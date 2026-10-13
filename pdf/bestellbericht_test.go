@@ -404,3 +404,28 @@ func TestBestellbericht_TitelBleibtInSeinerSpalte(t *testing.T) {
 		}
 	}
 }
+
+// Das Bestelldatum steht am Kalendertag der Schule da, und die Übersicht zählt die Bestellung zu
+// dessen Monat. Die Datenbank liefert den Zeitpunkt in UTC: 22:30 Uhr am 31.08. ist in der Schule
+// der 01.09., eine halbe Stunde nach Mitternacht.
+func TestBestellbericht_BestelldatumStehtAmKalendertagDerSchule(t *testing.T) {
+	roh, err := GenerateBestellberichtPDF(Bestellbericht{
+		Titel: "Jahresbericht",
+		Von:   time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
+		Jahresansicht: true, MitPreisen: false,
+		Toepfe: []BestellberichtTopf{{Beschriftung: "Block-Eins", Bestellungen: []BestellberichtBestellung{{
+			LieferantName: "Haendler-A", Kundennummer: "K-1", Bestelldatum: time.Date(2026, time.August, 31, 22, 30, 0, 0, time.UTC),
+			Gesamtbetrag: 10, AnzahlExemplare: 1,
+		}}}},
+	}, SchuleInfo{Name: "Testbibliothek"})
+	if err != nil {
+		t.Fatalf("Bericht drucken: %v", err)
+	}
+	texte := pdftest.TexteInReihenfolge(t, roh)
+	if !slices.Contains(texte, "01.09.2026  ·  Haendler-A  ·  Kd.-Nr. K-1") {
+		t.Errorf("die Kopfzeile der Bestellung nennt nicht den 01.09.2026: %q", texte)
+	}
+	if !slices.Contains(texte, "September") || slices.Contains(texte, "August") {
+		t.Errorf("die Übersicht nach Monat zählt die Bestellung nicht im September: %q", texte)
+	}
+}

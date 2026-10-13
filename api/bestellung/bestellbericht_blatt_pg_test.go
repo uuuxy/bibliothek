@@ -88,6 +88,9 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 	// Außerhalb des Zeitraums: am Tag vor „von" und am Tag nach „bis".
 	anlegen("August", mitteltopf.Land, mittags(time.August, 31), 7, 1.00)
 	anlegen("Oktober", mitteltopf.Land, mittags(time.October, 1), 9, 1.00)
+	// Um Mitternacht der Schule, in UTC gespeichert: 00:30 Uhr am 01.11.2019 und am 01.12.2019.
+	anlegen("Nacht-Anfang", mitteltopf.Land, time.Date(2019, time.October, 31, 23, 30, 0, 0, time.UTC), 1, 2.00)
+	anlegen("Nacht-Ende", mitteltopf.Land, time.Date(2019, time.November, 30, 23, 30, 0, 0, time.UTC), 1, 3.00)
 	if _, err := pool.Exec(ctx, `UPDATE bestellungen_verlauf SET lieferant_id = $1
 		WHERE lieferant_name IN ('Bericht-Probe Land-A', 'Bericht-Probe Oktober')`, haendler); err != nil {
 		t.Fatalf("Lieferant an zwei Bestellungen setzen: %v", err)
@@ -192,6 +195,26 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		folge(t, texte, "Abrechnung Herbst", "Übersicht nach Monat", "September", "4", "57", "255,50 €",
 			"Ausgaben nach Lieferant", "Bericht-Probe Alt", "Bericht-Probe Kreis", "Bericht-Probe Land-A", "Bericht-Probe Land-B",
 			"Bestellungen im Detail")
+	})
+
+	t.Run("der Zeitraum zählt am Kalendertag der Schule", func(t *testing.T) {
+		setzePreise(t, "true")
+		texte := blatt(t, "von=2019-11-01&bis=2019-11-30&jahresansicht=true")
+		folge(t, texte, "Zeitraum: 01.11.2019 bis 30.11.2019", "Bestellungen: 1", "Gesamtbetrag: 2,00 €",
+			"Übersicht nach Monat", "November", "1",
+			"01.11.2019  ·  Bericht-Probe Nacht-Anfang  ·  Kd.-Nr. KD-Nacht-Anfang", "Gesamtbetrag 01.11.2019 – 30.11.2019", "2,00 €")
+		if text := strings.Join(texte, "\n"); strings.Contains(text, "Nacht-Ende") || strings.Contains(text, "Oktober") {
+			t.Errorf("der November nennt die Bestellung vom 01.12. oder zählt eine im Oktober: %q", texte)
+		}
+		// Die Bestellung aus der ersten halben Stunde des Dezembers steht im Dezember.
+		folge(t, blatt(t, "von=2019-12-01&bis=2019-12-31"), "Bestellungen: 1",
+			"01.12.2019  ·  Bericht-Probe Nacht-Ende  ·  Kd.-Nr. KD-Nacht-Ende", "3,00 €")
+		// Und der Oktober endet vor ihr: Er führt nur die Bestellung vom 01.10.
+		oktober := blatt(t, "von=2019-10-01&bis=2019-10-31")
+		folge(t, oktober, "Bestellungen: 1", "01.10.2019  ·  Bericht-Probe Oktober  ·  Kd.-Nr. KD-Oktober")
+		if strings.Contains(strings.Join(oktober, "\n"), "Nacht-Anfang") {
+			t.Errorf("der Oktober nennt die Bestellung vom 01.11.: %q", oktober)
+		}
 	})
 
 	t.Run("Kopf der Antwort und Eingabefehler", func(t *testing.T) {

@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // Die Überschrift des Berichts: Ein mitgegebener Titel geht vor, sonst folgt sie aus Lieferant
@@ -35,15 +37,15 @@ func TestBerichtTitelAbleiten(t *testing.T) {
 	}
 }
 
-// Beide Tage des Zeitraums sind Pflicht und stehen als JJJJ-MM-TT da. Die Meldung nennt den
-// Parameter, an dem es liegt.
+// Beide Tage des Zeitraums sind Pflicht und stehen als JJJJ-MM-TT da; gelesen werden sie als
+// Kalendertage der Schule. Die Meldung nennt den Parameter, an dem es liegt.
 func TestParseBerichtZeitraum(t *testing.T) {
 	von, bis, err := parseBerichtZeitraum("2026-09-01", "2026-09-30")
 	if err != nil {
 		t.Fatalf("gültiger Zeitraum: %v", err)
 	}
-	if !von.Equal(time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)) || !bis.Equal(time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC)) {
-		t.Errorf("Zeitraum %s bis %s, erwartet 01.09.2026 bis 30.09.2026", von, bis)
+	if !von.Equal(time.Date(2026, 9, 1, 0, 0, 0, 0, schulzeit.Zone())) || !bis.Equal(time.Date(2026, 9, 30, 0, 0, 0, 0, schulzeit.Zone())) {
+		t.Errorf("Zeitraum %s bis %s, erwartet Mitternacht der Schule am 01.09.2026 und am 30.09.2026", von, bis)
 	}
 	for _, f := range []struct{ von, bis, nennt string }{
 		{"", "2026-09-30", "'von' und 'bis'"},

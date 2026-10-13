@@ -9,19 +9,22 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
-// parseBerichtZeitraum liest die zwei Tage des Zeitraums (JJJJ-MM-TT); beide sind Pflicht.
+// parseBerichtZeitraum liest die zwei Tage des Zeitraums (JJJJ-MM-TT) als Kalendertage der
+// Schule; beide sind Pflicht. In UTC gelesen zählte eine Bestellung aus der ersten Stunde eines
+// Monats zum Monat davor.
 func parseBerichtZeitraum(vonStr, bisStr string) (time.Time, time.Time, error) {
 	if vonStr == "" || bisStr == "" {
 		return time.Time{}, time.Time{}, fmt.Errorf("parameter 'von' und 'bis' erforderlich (YYYY-MM-DD)")
 	}
-	von, err := time.Parse(tuer.DateFormatISO, vonStr)
+	von, err := schulzeit.Kalendertag(vonStr)
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'von': %w", err)
 	}
-	bis, err := time.Parse(tuer.DateFormatISO, bisStr)
+	bis, err := schulzeit.Kalendertag(bisStr)
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'bis': %w", err)
 	}

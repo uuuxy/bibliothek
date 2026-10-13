@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/betrag"
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -34,7 +35,8 @@ type berichtSupplierStat struct {
 func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, orders []BestellberichtBestellung, gesamtExemplare int, gesamtBetrag float64, mitPreisen bool) {
 	monthly := map[time.Month]*berichtMonthStat{}
 	for _, o := range orders {
-		m := o.Bestelldatum.Month()
+		// Der Monat der Schule: Eine Bestellung aus der ersten Stunde eines Monats zählt zu ihm.
+		m := o.Bestelldatum.In(schulzeit.Zone()).Month()
 		if monthly[m] == nil {
 			monthly[m] = &berichtMonthStat{}
 		}

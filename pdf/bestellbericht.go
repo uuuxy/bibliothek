@@ -89,12 +89,12 @@ type berichtRahmen struct {
 }
 
 // zeichneBerichtBestellKopf setzt die Kopfzeile einer einzelnen Bestellung (Datum, Lieferant,
-// Kundennummer).
+// Kundennummer). Das Datum ist der Kalendertag der Schule, an dem bestellt wurde.
 func zeichneBerichtBestellKopf(p *gofpdf.Fpdf, tr func(string) string, o BestellberichtBestellung) {
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(235, 235, 245)
 	header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
-		o.Bestelldatum.Format(dateFormatDE), o.LieferantName, o.Kundennummer)
+		o.Bestelldatum.In(schulzeit.Zone()).Format(dateFormatDE), o.LieferantName, o.Kundennummer)
 	p.CellFormat(0, 7, tr(header), "LTR", 1, "L", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 }

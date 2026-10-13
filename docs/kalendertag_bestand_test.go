@@ -26,6 +26,11 @@ import (
 // Jedes Mal war es dieselbe Zeile in einer anderen Datei. Ein Kommentar hält das nicht
 // auf; eine Liste, die nur wachsen darf, wenn jemand einen Grund dazuschreibt, schon.
 //
+// Eine dritte Form derselben Klasse (13.10.2026): Ein Datum aus einer Eingabe wird mit
+// time.Parse als Tag in UTC gelesen und als Zeitpunkt gegen eine Spalte mit Zeitpunkten
+// verglichen. Der Bestellbericht führte so eine Bestellung aus der ersten Stunde eines Monats
+// im Monat davor. schulzeit.Kalendertag liest denselben Text als Tag der Schule.
+//
 // Was die Ratsche NICHT verbietet: Zeitpunkt-Vergleiche. „Überfällig" ist
 // `rueckgabe_frist < CURRENT_TIMESTAMP` und bleibt es — ein Instant ist in jeder Zone
 // derselbe. Verboten ist nur der KALENDERTAG aus einer fremden Zone.
@@ -47,11 +52,23 @@ var bestandKalendertag = map[string]struct {
 	"cmd/seed/main.go":                       {1, "erfundene Abgangsjahre für Testdaten"},
 	"internal/uebernahme/protokoll.go":       {1, "Zeitstempel einer Protokollzeile"},
 	"internal/service/bestellung_anlegen.go": {1, "Anschaffungsjahr eines Exemplars"},
+	// Ein Datum aus einer Eingabe, als Tag in UTC gelesen: geduldet, wo danach kein Zeitpunkt
+	// in UTC verglichen wird.
+	"internal/service/loan_rules.go":      {1, "Ferien-Leseclub: nimmt Jahr, Monat und Tag und baut daraus das Tagesende der Schule"},
+	"api/theke/ausleihe.go":               {1, "Frist von Hand: geht durch TagesEnde in der Zone der Schule"},
+	"api/lernmittel/lmf_verlaengerung.go": {1, "neues Rückgabedatum: geht durch TagesEnde in der Zone der Schule"},
+	"api/lernmittel/lmf_plan.go":          {3, "prüft nur die Form der Tage; gerechnet wird mit schulzeit.Kalendertag"},
+	"api/leser/student_create.go":         {1, "Geburtsdatum: trifft eine Datumsspalte"},
+	"api/leser/student_update.go":         {1, "Geburtsdatum: trifft eine Datumsspalte"},
+	"api/druck/etiketten_offen.go":        {2, "Stichtag der Etiketten: verglichen mit Datumsspalten"},
+	"pkg/lmfplan/ferien.go":               {2, "Ferientage als Kalendertage in UTC, verglichen mit Tagen derselben Form (kalendertagUTC)"},
+	"pkg/lmfplan/ferien_einstellung.go":   {2, "Ferientage als Kalendertage in UTC, verglichen mit Tagen derselben Form (kalendertagUTC)"},
 }
 
 var (
 	musterCurrentDate = regexp.MustCompile(`\bCURRENT_DATE\b`)
 	musterRoheUhr     = regexp.MustCompile(`time\.Now\(\)\.(Format|Year)\(`)
+	musterDatumInUTC  = regexp.MustCompile(`time\.Parse\((tuer\.DateFormatISO|"2006-01-02"|time\.DateOnly),`)
 	musterZeilenKomm  = regexp.MustCompile(`(?m)^\s*//.*$`)
 	musterSQLKomm     = regexp.MustCompile(`(?m)^\s*--.*$`)
 )
@@ -80,7 +97,8 @@ func TestKalendertag_BestandWaechstNicht(t *testing.T) {
 		// Kommentare zuerst weg: Ein Fund, der nur eine Erklärung ist, wäre ein Fehlalarm —
 		// und ein Register mit Fehlalarmen wird nach dem zweiten Mal nicht mehr gelesen.
 		quelle := musterSQLKomm.ReplaceAllString(musterZeilenKomm.ReplaceAllString(string(roh), ""), "")
-		n := len(musterCurrentDate.FindAllString(quelle, -1)) + len(musterRoheUhr.FindAllString(quelle, -1))
+		n := len(musterCurrentDate.FindAllString(quelle, -1)) + len(musterRoheUhr.FindAllString(quelle, -1)) +
+			len(musterDatumInUTC.FindAllString(quelle, -1))
 		if n > 0 {
 			rel := strings.TrimPrefix(filepath.ToSlash(strings.TrimPrefix(pfad, wurzel)), "/")
 			gefunden[rel] = n
@@ -117,10 +135,10 @@ func TestKalendertag_BestandWaechstNicht(t *testing.T) {
 
 	for _, p := range neu {
 		t.Errorf("%s rechnet neu mit dem Kalendertag der Sitzung (CURRENT_DATE) oder der "+
-			"Container-Uhr (time.Now().Format/Year). Zwischen Mitternacht in Berlin und "+
-			"Mitternacht UTC ist das der VORTAG. Entweder schulzeit.SQLHeute bzw. "+
-			"schulzeit.Jetzt() benutzen — oder die Stelle mit Begründung in "+
-			"bestandKalendertag eintragen.", p)
+			"Container-Uhr (time.Now().Format/Year), oder liest ein Datum mit time.Parse als "+
+			"Tag in UTC. Zwischen Mitternacht in Berlin und Mitternacht UTC ist das der VORTAG. "+
+			"Entweder schulzeit.SQLHeute, schulzeit.Jetzt() bzw. schulzeit.Kalendertag "+
+			"benutzen — oder die Stelle mit Begründung in bestandKalendertag eintragen.", p)
 	}
 	for _, p := range gewachsen {
 		t.Errorf("%s hat mehr solche Stellen als geduldet (%d statt %d). Eine Ausnahme ist "+
