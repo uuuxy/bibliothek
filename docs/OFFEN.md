@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 12.10.2026
+Stand: 13.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -535,9 +535,9 @@ von Stufe 4 neun der elf Themen.
   | Thema      | Dateien | Zeilen | Routen | Testdateien | Dateien heute in `api/` |
   | ---------- | ------- | ------ | ------ | ----------- | ----------------------- |
   | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go`, seit dem 12.10.2026 in `api/katalog` |
-  | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go` |
+  | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go`; `klassen_mapping.go` steht seit dem 13.10.2026 bei der Systempflege, weil nur die Seite der Einstellungen es ruft |
   | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go`, seit dem 12.10.2026 in `api/bestellung` |
-  | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |
+  | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system`; seit dem 13.10.2026 dazu `klassen_mapping.go` (die Adressen der Klassenleitungen) |
   | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
   | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go`, seit dem 12.10.2026 in `api/mahnwesen` |
   | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print_kontoauszug.go` (der Kontoauszug aus `print.go`); seit dem 12.10.2026 in `api/druck`, ohne drei Dateien, die nach der rufenden Seite zogen oder ziehen: `barcode_sequence.go` zum Katalog, `buchbarcodes_handler.go` zur Theke, der Kontoauszug zu den Lesern |

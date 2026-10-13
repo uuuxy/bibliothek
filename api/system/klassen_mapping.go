@@ -1,4 +1,4 @@
-package api
+package system
 
 import (
 	"errors"
@@ -19,7 +19,7 @@ type KlassenLehrerMapping struct {
 
 // GetKlassenMappingHandler returns all class → teacher-e-mail mappings.
 // GET /api/klassen-mapping
-func (s *Server) GetKlassenMappingHandler() http.HandlerFunc {
+func (s *Tueren) GetKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -42,7 +42,7 @@ func (s *Server) GetKlassenMappingHandler() http.HandlerFunc {
 
 // UpsertKlassenMappingHandler creates or updates a class → teacher-e-mail mapping.
 // POST /api/klassen-mapping  { "klasse": "5b", "lehrer_email": "..." }
-func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
+func (s *Tueren) UpsertKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req KlassenLehrerMapping
 		if !tuer.DecodeAndValidate(w, r, &req) {
@@ -85,7 +85,7 @@ func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
 
 // DeleteKlassenMappingHandler removes a class → teacher-e-mail mapping.
 // DELETE /api/klassen-mapping/{klasse}
-func (s *Server) DeleteKlassenMappingHandler() http.HandlerFunc {
+func (s *Tueren) DeleteKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		klasse := r.PathValue("klasse")
 		if klasse == "" {
