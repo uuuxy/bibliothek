@@ -78,10 +78,12 @@ func VerschluesseleMit(schluessel, klartext []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fehler beim Initialisieren von GCM: %w", err)
 	}
+	// Jeder Aufruf nimmt eine frische Nonce aus dem Zufall.
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return nil, fmt.Errorf("fehler beim Generieren der Nonce: %w", err)
 	}
+	// Seal hängt den Ciphertext an die Nonce an, damit beides zusammen gespeichert wird.
 	return gcm.Seal(nonce, nonce, klartext, nil), nil
 }
 
@@ -99,6 +101,7 @@ func EntschluesseleMit(schluessel, geheimtext []byte) ([]byte, error) {
 	if len(geheimtext) < nonceLaenge {
 		return nil, errors.New("ciphertext ist zu kurz, Nonce fehlt")
 	}
+	// Die Nonce steht vor dem Ciphertext.
 	nonce, rest := geheimtext[:nonceLaenge], geheimtext[nonceLaenge:]
 	klartext, err := gcm.Open(nil, nonce, rest, nil)
 	if err != nil {
@@ -113,26 +116,7 @@ func Verschluessele(klartext []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	block, err := aes.NewCipher(schluessel)
-	if err != nil {
-		return nil, fmt.Errorf("fehler beim Initialisieren des AES-Ciphers: %w", err)
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, fmt.Errorf("fehler beim Initialisieren von GCM: %w", err)
-	}
-
-	// Jeder Aufruf nimmt eine frische Nonce aus dem Zufall.
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, fmt.Errorf("fehler beim Generieren der Nonce: %w", err)
-	}
-
-	// Seal hängt den Ciphertext an die Nonce an, damit beides zusammen gespeichert wird.
-	geheimtext := gcm.Seal(nonce, nonce, klartext, nil)
-	return geheimtext, nil
+	return VerschluesseleMit(schluessel, klartext)
 }
 
 // Entschluessele entschlüsselt mit AES-256-GCM unter dem Schlüssel der Umgebung.
@@ -141,28 +125,5 @@ func Entschluessele(geheimtext []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	block, err := aes.NewCipher(schluessel)
-	if err != nil {
-		return nil, fmt.Errorf("fehler beim Initialisieren des AES-Ciphers: %w", err)
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, fmt.Errorf("fehler beim Initialisieren von GCM: %w", err)
-	}
-
-	nonceLaenge := gcm.NonceSize()
-	if len(geheimtext) < nonceLaenge {
-		return nil, errors.New("ciphertext ist zu kurz, Nonce fehlt")
-	}
-
-	// Die Nonce steht vor dem Ciphertext.
-	nonce, rest := geheimtext[:nonceLaenge], geheimtext[nonceLaenge:]
-	klartext, err := gcm.Open(nil, nonce, rest, nil)
-	if err != nil {
-		return nil, fmt.Errorf("entschlüsselung fehlgeschlagen (falscher Schlüssel oder manipulierte Daten?): %w", err)
-	}
-
-	return klartext, nil
+	return EntschluesseleMit(schluessel, geheimtext)
 }
