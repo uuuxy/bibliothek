@@ -50,6 +50,14 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
+- [ ] Zwei zugelieferte Pull Requests vom 13.10.2026 (734 und 735), beide am selben Tag am
+  Code geprüft. Vorschlag: 734 übernehmen, 735 schließen. 734 gibt dem aufklappbaren Bereich
+  im Vorrat des LMF-Plans (`LmfPlanVorrat.svelte`) eine Kennung und nennt sie am Knopf
+  (`aria-controls`), wie es sieben andere Bauteile schon tun; alle Prüfläufe am Pull Request
+  sind grün. 735 schreibt die Abfrage der Schlagwort-Pflege um, weil sie die Titel je Zeile
+  der ganzen Tabelle zähle. Gemessen an 5.003 Schlagworten zählt die vorhandene Abfrage
+  200-mal, einmal je gezeigter Zeile, genau wie die neue (0,73 gegen 0,70 ms); dazu käme ein
+  Kommentar mit Vorgeschichte in der Anweisung.
 - [x] Vier zugelieferte Pull Requests (726 bis 729): geschlossen am 12.10.2026, nach dem
   Vorschlag. Die Begründung steht je am Pull Request. Soll es den Knopf zum Leeren der Suche
   geben, entsteht er neu nach der Seite von Material 3.

@@ -4316,6 +4316,43 @@ Fenstern bekannt ist:
 - Barrierefreiheit: Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs
   braucht (HTML-Druckweg oder begründete Ausnahme), ist nicht geklärt; bis dahin geparkt. Was
   die Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
+- Abgleich des Go-Codes mit Googles Regelwerk für Go
+  ([Guide](https://google.github.io/styleguide/go/guide),
+  [Decisions](https://google.github.io/styleguide/go/decisions),
+  [Best Practices](https://google.github.io/styleguide/go/best-practices)), gemessen am
+  13.10.2026 nach dem Umzug der Türen. Von einem Gate gehalten: ein Paketkommentar je Paket,
+  ein Empfängername je Typ, ein Kommentar an jedem öffentlichen Namen, kein verworfener Fehler
+  ohne Vermerk, Prüfhilfen in eigenen Paketen, die kein Programmcode einbindet (2.3,
+  [sweeps.md](sweeps.md)). Was abweicht und bleibt:
+  - Öffentliche Namen ohne Nutzer außerhalb ihres Pakets: 515 von 2.105 (245 Typen, 93
+    Funktionen, 87 Konstanten, 74 Methoden, 16 Variablen; gemessen mit Typprüfung über den
+    ganzen Baum), dazu 210, die nur Tests brauchen. In den Themen unter `api/` sind es fast nur
+    Typen von Anfrage und Antwort; die meisten übrigen stehen in `repository/` (146),
+    `internal/littera` (54) und `inventur/` (45). Anlass zum Bauen: Ein Paket wird geteilt oder
+    bekommt einen zweiten Nutzer; dann seine Namen zuerst klein schreiben.
+  - Fehlertexte als ganze Sätze: 59 Stellen tragen `//nolint:staticcheck` (ST1005), weil der
+    Text des Fehlers die Meldung an der Oberfläche ist. Das Regelwerk schreibt Fehlertexte
+    klein und ohne Satzzeichen, weil sie in anderem Text stehen. Den Satz vom Fehler trennt
+    schon `apierrors.SendHTTPErrorMitMeldung`. Anlass zum Bauen: Eine Meldung bekommt eine
+    zweite Sprache, oder ein zweites Programm liest die Fehler.
+  - Zustand auf der Ebene eines Pakets hinter drei Nähten für Tests: der Mailversand
+    (`mailservice.SendEmail` als Variable, der Lader der Konfiguration mit
+    `TauscheKonfigLaderFuerTest`), der Zwischenspeicher der Rechte (`tuer.MerkeRechtFuerTest`)
+    und das Ersatzbild der Cover (`coverquelle.MerkeErsatzbildFuerTest`). Das Regelwerk
+    (Best Practices, „Global state") verlangt dafür Werte, die der Aufrufer anlegt und
+    weiterreicht. Tests dieser Stellen laufen deshalb nacheinander. Anlass zum Bauen: Tests
+    sollen nebeneinander laufen, oder ein Prozess trägt zwei Server; dann den Mailversand als
+    Wert in `tuer.Basis` führen, wie Datenbank, Anmeldung und Uhr.
+  - Die Türen der Themen nennen ihren Empfänger `s` (313 Methoden), ein Kürzel von `Server`
+    und nicht von `Tueren`. Einheitlich; ein Umbenennen brächte nur den Namen.
+  - Die Zuweisung des Kopfs der Schule aus den Einstellungen (`pdf.SchuleInfo{Name: …}`)
+    steht an acht Türen. Anlass zum Bauen: Der Kopf bekommt ein fünftes Feld.
+  - 29 von 901 Testdateien vergleichen mit testify; das Regelwerk lässt nur das Paket
+    `testing` zu, und die übrigen Tests kommen ohne aus. Anlass zum Bauen: Eine der Dateien
+    wird ohnehin umgeschrieben.
+  - Die Kommentare der umgezogenen Dateien tragen weiter Datum und Vorgeschichte (in `api/`
+    125 Kommentarzeilen mit Datum). Der Umzug nahm sie unverändert mit, damit der Vergleich
+    alt gegen neu Wort für Wort aufgeht. Anlass zum Bauen: Die Datei wird inhaltlich geändert.
 
 #### Kleinigkeiten
 
