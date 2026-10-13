@@ -8,14 +8,12 @@ import (
 	"time"
 )
 
-// Diese Tabelle stand bis zum Audit in api/katalog/image_caching_test.go. Sie ist mit der
-// Prüffunktion nach pkg/safehttp gewandert, weil dieselbe Schranke jetzt auch die
-// Cover- und Metadaten-Abrufe des Inventur-Moduls schützt.
+// Die Adressen, die der Dialer ablehnt, und zwei öffentliche als Gegenprobe.
 func TestVerbieteInterneZieladressen(t *testing.T) {
-	tests := []struct {
-		name    string
-		address string
-		blocked bool
+	faelle := []struct {
+		name     string
+		adresse  string
+		gesperrt bool
 	}{
 		{"Öffentliche IPv4", "93.184.216.34:443", false},
 		{"Öffentliche IPv6", "[2606:2800:220:1:248:1893:25c8:1946]:443", false},
@@ -31,23 +29,22 @@ func TestVerbieteInterneZieladressen(t *testing.T) {
 		{"Keine IP", "example.com:80", true},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := VerbieteInterneZieladressen("tcp4", tt.address, nil)
-			if blocked := err != nil; blocked != tt.blocked {
-				t.Errorf("VerbieteInterneZieladressen(%q) blocked = %v (err: %v); want %v", tt.address, blocked, err, tt.blocked)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			err := verbieteInterneZieladressen("tcp4", f.adresse, nil)
+			if gesperrt := err != nil; gesperrt != f.gesperrt {
+				t.Errorf("verbieteInterneZieladressen(%q) gesperrt = %v (err: %v); want %v", f.adresse, gesperrt, err, f.gesperrt)
 			}
 		})
 	}
 }
 
-// Der eigentliche Angriffsweg aus dem Audit, am echten Client durchgespielt: Ein
-// Host, den eine Allowlist durchgewinkt hat, antwortet mit einem Redirect auf ein
-// internes Ziel. Der Standard-Client folgt dem wortlos — dieser hier darf es nicht.
+// Der Angriffsweg am Client selbst: Ein erlaubter Host leitet auf ein internes Ziel weiter.
+// Der Standard-Client folgt dem, dieser nicht.
 //
-// Der Test belegt beides in einem Lauf: Der erste Hop (öffentlich erreichbarer
-// Testserver) kommt durch, der zweite (Loopback) wird abgelehnt.
-func TestNeuerClient_FolgtKeinemRedirectAufsLoopback(t *testing.T) {
+// Die Server des Tests lauschen auf 127.0.0.1; der Client lehnt deshalb schon die erste
+// Verbindung ab. Dass der Standard-Client bis ins Interne kommt, zeigt die Gegenprobe.
+func TestNewClient_FolgtKeinerWeiterleitungAufsLoopback(t *testing.T) {
 	intern := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte("interne Daten")); err != nil {
@@ -61,8 +58,8 @@ func TestNeuerClient_FolgtKeinemRedirectAufsLoopback(t *testing.T) {
 	}))
 	defer umleiter.Close()
 
-	// Gegenprobe zuerst: Der Standard-Client folgt der Umleitung bis ins Interne.
-	// Ohne diesen Nachweis wüssten wir nicht, ob der Test überhaupt etwas prüft.
+	// Die Gegenprobe zuerst: Der Standard-Client folgt der Weiterleitung bis ins Interne. Ohne
+	// sie stünde nicht fest, ob der Test etwas prüft.
 	if resp, err := http.Get(umleiter.URL); err == nil {
 		defer func() {
 			if cerr := resp.Body.Close(); cerr != nil {
@@ -76,10 +73,9 @@ func TestNeuerClient_FolgtKeinemRedirectAufsLoopback(t *testing.T) {
 		t.Fatalf("Vorbedingung: Standard-Client scheiterte bereits (%v) — der Test prüft dann nichts", err)
 	}
 
-	// httptest-Server lauschen auf 127.0.0.1. Der gehärtete Client darf deshalb
-	// bereits den ERSTEN Hop nicht aufbauen; entscheidend ist, dass die Ablehnung
-	// aus der Adressprüfung kommt und nicht aus einem beliebigen anderen Fehler.
-	client := NeuerClient(5 * time.Second)
+	// Es zählt, dass die Ablehnung aus der Prüfung der Adresse kommt und nicht aus einem
+	// anderen Fehler.
+	client := NewClient(5 * time.Second)
 	resp, err := client.Get(umleiter.URL)
 	if err == nil {
 		if cerr := resp.Body.Close(); cerr != nil {

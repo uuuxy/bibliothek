@@ -9,12 +9,11 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// Eine Datei, die entpackt über der Grenze liegt, wird abgewiesen — bewiesen mit einer
-// echten Bombe: 200 Zellen zu je 32.000 Zeichen (excelize kappt EINE Zelle still bei
-// 32.767 — die erste Fassung dieser Probe war deshalb keine Bombe; die Zellen müssen
-// sich außerdem unterscheiden, sonst dedupliziert sharedStrings sie auf eine). Rund
-// 6 MB entpackt, wenige Kilobyte komprimiert. Die Grenze wird hier klein gedreht, damit
-// der Test in Sekunden läuft; die Mechanik ist dieselbe wie bei 256 MB.
+// Eine Datei, die entpackt über der Grenze liegt, wird abgewiesen. Die Probe sind 200 Zellen
+// zu je 32.000 Zeichen: excelize kappt eine einzelne Zelle bei 32.767, und gleiche Zellen
+// legte die Tabelle der Zeichenketten zu einer zusammen, deshalb unterscheiden sie sich. Das
+// sind rund 6 MB entpackt und wenige Kilobyte gepackt. Die Grenze ist hier klein gewählt,
+// damit der Test in Sekunden läuft; der Weg ist derselbe wie bei 256 MB.
 func TestOptionen_WeistEntpackBombeAb(t *testing.T) {
 	f := excelize.NewFile()
 	for i := range 200 {

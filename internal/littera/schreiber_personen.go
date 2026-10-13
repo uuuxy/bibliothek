@@ -17,7 +17,7 @@ import (
 type PersonenBericht struct {
 	QuellLeser    int
 	Schueler      int
-	Kollegium     int // jede Leserzeile im Kollegium, mit Konto oder ohne (leserart.MitKonto)
+	Kollegium     int // jede Leserzeile im Kollegium, mit Konto oder ohne (leserart.HatKonto)
 	Uebersprungen int // an einem Fehler gescheiterte
 
 	IstSchueler  int
@@ -81,7 +81,7 @@ const sqlBenutzerEinfuegen = `
 const sqlLeserzeileNachtragen = `
 	UPDATE leser SET barcode_id = $1, art = $2 WHERE id = $3`
 
-// Praktikum und Fachbereich bekommen kein Konto (leserart.MitKonto, Entscheidung vom
+// Praktikum und Fachbereich bekommen kein Konto (leserart.HatKonto, Entscheidung vom
 // 30.09.2026): nur die Leserzeile, an der ihre Ausleihen hängen. Keine Platzhalter-Adresse —
 // es gibt nichts, womit sie sich anmelden sollten.
 const sqlLeserOhneKontoEinfuegen = `
@@ -261,7 +261,7 @@ func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error
 }
 
 // schreibePerson legt die Person nach ihrer Art an: Schüler in die Schülerdatei, im Kollegium
-// mit Konto, wo eines dazugehört (leserart.MitKonto), sonst nur die Leserzeile. Die
+// mit Konto, wo eines dazugehört (leserart.HatKonto), sonst nur die Leserzeile. Die
 // Littera-Gruppe steht seit dem 30.09.2026 als Art an der Leserzeile (ZielArt) und nicht mehr
 // nur im Protokoll.
 func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
@@ -269,7 +269,7 @@ func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (
 	switch {
 	case leserart.IstSchueler(ziel):
 		return p.schreibeSchueler(ctx, tx, l)
-	case leserart.MitKonto(ziel):
+	case leserart.HatKonto(ziel):
 		return p.schreibeLehrkraft(ctx, tx, l)
 	case ziel != "":
 		return p.schreibeOhneKonto(ctx, tx, l)

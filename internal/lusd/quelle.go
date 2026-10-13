@@ -91,7 +91,7 @@ func leseCsvZeilen(content []byte) ([]tabellenZeile, error) {
 func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
 	// Nur das Lesen der Blätter liegt hinter der Schranke; die Kopfzeilen-Suche darunter
 	// arbeitet auf fertigen Zeichenketten und darf keinen eigenen Fehler an sie verlieren.
-	blaetter, err := xlsxgrenze.MitMappe(bytes.NewReader(content), func(f *excelize.File) ([][]tabellenZeile, error) {
+	blaetter, err := xlsxgrenze.LeseMappe(bytes.NewReader(content), func(f *excelize.File) ([][]tabellenZeile, error) {
 		var alle [][]tabellenZeile
 		for _, blatt := range f.GetSheetList() {
 			rows, err := leseXlsxBlatt(f, blatt)

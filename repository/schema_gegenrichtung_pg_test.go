@@ -312,7 +312,7 @@ var checkBedingungenBestand = []string{
 	// chk_leser_art: die sieben Arten aus pkg/leserart (seit Migration 153 auch
 	// Praktikum, Sekretariat, U-plus, Fachbereich). Der Code schreibt nur diese (api/...,
 	// internal/littera, db/seed.go; gegen die Datenbank gehalten in
-	// pkg/leserart/leser_art_pg_test.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
+	// pkg/leserart/leserart_pg_test.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
 	//
 	// chk_leser_schueler_pflichtfelder: Klasse, Abgaengerjahr und Ausweis waren fuer ALLE
 	// Pflicht, solange jede Zeile ein Schueler war. Die Pflicht ist nicht aufgegeben,

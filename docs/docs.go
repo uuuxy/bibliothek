@@ -4893,7 +4893,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "email": {
-                    "description": "Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal\" dazugehört:\nLehrkraft, LiV, Sekretariat, U-plus (leserart.MitKonto; Absprache vom 16.09.2026).\nBei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie\nbekommen kein Konto (Entscheidung vom 30.09.2026).\n\nSie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
+                    "description": "Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal\" dazugehört:\nLehrkraft, LiV, Sekretariat, U-plus (leserart.HatKonto; Absprache vom 16.09.2026).\nBei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie\nbekommen kein Konto (Entscheidung vom 30.09.2026).\n\nSie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
                     "type": "string"
                 },
                 "geburtsdatum": {

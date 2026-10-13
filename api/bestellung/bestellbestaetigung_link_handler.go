@@ -77,7 +77,7 @@ func (s *Tueren) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 // immer nur der Hash des einen gültigen. „Neuen Link erzeugen" und der erneute Versand der
 // Bestellmail gehen beide hier durch.
 func (s *Tueren) erneuereBestaetigungsToken(ctx context.Context, bestellungID string) (token string, gueltigBis time.Time, err error) {
-	token, hash, err := bestelllink.NeuerToken()
+	token, hash, err := bestelllink.ErzeugeToken()
 	if err != nil {
 		return "", time.Time{}, err
 	}

@@ -31,10 +31,10 @@ type ermittler struct {
 	vertraut []*net.IPNet
 }
 
-// neuerErmittler liest die vertrauten Netze aus CIDR-Angaben oder einzelnen Adressen. Leere
+// newErmittler liest die vertrauten Netze aus CIDR-Angaben oder einzelnen Adressen. Leere
 // und unlesbare Einträge übergeht er, damit ein Tippfehler in der Umgebung den Start nicht
 // verhindert.
-func neuerErmittler(netze []string) *ermittler {
+func newErmittler(netze []string) *ermittler {
 	e := &ermittler{}
 	for _, roh := range netze {
 		netz := strings.TrimSpace(roh)
@@ -111,7 +111,7 @@ func ohnePort(adresse string) string {
 var prozessweit atomic.Pointer[ermittler]
 
 func init() {
-	prozessweit.Store(neuerErmittler(loopbackNetze))
+	prozessweit.Store(newErmittler(loopbackNetze))
 }
 
 // SetzeProxys legt fest, aus welchen Netzen ein Proxy als vertraut gilt. Loopback gilt
@@ -120,7 +120,7 @@ func SetzeProxys(netze []string) {
 	alle := make([]string, 0, len(netze)+len(loopbackNetze))
 	alle = append(alle, netze...)
 	alle = append(alle, loopbackNetze...)
-	prozessweit.Store(neuerErmittler(alle))
+	prozessweit.Store(newErmittler(alle))
 }
 
 // SetzeProxysAusUmgebung liest die vertrauten Netze aus TRUSTED_PROXIES, getrennt durch

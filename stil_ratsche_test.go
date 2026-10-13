@@ -39,7 +39,9 @@ var stilVerben = wortmenge("get list create update delete save insert upsert add
 	"fetch load lookup check validate verify generate build make send handle process resolve " +
 	"parse print serve sync run execute set is has can register write read count mark extend " +
 	"apply ensure calculate compute format render draw store edit start stop sanitize clean " +
-	"convert encode decode guard close require post put patch seed query")
+	"convert encode decode guard close require post put patch seed query " +
+	// Der Erzeuger eines Typs heißt New oder new, in jedem Paket dasselbe Wort.
+	"neuer neue neues")
 
 // stilFremdeNamen gibt eine Schnittstelle von Go oder einer Bibliothek vor; sie bleiben.
 var stilFremdeNamen = wortmenge("ServeHTTP RoundTrip MarshalJSON UnmarshalJSON WriteHeader " +

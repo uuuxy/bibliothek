@@ -79,11 +79,11 @@ func liesMit(daten []byte, opt excelize.Options) (gepanickt any) {
 	defer func() { gepanickt = recover() }()
 	f, err := excelize.OpenReader(bytes.NewReader(daten), opt)
 	if err != nil {
-		return nil // abgewiesen — genau das ist hier ein gutes Ergebnis
+		return nil // abgewiesen, und das ist hier ein gutes Ergebnis
 	}
 	defer closeutil.Schliesse(f, "xlsxgrenze-probe")
-	// Ein Fehler ist hier ebenfalls ein gutes Ergebnis: Gemessen wird der PANIC, nicht
-	// die Frage, ob die präparierte Mappe lesbar ist.
+	// Ein Fehler ist hier ebenfalls ein gutes Ergebnis: Gemessen wird der Absturz, nicht die
+	// Frage, ob die präparierte Mappe lesbar ist.
 	if _, err := f.GetRows("Tabelle1", excelize.Options{RawCellValue: true}); err != nil {
 		return nil
 	}
@@ -113,7 +113,7 @@ func TestNegativerSharedStringIndex_UnsereOptionenWehrenAb(t *testing.T) {
 	}
 }
 
-// Die tragende Invariante, im Kleinen gemessen: Sind beide Grenzen GLEICH, wird eine
+// Im Kleinen gemessen, worauf Optionen sich stützt: Sind beide Grenzen gleich, wird eine
 // Datei, die groß genug zum Auslagern wäre, vorher abgewiesen.
 func TestGleicheGrenzenMachenDenAuslagerungsWegUnerreichbar(t *testing.T) {
 	daten := bosartigeMappe(t, "-1")
@@ -125,8 +125,8 @@ func TestGleicheGrenzenMachenDenAuslagerungsWegUnerreichbar(t *testing.T) {
 	}
 }
 
-// Optionen() MUSS beide Grenzen gleich setzen. Wer die XML-Grenze senkt, um Speicher zu
-// sparen, macht den verwundbaren Weg erreichbar — und zwar lautlos.
+// Optionen setzt beide Grenzen gleich. Wer die XML-Grenze senkt, um Speicher zu sparen, macht
+// den verwundbaren Weg erreichbar, und kein Fehler meldet es.
 func TestOptionenSetzenBeideGrenzenGleich(t *testing.T) {
 	o := xlsxgrenze.Optionen()
 	if o.UnzipSizeLimit != o.UnzipXMLSizeLimit {

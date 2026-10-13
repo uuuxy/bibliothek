@@ -38,7 +38,7 @@ import (
 // neueArt ist die Art aus demselben Speichern (nil = nicht mitgeschickt), schon geprüft von
 // pruefeUndSetzeArt. Sie gilt vor der gespeicherten: Wer in einem Zug aus einem Praktikum eine
 // Lehrkraft macht und die Schul-E-Mail einträgt, bekommt das Konto; wer aus einer Lehrkraft
-// ohne Konto ein Praktikum macht, bekommt keins (leserart.MitKonto).
+// ohne Konto ein Praktikum macht, bekommt keins (leserart.HatKonto).
 //
 // Rückgabe: (nachzutragendeAdresse, ok). Eine leere Adresse heißt „nichts zu tun".
 // ok=false: Die Fehlerantwort steht bereits.

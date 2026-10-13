@@ -339,17 +339,17 @@ func (s *Tueren) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 // die Art unveraendert mitschicken darf.
 //
 // Ein bestehendes Konto bleibt beim Wechsel stehen, auch zu Praktikum oder Fachbereich: Neu
-// angelegt wird dort keines (leserart.MitKonto), ueber ein vorhandenes entscheidet die
+// angelegt wird dort keines (leserart.HatKonto), ueber ein vorhandenes entscheidet die
 // Benutzerverwaltung.
 func (s *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, id string, reqArt *string, b *repository.LeserAenderung) bool {
 	if reqArt == nil {
 		return true
 	}
 	neu := strings.TrimSpace(*reqArt)
-	// Dieselbe Menge wie beim Anlegen (leserart.Bekannt) und dieselbe wie
+	// Dieselbe Menge wie beim Anlegen (leserart.IstBekannt) und dieselbe wie
 	// chk_leser_art in der Datenbank. Eine unbekannte Art ist ein Tippfehler, kein neuer
 	// Personenkreis — und soll als Auskunft zurueckkommen, nicht als CHECK-500.
-	if !leserart.Bekannt(neu) {
+	if !leserart.IstBekannt(neu) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
 			fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", neu, leserart.Moegliche()))

@@ -23,7 +23,7 @@ import (
 // bestellungMitToken legt eine Bestellung samt Link-Token an und liefert den KLARTEXT.
 func bestellungMitToken(t *testing.T, pool *pgxpool.Pool, lieferantID string, gueltigTage int) (bestellungID, token string) {
 	t.Helper()
-	token, hash, err := bestelllink.NeuerToken()
+	token, hash, err := bestelllink.ErzeugeToken()
 	if err != nil {
 		t.Fatalf("Token erzeugen: %v", err)
 	}

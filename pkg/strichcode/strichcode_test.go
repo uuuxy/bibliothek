@@ -6,35 +6,35 @@ import (
 	"testing"
 )
 
-// Lange Inhalte sprengen die native Modulbreite der üblichen
-// 200px-Ausweisbreite — statt eines Fehlers ("can not scale barcode to an
-// image smaller than ...") muss das PNG dann eben breiter ausfallen.
+// Ein langer Inhalt ist breiter als die üblichen 200 Pixel der Ausweiskarte. Statt des Fehlers
+// der Bibliothek („can not scale barcode to an image smaller than …") kommt das PNG dann
+// breiter zurück.
 func TestPNG_LangerInhaltUnter200pxFaelltNichtAus(t *testing.T) {
-	data, err := PNG("S-GESPERRT-MRE1234567", false, 200, 50)
+	daten, err := PNG("S-GESPERRT-MRE1234567", false, 200, 50)
 	if err != nil {
-		t.Fatalf("langer Inhalt bei width=200 darf nicht scheitern: %v", err)
+		t.Fatalf("langer Inhalt bei Breite 200 darf nicht scheitern: %v", err)
 	}
 
-	img, err := png.Decode(bytes.NewReader(data))
+	bild, err := png.Decode(bytes.NewReader(daten))
 	if err != nil {
-		t.Fatalf("Ausgabe ist kein valides PNG: %v", err)
+		t.Fatalf("Ausgabe ist kein gültiges PNG: %v", err)
 	}
-	if img.Bounds().Dx() < 200 {
-		t.Errorf("Bild muss mindestens native Breite haben, hat %dpx", img.Bounds().Dx())
+	if bild.Bounds().Dx() < 200 {
+		t.Errorf("Bild muss mindestens so breit sein wie die Striche, hat %dpx", bild.Bounds().Dx())
 	}
 }
 
-// Kurze Inhalte respektieren weiterhin die Wunschgröße.
+// Ein kurzer Inhalt behält die gewünschte Größe.
 func TestPNG_KurzerInhaltBehaeltWunschbreite(t *testing.T) {
-	data, err := PNG("B-1", false, 300, 100)
+	daten, err := PNG("B-1", false, 300, 100)
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	img, err := png.Decode(bytes.NewReader(data))
+	bild, err := png.Decode(bytes.NewReader(daten))
 	if err != nil {
-		t.Fatalf("Ausgabe ist kein valides PNG: %v", err)
+		t.Fatalf("Ausgabe ist kein gültiges PNG: %v", err)
 	}
-	if img.Bounds().Dx() != 300 || img.Bounds().Dy() != 100 {
-		t.Errorf("erwartet 300x100, bekam %dx%d", img.Bounds().Dx(), img.Bounds().Dy())
+	if bild.Bounds().Dx() != 300 || bild.Bounds().Dy() != 100 {
+		t.Errorf("erwartet 300x100, bekam %dx%d", bild.Bounds().Dx(), bild.Bounds().Dy())
 	}
 }

@@ -70,7 +70,7 @@ func istLitteraXML(filename, contentStr string) bool {
 // leseTabellarischeDaten liest die Zeilen aus einer XLSX- oder CSV-Datei.
 func leseTabellarischeDaten(filename string, content []byte, contentStr string) (rows [][]string, isXLSX bool, err error) {
 	if strings.HasSuffix(strings.ToLower(filename), ".xlsx") {
-		rows, err := xlsxgrenze.MitMappe(bytes.NewReader(content), func(f *excelize.File) ([][]string, error) {
+		rows, err := xlsxgrenze.LeseMappe(bytes.NewReader(content), func(f *excelize.File) ([][]string, error) {
 			sheetName := f.GetSheetName(f.GetActiveSheetIndex())
 			return f.GetRows(sheetName, excelize.Options{RawCellValue: true})
 		})

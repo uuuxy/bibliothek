@@ -149,7 +149,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*O
 	var token, tokenHash string
 	linkTage := bestelllink.VorgabeTage
 	if supplier.IstHauptlieferant {
-		token, tokenHash, err = bestelllink.NeuerToken()
+		token, tokenHash, err = bestelllink.ErzeugeToken()
 		if err != nil {
 			return nil, fmt.Errorf("bestaetigungs-token: %w", err)
 		}

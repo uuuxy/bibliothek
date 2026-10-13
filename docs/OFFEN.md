@@ -173,7 +173,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 
 - [x] Die Regeln stehen auf einer Seite ([STIL.md](STIL.md)); eine Prüfung hält je Paket fest,
   was ihnen noch nicht folgt, und lässt den Bestand nur sinken (`stil_ratsche_test.go`).
-- [ ] Die Pakete unter `pkg/`.
+- [x] Die Pakete unter `pkg/`.
 - [ ] Die Pakete unter `internal/` ohne `internal/service`.
 - [ ] `repository/`.
 - [ ] `internal/service`.
@@ -359,7 +359,7 @@ Vermerk.
   (CVE-2026-107212; `pkg/xlsxgrenze/zeilennummer_test.go`, am Stand davor rot). Das Programm
   liest mit der Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht
   (`inventur/excel_import.go`, `internal/lusd/quelle.go`, `api/system/littera_import.go`), alle
-  durch `xlsxgrenze.MitMappe`; die Schranke dort bleibt als zweite Lage. Offen: auf die
+  durch `xlsxgrenze.LeseMappe`; die Schranke dort bleibt als zweite Lage. Offen: auf die
   veröffentlichte Fassung heben, sobald sie erscheint (Dependabot schlägt sie vor). Kommt
   vorher eine weitere Meldung, wird der Sicherheits-Scan rot; der Handgriff steht in
   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 5. Fällt an einem der drei Importe etwas
@@ -443,11 +443,8 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 19 von 79 Paketen:** `pkg/betrag` (gelesen, ohne Änderung), `pkg/clientip`,
-`pkg/closeutil`, `pkg/coverablage` (gelesen, ohne Änderung), `pkg/coverdatei`,
-`pkg/coverquelle`, `pkg/csvutil`, `pkg/ersatzwert`, `pkg/httpresp`, `pkg/imageutil`,
-`pkg/isbnutil`, `pkg/kennung`, `pkg/lmf`, `pkg/lmfplan`, `pkg/logger`, `pkg/mitteltopf`,
-`pkg/ratelimit`, `pkg/safego`, `pkg/schulzeit`.
+**Fertig sind 26 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+gelesen und ohne Änderung).
 
 **Ein Paket ist fertig, wenn:**
 
@@ -473,7 +470,11 @@ Programmcodes). Ein Commit, der nur Kommentare ändert, wird am Code ohne Kommen
 Zeichenketten (Listen, an denen Prüfungen hängen, und Fehlermeldungen), die Liste des toten
 Codes 86, die Kommentare für die Schnittstellenbeschreibung rund 50 Typen. Dort meldet der
 Compiler nichts. Jeder umbenannte Name wird im ganzen Repository gesucht und im selben Commit
-nachgezogen; eine Prüfung, die ihn als Text führt, wird danach einmal rot gesehen.
+nachgezogen; eine Prüfung, die ihn als Text führt, wird danach einmal rot gesehen. Die Suche
+nimmt auch den Go-Code mit: Kommentare anderer Pakete nennen den Namen, und das Werkzeug zieht
+nur das erste Wort über der Erklärung nach. Einen umbenannten Dateinamen in Dokumenten und
+Kommentaren meldet `go test ./docs/`. Steht der Kommentar über dem Feld eines Anfrage- oder
+Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o docs`.
 
 **Was seinen Namen behält:** Adressen, Feldnamen in JSON, Tabellen und Spalten
 ([STIL.md](STIL.md), Abschnitt 9).

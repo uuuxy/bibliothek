@@ -44,12 +44,12 @@ func TestAdresse_WirdNormalisiert(t *testing.T) {
 
 // Zwei Bestellungen dürfen nie denselben Token bekommen, und der gespeicherte Hash darf
 // den Token nicht preisgeben.
-func TestNeuerToken_EinmaligUndNurAlsHashGespeichert(t *testing.T) {
-	tokenA, hashA, err := NeuerToken()
+func TestErzeugeToken_EinmaligUndNurAlsHashGespeichert(t *testing.T) {
+	tokenA, hashA, err := ErzeugeToken()
 	if err != nil {
 		t.Fatalf("Token erzeugen: %v", err)
 	}
-	tokenB, hashB, err := NeuerToken()
+	tokenB, hashB, err := ErzeugeToken()
 	if err != nil {
 		t.Fatalf("Token erzeugen: %v", err)
 	}
@@ -69,8 +69,8 @@ func TestNeuerToken_EinmaligUndNurAlsHashGespeichert(t *testing.T) {
 }
 
 // Der Token trägt 32 Byte Zufall und nur Zeichen, die in einer Adresse unverändert bleiben.
-func TestNeuerToken_Form(t *testing.T) {
-	token, _, err := NeuerToken()
+func TestErzeugeToken_Form(t *testing.T) {
+	token, _, err := ErzeugeToken()
 	if err != nil {
 		t.Fatalf("Token erzeugen: %v", err)
 	}

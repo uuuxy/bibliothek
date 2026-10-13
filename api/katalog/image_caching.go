@@ -131,7 +131,7 @@ func baueSichereCoverURL(urlStr string) (string, bool) {
 // Die Umsetzung liegt seit dem Audit in pkg/safehttp, weil das Inventur-Modul für
 // seine Cover- und Metadaten-Abrufe denselben Schutz braucht und ihn vorher nicht
 // hatte — dort standen blanke http.Client{Timeout: …}.
-var coverHTTPClient = safehttp.NeuerClient(20 * time.Second)
+var coverHTTPClient = safehttp.NewClient(20 * time.Second)
 
 // holeUndKonvertiereCover lädt das Cover herunter und speichert es als WebP im
 // Cache-Verzeichnis. Bei Encode-/Close-Fehler wird die evtl. angefangene Datei

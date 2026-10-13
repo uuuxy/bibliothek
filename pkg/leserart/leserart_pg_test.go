@@ -41,7 +41,7 @@ func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	var ausDatei []string
 	for _, a := range pruefung.Arten {
 		ausDatei = append(ausDatei, a.Art)
-		if !leserart.Bekannt(a.Art) {
+		if !leserart.IstBekannt(a.Art) {
 			t.Errorf("%s: steht in den Prüffällen, der Server kennt die Art nicht", a.Art)
 		}
 	}
@@ -56,7 +56,7 @@ func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	var inDerDatenbank []string
 	for _, m := range regexp.MustCompile(`'([a-z]+)'`).FindAllStringSubmatch(def, -1) {
 		inDerDatenbank = append(inDerDatenbank, m[1])
-		if !leserart.Bekannt(m[1]) {
+		if !leserart.IstBekannt(m[1]) {
 			t.Errorf("chk_leser_art erlaubt %q, der Server kennt die Art nicht", m[1])
 		}
 	}

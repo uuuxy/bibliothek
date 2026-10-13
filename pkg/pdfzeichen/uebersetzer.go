@@ -1,23 +1,21 @@
-// Package pdfzeichen ist die eine Tür für die Zeichenersetzung in den PDFs.
+// Package pdfzeichen bringt Text in die Form, die gofpdf drucken kann, und kürzt ihn auf die
+// Breite einer Zelle.
 //
-// gofpdf zeichnet die Standardschriften in cp1252. Was diese Kodierung nicht kennt,
-// wird von ihrem Übersetzer (UnicodeTranslatorFromDescriptor) zu einem Punkt: „Ayşe" kam
-// als „Ay.e" aus dem Drucker, „Łukasz" als „.ukasz". Ein Etikett, ein Brief oder ein
-// Bescheid mit entstelltem Namen ist schlimmer als einer ohne Häkchen unter dem s —
-// deshalb wird vorher ersetzt statt hinterher verstümmelt.
+// gofpdf zeichnet die Standardschriften in cp1252. Was diese Kodierung nicht kennt, macht ihr
+// Übersetzer (UnicodeTranslatorFromDescriptor) zu einem Punkt: „Ayşe" käme als „Ay.e" aus dem
+// Drucker, „Łukasz" als „.ukasz". Ein Etikett, ein Brief oder ein Bescheid mit entstelltem
+// Namen ist schlimmer als einer ohne Häkchen unter dem s; deshalb wird vorher ersetzt.
 //
-// Bis zum 21.09.2026 stand die Ersetzung nur an zwei von siebzehn Stellen (Schüler-
-// Etikett, Bescheid); die Buchetiketten, die Mahnbriefe und alle anderen Renderer
-// kannten sie nicht. Jetzt läuft jeder Übersetzer durch Uebersetzer, und eine Ratsche
-// (pdfzeichen_ratsche_test.go im Wurzelpaket) hält es dabei.
+// Jeder Übersetzer eines Dokuments läuft durch Uebersetzer; pdfzeichen_ratsche_test.go im
+// Wurzelpaket hält es.
 package pdfzeichen
 
 import "strings"
 
-// ersatz bildet Buchstaben ab, die cp1252 nicht kennt. Abgedeckt sind die, die an einer
-// hessischen Schule tatsächlich vorkommen: türkisch, polnisch, rumänisch, tschechisch/
-// slowakisch, kroatisch/serbisch, ungarisch, litauisch/lettisch. Was cp1252 kennt (ä, ö,
-// ü, ß, é, à, â, î, ç, ñ, ø, æ …), steht hier bewusst NICHT — das druckt richtig.
+// ersatz bildet Buchstaben ab, die cp1252 nicht kennt. Abgedeckt sind die Sprachen, die an
+// einer hessischen Schule vorkommen: Türkisch, Polnisch, Rumänisch, Tschechisch, Slowakisch,
+// Kroatisch, Serbisch, Ungarisch, Litauisch und Lettisch. Was cp1252 kennt (ä, ö, ü, ß, é, à,
+// â, î, ç, ñ, ø, æ …), steht nicht darin, weil es richtig druckt.
 var ersatz = strings.NewReplacer(
 	"ş", "s", "Ş", "S", "ğ", "g", "Ğ", "G", "ı", "i", "İ", "I",
 	"ć", "c", "Ć", "C", "č", "c", "Č", "C", "ł", "l", "Ł", "L",
@@ -31,12 +29,12 @@ var ersatz = strings.NewReplacer(
 	"ų", "u", "Ų", "U", "ė", "e", "Ė", "E", "į", "i", "Į", "I",
 )
 
-// Uebersetzer nimmt den cp1252-Übersetzer eines gofpdf-Dokuments (dessen
-// UnicodeTranslatorFromDescriptor) und setzt die Ersetzung davor. Das Ergebnis ist die
-// Funktion, durch die jede Zeichenkette läuft, bevor sie aufs Papier geht.
+// Uebersetzer setzt die Ersetzung vor den cp1252-Übersetzer eines gofpdf-Dokuments (dessen
+// UnicodeTranslatorFromDescriptor). Durch das Ergebnis läuft jede Zeichenkette, bevor sie aufs
+// Papier geht.
 //
-// Die Signatur nimmt die Funktion, nicht das Dokument: Im Haus sind zwei gofpdf-
-// Fassungen im Einsatz (jung-kurt und phpdave11), und beide liefern denselben Typ.
+// Die Funktion nimmt den Übersetzer und nicht das Dokument, weil im Haus zwei Fassungen von
+// gofpdf im Einsatz sind (jung-kurt und phpdave11) und beide denselben Typ liefern.
 func Uebersetzer(cp1252 func(string) string) func(string) string {
 	return func(text string) string { return cp1252(ersatz.Replace(text)) }
 }

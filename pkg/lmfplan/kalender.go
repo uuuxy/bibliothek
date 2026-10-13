@@ -22,7 +22,7 @@ type kalender struct {
 	feiertage map[int][]feiertag
 }
 
-func neuerKalender(frei []Zeitraum) *kalender {
+func newKalender(frei []Zeitraum) *kalender {
 	return &kalender{frei: frei, feiertage: map[int][]feiertag{}}
 }
 
@@ -56,7 +56,7 @@ func (k *kalender) grund(t time.Time) string {
 // Schultage liefert die Regel für einen Schultag: Montag bis Freitag, kein gesetzlicher
 // Feiertag in Hessen und kein Tag in einem der Zeiträume.
 func Schultage(frei []Zeitraum) func(time.Time) bool {
-	k := neuerKalender(frei)
+	k := newKalender(frei)
 	return func(t time.Time) bool { return k.grund(t) == "" }
 }
 
@@ -64,7 +64,7 @@ func Schultage(frei []Zeitraum) func(time.Time) bool {
 // sind, mit ihrem Grund. Der Planer zeigt sie neben dem Rahmen, damit ein fehlender Donnerstag
 // im Plan erklärt ist; Wochenenden stehen nicht darin.
 func Ausfaelle(von, bis time.Time, frei []Zeitraum) []Ausfall {
-	k := neuerKalender(frei)
+	k := newKalender(frei)
 	ausfaelle := []Ausfall{}
 	for d := kalendertag(von); !d.After(kalendertag(bis)); d = d.AddDate(0, 0, 1) {
 		if g := k.grund(d); g != "" && g != "Wochenende" {

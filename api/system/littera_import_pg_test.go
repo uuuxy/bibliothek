@@ -147,7 +147,7 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 	// Bibliothek aus, und ob der OLE-Container VOR excelize abgewiesen wird, ist von hier
 	// aus nicht zu sehen — ohne die Abweisung lehnt excelize ihn selbst ab, auch mit 400
 	// (am 08.10.2026 als Rot-Probe gefahren, sie blieb grün). Beides steht im Test des
-	// Pakets (pkg/xlsxgrenze/mitmappe_test.go), wo der Absturz herstellbar und der
+	// Pakets (pkg/xlsxgrenze/lesemappe_test.go), wo der Absturz herstellbar und der
 	// Fehlerwert unterscheidbar ist. Hier steht, dass die Tür nicht mit 500 antwortet.
 	t.Run("XLSX unlesbar: 400, kein Serverfehler", func(t *testing.T) {
 		vorherT, vorherE := zaehle(t)

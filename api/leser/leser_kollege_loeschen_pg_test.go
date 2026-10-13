@@ -106,7 +106,7 @@ func TestKollegeLoeschen(t *testing.T) {
 		}
 	})
 
-	// Praktikum und Fachbereich haben nie ein Konto (Migration 153, leserart.MitKonto).
+	// Praktikum und Fachbereich haben nie ein Konto (Migration 153, leserart.HatKonto).
 	// Gerade Praktikanten gehen nach Wochen wieder; ihr Eintrag muss sich ohne Konto löschen
 	// lassen, statt am fehlenden Konto zu scheitern.
 	t.Run("ein Praktikum ohne Konto wandert in den Papierkorb", func(t *testing.T) {

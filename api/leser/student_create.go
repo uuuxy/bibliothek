@@ -38,7 +38,7 @@ type CreateStudentRequest struct {
 	// Spalte und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.
 	Art string `json:"art"`
 	// Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal" dazugehört:
-	// Lehrkraft, LiV, Sekretariat, U-plus (leserart.MitKonto; Absprache vom 16.09.2026).
+	// Lehrkraft, LiV, Sekretariat, U-plus (leserart.HatKonto; Absprache vom 16.09.2026).
 	// Bei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie
 	// bekommen kein Konto (Entscheidung vom 30.09.2026).
 	//
@@ -62,7 +62,7 @@ type CreateStudentRequest struct {
 // Schüler gibt es kein Geburtsdatum, an dem die Doppelprüfung greifen könnte.
 const meldungLeserNamensdublette = "achtung: Unter diesem Namen steht bereits ein Leser in der Leserdatei. Hat sich die Person über Mein Portal schon selbst angemeldet? Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten."
 
-// pruefeKollegiumEmail prüft die Schuladresse eines Kollegen mit Zugang (leserart.MitKonto).
+// pruefeKollegiumEmail prüft die Schuladresse eines Kollegen mit Zugang (leserart.HatKonto).
 //
 // PFLICHT, und zwar aus einem Grund, der nichts mit Erreichbarkeit zu tun hat: Ohne sie
 // entsteht kein Konto, und ohne Konto steht die Person zweimal in der Leserdatei, sobald
@@ -105,7 +105,7 @@ func pruefeKollegiumEmail(roh string) error {
 // ohne Klasse fällt in jeder Klassenliste und jeder Mahnung lautlos hinten runter; ein
 // Kollege MIT Klasse stünde umgekehrt in den Klassenlisten und im LUSD-Abgleich.
 func pruefeLeserAngaben(req *CreateStudentRequest) error {
-	if !leserart.Bekannt(req.Art) {
+	if !leserart.IstBekannt(req.Art) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
 		return fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", req.Art, leserart.Moegliche())
 	}
@@ -127,7 +127,7 @@ func pruefeLeserAngaben(req *CreateStudentRequest) error {
 }
 
 // meldungKeinZugang weist eine Schul-E-Mail bei Praktikum und Fachbereich ab. Aus der Adresse
-// entstünde ein Zugang zu „Mein Portal", und den bekommen sie nicht (leserart.MitKonto).
+// entstünde ein Zugang zu „Mein Portal", und den bekommen sie nicht (leserart.HatKonto).
 const meldungKeinZugang = "Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“ und deshalb keine Schul-E-Mail."
 
 // pruefeEmailZurArt paart die Schul-E-Mail an die Art: Pflicht, wo ein Zugang dazugehört;
@@ -135,7 +135,7 @@ const meldungKeinZugang = "Praktikum und Fachbereich bekommen keinen Zugang zu �
 // (pruefeSchulEmail).
 func pruefeEmailZurArt(art, email string) error {
 	switch {
-	case leserart.MitKonto(art):
+	case leserart.HatKonto(art):
 		return pruefeKollegiumEmail(email)
 	case strings.TrimSpace(email) == "":
 		return nil
@@ -276,13 +276,13 @@ func (s *Tueren) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	}
 
 	// 4. Das Konto einer Lehrkraft — in DERSELBEN Transaktion. Praktikum und Fachbereich
-	// bekommen keines (leserart.MitKonto), ein Schüler ohnehin nicht.
+	// bekommen keines (leserart.HatKonto), ein Schüler ohnehin nicht.
 	//
 	// `leser_id` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
 	// NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
 	// hier die zweite — genau der Doppeleintrag, den diese Änderung abschafft.
 	var kontoID string
-	if leserart.MitKonto(req.Art) {
+	if leserart.HatKonto(req.Art) {
 		// Das Konto entsteht in DERSELBEN Transaktion wie die Leserzeile — scheitert es,
 		// darf auch die Zeile nicht stehen bleiben (die belegte Adresse ist der häufige
 		// Fall und heisst: Die Person steht schon da).

@@ -39,8 +39,8 @@ func Tage(eingestellt int) int {
 // Verlinken zerlegen könnte.
 const tokenBytes = 32
 
-// NeuerToken liefert das Geheimnis für die Mail und seinen Hash für die Datenbank.
-func NeuerToken() (token, hash string, err error) {
+// ErzeugeToken liefert das Geheimnis für die Mail und seinen Hash für die Datenbank.
+func ErzeugeToken() (token, hash string, err error) {
 	roh := make([]byte, tokenBytes)
 	if _, err := rand.Read(roh); err != nil {
 		return "", "", err

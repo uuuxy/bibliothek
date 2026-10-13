@@ -22,9 +22,11 @@ fest, was erreicht ist. Neuer Code folgt den Regeln von Anfang an.
   `oe`, `ue`, `ss`): `Leser`, `Rueckgabe`, `PruefeFrist`.
 - Lehnwörter bleiben, wie man sie im Deutschen sagt: Barcode, Cover, Scan, Import, Export,
   Backup, Mail, Token, Cache, Cookie, Router, Middleware, Upload, Host.
-- Englisch ist nur, was Go oder eine Bibliothek vorgibt: `New…` für den Erzeuger eines Typs,
-  `Err…` für einen Fehlerwert, `Test…`, `Must…`, `main`, `init` und die Methoden fremder
-  Schnittstellen (`Error`, `String`, `ServeHTTP`, `Scan`, `Close`).
+- Englisch ist nur, was Go oder eine Bibliothek vorgibt: `New…` und klein `new…` für den
+  Erzeuger eines Typs (`NewClient`, `newKalender`; nicht `Neuer`, `Neue`, `Neues`, die mit dem
+  Geschlecht des Typs wechselten), `Err…` für einen Fehlerwert, `Test…`, `Must…`, `main`,
+  `init` und die Methoden fremder Schnittstellen (`Error`, `String`, `ServeHTTP`, `Scan`,
+  `Close`).
 - Pakete der Technik tragen die im Go-Umfeld üblichen Kurznamen (`api`, `db`, `auth`, `jobs`,
   `repository`, `service`, `pkg`, `internal`); ein Paket mit Fachbezug heißt deutsch (`leser`,
   `mahnwesen`).

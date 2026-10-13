@@ -10,7 +10,7 @@ import (
 
 // Server und Browser lesen dieselben Prüffälle. Ohne Datenbank prüft dieser Test Wort, Grenze
 // zum Kollegium, Zugang und Reihenfolge je Art; die Werte der Datenbank hält
-// pkg/leserart/leser_art_pg_test.go dagegen.
+// pkg/leserart/leserart_pg_test.go dagegen.
 func TestArten_WieInDenPrueffaellen(t *testing.T) {
 	const faelleDatei = "../../frontend/src/lib/leserArt.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
@@ -36,7 +36,7 @@ func TestArten_WieInDenPrueffaellen(t *testing.T) {
 	var ausDatei []string
 	for _, a := range pruefung.Arten {
 		ausDatei = append(ausDatei, a.Art)
-		if !Bekannt(a.Art) {
+		if !IstBekannt(a.Art) {
 			t.Errorf("%s: gilt als unbekannte Art", a.Art)
 		}
 		if ist := Bezeichnung(a.Art); ist != a.Text {
@@ -48,8 +48,8 @@ func TestArten_WieInDenPrueffaellen(t *testing.T) {
 		if ist := IstSchueler(a.Art); ist == a.Kollegium {
 			t.Errorf("%s: IstSchueler = %v, im Kollegium = %v", a.Art, ist, a.Kollegium)
 		}
-		if ist := MitKonto(a.Art); ist != a.MitKonto {
-			t.Errorf("%s: MitKonto = %v, erwartet %v", a.Art, ist, a.MitKonto)
+		if ist := HatKonto(a.Art); ist != a.MitKonto {
+			t.Errorf("%s: HatKonto = %v, erwartet %v", a.Art, ist, a.MitKonto)
 		}
 		wort := a.Text
 		if !a.Kollegium {
@@ -92,10 +92,10 @@ func TestArten_LeerUndUnbekannt(t *testing.T) {
 	if ist := KlasseOderArt("7b", ""); ist != "7b" {
 		t.Errorf("KlasseOderArt ohne Art = %q, erwartet die Klasse", ist)
 	}
-	if Bekannt("") || Bekannt("lehrer") {
+	if IstBekannt("") || IstBekannt("lehrer") {
 		t.Error("eine leere oder unbekannte Art gilt als bekannt")
 	}
-	if MitKonto("") || MitKonto("lehrer") {
+	if HatKonto("") || HatKonto("lehrer") {
 		t.Error("eine leere oder unbekannte Art bekäme ein Konto")
 	}
 	if ist := Bezeichnung("lehrer"); ist != "lehrer" {

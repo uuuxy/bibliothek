@@ -65,7 +65,7 @@ func parseCSVRows(file io.Reader) ([][]string, error) {
 // xlsxgrenze: Eine kaputte oder verschlüsselte Datei wird eine „ungültige excel-datei",
 // kein Absturz.
 func parseExcelRows(file io.Reader) ([][]string, error) {
-	rows, err := xlsxgrenze.MitMappe(file, func(f *excelize.File) ([][]string, error) {
+	rows, err := xlsxgrenze.LeseMappe(file, func(f *excelize.File) ([][]string, error) {
 		sheets := f.GetSheetList()
 		if len(sheets) == 0 {
 			return nil, errors.New("excel-datei ist leer")

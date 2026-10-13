@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// Jede XLSX-Lesestelle geht durch xlsxgrenze.MitMappe — excelize.OpenReader steht nur
+// Jede XLSX-Lesestelle geht durch xlsxgrenze.LeseMappe — excelize.OpenReader steht nur
 // noch dort.
 //
 // Das war bis zum 17.09.2026 eine Frage des Speichers (eine Entpack-Bombe aus einer
@@ -19,7 +19,7 @@ import (
 // wird der nur, wenn die XML-Grenze KLEINER ist als die Gesamtgrenze — und genau das
 // verhindert Optionen(), indem es beide gleich setzt
 // (pkg/xlsxgrenze/negativer_sharedstring_test.go misst es). Seit dem 08.10.2026 trägt
-// MitMappe zusätzlich die Schranke gegen Abstürze der Bibliothek und die Abweisung von
+// LeseMappe zusätzlich die Schranke gegen Abstürze der Bibliothek und die Abweisung von
 // OLE-Containern (OFFEN.md 5.10); ein direkter OpenReader-Aufruf ginge an beidem vorbei.
 // Deshalb: **Eine vierte Lesestelle ist eine Frage.**
 var xlsxLeserBestand = map[string]string{
@@ -34,10 +34,10 @@ const einzigerOpenReader = "pkg/xlsxgrenze/xlsxgrenze.go"
 
 var (
 	musterOpenReader = regexp.MustCompile(`excelize\.OpenReader\(`)
-	musterMitMappe   = regexp.MustCompile(`xlsxgrenze\.MitMappe\(`)
+	musterLeseMappe  = regexp.MustCompile(`xlsxgrenze\.LeseMappe\(`)
 )
 
-func TestXlsxLeser_JederDurchMitMappe(t *testing.T) {
+func TestXlsxLeser_JederDurchLeseMappe(t *testing.T) {
 	leser := map[string]int{}
 	direkt := map[string]bool{}
 	wurzel := ".."
@@ -60,7 +60,7 @@ func TestXlsxLeser_JederDurchMitMappe(t *testing.T) {
 		}
 		quelle := musterZeilenKomm.ReplaceAllString(string(roh), "")
 		rel := strings.TrimPrefix(filepath.ToSlash(strings.TrimPrefix(pfad, wurzel)), "/")
-		if musterMitMappe.MatchString(quelle) {
+		if musterLeseMappe.MatchString(quelle) {
 			leser[rel]++
 		}
 		if musterOpenReader.MatchString(quelle) && rel != einzigerOpenReader {
@@ -73,7 +73,7 @@ func TestXlsxLeser_JederDurchMitMappe(t *testing.T) {
 	}
 	if len(leser) == 0 {
 		t.Fatal("keine einzige XLSX-Lesestelle gefunden — der Detektor misst nichts; " +
-			"heißt der Weg noch xlsxgrenze.MitMappe?")
+			"heißt der Weg noch xlsxgrenze.LeseMappe?")
 	}
 	tuer, err := os.ReadFile(filepath.Join(wurzel, einzigerOpenReader))
 	if err != nil || !musterOpenReader.Match(tuer) {
@@ -111,7 +111,7 @@ func TestXlsxLeser_JederDurchMitMappe(t *testing.T) {
 
 	for _, p := range vorbei {
 		t.Errorf("%s ruft excelize.OpenReader direkt und geht damit an Entpackgrenze, "+
-			"OLE-Abweisung und Absturz-Schranke vorbei — xlsxgrenze.MitMappe nehmen.", p)
+			"OLE-Abweisung und Absturz-Schranke vorbei — xlsxgrenze.LeseMappe nehmen.", p)
 	}
 	for _, p := range neu {
 		t.Errorf("%s ist eine neue XLSX-Lesestelle. Bitte mit ihrem Zweck in "+

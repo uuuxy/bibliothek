@@ -734,7 +734,7 @@ Seit dem 13.10.2026 gilt:
   Dienst erreicht (`repository/exemplar_standort_erben_pg_test.go` geht vier Wege zu einem
   neuen Exemplar), ein Test des Ausleih-Dienstes in `internal/service`. Ein Paar aus Go und
   SQL steht bei der Go-Seite (`internal/lusd/lusd_klassen_normkey_pg_test.go`,
-  `pkg/leserart/leser_art_pg_test.go`), der Lauf einer Migration in `db/`.
+  `pkg/leserart/leserart_pg_test.go`), der Lauf einer Migration in `db/`.
 - Braucht ein Test eine Prüfhilfe, die sein Paket einbindet, steht er als Testpaket
   (`package repository_test`): `internal/testdaten` bindet `repository/` und
   `internal/service` ein, im Paket selbst wäre das ein Kreis. Dasselbe gilt für einen Test

@@ -65,7 +65,7 @@ type MetadatenErgebnis struct {
 // safehttp lehnt nicht-öffentliche Ziele auf Dialer-Ebene ab und damit bei jedem Hop.
 func NeuerMetadatenClient() *MetadatenClient {
 	return &MetadatenClient{
-		httpClient: safehttp.NeuerClient(8 * time.Second),
+		httpClient: safehttp.NewClient(8 * time.Second),
 	}
 }
 

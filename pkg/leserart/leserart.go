@@ -3,11 +3,11 @@
 //
 // Die Werte sind dieselben wie in chk_leser_art in der Datenbank und in
 // frontend/src/lib/leserArt.js. Server und Browser lesen dieselben Prüffälle
-// (frontend/src/lib/leserArt.faelle.json); pkg/leserart/leser_art_pg_test.go hält sie zusätzlich gegen
-// die Datenbank.
+// (frontend/src/lib/leserArt.faelle.json); pkg/leserart/leserart_pg_test.go hält sie zusätzlich
+// gegen die Datenbank.
 //
 // Entschieden wird an der Art zweierlei: Schüler oder nicht (IstSchueler, IstKollegium) und,
-// im Kollegium, ob ein Zugang zu „Mein Portal" dazugehört (MitKonto). Alles andere ist
+// im Kollegium, ob ein Zugang zu „Mein Portal" dazugehört (HatKonto). Alles andere ist
 // Bezeichnung. Das Paket steht unter pkg/, weil Türen, Fachlogik und Abfragen dieselbe
 // Antwort brauchen und repository/ und internal/service/ api/ nicht einbinden können.
 package leserart
@@ -30,10 +30,10 @@ var arten = []struct{ art, wort string }{
 	{"fachbereich", "Fachbereich"},
 }
 
-// Bekannt sagt, ob die Art zum Vokabular gehört. Eine unbekannte Art ist ein Tippfehler und
+// IstBekannt sagt, ob die Art zum Vokabular gehört. Eine unbekannte Art ist ein Tippfehler und
 // kein neuer Personenkreis: Die Datenbank wiese sie ab, aber als Datenbankfehler statt mit
 // einer Auskunft.
-func Bekannt(art string) bool {
+func IstBekannt(art string) bool {
 	for _, a := range arten {
 		if a.art == art {
 			return true
@@ -51,7 +51,7 @@ func IstSchueler(art string) bool { return art == Schueler }
 // frontend/src/lib/leserArt.js antwortet genauso.
 func IstKollegium(art string) bool { return art != "" && art != Schueler }
 
-// MitKonto sagt, ob zu dieser Art ein Zugang zu „Mein Portal" gehört und damit die
+// HatKonto sagt, ob zu dieser Art ein Zugang zu „Mein Portal" gehört und damit die
 // Schul-E-Mail, aus der er entsteht: Lehrkraft, LiV, Sekretariat und U-plus.
 //
 // Praktikum und Fachbereich nicht: Ein Fachbereich ist keine Person, sondern ein Sammelkonto,
@@ -60,7 +60,7 @@ func IstKollegium(art string) bool { return art != "" && art != Schueler }
 // Akte, noch in der Littera-Übernahme. Ein Konto, das schon besteht (etwa nach dem
 // Zusammenführen mit einer Selbstanmeldung), bleibt stehen; über den Zugang entscheidet dann
 // die Benutzerverwaltung. Ein Schüler hat nie ein Konto.
-func MitKonto(art string) bool {
+func HatKonto(art string) bool {
 	switch art {
 	case "lehrkraft", "liv", "sekretariat", "uplus":
 		return true

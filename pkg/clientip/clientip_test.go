@@ -16,7 +16,7 @@ func anfrage(gegenstelle string, koepfe map[string]string) *http.Request {
 // Wer den Server direkt erreicht, setzt die Köpfe selbst; sie dürfen die Adresse der
 // Verbindung nicht ersetzen.
 func TestErmittler_FremdeGegenstelleZaehltKoepfeNicht(t *testing.T) {
-	e := neuerErmittler(loopbackNetze)
+	e := newErmittler(loopbackNetze)
 
 	adresse := e.ausAnfrage(anfrage("203.0.113.9:5000", map[string]string{
 		"X-Forwarded-For": "1.2.3.4",
@@ -28,7 +28,7 @@ func TestErmittler_FremdeGegenstelleZaehltKoepfeNicht(t *testing.T) {
 }
 
 func TestErmittler_LoopbackGlaubtForwardedFor(t *testing.T) {
-	e := neuerErmittler(loopbackNetze)
+	e := newErmittler(loopbackNetze)
 
 	adresse := e.ausAnfrage(anfrage("127.0.0.1:5000", map[string]string{
 		"X-Forwarded-For": "198.51.100.7",
@@ -40,7 +40,7 @@ func TestErmittler_LoopbackGlaubtForwardedFor(t *testing.T) {
 
 // Caddy steht im Docker-Netz 172.16/12 und hängt den Client an.
 func TestErmittler_VertrauterProxyLiefertClient(t *testing.T) {
-	e := neuerErmittler([]string{"172.16.0.0/12"})
+	e := newErmittler([]string{"172.16.0.0/12"})
 
 	adresse := e.ausAnfrage(anfrage("172.18.0.5:5000", map[string]string{
 		"X-Forwarded-For": "198.51.100.7",
@@ -53,7 +53,7 @@ func TestErmittler_VertrauterProxyLiefertClient(t *testing.T) {
 // Der Client stellt einen Eintrag voran, Caddy hängt die echte Gegenstelle rechts an. Nur
 // der rechte Eintrag zählt.
 func TestErmittler_VorangestellterEintragZaehltNicht(t *testing.T) {
-	e := neuerErmittler([]string{"172.16.0.0/12"})
+	e := newErmittler([]string{"172.16.0.0/12"})
 
 	adresse := e.ausAnfrage(anfrage("172.18.0.5:5000", map[string]string{
 		"X-Forwarded-For": "10.9.9.9, 198.51.100.7",
@@ -67,7 +67,7 @@ func TestErmittler_VorangestellterEintragZaehltNicht(t *testing.T) {
 // Überspringt der Ermittler vertraute Einträge, werden alle Geräte der Schule für die Bremse
 // der Anmeldung und das Protokoll ein Client mit Caddys Adresse.
 func TestErmittler_LanClientHinterProxy(t *testing.T) {
-	e := neuerErmittler([]string{"172.16.0.0/12", "10.0.0.0/8", "192.168.0.0/16"})
+	e := newErmittler([]string{"172.16.0.0/12", "10.0.0.0/8", "192.168.0.0/16"})
 
 	a := e.ausAnfrage(anfrage("172.18.0.5:5000", map[string]string{"X-Forwarded-For": "192.168.1.50"}))
 	b := e.ausAnfrage(anfrage("172.18.0.5:5000", map[string]string{"X-Forwarded-For": "192.168.1.77"}))
@@ -79,7 +79,7 @@ func TestErmittler_LanClientHinterProxy(t *testing.T) {
 // Reicht der Proxy den eingehenden Kopf durch und hängt die echte Adresse an, darf der
 // Client seine Adresse nicht wählen, auch wenn seine echte in einem vertrauten Netz liegt.
 func TestErmittler_DurchgereichterHeaderIstNichtWaehlbar(t *testing.T) {
-	e := neuerErmittler([]string{"172.16.0.0/12", "10.0.0.0/8", "192.168.0.0/16"})
+	e := newErmittler([]string{"172.16.0.0/12", "10.0.0.0/8", "192.168.0.0/16"})
 
 	adresse := e.ausAnfrage(anfrage("172.18.0.5:5000", map[string]string{
 		"X-Forwarded-For": "8.8.8.8, 192.168.1.50",
@@ -92,7 +92,7 @@ func TestErmittler_DurchgereichterHeaderIstNichtWaehlbar(t *testing.T) {
 // Ein zweiter Proxy vor Caddy wird nicht übersprungen: Wer eine Kette betreibt, sieht dessen
 // Adresse statt einer still falschen.
 func TestErmittler_KetteLiefertLetztenHop(t *testing.T) {
-	e := neuerErmittler([]string{"172.16.0.0/12", "192.0.2.0/24"})
+	e := newErmittler([]string{"172.16.0.0/12", "192.0.2.0/24"})
 
 	adresse := e.ausAnfrage(anfrage("172.18.0.5:5000", map[string]string{
 		"X-Forwarded-For": "203.0.113.9, 192.0.2.10",
@@ -103,7 +103,7 @@ func TestErmittler_KetteLiefertLetztenHop(t *testing.T) {
 }
 
 func TestErmittler_OhneForwardedForFaelltAufRealIPZurueck(t *testing.T) {
-	e := neuerErmittler([]string{"172.16.0.0/12"})
+	e := newErmittler([]string{"172.16.0.0/12"})
 
 	adresse := e.ausAnfrage(anfrage("172.18.0.5:5000", map[string]string{
 		"X-Real-IP": "198.51.100.7",
@@ -114,7 +114,7 @@ func TestErmittler_OhneForwardedForFaelltAufRealIPZurueck(t *testing.T) {
 }
 
 func TestErmittler_VertrauterProxyOhneKoepfeLiefertGegenstelle(t *testing.T) {
-	e := neuerErmittler([]string{"172.16.0.0/12"})
+	e := newErmittler([]string{"172.16.0.0/12"})
 
 	adresse := e.ausAnfrage(anfrage("172.18.0.5:5000", nil))
 	if adresse != "172.18.0.5" {
@@ -124,7 +124,7 @@ func TestErmittler_VertrauterProxyOhneKoepfeLiefertGegenstelle(t *testing.T) {
 
 // Die Gegenstelle kommt ohne Port, und X-Forwarded-For endet auf einen leeren Eintrag.
 func TestErmittler_AdresseOhnePortUndLeererEintrag(t *testing.T) {
-	e := neuerErmittler([]string{"172.16.0.0/12"})
+	e := newErmittler([]string{"172.16.0.0/12"})
 
 	adresse := e.ausAnfrage(anfrage("172.18.0.5", map[string]string{
 		"X-Forwarded-For": "198.51.100.7, ",
@@ -138,7 +138,7 @@ func TestSetzeProxysAusUmgebung(t *testing.T) {
 	t.Setenv("TRUSTED_PROXIES", "172.16.0.0/12")
 	SetzeProxysAusUmgebung()
 	t.Cleanup(func() {
-		prozessweit.Store(neuerErmittler(loopbackNetze))
+		prozessweit.Store(newErmittler(loopbackNetze))
 	})
 
 	if adresse := AusAnfrage(anfrage("172.18.0.5:5000", map[string]string{

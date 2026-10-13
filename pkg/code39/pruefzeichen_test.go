@@ -8,19 +8,15 @@ import (
 	"github.com/boombuler/barcode/code39"
 )
 
-// Die Gegenprobe gegen die Bibliothek, die den Aufdruck TATSÄCHLICH erzeugt hat.
+// Die Gegenprobe mit der Bibliothek, die die älteren Aufdrucke erzeugt hat.
 //
-// Eine selbst nachgebaute Mod-43-Rechnung, die nur gegen sich selbst geprüft wird, ist
-// wertlos: Sie wäre genau so richtig oder falsch wie die Annahme, die ihr zugrunde liegt.
+// Eine nachgebaute Rechnung, die nur gegen sich selbst geprüft wird, wäre so richtig oder
+// falsch wie ihre Annahme. Geprüft wird deshalb an den Balken und nicht am Text:
+// `Encode(inhalt, true, …)` hängt das Prüfzeichen selbst an, `Encode(inhalt+zeichen, false, …)`
+// nimmt es als Teil des Inhalts. Stimmt die Rechnung, sind beide Bilder Pixel für Pixel gleich.
 //
-// Geprüft wird deshalb an den BALKEN, nicht am Text: `Encode(inhalt, true, …)` hängt das
-// Prüfzeichen selbst an, `Encode(inhalt+zeichen, false, …)` nimmt es als Teil des Inhalts.
-// Stimmt meine Rechnung, sind beide Bilder Pixel für Pixel gleich — und wenn nicht, ist
-// es meine Rechnung, die falsch liegt.
-//
-// Warum nicht über Content(): Die Bibliothek merkt sich dort den EINGABETEXT ohne
-// Prüfzeichen (am 17.09.2026 gemessen). Ein Test, der Content() vergleicht, wäre still
-// grün geblieben, ohne je ein Prüfzeichen gesehen zu haben.
+// Content() taugt dafür nicht: Die Bibliothek merkt sich dort den Text der Eingabe ohne
+// Prüfzeichen, und ein Vergleich darüber bliebe grün, ohne ein Prüfzeichen zu sehen.
 func TestPruefzeichenStimmtMitDemEchtenDrucker(t *testing.T) {
 	inhalte := []string{
 		"B-10001", "A-10003", "S-10001", "L-42", "LMF-77", "G-1",
@@ -35,14 +31,14 @@ func TestPruefzeichenStimmtMitDemEchtenDrucker(t *testing.T) {
 			}
 			gedruckt := inhalt + string(zeichen)
 
-			// Genau der Aufruf von früher (api/druck/barcode_generate.go bis 17.09.2026):
-			// includeChecksum=true, fullASCIIMode=true.
+			// Der Aufruf, mit dem die älteren Aufdrucke entstanden: includeChecksum=true,
+			// fullASCIIMode=true.
 			mitAutomatik, err := code39.Encode(inhalt, true, true)
 			if err != nil {
 				t.Fatalf("Encode(%q, mit Prüfzeichen): %v", inhalt, err)
 			}
-			// Dasselbe, aber das Prüfzeichen steht schon im Inhalt — die Bibliothek hängt
-			// dann keines an.
+			// Dasselbe, nur steht das Prüfzeichen schon im Inhalt; die Bibliothek hängt dann
+			// keines an.
 			mitMeinem, err := code39.Encode(gedruckt, false, true)
 			if err != nil {
 				t.Fatalf("Encode(%q, ohne Automatik): %v", gedruckt, err)
@@ -82,7 +78,7 @@ func gleicheBalken(t *testing.T, a, b barcode.Barcode, inhalt, gedruckt string) 
 	}
 }
 
-// Was NICHT als Prüfzeichen durchgehen darf.
+// Was nicht als Prüfzeichen durchgehen darf.
 func TestOhnePruefzeichenLaesstFremdesInRuhe(t *testing.T) {
 	faelle := []struct {
 		scan  string
@@ -92,7 +88,7 @@ func TestOhnePruefzeichenLaesstFremdesInRuhe(t *testing.T) {
 		{"B", "ein Zeichen"},
 		{"B-", "zwei Zeichen — nach dem Kürzen bliebe eines übrig"},
 		{"4006381333931", "eine EAN-13 vom Verlag; ihre Prüfziffer ist eine andere Rechnung"},
-		{"B-10001", "unser eigener Aufdruck OHNE Prüfzeichen — Code 128 seit 17.09.2026"},
+		{"B-10001", "der eigene Aufdruck ohne Prüfzeichen (Code 128)"},
 		{"müller", "Kleinbuchstaben und Umlaut kennt Code 39 nicht"},
 	}
 
@@ -110,10 +106,9 @@ func TestOhnePruefzeichenLaesstFremdesInRuhe(t *testing.T) {
 	}
 }
 
-// Die beiden Werte, die am 17.09.2026 an echten Ausdrucken gemessen wurden — mit zwei
-// unabhängigen Erkennern und am fertigen PDF des Druck-Centers. Sie stehen hier als
-// feste Zahlen, damit ein Umbau der Rechnung an der MESSUNG scheitert und nicht erst an
-// einer zweiten Rechnung, die denselben Fehler machen könnte.
+// Zwei Werte, an Ausdrucken gemessen, mit zwei unabhängigen Erkennern und am fertigen PDF des
+// Druck-Centers. Sie stehen als feste Zahlen hier, damit ein Umbau der Rechnung an der Messung
+// scheitert und nicht erst an einer zweiten Rechnung mit demselben Fehler.
 func TestGemesseneWerteVomEchtenAusdruck(t *testing.T) {
 	for gedruckt, erwartet := range map[string]string{
 		"B-100016": "B-10001",
@@ -121,8 +116,8 @@ func TestGemesseneWerteVomEchtenAusdruck(t *testing.T) {
 	} {
 		kern, hat := OhnePruefzeichen(gedruckt)
 		if !hat || kern != erwartet {
-			t.Errorf("OhnePruefzeichen(%q) = %q, %v — want %q, true (am 17.09.2026 an einem "+
-				"echten Ausdruck gemessen)", gedruckt, kern, hat, erwartet)
+			t.Errorf("OhnePruefzeichen(%q) = %q, %v — want %q, true (an einem "+
+				"Ausdruck gemessen)", gedruckt, kern, hat, erwartet)
 		}
 	}
 }
@@ -138,8 +133,8 @@ func TestJedesPruefzeichenDesZeichensatzes(t *testing.T) {
 		}
 		gesehen[zeichen] = true
 	}
-	// Über 200 Nummern müssen deutlich mehr als eine Handvoll verschiedener Prüfzeichen
-	// auftreten — sonst rechnet die Funktion nicht, sondern gibt etwas Festes zurück.
+	// Über 200 Nummern treten deutlich mehr als eine Handvoll verschiedener Prüfzeichen auf;
+	// sonst rechnet die Funktion nicht, sondern gibt etwas Festes zurück.
 	if len(gesehen) < 20 {
 		t.Errorf("nur %d verschiedene Prüfzeichen über 200 Nummern — die Rechnung greift "+
 			"vermutlich nicht", len(gesehen))

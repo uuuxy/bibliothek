@@ -14,7 +14,7 @@ import (
 // Steht hinter einer gültigen Zeile eine mit einer Nummer jenseits der Blattgrenze von
 // 1.048.576, zählte excelize jede fehlende Zeile einzeln ab (CVE-2026-107212): Nach der
 // Meldung hält eine Datei von 1,5 KB mit der Nummer 231999999999940 GetRows elf Tage auf
-// einem Prozessorkern fest. Die Schranke in MitMappe fängt eine Schleife nicht ab, und alle
+// einem Prozessorkern fest. Die Schranke in LeseMappe fängt eine Schleife nicht ab, und alle
 // drei Importwege lesen mit GetRows.
 //
 // Die eingesetzte Fassung weist die Zeile ab. Geprüft wird die erste Nummer über der Grenze:
@@ -27,7 +27,7 @@ func zweiZeilen(t *testing.T, nummer int) []byte {
 		`<row r="%d"><c r="A%d" t="inlineStr"><is><t>zweite</t></is></c></row>`, nummer, nummer))
 }
 
-func TestMitMappe_ZeilennummerJenseitsDerBlattgrenzeWirdAbgewiesen(t *testing.T) {
+func TestLeseMappe_ZeilennummerJenseitsDerBlattgrenzeWirdAbgewiesen(t *testing.T) {
 	for _, roh := range []bool{false, true} {
 		lies := func(f *excelize.File) ([][]string, error) {
 			return f.GetRows("Tabelle1", excelize.Options{RawCellValue: roh})
@@ -35,12 +35,12 @@ func TestMitMappe_ZeilennummerJenseitsDerBlattgrenzeWirdAbgewiesen(t *testing.T)
 
 		// Dieselbe Mappe mit einer Nummer im Blatt liest sich: Der Fehler unten liegt an der
 		// Nummer, nicht an der Bauart der Probe.
-		zeilen, err := xlsxgrenze.MitMappe(bytes.NewReader(zweiZeilen(t, 3)), lies)
+		zeilen, err := xlsxgrenze.LeseMappe(bytes.NewReader(zweiZeilen(t, 3)), lies)
 		if err != nil || len(zeilen) != 3 || zeilen[2][0] != "zweite" {
 			t.Fatalf("roh=%v: Zeile 3 gab %v, Fehler %v — erwartet drei Zeilen", roh, zeilen, err)
 		}
 
-		zeilen, err = xlsxgrenze.MitMappe(bytes.NewReader(zweiZeilen(t, excelize.TotalRows+1)), lies)
+		zeilen, err = xlsxgrenze.LeseMappe(bytes.NewReader(zweiZeilen(t, excelize.TotalRows+1)), lies)
 		if !errors.Is(err, excelize.ErrMaxRows) {
 			t.Errorf("roh=%v: %d Zeilen, Fehler %v — erwartet ErrMaxRows. Diese excelize-Fassung "+
 				"zählt bis zu einer Zeilennummer jenseits der Blattgrenze (CVE-2026-107212)",
