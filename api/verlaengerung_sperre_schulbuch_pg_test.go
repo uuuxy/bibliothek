@@ -14,6 +14,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -108,8 +109,8 @@ func (l *sperrFristLage) pruefeFrist(t *testing.T, f sperrFristFall) {
 func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_Einzeln(t *testing.T) {
 	l := sperrFristLageAnlegen(t)
 	mux := http.NewServeMux()
-	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", l.srv.ExtendLoanHandler(&mockSystemSettingsRepo{
-		settings: &repository.SystemEinstellungen{FristBuchTage: 28},
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", l.srv.ExtendLoanHandler(&tuertest.EinstellungenAttrappe{
+		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 28},
 	}))
 	for _, f := range l.faelle() {
 		rec := httptest.NewRecorder()

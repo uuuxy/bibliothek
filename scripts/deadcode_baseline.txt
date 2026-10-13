@@ -152,6 +152,8 @@ internal/tuertest/tuertest.go: unreachable func: Bestelle
 internal/tuertest/felder.go: unreachable func: LeereFelder
 internal/tuertest/dnb.go: unreachable func: DNBAttrappe.RoundTrip
 internal/tuertest/dnb.go: unreachable func: ZaehlendeDNB.RoundTrip
+internal/tuertest/einstellungen.go: unreachable func: EinstellungenAttrappe.GetSettings
+internal/tuertest/einstellungen.go: unreachable func: EinstellungenAttrappe.SaveSettings
 internal/tuertest/mail.go: unreachable func: MailAbfangen
 internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht
 internal/tuertest/sitzung.go: unreachable func: AdminSitzung

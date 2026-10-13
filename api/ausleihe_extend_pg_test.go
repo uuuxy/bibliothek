@@ -15,23 +15,10 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
-
-// mockSystemSettingsRepo is a simple mock to provide custom SystemEinstellungen.
-type mockSystemSettingsRepo struct {
-	settings *repository.SystemEinstellungen
-	err      error
-}
-
-func (m *mockSystemSettingsRepo) GetSettings(ctx context.Context) (*repository.SystemEinstellungen, error) {
-	return m.settings, m.err
-}
-
-func (m *mockSystemSettingsRepo) SaveSettings(ctx context.Context, req *repository.EinstellungenPatch) error {
-	return nil
-}
 
 // pruefeFrist belegt die neue Frist auf die Sekunde: Seit dem 24.09.2026 rechnet die
 // Verlängerung mit der Uhr des Servers (s.jetzt) statt mit CURRENT_TIMESTAMP, der Test setzt
@@ -175,8 +162,8 @@ func TestExtendLoanHandler(t *testing.T) {
 				srv.Uhr = func() time.Time { return tt.jetzt }
 			}
 
-			settingsRepo := &mockSystemSettingsRepo{
-				settings: &repository.SystemEinstellungen{
+			settingsRepo := &tuertest.EinstellungenAttrappe{
+				Einstellungen: &repository.SystemEinstellungen{
 					FristBuchTage: tt.extensionDays,
 				},
 			}
@@ -245,8 +232,8 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	mux := http.NewServeMux()
-	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.ExtendLoanHandler(&mockSystemSettingsRepo{
-		settings: &repository.SystemEinstellungen{FristBuchTage: 21},
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.ExtendLoanHandler(&tuertest.EinstellungenAttrappe{
+		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},
 	}))
 	verlaengere := func(ausleiheID string, rolle auth.Role) *httptest.ResponseRecorder {
 		t.Helper()
@@ -312,8 +299,8 @@ func TestExtendLoan_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing
 	// Montag 30.06.2031 plus 21 Tage ist Montag, der 21.07.2031 — nach den Einstellungen mitten
 	// in den Sommerferien (07.07.–15.08.), die Frist ist der Montag danach.
 	inDenFerien := testdaten.SeedAusleihe(t, pool, sid, "Buch vor den Ferien", alteFrist)
-	verlaengere(inDenFerien, time.Date(2031, time.June, 30, 10, 0, 0, 0, schulzeit.Zone()), &mockSystemSettingsRepo{
-		settings: &repository.SystemEinstellungen{
+	verlaengere(inDenFerien, time.Date(2031, time.June, 30, 10, 0, 0, 0, schulzeit.Zone()), &tuertest.EinstellungenAttrappe{
+		Einstellungen: &repository.SystemEinstellungen{
 			FristBuchTage: 21,
 			Sommerferien:  `[{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"}]`,
 		},
@@ -323,6 +310,6 @@ func TestExtendLoan_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing
 	// Montag 02.11.2026 plus 28 Tage ist Montag, der 30.11.2026.
 	ohneEinstellungen := testdaten.SeedAusleihe(t, pool, sid, "Buch ohne Einstellungen", alteFrist)
 	verlaengere(ohneEinstellungen, time.Date(2026, time.November, 2, 10, 0, 0, 0, schulzeit.Zone()),
-		&mockSystemSettingsRepo{err: errors.New("einstellungen nicht lesbar")})
+		&tuertest.EinstellungenAttrappe{Fehler: errors.New("einstellungen nicht lesbar")})
 	pruefeFrist(t, testdaten.FristVon(t, pool, ohneEinstellungen), testdaten.FristEnde(2026, time.November, 30))
 }
