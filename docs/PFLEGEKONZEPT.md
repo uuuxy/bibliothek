@@ -381,8 +381,8 @@ Gemessen am 13.10.2026 am Go-Code ohne Tests: 566 Dateien, 2.616 Funktionen.
   Oberfläche tragen 43 Dateinamen `student`, 33 `schueler` oder `leser`. Die Paare stehen im
   Wegweiser.
 - Kommentare mit Vorgeschichte: 560 Kommentarzeilen in 244 der 566 Dateien nennen ein Datum.
-  Neu gefasst wird ein Kommentar, wenn seine Datei ohnehin angefasst wird (`CLAUDE.md`,
-  Abschnitt 4).
+  Namen und Kommentare werden Paket für Paket umgestellt ([STIL.md](STIL.md),
+  [OFFEN.md](OFFEN.md) 5.66).
 - Die Datenbankschicht ist ein Ordner mit 152 Dateien; gefunden wird dort über den Namen der
   Datei. Warum sie ein Paket bleibt, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2.
 - Die größte Datei hat 907 Zeilen (`internal/bereitschaft/bereitschaft.go`).

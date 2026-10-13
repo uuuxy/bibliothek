@@ -251,11 +251,11 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 
 | Konvention                                        | Regel                                                                                                                                                                                                              | Durchsetzung                                                        |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| **Fachsprache deutsch**                           | Domänenbegriffe im Code deutsch (`ausleihen`, `leser`, `vormerkungen`, `Abgaenger`, `Ersatzwert`). Englisch nur, wo es aus der Frühzeit stammt (`book`, `loan`, `student`). Gemischt, aber nie übersetzt-doppelt.   | Review; [Glossar](#12-glossar)                                     |
+| **Namen, Sichtbarkeit, Kommentare**               | Eine Sache hat ein Wort, und das Fachwort ist deutsch; Verben, Kürzel, Türen, was öffentlich ist und was ein Kommentar sagt, regelt [STIL.md](STIL.md) nach Googles Regelwerk für Go. Der Bestand mischt noch Deutsch und Englisch (`Student` neben `Leser`) und wird Paket für Paket umgestellt. | `stil_ratsche_test.go` (Bestand je Paket, sinkt nur); `golangci-lint` (revive, Regel `exported`) |
 | **Migrationen**                                   | `NNN_beschreibung.sql`, idempotent (`IF NOT EXISTS` / `DO $$ … EXCEPTION`), dedupliziert über `schema_migrations`; die Seed-Liste in `schema.sql` muss exakt den Dateien entsprechen.                               | `db/migrations_drift_test.go`, `db/migrations_nummern_test.go`, `db/migrations_schema_paritaet_pg_test.go` |
 | **Rows-Iteration**                                | Jede `rows.Next()`-Schleife endet mit `rows.Err()`. Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als Erfolg — die Liste wäre still unvollständig.                                                   | `golangci-lint`, Review                                              |
 | **Paketkommentar**                                | Jedes Go-Paket trägt genau einen Kommentar unmittelbar über der `package`-Zeile; er sagt in ein bis drei Sätzen, wofür das Paket da ist. So verlangt es Googles Regelwerk für Go, Abschnitt [Package comments](https://google.github.io/styleguide/go/decisions#package-comments). Ein Kommando beginnt mit `Command <Name>`. | `golangci-lint` (revive, Regel `package-comments`) |
-| **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen der Themen heißen `s`, wie am Server, von dem sie stammen. | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
+| **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen der Themen heißen noch `s`, wie am Server, von dem sie stammen; mit ihrem Paket bekommen sie `t` ([STIL.md](STIL.md), Abschnitt 4). | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
 | **Komponenten-Größe Frontend**                    | ≤ 200 Zeilen je **neuer** `.svelte`-Datei; der Altbestand darüber darf nicht wachsen.                                                                                                                              | Ratsche `frontend/src/lib/frontend-hygiene-dateigroesse.test.js`     |
 | **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menu.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
 | **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede Sitzung genügt, `RequireAuthenticated()`; öffentliche Routen stehen in einer Allowlist.                        | `api/routes_authz_coverage_test.go`                                  |
@@ -2025,10 +2025,10 @@ nicht zu sehen.
 Kleinbuchstaben (`admin`, `kollegium`, `mitarbeiter`, `helfer`, `leitung`). SQL-Vergleiche
 müssen `LOWER(rolle::text)` verwenden — kein `= 'KOLLEGIUM'`.
 
-**Sprache:** Domänenbegriffe sind deutsch (`ausleihen`, `leser`, `vormerkungen`,
-`Ersatzwert`, `Abgaenger`, `Nachbuchen`); aus der Frühzeit steht Englisch daneben
-(`book`, `loan`, `student`). Gemischt, aber nie doppelt: Es gibt nicht zwei Namen für
-dieselbe Sache. Das [Glossar](#12-glossar) listet beide Seiten.
+**Sprache:** Fachwörter sind deutsch (`ausleihen`, `leser`, `vormerkungen`, `Ersatzwert`,
+`Abgaenger`, `Nachbuchen`). Aus der Frühzeit steht Englisch daneben, auch für dieselbe Sache:
+Der Typ `repository.Student` hält einen Leser. Welches Wort gilt, legt [STIL.md](STIL.md)
+fest; das [Glossar](#12-glossar) nennt, wo der Code noch anders heißt.
 
 ---
 
@@ -4325,40 +4325,9 @@ Fenstern bekannt ist:
 - Abgleich des Go-Codes mit Googles Regelwerk für Go
   ([Guide](https://google.github.io/styleguide/go/guide),
   [Decisions](https://google.github.io/styleguide/go/decisions),
-  [Best Practices](https://google.github.io/styleguide/go/best-practices)), gemessen am
-  13.10.2026 nach dem Umzug der Türen. Von einem Gate gehalten: ein Paketkommentar je Paket,
-  ein Empfängername je Typ, ein Kommentar an jedem öffentlichen Namen, kein verworfener Fehler
-  ohne Vermerk, Prüfhilfen in eigenen Paketen, die kein Programmcode einbindet (2.3,
-  [sweeps.md](sweeps.md)). Was abweicht und bleibt:
-  - Öffentliche Namen ohne Nutzer außerhalb ihres Pakets: 515 von 2.105 (245 Typen, 93
-    Funktionen, 87 Konstanten, 74 Methoden, 16 Variablen; gemessen mit Typprüfung über den
-    ganzen Baum), dazu 210, die nur Tests brauchen. In den Themen unter `api/` sind es fast nur
-    Typen von Anfrage und Antwort; die meisten übrigen stehen in `repository/` (146),
-    `internal/littera` (54) und `inventur/` (45). Anlass zum Bauen: Ein Paket wird geteilt oder
-    bekommt einen zweiten Nutzer; dann seine Namen zuerst klein schreiben.
-  - Fehlertexte als ganze Sätze: 59 Stellen tragen `//nolint:staticcheck` (ST1005), weil der
-    Text des Fehlers die Meldung an der Oberfläche ist. Das Regelwerk schreibt Fehlertexte
-    klein und ohne Satzzeichen, weil sie in anderem Text stehen. Den Satz vom Fehler trennt
-    schon `apierrors.SendHTTPErrorMitMeldung`. Anlass zum Bauen: Eine Meldung bekommt eine
-    zweite Sprache, oder ein zweites Programm liest die Fehler.
-  - Zustand auf der Ebene eines Pakets hinter drei Nähten für Tests: der Mailversand
-    (`mailservice.SendEmail` als Variable, der Lader der Konfiguration mit
-    `TauscheKonfigLaderFuerTest`), der Zwischenspeicher der Rechte (`tuer.MerkeRechtFuerTest`)
-    und das Ersatzbild der Cover (`coverquelle.MerkeErsatzbildFuerTest`). Das Regelwerk
-    (Best Practices, „Global state") verlangt dafür Werte, die der Aufrufer anlegt und
-    weiterreicht. Tests dieser Stellen laufen deshalb nacheinander. Anlass zum Bauen: Tests
-    sollen nebeneinander laufen, oder ein Prozess trägt zwei Server; dann den Mailversand als
-    Wert in `tuer.Basis` führen, wie Datenbank, Anmeldung und Uhr.
-  - Die Türen der Themen nennen ihren Empfänger `s` (313 Methoden), ein Kürzel von `Server`
-    und nicht von `Tueren`. Einheitlich; ein Umbenennen brächte nur den Namen.
-  - Die Zuweisung des Kopfs der Schule aus den Einstellungen (`pdf.SchuleInfo{Name: …}`)
-    steht an acht Türen. Anlass zum Bauen: Der Kopf bekommt ein fünftes Feld.
-  - 29 von 901 Testdateien vergleichen mit testify; das Regelwerk lässt nur das Paket
-    `testing` zu, und die übrigen Tests kommen ohne aus. Anlass zum Bauen: Eine der Dateien
-    wird ohnehin umgeschrieben.
-  - Die Kommentare der umgezogenen Dateien tragen weiter Datum und Vorgeschichte (in `api/`
-    125 Kommentarzeilen mit Datum). Der Umzug nahm sie unverändert mit, damit der Vergleich
-    alt gegen neu Wort für Wort aufgeht. Anlass zum Bauen: Die Datei wird inhaltlich geändert.
+  [Best Practices](https://google.github.io/styleguide/go/best-practices)): Was abweicht, wird
+  umgestellt und steht deshalb nicht hier, sondern mit Zahl und Reihenfolge in
+  [OFFEN.md](OFFEN.md) 5.66; die Regeln nennt [STIL.md](STIL.md).
 
 #### Kleinigkeiten
 

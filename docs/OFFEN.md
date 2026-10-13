@@ -164,33 +164,27 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [ ] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
 
-### Umbau: die Türen in Themenordner
+### Umbau: Lesbarkeit nach Googles Regelwerk für Go
 
-Entschieden am 12.10.2026, in Stufen; abgeschlossen am 13.10.2026. Wie die Türen jetzt
-stehen, nennt [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, die Handgriffe des Umzugs 8.14.
+Entschieden am 13.10.2026: Wer neu in den Code kommt, soll sich ohne langes Lesen
+zurechtfinden; die Zeit dafür spielt keine Rolle. Die Regeln für Namen, Sichtbarkeit und
+Kommentare stehen in [STIL.md](STIL.md). Umgestellt wird Paket für Paket, von unten nach oben,
+je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht unter 5.66.
 
-- [x] Stufe 0, Schutz: Die drei Prüfungen, die `api/` ohne Unterordner lasen, lesen sie mit.
-  Eine neue Prüfung hält die Dateiverweise gegen die Dateien des Repositorys. Die Zahl der
-  Tests und die Routen stehen als Vergleichsstand fest.
-- [x] Stufe 1, Tests: Die Helfer, die Tests mehrerer Themen brauchen und selbst nichts aus
-  `api/`, stehen in Paketen für Prüfhilfen.
-- [x] Stufe 2, Kern: Was jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), steht
-  im Paket `api/tuer`, der Mailversand in `mailservice/`. Es war die erste Änderung am
-  Programm; das Verhalten ist dasselbe.
-- [x] Stufe 3, das erste Thema: Die Türen des LMF-Plans stehen in `api/lernmittel` (5 Dateien,
-  9 Testdateien), umgezogen mit einem Werkzeug. Ein Test über den ganzen Router steht im
-  Ordner seines Themas, als eigenes Testpaket.
-- [x] Stufe 4, die übrigen elf Themen, je Thema ein Schritt: Inventur
-  (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
-  (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`), Katalog
-  (`api/katalog`), Druck (`api/druck`), Bestellung (`api/bestellung`), Leser (`api/leser`)
-  und Theke (`api/theke`). Alle zwölf Themen stehen in eigenen Paketen.
-- [x] Stufe 5, Abschluss: 38 Testdateien, die nichts aus `api/` prüfen, stehen bei dem Paket,
-  dessen Regel sie prüfen (25 in `repository/`, fünf in `internal/service`, je eine in `db/`,
-  `internal/lusd` und `pkg/leserart`, fünf im Wurzelpaket); vier Testdateien über den Router
-  stehen als Testpaket in `api/`. Eine Ratsche hält, dass kein Thema ein anderes einbindet
-  (`api/themen_ratsche_test.go`). Die Dokumente nennen die Gliederung und wo ein Test steht.
-  Die Messung an `repository/` ist gelaufen: Die Datenbankschicht bleibt ein Paket.
+- [x] Die Regeln stehen auf einer Seite ([STIL.md](STIL.md)); eine Prüfung hält je Paket fest,
+  was ihnen noch nicht folgt, und lässt den Bestand nur sinken (`stil_ratsche_test.go`).
+- [ ] Die Pakete unter `pkg/`.
+- [ ] Die Pakete unter `internal/` ohne `internal/service`.
+- [ ] `repository/`.
+- [ ] `internal/service`.
+- [ ] `api/tuer`, die zwölf Themen unter `api/`, `api/`.
+- [ ] `inventur/`, `auth/`, `jobs/`, `pdf/`, `mailservice/`, `db/`, `sse/`, `apierrors/`, `cmd/`
+  und das Wurzelpaket.
+- [ ] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
+- [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, Zustand auf der Ebene eines
+  Pakets, der Kopf der Schule an acht Türen.
+- [ ] Die Oberfläche: Dateinamen und Namen in einer Sprache.
+- [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -437,6 +431,65 @@ Offen ist eine Stelle: Die Zeile mit den Auflagen im Schulbuch-Export
 die sie aus der Spaltenbreite schätzt. Nächster Schritt: mit dem breitesten Text messen, ob
 eine vierte Zeile entsteht und in die nächste Zeile der Tabelle druckt; dann nach gemessenen
 Zeilen kürzen. Kategorie B.
+
+### 5.66 Lesbarkeit nach Googles Regelwerk für Go
+
+Gemessen am 13.10.2026 am Go-Code ohne Tests (566 Dateien, 79 Pakete), gezählt von
+`stil_ratsche_test.go`: 783 Namen tragen ein englisches Fachwort, für das es ein deutsches
+gibt (`Student` neben `Leser` und `Schueler`), 389 Funktionen beginnen mit einem englischen
+Verb (`Get`, `Handle`, `Create` neben `Lade`, `Pruefe`, `Schreibe`), 180 Namen schreiben ein
+Kürzel gemischt (`LmfPlan`), 121 Dateinamen tragen ein englisches Fachwort, 563 Kommentarzeilen
+nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen nennt kein anderes
+Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
+bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
+
+**Ein Paket ist fertig, wenn:**
+
+1. jeder Name, den es erklärt, [STIL.md](STIL.md) folgt (Fachwort, Verb, Kürzel, keine
+   Wiederholung des Pakets) und jede Datei wie ihre Sache heißt;
+2. öffentlich nur ist, was ein anderes Paket beim Namen nennt oder was in der Signatur eines
+   solchen Namens steht;
+3. seine Kommentare in ein bis zwei Sätzen das Warum nennen, ohne Datum und Vorgeschichte;
+4. seine Zeile in `stil_bestand_test.go` entfernt ist.
+
+**Reihenfolge:** von unten nach oben, zuerst die Pakete, die kein anderes des Projekts
+einbinden. So bekommt jeder Name seinen endgültigen in einem Schritt, und die Rufer in den
+Paketen darüber ziehen mit.
+
+**Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede
+Nennung über die Typprüfung findet. Danach laufen die ganze Go-Suite an der Datenbank, der
+Linter, die Prüfung auf toten Code und gosec. Adressen, die Texte der Datenbankabfragen und die
+Feldnamen in JSON sind vor und nach dem Schritt dieselben (Vergleich aller Zeichenketten des
+Programmcodes). Ein Commit, der nur Kommentare ändert, wird am Code ohne Kommentare verglichen.
+
+**Namen als Text:** Dokumente nennen 405 Namen des Programmcodes, Testdateien 524 in
+Zeichenketten (Listen, an denen Prüfungen hängen, und Fehlermeldungen), die Liste des toten
+Codes 86, die Kommentare für die Schnittstellenbeschreibung rund 50 Typen. Dort meldet der
+Compiler nichts. Jeder umbenannte Name wird im ganzen Repository gesucht und im selben Commit
+nachgezogen; eine Prüfung, die ihn als Text führt, wird danach einmal rot gesehen.
+
+**Was seinen Namen behält:** Adressen, Feldnamen in JSON, Tabellen und Spalten
+([STIL.md](STIL.md), Abschnitt 9).
+
+**Danach, je als eigener Schritt:**
+
+- Testdateien: 816 Kommentarzeilen mit Datum in 415 Dateien; 29 von 901 vergleichen mit
+  testify, das Regelwerk lässt nur das Paket `testing` zu (Decisions, „Use package testing").
+- Fehlertexte: 59 Stellen tragen `//nolint:staticcheck` (ST1005), weil der Text des Fehlers
+  die Meldung an der Oberfläche ist. Das Regelwerk schreibt Fehlertexte klein und ohne
+  Satzzeichen (Decisions, „Error strings"). Den Satz vom Fehler trennt schon
+  `apierrors.SendHTTPErrorMitMeldung`; die Meldungen an der Oberfläche bleiben dabei Wort für
+  Wort, was ein Test je Stelle belegt.
+- Zustand auf der Ebene eines Pakets hinter drei Nähten für Tests: der Mailversand
+  (`mailservice.SendEmail` als Variable, der Lader der Konfiguration), der Zwischenspeicher
+  der Rechte (`tuer.MerkeRechtFuerTest`) und das Ersatzbild der Cover
+  (`coverquelle.MerkeErsatzbildFuerTest`). Das Regelwerk (Best Practices, „Global state")
+  verlangt Werte, die der Rufer anlegt und weiterreicht, wie es `tuer.Basis` für Datenbank,
+  Anmeldung und Uhr tut.
+- Die Zuweisung des Kopfs der Schule aus den Einstellungen (`pdf.SchuleInfo{Name: …}`) steht
+  an acht Türen.
+- Die Oberfläche: 459 Dateien ohne Tests, `Student` in 30 Dateinamen gegen 15 mit `schueler`
+  oder `leser`.
 
 ---
 

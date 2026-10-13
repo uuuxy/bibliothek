@@ -4,7 +4,8 @@ Stand: 13.10.2026
 
 Eine Seite für den Einstieg in den Code: der Weg einer Anfrage, vom Menüpunkt zum Ordner und
 für häufige Änderungen die Stelle. Warum etwas so gebaut ist, steht in
-[ARCHITEKTUR.md](ARCHITEKTUR.md); die Fachbegriffe erklärt dort Kapitel 12.
+[ARCHITEKTUR.md](ARCHITEKTUR.md); die Fachbegriffe erklärt dort Kapitel 12. Wie etwas im Code
+heißt und was ein Kommentar sagt, regelt [STIL.md](STIL.md).
 
 ## Der Weg einer Anfrage
 
@@ -76,9 +77,10 @@ Nach jeder Änderung laufen die Prüfungen aus dem Abschnitt „Qualitätssicher
 
 ## Zwei Wörter für dieselbe Sache
 
-Ältere Dateien tragen englische Namen, neuere deutsche. Wer alles zu einer Sache sucht, sucht
-nach beiden Wörtern (gezählt am 13.10.2026 an den Namen von 1.034 Dateien in Go und in der
-Oberfläche, ohne Tests):
+Ältere Dateien tragen englische Namen, neuere deutsche. Das deutsche Wort gilt
+([STIL.md](STIL.md), Abschnitt 2); umgestellt wird Paket für Paket. Bis dahin sucht nach beiden
+Wörtern, wer alles zu einer Sache sucht (gezählt am 13.10.2026 an den Namen von 1.034 Dateien
+in Go und in der Oberfläche, ohne Tests):
 
 | Sache                          | deutsch im Namen         | englisch im Namen     |
 | ------------------------------ | ------------------------ | --------------------- |
