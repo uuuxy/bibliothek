@@ -217,7 +217,7 @@ func praedikatLesehistorieAusleihen(land bool, tage, kulanz int) Loeschbedingung
 func praedikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'ausleihen'
 		  AND al.details ? 'schueler_id'
-		  -- Wie beim Prädikat der Ausleihen: jeder Leser (16.09.2026).
+		  -- Wie beim Prädikat der Ausleihen: jeder Leser.
 		  AND al.timestamp < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (
 		        SELECT 1 FROM ausleihen a

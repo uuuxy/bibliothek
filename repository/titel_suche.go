@@ -71,10 +71,10 @@ func (a *pgKatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext str
 		FROM buecher_titel b
 		WHERE (
 			-- Index-Anker: erstes Token als direkte LIKE-Bedingung, damit der Planer
-			-- die Ausdrucks-Indizes aus Migration 054 per BitmapOr zieht. Die
+			-- die Ausdrucks-Indizes per BitmapOr zieht. Die
 			-- Ausdrücke müssen buchstäblich denen der Indizes entsprechen — ein
 			-- coalesce() darum herum macht den Zweig unindexierbar und kippt die
-			-- ganze Abfrage in den Seq Scan (siehe SearchStudentsFuzzy).
+			-- ganze Abfrage in den Seq Scan (siehe LeserAbfragen.FindeUnscharf).
 			   suchnorm(b.titel)    LIKE '%' || suchnorm($4::text) || '%'
 			OR suchnorm(b.autor)    LIKE '%' || suchnorm($4::text) || '%'
 			OR lower(b.isbn)        LIKE '%' || lower($4::text) || '%'

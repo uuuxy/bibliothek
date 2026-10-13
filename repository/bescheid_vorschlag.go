@@ -56,10 +56,10 @@ func (a *pgBescheidAbfragen) LadeEmpfaenger(ctx context.Context, schuelerID stri
 	err := a.db.QueryRow(ctx, `
 		SELECT vorname, nachname, coalesce(klasse, ''), coalesce(strasse, ''),
 		       coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''),
-		       -- Volljährigkeit am KALENDERTAG der Schule, nicht dem der Sitzung (im Image
+		       -- Volljährigkeit am Kalendertag der Schule, nicht dem der Sitzung (im Image
 		       -- UTC): Am 18. Geburtstag galt das Kind bis 2 Uhr Berliner Zeit noch als
 		       -- minderjährig, und der Bescheid ging an die Eltern statt an die Person.
-		       -- Dieselbe Rechnung wie die Frist (sqlSchulHeute, 16.09.2026).
+		       -- Dieselbe Rechnung wie die Frist (sqlSchulHeute).
 		       coalesce(geburtsdatum <= `+sqlSchulHeute+` - INTERVAL '18 years', false)
 		FROM schueler WHERE id = $1`, schuelerID).
 		Scan(&d.Vorname, &d.Nachname, &d.Klasse, &d.Strasse, &d.Hausnummer, &d.PLZ, &d.Ort, &d.Volljaehrig)
@@ -77,7 +77,7 @@ func (a *pgBescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schueler
 		       coalesce(t.listenpreis, 0)::float8,
 		       coalesce(e.zustand_abwertung_prozent, 0),
 		       CASE WHEN e.id IS NULL THEN '' ELSE `+ExemplarTopfSQL+` END,
-		       -- Zugang statt Bestelltag (Migration 129, Begründung an ersatzwert_groessen.go).
+		       -- Zugang statt Bestelltag (Begründung an ersatzwert_groessen.go).
 		       f.exemplar_id, COALESCE(e.zugang_am, e.erworben_am)
 		FROM schadensfaelle f
 		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id

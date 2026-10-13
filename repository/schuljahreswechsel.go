@@ -74,8 +74,8 @@ var sqlVersetzeSchueler = `
 			block_reason = CASE WHEN c.is_graduating
 			                    THEN COALESCE(NULLIF(s.block_reason, ''), '` + abgaengerSperrgrundSchuljahreswechsel + `')
 			                    ELSE s.block_reason END,
-			-- Karenz-Uhr (Migration 094): beim ERSTEN Abgang gestempelt, wie im LUSD-Pfad
-			-- (sperreAbgaenger) — Import, Job und Wächter rechnen die Anonymisierung daran.
+			-- Karenz-Uhr: beim ersten Abgang gestempelt, wie im LUSD-Pfad
+			-- (SperreAbgaenger) — Import, Job und Wächter rechnen die Anonymisierung daran.
 			abgaenger_seit = CASE WHEN c.is_graduating THEN COALESCE(s.abgaenger_seit, NOW()) ELSE s.abgaenger_seit END,
 			abgaenger_jahr = CASE
 				WHEN c.is_graduating THEN EXTRACT(YEAR FROM NOW() AT TIME ZONE $1)

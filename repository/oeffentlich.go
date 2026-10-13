@@ -133,7 +133,7 @@ func (a *MonitorAbfragen) ladeMeistgelesene(ctx context.Context, tage, anzahl in
 		JOIN buecher_titel bt ON bt.id = e.titel_id
 		WHERE a.ausgeliehen_am >= NOW() - make_interval(days => $1::int)
 		  AND a.schueler_id IS NOT NULL
-		  -- Dauerleihen zählen nicht: Ein Klassensatz ist EIN Vorgang, keine 30 Leser.
+		  -- Dauerleihen zählen nicht: Ein Klassensatz ist ein Vorgang, keine 30 Leser.
 		  -- Bis Migration 125 fiel er von selbst heraus — er stand in einer anderen
 		  -- Spalte, und die Zählung sah nur schueler_id. Seit alle Leser in einer Tabelle
 		  -- stehen, muss die Regel dastehen, sonst führte das Klassenbuch der 7 den

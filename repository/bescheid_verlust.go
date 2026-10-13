@@ -65,7 +65,7 @@ func (a *pgBescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, sch
 	rows, err := a.db.Query(ctx, `
 		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.listenpreis, 0)::float8, coalesce(e.zustand_abwertung_prozent, 0),
-		       -- Zugang statt Bestelltag (Migration 129, Begründung an ersatzwert_groessen.go).
+		       -- Zugang statt Bestelltag (Begründung an ersatzwert_groessen.go).
 		       `+ExemplarTopfSQL+`, a.rueckgabe_frist, a.mahnstufe, a.letztes_mahndatum,
 		       COALESCE(e.zugang_am, e.erworben_am)
 		FROM ausleihen a
@@ -78,8 +78,8 @@ func (a *pgBescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, sch
 		  -- Dauerleihen bleiben aussen vor: Sie werden nicht überfällig (dieselbe Regel wie
 		  -- in der Sperr-Automatik und in der Leserliste), und eine Forderung „wegen
 		  -- Überschreitung der Frist" gegen jemanden, der keine hat, wäre unbegründet.
-		  -- Ob ein Kollege für ein VERLORENES Buch zahlen soll, ist davon unberührt — das
-		  -- ist eine Betriebsfrage (docs/OFFEN.md 5.16 B) und keine Nebenwirkung der Frist.
+		  -- Ob ein Kollege für ein verlorenes Buch zahlen soll, ist davon unberührt — das
+		  -- ist eine Betriebsfrage und keine Nebenwirkung der Frist.
 		  AND a.ist_handapparat = false
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle f WHERE f.ausleihe_id = a.id AND f.storniert_am IS NULL)
 		ORDER BY a.rueckgabe_frist, t.titel`, schuelerID, jetzt)

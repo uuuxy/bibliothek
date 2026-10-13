@@ -73,7 +73,7 @@ func VerlaengereLernmittelDerKlasse(ctx context.Context, db Datenbank, klasse st
 			  -- durch eine Fristverlängerung ausgehebelt werden. Die der Ehemaligen zählt beim
 			  -- Schulbuch nicht, wie an der Theke.
 			  AND ` + sqlSchulbuchFristGehtMit + `
-			  -- Über den Normal-Schlüssel (Migration 079/087): „5a" aus einem Formular und
+			  -- Über den Normal-Schlüssel: „5a" aus einem Formular und
 			  -- „05A" als registrierte Anzeigeform meinen dieselbe Klasse.
 			  AND klassen_normkey(s.klasse) = klassen_normkey($2)
 			  AND t.ist_lernmittel

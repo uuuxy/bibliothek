@@ -88,7 +88,7 @@ func FindeTresenEreignisse(ctx context.Context, db Datenbank, exemplarIDs []stri
 		       COALESCE(TRIM(lk.vorname || ' ' || lk.nachname), ''),
 		       COALESCE(TRIM(bb.vorname || ' ' || bb.nachname), '')
 		FROM audit_log l
-		-- Die TABELLE leser, nicht die Sicht schueler: Unter schueler_id steht seit
+		-- Die Tabelle leser, nicht die Sicht schueler: Unter schueler_id steht seit
 		-- Migration 125 jeder Entleiher, auch ein Kollege. Über die Sicht hieß der
 		-- Kollege „Personenbezug getilgt" (TestTresenAuskunftNenntDenKollegen).
 		LEFT JOIN leser sch ON sch.id::text = l.details->>'schueler_id'

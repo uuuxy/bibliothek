@@ -91,7 +91,7 @@ const nachbuchMeldungSQL = `
 	LEFT JOIN buecher_exemplare e ON e.id = m.exemplar_id
 	LEFT JOIN buecher_titel t ON t.id = e.titel_id
 	-- leser und nicht die Sicht schueler: In der Meldungsliste stünde ein Kollege sonst
-	-- ohne Namen da, obwohl sein Scan der Anlass der Meldung war (Migration 125).
+	-- ohne Namen da, obwohl sein Scan der Anlass der Meldung war.
 	LEFT JOIN leser la ON la.id = m.ausleiher_schueler_id
 	LEFT JOIN leser lv ON lv.id = m.vorbesitzer_schueler_id
 	LEFT JOIN benutzer bq ON bq.id = m.quittiert_von`

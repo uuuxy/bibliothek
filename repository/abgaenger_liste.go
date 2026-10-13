@@ -37,7 +37,7 @@ func LadeAbgaengerMitOffenenAusleihen(ctx context.Context, db Datenbank) ([]Abga
 		       coalesce(m.lehrer_email, '')                        AS lehrer_email
 		FROM schueler s
 		JOIN ausleihen a ON s.id = a.schueler_id
-		-- Klassenleitung mitliefern: Ohne sie kann die Oberfläche VOR dem Versand nicht
+		-- Klassenleitung mitliefern: Ohne sie kann die Oberfläche vor dem Versand nicht
 		-- zeigen, welche Klasse überhaupt eine Adresse hat. Verglichen wird normalisiert
 		-- (getrimmt, Kleinschreibung) — „5a", „5A" und „5a " sind dieselbe Klasse, und
 		-- ein unsichtbares Leerzeichen darf keinen stillen Nullversand auslösen.

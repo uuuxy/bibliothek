@@ -74,7 +74,7 @@ func (a *pgBescheidAbfragen) ladeGroessen(ctx context.Context, bedingung string,
 		       coalesce(t.listenpreis, 0)::float8,
 		       e.zustand_abwertung_prozent,
 		       `+ExemplarTopfSQL+`,
-		       -- Der Zugang, nicht der Bestelltag (Migration 129): Im Bestellweg entsteht die
+		       -- Der Zugang, nicht der Bestelltag: Im Bestellweg entsteht die
 		       -- Zeile beim Bestellen, in den Bestand kommt das Buch mit der Lieferung — bei
 		       -- Lernmitteln regelmäßig im nächsten Schuljahr. Altbestand trägt in zugang_am
 		       -- dasselbe Datum wie in erworben_am; NULL (noch im Zulauf) kann hier nicht

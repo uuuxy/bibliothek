@@ -67,7 +67,7 @@ func (a *MahnwesenAbfragen) LadeUeberfaelligeNachKlasse(ctx context.Context, kla
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t    ON e.titel_id = t.id
-		-- Die SICHT schueler und nicht die Tabelle leser: Gemahnt werden Schüler, nicht
+		-- Die Sicht schueler und nicht die Tabelle leser: Gemahnt werden Schüler, nicht
 		-- das Kollegium (Entscheidung zum Lehrer-Anliegen). Der INNER JOIN lässt die
 		-- Ausleihen von Kollegen aus dem Mahnlauf fallen — vor Migration 125 taten das
 		-- die zwei getrennten Spalten.

@@ -171,7 +171,7 @@ func (a *InventurAbfragen) LadeAbgeschlosseneLaeufe(ctx context.Context, limit i
 		       COALESCE(v.count, 0),
 		       s.verworfen
 		FROM limited_sessions s
-		-- COALESCE auf die eingefrorene Zahl (Migration 103): Nur eine OFFENE Session
+		-- COALESCE auf die eingefrorene Zahl: Nur eine offene Session
 		-- zählt live; ein abgeschlossener Durchgang behält, was er gezählt hat.
 		LEFT JOIN LATERAL (SELECT COALESCE(s.erfasst_gemeldet,
 			(SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id)) as count) e ON true

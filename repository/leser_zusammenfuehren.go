@@ -527,7 +527,7 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p zusammenge
 			-- Klasse und Abgangsjahr gehören zum Schüler. Bei einem Kollegen müssen sie
 			-- NULL bleiben: Die Klasse hat einen Fremdschlüssel auf klassen(name), und ein
 			-- Abgangsjahr an einer Lehrkraft wäre eine Angabe, die niemand gemacht hat.
-			-- Die Paarung steht HIER und nicht nur im Aufrufer, weil dies der einzige
+			-- Die Paarung steht hier und nicht nur im Aufrufer, weil dies der einzige
 			-- Schreibweg des Zusammenführens ist.
 			klasse         = CASE WHEN art = 'schueler' THEN $4::varchar ELSE NULL END,
 			geburtsdatum = $5, schul_eintritt_am = $6,

@@ -172,12 +172,12 @@ func (a *pgLeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche
 		LEFT JOIN LATERAL (
 			SELECT
 				COUNT(*) as ausgeliehen_anzahl,
-				-- Dauerleihen werden NICHT überfällig. Das ist keine neue Regel, sondern
+				-- Dauerleihen werden nicht überfällig. Das ist keine neue Regel, sondern
 				-- dieselbe, nach der die Sperr-Automatik seit jeher zählt
-				-- (ZaehleUeberfaelligeBuecher: ist_handapparat = false). Hier fehlte sie:
+				-- (ZaehleUeberfaelligeAusleihen: ist_handapparat = false). Hier fehlte sie:
 				-- Ein Kollege stand nach einem Jahr mit roter Zahl in der Leserdatei,
 				-- während die Theke ihn anstandslos bediente — zwei Wahrheiten über
-				-- dieselbe Ausleihe. Entschieden am 16.09.2026: „kollegen haben keine
+				-- dieselbe Ausleihe. Entschieden: „kollegen haben keine
 				-- frist bzw werden einfach nie gesperrt!"
 				COUNT(*) FILTER (WHERE a.rueckgabe_frist < CURRENT_TIMESTAMP
 				                   AND a.ist_handapparat = false) as ueberfaellig_anzahl

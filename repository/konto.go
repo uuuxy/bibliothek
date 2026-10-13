@@ -251,7 +251,7 @@ func (a *pgKontoAbfragen) Aendere(ctx context.Context, p KontoAenderung) (KontoS
 		    email = COALESCE($3, email), rolle = COALESCE($4::benutzer_rolle, rolle),
 		    aktiv = COALESCE($5, aktiv),
 		    -- Freischalten erledigt den Antrag; ein späteres Deaktivieren soll nicht
-		    -- wieder wie ein Antrag aussehen (Migration 086).
+		    -- wieder wie ein Antrag aussehen.
 		    zugang_beantragt_am = CASE WHEN $5 IS TRUE THEN NULL ELSE zugang_beantragt_am END,
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $6

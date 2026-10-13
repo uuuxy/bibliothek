@@ -190,7 +190,7 @@ func (a *LMFAbfragen) SetzeLernmittelFristFuerKlassen(ctx context.Context, ex Da
 		  AND e.titel_id = t.id
 		  AND a.rueckgabe_am IS NULL
 		  AND `+sqlSchulbuchFristGehtMit+`
-		  -- EINE Normalform für beide Seiten (klassen_normkey, Migration 079): „09H1" in der
+		  -- eine Normalform für beide Seiten (klassen_normkey): „09H1" in der
 		  -- Akte und „9h1" aus dem Plan sind dieselbe Klasse. KlassenSchluessel (Go) kennt
 		  -- die führende Null nicht — deshalb hier nicht.
 		  AND klassen_normkey(s.klasse) IN (SELECT klassen_normkey(x) FROM unnest($2::text[]) AS x)

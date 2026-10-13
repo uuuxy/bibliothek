@@ -130,8 +130,8 @@ func AendereLUSDBestand(ctx context.Context, tx pgx.Tx, zeilen []LUSDAktualisier
 			nachname     = COALESCE(NULLIF($2, ''), nachname),
 			schul_eintritt_am = COALESCE($10::date, schul_eintritt_am),
 			geburtsdatum = COALESCE($11::date, geburtsdatum),
-			-- Wie die sieben Felder ringsum: ein LEERER Exportwert darf den Bestand nicht
-			-- loeschen. klasse stand hier als EINZIGES ungeschuetzt da (seit 4219a2e, nie
+			-- Wie die sieben Felder ringsum: ein leerer Exportwert darf den Bestand nicht
+			-- loeschen. klasse stand hier als einziges ungeschuetzt da (seit 4219a2e, nie
 			-- bewusst entschieden). Dieselbe Bugklasse hat 96c2f8c im Buch-Importer bereits
 			-- behoben (autor/verlag/jahr). Heute faengt lusd_parser.go:82 eine leere Klasse
 			-- schon beim Parsen ab — aber diese Zeile ist die zweite Tuer zum selben Zustand,
@@ -143,7 +143,7 @@ func AendereLUSDBestand(ctx context.Context, tx pgx.Tx, zeilen []LUSDAktualisier
 			plz          = COALESCE(NULLIF($6, ''), plz),
 			ort          = COALESCE(NULLIF($7, ''), ort),
 			eltern_email = COALESCE(NULLIF($8, ''), eltern_email),
-			-- Im Export wiedergefunden: das Gedächtnis für den Namensmodus (Migration 084).
+			-- Im Export wiedergefunden: das Gedächtnis für den Namensmodus.
 			lusd_bestaetigt_am = NOW(),
 			ist_abgaenger = false,
 			abgaenger_seit = NULL,
@@ -155,7 +155,7 @@ func AendereLUSDBestand(ctx context.Context, tx pgx.Tx, zeilen []LUSDAktualisier
 				THEN false
 				ELSE ist_gesperrt END,
 			-- block_reason konsistent zu ist_gesperrt setzen: chk_schueler_block_reason
-			-- verlangt einen Grund NUR solange ist_gesperrt = true.
+			-- verlangt einen Grund nur solange ist_gesperrt = true.
 			block_reason = CASE
 				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN NULL
 				WHEN `+sqlAbgaengerSperreAutomatisch+`
