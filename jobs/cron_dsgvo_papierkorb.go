@@ -40,7 +40,7 @@ func (s *Scheduler) RunPapierkorbKollegenLoeschung() {
 	for _, id := range ids {
 		// Leerer Bearbeiter: Das Protokoll nennt SYSTEM als Akteur statt einer Person.
 		if err := s.auditRepo.PurgeStudent(ctx, id, ""); err != nil {
-			log.Printf("Scheduler Papierkorb: Leser %s nicht gelöscht: %v", logger.SanitizeLog(id), err)
+			log.Printf("Scheduler Papierkorb: Leser %s nicht gelöscht: %v", logger.OhneUmbruch(id), err)
 			fehlschlaege = append(fehlschlaege, id)
 			continue
 		}

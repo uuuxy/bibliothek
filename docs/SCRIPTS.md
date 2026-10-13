@@ -466,7 +466,7 @@ CSV-Formel-Injection-Schutz (OWASP CWE-1236):
 ```go
 import "bibliothek/pkg/csvutil"
 
-safeRow := csvutil.SanitizeRow([]string{titel, autor, ...})
+safeRow := csvutil.EntschaerfeZeile([]string{titel, autor, ...})
 ```
 
 Setzt Apostroph-Präfix bei Zellen die mit `= + - @ \t \r \n` beginnen.

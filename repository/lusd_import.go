@@ -176,7 +176,7 @@ func AktualisiereLusdBestand(ctx context.Context, tx pgx.Tx, zeilen []LusdAktual
 
 	for _, z := range zeilen {
 		if _, err := br.Exec(); err != nil {
-			closeutil.LogClose(br, "LUSD-Batch nach Fehler")
+			closeutil.Schliesse(br, "LUSD-Batch nach Fehler")
 			return fmt.Errorf("schüler %s konnte nicht aktualisiert werden: %w", z.SchuelerID, err)
 		}
 	}

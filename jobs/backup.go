@@ -306,7 +306,7 @@ func rotateBackups(dir string, naechte, wochen int) {
 	if err != nil {
 		return
 	}
-	defer closeutil.LogClose(root, "backup dir")
+	defer closeutil.Schliesse(root, "backup dir")
 	dateien, err := listeBackups(root)
 	if err != nil {
 		// Nicht still aufhören: Ohne Rotation wächst das Verzeichnis, bis die Platte voll

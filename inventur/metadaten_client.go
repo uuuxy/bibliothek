@@ -107,7 +107,7 @@ var ErrUngueltigeISBN = errors.New("ungültiges ISBN-Format")
 // OpenLibrary und lädt das Cover herunter — für einen Vorschlag unnötig, und das anonyme
 // Tageskontingent von Google teilen wir mit allen.
 func (c *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
-	saubereIsbn := isbnutil.CleanISBN(isbn)
+	saubereIsbn := isbnutil.OhneTrenner(isbn)
 	if !validiereISBN(saubereIsbn) {
 		return nil, ErrUngueltigeISBN
 	}
@@ -129,7 +129,7 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	var fehler error
 
 	// ISBN von Strichen und Leerzeichen befreien
-	saubereIsbn := isbnutil.CleanISBN(isbn)
+	saubereIsbn := isbnutil.OhneTrenner(isbn)
 
 	// SSRF und Argument Injection Schutz: Nur gültige ISBN-Zeichenfolgen zulassen
 	// ⚡ Bolt: Using validiereISBN() which utilizes a pre-compiled regex instead of regexp.MatchString

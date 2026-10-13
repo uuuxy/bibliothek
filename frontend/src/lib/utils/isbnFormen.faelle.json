@@ -1,5 +1,5 @@
 {
-	"_zweck": "Geteilte Prüffälle: Die Datenbank führt eine ISBN in der Normalform (isbnutil.Normalform in pkg/isbnutil/clean.go, in SQL isbn_normalform), die Katalogsuche im Browser sucht mit isbnFormen (isbnFormen.js) nach beiden Längen. Beide Tests lesen diese Datei: Go prüft die Normalform, der Vitest die andere Länge und dass die Schreibweisen der Suche die Normalform enthalten. Rechnen die Seiten verschieden, findet die Suche einen Titel nicht, den die Datenbank unter dieser ISBN führt.",
+	"_zweck": "Geteilte Prüffälle: Die Datenbank führt eine ISBN in der Normalform (isbnutil.Normalform in pkg/isbnutil/normalform.go, in SQL isbn_normalform), die Katalogsuche im Browser sucht mit isbnFormen (isbnFormen.js) nach beiden Längen. Beide Tests lesen diese Datei: Go prüft die Normalform, der Vitest die andere Länge und dass die Schreibweisen der Suche die Normalform enthalten. Rechnen die Seiten verschieden, findet die Suche einen Titel nicht, den die Datenbank unter dieser ISBN führt.",
 	"_grenze": "Nur Eingaben aus Ziffern, X, Bindestrichen und Leerzeichen. Andere Zeichen behandeln beide Seiten bewusst verschieden: Der Browser streicht sie für die Suche, der Server hält die Normalform der Datenbank, in der ‚ISBN 978…' keine ISBN ist.",
 	"faelle": [
 		{

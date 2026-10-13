@@ -83,7 +83,7 @@ func TestNormalform_GoUndJavaScriptTeilenDiePrueffaelle(t *testing.T) {
 		if got != *f.Normalform {
 			t.Errorf("%s: Normalform(%q) = %q, erwartet %q", f.Fall, f.Roh, got, *f.Normalform)
 		}
-		switch zehnstellig := len(CleanISBN(f.Roh)) == 10; {
+		switch zehnstellig := len(OhneTrenner(f.Roh)) == 10; {
 		case zehnstellig && len(got) == 13:
 			umgerechnet++
 		case zehnstellig && len(got) == 10:

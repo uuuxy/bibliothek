@@ -82,7 +82,7 @@ func processUploadedImage(fileBytes []byte, id string) ([]byte, string, error) {
 		var buf bytes.Buffer
 		err = jpeg.Encode(&buf, dst, &jpeg.Options{Quality: coverJPEGQuality})
 		if err != nil {
-			log.Printf("cover-upload: jpeg encode failed for book %s: %v", logger.SanitizeLog(id), err)
+			log.Printf("cover-upload: jpeg encode failed for book %s: %v", logger.OhneUmbruch(id), err)
 			return nil, "", fmt.Errorf("%w: %w", errBildverarbeitung, err)
 		}
 		finalBytes = buf.Bytes()
@@ -103,7 +103,7 @@ func loescheCoverDatei(coverURL string) {
 		return
 	}
 	if err := loescheUploadDatei(filename); err != nil {
-		log.Printf("cover-upload: Cover %s konnte nicht entfernt werden: %v", logger.SanitizeLog(filename), err)
+		log.Printf("cover-upload: Cover %s konnte nicht entfernt werden: %v", logger.OhneUmbruch(filename), err)
 	}
 }
 
@@ -139,7 +139,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 		return
 	}
 	if err != nil {
-		log.Printf("cover-upload: buch %s laden: %v", logger.SanitizeLog(id), err)
+		log.Printf("cover-upload: buch %s laden: %v", logger.OhneUmbruch(id), err)
 		writeError(writer, http.StatusInternalServerError, "buch konnte nicht geladen werden")
 		return
 	}
@@ -159,7 +159,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 	}
 	if err != nil {
 		loescheCoverDatei(coverURL)
-		log.Printf("cover-upload: metadata update failed for book %s: %v", logger.SanitizeLog(id), err)
+		log.Printf("cover-upload: metadata update failed for book %s: %v", logger.OhneUmbruch(id), err)
 		writeError(writer, http.StatusInternalServerError, "metadaten konnten nicht gespeichert werden")
 		return
 	}
@@ -184,7 +184,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 func readCoverUpload(writer http.ResponseWriter, request *http.Request, id string) ([]byte, bool) {
 	request.Body = http.MaxBytesReader(writer, request.Body, maxCoverUploadBytes)
 	if err := request.ParseMultipartForm(maxCoverUploadBytes); err != nil {
-		log.Printf("cover-upload: multipart parse failed for book %s: %v", logger.SanitizeLog(id), err)
+		log.Printf("cover-upload: multipart parse failed for book %s: %v", logger.OhneUmbruch(id), err)
 		writeError(writer, http.StatusBadRequest, "datei zu groß oder ungültig (max. 10 MB)")
 		return nil, false
 	}
@@ -198,7 +198,7 @@ func readCoverUpload(writer http.ResponseWriter, request *http.Request, id strin
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		log.Printf("cover-upload: read failed for book %s: %v", logger.SanitizeLog(id), err)
+		log.Printf("cover-upload: read failed for book %s: %v", logger.OhneUmbruch(id), err)
 		writeError(writer, http.StatusInternalServerError, "fehler beim lesen der datei")
 		return nil, false
 	}
@@ -222,7 +222,7 @@ func saveCoverFile(writer http.ResponseWriter, id string, finalBytes []byte, sav
 	filename := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), saveExt)
 
 	if err := schreibeUploadDatei(filename, finalBytes); err != nil {
-		log.Printf("cover-upload: speichern fehlgeschlagen für Buch %s: %v", logger.SanitizeLog(id), err)
+		log.Printf("cover-upload: speichern fehlgeschlagen für Buch %s: %v", logger.OhneUmbruch(id), err)
 		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")
 		return "", false
 	}

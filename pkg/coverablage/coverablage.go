@@ -62,7 +62,7 @@ func Loesche(coverURL string) error {
 	if !ok {
 		return nil
 	}
-	defer closeutil.LogClose(wurzel, "coverablage wurzel")
+	defer closeutil.Schliesse(wurzel, "coverablage wurzel")
 
 	// Lstat: Eine Verknüpfung oder ein Ordner unter diesem Namen ist kein Cover.
 	if info, err := wurzel.Lstat(rel); err != nil || !info.Mode().IsRegular() {

@@ -8,7 +8,7 @@ import (
 
 // CoverQuellenFuerISBN liefert die gespeicherten Cover-Adressen aller Titel mit dieser
 // ISBN und ob es überhaupt einen solchen Titel gibt. Die ISBN steht in buecher_titel mit
-// oder ohne Trennstriche — verglichen wird die bereinigte Form (isbnutil.CleanISBN).
+// oder ohne Trennstriche — verglichen wird die bereinigte Form (isbnutil.OhneTrenner).
 //
 // Für den Cover-Proxy (api/katalog/cover_quelle_bindung.go): Er lädt nur Adressen, die der Katalog
 // für diese ISBN kennt oder die sich aus ihr herleiten lassen — sonst bestimmte der

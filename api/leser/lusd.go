@@ -35,7 +35,7 @@ func readLusdUpload(r *http.Request) (lusd.Datei, error) {
 	if err != nil {
 		return lusd.Datei{}, fmt.Errorf("CSV-Datei fehlt: %w", err)
 	}
-	defer closeutil.LogClose(file, "lusd upload")
+	defer closeutil.Schliesse(file, "lusd upload")
 
 	content, err := io.ReadAll(file)
 	if err != nil {

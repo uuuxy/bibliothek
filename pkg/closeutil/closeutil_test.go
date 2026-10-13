@@ -8,43 +8,39 @@ import (
 	"testing"
 )
 
-type mockCloser struct {
+type attrappe struct {
 	err error
 }
 
-func (m *mockCloser) Close() error {
-	return m.err
+func (a *attrappe) Close() error {
+	return a.err
 }
 
-func TestLogClose(t *testing.T) {
-	originalOutput := log.Writer()
-	defer log.SetOutput(originalOutput)
+func TestSchliesse(t *testing.T) {
+	vorher := log.Writer()
+	defer log.SetOutput(vorher)
 
-	var buf bytes.Buffer
-	log.SetOutput(&buf)
+	var ausgabe bytes.Buffer
+	log.SetOutput(&ausgabe)
 
-	t.Run("Kein Fehler beim Schliessen", func(t *testing.T) {
-		buf.Reset()
-		m := &mockCloser{err: nil}
+	t.Run("ohne Fehler bleibt das Log leer", func(t *testing.T) {
+		ausgabe.Reset()
 
-		LogClose(m, "test-success")
+		Schliesse(&attrappe{err: nil}, "test-success")
 
-		if buf.Len() > 0 {
-			t.Errorf("Es wurde keine Log-Ausgabe erwartet, aber erhalten: %q", buf.String())
+		if ausgabe.Len() > 0 {
+			t.Errorf("Log = %q, erwartet keine Zeile", ausgabe.String())
 		}
 	})
 
-	t.Run("Fehler beim Schliessen", func(t *testing.T) {
-		buf.Reset()
-		testErr := errors.New("simulierter Fehler")
-		m := &mockCloser{err: testErr}
+	t.Run("ein Fehler steht mit seiner Stelle im Log", func(t *testing.T) {
+		ausgabe.Reset()
 
-		LogClose(m, "test-failure")
+		Schliesse(&attrappe{err: errors.New("simulierter Fehler")}, "test-failure")
 
-		output := buf.String()
-		expectedSnippet := "test-failure: close failed: simulierter Fehler"
-		if !strings.Contains(output, expectedSnippet) {
-			t.Errorf("Log-Ausgabe sollte %q enthalten, stattdessen erhalten: %q", expectedSnippet, output)
+		want := "test-failure: close failed: simulierter Fehler"
+		if got := ausgabe.String(); !strings.Contains(got, want) {
+			t.Errorf("Log = %q, erwartet darin %q", got, want)
 		}
 	})
 }

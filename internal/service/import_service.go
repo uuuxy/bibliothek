@@ -130,7 +130,7 @@ func parseKatalogisat(kat Katalogisat) litteraFelder {
 		case "425":
 			f.jahrStr = val
 		case "540":
-			f.isbn = isbnutil.CleanISBN(val)
+			f.isbn = isbnutil.OhneTrenner(val)
 		case "700":
 			if feld.Reihung == "1" {
 				f.signatur = val

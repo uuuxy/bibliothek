@@ -37,7 +37,7 @@ func Pfad(coverURL string) string {
 	if !ok {
 		return ""
 	}
-	defer closeutil.LogClose(wurzel, "coverdatei wurzel")
+	defer closeutil.Schliesse(wurzel, "coverdatei wurzel")
 
 	info, err := wurzel.Stat(rel)
 	if err != nil || info.IsDir() {
@@ -62,13 +62,13 @@ func AlsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
 	if !ok {
 		return nil, "", false
 	}
-	defer closeutil.LogClose(wurzel, "coverdatei wurzel")
+	defer closeutil.Schliesse(wurzel, "coverdatei wurzel")
 
 	f, err := wurzel.Open(rel)
 	if err != nil {
 		return nil, "", false
 	}
-	defer closeutil.LogClose(f, "coverdatei bild")
+	defer closeutil.Schliesse(f, "coverdatei bild")
 
 	roh, err := io.ReadAll(f)
 	if err != nil {

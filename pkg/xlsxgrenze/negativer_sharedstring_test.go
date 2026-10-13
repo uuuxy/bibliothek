@@ -81,7 +81,7 @@ func liesMit(daten []byte, opt excelize.Options) (gepanickt any) {
 	if err != nil {
 		return nil // abgewiesen — genau das ist hier ein gutes Ergebnis
 	}
-	defer closeutil.LogClose(f, "xlsxgrenze-probe")
+	defer closeutil.Schliesse(f, "xlsxgrenze-probe")
 	// Ein Fehler ist hier ebenfalls ein gutes Ergebnis: Gemessen wird der PANIC, nicht
 	// die Frage, ob die präparierte Mappe lesbar ist.
 	if _, err := f.GetRows("Tabelle1", excelize.Options{RawCellValue: true}); err != nil {

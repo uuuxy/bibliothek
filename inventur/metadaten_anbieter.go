@@ -411,7 +411,7 @@ func (c *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([
 		return nil, nil
 	}
 
-	cleanQuery := isbnutil.CleanISBN(trimmed)
+	cleanQuery := isbnutil.OhneTrenner(trimmed)
 	var sruQuery string
 	if validiereISBN(cleanQuery) {
 		sruQuery = "NUM=" + cleanQuery

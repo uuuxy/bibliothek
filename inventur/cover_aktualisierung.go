@@ -21,7 +21,7 @@ func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, reques
 		return
 	}
 	if err != nil {
-		log.Printf("cover-refresh: buch %s laden: %v", logger.SanitizeLog(id), err)
+		log.Printf("cover-refresh: buch %s laden: %v", logger.OhneUmbruch(id), err)
 		writeError(writer, http.StatusInternalServerError, "buch konnte nicht geladen werden")
 		return
 	}
@@ -51,7 +51,7 @@ func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, reques
 
 	err = handler.repo.UpdateBookMetadata(request.Context(), id, "", "", coverURL)
 	if err != nil {
-		log.Printf("cover-refresh: update fehlgeschlagen für buch %s: %v", logger.SanitizeLog(id), err)
+		log.Printf("cover-refresh: update fehlgeschlagen für buch %s: %v", logger.OhneUmbruch(id), err)
 		writeError(writer, http.StatusInternalServerError, "cover konnte nicht gespeichert werden")
 		return
 	}

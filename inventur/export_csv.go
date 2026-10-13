@@ -45,7 +45,7 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
 	// Nutzereingaben und dürfen beim Öffnen in Excel keine Formel auslösen (je Zeile).
 	err := handler.repo.StreamBooksForCSVExport(ctx, kopf, func(row []string) error {
-		return writer.Write(csvutil.SanitizeRow(row))
+		return writer.Write(csvutil.EntschaerfeZeile(row))
 	})
 	writer.Flush()
 	if err != nil {

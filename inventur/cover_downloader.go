@@ -70,7 +70,7 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 		log.Printf("Cover-Download fehlgeschlagen für %s: %v", coverURL, err)
 		return nil
 	}
-	defer closeutil.LogClose(resp.Body, "cover download")
+	defer closeutil.Schliesse(resp.Body, "cover download")
 
 	if resp.StatusCode != http.StatusOK {
 		return nil

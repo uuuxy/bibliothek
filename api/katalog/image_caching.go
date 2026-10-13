@@ -61,7 +61,7 @@ var coverCacheVerzeichnis = "uploads/covers"
 // Cache-Verzeichnis. Zulässig sind Ziffern, Trennstriche und ein abschließendes X
 // (ISBN-10-Prüfziffer) — genau die Zeichen, die eine ISBN oder EAN haben kann.
 //
-// Bewusst NICHT über isbnutil.CleanISBN geprüft, obwohl das naheliegt: Der Reiniger
+// Bewusst NICHT über isbnutil.OhneTrenner geprüft, obwohl das naheliegt: Der Reiniger
 // entfernt auch Leerzeichen, weil er ISBNs VERGLEICHBAR machen soll. Hier geht es um
 // einen Dateinamen, und "9783161 84100" wäre danach gültig gewesen. Zwei verschiedene
 // Fragen an dieselbe Zeichenkette (ist das dieselbe ISBN? / darf das ein Dateiname
@@ -157,7 +157,7 @@ func ladeCoverBytes(ctx context.Context, urlStr string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer closeutil.LogClose(resp.Body, "cover download")
+	defer closeutil.Schliesse(resp.Body, "cover download")
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("cover download: unerwarteter Status %d", resp.StatusCode)
 	}
@@ -268,7 +268,7 @@ func (s *Tueren) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 		serveCoverFallback(w)
 		return
 	}
-	defer closeutil.LogClose(root, "cover cache dir")
+	defer closeutil.Schliesse(root, "cover cache dir")
 
 	// Sanity check to avoid unnecessary download/processing steps for obvious path traversals
 	// even though root.OpenFile would safely block them later.

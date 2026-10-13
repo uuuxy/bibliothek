@@ -168,7 +168,7 @@ func GenerateBarcodeCSV(labels []buchetikett.BarcodeLabelDetail) ([]byte, error)
 
 	for _, l := range labels {
 		// Schutz vor Formel-Injection (CWE-1236): Titel/Autor stammen aus Katalog-Importen.
-		if err := writer.Write(csvutil.SanitizeRow([]string{l.ISBN, l.Titel, l.Autor, l.BarcodeID})); err != nil {
+		if err := writer.Write(csvutil.EntschaerfeZeile([]string{l.ISBN, l.Titel, l.Autor, l.BarcodeID})); err != nil {
 			return nil, err
 		}
 	}

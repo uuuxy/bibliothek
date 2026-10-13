@@ -2,8 +2,8 @@ package csvutil
 
 import "testing"
 
-func TestSanitizeCell(t *testing.T) {
-	cases := map[string]string{
+func TestEntschaerfeZelle(t *testing.T) {
+	faelle := map[string]string{
 		"":                  "",
 		"Harry Potter":      "Harry Potter",
 		"=HYPERLINK(\"x\")": "'=HYPERLINK(\"x\")",
@@ -13,22 +13,22 @@ func TestSanitizeCell(t *testing.T) {
 		"@SUM(A1)":          "'@SUM(A1)",
 		"\tTab":             "'\tTab",
 		"\rCarriage":        "'\rCarriage",
-		"978-3-16-148410-0": "978-3-16-148410-0", // beginnt mit Ziffer → kein Trigger, unverändert
+		"978-3-16-148410-0": "978-3-16-148410-0", // beginnt mit einer Ziffer und bleibt
 		"Normaler; Titel":   "Normaler; Titel",
 	}
-	for in, want := range cases {
-		if got := SanitizeCell(in); got != want {
-			t.Errorf("SanitizeCell(%q) = %q, want %q", in, got, want)
+	for zelle, want := range faelle {
+		if got := entschaerfeZelle(zelle); got != want {
+			t.Errorf("entschaerfeZelle(%q) = %q, erwartet %q", zelle, got, want)
 		}
 	}
 }
 
-func TestSanitizeRow(t *testing.T) {
-	got := SanitizeRow([]string{"=evil", "ok", "@bad"})
+func TestEntschaerfeZeile(t *testing.T) {
+	got := EntschaerfeZeile([]string{"=evil", "ok", "@bad"})
 	want := []string{"'=evil", "ok", "'@bad"}
 	for i := range want {
 		if got[i] != want[i] {
-			t.Errorf("index %d: got %q want %q", i, got[i], want[i])
+			t.Errorf("Zelle %d: %q, erwartet %q", i, got[i], want[i])
 		}
 	}
 }

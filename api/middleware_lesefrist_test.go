@@ -30,7 +30,7 @@ func langsamerRumpf(t *testing.T, adresse, pfad string, pause time.Duration) (in
 	if err != nil {
 		t.Fatalf("Verbindung zum Testserver fehlgeschlagen: %v", err)
 	}
-	defer closeutil.LogClose(c, "lesefrist-test verbindung")
+	defer closeutil.Schliesse(c, "lesefrist-test verbindung")
 
 	kopf := fmt.Sprintf("POST %s HTTP/1.1\r\nHost: x\r\nContent-Length: 4\r\n\r\n", pfad)
 	if _, err := io.WriteString(c, kopf+"a"); err != nil {
@@ -148,7 +148,7 @@ func TestLesefrist_LangeAntwortWirdNichtAbgeschnitten(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Verbindung fehlgeschlagen: %v", err)
 	}
-	defer closeutil.LogClose(resp.Body, "lesefrist-test response body")
+	defer closeutil.Schliesse(resp.Body, "lesefrist-test response body")
 
 	koerper, err := io.ReadAll(resp.Body)
 	if err != nil {

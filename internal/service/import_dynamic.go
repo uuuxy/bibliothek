@@ -112,7 +112,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, bestand reposi
 	// Die Form, in der die Datenbank speichert: Nennt die Datei dasselbe Buch zehn- und
 	// dreizehnstellig, ist es ein Titel. Als zwei Schlüssel ergäbe es zwei INSERTs, und der
 	// zweite scheiterte am UNIQUE-Index.
-	isbn := isbnutil.Normalform(isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn")))
+	isbn := isbnutil.Normalform(isbnutil.OhneTrenner(spaltenWert(row, headerMap, "isbn")))
 
 	if _, bekannt := bestand.TitelZu(isbn, z.titel); bekannt {
 		return "", nil, false // schon vorhanden
@@ -219,7 +219,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, bestand reposito
 			continue
 		}
 
-		isbn := isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
+		isbn := isbnutil.OhneTrenner(spaltenWert(row, headerMap, "isbn"))
 		titelID, _ := bestand.TitelZu(isbn, titel)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
@@ -258,7 +258,7 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, bestand re
 		if z.titel == "" || z.signatur == "" {
 			continue
 		}
-		isbn := isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
+		isbn := isbnutil.OhneTrenner(spaltenWert(row, headerMap, "isbn"))
 		if id, bekannt := bestand.TitelZu(isbn, z.titel); bekannt {
 			updates[id] = z.signatur
 		}

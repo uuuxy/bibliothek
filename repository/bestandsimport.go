@@ -39,7 +39,7 @@ func LegeImportTitelAn(ctx context.Context, tx pgx.Tx, titel []BookTitle) ([]str
 	for range titel {
 		var id string
 		if err := br.QueryRow().Scan(&id); err != nil {
-			closeutil.LogClose(br, "title insert batch")
+			closeutil.Schliesse(br, "title insert batch")
 			return nil, fmt.Errorf("failed to insert title batch: %w", err)
 		}
 		ids = append(ids, id)
@@ -79,7 +79,7 @@ func SetzeImportSignaturen(ctx context.Context, tx pgx.Tx, signaturen []ImportSi
 	br := tx.SendBatch(ctx, batch)
 	for range batch.Len() {
 		if _, err := br.Exec(); err != nil {
-			closeutil.LogClose(br, "signatur update batch")
+			closeutil.Schliesse(br, "signatur update batch")
 			return fmt.Errorf("failed to update signatur batch: %w", err)
 		}
 	}
@@ -118,7 +118,7 @@ func LegeImportExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ImportExe
 	for _, e := range exemplare {
 		tag, fehler := br.Exec()
 		if fehler != nil {
-			closeutil.LogClose(br, "copy insert batch")
+			closeutil.Schliesse(br, "copy insert batch")
 			return 0, 0, fmt.Errorf("exemplar %q zu titel %s anlegen: %w", e.Barcode, e.TitelID, fehler)
 		}
 		if tag.RowsAffected() == 1 {

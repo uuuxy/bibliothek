@@ -2,7 +2,7 @@ package isbnutil
 
 import "testing"
 
-func TestCleanISBN(t *testing.T) {
+func TestOhneTrenner(t *testing.T) {
 	faelle := []struct {
 		name string
 		in   string
@@ -16,24 +16,23 @@ func TestCleanISBN(t *testing.T) {
 		{"leer", "", ""},
 		{"nur Trenner", "- -", ""},
 		{"ISBN-10 mit X", "3-16-148410-X", "316148410X"},
-		// Byte-weise Iteration ist UTF-8-sicher: Mehrbyte-Sequenzen enthalten nie
-		// ASCII-Bytes, '-' und ' ' können also nicht versehentlich in einem Zeichen treffen.
+		// Ein Zeichen aus mehreren Bytes enthält nie das Byte eines Bindestrichs oder
+		// Leerzeichens; Byte für Byte zu lesen zerschneidet es nicht.
 		{"Mehrbyte bleibt intakt", "978-3-16-ü", "978316ü"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if got := CleanISBN(f.in); got != f.want {
-				t.Errorf("CleanISBN(%q) = %q, erwartet %q", f.in, got, f.want)
+			if got := OhneTrenner(f.in); got != f.want {
+				t.Errorf("OhneTrenner(%q) = %q, erwartet %q", f.in, got, f.want)
 			}
 		})
 	}
 }
 
-// TestCleanISBN_OhneTrennerKeineKopie hält die Optimierung fest: Enthält die Eingabe
-// keinen Trenner, muss exakt derselbe String zurückkommen (kein neuer Allokat).
-func TestCleanISBN_OhneTrennerKeineKopie(t *testing.T) {
+// Enthält die Eingabe keinen Trenner, kommt dieselbe Zeichenkette zurück.
+func TestOhneTrenner_OhneTrennerKeineKopie(t *testing.T) {
 	in := "9783161484100"
-	if got := CleanISBN(in); got != in {
-		t.Fatalf("CleanISBN(%q) = %q", in, got)
+	if got := OhneTrenner(in); got != in {
+		t.Fatalf("OhneTrenner(%q) = %q", in, got)
 	}
 }

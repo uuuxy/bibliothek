@@ -67,7 +67,7 @@ func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, 
 		_ = conn.Close() //nolint:errcheck
 		return BeschreibeSMTPFehler(adresse, err)
 	}
-	defer closeutil.LogClose(c, "smtp client")
+	defer closeutil.Schliesse(c, "smtp client")
 
 	if err := c.Hello("localhost"); err != nil {
 		return BeschreibeSMTPFehler(adresse, err)

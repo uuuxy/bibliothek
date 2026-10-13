@@ -22,8 +22,8 @@ func TestCleanISBN(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got := isbnutil.CleanISBN(tt.val); got != tt.want {
-			t.Errorf("isbnutil.CleanISBN(%q) = %q, want %q", tt.val, got, tt.want)
+		if got := isbnutil.OhneTrenner(tt.val); got != tt.want {
+			t.Errorf("isbnutil.OhneTrenner(%q) = %q, want %q", tt.val, got, tt.want)
 		}
 	}
 }

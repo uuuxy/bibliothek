@@ -48,7 +48,6 @@ var stilBestand = map[string]stilZahl{
 	"pkg/code39":             {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 2},
 	"pkg/coverquelle":        {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},
 	"pkg/ersatzwert":         {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 5},
-	"pkg/kennung":            {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},
 	"pkg/lmf":                {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 2},
 	"pkg/lmfplan":            {Fach: 0, Verb: 1, Kuerzel: 0, Datei: 0, Datum: 15},
 	"pkg/pdfzeichen":         {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},

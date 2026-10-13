@@ -32,7 +32,7 @@ func mitUploadsRoot(fn func(*os.Root) error) error {
 	if err != nil {
 		return fmt.Errorf("uploads-Verzeichnis konnte nicht geöffnet werden: %w", err)
 	}
-	defer closeutil.LogClose(root, "uploads dir")
+	defer closeutil.Schliesse(root, "uploads dir")
 	return fn(root)
 }
 
@@ -44,7 +44,7 @@ func schreibeUploadDatei(name string, inhalt []byte) error {
 		if err != nil {
 			return fmt.Errorf("datei %q konnte nicht angelegt werden: %w", name, err)
 		}
-		defer closeutil.LogClose(datei, "upload file")
+		defer closeutil.Schliesse(datei, "upload file")
 
 		if _, err := datei.Write(inhalt); err != nil {
 			return fmt.Errorf("datei %q konnte nicht geschrieben werden: %w", name, err)

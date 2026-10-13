@@ -36,7 +36,7 @@ func schreibe(t *testing.T, conn net.Conn, befehl string) {
 // hier bewusst nur protokolliert: das Schließen IST die geprüfte Handlung.
 func schliesseHart(t *testing.T, conn net.Conn) {
 	t.Helper()
-	closeutil.LogClose(conn, "Testverbindung")
+	closeutil.Schliesse(conn, "Testverbindung")
 }
 
 func TestStarte_Normal(t *testing.T) {

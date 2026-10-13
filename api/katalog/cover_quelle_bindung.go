@@ -37,7 +37,7 @@ func coverKandidatenFuerISBN(isbnSauber string) []string {
 // coverDateiname bindet die Datei an ISBN UND Adresse.
 func coverDateiname(isbn, sichereURL string) string {
 	sum := sha256.Sum256([]byte(sichereURL))
-	return isbnutil.CleanISBN(isbn) + "-" + hex.EncodeToString(sum[:6]) + ".webp"
+	return isbnutil.OhneTrenner(isbn) + "-" + hex.EncodeToString(sum[:6]) + ".webp"
 }
 
 // coverQuelleErlaubt entscheidet, ob sichereURL für diese ISBN heruntergeladen werden
@@ -49,7 +49,7 @@ func (s *Tueren) coverQuelleErlaubt(r *http.Request, isbn, sichereURL string) bo
 	if s.DB == nil || s.DB.Pool == nil {
 		return false
 	}
-	isbnSauber := isbnutil.CleanISBN(isbn)
+	isbnSauber := isbnutil.OhneTrenner(isbn)
 	quellen, imKatalog, err := repository.CoverQuellenFuerISBN(r.Context(), s.DB.Pool, isbnSauber)
 	if err != nil {
 		return false

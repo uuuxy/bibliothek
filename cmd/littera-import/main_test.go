@@ -55,9 +55,9 @@ func TestRun_ImportiertEinKatalogisat(t *testing.T) {
 	pool := pgtest.Pool(t) // lädt das Schema und überspringt ohne TEST_DATABASE_URL
 	ctx := context.Background()
 	const isbn = "978-3-16-148410-0"
-	// Der Import legt die ISBN bereinigt ab (isbnutil.CleanISBN: ohne Bindestriche) —
+	// Der Import legt die ISBN bereinigt ab (isbnutil.OhneTrenner: ohne Bindestriche) —
 	// gesucht und aufgeräumt wird deshalb in derselben Schreibweise.
-	gespeichert := isbnutil.CleanISBN(isbn)
+	gespeichert := isbnutil.OhneTrenner(isbn)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM buecher_titel WHERE isbn = $1`, gespeichert); err != nil {
 			t.Logf("Aufräumen: %v", err)

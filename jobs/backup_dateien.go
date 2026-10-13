@@ -45,7 +45,7 @@ func BackupDateien(dir string) ([]BackupDatei, error) {
 		}
 		return nil, err
 	}
-	defer closeutil.LogClose(root, "backup dir")
+	defer closeutil.Schliesse(root, "backup dir")
 	return listeBackups(root)
 }
 
@@ -57,7 +57,7 @@ func listeBackups(root *os.Root) ([]BackupDatei, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer closeutil.LogClose(verzeichnis, "backup dir")
+	defer closeutil.Schliesse(verzeichnis, "backup dir")
 	eintraege, err := verzeichnis.ReadDir(-1)
 	if err != nil {
 		return nil, err

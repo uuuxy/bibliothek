@@ -443,6 +443,9 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
+**Fertig sind 7 von 79 Paketen:** `pkg/betrag` (gelesen, ohne Änderung), `pkg/clientip`,
+`pkg/closeutil`, `pkg/csvutil`, `pkg/isbnutil`, `pkg/kennung`, `pkg/logger`.
+
 **Ein Paket ist fertig, wenn:**
 
 1. jeder Name, den es erklärt, [STIL.md](STIL.md) folgt (Fachwort, Verb, Kürzel, keine

@@ -263,7 +263,7 @@ func TestHandlerLiefertStromUndEreignisse(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Verbindung: %v", err)
 	}
-	defer closeutil.LogClose(resp.Body, "sse-test response body")
+	defer closeutil.Schliesse(resp.Body, "sse-test response body")
 
 	if got := resp.Header.Get("Content-Type"); got != "text/event-stream" {
 		t.Errorf("Content-Type = %q, erwartet text/event-stream", got)
@@ -313,7 +313,7 @@ func TestHandlerWeistNachShutdownAb(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Anfrage: %v", err)
 	}
-	defer closeutil.LogClose(resp.Body, "sse-test response body")
+	defer closeutil.Schliesse(resp.Body, "sse-test response body")
 
 	if resp.StatusCode != http.StatusServiceUnavailable {
 		t.Errorf("HTTP %d, erwartet 503 — sonst hängt der Handler beim Herunterfahren",

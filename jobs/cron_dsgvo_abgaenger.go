@@ -62,13 +62,13 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 		// Audit-Log über den festen Kontext der Methode.
 		if err := s.auditRepo.PurgeAbgaenger(ctx, student.ID, ""); err != nil {
 			log.Printf("Scheduler GDPR Delete: failed to purge student ID %s: %v",
-				logger.SanitizeLog(student.ID), err)
+				logger.OhneUmbruch(student.ID), err)
 			failures = append(failures, student.ID)
 			continue
 		}
 
 		log.Printf("Scheduler GDPR Delete: deleted student ID %s (Klasse %s, Abgang %d)",
-			logger.SanitizeLog(student.ID), logger.SanitizeLog(student.Klasse), student.AbgaengerJahr)
+			logger.OhneUmbruch(student.ID), logger.OhneUmbruch(student.Klasse), student.AbgaengerJahr)
 		deleted++
 	}
 
