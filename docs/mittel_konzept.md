@@ -411,7 +411,7 @@ Formulare an Schüler). Gates: `api/bestellung/bestellung_mittel_pg_test.go`,
    gefiltert zeigte sie nur den Rest der neuesten 200 —, und die Kennzahlen im Kopf
    stehen zusätzlich je Topf. Der Filterwert `ohne` ist der Weg zu den Alt-Bestellungen,
    die der Rückweg (Nr. 6) noch braucht. Gates: `api/bestellung/bestellbericht_mittel_test.go`
-   (PDF-Inhaltsstrom, Summen je Topf = Gesamt), `api/bestellung/bestellbericht_mittel_pg_test.go`,
+   (PDF-Inhaltsstrom, Summen je Topf = Gesamt), `repository/bestellbericht_mittel_pg_test.go`,
    `api/bestellung/bestellhistorie_mittel_pg_test.go` (Aufteilung = Gesamtzahlen),
    `bestellberichte.test.js`, `BestellHistorieKopf.test.js`,
    `OrderStaging.test.js` (der DNB-Titel mit Haken).

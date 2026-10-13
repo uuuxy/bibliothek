@@ -474,7 +474,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   trägt keine Tür: `theke/nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
   seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
-  Typ aus `net/http` tragen `bestellung/bestellbericht_handler.go` (367),
+  Typ aus `net/http` tragen
   `lernmittel/lmf_plan.go` (260), `schaden/bescheid_handler.go` (211; die Rechnung des
   Ersatzwerts steht seit dem 12.10.2026 in `internal/service`), `leser/dsgvo_auskunft.go` (193),
   `system/betriebsbereitschaft_handler.go` (175) und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre

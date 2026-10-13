@@ -1,4 +1,4 @@
-package bestellung
+package repository_test
 
 import (
 	"context"
@@ -6,27 +6,22 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/api/tuer"
-	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
-// Der Topf-Filter des Berichts (#596, Bauplan 7.3 Schritt 4).
+// Der Topf-Filter des Bestellberichts.
 //
-// Die Lieferantenabrechnung ist das Blatt, gegen das die Rechnung des Händlers geprüft
-// wird. Kommen zwei Rechnungen — eine für die Lernmittel, eine für die Schülerbücherei —,
-// muss sich das Blatt auf den Topf einengen lassen, sonst prüft das Sekretariat jede
-// Rechnung gegen eine Liste, in der auch der andere Topf steht.
-//
-// Am echten Postgres, weil die Einengung im SQL steht.
+// Die Lieferantenabrechnung ist das Blatt, gegen das die Rechnung des Händlers geprüft wird.
+// Kommen zwei Rechnungen, eine für die Lernmittel und eine für die Schülerbücherei, muss sich
+// das Blatt auf den Topf einengen lassen; sonst prüft das Sekretariat jede Rechnung gegen eine
+// Liste, in der auch der andere Topf steht. An der Datenbank, weil die Einengung im SQL steht.
 func TestBestellberichtFiltertNachTopf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	anlegen := func(t *testing.T, name, mittel string, betrag float64) {
@@ -70,14 +65,17 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			orders, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", f.mittel)
+			orders, _, err := repository.LadeBerichtBestellungen(ctx, pool, von, bis, "", f.mittel)
 			if err != nil {
 				t.Fatalf("Bestellungen lesen: %v", err)
 			}
 			if len(orders) != f.anzahl {
 				t.Fatalf("%d Bestellungen, erwartet %d", len(orders), f.anzahl)
 			}
-			betrag, _ := summiereBestellungen(orders)
+			var betrag float64
+			for _, o := range orders {
+				betrag += o.Gesamtbetrag
+			}
 			if betrag != f.betrag {
 				t.Errorf("Summe %.2f, erwartet %.2f", betrag, f.betrag)
 			}
@@ -92,18 +90,18 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 		})
 	}
 
-	// Die Alt-Bestellung ohne Zuordnung gehört in KEINEN der beiden gefilterten Berichte —
-	// sie wird nie geraten (Migration 109, Backfill).
-	fuerLand, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", mitteltopf.Land)
+	// Die Bestellung ohne Zuordnung gehört in keinen der beiden gefilterten Berichte: Ihr Topf
+	// wird nicht geraten.
+	fuerLand, _, err := repository.LadeBerichtBestellungen(ctx, pool, von, bis, "", mitteltopf.Land)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fuerKreis, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", mitteltopf.Schultraeger)
+	fuerKreis, _, err := repository.LadeBerichtBestellungen(ctx, pool, von, bis, "", mitteltopf.Schultraeger)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(fuerLand)+len(fuerKreis) != 2 {
-		t.Errorf("die Alt-Bestellung ohne Zuordnung ist einem Topf zugeschlagen worden (%d + %d von 3)",
+		t.Errorf("die Bestellung ohne Zuordnung ist einem Topf zugeschlagen worden (%d + %d von 3)",
 			len(fuerLand), len(fuerKreis))
 	}
 }

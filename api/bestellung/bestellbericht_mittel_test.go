@@ -11,16 +11,36 @@ import (
 	"bibliothek/repository"
 )
 
-// Der Bestellbericht trennt die beiden Töpfe (#596, Bauplan 7.3 Schritt 4).
+// Der Bestellbericht trennt die beiden Töpfe.
 //
 // Die Schule beschafft aus zwei getrennten Haushalten: Lernmittel aus Landesmitteln, den
-// Bestand der Schülerbücherei aus Mitteln des Schulträgers. Der Bericht war bis zum
-// 12.09.2026 EINE Liste mit EINER Summe — genau die Zahl, die niemand verwenden kann:
-// Für das Schulamt zählt der Landes-Anteil, für den Schulträger seiner, und wer die
-// Summen von Hand aus einer gemischten Liste zieht, rechnet jeden Monat neu.
+// Bestand der Schülerbücherei aus Mitteln des Schulträgers. Für das Schulamt zählt der Anteil
+// des Landes, für den Schulträger seiner; aus einer gemischten Liste mit einer Summe müsste
+// jemand die zwei Zahlen von Hand ziehen.
 //
-// Geprüft am entpackten PDF-Inhaltsstrom, nicht an einer Zwischenstruktur: Der Bericht
-// ist ein Blatt Papier, gegen das eine Rechnung geprüft wird.
+// Geprüft am Blatt, das aus den Zeilen der Abfrage entsteht: Die Tür ordnet die Bestellungen
+// den Töpfen zu (bestellberichtToepfe), der Erzeuger druckt die Blöcke.
+
+// berichtBlatt druckt den Bericht, wie die Tür ihn aus den Zeilen der Abfrage füllt.
+func berichtBlatt(t *testing.T, titel string, orders []repository.BerichtBestellung) string {
+	t.Helper()
+	toepfe, err := bestellberichtToepfe(orders)
+	if err != nil {
+		t.Fatalf("Blöcke füllen: %v", err)
+	}
+	roh, err := pdf.GenerateBestellberichtPDF(pdf.Bestellbericht{
+		Titel:         titel,
+		Von:           time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+		Bis:           time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),
+		Jahresansicht: false,
+		MitPreisen:    true,
+		Toepfe:        toepfe,
+	}, pdf.SchuleInfo{Name: "Testschule"})
+	if err != nil {
+		t.Fatalf("Bericht erzeugen: %v", err)
+	}
+	return pdftest.Suchtext(t, roh)
+}
 
 func berichtBestellung(mittel string, betrag float64, exemplare int, titel string) repository.BerichtBestellung {
 	return repository.BerichtBestellung{
@@ -42,21 +62,10 @@ func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
 		berichtBestellung(mitteltopf.Schultraeger, 45.50, 5, "Die unendliche Geschichte"),
 		berichtBestellung("", 10.00, 2, "Alt ohne Zuordnung"),
 	}
+	text := berichtBlatt(t, "Bestellbericht", orders)
 
-	roh, err := generateBestellBerichtPDF(orders, pdf.SchuleInfo{Name: "Testschule"}, bestellBerichtOpts{
-		Titel:         "Bestellbericht",
-		Von:           time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
-		Bis:           time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),
-		Jahresansicht: false,
-		MitPreisen:    true,
-	})
-	if err != nil {
-		t.Fatalf("Bericht erzeugen: %v", err)
-	}
-	text := pdftest.Suchtext(t, roh)
-
-	// Jeder Topf steht mit seiner eigenen Summe da — und die Alt-Bestellungen ohne
-	// Zuordnung als das, was sie sind: nicht dem einen oder anderen zugeschlagen.
+	// Jeder Topf steht mit seiner eigenen Summe da, und die Bestellungen ohne Zuordnung als
+	// eigener Block: Sie sind keinem der zwei Töpfe zugeschlagen.
 	faelle := []struct{ topf, summe string }{
 		{"Lernmittelfreiheit", "200,00"},
 		{"lerb", "45,50"}, // „Schülerbücherei" — Umlaut, deshalb das Fragment
@@ -71,30 +80,18 @@ func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
 		}
 	}
 
-	// Und die Gesamtsumme steht darunter: 200 + 45,50 + 10 = 255,50. Geht sie nicht auf,
-	// ist einer der Blöcke doppelt gezählt oder einer fehlt — das Gate aus #596
-	// („Land + Kreis + ohne Zuordnung = Gesamt").
+	// Die Gesamtsumme steht darunter: 200 + 45,50 + 10 = 255,50. Geht sie nicht auf, ist einer
+	// der Blöcke doppelt gezählt oder einer fehlt.
 	if !strings.Contains(text, "255,50") {
 		t.Error("die Gesamtsumme 255,50 fehlt — die Summen der Töpfe müssen sie ergeben")
 	}
 }
 
-// Ein Bericht über einen einzigen Topf (Lieferantenabrechnung mit Filter) nennt den
-// anderen NICHT: Das Blatt wird gegen eine Rechnung dieses Topfs gehalten.
+// Ein Bericht über einen einzigen Topf (Lieferantenabrechnung mit Filter) nennt den anderen
+// nicht: Das Blatt wird gegen eine Rechnung dieses Topfs gehalten.
 func TestBestellberichtUeberEinenTopfNenntDenAnderenNicht(t *testing.T) {
 	orders := []repository.BerichtBestellung{berichtBestellung(mitteltopf.Land, 120.00, 30, "Mathematik 7")}
-
-	roh, err := generateBestellBerichtPDF(orders, pdf.SchuleInfo{Name: "Testschule"}, bestellBerichtOpts{
-		Titel:         "Lieferantenabrechnung",
-		Von:           time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
-		Bis:           time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),
-		Jahresansicht: false,
-		MitPreisen:    true,
-	})
-	if err != nil {
-		t.Fatalf("Bericht erzeugen: %v", err)
-	}
-	text := pdftest.Suchtext(t, roh)
+	text := berichtBlatt(t, "Lieferantenabrechnung", orders)
 
 	if !strings.Contains(text, "Lernmittelfreiheit") {
 		t.Error("der Topf des Berichts fehlt")

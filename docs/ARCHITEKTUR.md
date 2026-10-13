@@ -823,6 +823,11 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   lädt die Tür aus Vorlage und Einstellungen. Das Bestellanschreiben bekommt Betreff und Vermerk
   als fertige Texte zum Topf der Bestellung und den Weg der Etiketten als Wert
   (`bestellanschreiben`, `api/bestellung/bestellmail_anhaenge.go`); den Satz dazu wählt der Brief.
+  Der Bestellbericht bekommt je Topf einen Block mit fertiger Beschriftung, in der Reihenfolge
+  der Berichte (`bestellberichtToepfe`, `api/bestellung/bestellbericht_handler.go`); der
+  Erzeuger druckt die Blöcke seiner Eingabe und kennt die Töpfe der Schule nicht. Trägt eine
+  Bestellung einen Topf, den die Reihenfolge nicht nennt, entsteht kein Blatt: Sie stünde in
+  keinem Block und fehlte in jeder Summe.
 - Das Anlegen einer Bestellung steht in `internal/service` (`bestellung_anlegen.go`,
   `ProcessOrder`) und kennt weder die Anfrage noch den Druckauftrag der Tür. Die Tür füllt den
   Auftrag aus der Anfrage (`bestellAuftrag`, `api/bestellung/orders_handler.go`) und die Angaben der
