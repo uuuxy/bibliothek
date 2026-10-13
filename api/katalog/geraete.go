@@ -44,9 +44,9 @@ type GeraetAenderungRequest struct {
 
 // ListGeraeteHandler liefert die Geräteliste samt aktuellem Ausleiher.
 // GET /api/geraete
-func (s *Tueren) ListGeraeteHandler(repo repository.GeraeteRepository) http.HandlerFunc {
+func (s *Tueren) ListGeraeteHandler(repo repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		geraete, err := repo.ListGeraete(r.Context())
+		geraete, err := repo.LadeAlle(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Geräte", err)
 		}
@@ -68,7 +68,7 @@ func (s *Tueren) ListGeraeteHandler(repo repository.GeraeteRepository) http.Hand
 }
 
 // CreateGeraetHandler legt ein Gerät an. POST /api/geraete
-func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteRepository) http.HandlerFunc {
+func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req GeraetRequest
 		// Streng: Ein Feld, das die Tür nicht liest, ist ein Fehler und kein stiller Verlust.
@@ -89,7 +89,7 @@ func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteRepository) http.Han
 		if getrimmt := getrimmterZeiger(req.Seriennummer); getrimmt != nil && *getrimmt != "" {
 			seriennummer = getrimmt
 		}
-		id, err := repo.CreateGeraet(r.Context(), req.Modellname,
+		id, err := repo.LegeAn(r.Context(), req.Modellname,
 			seriennummer, req.BarcodeID, strings.TrimSpace(req.Zubehoer), strings.TrimSpace(req.ZustandNotiz))
 		if err != nil {
 			if istGeraetKonflikt(err) {
@@ -104,7 +104,7 @@ func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteRepository) http.Han
 
 // UpdateGeraetHandler pflegt Stammdaten und den Defekt-Status.
 // PUT /api/geraete/{id}
-func (s *Tueren) UpdateGeraetHandler(repo repository.GeraeteRepository) http.HandlerFunc {
+func (s *Tueren) UpdateGeraetHandler(repo repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req GeraetAenderungRequest
 		// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
@@ -123,7 +123,7 @@ func (s *Tueren) UpdateGeraetHandler(repo repository.GeraeteRepository) http.Han
 		if aenderung.Modellname != nil && *aenderung.Modellname == "" {
 			return apierrors.BadRequest("Ein Modellname ist erforderlich", nil)
 		}
-		err := repo.UpdateGeraet(r.Context(), r.PathValue("id"), aenderung)
+		err := repo.Aendere(r.Context(), r.PathValue("id"), aenderung)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Gerät nicht gefunden", err)

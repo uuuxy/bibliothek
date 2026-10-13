@@ -1,11 +1,7 @@
 package repository
 
-// geraete.go — die Verwaltungsseite der Geräteausleihe.
-//
-// Der Ausleihweg (Kiosk, G--Präfix → device_service) existierte lange vor der
-// Verwaltung: Geräte ließen sich nur per Hand-SQL anlegen, FACHKONZEPT §5 stand
-// als „angelegt, nicht in Betrieb". Diese Datei liefert die fehlende Tür:
-// anlegen, auflisten (mit aktuellem Ausleiher), Status pflegen.
+// Die Verwaltung der Geräte: anlegen, auflisten mit dem, der das Gerät gerade hat, und
+// Stammdaten und Status ändern. Die Ausleihe der Geräte steht in geraete_ausleihe.go.
 
 import (
 	"context"
@@ -17,8 +13,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// ErrGeraetBarcodeVergeben meldet, dass der Barcode bereits auf einem anderen Gerät klebt.
-// Nutzer-sichtbare Meldung (409), daher deutsche Großschreibung.
+// ErrGeraetBarcodeVergeben meldet, dass der Barcode schon auf einem anderen Gerät klebt. Der
+// Text ist die Meldung an der Oberfläche (409) und deshalb als Satz geschrieben.
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrGeraetBarcodeVergeben = errors.New("Barcode ist bereits an ein anderes Gerät vergeben")
@@ -41,19 +37,20 @@ func geraetEindeutigkeit(err error) error {
 	return ErrGeraetBarcodeVergeben
 }
 
-// GeraetMitStatus ist eine Zeile der Geräte-Verwaltung: die Stammdaten plus der
-// aktuelle Ausleiher (nil = im Schrank).
+// GeraetMitStatus ist eine Zeile der Geräte-Verwaltung: die Stammdaten und dazu, wer das
+// Gerät gerade hat (nil heißt: im Schrank).
 type GeraetMitStatus struct {
 	Geraet
 	AusgeliehenAn *string `json:"ausgeliehen_an,omitempty"`
 }
 
-// GeraeteRepository kapselt die Datenbankzugriffe der Geräte-Verwaltung.
-type GeraeteRepository interface {
-	ListGeraete(ctx context.Context) ([]GeraetMitStatus, error)
-	CreateGeraet(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error)
-	// UpdateGeraet pflegt Stammdaten und Ausleihstatus (ist_ausleihbar=false = defekt/gesperrt).
-	UpdateGeraet(ctx context.Context, id string, a GeraetAenderung) error
+// GeraeteAbfragen liest und schreibt die Geräte für ihre Verwaltung.
+type GeraeteAbfragen interface {
+	LadeAlle(ctx context.Context) ([]GeraetMitStatus, error)
+	LegeAn(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error)
+	// Aendere ändert Stammdaten und ob das Gerät ausleihbar ist (nicht ausleihbar heißt defekt
+	// oder gesperrt).
+	Aendere(ctx context.Context, id string, aenderung GeraetAenderung) error
 }
 
 // GeraetAenderung nennt, was an einem Gerät geändert wird. Ein Feld ohne Wert (nil) ist nicht
@@ -68,26 +65,25 @@ type GeraetAenderung struct {
 	IstAusleihbar *bool
 }
 
-// Leer sagt, ob die Änderung kein Feld nennt.
-func (a GeraetAenderung) Leer() bool {
+// IstLeer sagt, ob die Änderung kein Feld nennt.
+func (a GeraetAenderung) IstLeer() bool {
 	return a.Modellname == nil && a.Zubehoer == nil && a.ZustandNotiz == nil &&
 		a.Seriennummer == nil && a.IstAusleihbar == nil
 }
 
-type pgGeraeteRepository struct {
+type pgGeraeteAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewGeraeteRepository bindet die Geräte-Verwaltung an einen Pool.
-func NewGeraeteRepository(pool db.PgxPoolIface) GeraeteRepository {
-	return &pgGeraeteRepository{db: pool}
+// NewGeraeteAbfragen liefert die Abfragen der Geräte am übergebenen Pool.
+func NewGeraeteAbfragen(pool db.PgxPoolIface) GeraeteAbfragen {
+	return &pgGeraeteAbfragen{db: pool}
 }
 
-// ListGeraete liefert alle nicht ausgesonderten Geräte, neueste zuerst, mit dem
-// Namen des aktuellen Ausleihers (Schüler ODER Lehrkraft — check_loan_borrower
-// garantiert höchstens einen).
-func (r *pgGeraeteRepository) ListGeraete(ctx context.Context) ([]GeraetMitStatus, error) {
-	rows, err := r.db.Query(ctx, `
+// LadeAlle liefert alle Geräte, die nicht ausgesondert sind, das neueste zuerst, mit dem
+// Namen dessen, der das Gerät gerade hat; check_loan_borrower lässt höchstens einen zu.
+func (a *pgGeraeteAbfragen) LadeAlle(ctx context.Context) ([]GeraetMitStatus, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT g.id, g.modellname, g.seriennummer, g.barcode_id, g.zubehoer,
 		       g.ist_ausleihbar, g.ist_ausgesondert, g.zustand_notiz,
 		       g.erstellt_am, g.aktualisiert_am,
@@ -121,9 +117,11 @@ func (r *pgGeraeteRepository) ListGeraete(ctx context.Context) ([]GeraetMitStatu
 	return geraete, rows.Err()
 }
 
-func (r *pgGeraeteRepository) CreateGeraet(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error) {
+// LegeAn legt ein Gerät an und liefert seine ID. Eine leere Seriennummer oder Zustandsnotiz
+// wird NULL.
+func (a *pgGeraeteAbfragen) LegeAn(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error) {
 	var id string
-	err := r.db.QueryRow(ctx, `
+	err := a.db.QueryRow(ctx, `
 		INSERT INTO geraete (modellname, seriennummer, barcode_id, zubehoer, zustand_notiz)
 		VALUES ($1, NULLIF($2, ''), $3, $4, NULLIF($5, ''))
 		RETURNING id
@@ -134,15 +132,15 @@ func (r *pgGeraeteRepository) CreateGeraet(ctx context.Context, modellname strin
 	return id, nil
 }
 
-// UpdateGeraet schreibt, was die Änderung nennt. Der Bearbeiten-Dialog nennt das
-// Defekt-Kennzeichen nie (es liegt auf einem eigenen Knopf), der Knopf nennt nur das
-// Kennzeichen. Eine leere Seriennummer oder Zustandsnotiz wird NULL: Als leerer Text stieße
-// das zweite Gerät ohne Seriennummer an die Eindeutigkeit. Nennt die Änderung nichts, wird
-// nichts geschrieben; ein unbekanntes Gerät bleibt pgx.ErrNoRows.
-func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id string, a GeraetAenderung) error {
-	if a.Leer() {
+// Aendere schreibt, was die Änderung nennt. Der Dialog zum Bearbeiten nennt das Kennzeichen
+// „defekt" nie (es liegt auf einem eigenen Knopf), der Knopf nennt nur das Kennzeichen. Eine
+// leere Seriennummer oder Zustandsnotiz wird NULL: Als leerer Text stieße das zweite Gerät
+// ohne Seriennummer an die Eindeutigkeit. Nennt die Änderung nichts, wird nichts geschrieben;
+// ein unbekanntes Gerät bleibt pgx.ErrNoRows.
+func (a *pgGeraeteAbfragen) Aendere(ctx context.Context, id string, aenderung GeraetAenderung) error {
+	if aenderung.IstLeer() {
 		var vorhanden bool
-		if err := r.db.QueryRow(ctx,
+		if err := a.db.QueryRow(ctx,
 			`SELECT EXISTS (SELECT 1 FROM geraete WHERE id = $1 AND ist_ausgesondert = false)`, id).Scan(&vorhanden); err != nil {
 			return err
 		}
@@ -151,7 +149,7 @@ func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id string, a Ger
 		}
 		return nil
 	}
-	tag, err := r.db.Exec(ctx, `
+	tag, err := a.db.Exec(ctx, `
 		UPDATE geraete
 		SET modellname = COALESCE($1, modellname), zubehoer = COALESCE($2, zubehoer),
 		    zustand_notiz = CASE WHEN $3::text IS NULL THEN zustand_notiz ELSE NULLIF($3, '') END,
@@ -159,7 +157,7 @@ func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id string, a Ger
 		    ist_ausleihbar = COALESCE($5, ist_ausleihbar),
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $6 AND ist_ausgesondert = false
-	`, a.Modellname, a.Zubehoer, a.ZustandNotiz, a.Seriennummer, a.IstAusleihbar, id)
+	`, aenderung.Modellname, aenderung.Zubehoer, aenderung.ZustandNotiz, aenderung.Seriennummer, aenderung.IstAusleihbar, id)
 	if err != nil {
 		return geraetEindeutigkeit(err)
 	}

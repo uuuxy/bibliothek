@@ -153,7 +153,7 @@ var fkAktionenBestand = []string{
 	"SET NULL  buecher_exemplare.bestellung_id -> bestellungen_verlauf",
 	// Befragt am 07.09.2026: Sauber. Der Lesepfad nimmt den Titel als *string (kein
 	// NULL-Scan), und das Anliegen hält den Titeltext als eigene Abschrift
-	// (titel_text) — der Wunsch bleibt lesbar, wenn der Titel fällt (anliegen_repo.go).
+	// (titel_text) — der Wunsch bleibt lesbar, wenn der Titel fällt (anliegen.go).
 	"SET NULL  lehrer_anliegen.titel_id -> buecher_titel",
 	// Befragt am 06.09.2026: Genau dieser SET NULL machte die Forderung in der Rechnung
 	// unsichtbar, solange dort INNER JOIN stand (ce875654).

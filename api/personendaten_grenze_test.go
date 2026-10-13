@@ -130,11 +130,11 @@ func TestOverrideBlockNurMitEditStudents(t *testing.T) {
 }
 
 type geraeteListenStub struct {
-	repository.GeraeteRepository
+	repository.GeraeteAbfragen
 	zeilen []repository.GeraetMitStatus
 }
 
-func (g *geraeteListenStub) ListGeraete(_ context.Context) ([]repository.GeraetMitStatus, error) {
+func (g *geraeteListenStub) LadeAlle(_ context.Context) ([]repository.GeraetMitStatus, error) {
 	kopie := make([]repository.GeraetMitStatus, len(g.zeilen))
 	copy(kopie, g.zeilen)
 	return kopie, nil

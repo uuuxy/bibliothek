@@ -142,7 +142,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("GET /api/reservierungen/klassensatz/katalog/filter", s.RequirePermission("create_reservations")(s.portal().KollegiumKatalogFilterHandler()))
 
 	// Geräte-Verwaltung (Bereich im Medienkatalog): Geräte sind Bestand — Rechte wie Bücher.
-	geraeteRepo := repository.NewGeraeteRepository(s.DB.Pool)
+	geraeteRepo := repository.NewGeraeteAbfragen(s.DB.Pool)
 	mux.Handle("GET /api/geraete", s.RequirePermission("view_books")(s.katalog().ListGeraeteHandler(geraeteRepo)))
 	mux.Handle("POST /api/geraete", s.RequirePermission("edit_books")(s.katalog().CreateGeraetHandler(geraeteRepo)))
 	mux.Handle("PUT /api/geraete/{id}", s.RequirePermission("edit_books")(s.katalog().UpdateGeraetHandler(geraeteRepo)))

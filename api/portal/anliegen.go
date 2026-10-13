@@ -80,8 +80,8 @@ func (s *Tueren) CreateAnliegenHandler() http.HandlerFunc {
 			return
 		}
 
-		repo := repository.NewAnliegenRepository(s.DB.Pool)
-		id, err := repo.Create(r.Context(), repository.NeuesAnliegen{
+		repo := repository.NewAnliegenAbfragen(s.DB.Pool)
+		id, err := repo.LegeAn(r.Context(), repository.NeuesAnliegen{
 			Art:            req.Art,
 			TitelText:      req.TitelText,
 			Klasse:         req.Klasse,
@@ -114,7 +114,7 @@ func (s *Tueren) ListEigeneAnliegenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
 			return
 		}
-		anliegen, err := repository.NewAnliegenRepository(s.DB.Pool).ListEigene(r.Context(), claims.UserID)
+		anliegen, err := repository.NewAnliegenAbfragen(s.DB.Pool).LadeEigene(r.Context(), claims.UserID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -126,7 +126,7 @@ func (s *Tueren) ListEigeneAnliegenHandler() http.HandlerFunc {
 // ListOffeneAnliegenHandler ist die Arbeitsliste der LMF. GET /api/anliegen/offen
 func (s *Tueren) ListOffeneAnliegenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		anliegen, err := repository.NewAnliegenRepository(s.DB.Pool).ListOffene(r.Context())
+		anliegen, err := repository.NewAnliegenAbfragen(s.DB.Pool).LadeOffene(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -140,7 +140,7 @@ func (s *Tueren) ListOffeneAnliegenHandler() http.HandlerFunc {
 // GET /api/anliegen/anzahl → { "anzahl": 3 }
 func (s *Tueren) CountOffeneAnliegenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		n, err := repository.NewAnliegenRepository(s.DB.Pool).CountOffene(r.Context())
+		n, err := repository.NewAnliegenAbfragen(s.DB.Pool).ZaehleOffene(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -165,7 +165,7 @@ func (s *Tueren) handleErledigeAnliegen(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	erledigt, err := repository.NewAnliegenRepository(s.DB.Pool).Erledige(r.Context(), id, kuerze(strings.TrimSpace(body.Notiz), 500))
+	erledigt, err := repository.NewAnliegenAbfragen(s.DB.Pool).Erledige(r.Context(), id, kuerze(strings.TrimSpace(body.Notiz), 500))
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return

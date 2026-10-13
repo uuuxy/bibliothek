@@ -5,10 +5,9 @@ import (
 	"testing"
 )
 
-// Der Anliegen-Kern am echten Postgres: Anlegen, die offene Liste in
-// Warteschlangen-Reihenfolge, und das Abhaken liefert die Mail-Daten GENAU
-// EINMAL — der Doppelklick zweier Arbeitsplätze (Klassensatz-Lehre) darf
-// keine zweite Mail auslösen.
+// Die Anliegen am echten Postgres: Anlegen, die offene Liste in der Reihenfolge des Eingangs,
+// und das Abhaken liefert die Angaben für die Mail genau einmal: Klicken zwei Arbeitsplätze
+// zugleich, geht keine zweite Mail hinaus.
 func TestAnliegenLebenszyklus(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -22,22 +21,22 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 		t.Fatalf("Lehrkraft: %v", err)
 	}
 
-	repo := NewAnliegenRepository(pool)
-	id1, err := repo.Create(ctx, NeuesAnliegen{
+	repo := NewAnliegenAbfragen(pool)
+	id1, err := repo.LegeAn(ctx, NeuesAnliegen{
 		Art: "wunsch", TitelText: "Markl Biologie 2",
 		Klasse: "8G3", Kommentar: "bitte zum Halbjahr", AngefordertVon: lehrkraftID,
 	})
 	if err != nil {
 		t.Fatalf("Create Wunsch: %v", err)
 	}
-	if _, err := repo.Create(ctx, NeuesAnliegen{
+	if _, err := repo.LegeAn(ctx, NeuesAnliegen{
 		Art: "meldung", TitelText: "8G3 hat falsche Bücher bekommen",
 		Klasse: "8G3", AngefordertVon: lehrkraftID,
 	}); err != nil {
 		t.Fatalf("Create Meldung: %v", err)
 	}
 
-	offene, err := repo.ListOffene(ctx)
+	offene, err := repo.LadeOffene(ctx)
 	if err != nil {
 		t.Fatalf("ListOffene: %v", err)
 	}
@@ -51,17 +50,15 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 		t.Fatalf("offene Liste falsch (älteste zuerst erwartet): %+v", eigene)
 	}
 
-	// Jedes Feld in seiner eigenen Spalte. Gleichartige Strings gingen bis 23.08. als
-	// Positionsparameter in Create; ein Dreher zwischen Klasse und Kommentar hätte hier
-	// keinen Compilerfehler ausgelöst, sondern eine Anmerkung in der Klassenspalte der
-	// LMF-Liste.
+	// Jedes Feld steht in seiner Spalte. Ein Dreher zwischen Klasse und Kommentar ergäbe
+	// keinen Fehler des Compilers, sondern eine Anmerkung in der Spalte der Klasse.
 	if a := eigene[0]; a.Art != "wunsch" || a.Klasse != "8G3" || a.Kommentar != "bitte zum Halbjahr" {
 		t.Errorf("Felder vertauscht: %+v", a)
 	}
 
-	// titel_id und isbn schreibt seit dem 21.09.2026 niemand mehr; die Spalten bleiben.
-	// Der INSERT nennt sie nicht — hier steht, dass die Tabelle das trägt (isbn ist
-	// NOT NULL mit Vorgabe) und beide auf ihrer Vorgabe landen.
+	// titel_id und isbn schreibt niemand; die Spalten bleiben. Der INSERT nennt sie nicht:
+	// Hier steht, dass die Tabelle das trägt (isbn ist NOT NULL mit Vorgabe) und beide auf
+	// ihrer Vorgabe landen.
 	var ohneTitel bool
 	var isbn string
 	if err := pool.QueryRow(ctx, `SELECT titel_id IS NULL, isbn FROM lehrer_anliegen WHERE id = $1`,
@@ -91,7 +88,7 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 	}
 
 	// Die Lehrkraft sieht ihren Status: 1 erledigt (mit Notiz), 1 offen.
-	meine, err := repo.ListEigene(ctx, lehrkraftID)
+	meine, err := repo.LadeEigene(ctx, lehrkraftID)
 	if err != nil {
 		t.Fatalf("ListEigene: %v", err)
 	}

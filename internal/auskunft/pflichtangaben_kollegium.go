@@ -16,7 +16,7 @@ import (
 //   - Klassenleitung: klassen_lehrer_mapping speist die Mahnliste der Klasse und den Versand
 //     der Abgänger-Kontoauszüge (api/mahnwesen/graduates_mail.go).
 //   - Namen am Anliegen und an der Reservierung sieht das Bibliothekspersonal
-//     (repository/anliegen_repo.go, reservation_repo.go); die Kontenliste verlangt
+//     (repository/anliegen.go, reservation_repo.go); die Kontenliste verlangt
 //     manage_users, das Protokoll audit_logs (api/routes_system.go).
 //   - Trennen der Ausleihen: PredikatLesehistorieAusleihen fragt nicht nach der Art.
 //   - Erledigte Klassensatz-Reservierungen fallen nach derselben Frist wie erledigte Wünsche
