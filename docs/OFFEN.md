@@ -143,6 +143,10 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   fehlt; es ist seit dem 17.09.2026 als Verlust ausgebucht. Liegt es im Regal: in der Buchakte
   den Status des Exemplars zurückstellen.
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
+- [ ] Am Testserver einmal den Build-Cache leeren: `docker builder prune -af`. Dort liegen
+  12,8 GB, die Platte ist zu 82 % belegt (gelesen am 13.10.2026). Images, Container und
+  Volumes fasst der Befehl nicht an; das Update danach baut jede Schicht neu. Ab dem
+  übernächsten Update leert `update.sh` den Build-Cache selbst (Schritt 7).
 - [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome (Stufe 1 und 3), zurückgestellt
   am 24.09.2026. Stufe 2 über die Tür ist seit dem 08.10.2026 belegt. (2.3)
 
@@ -175,8 +179,8 @@ stehen, nennt [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, die Handgriffe des Umzugs 
   und Theke (`api/theke`). Alle zwölf Themen stehen in eigenen Paketen.
 - [x] Stufe 5, Abschluss: 38 Testdateien, die nichts aus `api/` prüfen, stehen bei dem Paket,
   dessen Regel sie prüfen (25 in `repository/`, fünf in `internal/service`, je eine in `db/`,
-  `internal/lusd` und `pkg/leserart`, fünf im Wurzelpaket); vier Tests über den Router stehen
-  als Testpaket in `api/`. Eine Ratsche hält, dass kein Thema ein anderes einbindet
+  `internal/lusd` und `pkg/leserart`, fünf im Wurzelpaket); vier Testdateien über den Router
+  stehen als Testpaket in `api/`. Eine Ratsche hält, dass kein Thema ein anderes einbindet
   (`api/themen_ratsche_test.go`). Die Dokumente nennen die Gliederung und wo ein Test steht.
   Die Messung an `repository/` ist gelaufen: Die Datenbankschicht bleibt ein Paket.
 
