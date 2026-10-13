@@ -37,7 +37,7 @@ const saetze = (profile) => dialog(profile).replace(/\s+/g, ' ');
 
 // Der Knopf ruft DELETE /api/schueler/{id}: Der Leser kommt in den Papierkorb und bleibt
 // wiederherstellbar. Nach 180 Tagen anonymisiert der Nachtlauf einen Schüler und löscht einen
-// Kollegen endgültig (repository.StandardAnonymisierungSoftDeleteTage). „Bis zu", weil ein
+// Kollegen endgültig (repository.AnonymisierungPapierkorbTage). „Bis zu", weil ein
 // Ehemaliger im Papierkorb schon mit dem Ende seiner Karenzzeit anonymisiert wird.
 describe('Löschen in der Akte: der Dialog sagt, was geschieht', () => {
 	it('Schüler: Papierkorb, bis zu 180 Tage wiederherstellbar, danach anonymisiert', () => {

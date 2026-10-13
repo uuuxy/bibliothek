@@ -96,8 +96,8 @@ func (s *Tueren) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 	// Nur dieser Druck zählt die Mahnung, der Mail-Versand nicht (docs/invarianten.md §1).
 	// Die Auswahl kommt aus der Oberfläche und kann älter sein als eine Verlängerung oder
 	// Rückgabe.
-	mahnRepo := repository.NewMahnwesenRepository(s.DB.Pool)
-	gezaehlt, err := mahnRepo.ZaehleMahnungTx(ctx, tx, ausleihIDs)
+	mahnRepo := repository.NewMahnwesenAbfragen(s.DB.Pool)
+	gezaehlt, err := mahnRepo.ErhoeheMahnstufe(ctx, tx, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim update der mahnstufen: %w", err))
 		return nil, false
@@ -105,7 +105,7 @@ func (s *Tueren) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 
 	// Der Brief hängt nicht am Zählen: Ein Buch steigt höchstens einmal am Tag, gedruckt
 	// wird es nach einem Papierstau auch ein zweites Mal.
-	briefe, err := mahnRepo.MahnbriefeTx(ctx, tx, ausleihIDs)
+	briefe, err := mahnRepo.LadeMahnbriefe(ctx, tx, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim abrufen der daten für pdf: %w", err))
 		return nil, false

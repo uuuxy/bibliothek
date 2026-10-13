@@ -23,9 +23,9 @@ type LeserAenderung struct {
 	Plz           *string
 	Ort           *string
 	ElternEmail   *string
-	// LusdID und Art haben eigene Regeln (nur nachtragbar, kein Wechsel über die Grenze zum
+	// LUSDID und Art haben eigene Regeln (nur nachtragbar, kein Wechsel über die Grenze zum
 	// Schüler). Die Tür prüft sie, bevor sie eines der beiden Felder nennt.
-	LusdID *string
+	LUSDID *string
 	Art    *string
 }
 
@@ -80,7 +80,7 @@ func (a LeserAenderung) zuweisungen() spaltenWerte {
 	z.leerbar("plz", a.Plz)
 	z.leerbar("ort", a.Ort)
 	z.leerbar("eltern_email", a.ElternEmail)
-	z.text("lusd_id", a.LusdID)
+	z.text("lusd_id", a.LUSDID)
 	z.text("art", a.Art)
 	return z
 }

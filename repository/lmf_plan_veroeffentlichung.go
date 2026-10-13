@@ -20,8 +20,8 @@ import (
 //     Eingangsjahrgänge, Einstellung lmf_eingangsjahrgaenge (Vorgabe „5, 7"; „manchmal
 //     kann ja auch mal was dazwischenkommen").
 
-// LMFEingangsjahrgaengeVorgabe ist die Vorgabe der Einstellung: neue 5er und 7er.
-const LMFEingangsjahrgaengeVorgabe = "5, 7"
+// lmfEingangsjahrgaengeVorgabe ist die Vorgabe der Einstellung: neue 5er und 7er.
+const lmfEingangsjahrgaengeVorgabe = "5, 7"
 
 // EingangsjahrgaengeAus liest die Einstellung („5, 7", „5;7", „5 7") als sortierte,
 // duplikatfreie Jahrgänge 1–13. Unlesbares fällt weg; ganz ohne lesbaren Wert gilt die
@@ -38,7 +38,7 @@ func EingangsjahrgaengeAus(einstellung string) []int {
 		jahrgaenge = append(jahrgaenge, n)
 	}
 	if len(jahrgaenge) == 0 {
-		return EingangsjahrgaengeAus(LMFEingangsjahrgaengeVorgabe)
+		return EingangsjahrgaengeAus(lmfEingangsjahrgaengeVorgabe)
 	}
 	sort.Ints(jahrgaenge)
 	return jahrgaenge
@@ -49,7 +49,7 @@ func EingangsjahrgaengeAus(einstellung string) []int {
 // jeder Text gespeichert und angezeigt, aber beim Lesen still verworfen — „8/9" (mit
 // Schrägstrich, so wie Klassen geschrieben werden) hieß gespeichert „8/9" und gerechnet
 // „5, 7". Hier stand bis zum 10.09.2026, der Nachbar lmf_stichtag
-// prüfe „seit jeher" — er tat es nicht; seitdem NormalisiereLmfStichtag.
+// prüfe „seit jeher" — er tat es nicht; seitdem NormalisiereLMFStichtag.
 func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 	if strings.TrimSpace(text) == "" {
 		return "", nil // leer heißt Vorgabe — das entscheidet der Patch-Pfad
@@ -80,11 +80,11 @@ func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 // tageImMonat eines Nicht-Schaltjahres: Ein Stichtag 29.02. gäbe es drei von vier Jahren nicht.
 var tageImMonat = [13]int{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 
-// NormalisiereLmfStichtag prüft den Lernmittel-Stichtag: „MM-TT", ein echter Kalendertag.
+// NormalisiereLMFStichtag prüft den Lernmittel-Stichtag: „MM-TT", ein echter Kalendertag.
 // Leer heißt Vorgabe (das entscheidet der Patch-Pfad). Bis zum 10.09.2026 prüfte der
 // Server ihn nicht: „30.06." wurde gespeichert und angezeigt, gerechnet wurde still mit
 // 07-31 (lmfStichtagMonatTag), „02-30" wurde zum 2. März (Bestands-Durchgang).
-func NormalisiereLmfStichtag(text string) (string, error) {
+func NormalisiereLMFStichtag(text string) (string, error) {
 	s := strings.TrimSpace(text)
 	if s == "" {
 		return "", nil
@@ -109,14 +109,14 @@ func nurRueckgabeSQL(spalte, eingang string) string {
 		AbschlussklasseSQL(spalte), klassenZahlSQL(spalte), eingang)
 }
 
-// KlassenNurRueckgabe nennt aus den Namen die Klassen, die vor den Ferien nur abgeben —
+// LadeKlassenNurRueckgabe nennt aus den Namen die Klassen, die vor den Ferien nur abgeben —
 // für die Markierung im Planer. Verglichen wird am Namen, Schüler braucht es nicht
 // (ein „07G6" aus dem Vorjahr ohne Schüler wird genauso eingeordnet).
-func (r *LmfTerminRepository) KlassenNurRueckgabe(ctx context.Context, namen []string, eingang []int) ([]string, error) {
+func (a *LMFAbfragen) LadeKlassenNurRueckgabe(ctx context.Context, namen []string, eingang []int) ([]string, error) {
 	if len(namen) == 0 {
 		return []string{}, nil
 	}
-	rows, err := r.db.Query(ctx, `
+	rows, err := a.db.Query(ctx, `
 		SELECT DISTINCT u.x FROM unnest($1::text[]) AS u(x)
 		WHERE `+nurRueckgabeSQL("u.x", "$2")+`
 		ORDER BY u.x`, namen, eingang)
@@ -135,21 +135,21 @@ func (r *LmfTerminRepository) KlassenNurRueckgabe(ctx context.Context, namen []s
 	return klassen, rows.Err()
 }
 
-// VeroeffentlicheLmfPlanIn stempelt den Plan; ein schon veröffentlichter behält seinen
-// Stempel (idempotent). Liefert den vollständigen Stand wie NeuesterLmfPlan.
+// VeroeffentlichePlan stempelt den Plan; ein schon veröffentlichter behält seinen
+// Stempel (idempotent). Liefert den vollständigen Stand wie LadeNeuestenPlan.
 //
 // Arbeitet auf einem Executor des Aufrufers (Transaktion des
 // Handlers, im Test der Pool). Die Teile (Zeilen, freie Tage, Auslassungen) liest sie
 // weiter am Pool: Sie wurden in dieser Transaktion nicht geschrieben, es gibt nichts
 // zurückzulesen.
-func (r *LmfTerminRepository) VeroeffentlicheLmfPlanIn(ctx context.Context, ex Datenbank, id string, jetzt time.Time) (LmfPlanStand, error) {
-	var st LmfPlanStand
-	err := scanLmfPlan(ex.QueryRow(ctx, `
+func (a *LMFAbfragen) VeroeffentlichePlan(ctx context.Context, ex Datenbank, id string, jetzt time.Time) (LMFPlanStand, error) {
+	var st LMFPlanStand
+	err := leseLMFPlan(ex.QueryRow(ctx, `
 		UPDATE lmf_plaene SET veroeffentlicht_am = COALESCE(veroeffentlicht_am, $2)
 		WHERE id = $1
 		RETURNING `+lmfPlanSpalten, id, jetzt), &st.Plan)
 	if err != nil {
 		return st, err
 	}
-	return r.ladeLmfPlanTeile(ctx, st)
+	return a.ladePlanTeile(ctx, st)
 }

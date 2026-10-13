@@ -13,36 +13,36 @@ import (
 
 // DsgvoStammdaten sind alle im Leserdatensatz gespeicherten Stammdaten, auch der Zeitpunkt des
 // Löschens und der Sperrgrund: Die Auskunft nennt alles, was gespeichert ist
-// (api.TestDsgvoAuskunft_KenntJedeLeserSpalte hält jede Spalte von leser dagegen). Die Felder
-// stehen in der Reihenfolge von repository.DsgvoStammdatenZeile, sonst greift die Typumwandlung
+// (api.TestDSGVOAuskunft_KenntJedeLeserSpalte hält jede Spalte von leser dagegen). Die Felder
+// stehen in der Reihenfolge von repository.DSGVOStammdatenZeile, sonst greift die Typumwandlung
 // der Tür nicht.
 type DsgvoStammdaten struct {
-	ID                string     `json:"id"`
-	BarcodeID         string     `json:"barcode_id"`
-	Vorname           string     `json:"vorname"`
-	Nachname          string     `json:"nachname"`
-	Klasse            string     `json:"klasse"`
-	Geburtsdatum      *string    `json:"geburtsdatum"`
-	AbgaengerJahr     int        `json:"abgaenger_jahr"`
-	IstGesperrt       bool       `json:"ist_gesperrt"`
-	IstAbgaenger      bool       `json:"ist_abgaenger"`
-	LusdID            *string    `json:"lusd_id"`
-	Strasse           string     `json:"strasse"`
-	Hausnummer        string     `json:"hausnummer"`
-	Plz               string     `json:"plz"`
-	Ort               string     `json:"ort"`
-	ElternEmail       string     `json:"eltern_email"`
-	IsManuallyBlocked bool       `json:"manuell_gesperrt"`
-	BlockReason       *string    `json:"sperrgrund"`
-	ErstelltAm        time.Time  `json:"erfasst_am"`
-	AktualisiertAm    time.Time  `json:"zuletzt_aktualisiert_am"`
-	GeloeschtAm       *time.Time `json:"geloescht_am"`
-	SchulEintrittAm   *string    `json:"schul_eintritt_am"`
-	AbgaengerSeit     *time.Time `json:"abgaenger_seit"`
+	ID                 string     `json:"id"`
+	BarcodeID          string     `json:"barcode_id"`
+	Vorname            string     `json:"vorname"`
+	Nachname           string     `json:"nachname"`
+	Klasse             string     `json:"klasse"`
+	Geburtsdatum       *string    `json:"geburtsdatum"`
+	AbgaengerJahr      int        `json:"abgaenger_jahr"`
+	IstGesperrt        bool       `json:"ist_gesperrt"`
+	IstAbgaenger       bool       `json:"ist_abgaenger"`
+	LUSDID             *string    `json:"lusd_id"`
+	Strasse            string     `json:"strasse"`
+	Hausnummer         string     `json:"hausnummer"`
+	Plz                string     `json:"plz"`
+	Ort                string     `json:"ort"`
+	ElternEmail        string     `json:"eltern_email"`
+	IstVonHandGesperrt bool       `json:"manuell_gesperrt"`
+	Sperrgrund         *string    `json:"sperrgrund"`
+	ErstelltAm         time.Time  `json:"erfasst_am"`
+	AktualisiertAm     time.Time  `json:"zuletzt_aktualisiert_am"`
+	GeloeschtAm        *time.Time `json:"geloescht_am"`
+	SchulEintrittAm    *string    `json:"schul_eintritt_am"`
+	AbgaengerSeit      *time.Time `json:"abgaenger_seit"`
 	// LetzterVorgangAm ist die zweite Uhr der Karenz neben AbgaengerSeit: Der Zeitpunkt bestimmt
 	// mit, wann die Daten der Person anonymisiert werden. Was ausgeliehen war, sagt er nicht.
 	LetzterVorgangAm *time.Time `json:"letzter_vorgang_am"`
-	LusdBestaetigtAm *time.Time `json:"lusd_bestaetigt_am"`
+	LUSDBestaetigtAm *time.Time `json:"lusd_bestaetigt_am"`
 	AnonymisiertAm   *time.Time `json:"anonymisiert_am"`
 	// Art entscheidet, welche Felder gefüllt sind: Ein Kollege hat keine Klasse und kein
 	// Abgangsjahr.
@@ -161,10 +161,10 @@ type DsgvoAuskunftResponse struct {
 	Verwaltung        []DsgvoVerwaltungsEintrag `json:"verwaltungsprotokolle"`
 	// Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;
 	// null, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).
-	Zugangskonto *repository.DsgvoZugangskonto `json:"zugangskonto"`
+	Zugangskonto *repository.DSGVOZugangskonto `json:"zugangskonto"`
 	// Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie. Leer, wenn
 	// es keine gab.
-	FruehereZugangskonten []repository.DsgvoFrueheresZugangskonto `json:"fruehere_zugangskonten"`
+	FruehereZugangskonten []repository.DSGVOFrueheresZugangskonto `json:"fruehere_zugangskonten"`
 	Verarbeitungsangaben  DsgvoVerarbeitungsangaben               `json:"verarbeitungsangaben"`
 }
 

@@ -11,17 +11,17 @@ import (
 
 // GetMahnwesenHandler returns overdue loans grouped by class and student.
 // GET /api/mahnwesen
-func (s *Tueren) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
+func (s *Tueren) GetMahnwesenHandler(mahnRepo *repository.MahnwesenAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, "")
+		klassen, err := mahnRepo.LadeUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		heuteRetourniert, err := mahnRepo.CountReturnsToday(ctx)
+		heuteRetourniert, err := mahnRepo.ZaehleRueckgabenHeute(ctx)
 		if err != nil {
 			log.Printf("mahnwesen: Anzahl heutiger Rückgaben konnte nicht ermittelt werden: %v", err)
 		}

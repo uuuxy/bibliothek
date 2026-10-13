@@ -24,8 +24,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// DsgvoEigenerVorgang ist ein Vorgang, den die Person selbst bearbeitet hat.
-type DsgvoEigenerVorgang struct {
+// DSGVOEigenerVorgang ist ein Vorgang, den die Person selbst bearbeitet hat.
+type DSGVOEigenerVorgang struct {
 	Zeitpunkt *time.Time `json:"zeitpunkt"`
 	Handlung  string     `json:"handlung"`
 	// Nur im Verwaltungsprotokoll gespeichert (audit_logs.ip_adresse): der Arbeitsplatz,
@@ -68,12 +68,12 @@ const dsgvoEigeneVorgaengeSQL = `
 	) v
 	ORDER BY zeitpunkt DESC NULLS LAST`
 
-// leseDsgvoEigeneVorgaenge liest die selbst bearbeiteten Vorgänge eines Kontos. Die Liste
+// ladeDSGVOEigeneVorgaenge liest die selbst bearbeiteten Vorgänge eines Kontos. Die Liste
 // ist nicht begrenzt: Eine Auskunft ist vollständig oder falsch. Bei einer Bibliothekskraft
 // sind es über die Aufbewahrung der Protokolle hinweg Tausende Zeilen.
-func leseDsgvoEigeneVorgaenge(ctx context.Context, q Datenbank, kontoID string) ([]DsgvoEigenerVorgang, error) {
-	vorgaenge, err := sammle(ctx, q, dsgvoEigeneVorgaengeSQL, func(r pgx.Rows) (DsgvoEigenerVorgang, error) {
-		var v DsgvoEigenerVorgang
+func ladeDSGVOEigeneVorgaenge(ctx context.Context, q Datenbank, kontoID string) ([]DSGVOEigenerVorgang, error) {
+	vorgaenge, err := sammle(ctx, q, dsgvoEigeneVorgaengeSQL, func(r pgx.Rows) (DSGVOEigenerVorgang, error) {
+		var v DSGVOEigenerVorgang
 		return v, r.Scan(&v.Zeitpunkt, &v.Handlung, &v.IPAdresse)
 	}, kontoID)
 	if err != nil {

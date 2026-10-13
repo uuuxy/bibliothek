@@ -3751,7 +3751,7 @@ const docTemplate = `{
                     "description": "Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie. Leer, wenn\nes keine gab.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.DsgvoFrueheresZugangskonto"
+                        "$ref": "#/definitions/repository.DSGVOFrueheresZugangskonto"
                     }
                 },
                 "nachbuch_meldungen": {
@@ -3800,7 +3800,7 @@ const docTemplate = `{
                     "description": "Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;\nnull, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/repository.DsgvoZugangskonto"
+                            "$ref": "#/definitions/repository.DSGVOZugangskonto"
                         }
                     ]
                 }
@@ -4696,7 +4696,7 @@ const docTemplate = `{
                 "termine": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.LmfTermin"
+                        "$ref": "#/definitions/repository.LMFTermin"
                     }
                 }
             }
@@ -4770,7 +4770,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "plan": {
-                    "$ref": "#/definitions/repository.LmfPlan"
+                    "$ref": "#/definitions/repository.LMFPlan"
                 },
                 "vorschau": {
                     "type": "boolean"
@@ -4778,7 +4778,7 @@ const docTemplate = `{
                 "zeilen": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                        "$ref": "#/definitions/repository.LMFPlanZeile"
                     }
                 }
             }
@@ -4817,7 +4817,7 @@ const docTemplate = `{
                     "description": "Plan ist der neueste Plan der Art; nil, wenn es noch keinen gibt.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/repository.LmfPlan"
+                            "$ref": "#/definitions/repository.LMFPlan"
                         }
                     ]
                 },
@@ -4844,7 +4844,7 @@ const docTemplate = `{
                 "zeilen": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                        "$ref": "#/definitions/repository.LMFPlanZeile"
                     }
                 }
             }
@@ -4873,7 +4873,7 @@ const docTemplate = `{
                 "zeilen": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                        "$ref": "#/definitions/repository.LMFPlanZeile"
                     }
                 }
             }
@@ -5256,7 +5256,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.DsgvoAnfrage": {
+        "repository.DSGVOAnfrage": {
             "type": "object",
             "properties": {
                 "anzahl": {
@@ -5294,7 +5294,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.DsgvoEigenerVorgang": {
+        "repository.DSGVOEigenerVorgang": {
             "type": "object",
             "properties": {
                 "handlung": {
@@ -5309,7 +5309,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.DsgvoFrueheresZugangskonto": {
+        "repository.DSGVOFrueheresZugangskonto": {
             "type": "object",
             "properties": {
                 "email": {
@@ -5319,7 +5319,7 @@ const docTemplate = `{
                     "description": "Nur die Einträge, die das Konto als ziel_id tragen (Anlage, Änderung). Was die Person\nmit dem Konto bearbeitet hat, trug die Kennung des Kontos in einer Spalte mit\nON DELETE SET NULL und ist ihr nicht mehr zuzuordnen.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.DsgvoKontoEreignis"
+                        "$ref": "#/definitions/repository.DSGVOKontoEreignis"
                     }
                 },
                 "geloescht_am": {
@@ -5333,7 +5333,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.DsgvoKontoEreignis": {
+        "repository.DSGVOKontoEreignis": {
             "type": "object",
             "properties": {
                 "aktion": {
@@ -5347,7 +5347,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.DsgvoZugangskonto": {
+        "repository.DSGVOZugangskonto": {
             "type": "object",
             "properties": {
                 "aktiv": {
@@ -5359,7 +5359,7 @@ const docTemplate = `{
                 "anfragen": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.DsgvoAnfrage"
+                        "$ref": "#/definitions/repository.DSGVOAnfrage"
                     }
                 },
                 "email": {
@@ -5368,7 +5368,7 @@ const docTemplate = `{
                 "ereignisse_im_verwaltungsprotokoll": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.DsgvoKontoEreignis"
+                        "$ref": "#/definitions/repository.DSGVOKontoEreignis"
                     }
                 },
                 "erstellt_am": {
@@ -5394,7 +5394,7 @@ const docTemplate = `{
                     "description": "Was die Person mit diesem Konto selbst bearbeitet hat — ohne die Daten Dritter\n(dsgvo_konto_vorgaenge.go).",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.DsgvoEigenerVorgang"
+                        "$ref": "#/definitions/repository.DSGVOEigenerVorgang"
                     }
                 },
                 "vorname": {
@@ -5721,94 +5721,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.LaufendeAusleihe": {
-            "type": "object",
-            "properties": {
-                "ausgeliehen_am": {
-                    "type": "string"
-                },
-                "ausleihe_id": {
-                    "type": "string"
-                },
-                "autor": {
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isbn": {
-                    "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
-                    "type": "string"
-                },
-                "ist_dauerleihe": {
-                    "description": "IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist\n(` + "`" + `ausleihen.ist_handapparat` + "`" + `, gesetzt in erzeugeAusleihe und im Geräte-Pfad).\n\nSie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die\nes nicht gibt: Entschieden am 16.09.2026 — „kollegen haben keine frist bzw werden einfach\nnie gesperrt!\" Die Sperr-Automatik hält das seit jeher (sie zählt nur Ausleihen mit\nist_handapparat = false); die Akte rechnete daneben ihr eigenes „überfällig\" aus\ndem Datum und färbte die Zeile nach einem Jahr rot.",
-                    "type": "boolean"
-                },
-                "ist_lernmittel": {
-                    "description": "IstLernmittel steuert die Marke „Lernmittel\" an der Ausleihzeile — aus der\nSpalte (Migration 093), nicht mehr aus einem LMF-Präfix in Titel oder Signatur.",
-                    "type": "boolean"
-                },
-                "rueckgabe_frist": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.LeserListenZeile": {
-            "type": "object",
-            "properties": {
-                "abgaenger_jahr": {
-                    "type": "integer"
-                },
-                "art": {
-                    "description": "Art ist Schüler, Lehrkraft oder LiV. Die Leserdatei führt sie als eigene Spalte —\nein Kollege hat keine Klasse, und ohne die Art stünde er in der Liste wie ein\nSchüler mit fehlender Angabe.",
-                    "type": "string"
-                },
-                "ausgeliehen_count": {
-                    "type": "integer"
-                },
-                "ausweis_gueltig_bis": {
-                    "description": "AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt — aus dem\nBildungsgang der Klasse gerechnet, NICHT aus AbgaengerJahr (siehe\ninternal/ausweis). nil heißt: aus dieser Klassenbezeichnung nicht ableitbar,\ndann fragt der Druckdialog nach.",
-                    "type": "integer"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "foto_url": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_manually_blocked": {
-                    "type": "boolean"
-                },
-                "ist_gesperrt": {
-                    "type": "boolean"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "ueberfaellig_count": {
-                    "type": "integer"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.LmfFreierTag": {
+        "repository.LMFFreierTag": {
             "type": "object",
             "properties": {
                 "datum": {
@@ -5820,7 +5733,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.LmfPlan": {
+        "repository.LMFPlan": {
             "type": "object",
             "properties": {
                 "art": {
@@ -5834,7 +5747,7 @@ const docTemplate = `{
                     "description": "FreieTage: Tage, die dieser Plan überspringt (Migration 099) — bewegliche\nFerientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche\nFeiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.LmfFreierTag"
+                        "$ref": "#/definitions/repository.LMFFreierTag"
                     }
                 },
                 "id": {
@@ -5863,7 +5776,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.LmfPlanZeile": {
+        "repository.LMFPlanZeile": {
             "type": "object",
             "properties": {
                 "datum": {
@@ -5889,7 +5802,7 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.LmfTermin": {
+        "repository.LMFTermin": {
             "type": "object",
             "properties": {
                 "art": {
@@ -5912,6 +5825,93 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "vermerk": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.LaufendeAusleihe": {
+            "type": "object",
+            "properties": {
+                "ausgeliehen_am": {
+                    "type": "string"
+                },
+                "ausleihe_id": {
+                    "type": "string"
+                },
+                "autor": {
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isbn": {
+                    "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
+                    "type": "string"
+                },
+                "ist_dauerleihe": {
+                    "description": "IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist\n(` + "`" + `ausleihen.ist_handapparat` + "`" + `, gesetzt in erzeugeAusleihe und im Geräte-Pfad).\n\nSie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die es\nnicht gibt: Kollegen haben keine Frist und werden nie gesperrt. Die Sperr-Automatik zählt\nnur Ausleihen mit ist_handapparat = false; ohne das Feld rechnete die Akte ihr eigenes\n„überfällig\" aus dem Datum und färbte die Zeile nach einem Jahr rot.",
+                    "type": "boolean"
+                },
+                "ist_lernmittel": {
+                    "description": "IstLernmittel steuert die Marke „Lernmittel\" an der Zeile; der Wert kommt aus der Spalte\nist_lernmittel des Titels.",
+                    "type": "boolean"
+                },
+                "rueckgabe_frist": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.LeserListenZeile": {
+            "type": "object",
+            "properties": {
+                "abgaenger_jahr": {
+                    "type": "integer"
+                },
+                "art": {
+                    "description": "Art ist Schüler, Lehrkraft oder LiV. Die Leserdatei führt sie als eigene Spalte —\nein Kollege hat keine Klasse, und ohne die Art stünde er in der Liste wie ein\nSchüler mit fehlender Angabe.",
+                    "type": "string"
+                },
+                "ausgeliehen_count": {
+                    "type": "integer"
+                },
+                "ausweis_gueltig_bis": {
+                    "description": "AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt — aus dem\nBildungsgang der Klasse gerechnet, nicht aus AbgaengerJahr (siehe\ninternal/ausweis). nil heißt: aus dieser Klassenbezeichnung nicht ableitbar,\ndann fragt der Druckdialog nach.",
+                    "type": "integer"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "foto_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_manually_blocked": {
+                    "type": "boolean"
+                },
+                "ist_gesperrt": {
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "ueberfaellig_count": {
+                    "type": "integer"
+                },
+                "vorname": {
                     "type": "string"
                 }
             }
@@ -6125,7 +6125,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "lesehistorie_tage": {
-                    "description": "Fristen des Datenschutzes und der Sitzung, je als Zeiger; Vorgaben und Begründung stehen\nin einstellungen_datenschutz.go. Die Lesehistorie zählt die Tage nach der Rückgabe, nach\ndenen eine Ausleihe vom Leser getrennt wird, je für Schülerbücherei und Lernmittel; Theke\nund Sperre zählen Minuten ohne Eingabe. 0 schaltet eine Frist ab, nur die Aufbewahrung des\nProtokolls hat eine Untergrenze (ProtokollAufbewahrungMonateMinimum).",
+                    "description": "Fristen des Datenschutzes und der Sitzung, je als Zeiger; Vorgaben und Begründung stehen\nin einstellungen_datenschutz.go. Die Lesehistorie zählt die Tage nach der Rückgabe, nach\ndenen eine Ausleihe vom Leser getrennt wird, je für Schülerbücherei und Lernmittel; Theke\nund Sperre zählen Minuten ohne Eingabe. 0 schaltet eine Frist ab, nur die Aufbewahrung des\nProtokolls hat eine Untergrenze (protokollAufbewahrungMonateMinimum).",
                     "type": "integer"
                 },
                 "lmf_eingangsjahrgaenge": {

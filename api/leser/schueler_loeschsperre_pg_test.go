@@ -22,7 +22,7 @@ import (
 //	Soft-Delete (Papierkorb, Oberfläche) → pruefeSchuelerLoeschbar
 //	LoescheLeserEndgueltig (endgültig, von Hand)   → pruefeKeineOffenenVorgaenge
 //	LoescheAbgaengerEndgueltig (Cronjob, nachts)     → pruefeKeineOffenenVorgaenge
-//	Anonymisierungs-Cronjob              → PredikatAnonymisierung (jobs-Paket getestet)
+//	Anonymisierungs-Cronjob              → PraedikatAnonymisierung (jobs-Paket getestet)
 //	LUSD-Import                          → repository.SperreAbgaenger statt anonymisieren
 //
 // Belegt war davon bisher genau eine (LoescheLeserEndgueltig bei offener Ausleihe). Für die

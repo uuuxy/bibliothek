@@ -21,7 +21,7 @@ import (
 // Bestand.
 //
 // Die bestehenden Tests prüfen die Einzelteile: die Bestandsabfrage kennt nur Schüler
-// (TestLusdBestandKenntNurSchueler), die Sicht macht einen Kollegen für die Schreibwege
+// (TestLUSDBestandKenntNurSchueler), die Sicht macht einen Kollegen für die Schreibwege
 // unsichtbar (TestKollegeIstFuerDenAbgleichUnsichtbar), der CHECK verbietet den Zustand
 // (TestKollegeKannAuchDirektKeinAbgaengerWerden). Keiner von ihnen fährt den Import
 // selbst: Upload → Parser → Klassifizierung → Anwenden → Commit.
@@ -43,7 +43,7 @@ import (
 //     bestätigt worden. Diese zweite Schranke fängt den Fehler ab.
 //
 // Darum steht die erste Schranke trotzdem nicht ohne Wächter da: Sie hat ihren eigenen
-// Test (TestLusdBestandKenntNurSchueler). Vier Schranken hintereinander, jede mit eigenem
+// Test (TestLUSDBestandKenntNurSchueler). Vier Schranken hintereinander, jede mit eigenem
 // Nachweis — Bestandsabfrage, Bestätigungsstempel, die Sicht beim Schreiben und der CHECK
 // in der Datenbank.
 func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {

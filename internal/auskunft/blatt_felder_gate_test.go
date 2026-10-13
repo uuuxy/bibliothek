@@ -9,7 +9,7 @@ import (
 )
 
 // Das dritte Glied der Kette von der Spalte in leser über das Feld in DsgvoStammdaten zur Zeile
-// auf dem Blatt. Das erste hält api.TestDsgvoAuskunft_KenntJedeLeserSpalte, das zweite der
+// auf dem Blatt. Das erste hält api.TestDSGVOAuskunft_KenntJedeLeserSpalte, das zweite der
 // Compiler. Der Abschnitt der Stammdaten zählt seine Zeilen von Hand auf: Ohne dieses Gate
 // fehlt ein neues Feld auf dem Blatt, und die gedruckte Auskunft ist kürzer als die abgerufene.
 //

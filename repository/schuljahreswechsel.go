@@ -72,7 +72,7 @@ var sqlVersetzeSchueler = `
 			-- Abgänger werden gesperrt → chk_schueler_block_reason verlangt einen Grund.
 			-- Ein vorhandener (z. B. manueller) Grund bleibt erhalten.
 			block_reason = CASE WHEN c.is_graduating
-			                    THEN COALESCE(NULLIF(s.block_reason, ''), '` + AbgaengerSperrgrundSchuljahreswechsel + `')
+			                    THEN COALESCE(NULLIF(s.block_reason, ''), '` + abgaengerSperrgrundSchuljahreswechsel + `')
 			                    ELSE s.block_reason END,
 			-- Karenz-Uhr (Migration 094): beim ERSTEN Abgang gestempelt, wie im LUSD-Pfad
 			-- (sperreAbgaenger) — Import, Job und Wächter rechnen die Anonymisierung daran.

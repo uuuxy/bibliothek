@@ -638,7 +638,7 @@ HTTP-Anfrage
 | `api/bestellung/`       | 2.438 Zeilen, 18 Dateien   | Die Türen des Bestellwesens: Vorschläge zum Nachbestellen, die Suche nach Titeln, die Bestellung mit ihrer Mail an den Lieferanten, Zulauf und Wareneingang, Bestellhistorie mit Übersicht, Einzelheiten und Bericht, die Lieferanten, die Bestätigung im Haus und über den Link des Lieferanten, das erneute Senden der Mail, der Topf einer Bestellung |
 | `api/leser/`            | 3.007 Zeilen, 18 Dateien   | Die Türen der Leserdatei: die Liste der Leser mit Klassen und Jahrgängen, die Leserakte, Anlegen, Ändern, Sperren, Löschen mit Papierkorb, das Zusammenführen zweier Datensätze, das Passbild, der Abgleich mit der LUSD, die Versetzung zum Schuljahreswechsel, die Auskunft nach Art. 15 DSGVO, der Kontoauszug |
 | `api/theke/`            | 1.562 Zeilen, 11 Dateien   | Die Türen der Theke: der Scan mit Ausleihe und Rückgabe, das Nachbuchen der Warteschlange ohne Netz mit seinen Meldungen und der Liste der Buchnummern, die Suche der Omnibox, Verlängern und Frist von Hand an einer Ausleihe, die Vormerkungen |
-| `repository/`           | 21.911 Zeilen, 166 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
+| `repository/`           | 21.915 Zeilen, 167 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
 | `internal/service/`     | 5.246 Zeilen, 31 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, womit ein neuer Plan beginnt (Rahmen und Reihenfolge) und seine Verteilung über die Schultage, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/leser/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 990 Zeilen, 3 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
@@ -788,8 +788,8 @@ Googles Regelwerk für Go nennt in
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size) die Probe:
 Muss ein Nutzer zweier Pakete beide einbinden, um eines sinnvoll zu nutzen, gehören sie
 zusammen, und eng gekoppelte Typen in einem Paket müssen ihre Einzelheiten nicht öffentlich
-machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 166 Dateien hat
-höchstens 112 Zeilen, neun von zehn höchstens 254, zwei haben über 500
+machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 167 Dateien hat
+höchstens 111 Zeilen, neun von zehn höchstens 244, zwei haben über 500
 (`leser_zusammenfuehren.go` 629, `schlagworte_pflege.go` 524; gezählt am 14.10.2026 nachts).
 Eine Teilung schriebe 2.213 Zeilen in 461 Dateien um, die einen Namen des Pakets nennen, und
 bewegte einen Teil der 161 Testdateien.
@@ -907,7 +907,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   in `rechte.go`. `auth/` behält, was eine fehlende Zeile bedeutet (nicht gesperrt, keine
   Sitzung, Selbstanmeldung), den Prüfwert des Passworts, die Fristen der Abfragen und die
   Antworten; die Lesefunktionen reichen `pgx.ErrNoRows` deshalb durch. Anmeldung und
-  Selbstanmeldung lesen das Konto mit derselben Funktion (`LiesAnmeldeKonto`) und füllen den
+  Selbstanmeldung lesen das Konto mit derselben Funktion (`LadeAnmeldeKonto`) und füllen den
   Stand der Anmeldung an einer Stelle (`loginUserAus`, `auth/handlers.go`). Bis zum
   09.10.2026 las die Selbstanmeldung mit einer eigenen Abfrage ohne die Adresse: Traf sie auf
   ein Konto, das zwischen dem ersten Lesen und der Anlage entstanden war, ging die Anmeldung
@@ -1633,7 +1633,7 @@ Datei (xlsx ODER Semikolon-CSV mit BOM)
 
 Import, nächtlicher Job und Selbstprüfung lesen **denselben** Einstellungsschlüssel
 (`abgaenger_karenz_tage`, Vorgabe 90 Tage) und rechnen mit **demselben** Prädikat
-(`repository.PredikatAnonymisierung`). Drei Rechner mit derselben Frage müssen dieselbe
+(`repository.PraedikatAnonymisierung`). Drei Rechner mit derselben Frage müssen dieselbe
 Antwort geben — sonst anonymisiert der eine, was der andere noch für reparierbar hält.
 
 Handanlagen, die nie in einem Export standen, bleiben unangetastet („nicht im Export").
@@ -2124,9 +2124,9 @@ Lesehistorie, Anliegen             →  eigene Läufe in derselben Nachtkette
 Die **Reihenfolge ist die Zusage**: Löschung läuft nach der Anonymisierung, damit die
 Karenz für beides gilt. Import, Nachtlauf und Selbstprüfung lesen **denselben**
 Einstellungsschlüssel und rechnen mit **demselben** Prädikat
-(`repository.PredikatAnonymisierung`). Jede Routine mit einer Frist hat eine Zeile im Wächter
+(`repository.PraedikatAnonymisierung`). Jede Routine mit einer Frist hat eine Zeile im Wächter
 des Rückstands, den die Selbstprüfung zeigt, seit dem 09.10.2026 auch die Bearbeiter
-zurückgegebener Ausleihen (`PredikatBearbeiterKennung`). Keine Frist darf eine andere verkürzen: Die Uhr der
+zurückgegebener Ausleihen (`praedikatBearbeiterKennung`). Keine Frist darf eine andere verkürzen: Die Uhr der
 Karenz liest den letzten abgeschlossenen Vorgang am Leser (`letzter_vorgang_am`, Migration
 137), nicht aus den Ausleihen, deren Zuordnung die Lesehistorie-Befristung löst.
 
@@ -4497,7 +4497,7 @@ Einstieg.
 | **Gerät**                   | Ausleihbare Hardware (Laptop, Tablet) mit Zubehör-Checkliste; Vorsilbe `G-`                                                                                             | `geraete`, `internal/service/device_service.go`             |
 | **Inventur-Session**        | Sitzungsgebundene Zählung, damit parallele Zählungen sich nicht überschreiben                                                                                            | `inventur_sessions`, `repository/inventurlauf.go`   |
 | **Jahrgang** (am Titel)     | „Im Unterricht von Jahrgang … bis": ganz eingetragen oder gar nicht. Ohne Eintrag ist der Jahrgang unbekannt; eine Vorgabe gibt es nicht | `buecher_titel.jahrgang_von`, `jahrgang_bis` |
-| **Karenzzeit**              | Frist ab dem späteren von Abgang und letztem abgeschlossenem Vorgang bis zur Anonymisierung (Vorgabe 90 Tage) — das Fenster, in dem eine falsche Zuordnung noch reparierbar ist | `abgaenger_karenz_tage`, `repository.KarenzUhr`, `PredikatAnonymisierung` |
+| **Karenzzeit**              | Frist ab dem späteren von Abgang und letztem abgeschlossenem Vorgang bis zur Anonymisierung (Vorgabe 90 Tage) — das Fenster, in dem eine falsche Zuordnung noch reparierbar ist | `abgaenger_karenz_tage`, `repository.sqlKarenzUhr`, `PraedikatAnonymisierung` |
 | **Katalog**                 | Die Titel (Metadaten), einer je **Auflage** — im Unterschied zum **Bestand**                                                                                            | `buecher_titel`                                            |
 | **Klassensatz**             | Mehrere Exemplare eines Titels für eine Klasse. Zwei Quellen: Handliste und live aus den Ausleihen abgeleitet                                                            | `class_books`, `klassensatz_reservierungen`                  |
 | **Kollegium**               | **Grundzustand** jeder Lehrkraft, keine vergebene Rolle. Ein Recht: `create_reservations`                                                                                | Enum `benutzer_rolle = 'kollegium'`, `db/seed.go`            |

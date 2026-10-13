@@ -28,22 +28,22 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// AbgangSeit ist der Ausdruck für „seit wann ist der weg": der Abgangsstempel, und für
+// sqlAbgangSeit ist der Ausdruck für „seit wann ist der weg": der Abgangsstempel, und für
 // Altzeilen ohne Stempel ersatzweise die letzte Änderung. EINE Formulierung für die
-// Löschuhr (PredikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
+// Löschuhr (PraedikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
 // (BetriebszustandAbfragen) — bis zum 12.09.2026 verlangte der Wächter
 // `abgaenger_seit IS NOT NULL` und sah die Altzeilen deshalb nie, obwohl gerade ihr Name
 // auf Dauer stehen bleibt (#593).
 //
 // alias ist der Tabellen-Alias der schueler-Zeile in der jeweiligen Abfrage.
-func AbgangSeit(alias string) string {
+func sqlAbgangSeit(alias string) string {
 	return "COALESCE(" + alias + ".abgaenger_seit, " + alias + ".aktualisiert_am)"
 }
 
-// KarenzUhr ist der Zeitpunkt, ab dem die Karenz eines Abgängers läuft: der SPÄTERE von
-// Abgang (AbgangSeit) und letztem abgeschlossenem Vorgang (letzter_vorgang_am — letzte
+// sqlKarenzUhr ist der Zeitpunkt, ab dem die Karenz eines Abgängers läuft: der SPÄTERE von
+// Abgang (sqlAbgangSeit) und letztem abgeschlossenem Vorgang (letzter_vorgang_am — letzte
 // Rückgabe oder letzter Abschluss eines Schadensfalls). EINE Formulierung für die Löschuhr
-// (PredikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
+// (PraedikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
 // (ZaehleEhemaligeMitOffenenVorgaengen) — bis zum 22.09.2026 rechnete der Wächter allein
 // mit dem Abgang und meldete „Karenz abgelaufen", wo die Löschuhr noch lief (OFFEN.md 5.12).
 // GREATEST übergeht NULL — ein Leser ohne je einen Vorgang rechnet allein ab dem Abgang.
@@ -55,19 +55,19 @@ func AbgangSeit(alias string) string {
 // Abgang zurück und die Zeile wurde FRÜHER anonymisiert als eingestellt (OFFEN.md 4.12).
 // Seit 137 trägt der Leser den Zeitpunkt selbst, von Triggern gestempelt; er überlebt das
 // Trennen der Ausleihe und sagt nichts darüber, WAS gelesen wurde.
-func KarenzUhr(alias string) string {
-	return "GREATEST(" + AbgangSeit(alias) + ", " + alias + ".letzter_vorgang_am)"
+func sqlKarenzUhr(alias string) string {
+	return "GREATEST(" + sqlAbgangSeit(alias) + ", " + alias + ".letzter_vorgang_am)"
 }
 
 // ── Schüler-Anonymisierung ──────────────────────────────────────────────────
 
-// PredikatAnonymisierung liefert die Bedingung von RunGDPRAnonymizeOldData.
+// PraedikatAnonymisierung liefert die Bedingung von RunGDPRAnonymizeOldData.
 // Ein Schüler mit offener Ausleihe oder unbezahltem Schaden bleibt stehen — dort ist
 // der Zweck der Speicherung noch nicht erreicht. Die Soft-Delete-Frist ist eine
 // Konstante; die Abgänger-Frist ist die einstellbare Karenzzeit (abgaengerKarenzTage,
 // Migration 094).
 //
-// Die Uhr der Karenz (KarenzUhr) ist der SPÄTERE von zwei Zeitpunkten: dem Abgang
+// Die Uhr der Karenz (sqlKarenzUhr) ist der SPÄTERE von zwei Zeitpunkten: dem Abgang
 // (abgaenger_seit; aktualisiert_am nur als Rückfall für Altzeilen ohne Stempel) und dem
 // letzten abgeschlossenen Vorgang (letzter_vorgang_am — die letzte Rückgabe einer Ausleihe
 // oder der letzte Abschluss eines Schadensfalls, Bezahlung wie Storno; seit Migration 137
@@ -76,18 +76,18 @@ func KarenzUhr(alias string) string {
 // Rückgabe: Wer am Tag 10 zurückgab, hatte 80 Tage Reparaturfenster; wer am Tag 120
 // zurückgab, wurde in der Folgenacht anonymisiert. Die Karenz ist für die Korrektur an
 // der Theke da, und die Rückgabe IST der Thekenkontakt. Die endgültige Löschung
-// (PredikatAbgaengerLoeschung) trifft seit 05.09.2026 nur anonymisierte Zeilen — sie
+// (praedikatAbgaengerLoeschung) trifft seit 05.09.2026 nur anonymisierte Zeilen — sie
 // wartet die Karenz also ab, statt sie abzuschneiden.
 //
 // Der Soft-Delete-Zweig behält seine eigene Uhr (deleted_at): Eine Löschung von Hand ist
 // eine Entscheidung, keine Zuordnung, die sich noch als falsch herausstellen könnte.
-func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
-	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, abgaengerKarenzTage, kulanz}, Where: `art = 'schueler'
+func PraedikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{AnonymisierungPapierkorbTage, abgaengerKarenzTage, kulanz}, Where: `art = 'schueler'
 		  AND anonymized_at IS NULL
 		  AND (
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - make_interval(days => $1::int + $3::int))
 		      OR
-		      (ist_abgaenger = true AND ` + KarenzUhr("schueler") + ` < NOW() - make_interval(days => $2::int + $3::int))
+		      (ist_abgaenger = true AND ` + sqlKarenzUhr("schueler") + ` < NOW() - make_interval(days => $2::int + $3::int))
 		  )
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)`}
@@ -109,16 +109,16 @@ func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 
 // ── Gelöschte Kollegen endgültig löschen ($1 Tage, $2 Kulanz) ─────────────────
 
-// PredikatKollegenPapierkorb liefert die Bedingung, mit der RunPapierkorbKollegenLoeschung
-// Kollegen auswählt, die seit StandardAnonymisierungSoftDeleteTage im Papierkorb liegen
+// praedikatKollegenPapierkorb liefert die Bedingung, mit der RunPapierkorbKollegenLoeschung
+// Kollegen auswählt, die seit AnonymisierungPapierkorbTage im Papierkorb liegen
 // (entschieden am 28.09.2026, docs/OFFEN.md 5.19). Dieselbe Frist wie beim Schüler, der dort
 // anonymisiert wird; einen Kollegen verbietet chk_leser_nur_schueler_werden_abgaenger zu
 // anonymisieren, deshalb fällt er ganz — über denselben Weg wie „Endgültig löschen" von Hand
 // (LoescheLeserEndgueltig). Offene Ausleihen und unbezahlte Forderungen halten ihn, wie dort.
 //
 // Gefragt wird die Tabelle leser, nicht die Sicht schueler: Die zeigt keinen Kollegen.
-func PredikatKollegenPapierkorb(kulanz int) Loeschbedingung {
-	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, kulanz}, Where: `art <> 'schueler'
+func praedikatKollegenPapierkorb(kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{AnonymisierungPapierkorbTage, kulanz}, Where: `art <> 'schueler'
 		  AND deleted_at IS NOT NULL
 		  AND deleted_at < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = leser.id AND rueckgabe_am IS NULL)
@@ -127,18 +127,18 @@ func PredikatKollegenPapierkorb(kulanz int) Loeschbedingung {
 
 // ── Abgänger endgültig löschen ($1 Stichjahr) ─────────────────────────────────
 
-// PredikatAbgaengerLoeschung liefert die WHERE-Bedingung, mit der
+// praedikatAbgaengerLoeschung liefert die WHERE-Bedingung, mit der
 // RunGDPRDeleteAbgaenger die endgültig löschbaren Abgänger auswählt. Die Frist steckt
 // hier nicht in einem Intervall, sondern im Stichjahr — siehe AbgaengerStichjahr.
 //
 // Gelöscht wird nur, was schon anonymisiert ist (anonymized_at). Bis 05.09.2026 löschte
 // der Job ab dem 30. Januar jeden Abgänger ohne offene Vorgänge in der nächsten Nacht —
-// und lief im Cron VOR der Anonymisierung. Die Karenz (PredikatAnonymisierung, ab dem
+// und lief im Cron VOR der Anonymisierung. Die Karenz (PraedikatAnonymisierung, ab dem
 // letzten Vorgang) galt damit nur bis zum Stichtag: Wer im November zurückgab, hatte
 // 77 statt 90 Tage Reparaturfenster, wer nach dem Stichtag zurückgab, keines. Mit dieser
 // einen Bedingung gilt die EINE Einstellung abgaenger_karenz_tage für beides; 0 heißt
 // weiter „sofort", weil dann schon der Import anonymisiert (AnonymisiereAbgaenger).
-func PredikatAbgaengerLoeschung(jetzt time.Time) Loeschbedingung {
+func praedikatAbgaengerLoeschung(jetzt time.Time) Loeschbedingung {
 	return Loeschbedingung{Args: []any{AbgaengerStichjahr(jetzt)}, Where: `art = 'schueler'
 		  AND ist_abgaenger = true
 		  AND deleted_at IS NULL
@@ -207,7 +207,7 @@ func klasse(spalte string, land bool) string {
 	return "NOT " + istLandExemplar(spalte)
 }
 
-// PredikatLesehistorieAusleihen liefert die WHERE-Bedingung, mit der die Ausleihe vom
+// praedikatLesehistorieAusleihen liefert die WHERE-Bedingung, mit der die Ausleihe vom
 // Schüler getrennt wird (Alias `a`). Ausleihen mit OFFENEM Schadensfall bleiben
 // zugeordnet — dort ist der Zweck (Forderung) noch nicht erreicht.
 //
@@ -222,7 +222,7 @@ func klasse(spalte string, land bool) string {
 // Kollegiums ist nie zurückgegeben und bleibt darum unberührt, solange sie läuft. Und die
 // Paarung Frist × Eigentum bleibt: Ein Buch des Landes behält seine 730 Tage für die
 // Bestandskartei, ein Buch der Schülerbücherei einen Tag (bis zum 29.09.2026 90).
-func PredikatLesehistorieAusleihen(land bool, tage, kulanz int) Loeschbedingung {
+func praedikatLesehistorieAusleihen(land bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `a.schueler_id IS NOT NULL
 		  AND a.rueckgabe_am IS NOT NULL
 		  AND a.rueckgabe_am < NOW() - make_interval(days => $1::int + $2::int)
@@ -234,12 +234,12 @@ func PredikatLesehistorieAusleihen(land bool, tage, kulanz int) Loeschbedingung 
 		  AND ` + klasse("a.exemplar_id", land)}
 }
 
-// PredikatLesehistorieProtokoll liefert die WHERE-Bedingung, mit der dem Ausleih-
+// praedikatLesehistorieProtokoll liefert die WHERE-Bedingung, mit der dem Ausleih-
 // Protokoll (audit_log, Alias `al`) die Schüler-Zuordnung genommen wird. datensatz_id
 // ist dort das EXEMPLAR (so schreibt protokolliereLeihvorgang), die Klasse kommt über sein Eigentum.
 // Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat oder ein
 // offener Schadensfall daran hängt.
-func PredikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung {
+func praedikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'ausleihen'
 		  AND al.details ? 'schueler_id'
 		  -- Wie beim Prädikat der Ausleihen: jeder Leser (16.09.2026).
@@ -258,7 +258,7 @@ func PredikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung 
 		  AND ` + klasse("al.datensatz_id", land)}
 }
 
-// PredikatLesehistorieVormerkspur liefert die WHERE-Bedingung, mit der der Spur einer
+// praedikatLesehistorieVormerkspur liefert die WHERE-Bedingung, mit der der Spur einer
 // Vormerkung, die mit ihrem Titel gelöscht wurde (audit_log, Alias `al`), der Leser genommen
 // wird: Kennung und Name. Die Zeile nennt den Titel des Buchs, und länger als die Lesehistorie
 // bindet nichts einen Leser an ein Buch. Den Titel gibt es nicht mehr, ein Eigentum also auch
@@ -267,7 +267,7 @@ func PredikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung 
 // Die Spur einer gelöschten Forderung (tabelle 'schadensfaelle') fällt nicht darunter: Sie
 // belegt, wessen Forderung mit dem Titel gelöscht wurde, und behält den Leser bis zu seiner
 // Tilgung.
-func PredikatLesehistorieVormerkspur(tage, kulanz int) Loeschbedingung {
+func praedikatLesehistorieVormerkspur(tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'vormerkungen'
 		  AND al.details ?| ARRAY['schueler_id', 'betrifft']
 		  AND al.timestamp < NOW() - make_interval(days => $1::int + $2::int)`}
@@ -275,25 +275,25 @@ func PredikatLesehistorieVormerkspur(tage, kulanz int) Loeschbedingung {
 
 // ── Bearbeiter an Ausleihen ($1 Tage, $2 Kulanz) ──────────────────────────────
 
-// PredikatBearbeiterKennung liefert die Bedingung, mit der einer zurückgegebenen Ausleihe die
+// praedikatBearbeiterKennung liefert die Bedingung, mit der einer zurückgegebenen Ausleihe die
 // Kennungen der Bearbeiter von Ausgabe und Rückgabe genommen werden. Die Frist läuft ab der
 // Rückgabe: Eine laufende Ausleihe behält ihren Bearbeiter.
-func PredikatBearbeiterKennung(kulanz int) Loeschbedingung {
+func praedikatBearbeiterKennung(kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{BearbeiterKennungTage, kulanz}, Where: `rueckgabe_am < NOW() - make_interval(days => $1::int + $2::int)
 		  AND (bearbeiter_id IS NOT NULL OR rueckgabe_bearbeiter_id IS NOT NULL)`}
 }
 
 // ── Erledigte Anliegen ($1 Tage, $2 Kulanz) ───────────────────────────────────
 
-// PredikatAnliegen liefert die WHERE-Bedingung der Anliegen-Befristung. Die Rechnung
+// praedikatAnliegen liefert die WHERE-Bedingung der Anliegen-Befristung. Die Rechnung
 // läuft über den Erledigungszeitpunkt, nicht über das Anlegen: Ein offenes Anliegen ist
 // eine laufende Sache und hat keine Frist.
-func PredikatAnliegen(tage, kulanz int) Loeschbedingung {
+func praedikatAnliegen(tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `erledigt_am IS NOT NULL
 		  AND erledigt_am < NOW() - make_interval(days => $1::int + $2::int)`}
 }
 
-// PredikatKlassensatzReservierungen liefert die Bedingung für erledigte
+// praedikatKlassensatzReservierungen liefert die Bedingung für erledigte
 // Klassensatz-Reservierungen. Dieselbe Frist wie die erledigten Anliegen (anliegen_tage,
 // entschieden am 28.09.2026, docs/OFFEN.md 5.19): Eine Reservierung ist eine Anfrage aus dem
 // Kollegiums-Portal wie ein Wunsch; erledigt ist ihr Zweck erreicht, offen bleibt sie.
@@ -301,7 +301,7 @@ func PredikatAnliegen(tage, kulanz int) Loeschbedingung {
 // Anders als beim Anliegen steht „erledigt" hier in einer eigenen Spalte; erledigt_am kam mit
 // Migration 089 dazu, ohne Nachtrag. Eine Reservierung, die davor erledigt wurde, hat keinen
 // Zeitpunkt und bleibt stehen — ein erfundener wäre schlechter als keiner.
-func PredikatKlassensatzReservierungen(tage, kulanz int) Loeschbedingung {
+func praedikatKlassensatzReservierungen(tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `erledigt = true
 		  AND erledigt_am IS NOT NULL
 		  AND erledigt_am < NOW() - make_interval(days => $1::int + $2::int)`}
@@ -327,8 +327,8 @@ func NachbuchMeldungenTage(einst *SystemEinstellungen) int {
 	return tage
 }
 
-// PredikatNachbuchMeldungen ist die Bedingung für quittierte Nachbuch-Meldungen.
-func PredikatNachbuchMeldungen(tage, kulanz int) Loeschbedingung {
+// praedikatNachbuchMeldungen ist die Bedingung für quittierte Nachbuch-Meldungen.
+func praedikatNachbuchMeldungen(tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `quittiert_am IS NOT NULL
 		  AND quittiert_am < NOW() - make_interval(days => $1::int + $2::int)`}
 }
@@ -338,15 +338,15 @@ func PredikatNachbuchMeldungen(tage, kulanz int) Loeschbedingung {
 // Die Kulanz ist hier ein zusätzlicher TAG im selben Intervall, nicht ein zusätzlicher
 // Monat — sonst gäbe der Wächter dem Job einen ganzen Monat Blindheit.
 
-// PredikatAuditLog ist die Bedingung für audit_log (fachliche Datensatz-Historie).
-func PredikatAuditLog(monate, kulanzTage int) Loeschbedingung {
+// praedikatProtokoll ist die Bedingung für audit_log (fachliche Datensatz-Historie).
+func praedikatProtokoll(monate, kulanzTage int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{monate, kulanzTage},
 		Where: `timestamp < NOW() - make_interval(months => $1::int, days => $2::int)`}
 }
 
-// PredikatAuditLogs ist die Bedingung für audit_logs (Admin-Aktionen inkl. IP-Adressen).
+// praedikatVerwaltungsProtokoll ist die Bedingung für audit_logs (Admin-Aktionen inkl. IP-Adressen).
 // Andere Tabelle, andere Zeitspalte, dieselbe Frist.
-func PredikatAuditLogs(monate, kulanzTage int) Loeschbedingung {
+func praedikatVerwaltungsProtokoll(monate, kulanzTage int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{monate, kulanzTage},
 		Where: `zeitstempel < NOW() - make_interval(months => $1::int, days => $2::int)`}
 }

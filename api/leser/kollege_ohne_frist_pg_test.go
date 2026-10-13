@@ -28,7 +28,7 @@ import (
 // Theke ihn anstandslos bediente — zwei Wahrheiten über dieselbe Ausleihe.
 //
 // Gemahnt wurde er nie: Der Mahnlauf joint die Sicht `schueler`
-// (repository/mahnwesen_queries.go). Das bleibt so.
+// (repository/mahnwesen_ueberfaellige.go). Das bleibt so.
 func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

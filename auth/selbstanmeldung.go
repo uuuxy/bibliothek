@@ -128,7 +128,7 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 
 	// Dasselbe Lesen wie in der Anmeldung: Trifft die Anlage ein vorhandenes Konto, geht die
 	// Anmeldung mit ihm weiter.
-	konto, err := repository.LiesAnmeldeKonto(ctx, dbPool, email)
+	konto, err := repository.LadeAnmeldeKonto(ctx, dbPool, email)
 	if err != nil {
 		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %v", ErrAnmeldedienstGestoert, err)
 	}

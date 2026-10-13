@@ -8,20 +8,20 @@ import (
 )
 
 // Spalten-Gate des Zugangskontos in der Auskunft (24.09.2026) — das Gegenstück zu
-// TestDsgvoAuskunft_KenntJedeLeserSpalte für die Tabelle benutzer. Bekommt das Konto eine
+// TestDSGVOAuskunft_KenntJedeLeserSpalte für die Tabelle benutzer. Bekommt das Konto eine
 // neue Spalte, steht sie in der Auskunft oder hier mit Begründung.
 //
 // Geprüft wird die Spaltenliste vor FROM, nicht die ganze Abfrage: leser_id steht im WHERE
 // und wäre sonst „gelesen", ohne in der Auskunft zu stehen.
-func TestDsgvoKonto_KenntJedeBenutzerSpalte(t *testing.T) {
+func TestDSGVOKonto_KenntJedeBenutzerSpalte(t *testing.T) {
 	pool := pgTestPool(t)
 	ausnahmen := map[string]string{
 		"leser_id": "die Verknüpfung zum Leser; sie steht als hat_zugangskonto in den Stammdaten der Auskunft",
 	}
 
-	auswahl, _, gefunden := strings.Cut(DsgvoKontoSQL, "FROM benutzer")
+	auswahl, _, gefunden := strings.Cut(dsgvoKontoSQL, "FROM benutzer")
 	if !gefunden {
-		t.Fatal("Liveness: DsgvoKontoSQL liest nicht mehr FROM benutzer — Gate zeigt ins Leere")
+		t.Fatal("Liveness: dsgvoKontoSQL liest nicht mehr FROM benutzer — Gate zeigt ins Leere")
 	}
 	rows, err := pool.Query(context.Background(),
 		`SELECT column_name FROM information_schema.columns WHERE table_name = 'benutzer' ORDER BY ordinal_position`)
@@ -48,7 +48,7 @@ func TestDsgvoKonto_KenntJedeBenutzerSpalte(t *testing.T) {
 			continue
 		}
 		if !regexp.MustCompile(`\b` + regexp.QuoteMeta(c) + `\b`).MatchString(auswahl) {
-			t.Errorf("Spalte benutzer.%s fehlt in der Auskunft (DsgvoKontoSQL) — aufnehmen oder begründet ausnehmen", c)
+			t.Errorf("Spalte benutzer.%s fehlt in der Auskunft (dsgvoKontoSQL) — aufnehmen oder begründet ausnehmen", c)
 		}
 	}
 	for c := range ausnahmen {

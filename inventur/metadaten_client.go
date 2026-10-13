@@ -44,13 +44,13 @@ type MetadatenErgebnis struct {
 	Preis float64 `json:"preis,omitempty"`
 	// Stichwoerter sind die Gattungsbegriffe (655 $a) und die freien Verlagswörter (653 $a
 	// ohne Vorsatz) der DNB — Kandidaten für den Schlagwort-Vorschlag beim Bestellen per
-	// ISBN (docs/OFFEN.md 4.20, repository.schlagworteAusStichwoertern). Nie gespeichert
+	// ISBN (docs/OFFEN.md 4.20, repository.ladeSchlagworteAusStichwoertern). Nie gespeichert
 	// und nie ausgeliefert: Ein Satz trägt bis zu 98 Verlagswörter, darunter Werbung
 	// („TikTok", „Must Read"); vorgeschlagen wird nur, was es in der eigenen Liste gibt.
 	Stichwoerter []string `json:"-"`
 	// Normdaten sind die Schlagwörter der Gemeinsamen Normdatei (MARC 600–651 mit $2 gnd) —
 	// ein festes Vokabular ohne Werbewörter. Angeboten werden sie auch, wenn die eigene Liste
-	// sie noch nicht kennt (repository.schlagworteAusNormdaten, docs/OFFEN.md 4.25). Nie
+	// sie noch nicht kennt (repository.ladeSchlagworteAusNormdaten, docs/OFFEN.md 4.25). Nie
 	// gespeichert und nie ausgeliefert.
 	Normdaten []repository.Normdatenbegriff `json:"-"`
 }

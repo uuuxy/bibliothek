@@ -29,15 +29,15 @@ func TestMahnbriefe_ZurueckgegebeneRausfiltern(t *testing.T) {
 	}
 	returnLoan(t, pool, loanZurueck) // dieses Buch ist schon zurück
 
-	repo := NewMahnwesenRepository(pool)
+	repo := NewMahnwesenAbfragen(pool)
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatalf("Begin: %v", err)
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // Rollback nach dem Lesen ist hier der Normalfall
-	briefe, err := repo.MahnbriefeTx(ctx, tx, []string{loanOffen, loanZurueck})
+	briefe, err := repo.LadeMahnbriefe(ctx, tx, []string{loanOffen, loanZurueck})
 	if err != nil {
-		t.Fatalf("MahnbriefeTx: %v", err)
+		t.Fatalf("LadeMahnbriefe: %v", err)
 	}
 
 	// Nur die noch offene Ausleihe darf auftauchen.

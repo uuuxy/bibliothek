@@ -85,7 +85,7 @@ func BeanspruchBestellmail(ctx context.Context, pool db.PgxPoolIface, bestellung
 		RETURNING ziel.lieferant_name, offen.empfaenger, COALESCE(ziel.kundennummer, ''), COALESCE(ziel.mittel, '')`,
 		bestellungID).Scan(&a.LieferantName, &a.Empfaenger, &a.Kundennummer, &a.Mittel)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, bestellmailNichtOffenOderUnbekannt(ctx, pool, bestellungID)
+		return nil, deuteBestellmailNichtOffen(ctx, pool, bestellungID)
 	}
 	if err != nil {
 		return nil, err
@@ -97,9 +97,9 @@ func BeanspruchBestellmail(ctx context.Context, pool db.PgxPoolIface, bestellung
 	return &a, nil
 }
 
-// bestellmailNichtOffenOderUnbekannt unterscheidet die zwei Gründe, aus denen kein Auftrag
+// deuteBestellmailNichtOffen unterscheidet die zwei Gründe, aus denen kein Auftrag
 // zu haben war: Die Bestellung gibt es nicht, oder sie trägt keinen Vermerk.
-func bestellmailNichtOffenOderUnbekannt(ctx context.Context, pool db.PgxPoolIface, bestellungID string) error {
+func deuteBestellmailNichtOffen(ctx context.Context, pool db.PgxPoolIface, bestellungID string) error {
 	var vorhanden bool
 	if err := pool.QueryRow(ctx,
 		`SELECT EXISTS (SELECT 1 FROM bestellungen_verlauf WHERE id = $1)`, bestellungID).Scan(&vorhanden); err != nil {

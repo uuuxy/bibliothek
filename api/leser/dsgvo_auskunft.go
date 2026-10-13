@@ -49,7 +49,7 @@ func alsAntwort[Z, T any](zeilen []Z, err error, als func(Z) T) ([]T, error) {
 }
 
 func (s *Tueren) dsgvoQueryStammdaten(ctx context.Context, id string) (*auskunft.DsgvoStammdaten, error) {
-	zeile, err := repository.LeseDsgvoStammdaten(ctx, s.DB.Pool, id)
+	zeile, err := repository.LadeDSGVOStammdaten(ctx, s.DB.Pool, id)
 	if err != nil || zeile == nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *Tueren) dsgvoQueryStammdaten(ctx context.Context, id string) (*auskunft
 
 func (s *Tueren) dsgvoQueryFoto(ctx context.Context, id string) (auskunft.DsgvoFoto, error) {
 	foto := auskunft.DsgvoFoto{Hinweis: "Foto wird verschlüsselt gespeichert; Kopie über die Akte in der Leserdatei abrufbar"}
-	aktualisiert, err := repository.LeseDsgvoFotoStand(ctx, s.DB.Pool, id)
+	aktualisiert, err := repository.LadeDSGVOFotoStand(ctx, s.DB.Pool, id)
 	if err != nil {
 		return foto, err
 	}
@@ -72,50 +72,50 @@ func (s *Tueren) dsgvoQueryFoto(ctx context.Context, id string) (auskunft.DsgvoF
 }
 
 func (s *Tueren) dsgvoQueryAusleihen(ctx context.Context, id string) ([]auskunft.DsgvoAusleihe, error) {
-	zeilen, err := repository.LeseDsgvoAusleihen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoAusleiheZeile) auskunft.DsgvoAusleihe {
+	zeilen, err := repository.LadeDSGVOAusleihen(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOAusleiheZeile) auskunft.DsgvoAusleihe {
 		return auskunft.DsgvoAusleihe(z)
 	})
 }
 
 func (s *Tueren) dsgvoQuerySchadensfaelle(ctx context.Context, id string) ([]auskunft.DsgvoSchadensfall, error) {
-	zeilen, err := repository.LeseDsgvoSchadensfaelle(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoSchadensfallZeile) auskunft.DsgvoSchadensfall {
+	zeilen, err := repository.LadeDSGVOSchadensfaelle(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOSchadensfallZeile) auskunft.DsgvoSchadensfall {
 		return auskunft.DsgvoSchadensfall(z)
 	})
 }
 
 func (s *Tueren) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]auskunft.DsgvoVormerkung, error) {
-	zeilen, err := repository.LeseDsgvoVormerkungen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoVormerkungZeile) auskunft.DsgvoVormerkung {
+	zeilen, err := repository.LadeDSGVOVormerkungen(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOVormerkungZeile) auskunft.DsgvoVormerkung {
 		return auskunft.DsgvoVormerkung(z)
 	})
 }
 
 func (s *Tueren) dsgvoQueryNachbuchMeldungen(ctx context.Context, id string) ([]auskunft.DsgvoNachbuchMeldung, error) {
-	zeilen, err := repository.LeseDsgvoNachbuchMeldungen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoNachbuchZeile) auskunft.DsgvoNachbuchMeldung {
+	zeilen, err := repository.LadeDSGVONachbuchMeldungen(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DSGVONachbuchZeile) auskunft.DsgvoNachbuchMeldung {
 		return auskunft.DsgvoNachbuchMeldung(z)
 	})
 }
 
 func (s *Tueren) dsgvoQueryBescheide(ctx context.Context, id string) ([]auskunft.DsgvoBescheid, error) {
-	zeilen, err := repository.LeseDsgvoBescheide(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoBescheidZeile) auskunft.DsgvoBescheid {
+	zeilen, err := repository.LadeDSGVOBescheide(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOBescheidZeile) auskunft.DsgvoBescheid {
 		return auskunft.DsgvoBescheid(z)
 	})
 }
 
 func (s *Tueren) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]auskunft.DsgvoAuditEintrag, error) {
-	zeilen, err := repository.LeseDsgvoAuditEintraege(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoAuditZeile) auskunft.DsgvoAuditEintrag {
+	zeilen, err := repository.LadeDSGVOProtokollEintraege(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOProtokollZeile) auskunft.DsgvoAuditEintrag {
 		return auskunft.DsgvoAuditEintrag(z)
 	})
 }
 
 func (s *Tueren) dsgvoQueryVerwaltungsEintraege(ctx context.Context, id string) ([]auskunft.DsgvoVerwaltungsEintrag, error) {
-	zeilen, err := repository.LeseDsgvoVerwaltungsEintraege(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoVerwaltungZeile) auskunft.DsgvoVerwaltungsEintrag {
+	zeilen, err := repository.LadeDSGVOVerwaltungsEintraege(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOVerwaltungZeile) auskunft.DsgvoVerwaltungsEintrag {
 		return auskunft.DsgvoVerwaltungsEintrag(z)
 	})
 }
@@ -131,8 +131,8 @@ type dsgvoDaten struct {
 	nachbuchMeldungen []auskunft.DsgvoNachbuchMeldung
 	auditEintraege    []auskunft.DsgvoAuditEintrag
 	verwaltung        []auskunft.DsgvoVerwaltungsEintrag
-	zugangskonto      *repository.DsgvoZugangskonto
-	fruehereKonten    []repository.DsgvoFrueheresZugangskonto
+	zugangskonto      *repository.DSGVOZugangskonto
+	fruehereKonten    []repository.DSGVOFrueheresZugangskonto
 	verarbeitung      auskunft.DsgvoVerarbeitungsangaben
 }
 
@@ -191,11 +191,11 @@ func (s *Tueren) sammleDsgvoDaten(ctx context.Context, id string, darfKonto bool
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Verwaltungsprotokolle", err)
 	}
-	zugangskonto, err := repository.LeseDsgvoZugangskonto(ctx, s.DB.Pool, id)
+	zugangskonto, err := repository.LadeDSGVOZugangskonto(ctx, s.DB.Pool, id)
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden des Zugangskontos", err)
 	}
-	fruehereKonten, err := repository.LeseDsgvoFruehereZugangskonten(ctx, s.DB.Pool, id)
+	fruehereKonten, err := repository.LadeDSGVOFruehereZugangskonten(ctx, s.DB.Pool, id)
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der früheren Zugangskonten", err)
 	}
@@ -232,7 +232,7 @@ func (s *Tueren) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
 		akteur = "USER"
 		bearbeiterID = &claims.UserID
 	}
-	if err := repository.SchreibeDsgvoAuskunftProtokoll(ctx, s.DB.Pool, id, bearbeiterID, akteur); err != nil {
+	if err := repository.ProtokolliereDSGVOAuskunft(ctx, s.DB.Pool, id, bearbeiterID, akteur); err != nil {
 		log.Printf("dsgvo-auskunft: Audit-Protokollierung fehlgeschlagen: %v", err)
 	}
 }

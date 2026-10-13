@@ -12,14 +12,14 @@ import (
 // Die Bestandsdaten und ihre Schlüssel liegen in repository/lusd_bestand.go (Schichtung:
 // ein Handler formuliert kein SQL). Hier stehen nur die Nachschlagekarten des Imports.
 
-type lusdBestandsSchueler = repository.LusdBestandsSchueler
+type lusdBestandsSchueler = repository.LUSDBestandsSchueler
 
 func waisenSchluessel(vorname, nachname string, geb *time.Time) string {
-	return repository.LusdSchluessel(vorname, nachname, geb)
+	return repository.LUSDSchluessel(vorname, nachname, geb)
 }
 
 func namensSchluessel(vorname, nachname string) string {
-	return repository.LusdNamensSchluessel(vorname, nachname)
+	return repository.LUSDNamensSchluessel(vorname, nachname)
 }
 
 // bestandsSchluessel liefert den Schlüssel, unter dem der Modus einen Bestandsschüler
@@ -31,12 +31,12 @@ func bestandsSchluessel(s *lusdBestandsSchueler, modus Modus) string {
 	case ModusNurName:
 		return s.Namensschluessel
 	default:
-		return s.LusdID
+		return s.LUSDID
 	}
 }
 
 func ladeLusdBestand(ctx context.Context, tx pgx.Tx) ([]lusdBestandsSchueler, error) {
-	return repository.LadeLusdBestand(ctx, tx)
+	return repository.LadeLUSDBestand(ctx, tx)
 }
 
 // lusdIndex sind die Nachschlagekarten eines Modus. Ein nil-Eintrag heißt MEHRDEUTIG:

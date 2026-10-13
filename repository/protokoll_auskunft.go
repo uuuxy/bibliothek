@@ -172,7 +172,7 @@ var protokollOhneAngabeJeSchluessel = func() map[string]bool {
 	return je
 }()
 
-// ProtokollOhneAngabe sagt, ob der Wert eines Schlüssels nicht aufs Blatt kommt.
-func ProtokollOhneAngabe(schluessel string) bool {
+// IstProtokollOhneAngabe sagt, ob der Wert eines Schlüssels nicht aufs Blatt kommt.
+func IstProtokollOhneAngabe(schluessel string) bool {
 	return protokollOhneAngabeJeSchluessel[schluessel]
 }

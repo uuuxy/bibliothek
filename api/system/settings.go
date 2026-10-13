@@ -117,7 +117,7 @@ func normalisiereLernmittelAngaben(req *repository.EinstellungenPatch) error {
 		req.LMFEingangsjahrgaenge = &norm
 	}
 	if req.LMFStichtag != nil {
-		norm, err := repository.NormalisiereLmfStichtag(*req.LMFStichtag)
+		norm, err := repository.NormalisiereLMFStichtag(*req.LMFStichtag)
 		if err != nil {
 			return err
 		}

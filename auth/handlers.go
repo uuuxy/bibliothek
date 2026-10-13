@@ -324,7 +324,7 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 	}
 
 	// IMAP succeeded, check if the user is registered in our local DB
-	konto, err := repository.LiesAnmeldeKonto(ctx, dbPool, email)
+	konto, err := repository.LadeAnmeldeKonto(ctx, dbPool, email)
 	if err != nil {
 		// NUR „Zeile nicht vorhanden" ist der Selbstanmelde-Fall. Jeder andere Fehler
 		// (Verbindungsabriss, Pool erschöpft, ctx-Frist) ist ein Ausfall des
@@ -378,7 +378,7 @@ func loadPermissionsForRole(ctx context.Context, dbPool db.PgxPoolIface, roleStr
 		return []string{"*"}, nil
 	}
 
-	return repository.ErlaubteRechteDerRolle(ctx, dbPool, roleStr)
+	return repository.LadeErlaubteRechteDerRolle(ctx, dbPool, roleStr)
 }
 
 // leseSitzung liest das Session-Cookie und prüft das Token, ohne auf die Sperre nach
@@ -415,7 +415,7 @@ func leseSitzung(w http.ResponseWriter, r *http.Request, authenticator *Authenti
 func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolIface, userID string) (LoginResponse, bool) {
 	ctx := r.Context()
 
-	konto, err := repository.LiesSitzungsKonto(ctx, dbPool, userID)
+	konto, err := repository.LadeSitzungsKonto(ctx, dbPool, userID)
 	// Ein fehlendes und ein deaktiviertes Konto sind beide keine aktive Sitzung. Ein DB-Fehler
 	// ist es nicht: 500 statt 401, sonst meldete der Client ab.
 	keineSitzung := errors.Is(err, pgx.ErrNoRows) || (err == nil && !konto.Aktiv)

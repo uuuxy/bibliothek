@@ -6,12 +6,37 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// Geraet repräsentiert ein physisches Hardware-Gerät (z. B. Laptop, iPad) der Schule (Tabelle `geraete`).
+type Geraet struct {
+	// ID ist die UUID des Geräts.
+	ID string `json:"id"`
+	// Modellname ist der Name des Gerätemodells (z. B. "Lenovo ThinkPad L13").
+	Modellname string `json:"modellname"`
+	// Seriennummer ist die Hardware-Hersteller-Seriennummer zur eindeutigen Geräteidentifikation.
+	Seriennummer *string `json:"seriennummer,omitempty"`
+	// BarcodeID ist der Barcode-Aufkleber auf dem Gehäuse.
+	BarcodeID string `json:"barcode_id"`
+	// Zubehoer listet mitgelieferte Zubehörteile auf, die bei Ausleihe geprüft werden müssen (z. B. "Ladekabel, Stift").
+	Zubehoer string `json:"zubehoer"`
+	// IstAusleihbar gibt an, ob das Gerät verliehen werden darf (Falsch bei Defekt).
+	IstAusleihbar bool `json:"ist_ausleihbar"`
+	// IstAusgesondert kennzeichnet Geräte, die dauerhaft aus dem Bestand entfernt wurden.
+	IstAusgesondert bool `json:"ist_ausgesondert"`
+	// ZustandNotiz beschreibt Vorschäden oder Gebrauchsspuren.
+	ZustandNotiz *string `json:"zustand_notiz,omitempty"`
+	// ErstelltAm ist das Datum der Geräteerfassung.
+	ErstelltAm time.Time `json:"erstellt_am"`
+	// AktualisiertAm ist der letzte Aktualisierungszeitpunkt.
+	AktualisiertAm time.Time `json:"aktualisiert_am"`
+}
 
 // ErrGeraetBarcodeVergeben meldet, dass der Barcode schon auf einem anderen Gerät klebt. Der
 // Text ist die Meldung an der Oberfläche (409) und deshalb als Satz geschrieben.

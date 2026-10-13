@@ -18,12 +18,12 @@ import (
 func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
 	entwurf := func(stundenJeTag int) LmfPlanEntwurf {
 		return LmfPlanEntwurf{
-			Plan: repository.LmfPlan{
-				Art: repository.LmfTerminAusgabe, ErsterTag: "2026-09-10",
+			Plan: repository.LMFPlan{
+				Art: repository.LMFTerminAusgabe, ErsterTag: "2026-09-10",
 				Startstunde: 1, StundenJeTag: stundenJeTag,
-				FreieTage: []repository.LmfFreierTag{},
+				FreieTage: []repository.LMFFreierTag{},
 			},
-			Zeilen: []repository.LmfPlanZeile{{Klassen: []string{"05A"}}, {Klassen: []string{"05B"}}},
+			Zeilen: []repository.LMFPlanZeile{{Klassen: []string{"05A"}}, {Klassen: []string{"05B"}}},
 			Fest:   []*lmfplan.Platz{nil, nil},
 		}
 	}
@@ -56,18 +56,18 @@ func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
 // Grund heißt er „freier Tag". Der 10.09.2026 ist ein Donnerstag, bei einer Stunde je Tag
 // liegt jede Zeile auf einem eigenen Schultag.
 func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
-	entwurf := func(frei []repository.LmfFreierTag) LmfPlanEntwurf {
+	entwurf := func(frei []repository.LMFFreierTag) LmfPlanEntwurf {
 		return LmfPlanEntwurf{
-			Plan: repository.LmfPlan{
-				Art: repository.LmfTerminAusgabe, ErsterTag: "2026-09-10",
+			Plan: repository.LMFPlan{
+				Art: repository.LMFTerminAusgabe, ErsterTag: "2026-09-10",
 				Startstunde: 1, StundenJeTag: 1, FreieTage: frei,
 			},
-			Zeilen: []repository.LmfPlanZeile{{Klassen: []string{"05A"}}, {Klassen: []string{"05B"}}, {Klassen: []string{"05C"}}},
+			Zeilen: []repository.LMFPlanZeile{{Klassen: []string{"05A"}}, {Klassen: []string{"05B"}}, {Klassen: []string{"05C"}}},
 			Fest:   []*lmfplan.Platz{nil, nil, nil},
 		}
 	}
 
-	e := entwurf([]repository.LmfFreierTag{{Datum: "2026-09-11", Grund: "Pädagogischer Tag"}, {Datum: "2026-09-14"}})
+	e := entwurf([]repository.LMFFreierTag{{Datum: "2026-09-11", Grund: "Pädagogischer Tag"}, {Datum: "2026-09-14"}})
 	plaetze, ausfaelle, err := VerteileLmfPlan(&e)
 	if err != nil {
 		t.Fatalf("Plan mit freien Tagen abgelehnt: %v", err)
@@ -87,7 +87,7 @@ func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
 		t.Errorf("Ausfälle %q, erwartet den pädagogischen Tag und den freien Tag ohne Grund", got)
 	}
 
-	e = entwurf([]repository.LmfFreierTag{{Datum: "kein Datum"}})
+	e = entwurf([]repository.LMFFreierTag{{Datum: "kein Datum"}})
 	if _, _, err := VerteileLmfPlan(&e); err == nil {
 		t.Error("ein freier Tag ohne lesbares Datum muss die Verteilung abbrechen")
 	}
@@ -97,7 +97,7 @@ func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
 // Platz; der Ausgabe-Plan fließt von seinem Beginn vorwärts und behält ihn. Der 25.06.2026 ist
 // ein Donnerstag, bei zwei Stunden je Tag liegen drei Zeilen auf zwei Tagen.
 func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *testing.T) {
-	zeilen := []repository.LmfPlanZeile{{Klassen: []string{"10R1"}}, {Klassen: []string{"09H1"}}, {Klassen: []string{"08R1"}}}
+	zeilen := []repository.LMFPlanZeile{{Klassen: []string{"10R1"}}, {Klassen: []string{"09H1"}}, {Klassen: []string{"08R1"}}}
 	plaetzeAls := func(plaetze []lmfplan.Platz) string {
 		var s []string
 		for _, p := range plaetze {
@@ -107,10 +107,10 @@ func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *tes
 	}
 
 	rueck := LmfPlanEntwurf{
-		Plan: repository.LmfPlan{
-			Art: repository.LmfTerminRueckgabe, LetzterTag: "2026-06-25", LetzteStunde: 2, StundenJeTag: 2,
+		Plan: repository.LMFPlan{
+			Art: repository.LMFTerminRueckgabe, LetzterTag: "2026-06-25", LetzteStunde: 2, StundenJeTag: 2,
 			// Der Beginn der Anfrage zählt nicht, die Verteilung rechnet ihn.
-			ErsterTag: "2026-06-25", Startstunde: 2, FreieTage: []repository.LmfFreierTag{},
+			ErsterTag: "2026-06-25", Startstunde: 2, FreieTage: []repository.LMFFreierTag{},
 		},
 		Zeilen: zeilen, Fest: []*lmfplan.Platz{nil, nil, nil},
 	}
@@ -126,10 +126,10 @@ func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *tes
 	}
 
 	aus := LmfPlanEntwurf{
-		Plan: repository.LmfPlan{
-			Art: repository.LmfTerminAusgabe, ErsterTag: "2026-06-25", Startstunde: 2, StundenJeTag: 2,
+		Plan: repository.LMFPlan{
+			Art: repository.LMFTerminAusgabe, ErsterTag: "2026-06-25", Startstunde: 2, StundenJeTag: 2,
 			// Ein Ende in der Anfrage zählt beim Ausgabe-Plan nicht.
-			LetzterTag: "2026-06-30", LetzteStunde: 1, FreieTage: []repository.LmfFreierTag{},
+			LetzterTag: "2026-06-30", LetzteStunde: 1, FreieTage: []repository.LMFFreierTag{},
 		},
 		Zeilen: zeilen, Fest: []*lmfplan.Platz{nil, nil, nil},
 	}
@@ -150,11 +150,11 @@ func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *tes
 
 // Ein Rahmen ohne lesbaren Anker bricht die Verteilung ab, statt am Kalendertag null zu rechnen.
 func TestVerteileLmfPlan_AnkerOhneDatumIstEinFehler(t *testing.T) {
-	for _, plan := range []repository.LmfPlan{
-		{Art: repository.LmfTerminRueckgabe, LetzterTag: "", LetzteStunde: 1, StundenJeTag: 6, ErsterTag: "2026-06-25"},
-		{Art: repository.LmfTerminAusgabe, ErsterTag: "kein Datum", Startstunde: 1, StundenJeTag: 6},
+	for _, plan := range []repository.LMFPlan{
+		{Art: repository.LMFTerminRueckgabe, LetzterTag: "", LetzteStunde: 1, StundenJeTag: 6, ErsterTag: "2026-06-25"},
+		{Art: repository.LMFTerminAusgabe, ErsterTag: "kein Datum", Startstunde: 1, StundenJeTag: 6},
 	} {
-		e := LmfPlanEntwurf{Plan: plan, Zeilen: []repository.LmfPlanZeile{{Klassen: []string{"05F1"}}}, Fest: []*lmfplan.Platz{nil}}
+		e := LmfPlanEntwurf{Plan: plan, Zeilen: []repository.LMFPlanZeile{{Klassen: []string{"05F1"}}}, Fest: []*lmfplan.Platz{nil}}
 		if _, _, err := VerteileLmfPlan(&e); err == nil {
 			t.Errorf("%s-Plan ohne lesbaren Anker: kein Fehler", plan.Art)
 		}
@@ -166,7 +166,7 @@ func TestVerteileLmfPlan_AnkerOhneDatumIstEinFehler(t *testing.T) {
 // behält ihn, die übrigen fließen um ihn herum. Die Woche vom 22. bis 25.06.2026 hat vier
 // Schultage.
 func TestVerteileLmfPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T) {
-	zeilen := []repository.LmfPlanZeile{{Klassen: []string{"10R1"}}, {Klassen: []string{"09H1"}}, {Klassen: []string{"08R1"}}}
+	zeilen := []repository.LMFPlanZeile{{Klassen: []string{"10R1"}}, {Klassen: []string{"09H1"}}, {Klassen: []string{"08R1"}}}
 	platz := func(tag, stunde int) *lmfplan.Platz {
 		return &lmfplan.Platz{Datum: time.Date(2026, time.June, tag, 0, 0, 0, 0, schulzeit.Zone()), Stunde: stunde}
 	}
@@ -177,17 +177,17 @@ func TestVerteileLmfPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T
 		}
 		return strings.Join(s, ",")
 	}
-	rueckgabe := func(stundenJeTag int, frei []repository.LmfFreierTag, fest []*lmfplan.Platz) LmfPlanEntwurf {
+	rueckgabe := func(stundenJeTag int, frei []repository.LMFFreierTag, fest []*lmfplan.Platz) LmfPlanEntwurf {
 		return LmfPlanEntwurf{
-			Plan: repository.LmfPlan{
-				Art: repository.LmfTerminRueckgabe, LetzterTag: "2026-06-25", LetzteStunde: stundenJeTag, StundenJeTag: stundenJeTag,
+			Plan: repository.LMFPlan{
+				Art: repository.LMFTerminRueckgabe, LetzterTag: "2026-06-25", LetzteStunde: stundenJeTag, StundenJeTag: stundenJeTag,
 				ErsterTag: "2026-06-25", Startstunde: stundenJeTag, FreieTage: frei,
 			},
 			Zeilen: zeilen, Fest: fest,
 		}
 	}
 
-	e := rueckgabe(1, []repository.LmfFreierTag{{Datum: "2026-06-24", Grund: "Studientag"}}, []*lmfplan.Platz{nil, nil, nil})
+	e := rueckgabe(1, []repository.LMFFreierTag{{Datum: "2026-06-24", Grund: "Studientag"}}, []*lmfplan.Platz{nil, nil, nil})
 	plaetze, ausfaelle, err := VerteileLmfPlan(&e)
 	if err != nil {
 		t.Fatalf("Rückgabe-Plan mit freiem Tag: %v", err)
@@ -199,7 +199,7 @@ func TestVerteileLmfPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T
 		t.Errorf("Rückgabe-Plan mit freiem Tag: Ausfälle %+v, erwartet den Studientag am 24.06.", ausfaelle)
 	}
 
-	e = rueckgabe(2, []repository.LmfFreierTag{}, []*lmfplan.Platz{platz(22, 1), nil, nil})
+	e = rueckgabe(2, []repository.LMFFreierTag{}, []*lmfplan.Platz{platz(22, 1), nil, nil})
 	if plaetze, _, err = VerteileLmfPlan(&e); err != nil {
 		t.Fatalf("Rückgabe-Plan mit festem Platz: %v", err)
 	}
@@ -208,9 +208,9 @@ func TestVerteileLmfPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T
 	}
 
 	aus := LmfPlanEntwurf{
-		Plan: repository.LmfPlan{
-			Art: repository.LmfTerminAusgabe, ErsterTag: "2026-06-25", Startstunde: 1, StundenJeTag: 2,
-			FreieTage: []repository.LmfFreierTag{},
+		Plan: repository.LMFPlan{
+			Art: repository.LMFTerminAusgabe, ErsterTag: "2026-06-25", Startstunde: 1, StundenJeTag: 2,
+			FreieTage: []repository.LMFFreierTag{},
 		},
 		Zeilen: zeilen, Fest: []*lmfplan.Platz{nil, platz(26, 2), nil},
 	}

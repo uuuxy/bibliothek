@@ -45,7 +45,7 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 	// und sein Grund wäre weg.
 	//
 	// COALESCE auch auf deleted_at: Liegt die Zeile schon im Papierkorb, bleibt der erste
-	// Zeitpunkt. Er ist die Uhr der Anonymisierung (PredikatAnonymisierung); ein zweites
+	// Zeitpunkt. Er ist die Uhr der Anonymisierung (PraedikatAnonymisierung); ein zweites
 	// Löschen schöbe sie sonst nach hinten.
 	tag, err := tx.Exec(ctx, `UPDATE leser
 		SET deleted_at = COALESCE(deleted_at, CURRENT_TIMESTAMP),

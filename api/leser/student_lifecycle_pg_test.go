@@ -117,9 +117,9 @@ func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	zeile := repository.LusdAktualisierung{SchuelerID: id, Vorname: "Lena", Nachname: "Zurück", Klasse: "EF"}
-	if err := repository.AktualisiereLusdBestand(ctx, tx, []repository.LusdAktualisierung{zeile}); err != nil {
-		t.Fatalf("AktualisiereLusdBestand: %v", err)
+	zeile := repository.LUSDAktualisierung{SchuelerID: id, Vorname: "Lena", Nachname: "Zurück", Klasse: "EF"}
+	if err := repository.AendereLUSDBestand(ctx, tx, []repository.LUSDAktualisierung{zeile}); err != nil {
+		t.Fatalf("AendereLUSDBestand: %v", err)
 	}
 
 	var vorname, nachname, klasse string

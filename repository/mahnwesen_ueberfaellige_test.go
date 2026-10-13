@@ -22,14 +22,14 @@ func medienAnzahl(schueler []UeberfaelligerSchueler, id string) int {
 // Medien bedeuten nicht gemahnte Bücher. Der Test deckt insbesondere den Fall
 // zweier gleichnamiger Schüler ab, deren Zeilen durch die Sortierung
 // (nachname, vorname, frist) verzahnt eintreffen.
-func TestQueryUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
+func TestLadeUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewMahnwesenRepository(mock)
+	repo := NewMahnwesenAbfragen(mock)
 	frist := time.Date(2026, 6, 20, 12, 0, 0, 0, time.UTC)
 
 	// 22:30 Uhr UTC ist in Berlin schon der nächste Kalendertag.
@@ -57,7 +57,7 @@ func TestQueryUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"klasse", "lehrer_email"}).
 			AddRow("7A", "lehrer7a@schule.de"))
 
-	klassen, err := repo.QueryUeberfaelligeNachKlasse(t.Context(), "")
+	klassen, err := repo.LadeUeberfaelligeNachKlasse(t.Context(), "")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -119,14 +119,14 @@ func TestQueryUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 	}
 }
 
-func TestQueryUeberfaelligeNachKlasse_MitKlassenfilter(t *testing.T) {
+func TestLadeUeberfaelligeNachKlasse_MitKlassenfilter(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewMahnwesenRepository(mock)
+	repo := NewMahnwesenAbfragen(mock)
 
 	mock.ExpectQuery(`AND s\.klasse = \$1 AND s\.ist_abgaenger = false`).
 		WithArgs("7A").
@@ -136,7 +136,7 @@ func TestQueryUeberfaelligeNachKlasse_MitKlassenfilter(t *testing.T) {
 			"rueckgabe_frist", "tage_ueberfaellig", "mahnstufe", "letztes_mahndatum",
 		}))
 
-	klassen, err := repo.QueryUeberfaelligeNachKlasse(t.Context(), "7A")
+	klassen, err := repo.LadeUeberfaelligeNachKlasse(t.Context(), "7A")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}

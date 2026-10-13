@@ -120,8 +120,8 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	inDieVergangenheit(t, pool, anna, 9)
 	inDieVergangenheit(t, pool, ben, 2)
 
-	mahnRepo := repository.NewMahnwesenRepository(pool)
-	klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, "")
+	mahnRepo := repository.NewMahnwesenAbfragen(pool)
+	klassen, err := mahnRepo.LadeUeberfaelligeNachKlasse(ctx, "")
 	if err != nil {
 		t.Fatalf("Überfällige laden: %v", err)
 	}

@@ -13,7 +13,7 @@ import (
 // dsgvoKontoAbschnitt druckt das Zugangskonto samt Klassenleitungen, Anfragen und den
 // Einträgen des Verwaltungsprotokolls über das Konto (repository/dsgvo_konto.go). Bei
 // Schülern zeigt in der Regel kein Konto auf den Leser; dann steht das hier in einem Satz.
-func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.DsgvoZugangskonto) {
+func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.DSGVOZugangskonto) {
 	dsgvoAbschnitt(p, tr, "10. Zugangskonto")
 	if k == nil {
 		dsgvoHinweis(p, tr, "Auf diesen Leserdatensatz zeigt kein Zugangskonto.")
@@ -61,7 +61,7 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 
 // dsgvoAnfrageZeile nennt zu einem Wunsch, einer Meldung oder einer Reservierung die
 // gespeicherten Angaben in einer Zeile; leere Angaben fallen weg.
-func dsgvoAnfrageZeile(a repository.DsgvoAnfrage) string {
+func dsgvoAnfrageZeile(a repository.DSGVOAnfrage) string {
 	teile := []string{dsgvoAnfrageArt(a.Art)}
 	if a.ISBN != "" {
 		teile = append(teile, "ISBN: "+a.ISBN)
@@ -91,9 +91,9 @@ func dsgvoAnfrageZeile(a repository.DsgvoAnfrage) string {
 }
 
 // dsgvoFruehereKontenAbschnitt druckt die gelöschten Konten, die auf diesen Leser zeigten, als
-// Teil von Abschnitt 10 (repository.LeseDsgvoFruehereZugangskonten). Gab es keine, bleibt es
+// Teil von Abschnitt 10 (repository.LadeDSGVOFruehereZugangskonten). Gab es keine, bleibt es
 // beim Abschnitt darüber.
-func dsgvoFruehereKontenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, konten []repository.DsgvoFrueheresZugangskonto) {
+func dsgvoFruehereKontenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, konten []repository.DSGVOFrueheresZugangskonto) {
 	if len(konten) == 0 {
 		return
 	}
@@ -122,7 +122,7 @@ type dsgvoVorgangsZeile struct {
 // behält jede Uhrzeit. Bei einer Bibliothekskraft sind es Tausende Vorgänge; eine Zeile je
 // Vorgang wären Hunderte Seiten. Die Reihenfolge folgt der Abfrage (neueste zuerst); innerhalb
 // eines Tages stehen die Handlungen in der Reihenfolge, in der sie zuerst vorkommen.
-func dsgvoVorgaengeJeTag(vorgaenge []repository.DsgvoEigenerVorgang) []dsgvoVorgangsZeile {
+func dsgvoVorgaengeJeTag(vorgaenge []repository.DSGVOEigenerVorgang) []dsgvoVorgangsZeile {
 	var zeilen []dsgvoVorgangsZeile
 	index := map[[2]string]int{}
 	for _, v := range vorgaenge {

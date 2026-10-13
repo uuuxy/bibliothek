@@ -77,9 +77,9 @@ func TestSeedLieferantenAbgeschafft107(t *testing.T) {
 
 	// Die Selbstprüfung: nach der Migration sauber …
 	repo := repository.NewBetriebszustandAbfragen(pool)
-	namen, err := repo.BeispielLieferanten(ctx)
+	namen, err := repo.LadeBeispielLieferanten(ctx)
 	if err != nil {
-		t.Fatalf("BeispielLieferanten: %v", err)
+		t.Fatalf("LadeBeispielLieferanten: %v", err)
 	}
 	if len(namen) != 0 {
 		t.Errorf("nach Migration noch Beispiel-Lieferanten: %v", namen)
@@ -92,9 +92,9 @@ func TestSeedLieferantenAbgeschafft107(t *testing.T) {
 		VALUES ('Unser Schulbuchhändler', 'Bestellung@Klett.de', 'K-1')`); err != nil {
 		t.Fatalf("Rest anlegen: %v", err)
 	}
-	namen, err = repo.BeispielLieferanten(ctx)
+	namen, err = repo.LadeBeispielLieferanten(ctx)
 	if err != nil {
-		t.Fatalf("BeispielLieferanten (Rest): %v", err)
+		t.Fatalf("LadeBeispielLieferanten (Rest): %v", err)
 	}
 	if len(namen) != 1 || namen[0] != "Unser Schulbuchhändler" {
 		t.Errorf("Rest nicht erkannt: %v", namen)

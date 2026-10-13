@@ -14,10 +14,10 @@ import (
 // dsgvoAuskunftAbfragen ist die Datei, in der die Abfragen der Auskunft am Leser stehen.
 const dsgvoAuskunftAbfragen = "../repository/dsgvo_auskunft.go"
 
-// TestDsgvoAuskunftLiestJedeSchuelerQuelle prüft die Auskunfts-Hälfte des Paars am
+// TestDSGVOAuskunftLiestJedeSchuelerQuelle prüft die Auskunfts-Hälfte des Paars am
 // Quelltext: Jede Tabelle mit Schülerbezug muss in repository/dsgvo_auskunft.go in einem
 // FROM/JOIN stehen.
-func TestDsgvoAuskunftLiestJedeSchuelerQuelle(t *testing.T) {
+func TestDSGVOAuskunftLiestJedeSchuelerQuelle(t *testing.T) {
 	quelltext, err := os.ReadFile(dsgvoAuskunftAbfragen)
 	if err != nil {
 		t.Fatalf("%s lesen: %v", dsgvoAuskunftAbfragen, err)
@@ -87,7 +87,7 @@ func TestAuditDetails_EinSchluesselFuerDenSchueler(t *testing.T) {
 
 // Eine Quelle ohne Fremdschlüssel findet keine Abfrage am Schema. Fällt sie aus der Liste,
 // prüfen Auskunft und Tilgung diese Tabelle nicht mehr, und die übrigen Prüfungen bleiben grün.
-func TestDsgvoQuellenOhneFremdschluessel_BleibenInDerListe(t *testing.T) {
+func TestDSGVOQuellenOhneFremdschluessel_BleibenInDerListe(t *testing.T) {
 	ohneFremdschluessel := map[string]bool{}
 	for _, q := range testdaten.DsgvoSchuelerQuellen {
 		if !q.MitFK {

@@ -48,7 +48,7 @@ func TestSendBulkOverdueHandler_SmtpFehlt(t *testing.T) {
 	defer mock.Close()
 
 	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
-	mahnRepo := repository.NewMahnwesenRepository(mock)
+	mahnRepo := repository.NewMahnwesenAbfragen(mock)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
 	rec := httptest.NewRecorder()
@@ -345,7 +345,7 @@ func TestSendBulkOverdueHandler_LeereAuswahlOhneDBZugriff(t *testing.T) {
 		server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 		req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", strings.NewReader(body))
 		rec := httptest.NewRecorder()
-		server.SendBulkOverdueHandler(repository.NewMahnwesenRepository(mock))(rec, req)
+		server.SendBulkOverdueHandler(repository.NewMahnwesenAbfragen(mock))(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Body %s: erwartet 400, bekam %d: %s", body, rec.Code, rec.Body.String())

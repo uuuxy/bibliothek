@@ -32,7 +32,7 @@ func (s *Tueren) GetPermissionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		rechte, err := repository.ListeRollenRechte(ctx, s.DB.Pool)
+		rechte, err := repository.LadeRollenRechte(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

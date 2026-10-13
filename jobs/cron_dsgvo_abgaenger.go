@@ -38,7 +38,7 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 
 	// Die Zeilen sind gelesen und geschlossen, die Verbindung ist zurück im Pool, bevor die
 	// Löschphase beginnt.
-	students, err := repository.LoeschreifeAbgaenger(ctx, s.db, jetzt)
+	students, err := repository.LadeLoeschreifeAbgaenger(ctx, s.db, jetzt)
 	if err != nil {
 		log.Printf("Scheduler GDPR Delete: Failed to fetch eligible students: %v", err)
 		return

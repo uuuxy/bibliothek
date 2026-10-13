@@ -12,10 +12,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestBlockReason_ConstraintLehntGesperrtOhneGrundAb sichert #3 ab: Die DB verbietet den
+// TestSperrgrund_ConstraintLehntGesperrtOhneGrundAb sichert #3 ab: Die DB verbietet den
 // Zombie-Zustand „gesperrt ohne Grund" (chk_schueler_block_reason). Ein gesperrter
 // Schüler ohne block_reason darf gar nicht erst entstehen.
-func TestBlockReason_ConstraintLehntGesperrtOhneGrundAb(t *testing.T) {
+func TestSperrgrund_ConstraintLehntGesperrtOhneGrundAb(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()

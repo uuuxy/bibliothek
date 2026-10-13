@@ -67,9 +67,9 @@ func leserZeileSchueler(t *testing.T, barcode, vorname, nachname, klasse string)
 	return id
 }
 
-// TestLusdBestandKenntNurSchueler: Die Abfrage, aus der die Abgänger-Erkennung ihren
+// TestLUSDBestandKenntNurSchueler: Die Abfrage, aus der die Abgänger-Erkennung ihren
 // Bestand zieht, liefert Kollegen nicht mit. Was sie nicht sieht, kann sie nicht sperren.
-func TestLusdBestandKenntNurSchueler(t *testing.T) {
+func TestLUSDBestandKenntNurSchueler(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -83,9 +83,9 @@ func TestLusdBestandKenntNurSchueler(t *testing.T) {
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
-	bestand, err := repository.LadeLusdBestand(ctx, tx)
+	bestand, err := repository.LadeLUSDBestand(ctx, tx)
 	if err != nil {
-		t.Fatalf("repository.LadeLusdBestand: %v", err)
+		t.Fatalf("repository.LadeLUSDBestand: %v", err)
 	}
 
 	var sahSchueler, sahKollegen bool
@@ -191,7 +191,7 @@ func TestKollegeKannAuchDirektKeinAbgaengerWerden(t *testing.T) {
 // der GANZE Lauf aus. Eine einzige gelöschte Kollegenzeile hätte die Anonymisierung für
 // alle echten Abgänger stillgelegt, Nacht für Nacht, mit einer Zeile im Protokoll.
 //
-// Geprüft wird an der EINEN Quelle der Frist (repository.PredikatAnonymisierung) — der
+// Geprüft wird an der EINEN Quelle der Frist (repository.PraedikatAnonymisierung) — der
 // Bedingung, die auch der Wächter der Selbstprüfung stellt.
 func TestNachtJobFasstKollegenNichtAn(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -208,7 +208,7 @@ func TestNachtJobFasstKollegenNichtAn(t *testing.T) {
 		}
 	}
 
-	bedingung := repository.PredikatAnonymisierung(90, 0)
+	bedingung := repository.PraedikatAnonymisierung(90, 0)
 	trifft := func(id string) bool {
 		args := append(append([]any{}, bedingung.Args...), id)
 		var anzahl int

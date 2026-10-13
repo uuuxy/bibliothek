@@ -207,7 +207,7 @@ func (a *Authenticator) ladeKontoStatus(userID string) (Role, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	aktiv, rolle, err := repository.KontoAktivUndRolle(ctx, a.pool, userID)
+	aktiv, rolle, err := repository.LadeKontoAktivUndRolle(ctx, a.pool, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", errors.New("user account no longer exists")

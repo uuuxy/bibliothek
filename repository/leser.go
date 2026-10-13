@@ -38,9 +38,9 @@ type Leser struct {
 	// Lernmittel (service.pruefeAusleihSperren). Offene Forderungen und überfällige Medien
 	// setzen sie nicht; die zählt die Theke bei jeder Ausleihe selbst.
 	IstGesperrt bool `json:"ist_gesperrt"`
-	// LusdID ist die Schülernummer aus der LUSD; an ihr erkennt der Abgleich den Schüler
+	// LUSDID ist die Schülernummer aus der LUSD; an ihr erkennt der Abgleich den Schüler
 	// wieder.
-	LusdID *string `json:"lusd_id,omitempty"`
+	LUSDID *string `json:"lusd_id,omitempty"`
 	// IstAbgaenger kennzeichnet Schüler, die die Schule verlassen haben.
 	IstAbgaenger bool `json:"ist_abgaenger"`
 	// Geburtsdatum ist der Tag als Text (DATE in Postgres); nil ohne Eintrag.
@@ -137,7 +137,7 @@ func NewLeserAbfragen(db db.PgxPoolIface) LeserAbfragen {
 func leseLeserMitZusatz(row scanner, zusatz ...any) (*Leser, error) {
 	var s Leser
 	ziele := []any{
-		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm, &s.IstVonHandGesperrt, &s.Sperrgrund,
+		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LUSDID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm, &s.IstVonHandGesperrt, &s.Sperrgrund,
 		&s.Strasse, &s.Hausnummer, &s.Plz, &s.Ort, &s.ElternEmail, &s.IstAnonymisiert,
 	}
 	if err := row.Scan(append(ziele, zusatz...)...); err != nil {

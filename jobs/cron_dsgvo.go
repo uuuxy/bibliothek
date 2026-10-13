@@ -118,7 +118,7 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 // (etwa am Append-Only-Trigger auf audit_log, den es nur auf manchen Altbeständen
 // gibt), bricht das die übrigen NICHT ab; das ist der Unterschied zur Tx des Purge.
 func (s *Scheduler) bereinigeAnonymisierteSchuelerSpuren(ctx context.Context) {
-	ids, err := repository.AnonymisierteSchuelerIDs(ctx, s.db)
+	ids, err := repository.LadeAnonymisierteSchuelerIDs(ctx, s.db)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: anonymisierte Schüler konnten nicht gelesen werden: %v", err)
 		return

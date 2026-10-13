@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Die Anmeldung findet ein Konto über LOWER(email) = LOWER($1) LIMIT 1 (LiesAnmeldeKonto). Die
+// Die Anmeldung findet ein Konto über LOWER(email) = LOWER($1) LIMIT 1 (LadeAnmeldeKonto). Die
 // Eindeutigkeit gilt deshalb in derselben Normalform: Sonst entstehen zwei Konten, die sich nur
 // in der Schreibweise unterscheiden, und welches die Anmeldung öffnet, entscheidet die
 // Reihenfolge in der Tabelle. Bei einem genauen Vergleich legte eine Selbstanmeldung

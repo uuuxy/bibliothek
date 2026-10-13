@@ -20,10 +20,10 @@ package repository
 // Geblieben sind ZWEI Fragen an dieselbe Rechnung, weil die Pfade wirklich Verschiedenes
 // wissen wollen — die eine ist über die andere gebaut, nicht neben sie:
 //
-//   - LmfStichtagImSchuljahr: „Welcher Tag ist der Stichtag DIESES Schuljahres?" Das ist
+//   - LMFStichtagImSchuljahr: „Welcher Tag ist der Stichtag DIESES Schuljahres?" Das ist
 //     die Frage des Rückwegs: Eine Klasse verliert ihren Termin, ihre Fristen gehen an
 //     den Stichtag des Schuljahres zurück, in dem der Termin lag.
-//   - LmfStichtagAbTag: „Welcher Stichtag liegt noch vor mir?" Das ist die Frage der
+//   - LMFStichtagAbTag: „Welcher Stichtag liegt noch vor mir?" Das ist die Frage der
 //     Ausleihe: Eine Frist, die in der Vergangenheit liegt, ist keine Frist, sondern
 //     eine Mahnung am Tag der Ausgabe.
 
@@ -57,7 +57,7 @@ func lmfStichtagMonatTag(stichtag string) (time.Month, int) {
 	return monat, tagImMonat
 }
 
-// LmfStichtagImSchuljahr legt den Stichtag in das Schuljahr eines Tages: die erste
+// LMFStichtagImSchuljahr legt den Stichtag in das Schuljahr eines Tages: die erste
 // Wiederkehr von „MM-TT" ab dem 1. August dieses Schuljahres. Für die Vorgabe 07-31 ist
 // das immer der letzte Tag des Schuljahres; für einen Stichtag ab August der Termin im
 // ERSTEN Kalenderjahr des Schuljahres.
@@ -66,7 +66,7 @@ func lmfStichtagMonatTag(stichtag string) (time.Month, int) {
 // Sommerzeitumstellung auf den Nachbartag kippt. Zur Frist wird daraus erst
 // service.TagesEndeInSchulzeitzone (23:59:59); diese Funktion liefert einen KALENDERTAG,
 // keine Frist.
-func LmfStichtagImSchuljahr(tag time.Time, stichtag string) time.Time {
+func LMFStichtagImSchuljahr(tag time.Time, stichtag string) time.Time {
 	monat, tagImMonat := lmfStichtagMonatTag(stichtag)
 	beginn := SchuljahrBeginn(tag)
 	jahr := beginn.Year() + 1
@@ -76,16 +76,16 @@ func LmfStichtagImSchuljahr(tag time.Time, stichtag string) time.Time {
 	return time.Date(jahr, monat, tagImMonat, 12, 0, 0, 0, schulzeit.Zone())
 }
 
-// LmfStichtagAbTag liefert den nächsten Stichtag, der nicht vor dem Tag liegt: den des
+// LMFStichtagAbTag liefert den nächsten Stichtag, der nicht vor dem Tag liegt: den des
 // laufenden Schuljahres, und wenn der schon vorbei ist, den des nächsten. Verglichen
 // werden Kalendertage — wer AM Stichtag ausleiht, bekommt ihn noch (bis 23:59:59), nicht
 // erst in einem Jahr.
-func LmfStichtagAbTag(tag time.Time, stichtag string) time.Time {
+func LMFStichtagAbTag(tag time.Time, stichtag string) time.Time {
 	tag = tag.In(schulzeit.Zone())
-	imSchuljahr := LmfStichtagImSchuljahr(tag, stichtag)
+	imSchuljahr := LMFStichtagImSchuljahr(tag, stichtag)
 	heute := time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())
 	if imSchuljahr.Before(heute) {
-		imSchuljahr = LmfStichtagImSchuljahr(SchuljahrBeginn(tag).AddDate(1, 0, 0), stichtag)
+		imSchuljahr = LMFStichtagImSchuljahr(SchuljahrBeginn(tag).AddDate(1, 0, 0), stichtag)
 	}
 	return imSchuljahr
 }

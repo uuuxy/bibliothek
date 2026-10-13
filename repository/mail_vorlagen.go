@@ -8,11 +8,11 @@ import (
 // MailVorlage ist eine Zeile der Tabelle mail_vorlagen.
 type MailVorlage struct {
 	ID, Typ, Betreff, TextBody string
-	UpdatedAt                  time.Time
+	AktualisiertAm             time.Time
 }
 
-// ListeMailVorlagen liefert alle Vorlagen nach ihrem Typ geordnet.
-func ListeMailVorlagen(ctx context.Context, db Datenbank) ([]MailVorlage, error) {
+// LadeMailVorlagen liefert alle Vorlagen nach ihrem Typ geordnet.
+func LadeMailVorlagen(ctx context.Context, db Datenbank) ([]MailVorlage, error) {
 	rows, err := db.Query(ctx, "SELECT id, typ, betreff, text_body, updated_at FROM mail_vorlagen ORDER BY typ ASC")
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func ListeMailVorlagen(ctx context.Context, db Datenbank) ([]MailVorlage, error)
 	var vorlagen []MailVorlage
 	for rows.Next() {
 		var v MailVorlage
-		if err := rows.Scan(&v.ID, &v.Typ, &v.Betreff, &v.TextBody, &v.UpdatedAt); err == nil {
+		if err := rows.Scan(&v.ID, &v.Typ, &v.Betreff, &v.TextBody, &v.AktualisiertAm); err == nil {
 			vorlagen = append(vorlagen, v)
 		}
 	}

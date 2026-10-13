@@ -83,7 +83,7 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 	}
 
 	t.Run("die Rückgabe stempelt die Uhr und lässt aktualisiert_am stehen", func(t *testing.T) {
-		// aktualisiert_am ist der Rückfall von AbgangSeit für Altzeilen ohne Abgangsstempel.
+		// aktualisiert_am ist der Rückfall von sqlAbgangSeit für Altzeilen ohne Abgangsstempel.
 		// Schriebe eine Rückgabe ihn mit, schöbe sie genau die Uhr vor, um die es hier geht.
 		id := leser("Rueck")
 		_, vorher := stand(id)
@@ -110,7 +110,7 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 		}
 		if !nachher.Equal(vorher) {
 			t.Errorf("die Rückgabe hat aktualisiert_am von %v auf %v gezogen — eine Rückgabe ist keine "+
-				"Änderung am Leser, und aktualisiert_am ist der Rückfall von AbgangSeit", vorher, nachher)
+				"Änderung am Leser, und aktualisiert_am ist der Rückfall von sqlAbgangSeit", vorher, nachher)
 		}
 	})
 

@@ -19,7 +19,7 @@ import (
 //
 // Warum ein Zwilling und nicht ein SELECT suchnorm($1): Der LUSD-Import bildet seinen
 // Namensschlüssel aus geparsten CSV-Zeilen und aus geladenen Bestandszeilen in Go
-// (LusdNamensSchluessel). Mit lower und trim allein fände der Export „Anna Mueller" die
+// (LUSDNamensSchluessel). Mit lower und trim allein fände der Export „Anna Mueller" die
 // von Hand angelegte „Anna Müller" nie — Neuanlage plus
 // „nicht im Export" statt Zuordnung. Ein Zwilling verpflichtet zur Parität:
 // suchnorm_pg_test.go vergleicht beide Seiten, damit die Schülersuche (SQL) und der

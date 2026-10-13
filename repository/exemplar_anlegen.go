@@ -33,7 +33,7 @@ func (a *pgKatalogAbfragen) LegeExemplareAn(ctx context.Context, tx pgx.Tx, exem
 	for _, c := range exemplare {
 		titelIDs = append(titelIDs, c.TitelID)
 	}
-	standorte, err := geerbteStandorte(ctx, tx, titelIDs)
+	standorte, err := ladeGeerbteStandorte(ctx, tx, titelIDs)
 	if err != nil {
 		return err
 	}

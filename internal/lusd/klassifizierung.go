@@ -247,7 +247,7 @@ func (l *klassifizierungsLauf) sammleAbgaenger(modus Modus) {
 		if s == nil || l.gesehen[key] {
 			continue
 		}
-		if modus != ModusID && !s.LusdBestaetigt {
+		if modus != ModusID && !s.LUSDBestaetigt {
 			l.res.NichtImExport = append(l.res.NichtImExport, diffBestand(s, s.ID))
 			continue
 		}

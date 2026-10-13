@@ -20,7 +20,7 @@ import (
 func TestLmfPlanZeilenVorher(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := repository.NewLmfTerminRepository(pool)
+	repo := repository.NewLMFAbfragen(pool)
 	raeume := func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM lmf_plaene`); err != nil {
 			t.Errorf("Aufräumen: %v", err)
@@ -29,8 +29,8 @@ func TestLmfPlanZeilenVorher(t *testing.T) {
 	raeume()
 	t.Cleanup(raeume)
 
-	const art = repository.LmfTerminRueckgabe
-	lies := func(ersterTag string) []repository.LmfPlanZeile {
+	const art = repository.LMFTerminRueckgabe
+	lies := func(ersterTag string) []repository.LMFPlanZeile {
 		t.Helper()
 		zeilen, err := LmfPlanZeilenVorher(ctx, repo, art, ersterTag)
 		if err != nil {
@@ -43,15 +43,15 @@ func TestLmfPlanZeilenVorher(t *testing.T) {
 	}
 
 	// Ein Plan im Schuljahr 2026/27 mit zwei Zeilen, zuerst als Entwurf.
-	zeilen := []repository.LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"10R1"}, Vermerk: "nur Rückgabe"}}
+	zeilen := []repository.LMFPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"10R1"}, Vermerk: "nur Rückgabe"}}
 	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: time.Date(2027, time.June, 22, 0, 0, 0, 0, schulzeit.Zone()), Startstunde: 1, StundenJeTag: 1},
 		make([]*lmfplan.Platz, len(zeilen)), lmfplan.Schultage(nil))
-	plan := repository.LmfPlan{Art: art, ErsterTag: "2027-06-22", Startstunde: 1, StundenJeTag: 1, LetzterTag: "2027-06-23", LetzteStunde: 1}
+	plan := repository.LMFPlan{Art: art, ErsterTag: "2027-06-22", Startstunde: 1, StundenJeTag: 1, LetzterTag: "2027-06-23", LetzteStunde: 1}
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	stand, err := repo.SaveLmfPlanIn(ctx, tx, plan, zeilen, plaetze, nil)
+	stand, err := repo.SchreibePlan(ctx, tx, plan, zeilen, plaetze, nil)
 	if err != nil {
 		t.Fatalf("Plan speichern: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestLmfPlanZeilenVorher(t *testing.T) {
 		t.Errorf("Entwurf im selben Schuljahr: %+v, erwartet keine Zeile", z)
 	}
 
-	if _, err := repo.VeroeffentlicheLmfPlanIn(ctx, pool, stand.Plan.ID, time.Now()); err != nil {
+	if _, err := repo.VeroeffentlichePlan(ctx, pool, stand.Plan.ID, time.Now()); err != nil {
 		t.Fatalf("Plan veröffentlichen: %v", err)
 	}
 	var klassen [][]string
@@ -85,7 +85,7 @@ func TestLmfPlanZeilenVorher(t *testing.T) {
 	}
 
 	// Eine andere Art hat keinen Plan, und ein unlesbarer Tag ist ein Fehler.
-	if z, err := LmfPlanZeilenVorher(ctx, repo, repository.LmfTerminAusgabe, "2027-06-21"); err != nil || z != nil {
+	if z, err := LmfPlanZeilenVorher(ctx, repo, repository.LMFTerminAusgabe, "2027-06-21"); err != nil || z != nil {
 		t.Errorf("andere Art: %+v, %v; erwartet keine Zeile und keinen Fehler", z, err)
 	}
 	if _, err := LmfPlanZeilenVorher(ctx, repo, art, "kein Datum"); err == nil {

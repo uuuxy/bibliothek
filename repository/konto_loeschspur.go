@@ -29,7 +29,7 @@ type kontoLoeschung struct {
 // stehen auf SET NULL); dieser Eintrag ist der Weg dorthin.
 //
 // Die Leserkennung steht unter schueler_id wie in jedem anderen Protokolleintrag über einen
-// Leser: Darüber findet die Auskunft das frühere Konto (LeseDsgvoFruehereZugangskonten), und
+// Leser: Darüber findet die Auskunft das frühere Konto (LadeDSGVOFruehereZugangskonten), und
 // darüber nimmt die Tilgung beim endgültigen Löschen des Lesers Name und Adresse heraus
 // (protokollSchluesselMitPersonenbezug). Jeder Schlüssel steht wörtlich hier, damit das Gate
 // in protokoll_personenbezug_test.go ihn sieht.

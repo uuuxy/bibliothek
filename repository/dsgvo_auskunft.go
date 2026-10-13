@@ -15,39 +15,39 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// DsgvoStammdatenZeile ist die Leserzeile, wie die Auskunft sie liest; die Felder in der
-// Reihenfolge von DsgvoStammdatenSQL.
-type DsgvoStammdatenZeile struct {
-	ID                string
-	BarcodeID         string
-	Vorname           string
-	Nachname          string
-	Klasse            string
-	Geburtsdatum      *string
-	AbgaengerJahr     int
-	IstGesperrt       bool
-	IstAbgaenger      bool
-	LusdID            *string
-	Strasse           string
-	Hausnummer        string
-	Plz               string
-	Ort               string
-	ElternEmail       string
-	IsManuallyBlocked bool
-	BlockReason       *string
-	ErstelltAm        time.Time
-	AktualisiertAm    time.Time
-	GeloeschtAm       *time.Time
-	SchulEintrittAm   *string
-	AbgaengerSeit     *time.Time
-	LetzterVorgangAm  *time.Time
-	LusdBestaetigtAm  *time.Time
-	AnonymisiertAm    *time.Time
-	Art               string
-	HatZugangskonto   bool
+// DSGVOStammdatenZeile ist die Leserzeile, wie die Auskunft sie liest; die Felder in der
+// Reihenfolge von DSGVOStammdatenSQL.
+type DSGVOStammdatenZeile struct {
+	ID                 string
+	BarcodeID          string
+	Vorname            string
+	Nachname           string
+	Klasse             string
+	Geburtsdatum       *string
+	AbgaengerJahr      int
+	IstGesperrt        bool
+	IstAbgaenger       bool
+	LUSDID             *string
+	Strasse            string
+	Hausnummer         string
+	Plz                string
+	Ort                string
+	ElternEmail        string
+	IstVonHandGesperrt bool
+	Sperrgrund         *string
+	ErstelltAm         time.Time
+	AktualisiertAm     time.Time
+	GeloeschtAm        *time.Time
+	SchulEintrittAm    *string
+	AbgaengerSeit      *time.Time
+	LetzterVorgangAm   *time.Time
+	LUSDBestaetigtAm   *time.Time
+	AnonymisiertAm     *time.Time
+	Art                string
+	HatZugangskonto    bool
 }
 
-// DsgvoStammdatenSQL ist die eine Spaltenliste der Auskunft. Sie ist sichtbar, damit das
+// DSGVOStammdatenSQL ist die eine Spaltenliste der Auskunft. Sie ist sichtbar, damit das
 // Spalten-Gate sie gegen information_schema.columns halten kann
 // (repository/dsgvo_spalten_gate_pg_test.go).
 //
@@ -55,7 +55,7 @@ type DsgvoStammdatenZeile struct {
 // COALESCE scheiterte das Lesen bei jedem Leser ohne Adresse. Gelesen wird die Tabelle leser,
 // nicht die Sicht schueler: Über die Sicht endete die Auskunft für einen Kollegen mit „nicht
 // gefunden".
-const DsgvoStammdatenSQL = `
+const DSGVOStammdatenSQL = `
 		SELECT id, COALESCE(barcode_id, '') AS barcode_id, vorname, nachname,
 		       COALESCE(klasse, '') AS klasse, geburtsdatum::text,
 		       COALESCE(abgaenger_jahr, 0) AS abgaenger_jahr,
@@ -72,17 +72,17 @@ const DsgvoStammdatenSQL = `
 		FROM leser
 		WHERE id = $1`
 
-// LeseDsgvoStammdaten liest die Leserzeile. Ohne Zeile: nil, kein Fehler.
-func LeseDsgvoStammdaten(ctx context.Context, q Datenbank, id string) (*DsgvoStammdatenZeile, error) {
-	var st DsgvoStammdatenZeile
-	err := q.QueryRow(ctx, DsgvoStammdatenSQL, id).Scan(
+// LadeDSGVOStammdaten liest die Leserzeile. Ohne Zeile: nil, kein Fehler.
+func LadeDSGVOStammdaten(ctx context.Context, q Datenbank, id string) (*DSGVOStammdatenZeile, error) {
+	var st DSGVOStammdatenZeile
+	err := q.QueryRow(ctx, DSGVOStammdatenSQL, id).Scan(
 		&st.ID, &st.BarcodeID, &st.Vorname, &st.Nachname, &st.Klasse, &st.Geburtsdatum,
-		&st.AbgaengerJahr, &st.IstGesperrt, &st.IstAbgaenger, &st.LusdID,
+		&st.AbgaengerJahr, &st.IstGesperrt, &st.IstAbgaenger, &st.LUSDID,
 		&st.Strasse, &st.Hausnummer, &st.Plz, &st.Ort, &st.ElternEmail,
-		&st.IsManuallyBlocked, &st.BlockReason,
+		&st.IstVonHandGesperrt, &st.Sperrgrund,
 		&st.ErstelltAm, &st.AktualisiertAm, &st.GeloeschtAm,
 		&st.SchulEintrittAm, &st.AbgaengerSeit, &st.LetzterVorgangAm,
-		&st.LusdBestaetigtAm, &st.AnonymisiertAm,
+		&st.LUSDBestaetigtAm, &st.AnonymisiertAm,
 		&st.Art, &st.HatZugangskonto,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -94,9 +94,9 @@ func LeseDsgvoStammdaten(ctx context.Context, q Datenbank, id string) (*DsgvoSta
 	return &st, nil
 }
 
-// LeseDsgvoFotoStand nennt, wann das Ausweisfoto zuletzt gespeichert wurde. Ohne Foto: nil,
+// LadeDSGVOFotoStand nennt, wann das Ausweisfoto zuletzt gespeichert wurde. Ohne Foto: nil,
 // kein Fehler.
-func LeseDsgvoFotoStand(ctx context.Context, q Datenbank, id string) (*time.Time, error) {
+func LadeDSGVOFotoStand(ctx context.Context, q Datenbank, id string) (*time.Time, error) {
 	var aktualisiert time.Time
 	err := q.QueryRow(ctx,
 		`SELECT aktualisiert_am FROM schueler_fotos WHERE schueler_id = $1`, id,
@@ -110,8 +110,8 @@ func LeseDsgvoFotoStand(ctx context.Context, q Datenbank, id string) (*time.Time
 	return &aktualisiert, nil
 }
 
-// DsgvoAusleiheZeile ist eine Zeile von LeseDsgvoAusleihen.
-type DsgvoAusleiheZeile struct {
+// DSGVOAusleiheZeile ist eine Zeile von LadeDSGVOAusleihen.
+type DSGVOAusleiheZeile struct {
 	Gegenstand     string
 	Barcode        string
 	AusgeliehenAm  time.Time
@@ -120,8 +120,8 @@ type DsgvoAusleiheZeile struct {
 	IstHandapparat bool
 }
 
-// LeseDsgvoAusleihen liest die Ausleihen des Lesers, die jüngste zuerst.
-func LeseDsgvoAusleihen(ctx context.Context, q Datenbank, id string) ([]DsgvoAusleiheZeile, error) {
+// LadeDSGVOAusleihen liest die Ausleihen des Lesers, die jüngste zuerst.
+func LadeDSGVOAusleihen(ctx context.Context, q Datenbank, id string) ([]DSGVOAusleiheZeile, error) {
 	return sammle(ctx, q, `
 		SELECT COALESCE(t.titel, g.modellname, 'Unbekannt') AS gegenstand,
 		       COALESCE(e.barcode_id, g.barcode_id, '') AS barcode,
@@ -131,14 +131,14 @@ func LeseDsgvoAusleihen(ctx context.Context, q Datenbank, id string) ([]DsgvoAus
 		LEFT JOIN buecher_titel t ON t.id = e.titel_id
 		LEFT JOIN geraete g ON g.id = a.geraet_id
 		WHERE a.schueler_id = $1
-		ORDER BY a.ausgeliehen_am DESC`, func(r pgx.Rows) (DsgvoAusleiheZeile, error) {
-		var a DsgvoAusleiheZeile
+		ORDER BY a.ausgeliehen_am DESC`, func(r pgx.Rows) (DSGVOAusleiheZeile, error) {
+		var a DSGVOAusleiheZeile
 		return a, r.Scan(&a.Gegenstand, &a.Barcode, &a.AusgeliehenAm, &a.RueckgabeFrist, &a.RueckgabeAm, &a.IstHandapparat)
 	}, id)
 }
 
-// DsgvoSchadensfallZeile ist eine Zeile von LeseDsgvoSchadensfaelle.
-type DsgvoSchadensfallZeile struct {
+// DSGVOSchadensfallZeile ist eine Zeile von LadeDSGVOSchadensfaelle.
+type DSGVOSchadensfallZeile struct {
 	Beschreibung      string
 	Betrag            string
 	IstBezahlt        bool
@@ -147,41 +147,41 @@ type DsgvoSchadensfallZeile struct {
 	Stornierungsgrund *string
 }
 
-// LeseDsgvoSchadensfaelle liest die Schadens- und Verlustfälle des Lesers.
-func LeseDsgvoSchadensfaelle(ctx context.Context, q Datenbank, id string) ([]DsgvoSchadensfallZeile, error) {
+// LadeDSGVOSchadensfaelle liest die Schadens- und Verlustfälle des Lesers.
+func LadeDSGVOSchadensfaelle(ctx context.Context, q Datenbank, id string) ([]DSGVOSchadensfallZeile, error) {
 	return sammle(ctx, q, `
 		SELECT beschreibung, betrag::text, ist_bezahlt, erstellt_am, storniert_am, stornierungsgrund
 		FROM schadensfaelle
 		WHERE schueler_id = $1
-		ORDER BY erstellt_am DESC`, func(r pgx.Rows) (DsgvoSchadensfallZeile, error) {
-		var f DsgvoSchadensfallZeile
+		ORDER BY erstellt_am DESC`, func(r pgx.Rows) (DSGVOSchadensfallZeile, error) {
+		var f DSGVOSchadensfallZeile
 		return f, r.Scan(&f.Beschreibung, &f.Betrag, &f.IstBezahlt, &f.ErstelltAm, &f.StorniertAm, &f.Stornierungsgrund)
 	}, id)
 }
 
-// DsgvoVormerkungZeile ist eine Zeile von LeseDsgvoVormerkungen.
-type DsgvoVormerkungZeile struct {
+// DSGVOVormerkungZeile ist eine Zeile von LadeDSGVOVormerkungen.
+type DSGVOVormerkungZeile struct {
 	Titel      string
 	Status     string
 	Notiz      *string
 	ErstelltAm time.Time
 }
 
-// LeseDsgvoVormerkungen liest die Vormerkungen des Lesers.
-func LeseDsgvoVormerkungen(ctx context.Context, q Datenbank, id string) ([]DsgvoVormerkungZeile, error) {
+// LadeDSGVOVormerkungen liest die Vormerkungen des Lesers.
+func LadeDSGVOVormerkungen(ctx context.Context, q Datenbank, id string) ([]DSGVOVormerkungZeile, error) {
 	return sammle(ctx, q, `
 		SELECT t.titel, v.status, v.notiz, v.erstellt_am
 		FROM vormerkungen v
 		JOIN buecher_titel t ON t.id = v.titel_id
 		WHERE v.schueler_id = $1
-		ORDER BY v.erstellt_am DESC`, func(r pgx.Rows) (DsgvoVormerkungZeile, error) {
-		var v DsgvoVormerkungZeile
+		ORDER BY v.erstellt_am DESC`, func(r pgx.Rows) (DSGVOVormerkungZeile, error) {
+		var v DSGVOVormerkungZeile
 		return v, r.Scan(&v.Titel, &v.Status, &v.Notiz, &v.ErstelltAm)
 	}, id)
 }
 
-// DsgvoNachbuchZeile ist eine Zeile von LeseDsgvoNachbuchMeldungen.
-type DsgvoNachbuchZeile struct {
+// DSGVONachbuchZeile ist eine Zeile von LadeDSGVONachbuchMeldungen.
+type DSGVONachbuchZeile struct {
 	Rolle       string
 	Barcode     string
 	Ergebnis    string
@@ -190,23 +190,23 @@ type DsgvoNachbuchZeile struct {
 	QuittiertAm *time.Time
 }
 
-// LeseDsgvoNachbuchMeldungen liest die Nachbuch-Meldungen, in denen die Person als Ausleiher
+// LadeDSGVONachbuchMeldungen liest die Nachbuch-Meldungen, in denen die Person als Ausleiher
 // oder Vorbesitzer steht. Nach der Tilgung findet die Abfrage nichts mehr: Beide
 // Personenspalten sind dann NULL.
-func LeseDsgvoNachbuchMeldungen(ctx context.Context, q Datenbank, id string) ([]DsgvoNachbuchZeile, error) {
+func LadeDSGVONachbuchMeldungen(ctx context.Context, q Datenbank, id string) ([]DSGVONachbuchZeile, error) {
 	return sammle(ctx, q, `
 		SELECT CASE WHEN ausleiher_schueler_id = $1 THEN 'ausleiher' ELSE 'vorbesitzer' END,
 		       barcode, ergebnis, grund, gescannt_am, quittiert_am
 		FROM nachbuch_meldungen
 		WHERE ausleiher_schueler_id = $1 OR vorbesitzer_schueler_id = $1
-		ORDER BY gescannt_am DESC`, func(r pgx.Rows) (DsgvoNachbuchZeile, error) {
-		var m DsgvoNachbuchZeile
+		ORDER BY gescannt_am DESC`, func(r pgx.Rows) (DSGVONachbuchZeile, error) {
+		var m DSGVONachbuchZeile
 		return m, r.Scan(&m.Rolle, &m.Barcode, &m.Ergebnis, &m.Grund, &m.GescanntAm, &m.QuittiertAm)
 	}, id)
 }
 
-// DsgvoBescheidZeile ist eine Zeile von LeseDsgvoBescheide.
-type DsgvoBescheidZeile struct {
+// DSGVOBescheidZeile ist eine Zeile von LadeDSGVOBescheide.
+type DSGVOBescheidZeile struct {
 	Referenznummer string
 	BriefDatum     time.Time
 	FristBis       time.Time
@@ -214,22 +214,22 @@ type DsgvoBescheidZeile struct {
 	Status         string
 }
 
-// LeseDsgvoBescheide liest die Schadensersatz-Bescheide des Lesers. Nach der Anonymisierung
+// LadeDSGVOBescheide liest die Schadensersatz-Bescheide des Lesers. Nach der Anonymisierung
 // findet die Abfrage nichts mehr: schueler_id ist dann NULL, der Brief bleibt als Beleg ohne
 // Person.
-func LeseDsgvoBescheide(ctx context.Context, q Datenbank, id string) ([]DsgvoBescheidZeile, error) {
+func LadeDSGVOBescheide(ctx context.Context, q Datenbank, id string) ([]DSGVOBescheidZeile, error) {
 	return sammle(ctx, q, `
 		SELECT referenznummer, brief_datum, frist_bis, gesamtbetrag::text, status
 		FROM schadensersatz_bescheide
 		WHERE schueler_id = $1
-		ORDER BY brief_datum DESC`, func(r pgx.Rows) (DsgvoBescheidZeile, error) {
-		var b DsgvoBescheidZeile
+		ORDER BY brief_datum DESC`, func(r pgx.Rows) (DSGVOBescheidZeile, error) {
+		var b DSGVOBescheidZeile
 		return b, r.Scan(&b.Referenznummer, &b.BriefDatum, &b.FristBis, &b.Gesamtbetrag, &b.Status)
 	}, id)
 }
 
-// DsgvoAuditZeile ist eine Zeile von LeseDsgvoAuditEintraege.
-type DsgvoAuditZeile struct {
+// DSGVOProtokollZeile ist eine Zeile von LadeDSGVOProtokollEintraege.
+type DSGVOProtokollZeile struct {
 	Tabelle    string
 	Aktion     string
 	Akteur     string
@@ -240,12 +240,12 @@ type DsgvoAuditZeile struct {
 	Details    json.RawMessage
 }
 
-// LeseDsgvoAuditEintraege liest jeden Eintrag der Datensatz-Historie, der den Leser nennt: die
+// LadeDSGVOProtokollEintraege liest jeden Eintrag der Datensatz-Historie, der den Leser nennt: die
 // Einträge an seiner Leserzeile (datensatz_id) und die jeder anderen Tabelle, die seine Kennung
 // in details tragen — Ausleihe und Rückgabe (datensatz_id ist dort das Exemplar oder Gerät), die
 // Stornierung einer Forderung, die Spur einer Ausleihe, Forderung oder Vormerkung, deren Titel
-// gelöscht wurde. Den Löscheintrag eines Zugangskontos liest LeseDsgvoFruehereZugangskonten.
-func LeseDsgvoAuditEintraege(ctx context.Context, q Datenbank, id string) ([]DsgvoAuditZeile, error) {
+// gelöscht wurde. Den Löscheintrag eines Zugangskontos liest LadeDSGVOFruehereZugangskonten.
+func LadeDSGVOProtokollEintraege(ctx context.Context, q Datenbank, id string) ([]DSGVOProtokollZeile, error) {
 	return sammle(ctx, q, `
 		SELECT al.tabelle, al.aktion, al.akteur, al.timestamp, al.kontext, COALESCE(al.details, 'null'::jsonb),
 		       COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, '')
@@ -255,35 +255,35 @@ func LeseDsgvoAuditEintraege(ctx context.Context, q Datenbank, id string) ([]Dsg
 		LEFT JOIN geraete g ON al.tabelle = 'ausleihen' AND g.id = al.datensatz_id
 		WHERE (al.tabelle = 'schueler' AND al.datensatz_id = $1::uuid)
 		   OR (al.tabelle <> 'benutzer' AND al.details->>'schueler_id' = $1::text)
-		ORDER BY al.timestamp DESC`, func(r pgx.Rows) (DsgvoAuditZeile, error) {
-		var e DsgvoAuditZeile
+		ORDER BY al.timestamp DESC`, func(r pgx.Rows) (DSGVOProtokollZeile, error) {
+		var e DSGVOProtokollZeile
 		return e, r.Scan(&e.Tabelle, &e.Aktion, &e.Akteur, &e.Zeitpunkt, &e.Kontext, &e.Details, &e.Gegenstand, &e.Barcode)
 	}, id)
 }
 
-// DsgvoVerwaltungZeile ist eine Zeile von LeseDsgvoVerwaltungsEintraege.
-type DsgvoVerwaltungZeile struct {
+// DSGVOVerwaltungZeile ist eine Zeile von LadeDSGVOVerwaltungsEintraege.
+type DSGVOVerwaltungZeile struct {
 	Aktion    string
 	Zeitpunkt time.Time
 	Details   json.RawMessage
 }
 
-// LeseDsgvoVerwaltungsEintraege liest die Einträge des Verwaltungsprotokolls (audit_logs), die
+// LadeDSGVOVerwaltungsEintraege liest die Einträge des Verwaltungsprotokolls (audit_logs), die
 // den Leser über details->>'schueler_id' nennen.
-func LeseDsgvoVerwaltungsEintraege(ctx context.Context, q Datenbank, id string) ([]DsgvoVerwaltungZeile, error) {
+func LadeDSGVOVerwaltungsEintraege(ctx context.Context, q Datenbank, id string) ([]DSGVOVerwaltungZeile, error) {
 	return sammle(ctx, q, `
 		SELECT aktion, zeitstempel, COALESCE(details, '{}'::jsonb)
 		FROM audit_logs
 		WHERE details->>'schueler_id' = $1
-		ORDER BY zeitstempel DESC`, func(r pgx.Rows) (DsgvoVerwaltungZeile, error) {
-		var e DsgvoVerwaltungZeile
+		ORDER BY zeitstempel DESC`, func(r pgx.Rows) (DSGVOVerwaltungZeile, error) {
+		var e DSGVOVerwaltungZeile
 		return e, r.Scan(&e.Aktion, &e.Zeitpunkt, &e.Details)
 	}, id)
 }
 
-// SchreibeDsgvoAuskunftProtokoll hält fest, dass die Auskunft erteilt wurde (Rechenschaft).
+// ProtokolliereDSGVOAuskunft hält fest, dass die Auskunft erteilt wurde (Rechenschaft).
 // bearbeiterID ist nil, wenn kein angemeldetes Konto sie abgerufen hat.
-func SchreibeDsgvoAuskunftProtokoll(ctx context.Context, q Datenbank, id string, bearbeiterID *string, akteur string) error {
+func ProtokolliereDSGVOAuskunft(ctx context.Context, q Datenbank, id string, bearbeiterID *string, akteur string) error {
 	_, err := q.Exec(ctx,
 		`INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur)
 		 VALUES ('schueler', 'dsgvo_auskunft', $1::uuid, $2, $3)`,

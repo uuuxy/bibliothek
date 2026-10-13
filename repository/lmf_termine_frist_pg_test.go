@@ -18,22 +18,22 @@ import (
 func TestRueckgabeTerminLage(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := NewLmfTerminRepository(pool)
+	repo := NewLMFAbfragen(pool)
 	t.Cleanup(func() { raeumeLmfPlaene(t, pool) })
 
-	veroeffentliche(t, repo, speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2026-06-01", Startstunde: 1, StundenJeTag: 6},
-		[]LmfPlanZeile{{Klassen: []string{"9H1"}, Vermerk: "vergangen"}}, nil))
+	veroeffentliche(t, repo, speicherePlan(t, repo, LMFPlan{Art: LMFTerminRueckgabe, ErsterTag: "2026-06-01", Startstunde: 1, StundenJeTag: 6},
+		[]LMFPlanZeile{{Klassen: []string{"9H1"}, Vermerk: "vergangen"}}, nil))
 	// 9H1 am 28.06. (Zeile 1) und noch einmal am 05.07. (Zeile 6, hinter dem Wochenende);
 	// 9H2 nur am 29.06.
-	entwurf := speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2027-06-28", Startstunde: 1, StundenJeTag: 1},
-		[]LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}, {Klassen: []string{"10R1"}},
+	entwurf := speicherePlan(t, repo, LMFPlan{Art: LMFTerminRueckgabe, ErsterTag: "2027-06-28", Startstunde: 1, StundenJeTag: 1},
+		[]LMFPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}, {Klassen: []string{"10R1"}},
 			{Klassen: []string{"10R2"}}, {Klassen: []string{"10R3"}}, {Klassen: []string{"9H1"}, Vermerk: "zweiter Termin"}}, nil)
-	veroeffentliche(t, repo, speicherePlan(t, repo, LmfPlan{Art: LmfTerminAusgabe, ErsterTag: "2027-08-10", Startstunde: 2, StundenJeTag: 6},
-		[]LmfPlanZeile{{Klassen: []string{"7G1"}, Vermerk: "neu"}}, nil))
+	veroeffentliche(t, repo, speicherePlan(t, repo, LMFPlan{Art: LMFTerminAusgabe, ErsterTag: "2027-08-10", Startstunde: 2, StundenJeTag: 6},
+		[]LMFPlanZeile{{Klassen: []string{"7G1"}, Vermerk: "neu"}}, nil))
 	heute := time.Date(2026, time.September, 5, 12, 0, 0, 0, schulzeit.Zone())
-	lageVon := func(klasse string, tag time.Time) LmfTerminLage {
+	lageVon := func(klasse string, tag time.Time) LMFTerminLage {
 		t.Helper()
-		lage, err := repo.RueckgabeTerminLage(ctx, klasse, tag)
+		lage, err := repo.LadeRueckgabeTerminLage(ctx, klasse, tag)
 		if err != nil {
 			t.Fatalf("Lage %s am %s: %v", klasse, tag.Format("2006-01-02"), err)
 		}
@@ -92,7 +92,7 @@ func TestRueckgabeTerminLage(t *testing.T) {
 // speicherePlan verteilt die Zeilen wie der Handler (Mo–Fr, ohne Ferien) und speichert.
 // Vom Plan zählen Art, erster Tag, Startstunde und Stunden je Tag; das Ende des
 // Rückgabe-Plans rechnet der Helfer.
-func speicherePlan(t *testing.T, repo *LmfTerminRepository, plan LmfPlan, zeilen []LmfPlanZeile, ausgelassen []string) LmfPlanStand {
+func speicherePlan(t *testing.T, repo *LMFAbfragen, plan LMFPlan, zeilen []LMFPlanZeile, ausgelassen []string) LMFPlanStand {
 	t.Helper()
 	tag, err := time.ParseInLocation("2006-01-02", plan.ErsterTag, schulzeit.Zone())
 	if err != nil {
@@ -102,7 +102,7 @@ func speicherePlan(t *testing.T, repo *LmfTerminRepository, plan LmfPlan, zeilen
 		make([]*lmfplan.Platz, len(zeilen)), lmfplan.Schultage(nil))
 	// Der Rückgabe-Plan trägt sein Ende (Migration 101): hier der Platz der letzten Zeile
 	// — vom Ende her gerechnet ergäbe das dieselben Plätze.
-	if plan.Art == LmfTerminRueckgabe {
+	if plan.Art == LMFTerminRueckgabe {
 		plan.LetzterTag, plan.LetzteStunde = plan.ErsterTag, plan.Startstunde
 		if n := len(plaetze); n > 0 {
 			plan.LetzterTag, plan.LetzteStunde = plaetze[n-1].Datum.Format("2006-01-02"), plaetze[n-1].Stunde
@@ -117,9 +117,9 @@ func speicherePlan(t *testing.T, repo *LmfTerminRepository, plan LmfPlan, zeilen
 
 // veroeffentliche stempelt einen gespeicherten Plan (Migration 100) — wie POST
 // …/veroeffentlichen, ohne Frist-Kopplung (die liegt in api/).
-func veroeffentliche(t *testing.T, repo *LmfTerminRepository, st LmfPlanStand) LmfPlanStand {
+func veroeffentliche(t *testing.T, repo *LMFAbfragen, st LMFPlanStand) LMFPlanStand {
 	t.Helper()
-	st, err := repo.VeroeffentlicheLmfPlanIn(context.Background(), repo.db, st.Plan.ID, time.Now())
+	st, err := repo.VeroeffentlichePlan(context.Background(), repo.db, st.Plan.ID, time.Now())
 	if err != nil {
 		t.Fatalf("Plan %s veröffentlichen: %v", st.Plan.ID, err)
 	}

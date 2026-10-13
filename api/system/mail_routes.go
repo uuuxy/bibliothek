@@ -16,7 +16,7 @@ import (
 func (s *Tueren) GetMailTemplatesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		vorlagen, err := repository.ListeMailVorlagen(ctx, s.DB.Pool)
+		vorlagen, err := repository.LadeMailVorlagen(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
 			return
@@ -34,7 +34,7 @@ func (s *Tueren) GetMailTemplatesHandler() http.HandlerFunc {
 		for _, v := range vorlagen {
 			templates = append(templates, MailTemplate{
 				ID: v.ID, Typ: v.Typ, Betreff: v.Betreff, TextBody: v.TextBody,
-				UpdatedAt: v.UpdatedAt.Format(time.RFC3339),
+				UpdatedAt: v.AktualisiertAm.Format(time.RFC3339),
 			})
 		}
 

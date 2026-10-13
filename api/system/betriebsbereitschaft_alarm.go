@@ -44,7 +44,7 @@ func (s *Tueren) BereitschaftsAlarm(ctx context.Context) {
 		return
 	}
 
-	admins, err := zustandRepo.AktiveAdmins(ctx)
+	admins, err := zustandRepo.LadeAktiveAdmins(ctx)
 	if err != nil {
 		log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e), aber Admin-Konten nicht lesbar (%v)", kritische, err)
 		return

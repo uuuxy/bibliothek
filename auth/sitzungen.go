@@ -52,7 +52,7 @@ func (s *Sitzungen) IstGesperrt(sitzungID string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	gesperrt, err := repository.SitzungGesperrt(ctx, s.pool, sitzungID)
+	gesperrt, err := repository.IstSitzungGesperrt(ctx, s.pool, sitzungID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
@@ -89,7 +89,7 @@ func (s *Sitzungen) PasswortPasst(ctx context.Context, sitzungID, passwort strin
 	if sitzungID == "" {
 		return false, false, nil
 	}
-	pruefwert, err := repository.SitzungsPruefwert(ctx, s.pool, sitzungID)
+	pruefwert, err := repository.LadeSitzungsPruefwert(ctx, s.pool, sitzungID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, false, nil
 	}

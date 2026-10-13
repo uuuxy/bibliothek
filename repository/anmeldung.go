@@ -20,10 +20,10 @@ type AnmeldeKonto struct {
 	ZugangBeantragt bool
 }
 
-// LiesAnmeldeKonto liest das Konto zu einer Adresse, ohne Rücksicht auf Groß- und
+// LadeAnmeldeKonto liest das Konto zu einer Adresse, ohne Rücksicht auf Groß- und
 // Kleinschreibung. Die Ausweisnummer steht an der Leserzeile des Kontos; ein Konto ohne
 // Leserzeile wird trotzdem gefunden und trägt dann keine.
-func LiesAnmeldeKonto(ctx context.Context, db Datenbank, email string) (AnmeldeKonto, error) {
+func LadeAnmeldeKonto(ctx context.Context, db Datenbank, email string) (AnmeldeKonto, error) {
 	var k AnmeldeKonto
 	query := `
 		SELECT b.id, coalesce(l.barcode_id, ''), b.rolle, b.vorname, b.nachname, b.aktiv, b.email,
@@ -61,10 +61,10 @@ type SitzungsKonto struct {
 	Email    string
 }
 
-// LiesSitzungsKonto liest Rolle, Namen, Adresse und Aktiv-Status eines Kontos. Eine Sitzung
+// LadeSitzungsKonto liest Rolle, Namen, Adresse und Aktiv-Status eines Kontos. Eine Sitzung
 // fragt die Datenbank und nicht ihr Token: Rolle und Status können sich seit der Anmeldung
 // geändert haben.
-func LiesSitzungsKonto(ctx context.Context, db Datenbank, kontoID string) (SitzungsKonto, error) {
+func LadeSitzungsKonto(ctx context.Context, db Datenbank, kontoID string) (SitzungsKonto, error) {
 	var k SitzungsKonto
 	err := db.QueryRow(ctx, `
 			SELECT rolle, vorname, nachname, aktiv, email
@@ -75,9 +75,9 @@ func LiesSitzungsKonto(ctx context.Context, db Datenbank, kontoID string) (Sitzu
 	return k, err
 }
 
-// KontoAktivUndRolle liest, ob das Konto aktiv ist, und seine gespeicherte Rolle: die Prüfung
+// LadeKontoAktivUndRolle liest, ob das Konto aktiv ist, und seine gespeicherte Rolle: die Prüfung
 // bei jeder Anfrage.
-func KontoAktivUndRolle(ctx context.Context, db Datenbank, kontoID string) (aktiv bool, rolle string, err error) {
+func LadeKontoAktivUndRolle(ctx context.Context, db Datenbank, kontoID string) (aktiv bool, rolle string, err error) {
 	err = db.QueryRow(ctx, `SELECT aktiv, rolle FROM benutzer WHERE id = $1`, kontoID).Scan(&aktiv, &rolle)
 	return aktiv, rolle, err
 }

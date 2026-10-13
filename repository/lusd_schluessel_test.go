@@ -11,7 +11,7 @@ import (
 // „nicht im Export". Sicher ist das, weil der Import einen doppelt belegten Schlüssel als
 // mehrdeutig markiert und dann niemanden anfasst: Ein zu weiter Schlüssel fällt auf das
 // alte Verhalten zurück, nie in eine falsche Zuordnung.
-func TestLusdNamensSchluessel_IstDieSuchnormDerNamen(t *testing.T) {
+func TestLUSDNamensSchluessel_IstDieSuchnormDerNamen(t *testing.T) {
 	gleich := [][2][2]string{
 		{{"Anna", "Müller"}, {"Anna", "Mueller"}},
 		{{"Anna", "Müller"}, {"ANNA", "MÜLLER"}},
@@ -20,7 +20,7 @@ func TestLusdNamensSchluessel_IstDieSuchnormDerNamen(t *testing.T) {
 		{{"Đorđe", "Šimić"}, {"Dorde", "Simic"}},
 	}
 	for _, p := range gleich {
-		a, b := LusdNamensSchluessel(p[0][0], p[0][1]), LusdNamensSchluessel(p[1][0], p[1][1])
+		a, b := LUSDNamensSchluessel(p[0][0], p[0][1]), LUSDNamensSchluessel(p[1][0], p[1][1])
 		if a != b {
 			t.Errorf("%v und %v müssen denselben Namensschlüssel haben: %q ≠ %q", p[0], p[1], a, b)
 		}
@@ -33,23 +33,23 @@ func TestLusdNamensSchluessel_IstDieSuchnormDerNamen(t *testing.T) {
 		{{"Anna-Lena", "Müller"}, {"Anna", "Müller"}},
 	}
 	for _, p := range verschieden {
-		if LusdNamensSchluessel(p[0][0], p[0][1]) == LusdNamensSchluessel(p[1][0], p[1][1]) {
+		if LUSDNamensSchluessel(p[0][0], p[0][1]) == LUSDNamensSchluessel(p[1][0], p[1][1]) {
 			t.Errorf("%v und %v dürfen nicht denselben Namensschlüssel haben", p[0], p[1])
 		}
 	}
 }
 
 // Dieselbe Normalform für den Name+Geburtsdatum-Schlüssel — zwei Stufen, EINE Regel.
-func TestLusdSchluessel_NormalisiertWieDerNamensschluessel(t *testing.T) {
+func TestLUSDSchluessel_NormalisiertWieDerNamensschluessel(t *testing.T) {
 	geb := time.Date(2012, 3, 4, 0, 0, 0, 0, time.UTC)
-	if a, b := LusdSchluessel("Anna", "Müller", &geb), LusdSchluessel("anna", "MUELLER", &geb); a != b {
+	if a, b := LUSDSchluessel("Anna", "Müller", &geb), LUSDSchluessel("anna", "MUELLER", &geb); a != b {
 		t.Errorf("Müller/MUELLER mit gleichem Geburtsdatum: %q ≠ %q", a, b)
 	}
 	andere := geb.AddDate(0, 0, 1)
-	if LusdSchluessel("Anna", "Müller", &geb) == LusdSchluessel("Anna", "Müller", &andere) {
+	if LUSDSchluessel("Anna", "Müller", &geb) == LUSDSchluessel("Anna", "Müller", &andere) {
 		t.Error("verschiedene Geburtsdaten müssen verschiedene Schlüssel geben")
 	}
-	if LusdSchluessel("Anna", "Müller", nil) != "" {
+	if LUSDSchluessel("Anna", "Müller", nil) != "" {
 		t.Error("ohne Geburtsdatum gibt es keinen Name+Datum-Schlüssel")
 	}
 }

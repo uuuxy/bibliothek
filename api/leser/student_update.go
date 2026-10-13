@@ -278,7 +278,7 @@ func (s *Tueren) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 	}
 	neu := strings.TrimSpace(*reqLusd)
 
-	aktuell, err := repository.LusdIDDesLesers(ctx, s.DB.Pool, id)
+	aktuell, err := repository.LadeLUSDIDDesLesers(ctx, s.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
@@ -303,7 +303,7 @@ func (s *Tueren) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 
 	// Eindeutigkeit VOR dem Schreiben prüfen, damit statt eines 500 am partiellen
 	// Unique-Index (uniq_schueler_lusd_id_active) eine klare 409 zurückkommt.
-	belegt, err := repository.LusdIDBeiAnderemSchueler(ctx, s.DB.Pool, neu, id)
+	belegt, err := repository.HatAndererSchuelerLUSDID(ctx, s.DB.Pool, neu, id)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", false
@@ -314,7 +314,7 @@ func (s *Tueren) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 		return "", false
 	}
 
-	b.LusdID = &neu
+	b.LUSDID = &neu
 	return neu, true
 }
 

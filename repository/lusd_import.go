@@ -19,20 +19,20 @@ import (
 // anderer Advisory-Schlüssel im Projekt nutzt diesen Nummernkreis.
 const lusdImportSperre int64 = 750_2026
 
-// SperreLusdImport reiht den Lauf hinter einem laufenden Import ein, bis die Transaktion
+// SperreLUSDImport reiht den Lauf hinter einem laufenden Import ein, bis die Transaktion
 // endet. Zwei Importe zugleich arbeiteten auf sich überholenden Ständen: Kollidierende
 // Ausweisnummern oder LUSD-IDs brächen den zweiten ab, und der eine könnte einen Abgänger
 // anonymisieren, den der andere gerade wieder aktiviert.
-func SperreLusdImport(ctx context.Context, tx pgx.Tx) error {
+func SperreLUSDImport(ctx context.Context, tx pgx.Tx) error {
 	_, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, lusdImportSperre)
 	return err
 }
 
-// FindeAktivenSchuelerNachLusdID nennt die nicht gelöschte Schülerzeile zu einer LUSD-ID oder
+// FindeAktivenSchuelerZuLUSDID nennt die nicht gelöschte Schülerzeile zu einer LUSD-ID oder
 // "", wenn es keine gibt; mehr als eine lässt der Teilindex uniq_schueler_lusd_id_active nicht
 // zu. So findet der Lauf einen Rückkehrer, der nicht unter den Aktiven steht, dessen Zeile die
 // LUSD-ID aber noch belegt.
-func FindeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID string) (string, error) {
+func FindeAktivenSchuelerZuLUSDID(ctx context.Context, tx pgx.Tx, lusdID string) (string, error) {
 	var id string
 	err := tx.QueryRow(ctx,
 		"SELECT id FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL LIMIT 1", lusdID,
@@ -43,7 +43,7 @@ func FindeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID strin
 	return id, err
 }
 
-// AdoptiereLusdWaise heftet die LUSD-ID an einen Schüler, der noch keine echte trägt, und
+// AdoptiereLUSDWaise heftet die LUSD-ID an einen Schüler, der noch keine echte trägt, und
 // trägt ein fehlendes Geburtsdatum nach. Mit leerer LUSD-ID (Abgleich über den Namen) bleibt
 // die ID unberührt.
 //
@@ -53,7 +53,7 @@ func FindeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID strin
 // Teilindex uniq_schueler_lusd_id_active, falls die ID inzwischen eine andere aktive Zeile
 // hält. Greift der Schutz, bleibt die Zeile unverändert und der Import läuft weiter; die
 // Zeile der Datei nimmt dann den Weg des Rückkehrers oder des Neuzugangs.
-func AdoptiereLusdWaise(ctx context.Context, tx pgx.Tx, schuelerID, lusdID, geburtsdatum string) error {
+func AdoptiereLUSDWaise(ctx context.Context, tx pgx.Tx, schuelerID, lusdID, geburtsdatum string) error {
 	var geb *string
 	if geburtsdatum != "" {
 		geb = &geburtsdatum
@@ -65,48 +65,48 @@ func AdoptiereLusdWaise(ctx context.Context, tx pgx.Tx, schuelerID, lusdID, gebu
 				aktualisiert_am = NOW()
 			WHERE id = $2 AND ($1 = '' OR lusd_id IS NULL OR lusd_id LIKE $3)
 			  AND NOT EXISTS (SELECT 1 FROM schueler WHERE $1 <> '' AND lusd_id = $1 AND deleted_at IS NULL)`,
-		lusdID, schuelerID, LitteraHerkunftPraefix+"%", geb)
+		lusdID, schuelerID, litteraHerkunftPraefix+"%", geb)
 	return err
 }
 
-// LusdNeuzugang ist ein Schüler, den der Import neu anlegt. Leere Texte werden als NULL
+// LUSDNeuzugang ist ein Schüler, den der Import neu anlegt. Leere Texte werden als NULL
 // gespeichert, auch die LUSD-ID: Ein Leerstring belegte den Teilindex
 // uniq_schueler_lusd_id_active, und der zweite Neuzugang ohne ID bräche den Import ab.
-type LusdNeuzugang struct {
+type LUSDNeuzugang struct {
 	Ausweisnummer                              string
 	Vorname, Nachname, Klasse                  string
 	AbgaengerJahr                              int
-	LusdID                                     string
+	LUSDID                                     string
 	Geburtsdatum, EintrittAm                   *time.Time
 	Strasse, Hausnummer, PLZ, Ort, ElternEmail string
 }
 
-// LegeLusdSchuelerAn legt den Neuzugang an. lusd_bestaetigt_am wird gesetzt: Der Schüler
+// LegeLUSDSchuelerAn legt den Neuzugang an. lusd_bestaetigt_am wird gesetzt: Der Schüler
 // kommt aus dem Export und gilt damit als von der LUSD geführt.
-func LegeLusdSchuelerAn(ctx context.Context, tx pgx.Tx, n LusdNeuzugang) error {
+func LegeLUSDSchuelerAn(ctx context.Context, tx pgx.Tx, n LUSDNeuzugang) error {
 	_, err := tx.Exec(ctx, `
 		INSERT INTO schueler
 			(barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum,
 			 strasse, hausnummer, plz, ort, eltern_email, lusd_bestaetigt_am, schul_eintritt_am)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), $13)`,
 		n.Ausweisnummer, n.Vorname, n.Nachname, n.Klasse, n.AbgaengerJahr,
-		leererStringAlsNull(n.LusdID), n.Geburtsdatum,
+		leererStringAlsNull(n.LUSDID), n.Geburtsdatum,
 		leererStringAlsNull(n.Strasse), leererStringAlsNull(n.Hausnummer), leererStringAlsNull(n.PLZ),
 		leererStringAlsNull(n.Ort), leererStringAlsNull(n.ElternEmail), n.EintrittAm)
 	return err
 }
 
-// LusdAktualisierung trägt, was der Export zu einem Schüler des Bestands sagt. Geburtsdatum
+// LUSDAktualisierung trägt, was der Export zu einem Schüler des Bestands sagt. Geburtsdatum
 // ist nur bei einem bestätigten Umbenennungs-Paar gesetzt: Sonst könnte eine Korrektur aus der
 // LUSD am Teilindex unique_schueler_name_gebdatum kollidieren und den ganzen Lauf abbrechen.
-type LusdAktualisierung struct {
+type LUSDAktualisierung struct {
 	SchuelerID                                 string
 	Vorname, Nachname, Klasse                  string
 	Strasse, Hausnummer, PLZ, Ort, ElternEmail string
 	EintrittAm, Geburtsdatum                   *time.Time
 }
 
-// AktualisiereLusdBestand übernimmt Klasse, Name und Kontaktdaten aus dem Export, alle Zeilen
+// AendereLUSDBestand übernimmt Klasse, Name und Kontaktdaten aus dem Export, alle Zeilen
 // als ein Batch. Ein leerer Wert des Exports überschreibt nichts (COALESCE(NULLIF(...))); ein
 // Export ohne Adressspalten löscht also keine Adressen.
 //
@@ -121,7 +121,7 @@ type LusdAktualisierung struct {
 // Die Verbindung bleibt bis zum Close vom Batch belegt; der Aufrufer nutzt die Transaktion
 // danach weiter. Close steht deshalb vor jedem Rückweg, und sein Fehler wird gemeldet: Er
 // nennt, was beim Abräumen der übrigen Ergebnisse auffiel.
-func AktualisiereLusdBestand(ctx context.Context, tx pgx.Tx, zeilen []LusdAktualisierung) error {
+func AendereLUSDBestand(ctx context.Context, tx pgx.Tx, zeilen []LUSDAktualisierung) error {
 	batch := &pgx.Batch{}
 	for _, z := range zeilen {
 		batch.Queue(`
@@ -149,7 +149,7 @@ func AktualisiereLusdBestand(ctx context.Context, tx pgx.Tx, zeilen []LusdAktual
 			abgaenger_seit = NULL,
 			ist_gesperrt = CASE
 				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN false
-				WHEN `+SQLAbgaengerSperreAutomatisch+`
+				WHEN `+sqlAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $9 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $9 AND ist_bezahlt = false)
 				THEN false
@@ -158,11 +158,11 @@ func AktualisiereLusdBestand(ctx context.Context, tx pgx.Tx, zeilen []LusdAktual
 			-- verlangt einen Grund NUR solange ist_gesperrt = true.
 			block_reason = CASE
 				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN NULL
-				WHEN `+SQLAbgaengerSperreAutomatisch+`
+				WHEN `+sqlAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $9 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $9 AND ist_bezahlt = false)
 				THEN NULL
-				WHEN `+SQLAbgaengerSperreAutomatisch+`
+				WHEN `+sqlAbgaengerSperreAutomatisch+`
 				THEN '`+AbgaengerSperrgrundOffen+`'
 				ELSE block_reason END,
 			aktualisiert_am = NOW()

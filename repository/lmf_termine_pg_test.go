@@ -18,30 +18,30 @@ import (
 // grenze auf; die Vorschlags-Reihenfolge kennt Schreibvarianten; ein zweites Speichern
 // im selben Schuljahr ersetzt, in einem anderen legt es einen neuen Plan an; der
 // neueste gewinnt.
-func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
+func TestLMFPlan_SpeichernListenAuslassen(t *testing.T) {
 	pool := pgTestPool(t)
 	// Eigene Ausgangslage: Der Test zählt weiter unten die Klassen MIT SCHÜLERN
-	// (KlassenMitSchuelern) und erwartet genau vier. Bis zum 16.09.2026 stimmte das nur,
+	// (LadeKlassenMitSchuelern) und erwartet genau vier. Bis zum 16.09.2026 stimmte das nur,
 	// solange kein vorher laufender Test einen Schüler hinterließ — die Reihenfolge der
 	// Testdateien im Paket entschied also über Grün und Rot. Das ist keine Aussage über
 	// den Plan, sondern über die Sortierung der Dateinamen.
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewLmfTerminRepository(pool)
+	repo := NewLMFAbfragen(pool)
 	t.Cleanup(func() {
 		raeumeLmfPlaene(t, pool)
 		if _, err := pool.Exec(ctx, `DELETE FROM schueler WHERE nachname = 'Lmfplantest'`); err != nil {
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-	if _, err := repo.NeuesterLmfPlan(ctx, LmfTerminRueckgabe); !errors.Is(err, pgx.ErrNoRows) {
+	if _, err := repo.LadeNeuestenPlan(ctx, LMFTerminRueckgabe); !errors.Is(err, pgx.ErrNoRows) {
 		t.Fatalf("ohne Plan erwartet ErrNoRows, war %v", err)
 	}
 
 	// Donnerstag 11.06.2026 ab 3. Stunde, 6 je Tag — wie der echte Plan der Schule.
 	// Schreibvarianten und eine Dublette in einer Zeile; eine Zeile ohne Klasse.
-	st := speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2026-06-11", Startstunde: 3, StundenJeTag: 6},
-		[]LmfPlanZeile{
+	st := speicherePlan(t, repo, LMFPlan{Art: LMFTerminRueckgabe, ErsterTag: "2026-06-11", Startstunde: 3, StundenJeTag: 6},
+		[]LMFPlanZeile{
 			{Klassen: []string{"9h1"}}, {Klassen: []string{"9H2"}, Vermerk: "bis 11. eingesammelt"},
 			{Klassen: []string{"10r1", " 10R2 ", "10r1"}}, {Klassen: []string{"10R3"}},
 			{Klassen: []string{"8H1"}}, {Vermerk: "Bücher setzen"},
@@ -65,21 +65,21 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	if st.Plan.VeroeffentlichtAm != nil {
 		t.Errorf("frisch gespeichert muss ein Entwurf sein, Stempel: %v", *st.Plan.VeroeffentlichtAm)
 	}
-	if entwurf, err := repo.ListLmfTermine(ctx, ab, LmfListenFilter{}); err != nil || len(entwurf) != 0 {
+	if entwurf, err := repo.LadeTermine(ctx, ab, LMFListenFilter{}); err != nil || len(entwurf) != 0 {
 		t.Errorf("Entwurf darf in der Liste nicht stehen: %d (%v)", len(entwurf), err)
 	}
-	if planer, err := repo.ListLmfTermine(ctx, ab, LmfListenFilter{MitEntwuerfen: true}); err != nil || len(planer) != 6 {
+	if planer, err := repo.LadeTermine(ctx, ab, LMFListenFilter{MitEntwuerfen: true}); err != nil || len(planer) != 6 {
 		t.Errorf("der Planer sieht den Entwurf: %d (%v)", len(planer), err)
 	}
 	stempel := time.Date(2026, time.May, 20, 10, 0, 0, 0, schulzeit.Zone())
-	veroeffentlicht, err := repo.VeroeffentlicheLmfPlanIn(ctx, repo.db, st.Plan.ID, stempel)
+	veroeffentlicht, err := repo.VeroeffentlichePlan(ctx, repo.db, st.Plan.ID, stempel)
 	if err != nil || veroeffentlicht.Plan.VeroeffentlichtAm == nil || len(veroeffentlicht.Zeilen) != 6 {
 		t.Fatalf("veröffentlichen: %+v (%v)", veroeffentlicht.Plan, err)
 	}
 	st = veroeffentlicht
 	// Liste ab Schuljahresbeginn: alle sechs, sortiert nach Platz; das Vokabular hat
 	// die Schreibweise vereinheitlicht („9h1" → registrierte Form).
-	liste, err := repo.ListLmfTermine(ctx, ab, LmfListenFilter{})
+	liste, err := repo.LadeTermine(ctx, ab, LMFListenFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,11 +89,11 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	if klassenNorm(liste[0].Klassen[0]) != "9h1" {
 		t.Errorf("Klasse der ersten Zeile: %v", liste[0].Klassen)
 	}
-	spaeter, err := repo.ListLmfTermine(ctx, time.Date(2026, time.August, 1, 0, 0, 0, 0, schulzeit.Zone()), LmfListenFilter{})
+	spaeter, err := repo.LadeTermine(ctx, time.Date(2026, time.August, 1, 0, 0, 0, 0, schulzeit.Zone()), LMFListenFilter{})
 	if err != nil || len(spaeter) != 0 {
 		t.Errorf("ab August 2026 darf nichts mehr zu sehen sein: %d (%v)", len(spaeter), err)
 	}
-	alle, err := repo.ListLmfTermine(ctx, time.Time{}, LmfListenFilter{})
+	alle, err := repo.LadeTermine(ctx, time.Time{}, LMFListenFilter{})
 	if err != nil || len(alle) != 6 {
 		t.Errorf("alle hebt die Grenze auf: %d (%v)", len(alle), err)
 	}
@@ -109,7 +109,7 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Vorschlags-Reihenfolge: Abschlussklasse zuerst, dann Jahrgang absteigend; ab 11 Oberstufe.
-	reihe, err := repo.KlassenMitSchuelern(ctx)
+	reihe, err := repo.LadeKlassenMitSchuelern(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,28 +122,28 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 
 	// Zweites Speichern im selben Schuljahr ERSETZT (eine Zeile weniger, andere Startstunde)
 	// — und der Stempel bleibt: ein veröffentlichter Plan wird durch Umschreiben kein Entwurf.
-	st2 := speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2026-06-15", Startstunde: 1, StundenJeTag: 6},
-		[]LmfPlanZeile{{Klassen: []string{"9H1"}}}, nil)
+	st2 := speicherePlan(t, repo, LMFPlan{Art: LMFTerminRueckgabe, ErsterTag: "2026-06-15", Startstunde: 1, StundenJeTag: 6},
+		[]LMFPlanZeile{{Klassen: []string{"9H1"}}}, nil)
 	if st2.Plan.ID != st.Plan.ID {
 		t.Errorf("gleiches Schuljahr muss denselben Plan umschreiben: %s ≠ %s", st2.Plan.ID, st.Plan.ID)
 	}
 	if st2.Plan.VeroeffentlichtAm == nil {
 		t.Error("Umschreiben eines veröffentlichten Plans darf den Stempel nicht löschen")
 	}
-	neuester, err := repo.NeuesterLmfPlan(ctx, LmfTerminRueckgabe)
+	neuester, err := repo.LadeNeuestenPlan(ctx, LMFTerminRueckgabe)
 	if err != nil || len(neuester.Zeilen) != 1 || neuester.Plan.Startstunde != 1 || len(neuester.Ausgelassen) != 0 {
 		t.Errorf("umgeschriebener Plan: %+v (%v)", neuester, err)
 	}
 	// Anderes Schuljahr legt einen NEUEN Plan an; der neueste gewinnt.
-	st3 := speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2027-06-14", Startstunde: 1, StundenJeTag: 6},
-		[]LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}}, nil)
+	st3 := speicherePlan(t, repo, LMFPlan{Art: LMFTerminRueckgabe, ErsterTag: "2027-06-14", Startstunde: 1, StundenJeTag: 6},
+		[]LMFPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}}, nil)
 	if st3.Plan.ID == st.Plan.ID {
 		t.Error("neues Schuljahr muss einen neuen Plan anlegen")
 	}
 	if st3.Plan.VeroeffentlichtAm != nil {
 		t.Error("der Plan des neuen Schuljahres beginnt als Entwurf")
 	}
-	if neuester, err = repo.NeuesterLmfPlan(ctx, LmfTerminRueckgabe); err != nil || neuester.Plan.ID != st3.Plan.ID {
+	if neuester, err = repo.LadeNeuestenPlan(ctx, LMFTerminRueckgabe); err != nil || neuester.Plan.ID != st3.Plan.ID {
 		t.Errorf("neuester Plan: %+v (%v)", neuester.Plan, err)
 	}
 	var anzahl int
@@ -152,11 +152,11 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	}
 
 	// Löschen räumt Zeilen und Klassen mit (CASCADE) und meldet, ob es etwas gab.
-	weg, err := repo.DeleteLmfPlanIn(ctx, repo.db, st3.Plan.ID)
+	weg, err := repo.LoeschePlan(ctx, repo.db, st3.Plan.ID)
 	if err != nil || !weg {
 		t.Fatalf("Löschen: weg=%v err=%v", weg, err)
 	}
-	if weg, err = repo.DeleteLmfPlanIn(ctx, repo.db, st3.Plan.ID); err != nil || weg {
+	if weg, err = repo.LoeschePlan(ctx, repo.db, st3.Plan.ID); err != nil || weg {
 		t.Errorf("zweites Löschen: weg=%v err=%v", weg, err)
 	}
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM lmf_termine WHERE plan_id = $1`, st3.Plan.ID).Scan(&anzahl); err != nil || anzahl != 0 {
@@ -186,10 +186,10 @@ func klassenNorm(k string) string {
 // Fester Platz und freie Tage (Migration 099) überleben den Weg durch die Datenbank:
 // Die Zeile mit dem Ausflug kommt mit fest = true und ihrem Platz zurück, die freien
 // Tage hängen am Plan — und ein zweites Speichern ersetzt beides vollständig.
-func TestLmfPlan_FesterPlatzUndFreieTage(t *testing.T) {
+func TestLMFPlan_FesterPlatzUndFreieTage(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := NewLmfTerminRepository(pool)
+	repo := NewLMFAbfragen(pool)
 	t.Cleanup(func() { raeumeLmfPlaene(t, pool) })
 
 	tag := func(s string) time.Time {
@@ -199,9 +199,9 @@ func TestLmfPlan_FesterPlatzUndFreieTage(t *testing.T) {
 		}
 		return d
 	}
-	plan := LmfPlan{Art: LmfTerminAusgabe, ErsterTag: "2026-08-24", Startstunde: 1, StundenJeTag: 6,
-		FreieTage: []LmfFreierTag{{Datum: "2026-08-25", Grund: "Pädagogischer Tag"}}}
-	zeilen := []LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"7G1"}, Fest: true, Vermerk: "Ausflug"}}
+	plan := LMFPlan{Art: LMFTerminAusgabe, ErsterTag: "2026-08-24", Startstunde: 1, StundenJeTag: 6,
+		FreieTage: []LMFFreierTag{{Datum: "2026-08-25", Grund: "Pädagogischer Tag"}}}
+	zeilen := []LMFPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"7G1"}, Fest: true, Vermerk: "Ausflug"}}
 	fest := []*lmfplan.Platz{nil, {Datum: tag("2026-08-28"), Stunde: 4}}
 	frei := []lmfplan.Zeitraum{{Von: tag("2026-08-25"), Bis: tag("2026-08-25"), Name: "Pädagogischer Tag"}}
 	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag("2026-08-24"), Startstunde: 1, StundenJeTag: 6}, fest, lmfplan.Schultage(frei))
@@ -209,11 +209,11 @@ func TestLmfPlan_FesterPlatzUndFreieTage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	st, err := repo.NeuesterLmfPlan(ctx, LmfTerminAusgabe)
+	st, err := repo.LadeNeuestenPlan(ctx, LMFTerminAusgabe)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(st.Plan.FreieTage) != 1 || st.Plan.FreieTage[0] != (LmfFreierTag{Datum: "2026-08-25", Grund: "Pädagogischer Tag"}) {
+	if len(st.Plan.FreieTage) != 1 || st.Plan.FreieTage[0] != (LMFFreierTag{Datum: "2026-08-25", Grund: "Pädagogischer Tag"}) {
 		t.Errorf("freie Tage: %+v", st.Plan.FreieTage)
 	}
 	if len(st.Zeilen) != 2 || st.Zeilen[0].Fest || !st.Zeilen[1].Fest {
@@ -230,7 +230,7 @@ func TestLmfPlan_FesterPlatzUndFreieTage(t *testing.T) {
 	if _, err := speichereLmfPlanImTest(ctx, repo, plan, zeilen, plaetze, nil); err != nil {
 		t.Fatal(err)
 	}
-	if st, err = repo.NeuesterLmfPlan(ctx, LmfTerminAusgabe); err != nil {
+	if st, err = repo.LadeNeuestenPlan(ctx, LMFTerminAusgabe); err != nil {
 		t.Fatal(err)
 	}
 	if len(st.Plan.FreieTage) != 0 || st.Zeilen[1].Fest || st.Zeilen[1].Datum != "2026-08-24" {

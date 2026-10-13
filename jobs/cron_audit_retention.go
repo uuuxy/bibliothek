@@ -36,12 +36,12 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 	}
 	monate := repository.ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate)
 
-	geloeschtDatensatz, err := repository.LoescheAuditLog(ctx, s.db, monate)
+	geloeschtDatensatz, err := repository.LoescheAltesProtokoll(ctx, s.db, monate)
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: audit_log: %v", err)
 		return
 	}
-	geloeschtAdmin, err := repository.LoescheAuditLogs(ctx, s.db, monate)
+	geloeschtAdmin, err := repository.LoescheAltesVerwaltungsProtokoll(ctx, s.db, monate)
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: audit_logs: %v", err)
 		return

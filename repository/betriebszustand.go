@@ -63,10 +63,10 @@ func (a *BetriebszustandAbfragen) ZaehleDemoExemplare(ctx context.Context) (int,
 	return anzahl, err
 }
 
-// BeispielLieferanten nennt die Lieferanten, die noch eine Kennung der früheren Startdaten
+// LadeBeispielLieferanten nennt die Lieferanten, die noch eine Kennung der früheren Startdaten
 // tragen. Leer heißt keiner, ein Fehler heißt „nicht erhoben"; der Rufer unterscheidet
 // beides, damit ein Fehler der Datenbank nicht als „alles gut" gilt.
-func (a *BetriebszustandAbfragen) BeispielLieferanten(ctx context.Context) ([]string, error) {
+func (a *BetriebszustandAbfragen) LadeBeispielLieferanten(ctx context.Context) ([]string, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
@@ -97,9 +97,9 @@ type AdminKonto struct {
 	Email string
 }
 
-// AktiveAdmins liefert alle aktiven Admin-Konten mit Name und Adresse, für den Versand der
+// LadeAktiveAdmins liefert alle aktiven Admin-Konten mit Name und Adresse, für den Versand der
 // Alarme und für die Selbstprüfung: Wer die Alarm-Mails bekommt, ist dort auch zu sehen.
-func (a *BetriebszustandAbfragen) AktiveAdmins(ctx context.Context) ([]AdminKonto, error) {
+func (a *BetriebszustandAbfragen) LadeAktiveAdmins(ctx context.Context) ([]AdminKonto, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
@@ -150,11 +150,11 @@ func (a *BetriebszustandAbfragen) LadeRollenRechte(ctx context.Context) (map[str
 	return live, rows.Err()
 }
 
-// KlassenBestand liefert die drei Mengen von Klassennamen, die nur über gleichen Text
+// LadeKlassenBestand liefert die drei Mengen von Klassennamen, die nur über gleichen Text
 // zusammenhängen: die Klassen der aktiven Schüler, die Zeilen der Zuordnung der Klassenlehrer
 // und die Klassen der Bücherlisten. Welche Klasse eine Klassenleitung braucht, entscheidet
 // die Selbstprüfung; hier wird nur erhoben.
-func (a *BetriebszustandAbfragen) KlassenBestand(ctx context.Context) (schueler, zuordnungen, buecherlisten []string, err error) {
+func (a *BetriebszustandAbfragen) LadeKlassenBestand(ctx context.Context) (schueler, zuordnungen, buecherlisten []string, err error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
@@ -216,7 +216,7 @@ func (a *BetriebszustandAbfragen) SchreibeEinstellungswert(ctx context.Context, 
 // ihn niemand, bleiben Name und Anschrift auf Dauer stehen, ohne dass eine Routine es meldet.
 func (a *BetriebszustandAbfragen) ZaehleEhemaligeMitOffenenVorgaengen(ctx context.Context, tage int) (int, error) {
 	var n int
-	// Dieselbe Uhr wie beim Löschen (KarenzUhr: Abgang, letzte Rückgabe, letzter Abschluss
+	// Dieselbe Uhr wie beim Löschen (sqlKarenzUhr: Abgang, letzte Rückgabe, letzter Abschluss
 	// eines Schadens). Ein Abgänger ohne Stempel bliebe sonst unsichtbar, weil der offene
 	// Vorgang ihn zugleich vor dem Löschen schützt; und wer vor zehn Tagen an der Theke war,
 	// ist noch kein Fall.
@@ -224,7 +224,7 @@ func (a *BetriebszustandAbfragen) ZaehleEhemaligeMitOffenenVorgaengen(ctx contex
 		SELECT count(*)
 		FROM schueler s
 		WHERE s.ist_abgaenger = true AND s.deleted_at IS NULL
-		  AND `+KarenzUhr("s")+` < now() - make_interval(days => $1)
+		  AND `+sqlKarenzUhr("s")+` < now() - make_interval(days => $1)
 		  AND (EXISTS (SELECT 1 FROM ausleihen a WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL)
 		    OR EXISTS (SELECT 1 FROM schadensfaelle d WHERE d.schueler_id = s.id AND d.ist_bezahlt = false))`, tage).Scan(&n)
 	return n, err

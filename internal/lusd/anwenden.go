@@ -72,17 +72,17 @@ func belegteLusdID(ctx context.Context, tx pgx.Tx, modus Modus, lusdID string) (
 	if modus != ModusID {
 		return "", nil
 	}
-	return repository.FindeAktivenSchuelerNachLusdID(ctx, tx, lusdID)
+	return repository.FindeAktivenSchuelerZuLUSDID(ctx, tx, lusdID)
 }
 
 // adoptiereWaisen heftet die LUSD-ID an bestehende Schüler ohne ID (Adoption über Name und
 // Geburtsdatum). Danach behandelt WendeAenderungenAn sie wie Schüler des Bestands. Im
 // Abgleich über den Namen ist die LUSD-ID leer: Dann trägt die Adoption nur das Geburtsdatum
 // nach, Klasse und Bestätigung übernimmt der Batch. Was die Anweisung gegen einen Wettlauf
-// schützt, steht an repository.AdoptiereLusdWaise.
+// schützt, steht an repository.AdoptiereLUSDWaise.
 func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) error {
 	for _, a := range adoptionen {
-		if err := repository.AdoptiereLusdWaise(ctx, tx, a.SchuelerID, a.LusdID, a.Geburtsdatum); err != nil {
+		if err := repository.AdoptiereLUSDWaise(ctx, tx, a.SchuelerID, a.LusdID, a.Geburtsdatum); err != nil {
 			return err
 		}
 	}
@@ -93,13 +93,13 @@ func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) 
 // der Klasse wie bei der Anlage von Hand (repository.AbgaengerJahr): eine Antwort auf dieselbe
 // Frage.
 func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec Zeile, barcodeCounter int) error {
-	return repository.LegeLusdSchuelerAn(ctx, tx, repository.LusdNeuzugang{
+	return repository.LegeLUSDSchuelerAn(ctx, tx, repository.LUSDNeuzugang{
 		Ausweisnummer: repository.AusweisNummer(barcodeCounter),
 		Vorname:       rec.Vorname,
 		Nachname:      rec.Nachname,
 		Klasse:        rec.Klasse,
 		AbgaengerJahr: repository.AbgaengerJahr(rec.Klasse),
-		LusdID:        rec.LusdID,
+		LUSDID:        rec.LusdID,
 		Geburtsdatum:  rec.GebDatum,
 		EintrittAm:    rec.EintrittAm,
 		Strasse:       rec.Strasse,
@@ -112,15 +112,15 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec Zeile, barcodeCount
 
 // aktualisiereBestandsschuelerBatch übergibt die Zeilen des Exports, die zu einem Schüler des
 // Bestands gehören. Das Geburtsdatum geht nur für ein bestätigtes Umbenennungs-Paar mit; die
-// Regeln der Anweisung stehen an repository.AktualisiereLusdBestand.
+// Regeln der Anweisung stehen an repository.AendereLUSDBestand.
 func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records []Zeile, ids []string) error {
-	zeilen := make([]repository.LusdAktualisierung, len(records))
+	zeilen := make([]repository.LUSDAktualisierung, len(records))
 	for i, rec := range records {
 		var gebFuerPaar *time.Time
 		if rec.geburtsdatumUebernehmen {
 			gebFuerPaar = rec.GebDatum
 		}
-		zeilen[i] = repository.LusdAktualisierung{
+		zeilen[i] = repository.LUSDAktualisierung{
 			SchuelerID:   ids[i],
 			Vorname:      rec.Vorname,
 			Nachname:     rec.Nachname,
@@ -134,14 +134,14 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 			Geburtsdatum: gebFuerPaar,
 		}
 	}
-	return repository.AktualisiereLusdBestand(ctx, tx, zeilen)
+	return repository.AendereLUSDBestand(ctx, tx, zeilen)
 }
 
 // behandleAbgaenger verarbeitet Schüler, die nicht mehr im Export stehen. Mit offenen
 // Vorgängen bleiben Name und Kontaktdaten erhalten: Mahnwesen und Schadensrechnung brauchen
 // sie noch. Ohne offene Vorgänge entscheidet die Karenzzeit (Einstellung
 // abgaenger_karenz_tage): Über 0 wird nur gesperrt, und der nächtliche Lauf anonymisiert
-// nach Ablauf (PredikatAnonymisierung, Uhr abgaenger_seit); bei 0 wird sofort anonymisiert.
+// nach Ablauf (PraedikatAnonymisierung, Uhr abgaenger_seit); bei 0 wird sofort anonymisiert.
 // In der Karenz lässt sich eine falsche Zuordnung noch beheben, etwa eine Umbenennung ohne
 // Schüler-ID: über die Paarung der Vorschau beim nächsten Lauf oder von Hand
 // (Zusammenführen).

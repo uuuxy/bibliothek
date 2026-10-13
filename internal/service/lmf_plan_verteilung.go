@@ -12,8 +12,8 @@ import (
 // LmfPlanEntwurf ist ein geprüfter Plan vor dem Rechnen: Rahmen, Zeilen, je Zeile der feste
 // Platz (nil, wenn sie fließt) und die ausgelassenen Klassen. Die Tür füllt ihn aus der Anfrage.
 type LmfPlanEntwurf struct {
-	Plan        repository.LmfPlan
-	Zeilen      []repository.LmfPlanZeile
+	Plan        repository.LMFPlan
+	Zeilen      []repository.LMFPlanZeile
 	Fest        []*lmfplan.Platz
 	Ausgelassen []string
 }
@@ -23,7 +23,7 @@ type LmfPlanEntwurf struct {
 // bis zum letzten Platz. Der Rückgabe-Plan fließt vom Ende her rückwärts; sein Beginn
 // (e.Plan.ErsterTag und Startstunde) ist danach der früheste Platz.
 func VerteileLmfPlan(e *LmfPlanEntwurf) ([]lmfplan.Platz, []lmfplan.Ausfall, error) {
-	rueckwaerts := e.Plan.Art == repository.LmfTerminRueckgabe
+	rueckwaerts := e.Plan.Art == repository.LMFTerminRueckgabe
 	ankerTag := e.Plan.ErsterTag
 	if rueckwaerts {
 		ankerTag = e.Plan.LetzterTag
@@ -64,7 +64,7 @@ func VerteileLmfPlan(e *LmfPlanEntwurf) ([]lmfplan.Platz, []lmfplan.Ausfall, err
 
 // lmfPlanFreieZeitraeume macht aus den freien Tagen des Plans eintägige Zeiträume; ohne Grund
 // heißt der Tag „freier Tag".
-func lmfPlanFreieZeitraeume(tage []repository.LmfFreierTag) ([]lmfplan.Zeitraum, error) {
+func lmfPlanFreieZeitraeume(tage []repository.LMFFreierTag) ([]lmfplan.Zeitraum, error) {
 	frei := []lmfplan.Zeitraum{}
 	for _, f := range tage {
 		tag, err := schulzeit.Kalendertag(f.Datum)

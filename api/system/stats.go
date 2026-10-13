@@ -39,10 +39,10 @@ func (s *Tueren) GetStatisticsHandler() http.HandlerFunc {
 		listLimit := resolveListLimit(r.URL.Query().Get("limit"))
 
 		// 1. Beliebteste Titel (Die Renner) — inkl. Drill-Down-Feldern
-		popularTitles := repository.ListeRenner(ctx, s.DB.Pool, ausleihenFilter, typeFilter, listLimit)
+		popularTitles := repository.LadeRenner(ctx, s.DB.Pool, ausleihenFilter, typeFilter, listLimit)
 
 		// 2. Ladenhüter (No checkouts since 2 years or never) — inkl. Drill-Down-Feldern
-		shelfWarmers := repository.ListeLadenhueter(ctx, s.DB.Pool, typeFilter, listLimit)
+		shelfWarmers := repository.LadeLadenhueter(ctx, s.DB.Pool, typeFilter, listLimit)
 
 		// 3. Verlust-, Finanz- und Zirkulationskennzahlen (EIN aggregierter Scan)
 		kennzahlen, err := repository.LadeBestandKennzahlen(ctx, s.DB.Pool, typeFilter)

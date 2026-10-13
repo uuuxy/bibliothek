@@ -77,7 +77,7 @@ type SystemEinstellungen struct {
 	// in einstellungen_datenschutz.go. Die Lesehistorie zählt die Tage nach der Rückgabe, nach
 	// denen eine Ausleihe vom Leser getrennt wird, je für Schülerbücherei und Lernmittel; Theke
 	// und Sperre zählen Minuten ohne Eingabe. 0 schaltet eine Frist ab, nur die Aufbewahrung des
-	// Protokolls hat eine Untergrenze (ProtokollAufbewahrungMonateMinimum).
+	// Protokolls hat eine Untergrenze (protokollAufbewahrungMonateMinimum).
 	LesehistorieTage            *int `json:"lesehistorie_tage"`
 	LesehistorieLernmittelTage  *int `json:"lesehistorie_lernmittel_tage"`
 	AnliegenTage                *int `json:"anliegen_tage"`
@@ -143,7 +143,7 @@ func NewEinstellungsAbfragen(pool db.PgxPoolIface) EinstellungsAbfragen {
 func einstellungenVorgabe() *SystemEinstellungen {
 	e := &SystemEinstellungen{
 		LMFStichtag:                LMFStichtagVorgabe,
-		LMFEingangsjahrgaenge:      LMFEingangsjahrgaengeVorgabe,
+		LMFEingangsjahrgaenge:      lmfEingangsjahrgaengeVorgabe,
 		SommerferienProgramm:       lmfplan.ProgrammEintraege(),
 		MaxAusleihenSchueler:       5,
 		FristBuchTage:              21,

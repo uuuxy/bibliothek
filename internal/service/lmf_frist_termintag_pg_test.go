@@ -75,31 +75,31 @@ func TestLmfFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testin
 func rueckgabePlanJuni2027(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
-	repo := repository.NewLmfTerminRepository(pool)
+	repo := repository.NewLMFAbfragen(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
 	ersterTag := time.Date(2027, time.June, 28, 0, 0, 0, 0, schulzeit.Zone())
-	zeilen := []repository.LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}, {Klassen: []string{"10R1"}},
+	zeilen := []repository.LMFPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}, {Klassen: []string{"10R1"}},
 		{Klassen: []string{"10R2"}}, {Klassen: []string{"10R3"}}, {Klassen: []string{"9H1"}, Vermerk: "Nachzügler"}}
 	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: ersterTag, Startstunde: 1, StundenJeTag: 1},
 		make([]*lmfplan.Platz, len(zeilen)), lmfplan.Schultage(nil))
-	plan := repository.LmfPlan{Art: repository.LmfTerminRueckgabe, ErsterTag: "2027-06-28", Startstunde: 1, StundenJeTag: 1,
+	plan := repository.LMFPlan{Art: repository.LMFTerminRueckgabe, ErsterTag: "2027-06-28", Startstunde: 1, StundenJeTag: 1,
 		LetzterTag: plaetze[len(plaetze)-1].Datum.Format("2006-01-02"), LetzteStunde: plaetze[len(plaetze)-1].Stunde}
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	stand, err := repo.SaveLmfPlanIn(ctx, tx, plan, zeilen, plaetze, nil)
+	stand, err := repo.SchreibePlan(ctx, tx, plan, zeilen, plaetze, nil)
 	if err != nil {
 		t.Fatalf("Plan speichern: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := repo.VeroeffentlicheLmfPlanIn(ctx, pool, stand.Plan.ID, time.Now()); err != nil {
+	if _, err := repo.VeroeffentlichePlan(ctx, pool, stand.Plan.ID, time.Now()); err != nil {
 		t.Fatalf("Plan veröffentlichen: %v", err)
 	}
 

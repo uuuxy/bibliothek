@@ -56,7 +56,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		freihandTage   = repository.LesehistorieTageVorgabe
 		lernmittelTage = repository.LesehistorieLernmittelTageVorgabe
 		anliegenTage   = repository.AnliegenTageVorgabe
-		papierkorbTage = repository.StandardAnonymisierungSoftDeleteTage
+		papierkorbTage = repository.AnonymisierungPapierkorbTage
 		// Länger als die Vorgabe von 24 Monaten: Mit ihr fiele die Protokollzeile der
 		// Lernmittel-Ausleihe (730 Tage) in derselben Nacht unter beide Fristen, und ihr Fall
 		// mäße die Lesehistorie nicht.

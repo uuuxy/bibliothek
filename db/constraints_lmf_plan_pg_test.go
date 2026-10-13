@@ -15,7 +15,7 @@ import (
 // Die vierte (`len(plaetze) == len(zeilen)`) ist keine Struktur, sondern eine Bedingung
 // zwischen zwei Go-Scheiben; sie steht in repository/lmf_plan.go.
 //
-// Heute ist keine der drei erreichbar: EIN Schreiber (SaveLmfPlanIn) setzt alle Werte
+// Heute ist keine der drei erreichbar: EIN Schreiber (LMFAbfragen.SchreibePlan) setzt alle Werte
 // selbst. Das ist genau der Moment, in dem eine Zusicherung billig ist — sie kostet
 // nichts, solange niemand sie verletzt, und sie steht, wenn der zweite Schreiber kommt.
 func neuerLmfPlan(t *testing.T, tx pgx.Tx, art string, stundenJeTag, letzteStunde int) string {

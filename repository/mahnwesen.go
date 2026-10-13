@@ -70,17 +70,17 @@ type MahnwesenKlasse struct {
 	Schueler []UeberfaelligerSchueler `json:"schueler"`
 }
 
-// MahnwesenRepository stellt Abfragemethoden zur Auswertung von Fristüberschreitungen und Mahnstufen zur Verfügung.
-type MahnwesenRepository struct {
+// MahnwesenAbfragen stellt Abfragemethoden zur Auswertung von Fristüberschreitungen und Mahnstufen zur Verfügung.
+type MahnwesenAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewMahnwesenRepository erzeugt eine neue Instanz des MahnwesenRepositorys.
-func NewMahnwesenRepository(pool db.PgxPoolIface) *MahnwesenRepository {
-	return &MahnwesenRepository{db: pool}
+// NewMahnwesenAbfragen erzeugt eine neue Instanz des MahnwesenRepositorys.
+func NewMahnwesenAbfragen(pool db.PgxPoolIface) *MahnwesenAbfragen {
+	return &MahnwesenAbfragen{db: pool}
 }
 
-// CountReturnsToday zählt die heute zurückgegebenen Ausleihen — „heute" ist der
+// ZaehleRueckgabenHeute zählt die heute zurückgegebenen Ausleihen — „heute" ist der
 // Kalendertag der SCHULE.
 //
 // Bis zum 17.09.2026 rechneten beide Seiten in der Zeitzone der Sitzung (im Image UTC):
@@ -88,12 +88,12 @@ func NewMahnwesenRepository(pool db.PgxPoolIface) *MahnwesenRepository {
 // dem Dashboard der Bibliothek; sie ist keine Grundlage für eine Entscheidung, aber eine
 // Zahl, die um zwei Stunden verrutscht, erklärt niemandem, warum die Rückgabe von eben
 // nicht zu sehen ist.
-func (repo *MahnwesenRepository) CountReturnsToday(ctx context.Context) (int, error) {
-	var count int
-	err := repo.db.QueryRow(ctx, `
+func (a *MahnwesenAbfragen) ZaehleRueckgabenHeute(ctx context.Context) (int, error) {
+	var anzahl int
+	err := a.db.QueryRow(ctx, `
 		SELECT count(*) FROM ausleihen
 		WHERE rueckgabe_am IS NOT NULL
 		  AND (rueckgabe_am AT TIME ZONE '`+schulzeit.ZonenName+`')::date = `+schulzeit.SQLHeute+`
-	`).Scan(&count)
-	return count, err
+	`).Scan(&anzahl)
+	return anzahl, err
 }

@@ -11,14 +11,14 @@ import "strings"
 // Welche Angaben Pflicht sind, nennt FehlendeAngaben. Frist, Zahlstelle und Bankverbindung
 // sind aus dem Musterschreiben vorbelegt; was leer bleiben darf, fehlt im Brief.
 const (
-	// BescheidFristTageVorgabe ist die Vierwochenfrist des Verfahrens in Tagen ab dem Datum
+	// bescheidFristTageVorgabe ist die Vierwochenfrist des Verfahrens in Tagen ab dem Datum
 	// des Briefs. Im Brief steht sie als Datum („bis zum 15.05."), gerechnet beim Erstellen.
-	BescheidFristTageVorgabe = 28
-	// BescheidZahlstelleVorgabe ist der Empfänger, den das Musterschreiben nennt.
-	BescheidZahlstelleVorgabe = "HCC-Schulbereich bei der Landesbank Hessen-Thüringen"
-	// BescheidBankverbindungVorgabe sind die vier Zeilen des Musterschreibens; im Brief stehen
+	bescheidFristTageVorgabe = 28
+	// bescheidZahlstelleVorgabe ist der Empfänger, den das Musterschreiben nennt.
+	bescheidZahlstelleVorgabe = "HCC-Schulbereich bei der Landesbank Hessen-Thüringen"
+	// bescheidBankverbindungVorgabe sind die vier Zeilen des Musterschreibens; im Brief stehen
 	// sie als Block untereinander.
-	BescheidBankverbindungVorgabe = "Konto-Nr. 1002401\nBankleitzahl 500 500 00\nIBAN DE86500500000001002401\nBIC HELADEFFXXX"
+	bescheidBankverbindungVorgabe = "Konto-Nr. 1002401\nBankleitzahl 500 500 00\nIBAN DE86500500000001002401\nBIC HELADEFFXXX"
 )
 
 // setzeBescheidEinstellung überträgt eine Zeile in ihr Feld und meldet, ob der Schlüssel zum
@@ -70,7 +70,7 @@ type BescheidAngaben struct {
 	// Zahlstelle und Bankverbindung sagen, wohin gezahlt wird.
 	Zahlstelle     string
 	Bankverbindung string
-	// FristTage hat die Vorgabe BescheidFristTageVorgabe.
+	// FristTage hat die Vorgabe bescheidFristTageVorgabe.
 	FristTage int
 }
 
@@ -78,9 +78,9 @@ type BescheidAngaben struct {
 func BescheidAngabenAus(e *SystemEinstellungen) BescheidAngaben {
 	if e == nil {
 		return BescheidAngaben{
-			Zahlstelle:     BescheidZahlstelleVorgabe,
-			Bankverbindung: BescheidBankverbindungVorgabe,
-			FristTage:      BescheidFristTageVorgabe,
+			Zahlstelle:     bescheidZahlstelleVorgabe,
+			Bankverbindung: bescheidBankverbindungVorgabe,
+			FristTage:      bescheidFristTageVorgabe,
 		}
 	}
 	a := BescheidAngaben{
@@ -93,13 +93,13 @@ func BescheidAngabenAus(e *SystemEinstellungen) BescheidAngaben {
 		Durchwahl:         strings.TrimSpace(e.BescheidDurchwahl),
 		Zahlstelle:        strings.TrimSpace(e.BescheidZahlstelle),
 		Bankverbindung:    strings.TrimSpace(e.BescheidBankverbindung),
-		FristTage:         BescheidFristTageVorgabe,
+		FristTage:         bescheidFristTageVorgabe,
 	}
 	if a.Zahlstelle == "" {
-		a.Zahlstelle = BescheidZahlstelleVorgabe
+		a.Zahlstelle = bescheidZahlstelleVorgabe
 	}
 	if a.Bankverbindung == "" {
-		a.Bankverbindung = BescheidBankverbindungVorgabe
+		a.Bankverbindung = bescheidBankverbindungVorgabe
 	}
 	if e.BescheidFristTage != nil && *e.BescheidFristTage > 0 {
 		a.FristTage = *e.BescheidFristTage

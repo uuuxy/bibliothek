@@ -17,10 +17,10 @@ var (
 	ErrSchadensfallErledigt      = errors.New("Schadensfall wurde bereits bezahlt oder storniert")
 )
 
-// betragFuerErledigung liest den Betrag einer offenen Forderung und sperrt die Zeile bis zum
+// ladeBetragFuerErledigung liest den Betrag einer offenen Forderung und sperrt die Zeile bis zum
 // Commit. Im Protokoll steht so der Betrag aus der Datenbank und nicht der aus der Anfrage.
 // Eine unbekannte und eine schon erledigte Forderung meldet die Funktion je mit eigenem Fehler.
-func betragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID string) (float64, error) {
+func ladeBetragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID string) (float64, error) {
 	var betrag float64
 	var istBezahlt bool
 	err := tx.QueryRow(ctx,
@@ -48,7 +48,7 @@ func (a *pgProtokollAbfragen) StorniereForderung(ctx context.Context, schadensfa
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	betrag, err := betragFuerErledigung(ctx, tx, schadensfallID)
+	betrag, err := ladeBetragFuerErledigung(ctx, tx, schadensfallID)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (a *pgProtokollAbfragen) VerbucheZahlung(ctx context.Context, schadensfallI
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	betrag, err := betragFuerErledigung(ctx, tx, schadensfallID)
+	betrag, err := ladeBetragFuerErledigung(ctx, tx, schadensfallID)
 	if err != nil {
 		return err
 	}

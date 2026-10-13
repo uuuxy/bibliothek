@@ -32,18 +32,18 @@ func HatLeserUnbezahlteForderungen(ctx context.Context, db Datenbank, id string)
 	return offen, err
 }
 
-// LusdIDDesLesers liest die LUSD-ID eines Lesers, leer wenn keine gesetzt ist; pgx.ErrNoRows,
+// LadeLUSDIDDesLesers liest die LUSD-ID eines Lesers, leer wenn keine gesetzt ist; pgx.ErrNoRows,
 // wenn es den Leser nicht gibt.
-func LusdIDDesLesers(ctx context.Context, db Datenbank, id string) (string, error) {
+func LadeLUSDIDDesLesers(ctx context.Context, db Datenbank, id string) (string, error) {
 	var lusdID string
 	err := db.QueryRow(ctx, "SELECT COALESCE(lusd_id, '') FROM leser WHERE id = $1", id).Scan(&lusdID)
 	return lusdID, err
 }
 
-// LusdIDBeiAnderemSchueler sagt, ob ein anderer aktiver Schüler die LUSD-ID trägt. Gefragt
+// HatAndererSchuelerLUSDID sagt, ob ein anderer aktiver Schüler die LUSD-ID trägt. Gefragt
 // wird die Sicht schueler: chk_leser_nur_schueler_werden_abgaenger lässt eine LUSD-ID nur an
 // einem Schüler zu, Sicht und Tabelle liefern hier dasselbe.
-func LusdIDBeiAnderemSchueler(ctx context.Context, db Datenbank, lusdID, eigeneID string) (bool, error) {
+func HatAndererSchuelerLUSDID(ctx context.Context, db Datenbank, lusdID, eigeneID string) (bool, error) {
 	var belegt bool
 	err := db.QueryRow(ctx,
 		"SELECT EXISTS(SELECT 1 FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL AND id <> $2)", lusdID, eigeneID).Scan(&belegt)

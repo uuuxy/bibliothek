@@ -67,7 +67,7 @@ func TestLeserAenderung_AnweisungUndWerte(t *testing.T) {
 	}
 	sollWerte := []any{"wert-Vorname", "wert-Nachname", "wert-Ausweisnummer", "wert-Klasse", 2031,
 		a.Geburtsdatum, "wert-Strasse", "wert-Hausnummer", "wert-Plz", "wert-Ort",
-		"wert-ElternEmail", "wert-LusdID", "wert-Art", "die-kennung"}
+		"wert-ElternEmail", "wert-LUSDID", "wert-Art", "die-kennung"}
 	if !reflect.DeepEqual(args, sollWerte) {
 		t.Errorf("Werte:\n ist  %#v\n soll %#v", args, sollWerte)
 	}

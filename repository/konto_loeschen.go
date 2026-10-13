@@ -124,7 +124,7 @@ func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *strin
 		return false, "ausweis", nil
 	}
 
-	kinder, err := fremdschluesselAufLeser(ctx, tx)
+	kinder, err := ladeFremdschluesselAufLeser(ctx, tx)
 	if err != nil {
 		return false, "", err
 	}
@@ -133,7 +133,7 @@ func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *strin
 	if len(kinder) == 0 {
 		return false, "katalog leer", nil
 	}
-	tabelle, err := ersteTabelleMitBezug(ctx, tx, kinder, *leserID)
+	tabelle, err := findeErsteTabelleMitBezug(ctx, tx, kinder, *leserID)
 	if err != nil {
 		return false, "", err
 	}
@@ -156,8 +156,8 @@ func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *strin
 // leserKind ist eine Spalte einer anderen Tabelle, die per Fremdschlüssel auf leser zeigt.
 type leserKind struct{ tabelle, spalte string }
 
-// fremdschluesselAufLeser liest aus dem Katalog der Datenbank, welche Spalten auf leser zeigen.
-func fremdschluesselAufLeser(ctx context.Context, tx pgx.Tx) ([]leserKind, error) {
+// ladeFremdschluesselAufLeser liest aus dem Katalog der Datenbank, welche Spalten auf leser zeigen.
+func ladeFremdschluesselAufLeser(ctx context.Context, tx pgx.Tx) ([]leserKind, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT c.conrelid::regclass::text, a.attname
 		  FROM pg_constraint c
@@ -183,8 +183,8 @@ func fremdschluesselAufLeser(ctx context.Context, tx pgx.Tx) ([]leserKind, error
 	return kinder, nil
 }
 
-// ersteTabelleMitBezug nennt die erste Tabelle, in der etwas an der Leserzeile hängt, sonst "".
-func ersteTabelleMitBezug(ctx context.Context, tx pgx.Tx, kinder []leserKind, leserID string) (string, error) {
+// findeErsteTabelleMitBezug nennt die erste Tabelle, in der etwas an der Leserzeile hängt, sonst "".
+func findeErsteTabelleMitBezug(ctx context.Context, tx pgx.Tx, kinder []leserKind, leserID string) (string, error) {
 	for _, k := range kinder {
 		// Die Namen stammen aus dem Katalog, nicht aus einer Eingabe; `regclass` liefert sie
 		// bereits so, wie Postgres sie wieder liest.

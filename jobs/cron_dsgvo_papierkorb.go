@@ -12,7 +12,7 @@ import (
 // ── Gelöschte Kollegen endgültig löschen (180 Tage im Papierkorb) ──────────────
 //
 // Ein gelöschter Kollege blieb bis zum 29.09.2026 ohne Frist im Papierkorb: Die
-// Anonymisierung nimmt nur Schüler (PredikatAnonymisierung), und einen Kollegen darf sie nicht
+// Anonymisierung nimmt nur Schüler (PraedikatAnonymisierung), und einen Kollegen darf sie nicht
 // anonymisieren (chk_leser_nur_schueler_werden_abgaenger). Entschieden am 28.09.2026
 // (docs/OFFEN.md 5.19): nach derselben Frist wie beim Schüler endgültig löschen. Sein
 // Zugangskonto ist schon beim Löschen gegangen (LegeLeserInPapierkorb, entschieden am 16.09.2026).
@@ -26,7 +26,7 @@ func (s *Scheduler) RunPapierkorbKollegenLoeschung() {
 
 	// Die Kennungen sind vorab gelesen und die Zeilen geschlossen, bevor die Löschungen je
 	// eine eigene Transaktion öffnen.
-	ids, err := repository.KollegenImPapierkorb(ctx, s.db)
+	ids, err := repository.LadeKollegenImPapierkorb(ctx, s.db)
 	if err != nil {
 		log.Printf("Scheduler Papierkorb: Kollegen konnten nicht gelesen werden: %v", err)
 		return
@@ -52,7 +52,7 @@ func (s *Scheduler) RunPapierkorbKollegenLoeschung() {
 		map[string]any{
 			"geloescht":    geloescht,
 			"fehlschlaege": len(fehlschlaege),
-			"tage":         repository.StandardAnonymisierungSoftDeleteTage,
+			"tage":         repository.AnonymisierungPapierkorbTage,
 		}); err != nil {
 		log.Printf("Scheduler Papierkorb: Audit-Eintrag fehlgeschlagen: %v", err)
 	}

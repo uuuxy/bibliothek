@@ -21,7 +21,7 @@ import (
 // queryKontoauszugBuecher lädt die aktuell ausgeliehenen Bücher eines Schülers
 // (Frist aufsteigend).
 func queryKontoauszugBuecher(ctx context.Context, dbPool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.KontoauszugBuch, error) {
-	zeilen, err := repository.ListeKontoauszugBuecher(ctx, dbPool, schuelerID)
+	zeilen, err := repository.LadeKontoauszugBuecher(ctx, dbPool, schuelerID)
 	if err != nil {
 		return nil, err
 	}

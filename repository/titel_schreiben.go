@@ -172,7 +172,7 @@ func ergaenzeSchlagworteAusImport(ctx context.Context, tx pgx.Tx, titel []Titel)
 	if err != nil {
 		return err
 	}
-	ohne, err := titelOhneSchlagworte(ctx, tx)
+	ohne, err := ladeTitelOhneSchlagworte(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -193,8 +193,8 @@ func ergaenzeSchlagworteAusImport(ctx context.Context, tx pgx.Tx, titel []Titel)
 	return nil
 }
 
-// titelOhneSchlagworte liefert die Kennungen der Titel, die kein Schlagwort tragen.
-func titelOhneSchlagworte(ctx context.Context, tx pgx.Tx) (map[string]bool, error) {
+// ladeTitelOhneSchlagworte liefert die Kennungen der Titel, die kein Schlagwort tragen.
+func ladeTitelOhneSchlagworte(ctx context.Context, tx pgx.Tx) (map[string]bool, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT t.id::text FROM buecher_titel t
 		WHERE NOT EXISTS (SELECT 1 FROM titel_schlagworte ts WHERE ts.titel_id = t.id)`)

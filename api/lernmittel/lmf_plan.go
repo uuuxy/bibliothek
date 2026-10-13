@@ -38,7 +38,7 @@ import (
 type LmfPlanVorschlag struct {
 	// Quelle: "vorjahr" (der letzte Plan der Art) oder "regel" (Abschluss zuerst).
 	Quelle      string                    `json:"quelle"`
-	Zeilen      []repository.LmfPlanZeile `json:"zeilen"`
+	Zeilen      []repository.LMFPlanZeile `json:"zeilen"`
 	Ausgelassen []string                  `json:"ausgelassen"`
 	// Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LmfPlanRahmenVorgabe).
 	Rahmen LmfPlanRahmenVorgabe `json:"rahmen"`
@@ -69,8 +69,8 @@ type LmfPlanRahmenVorgabe struct {
 // LmfPlanStandAntwort ist die Antwort von GET /api/lmf-plan/{art}.
 type LmfPlanStandAntwort struct {
 	// Plan ist der neueste Plan der Art; nil, wenn es noch keinen gibt.
-	Plan        *repository.LmfPlan       `json:"plan"`
-	Zeilen      []repository.LmfPlanZeile `json:"zeilen"`
+	Plan        *repository.LMFPlan       `json:"plan"`
+	Zeilen      []repository.LMFPlanZeile `json:"zeilen"`
 	Ausgelassen []string                  `json:"ausgelassen"`
 	// Vorbei: der letzte Termin des Plans liegt hinter heute — der Planer bietet dann
 	// den nächsten Plan an, mit derselben Reihenfolge als Vorschlag.
@@ -95,7 +95,7 @@ type LmfPlanStandAntwort struct {
 // lmfPlanArt liest {art} aus dem Pfad und prüft sie.
 func lmfPlanArt(r *http.Request) (string, error) {
 	art := r.PathValue("art")
-	if art != repository.LmfTerminRueckgabe && art != repository.LmfTerminAusgabe {
+	if art != repository.LMFTerminRueckgabe && art != repository.LMFTerminAusgabe {
 		return "", errors.New("art muss 'rueckgabe' oder 'ausgabe' sein")
 	}
 	return art, nil
@@ -118,7 +118,7 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 	if err != nil {
 		return apierrors.BadRequest(err.Error(), err)
 	}
-	repo := repository.NewLmfTerminRepository(s.DB.Pool)
+	repo := repository.NewLMFAbfragen(s.DB.Pool)
 	einstellungen, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(r.Context())
 	if err != nil {
 		return apierrors.Internal("Einstellungen laden", err)
@@ -126,8 +126,8 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 	eingang := repository.EingangsjahrgaengeAus(einstellungen.LMFEingangsjahrgaenge)
 	// Programmtabelle plus die Jahre, die die Schule selbst eingetragen hat.
 	ferientabelle := lmfplan.FerientabelleAus(einstellungen.Sommerferien)
-	antwort := LmfPlanStandAntwort{Zeilen: []repository.LmfPlanZeile{}, Ausgelassen: []string{}, Eingangsjahrgaenge: eingang}
-	stand, err := repo.NeuesterLmfPlan(r.Context(), art)
+	antwort := LmfPlanStandAntwort{Zeilen: []repository.LMFPlanZeile{}, Ausgelassen: []string{}, Eingangsjahrgaenge: eingang}
+	stand, err := repo.LadeNeuestenPlan(r.Context(), art)
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
 		// kein Plan
@@ -140,7 +140,7 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 	}
 	// Klassen mit aktiven Schülern. LeserAbfragen.LadeKlassen zählt Abgänger mit; die Klasse eines
 	// Abgängers ohne aktive Schüler stünde im Planer sonst als „mit Schülern".
-	klassen, err := repo.KlassenMitSchuelern(r.Context())
+	klassen, err := repo.LadeKlassenMitSchuelern(r.Context())
 	if err != nil {
 		return apierrors.Internal("Klassen laden", err)
 	}
@@ -220,7 +220,7 @@ type LmfPlanAusfall struct {
 // Stand, die Ausfälle im Plan-Zeitraum und die Zahl der Ausleihen, deren Frist dem Plan
 // gefolgt ist (0 bei Vorschau, bei Ausgabe-Plänen und bei einem Entwurf).
 type LmfPlanSpeicherAntwort struct {
-	repository.LmfPlanStand
+	repository.LMFPlanStand
 	Vorschau         bool             `json:"vorschau"`
 	Ausfaelle        []LmfPlanAusfall `json:"ausfaelle"`
 	FristenAngepasst int64            `json:"fristen_angepasst"`
@@ -230,7 +230,7 @@ const lmfPlanMaxZeilen = 400
 
 // pruefeLmfPlan prüft die Anfrage und füllt daraus den Entwurf, den der Dienst verteilt.
 func pruefeLmfPlan(art string, req lmfPlanRequest) (service.LmfPlanEntwurf, error) {
-	e := service.LmfPlanEntwurf{Plan: repository.LmfPlan{Art: art, StundenJeTag: req.StundenJeTag, FreieTage: []repository.LmfFreierTag{}}}
+	e := service.LmfPlanEntwurf{Plan: repository.LMFPlan{Art: art, StundenJeTag: req.StundenJeTag, FreieTage: []repository.LMFFreierTag{}}}
 	if e.Plan.StundenJeTag < 1 || e.Plan.StundenJeTag > 12 {
 		return e, errors.New("stunden_je_tag muss zwischen 1 und 12 liegen")
 	}
@@ -245,9 +245,9 @@ func pruefeLmfPlan(art string, req lmfPlanRequest) (service.LmfPlanEntwurf, erro
 		if _, err := time.Parse(tuer.DateFormatISO, datum); err != nil {
 			return e, fmt.Errorf("freier Tag %d: Datum muss als JJJJ-MM-TT angegeben sein", i+1)
 		}
-		e.Plan.FreieTage = append(e.Plan.FreieTage, repository.LmfFreierTag{Datum: datum, Grund: strings.TrimSpace(f.Grund)})
+		e.Plan.FreieTage = append(e.Plan.FreieTage, repository.LMFFreierTag{Datum: datum, Grund: strings.TrimSpace(f.Grund)})
 	}
-	e.Zeilen = make([]repository.LmfPlanZeile, 0, len(req.Zeilen))
+	e.Zeilen = make([]repository.LMFPlanZeile, 0, len(req.Zeilen))
 	e.Fest = make([]*lmfplan.Platz, 0, len(req.Zeilen))
 	for i, z := range req.Zeilen {
 		zeile, fest, err := pruefeLmfPlanZeile(i+1, z)
@@ -267,12 +267,12 @@ func pruefeLmfPlan(art string, req lmfPlanRequest) (service.LmfPlanEntwurf, erro
 
 // pruefeLmfPlanZeile prüft die Zeile mit der Nummer nr und liefert sie mit ihrem festen
 // Platz; ohne festen Platz (nil) fließt sie.
-func pruefeLmfPlanZeile(nr int, z lmfPlanRequestZeile) (repository.LmfPlanZeile, *lmfplan.Platz, error) {
+func pruefeLmfPlanZeile(nr int, z lmfPlanRequestZeile) (repository.LMFPlanZeile, *lmfplan.Platz, error) {
 	// Klassen als leere Liste anlegen, nicht als nil: Die Vorschau lieferte sonst
 	// `klassen: null`, wo der gespeicherte Plan `[]` liefert (schreibeKlassen); die Oberfläche
 	// müsste zwei Formen derselben Zeile kennen. Betroffen sind die Zeilen ohne Klasse, die es
 	// im Plan der Schule gibt („Nachzügler", „Aufräumen").
-	zeile := repository.LmfPlanZeile{
+	zeile := repository.LMFPlanZeile{
 		Vermerk: strings.TrimSpace(z.Vermerk),
 		Fest:    z.Fest != nil,
 		Klassen: make([]string, 0, len(z.Klassen)),
@@ -302,8 +302,8 @@ func pruefeLmfPlanZeile(nr int, z lmfPlanRequestZeile) (repository.LmfPlanZeile,
 // letzte_stunde): Beginn-Angaben der Anfrage werden verworfen, der Server rechnet den Beginn;
 // bis dahin steht das Ende auch als Beginn, damit ein Plan ohne Zeilen nicht ohne Tag ist. Der
 // Ausgabe-Plan beginnt (erster_tag, startstunde).
-func pruefeLmfAnker(p *repository.LmfPlan, req lmfPlanRequest) error {
-	if p.Art == repository.LmfTerminRueckgabe {
+func pruefeLmfAnker(p *repository.LMFPlan, req lmfPlanRequest) error {
+	if p.Art == repository.LMFTerminRueckgabe {
 		p.LetzterTag, p.LetzteStunde = strings.TrimSpace(req.LetzterTag), req.LetzteStunde
 		if _, err := time.Parse(tuer.DateFormatISO, p.LetzterTag); err != nil {
 			return errors.New("letzter_tag muss als JJJJ-MM-TT angegeben sein")
@@ -363,7 +363,7 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return keine, false, apierrors.BadRequest(err.Error(), err)
 	}
-	repo := repository.NewLmfTerminRepository(s.DB.Pool)
+	repo := repository.NewLMFAbfragen(s.DB.Pool)
 	plaetze, ausgefallen, err := service.VerteileLmfPlan(&e)
 	if err != nil {
 		return keine, false, apierrors.Internal("Verteilung rechnen", err)
@@ -386,7 +386,7 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 		return keine, false, apierrors.Internal("Transaktion", err)
 	}
 	defer db.SafeRollback(r.Context(), tx)
-	stand, err := repo.SaveLmfPlanIn(r.Context(), tx, e.Plan, e.Zeilen, plaetze, e.Ausgelassen)
+	stand, err := repo.SchreibePlan(r.Context(), tx, e.Plan, e.Zeilen, plaetze, e.Ausgelassen)
 	if err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan speichern", err)
 	}
@@ -406,7 +406,7 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 	if stand.Plan.VeroeffentlichtAm != nil {
 		s.auditiereLmfPlan(r, auditLmfPlanGespeichert, art, stand.Plan.ID, angepasst)
 	}
-	return LmfPlanSpeicherAntwort{LmfPlanStand: stand, Ausfaelle: ausfaelle, FristenAngepasst: angepasst}, true, nil
+	return LmfPlanSpeicherAntwort{LMFPlanStand: stand, Ausfaelle: ausfaelle, FristenAngepasst: angepasst}, true, nil
 }
 
 // lmfPlanAusfaelle wandelt die Ausfälle der Verteilung in die Form der Antwort. Die Liste ist
@@ -427,7 +427,7 @@ func lmfPlanVorschauAntwort(e service.LmfPlanEntwurf, plaetze []lmfplan.Platz, a
 		e.Zeilen[i].Stunde = plaetze[i].Stunde
 	}
 	return LmfPlanSpeicherAntwort{Vorschau: true, Ausfaelle: ausfaelle,
-		LmfPlanStand: repository.LmfPlanStand{Plan: e.Plan, Zeilen: e.Zeilen, Ausgelassen: e.Ausgelassen}}
+		LMFPlanStand: repository.LMFPlanStand{Plan: e.Plan, Zeilen: e.Zeilen, Ausgelassen: e.Ausgelassen}}
 }
 
 // DeleteLmfPlanHandler verwirft den neuesten Plan der Art; die Fristen seiner Klassen
@@ -456,8 +456,8 @@ func (s *Tueren) verwerfeLmfPlan(r *http.Request) (int64, error) {
 	if err != nil {
 		return 0, apierrors.BadRequest(err.Error(), err)
 	}
-	repo := repository.NewLmfTerminRepository(s.DB.Pool)
-	st, err := repo.NeuesterLmfPlan(r.Context(), art)
+	repo := repository.NewLMFAbfragen(s.DB.Pool)
+	st, err := repo.LadeNeuestenPlan(r.Context(), art)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, apierrors.NotFound("kein Plan vorhanden", pgx.ErrNoRows)
 	}
@@ -470,7 +470,7 @@ func (s *Tueren) verwerfeLmfPlan(r *http.Request) (int64, error) {
 		return 0, apierrors.Internal("Transaktion", err)
 	}
 	defer db.SafeRollback(r.Context(), tx)
-	if _, err := repo.DeleteLmfPlanIn(r.Context(), tx, st.Plan.ID); err != nil {
+	if _, err := repo.LoeschePlan(r.Context(), tx, st.Plan.ID); err != nil {
 		return 0, apierrors.Internal("LMF-Plan löschen", err)
 	}
 	// Nur ein veröffentlichter Plan hat Fristen gesetzt, die zurückkehren müssen.

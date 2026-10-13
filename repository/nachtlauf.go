@@ -10,10 +10,10 @@ import (
 	"time"
 )
 
-// AnonymisiereBearbeiterAlterAusleihen nimmt Ausleihen, die PredikatBearbeiterKennung trifft,
+// AnonymisiereBearbeiterAlterAusleihen nimmt Ausleihen, die praedikatBearbeiterKennung trifft,
 // die Kennungen der Bearbeiter von Ausgabe und Rückgabe, und liefert die Zahl der Zeilen.
 func AnonymisiereBearbeiterAlterAusleihen(ctx context.Context, db Datenbank) (int64, error) {
-	bedingung := PredikatBearbeiterKennung(KulanzJob)
+	bedingung := praedikatBearbeiterKennung(KulanzJob)
 	tag, err := db.Exec(ctx, `
 		UPDATE ausleihen
 		SET bearbeiter_id = NULL,
@@ -25,14 +25,14 @@ func AnonymisiereBearbeiterAlterAusleihen(ctx context.Context, db Datenbank) (in
 	return tag.RowsAffected(), nil
 }
 
-// AnonymisiereSchueler leert bei jedem Schüler, den PredikatAnonymisierung trifft, die Spalten,
+// AnonymisiereSchueler leert bei jedem Schüler, den PraedikatAnonymisierung trifft, die Spalten,
 // die ihn erkennbar machen, und setzt anonymized_at. barcode_id und block_reason bekommen
 // feste Ersatzwerte: Ein Schüler braucht eine Ausweisnummer, die unter den Lesern einmalig
 // ist, ein gesperrter einen Grund, und ein alter Freitext könnte selbst eine Person nennen.
 // Dieselben Spalten leert AnonymisiereAbgaenger im Abgleich mit der LUSD; kommt eine Spalte
 // dazu, die eine Person erkennbar macht, gehört sie in beide Anweisungen.
 func AnonymisiereSchueler(ctx context.Context, db Datenbank, karenzTage int) (int64, error) {
-	bedingung := PredikatAnonymisierung(karenzTage, KulanzJob)
+	bedingung := PraedikatAnonymisierung(karenzTage, KulanzJob)
 	tag, err := db.Exec(ctx, `
 		UPDATE schueler
 		SET vorname = left(md5(random()::text), 8),
@@ -67,15 +67,15 @@ func LoescheFotosAnonymisierterSchueler(ctx context.Context, db Datenbank) error
 	return err
 }
 
-// AnonymisierteSchuelerIDs nennt die Kennungen aller anonymisierten Schüler; für sie tilgt
+// LadeAnonymisierteSchuelerIDs nennt die Kennungen aller anonymisierten Schüler; für sie tilgt
 // der Nachtlauf die Spuren in den Nebentabellen (SpurTilgungen).
-func AnonymisierteSchuelerIDs(ctx context.Context, db Datenbank) ([]string, error) {
-	return leseKennungen(ctx, db, `SELECT id::text FROM schueler WHERE anonymized_at IS NOT NULL`)
+func LadeAnonymisierteSchuelerIDs(ctx context.Context, db Datenbank) ([]string, error) {
+	return ladeKennungen(ctx, db, `SELECT id::text FROM schueler WHERE anonymized_at IS NOT NULL`)
 }
 
-// leseKennungen liest eine Spalte von Kennungen ganz und schließt die Zeilen, bevor der
+// ladeKennungen liest eine Spalte von Kennungen ganz und schließt die Zeilen, bevor der
 // Aufrufer weitere Anweisungen schickt.
-func leseKennungen(ctx context.Context, db Datenbank, query string, args ...any) ([]string, error) {
+func ladeKennungen(ctx context.Context, db Datenbank, query string, args ...any) ([]string, error) {
 	rows, err := db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func leseKennungen(ctx context.Context, db Datenbank, query string, args ...any)
 	return ids, rows.Err()
 }
 
-// LoeschreiferAbgaenger ist ein Abgänger, den PredikatAbgaengerLoeschung zur endgültigen
+// LoeschreiferAbgaenger ist ein Abgänger, den praedikatAbgaengerLoeschung zur endgültigen
 // Löschung freigibt.
 type LoeschreiferAbgaenger struct {
 	ID            string
@@ -103,11 +103,11 @@ type LoeschreiferAbgaenger struct {
 	AbgaengerJahr int
 }
 
-// LoeschreifeAbgaenger liest die Abgänger, die zum Zeitpunkt jetzt endgültig gelöscht werden
+// LadeLoeschreifeAbgaenger liest die Abgänger, die zum Zeitpunkt jetzt endgültig gelöscht werden
 // dürfen. Die Zeilen sind gelesen und geschlossen, bevor der Aufrufer je Abgänger eine eigene
 // Transaktion öffnet.
-func LoeschreifeAbgaenger(ctx context.Context, db Datenbank, jetzt time.Time) ([]LoeschreiferAbgaenger, error) {
-	bedingung := PredikatAbgaengerLoeschung(jetzt)
+func LadeLoeschreifeAbgaenger(ctx context.Context, db Datenbank, jetzt time.Time) ([]LoeschreiferAbgaenger, error) {
+	bedingung := praedikatAbgaengerLoeschung(jetzt)
 	query := `
 		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
 		FROM schueler
@@ -129,11 +129,11 @@ func LoeschreifeAbgaenger(ctx context.Context, db Datenbank, jetzt time.Time) ([
 	return abgaenger, rows.Err()
 }
 
-// KollegenImPapierkorb nennt die Kennungen der Kollegen, die PredikatKollegenPapierkorb zur
+// LadeKollegenImPapierkorb nennt die Kennungen der Kollegen, die praedikatKollegenPapierkorb zur
 // endgültigen Löschung freigibt.
-func KollegenImPapierkorb(ctx context.Context, db Datenbank) ([]string, error) {
-	bedingung := PredikatKollegenPapierkorb(KulanzJob)
-	return leseKennungen(ctx, db, `SELECT id::text FROM leser WHERE `+bedingung.Where, bedingung.Args...)
+func LadeKollegenImPapierkorb(ctx context.Context, db Datenbank) ([]string, error) {
+	bedingung := praedikatKollegenPapierkorb(KulanzJob)
+	return ladeKennungen(ctx, db, `SELECT id::text FROM leser WHERE `+bedingung.Where, bedingung.Args...)
 }
 
 // TrenneAusleihenVomLeser nimmt abgeschlossenen Ausleihen den Leser, wenn die Rückgabe länger
@@ -143,7 +143,7 @@ func TrenneAusleihenVomLeser(ctx context.Context, db Datenbank, land bool, tage 
 	if tage <= 0 {
 		return 0, nil
 	}
-	bedingung := PredikatLesehistorieAusleihen(land, tage, KulanzJob)
+	bedingung := praedikatLesehistorieAusleihen(land, tage, KulanzJob)
 	query := `
 		UPDATE ausleihen a
 		SET schueler_id = NULL
@@ -163,7 +163,7 @@ func TilgeLeserImAusleihProtokoll(ctx context.Context, db Datenbank, land bool, 
 	if tage <= 0 {
 		return 0, nil
 	}
-	bedingung := PredikatLesehistorieProtokoll(land, tage, KulanzJob)
+	bedingung := praedikatLesehistorieProtokoll(land, tage, KulanzJob)
 	query := `
 		UPDATE audit_log al
 		SET details = al.details - 'schueler_id' - 'entleiher'
@@ -182,7 +182,7 @@ func TilgeLeserInVormerkSpuren(ctx context.Context, db Datenbank, tage int) (int
 	if tage <= 0 {
 		return 0, nil
 	}
-	bedingung := PredikatLesehistorieVormerkspur(tage, KulanzJob)
+	bedingung := praedikatLesehistorieVormerkspur(tage, KulanzJob)
 	query := `
 		UPDATE audit_log al
 		SET details = al.details - 'schueler_id' - 'betrifft'
@@ -200,7 +200,7 @@ func LoescheErledigteAnliegen(ctx context.Context, db Datenbank, tage int) (int6
 	if tage <= 0 {
 		return 0, nil
 	}
-	bedingung := PredikatAnliegen(tage, KulanzJob)
+	bedingung := praedikatAnliegen(tage, KulanzJob)
 	tag, err := db.Exec(ctx, `DELETE FROM lehrer_anliegen WHERE `+bedingung.Where, bedingung.Args...)
 	if err != nil {
 		return 0, err
@@ -214,7 +214,7 @@ func LoescheErledigteKlassensatzReservierungen(ctx context.Context, db Datenbank
 	if tage <= 0 {
 		return 0, nil
 	}
-	bedingung := PredikatKlassensatzReservierungen(tage, KulanzJob)
+	bedingung := praedikatKlassensatzReservierungen(tage, KulanzJob)
 	tag, err := db.Exec(ctx, `DELETE FROM klassensatz_reservierungen WHERE `+bedingung.Where, bedingung.Args...)
 	if err != nil {
 		return 0, err
@@ -225,7 +225,7 @@ func LoescheErledigteKlassensatzReservierungen(ctx context.Context, db Datenbank
 // LoescheQuittierteNachbuchMeldungen löscht Meldungen des Nachbuchens, die länger als tage
 // quittiert sind.
 func LoescheQuittierteNachbuchMeldungen(ctx context.Context, db Datenbank, tage int) (int64, error) {
-	bedingung := PredikatNachbuchMeldungen(tage, KulanzJob)
+	bedingung := praedikatNachbuchMeldungen(tage, KulanzJob)
 	tag, err := db.Exec(ctx, `DELETE FROM nachbuch_meldungen WHERE `+bedingung.Where, bedingung.Args...)
 	if err != nil {
 		return 0, err
@@ -233,9 +233,9 @@ func LoescheQuittierteNachbuchMeldungen(ctx context.Context, db Datenbank, tage 
 	return tag.RowsAffected(), nil
 }
 
-// LoescheAuditLog löscht aus dem Protokoll der Datensätze, was älter ist als monate.
-func LoescheAuditLog(ctx context.Context, db Datenbank, monate int) (int64, error) {
-	bedingung := PredikatAuditLog(monate, KulanzJob)
+// LoescheAltesProtokoll löscht aus dem Protokoll der Datensätze, was älter ist als monate.
+func LoescheAltesProtokoll(ctx context.Context, db Datenbank, monate int) (int64, error) {
+	bedingung := praedikatProtokoll(monate, KulanzJob)
 	tag, err := db.Exec(ctx, `DELETE FROM audit_log WHERE `+bedingung.Where, bedingung.Args...)
 	if err != nil {
 		return 0, err
@@ -243,9 +243,9 @@ func LoescheAuditLog(ctx context.Context, db Datenbank, monate int) (int64, erro
 	return tag.RowsAffected(), nil
 }
 
-// LoescheAuditLogs löscht aus dem Protokoll der Verwaltung, was älter ist als monate.
-func LoescheAuditLogs(ctx context.Context, db Datenbank, monate int) (int64, error) {
-	bedingung := PredikatAuditLogs(monate, KulanzJob)
+// LoescheAltesVerwaltungsProtokoll löscht aus dem Protokoll der Verwaltung, was älter ist als monate.
+func LoescheAltesVerwaltungsProtokoll(ctx context.Context, db Datenbank, monate int) (int64, error) {
+	bedingung := praedikatVerwaltungsProtokoll(monate, KulanzJob)
 	tag, err := db.Exec(ctx, `DELETE FROM audit_logs WHERE `+bedingung.Where, bedingung.Args...)
 	if err != nil {
 		return 0, err

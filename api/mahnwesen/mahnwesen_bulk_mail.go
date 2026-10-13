@@ -73,7 +73,7 @@ type bulkOverdueResponse struct {
 // verhält sich bewusst identisch zum Einzelversand (system-konsistent, keine
 // Button-abhängige Sonderlogik). Siehe docs/invarianten.md §1.
 // POST /api/mail/send-bulk-overdue
-func (s *Tueren) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
+func (s *Tueren) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -95,7 +95,7 @@ func (s *Tueren) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 
 		// 4. Alle überfälligen Klassen laden (leerer Filter = alle Klassen) und die
 		//    Auswahl des Aufrufers darauf anwenden.
-		alle, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, "")
+		alle, err := mahnRepo.LadeUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

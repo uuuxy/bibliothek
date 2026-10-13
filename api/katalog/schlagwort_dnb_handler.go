@@ -19,7 +19,7 @@ import (
 // Vorschlag; von 60 Titeln mit Littera-Schlagworten hätte die DNB für 26 weitere Wörter, im
 // Median zwei bis drei je Titel.
 //
-// Dieselbe Regel wie beim Anlegen (repository.SchlagwortVorschlagAusDNB), und wie dort ein
+// Dieselbe Regel wie beim Anlegen (repository.LadeSchlagwortVorschlagAusDNB), und wie dort ein
 // Vorschlag, kein Eintrag: Geschrieben wird nichts. Welche Wörter der Titel schon trägt, weiß
 // das Feld, das fragt — es bietet nur die übrigen an (ui/ChipFeld), so gilt auch ein Wort, das
 // eben erst getippt und noch nicht gespeichert ist.
@@ -68,7 +68,7 @@ func (s *Tueren) dnbSchlagwortVorschlag(client *inventur.MetadatenClient) http.H
 		case err != nil:
 			return apierrors.Internal("DNB-Abfrage fehlgeschlagen", err)
 		}
-		liste, neu, err := repository.SchlagwortVorschlagAusDNB(r.Context(), s.DB.Pool, meta.Stichwoerter, meta.Normdaten)
+		liste, neu, err := repository.LadeSchlagwortVorschlagAusDNB(r.Context(), s.DB.Pool, meta.Stichwoerter, meta.Normdaten)
 		if err != nil {
 			return apierrors.Internal("Schlagwort-Vorschlag konnte nicht gelesen werden", err)
 		}

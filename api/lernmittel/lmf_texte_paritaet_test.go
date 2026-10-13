@@ -35,8 +35,8 @@ func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 
 	// 1. Die zwei Überschriften: label je Art aus ARTEN.
 	for _, f := range []struct{ art, jsWert string }{
-		{repository.LmfTerminRueckgabe, "rueckgabe"},
-		{repository.LmfTerminAusgabe, "ausgabe"},
+		{repository.LMFTerminRueckgabe, "rueckgabe"},
+		{repository.LMFTerminAusgabe, "ausgabe"},
 	} {
 		muster := regexp.MustCompile(`\{ wert: '` + f.jsWert + `', label: '([^']+)' \}`)
 		treffer := muster.FindStringSubmatch(js)
@@ -55,7 +55,7 @@ func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 	eingang := []int{5, 7}
 	// Ohne Jahrgänge fällt das Klammerpaar weg — auf beiden Seiten gleich, sonst stünde im
 	// Portal „(Jahrgang )", während das PDF den ganzen Satz druckt.
-	if got, will := LmfArtErklaerung(repository.LmfTerminAusgabe, nil),
+	if got, will := LmfArtErklaerung(repository.LMFTerminAusgabe, nil),
 		"Nur die neu gebildeten Klassen bekommen ihre Schulbücher."; got != will {
 		t.Errorf("Ausgabe-Satz ohne Jahrgänge: %q", got)
 	}
@@ -63,8 +63,8 @@ func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 		t.Error("lmfplanDienst.js kennt den Satz ohne Jahrgänge nicht — dann zeigt das Portal ein leeres Klammerpaar")
 	}
 	saetze := map[string]string{
-		repository.LmfTerminAusgabe: "Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.",
-		repository.LmfTerminRueckgabe: "Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. " +
+		repository.LMFTerminAusgabe: "Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.",
+		repository.LMFTerminRueckgabe: "Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. " +
 			"„Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.",
 	}
 	for art, jsSatz := range saetze {

@@ -8,9 +8,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// LiesGeraetNachNummer liefert das Gerät mit dieser Nummer. Trägt keines sie, kommt
+// LadeGeraetZuNummer liefert das Gerät mit dieser Nummer. Trägt keines sie, kommt
 // pgx.ErrNoRows: Was das an der Theke heißt, sagt der Aufrufer.
-func LiesGeraetNachNummer(ctx context.Context, db Datenbank, nummer string) (Geraet, error) {
+func LadeGeraetZuNummer(ctx context.Context, db Datenbank, nummer string) (Geraet, error) {
 	var g Geraet
 	err := db.QueryRow(ctx, `
 		SELECT id, modellname, seriennummer, barcode_id, zubehoer, ist_ausleihbar, ist_ausgesondert, zustand_notiz
@@ -67,9 +67,9 @@ func LeiheGeraetAus(ctx context.Context, tx Datenbank, a GeraeteAusleihe) (strin
 	return id, err
 }
 
-// ErrGeraeteAusleiheFehlt meldet, dass es die Ausleihe nicht gibt, deren Rückgabe gebucht
+// errGeraeteAusleiheFehlt meldet, dass es die Ausleihe nicht gibt, deren Rückgabe gebucht
 // werden sollte.
-var ErrGeraeteAusleiheFehlt = errors.New("ausleihe des geräts nicht gefunden")
+var errGeraeteAusleiheFehlt = errors.New("ausleihe des geräts nicht gefunden")
 
 // BucheGeraeteRueckgabe trägt an der Ausleihe eines Geräts die Rückgabe ein: jetzt, durch
 // diesen Bearbeiter, und ob ein anderer als der Ausleiher das Gerät brachte.
@@ -83,7 +83,7 @@ func BucheGeraeteRueckgabe(ctx context.Context, tx Datenbank, ausleiheID, bearbe
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return ErrGeraeteAusleiheFehlt
+		return errGeraeteAusleiheFehlt
 	}
 	return nil
 }

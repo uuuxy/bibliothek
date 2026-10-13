@@ -15,9 +15,9 @@ type KontoauszugBuch struct {
 	Rueckgabedatum time.Time
 }
 
-// ListeKontoauszugBuecher lädt die offenen Ausleihen eines Schülers, die früheste Frist
+// LadeKontoauszugBuecher lädt die offenen Ausleihen eines Schülers, die früheste Frist
 // zuerst. Eine unlesbare Zeile wird übersprungen.
-func ListeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]KontoauszugBuch, error) {
+func LadeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]KontoauszugBuch, error) {
 	query := `
 		SELECT t.titel, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
 		FROM ausleihen a

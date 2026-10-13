@@ -37,7 +37,7 @@ func geraeteAufbau(t *testing.T, q Datenbank, kuerzel string) (geraetID, leserID
 
 // Das Gerät zu einer Nummer kommt mit jeder Spalte in ihrem Feld an. Gesucht wird über die
 // Nummer auf dem Gehäuse, nicht über die Seriennummer; eine unbekannte Nummer ist pgx.ErrNoRows.
-func TestLiesGeraetNachNummer_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
+func TestLadeGeraetZuNummer_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -65,7 +65,7 @@ func TestLiesGeraetNachNummer_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 		"GAF-2": {ID: karg, Modellname: "Feldprobe Laptop", BarcodeID: "GAF-2", IstAusleihbar: true},
 	}
 	for nummer, soll := range faelle {
-		ist, err := LiesGeraetNachNummer(ctx, tx, nummer)
+		ist, err := LadeGeraetZuNummer(ctx, tx, nummer)
 		if err != nil {
 			t.Fatalf("%s: %v", nummer, err)
 		}
@@ -74,7 +74,7 @@ func TestLiesGeraetNachNummer_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 		}
 	}
 	for _, nummer := range []string{"SN-FELD-1", "GAF-3"} {
-		if _, err := LiesGeraetNachNummer(ctx, tx, nummer); !errors.Is(err, pgx.ErrNoRows) {
+		if _, err := LadeGeraetZuNummer(ctx, tx, nummer); !errors.Is(err, pgx.ErrNoRows) {
 			t.Errorf("%s: Fehler %v, erwartet pgx.ErrNoRows", nummer, err)
 		}
 	}
@@ -254,7 +254,7 @@ func TestLeiheGeraetAus_SchreibtJedeAngabeUndNurEinmal(t *testing.T) {
 
 // Die Rückgabe steht mit Zeitpunkt, Bearbeiter der Rückgabe und dem Merkmal der Fremdrückgabe
 // an der Ausleihe; wer ausgeliehen hat, bleibt stehen. Eine Ausleihe, die es nicht gibt, ist
-// ErrGeraeteAusleiheFehlt.
+// errGeraeteAusleiheFehlt.
 func TestBucheGeraeteRueckgabe_SchreibtJedeAngabe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -297,8 +297,8 @@ func TestBucheGeraeteRueckgabe_SchreibtJedeAngabe(t *testing.T) {
 	}
 
 	err := BucheGeraeteRueckgabe(ctx, tx, "3f2504e0-4f89-11d3-9a0c-0305e82c3301", "3f2504e0-4f89-11d3-9a0c-0305e82c3302", false)
-	if !errors.Is(err, ErrGeraeteAusleiheFehlt) {
-		t.Errorf("unbekannte Ausleihe: Fehler %v, erwartet ErrGeraeteAusleiheFehlt", err)
+	if !errors.Is(err, errGeraeteAusleiheFehlt) {
+		t.Errorf("unbekannte Ausleihe: Fehler %v, erwartet errGeraeteAusleiheFehlt", err)
 	}
 }
 

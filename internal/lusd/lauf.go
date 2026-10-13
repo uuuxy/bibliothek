@@ -112,10 +112,10 @@ func Fuehre(ctx context.Context, pool db.PgxPoolIface, datei Datei, lauf Lauf) (
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Beim Anwenden reiht die Sperre gleichzeitige Läufe ein (repository.SperreLusdImport).
+	// Beim Anwenden reiht die Sperre gleichzeitige Läufe ein (repository.SperreLUSDImport).
 	// Die Vorschau liest nur und nimmt sie nicht.
 	if apply {
-		if err := repository.SperreLusdImport(ctx, tx); err != nil {
+		if err := repository.SperreLUSDImport(ctx, tx); err != nil {
 			return nil, fmt.Errorf("lusd-import sperren fehlgeschlagen: %w", err)
 		}
 	}
@@ -170,7 +170,7 @@ func Fuehre(ctx context.Context, pool db.PgxPoolIface, datei Datei, lauf Lauf) (
 	}
 
 	// Adoptionen zuerst: Sie heften die LUSD-ID an den vorhandenen Schüler ohne ID. Danach
-	// findet WendeAenderungenAn ihn über repository.FindeAktivenSchuelerNachLusdID und
+	// findet WendeAenderungenAn ihn über repository.FindeAktivenSchuelerZuLUSDID und
 	// übernimmt Klasse und Kontaktdaten wie bei jedem Schüler des Bestands, statt ihn ein
 	// zweites Mal anzulegen.
 	if err := adoptiereWaisen(ctx, tx, zuordnung.adoptionen); err != nil {

@@ -76,9 +76,28 @@ func vonJobsGerufen(t *testing.T) map[string]bool {
 	return gerufen
 }
 
+// bedingungsFunktionen nennt die Funktionen des Pakets, die eine Loeschbedingung liefern. Erkannt
+// werden sie am Ergebnistyp und nicht am Namen: Ein Merkmal am Namen misst nach dem Umbenennen
+// nichts mehr.
+func bedingungsFunktionen(dateien map[string]*ast.File) map[string]bool {
+	namen := map[string]bool{}
+	for _, datei := range dateien {
+		for _, decl := range datei.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv != nil || fn.Type.Results == nil || len(fn.Type.Results.List) != 1 {
+				continue
+			}
+			if istLoeschbedingung(fn.Type.Results.List[0].Type) {
+				namen[fn.Name.Name] = true
+			}
+		}
+	}
+	return namen
+}
+
 // aendertUndNenntBedingung sagt für einen Funktionsrumpf, ob er eine ändernde Anweisung trägt
-// und ob er eine Funktion ruft, deren Name mit Predikat beginnt.
-func aendertUndNenntBedingung(rumpf ast.Node) (aendert, nenntBedingung bool) {
+// und ob er eine der Funktionen ruft, die eine Loeschbedingung liefern.
+func aendertUndNenntBedingung(rumpf ast.Node, bedingungen map[string]bool) (aendert, nenntBedingung bool) {
 	ast.Inspect(rumpf, func(knoten ast.Node) bool {
 		switch k := knoten.(type) {
 		case *ast.BasicLit:
@@ -88,7 +107,7 @@ func aendertUndNenntBedingung(rumpf ast.Node) (aendert, nenntBedingung bool) {
 				}
 			}
 		case *ast.CallExpr:
-			if name, ok := k.Fun.(*ast.Ident); ok && strings.HasPrefix(name.Name, "Predikat") {
+			if name, ok := k.Fun.(*ast.Ident); ok && bedingungen[name.Name] {
 				nenntBedingung = true
 			}
 		}
@@ -99,15 +118,21 @@ func aendertUndNenntBedingung(rumpf ast.Node) (aendert, nenntBedingung bool) {
 
 func TestNachtlaeufe_AenderndeAnweisungSetztBedingungAusLoeschfristenEin(t *testing.T) {
 	gerufen := vonJobsGerufen(t)
+	dateien := produktivDateien(t, ".")
+	bedingungen := bedingungsFunktionen(dateien)
+	// Nicht-leer-Garantie: Ohne Funktionen mit einer Loeschbedingung erkennte der Test keinen Ruf.
+	if len(bedingungen) < 10 {
+		t.Fatalf("nur %d Funktionen liefern eine Loeschbedingung — der Detektor misst offenbar nichts mehr", len(bedingungen))
+	}
 	mitBedingung := 0
 	ohne := map[string]bool{}
-	for name, datei := range produktivDateien(t, ".") {
+	for name, datei := range dateien {
 		for _, decl := range datei.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
 			if !ok || fn.Recv != nil || fn.Body == nil || !gerufen[fn.Name.Name] {
 				continue
 			}
-			aendert, nenntBedingung := aendertUndNenntBedingung(fn.Body)
+			aendert, nenntBedingung := aendertUndNenntBedingung(fn.Body, bedingungen)
 			switch {
 			case !aendert:
 			case nenntBedingung:
@@ -116,7 +141,7 @@ func TestNachtlaeufe_AenderndeAnweisungSetztBedingungAusLoeschfristenEin(t *test
 				ohne[fn.Name.Name] = true
 				if _, ok := ohneBedingungAusLoeschfristen[fn.Name.Name]; !ok {
 					t.Errorf("%s (repository/%s) ändert oder löscht für einen Nachtlauf mit einer eigenen "+
-						"Bedingung. Die Bedingung gehört als Predikat-Funktion nach loeschfristen.go, damit "+
+						"Bedingung. Die Bedingung gehört als Funktion nach loeschfristen.go, damit "+
 						"Lauf und Wächter des Rückstands denselben Satz einsetzen.", fn.Name.Name, name)
 				}
 			}
@@ -182,7 +207,7 @@ func TestLoeschbedingung_EntstehtNurInLoeschfristen(t *testing.T) {
 	}
 	sort.Strings(fremde)
 	for _, pfad := range fremde {
-		t.Errorf("%s setzt eine Loeschbedingung selbst zusammen. Die Bedingung gehört als Predikat-Funktion "+
+		t.Errorf("%s setzt eine Loeschbedingung selbst zusammen. Die Bedingung gehört als Funktion "+
 			"nach %s: Dort setzt sie auch der Wächter des Rückstands ein.", pfad, heimat)
 	}
 }

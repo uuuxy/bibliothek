@@ -30,13 +30,13 @@ import (
 //
 // Maßgeblich ist der früheste Termin einer Klasse, nicht ihre letzte Zeile: Ein Plan kann eine
 // Klasse zweimal nennen, etwa mit einem nachgeschobenen Termin, und der Ausleihdienst nimmt
-// beim Ausleihen ebenfalls den nächsten Termin nach heute (RueckgabeTerminLage). Mit zwei
+// beim Ausleihen ebenfalls den nächsten Termin nach heute (LMFAbfragen.LadeRueckgabeTerminLage). Mit zwei
 // Regeln hätte dasselbe Schulbuch je nach Weg eine andere Frist.
 //
 // Zuerst kehren die Klassen, die im neuen Plan nicht mehr stehen, zum Stichtag zurück, dann
 // bekommt jede Klasse des neuen Plans ihren frühesten Termin.
-func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.Datenbank, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
-	if art != repository.LmfTerminRueckgabe {
+func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LMFAbfragen, ex repository.Datenbank, art string, alt, neu []repository.LMFPlanZeile) (int64, error) {
+	if art != repository.LMFTerminRueckgabe {
 		return 0, nil
 	}
 	termine := fruehesteTermineJeKlasse(neu)
@@ -62,8 +62,8 @@ func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LmfTerminReposit
 // derselben Art im Schuljahr des ersten Tages. Sie sind das „alt" der Kopplung. Leer, wenn es
 // keinen gibt oder er noch Entwurf ist; ein Entwurf hat keine Frist gesetzt, die zurückkehren
 // müsste.
-func LmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTerminRepository, art, ersterTag string) ([]repository.LmfPlanZeile, error) {
-	st, err := repo.NeuesterLmfPlan(ctx, art)
+func LmfPlanZeilenVorher(ctx context.Context, repo *repository.LMFAbfragen, art, ersterTag string) ([]repository.LMFPlanZeile, error) {
+	st, err := repo.LadeNeuestenPlan(ctx, art)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -83,7 +83,7 @@ func LmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTerminReposito
 
 // loeseLmfFristenVomTermin bringt die Fristen der Klassen, die ihren Rückgabe-Termin an diesem
 // Tag verlieren, zurück zum Stichtag.
-func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.Datenbank, datum string, verlierer []string) (int64, error) {
+func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LMFAbfragen, ex repository.Datenbank, datum string, verlierer []string) (int64, error) {
 	if len(verlierer) == 0 {
 		return 0, nil
 	}
@@ -98,14 +98,14 @@ func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LmfTerminRep
 	// Der Stichtag des Schuljahres, in dem der Termin lag, nicht der nächste ab heute: Angefasst
 	// werden nur Fristen dieses Schuljahres, und sie gehen dorthin zurück, wo sie ohne Plan
 	// gestanden hätten. Und nur Fristen, die auf dem Termin lagen: Eine Frist von Hand bleibt.
-	stichtag := repository.LmfStichtagImSchuljahr(altTag, einstellungen.LMFStichtag)
+	stichtag := repository.LMFStichtagImSchuljahr(altTag, einstellungen.LMFStichtag)
 	von, bis := schuljahrGrenzen(altTag)
-	return repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, verlierer,
+	return repo.SetzeLernmittelFristFuerKlassen(ctx, ex, verlierer,
 		TagesEndeInSchulzeitzone(stichtag), von, bis, &altTag)
 }
 
 // setzeLmfFristenAufTermin setzt die Fristen der Klassen eines Rückgabe-Termins auf dessen Tag.
-func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.Datenbank, datum string, klassen []string) (int64, error) {
+func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LMFAbfragen, ex repository.Datenbank, datum string, klassen []string) (int64, error) {
 	if len(klassen) == 0 {
 		return 0, nil
 	}
@@ -114,7 +114,7 @@ func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LmfTerminRep
 		return 0, err
 	}
 	von, bis := schuljahrGrenzen(neuTag)
-	return repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, klassen,
+	return repo.SetzeLernmittelFristFuerKlassen(ctx, ex, klassen,
 		TagesEndeInSchulzeitzone(neuTag), von, bis, nil)
 }
 
@@ -142,7 +142,7 @@ func ohne(a, b []string) []string {
 // fruehesteTermineJeKlasse gruppiert die Klassen des Plans nach ihrem frühesten Datum: Datum →
 // Klassen. Verglichen wird über KlassenSchluessel; beide Seiten kommen aus dem Vokabular der
 // Klassen, Schreibvarianten kommen hier nicht an.
-func fruehesteTermineJeKlasse(zeilen []repository.LmfPlanZeile) map[string][]string {
+func fruehesteTermineJeKlasse(zeilen []repository.LMFPlanZeile) map[string][]string {
 	frueheste := map[string]string{} // Klassenschlüssel → Datum
 	namen := map[string]string{}     // Klassenschlüssel → Schreibweise
 	for _, z := range zeilen {

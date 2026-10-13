@@ -7,10 +7,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// RechtDerRolle sagt, ob role_permissions der Rolle das Recht erteilt. Ohne Zeile gilt es als
+// HatRolleRecht sagt, ob role_permissions der Rolle das Recht erteilt. Ohne Zeile gilt es als
 // nicht erteilt. Ein Fehler der Datenbank kommt als Fehler zurück: Der Aufrufer muss ihn von
 // einem fehlenden Recht unterscheiden können, sonst würde aus einem Aussetzer ein Verbot.
-func RechtDerRolle(ctx context.Context, db Datenbank, rolle, recht string) (bool, error) {
+func HatRolleRecht(ctx context.Context, db Datenbank, rolle, recht string) (bool, error) {
 	var allowed bool
 	query := `
 		SELECT allowed
@@ -27,9 +27,9 @@ func RechtDerRolle(ctx context.Context, db Datenbank, rolle, recht string) (bool
 	return allowed, nil
 }
 
-// ErlaubteRechteJeRolle liefert je Rolle, klein geschrieben, die Rechte, die role_permissions
+// LadeErlaubteRechteJeRolle liefert je Rolle, klein geschrieben, die Rechte, die role_permissions
 // erteilt: dieselbe Tabelle, aus der Anmeldung und Rechteprüfung lesen.
-func ErlaubteRechteJeRolle(ctx context.Context, db Datenbank) (map[string][]string, error) {
+func LadeErlaubteRechteJeRolle(ctx context.Context, db Datenbank) (map[string][]string, error) {
 	rows, err := db.Query(ctx, `
 		SELECT lower(role), permission
 		FROM role_permissions
@@ -54,10 +54,10 @@ func ErlaubteRechteJeRolle(ctx context.Context, db Datenbank) (map[string][]stri
 	return rechte, nil
 }
 
-// ErlaubteRechteDerRolle liefert die Rechte, die role_permissions einer Rolle erteilt; die
+// LadeErlaubteRechteDerRolle liefert die Rechte, die role_permissions einer Rolle erteilt; die
 // Schreibweise der Rolle spielt keine Rolle. Ohne erteiltes Recht ist die Liste leer, nicht nil:
 // Die Anmeldung schickt sie so an den Browser.
-func ErlaubteRechteDerRolle(ctx context.Context, db Datenbank, rolle string) ([]string, error) {
+func LadeErlaubteRechteDerRolle(ctx context.Context, db Datenbank, rolle string) ([]string, error) {
 	rechte := []string{}
 	rows, err := db.Query(ctx, `
 		SELECT permission
@@ -87,8 +87,8 @@ type RollenRecht struct {
 	Erlaubt      bool
 }
 
-// ListeRollenRechte liefert die ganze Rechte-Matrix, nach Rolle und Recht geordnet.
-func ListeRollenRechte(ctx context.Context, db Datenbank) ([]RollenRecht, error) {
+// LadeRollenRechte liefert die ganze Rechte-Matrix, nach Rolle und Recht geordnet.
+func LadeRollenRechte(ctx context.Context, db Datenbank) ([]RollenRecht, error) {
 	query := `
 			SELECT role::text, permission, allowed 
 			FROM role_permissions 

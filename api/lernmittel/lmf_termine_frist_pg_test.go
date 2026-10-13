@@ -198,7 +198,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 
 // Steht eine Klasse ZWEIMAL im Plan — möglich, wenn für eine Klasse ein Termin nach-
 // geschoben wird —, müssen beide Wege dieselbe Frist nennen: Der
-// Ausleihdienst nimmt den nächsten Termin der Klasse (RueckgabeTerminLage = MIN),
+// Ausleihdienst nimmt den nächsten Termin der Klasse (LadeRueckgabeTerminLage = MIN),
 // der Plan-Abgleich muss dieselbe Zeile treffen. Bis 05.09.2026 gewann beim Speichern
 // die LETZTE Zeile — das schon draußen liegende Buch bekam den späteren Termin, das am
 // selben Tag ausgeliehene den früheren. Zwei Regeln für dieselbe Frage.
@@ -235,8 +235,8 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	}
 
 	// Was der Ausleihdienst beim nächsten Schulbuch sagen würde …
-	repo := repository.NewLmfTerminRepository(pool)
-	lage, err := repo.RueckgabeTerminLage(ctx, "9H1", tag("2027-06-01"))
+	repo := repository.NewLMFAbfragen(pool)
+	lage, err := repo.LadeRueckgabeTerminLage(ctx, "9H1", tag("2027-06-01"))
 	if err != nil || !lage.Bevorstehend {
 		t.Fatalf("Termin für 9H1: bevorstehend=%v err=%v", lage.Bevorstehend, err)
 	}
@@ -374,7 +374,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if a = lies(); a.Sommerferien.Bekannt || a.Sommerferien.Jahr != 2031 || a.Vorschlag == nil || a.Vorschlag.Rahmen.LetzterTag != "" || a.Vorschlag.Rahmen.LetzteStunde != 4 {
 		t.Errorf("ohne hinterlegte Ferien: %+v / %+v", a.Sommerferien, a.Vorschlag)
 	}
-	// Reihenfolge wie KlassenMitSchuelern: Abschluss zuerst, dann Jahrgang absteigend (ohne Ziffer = 99).
+	// Reihenfolge wie LMFAbfragen.LadeKlassenMitSchuelern: Abschluss zuerst, dann Jahrgang absteigend (ohne Ziffer = 99).
 	if ausgabe.Vorschlag != nil && strings.Join(ausgabe.Vorschlag.Ausgelassen, ",") != "09H1,Q1,12T1,08G1,06F1" {
 		t.Errorf("Ausgabe: alle anderen ausgelassen: %v", ausgabe.Vorschlag.Ausgelassen)
 	}
@@ -389,7 +389,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 }
 
 // schlusszeilen nennt die Vermerke der abschließenden Zeilen OHNE Klasse, mit | getrennt.
-func schlusszeilen(zeilen []repository.LmfPlanZeile) string {
+func schlusszeilen(zeilen []repository.LMFPlanZeile) string {
 	var teile []string
 	for _, z := range zeilen {
 		if len(z.Klassen) == 0 {
@@ -400,7 +400,7 @@ func schlusszeilen(zeilen []repository.LmfPlanZeile) string {
 }
 
 // klassenFolge nennt die erste Klasse jeder Zeile, kommagetrennt.
-func klassenFolge(zeilen []repository.LmfPlanZeile) string {
+func klassenFolge(zeilen []repository.LMFPlanZeile) string {
 	var teile []string
 	for _, z := range zeilen {
 		teile = append(teile, strings.Join(z.Klassen, "/"))

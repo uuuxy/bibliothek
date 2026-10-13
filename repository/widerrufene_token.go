@@ -19,8 +19,8 @@ func WiderrufeToken(ctx context.Context, db Datenbank, signatur string, laeuftAb
 	return err
 }
 
-// TokenWiderrufen sagt, ob die Signatur in der Sperrliste steht.
-func TokenWiderrufen(ctx context.Context, db Datenbank, signatur string) (bool, error) {
+// IstTokenWiderrufen sagt, ob die Signatur in der Sperrliste steht.
+func IstTokenWiderrufen(ctx context.Context, db Datenbank, signatur string) (bool, error) {
 	var widerrufen bool
 	err := db.QueryRow(ctx, `
 		SELECT EXISTS(SELECT 1 FROM revoked_tokens WHERE token_signature = $1)

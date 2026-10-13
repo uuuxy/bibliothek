@@ -70,7 +70,7 @@ var bleibtSchluessel = map[string]string{
 	"status":                  "Zustand der Vormerkung (wartend, abholbereit)",
 	"storniert_am":            "Zeitpunkt der Stornierung",
 	"tabelle":                 "Name der Tabelle, aus der der Bezug stammt",
-	"titel":                   "Buchtitel; nach der Anonymisierung hängt er an einem Pseudonym (Frist dieser Spuren: PredikatLesehistorieVormerkspur)",
+	"titel":                   "Buchtitel; nach der Anonymisierung hängt er an einem Pseudonym (Frist dieser Spuren: praedikatLesehistorieVormerkspur)",
 	"vom_programm":            "Wahrheitswert: Die Sperre davor kam vom Programm",
 	"von_hand":                "Wahrheitswert: Die Sperre davor kam von Hand",
 	"vormerkungen":            "Zahl der umgehängten Vormerkungen beim Zusammenführen",

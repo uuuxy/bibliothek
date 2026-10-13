@@ -515,7 +515,7 @@ type zusammengefuehrtesZiel struct {
 // schreibeZusammengefuehrtesZiel setzt die Stammdaten des führenden Datensatzes (f) auf
 // das Ziel, füllt Lücken aus dem anderen (o) und macht das Ziel wieder aktiv. Die CASE-
 // Ausdrücke für die Sperre lesen die alten Werte (Postgres wertet die rechte Seite vor
-// der Zuweisung aus) — dieselbe Bauart wie der Rückkehrer-Pfad in AktualisiereLusdBestand.
+// der Zuweisung aus) — dieselbe Bauart wie der Rückkehrer-Pfad in AendereLUSDBestand.
 //
 // Eine manuelle Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
 // nicht zum Datensatz: Sie geht auf das Ziel über — mit ihrem Grund, sofern das Ziel
@@ -538,19 +538,19 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p zusammenge
 			is_manually_blocked = COALESCE(is_manually_blocked, false) OR $15,
 			ist_gesperrt = CASE
 				WHEN $15 THEN true
-				WHEN `+SQLAbgaengerSperreAutomatisch+`
+				WHEN `+sqlAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
 				THEN false ELSE ist_gesperrt END,
 			block_reason = CASE
 				WHEN $15 AND NOT COALESCE(is_manually_blocked, false) THEN $16
 				WHEN $15 THEN block_reason
-				WHEN `+SQLAbgaengerSperreAutomatisch+`
+				WHEN `+sqlAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
 				THEN NULL
 				-- Mit Präfix: sonst erkennt kein späterer Weg die Sperre als automatisch wieder.
-				WHEN `+SQLAbgaengerSperreAutomatisch+` THEN '`+AbgaengerSperrgrundOffen+`'
+				WHEN `+sqlAbgaengerSperreAutomatisch+` THEN '`+AbgaengerSperrgrundOffen+`'
 				ELSE block_reason END,
 			aktualisiert_am = NOW()
 		WHERE id = $1`,

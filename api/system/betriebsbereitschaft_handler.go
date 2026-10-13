@@ -88,7 +88,7 @@ func (s *Tueren) sammleLage(
 		lage.DemoExemplare = anzahl
 	}
 	// Bei einem Fehler bleibt die Liste nil — „nicht lesbar", nicht „keiner".
-	if namen, err := zustandRepo.BeispielLieferanten(ctx); err == nil {
+	if namen, err := zustandRepo.LadeBeispielLieferanten(ctx); err == nil {
 		lage.BeispielLieferanten = namen
 	}
 
@@ -125,11 +125,11 @@ func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repositor
 		lage.RechteLive = rechte
 	}
 
-	if schueler, zuordnungen, listen, err := zustandRepo.KlassenBestand(ctx); err == nil {
+	if schueler, zuordnungen, listen, err := zustandRepo.LadeKlassenBestand(ctx); err == nil {
 		lage.TrageKlassenEin(schueler, zuordnungen, listen)
 	}
 
-	if admins, err := zustandRepo.AktiveAdmins(ctx); err == nil {
+	if admins, err := zustandRepo.LadeAktiveAdmins(ctx); err == nil {
 		lage.AdminKonten = make([]string, 0, len(admins))
 		for _, a := range admins {
 			lage.AdminKonten = append(lage.AdminKonten, a.Name+" ("+a.Email+")")

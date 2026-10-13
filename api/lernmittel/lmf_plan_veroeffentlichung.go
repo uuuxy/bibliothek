@@ -39,8 +39,8 @@ func (s *Tueren) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
 // lmfPlanNurRueckgabe nennt aus allen Klassen, die der Planer zeigt (Vokabular, Zeilen,
 // Vorschlag, Auslassungen), die, die vor den Ferien nur abgeben; leer beim Ausgabe-Plan. Aus
 // ihnen belegt service.BelegeLmfPlanVermerkNurRueckgabe den Vermerk des Vorschlags vor.
-func (s *Tueren) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LmfTerminRepository, art string, a LmfPlanStandAntwort, eingang []int) ([]string, error) {
-	if art != repository.LmfTerminRueckgabe {
+func (s *Tueren) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LMFAbfragen, art string, a LmfPlanStandAntwort, eingang []int) ([]string, error) {
+	if art != repository.LMFTerminRueckgabe {
 		return []string{}, nil
 	}
 	gesehen := map[string]bool{}
@@ -64,7 +64,7 @@ func (s *Tueren) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LmfTe
 			sammle(z.Klassen)
 		}
 	}
-	return repo.KlassenNurRueckgabe(ctx, namen, eingang)
+	return repo.LadeKlassenNurRueckgabe(ctx, namen, eingang)
 }
 
 // PostLmfPlanVeroeffentlichenHandler stempelt den neuesten Plan der Art als veröffentlicht
@@ -99,15 +99,15 @@ func (s *Tueren) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort
 	if err != nil {
 		return keine, false, apierrors.BadRequest(err.Error(), err)
 	}
-	repo := repository.NewLmfTerminRepository(s.DB.Pool)
-	st, err := repo.NeuesterLmfPlan(r.Context(), art)
+	repo := repository.NewLMFAbfragen(s.DB.Pool)
+	st, err := repo.LadeNeuestenPlan(r.Context(), art)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return keine, false, apierrors.NotFound("kein Plan vorhanden", pgx.ErrNoRows)
 	}
 	if err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan laden", err)
 	}
-	antwort := LmfPlanSpeicherAntwort{LmfPlanStand: st, Ausfaelle: []LmfPlanAusfall{}}
+	antwort := LmfPlanSpeicherAntwort{LMFPlanStand: st, Ausfaelle: []LmfPlanAusfall{}}
 	if st.Plan.VeroeffentlichtAm != nil {
 		return antwort, false, nil
 	}
@@ -117,7 +117,7 @@ func (s *Tueren) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort
 		return keine, false, apierrors.Internal("Transaktion", err)
 	}
 	defer db.SafeRollback(r.Context(), tx)
-	if antwort.LmfPlanStand, err = repo.VeroeffentlicheLmfPlanIn(r.Context(), tx, st.Plan.ID, s.Jetzt()); err != nil {
+	if antwort.LMFPlanStand, err = repo.VeroeffentlichePlan(r.Context(), tx, st.Plan.ID, s.Jetzt()); err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
 	}
 	if antwort.FristenAngepasst, err = service.KoppleLmfPlanFristen(r.Context(), repo, tx, art, nil, antwort.Zeilen); err != nil {

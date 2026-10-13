@@ -184,7 +184,7 @@ func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LmfPlan(t *testing.T) {
 	l := sperrFristLageAnlegen(t)
 	von := repository.SchuljahrBeginn(time.Date(2027, time.June, 28, 0, 0, 0, 0, schulzeit.Zone()))
 	bis := von.AddDate(1, 0, 0)
-	n, err := repository.NewLmfTerminRepository(l.pool).SetzeLernmittelFristFuerKlassenIn(context.Background(),
+	n, err := repository.NewLMFAbfragen(l.pool).SetzeLernmittelFristFuerKlassen(context.Background(),
 		l.pool, []string{"10r1"}, testdaten.FristEnde(2027, time.June, 28), von, bis, nil)
 	if err != nil {
 		t.Fatal(err)

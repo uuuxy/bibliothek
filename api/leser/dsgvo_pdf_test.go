@@ -30,10 +30,10 @@ func TestGenerateDsgvoAuskunftPDF(t *testing.T) {
 	daten := &dsgvoDaten{
 		stammdaten: &auskunft.DsgvoStammdaten{
 			ID: "abc-123", BarcodeID: "S-10001", Vorname: "Erika", Nachname: "Mustermann",
-			Klasse: "7b", Geburtsdatum: &gebdatum, AbgaengerJahr: 2030, LusdID: &lusd,
+			Klasse: "7b", Geburtsdatum: &gebdatum, AbgaengerJahr: 2030, LUSDID: &lusd,
 			Strasse: "Hauptstr.", Hausnummer: "5", Plz: "60311", Ort: "Frankfurt",
-			ElternEmail: "eltern@example.org", IstGesperrt: true, IsManuallyBlocked: true,
-			BlockReason: &sperrgrund, ErstelltAm: time.Now(), AktualisiertAm: time.Now(),
+			ElternEmail: "eltern@example.org", IstGesperrt: true, IstVonHandGesperrt: true,
+			Sperrgrund: &sperrgrund, ErstelltAm: time.Now(), AktualisiertAm: time.Now(),
 		},
 		foto:           auskunft.DsgvoFoto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
 		ausleihen:      []auskunft.DsgvoAusleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},

@@ -40,7 +40,7 @@ var dsgvoKontoQuellen = []string{
 	"sitzungen.benutzer_id",
 }
 
-func TestDsgvoKontoQuellen_DeckenSichMitDemSchema(t *testing.T) {
+func TestDSGVOKontoQuellen_DeckenSichMitDemSchema(t *testing.T) {
 	pool := pgtest.Pool(t)
 	rows, err := pool.Query(context.Background(), `
 		SELECT c.conrelid::regclass::text || '.' || a.attname
@@ -79,7 +79,7 @@ func TestDsgvoKontoQuellen_DeckenSichMitDemSchema(t *testing.T) {
 	}
 }
 
-func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
+func TestDSGVOAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -105,17 +105,17 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 	ex2 := testdaten.Exemplar(t, pool, titelID, "EX-KANARI-2", true, "")
 
 	// Je Quelle: Eintrag anlegen und sagen, woran die Auskunft ihn zeigt.
-	erwartet := map[string]func(k *repository.DsgvoZugangskonto) bool{}
-	vorgang := func(handlung string) func(k *repository.DsgvoZugangskonto) bool {
-		return func(k *repository.DsgvoZugangskonto) bool {
-			return slices.ContainsFunc(k.EigeneVorgaenge, func(v repository.DsgvoEigenerVorgang) bool {
+	erwartet := map[string]func(k *repository.DSGVOZugangskonto) bool{}
+	vorgang := func(handlung string) func(k *repository.DSGVOZugangskonto) bool {
+		return func(k *repository.DSGVOZugangskonto) bool {
+			return slices.ContainsFunc(k.EigeneVorgaenge, func(v repository.DSGVOEigenerVorgang) bool {
 				return v.Handlung == handlung && v.Zeitpunkt != nil
 			})
 		}
 	}
-	anfrage := func(art string) func(k *repository.DsgvoZugangskonto) bool {
-		return func(k *repository.DsgvoZugangskonto) bool {
-			return slices.ContainsFunc(k.Anfragen, func(a repository.DsgvoAnfrage) bool { return a.Art == art })
+	anfrage := func(art string) func(k *repository.DSGVOZugangskonto) bool {
+		return func(k *repository.DSGVOZugangskonto) bool {
+			return slices.ContainsFunc(k.Anfragen, func(a repository.DSGVOAnfrage) bool { return a.Art == art })
 		}
 	}
 	for _, quelle := range dsgvoKontoQuellen {
@@ -157,8 +157,8 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 			exec(`INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse)
 				VALUES ($1, 'OVERRIDE_BLOCK', jsonb_build_object('schueler_id', $2::text, 'reason', 'Kanari-Sperrgrund'), '10.1.2.3')`,
 				konto, schuelerin)
-			erwartet[quelle] = func(k *repository.DsgvoZugangskonto) bool {
-				return slices.ContainsFunc(k.EigeneVorgaenge, func(v repository.DsgvoEigenerVorgang) bool {
+			erwartet[quelle] = func(k *repository.DSGVOZugangskonto) bool {
+				return slices.ContainsFunc(k.EigeneVorgaenge, func(v repository.DSGVOEigenerVorgang) bool {
 					return v.Handlung == "Verwaltungseingriff: OVERRIDE_BLOCK" && v.IPAdresse != nil && *v.IPAdresse == "10.1.2.3"
 				})
 			}
@@ -181,7 +181,7 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 		}
 	}
 
-	k, err := repository.LeseDsgvoZugangskonto(ctx, pool, leser)
+	k, err := repository.LadeDSGVOZugangskonto(ctx, pool, leser)
 	if err != nil || k == nil {
 		t.Fatalf("Auskunft lesen: %v (Konto %v)", err, k)
 	}

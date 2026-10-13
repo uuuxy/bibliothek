@@ -115,7 +115,7 @@ func sperrZustand(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, manuel
 // `deleted_at = CURRENT_TIMESTAMP` bedingungslos, und geprüft wurde davor nur, DASS es
 // den Schüler gibt — nicht, ob er schon im Papierkorb liegt. Wer eine Zeile ein zweites
 // Mal löschte, verschob damit die 180-Tage-Frist der Anonymisierung
-// (repository.PredikatAnonymisierung liest deleted_at) um die ganze bereits abgelaufene
+// (repository.PraedikatAnonymisierung liest deleted_at) um die ganze bereits abgelaufene
 // Zeit nach hinten. Still: Die Antwort war beide Male „success", und im Papierkorb sieht
 // man das Datum nur als „gelöscht am".
 func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {

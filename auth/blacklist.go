@@ -76,7 +76,7 @@ func (b *TokenBlacklist) IsBlacklisted(token string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	exists, err := repository.TokenWiderrufen(ctx, b.pool, hash)
+	exists, err := repository.IstTokenWiderrufen(ctx, b.pool, hash)
 	if err != nil {
 		return false, err
 	}

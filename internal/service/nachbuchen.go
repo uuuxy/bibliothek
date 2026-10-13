@@ -278,7 +278,7 @@ func (s *defaultLoanService) meldeAbweisung(ctx context.Context, l *nachbuchLage
 // meldung baut die Meldung aus der Lage; Ausleiher ist die Person des Eintrags.
 func (s *defaultLoanService) meldung(l *nachbuchLage, ergebnis, grund string) repository.NachbuchMeldungEingabe {
 	m := repository.NachbuchMeldungEingabe{
-		IdempotencyKey: l.e.Schluessel, Barcode: l.e.Barcode, Ergebnis: ergebnis, Grund: grund,
+		IdempotenzSchluessel: l.e.Schluessel, Barcode: l.e.Barcode, Ergebnis: ergebnis, Grund: grund,
 		AusweisText: l.ausweis, GescanntAm: l.gescannt,
 	}
 	if l.copy != nil {

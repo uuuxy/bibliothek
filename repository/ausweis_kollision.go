@@ -6,9 +6,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// ConstraintAusweisUeberPersonen ist der Name, unter dem der Trigger eine
+// constraintAusweisUeberPersonen ist der Name, unter dem der Trigger eine
 // Ausweisnummer ablehnt, die schon eine Person der anderen Tabelle trägt (Schüler ↔ Kollegium).
-const ConstraintAusweisUeberPersonen = "uniq_ausweis_ueber_personen"
+const constraintAusweisUeberPersonen = "uniq_ausweis_ueber_personen"
 
 // IstAusweisKollision sagt, ob err eine vergebene Ausweisnummer meldet — unter den aktiven
 // Schülern oder über Schüler und Kollegium hinweg. Die
@@ -19,7 +19,7 @@ func IstAusweisKollision(err error) bool {
 	if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
 		return false
 	}
-	return pgErr.ConstraintName == ConstraintAusweisUeberPersonen ||
+	return pgErr.ConstraintName == constraintAusweisUeberPersonen ||
 		pgErr.ConstraintName == "uniq_schueler_barcode_active"
 }
 

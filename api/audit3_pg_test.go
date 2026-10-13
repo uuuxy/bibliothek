@@ -157,7 +157,7 @@ func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
 	}
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	warmers := repository.ListeLadenhueter(ctx, srv.DB.Pool, "", 100)
+	warmers := repository.LadeLadenhueter(ctx, srv.DB.Pool, "", 100)
 
 	titel := map[string]bool{}
 	for _, w := range warmers {
@@ -188,10 +188,10 @@ func TestMahnwesen_KeineZombieMahnungFuerGeloeschte(t *testing.T) {
 		t.Fatalf("Schüler löschen: %v", err)
 	}
 
-	repo := repository.NewMahnwesenRepository(pool)
-	klassen, err := repo.QueryUeberfaelligeNachKlasse(ctx, "")
+	repo := repository.NewMahnwesenAbfragen(pool)
+	klassen, err := repo.LadeUeberfaelligeNachKlasse(ctx, "")
 	if err != nil {
-		t.Fatalf("QueryUeberfaelligeNachKlasse: %v", err)
+		t.Fatalf("LadeUeberfaelligeNachKlasse: %v", err)
 	}
 
 	ids := map[string]bool{}

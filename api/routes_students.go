@@ -5,10 +5,10 @@ import (
 	"net/http"
 )
 
-func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repository.LeserAbfragen, mahnRepo *repository.MahnwesenRepository, auditRepo repository.ProtokollAbfragen) {
+func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repository.LeserAbfragen, mahnRepo *repository.MahnwesenAbfragen, auditRepo repository.ProtokollAbfragen) {
 	// ── SCHUELER (Students) ──
 	// Die Klassenliste hinter Jahrgangsfilter und Jahrgangs-Auswahlfeld (OFFEN.md 9.5).
-	lmfKlassenRepo := repository.NewLmfTerminRepository(s.DB.Pool)
+	lmfKlassenRepo := repository.NewLMFAbfragen(s.DB.Pool)
 	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.leser().ListStudentsHandler(studentRepo, lmfKlassenRepo)))
 	mux.Handle("GET /api/schueler/{id}", s.RequirePermission("view_students")(s.leser().GetStudentProfileHandler(studentRepo)))
 	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.leser().CreateStudentHandler()))

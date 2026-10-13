@@ -20,8 +20,8 @@ import (
 // sich der Plan, damit sie nicht als „ohne Termin" gelten und das nächste Jahr sie
 // wieder auslässt.
 
-// LmfPlan ist der Rahmen eines Plans.
-type LmfPlan struct {
+// LMFPlan ist der Rahmen eines Plans.
+type LMFPlan struct {
 	ID              string `json:"id"`
 	Art             string `json:"art"`
 	SchuljahrBeginn string `json:"schuljahr_beginn"` // YYYY-MM-DD
@@ -41,19 +41,19 @@ type LmfPlan struct {
 	// FreieTage: Tage, die dieser Plan überspringt (Migration 099) — bewegliche
 	// Ferientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche
 	// Feiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).
-	FreieTage []LmfFreierTag `json:"freie_tage"`
+	FreieTage []LMFFreierTag `json:"freie_tage"`
 }
 
-// LmfFreierTag ist ein freier Tag des Plans mit Grund.
-type LmfFreierTag struct {
+// LMFFreierTag ist ein freier Tag des Plans mit Grund.
+type LMFFreierTag struct {
 	Datum string `json:"datum"` // YYYY-MM-DD
 	Grund string `json:"grund"`
 }
 
-// LmfPlanZeile ist eine Zeile der Reihenfolge — mit den vom Server gerechneten Plätzen.
+// LMFPlanZeile ist eine Zeile der Reihenfolge — mit den vom Server gerechneten Plätzen.
 // Fest: Datum und Stunde sind vorgegeben, nicht gerechnet (die Klasse mit dem Ausflug,
 // Migration 099); die übrigen Zeilen fließen um diesen Platz herum.
-type LmfPlanZeile struct {
+type LMFPlanZeile struct {
 	Position int      `json:"position"`
 	Datum    string   `json:"datum"`
 	Stunde   int      `json:"stunde"`
@@ -62,23 +62,23 @@ type LmfPlanZeile struct {
 	Vermerk  string   `json:"vermerk"`
 }
 
-// LmfPlanStand ist ein Plan mit allem, was dazugehört.
-type LmfPlanStand struct {
-	Plan        LmfPlan        `json:"plan"`
-	Zeilen      []LmfPlanZeile `json:"zeilen"`
+// LMFPlanStand ist ein Plan mit allem, was dazugehört.
+type LMFPlanStand struct {
+	Plan        LMFPlan        `json:"plan"`
+	Zeilen      []LMFPlanZeile `json:"zeilen"`
 	Ausgelassen []string       `json:"ausgelassen"`
 }
 
 // lmfPlanSpalten ist die eine Spaltenliste des Rahmens — für Lesen, Speichern und
-// Veröffentlichen dieselbe, damit kein Weg ein Feld vergisst (scanLmfPlan liest sie).
+// Veröffentlichen dieselbe, damit kein Weg ein Feld vergisst (leseLMFPlan liest sie).
 const lmfPlanSpalten = `id, art, to_char(schuljahr_beginn, 'YYYY-MM-DD'), to_char(erster_tag, 'YYYY-MM-DD'),
 		       startstunde, stunden_je_tag, veroeffentlicht_am,
 		       COALESCE(to_char(letzter_tag, 'YYYY-MM-DD'), ''), COALESCE(letzte_stunde, 0)`
 
-// scanLmfPlan liest lmfPlanSpalten in den Rahmen; der Stempel kommt als RFC 3339 in der
+// leseLMFPlan liest lmfPlanSpalten in den Rahmen; der Stempel kommt als RFC 3339 in der
 // Schulzeitzone, weil die Oberfläche ihn nur anzeigt. Das Ende ist beim Ausgabe-Plan
 // NULL — COALESCE, nicht Zeigertyp (NULL-Scan-Bugklasse).
-func scanLmfPlan(row pgx.Row, p *LmfPlan) error {
+func leseLMFPlan(row pgx.Row, p *LMFPlan) error {
 	var veroeffentlicht *time.Time
 	if err := row.Scan(&p.ID, &p.Art, &p.SchuljahrBeginn, &p.ErsterTag, &p.Startstunde, &p.StundenJeTag, &veroeffentlicht,
 		&p.LetzterTag, &p.LetzteStunde); err != nil {
@@ -92,45 +92,45 @@ func scanLmfPlan(row pgx.Row, p *LmfPlan) error {
 	return nil
 }
 
-// NeuesterLmfPlan liefert den Plan der Art mit dem spätesten ersten Tag — der, an dem
+// LadeNeuestenPlan liefert den Plan der Art mit dem spätesten ersten Tag — der, an dem
 // gearbeitet wird oder der zuletzt galt, Entwurf oder veröffentlicht. pgx.ErrNoRows,
 // wenn es noch keinen gibt.
-func (r *LmfTerminRepository) NeuesterLmfPlan(ctx context.Context, art string) (LmfPlanStand, error) {
-	var st LmfPlanStand
-	err := scanLmfPlan(r.db.QueryRow(ctx, `
+func (a *LMFAbfragen) LadeNeuestenPlan(ctx context.Context, art string) (LMFPlanStand, error) {
+	var st LMFPlanStand
+	err := leseLMFPlan(a.db.QueryRow(ctx, `
 		SELECT `+lmfPlanSpalten+`
 		FROM lmf_plaene WHERE art = $1
 		ORDER BY erster_tag DESC LIMIT 1`, art), &st.Plan)
 	if err != nil {
 		return st, err
 	}
-	return r.ladeLmfPlanTeile(ctx, st)
+	return a.ladePlanTeile(ctx, st)
 }
 
-// ladeLmfPlanTeile ergänzt einen gelesenen Rahmen um Zeilen, freie Tage und Auslassungen.
-func (r *LmfTerminRepository) ladeLmfPlanTeile(ctx context.Context, st LmfPlanStand) (LmfPlanStand, error) {
+// ladePlanTeile ergänzt einen gelesenen Rahmen um Zeilen, freie Tage und Auslassungen.
+func (a *LMFAbfragen) ladePlanTeile(ctx context.Context, st LMFPlanStand) (LMFPlanStand, error) {
 	var err error
-	if st.Zeilen, err = r.lmfPlanZeilen(ctx, st.Plan.ID); err != nil {
+	if st.Zeilen, err = a.ladePlanZeilen(ctx, st.Plan.ID); err != nil {
 		return st, err
 	}
-	if st.Plan.FreieTage, err = r.lmfPlanFreieTage(ctx, st.Plan.ID); err != nil {
+	if st.Plan.FreieTage, err = a.ladeFreieTage(ctx, st.Plan.ID); err != nil {
 		return st, err
 	}
-	st.Ausgelassen, err = r.lmfPlanAusgelassen(ctx, st.Plan.ID)
+	st.Ausgelassen, err = a.ladeAusgelassene(ctx, st.Plan.ID)
 	return st, err
 }
 
-func (r *LmfTerminRepository) lmfPlanFreieTage(ctx context.Context, planID string) ([]LmfFreierTag, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *LMFAbfragen) ladeFreieTage(ctx context.Context, planID string) ([]LMFFreierTag, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT to_char(datum, 'YYYY-MM-DD'), grund FROM lmf_plan_freie_tage
 		WHERE plan_id = $1 ORDER BY datum`, planID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	tage := []LmfFreierTag{}
+	tage := []LMFFreierTag{}
 	for rows.Next() {
-		var t LmfFreierTag
+		var t LMFFreierTag
 		if err := rows.Scan(&t.Datum, &t.Grund); err != nil {
 			return nil, err
 		}
@@ -139,8 +139,8 @@ func (r *LmfTerminRepository) lmfPlanFreieTage(ctx context.Context, planID strin
 	return tage, rows.Err()
 }
 
-func (r *LmfTerminRepository) lmfPlanZeilen(ctx context.Context, planID string) ([]LmfPlanZeile, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *LMFAbfragen) ladePlanZeilen(ctx context.Context, planID string) ([]LMFPlanZeile, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT t.position, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.fest, t.vermerk,
 		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse))
 		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')
@@ -150,9 +150,9 @@ func (r *LmfTerminRepository) lmfPlanZeilen(ctx context.Context, planID string) 
 		return nil, err
 	}
 	defer rows.Close()
-	zeilen := []LmfPlanZeile{}
+	zeilen := []LMFPlanZeile{}
 	for rows.Next() {
-		var z LmfPlanZeile
+		var z LMFPlanZeile
 		if err := rows.Scan(&z.Position, &z.Datum, &z.Stunde, &z.Fest, &z.Vermerk, &z.Klassen); err != nil {
 			return nil, err
 		}
@@ -161,8 +161,8 @@ func (r *LmfTerminRepository) lmfPlanZeilen(ctx context.Context, planID string) 
 	return zeilen, rows.Err()
 }
 
-func (r *LmfTerminRepository) lmfPlanAusgelassen(ctx context.Context, planID string) ([]string, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *LMFAbfragen) ladeAusgelassene(ctx context.Context, planID string) ([]string, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT klasse FROM lmf_plan_ausgelassen WHERE plan_id = $1
 		ORDER BY klassen_normkey(klasse)`, planID)
 	if err != nil {
@@ -180,7 +180,7 @@ func (r *LmfTerminRepository) lmfPlanAusgelassen(ctx context.Context, planID str
 	return klassen, rows.Err()
 }
 
-// SaveLmfPlanIn legt den Plan der Art für das Schuljahr des ersten Tages an oder schreibt
+// SchreibePlan legt den Plan der Art für das Schuljahr des ersten Tages an oder schreibt
 // ihn um — Rahmen (mit freien Tagen), Zeilen (vollständig ersetzt, mit Platz, Position
 // und fest-Marke) und ausgelassene Klassen in einer Transaktion. Klassennamen laufen
 // durch das Vokabular; die Antwort trägt die kanonisierten Namen. Der Veröffentlichungs-
@@ -194,7 +194,7 @@ func (r *LmfTerminRepository) lmfPlanAusgelassen(ctx context.Context, planID str
 // zweiter Anlauf nicht mehr reparieren konnte, weil der alte Plan nicht mehr lesbar war.
 // Eine Hülle mit eigener Transaktion gibt es bewusst nicht mehr: Sie rief niemand, und
 // eine Tür, durch die niemand geht, ist eine, die irgendwann jemand falsch benutzt.
-func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan LmfPlan, zeilen []LmfPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LmfPlanStand, error) {
+func (a *LMFAbfragen) SchreibePlan(ctx context.Context, tx pgx.Tx, plan LMFPlan, zeilen []LMFPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LMFPlanStand, error) {
 	// Je Zeile ein Platz — die Schleife unten greift mit plaetze[i] in die zweite
 	// Scheibe. Bis zum 12.09.2026 sicherte das nur der eine Aufrufer zu (Register,
 	// Paket 5: „vier Zusicherungen halten nur per Verabredung"); hier steht sie an der
@@ -202,18 +202,18 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 	// ein Indexfehler mitten in einer offenen Transaktion — halb geschriebener Plan,
 	// keine lesbare Meldung.
 	if len(plaetze) != len(zeilen) {
-		return LmfPlanStand{}, fmt.Errorf("lmf-plan: %d Plätze für %d Zeilen", len(plaetze), len(zeilen))
+		return LMFPlanStand{}, fmt.Errorf("lmf-plan: %d Plätze für %d Zeilen", len(plaetze), len(zeilen))
 	}
 	ersterTag, err := schulzeit.Kalendertag(plan.ErsterTag)
 	if err != nil {
-		return LmfPlanStand{}, err
+		return LMFPlanStand{}, err
 	}
 
 	sjb := SchuljahrBeginn(ersterTag)
-	var st LmfPlanStand
+	var st LMFPlanStand
 	// Das Ende (Anker des Rückgabe-Plans) als NULL, wenn leer — der Check der Tabelle
 	// verlangt es beim Rückgabe-Plan und verbietet es beim Ausgabe-Plan.
-	if err := scanLmfPlan(tx.QueryRow(ctx, `
+	if err := leseLMFPlan(tx.QueryRow(ctx, `
 		INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag, letzter_tag, letzte_stunde)
 		VALUES ($1, $2, $3, $4, $5, NULLIF($6, '')::date, NULLIF($7, 0))
 		ON CONFLICT (art, schuljahr_beginn) DO UPDATE
@@ -234,9 +234,9 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 	if _, err := tx.Exec(ctx, `DELETE FROM lmf_plan_freie_tage WHERE plan_id = $1`, st.Plan.ID); err != nil {
 		return st, err
 	}
-	st.Plan.FreieTage = []LmfFreierTag{}
+	st.Plan.FreieTage = []LMFFreierTag{}
 	for _, f := range plan.FreieTage {
-		var t LmfFreierTag
+		var t LMFFreierTag
 		if err := tx.QueryRow(ctx, `
 			INSERT INTO lmf_plan_freie_tage (plan_id, datum, grund) VALUES ($1, $2::date, $3)
 			ON CONFLICT (plan_id, datum) DO UPDATE SET grund = EXCLUDED.grund
@@ -245,7 +245,7 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 		}
 		st.Plan.FreieTage = append(st.Plan.FreieTage, t)
 	}
-	st.Zeilen = make([]LmfPlanZeile, 0, len(zeilen))
+	st.Zeilen = make([]LMFPlanZeile, 0, len(zeilen))
 	for i, z := range zeilen {
 		var id string
 		if err := tx.QueryRow(ctx, `
@@ -259,7 +259,7 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 		if err != nil {
 			return st, err
 		}
-		st.Zeilen = append(st.Zeilen, LmfPlanZeile{Position: i + 1, Datum: plaetze[i].Datum.Format("2006-01-02"),
+		st.Zeilen = append(st.Zeilen, LMFPlanZeile{Position: i + 1, Datum: plaetze[i].Datum.Format("2006-01-02"),
 			Stunde: plaetze[i].Stunde, Fest: z.Fest, Klassen: kanonisch, Vermerk: z.Vermerk})
 	}
 	if st.Ausgelassen, err = schreibeKlassen(ctx, tx, `INSERT INTO lmf_plan_ausgelassen (plan_id, klasse) VALUES ($1, $2)
@@ -290,9 +290,9 @@ func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klass
 	return kanonisch, nil
 }
 
-// DeleteLmfPlanIn entfernt einen Plan samt Zeilen und Auslassungen (CASCADE) — auf einem
+// LoeschePlan entfernt einen Plan samt Zeilen und Auslassungen (CASCADE) — auf einem
 // Executor des Aufrufers (Transaktion des Handlers, im Test der Pool).
-func (r *LmfTerminRepository) DeleteLmfPlanIn(ctx context.Context, ex Datenbank, id string) (bool, error) {
+func (a *LMFAbfragen) LoeschePlan(ctx context.Context, ex Datenbank, id string) (bool, error) {
 	tag, err := ex.Exec(ctx, `DELETE FROM lmf_plaene WHERE id = $1`, id)
 	if err != nil {
 		return false, err
@@ -310,13 +310,13 @@ type KlasseImPlan struct {
 	Jahrgang  int
 }
 
-// KlassenMitSchuelern nennt die Klassen aktiver Schüler in der Reihenfolge, in der die
+// LadeKlassenMitSchuelern nennt die Klassen aktiver Schüler in der Reihenfolge, in der die
 // Schule sie abarbeitet: Abschlussklassen zuerst (AbschlussklasseSQL — die eine Regel
 // für das Ende eines Bildungsgangs), dann Jahrgang absteigend, dann Name. Oberstufe
 // (Jahrgang ab 11 oder ohne führende Ziffer, „E1", „Q3") ist markiert: Sie organisiert
 // Rückgabe und Ausgabe an dieser Schule selbst und steht im ersten Plan unten.
-func (r *LmfTerminRepository) KlassenMitSchuelern(ctx context.Context) ([]KlasseImPlan, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *LMFAbfragen) LadeKlassenMitSchuelern(ctx context.Context) ([]KlasseImPlan, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT s.klasse,
 		       `+AbschlussklasseSQL("s.klasse")+` AS abschluss,
 		       COALESCE(`+klassenZahlSQL("s.klasse")+`, 99) AS jahrgang

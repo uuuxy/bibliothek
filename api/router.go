@@ -155,7 +155,7 @@ func (s *Server) Routes() http.Handler {
 	bookRepo := repository.NewKatalogAbfragen(s.DB.Pool)
 	loanRepo := repository.NewAusleihAbfragen(s.DB.Pool)
 	auditRepo := repository.NewProtokollAbfragen(s.DB.Pool)
-	mahnRepo := repository.NewMahnwesenRepository(s.DB.Pool)
+	mahnRepo := repository.NewMahnwesenAbfragen(s.DB.Pool)
 	userRepo := repository.NewKontoAbfragen(s.DB.Pool)
 
 	loanSvc := service.NewLoanService(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)

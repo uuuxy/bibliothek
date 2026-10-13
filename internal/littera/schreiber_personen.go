@@ -315,7 +315,7 @@ func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser)
 // Die Gruppe „Abgegangen" trägt als Klassenbezeichnung nur „Ab" — daraus ist nichts
 // abzuleiten. Für sie gilt das laufende Schuljahr: Sie sind bereits weg, ist_abgaenger sagt
 // die Wahrheit, und das Jahr bestimmt nur noch, ab wann die Löschung greifen darf
-// (repository.PredikatAbgaengerLoeschung).
+// (repository.praedikatAbgaengerLoeschung).
 //
 // Jede andere Klasse ohne Jahrgang („AUS" der Gruppe „Im Ausland") bekommt, was die
 // Anwendung dafür überall einsetzt, Handanlage wie LUSD-Import (repository.AbgangsjahrOhneKlasse),

@@ -93,7 +93,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 		}
 	})
 	echt := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	repo := repository.NewLmfTerminRepository(pool)
+	repo := repository.NewLMFAbfragen(pool)
 
 	stichtag := time.Date(2027, time.July, 31, 23, 59, 0, 0, schulzeit.Zone())
 	anna := testdaten.SeedSchueler(t, pool, "TX-1", "Anna", "9H1")
@@ -111,7 +111,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 	if fristVorher.Equal(stichtag) {
 		t.Fatal("Aufbau: Annas Frist folgt dem Plan nicht — der Test prüfte dann ins Leere")
 	}
-	planVorher, err := repo.NeuesterLmfPlan(ctx, "rueckgabe")
+	planVorher, err := repo.LadeNeuestenPlan(ctx, "rueckgabe")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 	}
 
 	// Der Kern: NICHTS ist geschehen — weder am Plan noch an den Fristen.
-	planNachher, err := repo.NeuesterLmfPlan(ctx, "rueckgabe")
+	planNachher, err := repo.LadeNeuestenPlan(ctx, "rueckgabe")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 		`{"letzter_tag":"2027-06-28","letzte_stunde":4,"stunden_je_tag":6,"zeilen":[{"klassen":["8G1"]},{"klassen":["9H1"]}]}`); rec.Code != http.StatusOK {
 		t.Fatalf("Gegenprobe: dieselbe Änderung ohne Fehler: %d %s", rec.Code, rec.Body.String())
 	}
-	if st, err := repo.NeuesterLmfPlan(ctx, "rueckgabe"); err != nil || len(st.Zeilen) != 2 {
+	if st, err := repo.LadeNeuestenPlan(ctx, "rueckgabe"); err != nil || len(st.Zeilen) != 2 {
 		t.Errorf("Gegenprobe: Plan nach dem echten Speichern: %d Zeilen (%v), erwartet 2", len(st.Zeilen), err)
 	}
 }

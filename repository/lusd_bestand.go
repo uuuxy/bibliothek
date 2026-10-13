@@ -8,34 +8,34 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// LitteraHerkunftPraefix ist die Marke, die der Littera-Altbestandsimport in
+// litteraHerkunftPraefix ist die Marke, die der Littera-Altbestandsimport in
 // schueler.lusd_id schreibt ('littera:<Buchungsnummer>', internal/littera). Sie ist
 // KEINE LUSD-ID: Für den Landesabgleich gilt ein solcher Schüler als ID-los — er muss
 // per Name+Geburtsdatum zugeordnet werden und darf NICHT als „LUSD-verwaltet" gelten,
 // sonst stünde er bei jedem Import als Abgänger da (seine Marke steht nie in der CSV)
 // und würde anonymisiert. Bis 21.08.2026 war genau das der Fall.
-const LitteraHerkunftPraefix = "littera:"
+const litteraHerkunftPraefix = "littera:"
 
-// HatEchteLusdID sagt, ob ein lusd_id-Wert eine LUSD-Kennung ist (gesetzt und keine
+// hatEchteLUSDID sagt, ob ein lusd_id-Wert eine LUSD-Kennung ist (gesetzt und keine
 // Littera-Herkunftsmarke).
-func HatEchteLusdID(lusdID *string) bool {
-	return lusdID != nil && *lusdID != "" && !strings.HasPrefix(*lusdID, LitteraHerkunftPraefix)
+func hatEchteLUSDID(lusdID *string) bool {
+	return lusdID != nil && *lusdID != "" && !strings.HasPrefix(*lusdID, litteraHerkunftPraefix)
 }
 
-// LusdSchluessel normalisiert Vorname, Nachname und Geburtsdatum zu einem
+// LUSDSchluessel normalisiert Vorname, Nachname und Geburtsdatum zu einem
 // vergleichbaren Schlüssel (Namen in der Normalform suchnorm, Datum als YYYY-MM-DD).
 // Leerer String, wenn kein Geburtsdatum vorliegt — ohne Datum ist kein sicherer
 // Abgleich möglich.
-func LusdSchluessel(vorname, nachname string, geb *time.Time) string {
+func LUSDSchluessel(vorname, nachname string, geb *time.Time) string {
 	if geb == nil {
 		return ""
 	}
 	return namensteilNorm(vorname) + "\x1f" + namensteilNorm(nachname) + "\x1f" + geb.Format("2006-01-02")
 }
 
-// LusdNamensSchluessel ist der Nur-Name-Schlüssel (Vorname + Nachname in der Normalform
+// LUSDNamensSchluessel ist der Nur-Name-Schlüssel (Vorname + Nachname in der Normalform
 // suchnorm) — die letzte Stufe, wenn der Export weder ID noch Geburtsdatum trägt.
-func LusdNamensSchluessel(vorname, nachname string) string {
+func LUSDNamensSchluessel(vorname, nachname string) string {
 	return namensteilNorm(vorname) + "\x1f" + namensteilNorm(nachname)
 }
 
@@ -53,26 +53,26 @@ func namensteilNorm(s string) string {
 	return suchnorm(strings.Join(strings.Fields(s), " "))
 }
 
-// LusdBestandsSchueler ist eine nicht gelöschte schueler-Zeile, so wie der LUSD-Import
-// sie sieht. LusdID ist "" ohne ECHTE Kennung (NULL oder Littera-Marke), Schluessel der
+// LUSDBestandsSchueler ist eine nicht gelöschte schueler-Zeile, so wie der LUSD-Import
+// sie sieht. LUSDID ist "" ohne ECHTE Kennung (NULL oder Littera-Marke), Schluessel der
 // Name+Geburtsdatum-Schlüssel ("" ohne Datum), Namensschluessel der Nur-Name-Schlüssel,
-// LusdBestaetigt spiegelt lusd_bestaetigt_am IS NOT NULL (Migration 084).
+// LUSDBestaetigt spiegelt lusd_bestaetigt_am IS NOT NULL (Migration 084).
 //
 // Geburtsdatum, EintrittAm, Strasse und PLZ trägt die Zeile seit dem 02.09.2026 roh mit:
 // Die Umbenennungs-Paarung (internal/lusd/paarung.go) vergleicht damit einen Abgänger mit
 // einem vermeintlichen Neuzugang — gleiches Geburtsdatum, gleicher Schuleintritt, gleiche
 // Anschrift sind die Signale, die eine Namensänderung überstehen. Anonymisiert sagt, ob
 // die Zeile bereits ihre Personendaten verloren hat; sie taugt dann für keine Paarung.
-type LusdBestandsSchueler struct {
+type LUSDBestandsSchueler struct {
 	ID, Klasse, Vorname, Nachname        string
-	LusdID, Schluessel, Namensschluessel string
+	LUSDID, Schluessel, Namensschluessel string
 	Strasse, PLZ                         string
 	Geburtsdatum, EintrittAm             *time.Time
-	IstAbgaenger, LusdBestaetigt         bool
+	IstAbgaenger, LUSDBestaetigt         bool
 	Anonymisiert                         bool
 }
 
-// LadeLusdBestand liest ALLE nicht soft-gelöschten Schüler — aktive UND Abgänger. Beide
+// LadeLUSDBestand liest ALLE nicht soft-gelöschten Schüler — aktive UND Abgänger. Beide
 // braucht der Import: Aktive für Klassenwechsel und Abgänger-Erkennung, Abgänger für
 // Rückkehrer. deleted_at IS NULL ist zwingend: Eine Papierkorb-Zeile darf nie matchen,
 // sonst würde der aktive Schüler nie neu angelegt. Läuft in der Import-Transaktion.
@@ -87,7 +87,7 @@ type LusdBestandsSchueler struct {
 // Klasse, und die Spalte ist bei ihm NULL (repository/leser_lusd_schutz_pg_test.go zeigt beides).
 // Das ist ein Glücksfall, kein Schutz — ein Absturz wäre die harmlose Hälfte des Fehlers.
 // Die zweite Schranke steht deshalb in der Datenbank: chk_leser_nur_schueler_werden_abgaenger.
-func LadeLusdBestand(ctx context.Context, tx pgx.Tx) ([]LusdBestandsSchueler, error) {
+func LadeLUSDBestand(ctx context.Context, tx pgx.Tx) ([]LUSDBestandsSchueler, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger,
 		       lusd_bestaetigt_am IS NOT NULL, schul_eintritt_am,
@@ -98,19 +98,19 @@ func LadeLusdBestand(ctx context.Context, tx pgx.Tx) ([]LusdBestandsSchueler, er
 	}
 	defer rows.Close()
 
-	var bestand []LusdBestandsSchueler
+	var bestand []LUSDBestandsSchueler
 	for rows.Next() {
-		var s LusdBestandsSchueler
+		var s LUSDBestandsSchueler
 		var lusdID *string
 		if err := rows.Scan(&s.ID, &s.Klasse, &s.Vorname, &s.Nachname, &lusdID, &s.Geburtsdatum, &s.IstAbgaenger,
-			&s.LusdBestaetigt, &s.EintrittAm, &s.Strasse, &s.PLZ, &s.Anonymisiert); err != nil {
+			&s.LUSDBestaetigt, &s.EintrittAm, &s.Strasse, &s.PLZ, &s.Anonymisiert); err != nil {
 			return nil, err
 		}
-		if HatEchteLusdID(lusdID) {
-			s.LusdID = *lusdID
+		if hatEchteLUSDID(lusdID) {
+			s.LUSDID = *lusdID
 		}
-		s.Schluessel = LusdSchluessel(s.Vorname, s.Nachname, s.Geburtsdatum)
-		s.Namensschluessel = LusdNamensSchluessel(s.Vorname, s.Nachname)
+		s.Schluessel = LUSDSchluessel(s.Vorname, s.Nachname, s.Geburtsdatum)
+		s.Namensschluessel = LUSDNamensSchluessel(s.Vorname, s.Nachname)
 		bestand = append(bestand, s)
 	}
 	return bestand, rows.Err()

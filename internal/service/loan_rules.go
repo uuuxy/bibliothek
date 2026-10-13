@@ -130,12 +130,12 @@ func calculateDueDate(jetzt time.Time, opts DueDateOptions) time.Time {
 	// zurückgegeben werden.
 	if opts.IstLernmittel {
 		// Der nächste Stichtag ab heute — DIE Rechnung, die auch der Rückweg des
-		// LMF-Plans benutzt (repository.LmfStichtagAbTag). Bis zum 06.09.2026 stand sie
+		// LMF-Plans benutzt (repository.LMFStichtagAbTag). Bis zum 06.09.2026 stand sie
 		// hier ein zweites Mal und rechnete „ab August ins nächste Kalenderjahr"; das
 		// stimmt nur für einen Stichtag von Januar bis Juli. Ein Stichtag ab August
 		// ergab hier den Termin des FOLGENDEN Schuljahres — dreizehn Monate Frist —,
 		// während der Rückweg denselben Stichtag ein Jahr früher setzte.
-		stichtag := repository.LmfStichtagAbTag(now, opts.LmfStichtag)
+		stichtag := repository.LMFStichtagAbTag(now, opts.LmfStichtag)
 		// Mehrjährige Ausleihen (Zieljahrgang über der Klasse des Entleihers) laufen
 		// entsprechend viele Stichtage weiter.
 		stichtag = stichtag.AddDate(opts.AdditionalYears, 0, 0)
@@ -253,10 +253,10 @@ func mehrjahresbandJahre(copy *repository.Exemplar, borrowerKlasse string) int {
 // Ein Fehler beim Nachschlagen hält die Ausleihe nicht an: Dann gilt der Stichtag.
 func (s *defaultLoanService) fristNachLmfPlan(ctx context.Context, copy *repository.Exemplar, borrowerKlasse string, heute time.Time, settings *SystemEinstellungen, additionalYears int) (time.Time, bool) {
 	if copy.IstLernmittel && borrowerKlasse != "" {
-		lage, lageErr := repository.NewLmfTerminRepository(s.pool).RueckgabeTerminLage(ctx, borrowerKlasse, heute)
+		lage, lageErr := repository.NewLMFAbfragen(s.pool).LadeRueckgabeTerminLage(ctx, borrowerKlasse, heute)
 		if lageErr == nil && lage.Vergangen {
 			folgendes := repository.SchuljahrBeginn(heute).AddDate(1, 0, 0)
-			stichtag := repository.LmfStichtagImSchuljahr(folgendes, settings.LMFStichtag)
+			stichtag := repository.LMFStichtagImSchuljahr(folgendes, settings.LMFStichtag)
 			return TagesEndeInSchulzeitzone(stichtag.AddDate(max(additionalYears-1, 0), 0, 0)), true
 		}
 		if lageErr == nil && lage.Bevorstehend && additionalYears == 0 {

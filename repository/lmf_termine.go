@@ -17,15 +17,15 @@ import (
 
 // Die zwei Arten eines Termins: Rückgabe (setzt die Frist der Klasse) und Ausgabe.
 const (
-	LmfTerminRueckgabe = "rueckgabe"
-	LmfTerminAusgabe   = "ausgabe"
+	LMFTerminRueckgabe = "rueckgabe"
+	LMFTerminAusgabe   = "ausgabe"
 )
 
-// LmfTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen. „Nur
+// LMFTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen. „Nur
 // Rückgabe" ist seit 06.09.2026 kein gerechnetes Feld mehr, sondern Text im Vermerk —
 // der Planer belegt ihn im Vorschlag vor, die Bibliothek darf ihn ändern (Absprache: „fest
 // verankert … das ist nicht gut, es sollte im Feld sein").
-type LmfTermin struct {
+type LMFTermin struct {
 	ID      string   `json:"id"`
 	Datum   string   `json:"datum"` // YYYY-MM-DD
 	Stunde  int      `json:"stunde"`
@@ -34,9 +34,9 @@ type LmfTermin struct {
 	Vermerk string   `json:"vermerk"`
 }
 
-// LmfListenFilter steuert ListLmfTermine: MitEntwuerfen zeigt auch unveröffentlichte
+// LMFListenFilter steuert LadeTermine: MitEntwuerfen zeigt auch unveröffentlichte
 // Pläne (nur der Planer selbst, für das PDF an die Schulleitung).
-type LmfListenFilter struct {
+type LMFListenFilter struct {
 	MitEntwuerfen bool
 }
 
@@ -58,22 +58,22 @@ func schuljahrVon(t time.Time) int {
 	return SchuljahrBeginn(t).Year()
 }
 
-// LmfTerminRepository liest und schreibt den Plan.
-type LmfTerminRepository struct {
+// LMFAbfragen liest und schreibt den Plan.
+type LMFAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewLmfTerminRepository baut das Repository über dem Pool.
-func NewLmfTerminRepository(pool db.PgxPoolIface) *LmfTerminRepository {
-	return &LmfTerminRepository{db: pool}
+// NewLMFAbfragen baut das Repository über dem Pool.
+func NewLMFAbfragen(pool db.PgxPoolIface) *LMFAbfragen {
+	return &LMFAbfragen{db: pool}
 }
 
-// ListLmfTermine liefert die Termine veröffentlichter Pläne ab einem Datum
+// LadeTermine liefert die Termine veröffentlichter Pläne ab einem Datum
 // (einschließlich), nach Datum und Stunde sortiert; ab = Nullzeit liefert alle. Die
 // Klassen kommen sortiert mit, damit „6F1/6F2" in Oberfläche und PDF gleich aussieht.
 // Entwürfe (Migration 100) sieht nur, wer MitEntwuerfen setzt.
-func (r *LmfTerminRepository) ListLmfTermine(ctx context.Context, ab time.Time, f LmfListenFilter) ([]LmfTermin, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *LMFAbfragen) LadeTermine(ctx context.Context, ab time.Time, f LMFListenFilter) ([]LMFTermin, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT t.id, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.art, t.vermerk,
 		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse))
 		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')
@@ -87,9 +87,9 @@ func (r *LmfTerminRepository) ListLmfTermine(ctx context.Context, ab time.Time, 
 	}
 	defer rows.Close()
 
-	termine := []LmfTermin{}
+	termine := []LMFTermin{}
 	for rows.Next() {
-		var t LmfTermin
+		var t LMFTermin
 		if err := rows.Scan(&t.ID, &t.Datum, &t.Stunde, &t.Art, &t.Vermerk, &t.Klassen); err != nil {
 			return nil, err
 		}
@@ -107,9 +107,9 @@ func nullbaresDatum(t time.Time) *time.Time {
 	return &t
 }
 
-// LmfTerminLage sagt, wo eine Klasse im veröffentlichten Rückgabe-Plan steht, gesehen von
+// LMFTerminLage sagt, wo eine Klasse im veröffentlichten Rückgabe-Plan steht, gesehen von
 // einem Kalendertag aus. Der Ausleihdienst fragt sie beim Ausleihen eines Schulbuchs.
-type LmfTerminLage struct {
+type LMFTerminLage struct {
 	// Naechster ist der früheste Rückgabe-Termin der Klasse NACH dem Tag (Mitternacht,
 	// Schulzeitzone) — Schreibvariante der Klasse egal, Ausgabe-Zeilen zählen nicht,
 	// Entwürfe zählen nicht (Migration 100).
@@ -125,15 +125,15 @@ type LmfTerminLage struct {
 	Vergangen bool
 }
 
-// RueckgabeTerminLage liefert die Lage der Klasse zum Tag: den nächsten Termin danach
+// LadeRueckgabeTerminLage liefert die Lage der Klasse zum Tag: den nächsten Termin danach
 // und ob im laufenden Schuljahr schon einer am oder vor dem Tag lag. Eine Abfrage, damit
 // beide Antworten denselben Stand sehen.
-func (r *LmfTerminRepository) RueckgabeTerminLage(ctx context.Context, klasse string, tag time.Time) (LmfTerminLage, error) {
+func (a *LMFAbfragen) LadeRueckgabeTerminLage(ctx context.Context, klasse string, tag time.Time) (LMFTerminLage, error) {
 	tag = tag.In(schulzeit.Zone())
 	heute := time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())
-	var lage LmfTerminLage
+	var lage LMFTerminLage
 	var naechster *time.Time
-	err := r.db.QueryRow(ctx, `
+	err := a.db.QueryRow(ctx, `
 		SELECT min(t.datum) FILTER (WHERE t.datum > $1::date),
 		       coalesce(bool_or(t.datum <= $1::date AND t.datum >= $3::date), false)
 		FROM lmf_termine t
@@ -143,7 +143,7 @@ func (r *LmfTerminRepository) RueckgabeTerminLage(ctx context.Context, klasse st
 		  AND klassen_normkey(k.klasse) = klassen_normkey($2)`,
 		heute, klasse, SchuljahrBeginn(heute)).Scan(&naechster, &lage.Vergangen)
 	if err != nil {
-		return LmfTerminLage{}, err
+		return LMFTerminLage{}, err
 	}
 	if naechster != nil {
 		d := *naechster
@@ -153,18 +153,18 @@ func (r *LmfTerminRepository) RueckgabeTerminLage(ctx context.Context, klasse st
 	return lage, nil
 }
 
-// SchulbuchFristGehtMitSQL sagt, wessen offene Schulbücher eine Frist für die ganze Klasse
+// sqlSchulbuchFristGehtMit sagt, wessen offene Schulbücher eine Frist für die ganze Klasse
 // mitnehmen — die Massenverlängerung (VerlaengereLernmittelDerKlasse) und der LMF-Plan
-// (SetzeLernmittelFristFuerKlassenIn); s ist die Sicht `schueler`. Es ist die Regel der Theke
+// (SetzeLernmittelFristFuerKlassen); s ist die Sicht `schueler`. Es ist die Regel der Theke
 // für das Lernmittel (service.SperreAmLeserHaeltAn): Die Sperre von Hand hält an, ein
 // anonymisierter Datensatz bekommt nichts, der Papierkorb ist draußen. Die Sperre, die das
 // Programm den Ehemaligen setzt (ist_gesperrt), zählt nicht — entschieden am 28.09.2026.
 // Vorher ließen beide Wege jedes Kind mit ist_gesperrt aus.
-const SchulbuchFristGehtMitSQL = `s.deleted_at IS NULL AND s.anonymized_at IS NULL AND COALESCE(s.is_manually_blocked, false) = false`
+const sqlSchulbuchFristGehtMit = `s.deleted_at IS NULL AND s.anonymized_at IS NULL AND COALESCE(s.is_manually_blocked, false) = false`
 
-// SetzeLernmittelFristFuerKlassenIn schreibt die Frist offener Lernmittel-Ausleihen der
+// SetzeLernmittelFristFuerKlassen schreibt die Frist offener Lernmittel-Ausleihen der
 // genannten Klassen um — dieselbe Regel wie die Massenverlängerung (api/theke/ausleihe.go):
-// nur Schüler nach SchulbuchFristGehtMitSQL, nur Lernmittel, Mahnstufe zurück, wenn die neue
+// nur Schüler nach sqlSchulbuchFristGehtMit, nur Lernmittel, Mahnstufe zurück, wenn die neue
 // Frist in der Zukunft liegt. Zusätzlich: nur Fristen im Schuljahr [von, bis) — eine
 // mehrjährige Ausleihe (Frist im übernächsten Sommer) folgt dem Plan nicht. Ist
 // nurWennFristAm gesetzt, werden nur Ausleihen angefasst, deren Frist genau an diesem
@@ -173,7 +173,7 @@ const SchulbuchFristGehtMitSQL = `s.deleted_at IS NULL AND s.anonymized_at IS NU
 //
 // Arbeitet auf einem Executor des Aufrufers — die Plan-Handler koppeln die Fristen in
 // DERSELBEN Transaktion wie den Plan.
-func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassenIn(ctx context.Context, ex Datenbank, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
+func (a *LMFAbfragen) SetzeLernmittelFristFuerKlassen(ctx context.Context, ex Datenbank, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
 	if len(klassen) == 0 {
 		return 0, nil
 	}
@@ -193,7 +193,7 @@ func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassenIn(ctx context.Cont
 		  AND a.exemplar_id = e.id
 		  AND e.titel_id = t.id
 		  AND a.rueckgabe_am IS NULL
-		  AND `+SchulbuchFristGehtMitSQL+`
+		  AND `+sqlSchulbuchFristGehtMit+`
 		  -- EINE Normalform für beide Seiten (klassen_normkey, Migration 079): „09H1" in der
 		  -- Akte und „9h1" aus dem Plan sind dieselbe Klasse. KlassenSchluessel (Go) kennt
 		  -- die führende Null nicht — deshalb hier nicht.

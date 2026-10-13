@@ -27,9 +27,9 @@ func TestAktiveAdminMails_NurAktiveAdmins(t *testing.T) {
 		}
 	}
 
-	admins, err := NewBetriebszustandAbfragen(pool).AktiveAdmins(ctx)
+	admins, err := NewBetriebszustandAbfragen(pool).LadeAktiveAdmins(ctx)
 	if err != nil {
-		t.Fatalf("AktiveAdmins: %v", err)
+		t.Fatalf("LadeAktiveAdmins: %v", err)
 	}
 	gefunden := map[string]bool{}
 	for _, a := range admins {

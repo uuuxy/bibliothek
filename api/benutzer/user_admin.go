@@ -107,7 +107,7 @@ func (s *Tueren) ListUsersHandler(userRepo repository.KontoAbfragen) http.Handle
 //
 // Die Rollen kommen kleingeschrieben zurueck, passend zu UserResponse.Rolle.
 func (s *Tueren) rechteAllerRollen(ctx context.Context) (map[string][]string, error) {
-	rechte, err := repository.ErlaubteRechteJeRolle(ctx, s.DB.Pool)
+	rechte, err := repository.LadeErlaubteRechteJeRolle(ctx, s.DB.Pool)
 	if err != nil {
 		return nil, err
 	}

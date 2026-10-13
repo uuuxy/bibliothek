@@ -128,7 +128,7 @@ func paareAusPatch(p *EinstellungenPatch) [][2]string {
 	// Leer heißt Vorgabe, nie „niemand": Ohne Eingangsjahrgänge hätte der Ausgabe-Plan keine
 	// Klasse, und vor den Ferien gäbe niemand „nur zurück".
 	if p.LMFEingangsjahrgaenge != nil && strings.TrimSpace(*p.LMFEingangsjahrgaenge) == "" {
-		s.paare = append(s.paare, [2]string{"lmf_eingangsjahrgaenge", LMFEingangsjahrgaengeVorgabe})
+		s.paare = append(s.paare, [2]string{"lmf_eingangsjahrgaenge", lmfEingangsjahrgaengeVorgabe})
 	} else {
 		s.text("lmf_eingangsjahrgaenge", p.LMFEingangsjahrgaenge)
 	}

@@ -173,7 +173,7 @@ func (s *Scheduler) RunVormerkungVerfall() {
 func (s *Scheduler) RunNaechtlicheDSGVO() {
 	s.RunGDPRAnonymizeLoans()
 	// Erst anonymisieren, dann löschen: Die Löschung trifft nur anonymisierte Zeilen
-	// (repository.PredikatAbgaengerLoeschung). In dieser Reihenfolge fallen beide in
+	// (repository.praedikatAbgaengerLoeschung). In dieser Reihenfolge fallen beide in
 	// dieselbe Nacht, und der Wächter der Betriebsbereitschaft sieht nie eine
 	// anonymisierte Hülle einen Tag lang als Rückstand. Bis 05.09.2026 lief die Löschung
 	// zuerst — und schnitt die Karenz am Stichtag ab.

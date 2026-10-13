@@ -31,7 +31,7 @@ import (
 // Die Handler dieses Pakets bekommen ihre Repositories von außen, und ein Griff nach
 // s.DB.Pool sprengt jeden Test, der die Türen ohne Datenbank baut — genau daran ist
 // TestListStudentsLeereListeIstArray am 17.09.2026 mit einem nil-Zeiger abgestürzt.
-func (s *Tueren) ListStudentsHandler(studentRepo repository.LeserAbfragen, lmfRepo *repository.LmfTerminRepository) http.HandlerFunc {
+func (s *Tueren) ListStudentsHandler(studentRepo repository.LeserAbfragen, lmfRepo *repository.LMFAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		// Klasse ODER Jahrgang — die Klasse gewinnt, wenn beides kommt (sie ist die
 		// genauere Angabe). Die Übersetzung steht in schueler_jahrgang_filter.go.

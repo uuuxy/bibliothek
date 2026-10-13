@@ -13,7 +13,7 @@ import (
 // lange Antwort von der Datenbank fern.
 const schlagwortStichwoerterMax = 300
 
-// schlagworteAusStichwoertern gleicht die Stichwörter eines DNB-Satzes (Gattungsbegriffe und
+// ladeSchlagworteAusStichwoertern gleicht die Stichwörter eines DNB-Satzes (Gattungsbegriffe und
 // Verlagswörter, inventur.MetadatenErgebnis.Stichwoerter) gegen die eigene Liste ab —
 // der Schlagwort-Vorschlag beim Bestellen per ISBN. Vorgeschlagen wird
 // nur, was es schon gibt: ein Schlagwort, das mindestens ein Titel trägt, oder ein Verweis
@@ -27,8 +27,8 @@ const schlagwortStichwoerterMax = 300
 // Umlaute zusammengesetzt) — kein Teilstring: „Krieg" soll nicht „Kriegsende" vorschlagen.
 // Die Antwort ist alphabetisch und ohne Doppelte; leer, wenn nichts passt. Geschrieben wird
 // nichts: Das Ja gibt ein Mensch.
-func schlagworteAusStichwoertern(ctx context.Context, q Datenbank, stichwoerter []string) ([]string, error) {
-	treffer, err := listenZiele(ctx, q, stichwoerter)
+func ladeSchlagworteAusStichwoertern(ctx context.Context, q Datenbank, stichwoerter []string) ([]string, error) {
+	treffer, err := ladeListenZiele(ctx, q, stichwoerter)
 	if err != nil {
 		return nil, fmt.Errorf("schlagwort-vorschlag aus stichwörtern: %w", err)
 	}
@@ -50,7 +50,7 @@ type Normdatenbegriff struct {
 	Formen  []string
 }
 
-// schlagworteAusNormdaten gleicht die Normdatei-Begriffe eines DNB-Satzes gegen die eigene Liste
+// ladeSchlagworteAusNormdaten gleicht die Normdatei-Begriffe eines DNB-Satzes gegen die eigene Liste
 // ab. Steht ein Begriff in einer seiner Formen in
 // der Liste — als Wort mit Titeln oder als Verweis darauf —, kommt er zu vorhanden, aufgelöst zu
 // seinem Ziel wie beim Stichwort-Vorschlag. Sonst kommt er zu neu, in der Anzeige-Form: Die
@@ -59,12 +59,12 @@ type Normdatenbegriff struct {
 // 56 davon schon in der Liste, die übrigen wie „Judo", „Oslo", „Schulstress"). Ein Wort, das zu
 // lang für die Liste wäre, wird nicht angeboten. Beide Antworten sind alphabetisch, ohne
 // Doppelte und nie nil; eingetragen wird nur, was jemand anklickt.
-func schlagworteAusNormdaten(ctx context.Context, q Datenbank, begriffe []Normdatenbegriff) (vorhanden, neu []string, err error) {
+func ladeSchlagworteAusNormdaten(ctx context.Context, q Datenbank, begriffe []Normdatenbegriff) (vorhanden, neu []string, err error) {
 	var formen []string
 	for _, b := range begriffe {
 		formen = append(formen, b.Formen...)
 	}
-	treffer, err := listenZiele(ctx, q, formen)
+	treffer, err := ladeListenZiele(ctx, q, formen)
 	if err != nil {
 		return nil, nil, fmt.Errorf("schlagwort-vorschlag aus normdaten: %w", err)
 	}
@@ -109,12 +109,12 @@ func ohneVorhandene(neuRoh, vorhanden []string) []string {
 	return neu
 }
 
-// listenZiele sucht die Kandidaten in der eigenen Liste und liefert je getroffenem Kandidaten
+// ladeListenZiele sucht die Kandidaten in der eigenen Liste und liefert je getroffenem Kandidaten
 // (in schlagwortNormalform) das Wort, das vorgeschlagen wird: ein Wort mit Titeln oder das Ziel
 // eines Verweises darauf. Das ganze Wort, ohne Rücksicht auf Groß- und Kleinschreibung — der
 // Vergleich geschieht in der Datenbank mit lower(), wie der eindeutige Index, damit Go und SQL
 // nicht verschieden kleinschreiben.
-func listenZiele(ctx context.Context, q Datenbank, roh []string) (map[string]string, error) {
+func ladeListenZiele(ctx context.Context, q Datenbank, roh []string) (map[string]string, error) {
 	kandidaten := make([]string, 0, len(roh))
 	for _, r := range roh {
 		if wort := schlagwortNormalform(r); wort != "" {
@@ -148,18 +148,18 @@ func listenZiele(ctx context.Context, q Datenbank, roh []string) (map[string]str
 	return treffer, rows.Err()
 }
 
-// SchlagwortVorschlagAusDNB ist der ganze Schlagwort-Vorschlag zu einem DNB-Satz: liste sind die
+// LadeSchlagwortVorschlagAusDNB ist der ganze Schlagwort-Vorschlag zu einem DNB-Satz: liste sind die
 // Wörter der eigenen Liste, die der Satz als Gattung, Verlagswort oder Normdatei-Schlagwort nennt
-// (schlagworteAusStichwoertern, schlagworteAusNormdaten), neu die Normdatei-Wörter, die die Liste
+// (ladeSchlagworteAusStichwoertern, ladeSchlagworteAusNormdaten), neu die Normdatei-Wörter, die die Liste
 // noch nicht kennt. Die eine Regel für beide Türen: das Anlegen beim Bestellen (POST
 // /api/buecher/aus-isbn) und den Vorschlag im Buchformular und beim Nachbestellen (GET
 // /api/schlagworte/dnb-vorschlag). Beide Listen nie nil.
-func SchlagwortVorschlagAusDNB(ctx context.Context, q Datenbank, stichwoerter []string, normdaten []Normdatenbegriff) (liste, neu []string, err error) {
-	ausStichwoertern, err := schlagworteAusStichwoertern(ctx, q, stichwoerter)
+func LadeSchlagwortVorschlagAusDNB(ctx context.Context, q Datenbank, stichwoerter []string, normdaten []Normdatenbegriff) (liste, neu []string, err error) {
+	ausStichwoertern, err := ladeSchlagworteAusStichwoertern(ctx, q, stichwoerter)
 	if err != nil {
 		return nil, nil, err
 	}
-	ausNormdaten, neu, err := schlagworteAusNormdaten(ctx, q, normdaten)
+	ausNormdaten, neu, err := ladeSchlagworteAusNormdaten(ctx, q, normdaten)
 	if err != nil {
 		return nil, nil, err
 	}

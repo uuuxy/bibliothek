@@ -73,7 +73,7 @@ export function formatZeitpunkt(wert) {
  * derselben Zahl über denselben Titel wären zwei zu viel.
  *
  * `null`/`undefined` heißt NICHT null: Nur die Suchabfragen liefern die Zahlen mit
- * (siehe repository/models.go, Bestand/Verfuegbar als Zeiger); alle anderen lassen
+ * (siehe repository/titel.go, Bestand/Verfuegbar als Zeiger); alle anderen lassen
  * sie weg. Über einen Titel, dessen Bestand niemand gezählt hat, schreibt die
  * Oberfläche gar nichts statt „Keine Exemplare".
  *

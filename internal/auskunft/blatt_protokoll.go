@@ -146,7 +146,7 @@ func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege 
 }
 
 // dsgvoKontoEreignisse druckt die Einträge des Verwaltungsprotokolls über ein Zugangskonto.
-func dsgvoKontoEreignisse(p *gofpdf.Fpdf, tr func(string) string, ereignisse []repository.DsgvoKontoEreignis) {
+func dsgvoKontoEreignisse(p *gofpdf.Fpdf, tr func(string) string, ereignisse []repository.DSGVOKontoEreignis) {
 	for _, e := range ereignisse {
 		details, rest := dsgvoDetails(e.Details)
 		dsgvoProtokollEintrag(p, tr, dsgvoZeit(e.Zeitpunkt)+" — "+dsgvoKontoAktion(e.Aktion),
@@ -228,7 +228,7 @@ func dsgvoAngabenOhneBezeichnung(objekt map[string]any) []string {
 	var unbekannt []string
 	for schluessel, wert := range objekt {
 		_, bekannt := repository.ProtokollAngabeZu(schluessel, false, "")
-		if !bekannt && !repository.ProtokollOhneAngabe(schluessel) && wert != nil {
+		if !bekannt && !repository.IstProtokollOhneAngabe(schluessel) && wert != nil {
 			unbekannt = append(unbekannt, schluessel)
 		}
 	}

@@ -33,7 +33,7 @@ func TestVorschauZeileOhneKlassenLiefertLeereListe(t *testing.T) {
 		} `json:"fest"`
 	}{Klassen: nil, Vermerk: "Nachzügler"})
 
-	e, err := pruefeLmfPlan(repository.LmfTerminAusgabe, req)
+	e, err := pruefeLmfPlan(repository.LMFTerminAusgabe, req)
 	if err != nil {
 		t.Fatalf("Plan prüfen: %v", err)
 	}

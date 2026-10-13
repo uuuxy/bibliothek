@@ -12,8 +12,8 @@ const (
 
 	AbgaengerSperrgrundOffen              = AbgaengerSperrPraefix + " (offene Vorgänge)"
 	AbgaengerSperrgrundKarenz             = AbgaengerSperrPraefix + " (Karenzzeit vor Anonymisierung)"
-	AbgaengerSperrgrundSchuljahreswechsel = AbgaengerSperrPraefix + " (Schuljahreswechsel)"
+	abgaengerSperrgrundSchuljahreswechsel = AbgaengerSperrPraefix + " (Schuljahreswechsel)"
 
-	// SQLAbgaengerSperreAutomatisch ist das Prädikat, an dem SQL die Automatik erkennt.
-	SQLAbgaengerSperreAutomatisch = "block_reason LIKE '" + AbgaengerSperrPraefix + "%'"
+	// sqlAbgaengerSperreAutomatisch ist das Prädikat, an dem SQL die Automatik erkennt.
+	sqlAbgaengerSperreAutomatisch = "block_reason LIKE '" + AbgaengerSperrPraefix + "%'"
 )

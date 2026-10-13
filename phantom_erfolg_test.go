@@ -35,18 +35,18 @@ import (
 // anheben und im Commit begründen. Sinkt ein Zähler (Stelle behoben/entfernt), wird
 // er hier ABGESENKT — die Ratsche dreht nur zu.
 var phantomBestand = map[string]int{
-	"repository/ausweis_layout.go:SchreibeAusweisLayout":          1,
-	"repository/dsgvo_auskunft.go:SchreibeDsgvoAuskunftProtokoll": 1,
+	"repository/ausweis_layout.go:SchreibeAusweisLayout":      1,
+	"repository/dsgvo_auskunft.go:ProtokolliereDSGVOAuskunft": 1,
 	// Die Anweisungen des LUSD-Imports: die Sperre des Laufs (kein Schreibvorgang), Adoption
 	// und Aktualisierung (null Zeilen heißt, der Schutz der Bedingung hat gegriffen, der Lauf
 	// geht weiter), Neuanlage (INSERT), wartende Vormerkungen (null ist der Normalfall),
 	// Sperre und Anonymisierung eines Abgängers aus dem eben gelesenen Bestand.
-	"repository/lusd_import.go:SperreLusdImport":            1,
-	"repository/lusd_import.go:AdoptiereLusdWaise":          1,
-	"repository/lusd_import.go:AktualisiereLusdBestand":     1,
+	"repository/lusd_import.go:SperreLUSDImport":            1,
+	"repository/lusd_import.go:AdoptiereLUSDWaise":          1,
+	"repository/lusd_import.go:AendereLUSDBestand":          1,
 	"repository/lusd_import.go:AnonymisiereAbgaenger":       2,
 	"repository/lusd_import.go:LoescheWartendeVormerkungen": 1,
-	"repository/lusd_import.go:LegeLusdSchuelerAn":          1,
+	"repository/lusd_import.go:LegeLUSDSchuelerAn":          1,
 	"repository/lusd_import.go:SperreAbgaenger":             1,
 	"repository/schadensbrief.go:MerkeElternbriefErzeugt":   1,
 	// Schuljahreswechsel: die Sperre des Laufs (kein Schreibvorgang) und das Umhängen einer
@@ -123,9 +123,9 @@ var phantomBestand = map[string]int{
 	"repository/betriebszustand.go:SchreibeEinstellungswert": 1,
 	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null
 	// gelöschte Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
-	// Seit 07.09.2026 heißt der Rumpf SaveLmfPlanIn (Transaktion des Aufrufers);
+	// Seit 07.09.2026 heißt der Rumpf SchreibePlan (Transaktion des Aufrufers);
 	// SaveLmfPlan ist nur noch die Hülle mit eigener kurzer Transaktion.
-	"repository/lmf_plan.go:SaveLmfPlanIn": 3,
+	"repository/lmf_plan.go:SchreibePlan": 3,
 	// Schlagworte eines Titels (Migration 138), dieselbe Bauart: Wörter anlegen mit
 	// ON CONFLICT DO NOTHING (0 heißt „gibt es schon in anderer Schreibweise"), dann die
 	// Verbindungen ersetzen (DELETE + INSERT, 0 ist der Normalfall). Dass es den Titel gibt,

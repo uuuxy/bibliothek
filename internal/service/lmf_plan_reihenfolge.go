@@ -24,7 +24,7 @@ const (
 type LmfPlanReihenfolge struct {
 	// Quelle nennt, woher sie kommt: aus dem letzten Plan der Art oder aus der Regel.
 	Quelle      string
-	Zeilen      []repository.LmfPlanZeile
+	Zeilen      []repository.LMFPlanZeile
 	Ausgelassen []string
 }
 
@@ -33,7 +33,7 @@ type LmfPlanReihenfolge struct {
 // Ferien alles außer den Eingangsjahrgängen, nur die neu gebildeten Klassen bekommen Bücher.
 // Der Vorschlag und die Liste „bleiben draußen" des Planers fragen sie hier.
 func LmfPlanLaesstAus(art string, eingang []int, k repository.KlasseImPlan) bool {
-	if art == repository.LmfTerminAusgabe {
+	if art == repository.LMFTerminAusgabe {
 		return !slices.Contains(eingang, k.Jahrgang)
 	}
 	return k.Oberstufe
@@ -44,13 +44,13 @@ func LmfPlanLaesstAus(art string, eingang []int, k repository.KlasseImPlan) bool
 // Schüler bleiben aus dem Vorjahr erhalten, eine „7G6" kann wiederkommen; der Planer markiert
 // sie. Beim Ausgabe-Plan kommen nur die Eingangsjahrgänge in die Reihenfolge, alle anderen
 // Klassen stehen unter den ausgelassenen.
-func LmfPlanReihenfolgeVorgabe(art string, eingang []int, vorjahr bool, st repository.LmfPlanStand, klassen []repository.KlasseImPlan) LmfPlanReihenfolge {
-	v := LmfPlanReihenfolge{Quelle: LmfPlanQuelleRegel, Zeilen: []repository.LmfPlanZeile{}, Ausgelassen: []string{}}
+func LmfPlanReihenfolgeVorgabe(art string, eingang []int, vorjahr bool, st repository.LMFPlanStand, klassen []repository.KlasseImPlan) LmfPlanReihenfolge {
+	v := LmfPlanReihenfolge{Quelle: LmfPlanQuelleRegel, Zeilen: []repository.LMFPlanZeile{}, Ausgelassen: []string{}}
 	bekannt := map[string]bool{}
 	if vorjahr {
 		v.Quelle = LmfPlanQuelleVorjahr
 		for _, z := range st.Zeilen {
-			v.Zeilen = append(v.Zeilen, repository.LmfPlanZeile{Klassen: z.Klassen, Vermerk: z.Vermerk})
+			v.Zeilen = append(v.Zeilen, repository.LMFPlanZeile{Klassen: z.Klassen, Vermerk: z.Vermerk})
 			for _, k := range z.Klassen {
 				bekannt[repository.KlassenSchluessel(k)] = true
 			}
@@ -68,15 +68,15 @@ func LmfPlanReihenfolgeVorgabe(art string, eingang []int, vorjahr bool, st repos
 			v.Ausgelassen = append(v.Ausgelassen, k.Name)
 			continue
 		}
-		v.Zeilen = append(v.Zeilen, repository.LmfPlanZeile{Klassen: []string{k.Name}})
+		v.Zeilen = append(v.Zeilen, repository.LMFPlanZeile{Klassen: []string{k.Name}})
 	}
 	if v.Quelle == LmfPlanQuelleRegel {
 		// Die zwei Zeilen ohne Klasse, mit denen die Pläne der Schule enden: wer nicht dran war,
 		// und dann das Aufräumen. Das Vorjahr bringt sie von selbst mit; die Regel setzt sie,
 		// damit der erste Plan aussieht wie der der Schule.
 		v.Zeilen = append(v.Zeilen,
-			repository.LmfPlanZeile{Klassen: []string{}, Vermerk: "Nachzügler"},
-			repository.LmfPlanZeile{Klassen: []string{}, Vermerk: "Aufräumen"})
+			repository.LMFPlanZeile{Klassen: []string{}, Vermerk: "Nachzügler"},
+			repository.LMFPlanZeile{Klassen: []string{}, Vermerk: "Aufräumen"})
 	}
 	return v
 }
@@ -84,7 +84,7 @@ func LmfPlanReihenfolgeVorgabe(art string, eingang []int, vorjahr bool, st repos
 // LmfPlanVorbei sagt, ob der letzte Platz des Plans vor dem heutigen Kalendertag der Schule
 // liegt; bei einem Plan ohne Zeilen zählt sein erster Tag. Der Planer bietet dann den nächsten
 // Plan an.
-func LmfPlanVorbei(st repository.LmfPlanStand, jetzt time.Time) bool {
+func LmfPlanVorbei(st repository.LMFPlanStand, jetzt time.Time) bool {
 	letzter := st.Plan.ErsterTag
 	for _, z := range st.Zeilen {
 		if z.Datum > letzter {
@@ -102,7 +102,7 @@ const lmfPlanVermerkNurRueckgabe = "nur Rückgabe"
 // BelegeLmfPlanVermerkNurRueckgabe belegt den Vermerk der Zeilen vor, in denen jede Klasse nur
 // abgibt, außer der Vermerk aus dem Vorjahr sagt es schon. Danach gehört der Text der
 // Bibliothek: Sie kann ihn ändern oder löschen, nichts rechnet ihn nach.
-func BelegeLmfPlanVermerkNurRueckgabe(zeilen []repository.LmfPlanZeile, nurRueckgabe []string) {
+func BelegeLmfPlanVermerkNurRueckgabe(zeilen []repository.LMFPlanZeile, nurRueckgabe []string) {
 	ist := map[string]bool{}
 	for _, k := range nurRueckgabe {
 		ist[repository.KlassenSchluessel(k)] = true

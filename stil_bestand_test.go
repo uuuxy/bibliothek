@@ -26,7 +26,7 @@ var stilBestand = map[string]stilZahl{
 	"cmd/seed":               {Fach: 2, Verb: 4, Kuerzel: 0, Datei: 0, Datum: 1},
 	"cmd/stresstest":         {Fach: 4, Verb: 2, Kuerzel: 0, Datei: 0, Datum: 0},
 	"db":                     {Fach: 5, Verb: 5, Kuerzel: 0, Datei: 0, Datum: 13},
-	"internal/auskunft":      {Fach: 5, Verb: 1, Kuerzel: 16, Datei: 0, Datum: 0},
+	"internal/auskunft":      {Fach: 5, Verb: 1, Kuerzel: 14, Datei: 0, Datum: 0},
 	"internal/bereitschaft":  {Fach: 1, Verb: 0, Kuerzel: 6, Datei: 0, Datum: 15},
 	"internal/buchetikett":   {Fach: 1, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 0},
 	"internal/littera":       {Fach: 1, Verb: 1, Kuerzel: 0, Datei: 0, Datum: 27},
@@ -37,6 +37,6 @@ var stilBestand = map[string]stilZahl{
 	"jobs":                   {Fach: 4, Verb: 16, Kuerzel: 0, Datei: 1, Datum: 25},
 	"mailservice":            {Fach: 3, Verb: 2, Kuerzel: 0, Datei: 0, Datum: 5},
 	"pdf":                    {Fach: 16, Verb: 26, Kuerzel: 3, Datei: 0, Datum: 8},
-	"repository":             {Fach: 12, Verb: 5, Kuerzel: 70, Datei: 1, Datum: 47},
+	"repository":             {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 47},
 	"sse":                    {Fach: 1, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 0},
 }

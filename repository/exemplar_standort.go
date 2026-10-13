@@ -65,10 +65,10 @@ func SQLGeerbterStandort(titel string) string {
 		HAVING count(*) = count(e.standort) AND count(DISTINCT e.standort) = 1)`
 }
 
-// geerbteStandorte liest SQLGeerbterStandort je Titel für den Weg, der seine Zeilen ohne
+// ladeGeerbteStandorte liest SQLGeerbterStandort je Titel für den Weg, der seine Zeilen ohne
 // SQL-Ausdruck schreibt (CopyFrom der Bestellung). Der Schlüssel ist die Kennung, wie der
 // Aufrufer sie schreibt; ein Titel ohne Erbe fehlt in der Antwort.
-func geerbteStandorte(ctx context.Context, q Datenbank, titelIDs []string) (map[string]string, error) {
+func ladeGeerbteStandorte(ctx context.Context, q Datenbank, titelIDs []string) (map[string]string, error) {
 	rows, err := q.Query(ctx, `
 		SELECT roh, standort
 		FROM (SELECT u.roh, `+SQLGeerbterStandort("u.roh::uuid")+` AS standort

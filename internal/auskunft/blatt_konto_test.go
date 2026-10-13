@@ -20,7 +20,7 @@ func TestDsgvoVorgaengeJeTag(t *testing.T) {
 		return &z
 	}
 	ip := "10.0.0.7"
-	vorgaenge := []repository.DsgvoEigenerVorgang{
+	vorgaenge := []repository.DSGVOEigenerVorgang{
 		{Zeitpunkt: zeit("2026-09-23T22:30:00Z"), Handlung: "Ausleihe gebucht"}, // 00:30 am 24.09. in Berlin
 		{Zeitpunkt: zeit("2026-09-23T09:05:00Z"), Handlung: "Protokolleintrag: CHECKOUT (ausleihen)"},
 		{Zeitpunkt: zeit("2026-09-23T09:00:00Z"), Handlung: "Ausleihe gebucht"},

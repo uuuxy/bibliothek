@@ -27,7 +27,7 @@ import (
 type LmfPlanAntwort struct {
 	// Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.
 	Ab      string                 `json:"ab"`
-	Termine []repository.LmfTermin `json:"termine"`
+	Termine []repository.LMFTermin `json:"termine"`
 	// Eingangsjahrgaenge (Einstellung): die Jahrgänge, die nach den Ferien Bücher
 	// bekommen — für den erklärenden Satz über der Tabelle.
 	Eingangsjahrgaenge []int `json:"eingangsjahrgaenge"`
@@ -52,13 +52,13 @@ func (s *Tueren) lmfPlanAb(r *http.Request) time.Time {
 // @Router       /lmf-termine [get]
 func (s *Tueren) GetLmfTermineHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		repo := repository.NewLmfTerminRepository(s.DB.Pool)
+		repo := repository.NewLMFAbfragen(s.DB.Pool)
 		ab := s.lmfPlanAb(r)
 		eingang, err := s.lmfEingangsjahrgaenge(r.Context())
 		if err != nil {
 			return apierrors.Internal("Einstellungen laden", err)
 		}
-		termine, err := repo.ListLmfTermine(r.Context(), ab, repository.LmfListenFilter{})
+		termine, err := repo.LadeTermine(r.Context(), ab, repository.LMFListenFilter{})
 		if err != nil {
 			return apierrors.Internal("LMF-Plan laden", err)
 		}
@@ -76,7 +76,7 @@ func (s *Tueren) GetLmfTermineHandler() http.HandlerFunc {
 // Vor den Ferien tauschen die Klassen (alte ab, neue direkt mit), nach den Ferien
 // bekommen nur die neu gebildeten Klassen ihre Bücher.
 func LmfArtTitel(art string) string {
-	if art == repository.LmfTerminAusgabe {
+	if art == repository.LMFTerminAusgabe {
 		return "Bücherausgabe nach den Sommerferien"
 	}
 	return "Büchertausch vor den Sommerferien"
@@ -84,7 +84,7 @@ func LmfArtTitel(art string) string {
 
 // LmfArtErklaerung ist der eine Satz unter der Überschrift, mit den Eingangsjahrgängen.
 func LmfArtErklaerung(art string, eingang []int) string {
-	if art == repository.LmfTerminAusgabe {
+	if art == repository.LMFTerminAusgabe {
 		// Ohne bekannte Jahrgänge KEIN leeres Klammerpaar („(Jahrgang )"): Der Satz nennt
 		// dann nur die Regel. Beide Seiten müssen das gleich halten — TestLmfTexte prüft es.
 		if len(eingang) == 0 {
@@ -121,10 +121,10 @@ func jahrgaengeText(eingang []int) string {
 // nach jedem Speichern neu.
 //
 // „Nur Rückgabe" steht, wo die Bibliothek es hingeschrieben hat: im Vermerk.
-func lmfPlanAbschnitte(termine []repository.LmfTermin, eingang []int) ([]pdf.LmfPlanAbschnitt, error) {
+func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.LmfPlanAbschnitt, error) {
 	abschnitte := []pdf.LmfPlanAbschnitt{
-		{Titel: strings.ToUpper(LmfArtTitel(repository.LmfTerminRueckgabe)), Untertitel: LmfArtErklaerung(repository.LmfTerminRueckgabe, eingang)},
-		{Titel: strings.ToUpper(LmfArtTitel(repository.LmfTerminAusgabe)), Untertitel: LmfArtErklaerung(repository.LmfTerminAusgabe, eingang)},
+		{Titel: strings.ToUpper(LmfArtTitel(repository.LMFTerminRueckgabe)), Untertitel: LmfArtErklaerung(repository.LMFTerminRueckgabe, eingang)},
+		{Titel: strings.ToUpper(LmfArtTitel(repository.LMFTerminAusgabe)), Untertitel: LmfArtErklaerung(repository.LMFTerminAusgabe, eingang)},
 	}
 	for _, t := range termine {
 		datum, err := schulzeit.Kalendertag(t.Datum)
@@ -132,7 +132,7 @@ func lmfPlanAbschnitte(termine []repository.LmfTermin, eingang []int) ([]pdf.Lmf
 			return nil, err
 		}
 		z := pdf.LmfPlanZeile{Datum: datum, Stunde: t.Stunde, Klassen: strings.Join(t.Klassen, "/"), Vermerk: t.Vermerk}
-		if t.Art == repository.LmfTerminAusgabe {
+		if t.Art == repository.LMFTerminAusgabe {
 			abschnitte[1].Zeilen = append(abschnitte[1].Zeilen, z)
 		} else {
 			abschnitte[0].Zeilen = append(abschnitte[0].Zeilen, z)
@@ -150,14 +150,14 @@ func lmfPlanAbschnitte(termine []repository.LmfTermin, eingang []int) ([]pdf.Lmf
 // @Router       /lmf-termine/pdf [get]
 func (s *Tueren) GetLmfPlanPDFHandler(mitEntwuerfen bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := repository.NewLmfTerminRepository(s.DB.Pool)
+		repo := repository.NewLMFAbfragen(s.DB.Pool)
 		eingang, err := s.lmfEingangsjahrgaenge(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		termine, err := repo.ListLmfTermine(r.Context(), s.lmfPlanAb(r),
-			repository.LmfListenFilter{MitEntwuerfen: mitEntwuerfen})
+		termine, err := repo.LadeTermine(r.Context(), s.lmfPlanAb(r),
+			repository.LMFListenFilter{MitEntwuerfen: mitEntwuerfen})
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

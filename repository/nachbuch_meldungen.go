@@ -26,7 +26,7 @@ const (
 // Scan ohne Netz (umgebucht, nur reaktiviert, nicht gebucht, veraltet) bleibt mit Barcode,
 // Grund und Beteiligten stehen, bis jemand aus der Bibliothek sie quittiert.
 type NachbuchMeldungEingabe struct {
-	IdempotencyKey        string
+	IdempotenzSchluessel  string
 	ExemplarID            *string
 	Barcode               string
 	Ergebnis              string
@@ -70,7 +70,7 @@ func SchreibeNachbuchMeldung(ctx context.Context, q Datenbank, m NachbuchMeldung
 			 ausweis_text, gescannt_am)
 		VALUES ($1::uuid, $2::uuid, $3, $4, NULLIF($5, ''), $6::uuid, $7::uuid, $8, $9)
 		ON CONFLICT (idempotency_key) DO NOTHING`,
-		m.IdempotencyKey, m.ExemplarID, m.Barcode, m.Ergebnis, m.Grund,
+		m.IdempotenzSchluessel, m.ExemplarID, m.Barcode, m.Ergebnis, m.Grund,
 		m.AusleiherSchuelerID, m.VorbesitzerSchuelerID,
 		m.AusweisText, m.GescanntAm); err != nil {
 		return fmt.Errorf("nachbuch-meldung schreiben: %w", err)

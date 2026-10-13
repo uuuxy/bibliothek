@@ -50,7 +50,7 @@ func zahlenFelder(p *EinstellungenPatch) []zahlFeld {
 		{"anliegen_tage", p.AnliegenTage, 0, 3650, "Erledigte Anliegen (Tage)"},
 		// Untergrenze 6, anders als bei den drei Fristen darüber: Ohne Protokoll ließe sich
 		// nicht mehr prüfen, wer etwa eine Gebühr storniert hat.
-		{ProtokollAufbewahrungSchluessel, p.ProtokollAufbewahrungMonate, ProtokollAufbewahrungMonateMinimum, 120, "Aufbewahrung Prüfprotokoll (Monate)"},
+		{ProtokollAufbewahrungSchluessel, p.ProtokollAufbewahrungMonate, protokollAufbewahrungMonateMinimum, 120, "Aufbewahrung Prüfprotokoll (Monate)"},
 		{"theke_leeren_minuten", p.ThekeLeerenMinuten, 0, 1440, "Theke leeren nach (Minuten)"},
 		{"sperre_minuten", p.SperreMinuten, 0, 1440, "Bildschirmsperre nach (Minuten)"},
 		// 0 heißt sofort anonymisieren: der schärfste Wert des Schalters, aber ein gewollter.

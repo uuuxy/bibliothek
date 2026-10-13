@@ -92,7 +92,7 @@ func verbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterI
 	// Das Datum steht im Stornierungsgrund und damit in der Akte des Kindes und im Protokoll.
 	// Deshalb schulzeit.Jetzt(): time.Now() ist im Container UTC, und eine Rückgabe zwischen 0
 	// und 2 Uhr Berliner Zeit trüge das Datum des Vortags.
-	grund := "Rückgabe am " + schulzeit.Jetzt().Format(dateFormatDE)
+	grund := "Rückgabe am " + schulzeit.Jetzt().Format(datumsformat)
 	for _, f := range offene {
 		if f.bescheidStatus == "uebergeben" {
 			if err := merkeRueckgabeNachUebergabe(ctx, q, f, bearbeiterID); err != nil {

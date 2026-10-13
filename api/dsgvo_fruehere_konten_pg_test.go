@@ -208,7 +208,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 		}
 		return kontoID, leserID
 	}
-	aktionen := func(ereignisse []repository.DsgvoKontoEreignis) map[string]bool {
+	aktionen := func(ereignisse []repository.DSGVOKontoEreignis) map[string]bool {
 		m := map[string]bool{}
 		for _, e := range ereignisse {
 			m[e.Aktion] = true

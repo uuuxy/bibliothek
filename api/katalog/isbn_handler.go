@@ -122,7 +122,7 @@ type ISBNLookupResponse struct {
 	IstLernmittel bool `json:"ist_lernmittel"`
 	// SchlagwortVorschlaege: nur bei exists=false — die Wörter der eigenen Liste, die der
 	// DNB-Satz als Gattung, Verlagswort oder Normdatei-Schlagwort nennt
-	// (repository.SchlagwortVorschlagAusDNB, docs/OFFEN.md 4.20 und 4.25). Ein Vorschlag, kein
+	// (repository.LadeSchlagwortVorschlagAusDNB, docs/OFFEN.md 4.20 und 4.25). Ein Vorschlag, kein
 	// Eintrag: Am Titel steht davon nichts, bis im Bestellkorb jemand einen übernimmt. Für einen
 	// Titel, den es schon gibt, fragt das Bestellfenster auf Knopfdruck
 	// GET /api/schlagworte/dnb-vorschlag — nach derselben Regel.
@@ -138,7 +138,7 @@ type ISBNLookupResponse struct {
 // Abfrage, entsteht kein Titel — sonst stünde ein angelegter Titel hinter einer
 // Fehlermeldung, und der zweite Versuch fände ihn als vorhanden, ohne Vorschlag.
 func (s *Tueren) titelAusNachschlagen(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (ISBNLookupResponse, error) {
-	liste, neu, err := repository.SchlagwortVorschlagAusDNB(ctx, s.DB.Pool, meta.Stichwoerter, meta.Normdaten)
+	liste, neu, err := repository.LadeSchlagwortVorschlagAusDNB(ctx, s.DB.Pool, meta.Stichwoerter, meta.Normdaten)
 	if err != nil {
 		return ISBNLookupResponse{}, err
 	}

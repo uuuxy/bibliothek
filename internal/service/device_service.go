@@ -65,7 +65,7 @@ func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.LeserAbfragen
 // der Ausleihe (pruefeGeraetAusleihbar): Ein verliehenes Gerät, das danach als defekt gemeldet
 // wurde, muss sich zurückgeben lassen (geraet_rueckgabe_sperre_pg_test.go).
 func (s *defaultDeviceService) ladeGeraet(ctx context.Context, query string) (repository.Geraet, error) {
-	g, err := repository.LiesGeraetNachNummer(ctx, s.pool, query)
+	g, err := repository.LadeGeraetZuNummer(ctx, s.pool, query)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return g, meldung(ErrNotFound, "Gerät mit Barcode %s nicht gefunden", query)

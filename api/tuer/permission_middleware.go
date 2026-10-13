@@ -133,7 +133,7 @@ func (s *Basis) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permiss
 	// darf damit noch antworten, aber der Cache darf ihn nicht festhalten.
 	epocheBeimStart := leseCacheEpoche()
 
-	finalAllowed, err := repository.RechtDerRolle(ctx, s.DB.Pool, rolle, permission)
+	finalAllowed, err := repository.HatRolleRecht(ctx, s.DB.Pool, rolle, permission)
 	if err != nil {
 		return false, err
 	}

@@ -20,8 +20,8 @@ func LegeSitzungAn(ctx context.Context, db Datenbank, benutzerID, pruefwert stri
 	return id, err
 }
 
-// SitzungGesperrt sagt, ob die Anmeldung gesperrt ist.
-func SitzungGesperrt(ctx context.Context, db Datenbank, sitzungID string) (bool, error) {
+// IstSitzungGesperrt sagt, ob die Anmeldung gesperrt ist.
+func IstSitzungGesperrt(ctx context.Context, db Datenbank, sitzungID string) (bool, error) {
 	var gesperrt bool
 	err := db.QueryRow(ctx, `
 		SELECT gesperrt_seit IS NOT NULL FROM sitzungen WHERE id = $1
@@ -47,8 +47,8 @@ func EntsperreSitzung(ctx context.Context, db Datenbank, sitzungID string) error
 	return err
 }
 
-// SitzungsPruefwert liefert den Prüfwert des Passworts, mit dem die Anmeldung entstand.
-func SitzungsPruefwert(ctx context.Context, db Datenbank, sitzungID string) (string, error) {
+// LadeSitzungsPruefwert liefert den Prüfwert des Passworts, mit dem die Anmeldung entstand.
+func LadeSitzungsPruefwert(ctx context.Context, db Datenbank, sitzungID string) (string, error) {
 	var pruefwert string
 	err := db.QueryRow(ctx, `
 		SELECT passwort_pruefwert FROM sitzungen WHERE id = $1

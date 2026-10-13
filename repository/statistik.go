@@ -9,9 +9,9 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// PopularTitle ist ein Eintrag der „Renner"-Liste inkl. Drill-Down-Feldern
+// Renner ist ein Eintrag der „Renner"-Liste inkl. Drill-Down-Feldern
 // (Fachbereich/Systematik/Erscheinungsjahr) für Frontend-Filter.
-type PopularTitle struct {
+type Renner struct {
 	ID               string `json:"id"`
 	Titel            string `json:"titel"`
 	Autor            string `json:"autor"`
@@ -19,11 +19,11 @@ type PopularTitle struct {
 	Fachbereich      string `json:"fachbereich,omitempty"`
 	Systematik       string `json:"systematik,omitempty"`
 	Erscheinungsjahr int    `json:"erscheinungsjahr,omitempty"`
-	Count            int    `json:"count"`
+	Anzahl           int    `json:"count"`
 }
 
-// ShelfWarmer ist ein Eintrag der „Ladenhüter"-Liste inkl. Drill-Down-Feldern.
-type ShelfWarmer struct {
+// Ladenhueter ist ein Eintrag der „Ladenhüter"-Liste inkl. Drill-Down-Feldern.
+type Ladenhueter struct {
 	// ID ist Pflicht, auch wenn die Liste sie nicht anzeigt: Sie ist der einzige
 	// eindeutige Schlüssel. Zwei Titel dürfen legitim gleich heissen und beide keine
 	// ISBN haben (etwa zwei Ausgaben desselben Werks) — ohne ID kollidierten sie im
@@ -58,7 +58,7 @@ type BestandKennzahlen struct {
 // BestandsFilterBedingung mappt den ?type=-Parameter auf ein serverkontrolliertes
 // SQL-Fragment. Lernmittel sind an buecher_titel.ist_lernmittel erkennbar (Migration
 // 093) — dieselbe Spalte wie im Ausleih-Limit, im OPAC und in der Löschfrist.
-func BestandsFilterBedingung(typ string) (fragment string, normalized string) {
+func BestandsFilterBedingung(typ string) (fragment string, normalform string) {
 	switch typ {
 	case "lmf":
 		return "AND t.ist_lernmittel", "lmf"
@@ -71,7 +71,7 @@ func BestandsFilterBedingung(typ string) (fragment string, normalized string) {
 
 // LadeBestandKennzahlen liefert Verlust-, Finanz- und Zirkulationszahlen in
 // einem einzigen aggregierten Statement.
-func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typeFilter string) (*BestandKennzahlen, error) {
+func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typFilter string) (*BestandKennzahlen, error) {
 	// Als "Verlust" zählen ausschliesslich unfreiwillige Abgänge: VERLUST (nicht
 	// auffindbar) und BESCHAEDIGUNG (Schadensfall). Bewusst NICHT enthalten sind
 	// AUSSORTIERT (veraltet/verschlissen, kuratierte Entfernung) und BESTANDSKORREKTUR
@@ -108,7 +108,7 @@ func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typeFilter string)
 		LEFT JOIN aktive_ausleihen al ON al.exemplar_id = e.id
 		-- Gezählt wird, was im Bestand ist oder war; ein bestelltes Exemplar zählt ab dem Eintreffen.
 		WHERE %[3]s %[2]s
-	`, istVerlust, typeFilter, SQLWarImBestand)
+	`, istVerlust, typFilter, SQLWarImBestand)
 
 	k := &BestandKennzahlen{}
 	err := db.QueryRow(ctx, q).Scan(
@@ -149,10 +149,10 @@ func schuljahresBeginn(t time.Time) time.Time {
 	return time.Date(jahr, time.August, 1, 0, 0, 0, 0, t.Location())
 }
 
-// ListeRenner liefert die meistausgeliehenen Titel (best-effort: bei einem
+// LadeRenner liefert die meistausgeliehenen Titel (best-effort: bei einem
 // Query- oder Iterationsfehler wird eine leere Liste statt eines Fehlers geliefert).
-func ListeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typeFilter string, limit int) []PopularTitle {
-	popularTitles := []PopularTitle{}
+func LadeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typFilter string, limit int) []Renner {
+	renner := []Renner{}
 	q := fmt.Sprintf(`
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''),
 		       coalesce(t.subject, ''), coalesce(t.signatur, ''), coalesce(t.erscheinungsjahr, 0),
@@ -164,38 +164,38 @@ func ListeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typeFilter 
 		GROUP BY t.id, t.titel, t.autor, t.cover_url, t.subject, t.signatur, t.erscheinungsjahr
 		ORDER BY count DESC
 		LIMIT %d
-	`, ausleihenFilter, typeFilter, limit)
+	`, ausleihenFilter, typFilter, limit)
 	rows, err := db.Query(ctx, q)
 	if err != nil {
-		return popularTitles
+		return renner
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var p PopularTitle
+		var p Renner
 		// Scan-Fehler nicht stillschweigend überspringen: Laufen Query und Struct
 		// auseinander (Spalte ergänzt/entfernt), wäre die Liste sonst einfach leer —
 		// nicht von "keine Treffer" zu unterscheiden.
-		if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Count); err != nil {
+		if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Anzahl); err != nil {
 			log.Printf("stats: Renner-Zeile unlesbar: %v", err)
 			continue
 		}
-		popularTitles = append(popularTitles, p)
+		renner = append(renner, p)
 	}
 	// Bei einem Abbruch mitten in der Iteration keine irreführende Teil-Top-Liste
 	// zeigen (best-effort-Sektion, daher verwerfen statt 500).
 	if err := rows.Err(); err != nil {
-		return []PopularTitle{}
+		return []Renner{}
 	}
-	return popularTitles
+	return renner
 }
 
-// ListeLadenhueter liefert die Ladenhüter: entweder seit >2 Jahren nicht mehr
+// LadeLadenhueter liefert die Ladenhüter: entweder seit >2 Jahren nicht mehr
 // ausgeliehen, ODER noch nie ausgeliehen UND bereits seit >2 Jahren im Bestand. Der
 // Bestandsalter-Filter (MIN(e.erstellt_am)) verhindert, dass frisch gekaufte Neuzugänge
 // — nie ausgeliehen, weil brandneu — sofort auf der Aussonderungsliste landen und
 // versehentlich entsorgt werden. Best-effort mit leerer Liste bei Fehlern.
-func ListeLadenhueter(ctx context.Context, db Datenbank, typeFilter string, limit int) []ShelfWarmer {
-	shelfWarmers := []ShelfWarmer{}
+func LadeLadenhueter(ctx context.Context, db Datenbank, typFilter string, limit int) []Ladenhueter {
+	ladenhueter := []Ladenhueter{}
 	// t.id mitliefern: Es wird ohnehin danach gruppiert (eine Zeile je Titel), war aber
 	// nicht Teil der Projektion — dem Client fehlte damit der eindeutige Schlüssel.
 	q := fmt.Sprintf(`
@@ -211,40 +211,40 @@ func ListeLadenhueter(ctx context.Context, db Datenbank, typeFilter string, limi
 		    OR (MAX(a.ausgeliehen_am) IS NULL AND MIN(e.erstellt_am) < NOW() - INTERVAL '2 years')
 		ORDER BY last_loan ASC NULLS FIRST
 		LIMIT %d
-	`, typeFilter, limit)
+	`, typFilter, limit)
 	rows, err := db.Query(ctx, q)
 	if err != nil {
-		return shelfWarmers
+		return ladenhueter
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var sw ShelfWarmer
-		var lastLoan *time.Time
+		var l Ladenhueter
+		var letzteAusleihe *time.Time
 		// Wie oben: ein verschluckter Scan-Fehler sähe aus wie "keine Ladenhüter".
-		if err := rows.Scan(&sw.ID, &sw.Titel, &sw.Autor, &sw.ISBN, &sw.Fachbereich, &sw.Systematik, &sw.Erscheinungsjahr, &lastLoan); err != nil {
+		if err := rows.Scan(&l.ID, &l.Titel, &l.Autor, &l.ISBN, &l.Fachbereich, &l.Systematik, &l.Erscheinungsjahr, &letzteAusleihe); err != nil {
 			log.Printf("stats: Ladenhüter-Zeile unlesbar: %v", err)
 			continue
 		}
-		sw.LetzteAusleihe = "Nie ausgeliehen"
-		if lastLoan != nil {
-			sw.LetzteAusleihe = lastLoan.Format(dateFormatDE)
+		l.LetzteAusleihe = "Nie ausgeliehen"
+		if letzteAusleihe != nil {
+			l.LetzteAusleihe = letzteAusleihe.Format(datumsformat)
 		}
-		shelfWarmers = append(shelfWarmers, sw)
+		ladenhueter = append(ladenhueter, l)
 	}
 	// Bei Iterationsabbruch keine irreführende Teil-Ladenhüterliste zeigen.
 	if err := rows.Err(); err != nil {
-		return []ShelfWarmer{}
+		return []Ladenhueter{}
 	}
-	return shelfWarmers
+	return ladenhueter
 }
 
 // MonatsTrendPunkt ist ein Monat der Aktivitäts-Zeitreihe: wie viele Ausleihen
 // getätigt und wie viele Rückgaben verbucht wurden. Zwei Serien derselben Einheit
 // (Vorgänge/Monat) → eine gemeinsame Y-Achse im Frontend, kein Dual-Axis.
 type MonatsTrendPunkt struct {
-	Monat     string `json:"monat"` // "2026-07"
-	Ausleihen int    `json:"ausleihen"`
-	Ruckgaben int    `json:"rueckgaben"`
+	Monat      string `json:"monat"` // "2026-07"
+	Ausleihen  int    `json:"ausleihen"`
+	Rueckgaben int    `json:"rueckgaben"`
 }
 
 // LadeMonatsTrend liefert die letzten 12 Monate Ausleih-/Rückgabe-Aktivität als
@@ -252,7 +252,7 @@ type MonatsTrendPunkt struct {
 // nach rueckgabe_am — dieselbe Ausleihe kann also in unterschiedlichen Monaten in beide
 // Serien fallen. Best-effort mit leerer Liste bei Fehlern (wie die übrigen Sektionen);
 // der typeFilter (LMF/Freihand) bindet an t.titel. Bewusst anonym: keine Schülerdaten.
-func LadeMonatsTrend(ctx context.Context, db Datenbank, typeFilter string) []MonatsTrendPunkt {
+func LadeMonatsTrend(ctx context.Context, db Datenbank, typFilter string) []MonatsTrendPunkt {
 	trend := []MonatsTrendPunkt{}
 	q := fmt.Sprintf(`
 		WITH monate AS (
@@ -287,7 +287,7 @@ func LadeMonatsTrend(ctx context.Context, db Datenbank, typeFilter string) []Mon
 		LEFT JOIN ausl al ON al.monat = m.monat_start
 		LEFT JOIN rueck r ON r.monat = m.monat_start
 		ORDER BY m.monat_start
-	`, typeFilter)
+	`, typFilter)
 	rows, err := db.Query(ctx, q)
 	if err != nil {
 		return trend
@@ -295,7 +295,7 @@ func LadeMonatsTrend(ctx context.Context, db Datenbank, typeFilter string) []Mon
 	defer rows.Close()
 	for rows.Next() {
 		var p MonatsTrendPunkt
-		if err := rows.Scan(&p.Monat, &p.Ausleihen, &p.Ruckgaben); err != nil {
+		if err := rows.Scan(&p.Monat, &p.Ausleihen, &p.Rueckgaben); err != nil {
 			log.Printf("stats: Monatstrend-Zeile unlesbar: %v", err)
 			continue
 		}

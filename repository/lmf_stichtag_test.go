@@ -19,7 +19,7 @@ func tagIn(jahr int, monat time.Month, tag int) time.Time {
 
 // Die Rechnung selbst — als Tabelle, damit der Fall, der die beiden Fassungen
 // auseinandergehen ließ (Stichtag ab August), nicht wieder nur „theoretisch" ist.
-func TestLmfStichtagImSchuljahr(t *testing.T) {
+func TestLMFStichtagImSchuljahr(t *testing.T) {
 	faelle := []struct {
 		name     string
 		tag      time.Time
@@ -40,7 +40,7 @@ func TestLmfStichtagImSchuljahr(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := LmfStichtagImSchuljahr(f.tag, f.stichtag).Format("2006-01-02")
+			got := LMFStichtagImSchuljahr(f.tag, f.stichtag).Format("2006-01-02")
 			if got != f.will {
 				t.Errorf("Stichtag %q am %s: got %s, will %s",
 					f.stichtag, f.tag.Format("2006-01-02"), got, f.will)
@@ -51,7 +51,7 @@ func TestLmfStichtagImSchuljahr(t *testing.T) {
 
 // Die zweite Frage: die Frist einer NEUEN Ausleihe darf nicht in der Vergangenheit
 // liegen — sonst mahnt das System das Buch am Tag der Ausgabe.
-func TestLmfStichtagAbTag(t *testing.T) {
+func TestLMFStichtagAbTag(t *testing.T) {
 	faelle := []struct {
 		name     string
 		tag      time.Time
@@ -65,7 +65,7 @@ func TestLmfStichtagAbTag(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := LmfStichtagAbTag(f.tag, f.stichtag).Format("2006-01-02")
+			got := LMFStichtagAbTag(f.tag, f.stichtag).Format("2006-01-02")
 			if got != f.will {
 				t.Errorf("Stichtag %q am %s: got %s, will %s",
 					f.stichtag, f.tag.Format("2006-01-02"), got, f.will)
@@ -75,18 +75,18 @@ func TestLmfStichtagAbTag(t *testing.T) {
 }
 
 // Paar-Gate: Solange der Stichtag des Schuljahres noch bevorsteht, MÜSSEN Ausleihe
-// (LmfStichtagAbTag) und Rückweg des Plans (LmfStichtagImSchuljahr) denselben Tag
+// (LMFStichtagAbTag) und Rückweg des Plans (LMFStichtagImSchuljahr) denselben Tag
 // nennen. Genau diese Einigkeit fehlte bis zum 06.09.2026 — dasselbe Buch hätte je
 // nach Weg eine um ein Jahr verschiedene Frist bekommen.
-func TestLmfStichtag_AusleiheUndRueckwegEinig(t *testing.T) {
+func TestLMFStichtag_AusleiheUndRueckwegEinig(t *testing.T) {
 	for _, stichtag := range []string{"07-31", "06-15", "09-30", "12-24", "01-15", "08-01"} {
 		for monat := time.January; monat <= time.December; monat++ {
 			tag := tagIn(2026, monat, 10)
-			imSchuljahr := LmfStichtagImSchuljahr(tag, stichtag)
+			imSchuljahr := LMFStichtagImSchuljahr(tag, stichtag)
 			if imSchuljahr.Before(time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())) {
 				continue // vorbei — hier darf die Ausleihe bewusst weiterrücken
 			}
-			abTag := LmfStichtagAbTag(tag, stichtag)
+			abTag := LMFStichtagAbTag(tag, stichtag)
 			if !imSchuljahr.Equal(abTag) {
 				t.Errorf("Stichtag %q am %s: Ausleihe sagt %s, Rückweg sagt %s",
 					stichtag, tag.Format("2006-01-02"),
@@ -150,7 +150,7 @@ func quelleVon(fset *token.FileSet, n ast.Node) string {
 
 var quellAusschnitt = map[string]string{}
 
-func TestLmfStichtag_NurEineRechnung(t *testing.T) {
+func TestLMFStichtag_NurEineRechnung(t *testing.T) {
 	// Selbstprobe zuerst: Ein Muster, das nichts fasst, meldet ewig „alles gut".
 	probe := `package p
 
@@ -207,7 +207,7 @@ func f(einst struct{ LmfStichtag string }) {
 	if len(verstoesse) > 0 {
 		t.Errorf("Zweite Fassung der Stichtags-Rechnung:\n  %s\n\n"+
 			"Der Stichtag wird an EINER Stelle gerechnet (repository/lmf_stichtag.go): "+
-			"LmfStichtagImSchuljahr für den Rückweg des Plans, LmfStichtagAbTag für eine neue "+
+			"LMFStichtagImSchuljahr für den Rückweg des Plans, LMFStichtagAbTag für eine neue "+
 			"Ausleihe, LMFStichtagVorgabe für die Vorgabe. Zwei Fassungen waren sich zuletzt "+
 			"nur bei der Vorgabe einig.", strings.Join(verstoesse, "\n  "))
 	}

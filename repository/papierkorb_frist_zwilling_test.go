@@ -9,7 +9,7 @@ import (
 )
 
 // Die Frist des Papierkorbs steht zweimal: als Konstante der Löschläufe
-// (StandardAnonymisierungSoftDeleteTage) und als Zahl in den Sätzen, mit denen die Oberfläche
+// (AnonymisierungPapierkorbTage) und als Zahl in den Sätzen, mit denen die Oberfläche
 // sie ankündigt — im Löschdialog der Akte, in der Liste des Papierkorbs und in der
 // Beschreibung des Rechts zum endgültigen Löschen. Ändert sich die Konstante, nennen die Sätze
 // sonst weiter die alte Zahl.
@@ -19,7 +19,7 @@ import (
 //
 // Blind für eine weitere Stelle der Oberfläche, die die Frist nennt.
 func TestPapierkorbFrist_OberflaecheNenntDieZahlDerLoeschlaeufe(t *testing.T) {
-	soll := fmt.Sprintf("%d Tage", StandardAnonymisierungSoftDeleteTage)
+	soll := fmt.Sprintf("%d Tage", AnonymisierungPapierkorbTage)
 	frist := regexp.MustCompile(`\d+ Tage`)
 	for _, stelle := range []struct {
 		datei string

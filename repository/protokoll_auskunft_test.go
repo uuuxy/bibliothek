@@ -22,7 +22,7 @@ func TestProtokollSchluessel_FuerDieAuskunftEingeordnet(t *testing.T) {
 				continue
 			}
 			for _, k := range s.schluessel {
-				if _, mitAngabe := protokollAngabeJeSchluessel[k]; mitAngabe || ProtokollOhneAngabe(k) {
+				if _, mitAngabe := protokollAngabeJeSchluessel[k]; mitAngabe || IstProtokollOhneAngabe(k) {
 					continue
 				}
 				t.Errorf("%s (%s): Schlüssel %q neben %s ist für die Auskunft nicht eingeordnet. Nennt er etwas "+
@@ -44,7 +44,7 @@ func TestProtokollSchluessel_AuskunftsListenSindSauber(t *testing.T) {
 		if a.Bezeichnung == "" {
 			t.Errorf("%q hat keine Bezeichnung", a.Schluessel)
 		}
-		if ProtokollOhneAngabe(a.Schluessel) {
+		if IstProtokollOhneAngabe(a.Schluessel) {
 			t.Errorf("%q steht in protokollAngaben und in protokollOhneAngabe", a.Schluessel)
 		}
 	}

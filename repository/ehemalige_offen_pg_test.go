@@ -108,7 +108,7 @@ func TestWaechterSiehtAuchAbgaengerOhneStempel(t *testing.T) {
 	}
 }
 
-// Der Wächter und die Löschuhr rechnen mit DERSELBEN Uhr (KarenzUhr): dem spätesten von
+// Der Wächter und die Löschuhr rechnen mit DERSELBEN Uhr (sqlKarenzUhr): dem spätesten von
 // Abgang, letzter Rückgabe und letztem Schadensabschluss. Bis zum 22.09.2026 nahm der
 // Wächter allein den Abgang (OFFEN.md 5.12, „dritte Formulierung derselben Frage"): Wer vor
 // zwei Jahren wegging, vor zehn Tagen an der Theke ein Buch zurückgab und ein zweites noch
@@ -181,7 +181,7 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	}
 	if neu := nachher - vorher; neu != 0 {
 		t.Errorf("der Wächter meldet %d neue Fälle, erwartet 0 — die Karenz läuft seit der Rückgabe vor zehn Tagen, "+
-			"die Löschuhr (PredikatAnonymisierung) rechnet genau so", neu)
+			"die Löschuhr (PraedikatAnonymisierung) rechnet genau so", neu)
 	}
 	// Gegenprobe: Ist die letzte Rückgabe älter als die Karenz, meldet der Wächter — wie die
 	// Löschuhr, die ihn dann nur wegen des offenen Buchs stehen lässt.

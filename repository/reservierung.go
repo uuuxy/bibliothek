@@ -171,9 +171,9 @@ func (a *pgReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung,
 		); err != nil {
 			continue
 		}
-		r.ErstelltAm = t.Format(dateFormatDE)
+		r.ErstelltAm = t.Format(datumsformat)
 		if erledigtAm != nil {
-			r.ErledigtAm = erledigtAm.Format(dateFormatDE)
+			r.ErledigtAm = erledigtAm.Format(datumsformat)
 		}
 		reservierungen = append(reservierungen, r)
 	}
@@ -206,7 +206,7 @@ func (a *pgReservierungsAbfragen) LadeOffene(ctx context.Context) ([]OffeneReser
 		if err := rows.Scan(&o.TitelID, &o.Titel, &o.Klasse, &o.Anzahl, &t); err != nil {
 			return nil, err
 		}
-		o.ErstelltAm = t.Format(dateFormatDE)
+		o.ErstelltAm = t.Format(datumsformat)
 		offene = append(offene, o)
 	}
 	return offene, rows.Err()
@@ -255,9 +255,9 @@ func (a *pgReservierungsAbfragen) LadeEigene(ctx context.Context, benutzerID str
 			&m.Notiz, &m.Erledigt, &m.ErledigtNotiz, &erledigtAm, &erstellt); err != nil {
 			return nil, err
 		}
-		m.ErstelltAm = erstellt.Format(dateFormatDE)
+		m.ErstelltAm = erstellt.Format(datumsformat)
 		if erledigtAm != nil {
-			m.ErledigtAm = erledigtAm.Format(dateFormatDE)
+			m.ErledigtAm = erledigtAm.Format(datumsformat)
 		}
 		meine = append(meine, m)
 	}

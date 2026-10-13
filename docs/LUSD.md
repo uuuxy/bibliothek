@@ -136,7 +136,7 @@ verschoben bei weiteren Läufen, geräumt bei Rückkehr) und `letzter_vorgang_am
 aus den Ausleihen gerechnet, ginge er verloren, sobald die Lesehistorie-Befristung eine
 Ausleihe vom Leser trennt, und die Karenz würde kürzer als eingestellt. Import, nächtlicher Job
 (`jobs/cron_dsgvo.go`) und Selbstprüfung lesen **denselben** Schlüssel und rechnen mit
-**demselben** Prädikat (`repository.PredikatAnonymisierung`).
+**demselben** Prädikat (`repository.PraedikatAnonymisierung`).
 
 Warum 90 und nicht länger: Die endgültige Löschung (`RunGDPRDeleteAbgaenger`, 30. Januar
 des Folgejahres) bleibt unberührt und deckelt die Frist ohnehin. Warum nicht 0: In der

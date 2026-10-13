@@ -4,11 +4,36 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
 )
+
+// Konto ist der Zugang einer Person zum Programm: Lehrkraft, Verwaltung oder Helfer (Tabelle
+// benutzer).
+type Konto struct {
+	// ID ist die UUID des Kontos.
+	ID string `json:"id"`
+	// BarcodeID ist die Ausweisnummer aus der Leserzeile des Kontos.
+	BarcodeID string `json:"barcode_id"`
+	Vorname   string `json:"vorname"`
+	Nachname  string `json:"nachname"`
+	// Rolle ist die Rechteklasse des Kontos (Aufzählung benutzer_rolle).
+	Rolle string `json:"rolle"`
+	// Email ist die Adresse, mit der sich die Person anmeldet.
+	Email string `json:"email"`
+	// Aktiv sagt, ob sich die Person anmelden darf.
+	Aktiv      bool      `json:"aktiv"`
+	ErstelltAm time.Time `json:"erstellt_am"`
+	// ZugangBeantragtAm setzt die Selbstanmeldung, das Freischalten leert es; nil heißt kein
+	// offener Antrag.
+	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
+	// LeserID ist die Leserzeile des Kontos: Dort stehen Ausweis und Ausleihen. Jedes Konto
+	// hat eine; dafür sorgt ein Trigger und nicht der Rufer.
+	LeserID string `json:"leser_id"`
+}
 
 // KontoAbfragen liest und schreibt die Konten: die Zugänge von Lehrkräften, Verwaltung und
 // Helfern zum Programm (Tabelle benutzer).
@@ -88,7 +113,7 @@ func (a *pgKontoAbfragen) LadeAlle(ctx context.Context) ([]Konto, error) {
 }
 
 // IstEmailVergeben vergleicht in der Normalform der Anmeldung, ohne Rücksicht auf Groß- und
-// Kleinschreibung (LiesAnmeldeKonto). Bei einem genauen Vergleich gingen zwei Konten durch,
+// Kleinschreibung (LadeAnmeldeKonto). Bei einem genauen Vergleich gingen zwei Konten durch,
 // die sich nur in der Schreibweise unterscheiden, und welches die Anmeldung öffnet, entschiede
 // die Reihenfolge in der Tabelle. Der Index uniq_benutzer_email_lower hält dasselbe in der
 // Datenbank.

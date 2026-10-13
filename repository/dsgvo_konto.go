@@ -18,9 +18,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// DsgvoZugangskonto ist das Konto, mit dem sich die Person anmeldet, samt allem, was über
+// DSGVOZugangskonto ist das Konto, mit dem sich die Person anmeldet, samt allem, was über
 // dieses Konto gespeichert ist. Nil in der Auskunft heißt: Auf diesen Leser zeigt kein Konto.
-type DsgvoZugangskonto struct {
+type DSGVOZugangskonto struct {
 	ID                string     `json:"id"`
 	Email             string     `json:"email"`
 	Vorname           string     `json:"vorname"`
@@ -33,16 +33,16 @@ type DsgvoZugangskonto struct {
 	// Die Klassen, deren Klassenleitung diese Adresse ist (klassen_lehrer_mapping): Dorthin
 	// geht die Liste der überfälligen Medien einer Klasse.
 	Klassenleitungen []string             `json:"klassenleitungen"`
-	Anfragen         []DsgvoAnfrage       `json:"anfragen"`
-	Ereignisse       []DsgvoKontoEreignis `json:"ereignisse_im_verwaltungsprotokoll"`
+	Anfragen         []DSGVOAnfrage       `json:"anfragen"`
+	Ereignisse       []DSGVOKontoEreignis `json:"ereignisse_im_verwaltungsprotokoll"`
 	// Was die Person mit diesem Konto selbst bearbeitet hat — ohne die Daten Dritter
 	// (dsgvo_konto_vorgaenge.go).
-	EigeneVorgaenge []DsgvoEigenerVorgang `json:"selbst_bearbeitete_vorgaenge"`
+	EigeneVorgaenge []DSGVOEigenerVorgang `json:"selbst_bearbeitete_vorgaenge"`
 }
 
-// DsgvoAnfrage ist ein Wunsch, eine Meldung oder eine Klassensatz-Reservierung, die die
+// DSGVOAnfrage ist ein Wunsch, eine Meldung oder eine Klassensatz-Reservierung, die die
 // Person im Kollegiums-Portal gestellt hat.
-type DsgvoAnfrage struct {
+type DSGVOAnfrage struct {
 	Art           string     `json:"art"` // wunsch | meldung | klassensatz
 	Titel         string     `json:"titel"`
 	ISBN          string     `json:"isbn"`
@@ -55,18 +55,18 @@ type DsgvoAnfrage struct {
 	ErledigtNotiz string     `json:"erledigt_notiz"`
 }
 
-// DsgvoKontoEreignis ist ein Eintrag des Verwaltungsprotokolls ÜBER das Konto: angelegt,
+// DSGVOKontoEreignis ist ein Eintrag des Verwaltungsprotokolls ÜBER das Konto: angelegt,
 // geändert, selbst beantragt. Wer ihn ausgelöst hat (admin_id, IP-Adresse), ist eine andere
 // Person und steht deshalb nicht darin.
-type DsgvoKontoEreignis struct {
+type DSGVOKontoEreignis struct {
 	Aktion    string          `json:"aktion"`
 	Zeitpunkt time.Time       `json:"zeitpunkt"`
 	Details   json.RawMessage `json:"details" swaggertype:"object"`
 }
 
-// DsgvoKontoSQL ist die eine Spaltenliste des Kontos in der Auskunft. Das Spalten-Gate
+// dsgvoKontoSQL ist die eine Spaltenliste des Kontos in der Auskunft. Das Spalten-Gate
 // (dsgvo_konto_spalten_pg_test.go) hält sie gegen jede Spalte von benutzer.
-const DsgvoKontoSQL = `
+const dsgvoKontoSQL = `
 	SELECT id, email, vorname, nachname, rolle::text, aktiv, zugang_beantragt_am,
 	       erstellt_am, aktualisiert_am
 	FROM benutzer
@@ -103,11 +103,11 @@ const dsgvoKontoEreignisseSQL = `
 	       AND lower(details->>'email') = lower($2) AND zeitstempel >= $3)
 	ORDER BY zeitstempel DESC`
 
-// LeseDsgvoZugangskonto liest das Konto, das auf diesen Leser zeigt, samt allem, was daran
+// LadeDSGVOZugangskonto liest das Konto, das auf diesen Leser zeigt, samt allem, was daran
 // hängt. Ohne Konto: nil, kein Fehler.
-func LeseDsgvoZugangskonto(ctx context.Context, q Datenbank, leserID string) (*DsgvoZugangskonto, error) {
-	var k DsgvoZugangskonto
-	err := q.QueryRow(ctx, DsgvoKontoSQL, leserID).Scan(
+func LadeDSGVOZugangskonto(ctx context.Context, q Datenbank, leserID string) (*DSGVOZugangskonto, error) {
+	var k DSGVOZugangskonto
+	err := q.QueryRow(ctx, dsgvoKontoSQL, leserID).Scan(
 		&k.ID, &k.Email, &k.Vorname, &k.Nachname, &k.Rolle, &k.Aktiv, &k.ZugangBeantragtAm,
 		&k.ErstelltAm, &k.AktualisiertAm)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -126,20 +126,20 @@ func LeseDsgvoZugangskonto(ctx context.Context, q Datenbank, leserID string) (*D
 	}, k.Email); err != nil {
 		return nil, fmt.Errorf("klassenleitungen: %w", err)
 	}
-	if k.Anfragen, err = sammle(ctx, q, dsgvoAnfragenSQL, func(r pgx.Rows) (DsgvoAnfrage, error) {
-		var a DsgvoAnfrage
+	if k.Anfragen, err = sammle(ctx, q, dsgvoAnfragenSQL, func(r pgx.Rows) (DSGVOAnfrage, error) {
+		var a DSGVOAnfrage
 		return a, r.Scan(&a.Art, &a.Titel, &a.ISBN, &a.Klasse, &a.Anzahl, &a.Kommentar,
 			&a.ErstelltAm, &a.Erledigt, &a.ErledigtAm, &a.ErledigtNotiz)
 	}, k.ID); err != nil {
 		return nil, fmt.Errorf("anfragen: %w", err)
 	}
-	if k.Ereignisse, err = sammle(ctx, q, dsgvoKontoEreignisseSQL, func(r pgx.Rows) (DsgvoKontoEreignis, error) {
-		var e DsgvoKontoEreignis
+	if k.Ereignisse, err = sammle(ctx, q, dsgvoKontoEreignisseSQL, func(r pgx.Rows) (DSGVOKontoEreignis, error) {
+		var e DSGVOKontoEreignis
 		return e, r.Scan(&e.Aktion, &e.Zeitpunkt, &e.Details)
 	}, k.ID, k.Email, k.ErstelltAm); err != nil {
 		return nil, fmt.Errorf("kontoereignisse: %w", err)
 	}
-	if k.EigeneVorgaenge, err = leseDsgvoEigeneVorgaenge(ctx, q, k.ID); err != nil {
+	if k.EigeneVorgaenge, err = ladeDSGVOEigeneVorgaenge(ctx, q, k.ID); err != nil {
 		return nil, err
 	}
 	return &k, nil
@@ -164,12 +164,12 @@ func sammle[T any](ctx context.Context, q Datenbank, sql string, lies func(pgx.R
 	return out, rows.Err()
 }
 
-// DsgvoFrueheresZugangskonto ist ein gelöschtes Konto, das auf diesen Leser zeigte, samt den
+// DSGVOFrueheresZugangskonto ist ein gelöschtes Konto, das auf diesen Leser zeigte, samt den
 // Einträgen über das Konto, die nach dem Löschen noch zu finden sind (seit 29.09.2026,
 // OFFEN.md 5.19). Nach dem Löschen führt kein Fremdschlüssel mehr vom Leser zum Konto; der
 // Weg ist der Löscheintrag (konto_loeschspur.go), der die Leserkennung trägt. Löscheinträge
 // von vor dem 29.09.2026 tragen sie nicht und bleiben hier unsichtbar.
-type DsgvoFrueheresZugangskonto struct {
+type DSGVOFrueheresZugangskonto struct {
 	ID          string    `json:"id"`
 	GeloeschtAm time.Time `json:"geloescht_am"`
 	Email       string    `json:"email"`
@@ -177,7 +177,7 @@ type DsgvoFrueheresZugangskonto struct {
 	// Nur die Einträge, die das Konto als ziel_id tragen (Anlage, Änderung). Was die Person
 	// mit dem Konto bearbeitet hat, trug die Kennung des Kontos in einer Spalte mit
 	// ON DELETE SET NULL und ist ihr nicht mehr zuzuordnen.
-	Ereignisse []DsgvoKontoEreignis `json:"ereignisse_im_verwaltungsprotokoll"`
+	Ereignisse []DSGVOKontoEreignis `json:"ereignisse_im_verwaltungsprotokoll"`
 }
 
 const dsgvoFruehereKontenSQL = `
@@ -192,19 +192,19 @@ const dsgvoFruehereKontoEreignisseSQL = `
 	WHERE details->>'ziel_id' = $1::text
 	ORDER BY zeitstempel DESC`
 
-// LeseDsgvoFruehereZugangskonten liest die gelöschten Konten dieses Lesers. Leer statt nil,
+// LadeDSGVOFruehereZugangskonten liest die gelöschten Konten dieses Lesers. Leer statt nil,
 // damit die abgerufene Auskunft „keine" sagt und nicht „unbekannt".
-func LeseDsgvoFruehereZugangskonten(ctx context.Context, q Datenbank, leserID string) ([]DsgvoFrueheresZugangskonto, error) {
-	konten, err := sammle(ctx, q, dsgvoFruehereKontenSQL, func(r pgx.Rows) (DsgvoFrueheresZugangskonto, error) {
-		var k DsgvoFrueheresZugangskonto
+func LadeDSGVOFruehereZugangskonten(ctx context.Context, q Datenbank, leserID string) ([]DSGVOFrueheresZugangskonto, error) {
+	konten, err := sammle(ctx, q, dsgvoFruehereKontenSQL, func(r pgx.Rows) (DSGVOFrueheresZugangskonto, error) {
+		var k DSGVOFrueheresZugangskonto
 		return k, r.Scan(&k.ID, &k.GeloeschtAm, &k.Email, &k.Rolle)
 	}, leserID)
 	if err != nil {
 		return nil, fmt.Errorf("frühere zugangskonten: %w", err)
 	}
 	for i := range konten {
-		if konten[i].Ereignisse, err = sammle(ctx, q, dsgvoFruehereKontoEreignisseSQL, func(r pgx.Rows) (DsgvoKontoEreignis, error) {
-			var e DsgvoKontoEreignis
+		if konten[i].Ereignisse, err = sammle(ctx, q, dsgvoFruehereKontoEreignisseSQL, func(r pgx.Rows) (DSGVOKontoEreignis, error) {
+			var e DSGVOKontoEreignis
 			return e, r.Scan(&e.Aktion, &e.Zeitpunkt, &e.Details)
 		}, konten[i].ID); err != nil {
 			return nil, fmt.Errorf("einträge eines früheren kontos: %w", err)

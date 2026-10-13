@@ -91,15 +91,15 @@ func NewMonitorAbfragen(pool db.PgxPoolIface) *MonitorAbfragen {
 func (a *MonitorAbfragen) LadeFolien(ctx context.Context) (MonitorFolien, error) {
 	folien := MonitorFolien{NeuEingetroffen: []MonitorTitel{}, Beliebt: []MonitorTitel{}}
 
-	meist, err := a.meistgelesen(ctx, monitorBuchDesMonatsTage, 1, true)
+	meist, err := a.ladeMeistgelesene(ctx, monitorBuchDesMonatsTage, 1, true)
 	if err != nil {
 		return folien, fmt.Errorf("folie buch_des_monats: %w", err)
 	}
-	neu, err := a.neuEingetroffen(ctx, monitorNeuAnzahl)
+	neu, err := a.ladeNeuEingetroffene(ctx, monitorNeuAnzahl)
 	if err != nil {
 		return folien, fmt.Errorf("folie neu_eingetroffen: %w", err)
 	}
-	beliebt, err := a.meistgelesen(ctx, monitorBeliebtTage, monitorBeliebtAnzahl, false)
+	beliebt, err := a.ladeMeistgelesene(ctx, monitorBeliebtTage, monitorBeliebtAnzahl, false)
 	if err != nil {
 		return folien, fmt.Errorf("folie beliebt: %w", err)
 	}
@@ -116,17 +116,17 @@ func (a *MonitorAbfragen) LadeFolien(ctx context.Context) (MonitorFolien, error)
 	return folien, nil
 }
 
-// meistgelesen liefert die Titel, die in den letzten tage Tagen die meisten Leser hatten.
+// ladeMeistgelesene liefert die Titel, die in den letzten tage Tagen die meisten Leser hatten.
 //
 // Gezählt wird je Leser einmal und nicht je Ausleihe: Wer denselben Titel zweimal leiht, ist
 // ein Leser, und ein Klassensatz an eine Lehrkraft ist ein Vorgang und keine dreißig Leser.
 // Anonymisierte Ausleihen zählen nicht; sie liegen ohnehin außerhalb der Fenster.
-func (a *MonitorAbfragen) meistgelesen(ctx context.Context, tage, anzahl int, nurMitCover bool) ([]MonitorTitel, error) {
+func (a *MonitorAbfragen) ladeMeistgelesene(ctx context.Context, tage, anzahl int, nurMitCover bool) ([]MonitorTitel, error) {
 	cover := "TRUE"
 	if nurMitCover {
 		cover = monitorMitCover
 	}
-	return a.titelListe(ctx, `
+	return a.ladeTitelListe(ctx, `
 		SELECT `+monitorSpalten+`
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON e.id = a.exemplar_id
@@ -147,9 +147,9 @@ func (a *MonitorAbfragen) meistgelesen(ctx context.Context, tage, anzahl int, nu
 		LIMIT $2::int`, tage, anzahl)
 }
 
-// neuEingetroffen liefert die zuletzt angelegten Titel mit Cover.
-func (a *MonitorAbfragen) neuEingetroffen(ctx context.Context, anzahl int) ([]MonitorTitel, error) {
-	return a.titelListe(ctx, `
+// ladeNeuEingetroffene liefert die zuletzt angelegten Titel mit Cover.
+func (a *MonitorAbfragen) ladeNeuEingetroffene(ctx context.Context, anzahl int) ([]MonitorTitel, error) {
+	return a.ladeTitelListe(ctx, `
 		SELECT `+monitorSpalten+`
 		FROM buecher_titel bt
 		WHERE `+monitorMitCover+`
@@ -158,8 +158,8 @@ func (a *MonitorAbfragen) neuEingetroffen(ctx context.Context, anzahl int) ([]Mo
 		LIMIT $1::int`, anzahl)
 }
 
-// titelListe führt die Abfrage einer Folie aus und liest die monitorSpalten.
-func (a *MonitorAbfragen) titelListe(ctx context.Context, query string, args ...any) ([]MonitorTitel, error) {
+// ladeTitelListe führt die Abfrage einer Folie aus und liest die monitorSpalten.
+func (a *MonitorAbfragen) ladeTitelListe(ctx context.Context, query string, args ...any) ([]MonitorTitel, error) {
 	rows, err := a.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err

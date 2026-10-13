@@ -46,8 +46,8 @@ type LmfPlanRahmen struct {
 // LmfPlanSommerferien nennt die Ferien zum Plan: für einen laufenden Plan die, an denen er
 // hängt, sonst die nächsten von heute aus, vor denen der Tausch und nach denen die Ausgabe
 // liegt.
-func LmfPlanSommerferien(art string, plan *repository.LmfPlan, laufend bool, jetzt time.Time, tab lmfplan.Ferientabelle) (LmfPlanFerien, lmfplan.Zeitraum) {
-	rueckgabe := art == repository.LmfTerminRueckgabe
+func LmfPlanSommerferien(art string, plan *repository.LMFPlan, laufend bool, jetzt time.Time, tab lmfplan.Ferientabelle) (LmfPlanFerien, lmfplan.Zeitraum) {
+	rueckgabe := art == repository.LMFTerminRueckgabe
 	var z lmfplan.Zeitraum
 	var jahr int
 	var ok bool
@@ -80,7 +80,7 @@ func LmfPlanSommerferien(art string, plan *repository.LmfPlan, laufend bool, jet
 // lmfPlanEigeneFerien nennt die Ferien, an denen ein bestehender Plan hängt: Rückgabe die
 // nächsten nach seinem Ende (vor ihnen lag der Tausch), Ausgabe die seines Schuljahres. Dieselbe
 // Rechnung für den laufenden Plan und für die Frage, worüber ein Nachfolger hinaus muss.
-func lmfPlanEigeneFerien(rueckgabe bool, plan *repository.LmfPlan, jetzt time.Time, tab lmfplan.Ferientabelle) (lmfplan.Zeitraum, int, bool) {
+func lmfPlanEigeneFerien(rueckgabe bool, plan *repository.LMFPlan, jetzt time.Time, tab lmfplan.Ferientabelle) (lmfplan.Zeitraum, int, bool) {
 	if rueckgabe {
 		anker, err := schulzeit.Kalendertag(plan.LetzterTag)
 		if err != nil {
@@ -103,7 +103,7 @@ func LmfPlanRahmenVorgabe(art string, f LmfPlanFerien, z lmfplan.Zeitraum) LmfPl
 	if !f.Bekannt {
 		return v
 	}
-	if art == repository.LmfTerminRueckgabe {
+	if art == repository.LMFTerminRueckgabe {
 		v.LetzterTag = lmfplan.DonnerstagVor(z.Von).Format(time.DateOnly)
 	} else {
 		v.ErsterTag = lmfplan.ErsterSchultagNach(z).Format(time.DateOnly)

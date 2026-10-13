@@ -15,9 +15,9 @@ const (
 	// nächtlichen Lauf zugesteht.
 	KulanzWaechter = 1
 
-	// StandardAnonymisierungSoftDeleteTage sind die Tage nach dem Soft-Delete
+	// AnonymisierungPapierkorbTage sind die Tage nach dem Soft-Delete
 	// (Papierkorb), nach denen ein Schüler-Datensatz anonymisiert wird.
-	StandardAnonymisierungSoftDeleteTage = 180
+	AnonymisierungPapierkorbTage = 180
 	// AbgaengerKarenzTageVorgabe ist die Vorgabe der Karenzzeit nach dem Abgang: So
 	// lange bleibt ein Abgänger ohne offene Vorgänge nur gesperrt, bevor der nächtliche
 	// Job ihn anonymisiert. Bis zum 02.09.2026 anonymisierte der LUSD-Import sofort — und
@@ -26,7 +26,7 @@ const (
 	// wechsel, in dem solche Fälle an der Theke auffallen. Der Wert ist einstellbar
 	// (AbgaengerKarenzSchluessel); 0 heißt „sofort" wie früher. Die endgültige Löschung
 	// (AbgaengerStichjahr, 30. Januar) trifft seit 05.09.2026 nur anonymisierte Zeilen —
-	// sie wartet die Karenz ab, statt sie abzuschneiden (PredikatAbgaengerLoeschung).
+	// sie wartet die Karenz ab, statt sie abzuschneiden (praedikatAbgaengerLoeschung).
 	AbgaengerKarenzTageVorgabe = 90
 	// AbgaengerKarenzSchluessel ist die Zeile in system_einstellungen, aus der Import,
 	// Job und Wächter die Karenz lesen — EIN Schlüssel für drei Leser.
@@ -39,10 +39,10 @@ const (
 	// ProtokollAufbewahrungMonateVorgabe ist die Vorgabe-Aufbewahrung der beiden
 	// Protokolltabellen.
 	ProtokollAufbewahrungMonateVorgabe = 24
-	// ProtokollAufbewahrungMonateMinimum ist die Untergrenze: Eine versehentliche 0 in den
+	// protokollAufbewahrungMonateMinimum ist die Untergrenze: Eine versehentliche 0 in den
 	// Einstellungen darf nicht das komplette Protokoll wegräumen — Revisionsfähigkeit
 	// (wer hat die Gebühr storniert?) ist der Zweck der Tabellen.
-	ProtokollAufbewahrungMonateMinimum = 6
+	protokollAufbewahrungMonateMinimum = 6
 	// ProtokollAufbewahrungSchluessel ist die Zeile in system_einstellungen, aus der Job
 	// UND Wächter die Frist lesen.
 	ProtokollAufbewahrungSchluessel = "audit_aufbewahrung_monate"

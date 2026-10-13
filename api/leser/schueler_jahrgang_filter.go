@@ -22,7 +22,7 @@ import (
 // Warum das in Go steht und nicht im SQL: An dieser Schule heißt der elfte Jahrgang „ET",
 // der zwölfte „12T" und der dreizehnte „13T" (Klassenschema, Migration 087). Die Zahl
 // am Anfang der Klasse gibt es für „ET" nicht — genau die liest
-// KlassenMitSchuelern für die Sortierung des LMF-Plans, wo ein 99 als „irgendwo oben"
+// LMFAbfragen.LadeKlassenMitSchuelern für die Sortierung des LMF-Plans, wo ein 99 als „irgendwo oben"
 // folgenlos ist. Als FILTER wäre dieselbe Zeile falsch: Die Oberstufe fiele heraus, und
 // zwar lautlos — eine leere Liste sieht aus wie „niemand da".
 //
@@ -43,7 +43,7 @@ import (
 // Ohne den dritten Fall zeigte ein Jahrgang, zu dem es keine Klasse gibt, die ganze
 // Kartei statt einer leeren Liste — die Sorte Fehler, die niemand bemerkt, weil eine
 // volle Liste nach „geht" aussieht.
-func klassenFilter(ctx context.Context, lmfRepo *repository.LmfTerminRepository, klasse, jahrgang string) (klassen []string, leer bool, err error) {
+func klassenFilter(ctx context.Context, lmfRepo *repository.LMFAbfragen, klasse, jahrgang string) (klassen []string, leer bool, err error) {
 	if klasse != "" {
 		return []string{klasse}, false, nil
 	}
@@ -58,7 +58,7 @@ func klassenFilter(ctx context.Context, lmfRepo *repository.LmfTerminRepository,
 		return nil, true, nil
 	}
 
-	alle, err := lmfRepo.KlassenMitSchuelern(ctx)
+	alle, err := lmfRepo.LadeKlassenMitSchuelern(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -77,8 +77,8 @@ func klassenFilter(ctx context.Context, lmfRepo *repository.LmfTerminRepository,
 // Jahrgang" kennt das Schema dieser Schule, und sie soll genau EINMAL existieren. Eine
 // zweite Fassung in JavaScript wäre bis zur nächsten Umbenennung einer Klasse still
 // richtig und danach still falsch.
-func jahrgaengeMitSchuelern(ctx context.Context, lmfRepo *repository.LmfTerminRepository) ([]int, error) {
-	alle, err := lmfRepo.KlassenMitSchuelern(ctx)
+func jahrgaengeMitSchuelern(ctx context.Context, lmfRepo *repository.LMFAbfragen) ([]int, error) {
+	alle, err := lmfRepo.LadeKlassenMitSchuelern(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func jahrgaengeMitSchuelern(ctx context.Context, lmfRepo *repository.LmfTerminRe
 // @Produce      json
 // @Success      200 {array} int
 // @Router       /jahrgaenge [get]
-func (s *Tueren) JahrgaengeHandler(lmfRepo *repository.LmfTerminRepository) http.HandlerFunc {
+func (s *Tueren) JahrgaengeHandler(lmfRepo *repository.LMFAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		jahrgaenge, err := jahrgaengeMitSchuelern(r.Context(), lmfRepo)
 		if err != nil {

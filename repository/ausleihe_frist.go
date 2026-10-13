@@ -54,7 +54,7 @@ func SetzeAusleihFrist(ctx context.Context, db Datenbank, ausleiheID string, neu
 
 // VerlaengereLernmittelDerKlasse setzt die Frist der offenen Lernmittel-Ausleihen einer Klasse
 // und liefert die Zahl der angepassten Ausleihen. Ausgenommen bleibt, wer die Frist nicht
-// mitnimmt (SchulbuchFristGehtMitSQL), etwa ein Kind mit einer Sperre von Hand.
+// mitnimmt (sqlSchulbuchFristGehtMit), etwa ein Kind mit einer Sperre von Hand.
 //
 // Liegt die neue Frist in der Zukunft, beginnt auch hier die Mahnfolge neu; sonst liefe ein
 // ganzer Klassensatz nach der Verlängerung auf der alten Mahnstufe weiter.
@@ -72,7 +72,7 @@ func VerlaengereLernmittelDerKlasse(ctx context.Context, db Datenbank, klasse st
 			  -- Die Sperre von Hand nimmt ein Kind aus: Sie soll zur Rückgabe zwingen, nicht
 			  -- durch eine Fristverlängerung ausgehebelt werden. Die der Ehemaligen zählt beim
 			  -- Schulbuch nicht, wie an der Theke.
-			  AND ` + SchulbuchFristGehtMitSQL + `
+			  AND ` + sqlSchulbuchFristGehtMit + `
 			  -- Über den Normal-Schlüssel (Migration 079/087): „5a" aus einem Formular und
 			  -- „05A" als registrierte Anzeigeform meinen dieselbe Klasse.
 			  AND klassen_normkey(s.klasse) = klassen_normkey($2)

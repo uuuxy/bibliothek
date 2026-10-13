@@ -96,15 +96,15 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoS
 	dsgvoZeile(p, tr, "Abgangsjahr", fmt.Sprint(st.AbgaengerJahr))
 	dsgvoZeile(p, tr, "Abgänger seit", dsgvoZeitPtr(st.AbgaengerSeit))
 	dsgvoZeile(p, tr, "Letzter abgeschlossener Vorgang", dsgvoZeitPtr(st.LetzterVorgangAm))
-	dsgvoZeile(p, tr, "LUSD-ID", dsgvoStrPtr(st.LusdID))
-	dsgvoZeile(p, tr, "Zuletzt im LUSD-Export bestätigt", dsgvoZeitPtr(st.LusdBestaetigtAm))
+	dsgvoZeile(p, tr, "LUSD-ID", dsgvoStrPtr(st.LUSDID))
+	dsgvoZeile(p, tr, "Zuletzt im LUSD-Export bestätigt", dsgvoZeitPtr(st.LUSDBestaetigtAm))
 	dsgvoZeile(p, tr, "Anonymisiert am", dsgvoZeitPtr(st.AnonymisiertAm))
 	dsgvoZeile(p, tr, "Straße/Nr.", strings.TrimSpace(st.Strasse+" "+st.Hausnummer))
 	dsgvoZeile(p, tr, "PLZ/Ort", strings.TrimSpace(st.Plz+" "+st.Ort))
 	dsgvoZeile(p, tr, "Eltern-E-Mail", st.ElternEmail)
 	dsgvoZeile(p, tr, "Gesperrt", dsgvoJaNein(st.IstGesperrt))
-	dsgvoZeile(p, tr, "Manuell gesperrt", dsgvoJaNein(st.IsManuallyBlocked))
-	dsgvoZeile(p, tr, "Sperrgrund", dsgvoStrPtr(st.BlockReason))
+	dsgvoZeile(p, tr, "Manuell gesperrt", dsgvoJaNein(st.IstVonHandGesperrt))
+	dsgvoZeile(p, tr, "Sperrgrund", dsgvoStrPtr(st.Sperrgrund))
 	dsgvoZeile(p, tr, "Abgänger", dsgvoJaNein(st.IstAbgaenger))
 	dsgvoZeile(p, tr, "Erfasst am", dsgvoZeit(st.ErstelltAm))
 	dsgvoZeile(p, tr, "Zuletzt geändert", dsgvoZeit(st.AktualisiertAm))
@@ -266,7 +266,7 @@ func dsgvoNachbuchErgebnis(ergebnis string) string {
 }
 
 // dsgvoNachbuchRolle sagt, als wer die Person an der Meldung beteiligt war; die Abfrage setzt
-// das Wort (repository.LeseDsgvoNachbuchMeldungen). Ein unbekannter Wert bleibt stehen.
+// das Wort (repository.LadeDSGVONachbuchMeldungen). Ein unbekannter Wert bleibt stehen.
 func dsgvoNachbuchRolle(rolle string) string {
 	switch rolle {
 	case "ausleiher":
