@@ -5,13 +5,10 @@ import (
 	"testing"
 )
 
-// TestLoescheLeserEndgueltig_BedientNaechstenWartenden befragt den Fremdschlüssel
-// `vormerkungen.schueler_id -> schueler ON DELETE CASCADE` (Frage 12, Gegenrichtung
-// Schema): Die DSGVO-Löschung eines Schülers nimmt seine Vormerkungen lautlos mit.
-// War eine davon 'abholbereit', lag ein Exemplar für ihn auf dem Abholregal — und der
-// CASCADE überspringt den Schritt, den der Verfall-Lauf ausdrücklich tut: das
-// freigewordene Exemplar dem NÄCHSTEN Wartenden zuteilen. Ohne diesen Schritt bleibt
-// der nächste Schüler für immer 'wartend', während das Buch verfügbar herumsteht.
+// Das endgültige Löschen eines Schülers nimmt seine Vormerkungen mit. War eine davon
+// abholbereit, lag ein Exemplar für ihn im Abholfach; es geht an den nächsten Wartenden, wie
+// beim Verfall-Lauf. Sonst bliebe der Nächste für immer „wartend", während das Buch im Regal
+// steht.
 func TestLoescheLeserEndgueltig_BedientNaechstenWartenden(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

@@ -8,31 +8,20 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Nachrücken in der Warteschlange: Verschwindet eine Vormerkung, die bereits ein
-// Exemplar bereitliegen hatte, muss dieses Exemplar dem NÄCHSTEN Wartenden zugeteilt
-// werden. Sonst bleibt der Nächste für immer 'wartend', während das Buch verfügbar
-// herumsteht — genau der Zustand, für den der Verfall-Lauf gebaut wurde
-// (LasseAbgelaufeneVerfallen).
-//
-// Dieselbe Bewegung braucht die DSGVO-Tilgung: Purge, Abgänger-Cronjob und
-// LUSD-Anonymisierung löschen die Vormerkungen eines Schülers (die Freitext-Notiz ist
-// personenbezogen) — und ließen dabei bis 06.09.2026 ein bereitgelegtes Exemplar
-// unbedient auf dem Abholregal liegen. Gefunden über Frage 12 (Gegenrichtung Schema)
-// beim Befragen von `vormerkungen.schueler_id -> schueler ON DELETE CASCADE`: Der
-// CASCADE ist dort gar nicht der Handelnde — die Spuren-Tilgung löscht selbst, und ihr
-// fehlte der Schritt.
-
 // sqlWartenderDarfAbholen ist die Bedingung an den Schüler einer wartenden Vormerkung (Alias
 // s), damit ihm ein Exemplar bereitgestellt wird: nicht gelöscht und nicht gesperrt. Sonst läge
 // das Buch für jemanden im Abholfach, der es nicht holen kann, und die Nächsten gingen leer aus.
 const sqlWartenderDarfAbholen = `s.deleted_at IS NULL AND s.ist_gesperrt = false AND COALESCE(s.is_manually_blocked, false) = false`
 
-// bedieneNaechstenWartenden teilt ein freigewordenes Exemplar dem nächsten wartenden Schüler
-// desselben Titels zu, der abholen darf (neue Abholfrist ab jetzt, Abholfrist), aber nur, wenn
-// das Exemplar noch frei ist: nicht ausgeliehen, gesperrt oder ausgesondert. Gesperrt wird nur
-// die Vormerkung (FOR UPDATE OF v). Eine Vormerkung, die eine Rückgabe gerade bedient, wird
-// übergangen; hält eine Ausleihe die Zeile des Schülers, bleibt er trotzdem an der Reihe.
-// Liefert true, wenn jemand bedient wurde.
+// bedieneNaechstenWartenden teilt ein frei gewordenes Exemplar dem nächsten wartenden Schüler
+// desselben Titels zu, der abholen darf (neue Abholfrist ab jetzt, BestimmeAbholfrist), aber
+// nur, wenn das Exemplar noch frei ist: nicht ausgeliehen, gesperrt oder ausgesondert.
+// Verschwindet eine Vormerkung, für die schon ein Exemplar bereitlag, bliebe der Nächste sonst
+// für immer wartend, während das Buch im Regal steht.
+//
+// Gesperrt wird nur die Vormerkung (FOR UPDATE OF v). Eine Vormerkung, die eine Rückgabe gerade
+// bedient, wird übergangen; hält eine Ausleihe die Zeile des Schülers, bleibt er trotzdem an
+// der Reihe. Liefert true, wenn jemand bedient wurde.
 func bedieneNaechstenWartenden(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (bool, error) {
 	frist, err := BestimmeAbholfrist(ctx, db, jetzt)
 	if err != nil {
@@ -60,14 +49,14 @@ func bedieneNaechstenWartenden(ctx context.Context, db SpurenDatenbank, exemplar
 	return tag.RowsAffected() > 0, nil
 }
 
-// loescheVormerkungenUndRueckeNach ist der Vormerkungs-Schritt der Spuren-Tilgung: Es
-// löscht ALLE Vormerkungen der gegebenen Schüler und lässt für jedes dabei frei
-// werdende Exemplar die Warteschlange nachrücken. Gemeldet wird die Zahl der GELÖSCHTEN
-// Zeilen — das ist die Zahl, die das Cron-Protokoll als „bereinigt" ausweist.
+// loescheVormerkungenUndRueckeNach ist der Schritt der Vormerkungen in der Tilgung der Spuren:
+// Es löscht alle Vormerkungen der genannten Schüler (die Notiz ist personenbezogen) und lässt
+// für jedes dabei frei werdende Exemplar die Warteschlange nachrücken. Geliefert wird die Zahl
+// der gelöschten Zeilen; der nächtliche Lauf weist sie als bereinigt aus.
 //
-// Warum erst löschen, dann bedienen: Nur so kann der nächste Wartende nicht wieder ein
-// Kind sein, dessen Vormerkung gerade fällt (der Abgänger-Cronjob löscht Schüler, die
-// nicht weichgelöscht sind — sie kämen als „wartend" sonst selbst infrage).
+// Erst löschen, dann bedienen: So ist der nächste Wartende nie ein Kind, dessen Vormerkung
+// gerade fällt (der Lauf für Abgänger löscht Schüler, die nicht im Papierkorb liegen; sie kämen
+// als wartend sonst selbst infrage).
 //
 // Die Abholfrist des Nachrückenden zählt ab jetzt: Die Tilgung ist ein Schritt der Liste
 // spurTilgungen und hat keine eigene Uhr.
@@ -82,8 +71,8 @@ func loescheVormerkungenUndRueckeNach(ctx context.Context, db SpurenDatenbank, s
 	if err != nil {
 		return 0, err
 	}
-	// Erst nach dem Schließen der Rows weiterschreiben — solange sie offen sind, ist
-	// die Verbindung belegt.
+	// Erst nach dem Schließen von rows weiterschreiben; solange es offen ist, ist die
+	// Verbindung belegt.
 	for _, f := range freigaben {
 		if f.exemplarID == nil || f.titelID == nil {
 			continue
@@ -102,8 +91,8 @@ type freigewordenesExemplar struct {
 	titelID    *string
 }
 
-// sammleFreigaben liest das RETURNING einer Vormerkungs-Löschung vollständig aus und
-// schließt die Rows — damit die Verbindung danach wieder schreiben kann.
+// sammleFreigaben liest das RETURNING einer Löschung von Vormerkungen ganz aus und schließt
+// rows, damit die Verbindung danach wieder schreiben kann.
 func sammleFreigaben(rows pgx.Rows) ([]freigewordenesExemplar, error) {
 	defer rows.Close()
 	var freigaben []freigewordenesExemplar

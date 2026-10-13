@@ -7,19 +7,15 @@ import (
 	"bibliothek/pkg/lmfplan"
 )
 
-// abholfristTage ist die Zahl der Tage, die ein vorgemerktes Buch bereitliegt, gerechnet ab
-// dem Zeitpunkt, zu dem es zugeteilt wird — bei der Rückgabe (service,
-// processReturnVormerkungTx) oder beim Nachrücken (bedieneNaechstenWartenden). Entschieden
-// am 28.09.2026: drei Tage, das Ende fällt wie bei der Leihfrist auf den nächsten Schultag;
-// keine Einstellung. Bis zum 29.09.2026 stand an beiden Stellen CURRENT_TIMESTAMP + INTERVAL
-// '3 days':
-// Wochenende und Ferien zählten mit, und ein Buch, das in den letzten drei Tagen vor den
-// Herbstferien zurückkam, verfiel in den Ferien.
+// abholfristTage ist die Zahl der Tage, die ein vorgemerktes Buch bereitliegt, gerechnet ab der
+// Zuteilung: bei der Rückgabe oder beim Nachrücken (bedieneNaechstenWartenden). Drei Tage,
+// keine Einstellung. Das Ende fällt wie bei der Leihfrist auf den nächsten Schultag, damit ein
+// Buch, das kurz vor den Ferien zurückkommt, nicht in den Ferien verfällt.
 const abholfristTage = 3
 
-// BestimmeAbholfrist ist das Ende der BestimmeAbholfrist für eine Zuteilung um jetzt: die Tagesfrist
-// (lmfplan.Ferientabelle.Tagesfrist) mit den Sommerferien aus den Einstellungen, dieselbe
-// Rechnung wie bei der Leihfrist. ex ist der Executor der Zuteilung (Transaktion oder Pool).
+// BestimmeAbholfrist liefert das Ende der Abholfrist für eine Zuteilung um jetzt: die
+// Tagesfrist (lmfplan.Ferientabelle.Tagesfrist) mit den Sommerferien aus den Einstellungen,
+// dieselbe Rechnung wie bei der Leihfrist. db ist der Pool oder die Transaktion der Zuteilung.
 func BestimmeAbholfrist(ctx context.Context, db SpurenDatenbank, jetzt time.Time) (time.Time, error) {
 	einstellungen, err := LadeEinstellungen(ctx, db)
 	if err != nil {

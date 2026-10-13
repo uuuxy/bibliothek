@@ -19,10 +19,9 @@ func titelIDVonExemplar(t *testing.T, pool *pgxpool.Pool, exID string) string {
 	return titelID
 }
 
-// Bug 4 (Vormerkungs-Monopolisierung), DB-Seite: Der EXISTS-Join ausleihen→buecher_exemplare
-// in Create muss eine aktive Eigen-Ausleihe am selben TITEL korrekt erkennen (ausleihen hängt
-// am Exemplar, nicht am Titel). Nur ein echter DB-Test prüft, dass Join und titel_id-Filter
-// tatsächlich greifen — pgxmock spielt nur nachgestellte Antworten zurück.
+// Die Prüfung in LegeAn erkennt eine laufende eigene Ausleihe am selben Titel: ausleihen hängt
+// am Exemplar, nicht am Titel, und nur an der Datenbank zeigt sich, dass der Join und der
+// Filter auf titel_id greifen.
 func TestVormerkungLegeAn_SperrtSelbstAusgeliehenenTitel_PG(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -45,12 +44,12 @@ func TestVormerkungLegeAn_SperrtSelbstAusgeliehenenTitel_PG(t *testing.T) {
 		t.Fatalf("aktive Eigen-Ausleihe: erwartet ErrTitelBereitsAusgeliehen, bekam %v", err)
 	}
 
-	// (2) Derselbe Schüler darf aber einen ANDEREN Titel vormerken (Prüft den titel_id Filter).
+	// (2) Derselbe Schüler merkt einen anderen Titel vor (prüft den Filter auf titel_id).
 	if _, err := repo.LegeAn(ctx, titel2, "", schueler); err != nil {
 		t.Fatalf("Eigen-Ausleihe auf Titel 1 darf Vormerkung auf Titel 2 nicht blockieren: %v", err)
 	}
 
-	// (3) Ein ANDERER Schüler darf denselben Titel vormerken (Prüft den schueler_id Filter).
+	// (3) Ein anderer Schüler merkt denselben Titel vor (prüft den Filter auf schueler_id).
 	if _, err := repo.LegeAn(ctx, titelID, "", frisch); err != nil {
 		t.Fatalf("Eigen-Ausleihe von Schüler A darf Vormerkung von Schüler B nicht blockieren: %v", err)
 	}
@@ -62,10 +61,9 @@ func TestVormerkungLegeAn_SperrtSelbstAusgeliehenenTitel_PG(t *testing.T) {
 	}
 }
 
-// TestLasseAbgelaufeneVerfallen belegt die Betreiber-Entscheidung (19.08.2026):
-// Eine „abholbereit"-Reservierung, deren Abholfrist abgelaufen ist, wird gelöscht (der
-// No-Show verliert den Platz) und das Exemplar dem nächsten Wartenden zugeteilt — sofern
-// es noch frei ist. Ohne diesen Lauf blieb der No-Show für immer stecken.
+// Eine abholbereite Vormerkung, deren Abholfrist abgelaufen ist, wird gelöscht (wer nicht
+// abholt, verliert den Platz), und das Exemplar geht an den nächsten Wartenden, sofern es noch
+// frei ist.
 func TestLasseAbgelaufeneVerfallen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -78,7 +76,7 @@ func TestLasseAbgelaufeneVerfallen(t *testing.T) {
 	noShow := seedSchueler(t, pool, "VF-NOSHOW", "Nora", "7a")
 	naechster := seedSchueler(t, pool, "VF-NEXT", "Nils", "7b")
 
-	// No-Show: abholbereit, Frist GESTERN abgelaufen, hält exID.
+	// Nicht abgeholt: abholbereit, Frist gestern abgelaufen, hält exID.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis, erstellt_am)
 		VALUES ($1,$2,'abholbereit',$3, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '5 days')`,
@@ -100,7 +98,7 @@ func TestLasseAbgelaufeneVerfallen(t *testing.T) {
 		t.Fatalf("erwartet 1 verfallen + 1 neu bereit, war %d/%d", verfallen, neuBereit)
 	}
 
-	// No-Show ist weg.
+	// Die nicht abgeholte Vormerkung ist weg.
 	var noShowDa int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM vormerkungen WHERE schueler_id=$1`, noShow).Scan(&noShowDa); err != nil {
 		t.Fatal(err)
@@ -120,9 +118,8 @@ func TestLasseAbgelaufeneVerfallen(t *testing.T) {
 	}
 }
 
-// TestLasseAbgelaufeneVerfallen_ExemplarWeg: Ist das freigewordene Exemplar
-// zwischenzeitlich ausgeliehen, wird der No-Show trotzdem abgeräumt, der nächste aber
-// NICHT bedient (das Exemplar ist ja weg) — der reguläre Rückgabe-Pfad erledigt das später.
+// Ist das frei gewordene Exemplar inzwischen ausgeliehen, wird die nicht abgeholte Vormerkung
+// trotzdem gelöscht, der Nächste aber nicht bedient; das erledigt die nächste Rückgabe.
 func TestLasseAbgelaufeneVerfallen_ExemplarWeg(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -168,14 +165,12 @@ func TestLasseAbgelaufeneVerfallen_ExemplarWeg(t *testing.T) {
 	}
 }
 
-// Dieselbe Vormerkung zweimal: Die Tabelle hält UNIQUE(titel_id, schueler_id), und bis
-// zum 12.09.2026 kam der Constraint-Fehler roh aus Create zurück — der Handler machte
-// daraus einen 500 („Fehler beim Erstellen der Vormerkung"). Das ist kein Serverfehler,
-// sondern der fachliche Normalfall: Der Schüler steht schon auf der Liste. An der Theke
-// stand trotzdem eine rote Störungsmeldung, und wer sie sah, wusste nicht, ob die erste
-// Vormerkung noch gilt (Bestands-Durchgang 10.09.2026).
+// Dieselbe Vormerkung zweimal: Die Tabelle hält UNIQUE(titel_id, schueler_id). Der Fehler des
+// Constraints ist kein Serverfehler, sondern die Antwort „steht schon auf der Liste"; als 500
+// stünde an der Theke eine Störungsmeldung, und niemand wüsste, ob die erste Vormerkung noch
+// gilt.
 //
-// Anonyme Vormerkungen bleiben davon unberührt: NULL kollidiert in UNIQUE nicht mit NULL.
+// Vormerkungen ohne Schüler bleiben davon unberührt: NULL kollidiert in UNIQUE nicht mit NULL.
 func TestVormerkungLegeAn_ZweiteIstKonflikt_PG(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -194,8 +189,8 @@ func TestVormerkungLegeAn_ZweiteIstKonflikt_PG(t *testing.T) {
 		t.Fatalf("zweite Vormerkung: erwartet ErrVormerkungBereitsVorhanden, bekam %v", err)
 	}
 
-	// Gegenprobe: Die anonyme Vormerkung (ohne Schüler) darf mehrfach entstehen — die
-	// Theke merkt damit „ein Exemplar für die Klasse 7b" mehrfach vor.
+	// Gegenprobe: Die Vormerkung ohne Schüler entsteht mehrfach; die Theke merkt damit „ein
+	// Exemplar für die Klasse 7b" mehrmals vor.
 	if _, err := repo.LegeAn(ctx, titelID, "anonym 1", ""); err != nil {
 		t.Fatalf("erste anonyme Vormerkung: %v", err)
 	}

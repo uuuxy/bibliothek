@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-// AbholbereiterTitel ist ein Buch, das für einen Leser im Abholfach liegt.
+// AbholbereiterTitel ist ein Titel, der für einen Leser im Abholfach liegt.
 type AbholbereiterTitel struct {
 	Titel             string
 	BereitgestelltBis *time.Time
 }
 
-// LadeAbholbereiteTitel liefert die Bücher, die für den Leser im Abholfach liegen, höchstens fünf
-// und das mit der kürzesten Abholfrist zuerst: Der Hinweis an der Theke nennt sie einzeln.
+// LadeAbholbereiteTitel liefert die Titel, die für den Leser im Abholfach liegen, höchstens
+// fünf und den mit der kürzesten Abholfrist zuerst: Der Hinweis an der Theke nennt sie einzeln.
 func LadeAbholbereiteTitel(ctx context.Context, q Datenbank, leserID string) ([]AbholbereiterTitel, error) {
 	rows, err := q.Query(ctx, `
 		SELECT t.titel, v.bereitgestellt_bis

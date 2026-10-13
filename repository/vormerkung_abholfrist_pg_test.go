@@ -13,12 +13,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Abholfrist, entschieden am 28.09.2026: drei Tage ab der Zuteilung, das Ende fällt wie
-// bei der Leihfrist auf den nächsten Schultag, bis Tagesende. Geprüft an den drei Wegen, auf
-// denen repository die Warteschlange nachrücken lässt — Verfall-Lauf, Löschen von Hand,
-// Spuren-Tilgung —, über ein Wochenende, über die Herbstferien und über Sommerferien, die nur
-// in der Einstellung stehen. Die Rückgabe prüft internal/service
-// (TestRueckgabe_AbholfristMitFesterUhr).
+// Die Abholfrist: drei Tage ab der Zuteilung, das Ende fällt wie bei der Leihfrist auf den
+// nächsten Schultag, bis zum Ende des Tages. Geprüft an den drei Wegen, auf denen repository
+// die Warteschlange nachrücken lässt (Verfall-Lauf, Löschen von Hand, Tilgung der Spuren), über
+// ein Wochenende, über die Herbstferien und über Sommerferien, die nur in der Einstellung
+// stehen. Die Rückgabe prüft internal/service (TestRueckgabe_AbholfristMitFesterUhr).
 
 func abholfristEnde(j int, m time.Month, d int) time.Time {
 	return time.Date(j, m, d, 23, 59, 59, 0, schulzeit.Zone())
@@ -100,8 +99,8 @@ func setzeSommerferien(t *testing.T, pool *pgxpool.Pool, wert string) {
 	})
 }
 
-// Der Verfall-Lauf räumt Noras Vormerkung ab und teilt Nils das Exemplar zu; seine Frist
-// zählt ab der Uhr des Laufs. Rot am Rückbau zu CURRENT_TIMESTAMP + INTERVAL '3 days'.
+// Der Verfall-Lauf löscht Noras Vormerkung und teilt Nils das Exemplar zu; seine Frist zählt ab
+// der Uhr des Laufs und über Schultage, nicht als drei Kalendertage.
 func TestAbholfrist_VerfallLauf(t *testing.T) {
 	pool := pgTestPool(t)
 	for _, fall := range []struct {
@@ -149,7 +148,7 @@ func TestAbholfrist_SommerferienAusDerEinstellung(t *testing.T) {
 	}
 }
 
-// Wer Noras Vormerkung von Hand löscht, lässt Nils nachrücken — mit derselben Frist.
+// Wer Noras Vormerkung von Hand löscht, lässt Nils nachrücken, mit derselben Frist.
 func TestAbholfrist_LoeschenVonHand(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

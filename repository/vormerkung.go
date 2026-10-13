@@ -10,33 +10,31 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// ErrTitelBereitsAusgeliehen signalisiert, dass ein Schüler einen Titel vormerken will, den
-// er aktuell bereits selbst ausgeliehen hat. Ohne diese Sperre könnte er das Buch bei der
-// Rückgabe sofort wieder für sich selbst abgreifen und die Vormerkungs-Warteschlange
-// dauerhaft für sich monopolisieren. Nutzer-sichtbar (409).
+// ErrTitelBereitsAusgeliehen meldet, dass ein Schüler einen Titel vormerken will, den er selbst
+// ausgeliehen hat: Er könnte das Buch sonst bei der Rückgabe sofort wieder für sich bekommen
+// und die Warteschlange auf Dauer besetzen. Der Text steht so vor dem Menschen (409).
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrTitelBereitsAusgeliehen = errors.New("Buch wird aktuell bereits von diesem Schüler ausgeliehen")
 
-// ErrVormerkungBereitsVorhanden signalisiert die zweite Vormerkung desselben Schülers auf
-// denselben Titel. UNIQUE(titel_id, schueler_id) fängt sie in der Datenbank ab; bis zum
-// 12.09.2026 kam der Constraint-Fehler roh zurück und wurde zum 500 — an der Theke eine
-// Störungsmeldung für den fachlichen Normalfall „steht schon auf der Liste".
-// Nutzer-sichtbar (409).
+// ErrVormerkungBereitsVorhanden meldet die zweite Vormerkung desselben Schülers auf denselben
+// Titel. UNIQUE(titel_id, schueler_id) fängt sie in der Datenbank ab; ohne den eigenen
+// Fehlerwert käme für „steht schon auf der Liste" eine Störungsmeldung (500). Der Text steht so
+// vor dem Menschen (409).
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrVormerkungBereitsVorhanden = errors.New("Dieser Schüler hat den Titel bereits vorgemerkt")
 
-// ErrVormerkungNurFuerSchueler signalisiert eine Vormerkung für eine Leser-Id, die kein
-// Schüler ist (oder die es nicht gibt). Die Warteschlange liest die Sicht `schueler` —
-// eine Vormerkung für einen Kollegen würde nie bedient und stünde ohne Namen in der Liste.
-// Die Regel steht deshalb an der Tür (Create) und nicht nur in der Oberfläche, die zum
-// Vormerken ohnehin nur Schüler anbietet. Nutzer-sichtbar (409).
+// ErrVormerkungNurFuerSchueler meldet eine Vormerkung für einen Leser, der kein Schüler ist
+// oder den es nicht gibt. Die Warteschlange liest die Sicht schueler: Eine Vormerkung für einen
+// Kollegen würde nie bedient und stünde ohne Namen in der Liste. Die Regel steht deshalb an
+// LegeAn und nicht nur in der Oberfläche, die zum Vormerken ohnehin nur Schüler anbietet. Der
+// Text steht so vor dem Menschen (409).
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrVormerkungNurFuerSchueler = errors.New("Vormerken lässt sich nur für Schüler")
 
-// Vormerkung represents a pending book reservation entry for a student.
+// Vormerkung ist die Vormerkung eines Schülers auf einen Titel.
 type Vormerkung struct {
 	ID           string    `json:"id"`
 	TitelID      string    `json:"titel_id"`
@@ -45,38 +43,37 @@ type Vormerkung struct {
 	ErstelltAm   time.Time `json:"erstellt_am"`
 	SchuelerID   string    `json:"schueler_id,omitempty"`
 	SchuelerName string    `json:"schueler_name,omitempty"`
-	// Status ist 'wartend' oder 'abholbereit' (chk_vormerkung_status). Ohne dieses Feld
-	// zeigte die Oberfläche jede Reservierung als "Wartet seit …" — auch eine, die
-	// längst zur Abholung bereitliegt und deren Frist bald verfällt.
+	// Status ist 'wartend' oder 'abholbereit' (chk_vormerkung_status). Die Oberfläche
+	// unterscheidet daran „wartet seit …" von einer Vormerkung, die zur Abholung bereitliegt
+	// und deren Frist läuft.
 	Status string `json:"status"`
-	// BereitgestelltBis ist nur bei 'abholbereit' gesetzt: das Ende der Abholfrist (Abholfrist).
+	// BereitgestelltBis ist nur bei 'abholbereit' gesetzt: das Ende der Abholfrist
+	// (BestimmeAbholfrist).
 	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
 }
 
-// VormerkungsAbfragen defines operations for managing individual book reservations.
+// VormerkungsAbfragen liest und schreibt die Vormerkungen.
 type VormerkungsAbfragen interface {
 	LadeListe(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error)
 	LegeAn(ctx context.Context, titelID, notiz, schuelerID string) (string, error)
 	Loesche(ctx context.Context, id string) error
-	// LasseAbgelaufeneVerfallen räumt No-Show-Reservierungen ab.
+	// LasseAbgelaufeneVerfallen löscht bereitgelegte Vormerkungen, deren Abholfrist abgelaufen
+	// ist, und bedient den Nächsten.
 	LasseAbgelaufeneVerfallen(ctx context.Context) (verfallen, neuBereitgestellt int, err error)
 }
 
-// LasseAbgelaufeneVerfallen behandelt „abholbereit"-Reservierungen, deren
-// Abholfrist abgelaufen ist (No-Show). Betreiber-Entscheidung 19.08.2026:
-// „Verfall + nächsten bedienen". Ohne diesen Lauf blieb eine solche Vormerkung für
-// immer 'abholbereit' — der Schüler fiel still aus der Warteschlange, ohne bedient zu
-// werden, und das Exemplar wurde nie wieder zugeteilt.
+// LasseAbgelaufeneVerfallen behandelt bereitgelegte Vormerkungen, deren Abholfrist abgelaufen
+// ist: Wer nicht abholt, verliert seinen Platz, und der Nächste ist an der Reihe. Ohne diesen
+// Lauf bliebe die Vormerkung für immer abholbereit, und das Exemplar würde nie wieder
+// zugeteilt. Geliefert wird, wie viele verfallen sind und wie viele neu bereitgestellt wurden.
 //
-//  1. Die abgelaufene Reservierung wird GELÖSCHT (der No-Show verliert seinen Platz,
-//     wie in Bibliotheken üblich) — RETURNING liefert Exemplar und Titel.
-//  2. Ist das freigewordene Exemplar noch verfügbar (nicht zwischenzeitlich ausgeliehen
-//     oder ausgesondert), wird es dem NÄCHSTEN wartenden, abholberechtigten Schüler
-//     zugeteilt (Status 'abholbereit', neue Abholfrist ab r.uhr()). Ist es weg, geschieht nichts
-//     Weiteres — der reguläre Rückgabe-Pfad bedient die Warteschlange dann später.
+//   - Die abgelaufene Vormerkung wird gelöscht; RETURNING liefert Exemplar und Titel.
+//   - Ist das Exemplar noch frei (nicht ausgeliehen, nicht ausgesondert), bekommt es der
+//     nächste wartende Schüler, der abholen darf, mit neuer Abholfrist ab a.uhr(). Sonst
+//     bedient die nächste Rückgabe die Warteschlange.
 //
-// Alles in EINER Transaktion; FOR UPDATE SKIP LOCKED verhindert Deadlocks/Doppelzuteilung
-// gegen gleichzeitige Rückgaben.
+// Alles in einer Transaktion; FOR UPDATE SKIP LOCKED verhindert, dass der Lauf und eine
+// gleichzeitige Rückgabe aufeinander warten oder dasselbe Exemplar zweimal zuteilen.
 func (a *pgVormerkungsAbfragen) LasseAbgelaufeneVerfallen(ctx context.Context) (int, int, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -101,9 +98,8 @@ func (a *pgVormerkungsAbfragen) LasseAbgelaufeneVerfallen(ctx context.Context) (
 		if f.exemplarID == nil || f.titelID == nil {
 			continue
 		}
-		// Nächsten Wartenden nur dann bedienen, wenn das Exemplar wirklich noch frei
-		// ist — dieselbe Bewegung wie beim endgültigen Löschen eines Schülers
-		// (vormerkung_nachruecken.go).
+		// Den nächsten Wartenden nur bedienen, wenn das Exemplar noch frei ist, wie beim
+		// endgültigen Löschen eines Schülers (vormerkung_nachruecken.go).
 		bedient, err := bedieneNaechstenWartenden(ctx, tx, *f.exemplarID, *f.titelID, a.uhr())
 		if err != nil {
 			return 0, 0, err
@@ -135,23 +131,21 @@ func (a *pgVormerkungsAbfragen) uhr() time.Time {
 	return time.Now()
 }
 
-// NewVormerkungsAbfragen returns a new PostgreSQL implementation of VormerkungsAbfragen.
+// NewVormerkungsAbfragen liefert die Abfragen der Vormerkungen an Postgres.
 func NewVormerkungsAbfragen(db db.PgxPoolIface) VormerkungsAbfragen {
 	return &pgVormerkungsAbfragen{db: db}
 }
 
-// ErrVormerkungFilterFehlt signalisiert einen List-Aufruf ohne Titel- UND ohne Schüler-
-// Filter. Ein solcher Aufruf lieferte früher den GESAMTEN Vormerkungsbestand mit allen
-// Schülernamen und Klassen — ein Voll-Abzug, den die Oberfläche nie anfordert (sie fragt
-// stets nach Titel oder nach Schüler) und der genau dann zum PII-Dump wird, wenn das
-// optionale Recht manage_vormerkungen an eine Helfer-Rolle vergeben ist. Der Scope ist
-// deshalb Pflicht.
+// ErrVormerkungFilterFehlt meldet einen Aufruf von LadeListe ohne Titel und ohne Schüler. Er
+// lieferte sonst alle Vormerkungen mit Namen und Klassen: einen Abzug, den die Oberfläche nie
+// anfordert und der Personendaten preisgäbe, sobald das Recht manage_vormerkungen an eine
+// Helfer-Rolle vergeben ist. Der Filter ist deshalb Pflicht.
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrVormerkungFilterFehlt = errors.New("Vormerkungen brauchen einen Titel- oder Schüler-Filter")
 
-// LadeListe retrieves reservations filtered by either title or student. Ohne einen der beiden
-// Filter wird ErrVormerkungFilterFehlt zurückgegeben — es gibt bewusst keinen Voll-Abzug.
+// LadeListe liefert die Vormerkungen eines Titels oder eines Schülers, die ältesten zuerst.
+// Ohne einen der beiden Filter liefert es ErrVormerkungFilterFehlt.
 func (a *pgVormerkungsAbfragen) LadeListe(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error) {
 	var rows pgx.Rows
 	var err error
@@ -202,16 +196,13 @@ func (a *pgVormerkungsAbfragen) LadeListe(ctx context.Context, titelID, schueler
 	return vormerkungen, nil
 }
 
-// LegeAn creates a new reservation.
-//
-// Monopolisierungs-Schutz: Ein Schüler, der ein Exemplar dieses Titels aktuell selbst
-// ausgeliehen hat, darf ihn nicht zusätzlich für sich vormerken (siehe
-// ErrTitelBereitsAusgeliehen). Der Check läuft nur bei gesetztem schuelerID — anonyme
-// Vormerkungen (ohne Schüler) sind davon nicht betroffen.
+// LegeAn legt eine Vormerkung an. Ein Schüler, der ein Exemplar des Titels selbst ausgeliehen
+// hat, bekommt ErrTitelBereitsAusgeliehen; die Prüfung läuft nur mit schuelerID, eine
+// Vormerkung ohne Schüler ist davon nicht betroffen.
 func (a *pgVormerkungsAbfragen) LegeAn(ctx context.Context, titelID, notiz, schuelerID string) (string, error) {
 	if schuelerID != "" {
-		// Gegen die SICHT, mit Absicht: Sie ist dieselbe Frage, die die Warteschlange beim
-		// Bedienen stellt (siehe ErrVormerkungNurFuerSchueler).
+		// Gegen die Sicht schueler, mit Absicht: Es ist dieselbe Frage, die die Warteschlange
+		// beim Bedienen stellt (ErrVormerkungNurFuerSchueler).
 		var istSchueler bool
 		if err := a.db.QueryRow(ctx,
 			`SELECT EXISTS (SELECT 1 FROM schueler WHERE id = $1)`, schuelerID,
@@ -244,10 +235,10 @@ func (a *pgVormerkungsAbfragen) LegeAn(ctx context.Context, titelID, notiz, schu
 		VALUES ($1, NULLIF($2, ''), NULLIF($3, '')::uuid)
 		RETURNING id
 	`, titelID, notiz, schuelerID).Scan(&id)
-	// Die Zweitvormerkung ist kein Serverfehler, sondern eine Antwort: Der Schüler steht
-	// schon auf der Liste. Erkannt wird sie am Constraint der Tabelle, nicht an einer
-	// vorgelagerten Abfrage — die hätte zwischen Prüfen und Schreiben ein Fenster
-	// (zwei Arbeitsplätze, derselbe Titel).
+	// Die zweite Vormerkung ist kein Serverfehler, sondern eine Antwort: Der Schüler steht
+	// schon auf der Liste. Erkannt wird sie am Constraint der Tabelle und nicht an einer
+	// Abfrage davor; die ließe zwischen Prüfen und Schreiben ein Fenster (zwei Arbeitsplätze,
+	// derselbe Titel).
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "vormerkungen_titel_id_schueler_id_key" {
 		return "", ErrVormerkungBereitsVorhanden
@@ -255,18 +246,12 @@ func (a *pgVormerkungsAbfragen) LegeAn(ctx context.Context, titelID, notiz, schu
 	return id, err
 }
 
-// Loesche removes a reservation.
-//
-// BEWUSST ohne Objektbindung an einen Aufrufer (IDOR-Sweep 19.08.2026, geprüft):
-// manage_vormerkungen ist das eigens geschaffene enge Verwaltungsrecht der Theke
-// (sicherheitsbefund-vormerkungen, Weg 2) — fremde Vormerkungen auf Zuruf zu löschen
-// IST der Zweck dieses Rechts, kein Bypass. Die Datenminimierungs-Lücke war der
-// parameterlose List-Vollabzug, nicht das Löschen; siehe ErrVormerkungFilterFehlt.
+// Loesche löscht eine Vormerkung, gleich wem sie gehört: Das Recht manage_vormerkungen ist das
+// Verwaltungsrecht der Theke, und Vormerkungen anderer auf Zuruf zu löschen ist sein Zweck.
 //
 // Lag für die Vormerkung schon ein Exemplar im Abholfach, rückt der Nächste in derselben
-// Transaktion nach (vormerkung_nachruecken.go) — sonst bliebe er für immer „wartend",
-// und das Exemplar gälte als frei (Bestands-Durchgang 10.09.2026; Verfall-Lauf und
-// DSGVO-Tilgung taten es längst, das manuelle Löschen nicht).
+// Transaktion nach (vormerkung_nachruecken.go); sonst bliebe er für immer wartend, und das
+// Exemplar gälte als frei.
 func (a *pgVormerkungsAbfragen) Loesche(ctx context.Context, id string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -279,7 +264,7 @@ func (a *pgVormerkungsAbfragen) Loesche(ctx context.Context, id string) error {
 		DELETE FROM vormerkungen WHERE id = $1
 		RETURNING titel_id::text, CASE WHEN status = 'abholbereit' THEN bereitgestellt_exemplar_id::text END`,
 		id).Scan(&titelID, &bereitgestellt)
-	// Keine Zeile = unbekannte ID: „gelöscht" wäre gelogen (Phantom-Erfolg-Sweep 31.08.2026).
+	// Keine Zeile heißt unbekannte ID; „gelöscht" wäre dann falsch.
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrVormerkungNichtGefunden
 	}
@@ -294,5 +279,5 @@ func (a *pgVormerkungsAbfragen) Loesche(ctx context.Context, id string) error {
 	return tx.Commit(ctx)
 }
 
-// ErrVormerkungNichtGefunden meldet eine unbekannte Vormerkungs-ID beim Löschen.
+// ErrVormerkungNichtGefunden meldet eine unbekannte ID einer Vormerkung.
 var ErrVormerkungNichtGefunden = errors.New("vormerkung nicht gefunden")

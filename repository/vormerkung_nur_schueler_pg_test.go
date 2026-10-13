@@ -6,14 +6,11 @@ import (
 	"testing"
 )
 
-// Vormerken lässt sich nur für Schüler — und das muss die Tür sagen, nicht die Oberfläche.
-//
-// Die Warteschlange liest an vier Stellen die Sicht `schueler` (loan_return.go,
-// vormerkung_nachruecken.go, loan_checkout.go, List in vormerkung.go). Die Oberfläche
-// bietet zum Vormerken auch nur Schüler an (`/api/schueler?q=` ohne `art=alle`). Create
-// nahm bis zum 21.09.2026 aber JEDE Leser-Id: Eine Vormerkung für einen Kollegen entstand,
-// stand ohne Namen in der Liste, und beim Rückgabe-Vorgang ging die Warteschlange über sie
-// hinweg — für immer „wartend", ohne dass es jemand merkt (OFFEN.md 5.19).
+// Vormerken lässt sich nur für Schüler, und das sagt LegeAn, nicht nur die Oberfläche. Die
+// Warteschlange liest an vier Stellen die Sicht schueler, und die Oberfläche bietet zum
+// Vormerken nur Schüler an (/api/schueler?q= ohne art=alle). Eine Vormerkung für einen Kollegen
+// stünde ohne Namen in der Liste, und bei der Rückgabe ginge die Warteschlange über sie hinweg:
+// für immer „wartend", ohne dass es jemand merkt.
 func TestVormerkungLegeAn_NurFuerSchueler(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -36,7 +33,8 @@ func TestVormerkungLegeAn_NurFuerSchueler(t *testing.T) {
 		t.Errorf("%d Vormerkung(en) für den Kollegen geschrieben — die Warteschlange bedient sie nie", n)
 	}
 
-	// Eine Id, die es nicht gibt, ist dieselbe Antwort und kein roher FK-Fehler (500).
+	// Eine ID, die es nicht gibt, bekommt dieselbe Antwort und keinen Fehler des
+	// Fremdschlüssels (500).
 	if _, err := repo.LegeAn(ctx, titelID, "", "00000000-0000-4000-8000-000000000001"); !errors.Is(err, ErrVormerkungNurFuerSchueler) {
 		t.Errorf("Vormerkung für eine unbekannte Id: err = %v — want ErrVormerkungNurFuerSchueler", err)
 	}

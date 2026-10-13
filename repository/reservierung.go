@@ -10,7 +10,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Reservierung represents a pending class-set reservation.
+// Reservierung ist die Reservierung eines Klassensatzes durch eine Lehrkraft, wie die
+// Bibliothek sie in ihrer Liste sieht.
 type Reservierung struct {
 	ID             string  `json:"id"`
 	TitelID        string  `json:"titel_id"`
@@ -21,27 +22,23 @@ type Reservierung struct {
 	Notiz          *string `json:"notiz,omitempty"`
 	AngefordertVon *string `json:"angefordert_von,omitempty"`
 	Erledigt       bool    `json:"erledigt"`
-	// ErledigtNotiz/ErledigtAm: Antwort der Bibliothek und Abschlusszeitpunkt (088/089).
-	// Bis zum 31.08.2026 existierte die Notiz nur in der Bereit-Mail — scheiterte die,
-	// war sie für immer unsichtbar. ErledigtAm leer = vor Migration 089 abgeschlossen.
+	// ErledigtNotiz und ErledigtAm sind die Antwort der Bibliothek und der Zeitpunkt des
+	// Abschlusses. Die Notiz steht hier und nicht nur in der Mail an die Lehrkraft: Scheitert
+	// die Mail, bliebe sie sonst unsichtbar. ErledigtAm ist leer bei alten Reservierungen ohne
+	// Zeitpunkt.
 	ErledigtNotiz string `json:"erledigt_notiz,omitempty"`
 	ErledigtAm    string `json:"erledigt_am,omitempty"`
 	ErstelltAm    string `json:"erstellt_am"`
-	// Verfuegbar ist der aktuelle Ausleih-Bestand des Titels (gleiche Definition wie
-	// im OPAC: ausleihbar, nicht ausgesondert, keine offene Ausleihe) — damit sieht
-	// die Bibliothek beim Erledigen, ob der Satz noch vollständig ist, ohne am Regal
-	// zu zählen.
+	// Verfuegbar ist der ausleihbare Bestand des Titels, gezählt wie im Katalog (ausleihbar,
+	// nicht ausgesondert, keine offene Ausleihe): Die Bibliothek sieht beim Erledigen, ob der
+	// Satz vollständig ist, ohne am Regal zu zählen.
 	Verfuegbar int `json:"verfuegbar"`
 }
 
-// OffeneReservierung ist die schmale Sicht für das Kollegiums-Portal: Wer vor der
-// eigenen Reservierung steht (Titel, Klasse, Menge) — bewusst OHNE Personendaten
-// des Anfordernden.
-//
-// Der TITEL fehlte bis zum 23.08.2026, obwohl der Kommentar darüber ihn nannte. Neben
-// einem Suchtreffer fiel das nicht auf (das Buch steht ja daneben); auf der Startfläche
-// des Portals stand dann „Klasse 8B · 28 Stück" ohne jeden Hinweis, worum es geht. Der
-// Titel ist keine Person und steht ohnehin im öffentlichen Katalog.
+// OffeneReservierung ist die schmale Sicht für das Portal des Kollegiums: wer vor der eigenen
+// Reservierung steht (Titel, Klasse, Menge), ohne Personendaten des Anfordernden. Der Titel ist
+// keine Person und steht ohnehin im öffentlichen Katalog; ohne ihn sagte die Zeile nicht, worum
+// es geht.
 type OffeneReservierung struct {
 	TitelID    string `json:"titel_id"`
 	Titel      string `json:"titel"`
@@ -50,25 +47,24 @@ type OffeneReservierung struct {
 	ErstelltAm string `json:"erstellt_am"`
 }
 
-// ReservierungsAbfragen kapselt die Datenbankzugriffe für Reservierungen.
+// ReservierungsAbfragen liest und schreibt die Reservierungen von Klassensätzen.
 type ReservierungsAbfragen interface {
 	IstTitelVorhanden(ctx context.Context, titelID string) (bool, error)
-	// ZaehleTitelBestand liefert die Zahl physisch vorhandener (nicht ausgesonderter)
-	// Exemplare eines Titels — die Obergrenze für eine Klassensatz-Reservierung.
+	// ZaehleTitelBestand zählt die vorhandenen (nicht ausgesonderten) Exemplare eines Titels:
+	// die Obergrenze einer Reservierung.
 	ZaehleTitelBestand(ctx context.Context, titelID string) (int, error)
 	LegeAn(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (id string, neu bool, err error)
 	LadeAlle(ctx context.Context) ([]Reservierung, error)
-	// LadeOffene liefert die offenen Reservierungen in
-	// Warteschlangen-Reihenfolge (älteste zuerst) — die Sicht für das Portal.
+	// LadeOffene liefert die offenen Reservierungen in der Reihenfolge der Warteschlange (die
+	// älteste zuerst), für das Portal.
 	LadeOffene(ctx context.Context) ([]OffeneReservierung, error)
 	ZaehleOffene(ctx context.Context) (int, error)
-	// Erledige schliesst eine offene Reservierung ab und
-	// liefert die Angaben fuer die Bereit-Mail an die anfragende Lehrkraft.
-	// notiz ist die Antwort der Bibliothek (landet in der Mail, Migration 088).
-	// nil ohne Fehler: war nicht (mehr) offen.
+	// Erledige schließt eine offene Reservierung ab und liefert die Angaben für die Mail an die
+	// Lehrkraft; notiz ist die Antwort der Bibliothek. nil ohne Fehler heißt: war nicht mehr
+	// offen.
 	Erledige(ctx context.Context, id, notiz string) (*ErledigteReservierung, error)
-	// LadeEigene liefert die EIGENEN Reservierungen einer Lehrkraft
-	// fuers Portal — offene plus kuerzlich abgeschlossene samt Bibliotheks-Notiz (088/089).
+	// LadeEigene liefert die eigenen Reservierungen einer Lehrkraft für das Portal: offene und
+	// kürzlich abgeschlossene mit der Notiz der Bibliothek.
 	LadeEigene(ctx context.Context, benutzerID string) ([]EigeneReservierung, error)
 }
 
@@ -76,23 +72,21 @@ type pgReservierungsAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewReservierungsAbfragen bindet die Vormerkungen an einen Verbindungspool. Gibt die
-// Schnittstelle zurück, nicht den konkreten Typ — die Aufrufer sollen gegen den Vertrag
-// arbeiten, damit Tests ihn ersetzen können.
+// NewReservierungsAbfragen liefert die Abfragen der Reservierungen an Postgres.
 func NewReservierungsAbfragen(pool db.PgxPoolIface) ReservierungsAbfragen {
 	return &pgReservierungsAbfragen{db: pool}
 }
 
+// IstTitelVorhanden meldet, ob es den Titel gibt.
 func (a *pgReservierungsAbfragen) IstTitelVorhanden(ctx context.Context, titelID string) (bool, error) {
 	var vorhanden bool
 	err := a.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM buecher_titel WHERE id = $1)`, titelID).Scan(&vorhanden)
 	return vorhanden, err
 }
 
-// ZaehleTitelBestand zählt die physisch vorhandenen (nicht ausgesonderten) Exemplare eines
-// Titels. Eine Klassensatz-Reservierung über diese Zahl hinaus ist grundsätzlich
-// unerfüllbar (die Bibliothek besitzt die Bücher schlicht nicht) und bliebe als
-// unlösbare Aufgabe im Dashboard hängen.
+// ZaehleTitelBestand zählt die vorhandenen (nicht ausgesonderten) Exemplare eines Titels. Eine
+// Reservierung über diese Zahl hinaus ließe sich nie erfüllen und bliebe als Aufgabe in der
+// Liste stehen.
 func (a *pgReservierungsAbfragen) ZaehleTitelBestand(ctx context.Context, titelID string) (int, error) {
 	var anzahl int
 	err := a.db.QueryRow(ctx, `
@@ -102,11 +96,13 @@ func (a *pgReservierungsAbfragen) ZaehleTitelBestand(ctx context.Context, titelI
 	return anzahl, err
 }
 
+// LegeAn legt eine Reservierung an; der zweite Wert ist false, wenn dieselbe Anfrage schon
+// angelegt war.
 func (a *pgReservierungsAbfragen) LegeAn(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (string, bool, error) {
-	// Doppelklick-Schutz (Migration 076): Mit demselben idempotenz_schluessel läuft der
-	// zweite INSERT am partiellen Unique-Index auf und DO NOTHING liefert keine Zeile —
-	// dann geben wir die bereits angelegte Reservierung zurück (No-op, keine zweite Mail).
-	// Ohne Schlüssel (NULL) kollidiert nichts, jede Anfrage legt regulär an.
+	// Schutz vor dem Doppelklick: Mit demselben idempotenz_schluessel läuft das zweite INSERT
+	// auf den partiellen Unique-Index, DO NOTHING liefert keine Zeile, und zurück geht die
+	// schon angelegte Reservierung (keine zweite Mail). Ohne Schlüssel (NULL) kollidiert
+	// nichts.
 	var id string
 	err := a.db.QueryRow(ctx, `
 		INSERT INTO klassensatz_reservierungen
@@ -119,7 +115,7 @@ func (a *pgReservierungsAbfragen) LegeAn(ctx context.Context, titelID, klasse st
 		return id, true, nil
 	}
 	if errors.Is(err, pgx.ErrNoRows) && idempotenzSchluessel != nil {
-		// Konflikt: dieselbe Anfrage lief schon durch — bestehende ID zurückgeben.
+		// Dieselbe Anfrage lief schon durch: die ID der bestehenden Reservierung liefern.
 		errBestehend := a.db.QueryRow(ctx,
 			`SELECT id FROM klassensatz_reservierungen WHERE idempotenz_schluessel = $1`,
 			*idempotenzSchluessel).Scan(&id)
@@ -128,17 +124,15 @@ func (a *pgReservierungsAbfragen) LegeAn(ctx context.Context, titelID, klasse st
 	return "", false, err
 }
 
+// LadeAlle liefert alle Reservierungen: die offenen in der Reihenfolge der Warteschlange (die
+// älteste zuerst), dahinter die erledigten, die neuesten zuerst.
 func (a *pgReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung, error) {
-	// Offene Reservierungen in WARTESCHLANGEN-Reihenfolge (älteste zuerst) — wer
-	// zuerst reserviert hat, ist zuerst dran; erledigte dahinter, neueste zuerst.
-	// verfuegbar zählt wie der OPAC (Paarung!): ausleihbar, nicht ausgesondert,
-	// keine offene Ausleihe.
+	// Verfuegbar zählt wie der Katalog: ausleihbar, nicht ausgesondert, keine offene Ausleihe.
 	//
-	// Die Zählung steht als LATERAL-Join, nicht in der SELECT-Liste: So kann Postgres sie je
+	// Die Zählung steht als LATERAL-Join und nicht in der SELECT-Liste: So kann Postgres sie je
 	// Titel zwischenspeichern (Memoize), und mehrere Reservierungen desselben Titels zählen
-	// einmal. Eine Unterabfrage in der SELECT-Liste läuft je Zeile. Gemessen am 30.09.2026
-	// (PR #694) an 2.000 Reservierungen über 252 Titel: 98 ms → 17 ms, 2.000 → 252 Zählungen.
-	// Ein N+1 war es nie — es bleibt eine Abfrage.
+	// einmal. Gemessen an 2.000 Reservierungen über 252 Titel: 17 ms statt 98 ms, 252 statt
+	// 2.000 Zählungen.
 	rows, err := a.db.Query(ctx, `
 		SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,''),
 		       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am,
@@ -169,7 +163,7 @@ func (a *pgReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung,
 	for rows.Next() {
 		var r Reservierung
 		var t time.Time
-		var erledigtAm *time.Time // NULL = vor Migration 089 abgeschlossen
+		var erledigtAm *time.Time // NULL bei alten Reservierungen ohne Zeitpunkt
 		if err := rows.Scan(
 			&r.ID, &r.TitelID, &r.TitelName, &r.CoverURL,
 			&r.Klasse, &r.Anzahl, &r.Notiz, &r.Erledigt, &t, &r.AngefordertVon, &r.Verfuegbar,
@@ -189,10 +183,10 @@ func (a *pgReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung,
 	return reservierungen, nil
 }
 
-// LadeOffene — die Warteschlange aus Sicht der Lehrkräfte.
+// LadeOffene liefert die Warteschlange, wie die Lehrkräfte sie sehen.
 func (a *pgReservierungsAbfragen) LadeOffene(ctx context.Context) ([]OffeneReservierung, error) {
-	// LEFT JOIN, nicht INNER: Ein gelöschter Titel darf die Warteschlange der anderen
-	// nicht verschwinden lassen — dann steht dort eben ein leerer Name.
+	// Mit LEFT JOIN: Ein gelöschter Titel nimmt seine Reservierung nicht aus der Warteschlange
+	// der anderen; dort steht dann ein leerer Name.
 	rows, err := a.db.Query(ctx, `
 		SELECT k.titel_id, COALESCE(t.titel, ''), k.klasse, k.anzahl, k.erstellt_am
 		FROM klassensatz_reservierungen k
@@ -218,10 +212,9 @@ func (a *pgReservierungsAbfragen) LadeOffene(ctx context.Context) ([]OffeneReser
 	return offene, rows.Err()
 }
 
-// EigeneReservierung ist die Portal-Sicht einer Lehrkraft auf die EIGENEN Reservierungen —
-// offene und kürzlich abgeschlossene, samt Antwort der Bibliothek. Bis zum 31.08.2026
-// verschwand eine Reservierung mit dem Abschluss aus dem Portal, und die Notiz der
-// Bibliothek existierte nur in der Bereit-Mail; scheiterte die, war sie unsichtbar.
+// EigeneReservierung ist die Sicht einer Lehrkraft im Portal auf ihre Reservierungen: offene
+// und kürzlich abgeschlossene, mit der Antwort der Bibliothek. So bleibt die Antwort sichtbar,
+// wenn die Mail scheitert.
 type EigeneReservierung struct {
 	ID            string `json:"id"`
 	TitelID       string `json:"titel_id"`
@@ -231,14 +224,13 @@ type EigeneReservierung struct {
 	Notiz         string `json:"notiz,omitempty"`
 	Erledigt      bool   `json:"erledigt"`
 	ErledigtNotiz string `json:"erledigt_notiz,omitempty"`
-	ErledigtAm    string `json:"erledigt_am,omitempty"` // leer = vor Migration 089 abgeschlossen
+	ErledigtAm    string `json:"erledigt_am,omitempty"` // leer bei alten Reservierungen ohne Zeitpunkt
 	ErstelltAm    string `json:"erstellt_am"`
 }
 
-// LadeEigene — eigene offene plus die in den letzten 60 Tagen
-// abgeschlossenen (das Portal ist kein Archiv, wie ListEigene beim Anliegen; Altfälle
-// ohne erledigt_am bleiben draußen, ihr Zeitpunkt ist nicht rekonstruierbar).
-// Offene zuerst, dann neueste zuerst, höchstens 50.
+// LadeEigene liefert die eigenen offenen Reservierungen und die in den letzten 60 Tagen
+// abgeschlossenen; das Portal ist kein Archiv. Alte Reservierungen ohne erledigt_am bleiben
+// draußen. Offene zuerst, dann die neuesten, höchstens 50.
 func (a *pgReservierungsAbfragen) LadeEigene(ctx context.Context, benutzerID string) ([]EigeneReservierung, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT k.id, k.titel_id, COALESCE(t.titel, ''), k.klasse, k.anzahl,
@@ -272,25 +264,28 @@ func (a *pgReservierungsAbfragen) LadeEigene(ctx context.Context, benutzerID str
 	return meine, rows.Err()
 }
 
+// ZaehleOffene zählt die offenen Reservierungen.
 func (a *pgReservierungsAbfragen) ZaehleOffene(ctx context.Context) (int, error) {
 	var anzahl int
 	err := a.db.QueryRow(ctx, `SELECT COUNT(*) FROM klassensatz_reservierungen WHERE erledigt = false`).Scan(&anzahl)
 	return anzahl, err
 }
 
-// ErledigteReservierung sind die Angaben fuer die Bereit-Mail nach dem Abschliessen.
+// ErledigteReservierung sind die Angaben für die Mail an die Lehrkraft nach dem Abschluss.
 type ErledigteReservierung struct {
 	TitelName      string
 	Klasse         string
 	Anzahl         int
 	Notiz          string  // was die Lehrkraft beim Reservieren schrieb ('' wenn nichts)
-	ErledigtNotiz  string  // Antwort der Bibliothek beim Abschliessen ('' wenn nichts)
-	AnfragendeMail *string // nil: ohne Konto angefragt oder Konto geloescht
+	ErledigtNotiz  string  // Antwort der Bibliothek beim Abschließen ('' wenn nichts)
+	AnfragendeMail *string // nil: ohne Konto angefragt oder Konto gelöscht
 }
 
+// Erledige schließt eine offene Reservierung ab und liefert die Angaben für die Mail; nil ohne
+// Fehler heißt, sie war nicht mehr offen.
 func (a *pgReservierungsAbfragen) Erledige(ctx context.Context, id, notiz string) (*ErledigteReservierung, error) {
-	// erledigt = false in der WHERE-Klausel: Der zweite Klick (zweiter Admin) darf
-	// weder doppelt abschliessen noch eine zweite Bereit-Mail ausloesen.
+	// Die Bedingung erledigt = false: Ein zweiter Klick schließt nicht doppelt ab und löst
+	// keine zweite Mail aus.
 	row := a.db.QueryRow(ctx, `
 		WITH abgeschlossen AS (
 			UPDATE klassensatz_reservierungen

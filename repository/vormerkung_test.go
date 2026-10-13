@@ -8,11 +8,9 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// TestVormerkungLegeAn_LehntAbWennTitelSchonAusgeliehen sichert Bug 4 (Vormerkungs-
-// Monopolisierung) ab: Hat der Schüler ein Exemplar dieses Titels bereits selbst
-// ausgeliehen, darf er ihn nicht zusätzlich vormerken — sonst könnte er das Buch bei der
-// Rückgabe sofort wieder für sich abgreifen. Create muss ErrTitelBereitsAusgeliehen liefern
-// und das INSERT unterlassen.
+// Hat der Schüler ein Exemplar des Titels selbst ausgeliehen, merkt er ihn nicht zusätzlich
+// vor; sonst bekäme er das Buch bei der Rückgabe sofort wieder. LegeAn liefert
+// ErrTitelBereitsAusgeliehen und unterlässt das INSERT.
 func TestVormerkungLegeAn_LehntAbWennTitelSchonAusgeliehen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -29,7 +27,7 @@ func TestVormerkungLegeAn_LehntAbWennTitelSchonAusgeliehen(t *testing.T) {
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs("titel-1", "schueler-1").
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
-	// KEIN ExpectQuery("INSERT …"): Bei bestehender Ausleihe darf keine Vormerkung entstehen.
+	// Kein ExpectQuery("INSERT …"): Bei bestehender Ausleihe entsteht keine Vormerkung.
 
 	_, err = repo.LegeAn(context.Background(), "titel-1", "Notiz", "schueler-1")
 	if !errors.Is(err, ErrTitelBereitsAusgeliehen) {
@@ -40,8 +38,7 @@ func TestVormerkungLegeAn_LehntAbWennTitelSchonAusgeliehen(t *testing.T) {
 	}
 }
 
-// TestVormerkungLegeAn_ErlaubtWennNichtAusgeliehen: Der Normalfall — der Schüler hat den Titel
-// nicht ausgeliehen, die Vormerkung wird angelegt.
+// Der Normalfall: Der Schüler hat den Titel nicht ausgeliehen, die Vormerkung wird angelegt.
 func TestVormerkungLegeAn_ErlaubtWennNichtAusgeliehen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -74,8 +71,7 @@ func TestVormerkungLegeAn_ErlaubtWennNichtAusgeliehen(t *testing.T) {
 	}
 }
 
-// TestVormerkungLegeAn_OhneSchuelerKeinePruefung: Ohne Schüler (anonyme Vormerkung) gibt es
-// keinen Ausleih-Check — es wird direkt eingefügt.
+// Ohne Schüler gibt es keine Prüfung auf eine eigene Ausleihe; es wird direkt eingefügt.
 func TestVormerkungLegeAn_OhneSchuelerKeinePruefung(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -85,7 +81,7 @@ func TestVormerkungLegeAn_OhneSchuelerKeinePruefung(t *testing.T) {
 
 	repo := NewVormerkungsAbfragen(mock)
 
-	// KEIN EXISTS-Check erwartet, direkt das INSERT.
+	// Keine Prüfung mit EXISTS erwartet, direkt das INSERT.
 	mock.ExpectQuery("INSERT INTO vormerkungen").
 		WithArgs("titel-1", "", "").
 		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("vorm-2"))
@@ -102,11 +98,10 @@ func TestVormerkungLegeAn_OhneSchuelerKeinePruefung(t *testing.T) {
 	}
 }
 
-// TestVormerkungLadeListe_VerlangtFilter belegt die Datenminimierung (IDOR-Sweep 19.08.2026):
-// Ein List-Aufruf ohne Titel- UND ohne Schüler-Filter lieferte früher den GESAMTEN
-// Vormerkungsbestand mit allen Schülernamen — ein Voll-Abzug, den die Oberfläche nie
-// anfordert und der im Helfer-Opt-in-Fall (manage_vormerkungen) zum PII-Dump würde.
-// Ohne Scope muss List ErrVormerkungFilterFehlt liefern und KEINE Query absetzen.
+// LadeListe ohne Titel und ohne Schüler lieferte alle Vormerkungen mit den Namen der Schüler:
+// einen Abzug, den die Oberfläche nie anfordert und der Personendaten preisgäbe, sobald das
+// Recht manage_vormerkungen an eine Helfer-Rolle vergeben ist. Ohne Filter liefert LadeListe
+// ErrVormerkungFilterFehlt und fragt die Datenbank nicht.
 func TestVormerkungLadeListe_VerlangtFilter(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -115,7 +110,7 @@ func TestVormerkungLadeListe_VerlangtFilter(t *testing.T) {
 	defer mock.Close()
 	repo := NewVormerkungsAbfragen(mock)
 
-	// Keine ExpectQuery: Es darf gar keine Datenbankabfrage stattfinden.
+	// Kein ExpectQuery: Es findet keine Abfrage statt.
 	_, err = repo.LadeListe(context.Background(), "", "")
 	if !errors.Is(err, ErrVormerkungFilterFehlt) {
 		t.Fatalf("erwartet ErrVormerkungFilterFehlt ohne Filter, war: %v", err)

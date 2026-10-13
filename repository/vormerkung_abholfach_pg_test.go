@@ -5,20 +5,18 @@ import (
 	"testing"
 )
 
-// Eine abholbereite Vormerkung hält ein bestimmtes Exemplar im Abholfach. Verschwindet
-// dieses Exemplar aus dem Umlauf, muss die Vormerkung zurück auf „wartend" — sonst:
-//   - hält der Verfall-Lauf sie nach drei Tagen für „nicht abgeholt" und löscht sie; das
-//     Kind verliert seinen Platz in der Warteschlange, obwohl es nichts versäumt hat;
-//   - lehnt bedieneNaechstenWartenden das ausgesonderte Exemplar ab, der Nächste wird nie
+// Eine abholbereite Vormerkung hält ein bestimmtes Exemplar im Abholfach. Verschwindet dieses
+// Exemplar aus dem Umlauf, geht die Vormerkung zurück auf „wartend"; sonst
+//
+//   - hielte der Verfall-Lauf sie nach drei Tagen für „nicht abgeholt" und löschte sie, und das
+//     Kind verlöre seinen Platz in der Warteschlange, obwohl es nichts versäumt hat;
+//   - lehnte bedieneNaechstenWartenden das ausgesonderte Exemplar ab, und der Nächste würde nie
 //     bedient.
 //
-// Bis zum 10.09.2026 tat das nur EINE von sieben Türen (SchadensAbfragen.Melde). Inventur-Abschluss
-// (das Abholfach steht nicht im Regal und wird nicht gescannt → VERLUST), Status-Editor,
-// Aussondern, Ausbuchen, Bestandskorrektur, Defekt-Markierung und das Löschen von
-// Fehlbeständen ließen sie stehen (Bestands-Durchgang, Bugklasse „Ausgang ohne
-// Folgeschritt"). Die Regel liegt seitdem in der Datenbank (Migration 112): Dieser Test
-// prüft sie deshalb an den drei ROHEN Übergängen, nicht an jeder Tür — und zusätzlich an
-// einem echten Pfad.
+// Die Regel liegt in der Datenbank und nicht an jeder der sieben Türen, über die ein Exemplar
+// aus dem Umlauf geht (Schaden melden, Abschluss der Inventur, Status ändern, Aussondern,
+// Ausbuchen, Bestandskorrektur, Löschen von Fehlbeständen). Der Test prüft sie deshalb an den
+// drei Übergängen der Zeile selbst und zusätzlich an einem der Wege.
 func TestAbholbereit_FaelltZurueckWennDasExemplarVerschwindet(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -71,11 +69,9 @@ func TestAbholbereit_FaelltZurueckWennDasExemplarVerschwindet(t *testing.T) {
 	}
 }
 
-// Wird eine abholbereite Vormerkung gelöscht, rückt der Nächste nach — dieselbe
-// Invariante wie beim Verfall-Lauf und bei der DSGVO-Tilgung (vormerkung_nachruecken.go).
-// Bis zum 10.09.2026 ließ das manuelle Löschen (Knopf auch bei abholbereiten Einträgen)
-// den Nächsten für immer „wartend", und das Exemplar galt als frei: Jeder Dritte konnte es
-// ausleihen.
+// Wird eine abholbereite Vormerkung gelöscht, rückt der Nächste nach, wie beim Verfall-Lauf und
+// bei der Tilgung der Spuren (vormerkung_nachruecken.go). Sonst bliebe er für immer „wartend",
+// und das Exemplar gälte als frei: Jeder Dritte könnte es ausleihen.
 func TestVormerkungLoeschen_AbholbereitRuecktNach(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
