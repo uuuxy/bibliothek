@@ -10,8 +10,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// KlassensatzReservierung represents a pending class-set reservation.
-type KlassensatzReservierung struct {
+// Reservierung represents a pending class-set reservation.
+type Reservierung struct {
 	ID             string  `json:"id"`
 	TitelID        string  `json:"titel_id"`
 	TitelName      string  `json:"titel_name"`
@@ -34,7 +34,7 @@ type KlassensatzReservierung struct {
 	Verfuegbar int `json:"verfuegbar"`
 }
 
-// KlassensatzOffen ist die schmale Sicht für das Kollegiums-Portal: Wer vor der
+// OffeneReservierung ist die schmale Sicht für das Kollegiums-Portal: Wer vor der
 // eigenen Reservierung steht (Titel, Klasse, Menge) — bewusst OHNE Personendaten
 // des Anfordernden.
 //
@@ -42,7 +42,7 @@ type KlassensatzReservierung struct {
 // einem Suchtreffer fiel das nicht auf (das Buch steht ja daneben); auf der Startfläche
 // des Portals stand dann „Klasse 8B · 28 Stück" ohne jeden Hinweis, worum es geht. Der
 // Titel ist keine Person und steht ohnehin im öffentlichen Katalog.
-type KlassensatzOffen struct {
+type OffeneReservierung struct {
 	TitelID    string `json:"titel_id"`
 	Titel      string `json:"titel"`
 	Klasse     string `json:"klasse"`
@@ -50,85 +50,85 @@ type KlassensatzOffen struct {
 	ErstelltAm string `json:"erstellt_am"`
 }
 
-// ReservationRepository kapselt die Datenbankzugriffe für Reservierungen.
-type ReservationRepository interface {
-	CheckTitleExists(ctx context.Context, titelID string) (bool, error)
-	// CountTitleStock liefert die Zahl physisch vorhandener (nicht ausgesonderter)
+// ReservierungsAbfragen kapselt die Datenbankzugriffe für Reservierungen.
+type ReservierungsAbfragen interface {
+	IstTitelVorhanden(ctx context.Context, titelID string) (bool, error)
+	// ZaehleTitelBestand liefert die Zahl physisch vorhandener (nicht ausgesonderter)
 	// Exemplare eines Titels — die Obergrenze für eine Klassensatz-Reservierung.
-	CountTitleStock(ctx context.Context, titelID string) (int, error)
-	CreateKlassensatzReservierung(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (id string, neu bool, err error)
-	GetKlassensatzReservierungen(ctx context.Context) ([]KlassensatzReservierung, error)
-	// OffeneKlassensatzReservierungen liefert die offenen Reservierungen in
+	ZaehleTitelBestand(ctx context.Context, titelID string) (int, error)
+	LegeAn(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (id string, neu bool, err error)
+	LadeAlle(ctx context.Context) ([]Reservierung, error)
+	// LadeOffene liefert die offenen Reservierungen in
 	// Warteschlangen-Reihenfolge (älteste zuerst) — die Sicht für das Portal.
-	OffeneKlassensatzReservierungen(ctx context.Context) ([]KlassensatzOffen, error)
-	GetKlassensatzReservierungenAnzahl(ctx context.Context) (int, error)
-	// ErledigeKlassensatzReservierung schliesst eine offene Reservierung ab und
+	LadeOffene(ctx context.Context) ([]OffeneReservierung, error)
+	ZaehleOffene(ctx context.Context) (int, error)
+	// Erledige schliesst eine offene Reservierung ab und
 	// liefert die Angaben fuer die Bereit-Mail an die anfragende Lehrkraft.
 	// notiz ist die Antwort der Bibliothek (landet in der Mail, Migration 088).
 	// nil ohne Fehler: war nicht (mehr) offen.
-	ErledigeKlassensatzReservierung(ctx context.Context, id, notiz string) (*KlassensatzErledigt, error)
-	// MeineKlassensatzReservierungen liefert die EIGENEN Reservierungen einer Lehrkraft
+	Erledige(ctx context.Context, id, notiz string) (*ErledigteReservierung, error)
+	// LadeEigene liefert die EIGENEN Reservierungen einer Lehrkraft
 	// fuers Portal — offene plus kuerzlich abgeschlossene samt Bibliotheks-Notiz (088/089).
-	MeineKlassensatzReservierungen(ctx context.Context, benutzerID string) ([]KlassensatzMeine, error)
+	LadeEigene(ctx context.Context, benutzerID string) ([]EigeneReservierung, error)
 }
 
-type pgReservationRepository struct {
+type pgReservierungsAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewReservationRepository bindet die Vormerkungen an einen Verbindungspool. Gibt die
+// NewReservierungsAbfragen bindet die Vormerkungen an einen Verbindungspool. Gibt die
 // Schnittstelle zurück, nicht den konkreten Typ — die Aufrufer sollen gegen den Vertrag
 // arbeiten, damit Tests ihn ersetzen können.
-func NewReservationRepository(pool db.PgxPoolIface) ReservationRepository {
-	return &pgReservationRepository{db: pool}
+func NewReservierungsAbfragen(pool db.PgxPoolIface) ReservierungsAbfragen {
+	return &pgReservierungsAbfragen{db: pool}
 }
 
-func (r *pgReservationRepository) CheckTitleExists(ctx context.Context, titelID string) (bool, error) {
-	var exists bool
-	err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM buecher_titel WHERE id = $1)`, titelID).Scan(&exists)
-	return exists, err
+func (a *pgReservierungsAbfragen) IstTitelVorhanden(ctx context.Context, titelID string) (bool, error) {
+	var vorhanden bool
+	err := a.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM buecher_titel WHERE id = $1)`, titelID).Scan(&vorhanden)
+	return vorhanden, err
 }
 
-// CountTitleStock zählt die physisch vorhandenen (nicht ausgesonderten) Exemplare eines
+// ZaehleTitelBestand zählt die physisch vorhandenen (nicht ausgesonderten) Exemplare eines
 // Titels. Eine Klassensatz-Reservierung über diese Zahl hinaus ist grundsätzlich
 // unerfüllbar (die Bibliothek besitzt die Bücher schlicht nicht) und bliebe als
 // unlösbare Aufgabe im Dashboard hängen.
-func (r *pgReservationRepository) CountTitleStock(ctx context.Context, titelID string) (int, error) {
-	var count int
-	err := r.db.QueryRow(ctx, `
+func (a *pgReservierungsAbfragen) ZaehleTitelBestand(ctx context.Context, titelID string) (int, error) {
+	var anzahl int
+	err := a.db.QueryRow(ctx, `
 		SELECT COUNT(*) FROM buecher_exemplare
 		WHERE titel_id = $1 AND ist_ausgesondert = false
-	`, titelID).Scan(&count)
-	return count, err
+	`, titelID).Scan(&anzahl)
+	return anzahl, err
 }
 
-func (r *pgReservationRepository) CreateKlassensatzReservierung(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (string, bool, error) {
+func (a *pgReservierungsAbfragen) LegeAn(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (string, bool, error) {
 	// Doppelklick-Schutz (Migration 076): Mit demselben idempotenz_schluessel läuft der
 	// zweite INSERT am partiellen Unique-Index auf und DO NOTHING liefert keine Zeile —
 	// dann geben wir die bereits angelegte Reservierung zurück (No-op, keine zweite Mail).
 	// Ohne Schlüssel (NULL) kollidiert nichts, jede Anfrage legt regulär an.
-	var newID string
-	err := r.db.QueryRow(ctx, `
+	var id string
+	err := a.db.QueryRow(ctx, `
 		INSERT INTO klassensatz_reservierungen
 			(titel_id, klasse, anzahl, notiz, angefordert_von, idempotenz_schluessel)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (idempotenz_schluessel) WHERE idempotenz_schluessel IS NOT NULL DO NOTHING
 		RETURNING id
-	`, titelID, klasse, anzahl, notiz, angefordertVon, idempotenzSchluessel).Scan(&newID)
+	`, titelID, klasse, anzahl, notiz, angefordertVon, idempotenzSchluessel).Scan(&id)
 	if err == nil {
-		return newID, true, nil
+		return id, true, nil
 	}
 	if errors.Is(err, pgx.ErrNoRows) && idempotenzSchluessel != nil {
 		// Konflikt: dieselbe Anfrage lief schon durch — bestehende ID zurückgeben.
-		errBestehend := r.db.QueryRow(ctx,
+		errBestehend := a.db.QueryRow(ctx,
 			`SELECT id FROM klassensatz_reservierungen WHERE idempotenz_schluessel = $1`,
-			*idempotenzSchluessel).Scan(&newID)
-		return newID, false, errBestehend
+			*idempotenzSchluessel).Scan(&id)
+		return id, false, errBestehend
 	}
 	return "", false, err
 }
 
-func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Context) ([]KlassensatzReservierung, error) {
+func (a *pgReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung, error) {
 	// Offene Reservierungen in WARTESCHLANGEN-Reihenfolge (älteste zuerst) — wer
 	// zuerst reserviert hat, ist zuerst dran; erledigte dahinter, neueste zuerst.
 	// verfuegbar zählt wie der OPAC (Paarung!): ausleihbar, nicht ausgesondert,
@@ -139,7 +139,7 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 	// einmal. Eine Unterabfrage in der SELECT-Liste läuft je Zeile. Gemessen am 30.09.2026
 	// (PR #694) an 2.000 Reservierungen über 252 Titel: 98 ms → 17 ms, 2.000 → 252 Zählungen.
 	// Ein N+1 war es nie — es bleibt eine Abfrage.
-	rows, err := r.db.Query(ctx, `
+	rows, err := a.db.Query(ctx, `
 		SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,''),
 		       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am,
 		       CASE WHEN b.id IS NULL THEN NULL
@@ -165,35 +165,35 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 	}
 	defer rows.Close()
 
-	var result []KlassensatzReservierung
+	var reservierungen []Reservierung
 	for rows.Next() {
-		var res KlassensatzReservierung
+		var r Reservierung
 		var t time.Time
 		var erledigtAm *time.Time // NULL = vor Migration 089 abgeschlossen
 		if err := rows.Scan(
-			&res.ID, &res.TitelID, &res.TitelName, &res.CoverURL,
-			&res.Klasse, &res.Anzahl, &res.Notiz, &res.Erledigt, &t, &res.AngefordertVon, &res.Verfuegbar,
-			&res.ErledigtNotiz, &erledigtAm,
+			&r.ID, &r.TitelID, &r.TitelName, &r.CoverURL,
+			&r.Klasse, &r.Anzahl, &r.Notiz, &r.Erledigt, &t, &r.AngefordertVon, &r.Verfuegbar,
+			&r.ErledigtNotiz, &erledigtAm,
 		); err != nil {
 			continue
 		}
-		res.ErstelltAm = t.Format(dateFormatDE)
+		r.ErstelltAm = t.Format(dateFormatDE)
 		if erledigtAm != nil {
-			res.ErledigtAm = erledigtAm.Format(dateFormatDE)
+			r.ErledigtAm = erledigtAm.Format(dateFormatDE)
 		}
-		result = append(result, res)
+		reservierungen = append(reservierungen, r)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return result, nil
+	return reservierungen, nil
 }
 
-// OffeneKlassensatzReservierungen — die Warteschlange aus Sicht der Lehrkräfte.
-func (r *pgReservationRepository) OffeneKlassensatzReservierungen(ctx context.Context) ([]KlassensatzOffen, error) {
+// LadeOffene — die Warteschlange aus Sicht der Lehrkräfte.
+func (a *pgReservierungsAbfragen) LadeOffene(ctx context.Context) ([]OffeneReservierung, error) {
 	// LEFT JOIN, nicht INNER: Ein gelöschter Titel darf die Warteschlange der anderen
 	// nicht verschwinden lassen — dann steht dort eben ein leerer Name.
-	rows, err := r.db.Query(ctx, `
+	rows, err := a.db.Query(ctx, `
 		SELECT k.titel_id, COALESCE(t.titel, ''), k.klasse, k.anzahl, k.erstellt_am
 		FROM klassensatz_reservierungen k
 		LEFT JOIN buecher_titel t ON t.id = k.titel_id
@@ -205,9 +205,9 @@ func (r *pgReservationRepository) OffeneKlassensatzReservierungen(ctx context.Co
 	}
 	defer rows.Close()
 
-	offene := []KlassensatzOffen{}
+	offene := []OffeneReservierung{}
 	for rows.Next() {
-		var o KlassensatzOffen
+		var o OffeneReservierung
 		var t time.Time
 		if err := rows.Scan(&o.TitelID, &o.Titel, &o.Klasse, &o.Anzahl, &t); err != nil {
 			return nil, err
@@ -218,11 +218,11 @@ func (r *pgReservationRepository) OffeneKlassensatzReservierungen(ctx context.Co
 	return offene, rows.Err()
 }
 
-// KlassensatzMeine ist die Portal-Sicht einer Lehrkraft auf die EIGENEN Reservierungen —
+// EigeneReservierung ist die Portal-Sicht einer Lehrkraft auf die EIGENEN Reservierungen —
 // offene und kürzlich abgeschlossene, samt Antwort der Bibliothek. Bis zum 31.08.2026
 // verschwand eine Reservierung mit dem Abschluss aus dem Portal, und die Notiz der
 // Bibliothek existierte nur in der Bereit-Mail; scheiterte die, war sie unsichtbar.
-type KlassensatzMeine struct {
+type EigeneReservierung struct {
 	ID            string `json:"id"`
 	TitelID       string `json:"titel_id"`
 	Titel         string `json:"titel"`
@@ -235,12 +235,12 @@ type KlassensatzMeine struct {
 	ErstelltAm    string `json:"erstellt_am"`
 }
 
-// MeineKlassensatzReservierungen — eigene offene plus die in den letzten 60 Tagen
+// LadeEigene — eigene offene plus die in den letzten 60 Tagen
 // abgeschlossenen (das Portal ist kein Archiv, wie ListEigene beim Anliegen; Altfälle
 // ohne erledigt_am bleiben draußen, ihr Zeitpunkt ist nicht rekonstruierbar).
 // Offene zuerst, dann neueste zuerst, höchstens 50.
-func (r *pgReservationRepository) MeineKlassensatzReservierungen(ctx context.Context, benutzerID string) ([]KlassensatzMeine, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *pgReservierungsAbfragen) LadeEigene(ctx context.Context, benutzerID string) ([]EigeneReservierung, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT k.id, k.titel_id, COALESCE(t.titel, ''), k.klasse, k.anzahl,
 		       COALESCE(k.notiz, ''), k.erledigt, k.erledigt_notiz, k.erledigt_am, k.erstellt_am
 		FROM klassensatz_reservierungen k
@@ -254,9 +254,9 @@ func (r *pgReservationRepository) MeineKlassensatzReservierungen(ctx context.Con
 	}
 	defer rows.Close()
 
-	meine := []KlassensatzMeine{}
+	meine := []EigeneReservierung{}
 	for rows.Next() {
-		var m KlassensatzMeine
+		var m EigeneReservierung
 		var erstellt time.Time
 		var erledigtAm *time.Time
 		if err := rows.Scan(&m.ID, &m.TitelID, &m.Titel, &m.Klasse, &m.Anzahl,
@@ -272,14 +272,14 @@ func (r *pgReservationRepository) MeineKlassensatzReservierungen(ctx context.Con
 	return meine, rows.Err()
 }
 
-func (r *pgReservationRepository) GetKlassensatzReservierungenAnzahl(ctx context.Context) (int, error) {
-	var count int
-	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM klassensatz_reservierungen WHERE erledigt = false`).Scan(&count)
-	return count, err
+func (a *pgReservierungsAbfragen) ZaehleOffene(ctx context.Context) (int, error) {
+	var anzahl int
+	err := a.db.QueryRow(ctx, `SELECT COUNT(*) FROM klassensatz_reservierungen WHERE erledigt = false`).Scan(&anzahl)
+	return anzahl, err
 }
 
-// KlassensatzErledigt sind die Angaben fuer die Bereit-Mail nach dem Abschliessen.
-type KlassensatzErledigt struct {
+// ErledigteReservierung sind die Angaben fuer die Bereit-Mail nach dem Abschliessen.
+type ErledigteReservierung struct {
 	TitelName      string
 	Klasse         string
 	Anzahl         int
@@ -288,10 +288,10 @@ type KlassensatzErledigt struct {
 	AnfragendeMail *string // nil: ohne Konto angefragt oder Konto geloescht
 }
 
-func (r *pgReservationRepository) ErledigeKlassensatzReservierung(ctx context.Context, id, notiz string) (*KlassensatzErledigt, error) {
+func (a *pgReservierungsAbfragen) Erledige(ctx context.Context, id, notiz string) (*ErledigteReservierung, error) {
 	// erledigt = false in der WHERE-Klausel: Der zweite Klick (zweiter Admin) darf
 	// weder doppelt abschliessen noch eine zweite Bereit-Mail ausloesen.
-	row := r.db.QueryRow(ctx, `
+	row := a.db.QueryRow(ctx, `
 		WITH abgeschlossen AS (
 			UPDATE klassensatz_reservierungen
 			SET erledigt = true, erledigt_notiz = $2, erledigt_am = CURRENT_TIMESTAMP
@@ -304,7 +304,7 @@ func (r *pgReservationRepository) ErledigeKlassensatzReservierung(ctx context.Co
 		LEFT JOIN benutzer b ON b.id = a.angefordert_von
 	`, id, notiz)
 
-	var e KlassensatzErledigt
+	var e ErledigteReservierung
 	if err := row.Scan(&e.TitelName, &e.Klasse, &e.Anzahl, &e.Notiz, &e.ErledigtNotiz, &e.AnfragendeMail); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil

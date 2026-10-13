@@ -22,16 +22,16 @@ import (
 // vor der Prüfung der Fall.
 
 type vormerkungRepoZaehler struct {
-	repository.VormerkungRepository
+	repository.VormerkungsAbfragen
 	gerufen bool
 }
 
-func (v *vormerkungRepoZaehler) List(context.Context, string, string) ([]repository.Vormerkung, error) {
+func (v *vormerkungRepoZaehler) LadeListe(context.Context, string, string) ([]repository.Vormerkung, error) {
 	v.gerufen = true
 	return nil, nil
 }
 
-func (v *vormerkungRepoZaehler) Create(context.Context, string, string, string) (string, error) {
+func (v *vormerkungRepoZaehler) LegeAn(context.Context, string, string, string) (string, error) {
 	v.gerufen = true
 	return "neu", nil
 }

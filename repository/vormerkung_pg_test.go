@@ -23,7 +23,7 @@ func titelIDVonExemplar(t *testing.T, pool *pgxpool.Pool, exID string) string {
 // in Create muss eine aktive Eigen-Ausleihe am selben TITEL korrekt erkennen (ausleihen hängt
 // am Exemplar, nicht am Titel). Nur ein echter DB-Test prüft, dass Join und titel_id-Filter
 // tatsächlich greifen — pgxmock spielt nur nachgestellte Antworten zurück.
-func TestVormerkungCreate_BlocksSelfBorrowedTitle_PG(t *testing.T) {
+func TestVormerkungLegeAn_SperrtSelbstAusgeliehenenTitel_PG(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -34,43 +34,43 @@ func TestVormerkungCreate_BlocksSelfBorrowedTitle_PG(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, ex[0], schueler, bearbeiter)
 
-	repo := NewVormerkungRepository(pool)
+	repo := NewVormerkungsAbfragen(pool)
 
 	ex2 := seedSignaturMitExemplaren(t, pool, "Vorm2", 1)
 	titel2 := titelIDVonExemplar(t, pool, ex2[0])
 	frisch := seedSchueler(t, pool, "V-3", "Zoe", "7a")
 
 	// (1) Solange die Eigen-Ausleihe offen ist, darf keine Vormerkung auf denselben Titel entstehen.
-	if _, err := repo.Create(ctx, titelID, "", schueler); !errors.Is(err, ErrTitelBereitsAusgeliehen) {
+	if _, err := repo.LegeAn(ctx, titelID, "", schueler); !errors.Is(err, ErrTitelBereitsAusgeliehen) {
 		t.Fatalf("aktive Eigen-Ausleihe: erwartet ErrTitelBereitsAusgeliehen, bekam %v", err)
 	}
 
 	// (2) Derselbe Schüler darf aber einen ANDEREN Titel vormerken (Prüft den titel_id Filter).
-	if _, err := repo.Create(ctx, titel2, "", schueler); err != nil {
+	if _, err := repo.LegeAn(ctx, titel2, "", schueler); err != nil {
 		t.Fatalf("Eigen-Ausleihe auf Titel 1 darf Vormerkung auf Titel 2 nicht blockieren: %v", err)
 	}
 
 	// (3) Ein ANDERER Schüler darf denselben Titel vormerken (Prüft den schueler_id Filter).
-	if _, err := repo.Create(ctx, titelID, "", frisch); err != nil {
+	if _, err := repo.LegeAn(ctx, titelID, "", frisch); err != nil {
 		t.Fatalf("Eigen-Ausleihe von Schüler A darf Vormerkung von Schüler B nicht blockieren: %v", err)
 	}
 
 	// (4) Nach der Rückgabe ist die Vormerkung auf den eigenen Titel wieder erlaubt.
 	returnLoan(t, pool, loan)
-	if _, err := repo.Create(ctx, titelID, "", schueler); err != nil {
+	if _, err := repo.LegeAn(ctx, titelID, "", schueler); err != nil {
 		t.Fatalf("nach Rückgabe muss Vormerkung möglich sein, bekam: %v", err)
 	}
 }
 
-// TestVerfalleAbgelaufeneVormerkungen belegt die Betreiber-Entscheidung (19.08.2026):
+// TestLasseAbgelaufeneVerfallen belegt die Betreiber-Entscheidung (19.08.2026):
 // Eine „abholbereit"-Reservierung, deren Abholfrist abgelaufen ist, wird gelöscht (der
 // No-Show verliert den Platz) und das Exemplar dem nächsten Wartenden zugeteilt — sofern
 // es noch frei ist. Ohne diesen Lauf blieb der No-Show für immer stecken.
-func TestVerfalleAbgelaufeneVormerkungen(t *testing.T) {
+func TestLasseAbgelaufeneVerfallen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewVormerkungRepository(pool)
+	repo := NewVormerkungsAbfragen(pool)
 
 	ex := seedSignaturMitExemplaren(t, pool, "Verfall", 1)
 	exID := ex[0]
@@ -92,7 +92,7 @@ func TestVerfalleAbgelaufeneVormerkungen(t *testing.T) {
 		t.Fatalf("Warte-Vormerkung: %v", err)
 	}
 
-	verfallen, neuBereit, err := repo.VerfalleAbgelaufeneVormerkungen(ctx)
+	verfallen, neuBereit, err := repo.LasseAbgelaufeneVerfallen(ctx)
 	if err != nil {
 		t.Fatalf("Verfall: %v", err)
 	}
@@ -120,14 +120,14 @@ func TestVerfalleAbgelaufeneVormerkungen(t *testing.T) {
 	}
 }
 
-// TestVerfalleAbgelaufeneVormerkungen_ExemplarWeg: Ist das freigewordene Exemplar
+// TestLasseAbgelaufeneVerfallen_ExemplarWeg: Ist das freigewordene Exemplar
 // zwischenzeitlich ausgeliehen, wird der No-Show trotzdem abgeräumt, der nächste aber
 // NICHT bedient (das Exemplar ist ja weg) — der reguläre Rückgabe-Pfad erledigt das später.
-func TestVerfalleAbgelaufeneVormerkungen_ExemplarWeg(t *testing.T) {
+func TestLasseAbgelaufeneVerfallen_ExemplarWeg(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewVormerkungRepository(pool)
+	repo := NewVormerkungsAbfragen(pool)
 
 	ex := seedSignaturMitExemplaren(t, pool, "VerfallWeg", 1)
 	exID := ex[0]
@@ -151,7 +151,7 @@ func TestVerfalleAbgelaufeneVormerkungen_ExemplarWeg(t *testing.T) {
 	// Das Exemplar ist inzwischen an einen Dritten ausgeliehen.
 	seedAusleihe(t, pool, exID, borger, bearbeiter)
 
-	verfallen, neuBereit, err := repo.VerfalleAbgelaufeneVormerkungen(ctx)
+	verfallen, neuBereit, err := repo.LasseAbgelaufeneVerfallen(ctx)
 	if err != nil {
 		t.Fatalf("Verfall: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestVerfalleAbgelaufeneVormerkungen_ExemplarWeg(t *testing.T) {
 // Vormerkung noch gilt (Bestands-Durchgang 10.09.2026).
 //
 // Anonyme Vormerkungen bleiben davon unberührt: NULL kollidiert in UNIQUE nicht mit NULL.
-func TestVormerkungCreate_ZweiteIstKonflikt_PG(t *testing.T) {
+func TestVormerkungLegeAn_ZweiteIstKonflikt_PG(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -184,22 +184,22 @@ func TestVormerkungCreate_ZweiteIstKonflikt_PG(t *testing.T) {
 	ex := seedSignaturMitExemplaren(t, pool, "VormDup", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
 	schueler := seedSchueler(t, pool, "V-DUP", "Ida", "7a")
-	repo := NewVormerkungRepository(pool)
+	repo := NewVormerkungsAbfragen(pool)
 
-	if _, err := repo.Create(ctx, titelID, "", schueler); err != nil {
+	if _, err := repo.LegeAn(ctx, titelID, "", schueler); err != nil {
 		t.Fatalf("erste Vormerkung: %v", err)
 	}
-	_, err := repo.Create(ctx, titelID, "", schueler)
+	_, err := repo.LegeAn(ctx, titelID, "", schueler)
 	if !errors.Is(err, ErrVormerkungBereitsVorhanden) {
 		t.Fatalf("zweite Vormerkung: erwartet ErrVormerkungBereitsVorhanden, bekam %v", err)
 	}
 
 	// Gegenprobe: Die anonyme Vormerkung (ohne Schüler) darf mehrfach entstehen — die
 	// Theke merkt damit „ein Exemplar für die Klasse 7b" mehrfach vor.
-	if _, err := repo.Create(ctx, titelID, "anonym 1", ""); err != nil {
+	if _, err := repo.LegeAn(ctx, titelID, "anonym 1", ""); err != nil {
 		t.Fatalf("erste anonyme Vormerkung: %v", err)
 	}
-	if _, err := repo.Create(ctx, titelID, "anonym 2", ""); err != nil {
+	if _, err := repo.LegeAn(ctx, titelID, "anonym 2", ""); err != nil {
 		t.Fatalf("zweite anonyme Vormerkung darf nicht kollidieren: %v", err)
 	}
 }

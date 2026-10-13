@@ -38,8 +38,8 @@ func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx p
 
 	// Status der Vormerkung auf 'abholbereit' setzen. Das Buch liegt für diesen Schüler bis zum
 	// Ende der Abholfrist bereit — ab der Uhr des Dienstes, dieselbe Rechnung wie beim
-	// Nachrücken in der Warteschlange (repository.Abholfrist).
-	frist, err := repository.Abholfrist(ctx, tx, s.heute())
+	// Nachrücken in der Warteschlange (repository.BestimmeAbholfrist).
+	frist, err := repository.BestimmeAbholfrist(ctx, tx, s.heute())
 	if err != nil {
 		return fmt.Errorf("abholfrist für vormerkung %s: %w", wartende.ID, err)
 	}

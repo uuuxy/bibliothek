@@ -11,7 +11,7 @@ import (
 // Im Abholfach liegt für einen Leser, was abholbereit ist: nicht die wartende Vormerkung, nicht
 // das Buch eines anderen Lesers. Genannt werden höchstens fünf, das mit der kürzesten Abholfrist
 // zuerst und eines ohne Frist zuletzt; Titel und Frist kommen je in ihrem Feld an.
-func TestAbholbereiteBuecher_HoechstensFuenfNachAbholfrist(t *testing.T) {
+func TestLadeAbholbereiteTitel_HoechstensFuenfNachAbholfrist(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -45,9 +45,9 @@ func TestAbholbereiteBuecher_HoechstensFuenfNachAbholfrist(t *testing.T) {
 	merke("Abholprobe wartend", leserID, "wartend", nil)
 	merke("Abholprobe anderer Leser", andererLeser, "abholbereit", in(1))
 
-	buecher, err := AbholbereiteBuecher(ctx, tx, leserID)
+	buecher, err := LadeAbholbereiteTitel(ctx, tx, leserID)
 	if err != nil {
-		t.Fatalf("AbholbereiteBuecher: %v", err)
+		t.Fatalf("LadeAbholbereiteTitel: %v", err)
 	}
 	soll := []string{"Abholprobe ein Tag", "Abholprobe zwei Tage", "Abholprobe drei Tage", "Abholprobe vier Tage", "Abholprobe fünf Tage"}
 	if len(buecher) != len(soll) {
@@ -61,12 +61,12 @@ func TestAbholbereiteBuecher_HoechstensFuenfNachAbholfrist(t *testing.T) {
 	}
 
 	// Mit weniger als fünf Büchern steht das ohne Frist am Ende, nicht am Anfang.
-	nurAnderer, err := AbholbereiteBuecher(ctx, tx, andererLeser)
+	nurAnderer, err := LadeAbholbereiteTitel(ctx, tx, andererLeser)
 	if err != nil || len(nurAnderer) != 1 || nurAnderer[0].Titel != "Abholprobe anderer Leser" {
 		t.Errorf("anderer Leser: %+v, Fehler %v", nurAnderer, err)
 	}
 	merke("Abholprobe anderer ohne Frist", andererLeser, "abholbereit", nil)
-	zwei, err := AbholbereiteBuecher(ctx, tx, andererLeser)
+	zwei, err := LadeAbholbereiteTitel(ctx, tx, andererLeser)
 	if err != nil || len(zwei) != 2 || zwei[0].Titel != "Abholprobe anderer Leser" || zwei[1].BereitgestelltBis != nil {
 		t.Errorf("Buch ohne Frist: %+v, Fehler %v; erwartet es an zweiter Stelle", zwei, err)
 	}

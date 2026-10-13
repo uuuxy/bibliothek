@@ -14,7 +14,7 @@ import (
 // nahm bis zum 21.09.2026 aber JEDE Leser-Id: Eine Vormerkung für einen Kollegen entstand,
 // stand ohne Namen in der Liste, und beim Rückgabe-Vorgang ging die Warteschlange über sie
 // hinweg — für immer „wartend", ohne dass es jemand merkt (OFFEN.md 5.19).
-func TestVormerkungCreate_NurFuerSchueler(t *testing.T) {
+func TestVormerkungLegeAn_NurFuerSchueler(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -23,9 +23,9 @@ func TestVormerkungCreate_NurFuerSchueler(t *testing.T) {
 	titelID := titelIDVonExemplar(t, pool, ex[0])
 	kollege := seedKollege(t, pool, "A-VM-K1", "Kim")
 	schueler := seedSchueler(t, pool, "VM-S1", "Mia", "7a")
-	repo := NewVormerkungRepository(pool)
+	repo := NewVormerkungsAbfragen(pool)
 
-	if _, err := repo.Create(ctx, titelID, "", kollege); !errors.Is(err, ErrVormerkungNurFuerSchueler) {
+	if _, err := repo.LegeAn(ctx, titelID, "", kollege); !errors.Is(err, ErrVormerkungNurFuerSchueler) {
 		t.Errorf("Vormerkung für einen Kollegen: err = %v — want ErrVormerkungNurFuerSchueler", err)
 	}
 	var n int
@@ -37,15 +37,15 @@ func TestVormerkungCreate_NurFuerSchueler(t *testing.T) {
 	}
 
 	// Eine Id, die es nicht gibt, ist dieselbe Antwort und kein roher FK-Fehler (500).
-	if _, err := repo.Create(ctx, titelID, "", "00000000-0000-4000-8000-000000000001"); !errors.Is(err, ErrVormerkungNurFuerSchueler) {
+	if _, err := repo.LegeAn(ctx, titelID, "", "00000000-0000-4000-8000-000000000001"); !errors.Is(err, ErrVormerkungNurFuerSchueler) {
 		t.Errorf("Vormerkung für eine unbekannte Id: err = %v — want ErrVormerkungNurFuerSchueler", err)
 	}
 
 	// Gegenprobe: Schüler und die Vormerkung ohne Person (Notiz für die Theke) gehen weiter.
-	if _, err := repo.Create(ctx, titelID, "", schueler); err != nil {
+	if _, err := repo.LegeAn(ctx, titelID, "", schueler); err != nil {
 		t.Errorf("Vormerkung für einen Schüler: %v", err)
 	}
-	if _, err := repo.Create(ctx, titelID, "für die Projektwoche", ""); err != nil {
+	if _, err := repo.LegeAn(ctx, titelID, "für die Projektwoche", ""); err != nil {
 		t.Errorf("Vormerkung ohne Person: %v", err)
 	}
 }

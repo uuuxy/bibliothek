@@ -201,7 +201,7 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "vorname", "nachname", "klasse"}).
 			AddRow("v1", "Max", "Mustermann", "10A"))
 
-	// Die Abholfrist liest die Einstellungen (repository.Abholfrist); keine Sommerferien der
+	// Die Abholfrist liest die Einstellungen (repository.BestimmeAbholfrist); keine Sommerferien der
 	// Schule, es gilt die Programmtabelle.
 	mockPool.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))

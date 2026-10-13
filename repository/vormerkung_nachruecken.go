@@ -12,7 +12,7 @@ import (
 // Exemplar bereitliegen hatte, muss dieses Exemplar dem NÄCHSTEN Wartenden zugeteilt
 // werden. Sonst bleibt der Nächste für immer 'wartend', während das Buch verfügbar
 // herumsteht — genau der Zustand, für den der Verfall-Lauf gebaut wurde
-// (VerfalleAbgelaufeneVormerkungen).
+// (LasseAbgelaufeneVerfallen).
 //
 // Dieselbe Bewegung braucht die DSGVO-Tilgung: Purge, Abgänger-Cronjob und
 // LUSD-Anonymisierung löschen die Vormerkungen eines Schülers (die Freitext-Notiz ist
@@ -33,12 +33,12 @@ const sqlWartenderDarfAbholen = `s.deleted_at IS NULL AND s.ist_gesperrt = false
 // die Vormerkung (FOR UPDATE OF v). Eine Vormerkung, die eine Rückgabe gerade bedient, wird
 // übergangen; hält eine Ausleihe die Zeile des Schülers, bleibt er trotzdem an der Reihe.
 // Liefert true, wenn jemand bedient wurde.
-func bedieneNaechstenWartenden(ctx context.Context, ex SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (bool, error) {
-	frist, err := Abholfrist(ctx, ex, jetzt)
+func bedieneNaechstenWartenden(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (bool, error) {
+	frist, err := BestimmeAbholfrist(ctx, db, jetzt)
 	if err != nil {
 		return false, err
 	}
-	tag, err := ex.Exec(ctx, `
+	tag, err := db.Exec(ctx, `
 		UPDATE vormerkungen
 		SET status = 'abholbereit', bereitgestellt_exemplar_id = $1,
 		    bereitgestellt_bis = $3
@@ -60,7 +60,7 @@ func bedieneNaechstenWartenden(ctx context.Context, ex SpurenDatenbank, exemplar
 	return tag.RowsAffected() > 0, nil
 }
 
-// loescheVormerkungenUndRuecktNach ist der Vormerkungs-Schritt der Spuren-Tilgung: Es
+// loescheVormerkungenUndRueckeNach ist der Vormerkungs-Schritt der Spuren-Tilgung: Es
 // löscht ALLE Vormerkungen der gegebenen Schüler und lässt für jedes dabei frei
 // werdende Exemplar die Warteschlange nachrücken. Gemeldet wird die Zahl der GELÖSCHTEN
 // Zeilen — das ist die Zahl, die das Cron-Protokoll als „bereinigt" ausweist.
@@ -71,8 +71,8 @@ func bedieneNaechstenWartenden(ctx context.Context, ex SpurenDatenbank, exemplar
 //
 // Die Abholfrist des Nachrückenden zählt ab jetzt: Die Tilgung ist ein Schritt der Liste
 // spurTilgungen und hat keine eigene Uhr.
-func loescheVormerkungenUndRuecktNach(ctx context.Context, ex SpurenDatenbank, schuelerIDs []string) (int64, error) {
-	rows, err := ex.Query(ctx, `
+func loescheVormerkungenUndRueckeNach(ctx context.Context, db SpurenDatenbank, schuelerIDs []string) (int64, error) {
+	rows, err := db.Query(ctx, `
 		DELETE FROM vormerkungen WHERE schueler_id = ANY($1::uuid[])
 		RETURNING bereitgestellt_exemplar_id, titel_id`, schuelerIDs)
 	if err != nil {
@@ -88,7 +88,7 @@ func loescheVormerkungenUndRuecktNach(ctx context.Context, ex SpurenDatenbank, s
 		if f.exemplarID == nil || f.titelID == nil {
 			continue
 		}
-		if _, err := bedieneNaechstenWartenden(ctx, ex, *f.exemplarID, *f.titelID, time.Now()); err != nil {
+		if _, err := bedieneNaechstenWartenden(ctx, db, *f.exemplarID, *f.titelID, time.Now()); err != nil {
 			return int64(len(freigaben)), fmt.Errorf("nächsten wartenden bedienen: %w", err)
 		}
 	}

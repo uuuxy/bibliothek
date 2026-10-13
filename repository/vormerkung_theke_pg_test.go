@@ -107,7 +107,7 @@ func TestLoescheErfuellteVormerkung_NurDieDesLesersFuerDenTitel(t *testing.T) {
 }
 
 // Die Nummer eines Exemplars ist die auf seinem Etikett, nicht seine Kennung.
-func TestExemplarNummer_IstDieNummerDesEtiketts(t *testing.T) {
+func TestLadeExemplarNummer_IstDieNummerDesEtiketts(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -118,10 +118,10 @@ func TestExemplarNummer_IstDieNummerDesEtiketts(t *testing.T) {
 	}()
 	_, exemplar, _ := warteschlange(t, tx, "nummer")
 
-	if nummer, err := ExemplarNummer(ctx, tx, exemplar); err != nil || nummer != "WS-nummer" {
+	if nummer, err := LadeExemplarNummer(ctx, tx, exemplar); err != nil || nummer != "WS-nummer" {
 		t.Errorf("Nummer %q, Fehler %v; erwartet WS-nummer", nummer, err)
 	}
-	if _, err := ExemplarNummer(ctx, tx, "3f2504e0-4f89-11d3-9a0c-0305e82c3301"); !errors.Is(err, pgx.ErrNoRows) {
+	if _, err := LadeExemplarNummer(ctx, tx, "3f2504e0-4f89-11d3-9a0c-0305e82c3301"); !errors.Is(err, pgx.ErrNoRows) {
 		t.Errorf("unbekanntes Exemplar: Fehler %v, erwartet pgx.ErrNoRows", err)
 	}
 }

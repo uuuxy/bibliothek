@@ -97,8 +97,8 @@ func TestVormerkungLoeschen_AbholbereitRuecktNach(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := NewVormerkungRepository(pool).Delete(ctx, va); err != nil {
-		t.Fatalf("Delete: %v", err)
+	if err := NewVormerkungsAbfragen(pool).Loesche(ctx, va); err != nil {
+		t.Fatalf("Loesche: %v", err)
 	}
 	var status string
 	var bereit *string

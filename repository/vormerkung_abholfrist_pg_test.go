@@ -66,8 +66,8 @@ func abholfristVon(t *testing.T, pool *pgxpool.Pool, schuelerID string) time.Tim
 	return *bis
 }
 
-func vormerkungenMitUhr(pool *pgxpool.Pool, jetzt time.Time) *pgVormerkungRepository {
-	return &pgVormerkungRepository{db: pool, jetzt: func() time.Time { return jetzt }}
+func vormerkungenMitUhr(pool *pgxpool.Pool, jetzt time.Time) *pgVormerkungsAbfragen {
+	return &pgVormerkungsAbfragen{db: pool, jetzt: func() time.Time { return jetzt }}
 }
 
 // setzeSommerferien trägt die eigenen Sommerferien der Schule ein und stellt den alten Stand
@@ -119,7 +119,7 @@ func TestAbholfrist_VerfallLauf(t *testing.T) {
 		t.Run(fall.name, func(t *testing.T) {
 			resetInventurDaten(t, pool)
 			_, _, nils := abholLage(t, pool, "AFV")
-			verfallen, neuBereit, err := vormerkungenMitUhr(pool, fall.jetzt).VerfalleAbgelaufeneVormerkungen(context.Background())
+			verfallen, neuBereit, err := vormerkungenMitUhr(pool, fall.jetzt).LasseAbgelaufeneVerfallen(context.Background())
 			if err != nil {
 				t.Fatalf("Verfall: %v", err)
 			}
@@ -141,7 +141,7 @@ func TestAbholfrist_SommerferienAusDerEinstellung(t *testing.T) {
 	resetInventurDaten(t, pool)
 	setzeSommerferien(t, pool, `[{"jahr":2031,"von":"2031-07-14","bis":"2031-08-22"}]`)
 	_, _, nils := abholLage(t, pool, "AFS")
-	if _, _, err := vormerkungenMitUhr(pool, um10(2031, time.July, 11)).VerfalleAbgelaufeneVormerkungen(context.Background()); err != nil {
+	if _, _, err := vormerkungenMitUhr(pool, um10(2031, time.July, 11)).LasseAbgelaufeneVerfallen(context.Background()); err != nil {
 		t.Fatalf("Verfall: %v", err)
 	}
 	if ist, soll := abholfristVon(t, pool, nils), abholfristEnde(2031, time.August, 25); !ist.Equal(soll) {
@@ -154,7 +154,7 @@ func TestAbholfrist_LoeschenVonHand(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	noraVormerkung, _, nils := abholLage(t, pool, "AFL")
-	if err := vormerkungenMitUhr(pool, um10(2026, time.September, 16)).Delete(context.Background(), noraVormerkung); err != nil {
+	if err := vormerkungenMitUhr(pool, um10(2026, time.September, 16)).Loesche(context.Background(), noraVormerkung); err != nil {
 		t.Fatalf("Löschen: %v", err)
 	}
 	if ist, soll := abholfristVon(t, pool, nils), abholfristEnde(2026, time.September, 21); !ist.Equal(soll) {
@@ -169,7 +169,7 @@ func TestAbholfrist_SpurenTilgung(t *testing.T) {
 	resetInventurDaten(t, pool)
 	_, nora, nils := abholLage(t, pool, "AFT")
 	vorher := time.Now()
-	if _, err := loescheVormerkungenUndRuecktNach(context.Background(), pool, []string{nora}); err != nil {
+	if _, err := loescheVormerkungenUndRueckeNach(context.Background(), pool, []string{nora}); err != nil {
 		t.Fatalf("Tilgung: %v", err)
 	}
 	nachher := time.Now()

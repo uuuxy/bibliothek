@@ -42,10 +42,10 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/schuljahreswechsel.go": {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
 	"repository/nachtlauf.go":          {3, "Nachtläufe: Fotos und Kennungen der anonymisierten Schüler, löschreife Abgänger; das Kollegium hat keine Abgangslogik und wird nicht anonymisiert"},
 	// Durchsicht der Theken-Pfade, 21.09.2026 (OFFEN.md 5.19).
-	"repository/ausleihe_schranken.go":     {1, "Abholfach-Prüfung vor einer Ausleihe liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungRepository.Create, TestVormerkungCreate_NurFuerSchueler)"},
-	"repository/vormerkung_theke.go":       {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
-	"repository/vormerkung.go":             {3, "Create prüft gegen die Sicht, DASS es ein Schüler ist; die zwei Listen zeigen deshalb nur Schüler oder Vormerkungen ohne Person"},
-	"repository/vormerkung_nachruecken.go": {1, "Nachrücken im Abholfach — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
+	"repository/ausleihe_schranken.go":     {1, "Abholfach-Prüfung vor einer Ausleihe liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn, TestVormerkungLegeAn_NurFuerSchueler)"},
+	"repository/vormerkung_theke.go":       {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
+	"repository/vormerkung.go":             {3, "LegeAn prüft gegen die Sicht, DASS es ein Schüler ist; die zwei Listen zeigen deshalb nur Schüler oder Vormerkungen ohne Person"},
+	"repository/vormerkung_nachruecken.go": {1, "Nachrücken im Abholfach — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
 	"repository/ausleihe_frist.go":         {1, "Massen-Verlängerung der Lernmittel einer KLASSE; ein Kollege leiht auf Dauer (ist_handapparat) und soll keine Klassenfrist bekommen"},
 	"repository/mahnwesen_queries.go":      {3, "Gemahnt werden Schüler, nicht das Kollegium (Entscheidung zum Lehrer-Anliegen, Kommentar an der ersten Abfrage); das Blatt folgt derselben Auswahl, und ZaehleMahnungTx zählt, was auf dem Blatt steht"},
 	"repository/bescheid.go":               {3, "Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
@@ -64,7 +64,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/lmf_plan.go":                {1, "Klassen im LMF-Plan — Klassen haben nur Schüler"},
 	"repository/lmf_termine.go":             {1, "Fristübernahme je KLASSE für Lernmittel; ein Kollege hat keine Klasse und leiht auf Dauer (wie repository/ausleihe_frist.go)"},
 	"repository/lusd_bestand.go":            {1, "LUSD-Abgleich kennt nur Schüler; die Abfrage sagt es zusätzlich mit art = 'schueler'"},
-	"repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungRepository.Create)"},
+	"repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
 	"repository/abgaenger_liste.go":         {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
 	"repository/kontoauszug.go":             {1, "Kontoauszug — für Kollegen bewusst nicht (OFFEN.md 5.16 A)"},
 	// Auflagen eines Buchs, 25.09.2026 (OFFEN.md 4.18, Stufe 5).

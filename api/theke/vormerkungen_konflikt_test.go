@@ -17,11 +17,11 @@ import (
 // ist die Einordnung im Handler, nicht die Abfrage in der Datenbank (die steht in
 // repository/vormerkung_pg_test.go am echten Constraint).
 type vormerkungRepoStub struct {
-	repository.VormerkungRepository
+	repository.VormerkungsAbfragen
 	err error
 }
 
-func (v vormerkungRepoStub) Create(context.Context, string, string, string) (string, error) {
+func (v vormerkungRepoStub) LegeAn(context.Context, string, string, string) (string, error) {
 	return "", v.err
 }
 

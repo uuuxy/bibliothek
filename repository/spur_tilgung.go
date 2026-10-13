@@ -152,7 +152,7 @@ var spurTilgungen = []SpurTilgung{
 		// Kein bloßes DELETE: Lag für den Leser schon ein Exemplar zum Abholen bereit, geht es
 		// an den nächsten Wartenden; sonst bliebe das Buch im Abholregal liegen.
 		Beschreibung: "vormerkungen (gelöscht, Warteschlange nachgerückt)",
-		schritt:      loescheVormerkungenUndRuecktNach,
+		schritt:      loescheVormerkungenUndRueckeNach,
 	},
 }
 

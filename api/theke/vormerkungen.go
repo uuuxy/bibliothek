@@ -18,7 +18,7 @@ type CreateVormerkungRequest struct {
 }
 
 // ListVormerkungHandler handles GET /api/vormerkungen?titel_id=...
-func (s *Tueren) ListVormerkungHandler(vormerkungRepo repository.VormerkungRepository) http.HandlerFunc {
+func (s *Tueren) ListVormerkungHandler(vormerkungRepo repository.VormerkungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
@@ -31,11 +31,11 @@ func (s *Tueren) ListVormerkungHandler(vormerkungRepo repository.VormerkungRepos
 			return apierrors.BadRequest(err.Error(), nil)
 		}
 
-		result, err := vormerkungRepo.List(ctx, titelID, schuelerID)
+		result, err := vormerkungRepo.LadeListe(ctx, titelID, schuelerID)
 		if err != nil {
 			// Ohne Titel- oder Schüler-Filter gibt es bewusst keinen Voll-Abzug aller
 			// Namen — das ist ein Bedienfehler (400), kein Serverfehler.
-			if errors.Is(err, repository.ErrVormerkungScopeFehlt) {
+			if errors.Is(err, repository.ErrVormerkungFilterFehlt) {
 				return apierrors.BadRequest(err.Error(), err)
 			}
 			return apierrors.Internal("Fehler beim Abrufen der Vormerkungen", err)
@@ -50,7 +50,7 @@ func (s *Tueren) ListVormerkungHandler(vormerkungRepo repository.VormerkungRepos
 }
 
 // CreateVormerkungHandler handles POST /api/vormerkungen.
-func (s *Tueren) CreateVormerkungHandler(vormerkungRepo repository.VormerkungRepository) http.HandlerFunc {
+func (s *Tueren) CreateVormerkungHandler(vormerkungRepo repository.VormerkungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req CreateVormerkungRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {
@@ -59,7 +59,7 @@ func (s *Tueren) CreateVormerkungHandler(vormerkungRepo repository.VormerkungRep
 
 		ctx := r.Context()
 
-		id, err := vormerkungRepo.Create(ctx, req.TitelID, req.Notiz, req.SchuelerID)
+		id, err := vormerkungRepo.LegeAn(ctx, req.TitelID, req.Notiz, req.SchuelerID)
 		if err != nil {
 			// Drei fachliche Konflikte (409), kein Serverfehler: Der Schüler hat den Titel
 			// bereits selbst ausgeliehen und darf ihn nicht zusätzlich vormerken, er steht
@@ -81,7 +81,7 @@ func (s *Tueren) CreateVormerkungHandler(vormerkungRepo repository.VormerkungRep
 }
 
 // DeleteVormerkungHandler handles DELETE /api/vormerkungen/{id}.
-func (s *Tueren) DeleteVormerkungHandler(vormerkungRepo repository.VormerkungRepository) http.HandlerFunc {
+func (s *Tueren) DeleteVormerkungHandler(vormerkungRepo repository.VormerkungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -90,7 +90,7 @@ func (s *Tueren) DeleteVormerkungHandler(vormerkungRepo repository.VormerkungRep
 
 		ctx := r.Context()
 
-		if err := vormerkungRepo.Delete(ctx, id); err != nil {
+		if err := vormerkungRepo.Loesche(ctx, id); err != nil {
 			if errors.Is(err, repository.ErrVormerkungNichtGefunden) {
 				return apierrors.NotFound("Vormerkung nicht gefunden", err)
 			}

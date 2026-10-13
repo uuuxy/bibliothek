@@ -153,12 +153,12 @@ func (s *Scheduler) RunIdempotencyCleanup() {
 }
 
 // RunVormerkungVerfall räumt abgelaufene „abholbereit"-Reservierungen ab und teilt das
-// Exemplar dem nächsten Wartenden zu (siehe VerfalleAbgelaufeneVormerkungen).
+// Exemplar dem nächsten Wartenden zu (siehe LasseAbgelaufeneVerfallen).
 func (s *Scheduler) RunVormerkungVerfall() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	verfallen, neuBereit, err := repository.NewVormerkungRepository(s.db).VerfalleAbgelaufeneVormerkungen(ctx)
+	verfallen, neuBereit, err := repository.NewVormerkungsAbfragen(s.db).LasseAbgelaufeneVerfallen(ctx)
 	if err != nil {
 		log.Printf("Scheduler Vormerkung-Verfall: Fehler: %v", err)
 		return

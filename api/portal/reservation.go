@@ -51,11 +51,11 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 	}
 
 	ctx := r.Context()
-	repo := repository.NewReservationRepository(s.DB.Pool)
+	repo := repository.NewReservierungsAbfragen(s.DB.Pool)
 
 	// Ein Datenbankfehler ist kein „nicht gefunden": Sonst endete ein Verbindungsabbruch
 	// als 404, und die Lehrkraft läse „Buchtitel nicht gefunden" für einen Titel, der da ist.
-	exists, err := repo.CheckTitleExists(ctx, req.TitelID)
+	exists, err := repo.IstTitelVorhanden(ctx, req.TitelID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -69,7 +69,7 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 	// besitzt, erzeugt eine dauerhaft unerfüllbare Aufgabe im Dashboard (Ghost-Order).
 	// Die Wunschmenge wird deshalb gegen den physischen Bestand (nicht ausgesondert)
 	// geprüft.
-	bestand, err := repo.CountTitleStock(ctx, req.TitelID)
+	bestand, err := repo.ZaehleTitelBestand(ctx, req.TitelID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -80,7 +80,7 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 		return
 	}
 
-	newID, neu, err := repo.CreateKlassensatzReservierung(ctx, req.TitelID, req.Klasse, req.Anzahl, nullableString(req.Notiz), claims.UserID, nullableString(req.IdempotencyKey))
+	newID, neu, err := repo.LegeAn(ctx, req.TitelID, req.Klasse, req.Anzahl, nullableString(req.Notiz), claims.UserID, nullableString(req.IdempotencyKey))
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -99,8 +99,8 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 // GET /api/reservierungen/klassensatz
 func (s *Tueren) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := repository.NewReservationRepository(s.DB.Pool)
-		result, err := repo.GetKlassensatzReservierungen(r.Context())
+		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
+		result, err := repo.LadeAlle(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -108,7 +108,7 @@ func (s *Tueren) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 
 		// Ensure we don't return null for empty slices
 		if result == nil {
-			result = []repository.KlassensatzReservierung{}
+			result = []repository.Reservierung{}
 		}
 
 		tuer.RespondJSON(w, http.StatusOK, result)
@@ -119,8 +119,8 @@ func (s *Tueren) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 // GET /api/reservierungen/klassensatz/anzahl
 func (s *Tueren) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := repository.NewReservationRepository(s.DB.Pool)
-		count, err := repo.GetKlassensatzReservierungenAnzahl(r.Context())
+		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
+		count, err := repo.ZaehleOffene(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -138,8 +138,8 @@ func (s *Tueren) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 // GET /api/reservierungen/klassensatz/offen
 func (s *Tueren) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := repository.NewReservationRepository(s.DB.Pool)
-		offene, err := repo.OffeneKlassensatzReservierungen(r.Context())
+		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
+		offene, err := repo.LadeOffene(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -159,8 +159,8 @@ func (s *Tueren) MeineKlassensatzReservierungenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine sitzung"))
 			return
 		}
-		repo := repository.NewReservationRepository(s.DB.Pool)
-		meine, err := repo.MeineKlassensatzReservierungen(r.Context(), claims.UserID)
+		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
+		meine, err := repo.LadeEigene(r.Context(), claims.UserID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -186,8 +186,8 @@ func (s *Tueren) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 			return
 		}
 
-		repo := repository.NewReservationRepository(s.DB.Pool)
-		erledigt, err := repo.ErledigeKlassensatzReservierung(r.Context(), id, notiz)
+		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
+		erledigt, err := repo.Erledige(r.Context(), id, notiz)
 
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -242,7 +242,7 @@ func leseErledigtNotiz(w http.ResponseWriter, r *http.Request) (string, bool) {
 // der Lehrkraft (damit die Antwort einen Bezug hat) und die Antwort der Bibliothek —
 // dasselbe Muster wie die Anliegen-Mail. Vorher war der Text fest und liess sich
 // weder ergaenzen (Teilmenge, Abholort) noch korrigieren.
-func klassensatzBereitText(e *repository.KlassensatzErledigt) string {
+func klassensatzBereitText(e *repository.ErledigteReservierung) string {
 	text := fmt.Sprintf("Ihre Klassensatz-Reservierung ist fertig zusammengestellt und liegt in der Bibliothek zur Abholung bereit.\n\n"+
 		"  Titel:  %s\n  Klasse: %s\n  Anzahl: %d Exemplare\n",
 		e.TitelName, e.Klasse, e.Anzahl)

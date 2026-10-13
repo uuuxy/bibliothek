@@ -119,7 +119,7 @@ func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, copy *repositor
 		return // keine Vormerkung, nichts reserviert, oder genau dieses Exemplar wurde genommen
 	}
 
-	barcode, err := repository.ExemplarNummer(ctx, tx, *bereitgestellt)
+	barcode, err := repository.LadeExemplarNummer(ctx, tx, *bereitgestellt)
 	if err != nil {
 		log.Printf("ausleihe: Barcode des reservierten Exemplars %s nicht ladbar: %v", *bereitgestellt, err)
 		return

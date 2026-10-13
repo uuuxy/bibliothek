@@ -17,7 +17,7 @@ import (
 // Anlass (29.08.2026): GetBookByID nannte JEDEN Fehler „buch nicht gefunden" — ein
 // Scan-Fehler (NULL in string, Schema-Drift) wäre als 404 verkleidet gewesen, und ein
 // Ein zugelieferter PR (#529) wollte genau das per Test festschreiben. Dieselbe Form stand in
-// CreateKlassensatzReservierung: `if err != nil || !exists { 404 }`. Die Klasse:
+// ReservierungsAbfragen.LegeAn: `if err != nil || !exists { 404 }`. Die Klasse:
 // Eine Bedingung, die einen ECHTEN Fehler (err != nil) und einen fachlichen
 // Nicht-Treffer in dieselbe harmlose Antwort (404/401/403) presst. Die Diagnose
 // stirbt, der Betreiber sieht einen Bedienfehler statt eines kaputten Systems.
@@ -37,7 +37,7 @@ import (
 var kollapsBestand = map[string]string{
 	// „datei:funktion": Einordnung. Der Sweep vom 29.08.2026 fand 12 Stellen; 4 davon
 	// waren echte DB-Kollapse und sind behoben (MeHandler, Foto, zwei Druck-Handler,
-	// dazu GetBookByID und CreateKlassensatzReservierung). Die folgenden acht sind
+	// dazu GetBookByID und ReservierungsAbfragen.LegeAn). Die folgenden acht sind
 	// semantisch vertretbar — der Fehler IST dort die negative Antwort:
 	"api/csrf.go:CSRFMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
 	// Die drei Token-Stellen lesen über VerifyToken die DB (Sperrliste, Kontostatus). Bis

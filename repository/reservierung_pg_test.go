@@ -12,10 +12,10 @@ import (
 // mitgelieferte Verfügbarkeit sind die ganze Steuerung. Beides ist SQL-Verhalten
 // (ORDER BY über zwei CASE-Zweige, Verfügbar-Subquery mit der OPAC-Definition),
 // das pgxmock nur nachspielen könnte.
-func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
+func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := NewReservationRepository(pool)
+	repo := NewReservierungsAbfragen(pool)
 
 	// Ein Titel mit DREI Exemplaren — seedSignaturMitExemplaren taugt hier nicht,
 	// es legt pro Exemplar einen eigenen Titel an (der Verfügbar-Blick wäre immer 1).
@@ -35,16 +35,16 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	bearbeiter := seedEigenerBearbeiter(t, pool, "KSQ-B")
 
 	// Zwei Reservierungen nacheinander: 8a zuerst, 9b stellt sich an.
-	ersteID, _, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 3, nil, bearbeiter, nil)
+	ersteID, _, err := repo.LegeAn(ctx, titel, "8a", 3, nil, bearbeiter, nil)
 	if err != nil {
 		t.Fatalf("Reservierung 8a: %v", err)
 	}
-	if _, _, err := repo.CreateKlassensatzReservierung(ctx, titel, "9b", 2, nil, bearbeiter, nil); err != nil {
+	if _, _, err := repo.LegeAn(ctx, titel, "9b", 2, nil, bearbeiter, nil); err != nil {
 		t.Fatalf("Reservierung 9b: %v", err)
 	}
 
 	// (1) Admin-Liste: Warteschlangen-Reihenfolge (älteste zuerst), verfügbar = 3.
-	liste, err := repo.GetKlassensatzReservierungen(ctx)
+	liste, err := repo.LadeAlle(ctx)
 	if err != nil {
 		t.Fatalf("Liste: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	schueler := seedSchueler(t, pool, "S-KSQ-1", "Kim", "8a")
 	seedAusleihe(t, pool, exemplare[0], schueler, bearbeiter)
 
-	liste, err = repo.GetKlassensatzReservierungen(ctx)
+	liste, err = repo.LadeAlle(ctx)
 	if err != nil {
 		t.Fatalf("Liste nach Ausleihe: %v", err)
 	}
@@ -76,11 +76,11 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	}
 
 	// (3) Die Portal-Sicht führt beide in derselben Reihenfolge — ohne Personendaten.
-	offene, err := repo.OffeneKlassensatzReservierungen(ctx)
+	offene, err := repo.LadeOffene(ctx)
 	if err != nil {
 		t.Fatalf("Offene: %v", err)
 	}
-	offeneMeine := []KlassensatzOffen{}
+	offeneMeine := []OffeneReservierung{}
 	for _, o := range offene {
 		if o.TitelID == titel {
 			offeneMeine = append(offeneMeine, o)
@@ -100,7 +100,7 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	// (4) 8a wird erledigt → die 9b rückt in der offenen Liste nach vorn, die
 	// erledigte 8a bleibt als Historie dahinter. Das Abschliessen liefert die
 	// Angaben für die Bereit-Mail — inklusive der Konto-Adresse der Lehrkraft.
-	erledigt, err := repo.ErledigeKlassensatzReservierung(ctx, ersteID, "")
+	erledigt, err := repo.Erledige(ctx, ersteID, "")
 	if err != nil {
 		t.Fatalf("Erledigen: %v", err)
 	}
@@ -110,10 +110,10 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	}
 	// Der zweite Klick (zweiter Admin) schliesst nichts erneut ab — und löst damit
 	// auch keine zweite Bereit-Mail aus.
-	if nochmal, err := repo.ErledigeKlassensatzReservierung(ctx, ersteID, ""); err != nil || nochmal != nil {
+	if nochmal, err := repo.Erledige(ctx, ersteID, ""); err != nil || nochmal != nil {
 		t.Fatalf("Doppel-Erledigen: erwartet nil ohne Fehler, bekam %+v / %v", nochmal, err)
 	}
-	liste, err = repo.GetKlassensatzReservierungen(ctx)
+	liste, err = repo.LadeAlle(ctx)
 	if err != nil {
 		t.Fatalf("Liste nach Erledigen: %v", err)
 	}
@@ -125,8 +125,8 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 
 // nurTitel filtert die Gesamtliste auf einen Titel — andere Tests des Pakets
 // hinterlassen eigene Reservierungen.
-func nurTitel(liste []KlassensatzReservierung, titelID string) []KlassensatzReservierung {
-	out := []KlassensatzReservierung{}
+func nurTitel(liste []Reservierung, titelID string) []Reservierung {
+	out := []Reservierung{}
 	for _, r := range liste {
 		if r.TitelID == titelID {
 			out = append(out, r)
@@ -149,26 +149,26 @@ func seedEigenerBearbeiter(t *testing.T, pool *pgxpool.Pool, barcode string) str
 	return id
 }
 
-// TestKlassensatzIdempotenz belegt den Doppelklick-Schutz (Migration 076): Zwei
+// TestReservierungIdempotenz belegt den Doppelklick-Schutz (Migration 076): Zwei
 // Anfragen mit DEMSELBEN Idempotenz-Schlüssel erzeugen nur EINE Reservierung (die
 // zweite gibt dieselbe ID zurück, neu=false). Ein anderer Schlüssel legt regulär an.
-func TestKlassensatzIdempotenz(t *testing.T) {
+func TestReservierungIdempotenz(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewReservationRepository(pool)
+	repo := NewReservierungsAbfragen(pool)
 
 	ex := seedSignaturMitExemplaren(t, pool, "KsIdem", 3)
 	titel := titelIDVonExemplar(t, pool, ex[0])
 	bearbeiter := seedBearbeiter(t, pool)
 	key := "11111111-1111-1111-1111-111111111111"
 
-	id1, neu1, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 2, nil, bearbeiter, &key)
+	id1, neu1, err := repo.LegeAn(ctx, titel, "8a", 2, nil, bearbeiter, &key)
 	if err != nil || !neu1 {
 		t.Fatalf("erste Reservierung: id=%q neu=%v err=%v", id1, neu1, err)
 	}
 	// Doppelklick: gleicher Schlüssel → dieselbe ID, neu=false, KEINE zweite Zeile.
-	id2, neu2, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 2, nil, bearbeiter, &key)
+	id2, neu2, err := repo.LegeAn(ctx, titel, "8a", 2, nil, bearbeiter, &key)
 	if err != nil {
 		t.Fatalf("zweiter Klick: %v", err)
 	}
@@ -190,7 +190,7 @@ func TestKlassensatzIdempotenz(t *testing.T) {
 
 	// Anderer Schlüssel (bewusste zweite Reservierung) → legt regulär an.
 	key2 := "22222222-2222-2222-2222-222222222222"
-	if _, neu3, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 1, nil, bearbeiter, &key2); err != nil || !neu3 {
+	if _, neu3, err := repo.LegeAn(ctx, titel, "8a", 1, nil, bearbeiter, &key2); err != nil || !neu3 {
 		t.Fatalf("bewusste zweite Reservierung muss durchgehen: neu=%v err=%v", neu3, err)
 	}
 }

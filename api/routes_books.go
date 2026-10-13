@@ -107,7 +107,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("POST /api/buecher/aus-isbn", s.RequirePermission("create_orders")(s.katalog().ISBNZuTitelHandler()))
 
 	// Vormerkungen
-	vormerkungRepo := repository.NewVormerkungRepository(s.DB.Pool)
+	vormerkungRepo := repository.NewVormerkungsAbfragen(s.DB.Pool)
 	// Eigenes enges Recht manage_vormerkungen, NICHT view_books (bewertung/
 	// sicherheitsbefund-vormerkungen.md, Weg 2 — Betreiber-Entscheidung 18.08.2026):
 	// Die Liste verknüpft Schülernamen mit Leseinteresse und erlaubt Anlegen/Löschen

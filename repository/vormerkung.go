@@ -53,16 +53,16 @@ type Vormerkung struct {
 	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
 }
 
-// VormerkungRepository defines operations for managing individual book reservations.
-type VormerkungRepository interface {
-	List(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error)
-	Create(ctx context.Context, titelID, notiz, schuelerID string) (string, error)
-	Delete(ctx context.Context, id string) error
-	// VerfalleAbgelaufeneVormerkungen räumt No-Show-Reservierungen ab.
-	VerfalleAbgelaufeneVormerkungen(ctx context.Context) (verfallen, neuBereitgestellt int, err error)
+// VormerkungsAbfragen defines operations for managing individual book reservations.
+type VormerkungsAbfragen interface {
+	LadeListe(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error)
+	LegeAn(ctx context.Context, titelID, notiz, schuelerID string) (string, error)
+	Loesche(ctx context.Context, id string) error
+	// LasseAbgelaufeneVerfallen räumt No-Show-Reservierungen ab.
+	LasseAbgelaufeneVerfallen(ctx context.Context) (verfallen, neuBereitgestellt int, err error)
 }
 
-// VerfalleAbgelaufeneVormerkungen behandelt „abholbereit"-Reservierungen, deren
+// LasseAbgelaufeneVerfallen behandelt „abholbereit"-Reservierungen, deren
 // Abholfrist abgelaufen ist (No-Show). Betreiber-Entscheidung 19.08.2026:
 // „Verfall + nächsten bedienen". Ohne diesen Lauf blieb eine solche Vormerkung für
 // immer 'abholbereit' — der Schüler fiel still aus der Warteschlange, ohne bedient zu
@@ -77,8 +77,8 @@ type VormerkungRepository interface {
 //
 // Alles in EINER Transaktion; FOR UPDATE SKIP LOCKED verhindert Deadlocks/Doppelzuteilung
 // gegen gleichzeitige Rückgaben.
-func (r *pgVormerkungRepository) VerfalleAbgelaufeneVormerkungen(ctx context.Context) (int, int, error) {
-	tx, err := r.db.Begin(ctx)
+func (a *pgVormerkungsAbfragen) LasseAbgelaufeneVerfallen(ctx context.Context) (int, int, error) {
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -104,7 +104,7 @@ func (r *pgVormerkungRepository) VerfalleAbgelaufeneVormerkungen(ctx context.Con
 		// Nächsten Wartenden nur dann bedienen, wenn das Exemplar wirklich noch frei
 		// ist — dieselbe Bewegung wie beim endgültigen Löschen eines Schülers
 		// (vormerkung_nachruecken.go).
-		bedient, err := bedieneNaechstenWartenden(ctx, tx, *f.exemplarID, *f.titelID, r.uhr())
+		bedient, err := bedieneNaechstenWartenden(ctx, tx, *f.exemplarID, *f.titelID, a.uhr())
 		if err != nil {
 			return 0, 0, err
 		}
@@ -119,7 +119,7 @@ func (r *pgVormerkungRepository) VerfalleAbgelaufeneVormerkungen(ctx context.Con
 	return len(freigaben), neuBereit, nil
 }
 
-type pgVormerkungRepository struct {
+type pgVormerkungsAbfragen struct {
 	db db.PgxPoolIface
 	// jetzt ist die Uhr, ab der eine neue Abholfrist zählt (Nachrücken im Verfall-Lauf und
 	// beim Löschen); nil heißt time.Now. Tests setzen einen festen Tag vor einem Wochenende
@@ -128,19 +128,19 @@ type pgVormerkungRepository struct {
 }
 
 // uhr liefert den Zeitpunkt, ab dem eine neue Abholfrist zählt.
-func (r *pgVormerkungRepository) uhr() time.Time {
-	if r.jetzt != nil {
-		return r.jetzt()
+func (a *pgVormerkungsAbfragen) uhr() time.Time {
+	if a.jetzt != nil {
+		return a.jetzt()
 	}
 	return time.Now()
 }
 
-// NewVormerkungRepository returns a new PostgreSQL implementation of VormerkungRepository.
-func NewVormerkungRepository(db db.PgxPoolIface) VormerkungRepository {
-	return &pgVormerkungRepository{db: db}
+// NewVormerkungsAbfragen returns a new PostgreSQL implementation of VormerkungsAbfragen.
+func NewVormerkungsAbfragen(db db.PgxPoolIface) VormerkungsAbfragen {
+	return &pgVormerkungsAbfragen{db: db}
 }
 
-// ErrVormerkungScopeFehlt signalisiert einen List-Aufruf ohne Titel- UND ohne Schüler-
+// ErrVormerkungFilterFehlt signalisiert einen List-Aufruf ohne Titel- UND ohne Schüler-
 // Filter. Ein solcher Aufruf lieferte früher den GESAMTEN Vormerkungsbestand mit allen
 // Schülernamen und Klassen — ein Voll-Abzug, den die Oberfläche nie anfordert (sie fragt
 // stets nach Titel oder nach Schüler) und der genau dann zum PII-Dump wird, wenn das
@@ -148,16 +148,16 @@ func NewVormerkungRepository(db db.PgxPoolIface) VormerkungRepository {
 // deshalb Pflicht.
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrVormerkungScopeFehlt = errors.New("Vormerkungen brauchen einen Titel- oder Schüler-Filter")
+var ErrVormerkungFilterFehlt = errors.New("Vormerkungen brauchen einen Titel- oder Schüler-Filter")
 
-// List retrieves reservations filtered by either title or student. Ohne einen der beiden
-// Filter wird ErrVormerkungScopeFehlt zurückgegeben — es gibt bewusst keinen Voll-Abzug.
-func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error) {
+// LadeListe retrieves reservations filtered by either title or student. Ohne einen der beiden
+// Filter wird ErrVormerkungFilterFehlt zurückgegeben — es gibt bewusst keinen Voll-Abzug.
+func (a *pgVormerkungsAbfragen) LadeListe(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error) {
 	var rows pgx.Rows
 	var err error
 
 	if titelID != "" {
-		rows, err = r.db.Query(ctx, `
+		rows, err = a.db.Query(ctx, `
 			SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
 			       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, ''),
 			       v.status, v.bereitgestellt_bis
@@ -168,7 +168,7 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 			ORDER BY v.erstellt_am ASC
 		`, titelID)
 	} else if schuelerID != "" {
-		rows, err = r.db.Query(ctx, `
+		rows, err = a.db.Query(ctx, `
 			SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
 			       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, ''),
 			       v.status, v.bereitgestellt_bis
@@ -179,7 +179,7 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 			ORDER BY v.erstellt_am ASC
 		`, schuelerID)
 	} else {
-		return nil, ErrVormerkungScopeFehlt
+		return nil, ErrVormerkungFilterFehlt
 	}
 
 	if err != nil {
@@ -187,33 +187,33 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 	}
 	defer rows.Close()
 
-	var result []Vormerkung
+	var vormerkungen []Vormerkung
 	for rows.Next() {
 		var v Vormerkung
 		if err := rows.Scan(&v.ID, &v.TitelID, &v.TitelName, &v.Notiz, &v.ErstelltAm, &v.SchuelerID, &v.SchuelerName,
 			&v.Status, &v.BereitgestelltBis); err != nil {
 			return nil, err
 		}
-		result = append(result, v)
+		vormerkungen = append(vormerkungen, v)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return result, nil
+	return vormerkungen, nil
 }
 
-// Create creates a new reservation.
+// LegeAn creates a new reservation.
 //
 // Monopolisierungs-Schutz: Ein Schüler, der ein Exemplar dieses Titels aktuell selbst
 // ausgeliehen hat, darf ihn nicht zusätzlich für sich vormerken (siehe
 // ErrTitelBereitsAusgeliehen). Der Check läuft nur bei gesetztem schuelerID — anonyme
 // Vormerkungen (ohne Schüler) sind davon nicht betroffen.
-func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, schuelerID string) (string, error) {
+func (a *pgVormerkungsAbfragen) LegeAn(ctx context.Context, titelID, notiz, schuelerID string) (string, error) {
 	if schuelerID != "" {
 		// Gegen die SICHT, mit Absicht: Sie ist dieselbe Frage, die die Warteschlange beim
 		// Bedienen stellt (siehe ErrVormerkungNurFuerSchueler).
 		var istSchueler bool
-		if err := r.db.QueryRow(ctx,
+		if err := a.db.QueryRow(ctx,
 			`SELECT EXISTS (SELECT 1 FROM schueler WHERE id = $1)`, schuelerID,
 		).Scan(&istSchueler); err != nil {
 			return "", err
@@ -223,7 +223,7 @@ func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, sch
 		}
 
 		var bereitsAusgeliehen bool
-		if err := r.db.QueryRow(ctx, `
+		if err := a.db.QueryRow(ctx, `
 			SELECT EXISTS (
 				SELECT 1
 				FROM ausleihen a
@@ -239,7 +239,7 @@ func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, sch
 	}
 
 	var id string
-	err := r.db.QueryRow(ctx, `
+	err := a.db.QueryRow(ctx, `
 		INSERT INTO vormerkungen (titel_id, notiz, schueler_id)
 		VALUES ($1, NULLIF($2, ''), NULLIF($3, '')::uuid)
 		RETURNING id
@@ -255,20 +255,20 @@ func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, sch
 	return id, err
 }
 
-// Delete removes a reservation.
+// Loesche removes a reservation.
 //
 // BEWUSST ohne Objektbindung an einen Aufrufer (IDOR-Sweep 19.08.2026, geprüft):
 // manage_vormerkungen ist das eigens geschaffene enge Verwaltungsrecht der Theke
 // (sicherheitsbefund-vormerkungen, Weg 2) — fremde Vormerkungen auf Zuruf zu löschen
 // IST der Zweck dieses Rechts, kein Bypass. Die Datenminimierungs-Lücke war der
-// parameterlose List-Vollabzug, nicht das Löschen; siehe ErrVormerkungScopeFehlt.
+// parameterlose List-Vollabzug, nicht das Löschen; siehe ErrVormerkungFilterFehlt.
 //
 // Lag für die Vormerkung schon ein Exemplar im Abholfach, rückt der Nächste in derselben
 // Transaktion nach (vormerkung_nachruecken.go) — sonst bliebe er für immer „wartend",
 // und das Exemplar gälte als frei (Bestands-Durchgang 10.09.2026; Verfall-Lauf und
 // DSGVO-Tilgung taten es längst, das manuelle Löschen nicht).
-func (r *pgVormerkungRepository) Delete(ctx context.Context, id string) error {
-	tx, err := r.db.Begin(ctx)
+func (a *pgVormerkungsAbfragen) Loesche(ctx context.Context, id string) error {
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func (r *pgVormerkungRepository) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	if bereitgestellt != nil {
-		if _, err := bedieneNaechstenWartenden(ctx, tx, *bereitgestellt, titelID, r.uhr()); err != nil {
+		if _, err := bedieneNaechstenWartenden(ctx, tx, *bereitgestellt, titelID, a.uhr()); err != nil {
 			return err
 		}
 	}

@@ -23,8 +23,8 @@ func LoescheErfuellteVormerkung(ctx context.Context, q Datenbank, titelID, leser
 	return bereitgestellt, err
 }
 
-// ExemplarNummer liefert die Nummer auf dem Etikett eines Exemplars.
-func ExemplarNummer(ctx context.Context, q Datenbank, exemplarID string) (string, error) {
+// LadeExemplarNummer liefert die Nummer auf dem Etikett eines Exemplars.
+func LadeExemplarNummer(ctx context.Context, q Datenbank, exemplarID string) (string, error) {
 	var nummer string
 	err := q.QueryRow(ctx,
 		`SELECT barcode_id FROM buecher_exemplare WHERE id = $1`, exemplarID).Scan(&nummer)

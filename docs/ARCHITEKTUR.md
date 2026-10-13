@@ -957,7 +957,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   `repository/`: die offenen Forderungen (`OffeneSchaeden`) und die überfälligen Bücher
   (`ZaehleUeberfaelligeBuecher`: offen, kein Gerät, keine Dauerleihe, länger überfällig als
   die Kulanz). Den Hinweis auf das Abholfach beim Scan eines Ausweises liest
-  `AbholbereiteBuecher`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
+  `LadeAbholbereiteTitel`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
   (`omnibox_service.go`).
 - Fristen und Sperr-Schwellen liest die Ausleihe über `repository.LadeEinstellungen`
   (`ladeSystemEinstellungen`, `internal/service/loan_rules.go`) und nimmt daraus neun Felder
@@ -3419,7 +3419,7 @@ einer Vormerkung — drei Tage, das Ende auf dem nächsten Schultag, keine Einst
 `pkg/lmfplan` und nicht mehr in `internal/service`.
 
 **Fundstelle.** `lmfplan.Ferientabelle.Tagesfrist` (`pkg/lmfplan/tagesfrist.go`),
-`repository.Abholfrist` (`repository/vormerkung_abholfrist.go`), `pkg/lmfplan/uebrige_ferien.go`,
+`repository.BestimmeAbholfrist` (`repository/vormerkung_abholfrist.go`), `pkg/lmfplan/uebrige_ferien.go`,
 `pkg/lmfplan/sommerferien.go`, [FACHKONZEPT.md §2.1](FACHKONZEPT.md).
 
 ---

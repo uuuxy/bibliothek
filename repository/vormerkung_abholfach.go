@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-// AbholbereitesBuch ist ein Buch, das für einen Leser im Abholfach liegt.
-type AbholbereitesBuch struct {
+// AbholbereiterTitel ist ein Buch, das für einen Leser im Abholfach liegt.
+type AbholbereiterTitel struct {
 	Titel             string
 	BereitgestelltBis *time.Time
 }
 
-// AbholbereiteBuecher liefert die Bücher, die für den Leser im Abholfach liegen, höchstens fünf
+// LadeAbholbereiteTitel liefert die Bücher, die für den Leser im Abholfach liegen, höchstens fünf
 // und das mit der kürzesten Abholfrist zuerst: Der Hinweis an der Theke nennt sie einzeln.
-func AbholbereiteBuecher(ctx context.Context, q Datenbank, leserID string) ([]AbholbereitesBuch, error) {
+func LadeAbholbereiteTitel(ctx context.Context, q Datenbank, leserID string) ([]AbholbereiterTitel, error) {
 	rows, err := q.Query(ctx, `
 		SELECT t.titel, v.bereitgestellt_bis
 		FROM vormerkungen v
@@ -26,16 +26,16 @@ func AbholbereiteBuecher(ctx context.Context, q Datenbank, leserID string) ([]Ab
 	}
 	defer rows.Close()
 
-	var buecher []AbholbereitesBuch
+	var titel []AbholbereiterTitel
 	for rows.Next() {
-		var b AbholbereitesBuch
-		if err := rows.Scan(&b.Titel, &b.BereitgestelltBis); err != nil {
+		var t AbholbereiterTitel
+		if err := rows.Scan(&t.Titel, &t.BereitgestelltBis); err != nil {
 			return nil, err
 		}
-		buecher = append(buecher, b)
+		titel = append(titel, t)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return buecher, nil
+	return titel, nil
 }

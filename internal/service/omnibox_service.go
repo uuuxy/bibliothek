@@ -58,7 +58,7 @@ type OmniboxResult struct {
 	// liegt (Betreiber-Entscheidung 01.09.2026). Schüler scannen nicht selbst —
 	// der Hinweis sagt der Mitarbeiterin am Terminal, dass sie ins Abholfach
 	// greifen soll, solange der Schüler vor ihr steht. Ohne ihn läge das Buch im
-	// Fach, bis die Abholfrist (repository.Abholfrist) es still an den Nächsten weiterreicht.
+	// Fach, bis die Abholfrist (repository.BestimmeAbholfrist) es still an den Nächsten weiterreicht.
 	Abholbereit []AbholbereiteVormerkung
 	// AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die
 	// Kinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5). Aus LoanResult.
@@ -362,7 +362,7 @@ func (s *defaultOmniboxService) ladeAbholbereiteVormerkungen(ctx context.Context
 	if s.pool == nil {
 		return nil
 	}
-	buecher, err := repository.AbholbereiteBuecher(ctx, s.pool, schuelerID)
+	buecher, err := repository.LadeAbholbereiteTitel(ctx, s.pool, schuelerID)
 	if err != nil {
 		log.Printf("omnibox: Abholfach-Hinweis nicht ladbar für Schüler %s: %v", schuelerID, err)
 		return nil
