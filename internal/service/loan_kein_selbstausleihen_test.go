@@ -26,22 +26,22 @@ import (
 //
 // Ausgeliehen wird über den Ausweis. Dieser Test hält die Tür zu.
 type selbstausleiheLoanRepo struct {
-	repository.LoanRepository
+	repository.AusleihAbfragen
 	mock      pgxmock.PgxPoolIface
 	geschrieb bool
 }
 
-func (r *selbstausleiheLoanRepo) BeginTx(ctx context.Context) (pgx.Tx, error) {
+func (r *selbstausleiheLoanRepo) BeginneTx(ctx context.Context) (pgx.Tx, error) {
 	return r.mock.Begin(ctx)
 }
 
-func (r *selbstausleiheLoanRepo) GetActiveLoanByCopyIDTx(_ context.Context, _ pgx.Tx, _ string) (*repository.Loan, error) {
+func (r *selbstausleiheLoanRepo) SperreOffene(_ context.Context, _ pgx.Tx, _ string) (*repository.Ausleihe, error) {
 	return nil, nil // Buch ist frei — genau der Fall, in dem der Sonderweg zuschlug
 }
 
-func (r *selbstausleiheLoanRepo) CreateLoanTx(_ context.Context, _ pgx.Tx, _, _, _ string, _ time.Time, _ bool) (*repository.Loan, error) {
+func (r *selbstausleiheLoanRepo) LegeAn(_ context.Context, _ pgx.Tx, _, _, _ string, _ time.Time, _ bool) (*repository.Ausleihe, error) {
 	r.geschrieb = true
-	return &repository.Loan{}, nil
+	return &repository.Ausleihe{}, nil
 }
 
 func TestFreiesBuchWirdNichtAufDenScannerGebucht(t *testing.T) {

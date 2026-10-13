@@ -21,7 +21,7 @@ func TestIdempotenz_UebernahmeNurEinmalUndZuruecklegen(t *testing.T) {
 		VALUES ($1, '{"type": "rueckgabe", "fremdrueckgabe": true}', 200)`, k); err != nil {
 		t.Fatalf("Online-Antwort: %v", err)
 	}
-	alt, err := LiesIdempotenzAntwort(ctx, pool, k)
+	alt, err := LadeIdempotenzAntwort(ctx, pool, k)
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
@@ -36,19 +36,19 @@ func TestIdempotenz_UebernahmeNurEinmalUndZuruecklegen(t *testing.T) {
 	if ok, err := UebernimmIdempotenzAntwort(ctx, pool, k, *alt); err != nil || ok {
 		t.Fatalf("zweite Übernahme derselben Antwort: ok=%v err=%v — erwartet abgelehnt", ok, err)
 	}
-	jetzt, err := LiesIdempotenzAntwort(ctx, pool, k)
-	if err != nil || !jetzt.InArbeit() {
+	jetzt, err := LadeIdempotenzAntwort(ctx, pool, k)
+	if err != nil || !jetzt.IstInArbeit() {
 		t.Fatalf("nach der Übernahme: %+v %v — erwartet eine Reservierung", jetzt, err)
 	}
 
 	if err := StelleIdempotenzAntwortWiederHer(ctx, pool, k, *alt); err != nil {
 		t.Fatalf("zurücklegen: %v", err)
 	}
-	zurueck, err := LiesIdempotenzAntwort(ctx, pool, k)
+	zurueck, err := LadeIdempotenzAntwort(ctx, pool, k)
 	if err != nil || zurueck.Status != alt.Status || string(zurueck.Daten) != string(alt.Daten) {
 		t.Fatalf("zurückgelegt: %+v %v, erwartet %+v", zurueck, err, alt)
 	}
-	if err := StelleIdempotenzAntwortWiederHer(ctx, pool, k, *alt); err != ErrIdempotenzNichtReserviert {
-		t.Errorf("zurücklegen ohne Reservierung: %v, erwartet ErrIdempotenzNichtReserviert", err)
+	if err := StelleIdempotenzAntwortWiederHer(ctx, pool, k, *alt); err != errIdempotenzNichtReserviert {
+		t.Errorf("zurücklegen ohne Reservierung: %v, erwartet errIdempotenzNichtReserviert", err)
 	}
 }

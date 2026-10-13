@@ -54,7 +54,7 @@ func nbAufbau(t *testing.T) *nbWelt {
 
 	studentRepo := repository.NewStudentRepository(pool)
 	bookRepo := repository.NewBookRepository(pool)
-	loanRepo := repository.NewLoanRepository(pool)
+	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	w.svc = NewNachbuchService(pool, studentRepo, bookRepo, repository.NewKontoAbfragen(pool), loanRepo, auditRepo)
 	return w
@@ -210,16 +210,16 @@ func TestNachbuchen_WaechterUndFremdrueckgabe(t *testing.T) {
 
 	// Ben gibt das Buch zurück: Es liegt frei im Regal, aber es hat sich seit der Fremdrückgabe
 	// bewegt. Ein Eintrag, der auf dieselbe Fremdrückgabe verweist, ist veraltet.
-	loans := repository.NewLoanRepository(w.pool)
+	loans := repository.NewAusleihAbfragen(w.pool)
 	tx, err := w.pool.Begin(ctx)
 	if err != nil {
 		t.Fatalf("begin: %v", err)
 	}
-	aktiv, err := loans.GetActiveLoanByCopyIDTx(ctx, tx, w.exemplarID)
+	aktiv, err := loans.SperreOffene(ctx, tx, w.exemplarID)
 	if err != nil || aktiv == nil {
 		t.Fatalf("Bens Ausleihe: %v %v", aktiv, err)
 	}
-	if err := loans.ReturnLoanTx(ctx, tx, aktiv.ID, w.staff, false); err != nil {
+	if err := loans.BucheRueckgabe(ctx, tx, aktiv.ID, w.staff, false); err != nil {
 		t.Fatalf("Rückgabe von Ben: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {

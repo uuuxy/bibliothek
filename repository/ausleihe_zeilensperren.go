@@ -8,7 +8,7 @@ import (
 )
 
 // Die Zeilensperren einer Buchung an der Theke. Scan und Nachbuchen nehmen sie in derselben
-// Reihenfolge: den Leser, die offene Ausleihe des Exemplars (GetActiveLoanByCopyIDTx), das
+// Reihenfolge: den Leser, die offene Ausleihe des Exemplars (AusleihAbfragen.SperreOffene), das
 // Exemplar. In verschiedener Reihenfolge könnten zwei Buchungen aufeinander warten, bis die
 // Datenbank eine abbricht. Die Funktionen nehmen eine Transaktion und keinen Pool: Am Pool
 // endete die Sperre mit der Anweisung.

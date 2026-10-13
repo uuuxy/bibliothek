@@ -129,7 +129,7 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 		return sperrLage{}, err
 	}
 	lage.einst = einst
-	ueberfaellig, err := repository.ZaehleUeberfaelligeBuecher(ctx, q, leserID, einst.UeberfaelligKarenzTage)
+	ueberfaellig, err := repository.ZaehleUeberfaelligeAusleihen(ctx, q, leserID, einst.UeberfaelligKarenzTage)
 	if err != nil {
 		return sperrLage{}, err
 	}

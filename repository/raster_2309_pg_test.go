@@ -23,7 +23,7 @@ import (
 // (zaehleAktiveSchuelerAusleihen). Geben zwei Kinder an zwei Theken zugleich je das Buch des
 // anderen ab, sperrt jede Transaktion ihr eigenes Kind und wartet im Trigger auf das andere.
 // Die Schritte hier sind die des Codes: dieselbe Sperre auf den Schüler,
-// GetActiveLoanByCopyIDTx, ReturnLoanZumTx. Die Gegenprobe läuft dieselben Schritte mit
+// AusleihAbfragen.SperreOffene, BucheRueckgabeZum. Die Gegenprobe läuft dieselben Schritte mit
 // abgeschalteten Triggern (session_replication_role = replica) und kommt durch. Der Test
 // bleibt rot: Die Verklemmung ist hingenommen, die Theke meldet den Fehler, und erneutes
 // Scannen bucht. Die Abhilfe wäre der Stempel in einer eigenen Tabelle statt an der Leserzeile.
@@ -95,7 +95,7 @@ func kreuzRueckgabe(t *testing.T, pool *pgxpool.Pool, ohneTrigger bool) (err1, e
 		}
 	})
 
-	loanRepo := NewLoanRepository(pool)
+	loanRepo := NewAusleihAbfragen(pool)
 	t1, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -124,19 +124,19 @@ func kreuzRueckgabe(t *testing.T, pool *pgxpool.Pool, ohneTrigger bool) (err1, e
 	if _, err := t1.Exec(ctx, `SELECT id FROM schueler WHERE id = $1 FOR UPDATE`, lina); err != nil {
 		t.Fatal(err)
 	}
-	if l, err := loanRepo.GetActiveLoanByCopyIDTx(ctx, t1, exA); err != nil || l == nil {
+	if l, err := loanRepo.SperreOffene(ctx, t1, exA); err != nil || l == nil {
 		t.Fatalf("Theke 1: Ausleihe A: %v %v", l, err)
 	}
 	// Theke 2: Mias Sitzung ist offen, sie gibt Linas Buch B ab.
 	if _, err := t2.Exec(ctx, `SELECT id FROM schueler WHERE id = $1 FOR UPDATE`, mia); err != nil {
 		t.Fatal(err)
 	}
-	if l, err := loanRepo.GetActiveLoanByCopyIDTx(ctx, t2, exB); err != nil || l == nil {
+	if l, err := loanRepo.SperreOffene(ctx, t2, exB); err != nil || l == nil {
 		t.Fatalf("Theke 2: Ausleihe B: %v %v", l, err)
 	}
 
 	fertig1 := make(chan error, 1)
-	go func() { fertig1 <- ReturnLoanZumTx(ctx, t1, loanA, staff, true, nil) }()
+	go func() { fertig1 <- BucheRueckgabeZum(ctx, t1, loanA, staff, true, nil) }()
 	// Warten, bis Theke 1 auf eine Sperre wartet — oder fertig ist (ohne Trigger wartet sie nie).
 	gewartet := false
 	for i := 0; i < 50 && !gewartet; i++ {
@@ -156,7 +156,7 @@ func kreuzRueckgabe(t *testing.T, pool *pgxpool.Pool, ohneTrigger bool) (err1, e
 			}
 		}
 	}
-	err2 = ReturnLoanZumTx(ctx, t2, loanB, staff, true, nil)
+	err2 = BucheRueckgabeZum(ctx, t2, loanB, staff, true, nil)
 	if err2 == nil {
 		err2 = t2.Commit(ctx)
 	} else {

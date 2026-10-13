@@ -18,23 +18,23 @@ type mockLoanRepoReturn struct {
 	tx               pgx.Tx
 }
 
-func (m *mockLoanRepoReturn) GetActiveLoanByCopyID(ctx context.Context, copyID string) (*repository.Loan, error) {
+func (m *mockLoanRepoReturn) FindeOffene(ctx context.Context, copyID string) (*repository.Ausleihe, error) {
 	return nil, m.getActiveLoanErr
 }
-func (m *mockLoanRepoReturn) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.Tx, copyID string) (*repository.Loan, error) {
+func (m *mockLoanRepoReturn) SperreOffene(ctx context.Context, tx pgx.Tx, copyID string) (*repository.Ausleihe, error) {
 	return nil, m.getActiveLoanErr
 }
-func (m *mockLoanRepoReturn) BeginTx(ctx context.Context) (pgx.Tx, error) { return m.tx, m.beginErr }
-func (m *mockLoanRepoReturn) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Loan, error) {
+func (m *mockLoanRepoReturn) BeginneTx(ctx context.Context) (pgx.Tx, error) { return m.tx, m.beginErr }
+func (m *mockLoanRepoReturn) LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Ausleihe, error) {
 	return nil, nil
 }
-func (m *mockLoanRepoReturn) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, istVerlust bool) error {
+func (m *mockLoanRepoReturn) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, istVerlust bool) error {
 	return m.returnErr
 }
 func (m *mockLoanRepoReturn) ZaehleAktiveAusleihenVonSchuelerTx(ctx context.Context, tx pgx.Tx, schuelerID string) (int, error) {
 	return 0, nil
 }
-func (m *mockLoanRepoReturn) GetActiveBorrowingsByUserTx(ctx context.Context, tx pgx.Tx, userID string) ([]repository.Loan, error) {
+func (m *mockLoanRepoReturn) GetActiveBorrowingsByUserTx(ctx context.Context, tx pgx.Tx, userID string) ([]repository.Ausleihe, error) {
 	return nil, nil
 }
 
@@ -63,7 +63,7 @@ func TestHandleRueckgabe_ReturnLoanTxError(t *testing.T) {
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
 	leserID := "leser1"
-	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
+	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &LoanResult{}
 
 	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
@@ -109,7 +109,7 @@ func TestHandleRueckgabe_CommitError(t *testing.T) {
 	staffID := "staff1"
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
-	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
+	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &LoanResult{}
 
 	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
@@ -154,7 +154,7 @@ func TestHandleRueckgabe_Success(t *testing.T) {
 	staffID := "staff1"
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
-	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
+	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &LoanResult{}
 
 	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
@@ -217,7 +217,7 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 	staffID := "staff1"
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
-	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
+	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &LoanResult{}
 
 	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)

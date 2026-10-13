@@ -2,10 +2,10 @@ package repository
 
 import "context"
 
-// ZaehleUeberfaelligeBuecher zählt die offenen Ausleihen eines Lesers, deren Frist seit mehr als
+// ZaehleUeberfaelligeAusleihen zählt die offenen Ausleihen eines Lesers, deren Frist seit mehr als
 // kulanzTage Tagen abgelaufen ist. Dauerleihen und Geräte zählen nicht: Eine Dauerleihe wird
 // nie überfällig, und die Sperr-Automatik der Theke fragt nach Büchern.
-func ZaehleUeberfaelligeBuecher(ctx context.Context, q Datenbank, leserID string, kulanzTage int) (int, error) {
+func ZaehleUeberfaelligeAusleihen(ctx context.Context, q Datenbank, leserID string, kulanzTage int) (int, error) {
 	var n int
 	err := q.QueryRow(ctx, `
 		SELECT COUNT(*)

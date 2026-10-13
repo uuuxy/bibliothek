@@ -11,11 +11,11 @@ import (
 )
 
 type mockLoanRepo struct {
-	repository.LoanRepository // embed to satisfy interface methods we don't mock
-	returnLoanTxErr           error
+	repository.AusleihAbfragen // embed to satisfy interface methods we don't mock
+	returnLoanTxErr            error
 }
 
-func (m *mockLoanRepo) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID string, bearbeiterID string, isFremdrueckgabe bool) error {
+func (m *mockLoanRepo) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID string, bearbeiterID string, isFremdrueckgabe bool) error {
 	return m.returnLoanTxErr
 }
 
@@ -30,7 +30,7 @@ func TestHandleForeignReturn_Student(t *testing.T) {
 
 	tx := beginTx(t, mockPool)
 
-	activeLoan := &repository.Loan{
+	activeLoan := &repository.Ausleihe{
 		ID:         "loan1",
 		SchuelerID: strPtr("s1"),
 	}
@@ -79,7 +79,7 @@ func TestHandleForeignReturn_Kollege(t *testing.T) {
 
 	tx := beginTx(t, mockPool)
 
-	activeLoan := &repository.Loan{
+	activeLoan := &repository.Ausleihe{
 		ID:         "loan2",
 		SchuelerID: strPtr("t1"),
 	}
@@ -128,7 +128,7 @@ func TestHandleForeignReturn_ReturnLoanError(t *testing.T) {
 
 	tx := beginTx(t, mockPool)
 
-	activeLoan := &repository.Loan{
+	activeLoan := &repository.Ausleihe{
 		ID:         "loan3",
 		SchuelerID: strPtr("s1"),
 	}
@@ -159,7 +159,7 @@ func TestHandleForeignReturn_CommitError(t *testing.T) {
 
 	tx := beginTx(t, mockPool)
 
-	activeLoan := &repository.Loan{
+	activeLoan := &repository.Ausleihe{
 		ID:         "loan4",
 		SchuelerID: strPtr("s1"),
 	}

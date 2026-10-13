@@ -364,38 +364,38 @@ func TestIstEigeneRueckgabe(t *testing.T) {
 	tests := []struct {
 		name     string
 		chkCtx   *checkoutContext
-		loan     *repository.Loan
+		loan     *repository.Ausleihe
 		expected bool
 	}{
 		{"keine aktive Ausleihe", schuelerCtx("s1"), nil, false},
 		{
 			"Schüler scannt eigenes Buch",
 			schuelerCtx("s1"),
-			&repository.Loan{SchuelerID: strPtr("s1")},
+			&repository.Ausleihe{SchuelerID: strPtr("s1")},
 			true,
 		},
 		{
 			"Schüler scannt fremdes Buch",
 			schuelerCtx("s1"),
-			&repository.Loan{SchuelerID: strPtr("s2")},
+			&repository.Ausleihe{SchuelerID: strPtr("s2")},
 			false,
 		},
 		{
 			"Lehrkraft scannt eigenes Buch",
 			lehrkraftCtx("l1"),
-			&repository.Loan{SchuelerID: strPtr("l1")},
+			&repository.Ausleihe{SchuelerID: strPtr("l1")},
 			true,
 		},
 		{
 			"Lehrkraft scannt fremdes Buch",
 			lehrkraftCtx("l1"),
-			&repository.Loan{SchuelerID: strPtr("l2")},
+			&repository.Ausleihe{SchuelerID: strPtr("l2")},
 			false,
 		},
 		{
 			"Schüler scannt Buch einer Lehrkraft",
 			schuelerCtx("s1"),
-			&repository.Loan{SchuelerID: strPtr("l1")},
+			&repository.Ausleihe{SchuelerID: strPtr("l1")},
 			false,
 		},
 	}

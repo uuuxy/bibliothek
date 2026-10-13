@@ -22,7 +22,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	defer mock.Close()
 
 	studentRepo := repository.NewStudentRepository(mock)
-	loanRepo := repository.NewLoanRepository(mock)
+	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
@@ -61,7 +61,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
-	// 6. Mock GetActiveLoanByCopyIDTx (returns 0 rows -> no active loan)
+	// 6. Mock AusleihAbfragen.SperreOffene (returns 0 rows -> no active loan)
 	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
 		WithArgs(copy.ID).
 		WillReturnRows(pgxmock.NewRows([]string{}))
@@ -91,7 +91,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WithArgs(copy.ID).
 		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}))
 
-	// Mock CreateLoanTx
+	// Mock AusleihAbfragen.LegeAn
 	mock.ExpectQuery("INSERT INTO ausleihen").
 		WithArgs(copy.ID, studentID, pgxmock.AnyArg(), staffID, false, pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
@@ -133,7 +133,7 @@ func TestHandleBookReturn(t *testing.T) {
 	defer mock.Close()
 
 	studentRepo := repository.NewStudentRepository(mock)
-	loanRepo := repository.NewLoanRepository(mock)
+	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
@@ -153,7 +153,7 @@ func TestHandleBookReturn(t *testing.T) {
 	// Mock Tx
 	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
 
-	// Mock GetActiveLoanByCopyIDTx -> return an active loan
+	// Mock AusleihAbfragen.SperreOffene -> return an active loan
 	activeLoanID := "loan-1"
 	studentID := "student-1"
 	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
@@ -167,7 +167,7 @@ func TestHandleBookReturn(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email", "anonymisiert", "art"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", 0, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", "", false, "schueler"))
 
-	// ReturnLoanTx
+	// AusleihAbfragen.BucheRueckgabe
 	mock.ExpectExec("UPDATE ausleihen").
 		WithArgs(staffID, false, activeLoanID, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))

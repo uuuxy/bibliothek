@@ -24,7 +24,7 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 
 	studentRepo := repository.NewStudentRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
-	loanRepo := repository.NewLoanRepository(mock)
+	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
 	if !ok {
@@ -90,7 +90,7 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 
 	studentRepo := repository.NewStudentRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
-	loanRepo := repository.NewLoanRepository(mock)
+	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
 	if !ok {
@@ -151,7 +151,7 @@ func TestHandleNewLoan_ErzeugeAusleiheError(t *testing.T) {
 
 	studentRepo := repository.NewStudentRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
-	loanRepo := repository.NewLoanRepository(mock)
+	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
 	if !ok {
@@ -199,7 +199,7 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 
 	studentRepo := repository.NewStudentRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
-	loanRepo := repository.NewLoanRepository(mock)
+	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
 	if !ok {

@@ -315,14 +315,14 @@ func PredikatKlassensatzReservierungen(tage, kulanz int) Loeschbedingung {
 // den Schüler an ein Buch binden. Offene Meldungen haben keine Frist — sie sind Arbeit,
 // die noch aussteht, und der Wächter der Betriebsbereitschaft nennt sie nach 14 Tagen.
 
-// HoechstNachbuchMeldungenTage ist die Obergrenze der Frist, unabhängig von der Einstellung.
-const HoechstNachbuchMeldungenTage = 30
+// hoechstNachbuchMeldungenTage ist die Obergrenze der Frist, unabhängig von der Einstellung.
+const hoechstNachbuchMeldungenTage = 30
 
 // NachbuchMeldungenTage liefert die Frist: Lesehistorie-Frist, höchstens 30 Tage.
 func NachbuchMeldungenTage(einst *SystemEinstellungen) int {
 	tage := TageOderVorgabe(einst.LesehistorieTage, LesehistorieTageVorgabe)
-	if tage <= 0 || tage > HoechstNachbuchMeldungenTage {
-		return HoechstNachbuchMeldungenTage
+	if tage <= 0 || tage > hoechstNachbuchMeldungenTage {
+		return hoechstNachbuchMeldungenTage
 	}
 	return tage
 }

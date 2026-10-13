@@ -45,7 +45,7 @@ func neueVormerkTheke(t *testing.T) *vormerkTheke {
 			}
 		}
 	})
-	v.svc = NewLoanService(pool, repository.NewStudentRepository(pool), v.buecher, repository.NewLoanRepository(pool),
+	v.svc = NewLoanService(pool, repository.NewStudentRepository(pool), v.buecher, repository.NewAusleihAbfragen(pool),
 		repository.NewProtokollAbfragen(pool))
 	return v
 }

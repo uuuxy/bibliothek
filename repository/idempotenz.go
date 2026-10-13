@@ -34,12 +34,12 @@ type IdempotenzAntwort struct {
 	Status int
 }
 
-// InArbeit sagt, ob der Schlüssel reserviert, aber noch ohne Antwort ist.
-func (a IdempotenzAntwort) InArbeit() bool { return a.Status == 0 }
+// IstInArbeit sagt, ob der Schlüssel reserviert, aber noch ohne Antwort ist.
+func (a IdempotenzAntwort) IstInArbeit() bool { return a.Status == 0 }
 
-// ErrIdempotenzNichtReserviert heißt: Die Antwort ließ sich nicht ablegen, weil der Schlüssel
+// errIdempotenzNichtReserviert heißt: Die Antwort ließ sich nicht ablegen, weil der Schlüssel
 // nicht (mehr) dieser Anfrage gehört — keine Reservierung, oder schon beantwortet.
-var ErrIdempotenzNichtReserviert = errors.New("idempotenz: schlüssel nicht reserviert")
+var errIdempotenzNichtReserviert = errors.New("idempotenz: schlüssel nicht reserviert")
 
 // ReserviereIdempotenzSchluessel versucht, den Schlüssel zu reservieren. reserviert=true: der
 // Aufrufer darf arbeiten und speichert danach die Antwort. Sonst gehört der Schlüssel schon
@@ -63,15 +63,15 @@ func ReserviereIdempotenzSchluessel(ctx context.Context, pool db.PgxPoolIface, s
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return false, nil, err
 	}
-	antwort, err = LiesIdempotenzAntwort(ctx, pool, schluessel)
+	antwort, err = LadeIdempotenzAntwort(ctx, pool, schluessel)
 	if err != nil {
 		return false, nil, err
 	}
 	return false, antwort, nil
 }
 
-// LiesIdempotenzAntwort liest, was unter dem Schlüssel steht; pgx.ErrNoRows, wenn nichts.
-func LiesIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string) (*IdempotenzAntwort, error) {
+// LadeIdempotenzAntwort liest, was unter dem Schlüssel steht; pgx.ErrNoRows, wenn nichts.
+func LadeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string) (*IdempotenzAntwort, error) {
 	var a IdempotenzAntwort
 	if err := pool.QueryRow(ctx,
 		`SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1`,
@@ -81,9 +81,9 @@ func LiesIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel
 	return &a, nil
 }
 
-// SpeichereIdempotenzAntwort schreibt die Antwort in die eigene Reservierung. Eine fremde
+// SchreibeIdempotenzAntwort schreibt die Antwort in die eigene Reservierung. Eine fremde
 // oder schon beantwortete Zeile (Status ≠ 0) bleibt unberührt.
-func SpeichereIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string, daten []byte, status int) error {
+func SchreibeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string, daten []byte, status int) error {
 	tag, err := pool.Exec(ctx,
 		`UPDATE idempotency_keys SET response_data = $2, status_code = $3 WHERE idempotency_key = $1 AND status_code = 0`,
 		schluessel, daten, status)
@@ -91,7 +91,7 @@ func SpeichereIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schlu
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return ErrIdempotenzNichtReserviert
+		return errIdempotenzNichtReserviert
 	}
 	return nil
 }
@@ -125,7 +125,7 @@ func StelleIdempotenzAntwortWiederHer(ctx context.Context, pool db.PgxPoolIface,
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return ErrIdempotenzNichtReserviert
+		return errIdempotenzNichtReserviert
 	}
 	return nil
 }

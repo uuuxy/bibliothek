@@ -9,14 +9,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// LiesFremdrueckgabeZeitpunkt liefert den Rückgabezeitpunkt einer Ausleihe, die als
+// FindeFremdrueckgabeZeitpunkt liefert den Rückgabezeitpunkt einer Ausleihe, die als
 // Fremdrückgabe genau dieses Exemplars beendet wurde — nil, wenn es sie so nicht gibt.
 //
 // Die Nachbuch-Tür fragt das für einen Eintrag, unter dessen Schlüssel der Online-Versand nur
 // die Fremdrückgabe gebucht hat: Sie legt den Scan auf diesen Zeitpunkt, und der Wächter
 // entscheidet, ob sich das Exemplar seitdem bewegt hat (internal/service/nachbuchen.go). Ohne
 // ist_fremdrueckgabe genügte der Verweis auf irgendeine beendete Ausleihe desselben Exemplars.
-func LiesFremdrueckgabeZeitpunkt(ctx context.Context, q Datenbank, ausleiheID, exemplarID string) (*time.Time, error) {
+func FindeFremdrueckgabeZeitpunkt(ctx context.Context, q Datenbank, ausleiheID, exemplarID string) (*time.Time, error) {
 	var rueckgabe *time.Time
 	err := q.QueryRow(ctx, `
 		SELECT rueckgabe_am FROM ausleihen

@@ -242,7 +242,7 @@ func (s *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, a
 // Bis zum 29.09.2026 stand hier eine eigene Abfrage, die jede Sperre zählte — auch die der
 // Ehemaligen beim Schulbuch, das die Theke demselben Kind ausgibt.
 func (s *Tueren) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (bool, string, error) {
-	leserID, lernmittel, err := repository.LeserUndLernmittelDerAusleihe(ctx, s.DB.Pool, ausleiheID)
+	leserID, lernmittel, err := repository.LadeLeserUndLernmittelDerAusleihe(ctx, s.DB.Pool, ausleiheID)
 	if err != nil || leserID == nil {
 		return false, "", err
 	}

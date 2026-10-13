@@ -44,7 +44,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 
 	bookRepo := repository.NewBookRepository(pool)
 	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
-		repository.NewLoanRepository(pool), repository.NewProtokollAbfragen(pool))
+		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 	uebergangen := func() int {
 		t.Helper()
 		var n int

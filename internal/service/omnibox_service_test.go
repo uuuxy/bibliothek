@@ -86,7 +86,7 @@ func TestNewOmniboxService(t *testing.T) {
 	var studentRepo repository.StudentRepository
 	var bookRepo repository.BookRepository
 	var userRepo repository.KontoAbfragen
-	var loanRepo repository.LoanRepository
+	var loanRepo repository.AusleihAbfragen
 	var loanSvc LoanService
 	var deviceSvc DeviceService
 

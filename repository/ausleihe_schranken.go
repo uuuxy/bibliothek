@@ -10,7 +10,7 @@ import (
 // ZaehleOffeneBuechereiAusleihen zählt die offenen Ausleihen eines Lesers, die gegen das
 // Ausleihlimit zählen: Bücher, die kein Lernmittel sind.
 func ZaehleOffeneBuechereiAusleihen(ctx context.Context, q Datenbank, leserID string) (int, error) {
-	var count int
+	var anzahl int
 	err := q.QueryRow(ctx, `
 		SELECT COUNT(*)
 		FROM ausleihen a
@@ -19,20 +19,20 @@ func ZaehleOffeneBuechereiAusleihen(ctx context.Context, q Datenbank, leserID st
 		WHERE a.schueler_id = $1
 		  AND a.rueckgabe_am IS NULL
 		  AND NOT bt.ist_lernmittel
-	`, leserID).Scan(&count)
-	return count, err
+	`, leserID).Scan(&anzahl)
+	return anzahl, err
 }
 
-// AbholfachReservierung nennt, für wen ein Exemplar im Abholfach liegt.
-type AbholfachReservierung struct {
+// AbholfachVormerkung nennt, für wen ein Exemplar im Abholfach liegt.
+type AbholfachVormerkung struct {
 	LeserID  string
 	Vorname  string
 	Nachname string
 }
 
-// ReservierungAmExemplar liefert, für wen das Exemplar im Abholfach liegt, solange die
+// FindeVormerkungAmExemplar liefert, für wen das Exemplar im Abholfach liegt, solange die
 // Abholfrist läuft. bereit ist false, wenn es für niemanden bereitliegt.
-func ReservierungAmExemplar(ctx context.Context, q Datenbank, exemplarID string) (reservierung AbholfachReservierung, bereit bool, err error) {
+func FindeVormerkungAmExemplar(ctx context.Context, q Datenbank, exemplarID string) (vormerkung AbholfachVormerkung, bereit bool, err error) {
 	err = q.QueryRow(ctx, `
 		SELECT v.schueler_id, s.vorname, s.nachname
 		FROM vormerkungen v
@@ -40,12 +40,12 @@ func ReservierungAmExemplar(ctx context.Context, q Datenbank, exemplarID string)
 		WHERE v.bereitgestellt_exemplar_id = $1
 		  AND v.status = 'abholbereit'
 		  AND v.bereitgestellt_bis > CURRENT_TIMESTAMP
-	`, exemplarID).Scan(&reservierung.LeserID, &reservierung.Vorname, &reservierung.Nachname)
+	`, exemplarID).Scan(&vormerkung.LeserID, &vormerkung.Vorname, &vormerkung.Nachname)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return reservierung, false, nil
+		return vormerkung, false, nil
 	}
 	if err != nil {
-		return reservierung, false, err
+		return vormerkung, false, err
 	}
-	return reservierung, true, nil
+	return vormerkung, true, nil
 }

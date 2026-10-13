@@ -131,7 +131,7 @@ func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, 
 // Scheitert es an Sperre, Limit, Vormerkung oder an einer gleichzeitigen Buchung, ist der
 // Eintrag abgewiesen: Die Abweisung kommt als zweiter Wert zurück, und die Transaktion ist dann
 // abgeschlossen (weiseImSavepointAb).
-func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx, l *nachbuchLage, resp *LoanResult) (*repository.Loan, *NachbuchErgebnis, error) {
+func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx, l *nachbuchLage, resp *LoanResult) (*repository.Ausleihe, *NachbuchErgebnis, error) {
 	sp, err := tx.Begin(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -148,7 +148,7 @@ func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx,
 		return nil, abweisung, abwErr
 	}
 
-	loan, err := repository.CreateLoanZumTx(ctx, sp, repository.CreateLoanParams{
+	loan, err := repository.LegeAusleiheAn(ctx, sp, repository.AusleiheNeu{
 		ExemplarID:     l.copy.ID,
 		LeserID:        l.leser.ID,
 		BearbeiterID:   l.e.StaffID,
@@ -200,7 +200,7 @@ var errScanVeraltet = errors.New("scan veraltet")
 // schreibt das Protokoll; liefert den Vorbesitzer für Antwort und Meldung.
 func (s *defaultLoanService) nimmZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage, fremd bool, resp *LoanResult) (*repository.Student, error) {
 	aktiv := l.activeLoan
-	if err := repository.ReturnLoanZumTx(ctx, tx, aktiv.ID, l.e.StaffID, fremd, &l.gescannt); err != nil {
+	if err := repository.BucheRueckgabeZum(ctx, tx, aktiv.ID, l.e.StaffID, fremd, &l.gescannt); err != nil {
 		if istPruefungVerletzt(err) {
 			return nil, errScanVeraltet
 		}

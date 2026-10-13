@@ -154,7 +154,7 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 		// derselbe Stempel auch einer Rückdatierung DERSELBEN Ausleihe nicht folgt, ist die
 		// eine Abweichung vom früheren max(rueckgabe_am) — und ein Zustand, den keine Tür
 		// der Anwendung herstellt: Alle drei Rückgabewege fassen nur offene Ausleihen an
-		// (repository/loan.go ReturnLoanZumTx, repository/schaden_melden.go,
+		// (repository/ausleihe.go BucheRueckgabeZum, repository/schaden_melden.go,
 		// internal/service/device_service.go über activeLoan), die Littera-Übernahme fügt
 		// nur ein. rueckgabe_am geht von NULL auf einen Wert und nie von einem Wert auf
 		// einen anderen (nachgesehen am 23.09.2026).

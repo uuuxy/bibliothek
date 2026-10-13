@@ -60,7 +60,7 @@ func TestZaehleOffeneBuechereiAusleihen_NurOffeneBuecherOhneLernmittel(t *testin
 // Ein Exemplar ist reserviert, solange es abholbereit für jemanden im Fach liegt und die
 // Abholfrist läuft: nicht mehr nach ihrem Ablauf, nicht für eine wartende Vormerkung und nicht,
 // wenn ein anderes Exemplar bereitliegt.
-func TestReservierungAmExemplar_NurAbholbereitInDerFrist(t *testing.T) {
+func TestFindeVormerkungAmExemplar_NurAbholbereitInDerFrist(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -93,15 +93,15 @@ func TestReservierungAmExemplar_NurAbholbereitInDerFrist(t *testing.T) {
 	wartend := exemplar("wartend", "wartend", "2 days")
 	frei := exemplar("frei", "", "0")
 
-	ist, da, err := ReservierungAmExemplar(ctx, tx, bereit)
+	ist, da, err := FindeVormerkungAmExemplar(ctx, tx, bereit)
 	if err != nil || !da {
 		t.Fatalf("bereitliegendes Exemplar: bereit=%v, Fehler %v", da, err)
 	}
-	if soll := (AbholfachReservierung{LeserID: schueler, Vorname: "Vorname der Reservierung", Nachname: "Nachname der Reservierung"}); ist != soll {
+	if soll := (AbholfachVormerkung{LeserID: schueler, Vorname: "Vorname der Reservierung", Nachname: "Nachname der Reservierung"}); ist != soll {
 		t.Errorf("Reservierung %+v, erwartet %+v", ist, soll)
 	}
 	for name, id := range map[string]string{"Abholfrist abgelaufen": abgelaufen, "Vormerkung wartend": wartend, "ohne Vormerkung": frei} {
-		if _, da, err := ReservierungAmExemplar(ctx, tx, id); err != nil || da {
+		if _, da, err := FindeVormerkungAmExemplar(ctx, tx, id); err != nil || da {
 			t.Errorf("%s: bereit=%v, Fehler %v; erwartet nicht reserviert", name, da, err)
 		}
 	}

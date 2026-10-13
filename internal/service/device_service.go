@@ -47,12 +47,12 @@ type DeviceService interface {
 type defaultDeviceService struct {
 	pool        db.PgxPoolIface
 	studentRepo repository.StudentRepository
-	loanRepo    repository.LoanRepository
+	loanRepo    repository.AusleihAbfragen
 	auditRepo   repository.ProtokollAbfragen
 }
 
 // NewDeviceService erstellt eine neue Instanz des Standard-Geräteservice.
-func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, loanRepo repository.LoanRepository, auditRepo repository.ProtokollAbfragen) DeviceService {
+func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) DeviceService {
 	return &defaultDeviceService{
 		pool:        pool,
 		studentRepo: studentRepo,
@@ -194,7 +194,7 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 
 // ermittleVorbesitzer stellt fest, ob eine Fremdrückgabe vorliegt (Rückgeber ≠ Ausleiher)
 // und lädt in diesem Fall die Stammdaten des ursprünglichen Ausleihers in resp.
-func (s *defaultDeviceService) ermittleVorbesitzer(ctx context.Context, activeLoan *repository.Loan, leser *repository.Student, resp *DeviceResult) (bool, error) {
+func (s *defaultDeviceService) ermittleVorbesitzer(ctx context.Context, activeLoan *repository.Ausleihe, leser *repository.Student, resp *DeviceResult) (bool, error) {
 	if activeLoan.SchuelerID == nil {
 		return false, nil
 	}
@@ -211,7 +211,7 @@ func (s *defaultDeviceService) ermittleVorbesitzer(ctx context.Context, activeLo
 }
 
 // gibGeraetZurueck behandelt Fall B: das ausgeliehene Gerät wird zurückgegeben.
-func (s *defaultDeviceService) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, activeLoan *repository.Loan, leser *repository.Student, staffID string) (*DeviceResult, error) {
+func (s *defaultDeviceService) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, activeLoan *repository.Ausleihe, leser *repository.Student, staffID string) (*DeviceResult, error) {
 	resp := &DeviceResult{}
 
 	isFremd, err := s.ermittleVorbesitzer(ctx, activeLoan, leser, resp)
@@ -257,7 +257,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	}
 
 	// Transaktion starten, um den Ausleihprozess atomar und thread-sicher zu gestalten.
-	tx, err := s.loanRepo.BeginTx(ctx)
+	tx, err := s.loanRepo.BeginneTx(ctx)
 	if err != nil {
 		return nil, err
 	}

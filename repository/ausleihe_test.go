@@ -5,24 +5,24 @@ import (
 	"testing"
 )
 
-func TestNewLoanRepository(t *testing.T) {
+func TestNewAusleihAbfragen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer mock.Close()
 
-	repo := NewLoanRepository(mock)
+	repo := NewAusleihAbfragen(mock)
 	if repo == nil {
-		t.Fatal("NewLoanRepository returned nil")
+		t.Fatal("NewAusleihAbfragen returned nil")
 	}
 
-	pgRepo, ok := repo.(*pgLoanRepository)
+	pgRepo, ok := repo.(*pgAusleihAbfragen)
 	if !ok {
-		t.Fatal("NewLoanRepository did not return *pgLoanRepository")
+		t.Fatal("NewAusleihAbfragen did not return *pgAusleihAbfragen")
 	}
 
 	if pgRepo.db != mock {
-		t.Error("NewLoanRepository did not properly set the db field")
+		t.Error("NewAusleihAbfragen did not properly set the db field")
 	}
 }

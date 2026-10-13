@@ -81,7 +81,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 		}
 	})
 
-	svc := NewDeviceService(pool, repository.NewStudentRepository(pool), repository.NewLoanRepository(pool),
+	svc := NewDeviceService(pool, repository.NewStudentRepository(pool), repository.NewAusleihAbfragen(pool),
 		repository.NewProtokollAbfragen(pool))
 
 	faelle := []struct {

@@ -10,7 +10,7 @@ import (
 // Die Sperr-Automatik zählt, was offen, ein Buch und seit mehr als der Kulanz überfällig ist:
 // nicht die Ausleihe innerhalb der Kulanz, nicht die zurückgegebene, nicht die Dauerleihe,
 // nicht das Gerät und nicht die Ausleihe eines anderen Lesers.
-func TestZaehleUeberfaelligeBuecher_NurOffeneBuecherJenseitsDerKulanz(t *testing.T) {
+func TestZaehleUeberfaelligeAusleihen_NurOffeneBuecherJenseitsDerKulanz(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -53,7 +53,7 @@ func TestZaehleUeberfaelligeBuecher_NurOffeneBuecherJenseitsDerKulanz(t *testing
 		VALUES ($1, $2, $3, now() - interval '40 days', now() - interval '20 days')`, geraetID, leserID, bearbeiterID)
 
 	for kulanz, soll := range map[int]int{5: 2, 14: 1, 30: 0} {
-		ist, err := ZaehleUeberfaelligeBuecher(ctx, tx, leserID, kulanz)
+		ist, err := ZaehleUeberfaelligeAusleihen(ctx, tx, leserID, kulanz)
 		if err != nil {
 			t.Fatalf("Kulanz %d: %v", kulanz, err)
 		}

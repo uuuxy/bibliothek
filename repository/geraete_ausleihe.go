@@ -24,7 +24,7 @@ func LiesGeraetNachNummer(ctx context.Context, db Datenbank, nummer string) (Ger
 // zum Ende der Transaktion: Zwei Rückgaben desselben Geräts warten so aufeinander. offen ist
 // false, wenn das Gerät frei ist. Sie nimmt eine Transaktion und keinen Pool: Am Pool endete
 // die Sperre mit der Anweisung.
-func SperreOffeneGeraeteAusleihe(ctx context.Context, tx pgx.Tx, geraetID string) (ausleihe Loan, offen bool, err error) {
+func SperreOffeneGeraeteAusleihe(ctx context.Context, tx pgx.Tx, geraetID string) (ausleihe Ausleihe, offen bool, err error) {
 	err = tx.QueryRow(ctx, `
 		SELECT id, geraet_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 		FROM ausleihen

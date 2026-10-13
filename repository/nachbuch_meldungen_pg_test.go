@@ -57,7 +57,7 @@ func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 		t.Fatalf("zwei Einträge mit einem Schlüssel: offen vorher %d, nachher %d — erwartet +1", vorher, nachher)
 	}
 
-	offen, err := ListeNachbuchMeldungen(ctx, pool, true)
+	offen, err := LadeNachbuchMeldungen(ctx, pool, true)
 	if err != nil {
 		t.Fatalf("liste: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE nachbuch_meldungen SET quittiert_am = now() - interval '31 days' WHERE id = $1`, meine.ID); err != nil {
 		t.Fatalf("rückdatieren: %v", err)
 	}
-	b := PredikatNachbuchMeldungen(HoechstNachbuchMeldungenTage, KulanzJob)
+	b := PredikatNachbuchMeldungen(hoechstNachbuchMeldungenTage, KulanzJob)
 	tag, err := pool.Exec(ctx, `DELETE FROM nachbuch_meldungen WHERE `+b.Where+` AND barcode = $3`, append(b.Args, barcode)...)
 	if err != nil {
 		t.Fatalf("löschen: %v", err)

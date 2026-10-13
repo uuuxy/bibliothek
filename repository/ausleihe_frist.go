@@ -86,10 +86,10 @@ func VerlaengereLernmittelDerKlasse(ctx context.Context, db Datenbank, klasse st
 	return tag.RowsAffected(), nil
 }
 
-// LeserUndLernmittelDerAusleihe liest zu einer offenen Ausleihe ihren Leser (nil, wenn sie von
+// LadeLeserUndLernmittelDerAusleihe liest zu einer offenen Ausleihe ihren Leser (nil, wenn sie von
 // ihm getrennt ist) und ob ihr Titel ein Lernmittel ist. pgx.ErrNoRows, wenn es die Ausleihe
 // nicht gibt oder sie zurückgegeben ist.
-func LeserUndLernmittelDerAusleihe(ctx context.Context, db Datenbank, ausleiheID string) (leserID *string, lernmittel bool, err error) {
+func LadeLeserUndLernmittelDerAusleihe(ctx context.Context, db Datenbank, ausleiheID string) (leserID *string, lernmittel bool, err error) {
 	err = db.QueryRow(ctx, `
 		SELECT a.schueler_id, COALESCE(t.ist_lernmittel, false)
 		FROM ausleihen a

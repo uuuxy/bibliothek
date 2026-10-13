@@ -25,7 +25,7 @@ import (
 func (s *Tueren) NachbuchMeldungenListeHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		nurOffen := r.URL.Query().Get("alle") != "1"
-		liste, err := repository.ListeNachbuchMeldungen(r.Context(), s.DB.Pool, nurOffen)
+		liste, err := repository.LadeNachbuchMeldungen(r.Context(), s.DB.Pool, nurOffen)
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldungen konnten nicht gelesen werden", err)
 		}

@@ -84,7 +84,7 @@ func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) 
 
 // „Beliebt" heißt viele Leser, nicht viele Exemplare.
 //
-// Lehrer-Ausleihen sind je Exemplar eine Zeile in ausleihen (repository/loan.go): Ein
+// Lehrer-Ausleihen sind je Exemplar eine Zeile in ausleihen (repository/ausleihe.go): Ein
 // Klassensatz „Die Welle" ×30 an eine Lehrkraft wären 30 Ausleihen — er hätte „Beliebt
 // diese Woche" und „Buch des Monats" beherrscht, obwohl ihn kein einziger Schüler
 // freiwillig gelesen hat. Und ein Schüler, der denselben Titel zweimal ausleiht, ist ein
@@ -171,7 +171,7 @@ func seedLehrkraft(t *testing.T, pool *pgxpool.Pool) string {
 }
 
 // seedLehrerAusleihe bucht eine Ausleihe an eine Lehrkraft (Handapparat/Klassensatz) —
-// je Exemplar eine Zeile, genau wie repository/loan.go es tut.
+// je Exemplar eine Zeile, genau wie repository/ausleihe.go es tut.
 func seedLehrerAusleihe(t *testing.T, pool *pgxpool.Pool, exemplarID, benutzerID string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `

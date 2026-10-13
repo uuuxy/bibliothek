@@ -27,7 +27,7 @@ func (s *defaultLoanService) zaehleAktiveSchuelerAusleihen(ctx context.Context, 
 // istEigeneRueckgabe erkennt, ob der aktive Ausleiher sein eigenes Buch scannt
 // (also eine reguläre Rückgabe statt einer Fremdrückgabe). Eine Spalte, ein Vergleich:
 // Vorher waren es zwei, und ob der richtige griff, entschied der borrowerType.
-func istEigeneRueckgabe(chkCtx *checkoutContext, activeLoan *repository.Loan) bool {
+func istEigeneRueckgabe(chkCtx *checkoutContext, activeLoan *repository.Ausleihe) bool {
 	if activeLoan == nil {
 		return false
 	}
@@ -62,7 +62,7 @@ func (s *defaultLoanService) pruefeVormerkungKonflikt(ctx context.Context, tx pg
 	if !neueAusleihe {
 		return nil
 	}
-	reserviert, bereit, err := repository.ReservierungAmExemplar(ctx, tx, copyID)
+	reserviert, bereit, err := repository.FindeVormerkungAmExemplar(ctx, tx, copyID)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	}
 
 	// 2. Transaktion gegen Race Conditions
-	tx, err := s.loanRepo.BeginTx(ctx)
+	tx, err := s.loanRepo.BeginneTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 		return nil, err
 	}
 
-	activeLoan, err := s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
+	activeLoan, err := s.loanRepo.SperreOffene(ctx, tx, copy.ID)
 	if err != nil {
 		return nil, err
 	}

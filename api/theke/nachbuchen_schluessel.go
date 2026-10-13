@@ -59,7 +59,7 @@ func (s *Tueren) ergreifeNachbuchSchluessel(ctx context.Context, e NachbuchenEin
 	if reserviert {
 		return nachbuchSchluesselLage{}, nil
 	}
-	if antwort.InArbeit() {
+	if antwort.IstInArbeit() {
 		return nachbuchSchluesselLage{antwort: nachbuchNochInArbeit(e)}, nil
 	}
 	var ablage nachbuchAblage
@@ -126,7 +126,7 @@ func (s *Tueren) legeNachbuchErgebnisAb(ctx context.Context, erg NachbuchenErgeb
 		log.Printf("nachbuchen: Ergebnis zu %s nicht serialisierbar: %v", erg.Schluessel, err)
 		return
 	}
-	if err := repository.SpeichereIdempotenzAntwort(ctx, s.DB.Pool, erg.Schluessel, daten, http.StatusOK); err != nil {
+	if err := repository.SchreibeIdempotenzAntwort(ctx, s.DB.Pool, erg.Schluessel, daten, http.StatusOK); err != nil {
 		log.Printf("nachbuchen: Ergebnis zu %s nicht abgelegt: %v", erg.Schluessel, err)
 	}
 }

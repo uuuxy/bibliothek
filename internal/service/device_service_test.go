@@ -14,7 +14,7 @@ import (
 func TestNewDeviceService(t *testing.T) {
 	var pool db.PgxPoolIface = nil
 	var studentRepo repository.StudentRepository = nil
-	var loanRepo repository.LoanRepository = nil
+	var loanRepo repository.AusleihAbfragen = nil
 	var auditRepo repository.ProtokollAbfragen = nil
 
 	service := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)

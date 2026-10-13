@@ -117,7 +117,7 @@ func TestNachbuchMeldungen_SSESignalBeiAenderung(t *testing.T) {
 	warteAuf("Umbuchung")
 
 	// Quittieren ist die zweite Änderung: eine Meldung weniger.
-	liste, err := repository.ListeNachbuchMeldungen(context.Background(), w.pool, true)
+	liste, err := repository.LadeNachbuchMeldungen(context.Background(), w.pool, true)
 	if err != nil || len(liste) == 0 {
 		t.Fatalf("Meldung nicht gefunden (err=%v, %d Zeilen)", err, len(liste))
 	}

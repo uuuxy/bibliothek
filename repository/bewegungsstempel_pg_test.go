@@ -22,7 +22,7 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	f := stempelAufbau(t, pool)
-	loans := NewLoanRepository(pool)
+	loans := NewAusleihAbfragen(pool)
 
 	stempel := func() *time.Time {
 		var s *time.Time
@@ -37,7 +37,7 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 
 	// Ausleihe: Stempel gesetzt, erfasst_am an der Ausleihe.
 	tx := beginne(t, pool)
-	loan, err := loans.CreateLoanTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, time.Now().AddDate(0, 0, 14), false)
+	loan, err := loans.LegeAn(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, time.Now().AddDate(0, 0, 14), false)
 	if err != nil {
 		t.Fatalf("ausleihen: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 	// Rückgabe: Stempel rückt vor.
 	warte(t, pool)
 	tx = beginne(t, pool)
-	if err := loans.ReturnLoanTx(ctx, tx, loan.ID, f.bearbeiterID, false); err != nil {
+	if err := loans.BucheRueckgabe(ctx, tx, loan.ID, f.bearbeiterID, false); err != nil {
 		t.Fatalf("zurückgeben: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -107,7 +107,7 @@ func TestBewegungsstempel_LaeuftNieRueckwaerts(t *testing.T) {
 	vorDreissig, vorZwanzig, vorZehn := jetzt.Add(-30*time.Minute), jetzt.Add(-20*time.Minute), jetzt.Add(-10*time.Minute)
 
 	tx := beginne(t, pool)
-	loan, err := CreateLoanZumTx(ctx, tx, CreateLoanParams{
+	loan, err := LegeAusleiheAn(ctx, tx, AusleiheNeu{
 		ExemplarID:     f.exemplarID,
 		LeserID:        f.schuelerID,
 		BearbeiterID:   f.bearbeiterID,
@@ -121,27 +121,27 @@ func TestBewegungsstempel_LaeuftNieRueckwaerts(t *testing.T) {
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
-	if err := StempleBewegungZum(ctx, pool, f.exemplarID, nil); err != nil {
+	if err := stempleBewegungZum(ctx, pool, f.exemplarID, nil); err != nil {
 		t.Fatalf("stempeln: %v", err)
 	}
 	zuletzt := stempel()
 
-	if err := StempleBewegungZum(ctx, pool, f.exemplarID, &vorZehn); err != nil {
+	if err := stempleBewegungZum(ctx, pool, f.exemplarID, &vorZehn); err != nil {
 		t.Fatalf("früher stempeln: %v", err)
 	}
 	if s := stempel(); !s.Equal(zuletzt) {
-		t.Errorf("StempleBewegungZum mit früherem Zeitpunkt: %v → %v", zuletzt, s)
+		t.Errorf("stempleBewegungZum mit früherem Zeitpunkt: %v → %v", zuletzt, s)
 	}
 
 	tx = beginne(t, pool)
-	if err := ReturnLoanZumTx(ctx, tx, loan.ID, f.bearbeiterID, false, &vorZwanzig); err != nil {
+	if err := BucheRueckgabeZum(ctx, tx, loan.ID, f.bearbeiterID, false, &vorZwanzig); err != nil {
 		t.Fatalf("zurückgeben: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
 	if s := stempel(); !s.Equal(zuletzt) {
-		t.Errorf("ReturnLoanZumTx mit früherem Zeitpunkt: %v → %v", zuletzt, s)
+		t.Errorf("BucheRueckgabeZum mit früherem Zeitpunkt: %v → %v", zuletzt, s)
 	}
 
 	tx = beginne(t, pool)
@@ -163,7 +163,7 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 	stempel := stempelLeser(t, pool, f.exemplarID)
 
 	tx := beginne(t, pool)
-	loan, err := CreateLoanZumTx(ctx, tx, CreateLoanParams{
+	loan, err := LegeAusleiheAn(ctx, tx, AusleiheNeu{
 		ExemplarID:     f.exemplarID,
 		LeserID:        f.schuelerID,
 		BearbeiterID:   f.bearbeiterID,
@@ -184,7 +184,7 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 		t.Fatalf("now: %v", err)
 	}
 	warte(t, pool)
-	if err := StempleBewegungZum(ctx, pool, f.exemplarID, nil); err != nil {
+	if err := stempleBewegungZum(ctx, pool, f.exemplarID, nil); err != nil {
 		t.Fatalf("stempeln: %v", err)
 	}
 	zuletzt := stempel()

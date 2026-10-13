@@ -10,13 +10,13 @@ import (
 )
 
 // Der eindeutige Index lässt höchstens eine offene Ausleihe je Exemplar zu. Prallt
-// der INSERT daran ab, gab CreateLoanTx früher (nil, nil) zurück — kein Fehler, keine
+// der INSERT daran ab, gab AusleihAbfragen.LegeAn früher (nil, nil) zurück — kein Fehler, keine
 // Zeile. Der Aufrufer prüfte nur err, hielt das für Erfolg und meldete dem
 // Arbeitsplatz eine Ausleihe, die nie geschrieben wurde.
 //
 // Nur gegen echtes Postgres prüfbar: Es geht um das Verhalten von
 // "ON CONFLICT DO NOTHING ... RETURNING" am partiellen Unique-Index.
-func TestCreateLoanTx_MeldetKonfliktStattStillemNichts(t *testing.T) {
+func TestAusleiheLegeAn_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -27,13 +27,13 @@ func TestCreateLoanTx_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	frist := time.Now().AddDate(0, 0, 21)
 
-	repo := NewLoanRepository(pool)
+	repo := NewAusleihAbfragen(pool)
 
-	tx1, err := repo.BeginTx(ctx)
+	tx1, err := repo.BeginneTx(ctx)
 	if err != nil {
-		t.Fatalf("BeginTx: %v", err)
+		t.Fatalf("BeginneTx: %v", err)
 	}
-	loan, err := repo.CreateLoanTx(ctx, tx1, ex[0], ersterSchueler, bearbeiter, frist, false)
+	loan, err := repo.LegeAn(ctx, tx1, ex[0], ersterSchueler, bearbeiter, frist, false)
 	if err != nil {
 		t.Fatalf("erste Ausleihe: %v", err)
 	}
@@ -45,13 +45,13 @@ func TestCreateLoanTx_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	}
 
 	// Zweiter Vorgang auf dasselbe Exemplar, anderer Schüler — muss abprallen.
-	tx2, err := repo.BeginTx(ctx)
+	tx2, err := repo.BeginneTx(ctx)
 	if err != nil {
-		t.Fatalf("BeginTx 2: %v", err)
+		t.Fatalf("BeginneTx 2: %v", err)
 	}
 	defer db.SafeRollback(ctx, tx2)
 
-	zweite, err := repo.CreateLoanTx(ctx, tx2, ex[0], zweiterSchueler, bearbeiter, frist, false)
+	zweite, err := repo.LegeAn(ctx, tx2, ex[0], zweiterSchueler, bearbeiter, frist, false)
 
 	if zweite != nil {
 		t.Errorf("zweite Ausleihe lieferte unerwartet eine Zeile: %+v", zweite)
@@ -66,7 +66,7 @@ func TestCreateLoanTx_MeldetKonfliktStattStillemNichts(t *testing.T) {
 
 // Gegenprobe: Nach einer Rückgabe ist der Index wieder frei, dieselbe Signatur darf
 // erneut ausgeliehen werden. Sonst hätte der Fix den Normalbetrieb kaputtgemacht.
-func TestCreateLoanTx_NachRueckgabeWiederAusleihbar(t *testing.T) {
+func TestAusleiheLegeAn_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -76,18 +76,18 @@ func TestCreateLoanTx_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	frist := time.Now().AddDate(0, 0, 21)
 
-	repo := NewLoanRepository(pool)
+	repo := NewAusleihAbfragen(pool)
 
-	tx1, err := repo.BeginTx(ctx)
+	tx1, err := repo.BeginneTx(ctx)
 	if err != nil {
-		t.Fatalf("BeginTx 1: %v", err)
+		t.Fatalf("BeginneTx 1: %v", err)
 	}
-	erste, err := repo.CreateLoanTx(ctx, tx1, ex[0], schueler, bearbeiter, frist, false)
+	erste, err := repo.LegeAn(ctx, tx1, ex[0], schueler, bearbeiter, frist, false)
 	if err != nil || erste == nil {
 		db.SafeRollback(ctx, tx1)
 		t.Fatalf("erste Ausleihe: %v", err)
 	}
-	if err := repo.ReturnLoanTx(ctx, tx1, erste.ID, bearbeiter, false); err != nil {
+	if err := repo.BucheRueckgabe(ctx, tx1, erste.ID, bearbeiter, false); err != nil {
 		db.SafeRollback(ctx, tx1)
 		t.Fatalf("Rückgabe: %v", err)
 	}
@@ -95,13 +95,13 @@ func TestCreateLoanTx_NachRueckgabeWiederAusleihbar(t *testing.T) {
 		t.Fatalf("Commit 1: %v", err)
 	}
 
-	tx2, err := repo.BeginTx(ctx)
+	tx2, err := repo.BeginneTx(ctx)
 	if err != nil {
-		t.Fatalf("BeginTx 2: %v", err)
+		t.Fatalf("BeginneTx 2: %v", err)
 	}
 	defer db.SafeRollback(ctx, tx2)
 
-	zweite, err := repo.CreateLoanTx(ctx, tx2, ex[0], schueler, bearbeiter, frist, false)
+	zweite, err := repo.LegeAn(ctx, tx2, ex[0], schueler, bearbeiter, frist, false)
 	if err != nil {
 		t.Fatalf("Ausleihe nach Rückgabe schlug fehl: %v", err)
 	}

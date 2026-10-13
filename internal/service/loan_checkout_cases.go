@@ -23,12 +23,12 @@ func (s *defaultLoanService) erzeugeAusleihe(
 	copy *repository.BookCopy,
 	chkCtx *checkoutContext,
 	staffID string,
-) (*repository.Loan, error) {
+) (*repository.Ausleihe, error) {
 	// Ein Schreiber für jeden Leser (Migration 125). Die Dauerleihe bleibt an die Art
 	// geknüpft — sie war vorher an die Tabelle geknüpft, was dasselbe war: Wer kein
 	// Schüler ist, bekommt das Buch fürs Schuljahr und zählt nicht in die
-	// Überfällig-Automatik (repository.ZaehleUeberfaelligeBuecher).
-	loan, err := s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, !chkCtx.istSchueler())
+	// Überfällig-Automatik (repository.ZaehleUeberfaelligeAusleihen).
+	loan, err := s.loanRepo.LegeAn(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, !chkCtx.istSchueler())
 	if err == nil {
 		return loan, nil
 	}
@@ -67,7 +67,7 @@ func (s *defaultLoanService) deuteAusleiheKonflikt(
 	copy *repository.BookCopy,
 	chkCtx *checkoutContext,
 ) error {
-	aktiv, err := s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
+	aktiv, err := s.loanRepo.SperreOffene(ctx, tx, copy.ID)
 	if err != nil {
 		return err
 	}
@@ -85,13 +85,13 @@ func (s *defaultLoanService) deuteAusleiheKonflikt(
 
 // istSelberAusleiher prüft, ob die bestehende Ausleihe demselben Leser gehört wie der
 // aktuelle Vorgang.
-func istSelberAusleiher(aktiv *repository.Loan, chkCtx *checkoutContext) bool {
+func istSelberAusleiher(aktiv *repository.Ausleihe, chkCtx *checkoutContext) bool {
 	return aktiv.SchuelerID != nil && *aktiv.SchuelerID == chkCtx.borrowerID
 }
 
 // errAusleiheBereitsVorhanden ist kein Fehler nach außen, sondern das Signal an
 // handleNewLoan, mit der bestehenden Ausleihe weiterzumachen (doppelter Scan).
-type errAusleiheBereitsVorhanden struct{ loan *repository.Loan }
+type errAusleiheBereitsVorhanden struct{ loan *repository.Ausleihe }
 
 func (e errAusleiheBereitsVorhanden) Error() string {
 	return "ausleihe besteht bereits für denselben Ausleiher"
@@ -184,11 +184,11 @@ func (s *defaultLoanService) handleReturn(
 	tx pgx.Tx,
 	copy *repository.BookCopy,
 	chkCtx *checkoutContext,
-	activeLoan *repository.Loan,
+	activeLoan *repository.Ausleihe,
 	staffID string,
 	resp *LoanResult,
 ) (*LoanResult, error) {
-	if err := s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
+	if err := s.loanRepo.BucheRueckgabe(ctx, tx, activeLoan.ID, staffID, false); err != nil {
 		return nil, err
 	}
 
@@ -222,7 +222,7 @@ func (s *defaultLoanService) handleForeignReturn(
 	ctx context.Context,
 	tx pgx.Tx,
 	copy *repository.BookCopy,
-	activeLoan *repository.Loan,
+	activeLoan *repository.Ausleihe,
 	staffID string,
 	resp *LoanResult,
 ) (*LoanResult, error) {
@@ -239,7 +239,7 @@ func (s *defaultLoanService) handleForeignReturn(
 		}
 	}
 
-	if err = s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, true); err != nil {
+	if err = s.loanRepo.BucheRueckgabe(ctx, tx, activeLoan.ID, staffID, true); err != nil {
 		return nil, err
 	}
 

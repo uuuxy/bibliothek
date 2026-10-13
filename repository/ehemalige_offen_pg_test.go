@@ -191,7 +191,7 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	// Migration 137 steht die Uhr als Stempel am Leser und folgt einer Rückdatierung nicht
 	// mehr — sie geht nur nach vorne. Nachgesehen am 23.09.2026: Kein Schreibpfad der
 	// Anwendung stellt den Zustand her, den das UPDATE herstellte. Alle drei Rückgabewege
-	// fassen nur offene Ausleihen an (repository/loan.go ReturnLoanZumTx,
+	// fassen nur offene Ausleihen an (repository/ausleihe.go BucheRueckgabeZum,
 	// repository/schaden_melden.go, internal/service/device_service.go über activeLoan), und
 	// die Littera-Übernahme fügt nur ein (internal/littera/schreiber_ausleihen.go).
 	// rueckgabe_am geht also von NULL auf einen Wert und nie von einem Wert auf einen

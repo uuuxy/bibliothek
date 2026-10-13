@@ -63,14 +63,14 @@ func (s *defaultLoanService) HandleSimpleReturn(
 	resp := &LoanResult{}
 
 	// Transaktion starten, um Datenkonsistenz bei Rückgabe und Vormerkungsverarbeitung zu garantieren
-	tx, err := s.loanRepo.BeginTx(ctx)
+	tx, err := s.loanRepo.BeginneTx(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer db.SafeRollback(ctx, tx)
 
 	// Aktive Ausleihe für das Buchexemplar laden
-	activeLoan, err := s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
+	activeLoan, err := s.loanRepo.SperreOffene(ctx, tx, copy.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 // Mitarbeiter, der sein eigenes Buch scannt. Sie unterschieden sich nicht in der Sache,
 // sondern nur in der Spalte, in der der Ausleiher stand — und die Mitarbeiter-Fassung
 // vergaß dabei, den Ausleiher in die Antwort zu legen.
-func (s *defaultLoanService) handleRueckgabe(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, activeLoan *repository.Loan, staffID string, resp *LoanResult) (*LoanResult, error) {
+func (s *defaultLoanService) handleRueckgabe(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, activeLoan *repository.Ausleihe, staffID string, resp *LoanResult) (*LoanResult, error) {
 	var borrower *repository.Student
 	if activeLoan.SchuelerID != nil {
 		var err error
@@ -109,7 +109,7 @@ func (s *defaultLoanService) handleRueckgabe(ctx context.Context, tx pgx.Tx, cop
 	}
 
 	// Rückgabe buchen
-	if err := s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
+	if err := s.loanRepo.BucheRueckgabe(ctx, tx, activeLoan.ID, staffID, false); err != nil {
 		return nil, err
 	}
 

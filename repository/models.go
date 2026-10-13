@@ -217,36 +217,6 @@ type BookCopy struct {
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`
 }
 
-// Loan repräsentiert einen aktiven oder historischen Ausleiheintrag in der Datenbank (Tabelle `ausleihen`).
-type Loan struct {
-	// ID ist die eindeutige ID (UUID) des Ausleihvorgangs.
-	ID string `json:"id"`
-	// ExemplarID verweist auf das ausgeliehene Buch (null bei Geräteausleihe).
-	ExemplarID *string `json:"exemplar_id,omitempty"`
-	// GeraetID verweist auf das ausgeliehene Hardware-Gerät (null bei Buchausleihe).
-	GeraetID *string `json:"geraet_id,omitempty"`
-	// SchuelerID verweist auf den ausleihenden Schüler (null bei Ausleihe an Lehrkraft).
-	SchuelerID *string `json:"schueler_id,omitempty"`
-	// AusleiherBenutzerID verweist auf die ausleihende Lehrkraft (null bei Ausleihe an Schüler).
-	// AusgeliehenAm ist der genaue Zeitpunkt der Ausleihe.
-	AusgeliehenAm time.Time `json:"ausgeliehen_am"`
-	// RueckgabeFrist definiert den spätesten Abgabetermin.
-	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
-	// RueckgabeAm ist der tatsächliche Rückgabezeitpunkt (null bei laufenden Ausleihen).
-	RueckgabeAm *time.Time `json:"rueckgabe_am,omitempty"`
-	// BearbeiterID verweist auf den Bibliotheksmitarbeiter, der die Ausleihe erfasst hat.
-	// Nullbar: die DB-Spalte ist ON DELETE SET NULL, und der GDPR-Anonymisierungs-Job
-	// setzt sie auf NULL. Als nicht-nullbarer string scheiterte der Scan mit
-	// "cannot scan NULL into *string" → HTTP 500 im Kiosk (Scan/Rückgabe).
-	BearbeiterID *string `json:"bearbeiter_id"`
-	// RueckgabeBearbeiterID verweist auf den Mitarbeiter, der die Rückgabe erfasst hat (null bei laufenden Ausleihen).
-	RueckgabeBearbeiterID *string `json:"rueckgabe_bearbeiter_id,omitempty"`
-	// IstFremdrueckgabe zeigt an, ob das Buch von einer anderen Person zurückgebracht wurde.
-	IstFremdrueckgabe bool `json:"ist_fremdrueckgabe"`
-	// IstHandapparat markiert Dauerleihen (meist an Lehrer) zur Präsenznutzung im Unterricht.
-	IstHandapparat bool `json:"ist_handapparat"`
-}
-
 // Geraet repräsentiert ein physisches Hardware-Gerät (z. B. Laptop, iPad) der Schule (Tabelle `geraete`).
 type Geraet struct {
 	// ID ist die UUID des Geräts.

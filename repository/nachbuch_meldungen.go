@@ -100,9 +100,9 @@ const nachbuchMeldungSQL = `
 	LEFT JOIN leser lv ON lv.id = m.vorbesitzer_schueler_id
 	LEFT JOIN benutzer bq ON bq.id = m.quittiert_von`
 
-// ListeNachbuchMeldungen liest die offenen Meldungen (nurOffen) oder alle, jüngste zuerst.
+// LadeNachbuchMeldungen liest die offenen Meldungen (nurOffen) oder alle, jüngste zuerst.
 // Gekappt auf 500 Zeilen: Die Liste ist eine Arbeitsliste, kein Archiv (siehe Löschfrist).
-func ListeNachbuchMeldungen(ctx context.Context, q Datenbank, nurOffen bool) ([]NachbuchMeldung, error) {
+func LadeNachbuchMeldungen(ctx context.Context, q Datenbank, nurOffen bool) ([]NachbuchMeldung, error) {
 	where := ""
 	if nurOffen {
 		where = " WHERE m.quittiert_am IS NULL"

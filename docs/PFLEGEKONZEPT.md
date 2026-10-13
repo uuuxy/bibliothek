@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 13.10.2026 (Entwurf)
+Stand: 14.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -383,7 +383,7 @@ Gemessen am 13.10.2026 am Go-Code ohne Tests: 566 Dateien, 2.616 Funktionen.
 - Kommentare mit Vorgeschichte: 560 Kommentarzeilen in 244 der 566 Dateien nennen ein Datum.
   Namen und Kommentare werden Paket für Paket umgestellt ([STIL.md](STIL.md),
   [OFFEN.md](OFFEN.md) 5.66).
-- Die Datenbankschicht ist ein Ordner mit 160 Dateien; gefunden wird dort über den Namen der
+- Die Datenbankschicht ist ein Ordner mit 161 Dateien; gefunden wird dort über den Namen der
   Datei. Warum sie ein Paket bleibt, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2.
 - Die größte Datei hat 907 Zeilen (`internal/bereitschaft/bereitschaft.go`).
 - Um den Code: 3.294 Commits seit dem 29.05.2026, die Zahl der Projektregeln (`CLAUDE.md`,

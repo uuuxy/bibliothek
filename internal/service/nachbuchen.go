@@ -36,7 +36,7 @@ type NachbuchService interface {
 // NewNachbuchService baut die Tür auf demselben Rumpf wie der Ausleih-Service — dieselben
 // Schranken, dieselben Schreiber. userRepo löst Lehrerausweise auf, die offline gescannt
 // wurden.
-func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, userRepo repository.KontoAbfragen, loanRepo repository.LoanRepository, auditRepo repository.ProtokollAbfragen) NachbuchService {
+func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, userRepo repository.KontoAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) NachbuchService {
 	return &defaultLoanService{pool: pool, studentRepo: studentRepo, bookRepo: bookRepo, userRepo: userRepo, loanRepo: loanRepo, auditRepo: auditRepo}
 }
 
@@ -90,7 +90,7 @@ type nachbuchLage struct {
 	copy        *repository.BookCopy
 	leser       *repository.Student
 	ausweis     *string // nicht auflösbarer Ausweis-Barcode, als Text für die Meldung
-	activeLoan  *repository.Loan
+	activeLoan  *repository.Ausleihe
 	befund      repository.RueckkehrBefund
 	reaktiviert bool
 }
@@ -103,7 +103,7 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 		return abweisung, err
 	}
 
-	tx, err := s.loanRepo.BeginTx(ctx)
+	tx, err := s.loanRepo.BeginneTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 			return nil, err
 		}
 	}
-	if l.activeLoan, err = s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, l.copy.ID); err != nil {
+	if l.activeLoan, err = s.loanRepo.SperreOffene(ctx, tx, l.copy.ID); err != nil {
 		return nil, err
 	}
 	stand, err := repository.SperreExemplarzeile(ctx, tx, l.copy.ID)
@@ -197,7 +197,7 @@ func (s *defaultLoanService) loeseNachbuchEintrag(ctx context.Context, e Nachbuc
 func verlegeScanAufFremdrueckgabe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) error {
 	e := l.e
 	if e.NachFremdrueckgabeVon != nil && e.Absicht == NachbuchAbsichtAusleihe && l.activeLoan == nil {
-		rueckgabe, err := repository.LiesFremdrueckgabeZeitpunkt(ctx, tx, *e.NachFremdrueckgabeVon, l.copy.ID)
+		rueckgabe, err := repository.FindeFremdrueckgabeZeitpunkt(ctx, tx, *e.NachFremdrueckgabeVon, l.copy.ID)
 		if err != nil {
 			return err
 		}

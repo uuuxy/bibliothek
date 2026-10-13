@@ -16,7 +16,7 @@ import (
 // nicht-nullbaren Go-Typ landet. Der Schreibpfad lässt bearbeiter_id und
 // rueckgabe_bearbeiter_id leer (bei einer Altbestandsübernahme gibt es niemanden, der
 // ausgegeben hat) und setzt schueler_id ODER ausleiher_benutzer_id, nie beide. Genau die
-// Kombination muss scanLoan aushalten.
+// Kombination muss leseAusleihe aushalten.
 //
 // Eigenes SELECT im Test würde das nie zeigen: Es scheitert nicht am NULL, sondern an
 // der Struktur, in die die Anwendung hineinliest.
@@ -40,13 +40,13 @@ func TestUebernommeneDatenUeberDenLivePfad(t *testing.T) {
 		t.Fatalf("SchreibeAusleihen: %v", err)
 	}
 
-	loans := repository.NewLoanRepository(pool)
+	loans := repository.NewAusleihAbfragen(pool)
 	for littera, name := range map[string]string{"E1": "Schülerausleihe", "E2": "Lehrerausleihe"} {
 		exemplarID := bestandBericht.ExemplarIDs[littera]
 		if exemplarID == "" {
 			t.Fatalf("%s: Exemplar %s wurde nicht geschrieben", name, littera)
 		}
-		loan, err := loans.GetActiveLoanByCopyID(ctx, exemplarID)
+		loan, err := loans.FindeOffene(ctx, exemplarID)
 		if err != nil {
 			t.Fatalf("%s: die Anwendung kann die übernommene Ausleihe nicht lesen: %v", name, err)
 		}

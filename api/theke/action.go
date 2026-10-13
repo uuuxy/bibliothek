@@ -107,7 +107,7 @@ func (s *Tueren) erlangeIdempotenz(ctx context.Context, key string) idempotenzLa
 		if reserviert {
 			return idempotenzLage{reserviert: true}
 		}
-		if !antwort.InArbeit() {
+		if !antwort.IstInArbeit() {
 			return idempotenzLage{antwort: antwort}
 		}
 		if ctx.Err() != nil || time.Now().After(frist) {
@@ -144,7 +144,7 @@ func (s *Tueren) saveToCache(ctx context.Context, key string, data interface{}, 
 		log.Printf("idempotenz: Antwort konnte nicht serialisiert werden: %v", err)
 		return
 	}
-	if err := repository.SpeichereIdempotenzAntwort(ctx, s.DB.Pool, key, respData, status); err != nil {
+	if err := repository.SchreibeIdempotenzAntwort(ctx, s.DB.Pool, key, respData, status); err != nil {
 		log.Printf("idempotenz: Antwort nicht gespeichert: %v", err)
 	}
 }

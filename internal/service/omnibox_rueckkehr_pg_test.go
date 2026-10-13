@@ -77,7 +77,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	studentRepo := repository.NewStudentRepository(pool)
 	bookRepo := repository.NewBookRepository(pool)
 	userRepo := repository.NewKontoAbfragen(pool)
-	loanRepo := repository.NewLoanRepository(pool)
+	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	damageRepo := repository.NewSchadensAbfragen(pool)
 	bescheidRepo := repository.NewBescheidAbfragen(pool)

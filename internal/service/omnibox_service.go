@@ -98,7 +98,7 @@ type defaultOmniboxService struct {
 	studentRepo repository.StudentRepository
 	bookRepo    repository.BookRepository
 	userRepo    repository.KontoAbfragen
-	loanRepo    repository.LoanRepository
+	loanRepo    repository.AusleihAbfragen
 	loanSvc     LoanService
 	deviceSvc   DeviceService
 }
@@ -109,7 +109,7 @@ func NewOmniboxService(
 	studentRepo repository.StudentRepository,
 	bookRepo repository.BookRepository,
 	userRepo repository.KontoAbfragen,
-	loanRepo repository.LoanRepository,
+	loanRepo repository.AusleihAbfragen,
 	loanSvc LoanService,
 	deviceSvc DeviceService,
 ) OmniboxService {
@@ -399,7 +399,7 @@ func (s *defaultOmniboxService) handleSearchAction(ctx context.Context, query st
 // (vormerkungen.notiz in einen string), der dem berechtigten Kind 403 gemeldet hätte.
 // Beides ist mit dem Zweig gefallen (OFFEN.md 5.14).
 func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query string, copy *repository.BookCopy, staffID string, resp *OmniboxResult) (fertig bool, err error) {
-	activeLoan, err := s.loanRepo.GetActiveLoanByCopyID(ctx, copy.ID)
+	activeLoan, err := s.loanRepo.FindeOffene(ctx, copy.ID)
 	if err != nil {
 		return false, err
 	}

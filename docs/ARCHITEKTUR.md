@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 13.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
+Stand: 14.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
 07.10.2026 aus dreizehn Dateien zu dieser einen zusammengeführt; jedes Kapitel nennt seinen
 eigenen Stand
 
@@ -638,7 +638,7 @@ HTTP-Anfrage
 | `api/bestellung/`       | 2.438 Zeilen, 18 Dateien   | Die Türen des Bestellwesens: Vorschläge zum Nachbestellen, die Suche nach Titeln, die Bestellung mit ihrer Mail an den Lieferanten, Zulauf und Wareneingang, Bestellhistorie mit Übersicht, Einzelheiten und Bericht, die Lieferanten, die Bestätigung im Haus und über den Link des Lieferanten, das erneute Senden der Mail, der Topf einer Bestellung |
 | `api/leser/`            | 3.007 Zeilen, 18 Dateien   | Die Türen der Leserdatei: die Liste der Leser mit Klassen und Jahrgängen, die Leserakte, Anlegen, Ändern, Sperren, Löschen mit Papierkorb, das Zusammenführen zweier Datensätze, das Passbild, der Abgleich mit der LUSD, die Versetzung zum Schuljahreswechsel, die Auskunft nach Art. 15 DSGVO, der Kontoauszug |
 | `api/theke/`            | 1.562 Zeilen, 11 Dateien   | Die Türen der Theke: der Scan mit Ausleihe und Rückgabe, das Nachbuchen der Warteschlange ohne Netz mit seinen Meldungen und der Liste der Buchnummern, die Suche der Omnibox, Verlängern und Frist von Hand an einer Ausleihe, die Vormerkungen |
-| `repository/`           | 21.971 Zeilen, 160 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
+| `repository/`           | 21.978 Zeilen, 161 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
 | `internal/service/`     | 5.246 Zeilen, 31 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, womit ein neuer Plan beginnt (Rahmen und Reihenfolge) und seine Verteilung über die Schultage, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/leser/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 990 Zeilen, 3 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
@@ -788,9 +788,9 @@ Googles Regelwerk für Go nennt in
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size) die Probe:
 Muss ein Nutzer zweier Pakete beide einbinden, um eines sinnvoll zu nutzen, gehören sie
 zusammen, und eng gekoppelte Typen in einem Paket müssen ihre Einzelheiten nicht öffentlich
-machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 160 Dateien hat
-höchstens 118 Zeilen, neun von zehn höchstens 270, zwei haben über 500
-(`schueler_zusammenfuehren.go` 634, `schlagworte_pflege.go` 527; gezählt am 13.10.2026 nachts).
+machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 161 Dateien hat
+höchstens 118 Zeilen, neun von zehn höchstens 263, zwei haben über 500
+(`schueler_zusammenfuehren.go` 634, `schlagworte_pflege.go` 527; gezählt am 14.10.2026 nachts).
 Eine Teilung schriebe 2.213 Zeilen in 461 Dateien um, die einen Namen des Pakets nennen, und
 bewegte einen Teil der 161 Testdateien.
 
@@ -955,7 +955,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
 - Die Sperrprüfung einer neuen Ausleihe (`internal/service/ausleih_sperren.go`) entscheidet,
   welche Sperre hält und welcher Hinweis sich übergehen lässt. Ihre zwei Zahlen liest sie aus
   `repository/`: die offenen Forderungen (`OffeneSchaeden`) und die überfälligen Bücher
-  (`ZaehleUeberfaelligeBuecher`: offen, kein Gerät, keine Dauerleihe, länger überfällig als
+  (`ZaehleUeberfaelligeAusleihen`: offen, kein Gerät, keine Dauerleihe, länger überfällig als
   die Kulanz). Den Hinweis auf das Abholfach beim Scan eines Ausweises liest
   `LadeAbholbereiteTitel`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
   (`omnibox_service.go`).
@@ -1543,7 +1543,7 @@ Welcher Pfad welche Zeile sperrt:
 
 | Pfad                       | gesperrte Zeile                                                            | Fundstelle                                                     |
 | -------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Scan eines Exemplars       | die **aktive Ausleihe** (`ausleihen`)                                      | `GetActiveLoanByCopyIDTx` (`repository/loan.go`)               |
+| Scan eines Exemplars       | die **aktive Ausleihe** (`ausleihen`)                                      | `AusleihAbfragen.SperreOffene` (`repository/ausleihe.go`)               |
 | Ausleihe an einen Schüler  | die **Leser**-Zeile                                                        | `SperreLeserzeile` (`repository/ausleihe_zeilensperren.go`)    |
 | Rückgabe mit Vormerkung, Nachrücken | die **Vormerkung** — `FOR UPDATE OF v SKIP LOCKED`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt: Sie könnte sich mit der Ausleih-Logik verklemmen, und mit `SKIP LOCKED` fiele ein Wartender aus der Reihe, dessen Zeile eine Ausleihe gerade hält. Dass eine Sperre über einen Verbund ihre Tabelle nennt, hält `zeilensperre_verbund_ratsche_test.go` | `SperreNaechsteWartendeVormerkung` (`repository/vormerkung_theke.go`), `bedieneNaechstenWartenden` (`repository/vormerkung_nachruecken.go`) |
 | Geräte-Ausleihe            | die aktive Geräte-Ausleihe                                                 | `SperreOffeneGeraeteAusleihe` (`repository/geraete_ausleihe.go`) |
@@ -3156,8 +3156,8 @@ das Buch des anderen ab, bricht Postgres eine der beiden Buchungen ab; erneutes 
 Am 24.09.2026 entschieden, das so zu lassen, bis die Karenz-Uhr umgebaut wird.
 
 **Fundstelle.** Die Folge der Aufrufe in `internal/service/loan_checkout.go` und
-`nachbuchen.go`; die Sperren in `repository/ausleihe_zeilensperren.go` und `repository/loan.go`
-(`GetActiveLoanByCopyIDTx`, `StempleBewegungZum`); [invarianten.md](invarianten.md) Abschnitt 1.
+`nachbuchen.go`; die Sperren in `repository/ausleihe_zeilensperren.go` und `repository/ausleihe.go`
+(`AusleihAbfragen.SperreOffene`), der Stempel in `repository/bewegungsstempel.go`; [invarianten.md](invarianten.md) Abschnitt 1.
 
 ---
 
@@ -3565,7 +3565,7 @@ vermerkt.
 
 | ID  | Auslöser / Situation                                                                                 | Erwartete Reaktion                                                                                                 | Nachweis                                                                                            |
 | --- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| S1  | Zwei Stationen scannen **dasselbe Exemplar** für **zwei verschiedene** Leser, im selben Moment        | Eine Buchung gelingt, die andere endet mit **409 Conflict** — nie zwei aktive Ausleihen                             | `uniq_ausleihen_aktiv_exemplar` (DB) + `repository/loan_konflikt_pg_test.go`, `schaden_melden_ausleihe_pg_test.go` |
+| S1  | Zwei Stationen scannen **dasselbe Exemplar** für **zwei verschiedene** Leser, im selben Moment        | Eine Buchung gelingt, die andere endet mit **409 Conflict** — nie zwei aktive Ausleihen                             | `uniq_ausleihen_aktiv_exemplar` (DB) + `repository/ausleihe_konflikt_pg_test.go`, `schaden_melden_ausleihe_pg_test.go` |
 | S2  | Derselbe Scan kommt zweimal an (Netz, Doppeldruck, Nachbuchen)                                        | Die gespeicherte Antwort wird zurückgegeben; **kein** zweiter Schreibvorgang, **keine** zweite Sperrmeldung          | `repository/idempotenz_uebernahme_pg_test.go`, `api/idempotenz_fristen_test.go`                     |
 | S3  | Ein `UPDATE` trifft null Zeilen (Sicht, falsche ID, Wettlauf)                                          | Fehler oder 404 — **niemals** „erfolgreich"                                                                         | `phantom_erfolg_test.go`, `docs/schreibpfade_gegen_sicht_test.go`                                   |
 | S4  | Ein Lernmittel wird nach dem Rückgabetermin der Klasse ausgeliehen                                     | Frist ist der Stichtag des **folgenden** Schuljahres, nicht ein vergangener Termin                                  | `internal/service/loan_rules_test.go`, `repository/lmf_termine_frist_pg_test.go`                    |

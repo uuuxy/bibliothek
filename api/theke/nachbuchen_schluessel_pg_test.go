@@ -68,7 +68,7 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 
 	studentRepo := repository.NewStudentRepository(pool)
 	bookRepo := repository.NewBookRepository(pool)
-	loanRepo := repository.NewLoanRepository(pool)
+	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	userRepo := repository.NewKontoAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
@@ -359,7 +359,7 @@ func TestNachbuchen_Schluessel_ServerfehlerLaesstOnlineAntwortStehen(t *testing.
 	if code, r := w.onlineScan(t, k, w.anna); code != http.StatusOK || !r.Fremdrueckgabe {
 		t.Fatalf("Fremdrückgabe: %d", code)
 	}
-	vorher, err := repository.LiesIdempotenzAntwort(context.Background(), w.pool, k)
+	vorher, err := repository.LadeIdempotenzAntwort(context.Background(), w.pool, k)
 	if err != nil {
 		t.Fatalf("Antwort vorher: %v", err)
 	}
@@ -367,7 +367,7 @@ func TestNachbuchen_Schluessel_ServerfehlerLaesstOnlineAntwortStehen(t *testing.
 	if erg[0].Ergebnis != nachbuchWiederholen {
 		t.Errorf("Ergebnis %q, erwartet %q", erg[0].Ergebnis, nachbuchWiederholen)
 	}
-	nachher, err := repository.LiesIdempotenzAntwort(context.Background(), w.pool, k)
+	nachher, err := repository.LadeIdempotenzAntwort(context.Background(), w.pool, k)
 	if err != nil {
 		t.Fatalf("Antwort nachher: %v", err)
 	}
