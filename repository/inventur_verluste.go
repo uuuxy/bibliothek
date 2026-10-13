@@ -198,5 +198,3 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 	// Waren von fünf gewählten zwei inzwischen als gefunden markiert, bleiben sie dort stehen.
 	return ids, nil
 }
-
-func zeigerAuf(s string) *string { return &s }

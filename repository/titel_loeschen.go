@@ -196,7 +196,7 @@ func protokolliereWasMitDemTitelFaellt(ctx context.Context, tx pgx.Tx, titelID s
 // Barcode-Eintrag in der Form der Geschwister-Pfade (SondereExemplarAus, Verlust-Löschen), in der
 // Transaktion des Löschens: entweder Löschung und Spur oder keins von beiden.
 func (a *pgProtokollAbfragen) protokolliereTitelLoeschung(ctx context.Context, tx pgx.Tx, vorher titelVorDemLoeschen, bearbeiterID string) error {
-	if err := a.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err := schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "buecher_titel", Aktion: "DELETE", DatensatzID: vorher.id,
 		BearbeiterID: &bearbeiterID, Akteur: "USER",
 		Details: map[string]any{"titel": vorher.titel, "autor": vorher.autor, "isbn": vorher.isbn},
@@ -205,7 +205,7 @@ func (a *pgProtokollAbfragen) protokolliereTitelLoeschung(ctx context.Context, t
 	}
 	kontext := "Titel gelöscht — Exemplar mit entfernt"
 	for _, ex := range vorher.exemplare {
-		if err := a.schreibeEintrag(ctx, tx, protokollEintrag{
+		if err := schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: ex.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 			Details: map[string]any{

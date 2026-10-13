@@ -82,35 +82,6 @@ type protokollEintrag struct {
 	Details      map[string]any
 }
 
-// schreibeEintrag fügt einen Eintrag an audit_log an.
-func (a *pgProtokollAbfragen) schreibeEintrag(ctx context.Context, tx pgx.Tx, e protokollEintrag) error {
-	var detailsJSON []byte
-	if e.Details != nil {
-		var err error
-		detailsJSON, err = json.Marshal(e.Details)
-		if err != nil {
-			return fmt.Errorf("audit details serialization: %w", err)
-		}
-	}
-
-	const q = `
-		INSERT INTO audit_log
-		  (tabelle, aktion, datensatz_id, bearbeiter_id, akteur, kontext, details)
-		VALUES ($1, $2, $3::uuid, $4, $5, $6, $7)
-	`
-	_, err := tx.Exec(ctx, q,
-		e.Tabelle, e.Aktion, e.DatensatzID,
-		e.BearbeiterID, e.Akteur, e.Kontext,
-		func() interface{} {
-			if detailsJSON == nil {
-				return nil
-			}
-			return string(detailsJSON)
-		}(),
-	)
-	return err
-}
-
 // ProtokolliereAdminAktion schreibt einen Eintrag ins Protokoll der Verwaltung. Details, die
 // sich nicht als JSON schreiben lassen, stehen als leeres Objekt im Eintrag.
 func (a *pgProtokollAbfragen) ProtokolliereAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
@@ -151,7 +122,7 @@ func (a *pgProtokollAbfragen) ProtokolliereSystemAktion(ctx context.Context, tab
 	// Ein Vorgang des Programms hat keinen Datensatz; die Spalte bekommt die Null-UUID.
 	const nullUUID = "00000000-0000-0000-0000-000000000000"
 
-	if err = a.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err = schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: tabelle, Aktion: aktion, DatensatzID: nullUUID,
 		Akteur: "SYSTEM", Kontext: &kontext, Details: details,
 	}); err != nil {
@@ -190,16 +161,15 @@ func (a *pgProtokollAbfragen) protokolliereLeihvorgang(ctx context.Context, tx p
 		details["benutzer_id"] = benutzerID
 	}
 
-	return a.schreibeEintrag(ctx, tx, protokollEintrag{
+	return schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "ausleihen", Aktion: aktion, DatensatzID: exemplarID,
 		BearbeiterID: bearbeiterPtr, Akteur: "USER",
 		Details: details,
 	})
 }
 
-// schreibeProtokollEintrag fügt einen Eintrag an audit_log an, über die Schnittstelle
-// Datenbank: für Rufer, die den Pool oder eine Transaktion als Datenbank in der Hand haben.
-// pgProtokollAbfragen.schreibeEintrag verlangt eine pgx.Tx.
+// schreibeProtokollEintrag fügt einen Eintrag an audit_log an. db ist der Pool oder die
+// Transaktion des Rufers; ein Vorgang und sein Eintrag gelten so zusammen oder gar nicht.
 func schreibeProtokollEintrag(ctx context.Context, db Datenbank, e protokollEintrag) error {
 	var detailsJSON []byte
 	if e.Details != nil {

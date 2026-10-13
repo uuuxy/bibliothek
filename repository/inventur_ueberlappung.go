@@ -33,8 +33,8 @@ func bestimmeUeberlappung(aArt string, a InventurBereich, bArt string, b Inventu
 	// Zwei Signaturen überlappen, wenn eine Präfix der anderen ist, ohne Rücksicht auf Groß-
 	// und Kleinschreibung wie beim Scannen: „BIB" enthält „BIB Deu".
 	if aArt == "signature" && bArt == "signature" {
-		as := strings.ToLower(strings.TrimSpace(zeigerStr(a.Signatur)))
-		bs := strings.ToLower(strings.TrimSpace(zeigerStr(b.Signatur)))
+		as := strings.ToLower(strings.TrimSpace(zeigerText(a.Signatur)))
+		bs := strings.ToLower(strings.TrimSpace(zeigerText(b.Signatur)))
 		if as != "" && bs != "" && (strings.HasPrefix(as, bs) || strings.HasPrefix(bs, as)) {
 			return ueberlapptImmer
 		}
@@ -49,13 +49,6 @@ func bestimmeUeberlappung(aArt string, a InventurBereich, bArt string, b Inventu
 		return ueberlapptNie
 	}
 	return ueberlapptJeNachBestand
-}
-
-func zeigerStr(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }
 
 func istFachVereinbar(a, b *string) bool {
@@ -82,10 +75,10 @@ func istGleicherBereich(aArt string, a InventurBereich, bArt string, b InventurB
 	case "global":
 		return true
 	case "signature":
-		return strings.TrimSpace(zeigerStr(a.Signatur)) == strings.TrimSpace(zeigerStr(b.Signatur))
+		return strings.TrimSpace(zeigerText(a.Signatur)) == strings.TrimSpace(zeigerText(b.Signatur))
 	case "filter":
 		gleicheKlasse := (a.Jahrgang == nil && b.Jahrgang == nil) || (a.Jahrgang != nil && b.Jahrgang != nil && *a.Jahrgang == *b.Jahrgang)
-		return zeigerStr(a.Fach) == zeigerStr(b.Fach) && gleicheKlasse
+		return zeigerText(a.Fach) == zeigerText(b.Fach) && gleicheKlasse
 	}
 	return false
 }

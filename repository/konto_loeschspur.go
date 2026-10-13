@@ -54,7 +54,7 @@ func (a *pgProtokollAbfragen) protokolliereKontoLoeschung(ctx context.Context, t
 		akteur = "USER"
 		bearbeiter = &l.bearbeiterID
 	}
-	if err := a.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err := schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "benutzer", Aktion: "DELETE", DatensatzID: l.kontoID,
 		BearbeiterID: bearbeiter, Akteur: akteur, Kontext: l.kontext,
 		Details: details,

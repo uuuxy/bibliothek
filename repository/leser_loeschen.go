@@ -86,7 +86,7 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 
 	kontext := "Soft-Delete Routine"
 
-	if err = a.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err = schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "schueler", Aktion: "UPDATE", DatensatzID: leserID,
 		BearbeiterID: bearbeiterPtr, Akteur: akteur, Kontext: &kontext,
 		Details: map[string]any{
@@ -161,7 +161,7 @@ func (a *pgProtokollAbfragen) tilgeSpurenUndLoescheLeser(ctx context.Context, tx
 		akteur = "USER"
 		bearbeiterPtr = &bearbeiterID
 	}
-	if err := a.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err := schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "schueler", Aktion: "DELETE", DatensatzID: leserID,
 		BearbeiterID: bearbeiterPtr, Akteur: akteur, Kontext: &kontextText,
 		Details: map[string]any{"action": "purge", "geloescht_am": time.Now().UTC().Format(time.RFC3339)},

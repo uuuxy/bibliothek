@@ -128,9 +128,8 @@ func schreibeEigentum(ctx context.Context, tx pgx.Tx, s eigentumStand, a Eigentu
 	if tag.RowsAffected() != 1 {
 		return fmt.Errorf("eigentum: exemplar %s: %d zeilen statt 1", s.id, tag.RowsAffected())
 	}
-	audit := &pgProtokollAbfragen{}
 	kontext := "Eigentum von Hand geändert"
-	if err := audit.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err := schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "buecher_exemplare", Aktion: "UPDATE", DatensatzID: s.id,
 		BearbeiterID: &a.BearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: map[string]any{

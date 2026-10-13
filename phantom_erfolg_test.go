@@ -146,7 +146,6 @@ var phantomBestand = map[string]int{
 	"repository/auflagen.go:nimmAuflagenSperre":               1,
 	"repository/auflagen.go:raeumeWerkAuf":                    1,
 	"repository/protokoll.go:SchreibeAdminProtokoll":          1,
-	"repository/protokoll.go:schreibeEintrag":                 1,
 	"repository/titel_loeschen.go:LoescheTitel":               3,
 	"repository/forderung_erledigen.go:VerbucheZahlung":       1,
 	"repository/leser_loeschen.go:tilgeSpurenUndLoescheLeser": 2,

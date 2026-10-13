@@ -79,7 +79,7 @@ func (a *pgProtokollAbfragen) StorniereForderung(ctx context.Context, schadensfa
 		details["schueler_id"] = *leserID
 	}
 	kontext := "Gebühr storniert"
-	if err = a.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err = schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: details,
@@ -114,7 +114,7 @@ func (a *pgProtokollAbfragen) VerbucheZahlung(ctx context.Context, schadensfallI
 	}
 
 	kontext := "Gebühr bezahlt"
-	if err = a.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err = schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "schadensfaelle", Aktion: "ZAHLUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: map[string]any{

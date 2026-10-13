@@ -65,7 +65,7 @@ func (a *pgProtokollAbfragen) SondereExemplarAus(ctx context.Context, exemplarID
 	}
 
 	kontext := "Buch ausgebuchen (Soft-Delete)"
-	if err = a.schreibeEintrag(ctx, tx, protokollEintrag{
+	if err = schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "buecher_exemplare", Aktion: "UPDATE", DatensatzID: exemplarID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: map[string]any{"barcode_id": barcode, "zustand_notiz": zustandNotiz, "titel_id": titelID, "titel": titel, "action": "soft_delete"},

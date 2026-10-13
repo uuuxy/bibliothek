@@ -172,11 +172,3 @@ func (a *pgBescheidAbfragen) zaehleSchuljahreMitAusleihe(ctx context.Context, ex
 	}
 	return je, nil
 }
-
-// zeigerText macht aus einem Textfeld, das NULL sein kann, einen Text; NULL wird zu "".
-func zeigerText(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
