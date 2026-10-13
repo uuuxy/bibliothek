@@ -67,7 +67,7 @@ func (s *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
-	if !mitteltopf.Gueltig(req.Mittel) {
+	if !mitteltopf.IstGueltig(req.Mittel) {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
 		return
 	}

@@ -10,12 +10,12 @@ import (
 
 func TestGueltig(t *testing.T) {
 	for _, m := range []string{Land, Schultraeger} {
-		if !Gueltig(m) {
+		if !IstGueltig(m) {
 			t.Errorf("%q gehört zum Vokabular", m)
 		}
 	}
 	for _, m := range []string{"", "kreis", "Land", "LAND", "schultraeger "} {
-		if Gueltig(m) {
+		if IstGueltig(m) {
 			t.Errorf("%q darf nicht gültig sein — die Tür muss 400 sagen", m)
 		}
 	}
@@ -104,11 +104,11 @@ func TestReihenfolge(t *testing.T) {
 	}
 }
 
-func TestGrossesLernmittelEtikettFuer(t *testing.T) {
+func TestHatGrossesLernmittelEtikett(t *testing.T) {
 	faelle := map[string]bool{Land: true, Schultraeger: false, "": true}
 	for mittel, will := range faelle {
-		if ist := GrossesLernmittelEtikettFuer(mittel); ist != will {
-			t.Errorf("GrossesLernmittelEtikettFuer(%q) = %v, erwartet %v", mittel, ist, will)
+		if ist := HatGrossesLernmittelEtikett(mittel); ist != will {
+			t.Errorf("HatGrossesLernmittelEtikett(%q) = %v, erwartet %v", mittel, ist, will)
 		}
 	}
 }

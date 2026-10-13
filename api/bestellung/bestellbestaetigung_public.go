@@ -129,7 +129,7 @@ func (s *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	if t, err := mitteltopf.TexteFuer(kopf.Mittel); err == nil {
 		a.Mittel = t.Kurz
 	}
-	a.GrossesEtikett = mitteltopf.GrossesLernmittelEtikettFuer(kopf.Mittel)
+	a.GrossesEtikett = mitteltopf.HatGrossesLernmittelEtikett(kopf.Mittel)
 
 	positionen, err := repository.ListeOeffentlichePositionen(ctx, s.DB.Pool, bestellungID)
 	if err != nil {

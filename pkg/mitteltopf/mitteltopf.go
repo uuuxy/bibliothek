@@ -28,9 +28,9 @@ const (
 	Schultraeger = "schultraeger"
 )
 
-// Gueltig sagt, ob der Wert zum Vokabular gehört. Die Tür fragt vor dem Schreiben, damit ein
+// IstGueltig sagt, ob der Wert zum Vokabular gehört. Die Tür fragt vor dem Schreiben, damit ein
 // unbekannter Wert als Eingabefehler endet und nicht am CHECK der Datenbank.
-func Gueltig(mittel string) bool {
+func IstGueltig(mittel string) bool {
 	return mittel == Land || mittel == Schultraeger
 }
 
@@ -115,11 +115,11 @@ func Beschriftung(mittel string) string {
 	return t.Kurz + " (" + t.Traeger + ")"
 }
 
-// GrossesLernmittelEtikettFuer sagt, ob zu einer Bestellung dieses Topfs das große
+// HatGrossesLernmittelEtikett sagt, ob zu einer Bestellung dieses Topfs das große
 // Lernmittel-Etikett („Eigentum des Landes") gehört. Die Bestätigungsseite des Lieferanten,
 // die Tür dahinter und der Mailanhang fragen dieselbe Regel: Ein ausgeblendeter Knopf allein
 // ließe die Adresse offen. Ein Buch der Schülerbücherei ist kein Lernmittel; eine Bestellung
 // ohne Zuordnung behält beide Größen, weil ihr Topf nicht geraten wird.
-func GrossesLernmittelEtikettFuer(mittel string) bool {
+func HatGrossesLernmittelEtikett(mittel string) bool {
 	return mittel != Schultraeger
 }

@@ -1,21 +1,19 @@
-// Package lmf bündelt das Wissen über Lernmittel (Lernmittelfreiheit, „LMF"):
-// Schulbücher, die die Schule dem Schüler für ein Schuljahr leiht.
+// Package lmf kennt die Schreibweisen, an denen Littera ein Lernmittel erkennen lässt, und
+// leitet aus Signatur, Titel, Schlagwörtern und Zielgruppe Fach und Jahrgang ab. Lernmittel
+// sind die Schulbücher, die die Schule dem Schüler für ein Schuljahr leiht
+// (Lernmittelfreiheit, „LMF").
 //
-// Seit Migration 093 ist „Lernmittel" ein Feld am Titel (buecher_titel.ist_lernmittel).
-// Die Regeln — Schuljahresfrist, Ausleihlimit, öffentlicher Katalog, Löschfrist,
-// Bestellbedarf, Massenverlängerung — lesen diese Spalte und nichts sonst. Was
-// dieses Paket noch mit dem TEXT zu tun hat, betrifft allein den Weg aus Littera:
+// Ob ein Titel ein Lernmittel ist, sagt das Feld buecher_titel.ist_lernmittel, und die Regeln
+// lesen nur dieses Feld. Mit dem Text befasst sich das Paket für den Weg aus Littera:
 //
-//   - HatKennung erkennt Litteras Konvention „LMF …" in einem Feldwert. Der Import
-//     setzt daraus das Feld; Migration 093 hat den Altbestand damit befüllt.
-//   - Zerlege liest aus „LMF Bio 7" Fach und Jahrgang. Die Schulbücher tragen kein
-//     Rückenetikett, ihre Littera-Signatur war nie eine Regaladresse, sondern nur
-//     eine Einordnung — die eure Bibliothekarin schon vor Jahren von Hand getroffen
-//     hat. Wir nutzen ihre Arbeit, statt am Titel zu raten.
-//   - FachAusText, FachAusSchlagworten, JahrgangAusZielgruppe sind die Heuristiken
-//     für alles, was keine LMF-Signatur hat. Vorher gab es zwei Stichwortlisten
-//     (ISBN-Lookup: „Mathe", Excel-Import: „Mathematik"), die dieselbe Schule mit
-//     zwei Fächern für dasselbe Fach zurückließen.
+//   - HatKennung erkennt Litteras Schreibweise „LMF …" in einem Feldwert; der Import setzt
+//     daraus das Feld.
+//   - Zerlege liest aus „LMF Bio 7" Fach und Jahrgang. Die Signatur eines Schulbuchs war in
+//     Littera keine Regaladresse, sondern eine Einordnung von Hand, und die übernimmt der
+//     Import, statt am Titel zu raten.
+//   - FachAusText, FachAusSchlagworten und JahrgangAusZielgruppen schätzen, wo keine solche
+//     Signatur steht. Sie stehen an einer Stelle, damit jeder Weg des Imports dasselbe Fach
+//     unter demselben Namen anlegt.
 package lmf
 
 import (
@@ -23,15 +21,14 @@ import (
 	"strings"
 )
 
-// kennung matcht "lmf" am Anfang eines Feldwerts, gefolgt von einem Trenner
-// (Leerzeichen oder Bindestrich). Deckt "LMF-Deutsch", "LMF - Deutsch" und
-// "LMF Deutsch" ab, aber bewusst NICHT "LMFP-Roman" oder "lmfao" — nach dem Kürzel
-// muss ein Trenner stehen. Der Bindestrich steht am Ende der Zeichenklasse, damit er
-// literal (keine Range) ist. Migration 093 trägt dasselbe Muster als SQL; der Test
-// dieses Pakets hält beide gegeneinander.
+// kennung trifft „lmf" am Anfang eines Feldwerts, gefolgt von Leerzeichen oder Bindestrich:
+// „LMF-Deutsch", „LMF - Deutsch" und „LMF Deutsch", aber nicht „LMFP-Roman" oder „lmfao". Der
+// Bindestrich steht am Ende der Zeichenklasse, damit er als Zeichen gilt. Migration 093 trägt
+// dasselbe Muster als SQL; ein Test dieses Pakets hält beide gleich.
 var kennung = regexp.MustCompile(`(?i)^lmf[ -]`)
 
-// HatKennung meldet, ob ein Feldwert (Titel, Signatur) Litteras LMF-Konvention trägt.
+// HatKennung meldet, ob ein Feldwert (Titel, Signatur) Litteras Schreibweise für Lernmittel
+// trägt.
 func HatKennung(wert string) bool {
 	return kennung.MatchString(strings.TrimSpace(wert))
 }
@@ -48,10 +45,9 @@ func HatVermerk(wert string) bool {
 	return vermerk.MatchString(wert)
 }
 
-// Fächer — die kanonischen Bezeichnungen, unter denen Import und Heuristiken ein Fach
-// in der Systematik registrieren (buecher_titel.subject ist FK darauf, Migration 078).
-// Eine Schreibweise je Fach: Vorher legte der ISBN-Lookup „Mathe" an und der
-// Excel-Import „Mathematik", und die Systematik führte beides nebeneinander.
+// Die Fächer in der einen Schreibweise, unter der Import und Schätzung ein Fach in der
+// Systematik anlegen (buecher_titel.subject verweist darauf). Legten zwei Wege „Mathe" und
+// „Mathematik" an, führte die Systematik dasselbe Fach zweimal.
 const (
 	FachMathematik   = "Mathematik"
 	FachDeutsch      = "Deutsch"
@@ -77,10 +73,9 @@ const (
 	FachNaWi         = "Naturwissenschaften"
 )
 
-// fachKuerzel ordnet die Fachkürzel aus Littera-Signaturen („LMF Bio 7") und aus dem
-// alten Signatur-Vorschlag der Maske („LMF M") den Fächern zu — kleingeschrieben,
-// weil Littera „PoWi" und „Powi" nebeneinander kennt. Gezählt am Katalogisat vom
-// Juni 2026: 474 LMF-Signaturen, 25 verschiedene Kürzel.
+// fachKuerzel ordnet die Kürzel aus Litteras Signaturen („LMF Bio 7") und aus dem früheren
+// Signatur-Vorschlag der Maske („LMF M") den Fächern zu. Die Schlüssel sind klein geschrieben,
+// weil Littera „PoWi" und „Powi" nebeneinander führt.
 var fachKuerzel = map[string]string{
 	"ma": FachMathematik, "m": FachMathematik,
 	"deu": FachDeutsch, "d": FachDeutsch,
@@ -106,14 +101,13 @@ var fachKuerzel = map[string]string{
 	"nawi": FachNaWi,
 }
 
-// Zerlegung ist, was eine Littera-Lernmittelsignatur über das Buch sagt.
+// Zerlegung ist, was die Signatur eines Lernmittels aus Littera über den Titel sagt.
 type Zerlegung struct {
-	// Fach ist die kanonische Bezeichnung; leer, wenn das Kürzel unbekannt ist
-	// („LMF Pusch") — dann bleibt das Fach offen, statt geraten zu werden.
+	// Fach ist leer, wenn das Kürzel unbekannt ist („LMF Pusch"); es bleibt dann offen und
+	// wird nicht geraten.
 	Fach string
-	// JahrgangVon/JahrgangBis: „7" ist 7–7, „12/13" und „1213" sind 12–13, ohne Zahl 0/0.
-	// Nur 5–13 zählen: Littera schreibt bei Arbeitslehre „LMF Arb 1" — das ist Band 1,
-	// kein erster Jahrgang, den es an der Schule gar nicht gibt.
+	// JahrgangVon und JahrgangBis: „7" ist 7 bis 7, „12/13" und „1213" sind 12 bis 13, ohne
+	// Zahl 0 und 0. Nur 5 bis 13 zählen: In „LMF Arb 1" ist die 1 der Band, kein Jahrgang.
 	JahrgangVon, JahrgangBis int
 }
 
@@ -122,9 +116,9 @@ var (
 	jahrgangsZahlen = regexp.MustCompile(`\d{1,2}`)
 )
 
-// Zerlege liest Fach und Jahrgang aus einer Signatur mit LMF-Kennung. ok ist false,
-// wenn die Signatur keine Lernmittelsignatur ist — dann sagt sie nichts über Fach
-// oder Jahrgang, und der Aufrufer lässt die Felder in Ruhe.
+// Zerlege liest Fach und Jahrgang aus einer Signatur mit LMF-Kennung. ok ist false, wenn die
+// Signatur keine Kennung trägt; sie sagt dann nichts über Fach und Jahrgang, und der Rufer
+// lässt die Felder unverändert.
 func Zerlege(signatur string) (z Zerlegung, ok bool) {
 	rest := strings.TrimSpace(signatur)
 	if !kennung.MatchString(rest) {
@@ -135,14 +129,14 @@ func Zerlege(signatur string) (z Zerlegung, ok bool) {
 	if k := kuerzelAmAnfang.FindString(rest); k != "" {
 		z.Fach = fachKuerzel[strings.ToLower(k)]
 		if z.Fach == "" {
-			// „LMF Deutsch 5": Klartext statt Kürzel — derselbe Stichwort-Weg wie beim Titel,
-			// damit das Fach nicht davon abhängt, wie jemand die Signatur einst tippte.
+			// „LMF Deutsch 5" nennt das Fach im Klartext. Es geht denselben Weg wie ein Titel,
+			// damit das Fach nicht von der Schreibweise der Signatur abhängt.
 			z.Fach = FachAusText(k)
 		}
 		rest = rest[len(k):]
 	}
-	// „LMF Deu 7 / Bie" (Access-Pfad): das Titelkürzel hinter dem Schrägstrich trägt
-	// keine Jahrgangszahl, fällt aber auch nicht ins Gewicht — Zahlen stehen davor.
+	// „LMF Deu 7 / Bie": Hinter dem Schrägstrich steht das Kürzel des Titels; es trägt keine
+	// Zahl und fällt weg.
 	if i := strings.Index(rest, "/"); i >= 0 && !strings.ContainsAny(rest[i:], "0123456789") {
 		rest = rest[:i]
 	}
@@ -151,7 +145,7 @@ func Zerlege(signatur string) (z Zerlegung, ok bool) {
 }
 
 // jahrgangsSpanne liest den kleinsten und den größten Jahrgang aus dem Rest der Signatur;
-// ohne Zahl zwischen 5 und 13 bleibt es bei 0/0.
+// ohne Zahl zwischen 5 und 13 bleibt es bei 0 und 0.
 func jahrgangsSpanne(rest string) (von, bis int) {
 	for _, zahl := range jahrgangsZahlen.FindAllString(rest, -1) {
 		j := int(zahl[0] - '0')
@@ -171,10 +165,9 @@ func jahrgangsSpanne(rest string) (von, bis int) {
 	return von, bis
 }
 
-// stichwort ist ein Eintrag der Titel-Heuristik. Ein Slice, keine Map: Die Reihenfolge
-// entscheidet bei Mehrfachtreffern, und eine Map-Iteration ist in Go absichtlich
-// ungeordnet — die alte Lookup-Liste lieferte für „Mathematik und Physik" mal das
-// eine, mal das andere.
+// stichwort ist ein Eintrag der Liste, mit der FachAusText ein Fach schätzt. Die Liste ist ein
+// Slice und keine Map, weil bei zwei Treffern die Reihenfolge entscheidet und Go eine Map in
+// wechselnder Folge durchläuft.
 type stichwort struct{ wort, fach string }
 
 var stichwoerter = []stichwort{
@@ -194,21 +187,21 @@ var stichwoerter = []stichwort{
 	{"arbeitslehre", FachArbeitslehre}, {"sport", FachSport},
 }
 
-// FachAusText rät das Fach aus freiem Text (Titel, Untertitel). Der erste Treffer in
-// der Reihenfolge der Liste gewinnt; ohne Treffer "".
+// FachAusText schätzt das Fach aus freiem Text (Titel, Untertitel). Der erste Treffer in der
+// Reihenfolge der Liste gewinnt; ohne Treffer "".
 func FachAusText(text string) string {
-	lower := strings.ToLower(text)
+	klein := strings.ToLower(text)
 	for _, s := range stichwoerter {
-		if strings.Contains(lower, s.wort) {
+		if strings.Contains(klein, s.wort) {
 			return s.fach
 		}
 	}
 	return ""
 }
 
-// schlagwortFach ordnet Littera-Schlagwörter (MAB 710) exakt einem Fach zu. Exakt,
-// nicht enthalten: „Deutsch für Ausländer" ist kein Deutschunterricht, „Englische
-// Literatur" kein Englischbuch.
+// schlagwortFach ordnet Litteras Schlagwörter (MAB 710) einem Fach zu, wenn sie ihm genau
+// gleichen: „Deutsch für Ausländer" ist kein Deutschunterricht, „Englische Literatur" kein
+// Englischbuch.
 var schlagwortFach = map[string]string{
 	"mathematik": FachMathematik, "mathe": FachMathematik, "deutsch": FachDeutsch, "deutschunterricht": FachDeutsch,
 	"englisch": FachEnglisch, "englischunterricht": FachEnglisch,
@@ -227,22 +220,20 @@ var schlagwortFach = map[string]string{
 	"arbeitslehre": FachArbeitslehre, "darstellendes spiel": FachDarstSpiel,
 }
 
-// FachExakt liefert das kanonische Fach, wenn der Text als GANZES ein Fach benennt
-// („Mathe", „Deutsch", „Politik und Wirtschaft") — sonst "". Für Spalten, die ein Fach
-// tragen SOLLEN, aber nicht müssen: Litteras Kategorie-Spalte enthielt in der aus dem
-// PDF gewonnenen Bestands-CSV Standorttexte wie „Buch Pg/Kaf 078829 1. Aufl.", und der
-// Import machte daraus 1.677 „Fächer" (Test-Server, 19.08.2026). Enthalten-Suche
-// (FachAusText) wäre hier falsch: „Buch Che 11/Che 175" ist kein Chemiebuch-Beleg.
+// FachExakt liefert das Fach, wenn der Text als Ganzes ein Fach benennt („Mathe", „Deutsch",
+// „Politik und Wirtschaft"), sonst "". Sie ist für Spalten gedacht, die ein Fach tragen können,
+// aber nicht müssen: Litteras Kategorie enthält auch Standorttexte wie „Buch Che 11/Che 175",
+// und die Suche nach einem enthaltenen Wort (FachAusText) machte daraus ein Chemiebuch.
 func FachExakt(text string) string {
-	t := strings.ToLower(strings.TrimSpace(text))
-	if t == "" {
+	klein := strings.ToLower(strings.TrimSpace(text))
+	if klein == "" {
 		return ""
 	}
-	if f, ok := schlagwortFach[t]; ok {
+	if f, ok := schlagwortFach[klein]; ok {
 		return f
 	}
 	for _, f := range alleFaecher {
-		if strings.ToLower(f) == t {
+		if strings.ToLower(f) == klein {
 			return f
 		}
 	}
@@ -256,9 +247,8 @@ var alleFaecher = []string{
 	FachArbeitslehre, FachDarstSpiel, FachNaWi,
 }
 
-// FachAusSchlagworten liefert das Fach, wenn die Schlagwörter GENAU EIN Fach nennen.
-// Nennen sie zwei („Deutsch" und „Englisch" an einem zweisprachigen Band), bleibt das
-// Fach offen — lieber leer als falsch.
+// FachAusSchlagworten liefert das Fach, wenn die Schlagwörter genau ein Fach nennen. Nennen
+// sie zwei („Deutsch" und „Englisch" an einem zweisprachigen Band), bleibt das Fach offen.
 func FachAusSchlagworten(schlagwoerter []string) string {
 	fach := ""
 	for _, sw := range schlagwoerter {
@@ -274,9 +264,9 @@ func FachAusSchlagworten(schlagwoerter []string) string {
 	return fach
 }
 
-// JahrgangAusZielgruppe übersetzt Litteras Zielgruppe (MAB 070b) in die Jahrgangs-
-// spanne der kooperativen Gesamtschule mit Oberstufe. Ohne erkennbare Stufe 0/0.
-func JahrgangAusZielgruppe(zielgruppe string) (von, bis int) {
+// jahrgangAusZielgruppe übersetzt eine Zielgruppe aus Littera (MAB 070b) in die Jahrgänge der
+// kooperativen Gesamtschule mit Oberstufe. Ohne erkennbare Stufe 0 und 0.
+func jahrgangAusZielgruppe(zielgruppe string) (von, bis int) {
 	z := strings.ToLower(strings.TrimSpace(zielgruppe))
 	switch {
 	case z == "":
@@ -295,15 +285,13 @@ func JahrgangAusZielgruppe(zielgruppe string) (von, bis int) {
 	return 0, 0
 }
 
-// JahrgangAusZielgruppen nimmt alle Zielgruppen eines Titels — Littera führt bis zu fünf je
-// Titel, etwa „Sekundarstufe 2" und „Lehrer" (Interessenkreise, docs/OFFEN.md 4.20). Die Spanne
-// reicht vom kleinsten bis zum größten erkannten Jahrgang: „Sekundarstufe 1" und „Sekundarstufe
-// 2" ergeben 5–13 wie „Sekundarstufe 1 u. 2". Eine Gruppe ohne Stufe („Lehrer", „DAZ-Schüler")
-// trägt nichts bei. Bis zum 30.09.2026 las der Katalog-Import nur den letzten Wert; stand dort
-// „Lehrer", blieb die Spanne leer.
+// JahrgangAusZielgruppen liefert die Jahrgänge aus allen Zielgruppen eines Titels; Littera
+// führt bis zu fünf, etwa „Sekundarstufe 2" und „Lehrer". Die Spanne reicht vom kleinsten bis
+// zum größten erkannten Jahrgang: „Sekundarstufe 1" und „Sekundarstufe 2" ergeben 5 bis 13.
+// Eine Gruppe ohne Stufe („Lehrer", „DAZ-Schüler") trägt nichts bei.
 func JahrgangAusZielgruppen(zielgruppen []string) (von, bis int) {
 	for _, z := range zielgruppen {
-		v, b := JahrgangAusZielgruppe(z)
+		v, b := jahrgangAusZielgruppe(z)
 		if v == 0 {
 			continue
 		}

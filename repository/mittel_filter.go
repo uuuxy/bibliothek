@@ -23,7 +23,7 @@ const MittelOhneFilter = "ohne"
 
 // MittelFilterGueltig prüft den Parameter, bevor er in eine Abfrage geht. Leer = alle.
 func MittelFilterGueltig(filter string) bool {
-	return filter == "" || filter == MittelOhneFilter || mitteltopf.Gueltig(filter)
+	return filter == "" || filter == MittelOhneFilter || mitteltopf.IstGueltig(filter)
 }
 
 // MittelFilterFehler ist die Meldung an der Tür — sie nennt die erlaubten Werte, damit

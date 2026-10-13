@@ -18,7 +18,7 @@
  * 17.09.2026, Frage 3).
  *
  * Seither beantwortet der SERVER die Frage und schickt sie als eigenes Feld mit
- * (`ersatzwert_bekannt`, pkg/ersatzwert.Vorschlag.PreisBekannt). Fehlt das Feld — eine
+ * (`ersatzwert_bekannt`, pkg/ersatzwert.Vorschlag.HatPreis). Fehlt das Feld — eine
  * alte Antwort, ein Objekt aus einer anderen Quelle —, gilt „nicht bekannt": Lieber eine
  * Zeile zu wenig als eine falsche Zahl über einem Buch.
  *

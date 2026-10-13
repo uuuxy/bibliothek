@@ -125,7 +125,7 @@ type Lage struct {
 	Jetzt         time.Time
 
 	// Ferientabelle (06.09.2026): Der LMF-Planer belegt den letzten Tag des
-	// Büchertauschs aus den Sommerferien Hessen vor (pkg/lmfplan/ferien.go, KMK-
+	// Büchertauschs aus den Sommerferien Hessen vor (pkg/lmfplan/sommerferien.go, KMK-
 	// Beschluss in Sechsjahresblöcken, plus die Jahre aus der Einstellung
 	// „Sommerferien"). Läuft die Tabelle aus, steht der Planer ohne Vorgabe da — still.
 	// Das letzte bekannte Jahr, damit die Warnung hier steht, wo sie jemand liest, und
@@ -133,7 +133,7 @@ type Lage struct {
 	FerientabelleBis int
 
 	// Ferien für Leihfristen (24.09.2026): Herbst-, Weihnachts- und Osterferien Hessen
-	// stehen als Tabelle im Programm (pkg/lmfplan/schulferien.go); eine Leihfrist, die in
+	// stehen als Tabelle im Programm (pkg/lmfplan/uebrige_ferien.go); eine Leihfrist, die in
 	// sie fällt, rückt auf den nächsten Schultag. Das Jahr, in dem die letzten dieser
 	// Ferien enden — danach rücken die Fristen nur noch über Wochenende, Feiertag und
 	// Sommerferien. Anders als bei den Sommerferien gibt es keine Einstellung dafür.

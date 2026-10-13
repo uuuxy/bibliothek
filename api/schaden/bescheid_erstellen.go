@@ -126,7 +126,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 // pruefeBescheidAnfrage prüft Topf, Auswahl und Frist, bevor irgendetwas gelesen oder
 // geschrieben wird, und liefert die Frist als Kalendertag der Schule.
 func pruefeBescheidAnfrage(req BescheidErstellenRequest) (time.Time, error) {
-	if !mitteltopf.Gueltig(req.Mittel) {
+	if !mitteltopf.IstGueltig(req.Mittel) {
 		return time.Time{}, apierrors.BadRequest(mitteltopf.ErrUngueltig.Error(), mitteltopf.ErrUngueltig)
 	}
 	// Der Brief kennt nur einen Wortlaut und ein Konto: die des Landes. Die Rechnung

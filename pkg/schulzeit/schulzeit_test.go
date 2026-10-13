@@ -5,13 +5,10 @@ import (
 	"time"
 )
 
-// TestJetztIstSchulzeitUnabhaengigVonDerServerzeitzone ist das Gate zum Befund vom
-// 23.08.2026: Die gedruckten Dokumente nahmen die Container-Zeit (im Image UTC).
-//
-// Der Test stellt die Server-Zeitzone bewusst auf Pacific/Midway (UTC-11) — dort ist
-// über weite Teile des Tages ein ANDERER Kalendertag als in Berlin. Was hier
-// herauskommt, muss trotzdem der Berliner Tag sein, sonst trägt ein Schadensbescheid
-// das falsche Datum und seine Zahlungsfrist einen Tag zu wenig.
+// Die Zeitzone des Servers steht auf Pacific/Midway (UTC-11) und Pacific/Kiritimati (UTC+14):
+// Dort ist über weite Teile des Tages ein anderer Kalendertag als in Berlin. Heraus kommt
+// trotzdem der Berliner Tag; sonst trüge ein Schadensbescheid das falsche Datum und seine
+// Zahlungsfrist einen Tag zu wenig.
 func TestJetztIstSchulzeitUnabhaengigVonDerServerzeitzone(t *testing.T) {
 	for _, tz := range []string{"UTC", "Pacific/Midway", "Pacific/Kiritimati"} {
 		t.Setenv("TZ", tz)
@@ -29,8 +26,8 @@ func TestJetztIstSchulzeitUnabhaengigVonDerServerzeitzone(t *testing.T) {
 	}
 }
 
-// TestTagesEndeFaelltAufDenBerlinerKalendertag hält die Definition fest, die das ganze
-// System benutzt (internal/service reicht sie hierher durch).
+// Das Ende des Tages ist für das ganze Programm hier festgelegt; internal/service ruft diese
+// Funktion.
 func TestTagesEndeFaelltAufDenBerlinerKalendertag(t *testing.T) {
 	// 23:30 UTC am 15. Juni ist in Berlin bereits der 16. Juni, 01:30 (Sommerzeit).
 	spaet := time.Date(2026, 6, 15, 23, 30, 0, 0, time.UTC)

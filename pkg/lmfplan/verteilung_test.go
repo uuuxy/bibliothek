@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// verteile ist VerteileMit ohne feste Plätze — die Form, die die meisten Fälle brauchen.
+// verteile ist VerteileMit ohne feste Plätze; so brauchen es die meisten Fälle.
 func verteile(r Rahmen, n int, istSchultag func(time.Time) bool) []Platz {
 	return VerteileMit(r, make([]*Platz, n), istSchultag)
 }
@@ -18,8 +18,8 @@ func tag(s string) time.Time {
 	return t
 }
 
-// Der echte Plan 2026: Donnerstag 11.06. ab 3. Stunde, 6 Stunden je Tag. Zeile 5 muss
-// am Freitag in der 1. Stunde liegen, Zeile 11 am Montag — das Wochenende fällt aus.
+// Der Plan der Schule von 2026: Donnerstag 11.06. ab der 3. Stunde, 6 Stunden je Tag. Zeile 5
+// liegt am Freitag in der 1. Stunde, Zeile 11 am Montag, weil das Wochenende ausfällt.
 func TestVerteile_LaeuftUeberTageUndWochenende(t *testing.T) {
 	r := Rahmen{ErsterTag: tag("2026-06-11"), Startstunde: 3, StundenJeTag: 6}
 	p := verteile(r, 12, Schultage(nil))
@@ -63,8 +63,8 @@ func TestVerteile_StartstundeHinterTagesende(t *testing.T) {
 	}
 }
 
-// Ein Zeitraum ohne Ende („bis 9999") darf den Server nicht in eine Endlosschleife
-// schicken — nach einem Jahr Suche gilt der Kalender.
+// Ein Zeitraum ohne Ende („bis 9999") schickt den Server nicht in eine endlose Suche: Nach
+// einem Jahr endet sie.
 func TestVerteile_EndloseFerienEndenTrotzdem(t *testing.T) {
 	frei := []Zeitraum{{Von: tag("2000-01-01"), Bis: tag("9999-12-31")}}
 	p := verteile(Rahmen{ErsterTag: tag("2026-06-11"), Startstunde: 1, StundenJeTag: 6}, 2, Schultage(frei))
@@ -73,8 +73,8 @@ func TestVerteile_EndloseFerienEndenTrotzdem(t *testing.T) {
 	}
 }
 
-// Fronleichnam (Donnerstag 04.06.2026) ist in Hessen frei — ohne dass jemand ihn
-// einträgt. Mittwoch, dann Freitag; und die Ausfall-Liste nennt den Grund.
+// Fronleichnam (Donnerstag 04.06.2026) ist in Hessen frei, ohne dass jemand ihn einträgt:
+// Mittwoch, dann Freitag, und die Liste der Ausfälle nennt den Grund.
 func TestVerteile_FeiertagFaelltAus(t *testing.T) {
 	r := Rahmen{ErsterTag: tag("2026-06-03"), Startstunde: 1, StundenJeTag: 1}
 	p := verteile(r, 2, Schultage(nil))
@@ -89,10 +89,10 @@ func TestVerteile_FeiertagFaelltAus(t *testing.T) {
 	}
 }
 
-// Die Klasse mit dem Ausflug: Zeile 2 bekommt Freitag 12.06. 2. Stunde von Hand. Die
-// übrigen fließen weiter — und Zeile 4, die sonst genau auf diesen Platz käme, rückt
-// eine Stunde weiter. Der feste Platz darf auch auf einem Tag liegen, der kein
-// Schultag ist (Samstag): Wer ihn setzt, weiß es.
+// Die Klasse mit dem Ausflug: Zeile 2 bekommt Freitag 12.06. 2. Stunde von Hand. Die übrigen
+// fließen weiter, und Zeile 4, die sonst auf diesen Platz käme, rückt eine Stunde weiter. Der
+// feste Platz darf auch auf einem Tag liegen, der kein Schultag ist (Samstag): Wer ihn setzt,
+// weiß es.
 func TestVerteileMit_FesterPlatzWirdAusgelassen(t *testing.T) {
 	r := Rahmen{ErsterTag: tag("2026-06-11"), Startstunde: 6, StundenJeTag: 6} // Do, letzte Stunde
 	fest := []*Platz{nil, {Datum: tag("2026-06-12"), Stunde: 2}, nil, nil, {Datum: tag("2026-06-13"), Stunde: 1}}
@@ -101,7 +101,7 @@ func TestVerteileMit_FesterPlatzWirdAusgelassen(t *testing.T) {
 		{tag("2026-06-11"), 6}, // Zeile 1: Donnerstag 6.
 		{tag("2026-06-12"), 2}, // Zeile 2: fest
 		{tag("2026-06-12"), 1}, // Zeile 3: Freitag 1.
-		{tag("2026-06-12"), 3}, // Zeile 4: Freitag 3. — die 2. ist belegt
+		{tag("2026-06-12"), 3}, // Zeile 4: Freitag 3., die 2. ist belegt
 		{tag("2026-06-13"), 1}, // Zeile 5: fest, Samstag
 	}
 	for i := range erwartet {
@@ -112,11 +112,10 @@ func TestVerteileMit_FesterPlatzWirdAusgelassen(t *testing.T) {
 	}
 }
 
-// Der echte Plan 2026 vom Ende her (06.09.2026: „es endet immer am gleichen Tag —
-// Donnerstags vor den Ferien zur vierten Stunde"): 56 Zeilen, Ende Do 25.06. 4. Stunde,
-// Do 18.06. frei (im Excel steht dort keine Klasse) → Beginn Do 11.06. 3. Stunde, genau
-// wie im Excel. Ohne den freien Tag rückt der Beginn auf Fr 12.06. 3. Stunde — der
-// Anfang wandert, das Ende bleibt.
+// Der Plan der Schule von 2026 vom Ende her: 56 Zeilen, Ende Do 25.06. 4. Stunde, Do 18.06.
+// frei (im Excel der Schule steht dort keine Klasse), also Beginn Do 11.06. 3. Stunde wie im
+// Excel. Ohne den freien Tag rückt der Beginn auf Fr 12.06. 3. Stunde: Der Anfang wandert, das
+// Ende bleibt.
 func TestVerteileRueckwaerts_EchterPlan2026(t *testing.T) {
 	e := Ende{LetzterTag: tag("2026-06-25"), LetzteStunde: 4, StundenJeTag: 6}
 	frei := []Zeitraum{{Von: tag("2026-06-18"), Bis: tag("2026-06-18"), Name: "frei"}}
@@ -146,9 +145,9 @@ func TestVerteileRueckwaerts_EchterPlan2026(t *testing.T) {
 }
 
 // Rückwärts mit festem Platz, letztem Tag am Wochenende und letzter Stunde hinter dem
-// Tagesende: Samstag → Freitag davor; Stunde 9 bei 6 → 6. Die feste Zeile 2 (Fr 2. Std.)
-// wird vom Fluss ausgelassen: Zeile 3 rutscht von der belegten 2. auf die 1. Stunde,
-// Zeile 1 auf den Donnerstag, 6. Stunde.
+// Tagesende: Aus Samstag wird der Freitag davor, aus Stunde 9 bei 6 Stunden die 6. Die feste
+// Zeile 2 (Fr 2. Std.) lässt der Fluss aus: Zeile 3 rückt von der belegten 2. auf die 1.
+// Stunde, Zeile 1 auf den Donnerstag, 6. Stunde.
 func TestVerteileRueckwaerts_FestUndRaender(t *testing.T) {
 	e := Ende{LetzterTag: tag("2026-06-13"), LetzteStunde: 9, StundenJeTag: 6} // Samstag
 	fest := []*Platz{nil, {Datum: tag("2026-06-12"), Stunde: 2}, nil, nil, nil, nil, nil}

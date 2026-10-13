@@ -72,7 +72,7 @@ func TestVokabularIstInGoUndOberflaecheDasselbe(t *testing.T) {
 	// Rückrichtung: Ein Wert der Oberfläche, den Go nicht kennt, endet erst beim Auslösen der
 	// Bestellung an der Tür.
 	for wert := range ui {
-		if !Gueltig(wert) {
+		if !IstGueltig(wert) {
 			t.Errorf("Die Oberfläche führt den Topf %q, den der Server nicht kennt (Gueltig) — "+
 				"eine Bestellung daraus wird an der Tür abgewiesen.", wert)
 		}

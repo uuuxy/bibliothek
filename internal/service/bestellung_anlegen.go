@@ -131,7 +131,7 @@ type bestellItemResult struct {
 func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*OrderResult, error) {
 	// Der Topf ist Pflicht und wird vor jedem Datenbankzugriff geprüft, damit keine Barcodes
 	// für eine Bestellung reserviert werden, die es nicht geben wird.
-	if !mitteltopf.Gueltig(req.Mittel) {
+	if !mitteltopf.IstGueltig(req.Mittel) {
 		return nil, mitteltopf.ErrUngueltig
 	}
 

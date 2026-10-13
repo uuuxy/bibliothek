@@ -150,7 +150,7 @@ func pruefeEigentumAenderung(a EigentumAenderung) error {
 		return fmt.Errorf("%w: kein Exemplar gewählt", ErrEigentumUngueltig)
 	case len(a.ExemplarIDs) > ExemplarEigentumListeMax:
 		return fmt.Errorf("%w: höchstens %d Exemplare auf einmal", ErrEigentumUngueltig, ExemplarEigentumListeMax)
-	case a.Eigentum != "" && !mitteltopf.Gueltig(a.Eigentum):
+	case a.Eigentum != "" && !mitteltopf.IstGueltig(a.Eigentum):
 		return fmt.Errorf("%w: unbekanntes Eigentum %q", ErrEigentumUngueltig, a.Eigentum)
 	case strings.TrimSpace(a.Grund) == "":
 		return fmt.Errorf("%w: der Grund fehlt", ErrEigentumUngueltig)

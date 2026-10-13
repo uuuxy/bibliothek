@@ -6,21 +6,21 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Tagesfrist ist das Ende einer Frist, die in Tagen zählt — Buch, Medium, Gerät,
-// Verlängerung, Abholfrist einer Vormerkung: ab plus tage, und fällt dieser Tag auf ein
-// Wochenende, einen Feiertag oder in die Ferien, der nächste Schultag; Tagesende in der
-// Schulzeitzone.
+// Tagesfrist liefert das Ende einer Frist, die in Tagen zählt (Buch, Medium, Gerät,
+// Verlängerung, Abholfrist einer Vormerkung): ab plus tage und, wenn dieser Tag auf ein
+// Wochenende, einen Feiertag oder in die Ferien fällt, der nächste Schultag, am Tagesende in
+// der Zone der Schule. Wer vor den Ferien ausleiht, wird so nicht gemahnt, weil die Frist in
+// die Ferien fiel.
 //
-// Entscheidung vom 24.09.2026: Wer vor den Herbstferien ausleiht, soll nicht gemahnt
-// werden, weil die Frist in die Ferien fiel. Nicht hierüber laufen Stichtage und von Hand
-// gesetzte Fristen — Lernmittel (Stichtag, LMF-Plan), Ferien-Leseclub, Frist-Überschreibung,
-// die Jahresfrist der Dauerleihe. Der LMF-Stichtag 31.07. liegt in jedem Jahr der Tabelle in
-// den Sommerferien; über diese Regel stünde jedes Lernmittel am Tag der Bücherausgabe.
+// Stichtage und von Hand gesetzte Fristen laufen nicht hierüber: Lernmittel (Stichtag,
+// LMF-Plan), Ferien-Leseclub, eine überschriebene Frist und die Jahresfrist der Dauerleihe.
+// Der Stichtag der Lernmittel am 31.07. liegt in jedem Jahr der Tabelle in den Sommerferien;
+// mit dieser Regel rückte er für jedes Lernmittel auf den Tag der Bücherausgabe.
 //
-// Bis zum 29.09.2026 stand sie in internal/service. Die Abholfrist wird aber auch in
-// repository gesetzt (Nachrücken in der Warteschlange), und dorthin reicht service nicht.
+// Die Funktion steht in diesem Paket, weil auch repository eine Abholfrist setzt und
+// internal/service nicht einbinden kann.
 func (t Ferientabelle) Tagesfrist(ab time.Time, tage int) time.Time {
 	zone := schulzeit.Zone()
-	tag := t.NaechsterSchultag(ab.In(zone).AddDate(0, 0, tage))
+	tag := t.ersterSchultagAb(ab.In(zone).AddDate(0, 0, tage))
 	return schulzeit.TagesEnde(time.Date(tag.Year(), tag.Month(), tag.Day(), 12, 0, 0, 0, zone))
 }

@@ -13,15 +13,15 @@ func TestHatKennung(t *testing.T) {
 	}{
 		{"lmf-Deutsch 5", true},
 		{"LMF-Deutsch 5", true},
-		{"LMF - Deutsch 5", true}, // Leerzeichen um den Bindestrich (der gemeldete Bug von 2026)
+		{"LMF - Deutsch 5", true}, // Leerzeichen um den Bindestrich
 		{"LMF Deutsch 5", true},
-		{"  lmf-Mathe", true}, // führender Whitespace
+		{"  lmf-Mathe", true}, // Leerraum davor
 		{"LMF Bio 7 / Nat", true},
 		{"Der kleine Hobbit", false},
 		{"LMFP-Roman", false},      // kein Trenner nach lmf
 		{"lmfao Witzebuch", false}, // kein Trenner nach lmf
 		{"", false},
-		{"lmf", false}, // Kürzel allein ohne Trenner/Rest
+		{"lmf", false}, // Kürzel allein, ohne Trenner und Rest
 		{"BIB Rom", false},
 	}
 	for _, f := range faelle {
@@ -31,10 +31,6 @@ func TestHatKennung(t *testing.T) {
 	}
 }
 
-// Migration 093 hat den Altbestand mit demselben Muster befüllt, das HatKennung liest.
-// Läuft das Muster hier auseinander, erkennt der Import ein anderes Buch als Lernmittel
-// als die Migration — dieselbe Klasse „Doppelte Wahrheitsquelle", die 2026 zweimal ein
-// Schulbuch in den öffentlichen Katalog stellte.
 // Der Vermerk steht als eigenes Wort da, allein oder neben einem zweiten Ort.
 func TestHatVermerk(t *testing.T) {
 	faelle := map[string]bool{
@@ -57,6 +53,9 @@ func TestHatVermerk(t *testing.T) {
 	}
 }
 
+// Migration 093 hat den Altbestand mit demselben Muster befüllt, das HatKennung liest. Laufen
+// die zwei auseinander, erkennt der Import ein anderes Buch als Lernmittel als die Migration,
+// und ein Schulbuch stünde im öffentlichen Katalog.
 func TestHatKennung_MusterStehtInMigration093(t *testing.T) {
 	sql, err := os.ReadFile("../../migrations/093_lernmittel_feld.sql")
 	if err != nil {
@@ -78,7 +77,7 @@ func TestZerlege(t *testing.T) {
 		von, bis int
 		ok       bool
 	}{
-		// Echte Formen aus dem Katalogisat (Juni 2026)
+		// Formen aus dem Katalog der Schule
 		{"LMF Bio 7", FachBiologie, 7, 7, true},
 		{"LMF Ma 5", FachMathematik, 5, 5, true},
 		{"LMF PoWi 9", FachPoWi, 9, 9, true},
@@ -91,9 +90,9 @@ func TestZerlege(t *testing.T) {
 		{"LMF Ma Fo", FachMathematik, 0, 0, true},
 		{"LMF Pusch", "", 0, 0, true}, // unbekanntes Kürzel: Lernmittel ja, Fach offen
 		{"lmf eng 9", FachEnglisch, 9, 9, true},
-		// Access-Pfad: Regaladresse und Titelkürzel „LMF Deu 7 / Bie"
+		// Kürzel des Titels hinter dem Schrägstrich
 		{"LMF Deu 7 / Bie", FachDeutsch, 7, 7, true},
-		// Alter Signatur-Vorschlag der Maske
+		// Früherer Signatur-Vorschlag der Maske
 		{"LMF M", FachMathematik, 0, 0, true},
 		{"LMF-Ma 5", FachMathematik, 5, 5, true},
 		{"LMF - Deutsch 5", FachDeutsch, 5, 5, true},
@@ -101,7 +100,7 @@ func TestZerlege(t *testing.T) {
 		{"Bio 7", "", 0, 0, false},
 		{"JF", "", 0, 0, false},
 		{"", "", 0, 0, false},
-		// Zahlen außerhalb 5–13 zählen nicht: „LMF Arb 1" ist Band 1 (Katalogisat, 7 Titel)
+		// Zahlen außerhalb von 5 bis 13 zählen nicht: In „LMF Arb 1" ist die 1 der Band.
 		{"LMF Ma 99", FachMathematik, 0, 0, true},
 		{"LMF Arb 1", FachArbeitslehre, 0, 0, true},
 	}
@@ -114,8 +113,8 @@ func TestZerlege(t *testing.T) {
 	}
 }
 
-// „LMF Deutsch 5" (Klartext statt Kürzel) muss dasselbe Fach ergeben wie „LMF Deu 5"
-// — sonst hängt das Fach davon ab, wie jemand die Signatur vor Jahren getippt hat.
+// „LMF Deutsch 5" (Klartext statt Kürzel) ergibt dasselbe Fach wie „LMF Deu 5"; sonst hinge
+// das Fach an der Schreibweise der Signatur.
 func TestZerlege_KlartextFachUeberStichwort(t *testing.T) {
 	a, _ := Zerlege("LMF Deutsch 5")
 	b, _ := Zerlege("LMF Deu 5")
@@ -145,17 +144,17 @@ func TestFachAusText(t *testing.T) {
 	}
 }
 
-// Determinismus: Die alte Map-Iteration lieferte für Texte mit zwei Fächern mal das
-// eine, mal das andere. Die Liste entscheidet jetzt nach Reihenfolge — immer gleich.
+// Bei zwei Fächern im Text entscheidet die Reihenfolge der Liste, in jedem Lauf gleich. Eine
+// Map lieferte mal das eine, mal das andere.
 func TestFachAusText_Deterministisch(t *testing.T) {
-	first := FachAusText("Mathematik und Physik für die Oberstufe")
+	erstes := FachAusText("Mathematik und Physik für die Oberstufe")
 	for i := 0; i < 200; i++ {
-		if got := FachAusText("Mathematik und Physik für die Oberstufe"); got != first {
-			t.Fatalf("Lauf %d: %q, vorher %q", i, got, first)
+		if got := FachAusText("Mathematik und Physik für die Oberstufe"); got != erstes {
+			t.Fatalf("Lauf %d: %q, vorher %q", i, got, erstes)
 		}
 	}
-	if first != FachMathematik {
-		t.Errorf("erwartet %q (steht in der Liste vor Physik), war %q", FachMathematik, first)
+	if erstes != FachMathematik {
+		t.Errorf("erwartet %q (steht in der Liste vor Physik), war %q", FachMathematik, erstes)
 	}
 }
 
@@ -194,15 +193,15 @@ func TestJahrgangAusZielgruppe(t *testing.T) {
 		{"", 0, 0},
 	}
 	for _, f := range faelle {
-		von, bis := JahrgangAusZielgruppe(f.z)
+		von, bis := jahrgangAusZielgruppe(f.z)
 		if von != f.von || bis != f.bis {
-			t.Errorf("JahrgangAusZielgruppe(%q) = %d–%d, want %d–%d", f.z, von, bis, f.von, f.bis)
+			t.Errorf("jahrgangAusZielgruppe(%q) = %d–%d, want %d–%d", f.z, von, bis, f.von, f.bis)
 		}
 	}
 }
 
 // Ein Titel trägt in Littera bis zu fünf Zielgruppen; die Spanne kommt aus allen, nicht aus der
-// letzten. Stand „Lehrer" zuletzt, blieb sie bis zum 30.09.2026 leer.
+// letzten. Stünde „Lehrer" zuletzt, bliebe sie sonst leer.
 func TestJahrgangAusZielgruppen(t *testing.T) {
 	faelle := []struct {
 		z        []string
@@ -227,7 +226,7 @@ func TestFachExakt(t *testing.T) {
 	faelle := map[string]string{
 		"Mathe": FachMathematik, "mathematik": FachMathematik, "Deutsch": FachDeutsch,
 		"Politik und Wirtschaft": FachPoWi, "Geographie": FachErdkunde, " Chemie ": FachChemie,
-		// Litteras Kategorie-Spalte aus der PDF-CSV: Standorttexte, keine Fächer.
+		// Litteras Kategorie enthält auch Standorttexte; sie sind keine Fächer.
 		"Buch Pg/Kaf 078829": "", "Buch Che 11/Che 175 Exemplare": "", "Buch Deu 6/Cha 126 Exemplare 1. Auflage": "",
 		"10 R / Ausgabe 2010": "", "": "",
 	}

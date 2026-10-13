@@ -26,7 +26,7 @@ import (
 // ganze Zeit grün, während das Dokument daneben etwas anderes behauptete.
 //
 // Seitdem steht die Staffel an beiden Stellen in DERSELBEN maschinenlesbaren Form
-// (`Verleihjahr→Prozent`), und dieses Gate hält jedes Paar gegen ersatzwert.Rechne.
+// (`Verleihjahr→Prozent`), und dieses Gate hält jedes Paar gegen ersatzwert.Berechne.
 // Eine Zahl im Dokument zu ändern, ohne den Code zu ändern, macht es rot.
 //
 // Reparatur bei Rot: Zuerst die Arbeitshilfe lesen, nicht die jeweils andere Stelle
@@ -65,9 +65,9 @@ func TestStaffelImKonzeptStimmtMitDerRechnung(t *testing.T) {
 		// Wahl zwischen Kauf- und Neupreis (dafür gibt es ersatzwert_test.go).
 		pruefe := func(j int) {
 			t.Helper()
-			ist := ersatzwert.Rechne(j, 100, 100, 0, ersatzwert.PreisquelleListenpreis).Prozent
+			ist := ersatzwert.Berechne(j, 100, 100, 0, ersatzwert.PreisquelleListenpreis).Prozent
 			if ist != erwartet {
-				t.Errorf("mittel_konzept.md schreibt %s→%d %%, ersatzwert.Rechne rechnet für "+
+				t.Errorf("mittel_konzept.md schreibt %s→%d %%, ersatzwert.Berechne rechnet für "+
 					"das %d. Verleihjahr %d %% — eine der beiden Stellen ist falsch, und die "+
 					"Zahl steht in einem Bescheid an Eltern",
 					paar[1]+paar[2], erwartet, j, ist)

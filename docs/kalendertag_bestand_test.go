@@ -61,7 +61,7 @@ var bestandKalendertag = map[string]struct {
 	"api/leser/student_create.go":         {1, "Geburtsdatum: trifft eine Datumsspalte"},
 	"api/leser/student_update.go":         {1, "Geburtsdatum: trifft eine Datumsspalte"},
 	"api/druck/etiketten_offen.go":        {2, "Stichtag der Etiketten: verglichen mit Datumsspalten"},
-	"pkg/lmfplan/ferien.go":               {2, "Ferientage als Kalendertage in UTC, verglichen mit Tagen derselben Form (kalendertagUTC)"},
+	"pkg/lmfplan/sommerferien.go":         {2, "Ferientage als Kalendertage in UTC, verglichen mit Tagen derselben Form (kalendertagUTC)"},
 	"pkg/lmfplan/ferien_einstellung.go":   {2, "Ferientage als Kalendertage in UTC, verglichen mit Tagen derselben Form (kalendertagUTC)"},
 }
 

@@ -443,10 +443,11 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 14 von 79 Paketen:** `pkg/betrag` (gelesen, ohne Änderung), `pkg/clientip`,
+**Fertig sind 19 von 79 Paketen:** `pkg/betrag` (gelesen, ohne Änderung), `pkg/clientip`,
 `pkg/closeutil`, `pkg/coverablage` (gelesen, ohne Änderung), `pkg/coverdatei`,
-`pkg/coverquelle`, `pkg/csvutil`, `pkg/httpresp`, `pkg/imageutil`, `pkg/isbnutil`,
-`pkg/kennung`, `pkg/logger`, `pkg/ratelimit`, `pkg/safego`.
+`pkg/coverquelle`, `pkg/csvutil`, `pkg/ersatzwert`, `pkg/httpresp`, `pkg/imageutil`,
+`pkg/isbnutil`, `pkg/kennung`, `pkg/lmf`, `pkg/lmfplan`, `pkg/logger`, `pkg/mitteltopf`,
+`pkg/ratelimit`, `pkg/safego`, `pkg/schulzeit`.
 
 **Ein Paket ist fertig, wenn:**
 

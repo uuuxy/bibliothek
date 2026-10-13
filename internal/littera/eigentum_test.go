@@ -43,7 +43,7 @@ func TestZuordnungAusVermerk(t *testing.T) {
 // der Titel samt Exemplaren an der Datenbank ab, und das erst beim einen echten Lauf.
 func TestVermerkeLittera_NurGueltigesEigentum(t *testing.T) {
 	for schluessel, z := range vermerkeLittera {
-		if z.Eigentum != "" && !mitteltopf.Gueltig(z.Eigentum) {
+		if z.Eigentum != "" && !mitteltopf.IstGueltig(z.Eigentum) {
 			t.Errorf("%q ordnet %q zu — nicht im Vokabular von chk_exemplar_eigentum", schluessel, z.Eigentum)
 		}
 		if got, _ := zuordnungAusVermerk(z.Wortlaut); got != z {

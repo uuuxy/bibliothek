@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-// Die Stichtage sind der 15.3. und der 15.9. — die der Bestandskartei. Geprüft wird an den
-// Rändern, denn dort entscheidet sich, ob ein Abgang vom 15.9. noch in den Nachweis gehört,
-// den die Schule an diesem Tag ausdruckt.
+// Die Stichtage sind der 15.3. und der 15.9., die der Bestandskartei. Geprüft wird an den
+// Rändern: Dort entscheidet sich, ob ein Abgang vom 15.9. noch in den Nachweis gehört, den die
+// Schule an diesem Tag ausdruckt.
 func TestHalbjahr_Raender(t *testing.T) {
 	faelle := []struct {
 		tag      string
 		von, bis string
 	}{
-		{"2026-09-17", "2026-09-16", "2027-03-15"}, // heute: Winterhalbjahr
+		{"2026-09-17", "2026-09-16", "2027-03-15"}, // im Winterhalbjahr
 		{"2026-09-16", "2026-09-16", "2027-03-15"}, // erster Tag
 		{"2026-09-15", "2026-03-16", "2026-09-15"}, // Stichtag gehört noch zum Sommerhalbjahr
 		{"2026-03-16", "2026-03-16", "2026-09-15"},

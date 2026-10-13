@@ -6,18 +6,18 @@ import "testing"
 // (05.04.), 2027 (28.03.), 2024 (31.03.), 2038 (25.04., der späteste mögliche Termin).
 func TestOstersonntag(t *testing.T) {
 	for jahr, soll := range map[int]string{2024: "2024-03-31", 2026: "2026-04-05", 2027: "2027-03-28", 2038: "2038-04-25"} {
-		if got := Ostersonntag(jahr).Format("2006-01-02"); got != soll {
+		if got := ostersonntag(jahr).Format("2006-01-02"); got != soll {
 			t.Errorf("Ostern %d: %s, erwartet %s", jahr, got, soll)
 		}
 	}
 }
 
-// Die Feiertage, die in die Plan-Zeit fallen: Fronleichnam ist in Hessen frei — der
-// Donnerstag, der im Juni-Plan sonst sechs Klassen bekäme. Dazu die Gegenprobe, dass
-// Tage anderer Länder NICHT drinstehen.
+// Die Feiertage, die in die Zeit der Pläne fallen: Fronleichnam ist in Hessen frei, der
+// Donnerstag, der im Plan vom Juni sonst sechs Klassen bekäme. Dazu die Gegenprobe, dass Tage
+// anderer Länder nicht darin stehen.
 func TestFeiertageHessen_2026(t *testing.T) {
 	namen := map[string]string{}
-	for _, f := range FeiertageHessen(2026) {
+	for _, f := range feiertageHessen(2026) {
 		namen[f.Datum.Format("2006-01-02")] = f.Name
 	}
 	for datum, soll := range map[string]string{

@@ -122,6 +122,9 @@ seinen Typ nachschlagen können. Alles andere ist klein. In einem Thema unter `a
 Typ `Tueren` und seine Türen. Der Grund steht in Best Practices: „Every exported type increases
 the cognitive load for the reader."
 
+Konstanten, die zusammen eine Aufzählung bilden, sind als Ganzes öffentlich oder als Ganzes
+klein (`lmf.FachMathematik` bis `lmf.FachNaWi`).
+
 Eine Naht, die es nur gibt, damit ein Test etwas austauschen kann, endet auf `FuerTest`.
 
 ## 7. Dateien
@@ -141,6 +144,9 @@ Tests heißen `…_test.go`, Tests an der Datenbank `…_pg_test.go`, Prüfungen
 - Kein Datum, keine Vorgeschichte, kein Verweis auf eine Nummer aus OFFEN.md oder einen Pull
   Request, kein Wort in Großbuchstaben zur Betonung. Die Geschichte steht in der
   Commit-Nachricht.
+- Stehen bleibt ein Datum, das zu einer Quelle gehört: „Erlass vom 17.12.2014", „Beschluss vom
+  21.09.2022", „abgerufen am 24.09.2026". Marke und Datum stehen in einer Zeile; daran erkennt
+  die Prüfung sie.
 
 ## 9. Was seinen Namen behält
 

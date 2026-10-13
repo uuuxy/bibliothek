@@ -1,12 +1,9 @@
 package lmfplan
 
-// ferien_einstellung.go — die Sommerferien als Einstellung (06.09.2026). Die
-// Programmtabelle (ferien.go) reicht bis zum Ende des aktuellen KMK-Blocks; was danach
-// kommt, trägt die Schule selbst ein: Einstellungen → LUSD & Versetzung → Sommerferien,
-// gespeichert als JSON-Liste unter dem Schlüssel „sommerferien". Hier steht, wie der
-// Text gelesen, geprüft und in Normalform gebracht wird — an EINER Stelle, damit
-// Speichern (api/system/settings.go), Planer (api/lernmittel/lmf_plan.go) und Selbstprüfung
-// (api/system/betriebsbereitschaft_handler.go) dieselbe Lesart haben.
+// Die Sommerferien als Einstellung: Die Tabelle des Programms reicht bis zum Ende des
+// laufenden Beschlusses der KMK, spätere Jahre trägt die Schule in den Einstellungen ein,
+// gespeichert als JSON-Liste. Gelesen, geprüft und in Normalform gebracht wird der Text hier,
+// damit Speichern, Planer und Selbstprüfung ihn gleich lesen.
 
 import (
 	"encoding/json"
@@ -17,16 +14,17 @@ import (
 	"time"
 )
 
-// SommerferienSchluessel ist der Schlüssel in system_einstellungen.
+// SommerferienSchluessel ist der Schlüssel der Einstellung in system_einstellungen.
 const SommerferienSchluessel = "sommerferien"
 
-// SommerferienEintrag ist ein Jahr aus der Einstellung: Beginn und Ende als JJJJ-MM-TT.
+// SommerferienEintrag ist ein Jahr aus der Einstellung, Beginn und Ende als JJJJ-MM-TT.
 type SommerferienEintrag struct {
 	Jahr int    `json:"jahr"`
 	Von  string `json:"von"`
 	Bis  string `json:"bis"`
 }
 
+// zeitraum liefert den Eintrag als Zeitraum; ok ist false, wenn ein Datum nicht lesbar ist.
 func (e SommerferienEintrag) zeitraum() (Zeitraum, bool) {
 	von, err1 := time.Parse(time.DateOnly, e.Von)
 	bis, err2 := time.Parse(time.DateOnly, e.Bis)
@@ -36,11 +34,10 @@ func (e SommerferienEintrag) zeitraum() (Zeitraum, bool) {
 	return Zeitraum{Von: von, Bis: bis, Name: "Sommerferien"}, true
 }
 
-// ParseSommerferien liest die Einstellung und prüft jeden Eintrag: Datum lesbar, Beginn
-// vor Ende, beide im genannten Jahr, kein Jahr doppelt, plausible Länge (Sommerferien
-// dauern 5–8 Wochen; ein Zahlendreher „2031-07-07 bis 2031-08-51" kommt hier nicht
-// durch). Leer oder nur Leerraum ist eine leere Liste — die Vorgabe.
-func ParseSommerferien(text string) ([]SommerferienEintrag, error) {
+// leseSommerferien liest die Einstellung und prüft jeden Eintrag: Datum lesbar, Beginn vor
+// Ende, beide im genannten Jahr, kein Jahr doppelt und eine Länge von vier bis neun Wochen.
+// Leer oder nur Leerraum ergibt die leere Liste, die Vorgabe.
+func leseSommerferien(text string) ([]SommerferienEintrag, error) {
 	if strings.TrimSpace(text) == "" {
 		return nil, nil
 	}
@@ -68,8 +65,8 @@ func (e SommerferienEintrag) pruefe() error {
 	if !ok {
 		return fmt.Errorf("Sommerferien %d: Datum nicht lesbar (JJJJ-MM-TT)", e.Jahr)
 	}
-	// Ein Zahlendreher im Jahr (2131 statt 2031) käme sonst durch und machte die
-	// Selbstprüfung hundert Jahre stumm.
+	// Ein Zahlendreher im Jahr (2131 statt 2031) machte die Selbstprüfung sonst hundert Jahre
+	// stumm.
 	if e.Jahr < 2000 || e.Jahr > 2100 {
 		return fmt.Errorf("Sommerferien %d: das Jahr liegt außerhalb von 2000 bis 2100 — Zahlendreher?", e.Jahr)
 	}
@@ -85,11 +82,10 @@ func (e SommerferienEintrag) pruefe() error {
 	return nil
 }
 
-// NormalisiereSommerferien prüft den Text wie ParseSommerferien und gibt ihn in
-// Normalform zurück (nach Jahr sortiert, kompaktes JSON, "" für die leere Liste) —
-// das, was gespeichert wird.
+// NormalisiereSommerferien prüft den Text wie leseSommerferien und liefert, was gespeichert
+// wird: nach Jahr sortiert, als kompaktes JSON, "" für die leere Liste.
 func NormalisiereSommerferien(text string) (string, error) {
-	eintraege, err := ParseSommerferien(text)
+	eintraege, err := leseSommerferien(text)
 	if err != nil {
 		return "", err
 	}
@@ -103,25 +99,24 @@ func NormalisiereSommerferien(text string) (string, error) {
 	return string(b), nil
 }
 
-// FerientabelleAus baut die Tabelle für den Betrieb: Programmtabelle plus die
-// eingestellten Jahre. Ein unlesbarer Text zählt nicht — der Planer läuft dann mit der
-// Programmtabelle weiter, statt gar keine Vorgabe zu haben (gespeichert wird ohnehin
-// nur, was NormalisiereSommerferien durchlässt).
+// FerientabelleAus baut die Tabelle für den Betrieb: die des Programms und dazu die
+// eingestellten Jahre. Ein unlesbarer Text zählt nicht; der Planer läuft dann mit der Tabelle
+// des Programms weiter und steht nicht ohne Vorgabe da.
 func FerientabelleAus(text string) Ferientabelle {
-	eintraege, err := ParseSommerferien(text)
+	eintraege, err := leseSommerferien(text)
 	if err != nil {
 		return Hessen()
 	}
-	return Hessen().Mit(eintraege)
+	return Hessen().mit(eintraege)
 }
 
-// ProgrammEintraege sind die Jahre der Programmtabelle als Liste — die Oberfläche
-// zeigt sie neben den eigenen Einträgen, damit man sieht, was schon da ist.
+// ProgrammEintraege sind die Jahre der Tabelle des Programms als Liste. Die Oberfläche zeigt
+// sie neben den eigenen Einträgen, damit zu sehen ist, was schon hinterlegt ist.
 func ProgrammEintraege() []SommerferienEintrag {
-	out := make([]SommerferienEintrag, 0, len(sommerferienHessen))
+	eintraege := make([]SommerferienEintrag, 0, len(sommerferienHessen))
 	for jahr, z := range sommerferienHessen {
-		out = append(out, SommerferienEintrag{Jahr: jahr, Von: z.Von.Format(time.DateOnly), Bis: z.Bis.Format(time.DateOnly)})
+		eintraege = append(eintraege, SommerferienEintrag{Jahr: jahr, Von: z.Von.Format(time.DateOnly), Bis: z.Bis.Format(time.DateOnly)})
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Jahr < out[j].Jahr })
-	return out
+	sort.Slice(eintraege, func(i, j int) bool { return eintraege[i].Jahr < eintraege[j].Jahr })
+	return eintraege
 }

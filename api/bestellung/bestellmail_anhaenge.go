@@ -179,7 +179,7 @@ func GenerateBarcodeCSV(labels []buchetikett.BarcodeLabelDetail) ([]byte, error)
 // etikettenboegen erzeugt die Etiketten-PDFs für die Mail: immer den kleinen Bogen, für
 // den selbst beklebenden Hauptlieferanten zusätzlich das große Lernmittel-Etikett — er
 // wählt die Größe, Bibliosys entscheidet sie nicht vorab. Gilt die Bestellung der
-// Schülerbücherei, entfällt das große Etikett (mitteltopf.GrossesLernmittelEtikettFuer).
+// Schülerbücherei, entfällt das große Etikett (mitteltopf.HatGrossesLernmittelEtikett).
 //
 // Der Kopf kommt fertig herein (buchetikett.EtikettKopfAus) — derselbe wie im Selbstdruck und hinter
 // dem Lieferanten-Link, damit alle drei Wege zum selben Buch denselben Aufkleber ergeben.
@@ -200,7 +200,7 @@ func etikettenboegen(labels []buchetikett.BarcodeLabelDetail, kopf buchetikett.E
 		{Name: datiertName("etiketten_klein", "pdf"), ContentType: tuer.ContentTypePDF, Data: labelBuf.Bytes()},
 	}
 
-	if !istHauptlieferant || !mitteltopf.GrossesLernmittelEtikettFuer(mittel) {
+	if !istHauptlieferant || !mitteltopf.HatGrossesLernmittelEtikett(mittel) {
 		return boegen, nil
 	}
 

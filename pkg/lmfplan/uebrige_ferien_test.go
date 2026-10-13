@@ -7,11 +7,10 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Die Fälle, an denen eine Leihfrist hängt (Entscheidung vom 24.09.2026): erster und
-// letzter Ferientag, ein Feiertag am Wochenende vor den Ferien, Weihnachtsferien, die an
-// einem Dienstag enden, Ostern bis Ostermontag, Sommerferien aus der Tabelle und aus einem
-// eigenen Eintrag.
-func TestNaechsterSchultag(t *testing.T) {
+// Die Fälle, an denen eine Leihfrist hängt: erster und letzter Ferientag, ein Feiertag am
+// Wochenende vor den Ferien, Weihnachtsferien, die an einem Dienstag enden, Ostern bis
+// Ostermontag, Sommerferien aus der Tabelle und aus einem eigenen Eintrag.
+func TestErsterSchultagAb(t *testing.T) {
 	eigene := FerientabelleAus(`[{"jahr":2031,"von":"2031-07-14","bis":"2031-08-22"}]`)
 	for _, c := range []struct {
 		name      string
@@ -30,29 +29,29 @@ func TestNaechsterSchultag(t *testing.T) {
 		{"Sommerferien aus eigenem Eintrag", eigene, "2031-07-14", "2031-08-25"},
 		{"ohne eigenen Eintrag kennt 2031 keine Sommerferien", Hessen(), "2031-07-14", "2031-07-14"},
 	} {
-		if got := c.tabelle.NaechsterSchultag(tag(c.tag)); !got.Equal(tag(c.soll)) {
+		if got := c.tabelle.ersterSchultagAb(tag(c.tag)); !got.Equal(tag(c.soll)) {
 			t.Errorf("%s: %s → %s, erwartet %s", c.name, c.tag, got.Format("2006-01-02"), c.soll)
 		}
 	}
 }
 
 // Die Frist entsteht als Berliner Zeitpunkt. Mitternacht in Berlin liegt zwei Stunden vor
-// Mitternacht UTC — direkt gegen die UTC-Tage der Tabelle verglichen, fiele der erste
+// Mitternacht UTC: Direkt mit den Tagen der Tabelle in UTC verglichen, fiele der erste
 // Ferientag heraus, und die Frist bliebe mitten in den Ferien stehen.
-func TestNaechsterSchultag_BerlinerMitternacht(t *testing.T) {
+func TestErsterSchultagAb_BerlinerMitternacht(t *testing.T) {
 	berlin := schulzeit.Zone()
 	for _, zeitpunkt := range []time.Time{
 		time.Date(2026, 10, 5, 0, 0, 0, 0, berlin),
 		time.Date(2026, 10, 5, 23, 59, 59, 0, berlin),
 	} {
-		if got := Hessen().NaechsterSchultag(zeitpunkt); !got.Equal(tag("2026-10-19")) {
+		if got := Hessen().ersterSchultagAb(zeitpunkt); !got.Equal(tag("2026-10-19")) {
 			t.Errorf("%s: %s, erwartet 2026-10-19", zeitpunkt, got.Format("2006-01-02"))
 		}
 	}
 }
 
-// Die Tabelle von Hand abgetippt: Jedes Schuljahr hat Herbst-, Weihnachts- und Osterferien
-// in dieser Reihenfolge, lückenlos, ohne Überschneidung — auch nicht mit den Sommerferien.
+// Die Tabelle ist von Hand abgetippt: Jedes Schuljahr hat Herbst-, Weihnachts- und Osterferien
+// in dieser Reihenfolge, ohne Lücke und ohne Überschneidung, auch nicht mit den Sommerferien.
 // Ein Zahlendreher im Jahr oder ein vergessenes Schuljahr fällt hier auf.
 func TestUebrigeFerienHessen_Tabelle(t *testing.T) {
 	namen := []string{"Herbstferien", "Weihnachtsferien", "Osterferien"}
@@ -92,6 +91,6 @@ func TestUebrigeFerienHessen_Horizont(t *testing.T) {
 	if letztes := UebrigeFerienBis(); time.Now().Year()+2 > letztes {
 		t.Errorf("Herbst-, Weihnachts- und Osterferien Hessen sind nur bis %d hinterlegt — "+
 			"Termine von kultus.hessen.de/schulsystem/ferien/ferientermine nachtragen "+
-			"(pkg/lmfplan/schulferien.go)", letztes)
+			"(pkg/lmfplan/uebrige_ferien.go)", letztes)
 	}
 }

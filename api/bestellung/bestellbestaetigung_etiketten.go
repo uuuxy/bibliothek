@@ -68,7 +68,7 @@ func (s *Tueren) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if !mitteltopf.GrossesLernmittelEtikettFuer(mittel) {
+		if !mitteltopf.HatGrossesLernmittelEtikett(mittel) {
 			apierrors.SendHTTPError(w, http.StatusNotFound,
 				errors.New("zu dieser Bestellung gibt es kein großes Lernmittel-Etikett"))
 			return

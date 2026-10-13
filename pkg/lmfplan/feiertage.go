@@ -2,15 +2,15 @@ package lmfplan
 
 import "time"
 
-// Feiertag ist ein gesetzlicher Feiertag mit Namen — der Grund, der im Planer steht.
-type Feiertag struct {
+// feiertag ist ein gesetzlicher Feiertag mit seinem Namen; der Name steht im Planer als Grund.
+type feiertag struct {
 	Datum time.Time
 	Name  string
 }
 
-// Ostersonntag nach der Gauß'schen Osterformel in der Fassung von Lichtenberg —
-// gültig für den gregorianischen Kalender ohne Sonderfälle.
-func Ostersonntag(jahr int) time.Time {
+// ostersonntag rechnet den Ostersonntag eines Jahres nach der Osterformel von Gauß in der
+// Fassung von Lichtenberg; sie gilt für den gregorianischen Kalender ohne Sonderfälle.
+func ostersonntag(jahr int) time.Time {
 	k := jahr / 100
 	m := 15 + (3*k+3)/4 - (8*k+13)/25
 	s := 2 - (3*k+3)/4
@@ -23,37 +23,32 @@ func Ostersonntag(jahr int) time.Time {
 	return time.Date(jahr, time.March, 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, og+oe-1)
 }
 
-// FeiertageHessen nennt die gesetzlichen Feiertage eines Jahres in Hessen (§ 1 HFeiertagsG):
-// die bundesweiten und Fronleichnam. Kein Reformationstag, kein Allerheiligen, kein
-// Buß- und Bettag. Der Tag ist ein Kalendertag in UTC; verglichen wird über Jahr,
-// Monat und Tag (istGleicherTag), nicht über den Zeitpunkt.
+// feiertageHessen nennt die gesetzlichen Feiertage eines Jahres in Hessen (§ 1 HFeiertagsG):
+// die bundesweiten und Fronleichnam, ohne Reformationstag, Allerheiligen und Buß- und Bettag.
+// Der Tag ist ein Kalendertag in UTC; verglichen wird über Jahr, Monat und Tag
+// (istGleicherTag), nicht über den Zeitpunkt.
 //
-// Hessen ist hier fest — die Schule steht in Hessen, und ein Bundesland-Schalter ohne
-// zweite Schule wäre eine Einstellung, die niemand je umstellt. Wer das Programm in
-// einem anderen Land betreibt, ergänzt hier die Tabelle.
-func FeiertageHessen(jahr int) []Feiertag {
-	ostern := Ostersonntag(jahr)
-	fix := func(m time.Month, d int, name string) Feiertag {
-		return Feiertag{Datum: time.Date(jahr, m, d, 0, 0, 0, 0, time.UTC), Name: name}
+// Hessen steht fest, weil die Schule in Hessen liegt und ein Schalter für das Land ohne zweite
+// Schule eine Einstellung wäre, die niemand umstellt. Wer das Programm in einem anderen Land
+// betreibt, ergänzt hier die Tabelle.
+func feiertageHessen(jahr int) []feiertag {
+	ostern := ostersonntag(jahr)
+	fest := func(m time.Month, d int, name string) feiertag {
+		return feiertag{Datum: time.Date(jahr, m, d, 0, 0, 0, 0, time.UTC), Name: name}
 	}
-	beweglich := func(tage int, name string) Feiertag {
-		return Feiertag{Datum: ostern.AddDate(0, 0, tage), Name: name}
+	beweglich := func(tage int, name string) feiertag {
+		return feiertag{Datum: ostern.AddDate(0, 0, tage), Name: name}
 	}
-	return []Feiertag{
-		fix(time.January, 1, "Neujahr"),
+	return []feiertag{
+		fest(time.January, 1, "Neujahr"),
 		beweglich(-2, "Karfreitag"),
 		beweglich(1, "Ostermontag"),
-		fix(time.May, 1, "Tag der Arbeit"),
+		fest(time.May, 1, "Tag der Arbeit"),
 		beweglich(39, "Christi Himmelfahrt"),
 		beweglich(50, "Pfingstmontag"),
 		beweglich(60, "Fronleichnam"),
-		fix(time.October, 3, "Tag der Deutschen Einheit"),
-		fix(time.December, 25, "1. Weihnachtstag"),
-		fix(time.December, 26, "2. Weihnachtstag"),
+		fest(time.October, 3, "Tag der Deutschen Einheit"),
+		fest(time.December, 25, "1. Weihnachtstag"),
+		fest(time.December, 26, "2. Weihnachtstag"),
 	}
-}
-
-// istGleicherTag vergleicht zwei Zeitpunkte als Kalendertage, unabhängig von der Zone.
-func istGleicherTag(a, b time.Time) bool {
-	return a.Year() == b.Year() && a.Month() == b.Month() && a.Day() == b.Day()
 }

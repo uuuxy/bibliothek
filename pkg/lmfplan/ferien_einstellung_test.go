@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-// Die Sommerferien als Einstellung: Ein eigener Eintrag verlängert die Tabelle, ein
-// eigener Eintrag für ein Programmjahr gewinnt, und die Prüfung lässt keinen
-// Zahlendreher durch — der Planer hängt an diesen Tagen jede Frist auf.
+// Die Sommerferien als Einstellung: Ein eigener Eintrag verlängert die Tabelle, ein eigener
+// Eintrag für ein Jahr des Programms gilt vor diesem, und die Prüfung lässt keinen Zahlendreher
+// durch, weil der Planer an diesen Tagen jede Frist aufhängt.
 func TestFerientabelleAus(t *testing.T) {
 	tab := FerientabelleAus(`[{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"},{"jahr":2027,"von":"2027-07-05","bis":"2027-08-13"}]`)
 	if tab.LueckenlosBis(2025) != 2031 {
@@ -77,9 +77,8 @@ func TestProgrammEintraege(t *testing.T) {
 	}
 }
 
-// Rasterdurchgang 06.09.2026 (Frage 3): Die Selbstprüfung fragte nach dem MAXIMUM der
-// Tabelle, der Planer nach GENAU EINEM Jahr. Eine Lücke — oder ein Zahlendreher im Jahr —
-// machte die Prüfung stumm, während der Planer ohne Vorgabe dastand.
+// Der Planer braucht genau ein Jahr. Eine Lücke in der Tabelle oder ein Zahlendreher im Jahr
+// darf die Selbstprüfung deshalb nicht stumm machen, während der Planer ohne Vorgabe dasteht.
 func TestFerientabelle_LueckeUndZahlendreher(t *testing.T) {
 	// 2032 und 2033 eingetragen, 2031 vergessen: ab 2031 reicht die Tabelle nicht.
 	mit := `[{"jahr":2032,"von":"2032-07-05","bis":"2032-08-14"},{"jahr":2033,"von":"2033-07-04","bis":"2033-08-13"}]`
@@ -87,7 +86,7 @@ func TestFerientabelle_LueckeUndZahlendreher(t *testing.T) {
 	if got := tab.LueckenlosBis(2032); got != 2033 {
 		t.Errorf("lückenlos ab 2032: %d", got)
 	}
-	// Die Programmtabelle endet 2030 — lückenlos ab 2031 heißt also: gar nicht.
+	// Die Tabelle des Programms endet 2030; ohne Lücke ab 2031 heißt also: gar nicht.
 	if got := tab.LueckenlosBis(2031); got != 2030 {
 		t.Errorf("lückenlos ab 2031: %d (die Lücke 2031 muss zählen)", got)
 	}
@@ -101,11 +100,11 @@ func TestFerientabelle_LueckeUndZahlendreher(t *testing.T) {
 		t.Errorf("Programmtabelle ab 2026: %d", got)
 	}
 
-	// Zahlendreher: 2131 statt 2031 ging durch beide Türen.
-	if _, err := ParseSommerferien(`[{"jahr":2131,"von":"2131-07-07","bis":"2131-08-15"}]`); err == nil {
+	// Zahlendreher: 2131 statt 2031.
+	if _, err := leseSommerferien(`[{"jahr":2131,"von":"2131-07-07","bis":"2131-08-15"}]`); err == nil {
 		t.Error("Jahr 2131 muss abgelehnt werden — sonst schweigt die Selbstprüfung hundert Jahre")
 	}
-	if _, err := ParseSommerferien(`[{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"}]`); err != nil {
+	if _, err := leseSommerferien(`[{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"}]`); err != nil {
 		t.Errorf("Gegenprobe: ein plausibles Jahr muss durchgehen: %v", err)
 	}
 }

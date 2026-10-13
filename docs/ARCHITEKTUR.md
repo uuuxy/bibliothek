@@ -2280,7 +2280,7 @@ einzigen unbrauchbaren Meldung kollabieren.
 Vormerkung — endet an einem Schultag; fällt sie auf ein Wochenende, einen Feiertag Hessens oder
 in die Ferien, gilt der nächste (`lmfplan.Ferientabelle.Tagesfrist`, seit 24.09.2026, A19; die
 Abholfrist seit 29.09.2026). Die Ferien stehen als Tabelle im
-Programm (`pkg/lmfplan/ferien.go`, `pkg/lmfplan/schulferien.go`). Stichtage rücken nicht. Das
+Programm (`pkg/lmfplan/sommerferien.go`, `pkg/lmfplan/uebrige_ferien.go`). Stichtage rücken nicht. Das
 Werkzeug für „Bücher über die Sommerferien mitnehmen" bleibt der Ferien-Leseclub (aktiv +
 Zieldatum ⇒ feste Rückgabefrist für Ausleihen von Schülern außer Lernmitteln, bis das Datum
 vorbei ist); das Mahnwesen wird nur von Hand bedient.
@@ -3419,8 +3419,8 @@ einer Vormerkung — drei Tage, das Ende auf dem nächsten Schultag, keine Einst
 `pkg/lmfplan` und nicht mehr in `internal/service`.
 
 **Fundstelle.** `lmfplan.Ferientabelle.Tagesfrist` (`pkg/lmfplan/tagesfrist.go`),
-`repository.Abholfrist` (`repository/vormerkung_abholfrist.go`), `pkg/lmfplan/schulferien.go`,
-`pkg/lmfplan/ferien.go`, [FACHKONZEPT.md §2.1](FACHKONZEPT.md).
+`repository.Abholfrist` (`repository/vormerkung_abholfrist.go`), `pkg/lmfplan/uebrige_ferien.go`,
+`pkg/lmfplan/sommerferien.go`, [FACHKONZEPT.md §2.1](FACHKONZEPT.md).
 
 ---
 

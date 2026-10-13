@@ -49,6 +49,10 @@ var (
 	stilKuerzel = regexp.MustCompile(`(Lmf|Dsgvo|Lusd|Dnb|Opac|Isbn|Pdf|Csv|Xlsx|Json|Sql|Http|` +
 		`Smtp|Imap|Url|Uuid|Sse|Csrf|Jwt|Ean|Id|Ip|Db)([A-Z0-9]|$)`)
 	stilDatum = regexp.MustCompile(`\b\d{1,2}\.\d{1,2}\.20\d{2}\b|\b20\d{2}-\d{2}-\d{2}\b`)
+	// stilQuelle trifft ein Datum, das zu einer Quelle gehört: Es benennt einen Erlass oder sagt,
+	// wann eine Seite gelesen wurde. Marke und Datum stehen in einer Zeile.
+	stilQuelle = regexp.MustCompile(`(Erlass|Beschluss|Gesetz|Verordnung) vom \d{1,2}\.\d{1,2}\.20\d{2}|` +
+		`abgerufen am \d{1,2}\.\d{1,2}\.20\d{2}`)
 )
 
 // Der Bestand an Namen und Kommentaren, die docs/STIL.md noch nicht folgen, wächst nicht, und
@@ -57,7 +61,7 @@ var (
 // Blindheit: Testdateien und die Oberfläche liest die Prüfung nicht. Sie sieht nur Wörter der
 // drei Listen oben; ob ein deutscher Name die richtige Sache trifft, ob ein Name öffentlich
 // sein muss und ob ein Kommentar das Warum nennt, liest ein Mensch. Lokale Variablen und
-// Parameter zählt sie nicht.
+// Parameter zählt sie nicht. Das Datum einer Quelle (stilQuelle) zählt sie nicht als Datum.
 func TestStil_BestandWaechstNicht(t *testing.T) {
 	ist, funde, namen, gelesen := stilMessen(t)
 	if namen < 5000 || gelesen < 60 {
@@ -130,7 +134,7 @@ func stilMessen(t *testing.T) (map[string]stilZahl, map[string][]string, int, in
 		for _, gruppe := range datei.Comments {
 			for _, k := range gruppe.List {
 				for _, zeile := range strings.Split(k.Text, "\n") {
-					if stilDatum.MatchString(zeile) {
+					if stilDatum.MatchString(stilQuelle.ReplaceAllString(zeile, "")) {
 						z.Datum++
 						merke("Datum", strings.TrimSpace(zeile))
 					}

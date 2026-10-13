@@ -87,9 +87,9 @@ type ErsatzwertEingabe struct {
 // den Neuwert der Benutzungsordnung.
 func (e ErsatzwertEingabe) Rechne(quelle ersatzwert.Preisquelle) ersatzwert.Vorschlag {
 	if e.Topf != mitteltopf.Land {
-		return ersatzwert.RechneNeuwert(e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
+		return ersatzwert.BerechneNeuwert(e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
 	}
-	return ersatzwert.Rechne(ersatzwert.Verleihjahr(e.SchuljahreMitAusleihe, e.SchuljahreImBestand),
+	return ersatzwert.Berechne(ersatzwert.Verleihjahr(e.SchuljahreMitAusleihe, e.SchuljahreImBestand),
 		e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
 }
 
@@ -109,7 +109,7 @@ func ErsatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.P
 		Betrag:     v.Betrag,
 		Herleitung: ErsatzwertHerleitung(v),
 		Topf:       g.Topf,
-		Bekannt:    v.PreisBekannt(),
+		Bekannt:    v.HatPreis(),
 	}
 }
 
@@ -135,7 +135,7 @@ func ErsatzwertPreisquelle(ctx context.Context, pool db.PgxPoolIface) ersatzwert
 func ErsatzwertHerleitung(v ersatzwert.Vorschlag) string {
 	// Dieselbe Regel wie das Feld `bekannt` der Antwort — eine Funktion, nicht zwei
 	// Bedingungen, die zufällig dasselbe sagen.
-	if !v.PreisBekannt() {
+	if !v.HatPreis() {
 		return "kein Preis hinterlegt — Betrag bitte eintragen"
 	}
 	basis := "Kaufpreis"

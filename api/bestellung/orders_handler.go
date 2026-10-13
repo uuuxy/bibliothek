@@ -79,7 +79,7 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
 		return
 	}
-	if !mitteltopf.Gueltig(req.Mittel) {
+	if !mitteltopf.IstGueltig(req.Mittel) {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
 		return
 	}
