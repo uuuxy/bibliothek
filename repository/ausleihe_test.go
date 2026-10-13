@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/pashagolub/pgxmock/v5"
 	"testing"
+
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 func TestNewAusleihAbfragen(t *testing.T) {

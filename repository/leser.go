@@ -1,10 +1,11 @@
 package repository
 
 import (
-	"bibliothek/db"
-	"bibliothek/internal/ausweis"
 	"context"
 	"time"
+
+	"bibliothek/db"
+	"bibliothek/internal/ausweis"
 )
 
 // Leser ist jeder, der ausleiht: Schüler, Lehrkraft oder LiV (Tabelle leser), unterscheidbar an
