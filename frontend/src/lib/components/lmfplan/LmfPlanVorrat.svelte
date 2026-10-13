@@ -63,6 +63,7 @@
 			type="button"
 			class="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-sm font-medium text-on-surface-variant hover:bg-surface-container"
 			aria-expanded={zeigeBewusst}
+			aria-controls="lmf-vorrat-draussen"
 			onclick={() => (zeigeBewusst = !zeigeBewusst)}
 		>
 			{#if zeigeBewusst}
@@ -75,7 +76,7 @@
 	{/if}
 </div>
 {#if bewusst.length > 0 && zeigeBewusst}
-	<div class="mt-2 flex flex-wrap gap-2" data-testid="lmf-vorrat-draussen">
+	<div id="lmf-vorrat-draussen" class="mt-2 flex flex-wrap gap-2" data-testid="lmf-vorrat-draussen">
 		{#each bewusst as k (k)}
 			<LmfKlasseChip
 				name={k}

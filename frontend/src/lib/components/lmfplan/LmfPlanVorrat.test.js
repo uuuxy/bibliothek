@@ -27,6 +27,23 @@ describe('LmfPlanVorrat', () => {
 		expect(hinein).toHaveBeenCalledWith('12T1');
 	});
 
+	// Der Knopf nennt den Bereich, den er aufklappt, über dessen Kennung. Beide stehen an zwei
+	// Stellen der Datei; der Test hält sie als Paar, damit keine der beiden allein umbenannt wird.
+	it('nennt am Knopf die Kennung des Bereichs, den er aufklappt', async () => {
+		const r = render(LmfPlanVorrat, {
+			klassen: ['12T1'],
+			draussen: () => true,
+			marker: KEIN_MARKER,
+			onhinein: vi.fn()
+		});
+		const knopf = r.getByRole('button', { name: 'Eine Klasse bleibt draußen' });
+		await fireEvent.click(knopf);
+		expect(knopf.getAttribute('aria-expanded')).toBe('true');
+		const bereich = r.getByTestId('lmf-vorrat-draussen');
+		expect(bereich.id).not.toBe('');
+		expect(knopf.getAttribute('aria-controls')).toBe(bereich.id);
+	});
+
 	it('nimmt eine getippte Klasse über das Dialogfenster auf — Enter bestätigt', async () => {
 		const hinein = vi.fn();
 		const r = render(LmfPlanVorrat, {
