@@ -10,8 +10,7 @@ const testQUpdate = "UPDATE"
 
 func neuerUpsertContext() *titelUpsertContext {
 	return &titelUpsertContext{
-		isbnToID:  map[string]string{},
-		titelToID: map[string]string{},
+		bestand:   NeuerTitelBestand(),
 		seenISBN:  map[string]bool{},
 		seenTitel: map[string]bool{},
 	}
@@ -23,7 +22,7 @@ func neuerUpsertContext() *titelUpsertContext {
 // nur über die ISBN gematcht und für jeden CSV-Titel eine Dublette angelegt.
 func TestQueueTitelUpsert_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 	c := neuerUpsertContext()
-	c.titelToID["LMF-Deutschbuch 9"] = "id-bestand"
+	c.bestand.nachTitel["LMF-Deutschbuch 9"] = "id-bestand"
 
 	batch := &pgx.Batch{}
 	ok := queueTitelUpsert(batch, BookTitle{
@@ -94,7 +93,7 @@ func TestNormalisiereTitelKey(t *testing.T) {
 // dieselbe Bestandszeile treffen (UPDATE statt INSERT-Dublette).
 func TestQueueTitelUpsert_QuoteVariantenMatchen(t *testing.T) {
 	c := neuerUpsertContext()
-	c.titelToID[NormalisiereTitelKey(`"Kein Bock auf Lernen?"`)] = "id-quoted"
+	c.bestand.nachTitel[NormalisiereTitelKey(`"Kein Bock auf Lernen?"`)] = "id-quoted"
 
 	batch := &pgx.Batch{}
 	ok := queueTitelUpsert(batch, BookTitle{Titel: `Kein Bock auf Lernen?`}, c, testQUpdate)
@@ -107,8 +106,8 @@ func TestQueueTitelUpsert_QuoteVariantenMatchen(t *testing.T) {
 // ISBN-Match hat Vorrang vor dem Titel-Match: existieren beide, gewinnt die ISBN-Zeile.
 func TestQueueTitelUpsert_ISBNVorTitel(t *testing.T) {
 	c := neuerUpsertContext()
-	c.isbnToID["978-1"] = "id-isbn"
-	c.titelToID["Faust"] = "id-titel"
+	c.bestand.nachISBN["978-1"] = "id-isbn"
+	c.bestand.nachTitel["Faust"] = "id-titel"
 
 	batch := &pgx.Batch{}
 	queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate)

@@ -116,10 +116,7 @@ func TestSammleSignaturUpdates(t *testing.T) {
 		{"Unbekanntes Buch", "Xy 1", "1002"}, // nicht im Bestand → kein Update
 		{"Faust", "", "1003"},                // leer → darf "De GOE" nicht verdrängen
 	}
-	lookup := titelLookup{
-		isbnToID:  map[string]string{},
-		titelToID: map[string]string{"Faust": "id-faust"},
-	}
+	lookup := bestandMit(nil, map[string]string{"Faust": "id-faust"})
 
 	updates := sammleSignaturUpdates(rows, headerMap, lookup)
 	if len(updates) != 1 || updates["id-faust"] != "De GOE" {

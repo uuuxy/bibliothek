@@ -51,17 +51,17 @@ func TestLadeTitelBestand_BeiDoppelterISBNGiltDieNormalform(t *testing.T) {
 				idNormal = lege("Bestand-Probe Normalform", f.normal)
 			}
 
-			isbnZuID, titelZuID, err := LadeTitelBestand(ctx, tx)
+			bestand, err := LadeTitelBestand(ctx, tx)
 			if err != nil {
 				t.Fatalf("LadeTitelBestand: %v", err)
 			}
-			if ist := isbnZuID[f.normal]; ist != idNormal {
+			if ist := bestand.nachISBN[f.normal]; ist != idNormal {
 				t.Errorf("unter %s steht der Titel %s, erwartet der Titel in Normalform %s", f.normal, ist, idNormal)
 			}
-			if ist := titelZuID[NormalisiereTitelKey("Bestand-Probe Normalform")]; ist != idNormal {
+			if ist := bestand.nachTitel[NormalisiereTitelKey("Bestand-Probe Normalform")]; ist != idNormal {
 				t.Errorf("unter dem Titeltext steht %s, erwartet %s", ist, idNormal)
 			}
-			if _, da := isbnZuID[f.alt]; da {
+			if _, da := bestand.nachISBN[f.alt]; da {
 				t.Errorf("der Bestand führt die Altform %s als eigenen Schlüssel", f.alt)
 			}
 		})

@@ -29,13 +29,6 @@ type importNewTitle struct {
 	JahrgangBis   int
 }
 
-// titelLookup ordnet eine Zeile der Datei einem Titel zu: der Bestand aus
-// repository.LadeTitelBestand, ergänzt um die Titel, die der Lauf selbst anlegt.
-type titelLookup struct {
-	isbnToID  map[string]string
-	titelToID map[string]string
-}
-
 // spaltenWert liest den getrimmten Wert der über headerMap zugeordneten Spalte.
 func spaltenWert(row []string, headerMap map[string]int, key string) string {
 	if idx, ok := headerMap[key]; ok && idx < len(row) {
@@ -88,12 +81,12 @@ func titelZeilenFelder(row []string, headerMap map[string]int) zeilenFelder {
 
 // sammleNeueTitel identifiziert (erster Pass) die Titel, die neu angelegt werden
 // müssen, weil sie sich weder über ISBN noch über den Titel matchen lassen.
-func sammleNeueTitel(rows [][]string, headerMap map[string]int, lookup titelLookup) (map[string]*importNewTitle, []string) {
+func sammleNeueTitel(rows [][]string, headerMap map[string]int, bestand repository.TitelBestand) (map[string]*importNewTitle, []string) {
 	newTitlesMap := make(map[string]*importNewTitle) // key: isbn or titel
 	var newTitlesOrder []string
 
 	for _, row := range rows[1:] {
-		cacheKey, t, ok := baueNeuTitelAusZeile(row, headerMap, lookup)
+		cacheKey, t, ok := baueNeuTitelAusZeile(row, headerMap, bestand)
 		if !ok {
 			continue
 		}
@@ -106,22 +99,10 @@ func sammleNeueTitel(rows [][]string, headerMap map[string]int, lookup titelLook
 	return newTitlesMap, newTitlesOrder
 }
 
-// matchTitelID liefert die bekannte Titel-ID über ISBN (bevorzugt) oder Titel; "" wenn
-// noch unbekannt. Der Titel-Lookup läuft über den normalisierten Schlüssel.
-// matchTitelID liefert die bekannte Titel-ID über ISBN (bevorzugt) oder Titel; "" wenn
-// noch unbekannt. Beide Seiten in der Normalform (isbnutil.Normalform, Migration 133) —
-// die Datenbank speichert sie so, der Bestand kann noch anders geschrieben sein.
-func matchTitelID(isbn, titel string, lookup titelLookup) string {
-	if n := isbnutil.Normalform(isbn); n != "" && lookup.isbnToID[n] != "" {
-		return lookup.isbnToID[n]
-	}
-	return lookup.titelToID[repository.NormalisiereTitelKey(titel)]
-}
-
-// baueNeuTitelAusZeile prüft eine Zeile und liefert (falls es ein noch unbekannter Titel
-// ist) den Cache-Key und den anzulegenden Titel. ok=false bedeutet: Zeile überspringen
-// (leer oder bereits über ISBN/Titel gematcht).
-func baueNeuTitelAusZeile(row []string, headerMap map[string]int, lookup titelLookup) (cacheKey string, t *importNewTitle, ok bool) {
+// baueNeuTitelAusZeile prüft eine Zeile und liefert, falls der Bestand ihren Titel nicht
+// führt, den Cache-Key und den anzulegenden Titel. ok=false bedeutet: Zeile überspringen (leer
+// oder schon im Bestand).
+func baueNeuTitelAusZeile(row []string, headerMap map[string]int, bestand repository.TitelBestand) (cacheKey string, t *importNewTitle, ok bool) {
 	z := titelZeilenFelder(row, headerMap)
 	barcode := spaltenWert(row, headerMap, "barcode")
 	if z.titel == "" || barcode == "" {
@@ -133,7 +114,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, lookup titelLo
 	// zweite scheiterte am UNIQUE-Index.
 	isbn := isbnutil.Normalform(isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn")))
 
-	if matchTitelID(isbn, z.titel, lookup) != "" {
+	if _, bekannt := bestand.TitelZu(isbn, z.titel); bekannt {
 		return "", nil, false // schon vorhanden
 	}
 
@@ -192,9 +173,9 @@ func (t *importNewTitle) alsTitel() repository.BookTitle {
 	}
 }
 
-// fuegeNeueTitelEin legt die neuen Titel an und ergänzt die ID-Maps um die neu vergebenen
-// Titel-IDs.
-func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, lookup titelLookup) (int, error) {
+// fuegeNeueTitelEin legt die neuen Titel an und trägt sie im Bestand nach: Die Exemplare
+// derselben Datei finden sie im zweiten Durchgang.
+func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, bestand repository.TitelBestand) (int, error) {
 	neu := make([]repository.BookTitle, 0, len(newTitlesOrder))
 	for _, key := range newTitlesOrder {
 		neu = append(neu, newTitlesMap[key].alsTitel())
@@ -205,17 +186,14 @@ func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*
 	}
 	for i, key := range newTitlesOrder {
 		t := newTitlesMap[key]
-		if t.ISBN != "" {
-			lookup.isbnToID[t.ISBN] = ids[i]
-		}
-		lookup.titelToID[repository.NormalisiereTitelKey(t.Titel)] = ids[i]
+		bestand.Merke(t.ISBN, t.Titel, ids[i])
 	}
 	return len(ids), nil
 }
 
 // sammleExemplare sammelt (zweiter Pass) alle einzufügenden Exemplare, jetzt mit
 // den vollständigen Titel-IDs aus Pass 1.
-func sammleExemplare(rows [][]string, headerMap map[string]int, lookup titelLookup) []repository.ImportExemplar {
+func sammleExemplare(rows [][]string, headerMap map[string]int, bestand repository.TitelBestand) []repository.ImportExemplar {
 	var copiesToInsert []repository.ImportExemplar
 
 	for i, row := range rows[1:] {
@@ -242,7 +220,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, lookup titelLook
 		}
 
 		isbn := isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
-		titelID := matchTitelID(isbn, titel, lookup)
+		titelID, _ := bestand.TitelZu(isbn, titel)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
 		// "verliehen" sperrt das Exemplar für neue Ausleihen, der Rohwert
@@ -269,7 +247,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, lookup titelLook
 // sammleSignaturUpdates sammelt je Titel-ID die Signatur aus der Datei (letzte
 // nicht-leere gewinnt). Damit bekommen auch BESTEHENDE Titel ihre Signatur —
 // der Insert-Pfad deckt nur neue Titel ab.
-func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, lookup titelLookup) map[string]string {
+func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, bestand repository.TitelBestand) map[string]string {
 	if _, ok := headerMap["signatur"]; !ok {
 		return nil
 	}
@@ -281,7 +259,7 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, lookup tit
 			continue
 		}
 		isbn := isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
-		if id := matchTitelID(isbn, z.titel, lookup); id != "" {
+		if id, bekannt := bestand.TitelZu(isbn, z.titel); bekannt {
 			updates[id] = z.signatur
 		}
 	}
@@ -309,25 +287,24 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	isbnToID, titelToID, err := repository.LadeTitelBestand(ctx, tx)
-	if err != nil {
-		return 0, 0, err
-	}
-	lookup := titelLookup{isbnToID: isbnToID, titelToID: titelToID}
-
-	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, lookup)
-
-	newTitlesCount, err := fuegeNeueTitelEin(ctx, tx, newTitlesMap, newTitlesOrder, lookup)
+	bestand, err := repository.LadeTitelBestand(ctx, tx)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	signaturen := importSignaturen(sammleSignaturUpdates(rows, headerMap, lookup))
+	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, bestand)
+
+	newTitlesCount, err := fuegeNeueTitelEin(ctx, tx, newTitlesMap, newTitlesOrder, bestand)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	signaturen := importSignaturen(sammleSignaturUpdates(rows, headerMap, bestand))
 	if err := repository.SetzeImportSignaturen(ctx, tx, signaturen); err != nil {
 		return 0, 0, err
 	}
 
-	copiesToInsert := sammleExemplare(rows, headerMap, lookup)
+	copiesToInsert := sammleExemplare(rows, headerMap, bestand)
 
 	importedCopiesCount, skippedCount, err := repository.LegeImportExemplareAn(ctx, tx, copiesToInsert)
 	if err != nil {

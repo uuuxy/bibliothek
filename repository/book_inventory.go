@@ -247,8 +247,8 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	}
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck // No-op nach erfolgreichem Commit.
 
-	// 1. Bestand einmalig vorladen (isbn→id, titel→id).
-	isbnToID, titelToID, err := LadeTitelBestand(ctx, tx)
+	// 1. Bestand einmalig vorladen.
+	bestand, err := LadeTitelBestand(ctx, tx)
 	if err != nil {
 		return 0, err
 	}
@@ -297,8 +297,7 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	// 2. In-Batch-Dedup (letzter Datensatz gewinnt): verhindert, dass derselbe
 	//    Titel bzw. dieselbe ISBN innerhalb einer Datei doppelt geschrieben wird.
 	c := &titelUpsertContext{
-		isbnToID:  isbnToID,
-		titelToID: titelToID,
+		bestand:   bestand,
 		seenISBN:  make(map[string]bool),
 		seenTitel: make(map[string]bool),
 	}
@@ -379,7 +378,7 @@ func ergaenzeSchlagworteAusImport(ctx context.Context, tx pgx.Tx, titel []BookTi
 	if !slices.ContainsFunc(titel, func(t BookTitle) bool { return len(t.Schlagworte) > 0 }) {
 		return nil
 	}
-	isbnToID, titelToID, err := LadeTitelBestand(ctx, tx)
+	bestand, err := LadeTitelBestand(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -392,10 +391,7 @@ func ergaenzeSchlagworteAusImport(ctx context.Context, tx pgx.Tx, titel []BookTi
 		if len(woerter) == 0 {
 			continue
 		}
-		id, bekannt := isbnToID[t.ISBN]
-		if !bekannt {
-			id = titelToID[NormalisiereTitelKey(t.Titel)]
-		}
+		id, _ := bestand.TitelZu(t.ISBN, t.Titel)
 		if !ohne[id] {
 			continue // trägt schon Schlagworte, oder der Titel ist nicht zu finden
 		}
@@ -426,37 +422,6 @@ func titelOhneSchlagworte(ctx context.Context, tx pgx.Tx) (map[string]bool, erro
 	return ohne, nil
 }
 
-// LadeTitelBestand lädt den vorhandenen Titelbestand als isbn→id- und titel→id-Maps; beide
-// Importe ordnen damit zu. Der Schlüssel der ISBN ist ihre Normalform, der des Titels
-// NormalisiereTitelKey. Tragen zwei Titel dieselbe ISBN in verschiedener Schreibweise (eine
-// Dublette, die Migration 140 oder 157 stehen ließ), gilt der, der sie in der Normalform trägt.
-func LadeTitelBestand(ctx context.Context, tx pgx.Tx) (isbnToID, titelToID map[string]string, err error) {
-	rows, err := tx.Query(ctx, "SELECT id, COALESCE(isbn, ''), titel FROM buecher_titel")
-	if err != nil {
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	isbnToID = make(map[string]string)
-	titelToID = make(map[string]string)
-	for rows.Next() {
-		var id, isbn, titel string
-		if err := rows.Scan(&id, &isbn, &titel); err != nil {
-			return nil, nil, err
-		}
-		if schluessel := isbnutil.Normalform(isbn); schluessel != "" {
-			if _, belegt := isbnToID[schluessel]; !belegt || isbn == schluessel {
-				isbnToID[schluessel] = id
-			}
-		}
-		titelToID[NormalisiereTitelKey(titel)] = id
-	}
-	if err := rows.Err(); err != nil {
-		return nil, nil, err
-	}
-	return isbnToID, titelToID, nil
-}
-
 // titelAusImportAnlegen legt einen Titel an, wie ein Import ihn liefert. Lernmittel, Fach und
 // Jahrgang liest der Import aus Litteras Signatur „LMF Bio 7", den Schlagwörtern und der
 // Zielgruppe (pkg/lmf); ohne Angabe bleibt der Jahrgang leer, das heißt unbekannt.
@@ -476,17 +441,16 @@ func reiheTitelAnlageEin(batch *pgx.Batch, t BookTitle) {
 		t.IstLernmittel, t.JahrgangVon, t.JahrgangBis)
 }
 
-// titelUpsertContext bündelt die Lookup-Maps (Bestand) und die In-Batch-Dedup-Maps.
+// titelUpsertContext bündelt den Bestand und was der Lauf in dieser Datei schon eingereiht hat.
 type titelUpsertContext struct {
-	isbnToID, titelToID map[string]string
+	bestand             TitelBestand
 	seenISBN, seenTitel map[string]bool
 }
 
-// queueTitelUpsert reiht einen Titel als UPDATE (bekannt) oder INSERT (neu) in den Batch
-// ein. Das Matching läuft zweistufig: bevorzugt über die ISBN, sonst über den Titel —
-// auch für Datensätze MIT ISBN, weil der Bestand denselben Titel bereits ohne ISBN
-// enthalten kann (Bestands-CSV). Dedupliziert innerhalb der Datei nach ISBN und Titel.
-// Liefert false, wenn der Titel übersprungen wurde (leer oder Dublette).
+// queueTitelUpsert reiht einen Titel als UPDATE (bekannt) oder INSERT (neu) in den Batch ein.
+// Ob er bekannt ist, sagt der Bestand (TitelBestand.TitelZu). Innerhalb der Datei wird nach
+// ISBN und Titel dedupliziert. Liefert false, wenn der Titel übersprungen wurde (leer oder
+// Dublette).
 func queueTitelUpsert(batch *pgx.Batch, t BookTitle, c *titelUpsertContext, qUpdate string) bool {
 	if t.Titel == "" {
 		return false
@@ -496,10 +460,7 @@ func queueTitelUpsert(batch *pgx.Batch, t BookTitle, c *titelUpsertContext, qUpd
 	}
 
 	titelKey := NormalisiereTitelKey(t.Titel)
-	id, bekannt := c.isbnToID[t.ISBN]
-	if !bekannt {
-		id, bekannt = c.titelToID[titelKey]
-	}
+	id, bekannt := c.bestand.TitelZu(t.ISBN, t.Titel)
 	// Unbekannter Titel, aber bereits in dieser Datei eingereiht: kein zweiter
 	// INSERT — sonst legt eine Datei mit ISBN- und ISBN-losen Varianten desselben
 	// Titels zwei Zeilen an.

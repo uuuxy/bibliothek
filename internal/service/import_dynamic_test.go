@@ -28,35 +28,17 @@ func TestCleanISBN(t *testing.T) {
 	}
 }
 
-func TestMatchTitelID(t *testing.T) {
-	lookup := titelLookup{
-		isbnToID: map[string]string{
-			"1234567890": "id-isbn",
-		},
-		titelToID: map[string]string{
-			repository.NormalisiereTitelKey("Buch Titel"): "id-titel",
-		},
+// bestandMit baut einen Titelbestand für die Tests: je ISBN ein Titel des Bestands mit eigenem
+// Titeltext, dazu Titel ohne ISBN unter ihrem Titeltext.
+func bestandMit(nachISBN, nachTitel map[string]string) repository.TitelBestand {
+	b := repository.NeuerTitelBestand()
+	for isbn, id := range nachISBN {
+		b.Merke(isbn, "Titel im Bestand zur ISBN "+isbn, id)
 	}
-
-	tests := []struct {
-		name  string
-		isbn  string
-		titel string
-		want  string
-	}{
-		{"match by isbn", "1234567890", "Anderer Titel", "id-isbn"},
-		{"match by titel", "", "Buch Titel", "id-titel"},
-		{"match by titel with isbn missing in map", "999", "Buch Titel", "id-titel"},
-		{"no match", "999", "Unbekannt", ""},
+	for titel, id := range nachTitel {
+		b.Merke("", titel, id)
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := matchTitelID(tt.isbn, tt.titel, lookup); got != tt.want {
-				t.Errorf("matchTitelID(%q, %q) = %q, want %q", tt.isbn, tt.titel, got, tt.want)
-			}
-		})
-	}
+	return b
 }
 
 func TestBaueNeuTitelAusZeile(t *testing.T) {
@@ -71,10 +53,7 @@ func TestBaueNeuTitelAusZeile(t *testing.T) {
 		"barcode":   7,
 	}
 
-	lookup := titelLookup{
-		isbnToID:  map[string]string{"123": "id1"},
-		titelToID: map[string]string{repository.NormalisiereTitelKey("Bekannt"): "id2"},
-	}
+	lookup := bestandMit(map[string]string{"123": "id1"}, map[string]string{"Bekannt": "id2"})
 
 	tests := []struct {
 		name         string
@@ -151,10 +130,7 @@ func TestSammleNeueTitel(t *testing.T) {
 		{"Titel C", "333", ""},    // Missing barcode -> skip
 	}
 
-	lookup := titelLookup{
-		isbnToID:  map[string]string{},
-		titelToID: map[string]string{},
-	}
+	lookup := repository.NeuerTitelBestand()
 
 	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, lookup)
 
@@ -180,10 +156,7 @@ func TestSammleExemplare(t *testing.T) {
 		{"", "555", "BC4", ""},                  // missing titel -> skip
 	}
 
-	lookup := titelLookup{
-		isbnToID:  map[string]string{"111": "id1", "222": "id2", "333": "id3"},
-		titelToID: map[string]string{},
-	}
+	lookup := bestandMit(map[string]string{"111": "id1", "222": "id2", "333": "id3"}, nil)
 
 	copies := sammleExemplare(rows, headerMap, lookup)
 
@@ -279,10 +252,7 @@ func TestSammleSignaturUpdatesDynamic(t *testing.T) {
 		{"Neu", "999", "Sig3"},
 	}
 
-	lookup := titelLookup{
-		isbnToID:  map[string]string{"111": "id1"},
-		titelToID: map[string]string{repository.NormalisiereTitelKey("Bekannt2"): "id2"},
-	}
+	lookup := bestandMit(map[string]string{"111": "id1"}, map[string]string{"Bekannt2": "id2"})
 
 	updates := sammleSignaturUpdates(rows, headerMap, lookup)
 	if len(updates) != 2 {

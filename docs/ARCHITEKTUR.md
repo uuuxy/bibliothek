@@ -900,8 +900,13 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
 - Der Bestands-Import (`internal/service/import_dynamic.go`) liest die Zeilen der Datei,
   ordnet sie Titeln zu und zählt; seine Anweisungen stehen in `repository/bestandsimport.go`.
   Was er mit dem Katalog-Import gemeinsam hat, steht einmal: Beide laden den Titelbestand mit
-  `LadeTitelBestand`, und beide legen einen neuen Titel mit derselben Anweisung an
-  (`reiheTitelAnlageEin`, `repository/book_inventory.go`). Bis zum 09.10.2026 führte der
+  `LadeTitelBestand`, beide fragen ihn mit derselben Methode, zu welchem Titel eine Zeile
+  gehört (`TitelBestand.TitelZu`, `repository/titelbestand.go`: zuerst die ISBN in ihrer
+  Normalform, sonst der Titeltext), und beide legen einen neuen Titel mit derselben Anweisung
+  an (`reiheTitelAnlageEin`, `repository/book_inventory.go`). Die zwei Karten des Bestands
+  sind außerhalb des Typs nicht erreichbar: Eine vierte Stelle kann die Frage nicht noch
+  einmal selbst formulieren, wie es der Upsert, die Zuordnung der Schlagworte und der
+  Bestands-Import bis zum 13.10.2026 je für sich taten. Bis zum 09.10.2026 führte der
   Bestands-Import eine eigene Abfrage des Bestands. Trugen zwei Titel dieselbe ISBN in
   verschiedener Schreibweise, nahm sie den zuletzt gelesenen, der Katalog-Import den in der
   Normalform; jetzt gilt in beiden die Normalform. Das Fach eines neuen Titels registriert

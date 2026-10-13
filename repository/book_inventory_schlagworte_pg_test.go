@@ -134,3 +134,45 @@ func TestBulkUpsertBookTitles_SchlagworteAuchAusDerDublette(t *testing.T) {
 		t.Errorf("der zweite Lauf hat etwas geändert: %q, vorher %q", nachZwei, nachEins)
 	}
 }
+
+// Zwei Auflagen mit demselben Titeltext und verschiedener ISBN: Jede bekommt die Schlagworte
+// ihres Datensatzes. Die Zuordnung der Schlagworte fragt den Bestand wie der Upsert davor,
+// zuerst über die ISBN; nur über den Titeltext träfen beide Datensätze dieselbe Auflage, und
+// die andere bliebe ohne.
+func TestBulkUpsertBookTitles_SchlagworteJeAuflageUeberDieISBN(t *testing.T) {
+	pool := pgTestPool(t)
+	resetSchlagworte(t, pool)
+	ctx := context.Background()
+	const titel, isbnA, isbnB = "Schlagwort-Probe zweier Auflagen", "9780000562104", "9780000562111"
+	raeume := func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnA, isbnB); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	}
+	raeume()
+	t.Cleanup(raeume)
+	lege := func(isbn string) string {
+		var id string
+		if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, isbn) VALUES ($1, $2) RETURNING id`, titel, isbn).Scan(&id); err != nil {
+			t.Fatalf("Auflage %s anlegen: %v", isbn, err)
+		}
+		return id
+	}
+	idA, idB := lege(isbnA), lege(isbnB)
+
+	if _, err := NewBookRepository(pool).BulkUpsertBookTitles(ctx, []BookTitle{
+		{Titel: titel, ISBN: isbnA, Schlagworte: []string{"Auflage A"}},
+		{Titel: titel, ISBN: isbnB, Schlagworte: []string{"Auflage B"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for id, will := range map[string][]string{idA: {"Auflage A"}, idB: {"Auflage B"}} {
+		got, err := SchlagworteDesTitels(ctx, pool, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Equal(got, will) {
+			t.Errorf("Auflage %s trägt %q, erwartet %q", id, got, will)
+		}
+	}
+}

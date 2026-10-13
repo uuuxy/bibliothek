@@ -478,11 +478,6 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre
   Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
   lesen und trennen, was Regel und was Füll-Funktion ist.
-- **Die Zuordnung der Importe steht zweimal.** Katalog-Import und Bestands-Import laden den
-  Titelbestand mit einer Funktion (`repository.LadeTitelBestand`), fragen ihn aber je für sich:
-  zuerst die ISBN, sonst der Titeltext (`queueTitelUpsert` in `repository/book_inventory.go`,
-  `matchTitelID` in `internal/service/import_dynamic.go`). Beide Fassungen antworten gleich.
-  Nächster Schritt: ein Typ für den Titelbestand mit der Frage als Methode, den beide rufen.
 
 **Die Abfragen außerhalb der Datenbankschicht sind umgezogen** (seit dem 10.10.2026). Zur
 Datenbankschicht zählen `repository/`, `inventur/` mit eigener Schicht
