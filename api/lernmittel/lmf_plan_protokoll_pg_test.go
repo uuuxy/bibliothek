@@ -73,11 +73,11 @@ func TestLmfPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 		rec := httptest.NewRecorder()
 		switch methode {
 		case http.MethodPut:
-			srv.PutLmfPlanHandler()(rec, req)
+			srv.LMFPlanSchreiben()(rec, req)
 		case http.MethodPost:
-			srv.PostLmfPlanVeroeffentlichenHandler()(rec, req)
+			srv.LMFPlanVeroeffentlichen()(rec, req)
 		default:
-			srv.DeleteLmfPlanHandler()(rec, req)
+			srv.LMFPlanVerwerfen()(rec, req)
 		}
 		if rec.Code != http.StatusOK {
 			t.Fatalf("%s %s: %d %s", methode, art, rec.Code, rec.Body.String())
@@ -119,7 +119,7 @@ func TestLmfPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 
 	// 2. Veröffentlichen: Annas Schulbuch folgt dem Termin — mit Zahl im Protokoll.
 	rec := ruf(http.MethodPost, "rueckgabe", "")
-	var antwort LmfPlanSpeicherAntwort
+	var antwort lmfPlanSpeicherAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatal(err)
 	}

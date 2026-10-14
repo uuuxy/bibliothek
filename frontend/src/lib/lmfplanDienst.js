@@ -29,7 +29,7 @@ import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js'
 
 /** Die zwei Pläne — mit den Worten, die sagen, was passiert (Absprache vom 06.09.2026: „Rückgabe"
  *  und „Ausgabe" allein waren unklar, das sind zwei verschiedene Dinge zu verschiedenen
- *  Zeiten). Dieselben Titel schreibt das PDF (api/lernmittel/lmf_termine.go, LmfArtTitel). */
+ *  Zeiten). Dieselben Titel schreibt das PDF (api/lernmittel/lmf_termine.go, lmfArtTitel). */
 export const ARTEN = /** @type {const} */ ([
 	{ wert: 'rueckgabe', label: 'Büchertausch vor den Sommerferien' },
 	{ wert: 'ausgabe', label: 'Bücherausgabe nach den Sommerferien' }
@@ -49,7 +49,7 @@ function jahrgaengeText(jahrgaenge) {
 export function artErklaerung(art, eingang) {
 	if (art === 'ausgabe')
 		// Ohne bekannte Jahrgänge kein leeres Klammerpaar — dieselbe Regel wie in Go
-		// (api/lernmittel/lmf_termine.go, LmfArtErklaerung; Gate: TestLmfTexte…).
+		// (api/lernmittel/lmf_termine.go, lmfArtErklaerung; Prüfung: TestLMFTexte…).
 		return (eingang ?? []).length === 0
 			? 'Nur die neu gebildeten Klassen bekommen ihre Schulbücher.'
 			: `Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.`;

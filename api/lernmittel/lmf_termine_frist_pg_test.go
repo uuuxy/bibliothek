@@ -80,7 +80,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("speichern: %d %s", rec.Code, rec.Body.String())
 	}
-	var antwort LmfPlanSpeicherAntwort
+	var antwort lmfPlanSpeicherAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatal(err)
 	}
@@ -270,13 +270,13 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 
 	// Die Uhr steht auf dem 06.09.2026: Die nächsten Sommerferien sind 2027 (28.06.–06.08.).
 	srv.Uhr = func() time.Time { return time.Date(2026, 9, 6, 10, 0, 0, 0, schulzeit.Zone()) }
-	lies := func() LmfPlanStandAntwort {
+	lies := func() lmfPlanStandAntwort {
 		t.Helper()
 		rec := lmfPlanAufruf(t, srv, http.MethodGet, "rueckgabe", "")
 		if rec.Code != http.StatusOK {
 			t.Fatalf("lesen: %d %s", rec.Code, rec.Body.String())
 		}
-		var a LmfPlanStandAntwort
+		var a lmfPlanStandAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 			t.Fatal(err)
 		}
@@ -351,7 +351,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Ausgabe lesen: %d %s", rec.Code, rec.Body.String())
 	}
-	var ausgabe LmfPlanStandAntwort
+	var ausgabe lmfPlanStandAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &ausgabe); err != nil {
 		t.Fatal(err)
 	}
@@ -466,13 +466,13 @@ func lmfPlanAufruf(t *testing.T, srv *Tueren, methode, art, body string) *httpte
 	rec := httptest.NewRecorder()
 	switch methode {
 	case http.MethodGet:
-		srv.GetLmfPlanHandler()(rec, req)
+		srv.LMFPlan()(rec, req)
 	case http.MethodPut:
-		srv.PutLmfPlanHandler()(rec, req)
+		srv.LMFPlanSchreiben()(rec, req)
 	case http.MethodPost:
-		srv.PostLmfPlanVeroeffentlichenHandler()(rec, req)
+		srv.LMFPlanVeroeffentlichen()(rec, req)
 	default:
-		srv.DeleteLmfPlanHandler()(rec, req)
+		srv.LMFPlanVerwerfen()(rec, req)
 	}
 	return rec
 }

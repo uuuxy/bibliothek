@@ -687,7 +687,7 @@ Rate-Limit und die Abmeldung.
   Theke.
 - Die Routenlisten bleiben in `api/` (`routes_*.go`): Dort steht jede Tür mit Adresse und
   Recht. Sie erreichen ein Thema über den Zugang des Servers, eine Methode mit dem Namen des
-  Themas (`s.lernmittel().PutLmfPlanHandler()`, erklärt in `api/router.go`). Eine Tür, die
+  Themas (`s.lernmittel().LMFPlanSchreiben()`, erklärt in `api/router.go`). Eine Tür, die
   keine Methode ist, steht mit dem Paketnamen in der Liste
   (`schaden.PrintRechnungHandler`). Der Zugang
   reicht dem Thema die Basis des Servers als Zeiger, keine Kopie: Was am Server gestellt
@@ -811,7 +811,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   wandelt sie in die Typen ihrer Antwort (`api/lernmittel/lmf_plan.go`). Ebenso die
   Reihenfolge, mit der ein neuer Plan beginnt (`service.LMFPlanReihenfolgeVorgabe`), und die
   Ausfälle der Verteilung (`lmfPlanAusfaelle`). In der anderen Richtung prüft die Tür die
-  Anfrage und füllt daraus den Entwurf (`pruefeLmfPlan`, `service.LMFPlanEntwurf`); die
+  Anfrage und füllt daraus den Entwurf (`pruefeLMFPlan`, `service.LMFPlanEntwurf`); die
   Verteilung über die Schultage rechnet der Dienst (`service.VerteileLMFPlan`). Dort stehen
   auch die Regeln, die die Tür nur fragt: welche Klassen eine Art auslässt, wann ein Plan
   vorbei ist, welcher Vermerk vorbelegt wird (`lmf_plan_reihenfolge.go`) und welcher Plan
@@ -2806,7 +2806,7 @@ wenn man ihn einmal gebraucht hat.
   `Server` zum Typ des Themas in jedem Empfänger und jedem Literal der umziehenden Dateien,
   wobei die Basis im Literal ihr `&` bekommt, weil das Thema sie als Zeiger hält; und den
   Zugang hinter dem Empfänger in jeder Datei, die bleibt und eine umziehende Tür ruft
-  (`s.PutLmfPlanHandler()` wird `s.lernmittel().PutLmfPlanHandler()`). Es meldet, was eine
+  (`s.LMFPlanSchreiben()` wird `s.lernmittel().LMFPlanSchreiben()`). Es meldet, was eine
   umziehende Datei aus `api/` noch bräuchte und was eine bleibende klein geschrieben aus dem
   Thema bräuchte. Von Hand kommen die Datei mit dem Typ und der Zugang in `api/router.go`
   dazu. Vier Prüfungen werden von selbst rot und ziehen nach: der Bestand `dateienOhneTuer`

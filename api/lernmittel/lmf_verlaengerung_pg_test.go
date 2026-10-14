@@ -14,13 +14,13 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// TestGlobalExtendLMF_SchreibvariantenRobust sichert die zweite Hälfte von Bug #5 ab:
+// TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust sichert die zweite Hälfte von Bug #5 ab:
 // Die Massen-Verlängerung erkannte LMF-Titel per `ILIKE 'LMF-%'` und übersprang damit
 // still ein manuell angelegtes "LMF - Deutsch 5" (Leerzeichen nach LMF) — genau das
 // Szenario aus der Meldung. Ausleihe/Frist erkannten das Buch zwar korrekt als LMF,
 // die Verlängerung ließ es aber auf der alten Frist stehen → es wurde überfällig und
 // landete in der Mahnung. Der Filter muss über pkg/lmf laufen, konsistent zum Rest.
-func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
+func TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
@@ -40,7 +40,7 @@ func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/lmf/global-extend",
 		strings.NewReader(`{"klasse":"05A","neues_rueckgabe_datum":"2026-07-31"}`))
 	rec := httptest.NewRecorder()
-	srv.GlobalExtendLMFHandler()(rec, req)
+	srv.LernmittelDerKlasseVerlaengern()(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())

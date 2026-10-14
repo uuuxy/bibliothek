@@ -40,12 +40,12 @@ func markiereGemahntUndUeberfaellig(t *testing.T, pool *pgxpool.Pool, ausleiheID
 	}
 }
 
-// TestGlobalExtendLMF_ResetMahnstufe sichert Audit-Bug #1 ab: Schiebt eine Verlängerung die
+// TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck sichert Audit-Bug #1 ab: Schiebt eine Verlängerung die
 // Frist wieder in die Zukunft, wird die Mahn-Eskalation zurückgesetzt (mahnstufe = 0) — sonst
 // übersprang ein nach der 1. Mahnung verlängertes und erneut überzogenes Buch die 1. Stufe und
 // eskalierte sofort zur Rechnung. Bleibt die Frist trotz "Verlängerung" in der Vergangenheit,
 // bleibt die Mahnstufe erhalten (Eskalation berechtigt).
-func TestGlobalExtendLMF_ResetMahnstufe(t *testing.T) {
+func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
@@ -88,7 +88,7 @@ func globalExtend(t *testing.T, srv *Server, klasse, datum string) *httptest.Res
 	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/lmf/global-extend", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.lernmittel().GlobalExtendLMFHandler()(rec, req)
+	srv.lernmittel().LernmittelDerKlasseVerlaengern()(rec, req)
 	return rec
 }
 

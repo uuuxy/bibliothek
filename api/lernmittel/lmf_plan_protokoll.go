@@ -27,24 +27,24 @@ import (
 )
 
 const (
-	auditLmfPlanVeroeffentlicht = "LMF_PLAN_VEROEFFENTLICHT"
-	auditLmfPlanGespeichert     = "LMF_PLAN_GESPEICHERT"
-	auditLmfPlanVerworfen       = "LMF_PLAN_VERWORFEN"
+	aktionLMFPlanVeroeffentlicht = "LMF_PLAN_VEROEFFENTLICHT"
+	aktionLMFPlanGespeichert     = "LMF_PLAN_GESPEICHERT"
+	aktionLMFPlanVerworfen       = "LMF_PLAN_VERWORFEN"
 )
 
-// auditiereLmfPlan protokolliert einen Eingriff am Plan samt der Zahl der Ausleihen,
+// protokolliereLMFPlan protokolliert einen Eingriff am Plan samt der Zahl der Ausleihen,
 // deren Frist er bewegt hat.
-func (s *Tueren) auditiereLmfPlan(r *http.Request, aktion, art string, planID string, fristen int64) {
+func (t *Tueren) protokolliereLMFPlan(r *http.Request, aktion, art string, planID string, fristen int64) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return
 	}
 	// Türen ohne Datenbank (Testkonstruktion mit leerer Basis): nichts zu schreiben.
-	if s.DB == nil || s.DB.Pool == nil {
+	if t.DB == nil || t.DB.Pool == nil {
 		return
 	}
 	details := map[string]any{"art": art, "plan_id": planID, "fristen_angepasst": fristen}
-	if err := repository.NewProtokollAbfragen(s.DB.Pool).
+	if err := repository.NewProtokollAbfragen(t.DB.Pool).
 		ProtokolliereAdminAktion(r.Context(), claims.UserID, aktion, clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("LMF-Plan-Audit (%s) fehlgeschlagen: %v", aktion, err)
 	}

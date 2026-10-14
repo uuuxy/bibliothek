@@ -7,7 +7,7 @@ var stilBestand = map[string]stilZahl{
 	"api":                    {Fach: 14, Verb: 15, Kuerzel: 0, Datei: 4, Datum: 25},
 	"api/bestellung":         {Fach: 45, Verb: 17, Kuerzel: 0, Datei: 11, Datum: 6},
 	"api/katalog":            {Fach: 68, Verb: 43, Kuerzel: 2, Datei: 15, Datum: 17},
-	"api/lernmittel":         {Fach: 13, Verb: 7, Kuerzel: 27, Datei: 1, Datum: 7},
+	"api/lernmittel":         {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 7},
 	"api/leser":              {Fach: 36, Verb: 22, Kuerzel: 12, Datei: 12, Datum: 23},
 	"api/mahnwesen":          {Fach: 21, Verb: 13, Kuerzel: 0, Datei: 4, Datum: 6},
 	"api/schaden":            {Fach: 20, Verb: 9, Kuerzel: 0, Datei: 5, Datum: 6},

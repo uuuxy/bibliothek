@@ -18,7 +18,7 @@ import (
 // Vermerk ohne Klasse einen Fehler an einer Stelle, die mit der Vorschau nichts zu tun
 // hat.
 func TestVorschauZeileOhneKlassenLiefertLeereListe(t *testing.T) {
-	req := lmfPlanRequest{
+	req := lmfPlanAnfrage{
 		ErsterTag:    "2027-08-16",
 		Startstunde:  2,
 		StundenJeTag: 6,
@@ -33,7 +33,7 @@ func TestVorschauZeileOhneKlassenLiefertLeereListe(t *testing.T) {
 		} `json:"fest"`
 	}{Klassen: nil, Vermerk: "Nachzügler"})
 
-	e, err := pruefeLmfPlan(repository.LMFTerminAusgabe, req)
+	e, err := pruefeLMFPlan(repository.LMFTerminAusgabe, req)
 	if err != nil {
 		t.Fatalf("Plan prüfen: %v", err)
 	}

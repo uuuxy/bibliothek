@@ -28,8 +28,8 @@ import (
 )
 
 // lmfEingangsjahrgaenge liest die Einstellung; ohne lesbaren Wert gilt die Vorgabe.
-func (s *Tueren) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
-	einstellungen, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
+func (t *Tueren) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
+	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (s *Tueren) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
 // lmfPlanNurRueckgabe nennt aus allen Klassen, die der Planer zeigt (Vokabular, Zeilen,
 // Vorschlag, Auslassungen), die, die vor den Ferien nur abgeben; leer beim Ausgabe-Plan. Aus
 // ihnen belegt service.BelegeVermerkNurRueckgabeVor den Vermerk des Vorschlags vor.
-func (s *Tueren) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LMFAbfragen, art string, a LmfPlanStandAntwort, eingang []int) ([]string, error) {
+func (t *Tueren) lmfPlanNurRueckgabe(ctx context.Context, abfragen *repository.LMFAbfragen, art string, a lmfPlanStandAntwort, eingang []int) ([]string, error) {
 	if art != repository.LMFTerminRueckgabe {
 		return []string{}, nil
 	}
@@ -64,68 +64,68 @@ func (s *Tueren) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LMFAb
 			sammle(z.Klassen)
 		}
 	}
-	return repo.LadeKlassenNurRueckgabe(ctx, namen, eingang)
+	return abfragen.LadeKlassenNurRueckgabe(ctx, namen, eingang)
 }
 
-// PostLmfPlanVeroeffentlichenHandler stempelt den neuesten Plan der Art als veröffentlicht
+// LMFPlanVeroeffentlichen stempelt den neuesten Plan der Art als veröffentlicht
 // und lässt bei einem Rückgabe-Plan die Fristen der Klassen dem Plan folgen. Idempotent:
 // ein schon veröffentlichter Plan behält seinen Stempel, Fristen werden dann nicht
 // erneut angefasst (das tut jede Speicherung eines veröffentlichten Plans selbst).
 // @Summary      LMF-Plan veröffentlichen
 // @Tags         lernmittel
 // @Produce      json
-// @Success      200  {object}  LmfPlanSpeicherAntwort
+// @Success      200  {object}  lmfPlanSpeicherAntwort
 // @Router       /lmf-plan/{art}/veroeffentlichen [post]
-func (s *Tueren) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
+func (t *Tueren) LMFPlanVeroeffentlichen() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		antwort, gestempelt, err := s.veroeffentlicheLmfPlan(r)
+		antwort, gestempelt, err := t.veroeffentlicheLMFPlan(r)
 		if err != nil {
 			return err
 		}
 		// Ein schon veröffentlichter Plan ändert sich hier nicht und meldet nichts.
 		if gestempelt {
-			s.meldeLmfPlanGeaendert()
+			t.meldeLMFPlanGeaendert()
 		}
 		tuer.AntworteJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }
 
-// veroeffentlicheLmfPlan stempelt den neuesten Plan der Art und lässt die Fristen folgen.
+// veroeffentlicheLMFPlan stempelt den neuesten Plan der Art und lässt die Fristen folgen.
 // gestempelt ist false, wenn der Plan schon veröffentlicht war.
-func (s *Tueren) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort, bool, error) {
-	var keine LmfPlanSpeicherAntwort
-	art, err := lmfPlanArt(r)
+func (t *Tueren) veroeffentlicheLMFPlan(r *http.Request) (lmfPlanSpeicherAntwort, bool, error) {
+	var keine lmfPlanSpeicherAntwort
+	art, err := leseLMFPlanArt(r)
 	if err != nil {
 		return keine, false, apierrors.BadRequest(err.Error(), err)
 	}
-	repo := repository.NewLMFAbfragen(s.DB.Pool)
-	st, err := repo.LadeNeuestenPlan(r.Context(), art)
+	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
+	stand, err := abfragen.LadeNeuestenPlan(r.Context(), art)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return keine, false, apierrors.NotFound("kein Plan vorhanden", pgx.ErrNoRows)
 	}
 	if err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan laden", err)
 	}
-	antwort := LmfPlanSpeicherAntwort{LMFPlanStand: st, Ausfaelle: []LmfPlanAusfall{}}
-	if st.Plan.VeroeffentlichtAm != nil {
+	antwort := lmfPlanSpeicherAntwort{LMFPlanStand: stand, Ausfaelle: []lmfPlanAusfall{}}
+	if stand.Plan.VeroeffentlichtAm != nil {
 		return antwort, false, nil
 	}
 	// Stempel und Fristen stehen in einer Transaktion, wie beim Speichern.
-	tx, err := s.DB.Pool.Begin(r.Context())
+	tx, err := t.DB.Pool.Begin(r.Context())
 	if err != nil {
 		return keine, false, apierrors.Internal("Transaktion", err)
 	}
 	defer db.SafeRollback(r.Context(), tx)
-	if antwort.LMFPlanStand, err = repo.VeroeffentlichePlan(r.Context(), tx, st.Plan.ID, s.Jetzt()); err != nil {
+	if antwort.LMFPlanStand, err = abfragen.VeroeffentlichePlan(r.Context(), tx, stand.Plan.ID, t.Jetzt()); err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
 	}
-	if antwort.FristenAngepasst, err = service.KoppleLMFPlanFristen(r.Context(), repo, tx, art, nil, antwort.Zeilen); err != nil {
+	if antwort.FristenAngepasst, err = service.KoppleLMFPlanFristen(r.Context(), abfragen, tx, art, nil, antwort.Zeilen); err != nil {
 		return keine, false, apierrors.Internal("Fristen koppeln", err)
 	}
 	if err := tx.Commit(r.Context()); err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
 	}
-	s.auditiereLmfPlan(r, auditLmfPlanVeroeffentlicht, art, st.Plan.ID, antwort.FristenAngepasst)
+	t.protokolliereLMFPlan(r, aktionLMFPlanVeroeffentlicht, art, stand.Plan.ID, antwort.FristenAngepasst)
 	return antwort, true, nil
 }

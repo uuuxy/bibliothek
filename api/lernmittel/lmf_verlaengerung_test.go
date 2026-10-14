@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGlobalExtendLMFHandler(t *testing.T) {
+func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 	tests := []struct {
 		name           string
 		payload        interface{}
@@ -26,7 +26,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 	}{
 		{
 			name: "Success",
-			payload: GlobalExtendLMFRequest{
+			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
@@ -48,7 +48,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 		},
 		{
 			name: "Missing Fields",
-			payload: GlobalExtendLMFRequest{
+			payload: verlaengerungAnfrage{
 				Klasse: "",
 			},
 			setupMock:      func(mock pgxmock.PgxPoolIface) {},
@@ -57,7 +57,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 		},
 		{
 			name: "Invalid Date Format",
-			payload: GlobalExtendLMFRequest{
+			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "31.12.2023",
 			},
@@ -67,7 +67,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 		},
 		{
 			name: "Tx Begin Error",
-			payload: GlobalExtendLMFRequest{
+			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
@@ -79,7 +79,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 		},
 		{
 			name: "Tx Exec Error",
-			payload: GlobalExtendLMFRequest{
+			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
@@ -95,7 +95,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 		},
 		{
 			name: "Tx Commit Error",
-			payload: GlobalExtendLMFRequest{
+			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
@@ -121,7 +121,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 			defer mock.Close()
 
 			srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
-			handler := srv.GlobalExtendLMFHandler()
+			handler := srv.LernmittelDerKlasseVerlaengern()
 
 			tt.setupMock(mock)
 

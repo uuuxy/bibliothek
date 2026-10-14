@@ -34,13 +34,13 @@ func TestLmfPlan_StandFuerDenPlaner(t *testing.T) {
 	}
 	// Die Uhr steht auf dem 06.09.2026; die nächsten Sommerferien beginnen am 28.06.2027.
 	srv.Uhr = func() time.Time { return time.Date(2026, 9, 6, 10, 0, 0, 0, schulzeit.Zone()) }
-	stand := func(t *testing.T, art string) LmfPlanStandAntwort {
+	stand := func(t *testing.T, art string) lmfPlanStandAntwort {
 		t.Helper()
 		rec := lmfPlanAufruf(t, srv, http.MethodGet, art, "")
 		if rec.Code != http.StatusOK {
 			t.Fatalf("%s lesen: %d %s", art, rec.Code, rec.Body.String())
 		}
-		var a LmfPlanStandAntwort
+		var a lmfPlanStandAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +96,7 @@ func TestLmfPlan_StandFuerDenPlaner(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Vorschau: %d %s", rec.Code, rec.Body.String())
 		}
-		var a LmfPlanSpeicherAntwort
+		var a lmfPlanSpeicherAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 			t.Fatal(err)
 		}
@@ -110,7 +110,7 @@ func TestLmfPlan_StandFuerDenPlaner(t *testing.T) {
 		if !slices.Equal(plaetze, []string{"2027-08-16/1", "2027-08-20/3", "2027-08-18/1"}) {
 			t.Errorf("Plätze der Vorschau: %v, erwartet den freien Tag übersprungen und die zweite Zeile auf ihrem festen Platz", plaetze)
 		}
-		if !slices.ContainsFunc(a.Ausfaelle, func(x LmfPlanAusfall) bool { return x.Datum == "2027-08-17" && x.Grund == "Pädagogischer Tag" }) {
+		if !slices.ContainsFunc(a.Ausfaelle, func(x lmfPlanAusfall) bool { return x.Datum == "2027-08-17" && x.Grund == "Pädagogischer Tag" }) {
 			t.Errorf("Ausfälle der Vorschau: %+v, erwartet den pädagogischen Tag am 17.08.2027", a.Ausfaelle)
 		}
 	})

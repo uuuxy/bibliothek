@@ -25,7 +25,7 @@ import (
 // Deshalb an den ROUTEN aufgehängt, nicht an einer gepflegten Namensliste: Die Prüfung
 // liest, welche Handler hinter einem schreibenden /api/lmf-plan hängen, und verlangt von
 // jedem den Aufruf. Eine neue Route wächst damit von selbst in dieses Gate hinein.
-func TestJederLmfPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
+func TestJederLMFPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 	handler := lmfPlanSchreibHandler(t)
 	if len(handler) < 3 {
 		t.Fatalf("nur %d schreibende LMF-Plan-Routen gefunden (%v) — erwartet mindestens 3 "+
@@ -52,7 +52,7 @@ func TestJederLmfPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 			if !ok || fn.Body == nil {
 				continue
 			}
-			if ruftAuf(fn.Body, "meldeLmfPlanGeaendert") {
+			if ruftAuf(fn.Body, "meldeLMFPlanGeaendert") {
 				meldet[fn.Name.Name] = true
 			}
 		}
@@ -62,7 +62,7 @@ func TestJederLmfPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 		if !meldet[name] {
 			t.Errorf("%s schreibt den LMF-Plan, meldet die Änderung aber nicht — offene "+
 				"Portal-Seiten und der zweite Arbeitsplatz bleiben auf dem alten Stand. "+
-				"`s.meldeLmfPlanGeaendert()` nach dem erfolgreichen Schreiben aufrufen.", name)
+				"`t.meldeLMFPlanGeaendert()` nach dem erfolgreichen Schreiben aufrufen.", name)
 		}
 	}
 }

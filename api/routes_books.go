@@ -82,25 +82,25 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 	// ── AUSLEIHEN (Loans) ──
 	settingsRepo := repository.NewEinstellungsAbfragen(s.DB.Pool)
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.RequirePermission("edit_books")(s.theke().ExtendLoanHandler(settingsRepo)))
-	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.lernmittel().GlobalExtendLMFHandler()))
+	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.lernmittel().LernmittelDerKlasseVerlaengern()))
 
 	// ── LMF-PLAN (Rückgabe-/Ausgabetermine je Klasse, Migration 096) ──
 	// Lesen: jede Sitzung (das Kollegium liest den Plan im Portal; Stufe 0 — Daten und
 	// Klassennamen). Schreiben: edit_books wie die übrige Lernmittel-Pflege.
-	mux.Handle("GET /api/lmf-termine", s.VerlangeAnmeldung()(s.lernmittel().GetLmfTermineHandler()))
-	mux.Handle("GET /api/lmf-termine/pdf", s.VerlangeAnmeldung()(s.lernmittel().GetLmfPlanPDFHandler(false)))
+	mux.Handle("GET /api/lmf-termine", s.VerlangeAnmeldung()(s.lernmittel().LMFTermine()))
+	mux.Handle("GET /api/lmf-termine/pdf", s.VerlangeAnmeldung()(s.lernmittel().LMFPlanPDF(false)))
 	// Der Entwurf als PDF — zur Abnahme durch die Schulleitung, bevor er veröffentlicht
 	// ist (Migration 100). Nur der Planer; das Kollegium sieht Entwürfe nirgends.
-	mux.Handle("GET /api/lmf-termine/entwurf/pdf", s.RequirePermission("edit_books")(s.lernmittel().GetLmfPlanPDFHandler(true)))
+	mux.Handle("GET /api/lmf-termine/entwurf/pdf", s.RequirePermission("edit_books")(s.lernmittel().LMFPlanPDF(true)))
 	// Geschrieben wird der Plan als REIHENFOLGE (Migration 097, api/lernmittel/lmf_plan.go): ein Aufruf
 	// je Art, Vorschau über denselben Aufruf. Einzel-Termin-Routen gibt es seit dem
 	// 05.09.2026 abends nicht mehr — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
-	mux.Handle("GET /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.lernmittel().GetLmfPlanHandler()))
-	mux.Handle("PUT /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.lernmittel().PutLmfPlanHandler()))
-	mux.Handle("DELETE /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.lernmittel().DeleteLmfPlanHandler()))
+	mux.Handle("GET /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.lernmittel().LMFPlan()))
+	mux.Handle("PUT /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.lernmittel().LMFPlanSchreiben()))
+	mux.Handle("DELETE /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.lernmittel().LMFPlanVerwerfen()))
 	// Veröffentlichen: Speichern legt einen Entwurf an, erst dieser Aufruf macht ihn für
 	// Portal und PDF sichtbar und setzt bei einem Rückgabe-Plan die Fristen.
-	mux.Handle("POST /api/lmf-plan/{art}/veroeffentlichen", s.RequirePermission("edit_books")(s.lernmittel().PostLmfPlanVeroeffentlichenHandler()))
+	mux.Handle("POST /api/lmf-plan/{art}/veroeffentlichen", s.RequirePermission("edit_books")(s.lernmittel().LMFPlanVeroeffentlichen()))
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.theke().OverrideDueDateHandler(auditRepo)))
 
 	// Live ISBN Lookup

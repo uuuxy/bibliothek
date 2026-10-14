@@ -2419,7 +2419,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/lernmittel.LmfPlanStandAntwort"
+                            "$ref": "#/definitions/lernmittel.lmfPlanStandAntwort"
                         }
                     }
                 }
@@ -2439,7 +2439,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/lernmittel.LmfPlanSpeicherAntwort"
+                            "$ref": "#/definitions/lernmittel.lmfPlanSpeicherAntwort"
                         }
                     }
                 }
@@ -2479,7 +2479,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/lernmittel.LmfPlanSpeicherAntwort"
+                            "$ref": "#/definitions/lernmittel.lmfPlanSpeicherAntwort"
                         }
                     }
                 }
@@ -2499,7 +2499,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/lernmittel.LmfPlanAntwort"
+                            "$ref": "#/definitions/lernmittel.lmfTermineAntwort"
                         }
                     }
                 }
@@ -4679,29 +4679,7 @@ const docTemplate = `{
                 }
             }
         },
-        "lernmittel.LmfPlanAntwort": {
-            "type": "object",
-            "properties": {
-                "ab": {
-                    "description": "Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.",
-                    "type": "string"
-                },
-                "eingangsjahrgaenge": {
-                    "description": "Eingangsjahrgaenge (Einstellung): die Jahrgänge, die nach den Ferien Bücher\nbekommen — für den erklärenden Satz über der Tabelle.",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "termine": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.LMFTermin"
-                    }
-                }
-            }
-        },
-        "lernmittel.LmfPlanAusfall": {
+        "lernmittel.lmfPlanAusfall": {
             "type": "object",
             "properties": {
                 "datum": {
@@ -4712,7 +4690,7 @@ const docTemplate = `{
                 }
             }
         },
-        "lernmittel.LmfPlanRahmenVorgabe": {
+        "lernmittel.lmfPlanRahmenVorgabe": {
             "type": "object",
             "properties": {
                 "erster_tag": {
@@ -4732,7 +4710,7 @@ const docTemplate = `{
                 }
             }
         },
-        "lernmittel.LmfPlanSommerferien": {
+        "lernmittel.lmfPlanSommerferien": {
             "type": "object",
             "properties": {
                 "bekannt": {
@@ -4751,13 +4729,13 @@ const docTemplate = `{
                 }
             }
         },
-        "lernmittel.LmfPlanSpeicherAntwort": {
+        "lernmittel.lmfPlanSpeicherAntwort": {
             "type": "object",
             "properties": {
                 "ausfaelle": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/lernmittel.LmfPlanAusfall"
+                        "$ref": "#/definitions/lernmittel.lmfPlanAusfall"
                     }
                 },
                 "ausgelassen": {
@@ -4783,7 +4761,7 @@ const docTemplate = `{
                 }
             }
         },
-        "lernmittel.LmfPlanStandAntwort": {
+        "lernmittel.lmfPlanStandAntwort": {
             "type": "object",
             "properties": {
                 "ausgelassen": {
@@ -4825,7 +4803,7 @@ const docTemplate = `{
                     "description": "Sommerferien: die Ferien Hessen, an denen sich der Plan ausrichtet — der Planer\nzeigt sie neben dem Rahmen, oder den Hinweis, dass das Jahr nicht hinterlegt ist.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/lernmittel.LmfPlanSommerferien"
+                            "$ref": "#/definitions/lernmittel.lmfPlanSommerferien"
                         }
                     ]
                 },
@@ -4837,7 +4815,7 @@ const docTemplate = `{
                     "description": "Vorschlag ist gesetzt, wenn es keinen laufenden Plan gibt (kein Plan oder vorbei).",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/lernmittel.LmfPlanVorschlag"
+                            "$ref": "#/definitions/lernmittel.lmfPlanVorschlag"
                         }
                     ]
                 },
@@ -4849,7 +4827,7 @@ const docTemplate = `{
                 }
             }
         },
-        "lernmittel.LmfPlanVorschlag": {
+        "lernmittel.lmfPlanVorschlag": {
             "type": "object",
             "properties": {
                 "ausgelassen": {
@@ -4866,7 +4844,7 @@ const docTemplate = `{
                     "description": "Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LMFPlanRahmenVorgabe).",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/lernmittel.LmfPlanRahmenVorgabe"
+                            "$ref": "#/definitions/lernmittel.lmfPlanRahmenVorgabe"
                         }
                     ]
                 },
@@ -4874,6 +4852,28 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/repository.LMFPlanZeile"
+                    }
+                }
+            }
+        },
+        "lernmittel.lmfTermineAntwort": {
+            "type": "object",
+            "properties": {
+                "ab": {
+                    "description": "Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.",
+                    "type": "string"
+                },
+                "eingangsjahrgaenge": {
+                    "description": "Eingangsjahrgaenge (Einstellung): die Jahrgänge, die nach den Ferien Bücher\nbekommen — für den erklärenden Satz über der Tabelle.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "termine": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LMFTermin"
                     }
                 }
             }

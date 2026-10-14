@@ -23,8 +23,8 @@ import (
 	"bibliothek/repository"
 )
 
-// LmfPlanAntwort ist die Antwort von GET /api/lmf-termine.
-type LmfPlanAntwort struct {
+// lmfTermineAntwort ist die Antwort von GET /api/lmf-termine.
+type lmfTermineAntwort struct {
 	// Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.
 	Ab      string                 `json:"ab"`
 	Termine []repository.LMFTermin `json:"termine"`
@@ -36,33 +36,33 @@ type LmfPlanAntwort struct {
 // lmfPlanAb bestimmt, ab wann gelistet wird: der 1. August des laufenden Schuljahres,
 // damit im Juni die neue Rückgabe und die August-Ausgabe zusammen stehen und im
 // Herbst die alte Rückgabe verschwunden ist; ?alle=1 hebt die Grenze auf.
-func (s *Tueren) lmfPlanAb(r *http.Request) time.Time {
+func (t *Tueren) lmfPlanAb(r *http.Request) time.Time {
 	if r.URL.Query().Get("alle") == "1" {
 		return time.Time{}
 	}
-	return repository.SchuljahrBeginn(s.Jetzt())
+	return repository.SchuljahrBeginn(t.Jetzt())
 }
 
-// GetLmfTermineHandler listet den Plan.
+// LMFTermine listet den Plan.
 // @Summary      LMF-Plan
 // @Description  Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle).
 // @Tags         lernmittel
 // @Produce      json
-// @Success      200  {object}  LmfPlanAntwort
+// @Success      200  {object}  lmfTermineAntwort
 // @Router       /lmf-termine [get]
-func (s *Tueren) GetLmfTermineHandler() http.HandlerFunc {
+func (t *Tueren) LMFTermine() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		repo := repository.NewLMFAbfragen(s.DB.Pool)
-		ab := s.lmfPlanAb(r)
-		eingang, err := s.lmfEingangsjahrgaenge(r.Context())
+		abfragen := repository.NewLMFAbfragen(t.DB.Pool)
+		ab := t.lmfPlanAb(r)
+		eingang, err := t.lmfEingangsjahrgaenge(r.Context())
 		if err != nil {
 			return apierrors.Internal("Einstellungen laden", err)
 		}
-		termine, err := repo.LadeTermine(r.Context(), ab, repository.LMFListenFilter{})
+		termine, err := abfragen.LadeTermine(r.Context(), ab, repository.LMFListenFilter{})
 		if err != nil {
 			return apierrors.Internal("LMF-Plan laden", err)
 		}
-		antwort := LmfPlanAntwort{Termine: termine, Eingangsjahrgaenge: eingang}
+		antwort := lmfTermineAntwort{Termine: termine, Eingangsjahrgaenge: eingang}
 		if !ab.IsZero() {
 			antwort.Ab = ab.Format("2006-01-02")
 		}
@@ -71,19 +71,19 @@ func (s *Tueren) GetLmfTermineHandler() http.HandlerFunc {
 	})
 }
 
-// LmfArtTitel ist die Überschrift je Art — dieselben Worte wie ARTEN in
+// lmfArtTitel ist die Überschrift je Art — dieselben Worte wie ARTEN in
 // lmfplanDienst.js. „Rückgabe" und „Ausgabe" allein waren unklar (06.09.2026):
 // Vor den Ferien tauschen die Klassen (alte ab, neue direkt mit), nach den Ferien
 // bekommen nur die neu gebildeten Klassen ihre Bücher.
-func LmfArtTitel(art string) string {
+func lmfArtTitel(art string) string {
 	if art == repository.LMFTerminAusgabe {
 		return "Bücherausgabe nach den Sommerferien"
 	}
 	return "Büchertausch vor den Sommerferien"
 }
 
-// LmfArtErklaerung ist der eine Satz unter der Überschrift, mit den Eingangsjahrgängen.
-func LmfArtErklaerung(art string, eingang []int) string {
+// lmfArtErklaerung ist der eine Satz unter der Überschrift, mit den Eingangsjahrgängen.
+func lmfArtErklaerung(art string, eingang []int) string {
 	if art == repository.LMFTerminAusgabe {
 		// Ohne bekannte Jahrgänge KEIN leeres Klammerpaar („(Jahrgang )"): Der Satz nennt
 		// dann nur die Regel. Beide Seiten müssen das gleich halten — TestLmfTexte prüft es.
@@ -123,8 +123,8 @@ func jahrgaengeText(eingang []int) string {
 // „Nur Rückgabe" steht, wo die Bibliothek es hingeschrieben hat: im Vermerk.
 func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.LmfPlanAbschnitt, error) {
 	abschnitte := []pdf.LmfPlanAbschnitt{
-		{Titel: strings.ToUpper(LmfArtTitel(repository.LMFTerminRueckgabe)), Untertitel: LmfArtErklaerung(repository.LMFTerminRueckgabe, eingang)},
-		{Titel: strings.ToUpper(LmfArtTitel(repository.LMFTerminAusgabe)), Untertitel: LmfArtErklaerung(repository.LMFTerminAusgabe, eingang)},
+		{Titel: strings.ToUpper(lmfArtTitel(repository.LMFTerminRueckgabe)), Untertitel: lmfArtErklaerung(repository.LMFTerminRueckgabe, eingang)},
+		{Titel: strings.ToUpper(lmfArtTitel(repository.LMFTerminAusgabe)), Untertitel: lmfArtErklaerung(repository.LMFTerminAusgabe, eingang)},
 	}
 	for _, t := range termine {
 		datum, err := schulzeit.Kalendertag(t.Datum)
@@ -141,22 +141,22 @@ func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.Lmf
 	return abschnitte, nil
 }
 
-// GetLmfPlanPDFHandler liefert den Plan als PDF in der Form der bisherigen Excel-Liste.
+// LMFPlanPDF liefert den Plan als PDF in der Form der bisherigen Excel-Liste.
 // mitEntwuerfen = true ist die Planer-Route (edit_books): auch der unveröffentlichte
 // Entwurf, damit er zur Abnahme an die Schulleitung gehen kann.
 // @Summary      LMF-Plan als PDF
 // @Tags         lernmittel
 // @Produce      application/pdf
 // @Router       /lmf-termine/pdf [get]
-func (s *Tueren) GetLmfPlanPDFHandler(mitEntwuerfen bool) http.HandlerFunc {
+func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := repository.NewLMFAbfragen(s.DB.Pool)
-		eingang, err := s.lmfEingangsjahrgaenge(r.Context())
+		abfragen := repository.NewLMFAbfragen(t.DB.Pool)
+		eingang, err := t.lmfEingangsjahrgaenge(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		termine, err := repo.LadeTermine(r.Context(), s.lmfPlanAb(r),
+		termine, err := abfragen.LadeTermine(r.Context(), t.lmfPlanAb(r),
 			repository.LMFListenFilter{MitEntwuerfen: mitEntwuerfen})
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -171,15 +171,15 @@ func (s *Tueren) GetLmfPlanPDFHandler(mitEntwuerfen bool) http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		pdfBytes, err := pdf.GenerateLmfPlan(abschnitte, s.Jetzt())
+		pdfDaten, err := pdf.GenerateLmfPlan(abschnitte, t.Jetzt())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		filename := "LMF-Plan.pdf"
+		dateiname := "LMF-Plan.pdf"
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
-		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
-		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
+		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
+		http.ServeContent(w, r, dateiname, time.Now(), bytes.NewReader(pdfDaten))
 	}
 }

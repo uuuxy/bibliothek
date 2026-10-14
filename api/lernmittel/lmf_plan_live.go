@@ -19,11 +19,11 @@ package lernmittel
 // Pläne kennt, der Planer `GET /api/lmf-plan/{art}` hinter `edit_books`. Damit kann das
 // Signal nichts ausleiten, was der Empfänger nicht ohnehin abrufen darf.
 
-// meldeLmfPlanGeaendert sagt allen offenen Ansichten, dass sie den Plan neu holen
+// meldeLMFPlanGeaendert sagt allen offenen Ansichten, dass sie den Plan neu holen
 // sollen. Aufrufen NACH dem erfolgreichen Schreiben — ein Signal auf einen Schreibweg,
 // der noch scheitern kann, schickte alle Ansichten auf den alten Stand zurück.
-func (s *Tueren) meldeLmfPlanGeaendert() {
-	if s.Broker != nil {
-		s.Broker.Broadcast("lmf-plan", "{}")
+func (t *Tueren) meldeLMFPlanGeaendert() {
+	if t.Broker != nil {
+		t.Broker.Broadcast("lmf-plan", "{}")
 	}
 }

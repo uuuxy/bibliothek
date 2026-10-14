@@ -9,7 +9,7 @@ import (
 
 // SchreibePlan indiziert plaetze[i] über die Zeilen. Dass beide Scheiben gleich lang
 // sind, sichert auch der eine Aufrufer zu (api/lernmittel/lmf_plan.go, nach
-// pruefeLmfPlan). Diese Zusicherung gehört an die Tür, die sie braucht: Ein zweiter
+// pruefeLMFPlan). Diese Zusicherung gehört an die Tür, die sie braucht: Ein zweiter
 // Aufrufer — oder ein Umbau der Prüfung — bekommt sonst keinen Fehler, sondern einen
 // Indexfehler mitten in einer offenen Transaktion.
 //

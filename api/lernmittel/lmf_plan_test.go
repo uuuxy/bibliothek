@@ -13,7 +13,7 @@ import (
 // irgendetwas gerechnet wird — ein fester Termin ohne Datum ist kein „fließt eben",
 // sondern ein Fehler, den der Planer sehen muss.
 func TestPruefeLmfPlan_FestUndFreieTage(t *testing.T) {
-	var req lmfPlanRequest
+	var req lmfPlanAnfrage
 	req.LetzterTag, req.LetzteStunde, req.StundenJeTag = "2026-06-25", 4, 6
 	req.FreieTage = append(req.FreieTage, struct {
 		Datum string `json:"datum"`
@@ -38,7 +38,7 @@ func TestPruefeLmfPlan_FestUndFreieTage(t *testing.T) {
 		Stunde int    `json:"stunde"`
 	}{Datum: "2026-06-15", Stunde: 2}})
 
-	e, err := pruefeLmfPlan("rueckgabe", req)
+	e, err := pruefeLMFPlan("rueckgabe", req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,16 +57,16 @@ func TestPruefeLmfPlan_FestUndFreieTage(t *testing.T) {
 
 	// Fester Termin ohne Datum, feste Stunde 0, freier Tag ohne Datum: jeweils 400.
 	req.Zeilen[1].Fest.Datum = ""
-	if _, err := pruefeLmfPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "zeile 2") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "zeile 2") {
 		t.Errorf("fester Termin ohne Datum: %v", err)
 	}
 	req.Zeilen[1].Fest.Datum, req.Zeilen[1].Fest.Stunde = "2026-06-15", 0
-	if _, err := pruefeLmfPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "Stunde") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "Stunde") {
 		t.Errorf("feste Stunde 0: %v", err)
 	}
 	req.Zeilen[1].Fest.Stunde = 2
 	req.FreieTage[0].Datum = "Freitag"
-	if _, err := pruefeLmfPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "freier Tag 1") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "freier Tag 1") {
 		t.Errorf("freier Tag ohne Datum: %v", err)
 	}
 }
@@ -76,13 +76,13 @@ func TestPruefeLmfPlan_FestUndFreieTage(t *testing.T) {
 // braucht den Beginn und lässt das Ende leer. Ohne Zeilen steht beim Rückgabe-Plan das
 // Ende auch als Beginn — ein Plan ohne Tag gäbe ein leeres Schuljahr.
 func TestPruefeLmfPlan_AnkerJeArt(t *testing.T) {
-	var req lmfPlanRequest
+	var req lmfPlanAnfrage
 	req.ErsterTag, req.Startstunde, req.StundenJeTag = "2026-06-11", 3, 6
-	if _, err := pruefeLmfPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzter_tag") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzter_tag") {
 		t.Errorf("Rückgabe ohne Ende: %v", err)
 	}
 	req.LetzterTag, req.LetzteStunde = " 2026-06-25 ", 4
-	e, err := pruefeLmfPlan("rueckgabe", req)
+	e, err := pruefeLMFPlan("rueckgabe", req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,16 +90,16 @@ func TestPruefeLmfPlan_AnkerJeArt(t *testing.T) {
 		t.Errorf("Rückgabe-Anker: %+v", e.Plan)
 	}
 	req.LetzteStunde = 7
-	if _, err := pruefeLmfPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzte_stunde") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzte_stunde") {
 		t.Errorf("letzte Stunde hinter dem Tagesende: %v", err)
 	}
 	req.LetzteStunde = 4
-	if e, err = pruefeLmfPlan("ausgabe", req); err != nil || e.Plan.LetzterTag != "" || e.Plan.LetzteStunde != 0 ||
+	if e, err = pruefeLMFPlan("ausgabe", req); err != nil || e.Plan.LetzterTag != "" || e.Plan.LetzteStunde != 0 ||
 		e.Plan.ErsterTag != "2026-06-11" || e.Plan.Startstunde != 3 {
 		t.Errorf("Ausgabe-Anker: %+v (%v)", e.Plan, err)
 	}
 	req.ErsterTag = ""
-	if _, err := pruefeLmfPlan("ausgabe", req); err == nil || !strings.Contains(err.Error(), "erster_tag") {
+	if _, err := pruefeLMFPlan("ausgabe", req); err == nil || !strings.Contains(err.Error(), "erster_tag") {
 		t.Errorf("Ausgabe ohne Beginn: %v", err)
 	}
 }

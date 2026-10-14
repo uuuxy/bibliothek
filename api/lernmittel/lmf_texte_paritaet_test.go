@@ -26,7 +26,7 @@ import (
 // Gelesen wird die JS-Datei als Text — ein Node-Lauf im Go-Test wäre eine zweite
 // Werkzeugkette für eine Zeichenkette. Findet der Test die Stelle nicht mehr, ist er rot
 // und nicht still grün.
-func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
+func TestLMFTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 	quelle, err := os.ReadFile("../../frontend/src/lib/lmfplanDienst.js")
 	if err != nil {
 		t.Fatalf("lmfplanDienst.js lesen: %v", err)
@@ -44,7 +44,7 @@ func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 			t.Fatalf("ARTEN-Eintrag %q in lmfplanDienst.js nicht gefunden — Form geändert? "+
 				"Dann diesen Test nachziehen, sonst prüft er nichts.", f.jsWert)
 		}
-		if got := LmfArtTitel(f.art); got != treffer[1] {
+		if got := lmfArtTitel(f.art); got != treffer[1] {
 			t.Errorf("Überschrift %q: Go %q, JavaScript %q — PDF und Portal nennen den Plan verschieden",
 				f.art, got, treffer[1])
 		}
@@ -55,7 +55,7 @@ func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 	eingang := []int{5, 7}
 	// Ohne Jahrgänge fällt das Klammerpaar weg — auf beiden Seiten gleich, sonst stünde im
 	// Portal „(Jahrgang )", während das PDF den ganzen Satz druckt.
-	if got, will := LmfArtErklaerung(repository.LMFTerminAusgabe, nil),
+	if got, will := lmfArtErklaerung(repository.LMFTerminAusgabe, nil),
 		"Nur die neu gebildeten Klassen bekommen ihre Schulbücher."; got != will {
 		t.Errorf("Ausgabe-Satz ohne Jahrgänge: %q", got)
 	}
@@ -70,13 +70,13 @@ func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 	for art, jsSatz := range saetze {
 		if !strings.Contains(js, jsSatz) {
 			t.Errorf("Erklärungssatz %q steht so nicht in lmfplanDienst.js:\n  Go: %s",
-				art, LmfArtErklaerung(art, eingang))
+				art, lmfArtErklaerung(art, eingang))
 			continue
 		}
 		// Die Go-Fassung mit denselben Jahrgängen muss den JS-Satz ergeben, sobald die
 		// Einsetzung ausgeführt ist.
 		erwartet := strings.ReplaceAll(jsSatz, "${jahrgaengeText(eingang)}", jahrgaengeText(eingang))
-		if got := LmfArtErklaerung(art, eingang); got != erwartet {
+		if got := lmfArtErklaerung(art, eingang); got != erwartet {
 			t.Errorf("Erklärungssatz %q:\n  Go:         %s\n  JavaScript: %s", art, got, erwartet)
 		}
 	}

@@ -295,7 +295,7 @@ var checkBedingungenBestand = []string{
 	"chk_lmf_plaene_letzte_stunde",
 	// Migration 115: Die letzte Stunde des Rückgabe-Plans liegt im
 	// Schultag, den derselbe Plan beschreibt. Der Code prüft es an der Tür (api/lernmittel/lmf_plan.go,
-	// pruefeLmfAnker → 400), die Datenbank hält die zweite. Umgekehrt verlässt sich kein
+	// pruefeLMFAnker → 400), die Datenbank hält die zweite. Umgekehrt verlässt sich kein
 	// Lesepfad darauf, dass sie es nicht verbietet: Der Ausgabe-Plan hat keine letzte
 	// Stunde, und NULL lässt der Check ausdrücklich zu.
 	"chk_lmf_plaene_letzte_stunde_im_tag",
