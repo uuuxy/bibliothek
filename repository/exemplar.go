@@ -33,8 +33,8 @@ type ExemplarNeu struct {
 	BestellungID string
 }
 
-// Exemplar repräsentiert ein physisches Einzelexemplar eines Buchs (Tabelle `buecher_exemplare`).
-// Dieses Struct enthält zur Vereinfachung direkt gejointe Daten aus dem zugehörigen Buchtitel.
+// Exemplar ist das einzelne Stück eines Titels (Tabelle `buecher_exemplare`), mit den Angaben
+// seines Titels, die Theke und Akte daneben zeigen.
 type Exemplar struct {
 	// ID ist die UUID des konkreten Exemplars.
 	ID string `json:"id"`

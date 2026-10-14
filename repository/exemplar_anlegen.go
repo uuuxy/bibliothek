@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ErzeugeBarcodes erzeugt ein Array von count fortlaufenden Barcodes.
+// ErzeugeBarcodes zieht anzahl fortlaufende Barcodes.
 // Die Vergabe selbst steht in barcode_vergabe.go — sie ist die einzige Quelle für
 // B-Nummern und liefert nur Nummern, die im Bestand noch nicht vorkommen.
 func (a *pgKatalogAbfragen) ErzeugeBarcodes(ctx context.Context, anzahl int) ([]string, error) {
@@ -21,7 +21,7 @@ func (a *pgKatalogAbfragen) ErzeugeBarcodes(ctx context.Context, anzahl int) ([]
 	return barcodes, nil
 }
 
-// LegeExemplareAn fügt Exemplare im Bulk innerhalb einer Transaktion ein. Den Standort
+// LegeExemplareAn legt die Exemplare in der Transaktion des Rufers an. Den Standort
 // erben sie von den Exemplaren ihres Titels im Bestand (SQLGeerbterStandort), gelesen vor dem
 // Einfügen: Die neuen Zeilen zählen dabei nicht mit.
 func (a *pgKatalogAbfragen) LegeExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ExemplarNeu) error {

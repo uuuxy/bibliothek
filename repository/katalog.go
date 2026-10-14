@@ -8,27 +8,27 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// KatalogAbfragen definiert alle Datenbank-Operationen für physische Buchexemplare
-// und die Suche nach Buchtiteln im Katalog.
+// KatalogAbfragen liest und schreibt Titel und Exemplare: die Suche, das Anlegen und den Status
+// eines Exemplars.
 type KatalogAbfragen interface {
-	// FindeExemplar sucht ein physisches Buchexemplar anhand seines Barcodes.
-	// Liefert die Exemplardaten inklusive der Metadaten des verknüpften Buchtitels zurück.
-	// Gibt nil zurück, wenn kein Exemplar gefunden wurde.
+	// FindeExemplar liefert das Exemplar zu einem Barcode mit den Angaben seines Titels; nil,
+	// wenn keines die Nummer trägt.
 	FindeExemplar(ctx context.Context, barcode string) (*Exemplar, error)
 
-	// FindeTitel führt eine Volltextsuche (german tsvector) über Titel, Autoren und ISBNs aus
-	// und sortiert die Ergebnisse nach ihrer Relevanz (ts_rank).
+	// FindeTitel sucht über Titel, Autor und ISBN, als Volltext und als Teil des Texts, und
+	// ordnet die Treffer nach ihrem Rang; höchstens 50, nur Titel mit einem Exemplar.
 	FindeTitel(ctx context.Context, suchtext string) ([]Titel, error)
 
-	// FindeTitelUnscharf sucht tokenweise über Titel, Autor, ISBN und Signatur mit
-	// einer Ergebnismengenbegrenzung. Zweiter Rückgabewert ist die Gesamtzahl der
-	// Treffer vor dem Limit (siehe LeserAbfragen.FindeUnscharf).
+	// FindeTitelUnscharf sucht Wort für Wort über Titel, Autor, ISBN und Signatur, höchstens
+	// limit Treffer. Der zweite Wert ist die Zahl aller Treffer vor dem Limit (wie
+	// LeserAbfragen.FindeUnscharf).
 	FindeTitelUnscharf(ctx context.Context, suchtext string, limit int) ([]Titel, int, error)
 
-	// LadeTitel sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.
+	// LadeTitel liefert Titel, Autor, ISBN, Verlag und Signatur eines Titels, gelesen in der
+	// Transaktion des Rufers; die übrigen Felder bleiben leer. Kein Treffer ist pgx.ErrNoRows.
 	LadeTitel(ctx context.Context, tx pgx.Tx, id string) (*Titel, error)
 
-	// SetzeExemplarBarcode ändert den zugewiesenen Barcode eines physischen Exemplars.
+	// SetzeExemplarBarcode gibt einem Exemplar einen anderen Barcode.
 	SetzeExemplarBarcode(ctx context.Context, id string, barcode string) error
 
 	// AendereExemplarStatus ändert den Ausleih- und Aussonderungsstatus eines Exemplars.
@@ -45,24 +45,24 @@ type KatalogAbfragen interface {
 	// IstExemplarImBestand sagt, ob ein Exemplar zum Bestand zählt (SQLExemplarImBestand).
 	IstExemplarImBestand(ctx context.Context, id string) (bool, error)
 
-	// ErzeugeBarcodes erzeugt eine Serie fortlaufender Buch-Barcodes (Präfix "B-") über eine DB-Sequence.
+	// ErzeugeBarcodes zieht anzahl fortlaufende Buch-Barcodes (Präfix "B-") aus der Folge der
+	// Datenbank.
 	ErzeugeBarcodes(ctx context.Context, anzahl int) ([]string, error)
 
-	// LegeExemplareAn führt BulkInsertCopies innerhalb einer expliziten SQL-Transaktion aus.
+	// LegeExemplareAn legt die Exemplare in der Transaktion des Rufers an, alle in einem Zug.
 	LegeExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ExemplarNeu) error
 
-	// SchreibeTitel speichert viele Titel in einem einzigen gepipelineten
-	// Batch (statt je Titel eine eigene Rundreise) und liefert die Zahl der
-	// verarbeiteten Titel. Titel ohne ISBN werden per Titel dedupliziert.
+	// SchreibeTitel legt viele Titel an oder ändert sie, in einem Sammelauftrag statt mit einer
+	// Anfrage je Titel, und liefert die Zahl der verarbeiteten Titel. Einen Titel ohne ISBN
+	// ordnet die Funktion über seinen Titel zu.
 	SchreibeTitel(ctx context.Context, titel []Titel) (int, error)
 }
 
-// pgKatalogAbfragen implementiert das KatalogAbfragen für PostgreSQL.
 type pgKatalogAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewKatalogAbfragen erstellt eine neue Instanz des PostgreSQL-basierten Book-Repositorys.
+// NewKatalogAbfragen liefert die Abfragen des Katalogs an Postgres.
 func NewKatalogAbfragen(db db.PgxPoolIface) KatalogAbfragen {
 	return &pgKatalogAbfragen{db: db}
 }

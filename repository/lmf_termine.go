@@ -57,12 +57,13 @@ func schuljahrVon(t time.Time) int {
 	return SchuljahrBeginn(t).Year()
 }
 
-// LMFAbfragen liest und schreibt den Plan.
+// LMFAbfragen liest und schreibt den Plan der Lernmittel: die Termine der Rückgabe und Ausgabe
+// je Klasse.
 type LMFAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewLMFAbfragen baut das Repository über dem Pool.
+// NewLMFAbfragen liefert die Abfragen des Plans an Postgres.
 func NewLMFAbfragen(pool db.PgxPoolIface) *LMFAbfragen {
 	return &LMFAbfragen{db: pool}
 }

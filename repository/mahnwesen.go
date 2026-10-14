@@ -8,7 +8,7 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// UeberfaelligesMedium repräsentiert ein einzelnes Buch- oder Medienexemplar, das die Rückgabefrist überschritten hat.
+// UeberfaelligesMedium ist ein ausgeliehenes Exemplar, dessen Frist abgelaufen ist.
 type UeberfaelligesMedium struct {
 	// AusleiheID ist die UUID des Ausleihvorgangs.
 	AusleiheID string `json:"ausleihe_id"`
@@ -70,12 +70,13 @@ type MahnwesenKlasse struct {
 	Schueler []UeberfaelligerSchueler `json:"schueler"`
 }
 
-// MahnwesenAbfragen stellt Abfragemethoden zur Auswertung von Fristüberschreitungen und Mahnstufen zur Verfügung.
+// MahnwesenAbfragen liest die überfälligen Ausleihen für Mahnliste und Mahnbriefe und erhöht
+// die Mahnstufe.
 type MahnwesenAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewMahnwesenAbfragen erzeugt eine neue Instanz des MahnwesenRepositorys.
+// NewMahnwesenAbfragen liefert die Abfragen des Mahnwesens an Postgres.
 func NewMahnwesenAbfragen(pool db.PgxPoolIface) *MahnwesenAbfragen {
 	return &MahnwesenAbfragen{db: pool}
 }

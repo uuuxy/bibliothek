@@ -124,9 +124,9 @@ func (a *pgKatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext str
 	return treffer, gesamt, nil
 }
 
-// leseTitelMitBestand scannt die Standard-Spaltenliste und danach die beiden
-// Bestandszahlen. Getrennt von scanBookTitle, weil die übrigen Abfragen sie nicht
-// mitliefern — und ein Titel mit nil-Bestand sagt „nicht gezählt", nicht „keine da".
+// leseTitelMitBestand liest die feste Spaltenliste eines Titels und danach die Bestandszahlen.
+// Getrennt von leseTitelMitZusatz, weil die übrigen Abfragen die Zahlen nicht mitliefern: Ein
+// Titel mit nil-Bestand sagt „nicht gezählt", nicht „keine da".
 func leseTitelMitBestand(row scanner, zusatz ...any) (*Titel, error) {
 	var gesamt, verfuegbar, imZulauf int
 	t, err := leseTitelMitZusatz(row, append([]any{&gesamt, &verfuegbar, &imZulauf}, zusatz...)...)

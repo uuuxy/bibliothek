@@ -7,7 +7,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Titel repräsentiert die beschreibenden Metadaten eines Buchtitels oder Werks (Tabelle `buecher_titel`).
+// Titel ist ein Eintrag im Katalog: eine Auflage eines Buchs oder Mediums (Tabelle
+// `buecher_titel`).
 type Titel struct {
 	// ID ist die UUID des Buchtitels.
 	ID string `json:"id"`
@@ -84,7 +85,8 @@ func leseTitelMitZusatz(row scanner, zusatz ...any) (*Titel, error) {
 	return &t, nil
 }
 
-// LadeTitel sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.
+// LadeTitel liest Titel, Autor, ISBN, Verlag und Signatur eines Titels in der Transaktion des
+// Rufers.
 func (a *pgKatalogAbfragen) LadeTitel(ctx context.Context, tx pgx.Tx, id string) (*Titel, error) {
 	query := "SELECT id, coalesce(titel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(signatur, '') FROM buecher_titel WHERE id = $1"
 
