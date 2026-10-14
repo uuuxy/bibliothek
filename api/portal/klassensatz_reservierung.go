@@ -16,19 +16,20 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// klassensatzReservierungAnfrage is the payload for a class-set reservation.
+// klassensatzReservierungAnfrage ist die Reservierung eines Klassensatzes aus „Mein Portal".
 type klassensatzReservierungAnfrage struct {
 	TitelID string `json:"titel_id" validate:"omitempty,uuid_oder_leer"`
 	Klasse  string `json:"klasse"`
 	Anzahl  int    `json:"anzahl"`
 	Notiz   string `json:"notiz,omitempty"`
-	// IdempotenzSchluessel: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
-	// denselben Schlüssel und wird serverseitig zum No-op (keine zweite Reservierung,
-	// keine zweite Mail). Optional — ohne Schlüssel läuft alles wie bisher.
+	// IdempotenzSchluessel vergibt die Oberfläche je Absenden. Ein Doppelklick schickt
+	// denselben Schlüssel und legt keine zweite Reservierung an; ohne Schlüssel legt jedes
+	// Absenden eine an.
 	IdempotenzSchluessel string `json:"idempotency_key,omitempty"`
 }
 
-// KlassensatzReservierungAnlegen lets a LEHRER submit a class-set reservation.
+// KlassensatzReservierungAnlegen nimmt die Reservierung eines Klassensatzes durch eine
+// Lehrkraft an.
 // POST /api/reservierungen/klassensatz
 func (t *Tueren) KlassensatzReservierungAnlegen() http.HandlerFunc {
 	return t.legeKlassensatzReservierungAn
@@ -65,10 +66,8 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Bestandsdeckelung: Mehr Exemplare zu reservieren, als die Bibliothek überhaupt
-	// besitzt, erzeugt eine dauerhaft unerfüllbare Aufgabe im Dashboard (Ghost-Order).
-	// Die Wunschmenge wird deshalb gegen den physischen Bestand (nicht ausgesondert)
-	// geprüft.
+	// Mehr Exemplare, als die Bibliothek besitzt, ergäben eine Aufgabe, die sich nie erfüllen
+	// lässt; die Menge wird deshalb gegen den Bestand ohne ausgesonderte Exemplare geprüft.
 	bestand, err := abfragen.ZaehleTitelBestand(ctx, req.TitelID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -86,8 +85,8 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// neu=false: derselbe Idempotenz-Schlüssel lief schon durch (Doppelklick) — die
-	// bestehende Reservierung zurückgeben, kein zweiter Eintrag, keine zweite Mail.
+	// neu=false: Derselbe Idempotenz-Schlüssel lief schon durch (Doppelklick); die Antwort
+	// nennt die bestehende Reservierung.
 	status := "erstellt"
 	if !neu {
 		status = "bereits_vorhanden"
@@ -95,7 +94,8 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 	tuer.AntworteJSON(w, http.StatusCreated, map[string]string{"id": id, "status": status})
 }
 
-// KlassensatzReservierungen lists all pending class-set reservations for admins.
+// KlassensatzReservierungen liefert der Bibliothek alle Reservierungen: die offenen in der
+// Reihenfolge der Warteschlange, dahinter die erledigten.
 // GET /api/reservierungen/klassensatz
 func (t *Tueren) KlassensatzReservierungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +106,7 @@ func (t *Tueren) KlassensatzReservierungen() http.HandlerFunc {
 			return
 		}
 
-		// Ensure we don't return null for empty slices
+		// Eine leere Liste kommt als [] an, nicht als null.
 		if liste == nil {
 			liste = []repository.Reservierung{}
 		}
@@ -115,7 +115,8 @@ func (t *Tueren) KlassensatzReservierungen() http.HandlerFunc {
 	}
 }
 
-// KlassensatzReservierungenAnzahl returns the count of open reservations (for red badge).
+// KlassensatzReservierungenAnzahl zählt die offenen Reservierungen für den Zähler am
+// Menüpunkt.
 // GET /api/reservierungen/klassensatz/anzahl
 func (t *Tueren) KlassensatzReservierungenAnzahl() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -148,10 +149,9 @@ func (t *Tueren) OffeneKlassensatzReservierungen() http.HandlerFunc {
 	}
 }
 
-// EigeneKlassensatzReservierungen liefert die EIGENEN Reservierungen der
-// angemeldeten Lehrkraft fuers Portal — offene und kuerzlich abgeschlossene samt
-// Bibliotheks-Notiz. GET /api/reservierungen/klassensatz/eigene
-// (Muster und Recht wie GET /api/anliegen/eigene.)
+// EigeneKlassensatzReservierungen liefert der angemeldeten Lehrkraft ihre Reservierungen,
+// offene und kürzlich abgeschlossene samt Notiz der Bibliothek.
+// GET /api/reservierungen/klassensatz/eigene, Muster und Recht wie GET /api/anliegen/eigene.
 func (t *Tueren) EigeneKlassensatzReservierungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
@@ -169,11 +169,11 @@ func (t *Tueren) EigeneKlassensatzReservierungen() http.HandlerFunc {
 	}
 }
 
-// KlassensatzReservierungErledigen schliesst eine Klassensatz-Reservierung ab.
+// KlassensatzReservierungErledigen schließt die Reservierung eines Klassensatzes ab.
 // PUT /api/reservierungen/klassensatz/{id}/erledigen  { "notiz": "24 von 30, Rest bei der 8a" }
 //
-// Der Body ist optional (leer = ohne Notiz): Der Weg bestand vor Migration 088 ohne
-// Body, und ein Client mit altem Bundle soll weiter abschliessen koennen.
+// Der Rumpf ist freiwillig (leer heißt ohne Notiz), damit ein Browser mit altem Stand der
+// Oberfläche weiter abschließen kann.
 func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -198,14 +198,10 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 			return
 		}
 
-		// Bereit-Mail an die anfragende Lehrkraft — Betreiber-Entscheidung 16.08.2026:
-		// KEIN neuer Menuepunkt, das aktive Signal genuegt. Das Abschliessen gilt, auch
-		// wenn der Mailversand klemmt — aber der Ausfall ist seit der Ausfallmatrix
-		// (20.08.2026) nicht mehr SPURLOS: Vorher stand hier 204 + Logzeile, die Theke
-		// sah "abgeschlossen", die Lehrkraft wartete auf eine Mail, die nie kam, und
-		// niemand wusste es. Jetzt traegt die Antwort den Mail-Status und die
-		// Oberflaeche warnt ("bitte selbst benachrichtigen"). Ohne Konto-Adresse
-		// (per SQL angelegt, Konto geloescht) gibt es schlicht keine Mail.
+		// Die Bereit-Mail ist das Signal an die Lehrkraft; einen Menüpunkt dafür gibt es nicht.
+		// Das Abschließen gilt, auch wenn der Versand scheitert: Die Antwort nennt den
+		// Ausgang, und die Oberfläche bittet dann, die Lehrkraft selbst zu benachrichtigen.
+		// Ohne Adresse am Konto geht keine Mail.
 		mailStatus := mailStatusKeineAdresse
 		if erledigt.AnfragendeMail != nil && *erledigt.AnfragendeMail != "" {
 			mailStatus = mailStatusVersendet
@@ -223,8 +219,8 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 	}
 }
 
-// leseErledigtNotiz liest die optionale Notiz aus dem Body. Kein Body → "" (Altclient,
-// Erledigen ohne Antwort); ein vorhandener, aber kaputter Body ist ein 400.
+// leseErledigtNotiz liest die freiwillige Notiz aus dem Rumpf. Ohne Rumpf ist sie leer; ein
+// Rumpf, der sich nicht lesen lässt, ist ein 400.
 func leseErledigtNotiz(w http.ResponseWriter, r *http.Request) (string, bool) {
 	if r.Body == nil || r.ContentLength == 0 {
 		return "", true
@@ -238,10 +234,9 @@ func leseErledigtNotiz(w http.ResponseWriter, r *http.Request) (string, bool) {
 	return kuerze(strings.TrimSpace(body.Notiz), 500), true
 }
 
-// klassensatzBereitText ist die Bereit-Mail. Seit Migration 088 traegt sie die Notiz
-// der Lehrkraft (damit die Antwort einen Bezug hat) und die Antwort der Bibliothek —
-// dasselbe Muster wie die Anliegen-Mail. Vorher war der Text fest und liess sich
-// weder ergaenzen (Teilmenge, Abholort) noch korrigieren.
+// klassensatzBereitText ist die Bereit-Mail. Sie trägt die Notiz der Lehrkraft, damit die
+// Antwort der Bibliothek einen Bezug hat, und diese Antwort (Teilmenge, Abholort), wie die
+// Mail zum Anliegen.
 func klassensatzBereitText(e *repository.ErledigteReservierung) string {
 	text := fmt.Sprintf("Ihre Klassensatz-Reservierung ist fertig zusammengestellt und liegt in der Bibliothek zur Abholung bereit.\n\n"+
 		"  Titel:  %s\n  Klasse: %s\n  Anzahl: %d Exemplare\n",
@@ -255,11 +250,11 @@ func klassensatzBereitText(e *repository.ErledigteReservierung) string {
 	return text + "\nDiese Mail wurde automatisch beim Abschliessen der Reservierung verschickt."
 }
 
-// pruefeKlassensatzAnfrage prüft die Pflichtfelder und normalisiert die Anzahl
-// (Default 1, Obergrenze 200). ok=false: die Fehlerantwort wurde bereits geschrieben.
+// pruefeKlassensatzAnfrage prüft die Pflichtfelder und setzt die Anzahl (Vorgabe 1,
+// höchstens 200). Bei false ist die Fehlerantwort schon geschrieben.
 func pruefeKlassensatzAnfrage(w http.ResponseWriter, req *klassensatzReservierungAnfrage) bool {
-	// Klasse oder Kurs ist seit Migration 152 Freitext wie beim Anliegen: Trimmen und Kürzen
-	// machte bis dahin der Auslöser des Klassen-Vokabulars.
+	// Klasse oder Kurs ist Freitext wie beim Anliegen; Trimmen und Kürzen übernimmt deshalb die
+	// Tür.
 	req.Klasse = kuerze(strings.TrimSpace(req.Klasse), 50)
 	if req.TitelID == "" || req.Klasse == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id und klasse sind erforderlich"))
@@ -275,7 +270,7 @@ func pruefeKlassensatzAnfrage(w http.ResponseWriter, req *klassensatzReservierun
 	return true
 }
 
-// leerAlsNil converts an empty string to nil for nullable DB columns.
+// leerAlsNil macht aus einem leeren Text einen fehlenden Wert für Spalten, die NULL erlauben.
 func leerAlsNil(s string) *string {
 	if s == "" {
 		return nil

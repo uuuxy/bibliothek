@@ -10,8 +10,8 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Die OPAC-Suche schickt die Eingabe zweimal: roh für die Volltextsuche, maskiert für
-// die ILIKE-Vergleiche. Mit dem alten Code (ein Argument) trifft die Erwartung nicht.
+// Die OPAC-Suche schickt die Eingabe zweimal: roh für die Volltextsuche, maskiert für die
+// ILIKE-Vergleiche. Mit nur einem Argument trifft die Erwartung nicht.
 func TestOPACSuche_LikeJokerWerdenMaskiert(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {

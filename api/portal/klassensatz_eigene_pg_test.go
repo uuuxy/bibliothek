@@ -18,14 +18,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Bibliotheks-Notiz braucht einen Rückweg außerhalb der Bereit-Mail.
+// Die Notiz der Bibliothek braucht einen Weg außerhalb der Bereit-Mail.
 //
-// Bis zum 31.08.2026 existierte die Antwort der Bibliothek („24 von 30, Rest bei der
-// 8a") nur in der Mail: Die Theken-Liste las erledigt_notiz nie, das Portal zeigte nur
-// offene Reservierungen. Scheiterte die Mail oder fehlte die Adresse, war die Notiz für
-// immer unsichtbar — beim Anliegen steht sie dagegen dauerhaft im Portal
-// (Geschwister-Asymmetrie). Entscheidung 31.08.2026: Portal + Theke lesen sie; dazu
-// erledigt_am (Migration 089), damit „erledigt am …" überhaupt anzeigbar ist.
+// Die Antwort der Bibliothek („24 von 30, Rest bei der 8a") stünde sonst nur in der Mail:
+// Scheitert die Mail oder fehlt die Adresse, sähe die Lehrkraft sie nie. Portal und Theke
+// lesen sie deshalb wie beim Anliegen, dazu erledigt_am (Migration 089) für „erledigt am …".
 func TestEigeneKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -40,8 +37,8 @@ func TestEigeneKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T)
 	fertigA := legeReservierungAn(t, pool, titelID, lehrerA, "09C")
 	legeReservierungAn(t, pool, titelID, lehrerB, "05A")
 
-	// Abschluss über den ECHTEN Handler — mit Bibliotheks-Notiz und kaputtem Mailversand:
-	// genau der Fall, in dem die Notiz vorher verloren war.
+	// Abschluss über die echte Tür, mit Notiz der Bibliothek und scheiterndem Mailversand:
+	// der Fall, in dem nur die Zeile die Notiz trägt.
 	ersetzeMailversand(t, errors.New("smtp down"))
 	body := `{"notiz":"24 von 30, Rest bei der 8a"}`
 	req := httptest.NewRequest(http.MethodPut,
@@ -97,7 +94,7 @@ func TestEigeneKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T)
 	}
 }
 
-// eigeneReservierungen ruft den echten Handler mit der Sitzung der Lehrkraft auf.
+// eigeneReservierungen ruft die echte Tür mit der Sitzung der Lehrkraft auf.
 func eigeneReservierungen(t *testing.T, srv *Tueren, benutzerID string) []map[string]any {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/reservierungen/klassensatz/eigene", nil)

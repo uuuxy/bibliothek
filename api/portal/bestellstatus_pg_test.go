@@ -19,12 +19,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Befund F1 der unabhängigen Prüfung (bewertung/datenbank-pruefbericht.md):
-// Der Bestellstatus lebte als Magie-Text im Freitextfeld zustand_notiz — eine
-// harmlose Personal-Notiz wie "Bestellt am 3.9. neu" ließ ein Exemplar still
-// aus dem OPAC verschwinden. Seit Migration 071 entscheidet ausschließlich die
-// Spalte bestellstatus. Dieser Test spielt genau das Befund-Szenario an der
-// echten Datenbank durch.
+// Ob ein Exemplar bestellt und noch nicht da ist, entscheidet allein die Spalte bestellstatus
+// (Migration 071), nie ein Text im Freitextfeld zustand_notiz: Eine Notiz des Personals wie
+// "Bestellt am 3.9. neu" darf ein Exemplar nicht aus dem OPAC nehmen.
 func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -37,7 +34,7 @@ func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 		t.Fatalf("Titel: %v", err)
 	}
 
-	// 1) Das Befund-Szenario: menschliche Notiz, die wie der Magie-Text aussieht.
+	// 1) Eine Notiz des Personals, die wie ein Vermerk „bestellt" aussieht.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar)
 		VALUES ($1, 'F1-NOTIZ', 'Bestellt am 3.9. neu, alter Band verloren', true)`, titelID); err != nil {
@@ -91,8 +88,8 @@ func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 	}
 }
 
-// opacGesamt fragt die ÖFFENTLICHE Katalogsuche über den echten Handler ab —
-// nicht über eine nachgebaute Abfrage, die eine Regression im Handler nie sähe.
+// opacGesamt fragt die öffentliche Katalogsuche über die echte Tür ab, nicht über eine
+// nachgebaute Abfrage, die einen Rückschritt in der Tür nie sähe.
 func opacGesamt(t *testing.T, pool *pgxpool.Pool, titel string) int {
 	t.Helper()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

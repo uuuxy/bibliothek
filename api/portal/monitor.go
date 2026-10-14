@@ -13,9 +13,8 @@ import (
 // MonitorFolien bedient GET /api/monitor/slides — den einzigen Endpunkt des
 // Flur-Monitors: öffentlich, nur Titeldaten (docs/PII_MATRIX.de.md, Stufe 0).
 //
-// Was der Monitor zeigen darf, entscheidet repository.OeffentlichSichtbar — dieselbe
-// Regel wie im Katalog (api/portal/opac.go). Die Folien selbst baut repository.MonitorAbfragen;
-// die Abfragen standen bis zum 30.08.2026 hier im Handler, ohne diese Regel.
+// Was der Monitor zeigen darf, entscheidet repository.OeffentlichSichtbar, dieselbe Regel wie
+// im Katalog (api/portal/opac.go). Die Folien baut repository.MonitorAbfragen.
 func (t *Tueren) MonitorFolien() http.HandlerFunc {
 	abfragen := repository.NewMonitorAbfragen(t.DB.Pool)
 	return func(w http.ResponseWriter, r *http.Request) {

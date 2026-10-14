@@ -16,10 +16,10 @@ import (
 )
 
 // Die DNB liefert Umlaute zerlegt, als Grundbuchstabe mit Pünktchen dahinter (Migration 154).
-// Am Testserver fand der öffentliche Katalog — und über dieselbe Tür „Mein Portal" —
-// „Der Herr der Ringe - Anhänge und Register" mit „Anhänge" nicht, weder über ILIKE noch
-// über den Volltext; mit „Register" schon. Die Titel entstehen hier zerlegt, wie die
-// Bestellung sie aus der DNB schrieb; gesucht wird, wie man tippt: zusammengesetzt.
+// Der öffentliche Katalog, und über dieselbe Abfrage „Mein Portal", muss „Der Herr der Ringe -
+// Anhänge und Register" auch über „Anhänge" finden, über ILIKE und über den Volltext. Die
+// Titel entstehen hier zerlegt, wie die Bestellung sie aus der DNB schreibt; gesucht wird, wie
+// man tippt: zusammengesetzt.
 func TestOPACSuche_FindetTitelMitZerlegtenUmlauten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

@@ -17,17 +17,15 @@ import (
 	"bibliothek/mailservice"
 )
 
-// Ausfallmatrix 20.08.2026: Die Erledigt-Handler (Klassensatz bereit, Anliegen
-// abgehakt) verschicken ihre Benachrichtigung NACH dem Commit, best effort. Vorher
-// antworteten sie 204 — ein Mailversand-Ausfall war nur eine Server-Logzeile, die
-// Theke las "Erledigt — die Lehrkraft bekommt eine Mail", und niemand erfuhr, dass
-// die Mail nie ankam. Jetzt trägt die Antwort den Mail-Status; die Oberfläche warnt
-// bei "fehlgeschlagen".
+// Die Türen zum Erledigen (Klassensatz bereit, Anliegen abgehakt) verschicken ihre
+// Benachrichtigung nach dem Commit und nennen in der Antwort, was aus der Mail wurde: Ein
+// Ausfall des Versands stünde sonst nur im Log, und die Theke hielte die Lehrkraft für
+// benachrichtigt. Bei "fehlgeschlagen" warnt die Oberfläche.
 //
-// Echter PG-Test, weil beide Handler das Erledigen und den Mail-Empfänger in EINER
-// CTE-Query erledigen — pgxmock sähe einen Schema-Drift nicht.
+// An der echten Datenbank, weil beide Türen das Erledigen und den Empfänger der Mail in einer
+// Abfrage lesen; pgxmock sähe nicht, wenn das Schema davon abwiche.
 
-// stubSendEmail ersetzt den Versand für einen Test und stellt ihn danach wieder her.
+// ersetzeMailversand ersetzt den Versand für einen Test und stellt ihn danach wieder her.
 func ersetzeMailversand(t *testing.T, fehler error) {
 	t.Helper()
 	alt := mailservice.SendEmail
@@ -173,7 +171,8 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 
-	// body nil = Altclient ohne Body (vor Migration 088) — muss weiter abschliessen.
+	// body nil: ein Browser mit altem Stand der Oberfläche schickt keinen Rumpf und muss
+	// weiter abschließen können.
 	erledigeMit := func(t *testing.T, body *string) (*httptest.ResponseRecorder, string) {
 		t.Helper()
 		var resID string
@@ -211,9 +210,9 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 		}
 	})
 
-	// Migration 088: Die Antwort der Bibliothek landet in der Mail UND in der Zeile;
-	// die Notiz der Lehrkraft steht in der Mail, damit die Antwort einen Bezug hat.
-	// Ohne Body (Altclient) geht die Mail ohne Bibliotheks-Notiz, aber sie geht.
+	// Die Antwort der Bibliothek steht in der Mail und in der Zeile; die Notiz der Lehrkraft
+	// steht in der Mail, damit die Antwort einen Bezug hat. Ohne Rumpf geht die Mail ohne
+	// Notiz der Bibliothek, aber sie geht.
 	t.Run("Notiz der Bibliothek steht in Mail und Zeile", func(t *testing.T) {
 		var gesendet mailservice.MailRequest
 		alt := mailservice.SendEmail

@@ -11,17 +11,18 @@ import (
 )
 
 // bestellstatus heißt „dieses Exemplar ist bestellt und noch nicht da" (Migration 071).
-// Gesetzt wird er beim Bestellen, geräumt beim Wareneingang. Jeder ANDERE Ausgang aus dem
-// Zulauf muss ihn ebenfalls räumen — sonst filtern alle Leser, die `bestellstatus IS NULL`
-// voraussetzen (OPAC, Inventur, Lernmittel-Übersicht, Katalog/Monitor), das Exemplar für
-// immer weg (Bestands-Durchgang 10.09.2026, Bugklasse „Zustands-Ausgang ohne Räumer").
+// Gesetzt wird er beim Bestellen, geräumt beim Wareneingang. Jeder andere Ausgang aus dem
+// Zulauf muss ihn ebenfalls räumen, sonst filtern alle Leser, die `bestellstatus IS NULL`
+// voraussetzen (OPAC, Inventur, Lernmittel-Übersicht, Katalog und Monitor), das Exemplar für
+// immer weg.
 //
-// Die zwei Türen, die das nicht taten:
-//   - der Status-Editor der Buchakte (AendereExemplarStatus) — ein angekommenes Buch auf
-//     „verfügbar" gestellt statt über den Wareneingang: ausleihbar, aber nirgends gezählt;
-//   - das Aussondern (DecommissionCopy) — ein Buch, das der Händler nicht liefert: Es
-//     blieb für immer im Wareneingang, und „alle einbuchen" machte das AUSGESONDERTE
-//     Exemplar wieder ausleihbar.
+// Die zwei anderen Ausgänge:
+//   - der Status-Editor der Buchakte (KatalogAbfragen.AendereExemplarStatus): ein
+//     angekommenes Buch auf „verfügbar" gestellt statt über den Wareneingang; es muss
+//     ausleihbar und gezählt sein;
+//   - das Aussondern (ProtokollAbfragen.SondereExemplarAus): ein Buch, das der Händler nicht
+//     liefert; es darf nicht im Wareneingang bleiben, und „alle einbuchen" darf das
+//     ausgesonderte Exemplar nicht wieder ausleihbar machen.
 func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

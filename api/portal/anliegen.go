@@ -22,11 +22,10 @@ import (
 // ein Buch für eine Klasse möchte, reserviert es dort. Vorhandene Wünsche werden wie
 // Meldungen gelistet und abgehakt.
 
-// Mail-Status in Erledigt-Antworten (Ausfallmatrix 20.08.2026): Handler, die nach dem
-// Commit best effort eine Benachrichtigung verschicken (Klassensatz bereit, Anliegen
-// erledigt), melden dem Aufrufer, ob die Mail wirklich raus ist — vorher war ein
-// Versand-Ausfall nur eine Server-Logzeile, und die Theke glaubte, die Lehrkraft sei
-// informiert. Die Oberfläche zeigt bei "fehlgeschlagen" eine Warnung.
+// Was aus der Mail beim Erledigen wurde. Die Türen, die danach eine Lehrkraft benachrichtigen
+// (Klassensatz bereit, Anliegen erledigt), nennen es in der Antwort: Ein Ausfall des Versands
+// stünde sonst nur im Log, und die Theke hielte die Lehrkraft für benachrichtigt. Bei
+// „fehlgeschlagen" warnt die Oberfläche.
 const (
 	mailStatusVersendet      = "versendet"
 	mailStatusFehlgeschlagen = "fehlgeschlagen"
@@ -135,8 +134,8 @@ func (t *Tueren) OffeneAnliegen() http.HandlerFunc {
 	}
 }
 
-// OffeneAnliegenAnzahl speist das Badge an „Bestellungen“ — bis 24.08.2026 zählte
-// niemand offene Anliegen, und wer nicht ohnehin bestellen wollte, sah sie nie.
+// OffeneAnliegenAnzahl speist den Zähler am Menüpunkt „Bestellungen“: Ohne ihn sähe offene
+// Anliegen nur, wer ohnehin bestellen will.
 // GET /api/anliegen/anzahl → { "anzahl": 3 }
 func (t *Tueren) OffeneAnliegenAnzahl() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -20,16 +20,16 @@ const (
 	opacGrenze      = 50
 )
 
-// OPACTitel is a DSGVO-compliant book view for the public catalog.
-// Contains no loan data and no reader data.
+// OPACTitel ist ein Treffer im öffentlichen Katalog: nur Angaben zum Titel, keine zu Ausleihen
+// oder Lesern (DSGVO).
 type OPACTitel struct {
 	ID         string `json:"id"`
 	Titel      string `json:"titel"`
 	Autor      string `json:"autor"`
 	ISBN       string `json:"isbn,omitempty"`
 	CoverURL   string `json:"cover_url,omitempty"`
-	Verfuegbar int    `json:"verfuegbar"` // copies currently available
-	Gesamt     int    `json:"gesamt"`     // total copies
+	Verfuegbar int    `json:"verfuegbar"` // Exemplare, die gerade ausleihbar sind
+	Gesamt     int    `json:"gesamt"`     // alle Exemplare
 }
 
 // opacTitelAus bildet einen Katalogtreffer auf die Antwort des öffentlichen Katalogs ab.
@@ -46,8 +46,8 @@ func schreibeLeereTrefferliste(w http.ResponseWriter) {
 	httpresp.Schreibe(w, []byte("[]"))
 }
 
-// OPACSuche handles GET /api/public/opac/suche?q=...
-// Public endpoint: no auth required. Never exposes loan or reader data (DSGVO).
+// OPACSuche sucht im öffentlichen Katalog: GET /api/public/opac/suche?q=…, ohne Anmeldung und
+// deshalb ohne Angaben zu Ausleihen oder Lesern (DSGVO).
 //
 // Was ohne Anmeldung sichtbar ist (kein Lernmittel, mindestens ein Exemplar im Haus), steht
 // genau einmal in repository.OeffentlichSichtbar — dieselbe Regel wie im Flur-Monitor. Das

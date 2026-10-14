@@ -18,20 +18,15 @@ import (
 
 // Öffentliche Sichtbarkeit: Katalog und Flur-Monitor urteilen über denselben Titel gleich.
 //
-// Bis zum 30.08.2026 hatte jede der beiden Seiten ohne Anmeldung ihre eigene Regel: Der
-// Katalog (api/portal/opac.go) ließ Lernmittel weg und zeigte nur Titel mit einem Exemplar im
-// Haus; der Monitor kannte beides nicht. Auf einem Schulserver, dessen Bestand zum
-// größten Teil aus Schulbüchern besteht, wäre das Mathebuch der 7 „Buch des Monats"
-// gewesen — das Demo-Seed musste genau darum herumtricksen („sonst gewinnen
-// Lernmittel"). Ein Paar, das nur zufällig einig war (docs/sweeps.md,
+// Beide Seiten ohne Anmeldung nehmen dasselbe Prädikat (repository.OeffentlichSichtbar): Mit
+// je eigener Regel wäre auf einem Schulserver, dessen Bestand zum größten Teil aus
+// Schulbüchern besteht, das Mathebuch der 7 „Buch des Monats" (docs/sweeps.md,
 // Geschwister-Asymmetrie).
 //
-// Seit dem Umbau setzen beide Seiten DASSELBE Prädikat ein
-// (repository.OeffentlichSichtbar). Dieser Test hält das Paar zusammen: Er seedet je
-// einen Titel pro Ausschlussgrund und fragt BEIDE echten Handler — nicht eine
-// nachgebaute Abfrage, die eine Regression im Handler nie sähe. Jeder ausgeschlossene
-// Titel bekommt dabei jeden Weg auf den Monitor, den es gibt (Leser in den letzten
-// Tagen, Cover, jüngstes Anlagedatum) — alle müssen zu sein.
+// Der Test legt je Ausschlussgrund einen Titel an und fragt beide echten Türen, nicht eine
+// nachgebaute Abfrage, die einen Rückschritt in der Tür nie sähe. Jeder ausgeschlossene
+// Titel bekommt jeden Weg auf den Monitor, den es gibt (Leser in den letzten Tagen, Cover,
+// jüngstes Anlagedatum); alle müssen zu sein.
 func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -41,7 +36,7 @@ func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) 
 		testdaten.LegeSchuelerAn(t, pool, "S-MON-2", "Ben", "5a"),
 	}
 
-	// Schulbuch, dessen Kennzeichen NUR in der Signatur steht — die manuelle Neuanlage
+	// Schulbuch, dessen Kennzeichen nur in der Signatur steht — die manuelle Neuanlage
 	// schreibt es dorthin, der Sammelimport in den Titel (pkg/lmf kennt beide Wege).
 	lmf := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Mathematik Neue Wege 7", "LMF Mathe 7", true, 0)
 	for i, sid := range leser {
@@ -88,8 +83,7 @@ func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) 
 // Klassensatz „Die Welle" ×30 an eine Lehrkraft wären 30 Ausleihen — er hätte „Beliebt
 // diese Woche" und „Buch des Monats" beherrscht, obwohl ihn kein einziger Schüler
 // freiwillig gelesen hat. Und ein Schüler, der denselben Titel zweimal ausleiht, ist ein
-// Leser, nicht zwei. Gezählt werden deshalb Schüler-Ausleihen, je Schüler einmal
-// (Entscheidung 30.08.2026, Frage-Runde 2c).
+// Leser, nicht zwei. Gezählt werden deshalb Schüler-Ausleihen, je Schüler einmal.
 func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -101,7 +95,7 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 	}
 	lehrkraft := legeLehrkraftAn(t, pool)
 
-	// Klassensatz: 30 Exemplare an die Lehrkraft, dazu EIN Schüler und eine anonymisierte
+	// Klassensatz: 30 Exemplare an die Lehrkraft, dazu ein Schüler und eine anonymisierte
 	// Ausleihe (kein Ausleiher mehr) — 32 Zeilen, ein Leser.
 	welle := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Die Welle", "Jug Rho", true, 20)
 	for i := range 30 {
@@ -145,7 +139,7 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 	}
 }
 
-// seedZurueckgegebeneAusleihe bucht eine abgeschlossene Schüler-Ausleihe (vor vier Tagen
+// legeZurueckgegebeneAusleiheAn bucht eine abgeschlossene Schüler-Ausleihe (vor vier Tagen
 // geliehen, vor drei zurück) — im Fenster, aber das Exemplar ist wieder frei.
 func legeZurueckgegebeneAusleiheAn(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
 	t.Helper()
@@ -157,7 +151,7 @@ func legeZurueckgegebeneAusleiheAn(t *testing.T, pool *pgxpool.Pool, exemplarID,
 	}
 }
 
-// seedLehrkraft legt ein Kollegiums-Konto an, an das Klassensätze ausgeliehen werden.
+// legeLehrkraftAn legt ein Kollegiums-Konto an, an das Klassensätze ausgeliehen werden.
 func legeLehrkraftAn(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
 	var id string
@@ -170,7 +164,7 @@ func legeLehrkraftAn(t *testing.T, pool *pgxpool.Pool) string {
 	return id
 }
 
-// seedLehrerAusleihe bucht eine Ausleihe an eine Lehrkraft (Handapparat/Klassensatz) —
+// legeAusleiheDerLehrkraftAn bucht eine Ausleihe an eine Lehrkraft (Handapparat/Klassensatz) —
 // je Exemplar eine Zeile, genau wie repository/ausleihe.go es tut.
 func legeAusleiheDerLehrkraftAn(t *testing.T, pool *pgxpool.Pool, exemplarID, benutzerID string) {
 	t.Helper()
@@ -183,8 +177,8 @@ func legeAusleiheDerLehrkraftAn(t *testing.T, pool *pgxpool.Pool, exemplarID, be
 }
 
 // monitorTitelAntwort und monitorAntwort spiegeln nur die Felder der JSON-Antwort, die
-// die Tests lesen — bewusst nicht der Antworttyp des Handlers, damit der Test auch
-// gegen einen älteren Stand übersetzt (Rot-Probe am Rückbau).
+// die Tests lesen, nicht der Antworttyp der Tür, damit der Test auch gegen einen älteren
+// Stand übersetzt (Rot-Probe am Rückbau).
 type monitorTitelAntwort struct {
 	Titel string `json:"titel"`
 }
@@ -209,7 +203,7 @@ func (a monitorAntwort) alleTitel() map[string]bool {
 	return titel
 }
 
-// monitorAntwortLesen fragt den ÖFFENTLICHEN Monitor-Endpunkt über den echten Handler ab.
+// leseMonitorAntwort fragt den öffentlichen Monitor über die echte Tür ab.
 func leseMonitorAntwort(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
 	t.Helper()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -226,7 +220,7 @@ func leseMonitorAntwort(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
 	return antwort
 }
 
-// seedAusgesondertesExemplar legt ein ausgesondertes Exemplar an (Grund ist Pflicht,
+// legeAusgesondertesExemplarAn legt ein ausgesondertes Exemplar an (Grund ist Pflicht,
 // chk_aussonderung_grund).
 func legeAusgesondertesExemplarAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) string {
 	t.Helper()
