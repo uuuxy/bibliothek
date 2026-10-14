@@ -12,7 +12,7 @@ import (
 // pruefeLmfPlan: fester Platz und freie Tage (Migration 099) werden geprüft, bevor
 // irgendetwas gerechnet wird — ein fester Termin ohne Datum ist kein „fließt eben",
 // sondern ein Fehler, den der Planer sehen muss.
-func TestPruefeLmfPlan_FestUndFreieTage(t *testing.T) {
+func TestPruefeLMFPlan_FestUndFreieTage(t *testing.T) {
 	var req lmfPlanAnfrage
 	req.LetzterTag, req.LetzteStunde, req.StundenJeTag = "2026-06-25", 4, 6
 	req.FreieTage = append(req.FreieTage, struct {
@@ -75,7 +75,7 @@ func TestPruefeLmfPlan_FestUndFreieTage(t *testing.T) {
 // verwirft einen mitgeschickten Beginn (der Server rechnet ihn); der Ausgabe-Plan
 // braucht den Beginn und lässt das Ende leer. Ohne Zeilen steht beim Rückgabe-Plan das
 // Ende auch als Beginn — ein Plan ohne Tag gäbe ein leeres Schuljahr.
-func TestPruefeLmfPlan_AnkerJeArt(t *testing.T) {
+func TestPruefeLMFPlan_AnkerJeArt(t *testing.T) {
 	var req lmfPlanAnfrage
 	req.ErsterTag, req.Startstunde, req.StundenJeTag = "2026-06-11", 3, 6
 	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzter_tag") {
@@ -106,7 +106,7 @@ func TestPruefeLmfPlan_AnkerJeArt(t *testing.T) {
 
 // Die Ausfälle der Verteilung stehen in der Antwort mit dem Tag als JJJJ-MM-TT und ihrem Grund,
 // in der Folge der Verteilung. Ohne Ausfall bekommt der Planer eine leere Liste und nicht null.
-func TestLmfPlanAusfaelle_FormDerAntwort(t *testing.T) {
+func TestLMFPlanAusfaelle_FormDerAntwort(t *testing.T) {
 	ist := lmfPlanAusfaelle([]lmfplan.Ausfall{
 		{Datum: time.Date(2026, time.June, 4, 0, 0, 0, 0, time.UTC), Grund: "Fronleichnam"},
 		{Datum: time.Date(2026, time.June, 5, 0, 0, 0, 0, time.UTC), Grund: "Brückentag"},

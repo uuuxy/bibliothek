@@ -18,7 +18,7 @@ import (
 // Der Stand für den Planer über die Tür, an der Datenbank: Ein laufender Plan ist nicht vorbei
 // und bekommt keinen Vorschlag; die Liste „bleiben draußen" nennt je Art die Klassen, die ihre
 // Regel auslässt; und die Vorschau nennt die Ausfälle zwischen erstem Tag und letztem Platz.
-func TestLmfPlan_StandFuerDenPlaner(t *testing.T) {
+func TestLMFPlan_StandFuerDenPlaner(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

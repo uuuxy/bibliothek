@@ -82,7 +82,7 @@ func (t txMitFehlerBei) Exec(ctx context.Context, sql string, args ...any) (pgco
 	return t.Tx.Exec(ctx, sql, args...)
 }
 
-func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *testing.T) {
+func TestLMFPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -155,7 +155,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 // Scheitert die Kopplung nach ihrer ersten Änderung, bleibt auch diese nicht stehen: Jede
 // Änderung der Kopplung läuft in der Transaktion des Plans. Liefe sie am Pool, stünde die erste
 // Frist schon um, wenn die zweite scheitert, und die Tür meldete trotzdem einen Fehler.
-func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmgeschrieben(t *testing.T) {
+func TestLMFPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmgeschrieben(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()

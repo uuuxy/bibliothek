@@ -21,7 +21,7 @@ import (
 // Veröffentlichen und Verwerfen und bleibt aus, wo nichts geschrieben wurde (Vorschau,
 // Ablehnung, ein zweites Veröffentlichen). Geprüft am Strom: Nach jedem Schritt geht eine
 // Marke über die Leitung; was vor ihr ankommt, hat der Schritt gesendet.
-func TestLmfPlan_SignalNurNachDemSchreiben(t *testing.T) {
+func TestLMFPlan_SignalNurNachDemSchreiben(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	raeumePlaene := func() {

@@ -24,7 +24,7 @@ import (
 // Nicht-Lernmittel, von Hand gesperrte Schüler, mehrjährige Ausleihen, andere Klassen,
 // Ausgabe-Pläne. Die Sperre der Ehemaligen hält den Plan nicht an
 // (TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LmfPlan).
-func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
+func TestLMFPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -201,7 +201,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 // der Plan-Abgleich muss dieselbe Zeile treffen. Bis 05.09.2026 gewann beim Speichern
 // die LETZTE Zeile — das schon draußen liegende Buch bekam den späteren Termin, das am
 // selben Tag ausgeliehene den früheren. Zwei Regeln für dieselbe Frage.
-func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
+func TestLMFPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -253,7 +253,7 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 
 // Der Vorschlag für einen neuen Plan: ohne Vorjahr aus der Regel (Abschluss zuerst,
 // Oberstufe ausgelassen); mit vorbeigegangenem Vorjahr dessen Reihenfolge plus neue Klassen.
-func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
+func TestLMFPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -409,7 +409,7 @@ func klassenFolge(zeilen []repository.LMFPlanZeile) string {
 
 // Verliert eine Klasse ihren Termin, kehrt die Frist zum eingestellten Stichtag zurück, nicht zur
 // Vorgabe des Programms. Die Kopplung liest die Einstellung in der Transaktion der Tür.
-func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
+func TestLMFPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()

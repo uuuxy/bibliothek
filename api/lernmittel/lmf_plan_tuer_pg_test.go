@@ -22,7 +22,7 @@ import (
 // nicht einbinden kann. Geprüft wird, dass die Türen auf der Basis des Servers stehen: Sie
 // schreiben in seine Datenbank und rechnen mit seiner Uhr, auch wenn sie erst nach dem Bau des
 // Routers gestellt wird.
-func TestLmfPlan_UeberDenRouter_StehtAufDerBasisDesServers(t *testing.T) {
+func TestLMFPlan_UeberDenRouter_StehtAufDerBasisDesServers(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	raeumePlaene := func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM lmf_plaene`) }

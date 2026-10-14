@@ -27,7 +27,7 @@ import (
 // Geprüft wird am ERGEBNIS in audit_logs, nicht am Aufruf: Wer hat wann welchen Plan
 // bewegt, und wie viele Fristen hingen daran. Ein ENTWURF fasst keine Frist an und
 // schreibt deshalb auch nichts — sonst stünde im Protokoll jeder Zwischenstand.
-func TestLmfPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
+func TestLMFPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
