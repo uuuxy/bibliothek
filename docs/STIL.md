@@ -1,6 +1,6 @@
 # Stil — wie der Code geschrieben ist
 
-Stand: 13.10.2026
+Stand: 14.10.2026
 
 Eine Seite mit den Regeln für Namen, Sichtbarkeit und Kommentare im Go-Code, über `gofmt` und
 den Linter hinaus. Maßstab ist Googles Regelwerk für Go
@@ -21,7 +21,7 @@ fest, was erreicht ist. Neuer Code folgt den Regeln von Anfang an.
 - Was die Bibliothek und das Projekt benennen, heißt deutsch, ohne Umlaute geschrieben (`ae`,
   `oe`, `ue`, `ss`): `Leser`, `Rueckgabe`, `PruefeFrist`.
 - Lehnwörter bleiben, wie man sie im Deutschen sagt: Barcode, Cover, Scan, Import, Export,
-  Backup, Mail, Token, Cache, Cookie, Router, Middleware, Upload, Host.
+  Backup, Mail, Token, Cache, Cookie, Router, Middleware, Upload, Host, Snapshot.
 - Englisch ist nur, was Go oder eine Bibliothek vorgibt: `New…` und klein `new…` für den
   Erzeuger eines Typs (`NewClient`, `newKalender`; nicht `Neuer`, `Neue`, `Neues`, die mit dem
   Geschlecht des Typs wechselten), `Err…` für einen Fehlerwert, `Test…`, `Must…`, `main`,
@@ -66,6 +66,13 @@ Consistency).
 „Buch" steht nur in festen Wörtern (Buchakte, Zugangsbuch); sonst ist es der Titel oder das
 Exemplar. Das technische Log des Servers heißt weiter `Log`.
 
+Wiederkehrende Bausteine tragen dasselbe Wort: Die Angaben eines neuen Datensatzes enden auf
+`Neu` (`AusleiheNeu`, `ExemplarNeu`), der Helfer, der eine Zeile der Datenbank liest, beginnt
+mit `lese` (`leseExemplar`), der Schlüssel einer Sperre der Datenbank endet auf `Sperre`
+(`auflagenSperre`), und was ein Stück SQL liefert, beginnt mit `sql` oder `SQL`
+(`sqlKarenzUhr`, `SQLTitelHatExemplar`). Der Lauf einer Inventur hat einen Bereich
+(`InventurBereich`), keinen Scope.
+
 ## 3. Verben
 
 Eine Funktion, die etwas tut, beginnt mit dem Verb in der Befehlsform; ein trennbares Verb
@@ -93,7 +100,13 @@ wie das Gelieferte (`FristEnde`), ohne `Get` davor (Decisions, „Getters").
 | `Fuehre…Aus`            | führt einen Lauf aus                                         | `Run`, `Execute`                      |
 
 Die Tabelle legt fest, wo zwei Wörter für dieselbe Tätigkeit standen. Jede andere Tätigkeit
-trägt ihr deutsches Verb (`Kuerze`, `Zerlege`, `Schliesse`, `Entschaerfe`).
+trägt ihr deutsches Verb (`Kuerze`, `Zerlege`, `Schliesse`, `Entschaerfe`), in der Befehlsform
+auf e (`Verwerfe`, `Uebergebe`).
+
+Wer aus der Datenbank liest, beginnt mit `Lade`, `Finde` oder `Zaehle`, auch wenn er nur einen
+Wert liefert (`LadeKontoEmail`); den Namen ohne Verb trägt, wer rechnet, ohne zu lesen
+(`FristEnde`, `AbgaengerJahr`). Dass eine Funktion in der Transaktion des Rufers läuft, sagt
+ihr Parameter; der Name trägt dafür keine Endung (`LegeAn`, nicht `LegeAnTx`).
 
 Wer eine übergebene Funktion in einem Rahmen ausführt, heißt nach dem Rahmen: `InTx`,
 `ImSavepoint`.

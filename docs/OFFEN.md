@@ -474,7 +474,15 @@ Feldnamen in JSON sind vor und nach dem Schritt dieselben (Vergleich aller Zeich
 Programmcodes). Ein Commit, der nur Kommentare ändert, wird am Code ohne Kommentare verglichen.
 Eine Attrappe, die eine Schnittstelle nur in den Testdateien eines anderen Pakets erfüllt,
 zieht das Werkzeug nicht mit (`tuertest.EinstellungenAttrappe`); `go vet ./...` baut auch die
-Tests und meldet die Stelle.
+Tests und meldet die Stelle. Drei Stellen sieht auch `go vet ./...` nicht oder erst am Fehler:
+
+- Dateien hinter einem Build-Tag (`repository/raster_*_pg_test.go`): `go vet -tags raster
+  ./repository/` baut sie.
+- Wandelt ein Paket die Zeile eines anderen in seinen eigenen Typ um (`AbgaengerZeile(z)` in
+  `api/mahnwesen`, `auskunft.DsgvoStammdaten(*zeile)`), müssen die Felder beider Typen gleich
+  heißen: Ein umbenanntes Feld zieht das Feld des Zwillings mit, das Feld in JSON bleibt.
+- Kommentare im Text einer Abfrage (`-- …`) stehen in einer Zeichenkette. Sie werden von Hand
+  gesucht und als eigener Commit nachgezogen, weil sich dabei der Text der Abfrage ändert.
 
 **Namen als Text:** Dokumente nennen 405 Namen des Programmcodes, Testdateien 524 in
 Zeichenketten (Listen, an denen Prüfungen hängen, und Fehlermeldungen), die Liste des toten
@@ -486,7 +494,10 @@ nur das erste Wort über der Erklärung nach. Eine Prüfung, die einen Aufruf an
 erkennt, bekommt vor dem Umbenennen ein Merkmal, das den Namen überlebt
 (`repository/einstellungen_lesefehler_ratsche_test.go` nimmt den Typ des Ergebnisses). Einen
 umbenannten Dateinamen in Dokumenten und Kommentaren meldet `go test ./docs/`. Steht der Kommentar über dem Feld eines Anfrage- oder
-Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o docs`.
+Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o docs`. Führt ein
+anderes Paket einen eigenen Bezeichner desselben Namens (`inventur.NewBookRepository`, das Feld
+`GenerateBarcodes` in `internal/service`), bleibt er: Die Suche als Text gilt deshalb nur im
+Ordner des Pakets und für die Form `paket.Name`.
 
 **Was seinen Namen behält:** Adressen, Feldnamen in JSON, Tabellen und Spalten
 ([STIL.md](STIL.md), Abschnitt 9).
