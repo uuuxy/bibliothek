@@ -25,8 +25,8 @@ import (
 // Detektor am Merkmal, nicht an einer Liste von Schreibern: jede Map im Nicht-Test-Code, die
 // den Schlüssel "schueler_id" bekommt — als Literal, per Index-Zuweisung oder als JSON-Text
 // —, mit allen Schlüsseln derselben Variable in derselben Funktion. Ob eine Map ins Protokoll
-// geht, rät das Gate nicht: Auch ein Hilfsaufruf wie bescheidAudit schreibt eine. Eine Map,
-// die kein Protokolleintrag ist, steht mit Ort und Grund in keinProtokoll.
+// geht, rät das Gate nicht: Auch ein Hilfsaufruf wie protokolliereBescheid schreibt eine. Eine
+// Map, die kein Protokolleintrag ist, steht mit Ort und Grund in keinProtokoll.
 //
 // „getilgt" heißt: der Schlüssel steht in protokollSchluesselMitPersonenbezug
 // (protokoll_personenbezug.go), aus der die Tilgung ihre Anweisungen für audit_logs und

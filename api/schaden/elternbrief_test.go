@@ -16,7 +16,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestGenerateDamagePDFHandler_Success(t *testing.T) {
+func TestElternbriefPDF_Erfolg(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -53,7 +53,7 @@ func TestGenerateDamagePDFHandler_Success(t *testing.T) {
 	req.SetPathValue("id", caseID)
 	rec := httptest.NewRecorder()
 
-	srv.GenerateDamagePDFHandler().ServeHTTP(rec, req)
+	srv.ElternbriefPDF().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
@@ -72,7 +72,7 @@ func TestGenerateDamagePDFHandler_Success(t *testing.T) {
 	}
 }
 
-func TestGenerateDamagePDFHandler_NotFound(t *testing.T) {
+func TestElternbriefPDF_UnbekannterFall(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -90,7 +90,7 @@ func TestGenerateDamagePDFHandler_NotFound(t *testing.T) {
 	req.SetPathValue("id", caseID)
 	rec := httptest.NewRecorder()
 
-	srv.GenerateDamagePDFHandler().ServeHTTP(rec, req)
+	srv.ElternbriefPDF().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("expected 404, got %d", rec.Code)
@@ -101,20 +101,20 @@ func TestGenerateDamagePDFHandler_NotFound(t *testing.T) {
 	}
 }
 
-func TestGenerateDamagePDFHandler_MissingID(t *testing.T) {
+func TestElternbriefPDF_OhneKennung(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 	req := httptest.NewRequest(http.MethodGet, "/api/schadensfaelle//pdf", nil)
 	// We deliberately leave id empty
 	rec := httptest.NewRecorder()
 
-	srv.GenerateDamagePDFHandler().ServeHTTP(rec, req)
+	srv.ElternbriefPDF().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("expected 400 for missing ID, got %d", rec.Code)
 	}
 }
 
-func TestGenerateDamagePDFHandler_DBError(t *testing.T) {
+func TestElternbriefPDF_Datenbankfehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -132,7 +132,7 @@ func TestGenerateDamagePDFHandler_DBError(t *testing.T) {
 	req.SetPathValue("id", caseID)
 	rec := httptest.NewRecorder()
 
-	srv.GenerateDamagePDFHandler().ServeHTTP(rec, req)
+	srv.ElternbriefPDF().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("expected 500 for DB error, got %d", rec.Code)
@@ -143,7 +143,7 @@ func TestGenerateDamagePDFHandler_DBError(t *testing.T) {
 	}
 }
 
-func TestGenerateDamagePDFHandler_WriterError(t *testing.T) {
+func TestElternbriefPDF_Schreibfehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -175,9 +175,9 @@ func TestGenerateDamagePDFHandler_WriterError(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	// Use a mock response writer that simulates an error
-	errWriter := &errorResponseWriter{ResponseWriter: rec}
+	errWriter := &fehlerSchreiber{ResponseWriter: rec}
 
-	srv.GenerateDamagePDFHandler().ServeHTTP(errWriter, req)
+	srv.ElternbriefPDF().ServeHTTP(errWriter, req)
 
 	// Handler log output error but returns HTTP 200 before the error, so code should be 200
 	if rec.Code != http.StatusOK {
@@ -189,7 +189,7 @@ func TestGenerateDamagePDFHandler_WriterError(t *testing.T) {
 	}
 }
 
-func TestGenerateDamagePDFHandler_UpdateError(t *testing.T) {
+func TestElternbriefPDF_VermerkScheitert(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -220,7 +220,7 @@ func TestGenerateDamagePDFHandler_UpdateError(t *testing.T) {
 	req.SetPathValue("id", caseID)
 	rec := httptest.NewRecorder()
 
-	srv.GenerateDamagePDFHandler().ServeHTTP(rec, req)
+	srv.ElternbriefPDF().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected 200 despite update error, got %d", rec.Code)
@@ -231,7 +231,7 @@ func TestGenerateDamagePDFHandler_UpdateError(t *testing.T) {
 	}
 }
 
-func TestGenerateDamagePDFHandler_InfoScanError(t *testing.T) {
+func TestElternbriefPDF_FallUnlesbar(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -252,7 +252,7 @@ func TestGenerateDamagePDFHandler_InfoScanError(t *testing.T) {
 	req.SetPathValue("id", caseID)
 	rec := httptest.NewRecorder()
 
-	srv.GenerateDamagePDFHandler().ServeHTTP(rec, req)
+	srv.ElternbriefPDF().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("expected 500 for info scan error, got %d", rec.Code)
@@ -263,10 +263,10 @@ func TestGenerateDamagePDFHandler_InfoScanError(t *testing.T) {
 	}
 }
 
-type errorResponseWriter struct {
+type fehlerSchreiber struct {
 	http.ResponseWriter
 }
 
-func (w *errorResponseWriter) Write(b []byte) (int, error) {
+func (w *fehlerSchreiber) Write(b []byte) (int, error) {
 	return 0, context.DeadlineExceeded
 }

@@ -17,9 +17,9 @@ import (
 
 // Der Vorschlag für einen neuen Bescheid: was auf den Brief kann, je mit dem Betrag der Staffel.
 
-// BescheidVorschlagPosition ist eine offene Forderung mit dem vorgeschlagenen Betrag und
+// bescheidVorschlagPosition ist eine offene Forderung mit dem vorgeschlagenen Betrag und
 // seiner Herleitung — der Dialog zeigt beides, damit der Mensch die Zahl beurteilen kann.
-type BescheidVorschlagPosition struct {
+type bescheidVorschlagPosition struct {
 	SchadensfallID string  `json:"schadensfall_id"`
 	Art            string  `json:"art"`
 	Titel          string  `json:"titel"`
@@ -34,9 +34,9 @@ type BescheidVorschlagPosition struct {
 	Topf string `json:"topf"`
 }
 
-// BescheidVorschlagAusleihe ist ein überfälliges Buch ohne Forderung: Es kommt mit dem
+// bescheidVorschlagAusleihe ist ein überfälliges Buch ohne Forderung: Es kommt mit dem
 // Brief als Verlust in die Bücher (Stufe 2). Betrag und Herleitung wie bei einer Position.
-type BescheidVorschlagAusleihe struct {
+type bescheidVorschlagAusleihe struct {
 	AusleiheID  string  `json:"ausleihe_id"`
 	Titel       string  `json:"titel"`
 	ISBN        string  `json:"isbn"`
@@ -50,58 +50,58 @@ type BescheidVorschlagAusleihe struct {
 	LetztesMahndatum string `json:"letztes_mahndatum,omitempty"`
 }
 
-// BescheidVorschlag ist die Antwort für den Dialog.
-type BescheidVorschlag struct {
+// bescheidVorschlagAntwort ist die Antwort für den Dialog.
+type bescheidVorschlagAntwort struct {
 	SchuelerName string                      `json:"schueler_name"`
 	Klasse       string                      `json:"klasse"`
 	FristBis     string                      `json:"frist_bis"`
-	Positionen   []BescheidVorschlagPosition `json:"positionen"`
+	Positionen   []bescheidVorschlagPosition `json:"positionen"`
 	// Ausleihen: überfällige Bücher, die noch keine Forderung tragen. Seit dem
 	// 15.09.2026 (Stufe 2) braucht es keine Verlustmeldung je Buch mehr vor dem Brief.
-	Ausleihen []BescheidVorschlagAusleihe `json:"ausleihen"`
+	Ausleihen []bescheidVorschlagAusleihe `json:"ausleihen"`
 	// FehlendeAngaben nennt die Einstellungen, ohne die kein Bescheid entstehen kann.
 	// Der Dialog zeigt sie, statt den Knopf stumm zu sperren.
 	FehlendeAngaben []string `json:"fehlende_angaben"`
 }
 
-// BescheidVorschlagHandler liefert die offenen Forderungen eines Schülers mit
+// BescheidVorschlag liefert die offenen Forderungen eines Schülers mit
 // Betragsvorschlag.
 //
 // @Summary      Proposal for a new compensation notice
 // @Tags         schadensersatz
 // @Produce      json
 // @Param        id path string true "Student ID"
-// @Success      200 {object} BescheidVorschlag
+// @Success      200 {object} bescheidVorschlagAntwort
 // @Router       /schueler/{id}/bescheid-vorschlag [get]
-func (s *Tueren) BescheidVorschlagHandler(bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheidVorschlag(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		return s.handleBescheidVorschlag(w, r, bescheidRepo)
+		return t.schlageBescheidVor(w, r, bescheidAbfragen)
 	})
 }
 
-// handleBescheidVorschlag sammelt, was auf einen Bescheid kann: offene Forderungen und
+// schlageBescheidVor sammelt, was auf einen Bescheid kann: offene Forderungen und
 // überfällige Bücher, je mit Betragsvorschlag.
-func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidAbfragen) error {
+func (t *Tueren) schlageBescheidVor(w http.ResponseWriter, r *http.Request, bescheidAbfragen repository.BescheidAbfragen) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 	}
 	ctx := r.Context()
 
-	angaben, schule, err := s.bescheidAngaben(ctx)
+	angaben, schule, err := t.bescheidAngaben(ctx)
 	if err != nil {
 		return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 	}
 	// Welcher Preis die Grundlage ist, steht in denselben Einstellungen (Stufe 4).
-	quelle := service.LadeErsatzwertPreisquelle(ctx, s.DB.Pool)
+	quelle := service.LadeErsatzwertPreisquelle(ctx, t.DB.Pool)
 
-	vorschlag := BescheidVorschlag{
+	vorschlag := bescheidVorschlagAntwort{
 		FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(tuer.DatumsformatISO),
 		FehlendeAngaben: angaben.FehlendeAngaben(schule),
-		Positionen:      []BescheidVorschlagPosition{},
-		Ausleihen:       []BescheidVorschlagAusleihe{},
+		Positionen:      []bescheidVorschlagPosition{},
+		Ausleihen:       []bescheidVorschlagAusleihe{},
 	}
-	empfaenger, err := bescheidRepo.LadeEmpfaenger(ctx, id)
+	empfaenger, err := bescheidAbfragen.LadeEmpfaenger(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return apierrors.NotFound("Schüler nicht gefunden", err)
@@ -111,14 +111,14 @@ func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 	vorschlag.SchuelerName = strings.TrimSpace(empfaenger.Vorname + " " + empfaenger.Nachname)
 	vorschlag.Klasse = empfaenger.Klasse
 
-	offene, err := bescheidRepo.LadeOffeneForderungen(ctx, id)
+	offene, err := bescheidAbfragen.LadeOffeneForderungen(ctx, id)
 	if err != nil {
 		return apierrors.Internal("Offene Forderungen konnten nicht gelesen werden", err)
 	}
 	for _, f := range offene {
 		vorschlag.Positionen = append(vorschlag.Positionen, bescheidVorschlagAus(f, quelle))
 	}
-	ueberfaellig, err := bescheidRepo.LadeUeberfaelligeAusleihen(ctx, id)
+	ueberfaellig, err := bescheidAbfragen.LadeUeberfaelligeAusleihen(ctx, id)
 	if err != nil {
 		return apierrors.Internal("Überfällige Ausleihen konnten nicht gelesen werden", err)
 	}
@@ -136,13 +136,13 @@ func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 // Arbeitshilfe verlangt ab dem zweiten Verleihjahr den Neupreis zum Zeitpunkt des
 // Verlusts. Bis zum 17.09.2026 stand hier eine harte 0, und die Staffel wich immer auf
 // den Kaufpreis aus. Ist kein Listenpreis erfasst, tut sie das weiterhin — und sagt es.
-func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisquelle) BescheidVorschlagPosition {
+func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisquelle) bescheidVorschlagPosition {
 	v := service.ErsatzwertEingabe{
 		Kaufpreis: f.Kaufpreis, Listenpreis: f.Listenpreis, ZustandAbschlag: f.ZustandAbschlag,
 		SchuljahreMitAusleihe: f.SchuljahreMitAusleihe, SchuljahreImBestand: f.SchuljahreImBestand,
 		Topf: f.Topf,
 	}.Rechne(quelle)
-	return BescheidVorschlagPosition{
+	return bescheidVorschlagPosition{
 		SchadensfallID: f.SchadensfallID,
 		Art:            f.Art,
 		Titel:          f.Titel,
@@ -155,13 +155,13 @@ func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisq
 
 // bescheidVorschlagAusAusleihe rechnet den Staffel-Vorschlag für ein überfälliges Buch —
 // dieselbe Rechnung wie für eine Forderung, das Buch trägt nur noch keine.
-func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ersatzwert.Preisquelle) BescheidVorschlagAusleihe {
+func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ersatzwert.Preisquelle) bescheidVorschlagAusleihe {
 	v := service.ErsatzwertEingabe{
 		Kaufpreis: a.Kaufpreis, Listenpreis: a.Listenpreis, ZustandAbschlag: a.ZustandAbschlag,
 		SchuljahreMitAusleihe: a.SchuljahreMitAusleihe, SchuljahreImBestand: a.SchuljahreImBestand,
 		Topf: a.Topf,
 	}.Rechne(quelle)
-	antwort := BescheidVorschlagAusleihe{
+	antwort := bescheidVorschlagAusleihe{
 		AusleiheID:  a.AusleiheID,
 		Titel:       a.Titel,
 		ISBN:        a.ISBN,

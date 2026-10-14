@@ -3741,7 +3741,7 @@ Dateien der Themen hat die Hälfte höchstens 112 Zeilen, neun von zehn höchste
 haben über 400 (gezählt am 13.10.2026 abends): `leser/student_update.go` (555),
 `lernmittel/lmf_plan.go` (490), `mahnwesen/mahnwesen_bulk_mail.go` (423) und
 `leser/student_create.go` (420). Am Morgen desselben Tages waren es sechs, die drei größten
-`lernmittel/lmf_plan.go` (692), `schaden/bescheid_handler.go` (623) und
+`lernmittel/lmf_plan.go` (692), die Türen des Bescheids in einer Datei (623) und
 `bestellung/bestellbericht_handler.go` (567): Der Erzeuger des Bestellberichts steht jetzt
 in `pdf/` (die Datei der Tür hat 189 Zeilen), die Regeln des LMF-Plans in
 `internal/service`, und die Türen des Bescheids stehen je Schritt in einer eigenen Datei
@@ -3981,7 +3981,7 @@ Anlass zum Bauen: In der Bestellhistorie stehen gelieferte Bestellungen mit dem 
 #### Eine Forderung für ein Gerät lässt sich nicht anlegen
 
 Die Datenbank sieht sie vor (`check_damage_item`: genau eines von `exemplar_id` und
-`geraet_id`), die Rechnung an die Eltern kann sie drucken (`queryRechnungItems`), aber der
+`geraet_id`), die Rechnung an die Eltern kann sie drucken (`ladeRechnungPosten`), aber der
 einzige Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar:
 Er sondert das Exemplar aus und legt die Forderung mit `exemplar_id` an. Fehlt bei der Rückgabe
 Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHKONZEPT (Abschnitt

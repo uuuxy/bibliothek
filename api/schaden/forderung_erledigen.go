@@ -20,15 +20,15 @@ import (
 // NICHT "nur eingeloggt": Kiosk-Arbeitsplätze sind dauerhaft mit der Helfer-Rolle
 // angemeldet — Gebühren erledigen dürfen nur Rollen, die Schülerdaten bearbeiten.
 
-// ListStudentSchadensfaelleHandler liefert alle Schadensfälle eines Schülers für
+// SchadensfaelleDesSchuelers liefert alle Schadensfälle eines Schülers für
 // die Gebühren-Sektion der Schülerakte (GET /api/schueler/{id}/schadensfaelle).
-func (s *Tueren) ListStudentSchadensfaelleHandler(damageRepo repository.SchadensAbfragen) http.HandlerFunc {
+func (t *Tueren) SchadensfaelleDesSchuelers(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest("Schüler-ID fehlt", nil)
 		}
-		faelle, err := damageRepo.LadeZuLeser(r.Context(), id)
+		faelle, err := schadensAbfragen.LadeZuLeser(r.Context(), id)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Schadensfälle", err)
 		}
@@ -51,15 +51,15 @@ func erledigungsFehler(err error, aktion string) error {
 	return apierrors.Internal("Fehler beim "+aktion+" der Gebühr", err)
 }
 
-// BezahltGebuehrHandler verbucht die Zahlung (POST /api/schadensfaelle/{id}/bezahlt).
+// ZahlungVerbuchen verbucht die Zahlung (POST /api/schadensfaelle/{id}/bezahlt).
 // Kein Request-Body: Der Betrag kommt IMMER aus der Datenbank, nie vom Client.
-func (s *Tueren) BezahltGebuehrHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("missing session information", nil)
 		}
-		if err := auditRepo.VerbucheZahlung(r.Context(), r.PathValue("id"), claims.UserID); err != nil {
+		if err := protokollAbfragen.VerbucheZahlung(r.Context(), r.PathValue("id"), claims.UserID); err != nil {
 			return erledigungsFehler(err, "Verbuchen")
 		}
 		tuer.AntworteErfolg(w)
@@ -67,9 +67,9 @@ func (s *Tueren) BezahltGebuehrHandler(auditRepo repository.ProtokollAbfragen) h
 	})
 }
 
-// StornoGebuehrHandler storniert eine Gebühr mit zwingender Begründung
+// ForderungStornieren storniert eine Gebühr mit zwingender Begründung
 // (POST /api/schadensfaelle/{id}/storno).
-func (s *Tueren) StornoGebuehrHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) ForderungStornieren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -85,7 +85,7 @@ func (s *Tueren) StornoGebuehrHandler(auditRepo repository.ProtokollAbfragen) ht
 		if grund == "" {
 			return apierrors.BadRequest("Ein Stornierungsgrund ist erforderlich", nil)
 		}
-		if err := auditRepo.StorniereForderung(r.Context(), r.PathValue("id"), claims.UserID, grund); err != nil {
+		if err := protokollAbfragen.StorniereForderung(r.Context(), r.PathValue("id"), claims.UserID, grund); err != nil {
 			return erledigungsFehler(err, "Stornieren")
 		}
 		tuer.AntworteErfolg(w)

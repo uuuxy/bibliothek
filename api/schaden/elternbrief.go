@@ -14,9 +14,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// GenerateDamagePDFHandler generates a formal PDF notification letter ("Elternbrief")
+// ElternbriefPDF generates a formal PDF notification letter ("Elternbrief")
 // for a student responsible for library book damage, marking the record in the DB.
-func (s *Tueren) GenerateDamagePDFHandler() http.HandlerFunc {
+func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -26,7 +26,7 @@ func (s *Tueren) GenerateDamagePDFHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		info, aufBescheid, err := s.fetchDamageCaseInfo(ctx, id)
+		info, aufBescheid, err := t.ladeSchadensfallBrief(ctx, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
@@ -47,48 +47,48 @@ func (s *Tueren) GenerateDamagePDFHandler() http.HandlerFunc {
 
 		// Ein Lesefehler ist ein Fehler: Mit den Vorgaben nennte der Brief keine Schule und
 		// die Bankverbindung der Vorgabe statt der eingetragenen.
-		settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
+		einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 			return
 		}
 		schule := pdf.SchuleInfo{
-			Name:    settings.SchuleName,
-			Strasse: settings.SchuleStrasse,
-			PLZ:     settings.SchulePLZ,
-			Ort:     settings.SchuleOrt,
+			Name:    einstellungen.SchuleName,
+			Strasse: einstellungen.SchuleStrasse,
+			PLZ:     einstellungen.SchulePLZ,
+			Ort:     einstellungen.SchuleOrt,
 		}
 
 		// Zahlstelle und Bankverbindung des Landes aus derselben Einstellung wie im
 		// Bescheid — eine zweite Kontoangabe im selben Haus wäre eine zweite Wahrheit.
-		angaben := repository.BescheidAngabenAus(settings)
+		angaben := repository.BescheidAngabenAus(einstellungen)
 		zahlung := pdf.Zahlungsangaben{Zahlstelle: angaben.Zahlstelle, Bankverbindung: angaben.Bankverbindung}
 
-		pdfBytes, err := pdf.GenerateSchadensfallPDF(info, schule, zahlung)
+		pdfDaten, err := pdf.GenerateSchadensfallPDF(info, schule, zahlung)
 		if err != nil {
 			log.Printf("PDF Generator: Generation error for case %s: %v", id, err)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("failed to generate PDF"))
 			return
 		}
 
-		s.markElternbriefGenerated(ctx, id)
+		t.merkeElternbriefErzeugt(ctx, id)
 
 		// Stream the generated PDF
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=elternbrief_%s.pdf", info.SchuelerNachname))
 
 		// #nosec G705 - der Körper ist das erzeugte PDF (application/pdf, als Anhang, nosniff); aus der Anfrage stammt nur die Kennung des Falls
-		if _, err := w.Write(pdfBytes); err != nil {
+		if _, err := w.Write(pdfDaten); err != nil {
 			log.Printf("PDF Generator: Output error: %v", err)
 			return
 		}
 	}
 }
 
-// fetchDamageCaseInfo lädt den Fall für den Elternbrief und sagt dazu, ob die Forderung
+// ladeSchadensfallBrief lädt den Fall für den Elternbrief und sagt dazu, ob die Forderung
 // schon auf einem Schadensersatz-Bescheid steht (dann gibt es keinen Brief).
-func (s *Tueren) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.SchadensfallInfo, bool, error) {
-	fall, aufBescheid, err := repository.LadeSchadensfallBrief(ctx, s.DB.Pool, id)
+func (t *Tueren) ladeSchadensfallBrief(ctx context.Context, id string) (pdf.SchadensfallInfo, bool, error) {
+	fall, aufBescheid, err := repository.LadeSchadensfallBrief(ctx, t.DB.Pool, id)
 	if err != nil {
 		return pdf.SchadensfallInfo{}, false, err
 	}
@@ -110,8 +110,8 @@ func (s *Tueren) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 	}, aufBescheid, nil
 }
 
-func (s *Tueren) markElternbriefGenerated(ctx context.Context, id string) {
-	if dbErr := repository.MerkeElternbriefErzeugt(ctx, s.DB.Pool, id); dbErr != nil {
-		log.Printf("PDF Generator: Database status update failed for case %s: %v", id, dbErr)
+func (t *Tueren) merkeElternbriefErzeugt(ctx context.Context, id string) {
+	if err := repository.MerkeElternbriefErzeugt(ctx, t.DB.Pool, id); err != nil {
+		log.Printf("PDF Generator: Database status update failed for case %s: %v", id, err)
 	}
 }

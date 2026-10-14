@@ -38,7 +38,7 @@ func TestElternbrief_EinstellungenUnlesbar_KeinBriefKeinVermerk(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/schadensfaelle/"+fall+"/pdf", nil)
 		req.SetPathValue("id", fall)
 		rec := httptest.NewRecorder()
-		srv.GenerateDamagePDFHandler().ServeHTTP(rec, req)
+		srv.ElternbriefPDF().ServeHTTP(rec, req)
 		return rec
 	}
 
@@ -73,7 +73,7 @@ func TestErsatzforderung_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)
 		req.SetPathValue("schueler_id", sid)
 		rec := httptest.NewRecorder()
-		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}).PrintRechnungHandler()(rec, req)
+		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}).RechnungPDF()(rec, req)
 		return rec
 	}
 

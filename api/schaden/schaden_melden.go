@@ -10,9 +10,9 @@ import (
 	"bibliothek/repository"
 )
 
-// ReportDamageHandler handles POST /api/damage/report
+// SchadenMelden handles POST /api/damage/report
 // Sets ist_ausgesondert = true, inserts into schadensfaelle, and ends the loan.
-func (s *Tueren) ReportDamageHandler(damageRepo repository.SchadensAbfragen) http.HandlerFunc {
+func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -20,11 +20,11 @@ func (s *Tueren) ReportDamageHandler(damageRepo repository.SchadensAbfragen) htt
 		}
 
 		var req struct {
-			LoanID string `json:"loan_id" validate:"omitempty,uuid_oder_leer"`
+			AusleiheID string `json:"loan_id" validate:"omitempty,uuid_oder_leer"`
 			// SchuelerID schickt der Dialog mit; gelesen wird es nicht. Der Schuldner steht
 			// an der Ausleihe (repository.meldeSchaden).
 			SchuelerID   string `json:"schueler_id" validate:"omitempty,uuid_oder_leer"`
-			CopyID       string `json:"copy_id" validate:"omitempty,uuid_oder_leer"`
+			ExemplarID   string `json:"copy_id" validate:"omitempty,uuid_oder_leer"`
 			Beschreibung string `json:"beschreibung"`
 			// Art: Fallgruppe des Bescheids — Pflicht, ohne stillen Vorgabewert. Bis zum
 			// 10.09.2026 fehlte das Feld, jede Forderung bekam den DEFAULT 'beschaedigt',
@@ -42,7 +42,7 @@ func (s *Tueren) ReportDamageHandler(damageRepo repository.SchadensAbfragen) htt
 				errors.New("art fehlt oder ist ungültig"))
 		}
 
-		schadensID, err := damageRepo.Melde(r.Context(), req.CopyID, req.LoanID, claims.UserID, req.Beschreibung, art, req.Betrag)
+		schadensID, err := schadensAbfragen.Melde(r.Context(), req.ExemplarID, req.AusleiheID, claims.UserID, req.Beschreibung, art, req.Betrag)
 		if err != nil {
 			// Inzwischen neu verliehen oder zurückgegeben: ein Konflikt (409), kein
 			// Serverfehler. Die Akte zeigt einen Stand, den es nicht mehr gibt.

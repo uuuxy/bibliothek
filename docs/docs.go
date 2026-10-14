@@ -3235,7 +3235,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schaden.BescheidVorschlag"
+                            "$ref": "#/definitions/schaden.bescheidVorschlagAntwort"
                         }
                     }
                 }
@@ -3296,7 +3296,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schaden.BescheidErstellenRequest"
+                            "$ref": "#/definitions/schaden.bescheidErstellenAnfrage"
                         }
                     }
                 ],
@@ -6266,7 +6266,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schaden.BescheidErstellenRequest": {
+        "schaden.bescheidErstellenAnfrage": {
             "type": "object",
             "properties": {
                 "ausleihen": {
@@ -6306,14 +6306,14 @@ const docTemplate = `{
                 }
             }
         },
-        "schaden.BescheidVorschlag": {
+        "schaden.bescheidVorschlagAntwort": {
             "type": "object",
             "properties": {
                 "ausleihen": {
                     "description": "Ausleihen: überfällige Bücher, die noch keine Forderung tragen. Seit dem\n15.09.2026 (Stufe 2) braucht es keine Verlustmeldung je Buch mehr vor dem Brief.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schaden.BescheidVorschlagAusleihe"
+                        "$ref": "#/definitions/schaden.bescheidVorschlagAusleihe"
                     }
                 },
                 "fehlende_angaben": {
@@ -6332,7 +6332,7 @@ const docTemplate = `{
                 "positionen": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schaden.BescheidVorschlagPosition"
+                        "$ref": "#/definitions/schaden.bescheidVorschlagPosition"
                     }
                 },
                 "schueler_name": {
@@ -6340,7 +6340,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schaden.BescheidVorschlagAusleihe": {
+        "schaden.bescheidVorschlagAusleihe": {
             "type": "object",
             "properties": {
                 "ausleihe_id": {
@@ -6373,7 +6373,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schaden.BescheidVorschlagPosition": {
+        "schaden.bescheidVorschlagPosition": {
             "type": "object",
             "properties": {
                 "art": {

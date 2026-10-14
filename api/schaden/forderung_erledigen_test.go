@@ -17,22 +17,22 @@ import (
 // (404/409 statt sanitiertem 500), Pflicht-Grund beim Storno, 401 ohne Session.
 // Das SQL-Verhalten selbst sichert repository/forderung_erledigen_pg_test.go.
 
-type stubGebuehrAuditRepo struct {
+type gebuehrAttrappe struct {
 	repository.ProtokollAbfragen
 	stornoErr  error
 	bezahltErr error
 	grund      string
 }
 
-func (s *stubGebuehrAuditRepo) StorniereForderung(_ context.Context, _, _, grund string) error {
-	s.grund = grund
-	return s.stornoErr
+func (a *gebuehrAttrappe) StorniereForderung(_ context.Context, _, _, grund string) error {
+	a.grund = grund
+	return a.stornoErr
 }
-func (s *stubGebuehrAuditRepo) VerbucheZahlung(_ context.Context, _, _ string) error {
-	return s.bezahltErr
+func (a *gebuehrAttrappe) VerbucheZahlung(_ context.Context, _, _ string) error {
+	return a.bezahltErr
 }
 
-func gebuehrRequest(t *testing.T, methode, ziel, body string, mitClaims bool) *http.Request {
+func gebuehrAnfrage(t *testing.T, methode, ziel, body string, mitClaims bool) *http.Request {
 	t.Helper()
 	var leser *strings.Reader
 	if body == "" {
@@ -50,7 +50,7 @@ func gebuehrRequest(t *testing.T, methode, ziel, body string, mitClaims bool) *h
 	return req
 }
 
-func TestStornoGebuehrHandler(t *testing.T) {
+func TestForderungStornieren(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	faelle := []struct {
@@ -69,9 +69,9 @@ func TestStornoGebuehrHandler(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			repo := &stubGebuehrAuditRepo{stornoErr: f.repoErr}
+			repo := &gebuehrAttrappe{stornoErr: f.repoErr}
 			rec := httptest.NewRecorder()
-			srv.StornoGebuehrHandler(repo)(rec, gebuehrRequest(t, http.MethodPost, "/api/schadensfaelle/sf-1/storno", f.body, f.mitClaims))
+			srv.ForderungStornieren(repo)(rec, gebuehrAnfrage(t, http.MethodPost, "/api/schadensfaelle/sf-1/storno", f.body, f.mitClaims))
 			if rec.Code != f.wantStatus {
 				t.Fatalf("Status = %d, erwartet %d (Body: %s)", rec.Code, f.wantStatus, rec.Body.String())
 			}
@@ -82,13 +82,13 @@ func TestStornoGebuehrHandler(t *testing.T) {
 	}
 }
 
-func TestBezahltGebuehrHandler(t *testing.T) {
+func TestZahlungVerbuchen(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	t.Run("bereits erledigt -> 409 mit lesbarer Meldung", func(t *testing.T) {
-		repo := &stubGebuehrAuditRepo{bezahltErr: repository.ErrSchadensfallErledigt}
+		repo := &gebuehrAttrappe{bezahltErr: repository.ErrSchadensfallErledigt}
 		rec := httptest.NewRecorder()
-		srv.BezahltGebuehrHandler(repo)(rec, gebuehrRequest(t, http.MethodPost, "/api/schadensfaelle/sf-1/bezahlt", "", true))
+		srv.ZahlungVerbuchen(repo)(rec, gebuehrAnfrage(t, http.MethodPost, "/api/schadensfaelle/sf-1/bezahlt", "", true))
 		if rec.Code != http.StatusConflict {
 			t.Fatalf("Status = %d, erwartet 409", rec.Code)
 		}
@@ -103,9 +103,9 @@ func TestBezahltGebuehrHandler(t *testing.T) {
 	})
 
 	t.Run("Erfolg -> 200", func(t *testing.T) {
-		repo := &stubGebuehrAuditRepo{}
+		repo := &gebuehrAttrappe{}
 		rec := httptest.NewRecorder()
-		srv.BezahltGebuehrHandler(repo)(rec, gebuehrRequest(t, http.MethodPost, "/api/schadensfaelle/sf-1/bezahlt", "", true))
+		srv.ZahlungVerbuchen(repo)(rec, gebuehrAnfrage(t, http.MethodPost, "/api/schadensfaelle/sf-1/bezahlt", "", true))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status = %d, erwartet 200 (Body: %s)", rec.Code, rec.Body.String())
 		}

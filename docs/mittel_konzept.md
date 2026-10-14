@@ -121,9 +121,9 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 | Baustein                             | Fundstelle                                                                                                                                                    | Stand                                                                                                                                                              |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Forderung anlegen                    | `repository/schaden.go` (`SchadensAbfragen.Melde` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `DamageReportModal.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. Der Betrag ist ein gerechneter VORSCHLAG mit Herleitung (seit 17.09.2026; vorher Freitext mit der Vorgabe 15,00 € ohne Bezug zum Preis) — überschreibbar, denn er liegt im Ermessen der Schule.               |
-| Forderung erledigen                  | `api/schaden/damage_resolve.go`, `repository/forderung_erledigen.go` (Bezahlt / Storno mit Grund, Audit, 409 bei Doppelbuchung)                                              | ✅ „Bezahlt" bedeutet heute **Barzahlung am Tresen**.                                                                                                              |
-| Brief 1: Elternbrief je Schadensfall | `pdf/schadensfall.go`, `api/schaden/pdf.go` (`elternbrief_generiert`)                                                                                                 | 14-Tage-Frist, „Schulbibliotheksordnung", Unterschrift „Bibliotheksleitung". Der Zahlungsweg stimmt seit 17.09.2026 (Konto des Landes bzw. offener Weg des Trägers); die übrigen Punkte bleiben für ein Lernmittel falsch. |
-| Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/schaden/print_rechnung.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), Zahlungsweg je Topf seit 17.09.2026 — aber weiterhin ohne Nummer und ohne Frist im Landesformat.                  |
+| Forderung erledigen                  | `api/schaden/forderung_erledigen.go`, `repository/forderung_erledigen.go` (Bezahlt / Storno mit Grund, Audit, 409 bei Doppelbuchung)                                              | ✅ „Bezahlt" bedeutet heute **Barzahlung am Tresen**.                                                                                                              |
+| Brief 1: Elternbrief je Schadensfall | `pdf/schadensfall.go`, `api/schaden/elternbrief.go` (`elternbrief_generiert`)                                                                                                 | 14-Tage-Frist, „Schulbibliotheksordnung", Unterschrift „Bibliotheksleitung". Der Zahlungsweg stimmt seit 17.09.2026 (Konto des Landes bzw. offener Weg des Trägers); die übrigen Punkte bleiben für ein Lernmittel falsch. |
+| Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/schaden/rechnung.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), Zahlungsweg je Topf seit 17.09.2026 — aber weiterhin ohne Nummer und ohne Frist im Landesformat.                  |
 | Brief 3: Eltern-Mahnbrief            | `pdf/mahnbrief.go`, Vorlage `MAHNUNG_ELTERN`                                                                                                                  | DIN-5008-Fensterkuvert, Falzmarken, Tabelle der überfälligen Bücher — **die Bauform, die der Bescheid braucht.**                                                   |
 | Mahnwesen                            | `api/mahnwesen*.go`, `repository/mahnwesen_*.go`, `Mahnwesen.svelte` + `components/mahnwesen/`                                                                | Überfällige nach Klasse, Auswahl → „Mahnbriefe drucken" (Mahnstufe steigt nur beim Druck), Klassenleitungs-Mail, Sperre ab `max_overdue_days` (nur Schülerbücherei). |
 | Schulstammdaten                      | `SchuleKategorie.svelte`, `einstellungen*.go`                                                                                                                 | Name, Anschrift, Eigentumsvermerk. **Fehlt:** Schulnummer, Schulaufsicht (Nr. + Anschrift), Bankverbindungen, Schulleitung, Geschäftszeichen/Bearbeiter/Durchwahl. |
@@ -226,7 +226,7 @@ Anschriftfeld, „(keine Adresse hinterlegt)"-Regel).
 - **Schulträger**: Rechnung mit Rechnungsnummer, Frist, Tabelle, Hinweis auf
   Ersatzbeschaffung als Alternative, Zahlungsweg aus den Einstellungen — ohne Nummer im
   Landesformat, ohne den Schlussabsatz des Landesbescheids.
-- Beide ersetzen `pdf/schadensfall.go` und `pdf/rechnung.go`; `api/schaden/pdf.go`, `api/schaden/print_rechnung.go`
+- Beide ersetzen `pdf/schadensfall.go` und `pdf/rechnung.go`; `api/schaden/elternbrief.go`, `api/schaden/rechnung.go`
 und `elternbrief_generiert*` werden abgeräumt (Deadcode-Gate, Bestandsliste
   der Bauteile). Der Eltern-**Mahnbrief** (überfällig, ohne Geld) bleibt, wie er ist.
 
@@ -265,7 +265,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 
 1. ~~Datenmodell + Nummernkreis + Landes-Bescheid + Einstellungen.~~ **GEBAUT 10.09.2026**
    (Migration 110, `pkg/ersatzwert`, `pdf/bescheid.go`, `repository/bescheid.go`,
-   `api/schaden/bescheid_handler.go`, Kategorie „Schadensersatz", Reiter und Dialog im Mahnwesen).
+   `api/schaden/bescheid.go`, Kategorie „Schadensersatz", Reiter und Dialog im Mahnwesen).
    Abweichungen vom Plan oben, jeweils mit Grund: Der Bescheid entsteht im **Mahnwesen**
    statt in der Schülerakte (dort steht, wer überfällig ist); `schadensfaelle.art` hat
    **zwei** Werte statt drei (genau die zwei Kästchen des Formulars — „Verlust" IST die

@@ -39,7 +39,7 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 		{"heute", tag(0), "nach dem heutigen Tag"},
 		{"mehr als ein Jahr voraus", heute.AddDate(1, 0, 1).Format("2006-01-02"), "mehr als ein Jahr"},
 	} {
-		rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+		rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 			testdaten.BescheidRumpf(fall.frist, map[string]float64{f: 18.00}))
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("Frist %s (%s): Status %d, want 400 — %s", fall.name, fall.frist, rec.Code, rec.Body.String())
@@ -52,13 +52,13 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 
 	// Gegenprobe: morgen und vier Wochen sind erlaubt — der zweite Bescheid braucht eine
 	// eigene Forderung, die erste steht dann schon auf einem.
-	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(tag(1), map[string]float64{f: 18.00})); rec.Code != http.StatusCreated {
 		t.Fatalf("Frist morgen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
 	f2 := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "FRIST-2", true, ""),
 		"beschaedigt", "Chemie 8 beschädigt")
-	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f2: 9.00})); rec.Code != http.StatusCreated {
 		t.Fatalf("Frist in vier Wochen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
@@ -96,7 +96,7 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 		{"Leser unbekannt", unbekannt, `{"mittel":"land","frist_bis":"` + testdaten.In28Tagen() + `","positionen":` + position + `}`,
 			http.StatusNotFound, "nicht gefunden"},
 	} {
-		rec := bescheidErstellenUeberHandler(t, srv, pool, fall.leser, fall.rumpf)
+		rec := bescheidErstellenUeberTuer(t, srv, pool, fall.leser, fall.rumpf)
 		if rec.Code != fall.status {
 			t.Errorf("%s: Status %d, erwartet %d: %s", fall.name, rec.Code, fall.status, rec.Body.String())
 		}

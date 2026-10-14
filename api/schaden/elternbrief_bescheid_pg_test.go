@@ -16,7 +16,7 @@ import (
 // Der Elternbrief je Schadensfall (GET /api/schadensfaelle/{id}/pdf) prüfte nicht, ob die
 // Forderung schon auf einem Schadensersatz-Bescheid steht (docs/OFFEN.md 5.2). Dann stünde
 // dieselbe Forderung auf zwei Briefen mit zwei Fristen und zwei Zahlungswegen. Die
-// Ersatzforderung hält diese Regel seit dem 13.09.2026 (api/schaden/print_rechnung.go,
+// Ersatzforderung hält diese Regel seit dem 13.09.2026 (api/schaden/rechnung.go,
 // bescheid_id IS NULL); die Oberfläche öffnet den Elternbrief nicht mehr, über die Adresse
 // blieb er erreichbar.
 func TestElternbrief_ForderungAufEinemBescheidBekommtKeinenBrief(t *testing.T) {
@@ -33,7 +33,7 @@ func TestElternbrief_ForderungAufEinemBescheidBekommtKeinenBrief(t *testing.T) {
 		"nicht_zurueckgegeben", "Mathematik 8 nicht zurück")
 	fOhne := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "EBRIEF-2", true, ""),
 		"beschaedigt", "Mathematik 8 beschädigt")
-	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fAuf: 24.90})); rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
@@ -42,7 +42,7 @@ func TestElternbrief_ForderungAufEinemBescheidBekommtKeinenBrief(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/schadensfaelle/"+id+"/pdf", nil)
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		srv.GenerateDamagePDFHandler().ServeHTTP(rec, req)
+		srv.ElternbriefPDF().ServeHTTP(rec, req)
 		return rec
 	}
 

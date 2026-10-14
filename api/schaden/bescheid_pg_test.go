@@ -30,8 +30,8 @@ import (
 // zweimal — sonst lässt sich eine eingehende Zahlung nicht zuordnen. Alles andere hängt
 // daran: Wird ein Brief abgewiesen, darf auch keine Nummer verbraucht sein.
 
-// bescheidErstellenUeberHandler ruft POST /api/schueler/{id}/bescheide.
-func bescheidErstellenUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool, schuelerID, rumpf string) *httptest.ResponseRecorder {
+// bescheidErstellenUeberTuer ruft POST /api/schueler/{id}/bescheide.
+func bescheidErstellenUeberTuer(t *testing.T, srv *Tueren, pool *pgxpool.Pool, schuelerID, rumpf string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+schuelerID+"/bescheide", strings.NewReader(rumpf))
 	req.SetPathValue("id", schuelerID)
@@ -39,7 +39,7 @@ func bescheidErstellenUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.BescheidErstellenHandler(repository.NewBescheidAbfragen(pool), repository.NewProtokollAbfragen(pool))(rec, req)
+	srv.BescheidErstellen(repository.NewBescheidAbfragen(pool), repository.NewProtokollAbfragen(pool))(rec, req)
 	return rec
 }
 
@@ -64,7 +64,7 @@ func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
 	for _, mittel := range []string{"land", "schultraeger"} {
 		rumpf := fmt.Sprintf(`{"mittel":%q,"frist_bis":%q,"positionen":[{"schadensfall_id":%q,"betrag":12.00}]}`,
 			mittel, testdaten.In28Tagen(), f)
-		rec := bescheidErstellenUeberHandler(t, srv, pool, sid, rumpf)
+		rec := bescheidErstellenUeberTuer(t, srv, pool, sid, rumpf)
 		if rec.Code != http.StatusConflict {
 			t.Errorf("mittel=%s für ein Nicht-Lernmittel: Status %d, want 409: %s", mittel, rec.Code, rec.Body.String())
 		}
@@ -94,7 +94,7 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 	f1 := testdaten.LegeForderungAn(t, pool, sid, ex1, "nicht_zurueckgegeben", "Mathematik 7 nicht zurück")
 	f2 := testdaten.LegeForderungAn(t, pool, sid, ex2, "beschaedigt", "Mathematik 7 beschädigt")
 
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f1: 24.90, f2: 12.00}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Status %d, want 201: %s", rec.Code, rec.Body.String())
@@ -145,7 +145,7 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 	var details string
 	if err := pool.QueryRow(ctx,
 		`SELECT details::text FROM audit_logs WHERE aktion = $1 ORDER BY zeitstempel DESC LIMIT 1`,
-		auditBescheidErstellt).Scan(&details); err != nil {
+		aktionBescheidErstellt).Scan(&details); err != nil {
 		t.Fatalf("Audit-Eintrag fehlt: %v", err)
 	}
 	if !strings.Contains(details, b.Referenznummer) {
@@ -167,11 +167,11 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-3", true, "")
 	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
 
-	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.50})); rec.Code != http.StatusCreated {
 		t.Fatalf("erster Bescheid: %d %s", rec.Code, rec.Body.String())
 	}
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.50}))
 	if rec.Code != http.StatusConflict {
 		t.Errorf("zweiter Bescheid auf dieselbe Forderung: %d, want 409: %s", rec.Code, rec.Body.String())
@@ -213,7 +213,7 @@ func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
 	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-4", true, "")
 	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 9 nicht zurück")
 
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 20.00}))
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status %d, want 409: %s", rec.Code, rec.Body.String())
@@ -270,7 +270,7 @@ func TestBescheidNummernkreis_ParallelKeineDoppelte(t *testing.T) {
 		wg.Add(1)
 		go func(i int, a auftrag) {
 			defer wg.Done()
-			rec := bescheidErstellenUeberHandler(t, srv, pool, a.sid,
+			rec := bescheidErstellenUeberTuer(t, srv, pool, a.sid,
 				testdaten.BescheidRumpf(frist, map[string]float64{a.forderung: 10.00}))
 			codes[i] = rec.Code
 			var b repository.Bescheid
@@ -323,7 +323,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-5", true, "")
 	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Physik 9 nicht zurück")
 
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 22.00}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
@@ -340,7 +340,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.BescheidUebergebenHandler(repo, repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.BescheidUebergeben(repo, repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 	if rec := uebergeben(); rec.Code != http.StatusConflict {
@@ -389,7 +389,7 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-BEZ", "Zahlkind", "08G2")
 	titelID := testdaten.LegeLernmittelAn(t, pool, "Biologie 8")
 	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-BEZ-1", true, ""), "nicht_zurueckgegeben", "Biologie 8 nicht zurück")
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid, testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.00}))
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid, testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.00}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
 	}
@@ -446,7 +446,7 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-6", true, "")
 	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Chemie 9 nicht zurück")
 
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 19.90}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
@@ -466,7 +466,7 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/bescheide/"+b.ID+"/pdf", nil)
 		req.SetPathValue("id", b.ID)
 		rec := httptest.NewRecorder()
-		srv.BescheidPDFHandler(repo)(rec, req)
+		srv.BescheidPDF(repo)(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("PDF: %d %s", rec.Code, rec.Body.String())
 		}

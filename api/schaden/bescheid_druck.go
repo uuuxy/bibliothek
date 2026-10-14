@@ -18,7 +18,7 @@ import (
 
 // Der Brief zu einem Bescheid, beim ersten Druck und bei jedem Nachdruck aus dem Schnappschuss.
 
-// BescheidPDFHandler liefert den Brief — beim ersten Mal und bei jedem Nachdruck
+// BescheidPDF liefert den Brief — beim ersten Mal und bei jedem Nachdruck
 // derselbe, aus dem Snapshot.
 //
 // @Summary      Print (or reprint) a compensation notice
@@ -27,7 +27,7 @@ import (
 // @Param        id path string true "Notice ID"
 // @Success      200 {file} file
 // @Router       /bescheide/{id}/pdf [get]
-func (s *Tueren) BescheidPDFHandler(bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheidPDF(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -35,7 +35,7 @@ func (s *Tueren) BescheidPDFHandler(bescheidRepo repository.BescheidAbfragen) ht
 		}
 		ctx := r.Context()
 
-		brief, bescheid, err := s.bescheidBrief(ctx, bescheidRepo, id)
+		brief, bescheid, err := t.bescheidBrief(ctx, bescheidAbfragen, id)
 		if err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ func (s *Tueren) BescheidPDFHandler(bescheidRepo repository.BescheidAbfragen) ht
 		if err != nil {
 			return apierrors.Internal("Bescheid konnte nicht erzeugt werden", err)
 		}
-		if err := bescheidRepo.VermerkeDruck(ctx, id); err != nil {
+		if err := bescheidAbfragen.VermerkeDruck(ctx, id); err != nil {
 			// Der Vermerk ist Buchführung, nicht der Zweck: Der Brief geht trotzdem raus.
 			log.Printf("Druckvermerk für Bescheid %s fehlgeschlagen: %v", id, err)
 		}
@@ -61,30 +61,30 @@ func (s *Tueren) BescheidPDFHandler(bescheidRepo repository.BescheidAbfragen) ht
 }
 
 // bescheidBrief baut das Blatt aus Bescheid, Snapshot, Positionen und Einstellungen.
-func (s *Tueren) bescheidBrief(ctx context.Context, bescheidRepo repository.BescheidAbfragen, id string) (pdf.BescheidBrief, *repository.Bescheid, error) {
-	bescheid, err := bescheidRepo.Lade(ctx, id)
+func (t *Tueren) bescheidBrief(ctx context.Context, bescheidAbfragen repository.BescheidAbfragen, id string) (pdf.BescheidBrief, *repository.Bescheid, error) {
+	bescheid, err := bescheidAbfragen.Lade(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return pdf.BescheidBrief{}, nil, apierrors.NotFound("Bescheid nicht gefunden", err)
 		}
 		return pdf.BescheidBrief{}, nil, apierrors.Internal("Bescheid konnte nicht gelesen werden", err)
 	}
-	snapshot, err := bescheidRepo.LadeEmpfaengerSnapshot(ctx, id)
+	snapshot, err := bescheidAbfragen.LadeEmpfaengerSnapshot(ctx, id)
 	if err != nil {
 		return pdf.BescheidBrief{}, nil, apierrors.Internal("Empfänger konnte nicht gelesen werden", err)
 	}
-	positionen, err := bescheidRepo.LadePositionen(ctx, id)
+	positionen, err := bescheidAbfragen.LadePositionen(ctx, id)
 	if err != nil {
 		return pdf.BescheidBrief{}, nil, apierrors.Internal("Positionen konnten nicht gelesen werden", err)
 	}
 	// Die Angaben der Schule, wie sie im Brief standen (Migration 141). Ein Bescheid von
 	// vorher hat keinen Schnappschuss; für ihn gelten die Einstellungen von heute.
-	absender, err := bescheidRepo.LadeAbsenderSnapshot(ctx, id)
+	absender, err := bescheidAbfragen.LadeAbsenderSnapshot(ctx, id)
 	if err != nil {
 		return pdf.BescheidBrief{}, nil, apierrors.Internal("Angaben der Schule konnten nicht gelesen werden", err)
 	}
 	if len(absender) == 0 {
-		angaben, schule, err := s.bescheidAngaben(ctx)
+		angaben, schule, err := t.bescheidAngaben(ctx)
 		if err != nil {
 			return pdf.BescheidBrief{}, nil, apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 		}

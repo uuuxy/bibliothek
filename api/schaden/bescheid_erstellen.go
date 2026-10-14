@@ -19,8 +19,8 @@ import (
 
 // Das Erstellen eines Bescheids: Eingabe prüfen, Pflichtangaben, schreiben, protokollieren.
 
-// BescheidErstellenRequest ist die Eingabe des Dialogs.
-type BescheidErstellenRequest struct {
+// bescheidErstellenAnfrage ist die Eingabe des Dialogs.
+type bescheidErstellenAnfrage struct {
 	Mittel     string `json:"mittel"`
 	FristBis   string `json:"frist_bis"`
 	Positionen []struct {
@@ -34,27 +34,27 @@ type BescheidErstellenRequest struct {
 	} `json:"ausleihen" validate:"dive"`
 }
 
-// BescheidErstellenHandler schreibt den Bescheid und liefert ihn zurück.
+// BescheidErstellen schreibt den Bescheid und liefert ihn zurück.
 //
 // @Summary      Create a compensation notice for a student
 // @Tags         schadensersatz
 // @Accept       json
 // @Produce      json
 // @Param        id path string true "Student ID"
-// @Param        body body BescheidErstellenRequest true "Pot, deadline and positions"
+// @Param        body body bescheidErstellenAnfrage true "Pot, deadline and positions"
 // @Success      201 {object} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [post]
-func (s *Tueren) BescheidErstellenHandler(bescheidRepo repository.BescheidAbfragen, auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheidErstellen(bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		return s.handleBescheidErstellen(w, r, bescheidRepo, auditRepo)
+		return t.erstelleBescheid(w, r, bescheidAbfragen, protokollAbfragen)
 	})
 }
 
-// handleBescheidErstellen prüft die Anfrage und die Pflichtangaben, schreibt den Bescheid und
+// erstelleBescheid prüft die Anfrage und die Pflichtangaben, schreibt den Bescheid und
 // protokolliert ihn.
-func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidAbfragen, auditRepo repository.ProtokollAbfragen) error {
+func (t *Tueren) erstelleBescheid(w http.ResponseWriter, r *http.Request, bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) error {
 	id := r.PathValue("id")
-	var req BescheidErstellenRequest
+	var req bescheidErstellenAnfrage
 	if id == "" {
 		return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 	}
@@ -67,7 +67,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 	}
 
 	ctx := r.Context()
-	angaben, schule, err := s.bescheidAngaben(ctx)
+	angaben, schule, err := t.bescheidAngaben(ctx)
 	if err != nil {
 		return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 	}
@@ -79,7 +79,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 		return apierrors.Conflict(meldung, errors.New("bescheid-angaben unvollständig"))
 	}
 
-	snapshot, err := bescheidSnapshotAus(ctx, bescheidRepo, id)
+	snapshot, err := bescheidSnapshotAus(ctx, bescheidAbfragen, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return apierrors.NotFound("Schüler nicht gefunden", err)
@@ -99,7 +99,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 	}
 	eingabe.Positionen, eingabe.Verluste = bescheidPostenAus(req)
 
-	bescheid, err := bescheidRepo.LegeAn(ctx, eingabe)
+	bescheid, err := bescheidAbfragen.LegeAn(ctx, eingabe)
 	if err != nil {
 		// Die Zuordnungs-Prüfung ist ein Bedienfehler (Forderung bezahlt, storniert
 		// oder schon auf einem Brief), kein Serverfehler — ebenso ein Buch, das
@@ -110,7 +110,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 		return apierrors.Internal("Bescheid konnte nicht erstellt werden", err)
 	}
 
-	bescheidAudit(ctx, s, auditRepo, auditBescheidErstellt, map[string]any{
+	protokolliereBescheid(ctx, t, protokollAbfragen, aktionBescheidErstellt, map[string]any{
 		"bescheid_id":    bescheid.ID,
 		"schueler_id":    id,
 		"referenznummer": bescheid.Referenznummer,
@@ -125,7 +125,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 
 // pruefeBescheidAnfrage prüft Topf, Auswahl und Frist, bevor irgendetwas gelesen oder
 // geschrieben wird, und liefert die Frist als Kalendertag der Schule.
-func pruefeBescheidAnfrage(req BescheidErstellenRequest) (time.Time, error) {
+func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 	if !mitteltopf.IstGueltig(req.Mittel) {
 		return time.Time{}, apierrors.BadRequest(mitteltopf.ErrUngueltig.Error(), mitteltopf.ErrUngueltig)
 	}
@@ -167,7 +167,7 @@ func pruefeBescheidAnfrage(req BescheidErstellenRequest) (time.Time, error) {
 
 // bescheidPostenAus übersetzt die Auswahl des Dialogs: Forderungen, die es schon gibt, und
 // überfällige Bücher, die mit dem Brief als Verlust gebucht werden.
-func bescheidPostenAus(req BescheidErstellenRequest) ([]repository.BescheidPositionEingabe, []repository.BescheidVerlustEingabe) {
+func bescheidPostenAus(req bescheidErstellenAnfrage) ([]repository.BescheidPositionEingabe, []repository.BescheidVerlustEingabe) {
 	var positionen []repository.BescheidPositionEingabe
 	for _, p := range req.Positionen {
 		positionen = append(positionen,

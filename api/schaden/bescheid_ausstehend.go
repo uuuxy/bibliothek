@@ -8,7 +8,7 @@ import (
 	"bibliothek/repository"
 )
 
-// BescheidAusstehendHandler liefert die Kinder mit offenen Forderungen, die noch auf
+// BescheideAusstehend liefert die Kinder mit offenen Forderungen, die noch auf
 // keinem Bescheid stehen — die Zeilen „Bescheid noch nicht erstellt" im Reiter
 // „Schadensersatz" des Mahnwesens.
 //
@@ -17,9 +17,9 @@ import (
 // @Produce      json
 // @Success      200 {array} repository.ForderungOhneBescheid
 // @Router       /bescheide/ausstehend [get]
-func (s *Tueren) BescheidAusstehendHandler(bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheideAusstehend(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		liste, err := bescheidRepo.LadeForderungenOhneBescheid(r.Context())
+		liste, err := bescheidAbfragen.LadeForderungenOhneBescheid(r.Context())
 		if err != nil {
 			return apierrors.Internal("Offene Forderungen konnten nicht gelesen werden", err)
 		}

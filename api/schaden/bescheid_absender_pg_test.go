@@ -36,7 +36,7 @@ func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
 	titelID := testdaten.LegeLernmittelAn(t, pool, "Biologie 8")
 	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "ABSENDER-1", true, ""),
 		"nicht_zurueckgegeben", "Biologie 8 nicht zurück")
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 21.50}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
@@ -69,7 +69,7 @@ func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/bescheide/"+b.ID+"/pdf", nil)
 	req.SetPathValue("id", b.ID)
 	pdfRec := httptest.NewRecorder()
-	srv.BescheidPDFHandler(repo)(pdfRec, req)
+	srv.BescheidPDF(repo)(pdfRec, req)
 	if pdfRec.Code != http.StatusOK {
 		t.Fatalf("PDF: %d %s", pdfRec.Code, pdfRec.Body.String())
 	}

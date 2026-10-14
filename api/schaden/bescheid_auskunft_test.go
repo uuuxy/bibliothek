@@ -17,7 +17,7 @@ func TestBescheid_AuskunftNenntDasErstellenInWorten(t *testing.T) {
 	a := auskunft.Antwort{
 		Art: "Auskunft nach Art. 15 DSGVO",
 		Verwaltung: []auskunft.VerwaltungsEintrag{
-			{Aktion: auditBescheidErstellt, Zeitpunkt: time.Date(2026, 10, 8, 10, 15, 0, 0, time.UTC)},
+			{Aktion: aktionBescheidErstellt, Zeitpunkt: time.Date(2026, 10, 8, 10, 15, 0, 0, time.UTC)},
 		},
 	}
 	roh, err := auskunft.ErzeugeBlatt(a, pdf.SchuleInfo{Name: "Testschule"})
@@ -31,7 +31,7 @@ func TestBescheid_AuskunftNenntDasErstellenInWorten(t *testing.T) {
 	if !strings.Contains(blatt, "Schadensersatz-Bescheid erstellt") {
 		t.Error("das Blatt nennt den erstellten Bescheid nicht in Worten")
 	}
-	if strings.Contains(blatt, auditBescheidErstellt) {
-		t.Errorf("auf dem Blatt steht der Name der Aktion (%s)", auditBescheidErstellt)
+	if strings.Contains(blatt, aktionBescheidErstellt) {
+		t.Errorf("auf dem Blatt steht der Name der Aktion (%s)", aktionBescheidErstellt)
 	}
 }

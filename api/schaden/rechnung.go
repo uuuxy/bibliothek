@@ -18,34 +18,34 @@ import (
 	"github.com/google/uuid"
 )
 
-// queryRechnungItems lädt die offenen Forderungen eines Schülers ohne Bescheid als
+// ladeRechnungPosten lädt die offenen Forderungen eines Schülers ohne Bescheid als
 // Rechnungspositionen (repository.LadeOffeneForderungenOhneBescheid).
-func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
-	posten, err := repository.LadeOffeneForderungenOhneBescheid(ctx, dbPool, schuelerID)
+func ladeRechnungPosten(ctx context.Context, datenbank db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
+	posten, err := repository.LadeOffeneForderungenOhneBescheid(ctx, datenbank, schuelerID)
 	if err != nil {
 		return nil, err
 	}
-	var items []pdf.RechnungItem
+	var zeilen []pdf.RechnungItem
 	for _, p := range posten {
-		items = append(items, pdf.RechnungItem(p))
+		zeilen = append(zeilen, pdf.RechnungItem(p))
 	}
-	return items, nil
+	return zeilen, nil
 }
 
-// PrintRechnungHandler generates the invoice for lost books of a student.
-func (s *Tueren) PrintRechnungHandler() http.HandlerFunc {
+// RechnungPDF generates the invoice for lost books of a student.
+func (t *Tueren) RechnungPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handlePrintRechnung(w, r, s.DB.Pool)
+		liefereRechnung(w, r, t.DB.Pool)
 	}
 }
 
-// handlePrintRechnung lädt Anschrift und offene Forderungen ohne Bescheid und setzt den Brief.
-func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolIface) {
+// liefereRechnung lädt Anschrift und offene Forderungen ohne Bescheid und setzt den Brief.
+func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.PgxPoolIface) {
 	ctx := r.Context()
 
 	// extract schueler_id from the URL path: /api/print/rechnung/{id}
-	idStr := r.PathValue("schueler_id")
-	schuelerID, err := uuid.Parse(idStr)
+	idText := r.PathValue("schueler_id")
+	schuelerID, err := uuid.Parse(idText)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return
@@ -54,8 +54,8 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 	// Anschrift mitladen: Die Rechnung ist wie der Eltern-Mahnbrief ein Brief für das
 	// DIN-Fensterkuvert (VVT-Zweck „gedruckte Rechnung / Elternbrief"). COALESCE ist
 	// Pflicht: Die Spalten sind nullbar, die Go-Strings nicht.
-	anschrift, err := repository.LadeBriefAnschrift(ctx, dbPool, schuelerID)
-	s := pdf.Schueler(anschrift)
+	anschrift, err := repository.LadeBriefAnschrift(ctx, datenbank, schuelerID)
+	schueler := pdf.Schueler(anschrift)
 	if errors.Is(err, pgx.ErrNoRows) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 		return
@@ -65,16 +65,16 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 		return
 	}
 
-	items, err := queryRechnungItems(ctx, dbPool, schuelerID)
+	zeilen, err := ladeRechnungPosten(ctx, datenbank, schuelerID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	if len(items) == 0 {
+	if len(zeilen) == 0 {
 		// Stehen die offenen Forderungen alle auf einem Bescheid, sagt die Meldung das.
 		// Sonst hieße es „keine offenen Schadensfälle", während die Akte offene Beträge zeigt.
-		aufBescheid, err := repository.HatOffeneForderungAufBescheid(ctx, dbPool, schuelerID)
+		aufBescheid, err := repository.HatOffeneForderungAufBescheid(ctx, datenbank, schuelerID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -90,24 +90,24 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 
 	// Ein Lesefehler ist ein Fehler: Mit den Vorgaben nennte das Blatt keine Schule und die
 	// Bankverbindung der Vorgabe statt der eingetragenen.
-	settings, err := repository.NewEinstellungsAbfragen(dbPool).Lade(ctx)
+	einstellungen, err := repository.NewEinstellungsAbfragen(datenbank).Lade(ctx)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 		return
 	}
 	schule := pdf.SchuleInfo{
-		Name:    settings.SchuleName,
-		Strasse: settings.SchuleStrasse,
-		PLZ:     settings.SchulePLZ,
-		Ort:     settings.SchuleOrt,
+		Name:    einstellungen.SchuleName,
+		Strasse: einstellungen.SchuleStrasse,
+		PLZ:     einstellungen.SchulePLZ,
+		Ort:     einstellungen.SchuleOrt,
 	}
 
 	// Zahlstelle und Bankverbindung des Landes aus derselben Einstellung wie im
 	// Bescheid — eine zweite Kontoangabe im selben Haus wäre eine zweite Wahrheit.
-	angaben := repository.BescheidAngabenAus(settings)
+	angaben := repository.BescheidAngabenAus(einstellungen)
 	zahlung := pdf.Zahlungsangaben{Zahlstelle: angaben.Zahlstelle, Bankverbindung: angaben.Bankverbindung}
 
-	pdfBytes, err := pdf.GenerateRechnung(s, items, schule, zahlung)
+	pdfDaten, err := pdf.GenerateRechnung(schueler, zeilen, schule, zahlung)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -115,7 +115,7 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 	w.Header().Set(tuer.HeaderContentDisposition, `inline; filename="Rechnung.pdf"`)
-	w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
+	w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
 
-	http.ServeContent(w, r, "Rechnung.pdf", time.Now(), bytes.NewReader(pdfBytes))
+	http.ServeContent(w, r, "Rechnung.pdf", time.Now(), bytes.NewReader(pdfDaten))
 }

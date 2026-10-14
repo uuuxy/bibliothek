@@ -21,7 +21,7 @@ import (
 // Bezugsspalte. Mit den früheren INNER JOINs fiel so eine Forderung lautlos aus dem
 // Brief: Der Betrag war zu klein, oder es hieß „keine offenen Schadensfälle", während
 // die Akte offene Beträge zeigte und der Schüler gesperrt blieb.
-func TestQueryRechnungItems_ForderungOhneExemplarUndAusleihe(t *testing.T) {
+func TestLadeRechnungPosten_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -46,7 +46,7 @@ func TestQueryRechnungItems_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 		t.Fatalf("Forderung ohne Exemplar/Ausleihe anlegen: %v", err)
 	}
 
-	items, err := queryRechnungItems(ctx, pool, schuelerID)
+	items, err := ladeRechnungPosten(ctx, pool, schuelerID)
 	if err != nil {
 		t.Fatalf("Rechnungspositionen lesen: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestQueryRechnungItems_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 // dieselbe Forderung auf beiden Briefen, bekämen die Eltern zwei Zahlungsaufforderungen mit zwei
 // verschiedenen Zahlungswegen. Der Bescheid entsteht hier über den echten Handler, damit der Test
 // genau die Form trifft, die der Betrieb schreibt.
-func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T) {
+func TestLadeRechnungPosten_ForderungAufEinemBescheidBleibtDraussen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
@@ -89,13 +89,13 @@ func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T
 	fAufBescheid := testdaten.LegeForderungAn(t, pool, sid, exAufBescheid, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
 	testdaten.LegeForderungAn(t, pool, sid, exOhneBescheid, "beschaedigt", "Deutsch 8 beschädigt")
 
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fAufBescheid: 24.90}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
 
-	items, err := queryRechnungItems(ctx, pool, uuid.MustParse(sid))
+	items, err := ladeRechnungPosten(ctx, pool, uuid.MustParse(sid))
 	if err != nil {
 		t.Fatalf("Rechnungspositionen lesen: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T
 // Stehen alle offenen Forderungen auf einem Bescheid, entsteht keine Ersatzforderung — und der
 // Knopf in der Schülerakte sagt, warum, statt „keine offenen Schadensfälle" zu melden, während
 // die Akte offene Beträge zeigt.
-func TestPrintRechnung_AlleForderungenAufBescheid(t *testing.T) {
+func TestRechnungPDF_AlleForderungenAufBescheid(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
@@ -122,7 +122,7 @@ func TestPrintRechnung_AlleForderungenAufBescheid(t *testing.T) {
 	titelID := testdaten.LegeLernmittelAn(t, pool, "Englisch 8")
 	ex := testdaten.LegeExemplarAn(t, pool, titelID, "RECH-ALLE-1", true, "")
 	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 8 nicht zurück")
-	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 19.50})); rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
@@ -130,7 +130,7 @@ func TestPrintRechnung_AlleForderungenAufBescheid(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)
 	req.SetPathValue("schueler_id", sid)
 	rec := httptest.NewRecorder()
-	srv.PrintRechnungHandler()(rec, req)
+	srv.RechnungPDF()(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("Status %d, want 404 — die Forderung steht schon auf einem Bescheid, eine "+

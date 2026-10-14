@@ -89,12 +89,12 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 
 	// Kiosk / Damage
 	damageRepo := repository.NewSchadensAbfragen(s.DB.Pool)
-	mux.Handle("POST /api/damage/report", s.RequirePermission("edit_students")(s.schaden().ReportDamageHandler(damageRepo)))
-	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.RequirePermission("view_students")(s.schaden().GenerateDamagePDFHandler()))
+	mux.Handle("POST /api/damage/report", s.RequirePermission("edit_students")(s.schaden().SchadenMelden(damageRepo)))
+	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.RequirePermission("view_students")(s.schaden().ElternbriefPDF()))
 	// Gebühren-Erledigung: Lesen wie die Akte (view_students), Erledigen wie das
-	// Anlegen (edit_students) — Begründung im Kopf von api/schaden/damage_resolve.go.
+	// Anlegen (edit_students) — Begründung im Kopf von api/schaden/forderung_erledigen.go.
 	auditRepoGebuehren := repository.NewProtokollAbfragen(s.DB.Pool)
-	mux.Handle("GET /api/schueler/{id}/schadensfaelle", s.RequirePermission("view_students")(s.schaden().ListStudentSchadensfaelleHandler(damageRepo)))
+	mux.Handle("GET /api/schueler/{id}/schadensfaelle", s.RequirePermission("view_students")(s.schaden().SchadensfaelleDesSchuelers(damageRepo)))
 
 	// ── SCHADENSERSATZ-BESCHEIDE (Migration 110) ──
 	//
@@ -104,18 +104,18 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Brief dazu. Ein eigenes Recht bliebe ab Werk bei niemandem und wäre eine Tür, die
 	// keiner öffnen kann; die Entscheidung steht als E-Frage im Konzept.
 	bescheidRepo := repository.NewBescheidAbfragen(s.DB.Pool)
-	mux.Handle("GET /api/schueler/{id}/bescheid-vorschlag", s.RequirePermission("edit_students")(s.schaden().BescheidVorschlagHandler(bescheidRepo)))
+	mux.Handle("GET /api/schueler/{id}/bescheid-vorschlag", s.RequirePermission("edit_students")(s.schaden().BescheidVorschlag(bescheidRepo)))
 	// Der Betragsvorschlag des Melde-Dialogs (OFFEN.md 9.3 a): dasselbe Recht wie das
 	// Melden selbst — wer die Forderung anlegen darf, darf auch den Vorschlag dafür sehen.
-	mux.Handle("GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag", s.RequirePermission("edit_students")(s.schaden().ErsatzwertVorschlagHandler(bescheidRepo)))
-	mux.Handle("GET /api/schueler/{id}/bescheide", s.RequirePermission("view_students")(s.schaden().BescheidSchuelerListeHandler(bescheidRepo)))
-	mux.Handle("POST /api/schueler/{id}/bescheide", s.RequirePermission("edit_students")(s.schaden().BescheidErstellenHandler(bescheidRepo, auditRepoGebuehren)))
-	mux.Handle("GET /api/bescheide", s.RequirePermission("view_students")(s.schaden().BescheidListeHandler(bescheidRepo)))
-	mux.Handle("GET /api/bescheide/ausstehend", s.RequirePermission("view_students")(s.schaden().BescheidAusstehendHandler(bescheidRepo)))
-	mux.Handle("GET /api/bescheide/{id}/pdf", s.RequirePermission("view_students")(s.schaden().BescheidPDFHandler(bescheidRepo)))
-	mux.Handle("POST /api/bescheide/{id}/uebergeben", s.RequirePermission("edit_students")(s.schaden().BescheidUebergebenHandler(bescheidRepo, auditRepoGebuehren)))
-	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.RequirePermission("edit_students")(s.schaden().BezahltGebuehrHandler(auditRepoGebuehren)))
-	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.RequirePermission("edit_students")(s.schaden().StornoGebuehrHandler(auditRepoGebuehren)))
+	mux.Handle("GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag", s.RequirePermission("edit_students")(s.schaden().ErsatzwertVorschlag(bescheidRepo)))
+	mux.Handle("GET /api/schueler/{id}/bescheide", s.RequirePermission("view_students")(s.schaden().BescheideDesSchuelers(bescheidRepo)))
+	mux.Handle("POST /api/schueler/{id}/bescheide", s.RequirePermission("edit_students")(s.schaden().BescheidErstellen(bescheidRepo, auditRepoGebuehren)))
+	mux.Handle("GET /api/bescheide", s.RequirePermission("view_students")(s.schaden().Bescheide(bescheidRepo)))
+	mux.Handle("GET /api/bescheide/ausstehend", s.RequirePermission("view_students")(s.schaden().BescheideAusstehend(bescheidRepo)))
+	mux.Handle("GET /api/bescheide/{id}/pdf", s.RequirePermission("view_students")(s.schaden().BescheidPDF(bescheidRepo)))
+	mux.Handle("POST /api/bescheide/{id}/uebergeben", s.RequirePermission("edit_students")(s.schaden().BescheidUebergeben(bescheidRepo, auditRepoGebuehren)))
+	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.RequirePermission("edit_students")(s.schaden().ZahlungVerbuchen(auditRepoGebuehren)))
+	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.RequirePermission("edit_students")(s.schaden().ForderungStornieren(auditRepoGebuehren)))
 
 	// Mahnwesen
 	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.mahnwesen().GetMahnwesenHandler(mahnRepo)))

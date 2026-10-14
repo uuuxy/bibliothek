@@ -66,12 +66,12 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 	fTraeger := testdaten.LegeForderungAn(t, pool, sidTraeger, exSchulbuch, "beschaedigt", "Schulbuch beschädigt")
 
 	// 1. Der Vorschlag: Topf und Regel.
-	vLand := bescheidVorschlagUeberHandler(t, srv, pool, sidLand)
+	vLand := bescheidVorschlagUeberTuer(t, srv, pool, sidLand)
 	if len(vLand.Positionen) != 1 || vLand.Positionen[0].Topf != mitteltopf.Land ||
 		!strings.Contains(vLand.Positionen[0].Herleitung, "Verleihjahr") {
 		t.Errorf("Lektüre des Landes: %+v — erwartet Topf land und die Staffel", vLand.Positionen)
 	}
-	vTraeger := bescheidVorschlagUeberHandler(t, srv, pool, sidTraeger)
+	vTraeger := bescheidVorschlagUeberTuer(t, srv, pool, sidTraeger)
 	if len(vTraeger.Positionen) != 1 || vTraeger.Positionen[0].Topf != mitteltopf.Schultraeger ||
 		strings.Contains(vTraeger.Positionen[0].Herleitung, "Verleihjahr") {
 		t.Errorf("Schulbuch des Schulträgers: %+v — erwartet Topf schultraeger und den Neuwert", vTraeger.Positionen)
@@ -93,24 +93,24 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 
 	// 3. Rechnung und Elternbrief nennen das Konto nach dem Eigentum.
 	for sid, want := range map[string]bool{sidLand: true, sidTraeger: false} {
-		items, err := queryRechnungItems(ctx, pool, uuid.MustParse(sid))
+		items, err := ladeRechnungPosten(ctx, pool, uuid.MustParse(sid))
 		if err != nil || len(items) != 1 || items[0].Land != want {
 			t.Errorf("Rechnung %s: %+v (%v) — erwartet Land=%v", sid, items, err, want)
 		}
 	}
 	for fid, want := range map[string]bool{fLand: true, fTraeger: false} {
-		info, _, err := srv.fetchDamageCaseInfo(ctx, fid)
+		info, _, err := srv.ladeSchadensfallBrief(ctx, fid)
 		if err != nil || info.Land != want {
 			t.Errorf("Elternbrief %s: Land=%v (%v), erwartet %v", fid, info.Land, err, want)
 		}
 	}
 
 	// 4. Der Brief: Die Lektüre darf auf den Landes-Bescheid, das Schulbuch des Trägers nicht.
-	if rec := bescheidErstellenUeberHandler(t, srv, pool, sidLand,
+	if rec := bescheidErstellenUeberTuer(t, srv, pool, sidLand,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fLand: 1.40})); rec.Code != http.StatusCreated {
 		t.Errorf("Landes-Bescheid für die Lektüre: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
-	if rec := bescheidErstellenUeberHandler(t, srv, pool, sidTraeger,
+	if rec := bescheidErstellenUeberTuer(t, srv, pool, sidTraeger,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fTraeger: 14.00})); rec.Code != http.StatusConflict {
 		t.Errorf("Landes-Bescheid für ein Buch des Schulträgers: Status %d, want 409: %s", rec.Code, rec.Body.String())
 	}

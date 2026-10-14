@@ -47,19 +47,19 @@ func bescheidRumpfMitAusleihen(frist string, betraege map[string]float64) string
 	return fmt.Sprintf(`{"mittel":"land","frist_bis":%q,"positionen":[],"ausleihen":[%s]}`, frist, strings.Join(teile, ","))
 }
 
-// bescheidVorschlagUeberHandler ruft GET /api/schueler/{id}/bescheid-vorschlag.
-func bescheidVorschlagUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool, schuelerID string) BescheidVorschlag {
+// bescheidVorschlagUeberTuer ruft GET /api/schueler/{id}/bescheid-vorschlag.
+func bescheidVorschlagUeberTuer(t *testing.T, srv *Tueren, pool *pgxpool.Pool, schuelerID string) bescheidVorschlagAntwort {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+schuelerID+"/bescheid-vorschlag", nil)
 	req.SetPathValue("id", schuelerID)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.BescheidVorschlagHandler(repository.NewBescheidAbfragen(pool))(rec, req)
+	srv.BescheidVorschlag(repository.NewBescheidAbfragen(pool))(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vorschlag: Status %d: %s", rec.Code, rec.Body.String())
 	}
-	var v BescheidVorschlag
+	var v bescheidVorschlagAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &v); err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestBescheidVorschlag_NenntUeberfaelligeBuecherOhneForderung(t *testing.T) 
 		t.Fatal(err)
 	}
 
-	v := bescheidVorschlagUeberHandler(t, srv, pool, sid)
+	v := bescheidVorschlagUeberTuer(t, srv, pool, sid)
 	if len(v.Ausleihen) != 1 || v.Ausleihen[0].AusleiheID != aUeberfaellig {
 		t.Fatalf("Ausleihen = %+v, erwartet genau die überfällige ohne Forderung", v.Ausleihen)
 	}
@@ -141,7 +141,7 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 	a1 := bescheidAusleihe(t, pool, ex1, sid, 30)
 	a2 := bescheidAusleihe(t, pool, ex2, sid, 45)
 
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{a1: 24.90, a2: 12.00}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Status %d, want 201: %s", rec.Code, rec.Body.String())
@@ -189,7 +189,7 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 		t.Errorf("%d von 2 Exemplaren als VERLUST ausgesondert", verluste)
 	}
 	// 4. Der Vorschlag nennt die Bücher danach nicht mehr — sie stehen auf dem Brief.
-	if v := bescheidVorschlagUeberHandler(t, srv, pool, sid); len(v.Ausleihen) != 0 || len(v.Positionen) != 0 {
+	if v := bescheidVorschlagUeberTuer(t, srv, pool, sid); len(v.Ausleihen) != 0 || len(v.Positionen) != 0 {
 		t.Errorf("Vorschlag nach dem Brief: Ausleihen %d, Positionen %d — want 0/0", len(v.Ausleihen), len(v.Positionen))
 	}
 }
@@ -226,7 +226,7 @@ func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 	fremd := bescheidAusleihe(t, pool, fremdEx, anderes, 30)
 
 	for name, ausleihe := range map[string]string{"zurückgegeben": zurueck, "schon gemeldet": gemeldet, "fremdes Kind": fremd} {
-		rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+		rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 			bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{ausleihe: 10}))
 		if rec.Code != http.StatusConflict {
 			t.Errorf("%s: Status %d, want 409: %s", name, rec.Code, rec.Body.String())
@@ -264,7 +264,7 @@ func TestBescheidErstellen_BuechereiBuchNichtAlsVerlust(t *testing.T) {
 	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BUE-EX-1", true, "")
 	a := bescheidAusleihe(t, pool, ex, sid, 30)
 
-	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{a: 9.90}))
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status %d, want 409: %s", rec.Code, rec.Body.String())
