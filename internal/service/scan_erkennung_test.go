@@ -67,8 +67,8 @@ func TestErkenneScan(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			treffer, err := ErkenneScan(context.Background(),
-				&mockBookRepo{mockGetCopyByBarcode: f.exemplare},
-				&stubLeserRepo{leser: f.leser, err: f.leserErr}, f.wert)
+				&katalogAttrappe{findeExemplar: f.exemplare},
+				&festerLeserAttrappe{leser: f.leser, err: f.leserErr}, f.wert)
 			if !errors.Is(err, f.sollFehler) {
 				t.Fatalf("Fehler %v, erwartet %v", err, f.sollFehler)
 			}

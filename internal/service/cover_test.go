@@ -27,11 +27,11 @@ func TestNewCoverDienst(t *testing.T) {
 	}
 }
 
-// panicQueryDB paniert bei Query — nur diese Methode wird vor dem Panik erreicht;
+// panikDatenbank paniert bei Query — nur diese Methode wird vor dem Panik erreicht;
 // die übrigen PgxPoolIface-Methoden bleiben ungenutzt (eingebettetes nil-Interface).
-type panicQueryDB struct{ db.PgxPoolIface }
+type panikDatenbank struct{ db.PgxPoolIface }
 
-func (panicQueryDB) Query(context.Context, string, ...any) (pgx.Rows, error) {
+func (panikDatenbank) Query(context.Context, string, ...any) (pgx.Rows, error) {
 	panic("boom aus dem cover-sync (simuliert)")
 }
 
@@ -42,7 +42,7 @@ func TestGleicheFehlendeCoverAbUeberlebtPanik(t *testing.T) {
 	coverAbgleichLaeuft.Store(false)
 	t.Cleanup(func() { coverAbgleichLaeuft.Store(false) })
 
-	svc := &CoverDienst{pool: panicQueryDB{}}
+	svc := &CoverDienst{pool: panikDatenbank{}}
 	svc.GleicheFehlendeCoverAb() // darf nicht paniken — sonst stirbt der Test mit
 
 	if coverAbgleichLaeuft.Load() {

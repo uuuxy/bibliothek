@@ -10,7 +10,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-const deleteVormerkungQuery = "DELETE FROM vormerkungen WHERE titel_id = \\$1 AND schueler_id = \\$2"
+const loescheVormerkungAbfrage = "DELETE FROM vormerkungen WHERE titel_id = \\$1 AND schueler_id = \\$2"
 
 // TestRegalfreigabe_AnderesExemplar deckt den "Geisterbuch"-Fall ab: Für den Schüler
 // lag Exemplar A im Reservierungsfach, er nimmt aber Exemplar B (Freihand). Die
@@ -22,12 +22,12 @@ func TestRegalfreigabe_AnderesExemplar(t *testing.T) {
 		t.Fatalf("Mock-Pool: %v", err)
 	}
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	copyB := &repository.Exemplar{ID: "exB", TitelID: "titel1"}
 
 	// Die gelöschte Vormerkung hatte Exemplar A bereitgestellt (nicht B).
-	mock.ExpectQuery(deleteVormerkungQuery).WithArgs("titel1", "s1").
+	mock.ExpectQuery(loescheVormerkungAbfrage).WithArgs("titel1", "s1").
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
 	mock.ExpectQuery("SELECT barcode_id FROM buecher_exemplare").WithArgs("exA").
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("BC-A-123"))
@@ -51,11 +51,11 @@ func TestRegalfreigabe_SelbesExemplar(t *testing.T) {
 		t.Fatalf("Mock-Pool: %v", err)
 	}
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	copyA := &repository.Exemplar{ID: "exA", TitelID: "titel1"}
 
-	mock.ExpectQuery(deleteVormerkungQuery).WithArgs("titel1", "s1").
+	mock.ExpectQuery(loescheVormerkungAbfrage).WithArgs("titel1", "s1").
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
 	// KEIN barcode-Lookup erwartet.
 
@@ -78,11 +78,11 @@ func TestRegalfreigabe_KeineVormerkung(t *testing.T) {
 		t.Fatalf("Mock-Pool: %v", err)
 	}
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	copyX := &repository.Exemplar{ID: "exX", TitelID: "titel9"}
 
-	mock.ExpectQuery(deleteVormerkungQuery).WithArgs("titel9", "s1").
+	mock.ExpectQuery(loescheVormerkungAbfrage).WithArgs("titel9", "s1").
 		WillReturnError(pgx.ErrNoRows)
 
 	resp := &AusleihErgebnis{}

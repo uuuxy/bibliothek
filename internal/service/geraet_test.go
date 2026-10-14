@@ -41,15 +41,15 @@ func TestNewGeraeteDienst(t *testing.T) {
 	}
 }
 
-// stubStudentRepoSperre liefert einen festen Leser — nur Finde wird von ladeAkteur
+// gesperrterLeserAttrappe liefert einen festen Leser — nur Finde wird von ladeAkteur
 // aufgerufen, die übrigen Interface-Methoden bleiben ungenutzt (eingebettetes nil).
-type stubStudentRepoSperre struct {
+type gesperrterLeserAttrappe struct {
 	repository.LeserAbfragen
-	student *repository.Leser
+	leser *repository.Leser
 }
 
-func (s stubStudentRepoSperre) Finde(context.Context, string) (*repository.Leser, error) {
-	return s.student, nil
+func (s gesperrterLeserAttrappe) Finde(context.Context, string) (*repository.Leser, error) {
+	return s.leser, nil
 }
 
 // TestGeraeteAusleiheRespektiertManuelleSperre belegt die Lücke, die der Nebenläufigkeits-
@@ -61,8 +61,8 @@ func (s stubStudentRepoSperre) Finde(context.Context, string) (*repository.Leser
 func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 	sid := "s1"
 	// Nur manuell gesperrt → blockiert VOR jeder Pool-Nutzung (Flag-Check zuerst).
-	svc := &geraeteDienst{leserAbfragen: stubStudentRepoSperre{
-		student: &repository.Leser{ID: sid, Art: "schueler", IstVonHandGesperrt: true}}}
+	svc := &geraeteDienst{leserAbfragen: gesperrterLeserAttrappe{
+		leser: &repository.Leser{ID: sid, Art: "schueler", IstVonHandGesperrt: true}}}
 	for _, uebergehen := range []bool{false, true} {
 		_, _, err := svc.ladeAkteur(context.Background(), &sid, uebergehen)
 		if !errors.Is(err, ErrGesperrt) || !IstSperreAmLeser(err) {
@@ -85,8 +85,8 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 		}
 		t.Cleanup(mock.Close)
 		vorbereiten(mock)
-		return &geraeteDienst{pool: mock, leserAbfragen: stubStudentRepoSperre{
-			student: &repository.Leser{ID: sid, Art: "schueler"}}}, mock
+		return &geraeteDienst{pool: mock, leserAbfragen: gesperrterLeserAttrappe{
+			leser: &repository.Leser{ID: sid, Art: "schueler"}}}, mock
 	}
 	schaden := func(mock pgxmock.PgxPoolIface) {
 		mock.ExpectQuery(`FROM schadensfaelle WHERE schueler_id`).
@@ -148,8 +148,8 @@ func TestGeraeteAusleiheKollegeOhneSperre(t *testing.T) {
 	defer mock.Close()
 	mock.ExpectQuery(`FROM system_einstellungen`).
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("sommerferien", strPtr("")))
-	svc := &geraeteDienst{pool: mock, leserAbfragen: stubStudentRepoSperre{
-		student: &repository.Leser{ID: kid, Art: "lehrkraft", IstVonHandGesperrt: true, Sperrgrund: strPtr("alt")}}}
+	svc := &geraeteDienst{pool: mock, leserAbfragen: gesperrterLeserAttrappe{
+		leser: &repository.Leser{ID: kid, Art: "lehrkraft", IstVonHandGesperrt: true, Sperrgrund: strPtr("alt")}}}
 
 	leser, lage, err := svc.ladeAkteur(context.Background(), &kid, false)
 	if err != nil || leser == nil {

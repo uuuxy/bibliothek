@@ -16,7 +16,7 @@ type importTitelZeile struct {
 	Lernmittel                          bool
 }
 
-func liesImportTitel(t *testing.T, pool *pgxpool.Pool, titel string) importTitelZeile {
+func ladeImportTitel(t *testing.T, pool *pgxpool.Pool, titel string) importTitelZeile {
 	t.Helper()
 	var z importTitelZeile
 	if err := pool.QueryRow(context.Background(), `
@@ -85,7 +85,7 @@ func TestImportiereZeilen_JedeSpalteKommtAnIhrerStelleAn(t *testing.T) {
 		rechenbuch: {Fach: "Mathematik", Signatur: "Ma 6 Rech", Von: 6, Bis: 6, Lernmittel: true},
 	}
 	for name, soll := range titel {
-		if ist := liesImportTitel(t, pool, name); ist != soll {
+		if ist := ladeImportTitel(t, pool, name); ist != soll {
 			t.Errorf("Titel %q:\n  ist  %+v\n  soll %+v", name, ist, soll)
 		}
 	}
@@ -167,7 +167,7 @@ func TestImportiereZeilen_FachInDerSchreibweiseDerSystematik(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ImportiereZeilen: %v", err)
 	}
-	if fach := liesImportTitel(t, pool, titel).Fach; neueTitel != 1 || fach != "ARBEITSLEHRE" {
+	if fach := ladeImportTitel(t, pool, titel).Fach; neueTitel != 1 || fach != "ARBEITSLEHRE" {
 		t.Errorf("%d neue Titel, Fach %q — erwartet 1 und die Schreibweise der Systematik, ARBEITSLEHRE", neueTitel, fach)
 	}
 }
@@ -209,7 +209,7 @@ func TestImportiereZeilen_SignaturAmVorhandenenTitel(t *testing.T) {
 		ohneAngabe:       {Signatur: "Bleibt 1"},
 	}
 	for name, s := range soll {
-		if ist := liesImportTitel(t, pool, name); ist.Signatur != s.Signatur || ist.Lernmittel != s.Lernmittel {
+		if ist := ladeImportTitel(t, pool, name); ist.Signatur != s.Signatur || ist.Lernmittel != s.Lernmittel {
 			t.Errorf("Titel %q: Signatur %q, Lernmittel %v — erwartet %q und %v",
 				name, ist.Signatur, ist.Lernmittel, s.Signatur, s.Lernmittel)
 		}

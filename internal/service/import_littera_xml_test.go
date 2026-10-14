@@ -49,7 +49,7 @@ func TestImportiereLitteraXML_FalscheWurzelIstKeinKatalogisat(t *testing.T) {
 		{"gar kein XML", `Titel,Autor,Barcode`},
 	}
 
-	svc := NewImportDienst(&stubBookRepo{}, nil)
+	svc := NewImportDienst(&titelSchreiberAttrappe{}, nil)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := svc.ImportiereLitteraXML(context.Background(), strings.NewReader(tt.xml))

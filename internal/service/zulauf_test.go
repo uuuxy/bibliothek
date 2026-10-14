@@ -107,7 +107,7 @@ func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 	}
 }
 
-func TestLadeZulauf_QueryError(t *testing.T) {
+func TestLadeZulauf_AbfragefehlerGehtWeiter(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)

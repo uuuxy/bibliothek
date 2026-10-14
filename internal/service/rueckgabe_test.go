@@ -13,34 +13,30 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-type mockLoanRepoReturn struct {
-	returnErr        error
-	beginErr         error
-	getActiveLoanErr error
-	tx               pgx.Tx
+type rueckgabeAttrappe struct {
+	rueckgabeFehler error
+	beginnFehler    error
+	offeneFehler    error
+	tx              pgx.Tx
 }
 
-func (m *mockLoanRepoReturn) FindeOffene(ctx context.Context, copyID string) (*repository.Ausleihe, error) {
-	return nil, m.getActiveLoanErr
+func (m *rueckgabeAttrappe) FindeOffene(ctx context.Context, copyID string) (*repository.Ausleihe, error) {
+	return nil, m.offeneFehler
 }
-func (m *mockLoanRepoReturn) SperreOffene(ctx context.Context, tx pgx.Tx, copyID string) (*repository.Ausleihe, error) {
-	return nil, m.getActiveLoanErr
+func (m *rueckgabeAttrappe) SperreOffene(ctx context.Context, tx pgx.Tx, copyID string) (*repository.Ausleihe, error) {
+	return nil, m.offeneFehler
 }
-func (m *mockLoanRepoReturn) BeginneTx(ctx context.Context) (pgx.Tx, error) { return m.tx, m.beginErr }
-func (m *mockLoanRepoReturn) LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Ausleihe, error) {
+func (m *rueckgabeAttrappe) BeginneTx(ctx context.Context) (pgx.Tx, error) {
+	return m.tx, m.beginnFehler
+}
+func (m *rueckgabeAttrappe) LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Ausleihe, error) {
 	return nil, nil
 }
-func (m *mockLoanRepoReturn) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, istVerlust bool) error {
-	return m.returnErr
-}
-func (m *mockLoanRepoReturn) ZaehleAktiveAusleihenVonSchuelerTx(ctx context.Context, tx pgx.Tx, schuelerID string) (int, error) {
-	return 0, nil
-}
-func (m *mockLoanRepoReturn) GetActiveBorrowingsByUserTx(ctx context.Context, tx pgx.Tx, userID string) ([]repository.Ausleihe, error) {
-	return nil, nil
+func (m *rueckgabeAttrappe) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, istVerlust bool) error {
+	return m.rueckgabeFehler
 }
 
-func TestVerarbeiteRueckgabe_ReturnLoanTxError(t *testing.T) {
+func TestVerarbeiteRueckgabe_RueckgabeFehler(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -50,8 +46,8 @@ func TestVerarbeiteRueckgabe_ReturnLoanTxError(t *testing.T) {
 	expectedErr := errors.New("db error")
 	svc := &ausleihDienst{
 		pool:            mockPool,
-		ausleihAbfragen: &mockLoanRepoReturn{returnErr: expectedErr},
-		leserAbfragen:   &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
+		ausleihAbfragen: &rueckgabeAttrappe{rueckgabeFehler: expectedErr},
+		leserAbfragen:   &leserAttrappe{leser: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -78,19 +74,19 @@ func TestVerarbeiteRueckgabe_ReturnLoanTxError(t *testing.T) {
 	}
 }
 
-func TestVerarbeiteRueckgabe_CommitError(t *testing.T) {
+func TestVerarbeiteRueckgabe_CommitFehler(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
 	}
 	defer mockPool.Close()
 
-	audit := &mockAuditRepo{}
+	audit := &protokollAttrappe{}
 	svc := &ausleihDienst{
 		pool:              mockPool,
-		ausleihAbfragen:   &mockLoanRepoReturn{},
+		ausleihAbfragen:   &rueckgabeAttrappe{},
 		protokollAbfragen: audit,
-		leserAbfragen:     &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
+		leserAbfragen:     &leserAttrappe{leser: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -124,19 +120,19 @@ func TestVerarbeiteRueckgabe_CommitError(t *testing.T) {
 	}
 }
 
-func TestVerarbeiteRueckgabe_Success(t *testing.T) {
+func TestVerarbeiteRueckgabe_Gelingt(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
 	}
 	defer mockPool.Close()
 
-	audit := &mockAuditRepo{}
+	audit := &protokollAttrappe{}
 	svc := &ausleihDienst{
 		pool:              mockPool,
-		ausleihAbfragen:   &mockLoanRepoReturn{},
+		ausleihAbfragen:   &rueckgabeAttrappe{},
 		protokollAbfragen: audit,
-		leserAbfragen:     &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
+		leserAbfragen:     &leserAttrappe{leser: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -180,12 +176,12 @@ func TestVerarbeiteRueckgabe_VormerkungAktiviert(t *testing.T) {
 	}
 	defer mockPool.Close()
 
-	audit := &mockAuditRepo{}
+	audit := &protokollAttrappe{}
 	svc := &ausleihDienst{
 		pool:              mockPool,
-		ausleihAbfragen:   &mockLoanRepoReturn{},
+		ausleihAbfragen:   &rueckgabeAttrappe{},
 		protokollAbfragen: audit,
-		leserAbfragen:     &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
+		leserAbfragen:     &leserAttrappe{leser: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 		// Donnerstag vor den Herbstferien (05.10.–17.10.2026): plus drei Tage ist Sonntag, der
 		// nächste Schultag der Montag nach den Ferien.
 		jetzt: func() time.Time { return time.Date(2026, time.October, 1, 10, 0, 0, 0, schulzeit.Zone()) },
@@ -250,7 +246,7 @@ func TestNimmZurueck_ReichtFehlerWeiter(t *testing.T) {
 	exemplar := &repository.Exemplar{ID: "ex-1"}
 
 	t.Run("die Transaktion beginnt nicht", func(t *testing.T) {
-		svc := &ausleihDienst{ausleihAbfragen: &mockLoanRepoReturn{beginErr: dbFehler}}
+		svc := &ausleihDienst{ausleihAbfragen: &rueckgabeAttrappe{beginnFehler: dbFehler}}
 
 		ergebnis, err := svc.NimmZurueck(context.Background(), exemplar, "theke")
 		if !errors.Is(err, dbFehler) {
@@ -273,7 +269,7 @@ func TestNimmZurueck_ReichtFehlerWeiter(t *testing.T) {
 			t.Fatalf("Transaktion der Attrappe: %v", err)
 		}
 		pool.ExpectRollback()
-		svc := &ausleihDienst{ausleihAbfragen: &mockLoanRepoReturn{tx: tx, getActiveLoanErr: dbFehler}}
+		svc := &ausleihDienst{ausleihAbfragen: &rueckgabeAttrappe{tx: tx, offeneFehler: dbFehler}}
 
 		ergebnis, err := svc.NimmZurueck(context.Background(), exemplar, "theke")
 		if !errors.Is(err, dbFehler) {

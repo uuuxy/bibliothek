@@ -13,15 +13,15 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-type orderMockTransport struct {
-	roundTripFunc func(req *http.Request) (*http.Response, error)
+type dnbTransportAttrappe struct {
+	antwort func(req *http.Request) (*http.Response, error)
 }
 
-func (t *orderMockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	return t.roundTripFunc(req)
+func (t *dnbTransportAttrappe) RoundTrip(req *http.Request) (*http.Response, error) {
+	return t.antwort(req)
 }
 
-func TestFindeZumBestellen_ReturnsCombinedResults(t *testing.T) {
+func TestFindeZumBestellen_KatalogUndDNBZusammen(t *testing.T) {
 	mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -36,8 +36,8 @@ func TestFindeZumBestellen_ReturnsCombinedResults(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "ist_lernmittel", "current_stock"}).
 			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "cover-lokal", "SIG-1", true, 3))
 
-	mockTransport := &orderMockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+	mockTransport := &dnbTransportAttrappe{
+		antwort: func(req *http.Request) (*http.Response, error) {
 			if req.URL.Host == "services.dnb.de" {
 				xml := `<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
   <numberOfRecords>1</numberOfRecords>
@@ -115,7 +115,7 @@ func TestFindeZumBestellen_ReturnsCombinedResults(t *testing.T) {
 	}
 }
 
-func TestFindeZumBestellen_LocalOnlyWhenDNBFails(t *testing.T) {
+func TestFindeZumBestellen_NurKatalogWennDNBScheitert(t *testing.T) {
 	mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -130,8 +130,8 @@ func TestFindeZumBestellen_LocalOnlyWhenDNBFails(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "ist_lernmittel", "current_stock"}).
 			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "", "SIG-1", false, 3))
 
-	mockTransport := &orderMockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+	mockTransport := &dnbTransportAttrappe{
+		antwort: func(req *http.Request) (*http.Response, error) {
 			return nil, errors.New("network error")
 		},
 	}
@@ -161,7 +161,7 @@ func TestFindeZumBestellen_LocalOnlyWhenDNBFails(t *testing.T) {
 	}
 }
 
-func TestFindeZumBestellen_DNBOnlyWhenLocalFails(t *testing.T) {
+func TestFindeZumBestellen_NurDNBWennKatalogScheitert(t *testing.T) {
 	mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -175,8 +175,8 @@ func TestFindeZumBestellen_DNBOnlyWhenLocalFails(t *testing.T) {
 		WithArgs("TestBook").
 		WillReturnError(errors.New("db error"))
 
-	mockTransport := &orderMockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+	mockTransport := &dnbTransportAttrappe{
+		antwort: func(req *http.Request) (*http.Response, error) {
 			if req.URL.Host == "services.dnb.de" {
 				xml := `<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
   <numberOfRecords>1</numberOfRecords>

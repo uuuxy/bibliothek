@@ -10,25 +10,25 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-type mockLoanRepo struct {
+type rueckgabeFehlerAttrappe struct {
 	repository.AusleihAbfragen // embed to satisfy interface methods we don't mock
-	returnLoanTxErr            error
+	rueckgabeFehler            error
 }
 
-func (m *mockLoanRepo) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID string, bearbeiterID string, isFremdrueckgabe bool) error {
-	return m.returnLoanTxErr
+func (m *rueckgabeFehlerAttrappe) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID string, bearbeiterID string, isFremdrueckgabe bool) error {
+	return m.rueckgabeFehler
 }
 
-func TestVerarbeiteFremdrueckgabe_Student(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, &repository.Leser{
+func TestVerarbeiteFremdrueckgabe_Schueler(t *testing.T) {
+	svc, _, mockPool := newVorgangDienst(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
 	defer mockPool.Close()
 
-	mockLoan := &mockLoanRepo{}
+	mockLoan := &rueckgabeFehlerAttrappe{}
 	svc.ausleihAbfragen = mockLoan
 
-	tx := beginTx(t, mockPool)
+	tx := beginneTx(t, mockPool)
 
 	activeLoan := &repository.Ausleihe{
 		ID:         "loan1",
@@ -69,15 +69,15 @@ func TestVerarbeiteFremdrueckgabe_Student(t *testing.T) {
 // Kontentabelle; jetzt ist es derselbe Weg wie beim Schüler — Finde, nicht die
 // Sicht `schueler`, sonst bliebe der Vorbesitzer namenlos.
 func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, &repository.Leser{
+	svc, _, mockPool := newVorgangDienst(t, &repository.Leser{
 		ID: "t1", Vorname: "Hans", Nachname: "Lehrer", Art: "lehrkraft",
 	})
 	defer mockPool.Close()
 
-	mockLoan := &mockLoanRepo{}
+	mockLoan := &rueckgabeFehlerAttrappe{}
 	svc.ausleihAbfragen = mockLoan
 
-	tx := beginTx(t, mockPool)
+	tx := beginneTx(t, mockPool)
 
 	activeLoan := &repository.Ausleihe{
 		ID:         "loan2",
@@ -116,17 +116,17 @@ func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
 	}
 }
 
-func TestVerarbeiteFremdrueckgabe_ReturnLoanError(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, &repository.Leser{
+func TestVerarbeiteFremdrueckgabe_RueckgabeFehler(t *testing.T) {
+	svc, _, mockPool := newVorgangDienst(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
 	defer mockPool.Close()
 
 	// Return error
-	mockLoan := &mockLoanRepo{returnLoanTxErr: pgx.ErrTxClosed}
+	mockLoan := &rueckgabeFehlerAttrappe{rueckgabeFehler: pgx.ErrTxClosed}
 	svc.ausleihAbfragen = mockLoan
 
-	tx := beginTx(t, mockPool)
+	tx := beginneTx(t, mockPool)
 
 	activeLoan := &repository.Ausleihe{
 		ID:         "loan3",
@@ -148,16 +148,16 @@ func TestVerarbeiteFremdrueckgabe_ReturnLoanError(t *testing.T) {
 	}
 }
 
-func TestVerarbeiteFremdrueckgabe_CommitError(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, &repository.Leser{
+func TestVerarbeiteFremdrueckgabe_CommitFehler(t *testing.T) {
+	svc, _, mockPool := newVorgangDienst(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
 	defer mockPool.Close()
 
-	mockLoan := &mockLoanRepo{}
+	mockLoan := &rueckgabeFehlerAttrappe{}
 	svc.ausleihAbfragen = mockLoan
 
-	tx := beginTx(t, mockPool)
+	tx := beginneTx(t, mockPool)
 
 	activeLoan := &repository.Ausleihe{
 		ID:         "loan4",

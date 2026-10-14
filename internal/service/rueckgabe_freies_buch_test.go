@@ -25,21 +25,21 @@ import (
 // Monate lang tot, ohne dass es jemandem auffiel.
 //
 // Ausgeliehen wird über den Ausweis. Dieser Test hält die Tür zu.
-type selbstausleiheLoanRepo struct {
+type selbstausleiheAttrappe struct {
 	repository.AusleihAbfragen
-	mock      pgxmock.PgxPoolIface
+	pool      pgxmock.PgxPoolIface
 	geschrieb bool
 }
 
-func (r *selbstausleiheLoanRepo) BeginneTx(ctx context.Context) (pgx.Tx, error) {
-	return r.mock.Begin(ctx)
+func (r *selbstausleiheAttrappe) BeginneTx(ctx context.Context) (pgx.Tx, error) {
+	return r.pool.Begin(ctx)
 }
 
-func (r *selbstausleiheLoanRepo) SperreOffene(_ context.Context, _ pgx.Tx, _ string) (*repository.Ausleihe, error) {
+func (r *selbstausleiheAttrappe) SperreOffene(_ context.Context, _ pgx.Tx, _ string) (*repository.Ausleihe, error) {
 	return nil, nil // Buch ist frei — genau der Fall, in dem der Sonderweg zuschlug
 }
 
-func (r *selbstausleiheLoanRepo) LegeAn(_ context.Context, _ pgx.Tx, _, _, _ string, _ time.Time, _ bool) (*repository.Ausleihe, error) {
+func (r *selbstausleiheAttrappe) LegeAn(_ context.Context, _ pgx.Tx, _, _, _ string, _ time.Time, _ bool) (*repository.Ausleihe, error) {
 	r.geschrieb = true
 	return &repository.Ausleihe{}, nil
 }
@@ -53,7 +53,7 @@ func TestFreiesBuchWirdNichtAufDenScannerGebucht(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectRollback()
 
-	repo := &selbstausleiheLoanRepo{mock: mock}
+	repo := &selbstausleiheAttrappe{pool: mock}
 	svc := &ausleihDienst{ausleihAbfragen: repo}
 	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", IstAusleihbar: true}
 

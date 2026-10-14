@@ -52,7 +52,7 @@ type katalog struct {
 
 func (k katalog) client() *inventur.MetadatenClient {
 	c := inventur.NeuerMetadatenClient()
-	c.SetzeHTTPClientFuerTest(&http.Client{Transport: &orderMockTransport{roundTripFunc: k.antworte}})
+	c.SetzeHTTPClientFuerTest(&http.Client{Transport: &dnbTransportAttrappe{antwort: k.antworte}})
 	return c
 }
 

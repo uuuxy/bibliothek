@@ -69,15 +69,15 @@ func TestZerlegeLMFTeil(t *testing.T) {
 	}
 }
 
-// stubBookRepo zeichnet Upserts auf; alle übrigen Interface-Methoden
+// titelSchreiberAttrappe zeichnet Upserts auf; alle übrigen Interface-Methoden
 // stammen aus dem eingebetteten Nil-Interface und dürfen nicht aufgerufen werden.
-type stubBookRepo struct {
+type titelSchreiberAttrappe struct {
 	repository.KatalogAbfragen
-	titles []repository.Titel
+	titel []repository.Titel
 }
 
-func (s *stubBookRepo) SchreibeTitel(_ context.Context, titles []repository.Titel) (int, error) {
-	s.titles = append(s.titles, titles...)
+func (s *titelSchreiberAttrappe) SchreibeTitel(_ context.Context, titles []repository.Titel) (int, error) {
+	s.titel = append(s.titel, titles...)
 	return len(titles), nil
 }
 
@@ -126,7 +126,7 @@ func TestImportiereLitteraXML_LMFUndSignatur(t *testing.T) {
   </Katalogisat>
 </Katalogisate>`
 
-	repo := &stubBookRepo{}
+	repo := &titelSchreiberAttrappe{}
 	svc := NewImportDienst(repo, nil)
 
 	count, err := svc.ImportiereLitteraXML(context.Background(), strings.NewReader(xmlDaten))
@@ -144,7 +144,7 @@ func TestImportiereLitteraXML_LMFUndSignatur(t *testing.T) {
 		{Titel: "Bilingual unterrichten", Signatur: "Pg", IstLernmittel: false, Fach: ""},
 	}
 	for i, w := range want {
-		g := repo.titles[i]
+		g := repo.titel[i]
 		if g.Titel != w.Titel || g.Signatur != w.Signatur || g.IstLernmittel != w.IstLernmittel ||
 			g.Fach != w.Fach || g.JahrgangVon != w.JahrgangVon || g.JahrgangBis != w.JahrgangBis {
 			t.Errorf("Titel[%d] = {%q %q lernmittel=%v fach=%q %d–%d}, want {%q %q lernmittel=%v fach=%q %d–%d}",
@@ -185,14 +185,14 @@ func TestImportiereLitteraXML_InteressenkreiseAlsSchlagworte(t *testing.T) {
   </Katalogisat>
 </Katalogisate>`
 
-	repo := &stubBookRepo{}
+	repo := &titelSchreiberAttrappe{}
 	if _, err := NewImportDienst(repo, nil).ImportiereLitteraXML(context.Background(), strings.NewReader(xmlDaten)); err != nil {
 		t.Fatalf("ImportiereLitteraXML: %v", err)
 	}
-	if len(repo.titles) != 1 {
-		t.Fatalf("%d Titel, want 1", len(repo.titles))
+	if len(repo.titel) != 1 {
+		t.Fatalf("%d Titel, want 1", len(repo.titel))
 	}
-	g := repo.titles[0]
+	g := repo.titel[0]
 	wantSW := []string{"Weimarer Republik", "Geschichte", "Sekundarstufe 2", "Referendare", "Lehrer"}
 	if !slices.Equal(g.Schlagworte, wantSW) {
 		t.Errorf("Schlagworte = %q, want %q", g.Schlagworte, wantSW)

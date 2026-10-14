@@ -22,7 +22,7 @@ type geraeteTheke struct {
 	pool             *pgxpool.Pool
 	suffix           string
 	ausgabe, annahme string
-	svc              GeraeteDienst
+	dienst           GeraeteDienst
 }
 
 func neueGeraeteTheke(t *testing.T) *geraeteTheke {
@@ -49,7 +49,7 @@ func neueGeraeteTheke(t *testing.T) *geraeteTheke {
 			}
 		}
 	})
-	g.svc = NewGeraeteDienst(pool, repository.NewLeserAbfragen(pool), repository.NewAusleihAbfragen(pool),
+	g.dienst = NewGeraeteDienst(pool, repository.NewLeserAbfragen(pool), repository.NewAusleihAbfragen(pool),
 		repository.NewProtokollAbfragen(pool))
 	return g
 }
@@ -144,7 +144,7 @@ func TestGeraetAusleihe_AntwortNenntDieGeschriebeneAusleihe(t *testing.T) {
 	nummer := g.geraet(t, "antwort")
 	leser := g.schueler(t, "Antwort")
 
-	res, err := g.svc.VerarbeiteScan(context.Background(), nummer, &leser, true, false, g.ausgabe)
+	res, err := g.dienst.VerarbeiteScan(context.Background(), nummer, &leser, true, false, g.ausgabe)
 	if err != nil {
 		t.Fatalf("Ausleihe: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestGeraetAusleihe_AntwortNenntDieGeschriebeneAusleihe(t *testing.T) {
 // Serverfehler.
 func TestGeraet_UnbekannteNummerIstNichtGefunden(t *testing.T) {
 	g := neueGeraeteTheke(t)
-	_, err := g.svc.VerarbeiteScan(context.Background(), "G-TH-unbekannt-"+g.suffix, nil, true, false, g.ausgabe)
+	_, err := g.dienst.VerarbeiteScan(context.Background(), "G-TH-unbekannt-"+g.suffix, nil, true, false, g.ausgabe)
 	if !errors.Is(err, ErrNichtGefunden) {
 		t.Errorf("unbekannte Nummer: Fehler %v, erwartet ErrNichtGefunden", err)
 	}
@@ -180,10 +180,10 @@ func TestGeraetRueckgabe_FremdrueckgabeNenntDenVorbesitzer(t *testing.T) {
 	bringer := g.schueler(t, "Bringer")
 
 	fremd := g.geraet(t, "fremd")
-	if _, err := g.svc.VerarbeiteScan(ctx, fremd, &ausleiher, true, false, g.ausgabe); err != nil {
+	if _, err := g.dienst.VerarbeiteScan(ctx, fremd, &ausleiher, true, false, g.ausgabe); err != nil {
 		t.Fatalf("Ausleihe: %v", err)
 	}
-	res, err := g.svc.VerarbeiteScan(ctx, fremd, &bringer, true, false, g.annahme)
+	res, err := g.dienst.VerarbeiteScan(ctx, fremd, &bringer, true, false, g.annahme)
 	if err != nil {
 		t.Fatalf("Rückgabe durch einen anderen: %v", err)
 	}
@@ -199,10 +199,10 @@ func TestGeraetRueckgabe_FremdrueckgabeNenntDenVorbesitzer(t *testing.T) {
 	}
 
 	selbst := g.geraet(t, "selbst")
-	if _, err := g.svc.VerarbeiteScan(ctx, selbst, &ausleiher, true, false, g.ausgabe); err != nil {
+	if _, err := g.dienst.VerarbeiteScan(ctx, selbst, &ausleiher, true, false, g.ausgabe); err != nil {
 		t.Fatalf("Ausleihe: %v", err)
 	}
-	res, err = g.svc.VerarbeiteScan(ctx, selbst, &ausleiher, true, false, g.annahme)
+	res, err = g.dienst.VerarbeiteScan(ctx, selbst, &ausleiher, true, false, g.annahme)
 	if err != nil {
 		t.Fatalf("Rückgabe durch den Ausleiher: %v", err)
 	}
@@ -219,14 +219,14 @@ func TestGeraetRueckgabe_GeloeschterVorbesitzerHaeltNichtAuf(t *testing.T) {
 	ctx := context.Background()
 	nummer := g.geraet(t, "geloescht")
 	ausleiher := g.schueler(t, "Geloescht")
-	if _, err := g.svc.VerarbeiteScan(ctx, nummer, &ausleiher, true, false, g.ausgabe); err != nil {
+	if _, err := g.dienst.VerarbeiteScan(ctx, nummer, &ausleiher, true, false, g.ausgabe); err != nil {
 		t.Fatalf("Ausleihe: %v", err)
 	}
 	if _, err := g.pool.Exec(ctx, `UPDATE leser SET deleted_at = now() WHERE id = $1`, ausleiher); err != nil {
 		t.Fatalf("Leser löschen: %v", err)
 	}
 
-	res, err := g.svc.VerarbeiteScan(ctx, nummer, nil, true, false, g.annahme)
+	res, err := g.dienst.VerarbeiteScan(ctx, nummer, nil, true, false, g.annahme)
 	if err != nil {
 		t.Fatalf("Rückgabe: %v", err)
 	}
@@ -261,7 +261,7 @@ func TestGeraetAusleihe_ZweiterPlatzBekommtDenKonflikt(t *testing.T) {
 
 	fertig := make(chan error, 1)
 	go func() {
-		_, err := g.svc.VerarbeiteScan(ctx, nummer, &zweiter, true, false, g.annahme)
+		_, err := g.dienst.VerarbeiteScan(ctx, nummer, &zweiter, true, false, g.annahme)
 		fertig <- err
 	}()
 	warteAufWartende(t, g.pool, platzEins, 1)
@@ -286,7 +286,7 @@ func TestGeraetRueckgabe_ZweiPlaetzeBuchenNurEinmal(t *testing.T) {
 	ctx := context.Background()
 	nummer := g.geraet(t, "doppelt")
 	leser := g.schueler(t, "Doppelt")
-	if _, err := g.svc.VerarbeiteScan(ctx, nummer, &leser, true, false, g.ausgabe); err != nil {
+	if _, err := g.dienst.VerarbeiteScan(ctx, nummer, &leser, true, false, g.ausgabe); err != nil {
 		t.Fatalf("Ausleihe: %v", err)
 	}
 
@@ -307,7 +307,7 @@ func TestGeraetRueckgabe_ZweiPlaetzeBuchenNurEinmal(t *testing.T) {
 	antworten := make(chan antwort, 2)
 	for range 2 {
 		go func() {
-			res, err := g.svc.VerarbeiteScan(ctx, nummer, nil, true, false, g.annahme)
+			res, err := g.dienst.VerarbeiteScan(ctx, nummer, nil, true, false, g.annahme)
 			antworten <- antwort{res, err}
 		}()
 	}
@@ -366,7 +366,7 @@ func TestGeraet_OhneProtokollWederAusleiheNochRueckgabe(t *testing.T) {
 		t.Fatalf("%d offene Ausleihen, obwohl das Protokoll scheiterte", n)
 	}
 
-	if _, err := g.svc.VerarbeiteScan(ctx, nummer, &leser, true, false, g.ausgabe); err != nil {
+	if _, err := g.dienst.VerarbeiteScan(ctx, nummer, &leser, true, false, g.ausgabe); err != nil {
 		t.Fatalf("Ausleihe: %v", err)
 	}
 	if _, err := ohneProtokoll.VerarbeiteScan(ctx, nummer, &leser, true, false, g.annahme); !errors.Is(err, errProtokollProbe) {

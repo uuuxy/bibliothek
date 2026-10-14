@@ -16,9 +16,9 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// pruefeMitMock ruft den Prüfweg mit einem Mock-Pool, auf dem vorbereiten die erwarteten
+// pruefeMitAttrappe ruft den Prüfweg mit einem Mock-Pool, auf dem vorbereiten die erwarteten
 // Abfragen einträgt, und prüft danach, dass genau diese liefen.
-func pruefeMitMock(t *testing.T, leser *repository.Leser, lernmittel, uebergehen bool, vorbereiten func(pgxmock.PgxPoolIface)) (sperrLage, error) {
+func pruefeMitAttrappe(t *testing.T, leser *repository.Leser, lernmittel, uebergehen bool, vorbereiten func(pgxmock.PgxPoolIface)) (sperrLage, error) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -59,7 +59,7 @@ func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
 	for name, leser := range faelle {
 		t.Run(name, func(t *testing.T) {
 			for _, uebergehen := range []bool{false, true} {
-				_, err := pruefeMitMock(t, leser, false, uebergehen, keineAbfrage)
+				_, err := pruefeMitAttrappe(t, leser, false, uebergehen, keineAbfrage)
 				if !errors.Is(err, ErrGesperrt) {
 					t.Fatalf("uebergehen=%v: erwartet ErrGesperrt, bekam %v", uebergehen, err)
 				}
@@ -85,7 +85,7 @@ func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 		leser := schueler(func(s *repository.Leser) {
 			s.IstGesperrt, s.Sperrgrund = true, strPtr("Automatisierte Abgänger-Sperre (Schuljahreswechsel)")
 		})
-		lage, err := pruefeMitMock(t, leser, true, false, keineAbfrage)
+		lage, err := pruefeMitAttrappe(t, leser, true, false, keineAbfrage)
 		if err != nil {
 			t.Fatalf("Lernmittel an einen Ehemaligen abgewiesen: %v", err)
 		}
@@ -97,7 +97,7 @@ func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 		leser := schueler(func(s *repository.Leser) {
 			s.IstVonHandGesperrt, s.Sperrgrund = true, strPtr("Hausverbot")
 		})
-		if _, err := pruefeMitMock(t, leser, true, false, keineAbfrage); !IstSperreAmLeser(err) {
+		if _, err := pruefeMitAttrappe(t, leser, true, false, keineAbfrage); !IstSperreAmLeser(err) {
 			t.Errorf("Sperre von Hand beim Lernmittel: erwartet Sperre am Leser, bekam %v", err)
 		}
 	})
@@ -109,13 +109,13 @@ func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 func TestAusleihSperren_KollegeWirdNieGesperrt(t *testing.T) {
 	for _, art := range []string{"lehrkraft", "liv"} {
 		leser := &repository.Leser{ID: "k1", Art: art, IstVonHandGesperrt: true, IstGesperrt: true, Sperrgrund: strPtr("alt")}
-		if _, err := pruefeMitMock(t, leser, false, false, keineAbfrage); err != nil {
+		if _, err := pruefeMitAttrappe(t, leser, false, false, keineAbfrage); err != nil {
 			t.Errorf("%s abgewiesen: %v", art, err)
 		}
 	}
 	t.Run("leere Art heißt Schüler (Sicht schueler) — die Sperre gilt", func(t *testing.T) {
 		leser := &repository.Leser{ID: "s1", IstVonHandGesperrt: true, Sperrgrund: strPtr("Test")}
-		if _, err := pruefeMitMock(t, leser, false, false, keineAbfrage); !IstSperreAmLeser(err) {
+		if _, err := pruefeMitAttrappe(t, leser, false, false, keineAbfrage); !IstSperreAmLeser(err) {
 			t.Errorf("erwartet Sperre am Leser, bekam %v", err)
 		}
 	})
@@ -128,7 +128,7 @@ func TestAusleihSperren_AnonymisiertBekommtNichts(t *testing.T) {
 		s.IstAnonymisiert, s.IstGesperrt, s.Sperrgrund = true, true, strPtr("Abgänger anonymisiert")
 	})
 	for _, lernmittel := range []bool{false, true} {
-		_, err := pruefeMitMock(t, leser, lernmittel, true, keineAbfrage)
+		_, err := pruefeMitAttrappe(t, leser, lernmittel, true, keineAbfrage)
 		if !errors.Is(err, ErrGesperrt) || IstSperreAmLeser(err) || IstUebergehbareSperre(err) {
 			t.Errorf("lernmittel=%v: erwartet ErrGesperrt ohne Merkmal, bekam %v", lernmittel, err)
 		}
@@ -143,22 +143,22 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 		mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle").
 			WithArgs("s1").WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(1, 12.0))
 	}
-	ueberfaellig := func(mock pgxmock.PgxPoolIface) { expectSettingsAndOverdue(mock, 2) }
+	ueberfaellig := func(mock pgxmock.PgxPoolIface) { erwarteEinstellungenUndUeberfaellige(mock, 2) }
 
 	t.Run("offene Forderung ohne override_block", func(t *testing.T) {
-		_, err := pruefeMitMock(t, schueler(nil), false, false, forderung)
+		_, err := pruefeMitAttrappe(t, schueler(nil), false, false, forderung)
 		if !errors.Is(err, ErrGesperrt) || !IstUebergehbareSperre(err) {
 			t.Errorf("erwartet übergehbare Sperre, bekam %v", err)
 		}
 	})
 	t.Run("überfällig ohne override_block", func(t *testing.T) {
-		_, err := pruefeMitMock(t, schueler(nil), false, false, ueberfaellig)
+		_, err := pruefeMitAttrappe(t, schueler(nil), false, false, ueberfaellig)
 		if !errors.Is(err, ErrGesperrt) || !IstUebergehbareSperre(err) {
 			t.Errorf("erwartet übergehbare Sperre, bekam %v", err)
 		}
 	})
 	t.Run("beide übergangen", func(t *testing.T) {
-		lage, err := pruefeMitMock(t, schueler(nil), false, true, func(mock pgxmock.PgxPoolIface) {
+		lage, err := pruefeMitAttrappe(t, schueler(nil), false, true, func(mock pgxmock.PgxPoolIface) {
 			forderung(mock)
 			mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
@@ -174,8 +174,8 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 		}
 	})
 	t.Run("ohne Hinweis: nichts übergangen", func(t *testing.T) {
-		lage, err := pruefeMitMock(t, schueler(nil), false, true, func(mock pgxmock.PgxPoolIface) {
-			expectSettingsAndOverdue(mock, 0)
+		lage, err := pruefeMitAttrappe(t, schueler(nil), false, true, func(mock pgxmock.PgxPoolIface) {
+			erwarteEinstellungenUndUeberfaellige(mock, 0)
 		})
 		if err != nil || len(lage.uebergangen) != 0 {
 			t.Errorf("erwartet freie Ausleihe ohne Protokolleintrag, bekam err=%v uebergangen=%v", err, lage.uebergangen)
@@ -186,14 +186,14 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 // Das Protokoll schreibt je übergangenen Hinweis einen Eintrag — und keinen, wenn nichts
 // übergangen wurde.
 func TestAusleihSperren_ProtokollJeHinweis(t *testing.T) {
-	audit := &mockAuditRepo{}
+	audit := &protokollAttrappe{}
 	protokolliereUebergangen(context.Background(), audit, "staff1", "s1", nil)
-	if audit.adminAktionCalls != 0 {
-		t.Fatalf("ohne Übergehen %d Einträge", audit.adminAktionCalls)
+	if audit.adminAktionen != 0 {
+		t.Fatalf("ohne Übergehen %d Einträge", audit.adminAktionen)
 	}
 	protokolliereUebergangen(context.Background(), audit, "staff1", "s1", []string{"a", "b"})
-	if audit.adminAktionCalls != 2 {
-		t.Errorf("erwartet 2 Einträge, bekam %d", audit.adminAktionCalls)
+	if audit.adminAktionen != 2 {
+		t.Errorf("erwartet 2 Einträge, bekam %d", audit.adminAktionen)
 	}
 }
 

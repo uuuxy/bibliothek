@@ -97,7 +97,7 @@ func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 // Druck-Center-Pfad (buchetikett.LadeDesTitels) — die Signatur muss deshalb hier ankommen, über
 // die echte Kette KatalogAbfragen.LadeTitel → buchetikett.Etikett. Ein Unit-Test, der Signatur
 // direkt ans Struct schreibt, beweist das nicht: Genau so blieb sie im Mailanhang leer.
-func TestLegeBestellungAn_LabelsTragenSignatur(t *testing.T) {
+func TestLegeBestellungAn_EtikettenTragenSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()

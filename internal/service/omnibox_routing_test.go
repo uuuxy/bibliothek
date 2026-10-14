@@ -16,26 +16,26 @@ import (
 // Tabellen, und ihre Reihenfolge entschied bei einer doppelt vergebenen Nummer still, wen
 // die Theke lädt.
 
-type routingBookRepo struct {
+type weicheKatalogAttrappe struct {
 	repository.KatalogAbfragen
-	copies map[string]*repository.Exemplar
+	exemplare map[string]*repository.Exemplar
 }
 
-func (r *routingBookRepo) FindeExemplar(_ context.Context, barcode string) (*repository.Exemplar, error) {
-	return r.copies[barcode], nil
+func (r *weicheKatalogAttrappe) FindeExemplar(_ context.Context, barcode string) (*repository.Exemplar, error) {
+	return r.exemplare[barcode], nil
 }
 
-func (r *routingBookRepo) FindeTitel(_ context.Context, _ string) ([]repository.Titel, error) {
+func (r *weicheKatalogAttrappe) FindeTitel(_ context.Context, _ string) ([]repository.Titel, error) {
 	return nil, nil
 }
 
-type routingStudentRepo struct {
+type weicheLeserAttrappe struct {
 	repository.LeserAbfragen
-	students map[string]*repository.Leser
+	leser map[string]*repository.Leser
 }
 
-func (r *routingStudentRepo) FindeZuBarcode(_ context.Context, barcode string) (*repository.Leser, error) {
-	return r.students[barcode], nil
+func (r *weicheLeserAttrappe) FindeZuBarcode(_ context.Context, barcode string) (*repository.Leser, error) {
+	return r.leser[barcode], nil
 }
 
 // TestVerarbeiteEingabe_AusweisOhnePraefix bildet die Littera-Altbestand-Ausweise ab:
@@ -43,8 +43,8 @@ func (r *routingStudentRepo) FindeZuBarcode(_ context.Context, barcode string) (
 // ohne das bestehende Buch-Routing oder die Volltextsuche zu stören.
 func TestVerarbeiteEingabe_AusweisOhnePraefix(t *testing.T) {
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen: &routingStudentRepo{students: map[string]*repository.Leser{
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			"20240001737": {ID: "s1", BarcodeID: "20240001737", Vorname: "Mia", Nachname: "Muster"},
 		}},
 	}
@@ -62,8 +62,8 @@ func TestVerarbeiteEingabe_AusweisOhnePraefix(t *testing.T) {
 // die weder Buch- noch Ausweis-Barcode sind, weiterhin in der Volltextsuche landen.
 func TestVerarbeiteEingabe_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen:   &routingStudentRepo{students: map[string]*repository.Leser{}},
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}
 
 	res, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: "gibtesnicht", BearbeiterID: "staff"})
@@ -77,8 +77,8 @@ func TestVerarbeiteEingabe_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 
 // Finde bedient die Auswahl aus der Trefferliste: Dort steht die ID, nicht die
 // Ausweisnummer — ein Kollege ohne gedruckten Ausweis hat gar keine.
-func (r *routingStudentRepo) Finde(_ context.Context, id string) (*repository.Leser, error) {
-	for _, s := range r.students {
+func (r *weicheLeserAttrappe) Finde(_ context.Context, id string) (*repository.Leser, error) {
+	for _, s := range r.leser {
 		if s.ID == id {
 			return s, nil
 		}
@@ -93,8 +93,8 @@ func (r *routingStudentRepo) Finde(_ context.Context, id string) (*repository.Le
 // leer, und der Klick tat nichts.
 func TestVerarbeiteEingabe_LeserAusDerTrefferliste(t *testing.T) {
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen: &routingStudentRepo{students: map[string]*repository.Leser{
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			"ohne-ausweis": {ID: "l1", Vorname: "Hendrik", Nachname: "Wendlandt", Art: "liv"},
 		}},
 	}
@@ -113,8 +113,8 @@ func TestVerarbeiteEingabe_LeserAusDerTrefferliste(t *testing.T) {
 // „keine Treffer", und an der Theke sähe es aus, als sei der Klick ins Leere gegangen.
 func TestVerarbeiteEingabe_LeserIDUnbekannt(t *testing.T) {
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen:   &routingStudentRepo{students: map[string]*repository.Leser{}},
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}
 
 	if _, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: "leser:fehlt", BearbeiterID: "staff"}); err == nil {

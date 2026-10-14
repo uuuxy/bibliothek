@@ -21,7 +21,7 @@ type vormerkTheke struct {
 	suffix      string
 	mitarbeiter string
 	buecher     repository.KatalogAbfragen
-	svc         AusleihDienst
+	dienst      AusleihDienst
 }
 
 func neueVormerkTheke(t *testing.T) *vormerkTheke {
@@ -45,7 +45,7 @@ func neueVormerkTheke(t *testing.T) *vormerkTheke {
 			}
 		}
 	})
-	v.svc = NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), v.buecher, repository.NewAusleihAbfragen(pool),
+	v.dienst = NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), v.buecher, repository.NewAusleihAbfragen(pool),
 		repository.NewProtokollAbfragen(pool))
 	return v
 }
@@ -102,7 +102,7 @@ func (v *vormerkTheke) leihe(t *testing.T, nummer, leserID string) (*AusleihErge
 	if err != nil || exemplar == nil {
 		t.Fatalf("Exemplar %s laden: %v", nummer, err)
 	}
-	return v.svc.BucheAmLeser(ctx, exemplar, &leserID, v.mitarbeiter, false)
+	return v.dienst.BucheAmLeser(ctx, exemplar, &leserID, v.mitarbeiter, false)
 }
 
 // vormerkungen zählt die Vormerkungen des Titels.

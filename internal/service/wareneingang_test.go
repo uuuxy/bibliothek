@@ -9,9 +9,9 @@ import (
 )
 
 // Der UPDATE…RETURNING-Kern von BucheWareneingang (Regex für pgxmock).
-const bulkReceiveQuery = `UPDATE buecher_exemplare e\s+SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL\s+FROM buecher_titel t\s+WHERE e\.titel_id = t\.id\s+AND e\.ist_ausleihbar = false\s+(?:--[^\n]*\s+)*AND e\.bestellstatus IS NOT NULL\s+AND e\.ist_ausgesondert = false\s+AND e\.id = ANY\(\$1\)\s+RETURNING e\.barcode_id, t\.titel, coalesce\(t\.autor, ''\) AS autor, e\.etikett_gedruckt`
+const wareneingangAbfrage = `UPDATE buecher_exemplare e\s+SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL\s+FROM buecher_titel t\s+WHERE e\.titel_id = t\.id\s+AND e\.ist_ausleihbar = false\s+(?:--[^\n]*\s+)*AND e\.bestellstatus IS NOT NULL\s+AND e\.ist_ausgesondert = false\s+AND e\.id = ANY\(\$1\)\s+RETURNING e\.barcode_id, t\.titel, coalesce\(t\.autor, ''\) AS autor, e\.etikett_gedruckt`
 
-func TestBucheWareneingang_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
+func TestBucheWareneingang_NenntEtikettStandJeExemplar(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -20,7 +20,7 @@ func TestBucheWareneingang_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
 
 	ids := []string{"ex-1", "ex-2"}
 
-	mock.ExpectQuery(bulkReceiveQuery).
+	mock.ExpectQuery(wareneingangAbfrage).
 		WithArgs(ids).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "titel", "autor", "etikett_gedruckt"}).
 			AddRow("B-100", "Faust", "Goethe", true).
@@ -55,7 +55,7 @@ func TestBucheWareneingang_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
 	}
 }
 
-func TestBucheWareneingang_NoMatchingCopiesReturnsError(t *testing.T) {
+func TestBucheWareneingang_OhnePassendeExemplareEinFehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -64,7 +64,7 @@ func TestBucheWareneingang_NoMatchingCopiesReturnsError(t *testing.T) {
 
 	ids := []string{"bereits-freigegeben"}
 
-	mock.ExpectQuery(bulkReceiveQuery).
+	mock.ExpectQuery(wareneingangAbfrage).
 		WithArgs(ids).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "titel", "autor", "etikett_gedruckt"}))
 

@@ -29,7 +29,7 @@ func (w *nbWelt) meldungsGrund(t *testing.T, ergebnis string) string {
 func TestBucheNach_RueckgabeEinesBuchsImRegal(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
-	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now().Add(-time.Minute)))
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now().Add(-time.Minute)))
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != "Buch war nicht ausgeliehen" {
 		t.Fatalf("Rückgabe im Regal: %v %+v — erwartet nicht_gebucht mit dem Grund", err, erg)
 	}
@@ -47,7 +47,7 @@ func TestBucheNach_RueckgabeEinesBuchsImRegal(t *testing.T) {
 
 func TestBucheNach_UnbekannteAbsicht(t *testing.T) {
 	w := nbAufbau(t)
-	erg, err := w.svc.BucheNach(context.Background(), w.eintrag("verlaengern", &w.anna, time.Now()))
+	erg, err := w.dienst.BucheNach(context.Background(), w.eintrag("verlaengern", &w.anna, time.Now()))
 	if !errors.Is(err, ErrUngueltigerZustand) || erg != nil {
 		t.Fatalf("unbekannte Absicht: %v %+v — erwartet ErrUngueltigerZustand ohne Ergebnis", err, erg)
 	}
@@ -68,7 +68,7 @@ func TestBucheNach_ScanAusDerZukunftZaehltAbServerzeit(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
 	vorher := time.Now()
-	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(3*time.Hour)))
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(3*time.Hour)))
 	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Scan aus der Zukunft: %v %+v", err, erg)
 	}
@@ -92,7 +92,7 @@ func TestBucheNach_OfflineGescannterAusweisLoestDiePersonAuf(t *testing.T) {
 	}
 	e := w.eintrag(NachbuchAbsichtAusleihe, nil, time.Now().Add(-time.Minute))
 	e.AusweisBarcode = &ausweis
-	erg, err := w.svc.BucheNach(ctx, e)
+	erg, err := w.dienst.BucheNach(ctx, e)
 	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Ausleihe über den Ausweis: %v %+v", err, erg)
 	}
@@ -125,7 +125,7 @@ func TestBucheNach_ScanVorDerAusleiheIstVeraltet(t *testing.T) {
 			if _, err := w.pool.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = NULL WHERE id = $1`, w.exemplarID); err != nil {
 				t.Fatalf("Stempel leeren: %v", err)
 			}
-			erg, err := w.svc.BucheNach(ctx, w.eintrag(f.absicht, f.person(w), jetzt.Add(-10*time.Minute)))
+			erg, err := w.dienst.BucheNach(ctx, w.eintrag(f.absicht, f.person(w), jetzt.Add(-10*time.Minute)))
 			if err != nil || erg.Ergebnis != repository.NachbuchVeraltet || erg.Grund != f.grund {
 				t.Fatalf("%v %+v — erwartet veraltet mit dem Grund %q", err, erg, f.grund)
 			}
@@ -146,7 +146,7 @@ func TestBucheNach_GleichzeitigeAusleiheAmAnderenArbeitsplatz(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
 	t0 := time.Now().Add(-30 * time.Minute)
-	if erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.ben, t0)); err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
+	if erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.ben, t0)); err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Ben: %v %+v", err, erg)
 	}
 
@@ -173,7 +173,7 @@ func TestBucheNach_GleichzeitigeAusleiheAmAnderenArbeitsplatz(t *testing.T) {
 	})
 
 	scan := t0.Add(5 * time.Minute)
-	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, scan))
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, scan))
 	const grund = "Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht"
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != grund {
 		t.Fatalf("%v %+v — erwartet nicht_gebucht mit dem Grund %q", err, erg, grund)
@@ -205,7 +205,7 @@ func TestBucheNach_RueckkehrNenntDenGrund(t *testing.T) {
 		t.Fatalf("aussondern: %v", err)
 	}
 	time.Sleep(50 * time.Millisecond)
-	erg, err := ohne.svc.BucheNach(ctx, ohne.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
+	erg, err := ohne.dienst.BucheNach(ctx, ohne.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	const umlauf = "Buch war abgeschrieben und ist wieder im Umlauf"
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert || erg.Grund != umlauf {
 		t.Fatalf("ohne Forderung: %v %+v — erwartet nur_reaktiviert mit dem Grund %q", err, erg, umlauf)
@@ -217,7 +217,7 @@ func TestBucheNach_RueckkehrNenntDenGrund(t *testing.T) {
 	mit := nbAufbau(t)
 	verlorenGemeldet(t, mit)
 	time.Sleep(50 * time.Millisecond)
-	erg, err = mit.svc.BucheNach(ctx, mit.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
+	erg, err = mit.dienst.BucheNach(ctx, mit.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	const storniert = "Buch war abgeschrieben; Forderung über 12,00 € storniert"
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert || erg.Grund != storniert {
 		t.Fatalf("mit Forderung: %v %+v — erwartet nur_reaktiviert mit dem Grund %q", err, erg, storniert)
@@ -232,14 +232,14 @@ func TestBucheNach_RueckkehrNenntDenGrund(t *testing.T) {
 func TestBucheNach_AusleiheOhnePersonNenntDenAusweis(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
-	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, nil, time.Now().Add(-time.Minute)))
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, nil, time.Now().Add(-time.Minute)))
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != "Ausweis unbekannt" {
 		t.Fatalf("ohne Person und ohne Ausweis: %v %+v", err, erg)
 	}
 	ausweis := "S-FREMD-4711"
 	e := w.eintrag(NachbuchAbsichtAusleihe, nil, time.Now().Add(-time.Minute))
 	e.AusweisBarcode = &ausweis
-	erg, err = w.svc.BucheNach(ctx, e)
+	erg, err = w.dienst.BucheNach(ctx, e)
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != "Ausweis unbekannt: S-FREMD-4711" {
 		t.Fatalf("mit unbekanntem Ausweis: %v %+v", err, erg)
 	}
@@ -268,7 +268,7 @@ func TestBucheNach_GesperrtesExemplar(t *testing.T) {
 		t.Fatalf("sperren: %v", err)
 	}
 	time.Sleep(50 * time.Millisecond)
-	erg, err := imRegal.svc.BucheNach(ctx, imRegal.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
+	erg, err := imRegal.dienst.BucheNach(ctx, imRegal.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert {
 		t.Fatalf("gesperrt im Regal: %v %+v — erwartet nur_reaktiviert", err, erg)
 	}
@@ -277,14 +277,14 @@ func TestBucheNach_GesperrtesExemplar(t *testing.T) {
 	}
 
 	verliehen := nbAufbau(t)
-	if erg, err := verliehen.svc.BucheNach(ctx, verliehen.eintrag(NachbuchAbsichtAusleihe, &verliehen.anna, time.Now().Add(-30*time.Minute))); err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
+	if erg, err := verliehen.dienst.BucheNach(ctx, verliehen.eintrag(NachbuchAbsichtAusleihe, &verliehen.anna, time.Now().Add(-30*time.Minute))); err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Anna: %v %+v", err, erg)
 	}
 	if _, err := verliehen.pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausleihbar = false WHERE id = $1`, verliehen.exemplarID); err != nil {
 		t.Fatalf("sperren: %v", err)
 	}
 	time.Sleep(50 * time.Millisecond)
-	erg, err = verliehen.svc.BucheNach(ctx, verliehen.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
+	erg, err = verliehen.dienst.BucheNach(ctx, verliehen.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	if err != nil || erg.Ergebnis != repository.NachbuchZurueckgegeben {
 		t.Fatalf("gesperrt und verliehen: %v %+v — erwartet zurueckgegeben", err, erg)
 	}
@@ -309,7 +309,7 @@ func TestBucheNach_RueckholenZaehltAbDemScan(t *testing.T) {
 		t.Fatalf("Stempel setzen: %v", err)
 	}
 	scan := jetzt.Add(-5 * time.Minute)
-	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, scan))
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, scan))
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert {
 		t.Fatalf("Rückkehr: %v %+v", err, erg)
 	}
@@ -324,7 +324,7 @@ func TestBucheNach_RueckholenZaehltAbDemScan(t *testing.T) {
 	a := nbAufbau(t)
 	verlorenGemeldet(t, a)
 	time.Sleep(50 * time.Millisecond)
-	erg, err = a.svc.BucheNach(ctx, a.eintrag(NachbuchAbsichtAusleihe, &a.ben, time.Now()))
+	erg, err = a.dienst.BucheNach(ctx, a.eintrag(NachbuchAbsichtAusleihe, &a.ben, time.Now()))
 	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Ausleihe eines abgeschriebenen Buchs: %v %+v", err, erg)
 	}
@@ -344,7 +344,7 @@ func TestBucheNach_RueckholenZaehltAbDemScan(t *testing.T) {
 func TestBucheNach_AntwortNenntAusleiheUndFrist(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
-	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(-time.Minute)))
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(-time.Minute)))
 	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen || erg.Gebucht == nil {
 		t.Fatalf("Ausleihe: %v %+v", err, erg)
 	}
@@ -368,7 +368,7 @@ func TestBucheNach_AbweisungNenntDieSchranke(t *testing.T) {
 	ctx := context.Background()
 
 	sperre := nbAufbau(t)
-	erg, err := sperre.svc.BucheNach(ctx, sperre.eintrag(NachbuchAbsichtAusleihe, &sperre.carla, time.Now().Add(-time.Minute)))
+	erg, err := sperre.dienst.BucheNach(ctx, sperre.eintrag(NachbuchAbsichtAusleihe, &sperre.carla, time.Now().Add(-time.Minute)))
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht {
 		t.Fatalf("gesperrter Leser: %v %+v", err, erg)
 	}
@@ -386,7 +386,7 @@ func TestBucheNach_AbweisungNenntDieSchranke(t *testing.T) {
 		vorgemerkt.titelID, vorgemerkt.ben, vorgemerkt.exemplarID); err != nil {
 		t.Fatalf("Vormerkung für Ben: %v", err)
 	}
-	erg, err = vorgemerkt.svc.BucheNach(ctx, vorgemerkt.eintrag(NachbuchAbsichtAusleihe, &vorgemerkt.anna, time.Now().Add(-time.Minute)))
+	erg, err = vorgemerkt.dienst.BucheNach(ctx, vorgemerkt.eintrag(NachbuchAbsichtAusleihe, &vorgemerkt.anna, time.Now().Add(-time.Minute)))
 	const reserviert = "Achtung: dieses Exemplar ist noch für Ben Zweiter reserviert"
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != reserviert {
 		t.Fatalf("fremde Vormerkung: %v %+v — erwartet nicht_gebucht mit dem Grund %q", err, erg, reserviert)

@@ -12,7 +12,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// sameDay vergleicht zwei Zeitpunkte auf Kalendertag-Ebene (Jahr/Monat/Tag) — beide
+// istGleicherTag vergleicht zwei Zeitpunkte auf Kalendertag-Ebene (Jahr/Monat/Tag) — beide
 // zuvor in die Schul-Zeitzone umgerechnet.
 //
 // Die Umrechnung ist der Kern: Date() liefert den Kalendertag in der Location des
@@ -21,7 +21,7 @@ import (
 // Rechners. Auf einem UTC-Server (CI) sind das ab 22:00 UTC zwei verschiedene
 // Kalendertage — derselbe Zeitpunkt, aber 22:09 UTC = 00:09 des Folgetags in Berlin.
 // Ohne Normalisierung waren diese Tests jede Nacht zwei Stunden lang rot.
-func sameDay(a, b time.Time) bool {
+func istGleicherTag(a, b time.Time) bool {
 	loc := schulzeit.Zone()
 	ay, am, ad := a.In(loc).Date()
 	by, bm, bd := b.In(loc).Date()
@@ -64,7 +64,7 @@ func TestLeseJahrgang(t *testing.T) {
 // Tage ist Dienstag 22.09., plus 7 Tage Dienstag 08.09. Mit time.Now() hinge das Ergebnis
 // vom Kalender ab — Fristen, die auf Wochenende, Feiertag oder Ferien fallen, rücken auf den
 // nächsten Schultag (tagesfrist_test.go).
-func TestBerechneFrist_RegularBook(t *testing.T) {
+func TestBerechneFrist_GewoehnlichesBuch(t *testing.T) {
 	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
 	got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schulzeit.Zone())
@@ -73,7 +73,7 @@ func TestBerechneFrist_RegularBook(t *testing.T) {
 	}
 }
 
-func TestBerechneFrist_Media(t *testing.T) {
+func TestBerechneFrist_Medien(t *testing.T) {
 	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
 	for _, mt := range []string{"CD", "DVD", "Audio-CD", "dvd"} {
 		got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: mt, LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
@@ -84,7 +84,7 @@ func TestBerechneFrist_Media(t *testing.T) {
 	}
 }
 
-func TestBerechneFrist_LMF_DefaultStichtag(t *testing.T) {
+func TestBerechneFrist_LMF_StichtagVorgabe(t *testing.T) {
 	for _, titel := range []string{"Mathe 9", "Deutsch 5"} {
 		got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 
@@ -126,14 +126,14 @@ func TestBerechneFrist_LMF_NurInSignatur(t *testing.T) {
 	}
 }
 
-func TestBerechneFrist_LMF_CustomStichtag(t *testing.T) {
+func TestBerechneFrist_LMF_EigenerStichtag(t *testing.T) {
 	got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	if got.Month() != time.June || got.Day() != 15 {
 		t.Errorf("benutzerdefinierter Stichtag 06-15: got %02d-%02d", got.Month(), got.Day())
 	}
 }
 
-func TestBerechneFrist_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
+func TestBerechneFrist_LMF_UngueltigerStichtagGiltAls31Juli(t *testing.T) {
 	for _, bad := range []string{"99-99", "kaputt", "13-40", ""} {
 		got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 		if got.Month() != time.July || got.Day() != 31 {
@@ -142,7 +142,7 @@ func TestBerechneFrist_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
 	}
 }
 
-func TestBerechneFrist_LMF_AdditionalYears(t *testing.T) {
+func TestBerechneFrist_LMF_ZusatzJahre(t *testing.T) {
 	base := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	plus2 := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 2, Sommerferien: ""})
 
@@ -158,7 +158,7 @@ func TestBerechneFrist_LMF_AdditionalYears(t *testing.T) {
 
 // --- ladeEinstellungen: robustes Einlesen der Konfiguration inkl. Default-Fallbacks ---
 
-func newServiceWithMock(t *testing.T) (*ausleihDienst, pgxmock.PgxPoolIface) {
+func newDienstMitAttrappe(t *testing.T) (*ausleihDienst, pgxmock.PgxPoolIface) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -167,8 +167,8 @@ func newServiceWithMock(t *testing.T) (*ausleihDienst, pgxmock.PgxPoolIface) {
 	return &ausleihDienst{pool: mock}, mock
 }
 
-func TestLadeEinstellungen_ParsesValuesAndIgnoresInvalid(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+func TestLadeEinstellungen_LiestWerteUndUebergehtUngueltige(t *testing.T) {
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
@@ -211,8 +211,8 @@ func TestLadeEinstellungen_ParsesValuesAndIgnoresInvalid(t *testing.T) {
 	}
 }
 
-func TestLadeEinstellungen_EmptyTableKeepsDefaults(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+func TestLadeEinstellungen_LeereTabelleBehaeltVorgaben(t *testing.T) {
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
@@ -227,8 +227,8 @@ func TestLadeEinstellungen_EmptyTableKeepsDefaults(t *testing.T) {
 	}
 }
 
-func TestLadeEinstellungen_DBErrorPropagates(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+func TestLadeEinstellungen_DatenbankfehlerGehtWeiter(t *testing.T) {
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
@@ -241,8 +241,8 @@ func TestLadeEinstellungen_DBErrorPropagates(t *testing.T) {
 
 // --- bestimmeFrist: kombiniert Einstellungen + Sonderregeln ---
 
-func TestBestimmeFrist_LeseclubOverride(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+func TestBestimmeFrist_LeseclubGehtVor(t *testing.T) {
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	ziel := "2030-09-15"
@@ -268,7 +268,7 @@ func TestBestimmeFrist_LeseclubOverride(t *testing.T) {
 // Tagen gesperrt, und das Mahnwesen erfasste sie am selben Tag. Die Theke zeigt die Frist
 // beim Ausleihen nicht an; niemand hätte es bemerkt. Ein Zieldatum vor heute gilt nicht.
 func TestBestimmeFrist_LeseclubVergangenGiltNicht(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
@@ -290,7 +290,7 @@ func TestBestimmeFrist_LeseclubVergangenGiltNicht(t *testing.T) {
 // Ein eingestelltes Zieldatum gilt nur bei eingeschaltetem Leseclub: Nach der Aktion bleibt das
 // Datum in den Einstellungen stehen, der Schalter ist aus.
 func TestBestimmeFrist_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
@@ -312,8 +312,8 @@ func TestBestimmeFrist_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
 	}
 }
 
-func TestBestimmeFrist_LMFIgnoresLeseclub(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+func TestBestimmeFrist_LMFOhneLeseclub(t *testing.T) {
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
@@ -340,7 +340,7 @@ func TestBestimmeFrist_LMFIgnoresLeseclub(t *testing.T) {
 // LMF-Plan (Register, Entscheidung 3a): Nennt der Plan für die Klasse einen Rückgabe-
 // Termin, ist der die Frist — vor dem Stichtag. Eine mehrjährige Ausleihe folgt ihm nicht.
 func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	termin := time.Date(2027, time.June, 28, 0, 0, 0, 0, time.UTC)
@@ -377,14 +377,14 @@ func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
 	}
 }
 
-func TestBestimmeFrist_DBErrorUsesEmergencyDefaults(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+func TestBestimmeFrist_DatenbankfehlerNimmtFesteWerte(t *testing.T) {
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnError(errors.New("db down"))
 
-	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestBerechneFrist_RegularBook).
+	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestBerechneFrist_GewoehnlichesBuch).
 	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone()) }
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
 	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
@@ -402,8 +402,8 @@ func TestBestimmeFrist_DBErrorUsesEmergencyDefaults(t *testing.T) {
 // Eine Zeile ohne Wert (etwa ein nie gesetztes ferien_leseclub_zieldatum) und eine mit leerem
 // Wert lassen die Vorgabe stehen und sind kein Fehler: Sonst scheiterte jede Ausleihe am Lesen
 // der Einstellungen. An der Datenbank hält das TestLadeAusleihEinstellungen_AnDerDatenbank.
-func TestLadeEinstellungen_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+func TestLadeEinstellungen_LeererWertFaelltAufVorgabeZurueck(t *testing.T) {
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
@@ -459,7 +459,7 @@ func TestBestimmeFrist_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
-			svc, mock := newServiceWithMock(t)
+			svc, mock := newDienstMitAttrappe(t)
 			defer mock.Close()
 			svc.jetzt = func() time.Time { return fall.heute }
 			mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").

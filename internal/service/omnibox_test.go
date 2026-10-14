@@ -11,14 +11,14 @@ import (
 	"bibliothek/repository"
 )
 
-// stubLeserRepo liefert einen festen Leser für die Ausweis-Stufe der Theke.
-type stubLeserRepo struct {
+// festerLeserAttrappe liefert einen festen Leser für die Ausweis-Stufe der Theke.
+type festerLeserAttrappe struct {
 	repository.LeserAbfragen
 	leser *repository.Leser
 	err   error
 }
 
-func (m *stubLeserRepo) FindeZuBarcode(ctx context.Context, barcode string) (*repository.Leser, error) {
+func (m *festerLeserAttrappe) FindeZuBarcode(ctx context.Context, barcode string) (*repository.Leser, error) {
 	return m.leser, m.err
 }
 
@@ -55,7 +55,7 @@ func TestVerarbeiteAusweis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			svc := &omniboxDienst{
-				leserAbfragen: &stubLeserRepo{leser: tt.leser, err: tt.err},
+				leserAbfragen: &festerLeserAttrappe{leser: tt.leser, err: tt.err},
 			}
 
 			resp := &OmniboxErgebnis{}
@@ -130,36 +130,36 @@ func TestNewOmniboxDienst(t *testing.T) {
 	}
 }
 
-// mockBookRepo is a partial mock for repository.KatalogAbfragen
-type mockBookRepo struct {
+// katalogAttrappe is a partial mock for repository.KatalogAbfragen
+type katalogAttrappe struct {
 	repository.KatalogAbfragen
-	mockGetCopyByBarcode func(ctx context.Context, barcode string) (*repository.Exemplar, error)
+	findeExemplar func(ctx context.Context, barcode string) (*repository.Exemplar, error)
 }
 
-func (m *mockBookRepo) FindeExemplar(ctx context.Context, barcode string) (*repository.Exemplar, error) {
-	if m.mockGetCopyByBarcode != nil {
-		return m.mockGetCopyByBarcode(ctx, barcode)
+func (m *katalogAttrappe) FindeExemplar(ctx context.Context, barcode string) (*repository.Exemplar, error) {
+	if m.findeExemplar != nil {
+		return m.findeExemplar(ctx, barcode)
 	}
 	return nil, nil
 }
 
-// mockLoanService is a partial mock for AusleihDienst
-type mockLoanService struct {
+// ausleihDienstAttrappe is a partial mock for AusleihDienst
+type ausleihDienstAttrappe struct {
 	AusleihDienst
-	mockHandleUnifiedCheckout func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error)
-	mockHandleSimpleReturn    func(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error)
+	bucheAmLeser func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error)
+	nimmZurueck  func(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error)
 }
 
-func (m *mockLoanService) BucheAmLeser(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
-	if m.mockHandleUnifiedCheckout != nil {
-		return m.mockHandleUnifiedCheckout(ctx, copy, activeLeserID, staffID, overrideBlock)
+func (m *ausleihDienstAttrappe) BucheAmLeser(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
+	if m.bucheAmLeser != nil {
+		return m.bucheAmLeser(ctx, copy, activeLeserID, staffID, overrideBlock)
 	}
 	return nil, nil
 }
 
-func (m *mockLoanService) NimmZurueck(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
-	if m.mockHandleSimpleReturn != nil {
-		return m.mockHandleSimpleReturn(ctx, copy, staffID)
+func (m *ausleihDienstAttrappe) NimmZurueck(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
+	if m.nimmZurueck != nil {
+		return m.nimmZurueck(ctx, copy, staffID)
 	}
 	return nil, nil
 }
@@ -169,8 +169,8 @@ func TestVerarbeiteExemplar(t *testing.T) {
 
 	t.Run("FindeExemplar returns error", func(t *testing.T) {
 		expectedErr := errors.New("db error")
-		bookRepo := &mockBookRepo{
-			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
+		bookRepo := &katalogAttrappe{
+			findeExemplar: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
 				return nil, expectedErr
 			},
 		}
@@ -189,8 +189,8 @@ func TestVerarbeiteExemplar(t *testing.T) {
 	})
 
 	t.Run("FindeExemplar returns nil (not found)", func(t *testing.T) {
-		bookRepo := &mockBookRepo{
-			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
+		bookRepo := &katalogAttrappe{
+			findeExemplar: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
 				return nil, nil
 			},
 		}
@@ -215,14 +215,14 @@ func TestVerarbeiteExemplar(t *testing.T) {
 		bookCopy := &repository.Exemplar{ID: "copy-123", IstAusleihbar: true, IstAusgesondert: false}
 		expectedLoanResult := &AusleihErgebnis{Art: "ausleihe"}
 
-		bookRepo := &mockBookRepo{
-			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
+		bookRepo := &katalogAttrappe{
+			findeExemplar: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
 				return bookCopy, nil
 			},
 		}
 
-		loanSvc := &mockLoanService{
-			mockHandleUnifiedCheckout: func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
+		loanSvc := &ausleihDienstAttrappe{
+			bucheAmLeser: func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
 				if copy != bookCopy || activeLeserID == nil || *activeLeserID != studentID {
 					t.Errorf("BucheAmLeser called with wrong arguments")
 				}
@@ -251,14 +251,14 @@ func TestVerarbeiteExemplar(t *testing.T) {
 		bookCopy := &repository.Exemplar{ID: "copy-123", IstAusleihbar: true, IstAusgesondert: false}
 		expectedLoanResult := &AusleihErgebnis{Art: "rueckgabe"}
 
-		bookRepo := &mockBookRepo{
-			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
+		bookRepo := &katalogAttrappe{
+			findeExemplar: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
 				return bookCopy, nil
 			},
 		}
 
-		loanSvc := &mockLoanService{
-			mockHandleSimpleReturn: func(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
+		loanSvc := &ausleihDienstAttrappe{
+			nimmZurueck: func(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
 				if copy != bookCopy {
 					t.Errorf("NimmZurueck called with wrong arguments")
 				}
@@ -284,14 +284,14 @@ func TestVerarbeiteExemplar(t *testing.T) {
 	})
 }
 
-type searchBookRepo struct {
+type sucheKatalogAttrappe struct {
 	repository.KatalogAbfragen
-	titles []repository.Titel
-	err    error
+	titel []repository.Titel
+	err   error
 }
 
-func (r *searchBookRepo) FindeTitel(_ context.Context, _ string) ([]repository.Titel, error) {
-	return r.titles, r.err
+func (r *sucheKatalogAttrappe) FindeTitel(_ context.Context, _ string) ([]repository.Titel, error) {
+	return r.titel, r.err
 }
 
 func TestVerarbeiteSuche(t *testing.T) {
@@ -331,9 +331,9 @@ func TestVerarbeiteSuche(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo := &searchBookRepo{
-				titles: tt.mockTitles,
-				err:    tt.mockErr,
+			repo := &sucheKatalogAttrappe{
+				titel: tt.mockTitles,
+				err:   tt.mockErr,
 			}
 			svc := &omniboxDienst{
 				katalogAbfragen: repo,
@@ -376,8 +376,8 @@ func TestVerarbeiteEingabe_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
 
 	t.Run("beide Versuche leer: die Meldung nennt die gescannte Nummer", func(t *testing.T) {
 		var gefragt []string
-		svc := &omniboxDienst{katalogAbfragen: &mockBookRepo{
-			mockGetCopyByBarcode: func(_ context.Context, barcode string) (*repository.Exemplar, error) {
+		svc := &omniboxDienst{katalogAbfragen: &katalogAttrappe{
+			findeExemplar: func(_ context.Context, barcode string) (*repository.Exemplar, error) {
 				gefragt = append(gefragt, barcode)
 				return nil, nil
 			},
@@ -398,8 +398,8 @@ func TestVerarbeiteEingabe_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
 	t.Run("ein Fehler der Datenbank löst keinen zweiten Versuch aus", func(t *testing.T) {
 		dbFehler := errors.New("verbindung weg")
 		abfragen := 0
-		svc := &omniboxDienst{katalogAbfragen: &mockBookRepo{
-			mockGetCopyByBarcode: func(context.Context, string) (*repository.Exemplar, error) {
+		svc := &omniboxDienst{katalogAbfragen: &katalogAttrappe{
+			findeExemplar: func(context.Context, string) (*repository.Exemplar, error) {
 				abfragen++
 				return nil, dbFehler
 			},

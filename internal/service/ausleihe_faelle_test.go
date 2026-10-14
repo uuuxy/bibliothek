@@ -15,7 +15,7 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-func TestVerarbeiteAusleihe_Student_Success(t *testing.T) {
+func TestVerarbeiteAusleihe_Schueler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -31,7 +31,7 @@ func TestVerarbeiteAusleihe_Student_Success(t *testing.T) {
 		t.Fatal("NewAusleihDienst liefert keinen *ausleihDienst")
 	}
 
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
 	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
@@ -81,7 +81,7 @@ func TestVerarbeiteAusleihe_Student_Success(t *testing.T) {
 	}
 }
 
-func TestVerarbeiteAusleihe_Teacher_Success(t *testing.T) {
+func TestVerarbeiteAusleihe_Lehrkraft(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -97,7 +97,7 @@ func TestVerarbeiteAusleihe_Teacher_Success(t *testing.T) {
 		t.Fatal("NewAusleihDienst liefert keinen *ausleihDienst")
 	}
 
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
 	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
@@ -142,7 +142,7 @@ func TestVerarbeiteAusleihe_Teacher_Success(t *testing.T) {
 	}
 }
 
-func TestVerarbeiteAusleihe_ErzeugeAusleiheError(t *testing.T) {
+func TestVerarbeiteAusleihe_AnlegeFehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -158,7 +158,7 @@ func TestVerarbeiteAusleihe_ErzeugeAusleiheError(t *testing.T) {
 		t.Fatal("NewAusleihDienst liefert keinen *ausleihDienst")
 	}
 
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
 	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
@@ -190,7 +190,7 @@ func TestVerarbeiteAusleihe_ErzeugeAusleiheError(t *testing.T) {
 	}
 }
 
-func TestVerarbeiteAusleihe_CommitError(t *testing.T) {
+func TestVerarbeiteAusleihe_CommitFehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -206,7 +206,7 @@ func TestVerarbeiteAusleihe_CommitError(t *testing.T) {
 		t.Fatal("NewAusleihDienst liefert keinen *ausleihDienst")
 	}
 
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
 	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}

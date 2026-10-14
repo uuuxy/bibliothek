@@ -14,21 +14,21 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// expectSettings bedient die system_einstellungen-Abfrage aus ladeEinstellungen.
-func expectSettings(mock pgxmock.PgxPoolIface, maxAusleihen string) {
+// erwarteEinstellungen bedient die system_einstellungen-Abfrage aus ladeEinstellungen.
+func erwarteEinstellungen(mock pgxmock.PgxPoolIface, maxAusleihen string) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", strPtr(maxAusleihen)))
 }
 
-func schuelerCtx(id string) *ausleihVorgang {
+func schuelerVorgang(id string) *ausleihVorgang {
 	return &ausleihVorgang{leserID: id, leser: &repository.Leser{ID: id, Art: "schueler"}}
 }
 
-// lehrkraftCtx ist der Gegenpart: ein Leser, der kein Schüler ist. Die Schülerregeln
+// lehrkraftVorgang ist der Gegenpart: ein Leser, der kein Schüler ist. Die Schülerregeln
 // (Limit, Vormerkung, Zählung) hängen seit Migration 125 an der ART, nicht mehr daran, aus
 // welcher Tabelle der Ausleiher kam.
-func lehrkraftCtx(id string) *ausleihVorgang {
+func lehrkraftVorgang(id string) *ausleihVorgang {
 	return &ausleihVorgang{leserID: id, leser: &repository.Leser{ID: id, Art: "lehrkraft"}}
 }
 
@@ -45,11 +45,11 @@ func lernmittel(titel string) *repository.Exemplar {
 // --- Ausleihlimit (max_ausleihen_schueler) ---
 
 func TestPruefeAusleihlimit_ErreichtesLimitBlockiert(t *testing.T) {
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	expectSettings(mock, "5")
+	erwarteEinstellungen(mock, "5")
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 5, true)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerVorgang("s1"), buchMitTitel("Der Hobbit"), 5, true)
 
 	if !errors.Is(err, ErrGesperrt) {
 		t.Errorf("erreichtes Limit (5 von 5) soll ErrGesperrt liefern, bekam: %v", err)
@@ -57,11 +57,11 @@ func TestPruefeAusleihlimit_ErreichtesLimitBlockiert(t *testing.T) {
 }
 
 func TestPruefeAusleihlimit_UnterLimitErlaubt(t *testing.T) {
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	expectSettings(mock, "5")
+	erwarteEinstellungen(mock, "5")
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 4, true)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerVorgang("s1"), buchMitTitel("Der Hobbit"), 4, true)
 
 	if err != nil {
 		t.Errorf("4 von 5 Ausleihen soll erlaubt sein, bekam: %v", err)
@@ -71,11 +71,11 @@ func TestPruefeAusleihlimit_UnterLimitErlaubt(t *testing.T) {
 func TestPruefeAusleihlimit_LMFBuchIstAusgenommen(t *testing.T) {
 	// Lernmittelfreiheit-Bücher zählen nicht gegen das Limit — sonst könnte ein
 	// Schüler mit vollem Klassensatz keine regulären Bücher mehr leihen.
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	expectSettings(mock, "5")
+	erwarteEinstellungen(mock, "5")
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), lernmittel("Mathematik 7"), 10, true)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerVorgang("s1"), lernmittel("Mathematik 7"), 10, true)
 
 	if err != nil {
 		t.Errorf("LMF-Buch soll trotz überschrittenem Limit durchgehen, bekam: %v", err)
@@ -87,12 +87,12 @@ func TestPruefeAusleihlimit_LMFNurInSignaturIstAusgenommen(t *testing.T) {
 	// LMF-Kennzeichen nur in der Signatur, nicht im Titel — das darf sie nicht ins
 	// Ausleihlimit laufen lassen (der Fehler, den diese Prüfung ursprünglich beheben
 	// sollte, nur über den anderen Weg ins System gekommen).
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	expectSettings(mock, "5")
+	erwarteEinstellungen(mock, "5")
 
 	err := svc.pruefeSchuelerAusleihlimit(
-		context.Background(), schuelerCtx("s1"), lernmittel("Mathematik Neue Wege 9"), 10, true,
+		context.Background(), schuelerVorgang("s1"), lernmittel("Mathematik Neue Wege 9"), 10, true,
 	)
 
 	if err != nil {
@@ -105,10 +105,10 @@ func TestPruefeAusleihlimit_RueckgabeIstAusgenommen(t *testing.T) {
 	// fremden (das Buch eines Mitschülers, abgegeben während jemand an der Theke steht).
 	// Das Limit darf keine davon blockieren; bis zum 12.09.2026 scheiterte die
 	// Fremdrückgabe am Limit des Kindes in der Sitzung.
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 10, false)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerVorgang("s1"), buchMitTitel("Der Hobbit"), 10, false)
 
 	if err != nil {
 		t.Errorf("Rückgabe soll trotz Limit durchgehen, bekam: %v", err)
@@ -118,13 +118,13 @@ func TestPruefeAusleihlimit_RueckgabeIstAusgenommen(t *testing.T) {
 	}
 }
 
-func TestPruefeAusleihlimit_LehrerOhneLimit(t *testing.T) {
+func TestPruefeAusleihlimit_LehrkraftOhneLimit(t *testing.T) {
 	// Für Lehrkräfte (Handapparat) gilt kein Limit — die Regel greift vor jeder
 	// Settings-Abfrage, daher ist hier bewusst KEINE Query zu erwarten.
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
 
-	lehrerCtx := lehrkraftCtx("l1")
+	lehrerCtx := lehrkraftVorgang("l1")
 	err := svc.pruefeSchuelerAusleihlimit(context.Background(), lehrerCtx, buchMitTitel("Der Hobbit"), 99, true)
 
 	if err != nil {
@@ -180,12 +180,12 @@ func TestDeuteAnlegeFehler(t *testing.T) {
 // auf das Tagesende der Schul-Zeitzone normalisiert wie jede andere Frist. Vor Migration
 // 125 entschied das die Tabelle, aus der er kam; jetzt seine Art.
 func TestLadeVorgang_NichtSchuelerBekommtJahresfrist(t *testing.T) {
-	svc, _, mock := newValidationService(t, &repository.Leser{
+	svc, _, mock := newVorgangDienst(t, &repository.Leser{
 		ID: "l1", Vorname: "Anna", Nachname: "Lehrerin", Art: "lehrkraft",
 	})
 	defer mock.Close()
 
-	chkCtx, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l1"))
+	chkCtx, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), aktiverSchueler("l1"))
 
 	if err != nil {
 		t.Fatalf("eine aktive Lehrkraft soll aufgelöst werden, bekam: %v", err)
@@ -194,7 +194,7 @@ func TestLadeVorgang_NichtSchuelerBekommtJahresfrist(t *testing.T) {
 		t.Errorf("erwartet Nicht-Schüler l1, bekam Art %q / %q", chkCtx.leser.Art, chkCtx.leserID)
 	}
 	erwarteterTag := time.Now().In(schulzeit.Zone()).AddDate(1, 0, 0)
-	if !sameDay(chkCtx.frist, erwarteterTag) {
+	if !istGleicherTag(chkCtx.frist, erwarteterTag) {
 		t.Errorf("Leihfrist soll ~1 Jahr betragen, bekam %v (erwarteter Tag ~%v)", chkCtx.frist, erwarteterTag)
 	}
 	if h, m, sec := chkCtx.frist.In(schulzeit.Zone()).Clock(); h != 23 || m != 59 || sec != 59 {
@@ -208,10 +208,10 @@ func TestLadeVorgang_NichtSchuelerBekommtJahresfrist(t *testing.T) {
 
 // Eine Kennung ohne Leserzeile ist ein Bedienfehler (404), kein Serverfehler.
 func TestLadeVorgang_UnbekannterLeser(t *testing.T) {
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
 
-	_, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l9"))
+	_, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), aktiverSchueler("l9"))
 
 	if !errors.Is(err, ErrNichtGefunden) {
 		t.Errorf("unbekannter Leser soll ErrNichtGefunden liefern, bekam: %v", err)
@@ -223,11 +223,11 @@ func TestLadeVorgang_UnbekannterLeser(t *testing.T) {
 // Für den Offline-Betrieb (OFFEN.md 2, Entscheidung (d)) muss der Aussetzer durchkommen.
 func TestLadeVorgang_DatenbankfehlerBleibtFehler(t *testing.T) {
 	stoerung := errors.New("connection reset by peer")
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	svc.leserAbfragen = &mockStudentRepo{err: stoerung}
+	svc.leserAbfragen = &leserAttrappe{err: stoerung}
 
-	_, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l1"))
+	_, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), aktiverSchueler("l1"))
 
 	if errors.Is(err, ErrNichtGefunden) {
 		t.Fatalf("Datenbankfehler wurde als ErrNichtGefunden (404) gemeldet: %v", err)
@@ -241,12 +241,12 @@ func TestLadeVorgang_DatenbankfehlerBleibtFehler(t *testing.T) {
 
 func TestZaehleAktiveAusleihen_NichtSchuelerZaehltNull(t *testing.T) {
 	// Für Lehrkräfte gilt kein Limit — es darf gar nicht gezählt werden.
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	count, err := svc.zaehleAktiveSchuelerAusleihen(context.Background(), tx,
-		lehrkraftCtx("l1"))
+		lehrkraftVorgang("l1"))
 
 	if err != nil || count != 0 {
 		t.Errorf("Nicht-Schüler soll 0 ohne Fehler liefern, bekam %d / %v", count, err)
@@ -257,9 +257,9 @@ func TestZaehleAktiveAusleihen_NichtSchuelerZaehltNull(t *testing.T) {
 }
 
 func TestZaehleAktiveAusleihen_SchuelerWirdGesperrtUndGezaehlt(t *testing.T) {
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
 	// Row-Level-Lock gegen parallele Scans, dann Zählung ohne LMF-Titel.
 	mock.ExpectExec("SELECT id FROM leser WHERE id = \\$1 FOR UPDATE").
@@ -267,7 +267,7 @@ func TestZaehleAktiveAusleihen_SchuelerWirdGesperrtUndGezaehlt(t *testing.T) {
 	mock.ExpectQuery("SELECT COUNT").WithArgs("s1").
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(3))
 
-	count, err := svc.zaehleAktiveSchuelerAusleihen(context.Background(), tx, schuelerCtx("s1"))
+	count, err := svc.zaehleAktiveSchuelerAusleihen(context.Background(), tx, schuelerVorgang("s1"))
 
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
@@ -282,8 +282,8 @@ func TestZaehleAktiveAusleihen_SchuelerWirdGesperrtUndGezaehlt(t *testing.T) {
 
 // --- Vormerkungs-Konflikt (abholbereit reserviertes Exemplar) ---
 
-// beginTx startet eine gemockte Transaktion für die Konflikt-Prüfung.
-func beginTx(t *testing.T, mock pgxmock.PgxPoolIface) pgx.Tx {
+// beginneTx startet eine gemockte Transaktion für die Konflikt-Prüfung.
+func beginneTx(t *testing.T, mock pgxmock.PgxPoolIface) pgx.Tx {
 	t.Helper()
 	mock.ExpectBegin()
 	tx, err := mock.Begin(context.Background())
@@ -293,18 +293,18 @@ func beginTx(t *testing.T, mock pgxmock.PgxPoolIface) pgx.Tx {
 	return tx
 }
 
-const vormerkungQuery = "SELECT v.schueler_id, s.vorname, s.nachname"
+const vormerkungAbfrage = "SELECT v.schueler_id, s.vorname, s.nachname"
 
 func TestVormerkungKonflikt_FremdeReservierungBlockiert(t *testing.T) {
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
-	mock.ExpectQuery(vormerkungQuery).WithArgs("copy1").
+	mock.ExpectQuery(vormerkungAbfrage).WithArgs("copy1").
 		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}).
 			AddRow("s2", "Erika", "Musterfrau"))
 
-	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), true)
+	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerVorgang("s1"), true)
 
 	if !errors.Is(err, ErrKonflikt) {
 		t.Errorf("für s2 reserviertes Exemplar darf nicht an s1 gehen, bekam: %v", err)
@@ -312,15 +312,15 @@ func TestVormerkungKonflikt_FremdeReservierungBlockiert(t *testing.T) {
 }
 
 func TestVormerkungKonflikt_EigeneReservierungErlaubt(t *testing.T) {
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
-	mock.ExpectQuery(vormerkungQuery).WithArgs("copy1").
+	mock.ExpectQuery(vormerkungAbfrage).WithArgs("copy1").
 		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}).
 			AddRow("s1", "Max", "Mustermann"))
 
-	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), true)
+	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerVorgang("s1"), true)
 
 	if err != nil {
 		t.Errorf("eigene Reservierung soll abholbar sein, bekam: %v", err)
@@ -328,13 +328,13 @@ func TestVormerkungKonflikt_EigeneReservierungErlaubt(t *testing.T) {
 }
 
 func TestVormerkungKonflikt_OhneReservierungErlaubt(t *testing.T) {
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
-	mock.ExpectQuery(vormerkungQuery).WithArgs("copy1").WillReturnError(pgx.ErrNoRows)
+	mock.ExpectQuery(vormerkungAbfrage).WithArgs("copy1").WillReturnError(pgx.ErrNoRows)
 
-	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), true)
+	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerVorgang("s1"), true)
 
 	if err != nil {
 		t.Errorf("ohne Reservierung soll die Ausleihe durchgehen, bekam: %v", err)
@@ -345,11 +345,11 @@ func TestVormerkungKonflikt_BeiRueckgabeKeinePruefung(t *testing.T) {
 	// Eine Rückgabe darf nie an einer Reservierung scheitern — es wird bewusst
 	// gar keine Abfrage erwartet. Das gilt für die eigene wie für die fremde: Beide
 	// nehmen nur zurück, die Vormerkung bedient danach bedieneVormerkung.
-	svc, _, mock := newValidationService(t, nil)
+	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
-	tx := beginTx(t, mock)
+	tx := beginneTx(t, mock)
 
-	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), false)
+	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerVorgang("s1"), false)
 
 	if err != nil {
 		t.Errorf("Rückgabe soll nicht geprüft werden, bekam: %v", err)
@@ -368,34 +368,34 @@ func TestIstEigeneRueckgabe(t *testing.T) {
 		loan     *repository.Ausleihe
 		expected bool
 	}{
-		{"keine aktive Ausleihe", schuelerCtx("s1"), nil, false},
+		{"keine aktive Ausleihe", schuelerVorgang("s1"), nil, false},
 		{
 			"Schüler scannt eigenes Buch",
-			schuelerCtx("s1"),
+			schuelerVorgang("s1"),
 			&repository.Ausleihe{SchuelerID: strPtr("s1")},
 			true,
 		},
 		{
 			"Schüler scannt fremdes Buch",
-			schuelerCtx("s1"),
+			schuelerVorgang("s1"),
 			&repository.Ausleihe{SchuelerID: strPtr("s2")},
 			false,
 		},
 		{
 			"Lehrkraft scannt eigenes Buch",
-			lehrkraftCtx("l1"),
+			lehrkraftVorgang("l1"),
 			&repository.Ausleihe{SchuelerID: strPtr("l1")},
 			true,
 		},
 		{
 			"Lehrkraft scannt fremdes Buch",
-			lehrkraftCtx("l1"),
+			lehrkraftVorgang("l1"),
 			&repository.Ausleihe{SchuelerID: strPtr("l2")},
 			false,
 		},
 		{
 			"Schüler scannt Buch einer Lehrkraft",
-			schuelerCtx("s1"),
+			schuelerVorgang("s1"),
 			&repository.Ausleihe{SchuelerID: strPtr("l1")},
 			false,
 		},

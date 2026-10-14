@@ -16,8 +16,8 @@ import (
 func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 	const karte = "B97601826457"
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen: &routingStudentRepo{students: map[string]*repository.Leser{
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			karte: {ID: "s1", Vorname: "Nina", Nachname: "Berger"},
 		}},
 	}
@@ -41,8 +41,8 @@ func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 func TestLehrerausweisOhnePraefix(t *testing.T) {
 	const karte = "B97601826458"
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen: &routingStudentRepo{students: map[string]*repository.Leser{
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			karte: {ID: "l1", Vorname: "Anna", Nachname: "Berg", Art: "lehrkraft"},
 		}},
 	}
@@ -63,8 +63,8 @@ func TestLehrerausweisOhnePraefix(t *testing.T) {
 // Ausweis und muss in der Volltextsuche landen (Frage vom 16.09.2026).
 func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen:   &routingStudentRepo{students: map[string]*repository.Leser{}},
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}
 	for _, eingabe := range []string{"Goethe", "Die Leiden des jungen Werther"} {
 		resp, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: eingabe})
@@ -86,8 +86,8 @@ func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 // über den neu gedruckten Ausweis noch über die Namenssuche ladbar (OFFEN.md 5.15).
 func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen: &routingStudentRepo{students: map[string]*repository.Leser{
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			"L-4711": {ID: "s1", BarcodeID: "L-4711", Vorname: "Ersatz", Nachname: "Nummer"},
 		}},
 	}
@@ -105,8 +105,8 @@ func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 // S-Nummer muss laden.
 func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen: &routingStudentRepo{students: map[string]*repository.Leser{
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			"S-0815": {ID: "l1", Vorname: "Anna", Nachname: "Berg", Art: "lehrkraft"},
 		}},
 	}
@@ -123,8 +123,8 @@ func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
 // sie verschwindet nicht leise in der Volltextsuche.
 func TestUnbekannterAusweisMeldetSichLaut(t *testing.T) {
 	svc := &omniboxDienst{
-		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		leserAbfragen:   &routingStudentRepo{students: map[string]*repository.Leser{}},
+		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
+		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}
 	for _, code := range []string{"S-404", "L-404"} {
 		resp, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: code})

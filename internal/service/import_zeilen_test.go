@@ -10,7 +10,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestCleanISBN(t *testing.T) {
+func TestISBNOhneTrenner(t *testing.T) {
 	tests := []struct {
 		val  string
 		want string
@@ -189,7 +189,7 @@ func TestSammleExemplare(t *testing.T) {
 	}
 }
 
-func TestImportiereZeilen_EmptyRows(t *testing.T) {
+func TestImportiereZeilen_LeereZeilen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)

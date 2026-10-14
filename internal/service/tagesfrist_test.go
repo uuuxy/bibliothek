@@ -60,7 +60,7 @@ func TestBerechneFrist_LernmittelBleibtAmStichtag(t *testing.T) {
 // Die eigenen Sommerferien kommen über die Einstellung „sommerferien" in die Frist — dieselbe
 // Liste, die der LMF-Planer liest, keine zweite.
 func TestBestimmeFrist_SommerferienAusDerEinstellung(t *testing.T) {
-	svc, mock := newServiceWithMock(t)
+	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 	svc.jetzt = func() time.Time { return time.Date(2031, time.June, 23, 10, 0, 0, 0, schulzeit.Zone()) }
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").

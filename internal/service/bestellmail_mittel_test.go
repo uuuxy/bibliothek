@@ -44,7 +44,7 @@ func TestBestellMailErsetztDenPlatzhalterUndHaengtDannNichtsAn(t *testing.T) {
 
 // Die Werksvorgabe (Fallback, wenn die Vorlage fehlt) trägt den Platzhalter selbst —
 // sonst käme jede Fallback-Mail mit dem angehängten Absatz statt mit dem Topf im Betreff.
-func TestBestellMailFallbackKenntDenTopf(t *testing.T) {
+func TestBestellMailVorgabeKenntDenTopf(t *testing.T) {
 	for _, vorlage := range []string{bestellMailVorgabeBetreff, bestellMailVorgabeText} {
 		if !strings.Contains(vorlage, "{{.Mittel}}") {
 			t.Errorf("Fallback ohne {{.Mittel}}: %q", vorlage)
