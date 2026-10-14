@@ -174,6 +174,9 @@ Tests heißen `…_test.go`, Tests an der Datenbank `…_pg_test.go`, Prüfungen
 - Stehen bleibt ein Datum, das zu einer Quelle gehört: „Erlass vom 17.12.2014", „Beschluss vom
   21.09.2022", „abgerufen am 24.09.2026". Marke und Datum stehen in einer Zeile; daran erkennt
   die Prüfung sie.
+- In einem Doc-Kommentar schreibt `gofmt` zwei Apostrophe als `”` und zwei Gravis als `“`.
+  Der leere Text aus SQL (`''`) steht dort deshalb in Worten („auf den leeren Text"); im Rumpf
+  einer Funktion bleibt er, wie er ist.
 
 ## 9. Was seinen Namen behält
 

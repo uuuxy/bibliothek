@@ -80,7 +80,7 @@ func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 	}
 }
 
-// aussonderungsGrund liest den Grund eines Exemplars (” = keiner).
+// aussonderungsGrund liest den Grund eines Exemplars (leerer Text = keiner).
 func aussonderungsGrund(t *testing.T, pool *pgxpool.Pool, copyID string) string {
 	t.Helper()
 	var grund string

@@ -75,7 +75,7 @@ const leserSuchCTE = `
 // Die vorangestellte Ankerbedingung auf $2 ist Absicht und kein Duplikat: Als direkte
 // LIKE-Bedingung kann der Planer dafür die Trigramm-Indizes ziehen
 // (BitmapOr über alle drei). Sie muss buchstäblich dem Index entsprechen — lower(barcode_id),
-// nicht lower(coalesce(barcode_id, ”)). Mit dem coalesce ist dieser eine OR-Zweig nicht
+// nicht lower(coalesce(…)) auf den leeren Text. Mit dem coalesce ist dieser eine OR-Zweig nicht
 // indexierbar, und ein einziger nicht-indexierbarer Zweig kippt die gesamte Abfrage in den
 // Seq Scan (gemessen: 30 ms statt 0,1 ms bei 20.000 Schülern). Ein NULL-Barcode ergibt hier
 // NULL statt false, was in der OR-Verknüpfung dasselbe Ergebnis liefert. Die Klasse steht

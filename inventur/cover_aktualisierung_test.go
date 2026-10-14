@@ -229,8 +229,9 @@ func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 }
 
 // Erfolg: Google liefert Metadaten, DNB das Bild. Geschrieben wird NUR das Cover — Titel
-// und Autor gehen mit leeren Werten an UpdateBookMetadata (COALESCE(NULLIF($1,”), titel)),
-// die Antwort trägt den alten Titel und den neuen lokalen Cover-Pfad.
+// und Autor gehen mit leeren Werten an UpdateBookMetadata, das einen leeren Wert übergeht
+// (NULLIF auf den leeren Text, dann COALESCE mit dem alten Wert); die Antwort trägt den alten
+// Titel und den neuen lokalen Cover-Pfad.
 func TestHandleRefreshCover_Success(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
