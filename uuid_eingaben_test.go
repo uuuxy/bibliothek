@@ -104,7 +104,7 @@ func nimmUUIDDatei(p *uuidPaket, datei *ast.File) {
 }
 
 // pruefeUUIDEingaben liefert jede Stelle, an der eine Kennung ungeprüft hereinkommt.
-func pruefeUUIDEingaben(pakete map[string]*uuidPaket) (maengel []string, gesehen map[string]bool) {
+func pruefeUUIDEingaben(pakete map[string]*uuidPaket, namen eingabeDerTueren) (maengel []string, gesehen map[string]bool) {
 	gesehen = map[string]bool{}
 	nachName := map[string]*uuidPaket{}
 	for verz, p := range pakete {
@@ -127,7 +127,7 @@ func pruefeUUIDEingaben(pakete map[string]*uuidPaket) (maengel []string, gesehen
 		for _, datei := range p.dateien {
 			for _, decl := range datei.Decls {
 				if fn, ok := decl.(*ast.FuncDecl); ok && fn.Body != nil {
-					pruefeUUIDFunktion(p, paket, fn, melde)
+					pruefeUUIDFunktion(p, paket, fn, namen, melde)
 				}
 			}
 		}
@@ -136,7 +136,7 @@ func pruefeUUIDEingaben(pakete map[string]*uuidPaket) (maengel []string, gesehen
 	return maengel, gesehen
 }
 
-func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, melde func(schluessel, ort string)) {
+func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, namen eingabeDerTueren, melde func(schluessel, ort string)) {
 	typen := lokaleVariablen(fn.Body)
 	if prueftLocker(fn.Body) {
 		melde(fmt.Sprintf("%s:%s:lockere UUID-Prüfung", paket, fn.Name.Name), fn.Name.Name)
@@ -146,7 +146,7 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, melde func
 	}
 	uuidSichtbar := ruftAuf(fn.Body, "kennung", "IstUUID") || ruftAuf(fn.Body, "uuid", "Parse") ||
 		ruftHelferAuf(fn.Body, "alleUUIDs")
-	validateSichtbar := ruftAuf(fn.Body, "Validate", "Struct", "Var") || ruftValidatorDerTuerenAuf(fn.Body)
+	validateSichtbar := ruftAuf(fn.Body, namen.validator, "Struct", "Var") || ruftValidatorDerTuerenAuf(fn.Body, namen.validator)
 	queryVars := queryVariablen(fn.Body)
 	ast.Inspect(fn.Body, func(n ast.Node) bool {
 		call, ok := n.(*ast.CallExpr)
@@ -156,7 +156,7 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, melde func
 		if name, ok := queryIDName(call, queryVars); ok {
 			melde(fmt.Sprintf("%s:%s:query:%s", paket, fn.Name.Name, name), fn.Name.Name)
 		}
-		ziel, direkt := dekodierZiel(call)
+		ziel, direkt := dekodierZiel(call, namen.dekodierer)
 		if ziel == "" || typen[ziel] == nil || (direkt && uuidSichtbar) {
 			return true
 		}
@@ -263,13 +263,160 @@ func ruftAuf(body *ast.BlockStmt, paket string, namen ...string) bool {
 	return gefunden
 }
 
-// ruftValidatorDerTuerenAuf: irgendwo im Rumpf steht tuer.Validate.Struct(…) oder
-// tuer.Validate.Var(…), der Validator der Türen aus einem anderen Paket gerufen.
-func ruftValidatorDerTuerenAuf(body *ast.BlockStmt) bool {
+// eingabeDerTueren nennt die Namen, unter denen die Türen ihre Eingabe lesen und prüfen: die
+// Dekodierer (Name → liest streng) und den gemeinsamen Validator aus api/tuer. Die Prüfung
+// liest sie an der Form der Erklärung ab und nicht als Text, damit ein Umbenennen in api/tuer
+// sie nicht blind macht.
+type eingabeDerTueren struct {
+	dekodierer map[string]bool
+	validator  string
+}
+
+// ladeEingabeDerTueren erkennt einen Dekodierer daran, dass er generisch ist, als dritten
+// Parameter einen Zeiger auf seinen Typparameter nimmt und bool liefert; streng ist er, wenn
+// er DisallowUnknownFields ruft. Der Validator ist die Variable, deren Wert eine Funktion
+// liefert, die *validator.Validate zurückgibt.
+func ladeEingabeDerTueren() (eingabeDerTueren, error) {
+	namen := eingabeDerTueren{dekodierer: map[string]bool{}}
+	pfade, err := filepath.Glob(filepath.Join("api", "tuer", "*.go"))
+	if err != nil {
+		return namen, err
+	}
+	erzeuger := map[string]bool{}
+	var dateien []*ast.File
+	for _, pfad := range pfade {
+		if strings.HasSuffix(pfad, "_test.go") {
+			continue
+		}
+		datei, err := parser.ParseFile(token.NewFileSet(), pfad, nil, 0)
+		if err != nil {
+			return namen, err
+		}
+		dateien = append(dateien, datei)
+		for _, decl := range datei.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv != nil {
+				continue
+			}
+			if istDekodiererForm(fn) {
+				namen.dekodierer[fn.Name.Name] = ruftMethodeAuf(fn.Body, "DisallowUnknownFields")
+			}
+			if liefertValidator(fn) {
+				erzeuger[fn.Name.Name] = true
+			}
+		}
+	}
+	for _, datei := range dateien {
+		for _, decl := range datei.Decls {
+			gen, ok := decl.(*ast.GenDecl)
+			if !ok || gen.Tok != token.VAR {
+				continue
+			}
+			for _, spec := range gen.Specs {
+				vs, ok := spec.(*ast.ValueSpec)
+				if !ok || len(vs.Names) != 1 || len(vs.Values) != 1 {
+					continue
+				}
+				if call, ok := vs.Values[0].(*ast.CallExpr); ok {
+					if id, ok := call.Fun.(*ast.Ident); ok && erzeuger[id.Name] {
+						namen.validator = vs.Names[0].Name
+					}
+				}
+			}
+		}
+	}
+	return namen, nil
+}
+
+// istDekodiererForm: func X[T any](w, r, ziel *T) bool.
+func istDekodiererForm(fn *ast.FuncDecl) bool {
+	tp := fn.Type.TypeParams
+	if tp == nil || len(tp.List) != 1 || len(tp.List[0].Names) != 1 {
+		return false
+	}
+	var parameter []ast.Expr
+	for _, feld := range fn.Type.Params.List {
+		for range max(1, len(feld.Names)) {
+			parameter = append(parameter, feld.Type)
+		}
+	}
+	if len(parameter) != 3 {
+		return false
+	}
+	zeiger, ok := parameter[2].(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+	if id, ok := zeiger.X.(*ast.Ident); !ok || id.Name != tp.List[0].Names[0].Name {
+		return false
+	}
+	ergebnis := fn.Type.Results
+	if ergebnis == nil || len(ergebnis.List) != 1 {
+		return false
+	}
+	id, ok := ergebnis.List[0].Type.(*ast.Ident)
+	return ok && id.Name == "bool"
+}
+
+// liefertValidator: func x() *validator.Validate.
+func liefertValidator(fn *ast.FuncDecl) bool {
+	ergebnis := fn.Type.Results
+	if ergebnis == nil || len(ergebnis.List) != 1 {
+		return false
+	}
+	zeiger, ok := ergebnis.List[0].Type.(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+	sel, ok := zeiger.X.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "Validate" {
+		return false
+	}
+	paket, ok := sel.X.(*ast.Ident)
+	return ok && paket.Name == "validator"
+}
+
+// ruftMethodeAuf: irgendwo im Rumpf steht x.Name(…).
+func ruftMethodeAuf(body *ast.BlockStmt, name string) bool {
+	gefunden := false
+	ast.Inspect(body, func(n ast.Node) bool {
+		if sel, ok := n.(*ast.SelectorExpr); ok && sel.Sel.Name == name {
+			gefunden = true
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
+// pruefeEingabeDerTueren hält die Prüfung an, wenn sie Dekodierer oder Validator in api/tuer
+// nicht mehr findet: Ohne sie sähe sie keine Eingabe, die über die Türen hereinkommt.
+func pruefeEingabeDerTueren(t *testing.T) eingabeDerTueren {
+	t.Helper()
+	namen, err := ladeEingabeDerTueren()
+	if err != nil {
+		t.Fatal(err)
+	}
+	streng := 0
+	for _, s := range namen.dekodierer {
+		if s {
+			streng++
+		}
+	}
+	if len(namen.dekodierer) != 2 || streng != 1 || namen.validator == "" {
+		t.Fatalf("api/tuer: erwartet zwei Dekodierer, einer davon streng, und einen Validator; "+
+			"gefunden %v und %q. Die Form der Erklärung passt nicht mehr zu ladeEingabeDerTueren.",
+			namen.dekodierer, namen.validator)
+	}
+	return namen
+}
+
+// ruftValidatorDerTuerenAuf: irgendwo im Rumpf steht tuer.<Validator>.Struct(…) oder
+// tuer.<Validator>.Var(…), der Validator der Türen aus einem anderen Paket gerufen.
+func ruftValidatorDerTuerenAuf(body *ast.BlockStmt, validatorName string) bool {
 	gefunden := false
 	ast.Inspect(body, func(n ast.Node) bool {
 		if sel, ok := n.(*ast.SelectorExpr); ok && (sel.Sel.Name == "Struct" || sel.Sel.Name == "Var") {
-			if validator, ok := sel.X.(*ast.SelectorExpr); ok && validator.Sel.Name == "Validate" {
+			if validator, ok := sel.X.(*ast.SelectorExpr); ok && validator.Sel.Name == validatorName {
 				if paket, ok := validator.X.(*ast.Ident); ok && paket.Name == "tuer" {
 					gefunden = true
 				}
@@ -295,15 +442,16 @@ func ruftHelferAuf(body *ast.BlockStmt, name string) bool {
 	return gefunden
 }
 
-// dekodierZiel: Name der Variablen hinter &x in tuer.DecodeAndValidate(w, r, &x) oder
-// json.NewDecoder(...).Decode(&x); direkt=true für den zweiten Weg. Der Dekodierer der
-// Türen zählt mit und ohne Paketnamen: Die Türen rufen ihn aus api/tuer, das Paket selbst
-// ohne Namen davor.
-func dekodierZiel(call *ast.CallExpr) (string, bool) {
+// dekodierZiel: Name der Variablen hinter &x im Aufruf eines Dekodierers der Türen
+// (tuer.<Dekodierer>(w, r, &x)) oder in json.NewDecoder(...).Decode(&x); direkt=true für den
+// zweiten Weg. Der Dekodierer der Türen zählt mit und ohne Paketnamen: Die Türen rufen ihn
+// aus api/tuer, das Paket selbst ohne Namen davor.
+func dekodierZiel(call *ast.CallExpr, dekodierer map[string]bool) (string, bool) {
 	var arg ast.Expr
 	direkt := false
 	istDekodierer := func(name string) bool {
-		return name == "DecodeAndValidate" || name == "DecodeStrictAndValidate"
+		_, ok := dekodierer[name]
+		return ok
 	}
 	switch f := call.Fun.(type) {
 	case *ast.Ident:
@@ -477,7 +625,8 @@ func istTextKennung(typ ast.Expr) bool {
 }
 
 func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
-	maengel, gesehen := pruefeUUIDEingaben(ladeUUIDPakete(t, "api", "inventur"))
+	namen := pruefeEingabeDerTueren(t)
+	maengel, gesehen := pruefeUUIDEingaben(ladeUUIDPakete(t, "api", "inventur"), namen)
 	if len(gesehen) < 5 {
 		t.Fatalf("nur %d Kennungs-Eingaben gefunden — der Sammler greift vermutlich ins Leere", len(gesehen))
 	}
@@ -561,19 +710,21 @@ func pfadSelbstZerlegt(body *ast.BlockStmt) bool {
 
 // Gegenprobe am Detektor: ein Sammler, der nichts findet, meldet ewig „alles gut".
 func TestUUIDEingabenDetektorErkenntDieFormen(t *testing.T) {
+	// LESE, LESESTRENG und VALIDATOR stehen für die Namen, die ladeEingabeDerTueren in api/tuer
+	// findet; die Probe ruft die Türen so, wie sie heute heißen.
 	quelle := `package p
 type ohneTag struct { SessionID string ` + "`json:\"session_id\"`" + ` }
 type mitTag struct { SessionID string ` + "`json:\"session_id\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
 type liste struct { IDs []string ` + "`json:\"exemplar_ids\"`" + ` }
 type kein struct { Name string ` + "`json:\"name\"`" + ` }
-func aTag(w, r any) { var req ohneTag; DecodeAndValidate(w, r, &req) }
-func bSauber(w, r any) { var req mitTag; DecodeAndValidate(w, r, &req) }
+func aTag(w, r any) { var req ohneTag; LESE(w, r, &req) }
+func bSauber(w, r any) { var req mitTag; LESE(w, r, &req) }
 func cQuery(r any) { _ = r.URL.Query().Get("titel_id") }
 func dDirekt(r any) { var req mitTag; json.NewDecoder(r.Body).Decode(&req) }
 func eDirektGeprueft(r any) { var req liste; json.NewDecoder(r.Body).Decode(&req); kennung.IstUUID(req.IDs[0]) }
-func fListe(w, r any) { var req liste; DecodeAndValidate(w, r, &req) }
+func fListe(w, r any) { var req liste; LESE(w, r, &req) }
 func hHelfer(r any) { var req liste; json.NewDecoder(r.Body).Decode(&req); alleUUIDs(req.IDs) }
-func gKeine(w, r any) { var req kein; DecodeAndValidate(w, r, &req) }
+func gKeine(w, r any) { var req kein; LESE(w, r, &req) }
 func iLocker(s string) bool { return uuid.Validate(s) == nil }
 func jParseVerworfen(s string) bool { if _, err := uuid.Parse(s); err != nil { return false }; return true }
 func kParseGenutzt(s string) string { id, _ := uuid.Parse(s); return id.String() }
@@ -587,21 +738,31 @@ type stapelDive struct { Eintraege []eintrag ` + "`json:\"eintraege\" validate:\
 type listeOhneDive struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
 type listeLeeresElement struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,dive,uuid_oder_leer\"`" + ` }
 type listeSauber struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,dive,required,uuid_oder_leer\"`" + ` }
-func oKurz(w, r any) { req := ohneTag2{}; DecodeAndValidate(w, r, &req) }
+func oKurz(w, r any) { req := ohneTag2{}; LESE(w, r, &req) }
 func pQueryVar(r any) { q := r.URL.Query(); _ = q.Get("schueler_id") }
-func qStapel(w, r any) { var req stapel; DecodeAndValidate(w, r, &req) }
-func rStapelDive(w, r any) { var req stapelDive; DecodeAndValidate(w, r, &req) }
-func sListeOhneDive(w, r any) { var req listeOhneDive; DecodeAndValidate(w, r, &req) }
-func tFremd(w, r any) { var req fremd.Anfrage; DecodeAndValidate(w, r, &req) }
-func uListeLeer(w, r any) { var req listeLeeresElement; DecodeAndValidate(w, r, &req) }
-func vListeSauber(w, r any) { var req listeSauber; DecodeAndValidate(w, r, &req) }
+func qStapel(w, r any) { var req stapel; LESE(w, r, &req) }
+func rStapelDive(w, r any) { var req stapelDive; LESE(w, r, &req) }
+func sListeOhneDive(w, r any) { var req listeOhneDive; LESE(w, r, &req) }
+func tFremd(w, r any) { var req fremd.Anfrage; LESE(w, r, &req) }
+func uListeLeer(w, r any) { var req listeLeeresElement; LESE(w, r, &req) }
+func vListeSauber(w, r any) { var req listeSauber; LESE(w, r, &req) }
 type ohneTag3 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
 type ohneTag4 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
-func wTuer(w, r any) { var req ohneTag3; tuer.DecodeAndValidate(w, r, &req) }
-func xTuerStreng(w, r any) { var req ohneTag4; tuer.DecodeStrictAndValidate(w, r, &req) }
-func yTuerSauber(w, r any) { var req mitTag; tuer.DecodeAndValidate(w, r, &req) }
-func zDirektTuerValidator(r any) { var req mitTag; json.NewDecoder(r.Body).Decode(&req); tuer.Validate.Struct(req) }
+func wTuer(w, r any) { var req ohneTag3; tuer.LESE(w, r, &req) }
+func xTuerStreng(w, r any) { var req ohneTag4; tuer.LESESTRENG(w, r, &req) }
+func yTuerSauber(w, r any) { var req mitTag; tuer.LESE(w, r, &req) }
+func zDirektTuerValidator(r any) { var req mitTag; json.NewDecoder(r.Body).Decode(&req); tuer.VALIDATOR.Struct(req) }
 `
+	namen := pruefeEingabeDerTueren(t)
+	var lese, leseStreng string
+	for name, streng := range namen.dekodierer {
+		if streng {
+			leseStreng = name
+		} else {
+			lese = name
+		}
+	}
+	quelle = strings.NewReplacer("LESESTRENG", leseStreng, "LESE", lese, "VALIDATOR", namen.validator).Replace(quelle)
 	fremdQuelle := `package fremd
 type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 `
@@ -617,7 +778,7 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 	nimmUUIDDatei(p, datei)
 	fremd := &uuidPaket{typen: map[string]ast.Expr{}}
 	nimmUUIDDatei(fremd, fremdDatei)
-	maengel, _ := pruefeUUIDEingaben(map[string]*uuidPaket{"p": p, "fremd": fremd})
+	maengel, _ := pruefeUUIDEingaben(map[string]*uuidPaket{"p": p, "fremd": fremd}, namen)
 	// Seit dem 22.09.2026 auch: Kurzform `req := T{}` (oKurz), Query-Variable (pQueryVar),
 	// Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne `dive` (sListeOhneDive),
 	// Typ aus fremdem Paket (tFremd). rStapelDive ist die saubere Gegenprobe. Seit dem
