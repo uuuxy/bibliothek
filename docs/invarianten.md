@@ -260,7 +260,7 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
 | Steht eine Klasse mehrfach im Plan, gilt der FRÜHESTE Termin — beim Ausleihen wie beim Massenabgleich                                        | 🟡 Code (`LMFAbfragen.LadeRueckgabeTerminLage` MIN, `fruehesteTermineJeKlasse`) + PG-Test                     | `repository/lmf_termine.go`, `internal/service/lmf_frist_kopplung.go`, `api/lernmittel/lmf_termine_frist_pg_test.go` |
 | Ein Entwurf (`veroeffentlicht_am` NULL) setzt keine Fristen und ist für Portal und PDF unsichtbar                                            | 🟡 Code (Frist-Kopplung nur bei Stempel; Listen filtern `veroeffentlicht_am IS NOT NULL`) + PG-Test | `lmf_plaene` (`veroeffentlicht_am`), `api/lernmittel/lmf_plan_veroeffentlichung.go` |
 | Freie Tage und feste Plätze gelten je Plan; der Vorschlag fürs Folgejahr bringt sie nicht mit                                                | 🟡 Code (`entwurfAus`, `service.LmfPlanReihenfolgeVorgabe`)                                         | `lmf_plan_freie_tage`, `lmf_termine` (`fest`)                            |
-| Sommerferien-Tabelle (Hessen, KMK) reicht mindestens zwei Jahre voraus                                                                       | 🟡 Selbstprüfung „Ferientabelle" + Horizont-Test (rot ab Januar 2029)                               | `pkg/lmfplan/sommerferien.go`, `internal/bereitschaft/bereitschaft.go`                   |
+| Sommerferien-Tabelle (Hessen, KMK) reicht mindestens zwei Jahre voraus                                                                       | 🟡 Selbstprüfung „Ferientabelle" + Horizont-Test (rot ab Januar 2029)                               | `pkg/lmfplan/sommerferien.go`, `internal/bereitschaft/ferien.go`                   |
 
 ---
 

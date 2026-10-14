@@ -2050,7 +2050,7 @@ fest; das [Glossar](#12-glossar) nennt, wo der Code noch anders heißt.
 | **Fail-closed**           | Ist die Sperrlisten- oder Kontostatus-Abfrage nicht erreichbar, wird die Anfrage mit **503** abgelehnt — nicht durchgelassen und **nicht** mit 401 beantwortet (eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist) |
 | **Autorisierung**         | `RequirePermission` je Route: Recht aus `role_permissions` (Cache 60 s mit Epochenzähler) **plus** Live-Kontostatus **plus** UUID-Form der Pfadparameter |
 | **Eskalationsschutz**     | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`api/benutzer/user_admin_eskalation.go`) — weil wer `benutzer.email` schreiben darf, ein Konto übernimmt |
-| **Secret-Guard**          | Außerhalb von `local/development/test` verweigert der Server den Start bei bekannten Beispiel-Geheimnissen. Die Liste steht **einmal** (`bereitschaft.IstBekanntesDefaultGeheimnis`) und wird von der Selbstprüfung mitbenutzt — zwei Listen würden „alles gut" melden, während der Server aus demselben Grund nicht startet |
+| **Secret-Guard**          | Außerhalb von `local/development/test` verweigert der Server den Start bei bekannten Beispiel-Geheimnissen. Die Liste steht **einmal** (`bereitschaft.IstBeispielGeheimnis`) und wird von der Selbstprüfung mitbenutzt — zwei Listen würden „alles gut" melden, während der Server aus demselben Grund nicht startet |
 
 #### Injection und Datenausgänge
 
@@ -3330,7 +3330,7 @@ Repo-Zugriff hätte Admin-JWTs fälschen (JWT_SECRET) bzw. die verschlüsselten 
 entschlüsseln können (APP_ENCRYPTION_KEY).
 
 **Folge.** Die Liste der Beispiel-Geheimnisse steht **einmal**
-(`bereitschaft.IstBekanntesDefaultGeheimnis`) und wird von der Selbstprüfung mitbenutzt. Zwei Listen
+(`bereitschaft.IstBeispielGeheimnis`) und wird von der Selbstprüfung mitbenutzt. Zwei Listen
 wären genau die Fehlerart, gegen die die Selbstprüfung antritt: Sie meldete „alles gut",
 während der Server aus demselben Grund den Start verweigert.
 

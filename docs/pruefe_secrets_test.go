@@ -16,7 +16,7 @@ import (
 // Blindheit: Geprüft wird das Skript an erdachten .env-Dateien. Ob es am Server je läuft
 // (nur von Hand), sieht der Test nicht; ebenso wenig einen schwachen Wert, der kein
 // Beispiel ist, und einen Beispielwert, der weder in .env.example noch in
-// bereitschaft.IstBekanntesDefaultGeheimnis steht.
+// bereitschaft.IstBeispielGeheimnis steht.
 
 // pruefeSecrets lässt scripts/pruefe_secrets.sh über eine .env laufen und liefert Ausgabe
 // und Exit-Code.
@@ -85,17 +85,17 @@ func TestPruefeSecrets_KenntDieBeispielwerteDerVorlage(t *testing.T) {
 	}
 }
 
-// Was der Server als Beispiel-Geheimnis kennt (bereitschaft.IstBekanntesDefaultGeheimnis), meldet
+// Was der Server als Beispiel-Geheimnis kennt (bereitschaft.IstBeispielGeheimnis), meldet
 // auch das Skript. Die Liste kommt aus dem Quelltext des Servers, nicht aus diesem Test.
 func TestPruefeSecrets_KenntDieBeispielwerteDesServers(t *testing.T) {
-	quelle := lies(t, "../internal/bereitschaft/bereitschaft.go")
-	start := strings.Index(quelle, "func IstBekanntesDefaultGeheimnis")
+	quelle := lies(t, "../internal/bereitschaft/geheimnisse.go")
+	start := strings.Index(quelle, "func IstBeispielGeheimnis")
 	if start < 0 {
-		t.Fatal("IstBekanntesDefaultGeheimnis nicht gefunden — Gate nachziehen")
+		t.Fatal("IstBeispielGeheimnis nicht gefunden — Gate nachziehen")
 	}
 	ende := strings.Index(quelle[start:], "return true")
 	if ende < 0 {
-		t.Fatal("Ende der Liste in IstBekanntesDefaultGeheimnis nicht gefunden")
+		t.Fatal("Ende der Liste in IstBeispielGeheimnis nicht gefunden")
 	}
 	var werte []string
 	wertMuster := regexp.MustCompile(`"([^"]+)"`)

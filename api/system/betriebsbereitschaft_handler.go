@@ -38,19 +38,19 @@ func (s *Tueren) sammleLage(
 	zustandRepo *repository.BetriebszustandAbfragen,
 ) bereitschaft.Lage {
 	lage := bereitschaft.Lage{
-		AppEnv:             strings.ToLower(os.Getenv("APP_ENV")),
-		S3Endpoint:         os.Getenv("S3_ENDPOINT"),
-		S3AccessKey:        os.Getenv("S3_ACCESS_KEY"),
-		S3SecretKey:        os.Getenv("S3_SECRET_KEY"),
-		S3Bucket:           os.Getenv("S3_BUCKET"),
-		EnforceProdSecrets: bereitschaft.ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS")),
-		JWTSecret:          os.Getenv("JWT_SECRET"),
-		AppEncryptionKey:   os.Getenv("APP_ENCRYPTION_KEY"),
-		ImapHost:           os.Getenv("IMAP_HOST"),
+		Umgebung:              strings.ToLower(os.Getenv("APP_ENV")),
+		S3Endpunkt:            os.Getenv("S3_ENDPOINT"),
+		S3Zugangsschluessel:   os.Getenv("S3_ACCESS_KEY"),
+		S3Geheimschluessel:    os.Getenv("S3_SECRET_KEY"),
+		S3Bucket:              os.Getenv("S3_BUCKET"),
+		GeheimnisSchutzScharf: bereitschaft.IstGeheimnisSchutzScharf(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS")),
+		JWTGeheimnis:          os.Getenv("JWT_SECRET"),
+		Schluessel:            os.Getenv("APP_ENCRYPTION_KEY"),
+		IMAPHost:              os.Getenv("IMAP_HOST"),
 		// Derselbe Vergleich wie in mailservice/versand.go: Nur "true" schaltet.
-		SmtpAllowInsecureTLS: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true",
-		SmtpAllowPlaintext:   os.Getenv("SMTP_ALLOW_PLAINTEXT") == "true",
-		SelbstanmeldeDomain:  auth.SelbstanmeldeDomain(),
+		SMTPUnsicheresTLSErlaubt: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true",
+		SMTPKlartextErlaubt:      os.Getenv("SMTP_ALLOW_PLAINTEXT") == "true",
+		SelbstanmeldeDomain:      auth.SelbstanmeldeDomain(),
 	}
 
 	// Öffentliche Adresse und SMTP-Host kommen aus der Datenbank, nicht aus der .env:
@@ -76,7 +76,7 @@ func (s *Tueren) sammleLage(
 		lage.NachbuchMeldungenOffen = &n
 	}
 	if mail, err := mailRepo.Lade(ctx); err == nil && mail != nil {
-		lage.SmtpHost = strings.TrimSpace(mail.SMTPHost)
+		lage.SMTPHost = strings.TrimSpace(mail.SMTPHost)
 	}
 
 	// Ein Fehler hier ist kein Grund, die ganze Auskunft zu verweigern: Der Bereich ist
@@ -142,8 +142,8 @@ func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repositor
 func sicherungUndFerienInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandAbfragen, lage *bereitschaft.Lage) {
 	// Backup-Zustand aus derselben Quelle wie das Dashboard-Badge (backup_status.go).
 	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
-	lage.BackupKeySet = encKey != ""
-	lage.BackupKeyWeak = jobs.SchluesselIstSchwach(encKey)
+	lage.BackupSchluesselGesetzt = encKey != ""
+	lage.BackupSchluesselSchwach = jobs.SchluesselIstSchwach(encKey)
 	backupDir := os.Getenv("BACKUP_DIR")
 	if backupDir == "" {
 		backupDir = "./backups" // identischer Default wie jobs/backup.go

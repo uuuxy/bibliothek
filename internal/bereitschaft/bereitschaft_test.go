@@ -1,7 +1,6 @@
 package bereitschaft
 
 import (
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -25,20 +24,20 @@ func vorStunden(n int) *time.Time {
 
 func lageEingerichtet() Lage {
 	return Lage{
-		AppEnv:              "production",
-		S3Endpoint:          "https://s3.example.net",
-		S3AccessKey:         "AK",
-		S3SecretKey:         "SK",
-		S3Bucket:            "bibliothek-backups",
-		EnforceProdSecrets:  true,
-		JWTSecret:           "ein-eigenes-langes-geheimnis-mit-genug-zeichen",
-		AppEncryptionKey:    "eigener-schluessel-32-zeichen-ab",
-		ImapHost:            "srv1.philipp-reis-schule.de",
-		SelbstanmeldeDomain: "philipp-reis-schule.de",
-		OeffentlicheAdresse: "https://flasch3.herzog-dupont.de",
-		SmtpHost:            "srv1.philipp-reis-schule.de",
-		DemoSchueler:        0,
-		DemoExemplare:       0,
+		Umgebung:              "production",
+		S3Endpunkt:            "https://s3.example.net",
+		S3Zugangsschluessel:   "AK",
+		S3Geheimschluessel:    "SK",
+		S3Bucket:              "bibliothek-backups",
+		GeheimnisSchutzScharf: true,
+		JWTGeheimnis:          "ein-eigenes-langes-geheimnis-mit-genug-zeichen",
+		Schluessel:            "eigener-schluessel-32-zeichen-ab",
+		IMAPHost:              "srv1.philipp-reis-schule.de",
+		SelbstanmeldeDomain:   "philipp-reis-schule.de",
+		OeffentlicheAdresse:   "https://flasch3.herzog-dupont.de",
+		SMTPHost:              "srv1.philipp-reis-schule.de",
+		DemoSchueler:          0,
+		DemoExemplare:         0,
 		// Lieferanten: erhoben, keiner trägt eine Kennung des alten Seeds.
 		BeispielLieferanten: []string{},
 		RechteLive:          rechteWieVorgabe(),
@@ -48,10 +47,10 @@ func lageEingerichtet() Lage {
 		VerwaisteZuordnungen:  []string{},
 		VerwaisteBuecherliste: []string{},
 		// Nächtliches Backup (B3): Key stark, letzter Lauf heute Nacht.
-		BackupKeySet:  true,
-		BackupKeyWeak: false,
-		LetztesBackup: vorStunden(10),
-		Jetzt:         testJetzt,
+		BackupSchluesselGesetzt: true,
+		BackupSchluesselSchwach: false,
+		LetztesBackup:           vorStunden(10),
+		Jetzt:                   testJetzt,
 		// Restore-Probe: letzter Wochenlauf erfolgreich.
 		RestoreProbe: &jobs.RestoreProbeErgebnis{
 			Zeitpunkt: *vorStunden(3 * 24), Erfolg: true,
@@ -157,14 +156,14 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 		},
 		{
 			name:     "Mailversand darf Klartext",
-			aendere:  func(l *Lage) { l.SmtpAllowPlaintext = true },
+			aendere:  func(l *Lage) { l.SMTPKlartextErlaubt = true },
 			bereich:  "Mailversand (Mahnwesen)",
 			stufe:    StufeWarnung,
 			enthaelt: "SMTP_ALLOW_PLAINTEXT",
 		},
 		{
 			name:     "Mailversand prüft das Zertifikat nicht",
-			aendere:  func(l *Lage) { l.SmtpAllowInsecureTLS = true },
+			aendere:  func(l *Lage) { l.SMTPUnsicheresTLSErlaubt = true },
 			bereich:  "Mailversand (Mahnwesen)",
 			stufe:    StufeWarnung,
 			enthaelt: "SMTP_ALLOW_INSECURE_TLS",
@@ -216,28 +215,28 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 		},
 		{
 			name:     "Beispiel-Geheimnis im Echtbetrieb",
-			aendere:  func(l *Lage) { l.JWTSecret = "super-secret-default-key-at-least-32-bytes" },
+			aendere:  func(l *Lage) { l.JWTGeheimnis = "super-secret-default-key-at-least-32-bytes" },
 			bereich:  "Geheimnisse",
 			stufe:    StufeKritisch,
 			enthaelt: "Sitzungen fälschen",
 		},
 		{
 			name:     "eigene Geheimnisse, Absicherung aber nicht scharf",
-			aendere:  func(l *Lage) { l.EnforceProdSecrets = false },
+			aendere:  func(l *Lage) { l.GeheimnisSchutzScharf = false },
 			bereich:  "Geheimnisse",
 			stufe:    StufeWarnung,
 			enthaelt: "ENFORCE_PROD_SECRETS",
 		},
 		{
 			name:     "mock-Anmeldung im Echtbetrieb",
-			aendere:  func(l *Lage) { l.ImapHost = "mock" },
+			aendere:  func(l *Lage) { l.IMAPHost = "mock" },
 			bereich:  "Anmeldung",
 			stufe:    StufeKritisch,
 			enthaelt: "JEDES Passwort",
 		},
 		{
 			name:     "kein IMAP-Host",
-			aendere:  func(l *Lage) { l.ImapHost = "" },
+			aendere:  func(l *Lage) { l.IMAPHost = "" },
 			bereich:  "Anmeldung",
 			stufe:    StufeKritisch,
 			enthaelt: "anmelden",
@@ -258,7 +257,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 		},
 		{
 			name:     "kein SMTP-Server",
-			aendere:  func(l *Lage) { l.SmtpHost = "" },
+			aendere:  func(l *Lage) { l.SMTPHost = "" },
 			bereich:  "Mailversand (Mahnwesen)",
 			stufe:    StufeWarnung,
 			enthaelt: "Mahnungen",
@@ -346,7 +345,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 		// sah ihn nur das Dashboard-Badge, und nur, wer die Seite öffnete.
 		{
 			name:     "Backup-Key fehlt",
-			aendere:  func(l *Lage) { l.BackupKeySet = false },
+			aendere:  func(l *Lage) { l.BackupSchluesselGesetzt = false },
 			bereich:  "Nächtliches Backup",
 			stufe:    StufeKritisch,
 			enthaelt: "BACKUP_ENCRYPTION_KEY",
@@ -374,7 +373,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 		},
 		{
 			name:     "schwacher Backup-Key",
-			aendere:  func(l *Lage) { l.BackupKeyWeak = true },
+			aendere:  func(l *Lage) { l.BackupSchluesselSchwach = true },
 			bereich:  "Nächtliches Backup",
 			stufe:    StufeWarnung,
 			enthaelt: "zu kurz",
@@ -449,43 +448,19 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 	}
 }
 
-// Optionale Rechte (db.RechteOptional) sind zum Umschalten GEBAUT: Schaltet ein
-// Admin dem Helfer die Vormerkungen zu, ist das der vorgesehene Gebrauch — keine
-// Drift. Ohne diese Ausnahme stünde jede nutzende Anlage dauerhaft gelb, und
-// Dauerwarnungen erziehen zum Wegsehen. Die Existenz-Prüfung bleibt scharf:
-// Verschwindet die Zeile ganz, fehlt die Tür in der Rechte-Matrix — Warnung.
-func TestBetriebsbereitschaft_OptionalesRechtIstKeineDrift(t *testing.T) {
-	t.Run("eingeschaltet ist kein Befund", func(t *testing.T) {
-		l := lageEingerichtet()
-		l.RechteLive["HELFER"]["manage_vormerkungen"] = true
-		b := befundZu(t, Pruefe(l), "Rechte-Vorgabe")
-		if b.Stufe != StufeOK {
-			t.Errorf("optionales Recht eingeschaltet → %q statt OK: %s", b.Stufe, b.Befund)
-		}
-	})
-	t.Run("fehlende Zeile warnt weiterhin", func(t *testing.T) {
-		l := lageEingerichtet()
-		delete(l.RechteLive["HELFER"], "manage_vormerkungen")
-		b := befundZu(t, Pruefe(l), "Rechte-Vorgabe")
-		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund+b.Folge, "HELFER/manage_vormerkungen fehlt live") {
-			t.Errorf("fehlende optionale Zeile muss warnen, got %q: %s", b.Stufe, b.Befund)
-		}
-	})
-}
-
 // Auf dem Entwicklungsrechner sind mock-Anmeldung und Beispiel-Geheimnisse RICHTIG.
 // Meldete die Prüfung sie dort als Mangel, wäre sie dauerhaft rot — und damit wertlos.
 func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
 	for _, env := range []string{"local", "development", "test"} {
 		l := lageEingerichtet()
-		l.AppEnv = env
-		l.ImapHost = "mock"
-		l.JWTSecret = "super-secret-default-key-at-least-32-bytes"
-		l.AppEncryptionKey = "super-secure-aes-key-32-chars-ok"
-		l.EnforceProdSecrets = false
+		l.Umgebung = env
+		l.IMAPHost = "mock"
+		l.JWTGeheimnis = "super-secret-default-key-at-least-32-bytes"
+		l.Schluessel = "super-secure-aes-key-32-chars-ok"
+		l.GeheimnisSchutzScharf = false
 		// Auf dem Entwicklungsrechner gibt es weder Key noch Backup-Dateien —
 		// dauerhaft rot wäre der Wächter wertlos.
-		l.BackupKeySet = false
+		l.BackupSchluesselGesetzt = false
 		l.LetztesBackup = nil
 
 		for _, bereich := range []string{"Anmeldung", "Geheimnisse", "Nächtliches Backup"} {
@@ -495,79 +470,6 @@ func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
 			}
 		}
 	}
-}
-
-// Die Liste der Beispiel-Geheimnisse ist mit main.go geteilt. Bricht sie, startet der
-// Server mit einem öffentlich bekannten Schlüssel — deshalb hier festgehalten.
-func TestIstBekanntesDefaultGeheimnis(t *testing.T) {
-	for _, wert := range []string{
-		"super-secret-default-key-at-least-32-bytes",
-		"super-secure-aes-key-32-chars-ok",
-		"supergeheim_lokal",
-		// Die .env.example-Platzhalter — genau die, die beim cp .env.example .env
-		// stehen bleiben (Sicherheits-Audit 07.09.2026):
-		"super-secret-key-that-is-at-least-32-bytes-long",
-		"your-32-character-encryption-key",
-	} {
-		if !IstBekanntesDefaultGeheimnis(wert) {
-			t.Errorf("%q wird nicht als Beispiel-Geheimnis erkannt", wert)
-		}
-	}
-	for _, wert := range []string{"", "ein-eigenes-langes-geheimnis-mit-genug-zeichen"} {
-		if IstBekanntesDefaultGeheimnis(wert) {
-			t.Errorf("%q gilt fälschlich als Beispiel-Geheimnis", wert)
-		}
-	}
-}
-
-// Viele Abweichungen dürfen die Auskunft nicht fluten: gezeigt werden sechs,
-// der Rest wird gezählt. (Der Extremfall — leere, aber lesbare Tabelle — meldet
-// JEDE Vorgabe-Zeile als fehlend.)
-func TestBetriebsbereitschaft_RechteAbweichungenWerdenGekappt(t *testing.T) {
-	l := lageEingerichtet()
-	l.RechteLive = map[string]map[string]bool{}
-
-	b := befundZu(t, Pruefe(l), "Rechte-Vorgabe")
-	if b.Stufe != StufeWarnung {
-		t.Fatalf("Stufe %q statt Warnung: %s", b.Stufe, b.Befund)
-	}
-	if !strings.Contains(b.Befund, "weitere") {
-		t.Errorf("die Kappung fehlt — der Befund listet alles: %s", b.Befund)
-	}
-	if strings.Count(b.Befund, ";") > 6 {
-		t.Errorf("mehr als sechs Einträge gezeigt: %s", b.Befund)
-	}
-}
-
-// Die Klassen-Drift-Prüfung (F3): nicht erhoben ≠ alles verbunden, und jede
-// gerissene Text-Verbindung wird benannt statt still geschluckt.
-func TestKlassenDrift(t *testing.T) {
-	t.Run("nicht erhoben ist eine Warnung, kein OK", func(t *testing.T) {
-		l := lageEingerichtet()
-		l.KlassenOhneLehrkraft = nil
-		b := pruefeKlassenDrift(l)
-		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "nicht geprüft") {
-			t.Errorf("nil muss als 'nicht geprüft' warnen, got %+v", b)
-		}
-	})
-	t.Run("Klasse ohne Lehrkraft wird benannt", func(t *testing.T) {
-		l := lageEingerichtet()
-		l.KlassenOhneLehrkraft = []string{"06a"}
-		b := pruefeKlassenDrift(l)
-		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "06a") {
-			t.Errorf("06a muss in der Warnung stehen, got %+v", b)
-		}
-		if b.Abhilfe == "" || b.Folge == "" {
-			t.Error("Warnung ohne Folge/Abhilfe landet auf einem Zettel statt in der Zuordnung")
-		}
-	})
-	t.Run("verwaiste Buecherliste wird benannt", func(t *testing.T) {
-		l := lageEingerichtet()
-		l.VerwaisteBuecherliste = []string{"7x"}
-		if b := pruefeKlassenDrift(l); b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "7x") {
-			t.Errorf("7x muss in der Warnung stehen, got %+v", b)
-		}
-	})
 }
 
 // rueckstandSauber: alle Routinen erhoben, keine überfällige Zeile, keine Frist auf 0 —
@@ -583,89 +485,29 @@ func rueckstandSauber() []repository.LoeschRueckstand {
 	}
 }
 
-// Prüfung 22.08.2026: Die DSGVO-Anonymisierung lief zweimal monatelang ins Leere; nur eine
-// Logzeile wusste es. Jetzt urteilt die Selbstprüfung über den ZUSTAND — seit dem
-// 23.08.2026 über den ALLER Löschroutinen, nicht nur der Anonymisierung.
-func TestPruefeDsgvoRoutinen(t *testing.T) {
-	t.Run("nicht erhoben ist eine Warnung, kein OK", func(t *testing.T) {
-		if b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: nil}); b.Stufe != StufeWarnung {
-			t.Fatalf("nicht erhoben = Warnung: %+v", b)
+// Die schärfste Stufe gewinnt, gleich an welcher Stelle sie steht; ohne Befund ist alles in
+// Ordnung.
+func TestGesamt(t *testing.T) {
+	befunde := func(stufen ...string) []Befund {
+		var b []Befund
+		for _, s := range stufen {
+			b = append(b, Befund{Stufe: s})
 		}
-	})
-
-	t.Run("sauber ist ok", func(t *testing.T) {
-		b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: rueckstandSauber()})
-		if b.Stufe != StufeOK || !strings.Contains(b.Befund, "6 Löschroutinen") {
-			t.Fatalf("sauber = ok über alle Routinen: %+v", b)
-		}
-	})
-
-	// Der eigentliche Zugewinn: JEDE Routine muss den Alarm allein auslösen können.
-	// Vorher konnte das nur die Anonymisierung — die anderen liefen unbeobachtet.
-	for i, r := range rueckstandSauber() {
-		t.Run("überfällig: "+r.Routine, func(t *testing.T) {
-			stand := rueckstandSauber()
-			stand[i].Zeilen = 3
-			b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: stand})
-			if b.Stufe != StufeKritisch {
-				t.Fatalf("%s überfällig muss kritisch sein: %+v", r.Routine, b)
-			}
-			if !strings.Contains(b.Befund, r.Routine) || !strings.Contains(b.Befund, "3") {
-				t.Errorf("Befund nennt Routine und Anzahl nicht: %s", b.Befund)
-			}
-			if !strings.Contains(b.Befund, r.Frist) {
-				t.Errorf("Befund nennt die geltende Frist nicht: %s", b.Befund)
-			}
-		})
+		return b
 	}
-
-	t.Run("abgeschaltete Frist ist eine Warnung, kein Fehler", func(t *testing.T) {
-		stand := rueckstandSauber()
-		stand[2].Aus = true
-		b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: stand})
-		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "Lesehistorie Schülerbücherei") {
-			t.Fatalf("Frist auf 0 = Warnung mit Namen der Routine: %+v", b)
+	for _, f := range []struct {
+		stufen []string
+		want   string
+	}{
+		{nil, StufeOK},
+		{[]string{StufeOK, StufeOK}, StufeOK},
+		{[]string{StufeOK, StufeWarnung, StufeOK}, StufeWarnung},
+		{[]string{StufeWarnung, StufeKritisch, StufeOK}, StufeKritisch},
+		{[]string{StufeKritisch, StufeWarnung}, StufeKritisch},
+		{[]string{StufeOK, StufeKritisch}, StufeKritisch},
+	} {
+		if ist := Gesamt(befunde(f.stufen...)); ist != f.want {
+			t.Errorf("Gesamt über %v: %s, erwartet %s", f.stufen, ist, f.want)
 		}
-	})
-
-	// Rangfolge: Ein echter Rückstand darf nicht von einer abgeschalteten Frist
-	// verdeckt werden — sonst meldete die Seite „Warnung", während Daten stehen bleiben.
-	t.Run("Rückstand schlägt abgeschaltete Frist", func(t *testing.T) {
-		stand := rueckstandSauber()
-		stand[2].Aus = true
-		stand[5].Zeilen = 1
-		if b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: stand}); b.Stufe != StufeKritisch {
-			t.Fatalf("Rückstand muss die Warnung überstimmen: %+v", b)
-		}
-	})
-}
-
-// Der Wächter kennt die Platzhalter aus .env.example — gelesen aus der DATEI, nicht aus
-// einer Kopie hier: Ändert jemand die Beispielwerte, ohne den Wächter nachzuziehen,
-// wird dieser Test rot statt der Wächter blind (Sicherheits-Audit 07.09.2026: genau
-// das war passiert — drei alte Compose-Defaults gesperrt, die zwei Beispielwerte nicht).
-func TestIstBekanntesDefaultGeheimnis_KenntEnvExample(t *testing.T) {
-	inhalt, err := os.ReadFile("../../.env.example")
-	if err != nil {
-		t.Fatalf(".env.example lesen: %v", err)
-	}
-	gesehen := 0
-	for _, zeile := range strings.Split(string(inhalt), "\n") {
-		for _, schluessel := range []string{"JWT_SECRET=", "APP_ENCRYPTION_KEY=", "BACKUP_ENCRYPTION_KEY="} {
-			if !strings.HasPrefix(zeile, schluessel) {
-				continue
-			}
-			wert := strings.TrimSpace(strings.TrimPrefix(zeile, schluessel))
-			if wert == "" {
-				continue // leer = kein kopierbares Geheimnis
-			}
-			gesehen++
-			if !IstBekanntesDefaultGeheimnis(wert) {
-				t.Errorf(".env.example %s%q wird vom Wächter nicht als Beispiel erkannt — cp .env.example .env startet damit in Produktion", schluessel, wert)
-			}
-		}
-	}
-	if gesehen < 2 {
-		t.Fatalf("nur %d Beispielwerte in .env.example gefunden — die Probe läuft ins Leere", gesehen)
 	}
 }

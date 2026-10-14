@@ -1,6 +1,9 @@
 package bereitschaft
 
-import "bibliothek/internal/ausweis"
+import (
+	"bibliothek/internal/ausweis"
+	"strings"
+)
 
 // TrageKlassenEin vergleicht die Klassen mit aktiven Schülern mit den Zuordnungen der
 // Klassenleitungen und mit den Bücherlisten und trägt in die Lage ein, was nicht
@@ -48,4 +51,45 @@ func fehlendeEintraege(menge, referenz []string) []string {
 		}
 	}
 	return fehlt
+}
+
+// pruefeKlassenDrift macht die Text-Verbindungen des Klassennamens sichtbar
+// (Befund F3, bewertung/datenbank-pruefbericht.md): Schüler, Klassenlehrer-
+// Zuordnung und Bücherlisten hängen nur an übereinstimmenden Namen. Der
+// Jahreswechsel versetzt die Zuordnung seit 18.08.2026 mit (api/leser/student_promotion.go),
+// aber Umbenennungen von Hand oder LUSD-Umschichtungen können weiter driften —
+// und ohne diese Prüfung merkt es niemand, bis eine Mahnliste leer läuft.
+// Bewusst nur Warnung: Eine Klasse ohne Lehrkraft-Zuordnung kann gewollt sein
+// (die Mahnmail geht dann eben an niemanden — genau das soll man hier sehen).
+func pruefeKlassenDrift(l Lage) Befund {
+	b := Befund{Bereich: "Klassen-Zuordnung"}
+	if l.KlassenOhneLehrkraft == nil || l.VerwaisteZuordnungen == nil || l.VerwaisteBuecherliste == nil {
+		b.Stufe = StufeWarnung
+		b.Befund = "Die Klassen-Verbindungen konnten nicht geprüft werden (Datenbank nicht erreichbar)."
+		b.Folge = "Ob Mahnwesen und Bücherlisten ihre Klassen finden, ist unbekannt."
+		b.Abhilfe = abhilfeDBNeuLaden
+		return b
+	}
+
+	var probleme []string
+	if len(l.KlassenOhneLehrkraft) > 0 {
+		probleme = append(probleme, "Klassen ohne Lehrkraft-Zuordnung: "+strings.Join(l.KlassenOhneLehrkraft, ", "))
+	}
+	if len(l.VerwaisteZuordnungen) > 0 {
+		probleme = append(probleme, "Zuordnungen ohne aktive Schüler: "+strings.Join(l.VerwaisteZuordnungen, ", "))
+	}
+	if len(l.VerwaisteBuecherliste) > 0 {
+		probleme = append(probleme, "Bücherlisten für unbekannte Klassen: "+strings.Join(l.VerwaisteBuecherliste, ", "))
+	}
+	if len(probleme) == 0 {
+		b.Stufe = StufeOK
+		b.Befund = "Alle Klassennamen sind zwischen Schülern, Lehrkraft-Zuordnung und Bücherlisten verbunden."
+		return b
+	}
+	b.Stufe = StufeWarnung
+	b.Befund = strings.Join(probleme, " — ")
+	b.Folge = "Mahnlisten dieser Klassen erreichen keine Lehrkraft bzw. Listen zeigen ins Leere — ohne Fehlermeldung."
+	b.Abhilfe = "Einstellungen → Mahnwesen-Routing: Zuordnung nachtragen oder verwaiste Zeilen entfernen. " +
+		"Eine Buchliste ohne Klasse unter Klassensätze löschen."
+	return b
 }

@@ -258,22 +258,22 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	//
 	// Außerhalb von local/development/test verweigert der Server die Beispielwerte von
 	// selbst. Nur ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet das für eine
-	// Testphase ab (bereitschaft.ErzwingeProdGeheimnisse, geteilt mit der Selbstprüfung).
-	enforceProdSecrets := bereitschaft.ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS"))
+	// Testphase ab (bereitschaft.IstGeheimnisSchutzScharf, geteilt mit der Selbstprüfung).
+	enforceProdSecrets := bereitschaft.IstGeheimnisSchutzScharf(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS"))
 	if !enforceProdSecrets && strings.EqualFold(strings.TrimSpace(os.Getenv("ENFORCE_PROD_SECRETS")), "false") {
 		slog.Warn("ENFORCE_PROD_SECRETS=false — der Server startet auch mit Beispiel-Geheimnissen aus dem Repository. Nur für die Testphase zulässig.",
 			"app_env", os.Getenv("APP_ENV"))
 	}
 	if enforceProdSecrets {
 		// Die Liste der Beispiel-Geheimnisse steht seit dem 11.08.2026 in
-		// bereitschaft.IstBekanntesDefaultGeheimnis und wird von der Selbstpruefung
-		// (internal/bereitschaft/bereitschaft.go) mitbenutzt. Zwei Listen waeren genau die Fehlerart,
+		// bereitschaft.IstBeispielGeheimnis und wird von der Selbstpruefung
+		// (internal/bereitschaft/geheimnisse.go) mitbenutzt. Zwei Listen waeren genau die Fehlerart,
 		// gegen die die Selbstpruefung antritt: Sie meldete "alles gut", waehrend der Server
 		// aus demselben Grund den Start verweigert.
-		if bereitschaft.IstBekanntesDefaultGeheimnis(jwtSecret) {
+		if bereitschaft.IstBeispielGeheimnis(jwtSecret) {
 			log.Fatalf("FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
-		if bereitschaft.IstBekanntesDefaultGeheimnis(aesKey) {
+		if bereitschaft.IstBeispielGeheimnis(aesKey) {
 			log.Fatalf("FATAL: APP_ENCRYPTION_KEY nutzt einen bekannten Default-Wert. Setze einen eigenen 32-Byte-Schlüssel — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
 	}

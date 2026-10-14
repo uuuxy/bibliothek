@@ -11,13 +11,8 @@
 package bereitschaft
 
 import (
-	"fmt"
-	"sort"
-	"strconv"
-	"strings"
 	"time"
 
-	"bibliothek/db"
 	"bibliothek/jobs"
 	"bibliothek/repository"
 )
@@ -31,12 +26,12 @@ const (
 
 // Zwei Formulierungen sagen mehrere Prüfungen wörtlich gleich. Sie stehen hier an
 // einer Stelle, damit die Selbstprüfung nicht in vier Tonfällen spricht (go:S1192).
-const abhilfeDbNeuLaden = "Datenbankverbindung prüfen und die Seite neu laden."
+const abhilfeDBNeuLaden = "Datenbankverbindung prüfen und die Seite neu laden."
 
 // befundNichtImEchtbetrieb formuliert den Befund für einen Bereich, den es außerhalb
 // des echten Betriebs bewusst nicht gibt — kein Mangel, sondern die Umgebung.
-func befundNichtImEchtbetrieb(was, appEnv string) string {
-	return was + " — in " + appEnv + " ist das richtig so."
+func befundNichtImEchtbetrieb(was, umgebung string) string {
+	return was + " — in " + umgebung + " ist das richtig so."
 }
 
 // Befund ist eine Zeile der Selbstprüfung.
@@ -54,36 +49,36 @@ type Befund struct {
 
 // Lage ist der Zustand, über den geurteilt wird — eingesammelt vom Handler.
 type Lage struct {
-	AppEnv string
+	Umgebung string
 
 	// Auslagerung der Backups
-	S3Endpoint  string
-	S3AccessKey string
-	S3SecretKey string
-	S3Bucket    string
+	S3Endpunkt          string
+	S3Zugangsschluessel string
+	S3Geheimschluessel  string
+	S3Bucket            string
 
 	// Geheimnisse
-	EnforceProdSecrets bool
-	JWTSecret          string
-	AppEncryptionKey   string
+	GeheimnisSchutzScharf bool
+	JWTGeheimnis          string
+	Schluessel            string
 	// SchluesselProbe: Ließ sich je verschlüsselter Spalte ein Wert mit dem laufenden
 	// APP_ENCRYPTION_KEY entschlüsseln? nil: nicht lesbar.
 	SchluesselProbe *repository.SchluesselProbe
 
 	// Anmeldung
-	ImapHost string
+	IMAPHost string
 	// SelbstanmeldeDomain: SELBSTANMELDUNG_DOMAIN — leer heißt, Kollegium muss von Hand
 	// angelegt werden (auth/selbstanmeldung.go).
 	SelbstanmeldeDomain string
 
 	// Aus den Einstellungen (Datenbank, nicht .env — siehe api/system/mail_settings.go)
 	OeffentlicheAdresse string
-	SmtpHost            string
+	SMTPHost            string
 	// Die beiden Ausnahmeschalter des Mailversands (mailservice/versand.go), jeweils
 	// „steht auf true". Bis zum 21.09.2026 reichte Compose sie nicht durch; seitdem wirken
 	// sie im Container, und nur der Klartext-Schalter schrieb je eine Logzeile.
-	SmtpAllowInsecureTLS bool
-	SmtpAllowPlaintext   bool
+	SMTPUnsicheresTLSErlaubt bool
+	SMTPKlartextErlaubt      bool
 
 	// Bestand: was scripts/seed_demo.sql angelegt hat (Schüler DEMO-S-, Exemplare DEMO-B-).
 	DemoSchueler  int
@@ -119,10 +114,10 @@ type Lage struct {
 	// nur das Dashboard-Badge (api/system/backup_status.go) — die tägliche Kritisch-Alarm-Mail
 	// speist sich aus DIESEN Befunden und blieb stumm. nil LetztesBackup: noch nie
 	// gelaufen. Jetzt ist injiziert, damit die Altersrechnung testbar bleibt.
-	BackupKeySet  bool
-	BackupKeyWeak bool
-	LetztesBackup *time.Time
-	Jetzt         time.Time
+	BackupSchluesselGesetzt bool
+	BackupSchluesselSchwach bool
+	LetztesBackup           *time.Time
+	Jetzt                   time.Time
 
 	// Ferientabelle (06.09.2026): Der LMF-Planer belegt den letzten Tag des
 	// Büchertauschs aus den Sommerferien Hessen vor (pkg/lmfplan/sommerferien.go, KMK-
@@ -177,38 +172,11 @@ type Lage struct {
 	NachbuchMeldungenOffen *int
 }
 
-// IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
-// Beispiel-Geheimnisse ist.
-//
-// Die Liste stand bis zum 11.08.2026 fest verdrahtet in main.go. Sie hier ein zweites Mal
-// aufzuschreiben hätte genau die Fehlerart erzeugt, gegen die diese Datei antritt: zwei
-// Listen, die auseinanderlaufen, und eine Selbstprüfung, die „alles gut" meldet, während
-// der Server aus demselben Grund den Start verweigert.
-func IstBekanntesDefaultGeheimnis(wert string) bool {
-	switch wert {
-	case "super-secret-default-key-at-least-32-bytes", // Default aus docker-compose.yml (JWT)
-		"super-secure-aes-key-32-chars-ok", // Default aus docker-compose.yml (AES)
-		"supergeheim_lokal",
-		// Platzhalter aus .env.example (07.09.2026, Sicherheits-Audit): Wer die Datei
-		// nach .env kopiert und nur die per docker-compose `:?` erzwungenen Werte
-		// (POSTGRES_PASSWORD, IMAP_HOST) setzt, ließ diese beiden unverändert — und der
-		// Server startete mit APP_ENV=production trotz scharfem ENFORCE_PROD_SECRETS,
-		// weil der Wächter genau die im Repository lesbaren Beispielwerte nicht kannte.
-		// Beide erfüllen zugleich die Längenprüfung, fielen also durch jede andere
-		// Schranke. Die Selbstprüfung nutzt dieselbe Liste (betriebsbereitschaft_handler),
-		// meldete die Absicherung also fälschlich als „scharf".
-		"super-secret-key-that-is-at-least-32-bytes-long", // .env.example JWT_SECRET
-		"your-32-character-encryption-key":                // .env.example APP_ENCRYPTION_KEY
-		return true
-	}
-	return false
-}
-
 // IstEchterBetrieb sagt, ob die Umgebung der Betrieb ist. In local, development und test
 // sind die Anmeldung ohne Mailserver und Beispiel-Geheimnisse richtig und kein Mangel: Ein
 // Wächter, der am Entwicklungsrechner dauernd rot ist, wird abgeschaltet statt gelesen.
-func IstEchterBetrieb(appEnv string) bool {
-	switch appEnv {
+func IstEchterBetrieb(umgebung string) bool {
+	switch umgebung {
 	case "local", "development", "test":
 		return false
 	}
@@ -217,7 +185,7 @@ func IstEchterBetrieb(appEnv string) bool {
 
 // Pruefe wendet alle Regeln auf eine Lage an. Reine Funktion, keine Seiteneffekte.
 func Pruefe(l Lage) []Befund {
-	echt := IstEchterBetrieb(l.AppEnv)
+	echt := IstEchterBetrieb(l.Umgebung)
 
 	befunde := []Befund{
 		pruefeAuslagerung(l),
@@ -234,7 +202,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeKlassenDrift(l),
 		pruefeBackupAlter(l, echt),
 		pruefeRestoreProbe(l, echt),
-		pruefeDsgvoRoutinen(l),
+		pruefeLoeschroutinen(l),
 		pruefeEhemaligeOffen(l),
 		pruefeNachbuchMeldungenOffen(l),
 		pruefeFerientabelle(l),
@@ -257,651 +225,4 @@ func Gesamt(befunde []Befund) string {
 		}
 	}
 	return gesamt
-}
-
-// ferientabelleVorlaufJahre: Wie viele Jahre vor dem Ende der Tabelle die Warnung
-// kommt. Zwei — die KMK beschließt den nächsten Block Jahre im Voraus, und der Plan
-// für den Sommer wird im Frühjahr gemacht.
-const ferientabelleVorlaufJahre = 2
-
-// pruefeFerientabelle: Reichen die hinterlegten Sommerferien noch weit genug?
-func pruefeFerientabelle(l Lage) Befund {
-	b := Befund{Bereich: "Ferientabelle"}
-	if l.Jetzt.Year()+ferientabelleVorlaufJahre > l.FerientabelleBis {
-		b.Stufe = StufeWarnung
-		b.Befund = fmt.Sprintf("Die Sommerferien Hessen sind nur bis %d hinterlegt.", l.FerientabelleBis)
-		b.Folge = fmt.Sprintf("Ab dem Schuljahr %d/%d belegt der LMF-Planer den letzten Tag des Büchertauschs "+
-			"und den ersten Tag der Bücherausgabe nicht mehr vor — die Termine müssen dann von Hand gesetzt werden.",
-			l.FerientabelleBis, (l.FerientabelleBis+1)%100)
-		b.Abhilfe = "Den nächsten Beschluss der Kultusministerkonferenz (kmk.org/service/ferienregelung) " +
-			"unter Einstellungen → LUSD & Versetzung → Sommerferien eintragen, je Jahr Beginn und Ende."
-		return b
-	}
-	b.Stufe = StufeOK
-	b.Befund = fmt.Sprintf("Sommerferien Hessen bis %d hinterlegt.", l.FerientabelleBis)
-	return b
-}
-
-// pruefeUebrigeFerien: Kennen die Leihfristen die Herbst-, Weihnachts- und Osterferien
-// noch weit genug? Derselbe Vorlauf wie bei den Sommerferien.
-func pruefeUebrigeFerien(l Lage) Befund {
-	b := Befund{Bereich: "Ferien für Leihfristen"}
-	if l.Jetzt.Year()+ferientabelleVorlaufJahre > l.UebrigeFerienBis {
-		b.Stufe = StufeWarnung
-		b.Befund = fmt.Sprintf("Herbst-, Weihnachts- und Osterferien Hessen sind nur bis %d hinterlegt.", l.UebrigeFerienBis)
-		b.Folge = "Danach rückt eine Leihfrist, die in diese Ferien fällt, nicht mehr auf den nächsten Schultag. " +
-			"Wer in den Ferien nicht zurückgeben kann, steht nach den Ferien in der Mahnliste."
-		b.Abhilfe = "Die Termine stehen im Programm (Quelle: kultus.hessen.de/schulsystem/ferien/ferientermine). " +
-			"Auf eine Programmversion aktualisieren, die die folgenden Schuljahre enthält."
-		return b
-	}
-	b.Stufe = StufeOK
-	b.Befund = fmt.Sprintf("Herbst-, Weihnachts- und Osterferien Hessen bis %d hinterlegt.", l.UebrigeFerienBis)
-	return b
-}
-
-// EhemaligeOffenSeitTagen ist die Schwelle des Wächters: ein Jahr. Kürzer meldete er
-// jede Herbst-Mahnung, länger ließe die Akte Jahre stehen.
-const EhemaligeOffenSeitTagen = 365
-
-// pruefeEhemaligeOffen: Bleibt jemand, der die Schule verlassen hat, mit Name und
-// Anschrift stehen, weil ein Vorgang nie geschlossen wurde? Kein Automatismus — was zu
-// tun ist (Verlust buchen, Forderung stellen oder stornieren), entscheidet ein Mensch;
-// der Wächter hält nur fest, DASS es zu tun ist. Danach greifen Karenz und Löschung von
-// selbst.
-func pruefeEhemaligeOffen(l Lage) Befund {
-	b := Befund{Bereich: "Ehemalige mit offenen Vorgängen"}
-	if l.EhemaligeMitOffenenVorgaengen == nil {
-		b.Stufe = StufeWarnung
-		b.Befund = "Nicht erhoben — die Zählung der Ehemaligen mit offenen Vorgängen ist fehlgeschlagen."
-		b.Folge = "Unklar, ob Datensätze Weggegangener über die Löschfrist hinaus stehen bleiben."
-		b.Abhilfe = "Datenbankverbindung prüfen; die Zählung läuft bei jedem Aufruf dieser Seite."
-		return b
-	}
-	n := *l.EhemaligeMitOffenenVorgaengen
-	if n > 0 {
-		b.Stufe = StufeWarnung
-		b.Befund = fmt.Sprintf("%d Ehemalige haben seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung.", n)
-		b.Folge = "Solange der Vorgang offen ist, bleiben Name und Anschrift gespeichert — Karenz, Anonymisierung und Löschung greifen nicht (Art. 5 (1) e DSGVO)."
-		b.Abhilfe = "Leserdatei → Ehemalige / Archiv → Akte öffnen: das Buch als Verlust melden (schließt die Ausleihe, die Forderung entsteht), dann die Forderung als bezahlt oder storniert buchen. Danach anonymisiert und löscht das System von selbst."
-		return b
-	}
-	b.Stufe = StufeOK
-	b.Befund = "Kein Ehemaliger mit einem seit über einem Jahr offenen Vorgang."
-	return b
-}
-
-// pruefeDsgvoRoutinen: Tun die nächtlichen Löschroutinen, was sie sollen? Das Kriterium
-// ist der ZUSTAND — wie viele Zeilen müssten seit mindestens einem Tag weg sein und sind
-// es nicht —, nicht ein Log: Ein Job, der still scheitert, schreibt keine Zeile, die
-// jemand liest, aber er hinterlässt genau diesen Rückstand.
-//
-// Die Zahlen kommen aus repository.ZaehleLoeschRueckstand, und die stellt bewusst
-// DIESELBEN Fragen wie die Jobs — Wort für Wort denselben SQL-Ausdruck aus
-// repository/loeschfristen.go, nur als count(*) und mit einem Tag Kulanz. Zwei getrennt
-// gepflegte Bedingungen wären der schlimmste denkbare Zustand: ein Wächter, der
-// beruhigt, während der Job schläft.
-func pruefeDsgvoRoutinen(l Lage) Befund {
-	b := Befund{Bereich: "DSGVO-Löschroutinen"}
-	if l.LoeschRueckstand == nil {
-		b.Stufe = StufeWarnung
-		b.Befund = "Der Zustand der Löschroutinen konnte nicht erhoben werden."
-		b.Folge = "Unklar, ob die nächtlichen Löschroutinen laufen."
-		b.Abhilfe = "Datenbankverbindung prüfen; Container-Logs nach 'Scheduler GDPR', 'Scheduler Lesehistorie', 'Scheduler Anliegen' und 'Audit-Aufbewahrung' durchsuchen."
-		return b
-	}
-
-	var ueberfaellig, abgeschaltet []string
-	for _, r := range l.LoeschRueckstand {
-		switch {
-		case r.Aus:
-			abgeschaltet = append(abgeschaltet, r.Routine)
-		case r.Zeilen > 0:
-			ueberfaellig = append(ueberfaellig, fmt.Sprintf("%s: %d (Frist %s)", r.Routine, r.Zeilen, r.Frist))
-		}
-	}
-
-	if len(ueberfaellig) > 0 {
-		b.Stufe = StufeKritisch
-		b.Befund = "Überfällig und nicht gelöscht — " + strings.Join(ueberfaellig, "; ") + "."
-		b.Folge = "Mindestens eine nächtliche Löschroutine läuft nicht oder scheitert still — Personendaten bleiben über die Frist hinaus stehen (Art. 5 (1) e DSGVO)."
-		b.Abhilfe = "Container-Logs der letzten Nacht nach der genannten Routine durchsuchen (der Fehlertext steht dort); die Jobs wiederholen sich jede Nacht und heilen den Rückstand selbst, sobald die Ursache weg ist."
-		return b
-	}
-
-	if len(abgeschaltet) > 0 {
-		b.Stufe = StufeWarnung
-		b.Befund = "Frist steht auf 0 = aus: " + strings.Join(abgeschaltet, ", ") + "."
-		b.Folge = "Diese Daten werden nicht befristet — das Verzeichnis der Verarbeitungstätigkeiten und der Datenschutzhinweis müssen das so ausweisen."
-		b.Abhilfe = "Einstellungen → Datenschutz & Sitzung: Frist in Tagen setzen, oder die Entscheidung im VVT festhalten."
-		return b
-	}
-
-	b.Stufe = StufeOK
-	b.Befund = fmt.Sprintf("%d Löschroutinen geprüft, kein überfälliger Datensatz.", len(l.LoeschRueckstand))
-	return b
-}
-
-// pruefeRestoreProbe beurteilt das Ergebnis der wöchentlichen Wiederherstellungs-Probe
-// (jobs/restore_probe.go). Ein Backup, das sich nicht einspielen lässt, ist so viel
-// wert wie keins — und man erfährt es sonst im schlechtesten Moment.
-func pruefeRestoreProbe(l Lage, echt bool) Befund {
-	b := Befund{Bereich: "Restore-Probe"}
-	switch {
-	case !echt:
-		b.Stufe = StufeOK
-		b.Befund = befundNichtImEchtbetrieb("Keine Restore-Probe", l.AppEnv)
-	case l.RestoreProbe == nil:
-		b.Stufe = StufeWarnung
-		b.Befund = "Noch kein Probelauf verzeichnet."
-		b.Folge = "Ob die nächtlichen Backups wiederherstellbar sind, ist unbewiesen."
-		b.Abhilfe = "Die Probe läuft sonntags 03:30 — nach dem ersten Lauf verschwindet diese Meldung. " +
-			"Bleibt sie über eine Woche stehen, Container-Logs nach 'Restore-Probe' durchsuchen."
-	case !l.RestoreProbe.Erfolg:
-		b.Stufe = StufeKritisch
-		b.Befund = "Die letzte Wiederherstellungs-Probe ist FEHLGESCHLAGEN: " + l.RestoreProbe.Fehler
-		b.Folge = "Im Ernstfall ließe sich die Datenbank aus dem jüngsten Backup nicht wiederherstellen."
-		b.Abhilfe = "Ursache im Befundtext beheben (Schlüssel? Datei? psql?). Nach einem Fehlschlag " +
-			"probt der Stack beim nächsten Neustart von selbst erneut, sonst am Sonntag 03:30 UTC."
-	case l.Jetzt.Sub(l.RestoreProbe.Zeitpunkt) > 9*24*time.Hour:
-		b.Stufe = StufeKritisch
-		b.Befund = fmt.Sprintf("Die letzte erfolgreiche Probe ist %d Tage her — der Wochenlauf steht still.",
-			int(l.Jetzt.Sub(l.RestoreProbe.Zeitpunkt).Hours()/24))
-		b.Folge = "Ob die aktuellen Backups wiederherstellbar sind, ist wieder unbewiesen."
-		b.Abhilfe = "Container-Logs nach 'Restore-Probe' durchsuchen; läuft der Scheduler?"
-	default:
-		b.Stufe = StufeOK
-		b.Befund = fmt.Sprintf("Backup %s erfolgreich wiederhergestellt (%d Tabellen, Probe vom %s).",
-			l.RestoreProbe.BackupDatei, l.RestoreProbe.Tabellen, l.RestoreProbe.Zeitpunkt.Format("02.01.2006"))
-	}
-	return b
-}
-
-// pruefeBackupAlter hebt den Backup-Wächter des Dashboard-Badges in die Befunde —
-// und damit in die tägliche Kritisch-Alarm-Mail. Die Schwellen und ihre Anwendung
-// (jobs.BackupStatus) bleiben die eine Quelle; hier wird nur
-// übersetzt, damit Badge und Alarm nie auseinanderlaufen.
-func pruefeBackupAlter(l Lage, echt bool) Befund {
-	b := Befund{Bereich: "Nächtliches Backup"}
-	if !echt {
-		b.Stufe = StufeOK
-		b.Befund = befundNichtImEchtbetrieb("Kein Backup-Betrieb", l.AppEnv)
-		return b
-	}
-	switch jobs.BackupStatus(l.BackupKeySet, l.BackupKeyWeak, l.LetztesBackup, l.Jetzt) {
-	case "critical":
-		b.Stufe = StufeKritisch
-		switch {
-		case !l.BackupKeySet:
-			b.Befund = "BACKUP_ENCRYPTION_KEY fehlt — der nächtliche Job überspringt sich still."
-			b.Folge = "Es entsteht KEIN Backup. Ein Datenbankschaden kostet den gesamten Bestand."
-			b.Abhilfe = "BACKUP_ENCRYPTION_KEY in der .env setzen (≥32 Zeichen) und den Schlüssel getrennt verwahren."
-		case l.LetztesBackup == nil:
-			b.Befund = "Noch nie ein Backup geschrieben."
-			b.Folge = "Ein Datenbankschaden kostet den gesamten Bestand."
-			b.Abhilfe = "Backup-Job und BACKUP_DIR prüfen; der Job läuft täglich 02:30."
-		default:
-			b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden — mehr als %d Stunden alt.",
-				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()), int(jobs.BackupKritischAlter.Hours()))
-			b.Folge = "Der Datenverlust-Puffer ist aufgebraucht; der Job steht offenbar still."
-			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)."
-		}
-	case "warning":
-		b.Stufe = StufeWarnung
-		if l.LetztesBackup != nil && l.Jetzt.Sub(*l.LetztesBackup) > jobs.BackupWarnAlter {
-			b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden — mindestens ein Lauf wurde verpasst.",
-				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()))
-			b.Folge = "Bleibt es dabei, ist der Datenverlust-Puffer in Kürze aufgebraucht."
-			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)."
-		} else {
-			b.Befund = "BACKUP_ENCRYPTION_KEY ist zu kurz (unter 32 Zeichen)."
-			b.Folge = "Auch die scrypt-Ableitung rettet eine kurze Passphrase nicht — eine entwendete Backup-Datei wäre offline durchprobierbar."
-			b.Abhilfe = "Einen Schlüssel mit mindestens 32 Zeichen setzen."
-		}
-	default:
-		b.Stufe = StufeOK
-		b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden.", int(l.Jetzt.Sub(*l.LetztesBackup).Hours()))
-	}
-	return b
-}
-
-// pruefeAdminKonten macht sichtbar, WER Vollzugriff hat und die Alarm-Mails erhält.
-//
-// Anlass (16.08.2026 abends): Die erste Kritisch-Mail ging an ein Admin-Konto, von
-// dem der Betreiber nichts wusste — auf Prod lagen VIER aktive Admins, drei davon
-// ohne bekannte Herkunft (die Konten-Anlage war bis dahin unauditiert). Eine Liste
-// auf dieser Seite hätte das Wochen früher gezeigt. Bewusst Stufe OK, solange
-// überhaupt Admins existieren: Mehrere Admins können völlig richtig sein — die
-// Seite URTEILT nicht, sie zeigt. Wer hier einen unbekannten Namen liest, handelt.
-func pruefeAdminKonten(l Lage) Befund {
-	b := Befund{Bereich: "Admin-Konten"}
-	switch {
-	case l.AdminKonten == nil:
-		b.Stufe = StufeWarnung
-		b.Befund = "Die Admin-Konten konnten nicht gelesen werden."
-		b.Folge = "Unbekannt, wer Vollzugriff hat und die Alarm-Mails erhält."
-		b.Abhilfe = abhilfeDbNeuLaden
-	case len(l.AdminKonten) == 0:
-		b.Stufe = StufeKritisch
-		b.Befund = "Kein aktives Admin-Konto vorhanden."
-		b.Folge = "Niemand kann das System verwalten, und die Kritisch-Alarme erreichen niemanden."
-		b.Abhilfe = "Über die Datenbank bzw. INITIAL_ADMIN_EMAIL ein Admin-Konto herstellen."
-	default:
-		b.Stufe = StufeOK
-		ziel := "Die Kritisch-Alarme gehen an alle diese Konten."
-		if strings.TrimSpace(l.AlarmEmpfaenger) != "" {
-			ziel = "Die Kritisch-Alarme gehen an die konfigurierten Empfänger: " + l.AlarmEmpfaenger + "."
-		}
-		b.Befund = fmt.Sprintf("%d Admin-Konto/-Konten mit Vollzugriff: %s. %s",
-			len(l.AdminKonten), strings.Join(l.AdminKonten, "; "), ziel)
-	}
-	return b
-}
-
-// pruefeRechteVorgabe vergleicht die Live-Rechte mit der Code-Vorgabe (db.RechteVorgabe).
-//
-// Der Seed schreibt nur FEHLENDE Zeilen (ON CONFLICT DO NOTHING) — ändert sich die
-// Vorgabe im Code, erreicht sie eine bestehende Anlage nie von selbst. Genau so sah
-// das Kollegium wochenlang nur einen Teil seiner Menüpunkte, und niemand merkte es.
-//
-// Eine Abweichung ist bewusst nur eine WARNUNG, kein Fehler: role_permissions ist
-// über die Oberfläche einstellbar, die Abweichung kann eine Admin-Entscheidung sein.
-// Die Prüfung urteilt nicht darüber — sie macht die Abweichung sichtbar, damit ein
-// Mensch entscheidet. Repariert wird hier nichts.
-func pruefeRechteVorgabe(l Lage) Befund {
-	b := Befund{Bereich: "Rechte-Vorgabe"}
-	if l.RechteLive == nil {
-		b.Stufe = StufeWarnung
-		b.Befund = "Die Live-Rechte (role_permissions) konnten nicht gelesen werden."
-		b.Folge = "Ob Menü und API der aktuellen Vorgabe folgen, ist unbekannt."
-		b.Abhilfe = abhilfeDbNeuLaden
-		return b
-	}
-
-	abweichungen := rechteAbweichungen(l.RechteLive)
-	if len(abweichungen) == 0 {
-		b.Stufe = StufeOK
-		b.Befund = fmt.Sprintf("Live-Rechte decken sich mit der Code-Vorgabe (%d Zeilen).", len(db.RechteVorgabe))
-		return b
-	}
-
-	// Map-Reihenfolge ist Zufall — sortieren, damit Anzeige und Tests stabil sind.
-	sort.Strings(abweichungen)
-	const zeigeMax = 6
-	gezeigt := abweichungen
-	if len(gezeigt) > zeigeMax {
-		gezeigt = append(append([]string{}, gezeigt[:zeigeMax]...),
-			fmt.Sprintf("… und %d weitere", len(abweichungen)-zeigeMax))
-	}
-	b.Stufe = StufeWarnung
-	b.Befund = fmt.Sprintf("%d Abweichung(en) von der Code-Vorgabe: %s.",
-		len(abweichungen), strings.Join(gezeigt, "; "))
-	b.Folge = "Menü und API richten sich nach der Live-Tabelle, nicht nach dem Code. " +
-		"Nach einer Code-Änderung bleibt die alte Einstellung bestehen — eine Rolle sieht " +
-		"dann mehr oder weniger, als die aktuelle Vorgabe vorsieht, ohne dass es auffällt."
-	b.Abhilfe = "Jede Zeile prüfen. Bewusste Admin-Entscheidung: so lassen (die Warnung " +
-		"dokumentiert sie). Drift nach Code-Änderung: unter Benutzer & Rechte → Rollen & Rechte angleichen."
-	return b
-}
-
-// rechteAbweichungen vergleicht die Live-Rechte in beiden Richtungen mit der Vorgabe und
-// nennt jede Abweichung; die Reihenfolge ist die der Maps und damit zufällig.
-func rechteAbweichungen(live map[string]map[string]bool) []string {
-	var abweichungen []string
-	vorgabe := map[string]map[string]bool{}
-	for _, v := range db.RechteVorgabe {
-		if vorgabe[v.Role] == nil {
-			vorgabe[v.Role] = map[string]bool{}
-		}
-		vorgabe[v.Role][v.Permission] = v.Allowed
-		zeile, bekannt := live[v.Role]
-		liveWert, vorhanden := false, false
-		if bekannt {
-			liveWert, vorhanden = zeile[v.Permission]
-		}
-		switch {
-		case !vorhanden:
-			abweichungen = append(abweichungen,
-				fmt.Sprintf("%s/%s fehlt live (Vorgabe: %s)", v.Role, v.Permission, anAus(v.Allowed)))
-		// Optionale Paare (db.RechteOptional): Der Haken in der Rechte-Matrix ist
-		// dort der vorgesehene Gebrauch, kein Drift — nur die Existenz zählt.
-		case db.RechteOptional[v.Role+"/"+v.Permission]:
-		case liveWert != v.Allowed:
-			abweichungen = append(abweichungen,
-				fmt.Sprintf("%s/%s live %s, Vorgabe %s", v.Role, v.Permission, anAus(liveWert), anAus(v.Allowed)))
-		}
-	}
-	// Gegenrichtung: Live-Zeilen, deren Rolle oder Recht die Vorgabe nicht kennt —
-	// Reste alter Vokabulare (z. B. eine umbenannte Rolle) oder Tippfehler im Editor.
-	for rolle, zeile := range live {
-		for recht, erlaubt := range zeile {
-			if _, kennt := vorgabe[rolle][recht]; !kennt {
-				abweichungen = append(abweichungen,
-					fmt.Sprintf("%s/%s live %s, in der Vorgabe unbekannt", rolle, recht, anAus(erlaubt)))
-			}
-		}
-	}
-	return abweichungen
-}
-
-func anAus(erlaubt bool) string {
-	if erlaubt {
-		return "an"
-	}
-	return "aus"
-}
-
-func pruefeAuslagerung(l Lage) Befund {
-	b := Befund{Bereich: "Auslagerung der Backups"}
-	if l.S3Endpoint != "" && l.S3AccessKey != "" && l.S3SecretKey != "" && l.S3Bucket != "" {
-		b.Stufe = StufeOK
-		b.Befund = "Backups werden zusätzlich außer Haus abgelegt (" + l.S3Bucket + ")."
-		return b
-	}
-	b.Stufe = StufeKritisch
-	b.Befund = "Kein Ziel außer Haus eingerichtet — der Job überspringt sich still."
-	b.Folge = "Alle Backups liegen auf derselben Platte wie die Datenbank. " +
-		"Ein Plattenausfall kostet den gesamten Bestand samt aller Sicherungen."
-	b.Abhilfe = "S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY und S3_BUCKET in der .env setzen und den Stack " +
-		"neu starten (docker compose reicht sie seit 22.08.2026 durch; davor kamen sie nie im Container an)."
-	return b
-}
-
-func pruefeGeheimnisse(l Lage, echt bool) Befund {
-	b := Befund{Bereich: "Geheimnisse"}
-	defaultsAktiv := IstBekanntesDefaultGeheimnis(l.JWTSecret) ||
-		IstBekanntesDefaultGeheimnis(l.AppEncryptionKey)
-
-	switch {
-	case !defaultsAktiv && l.EnforceProdSecrets:
-		b.Stufe = StufeOK
-		b.Befund = "Eigene Geheimnisse gesetzt, die harte Absicherung ist scharf."
-	case !defaultsAktiv:
-		b.Stufe = StufeWarnung
-		b.Befund = "Eigene Geheimnisse gesetzt, ENFORCE_PROD_SECRETS steht aber ausdrücklich auf false."
-		b.Folge = "Der Server würde auch mit einem Beispiel-Geheimnis starten — " +
-			"ein versehentliches Zurückfallen fiele nicht auf."
-		b.Abhilfe = "Die Zeile ENFORCE_PROD_SECRETS=false aus der .env entfernen (Vorgabe ist scharf)."
-	case echt:
-		b.Stufe = StufeKritisch
-		b.Befund = "Es laufen mitgelieferte Beispiel-Geheimnisse."
-		b.Folge = "JWT_SECRET und APP_ENCRYPTION_KEY stehen öffentlich im Repository. " +
-			"Wer sie kennt, kann Sitzungen fälschen und verschlüsselte Ablagen lesen."
-		b.Abhilfe = "Eigene Werte setzen (JWT_SECRET ≥32 Zeichen, APP_ENCRYPTION_KEY genau 32 Byte) " +
-			"und die Zeile ENFORCE_PROD_SECRETS=false entfernen."
-	default:
-		b.Stufe = StufeOK
-		b.Befund = befundNichtImEchtbetrieb("Beispiel-Geheimnisse", l.AppEnv)
-	}
-	return b
-}
-
-// pruefeSchluesselPasstZumBestand: Passt APP_ENCRYPTION_KEY zu dem, was in der Datenbank
-// verschlüsselt liegt? Der Fall dahinter ist die Wiederherstellung auf einem neuen Server:
-// Die Sicherung bringt die Daten zurück, die .env nicht — sie steht in keiner Sicherung.
-// Mit einem neuen Schlüssel startet das System ohne Meldung, und gemerkt wird es erst am
-// leeren Schülerfoto oder an der Mahnmail, die nicht rausgeht.
-//
-// Kritisch ohne Blick auf APP_ENV: Ein unlesbarer Bestand ist auf jedem System ein Fehler.
-func pruefeSchluesselPasstZumBestand(l Lage) Befund {
-	b := Befund{Bereich: "Schlüssel und Bestand"}
-	switch {
-	case l.SchluesselProbe == nil:
-		b.Stufe = StufeWarnung
-		b.Befund = "Ob APP_ENCRYPTION_KEY zum Bestand passt, ließ sich nicht prüfen."
-		b.Folge = "Ein falscher Schlüssel bliebe unbemerkt, bis ein Foto leer bleibt oder der Mailversand scheitert."
-		b.Abhilfe = abhilfeDbNeuLaden
-	case len(l.SchluesselProbe.NichtLesbar) > 0:
-		b.Stufe = StufeKritisch
-		b.Befund = "APP_ENCRYPTION_KEY passt nicht zum Bestand — nicht entschlüsselbar: " +
-			strings.Join(l.SchluesselProbe.NichtLesbar, ", ") + "."
-		b.Folge = "Schülerfotos bleiben leer, und ohne lesbares SMTP-Passwort geht keine Mail hinaus. " +
-			"Die Daten sind nicht verloren, solange der ursprüngliche Schlüssel noch existiert."
-		b.Abhilfe = "Den APP_ENCRYPTION_KEY der Anlage, von der die Daten stammen, in die .env eintragen " +
-			"und den Stack neu starten. Ist er verloren: SMTP-Passwort in den Einstellungen neu " +
-			"eingeben, Fotos neu einspielen."
-	case l.SchluesselProbe.Geprueft == 0:
-		b.Stufe = StufeOK
-		b.Befund = "Es liegt noch nichts verschlüsselt in der Datenbank — der Schlüssel kann nichts verfehlen."
-	default:
-		b.Stufe = StufeOK
-		b.Befund = "APP_ENCRYPTION_KEY passt zum Bestand (Stichprobe je verschlüsselter Spalte)."
-	}
-	return b
-}
-
-func pruefeAnmeldung(l Lage, echt bool) Befund {
-	b := Befund{Bereich: "Anmeldung"}
-	switch {
-	case l.ImapHost == "mock" && echt:
-		b.Stufe = StufeKritisch
-		b.Befund = "IMAP_HOST steht auf \"mock\"."
-		b.Folge = "Die Anmeldung akzeptiert JEDES Passwort für jede hinterlegte E-Mail-Adresse."
-		b.Abhilfe = "Den echten IMAP-Host der Schule eintragen."
-	case l.ImapHost == "mock":
-		b.Stufe = StufeOK
-		b.Befund = befundNichtImEchtbetrieb("Mock-Anmeldung", l.AppEnv)
-	case l.ImapHost == "":
-		b.Stufe = StufeKritisch
-		b.Befund = "IMAP_HOST ist leer."
-		b.Folge = "Niemand kann sich anmelden."
-		b.Abhilfe = "Den IMAP-Host der Schule eintragen."
-	default:
-		b.Stufe = StufeOK
-		b.Befund = "Anmeldung läuft über " + l.ImapHost + "."
-	}
-	return b
-}
-
-// pruefeSelbstanmeldung: Ohne SELBSTANMELDUNG_DOMAIN bekommt eine Lehrkraft mit
-// RICHTIGEM Passwort „invalid email or password“ und nach fünf Versuchen eine Sperre —
-// eine tote Tür, die wie ein Tippfehler aussieht. Der Serverstart protokolliert den
-// Zustand zwar (auth.SelbstanmeldungStatus), aber ein Log liest niemand, der gerade
-// eine Lehrkraft am Telefon hat. Warnung, nicht kritisch: Die Schule KANN alle 160
-// Konten von Hand anlegen — sie soll nur wissen, dass sie das gerade tut.
-func pruefeSelbstanmeldung(l Lage) Befund {
-	b := Befund{Bereich: "Selbstanmeldung Kollegium"}
-	if l.SelbstanmeldeDomain == "" {
-		b.Stufe = StufeWarnung
-		b.Befund = "SELBSTANMELDUNG_DOMAIN ist leer — Lehrkräfte können sich nicht selbst anmelden."
-		b.Folge = "Eine Lehrkraft ohne Konto bekommt trotz richtigem Passwort „Anmeldung fehlgeschlagen“; jedes Kollegiums-Konto muss unter Benutzer & Rechte von Hand angelegt werden."
-		b.Abhilfe = "Die Schul-Maildomain eintragen (z. B. SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de). Neue Konten entstehen dann inaktiv und werden unter Benutzer & Rechte freigeschaltet."
-		return b
-	}
-	b.Stufe = StufeOK
-	b.Befund = "Postfächer @" + l.SelbstanmeldeDomain + " melden sich selbst an; neue Konten warten inaktiv auf die Freischaltung."
-	return b
-}
-
-func pruefeBestelllink(l Lage) Befund {
-	b := Befund{Bereich: "Bestell-Bestätigungslink"}
-	if l.OeffentlicheAdresse != "" {
-		b.Stufe = StufeOK
-		b.Befund = "Links verweisen auf " + l.OeffentlicheAdresse + "."
-		return b
-	}
-	b.Stufe = StufeWarnung
-	b.Befund = "Keine öffentliche Adresse hinterlegt."
-	b.Folge = "Bestellmails gehen raus, aber ohne den Bestätigungslink, " +
-		"um dessentwillen es sie gibt. Der Lieferant kann nicht bestätigen."
-	b.Abhilfe = "Einstellungen → Erreichbarkeit & Alarme: öffentliche Adresse der Anwendung eintragen."
-	return b
-}
-
-func pruefeMailversand(l Lage) Befund {
-	b := Befund{Bereich: "Mailversand (Mahnwesen)"}
-	// Die Ausnahmeschalter zuerst: Sie schwächen den Versand auch dann, wenn sonst alles
-	// eingerichtet ist — und genau dann sähe der Bereich ohne diese Zeilen „ok" aus.
-	var schalter []string
-	if l.SmtpAllowPlaintext {
-		schalter = append(schalter, "SMTP_ALLOW_PLAINTEXT")
-	}
-	if l.SmtpAllowInsecureTLS {
-		schalter = append(schalter, "SMTP_ALLOW_INSECURE_TLS")
-	}
-	if len(schalter) > 0 {
-		b.Stufe = StufeWarnung
-		b.Befund = "Der Mailversand läuft mit abgeschwächter Absicherung: " +
-			strings.Join(schalter, " und ") + " steht auf true."
-		b.Folge = "SMTP_ALLOW_PLAINTEXT schickt Mails ohne Verschlüsselung, wenn der Server kein STARTTLS " +
-			"anbietet; SMTP_ALLOW_INSECURE_TLS prüft das Zertifikat des Mailservers nicht. Mahnungen " +
-			"tragen Schülernamen und Elternadressen."
-		b.Abhilfe = "Die Zeile aus der .env entfernen und den Stack neu starten — außer der Mailserver " +
-			"der Schule verlangt die Ausnahme wirklich (altes Relay, selbstsigniertes Zertifikat)."
-		return b
-	}
-	if l.SmtpHost != "" {
-		b.Stufe = StufeOK
-		b.Befund = "Versand über " + l.SmtpHost + "."
-		return b
-	}
-	b.Stufe = StufeWarnung
-	b.Befund = "Kein SMTP-Server in den Einstellungen."
-	b.Folge = "Mahnungen und Bestellmails können nicht zugestellt werden."
-	b.Abhilfe = "Einstellungen → Mail: Postausgang ausfüllen und mit dem Testversand prüfen."
-	return b
-}
-
-// pruefeBescheidAngaben: Kann das Sekretariat einen Schadensersatz-Bescheid erstellen?
-// Die Liste kommt aus BescheidAngaben.FehlendeAngaben — derselben Funktion, mit der das
-// Erstellen abweist. Warnung, nicht kritisch: Solange niemand einen Bescheid braucht,
-// fällt nichts aus; die Schule soll es vorher wissen, nicht erst am Tag des Falls.
-func pruefeBescheidAngaben(l Lage) Befund {
-	b := Befund{Bereich: "Schadensersatz-Bescheid"}
-	if l.BescheidFehlend == nil {
-		b.Stufe = StufeWarnung
-		b.Befund = "Die Pflichtangaben wurden nicht erhoben — die Einstellungen waren nicht lesbar."
-		b.Folge = "Unklar, ob sich ein Bescheid erstellen lässt."
-		b.Abhilfe = abhilfeDbNeuLaden
-		return b
-	}
-	if len(l.BescheidFehlend) > 0 {
-		b.Stufe = StufeWarnung
-		b.Befund = "Es fehlen: " + strings.Join(l.BescheidFehlend, ", ") + "."
-		b.Folge = "Ein Bescheid lässt sich erst erstellen, wenn diese Angaben stehen — das Erstellen weist bis dahin ab."
-		b.Abhilfe = "Einstellungen → Schadensersatz: die fehlenden Angaben eintragen; die Anschrift der Schule steht unter Einstellungen → Schule."
-		return b
-	}
-	b.Stufe = StufeOK
-	b.Befund = "Alle Pflichtangaben für den Bescheid stehen."
-	return b
-}
-
-func pruefeDemodaten(l Lage) Befund {
-	b := Befund{Bereich: "Demo-Daten"}
-	if l.DemoSchueler == 0 && l.DemoExemplare == 0 {
-		b.Stufe = StufeOK
-		b.Befund = "Keine Demo-Datensätze im Bestand."
-		return b
-	}
-	b.Stufe = StufeWarnung
-	b.Befund = strconv.Itoa(l.DemoSchueler) + " Demo-Schüler und " +
-		strconv.Itoa(l.DemoExemplare) + " Demo-Exemplare im Bestand."
-	b.Folge = "Statistik, Mahnwesen und Bestellbedarf mischen echte Zahlen mit Fiktion. " +
-		"Demo-Eltern-Adressen enden auf example.invalid, ein Mahnlauf erreicht sie nie."
-	// Nicht der Block am Anfang von seed_demo.sql: Der bricht auf einem benutzten System an
-	// Schäden ab (RESTRICT) und lässt Bescheide und Inventur-Verluste ohne Bezug stehen.
-	b.Abhilfe = "Vor dem Echtstart scripts/entferne_demo_daten.sql ausführen: erst ohne Schalter " +
-		"(Vorschau, zeigt jede Verflechtung mit echten Daten), dann mit -v ausfuehren=ja. " +
-		"Der Aufruf steht im Kopf der Datei."
-	return b
-}
-
-// pruefeBeispielLieferanten: Vom 30.05. bis zum 07.09.2026 legte der erste Programmstart
-// drei Beispiel-Lieferanten an — damals gewollt, damit das Bestellwesen ohne Vorarbeit
-// bedienbar war. Das Problem war nie die Absicht, sondern der Ort: Startdaten im
-// Boot-Pfad sind auf einer echten Anlage von echten Händlern nicht zu unterscheiden. Wer
-// einen davon im Bestellformular wählte, bekam eine Historie mit „gesendet“ — und keine
-// Bücher. Kritisch, nicht Warnung: Der Schaden ist still und trifft eine echte Bestellung.
-func pruefeBeispielLieferanten(l Lage) Befund {
-	b := Befund{Bereich: "Lieferanten"}
-	switch {
-	case l.BeispielLieferanten == nil:
-		b.Stufe = StufeWarnung
-		b.Befund = "Lieferantenliste nicht lesbar — nicht geprüft."
-		b.Folge = "Ob noch Beispiel-Lieferanten aus den alten Startdaten im Bestand stehen, ist offen."
-		b.Abhilfe = abhilfeDbNeuLaden
-	case len(l.BeispielLieferanten) > 0:
-		b.Stufe = StufeKritisch
-		b.Befund = "Beispiel-Lieferanten aus den alten Startdaten im Bestand: " +
-			strings.Join(l.BeispielLieferanten, ", ") + "."
-		b.Folge = "Eine Bestellung an diesen Eintrag geht wirklich an die Beispiel-Adresse, mit einer " +
-			"Kundennummer, die es nicht gibt. Die Historie meldet „gesendet“, die Bücher kommen nie."
-		b.Abhilfe = "Einstellungen → Lieferanten: Eintrag löschen oder mit den echten Daten des Händlers überschreiben."
-	default:
-		b.Stufe = StufeOK
-		b.Befund = "Keine Beispiel-Lieferanten im Bestand."
-	}
-	return b
-}
-
-// pruefeKlassenDrift macht die Text-Verbindungen des Klassennamens sichtbar
-// (Befund F3, bewertung/datenbank-pruefbericht.md): Schüler, Klassenlehrer-
-// Zuordnung und Bücherlisten hängen nur an übereinstimmenden Namen. Der
-// Jahreswechsel versetzt die Zuordnung seit 18.08.2026 mit (api/leser/student_promotion.go),
-// aber Umbenennungen von Hand oder LUSD-Umschichtungen können weiter driften —
-// und ohne diese Prüfung merkt es niemand, bis eine Mahnliste leer läuft.
-// Bewusst nur Warnung: Eine Klasse ohne Lehrkraft-Zuordnung kann gewollt sein
-// (die Mahnmail geht dann eben an niemanden — genau das soll man hier sehen).
-func pruefeKlassenDrift(l Lage) Befund {
-	b := Befund{Bereich: "Klassen-Zuordnung"}
-	if l.KlassenOhneLehrkraft == nil || l.VerwaisteZuordnungen == nil || l.VerwaisteBuecherliste == nil {
-		b.Stufe = StufeWarnung
-		b.Befund = "Die Klassen-Verbindungen konnten nicht geprüft werden (Datenbank nicht erreichbar)."
-		b.Folge = "Ob Mahnwesen und Bücherlisten ihre Klassen finden, ist unbekannt."
-		b.Abhilfe = abhilfeDbNeuLaden
-		return b
-	}
-
-	var probleme []string
-	if len(l.KlassenOhneLehrkraft) > 0 {
-		probleme = append(probleme, "Klassen ohne Lehrkraft-Zuordnung: "+strings.Join(l.KlassenOhneLehrkraft, ", "))
-	}
-	if len(l.VerwaisteZuordnungen) > 0 {
-		probleme = append(probleme, "Zuordnungen ohne aktive Schüler: "+strings.Join(l.VerwaisteZuordnungen, ", "))
-	}
-	if len(l.VerwaisteBuecherliste) > 0 {
-		probleme = append(probleme, "Bücherlisten für unbekannte Klassen: "+strings.Join(l.VerwaisteBuecherliste, ", "))
-	}
-	if len(probleme) == 0 {
-		b.Stufe = StufeOK
-		b.Befund = "Alle Klassennamen sind zwischen Schülern, Lehrkraft-Zuordnung und Bücherlisten verbunden."
-		return b
-	}
-	b.Stufe = StufeWarnung
-	b.Befund = strings.Join(probleme, " — ")
-	b.Folge = "Mahnlisten dieser Klassen erreichen keine Lehrkraft bzw. Listen zeigen ins Leere — ohne Fehlermeldung."
-	b.Abhilfe = "Einstellungen → Mahnwesen-Routing: Zuordnung nachtragen oder verwaiste Zeilen entfernen. " +
-		"Eine Buchliste ohne Klasse unter Klassensätze löschen."
-	return b
-}
-
-// NachbuchOffenSeitTagen ist die Schwelle des Wächters: zwei Wochen (Entscheidung vom
-// 13.09.2026). Eine Meldung, die so lange niemand quittiert, hat niemand angesehen.
-const NachbuchOffenSeitTagen = 14
-
-// pruefeNachbuchMeldungenOffen: Abweichungen zwischen Offline-Scan und Wirklichkeit —
-// umgebuchte Bücher, abgewiesene Ausleihen, veraltete Scans — stehen als Meldung, bis
-// jemand aus der Bibliothek sie quittiert. Der Wächter hält fest, DASS sie liegen bleiben;
-// was daraus folgt (Buch suchen, Kind ansprechen), entscheidet ein Mensch.
-func pruefeNachbuchMeldungenOffen(l Lage) Befund {
-	b := Befund{Bereich: "Nachbuch-Meldungen der Theke"}
-	if l.NachbuchMeldungenOffen == nil {
-		b.Stufe = StufeWarnung
-		b.Befund = "Nicht erhoben — die Zählung der offenen Nachbuch-Meldungen ist fehlgeschlagen."
-		b.Folge = "Unklar, ob Abweichungen aus dem Offline-Betrieb unbesehen liegen bleiben."
-		b.Abhilfe = "Datenbankverbindung prüfen; die Zählung läuft bei jedem Aufruf dieser Seite."
-		return b
-	}
-	n := *l.NachbuchMeldungenOffen
-	if n > 0 {
-		b.Stufe = StufeWarnung
-		b.Befund = fmt.Sprintf("%d Nachbuch-Meldungen sind seit mehr als zwei Wochen nicht quittiert.", n)
-		b.Folge = "Ein umgebuchtes oder abgewiesenes Buch aus dem Offline-Betrieb hat niemand angesehen; die Beteiligten stehen mit Namen darin, ohne Frist."
-		b.Abhilfe = "Theke → Meldungen: jede Zeile prüfen und quittieren. Quittierte Meldungen löscht das System nach der Lesehistorie-Frist von selbst."
-		return b
-	}
-	b.Stufe = StufeOK
-	b.Befund = "Keine Nachbuch-Meldung liegt länger als zwei Wochen unquittiert."
-	return b
 }
