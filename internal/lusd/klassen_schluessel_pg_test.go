@@ -7,12 +7,12 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Parität Go ↔ SQL: lusd.KlassenNormkey (Klassenvergleich im LUSD-Import) muss dasselbe
+// Parität Go ↔ SQL: lusd.KlassenSchluessel (Klassenvergleich im LUSD-Import) muss dasselbe
 // liefern wie klassen_normkey (Migration 079, der Trigger-Schlüssel des Klassen-
 // Vokabulars). Driften die beiden, meldet die Vorschau Klassenwechsel, die der Trigger
 // anschließend wegkanonisiert — oder übersieht echte. Zwei Implementierungen derselben
 // Regel brauchen ein Gate, das sie gegeneinander hält.
-func TestKlassenNormkey_ParitaetZurSQLFunktion(t *testing.T) {
+func TestKlassenSchluessel_ParitaetZurSQLFunktion(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := t.Context()
 
@@ -25,8 +25,8 @@ func TestKlassenNormkey_ParitaetZurSQLFunktion(t *testing.T) {
 		if err := pool.QueryRow(ctx, `SELECT klassen_normkey($1)`, in).Scan(&sql); err != nil {
 			t.Fatalf("klassen_normkey(%q): %v", in, err)
 		}
-		if got := lusd.KlassenNormkey(in); got != sql {
-			t.Errorf("lusd.KlassenNormkey(%q) = %q, SQL liefert %q", in, got, sql)
+		if got := lusd.KlassenSchluessel(in); got != sql {
+			t.Errorf("lusd.KlassenSchluessel(%q) = %q, SQL liefert %q", in, got, sql)
 		}
 	}
 }

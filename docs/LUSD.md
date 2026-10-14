@@ -204,8 +204,8 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_gate_pg_test.
 
 | Frage                                                                | Datei                                                                                                                                                  |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Kopfzeilen, Aliase, Pflichtspalten                                   | `internal/lusd/header.go`                                                                                                                                   |
-| Parsen, Modus-Erkennung, Dubletten in der Datei                      | `internal/lusd/parser.go`, `internal/lusd/quelle.go`                                                                                                      |
+| Kopfzeilen, Aliase, Pflichtspalten                                   | `internal/lusd/spalten.go`                                                                                                                                  |
+| Parsen, Modus-Erkennung, Dubletten in der Datei                      | `internal/lusd/datei.go`, `internal/lusd/quelle.go`                                                                                                        |
 | Bestandsindex je Modus                                               | `internal/lusd/bestand.go`, `repository/lusd_bestand.go`                                                                                                    |
 | Klassifizierung (neu / Wechsel / Rückkehrer / Abgänger / mehrdeutig) | `internal/lusd/klassifizierung.go`                                                                                                                          |
 | Umbenennungs-Paare                                                   | `internal/lusd/paarung.go`                                                                                                                                  |

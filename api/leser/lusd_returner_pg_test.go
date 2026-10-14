@@ -46,7 +46,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 
 		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 		if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
-			{LusdID: "L-RETURN", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
+			{LUSDID: "L-RETURN", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
 		}, true, true); err != nil {
 			t.Fatalf("Import eines Rückkehrers darf nicht fehlschlagen: %v", err)
 		}
@@ -96,7 +96,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 
 		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 		if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
-			{LusdID: "L-DEBT", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
+			{LUSDID: "L-DEBT", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
 		}, true, true); err != nil {
 			t.Fatalf("Import darf nicht fehlschlagen: %v", err)
 		}
@@ -132,7 +132,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Fatalf("offene Ausleihe anlegen: %v", err)
 		}
 		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-		zeile := []lusd.Zeile{{LusdID: "L-DEBT3", Vorname: "Max", Nachname: "Muster", Klasse: "E1"}}
+		zeile := []lusd.Zeile{{LUSDID: "L-DEBT3", Vorname: "Max", Nachname: "Muster", Klasse: "E1"}}
 		if _, err := s.computeLusdChanges(ctx, zeile, true, true); err != nil {
 			t.Fatalf("erster Import: %v", err)
 		}

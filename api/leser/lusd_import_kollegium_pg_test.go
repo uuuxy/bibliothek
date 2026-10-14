@@ -96,7 +96,7 @@ func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		"Mia,Muster,8a,2012-03-04\n" +
 		"Nora,Neuling,5c,2015-07-08\n"
 
-	antwort := func(t *testing.T, pfad string, felder map[string]string) (*httptest.ResponseRecorder, *lusd.PreviewResult) {
+	antwort := func(t *testing.T, pfad string, felder map[string]string) (*httptest.ResponseRecorder, *lusd.Vorschau) {
 		t.Helper()
 		var koerper bytes.Buffer
 		mw := multipart.NewWriter(&koerper)
@@ -124,7 +124,7 @@ func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		} else {
 			srv.PostLusdPreviewHandler().ServeHTTP(rec, req)
 		}
-		var res lusd.PreviewResult
+		var res lusd.Vorschau
 		if rec.Code == http.StatusOK {
 			if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
 				t.Fatalf("Antwort lesen: %v (%s)", err, rec.Body.String())
@@ -138,16 +138,16 @@ func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vorschau: Status %d, %s", rec.Code, rec.Body.String())
 	}
-	if len(vorschau.NewStudents) != 1 || vorschau.NewStudents[0].Nachname != "Neuling" {
-		t.Errorf("Vorschau, Neue: %+v", vorschau.NewStudents)
+	if len(vorschau.Neuzugaenge) != 1 || vorschau.Neuzugaenge[0].Nachname != "Neuling" {
+		t.Errorf("Vorschau, Neue: %+v", vorschau.Neuzugaenge)
 	}
-	if len(vorschau.ClassChanges) != 1 || vorschau.ClassChanges[0].NeueKlasse != "8a" {
-		t.Errorf("Vorschau, Klassenwechsel: %+v", vorschau.ClassChanges)
+	if len(vorschau.Klassenwechsel) != 1 || vorschau.Klassenwechsel[0].NeueKlasse != "8a" {
+		t.Errorf("Vorschau, Klassenwechsel: %+v", vorschau.Klassenwechsel)
 	}
 	// Genau EIN Abgänger — Tim. Stünden die Kollegen im Bestand des Abgleichs, wären es
 	// drei, und zwei Menschen verlören nach der Karenz ihren Namen.
-	if len(vorschau.Graduates) != 1 || vorschau.Graduates[0].Nachname != "Tschuess" {
-		t.Fatalf("Vorschau, Abgänger: %+v — Kollegium gehört NICHT dazu", vorschau.Graduates)
+	if len(vorschau.Abgaenger) != 1 || vorschau.Abgaenger[0].Nachname != "Tschuess" {
+		t.Fatalf("Vorschau, Abgänger: %+v — Kollegium gehört NICHT dazu", vorschau.Abgaenger)
 	}
 
 	// ── 2. Der schreibende Lauf ──────────────────────────────────────────────────
@@ -157,9 +157,9 @@ func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Import: Status %d, %s", rec.Code, rec.Body.String())
 	}
-	if len(ergebnis.NewStudents) != 1 || len(ergebnis.ClassChanges) != 1 || len(ergebnis.Graduates) != 1 {
+	if len(ergebnis.Neuzugaenge) != 1 || len(ergebnis.Klassenwechsel) != 1 || len(ergebnis.Abgaenger) != 1 {
 		t.Errorf("Import-Zahlen: neu=%d wechsel=%d abgänger=%d",
-			len(ergebnis.NewStudents), len(ergebnis.ClassChanges), len(ergebnis.Graduates))
+			len(ergebnis.Neuzugaenge), len(ergebnis.Klassenwechsel), len(ergebnis.Abgaenger))
 	}
 
 	// ── 3. Was wirklich in der Datenbank steht ───────────────────────────────────

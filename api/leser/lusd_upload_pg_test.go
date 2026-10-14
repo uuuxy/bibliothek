@@ -59,11 +59,11 @@ func TestLusdPreviewHandler_XlsxOhneIDDurchDieVordertuer(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
-	var res lusd.PreviewResult
+	var res lusd.Vorschau
 	if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
 		t.Fatal(err)
 	}
-	if res.Modus != "name_geburtsdatum" || len(res.ClassChanges) != 1 || len(res.NewStudents) != 1 {
+	if res.Modus != "name_geburtsdatum" || len(res.Klassenwechsel) != 1 || len(res.Neuzugaenge) != 1 {
 		t.Fatalf("Vorschau aus Excel falsch: %+v", res)
 	}
 	// Vorschau schreibt nichts.

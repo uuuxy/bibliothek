@@ -18,7 +18,7 @@ import (
 // bleibt es Abgänger + Neuanlage (jetzt mit Karenz-Sperre statt Anonymisierung).
 
 func umbZeile(line int, vorname, nachname, klasse string, geb, eintritt *time.Time) lusd.Zeile {
-	return lusd.Zeile{Vorname: vorname, Nachname: nachname, Klasse: klasse, GebDatum: geb, EintrittAm: eintritt, LineNum: line}
+	return lusd.Zeile{Vorname: vorname, Nachname: nachname, Klasse: klasse, Geburtsdatum: geb, EintrittAm: eintritt, Nr: line}
 }
 
 // Namensänderung mit Schuleintritt im Bericht: sicheres Paar. Bestätigt → derselbe
@@ -47,8 +47,8 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if len(prev.NewStudents) != 1 || len(prev.Graduates) != 1 || len(prev.Umbenennungen) != 1 {
-		t.Fatalf("Vorschau: neu=%d abg=%d umb=%d — erwartet je 1", len(prev.NewStudents), len(prev.Graduates), len(prev.Umbenennungen))
+	if len(prev.Neuzugaenge) != 1 || len(prev.Abgaenger) != 1 || len(prev.Umbenennungen) != 1 {
+		t.Fatalf("Vorschau: neu=%d abg=%d umb=%d — erwartet je 1", len(prev.Neuzugaenge), len(prev.Abgaenger), len(prev.Umbenennungen))
 	}
 	p := prev.Umbenennungen[0]
 	if p.Zeile != 2 || p.SchuelerID != annaID || !p.Sicher || p.WarAbgaenger || p.AltNachname != "Müller" || p.NeuNachname != "Mueller-Schmidt" {
@@ -63,8 +63,8 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
-	if len(res.NewStudents) != 0 || len(res.Graduates) != 0 || !res.Umbenennungen[0].Bestaetigt {
-		t.Errorf("Ergebnis nach Bestätigung: neu=%d abg=%d bestaetigt=%v", len(res.NewStudents), len(res.Graduates), res.Umbenennungen[0].Bestaetigt)
+	if len(res.Neuzugaenge) != 0 || len(res.Abgaenger) != 0 || !res.Umbenennungen[0].Bestaetigt {
+		t.Errorf("Ergebnis nach Bestätigung: neu=%d abg=%d bestaetigt=%v", len(res.Neuzugaenge), len(res.Abgaenger), res.Umbenennungen[0].Bestaetigt)
 	}
 	if n := zaehle(t, pool, "lower(nachname) LIKE 'm%'"); n != 1 {
 		t.Fatalf("erwartet EINE Zeile für Anna, waren %d", n)
@@ -76,7 +76,7 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 		Scan(&nachname, &klasse, &barcode, &abg, &bestaetigt, &eintrittDB); err != nil {
 		t.Fatal(err)
 	}
-	if nachname != "Mueller-Schmidt" || !lusd.KlassenGleich(klasse, "06F1") || barcode != "UMB-1" || abg || bestaetigt == nil || time.Since(*bestaetigt) > time.Minute {
+	if nachname != "Mueller-Schmidt" || !lusd.IstKlasseGleich(klasse, "06F1") || barcode != "UMB-1" || abg || bestaetigt == nil || time.Since(*bestaetigt) > time.Minute {
 		t.Errorf("Anna: nachname=%q klasse=%q barcode=%q abg=%v bestaetigt=%v", nachname, klasse, barcode, abg, bestaetigt)
 	}
 	// Der Import SCHREIBT den Schuleintritt (Bestand + Neuanlage) — kein Test sah das
@@ -99,8 +99,8 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prev2.NewStudents)+len(prev2.Graduates)+len(prev2.Umbenennungen)+len(prev2.ClassChanges) != 0 {
-		t.Errorf("zweiter Lauf muss leer sein: neu=%d abg=%d umb=%d wechsel=%d", len(prev2.NewStudents), len(prev2.Graduates), len(prev2.Umbenennungen), len(prev2.ClassChanges))
+	if len(prev2.Neuzugaenge)+len(prev2.Abgaenger)+len(prev2.Umbenennungen)+len(prev2.Klassenwechsel) != 0 {
+		t.Errorf("zweiter Lauf muss leer sein: neu=%d abg=%d umb=%d wechsel=%d", len(prev2.Neuzugaenge), len(prev2.Abgaenger), len(prev2.Umbenennungen), len(prev2.Klassenwechsel))
 	}
 }
 

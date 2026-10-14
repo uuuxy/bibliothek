@@ -37,8 +37,8 @@ func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 		geb := time.Date(2012, 5, 4, 0, 0, 0, 0, time.UTC)
 		for i, n := range namen {
 			datei.Zeilen = append(datei.Zeilen, lusd.Zeile{
-				LusdID: "LUSD-" + n, Vorname: "Vor", Nachname: n, Klasse: "07A",
-				GebDatum: &geb, LineNum: i + 2,
+				LUSDID: "LUSD-" + n, Vorname: "Vor", Nachname: n, Klasse: "07A",
+				Geburtsdatum: &geb, Nr: i + 2,
 			})
 		}
 		tx, err := pool.Begin(ctx)

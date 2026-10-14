@@ -44,7 +44,7 @@ func legeNmSchuelerAn(t *testing.T, ctx context.Context, pool *pgxpool.Pool, s n
 }
 
 func nmZeile(line int, vorname, nachname, klasse string, geb *time.Time) lusd.Zeile {
-	return lusd.Zeile{Vorname: vorname, Nachname: nachname, Klasse: klasse, GebDatum: geb, LineNum: line}
+	return lusd.Zeile{Vorname: vorname, Nachname: nachname, Klasse: klasse, Geburtsdatum: geb, Nr: line}
 }
 
 func nmDatei(zeilen ...lusd.Zeile) lusd.Datei {
@@ -82,8 +82,8 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if prev.Modus != "name_geburtsdatum" || len(prev.ClassChanges) != 2 || len(prev.NewStudents) != 1 ||
-		len(prev.Graduates) != 0 || len(prev.Adoptions) != 0 || len(prev.Mehrdeutig) != 0 {
+	if prev.Modus != "name_geburtsdatum" || len(prev.Klassenwechsel) != 2 || len(prev.Neuzugaenge) != 1 ||
+		len(prev.Abgaenger) != 0 || len(prev.Adoptionen) != 0 || len(prev.Mehrdeutig) != 0 {
 		t.Fatalf("Vorschau falsch: %+v", prev)
 	}
 	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
@@ -100,9 +100,9 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 		if err := pool.QueryRow(ctx, `SELECT klasse, lusd_bestaetigt_am FROM schueler WHERE id=$1`, id).Scan(&k, &bestaetigt); err != nil {
 			t.Fatal(err)
 		}
-		// lusd.KlassenGleich statt ==: Der Klassen-Trigger (Migration 079) kanonisiert "06A" auf
+		// lusd.IstKlasseGleich statt ==: Der Klassen-Trigger (Migration 079) kanonisiert "06A" auf
 		// die registrierte Schreibweise ("6a"), wenn die Schule so schreibt.
-		if !lusd.KlassenGleich(k, klasse) || bestaetigt == nil {
+		if !lusd.IstKlasseGleich(k, klasse) || bestaetigt == nil {
 			t.Errorf("Schüler %s: Klasse %q (erwartet %q), bestätigt=%v", id, k, klasse, bestaetigt != nil)
 		}
 	}
@@ -119,7 +119,7 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prev2.NewStudents)+len(prev2.ClassChanges)+len(prev2.Graduates)+len(prev2.NichtImExport) != 0 {
+	if len(prev2.Neuzugaenge)+len(prev2.Klassenwechsel)+len(prev2.Abgaenger)+len(prev2.NichtImExport) != 0 {
 		t.Errorf("zweiter Lauf muss leer sein: %+v", prev2)
 	}
 }
@@ -142,8 +142,8 @@ func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prev.Graduates) != 1 || prev.Graduates[0].ID != abID {
-		t.Fatalf("erwartet genau den bestätigten Schüler als Abgänger: %+v", prev.Graduates)
+	if len(prev.Abgaenger) != 1 || prev.Abgaenger[0].ID != abID {
+		t.Fatalf("erwartet genau den bestätigten Schüler als Abgänger: %+v", prev.Abgaenger)
 	}
 	if len(prev.NichtImExport) != 1 || prev.NichtImExport[0].ID != handID {
 		t.Fatalf("Handanlage muss als „nicht im Export“ gemeldet werden: %+v", prev.NichtImExport)
@@ -189,7 +189,7 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prev.Rueckkehrer) != 1 || len(prev.NewStudents) != 0 {
+	if len(prev.Rueckkehrer) != 1 || len(prev.Neuzugaenge) != 0 {
 		t.Fatalf("erwartet 1 Rückkehrer, 0 Neuzugänge: %+v", prev)
 	}
 	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
@@ -227,7 +227,7 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prev.Mehrdeutig) == 0 || len(prev.NewStudents) != 0 || len(prev.ClassChanges) != 0 {
+	if len(prev.Mehrdeutig) == 0 || len(prev.Neuzugaenge) != 0 || len(prev.Klassenwechsel) != 0 {
 		t.Fatalf("erwartet Mehrdeutig-Meldung ohne Neuzugang/Wechsel: %+v", prev)
 	}
 	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
@@ -265,9 +265,9 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prev.NewStudents) != 0 || len(prev.Adoptions) != 1 || len(prev.Mehrdeutig) != 1 {
+	if len(prev.Neuzugaenge) != 0 || len(prev.Adoptionen) != 1 || len(prev.Mehrdeutig) != 1 {
 		t.Fatalf("erwartet 0 neu, 1 Adoption (Datum nachgetragen), 1 mehrdeutig: neu=%d adopt=%d mehrdeutig=%d",
-			len(prev.NewStudents), len(prev.Adoptions), len(prev.Mehrdeutig))
+			len(prev.Neuzugaenge), len(prev.Adoptionen), len(prev.Mehrdeutig))
 	}
 	if len(prev.NichtAbgleichbar) != 2 {
 		t.Fatalf("nur die beiden Pauls bleiben nicht abgleichbar, waren %d", len(prev.NichtAbgleichbar))
@@ -284,7 +284,7 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT geburtsdatum, klasse, lusd_bestaetigt_am IS NOT NULL FROM schueler WHERE id=$1`, lisa).Scan(&geb, &klasse, &bestaetigt); err != nil {
 		t.Fatal(err)
 	}
-	if geb == nil || geb.Format("2006-01-02") != "2013-03-03" || !lusd.KlassenGleich(klasse, "6a") || !bestaetigt {
+	if geb == nil || geb.Format("2006-01-02") != "2013-03-03" || !lusd.IstKlasseGleich(klasse, "6a") || !bestaetigt {
 		t.Errorf("Lisa: geb=%v klasse=%q bestaetigt=%v — Datum nachgetragen, Klasse übernommen, bestätigt erwartet", geb, klasse, bestaetigt)
 	}
 	if n := zaehle(t, pool, "nachname='Doppel' AND geburtsdatum IS NOT NULL"); n != 0 {

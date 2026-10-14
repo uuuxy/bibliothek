@@ -41,7 +41,7 @@ func readLusdUpload(r *http.Request) (lusd.Datei, error) {
 	if err != nil {
 		return lusd.Datei{}, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err)
 	}
-	return lusd.ParseDatei(content)
+	return lusd.LeseDatei(content)
 }
 
 // lusdUploadHandler bündelt, was Vorschau und Import gemeinsam haben: Upload-Grenze,
@@ -72,7 +72,7 @@ func (s *Tueren) handleLusdUpload(w http.ResponseWriter, r *http.Request, apply 
 	// Die Karenzzeit vor der Transaktion des Laufs lesen: eine Einstellung, kein Teil des
 	// Bestands, den der Lauf vergleicht.
 	lauf.KarenzTage = s.abgaengerKarenzTage(r.Context())
-	res, err := lusd.Fuehre(r.Context(), s.DB.Pool, datei, lauf)
+	res, err := lusd.FuehreAus(r.Context(), s.DB.Pool, datei, lauf)
 	if err != nil {
 		apierrors.SendHTTPError(w, lusdFehlerStatus(err), err)
 		return
@@ -120,7 +120,7 @@ func (s *Tueren) PostLusdPreviewHandler() http.HandlerFunc { return s.lusdUpload
 // confirm_graduates=true (HTTP 409 sonst) — zweite, bewusste Bestätigung.
 func (s *Tueren) PostLusdImportHandler() http.HandlerFunc { return s.lusdUploadHandler(true) }
 
-func zaehleBestaetigte(paare []lusd.UmbenennungDiff) int {
+func zaehleBestaetigte(paare []lusd.VorschauUmbenennung) int {
 	n := 0
 	for _, p := range paare {
 		if p.Bestaetigt {
@@ -132,19 +132,19 @@ func zaehleBestaetigte(paare []lusd.UmbenennungDiff) int {
 
 // protokolliereLusdImport schreibt den Apply-Lauf ins Admin-Audit: Modus, Zähler je
 // Kategorie und ob der Massenabgang bestätigt wurde. Ohne Namen.
-func (s *Tueren) protokolliereLusdImport(r *http.Request, res *lusd.PreviewResult, massenabgangBestaetigt bool) {
+func (s *Tueren) protokolliereLusdImport(r *http.Request, res *lusd.Vorschau, massenabgangBestaetigt bool) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok || s.DB == nil || s.DB.Pool == nil || res == nil {
 		return
 	}
 	details := map[string]any{
 		"modus":                    res.Modus,
-		"zeilen":                   res.TotalCsvRecords,
-		"neu":                      len(res.NewStudents),
-		"klassenwechsel":           len(res.ClassChanges),
-		"adoptionen":               len(res.Adoptions),
+		"zeilen":                   res.ZeilenInDatei,
+		"neu":                      len(res.Neuzugaenge),
+		"klassenwechsel":           len(res.Klassenwechsel),
+		"adoptionen":               len(res.Adoptionen),
 		"rueckkehrer":              len(res.Rueckkehrer),
-		"abgaenger":                len(res.Graduates),
+		"abgaenger":                len(res.Abgaenger),
 		"nicht_im_export":          len(res.NichtImExport),
 		"nicht_abgleichbar":        len(res.NichtAbgleichbar),
 		"mehrdeutig":               len(res.Mehrdeutig),

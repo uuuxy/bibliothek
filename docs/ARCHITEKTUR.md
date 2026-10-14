@@ -733,7 +733,7 @@ Seit dem 13.10.2026 gilt:
   Datenbankschicht steht in `repository/`, auch wenn er sie über den Medienkatalog oder einen
   Dienst erreicht (`repository/exemplar_standort_erben_pg_test.go` geht vier Wege zu einem
   neuen Exemplar), ein Test des Ausleih-Dienstes in `internal/service`. Ein Paar aus Go und
-  SQL steht bei der Go-Seite (`internal/lusd/lusd_klassen_normkey_pg_test.go`,
+  SQL steht bei der Go-Seite (`internal/lusd/klassen_schluessel_pg_test.go`,
   `pkg/leserart/leserart_pg_test.go`), der Lauf einer Migration in `db/`.
 - Braucht ein Test eine Prüfhilfe, die sein Paket einbindet, steht er als Testpaket
   (`package repository_test`): `internal/testdaten` bindet `repository/` und
@@ -4415,7 +4415,7 @@ Fenstern bekannt ist:
   als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
 - Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
 - `LabelHeight >= 30` steht zweimal (`pdf/etikett_buch.go`, `pdf/etikett_schueler.go`).
-- Zwei Normalformen für Namen (`repository.suchnorm`, `normName` in `internal/lusd/paarung.go`); beim
+- Zwei Normalformen für Namen (`repository.suchnorm`, `normierterName` in `internal/lusd/paarung.go`); beim
   Anfassen der Paarung zusammenführen.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.
 - Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.

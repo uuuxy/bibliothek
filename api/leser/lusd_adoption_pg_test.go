@@ -36,8 +36,8 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	}
 
 	rec := lusd.Zeile{
-		LusdID: "LUSD-ADOPT-1", Vorname: "Mia", Nachname: "Waise", Klasse: "8a",
-		GebDatum: &geb, LineNum: 1,
+		LUSDID: "LUSD-ADOPT-1", Vorname: "Mia", Nachname: "Waise", Klasse: "8a",
+		Geburtsdatum: &geb, Nr: 1,
 	}
 
 	// Vorschau: als Adoption erkannt, NICHT als Neuzugang.
@@ -45,17 +45,17 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if len(prev.Adoptions) != 1 {
-		t.Fatalf("erwartet 1 Adoption, waren %d (NewStudents: %d)", len(prev.Adoptions), len(prev.NewStudents))
+	if len(prev.Adoptionen) != 1 {
+		t.Fatalf("erwartet 1 Adoption, waren %d (Neuzugaenge: %d)", len(prev.Adoptionen), len(prev.Neuzugaenge))
 	}
-	if prev.Adoptions[0].SchuelerID != waiseID || prev.Adoptions[0].LusdID != "LUSD-ADOPT-1" {
-		t.Errorf("Adoption falsch: %+v", prev.Adoptions[0])
+	if prev.Adoptionen[0].SchuelerID != waiseID || prev.Adoptionen[0].LUSDID != "LUSD-ADOPT-1" {
+		t.Errorf("Adoption falsch: %+v", prev.Adoptionen[0])
 	}
-	if prev.Adoptions[0].Geburtsdatum != gebStr {
-		t.Errorf("Geburtsdatum falsch: %q", prev.Adoptions[0].Geburtsdatum)
+	if prev.Adoptionen[0].Geburtsdatum != gebStr {
+		t.Errorf("Geburtsdatum falsch: %q", prev.Adoptionen[0].Geburtsdatum)
 	}
-	if len(prev.NewStudents) != 0 {
-		t.Errorf("keine Neuzugänge erwartet, waren %d", len(prev.NewStudents))
+	if len(prev.Neuzugaenge) != 0 {
+		t.Errorf("keine Neuzugänge erwartet, waren %d", len(prev.Neuzugaenge))
 	}
 
 	// Anwenden: derselbe Datensatz bekommt die LUSD-ID + neue Klasse, KEIN Duplikat.
@@ -98,16 +98,16 @@ func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 		t.Fatalf("Waise anlegen: %v", err)
 	}
 
-	rec := lusd.Zeile{LusdID: "LUSD-ADOPT-2", Vorname: "Tom", Nachname: "Waise", Klasse: "8b", GebDatum: nil}
+	rec := lusd.Zeile{LUSDID: "LUSD-ADOPT-2", Vorname: "Tom", Nachname: "Waise", Klasse: "8b", Geburtsdatum: nil}
 	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if len(prev.Adoptions) != 0 {
-		t.Errorf("ohne Geburtsdatum darf nicht adoptiert werden, waren %d Adoptionen", len(prev.Adoptions))
+	if len(prev.Adoptionen) != 0 {
+		t.Errorf("ohne Geburtsdatum darf nicht adoptiert werden, waren %d Adoptionen", len(prev.Adoptionen))
 	}
-	if len(prev.NewStudents) != 1 {
-		t.Errorf("erwartet 1 Neuzugang, waren %d", len(prev.NewStudents))
+	if len(prev.Neuzugaenge) != 1 {
+		t.Errorf("erwartet 1 Neuzugang, waren %d", len(prev.Neuzugaenge))
 	}
 }
 
@@ -136,15 +136,15 @@ func TestLusdAutoMatching_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T)
 		t.Fatalf("Schreibvariante desselben Menschen wurde angelegt — Migration 108 greift nicht: %v", err)
 	}
 
-	rec := lusd.Zeile{LusdID: "LUSD-AMB", Vorname: "Anna", Nachname: "Zwilling", Klasse: "8c", GebDatum: &geb}
+	rec := lusd.Zeile{LUSDID: "LUSD-AMB", Vorname: "Anna", Nachname: "Zwilling", Klasse: "8c", Geburtsdatum: &geb}
 	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if len(prev.Adoptions) != 1 {
-		t.Errorf("der eine verbliebene Schüler muss eindeutig adoptiert werden, waren %d Adoptionen", len(prev.Adoptions))
+	if len(prev.Adoptionen) != 1 {
+		t.Errorf("der eine verbliebene Schüler muss eindeutig adoptiert werden, waren %d Adoptionen", len(prev.Adoptionen))
 	}
-	if len(prev.NewStudents) != 0 {
-		t.Errorf("erwartet 0 Neuzugänge, waren %d", len(prev.NewStudents))
+	if len(prev.Neuzugaenge) != 0 {
+		t.Errorf("erwartet 0 Neuzugänge, waren %d", len(prev.Neuzugaenge))
 	}
 }

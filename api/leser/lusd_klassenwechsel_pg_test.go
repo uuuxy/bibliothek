@@ -18,7 +18,7 @@ import (
 // alle Jahrgänge gleichzeitig — das ist keine Randbedingung, sondern der Normalfall.
 //
 // Warum als eigener Test und warum mit MEHREREN Schülern: Seit dem Umbau auf
-// aktualisiereBestandsschuelerBatch (#441) laufen alle Aktualisierungen als EIN
+// aendereBestandsschueler (#441) laufen alle Aktualisierungen als EIN
 // pgx.Batch. Jede Anweisung trägt ihre eigene Ziel-ID im Argument ($9), die Zuordnung
 // entsteht also beim Einreihen. Genau dort kann sie auch kaputtgehen: Verrutschte der
 // Index zwischen Datensatz und ID um eins, bekäme JEDER Schüler die Klasse seines
@@ -59,8 +59,8 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 	records := make([]lusd.Zeile, 0, len(faelle))
 	for i, f := range faelle {
 		records = append(records, lusd.Zeile{
-			LusdID: f.lusdID, Vorname: f.vorname, Nachname: f.nachname,
-			Klasse: f.neueKlasse, LineNum: i + 1,
+			LUSDID: f.lusdID, Vorname: f.vorname, Nachname: f.nachname,
+			Klasse: f.neueKlasse, Nr: i + 1,
 		})
 	}
 
@@ -80,7 +80,7 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 		if vorname != f.vorname {
 			t.Errorf("%s: Vorname %q, erwartet %q — die Zeilen sind vertauscht", f.lusdID, vorname, f.vorname)
 		}
-		if !lusd.KlassenGleich(klasse, f.neueKlasse) {
+		if !lusd.IstKlasseGleich(klasse, f.neueKlasse) {
 			t.Errorf("%s (%s %s): Klasse %q, erwartet %q — die Zuordnung im Batch stimmt nicht",
 				f.lusdID, f.vorname, f.nachname, klasse, f.neueKlasse)
 		}
@@ -116,7 +116,7 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
-		{LusdID: "L-LEER", Vorname: "Greta", Nachname: "Gruen", Klasse: "", LineNum: 1},
+		{LUSDID: "L-LEER", Vorname: "Greta", Nachname: "Gruen", Klasse: "", Nr: 1},
 	}, true, true); err != nil {
 		t.Fatalf("Import scheiterte: %v", err)
 	}
@@ -169,7 +169,7 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	// Der neue Export nennt KEINEN der drei mehr — alle sind Abgänger.
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
-		{LusdID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", LineNum: 1},
+		{LUSDID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", Nr: 1},
 	}, true, true); err != nil {
 		t.Fatalf("Abgängerlauf scheiterte: %v", err)
 	}
@@ -218,7 +218,7 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
-		{LusdID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", LineNum: 1},
+		{LUSDID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", Nr: 1},
 	}, true, true); err != nil {
 		t.Fatalf("zweiter Abgängerlauf scheiterte: %v", err)
 	}

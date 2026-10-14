@@ -39,13 +39,13 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if len(prev.NewStudents) != 0 || len(prev.NichtImExport) != 0 {
+	if len(prev.Neuzugaenge) != 0 || len(prev.NichtImExport) != 0 {
 		t.Errorf("Anna Mueller muss Anna Müller zugeordnet werden — neu=%d, nichtImExport=%d (Schlüssel nur lower+trim?)",
-			len(prev.NewStudents), len(prev.NichtImExport))
+			len(prev.Neuzugaenge), len(prev.NichtImExport))
 	}
-	if len(prev.Mehrdeutig) == 0 || len(prev.Graduates) != 0 {
+	if len(prev.Mehrdeutig) == 0 || len(prev.Abgaenger) != 0 {
 		t.Errorf("Bauer/Baur müssen als mehrdeutig gemeldet werden und keine Abgänger sein — mehrdeutig=%d, abgaenger=%d",
-			len(prev.Mehrdeutig), len(prev.Graduates))
+			len(prev.Mehrdeutig), len(prev.Abgaenger))
 	}
 
 	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
@@ -59,7 +59,7 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT klasse, lusd_bestaetigt_am IS NOT NULL FROM schueler WHERE id=$1`, muellerID).Scan(&klasse, &bestaetigt); err != nil {
 		t.Fatal(err)
 	}
-	if !lusd.KlassenGleich(klasse, "06A") || !bestaetigt {
+	if !lusd.IstKlasseGleich(klasse, "06A") || !bestaetigt {
 		t.Errorf("Anna Müller: Klasse %q (erwartet 06A), bestätigt=%v", klasse, bestaetigt)
 	}
 	for _, id := range []string{bauerID, baurID} {

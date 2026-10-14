@@ -10,7 +10,7 @@ import (
 // Umbenennung ohne Schüler-ID.
 //
 // Der LUSD-Export der Schule hat keine Schüler-ID und bekommt so schnell keine. Der
-// Import ordnet über Name + Geburtsdatum zu (parser.go). Ändert die LUSD den Namen
+// Import ordnet über Name + Geburtsdatum zu (datei.go). Ändert die LUSD den Namen
 // (Schreibkorrektur, Umlaut, zweiter Vorname fällt weg, Adoption) oder korrigiert sie
 // das Geburtsdatum, findet der Schlüssel niemanden mehr: Der Bestandsschüler steht als
 // Abgänger da, die Exportzeile als Neuzugang — zwei Datensätze für ein Kind, das seinen
@@ -38,9 +38,9 @@ import (
 // das stärkere. Paare gibt es nur im Modus Name + Geburtsdatum: Im Nur-Name-Modus trägt
 // ohne Datum kein Signal, im ID-Modus löst die LUSD-ID jede Umbenennung selbst.
 
-// UmbenennungDiff ist ein vorgeschlagenes Paar in der Vorschau. Zeile ist die Zeilen-
+// VorschauUmbenennung ist ein vorgeschlagenes Paar in der Vorschau. Zeile ist die Zeilen-
 // nummer der Datei (stabil über Vorschau und Import), SchuelerID der Bestandsdatensatz.
-type UmbenennungDiff struct {
+type VorschauUmbenennung struct {
 	Zeile           int    `json:"zeile"`
 	SchuelerID      string `json:"schueler_id"`
 	AltVorname      string `json:"alt_vorname"`
@@ -68,7 +68,7 @@ type UmbenennungWahl struct {
 
 type paarKandidat struct {
 	zeile   int // Index in datei.Zeilen
-	s       *lusdBestandsSchueler
+	s       *bestandsSchueler
 	signale int
 	sicher  bool
 	grund   string
@@ -81,11 +81,11 @@ type paarKandidat struct {
 // Nur im Modus Name + Geburtsdatum: Im ID-Modus findet die LUSD-ID eine Umbenennung selbst;
 // ein Paar behielte dort die alte lusd_id und erschiene beim nächsten Lauf erneut als
 // Abgänger und Neuzugang.
-func findeUmbenennungen(datei Datei, bestand []lusdBestandsSchueler, idx lusdIndex, z Zuordnung) []UmbenennungDiff {
+func findeUmbenennungen(datei Datei, bestand []bestandsSchueler, index bestandsIndex, z Zuordnung) []VorschauUmbenennung {
 	if datei.Modus != ModusName || len(z.neuZeilen) == 0 {
 		return nil
 	}
-	seite := umbenennungsSeite(bestand, idx, z)
+	seite := umbenennungsSeite(bestand, index, z)
 
 	var kandidaten []paarKandidat
 	for _, i := range z.neuZeilen {
@@ -101,8 +101,8 @@ func findeUmbenennungen(datei Datei, bestand []lusdBestandsSchueler, idx lusdInd
 // umbenennungsSeite sammelt die Bestandsschüler, die für ein Paar in Frage kommen, nach ID
 // sortiert. Wen dieser Lauf schon per Schlüssel zuordnet (Rückkehrer in z.zielID), der
 // bleibt draußen: Sonst zeigten zwei Zeilen auf dieselbe ID.
-func umbenennungsSeite(bestand []lusdBestandsSchueler, idx lusdIndex, z Zuordnung) []*lusdBestandsSchueler {
-	nachID := make(map[string]*lusdBestandsSchueler, len(bestand))
+func umbenennungsSeite(bestand []bestandsSchueler, index bestandsIndex, z Zuordnung) []*bestandsSchueler {
+	nachID := make(map[string]*bestandsSchueler, len(bestand))
 	for i := range bestand {
 		nachID[bestand[i].ID] = &bestand[i]
 	}
@@ -110,13 +110,13 @@ func umbenennungsSeite(bestand []lusdBestandsSchueler, idx lusdIndex, z Zuordnun
 	for _, id := range z.zielID {
 		schonZugeordnet[id] = true
 	}
-	var seite []*lusdBestandsSchueler
+	var seite []*bestandsSchueler
 	for _, id := range z.abgaengerIDs {
 		if s := nachID[id]; s != nil && !schonZugeordnet[id] {
 			seite = append(seite, s)
 		}
 	}
-	for _, s := range idx.abgaenger {
+	for _, s := range index.abgaenger {
 		if s != nil && !s.Anonymisiert && !schonZugeordnet[s.ID] {
 			seite = append(seite, s)
 		}
@@ -130,19 +130,19 @@ type paarSignale struct {
 	eintritt, geb, nachname, vorname, klasse, adresse bool
 }
 
-func lesePaarSignale(rec Zeile, s *lusdBestandsSchueler) paarSignale {
+func lesePaarSignale(zeile Zeile, s *bestandsSchueler) paarSignale {
 	return paarSignale{
-		eintritt: datumGleich(rec.EintrittAm, s.EintrittAm),
-		geb:      datumGleich(rec.GebDatum, s.Geburtsdatum),
-		nachname: namensteilGleich(rec.Nachname, s.Nachname),
-		vorname:  namensteilGleich(rec.Vorname, s.Vorname),
-		klasse:   klassenNachbar(s.Klasse, rec.Klasse),
-		adresse: rec.PLZ != "" && rec.Strasse != "" &&
-			normName(rec.PLZ) == normName(s.PLZ) && normName(rec.Strasse) == normName(s.Strasse),
+		eintritt: istDatumGleich(zeile.EintrittAm, s.EintrittAm),
+		geb:      istDatumGleich(zeile.Geburtsdatum, s.Geburtsdatum),
+		nachname: istNamensteilGleich(zeile.Nachname, s.Nachname),
+		vorname:  istNamensteilGleich(zeile.Vorname, s.Vorname),
+		klasse:   istKlassenNachbar(s.Klasse, zeile.Klasse),
+		adresse: zeile.PLZ != "" && zeile.Strasse != "" &&
+			normierterName(zeile.PLZ) == normierterName(s.PLZ) && normierterName(zeile.Strasse) == normierterName(s.Strasse),
 	}
 }
 
-func (p paarSignale) name() bool { return p.nachname && p.vorname }
+func (p paarSignale) istNameGleich() bool { return p.nachname && p.vorname }
 
 // gruende nennt die Übereinstimmungen, absteigend nach Gewicht. Ein voller Name steht für
 // seine beiden Teile.
@@ -154,9 +154,9 @@ func (p paarSignale) gruende() []string {
 	}{
 		{p.eintritt, "gleicher Schuleintritt"},
 		{p.geb, "gleiches Geburtsdatum"},
-		{p.name(), "gleicher Name"},
-		{!p.name() && p.nachname, "gleicher Nachname"},
-		{!p.name() && p.vorname, "gleicher Vorname"},
+		{p.istNameGleich(), "gleicher Name"},
+		{!p.istNameGleich() && p.nachname, "gleicher Nachname"},
+		{!p.istNameGleich() && p.vorname, "gleicher Vorname"},
 		{p.klasse, "gleiche oder benachbarte Klasse"},
 		{p.adresse, "gleiche Anschrift"},
 	} {
@@ -168,15 +168,15 @@ func (p paarSignale) gruende() []string {
 }
 
 // bewertePaar sammelt die Signale zwischen einer Exportzeile und einem Bestandsschüler.
-func bewertePaar(i int, rec Zeile, s *lusdBestandsSchueler) (paarKandidat, bool) {
-	p := lesePaarSignale(rec, s)
+func bewertePaar(i int, zeile Zeile, s *bestandsSchueler) (paarKandidat, bool) {
+	p := lesePaarSignale(zeile, s)
 	gruende := p.gruende()
 	k := paarKandidat{zeile: i, s: s, signale: len(gruende)}
 	switch {
-	case p.eintritt && (p.name() || (p.geb && p.vorname)):
+	case p.eintritt && (p.istNameGleich() || (p.geb && p.vorname)):
 		k.sicher = true
 	case p.geb && (p.nachname || p.vorname || p.klasse || p.adresse || p.eintritt):
-	case p.name() && (p.klasse || p.adresse):
+	case p.istNameGleich() && (p.klasse || p.adresse):
 		gruende = append(gruende, "Geburtsdatum abweichend (Korrektur?)")
 	default:
 		return paarKandidat{}, false
@@ -184,7 +184,7 @@ func bewertePaar(i int, rec Zeile, s *lusdBestandsSchueler) (paarKandidat, bool)
 	// Gegen-Signal: gleiches Geburtsdatum, aber ein Vorname, der weder gleich noch Anfang des
 	// anderen ist. So sehen Zwillinge aus und ein Tippfehler im Vornamen; das Paar wird
 	// angeboten, aber nie vorangekreuzt.
-	if p.geb && !p.vorname && normName(rec.Vorname) != "" && normName(s.Vorname) != "" {
+	if p.geb && !p.vorname && normierterName(zeile.Vorname) != "" && normierterName(s.Vorname) != "" {
 		gruende = append(gruende, "Vorname abweichend (Zwilling?)")
 	}
 	k.grund = strings.Join(gruende, ", ")
@@ -200,7 +200,7 @@ func bewertePaar(i int, rec Zeile, s *lusdBestandsSchueler) (paarKandidat, bool)
 // starken Signalen (oder ein Bestandsschüler für zwei gleich starke Zeilen), wird nicht
 // gewürfelt, sondern kein Paar gebildet — das Kind bleibt Abgänger + Neuzugang, und der
 // Admin führt bei Bedarf über die Akte zusammen.
-func waehlePaare(datei Datei, kandidaten []paarKandidat) []UmbenennungDiff {
+func waehlePaare(datei Datei, kandidaten []paarKandidat) []VorschauUmbenennung {
 	sort.SliceStable(kandidaten, func(a, b int) bool {
 		ka, kb := kandidaten[a], kandidaten[b]
 		if ka.sicher != kb.sicher {
@@ -215,7 +215,7 @@ func waehlePaare(datei Datei, kandidaten []paarKandidat) []UmbenennungDiff {
 		return ka.s.ID < kb.s.ID
 	})
 	zeileBelegt, schuelerBelegt := map[int]bool{}, map[string]bool{}
-	var paare []UmbenennungDiff
+	var paare []VorschauUmbenennung
 	for i, k := range kandidaten {
 		if zeileBelegt[k.zeile] || schuelerBelegt[k.s.ID] {
 			continue
@@ -225,13 +225,13 @@ func waehlePaare(datei Datei, kandidaten []paarKandidat) []UmbenennungDiff {
 			continue
 		}
 		zeileBelegt[k.zeile], schuelerBelegt[k.s.ID] = true, true
-		rec := datei.Zeilen[k.zeile]
-		paare = append(paare, UmbenennungDiff{
-			Zeile: rec.LineNum, SchuelerID: k.s.ID,
+		zeile := datei.Zeilen[k.zeile]
+		paare = append(paare, VorschauUmbenennung{
+			Zeile: zeile.Nr, SchuelerID: k.s.ID,
 			AltVorname: k.s.Vorname, AltNachname: k.s.Nachname, AltKlasse: k.s.Klasse,
 			AltGeburtsdatum: datumText(k.s.Geburtsdatum),
-			NeuVorname:      rec.Vorname, NeuNachname: rec.Nachname, NeuKlasse: rec.Klasse,
-			NeuGeburtsdatum: datumText(rec.GebDatum),
+			NeuVorname:      zeile.Vorname, NeuNachname: zeile.Nachname, NeuKlasse: zeile.Klasse,
+			NeuGeburtsdatum: datumText(zeile.Geburtsdatum),
 			Grund:           k.grund, Sicher: k.sicher, WarAbgaenger: k.s.IstAbgaenger,
 		})
 	}
@@ -258,13 +258,13 @@ func hatGleichstand(rest []paarKandidat, k paarKandidat, zeileBelegt map[int]boo
 // uebernimmUmbenennungen wendet die Wahl des Admins auf Zuordnung und Vorschau an.
 // Nur Paare, die diese Vorschau selbst vorgeschlagen hat, zählen — eine fremde
 // Kombination (verändertes Formular, veraltete Vorschau) wird abgewiesen, nicht geraten.
-func uebernimmUmbenennungen(datei Datei, wahl []UmbenennungWahl, paare []UmbenennungDiff, z *Zuordnung, res *PreviewResult) error {
+func uebernimmUmbenennungen(datei Datei, wahl []UmbenennungWahl, paare []VorschauUmbenennung, z *Zuordnung, vorschau *Vorschau) error {
 	if len(wahl) == 0 {
 		return nil
 	}
 	zeilenIndex := make(map[int]int, len(datei.Zeilen))
-	for i, rec := range datei.Zeilen {
-		zeilenIndex[rec.LineNum] = i
+	for i, zeile := range datei.Zeilen {
+		zeilenIndex[zeile.Nr] = i
 	}
 	vorgeschlagen := make(map[int]int, len(paare)) // Zeile → Index in paare
 	for i, p := range paare {
@@ -284,8 +284,8 @@ func uebernimmUmbenennungen(datei Datei, wahl []UmbenennungWahl, paare []Umbenen
 		z.zielID[i] = p.SchuelerID
 		z.geburtsdatumSetzen[i] = true
 		z.abgaengerIDs = entferneID(z.abgaengerIDs, p.SchuelerID)
-		res.Graduates = entferneDiff(res.Graduates, p.SchuelerID)
-		res.NewStudents = entferneDiff(res.NewStudents, "zeile-"+strconv.Itoa(w.Zeile))
+		vorschau.Abgaenger = entferneAusVorschau(vorschau.Abgaenger, p.SchuelerID)
+		vorschau.Neuzugaenge = entferneAusVorschau(vorschau.Neuzugaenge, "zeile-"+strconv.Itoa(w.Zeile))
 	}
 	return nil
 }
@@ -299,61 +299,61 @@ func (e *UmbenennungUngueltigFehler) Error() string {
 }
 
 func entferneID(ids []string, id string) []string {
-	out := ids[:0]
+	rest := ids[:0]
 	for _, x := range ids {
 		if x != id {
-			out = append(out, x)
+			rest = append(rest, x)
 		}
 	}
-	return out
+	return rest
 }
 
-func entferneDiff(liste []StudentDiff, id string) []StudentDiff {
-	out := liste[:0]
+func entferneAusVorschau(liste []VorschauSchueler, id string) []VorschauSchueler {
+	rest := liste[:0]
 	for _, d := range liste {
 		if d.ID != id {
-			out = append(out, d)
+			rest = append(rest, d)
 		}
 	}
-	return out
+	return rest
 }
 
 // ── Vergleichshelfer ─────────────────────────────────────────────────────────
 
-func datumGleich(a, b *time.Time) bool {
-	return a != nil && b != nil && a.Format(dateFormatISO) == b.Format(dateFormatISO)
+func istDatumGleich(a, b *time.Time) bool {
+	return a != nil && b != nil && a.Format(datumsformatISO) == b.Format(datumsformatISO)
 }
 
 func datumText(d *time.Time) string {
 	if d == nil {
 		return ""
 	}
-	return d.Format(dateFormatISO)
+	return d.Format(datumsformatISO)
 }
 
-// normName ebnet ein, was eine Umbenennung typischerweise ändert: Groß/Klein, Umlaut-
+// normierterName ebnet ein, was eine Umbenennung typischerweise ändert: Groß/Klein, Umlaut-
 // Schreibung, Bindestrich, Leerzeichen. „Al-Sayed" und „Al Sayed", „Müller" und
 // „Mueller" gelten als gleich.
-func normName(s string) string {
+func normierterName(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
 	s = strings.NewReplacer("ä", "ae", "ö", "oe", "ü", "ue", "ß", "ss", "-", "", " ", "", ".", "").Replace(s)
 	return s
 }
 
-// namensteilGleich: gleich nach Normierung, oder der eine ist Anfang des anderen (ein
+// istNamensteilGleich: gleich nach Normierung, oder der eine ist Anfang des anderen (ein
 // zweiter Vorname kommt hinzu oder fällt weg: „Ayman Sharafudin" ↔ „Ayman").
-func namensteilGleich(a, b string) bool {
-	na, nb := normName(a), normName(b)
+func istNamensteilGleich(a, b string) bool {
+	na, nb := normierterName(a), normierterName(b)
 	if na == "" || nb == "" {
 		return false
 	}
 	return na == nb || strings.HasPrefix(na, nb) || strings.HasPrefix(nb, na)
 }
 
-// klassenNachbar: gleiche Klasse (Normkey) oder derselbe Zug im Nachbarjahrgang —
+// istKlassenNachbar: gleiche Klasse (Normkey) oder derselbe Zug im Nachbarjahrgang —
 // „05F1" und „06F1" sind beim Schuljahreswechsel dieselbe Klasse ein Jahr später.
-func klassenNachbar(a, b string) bool {
-	ka, kb := KlassenNormkey(a), KlassenNormkey(b)
+func istKlassenNachbar(a, b string) bool {
+	ka, kb := KlassenSchluessel(a), KlassenSchluessel(b)
 	if ka == kb {
 		return true
 	}

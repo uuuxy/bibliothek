@@ -89,8 +89,8 @@ func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 	mock.ExpectRollback()
 
 	records := []lusd.Zeile{
-		{LusdID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"},
-		{LusdID: "L-b", Vorname: "Vorb", Nachname: "Nachb", Klasse: "8A"},
+		{LUSDID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"},
+		{LUSDID: "L-b", Vorname: "Vorb", Nachname: "Nachb", Klasse: "8A"},
 	}
 
 	_, err = s.computeLusdChanges(t.Context(), records, true, false)
@@ -98,7 +98,7 @@ func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 	if !errors.As(err, &massErr) {
 		t.Fatalf("erwartet lusd.MassenabgangFehler, bekam: %v", err)
 	}
-	if massErr.Graduates != 8 || massErr.Active != 10 {
+	if massErr.Abgaenger != 8 || massErr.Aktive != 10 {
 		t.Errorf("Zahlen falsch: %+v", massErr)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -121,8 +121,8 @@ func TestComputeLusdChanges_PreviewNeverWrites(t *testing.T) {
 	mock.ExpectRollback()
 
 	records := []lusd.Zeile{
-		{LusdID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"}, // Klassenwechsel
-		{LusdID: "L-neu", Vorname: "Neu", Nachname: "Kind", Klasse: "5A"}, // Neuzugang
+		{LUSDID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"}, // Klassenwechsel
+		{LUSDID: "L-neu", Vorname: "Neu", Nachname: "Kind", Klasse: "5A"}, // Neuzugang
 		{Vorname: "Ohne", Nachname: "ID", Klasse: "5A"},                   // ohne LUSD-ID → übersprungen
 	}
 
@@ -130,11 +130,11 @@ func TestComputeLusdChanges_PreviewNeverWrites(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if len(res.NewStudents) != 1 || len(res.ClassChanges) != 1 || len(res.Graduates) != 9 {
-		t.Errorf("Diff falsch: neu=%d wechsel=%d abgaenger=%d", len(res.NewStudents), len(res.ClassChanges), len(res.Graduates))
+	if len(res.Neuzugaenge) != 1 || len(res.Klassenwechsel) != 1 || len(res.Abgaenger) != 9 {
+		t.Errorf("Diff falsch: neu=%d wechsel=%d abgaenger=%d", len(res.Neuzugaenge), len(res.Klassenwechsel), len(res.Abgaenger))
 	}
-	if res.ActiveDbStudents != 10 || res.SkippedNoID != 1 {
-		t.Errorf("Metadaten falsch: aktiv=%d skipped=%d", res.ActiveDbStudents, res.SkippedNoID)
+	if res.AktiveImBestand != 10 || res.OhneID != 1 {
+		t.Errorf("Metadaten falsch: aktiv=%d skipped=%d", res.AktiveImBestand, res.OhneID)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Preview darf nie schreiben: %v", err)

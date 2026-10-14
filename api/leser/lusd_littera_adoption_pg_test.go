@@ -35,17 +35,17 @@ func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 	}
 
 	rec := lusd.Zeile{
-		LusdID: "LUSD-9001", Vorname: "Lena", Nachname: "Littera", Klasse: "7b",
-		GebDatum: &geb, LineNum: 1,
+		LUSDID: "LUSD-9001", Vorname: "Lena", Nachname: "Littera", Klasse: "7b",
+		Geburtsdatum: &geb, Nr: 1,
 	}
 
 	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if len(prev.Adoptions) != 1 || len(prev.NewStudents) != 0 {
+	if len(prev.Adoptionen) != 1 || len(prev.Neuzugaenge) != 0 {
 		t.Fatalf("erwartet 1 Adoption und 0 Neuzugänge, waren %d Adoptionen / %d Neuzugänge",
-			len(prev.Adoptions), len(prev.NewStudents))
+			len(prev.Adoptionen), len(prev.Neuzugaenge))
 	}
 
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, true, true); err != nil {

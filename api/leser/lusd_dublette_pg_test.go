@@ -28,8 +28,8 @@ func TestLusdImport_DubletteInDerselbenDatei(t *testing.T) {
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
-		{LusdID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5a", LineNum: 1},
-		{LusdID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5b", LineNum: 2},
+		{LUSDID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5a", Nr: 1},
+		{LUSDID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5b", Nr: 2},
 	}, true, true); err != nil {
 		t.Fatalf("Dublette in der Importdatei darf den Import nicht abreißen lassen: %v", err)
 	}

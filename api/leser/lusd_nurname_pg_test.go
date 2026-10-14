@@ -39,7 +39,7 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if prev.Modus != "name" || len(prev.ClassChanges) != 2 || len(prev.NewStudents) != 1 || len(prev.Mehrdeutig) != 0 || len(prev.NichtAbgleichbar) != 0 {
+	if prev.Modus != "name" || len(prev.Klassenwechsel) != 2 || len(prev.Neuzugaenge) != 1 || len(prev.Mehrdeutig) != 0 || len(prev.NichtAbgleichbar) != 0 {
 		t.Fatalf("Vorschau falsch: %+v", prev)
 	}
 	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
@@ -54,7 +54,7 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 		if err := pool.QueryRow(ctx, `SELECT klasse, lusd_bestaetigt_am IS NOT NULL FROM schueler WHERE id=$1`, id).Scan(&k, &bestaetigt); err != nil {
 			t.Fatal(err)
 		}
-		if !lusd.KlassenGleich(k, klasse) || !bestaetigt {
+		if !lusd.IstKlasseGleich(k, klasse) || !bestaetigt {
 			t.Errorf("Schüler %s: Klasse %q (erwartet %q), bestätigt=%v", id, k, klasse, bestaetigt)
 		}
 	}
@@ -87,8 +87,8 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	if len(prev.Mehrdeutig) != 5 {
 		t.Fatalf("erwartet 5 Mehrdeutig-Einträge, waren %d: %+v", len(prev.Mehrdeutig), prev.Mehrdeutig)
 	}
-	if len(prev.NewStudents) != 0 || len(prev.ClassChanges) != 1 || len(prev.Graduates) != 0 {
-		t.Fatalf("Vorschau falsch: neu=%d wechsel=%d abgänger=%d", len(prev.NewStudents), len(prev.ClassChanges), len(prev.Graduates))
+	if len(prev.Neuzugaenge) != 0 || len(prev.Klassenwechsel) != 1 || len(prev.Abgaenger) != 0 {
+		t.Fatalf("Vorschau falsch: neu=%d wechsel=%d abgänger=%d", len(prev.Neuzugaenge), len(prev.Klassenwechsel), len(prev.Abgaenger))
 	}
 	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
@@ -130,8 +130,8 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prev.Graduates) != 0 {
-		t.Fatalf("Bestandsschüler mit Doppelname in der Datei darf KEIN Abgänger sein: %+v", prev.Graduates)
+	if len(prev.Abgaenger) != 0 {
+		t.Fatalf("Bestandsschüler mit Doppelname in der Datei darf KEIN Abgänger sein: %+v", prev.Abgaenger)
 	}
 	if len(prev.Mehrdeutig) != 2 {
 		t.Fatalf("erwartet 2 Mehrdeutig-Zeilen, waren %d", len(prev.Mehrdeutig))
@@ -168,7 +168,7 @@ func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prev.Rueckkehrer) != 0 || len(prev.Mehrdeutig) != 1 || len(prev.NewStudents) != 0 {
+	if len(prev.Rueckkehrer) != 0 || len(prev.Mehrdeutig) != 1 || len(prev.Neuzugaenge) != 0 {
 		t.Fatalf("Nur-Name: Abgänger-Namensvetter muss mehrdeutig sein, nicht Rückkehrer/neu: %+v", prev)
 	}
 	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {

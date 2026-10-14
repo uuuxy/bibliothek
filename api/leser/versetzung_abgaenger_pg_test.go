@@ -50,7 +50,7 @@ func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.
 	// Rückkehr per LUSD-Import: aktiv UND entsperrt, wie beim Import-Abgänger.
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
-		{LusdID: "L-VERS", Vorname: "Vera", Nachname: "Versetzt", Klasse: "13"},
+		{LUSDID: "L-VERS", Vorname: "Vera", Nachname: "Versetzt", Klasse: "13"},
 	}, true, true); err != nil {
 		t.Fatal(err)
 	}
