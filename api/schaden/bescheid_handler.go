@@ -75,7 +75,7 @@ func (s *Tueren) BescheidListeHandler(bescheidRepo repository.BescheidAbfragen) 
 		if err != nil {
 			return apierrors.Internal("Bescheide konnten nicht gelesen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, liste)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -98,7 +98,7 @@ func (s *Tueren) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidAb
 		if err != nil {
 			return apierrors.Internal("Bescheide konnten nicht gelesen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, liste)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -133,7 +133,7 @@ func (s *Tueren) BescheidUebergebenHandler(bescheidRepo repository.BescheidAbfra
 		}
 
 		bescheidAudit(ctx, s, auditRepo, auditBescheidUebergeben, map[string]any{"bescheid_id": id}, clientip.AusAnfrage(r))
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{"id": id, "status": "uebergeben"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"id": id, "status": "uebergeben"})
 		return nil
 	})
 }

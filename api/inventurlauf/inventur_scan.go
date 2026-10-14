@@ -79,7 +79,7 @@ func (s *Tueren) InventurScanHandler() http.HandlerFunc {
 // zählen (SonarQube S3776).
 func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	var req InventurScanRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 	if req.SessionID == "" {
@@ -128,7 +128,7 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	// ohne ihn mitzuzählen. Der Status "ausser_scope" macht den Fall clientseitig
 	// unterscheidbar.
 	if !imScope {
-		tuer.RespondJSON(w, http.StatusConflict, InventurScanResponse{
+		tuer.AntworteJSON(w, http.StatusConflict, InventurScanResponse{
 			BarcodeID: req.BarcodeID,
 			Titel:     res.Titel,
 			CoverURL:  res.CoverURL,
@@ -150,7 +150,7 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, InventurScanResponse{
+	tuer.AntworteJSON(w, http.StatusOK, InventurScanResponse{
 		BarcodeID: req.BarcodeID,
 		Titel:     res.Titel,
 		CoverURL:  res.CoverURL,

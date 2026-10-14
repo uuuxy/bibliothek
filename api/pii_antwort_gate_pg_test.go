@@ -252,7 +252,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 			}
 		}
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
-		tuer.InvalidatePermissionCache()
+		tuer.LeereRechteCache()
 	})
 	return w
 }

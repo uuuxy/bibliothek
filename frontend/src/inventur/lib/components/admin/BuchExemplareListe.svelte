@@ -45,7 +45,7 @@
 				const err = await res.json().catch(() => ({}));
 				throw new Error(err.error || 'Fehler beim Laden der Exemplare');
 			}
-			// Die Antwort ist das nackte Array (RespondJSON), wie Buchakte und Druck-Center
+			// Die Antwort ist das nackte Array (AntworteJSON), wie Buchakte und Druck-Center
 			// sie lesen. Ob ein Exemplar zum Bestand zählt, sagt der Server (im_bestand).
 			/** @type {any[]} */
 			const alle = (await res.json()) ?? [];

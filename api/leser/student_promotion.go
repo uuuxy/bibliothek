@@ -82,7 +82,7 @@ func (s *Tueren) PromoteStudentsHandler() http.HandlerFunc {
 			return
 		}
 		resp.DryRun = req.DryRun
-		tuer.RespondJSON(w, http.StatusOK, resp)
+		tuer.AntworteJSON(w, http.StatusOK, resp)
 	}
 }
 

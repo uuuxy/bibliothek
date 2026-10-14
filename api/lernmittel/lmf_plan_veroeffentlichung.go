@@ -86,7 +86,7 @@ func (s *Tueren) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
 		if gestempelt {
 			s.meldeLmfPlanGeaendert()
 		}
-		tuer.RespondJSON(w, http.StatusOK, antwort)
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }

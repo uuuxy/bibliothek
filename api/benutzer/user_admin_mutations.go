@@ -58,7 +58,7 @@ func (s *Tueren) CreateUserHandler(userRepo repository.KontoAbfragen) http.Handl
 // handleCreateUser prüft Rolle, Adresse und Ausweis, legt das Konto an und protokolliert es.
 func (s *Tueren) handleCreateUser(w http.ResponseWriter, r *http.Request, userRepo repository.KontoAbfragen) {
 	var req CreateUserRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
@@ -153,7 +153,7 @@ func (s *Tueren) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 	var req UpdateUserRequest
 	// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg, ohne zu
 	// schreiben („aktive" statt „aktiv" ließe ein Konto freigeschaltet).
-	if !tuer.DecodeStrictAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrageStreng(w, r, &req) {
 		return
 	}
 	if !pruefeGenanntePflichtfelder(w, req) {
@@ -196,7 +196,7 @@ func (s *Tueren) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 		"ziel_id": id, "email": stand.Email, "rolle": stand.Rolle, "aktiv": stand.Aktiv,
 	})
 
-	tuer.InvalidatePermissionCache()
+	tuer.LeereRechteCache()
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Schreibe(w, []byte(`{"status":"success"}`))

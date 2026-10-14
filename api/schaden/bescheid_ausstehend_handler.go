@@ -23,7 +23,7 @@ func (s *Tueren) BescheidAusstehendHandler(bescheidRepo repository.BescheidAbfra
 		if err != nil {
 			return apierrors.Internal("Offene Forderungen konnten nicht gelesen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, liste)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }

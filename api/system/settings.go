@@ -29,7 +29,7 @@ func (s *Tueren) GetSettingsHandler(settingsRepo repository.EinstellungsAbfragen
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, settings)
+		tuer.AntworteJSON(w, http.StatusOK, settings)
 		return nil
 	})
 }
@@ -57,13 +57,13 @@ func (s *Tueren) handleUpdateSettings(w http.ResponseWriter, r *http.Request, se
 	// Patch statt vollem Objekt: Der Rumpf trägt nur die Felder einer Kategorie
 	// (repository/einstellungen_patch.go). Ein volles Objekt dekodierte hier zu lauter Nullwerten
 	// und setzte beim Speichern die übrigen Kategorien zurück.
-	// Streng dekodiert (DecodeStrictAndValidate): Der Rumpf entsteht aus einer
+	// Streng dekodiert (LeseAnfrageStreng): Der Rumpf entsteht aus einer
 	// geschlossenen Liste benannter Schlüssel, ein unbekanntes Feld ist hier also
 	// immer ein Fehler — und zwar der teuerste, weil er sonst still verschwindet
 	// und die Oberfläche trotzdem "gespeichert" meldet.
 	var req repository.EinstellungenPatch
-	if !tuer.DecodeStrictAndValidate(w, r, &req) {
-		return nil // Error is already sent by DecodeAndValidate
+	if !tuer.LeseAnfrageStreng(w, r, &req) {
+		return nil // Error is already sent by LeseAnfrageStreng
 	}
 
 	if req.IstLeer() {
@@ -94,7 +94,7 @@ func (s *Tueren) handleUpdateSettings(w http.ResponseWriter, r *http.Request, se
 		s.Broker.Broadcast("sitzungsfristen", "{}")
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	return nil
 }
 
@@ -156,7 +156,7 @@ func (s *Tueren) GetSitzungsEinstellungenHandler(settingsRepo repository.Einstel
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, SitzungsEinstellungen{
+		tuer.AntworteJSON(w, http.StatusOK, SitzungsEinstellungen{
 			ThekeLeerenMinuten: repository.TageOderVorgabe(settings.ThekeLeerenMinuten, repository.ThekeLeerenMinutenVorgabe),
 			SperreMinuten:      repository.TageOderVorgabe(settings.SperreMinuten, repository.SperreMinutenVorgabe),
 		})

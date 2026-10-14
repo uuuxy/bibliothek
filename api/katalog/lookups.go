@@ -29,7 +29,7 @@ func (s *Tueren) GetSystematicsHandler() http.HandlerFunc {
 			results = append(results, Systematik{ID: k.ID, Kuerzel: k.Kuerzel, Bezeichnung: k.Bezeichnung})
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, results)
+		tuer.AntworteJSON(w, http.StatusOK, results)
 	}
 }
 
@@ -43,6 +43,6 @@ func (s *Tueren) GetFaecherHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, faecher)
+		tuer.AntworteJSON(w, http.StatusOK, faecher)
 	}
 }

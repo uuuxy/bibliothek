@@ -56,7 +56,7 @@ func (s *Tueren) GetBestellhistorieUebersichtHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, u)
+		tuer.AntworteJSON(w, http.StatusOK, u)
 	}
 }
 

@@ -113,8 +113,8 @@ func actionSiehtOverride(rolle string) bool {
 // Helfer-Konto belegt: perform_actions allein reichte, die Sperre fiel per
 // Request-Feld, obwohl die UI den Schalter nie anbot (Schutz nur als Konvention).
 func TestOverrideBlockNurMitEditStudents(t *testing.T) {
-	tuer.InvalidatePermissionCache()
-	t.Cleanup(tuer.InvalidatePermissionCache)
+	tuer.LeereRechteCache()
+	t.Cleanup(tuer.LeereRechteCache)
 	tuer.MerkeRechtFuerTest("helfer", "edit_students", false)
 	tuer.MerkeRechtFuerTest("mitarbeiter", "edit_students", true)
 
@@ -159,8 +159,8 @@ func geraeteRequest(rolle string) *httptest.ResponseRecorder {
 // sieht den Namen. Der Cache wird gezielt vorbefüllt, damit der Test ohne
 // Datenbank läuft und trotzdem den echten Rechte-Pfad nimmt.
 func TestGeraetelisteBlendetAusleiherOhneViewStudentsAus(t *testing.T) {
-	tuer.InvalidatePermissionCache()
-	t.Cleanup(tuer.InvalidatePermissionCache)
+	tuer.LeereRechteCache()
+	t.Cleanup(tuer.LeereRechteCache)
 	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
 
 	helferAntwort := geraeteRequest("helfer").Body.String()

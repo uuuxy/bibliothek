@@ -74,7 +74,7 @@ func (s *Tueren) GetSchlagwortPflegeHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, liste)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -99,7 +99,7 @@ func (s *Tueren) PutSchlagwortWortHandler() http.HandlerFunc {
 			return err
 		}
 		var req SchlagwortWortRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		if req.AlteAlsVerweis == nil {
@@ -113,7 +113,7 @@ func (s *Tueren) PutSchlagwortWortHandler() http.HandlerFunc {
 		if verweis {
 			antwort.Verweise = 1
 		}
-		tuer.RespondJSON(w, http.StatusOK, antwort)
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }
@@ -138,7 +138,7 @@ func (s *Tueren) PutSchlagwortFilterHandler() http.HandlerFunc {
 			return err
 		}
 		var req SchlagwortFilterRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		if req.IstFilter == nil {
@@ -173,7 +173,7 @@ func (s *Tueren) PostSchlagwortZusammenfuehrenHandler() http.HandlerFunc {
 			return err
 		}
 		var req SchlagwortZielRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		if req.AlteAlsVerweis == nil {
@@ -183,10 +183,10 @@ func (s *Tueren) PostSchlagwortZusammenfuehrenHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
-		s.ProtokolliereVerwaltung(r.Context(), tuer.AuditSchlagwortZusammengefuehrt, map[string]any{
+		s.ProtokolliereVerwaltung(r.Context(), tuer.AktionSchlagwortZusammengefuehrt, map[string]any{
 			"von": ergebnis.Von, "in": ergebnis.In, "titel": ergebnis.Titel, "alte_als_verweis": *req.AlteAlsVerweis,
 		})
-		tuer.RespondJSON(w, http.StatusOK, SchlagwortAenderung{Titel: ergebnis.Titel})
+		tuer.AntworteJSON(w, http.StatusOK, SchlagwortAenderung{Titel: ergebnis.Titel})
 		return nil
 	})
 }
@@ -206,7 +206,7 @@ func (s *Tueren) PostSchlagwortZusammenfuehrenHandler() http.HandlerFunc {
 func (s *Tueren) PostSchlagwortVerweisHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req SchlagwortVerweisRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		ergebnis, err := repository.SetzeSchlagwortVerweis(r.Context(), s.DB.Pool, req.Wort, req.ZielID)
@@ -214,7 +214,7 @@ func (s *Tueren) PostSchlagwortVerweisHandler() http.HandlerFunc {
 			return schlagwortPflegeFehler(err)
 		}
 		// Trug die Schreibweise schon Titel, hängen sie jetzt am Ziel; „titel" nennt, wie viele.
-		s.ProtokolliereVerwaltung(r.Context(), tuer.AuditSchlagwortVerweis, map[string]any{
+		s.ProtokolliereVerwaltung(r.Context(), tuer.AktionSchlagwortVerweis, map[string]any{
 			"wort": ergebnis.Von, "in": ergebnis.In, "titel": ergebnis.Titel,
 		})
 		w.WriteHeader(http.StatusNoContent)
@@ -239,7 +239,7 @@ func (s *Tueren) PostSchlagwortVerweisHandler() http.HandlerFunc {
 func (s *Tueren) PostSchlagworteLoeschenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req SchlagworteLoeschenRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		geloescht, err := repository.LoescheSchlagworte(r.Context(), s.DB.Pool, req.IDs)
@@ -250,11 +250,11 @@ func (s *Tueren) PostSchlagworteLoeschenHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
-		s.ProtokolliereVerwaltung(r.Context(), tuer.AuditSchlagwortGeloescht, map[string]any{
+		s.ProtokolliereVerwaltung(r.Context(), tuer.AktionSchlagwortGeloescht, map[string]any{
 			"woerter": geloeschteWoerter(geloescht.Namen), "anzahl": geloescht.Woerter,
 			"titel": geloescht.Titel, "verweise": geloescht.Verweise,
 		})
-		tuer.RespondJSON(w, http.StatusOK, SchlagwortAenderung{
+		tuer.AntworteJSON(w, http.StatusOK, SchlagwortAenderung{
 			Woerter: geloescht.Woerter, Titel: geloescht.Titel, Verweise: geloescht.Verweise,
 		})
 		return nil

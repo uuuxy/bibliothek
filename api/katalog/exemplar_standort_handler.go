@@ -37,7 +37,7 @@ type ExemplarStandortRequest struct {
 func (s *Tueren) ExemplarStandortHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req ExemplarStandortRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		claims, ok := auth.GetClaims(r.Context())
@@ -57,7 +57,7 @@ func (s *Tueren) ExemplarStandortHandler() http.HandlerFunc {
 		case err != nil:
 			return apierrors.Internal("Der Standort konnte nicht gespeichert werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, map[string]int{"geaendert": geaendert})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]int{"geaendert": geaendert})
 		return nil
 	})
 }
@@ -78,7 +78,7 @@ func (s *Tueren) ExemplarStandorteHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Die Standorte konnten nicht geladen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, liste)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }

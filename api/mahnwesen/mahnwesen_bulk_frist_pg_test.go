@@ -266,7 +266,7 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 		if rec := drucke(t, buch); rec.Code != http.StatusOK {
 			t.Fatalf("Druck: Status %d — %s", rec.Code, rec.Body.String())
 		}
-		heute := schulzeit.Jetzt().Format(tuer.DateFormatISO)
+		heute := schulzeit.Jetzt().Format(tuer.DatumsformatISO)
 		if stufe, datum := mahnungenInDerListe(t, buch); stufe != 1 || datum != heute {
 			t.Errorf("nach dem Druck: Liste nennt %d Mahnungen und das Datum %q, erwartet 1 und %s", stufe, datum, heute)
 		}

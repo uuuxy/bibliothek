@@ -75,9 +75,9 @@ func leseBerichtAnfrage(r *http.Request) (berichtAnfrage, error) {
 	if a.von, a.bis, err = parseBerichtZeitraum(a.vonText, a.bisText); err != nil {
 		return berichtAnfrage{}, err
 	}
-	// Geprüft wie jede Kennung aus der Query (tuer.UUIDAusQuery): Ein Rohtext wie `x` ginge
+	// Geprüft wie jede Kennung aus der Query (tuer.LeseUUIDParameter): Ein Rohtext wie `x` ginge
 	// sonst in `AND lieferant_id = $n` und käme von Postgres als 500 zurück (22P02).
-	if a.lieferantID, err = tuer.UUIDAusQuery(r, "lieferant_id"); err != nil {
+	if a.lieferantID, err = tuer.LeseUUIDParameter(r, "lieferant_id"); err != nil {
 		return berichtAnfrage{}, err
 	}
 	// Der Topf-Filter macht aus dem Bericht das Blatt, gegen das eine Rechnung geprüft wird.

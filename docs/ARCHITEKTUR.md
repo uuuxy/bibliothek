@@ -218,7 +218,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | #  | Randbedingung                                                                 | Hintergrund und Konsequenz                                                                                                                                                                               |
 | -- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | T1 | **Go 1.27.2**, Version identisch in `go.mod` und `Dockerfile`                 | Zwei Versionen wären zwei Verhalten. Genutzt werden ausdrücklich neuere Fähigkeiten: Methoden-Routing im `net/http`-Mux (`GET /api/...`), `os.OpenRoot` gegen Path-Traversal, `slog` als Standard-Logger. |
-| T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`api/router.go`, `api/middleware.go`, `api/tuer/permission_middleware.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`routes_authz_coverage_test.go`). |
+| T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`api/router.go`, `api/middleware.go`, `api/tuer/rechte.go`, `api/tuer/sitzung.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`routes_authz_coverage_test.go`). |
 | T3 | **PostgreSQL 18** über `pgx/v5` (Pool), keine ORM-Schicht                     | SQL steht im Repository-Paket sichtbar da. Constraints sind ein Entwurfsmittel, nicht eine Absicherung „unten" — siehe [invarianten.md](invarianten.md).                                                |
 | T4 | **CGO_ENABLED=1** für das Hauptbinary                                         | `chai2010/webp` (Cover-Dekodierung) braucht CGO. Folge: Der Build braucht `build-base` im Builder-Image; die CLI-Werkzeuge werden dagegen mit `CGO_ENABLED=0` gebaut.                                      |
 | T5 | **Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript**                       | Typsicherheit kommt über JSDoc + `svelte-check --fail-on-warnings`, nicht über `.ts`. Eine Umstellung wäre ein Umbau von rund 300 Komponenten und ist bewusst nicht erfolgt.                                    |
@@ -258,7 +258,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen der Themen heißen noch `s`, wie am Server, von dem sie stammen; mit ihrem Paket bekommen sie `t` ([STIL.md](STIL.md), Abschnitt 4). | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
 | **Komponenten-Größe Frontend**                    | ≤ 200 Zeilen je **neuer** `.svelte`-Datei; der Altbestand darüber darf nicht wachsen.                                                                                                                              | Ratsche `frontend/src/lib/frontend-hygiene-dateigroesse.test.js`     |
 | **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menu.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
-| **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede Sitzung genügt, `RequireAuthenticated()`; öffentliche Routen stehen in einer Allowlist.                        | `api/routes_authz_coverage_test.go`                                  |
+| **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede Sitzung genügt, `VerlangeAnmeldung()`; öffentliche Routen stehen in einer Allowlist.                        | `api/routes_authz_coverage_test.go`                                  |
 | **Fundstellen beim Namen**                        | In der Dokumentation werden Constraint-, Index-, Datei- und Paketnamen genannt — keine Zeilennummern und keine Migrationsnummern als Beleg (eine Datei existiert weiter, auch wenn eine spätere Migration sie aufhebt). | `docs/invarianten_fundstellen_test.go`                               |
 | **Stand-Angaben**                                 | Kein Dokument behauptet im Kopf einen Stand, unter dem es jüngere Vorgänge beschreibt.                                                                                                                             | `docs/stand_angaben_test.go` (jede `.md` unter `docs/`)              |
 | **Keine Changelog-Datei**                         | Die Commit-Historie ist Teil der Dokumentation; Erledigtes wird aus `OFFEN.md` gelöscht, nicht archiviert.                                                                                                          | Entscheidung vom 15.09.2026                                          |
@@ -379,7 +379,7 @@ graph TB
 | Schnittstelle                    | Protokoll / Format                              | Richtung        | Absicherung                                                                                                                       |
 | -------------------------------- | ----------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | **Browser → Backend**            | HTTPS, JSON über `/api`, `POST /login`          | eingehend       | Security-Header/CSP, CORS auf die Schuldomain, Body-Limit 100 MB, Timeouts, Rate-Limit, CSRF (Double-Submit), JWT im HttpOnly-Cookie |
-| **Backend → Browser (Echtzeit)** | Server-Sent Events, `GET /events`               | ausgehend       | Nur authentifiziert (`RequireAuthenticated`); Heartbeat alle 15 s; **kein** `WriteTimeout` am Server, weil der Strom nie endet     |
+| **Backend → Browser (Echtzeit)** | Server-Sent Events, `GET /events`               | ausgehend       | Nur authentifiziert (`VerlangeAnmeldung`); Heartbeat alle 15 s; **kein** `WriteTimeout` am Server, weil der Strom nie endet     |
 | **Statische Auslieferung**       | SPA aus `frontend/dist`, PWA-Service-Worker      | ausgehend       | Dateizugriffe OS-seitig an `dist/` gebunden (`os.OpenRoot`); ein unbekannter `/api/`-Pfad antwortet 404 statt App-Shell            |
 | **Cover-Dateien**                | `GET /uploads/...`                              | ausgehend       | **Bewusst ohne Anmeldung** (Katalog/Monitor brauchen Cover); in der Allowlist von `routes_authz_coverage_test.go` vermerkt          |
 | **Backend → PostgreSQL**         | Postgres-Wire über `pgx/v5`-Pool                | ausgehend       | Netz nur intern; Passwort aus `.env`; `pg_dump` erhält es über eine temporäre `.pgpass`, nicht über `PGPASSWORD`                    |
@@ -597,7 +597,7 @@ HTTP-Anfrage
    │
    ▼  http.ServeMux (Methoden-Routing, Go 1.22+)
    │
-   ├─ RequirePermission("…") / RequireAuthenticated()
+   ├─ RequirePermission("…") / VerlangeAnmeldung()
    │     └─ Cookie → JWT prüfen → Kontostatus in der DB → Recht (Cache 60 s, Epoche)
    │        → UUID-Pfadparameter prüfen  ← hier, weil r.PathValue erst nach dem Routing gefüllt ist
    ▼
@@ -991,12 +991,12 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Versandfehler (`mailFehlerStatus`, `api/system/mail_settings.go`) und die Werte des Felds `mail`
   (`api/portal/anliegen.go`). Ein Test stellt die Konfiguration über
   `mailservice.TauscheKonfigLaderFuerTest` ein.
-- Was jede Tür braucht, steht in `api/tuer`: `RespondJSON` und `DecodeAndValidate`, die
+- Was jede Tür braucht, steht in `api/tuer`: `AntworteJSON` und `LeseAnfrage`, die
   Rechteprüfung mit ihrem Zwischenspeicher (5.4.3), das Protokoll der Verwaltung, die Uhr. Das
   Paket steht unter den Türen, damit das Paket eines Themas es einbinden kann; `api/` selbst
   ließe sich von dort nicht einbinden. Der Typ `tuer.Basis` trägt
   Datenbank, Anmeldung, Live-Leitung und Uhr mit den Methoden dazu. `api.Server` bettet ihn
-  ein: Eine Tür schreibt weiter `s.DB` und `s.BesitztRecht(…)`, und die Routenlisten rufen
+  ein: Eine Tür schreibt weiter `s.DB` und `s.HatRecht(…)`, und die Routenlisten rufen
   `s.RequirePermission(…)` wie bisher. Ein Literal nennt die vier Felder über die Basis
   (`&Server{Basis: tuer.Basis{DB: …}}`). Router, Routenlisten und die Kette der Middleware
   bleiben in `api/`.
@@ -1255,22 +1255,23 @@ Ein Fehler, der **kein** `ErrNichtGefunden` ist (Datenbank weg, Sperre, Gerät o
 gilt ausdrücklich nicht als „ohne Treffer": Ihn ein zweites Mal auszulösen hieße, eine
 Sperrmeldung doppelt zu schreiben oder eine echte Störung zu verschleiern.
 
-#### 5.4.3 `api/tuer/permission_middleware.go` — Rechteprüfung mit Epoche
+#### 5.4.3 `api/tuer/rechte.go` — Rechteprüfung mit Epoche
 
 Der Rechte-Cache (60 s) hat einen Zähler, nicht nur einen Inhalt:
 
 ```
-leseCacheEpoche()  ──►  DB lesen  ──►  nur cachen, wenn die Epoche unverändert ist
-                                        └─ sonst: Entscheidung ist überholt, nicht speichern
-InvalidatePermissionCache()  ──►  Cache leeren UND Epoche erhöhen
+cacheEpoche()  ──►  DB lesen  ──►  nur cachen, wenn die Epoche unverändert ist
+                                    └─ sonst: Entscheidung ist überholt, nicht speichern
+LeereRechteCache()  ──►  Cache leeren UND Epoche erhöhen
 ```
 
 Ohne die Epoche konnte ein Leser, der **vor** einer Rechteänderung startete, den alten
 Stand **nach** der Invalidierung zurückschreiben — und er wirkte bis zu 60 s weiter
 (Nebenläufigkeits-Audit vom 19.08.2026).
 
-Die Datei trägt die Prüfung für eine Route (`PruefeBerechtigung`, `RequireAuthenticated`)
-und die in einer Tür (`BesitztRecht`); beide lesen denselben Zwischenspeicher.
+Die Datei trägt die Prüfung für eine Route (`PruefeRecht`) und die in einer Tür (`HatRecht`);
+beide lesen denselben Zwischenspeicher. Eine Route, der jede Sitzung genügt, prüft
+`VerlangeAnmeldung` in `api/tuer/sitzung.go`.
 `RequirePermission` steht beim Router (`api/middleware.go`): Es setzt die Prüfung der
 Pfadparameter davor, und deren Liste gehört zu den Routen. Ein Test legt eine Entscheidung
 über `tuer.MerkeRechtFuerTest` in den Zwischenspeicher.
@@ -3064,7 +3065,7 @@ bereits das Gegenteil.
 ### A3 — Autorisierung pro Route; `RBACBlockMiddleware` entfernt
 
 **Entscheidung.** Jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede
-Sitzung genügt, `RequireAuthenticated()`. Es gibt **keine** globale Autorisierungs-Middleware
+Sitzung genügt, `VerlangeAnmeldung()`. Es gibt **keine** globale Autorisierungs-Middleware
 und keinen Wächter, der nach der Rolle fragt (`RequireRoles` ist seit dem 04.08.2026 entfernt).
 
 **Anlass.** Die frühere `RBACBlockMiddleware` führte eine hartkodierte Pfad-Allowlist für
@@ -3075,7 +3076,7 @@ konnte im PermissionManager gewährte Rechte nicht nutzen.
 Vollständigkeitspflicht — deshalb das Coverage-Gate mit Allowlist für die bewusst
 öffentlichen Routen.
 
-**Fundstelle.** `api/tuer/permission_middleware.go`, `api/middleware.go` (`RequirePermission`),
+**Fundstelle.** `api/tuer/rechte.go`, `api/tuer/sitzung.go`, `api/middleware.go` (`RequirePermission`),
 `api/routes_authz_coverage_test.go`.
 
 ---
@@ -3192,11 +3193,11 @@ zweimal eingespielte Sicherung führt deshalb nichts doppelt aus.
 startete, schrieb den alten Stand **nach** der Invalidierung zurück — und er wirkte bis zu
 60 s weiter.
 
-**Folge.** `InvalidatePermissionCache()` leert den Cache **und** erhöht die Epoche; der
+**Folge.** `LeereRechteCache()` leert den Cache **und** erhöht die Epoche; der
 Schreiber vergleicht. 60 s Cache bleiben als Obergrenze für die Wirksamkeit einer
 Rechteänderung.
 
-**Fundstelle.** `api/tuer/permission_middleware.go`.
+**Fundstelle.** `api/tuer/rechte.go`.
 
 ---
 
@@ -3962,7 +3963,7 @@ Gewicht.
 #### Leserakte und Titel verwerfen unbekannte Felder still
 
 Die Türen für Benutzer, Gerät, Lieferant und Einstellungen lehnen ein Feld ab, das sie nicht kennen
-(`DecodeStrictAndValidate`). `PATCH /api/schueler/{id}` und `PUT /api/books/{id}` verwerfen es
+(`LeseAnfrageStreng`). `PATCH /api/schueler/{id}` und `PUT /api/books/{id}` verwerfen es
 still: Steht ein vertippter Name neben einem richtigen, wird der richtige gespeichert, und der
 andere fällt ohne Meldung. Die Leserakte lehnt nur einen Rumpf ab, der gar kein bekanntes Feld
 nennt (am Stack geprüft am 08.10.2026); der Titel nimmt das ganze Objekt entgegen, samt der
@@ -4409,7 +4410,7 @@ Fenstern bekannt ist:
   Konsument; bei den Geräten `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
 - Die Prüfung der UUID-Pfadparameter (`ValidateUUIDParamsMiddleware`) sitzt in
   `RequirePermission`. Eine Route mit `{id}`, `{schueler_id}` oder `{ausleihe_id}` unter
-  `RequireAuthenticated` liefe an ihr vorbei, und die Kennung ginge ungeprüft an die Datenbank.
+  `VerlangeAnmeldung` liefe an ihr vorbei, und die Kennung ginge ungeprüft an die Datenbank.
   Heute gibt es keine: Am 04.10.2026 antworteten alle 65 Routen mit UUID-Platzhalter am echten
   Router auf eine Kennung, die keine UUID ist, mit 400. Kein Gate hält das;
   `api/uuid_pfadparameter_test.go` prüft die Namen der Platzhalter, nicht die Hülle der Route.

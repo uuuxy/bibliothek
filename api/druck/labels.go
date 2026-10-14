@@ -81,7 +81,7 @@ type PrintLabelsRequest struct {
 func (s *Tueren) PrintLabelsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PrintLabelsRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 

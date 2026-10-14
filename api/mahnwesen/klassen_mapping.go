@@ -36,7 +36,7 @@ func (s *Tueren) GetKlassenMappingHandler() http.HandlerFunc {
 			})
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, mappings)
+		tuer.AntworteJSON(w, http.StatusOK, mappings)
 	}
 }
 
@@ -45,7 +45,7 @@ func (s *Tueren) GetKlassenMappingHandler() http.HandlerFunc {
 func (s *Tueren) UpsertKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req KlassenLehrerMapping
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 		// Getrimmt speichern: Ein aus der Zwischenablage mitgeschlepptes Leerzeichen ist
@@ -75,11 +75,11 @@ func (s *Tueren) UpsertKlassenMappingHandler() http.HandlerFunc {
 			if neu {
 				art = "eingetragen"
 			}
-			s.ProtokolliereVerwaltung(ctx, tuer.AuditKlassenleitungGeaendert,
+			s.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungGeaendert,
 				map[string]any{"klasse": req.Klasse, "art": art})
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 
@@ -105,7 +105,7 @@ func (s *Tueren) DeleteKlassenMappingHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
 			return
 		}
-		s.ProtokolliereVerwaltung(ctx, tuer.AuditKlassenleitungEntfernt, map[string]any{"klasse": klasse})
+		s.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungEntfernt, map[string]any{"klasse": klasse})
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

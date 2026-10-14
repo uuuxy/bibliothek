@@ -40,6 +40,6 @@ func (s *Tueren) TitelSucheHandler(bookRepo repository.KatalogAbfragen) http.Han
 		if books == nil {
 			books = []repository.Titel{}
 		}
-		tuer.RespondJSON(w, http.StatusOK, TitelSucheResult{Books: books, BooksTotal: total})
+		tuer.AntworteJSON(w, http.StatusOK, TitelSucheResult{Books: books, BooksTotal: total})
 	}
 }

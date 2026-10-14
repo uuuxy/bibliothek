@@ -80,7 +80,7 @@ func (s *Tueren) ZusammenfuehrenSchuelerHandler(auditRepo repository.ProtokollAb
 				log.Printf("Zusammenführen: Audit-Eintrag fehlgeschlagen: %v", err)
 			}
 		}
-		tuer.RespondJSON(w, http.StatusOK, erg)
+		tuer.AntworteJSON(w, http.StatusOK, erg)
 		return nil
 	})
 }
@@ -94,7 +94,7 @@ func (s *Tueren) ZusammenfuehrenKandidatenHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Kandidatensuche fehlgeschlagen", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, treffer)
+		tuer.AntworteJSON(w, http.StatusOK, treffer)
 		return nil
 	})
 }

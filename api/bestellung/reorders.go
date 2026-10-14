@@ -26,7 +26,7 @@ func (s *Tueren) GetReordersHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, reorders)
+		tuer.AntworteJSON(w, http.StatusOK, reorders)
 	}
 }
 

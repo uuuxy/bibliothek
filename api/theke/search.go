@@ -72,6 +72,6 @@ func (s *Tueren) SearchHandler(studentRepo repository.LeserAbfragen, bookRepo re
 			Treffer:       treffer,
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, result)
+		tuer.AntworteJSON(w, http.StatusOK, result)
 	}
 }

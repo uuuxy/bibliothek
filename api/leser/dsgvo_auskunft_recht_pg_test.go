@@ -54,7 +54,7 @@ func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 			ON CONFLICT (role, permission) DO UPDATE SET allowed = EXCLUDED.allowed`, erlaubt); err != nil {
 			t.Fatalf("Rechtezeile setzen: %v", err)
 		}
-		tuer.InvalidatePermissionCache()
+		tuer.LeereRechteCache()
 	}
 	setzeKontenrecht(false)
 	t.Cleanup(func() {
@@ -77,7 +77,7 @@ func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 				t.Errorf("aufräumen: %v", err)
 			}
 		}
-		tuer.InvalidatePermissionCache()
+		tuer.LeereRechteCache()
 	})
 
 	// Konten: Der Trigger trg_benutzer_hat_leserzeile hängt jedem die Leserzeile an.

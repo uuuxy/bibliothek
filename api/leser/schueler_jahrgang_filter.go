@@ -109,7 +109,7 @@ func (s *Tueren) JahrgaengeHandler(lmfRepo *repository.LMFAbfragen) http.Handler
 		if err != nil {
 			return apierrors.Internal("Jahrgänge konnten nicht gelesen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, jahrgaenge)
+		tuer.AntworteJSON(w, http.StatusOK, jahrgaenge)
 		return nil
 	})
 }

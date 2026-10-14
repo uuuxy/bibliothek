@@ -95,7 +95,7 @@ func (s *Tueren) ListUsersHandler(userRepo repository.KontoAbfragen) http.Handle
 			responseUsers = append(responseUsers, ur)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, responseUsers)
+		tuer.AntworteJSON(w, http.StatusOK, responseUsers)
 	}
 }
 

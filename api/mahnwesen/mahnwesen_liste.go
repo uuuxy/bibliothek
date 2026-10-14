@@ -26,7 +26,7 @@ func (s *Tueren) GetMahnwesenHandler(mahnRepo *repository.MahnwesenAbfragen) htt
 			log.Printf("mahnwesen: Anzahl heutiger Rückgaben konnte nicht ermittelt werden: %v", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"klassen":           klassen,
 			"heute_retourniert": heuteRetourniert,
 		})

@@ -306,7 +306,7 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 		Anzahl int `json:"anzahl"`
 	}
 	jsonHolen(t, srv.druck().EtikettenOffenAnzahlHandler(),
-		"/api/exemplare/etiketten-offen/anzahl?bis="+time.Now().Format(tuer.DateFormatISO), &mitStichtag)
+		"/api/exemplare/etiketten-offen/anzahl?bis="+time.Now().Format(tuer.DatumsformatISO), &mitStichtag)
 	if mitStichtag.Anzahl != 4 {
 		t.Errorf("Stichtag-Zaehler nennt %d, erwartet 4 (drei markierte + ein fremdes offenes)",
 			mitStichtag.Anzahl)

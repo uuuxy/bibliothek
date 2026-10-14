@@ -55,7 +55,7 @@ func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 		msg := "Verlängerung nicht möglich: Ausleihe gesperrt"
 		// Der Sperr-Freitext ist Verwaltungsinformation (PII-Matrix Stufe 2) —
 		// dieselbe view_students-Grenze wie bei /api/action (ohneSperrgrund).
-		if blockReason != "" && s.BesitztRecht(r, "view_students") {
+		if blockReason != "" && s.HatRecht(r, "view_students") {
 			msg += " (" + blockReason + ")"
 		}
 		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New(msg))
@@ -106,7 +106,7 @@ func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 		return
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
 		"success":               true,
 		"neues_rueckgabe_datum": newFrist,
 	})
@@ -134,7 +134,7 @@ func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 	}
 
 	var req OverrideDueDateRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
@@ -184,7 +184,7 @@ func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 		log.Printf("Audit für Frist-Überschreibung fehlgeschlagen: %v", logErr)
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
 		"success":    true,
 		"faellig_am": newFrist,
 	})

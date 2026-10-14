@@ -24,7 +24,7 @@ type GlobalExtendLMFRequest struct {
 func (s *Tueren) GlobalExtendLMFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req GlobalExtendLMFRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
@@ -67,14 +67,14 @@ func (s *Tueren) GlobalExtendLMFHandler() http.HandlerFunc {
 		// Wie bei der Frist einer einzelnen Ausleihe (FRIST_OVERRIDE): Wer die Fristen einer
 		// ganzen Klasse verschiebt, steht im Protokoll. Bewegt sich keine Frist, steht nichts.
 		if angepasst > 0 {
-			s.ProtokolliereVerwaltung(ctx, tuer.AuditFristKlasseGeaendert, map[string]any{
+			s.ProtokolliereVerwaltung(ctx, tuer.AktionFristKlasseGeaendert, map[string]any{
 				"klasse":            req.Klasse,
 				"neue_frist":        newDate.Format(time.RFC3339),
 				"fristen_angepasst": angepasst,
 			})
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
 			"success":       true,
 			"updated_count": angepasst,
 		})

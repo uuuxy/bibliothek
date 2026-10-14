@@ -169,7 +169,7 @@ func (s *Tueren) handleGetStudentProfile(w http.ResponseWriter, r *http.Request,
 		EntlieheneBuecher: borrowedBooks,
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, resp)
+	tuer.AntworteJSON(w, http.StatusOK, resp)
 	return nil
 }
 
@@ -189,7 +189,7 @@ func (s *Tueren) GetClassesHandler(studentRepo repository.LeserAbfragen) http.Ha
 			return apierrors.Internal("Fehler beim Laden der Klassen", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, classes)
+		tuer.AntworteJSON(w, http.StatusOK, classes)
 		return nil
 	})
 }

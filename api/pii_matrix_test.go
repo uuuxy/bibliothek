@@ -29,7 +29,7 @@ import (
 
 type matrixZeile struct {
 	Route  string // "GET /api/vormerkungen"
-	Recht  string // "view_students", "öffentlich", "RequireAuthenticated", "inventur:view_books", ...
+	Recht  string // "view_students", "öffentlich", "Sitzung", "inventur:view_books", ...
 	Stufe  string // "0".."3"
 	Quelle string // Dateiname laut Abschnittsüberschrift im Dokument
 }
@@ -134,12 +134,18 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 		case "öffentlich", "Token", "selbst-prüfend":
 			// Kein Authz-Wrapper: Token-Routen weisen sich über den Link-Token aus,
 			// selbst-prüfende (auth/*) validieren das Session-Cookie im Handler.
-			if strings.Contains(zeile, "RequirePermission(") || strings.Contains(zeile, "RequireRoles(") || strings.Contains(zeile, "RequireAuthenticated(") {
+			if strings.Contains(zeile, "RequirePermission(") || strings.Contains(zeile, "RequireRoles(") ||
+				strings.Contains(zeile, "VerlangeAnmeldung(") || strings.Contains(zeile, "RequireAuthenticated(") {
 				t.Errorf("%s: Matrix sagt %q, Code hat einen Wrapper: %s", route, z.Recht, strings.TrimSpace(zeile))
 			}
 			continue
 		case "Sitzung":
-			erwartet = "RequireAuthenticated("
+			// api/ ruft VerlangeAnmeldung, das inventur-Paket das hereingereichte Feld
+			// RequireAuthenticated seiner Konfiguration.
+			if !strings.Contains(zeile, "VerlangeAnmeldung(") && !strings.Contains(zeile, "RequireAuthenticated(") {
+				t.Errorf("%s: Matrix dokumentiert Recht %q, die Registrierung sagt etwas anderes: %s", route, z.Recht, strings.TrimSpace(zeile))
+			}
+			continue
 		case "inventur-Mux":
 			erwartet = "invHandler" // Schutz liegt im inneren Mux, dessen Routen stehen einzeln in der Matrix
 		case "inventur:view_books":

@@ -80,7 +80,7 @@ func (s *Tueren) AbgangsbuchHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Abgangsbuch konnte nicht gelesen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, abgangsbuchAntwort(buch))
+		tuer.AntworteJSON(w, http.StatusOK, abgangsbuchAntwort(buch))
 		return nil
 	})
 }
@@ -114,7 +114,7 @@ func (s *Tueren) AbgangsbuchPDFHandler() http.HandlerFunc {
 		}
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="Abgangsbuch_%s_bis_%s.pdf"`,
-			buch.Von.Format(tuer.DateFormatISO), buch.Bis.Format(tuer.DateFormatISO)))
+			buch.Von.Format(tuer.DatumsformatISO), buch.Bis.Format(tuer.DatumsformatISO)))
 		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(blatt)))
 		if _, err := w.Write(blatt); err != nil {
 			return nil // Verbindung weg — der Client hat abgebrochen.

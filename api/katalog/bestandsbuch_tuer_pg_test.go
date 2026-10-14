@@ -66,7 +66,7 @@ func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, bestellung_id)
 			VALUES ($1, $2, $3::date, $4)`,
-			buecherei, barcode, wann.Format(tuer.DateFormatISO), bestellID); err != nil {
+			buecherei, barcode, wann.Format(tuer.DatumsformatISO), bestellID); err != nil {
 			t.Fatalf("Zugang %s: %v", barcode, err)
 		}
 	}

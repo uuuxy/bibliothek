@@ -115,7 +115,7 @@ func (s *Tueren) DeleteStudentHandler(auditRepo repository.ProtokollAbfragen) ht
 		details := fmt.Sprintf(`{"schueler_id":"%s"}`, id)
 		s.SchreibeAdminProtokoll(ctx, claims.UserID, "DELETE_STUDENT", clientip.AusAnfrage(r), details)
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status": "success",
 		})
 	}
@@ -127,7 +127,7 @@ func parseGeburtsdatum(raw string) (*time.Time, error) {
 	if raw == "" {
 		return nil, nil
 	}
-	t, err := time.Parse(tuer.DateFormatISO, raw)
+	t, err := time.Parse(tuer.DatumsformatISO, raw)
 	if err != nil {
 		return nil, fmt.Errorf("ungültiges Datumsformat für Geburtsdatum: %q — erwartet YYYY-MM-DD", raw)
 	}
@@ -158,7 +158,7 @@ func (s *Tueren) handlePatchStudent(w http.ResponseWriter, r *http.Request, audi
 	}
 
 	var req patchStudentRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
@@ -238,7 +238,7 @@ func (s *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 		// Das Konto entsteht immer, aktiv nur bei manage_users — dieselbe Paarung wie beim
 		// Anlegen (student_create.go). Wer hier nur edit_students hat, bekäme sonst still
 		// das Recht, Zugänge freizuschalten.
-		kontoID, ok := s.trageKontoNach(ctx, w, id, a.kontoAdresse, s.BesitztRecht(r, "manage_users"))
+		kontoID, ok := s.trageKontoNach(ctx, w, id, a.kontoAdresse, s.HatRecht(r, "manage_users"))
 		if !ok {
 			return false
 		}

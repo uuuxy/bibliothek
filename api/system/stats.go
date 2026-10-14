@@ -56,7 +56,7 @@ func (s *Tueren) GetStatisticsHandler() http.HandlerFunc {
 		//    eigenes 12-Monats-Fenster; der Bestand-Filter (LMF/Freihand) gilt aber.
 		monatsTrend := repository.LadeMonatsTrend(ctx, s.DB.Pool, typeFilter)
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"filter_type":    typeName,
 			"popular_titles": popularTitles,
 			"shelf_warmers":  shelfWarmers,

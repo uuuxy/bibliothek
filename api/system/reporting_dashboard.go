@@ -53,6 +53,6 @@ func (s *Tueren) GetDashboardSummaryHandler() http.HandlerFunc {
 			},
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, summary)
+		tuer.AntworteJSON(w, http.StatusOK, summary)
 	}
 }

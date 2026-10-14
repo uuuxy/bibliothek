@@ -137,7 +137,7 @@ func (s *Tueren) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenAbfragen) 
 			Abgebrochen:   erg.Abgebrochen,
 		})
 
-		tuer.RespondJSON(w, http.StatusOK, bulkOverdueResponse{
+		tuer.AntworteJSON(w, http.StatusOK, bulkOverdueResponse{
 			SentCount:    erg.Sent,
 			SkippedCount: erg.Skipped,
 			FailedCount:  erg.Failed,

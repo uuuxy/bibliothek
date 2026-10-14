@@ -68,18 +68,18 @@ func baueMahnMailRequest(req mahnwesenSendenRequest, pdfBytes []byte, totalSchue
 			"Bitte informieren Sie die betroffenen Schüler/innen über die ausstehenden Rückgaben.\n\n"+
 			"Mit freundlichen Grüßen,\nSchulbibliothek",
 		req.Klasse,
-		schulzeit.Jetzt().Format(tuer.DateFormatDE),
+		schulzeit.Jetzt().Format(tuer.DatumsformatDE),
 		totalSchueler,
 		totalMedien,
 	)
 
 	return mailservice.MailRequest{
 		To:      req.Email,
-		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, schulzeit.Jetzt().Format(tuer.DateFormatDE)),
+		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
 		Body:    emailBody,
 		Attachments: []mailservice.MailAttachment{
 			{
-				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, schulzeit.Jetzt().Format(tuer.DateFormatISO)),
+				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatISO)),
 				ContentType: tuer.ContentTypePDF,
 				Data:        pdfBytes,
 			},

@@ -40,7 +40,7 @@ type SchuelerEtikettenRequest struct {
 func (s *Tueren) PrintSchuelerEtikettenHandler(studentRepo repository.LeserAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SchuelerEtikettenRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 

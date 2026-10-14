@@ -50,7 +50,7 @@ func (s *Tueren) GetBestellhistorieHandler() http.HandlerFunc {
 		}
 
 		if len(orders) == 0 {
-			tuer.RespondJSON(w, http.StatusOK, orders)
+			tuer.AntworteJSON(w, http.StatusOK, orders)
 			return
 		}
 
@@ -59,6 +59,6 @@ func (s *Tueren) GetBestellhistorieHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, orders)
+		tuer.AntworteJSON(w, http.StatusOK, orders)
 	}
 }

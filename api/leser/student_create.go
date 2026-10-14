@@ -166,7 +166,7 @@ var errGeburtsdatumPflicht = errors.New("Geburtsdatum fehlt. Es ist der einzige 
 func (s *Tueren) CreateStudentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateStudentRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
@@ -211,12 +211,12 @@ func (s *Tueren) CreateStudentHandler() http.HandlerFunc {
 		// E-Mail-Adresse ist das, was den zweiten Eintrag bei der Selbstanmeldung
 		// verhindert. Ob es aktiv ist, ändert daran nichts — wer nicht freischalten darf,
 		// erzeugt eine Zugangsanfrage, wie sie die Selbstanmeldung auch erzeugt.
-		studentID, barcodeID, ok := s.legeSchuelerAn(ctx, w, req, parsedGebdatum, s.BesitztRecht(r, "manage_users"))
+		studentID, barcodeID, ok := s.legeSchuelerAn(ctx, w, req, parsedGebdatum, s.HatRecht(r, "manage_users"))
 		if !ok {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusCreated, map[string]any{
+		tuer.AntworteJSON(w, http.StatusCreated, map[string]any{
 			"status":     "success",
 			"id":         studentID,
 			"barcode_id": barcodeID,
@@ -370,7 +370,7 @@ func parseCreateGeburtsdatum(w http.ResponseWriter, raw *string) (*time.Time, bo
 	if raw == nil || *raw == "" {
 		return nil, true
 	}
-	t, err := time.Parse(tuer.DateFormatISO, *raw)
+	t, err := time.Parse(tuer.DatumsformatISO, *raw)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
 		return nil, false

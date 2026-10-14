@@ -67,7 +67,7 @@ func (s *Tueren) SubmitOrderHandler(orderSvc *service.BestellDienst) http.Handle
 // die Bestellung gilt auch, wenn der Versand ausbleibt.
 func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *service.BestellDienst) {
 	var req SubmitOrderRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
@@ -95,7 +95,7 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	// Doppelklick: dieselbe Bestellung lief schon durch — KEINE zweite Mail, keine
 	// zweite Bestellung. Die erste Anfrage hat Mail und Etiketten bereits erledigt.
 	if res.BereitsVorhanden {
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
 			"message":     fmt.Sprintf("Bestellung an %s war bereits erfasst (Doppelklick) — es wurde keine zweite Bestellung ausgelöst.", res.LieferantName),
 			"ordered_qty": res.Menge,
@@ -106,7 +106,7 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	if !mailservice.SMTPKonfiguriert() {
 		log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
 		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
 			"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.LieferantName),
 			"ordered_qty": res.Menge,
@@ -119,7 +119,7 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		// Die Bestellung ist gespeichert, die Mail nicht raus: Der Vermerk an der Bestellung
 		// bleibt, wenn diese Meldung vom Bildschirm verschwunden ist.
 		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "warning",
 			"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.LieferantEmail),
 			"ordered_qty": res.Menge,
@@ -128,7 +128,7 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	}
 
 	status, meldung := bestellVersandMeldung(res.LieferantName, res.IstHauptlieferant && !mitLink)
-	tuer.RespondJSON(w, http.StatusOK, map[string]any{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 		"status":      status,
 		"message":     meldung,
 		"ordered_qty": res.Menge,
@@ -162,7 +162,7 @@ func (s *Tueren) GetIncomingShipmentsHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, groups)
+		tuer.AntworteJSON(w, http.StatusOK, groups)
 	}
 }
 
@@ -188,13 +188,13 @@ func (s *Tueren) SearchOrdersHandler() http.HandlerFunc {
 func (s *Tueren) sucheBestellung(metaClient *inventur.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req OrderSearchRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
 		query := strings.TrimSpace(req.Query)
 		if query == "" {
-			tuer.RespondJSON(w, http.StatusOK, []service.BestellTreffer{})
+			tuer.AntworteJSON(w, http.StatusOK, []service.BestellTreffer{})
 			return
 		}
 
@@ -208,7 +208,7 @@ func (s *Tueren) sucheBestellung(metaClient *inventur.MetadatenClient) http.Hand
 			w.Header().Set(dnbAusfallKopf, "1")
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, results)
+		tuer.AntworteJSON(w, http.StatusOK, results)
 	}
 }
 
@@ -221,7 +221,7 @@ type BulkReceiveRequest struct {
 func (s *Tueren) BulkReceiveOrderHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req BulkReceiveRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
@@ -252,7 +252,7 @@ func (s *Tueren) BulkReceiveOrderHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":         "success",
 			"received_count": len(receivedItems),
 			"received_items": receivedItems,

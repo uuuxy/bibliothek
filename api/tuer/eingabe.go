@@ -7,15 +7,14 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
-	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/kennung"
 
 	"github.com/go-playground/validator/v10"
 )
 
-// Validate ist der gemeinsame Struct-Validator für alle Eingangs-Payloads. Bewusst EINE
+// Pruefer ist der gemeinsame Struct-Validator für alle Eingangs-Payloads. Bewusst EINE
 // Instanz: validator.New() baut bei jedem Aufruf einen eigenen Regel-Cache auf.
-var Validate = neuerValidator()
+var Pruefer = newPruefer()
 
 // regelUUIDOderLeer: Eine Kennung, die als UUID in die Datenbank geht, muss eine sein —
 // sonst kommt `invalid input syntax for type uuid` (22P02) als 500 zurück (ZAP-Lauf
@@ -25,7 +24,7 @@ var Validate = neuerValidator()
 // Schreibweise am Feld: `validate:"omitempty,uuid_oder_leer"` (Listen: `omitempty,dive,uuid_oder_leer`).
 const regelUUIDOderLeer = "uuid_oder_leer"
 
-func neuerValidator() *validator.Validate {
+func newPruefer() *validator.Validate {
 	v := validator.New()
 	if err := v.RegisterValidation(regelUUIDOderLeer, func(fl validator.FieldLevel) bool {
 		wert := fl.Field().String()
@@ -36,9 +35,9 @@ func neuerValidator() *validator.Validate {
 	return v
 }
 
-// MeldeValidierung übersetzt eine ungültige Kennung in einen Satz; alle anderen
+// Pruefmeldung übersetzt eine ungültige Kennung in einen Satz; alle anderen
 // Validierungsfehler bleiben, wie sie sind.
-func MeldeValidierung(err error) error {
+func Pruefmeldung(err error) error {
 	var fehler validator.ValidationErrors
 	if errors.As(err, &fehler) {
 		for _, f := range fehler {
@@ -50,9 +49,9 @@ func MeldeValidierung(err error) error {
 	return err
 }
 
-// UUIDAusQuery liest einen Query-Parameter, der eine UUID sein muss. Leer bleibt leer;
+// LeseUUIDParameter liest einen Query-Parameter, der eine UUID sein muss. Leer bleibt leer;
 // alles andere, das keine UUID ist, ist ein Bedienfehler statt eines 500 aus Postgres.
-func UUIDAusQuery(r *http.Request, name string) (string, error) {
+func LeseUUIDParameter(r *http.Request, name string) (string, error) {
 	wert := r.URL.Query().Get(name)
 	if wert != "" && !kennung.IstUUID(wert) {
 		return "", fmt.Errorf("%s ist keine gültige Kennung", name)
@@ -60,7 +59,7 @@ func UUIDAusQuery(r *http.Request, name string) (string, error) {
 	return wert, nil
 }
 
-// DecodeStrictAndValidate ist DecodeAndValidate mit einem Unterschied: Ein Feld, das
+// LeseAnfrageStreng ist DecodeAndValidate mit einem Unterschied: Ein Feld, das
 // das Ziel-Struct nicht kennt, ist ein FEHLER (400) statt eines stillen Verlusts.
 //
 // Warum nicht überall? Weil mehrere Endpunkte bewusst das ganze Objekt entgegennehmen,
@@ -74,44 +73,31 @@ func UUIDAusQuery(r *http.Request, name string) (string, error) {
 // Mail-Kategorie ihre Felder noch in Unterstrich-Schreibweise, der Decoder verwarf sie
 // still, und die Oberfläche meldete "gespeichert" (Commit 488f51d9). Genau diese
 // Klasse — 200 trotz Datenverlust — ist die teuerste des Projekts.
-func DecodeStrictAndValidate[T any](w http.ResponseWriter, r *http.Request, target *T) bool {
+func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
-	if err := dec.Decode(target); err != nil {
+	if err := dec.Decode(ziel); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return false
 	}
-	if err := Validate.Struct(target); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, MeldeValidierung(err))
+	if err := Pruefer.Struct(ziel); err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, Pruefmeldung(err))
 		return false
 	}
 	return true
 }
 
-// DecodeAndValidate decodes the JSON request body and validates the struct. Unbekannte
+// LeseAnfrage decodes the JSON request body and validates the struct. Unbekannte
 // Felder werden dabei still verworfen — wo das nicht in Ordnung ist, steht
 // DecodeStrictAndValidate darüber.
-func DecodeAndValidate[T any](w http.ResponseWriter, r *http.Request, target *T) bool {
-	if err := json.NewDecoder(r.Body).Decode(target); err != nil {
+func LeseAnfrage[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
+	if err := json.NewDecoder(r.Body).Decode(ziel); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return false
 	}
-	if err := Validate.Struct(target); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, MeldeValidierung(err))
+	if err := Pruefer.Struct(ziel); err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, Pruefmeldung(err))
 		return false
 	}
 	return true
-}
-
-// RespondJSON encodes the payload as JSON and sends it with the given HTTP status code.
-// It sets the Content-Type header to application/json.
-func RespondJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	httpresp.SchreibeJSON(w, payload)
-}
-
-// RespondSuccess is a convenience function that sends a {"status": "success"} JSON response.
-func RespondSuccess(w http.ResponseWriter) {
-	RespondJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }

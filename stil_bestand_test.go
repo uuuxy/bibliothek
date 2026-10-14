@@ -17,7 +17,7 @@ var stilBestand = map[string]stilZahl{
 	"api/schaden":            {Fach: 20, Verb: 9, Kuerzel: 0, Datei: 5, Datum: 6},
 	"api/system":             {Fach: 37, Verb: 15, Kuerzel: 0, Datei: 6, Datum: 4},
 	"api/theke":              {Fach: 38, Verb: 11, Kuerzel: 0, Datei: 4, Datum: 12},
-	"api/tuer":               {Fach: 12, Verb: 4, Kuerzel: 0, Datei: 1, Datum: 5},
+	"api/tuer":               {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 5},
 	"apierrors":              {Fach: 3, Verb: 5, Kuerzel: 0, Datei: 0, Datum: 2},
 	"auth":                   {Fach: 30, Verb: 10, Kuerzel: 0, Datei: 3, Datum: 13},
 	"cmd/littera-altbestand": {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},

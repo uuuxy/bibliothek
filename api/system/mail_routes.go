@@ -38,7 +38,7 @@ func (s *Tueren) GetMailTemplatesHandler() http.HandlerFunc {
 			})
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, templates)
+		tuer.AntworteJSON(w, http.StatusOK, templates)
 	}
 }
 
@@ -55,7 +55,7 @@ func (s *Tueren) UpdateMailTemplateHandler() http.HandlerFunc {
 			Betreff  string `json:"betreff"`
 			TextBody string `json:"text_body"`
 		}
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
@@ -72,9 +72,9 @@ func (s *Tueren) UpdateMailTemplateHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
 			return
 		}
-		s.ProtokolliereGeaenderteFelder(ctx, tuer.AuditMailvorlageGeaendert, map[string]any{"vorlage": typ},
+		s.ProtokolliereGeaenderteFelder(ctx, tuer.AktionMailvorlageGeaendert, map[string]any{"vorlage": typ},
 			tuer.GeaenderteFelder(tuer.FeldWechsel{Name: "betreff", Geaendert: betreffNeu}, tuer.FeldWechsel{Name: "text", Geaendert: textNeu}))
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{"message": "Erfolgreich gespeichert"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"message": "Erfolgreich gespeichert"})
 	}
 }

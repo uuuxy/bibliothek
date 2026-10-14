@@ -63,7 +63,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 			}
 		}
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, kontoID)
-		tuer.InvalidatePermissionCache()
+		tuer.LeereRechteCache()
 	})
 
 	leser := testdaten.LegeSchuelerAn(t, pool, "MR-1", "Mona", "7a")

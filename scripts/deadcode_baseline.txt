@@ -178,4 +178,4 @@ mailservice/mail_sender.go: unreachable func: TauscheKonfigLaderFuerTest
 # Rolle darf, liegt eine Minute im Zwischenspeicher des Pakets. Tests ohne Tabelle der Rechte
 # legen sie dort ab; vorher schrieben sie selbst in den Zwischenspeicher, als er noch in api/
 # stand.
-api/tuer/permission_middleware.go: unreachable func: MerkeRechtFuerTest
+api/tuer/rechte.go: unreachable func: MerkeRechtFuerTest

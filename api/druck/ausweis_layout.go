@@ -64,6 +64,6 @@ func (s *Tueren) SaveAusweisLayoutHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "gespeichert"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "gespeichert"})
 	}
 }

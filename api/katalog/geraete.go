@@ -54,7 +54,7 @@ func (s *Tueren) ListGeraeteHandler(repo repository.GeraeteAbfragen) http.Handle
 		// da?"). Der NAME des Ausleihers ist aber eine Personenangabe und
 		// bleibt Aufrufern ohne view_students verborgen — verliehen ja/nein
 		// sieht man weiterhin (ausgeliehen_an wird zu "", nicht nil).
-		if !s.BesitztRecht(r, "view_students") {
+		if !s.HatRecht(r, "view_students") {
 			leer := ""
 			for i := range geraete {
 				if geraete[i].AusgeliehenAn != nil {
@@ -62,7 +62,7 @@ func (s *Tueren) ListGeraeteHandler(repo repository.GeraeteAbfragen) http.Handle
 				}
 			}
 		}
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{"data": geraete})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"data": geraete})
 		return nil
 	})
 }
@@ -72,7 +72,7 @@ func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteAbfragen) http.Handl
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req GeraetRequest
 		// Streng: Ein Feld, das die Tür nicht liest, ist ein Fehler und kein stiller Verlust.
-		if !tuer.DecodeStrictAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrageStreng(w, r, &req) {
 			return nil
 		}
 		req.Modellname = strings.TrimSpace(req.Modellname)
@@ -97,7 +97,7 @@ func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteAbfragen) http.Handl
 			}
 			return apierrors.Internal("Fehler beim Anlegen des Geräts", err)
 		}
-		tuer.RespondJSON(w, http.StatusCreated, map[string]string{"id": id})
+		tuer.AntworteJSON(w, http.StatusCreated, map[string]string{"id": id})
 		return nil
 	})
 }
@@ -108,7 +108,7 @@ func (s *Tueren) UpdateGeraetHandler(repo repository.GeraeteAbfragen) http.Handl
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req GeraetAenderungRequest
 		// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
-		if !tuer.DecodeStrictAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrageStreng(w, r, &req) {
 			return nil
 		}
 		aenderung := repository.GeraetAenderung{
@@ -133,7 +133,7 @@ func (s *Tueren) UpdateGeraetHandler(repo repository.GeraeteAbfragen) http.Handl
 			}
 			return apierrors.Internal("Fehler beim Speichern des Geräts", err)
 		}
-		tuer.RespondSuccess(w)
+		tuer.AntworteErfolg(w)
 		return nil
 	})
 }

@@ -199,7 +199,7 @@ func (s *Server) registerInventurSubmoduleRoutes(mux *http.ServeMux) {
 		RequireViewBooks:     s.RequirePermission("view_books"),
 		RequireEditBooks:     s.RequirePermission("edit_books"),
 		RequireDeleteBooks:   s.RequirePermission("delete_books"),
-		RequireAuthenticated: s.RequireAuthenticated(),
+		RequireAuthenticated: s.VerlangeAnmeldung(),
 	})
 
 	// Mount Inventur routes

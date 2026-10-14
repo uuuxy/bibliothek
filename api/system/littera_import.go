@@ -141,7 +141,7 @@ func (s *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, co
 	// den Zähler still verschluckt (omitempty auf int 0 entfernt den Schlüssel,
 	// das Widget zeigte "undefined bestehende Titel"). Die Zusatzschlüssel der
 	// Map (imported_count, message) las kein Konsument (gegengeprüft).
-	tuer.RespondJSON(w, http.StatusOK, LitteraImportResponse{
+	tuer.AntworteJSON(w, http.StatusOK, LitteraImportResponse{
 		UpdatedTitles: importedCount,
 		Type:          "xml",
 	})
@@ -189,7 +189,7 @@ func (s *Tueren) LitteraImportHandler() http.HandlerFunc {
 			importType = "xlsx"
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, LitteraImportResponse{
+		tuer.AntworteJSON(w, http.StatusOK, LitteraImportResponse{
 			NewTitles:      newTitlesCount,
 			ImportedCopies: importedCopiesCount,
 			Type:           importType,
@@ -266,7 +266,7 @@ func (s *Tueren) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 		s.SchreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.AusAnfrage(r), details)
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
 		"new_titles_count":      newTitles,
 		"imported_copies_count": importedCopies,
 		"message":               "Bestands-CSV erfolgreich importiert",

@@ -38,8 +38,8 @@ func (o *sperrOmnibox) VerarbeiteEingabe(context.Context, service.OmniboxEingabe
 
 func helferOhneRechte(t *testing.T) {
 	t.Helper()
-	tuer.InvalidatePermissionCache()
-	t.Cleanup(tuer.InvalidatePermissionCache)
+	tuer.LeereRechteCache()
+	t.Cleanup(tuer.LeereRechteCache)
 	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
 	tuer.MerkeRechtFuerTest("helfer", "edit_students", false)
 }

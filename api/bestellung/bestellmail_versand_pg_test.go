@@ -166,7 +166,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	for _, zeile := range []string{
 		"Subject: Buchbestellung Lernmittelfreiheit - ",
 		"Diese Bestellung: Lernmittelfreiheit",
-		"bis zum " + gueltigBis.In(schulzeit.Zone()).Format(tuer.DateFormatDE),
+		"bis zum " + gueltigBis.In(schulzeit.Zone()).Format(tuer.DatumsformatDE),
 	} {
 		if !strings.Contains(nachricht, zeile) {
 			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))

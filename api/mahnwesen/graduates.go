@@ -85,7 +85,7 @@ func (s *Tueren) GetGraduatesHandler() http.HandlerFunc {
 			}
 			antwort.Abgaenger = zeilen
 		}
-		tuer.RespondJSON(w, http.StatusOK, antwort)
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
 	}
 }
 

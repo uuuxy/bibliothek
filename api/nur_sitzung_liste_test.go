@@ -13,7 +13,7 @@ import (
 //
 // Das ist die kleine, aber empfindliche Fläche, die jede angemeldete Rolle öffnen kann:
 // auch KOLLEGIUM (Portal) und HELFER (Kiosk). Bis zum 06.09.2026 stand die Antwort nur
-// als Satz im Kommentar über RequireAuthenticated — und der Satz war zweimal falsch:
+// als Satz im Kommentar über VerlangeAnmeldung — und der Satz war zweimal falsch:
 // erst „heute genau einer" (es waren vier), dann „vier" (es sind sieben). Beim zweiten
 // Mal, im Rasterdurchgang desselben Tages, hat der Zähler die drei Portal-Routen des
 // inventur-Pakets übersehen, weil sie die Middleware INJIZIERT bekommen
@@ -34,9 +34,9 @@ func TestNurSitzungRoutenSindBenannt(t *testing.T) {
 		"GET /api/portal/lernmittel/export": "derselbe Bestand als PDF-Export.",
 	}
 
-	// Zwei Schreibweisen, ein Sinn: `s.RequireAuthenticated()(…)` in api/, und die
+	// Zwei Schreibweisen, ein Sinn: `s.VerlangeAnmeldung()(…)` in api/, und die
 	// injizierte Fassung `config.RequireAuthenticated(…)` im inventur-Paket.
-	registrierung := regexp.MustCompile(`(?:handler\.)?mux\.Handle(?:Func)?\("([^"]+)"[^)]*RequireAuthenticated`)
+	registrierung := regexp.MustCompile(`(?:handler\.)?mux\.Handle(?:Func)?\("([^"]+)"[^)]*(?:VerlangeAnmeldung|RequireAuthenticated)`)
 
 	dateien, err := filepath.Glob("routes_*.go")
 	if err != nil {
@@ -58,7 +58,7 @@ func TestNurSitzungRoutenSindBenannt(t *testing.T) {
 	}
 
 	if len(gefunden) == 0 {
-		t.Fatal("keine einzige Route mit RequireAuthenticated gefunden — die Suchform passt nicht mehr, " +
+		t.Fatal("keine einzige Route mit VerlangeAnmeldung oder RequireAuthenticated gefunden — die Suchform passt nicht mehr, " +
 			"und dieses Gate wäre still grün")
 	}
 	var neu, weg []string

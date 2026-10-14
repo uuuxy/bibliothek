@@ -66,7 +66,7 @@ func (s *Tueren) GetLmfTermineHandler() http.HandlerFunc {
 		if !ab.IsZero() {
 			antwort.Ab = ab.Format("2006-01-02")
 		}
-		tuer.RespondJSON(w, http.StatusOK, antwort)
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }

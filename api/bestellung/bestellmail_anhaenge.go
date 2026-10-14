@@ -216,5 +216,5 @@ func etikettenboegen(labels []buchetikett.Etikett, kopf buchetikett.Kopf, istHau
 // im Postfach des Händlers zwischen allen anderen Bestellungen und ist dort die einzige
 // Unterscheidung.
 func datiertName(basis, endung string) string {
-	return fmt.Sprintf("%s_%s.%s", basis, schulzeit.Jetzt().Format(tuer.DateFormatISO), endung)
+	return fmt.Sprintf("%s_%s.%s", basis, schulzeit.Jetzt().Format(tuer.DatumsformatISO), endung)
 }

@@ -213,8 +213,8 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	tuer.InvalidatePermissionCache()
-	t.Cleanup(tuer.InvalidatePermissionCache)
+	tuer.LeereRechteCache()
+	t.Cleanup(tuer.LeereRechteCache)
 	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
 
 	const grund = "Schadensrechnung offen - Familie"

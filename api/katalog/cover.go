@@ -14,7 +14,7 @@ func SyncCoversHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		coverSvc := service.NewCoverDienst(dbPool)
 		go coverSvc.GleicheFehlendeCoverAb()
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{
 			"status":  "success",
 			"message": "Der Hintergrund-Job zum Herunterladen fehlender Cover wurde gestartet.",
 		})

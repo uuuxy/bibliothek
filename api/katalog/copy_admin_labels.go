@@ -42,7 +42,7 @@ func (s *Tueren) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request,
 	}
 
 	var req UpdateBarcodeRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
@@ -73,5 +73,5 @@ func (s *Tueren) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	tuer.RespondSuccess(w)
+	tuer.AntworteErfolg(w)
 }

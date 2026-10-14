@@ -31,7 +31,7 @@ type KollegiumTitel struct {
 func (s *Tueren) KollegiumKatalogSucheHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
-		schlagwortID, err := tuer.UUIDAusQuery(r, "schlagwort_id")
+		schlagwortID, err := tuer.LeseUUIDParameter(r, "schlagwort_id")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -57,7 +57,7 @@ func (s *Tueren) KollegiumKatalogSucheHandler() http.HandlerFunc {
 			result = append(result, KollegiumTitel{OpacTitel: opacTitelAus(t), ImZulauf: t.ImZulauf})
 		}
 		w.Header().Set(opacTrefferKopf, strconv.Itoa(gesamt))
-		tuer.RespondJSON(w, http.StatusOK, result)
+		tuer.AntworteJSON(w, http.StatusOK, result)
 	}
 }
 
@@ -71,6 +71,6 @@ func (s *Tueren) KollegiumKatalogFilterHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, filter)
+		tuer.AntworteJSON(w, http.StatusOK, filter)
 	}
 }

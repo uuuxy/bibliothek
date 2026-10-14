@@ -29,7 +29,7 @@ func (s *Tueren) NachbuchMeldungenListeHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldungen konnten nicht gelesen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, liste)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -46,7 +46,7 @@ func (s *Tueren) NachbuchMeldungenAnzahlHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldungen konnten nicht gezählt werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, map[string]int{"offen": n})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]int{"offen": n})
 		return nil
 	})
 }
@@ -80,7 +80,7 @@ func (s *Tueren) NachbuchMeldungQuittierenHandler() http.HandlerFunc {
 		// Eine Meldung weniger: Das Band der anderen Arbeitsplätze zeigt sonst weiter die
 		// alte Zahl, bis dort jemand neu anmeldet.
 		s.meldeMeldungsstand()
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		return nil
 	})
 }

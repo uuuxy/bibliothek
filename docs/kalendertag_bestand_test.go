@@ -68,7 +68,7 @@ var bestandKalendertag = map[string]struct {
 var (
 	musterCurrentDate = regexp.MustCompile(`\bCURRENT_DATE\b`)
 	musterRoheUhr     = regexp.MustCompile(`time\.Now\(\)\.(Format|Year)\(`)
-	musterDatumInUTC  = regexp.MustCompile(`time\.Parse\((tuer\.DateFormatISO|"2006-01-02"|time\.DateOnly),`)
+	musterDatumInUTC  = regexp.MustCompile(`time\.Parse\((tuer\.DatumsformatISO|"2006-01-02"|time\.DateOnly),`)
 	musterZeilenKomm  = regexp.MustCompile(`(?m)^\s*//.*$`)
 	musterSQLKomm     = regexp.MustCompile(`(?m)^\s*--.*$`)
 )

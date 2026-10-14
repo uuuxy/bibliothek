@@ -57,7 +57,7 @@ func (s *Tueren) BackupStatusHandler() http.HandlerFunc {
 		}
 		last := newestBackupTime(dir)
 
-		tuer.RespondJSON(w, http.StatusOK, BackupStatusResponse{
+		tuer.AntworteJSON(w, http.StatusOK, BackupStatusResponse{
 			LastBackupAt:      last,
 			EncryptionKeySet:  keySet,
 			EncryptionKeyWeak: keyWeak,

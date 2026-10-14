@@ -36,7 +36,7 @@ func (s *Tueren) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidAbfr
 			return apierrors.Internal("Ersatzwert konnte nicht berechnet werden", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, service.ErsatzwertVorschlagAus(groessen, service.LadeErsatzwertPreisquelle(r.Context(), s.DB.Pool)))
+		tuer.AntworteJSON(w, http.StatusOK, service.ErsatzwertVorschlagAus(groessen, service.LadeErsatzwertPreisquelle(r.Context(), s.DB.Pool)))
 		return nil
 	})
 }

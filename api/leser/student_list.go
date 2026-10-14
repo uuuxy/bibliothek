@@ -43,7 +43,7 @@ func (s *Tueren) ListStudentsHandler(studentRepo repository.LeserAbfragen, lmfRe
 		if ohneTreffer {
 			// Zu diesem Jahrgang gibt es keine Klasse. Eine leere Liste ist die richtige
 			// Antwort; ohne diesen Zweig stünde hier die ganze Kartei.
-			tuer.RespondJSON(w, http.StatusOK, []repository.LeserListenZeile{})
+			tuer.AntworteJSON(w, http.StatusOK, []repository.LeserListenZeile{})
 			return nil
 		}
 		// q sucht auf dem Server. Ohne das filterte die Schülerdatei im Browser über die
@@ -78,7 +78,7 @@ func (s *Tueren) ListStudentsHandler(studentRepo repository.LeserAbfragen, lmfRe
 			return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, students)
+		tuer.AntworteJSON(w, http.StatusOK, students)
 		return nil
 	})
 }

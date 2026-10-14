@@ -13,18 +13,18 @@ package main
 // ein Bedienfehler. Die Prüfung gehört an die Stelle, die weiß, dass hier eine Eingabe
 // ankommt.
 //
-// Regel: In jedem Struct, das ein Handler aus dem Request-Body liest (tuer.DecodeAndValidate
+// Regel: In jedem Struct, das ein Handler aus dem Request-Body liest (tuer.LeseAnfrage
 // oder json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf „id"/„ids" vom
 // Typ string, *string oder []string einen validate-Tag mit „uuid" — oder steht mit Grund
 // in uuidEingabenAusnahmen. Liest ein Handler direkt per json.NewDecoder, muss er außerdem
 // selbst prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
-// tuer.Validate.Struct. Dasselbe für `Query().Get("…id")` mit festem Namen.
+// tuer.Pruefer.Struct. Dasselbe für `Query().Get("…id")` mit festem Namen.
 //
 // uuid.Validate und ein uuid.Parse, dessen Ergebnis verworfen wird, zählen NICHT als
 // Prüfung und werden gemeldet (prueftLocker): Beide nehmen `urn:uuid:…` an, Postgres nicht.
 //
-// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/tuer/http_utils.go),
-// für Query-Parameter tuer.UUIDAusQuery, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
+// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/tuer/eingabe.go),
+// für Query-Parameter tuer.LeseUUIDParameter, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
 // keine UUID (Barcode, LUSD-ID), Eintrag in uuidEingabenAusnahmen mit der Spalte, die das
 // belegt.
 
@@ -632,7 +632,7 @@ func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
 	}
 	if len(maengel) > 0 {
 		t.Errorf("Kennung kommt ungeprüft herein und endet bei einem Nicht-UUID-Wert als 500 (22P02):\n  %s\n"+
-			"Fix: validate-Tag mit uuid_oder_leer bzw. tuer.UUIDAusQuery — oder Eintrag in uuidEingabenAusnahmen mit Grund.",
+			"Fix: validate-Tag mit uuid_oder_leer bzw. tuer.LeseUUIDParameter — oder Eintrag in uuidEingabenAusnahmen mit Grund.",
 			strings.Join(maengel, "\n  "))
 	}
 	for schluessel := range uuidEingabenAusnahmen {

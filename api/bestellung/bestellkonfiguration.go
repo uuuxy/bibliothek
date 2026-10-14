@@ -50,7 +50,7 @@ func (s *Tueren) BestellKonfigurationHandler(settingsRepo repository.Einstellung
 			return apierrors.Internal("Fehler beim Laden der Bestell-Konfiguration", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, BestellKonfiguration{
+		tuer.AntworteJSON(w, http.StatusOK, BestellKonfiguration{
 			PreiseErfassen:         settings.PreiseErfassen,
 			BestelllinkOhneAdresse: hauptlieferant && settings.AdresseFuerLinks() == "",
 		})

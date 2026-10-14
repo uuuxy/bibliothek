@@ -22,11 +22,11 @@ func (s *Tueren) ListVormerkungHandler(vormerkungRepo repository.VormerkungsAbfr
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
-		titelID, err := tuer.UUIDAusQuery(r, "titel_id")
+		titelID, err := tuer.LeseUUIDParameter(r, "titel_id")
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), nil)
 		}
-		schuelerID, err := tuer.UUIDAusQuery(r, "schueler_id")
+		schuelerID, err := tuer.LeseUUIDParameter(r, "schueler_id")
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), nil)
 		}
@@ -44,7 +44,7 @@ func (s *Tueren) ListVormerkungHandler(vormerkungRepo repository.VormerkungsAbfr
 			result = []repository.Vormerkung{}
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, result)
+		tuer.AntworteJSON(w, http.StatusOK, result)
 		return nil
 	})
 }
@@ -53,7 +53,7 @@ func (s *Tueren) ListVormerkungHandler(vormerkungRepo repository.VormerkungsAbfr
 func (s *Tueren) CreateVormerkungHandler(vormerkungRepo repository.VormerkungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req CreateVormerkungRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 
@@ -75,7 +75,7 @@ func (s *Tueren) CreateVormerkungHandler(vormerkungRepo repository.VormerkungsAb
 			return apierrors.Internal("Fehler beim Erstellen der Vormerkung", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusCreated, map[string]string{"id": id})
+		tuer.AntworteJSON(w, http.StatusCreated, map[string]string{"id": id})
 		return nil
 	})
 }

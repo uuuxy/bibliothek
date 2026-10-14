@@ -32,7 +32,7 @@ func (s *Tueren) ListStudentSchadensfaelleHandler(damageRepo repository.Schadens
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Schadensfälle", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{"data": faelle})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"data": faelle})
 		return nil
 	})
 }
@@ -62,7 +62,7 @@ func (s *Tueren) BezahltGebuehrHandler(auditRepo repository.ProtokollAbfragen) h
 		if err := auditRepo.VerbucheZahlung(r.Context(), r.PathValue("id"), claims.UserID); err != nil {
 			return erledigungsFehler(err, "Verbuchen")
 		}
-		tuer.RespondSuccess(w)
+		tuer.AntworteErfolg(w)
 		return nil
 	})
 }
@@ -78,7 +78,7 @@ func (s *Tueren) StornoGebuehrHandler(auditRepo repository.ProtokollAbfragen) ht
 		var req struct {
 			Grund string `json:"grund"`
 		}
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		grund := strings.TrimSpace(req.Grund)
@@ -88,7 +88,7 @@ func (s *Tueren) StornoGebuehrHandler(auditRepo repository.ProtokollAbfragen) ht
 		if err := auditRepo.StorniereForderung(r.Context(), r.PathValue("id"), claims.UserID, grund); err != nil {
 			return erledigungsFehler(err, "Stornieren")
 		}
-		tuer.RespondSuccess(w)
+		tuer.AntworteErfolg(w)
 		return nil
 	})
 }

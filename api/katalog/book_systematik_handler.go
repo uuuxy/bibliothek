@@ -45,7 +45,7 @@ func (s *Tueren) UpdateTitelSignaturHandler() http.HandlerFunc {
 		}
 
 		var req UpdateTitelSignaturRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		signatur := strings.TrimSpace(req.Signatur)
@@ -58,7 +58,7 @@ func (s *Tueren) UpdateTitelSignaturHandler() http.HandlerFunc {
 			return apierrors.Internal("Signatur konnte nicht gespeichert werden", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{
 			"id":       id,
 			"signatur": neueSignatur,
 		})
@@ -104,7 +104,7 @@ func (s *Tueren) UpdateTitelLernmittelHandler() http.HandlerFunc {
 		}
 
 		var req UpdateTitelLernmittelRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 
@@ -116,7 +116,7 @@ func (s *Tueren) UpdateTitelLernmittelHandler() http.HandlerFunc {
 			return apierrors.Internal("Lernmittel-Kennzeichen konnte nicht gespeichert werden", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"id":             id,
 			"ist_lernmittel": istLernmittel,
 		})

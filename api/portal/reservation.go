@@ -37,7 +37,7 @@ func (s *Tueren) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 // handleCreateKlassensatzReservierung prüft Titel und Bestand und legt die Reservierung an.
 func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *http.Request) {
 	var req KlassensatzReservierungRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 	if !validateKlassensatzRequest(w, &req) {
@@ -92,7 +92,7 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 	if !neu {
 		status = "bereits_vorhanden"
 	}
-	tuer.RespondJSON(w, http.StatusCreated, map[string]string{"id": newID, "status": status})
+	tuer.AntworteJSON(w, http.StatusCreated, map[string]string{"id": newID, "status": status})
 }
 
 // GetKlassensatzReservierungenHandler lists all pending class-set reservations for admins.
@@ -111,7 +111,7 @@ func (s *Tueren) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 			result = []repository.Reservierung{}
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, result)
+		tuer.AntworteJSON(w, http.StatusOK, result)
 	}
 }
 
@@ -126,7 +126,7 @@ func (s *Tueren) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]int{"anzahl": count})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]int{"anzahl": count})
 	}
 }
 
@@ -144,7 +144,7 @@ func (s *Tueren) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, offene)
+		tuer.AntworteJSON(w, http.StatusOK, offene)
 	}
 }
 
@@ -165,7 +165,7 @@ func (s *Tueren) MeineKlassensatzReservierungenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, meine)
+		tuer.AntworteJSON(w, http.StatusOK, meine)
 	}
 }
 
@@ -219,7 +219,7 @@ func (s *Tueren) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 			}
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{"mail": mailStatus})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"mail": mailStatus})
 	}
 }
 
@@ -232,7 +232,7 @@ func leseErledigtNotiz(w http.ResponseWriter, r *http.Request) (string, bool) {
 	var body struct {
 		Notiz string `json:"notiz"`
 	}
-	if !tuer.DecodeAndValidate(w, r, &body) {
+	if !tuer.LeseAnfrage(w, r, &body) {
 		return "", false
 	}
 	return kuerze(strings.TrimSpace(body.Notiz), 500), true

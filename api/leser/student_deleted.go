@@ -47,7 +47,7 @@ func (s *Tueren) GetDeletedStudentsHandler() http.HandlerFunc {
 			})
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, students)
+		tuer.AntworteJSON(w, http.StatusOK, students)
 	}
 }
 
@@ -100,7 +100,7 @@ func (s *Tueren) RestoreStudentHandler() http.HandlerFunc {
 			s.SchreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
 			"message": "Schüler erfolgreich wiederhergestellt",
 		})
@@ -176,7 +176,7 @@ func (s *Tueren) PurgeStudentHandler(auditRepo repository.ProtokollAbfragen) htt
 
 		s.SchreibeAdminProtokoll(ctx, claims.UserID, "PURGE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
 			"message": "Schüler endgültig und DSGVO-konform gelöscht",
 		})

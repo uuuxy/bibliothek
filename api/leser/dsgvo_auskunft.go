@@ -258,7 +258,7 @@ func (s *Tueren) DsgvoAuskunftHandler() http.HandlerFunc {
 		}
 		ctx := r.Context()
 
-		daten, err := s.sammleDsgvoDaten(ctx, id, s.BesitztRecht(r, dsgvoKontoRecht))
+		daten, err := s.sammleDsgvoDaten(ctx, id, s.HatRecht(r, dsgvoKontoRecht))
 		if err != nil {
 			return err
 		}
@@ -266,7 +266,7 @@ func (s *Tueren) DsgvoAuskunftHandler() http.HandlerFunc {
 		// Rechenschaftspflicht: Die Auskunftserteilung selbst wird protokolliert.
 		s.protokolliereDsgvoAuskunft(ctx, id)
 
-		tuer.RespondJSON(w, http.StatusOK, dsgvoAntwort(daten, time.Now()))
+		tuer.AntworteJSON(w, http.StatusOK, dsgvoAntwort(daten, time.Now()))
 		return nil
 	})
 }

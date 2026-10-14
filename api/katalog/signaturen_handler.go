@@ -56,7 +56,7 @@ func (s *Tueren) GetSignaturenHandler() http.HandlerFunc {
 			gruppen = append(gruppen, SignaturGruppe(z))
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, gruppen)
+		tuer.AntworteJSON(w, http.StatusOK, gruppen)
 		return nil
 	})
 }
@@ -124,7 +124,7 @@ func (s *Tueren) GetSignaturBuecherHandler() http.HandlerFunc {
 			buecher = buecher[:signaturBuecherLimit]
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, SignaturBuecherResponse{
+		tuer.AntworteJSON(w, http.StatusOK, SignaturBuecherResponse{
 			Signatur: signatur,
 			Buecher:  buecher,
 			Gesamt:   len(buecher),

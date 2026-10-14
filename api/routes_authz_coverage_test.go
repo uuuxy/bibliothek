@@ -12,7 +12,7 @@ import (
 // ungeschützte Endpunkte. Jede in router.go / routes_*.go registrierte HTTP-Route
 // MUSS eine der drei Bedingungen erfüllen:
 //
-//  1. einen Autorisierungs-Wrapper tragen (RequirePermission oder RequireAuthenticated),
+//  1. einen Autorisierungs-Wrapper tragen (RequirePermission oder VerlangeAnmeldung),
 //  2. an den inventur-invHandler delegieren (dessen Routen prüft TestPIIMatrixRechtStimmtMitCodeUeberein), ODER
 //  3. bewusst auf der öffentlichen Allowlist unten stehen.
 //
@@ -41,7 +41,7 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		"/api/auth/me":      "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/logout":  "Auth-Endpunkt",
 		// Sperre nach Inaktivität: Beide prüfen das Token selbst und wirken nur auf die
-		// Anmeldung, mit der die Anfrage kommt. Hinter RequireAuthenticated ginge Entsperren
+		// Anmeldung, mit der die Anfrage kommt. Hinter VerlangeAnmeldung ginge Entsperren
 		// nicht — die Tür lehnt eine gesperrte Anmeldung ab.
 		"/api/auth/sperren":    "Auth-Endpunkt (validiert das Token selbst, sperrt nur die eigene Anmeldung)",
 		"/api/auth/entsperren": "Auth-Endpunkt (validiert das Token selbst, prüft das Passwort; Rate-Limit-Middleware)",
@@ -78,11 +78,11 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 			pfad := methodenPraefix.ReplaceAllString(muster, "")
 
 			geschuetzt := strings.Contains(ausdruck, "RequirePermission(") ||
-				// RequireAuthenticated verlangt eine gültige Sitzung, aber kein Fachrecht —
+				// VerlangeAnmeldung verlangt eine gültige Sitzung, aber kein Fachrecht —
 				// die richtige Schwelle für Endpunkte, die JEDER angemeldete Client öffnet
 				// (heute nur der SSE-Stream /events). Bewusst hier und nicht auf der
 				// Public-Allowlist: Ohne Sitzung kommt niemand durch.
-				strings.Contains(ausdruck, "RequireAuthenticated(") ||
+				strings.Contains(ausdruck, "VerlangeAnmeldung(") ||
 				strings.Contains(ausdruck, "invHandler")
 			if geschuetzt {
 				continue
@@ -91,7 +91,7 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 				continue
 			}
 			t.Errorf("Route %q (in %s) hat KEINEN Autorisierungs-Wrapper und steht nicht auf der Public-Allowlist.\n"+
-				"→ Entweder mit RequirePermission(...) schützen (RequireAuthenticated(...), wenn jede Sitzung genügt), oder — falls bewusst öffentlich — "+
+				"→ Entweder mit RequirePermission(...) schützen (VerlangeAnmeldung(...), wenn jede Sitzung genügt), oder — falls bewusst öffentlich — "+
 				"mit Begründung in publicAllowlist (routes_authz_coverage_test.go) aufnehmen.", muster, datei)
 		}
 	}

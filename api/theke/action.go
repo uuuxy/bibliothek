@@ -173,7 +173,7 @@ func (s *Tueren) serveCachedActionResponse(w http.ResponseWriter, antwort *repos
 		log.Printf("idempotenz: beschädigte Antwort im Cache, wird neu berechnet: %v", uerr)
 		return false
 	}
-	tuer.RespondJSON(w, cachedStatus, cachedResp)
+	tuer.AntworteJSON(w, cachedStatus, cachedResp)
 	return true
 }
 
@@ -193,7 +193,7 @@ func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 	}
 
 	var req ActionRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
@@ -225,12 +225,12 @@ func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 		AktiverLeserID:       req.ActiveLeserID,
 		ChecklisteBestaetigt: req.ConfirmedChecklist,
 		BearbeiterID:         claims.UserID,
-		SperreUebergehen:     req.OverrideBlock && s.BesitztRecht(r, "edit_students"),
+		SperreUebergehen:     req.OverrideBlock && s.HatRecht(r, "edit_students"),
 	})
 
 	if err != nil {
 		// Vor dem Cachen kürzen — sonst läge der Freitext im Idempotenz-Cache.
-		err = ohneSperrgrund(err, s.BesitztRecht(r, "view_students"))
+		err = ohneSperrgrund(err, s.HatRecht(r, "view_students"))
 		status := mapServiceErrorToStatus(err)
 		cacheDaten := map[string]string{"error": err.Error()}
 		if merkmal := sperrMerkmal(err); merkmal != "" {
@@ -255,7 +255,7 @@ func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 		s.broadcastActionEvent(*resp)
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, resp)
+	tuer.AntworteJSON(w, http.StatusOK, resp)
 }
 
 func mapOmniboxResultToActionResponse(res *service.OmniboxErgebnis) *ActionResponse {

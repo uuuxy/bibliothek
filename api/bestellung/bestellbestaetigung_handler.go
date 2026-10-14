@@ -55,7 +55,7 @@ func (s *Tueren) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req BestaetigenRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 	if req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
@@ -97,7 +97,7 @@ func (s *Tueren) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, map[string]any{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 		"status":            "success",
 		"etiketten_groesse": req.EtikettenGroesse,
 	})

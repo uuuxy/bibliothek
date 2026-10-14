@@ -107,7 +107,7 @@ func (s *Tueren) OeffentlicheBestellungHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, ansicht)
+		tuer.AntworteJSON(w, http.StatusOK, ansicht)
 	}
 }
 
@@ -173,7 +173,7 @@ func (s *Tueren) OeffentlichBestaetigenHandler() http.HandlerFunc {
 		}
 
 		var req OeffentlichBestaetigenRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 		if req.EtikettenGroesse != "" && req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
@@ -195,7 +195,7 @@ func (s *Tueren) OeffentlichBestaetigenHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{"status": "success"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"status": "success"})
 	}
 }
 

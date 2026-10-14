@@ -64,7 +64,7 @@ func (s *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	}
 
 	var req MittelKorrekturRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 	if !mitteltopf.IstGueltig(req.Mittel) {
@@ -97,7 +97,7 @@ func (s *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 		s.auditiereMittelKorrektur(r, id, von, req.Mittel, grund)
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, map[string]any{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 		"id":        id,
 		"mittel":    req.Mittel,
 		"von":       von,

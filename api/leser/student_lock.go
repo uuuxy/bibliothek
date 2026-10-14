@@ -58,8 +58,8 @@ func (s *Tueren) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 		IsLocked bool   `json:"is_locked"`
 		Reason   string `json:"reason"`
 	}
-	if !tuer.DecodeAndValidate(w, r, &req) {
-		// DecodeAndValidate handles writing its own response for now
+	if !tuer.LeseAnfrage(w, r, &req) {
+		// LeseAnfrage handles writing its own response for now
 		return nil
 	}
 

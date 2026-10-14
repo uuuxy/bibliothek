@@ -40,11 +40,11 @@ func TestGesperrteSitzung_Antwortet423UndErreichtKeinenHandler(t *testing.T) {
 		"RequirePermission": func(s *Server, req *http.Request) (*httptest.ResponseRecorder, bool) {
 			return serve(s, "buch.loeschen", req)
 		},
-		"RequireAuthenticated": func(s *Server, req *http.Request) (*httptest.ResponseRecorder, bool) {
+		"VerlangeAnmeldung": func(s *Server, req *http.Request) (*httptest.ResponseRecorder, bool) {
 			reached := false
 			next := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { reached = true })
 			rr := httptest.NewRecorder()
-			s.RequireAuthenticated()(next).ServeHTTP(rr, req)
+			s.VerlangeAnmeldung()(next).ServeHTTP(rr, req)
 			return rr, reached
 		},
 	}

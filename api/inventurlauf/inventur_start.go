@@ -128,7 +128,7 @@ func filterLabel(req InventurStartRequest) string {
 func (s *Tueren) InventurStartHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventurStartRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 		if !validateInventurStart(w, req) {
@@ -161,7 +161,7 @@ func (s *Tueren) InventurStartHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, InventurStartResponse{
+		tuer.AntworteJSON(w, http.StatusOK, InventurStartResponse{
 			SessionID: session.ID,
 			Scope:     session.BereichArt,
 			Label:     session.Bezeichnung,

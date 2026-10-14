@@ -76,6 +76,6 @@ func (s *Tueren) PublicCatalogSearchHandler() http.HandlerFunc {
 			result = append(result, opacTitelAus(t))
 		}
 		w.Header().Set(opacTrefferKopf, strconv.Itoa(gesamt))
-		tuer.RespondJSON(w, http.StatusOK, result)
+		tuer.AntworteJSON(w, http.StatusOK, result)
 	}
 }

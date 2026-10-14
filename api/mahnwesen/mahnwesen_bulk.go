@@ -147,7 +147,7 @@ type BulkPrintRequest struct {
 func (s *Tueren) BulkPrintMahnungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req BulkPrintRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
@@ -161,7 +161,7 @@ func (s *Tueren) BulkPrintMahnungenHandler() http.HandlerFunc {
 			return
 		}
 
-		filename := fmt.Sprintf("mahnbriefe_%s.pdf", schulzeit.Jetzt().Format(tuer.DateFormatISO))
+		filename := fmt.Sprintf("mahnbriefe_%s.pdf", schulzeit.Jetzt().Format(tuer.DatumsformatISO))
 
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))

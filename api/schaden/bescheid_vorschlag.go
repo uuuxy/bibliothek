@@ -96,7 +96,7 @@ func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 	quelle := service.LadeErsatzwertPreisquelle(ctx, s.DB.Pool)
 
 	vorschlag := BescheidVorschlag{
-		FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(tuer.DateFormatISO),
+		FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(tuer.DatumsformatISO),
 		FehlendeAngaben: angaben.FehlendeAngaben(schule),
 		Positionen:      []BescheidVorschlagPosition{},
 		Ausleihen:       []BescheidVorschlagAusleihe{},
@@ -126,7 +126,7 @@ func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 		vorschlag.Ausleihen = append(vorschlag.Ausleihen, bescheidVorschlagAusAusleihe(a, quelle))
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, vorschlag)
+	tuer.AntworteJSON(w, http.StatusOK, vorschlag)
 	return nil
 }
 
@@ -168,11 +168,11 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ers
 		Betrag:      v.Betrag,
 		Herleitung:  service.ErsatzwertHerleitung(v),
 		Topf:        a.Topf,
-		FaelligSeit: a.FaelligSeit.In(schulzeit.Zone()).Format(tuer.DateFormatISO),
+		FaelligSeit: a.FaelligSeit.In(schulzeit.Zone()).Format(tuer.DatumsformatISO),
 		Mahnstufe:   a.Mahnstufe,
 	}
 	if a.LetztesMahndatum != nil {
-		antwort.LetztesMahndatum = a.LetztesMahndatum.In(schulzeit.Zone()).Format(tuer.DateFormatISO)
+		antwort.LetztesMahndatum = a.LetztesMahndatum.In(schulzeit.Zone()).Format(tuer.DatumsformatISO)
 	}
 	return antwort
 }

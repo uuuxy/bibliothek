@@ -67,7 +67,7 @@ func (s *Tueren) ZugangsbuchHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Zugangsbuch konnte nicht gelesen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, zugangsbuchAntwort(buch))
+		tuer.AntworteJSON(w, http.StatusOK, zugangsbuchAntwort(buch))
 		return nil
 	})
 }
@@ -101,7 +101,7 @@ func (s *Tueren) ZugangsbuchPDFHandler() http.HandlerFunc {
 		}
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="Zugangsbuch_%s_bis_%s.pdf"`,
-			buch.Von.Format(tuer.DateFormatISO), buch.Bis.Format(tuer.DateFormatISO)))
+			buch.Von.Format(tuer.DatumsformatISO), buch.Bis.Format(tuer.DatumsformatISO)))
 		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(blatt)))
 		if _, err := w.Write(blatt); err != nil {
 			return nil // Verbindung weg — der Client hat abgebrochen.

@@ -65,7 +65,7 @@ func (s *Tueren) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"link":        bestelllink.Adresse(basis, token),
 			"gueltig_bis": gueltigBis,
 		})

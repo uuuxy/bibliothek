@@ -14,5 +14,5 @@ import (
 func SetzeGenauEinRecht(t *testing.T, pool *pgxpool.Pool, recht string) {
 	t.Helper()
 	testdaten.SetzeGenauEinRecht(t, pool, recht)
-	tuer.InvalidatePermissionCache()
+	tuer.LeereRechteCache()
 }

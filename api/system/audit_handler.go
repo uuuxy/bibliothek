@@ -64,6 +64,6 @@ func (s *Tueren) GetAuditLogsHandler() http.HandlerFunc {
 			logs = append(logs, AuditLogEntry(z))
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, logs)
+		tuer.AntworteJSON(w, http.StatusOK, logs)
 	}
 }

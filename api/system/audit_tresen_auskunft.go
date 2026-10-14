@@ -146,7 +146,7 @@ func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 		return
 	}
 
-	tuer.RespondJSON(w, http.StatusOK, TresenAuskunft{
+	tuer.AntworteJSON(w, http.StatusOK, TresenAuskunft{
 		Barcode: barcode, Exemplare: exemplare, Ereignisse: ereignisse,
 	})
 }

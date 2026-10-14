@@ -41,6 +41,6 @@ func (s *Tueren) GetBestelldetailHandler(repo repository.BestelldetailAbfragen) 
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, detail)
+		tuer.AntworteJSON(w, http.StatusOK, detail)
 	}
 }

@@ -61,7 +61,7 @@ func (s *Tueren) GetMailSettingsHandler(mailRepo *repository.MailEinstellungsAbf
 			HasPassword: len(config.SMTPPasswortVerschluesselt) > 0,
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, resp)
+		tuer.AntworteJSON(w, http.StatusOK, resp)
 	}
 }
 
@@ -69,7 +69,7 @@ func (s *Tueren) GetMailSettingsHandler(mailRepo *repository.MailEinstellungsAbf
 func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailEinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req MailSettingsRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
@@ -109,7 +109,7 @@ func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailEinstellungs
 			}
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 
@@ -119,7 +119,7 @@ func (s *Tueren) PostTestMailSettingsHandler() http.HandlerFunc {
 		var req struct {
 			To string `json:"to"`
 		}
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
@@ -149,7 +149,7 @@ func (s *Tueren) PostTestMailSettingsHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 

@@ -99,7 +99,7 @@ func (s *Tueren) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 		audit.Sent, audit.Skipped, audit.Failed, audit.Abgebrochen = erg.Sent, erg.Skipped, erg.Failed, erg.Abgebrochen
 		s.logKlassenVersandAudit(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		tuer.RespondJSON(w, http.StatusOK, bulkOverdueResponse{
+		tuer.AntworteJSON(w, http.StatusOK, bulkOverdueResponse{
 			SentCount:    erg.Sent,
 			SkippedCount: erg.Skipped,
 			FailedCount:  erg.Failed,
@@ -279,13 +279,13 @@ func baueAbgaengerMailRequest(kl abgaengerKlasse, anhaenge []mailservice.MailAtt
 			"in der Bibliothek abgezeichnet.\n\n"+
 			"Mit freundlichen Grüßen,\nSchulbibliothek",
 		kl.Klasse,
-		schulzeit.Jetzt().Format(tuer.DateFormatDE),
+		schulzeit.Jetzt().Format(tuer.DatumsformatDE),
 		len(anhaenge),
 	)
 
 	return mailservice.MailRequest{
 		To:          kl.Empfaenger,
-		Subject:     fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DateFormatDE)),
+		Subject:     fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
 		Body:        body,
 		Attachments: anhaenge,
 	}

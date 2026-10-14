@@ -284,7 +284,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 		// (Audit-Befund vom 01.08.2026, belegt in middleware_frist_test.go). An dieser
 		// Stelle ist die Route bereits getroffen und PathValue gefüllt.
 		return ValidateUUIDParamsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			s.PruefeBerechtigung(w, r, next, permission)
+			s.PruefeRecht(w, r, next, permission)
 		}))
 	}
 }

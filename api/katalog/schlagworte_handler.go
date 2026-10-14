@@ -49,7 +49,7 @@ func (s *Tueren) GetSchlagwortVorschlaegeHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, vorschlaege)
+		tuer.AntworteJSON(w, http.StatusOK, vorschlaege)
 		return nil
 	})
 }
@@ -76,7 +76,7 @@ func (s *Tueren) GetTitelSchlagworteHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortFehler(err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, TitelSchlagworte{ID: id, Schlagworte: woerter})
+		tuer.AntworteJSON(w, http.StatusOK, TitelSchlagworte{ID: id, Schlagworte: woerter})
 		return nil
 	})
 }
@@ -102,7 +102,7 @@ func (s *Tueren) PutTitelSchlagworteHandler() http.HandlerFunc {
 			return apierrors.BadRequest("ungültige Titel-ID", errors.New("keine UUID"))
 		}
 		var req TitelSchlagworteRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		if req.Schlagworte == nil {
@@ -113,7 +113,7 @@ func (s *Tueren) PutTitelSchlagworteHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortFehler(err)
 		}
-		tuer.RespondJSON(w, http.StatusOK, TitelSchlagworte{ID: id, Schlagworte: woerter})
+		tuer.AntworteJSON(w, http.StatusOK, TitelSchlagworte{ID: id, Schlagworte: woerter})
 		return nil
 	})
 }

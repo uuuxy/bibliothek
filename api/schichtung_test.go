@@ -90,7 +90,6 @@ var dateienOhneTuer = []string{
 	"theke/action_types.go",
 	"theke/schueler_kiosk.go",
 	"theke/theke.go",
-	"tuer/constants.go",
 	"tuer/tuer.go",
 	"tuer/verwaltung_protokoll.go",
 }

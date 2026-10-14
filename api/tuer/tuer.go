@@ -26,9 +26,15 @@ type Basis struct {
 }
 
 // Jetzt ist die Uhr des Servers: in Tests setzbar (Basis.Uhr), sonst die Schulzeit.
-func (s *Basis) Jetzt() time.Time {
-	if s.Uhr != nil {
-		return s.Uhr()
+func (b *Basis) Jetzt() time.Time {
+	if b.Uhr != nil {
+		return b.Uhr()
 	}
 	return schulzeit.Jetzt()
 }
+
+// Datumsformate (Go-Referenzzeit "Mon Jan 2 15:04:05 MST 2006").
+const (
+	DatumsformatDE  = "02.01.2006" // TT.MM.JJJJ
+	DatumsformatISO = "2006-01-02" // JJJJ-MM-TT
+)

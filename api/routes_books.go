@@ -87,8 +87,8 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 	// ── LMF-PLAN (Rückgabe-/Ausgabetermine je Klasse, Migration 096) ──
 	// Lesen: jede Sitzung (das Kollegium liest den Plan im Portal; Stufe 0 — Daten und
 	// Klassennamen). Schreiben: edit_books wie die übrige Lernmittel-Pflege.
-	mux.Handle("GET /api/lmf-termine", s.RequireAuthenticated()(s.lernmittel().GetLmfTermineHandler()))
-	mux.Handle("GET /api/lmf-termine/pdf", s.RequireAuthenticated()(s.lernmittel().GetLmfPlanPDFHandler(false)))
+	mux.Handle("GET /api/lmf-termine", s.VerlangeAnmeldung()(s.lernmittel().GetLmfTermineHandler()))
+	mux.Handle("GET /api/lmf-termine/pdf", s.VerlangeAnmeldung()(s.lernmittel().GetLmfPlanPDFHandler(false)))
 	// Der Entwurf als PDF — zur Abnahme durch die Schulleitung, bevor er veröffentlicht
 	// ist (Migration 100). Nur der Planer; das Kollegium sieht Entwürfe nirgends.
 	mux.Handle("GET /api/lmf-termine/entwurf/pdf", s.RequirePermission("edit_books")(s.lernmittel().GetLmfPlanPDFHandler(true)))

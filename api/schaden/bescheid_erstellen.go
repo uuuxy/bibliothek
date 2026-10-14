@@ -58,7 +58,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 	if id == "" {
 		return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 	}
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return nil
 	}
 	frist, err := pruefeBescheidAnfrage(req)
@@ -119,7 +119,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 		"positionen":     bescheid.AnzahlPositionen,
 	}, clientip.AusAnfrage(r))
 
-	tuer.RespondJSON(w, http.StatusCreated, bescheid)
+	tuer.AntworteJSON(w, http.StatusCreated, bescheid)
 	return nil
 }
 

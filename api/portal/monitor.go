@@ -27,6 +27,6 @@ func (s *Tueren) GetMonitorSlidesHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("internal server error"))
 			return
 		}
-		tuer.RespondJSON(w, http.StatusOK, slides)
+		tuer.AntworteJSON(w, http.StatusOK, slides)
 	}
 }

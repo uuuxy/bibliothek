@@ -92,7 +92,7 @@ func (s *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 	s.ProtokolliereVerwaltung(ctx, auditBestellmailErneutGesendet, map[string]any{"bestellung_id": id})
 
 	status, meldung := bestellVersandMeldung(auftrag.LieferantName, daten.IstHauptlieferant && !mitLink)
-	tuer.RespondJSON(w, http.StatusOK, map[string]any{"status": status, "message": meldung})
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{"status": status, "message": meldung})
 }
 
 // auditBestellmailVermerkEntfernt ist die Aktion im Protokoll.
@@ -137,7 +137,7 @@ func (s *Tueren) NimmBestellmailVermerkHandler() http.HandlerFunc {
 		}
 
 		s.ProtokolliereVerwaltung(ctx, auditBestellmailVermerkEntfernt, map[string]any{"bestellung_id": id})
-		tuer.RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
 			"message": "Der Hinweis ist entfernt. Die Bestellung wurde nicht noch einmal gesendet.",
 		})

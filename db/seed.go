@@ -54,7 +54,7 @@ type RechteEintrag struct {
 // selbst — so sah das Kollegium wochenlang nur einen Teil seiner Menüpunkte.
 //
 // Die Rolle eines Benutzers steht in benutzer.rolle (ENUM, kleingeschrieben); die
-// Middleware verbindet beide Vokabulare per UPPER() (permission_middleware.go).
+// Middleware verbindet beide Vokabulare per UPPER() (repository/rechte.go).
 // role_permissions bildet also nur ab, was eine ROLLE darf — nicht, wer sie hat.
 var RechteVorgabe = []RechteEintrag{
 	// Admin defaults

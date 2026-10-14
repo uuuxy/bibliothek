@@ -28,7 +28,7 @@ func (s *Tueren) NextBarcodeHandler() http.HandlerFunc {
 			return
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, map[string]string{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{
 			"next_barcode": nextBarcode,
 		})
 	}

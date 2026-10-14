@@ -44,7 +44,7 @@ func (s *Tueren) GetPermissionsHandler() http.HandlerFunc {
 			settings = append(settings, PermissionSetting{Role: strings.ToLower(re.Rolle), Permission: re.Recht, Allowed: re.Erlaubt})
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, settings)
+		tuer.AntworteJSON(w, http.StatusOK, settings)
 	}
 }
 
@@ -69,7 +69,7 @@ type UpdatePermissionsRequest struct {
 func (s *Tueren) UpdatePermissionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req UpdatePermissionsRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
@@ -112,7 +112,7 @@ func (s *Tueren) UpdatePermissionsHandler() http.HandlerFunc {
 		})
 
 		// Invalidate permission cache so permission changes take effect immediately
-		tuer.InvalidatePermissionCache()
+		tuer.LeereRechteCache()
 
 		w.Header().Set("Content-Type", "application/json")
 		httpresp.Schreibe(w, []byte(`{"status":"success"}`))

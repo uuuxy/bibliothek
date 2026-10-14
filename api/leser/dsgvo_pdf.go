@@ -32,7 +32,7 @@ func (s *Tueren) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 		}
 		ctx := r.Context()
 
-		daten, err := s.sammleDsgvoDaten(ctx, id, s.BesitztRecht(r, dsgvoKontoRecht))
+		daten, err := s.sammleDsgvoDaten(ctx, id, s.HatRecht(r, dsgvoKontoRecht))
 		if err != nil {
 			return err
 		}

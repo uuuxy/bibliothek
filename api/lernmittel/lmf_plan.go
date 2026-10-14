@@ -173,7 +173,7 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 		}
 		service.BelegeVermerkNurRueckgabeVor(antwort.Vorschlag.Zeilen, nurRueckgabe)
 	}
-	tuer.RespondJSON(w, http.StatusOK, antwort)
+	tuer.AntworteJSON(w, http.StatusOK, antwort)
 	return nil
 }
 
@@ -242,7 +242,7 @@ func pruefeLmfPlan(art string, req lmfPlanRequest) (service.LMFPlanEntwurf, erro
 	}
 	for i, f := range req.FreieTage {
 		datum := strings.TrimSpace(f.Datum)
-		if _, err := time.Parse(tuer.DateFormatISO, datum); err != nil {
+		if _, err := time.Parse(tuer.DatumsformatISO, datum); err != nil {
 			return e, fmt.Errorf("freier Tag %d: Datum muss als JJJJ-MM-TT angegeben sein", i+1)
 		}
 		e.Plan.FreieTage = append(e.Plan.FreieTage, repository.LMFFreierTag{Datum: datum, Grund: strings.TrimSpace(f.Grund)})
@@ -305,7 +305,7 @@ func pruefeLmfPlanZeile(nr int, z lmfPlanRequestZeile) (repository.LMFPlanZeile,
 func pruefeLmfAnker(p *repository.LMFPlan, req lmfPlanRequest) error {
 	if p.Art == repository.LMFTerminRueckgabe {
 		p.LetzterTag, p.LetzteStunde = strings.TrimSpace(req.LetzterTag), req.LetzteStunde
-		if _, err := time.Parse(tuer.DateFormatISO, p.LetzterTag); err != nil {
+		if _, err := time.Parse(tuer.DatumsformatISO, p.LetzterTag); err != nil {
 			return errors.New("letzter_tag muss als JJJJ-MM-TT angegeben sein")
 		}
 		if p.LetzteStunde < 1 || p.LetzteStunde > p.StundenJeTag {
@@ -315,7 +315,7 @@ func pruefeLmfAnker(p *repository.LMFPlan, req lmfPlanRequest) error {
 		return nil
 	}
 	p.ErsterTag, p.Startstunde = strings.TrimSpace(req.ErsterTag), req.Startstunde
-	if _, err := time.Parse(tuer.DateFormatISO, p.ErsterTag); err != nil {
+	if _, err := time.Parse(tuer.DatumsformatISO, p.ErsterTag); err != nil {
 		return errors.New("erster_tag muss als JJJJ-MM-TT angegeben sein")
 	}
 	if p.Startstunde < 1 || p.Startstunde > p.StundenJeTag {
@@ -342,7 +342,7 @@ func (s *Tueren) PutLmfPlanHandler() http.HandlerFunc {
 		if !antwort.Vorschau {
 			s.meldeLmfPlanGeaendert()
 		}
-		tuer.RespondJSON(w, http.StatusOK, antwort)
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }
@@ -356,7 +356,7 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 		return keine, false, apierrors.BadRequest(err.Error(), err)
 	}
 	var req lmfPlanRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return keine, false, nil
 	}
 	e, err := pruefeLmfPlan(art, req)
@@ -414,7 +414,7 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 func lmfPlanAusfaelle(ausfaelle []lmfplan.Ausfall) []LmfPlanAusfall {
 	aus := make([]LmfPlanAusfall, 0, len(ausfaelle))
 	for _, a := range ausfaelle {
-		aus = append(aus, LmfPlanAusfall{Datum: a.Datum.Format(tuer.DateFormatISO), Grund: a.Grund})
+		aus = append(aus, LmfPlanAusfall{Datum: a.Datum.Format(tuer.DatumsformatISO), Grund: a.Grund})
 	}
 	return aus
 }
@@ -423,7 +423,7 @@ func lmfPlanAusfaelle(ausfaelle []lmfplan.Ausfall) []LmfPlanAusfall {
 func lmfPlanVorschauAntwort(e service.LMFPlanEntwurf, plaetze []lmfplan.Platz, ausfaelle []LmfPlanAusfall) LmfPlanSpeicherAntwort {
 	for i := range e.Zeilen {
 		e.Zeilen[i].Position = i + 1
-		e.Zeilen[i].Datum = plaetze[i].Datum.Format(tuer.DateFormatISO)
+		e.Zeilen[i].Datum = plaetze[i].Datum.Format(tuer.DatumsformatISO)
 		e.Zeilen[i].Stunde = plaetze[i].Stunde
 	}
 	return LmfPlanSpeicherAntwort{Vorschau: true, Ausfaelle: ausfaelle,
@@ -444,7 +444,7 @@ func (s *Tueren) DeleteLmfPlanHandler() http.HandlerFunc {
 			return err
 		}
 		s.meldeLmfPlanGeaendert()
-		tuer.RespondJSON(w, http.StatusOK, map[string]int64{"fristen_angepasst": angepasst})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]int64{"fristen_angepasst": angepasst})
 		return nil
 	})
 }

@@ -73,6 +73,6 @@ func (s *Tueren) istAngemeldet(r *http.Request) bool {
 	if s.Auth == nil {
 		return false
 	}
-	_, _, err := s.ClaimsAusRequest(r)
+	_, _, err := s.PruefeSitzung(r)
 	return err == nil
 }

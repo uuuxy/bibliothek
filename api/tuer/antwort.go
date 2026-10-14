@@ -1,5 +1,24 @@
 package tuer
 
+import (
+	"net/http"
+
+	"bibliothek/pkg/httpresp"
+)
+
+// AntworteJSON encodes the payload as JSON and sends it with the given HTTP status code.
+// It sets the Content-Type header to application/json.
+func AntworteJSON(w http.ResponseWriter, status int, antwort any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	httpresp.SchreibeJSON(w, antwort)
+}
+
+// AntworteErfolg is a convenience function that sends a {"status": "success"} JSON response.
+func AntworteErfolg(w http.ResponseWriter) {
+	AntworteJSON(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
 // Mehrfach genutzte String-Literale, zentral definiert (SonarQube go:S1192).
 
 // HTTP-Header-Namen.
@@ -14,12 +33,6 @@ const (
 const (
 	ContentTypeJSON = "application/json"
 	ContentTypePDF  = "application/pdf"
-)
-
-// Datumsformate (Go-Referenzzeit "Mon Jan 2 15:04:05 MST 2006").
-const (
-	DateFormatDE  = "02.01.2006" // TT.MM.JJJJ
-	DateFormatISO = "2006-01-02" // JJJJ-MM-TT
 )
 
 // Fehlermeldungen, die mehrere Handler wörtlich gleich ausgeben.

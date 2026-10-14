@@ -123,7 +123,7 @@ func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
 	}
 	var req NachbuchenRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return nil
 	}
 	if len(req.Eintraege) > nachbuchenHoechstens {
@@ -146,7 +146,7 @@ func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 	// Dienst, und eine zweite Liste hier wäre die zweite Wahrheitsquelle — sie stimmte
 	// genau bis zur nächsten Meldung, die jemand hinzufügt.
 	offenVorher, zaehlbar := s.zaehleMeldungen(ctx)
-	absender := nachbuchAbsender{staffID: claims.UserID, uhrVersatz: versatz, darfSperrgrundSehen: s.BesitztRecht(r, "view_students")}
+	absender := nachbuchAbsender{staffID: claims.UserID, uhrVersatz: versatz, darfSperrgrundSehen: s.HatRecht(r, "view_students")}
 	for _, e := range req.Eintraege {
 		antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, absender))
 	}
@@ -155,7 +155,7 @@ func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 			s.meldeMeldungsstand()
 		}
 	}
-	tuer.RespondJSON(w, http.StatusOK, antwort)
+	tuer.AntworteJSON(w, http.StatusOK, antwort)
 	return nil
 }
 

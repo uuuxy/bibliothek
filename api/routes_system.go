@@ -22,7 +22,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	// Sitzungs-Fristen (Theke leeren, Sperrbildschirm) braucht JEDER angemeldete Client —
 	// auch Helfer und Kollegium, die /api/einstellungen nicht lesen dürfen. Nur die zwei
 	// Zahlen, keine Schul- oder Betriebsdaten.
-	mux.Handle("GET /api/einstellungen/sitzung", s.RequireAuthenticated()(s.system().GetSitzungsEinstellungenHandler(settingsRepo)))
+	mux.Handle("GET /api/einstellungen/sitzung", s.VerlangeAnmeldung()(s.system().GetSitzungsEinstellungenHandler(settingsRepo)))
 
 	// Ausweis-Design (zentral, für alle vernetzten Arbeitsplätze). Lesen breit (jeder,
 	// der Ausweise druckt), Speichern nur administrativ.
@@ -121,7 +121,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	// beide Male musste er umgehängt werden, sobald eine Rolle ohne dieses Recht dazukam
 	// (Helfer, dann Kollegium), sonst lief sie in eine 403-Reconnect-Schleife. Der Stream
 	// trägt nur operative Aktions-Events (Typ, IDs, Buchtitel, Zeitstempel) — keine
-	// Schüler-PII. Siehe RequireAuthenticated in permission_middleware.go.
+	// Schüler-PII. Siehe VerlangeAnmeldung in api/tuer/sitzung.go.
 	sseHandler := s.Broker.Handler()
-	mux.Handle("GET /events", s.RequireAuthenticated()(sseHandler))
+	mux.Handle("GET /events", s.VerlangeAnmeldung()(sseHandler))
 }

@@ -182,7 +182,7 @@ func (s *Tueren) BetriebsbereitschaftHandler(
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		befunde := bereitschaft.Pruefe(s.sammleLage(r.Context(), settingsRepo, mailRepo, zustandRepo))
-		tuer.RespondJSON(w, http.StatusOK, BetriebsbereitschaftResponse{
+		tuer.AntworteJSON(w, http.StatusOK, BetriebsbereitschaftResponse{
 			Gesamt:  bereitschaft.Gesamt(befunde),
 			Befunde: befunde,
 		})

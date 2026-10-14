@@ -54,7 +54,7 @@ func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	}
 
 	var req UpdateStatusRequest
-	if !tuer.DecodeAndValidate(w, r, &req) {
+	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
@@ -111,5 +111,5 @@ func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	if imBestand, bestandErr := bookRepo.IstExemplarImBestand(ctx, id); bestandErr == nil {
 		antwort["im_bestand"] = imBestand
 	}
-	tuer.RespondJSON(w, http.StatusOK, antwort)
+	tuer.AntworteJSON(w, http.StatusOK, antwort)
 }

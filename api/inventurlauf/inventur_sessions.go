@@ -71,7 +71,7 @@ func (s *Tueren) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
 				Verworfen:       sessions[i].Verworfen,
 			})
 		}
-		tuer.RespondJSON(w, http.StatusOK, out)
+		tuer.AntworteJSON(w, http.StatusOK, out)
 	}
 }
 
@@ -112,7 +112,7 @@ func (s *Tueren) ListInventurSessionsHandler() http.HandlerFunc {
 				Erwartet:    erwartet,
 			})
 		}
-		tuer.RespondJSON(w, http.StatusOK, out)
+		tuer.AntworteJSON(w, http.StatusOK, out)
 	}
 }
 
@@ -136,7 +136,7 @@ type InventurAbortRequest struct {
 func (s *Tueren) InventurAbortHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventurAbortRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
+		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 		if req.SessionID == "" {
@@ -154,6 +154,6 @@ func (s *Tueren) InventurAbortHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.RespondSuccess(w)
+		tuer.AntworteErfolg(w)
 	}
 }
