@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
@@ -15,13 +16,13 @@ import (
 // zuvor in die Schul-Zeitzone umgerechnet.
 //
 // Die Umrechnung ist der Kern: Date() liefert den Kalendertag in der Location des
-// jeweiligen Zeitpunkts. calculateDueDate rechnet bewusst in schoolLocation(), die
+// jeweiligen Zeitpunkts. calculateDueDate rechnet bewusst in schulzeit.Zone(), die
 // Erwartungswerte der Tests entstehen aber aus time.Now() in der Zeitzone des
 // Rechners. Auf einem UTC-Server (CI) sind das ab 22:00 UTC zwei verschiedene
 // Kalendertage — derselbe Zeitpunkt, aber 22:09 UTC = 00:09 des Folgetags in Berlin.
 // Ohne Normalisierung waren diese Tests jede Nacht zwei Stunden lang rot.
 func sameDay(a, b time.Time) bool {
-	loc := schoolLocation()
+	loc := schulzeit.Zone()
 	ay, am, ad := a.In(loc).Date()
 	by, bm, bd := b.In(loc).Date()
 	return ay == by && am == bm && ad == bd
@@ -64,19 +65,19 @@ func TestParseGrade(t *testing.T) {
 // vom Kalender ab — Fristen, die auf Wochenende, Feiertag oder Ferien fallen, rücken auf den
 // nächsten Schultag (tagesfrist_test.go).
 func TestCalculateDueDate_RegularBook(t *testing.T) {
-	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schoolLocation())
+	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
 	got := calculateDueDate(jetzt, DueDateOptions{IstLernmittel: false, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
-	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schoolLocation())
+	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schulzeit.Zone())
 	if !got.Equal(want) {
 		t.Errorf("reguläres Buch: got %v, want %v", got, want)
 	}
 }
 
 func TestCalculateDueDate_Media(t *testing.T) {
-	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schoolLocation())
+	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
 	for _, mt := range []string{"CD", "DVD", "Audio-CD", "dvd"} {
 		got := calculateDueDate(jetzt, DueDateOptions{IstLernmittel: false, Medientyp: mt, LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
-		want := time.Date(2026, time.September, 8, 23, 59, 59, 0, schoolLocation())
+		want := time.Date(2026, time.September, 8, 23, 59, 59, 0, schulzeit.Zone())
 		if !got.Equal(want) {
 			t.Errorf("Medium %q: got %v, want %v", mt, got, want)
 		}
@@ -97,7 +98,7 @@ func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 		// Jahr: laufendes Schuljahr, ab August rollt es ins nächste Kalenderjahr.
 		// In Schul-Zeitzone rechnen, konsistent mit calculateDueDate (sonst flaky
 		// am Monatswechsel nahe Mitternacht).
-		now := time.Now().In(schoolLocation())
+		now := time.Now().In(schulzeit.Zone())
 		wantYear := now.Year()
 		if now.Month() >= time.August {
 			wantYear++
@@ -107,9 +108,9 @@ func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 		}
 
 		// Der Stichtag muss in der Schul-Zeitzone liegen, nicht in der Server-Zeitzone.
-		if got.Location().String() != schoolLocation().String() {
+		if got.Location().String() != schulzeit.Zone().String() {
 			t.Errorf("LMF %q: Stichtag soll in %s liegen, war in %s",
-				titel, schoolLocation(), got.Location())
+				titel, schulzeit.Zone(), got.Location())
 		}
 	}
 }
@@ -384,7 +385,7 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 		WillReturnError(errors.New("db down"))
 
 	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestCalculateDueDate_RegularBook).
-	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schoolLocation()) }
+	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone()) }
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
 	// Bewusst kein Fehler: bei DB-Ausfall greifen Notfall-Defaults (21 Tage),
@@ -392,7 +393,7 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DB-Fehler soll mit Notfall-Default abgefangen werden, bekam: %v", err)
 	}
-	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schoolLocation())
+	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schulzeit.Zone())
 	if !got.Equal(want) {
 		t.Errorf("Notfall-Default soll 21 Tage sein: got %v, want %v", got, want)
 	}
@@ -432,7 +433,7 @@ func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
 // „Frist am Tag des Ereignisses"); die Lage kommt hier aus dem Mock, am echten Postgres prüft
 // sie lmf_frist_termintag_pg_test.go.
 func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
-	termin := time.Date(2027, time.June, 29, 0, 0, 0, 0, schoolLocation())
+	termin := time.Date(2027, time.June, 29, 0, 0, 0, 0, schulzeit.Zone())
 	faelle := []struct {
 		name         string
 		heute        time.Time
@@ -442,19 +443,19 @@ func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSc
 		want         time.Time
 	}{
 		{"Tag davor: der Termin ist die Frist", termin.AddDate(0, 0, -1), &termin, false, "07-31",
-			time.Date(2027, time.June, 29, 23, 59, 59, 0, schoolLocation())},
+			time.Date(2027, time.June, 29, 23, 59, 59, 0, schulzeit.Zone())},
 		{"am Termintag: Stichtag des folgenden Schuljahres", termin, nil, true, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schoolLocation())},
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
 		{"Tag danach: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, 1), nil, true, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schoolLocation())},
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
 		{"Tag danach, Stichtag im Herbst: der des folgenden Schuljahres", termin.AddDate(0, 0, 1), nil, true, "09-30",
-			time.Date(2027, time.September, 30, 23, 59, 59, 0, schoolLocation())},
+			time.Date(2027, time.September, 30, 23, 59, 59, 0, schulzeit.Zone())},
 		{"Nachzügler-Termin steht noch an, der erste ist vorbei: trotzdem das folgende Schuljahr",
 			termin, func() *time.Time { z := termin.AddDate(0, 0, 6); return &z }(), true, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schoolLocation())},
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
 		{"neues Schuljahr, kein Termin mehr: Stichtag des laufenden Schuljahres",
-			time.Date(2027, time.September, 6, 10, 0, 0, 0, schoolLocation()), nil, false, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schoolLocation())},
+			time.Date(2027, time.September, 6, 10, 0, 0, 0, schulzeit.Zone()), nil, false, "07-31",
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
@@ -472,7 +473,7 @@ func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSc
 				t.Fatalf("unerwarteter Fehler: %v", err)
 			}
 			if !got.Equal(fall.want) {
-				t.Errorf("Frist %v, erwartet %v", got.In(schoolLocation()), fall.want)
+				t.Errorf("Frist %v, erwartet %v", got.In(schulzeit.Zone()), fall.want)
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("unerfüllte Erwartungen: %v", err)

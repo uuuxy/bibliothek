@@ -101,7 +101,7 @@ func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LMFAbfragen,
 	stichtag := repository.LMFStichtagImSchuljahr(altTag, einstellungen.LMFStichtag)
 	von, bis := schuljahrGrenzen(altTag)
 	return repo.SetzeLernmittelFristFuerKlassen(ctx, ex, verlierer,
-		TagesEndeInSchulzeitzone(stichtag), von, bis, &altTag)
+		schulzeit.TagesEnde(stichtag), von, bis, &altTag)
 }
 
 // setzeLmfFristenAufTermin setzt die Fristen der Klassen eines Rückgabe-Termins auf dessen Tag.
@@ -115,7 +115,7 @@ func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LMFAbfragen,
 	}
 	von, bis := schuljahrGrenzen(neuTag)
 	return repo.SetzeLernmittelFristFuerKlassen(ctx, ex, klassen,
-		TagesEndeInSchulzeitzone(neuTag), von, bis, nil)
+		schulzeit.TagesEnde(neuTag), von, bis, nil)
 }
 
 // schuljahrGrenzen liefert [1. August des Schuljahres, 1. August des nächsten).

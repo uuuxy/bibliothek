@@ -189,7 +189,7 @@ func TestHandleBookReturn(t *testing.T) {
 
 	claims := &auth.Claims{UserID: staffID, Rolle: auth.RoleMitarbeiter}
 
-	res, err := omniboxSvc.ProcessQuery(context.Background(), service.OmniboxQuery{Query: barcode, StaffID: claims.UserID, StaffRole: string(claims.Rolle)})
+	res, err := omniboxSvc.ProcessQuery(context.Background(), service.OmniboxQuery{Query: barcode, StaffID: claims.UserID})
 	var resp ActionResponse
 	if res != nil {
 		resp = *mapOmniboxResultToActionResponse(res)

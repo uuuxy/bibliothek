@@ -10,8 +10,8 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
-	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
+	"bibliothek/pkg/schulzeit"
 )
 
 // TestGlobalExtendLMF_SchreibvariantenRobust sichert die zweite Hälfte von Bug #5 ab:
@@ -48,7 +48,7 @@ func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
 
 	// Berliner Tagesende zum Datum (Sommer/CEST = 21:59:59 UTC), wie der Handler es
 	// seit dem Zeit-Sweep normalisiert — nicht mehr roh 23:59:59 UTC.
-	neu := service.TagesEndeInSchulzeitzone(time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC))
+	neu := schulzeit.TagesEnde(time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC))
 	for _, tc := range []struct {
 		name       string
 		id         string

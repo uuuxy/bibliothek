@@ -82,7 +82,6 @@ type OmniboxQuery struct {
 	ActiveLeserID      *string
 	ConfirmedChecklist bool
 	StaffID            string
-	StaffRole          string
 	OverrideBlock      bool
 }
 

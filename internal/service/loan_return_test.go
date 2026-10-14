@@ -6,7 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -186,7 +188,7 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 		// Donnerstag vor den Herbstferien (05.10.–17.10.2026): plus drei Tage ist Sonntag, der
 		// nächste Schultag der Montag nach den Ferien.
-		jetzt: func() time.Time { return time.Date(2026, time.October, 1, 10, 0, 0, 0, schoolLocation()) },
+		jetzt: func() time.Time { return time.Date(2026, time.October, 1, 10, 0, 0, 0, schulzeit.Zone()) },
 	}
 
 	mockPool.ExpectBegin()
@@ -208,7 +210,7 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 
 	// Status der Vormerkung auf 'abholbereit' setzen, bis Montag 19.10.2026 abends.
 	mockPool.ExpectExec("UPDATE vormerkungen SET status = 'abholbereit'").
-		WithArgs("c1", "v1", time.Date(2026, time.October, 19, 23, 59, 59, 0, schoolLocation())).
+		WithArgs("c1", "v1", time.Date(2026, time.October, 19, 23, 59, 59, 0, schulzeit.Zone())).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	mockPool.ExpectCommit()

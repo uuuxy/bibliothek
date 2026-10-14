@@ -39,10 +39,10 @@ func TestLmfFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testin
 		heute time.Time
 		want  time.Time
 	}{
-		{"Tag davor: der Termin ist die Frist", tag("2027-06-28"), TagesEndeInSchulzeitzone(tag("2027-06-29"))},
-		{"am Termintag: Stichtag des folgenden Schuljahres", tag("2027-06-29"), TagesEndeInSchulzeitzone(tag("2028-07-31"))},
-		{"Tag danach: Stichtag des folgenden Schuljahres", tag("2027-06-30"), TagesEndeInSchulzeitzone(tag("2028-07-31"))},
-		{"nächstes Schuljahr ohne neuen Plan: Stichtag des laufenden", tag("2027-09-06"), TagesEndeInSchulzeitzone(tag("2028-07-31"))},
+		{"Tag davor: der Termin ist die Frist", tag("2027-06-28"), schulzeit.TagesEnde(tag("2027-06-29"))},
+		{"am Termintag: Stichtag des folgenden Schuljahres", tag("2027-06-29"), schulzeit.TagesEnde(tag("2028-07-31"))},
+		{"Tag danach: Stichtag des folgenden Schuljahres", tag("2027-06-30"), schulzeit.TagesEnde(tag("2028-07-31"))},
+		{"nächstes Schuljahr ohne neuen Plan: Stichtag des laufenden", tag("2027-09-06"), schulzeit.TagesEnde(tag("2028-07-31"))},
 	}
 	// 9H1 steht zweimal im Plan (28.06. und, hinter dem Wochenende, 05.07.): Am ersten
 	// Termintag zählt nicht der Nachzügler-Termin, sondern das folgende Schuljahr.
@@ -50,7 +50,7 @@ func TestLmfFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testin
 		name  string
 		heute time.Time
 		want  time.Time
-	}{"Nachzügler-Termin steht noch an: trotzdem das folgende Schuljahr", tag("2027-06-28"), TagesEndeInSchulzeitzone(tag("2028-07-31"))})
+	}{"Nachzügler-Termin steht noch an: trotzdem das folgende Schuljahr", tag("2027-06-28"), schulzeit.TagesEnde(tag("2028-07-31"))})
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
 			svc.jetzt = func() time.Time { return fall.heute }
@@ -130,11 +130,11 @@ func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 		heute  time.Time
 		want   time.Time
 	}{
-		{"Tag vor dem Termin: der Termin zählt nicht, Stichtag plus zwei Jahre", "9H2", tag("2027-06-28"), TagesEndeInSchulzeitzone(tag("2029-07-31"))},
-		{"am Termintag: folgendes Schuljahr plus das verbleibende Jahr", "9H2", tag("2027-06-29"), TagesEndeInSchulzeitzone(tag("2029-07-31"))},
-		{"Tag danach: dasselbe", "9H2", tag("2027-06-30"), TagesEndeInSchulzeitzone(tag("2029-07-31"))},
-		{"Kind der 11: der letzte Jahrgang, ein Schuljahr wie bisher", "ET", tag("2027-06-28"), TagesEndeInSchulzeitzone(tag("2027-07-31"))},
-		{"Kind über der Spanne: ein Schuljahr", "12T", tag("2027-06-28"), TagesEndeInSchulzeitzone(tag("2027-07-31"))},
+		{"Tag vor dem Termin: der Termin zählt nicht, Stichtag plus zwei Jahre", "9H2", tag("2027-06-28"), schulzeit.TagesEnde(tag("2029-07-31"))},
+		{"am Termintag: folgendes Schuljahr plus das verbleibende Jahr", "9H2", tag("2027-06-29"), schulzeit.TagesEnde(tag("2029-07-31"))},
+		{"Tag danach: dasselbe", "9H2", tag("2027-06-30"), schulzeit.TagesEnde(tag("2029-07-31"))},
+		{"Kind der 11: der letzte Jahrgang, ein Schuljahr wie bisher", "ET", tag("2027-06-28"), schulzeit.TagesEnde(tag("2027-07-31"))},
+		{"Kind über der Spanne: ein Schuljahr", "12T", tag("2027-06-28"), schulzeit.TagesEnde(tag("2027-07-31"))},
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
@@ -162,7 +162,7 @@ func TestLmfFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
 
 	// Montag, der Tag vor dem Termin der 9H2.
 	heute := time.Date(2027, time.June, 28, 10, 0, 0, 0, schulzeit.Zone())
-	termin := TagesEndeInSchulzeitzone(time.Date(2027, time.June, 29, 10, 0, 0, 0, schulzeit.Zone()))
+	termin := schulzeit.TagesEnde(time.Date(2027, time.June, 29, 10, 0, 0, 0, schulzeit.Zone()))
 	svc := &defaultLoanService{pool: pool, jetzt: func() time.Time { return heute }}
 
 	ohneKaestchen := &repository.Exemplar{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", JahrgangBis: 11}

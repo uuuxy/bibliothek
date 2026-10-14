@@ -12,37 +12,6 @@ import (
 	"bibliothek/repository"
 )
 
-// schoolLocation liefert die feste Zeitzone der Schule (Europe/Berlin).
-// Fristen wie der LMF-Stichtag oder das Leseclub-Zieldatum sind Kalendertage
-// ("Ende des 31.07.") und müssen in der Schul-Zeitzone berechnet werden —
-// sonst hängt das tatsächliche Ablaufdatum davon ab, in welcher Zeitzone der
-// Server/Container läuft (im Docker-Image standardmäßig UTC). Fällt das Laden
-// fehl (fehlende tzdata), wird sicher auf UTC zurückgegriffen.
-// Seit 23.08.2026 liegt die Zeitzone selbst in pkg/schulzeit — einem Blatt-Paket ohne
-// Abhängigkeiten. Grund: Die gedruckten Dokumente (pdf/) brauchen dieselbe Zeitzone,
-// können aber unmöglich das ganze service-Paket samt pgx und repository importieren.
-// Diese Funktion bleibt als Name stehen, weil sie hier vierfach gerufen wird.
-func schoolLocation() *time.Location {
-	return schulzeit.Zone()
-}
-
-// TagesEndeInSchulzeitzone normalisiert einen Zeitpunkt auf das Ende seines Kalendertags
-// (23:59:59) in der Schul-Zeitzone (Europe/Berlin). Die Definition dahinter,
-// schulzeit.TagesEnde, ist die EINZIGE von "Ende des Tages" im System: JEDE Rückgabefrist
-// (reguläre Bücher, Medien, LMF-Stichtag, Geräte, Handapparat/Lehrer-Dauerleihe) läuft
-// darüber — seit 19.08.2026 auch die manuelle Frist-Überschreibung und die
-// LMF-Massenverlängerung im api-Paket, die zuvor roh 23:59:59 UTC setzten und damit
-// fristabhängig 1–2 h daneben lagen; seit 24.09.2026 über die Tagesfrist
-// (lmfplan.Ferientabelle.Tagesfrist) auch die Einzel-Verlängerung, die bis dahin in SQL ab
-// CURRENT_TIMESTAMP rechnete und bei einer überfälligen Ausleihe die Uhrzeit der
-// Verlängerung behielt. Damit fällt die Fälligkeit immer
-// deterministisch auf den Kalendertag — unabhängig von der Server-Zeitzone (Docker = UTC) —
-// und es gibt keine zweite, rohe Berechnungsmethode mehr, die bei künftigen Änderungen
-// (z. B. kürzere Handapparat-Frist) auf die Füße fällt.
-func TagesEndeInSchulzeitzone(t time.Time) time.Time {
-	return schulzeit.TagesEnde(t)
-}
-
 // SystemEinstellungen repräsentiert die Konfigurationsparameter des Ausleihsystems,
 // die in der Datenbanktabelle `system_einstellungen` verwaltet werden.
 type SystemEinstellungen struct {
@@ -121,8 +90,8 @@ type DueDateOptions struct {
 func calculateDueDate(jetzt time.Time, opts DueDateOptions) time.Time {
 	// In Schul-Zeitzone rechnen, damit sowohl der Jahreswechsel-Stichtag (August)
 	// als auch das "Ende des Tages" (23:59:59) deterministisch sind — unabhängig
-	// von der Server-Zeitzone. now.Location() ist dadurch schoolLocation().
-	now := jetzt.In(schoolLocation())
+	// von der Server-Zeitzone. now.Location() ist dadurch schulzeit.Zone().
+	now := jetzt.In(schulzeit.Zone())
 
 	// 1. Fall: Lernmittelfreiheit (Schulbücher)
 	// Schulbücher (buecher_titel.ist_lernmittel) werden für das gesamte Schuljahr
@@ -139,7 +108,7 @@ func calculateDueDate(jetzt time.Time, opts DueDateOptions) time.Time {
 		// Mehrjährige Ausleihen (Zieljahrgang über der Klasse des Entleihers) laufen
 		// entsprechend viele Stichtage weiter.
 		stichtag = stichtag.AddDate(opts.AdditionalYears, 0, 0)
-		return TagesEndeInSchulzeitzone(stichtag)
+		return schulzeit.TagesEnde(stichtag)
 	}
 
 	// 2. Fall: Audiovisuelle/Digitale Medien
@@ -189,7 +158,7 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 // Scan-Zeitpunkt (Frist, Mahnwesen und Lesehistorie rechnen ab dem Scan), am Online-Scan jetzt.
 func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy *repository.Exemplar, borrowerKlasse string, heute time.Time) (time.Time, error) {
 	settings, err := s.querySettings(ctx)
-	heute = heute.In(schoolLocation())
+	heute = heute.In(schulzeit.Zone())
 	additionalYears := mehrjahresbandJahre(copy, borrowerKlasse)
 
 	if err != nil {
@@ -257,10 +226,10 @@ func (s *defaultLoanService) fristNachLmfPlan(ctx context.Context, copy *reposit
 		if lageErr == nil && lage.Vergangen {
 			folgendes := repository.SchuljahrBeginn(heute).AddDate(1, 0, 0)
 			stichtag := repository.LMFStichtagImSchuljahr(folgendes, settings.LMFStichtag)
-			return TagesEndeInSchulzeitzone(stichtag.AddDate(max(additionalYears-1, 0), 0, 0)), true
+			return schulzeit.TagesEnde(stichtag.AddDate(max(additionalYears-1, 0), 0, 0)), true
 		}
 		if lageErr == nil && lage.Bevorstehend && additionalYears == 0 {
-			return TagesEndeInSchulzeitzone(lage.Naechster), true
+			return schulzeit.TagesEnde(lage.Naechster), true
 		}
 	}
 	return time.Time{}, false
@@ -274,7 +243,7 @@ func leseclubFrist(copy *repository.Exemplar, settings *SystemEinstellungen, heu
 	if !copy.IstLernmittel && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
 		t, parseErr := time.Parse("2006-01-02", *settings.FerienLeseclubZieldatum)
 		if parseErr == nil {
-			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, schoolLocation())
+			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, schulzeit.Zone())
 			if end.After(heute) {
 				return end, true
 			}

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -192,11 +193,11 @@ func TestResolveBorrower_NichtSchuelerBekommtJahresfrist(t *testing.T) {
 	if chkCtx.istSchueler() || chkCtx.borrowerID != "l1" {
 		t.Errorf("erwartet Nicht-Schüler l1, bekam Art %q / %q", chkCtx.leser.Art, chkCtx.borrowerID)
 	}
-	erwarteterTag := time.Now().In(schoolLocation()).AddDate(1, 0, 0)
+	erwarteterTag := time.Now().In(schulzeit.Zone()).AddDate(1, 0, 0)
 	if !sameDay(chkCtx.dueTime, erwarteterTag) {
 		t.Errorf("Leihfrist soll ~1 Jahr betragen, bekam %v (erwarteter Tag ~%v)", chkCtx.dueTime, erwarteterTag)
 	}
-	if h, m, sec := chkCtx.dueTime.In(schoolLocation()).Clock(); h != 23 || m != 59 || sec != 59 {
+	if h, m, sec := chkCtx.dueTime.In(schulzeit.Zone()).Clock(); h != 23 || m != 59 || sec != 59 {
 		t.Errorf("Frist soll auf das Tagesende (23:59:59) fallen, bekam %02d:%02d:%02d", h, m, sec)
 	}
 	// Die Frist eines Nicht-Schülers steht fest: Es darf keine Settings-Abfrage laufen.

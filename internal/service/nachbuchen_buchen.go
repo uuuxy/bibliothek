@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"bibliothek/pkg/betrag"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -225,7 +226,7 @@ func (s *defaultLoanService) nimmZurueck(ctx context.Context, tx pgx.Tx, l *nach
 func (s *defaultLoanService) nachbuchKontext(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*checkoutContext, error) {
 	chkCtx := &checkoutContext{borrowerID: l.leser.ID, leser: l.leser}
 	if !chkCtx.istSchueler() {
-		chkCtx.dueTime = TagesEndeInSchulzeitzone(l.gescannt.AddDate(1, 0, 0))
+		chkCtx.dueTime = schulzeit.TagesEnde(l.gescannt.AddDate(1, 0, 0))
 		return chkCtx, nil
 	}
 	frist, err := s.resolveCheckoutDueDateAm(ctx, l.copy, l.leser.Klasse, l.gescannt)

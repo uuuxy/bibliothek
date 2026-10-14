@@ -33,7 +33,7 @@ func TestProcessQuery_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 		loanSvc:     loanSvc,
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "5896800039556", StaffID: "staff", StaffRole: "admin"})
+	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "5896800039556", StaffID: "staff"})
 	if err != nil {
 		t.Fatalf("ProcessQuery: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestProcessQuery_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "1241170039561", StaffID: "staff", StaffRole: "admin"})
+	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "1241170039561", StaffID: "staff"})
 	if err != nil {
 		t.Fatalf("ProcessQuery: %v", err)
 	}

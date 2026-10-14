@@ -141,7 +141,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	barcodeOffen := "B-RUECK-A-" + suffix
 	abgerechnet(t, barcodeOffen, time.Now().AddDate(0, 0, 28))
 
-	res, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeOffen, StaffID: mitarbeiterID, StaffRole: "mitarbeiter"})
+	res, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeOffen, StaffID: mitarbeiterID})
 	if err != nil {
 		t.Fatalf("Scan des zurückgebrachten Buches: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		t.Fatalf("Übergabe an die Schulaufsicht: %v", err)
 	}
 
-	res, err = svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeUeberg, StaffID: mitarbeiterID, StaffRole: "mitarbeiter"})
+	res, err = svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeUeberg, StaffID: mitarbeiterID})
 	if err != nil {
 		t.Fatalf("Scan nach der Übergabe: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		"Wasserschaden (Test)", repository.SchadensArtBeschaedigt, 7.50); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}
-	if _, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeDefekt, StaffID: mitarbeiterID, StaffRole: "mitarbeiter"}); err != nil {
+	if _, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeDefekt, StaffID: mitarbeiterID}); err != nil {
 		t.Fatalf("Scan des defekten Buches: %v", err)
 	}
 	if offen, _ := forderungOffen(t, barcodeDefekt); !offen {

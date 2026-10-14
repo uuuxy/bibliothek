@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/leserart"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -54,9 +55,8 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(ctx context.Context, copy
 
 	result := &checkoutContext{borrowerID: *leserID, leser: leser}
 	if !result.istSchueler() {
-		// Tagesende in der Schul-Zeitzone — dieselbe Normalisierung wie alle Fristen
-		// (TagesEndeInSchulzeitzone).
-		result.dueTime = TagesEndeInSchulzeitzone(s.heute().AddDate(1, 0, 0))
+		// Tagesende in der Schul-Zeitzone — dieselbe Normalisierung wie alle Fristen.
+		result.dueTime = schulzeit.TagesEnde(s.heute().AddDate(1, 0, 0))
 		return result, nil
 	}
 

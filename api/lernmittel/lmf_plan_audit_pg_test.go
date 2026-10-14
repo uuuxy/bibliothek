@@ -13,7 +13,6 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
-	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 )
@@ -57,7 +56,7 @@ func TestLmfPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Testdatum %q: %v", d, err)
 		}
-		return service.TagesEndeInSchulzeitzone(x)
+		return schulzeit.TagesEnde(x)
 	}
 	anna := testdaten.SeedSchueler(t, pool, "AUD-1", "Anna", "9H1")
 	testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Audit", tag("2027-07-31"))

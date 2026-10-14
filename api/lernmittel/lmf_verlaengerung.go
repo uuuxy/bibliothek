@@ -9,7 +9,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/db"
-	"bibliothek/internal/service"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -39,8 +39,8 @@ func (s *Tueren) GlobalExtendLMFHandler() http.HandlerFunc {
 			return
 		}
 		// Tagesende in der Schulzeitzone (Berlin) — dieselbe Definition wie jede andere
-		// Frist (service.TagesEndeInSchulzeitzone), nicht roh 23:59:59 UTC.
-		newDate = service.TagesEndeInSchulzeitzone(newDate)
+		// Frist, nicht roh 23:59:59 UTC.
+		newDate = schulzeit.TagesEnde(newDate)
 
 		ctx := r.Context()
 		tx, err := s.DB.Pool.Begin(ctx)

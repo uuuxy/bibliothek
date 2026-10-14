@@ -14,6 +14,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/internal/service"
 	"bibliothek/pkg/lmfplan"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -201,7 +202,7 @@ func leseFaelligAm(text string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, errors.New("ungültiges Datumsformat (erwartet ISO 8601 oder YYYY-MM-DD)")
 	}
-	return service.TagesEndeInSchulzeitzone(datum), nil
+	return schulzeit.TagesEnde(datum), nil
 }
 
 // verlaengerungsRegel liefert die Tage einer Verlängerung und die Sommerferien aus den

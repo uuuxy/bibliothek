@@ -225,7 +225,6 @@ func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 		ActiveLeserID:      req.ActiveLeserID,
 		ConfirmedChecklist: req.ConfirmedChecklist,
 		StaffID:            claims.UserID,
-		StaffRole:          string(claims.Rolle),
 		OverrideBlock:      req.OverrideBlock && s.BesitztRecht(r, "edit_students"),
 	})
 

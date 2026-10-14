@@ -12,7 +12,6 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
-	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -41,7 +40,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Testdatum %q: %v", d, err)
 		}
-		return service.TagesEndeInSchulzeitzone(x)
+		return schulzeit.TagesEnde(x)
 	}
 	stichtag := tag("2027-07-31")
 
@@ -217,7 +216,7 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Testdatum %q: %v", d, err)
 		}
-		return service.TagesEndeInSchulzeitzone(x)
+		return schulzeit.TagesEnde(x)
 	}
 	anna := testdaten.SeedSchueler(t, pool, "Z-1", "Anna", "9H1")
 	annaLmf := testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Zwei", tag("2027-07-31"))
@@ -242,7 +241,7 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	}
 	// … muss dasselbe sein wie das, was am schon ausgeliehenen Buch steht.
 	ist := testdaten.FristVon(t, pool, annaLmf)
-	soll := service.TagesEndeInSchulzeitzone(lage.Naechster)
+	soll := schulzeit.TagesEnde(lage.Naechster)
 	if !ist.Equal(soll) {
 		t.Errorf("Frist des offenen Buchs %v, der Ausleihdienst nennt %v — zwei Regeln für dieselbe Klasse",
 			ist.In(schulzeit.Zone()), soll.In(schulzeit.Zone()))
@@ -430,7 +429,7 @@ func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 		}
 	})
 	tagesEnde := func(jahr int, monat time.Month, tag int) time.Time {
-		return service.TagesEndeInSchulzeitzone(time.Date(jahr, monat, tag, 0, 0, 0, 0, schulzeit.Zone()))
+		return schulzeit.TagesEnde(time.Date(jahr, monat, tag, 0, 0, 0, 0, schulzeit.Zone()))
 	}
 
 	setzeStichtag("06-30")

@@ -53,7 +53,7 @@ func lmfStichtagMonatTag(stichtag string) (time.Month, int) {
 //
 // Die Uhrzeit ist 12:00 der Schulzeitzone — ein Mittagswert, der bei keiner
 // Sommerzeitumstellung auf den Nachbartag kippt. Zur Frist wird daraus erst
-// service.TagesEndeInSchulzeitzone (23:59:59); diese Funktion liefert einen Kalendertag,
+// schulzeit.TagesEnde (23:59:59); diese Funktion liefert einen Kalendertag,
 // keine Frist.
 func LMFStichtagImSchuljahr(tag time.Time, stichtag string) time.Time {
 	monat, tagImMonat := lmfStichtagMonatTag(stichtag)

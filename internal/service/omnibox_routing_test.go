@@ -49,7 +49,7 @@ func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
 		}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "20240001737", StaffID: "staff", StaffRole: "admin"})
+	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "20240001737", StaffID: "staff"})
 	if err != nil {
 		t.Fatalf("ProcessQuery: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestProcessQuery_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "gibtesnicht", StaffID: "staff", StaffRole: "admin"})
+	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "gibtesnicht", StaffID: "staff"})
 	if err != nil {
 		t.Fatalf("ProcessQuery: %v", err)
 	}
@@ -99,7 +99,7 @@ func TestProcessQuery_LeserAusDerTrefferliste(t *testing.T) {
 		}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "leser:l1", StaffID: "staff", StaffRole: "admin"})
+	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "leser:l1", StaffID: "staff"})
 	if err != nil {
 		t.Fatalf("ProcessQuery: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestProcessQuery_LeserIDUnbekannt(t *testing.T) {
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
-	if _, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "leser:fehlt", StaffID: "staff", StaffRole: "admin"}); err == nil {
+	if _, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "leser:fehlt", StaffID: "staff"}); err == nil {
 		t.Fatal("unbekannte Leser-ID muss einen Fehler melden, nicht in die Suche fallen")
 	}
 }

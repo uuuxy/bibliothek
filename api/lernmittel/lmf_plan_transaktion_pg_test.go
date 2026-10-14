@@ -11,7 +11,6 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
-	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -167,7 +166,7 @@ func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 	})
 	echt := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	stichtag := service.TagesEndeInSchulzeitzone(time.Date(2027, time.July, 31, 0, 0, 0, 0, schulzeit.Zone()))
+	stichtag := schulzeit.TagesEnde(time.Date(2027, time.July, 31, 0, 0, 0, 0, schulzeit.Zone()))
 	anna := testdaten.SeedSchueler(t, pool, "TX-2", "Anna", "9H1")
 	annaLmf := testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
 	emil := testdaten.SeedSchueler(t, pool, "TX-3", "Emil", "8G1")

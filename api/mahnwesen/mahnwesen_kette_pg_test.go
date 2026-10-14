@@ -14,11 +14,11 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
-	"bibliothek/internal/service"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/lmfplan"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -98,7 +98,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	bearbeiter := testdaten.AdminFuerAudit(t, pool)
 	frist := testdaten.AusleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
 	// Beide Seiten durch DIESELBE Produktionsdefinition schicken (seit dem 24.09.2026
-	// lmfplan.Ferientabelle.Tagesfrist, davor TagesEndeInSchulzeitzone), statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
+	// lmfplan.Ferientabelle.Tagesfrist, davor schulzeit.TagesEnde), statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
 	// in der Schul-Zeitzone (Europe/Berlin), der Test lief mit time.Now() in der Zeitzone des
 	// Runners. Auf dem UTC-CI sind das ab 22:00 UTC zwei verschiedene Kalendertage — genau
 	// daran war dieser Test in der Nacht auf den 22.08.2026 rot (erwartet 03.09., war 04.09.),
@@ -110,7 +110,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// Runner-Kalender und weicht am DST-Ende (24.10., 22–23 UTC) um einen Tag ab
 	// (Prüfung 22.08.2026). Tagesfrist rechnet genau so.
 	erwartet := lmfplan.Hessen().Tagesfrist(time.Now(), tage)
-	if !service.TagesEndeInSchulzeitzone(frist).Equal(erwartet) {
+	if !schulzeit.TagesEnde(frist).Equal(erwartet) {
 		t.Fatalf("Rückgabefrist = %s, erwartet den %s (%d Tage aus der Einstellung)",
 			frist.Format("02.01.2006"), erwartet.Format("02.01.2006"), tage)
 	}

@@ -55,8 +55,7 @@ func Kalendertag(datum string) (time.Time, error) {
 }
 
 // TagesEnde liefert das Ende des Kalendertags von t (23:59:59) in der Zone der Schule. Es ist
-// die eine Festlegung von „Ende des Tages"; internal/service ruft sie über
-// TagesEndeInSchulzeitzone.
+// die eine Festlegung von „Ende des Tages".
 func TagesEnde(t time.Time) time.Time {
 	loc := Zone()
 	d := t.In(loc)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -72,8 +73,6 @@ type LoanResult struct {
 	Book *repository.Exemplar
 	// Student ist das Schülerprofil, falls die Aktion für einen Schüler durchgeführt wurde.
 	Student *repository.Leser
-	// Teacher ist das Benutzerprofil, falls die Aktion für eine Lehrkraft durchgeführt wurde.
-	Teacher *repository.Konto
 	// DueDate gibt das berechnete Rückgabedatum an (nur bei erfolgreicher Ausleihe).
 	DueDate *time.Time
 	// LoanID ist die eindeutige ID des Ausleihvorgangs.
@@ -133,9 +132,9 @@ type defaultLoanService struct {
 // heute liefert den Zeitpunkt der Uhr in der Schulzeitzone.
 func (s *defaultLoanService) heute() time.Time {
 	if s.jetzt != nil {
-		return s.jetzt().In(schoolLocation())
+		return s.jetzt().In(schulzeit.Zone())
 	}
-	return time.Now().In(schoolLocation())
+	return time.Now().In(schulzeit.Zone())
 }
 
 // NewLoanService erzeugt eine neue Instanz des standardmäßigen LoanService.

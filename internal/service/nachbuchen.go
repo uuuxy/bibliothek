@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -133,7 +134,7 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 		db.SafeRollback(ctx, tx)
 		return s.meldeAbweisung(ctx, l, repository.NachbuchVeraltet,
 			fmt.Sprintf("Scan von %s liegt vor der letzten Bewegung des Exemplars (%s)",
-				l.gescannt.Format("02.01.2006 15:04"), stand.LetzteBewegung.In(schoolLocation()).Format("02.01.2006 15:04")))
+				l.gescannt.Format("02.01.2006 15:04"), stand.LetzteBewegung.In(schulzeit.Zone()).Format("02.01.2006 15:04")))
 	}
 
 	if err := holeAbgeschriebenesZurueck(ctx, tx, l, stand.Ausleihbar, stand.Ausgesondert); err != nil {
@@ -154,7 +155,7 @@ func (s *defaultLoanService) loeseNachbuchEintrag(ctx context.Context, e Nachbuc
 		return nil, nil, meldung(ErrInvalidState, "Unbekannte Absicht %q", e.Absicht)
 	}
 	jetzt := s.heute()
-	gescannt := e.GescanntAm.Add(e.UhrVersatz).In(schoolLocation())
+	gescannt := e.GescanntAm.Add(e.UhrVersatz).In(schulzeit.Zone())
 	if gescannt.After(jetzt) {
 		gescannt = jetzt // höchstens Serverzeit — auch nach der Umrechnung datiert nichts vor
 	}
