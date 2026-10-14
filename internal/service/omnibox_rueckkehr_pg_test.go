@@ -76,14 +76,13 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 
 	studentRepo := repository.NewLeserAbfragen(pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	userRepo := repository.NewKontoAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	damageRepo := repository.NewSchadensAbfragen(pool)
 	bescheidRepo := repository.NewBescheidAbfragen(pool)
 	loanSvc := NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	svc := NewOmniboxService(pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
+	svc := NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
 	// abgerechnet: ausleihen → „nicht zurückgegeben" melden → Bescheid schreiben.
 	abgerechnet := func(t *testing.T, barcode string, frist time.Time) string {

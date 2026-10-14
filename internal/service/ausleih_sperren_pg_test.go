@@ -55,7 +55,7 @@ func neueSperrTheke(t *testing.T) *sperrTheke {
 		pool:       pool,
 		books:      books,
 		loanSvc:    loanSvc,
-		omnibox:    service.NewOmniboxService(pool, students, books, repository.NewKontoAbfragen(pool), loans, loanSvc, deviceSvc),
+		omnibox:    service.NewOmniboxService(pool, students, books, loans, loanSvc, deviceSvc),
 		bearbeiter: testdaten.AdminFuerAudit(t, pool),
 	}
 }

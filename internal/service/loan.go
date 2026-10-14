@@ -120,9 +120,6 @@ type defaultLoanService struct {
 	bookRepo    repository.KatalogAbfragen
 	loanRepo    repository.AusleihAbfragen
 	auditRepo   repository.ProtokollAbfragen
-	// userRepo löst Lehrerausweise auf, die offline gescannt wurden (nur die Nachbuch-Tür
-	// setzt es; der Online-Scan kennt die Lehrkraft schon).
-	userRepo repository.KontoAbfragen
 	// jetzt ist die Uhr der Fristberechnung; nil heißt time.Now. Tests setzen einen festen
 	// Tag, um die Frist am Tag vor, am und nach dem Rückgabetermin zu prüfen (Bugklasse
 	// „Frist am Tag des Ereignisses", docs/sweeps.md).

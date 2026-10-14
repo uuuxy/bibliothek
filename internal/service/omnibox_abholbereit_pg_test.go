@@ -69,12 +69,11 @@ func TestSchuelerScanTraegtAbholfachHinweis(t *testing.T) {
 
 	studentRepo := repository.NewLeserAbfragen(pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	userRepo := repository.NewKontoAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	loanSvc := NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	svc := NewOmniboxService(pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
+	svc := NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
 	res, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: "ABH-" + suffix})
 	if err != nil {

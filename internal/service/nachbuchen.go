@@ -35,10 +35,9 @@ type NachbuchService interface {
 }
 
 // NewNachbuchService baut die Tür auf demselben Rumpf wie der Ausleih-Service — dieselben
-// Schranken, dieselben Schreiber. userRepo löst Lehrerausweise auf, die offline gescannt
-// wurden.
-func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.LeserAbfragen, bookRepo repository.KatalogAbfragen, userRepo repository.KontoAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) NachbuchService {
-	return &defaultLoanService{pool: pool, studentRepo: studentRepo, bookRepo: bookRepo, userRepo: userRepo, loanRepo: loanRepo, auditRepo: auditRepo}
+// Schranken, dieselben Schreiber.
+func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.LeserAbfragen, bookRepo repository.KatalogAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) NachbuchService {
+	return &defaultLoanService{pool: pool, studentRepo: studentRepo, bookRepo: bookRepo, loanRepo: loanRepo, auditRepo: auditRepo}
 }
 
 // Absichten eines Eintrags: was der Theken-Rechner beim Scan meinte.

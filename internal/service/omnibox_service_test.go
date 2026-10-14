@@ -85,7 +85,6 @@ func TestNewOmniboxService(t *testing.T) {
 	var pool db.PgxPoolIface
 	var studentRepo repository.LeserAbfragen
 	var bookRepo repository.KatalogAbfragen
-	var userRepo repository.KontoAbfragen
 	var loanRepo repository.AusleihAbfragen
 	var loanSvc LoanService
 	var deviceSvc DeviceService
@@ -95,7 +94,6 @@ func TestNewOmniboxService(t *testing.T) {
 		pool,
 		studentRepo,
 		bookRepo,
-		userRepo,
 		loanRepo,
 		loanSvc,
 		deviceSvc,
@@ -120,9 +118,6 @@ func TestNewOmniboxService(t *testing.T) {
 	}
 	if impl.bookRepo != bookRepo {
 		t.Errorf("Expected bookRepo to be injected")
-	}
-	if impl.userRepo != userRepo {
-		t.Errorf("Expected userRepo to be injected")
 	}
 	if impl.loanRepo != loanRepo {
 		t.Errorf("Expected loanRepo to be injected")

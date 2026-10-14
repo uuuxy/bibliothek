@@ -56,7 +56,7 @@ func nbAufbau(t *testing.T) *nbWelt {
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	w.svc = NewNachbuchService(pool, studentRepo, bookRepo, repository.NewKontoAbfragen(pool), loanRepo, auditRepo)
+	w.svc = NewNachbuchService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	return w
 }
 

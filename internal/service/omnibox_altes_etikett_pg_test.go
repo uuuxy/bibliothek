@@ -85,12 +85,11 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 
 	studentRepo := repository.NewLeserAbfragen(pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	userRepo := repository.NewKontoAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	loanSvc := NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	svc := NewOmniboxService(pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
+	svc := NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
 	// wieGedruckt hängt das Prüfzeichen an — genau das, was das Lesegerät liefert.
 	wieGedruckt := func(t *testing.T, nummer string) string {

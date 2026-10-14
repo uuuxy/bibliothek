@@ -70,11 +70,10 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	userRepo := repository.NewKontoAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	w.online = service.NewOmniboxService(pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
-	w.nachbuch = service.NewNachbuchService(pool, studentRepo, bookRepo, userRepo, loanRepo, auditRepo)
+	w.online = service.NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	w.nachbuch = service.NewNachbuchService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	w.srv = &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 	return w
 }
