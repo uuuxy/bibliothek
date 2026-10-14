@@ -13,12 +13,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Tür „Benutzer ändern" schreibt nur, was der Rumpf nennt.
+// Die Tür zum Ändern eines Kontos schreibt nur, was der Rumpf nennt.
 //
 // Die Maske füllt sich aus der Zeile der Liste, die beim Öffnen der Seite lädt. Schickte sie
 // beim Speichern jedes Feld zurück, schrieb sie den alten Stand über alles, was ein anderer
 // Platz inzwischen geändert hat: die Rolle, „aktiv", die Ausweisnummer aus der Leserakte.
-// Geprüft über die Handler der Benutzerverwaltung am echten Postgres.
+// Geprüft über die Türen der Benutzerverwaltung am echten Postgres.
 func TestKontoAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

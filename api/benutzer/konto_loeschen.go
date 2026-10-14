@@ -11,17 +11,17 @@ import (
 	"bibliothek/repository"
 )
 
-// Das Löschen eines Benutzers steht für sich, weil es eigene Regeln hat, die mit dem
+// Das Löschen eines Kontos steht für sich, weil es eigene Regeln hat, die mit dem
 // Anlegen und Ändern nichts zu tun haben: kein Selbstlöschen, keine Admin-Konten ohne
 // Adminrechte, und aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Fehler.
 
-// KontoLoeschen deletes a user and logs it in the audit log.
-// @Summary      Delete user
-// @Description  Deletes a system user by their ID and registers the deletion in the audit log.
+// KontoLoeschen löscht ein Konto und vermerkt es im Protokoll.
+// @Summary      Konto löschen
+// @Description  Löscht ein Konto über seine Kennung und vermerkt es im Protokoll.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        id   path      string  true  "User ID (UUID)"
+// @Param        id   path      string  true  "Kennung des Kontos (UUID)"
 // @Success      200  {object}  map[string]string
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
@@ -47,7 +47,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 		return
 	}
 
-	// Prevent self-deletion
+	// Das eigene Konto löscht niemand.
 	if id == claims.UserID {
 		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
 		return

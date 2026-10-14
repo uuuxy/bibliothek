@@ -18,7 +18,7 @@ import (
 // abgebildet.
 type eskalationsAttrappe struct {
 	repository.KontoAbfragen
-	rollen    map[string]string // Benutzer-ID → aktuelle Rolle
+	rollen    map[string]string // Kennung des Kontos → aktuelle Rolle
 	geaendert bool
 	angelegt  bool
 }
@@ -49,7 +49,7 @@ func (a *eskalationsAttrappe) Aendere(_ context.Context, _ repository.KontoAende
 	return repository.KontoStand{}, nil
 }
 
-// anfrageAls baut eine Anfrage mit Sitzungs-Claims. rolle ist die Rolle des AUFRUFERS,
+// anfrageAls baut eine Anfrage mit Sitzungs-Claims. rolle ist die Rolle des Aufrufers,
 // so wie auth.VerifyToken sie bei jeder Anfrage frisch aus der Datenbank setzt.
 func anfrageAls(t *testing.T, methode, pfad, rumpf string, userID string, rolle auth.Role) *http.Request {
 	t.Helper()
@@ -61,7 +61,7 @@ func anfrageAls(t *testing.T, methode, pfad, rumpf string, userID string, rolle 
 
 const rumpfAdmin = `{"vorname":"Eva","nachname":"Neu","email":"eva@schule.de","rolle":"admin","aktiv":true}`
 
-// Weg 1: Selbstbeförderung. Ein MITARBEITER mit manage_users bearbeitet den EIGENEN
+// Weg 1: Selbstbeförderung. Ein Mitarbeiter mit manage_users bearbeitet den eigenen
 // Datensatz und trägt sich als Admin ein.
 func TestSelbstbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
@@ -81,9 +81,9 @@ func TestSelbstbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 	}
 }
 
-// Der Gegenbeweis zu Weg 1: Derselbe Benutzer muss seinen eigenen Datensatz mit
-// UNVERÄNDERTER Rolle speichern können. Die Vorgängerfassung lehnte genau das ab
-// („eigene Admin-Rolle kann nicht herabgestuft werden") und ließ nur die Beförderung zu.
+// Die Gegenprobe zu Weg 1: Dasselbe Konto muss seinen eigenen Datensatz mit unveränderter
+// Rolle speichern können. Ein Selbstschutz, der jeden, der sich selbst bearbeitet, für einen
+// Admin hält, lehnte genau das ab.
 func TestEigenerDatensatzMitGleicherRolleBleibtSpeicherbar(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
@@ -103,7 +103,7 @@ func TestEigenerDatensatzMitGleicherRolleBleibtSpeicherbar(t *testing.T) {
 	}
 }
 
-// Weg 2: Fremdbeförderung — einen zweiten Benutzer zum Admin machen.
+// Weg 2: Fremdbeförderung, ein zweites Konto zum Admin machen.
 func TestFremdbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"kollege-1": "HELFER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
@@ -140,11 +140,11 @@ func TestAdminNeuanlageOhneAdminrechteWirdAbgelehnt(t *testing.T) {
 	}
 }
 
-// Weg 3: Übernahme eines Admin-Kontos OHNE jede Rollenänderung.
+// Weg 3: Übernahme eines Admin-Kontos ohne jede Änderung der Rolle.
 //
-// Die Anmeldung prüft per IMAP und sucht den Benutzer danach über seine E-Mail
+// Die Anmeldung prüft per IMAP und sucht das Konto danach über seine E-Mail
 // (auth/handlers.go). Wer die E-Mail des Admin-Datensatzes auf die eigene Schuladresse
-// umschreibt, meldet sich anschließend mit den EIGENEN Zugangsdaten an und erhält die
+// umschreibt, meldet sich anschließend mit den eigenen Zugangsdaten an und erhält die
 // Admin-Sitzung. Die Rolle im Rumpf bleibt dabei unverdächtig "admin".
 func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-1": "ADMIN"}}
@@ -165,12 +165,12 @@ func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
 	}
 }
 
-// Weg 3b: derselbe Angriff, aber mit HERABSTUFUNG statt Beibehaltung der Admin-Rolle.
+// Weg 3b: derselbe Angriff, aber mit Herabstufung statt Beibehaltung der Admin-Rolle.
 //
 // Dieser Fall ist der eigentliche Prüfstein für pruefeAdminZiel: Weil im Rumpf nicht
 // "admin" steht, greift pruefeAdminVergabe hier nicht. Hängen bleibt der Versuch allein
-// daran, dass das ZIEL heute ein Administrator ist. Ohne diesen Test könnte man
-// pruefeAdminZiel entfernen, ohne dass ein Gate rot wird — und mit ihm den Schutz gegen
+// daran, dass das Ziel heute ein Administrator ist. Ohne diesen Test könnte man
+// pruefeAdminZiel entfernen, ohne dass eine Prüfung rot wird — und mit ihm den Schutz gegen
 // „Admin herabstufen, E-Mail übernehmen, danach in Ruhe wieder hochstufen".
 func TestAdminHerabstufenDurchNichtAdminWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-1": "ADMIN"}}
@@ -233,11 +233,11 @@ func TestManageUsersDarfNichtAdminKontenWeiterhinBearbeiten(t *testing.T) {
 	}
 }
 
-// Der ursprüngliche Zweck des Selbstschutzes bleibt erhalten: Ein Administrator darf
+// Der Selbstschutz hält auch für Administratoren: Ein Administrator darf
 // sich nicht selbst herabstufen und damit womöglich den letzten Admin-Zugang schließen.
 //
 // Nur pruefeSelbstschutz fängt diesen Fall: Die Admin-Rolle wird nicht vergeben (also
-// kein Fall für pruefeAdminVergabe), und der Aufrufer IST Admin (also kein Fall für
+// kein Fall für pruefeAdminVergabe), und der Aufrufer ist Admin (also kein Fall für
 // pruefeAdminZiel).
 func TestAdminKannSichNichtSelbstHerabstufen(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-1": "ADMIN"}}
@@ -276,7 +276,7 @@ func TestEigeneDeaktivierungWirdAbgelehnt(t *testing.T) {
 }
 
 // Die Schutzregeln gelten auch, wenn der Rumpf nur einzelne Felder nennt: Ein fehlendes Feld
-// ändert nichts und gibt nichts frei; ein genanntes wird geprüft wie bisher.
+// ändert nichts und gibt nichts frei; ein genanntes wird geprüft.
 func TestSchutzregelnBeiEinzelnenFeldern(t *testing.T) {
 	faelle := []struct {
 		name          string

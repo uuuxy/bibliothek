@@ -15,16 +15,11 @@ import (
 	"bibliothek/repository"
 )
 
-// TestKonten_LiefernEchteRechte sichert Audit-Punkt 8 ab.
+// TestKonten_LiefernEchteRechte: GET /api/benutzer nennt die Rechte aus role_permissions wie
+// die Anmeldung und /api/auth/me, keine feste Liste. Eine feste Liste nannte manage_settings,
+// print_classes und view_media, Namen, die es im Rechtesystem nicht gibt.
 //
-// GET /api/benutzer meldete die Rechte aus einer hartkodierten Liste, die sich
-// "analog zum Login" nannte, es aber nicht war: Sie nannte manage_settings,
-// print_classes und view_media — Namen, die es im Rechtesystem ueberhaupt nicht gibt
-// (kein RequirePermission, kein Seed). Wer die Benutzerverwaltung ansah, bekam also
-// erfundene Angaben, waehrend Login und /api/auth/me die echten Rechte laden.
-//
-// Der Test prueft beides: dass die erfundenen Namen verschwunden sind UND dass ein
-// tatsaechlich vergebenes Recht ankommt.
+// Der Test prüft beides: dass diese Namen fehlen und dass ein vergebenes Recht ankommt.
 func TestKonten_LiefernEchteRechte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -44,9 +39,9 @@ func TestKonten_LiefernEchteRechte(t *testing.T) {
 		t.Fatalf("Benutzer anlegen: %v", err)
 	}
 
-	// role_permissions wird NICHT von schema.sql angelegt, sondern zur Laufzeit von
-	// db/seed.go (CREATE TABLE IF NOT EXISTS beim Serverstart). Die Test-Datenbank kennt
-	// sie deshalb nicht — dieselbe Definition hier, damit der Test eigenstaendig laeuft.
+	// role_permissions legt nicht schema.sql an, sondern db/seed.go zur Laufzeit (CREATE TABLE
+	// IF NOT EXISTS beim Start des Servers). Die Test-Datenbank kennt sie deshalb nicht; dieselbe
+	// Definition steht hier, damit der Test für sich läuft.
 	if _, err := pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS role_permissions (
 			role VARCHAR(50) NOT NULL,
@@ -58,7 +53,7 @@ func TestKonten_LiefernEchteRechte(t *testing.T) {
 		t.Fatalf("role_permissions anlegen: %v", err)
 	}
 
-	// Ein Recht, von dem wir wissen, dass es echt ist und der Rolle gehoert.
+	// Ein Recht, von dem wir wissen, dass es echt ist und der Rolle gehört.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO role_permissions (role, permission, allowed)
 		VALUES ('MITARBEITER', 'view_books', true)
@@ -89,7 +84,7 @@ func TestKonten_LiefernEchteRechte(t *testing.T) {
 		t.Fatal("angelegter Benutzer fehlt in der Liste")
 	}
 
-	// Die erfundenen Namen duerfen nirgends mehr auftauchen — bei KEINEM Benutzer.
+	// Die erfundenen Namen dürfen nirgends auftauchen, bei keinem Konto.
 	erfunden := map[string]bool{"manage_settings": true, "print_classes": true, "view_media": true}
 	for _, b := range benutzer {
 		for _, p := range b.Rechte {

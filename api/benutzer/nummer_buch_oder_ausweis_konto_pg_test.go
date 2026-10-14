@@ -15,12 +15,11 @@ import (
 	"bibliothek/repository"
 )
 
-// Migration 131: Eine Nummer ist entweder ein Buch oder ein Ausweis. Die drei Schüler-Türen
-// (Anlegen, Akte, Wiederherstellen) übersetzen die Ablehnung des Wächters in eine Auskunft
-// (409). Das Kollegiumskonto prüfte vor dem Schreiben nur die Leserzeilen
-// (IstAusweisnummerVergeben) und reichte die Ablehnung der Datenbank als 500 durch — die
-// Bibliothek sah „interner Fehler“ statt „das ist die Nummer eines Buchs“
-// (Rasterdurchgang 22.09.2026, Frage 5: stille Fehler).
+// Migration 131: Eine Nummer ist entweder ein Buch oder ein Ausweis. Die drei Türen für
+// Schüler (Anlegen, Akte, Wiederherstellen) übersetzen die Ablehnung des Wächters in eine
+// Auskunft (409). Das Kollegiumskonto prüft vor dem Schreiben nur die Leserzeilen
+// (IstAusweisnummerVergeben); die Ablehnung der Datenbank muss deshalb ebenfalls als Auskunft
+// ankommen, nicht als 500 „interner Fehler“.
 func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

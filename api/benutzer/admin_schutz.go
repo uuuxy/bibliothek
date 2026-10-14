@@ -13,22 +13,19 @@ import (
 
 // Trennung von manage_users und Administrator.
 //
-// manage_users ist ein delegierbares Recht: Der PermissionManager bietet es für
-// MITARBEITER, LEHRER und HELFER an (frontend/src/lib/permissionMetadata.js). Geseedet
-// ist es nur für ADMIN — vergeben wurde es damit aber trotzdem, und bis zum 06.08.2026
-// war es gleichbedeutend mit Administrator. Drei Wege führten dahin:
+// manage_users ist ein Recht, das der Administrator weitergeben kann: Die Rechte-Matrix bietet
+// es den Rollen unterhalb des Administrators an (frontend/src/lib/permissionMetadata.js). Ohne
+// die Regeln dieser Datei käme es einem Administrator gleich, auf drei Wegen:
 //
-//  1. Selbstbeförderung. PUT /api/benutzer/{eigene-id} mit rolle:"admin" ging durch.
-//     Der Selbstschutz unterstellte, wer sich selbst bearbeitet, sei bereits Admin,
-//     und ließ ausgerechnet den einen Fall zu, den er verhindern sollte.
-//  2. Fremdbeförderung. POST/PUT /api/benutzer mit rolle:"admin" für ein beliebiges
-//     Konto — normalisiereBenutzerRolle nahm "admin" ohne jede Prüfung entgegen.
-//  3. Übernahme eines Admin-Kontos ganz OHNE Rollenänderung. Die Anmeldung prüft die
-//     Zugangsdaten per IMAP und sucht den Benutzer danach über seine E-Mail-Adresse
-//     (auth/handlers.go, verifyIMAPCredentials). Wer die E-Mail eines Admin-Datensatzes
-//     auf die eigene Schuladresse setzt, meldet sich beim nächsten Login mit den EIGENEN
-//     IMAP-Zugangsdaten an und bekommt die Admin-Sitzung. Deshalb schützt pruefeAdminZiel
-//     den ganzen Datensatz und nicht nur das Rollenfeld.
+//  1. Selbstbeförderung: PUT /api/benutzer/{eigene-id} mit rolle:"admin". pruefeSelbstschutz
+//     lehnt jede Änderung der eigenen Rolle ab.
+//  2. Fremdbeförderung: POST oder PUT /api/benutzer mit rolle:"admin" für ein beliebiges
+//     Konto. pruefeAdminVergabe verlangt dafür einen Administrator.
+//  3. Übernahme eines Admin-Kontos ohne Änderung der Rolle: Die Anmeldung prüft die
+//     Zugangsdaten per IMAP und sucht das Konto danach über seine E-Mail-Adresse
+//     (auth/handlers.go, verifyIMAPCredentials). Wer die E-Mail eines Admin-Kontos auf die
+//     eigene Schuladresse setzt, meldet sich mit den eigenen Zugangsdaten an und bekommt die
+//     Admin-Sitzung. Deshalb schützt pruefeAdminZiel das ganze Konto, nicht nur die Rolle.
 //
 // Die Regel dahinter: manage_users verwaltet Konten unterhalb der Administratorebene.
 // Wer einen Administrator anlegen, verändern oder löschen will, muss selbst einer sein.
@@ -57,9 +54,9 @@ func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle
 	return false
 }
 
-// pruefeAdminZiel verlangt Administratorrechte, wenn das Ziel HEUTE ein Administrator
-// ist — unabhängig davon, welches Feld geändert werden soll. Ein unbekanntes Ziel
-// (kein Treffer) lässt die Prüfung passieren; darüber entscheidet der Handler.
+// pruefeAdminZiel verlangt Administratorrechte, wenn das Ziel heute ein Administrator ist,
+// gleich welches Feld geändert werden soll. Ein unbekanntes Ziel (kein Treffer) lässt die
+// Prüfung passieren; darüber entscheidet die Tür.
 func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen, id string) bool {
 	if istAufruferAdmin(r) {
 		return true
@@ -77,15 +74,10 @@ func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request
 	return true
 }
 
-// pruefeSelbstschutz verhindert, dass ein Benutzer die EIGENE Rolle ändert oder das
-// eigene Konto deaktiviert — gleich welcher Rolle er angehört.
-//
-// Die Vorgängerfassung prüfte nur auf != "ADMIN" und unterstellte damit, jeder
-// Selbstbearbeiter sei Admin. Für einen MITARBEITER mit manage_users hatte das zwei
-// Folgen: Das Speichern des eigenen Datensatzes mit UNVERÄNDERTER Rolle scheiterte
-// mit „eigene Admin-Rolle kann nicht herabgestuft werden", und die einzige
-// Selbstbearbeitung, die durchging, war rolle:"admin". Der Wächter verhinderte die
-// Eskalation nicht — er ließ nur sie übrig.
+// pruefeSelbstschutz verhindert, dass jemand die eigene Rolle ändert oder das eigene Konto
+// deaktiviert, gleich welcher Rolle er angehört. Er darf nicht unterstellen, wer sich selbst
+// bearbeitet, sei Admin: Dann scheiterte ein Mitarbeiter mit manage_users am Speichern seines
+// eigenen Datensatzes, und durch ginge ausgerechnet rolle:"admin".
 //
 // neueRolle und aktiv sind nil, wenn die Änderung das Feld nicht nennt: Dann bleibt es, wie
 // es ist, und es gibt nichts zu schützen.

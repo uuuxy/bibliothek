@@ -213,7 +213,7 @@ const docTemplate = `{
         },
         "/admin/permissions": {
             "get": {
-                "description": "Retrieves current allowed/denied flags for permissions across all system roles.",
+                "description": "Liefert je Rolle und Recht, ob es erlaubt ist.",
                 "consumes": [
                     "application/json"
                 ],
@@ -223,7 +223,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get role permissions",
+                "summary": "Rechte-Matrix",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -246,7 +246,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Enables or disables a specific permission for a user role.",
+                "description": "Schaltet ein Recht für eine Rolle an oder ab.",
                 "consumes": [
                     "application/json"
                 ],
@@ -256,10 +256,10 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Update role permission",
+                "summary": "Recht einer Rolle setzen",
                 "parameters": [
                     {
-                        "description": "Permission update payload",
+                        "description": "Rolle, Recht und ob es erlaubt ist",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -336,7 +336,7 @@ const docTemplate = `{
         },
         "/benutzer": {
             "get": {
-                "description": "Retrieves all administrative and staff users registered in the system.",
+                "description": "Liefert alle Konten des Personals mit den Rechten ihrer Rolle.",
                 "consumes": [
                     "application/json"
                 ],
@@ -346,7 +346,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "List system users",
+                "summary": "Konten",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -369,7 +369,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Registers a new system user (admin, teacher, staff) with role assignments. Login erfolgt über IMAP/Barcode, nicht über ein lokales Passwort.",
+                "description": "Legt ein Konto des Personals mit seiner Rolle an. Angemeldet wird über IMAP oder Barcode, nicht über ein Passwort.",
                 "consumes": [
                     "application/json"
                 ],
@@ -379,10 +379,10 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Create system user",
+                "summary": "Konto anlegen",
                 "parameters": [
                     {
-                        "description": "User registration payload",
+                        "description": "Angaben des Kontos",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -434,17 +434,17 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Update system user",
+                "summary": "Konto ändern",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID (UUID)",
+                        "description": "Kennung des Kontos (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "User update payload",
+                        "description": "Geänderte Felder",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -484,7 +484,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a system user by their ID and registers the deletion in the audit log.",
+                "description": "Löscht ein Konto über seine Kennung und vermerkt es im Protokoll.",
                 "consumes": [
                     "application/json"
                 ],
@@ -494,11 +494,11 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Delete user",
+                "summary": "Konto löschen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID (UUID)",
+                        "description": "Kennung des Kontos (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -4124,7 +4124,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "leser_id": {
-                    "description": "LeserID ist die Leserzeile dieses Kontos (Migration 125). Die Freischaltungs-Zeile\nbraucht sie, um von einem offenen Antrag aus nach der gleichnamigen Leserzeile zu\nsuchen, die noch KEIN Konto hat — der Altbestand, bei dem die Selbstanmeldung sonst\neinen zweiten Eintrag erzeugt (UserManagementZugangsanfragen.svelte).",
+                    "description": "LeserID ist die Leserzeile dieses Kontos. Die Zeile zum Freischalten braucht sie, um von\neinem offenen Antrag aus nach der gleichnamigen Leserzeile zu suchen, die noch kein Konto\nhat: der Altbestand, bei dem die Selbstanmeldung sonst einen zweiten Eintrag erzeugt\n(UserManagementZugangsanfragen.svelte).",
                     "type": "string"
                 },
                 "nachname": {
@@ -4143,7 +4143,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "zugang_beantragt_am": {
-                    "description": "ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);\nnull = keiner. Die Oberfläche unterscheidet daran „wartet\" von „deaktiviert\".",
+                    "description": "ZugangBeantragtAm ist der offene Antrag aus der Selbstanmeldung, null heißt keiner. Die\nOberfläche unterscheidet daran „wartet\" von „deaktiviert\".",
                     "type": "string"
                 }
             }

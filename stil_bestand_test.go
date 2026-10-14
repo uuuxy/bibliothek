@@ -5,7 +5,6 @@ package main
 var stilBestand = map[string]stilZahl{
 	".":                      {Fach: 1, Verb: 4, Kuerzel: 0, Datei: 0, Datum: 4},
 	"api":                    {Fach: 14, Verb: 15, Kuerzel: 0, Datei: 4, Datum: 25},
-	"api/benutzer":           {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 5},
 	"api/bestellung":         {Fach: 45, Verb: 17, Kuerzel: 0, Datei: 11, Datum: 6},
 	"api/katalog":            {Fach: 68, Verb: 43, Kuerzel: 2, Datei: 15, Datum: 17},
 	"api/lernmittel":         {Fach: 13, Verb: 7, Kuerzel: 27, Datei: 1, Datum: 7},

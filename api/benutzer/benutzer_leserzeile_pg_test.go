@@ -15,13 +15,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Wer ein Konto anlegt, legt einen LESER an (Migration 125): Der Mensch bekommt seinen
-// Platz in der Lesertabelle, das Konto bleibt Anmeldung und Rechte. Ohne diese Zeile fände
-// die Theke die Person nicht — genau der Fehler, den der Umbau abschafft.
+// Wer ein Konto anlegt, legt einen Leser an (Migration 125): Der Mensch bekommt seinen Platz
+// in der Lesertabelle, das Konto bleibt Anmeldung und Rechte. Ohne diese Zeile fände die Theke
+// die Person nicht.
 //
-// Geprüft am Live-Pfad, also über die Handler der Benutzerverwaltung und nicht über rohes
-// SQL: Der Trigger allein beweist nur, dass die Datenbank es täte; dieser Test beweist,
-// dass die Verwaltung auch dort ankommt, wo die Theke nachsieht.
+// Geprüft über die Türen der Benutzerverwaltung, nicht über rohes SQL: Der Trigger allein
+// beweist nur, dass die Datenbank es täte; dieser Test beweist, dass die Verwaltung auch dort
+// ankommt, wo die Theke nachsieht.
 func TestKontoBekommtLeserzeile(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -55,7 +55,7 @@ func TestKontoBekommtLeserzeile(t *testing.T) {
 			t.Fatalf("Anlegen (%s): Status %d, %s", body, rec.Code, rec.Body.String())
 		}
 	}
-	// liesLeser liefert Art, Ausweis und Namen der LESERZEILE hinter einem Konto.
+	// liesLeser liefert Art, Ausweis und Namen der Leserzeile hinter einem Konto.
 	liesLeser := func(t *testing.T, email string) (kontoID, art, ausweis, name string) {
 		t.Helper()
 		if err := pool.QueryRow(ctx, `

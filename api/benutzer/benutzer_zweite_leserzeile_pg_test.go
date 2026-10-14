@@ -14,15 +14,14 @@ import (
 	"bibliothek/repository"
 )
 
-// Ein zweites Konto derselben Person darf keine zweite Leserzeile erzeugen (OFFEN.md 5.17).
+// Ein zweites Konto derselben Person darf keine zweite Leserzeile erzeugen.
 //
-// Der Wächter trg_benutzer_hat_leserzeile hängt jedem Konto ohne Leserzeile eine frische
-// an. Wird das Konto eines Kollegen gelöscht (seine Leserzeile bleibt — die Ausleihen
-// hängen daran), und legt die Benutzerverwaltung ihm später ein neues an, stand er bis zum
-// 22.09.2026 zweimal in der Leserdatei: einmal mit Ausweis und Geschichte, einmal leer.
-// Repariert wurde das mit „Zusammenführen"; entstehen soll es gar nicht. Der Weg zum
-// Konto an einer vorhandenen Leserzeile ist die Schul-E-Mail in der Akte
-// (LegeKollegiumskontoAn) — dorthin verweist die Antwort.
+// Der Wächter trg_benutzer_hat_leserzeile hängt jedem Konto ohne Leserzeile eine frische an.
+// Wird das Konto eines Kollegen gelöscht (seine Leserzeile bleibt, die Ausleihen hängen
+// daran) und legt die Benutzerverwaltung ihm später ein neues an, stünde er zweimal in der
+// Leserdatei: einmal mit Ausweis und Geschichte, einmal leer. Zusammenführen repariert das;
+// entstehen soll es gar nicht. Der Weg zum Konto an einer vorhandenen Leserzeile ist die
+// Schul-E-Mail in der Akte (LegeKollegiumskontoAn); dorthin verweist die Antwort.
 func TestKontoAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -58,7 +57,7 @@ func TestKontoAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 		return n
 	}
 
-	// Die Leserzeile eines Kollegen OHNE Konto — so sieht sie nach dem Löschen des Kontos
+	// Die Leserzeile eines Kollegen ohne Konto — so sieht sie nach dem Löschen des Kontos
 	// aus, und so kommt sie aus der Littera-Übernahme.
 	if _, err := pool.Exec(ctx, `INSERT INTO leser (barcode_id, vorname, nachname, art) VALUES ('A-517', 'Kim', 'Zweitezeile', 'lehrkraft')`); err != nil {
 		t.Fatal(err)

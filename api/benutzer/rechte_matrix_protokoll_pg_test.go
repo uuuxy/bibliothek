@@ -17,10 +17,9 @@ import (
 )
 
 // Wer ändert, was eine Rolle darf, steht im Protokoll: Die Matrix entscheidet an jeder Route,
-// wer welche Daten sieht. Konten (USER_UPDATE) und Einstellungen (UPDATE_SETTINGS) schrieben
-// ihren Eintrag schon; an der Matrix fehlte er, und nach einer Änderung ließ sich nicht
-// nachsehen, wer einer Rolle wann ein Recht gegeben hat. Eine abgelehnte Änderung schreibt
-// keinen Eintrag.
+// wer welche Daten sieht. Wie Konten (USER_UPDATE) und Einstellungen (UPDATE_SETTINGS) schreibt
+// sie einen Eintrag; sonst ließe sich nicht nachsehen, wer einer Rolle wann ein Recht gegeben
+// hat. Eine abgelehnte Änderung schreibt keinen Eintrag.
 func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

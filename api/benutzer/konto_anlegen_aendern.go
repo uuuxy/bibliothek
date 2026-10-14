@@ -12,7 +12,7 @@ import (
 	"bibliothek/repository"
 )
 
-// kontoAnlegenAnfrage holds payload data for user creation.
+// kontoAnlegenAnfrage nennt die Angaben eines neuen Kontos.
 type kontoAnlegenAnfrage struct {
 	BarcodeID string `json:"barcode_id"`
 	Vorname   string `json:"vorname" validate:"required"`
@@ -21,14 +21,14 @@ type kontoAnlegenAnfrage struct {
 	Rolle     string `json:"rolle" validate:"required"`
 }
 
-// KontoAnlegen inserts a new user. Es gibt keine lokalen Passwörter — die
-// Authentifizierung läuft über den Schul-Mailserver (IMAP) bzw. Barcode/PIN.
-// @Summary      Create system user
-// @Description  Registers a new system user (admin, teacher, staff) with role assignments. Login erfolgt über IMAP/Barcode, nicht über ein lokales Passwort.
+// KontoAnlegen legt ein Konto an. Ein Passwort gibt es nicht: Angemeldet wird über den
+// Schul-Mailserver (IMAP) oder mit Barcode und PIN.
+// @Summary      Konto anlegen
+// @Description  Legt ein Konto des Personals mit seiner Rolle an. Angemeldet wird über IMAP oder Barcode, nicht über ein Passwort.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        body  body      kontoAnlegenAnfrage  true  "User registration payload"
+// @Param        body  body      kontoAnlegenAnfrage  true  "Angaben des Kontos"
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
@@ -51,8 +51,7 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 		return
 	}
 
-	// Einen Administrator darf nur ein Administrator anlegen (siehe
-	// admin_schutz.go).
+	// Einen Administrator darf nur ein Administrator anlegen (siehe admin_schutz.go).
 	if !pruefeAdminVergabe(w, r, req.Rolle) {
 		return
 	}
@@ -78,7 +77,7 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 	rolle := normalisiereRolle(req.Rolle)
 
 	// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
-	// von selbst (Trigger trg_benutzer_hat_leserzeile, Migration 125).
+	// von selbst (Trigger trg_benutzer_hat_leserzeile).
 	kontoID, err := kontoAbfragen.LegeAn(ctx, nummer, req.Vorname, req.Nachname, req.Email, rolle)
 	if err != nil {
 		if meldeAusweisKollision(w, err) {
@@ -108,13 +107,13 @@ type kontoAendernAnfrage struct {
 }
 
 // KontoAendern ändert Name, E-Mail, Ausweisnummer, Rolle oder „aktiv" eines Kontos.
-// @Summary      Update system user
+// @Summary      Konto ändern
 // @Description  Ändert an einem Konto die Felder, die der Rumpf nennt; ein fehlendes Feld bleibt, wie es ist.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string             true  "User ID (UUID)"
-// @Param        body  body      kontoAendernAnfrage  true  "User update payload"
+// @Param        id    path      string             true  "Kennung des Kontos (UUID)"
+// @Param        body  body      kontoAendernAnfrage  true  "Geänderte Felder"
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
@@ -152,7 +151,7 @@ func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 
 	// Reihenfolge ist Absicht: erst die eigene Rolle/Aktivierung schützen, dann die
 	// Vergabe der Admin-Rolle, dann den Schutz bestehender Admin-Konten. Alle drei
-	// laufen VOR jedem Schreibzugriff (siehe admin_schutz.go).
+	// laufen vor jedem Schreibzugriff (siehe admin_schutz.go).
 	if !pruefeSelbstschutz(w, r, id, req.Rolle, req.Aktiv) {
 		return
 	}
@@ -169,7 +168,7 @@ func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 	}
 	stand, err := kontoAbfragen.Aendere(ctx, aenderung)
 	if err != nil {
-		// Kein Protokolleintrag und kein Cache-Invalidate für eine Änderung, die nie
+		// Kein Protokolleintrag und kein Leeren des Rechte-Caches für eine Änderung, die nie
 		// stattfand.
 		antworteAufKontoAenderungsfehler(w, err)
 		return
@@ -224,7 +223,7 @@ func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, kont
 }
 
 // kontoAenderungAus prüft die genannte E-Mail und Ausweisnummer auf Eindeutigkeit und baut die
-// Änderung für das Repository. ok=false: Die Ablehnung ist schon beantwortet.
+// Änderung für die Abfragen. Bei false ist die Ablehnung schon beantwortet.
 func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, id string, req kontoAendernAnfrage) (repository.KontoAenderung, bool) {
 	aenderung := repository.KontoAenderung{
 		ID: id, Vorname: req.Vorname, Nachname: req.Nachname, Email: req.Email, Aktiv: req.Aktiv,

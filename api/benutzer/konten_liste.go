@@ -1,9 +1,5 @@
 package benutzer
 
-// konten_liste.go — Handlers for system user and role-permission management.
-// Covers: listing/creating/updating/deleting staff accounts and reading/writing
-// the role_permissions table.
-
 import (
 	"context"
 	"net/http"
@@ -16,7 +12,7 @@ import (
 	"bibliothek/repository"
 )
 
-// kontoAntwort holds public user data sent to administrative screens.
+// kontoAntwort ist ein Konto, wie die Benutzerverwaltung es zeigt.
 type kontoAntwort struct {
 	ID         string    `json:"id"`
 	BarcodeID  string    `json:"barcode_id"`
@@ -26,20 +22,20 @@ type kontoAntwort struct {
 	Rolle      string    `json:"rolle"`
 	Aktiv      bool      `json:"aktiv"`
 	ErstelltAm time.Time `json:"erstellt_am"`
-	// ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);
-	// null = keiner. Die Oberfläche unterscheidet daran „wartet" von „deaktiviert".
+	// ZugangBeantragtAm ist der offene Antrag aus der Selbstanmeldung, null heißt keiner. Die
+	// Oberfläche unterscheidet daran „wartet" von „deaktiviert".
 	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
-	// LeserID ist die Leserzeile dieses Kontos (Migration 125). Die Freischaltungs-Zeile
-	// braucht sie, um von einem offenen Antrag aus nach der gleichnamigen Leserzeile zu
-	// suchen, die noch KEIN Konto hat — der Altbestand, bei dem die Selbstanmeldung sonst
-	// einen zweiten Eintrag erzeugt (UserManagementZugangsanfragen.svelte).
+	// LeserID ist die Leserzeile dieses Kontos. Die Zeile zum Freischalten braucht sie, um von
+	// einem offenen Antrag aus nach der gleichnamigen Leserzeile zu suchen, die noch kein Konto
+	// hat: der Altbestand, bei dem die Selbstanmeldung sonst einen zweiten Eintrag erzeugt
+	// (UserManagementZugangsanfragen.svelte).
 	LeserID string   `json:"leser_id"`
 	Rechte  []string `json:"permissions"`
 }
 
-// Konten returns a list of all system users.
-// @Summary      List system users
-// @Description  Retrieves all administrative and staff users registered in the system.
+// Konten liefert alle Konten mit den Rechten ihrer Rolle.
+// @Summary      Konten
+// @Description  Liefert alle Konten des Personals mit den Rechten ihrer Rolle.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
@@ -56,8 +52,8 @@ func (t *Tueren) Konten(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc
 			return
 		}
 
-		// EINMAL fuer alle Rollen laden, nicht je Benutzer: Sonst wird aus einer Liste
-		// mit zwanzig Eintraegen eine Abfragelawine gegen dieselben vier Rollen.
+		// Einmal für alle Rollen laden, nicht je Konto: Sonst würde aus einer Liste mit zwanzig
+		// Einträgen eine Lawine von Abfragen an dieselben vier Rollen.
 		rechteJeRolle, err := t.rechteAllerRollen(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -80,13 +76,8 @@ func (t *Tueren) Konten(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc
 				LeserID:           konto.LeserID,
 			}
 
-			// Die echten Rechte aus role_permissions, nicht mehr eine feste Liste.
-			//
-			// Hier stand eine hartkodierte Zuordnung, die sich „analog zum Login" nannte,
-			// es aber nicht war: Sie nannte manage_settings, print_classes und view_media —
-			// Rechte, die es im System gar nicht gibt (kein RequirePermission, kein Seed).
-			// Wer die Benutzerliste ansah, bekam also erfundene Angaben, waehrend Login und
-			// /api/auth/me die tatsaechlichen Rechte laden. Audit-Befund vom 01.08.2026.
+			// Die Rechte kommen aus role_permissions wie bei der Anmeldung und /api/auth/me,
+			// damit die Liste die Rechte zeigt, die gelten.
 			eintrag.Rechte = rechteJeRolle[eintrag.Rolle]
 			if eintrag.Rechte == nil {
 				eintrag.Rechte = []string{}
@@ -99,13 +90,12 @@ func (t *Tueren) Konten(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc
 	}
 }
 
-// rechteAllerRollen liefert die freigeschalteten Rechte je Rolle aus role_permissions —
-// derselben Tabelle, aus der auch Login und RequirePermission lesen.
+// rechteAllerRollen liefert die freigeschalteten Rechte je Rolle aus role_permissions,
+// derselben Tabelle, aus der Anmeldung und RequirePermission lesen.
 //
-// Admin bekommt "*" wie im Login und im Middleware-Bypass; ein Admin hat implizit alle
-// Rechte, unabhaengig davon, was in der Tabelle steht.
-//
-// Die Rollen kommen kleingeschrieben zurueck, passend zu UserResponse.Rolle.
+// Admin bekommt "*" wie bei der Anmeldung und in der Prüfung der Rechte: Ein Admin hat alle
+// Rechte, gleich was in der Tabelle steht. Die Rollen kommen klein geschrieben zurück, wie
+// kontoAntwort.Rolle.
 func (t *Tueren) rechteAllerRollen(ctx context.Context) (map[string][]string, error) {
 	rechte, err := repository.LadeErlaubteRechteJeRolle(ctx, t.DB.Pool)
 	if err != nil {

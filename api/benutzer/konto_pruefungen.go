@@ -11,17 +11,17 @@ import (
 	"bibliothek/repository"
 )
 
-// Feldprüfungen der Benutzerverwaltung: Rolle normalisieren, E-Mail und Barcode auf
-// Eindeutigkeit prüfen. Bewusst getrennt von den Handlern (konto_anlegen_aendern.go) und
-// von der Rechtetrennung (admin_schutz.go) — drei verschiedene Fragen:
-// „ist die Eingabe wohlgeformt", „wer ruft auf", „was macht der Endpunkt".
+// Feldprüfungen der Benutzerverwaltung: Rolle normalisieren, E-Mail und Ausweisnummer auf
+// Eindeutigkeit prüfen. Getrennt von den Türen (konto_anlegen_aendern.go) und vom Schutz der
+// Admin-Konten (admin_schutz.go), weil es drei verschiedene Fragen sind: „ist die Eingabe
+// wohlgeformt", „wer ruft auf", „was tut die Tür".
 
-// normalisiereRolle bildet die Eingaberolle auf einen gültigen DB-Enum-Wert
-// ab; unbekannte Rollen werden auf "mitarbeiter" zurückgesetzt.
+// normalisiereRolle bildet die Rolle der Eingabe auf einen Wert ab, den die Datenbank kennt;
+// eine unbekannte Rolle wird "mitarbeiter".
 //
-// Die Rückfallebene ist die HARMLOSESTE Rolle, nicht die nächstliegende: Ein Tippfehler
-// darf niemals nach oben führen. Wer "admin" schreiben will, muss es exakt treffen — und
-// die Vergabe gestattet zusätzlich nur pruefeAdminVergabe.
+// Die Rückfallebene ist die harmloseste Rolle, nicht die nächstliegende: Ein Tippfehler darf
+// nie nach oben führen. Wer "admin" schreiben will, muss es genau treffen, und vergeben darf
+// es zusätzlich nur, wer pruefeAdminVergabe passiert.
 func normalisiereRolle(rolle string) string {
 	klein := strings.ToLower(strings.TrimSpace(rolle))
 	switch klein {
@@ -32,11 +32,11 @@ func normalisiereRolle(rolle string) string {
 	}
 }
 
-// pruefeEmailEindeutig prüft die E-Mail-Eindeutigkeit (excludeID leer bei Neuanlage,
-// sonst die eigene ID). Bei Konflikt oder DB-Fehler wird die HTTP-Antwort direkt
-// geschrieben und false zurückgegeben.
+// pruefeEmailEindeutig prüft, dass kein anderes Konto die E-Mail trägt (ausgenommeneID leer
+// bei einem neuen Konto, sonst die eigene Kennung). Bei einem Konflikt oder Fehler der
+// Datenbank ist die Antwort schon geschrieben, und es liefert false.
 //
-// Die Eindeutigkeit ist hier mehr als Datenhygiene: Die Anmeldung findet den Benutzer
+// Die Eindeutigkeit ist hier mehr als Datenhygiene: Die Anmeldung findet das Konto
 // über seine E-Mail (auth/handlers.go). Zwei Datensätze mit derselben Adresse hießen,
 // dass nicht mehr feststeht, wessen Konto ein Login öffnet.
 func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, email, ausgenommeneID string) bool {
@@ -53,7 +53,7 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfra
 }
 
 // pruefeKeineLeserzeileOhneKonto bremst, wenn ein Kollege gleichen Namens schon eine
-// Leserzeile OHNE Konto hat (OFFEN.md 5.17): nach dem Löschen seines Kontos oder aus der
+// Leserzeile ohne Konto hat: nach dem Löschen seines Kontos oder aus der
 // Littera-Übernahme. Der Wächter trg_benutzer_hat_leserzeile hängt jedem neuen Konto eine
 // frische Leserzeile an — dieselbe Person stünde dann zweimal in der Leserdatei, einmal mit
 // Ausweis und Geschichte, einmal leer. Der Weg zum Konto an der vorhandenen Zeile ist die
@@ -74,16 +74,17 @@ func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, 
 	return true
 }
 
-// ausweisPruefung bündelt die Parameter für die Prüfung der Barcode-Eindeutigkeit.
+// ausweisPruefung bündelt, was die Prüfung der Ausweisnummer braucht: die Nummer, das Konto,
+// das sie schon tragen darf, und die Meldung bei einem Konflikt.
 type ausweisPruefung struct {
 	nummer          string
 	ausgenommeneID  string
 	konfliktmeldung string
 }
 
-// pruefeAusweisnummerEindeutig liefert den optionalen Barcode-Pointer und validiert dessen
-// Eindeutigkeit. Ist kein Barcode gesetzt, wird (nil, true) geliefert. Bei Konflikt
-// oder DB-Fehler wird die HTTP-Antwort direkt geschrieben (ok=false).
+// pruefeAusweisnummerEindeutig liefert die Ausweisnummer als Zeiger, nil ohne Nummer, und prüft,
+// dass kein anderes Konto sie trägt. Bei einem Konflikt oder Fehler der Datenbank ist die
+// Antwort schon geschrieben (ok=false).
 func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, pruefung ausweisPruefung) (nummer *string, ok bool) {
 	if pruefung.nummer == "" {
 		return nil, true
@@ -101,12 +102,11 @@ func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, ko
 }
 
 // meldeAusweisKollision übersetzt die Ablehnung der Datenbank beim Eintragen einer
-// Ausweisnummer in eine Auskunft (409) und sagt, ob sie geschrieben wurde. Zwei Wächter
-// greifen hinter der Vorprüfung (pruefeBarcodeEindeutig, sie kennt nur die Leserzeilen):
-// dieselbe Nummer bei einer anderen Person (Migration 118/125, zwei Arbeitsplätze
-// gleichzeitig) und die Nummer eines Buchs (Migration 131). Bis zum 22.09.2026 kam beides
-// als 500 „interner Fehler“ an — die drei Schüler-Türen übersetzen es seit ihrer Anlage
-// (Rasterdurchgang 22.09.2026, Frage 5).
+// Ausweisnummer in eine Auskunft (409) und sagt, ob sie geschrieben wurde. Zwei Wächter greifen
+// hinter der Vorprüfung (pruefeAusweisnummerEindeutig, sie kennt nur die Leserzeilen):
+// dieselbe Nummer bei einer anderen Person (zwei Arbeitsplätze gleichzeitig) und die Nummer
+// eines Buchs. Wie die drei Türen für Schüler übersetzt sie beides in eine Auskunft statt in
+// eine 500.
 func meldeAusweisKollision(w http.ResponseWriter, err error) bool {
 	switch {
 	case repository.IstNummerBuchOderAusweisKollision(err):

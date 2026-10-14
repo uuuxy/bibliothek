@@ -14,8 +14,8 @@ import (
 
 // Die Rechte-Matrix ist Systemkonfiguration, nicht Tagesgeschäft der Kontoverwaltung.
 //
-// Vorher genügte manage_users, um sie zu ändern — und damit schloss sich der Kreis:
-// Wer Konten verwalten durfte, konnte der EIGENEN Rolle jedes weitere Recht zuschalten.
+// Genügte manage_users, um sie zu ändern, könnte, wer Konten verwalten darf, der eigenen Rolle
+// jedes weitere Recht zuschalten.
 // Der Test läuft gegen echtes Postgres, weil genau die Trefferzahl der UPDATE-Anweisung
 // geprüft wird; ein Mock würde die zurückgeben, die man ihm vorgibt.
 func TestRechteMatrixNurDurchAdmin(t *testing.T) {
@@ -81,9 +81,9 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 		}
 	})
 
-	// Bugklasse „still verworfen, trotzdem 200": Ein Tippfehler im Rechtenamen traf keine
-	// Zeile, der Endpunkt meldete aber Erfolg. In der Oberfläche sah das aus wie ein
-	// gesetzter Haken, der nach dem nächsten Neuladen wieder weg war.
+	// „Still verworfen, trotzdem 200": Ein Tippfehler im Namen des Rechts trifft keine Zeile.
+	// Meldete die Tür Erfolg, sähe die Oberfläche einen gesetzten Haken, der nach dem nächsten
+	// Neuladen wieder weg ist.
 	t.Run("unbekanntes Recht meldet Fehler statt Erfolg", func(t *testing.T) {
 		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions",
 			`{"role":"mitarbeiter","permission":"audit_logz","allowed":true}`, "admin-1", auth.RoleAdmin)

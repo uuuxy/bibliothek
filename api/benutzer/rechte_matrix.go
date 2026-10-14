@@ -12,16 +12,16 @@ import (
 	"bibliothek/repository"
 )
 
-// rollenRecht holds a single role-permission flag returned by the API.
+// rollenRecht ist ein Feld der Rechte-Matrix: ob eine Rolle ein Recht hat.
 type rollenRecht struct {
 	Rolle   string `json:"role"`
 	Recht   string `json:"permission"`
 	Erlaubt bool   `json:"allowed"`
 }
 
-// RechteMatrix returns all permission configurations grouped by role.
-// @Summary      Get role permissions
-// @Description  Retrieves current allowed/denied flags for permissions across all system roles.
+// RechteMatrix liefert für jede Rolle und jedes Recht, ob es erlaubt ist.
+// @Summary      Rechte-Matrix
+// @Description  Liefert je Rolle und Recht, ob es erlaubt ist.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
@@ -48,20 +48,21 @@ func (t *Tueren) RechteMatrix() http.HandlerFunc {
 	}
 }
 
-// rollenRechtAnfrage is the payload for toggling a single role-permission flag.
+// rollenRechtAnfrage schaltet ein Recht für eine Rolle an oder ab.
 type rollenRechtAnfrage struct {
 	Rolle   string `json:"role"`
 	Recht   string `json:"permission"`
 	Erlaubt bool   `json:"allowed"`
 }
 
-// RollenRechtSetzen updates a specific permission setting.
-// @Summary      Update role permission
-// @Description  Enables or disables a specific permission for a user role.
+// RollenRechtSetzen schaltet ein Recht für eine Rolle an oder ab; das darf nur ein
+// Administrator.
+// @Summary      Recht einer Rolle setzen
+// @Description  Schaltet ein Recht für eine Rolle an oder ab.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        body  body      rollenRechtAnfrage  true  "Permission update payload"
+// @Param        body  body      rollenRechtAnfrage  true  "Rolle, Recht und ob es erlaubt ist"
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
@@ -73,13 +74,10 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 			return
 		}
 
-		// Wer Konten verwaltet, definiert damit nicht, was Rollen dürfen.
-		//
-		// Vorher genügte manage_users, und das schloss den Kreis: Der Endpunkt konnte der
-		// EIGENEN Rolle jedes beliebige Recht zuschalten — audit_logs, delete_students,
-		// und bis zum 06.08.2026 auch manage_users für weitere Rollen. Ein delegiertes
-		// Verwaltungsrecht wuchs so in einem Schritt zu vollem Zugriff aus. Die Rechte-
-		// Matrix ist Konfiguration des Systems, nicht Tagesgeschäft der Kontoverwaltung.
+		// Wer Konten verwaltet, legt damit nicht fest, was Rollen dürfen: Mit manage_users
+		// allein könnte man der eigenen Rolle jedes Recht zuschalten und ein weitergegebenes
+		// Recht in einem Schritt zu vollem Zugriff ausbauen. Die Rechte-Matrix ist
+		// Konfiguration des Systems, nicht Tagesgeschäft der Kontoverwaltung.
 		if !istAufruferAdmin(r) {
 			apierrors.SendHTTPError(w, http.StatusForbidden,
 				errors.New("die Rechte-Matrix kann nur ein Administrator ändern"))
@@ -94,11 +92,9 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 			return
 		}
 
-		// Kein Treffer heißt: Rolle oder Recht gibt es nicht. Ohne diese Prüfung
-		// aktualisierte der Endpunkt null Zeilen und meldete trotzdem "success" — ein
-		// Tippfehler im Rechtenamen sah in der Oberfläche aus wie ein gesetzter Haken,
-		// blieb in der Datenbank aber wirkungslos. Genau die Bugklasse "still verworfen,
-		// trotzdem 200", die dieses Projekt schon mehrfach getroffen hat.
+		// Kein Treffer heißt: Rolle oder Recht gibt es nicht. Meldete die Tür trotzdem
+		// Erfolg, sähe ein Tippfehler im Namen des Rechts in der Oberfläche aus wie ein
+		// gesetzter Haken, der in der Datenbank nichts bewirkt.
 		if getroffen == 0 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest,
 				fmt.Errorf("unbekannte Kombination aus Rolle %q und Recht %q — nichts geändert", req.Rolle, req.Recht))
@@ -111,7 +107,7 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 			"rolle": strings.ToUpper(req.Rolle), "recht": req.Recht, "erlaubt": req.Erlaubt,
 		})
 
-		// Invalidate permission cache so permission changes take effect immediately
+		// Den Rechte-Cache leeren, damit die Änderung sofort gilt.
 		tuer.LeereRechteCache()
 
 		w.Header().Set("Content-Type", "application/json")

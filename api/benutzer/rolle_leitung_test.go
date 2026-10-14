@@ -9,7 +9,7 @@ import (
 	"bibliothek/auth"
 )
 
-// Die Rolle Leitung muss vergebbar sein. normalisiereBenutzerRolle ist die Stelle, an
+// Die Rolle Leitung muss vergebbar sein. normalisiereRolle ist die Stelle, an
 // der eine unbekannte Rolle auf die harmloseste zurückfällt — stünde „leitung" nicht in
 // der Liste, würde jede Vergabe still zu „mitarbeiter", und die Auswahl in der
 // Benutzerverwaltung sähe nur so aus, als hätte sie gewirkt.
@@ -29,12 +29,12 @@ func TestNormalisiereRolle_KenntLeitung(t *testing.T) {
 	}
 }
 
-// Die Leitung ist KEIN Administrator. Ab Werk hat sie kein manage_users und erreicht die
+// Die Leitung ist kein Administrator. Ab Werk hat sie kein manage_users und erreicht die
 // Benutzerverwaltung gar nicht — aber der Admin kann ihr das Recht erteilen (es ist
 // delegierbar, siehe admin_schutz.go). Dann gilt dieselbe Grenze wie für einen
-// Mitarbeiter: Wer einen Administrator anlegen oder verändern will, muss selbst einer
-// sein. Diese Regel bestand schon; der Test hält sie für die neue Rolle fest, damit sie
-// nicht beim nächsten Umbau an eine Rollenliste gerät, die „leitung" mitzählt.
+// Mitarbeiter: Wer einen Administrator anlegen oder verändern will, muss selbst einer sein.
+// Der Test hält die Regel für diese Rolle fest, damit sie nicht an eine Rollenliste gerät,
+// die „leitung" mitzählt.
 func TestLeitungDarfKeinenAdminVergeben(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"leitung-1": "LEITUNG"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
@@ -52,7 +52,7 @@ func TestLeitungDarfKeinenAdminVergeben(t *testing.T) {
 	}
 }
 
-// Dieselbe Grenze in der anderen Richtung: Das KONTO eines Admins ist für eine Leitung
+// Dieselbe Grenze in der anderen Richtung: Das Konto eines Admins ist für eine Leitung
 // tabu, gleich welches Feld sie ändern will. Der Grund ist nicht das Rollenfeld, sondern
 // die E-Mail: Wer sie auf die eigene Adresse setzt, bekommt beim nächsten Login die
 // Admin-Sitzung (auth/handlers.go sucht den Benutzer über seine E-Mail).
