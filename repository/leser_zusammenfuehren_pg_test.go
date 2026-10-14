@@ -66,7 +66,7 @@ func TestZusammenfuehren_QuelleGehtImZielAuf(t *testing.T) {
 		t.Fatal(err)
 	}
 	// LUSD führend: Name, Klasse und Anschrift der frischer bestätigten Quelle.
-	if vorname != "Neu" || !lusd.KlassenGleich(klasse, "08A") || strasse != "Neuweg" {
+	if vorname != "Neu" || !lusd.IstKlasseGleich(klasse, "08A") || strasse != "Neuweg" {
 		t.Errorf("Stammdaten nicht von der LUSD-frischen Seite: vorname=%q klasse=%q strasse=%q", vorname, klasse, strasse)
 	}
 	// Kein Abgänger mehr; die Sperre bleibt wegen der offenen Ausleihe — mit sachlichem Grund.
@@ -374,7 +374,7 @@ func TestZusammenfuehren_AktiveHandanlageSchlaegtAbgaenger(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if erg.Nachname != "Fuehrend-Neu" || !lusd.KlassenGleich(erg.Klasse, "08A") {
+	if erg.Nachname != "Fuehrend-Neu" || !lusd.IstKlasseGleich(erg.Klasse, "08A") {
 		t.Errorf("aktive Handanlage muss die Stammdaten stellen, nicht der Abgänger: %+v", erg)
 	}
 }
