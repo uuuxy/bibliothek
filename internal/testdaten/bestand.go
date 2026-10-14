@@ -22,8 +22,8 @@ func LegeTitelAn(t *testing.T, pool *pgxpool.Pool, titel string, meldebestand in
 	return id
 }
 
-// LegeTitelMitSignaturAn legt einen Titel mit Signatur an; Lernmittel, wenn Titel oder Signatur die
-// Kennung der Lernmittel tragen.
+// LegeTitelMitSignaturAn legt einen Titel mit Signatur an; er entsteht als Lernmittel, wenn
+// Titel oder Signatur die Kennung der Lernmittel tragen.
 func LegeTitelMitSignaturAn(t *testing.T, pool *pgxpool.Pool, titel, signatur string, meldebestand int) string {
 	t.Helper()
 	var id string
@@ -35,8 +35,9 @@ func LegeTitelMitSignaturAn(t *testing.T, pool *pgxpool.Pool, titel, signatur st
 	return id
 }
 
-// LegeTitelMitCoverUndAlterAn legt einen Titel mit Signatur an, wahlweise mit Cover, angelegt vor alterTage
-// Tagen: Das Datum steuert „Neu eingetroffen“ am Monitor, das Cover seine Cover-Pflicht.
+// LegeTitelMitCoverUndAlterAn legt einen Titel mit Signatur an, wahlweise mit Cover, angelegt
+// vor alterTage Tagen: Das Datum steuert „Neu eingetroffen“ am Monitor, das Cover seine
+// Cover-Pflicht.
 func LegeTitelMitCoverUndAlterAn(t *testing.T, pool *pgxpool.Pool, titel, signatur string, mitCover bool, alterTage int) string {
 	t.Helper()
 	var cover *string
@@ -80,8 +81,8 @@ func LegeExemplarAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode string, a
 	return id
 }
 
-// LegeExemplarImZulaufAn legt ein Exemplar an, wie es das Bestellwesen anlegt: nicht ausleihbar, mit
-// Bestellstatus und dem heutigen Tag als erworben_am (Vorgabe der Spalte).
+// LegeExemplarImZulaufAn legt ein Exemplar an, wie es das Bestellwesen anlegt: nicht
+// ausleihbar, mit Bestellstatus und dem heutigen Tag als erworben_am (Vorgabe der Spalte).
 func LegeExemplarImZulaufAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) string {
 	t.Helper()
 	var id string

@@ -10,8 +10,8 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// LegeAusleiheMitFristAn legt Titel, Exemplar und eine offene Ausleihe mit der Frist an und liefert die
-// Kennung der Ausleihe.
+// LegeAusleiheMitFristAn legt Titel, Exemplar und eine offene Ausleihe mit der Frist an und
+// liefert die Kennung der Ausleihe.
 func LegeAusleiheMitFristAn(t *testing.T, pool *pgxpool.Pool, schuelerID, titel string, frist time.Time) string {
 	t.Helper()
 	ctx := context.Background()
@@ -27,8 +27,9 @@ func LegeAusleiheMitFristAn(t *testing.T, pool *pgxpool.Pool, schuelerID, titel 
 	return ausleiheID
 }
 
-// LegeAusleiheVorZweiTagenAn bucht eine Ausleihe von vor zwei Tagen: innerhalb jedes Zeitfensters des
-// Monitors. Die Zeit kommt aus der Datenbank, weil die Fenster dort gerechnet werden.
+// LegeAusleiheVorZweiTagenAn legt am Exemplar eine Ausleihe von vor zwei Tagen an: Sie liegt in
+// jedem Zeitfenster des Monitors. Die Zeit kommt aus der Datenbank, weil die Fenster dort
+// gerechnet werden.
 func LegeAusleiheVorZweiTagenAn(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `
@@ -39,7 +40,8 @@ func LegeAusleiheVorZweiTagenAn(t *testing.T, pool *pgxpool.Pool, exemplarID, sc
 	}
 }
 
-// LegeOffeneAusleiheAn hängt dem Schüler eine noch nicht zurückgegebene Ausleihe an.
+// LegeOffeneAusleiheAn legt Titel und Exemplar an und hängt dem Schüler eine Ausleihe an, deren
+// Frist in 14 Tagen endet.
 func LegeOffeneAusleiheAn(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
 	t.Helper()
 	titelID := LegeTitelAn(t, pool, "Titel-"+barcodePraefix, 1)
@@ -80,7 +82,8 @@ func LadeMahnstufe(t *testing.T, pool *pgxpool.Pool, ausleiheID string) (int, *t
 	return stufe, datum
 }
 
-// LegeSchuelerMitAusleiheAn legt einen aktiven Schüler mit genau einem offenen Buch an.
+// LegeSchuelerMitAusleiheAn legt einen Schüler mit genau einer offenen Ausleihe an, deren Frist
+// vor drei Tagen ablief.
 func LegeSchuelerMitAusleiheAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
 	id := LegeSchuelerAn(t, pool, barcode, vorname, klasse)

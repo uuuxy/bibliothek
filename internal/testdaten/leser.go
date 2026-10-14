@@ -10,7 +10,7 @@ import (
 	"bibliothek/repository"
 )
 
-// LegeSchuelerAn legt einen Schüler mit dem Nachnamen „Test“ an.
+// LegeSchuelerAn legt einen Schüler mit dem Nachnamen „Test“ an und liefert seine Kennung.
 func LegeSchuelerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
 	var id string
@@ -36,16 +36,16 @@ func LegeAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse 
 	return id
 }
 
-// LUSDSchuelerNeu sind die Angaben für LegeLUSDSchuelerAn. Ein Abgänger entsteht gesperrt, mit dem
-// Sperrgrund der Abgänger und einer Karenz, die seit zehn Tagen läuft.
+// LUSDSchuelerNeu sind die Angaben für LegeLUSDSchuelerAn. Ein Abgänger entsteht gesperrt, mit
+// dem Sperrgrund der Abgänger und einer Karenz, die seit zehn Tagen läuft.
 type LUSDSchuelerNeu struct {
 	Vorname, Nachname, Klasse, Barcode string
 	Geburtsdatum, SchulEintrittAm      *time.Time
 	IstAbgaenger                       bool
 }
 
-// LegeLUSDSchuelerAn legt einen Schüler mit Geburtsdatum und Eintritt an, vom LUSD-Import vor
-// einem Jahr bestätigt.
+// LegeLUSDSchuelerAn legt einen Schüler an, wie ihn der LUSD-Import hinterlässt: mit
+// Geburtsdatum und Schuleintritt, vor einem Jahr bestätigt.
 func LegeLUSDSchuelerAn(t *testing.T, pool *pgxpool.Pool, s LUSDSchuelerNeu) string {
 	t.Helper()
 	var id string
@@ -62,7 +62,8 @@ func LegeLUSDSchuelerAn(t *testing.T, pool *pgxpool.Pool, s LUSDSchuelerNeu) str
 	return id
 }
 
-// LegeKollegiumskontoAn legt ein Konto des Kollegiums an.
+// LegeKollegiumskontoAn legt ein Konto des Kollegiums mit der Adresse an und liefert seine
+// Kennung; gibt es die Adresse schon, liefert es deren Konto.
 func LegeKollegiumskontoAn(t *testing.T, pool *pgxpool.Pool, email string) string {
 	t.Helper()
 	var id string
@@ -76,7 +77,8 @@ func LegeKollegiumskontoAn(t *testing.T, pool *pgxpool.Pool, email string) strin
 	return id
 }
 
-// LegeBearbeiterAn legt das Admin-Konto an, auf das ein Protokolleintrag zeigt.
+// LegeBearbeiterAn legt das eine Admin-Konto an, das in allen Tests als Bearbeiter handelt, und
+// liefert seine Kennung: Ein Protokolleintrag zeigt auf ein Konto.
 func LegeBearbeiterAn(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
 	var id string
@@ -108,9 +110,9 @@ func ZusammenfuehrenAuftrag(ziel, quelle string) repository.ZusammenfuehrenAuftr
 	return repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}
 }
 
-// LegeAdminKontoAn legt ein aktives Admin-Konto mit dieser Adresse an und nennt seine Kennung. Die
-// Adresse gehört dem Test: Zwei Tests teilen sich so kein Konto und zählen nicht die
-// Protokolleinträge des anderen.
+// LegeAdminKontoAn legt ein aktives Admin-Konto mit dieser Adresse an und liefert seine
+// Kennung. Die Adresse gehört dem Test: Zwei Tests teilen sich so kein Konto und zählen nicht
+// die Protokolleinträge des anderen.
 func LegeAdminKontoAn(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname string) string {
 	t.Helper()
 	var id string

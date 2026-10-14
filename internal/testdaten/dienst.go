@@ -11,8 +11,8 @@ import (
 	"bibliothek/repository"
 )
 
-// BucheAusleiheUeberDienst leiht ein Exemplar an einen Schüler aus — über denselben Dienst,
-// den auch der Scanner benutzt, damit die Frist wirklich aus den Einstellungen kommt und
+// BucheAusleiheUeberDienst leiht ein Exemplar an einen Schüler aus, über denselben Dienst wie
+// der Scan an der Theke, und liefert die Frist. So kommt die Frist aus den Einstellungen und
 // nicht aus dem Test.
 func BucheAusleiheUeberDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerID, bearbeiterID string) time.Time {
 	t.Helper()

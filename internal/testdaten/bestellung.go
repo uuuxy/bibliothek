@@ -9,8 +9,8 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// LegeLieferantAn legt einen Lieferanten an und liefert seine Kennung. Als Hauptlieferant räumt er
-// zuerst den bisherigen: Es darf höchstens einen geben, und LeereBestandsdaten leert die
+// LegeLieferantAn legt einen Lieferanten an und liefert seine Kennung. Als Hauptlieferant räumt
+// er zuerst den bisherigen: Es darf höchstens einen geben, und LeereBestandsdaten leert die
 // Lieferanten nicht.
 func LegeLieferantAn(t *testing.T, pool *pgxpool.Pool, name string, istHaupt bool) string {
 	t.Helper()
@@ -32,7 +32,7 @@ func LegeLieferantAn(t *testing.T, pool *pgxpool.Pool, name string, istHaupt boo
 	return id
 }
 
-// LegeBestellungAn legt eine Bestellung mit Topf an.
+// LegeBestellungAn legt eine Bestellung aus dem genannten Topf an und liefert ihre Kennung.
 func LegeBestellungAn(t *testing.T, mittel string) string {
 	t.Helper()
 	var id string
@@ -69,7 +69,8 @@ func LadeBarcodesDerBestellung(t *testing.T, pool *pgxpool.Pool) []string {
 	return liste
 }
 
-// LadeExemplarIDsDerBestellung liest die Kennungen, mit denen der Wareneingang arbeitet.
+// LadeExemplarIDsDerBestellung liest die Kennungen derselben Exemplare; mit ihnen arbeitet der
+// Wareneingang.
 func LadeExemplarIDsDerBestellung(t *testing.T, pool *pgxpool.Pool) []string {
 	t.Helper()
 	rows, err := pool.Query(context.Background(),
@@ -111,9 +112,9 @@ func SetzeOeffentlicheAdresse(t *testing.T, pool *pgxpool.Pool, adresse string) 
 	}
 }
 
-// LegeBestellungOhneTopfAn legt eine Bestellung an, wie sie vor der Zuordnung zu einem Topf entstand: ohne
-// Mittel, mit je einer Position für die genannten Titel. Ein leerer Eintrag steht für eine
-// Position, deren Titel gelöscht ist.
+// LegeBestellungOhneTopfAn legt eine Bestellung an, wie sie vor der Zuordnung zu einem Topf
+// entstand: ohne Mittel, mit je einer Position für die genannten Titel. Ein leerer Eintrag
+// steht für eine Position, deren Titel gelöscht ist.
 func LegeBestellungOhneTopfAn(t *testing.T, pool *pgxpool.Pool, name string, titelIDs []string) string {
 	t.Helper()
 	ctx := context.Background()

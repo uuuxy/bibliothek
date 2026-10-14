@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// SetzeGenauEinRecht stellt die MITARBEITER-Rolle in role_permissions auf exakt ein erlaubtes
+// SetzeGenauEinRecht stellt die Rolle MITARBEITER in role_permissions auf genau ein erlaubtes
 // Recht; ein leeres Recht nimmt ihr alle. Den Zwischenspeicher der Rechteprüfung leert es
 // nicht: Tests von Türen rufen tuertest.SetzeGenauEinRecht.
 func SetzeGenauEinRecht(t *testing.T, pool *pgxpool.Pool, recht string) {

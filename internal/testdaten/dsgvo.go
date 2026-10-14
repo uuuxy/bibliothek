@@ -7,26 +7,24 @@ package testdaten
 // und die Fremdschlüssel des Schemas gegen die Liste.
 var DSGVOLeserQuellen = []struct {
 	Tabelle            string
-	Bezug              string // wie die Tabelle auf den Schüler verweist (Doku + Fehlermeldung)
-	MitFremdschluessel bool   // taucht im information_schema-Scan der FK-Ratsche auf
+	Bezug              string // wie die Tabelle auf den Leser verweist, für die Meldungen
+	MitFremdschluessel bool   // die Prüfung über die Fremdschlüssel des Schemas findet die Tabelle
 }{
-	// Die Tabelle leser, nicht die Sicht schueler: Die Auskunft gibt es seit dem 24.09.2026
-	// für jeden Leser (OFFEN.md 5.19).
+	// Die Tabelle leser, nicht die Sicht schueler: Die Auskunft gilt für jeden Leser.
 	{"leser", "id", false},
 	{"schueler_fotos", "schueler_id (FK, ON DELETE CASCADE)", true},
 	{"ausleihen", "schueler_id (FK, bei Tilgung -> NULL)", true},
 	{"schadensfaelle", "schueler_id (FK, bei Tilgung geloescht)", true},
 	{"vormerkungen", "schueler_id (FK, bei Tilgung geloescht)", true},
-	// Migration 110: Der Bescheid bleibt als Beleg (die Referenznummer ordnet Zahlungen
-	// zu), sein Empfänger-Snapshot wird bei der Tilgung geleert.
+	// Der Bescheid bleibt als Beleg (die Referenznummer ordnet Zahlungen zu); die Tilgung leert
+	// seinen Empfänger-Snapshot.
 	{"schadensersatz_bescheide", "schueler_id (FK, bei Tilgung wird empfaenger_snapshot geleert)", true},
-	// Migration 117: Die Meldung bleibt als Vorgang (Barcode, Ergebnis), beide Personen-
-	// spalten werden bei der Tilgung auf NULL gesetzt.
+	// Die Meldung bleibt als Vorgang (Barcode, Ergebnis); die Tilgung setzt beide Spalten mit
+	// Personenbezug auf NULL.
 	{"nachbuch_meldungen", "ausleiher_schueler_id / vorbesitzer_schueler_id (FK, bei Tilgung -> NULL)", true},
-	// Migration 123: Die Tabelle fuehrt alle Leser, und ein Konto zeigt auf seine
-	// Leserzeile. Die Auskunft nennt das Konto samt Anmeldedaten (seit dem 24.09.2026,
-	// repository/dsgvo_konto.go); die Tilgung loest die Verknuepfung. Der Fremdschluessel
-	// steht auf ON DELETE SET NULL, greift also erst, wenn die Leserzeile ganz verschwindet.
+	// Ein Konto zeigt auf seine Leserzeile. Die Auskunft nennt das Konto samt Anmeldedaten
+	// (repository/dsgvo_konto.go), die Tilgung löst die Verknüpfung. Der Fremdschlüssel steht
+	// auf ON DELETE SET NULL und greift erst, wenn die Leserzeile ganz verschwindet.
 	{"benutzer", "leser_id (FK, ON DELETE SET NULL; bei Tilgung -> NULL)", true},
 	{"audit_log", "datensatz_id (tabelle='schueler') bzw. details->>'schueler_id'", false},
 	{"audit_logs", "details->>'schueler_id'", false},

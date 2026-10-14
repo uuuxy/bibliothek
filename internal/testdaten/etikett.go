@@ -15,8 +15,8 @@ const (
 	EtikettFormatMitVermerk = "avery_3475"
 )
 
-// SetzeVermerkSchuelerbuecherei hinterlegt den Eigentumsvermerk für Bücher aus Mitteln des
-// Schulträgers direkt in der Tabelle und nimmt ihn am Ende des Tests zurück.
+// SetzeVermerkSchuelerbuecherei hinterlegt den Eigentumsvermerk für Exemplare aus Mitteln des
+// Schulträgers unmittelbar in der Tabelle und nimmt ihn am Ende des Tests zurück.
 func SetzeVermerkSchuelerbuecherei(t *testing.T, pool *pgxpool.Pool, wert string) {
 	t.Helper()
 	ctx := context.Background()

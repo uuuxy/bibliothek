@@ -1,10 +1,13 @@
 // Package testdaten legt Zeilen in der Testdatenbank an und leert sie: Titel, Exemplare, Leser,
-// Ausleihen, Bestellungen, Forderungen. Jede Funktion schreibt die Zeile unmittelbar, ohne den
-// Weg des Programms: Ein Test stellt damit eine Lage her und prüft dann die Tür.
+// Konten, Ausleihen, Bestellungen, Forderungen. Was es anlegt, schreibt es unmittelbar in die
+// Tabelle, nicht über den Weg des Programms: Ein Test stellt damit eine Lage her und prüft dann
+// die Tür. Nur BucheAusleiheUeberDienst geht über den Dienst, weil dort die Frist aus den
+// Einstellungen zählt.
 //
 // Wie internal/pgtest ist es ein gewöhnliches Paket, das nur Tests einbinden: Eine Testdatei
 // lässt sich nicht aus einem anderen Paket einbinden, und die Tests der Türen stehen in mehr
-// als einem. Die deadcode-Baseline führt seine Funktionen deshalb mit Begründung.
+// als einem. Die Liste des toten Codes (scripts/deadcode_baseline.txt) führt seine Funktionen
+// deshalb mit Begründung.
 package testdaten
 
 import (

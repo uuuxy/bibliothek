@@ -10,8 +10,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// LeereBescheide leert Bescheide und Nummernkreis. LeereBestandsdaten nimmt beide nicht mit: Der
-// Bescheid hängt am Schüler mit ON DELETE SET NULL, und der Zähler der Nummern steht für sich.
+// LeereBescheide leert Bescheide und Nummernkreis. LeereBestandsdaten nimmt beide nicht mit:
+// Der Bescheid hängt am Schüler mit ON DELETE SET NULL, und der Zähler der Nummern steht für
+// sich.
 func LeereBescheide(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(),
@@ -52,8 +53,8 @@ func SetzeBescheidAngaben(t *testing.T, pool *pgxpool.Pool) {
 	})
 }
 
-// LegeLernmittelAn legt einen Lernmittel-Titel an: Nur deren Forderungen gehören auf einen
-// Bescheid des Landes.
+// LegeLernmittelAn legt einen Titel als Lernmittel an: Nur Forderungen zu Lernmitteln gehören
+// auf einen Bescheid des Landes.
 func LegeLernmittelAn(t *testing.T, pool *pgxpool.Pool, titel string) string {
 	t.Helper()
 	id := LegeTitelMitCoverUndAlterAn(t, pool, titel, "Autor", true, 0)
@@ -76,7 +77,8 @@ func LegeForderungAn(t *testing.T, pool *pgxpool.Pool, schuelerID, exemplarID, a
 	return id
 }
 
-// BescheidRumpf baut den Rumpf der Anfrage für die genannten Forderungen.
+// BescheidRumpf baut den Rumpf der Anfrage, die einen Bescheid über die genannten Forderungen
+// anlegt.
 func BescheidRumpf(frist string, betraege map[string]float64) string {
 	teile := make([]string, 0, len(betraege))
 	for id, betrag := range betraege {
