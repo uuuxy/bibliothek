@@ -26,9 +26,9 @@ func normiereKopf(zelle string) string {
 // (Individueller Bericht, z. B. "Schueler_Vorname") und ohne (Standardexport,
 // z. B. "Vorname"). Erweiterbar ohne Datenbank-/Migrationsaufwand.
 //
-// Dritter Stil (26.08.2026, eine Klassenliste mit LUSD-Feldkürzeln aus der Schule —
-// kein LUSD-Export, aber dieselben Kürzel): SLR_ (Schüler), KLA_ (Klasse): SLR_Nachname,
-// SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT, KLA_Klassennamen. Ohne diese Aliase bricht
+// Ein dritter Stil kommt aus einer Klassenliste der Schule mit den Feldkürzeln der LUSD (kein
+// Export der LUSD, aber dieselben Kürzel): SLR_ (Schüler), KLA_ (Klasse): SLR_Nachname,
+// SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT, KLA_Klassennamen. Ohne diese Schreibweisen bräche
 // der Import an solchen Köpfen mit „Pflichtspalte 'vorname' fehlt" ab.
 var kopfSchreibweisen = map[string][]string{
 	spalteID:           {"lusd_id", "schueler_id", "lusdid", "slr_id", "slr_schuelerid"},
@@ -41,12 +41,12 @@ var kopfSchreibweisen = map[string][]string{
 	spaltePLZ:          {"plz", "postleitzahl", "schueler_plz", "schueler_postleitzahl", "anschrift_plz", "slr_plz"},
 	spalteOrt:          {"ort", "wohnort", "schueler_ort", "anschrift_ort", "slr_ort"},
 	spalteElternEmail:  {"eltern_email", "email", "ansprechpartner_email", "erziehungsberechtigte_email", "erziehungsberechtigter_email", "slr_email"},
-	// Schuleintritt (02.09.2026): So heißt die Spalte im Individuellen Bericht der LUSD
+	// Schuleintritt: So heißt die Spalte im Individuellen Bericht der LUSD
 	// („All_Inklusiv"-Demo-Export geprüft); die kurzen Formen für handgebaute Listen.
 	spalteEintritt: {"eintritt", "eintrittsdatum", "schueler_eintritt_aktuelleschule", "eintritt_aktuelleschule", "schueler_eintritt", "slr_eintritt", "aufnahmedatum"},
 }
 
-// pflichtspalten müssen in jedem Export stehen. Den ZUORDNUNGSSCHLÜSSEL bestimmt
+// pflichtspalten müssen in jedem Export stehen. Den Schlüssel der Zuordnung bestimmt
 // die Datei selbst (datei.go): LUSD-ID, sonst Name + Geburtsdatum, sonst nur der
 // Name — der LANIS-Klassenlisten-Export der Schule hat genau diese drei Spalten.
 var pflichtspalten = []string{spalteVorname, spalteNachname, spalteKlasse}

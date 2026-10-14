@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Die Bestandsdaten und ihre Schlüssel liegen in repository/lusd_bestand.go (Schichtung:
-// ein Handler formuliert kein SQL). Hier stehen nur die Nachschlagekarten des Imports.
+// Die Bestandsdaten und ihre Schlüssel liegen in repository/lusd_bestand.go, weil das SQL
+// in der Datenbankschicht steht. Hier stehen nur die Nachschlagekarten des Imports.
 
 type bestandsSchueler = repository.LUSDBestandsSchueler
 
@@ -39,14 +39,14 @@ func ladeBestand(ctx context.Context, tx pgx.Tx) ([]bestandsSchueler, error) {
 	return repository.LadeLUSDBestand(ctx, tx)
 }
 
-// bestandsIndex sind die Nachschlagekarten eines Modus. Ein nil-Eintrag heißt MEHRDEUTIG:
+// bestandsIndex sind die Nachschlagekarten eines Modus. Ein nil-Eintrag heißt mehrdeutig:
 // zwei Bestandszeilen teilen denselben Schlüssel (im Namensmodus etwa "Anna Müller" und
 // "anna müller" mit demselben Geburtstag — der Unique-Index ist case-sensitiv). Mehr-
-// deutiges wird NICHT zugeordnet: lieber melden als die falsche Person zusammenführen.
+// deutiges wird nicht zugeordnet: lieber melden als die falsche Person zusammenführen.
 type bestandsIndex struct {
 	aktiv     map[string]*bestandsSchueler // Modus-Schlüssel → aktiver Schüler
 	abgaenger map[string]*bestandsSchueler // Modus-Schlüssel → Abgänger (Rückkehrer-Kandidat)
-	// waisen gibt es nur im ID-Modus: Name+Geburtsdatum → aktiver Schüler OHNE echte
+	// waisen gibt es nur im ID-Modus: Name+Geburtsdatum → aktiver Schüler ohne echte
 	// LUSD-ID (Handanlage oder Littera-Übernahme). Eine CSV-Zeile, deren ID im Bestand
 	// fehlt, adoptiert ihn statt ein Duplikat anzulegen.
 	waisen map[string]*bestandsSchueler
@@ -54,11 +54,11 @@ type bestandsIndex struct {
 	// Geburtsdatum. Sie sind nicht über den Schlüssel abgleichbar — die Vorschau meldet
 	// sie. (Im Nur-Name-Modus hat jeder Schüler einen Schlüssel.)
 	ohneSchluessel []bestandsSchueler
-	// ohneDatumNachName: dieselben Schüler, nach NAME nachschlagbar (nil = mehrdeutig).
-	// Rückfallstufe für den Modus-Wechsel: Eine Schule, die erst mit der LANIS-Liste
-	// (nur Name) importierte und später einen Export MIT Geburtsdatum bekommt, hätte sonst
-	// jeden Bestandsschüler als „neu" doppelt angelegt (Prüfung 22.08.2026). Ein
-	// eindeutiger Namenstreffer wird zugeordnet und bekommt das Datum nachgetragen.
+	// ohneDatumNachName: dieselben Schüler, nach Name nachschlagbar (nil = mehrdeutig).
+	// Rückfallstufe für den Wechsel des Modus: Eine Schule, die erst mit der LANIS-Liste (nur
+	// Name) importierte und später einen Export mit Geburtsdatum bekommt, legte sonst jeden
+	// Bestandsschüler als „neu" ein zweites Mal an. Ein eindeutiger Namenstreffer wird
+	// zugeordnet und bekommt das Datum nachgetragen.
 	ohneDatumNachName map[string]*bestandsSchueler
 	// mehrdeutigAktiv sind die aktiven Zeilen hinter nil-Einträgen in aktiv — damit
 	// die Vorschau die Paare nennen kann, auch wenn keine CSV-Zeile sie trifft.

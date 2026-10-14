@@ -7,7 +7,7 @@ import (
 )
 
 // Zuordnung ist das Ergebnis der Klassifizierung — je CSV-Zeile das Ziel. Die
-// Vorschau (Vorschau) ist dieselbe Entscheidung, nur für Menschen erzählt.
+// Vorschau ist dieselbe Entscheidung, nur für Menschen erzählt.
 type Zuordnung struct {
 	zielID        map[int]string     // Zeilenindex → schueler.id: Bestand aktualisieren
 	ueberspringen map[int]bool       // Zeilenindex → nicht anfassen (ohne ID, mehrdeutig)
@@ -26,7 +26,7 @@ type Zuordnung struct {
 
 var fuehrendeNullen = regexp.MustCompile(`^0+(\d)`)
 
-// KlassenSchluessel spiegelt die SQL-Funktion klassen_normkey aus Migration 079 (klein,
+// KlassenSchluessel spiegelt die SQL-Funktion klassen_normkey (klein,
 // ohne Leerzeichen, ohne führende Nullen vor Ziffern). Der BEFORE-Trigger kanonisiert
 // jede geschriebene Klasse auf die registrierte Schreibweise — "05A" aus der LUSD wird
 // zu "5a", wenn die Schule so schreibt. Vergliche der Import roh, stünde in jeder
@@ -40,8 +40,8 @@ func KlassenSchluessel(klasse string) string {
 // IstKlasseGleich sagt, ob zwei Schreibweisen dieselbe Klasse meinen ("05A" und "5a").
 func IstKlasseGleich(a, b string) bool { return KlassenSchluessel(a) == KlassenSchluessel(b) }
 
-// vorschauAusZeile baut den Vorschau-Eintrag einer CSV-Zeile. id ist der Listenschlüssel fürs
-// Frontend: die LUSD-ID (ID-Modus) oder die schueler-UUID — bei Neuzugängen im
+// vorschauAusZeile baut den Vorschau-Eintrag einer CSV-Zeile. id ist der Listenschlüssel der
+// Oberfläche: die LUSD-ID (ID-Modus) oder die schueler-UUID — bei Neuzugängen im
 // Namensmodus die Zeilennummer, denn sonst gäbe es nichts Stabiles.
 func vorschauAusZeile(id string, zeile Zeile, alteKlasse, neueKlasse string) VorschauSchueler {
 	return VorschauSchueler{ID: id, Vorname: zeile.Vorname, Nachname: zeile.Nachname, AlteKlasse: alteKlasse, NeueKlasse: neueKlasse}
@@ -81,9 +81,9 @@ func klassifiziere(datei Datei, index bestandsIndex, vorschau *Vorschau) Zuordnu
 			if namenInDatei[zeile.namensschluessel()] > 1 {
 				lauf.vorschau.Mehrdeutig = append(lauf.vorschau.Mehrdeutig, vorschauAusZeile(zeile.zeilenKennung(), zeile, "", zeile.Klasse))
 				lauf.z.ueberspringen[i] = true
-				// Der Name STEHT im Export — ein bestätigter Bestandsschüler dieses Namens
-				// ist also nicht „nicht im Export". Ohne diese Zeile machte sammleAbgaenger
-				// ihn zum Abgänger und Apply anonymisierte ihn (Prüfung 22.08.2026, A1).
+				// Der Name steht im Export, ein bestätigter Bestandsschüler dieses Namens ist also nicht
+				// „nicht im Export". Ohne diese Zeile machte sammleAbgaenger ihn zum Abgänger, und das
+				// Anwenden anonymisierte ihn.
 				lauf.gesehen[zeile.namensschluessel()] = true
 				continue
 			}
@@ -239,7 +239,7 @@ func (l *klassifizierungsLauf) ordneUeberNamenZu(i int, zeile Zeile) bool {
 }
 
 // sammleAbgaenger: Wer aktiv ist und nicht im Export steht, geht ab — im ID-Modus jeder
-// mit echter LUSD-ID, in den Namensmodi nur, wer schon einmal von einem Export BESTÄTIGT
+// mit echter LUSD-ID, in den Namensmodi nur, wer schon einmal von einem Export bestätigt
 // wurde (lusd_bestaetigt_am). Nie bestätigte Handanlagen bleiben stehen und werden als
 // „nicht im Export" gemeldet; Schüler ohne Geburtsdatum sind nicht abgleichbar.
 func (l *klassifizierungsLauf) sammleAbgaenger(modus Modus) {

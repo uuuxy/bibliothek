@@ -8,10 +8,9 @@ import (
 )
 
 // Parität Go ↔ SQL: lusd.KlassenSchluessel (Klassenvergleich im LUSD-Import) muss dasselbe
-// liefern wie klassen_normkey (Migration 079, der Trigger-Schlüssel des Klassen-
-// Vokabulars). Driften die beiden, meldet die Vorschau Klassenwechsel, die der Trigger
-// anschließend wegkanonisiert — oder übersieht echte. Zwei Implementierungen derselben
-// Regel brauchen ein Gate, das sie gegeneinander hält.
+// liefern wie klassen_normkey, der Schlüssel des Triggers für die Klassen. Laufen die beiden
+// auseinander, meldet die Vorschau Klassenwechsel, die der Trigger danach wegkanonisiert, oder
+// übersieht echte.
 func TestKlassenSchluessel_ParitaetZurSQLFunktion(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := t.Context()

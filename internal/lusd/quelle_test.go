@@ -91,9 +91,9 @@ func TestLeseDatei_BinaermuellBleibtVerstaendlich(t *testing.T) {
 	}
 }
 
-// Eine Klassenliste mit LUSD-Feldkürzeln (26.08.2026, kein LUSD-Export): je Klasse ein Blatt, gleiche Kopfzeile im
-// SLR_/KLA_-Kürzelstil, kein Geburtsdatum. Alle Blätter müssen ankommen — vorher nur
-// das erste, und im Nur-Name-Modus hätten die übrigen Klassen als Abgänger gegolten.
+// Eine Klassenliste mit den Feldkürzeln der LUSD (kein Export der LUSD): je Klasse ein
+// Blatt, gleiche Kopfzeile im SLR_/KLA_-Kürzelstil, kein Geburtsdatum. Alle Blätter müssen
+// ankommen; käme nur das erste an, gälten im Nur-Name-Modus die übrigen Klassen als Abgänger.
 func TestLeseDatei_XlsxLiestAlleBlaetterMitKopfzeile(t *testing.T) {
 	kopf := []any{"SLR_Nachname", "SLR_Vorname", "SLR_Strasse", "SLR_PLZ", "SLR_ORT", "KLA_Klassennamen", "KLA_KlassenlehrerKuerzel"}
 	xlsx := xlsxtest.Baue(t, map[string][][]any{
@@ -101,7 +101,7 @@ func TestLeseDatei_XlsxLiestAlleBlaetterMitKopfzeile(t *testing.T) {
 		"6F2": {kopf, {"Cato", "Cem", "Weg 3", "61381", "Ort", "06F2", "XY"}},
 		// Deckblatt ohne Tabelle bleibt unsichtbar.
 		"Hinweise": {{"Stand März 2026"}, {"Nur für den Dienstgebrauch"}},
-		// Ein Blatt mit ANDERER Spaltenreihenfolge muss trotzdem richtig landen.
+		// Ein Blatt mit anderer Spaltenreihenfolge muss trotzdem richtig landen.
 		"6F3": {{"KLA_Klassennamen", "SLR_Vorname", "SLR_Nachname"}, {"06F3", "Dana", "Dorn"}},
 	})
 	datei, err := LeseDatei(xlsx)

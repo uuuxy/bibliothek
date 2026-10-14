@@ -63,7 +63,7 @@ func TestLeseCSV_PraefixKoepfeMitAnschrift(t *testing.T) {
 	}
 }
 
-// Der dritte Export-Stil (26.08.2026): eine Klassenliste mit LUSD-Feldkürzeln (kein
+// Der dritte Export-Stil: eine Klassenliste mit LUSD-Feldkürzeln (kein
 // LUSD-Export) trägt Tabellen-KÜRZEL — SLR_ für Schüler, KLA_ für Klasse. Genau diese Kopfzeile, Wort für Wort;
 // die Zeilen darunter sind erfunden.
 func TestOrdneSpaltenZu_KuerzelDerSchule(t *testing.T) {
@@ -92,9 +92,9 @@ func TestOrdneSpaltenZu_KuerzelDerSchule(t *testing.T) {
 	}
 }
 
-// Der echte LUSD-Bericht „All_Inklusiv" (02.09.2026, Demo-Export der Schule) schreibt die
-// Postleitzahl als „Schueler_Postleitzahl" — weder „PLZ" noch „Schueler_PLZ". Ohne den Alias
-// kam jeder Schüler aus diesem Bericht ohne Postleitzahl an, still.
+// Der echte LUSD-Bericht „All_Inklusiv" (ein Demo-Export der Schule) schreibt die
+// Postleitzahl als „Schueler_Postleitzahl", weder „PLZ" noch „Schueler_PLZ". Ohne diese
+// Schreibweise käme jeder Schüler aus diesem Bericht still ohne Postleitzahl an.
 func TestOrdneSpaltenZu_AllInklusivBericht(t *testing.T) {
 	headers := []string{
 		"Schueler_Schluessel", "Schueler_Nachname", "Schueler_Vorname", "Schueler_Geburtsdatum",

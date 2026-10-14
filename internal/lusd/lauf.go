@@ -12,8 +12,8 @@ import (
 	"bibliothek/repository"
 )
 
-// VorschauSchueler ist ein Schüler-Eintrag der Vorschau. ID ist der Listenschlüssel fürs
-// Frontend — die LUSD-ID (ID-Modus) oder die schueler-UUID, bei Neuzugängen im
+// VorschauSchueler ist ein Schüler-Eintrag der Vorschau. ID ist der Listenschlüssel der
+// Oberfläche — die LUSD-ID (ID-Modus) oder die schueler-UUID, bei Neuzugängen im
 // Namensmodus die Zeilennummer. Nie eine interne Kennung, die es nicht ohnehin gibt.
 type VorschauSchueler struct {
 	ID         string `json:"id"`
@@ -101,7 +101,7 @@ type Lauf struct {
 
 // FuehreAus vergleicht die Datei mit dem Bestand in einer Transaktion und liefert die Vorschau
 // oder wendet die Änderungen an, samt der gewählten Umbenennungen. Die Karenzzeit liest der
-// Aufrufer vorher aus den Einstellungen: Sie gehört nicht in den Stand, den die Transaktion
+// Rufer vorher aus den Einstellungen, weil sie nicht zu dem Stand gehört, den die Transaktion
 // sieht.
 func FuehreAus(ctx context.Context, pool db.PgxPoolIface, datei Datei, lauf Lauf) (*Vorschau, error) {
 	anwenden := lauf.Anwenden

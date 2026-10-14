@@ -14,7 +14,7 @@ import (
 // Die Quelle des LUSD-Imports: CSV oder Excel. Was die Schule wirklich bekommt, ist
 // nicht verlässlich bekannt — der LANIS-Klassenlisten-Export ist eine Semikolon-CSV
 // (`Nachname;Vorname;Klasse;…`, UTF-8 mit BOM), LUSD-Berichte kommen als .xlsx mit
-// Titelzeilen ÜBER der Kopfzeile. Deshalb: beide Formate, Kopfzeile wird gesucht,
+// Titelzeilen über der Kopfzeile. Deshalb: beide Formate, Kopfzeile wird gesucht,
 // nicht vorausgesetzt.
 
 // maxKopfzeilenSuche begrenzt, wie viele Zeilen vor der Kopfzeile stehen dürfen
@@ -26,7 +26,7 @@ var (
 	xlsSignatur  = []byte{0xD0, 0xCF, 0x11, 0xE0}
 )
 
-// tabellenZeile ist eine Zeile der Quelle samt ihrer ECHTEN Zeilennummer in der Datei
+// tabellenZeile ist eine Zeile der Quelle samt ihrer echten Zeilennummer in der Datei
 // (CSV: Dateizeile inkl. übersprungener Leerzeilen, Excel: Blattzeile). Die Nummer steht
 // in jeder Fehlermeldung — das Sekretariat muss die Zeile in seiner Datei finden können.
 type tabellenZeile struct {
@@ -186,7 +186,7 @@ func umsortiert(zellen []string, kopf, ersterKopf map[string]int, breite int) []
 	return ergebnis
 }
 
-// findeKopfzeile sucht in den ersten Zeilen die Kopfzeile: die erste, die Vor- UND
+// findeKopfzeile sucht in den ersten Zeilen die Kopfzeile: die erste, die Vor- und
 // Nachname-Spalte trägt. Findet sich keine, wird die Pflichtspalten-Prüfung auf die
 // erste Zeile losgelassen — so bleibt die Meldung konkret („Pflichtspalte 'vorname'
 // fehlt …") statt eines vagen „Kopfzeile nicht gefunden".

@@ -81,10 +81,10 @@ func TestLeseDatei_NurNameLegtGleicheNamenNichtZusammen(t *testing.T) {
 }
 
 func TestLeseDatei_NamensmodusLeeresGeburtsdatumBrichtHartAb(t *testing.T) {
-	// Eine Zeile ohne lesbares Datum hat im Namensmodus keinen Schlüssel. Still
-	// überspringen hieße: dieser Schüler würde jedes Jahr neu angelegt oder nie
-	// gefunden. Deshalb harter Abbruch mit Zeile — OHNE Namen: Die Meldung landet über
-	// SendHTTPError im Server-Log (Prüfung 22.08.2026); die Zeilennummer reicht zum Finden.
+	// Eine Zeile ohne lesbares Datum hat im Namensmodus keinen Schlüssel. Still übersprungen,
+	// würde der Schüler jedes Jahr neu angelegt oder nie gefunden; deshalb bricht der Lauf mit der
+	// Zeilennummer ab. Den Namen nennt die Meldung nicht, weil sie über SendHTTPError auch im
+	// Server-Log landet.
 	for _, wert := range []string{"", "Unsinn", "31.02.2012"} {
 		csv := "vorname,nachname,klasse,geburtsdatum\nMax,Mustermann,5a,01.02.2012\nErika,Musterfrau,6b," + wert + "\n"
 		_, err := LeseDatei([]byte(csv))
@@ -111,9 +111,9 @@ func TestLeseDatei_NamensmodusDublettenLetzteGewinnt(t *testing.T) {
 	if datei.Zeilen[0].Klasse != "6a" || datei.Zeilen[1].Nachname != "Beispiel" {
 		t.Errorf("letzte Zeile muss an erster Position gewinnen: %+v", datei.Zeilen)
 	}
-	// Die Klassen unterschieden sich — das nennt die Vorschau beim Namen (OFFEN.md 5.6):
+	// Die Klassen unterschieden sich — das nennt die Vorschau beim Namen:
 	// Ein Schulformwechsler, oder zwei Kinder mit demselben Namen und einem Tippfehler im
-	// Geburtsdatum. Eine bloße Zahl („1 zusammengelegt") verschwieg, WER zusammenfiel.
+	// Geburtsdatum. Eine bloße Zahl („1 zusammengelegt") verschwieg, wer zusammenfiel.
 	if len(datei.Zusammengelegt) != 1 {
 		t.Fatalf("erwartet 1 zusammengelegte Zeile mit abweichender Klasse, waren %d: %+v", len(datei.Zusammengelegt), datei.Zusammengelegt)
 	}

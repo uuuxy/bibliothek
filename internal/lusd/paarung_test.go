@@ -153,8 +153,8 @@ func TestUebernimmUmbenennungen(t *testing.T) {
 		t.Error("Paar muss als bestätigt markiert sein")
 	}
 
-	// Fremde Kombination → Fehler, nichts geraten: unbekannte Zeile UND bekannte Zeile
-	// mit fremder ID (die zweite Form fasste der Test bis 02.09.2026 nicht).
+	// Fremde Kombination → Fehler, nichts geraten: unbekannte Zeile und bekannte Zeile mit
+	// fremder ID.
 	for _, w := range []UmbenennungWahl{{Zeile: 2, SchuelerID: "weg"}, {Zeile: 3, SchuelerID: "weg"}} {
 		err := uebernimmUmbenennungen(datei, []UmbenennungWahl{w}, paare, &z, res)
 		if _, ok := err.(*UmbenennungUngueltigFehler); !ok {
@@ -183,7 +183,7 @@ func TestOrdneSpaltenZu_SchreibweisenDesSchuleintritts(t *testing.T) {
 
 // Zwillinge: gleiches Geburtsdatum, gleicher Schuleintritt, gleicher Nachname — nur
 // der Vorname unterscheidet sie. Ein abweichender Vorname bei gleichem Geburtsdatum ist
-// ein Gegen-Signal: höchstens „vermutlich", nie vorangekreuzt (Rasterdurchgang 02.09.).
+// ein Gegen-Signal: höchstens „vermutlich", nie vorangekreuzt.
 func TestBewertePaar_ZwillingNieSicher(t *testing.T) {
 	geb, eintritt := tag(2013, 5, 4), tag(2024, 8, 19)
 	anna := bestandsZeile("anna", "Anna", "Müller", "05F1", geb, eintritt)
@@ -237,7 +237,7 @@ func TestWaehlePaare_GleichstandKeinPaarUndReihenfolgeEgal(t *testing.T) {
 
 // Paare nur im Modus Name + Geburtsdatum: Im ID-Modus löst die LUSD-ID die Umbenennung
 // selbst; ein Paar hätte dort die alte lusd_id behalten und wäre beim nächsten Lauf
-// erneut Abgänger + Neuzugang gewesen (Rasterdurchgang 02.09.2026).
+// erneut Abgänger + Neuzugang gewesen.
 func TestFindeUmbenennungen_NurImNamensmodus(t *testing.T) {
 	geb, eintritt := tag(2013, 5, 4), tag(2024, 8, 19)
 	bestand := []bestandsSchueler{bestandsZeile("alt", "Anna", "Müller", "05F1", geb, eintritt)}

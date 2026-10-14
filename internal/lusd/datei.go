@@ -45,8 +45,8 @@ func (z Zeile) namensschluessel() string {
 
 // schluesselFuer liefert den Nachschlage-Schlüssel dieser Zeile für den gegebenen Modus —
 // das Gegenstück zu bestandsSchluessel (bestand.go), das dasselbe für die Bestandszeile
-// tut. Zwei Seiten, EINE Regel: Solange beide über den Modus gehen, kann niemand versehentlich
-// den Namensschlüssel gegen den Name+Datum-Index schlagen (das matchte still niemanden).
+// tut. Zwei Seiten, eine Regel: Solange beide über den Modus gehen, kann niemand versehentlich
+// den Namensschlüssel gegen den Name+Datum-Index schlagen (das traf still niemanden).
 func (z Zeile) schluesselFuer(modus Modus) string {
 	if modus == ModusNurName {
 		return z.namensschluessel()
@@ -62,7 +62,7 @@ const (
 	spalteGeburtsdatum = "geburtsdatum"
 	// Optionale Kontakt-/Adressspalten. Fehlen sie im Export, bleibt der Import
 	// gültig; die Felder sind dann leer. Zweck: Schadens-Rechnung (Anschrift) und
-	// Elternkontakt (E-Mail). Header müssen exakt (case-insensitiv) so heißen.
+	// Elternkontakt (E-Mail). Die Kopfzellen müssen so heißen, gleich in welcher Schreibung.
 	spalteStrasse     = "strasse"
 	spalteHausnummer  = "hausnummer"
 	spaltePLZ         = "plz"
@@ -90,7 +90,7 @@ const (
 	ModusNurName
 )
 
-// String ist der Wert, den die Vorschau dem Frontend meldet.
+// String ist der Wert, den die Vorschau der Oberfläche meldet.
 func (m Modus) String() string {
 	switch m {
 	case ModusName:
@@ -102,22 +102,21 @@ func (m Modus) String() string {
 	}
 }
 
-// Datei ist das Parse-Ergebnis: die Zeilen plus der Modus, in dem sie zugeordnet
+// Datei ist die gelesene Datei: die Zeilen plus der Modus, in dem sie zugeordnet
 // werden, plus das, was beim Zusammenlegen doppelter Zeilen verloren ging.
 type Datei struct {
 	Zeilen []Zeile
 	Modus  Modus
 	// DublettenInDatei zählt Zeilen, die auf denselben Schlüssel fielen und von der
 	// späteren überschrieben wurden (ID- und Name+Geburtsdatum-Modus: letzte gewinnt).
-	// Im Nur-Name-Modus wird NICHT zusammengelegt — gleiche Namen sind dort mehrdeutig.
+	// Im Nur-Name-Modus wird nicht zusammengelegt — gleiche Namen sind dort mehrdeutig.
 	DublettenInDatei int
-	// Zusammengelegt nennt die Dubletten, deren Zeilen sich in der KLASSE unterschieden
+	// Zusammengelegt nennt die Dubletten, deren Zeilen sich in der Klasse unterschieden
 	// (AlteKlasse = überschriebene Zeile, NeueKlasse = gewonnene, ID = Zeilennummer der
-	// gewonnenen). Im Name+Geburtsdatum-Modus kann das ein Schulformwechsler sein, den
-	// LUSD doppelt führt — oder zwei Schüler mit demselben Namen und einem Tippfehler im
-	// Datum. Die Zahl allein (DublettenInDatei) verschwieg den Fall; die Vorschau nennt
-	// ihn beim Namen (OFFEN.md 5.6, 22.09.2026). Gleiche Klasse ist eine bloße
-	// Doppelzeile und bleibt eine Zahl.
+	// gewonnenen). Im Name+Geburtsdatum-Modus kann das ein Schulformwechsler sein, den die LUSD
+	// doppelt führt, oder zwei Schüler mit demselben Namen und einem Tippfehler im Datum; die
+	// Vorschau nennt sie deshalb beim Namen. Gleiche Klasse ist eine bloße Doppelzeile und bleibt
+	// eine Zahl.
 	Zusammengelegt []VorschauSchueler
 }
 
@@ -161,8 +160,8 @@ func leseDatum(zellen []string, spalten map[string]int, spalte string) *time.Tim
 
 // plausiblerEintritt verwirft Platzhalter- und Unsinnsdaten im Schuleintritt: vor 1990,
 // in der Zukunft oder nicht nach dem Geburtsdatum. Ein Platzhalter wie 01.01.1900 in
-// jeder Zeile machte sonst jeden Namensvetter zum „sicheren" Paar (Rasterdurchgang
-// 02.09.2026, Sonde des Prüfers) — und bestätigt überschriebe der Batch das Geburtsdatum.
+// jeder Zeile machte sonst jeden Namensvetter zum „sicheren" Paar, und bestätigt überschriebe
+// der Batch das Geburtsdatum.
 func plausiblerEintritt(eintritt, geburtsdatum *time.Time) *time.Time {
 	if eintritt == nil {
 		return nil
@@ -271,7 +270,7 @@ func pruefeGeburtsdatumJeZeile(zeilen []Zeile) error {
 	return nil
 }
 
-// legeDublettenZusammen lässt von mehreren Zeilen mit demselben Schlüssel die LETZTE
+// legeDublettenZusammen lässt von mehreren Zeilen mit demselben Schlüssel die letzte
 // gewinnen (an ihrem ersten Platz) und zählt, was dabei überschrieben wurde. Zeilen
 // ohne Schlüssel (ID-Modus: leere ID) bleiben einzeln erhalten — die Klassifizierung
 // meldet sie als übersprungen.
@@ -298,9 +297,7 @@ func legeDublettenZusammen(zeilen []Zeile, modus Modus, schluesselVon func(Zeile
 	return datei
 }
 
-// Mehrfach genutzte String-Literale, zentral definiert (SonarQube go:S1192).
-
-// Datumsformate (Go-Referenzzeit "Mon Jan 2 15:04:05 MST 2006").
+// Datumsformate in der Schreibweise von Go (Referenzzeit "Mon Jan 2 15:04:05 MST 2006").
 const (
 	datumsformatDE  = "02.01.2006" // TT.MM.JJJJ
 	datumsformatISO = "2006-01-02" // JJJJ-MM-TT

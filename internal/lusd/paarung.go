@@ -13,18 +13,17 @@ import (
 // Import ordnet über Name + Geburtsdatum zu (datei.go). Ändert die LUSD den Namen
 // (Schreibkorrektur, Umlaut, zweiter Vorname fällt weg, Adoption) oder korrigiert sie
 // das Geburtsdatum, findet der Schlüssel niemanden mehr: Der Bestandsschüler steht als
-// Abgänger da, die Exportzeile als Neuzugang — zwei Datensätze für ein Kind, das seinen
-// Ausweis und seine Bücher am alten hat. Littera hatte dasselbe Problem und löste es mit
-// einer gedruckten Abgängerliste zum Abhaken.
+// Abgänger da, die Exportzeile als Neuzugang: zwei Datensätze für ein Kind, das seinen
+// Ausweis und seine Bücher am alten hat.
 //
-// Hier macht das System den Vorschlag: Aus den Abgängern und den Neuzugängen EINER
+// Hier macht das System den Vorschlag: Aus den Abgängern und den Neuzugängen einer
 // Vorschau werden Paare gebildet, die nach allem, was der Export sonst noch hergibt,
 // dieselbe Person sind. Der Admin bestätigt je Paar (LusdImportView); bestätigt heißt,
 // der bestehende Datensatz bekommt den neuen Namen bzw. das korrigierte Datum und
-// behält UUID, Barcode, Ausleihen und Historie. Unbestätigt bleibt alles wie bisher.
+// behält UUID, Barcode, Ausleihen und Historie. Unbestätigt bleibt alles, wie es ist.
 //
 // Signale, absteigend nach Gewicht:
-//   - Schuleintritt (schul_eintritt_am, Migration 094) — übersteht jede Umbenennung.
+//   - Schuleintritt (schul_eintritt_am): übersteht jede Umbenennung.
 //     Ein „Neuzugang", dessen Eintritt Jahre zurückliegt, ist fast sicher keiner.
 //   - Geburtsdatum, Name (Vor- oder Nachname), Klasse (gleich oder Nachbarjahrgang),
 //     Anschrift (Straße + PLZ).
@@ -240,7 +239,7 @@ func waehlePaare(datei Datei, kandidaten []paarKandidat) []VorschauUmbenennung {
 }
 
 // hatGleichstand: gibt es unter den schwächeren oder gleich starken Kandidaten einen
-// noch freien mit derselben Zeile ODER demselben Schüler und exakt gleicher Stärke?
+// noch freien mit derselben Zeile oder demselben Schüler und exakt gleicher Stärke?
 func hatGleichstand(rest []paarKandidat, k paarKandidat, zeileBelegt map[int]bool, schuelerBelegt map[string]bool) bool {
 	for _, o := range rest {
 		if o.sicher != k.sicher || o.signale != k.signale {
