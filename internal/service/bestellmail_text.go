@@ -123,7 +123,7 @@ func ergaenzeLinkAbsatz(aufgeloest, rohText, link string, gueltigBis *time.Time)
 	return aufgeloest + fmt.Sprintf(linkAbsatz, link, frist)
 }
 
-// Mehrfach genutzte Domaenen-Literale (SonarQube go:S1192).
+// datumsformatDE ist die Schreibweise eines Datums in Mail und Zulauf (TT.MM.JJJJ).
 const (
-	datumsformatDE = "02.01.2006" // TT.MM.JJJJ
+	datumsformatDE = "02.01.2006"
 )

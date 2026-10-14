@@ -11,7 +11,8 @@ import (
 	"bibliothek/repository"
 )
 
-// Zulaufgruppe helps structure the incoming shipments response.
+// Zulaufgruppe ist eine Gruppe der Liste im Zulauf: die Titel einer Bestellung, beim Altbestand
+// ohne Bestellung die eines Tages und Lieferanten.
 type Zulaufgruppe struct {
 	ID            string          `json:"id"`
 	LieferantName string          `json:"supplierName"`
@@ -20,7 +21,8 @@ type Zulaufgruppe struct {
 	Posten        []*ZulaufPosten `json:"items"`
 }
 
-// ZulaufPosten represents an item within a Zulaufgruppe.
+// ZulaufPosten ist ein Titel einer Zulaufgruppe mit der Zahl und den Kennungen seiner
+// Exemplare.
 type ZulaufPosten struct {
 	TitelID     string   `json:"titel_id"`
 	Titel       string   `json:"titel"`
@@ -30,11 +32,10 @@ type ZulaufPosten struct {
 	ExemplarIDs []string `json:"exemplar_ids"`
 }
 
-// LadeZulauf liefert die bestellten, noch nicht eingetroffenen Exemplare, gruppiert
-// nach Bestellung: Zwei Bestellungen am selben Tag beim selben Händler sind zwei Gruppen, und
-// das Datum der Gruppe ist der Kalendertag der Schule. Ein Exemplar ohne Bestellung
-// (Altbestand vor Migration 063) steht unter dem Tag seiner Anlage und dem Lieferanten, den
-// seine Notiz nennt.
+// LadeZulauf liefert die bestellten, noch nicht eingetroffenen Exemplare, gruppiert nach
+// Bestellung: Zwei Bestellungen am selben Tag beim selben Händler sind zwei Gruppen, und das
+// Datum der Gruppe ist der Kalendertag der Schule. Ein Exemplar aus dem Altbestand ohne
+// Bestellung steht unter dem Tag seiner Anlage und dem Lieferanten, den seine Notiz nennt.
 func LadeZulauf(ctx context.Context, pool db.PgxPoolIface) ([]*Zulaufgruppe, error) {
 	exemplare, err := repository.LadeExemplareImZulauf(ctx, pool)
 	if err != nil {
@@ -96,8 +97,8 @@ func LadeZulauf(ctx context.Context, pool db.PgxPoolIface) ([]*Zulaufgruppe, err
 	return gruppen, nil
 }
 
-// lieferantAusNotiz leitet den Lieferanten aus der Notiz eines Exemplars ab, für den
-// Altbestand ohne Bestellung (vor Migration 063); sonst nennt ihn die Bestellung.
+// lieferantAusNotiz liest den Lieferanten aus der Notiz eines Exemplars, für den Altbestand
+// ohne Bestellung; sonst nennt ihn die Bestellung.
 func lieferantAusNotiz(zustandNotiz string) string {
 	switch {
 	case strings.HasPrefix(zustandNotiz, "Im Zulauf - "):
@@ -122,8 +123,7 @@ type exemplarZurGruppe struct {
 	ExemplarID string
 }
 
-// ordneExemplarZu ordnet ein Exemplar dem passenden ZulaufPosten (nach Titel) zu oder
-// legt einen neuen Item-Eintrag in der Gruppe an.
+// ordneExemplarZu zählt ein Exemplar zum Posten seines Titels oder legt den Posten an.
 func ordneExemplarZu(gruppe *Zulaufgruppe, e exemplarZurGruppe) {
 	for _, posten := range gruppe.Posten {
 		if posten.Titel == e.Titel {

@@ -26,7 +26,7 @@ type BestellDienst struct {
 	lieferantenAbfragen repository.LieferantenAbfragen
 }
 
-// NewBestellDienst erstellt eine neue BestellDienst-Instanz.
+// NewBestellDienst baut den Dienst für Bestellungen.
 func NewBestellDienst(datenbank *db.Database, katalogAbfragen repository.KatalogAbfragen) *BestellDienst {
 	return &BestellDienst{
 		datenbank:           datenbank,
@@ -92,7 +92,7 @@ type BestellErgebnis struct {
 	// IstHauptlieferant steuert, ob die Bestellmail zusätzlich das große Lernmittel-Etikett
 	// anhängt (repository.Lieferant).
 	IstHauptlieferant bool
-	// BestellungID der soeben geschriebenen Bestellung.
+	// BestellungID ist die Kennung der eben geschriebenen Bestellung.
 	BestellungID string
 	// BestaetigungsToken ist der Klartext für den Link in der Bestellmail. In der Datenbank
 	// liegt nur sein Hash; wer ihn hier nicht mitnimmt, erfährt ihn nicht mehr. Leer, wenn der
@@ -100,8 +100,8 @@ type BestellErgebnis struct {
 	BestaetigungsToken string
 	// LinkGueltigBis ist der Ablauf des Bestätigungs-Links für die Mail, nil ohne Link.
 	LinkGueltigBis *time.Time
-	// BereitsVorhanden: Derselbe Idempotenz-Schlüssel hat schon eine Bestellung erzeugt
-	// (Doppelklick). Die Tür verschickt dann keine zweite Mail.
+	// BereitsVorhanden sagt, dass derselbe Idempotenz-Schlüssel schon eine Bestellung erzeugt
+	// hat (Doppelklick); die Tür verschickt dann keine zweite Mail.
 	BereitsVorhanden bool
 	// Mittel ist der Topf dieser Bestellung (mitteltopf.Land / mitteltopf.Schultraeger). Er
 	// steuert den Vermerk in Anschreiben und Mail; Kundennummer ist schon die Nummer dieses

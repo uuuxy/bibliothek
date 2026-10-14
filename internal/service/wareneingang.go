@@ -8,8 +8,8 @@ import (
 	"bibliothek/repository"
 )
 
-// EingebuchtesExemplar describes a received exemplar, including whether its
-// barcode label still needs printing (drives the print suggestion in the UI).
+// EingebuchtesExemplar ist ein Exemplar, das der Wareneingang eingebucht hat. EtikettGedruckt
+// sagt der Oberfläche, ob sie den Druck des Etiketts anbietet.
 type EingebuchtesExemplar struct {
 	BarcodeID       string `json:"barcode_id"`
 	Titel           string `json:"titel"`
@@ -22,14 +22,18 @@ type EingebuchtesExemplar struct {
 // erkennt den Fall am Fehlerwert, nicht am Wortlaut der Meldung.
 var ErrNichtsEinzubuchen = errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)")
 
-// WareneingangAngaben encapsulates the parameters needed to bulk receive orders.
+// WareneingangAngaben sind die Angaben eines Wareneingangs. parameter_strukturen_test.go
+// verlangt, dass jedes Literal jedes Feld setzt: Ohne Bearbeiter oder IP-Adresse stünde der
+// Eintrag im Protokoll ohne sie.
 type WareneingangAngaben struct {
 	ExemplarIDs  []string
 	BearbeiterID string
 	IPAdresse    string
 }
 
-// BucheWareneingang marks all pre-allocated items as received.
+// BucheWareneingang bucht die genannten Exemplare aus dem Zulauf ein und schreibt einen Eintrag
+// ins Protokoll. Scheitert nur der Eintrag, bleibt die Buchung, und der Fehler steht im Log
+// (meldeProtokollFehler).
 func BucheWareneingang(ctx context.Context, pool db.PgxPoolIface, protokollAbfragen repository.ProtokollAbfragen, angaben WareneingangAngaben) ([]EingebuchtesExemplar, error) {
 	eingebucht, err := repository.BucheZulaufEin(ctx, pool, angaben.ExemplarIDs)
 	if err != nil {

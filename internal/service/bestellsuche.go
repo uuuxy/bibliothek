@@ -11,9 +11,8 @@ import (
 	"bibliothek/repository"
 )
 
-// BestellTreffer ist ein Suchtreffer der Bestellsuche auf Dienstebene. Welche Felder
-// gefüllt sind, hängt von der Herkunft ab — die Feldkommentare unten sagen, welche nur
-// bei source="local" existieren.
+// BestellTreffer ist ein Treffer der Bestellsuche. Welche Felder gefüllt sind, hängt von der
+// Quelle ab; die Kommentare der Felder sagen, welche nur bei source="local" gesetzt sind.
 type BestellTreffer struct {
 	ID       string `json:"id,omitempty"`
 	Titel    string `json:"titel"`
@@ -21,9 +20,9 @@ type BestellTreffer struct {
 	ISBN     string `json:"isbn"`
 	Verlag   string `json:"verlag,omitempty"`
 	CoverURL string `json:"cover_url,omitempty"`
-	// Signatur ist nur bei source="local" gesetzt — die Regalsignatur eines bereits
-	// katalogisierten Titels. DNB-Treffer haben noch keinen lokalen Titel und damit
-	// keine Signatur; die entsteht erst als Vorschlag beim Anlegen über /aus-isbn.
+	// Signatur ist nur bei source="local" gesetzt: die Signatur eines schon katalogisierten
+	// Titels. Ein Treffer der DNB hat noch keinen Titel und damit keine Signatur; sie entsteht
+	// erst als Vorschlag beim Anlegen über /aus-isbn.
 	Signatur    string `json:"signatur,omitempty"`
 	Quelle      string `json:"source"`
 	Bestand     int    `json:"current_stock,omitempty"`
@@ -32,10 +31,10 @@ type BestellTreffer struct {
 	// zum Erscheinen und ist nicht der Preis der Schule: Die Oberfläche füllt damit das
 	// Preisfeld vor und übernimmt ihn nie ungefragt als Ausgabe.
 	PreisVorschlag float64 `json:"preis_vorschlag,omitempty"`
-	// IstLernmittel: nur bei source="local" aussagekräftig — der Vorschlag für den
-	// Topf der Bestellung (Lernmittel → Land, sonst Schulträger; Warenkorb, mittel.js).
-	// Ein DNB-Treffer ist noch kein Titel und trägt deshalb false; das Staging-Fenster
-	// fragt beim Anlegen nach.
+	// IstLernmittel ist nur bei source="local" aussagekräftig: der Vorschlag für den Topf der
+	// Bestellung (Lernmittel heißt Land, sonst Schulträger; mittel.js im Warenkorb). Ein
+	// Treffer der DNB ist noch kein Titel und trägt false; beim Anlegen fragt die Oberfläche
+	// nach.
 	IstLernmittel bool `json:"ist_lernmittel"`
 }
 
