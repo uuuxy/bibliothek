@@ -21,7 +21,7 @@ import (
 // Fach UND war frei ausleihbar; der Wartende sah in seinem Profil nichts, und der
 // Verfall-Cron griff mangels bereitgestellt_bis nie. Auch ein Transportfehler des
 // SELECTs galt still als „keine Vormerkung".
-func TestProcessReturnVormerkung_FehlschlagLuegtNicht(t *testing.T) {
+func TestBedieneVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 	ctx := context.Background()
 	copy := &repository.Exemplar{ID: "11111111-1111-1111-1111-111111111111",
 		TitelID: "22222222-2222-2222-2222-222222222222", Titel: "Tschick"}
@@ -47,11 +47,11 @@ func TestProcessReturnVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Begin: %v", err)
 		}
-		resp := &LoanResult{}
-		if err := (&defaultLoanService{}).processReturnVormerkungTx(ctx, tx, copy, resp, nil); err == nil {
+		resp := &AusleihErgebnis{}
+		if err := (&ausleihDienst{}).bedieneVormerkung(ctx, tx, copy, resp, nil); err == nil {
 			t.Error("UPDATE-Fehlschlag kam nicht als Fehler zurück — der Aufrufer committet und die Theke lügt")
 		}
-		if resp.HasVormerkung || resp.VormerkungUser != "" {
+		if resp.HatVormerkung || resp.VorgemerktFuer != "" {
 			t.Errorf("Antwort behauptet ein Abholfach trotz gescheitertem UPDATE: %+v", resp)
 		}
 	})
@@ -71,8 +71,8 @@ func TestProcessReturnVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Begin: %v", err)
 		}
-		resp := &LoanResult{}
-		if err := (&defaultLoanService{}).processReturnVormerkungTx(ctx, tx, copy, resp, nil); err == nil {
+		resp := &AusleihErgebnis{}
+		if err := (&ausleihDienst{}).bedieneVormerkung(ctx, tx, copy, resp, nil); err == nil {
 			t.Error("SELECT-Transportfehler galt still als „keine Vormerkung“")
 		}
 	})
@@ -92,11 +92,11 @@ func TestProcessReturnVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Begin: %v", err)
 		}
-		resp := &LoanResult{}
-		if err := (&defaultLoanService{}).processReturnVormerkungTx(ctx, tx, copy, resp, nil); err != nil {
+		resp := &AusleihErgebnis{}
+		if err := (&ausleihDienst{}).bedieneVormerkung(ctx, tx, copy, resp, nil); err != nil {
 			t.Errorf("ErrNoRows ist der Normalfall (niemand wartet) und kein Fehler: %v", err)
 		}
-		if resp.HasVormerkung {
+		if resp.HatVormerkung {
 			t.Error("keine Vormerkung, aber HasVormerkung gesetzt")
 		}
 	})

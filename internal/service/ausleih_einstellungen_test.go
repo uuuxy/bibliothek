@@ -14,7 +14,7 @@ import (
 func TestAusleihEinstellungenAus_JedesFeldAusSeinerQuelle(t *testing.T) {
 	quelle := &repository.SystemEinstellungen{}
 	q := reflect.ValueOf(quelle).Elem()
-	ziel := reflect.TypeOf(SystemEinstellungen{})
+	ziel := reflect.TypeOf(ausleihEinstellungen{})
 	for i := range ziel.NumField() {
 		name := ziel.Field(i).Name
 		feld := q.FieldByName(name)

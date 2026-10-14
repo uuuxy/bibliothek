@@ -14,22 +14,22 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// expectSettings bedient die system_einstellungen-Abfrage aus querySettings.
+// expectSettings bedient die system_einstellungen-Abfrage aus ladeEinstellungen.
 func expectSettings(mock pgxmock.PgxPoolIface, maxAusleihen string) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", strPtr(maxAusleihen)))
 }
 
-func schuelerCtx(id string) *checkoutContext {
-	return &checkoutContext{borrowerID: id, leser: &repository.Leser{ID: id, Art: "schueler"}}
+func schuelerCtx(id string) *ausleihVorgang {
+	return &ausleihVorgang{leserID: id, leser: &repository.Leser{ID: id, Art: "schueler"}}
 }
 
 // lehrkraftCtx ist der Gegenpart: ein Leser, der kein Schüler ist. Die Schülerregeln
 // (Limit, Vormerkung, Zählung) hängen seit Migration 125 an der ART, nicht mehr daran, aus
 // welcher Tabelle der Ausleiher kam.
-func lehrkraftCtx(id string) *checkoutContext {
-	return &checkoutContext{borrowerID: id, leser: &repository.Leser{ID: id, Art: "lehrkraft"}}
+func lehrkraftCtx(id string) *ausleihVorgang {
+	return &ausleihVorgang{leserID: id, leser: &repository.Leser{ID: id, Art: "lehrkraft"}}
 }
 
 func buchMitTitel(titel string) *repository.Exemplar {
@@ -51,8 +51,8 @@ func TestPruefeAusleihlimit_ErreichtesLimitBlockiert(t *testing.T) {
 
 	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 5, true)
 
-	if !errors.Is(err, ErrBlocked) {
-		t.Errorf("erreichtes Limit (5 von 5) soll ErrBlocked liefern, bekam: %v", err)
+	if !errors.Is(err, ErrGesperrt) {
+		t.Errorf("erreichtes Limit (5 von 5) soll ErrGesperrt liefern, bekam: %v", err)
 	}
 }
 
@@ -137,7 +137,7 @@ func TestPruefeAusleihlimit_LehrerOhneLimit(t *testing.T) {
 
 // --- Race-Condition-Übersetzung (Unique-Index aus Migration 033) ---
 
-func TestMapLoanCreateErr(t *testing.T) {
+func TestDeuteAnlegeFehler(t *testing.T) {
 	// Der partielle Unique-Index verhindert zwei aktive Ausleihen desselben
 	// Exemplars. Greifen zwei Terminals gleichzeitig zu, muss daraus ein sauberer
 	// Konflikt werden (409) statt eines 500ers.
@@ -159,11 +159,11 @@ func TestMapLoanCreateErr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := mapLoanCreateErr(tt.in)
+			got := deuteAnlegeFehler(tt.in)
 
 			if tt.wantConfl {
-				if !errors.Is(got, ErrConflict) {
-					t.Fatalf("erwartete ErrConflict, bekam: %v", got)
+				if !errors.Is(got, ErrKonflikt) {
+					t.Fatalf("erwartete ErrKonflikt, bekam: %v", got)
 				}
 				return
 			}
@@ -179,25 +179,25 @@ func TestMapLoanCreateErr(t *testing.T) {
 // Ein Leser, der kein Schüler ist, bekommt die Jahresfrist statt der Schuljahresfrist —
 // auf das Tagesende der Schul-Zeitzone normalisiert wie jede andere Frist. Vor Migration
 // 125 entschied das die Tabelle, aus der er kam; jetzt seine Art.
-func TestResolveBorrower_NichtSchuelerBekommtJahresfrist(t *testing.T) {
+func TestLadeVorgang_NichtSchuelerBekommtJahresfrist(t *testing.T) {
 	svc, _, mock := newValidationService(t, &repository.Leser{
 		ID: "l1", Vorname: "Anna", Nachname: "Lehrerin", Art: "lehrkraft",
 	})
 	defer mock.Close()
 
-	chkCtx, err := svc.resolveBorrowerAndDueTime(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l1"))
+	chkCtx, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l1"))
 
 	if err != nil {
 		t.Fatalf("eine aktive Lehrkraft soll aufgelöst werden, bekam: %v", err)
 	}
-	if chkCtx.istSchueler() || chkCtx.borrowerID != "l1" {
-		t.Errorf("erwartet Nicht-Schüler l1, bekam Art %q / %q", chkCtx.leser.Art, chkCtx.borrowerID)
+	if chkCtx.istSchueler() || chkCtx.leserID != "l1" {
+		t.Errorf("erwartet Nicht-Schüler l1, bekam Art %q / %q", chkCtx.leser.Art, chkCtx.leserID)
 	}
 	erwarteterTag := time.Now().In(schulzeit.Zone()).AddDate(1, 0, 0)
-	if !sameDay(chkCtx.dueTime, erwarteterTag) {
-		t.Errorf("Leihfrist soll ~1 Jahr betragen, bekam %v (erwarteter Tag ~%v)", chkCtx.dueTime, erwarteterTag)
+	if !sameDay(chkCtx.frist, erwarteterTag) {
+		t.Errorf("Leihfrist soll ~1 Jahr betragen, bekam %v (erwarteter Tag ~%v)", chkCtx.frist, erwarteterTag)
 	}
-	if h, m, sec := chkCtx.dueTime.In(schulzeit.Zone()).Clock(); h != 23 || m != 59 || sec != 59 {
+	if h, m, sec := chkCtx.frist.In(schulzeit.Zone()).Clock(); h != 23 || m != 59 || sec != 59 {
 		t.Errorf("Frist soll auf das Tagesende (23:59:59) fallen, bekam %02d:%02d:%02d", h, m, sec)
 	}
 	// Die Frist eines Nicht-Schülers steht fest: Es darf keine Settings-Abfrage laufen.
@@ -207,30 +207,30 @@ func TestResolveBorrower_NichtSchuelerBekommtJahresfrist(t *testing.T) {
 }
 
 // Eine Kennung ohne Leserzeile ist ein Bedienfehler (404), kein Serverfehler.
-func TestResolveBorrower_UnbekannterLeser(t *testing.T) {
+func TestLadeVorgang_UnbekannterLeser(t *testing.T) {
 	svc, _, mock := newValidationService(t, nil)
 	defer mock.Close()
 
-	_, err := svc.resolveBorrowerAndDueTime(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l9"))
+	_, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l9"))
 
-	if !errors.Is(err, ErrNotFound) {
-		t.Errorf("unbekannter Leser soll ErrNotFound liefern, bekam: %v", err)
+	if !errors.Is(err, ErrNichtGefunden) {
+		t.Errorf("unbekannter Leser soll ErrNichtGefunden liefern, bekam: %v", err)
 	}
 }
 
 // Ein Datenbank-Aussetzer ist kein „nicht gefunden": Bis zum 15.09.2026 wurde JEDER Fehler
-// zu ErrNotFound (404), und die Theke meldete einen Verbindungsabbruch als Bedienfehler.
+// zu ErrNichtGefunden (404), und die Theke meldete einen Verbindungsabbruch als Bedienfehler.
 // Für den Offline-Betrieb (OFFEN.md 2, Entscheidung (d)) muss der Aussetzer durchkommen.
-func TestResolveBorrower_DatenbankfehlerBleibtFehler(t *testing.T) {
+func TestLadeVorgang_DatenbankfehlerBleibtFehler(t *testing.T) {
 	stoerung := errors.New("connection reset by peer")
 	svc, _, mock := newValidationService(t, nil)
 	defer mock.Close()
-	svc.studentRepo = &mockStudentRepo{err: stoerung}
+	svc.leserAbfragen = &mockStudentRepo{err: stoerung}
 
-	_, err := svc.resolveBorrowerAndDueTime(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l1"))
+	_, err := svc.ladeVorgang(context.Background(), buchMitTitel("Der Hobbit"), activeStudent("l1"))
 
-	if errors.Is(err, ErrNotFound) {
-		t.Fatalf("Datenbankfehler wurde als ErrNotFound (404) gemeldet: %v", err)
+	if errors.Is(err, ErrNichtGefunden) {
+		t.Fatalf("Datenbankfehler wurde als ErrNichtGefunden (404) gemeldet: %v", err)
 	}
 	if !errors.Is(err, stoerung) {
 		t.Errorf("der Datenbankfehler soll unverändert durchkommen, bekam: %v", err)
@@ -306,7 +306,7 @@ func TestVormerkungKonflikt_FremdeReservierungBlockiert(t *testing.T) {
 
 	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), true)
 
-	if !errors.Is(err, ErrConflict) {
+	if !errors.Is(err, ErrKonflikt) {
 		t.Errorf("für s2 reserviertes Exemplar darf nicht an s1 gehen, bekam: %v", err)
 	}
 }
@@ -344,7 +344,7 @@ func TestVormerkungKonflikt_OhneReservierungErlaubt(t *testing.T) {
 func TestVormerkungKonflikt_BeiRueckgabeKeinePruefung(t *testing.T) {
 	// Eine Rückgabe darf nie an einer Reservierung scheitern — es wird bewusst
 	// gar keine Abfrage erwartet. Das gilt für die eigene wie für die fremde: Beide
-	// nehmen nur zurück, die Vormerkung bedient danach processReturnVormerkungTx.
+	// nehmen nur zurück, die Vormerkung bedient danach bedieneVormerkung.
 	svc, _, mock := newValidationService(t, nil)
 	defer mock.Close()
 	tx := beginTx(t, mock)
@@ -364,7 +364,7 @@ func TestVormerkungKonflikt_BeiRueckgabeKeinePruefung(t *testing.T) {
 func TestIstEigeneRueckgabe(t *testing.T) {
 	tests := []struct {
 		name     string
-		chkCtx   *checkoutContext
+		chkCtx   *ausleihVorgang
 		loan     *repository.Ausleihe
 		expected bool
 	}{

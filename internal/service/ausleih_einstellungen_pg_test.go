@@ -12,7 +12,7 @@ import (
 // Die Ausleihe liest ihre Einstellungen an der Datenbank: gesetzte Werte kommen an, eine Zeile
 // ohne Wert oder mit leerem Wert lässt die Vorgabe stehen, und keine von beiden ist ein Fehler.
 // In einer Transaktion, die am Ende zurückgerollt wird.
-func TestLadeSystemEinstellungen_AnDerDatenbank(t *testing.T) {
+func TestLadeAusleihEinstellungen_AnDerDatenbank(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx, err := pool.Begin(ctx)
@@ -43,11 +43,11 @@ func TestLadeSystemEinstellungen_AnDerDatenbank(t *testing.T) {
 		}
 	}
 
-	ist, err := ladeSystemEinstellungen(ctx, tx)
+	ist, err := ladeAusleihEinstellungen(ctx, tx)
 	if err != nil {
-		t.Fatalf("ladeSystemEinstellungen: %v", err)
+		t.Fatalf("ladeAusleihEinstellungen: %v", err)
 	}
-	soll := SystemEinstellungen{
+	soll := ausleihEinstellungen{
 		FristBuchTage:              30,
 		FristMedienTage:            7,
 		MaxAusleihenSchueler:       8,

@@ -25,7 +25,7 @@ func TestLmfFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testin
 	ctx := context.Background()
 	rueckgabePlanJuni2027(t, pool)
 
-	svc := &defaultLoanService{pool: pool}
+	svc := &ausleihDienst{pool: pool}
 	schulbuch := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	tag := func(d string) time.Time {
 		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
@@ -58,7 +58,7 @@ func TestLmfFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testin
 			if strings.HasPrefix(fall.name, "Nachzügler") {
 				klasse = "9H1"
 			}
-			got, err := svc.resolveCheckoutDueDate(ctx, schulbuch, klasse)
+			got, err := svc.bestimmeFrist(ctx, schulbuch, klasse)
 			if err != nil {
 				t.Fatalf("Frist: %v", err)
 			}
@@ -115,7 +115,7 @@ func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 	ctx := context.Background()
 	rueckgabePlanJuni2027(t, pool)
 
-	svc := &defaultLoanService{pool: pool}
+	svc := &ausleihDienst{pool: pool}
 	band := &repository.Exemplar{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 11}
 	tag := func(d string) time.Time {
 		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
@@ -139,7 +139,7 @@ func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
 			svc.jetzt = func() time.Time { return fall.heute }
-			got, err := svc.resolveCheckoutDueDate(ctx, band, fall.klasse)
+			got, err := svc.bestimmeFrist(ctx, band, fall.klasse)
 			if err != nil {
 				t.Fatalf("Frist: %v", err)
 			}
@@ -163,10 +163,10 @@ func TestLmfFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
 	// Montag, der Tag vor dem Termin der 9H2.
 	heute := time.Date(2027, time.June, 28, 10, 0, 0, 0, schulzeit.Zone())
 	termin := schulzeit.TagesEnde(time.Date(2027, time.June, 29, 10, 0, 0, 0, schulzeit.Zone()))
-	svc := &defaultLoanService{pool: pool, jetzt: func() time.Time { return heute }}
+	svc := &ausleihDienst{pool: pool, jetzt: func() time.Time { return heute }}
 
 	ohneKaestchen := &repository.Exemplar{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", JahrgangBis: 11}
-	got, err := svc.resolveCheckoutDueDate(ctx, ohneKaestchen, "9H2")
+	got, err := svc.bestimmeFrist(ctx, ohneKaestchen, "9H2")
 	if err != nil {
 		t.Fatalf("Frist: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestLmfFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
 	}
 
 	buecherei := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err = svc.resolveCheckoutDueDate(ctx, buecherei, "9H2")
+	got, err = svc.bestimmeFrist(ctx, buecherei, "9H2")
 	if err != nil {
 		t.Fatalf("Frist: %v", err)
 	}

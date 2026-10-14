@@ -9,7 +9,7 @@ import (
 // Zwei Umkehrungen des Prüfzeichens, eine Wahrheit.
 //
 // Online entscheidet der Server, ob ein Scan ein Aufdruck von früher ist
-// (internal/service/omnibox_service.go). Ohne Netz muss der Theken-Rechner dasselbe tun
+// (internal/service/omnibox.go). Ohne Netz muss der Theken-Rechner dasselbe tun
 // (frontend/src/lib/code39Pruefzeichen.js) — sonst gälte ein Buch offline als unklar, das
 // online gebucht wird, oder umgekehrt. Dieselbe Bauart wie bei den Littera-Etiketten.
 //

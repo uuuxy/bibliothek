@@ -5595,7 +5595,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "mehrjahresband": {
-                    "description": "Mehrjahresband und JahrgangBis kommen vom Titel: Bleibt das Buch über\nmehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,\nin dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).",
+                    "description": "Mehrjahresband und JahrgangBis kommen vom Titel: Bleibt das Buch über\nmehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,\nin dem das Kind JahrgangBis beendet (internal/service/frist.go).",
                     "type": "boolean"
                 },
                 "signatur": {
@@ -5855,7 +5855,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ist_dauerleihe": {
-                    "description": "IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist\n(` + "`" + `ausleihen.ist_handapparat` + "`" + `, gesetzt in erzeugeAusleihe und im Geräte-Pfad).\n\nSie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die es\nnicht gibt: Kollegen haben keine Frist und werden nie gesperrt. Die Sperr-Automatik zählt\nnur Ausleihen mit ist_handapparat = false; ohne das Feld rechnete die Akte ihr eigenes\n„überfällig\" aus dem Datum und färbte die Zeile nach einem Jahr rot.",
+                    "description": "IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist\n(` + "`" + `ausleihen.ist_handapparat` + "`" + `, gesetzt in legeAusleiheAn und im Geräte-Pfad).\n\nSie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die es\nnicht gibt: Kollegen haben keine Frist und werden nie gesperrt. Die Sperr-Automatik zählt\nnur Ausleihen mit ist_handapparat = false; ohne das Feld rechnete die Akte ihr eigenes\n„überfällig\" aus dem Datum und färbte die Zeile nach einem Jahr rot.",
                     "type": "boolean"
                 },
                 "ist_lernmittel": {

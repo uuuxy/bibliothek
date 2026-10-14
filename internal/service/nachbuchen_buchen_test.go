@@ -8,10 +8,10 @@ import (
 	"bibliothek/repository"
 )
 
-// TestLoanResultAlsOmnibox: Das Nachbuchen antwortet in der Form der Theke. Jedes Feld der
+// TestOmniboxErgebnisAus: Das Nachbuchen antwortet in der Form der Theke. Jedes Feld der
 // Buchung kommt in der Antwort an; ohne Buchung ist die Antwort leer und nicht nil.
-func TestLoanResultAlsOmnibox(t *testing.T) {
-	if antwort := LoanResultAlsOmnibox(nil); !reflect.DeepEqual(antwort, &OmniboxResult{}) {
+func TestOmniboxErgebnisAus(t *testing.T) {
+	if antwort := OmniboxErgebnisAus(nil); !reflect.DeepEqual(antwort, &OmniboxErgebnis{}) {
 		t.Errorf("ohne Buchung: %+v, erwartet eine leere Antwort", antwort)
 	}
 
@@ -22,31 +22,31 @@ func TestLoanResultAlsOmnibox(t *testing.T) {
 	vorbesitzer := &repository.Leser{ID: "leser-2"}
 	hinweis := &repository.AuflagenMischung{Klasse: "08G1", Auflage: "2. Auflage"}
 
-	antwort := LoanResultAlsOmnibox(&LoanResult{
-		Type:                 "rueckgabe",
-		Book:                 buch,
-		Student:              leser,
-		DueDate:              &frist,
-		LoanID:               &ausleihe,
+	antwort := OmniboxErgebnisAus(&AusleihErgebnis{
+		Art:                  "rueckgabe",
+		Exemplar:             buch,
+		Leser:                leser,
+		Frist:                &frist,
+		AusleiheID:           &ausleihe,
 		Fremdrueckgabe:       true,
 		Vorbesitzer:          vorbesitzer,
-		HasVormerkung:        true,
+		HatVormerkung:        true,
 		VormerkungTitel:      "Natura 2",
-		VormerkungUser:       "Kollegin Muster",
+		VorgemerktFuer:       "Kollegin Muster",
 		RegalfreigabeBarcode: "B-2",
 		AuflagenHinweis:      hinweis,
 	})
-	soll := &OmniboxResult{
-		Type:                 "rueckgabe",
-		Book:                 buch,
-		Student:              leser,
-		DueDate:              &frist,
-		LoanID:               &ausleihe,
+	soll := &OmniboxErgebnis{
+		Art:                  "rueckgabe",
+		Exemplar:             buch,
+		Leser:                leser,
+		Frist:                &frist,
+		AusleiheID:           &ausleihe,
 		Fremdrueckgabe:       true,
 		Vorbesitzer:          vorbesitzer,
-		HasVormerkung:        true,
+		HatVormerkung:        true,
 		VormerkungTitel:      "Natura 2",
-		VormerkungUser:       "Kollegin Muster",
+		VorgemerktFuer:       "Kollegin Muster",
 		RegalfreigabeBarcode: "B-2",
 		AuflagenHinweis:      hinweis,
 	}

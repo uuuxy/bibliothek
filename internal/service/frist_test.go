@@ -16,7 +16,7 @@ import (
 // zuvor in die Schul-Zeitzone umgerechnet.
 //
 // Die Umrechnung ist der Kern: Date() liefert den Kalendertag in der Location des
-// jeweiligen Zeitpunkts. calculateDueDate rechnet bewusst in schulzeit.Zone(), die
+// jeweiligen Zeitpunkts. berechneFrist rechnet bewusst in schulzeit.Zone(), die
 // Erwartungswerte der Tests entstehen aber aus time.Now() in der Zeitzone des
 // Rechners. Auf einem UTC-Server (CI) sind das ab 22:00 UTC zwei verschiedene
 // Kalendertage — derselbe Zeitpunkt, aber 22:09 UTC = 00:09 des Folgetags in Berlin.
@@ -28,9 +28,9 @@ func sameDay(a, b time.Time) bool {
 	return ay == by && am == bm && ad == bd
 }
 
-// --- parseGrade: reine Jahrgangs-Extraktion (kritisch für mehrjährige LMF-Ausleihen) ---
+// --- leseJahrgang: reine Jahrgangs-Extraktion (kritisch für mehrjährige LMF-Ausleihen) ---
 
-func TestParseGrade(t *testing.T) {
+func TestLeseJahrgang(t *testing.T) {
 	cases := []struct {
 		klasse string
 		want   int
@@ -51,32 +51,32 @@ func TestParseGrade(t *testing.T) {
 		{"5f1", 5}, // Klassensatz-Notation: erste Zahl zählt
 	}
 	for _, c := range cases {
-		if got := parseGrade(c.klasse); got != c.want {
-			t.Errorf("parseGrade(%q) = %d, want %d", c.klasse, got, c.want)
+		if got := leseJahrgang(c.klasse); got != c.want {
+			t.Errorf("leseJahrgang(%q) = %d, want %d", c.klasse, got, c.want)
 		}
 	}
 }
 
-// --- calculateDueDate: Fristberechnung. Ein stiller Fehler hier erzeugt falsche
+// --- berechneFrist: Fristberechnung. Ein stiller Fehler hier erzeugt falsche
 // Rückgabefristen und damit falsches Mahnwesen. ---
 
 // Feste Uhr an einem Tag, dessen Fristen auf Schultage fallen: Dienstag 01.09.2026 plus 21
 // Tage ist Dienstag 22.09., plus 7 Tage Dienstag 08.09. Mit time.Now() hinge das Ergebnis
 // vom Kalender ab — Fristen, die auf Wochenende, Feiertag oder Ferien fallen, rücken auf den
 // nächsten Schultag (tagesfrist_test.go).
-func TestCalculateDueDate_RegularBook(t *testing.T) {
+func TestBerechneFrist_RegularBook(t *testing.T) {
 	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
-	got := calculateDueDate(jetzt, DueDateOptions{IstLernmittel: false, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+	got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schulzeit.Zone())
 	if !got.Equal(want) {
 		t.Errorf("reguläres Buch: got %v, want %v", got, want)
 	}
 }
 
-func TestCalculateDueDate_Media(t *testing.T) {
+func TestBerechneFrist_Media(t *testing.T) {
 	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
 	for _, mt := range []string{"CD", "DVD", "Audio-CD", "dvd"} {
-		got := calculateDueDate(jetzt, DueDateOptions{IstLernmittel: false, Medientyp: mt, LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+		got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: mt, LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 		want := time.Date(2026, time.September, 8, 23, 59, 59, 0, schulzeit.Zone())
 		if !got.Equal(want) {
 			t.Errorf("Medium %q: got %v, want %v", mt, got, want)
@@ -84,9 +84,9 @@ func TestCalculateDueDate_Media(t *testing.T) {
 	}
 }
 
-func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
+func TestBerechneFrist_LMF_DefaultStichtag(t *testing.T) {
 	for _, titel := range []string{"Mathe 9", "Deutsch 5"} {
-		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+		got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 
 		if got.Month() != time.July || got.Day() != 31 {
 			t.Errorf("LMF %q: Stichtag soll 31.07 sein, got %02d-%02d", titel, got.Month(), got.Day())
@@ -96,7 +96,7 @@ func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 		}
 
 		// Jahr: laufendes Schuljahr, ab August rollt es ins nächste Kalenderjahr.
-		// In Schul-Zeitzone rechnen, konsistent mit calculateDueDate (sonst flaky
+		// In Schul-Zeitzone rechnen, konsistent mit berechneFrist (sonst flaky
 		// am Monatswechsel nahe Mitternacht).
 		now := time.Now().In(schulzeit.Zone())
 		wantYear := now.Year()
@@ -119,32 +119,32 @@ func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 // Seit Migration 093 entscheidet allein das Feld — Titel und Signatur dürfen beliebig
 // heißen. Das war der Fehler von 2026: ein Klartext-Titel mit „LMF" nur in der Signatur
 // bekam die 21-Tage-Frist.
-func TestCalculateDueDate_LMF_NurInSignatur(t *testing.T) {
-	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+func TestBerechneFrist_LMF_NurInSignatur(t *testing.T) {
+	got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	if got.Month() != time.July || got.Day() != 31 {
 		t.Errorf("LMF nur in Signatur: Stichtag soll 31.07 sein, got %02d-%02d", got.Month(), got.Day())
 	}
 }
 
-func TestCalculateDueDate_LMF_CustomStichtag(t *testing.T) {
-	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+func TestBerechneFrist_LMF_CustomStichtag(t *testing.T) {
+	got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	if got.Month() != time.June || got.Day() != 15 {
 		t.Errorf("benutzerdefinierter Stichtag 06-15: got %02d-%02d", got.Month(), got.Day())
 	}
 }
 
-func TestCalculateDueDate_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
+func TestBerechneFrist_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
 	for _, bad := range []string{"99-99", "kaputt", "13-40", ""} {
-		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+		got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 		if got.Month() != time.July || got.Day() != 31 {
 			t.Errorf("ungültiger Stichtag %q soll auf 31.07 zurückfallen, got %02d-%02d", bad, got.Month(), got.Day())
 		}
 	}
 }
 
-func TestCalculateDueDate_LMF_AdditionalYears(t *testing.T) {
-	base := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
-	plus2 := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 2, Sommerferien: ""})
+func TestBerechneFrist_LMF_AdditionalYears(t *testing.T) {
+	base := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
+	plus2 := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 2, Sommerferien: ""})
 
 	if plus2.Year() != base.Year()+2 {
 		t.Errorf("additionalYears=2 soll Stichtagsjahr um 2 erhöhen: base %d, got %d", base.Year(), plus2.Year())
@@ -156,18 +156,18 @@ func TestCalculateDueDate_LMF_AdditionalYears(t *testing.T) {
 	}
 }
 
-// --- querySettings: robustes Einlesen der Konfiguration inkl. Default-Fallbacks ---
+// --- ladeEinstellungen: robustes Einlesen der Konfiguration inkl. Default-Fallbacks ---
 
-func newServiceWithMock(t *testing.T) (*defaultLoanService, pgxmock.PgxPoolIface) {
+func newServiceWithMock(t *testing.T) (*ausleihDienst, pgxmock.PgxPoolIface) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock konnte nicht initialisiert werden: %v", err)
 	}
-	return &defaultLoanService{pool: mock}, mock
+	return &ausleihDienst{pool: mock}, mock
 }
 
-func TestQuerySettings_ParsesValuesAndIgnoresInvalid(t *testing.T) {
+func TestLadeEinstellungen_ParsesValuesAndIgnoresInvalid(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
@@ -182,7 +182,7 @@ func TestQuerySettings_ParsesValuesAndIgnoresInvalid(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
-	got, err := svc.querySettings(context.Background())
+	got, err := svc.ladeEinstellungen(context.Background())
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -211,14 +211,14 @@ func TestQuerySettings_ParsesValuesAndIgnoresInvalid(t *testing.T) {
 	}
 }
 
-func TestQuerySettings_EmptyTableKeepsDefaults(t *testing.T) {
+func TestLadeEinstellungen_EmptyTableKeepsDefaults(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 
-	got, err := svc.querySettings(context.Background())
+	got, err := svc.ladeEinstellungen(context.Background())
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -227,21 +227,21 @@ func TestQuerySettings_EmptyTableKeepsDefaults(t *testing.T) {
 	}
 }
 
-func TestQuerySettings_DBErrorPropagates(t *testing.T) {
+func TestLadeEinstellungen_DBErrorPropagates(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnError(errors.New("connection refused"))
 
-	if _, err := svc.querySettings(context.Background()); err == nil {
+	if _, err := svc.ladeEinstellungen(context.Background()); err == nil {
 		t.Error("DB-Fehler soll propagiert werden, bekam nil")
 	}
 }
 
-// --- resolveCheckoutDueDate: kombiniert Einstellungen + Sonderregeln ---
+// --- bestimmeFrist: kombiniert Einstellungen + Sonderregeln ---
 
-func TestResolveCheckoutDueDate_LeseclubOverride(t *testing.T) {
+func TestBestimmeFrist_LeseclubOverride(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
@@ -254,7 +254,7 @@ func TestResolveCheckoutDueDate_LeseclubOverride(t *testing.T) {
 		WillReturnRows(rows)
 
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
+	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -267,7 +267,7 @@ func TestResolveCheckoutDueDate_LeseclubOverride(t *testing.T) {
 // jede neue Ausleihe das VERGANGENE Ferienende als Frist — sofort überfällig, nach 14
 // Tagen gesperrt, und das Mahnwesen erfasste sie am selben Tag. Die Theke zeigt die Frist
 // beim Ausleihen nicht an; niemand hätte es bemerkt. Ein Zieldatum vor heute gilt nicht.
-func TestResolveCheckoutDueDate_LeseclubVergangenGiltNicht(t *testing.T) {
+func TestBestimmeFrist_LeseclubVergangenGiltNicht(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
@@ -278,7 +278,7 @@ func TestResolveCheckoutDueDate_LeseclubVergangenGiltNicht(t *testing.T) {
 		WillReturnRows(rows)
 
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
+	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -289,7 +289,7 @@ func TestResolveCheckoutDueDate_LeseclubVergangenGiltNicht(t *testing.T) {
 
 // Ein eingestelltes Zieldatum gilt nur bei eingeschaltetem Leseclub: Nach der Aktion bleibt das
 // Datum in den Einstellungen stehen, der Schalter ist aus.
-func TestResolveCheckoutDueDate_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
+func TestBestimmeFrist_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
@@ -300,7 +300,7 @@ func TestResolveCheckoutDueDate_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
 		WillReturnRows(rows)
 
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
+	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -312,7 +312,7 @@ func TestResolveCheckoutDueDate_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
 	}
 }
 
-func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
+func TestBestimmeFrist_LMFIgnoresLeseclub(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
@@ -328,7 +328,7 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 
 	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
 	copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
-	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9a")
+	got, err := svc.bestimmeFrist(context.Background(), copy, "9a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -339,7 +339,7 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 
 // LMF-Plan (Register, Entscheidung 3a): Nennt der Plan für die Klasse einen Rückgabe-
 // Termin, ist der die Frist — vor dem Stichtag. Eine mehrjährige Ausleihe folgt ihm nicht.
-func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
+func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
@@ -350,7 +350,7 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(&termin, false))
 
 	copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
-	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9H1")
+	got, err := svc.bestimmeFrist(context.Background(), copy, "9H1")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -365,7 +365,7 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 	mehrjahr := &repository.Exemplar{Titel: "Atlas", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 10}
-	got, err = svc.resolveCheckoutDueDate(context.Background(), mehrjahr, "9H1")
+	got, err = svc.bestimmeFrist(context.Background(), mehrjahr, "9H1")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -377,17 +377,17 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 	}
 }
 
-func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
+func TestBestimmeFrist_DBErrorUsesEmergencyDefaults(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnError(errors.New("db down"))
 
-	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestCalculateDueDate_RegularBook).
+	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestBerechneFrist_RegularBook).
 	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone()) }
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
+	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
 	// Bewusst kein Fehler: bei DB-Ausfall greifen Notfall-Defaults (21 Tage),
 	// damit die Ausleihe nicht komplett blockiert.
 	if err != nil {
@@ -401,8 +401,8 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 
 // Eine Zeile ohne Wert (etwa ein nie gesetztes ferien_leseclub_zieldatum) und eine mit leerem
 // Wert lassen die Vorgabe stehen und sind kein Fehler: Sonst scheiterte jede Ausleihe am Lesen
-// der Einstellungen. An der Datenbank hält das TestLadeSystemEinstellungen_AnDerDatenbank.
-func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
+// der Einstellungen. An der Datenbank hält das TestLadeAusleihEinstellungen_AnDerDatenbank.
+func TestLadeEinstellungen_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
@@ -413,7 +413,7 @@ func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
 	mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
 		WillReturnRows(rows)
 
-	got, err := svc.querySettings(context.Background())
+	got, err := svc.ladeEinstellungen(context.Background())
 	if err != nil {
 		t.Fatalf("leere Werte dürfen keinen Fehler auslösen: %v", err)
 	}
@@ -432,7 +432,7 @@ func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
 // Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je einen Fall hat (Bugklasse
 // „Frist am Tag des Ereignisses"); die Lage kommt hier aus dem Mock, am echten Postgres prüft
 // sie lmf_frist_termintag_pg_test.go.
-func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
+func TestBestimmeFrist_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
 	termin := time.Date(2027, time.June, 29, 0, 0, 0, 0, schulzeit.Zone())
 	faelle := []struct {
 		name         string
@@ -468,7 +468,7 @@ func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSc
 				WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(fall.bevorstehend, fall.vergangen))
 
 			copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
-			got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9H2")
+			got, err := svc.bestimmeFrist(context.Background(), copy, "9H2")
 			if err != nil {
 				t.Fatalf("unerwarteter Fehler: %v", err)
 			}

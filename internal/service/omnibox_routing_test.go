@@ -38,40 +38,40 @@ func (r *routingStudentRepo) FindeZuBarcode(_ context.Context, barcode string) (
 	return r.students[barcode], nil
 }
 
-// TestProcessQuery_AusweisOhnePraefix bildet die Littera-Altbestand-Ausweise ab:
+// TestVerarbeiteEingabe_AusweisOhnePraefix bildet die Littera-Altbestand-Ausweise ab:
 // nackte, längere Nummern ohne "S-"-Präfix müssen am Pult den Schüler öffnen,
 // ohne das bestehende Buch-Routing oder die Volltextsuche zu stören.
-func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
-	svc := &defaultOmniboxService{
-		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{
+func TestVerarbeiteEingabe_AusweisOhnePraefix(t *testing.T) {
+	svc := &omniboxDienst{
+		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
+		leserAbfragen: &routingStudentRepo{students: map[string]*repository.Leser{
 			"20240001737": {ID: "s1", BarcodeID: "20240001737", Vorname: "Mia", Nachname: "Muster"},
 		}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "20240001737", StaffID: "staff"})
+	res, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: "20240001737", BearbeiterID: "staff"})
 	if err != nil {
-		t.Fatalf("ProcessQuery: %v", err)
+		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
-	if res.Type != "student" || res.Student == nil || res.Student.ID != "s1" {
-		t.Fatalf("Ausweisnummer ohne Präfix muss den Schüler öffnen, got Type=%q Student=%v", res.Type, res.Student)
+	if res.Art != "student" || res.Leser == nil || res.Leser.ID != "s1" {
+		t.Fatalf("Ausweisnummer ohne Präfix muss den Schüler öffnen, got Type=%q Student=%v", res.Art, res.Leser)
 	}
 }
 
-// TestProcessQuery_UnbekannteNummerFaelltAufSuche stellt sicher, dass Eingaben,
+// TestVerarbeiteEingabe_UnbekannteNummerFaelltAufSuche stellt sicher, dass Eingaben,
 // die weder Buch- noch Ausweis-Barcode sind, weiterhin in der Volltextsuche landen.
-func TestProcessQuery_UnbekannteNummerFaelltAufSuche(t *testing.T) {
-	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
+func TestVerarbeiteEingabe_UnbekannteNummerFaelltAufSuche(t *testing.T) {
+	svc := &omniboxDienst{
+		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
+		leserAbfragen:   &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "gibtesnicht", StaffID: "staff"})
+	res, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: "gibtesnicht", BearbeiterID: "staff"})
 	if err != nil {
-		t.Fatalf("ProcessQuery: %v", err)
+		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
-	if res.Type != "search_results" {
-		t.Fatalf("unbekannte Eingabe muss in der Suche landen, got Type=%q", res.Type)
+	if res.Art != "search_results" {
+		t.Fatalf("unbekannte Eingabe muss in der Suche landen, got Type=%q", res.Art)
 	}
 }
 
@@ -86,38 +86,38 @@ func (r *routingStudentRepo) Finde(_ context.Context, id string) (*repository.Le
 	return nil, nil
 }
 
-// TestProcessQuery_LeserAusDerTrefferliste: Wer an der Theke einen Namen tippt und einen
+// TestVerarbeiteEingabe_LeserAusDerTrefferliste: Wer an der Theke einen Namen tippt und einen
 // Treffer anklickt, muss diesen Leser geladen bekommen — auch wenn er keine
 // Ausweisnummer hat. Bis zum 16.09.2026 setzte die Auswahl die Ausweisnummer in die
 // Scanleiste und schickte sie los; bei einem Kollegen aus der Selbstanmeldung war die
 // leer, und der Klick tat nichts.
-func TestProcessQuery_LeserAusDerTrefferliste(t *testing.T) {
-	svc := &defaultOmniboxService{
-		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{
+func TestVerarbeiteEingabe_LeserAusDerTrefferliste(t *testing.T) {
+	svc := &omniboxDienst{
+		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
+		leserAbfragen: &routingStudentRepo{students: map[string]*repository.Leser{
 			"ohne-ausweis": {ID: "l1", Vorname: "Hendrik", Nachname: "Wendlandt", Art: "liv"},
 		}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "leser:l1", StaffID: "staff"})
+	res, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: "leser:l1", BearbeiterID: "staff"})
 	if err != nil {
-		t.Fatalf("ProcessQuery: %v", err)
+		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
-	if res.Type != "student" || res.Student == nil || res.Student.ID != "l1" {
-		t.Fatalf("Auswahl aus der Trefferliste muss den Leser öffnen, got Type=%q Student=%v", res.Type, res.Student)
+	if res.Art != "student" || res.Leser == nil || res.Leser.ID != "l1" {
+		t.Fatalf("Auswahl aus der Trefferliste muss den Leser öffnen, got Type=%q Student=%v", res.Art, res.Leser)
 	}
 }
 
-// TestProcessQuery_LeserIDUnbekannt: Eine ID, zu der es niemanden gibt, ist ein lauter
+// TestVerarbeiteEingabe_LeserIDUnbekannt: Eine ID, zu der es niemanden gibt, ist ein lauter
 // Fehler — sie darf nicht in die Buchtitel-Volltextsuche durchfallen. Dort stünde dann
 // „keine Treffer", und an der Theke sähe es aus, als sei der Klick ins Leere gegangen.
-func TestProcessQuery_LeserIDUnbekannt(t *testing.T) {
-	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
+func TestVerarbeiteEingabe_LeserIDUnbekannt(t *testing.T) {
+	svc := &omniboxDienst{
+		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
+		leserAbfragen:   &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
-	if _, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "leser:fehlt", StaffID: "staff"}); err == nil {
+	if _, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: "leser:fehlt", BearbeiterID: "staff"}); err == nil {
 		t.Fatal("unbekannte Leser-ID muss einen Fehler melden, nicht in die Suche fallen")
 	}
 }

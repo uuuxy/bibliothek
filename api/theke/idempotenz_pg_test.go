@@ -32,15 +32,15 @@ import (
 // zwischenzeitlich lässt nach dem Commit der ersten Anfrage die zweite starten, bevor die
 // erste ihre Antwort speichert.
 type zwischenzeitlich struct {
-	echt    service.OmniboxService
+	echt    service.OmniboxDienst
 	einmal  sync.Once
 	zweite  func()
 	fertig  chan struct{}
 	gewesen bool
 }
 
-func (z *zwischenzeitlich) ProcessQuery(ctx context.Context, q service.OmniboxQuery) (*service.OmniboxResult, error) {
-	res, err := z.echt.ProcessQuery(ctx, q)
+func (z *zwischenzeitlich) VerarbeiteEingabe(ctx context.Context, q service.OmniboxEingabe) (*service.OmniboxErgebnis, error) {
+	res, err := z.echt.VerarbeiteEingabe(ctx, q)
 	z.einmal.Do(func() {
 		z.gewesen = true
 		go func() {
@@ -88,9 +88,9 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	echt := service.NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	loanSvc := service.NewAusleihDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := service.NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
+	echt := service.NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 	schluessel := "3f2504e0-4f89-11d3-9a0c-0305e82c" + suffix[len(suffix)-4:]

@@ -103,7 +103,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// Runners. Auf dem UTC-CI sind das ab 22:00 UTC zwei verschiedene Kalendertage — genau
 	// daran war dieser Test in der Nacht auf den 22.08.2026 rot (erwartet 03.09., war 04.09.),
 	// und nur in diesem Zwei-Stunden-Fenster. Die Schwestern in
-	// internal/service/loan_rules_test.go (sameDay) wurden beim Zeit-Sweep am 19.08.2026 schon
+	// internal/service/frist_test.go (sameDay) wurden beim Zeit-Sweep am 19.08.2026 schon
 	// so normalisiert; dieser Test hier wurde damals übersehen.
 	// Nachstellbar ohne Warten auf Mitternacht: TZ=Pacific/Midway go test ./api/ -run TestMahnkette
 	// AddDate NACH der Umrechnung in die Schulzeitzone — sonst rechnet der Test im

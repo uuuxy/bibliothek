@@ -32,7 +32,7 @@ func TestRegalfreigabe_AnderesExemplar(t *testing.T) {
 	mock.ExpectQuery("SELECT barcode_id FROM buecher_exemplare").WithArgs("exA").
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("BC-A-123"))
 
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 	entferneErfuellteVormerkung(context.Background(), tx, copyB, "s1", resp)
 
 	if resp.RegalfreigabeBarcode != "BC-A-123" {
@@ -59,7 +59,7 @@ func TestRegalfreigabe_SelbesExemplar(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
 	// KEIN barcode-Lookup erwartet.
 
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 	entferneErfuellteVormerkung(context.Background(), tx, copyA, "s1", resp)
 
 	if resp.RegalfreigabeBarcode != "" {
@@ -85,7 +85,7 @@ func TestRegalfreigabe_KeineVormerkung(t *testing.T) {
 	mock.ExpectQuery(deleteVormerkungQuery).WithArgs("titel9", "s1").
 		WillReturnError(pgx.ErrNoRows)
 
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 	entferneErfuellteVormerkung(context.Background(), tx, copyX, "s1", resp)
 
 	if resp.RegalfreigabeBarcode != "" {

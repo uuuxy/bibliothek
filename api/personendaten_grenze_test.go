@@ -89,9 +89,9 @@ type overrideSpyOmnibox struct {
 	gesehenerOverride bool
 }
 
-func (o *overrideSpyOmnibox) ProcessQuery(_ context.Context, q service.OmniboxQuery) (*service.OmniboxResult, error) {
-	o.gesehenerOverride = q.OverrideBlock
-	return &service.OmniboxResult{Type: "info", Message: "ok"}, nil
+func (o *overrideSpyOmnibox) VerarbeiteEingabe(_ context.Context, q service.OmniboxEingabe) (*service.OmniboxErgebnis, error) {
+	o.gesehenerOverride = q.SperreUebergehen
+	return &service.OmniboxErgebnis{Art: "info", Meldung: "ok"}, nil
 }
 
 func actionSiehtOverride(rolle string) bool {

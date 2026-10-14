@@ -16,7 +16,7 @@ import (
 // Schultag, wenn sie auf ein Wochenende, einen Feiertag oder in die Ferien fällt. Der Anlass
 // ist dieser Tag selbst: Donnerstag 24.09.2026 plus 21 Tage ist der 15.10., mitten in den
 // Herbstferien (05.10.–17.10.2026).
-func TestCalculateDueDate_FristRuecktAufDenNaechstenSchultag(t *testing.T) {
+func TestBerechneFrist_FristRuecktAufDenNaechstenSchultag(t *testing.T) {
 	berlin := schulzeit.Zone()
 	am := func(j int, m time.Month, d int) time.Time { return time.Date(j, m, d, 10, 0, 0, 0, berlin) }
 	ende := func(j int, m time.Month, d int) time.Time { return time.Date(j, m, d, 23, 59, 59, 0, berlin) }
@@ -37,8 +37,8 @@ func TestCalculateDueDate_FristRuecktAufDenNaechstenSchultag(t *testing.T) {
 		{"eigene Sommerferien aus der Einstellung", am(2031, time.June, 23), "Buch", 21, eigene, ende(2031, time.August, 25)},
 		{"ohne Eintrag kennt 2031 keine Sommerferien", am(2031, time.June, 23), "Buch", 21, "", ende(2031, time.July, 14)},
 	} {
-		got := calculateDueDate(c.jetzt, DueDateOptions{IstLernmittel: false, Medientyp: c.medientyp, LmfStichtag: "07-31",
-			FristBuchTage: c.buchTage, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: c.sommerferien})
+		got := berechneFrist(c.jetzt, fristAngaben{IstLernmittel: false, Medientyp: c.medientyp, LMFStichtag: "07-31",
+			FristBuchTage: c.buchTage, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: c.sommerferien})
 		if !got.Equal(c.soll) {
 			t.Errorf("%s: %s, erwartet %s", c.name, got.In(berlin), c.soll)
 		}
@@ -47,10 +47,10 @@ func TestCalculateDueDate_FristRuecktAufDenNaechstenSchultag(t *testing.T) {
 
 // Lernmittel behalten ihren Stichtag, auch wenn er in den Sommerferien liegt — sonst stünde
 // jedes Schulbuch am ersten Schultag danach, dem Tag der Bücherausgabe.
-func TestCalculateDueDate_LernmittelBleibtAmStichtag(t *testing.T) {
+func TestBerechneFrist_LernmittelBleibtAmStichtag(t *testing.T) {
 	jetzt := time.Date(2026, time.September, 24, 10, 0, 0, 0, schulzeit.Zone())
-	got := calculateDueDate(jetzt, DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31",
-		FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+	got := berechneFrist(jetzt, fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31",
+		FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	// Samstag 31.07.2027, in den Sommerferien 28.06.–06.08.2027.
 	if want := time.Date(2027, time.July, 31, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {
 		t.Errorf("Lernmittel: %s, erwartet %s", got.In(schulzeit.Zone()), want)
@@ -59,7 +59,7 @@ func TestCalculateDueDate_LernmittelBleibtAmStichtag(t *testing.T) {
 
 // Die eigenen Sommerferien kommen über die Einstellung „sommerferien" in die Frist — dieselbe
 // Liste, die der LMF-Planer liest, keine zweite.
-func TestResolveCheckoutDueDate_SommerferienAusDerEinstellung(t *testing.T) {
+func TestBestimmeFrist_SommerferienAusDerEinstellung(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 	svc.jetzt = func() time.Time { return time.Date(2031, time.June, 23, 10, 0, 0, 0, schulzeit.Zone()) }
@@ -67,7 +67,7 @@ func TestResolveCheckoutDueDate_SommerferienAusDerEinstellung(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow(lmfplan.SommerferienSchluessel, strPtr(`[{"jahr":2031,"von":"2031-07-14","bis":"2031-08-22"}]`)))
 
-	got, err := svc.resolveCheckoutDueDate(context.Background(), &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}, "5a")
+	got, err := svc.bestimmeFrist(context.Background(), &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}

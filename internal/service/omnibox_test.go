@@ -22,11 +22,11 @@ func (m *stubLeserRepo) FindeZuBarcode(ctx context.Context, barcode string) (*re
 	return m.leser, m.err
 }
 
-// TestHandleAusweisAction: Ein gescannter Ausweis liefert seit Migration 125 EINEN Leser —
+// TestVerarbeiteAusweis: Ein gescannter Ausweis liefert seit Migration 125 EINEN Leser —
 // Schüler wie Kollegium, unterscheidbar an der Art. Eine unbekannte Nummer bleibt ein
 // lauter Fehler und verschwindet nicht in der Volltextsuche; ein Datenbankfehler kommt als
 // solcher durch, statt sich als „nicht registriert" zu tarnen.
-func TestHandleAusweisAction(t *testing.T) {
+func TestVerarbeiteAusweis(t *testing.T) {
 	tests := []struct {
 		name        string
 		leser       *repository.Leser
@@ -54,12 +54,12 @@ func TestHandleAusweisAction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc := &defaultOmniboxService{
-				studentRepo: &stubLeserRepo{leser: tt.leser, err: tt.err},
+			svc := &omniboxDienst{
+				leserAbfragen: &stubLeserRepo{leser: tt.leser, err: tt.err},
 			}
 
-			resp := &OmniboxResult{}
-			err := svc.handleAusweisAction(context.Background(), "L-123", resp)
+			resp := &OmniboxErgebnis{}
+			err := svc.verarbeiteAusweis(context.Background(), "L-123", resp)
 
 			if tt.expectError {
 				if err == nil {
@@ -70,27 +70,27 @@ func TestHandleAusweisAction(t *testing.T) {
 			if err != nil {
 				t.Fatalf("did not expect an error, but got: %v", err)
 			}
-			if resp.Type != "student" {
-				t.Errorf("expected resp.Type to be \"student\", got %q", resp.Type)
+			if resp.Art != "student" {
+				t.Errorf("expected resp.Type to be \"student\", got %q", resp.Art)
 			}
-			if resp.Student != tt.leser {
-				t.Errorf("expected resp.Student to be %v, got %v", tt.leser, resp.Student)
+			if resp.Leser != tt.leser {
+				t.Errorf("expected resp.Student to be %v, got %v", tt.leser, resp.Leser)
 			}
 		})
 	}
 }
 
-func TestNewOmniboxService(t *testing.T) {
+func TestNewOmniboxDienst(t *testing.T) {
 	// Setup zero-value dependencies (we just need to verify they get injected correctly)
 	var pool db.PgxPoolIface
 	var studentRepo repository.LeserAbfragen
 	var bookRepo repository.KatalogAbfragen
 	var loanRepo repository.AusleihAbfragen
-	var loanSvc LoanService
-	var deviceSvc DeviceService
+	var loanSvc AusleihDienst
+	var deviceSvc GeraeteDienst
 
 	// Act
-	svc := NewOmniboxService(
+	svc := NewOmniboxDienst(
 		pool,
 		studentRepo,
 		bookRepo,
@@ -101,31 +101,31 @@ func TestNewOmniboxService(t *testing.T) {
 
 	// Assert
 	if svc == nil {
-		t.Fatalf("Expected NewOmniboxService to return a non-nil instance")
+		t.Fatalf("Expected NewOmniboxDienst to return a non-nil instance")
 	}
 
-	impl, ok := svc.(*defaultOmniboxService)
+	impl, ok := svc.(*omniboxDienst)
 	if !ok {
-		t.Fatalf("Expected implementation to be of type *defaultOmniboxService, got %T", svc)
+		t.Fatalf("Expected implementation to be of type *omniboxDienst, got %T", svc)
 	}
 
 	// Verify all dependencies were injected
 	if impl.pool != pool {
 		t.Errorf("Expected pool to be injected")
 	}
-	if impl.studentRepo != studentRepo {
+	if impl.leserAbfragen != studentRepo {
 		t.Errorf("Expected studentRepo to be injected")
 	}
-	if impl.bookRepo != bookRepo {
+	if impl.katalogAbfragen != bookRepo {
 		t.Errorf("Expected bookRepo to be injected")
 	}
-	if impl.loanRepo != loanRepo {
+	if impl.ausleihAbfragen != loanRepo {
 		t.Errorf("Expected loanRepo to be injected")
 	}
-	if impl.loanSvc != loanSvc {
+	if impl.ausleihe != loanSvc {
 		t.Errorf("Expected loanSvc to be injected")
 	}
-	if impl.deviceSvc != deviceSvc {
+	if impl.geraete != deviceSvc {
 		t.Errorf("Expected deviceSvc to be injected")
 	}
 }
@@ -143,28 +143,28 @@ func (m *mockBookRepo) FindeExemplar(ctx context.Context, barcode string) (*repo
 	return nil, nil
 }
 
-// mockLoanService is a partial mock for LoanService
+// mockLoanService is a partial mock for AusleihDienst
 type mockLoanService struct {
-	LoanService
-	mockHandleUnifiedCheckout func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error)
-	mockHandleSimpleReturn    func(ctx context.Context, copy *repository.Exemplar, staffID string) (*LoanResult, error)
+	AusleihDienst
+	mockHandleUnifiedCheckout func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error)
+	mockHandleSimpleReturn    func(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error)
 }
 
-func (m *mockLoanService) HandleUnifiedCheckout(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error) {
+func (m *mockLoanService) BucheAmLeser(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
 	if m.mockHandleUnifiedCheckout != nil {
 		return m.mockHandleUnifiedCheckout(ctx, copy, activeLeserID, staffID, overrideBlock)
 	}
 	return nil, nil
 }
 
-func (m *mockLoanService) HandleSimpleReturn(ctx context.Context, copy *repository.Exemplar, staffID string) (*LoanResult, error) {
+func (m *mockLoanService) NimmZurueck(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
 	if m.mockHandleSimpleReturn != nil {
 		return m.mockHandleSimpleReturn(ctx, copy, staffID)
 	}
 	return nil, nil
 }
 
-func TestHandleBookAction(t *testing.T) {
+func TestVerarbeiteExemplar(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("FindeExemplar returns error", func(t *testing.T) {
@@ -175,13 +175,13 @@ func TestHandleBookAction(t *testing.T) {
 			},
 		}
 
-		svc := &defaultOmniboxService{
-			bookRepo: bookRepo,
+		svc := &omniboxDienst{
+			katalogAbfragen: bookRepo,
 		}
 
-		q := OmniboxQuery{Query: "123"}
-		resp := &OmniboxResult{}
-		err := svc.handleBookAction(ctx, q, resp)
+		q := OmniboxEingabe{Text: "123"}
+		resp := &OmniboxErgebnis{}
+		err := svc.verarbeiteExemplar(ctx, q, resp)
 
 		if err != expectedErr {
 			t.Errorf("Expected error %v, got %v", expectedErr, err)
@@ -195,25 +195,25 @@ func TestHandleBookAction(t *testing.T) {
 			},
 		}
 
-		svc := &defaultOmniboxService{
-			bookRepo: bookRepo,
+		svc := &omniboxDienst{
+			katalogAbfragen: bookRepo,
 		}
 
-		q := OmniboxQuery{Query: "123"}
-		resp := &OmniboxResult{}
-		err := svc.handleBookAction(ctx, q, resp)
+		q := OmniboxEingabe{Text: "123"}
+		resp := &OmniboxErgebnis{}
+		err := svc.verarbeiteExemplar(ctx, q, resp)
 
 		if err == nil {
 			t.Errorf("Expected an error when copy is not found, got nil")
-		} else if !errors.Is(err, ErrNotFound) {
-			t.Errorf("Expected ErrNotFound, got %v", err)
+		} else if !errors.Is(err, ErrNichtGefunden) {
+			t.Errorf("Expected ErrNichtGefunden, got %v", err)
 		}
 	})
 
 	t.Run("Successful Checkout with active student", func(t *testing.T) {
 		studentID := "student-123"
 		bookCopy := &repository.Exemplar{ID: "copy-123", IstAusleihbar: true, IstAusgesondert: false}
-		expectedLoanResult := &LoanResult{Type: "ausleihe"}
+		expectedLoanResult := &AusleihErgebnis{Art: "ausleihe"}
 
 		bookRepo := &mockBookRepo{
 			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
@@ -222,34 +222,34 @@ func TestHandleBookAction(t *testing.T) {
 		}
 
 		loanSvc := &mockLoanService{
-			mockHandleUnifiedCheckout: func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error) {
+			mockHandleUnifiedCheckout: func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
 				if copy != bookCopy || activeLeserID == nil || *activeLeserID != studentID {
-					t.Errorf("HandleUnifiedCheckout called with wrong arguments")
+					t.Errorf("BucheAmLeser called with wrong arguments")
 				}
 				return expectedLoanResult, nil
 			},
 		}
 
-		svc := &defaultOmniboxService{
-			bookRepo: bookRepo,
-			loanSvc:  loanSvc,
+		svc := &omniboxDienst{
+			katalogAbfragen: bookRepo,
+			ausleihe:        loanSvc,
 		}
 
-		q := OmniboxQuery{Query: "123", ActiveLeserID: &studentID}
-		resp := &OmniboxResult{}
-		err := svc.handleBookAction(ctx, q, resp)
+		q := OmniboxEingabe{Text: "123", AktiverLeserID: &studentID}
+		resp := &OmniboxErgebnis{}
+		err := svc.verarbeiteExemplar(ctx, q, resp)
 
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
-		if resp.Type != "ausleihe" {
-			t.Errorf("Expected resp.Type to be 'ausleihe', got %s", resp.Type)
+		if resp.Art != "ausleihe" {
+			t.Errorf("Expected resp.Type to be 'ausleihe', got %s", resp.Art)
 		}
 	})
 
 	t.Run("Successful Return with no active borrower", func(t *testing.T) {
 		bookCopy := &repository.Exemplar{ID: "copy-123", IstAusleihbar: true, IstAusgesondert: false}
-		expectedLoanResult := &LoanResult{Type: "rueckgabe"}
+		expectedLoanResult := &AusleihErgebnis{Art: "rueckgabe"}
 
 		bookRepo := &mockBookRepo{
 			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.Exemplar, error) {
@@ -258,28 +258,28 @@ func TestHandleBookAction(t *testing.T) {
 		}
 
 		loanSvc := &mockLoanService{
-			mockHandleSimpleReturn: func(ctx context.Context, copy *repository.Exemplar, staffID string) (*LoanResult, error) {
+			mockHandleSimpleReturn: func(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
 				if copy != bookCopy {
-					t.Errorf("HandleSimpleReturn called with wrong arguments")
+					t.Errorf("NimmZurueck called with wrong arguments")
 				}
 				return expectedLoanResult, nil
 			},
 		}
 
-		svc := &defaultOmniboxService{
-			bookRepo: bookRepo,
-			loanSvc:  loanSvc,
+		svc := &omniboxDienst{
+			katalogAbfragen: bookRepo,
+			ausleihe:        loanSvc,
 		}
 
-		q := OmniboxQuery{Query: "123"}
-		resp := &OmniboxResult{}
-		err := svc.handleBookAction(ctx, q, resp)
+		q := OmniboxEingabe{Text: "123"}
+		resp := &OmniboxErgebnis{}
+		err := svc.verarbeiteExemplar(ctx, q, resp)
 
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
-		if resp.Type != "rueckgabe" {
-			t.Errorf("Expected resp.Type to be 'rueckgabe', got %s", resp.Type)
+		if resp.Art != "rueckgabe" {
+			t.Errorf("Expected resp.Type to be 'rueckgabe', got %s", resp.Art)
 		}
 	})
 }
@@ -294,7 +294,7 @@ func (r *searchBookRepo) FindeTitel(_ context.Context, _ string) ([]repository.T
 	return r.titles, r.err
 }
 
-func TestHandleSearchAction(t *testing.T) {
+func TestVerarbeiteSuche(t *testing.T) {
 	tests := []struct {
 		name          string
 		query         string
@@ -335,12 +335,12 @@ func TestHandleSearchAction(t *testing.T) {
 				titles: tt.mockTitles,
 				err:    tt.mockErr,
 			}
-			svc := &defaultOmniboxService{
-				bookRepo: repo,
+			svc := &omniboxDienst{
+				katalogAbfragen: repo,
 			}
 
-			resp := &OmniboxResult{}
-			err := svc.handleSearchAction(context.Background(), tt.query, resp)
+			resp := &OmniboxErgebnis{}
+			err := svc.verarbeiteSuche(context.Background(), tt.query, resp)
 
 			if tt.expectedError {
 				if err == nil {
@@ -353,39 +353,39 @@ func TestHandleSearchAction(t *testing.T) {
 				if err != nil {
 					t.Errorf("Expected no error, got %v", err)
 				}
-				if resp.Type != tt.expectedType {
-					t.Errorf("Expected response type %q, got %q", tt.expectedType, resp.Type)
+				if resp.Art != tt.expectedType {
+					t.Errorf("Expected response type %q, got %q", tt.expectedType, resp.Art)
 				}
 				// Verify the exact content
-				if len(resp.SearchResults) != len(tt.mockTitles) {
-					t.Errorf("Expected %d search results, got %d", len(tt.mockTitles), len(resp.SearchResults))
+				if len(resp.Treffer) != len(tt.mockTitles) {
+					t.Errorf("Expected %d search results, got %d", len(tt.mockTitles), len(resp.Treffer))
 				}
 			}
 		})
 	}
 }
 
-// TestProcessQuery_ZweiterVersuchOhnePruefzeichen: Bleibt ein Scan ohne Treffer und endet er
+// TestVerarbeiteEingabe_ZweiterVersuchOhnePruefzeichen: Bleibt ein Scan ohne Treffer und endet er
 // auf ein gültiges Prüfzeichen, fragt die Theke ein zweites Mal ohne dieses Zeichen
 // (TestAlterAufdruckMitPruefzeichenWirdGelesen). Zwei Zusagen daran: Bleibt auch der zweite
 // Versuch leer, nennt die Meldung die Nummer, die gescannt wurde. Und ein Fehler, der kein
 // „nicht gefunden" ist, löst keinen zweiten Versuch aus.
-func TestProcessQuery_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
+func TestVerarbeiteEingabe_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
 	// „B-100016" ist „B-10001" mit dem Prüfzeichen 6.
 	const gescannt, gekuerzt = "B-100016", "B-10001"
 
 	t.Run("beide Versuche leer: die Meldung nennt die gescannte Nummer", func(t *testing.T) {
 		var gefragt []string
-		svc := &defaultOmniboxService{bookRepo: &mockBookRepo{
+		svc := &omniboxDienst{katalogAbfragen: &mockBookRepo{
 			mockGetCopyByBarcode: func(_ context.Context, barcode string) (*repository.Exemplar, error) {
 				gefragt = append(gefragt, barcode)
 				return nil, nil
 			},
 		}}
 
-		_, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: gescannt})
-		if !errors.Is(err, ErrNotFound) {
-			t.Fatalf("Fehler %v, erwartet ErrNotFound", err)
+		_, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: gescannt})
+		if !errors.Is(err, ErrNichtGefunden) {
+			t.Fatalf("Fehler %v, erwartet ErrNichtGefunden", err)
 		}
 		if !strings.Contains(err.Error(), gescannt) {
 			t.Errorf("Meldung %q nennt nicht die gescannte Nummer %s", err.Error(), gescannt)
@@ -398,14 +398,14 @@ func TestProcessQuery_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
 	t.Run("ein Fehler der Datenbank löst keinen zweiten Versuch aus", func(t *testing.T) {
 		dbFehler := errors.New("verbindung weg")
 		abfragen := 0
-		svc := &defaultOmniboxService{bookRepo: &mockBookRepo{
+		svc := &omniboxDienst{katalogAbfragen: &mockBookRepo{
 			mockGetCopyByBarcode: func(context.Context, string) (*repository.Exemplar, error) {
 				abfragen++
 				return nil, dbFehler
 			},
 		}}
 
-		_, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: gescannt})
+		_, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: gescannt})
 		if !errors.Is(err, dbFehler) {
 			t.Fatalf("Fehler %v, erwartet %v", err, dbFehler)
 		}

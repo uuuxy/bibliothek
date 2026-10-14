@@ -13,7 +13,7 @@
 	 * 3. Kollegium (16.09.2026): Seit die Akte auch einen Kollegen zeigt, sieht die
 	 *    Theke dieselbe Ansicht wie bei einem Schüler — nur ohne Klasse. Der
 	 *    Hinweis sagt, was daran anders ist: Die Frist ist ein Jahr
-	 *    (resolveBorrowerAndDueTime). Vorher stand dafür eine eigene schmale
+	 *    (ladeVorgang). Vorher stand dafür eine eigene schmale
 	 *    Karte da, weil es die Akte noch nicht gab.
 	 * 4. Gemischte Auflagen (25.09.2026, docs/OFFEN.md 4.18, Stufe 5): Das eben
 	 *    ausgeliehene Schulbuch ist eine andere Auflage als die, die Kinder derselben

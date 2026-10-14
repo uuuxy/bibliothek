@@ -67,7 +67,7 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 		VALUES ($1, $2, now(), now() + interval '3 days')`, ex1, schuelerID); err != nil {
 		t.Fatalf("Schüler-Ausleihe: %v", err)
 	}
-	// ist_handapparat wie der echte Schreiber (erzeugeAusleihe: jeder Nicht-Schüler).
+	// ist_handapparat wie der echte Schreiber (legeAusleiheAn: jeder Nicht-Schüler).
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, ist_handapparat)
 		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), now(), now() + interval '10 days', true)`, ex2, lehrerID); err != nil {

@@ -1,5 +1,5 @@
 /**
- * Einordnung eines Scans OHNE NETZ — der Zwilling von internal/service/omnibox_service.go.
+ * Einordnung eines Scans OHNE NETZ — der Zwilling von internal/service/omnibox.go.
  *
  * Mit Netz entscheidet der Server, was ein Scan ist: Vorsilbe, sonst der Reihe nach Buch,
  * Schüler-, Lehrerausweis, Volltextsuche. Ohne Netz gibt es niemanden zu fragen, und die
@@ -107,7 +107,7 @@ export function ordneScanEin(roh, istBuch) {
 	// MIT Pruefzeichen, und das Lesegeraet gibt es als Teil der Nummer zurueck (aus
 	// „58968" wird „58968-"). Die Karten und Etiketten von damals sind im Umlauf und
 	// sollen weiter funktionieren; der Server macht online dasselbe
-	// (internal/service/omnibox_service.go).
+	// (internal/service/omnibox.go).
 	//
 	// ZULETZT und nur mit Treffer in der Liste: Bei 43 moeglichen Zeichen sieht im Schnitt
 	// jeder 43. gueltige Code zufaellig so aus, als haenge ein Pruefzeichen dran. Erst

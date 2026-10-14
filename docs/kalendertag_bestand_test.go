@@ -54,7 +54,7 @@ var bestandKalendertag = map[string]struct {
 	"internal/service/bestellung_anlegen.go": {1, "Anschaffungsjahr eines Exemplars"},
 	// Ein Datum aus einer Eingabe, als Tag in UTC gelesen: geduldet, wo danach kein Zeitpunkt
 	// in UTC verglichen wird.
-	"internal/service/loan_rules.go":      {1, "Ferien-Leseclub: nimmt Jahr, Monat und Tag und baut daraus das Tagesende der Schule"},
+	"internal/service/frist.go":           {1, "Ferien-Leseclub: nimmt Jahr, Monat und Tag und baut daraus das Tagesende der Schule"},
 	"api/theke/ausleihe.go":               {1, "Frist von Hand: geht durch TagesEnde in der Zone der Schule"},
 	"api/lernmittel/lmf_verlaengerung.go": {1, "neues Rückgabedatum: geht durch TagesEnde in der Zone der Schule"},
 	"api/lernmittel/lmf_plan.go":          {3, "prüft nur die Form der Tage; gerechnet wird mit schulzeit.Kalendertag"},

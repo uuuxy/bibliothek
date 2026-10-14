@@ -81,7 +81,7 @@ func sammleSchemaBezeichner(katalog string) []string {
 }
 
 // istDateiverweis erkennt Zellen, die bewusst woandershin zeigen: Quelldateien
-// (`internal/service/loan_checkout.go`), Verzeichnisse (`migrations/042`) und
+// (`internal/service/ausleihe_am_leser.go`), Verzeichnisse (`migrations/042`) und
 // Frontend-Pfade. Sie werden als GANZES übersprungen — würde man sie an `/` und `.`
 // zerlegen, entstünden Scheinbezeichner wie "internal" oder "service".
 var istDateiverweis = regexp.MustCompile(`/|\.(go|js|svelte|sql|sh|md|yml|json|properties)$`)

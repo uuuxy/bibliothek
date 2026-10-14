@@ -40,7 +40,7 @@ func (m *mockLoanRepoReturn) GetActiveBorrowingsByUserTx(ctx context.Context, tx
 	return nil, nil
 }
 
-func TestHandleRueckgabe_ReturnLoanTxError(t *testing.T) {
+func TestVerarbeiteRueckgabe_ReturnLoanTxError(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -48,10 +48,10 @@ func TestHandleRueckgabe_ReturnLoanTxError(t *testing.T) {
 	defer mockPool.Close()
 
 	expectedErr := errors.New("db error")
-	svc := &defaultLoanService{
-		pool:        mockPool,
-		loanRepo:    &mockLoanRepoReturn{returnErr: expectedErr},
-		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
+	svc := &ausleihDienst{
+		pool:            mockPool,
+		ausleihAbfragen: &mockLoanRepoReturn{returnErr: expectedErr},
+		leserAbfragen:   &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -66,9 +66,9 @@ func TestHandleRueckgabe_ReturnLoanTxError(t *testing.T) {
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
 	leserID := "leser1"
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 
-	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
 
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("expected %v, got %v", expectedErr, err)
@@ -78,7 +78,7 @@ func TestHandleRueckgabe_ReturnLoanTxError(t *testing.T) {
 	}
 }
 
-func TestHandleRueckgabe_CommitError(t *testing.T) {
+func TestVerarbeiteRueckgabe_CommitError(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -86,11 +86,11 @@ func TestHandleRueckgabe_CommitError(t *testing.T) {
 	defer mockPool.Close()
 
 	audit := &mockAuditRepo{}
-	svc := &defaultLoanService{
-		pool:        mockPool,
-		loanRepo:    &mockLoanRepoReturn{},
-		auditRepo:   audit,
-		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
+	svc := &ausleihDienst{
+		pool:              mockPool,
+		ausleihAbfragen:   &mockLoanRepoReturn{},
+		protokollAbfragen: audit,
+		leserAbfragen:     &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -112,9 +112,9 @@ func TestHandleRueckgabe_CommitError(t *testing.T) {
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 
-	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
 
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("expected %v, got %v", expectedErr, err)
@@ -124,7 +124,7 @@ func TestHandleRueckgabe_CommitError(t *testing.T) {
 	}
 }
 
-func TestHandleRueckgabe_Success(t *testing.T) {
+func TestVerarbeiteRueckgabe_Success(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -132,11 +132,11 @@ func TestHandleRueckgabe_Success(t *testing.T) {
 	defer mockPool.Close()
 
 	audit := &mockAuditRepo{}
-	svc := &defaultLoanService{
-		pool:        mockPool,
-		loanRepo:    &mockLoanRepoReturn{},
-		auditRepo:   audit,
-		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
+	svc := &ausleihDienst{
+		pool:              mockPool,
+		ausleihAbfragen:   &mockLoanRepoReturn{},
+		protokollAbfragen: audit,
+		leserAbfragen:     &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -157,23 +157,23 @@ func TestHandleRueckgabe_Success(t *testing.T) {
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 
-	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.Type != "rueckgabe" {
-		t.Errorf("expected type rueckgabe, got %v", result.Type)
+	if result.Art != "rueckgabe" {
+		t.Errorf("expected type rueckgabe, got %v", result.Art)
 	}
-	if result.LoanID == nil || *result.LoanID != "loan1" {
-		t.Errorf("expected loan1, got %v", result.LoanID)
+	if result.AusleiheID == nil || *result.AusleiheID != "loan1" {
+		t.Errorf("expected loan1, got %v", result.AusleiheID)
 	}
 }
 
-func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
+func TestVerarbeiteRueckgabe_VormerkungAktiviert(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -181,11 +181,11 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 	defer mockPool.Close()
 
 	audit := &mockAuditRepo{}
-	svc := &defaultLoanService{
-		pool:        mockPool,
-		loanRepo:    &mockLoanRepoReturn{},
-		auditRepo:   audit,
-		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
+	svc := &ausleihDienst{
+		pool:              mockPool,
+		ausleihAbfragen:   &mockLoanRepoReturn{},
+		protokollAbfragen: audit,
+		leserAbfragen:     &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 		// Donnerstag vor den Herbstferien (05.10.–17.10.2026): plus drei Tage ist Sonntag, der
 		// nächste Schultag der Montag nach den Ferien.
 		jetzt: func() time.Time { return time.Date(2026, time.October, 1, 10, 0, 0, 0, schulzeit.Zone()) },
@@ -220,39 +220,39 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 
-	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.Type != "rueckgabe" {
-		t.Errorf("expected type rueckgabe, got %v", result.Type)
+	if result.Art != "rueckgabe" {
+		t.Errorf("expected type rueckgabe, got %v", result.Art)
 	}
-	if !result.HasVormerkung {
+	if !result.HatVormerkung {
 		t.Errorf("expected HasVormerkung to be true")
 	}
-	if result.VormerkungUser != "Max Mustermann, 10A" {
-		t.Errorf("expected VormerkungUser to be Max Mustermann, 10A, got %v", result.VormerkungUser)
+	if result.VorgemerktFuer != "Max Mustermann, 10A" {
+		t.Errorf("expected VormerkungUser to be Max Mustermann, 10A, got %v", result.VorgemerktFuer)
 	}
 	if result.VormerkungTitel != "Test Book" {
 		t.Errorf("expected VormerkungTitel to be Test Book, got %v", result.VormerkungTitel)
 	}
 }
 
-// TestHandleSimpleReturn_ReichtFehlerWeiter: Beginnt die Transaktion nicht oder lässt sich die
+// TestNimmZurueck_ReichtFehlerWeiter: Beginnt die Transaktion nicht oder lässt sich die
 // offene Ausleihe nicht lesen, kommt der Fehler an. Verschluckt gälte das Buch als „nicht
 // ausgeliehen", und die Theke wiese eine Rückgabe ab, die es gibt.
-func TestHandleSimpleReturn_ReichtFehlerWeiter(t *testing.T) {
+func TestNimmZurueck_ReichtFehlerWeiter(t *testing.T) {
 	dbFehler := errors.New("verbindung weg")
 	exemplar := &repository.Exemplar{ID: "ex-1"}
 
 	t.Run("die Transaktion beginnt nicht", func(t *testing.T) {
-		svc := &defaultLoanService{loanRepo: &mockLoanRepoReturn{beginErr: dbFehler}}
+		svc := &ausleihDienst{ausleihAbfragen: &mockLoanRepoReturn{beginErr: dbFehler}}
 
-		ergebnis, err := svc.HandleSimpleReturn(context.Background(), exemplar, "theke")
+		ergebnis, err := svc.NimmZurueck(context.Background(), exemplar, "theke")
 		if !errors.Is(err, dbFehler) {
 			t.Errorf("Fehler %v, erwartet %v", err, dbFehler)
 		}
@@ -273,9 +273,9 @@ func TestHandleSimpleReturn_ReichtFehlerWeiter(t *testing.T) {
 			t.Fatalf("Transaktion der Attrappe: %v", err)
 		}
 		pool.ExpectRollback()
-		svc := &defaultLoanService{loanRepo: &mockLoanRepoReturn{tx: tx, getActiveLoanErr: dbFehler}}
+		svc := &ausleihDienst{ausleihAbfragen: &mockLoanRepoReturn{tx: tx, getActiveLoanErr: dbFehler}}
 
-		ergebnis, err := svc.HandleSimpleReturn(context.Background(), exemplar, "theke")
+		ergebnis, err := svc.NimmZurueck(context.Background(), exemplar, "theke")
 		if !errors.Is(err, dbFehler) {
 			t.Errorf("Fehler %v, erwartet %v", err, dbFehler)
 		}

@@ -117,8 +117,8 @@ Grund, nicht der Geschmack.
 
 | #  | Anforderung                                                                                                                                  | Fundstelle                                       |
 | -- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| F1 | **Ein Eingabefeld für alle Scans** (Omnibox). Ohne Präfix wird in der Reihenfolge Buch → Ausweis → Volltextsuche aufgelöst.                   | `internal/service/omnibox_service.go`, FACHKONZEPT §1 |
-| F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag 31. Juli bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Kollegium als Dauerleihe (gespeichert wird ein Jahr, überfällig wird sie nie). | `internal/service/loan_rules.go`, `pkg/lmf`, `pkg/lmfplan` |
+| F1 | **Ein Eingabefeld für alle Scans** (Omnibox). Ohne Präfix wird in der Reihenfolge Buch → Ausweis → Volltextsuche aufgelöst.                   | `internal/service/omnibox.go`, FACHKONZEPT §1 |
+| F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag 31. Juli bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Kollegium als Dauerleihe (gespeichert wird ein Jahr, überfällig wird sie nie). | `internal/service/frist.go`, `pkg/lmf`, `pkg/lmfplan` |
 | F3 | **Bis zu 8 Kiosk-Stationen gleichzeitig** am selben Bestand, ohne Doppelbuchung und ohne Phantom-Erfolg.                                      | `migrations/033_unique_active_loan.sql`, `sse/`  |
 | F4 | **Mahnwesen**: Mahnstufe steigt ausschließlich beim PDF-Druck (dem physischen Verwaltungsakt), nie beim Mailversand; Listen gehen an die Klassenleitung, nie an Schüler. | `api/mahnwesen/mahnwesen_bulk.go`                          |
 | F5 | **Schülerdaten unter DSGVO**: Löschfristen, Karenz, Anonymisierung, verschlüsselte Fotos, Auskunftsrecht, Audit-Trail.                        | `jobs/cron_dsgvo*.go`, `internal/crypto`, [SECURITY.md](SECURITY.md) |
@@ -455,7 +455,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
    Wartezeit auf eine laufende Anfrage desselben Schlüssels. Der Unique-Index deckt den
    TOCTOU-Fall ab, in dem zwei Anfragen die Idempotenz-Prüfung gleichzeitig passieren.
 4. **Fehler ehrlich abbilden:** Eine Unique-Verletzung wird zu **409 Conflict**
-   (`mapLoanCreateErr`), nicht zu 500 und nicht zu einem stillen Erfolg. Die Testklasse
+   (`deuteAnlegeFehler`), nicht zu 500 und nicht zu einem stillen Erfolg. Die Testklasse
    dazu heißt `phantom_erfolg_test.go` — „hat es geklappt?" muss beantwortbar sein.
 
 #### Q2 Datenschutz-Konformität
@@ -942,7 +942,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Bestellsuche und Bestellbedarf: der eigene Eintrag des Titels, sonst die Cover-Adresse der
   DNB zu seiner ISBN. Bricht das Lesen der vorhandenen ISBN ab, gilt keine als vorhanden; bis
   zum 10.10.2026 galten die bis dahin gelesenen.
-- Die Geräte-Ausleihe (`internal/service/device_service.go`) entscheidet, ob ein Scan eine
+- Die Geräte-Ausleihe (`internal/service/geraet.go`) entscheidet, ob ein Scan eine
   Ausleihe oder eine Rückgabe ist, prüft Gerät und Leser, rechnet die Frist und schreibt das
   Protokoll in der Transaktion der Buchung. Ihre Anweisungen stehen in
   `repository/geraete_ausleihe.go`. `SperreOffeneGeraeteAusleihe` sperrt die Zeile der offenen
@@ -960,7 +960,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   `LadeAbholbereiteTitel`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
   (`omnibox_service.go`).
 - Fristen und Sperr-Schwellen liest die Ausleihe über `repository.LadeEinstellungen`
-  (`ladeSystemEinstellungen`, `internal/service/loan_rules.go`) und nimmt daraus neun Felder
+  (`ladeAusleihEinstellungen`, `internal/service/ausleih_einstellungen.go`) und nimmt daraus neun Felder
   (`ausleihEinstellungenAus`). Die Zeilen der Einstellungen liest und bildet damit eine Stelle
   ab: Ein fehlender oder unlesbarer Wert hat an der Theke dieselbe Vorgabe wie in der Maske
   der Einstellungen. Bis zum 10.10.2026 las der Dienst die Tabelle selbst und bildete neun
@@ -1215,32 +1215,34 @@ frontend/src
 
 ### 5.4 Level 3 — Ausgewählte Bausteine im Detail
 
-#### 5.4.1 `internal/service` — Ausleihe (`loan_*.go`)
+#### 5.4.1 `internal/service` — Ausleihe
 
-| Datei                          | Aufgabe                                                                                                  |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `loan.go`                      | Dienstdefinition, Abhängigkeiten (Pools und Repositories)                                                |
-| `loan_checkout.go`             | Die Transaktionsklammer: Sperren in der Reihenfolge Schüler → Ausleihe → Exemplar, Limits, Vormerkungskonflikt |
-| `loan_checkout_validation.go`  | Ausleiher und Leihfrist auflösen                                                                         |
-| `ausleih_sperren.go`           | Die Sperren einer Ausleihe — ein Prüfweg für Buch, Gerät und Nachbuchen; Übergehen mit Protokoll         |
-| `loan_checkout_cases.go`       | Abbildung der DB-Fehler auf HTTP-Fälle (`mapLoanCreateErr` → 409)                                        |
-| `loan_return.go`               | Rückgabe; stellt das Buch dem nächsten Wartenden bereit (`repository.SperreNaechsteWartendeVormerkung`)  |
-| `loan_rules.go`                | Fristenberechnung je Medienart und Entleiherart                                                          |
+| Datei                      | Aufgabe                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `ausleihe.go`              | Der Dienst: Schnittstelle, Abhängigkeiten, Ergebnis                                                             |
+| `ausleihe_am_leser.go`     | Die Transaktionsklammer: Sperren in der Reihenfolge Schüler → Ausleihe → Exemplar, Limits, Vormerkungskonflikt  |
+| `ausleih_vorgang.go`       | Ausleiher und Leihfrist laden                                                                                   |
+| `ausleih_sperren.go`       | Die Sperren einer Ausleihe — ein Prüfweg für Buch, Gerät und Nachbuchen; Übergehen mit Protokoll                |
+| `ausleihe_faelle.go`       | Ausleihe, eigene Rückgabe und Fremdrückgabe; ein Doppelscan wird 409 (`deuteAnlegeFehler`)                      |
+| `rueckgabe.go`             | Rückgabe; stellt das Buch dem nächsten Wartenden bereit (`repository.SperreNaechsteWartendeVormerkung`)         |
+| `frist.go`                 | Fristenberechnung je Medienart und Leserart                                                                     |
+| `ausleih_einstellungen.go` | Was Ausleihe und Sperren aus den Einstellungen lesen                                                            |
+| `fehler.go`                | Die Fehlerarten; an ihnen hängt der HTTP-Status                                                                 |
 
-`HandleUnifiedCheckout` ist bewusst **eine** Tür für Ausleihe und Rückgabe: Wird ein
+`BucheAmLeser` ist bewusst **eine** Tür für Ausleihe und Rückgabe: Wird ein
 bereits ausgeliehenes Exemplar gescannt, entscheidet die Methode selbst, ob das eine
 reguläre Rückgabe, eine Fremdrückgabe oder ein Konflikt ist. Zwei Türen wären zwei
 Sperrreihenfolgen.
 
-#### 5.4.2 `internal/service/omnibox_service.go` — der Scan-Dispatcher
+#### 5.4.2 `internal/service/omnibox.go` — der Scan-Dispatcher
 
 ```
-ProcessQuery(eingabe)
+VerarbeiteEingabe(eingabe)
    │
    ├─ verarbeite(eingabe)              ← der Schalter: Präfix B- / A- / S- / L- / G-,
    │                                     sonst Buch → Ausweis → Volltextsuche
    │
-   ├─ scanBliebOhneTreffer(resp, err)? ← erkennt BEIDE Formen: lauter ErrNotFound
+   ├─ istOhneTreffer(erg, err)?        ← erkennt BEIDE Formen: lauter ErrNichtGefunden
    │                                     und stille leere Trefferliste
    │
    └─ ja → Prüfzeichen abschneiden, EINMAL erneut verarbeiten
@@ -1248,7 +1250,7 @@ ProcessQuery(eingabe)
             Code zufällig so aus, als hinge ein Prüfzeichen dran)
 ```
 
-Ein Fehler, der **kein** `ErrNotFound` ist (Datenbank weg, Sperre, Gerät ohne Checkliste),
+Ein Fehler, der **kein** `ErrNichtGefunden` ist (Datenbank weg, Sperre, Gerät ohne Checkliste),
 gilt ausdrücklich nicht als „ohne Treffer": Ihn ein zweites Mal auszulösen hieße, eine
 Sperrmeldung doppelt zu schreiben oder eine echte Störung zu verschleiern.
 
@@ -1465,7 +1467,7 @@ sequenceDiagram
         DB-->>H: gespeicherte Antwort
         H-->>K: dieselbe Antwort (kein zweiter Schreibvorgang)
     else neu
-        H->>S: ProcessQuery(eingabe)
+        H->>S: VerarbeiteEingabe(eingabe)
         Note over S: Präfix? B- / A- / S- / L- / G-<br/>sonst: Buch → Ausweis → Volltextsuche
         alt ohne Treffer
             S->>S: mögliches Code-39-Prüfzeichen abschneiden,<br/>EINMAL erneut auflösen
@@ -1531,7 +1533,7 @@ Station 1: Exemplar X → Schüler A        Station 2: Exemplar X → Schüler B
       ├─ INSERT ausleihen (X, A) ✓             ├─ INSERT ausleihen (X, B)
       │                                        │      └─ uniq_ausleihen_aktiv_exemplar
       │                                        │         verweigert → SQLSTATE 23505
-      └─ 200                                   └─ mapLoanCreateErr → 409 Conflict
+      └─ 200                                   └─ deuteAnlegeFehler → 409 Conflict
 ```
 
 **Der Scan eines Exemplars sperrt nicht das Exemplar, sondern die aktive Ausleihe.** Zwei
@@ -2245,7 +2247,7 @@ höchstens Serverzeit).
 
 | Regel                                                          | Warum                                                                                                                                           |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Eine Unique-Verletzung wird 409, nicht 500**                  | Ein Doppelscan ist ein Fachfall, keine Störung. `mapLoanCreateErr` bildet SQLSTATE 23505 ab                                                     |
+| **Eine Unique-Verletzung wird 409, nicht 500**                  | Ein Doppelscan ist ein Fachfall, keine Störung. `deuteAnlegeFehler` bildet SQLSTATE 23505 ab                                                     |
 | **DB-Aussetzer bei der Sitzungsprüfung wird 503, nicht 401**    | Eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist                                                                               |
 | **Ein unbekannter `/api/`-Pfad wird 404, nicht die App-Shell**  | Vorher antwortete er „200 text/html", und der Aufrufer scheiterte erst beim JSON-Parsen — mit einer Meldung, die nichts mit der Ursache zu tun hat |
 | **Jede `rows.Next()`-Schleife endet mit `rows.Err()`**          | Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als **Erfolg** — die Liste wäre still unvollständig. In `titel_loeschen.go` hätte das einen Titel trotz aktiver Ausleihen als „ausleihbar" behandeln können |
@@ -3111,7 +3113,7 @@ Gürtel. Er deckt zugleich den TOCTOU-Fall bei Idempotenz-Keys ab.
 außerhalb der PG-Integrationstests es merkt.
 
 **Fundstelle.** `uniq_ausleihen_aktiv_exemplar`, `uniq_ausleihen_aktiv_geraet`,
-`check_loan_item`, `mapLoanCreateErr`.
+`check_loan_item`, `deuteAnlegeFehler`.
 
 **Doku-Korrektur.** Bis zum 11.08.2026 stand in der Architekturübersicht, der Scan sperre
 `buecher_exemplare`. Das tut nur der Schadens-Pfad.
@@ -3155,7 +3157,7 @@ nicht: Er sperrt die Leserzeile nach der Ausleihe. Geben zwei Kinder an zwei The
 das Buch des anderen ab, bricht Postgres eine der beiden Buchungen ab; erneutes Scannen bucht.
 Am 24.09.2026 entschieden, das so zu lassen, bis die Karenz-Uhr umgebaut wird.
 
-**Fundstelle.** Die Folge der Aufrufe in `internal/service/loan_checkout.go` und
+**Fundstelle.** Die Folge der Aufrufe in `internal/service/ausleihe_am_leser.go` und
 `nachbuchen.go`; die Sperren in `repository/ausleihe_zeilensperren.go` und `repository/ausleihe.go`
 (`AusleihAbfragen.SperreOffene`), der Stempel in `repository/bewegungsstempel.go`; [invarianten.md](invarianten.md) Abschnitt 1.
 
@@ -3287,7 +3289,7 @@ selbst bleibt** — und der Grund ist nicht offensichtlich: Ohne Netz ist sie di
 Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheiden kann
 (A21). Littera kommt ohne aus, weil dort Nummer und Scanwert zwei verschiedene Felder sind.
 
-**Fundstelle.** `internal/service/omnibox_service.go`, `internal/service/vorsilben_zwilling_test.go`.
+**Fundstelle.** `internal/service/omnibox.go`, `internal/service/vorsilben_zwilling_test.go`.
 
 ---
 
@@ -3305,15 +3307,15 @@ Theke aus, als täte der Scanner **gar nichts**.
 
 **Folge.** Die Nachsicht greift **nur** als zweiter Versuch: Bei 43 möglichen Zeichen sieht
 im Schnitt jeder 43. gültige Code zufällig so aus, als hinge ein Prüfzeichen dran. Sie
-sitzt **an einer** Stelle (in `ProcessQuery`, nicht in den einzelnen Zweigen), weil ein
+sitzt **an einer** Stelle (in `VerarbeiteEingabe`, nicht in den einzelnen Zweigen), weil ein
 alter Aufdruck jede Form haben kann — drei Stellen wären drei Gelegenheiten, eine zu
-vergessen. Ein Fehler, der **kein** `ErrNotFound` ist, gilt ausdrücklich nicht als „ohne
+vergessen. Ein Fehler, der **kein** `ErrNichtGefunden` ist, gilt ausdrücklich nicht als „ohne
 Treffer".
 
 **Dauerhaft so:** Alle vor dem 17.09.2026 gedruckten Ausweise und Etiketten bleiben über
 diesen Weg nutzbar; neu drucken muss die Schule nichts (entschieden am 17.09.2026).
 
-**Fundstelle.** `pkg/code39`, `internal/service/omnibox_service.go`,
+**Fundstelle.** `pkg/code39`, `internal/service/omnibox.go`,
 `frontend/e2e/barcode-lesbar.spec.js`.
 
 ---
@@ -3568,7 +3570,7 @@ vermerkt.
 | S1  | Zwei Stationen scannen **dasselbe Exemplar** für **zwei verschiedene** Leser, im selben Moment        | Eine Buchung gelingt, die andere endet mit **409 Conflict** — nie zwei aktive Ausleihen                             | `uniq_ausleihen_aktiv_exemplar` (DB) + `repository/ausleihe_konflikt_pg_test.go`, `schaden_melden_ausleihe_pg_test.go` |
 | S2  | Derselbe Scan kommt zweimal an (Netz, Doppeldruck, Nachbuchen)                                        | Die gespeicherte Antwort wird zurückgegeben; **kein** zweiter Schreibvorgang, **keine** zweite Sperrmeldung          | `repository/idempotenz_uebernahme_pg_test.go`, `api/idempotenz_fristen_test.go`                     |
 | S3  | Ein `UPDATE` trifft null Zeilen (Sicht, falsche ID, Wettlauf)                                          | Fehler oder 404 — **niemals** „erfolgreich"                                                                         | `phantom_erfolg_test.go`, `docs/schreibpfade_gegen_sicht_test.go`                                   |
-| S4  | Ein Lernmittel wird nach dem Rückgabetermin der Klasse ausgeliehen                                     | Frist ist der Stichtag des **folgenden** Schuljahres, nicht ein vergangener Termin                                  | `internal/service/loan_rules_test.go`, `repository/lmf_termine_frist_pg_test.go`                    |
+| S4  | Ein Lernmittel wird nach dem Rückgabetermin der Klasse ausgeliehen                                     | Frist ist der Stichtag des **folgenden** Schuljahres, nicht ein vergangener Termin                                  | `internal/service/frist_test.go`, `repository/lmf_termine_frist_pg_test.go`                    |
 | S5  | Das jüngste verschlüsselte Backup soll wiederhergestellt werden                                         | Wöchentliche Probe spielt es in eine Wegwerf-Datenbank ein; Fehlschlag wird **Befund der Selbstprüfung**             | `jobs/restore_probe_pg_test.go`, `jobs/backup_drill_pg_test.go`, `docs/rueckweg_anleitungen_test.go` |
 | S24 | Eine Verbindung bricht mitten in einer Ergebnisliste ab                                                 | Fehler — die Liste darf **nicht** still gekürzt zurückkommen                                                        | `rows.Err()`-Konvention + `golangci-lint`; **kein** eigenes Gate                                     |
 
@@ -4032,8 +4034,8 @@ wird nur mit Anlass.
 Gefunden am 30.09.2026, am Code gelesen, nicht nachgestellt. Nach der Übernahme ist die Nummer
 eines Littera-Exemplars der EAN-13 seines Etiketts (`5896800039556`); lesbar steht auf dem
 Etikett nur „Exemplar-Nr.: 58968". Liest der Scanner das Etikett nicht mehr, findet die Theke
-das Buch über die getippte kurze Nummer nicht: `resolveOhnePraefix`
-(`internal/service/omnibox_service.go`) sucht die Nummer genau und rechnet nur 13-stellige
+das Buch über die getippte kurze Nummer nicht: `verarbeiteOhneVorsilbe`
+(`internal/service/omnibox.go`) sucht die Nummer genau und rechnet nur 13-stellige
 Scans zurück; die kurze Nummer steht in `erweiterte_eigenschaften` als `littera_exemplarnr`
 und wird nirgends gelesen. Ist `FremdLeserNummer` in der Sicherung von 2026 leer
 ([OFFEN.md](OFFEN.md) 7.2), tragen die Ausweise die Littera-Lesernummer, und beide
@@ -4488,13 +4490,13 @@ Einstieg.
 | **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**                                                             | `internal/ausweis`, `api/druck/ausweis_layout.go`                 |
 | **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `pdf/bescheid.go`               |
 | **Bestand**                 | Die physischen Stücke — im Unterschied zum **Katalog** (den Titeln)                                                                                                     | `buecher_exemplare`                                        |
-| **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `resolveBorrowerAndDueTime` (`internal/service/loan_checkout_validation.go`) |
+| **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `ladeVorgang` (`internal/service/ausleih_vorgang.go`) |
 | **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `api/katalog/bestandsbuch.go`                                      |
 | **Betriebsbereitschaft**    | Die Selbstprüfung: „Was ist eingerichtet, aber nicht in Betrieb?"                                                                                                       | `api/betriebsbereitschaft*.go`                              |
 | **Exemplar**                | Ein einzelnes physisches Buch mit eigenem Barcode                                                                                                                       | `buecher_exemplare`                                        |
 | **Ersatzwert**              | Was ein Buch **heute noch wert** ist — als Vorschlag **mit Herleitung**, weil der Betrag im Ermessen der Schule liegt                                                    | `pkg/ersatzwert`                                            |
-| **Freihand**                | Sonderbestände (CDs, DVDs, Hörbücher) mit rollierender Frist statt Jahresfrist                                                                                          | `internal/service/loan_rules.go`                            |
-| **Gerät**                   | Ausleihbare Hardware (Laptop, Tablet) mit Zubehör-Checkliste; Vorsilbe `G-`                                                                                             | `geraete`, `internal/service/device_service.go`             |
+| **Freihand**                | Sonderbestände (CDs, DVDs, Hörbücher) mit rollierender Frist statt Jahresfrist                                                                                          | `internal/service/frist.go`                            |
+| **Gerät**                   | Ausleihbare Hardware (Laptop, Tablet) mit Zubehör-Checkliste; Vorsilbe `G-`                                                                                             | `geraete`, `internal/service/geraet.go`             |
 | **Inventur-Session**        | Sitzungsgebundene Zählung, damit parallele Zählungen sich nicht überschreiben                                                                                            | `inventur_sessions`, `repository/inventurlauf.go`   |
 | **Jahrgang** (am Titel)     | „Im Unterricht von Jahrgang … bis": ganz eingetragen oder gar nicht. Ohne Eintrag ist der Jahrgang unbekannt; eine Vorgabe gibt es nicht | `buecher_titel.jahrgang_von`, `jahrgang_bis` |
 | **Karenzzeit**              | Frist ab dem späteren von Abgang und letztem abgeschlossenem Vorgang bis zur Anonymisierung (Vorgabe 90 Tage) — das Fenster, in dem eine falsche Zuordnung noch reparierbar ist | `abgaenger_karenz_tage`, `repository.sqlKarenzUhr`, `PraedikatAnonymisierung` |
@@ -4513,7 +4515,7 @@ Einstieg.
 | **Mehrjahresband**          | Lernmittel, das über seine Jahrgangsspanne beim selben Kind bleibt, statt am Rückgabetermin der Klasse zurückzukommen | `buecher_titel.mehrjahresband` (Migration 134) |
 | **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
 | **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/theke/nachbuchen_handler.go`, `internal/service/nachbuchen.go` |
-| **Omnibox**                 | Das **eine** Eingabefeld des Tresens für alle Scans und Suchen                                                                                                          | `internal/service/omnibox_service.go`, `frontend/src/lib/Omnibox.svelte` |
+| **Omnibox**                 | Das **eine** Eingabefeld des Tresens für alle Scans und Suchen                                                                                                          | `internal/service/omnibox.go`, `frontend/src/lib/Omnibox.svelte` |
 | **OPAC**                    | Der öffentliche Katalog unter `/katalog` — ohne Anmeldung, ohne Personendaten                                                                                            | `api/portal/opac.go`                                               |
 | **Regaladresse**            | Der Teil einer Signatur vor „ / ". Vorschläge, die Seite „Signaturen" und die Auswahl der Inventur fassen nach ihr zusammen; am Titel bleibt die ganze Aufschrift | `sqlSignaturRegaladresse` (`repository/signatur_praefix.go`) |
 | **Schlagwort**              | Freies Wort am Titel (Thema, Gattung), mehrere je Titel, wie in Littera; ein Wort ist seine Kleinschreibung. Gepflegt unter Einstellungen → Schlagworte                 | `schlagworte`, `titel_schlagworte`, `repository.SetzeSchlagworte` |

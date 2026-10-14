@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/inventur"
+
 	"github.com/pashagolub/pgxmock/v5"
 )
 

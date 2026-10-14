@@ -11,36 +11,36 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// mapLoanCreateErr übersetzt eine Unique-Verletzung (Migration 033: höchstens eine aktive
+// deuteAnlegeFehler übersetzt eine Unique-Verletzung (Migration 033: höchstens eine aktive
 // Ausleihe je Exemplar/Gerät) in einen sauberen Konflikt. Das tritt auf, wenn ein zweiter
 // zeitgleicher Checkout dasselbe Exemplar greifen will — dann ist 409 (statt 500) korrekt.
-// erzeugeAusleihe schreibt die Ausleihe und behandelt den einen Fall, den der
+// legeAusleiheAn schreibt die Ausleihe und behandelt den einen Fall, den der
 // INSERT nicht selbst entscheiden kann: Er prallt am eindeutigen Index ab, weil
 // zwischen Freiprüfung und Schreiben ein anderer Vorgang das Exemplar verbucht hat.
-func (s *defaultLoanService) erzeugeAusleihe(
+func (d *ausleihDienst) legeAusleiheAn(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.Exemplar,
-	chkCtx *checkoutContext,
-	staffID string,
+	exemplar *repository.Exemplar,
+	vorgang *ausleihVorgang,
+	bearbeiterID string,
 ) (*repository.Ausleihe, error) {
 	// Ein Schreiber für jeden Leser (Migration 125). Die Dauerleihe bleibt an die Art
 	// geknüpft — sie war vorher an die Tabelle geknüpft, was dasselbe war: Wer kein
 	// Schüler ist, bekommt das Buch fürs Schuljahr und zählt nicht in die
 	// Überfällig-Automatik (repository.ZaehleUeberfaelligeAusleihen).
-	loan, err := s.loanRepo.LegeAn(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, !chkCtx.istSchueler())
+	ausleihe, err := d.ausleihAbfragen.LegeAn(ctx, tx, exemplar.ID, vorgang.leserID, bearbeiterID, vorgang.frist, !vorgang.istSchueler())
 	if err == nil {
-		return loan, nil
+		return ausleihe, nil
 	}
 	if !errors.Is(err, repository.ErrAusleiheKonflikt) {
-		return nil, mapLoanCreateErr(err)
+		return nil, deuteAnlegeFehler(err)
 	}
 
 	// Doppelter Scan desselben Ausleihers: gewünschter Zustand besteht schon.
-	deutung := s.deuteAusleiheKonflikt(ctx, tx, copy, chkCtx)
+	deutung := d.deuteAusleiheKonflikt(ctx, tx, exemplar, vorgang)
 	var bereits errAusleiheBereitsVorhanden
 	if errors.As(deutung, &bereits) {
-		return bereits.loan, nil
+		return bereits.ausleihe, nil
 	}
 	return nil, deutung
 }
@@ -61,46 +61,46 @@ func (s *defaultLoanService) erzeugeAusleihe(
 //     heraus. Auffällig wird das erst bei der Inventur.
 //
 // Read Committed: Die fremde Transaktion ist committet, ein neues SELECT sieht sie.
-func (s *defaultLoanService) deuteAusleiheKonflikt(
+func (d *ausleihDienst) deuteAusleiheKonflikt(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.Exemplar,
-	chkCtx *checkoutContext,
+	exemplar *repository.Exemplar,
+	vorgang *ausleihVorgang,
 ) error {
-	aktiv, err := s.loanRepo.SperreOffene(ctx, tx, copy.ID)
+	aktiv, err := d.ausleihAbfragen.SperreOffene(ctx, tx, exemplar.ID)
 	if err != nil {
 		return err
 	}
 	if aktiv == nil {
 		// Weder geschrieben noch auffindbar — nichts beschönigen.
-		return meldung(ErrConflict, "Dieses Exemplar konnte nicht verbucht werden, bitte erneut scannen")
+		return meldung(ErrKonflikt, "Dieses Exemplar konnte nicht verbucht werden, bitte erneut scannen")
 	}
 
-	if istSelberAusleiher(aktiv, chkCtx) {
-		return errAusleiheBereitsVorhanden{loan: aktiv}
+	if istSelberAusleiher(aktiv, vorgang) {
+		return errAusleiheBereitsVorhanden{ausleihe: aktiv}
 	}
 
-	return meldung(ErrConflict, "Dieses Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht")
+	return meldung(ErrKonflikt, "Dieses Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht")
 }
 
 // istSelberAusleiher prüft, ob die bestehende Ausleihe demselben Leser gehört wie der
 // aktuelle Vorgang.
-func istSelberAusleiher(aktiv *repository.Ausleihe, chkCtx *checkoutContext) bool {
-	return aktiv.SchuelerID != nil && *aktiv.SchuelerID == chkCtx.borrowerID
+func istSelberAusleiher(aktiv *repository.Ausleihe, vorgang *ausleihVorgang) bool {
+	return aktiv.SchuelerID != nil && *aktiv.SchuelerID == vorgang.leserID
 }
 
 // errAusleiheBereitsVorhanden ist kein Fehler nach außen, sondern das Signal an
-// handleNewLoan, mit der bestehenden Ausleihe weiterzumachen (doppelter Scan).
-type errAusleiheBereitsVorhanden struct{ loan *repository.Ausleihe }
+// verarbeiteAusleihe, mit der bestehenden Ausleihe weiterzumachen (doppelter Scan).
+type errAusleiheBereitsVorhanden struct{ ausleihe *repository.Ausleihe }
 
 func (e errAusleiheBereitsVorhanden) Error() string {
 	return "ausleihe besteht bereits für denselben Ausleiher"
 }
 
-func mapLoanCreateErr(err error) error {
+func deuteAnlegeFehler(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return meldung(ErrConflict, "Dieses Exemplar wurde soeben bereits ausgeliehen")
+		return meldung(ErrKonflikt, "Dieses Exemplar wurde soeben bereits ausgeliehen")
 	}
 	return err
 }
@@ -109,13 +109,13 @@ func mapLoanCreateErr(err error) error {
 // ausgeliehen hat. Lag für ihn ein anderes Exemplar im Abholfach als das, das er genommen hat,
 // muss es zurück ins Regal: Seine Nummer geht als Regal-Hinweis in die Antwort. Einen Fehler
 // meldet die Funktion nicht weiter, sie schreibt ihn ins Log.
-func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, copy *repository.Exemplar, schuelerID string, resp *LoanResult) {
-	bereitgestellt, err := repository.LoescheErfuellteVormerkung(ctx, tx, copy.TitelID, schuelerID)
+func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, schuelerID string, erg *AusleihErgebnis) {
+	bereitgestellt, err := repository.LoescheErfuellteVormerkung(ctx, tx, exemplar.TitelID, schuelerID)
 	if err != nil {
-		log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", copy.TitelID, err)
+		log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", exemplar.TitelID, err)
 		return
 	}
-	if bereitgestellt == nil || *bereitgestellt == copy.ID {
+	if bereitgestellt == nil || *bereitgestellt == exemplar.ID {
 		return // keine Vormerkung, nichts reserviert, oder genau dieses Exemplar wurde genommen
 	}
 
@@ -124,53 +124,53 @@ func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, copy *repositor
 		log.Printf("ausleihe: Barcode des reservierten Exemplars %s nicht ladbar: %v", *bereitgestellt, err)
 		return
 	}
-	resp.RegalfreigabeBarcode = barcode
+	erg.RegalfreigabeBarcode = barcode
 }
 
-// handleNewLoan handles the case where the book is currently available (not checked out).
-func (s *defaultLoanService) handleNewLoan(
+// verarbeiteAusleihe handles the case where the book is currently available (not checked out).
+func (d *ausleihDienst) verarbeiteAusleihe(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.Exemplar,
-	chkCtx *checkoutContext,
-	staffID string,
-	resp *LoanResult,
-) (*LoanResult, error) {
-	loan, err := s.erzeugeAusleihe(ctx, tx, copy, chkCtx, staffID)
+	exemplar *repository.Exemplar,
+	vorgang *ausleihVorgang,
+	bearbeiterID string,
+	erg *AusleihErgebnis,
+) (*AusleihErgebnis, error) {
+	ausleihe, err := d.legeAusleiheAn(ctx, tx, exemplar, vorgang, bearbeiterID)
 	if err != nil {
 		return nil, err
 	}
 
-	if chkCtx.istSchueler() {
-		entferneErfuellteVormerkung(ctx, tx, copy, chkCtx.borrowerID, resp)
+	if vorgang.istSchueler() {
+		entferneErfuellteVormerkung(ctx, tx, exemplar, vorgang.leserID, erg)
 	}
 
-	if err := s.auditRepo.ProtokolliereAusleihe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
+	if err := d.protokollAbfragen.ProtokolliereAusleihe(ctx, tx, exemplar.ID, vorgang.leserID, "", bearbeiterID); err != nil {
 		return nil, err
 	}
-	resp.Student = chkCtx.leser
+	erg.Leser = vorgang.leser
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
-	protokolliereUebergangen(ctx, s.auditRepo, staffID, chkCtx.borrowerID, chkCtx.uebergangen)
+	protokolliereUebergangen(ctx, d.protokollAbfragen, bearbeiterID, vorgang.leserID, vorgang.uebergangen)
 
-	resp.Type = "ausleihe"
-	resp.Book = copy
-	if loan != nil {
-		resp.DueDate = &loan.RueckgabeFrist
+	erg.Art = "ausleihe"
+	erg.Exemplar = exemplar
+	if ausleihe != nil {
+		erg.Frist = &ausleihe.RueckgabeFrist
 	}
-	if chkCtx.istSchueler() && copy.IstLernmittel {
-		resp.AuflagenHinweis = s.auflagenHinweis(ctx, copy.TitelID, chkCtx.borrowerID)
+	if vorgang.istSchueler() && exemplar.IstLernmittel {
+		erg.AuflagenHinweis = d.ladeAuflagenHinweis(ctx, exemplar.TitelID, vorgang.leserID)
 	}
-	return resp, nil
+	return erg, nil
 }
 
-// auflagenHinweis fragt NACH der Buchung, ob die Klasse gemischte Auflagen bekommt
+// ladeAuflagenHinweis fragt NACH der Buchung, ob die Klasse gemischte Auflagen bekommt
 // (repository.LadeAuflagenMischungInKlasse). Ein Fehler hier darf die gebuchte Ausleihe nicht
 // als gescheitert melden: Er landet im Log, und die Theke zeigt keinen Hinweis.
-func (s *defaultLoanService) auflagenHinweis(ctx context.Context, titelID, schuelerID string) *repository.AuflagenMischung {
-	m, err := repository.LadeAuflagenMischungInKlasse(ctx, s.pool, titelID, schuelerID)
+func (d *ausleihDienst) ladeAuflagenHinweis(ctx context.Context, titelID, schuelerID string) *repository.AuflagenMischung {
+	m, err := repository.LadeAuflagenMischungInKlasse(ctx, d.pool, titelID, schuelerID)
 	if err != nil {
 		log.Printf("auflagen-hinweis: %v", err)
 		return nil
@@ -178,79 +178,79 @@ func (s *defaultLoanService) auflagenHinweis(ctx context.Context, titelID, schue
 	return m
 }
 
-// handleReturn handles the case where the active user returns their own book.
-func (s *defaultLoanService) handleReturn(
+// verarbeiteEigeneRueckgabe handles the case where the active user returns their own book.
+func (d *ausleihDienst) verarbeiteEigeneRueckgabe(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.Exemplar,
-	chkCtx *checkoutContext,
-	activeLoan *repository.Ausleihe,
-	staffID string,
-	resp *LoanResult,
-) (*LoanResult, error) {
-	if err := s.loanRepo.BucheRueckgabe(ctx, tx, activeLoan.ID, staffID, false); err != nil {
+	exemplar *repository.Exemplar,
+	vorgang *ausleihVorgang,
+	offeneAusleihe *repository.Ausleihe,
+	bearbeiterID string,
+	erg *AusleihErgebnis,
+) (*AusleihErgebnis, error) {
+	if err := d.ausleihAbfragen.BucheRueckgabe(ctx, tx, offeneAusleihe.ID, bearbeiterID, false); err != nil {
 		return nil, err
 	}
 
 	// Eigene Vormerkung des zurückgebenden Schülers überspringen (Monopolisierungs-Schutz).
-	if err := s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID); err != nil {
+	if err := d.bedieneVormerkung(ctx, tx, exemplar, erg, offeneAusleihe.SchuelerID); err != nil {
 		return nil, err
 	}
 
-	if err := s.auditRepo.ProtokolliereRueckgabe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
+	if err := d.protokollAbfragen.ProtokolliereRueckgabe(ctx, tx, exemplar.ID, vorgang.leserID, "", bearbeiterID); err != nil {
 		return nil, err
 	}
-	resp.Student = chkCtx.leser
+	erg.Leser = vorgang.leser
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 
-	resp.Type = "rueckgabe"
-	resp.Book = copy
-	resp.LoanID = &activeLoan.ID
-	return resp, nil
+	erg.Art = "rueckgabe"
+	erg.Exemplar = exemplar
+	erg.AusleiheID = &offeneAusleihe.ID
+	return erg, nil
 }
 
-// handleForeignReturn: In einer aktiven Sitzung wird ein Buch gescannt, das auf
+// verarbeiteFremdrueckgabe: In einer aktiven Sitzung wird ein Buch gescannt, das auf
 // jemand ANDEREN verbucht ist. Bewusst NUR eine Rückgabe beim Vorbesitzer —
 // kein automatisches Umbuchen auf die aktive Sitzung (Produktentscheidung
 // 10.07.: Freund-Rückgaben landeten sonst still auf dem falschen Konto).
 // Soll das Buch an die aktive Sitzung: einfach erneut scannen — das Buch ist
-// jetzt frei und der zweite Scan läuft als normale Ausleihe (handleNewLoan).
-func (s *defaultLoanService) handleForeignReturn(
+// jetzt frei und der zweite Scan läuft als normale Ausleihe (verarbeiteAusleihe).
+func (d *ausleihDienst) verarbeiteFremdrueckgabe(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.Exemplar,
-	activeLoan *repository.Ausleihe,
-	staffID string,
-	resp *LoanResult,
-) (*LoanResult, error) {
+	exemplar *repository.Exemplar,
+	offeneAusleihe *repository.Ausleihe,
+	bearbeiterID string,
+	erg *AusleihErgebnis,
+) (*AusleihErgebnis, error) {
 	// Der Vorbesitzer ist ein Leser — Schüler oder Kollege. Deshalb LeserAbfragen.Finde und
 	// nicht GetByID: Letzteres liest die Sicht `schueler` und meldete für das Buch eines
 	// Kollegen „Vorbesitzer unbekannt".
-	var prevLeser *repository.Leser
+	var vorbesitzer *repository.Leser
 	var err error
 
-	if activeLoan.SchuelerID != nil {
-		prevLeser, err = s.studentRepo.Finde(ctx, *activeLoan.SchuelerID)
+	if offeneAusleihe.SchuelerID != nil {
+		vorbesitzer, err = d.leserAbfragen.Finde(ctx, *offeneAusleihe.SchuelerID)
 		if err != nil {
 			log.Printf("fremdrückgabe: Vorbesitzer konnte nicht geladen werden: %v", err)
 		}
 	}
 
-	if err = s.loanRepo.BucheRueckgabe(ctx, tx, activeLoan.ID, staffID, true); err != nil {
+	if err = d.ausleihAbfragen.BucheRueckgabe(ctx, tx, offeneAusleihe.ID, bearbeiterID, true); err != nil {
 		return nil, err
 	}
 
 	// Vormerkungs-Hinweis wie bei jeder Rückgabe: das Buch wird gerade frei. Die eigene
 	// Vormerkung des Vorbesitzers wird übersprungen (Monopolisierungs-Schutz).
-	if err := s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID); err != nil {
+	if err := d.bedieneVormerkung(ctx, tx, exemplar, erg, offeneAusleihe.SchuelerID); err != nil {
 		return nil, err
 	}
 
-	if activeLoan.SchuelerID != nil {
-		if err := s.auditRepo.ProtokolliereRueckgabe(ctx, tx, copy.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
+	if offeneAusleihe.SchuelerID != nil {
+		if err := d.protokollAbfragen.ProtokolliereRueckgabe(ctx, tx, exemplar.ID, *offeneAusleihe.SchuelerID, "", bearbeiterID); err != nil {
 			return nil, err
 		}
 	}
@@ -259,13 +259,13 @@ func (s *defaultLoanService) handleForeignReturn(
 		return nil, err
 	}
 
-	resp.Type = "rueckgabe"
-	resp.Book = copy
-	resp.LoanID = &activeLoan.ID
+	erg.Art = "rueckgabe"
+	erg.Exemplar = exemplar
+	erg.AusleiheID = &offeneAusleihe.ID
 	// Student = Vorbesitzer: SSE-Livesync zielt auf das Konto, das sich
 	// geändert hat; die aktive Sitzung bleibt clientseitig unangetastet.
-	resp.Student = prevLeser
-	resp.Fremdrueckgabe = true
-	resp.Vorbesitzer = prevLeser
-	return resp, nil
+	erg.Leser = vorbesitzer
+	erg.Fremdrueckgabe = true
+	erg.Vorbesitzer = vorbesitzer
+	return erg, nil
 }

@@ -10,52 +10,52 @@ import (
 // etikettLoanSvc hält fest, mit welchem Exemplar die Ausleih-Logik angesteuert
 // wurde — mehr Loan-Verhalten braucht der Routing-Beweis nicht.
 type etikettLoanSvc struct {
-	LoanService
+	AusleihDienst
 	zuletzt *repository.Exemplar
 }
 
-func (l *etikettLoanSvc) HandleSimpleReturn(_ context.Context, copy *repository.Exemplar, _ string) (*LoanResult, error) {
+func (l *etikettLoanSvc) NimmZurueck(_ context.Context, copy *repository.Exemplar, _ string) (*AusleihErgebnis, error) {
 	l.zuletzt = copy
-	return &LoanResult{Type: "rueckgabe", Book: copy}, nil
+	return &AusleihErgebnis{Art: "rueckgabe", Exemplar: copy}, nil
 }
 
-// TestProcessQuery_LitteraEtikettWirdRueckgerechnet bildet den Thekenfall ab:
+// TestVerarbeiteEingabe_LitteraEtikettWirdRueckgerechnet bildet den Thekenfall ab:
 // Der Scanner liefert die EAN-13 vom Littera-Etikett (echter Messwert), im
 // System steht das Exemplar unter seiner kurzen Mediennummer. Die Auflösung
 // muss beim richtigen Buch landen — und eine unbekannte EAN weiterhin in der
 // Volltextsuche, nicht in einem falschen Treffer.
-func TestProcessQuery_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
+func TestVerarbeiteEingabe_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 	exemplar := &repository.Exemplar{ID: "ex1", BarcodeID: "58968", Titel: "Testbuch", IstAusleihbar: true}
 	loanSvc := &etikettLoanSvc{}
-	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{"58968": exemplar}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
-		loanSvc:     loanSvc,
+	svc := &omniboxDienst{
+		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{"58968": exemplar}},
+		leserAbfragen:   &routingStudentRepo{students: map[string]*repository.Leser{}},
+		ausleihe:        loanSvc,
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "5896800039556", StaffID: "staff"})
+	res, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: "5896800039556", BearbeiterID: "staff"})
 	if err != nil {
-		t.Fatalf("ProcessQuery: %v", err)
+		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
-	if res.Type != "rueckgabe" || loanSvc.zuletzt == nil || loanSvc.zuletzt.ID != "ex1" {
-		t.Fatalf("Littera-EAN muss beim Exemplar 58968 landen, got Type=%q zuletzt=%v", res.Type, loanSvc.zuletzt)
+	if res.Art != "rueckgabe" || loanSvc.zuletzt == nil || loanSvc.zuletzt.ID != "ex1" {
+		t.Fatalf("Littera-EAN muss beim Exemplar 58968 landen, got Type=%q zuletzt=%v", res.Art, loanSvc.zuletzt)
 	}
 }
 
-// TestProcessQuery_UnbekanntesEtikettFaelltAufSuche: Eine formal gültige
+// TestVerarbeiteEingabe_UnbekanntesEtikettFaelltAufSuche: Eine formal gültige
 // Littera-EAN, deren Mediennummer NICHT im Bestand ist, darf keine Aktion
 // auslösen — sie läuft wie bisher in die Volltextsuche.
-func TestProcessQuery_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
-	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
+func TestVerarbeiteEingabe_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
+	svc := &omniboxDienst{
+		katalogAbfragen: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
+		leserAbfragen:   &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "1241170039561", StaffID: "staff"})
+	res, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: "1241170039561", BearbeiterID: "staff"})
 	if err != nil {
-		t.Fatalf("ProcessQuery: %v", err)
+		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
-	if res.Type != "search_results" {
-		t.Fatalf("unbekannte Littera-EAN muss in der Suche landen, got Type=%q", res.Type)
+	if res.Art != "search_results" {
+		t.Fatalf("unbekannte Littera-EAN muss in der Suche landen, got Type=%q", res.Art)
 	}
 }

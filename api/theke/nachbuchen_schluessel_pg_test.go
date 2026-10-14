@@ -35,8 +35,8 @@ import (
 type nbTuer struct {
 	pool                    *pgxpool.Pool
 	srv                     *Tueren
-	online                  service.OmniboxService
-	nachbuch                service.NachbuchService
+	online                  service.OmniboxDienst
+	nachbuch                service.NachbuchDienst
 	staff, anna, ben, carla string
 	code, exemplarID        string
 }
@@ -70,10 +70,10 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	w.online = service.NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
-	w.nachbuch = service.NewNachbuchService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	loanSvc := service.NewAusleihDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := service.NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
+	w.online = service.NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	w.nachbuch = service.NewNachbuchDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	w.srv = &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 	return w
 }
@@ -107,7 +107,7 @@ func (w *nbTuer) eintrag(schluessel, absicht string, schueler *string, gescannt 
 	return e
 }
 
-func (w *nbTuer) nachbuchenMit(t *testing.T, svc service.NachbuchService, eintraege ...map[string]any) []NachbuchenErgebnis {
+func (w *nbTuer) nachbuchenMit(t *testing.T, svc service.NachbuchDienst, eintraege ...map[string]any) []NachbuchenErgebnis {
 	t.Helper()
 	body, err := json.Marshal(map[string]any{"eintraege": eintraege, "gesendet_am": time.Now()})
 	if err != nil {
@@ -343,7 +343,7 @@ func TestNachbuchen_Schluessel_ZweiGleichzeitigeAufrufe(t *testing.T) {
 
 type nachbuchFehler struct{}
 
-func (nachbuchFehler) Nachbuchen(context.Context, service.NachbuchEintrag) (*service.NachbuchErgebnis, error) {
+func (nachbuchFehler) BucheNach(context.Context, service.NachbuchEintrag) (*service.NachbuchErgebnis, error) {
 	return nil, errors.New("datenbank weg")
 }
 

@@ -32,7 +32,7 @@ import (
 
 type sperrOmnibox struct{ fehler error }
 
-func (o *sperrOmnibox) ProcessQuery(context.Context, service.OmniboxQuery) (*service.OmniboxResult, error) {
+func (o *sperrOmnibox) VerarbeiteEingabe(context.Context, service.OmniboxEingabe) (*service.OmniboxErgebnis, error) {
 	return nil, o.fehler
 }
 
@@ -60,17 +60,17 @@ func TestSperrMerkmalImHeader(t *testing.T) {
 		fehler  error
 		merkmal string
 	}{
-		{"manuelle Sperre, Grund für Helfer gekürzt", &service.SperrGrundFehler{
-			Kern:  service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrBlocked)),
+		{"manuelle Sperre, Grund für Helfer gekürzt", &service.SperrgrundFehler{
+			Kern:  service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)),
 			Grund: grund,
 		}, "leser"},
-		{"Sperre der Ehemaligen, Grund für Helfer gekürzt", &service.SperrGrundFehler{
-			Kern:  service.SperreAmLeser(service.ErrBlocked),
+		{"Sperre der Ehemaligen, Grund für Helfer gekürzt", &service.SperrgrundFehler{
+			Kern:  service.SperreAmLeser(service.ErrGesperrt),
 			Grund: grund,
 		}, "leser"},
 		{"offener Schaden", service.UebergehbareSperre(
-			fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrBlocked)), "uebergehbar"},
-		{"Gerät gesperrt (kein Override)", fmt.Errorf("%w: Gerät ist aktuell gesperrt", service.ErrBlocked), ""},
+			fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrGesperrt)), "uebergehbar"},
+		{"Gerät gesperrt (kein Override)", fmt.Errorf("%w: Gerät ist aktuell gesperrt", service.ErrGesperrt), ""},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -124,7 +124,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
-		fehler := service.UebergehbareSperre(fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrBlocked))
+		fehler := service.UebergehbareSperre(fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrGesperrt))
 		s.ActionHandler(&sperrOmnibox{fehler: fehler})(w, aktionAnfrage(schluessel))
 
 		if got := w.Header().Get("X-Sperre"); got != "uebergehbar" {
@@ -173,7 +173,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
-		fehler := &service.SperrGrundFehler{Kern: service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrBlocked)), Grund: "x"}
+		fehler := &service.SperrgrundFehler{Kern: service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)), Grund: "x"}
 		s.ActionHandler(&sperrOmnibox{fehler: fehler})(w, aktionAnfrage(schluesselLeser))
 		if got := w.Header().Get("X-Sperre"); got != "leser" {
 			t.Errorf("X-Sperre = %q, erwartet leser", got)

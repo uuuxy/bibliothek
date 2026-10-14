@@ -105,14 +105,14 @@ const nachbuchBereitsGebucht = "bereits_gebucht"
 // @Param        body body NachbuchenRequest true "Einträge der Warteschlange"
 // @Success      200 {object} NachbuchenResponse
 // @Router       /action/nachbuchen [post]
-func (s *Tueren) NachbuchenHandler(nachbuchSvc service.NachbuchService) http.HandlerFunc {
+func (s *Tueren) NachbuchenHandler(nachbuchSvc service.NachbuchDienst) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleNachbuchen(w, r, nachbuchSvc)
 	})
 }
 
 // handleNachbuchen bucht eine Portion der Warteschlange, Eintrag für Eintrag.
-func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbuchSvc service.NachbuchService) error {
+func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbuchSvc service.NachbuchDienst) error {
 	// Die Empfangszeit wird vor dem Einlesen festgehalten. Der gemessene Versatz enthält die
 	// Laufzeit der Anfrage bis hierher: Umgerechnet liegt ein Scan um diese Laufzeit zu spät,
 	// im Schulnetz Millisekunden — weniger, als ein Buch braucht, um von einer Theke zur
@@ -171,7 +171,7 @@ type nachbuchAbsender struct {
 // Aufrufs: Die übrigen Einträge sollen durchlaufen, und der gescheiterte bleibt auf dem
 // Rechner liegen („wiederholen"). Schweigen wäre hier das Schlimmste — die Theke hielte
 // ihn für erledigt, und erledigt ist nur, was der Server gebucht hat.
-func (s *Tueren) bucheEintragNach(ctx context.Context, svc service.NachbuchService, e NachbuchenEintrag, absender nachbuchAbsender) NachbuchenErgebnis {
+func (s *Tueren) bucheEintragNach(ctx context.Context, svc service.NachbuchDienst, e NachbuchenEintrag, absender nachbuchAbsender) NachbuchenErgebnis {
 	lage, err := s.ergreifeNachbuchSchluessel(ctx, e)
 	if err != nil {
 		log.Printf("nachbuchen: Schlüssel %s nicht lesbar: %v", e.Schluessel, err)
@@ -182,11 +182,11 @@ func (s *Tueren) bucheEintragNach(ctx context.Context, svc service.NachbuchServi
 		fertig.Schluessel = e.Schluessel
 		return fertig
 	}
-	erg, err := svc.Nachbuchen(ctx, service.NachbuchEintrag{
+	erg, err := svc.BucheNach(ctx, service.NachbuchEintrag{
 		Schluessel: e.Schluessel, Absicht: e.Absicht, Barcode: e.Barcode,
 		GescanntAm: e.GescanntAm, UhrVersatz: absender.uhrVersatz,
 		LeserID: e.LeserID, AusweisBarcode: e.AusweisBarcode,
-		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, StaffID: absender.staffID,
+		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, BearbeiterID: absender.staffID,
 	})
 	if err != nil {
 		log.Printf("nachbuchen: Eintrag %s konnte nicht gebucht werden: %v", e.Schluessel, err)
@@ -203,8 +203,8 @@ func (s *Tueren) bucheEintragNach(ctx context.Context, svc service.NachbuchServi
 		// einer Person kommen, die ihn nicht lesen darf.
 		out.Grund = ohneSperrgrund(erg.Schranke, false).Error()
 	}
-	if erg.Result != nil {
-		out.Daten = mapOmniboxResultToActionResponse(service.LoanResultAlsOmnibox(erg.Result))
+	if erg.Gebucht != nil {
+		out.Daten = mapOmniboxResultToActionResponse(service.OmniboxErgebnisAus(erg.Gebucht))
 	}
 	s.legeNachbuchErgebnisAb(ctx, out)
 	if erg.Schranke != nil {

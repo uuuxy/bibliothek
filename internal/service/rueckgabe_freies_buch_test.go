@@ -54,12 +54,12 @@ func TestFreiesBuchWirdNichtAufDenScannerGebucht(t *testing.T) {
 	mock.ExpectRollback()
 
 	repo := &selbstausleiheLoanRepo{mock: mock}
-	svc := &defaultLoanService{loanRepo: repo}
+	svc := &ausleihDienst{ausleihAbfragen: repo}
 	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", IstAusleihbar: true}
 
-	_, err = svc.HandleSimpleReturn(context.Background(), copy, "staff1")
+	_, err = svc.NimmZurueck(context.Background(), copy, "staff1")
 
-	if !errors.Is(err, ErrInvalidState) || !strings.Contains(err.Error(), "nicht ausgeliehen") {
+	if !errors.Is(err, ErrUngueltigerZustand) || !strings.Contains(err.Error(), "nicht ausgeliehen") {
 		t.Errorf("ein freies Buch ohne Ausweis muss „nicht ausgeliehen\" melden, bekam: %v", err)
 	}
 	if repo.geschrieb {

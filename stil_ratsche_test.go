@@ -31,7 +31,7 @@ var stilFachwoerter = wortmenge("student students borrower borrowers borrowed bo
 	"overdue user users account accounts permission permissions role roles setting settings " +
 	"config configs label labels photo photos lock locked unlock deleted graduate graduates " +
 	"teacher teachers inventory session sessions search login logout audit handler handlers " +
-	"request response bulk repository repo standard standards default defaults")
+	"request response bulk repository repo standard standards default defaults service services svc")
 
 // stilVerben sind die englischen Verben am Anfang eines Funktionsnamens, für die STIL.md ein
 // deutsches festlegt.

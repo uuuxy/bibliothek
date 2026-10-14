@@ -6,7 +6,7 @@ import "errors"
 // Ein Lernmittel, das über die Spanne „im Unterricht von Jahrgang … bis" beim Kind bleibt.
 // Die Jahreszahl, bis zu der es bleibt, ist jahrgang_bis — eine zweite gibt es nicht. Die
 // Frist rechnet bis zum Stichtag des Schuljahres, in dem das Kind diesen Jahrgang beendet
-// (internal/service/loan_rules.go).
+// (internal/service/frist.go).
 //
 // Der Schalter gilt nur an einem Lernmittel (bei einem Buch der Schülerbücherei liest ihn
 // keine Regel) und nur mit einer Spanne über mehr als einen Jahrgang — ein „Mehrjahresband

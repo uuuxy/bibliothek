@@ -554,7 +554,7 @@ export function createOmniboxStore() {
 	// Offline-Testfall `B-10234` scannte.
 	//
 	// Eingeordnet wird jetzt wie am Server (scanEinordnen.js, Zwilling von
-	// omnibox_service.go), mit der Barcode-Liste dieses Rechners als Nachschlagewerk.
+	// omnibox.go), mit der Barcode-Liste dieses Rechners als Nachschlagewerk.
 	// Gebucht wird unter der NUMMER aus der Einordnung, nicht unter dem Aufdruck: Ein
 	// Littera-Etikett traegt im Strichcode eine EAN-13, der Server kennt nur die Nummer
 	// darin.
@@ -774,7 +774,7 @@ export function createOmniboxStore() {
 		// die Vorschlagsliste genau EINEN Treffer hat, ist der gemeint.
 		//
 		// Ohne das ging der rohe Text an /api/action — und der Weg dort endet für eine
-		// Eingabe ohne Präfix in der Titelsuche (resolveOhnePraefix → handleSearchAction),
+		// Eingabe ohne Präfix in der Titelsuche (verarbeiteOhneVorsilbe → verarbeiteSuche),
 		// die nur Bücher kennt. Ein getippter Nachname lieferte damit zuverlässig "nichts
 		// gefunden", obwohl der Schüler im Vorschlag direkt darüber stand.
 		//

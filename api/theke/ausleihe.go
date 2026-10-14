@@ -238,7 +238,7 @@ func (s *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, a
 
 // checkAusleiheGesperrt prüft, ob eine Sperre am Leser die Verlängerung dieser Ausleihe
 // anhält, und liefert den Grund. Es entscheidet die Regel der Theke
-// (service.SperreAmLeserHaeltAn): beim Schulbuch nur die Sperre von Hand, beim Kollegen keine;
+// (service.PruefeSperreAmLeser): beim Schulbuch nur die Sperre von Hand, beim Kollegen keine;
 // ein anonymisierter Datensatz und der Papierkorb bekommen nichts.
 // Bis zum 29.09.2026 stand hier eine eigene Abfrage, die jede Sperre zählte — auch die der
 // Ehemaligen beim Schulbuch, das die Theke demselben Kind ausgibt.
@@ -255,11 +255,11 @@ func (s *Tueren) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (
 		// Im Papierkorb: Die Theke findet ihn nicht und gibt ihm nichts aus.
 		return true, "", nil
 	}
-	sperre := service.SperreAmLeserHaeltAn(leser, lernmittel)
+	sperre := service.PruefeSperreAmLeser(leser, lernmittel)
 	if sperre == nil {
 		return false, "", nil
 	}
-	var mitGrund *service.SperrGrundFehler
+	var mitGrund *service.SperrgrundFehler
 	if errors.As(sperre, &mitGrund) {
 		return true, mitGrund.Grund, nil
 	}

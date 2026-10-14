@@ -9,7 +9,7 @@ import (
 
 // Eine Nummer ist entweder ein Buch oder ein Ausweis — nie beides.
 //
-// Die Theke löst einen Scan ohne Vorsilbe zuerst als Buch auf (resolveOhnePraefix,
+// Die Theke löst einen Scan ohne Vorsilbe zuerst als Buch auf (verarbeiteOhneVorsilbe,
 // ErkenneScan): Trägt ein Leser die Nummer eines Exemplars, lädt sein Ausweis das Buch,
 // und niemand sieht warum. Bis Migration 131 prüfte das allein die Littera-Übernahme, für
 // ihren eigenen Lauf (schreiber_personen.go: „Ausweisnummer ist schon der Barcode eines

@@ -153,7 +153,7 @@ type personenlauf struct {
 	verbrauchteAusweise map[string]bool
 	belegteMails        map[string]bool
 	// buchBarcodes sind für Ausweise gesperrt: Die Theke löst eine Nummer ohne Vorsilbe
-	// zuerst als Buch auf (resolveOhnePraefix).
+	// zuerst als Buch auf (verarbeiteOhneVorsilbe).
 	buchBarcodes map[string]bool
 	// karten bildet Leser → Herstellernummer des Ausweises ab (FremdLeserNummer);
 	// mehrereKarten nennt die Leser, für die Littera mehr als eine Karte führt.

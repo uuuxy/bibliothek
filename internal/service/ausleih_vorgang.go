@@ -9,30 +9,30 @@ import (
 	"bibliothek/repository"
 )
 
-// checkoutContext holds the resolved borrower information and the due time.
-// checkoutContext ist der Ausleiher eines laufenden Vorgangs: EIN Leser (Migration 125).
+// ausleihVorgang holds the resolved borrower information and the due time.
+// ausleihVorgang ist der Ausleiher eines laufenden Vorgangs: EIN Leser (Migration 125).
 // Bis dahin standen hier zwei Paare — borrowerType/borrowerID und student/teacher — und
 // jede Fallunterscheidung im Ausleihpfad musste beide richtig bedienen.
-type checkoutContext struct {
-	borrowerID string
+type ausleihVorgang struct {
+	leserID string
 	// leser ist der Ausleiher. Über die Theke immer gesetzt; er trägt seine Art.
-	leser   *repository.Leser
-	dueTime time.Time
+	leser *repository.Leser
+	frist time.Time
 	// uebergangen sind die Hinweise, die override_block übergangen hat
-	// (pruefeAusleihSperren). handleNewLoan protokolliert sie, wenn die Ausleihe steht.
+	// (pruefeAusleihSperren). verarbeiteAusleihe protokolliert sie, wenn die Ausleihe steht.
 	uebergangen []string
 }
 
 // istSchueler sagt, ob die Schülerregeln greifen: Ausleihlimit, Vormerkungen und die
 // Frist aus der Klasse. Sie hängen an der ART des Lesers, nicht mehr daran, aus welcher
 // Tabelle er kam — das war vorher dasselbe und ist es seit Migration 125 nicht mehr.
-func (c *checkoutContext) istSchueler() bool {
-	return c.leser != nil && leserart.IstSchueler(c.leser.Art)
+func (v *ausleihVorgang) istSchueler() bool {
+	return v.leser != nil && leserart.IstSchueler(v.leser.Art)
 }
 
-// resolveBorrowerAndDueTime lädt den aktiven LESER und bestimmt seine Leihfrist.
+// ladeVorgang lädt den aktiven LESER und bestimmt seine Leihfrist.
 //
-// Die Sperrgründe prüft HandleUnifiedCheckout erst, wenn feststeht, dass eine Ausleihe
+// Die Sperrgründe prüft BucheAmLeser erst, wenn feststeht, dass eine Ausleihe
 // entsteht (pruefeAusleihSperren) — wer sein Buch ZURÜCKgibt, darf gesperrt sein.
 //
 // Die Frist: Für einen Schüler aus der Klasse (Schuljahresende, Lernmittel abweichend),
@@ -40,30 +40,30 @@ func (c *checkoutContext) istSchueler() bool {
 // hieß sie „Lehrerausleihe = Dauerleihgabe". Gespeichert wird das Jahr, aber die Ausleihe
 // eines Kollegen ist eine Dauerleihe: Sie wird nie überfällig, und die Akte zeigt „ohne
 // Frist" (entschieden am 16.09.2026).
-func (s *defaultLoanService) resolveBorrowerAndDueTime(ctx context.Context, copy *repository.Exemplar, leserID *string) (*checkoutContext, error) {
+func (d *ausleihDienst) ladeVorgang(ctx context.Context, exemplar *repository.Exemplar, leserID *string) (*ausleihVorgang, error) {
 	if leserID == nil || *leserID == "" {
-		return nil, meldung(ErrInvalidState, "Kein Leser aktiv")
+		return nil, meldung(ErrUngueltigerZustand, "Kein Leser aktiv")
 	}
 
-	leser, err := s.studentRepo.Finde(ctx, *leserID)
+	leser, err := d.leserAbfragen.Finde(ctx, *leserID)
 	if err != nil {
 		return nil, err
 	}
 	if leser == nil {
-		return nil, meldung(ErrNotFound, "Aktiver Leser nicht gefunden")
+		return nil, meldung(ErrNichtGefunden, "Aktiver Leser nicht gefunden")
 	}
 
-	result := &checkoutContext{borrowerID: *leserID, leser: leser}
-	if !result.istSchueler() {
+	vorgang := &ausleihVorgang{leserID: *leserID, leser: leser}
+	if !vorgang.istSchueler() {
 		// Tagesende in der Schul-Zeitzone — dieselbe Normalisierung wie alle Fristen.
-		result.dueTime = schulzeit.TagesEnde(s.heute().AddDate(1, 0, 0))
-		return result, nil
+		vorgang.frist = schulzeit.TagesEnde(d.heute().AddDate(1, 0, 0))
+		return vorgang, nil
 	}
 
-	dt, err := s.resolveCheckoutDueDate(ctx, copy, leser.Klasse)
+	frist, err := d.bestimmeFrist(ctx, exemplar, leser.Klasse)
 	if err != nil {
 		return nil, err
 	}
-	result.dueTime = dt
-	return result, nil
+	vorgang.frist = frist
+	return vorgang, nil
 }

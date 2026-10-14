@@ -25,7 +25,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	bookRepo := repository.NewKatalogAbfragen(mock)
-	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
+	loanSvc := service.NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
 	copy := &repository.Exemplar{
 		ID:            "copy-1",
@@ -42,7 +42,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email", "anonymisiert", "art"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", 0, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", "", false, "schueler"))
 
-	// 2. querySettings inside resolveCheckoutDueDate
+	// 2. ladeEinstellungen inside bestimmeFrist
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", testdaten.Ptr("5")).
@@ -81,7 +81,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WithArgs(studentID, 14).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
-	// 7. querySettings inside early limit check
+	// 7. ladeEinstellungen inside early limit check
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", testdaten.Ptr("5")).
@@ -112,11 +112,11 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	lr, err := loanSvc.HandleUnifiedCheckout(context.Background(), copy, &studentID, staffID, false)
+	lr, err := loanSvc.BucheAmLeser(context.Background(), copy, &studentID, staffID, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if lr.Student == nil || lr.Student.ID != studentID {
+	if lr.Leser == nil || lr.Leser.ID != studentID {
 		t.Errorf("expected student to be populated")
 	}
 
@@ -136,9 +136,9 @@ func TestHandleBookReturn(t *testing.T) {
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	bookRepo := repository.NewKatalogAbfragen(mock)
-	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := service.NewDeviceService(mock, studentRepo, loanRepo, auditRepo)
-	omniboxSvc := service.NewOmniboxService(mock, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	loanSvc := service.NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := service.NewGeraeteDienst(mock, studentRepo, loanRepo, auditRepo)
+	omniboxSvc := service.NewOmniboxDienst(mock, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
 	copyID := "copy-1"
 	barcode := "B-9999"
@@ -189,7 +189,7 @@ func TestHandleBookReturn(t *testing.T) {
 
 	claims := &auth.Claims{UserID: staffID, Rolle: auth.RoleMitarbeiter}
 
-	res, err := omniboxSvc.ProcessQuery(context.Background(), service.OmniboxQuery{Query: barcode, StaffID: claims.UserID})
+	res, err := omniboxSvc.VerarbeiteEingabe(context.Background(), service.OmniboxEingabe{Text: barcode, BearbeiterID: claims.UserID})
 	var resp ActionResponse
 	if res != nil {
 		resp = *mapOmniboxResultToActionResponse(res)

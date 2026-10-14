@@ -20,7 +20,7 @@ func NewAusweisnummernAbfragen(db Datenbank) *AusweisnummernAbfragen {
 // das Kollegium: Wer jemand ist, steht in den Stammdaten, nicht auf dem Ausweis. Ohne Netz ist
 // die Vorsilbe das Einzige, woran die Theke einen Ausweis von einem Buch unterscheidet
 // (frontend/src/lib/stores/omnibox.svelte.js). Die früheren Vorsilben „S-" und „L-" versteht
-// der Scanner weiter (internal/service/omnibox_service.go); vergeben werden sie nicht mehr.
+// der Scanner weiter (internal/service/omnibox.go); vergeben werden sie nicht mehr.
 const AusweisPraefix = "A-"
 
 // AusweisNummer setzt eine laufende Zahl in die Form, die auf den Ausweis gedruckt wird:

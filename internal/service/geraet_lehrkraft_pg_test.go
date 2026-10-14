@@ -81,7 +81,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 		}
 	})
 
-	svc := NewDeviceService(pool, repository.NewLeserAbfragen(pool), repository.NewAusleihAbfragen(pool),
+	svc := NewGeraeteDienst(pool, repository.NewLeserAbfragen(pool), repository.NewAusleihAbfragen(pool),
 		repository.NewProtokollAbfragen(pool))
 
 	faelle := []struct {
@@ -92,7 +92,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 	}{
 		{"Lehrkraft bekommt das Gerät", legeLeserAn("LK", "lehrkraft", false), true, true, nil},
 		{"LiV bekommt das Gerät", legeLeserAn("LIV", "liv", false), true, true, nil},
-		{"unbekannte Kennung", "3f2504e0-4f89-11d3-9a0c-0305e82c3301", false, false, ErrNotFound},
+		{"unbekannte Kennung", "3f2504e0-4f89-11d3-9a0c-0305e82c3301", false, false, ErrNichtGefunden},
 		{"gesperrte Lehrkraft bekommt das Gerät — ein Kollege wird nie gesperrt", legeLeserAn("GES", "lehrkraft", true), true, true, nil},
 		{"Schüler bekommt das Gerät mit Frist", legeSchuelerAn(), true, false, nil},
 	}
@@ -103,7 +103,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 				t.Fatalf("Gerät anlegen: %v", err)
 			}
 			kennung := f.kennung
-			res, err := svc.HandleDeviceAction(ctx, barcode, &kennung, true, false, mitarbeiterID)
+			res, err := svc.VerarbeiteScan(ctx, barcode, &kennung, true, false, mitarbeiterID)
 
 			var offen int
 			if qerr := pool.QueryRow(ctx, `
@@ -114,7 +114,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 			}
 
 			if f.verliehen {
-				if err != nil || res == nil || res.Type != "ausleihe" || offen != 1 {
+				if err != nil || res == nil || res.Art != "ausleihe" || offen != 1 {
 					t.Fatalf("erwartet Ausleihe, war err=%v, offen=%d", err, offen)
 				}
 				var dauerleihe bool

@@ -67,7 +67,7 @@ func LoeseBestellMailAuf(betreff, text string, w BestellMailWerte) (subject, bod
 		texte = mitteltopf.Texte{}
 	}
 	replacer := strings.NewReplacer(
-		"{{.Datum}}", schulzeit.Jetzt().Format(dateFormatDE),
+		"{{.Datum}}", schulzeit.Jetzt().Format(datumsformatDE),
 		"{{.Kundennummer}}", w.Kundennummer,
 		"{{.AnzahlTitel}}", strconv.Itoa(w.AnzahlTitel),
 		"{{.AnzahlExemplare}}", strconv.Itoa(w.AnzahlExemplare),
@@ -106,7 +106,7 @@ func linkFrist(gueltigBis *time.Time) string {
 	if gueltigBis == nil {
 		return ""
 	}
-	return gueltigBis.In(schulzeit.Zone()).Format(dateFormatDE)
+	return gueltigBis.In(schulzeit.Zone()).Format(datumsformatDE)
 }
 
 // ergaenzeLinkAbsatz hängt den Link an, falls die Vorlage keinen Platzhalter dafür hat. Geprüft

@@ -19,16 +19,16 @@ func TestMapServiceErrorToStatus(t *testing.T) {
 		err      error
 		erwartet int
 	}{
-		{"nicht gefunden", service.ErrNotFound, http.StatusNotFound},
-		{"gesperrt", service.ErrBlocked, http.StatusForbidden},
-		{"unzulässiger Zustand", service.ErrInvalidState, http.StatusBadRequest},
-		{"Konflikt", service.ErrConflict, http.StatusConflict},
+		{"nicht gefunden", service.ErrNichtGefunden, http.StatusNotFound},
+		{"gesperrt", service.ErrGesperrt, http.StatusForbidden},
+		{"unzulässiger Zustand", service.ErrUngueltigerZustand, http.StatusBadRequest},
+		{"Konflikt", service.ErrKonflikt, http.StatusConflict},
 		{"unbekannter Fehler", errors.New("irgendein Fehler"), http.StatusInternalServerError},
 		// So kommt ein Sperrfehler an, wenn ohneSperrgrund ihm den Freitext nimmt: der Kern
-		// (selbst eine ErrBlocked-Kette) mit dem Hinweis dahinter.
+		// (selbst eine ErrGesperrt-Kette) mit dem Hinweis dahinter.
 		{"eingewickelt, gesperrt", fmt.Errorf("%w — bitte an die Bibliotheksleitung wenden",
-			fmt.Errorf("%w: Manuelle Sperre", service.ErrBlocked)), http.StatusForbidden},
-		{"eingewickelt, nicht gefunden", fmt.Errorf("Leser: %w", service.ErrNotFound), http.StatusNotFound},
+			fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)), http.StatusForbidden},
+		{"eingewickelt, nicht gefunden", fmt.Errorf("Leser: %w", service.ErrNichtGefunden), http.StatusNotFound},
 	}
 
 	for _, f := range faelle {

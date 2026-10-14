@@ -32,7 +32,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	}
 
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, repository.NewLeserAbfragen(pool), bookRepo,
+	loanSvc := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 	ex, err := bookRepo.FindeExemplar(ctx, "B-SPERRE-1")
 	if err != nil {
@@ -50,7 +50,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	vorher := uebergangen()
 
 	// Die eigene Rückgabe geht durch — ohne Übergehen.
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &kind, bearbeiter, false); err != nil {
+	if _, err := loanSvc.BucheAmLeser(ctx, ex, &kind, bearbeiter, false); err != nil {
 		t.Fatalf("eigene Rückgabe eines gesperrten Kindes abgewiesen: %v", err)
 	}
 	var offen int
@@ -70,18 +70,18 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Exemplar neu laden: %v", err)
 	}
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &kind, bearbeiter, false); !errors.Is(err, service.ErrBlocked) {
-		t.Errorf("neue Ausleihe an ein gesperrtes Kind: erwartet ErrBlocked, bekam %v", err)
+	if _, err := loanSvc.BucheAmLeser(ctx, ex, &kind, bearbeiter, false); !errors.Is(err, service.ErrGesperrt) {
+		t.Errorf("neue Ausleihe an ein gesperrtes Kind: erwartet ErrGesperrt, bekam %v", err)
 	}
 }
 
 // Der Zwilling dazu (Raster-Durchgang 12.09.2026 über die Änderungen vom 11.09.): Die
 // Theke scannt in offener Sitzung ein Buch, das einem ANDEREN Kind gehört. Das ist eine
-// Fremdrückgabe — handleForeignReturn gibt nur zurück, für das Kind in der Sitzung
+// Fremdrückgabe — verarbeiteFremdrueckgabe gibt nur zurück, für das Kind in der Sitzung
 // entsteht KEINE Ausleihe. Die Schranken der Ausleihe (Sperre, Ausleihlimit) liefen
 // trotzdem, weil sie an `!isReturningThis` hingen statt an „es entsteht eine Ausleihe":
 // Wer gesperrt oder am Limit war, konnte das Buch eines Mitschülers nicht abgeben,
-// während dieselbe Rückgabe ohne offene Sitzung (HandleSimpleReturn) durchging.
+// während dieselbe Rückgabe ohne offene Sitzung (NimmZurueck) durchging.
 func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -89,7 +89,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 
 	bearbeiter := testdaten.AdminFuerAudit(t, pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, repository.NewLeserAbfragen(pool), bookRepo,
+	loanSvc := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Titel Fremdrueckgabe", 3)
@@ -129,12 +129,12 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 		}
 		vorher := uebergangen()
 
-		lr, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &inSitzung, bearbeiter, false)
+		lr, err := loanSvc.BucheAmLeser(ctx, ex, &inSitzung, bearbeiter, false)
 		if err != nil {
 			t.Fatalf("Fremdrückgabe von %s abgewiesen: %v", barcode, err)
 		}
-		if !lr.Fremdrueckgabe || lr.Type != "rueckgabe" {
-			t.Errorf("erwartet Fremdrückgabe, bekam Type=%q Fremdrueckgabe=%v", lr.Type, lr.Fremdrueckgabe)
+		if !lr.Fremdrueckgabe || lr.Art != "rueckgabe" {
+			t.Errorf("erwartet Fremdrückgabe, bekam Type=%q Fremdrueckgabe=%v", lr.Art, lr.Fremdrueckgabe)
 		}
 		var offen int
 		if err := pool.QueryRow(ctx,

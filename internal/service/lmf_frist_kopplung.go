@@ -13,7 +13,7 @@ import (
 )
 
 // Die Kopplung des LMF-Plans an die Fristen: Der Rückgabe-Termin einer Klasse ist die Frist
-// ihrer Lernmittel. Beim Ausleihen liest resolveCheckoutDueDate den Termin; hier folgt der
+// ihrer Lernmittel. Beim Ausleihen liest bestimmeFrist den Termin; hier folgt der
 // Bestand dem Plan, wenn er sich ändert. Sonst gälte der Termin nur für Bücher, die nach dem
 // Eintrag ausgeliehen werden, und der Plan entsteht im Mai, wenn die Bücher seit September
 // draußen sind.

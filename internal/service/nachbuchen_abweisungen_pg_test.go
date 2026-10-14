@@ -26,10 +26,10 @@ func (w *nbWelt) meldungsGrund(t *testing.T, ergebnis string) string {
 	return grund
 }
 
-func TestNachbuchen_RueckgabeEinesBuchsImRegal(t *testing.T) {
+func TestBucheNach_RueckgabeEinesBuchsImRegal(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
-	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now().Add(-time.Minute)))
+	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now().Add(-time.Minute)))
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != "Buch war nicht ausgeliehen" {
 		t.Fatalf("Rückgabe im Regal: %v %+v — erwartet nicht_gebucht mit dem Grund", err, erg)
 	}
@@ -45,11 +45,11 @@ func TestNachbuchen_RueckgabeEinesBuchsImRegal(t *testing.T) {
 	}
 }
 
-func TestNachbuchen_UnbekannteAbsicht(t *testing.T) {
+func TestBucheNach_UnbekannteAbsicht(t *testing.T) {
 	w := nbAufbau(t)
-	erg, err := w.svc.Nachbuchen(context.Background(), w.eintrag("verlaengern", &w.anna, time.Now()))
-	if !errors.Is(err, ErrInvalidState) || erg != nil {
-		t.Fatalf("unbekannte Absicht: %v %+v — erwartet ErrInvalidState ohne Ergebnis", err, erg)
+	erg, err := w.svc.BucheNach(context.Background(), w.eintrag("verlaengern", &w.anna, time.Now()))
+	if !errors.Is(err, ErrUngueltigerZustand) || erg != nil {
+		t.Fatalf("unbekannte Absicht: %v %+v — erwartet ErrUngueltigerZustand ohne Ergebnis", err, erg)
 	}
 	if n, _ := w.offeneAusleihen(t); n != 0 {
 		t.Errorf("%d offene Ausleihen nach einer unbekannten Absicht", n)
@@ -64,11 +64,11 @@ func TestNachbuchen_UnbekannteAbsicht(t *testing.T) {
 }
 
 // Die Uhr des Theken-Rechners geht drei Stunden vor: Gebucht wird höchstens zur Serverzeit.
-func TestNachbuchen_ScanAusDerZukunftZaehltAbServerzeit(t *testing.T) {
+func TestBucheNach_ScanAusDerZukunftZaehltAbServerzeit(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
 	vorher := time.Now()
-	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(3*time.Hour)))
+	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(3*time.Hour)))
 	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Scan aus der Zukunft: %v %+v", err, erg)
 	}
@@ -83,7 +83,7 @@ func TestNachbuchen_ScanAusDerZukunftZaehltAbServerzeit(t *testing.T) {
 
 // Der Rechner konnte die Person beim Scan nicht auflösen und schickt den Ausweis: Der Server
 // löst ihn auf und leiht an diese Person aus.
-func TestNachbuchen_OfflineGescannterAusweisLoestDiePersonAuf(t *testing.T) {
+func TestBucheNach_OfflineGescannterAusweisLoestDiePersonAuf(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
 	var ausweis string
@@ -92,7 +92,7 @@ func TestNachbuchen_OfflineGescannterAusweisLoestDiePersonAuf(t *testing.T) {
 	}
 	e := w.eintrag(NachbuchAbsichtAusleihe, nil, time.Now().Add(-time.Minute))
 	e.AusweisBarcode = &ausweis
-	erg, err := w.svc.Nachbuchen(ctx, e)
+	erg, err := w.svc.BucheNach(ctx, e)
 	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Ausleihe über den Ausweis: %v %+v", err, erg)
 	}
@@ -104,7 +104,7 @@ func TestNachbuchen_OfflineGescannterAusweisLoestDiePersonAuf(t *testing.T) {
 // Ein Scan, der vor dem Beginn der laufenden Ausleihe liegt, beschreibt eine Wirklichkeit, die
 // es nicht mehr gibt — auch wenn das Exemplar keinen Bewegungsstempel trägt. Die Ausleihe
 // bleibt, der Eintrag ist veraltet und gemeldet.
-func TestNachbuchen_ScanVorDerAusleiheIstVeraltet(t *testing.T) {
+func TestBucheNach_ScanVorDerAusleiheIstVeraltet(t *testing.T) {
 	for _, f := range []struct {
 		name, absicht, grund string
 		person               func(w *nbWelt) *string
@@ -125,7 +125,7 @@ func TestNachbuchen_ScanVorDerAusleiheIstVeraltet(t *testing.T) {
 			if _, err := w.pool.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = NULL WHERE id = $1`, w.exemplarID); err != nil {
 				t.Fatalf("Stempel leeren: %v", err)
 			}
-			erg, err := w.svc.Nachbuchen(ctx, w.eintrag(f.absicht, f.person(w), jetzt.Add(-10*time.Minute)))
+			erg, err := w.svc.BucheNach(ctx, w.eintrag(f.absicht, f.person(w), jetzt.Add(-10*time.Minute)))
 			if err != nil || erg.Ergebnis != repository.NachbuchVeraltet || erg.Grund != f.grund {
 				t.Fatalf("%v %+v — erwartet veraltet mit dem Grund %q", err, erg, f.grund)
 			}
@@ -142,11 +142,11 @@ func TestNachbuchen_ScanVorDerAusleiheIstVeraltet(t *testing.T) {
 // Legt ein anderer Arbeitsplatz die Ausleihe im selben Augenblick an, verwirft die Datenbank die
 // zweite (ON CONFLICT, keine Zeile). Der Eintrag ist dann nicht gebucht und gemeldet; die
 // Rücknahme beim Vorbesitzer bleibt.
-func TestNachbuchen_GleichzeitigeAusleiheAmAnderenArbeitsplatz(t *testing.T) {
+func TestBucheNach_GleichzeitigeAusleiheAmAnderenArbeitsplatz(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
 	t0 := time.Now().Add(-30 * time.Minute)
-	if erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.ben, t0)); err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
+	if erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.ben, t0)); err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Ben: %v %+v", err, erg)
 	}
 
@@ -173,7 +173,7 @@ func TestNachbuchen_GleichzeitigeAusleiheAmAnderenArbeitsplatz(t *testing.T) {
 	})
 
 	scan := t0.Add(5 * time.Minute)
-	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, scan))
+	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, scan))
 	const grund = "Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht"
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != grund {
 		t.Fatalf("%v %+v — erwartet nicht_gebucht mit dem Grund %q", err, erg, grund)
@@ -197,7 +197,7 @@ func TestNachbuchen_GleichzeitigeAusleiheAmAnderenArbeitsplatz(t *testing.T) {
 
 // Kommt ein abgeschriebenes Buch über eine Rückgabe zurück, nennt die Meldung, was mit ihm
 // geschah: wieder im Umlauf, und mit Betrag, wenn dabei eine Forderung endete.
-func TestNachbuchen_RueckkehrNenntDenGrund(t *testing.T) {
+func TestBucheNach_RueckkehrNenntDenGrund(t *testing.T) {
 	ctx := context.Background()
 
 	ohne := nbAufbau(t)
@@ -205,7 +205,7 @@ func TestNachbuchen_RueckkehrNenntDenGrund(t *testing.T) {
 		t.Fatalf("aussondern: %v", err)
 	}
 	time.Sleep(50 * time.Millisecond)
-	erg, err := ohne.svc.Nachbuchen(ctx, ohne.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
+	erg, err := ohne.svc.BucheNach(ctx, ohne.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	const umlauf = "Buch war abgeschrieben und ist wieder im Umlauf"
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert || erg.Grund != umlauf {
 		t.Fatalf("ohne Forderung: %v %+v — erwartet nur_reaktiviert mit dem Grund %q", err, erg, umlauf)
@@ -217,7 +217,7 @@ func TestNachbuchen_RueckkehrNenntDenGrund(t *testing.T) {
 	mit := nbAufbau(t)
 	verlorenGemeldet(t, mit)
 	time.Sleep(50 * time.Millisecond)
-	erg, err = mit.svc.Nachbuchen(ctx, mit.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
+	erg, err = mit.svc.BucheNach(ctx, mit.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	const storniert = "Buch war abgeschrieben; Forderung über 12,00 € storniert"
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert || erg.Grund != storniert {
 		t.Fatalf("mit Forderung: %v %+v — erwartet nur_reaktiviert mit dem Grund %q", err, erg, storniert)
@@ -229,17 +229,17 @@ func TestNachbuchen_RueckkehrNenntDenGrund(t *testing.T) {
 
 // Eine Ausleihe ohne Person wird abgewiesen, und der Grund nennt den gescannten Ausweis, wenn
 // es einen gab.
-func TestNachbuchen_AusleiheOhnePersonNenntDenAusweis(t *testing.T) {
+func TestBucheNach_AusleiheOhnePersonNenntDenAusweis(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
-	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtAusleihe, nil, time.Now().Add(-time.Minute)))
+	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, nil, time.Now().Add(-time.Minute)))
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != "Ausweis unbekannt" {
 		t.Fatalf("ohne Person und ohne Ausweis: %v %+v", err, erg)
 	}
 	ausweis := "S-FREMD-4711"
 	e := w.eintrag(NachbuchAbsichtAusleihe, nil, time.Now().Add(-time.Minute))
 	e.AusweisBarcode = &ausweis
-	erg, err = w.svc.Nachbuchen(ctx, e)
+	erg, err = w.svc.BucheNach(ctx, e)
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != "Ausweis unbekannt: S-FREMD-4711" {
 		t.Fatalf("mit unbekanntem Ausweis: %v %+v", err, erg)
 	}
@@ -260,7 +260,7 @@ func (w *nbWelt) exemplarStand(t *testing.T) (ausleihbar, ausgesondert bool, bew
 // Ein gesperrtes Exemplar (nicht ausleihbar, nicht ausgesondert), das im Regal steht, kommt mit
 // dem Scan zurück in den Umlauf. Ist es verliehen, endet mit der Rückgabe nur die Ausleihe —
 // die Sperre am Exemplar bleibt.
-func TestNachbuchen_GesperrtesExemplar(t *testing.T) {
+func TestBucheNach_GesperrtesExemplar(t *testing.T) {
 	ctx := context.Background()
 
 	imRegal := nbAufbau(t)
@@ -268,7 +268,7 @@ func TestNachbuchen_GesperrtesExemplar(t *testing.T) {
 		t.Fatalf("sperren: %v", err)
 	}
 	time.Sleep(50 * time.Millisecond)
-	erg, err := imRegal.svc.Nachbuchen(ctx, imRegal.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
+	erg, err := imRegal.svc.BucheNach(ctx, imRegal.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert {
 		t.Fatalf("gesperrt im Regal: %v %+v — erwartet nur_reaktiviert", err, erg)
 	}
@@ -277,14 +277,14 @@ func TestNachbuchen_GesperrtesExemplar(t *testing.T) {
 	}
 
 	verliehen := nbAufbau(t)
-	if erg, err := verliehen.svc.Nachbuchen(ctx, verliehen.eintrag(NachbuchAbsichtAusleihe, &verliehen.anna, time.Now().Add(-30*time.Minute))); err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
+	if erg, err := verliehen.svc.BucheNach(ctx, verliehen.eintrag(NachbuchAbsichtAusleihe, &verliehen.anna, time.Now().Add(-30*time.Minute))); err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Anna: %v %+v", err, erg)
 	}
 	if _, err := verliehen.pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausleihbar = false WHERE id = $1`, verliehen.exemplarID); err != nil {
 		t.Fatalf("sperren: %v", err)
 	}
 	time.Sleep(50 * time.Millisecond)
-	erg, err = verliehen.svc.Nachbuchen(ctx, verliehen.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
+	erg, err = verliehen.svc.BucheNach(ctx, verliehen.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	if err != nil || erg.Ergebnis != repository.NachbuchZurueckgegeben {
 		t.Fatalf("gesperrt und verliehen: %v %+v — erwartet zurueckgegeben", err, erg)
 	}
@@ -299,7 +299,7 @@ func TestNachbuchen_GesperrtesExemplar(t *testing.T) {
 // Das Rückholen eines abgeschriebenen Buchs zählt ab dem Scan: Der Bewegungsstempel trägt den
 // Scan-Zeitpunkt, nicht die Zeit des Nachbuchens. Kommt es über eine Ausleihe zurück, ist es
 // in derselben Buchung ausgeliehen, und die Antwort zeigt es im Umlauf.
-func TestNachbuchen_RueckholenZaehltAbDemScan(t *testing.T) {
+func TestBucheNach_RueckholenZaehltAbDemScan(t *testing.T) {
 	ctx := context.Background()
 
 	w := nbAufbau(t)
@@ -309,7 +309,7 @@ func TestNachbuchen_RueckholenZaehltAbDemScan(t *testing.T) {
 		t.Fatalf("Stempel setzen: %v", err)
 	}
 	scan := jetzt.Add(-5 * time.Minute)
-	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, scan))
+	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, scan))
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert {
 		t.Fatalf("Rückkehr: %v %+v", err, erg)
 	}
@@ -324,7 +324,7 @@ func TestNachbuchen_RueckholenZaehltAbDemScan(t *testing.T) {
 	a := nbAufbau(t)
 	verlorenGemeldet(t, a)
 	time.Sleep(50 * time.Millisecond)
-	erg, err = a.svc.Nachbuchen(ctx, a.eintrag(NachbuchAbsichtAusleihe, &a.ben, time.Now()))
+	erg, err = a.svc.BucheNach(ctx, a.eintrag(NachbuchAbsichtAusleihe, &a.ben, time.Now()))
 	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
 		t.Fatalf("Ausleihe eines abgeschriebenen Buchs: %v %+v", err, erg)
 	}
@@ -334,18 +334,18 @@ func TestNachbuchen_RueckholenZaehltAbDemScan(t *testing.T) {
 	if ausleihbar, ausgesondert, _ := a.exemplarStand(t); !ausleihbar || ausgesondert {
 		t.Errorf("Exemplar nach dem Rückholen: ausleihbar %v, ausgesondert %v", ausleihbar, ausgesondert)
 	}
-	if b := erg.Result.Book; b == nil || !b.IstAusleihbar || b.IstAusgesondert || b.ZustandNotiz != "" {
+	if b := erg.Gebucht.Exemplar; b == nil || !b.IstAusleihbar || b.IstAusgesondert || b.ZustandNotiz != "" {
 		t.Errorf("die Antwort zeigt das Exemplar nicht im Umlauf: %+v", b)
 	}
 }
 
 // Die Antwort einer gebuchten Ausleihe nennt die neue Ausleihe und ihre Frist — daran hängt an
 // der Theke das Rückgängigmachen.
-func TestNachbuchen_AntwortNenntAusleiheUndFrist(t *testing.T) {
+func TestBucheNach_AntwortNenntAusleiheUndFrist(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
-	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(-time.Minute)))
-	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen || erg.Result == nil {
+	erg, err := w.svc.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(-time.Minute)))
+	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen || erg.Gebucht == nil {
 		t.Fatalf("Ausleihe: %v %+v", err, erg)
 	}
 	var id string
@@ -353,22 +353,22 @@ func TestNachbuchen_AntwortNenntAusleiheUndFrist(t *testing.T) {
 	if err := w.pool.QueryRow(ctx, `SELECT id::text, rueckgabe_frist FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`, w.exemplarID).Scan(&id, &frist); err != nil {
 		t.Fatalf("Ausleihe lesen: %v", err)
 	}
-	if erg.Result.LoanID == nil || *erg.Result.LoanID != id {
-		t.Errorf("die Antwort nennt die Ausleihe %v, erwartet %s", erg.Result.LoanID, id)
+	if erg.Gebucht.AusleiheID == nil || *erg.Gebucht.AusleiheID != id {
+		t.Errorf("die Antwort nennt die Ausleihe %v, erwartet %s", erg.Gebucht.AusleiheID, id)
 	}
-	if erg.Result.DueDate == nil || !erg.Result.DueDate.Equal(frist) {
-		t.Errorf("die Antwort nennt die Frist %v, erwartet %v", erg.Result.DueDate, frist)
+	if erg.Gebucht.Frist == nil || !erg.Gebucht.Frist.Equal(frist) {
+		t.Errorf("die Antwort nennt die Frist %v, erwartet %v", erg.Gebucht.Frist, frist)
 	}
 }
 
 // Die Schranken des Online-Scans gelten auch beim Nachbuchen, und die Meldung nennt, woran es
 // lag: an der Sperre des Lesers oder an der Vormerkung eines anderen. Beides ist eine
 // Abweisung, keine Störung.
-func TestNachbuchen_AbweisungNenntDieSchranke(t *testing.T) {
+func TestBucheNach_AbweisungNenntDieSchranke(t *testing.T) {
 	ctx := context.Background()
 
 	sperre := nbAufbau(t)
-	erg, err := sperre.svc.Nachbuchen(ctx, sperre.eintrag(NachbuchAbsichtAusleihe, &sperre.carla, time.Now().Add(-time.Minute)))
+	erg, err := sperre.svc.BucheNach(ctx, sperre.eintrag(NachbuchAbsichtAusleihe, &sperre.carla, time.Now().Add(-time.Minute)))
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht {
 		t.Fatalf("gesperrter Leser: %v %+v", err, erg)
 	}
@@ -386,7 +386,7 @@ func TestNachbuchen_AbweisungNenntDieSchranke(t *testing.T) {
 		vorgemerkt.titelID, vorgemerkt.ben, vorgemerkt.exemplarID); err != nil {
 		t.Fatalf("Vormerkung für Ben: %v", err)
 	}
-	erg, err = vorgemerkt.svc.Nachbuchen(ctx, vorgemerkt.eintrag(NachbuchAbsichtAusleihe, &vorgemerkt.anna, time.Now().Add(-time.Minute)))
+	erg, err = vorgemerkt.svc.BucheNach(ctx, vorgemerkt.eintrag(NachbuchAbsichtAusleihe, &vorgemerkt.anna, time.Now().Add(-time.Minute)))
 	const reserviert = "Achtung: dieses Exemplar ist noch für Ben Zweiter reserviert"
 	if err != nil || erg.Ergebnis != repository.NachbuchNichtGebucht || erg.Grund != reserviert {
 		t.Fatalf("fremde Vormerkung: %v %+v — erwartet nicht_gebucht mit dem Grund %q", err, erg, reserviert)

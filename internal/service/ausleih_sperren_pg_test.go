@@ -1,8 +1,8 @@
 package service_test
 
 // Der eine Prüfweg für Buch und Gerät am Live-Pfad der Theke (service.pruefeAusleihSperren,
-// entschieden am 24.09.2026): das Buch über HandleUnifiedCheckout, das Gerät über die
-// Omnibox wie beim Scan (ProcessQuery mit „G-"). Jeder Test nennt die Probe, an der er rot
+// entschieden am 24.09.2026): das Buch über BucheAmLeser, das Gerät über die
+// Omnibox wie beim Scan (VerarbeiteEingabe mit „G-"). Jeder Test nennt die Probe, an der er rot
 // wurde.
 
 import (
@@ -22,8 +22,8 @@ import (
 type sperrTheke struct {
 	pool       *pgxpool.Pool
 	books      repository.KatalogAbfragen
-	loanSvc    service.LoanService
-	omnibox    service.OmniboxService
+	loanSvc    service.AusleihDienst
+	omnibox    service.OmniboxDienst
 	bearbeiter string
 }
 
@@ -49,13 +49,13 @@ func neueSperrTheke(t *testing.T) *sperrTheke {
 	books := repository.NewKatalogAbfragen(pool)
 	loans := repository.NewAusleihAbfragen(pool)
 	audit := repository.NewProtokollAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, students, books, loans, audit)
-	deviceSvc := service.NewDeviceService(pool, students, loans, audit)
+	loanSvc := service.NewAusleihDienst(pool, students, books, loans, audit)
+	deviceSvc := service.NewGeraeteDienst(pool, students, loans, audit)
 	return &sperrTheke{
 		pool:       pool,
 		books:      books,
 		loanSvc:    loanSvc,
-		omnibox:    service.NewOmniboxService(pool, students, books, loans, loanSvc, deviceSvc),
+		omnibox:    service.NewOmniboxDienst(pool, students, books, loans, loanSvc, deviceSvc),
 		bearbeiter: testdaten.AdminFuerAudit(t, pool),
 	}
 }
@@ -67,16 +67,16 @@ func (th *sperrTheke) buch(t *testing.T, barcode, leserID string, uebergehen boo
 	if err != nil {
 		t.Fatalf("Exemplar %s laden: %v", barcode, err)
 	}
-	_, err = th.loanSvc.HandleUnifiedCheckout(context.Background(), ex, &leserID, th.bearbeiter, uebergehen)
+	_, err = th.loanSvc.BucheAmLeser(context.Background(), ex, &leserID, th.bearbeiter, uebergehen)
 	return err
 }
 
 // geraet scannt das Gerät an der Theke — über die Omnibox, denn dort kommt override_block an.
-func (th *sperrTheke) geraet(t *testing.T, barcode, leserID string, bestaetigt, uebergehen bool) (*service.OmniboxResult, error) {
+func (th *sperrTheke) geraet(t *testing.T, barcode, leserID string, bestaetigt, uebergehen bool) (*service.OmniboxErgebnis, error) {
 	t.Helper()
-	return th.omnibox.ProcessQuery(context.Background(), service.OmniboxQuery{
-		Query: barcode, ActiveLeserID: &leserID, ConfirmedChecklist: bestaetigt,
-		StaffID: th.bearbeiter, OverrideBlock: uebergehen,
+	return th.omnibox.VerarbeiteEingabe(context.Background(), service.OmniboxEingabe{
+		Text: barcode, AktiverLeserID: &leserID, ChecklisteBestaetigt: bestaetigt,
+		BearbeiterID: th.bearbeiter, SperreUebergehen: uebergehen,
 	})
 }
 
@@ -130,7 +130,7 @@ func (th *sperrTheke) bestand(t *testing.T, praefix string) (buecherei, schulbuc
 }
 
 func istSperreAmLeser(err error) bool {
-	return errors.Is(err, service.ErrBlocked) && service.IstSperreAmLeser(err) && !service.IstUebergehbareSperre(err)
+	return errors.Is(err, service.ErrGesperrt) && service.IstSperreAmLeser(err) && !service.IstUebergehbareSperre(err)
 }
 
 // Eine Sperre von Hand lässt an der Theke nur die Rückgabe zu — beim Buch, beim Schulbuch
@@ -171,7 +171,7 @@ func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 // Hand. Beim Schulbuch zählt sie nicht: Die Schule schließt jede automatische Sperre am
 // Lernmittel aus (22.09.2026) — das Kind der 10R, das in die E-Phase geht, bekommt seine
 // Schulbücher, ohne dass jemand etwas übergehen muss.
-// Rot gesehen am Rückbau: `&& !lernmittel` aus pruefeSperreAmLeser entfernt — das Schulbuch
+// Rot gesehen am Rückbau: `&& !lernmittel` aus pruefeSperrschalter entfernt — das Schulbuch
 // wird abgewiesen.
 func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 	th := neueSperrTheke(t)
@@ -215,7 +215,7 @@ func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {
 	}
 
 	err := th.buch(t, schulbuch, anonym, true)
-	if !errors.Is(err, service.ErrBlocked) || service.IstSperreAmLeser(err) || service.IstUebergehbareSperre(err) {
+	if !errors.Is(err, service.ErrGesperrt) || service.IstSperreAmLeser(err) || service.IstUebergehbareSperre(err) {
 		t.Errorf("erwartet Sperre ohne Merkmal, bekam %v", err)
 	}
 	if th.offen(t, schulbuch) != 0 {
@@ -282,7 +282,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 	th.neuesGeraet(t, "G-SPERRWEG-4", "Ladekabel")
 
 	uebergehbar := func(err error) bool {
-		return errors.Is(err, service.ErrBlocked) && service.IstUebergehbareSperre(err)
+		return errors.Is(err, service.ErrGesperrt) && service.IstUebergehbareSperre(err)
 	}
 
 	// Buch der Bücherei: ohne override_block gesperrt, mit ihm durch und protokolliert.
@@ -301,7 +301,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 		t.Fatalf("Gerät ohne override_block: erwartet übergehbare Sperre, bekam %v", err)
 	}
 	res, err := th.geraet(t, "G-SPERRWEG-4", kind, false, true)
-	if err != nil || res.Type != "geraet_check" {
+	if err != nil || res.Art != "geraet_check" {
 		t.Fatalf("Gerät mit override_block, Zubehör offen: erwartet geraet_check, bekam %v / %v", res, err)
 	}
 	if th.offen(t, "G-SPERRWEG-4") != 0 || th.uebergangen(t, kind) != 1 {
@@ -319,7 +319,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 // Übergangen ist erst, was ausgeliehen wurde. Weist nach der Sperre noch das Ausleihlimit ab,
 // steht nichts im Protokoll — bis zum 24.09.2026 schrieb die Prüfung den Eintrag, bevor
 // feststand, ob überhaupt ausgeliehen wird.
-// Rot gesehen am Rückbau: protokolliereUebergangen in HandleUnifiedCheckout direkt hinter
+// Rot gesehen am Rückbau: protokolliereUebergangen in BucheAmLeser direkt hinter
 // die Prüfung gezogen — ein Eintrag ohne Ausleihe.
 func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
 	th := neueSperrTheke(t)
@@ -359,7 +359,7 @@ func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
 	}
 
 	err := th.buch(t, buecherei, kind, true)
-	if !errors.Is(err, service.ErrBlocked) || service.IstUebergehbareSperre(err) {
+	if !errors.Is(err, service.ErrGesperrt) || service.IstUebergehbareSperre(err) {
 		t.Fatalf("erwartet die Abweisung am Ausleihlimit, bekam %v", err)
 	}
 	if n := th.uebergangen(t, kind); n != 0 {

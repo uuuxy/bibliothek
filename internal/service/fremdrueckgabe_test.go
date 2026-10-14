@@ -19,14 +19,14 @@ func (m *mockLoanRepo) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID str
 	return m.returnLoanTxErr
 }
 
-func TestHandleForeignReturn_Student(t *testing.T) {
+func TestVerarbeiteFremdrueckgabe_Student(t *testing.T) {
 	svc, _, mockPool := newValidationService(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
 	defer mockPool.Close()
 
 	mockLoan := &mockLoanRepo{}
-	svc.loanRepo = mockLoan
+	svc.ausleihAbfragen = mockLoan
 
 	tx := beginTx(t, mockPool)
 
@@ -40,20 +40,20 @@ func TestHandleForeignReturn_Student(t *testing.T) {
 		Titel:     "Testbuch",
 	}
 
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 
-	// mock processReturnVormerkungTx internals
+	// mock bedieneVormerkung internals
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit()
 
-	res, err := svc.handleForeignReturn(context.Background(), tx, copy, activeLoan, "staff1", resp)
+	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, copy, activeLoan, "staff1", resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if res.Type != "rueckgabe" {
-		t.Errorf("expected resp.Type to be 'rueckgabe', got %s", res.Type)
+	if res.Art != "rueckgabe" {
+		t.Errorf("expected resp.Type to be 'rueckgabe', got %s", res.Art)
 	}
 	if res.Vorbesitzer == nil || res.Vorbesitzer.ID != "s1" {
 		t.Errorf("expected res.Vorbesitzer to be s1")
@@ -68,14 +68,14 @@ func TestHandleForeignReturn_Student(t *testing.T) {
 // ging vor Migration 125 über eine zweite Spalte und eine zweite Abfrage in die
 // Kontentabelle; jetzt ist es derselbe Weg wie beim Schüler — Finde, nicht die
 // Sicht `schueler`, sonst bliebe der Vorbesitzer namenlos.
-func TestHandleForeignReturn_Kollege(t *testing.T) {
+func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
 	svc, _, mockPool := newValidationService(t, &repository.Leser{
 		ID: "t1", Vorname: "Hans", Nachname: "Lehrer", Art: "lehrkraft",
 	})
 	defer mockPool.Close()
 
 	mockLoan := &mockLoanRepo{}
-	svc.loanRepo = mockLoan
+	svc.ausleihAbfragen = mockLoan
 
 	tx := beginTx(t, mockPool)
 
@@ -89,20 +89,20 @@ func TestHandleForeignReturn_Kollege(t *testing.T) {
 		Titel:     "Lehrerbuch",
 	}
 
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 
-	// mock processReturnVormerkungTx internals
+	// mock bedieneVormerkung internals
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit()
 
-	res, err := svc.handleForeignReturn(context.Background(), tx, copy, activeLoan, "staff1", resp)
+	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, copy, activeLoan, "staff1", resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if res.Type != "rueckgabe" {
-		t.Errorf("expected resp.Type to be 'rueckgabe', got %s", res.Type)
+	if res.Art != "rueckgabe" {
+		t.Errorf("expected resp.Type to be 'rueckgabe', got %s", res.Art)
 	}
 	if res.Vorbesitzer == nil || res.Vorbesitzer.ID != "t1" {
 		t.Errorf("der Kollege muss als Vorbesitzer in der Antwort stehen, bekam: %+v", res.Vorbesitzer)
@@ -116,7 +116,7 @@ func TestHandleForeignReturn_Kollege(t *testing.T) {
 	}
 }
 
-func TestHandleForeignReturn_ReturnLoanError(t *testing.T) {
+func TestVerarbeiteFremdrueckgabe_ReturnLoanError(t *testing.T) {
 	svc, _, mockPool := newValidationService(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
@@ -124,7 +124,7 @@ func TestHandleForeignReturn_ReturnLoanError(t *testing.T) {
 
 	// Return error
 	mockLoan := &mockLoanRepo{returnLoanTxErr: pgx.ErrTxClosed}
-	svc.loanRepo = mockLoan
+	svc.ausleihAbfragen = mockLoan
 
 	tx := beginTx(t, mockPool)
 
@@ -136,9 +136,9 @@ func TestHandleForeignReturn_ReturnLoanError(t *testing.T) {
 		ID: "copy3",
 	}
 
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 
-	res, err := svc.handleForeignReturn(context.Background(), tx, copy, activeLoan, "staff1", resp)
+	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, copy, activeLoan, "staff1", resp)
 
 	if err == nil {
 		t.Fatalf("expected error, got nil")
@@ -148,14 +148,14 @@ func TestHandleForeignReturn_ReturnLoanError(t *testing.T) {
 	}
 }
 
-func TestHandleForeignReturn_CommitError(t *testing.T) {
+func TestVerarbeiteFremdrueckgabe_CommitError(t *testing.T) {
 	svc, _, mockPool := newValidationService(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
 	defer mockPool.Close()
 
 	mockLoan := &mockLoanRepo{}
-	svc.loanRepo = mockLoan
+	svc.ausleihAbfragen = mockLoan
 
 	tx := beginTx(t, mockPool)
 
@@ -169,12 +169,12 @@ func TestHandleForeignReturn_CommitError(t *testing.T) {
 		Titel:     "Testbuch",
 	}
 
-	resp := &LoanResult{}
+	resp := &AusleihErgebnis{}
 
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit().WillReturnError(pgx.ErrTxClosed)
 
-	res, err := svc.handleForeignReturn(context.Background(), tx, copy, activeLoan, "staff1", resp)
+	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, copy, activeLoan, "staff1", resp)
 
 	if err == nil {
 		t.Fatalf("expected commit error, got nil")

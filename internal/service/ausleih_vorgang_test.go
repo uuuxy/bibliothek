@@ -83,7 +83,7 @@ func (m *mockAuditRepo) ProtokolliereSystemAktion(ctx context.Context, tabelle, 
 func strPtr(s string) *string { return &s }
 
 // expectSettingsAndOverdue richtet die Mock-Erwartungen für einen Durchlauf der
-// Sperrprüfung ohne Sperre ein: offene Schäden → querySettings → Overdue-Zählung.
+// Sperrprüfung ohne Sperre ein: offene Schäden → ladeEinstellungen → Overdue-Zählung.
 func expectSettingsAndOverdue(mock pgxmock.PgxPoolIface, overdueCount int) {
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle").
 		WithArgs("s1").
@@ -97,7 +97,7 @@ func expectSettingsAndOverdue(mock pgxmock.PgxPoolIface, overdueCount int) {
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(overdueCount))
 }
 
-// expectFristSettings: die eine Einstellungsabfrage, mit der resolveCheckoutDueDate die
+// expectFristSettings: die eine Einstellungsabfrage, mit der bestimmeFrist die
 // Leihfrist bestimmt.
 func expectFristSettings(mock pgxmock.PgxPoolIface) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
@@ -105,17 +105,17 @@ func expectFristSettings(mock pgxmock.PgxPoolIface) {
 			AddRow("standard_ausleihfrist_tage", strPtr("14")))
 }
 
-func newValidationService(t *testing.T, student *repository.Leser) (*defaultLoanService, *mockAuditRepo, pgxmock.PgxPoolIface) {
+func newValidationService(t *testing.T, student *repository.Leser) (*ausleihDienst, *mockAuditRepo, pgxmock.PgxPoolIface) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock init: %v", err)
 	}
 	audit := &mockAuditRepo{}
-	svc := &defaultLoanService{
-		pool:        mock,
-		studentRepo: &mockStudentRepo{student: student},
-		auditRepo:   audit,
+	svc := &ausleihDienst{
+		pool:              mock,
+		leserAbfragen:     &mockStudentRepo{student: student},
+		protokollAbfragen: audit,
 	}
 	return svc, audit, mock
 }
@@ -124,7 +124,7 @@ func activeStudent(id string) *string { return &id }
 
 // --- Tests ---
 
-func TestResolveBorrower_HappyPath(t *testing.T) {
+func TestLadeVorgang_HappyPath(t *testing.T) {
 	svc, _, mock := newValidationService(t, &repository.Leser{
 		ID: "s1", Klasse: "5a", Vorname: "Max", Nachname: "Mustermann", Art: "schueler",
 	})
@@ -133,22 +133,22 @@ func TestResolveBorrower_HappyPath(t *testing.T) {
 	expectFristSettings(mock)
 
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	ctx, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"))
+	ctx, err := svc.ladeVorgang(context.Background(), copy, activeStudent("s1"))
 
 	if err != nil {
 		t.Fatalf("regulärer Schüler ohne Sperre soll durchgehen, bekam: %v", err)
 	}
-	if !ctx.istSchueler() || ctx.borrowerID != "s1" {
-		t.Errorf("erwartete den Schüler s1, bekam Art %q / %q", ctx.leser.Art, ctx.borrowerID)
+	if !ctx.istSchueler() || ctx.leserID != "s1" {
+		t.Errorf("erwartete den Schüler s1, bekam Art %q / %q", ctx.leser.Art, ctx.leserID)
 	}
-	if ctx.dueTime.IsZero() {
+	if ctx.frist.IsZero() {
 		t.Error("erwartete gesetztes Fälligkeitsdatum")
 	}
 }
 
 // Auflösen sperrt nicht: Ein gesperrter Schüler wird aufgelöst, die Sperre prüft der
 // Checkout danach. Sperrte schon das Auflösen, wäre die eigene Rückgabe wieder gesperrt.
-func TestResolveBorrower_SperrtNicht(t *testing.T) {
+func TestLadeVorgang_SperrtNicht(t *testing.T) {
 	svc, audit, mock := newValidationService(t, &repository.Leser{
 		ID: "s1", Klasse: "5a", Art: "schueler", IstGesperrt: true, Sperrgrund: strPtr("überfällig"),
 	})
@@ -157,27 +157,27 @@ func TestResolveBorrower_SperrtNicht(t *testing.T) {
 	expectFristSettings(mock)
 
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	ctx, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"))
+	ctx, err := svc.ladeVorgang(context.Background(), copy, activeStudent("s1"))
 
 	if err != nil {
 		t.Fatalf("Auflösen darf nicht sperren, bekam: %v", err)
 	}
 	if ctx.leser == nil || !ctx.leser.IstGesperrt {
-		t.Error("erwartete den gesperrten Leser im checkoutContext")
+		t.Error("erwartete den gesperrten Leser im ausleihVorgang")
 	}
 	if audit.adminAktionCalls != 0 {
 		t.Errorf("Auflösen darf kein Übergehen protokollieren, calls=%d", audit.adminAktionCalls)
 	}
 }
 
-func TestResolveBorrower_NoActiveBorrower(t *testing.T) {
+func TestLadeVorgang_NoActiveBorrower(t *testing.T) {
 	svc, _, mock := newValidationService(t, nil)
 	defer mock.Close()
 
 	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	_, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, nil)
+	_, err := svc.ladeVorgang(context.Background(), copy, nil)
 
-	if !errors.Is(err, ErrInvalidState) {
-		t.Errorf("ohne aktiven Leser soll ErrInvalidState kommen, bekam: %v", err)
+	if !errors.Is(err, ErrUngueltigerZustand) {
+		t.Errorf("ohne aktiven Leser soll ErrUngueltigerZustand kommen, bekam: %v", err)
 	}
 }

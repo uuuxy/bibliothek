@@ -29,30 +29,30 @@ func dekodiereLitteraEtikett(scan string) (nummer string, ok bool) {
 			return "", false
 		}
 	}
-	if !ean13PruefzifferStimmt(scan) {
+	if !istPruefzifferRichtig(scan) {
 		return "", false
 	}
 
-	payload := scan[:12]
-	laenge := int(payload[11] - '0')
+	daten := scan[:12]
+	laenge := int(daten[11] - '0')
 	if laenge < 1 || laenge > 8 {
 		return "", false
 	}
-	nummer = payload[:laenge]
+	nummer = daten[:laenge]
 	if nummer[0] == '0' {
 		return "", false
 	}
 	// Zwischen Mediennummer und Bibliotheksnummer steht ausschließlich Polsterung.
 	for i := laenge; i < 8; i++ {
-		if payload[i] != '0' {
+		if daten[i] != '0' {
 			return "", false
 		}
 	}
 	return nummer, true
 }
 
-// ean13PruefzifferStimmt prüft die Standard-EAN-13-Prüfziffer (Gewichte 1/3).
-func ean13PruefzifferStimmt(scan string) bool {
+// istPruefzifferRichtig prüft die Standard-EAN-13-Prüfziffer (Gewichte 1/3).
+func istPruefzifferRichtig(scan string) bool {
 	summe := 0
 	for i := 0; i < 12; i++ {
 		ziffer := int(scan[i] - '0')

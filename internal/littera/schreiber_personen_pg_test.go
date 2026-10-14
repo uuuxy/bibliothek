@@ -356,7 +356,7 @@ func TestFremdLeserNummerGewinnt(t *testing.T) {
 
 // TestAusweisnummerGleichBuchBarcodeWeichtAus: Lesernummern sind kleine Zahlen, und im Bestand
 // tragen Tausende Bücher nackte Mediennummern (auf dem Server 30.658). Die Theke löst eine
-// Nummer ohne Vorsilbe zuerst als Buch auf (resolveOhnePraefix) — ein Schüler mit derselben
+// Nummer ohne Vorsilbe zuerst als Buch auf (verarbeiteOhneVorsilbe) — ein Schüler mit derselben
 // Nummer buchte beim Klick in der Namenssuche oder beim Scan seines neuen Ausweises das Buch.
 // Eine Nummer, die schon ein Buch trägt, ist deshalb vergeben.
 func TestAusweisnummerGleichBuchBarcodeWeichtAus(t *testing.T) {

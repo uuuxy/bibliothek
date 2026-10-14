@@ -21,7 +21,7 @@ import (
 //
 // Die Regel gab es schon, sie war nur nicht zu Ende geführt. Eine Ausleihe an jemanden,
 // der kein Schüler ist, ist eine DAUERLEIHE (`ausleihen.ist_handapparat`, gesetzt in
-// erzeugeAusleihe und im Geräte-Pfad), und die Sperr-Automatik zählt seit jeher nur
+// legeAusleiheAn und im Geräte-Pfad), und die Sperr-Automatik zählt seit jeher nur
 // Ausleihen mit `ist_handapparat = false`. Die Leserliste und die Übersicht rechneten
 // daneben ihr eigenes „überfällig" aus dem blossen Datum: Nach einem Jahr stand ein
 // Kollege mit roter Zahl in der Leserdatei und als Mahnfall in der Statistik, während die

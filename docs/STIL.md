@@ -63,12 +63,15 @@ Consistency).
 | nimmt eine Anfrage der Oberfläche an                | Tür, am Typ `Tueren` ihres Themas    | `Handler`                         |
 | was eine Tür liest und zurückgibt                   | `…Anfrage`, `…Antwort`               | `Request`, `Response`             |
 | liest und schreibt eine Sache in der Datenbank      | `…Abfragen`, an Postgres `pg…Abfragen` | `…Repository`, `…Repo`          |
+| führt einen Vorgang mit seinen Regeln aus (`internal/service`) | `…Dienst`                 | `…Service`, `…Svc`                |
+| das eine Eingabefeld der Theke für Scan und Suche   | `Omnibox` (Glossar)                  | —                                 |
 
 „Buch" steht nur in festen Wörtern (Buchakte, Zugangsbuch); sonst ist es der Titel oder das
 Exemplar. Das technische Log des Servers heißt weiter `Log`.
 
 Wiederkehrende Bausteine tragen dasselbe Wort: Die Angaben eines neuen Datensatzes enden auf
-`Neu` (`AusleiheNeu`, `ExemplarNeu`), der Helfer, der eine Zeile der Datenbank liest, beginnt
+`Neu` (`AusleiheNeu`, `ExemplarNeu`), was ein Dienst zurückgibt, auf `Ergebnis`
+(`AusleihErgebnis`), der Helfer, der eine Zeile der Datenbank liest, beginnt
 mit `lese` (`leseExemplar`), der Schlüssel einer Sperre der Datenbank endet auf `Sperre`
 (`auflagenSperre`), und was ein Stück SQL liefert, beginnt mit `sql` oder `SQL`
 (`sqlKarenzUhr`, `SQLTitelHatExemplar`). Der Lauf einer Inventur hat einen Bereich

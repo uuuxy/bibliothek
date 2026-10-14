@@ -19,14 +19,14 @@ func AusleiheUeberDenDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerI
 	ctx := context.Background()
 
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, repository.NewLeserAbfragen(pool), bookRepo,
+	loanSvc := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 
 	exemplar, err := bookRepo.FindeExemplar(ctx, barcode)
 	if err != nil {
 		t.Fatalf("Exemplar %s laden: %v", barcode, err)
 	}
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, exemplar, &schuelerID, bearbeiterID, false); err != nil {
+	if _, err := loanSvc.BucheAmLeser(ctx, exemplar, &schuelerID, bearbeiterID, false); err != nil {
 		t.Fatalf("Ausleihe von %s: %v", barcode, err)
 	}
 

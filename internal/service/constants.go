@@ -6,6 +6,5 @@ package service
 
 // Mehrfach genutzte Domaenen-Literale (SonarQube go:S1192).
 const (
-	overrideBlockAction = "override-block" // Override-Kennung bei Ausleih-Blockade
-	dateFormatDE        = "02.01.2006"     // TT.MM.JJJJ
+	datumsformatDE = "02.01.2006" // TT.MM.JJJJ
 )

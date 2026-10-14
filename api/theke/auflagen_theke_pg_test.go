@@ -66,9 +66,9 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	omnibox := service.NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	loanSvc := service.NewAusleihDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := service.NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
+	omnibox := service.NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 
 	scan := func(barcode, leser string) ActionResponse {

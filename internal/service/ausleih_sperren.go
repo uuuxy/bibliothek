@@ -40,14 +40,14 @@ type sperrLage struct {
 	uebergangen []string
 	// einst sind die Einstellungen, die die Überfällig-Automatik gelesen hat; der
 	// Geräte-Pfad rechnet daraus die Frist. nil, wenn die Automatik nicht lief.
-	einst *SystemEinstellungen
+	einst *ausleihEinstellungen
 }
 
 // pruefeAusleihSperren prüft die Sperren für eine NEUE Ausleihe an leser. Eine Rückgabe
 // prüft sie nie: Wer gesperrt ist, muss zurückgeben können. q trägt die Abfragen — am Scan
 // der Pool, beim Nachbuchen die Transaktion des Eintrags. uebergehen ist override_block.
 func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *repository.Leser, lernmittel, uebergehen bool) (sperrLage, error) {
-	if err := SperreAmLeserHaeltAn(leser, lernmittel); err != nil {
+	if err := PruefeSperreAmLeser(leser, lernmittel); err != nil {
 		return sperrLage{}, err
 	}
 	if istKollegium(leser) || lernmittel {
@@ -56,16 +56,16 @@ func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *re
 	return pruefeHinweise(ctx, q, leser.ID, uebergehen)
 }
 
-// SperreAmLeserHaeltAn ist der Teil der Regel, den auch die Verlängerung fragt (Einzel-
+// PruefeSperreAmLeser ist der Teil der Regel, den auch die Verlängerung fragt (Einzel-
 // verlängerung und Frist von Hand, api/theke/ausleihe.go): Hält eine Sperre am Leser diese Ausleihe
 // an? Beim Schulbuch nur die von Hand, beim Kollegen keine; der anonymisierte Datensatz bekommt
 // nichts. Entschieden am 28.09.2026: Der Satz der Schule gilt auch für die Ehemaligen und auch
 // bei der Verlängerung. Die Hinweise (Forderung, überfällig) halten eine Verlängerung nicht an.
-func SperreAmLeserHaeltAn(leser *repository.Leser, lernmittel bool) error {
+func PruefeSperreAmLeser(leser *repository.Leser, lernmittel bool) error {
 	if istKollegium(leser) {
 		return nil
 	}
-	return pruefeSperreAmLeser(leser, lernmittel)
+	return pruefeSperrschalter(leser, lernmittel)
 }
 
 // istKollegium: jede Art außer Schüler; leer heißt Schüler (leserart.IstKollegium).
@@ -73,33 +73,33 @@ func istKollegium(leser *repository.Leser) bool {
 	return leserart.IstKollegium(leser.Art)
 }
 
-// pruefeSperreAmLeser prüft die zwei Schalter am Leser. Ihr Merkmal (SperreAmLeser) sagt der
+// pruefeSperrschalter prüft die zwei Schalter am Leser. Ihr Merkmal (SperreAmLeser) sagt der
 // Theke, dass sie nichts übergehen, sondern die Sperre aufheben lässt. Der Grund steht im
-// SperrGrundFehler; wer view_students nicht hat, bekommt ihn nicht (api.ohneSperrgrund).
-func pruefeSperreAmLeser(leser *repository.Leser, lernmittel bool) error {
+// SperrgrundFehler; wer view_students nicht hat, bekommt ihn nicht (api.ohneSperrgrund).
+func pruefeSperrschalter(leser *repository.Leser, lernmittel bool) error {
 	if leser.IstAnonymisiert {
 		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/leser/student_lock.go lehnt ab).
-		return fmt.Errorf("%w: der Datensatz ist anonymisiert", ErrBlocked)
+		return fmt.Errorf("%w: der Datensatz ist anonymisiert", ErrGesperrt)
 	}
 	if leser.IstVonHandGesperrt {
-		return &SperrGrundFehler{
-			Kern:  SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", ErrBlocked)),
-			Grund: sperrGrund(leser, "ohne Grund"),
+		return &SperrgrundFehler{
+			Kern:  SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", ErrGesperrt)),
+			Grund: sperrgrund(leser, "ohne Grund"),
 		}
 	}
 	if leser.IstGesperrt && !lernmittel {
 		// block_reason ist bei dieser Sperre garantiert gefüllt (chk_schueler_block_reason);
 		// der Ersatztext greift nur bei Altbeständen.
-		return &SperrGrundFehler{
-			Kern:  SperreAmLeser(ErrBlocked),
-			Grund: sperrGrund(leser, "Grund nicht erfasst"),
+		return &SperrgrundFehler{
+			Kern:  SperreAmLeser(ErrGesperrt),
+			Grund: sperrgrund(leser, "Grund nicht erfasst"),
 		}
 	}
 	return nil
 }
 
-// sperrGrund ist der Grund am Leser oder, wenn keiner da ist, ersatz.
-func sperrGrund(leser *repository.Leser, ersatz string) string {
+// sperrgrund ist der Grund am Leser oder, wenn keiner da ist, ersatz.
+func sperrgrund(leser *repository.Leser, ersatz string) string {
 	if leser.Sperrgrund != nil && *leser.Sperrgrund != "" {
 		return *leser.Sperrgrund
 	}
@@ -119,12 +119,12 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 	}
 	if offen > 0 {
 		if !uebergehen {
-			return sperrLage{}, UebergehbareSperre(fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrBlocked, offen))
+			return sperrLage{}, UebergehbareSperre(fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrGesperrt, offen))
 		}
 		lage.uebergangen = append(lage.uebergangen, fmt.Sprintf("Ausleihsperre manuell ignoriert (unbezahlte Schäden: %d)", offen))
 	}
 
-	einst, err := ladeSystemEinstellungen(ctx, q)
+	einst, err := ladeAusleihEinstellungen(ctx, q)
 	if err != nil {
 		return sperrLage{}, err
 	}
@@ -135,20 +135,22 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 	}
 	if ueberfaellig >= einst.UeberfaelligSperreAbMedien {
 		if !uebergehen {
-			return sperrLage{}, UebergehbareSperre(fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, ueberfaellig))
+			return sperrLage{}, UebergehbareSperre(fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrGesperrt, ueberfaellig))
 		}
 		lage.uebergangen = append(lage.uebergangen, fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", ueberfaellig))
 	}
 	return lage, nil
 }
 
+const aktionUebergehen = "override-block" // Override-Kennung bei Ausleih-Blockade
+
 // protokolliereUebergangen schreibt je übergangenen Hinweis einen Eintrag (OVERRIDE_BLOCK).
 // Aufgerufen wird sie, wenn die Ausleihe entstanden ist, nicht schon bei der Prüfung: Am
 // Gerät unterbricht die Zubehör-Liste zwischen beidem, und beim Buch können danach noch
 // Ausleihlimit und Vormerkung abweisen — dann ist nichts übergangen worden.
-func protokolliereUebergangen(ctx context.Context, audit repository.ProtokollAbfragen, staffID, leserID string, uebergangen []string) {
+func protokolliereUebergangen(ctx context.Context, protokoll repository.ProtokollAbfragen, bearbeiterID, leserID string, uebergangen []string) {
 	for _, grund := range uebergangen {
-		logAuditErr(overrideBlockAction, audit.ProtokolliereAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
+		meldeProtokollFehler(aktionUebergehen, protokoll.ProtokolliereAdminAktion(ctx, bearbeiterID, "OVERRIDE_BLOCK", "", map[string]any{
 			"schueler_id": leserID,
 			"reason":      grund,
 		}))

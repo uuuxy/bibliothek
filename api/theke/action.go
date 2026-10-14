@@ -47,7 +47,7 @@ func sperrMerkmal(err error) string {
 // 18.08.2026 am Live-Pfad mit Helfer-Konto). Dieselbe Grenze wie die
 // Geräteliste: view_students entscheidet, nicht die Route.
 func ohneSperrgrund(err error, darfGrundSehen bool) error {
-	var sg *service.SperrGrundFehler
+	var sg *service.SperrgrundFehler
 	if err == nil || darfGrundSehen || !errors.As(err, &sg) {
 		return err
 	}
@@ -56,13 +56,13 @@ func ohneSperrgrund(err error, darfGrundSehen bool) error {
 
 func mapServiceErrorToStatus(err error) int {
 	switch {
-	case errors.Is(err, service.ErrNotFound):
+	case errors.Is(err, service.ErrNichtGefunden):
 		return http.StatusNotFound
-	case errors.Is(err, service.ErrBlocked):
+	case errors.Is(err, service.ErrGesperrt):
 		return http.StatusForbidden
-	case errors.Is(err, service.ErrInvalidState):
+	case errors.Is(err, service.ErrUngueltigerZustand):
 		return http.StatusBadRequest
-	case errors.Is(err, service.ErrConflict):
+	case errors.Is(err, service.ErrKonflikt):
 		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
@@ -178,14 +178,14 @@ func (s *Tueren) serveCachedActionResponse(w http.ResponseWriter, antwort *repos
 }
 
 // ActionHandler dispatches requests from the Omnibox.
-func (s *Tueren) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFunc {
+func (s *Tueren) ActionHandler(omniboxSvc service.OmniboxDienst) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleAction(w, r, omniboxSvc)
 	}
 }
 
 // handleAction nimmt einen Scan oder eine Suche der Theke entgegen und reicht sie an die Omnibox.
-func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc service.OmniboxService) {
+func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc service.OmniboxDienst) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
@@ -220,12 +220,12 @@ func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 	// das Feld ohne das Recht setzt, wird behandelt, als hätte er es nicht gesetzt. Übergangen
 	// werden am Buch wie am Gerät nur die Hinweise (offene Forderung, Überfällig-Automatik),
 	// keine Sperre am Leser.
-	res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
-		Query:              req.Query,
-		ActiveLeserID:      req.ActiveLeserID,
-		ConfirmedChecklist: req.ConfirmedChecklist,
-		StaffID:            claims.UserID,
-		OverrideBlock:      req.OverrideBlock && s.BesitztRecht(r, "edit_students"),
+	res, err := omniboxSvc.VerarbeiteEingabe(ctx, service.OmniboxEingabe{
+		Text:                 req.Query,
+		AktiverLeserID:       req.ActiveLeserID,
+		ChecklisteBestaetigt: req.ConfirmedChecklist,
+		BearbeiterID:         claims.UserID,
+		SperreUebergehen:     req.OverrideBlock && s.BesitztRecht(r, "edit_students"),
 	})
 
 	if err != nil {
@@ -258,24 +258,24 @@ func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 	tuer.RespondJSON(w, http.StatusOK, resp)
 }
 
-func mapOmniboxResultToActionResponse(res *service.OmniboxResult) *ActionResponse {
+func mapOmniboxResultToActionResponse(res *service.OmniboxErgebnis) *ActionResponse {
 	if res == nil {
 		return nil
 	}
 	return &ActionResponse{
-		Type:                 res.Type,
-		Message:              res.Message,
-		Student:              zumKioskSchueler(res.Student),
-		Book:                 res.Book,
+		Type:                 res.Art,
+		Message:              res.Meldung,
+		Student:              zumKioskSchueler(res.Leser),
+		Book:                 res.Exemplar,
 		Geraet:               res.Geraet,
-		DueDate:              res.DueDate,
-		LoanID:               res.LoanID,
+		DueDate:              res.Frist,
+		LoanID:               res.AusleiheID,
 		Fremdrueckgabe:       res.Fremdrueckgabe,
 		Vorbesitzer:          zumKioskSchueler(res.Vorbesitzer),
-		SearchResults:        res.SearchResults,
-		HasVormerkung:        res.HasVormerkung,
+		SearchResults:        res.Treffer,
+		HasVormerkung:        res.HatVormerkung,
 		VormerkungTitel:      res.VormerkungTitel,
-		VormerkungUser:       res.VormerkungUser,
+		VormerkungUser:       res.VorgemerktFuer,
 		RegalfreigabeBarcode: res.RegalfreigabeBarcode,
 		AufsichtInformieren:  res.AufsichtInformieren,
 		Abholbereit:          zuAbholbereitInfos(res.Abholbereit),

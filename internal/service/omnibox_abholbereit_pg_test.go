@@ -4,7 +4,7 @@ package service
 // Schüler scannen nicht selbst — beim Scan des Ausweises durch die Mitarbeiterin
 // muss die Antwort die abholbereiten Vormerkungen des Schülers tragen, damit
 // das Buch aus dem Abholfach direkt mitgegeben wird, statt dort die Abholfrist
-// abzuwarten. Echtes Postgres über den ECHTEN Service (NewOmniboxService mit
+// abzuwarten. Echtes Postgres über den ECHTEN Service (NewOmniboxDienst mit
 // echten Repos): geprüft wird der Live-Pfad des Scans, nicht ein Stub.
 
 import (
@@ -71,16 +71,16 @@ func TestSchuelerScanTraegtAbholfachHinweis(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	loanSvc := NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	svc := NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	loanSvc := NewAusleihDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
+	svc := NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
-	res, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: "ABH-" + suffix})
+	res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: "ABH-" + suffix})
 	if err != nil {
-		t.Fatalf("ProcessQuery: %v", err)
+		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
-	if res.Type != "student" || res.Student == nil {
-		t.Fatalf("erwartet Schüler-Antwort, war Typ %q", res.Type)
+	if res.Art != "student" || res.Leser == nil {
+		t.Fatalf("erwartet Schüler-Antwort, war Typ %q", res.Art)
 	}
 	if len(res.Abholbereit) != 1 {
 		t.Fatalf("erwartet genau 1 Abholfach-Hinweis (die wartende Vormerkung zählt nicht), waren %d: %+v",

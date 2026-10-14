@@ -192,7 +192,7 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	// mehr — sie geht nur nach vorne. Nachgesehen: Kein Schreibpfad der
 	// Anwendung stellt den Zustand her, den das UPDATE herstellte. Alle drei Rückgabewege
 	// fassen nur offene Ausleihen an (repository/ausleihe.go BucheRueckgabeZum,
-	// repository/schaden_melden.go, internal/service/device_service.go über activeLoan), und
+	// repository/schaden_melden.go, internal/service/geraet.go über activeLoan), und
 	// die Littera-Übernahme fügt nur ein (internal/littera/schreiber_ausleihen.go).
 	// rueckgabe_am geht also von NULL auf einen Wert und nie von einem Wert auf einen
 	// anderen; für jeden erreichbaren Zustand ist der Stempel dasselbe wie das frühere

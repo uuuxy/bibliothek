@@ -60,14 +60,14 @@ func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			for _, uebergehen := range []bool{false, true} {
 				_, err := pruefeMitMock(t, leser, false, uebergehen, keineAbfrage)
-				if !errors.Is(err, ErrBlocked) {
-					t.Fatalf("uebergehen=%v: erwartet ErrBlocked, bekam %v", uebergehen, err)
+				if !errors.Is(err, ErrGesperrt) {
+					t.Fatalf("uebergehen=%v: erwartet ErrGesperrt, bekam %v", uebergehen, err)
 				}
 				if !IstSperreAmLeser(err) || IstUebergehbareSperre(err) {
 					t.Errorf("uebergehen=%v: erwartet Merkmal „leser“, bekam leser=%v uebergehbar=%v",
 						uebergehen, IstSperreAmLeser(err), IstUebergehbareSperre(err))
 				}
-				var sg *SperrGrundFehler
+				var sg *SperrgrundFehler
 				if !errors.As(err, &sg) || sg.Grund != *leser.Sperrgrund {
 					t.Errorf("der Grund fehlt in der Meldung: %v", err)
 				}
@@ -129,8 +129,8 @@ func TestAusleihSperren_AnonymisiertBekommtNichts(t *testing.T) {
 	})
 	for _, lernmittel := range []bool{false, true} {
 		_, err := pruefeMitMock(t, leser, lernmittel, true, keineAbfrage)
-		if !errors.Is(err, ErrBlocked) || IstSperreAmLeser(err) || IstUebergehbareSperre(err) {
-			t.Errorf("lernmittel=%v: erwartet ErrBlocked ohne Merkmal, bekam %v", lernmittel, err)
+		if !errors.Is(err, ErrGesperrt) || IstSperreAmLeser(err) || IstUebergehbareSperre(err) {
+			t.Errorf("lernmittel=%v: erwartet ErrGesperrt ohne Merkmal, bekam %v", lernmittel, err)
 		}
 	}
 }
@@ -147,13 +147,13 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 
 	t.Run("offene Forderung ohne override_block", func(t *testing.T) {
 		_, err := pruefeMitMock(t, schueler(nil), false, false, forderung)
-		if !errors.Is(err, ErrBlocked) || !IstUebergehbareSperre(err) {
+		if !errors.Is(err, ErrGesperrt) || !IstUebergehbareSperre(err) {
 			t.Errorf("erwartet übergehbare Sperre, bekam %v", err)
 		}
 	})
 	t.Run("überfällig ohne override_block", func(t *testing.T) {
 		_, err := pruefeMitMock(t, schueler(nil), false, false, ueberfaellig)
-		if !errors.Is(err, ErrBlocked) || !IstUebergehbareSperre(err) {
+		if !errors.Is(err, ErrGesperrt) || !IstUebergehbareSperre(err) {
 			t.Errorf("erwartet übergehbare Sperre, bekam %v", err)
 		}
 	})
@@ -201,7 +201,7 @@ func TestAusleihSperren_ProtokollJeHinweis(t *testing.T) {
 // die Theke meldet es nur.
 func TestAusleihSperren_GesperrtesGeraetOhneMerkmal(t *testing.T) {
 	err := pruefeGeraetAusleihbar(repository.Geraet{IstAusleihbar: false})
-	if !errors.Is(err, ErrBlocked) || IstUebergehbareSperre(err) || IstSperreAmLeser(err) {
-		t.Errorf("Geräte-Sperre: erwartet ErrBlocked ohne Merkmal, bekam %v", err)
+	if !errors.Is(err, ErrGesperrt) || IstUebergehbareSperre(err) || IstSperreAmLeser(err) {
+		t.Errorf("Geräte-Sperre: erwartet ErrGesperrt ohne Merkmal, bekam %v", err)
 	}
 }

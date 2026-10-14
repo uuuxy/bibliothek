@@ -11,33 +11,33 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestNewDeviceService(t *testing.T) {
+func TestNewGeraeteDienst(t *testing.T) {
 	var pool db.PgxPoolIface = nil
 	var studentRepo repository.LeserAbfragen = nil
 	var loanRepo repository.AusleihAbfragen = nil
 	var auditRepo repository.ProtokollAbfragen = nil
 
-	service := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
+	service := NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
 	if service == nil {
-		t.Fatal("erwartete DeviceService-Instanz, bekam nil")
+		t.Fatal("erwartete GeraeteDienst-Instanz, bekam nil")
 	}
 
-	ds, ok := service.(*defaultDeviceService)
+	ds, ok := service.(*geraeteDienst)
 	if !ok {
-		t.Fatalf("erwartete Typ *defaultDeviceService, bekam %T", service)
+		t.Fatalf("erwartete Typ *geraeteDienst, bekam %T", service)
 	}
 
 	if ds.pool != pool {
 		t.Errorf("erwartete pool=%v, bekam %v", pool, ds.pool)
 	}
-	if ds.studentRepo != studentRepo {
-		t.Errorf("erwartete studentRepo=%v, bekam %v", studentRepo, ds.studentRepo)
+	if ds.leserAbfragen != studentRepo {
+		t.Errorf("erwartete studentRepo=%v, bekam %v", studentRepo, ds.leserAbfragen)
 	}
-	if ds.loanRepo != loanRepo {
-		t.Errorf("erwartete loanRepo=%v, bekam %v", loanRepo, ds.loanRepo)
+	if ds.ausleihAbfragen != loanRepo {
+		t.Errorf("erwartete loanRepo=%v, bekam %v", loanRepo, ds.ausleihAbfragen)
 	}
-	if ds.auditRepo != auditRepo {
-		t.Errorf("erwartete auditRepo=%v, bekam %v", auditRepo, ds.auditRepo)
+	if ds.protokollAbfragen != auditRepo {
+		t.Errorf("erwartete auditRepo=%v, bekam %v", auditRepo, ds.protokollAbfragen)
 	}
 }
 
@@ -61,11 +61,11 @@ func (s stubStudentRepoSperre) Finde(context.Context, string) (*repository.Leser
 func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 	sid := "s1"
 	// Nur manuell gesperrt → blockiert VOR jeder Pool-Nutzung (Flag-Check zuerst).
-	svc := &defaultDeviceService{studentRepo: stubStudentRepoSperre{
+	svc := &geraeteDienst{leserAbfragen: stubStudentRepoSperre{
 		student: &repository.Leser{ID: sid, Art: "schueler", IstVonHandGesperrt: true}}}
 	for _, uebergehen := range []bool{false, true} {
 		_, _, err := svc.ladeAkteur(context.Background(), &sid, uebergehen)
-		if !errors.Is(err, ErrBlocked) || !IstSperreAmLeser(err) {
+		if !errors.Is(err, ErrGesperrt) || !IstSperreAmLeser(err) {
 			t.Fatalf("override_block=%v: manuell gesperrter Schüler muss auch fürs Gerät blockiert sein, err=%v", uebergehen, err)
 		}
 	}
@@ -77,7 +77,7 @@ func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 // am Gerät übergehen wie am Buch (docs/OFFEN.md 4.4).
 func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 	sid := "s1"
-	neu := func(t *testing.T, vorbereiten func(pgxmock.PgxPoolIface)) (*defaultDeviceService, pgxmock.PgxPoolIface) {
+	neu := func(t *testing.T, vorbereiten func(pgxmock.PgxPoolIface)) (*geraeteDienst, pgxmock.PgxPoolIface) {
 		t.Helper()
 		mock, err := pgxmock.NewPool()
 		if err != nil {
@@ -85,7 +85,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 		}
 		t.Cleanup(mock.Close)
 		vorbereiten(mock)
-		return &defaultDeviceService{pool: mock, studentRepo: stubStudentRepoSperre{
+		return &geraeteDienst{pool: mock, leserAbfragen: stubStudentRepoSperre{
 			student: &repository.Leser{ID: sid, Art: "schueler"}}}, mock
 	}
 	schaden := func(mock pgxmock.PgxPoolIface) {
@@ -96,7 +96,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 	t.Run("unbezahlter Schaden blockiert das Gerät", func(t *testing.T) {
 		svc, _ := neu(t, schaden)
 		_, _, err := svc.ladeAkteur(context.Background(), &sid, false)
-		if !errors.Is(err, ErrBlocked) || !IstUebergehbareSperre(err) {
+		if !errors.Is(err, ErrGesperrt) || !IstUebergehbareSperre(err) {
 			t.Fatalf("Schüler mit unbezahltem Schaden: erwartet übergehbare Sperre, err=%v", err)
 		}
 	})
@@ -148,7 +148,7 @@ func TestGeraeteAusleiheKollegeOhneSperre(t *testing.T) {
 	defer mock.Close()
 	mock.ExpectQuery(`FROM system_einstellungen`).
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("sommerferien", strPtr("")))
-	svc := &defaultDeviceService{pool: mock, studentRepo: stubStudentRepoSperre{
+	svc := &geraeteDienst{pool: mock, leserAbfragen: stubStudentRepoSperre{
 		student: &repository.Leser{ID: kid, Art: "lehrkraft", IstVonHandGesperrt: true, Sperrgrund: strPtr("alt")}}}
 
 	leser, lage, err := svc.ladeAkteur(context.Background(), &kid, false)

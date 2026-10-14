@@ -78,7 +78,7 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
   22.09.2026 entschieden: Für Lernmittel gibt es keinerlei automatische Sperre, auch keine
   übergehbare; für die Schülerbücherei bleibt sie. Am 28.09.2026 entschieden: auch nicht die
   der Ehemaligen und auch nicht bei der Verlängerung. Gebaut in
-  `internal/service/ausleih_sperren.go` (`pruefeAusleihSperren`, `SperreAmLeserHaeltAn`). „Nur Überweisung, keine Barzahlung" ist
+  `internal/service/ausleih_sperren.go` (`pruefeAusleihSperren`, `PruefeSperreAmLeser`). „Nur Überweisung, keine Barzahlung" ist
   dagegen belegt (Arbeitshilfe, Abschnitt 1).
 
 **Zwei Dinge, die die Schule wissen muss:**

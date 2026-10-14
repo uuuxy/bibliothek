@@ -21,7 +21,7 @@ import (
 	"bibliothek/repository"
 )
 
-func TestResolveBorrower_LehrkraftOhneAusweis(t *testing.T) {
+func TestLadeVorgang_LehrkraftOhneAusweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
@@ -41,19 +41,19 @@ func TestResolveBorrower_LehrkraftOhneAusweis(t *testing.T) {
 		}
 	})
 
-	svc := &defaultLoanService{pool: pool, studentRepo: repository.NewLeserAbfragen(pool)}
-	chk, err := svc.resolveBorrowerAndDueTime(ctx, &repository.Exemplar{}, &leserID)
+	svc := &ausleihDienst{pool: pool, leserAbfragen: repository.NewLeserAbfragen(pool)}
+	chk, err := svc.ladeVorgang(ctx, &repository.Exemplar{}, &leserID)
 	if err != nil {
 		t.Fatalf("eine aktive Lehrkraft ohne Ausweis muss ausleihen können, bekam: %v", err)
 	}
-	if chk.borrowerID != leserID || chk.leser == nil || chk.leser.BarcodeID != "" {
-		t.Fatalf("erwartet Leser %s ohne Ausweisnummer, bekam %q/%+v", leserID, chk.borrowerID, chk.leser)
+	if chk.leserID != leserID || chk.leser == nil || chk.leser.BarcodeID != "" {
+		t.Fatalf("erwartet Leser %s ohne Ausweisnummer, bekam %q/%+v", leserID, chk.leserID, chk.leser)
 	}
 	if chk.istSchueler() {
 		t.Errorf("eine Lehrkraft ist kein Schüler, Art gelesen: %q", chk.leser.Art)
 	}
 	// Ohne Klasse gibt es keine Schuljahresfrist: Nicht-Schüler bekommen ein Jahr.
-	if chk.dueTime.Before(time.Now().AddDate(0, 11, 0)) {
-		t.Errorf("Frist %s liegt zu früh — erwartet rund ein Jahr", chk.dueTime)
+	if chk.frist.Before(time.Now().AddDate(0, 11, 0)) {
+		t.Errorf("Frist %s liegt zu früh — erwartet rund ein Jahr", chk.frist)
 	}
 }

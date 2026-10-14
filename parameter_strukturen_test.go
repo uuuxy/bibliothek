@@ -5,7 +5,7 @@ package main
 // (1359408b). Der Gewinn ist echt — benachbarte Argumente desselben Typs lassen sich nicht
 // mehr stumm vertauschen. Der Preis steht in derselben Commit-Botschaft: Aus einem
 // Pflichtargument wird ein Feld, und ein VERGESSENES Feld ist kein Compilerfehler, sondern
-// der Nullwert. Bei DueDateOptions wären das 0 Tage Frist, bei den Zusammenführ-Parametern
+// der Nullwert. Bei fristAngaben wären das 0 Tage Frist, bei den Zusammenführ-Parametern
 // eine Rückweg-Spur ohne Bezug.
 //
 // Diese Ratsche verlangt für genau diese Strukturen, dass JEDES Literal JEDES Feld setzt.
@@ -37,7 +37,7 @@ import (
 
 // parameterStrukturen: Typname → warum ein fehlendes Feld hier schadet.
 var parameterStrukturen = map[string]string{
-	"DueDateOptions":         "fehlendes Feld = 0 Tage Frist und damit eine falsche Mahnung",
+	"fristAngaben":           "fehlendes Feld = 0 Tage Frist und damit eine falsche Mahnung",
 	"BarcodePruefOptionen":   "fehlendes Feld = leere Ausschluss-ID oder leere Meldung",
 	"BulkReceiveParams":      "fehlendes Feld = Wareneingang ohne Bearbeiter oder ohne IP im Protokoll",
 	"Kuerzung":               "fehlendes Feld = Übernahme-Protokoll ohne Quelle, Kennung oder Wert",

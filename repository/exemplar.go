@@ -73,7 +73,7 @@ type Exemplar struct {
 	Signatur string `json:"signatur,omitempty"`
 	// Mehrjahresband und JahrgangBis kommen vom Titel: Bleibt das Buch über
 	// mehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,
-	// in dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).
+	// in dem das Kind JahrgangBis beendet (internal/service/frist.go).
 	Mehrjahresband bool `json:"mehrjahresband"`
 	JahrgangBis    int  `json:"jahrgang_bis"`
 	// IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel). Es trägt

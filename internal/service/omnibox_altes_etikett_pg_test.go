@@ -87,9 +87,9 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	loanSvc := NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	svc := NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	loanSvc := NewAusleihDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
+	svc := NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
 	// wieGedruckt hängt das Prüfzeichen an — genau das, was das Lesegerät liefert.
 	wieGedruckt := func(t *testing.T, nummer string) string {
@@ -108,17 +108,17 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 	t.Run("ein alter Schülerausweis findet sein Kind", func(t *testing.T) {
 		gescannt := wieGedruckt(t, ausweis)
 
-		res, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: gescannt, StaffID: mitarbeiterID})
+		res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: gescannt, BearbeiterID: mitarbeiterID})
 		if err != nil {
 			t.Fatalf("Scan von %q (auf der Karte steht %q): %v", gescannt, ausweis, err)
 		}
-		if res.Student == nil {
+		if res.Leser == nil {
 			t.Fatalf("Scan von %q lieferte keinen Leser (Type=%q) — auf der Karte steht %q, "+
 				"und die Karte liegt seit Jahren in einer Schultasche",
-				gescannt, res.Type, ausweis)
+				gescannt, res.Art, ausweis)
 		}
-		if res.Student.BarcodeID != ausweis {
-			t.Errorf("Leser hat Ausweis %q, want %q", res.Student.BarcodeID, ausweis)
+		if res.Leser.BarcodeID != ausweis {
+			t.Errorf("Leser hat Ausweis %q, want %q", res.Leser.BarcodeID, ausweis)
 		}
 	})
 
@@ -128,14 +128,14 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 		// dasselbe Ärgernis wie vorher.
 		gescannt := wieGedruckt(t, buchNummer)
 
-		res, err := svc.ProcessQuery(ctx, OmniboxQuery{
-			Query: gescannt, ActiveLeserID: &schuelerID, StaffID: mitarbeiterID,
+		res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{
+			Text: gescannt, AktiverLeserID: &schuelerID, BearbeiterID: mitarbeiterID,
 		})
 		if err != nil {
 			t.Fatalf("Scan von %q (auf dem Etikett steht %q): %v", gescannt, buchNummer, err)
 		}
-		if res.Type != "ausleihe" {
-			t.Fatalf("Type = %q, want „ausleihe\" — Scan %q, Etikett %q", res.Type, gescannt, buchNummer)
+		if res.Art != "ausleihe" {
+			t.Fatalf("Type = %q, want „ausleihe\" — Scan %q, Etikett %q", res.Art, gescannt, buchNummer)
 		}
 
 		var offen int
@@ -154,22 +154,22 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 		// Nummer trägt ein gültiges Prüfzeichen — und auch gekürzt gibt es sie nicht.
 		gescannt := wieGedruckt(t, "B-999999999")
 
-		res, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: gescannt, StaffID: mitarbeiterID})
-		if err == nil && res.Book != nil {
+		res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: gescannt, BearbeiterID: mitarbeiterID})
+		if err == nil && res.Exemplar != nil {
 			t.Errorf("Scan von %q lieferte ein Buch (%v) — es gibt weder die Nummer noch "+
-				"ihre gekürzte Form", gescannt, res.Book.BarcodeID)
+				"ihre gekürzte Form", gescannt, res.Exemplar.BarcodeID)
 		}
 	})
 
 	t.Run("ein Scan OHNE Prüfzeichen bleibt unverändert", func(t *testing.T) {
 		// Der Normalfall seit dem 17.09.2026: Code 128, kein Prüfzeichen. Er muss auf dem
 		// direkten Weg gefunden werden — ohne dass die Nachsicht ihn anfasst.
-		res, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: ausweis, StaffID: mitarbeiterID})
+		res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: ausweis, BearbeiterID: mitarbeiterID})
 		if err != nil {
 			t.Fatalf("Scan von %q: %v", ausweis, err)
 		}
-		if res.Student == nil || res.Student.BarcodeID != ausweis {
-			t.Errorf("Scan von %q fand den Leser nicht (Type=%q)", ausweis, res.Type)
+		if res.Leser == nil || res.Leser.BarcodeID != ausweis {
+			t.Errorf("Scan von %q fand den Leser nicht (Type=%q)", ausweis, res.Art)
 		}
 	})
 }

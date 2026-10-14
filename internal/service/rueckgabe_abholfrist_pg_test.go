@@ -14,7 +14,7 @@ import (
 
 // Kommt ein vorgemerktes Buch zurück, liegt es drei Tage bereit; fällt das Ende auf ein
 // Wochenende, einen Feiertag oder in die Ferien, bis zum nächsten Schultag (entschieden am
-// 28.09.2026). Am echten Postgres über processReturnVormerkungTx mit fester Uhr; alles in einer
+// 28.09.2026). Am echten Postgres über bedieneVormerkung mit fester Uhr; alles in einer
 // Transaktion, die am Ende zurückrollt. Das Nachrücken prüft repository
 // (vormerkung_abholfrist_pg_test.go).
 func TestRueckgabe_AbholfristMitFesterUhr(t *testing.T) {
@@ -58,13 +58,13 @@ func TestRueckgabe_AbholfristMitFesterUhr(t *testing.T) {
 				t.Fatalf("Vormerkung anlegen: %v", err)
 			}
 
-			svc := &defaultLoanService{pool: pool, jetzt: func() time.Time { return fall.jetzt }}
-			resp := &LoanResult{}
+			svc := &ausleihDienst{pool: pool, jetzt: func() time.Time { return fall.jetzt }}
+			resp := &AusleihErgebnis{}
 			buch := &repository.Exemplar{ID: exemplarID, TitelID: titelID, Titel: "Abholfrist-Testband"}
-			if err := svc.processReturnVormerkungTx(ctx, tx, buch, resp, nil); err != nil {
+			if err := svc.bedieneVormerkung(ctx, tx, buch, resp, nil); err != nil {
 				t.Fatalf("Rückgabe: %v", err)
 			}
-			if !resp.HasVormerkung {
+			if !resp.HatVormerkung {
 				t.Fatal("die Vormerkung wurde nicht bedient")
 			}
 			var bis time.Time

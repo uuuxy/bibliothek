@@ -12,7 +12,7 @@ import (
 //
 // Entschieden: „kollegen haben keine frist bzw werden einfach nie gesperrt!"
 // Eine Ausleihe an jemanden, der kein Schüler ist, ist eine Dauerleihe
-// (`ausleihen.ist_handapparat`, gesetzt in erzeugeAusleihe und im Geräte-Pfad).
+// (`ausleihen.ist_handapparat`, gesetzt in legeAusleiheAn und im Geräte-Pfad).
 //
 // Die Regel gab es schon: Die Sperr-Automatik zählt seit jeher nur Ausleihen mit
 // `ist_handapparat = false`. Sie war nur nicht zu Ende geführt — die Leserliste, die

@@ -80,9 +80,9 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	damageRepo := repository.NewSchadensAbfragen(pool)
 	bescheidRepo := repository.NewBescheidAbfragen(pool)
-	loanSvc := NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	svc := NewOmniboxService(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	loanSvc := NewAusleihDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
+	svc := NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
 	// abgerechnet: ausleihen → „nicht zurückgegeben" melden → Bescheid schreiben.
 	abgerechnet := func(t *testing.T, barcode string, frist time.Time) string {
@@ -99,7 +99,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		}
 		// overrideBlock: Der zweite Fall liehe sonst an einem Kind, das der erste Fall
 		// gerade gesperrt hat — der Aufbau soll nicht vom Ausgang des vorigen abhängen.
-		if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &schuelerID, mitarbeiterID, true); err != nil {
+		if _, err := loanSvc.BucheAmLeser(ctx, ex, &schuelerID, mitarbeiterID, true); err != nil {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 		var loanID string
@@ -140,7 +140,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	barcodeOffen := "B-RUECK-A-" + suffix
 	abgerechnet(t, barcodeOffen, time.Now().AddDate(0, 0, 28))
 
-	res, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeOffen, StaffID: mitarbeiterID})
+	res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: barcodeOffen, BearbeiterID: mitarbeiterID})
 	if err != nil {
 		t.Fatalf("Scan des zurückgebrachten Buches: %v", err)
 	}
@@ -149,8 +149,8 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	} else if !strings.Contains(grund, "Rückgabe") {
 		t.Errorf("Stornierungsgrund nennt die Rückgabe nicht: %q", grund)
 	}
-	if !strings.Contains(res.Message, "storniert") {
-		t.Errorf("die Theke erfährt nichts von der Stornierung: %q", res.Message)
+	if !strings.Contains(res.Meldung, "storniert") {
+		t.Errorf("die Theke erfährt nichts von der Stornierung: %q", res.Meldung)
 	}
 	if res.AufsichtInformieren != "" {
 		t.Errorf("ohne Übergabe ist niemand zu informieren, gemeldet wurde: %q", res.AufsichtInformieren)
@@ -163,7 +163,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		t.Fatalf("Übergabe an die Schulaufsicht: %v", err)
 	}
 
-	res, err = svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeUeberg, StaffID: mitarbeiterID})
+	res, err = svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: barcodeUeberg, BearbeiterID: mitarbeiterID})
 	if err != nil {
 		t.Fatalf("Scan nach der Übergabe: %v", err)
 	}
@@ -183,8 +183,8 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	}
 	// Und nicht als Erfolgsmeldung: Eine offene Aufgabe gehört nicht in denselben Kanal
 	// wie „erledigt" — die Theke zeigt Message grün und diesen Hinweis als Warnung.
-	if strings.Contains(res.Message, "storniert") {
-		t.Errorf("die Meldung behauptet eine Stornierung, die es nicht gab: %q", res.Message)
+	if strings.Contains(res.Meldung, "storniert") {
+		t.Errorf("die Meldung behauptet eine Stornierung, die es nicht gab: %q", res.Meldung)
 	}
 
 	// ── Gegenprobe: Ein beschädigtes Buch ist kein verschwundenes ─────────────────
@@ -206,7 +206,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Exemplar lesen: %v", err)
 	}
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, exDefekt, &schuelerID, mitarbeiterID, true); err != nil {
+	if _, err := loanSvc.BucheAmLeser(ctx, exDefekt, &schuelerID, mitarbeiterID, true); err != nil {
 		t.Fatalf("Ausleihe: %v", err)
 	}
 	var defektLoanID string
@@ -218,7 +218,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		"Wasserschaden (Test)", repository.SchadensArtBeschaedigt, 7.50); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}
-	if _, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeDefekt, StaffID: mitarbeiterID}); err != nil {
+	if _, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: barcodeDefekt, BearbeiterID: mitarbeiterID}); err != nil {
 		t.Fatalf("Scan des defekten Buches: %v", err)
 	}
 	if offen, _ := forderungOffen(t, barcodeDefekt); !offen {

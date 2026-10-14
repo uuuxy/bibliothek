@@ -221,7 +221,7 @@ func BucheRueckgabeZum(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID 
 		return errors.New("loan not active or already returned")
 	}
 	// Der Bewegungsstempel am Exemplar. Diese Funktion bucht Bücher, Geräte gehen über
-	// internal/service/device_service.go; die Ausleihe trägt hier also immer ein Exemplar, und
+	// internal/service/geraet.go; die Ausleihe trägt hier also immer ein Exemplar, und
 	// keine getroffene Zeile ist ein Widerspruch.
 	stempel, err := tx.Exec(ctx, `
 		UPDATE buecher_exemplare e SET letzte_bewegung_am = `+sqlStempelVor(`$2`)+`

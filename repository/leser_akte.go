@@ -24,7 +24,7 @@ type LaufendeAusleihe struct {
 	AusgeliehenAm  time.Time `json:"ausgeliehen_am"`
 	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
 	// IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist
-	// (`ausleihen.ist_handapparat`, gesetzt in erzeugeAusleihe und im Geräte-Pfad).
+	// (`ausleihen.ist_handapparat`, gesetzt in legeAusleiheAn und im Geräte-Pfad).
 	//
 	// Sie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die es
 	// nicht gibt: Kollegen haben keine Frist und werden nie gesperrt. Die Sperr-Automatik zählt

@@ -13,10 +13,10 @@ import (
 //
 // Ohne Netz ordnet der Theken-Rechner jeden Scan selbst ein (frontend/src/lib/
 // scanEinordnen.js): `A-`/`S-`/`L-` sind ein Ausweis, `B-`/`LMF-` ein Buch, `G-` ein
-// Gerät. Mit Netz entscheidet der Switch in omnibox_service.go dieselbe Frage. Bis zum
+// Gerät. Mit Netz entscheidet der Switch in omnibox.go dieselbe Frage. Bis zum
 // 17.09.2026 hielt die beiden Seiten nur ein Kommentar zusammen („dieselbe Menge wie im
 // Server-Switch"), und schon beim Aufschreiben dieses Tests stimmte das nicht mehr:
-// `LMF-` fehlte im Switch und kam nur über den Umweg resolveOhnePraefix zum selben
+// `LMF-` fehlte im Switch und kam nur über den Umweg verarbeiteOhneVorsilbe zum selben
 // Ergebnis.
 //
 // Was eine Abweichung kostet: Eine neue Vorsilbe an EINER Stelle fällt zwar laut aus
@@ -119,17 +119,17 @@ func vorsilbenAusScanEinordnen(t *testing.T) map[string]string {
 // alle Vorsilben und den Handler, an den er weitergibt.
 func vorsilbenAusOmniboxSwitch(t *testing.T) map[string]string {
 	t.Helper()
-	roh, err := os.ReadFile("omnibox_service.go")
+	roh, err := os.ReadFile("omnibox.go")
 	if err != nil {
-		t.Fatalf("omnibox_service.go nicht lesbar: %v", err)
+		t.Fatalf("omnibox.go nicht lesbar: %v", err)
 	}
 	quelle := string(roh)
-	// Gelesen wird `verarbeite`, nicht ProcessQuery: Dort steht der Switch seit dem
-	// 17.09.2026: ProcessQuery ist seither die Hülle, die einem Aufdruck mit
+	// Gelesen wird `verarbeite`, nicht VerarbeiteEingabe: Dort steht der Switch seit dem
+	// 17.09.2026: VerarbeiteEingabe ist seither die Hülle, die einem Aufdruck mit
 	// Code-39-Prüfzeichen eine zweite Chance gibt, und enthält selbst keine Vorsilbe mehr.
 	// Aufgefallen ist der Umzug genau hier — der Sanity-Floor am Ende dieser Funktion
 	// meldete „nichts gemessen (js=6, go=0)", statt still grün zu bleiben.
-	const switchFunktion = "func (s *defaultOmniboxService) verarbeite"
+	const switchFunktion = "func (d *omniboxDienst) verarbeite"
 	start := strings.Index(quelle, switchFunktion)
 	if start < 0 {
 		t.Fatalf("%s nicht gefunden — der Detektor misst nichts. Wurde die Funktion "+
@@ -142,17 +142,17 @@ func vorsilbenAusOmniboxSwitch(t *testing.T) map[string]string {
 	rumpf := quelle[start : start+ende]
 
 	handlerZuArt := map[string]string{
-		"handleAusweisAction":     "ausweis",
-		"handleBookAction":        "buch",
-		"HandleDeviceAction":      "geraet",
-		"handleLeserIDAction":     "", // keine Scanner-Vorsilbe, sondern die Trefferauswahl
-		"resolveOhnePraefix":      "",
-		"mapDeviceResult":         "geraet",
-		"strings.TrimPrefix(q.Qu": "",
+		"verarbeiteAusweis":               "ausweis",
+		"verarbeiteExemplar":              "buch",
+		"VerarbeiteScan":                  "geraet",
+		"verarbeiteLeserID":               "", // keine Scanner-Vorsilbe, sondern die Trefferauswahl
+		"verarbeiteOhneVorsilbe":          "",
+		"uebernimmGeraeteErgebnis":        "geraet",
+		"strings.TrimPrefix(eingabe.Text": "",
 	}
 
 	arten := map[string]string{}
-	praefix := regexp.MustCompile(`strings\.HasPrefix\(q\.Query, "([^"]+)"\)`)
+	praefix := regexp.MustCompile(`strings\.HasPrefix\(eingabe\.Text, "([^"]+)"\)`)
 	for _, zweig := range strings.Split(rumpf, "\tcase ")[1:] {
 		art := ""
 		for handler, a := range handlerZuArt {

@@ -17,15 +17,15 @@ import "errors"
 // Bis zum 13.09.2026 entschied das Frontend am Wortlaut der Meldung („Sperre",
 // „Sperr-Automatik", „überfällig"). Die Schadens-Sperre traf keins der Wörter, bei der
 // System-Sperre hing es am Sperrgrund, den eine Helferin gar nicht sieht
-// (loan_checkout_validation_test.go, api/theke/sperr_merkmal_test.go).
+// (ausleih_vorgang_test.go, api/theke/sperr_merkmal_test.go).
 //
-// Bei SperrGrundFehler gehört das Merkmal in Kern: api.ohneSperrgrund baut den Fehler für
+// Bei SperrgrundFehler gehört das Merkmal in Kern: api.ohneSperrgrund baut den Fehler für
 // Aufrufer ohne view_students aus Kern neu, ein Merkmal außen herum ginge dabei verloren.
 type uebergehbareSperre struct{ err error }
 
 func (u *uebergehbareSperre) Error() string { return u.err.Error() }
 
-// Unwrap hält errors.Is(err, ErrBlocked) am Leben — der HTTP-Status bleibt 403.
+// Unwrap hält errors.Is(err, ErrGesperrt) am Leben — der HTTP-Status bleibt 403.
 func (u *uebergehbareSperre) Unwrap() error { return u.err }
 
 // UebergehbareSperre markiert err als Sperre, die override_block aufheben darf.
@@ -43,7 +43,7 @@ type sperreAmLeser struct{ err error }
 
 func (s *sperreAmLeser) Error() string { return s.err.Error() }
 
-// Unwrap hält errors.Is(err, ErrBlocked) am Leben — der HTTP-Status bleibt 403.
+// Unwrap hält errors.Is(err, ErrGesperrt) am Leben — der HTTP-Status bleibt 403.
 func (s *sperreAmLeser) Unwrap() error { return s.err }
 
 // SperreAmLeser markiert err als Sperre am Leser.
@@ -54,3 +54,19 @@ func IstSperreAmLeser(err error) bool {
 	var s *sperreAmLeser
 	return errors.As(err, &s)
 }
+
+// SperrgrundFehler trennt den Sperr-Freitext (schueler.block_reason) vom
+// generischen Teil der Meldung. Der Freitext ist Verwaltungsinformation —
+// er kann Zahlungsrückstände oder Familieninterna nennen (PII-Matrix Stufe 2)
+// und darf Aufrufer ohne view_students nicht erreichen. Die HTTP-Schicht
+// entscheidet anhand dieses Typs (errors.As), ob sie den Grund mitschickt;
+// Error() liefert weiterhin die volle Meldung für berechtigte Aufrufer & Logs.
+type SperrgrundFehler struct {
+	Kern  error  // ErrGesperrt-Kette mit generischem Text ("…: Manuelle Sperre")
+	Grund string // Freitext aus schueler.block_reason
+}
+
+func (e *SperrgrundFehler) Error() string { return e.Kern.Error() + ": " + e.Grund }
+
+// Unwrap hält errors.Is(err, ErrGesperrt) am Leben — der HTTP-Status bleibt 403.
+func (e *SperrgrundFehler) Unwrap() error { return e.Kern }

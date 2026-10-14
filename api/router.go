@@ -158,10 +158,10 @@ func (s *Server) Routes() http.Handler {
 	mahnRepo := repository.NewMahnwesenAbfragen(s.DB.Pool)
 	userRepo := repository.NewKontoAbfragen(s.DB.Pool)
 
-	loanSvc := service.NewLoanService(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := service.NewDeviceService(s.DB.Pool, studentRepo, loanRepo, auditRepo)
-	omniboxSvc := service.NewOmniboxService(s.DB.Pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
-	nachbuchSvc := service.NewNachbuchService(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	loanSvc := service.NewAusleihDienst(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := service.NewGeraeteDienst(s.DB.Pool, studentRepo, loanRepo, auditRepo)
+	omniboxSvc := service.NewOmniboxDienst(s.DB.Pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	nachbuchSvc := service.NewNachbuchDienst(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	orderSvc := service.NewOrderService(s.DB, bookRepo)
 
 	s.registerInventurSubmoduleRoutes(mux)

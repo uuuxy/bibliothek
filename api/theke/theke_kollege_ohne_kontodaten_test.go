@@ -27,8 +27,8 @@ func TestActionResponse_KollegeOhneKontodaten(t *testing.T) {
 		Strasse:      "Schulstraße", Hausnummer: "7", Plz: "61250", Ort: "Usingen",
 		ElternEmail: "frieda.fachlehrerin@philipp-reis-schule.de",
 	}
-	resp := mapOmniboxResultToActionResponse(&service.OmniboxResult{
-		Type: "student", Student: voll, Vorbesitzer: voll,
+	resp := mapOmniboxResultToActionResponse(&service.OmniboxErgebnis{
+		Art: "student", Leser: voll, Vorbesitzer: voll,
 	})
 	raw, err := json.Marshal(resp)
 	if err != nil {

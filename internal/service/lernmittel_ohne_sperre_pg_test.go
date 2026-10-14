@@ -15,7 +15,7 @@ import (
 // lässt keine automatische Sperre zu — auch keine, die jemand übergehen kann. Ein Kind mit
 // unbezahlter Forderung bekommt sein Schulbuch ohne Override; dasselbe Kind wird beim Buch
 // der Schülerbücherei weiter abgewiesen. Beide Fälle laufen über den Live-Pfad der Theke
-// (HandleUnifiedCheckout), nicht über die Prüffunktion allein: Nur so ist belegt, dass das
+// (BucheAmLeser), nicht über die Prüffunktion allein: Nur so ist belegt, dass das
 // Exemplar an der Weiche ankommt. Rot gesehen am Rückbau der Weiche (22.09.2026).
 func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -43,7 +43,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	testdaten.Exemplar(t, pool, buecherei, "B-LMF-SPERRE-2", true, "")
 
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, repository.NewLeserAbfragen(pool), bookRepo,
+	loanSvc := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 	uebergangen := func() int {
 		t.Helper()
@@ -61,7 +61,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Lernmittel laden: %v", err)
 	}
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, schulbuch, &kind, bearbeiter, false); err != nil {
+	if _, err := loanSvc.BucheAmLeser(ctx, schulbuch, &kind, bearbeiter, false); err != nil {
 		t.Fatalf("Lernmittel trotz offener Forderung abgewiesen: %v", err)
 	}
 	var offen int
@@ -81,7 +81,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Roman laden: %v", err)
 	}
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, roman, &kind, bearbeiter, false); !errors.Is(err, service.ErrBlocked) {
-		t.Errorf("Schülerbücherei bei offener Forderung: erwartet ErrBlocked, bekam %v", err)
+	if _, err := loanSvc.BucheAmLeser(ctx, roman, &kind, bearbeiter, false); !errors.Is(err, service.ErrGesperrt) {
+		t.Errorf("Schülerbücherei bei offener Forderung: erwartet ErrGesperrt, bekam %v", err)
 	}
 }

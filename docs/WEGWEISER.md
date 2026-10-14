@@ -59,7 +59,7 @@ Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bi
 | Ich will …                                    | Dort                                                                                                                                |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | den Text oder das Bild eines Blatts ändern    | `pdf/`, je Blatt eine Datei (`pdf/mahnbrief.go`, `pdf/etikett_buch.go`)                                                             |
-| eine Regel der Ausleihe ändern                | `internal/service/loan_rules.go`, `internal/service/ausleih_sperren.go`                                                             |
+| eine Regel der Ausleihe ändern                | `internal/service/frist.go`, `internal/service/ausleih_sperren.go`                                                             |
 | eine Abfrage ändern                           | `repository/`, die Datei heißt wie die Sache (`repository/auflagen.go`)                                                             |
 | eine Tabelle oder Spalte ergänzen             | ein neuer Schritt in `migrations/` und derselbe Stand in `schema.sql`; `db/migrations_schema_paritaet_pg_test.go` hält beide gleich |
 | eine neue Adresse anlegen                     | die Tür im Ordner ihres Themas, Adresse und Recht in der passenden Liste `api/routes_*.go`                                          |

@@ -21,7 +21,7 @@ type vormerkTheke struct {
 	suffix      string
 	mitarbeiter string
 	buecher     repository.KatalogAbfragen
-	svc         LoanService
+	svc         AusleihDienst
 }
 
 func neueVormerkTheke(t *testing.T) *vormerkTheke {
@@ -45,7 +45,7 @@ func neueVormerkTheke(t *testing.T) *vormerkTheke {
 			}
 		}
 	})
-	v.svc = NewLoanService(pool, repository.NewLeserAbfragen(pool), v.buecher, repository.NewAusleihAbfragen(pool),
+	v.svc = NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), v.buecher, repository.NewAusleihAbfragen(pool),
 		repository.NewProtokollAbfragen(pool))
 	return v
 }
@@ -95,14 +95,14 @@ func (v *vormerkTheke) legeBereit(t *testing.T, titelID, leserID, nummer string)
 }
 
 // leihe scannt das Exemplar für den Leser.
-func (v *vormerkTheke) leihe(t *testing.T, nummer, leserID string) (*LoanResult, error) {
+func (v *vormerkTheke) leihe(t *testing.T, nummer, leserID string) (*AusleihErgebnis, error) {
 	t.Helper()
 	ctx := context.Background()
 	exemplar, err := v.buecher.FindeExemplar(ctx, nummer)
 	if err != nil || exemplar == nil {
 		t.Fatalf("Exemplar %s laden: %v", nummer, err)
 	}
-	return v.svc.HandleUnifiedCheckout(ctx, exemplar, &leserID, v.mitarbeiter, false)
+	return v.svc.BucheAmLeser(ctx, exemplar, &leserID, v.mitarbeiter, false)
 }
 
 // vormerkungen zählt die Vormerkungen des Titels.
@@ -129,7 +129,7 @@ func TestAusleihe_ReserviertesExemplarNurFuerDenVorgemerkten(t *testing.T) {
 		"ein Kollege":         v.leser(t, "Kollegin", "lehrkraft"),
 	} {
 		_, err := v.leihe(t, nummern["A"], leserID)
-		if !errors.Is(err, ErrConflict) || !strings.Contains(fmt.Sprint(err), "für Vormerktheke Vorgemerkt reserviert") {
+		if !errors.Is(err, ErrKonflikt) || !strings.Contains(fmt.Sprint(err), "für Vormerktheke Vorgemerkt reserviert") {
 			t.Errorf("%s: Fehler %v, erwartet den Konflikt mit dem Namen des Vorgemerkten", name, err)
 		}
 	}
@@ -138,7 +138,7 @@ func TestAusleihe_ReserviertesExemplarNurFuerDenVorgemerkten(t *testing.T) {
 	}
 
 	res, err := v.leihe(t, nummern["A"], vorgemerkt)
-	if err != nil || res.Type != "ausleihe" {
+	if err != nil || res.Art != "ausleihe" {
 		t.Fatalf("der Vorgemerkte: %+v, Fehler %v", res, err)
 	}
 	if res.RegalfreigabeBarcode != "" {
@@ -159,7 +159,7 @@ func TestAusleihe_AnderesExemplarNenntDasBereitgelegte(t *testing.T) {
 	v.legeBereit(t, titelID, vorgemerkt, nummern["Fach"])
 
 	res, err := v.leihe(t, nummern["Regal"], vorgemerkt)
-	if err != nil || res.Type != "ausleihe" {
+	if err != nil || res.Art != "ausleihe" {
 		t.Fatalf("Ausleihe: %+v, Fehler %v", res, err)
 	}
 	if res.RegalfreigabeBarcode != nummern["Fach"] {

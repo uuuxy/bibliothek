@@ -8,7 +8,7 @@ import (
 )
 
 // ScanTreffer ist die Antwort auf „was ist das?" für einen gescannten oder getippten
-// Wert — OHNE Wirkung. Die Theke (ProcessQuery) bucht; die globale Suchleiste springt
+// Wert — OHNE Wirkung. Die Theke (VerarbeiteEingabe) bucht; die globale Suchleiste springt
 // nur hin. Beide erkennen dasselbe: Exemplar-Barcode (auch als Littera-EAN-13), dann
 // Schülerausweis. Typ "" = kein exakter Treffer, die Volltextsuche entscheidet.
 type ScanTreffer struct {
@@ -20,35 +20,35 @@ type ScanTreffer struct {
 
 // ErkenneScan löst einen Wert exakt auf: erst Exemplar-Barcode, dann Littera-Etikett
 // (EAN-13 → Mediennummer), dann Ausweis (Schüler oder Kollegium). Dieselbe Reihenfolge wie
-// resolveOhnePraefix in der Theke, nur ohne Buchung.
-func ErkenneScan(ctx context.Context, bookRepo repository.KatalogAbfragen, studentRepo repository.LeserAbfragen, q string) (*ScanTreffer, error) {
-	for _, kandidat := range exemplarKandidaten(q) {
-		copy, err := bookRepo.FindeExemplar(ctx, kandidat)
+// verarbeiteOhneVorsilbe in der Theke, nur ohne Buchung.
+func ErkenneScan(ctx context.Context, katalogAbfragen repository.KatalogAbfragen, leserAbfragen repository.LeserAbfragen, text string) (*ScanTreffer, error) {
+	for _, kandidat := range exemplarKandidaten(text) {
+		exemplar, err := katalogAbfragen.FindeExemplar(ctx, kandidat)
 		if err != nil {
 			return nil, fmt.Errorf("exemplar auflösen: %w", err)
 		}
-		if copy != nil {
-			return &ScanTreffer{Typ: "exemplar", ID: copy.ID, TitelID: copy.TitelID, Barcode: copy.BarcodeID}, nil
+		if exemplar != nil {
+			return &ScanTreffer{Typ: "exemplar", ID: exemplar.ID, TitelID: exemplar.TitelID, Barcode: exemplar.BarcodeID}, nil
 		}
 	}
 	// Ein LESER, nicht nur ein Schüler: Die Akte ist eine Maske für jeden, und die Theke
 	// löst denselben Ausweis über dieselbe Funktion auf. Der Typ heißt weiter "schueler" —
 	// er benennt das Sprungziel (die Akte), nicht die Art der Person.
-	student, err := studentRepo.FindeZuBarcode(ctx, q)
+	leser, err := leserAbfragen.FindeZuBarcode(ctx, text)
 	if err != nil {
 		return nil, fmt.Errorf("ausweis auflösen: %w", err)
 	}
-	if student != nil {
-		return &ScanTreffer{Typ: "schueler", ID: student.ID, Barcode: student.BarcodeID}, nil
+	if leser != nil {
+		return &ScanTreffer{Typ: "schueler", ID: leser.ID, Barcode: leser.BarcodeID}, nil
 	}
 	return nil, nil
 }
 
 // exemplarKandidaten: der Wert selbst und — falls er ein Littera-Etikett ist — die
 // rückgerechnete Mediennummer.
-func exemplarKandidaten(q string) []string {
-	kandidaten := []string{q}
-	if nummer, istEtikett := dekodiereLitteraEtikett(q); istEtikett {
+func exemplarKandidaten(text string) []string {
+	kandidaten := []string{text}
+	if nummer, istEtikett := dekodiereLitteraEtikett(text); istEtikett {
 		kandidaten = append(kandidaten, nummer)
 	}
 	return kandidaten

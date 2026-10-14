@@ -13,21 +13,21 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// nachbuchenRueckgabe: Absicht „Rückgabe". Lag das Buch bei jemandem, endet die Ausleihe
+// bucheRueckgabeNach: Absicht „Rückgabe". Lag das Buch bei jemandem, endet die Ausleihe
 // zum Scan-Zeitpunkt — auch wenn es nicht die Person des Eintrags war (Fremdrückgabe).
 // War es nicht verliehen, gibt es nichts zu buchen: nur_reaktiviert, wenn es abgeschrieben
 // war (dann ist die Forderung beendet), sonst nicht_gebucht.
-func (s *defaultLoanService) nachbuchenRueckgabe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
-	if l.activeLoan == nil {
-		return s.rueckgabeOhneAusleihe(ctx, tx, l)
+func (d *ausleihDienst) bucheRueckgabeNach(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
+	if l.offeneAusleihe == nil {
+		return d.verarbeiteRueckgabeOhneAusleihe(ctx, tx, l)
 	}
 
-	resp := &LoanResult{}
-	fremd := l.leser != nil && !gehoert(l)
-	vorbesitzer, err := s.nimmZurueck(ctx, tx, l, fremd, resp)
+	erg := &AusleihErgebnis{}
+	fremd := l.leser != nil && !istEigeneAusleihe(l)
+	vorbesitzer, err := d.beendeAusleiheZumScan(ctx, tx, l, fremd, erg)
 	if errors.Is(err, errScanVeraltet) {
-		rollbackStill(ctx, tx)
-		return s.meldeAbweisung(ctx, l, repository.NachbuchVeraltet, "Rückgabe liegt vor der Ausleihe")
+		verwerfeStill(ctx, tx)
+		return d.meldeAbweisung(ctx, l, repository.NachbuchVeraltet, "Rückgabe liegt vor der Ausleihe")
 	}
 	if err != nil {
 		return nil, err
@@ -35,24 +35,24 @@ func (s *defaultLoanService) nachbuchenRueckgabe(ctx context.Context, tx pgx.Tx,
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
-	resp.Type = "rueckgabe"
-	resp.Book = l.copy
-	resp.LoanID = &l.activeLoan.ID
-	resp.Fremdrueckgabe = fremd
-	resp.Vorbesitzer = vorbesitzer
+	erg.Art = "rueckgabe"
+	erg.Exemplar = l.exemplar
+	erg.AusleiheID = &l.offeneAusleihe.ID
+	erg.Fremdrueckgabe = fremd
+	erg.Vorbesitzer = vorbesitzer
 	if !fremd {
-		resp.Student = l.leser
+		erg.Leser = l.leser
 	}
-	return &NachbuchErgebnis{Ergebnis: repository.NachbuchZurueckgegeben, Result: resp}, nil
+	return &NachbuchErgebnis{Ergebnis: repository.NachbuchZurueckgegeben, Gebucht: erg}, nil
 }
 
-// rueckgabeOhneAusleihe: Das Buch war nicht verliehen, es gibt nichts zurückzunehmen. War es
+// verarbeiteRueckgabeOhneAusleihe: Das Buch war nicht verliehen, es gibt nichts zurückzunehmen. War es
 // abgeschrieben, ist es jetzt wieder im Umlauf (nur_reaktiviert), und die Meldung nennt, was mit
 // der Forderung geschah; sonst nicht_gebucht.
-func (s *defaultLoanService) rueckgabeOhneAusleihe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
+func (d *ausleihDienst) verarbeiteRueckgabeOhneAusleihe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
 	if !l.reaktiviert {
-		rollbackStill(ctx, tx)
-		return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, "Buch war nicht ausgeliehen")
+		verwerfeStill(ctx, tx)
+		return d.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, "Buch war nicht ausgeliehen")
 	}
 	hinweis := l.befund.AufsichtHinweis()
 	grund := "Buch war abgeschrieben und ist wieder im Umlauf"
@@ -62,7 +62,7 @@ func (s *defaultLoanService) rueckgabeOhneAusleihe(ctx context.Context, tx pgx.T
 	if hinweis != "" {
 		grund = hinweis
 	}
-	if err := repository.SchreibeNachbuchMeldung(ctx, tx, s.meldung(l, repository.NachbuchNurReaktiviert, grund)); err != nil {
+	if err := repository.SchreibeNachbuchMeldung(ctx, tx, d.baueMeldung(l, repository.NachbuchNurReaktiviert, grund)); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -71,27 +71,27 @@ func (s *defaultLoanService) rueckgabeOhneAusleihe(ctx context.Context, tx pgx.T
 	return &NachbuchErgebnis{Ergebnis: repository.NachbuchNurReaktiviert, Grund: grund, AufsichtHinweis: hinweis}, nil
 }
 
-// nachbuchenAusleihe: Absicht „Ausleihe". Beim selben Kind wird nichts umgekehrt
+// bucheAusleiheNach: Absicht „Ausleihe". Beim selben Kind wird nichts umgekehrt
 // (bereits_ausgeliehen). Lag das Buch bei jemand anderem, wird dort zurückgenommen — vor
 // dem Savepoint, damit die Rücknahme bleibt, wenn die neue Ausleihe an Sperre, Limit oder
 // Vormerkung scheitert.
-func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
-	if l.activeLoan != nil && gehoert(l) {
-		rollbackStill(ctx, tx)
-		resp := &LoanResult{Type: "ausleihe", Book: l.copy, Student: l.leser, LoanID: &l.activeLoan.ID}
-		frist := l.activeLoan.RueckgabeFrist
-		resp.DueDate = &frist
-		return &NachbuchErgebnis{Ergebnis: repository.NachbuchBereitsAusgeliehen, Result: resp}, nil
+func (d *ausleihDienst) bucheAusleiheNach(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
+	if l.offeneAusleihe != nil && istEigeneAusleihe(l) {
+		verwerfeStill(ctx, tx)
+		erg := &AusleihErgebnis{Art: "ausleihe", Exemplar: l.exemplar, Leser: l.leser, AusleiheID: &l.offeneAusleihe.ID}
+		frist := l.offeneAusleihe.RueckgabeFrist
+		erg.Frist = &frist
+		return &NachbuchErgebnis{Ergebnis: repository.NachbuchBereitsAusgeliehen, Gebucht: erg}, nil
 	}
 
-	resp := &LoanResult{}
+	erg := &AusleihErgebnis{}
 	var vorbesitzer *repository.Leser
-	if l.activeLoan != nil {
+	if l.offeneAusleihe != nil {
 		var err error
-		vorbesitzer, err = s.nimmZurueck(ctx, tx, l, true, resp)
+		vorbesitzer, err = d.beendeAusleiheZumScan(ctx, tx, l, true, erg)
 		if errors.Is(err, errScanVeraltet) {
-			rollbackStill(ctx, tx)
-			return s.meldeAbweisung(ctx, l, repository.NachbuchVeraltet, "Scan liegt vor der Ausleihe des Vorbesitzers")
+			verwerfeStill(ctx, tx)
+			return d.meldeAbweisung(ctx, l, repository.NachbuchVeraltet, "Scan liegt vor der Ausleihe des Vorbesitzers")
 		}
 		if err != nil {
 			return nil, err
@@ -99,7 +99,7 @@ func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, 
 	}
 
 	// Savepoint: Was ab hier scheitert, nimmt die Rücknahme nicht mit.
-	loan, abweisung, err := s.leiheImSavepointAus(ctx, tx, l, resp)
+	ausleihe, abweisung, err := d.leiheImSavepointAus(ctx, tx, l, erg)
 	if abweisung != nil || err != nil {
 		return abweisung, err
 	}
@@ -107,7 +107,7 @@ func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, 
 	ergebnis := repository.NachbuchAusgeliehen
 	if vorbesitzer != nil {
 		ergebnis = repository.NachbuchUmgebucht
-		m := s.meldung(l, ergebnis, "lag bei jemand anderem — dort zurückgenommen, neu ausgeliehen")
+		m := d.baueMeldung(l, ergebnis, "lag bei jemand anderem — dort zurückgenommen, neu ausgeliehen")
 		m.VorbesitzerSchuelerID = &vorbesitzer.ID
 		if err := repository.SchreibeNachbuchMeldung(ctx, tx, m); err != nil {
 			return nil, err
@@ -116,77 +116,77 @@ func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
-	resp.Type = "ausleihe"
-	resp.Book = l.copy
-	resp.Student = l.leser
-	resp.Vorbesitzer = vorbesitzer
-	resp.Fremdrueckgabe = vorbesitzer != nil
-	if loan != nil {
-		resp.DueDate = &loan.RueckgabeFrist
-		resp.LoanID = &loan.ID
+	erg.Art = "ausleihe"
+	erg.Exemplar = l.exemplar
+	erg.Leser = l.leser
+	erg.Vorbesitzer = vorbesitzer
+	erg.Fremdrueckgabe = vorbesitzer != nil
+	if ausleihe != nil {
+		erg.Frist = &ausleihe.RueckgabeFrist
+		erg.AusleiheID = &ausleihe.ID
 	}
-	return &NachbuchErgebnis{Ergebnis: ergebnis, Result: resp, AufsichtHinweis: l.befund.AufsichtHinweis()}, nil
+	return &NachbuchErgebnis{Ergebnis: ergebnis, Gebucht: erg, AufsichtHinweis: l.befund.AufsichtHinweis()}, nil
 }
 
 // leiheImSavepointAus prüft die Schranken und legt die Ausleihe an, beides im Savepoint.
 // Scheitert es an Sperre, Limit, Vormerkung oder an einer gleichzeitigen Buchung, ist der
 // Eintrag abgewiesen: Die Abweisung kommt als zweiter Wert zurück, und die Transaktion ist dann
 // abgeschlossen (weiseImSavepointAb).
-func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx, l *nachbuchLage, resp *LoanResult) (*repository.Ausleihe, *NachbuchErgebnis, error) {
+func (d *ausleihDienst) leiheImSavepointAus(ctx context.Context, tx pgx.Tx, l *nachbuchLage, erg *AusleihErgebnis) (*repository.Ausleihe, *NachbuchErgebnis, error) {
 	sp, err := tx.Begin(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	chkCtx, err := s.nachbuchKontext(ctx, tx, l)
+	vorgang, err := d.baueNachbuchVorgang(ctx, tx, l)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := s.nachbuchSchranken(ctx, sp, l, chkCtx); err != nil {
-		if !errors.Is(err, ErrBlocked) && !errors.Is(err, ErrConflict) {
+	if err := d.pruefeNachbuchSchranken(ctx, sp, l, vorgang); err != nil {
+		if !errors.Is(err, ErrGesperrt) && !errors.Is(err, ErrKonflikt) {
 			return nil, nil, err
 		}
-		abweisung, abwErr := s.weiseImSavepointAb(ctx, tx, sp, l, err.Error(), err)
+		abweisung, abwErr := d.weiseImSavepointAb(ctx, tx, sp, l, err.Error(), err)
 		return nil, abweisung, abwErr
 	}
 
-	loan, err := repository.LegeAusleiheAn(ctx, sp, repository.AusleiheNeu{
-		ExemplarID:     l.copy.ID,
+	ausleihe, err := repository.LegeAusleiheAn(ctx, sp, repository.AusleiheNeu{
+		ExemplarID:     l.exemplar.ID,
 		LeserID:        l.leser.ID,
-		BearbeiterID:   l.e.StaffID,
-		RueckgabeFrist: chkCtx.dueTime,
-		IstDauerleihe:  !chkCtx.istSchueler(),
+		BearbeiterID:   l.eintrag.BearbeiterID,
+		RueckgabeFrist: vorgang.frist,
+		IstDauerleihe:  !vorgang.istSchueler(),
 		Zeitpunkt:      &l.gescannt,
 	})
 	if errors.Is(err, repository.ErrAusleiheKonflikt) {
-		abweisung, abwErr := s.weiseImSavepointAb(ctx, tx, sp, l, "Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht", nil)
+		abweisung, abwErr := d.weiseImSavepointAb(ctx, tx, sp, l, "Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht", nil)
 		return nil, abweisung, abwErr
 	}
 	if err != nil {
 		return nil, nil, err
 	}
-	if chkCtx.istSchueler() {
-		entferneErfuellteVormerkung(ctx, sp, l.copy, l.leser.ID, resp)
+	if vorgang.istSchueler() {
+		entferneErfuellteVormerkung(ctx, sp, l.exemplar, l.leser.ID, erg)
 	}
-	if err := s.auditRepo.ProtokolliereAusleihe(ctx, sp, l.copy.ID, l.leser.ID, "", l.e.StaffID); err != nil {
+	if err := d.protokollAbfragen.ProtokolliereAusleihe(ctx, sp, l.exemplar.ID, l.leser.ID, "", l.eintrag.BearbeiterID); err != nil {
 		return nil, nil, err
 	}
 	if err := sp.Commit(ctx); err != nil {
 		return nil, nil, err
 	}
-	return loan, nil, nil
+	return ausleihe, nil, nil
 }
 
 // weiseImSavepointAb nimmt den Savepoint zurück und schließt die Transaktion ab — die
 // Rücknahme beim Vorbesitzer bleibt —, dann schreibt es die Abweisung als Meldung. schranke
 // ist der Fehler der Schranke, wenn es an einer lag; er reist mit dem Ergebnis zur Tür.
-func (s *defaultLoanService) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l *nachbuchLage, grund string, schranke error) (*NachbuchErgebnis, error) {
+func (d *ausleihDienst) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l *nachbuchLage, grund string, schranke error) (*NachbuchErgebnis, error) {
 	if err := sp.Rollback(ctx); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
-	abweisung, err := s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, grund)
+	abweisung, err := d.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, grund)
 	if err != nil {
 		return nil, err
 	}
@@ -197,79 +197,70 @@ func (s *defaultLoanService) weiseImSavepointAb(ctx context.Context, tx, sp pgx.
 // errScanVeraltet: die Rückgabe läge vor der Ausleihe (check_return_date).
 var errScanVeraltet = errors.New("scan veraltet")
 
-// nimmZurueck beendet die aktive Ausleihe zum Scan-Zeitpunkt, bedient die Vormerkung und
+// beendeAusleiheZumScan beendet die aktive Ausleihe zum Scan-Zeitpunkt, bedient die Vormerkung und
 // schreibt das Protokoll; liefert den Vorbesitzer für Antwort und Meldung.
-func (s *defaultLoanService) nimmZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage, fremd bool, resp *LoanResult) (*repository.Leser, error) {
-	aktiv := l.activeLoan
-	if err := repository.BucheRueckgabeZum(ctx, tx, aktiv.ID, l.e.StaffID, fremd, &l.gescannt); err != nil {
+func (d *ausleihDienst) beendeAusleiheZumScan(ctx context.Context, tx pgx.Tx, l *nachbuchLage, fremd bool, erg *AusleihErgebnis) (*repository.Leser, error) {
+	aktiv := l.offeneAusleihe
+	if err := repository.BucheRueckgabeZum(ctx, tx, aktiv.ID, l.eintrag.BearbeiterID, fremd, &l.gescannt); err != nil {
 		if istPruefungVerletzt(err) {
 			return nil, errScanVeraltet
 		}
 		return nil, err
 	}
-	if err := s.processReturnVormerkungTx(ctx, tx, l.copy, resp, aktiv.SchuelerID); err != nil {
+	if err := d.bedieneVormerkung(ctx, tx, l.exemplar, erg, aktiv.SchuelerID); err != nil {
 		return nil, err
 	}
 	if aktiv.SchuelerID == nil {
 		return nil, nil
 	}
-	if err := s.auditRepo.ProtokolliereRueckgabe(ctx, tx, l.copy.ID, *aktiv.SchuelerID, "", l.e.StaffID); err != nil {
+	if err := d.protokollAbfragen.ProtokolliereRueckgabe(ctx, tx, l.exemplar.ID, *aktiv.SchuelerID, "", l.eintrag.BearbeiterID); err != nil {
 		return nil, err
 	}
 	if !fremd {
 		return nil, nil
 	}
-	return s.studentRepo.Finde(ctx, *aktiv.SchuelerID)
+	return d.leserAbfragen.Finde(ctx, *aktiv.SchuelerID)
 }
 
-// nachbuchKontext baut den Ausleih-Kontext mit der Frist ab dem Scan-Zeitpunkt.
-func (s *defaultLoanService) nachbuchKontext(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*checkoutContext, error) {
-	chkCtx := &checkoutContext{borrowerID: l.leser.ID, leser: l.leser}
-	if !chkCtx.istSchueler() {
-		chkCtx.dueTime = schulzeit.TagesEnde(l.gescannt.AddDate(1, 0, 0))
-		return chkCtx, nil
+// baueNachbuchVorgang baut den Ausleih-Kontext mit der Frist ab dem Scan-Zeitpunkt.
+func (d *ausleihDienst) baueNachbuchVorgang(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*ausleihVorgang, error) {
+	vorgang := &ausleihVorgang{leserID: l.leser.ID, leser: l.leser}
+	if !vorgang.istSchueler() {
+		vorgang.frist = schulzeit.TagesEnde(l.gescannt.AddDate(1, 0, 0))
+		return vorgang, nil
 	}
-	frist, err := s.resolveCheckoutDueDateAm(ctx, l.copy, l.leser.Klasse, l.gescannt)
+	frist, err := d.bestimmeFristAm(ctx, l.exemplar, l.leser.Klasse, l.gescannt)
 	if err != nil {
 		return nil, err
 	}
-	chkCtx.dueTime = frist
-	return chkCtx, nil
+	vorgang.frist = frist
+	return vorgang, nil
 }
 
-// nachbuchSchranken sind dieselben Schranken wie am Online-Scan — Sperren, Ausleihlimit,
+// pruefeNachbuchSchranken sind dieselben Schranken wie am Online-Scan — Sperren, Ausleihlimit,
 // fremde Vormerkung —, die Zählungen laufen über die Transaktion des Eintrags. Übergehen
 // gibt es beim Nachbuchen nicht: Niemand steht daneben.
-func (s *defaultLoanService) nachbuchSchranken(ctx context.Context, q pgx.Tx, l *nachbuchLage, chkCtx *checkoutContext) error {
-	if _, err := pruefeAusleihSperren(ctx, q, l.leser, l.copy.IstLernmittel, false); err != nil {
+func (d *ausleihDienst) pruefeNachbuchSchranken(ctx context.Context, q pgx.Tx, l *nachbuchLage, vorgang *ausleihVorgang) error {
+	if _, err := pruefeAusleihSperren(ctx, q, l.leser, l.exemplar.IstLernmittel, false); err != nil {
 		return err
 	}
-	if chkCtx.istSchueler() {
-		anzahl, err := s.zaehleAktiveSchuelerAusleihen(ctx, q, chkCtx)
+	if vorgang.istSchueler() {
+		anzahl, err := d.zaehleAktiveSchuelerAusleihen(ctx, q, vorgang)
 		if err != nil {
 			return err
 		}
-		if err := s.pruefeSchuelerAusleihlimit(ctx, chkCtx, l.copy, anzahl, true); err != nil {
+		if err := d.pruefeSchuelerAusleihlimit(ctx, vorgang, l.exemplar, anzahl, true); err != nil {
 			return err
 		}
 	}
-	return s.pruefeVormerkungKonflikt(ctx, q, l.copy.ID, chkCtx, true)
+	return d.pruefeVormerkungKonflikt(ctx, q, l.exemplar.ID, vorgang, true)
 }
 
-// rollbackStill verwirft die Transaktion, wenn fachlich nichts zu buchen ist. Ein Fehler
+// verwerfeStill verwirft die Transaktion, wenn fachlich nichts zu buchen ist. Ein Fehler
 // beim Rollback wird protokolliert, nicht gemeldet: Gebucht wurde ohnehin nichts, und der
 // Aufrufer soll seine fachliche Antwort behalten.
-func rollbackStill(ctx context.Context, tx pgx.Tx) {
+func verwerfeStill(ctx context.Context, tx pgx.Tx) {
 	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
 		log.Printf("nachbuchen: Rollback fehlgeschlagen: %v", err)
 	}
-}
-
-// LoanResultAlsOmnibox überträgt ein Ausleih-Ergebnis in die Omnibox-Form — dieselbe
-// Abbildung, die der Online-Scan nutzt (mapLoanResult), damit die Nachbuch-Antwort für
-// die Theke dieselbe Gestalt hat.
-func LoanResultAlsOmnibox(lr *LoanResult) *OmniboxResult {
-	resp := &OmniboxResult{}
-	(&defaultOmniboxService{}).mapLoanResult(lr, resp)
-	return resp
 }

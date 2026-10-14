@@ -47,7 +47,7 @@ var standardtextQuellen = map[string]string{
 // Ein Eintrag hier ist ein geparkter Befund, kein Normalzustand. Der bisher
 // einzige Fall (BESTELLUNG_EINGETROFFEN) ist mit Migration 092 ausgetragen:
 // Die Abholbereit-Benachrichtigung ist der Abholfach-Hinweis am Theken-Terminal
-// (OmniboxService), keine Mail — Betreiber-Entscheidung 01.09.2026.
+// (OmniboxDienst), keine Mail — Betreiber-Entscheidung 01.09.2026.
 var ohneRenderer = map[string]string{}
 
 // sammlePlatzhalter zieht alle {{.X}}-Vorkommen aus einem Text als Menge.

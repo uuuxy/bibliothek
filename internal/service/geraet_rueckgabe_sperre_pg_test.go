@@ -1,6 +1,6 @@
 package service
 
-// Rückgabe trotz Sperre. Bis zum 13.09.2026 prüfte HandleDeviceAction die Sperren des
+// Rückgabe trotz Sperre. Bis zum 13.09.2026 prüfte VerarbeiteScan die Sperren des
 // Geräts (ist_ausleihbar = false, etwa nach der Defekt-Meldung) und des aktiven Schülers,
 // BEVOR feststand, ob ausgeliehen oder zurückgegeben wird. Ein verliehenes Gerät, das
 // danach als defekt gemeldet wurde, ließ sich an der Theke nicht mehr zurücknehmen: 403
@@ -56,7 +56,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 	studentRepo := repository.NewLeserAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	svc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
+	svc := NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
 
 	legeGeraetAn := func(t *testing.T, name string) string {
 		t.Helper()
@@ -105,34 +105,34 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 
 	t.Run("defektes Gerät kommt von der Lehrkraft zurück", func(t *testing.T) {
 		barcode := legeGeraetAn(t, "defekt")
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &lehrkraftID, true, false, mitarbeiterID); err != nil {
+		if _, err := svc.VerarbeiteScan(ctx, barcode, &lehrkraftID, true, false, mitarbeiterID); err != nil {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 		sperreGeraet(t, barcode)
 
-		res, err := svc.HandleDeviceAction(ctx, barcode, nil, true, false, mitarbeiterID)
+		res, err := svc.VerarbeiteScan(ctx, barcode, nil, true, false, mitarbeiterID)
 		if err != nil {
 			t.Fatalf("Rückgabe eines verliehenen, danach defekt gemeldeten Geräts abgewiesen: %v", err)
 		}
-		if res.Type != "rueckgabe" || offeneAusleihen(t, barcode) != 0 {
-			t.Fatalf("erwartet Rückgabe ohne offene Ausleihe, war Typ %q, offen %d", res.Type, offeneAusleihen(t, barcode))
+		if res.Art != "rueckgabe" || offeneAusleihen(t, barcode) != 0 {
+			t.Fatalf("erwartet Rückgabe ohne offene Ausleihe, war Typ %q, offen %d", res.Art, offeneAusleihen(t, barcode))
 		}
 	})
 
 	t.Run("gesperrter Schüler gibt sein Gerät zurück", func(t *testing.T) {
 		barcode := legeGeraetAn(t, "schueler")
 		schuelerID := legeSchuelerAn(t, "Zurueck")
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, false, mitarbeiterID); err != nil {
+		if _, err := svc.VerarbeiteScan(ctx, barcode, &schuelerID, true, false, mitarbeiterID); err != nil {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 		sperreSchueler(t, schuelerID)
 
-		res, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, false, mitarbeiterID)
+		res, err := svc.VerarbeiteScan(ctx, barcode, &schuelerID, true, false, mitarbeiterID)
 		if err != nil {
 			t.Fatalf("Rückgabe durch den gesperrten Schüler abgewiesen: %v", err)
 		}
-		if res.Type != "rueckgabe" || offeneAusleihen(t, barcode) != 0 {
-			t.Fatalf("erwartet Rückgabe ohne offene Ausleihe, war Typ %q, offen %d", res.Type, offeneAusleihen(t, barcode))
+		if res.Art != "rueckgabe" || offeneAusleihen(t, barcode) != 0 {
+			t.Fatalf("erwartet Rückgabe ohne offene Ausleihe, war Typ %q, offen %d", res.Art, offeneAusleihen(t, barcode))
 		}
 	})
 
@@ -140,8 +140,8 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 		barcode := legeGeraetAn(t, "frei")
 		sperreGeraet(t, barcode)
 
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &lehrkraftID, true, false, mitarbeiterID); !errors.Is(err, ErrBlocked) {
-			t.Fatalf("erwartet ErrBlocked, war %v", err)
+		if _, err := svc.VerarbeiteScan(ctx, barcode, &lehrkraftID, true, false, mitarbeiterID); !errors.Is(err, ErrGesperrt) {
+			t.Fatalf("erwartet ErrGesperrt, war %v", err)
 		}
 		if n := offeneAusleihen(t, barcode); n != 0 {
 			t.Fatalf("gesperrtes Gerät wurde trotzdem verliehen (%d offen)", n)
@@ -153,8 +153,8 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 		schuelerID := legeSchuelerAn(t, "Gesperrt")
 		sperreSchueler(t, schuelerID)
 
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, false, mitarbeiterID); !errors.Is(err, ErrBlocked) {
-			t.Fatalf("erwartet ErrBlocked, war %v", err)
+		if _, err := svc.VerarbeiteScan(ctx, barcode, &schuelerID, true, false, mitarbeiterID); !errors.Is(err, ErrGesperrt) {
+			t.Fatalf("erwartet ErrGesperrt, war %v", err)
 		}
 		if n := offeneAusleihen(t, barcode); n != 0 {
 			t.Fatalf("gesperrter Schüler bekam trotzdem ein Gerät (%d offen)", n)

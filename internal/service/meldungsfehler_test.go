@@ -19,7 +19,7 @@ import (
 // understandable by anyone, anywhere"). Die Art bleibt für errors.Is erhalten, auch eingewickelt,
 // denn an ihr hängt der HTTP-Status.
 func TestMeldungZeigtNurDieMeldung(t *testing.T) {
-	for _, art := range []error{ErrInvalidState, ErrConflict, ErrNotFound} {
+	for _, art := range []error{ErrUngueltigerZustand, ErrKonflikt, ErrNichtGefunden} {
 		err := meldung(art, "Buchexemplar %s ist ausgesondert", "4711")
 		if soll := "Buchexemplar 4711 ist ausgesondert"; err.Error() != soll {
 			t.Errorf("%v: Meldung %q, erwartet %q", art, err.Error(), soll)
@@ -27,15 +27,15 @@ func TestMeldungZeigtNurDieMeldung(t *testing.T) {
 		if !errors.Is(err, art) || !errors.Is(fmt.Errorf("beim Ausleihen: %w", err), art) {
 			t.Errorf("die Art %q muss erkennbar bleiben, auch eingewickelt", art)
 		}
-		if errors.Is(err, ErrBlocked) {
+		if errors.Is(err, ErrGesperrt) {
 			t.Errorf("%v darf nicht als Sperre gelten", art)
 		}
 	}
 }
 
-// ohneBezeichnung sind die Fehlerarten, deren Text eine interne Bezeichnung ist. ErrBlocked fehlt
-// mit Absicht: „die ausleihe ist gesperrt" ist der Kopf jeder Sperrmeldung (loan.go).
-var ohneBezeichnung = map[string]bool{"ErrInvalidState": true, "ErrConflict": true, "ErrNotFound": true}
+// ohneBezeichnung sind die Fehlerarten, deren Text eine interne Bezeichnung ist. ErrGesperrt fehlt
+// mit Absicht: „die ausleihe ist gesperrt" ist der Kopf jeder Sperrmeldung (fehler.go).
+var ohneBezeichnung = map[string]bool{"ErrUngueltigerZustand": true, "ErrKonflikt": true, "ErrNichtGefunden": true}
 
 // TestFehlerartenNurUeberMeldung: Kein fmt.Errorf im Bestand wickelt eine dieser Arten ein —
 // sonst stünde ihre Bezeichnung wieder vor der Meldung an der Theke. Am 28.09.2026 waren es 19

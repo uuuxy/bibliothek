@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLogAuditErr(t *testing.T) {
+func TestMeldeProtokollFehler(t *testing.T) {
 	tests := []struct {
 		name     string
 		action   string
@@ -43,7 +43,7 @@ func TestLogAuditErr(t *testing.T) {
 				log.SetFlags(originalFlags)
 			}()
 
-			logAuditErr(tt.action, tt.err)
+			meldeProtokollFehler(tt.action, tt.err)
 
 			assert.Equal(t, tt.expected, buf.String())
 		})

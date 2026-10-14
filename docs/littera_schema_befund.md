@@ -365,7 +365,7 @@ lange Nummer; an der Theke bestätigt am 01.10.2026: Sie buchen. In der Sicherun
 „LMF" in keiner Zeichenkette der Spalte `Barcode` und in keiner `Exemplarnummer`, nur in `Sig1`
 (gezählt am 07.10.2026); woher diese Etiketten stammen, ist nicht belegt. Die Theke schlägt
 eine solche Nummer nach, wie sie gescannt wird, und `LMF-` ist eine Vorsilbe für Bücher wie
-`B-`: am Server (`internal/service/omnibox_service.go`) und ohne Netz (`BUCH_VORSILBEN` in
+`B-`: am Server (`internal/service/omnibox.go`) und ohne Netz (`BUCH_VORSILBEN` in
 `frontend/src/lib/scanEinordnen.js`); `internal/service/vorsilben_zwilling_test.go` hält beide
 gleich. Sie gehört nicht zu den Resten des früheren Titelzusatzes „LMF-" und bleibt.
 

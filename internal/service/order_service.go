@@ -63,10 +63,10 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 			supplierName = *e.LieferantName
 		default:
 			supplierName = resolveSupplierName(e.ZustandNotiz)
-			groupKey = zeitpunkt.In(schulzeit.Zone()).Format(dateFormatDE) + "|" + supplierName
+			groupKey = zeitpunkt.In(schulzeit.Zone()).Format(datumsformatDE) + "|" + supplierName
 			groupID = groupKey
 		}
-		dateStr := zeitpunkt.In(schulzeit.Zone()).Format(dateFormatDE)
+		dateStr := zeitpunkt.In(schulzeit.Zone()).Format(datumsformatDE)
 
 		group, exists := groupsMap[groupKey]
 		if !exists {
@@ -306,7 +306,7 @@ func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repos
 		items = append(items, ReceivedItem(e))
 	}
 
-	logAuditErr("wareneingang-bulk", auditRepo.ProtokolliereAdminAktion(ctx, params.AdminID, "BULK_RECEIVE_ITEMS", params.IPAddr, map[string]any{
+	meldeProtokollFehler("wareneingang-bulk", auditRepo.ProtokolliereAdminAktion(ctx, params.AdminID, "BULK_RECEIVE_ITEMS", params.IPAddr, map[string]any{
 		"received_count": len(items),
 		"message":        "Wareneingang gebucht (Massen-Freigabe)",
 	}))

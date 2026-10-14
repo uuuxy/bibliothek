@@ -15,7 +15,7 @@ import (
 
 // GET /api/search erkennt Scans exakt (Treffer), ohne zu buchen: Exemplar-Barcode,
 // Littera-Etikett (EAN-13 → Mediennummer) und Schülerausweis — dieselbe Reihenfolge wie
-// die Theke (resolveOhnePraefix), nur als Auskunft. Grundlage der globalen Suchleiste
+// die Theke (verarbeiteOhneVorsilbe), nur als Auskunft. Grundlage der globalen Suchleiste
 // (03.09.2026): Buch → Buchakte, Ausweis → Schülerakte.
 func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 	pool := pgtest.Pool(t)
