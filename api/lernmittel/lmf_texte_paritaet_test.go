@@ -11,17 +11,11 @@ import (
 
 // Dieselben Worte auf beiden Wegen zum Plan.
 //
-// Überschrift und Erklärungssatz jedes Plans stehen zweimal: in Go (LmfArtTitel /
-// LmfArtErklaerung — Quelle für das Kollegiums-PDF) und in JavaScript (ARTEN /
-// artErklaerung in lmfplanDienst.js — Quelle für Planer und Portal-Reiter). Der
-// Go-Kommentar sagt „dieselben Worte wie ARTEN in lmfplanDienst.js" — bis zum
-// Rasterdurchgang am 06.09.2026 war das eine Verabredung zwischen zwei Dateien, die
-// niemand prüfte (Raster, Frage 3: zwei Wahrheitsquellen).
-//
-// Wirkung ohne Gate: Die Begriffe wurden am 06.09.2026 schon einmal umbenannt („nicht
-// Rückgabe und Ausgabe, das sind zwei verschiedene Dinge"). Wird nur die eine Seite
-// angefasst, zeigt der Portal-Reiter den neuen Titel und das PDF, das derselbe Knopf im
-// selben Reiter herunterlädt, den alten.
+// Überschrift und Erklärungssatz jedes Plans stehen zweimal: in Go (lmfArtTitel /
+// lmfArtErklaerung, Quelle für das PDF des Kollegiums) und in JavaScript (ARTEN /
+// artErklaerung in lmfplanDienst.js, Quelle für Planer und Reiter im Portal). Wird nur die
+// eine Seite angefasst, zeigt der Reiter im Portal den neuen Titel und das PDF, das derselbe
+// Knopf im selben Reiter herunterlädt, den alten.
 //
 // Gelesen wird die JS-Datei als Text — ein Node-Lauf im Go-Test wäre eine zweite
 // Werkzeugkette für eine Zeichenkette. Findet der Test die Stelle nicht mehr, ist er rot

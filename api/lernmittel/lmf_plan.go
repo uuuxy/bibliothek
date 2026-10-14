@@ -1,6 +1,6 @@
 package lernmittel
 
-// lmf_plan.go — die Türen des LMF-Plans: lesen, rechnen und speichern, verwerfen.
+// Die Türen des LMF-Plans: lesen, rechnen und speichern, verwerfen.
 //
 // Der Plan ist ein Rahmen und eine Reihenfolge von Zeilen (Klassen, Vermerk). Datum und Stunde
 // jeder Zeile rechnet der Server über die Schultage (service.VerteileLMFPlan, pkg/lmfplan); eine
@@ -47,7 +47,7 @@ type lmfPlanVorschlag struct {
 // lmfPlanSommerferien sind die Sommerferien Hessen, an denen sich der Plan ausrichtet.
 type lmfPlanSommerferien struct {
 	Jahr int    `json:"jahr"`
-	Von  string `json:"von"` // YYYY-MM-DD, leer wenn nicht bekannt
+	Von  string `json:"von"` // JJJJ-MM-TT, leer, wenn nicht bekannt
 	Bis  string `json:"bis"`
 	// Bekannt: false, wenn das Jahr weder im Programm noch in der Einstellung
 	// „Sommerferien" steht — der Planer nennt dann das Jahr und bittet um den letzten
@@ -81,9 +81,9 @@ type lmfPlanStandAntwort struct {
 	// im Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.
 	Klassen []string `json:"klassen"`
 	// AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt
-	// (service.IstAusgelassenImLMFPlan). Der Planer klappt sie unter „bleiben draußen" ein, auch bei
-	// einem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte sonst
-	// jede Klasse der Schule offen an.
+	// (service.IstAusgelassenImLMFPlan). Der Planer klappt sie unter „bleiben draußen" ein,
+	// auch bei einem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte
+	// sonst jede Klasse der Schule offen an.
 	AusgelassenRegel []string `json:"ausgelassen_regel"`
 	// Eingangsjahrgaenge: die Jahrgänge, die nach den Ferien Bücher bekommen (Einstellung).
 	Eingangsjahrgaenge []int `json:"eingangsjahrgaenge"`

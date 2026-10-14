@@ -17,10 +17,9 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Kopplung Plan → Frist am echten Postgres, über den Plan-Handler (Register,
-// Entscheidung 3a; seit Migration 097 als Reihenfolge): Ein Rückgabe-Plan setzt die
-// Frist der offenen Schulbücher seiner Klassen; ein Umschreiben zieht nach; Klassen, die
-// aus dem Plan fallen, kehren zum Stichtag zurück; Verwerfen ebenso. Nicht angefasst:
+// Die Kopplung Plan → Frist am echten Postgres, über die Türen des Plans: Ein Rückgabe-Plan
+// setzt die Frist der offenen Schulbücher seiner Klassen; ein Umschreiben zieht nach; Klassen,
+// die aus dem Plan fallen, kehren zum Stichtag zurück; Verwerfen ebenso. Nicht angefasst:
 // Nicht-Lernmittel, von Hand gesperrte Schüler, mehrjährige Ausleihen, andere Klassen,
 // Ausgabe-Pläne. Die Sperre der Ehemaligen hält den Plan nicht an
 // (TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LmfPlan).
@@ -73,7 +72,7 @@ func TestLMFPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	erwarte("Annas Schulbuch nach der Vorschau", annaLmf, stichtag)
 
 	// 1. Speichern: Ende Montag 28.06.2027 4. Stunde (Migration 101: der Rückgabe-Plan
-	//    fließt vom Ende her), zwei Zeilen → 9H1 in der 3. Stunde. Das ist ein ENTWURF
+	//    fließt vom Ende her), zwei Zeilen → 9H1 in der 3. Stunde. Das ist ein Entwurf
 	//    (Migration 100): Plätze kommen, Fristen bleiben — bis zum Veröffentlichen.
 	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-28","letzte_stunde":4,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]},{"vermerk":"Bücher setzen"}]}`)
@@ -195,12 +194,11 @@ func TestLMFPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	}
 }
 
-// Steht eine Klasse ZWEIMAL im Plan — möglich, wenn für eine Klasse ein Termin nach-
-// geschoben wird —, müssen beide Wege dieselbe Frist nennen: Der
-// Ausleihdienst nimmt den nächsten Termin der Klasse (LadeRueckgabeTerminLage = MIN),
-// der Plan-Abgleich muss dieselbe Zeile treffen. Bis 05.09.2026 gewann beim Speichern
-// die LETZTE Zeile — das schon draußen liegende Buch bekam den späteren Termin, das am
-// selben Tag ausgeliehene den früheren. Zwei Regeln für dieselbe Frage.
+// Steht eine Klasse zweimal im Plan (möglich, wenn für eine Klasse ein Termin nachgeschoben
+// wird), müssen beide Wege dieselbe Frist nennen: Der Ausleihdienst nimmt den nächsten Termin
+// der Klasse (LadeRueckgabeTerminLage = MIN), der Plan-Abgleich muss dieselbe Zeile treffen.
+// Gewönne beim Speichern die letzte Zeile, bekäme das schon draußen liegende Buch den späteren
+// Termin, das am selben Tag ausgeliehene den früheren: zwei Regeln für dieselbe Frage.
 func TestLMFPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -221,7 +219,8 @@ func TestLMFPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	anna := testdaten.LegeSchuelerAn(t, pool, "Z-1", "Anna", "9H1")
 	annaLmf := testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Mathe 9 Zwei", tag("2027-07-31"))
 
-	// Zeile 1 (Mo 28.06., 1. Std.) und Zeile 7 (Di 29.06., 1. Std. — das Ende) nennen dieselbe Klasse.
+	// Zeile 1 (Mo 28.06., 1. Std.) und Zeile 7 (Di 29.06., 1. Std., das Ende) nennen dieselbe
+	// Klasse.
 	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-29","letzte_stunde":1,"stunden_je_tag":6,"zeilen":[`+
 			`{"klassen":["9H1"]},{"vermerk":"2"},{"vermerk":"3"},{"vermerk":"4"},{"vermerk":"5"},{"vermerk":"6"},`+
@@ -286,7 +285,7 @@ func TestLMFPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if a.Plan != nil || a.Vorschlag == nil || a.Vorschlag.Quelle != "regel" {
 		t.Fatalf("ohne Plan: %+v", a)
 	}
-	// Der Rahmen-Vorschlag (06.09.2026): Donnerstag vor den Sommerferien 2027, 4. Stunde.
+	// Der Rahmen-Vorschlag: Donnerstag vor den Sommerferien 2027, 4. Stunde.
 	if r := a.Vorschlag.Rahmen; r.LetzterTag != "2027-06-24" || r.LetzteStunde != 4 || r.StundenJeTag != 6 || r.ErsterTag != "" {
 		t.Errorf("Rahmen-Vorgabe Rückgabe: %+v", r)
 	}
@@ -327,7 +326,7 @@ func TestLMFPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if len(a.Klassen) != 5 {
 		t.Errorf("Klassen des Vokabulars: %v", a.Klassen)
 	}
-	// „Nur Rückgabe" vor den Ferien steht als VORBELEGUNG im Vermerk (06.09.2026):
+	// „Nur Rückgabe" vor den Ferien steht als Vorbelegung im Vermerk:
 	// 9H1 ist Abschlussklasse und trägt es zusätzlich zum Vorjahres-Vermerk; 8G1 und 7R1
 	// tauschen (Vorgabe der Eingangsjahrgänge 5 und 7: erst die 6er geben nur ab).
 	if z[1].Vermerk != "nur Rückgabe · bis 11. eingesammelt" || z[0].Vermerk != "" || z[2].Vermerk != "" ||
@@ -373,12 +372,13 @@ func TestLMFPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if a = lies(); a.Sommerferien.Bekannt || a.Sommerferien.Jahr != 2031 || a.Vorschlag == nil || a.Vorschlag.Rahmen.LetzterTag != "" || a.Vorschlag.Rahmen.LetzteStunde != 4 {
 		t.Errorf("ohne hinterlegte Ferien: %+v / %+v", a.Sommerferien, a.Vorschlag)
 	}
-	// Reihenfolge wie LMFAbfragen.LadeKlassenMitSchuelern: Abschluss zuerst, dann Jahrgang absteigend (ohne Ziffer = 99).
+	// Reihenfolge wie LMFAbfragen.LadeKlassenMitSchuelern: Abschluss zuerst, dann Jahrgang
+	// absteigend (ohne Ziffer = 99).
 	if ausgabe.Vorschlag != nil && strings.Join(ausgabe.Vorschlag.Ausgelassen, ",") != "09H1,Q1,12T1,08G1,06F1" {
 		t.Errorf("Ausgabe: alle anderen ausgelassen: %v", ausgabe.Vorschlag.Ausgelassen)
 	}
 	// Kein Vermerk „nur Rückgabe" — die Vorbelegung gehört zum Büchertausch, nicht zur
-	// Ausgabe. Geprüft wird der Vermerk der KLASSEN-Zeilen; die zwei Schlusszeilen ohne
+	// Ausgabe. Geprüft wird der Vermerk der Zeilen mit Klassen; die zwei Schlusszeilen ohne
 	// Klasse tragen ihren eigenen Text und stehen eine Zeile höher.
 	for _, zeile := range ausgabe.Vorschlag.Zeilen {
 		if len(zeile.Klassen) > 0 && zeile.Vermerk != "" {
@@ -387,7 +387,7 @@ func TestLMFPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	}
 }
 
-// schlusszeilen nennt die Vermerke der abschließenden Zeilen OHNE Klasse, mit | getrennt.
+// schlusszeilen nennt die Vermerke der abschließenden Zeilen ohne Klasse, mit | getrennt.
 func schlusszeilen(zeilen []repository.LMFPlanZeile) string {
 	var teile []string
 	for _, z := range zeilen {

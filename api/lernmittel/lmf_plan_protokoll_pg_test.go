@@ -18,15 +18,14 @@ import (
 )
 
 // Veröffentlichen, Korrigieren und Verwerfen eines Rückgabe-Plans schreiben die
-// Rückgabefristen ALLER Klassen des Plans um und löschen dabei Mahnstufe und Mahndatum
-// der betroffenen Ausleihen (repository.LMFAbfragen.SetzeLernmittelFristFuerKlassen). Für die Frist
-// EINER Ausleihe verlangt dieses Projekt seit dem 18.08.2026 einen Protokolleintrag
-// („FRIST_OVERRIDE", api/theke/ausleihe.go); die tausendfache Fassung desselben Eingriffs
-// hinterließ bis zum Rasterdurchgang am 06.09.2026 keine Spur.
+// Rückgabefristen aller Klassen des Plans um und löschen dabei Mahnstufe und Mahndatum der
+// betroffenen Ausleihen (repository.LMFAbfragen.SetzeLernmittelFristFuerKlassen). Die Frist
+// einer einzelnen Ausleihe steht im Protokoll („FRIST_OVERRIDE", api/theke/ausleihe.go); die
+// tausendfache Fassung desselben Eingriffs muss ebenso eine Spur hinterlassen.
 //
-// Geprüft wird am ERGEBNIS in audit_logs, nicht am Aufruf: Wer hat wann welchen Plan
-// bewegt, und wie viele Fristen hingen daran. Ein ENTWURF fasst keine Frist an und
-// schreibt deshalb auch nichts — sonst stünde im Protokoll jeder Zwischenstand.
+// Geprüft wird am Ergebnis in audit_logs, nicht am Aufruf: Wer hat wann welchen Plan bewegt,
+// und wie viele Fristen hingen daran. Ein Entwurf fasst keine Frist an und schreibt deshalb
+// auch nichts, sonst stünde im Protokoll jeder Zwischenstand.
 func TestLMFPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

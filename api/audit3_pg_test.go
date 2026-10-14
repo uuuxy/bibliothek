@@ -40,8 +40,8 @@ func markiereGemahntUndUeberfaellig(t *testing.T, pool *pgxpool.Pool, ausleiheID
 	}
 }
 
-// TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck sichert Audit-Bug #1 ab: Schiebt eine Verlängerung die
-// Frist wieder in die Zukunft, wird die Mahn-Eskalation zurückgesetzt (mahnstufe = 0) — sonst
+// TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck: Schiebt eine Verlängerung die
+// Frist wieder in die Zukunft, wird die Mahn-Eskalation zurückgesetzt (mahnstufe = 0). Sonst
 // übersprang ein nach der 1. Mahnung verlängertes und erneut überzogenes Buch die 1. Stufe und
 // eskalierte sofort zur Rechnung. Bleibt die Frist trotz "Verlängerung" in der Vergangenheit,
 // bleibt die Mahnstufe erhalten (Eskalation berechtigt).

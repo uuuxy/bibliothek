@@ -1,17 +1,16 @@
 package lernmittel
 
-// lmf_plan_veroeffentlichung.go — Entwurf und Veröffentlichung des LMF-Plans (Migration
-// 100). Absprache vom 06.09.2026: „Stille Vorbereitung — der Plan nimmt die Schulleitung immer
-// erst ab." Speichern legt deshalb einen ENTWURF an: zentral, auf jedem PC gleich, aber
-// für Portal, Kollegiums-PDF und Frist-Kopplung unsichtbar. Erst POST …/veroeffentlichen
-// stempelt ihn und setzt bei einem Rückgabe-Plan die Fristen; danach gilt jede weitere
-// Speicherung sofort (die Korrektur-Mail von früher). Einen zweiten Entwurf neben einem
-// veröffentlichten Plan gibt es bewusst nicht — dann wüsste niemand, welcher gilt.
+// Entwurf und Veröffentlichung des LMF-Plans. Den Plan nimmt die Schulleitung ab, bevor er
+// gilt: Speichern legt deshalb einen Entwurf an, zentral und auf jedem Arbeitsplatz gleich, aber
+// für Portal, PDF des Kollegiums und Kopplung der Fristen unsichtbar. Erst POST
+// …/veroeffentlichen stempelt ihn und setzt bei einem Rückgabe-Plan die Fristen; danach gilt
+// jede weitere Speicherung sofort. Einen zweiten Entwurf neben einem veröffentlichten Plan gibt
+// es nicht, sonst wüsste niemand, welcher gilt.
 //
 // Dazu die Eingangsjahrgänge (Einstellung lmf_eingangsjahrgaenge, Vorgabe „5, 7"):
 // Nach den Ferien bekommen nur die neu gebildeten Klassen Bücher; vor den Ferien geben
 // die Klassen, die neu gebildet werden (die 6er → 7H/7R/7G), und die Abschlussklassen
-// NUR zurück, alle anderen tauschen.
+// nur zurück, alle anderen tauschen.
 
 import (
 	"context"

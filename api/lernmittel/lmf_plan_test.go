@@ -9,7 +9,7 @@ import (
 	"bibliothek/pkg/lmfplan"
 )
 
-// pruefeLmfPlan: fester Platz und freie Tage (Migration 099) werden geprüft, bevor
+// pruefeLMFPlan: fester Platz und freie Tage (Migration 099) werden geprüft, bevor
 // irgendetwas gerechnet wird — ein fester Termin ohne Datum ist kein „fließt eben",
 // sondern ein Fehler, den der Planer sehen muss.
 func TestPruefeLMFPlan_FestUndFreieTage(t *testing.T) {

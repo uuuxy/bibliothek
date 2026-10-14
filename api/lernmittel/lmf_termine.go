@@ -1,12 +1,10 @@
 package lernmittel
 
-// lmf_termine.go — der LMF-Plan lesend: Rückgabe- und Ausgabetermine je Klasse
-// (Register, Entscheidung 3, 05.09.2026). Das Kollegium liest sie im Portal (für alle
-// gleich, keine Personalisierung), das PDF sieht aus wie die bisherige Excel-Liste.
-// Lesen verlangt nur eine Sitzung (Stufe 0: Daten und Klassen, kein Schülerbezug).
-// Geschrieben wird der Plan als Reihenfolge (lmf_plan.go, Migration 097). Sichtbar sind
-// nur veröffentlichte Pläne (Migration 100); den Entwurf als PDF für die Schulleitung
-// bekommt nur der Planer (edit_books) über eine eigene Route.
+// Der LMF-Plan lesend: Rückgabe- und Ausgabetermine je Klasse. Das Kollegium liest sie im
+// Portal, für alle gleich, und als PDF in der Form der früheren Excel-Liste. Lesen verlangt nur
+// eine Sitzung (Stufe 0: Daten und Klassen, kein Bezug zu Schülern). Geschrieben wird der Plan
+// als Reihenfolge (lmf_plan.go). Sichtbar sind nur veröffentlichte Pläne; den Entwurf als PDF
+// für die Schulleitung bekommt nur der Planer (edit_books) über eine eigene Route.
 
 import (
 	"bytes"
@@ -71,10 +69,9 @@ func (t *Tueren) LMFTermine() http.HandlerFunc {
 	})
 }
 
-// lmfArtTitel ist die Überschrift je Art — dieselben Worte wie ARTEN in
-// lmfplanDienst.js. „Rückgabe" und „Ausgabe" allein waren unklar (06.09.2026):
-// Vor den Ferien tauschen die Klassen (alte ab, neue direkt mit), nach den Ferien
-// bekommen nur die neu gebildeten Klassen ihre Bücher.
+// lmfArtTitel ist die Überschrift je Art, dieselben Worte wie ARTEN in lmfplanDienst.js.
+// „Rückgabe" und „Ausgabe" allein sagen zu wenig: Vor den Ferien tauschen die Klassen (alte ab,
+// neue direkt mit), nach den Ferien bekommen nur die neu gebildeten Klassen ihre Bücher.
 func lmfArtTitel(art string) string {
 	if art == repository.LMFTerminAusgabe {
 		return "Bücherausgabe nach den Sommerferien"
@@ -85,8 +82,8 @@ func lmfArtTitel(art string) string {
 // lmfArtErklaerung ist der eine Satz unter der Überschrift, mit den Eingangsjahrgängen.
 func lmfArtErklaerung(art string, eingang []int) string {
 	if art == repository.LMFTerminAusgabe {
-		// Ohne bekannte Jahrgänge KEIN leeres Klammerpaar („(Jahrgang )"): Der Satz nennt
-		// dann nur die Regel. Beide Seiten müssen das gleich halten — TestLmfTexte prüft es.
+		// Ohne bekannte Jahrgänge kein leeres Klammerpaar („(Jahrgang )"): Der Satz nennt dann
+		// nur die Regel. Beide Seiten müssen das gleich halten; TestLMFTexte prüft es.
 		if len(eingang) == 0 {
 			return "Nur die neu gebildeten Klassen bekommen ihre Schulbücher."
 		}
@@ -108,17 +105,15 @@ func jahrgaengeText(eingang []int) string {
 	return strings.Join(teile[:len(teile)-1], ", ") + " und " + teile[len(teile)-1]
 }
 
-// lmfPlanAbschnitte gruppiert die Termine für das PDF: erst der Tausch vor den Ferien,
-// dann die Ausgabe danach, je Abschnitt NACH ZEITPUNKT — Datum, Stunde, und bei
-// Gleichstand die Position im Plan.
+// lmfPlanAbschnitte gruppiert die Termine für das PDF: erst der Tausch vor den Ferien, dann
+// die Ausgabe danach, je Abschnitt nach Zeitpunkt: Datum, Stunde und bei Gleichstand die
+// Position im Plan.
 //
-// Das ist bewusst NICHT die Reihenfolge der Zeilen im Planer (der Kommentar behauptete
-// das bis zum Rasterdurchgang am 06.09.2026): Ein fester Platz kann eine Zeile nach
-// hinten schieben, ohne ihre Nummer zu ändern — im Planer bleibt sie Zeile 2, im Portal
-// und im PDF steht sie dort, wo sie stattfindet. Das Kollegium liest einen Fahrplan, die
-// Bibliothek arbeitet eine Reihenfolge ab. Die Position als letztes Kriterium hält die
-// Ausgabe stabil; vorher entschied bei zwei gleichen Plätzen die Zeilen-UUID, und die ist
-// nach jedem Speichern neu.
+// Das ist nicht die Reihenfolge der Zeilen im Planer: Ein fester Platz kann eine Zeile nach
+// hinten schieben, ohne ihre Nummer zu ändern; im Planer bleibt sie Zeile 2, im Portal und im
+// PDF steht sie dort, wo sie stattfindet. Das Kollegium liest einen Fahrplan, die Bibliothek
+// arbeitet eine Reihenfolge ab. Die Position als letztes Kriterium hält die Ausgabe stabil; die
+// Kennung einer Zeile ist nach jedem Speichern neu.
 //
 // „Nur Rückgabe" steht, wo die Bibliothek es hingeschrieben hat: im Vermerk.
 func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.LmfPlanAbschnitt, error) {
@@ -141,7 +136,7 @@ func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.Lmf
 	return abschnitte, nil
 }
 
-// LMFPlanPDF liefert den Plan als PDF in der Form der bisherigen Excel-Liste.
+// LMFPlanPDF liefert den Plan als PDF in der Form der früheren Excel-Liste.
 // mitEntwuerfen = true ist die Planer-Route (edit_books): auch der unveröffentlichte
 // Entwurf, damit er zur Abnahme an die Schulleitung gehen kann.
 // @Summary      LMF-Plan als PDF

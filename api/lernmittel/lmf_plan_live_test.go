@@ -14,17 +14,16 @@ import (
 
 // Jeder Schreibweg des LMF-Plans muss seine Änderung melden.
 //
-// Absprache vom 07.09.2026: „änderungen soll und kann man jederzeit eintragen und man sieht es
-// live!" Getragen wird das von einem SSE-Ereignis (lmf_plan_live.go), das Portal und
-// Planer zum Nachholen bringt. Ein Schreibweg, der es vergisst, fällt nicht auf: Die
-// Antwort an den Aufrufer ist richtig, sein eigener Bildschirm zeigt den neuen Stand,
-// und nur die ANDEREN — das Lehrerzimmer, der zweite Arbeitsplatz — bleiben auf dem
-// alten. Das merkt niemand, bis jemand nach einem Termin fragt, den es so nicht mehr
-// gibt.
+// Änderungen am Plan sieht man live. Getragen wird das von einem SSE-Ereignis
+// (lmf_plan_live.go), das Portal und Planer zum Nachholen bringt. Ein Schreibweg, der es
+// vergisst, fällt nicht auf: Die Antwort an den Aufrufer ist richtig, sein eigener Bildschirm
+// zeigt den neuen Stand, und nur die anderen, das Lehrerzimmer und der zweite Arbeitsplatz,
+// bleiben auf dem alten. Das merkt niemand, bis jemand nach einem Termin fragt, den es so nicht
+// mehr gibt.
 //
-// Deshalb an den ROUTEN aufgehängt, nicht an einer gepflegten Namensliste: Die Prüfung
-// liest, welche Handler hinter einem schreibenden /api/lmf-plan hängen, und verlangt von
-// jedem den Aufruf. Eine neue Route wächst damit von selbst in dieses Gate hinein.
+// Deshalb an den Routen aufgehängt, nicht an einer gepflegten Namensliste: Die Prüfung liest,
+// welche Türen hinter einem schreibenden /api/lmf-plan hängen, und verlangt von jeder den
+// Aufruf. Eine neue Route wächst damit von selbst in diese Prüfung hinein.
 func TestJederLMFPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 	handler := lmfPlanSchreibHandler(t)
 	if len(handler) < 3 {

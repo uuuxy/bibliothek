@@ -13,14 +13,14 @@ import (
 	"bibliothek/repository"
 )
 
-// verlaengerungAnfrage holds the JSON payload for extending LMF loans by class.
+// verlaengerungAnfrage nennt die Klasse und das neue Rückgabedatum ihrer Lernmittel.
 type verlaengerungAnfrage struct {
 	Klasse              string `json:"klasse"`
-	NeuesRueckgabeDatum string `json:"neues_rueckgabe_datum"` // Expected format "2006-01-02"
+	NeuesRueckgabeDatum string `json:"neues_rueckgabe_datum"` // JJJJ-MM-TT
 }
 
-// LernmittelDerKlasseVerlaengern performs a mass-extension for all LMF media for a specific class.
-// It executes a single SQL transaction to ensure consistency.
+// LernmittelDerKlasseVerlaengern verlängert alle Lernmittel einer Klasse auf ein Datum, in einer
+// Transaktion.
 func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req verlaengerungAnfrage

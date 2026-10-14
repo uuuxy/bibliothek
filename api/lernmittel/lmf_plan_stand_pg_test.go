@@ -56,7 +56,8 @@ func TestLMFPlan_StandFuerDenPlaner(t *testing.T) {
 		if got := slices.Sorted(slices.Values(rueck.AusgelassenRegel)); !slices.Equal(got, []string{"12T1", "Q1"}) {
 			t.Errorf("Rückgabe, bleiben draußen: %v, erwartet die Oberstufe (12T1, Q1)", got)
 		}
-		// Die Ausgabe lässt alles aus außer den Eingangsjahrgängen 5 und 7 (Vorgabe der Einstellung).
+		// Die Ausgabe lässt alles aus außer den Eingangsjahrgängen 5 und 7 (Vorgabe der
+		// Einstellung).
 		drin := []string{}
 		for _, k := range aus.Klassen {
 			if !slices.Contains(aus.AusgelassenRegel, k) {

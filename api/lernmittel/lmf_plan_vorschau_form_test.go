@@ -8,14 +8,14 @@ import (
 	"bibliothek/repository"
 )
 
-// Vorschau und gespeicherter Plan müssen dieselbe FORM haben (#593, Paket 5).
+// Vorschau und gespeicherter Plan müssen dieselbe Form haben.
 //
 // Der Planer rechnet die Vorschau mit demselben Aufruf, mit dem er speichert („vorschau":
-// true) — genau damit es keine zweite Wahrheit gibt. Die Zeilen kamen trotzdem
-// verschieden zurück: Eine Zeile ohne Klassen („Nachzügler", „Aufräumen" — es gibt sie
-// im echten Plan) lieferte in der Vorschau `klassen: null`, nach dem Speichern `[]`. Die
-// Oberfläche muss dann beide Formen kennen, und wer das vergisst, bekommt beim ersten
-// Vermerk ohne Klasse einen Fehler an einer Stelle, die mit der Vorschau nichts zu tun
+// true), damit es keine zweite Wahrheit gibt. Eine Zeile ohne Klassen („Nachzügler",
+// „Aufräumen"; es gibt sie im echten Plan) muss in der Vorschau wie nach dem Speichern `[]`
+// liefern, nicht `null`: Sonst muss die Oberfläche beide Formen kennen, und wer das vergisst,
+// bekommt beim ersten Vermerk ohne Klasse einen Fehler an einer Stelle, die mit der Vorschau
+// nichts zu tun
 // hat.
 func TestVorschauZeileOhneKlassenLiefertLeereListe(t *testing.T) {
 	req := lmfPlanAnfrage{

@@ -14,12 +14,10 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust sichert die zweite Hälfte von Bug #5 ab:
-// Die Massen-Verlängerung erkannte LMF-Titel per `ILIKE 'LMF-%'` und übersprang damit
-// still ein manuell angelegtes "LMF - Deutsch 5" (Leerzeichen nach LMF) — genau das
-// Szenario aus der Meldung. Ausleihe/Frist erkannten das Buch zwar korrekt als LMF,
-// die Verlängerung ließ es aber auf der alten Frist stehen → es wurde überfällig und
-// landete in der Mahnung. Der Filter muss über pkg/lmf laufen, konsistent zum Rest.
+// TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust: Die Verlängerung einer Klasse
+// erkennt Lernmittel über pkg/lmf wie Ausleihe und Frist, nicht über `ILIKE 'LMF-%'`. Sonst
+// bliebe ein von Hand angelegtes "LMF - Deutsch 5" (Leerzeichen nach LMF) auf der alten Frist
+// stehen, würde überfällig und landete in der Mahnung.
 func TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -30,7 +28,7 @@ func TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust(t *testing.T) {
 	alteFrist := time.Date(2025, 9, 1, 23, 59, 59, 0, time.UTC)
 
 	// Drei LMF-Schreibvarianten (alle müssen verlängert werden) + ein Freihand-Titel
-	// (darf NICHT angefasst werden).
+	// (darf nicht angefasst werden).
 	bindestrich := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "LMF-Mathe 5", alteFrist)
 	leerBindestrich := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "LMF - Deutsch 5", alteFrist)
 	leer := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "LMF Bio 5", alteFrist)
@@ -46,8 +44,8 @@ func TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust(t *testing.T) {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Berliner Tagesende zum Datum (Sommer/CEST = 21:59:59 UTC), wie der Handler es
-	// seit dem Zeit-Sweep normalisiert — nicht mehr roh 23:59:59 UTC.
+	// Berliner Tagesende zum Datum (Sommer/CEST = 21:59:59 UTC), wie die Tür es setzt, nicht
+	// roh 23:59:59 UTC.
 	neu := schulzeit.TagesEnde(time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC))
 	for _, tc := range []struct {
 		name       string

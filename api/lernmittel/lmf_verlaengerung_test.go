@@ -34,8 +34,8 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE ausleihen a").
 					WithArgs(
-						// Berliner Tagesende zum Datum — dieselbe Normalisierung, die der
-						// Handler seit dem Zeit-Sweep anwendet (nicht mehr roh 23:59:59 UTC).
+						// Berliner Tagesende zum Datum, wie die Tür es setzt (nicht roh
+						// 23:59:59 UTC).
 						schulzeit.TagesEnde(time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC)),
 						"10A",
 					).

@@ -1,21 +1,15 @@
 package lernmittel
 
-// lmf_plan_audit.go — die Spur der Massenänderungen am Plan.
+// Die Spur der Massenänderungen am Plan. Veröffentlichen, Speichern eines veröffentlichten
+// Plans und Verwerfen schreiben über service.KoppleLMFPlanFristen die Rückgabefristen aller
+// Klassen des Plans um und löschen dabei, wo die neue Frist in der Zukunft liegt, Mahnstufe
+// und Mahndatum der betroffenen Ausleihen (repository.LMFAbfragen.SetzeLernmittelFristFuerKlassen).
+// Im Plan der Schule sind das rund siebzig Klassen in einem Klick.
 //
-// Rasterdurchgang 06.09.2026, Frage 9 (Ausleitung/Nachvollziehbarkeit): Veröffentlichen,
-// Speichern eines veröffentlichten Plans und Verwerfen schreiben über
-// service.KoppleLMFPlanFristen die Rückgabefristen ALLER Klassen des Plans um und löschen dabei,
-// wo die neue Frist in der Zukunft liegt, Mahnstufe und Mahndatum der betroffenen
-// Ausleihen (repository.LMFAbfragen.SetzeLernmittelFristFuerKlassen). Im Plan der Schule sind das rund
-// siebzig Klassen in einem Klick.
-//
-// Für die Frist EINER Ausleihe hat dieses Projekt die Antwort längst gegeben
-// (api/theke/ausleihe.go, „FRIST_OVERRIDE"): „Ein manuell überschriebenes Fälligkeitsdatum ist
-// ein Eingriff in eine Sanktion — er gehört revisionssicher protokolliert." Für die
-// tausendfache Fassung desselben Eingriffs stand bis heute nichts im Protokoll.
-//
-// Best effort wie überall sonst: Ein klemmendes Audit bricht den Vorgang nicht ab, der
-// Fehlversuch steht im Server-Log.
+// Die Frist einer einzelnen Ausleihe steht im Protokoll (api/theke/ausleihe.go,
+// „FRIST_OVERRIDE"), weil eine überschriebene Frist ein Eingriff in eine Sanktion ist; die
+// tausendfache Fassung desselben Eingriffs gehört ebenso hinein. Ein klemmendes Protokoll bricht
+// den Vorgang nicht ab, der Fehlversuch steht im Log des Servers.
 
 import (
 	"log"

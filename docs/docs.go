@@ -4724,7 +4724,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "von": {
-                    "description": "YYYY-MM-DD, leer wenn nicht bekannt",
+                    "description": "JJJJ-MM-TT, leer, wenn nicht bekannt",
                     "type": "string"
                 }
             }
@@ -4771,7 +4771,7 @@ const docTemplate = `{
                     }
                 },
                 "ausgelassen_regel": {
-                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(service.IstAusgelassenImLMFPlan). Der Planer klappt sie unter „bleiben draußen\" ein, auch bei\neinem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte sonst\njede Klasse der Schule offen an.",
+                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(service.IstAusgelassenImLMFPlan). Der Planer klappt sie unter „bleiben draußen\" ein,\nauch bei einem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte\nsonst jede Klasse der Schule offen an.",
                     "type": "array",
                     "items": {
                         "type": "string"

@@ -19,19 +19,17 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Plan-Schreibung und Frist-Kopplung sind EINE Transaktion.
+// Plan-Schreibung und Frist-Kopplung sind eine Transaktion.
 //
-// Register 06.09.2026 (B): Bis heute committete SaveLmfPlan selbst, und die Kopplung
-// lief danach am Pool — eine Schleife über die Klassen, jede ein eigenes UPDATE auf
-// ausleihen. Brach sie mittendrin ab (Verbindung weg, Sperre, Timeout), war der Plan
-// geschrieben, die Antwort ein 500, und die Fristen standen zur Hälfte auf dem neuen
-// Termin. Ein zweiter Anlauf heilte das nicht: Die Verlierer-Klassen rechnet der Handler
-// aus dem ALTEN Plan, und der war schon überschrieben. Die Oberfläche lud neu und zeigte
-// den echten Plan — die halb umgeschriebenen Fristen sah niemand.
+// Liefe die Kopplung nach dem Commit des Plans am Pool, eine Schleife über die Klassen mit je
+// einem UPDATE auf ausleihen, und bräche mittendrin ab (Verbindung weg, Sperre, Timeout), wäre
+// der Plan geschrieben, die Antwort ein 500 und die Fristen zur Hälfte auf dem neuen Termin.
+// Ein zweiter Anlauf heilte das nicht: Die Klassen, die ihren Termin verlieren, rechnet die Tür
+// aus dem alten Plan, und der wäre schon überschrieben.
 //
-// Der Beweis braucht einen Fehler an genau der richtigen Stelle. Kein Mock des Brokers,
-// kein pgxmock: der ECHTE Pool, eingewickelt, und seine Transaktion lässt genau das
-// Fristen-UPDATE scheitern. Alles andere — Plan lesen, Plan schreiben — läuft echt.
+// Der Beweis braucht einen Fehler an genau der richtigen Stelle. Kein Mock des Brokers, kein
+// pgxmock: der echte Pool, eingewickelt, und seine Transaktion lässt genau das UPDATE der
+// Fristen scheitern. Alles andere, Plan lesen und Plan schreiben, läuft echt.
 type poolMitFehlerBei struct {
 	db.PgxPoolIface
 	muster string
@@ -52,8 +50,8 @@ func scheitertAn(sql, muster string, durchgelassen *int) bool {
 	return true
 }
 
-// Exec am Pool scheitert ebenfalls: So fällt auch die ALTE Form (Plan committet, Kopplung
-// am Pool) an der richtigen Stelle — und nicht schon daran, dass kein Fehler ankommt.
+// Exec am Pool scheitert ebenfalls: So fällt auch eine Fassung, die nach dem Commit am Pool
+// koppelt, an der richtigen Stelle und nicht schon daran, dass kein Fehler ankommt.
 func (p poolMitFehlerBei) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 	if scheitertAn(sql, p.muster, p.durchgelassen) {
 		return pgconn.CommandTag{}, errors.New("Testfehler mitten in der Frist-Kopplung: " + p.muster)
@@ -123,7 +121,7 @@ func TestLMFPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 		t.Fatalf("der eingebaute Fehler kam nicht an: Status %d %s", rec.Code, rec.Body.String())
 	}
 
-	// Der Kern: NICHTS ist geschehen — weder am Plan noch an den Fristen.
+	// Der Kern: Nichts ist geschehen, weder am Plan noch an den Fristen.
 	planNachher, err := repo.LadeNeuestenPlan(ctx, "rueckgabe")
 	if err != nil {
 		t.Fatal(err)
