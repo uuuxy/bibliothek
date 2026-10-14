@@ -11,12 +11,12 @@ import (
 	"bibliothek/repository"
 )
 
-// DsgvoStammdaten sind alle im Leserdatensatz gespeicherten Stammdaten, auch der Zeitpunkt des
+// Stammdaten sind alle im Leserdatensatz gespeicherten Stammdaten, auch der Zeitpunkt des
 // Löschens und der Sperrgrund: Die Auskunft nennt alles, was gespeichert ist
 // (api.TestDSGVOAuskunft_KenntJedeLeserSpalte hält jede Spalte von leser dagegen). Die Felder
 // stehen in der Reihenfolge von repository.DSGVOStammdatenZeile, sonst greift die Typumwandlung
 // der Tür nicht.
-type DsgvoStammdaten struct {
+type Stammdaten struct {
 	ID                 string     `json:"id"`
 	BarcodeID          string     `json:"barcode_id"`
 	Vorname            string     `json:"vorname"`
@@ -48,19 +48,19 @@ type DsgvoStammdaten struct {
 	// Abgangsjahr.
 	Art string `json:"art"`
 	// HatZugangskonto sagt, ob ein Zugangskonto auf diesen Leser zeigt. Die Anmeldedaten stehen
-	// in DsgvoAuskunftResponse.Zugangskonto: Sie gehören zum Konto, nicht zum Leser.
+	// in Antwort.Zugangskonto: Sie gehören zum Konto, nicht zum Leser.
 	HatZugangskonto bool `json:"hat_zugangskonto"`
 }
 
-// DsgvoFoto beschreibt das (verschlüsselt gespeicherte) Ausweisfoto.
-type DsgvoFoto struct {
+// Foto beschreibt das (verschlüsselt gespeicherte) Ausweisfoto.
+type Foto struct {
 	Vorhanden      bool       `json:"vorhanden"`
 	AktualisiertAm *time.Time `json:"aktualisiert_am"`
 	Hinweis        string     `json:"hinweis"`
 }
 
-// DsgvoAusleihe ist ein Eintrag der vollständigen Ausleihhistorie.
-type DsgvoAusleihe struct {
+// Ausleihe ist ein Eintrag der vollständigen Ausleihhistorie.
+type Ausleihe struct {
 	Gegenstand     string     `json:"gegenstand"`
 	Barcode        string     `json:"barcode"`
 	AusgeliehenAm  time.Time  `json:"ausgeliehen_am"`
@@ -69,8 +69,8 @@ type DsgvoAusleihe struct {
 	IstHandapparat bool       `json:"ist_handapparat"`
 }
 
-// DsgvoSchadensfall ist ein gemeldeter Schadens- oder Verlustfall des Lesers.
-type DsgvoSchadensfall struct {
+// Schadensfall ist ein gemeldeter Schadens- oder Verlustfall des Lesers.
+type Schadensfall struct {
 	Beschreibung      string     `json:"beschreibung"`
 	Betrag            string     `json:"betrag_eur"`
 	IstBezahlt        bool       `json:"ist_bezahlt"`
@@ -79,19 +79,19 @@ type DsgvoSchadensfall struct {
 	Stornierungsgrund *string    `json:"stornierungsgrund"`
 }
 
-// DsgvoVormerkung ist eine Vormerkung auf einen Buchtitel.
-type DsgvoVormerkung struct {
+// Vormerkung ist eine Vormerkung auf einen Buchtitel.
+type Vormerkung struct {
 	Titel      string    `json:"titel"`
 	Status     string    `json:"status"`
 	Notiz      *string   `json:"notiz"`
 	ErstelltAm time.Time `json:"erstellt_am"`
 }
 
-// DsgvoAuditEintrag ist ein Eintrag der Datensatz-Historie (audit_log), der den Leser nennt.
+// ProtokollEintrag ist ein Eintrag der Datensatz-Historie (audit_log), der den Leser nennt.
 // Details trägt den Hinweis swaggertype, weil swag json.RawMessage ohne --parseDependency nicht
 // auflöst: Die Beschreibung des Endpunkts bräche still ab, und er fehlte in der Swagger-Datei.
 // Was über einem Feld steht, übernimmt swag als dessen Beschreibung.
-type DsgvoAuditEintrag struct {
+type ProtokollEintrag struct {
 	// Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der
 	// Aktion ergibt sie den Vorgang, den das Blatt in Worten nennt.
 	Tabelle   string    `json:"tabelle"`
@@ -108,18 +108,18 @@ type DsgvoAuditEintrag struct {
 	Details json.RawMessage `json:"details" swaggertype:"object"`
 }
 
-// DsgvoVerwaltungsEintrag ist ein Eintrag des Verwaltungsprotokolls (audit_logs), der den Leser
+// VerwaltungsEintrag ist ein Eintrag des Verwaltungsprotokolls (audit_logs), der den Leser
 // über details->>'schueler_id' nennt, etwa DELETE_STUDENT oder LUSD_ID_NACHGETRAGEN. admin_id
 // und ip_adresse fehlen: Sie sind Daten der bearbeitenden Person, nicht des Lesers.
-type DsgvoVerwaltungsEintrag struct {
+type VerwaltungsEintrag struct {
 	Aktion    string          `json:"aktion"`
 	Zeitpunkt time.Time       `json:"zeitpunkt"`
 	Details   json.RawMessage `json:"details" swaggertype:"object"`
 }
 
-// DsgvoBescheid ist ein Schadensersatz-Bescheid an diese Person: der Brief mit Nummer, Datum,
+// Bescheid ist ein Schadensersatz-Bescheid an diese Person: der Brief mit Nummer, Datum,
 // Frist, Summe und Zustand. Seine Positionen stehen als Schadensfälle in der Auskunft.
-type DsgvoBescheid struct {
+type Bescheid struct {
 	Referenznummer string    `json:"referenznummer"`
 	BriefDatum     time.Time `json:"brief_datum"`
 	FristBis       time.Time `json:"frist_bis"`
@@ -127,7 +127,7 @@ type DsgvoBescheid struct {
 	Status         string    `json:"status"`
 }
 
-// DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO: Zwecke
+// Verarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO: Zwecke
 // (lit. a), Empfänger (lit. c), Speicherdauer (lit. d), Herkunft (lit. g) und die
 // Betroffenenrechte samt Beschwerderecht (lit. e und f). Die Datenkategorien (lit. b)
 // stehen als die Daten selbst in der Auskunft.
@@ -137,7 +137,7 @@ type DsgvoBescheid struct {
 // Verarbeitung nicht nennt. § 83 HSchG ist die Norm zur Erhebung und Verarbeitung
 // personenbezogener Daten durch Schulen, § 153 HSchG die Lernmittelfreiheit. Maßgeblich bleibt
 // das Verzeichnis von Verarbeitungstätigkeiten der Schule.
-type DsgvoVerarbeitungsangaben struct {
+type Verarbeitungsangaben struct {
 	Zwecke            []string `json:"zwecke"`
 	Rechtsgrundlage   string   `json:"rechtsgrundlage"`
 	Empfaenger        string   `json:"empfaenger"`
@@ -146,31 +146,31 @@ type DsgvoVerarbeitungsangaben struct {
 	Betroffenenrechte string   `json:"betroffenenrechte"`
 }
 
-// DsgvoAuskunftResponse ist die vollständige Betroffenenauskunft nach Art. 15 DSGVO.
-type DsgvoAuskunftResponse struct {
-	Art               string                    `json:"art"`
-	ErstelltAm        time.Time                 `json:"auskunft_erstellt_am"`
-	Stammdaten        DsgvoStammdaten           `json:"stammdaten"`
-	Foto              DsgvoFoto                 `json:"ausweisfoto"`
-	Ausleihen         []DsgvoAusleihe           `json:"ausleihhistorie"`
-	Schadensfaelle    []DsgvoSchadensfall       `json:"schadensfaelle"`
-	Vormerkungen      []DsgvoVormerkung         `json:"vormerkungen"`
-	Bescheide         []DsgvoBescheid           `json:"schadensersatz_bescheide"`
-	NachbuchMeldungen []DsgvoNachbuchMeldung    `json:"nachbuch_meldungen"`
-	AuditEintraege    []DsgvoAuditEintrag       `json:"protokolleintraege"`
-	Verwaltung        []DsgvoVerwaltungsEintrag `json:"verwaltungsprotokolle"`
+// Antwort ist die vollständige Betroffenenauskunft nach Art. 15 DSGVO.
+type Antwort struct {
+	Art                string               `json:"art"`
+	ErstelltAm         time.Time            `json:"auskunft_erstellt_am"`
+	Stammdaten         Stammdaten           `json:"stammdaten"`
+	Foto               Foto                 `json:"ausweisfoto"`
+	Ausleihen          []Ausleihe           `json:"ausleihhistorie"`
+	Schadensfaelle     []Schadensfall       `json:"schadensfaelle"`
+	Vormerkungen       []Vormerkung         `json:"vormerkungen"`
+	Bescheide          []Bescheid           `json:"schadensersatz_bescheide"`
+	NachbuchMeldungen  []NachbuchMeldung    `json:"nachbuch_meldungen"`
+	ProtokollEintraege []ProtokollEintrag   `json:"protokolleintraege"`
+	Verwaltung         []VerwaltungsEintrag `json:"verwaltungsprotokolle"`
 	// Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;
 	// null, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).
 	Zugangskonto *repository.DSGVOZugangskonto `json:"zugangskonto"`
 	// Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie. Leer, wenn
 	// es keine gab.
 	FruehereZugangskonten []repository.DSGVOFrueheresZugangskonto `json:"fruehere_zugangskonten"`
-	Verarbeitungsangaben  DsgvoVerarbeitungsangaben               `json:"verarbeitungsangaben"`
+	Verarbeitungsangaben  Verarbeitungsangaben                    `json:"verarbeitungsangaben"`
 }
 
-// DsgvoNachbuchMeldung ist eine Nachbuch-Meldung der Theke, in der die Person als Ausleiher
+// NachbuchMeldung ist eine Nachbuch-Meldung der Theke, in der die Person als Ausleiher
 // oder Vorbesitzer steht.
-type DsgvoNachbuchMeldung struct {
+type NachbuchMeldung struct {
 	Rolle       string     `json:"rolle"` // ausleiher | vorbesitzer
 	Barcode     string     `json:"barcode"`
 	Ergebnis    string     `json:"ergebnis"`

@@ -12,7 +12,7 @@ import (
 // Schüler. Jede Frist im Text ist ein Wert der Einstellungen, mit dem auch die Löschjobs
 // rechnen: Eine feste Zahl im Satz gäbe der betroffenen Person eine falsche Frist, sobald die
 // Schule die Einstellung ändert.
-func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, auditMonate int) DsgvoVerarbeitungsangaben {
+func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, auditMonate int) Verarbeitungsangaben {
 	karenz := "sofort nach dem letzten Vorgang"
 	if karenzTage > 0 {
 		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem letzten Vorgang (Abgang, letzte Rückgabe oder Schadensregulierung)", karenzTage)
@@ -23,7 +23,7 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, aud
 		}
 		return repository.TageMitZahl(tage) + " nach Rückgabe"
 	}
-	return DsgvoVerarbeitungsangaben{
+	return Verarbeitungsangaben{
 		Zwecke: []string{
 			"Verwaltung der Lernmittelausleihe im Rahmen der Lernmittelfreiheit (Nachweis von Ausleihe und Rücklauf, Mahnung, Schadensersatz)",
 			"Betrieb der Schülerbücherei (Ausleihe, Vormerkung, Rückgabeerinnerung)",
@@ -57,17 +57,17 @@ var dsgvoSicherungen = fmt.Sprintf("Verschlüsselte Sicherungen: die der letzten
 // dsgvoBetroffenenrechte gilt für jede Leserart gleich.
 const dsgvoBetroffenenrechte = "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)"
 
-// DsgvoFristWerte sind die eingestellten Fristen, die die Pflichtangaben nennen.
-type DsgvoFristWerte struct {
-	LesehistorieTage, LernmittelTage, KarenzTage, AuditMonate, AnliegenTage int
+// FristWerte sind die eingestellten Fristen, die die Pflichtangaben nennen.
+type FristWerte struct {
+	LesehistorieTage, LernmittelTage, KarenzTage, ProtokollMonate, AnliegenTage int
 }
 
-// DsgvoPflichtangaben wählt die Pflichtangaben nach der Art des Lesers: Für einen Schüler
+// Pflichtangaben wählt die Pflichtangaben nach der Art des Lesers: Für einen Schüler
 // gelten Lernmittelfreiheit und Schülerbücherei, für jede andere Art (Kollegium und
 // Sonderkonten) das Beschäftigungsverhältnis (pflichtangaben_kollegium.go).
-func DsgvoPflichtangaben(art string, f DsgvoFristWerte) DsgvoVerarbeitungsangaben {
+func Pflichtangaben(art string, f FristWerte) Verarbeitungsangaben {
 	if leserart.IstSchueler(art) {
-		return dsgvoVerarbeitungsangaben(f.LesehistorieTage, f.LernmittelTage, f.KarenzTage, f.AuditMonate)
+		return dsgvoVerarbeitungsangaben(f.LesehistorieTage, f.LernmittelTage, f.KarenzTage, f.ProtokollMonate)
 	}
 	return dsgvoVerarbeitungsangabenKollegium(f)
 }

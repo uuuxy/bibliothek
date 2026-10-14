@@ -15,39 +15,39 @@ import (
 // repository/protokoll.go, titel_loeschen.go, exemplar_aussondern.go, leser_loeschen.go,
 // forderung_erledigen.go, bescheid_rueckkehr.go, schueler_zusammenfuehren.go,
 // titel_loeschen_wartende.go und inventur/db_books_delete_spur.go.
-func TestDsgvoVorgang(t *testing.T) {
+func TestDSGVOVorgang(t *testing.T) {
 	satz := func(s string) *string { return &s }
 	faelle := []struct {
 		name    string
-		eintrag DsgvoAuditEintrag
+		eintrag ProtokollEintrag
 		details string
 		worte   string
 	}{
-		{"Ausleihe", DsgvoAuditEintrag{Tabelle: "ausleihen", Aktion: "CHECKOUT", Akteur: "USER"}, `{"exemplar_id":"x"}`, "Ausleihe"},
-		{"Rückgabe", DsgvoAuditEintrag{Tabelle: "ausleihen", Aktion: "RETURN", Akteur: "USER"}, `{}`, "Rückgabe"},
+		{"Ausleihe", ProtokollEintrag{Tabelle: "ausleihen", Aktion: "CHECKOUT", Akteur: "USER"}, `{"exemplar_id":"x"}`, "Ausleihe"},
+		{"Rückgabe", ProtokollEintrag{Tabelle: "ausleihen", Aktion: "RETURN", Akteur: "USER"}, `{}`, "Rückgabe"},
 		{"Titel gelöscht bei laufender Ausleihe",
-			DsgvoAuditEintrag{Tabelle: "ausleihen", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, Buch war zu diesem Zeitpunkt verliehen")},
+			ProtokollEintrag{Tabelle: "ausleihen", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, Buch war zu diesem Zeitpunkt verliehen")},
 			`{"action":"titel_geloescht_mit_offener_ausleihe"}`, "Titel gelöscht, während das Buch ausgeliehen war (automatisch)"},
-		{"Papierkorb", DsgvoAuditEintrag{Tabelle: "schueler", Aktion: "UPDATE", Akteur: "USER", Kontext: satz("Soft-Delete Routine")},
+		{"Papierkorb", ProtokollEintrag{Tabelle: "schueler", Aktion: "UPDATE", Akteur: "USER", Kontext: satz("Soft-Delete Routine")},
 			`{"action":"soft_delete"}`, "Leserdatensatz in den Papierkorb gelegt"},
-		{"Zusammenführen", DsgvoAuditEintrag{Tabelle: "schueler", Aktion: "ZUSAMMENGEFUEHRT", Akteur: "USER"},
+		{"Zusammenführen", ProtokollEintrag{Tabelle: "schueler", Aktion: "ZUSAMMENGEFUEHRT", Akteur: "USER"},
 			`{"action":"zusammenfuehren"}`, "Mit einem zweiten Datensatz derselben Person zusammengeführt"},
-		{"Auskunft", DsgvoAuditEintrag{Tabelle: "schueler", Aktion: "dsgvo_auskunft", Akteur: "USER"}, `null`, "Auskunft nach Art. 15 DSGVO erteilt"},
-		{"Stornierung von Hand", DsgvoAuditEintrag{Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", Akteur: "USER", Kontext: satz("Gebühr storniert")},
+		{"Auskunft", ProtokollEintrag{Tabelle: "schueler", Aktion: "dsgvo_auskunft", Akteur: "USER"}, `null`, "Auskunft nach Art. 15 DSGVO erteilt"},
+		{"Stornierung von Hand", ProtokollEintrag{Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", Akteur: "USER", Kontext: satz("Gebühr storniert")},
 			`{"betrag":12.5}`, "Forderung storniert"},
 		{"Stornierung, weil das Buch zurück ist",
-			DsgvoAuditEintrag{Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", Akteur: "USER", Kontext: satz("Forderung storniert: das Buch ist zurück")},
+			ProtokollEintrag{Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", Akteur: "USER", Kontext: satz("Forderung storniert: das Buch ist zurück")},
 			`{"anlass":"rueckgabe"}`, "Forderung storniert, weil das Buch zurück ist"},
 		{"Titel gelöscht bei offener Forderung",
-			DsgvoAuditEintrag{Tabelle: "schadensfaelle", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, es stand noch eine unbezahlte Forderung offen")},
+			ProtokollEintrag{Tabelle: "schadensfaelle", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, es stand noch eine unbezahlte Forderung offen")},
 			`{"action":"titel_geloescht_mit_offener_forderung"}`, "Titel gelöscht, während eine Forderung offen war (automatisch)"},
 		{"Titel gelöscht bei offener Vormerkung",
-			DsgvoAuditEintrag{Tabelle: "vormerkungen", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, eine Vormerkung stand noch offen")},
+			ProtokollEintrag{Tabelle: "vormerkungen", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, eine Vormerkung stand noch offen")},
 			`{"action":"titel_geloescht_mit_offenem_bezug"}`, "Titel gelöscht, während eine Vormerkung offen war (automatisch)"},
 		// Was das Blatt nicht kennt, bleibt stehen: Aktion, Tabelle, kontext, Akteur.
-		{"unbekannter Vorgang", DsgvoAuditEintrag{Tabelle: "neue_tabelle", Aktion: "NEUE_AKTION", Akteur: "DIENST", Kontext: satz("neuer Satz")},
+		{"unbekannter Vorgang", ProtokollEintrag{Tabelle: "neue_tabelle", Aktion: "NEUE_AKTION", Akteur: "DIENST", Kontext: satz("neuer Satz")},
 			`{}`, "NEUE_AKTION (neue_tabelle) — neuer Satz (DIENST)"},
-		{"bekannter Vorgang mit neuem kontext", DsgvoAuditEintrag{Tabelle: "ausleihen", Aktion: "RETURN", Akteur: "USER", Kontext: satz("am Automaten")},
+		{"bekannter Vorgang mit neuem kontext", ProtokollEintrag{Tabelle: "ausleihen", Aktion: "RETURN", Akteur: "USER", Kontext: satz("am Automaten")},
 			`{}`, "Rückgabe — am Automaten"},
 	}
 	for _, fall := range faelle {
@@ -62,7 +62,7 @@ func TestDsgvoVorgang(t *testing.T) {
 
 // Die Angaben eines Eintrags stehen mit Bezeichnung da, die Kennungen des Programms und das
 // buchende Konto nicht.
-func TestDsgvoAngabenZeilen(t *testing.T) {
+func TestDSGVOAngabenZeilen(t *testing.T) {
 	const kennung = "3f2a9c1e-0000-4000-8000-000000000001"
 	faelle := []struct {
 		name    string
@@ -119,7 +119,7 @@ func TestDsgvoAngabenZeilen(t *testing.T) {
 }
 
 // Angaben, die kein Objekt sind, stehen als Text da.
-func TestDsgvoDetails_KeinObjekt(t *testing.T) {
+func TestDSGVODetails_KeinObjekt(t *testing.T) {
 	for roh, soll := range map[string]string{`null`: "", ``: "", `"frei getippt"`: `"frei getippt"`, `[1,2]`: `[1,2]`} {
 		details, rest := dsgvoDetails(json.RawMessage(roh))
 		if details != nil || strings.Join(rest, "") != soll {
@@ -128,7 +128,7 @@ func TestDsgvoDetails_KeinObjekt(t *testing.T) {
 	}
 }
 
-func TestDsgvoProtokollZeit(t *testing.T) {
+func TestDSGVOProtokollZeit(t *testing.T) {
 	for text, soll := range map[string]string{
 		"2026-10-08T10:15:00Z":          "08.10.2026, 12:15 Uhr",
 		"2026-01-08T23:30:00Z":          "09.01.2026, 00:30 Uhr",
@@ -146,14 +146,14 @@ func TestDsgvoProtokollZeit(t *testing.T) {
 
 // Auf dem gedruckten Blatt: Worte statt der Schreibweise des Programms, Titel und Nummer des
 // Buchs, keine Kennung und kein buchendes Konto.
-func TestDsgvoPDF_ProtokollzeilenInWorten(t *testing.T) {
+func TestBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	const kennung = "3f2a9c1e-0000-4000-8000-000000000001"
 	zeit := time.Date(2026, 10, 8, 10, 15, 0, 0, time.UTC)
-	a := DsgvoAuskunftResponse{
+	a := Antwort{
 		Art:        "Auskunft nach Art. 15 DSGVO",
 		ErstelltAm: zeit,
-		Stammdaten: DsgvoStammdaten{ID: "leser-1", Vorname: "Erika", Nachname: "Muster", Klasse: "07A"},
-		AuditEintraege: []DsgvoAuditEintrag{
+		Stammdaten: Stammdaten{ID: "leser-1", Vorname: "Erika", Nachname: "Muster", Klasse: "07A"},
+		ProtokollEintraege: []ProtokollEintrag{
 			{Tabelle: "ausleihen", Aktion: "CHECKOUT", Akteur: "USER", Zeitpunkt: zeit, Gegenstand: "Mathematik heute 6", Barcode: "2424",
 				Details: json.RawMessage(`{"exemplar_id":"` + kennung + `","schueler_id":"` + kennung + `","zeitpunkt":"2026-10-08T10:15:00Z"}`)},
 			{Tabelle: "ausleihen", Aktion: "RETURN", Akteur: "USER", Zeitpunkt: zeit,
@@ -161,12 +161,12 @@ func TestDsgvoPDF_ProtokollzeilenInWorten(t *testing.T) {
 			{Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", Akteur: "USER", Zeitpunkt: zeit,
 				Details: json.RawMessage(`{"betrag":24.5,"grund":"Buch im Regal gefunden","bearbeiter_id":"` + kennung + `","schueler_id":"` + kennung + `"}`)},
 		},
-		Verwaltung: []DsgvoVerwaltungsEintrag{
+		Verwaltung: []VerwaltungsEintrag{
 			{Aktion: "LESER_GESPERRT", Zeitpunkt: zeit, Details: json.RawMessage(`{"schueler_id":"` + kennung + `","grund":"Buch seit Mai überfällig"}`)},
 			{Aktion: "LUSD_ID_NACHGETRAGEN", Zeitpunkt: zeit, Details: json.RawMessage(`{"schueler_id":"` + kennung + `","lusd_id":"4711"}`)},
 		},
 	}
-	roh, err := GenerateDsgvoAuskunftPDF(a, pdf.SchuleInfo{Name: "Testschule"})
+	roh, err := ErzeugeBlatt(a, pdf.SchuleInfo{Name: "Testschule"})
 	if err != nil {
 		t.Fatal(err)
 	}

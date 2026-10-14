@@ -9,7 +9,7 @@ import (
 // Das Blatt schreibt jede Art eines Lesers aus. Die Arten stehen in den Prüffällen, die Server
 // und Browser beide lesen; eine Art, die dsgvoLeserart nicht kennt, stünde mit ihrem Wert aus
 // der Datenbank auf dem Blatt.
-func TestDsgvoLeserart_SchreibtJedeArtAus(t *testing.T) {
+func TestDSGVOLeserart_SchreibtJedeArtAus(t *testing.T) {
 	const faelleDatei = "../../frontend/src/lib/leserArt.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
 	if err != nil {

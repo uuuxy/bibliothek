@@ -17,7 +17,7 @@ import (
 // das JSON.
 //
 // Das Gate hängt am Merkmal, nicht an einer Liste: Es füllt jedes Feld der Auskunft
-// (DsgvoAuskunftResponse, per Reflexion) mit einem eigenen Prüfwert, erzeugt daraus das PDF
+// (Antwort, per Reflexion) mit einem eigenen Prüfwert, erzeugt daraus das PDF
 // und verlangt jeden Wert auf dem Blatt. Ein neues Feld oder ein neuer Teil der Auskunft ist
 // damit geprüft, ohne dass jemand dieses Gate anfasst.
 //
@@ -27,14 +27,14 @@ import (
 //
 // Blindheit: Ja/Nein-Werte prüft es nicht; „Ja" steht zu oft auf dem Blatt, um einem Feld
 // zugeordnet zu werden.
-func TestDsgvoPDF_DrucktJedeAngabeDerAuskunft(t *testing.T) {
+func TestBlatt_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 	// Ausnahmen: Pfad → Begründung. Die Angaben der Protokolleinträge (details) sind keine mehr:
 	// Das Blatt druckt jeden Schlüssel, den es nicht als Kennung des Programms oder als buchendes
 	// Konto führt (repository/protokoll_auskunft.go) — auch einen, den es nicht kennt, wie den
 	// Prüfwert hier.
 	ausnahmen := map[string]string{}
 
-	var a DsgvoAuskunftResponse
+	var a Antwort
 	w := &pruefwerte{pfade: map[string]bool{}}
 	w.fuelle(t, reflect.ValueOf(&a).Elem(), "")
 	// Selbstprobe: Läuft die Reflexion künftig leer, soll das Gate auffallen.
@@ -42,9 +42,9 @@ func TestDsgvoPDF_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 		t.Fatalf("Liveness: nur %d Angaben in der Auskunft gefunden", len(w.erwartet))
 	}
 
-	roh, err := GenerateDsgvoAuskunftPDF(a, pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
+	roh, err := ErzeugeBlatt(a, pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
 	if err != nil {
-		t.Fatalf("GenerateDsgvoAuskunftPDF: %v", err)
+		t.Fatalf("ErzeugeBlatt: %v", err)
 	}
 	blatt := strings.Join(pdftest.Texte(t, roh), "\n")
 	if !strings.Contains(blatt, "Stammdaten") {

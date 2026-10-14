@@ -79,7 +79,7 @@ func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Auskunft: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	var a auskunft.DsgvoAuskunftResponse
+	var a auskunft.Antwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Auskunft lesen: %v", err)
 	}

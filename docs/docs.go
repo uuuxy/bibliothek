@@ -3332,7 +3332,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auskunft.DsgvoAuskunftResponse"
+                            "$ref": "#/definitions/auskunft.Antwort"
                         }
                     },
                     "404": {
@@ -3697,7 +3697,165 @@ const docTemplate = `{
                 }
             }
         },
-        "auskunft.DsgvoAuditEintrag": {
+        "auskunft.Antwort": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "type": "string"
+                },
+                "auskunft_erstellt_am": {
+                    "type": "string"
+                },
+                "ausleihhistorie": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.Ausleihe"
+                    }
+                },
+                "ausweisfoto": {
+                    "$ref": "#/definitions/auskunft.Foto"
+                },
+                "fruehere_zugangskonten": {
+                    "description": "Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie. Leer, wenn\nes keine gab.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.DSGVOFrueheresZugangskonto"
+                    }
+                },
+                "nachbuch_meldungen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.NachbuchMeldung"
+                    }
+                },
+                "protokolleintraege": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.ProtokollEintrag"
+                    }
+                },
+                "schadensersatz_bescheide": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.Bescheid"
+                    }
+                },
+                "schadensfaelle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.Schadensfall"
+                    }
+                },
+                "stammdaten": {
+                    "$ref": "#/definitions/auskunft.Stammdaten"
+                },
+                "verarbeitungsangaben": {
+                    "$ref": "#/definitions/auskunft.Verarbeitungsangaben"
+                },
+                "verwaltungsprotokolle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.VerwaltungsEintrag"
+                    }
+                },
+                "vormerkungen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.Vormerkung"
+                    }
+                },
+                "zugangskonto": {
+                    "description": "Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;\nnull, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.DSGVOZugangskonto"
+                        }
+                    ]
+                }
+            }
+        },
+        "auskunft.Ausleihe": {
+            "type": "object",
+            "properties": {
+                "ausgeliehen_am": {
+                    "type": "string"
+                },
+                "barcode": {
+                    "type": "string"
+                },
+                "gegenstand": {
+                    "type": "string"
+                },
+                "ist_handapparat": {
+                    "type": "boolean"
+                },
+                "rueckgabe_am": {
+                    "type": "string"
+                },
+                "rueckgabe_frist": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.Bescheid": {
+            "type": "object",
+            "properties": {
+                "brief_datum": {
+                    "type": "string"
+                },
+                "frist_bis": {
+                    "type": "string"
+                },
+                "gesamtbetrag": {
+                    "type": "string"
+                },
+                "referenznummer": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.Foto": {
+            "type": "object",
+            "properties": {
+                "aktualisiert_am": {
+                    "type": "string"
+                },
+                "hinweis": {
+                    "type": "string"
+                },
+                "vorhanden": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "auskunft.NachbuchMeldung": {
+            "type": "object",
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                },
+                "ergebnis": {
+                    "type": "string"
+                },
+                "gescannt_am": {
+                    "type": "string"
+                },
+                "grund": {
+                    "type": "string"
+                },
+                "quittiert_am": {
+                    "type": "string"
+                },
+                "rolle": {
+                    "description": "ausleiher | vorbesitzer",
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.ProtokollEintrag": {
             "type": "object",
             "properties": {
                 "akteur": {
@@ -3729,165 +3887,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auskunft.DsgvoAuskunftResponse": {
-            "type": "object",
-            "properties": {
-                "art": {
-                    "type": "string"
-                },
-                "auskunft_erstellt_am": {
-                    "type": "string"
-                },
-                "ausleihhistorie": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/auskunft.DsgvoAusleihe"
-                    }
-                },
-                "ausweisfoto": {
-                    "$ref": "#/definitions/auskunft.DsgvoFoto"
-                },
-                "fruehere_zugangskonten": {
-                    "description": "Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie. Leer, wenn\nes keine gab.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.DSGVOFrueheresZugangskonto"
-                    }
-                },
-                "nachbuch_meldungen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/auskunft.DsgvoNachbuchMeldung"
-                    }
-                },
-                "protokolleintraege": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/auskunft.DsgvoAuditEintrag"
-                    }
-                },
-                "schadensersatz_bescheide": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/auskunft.DsgvoBescheid"
-                    }
-                },
-                "schadensfaelle": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/auskunft.DsgvoSchadensfall"
-                    }
-                },
-                "stammdaten": {
-                    "$ref": "#/definitions/auskunft.DsgvoStammdaten"
-                },
-                "verarbeitungsangaben": {
-                    "$ref": "#/definitions/auskunft.DsgvoVerarbeitungsangaben"
-                },
-                "verwaltungsprotokolle": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/auskunft.DsgvoVerwaltungsEintrag"
-                    }
-                },
-                "vormerkungen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/auskunft.DsgvoVormerkung"
-                    }
-                },
-                "zugangskonto": {
-                    "description": "Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;\nnull, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/repository.DSGVOZugangskonto"
-                        }
-                    ]
-                }
-            }
-        },
-        "auskunft.DsgvoAusleihe": {
-            "type": "object",
-            "properties": {
-                "ausgeliehen_am": {
-                    "type": "string"
-                },
-                "barcode": {
-                    "type": "string"
-                },
-                "gegenstand": {
-                    "type": "string"
-                },
-                "ist_handapparat": {
-                    "type": "boolean"
-                },
-                "rueckgabe_am": {
-                    "type": "string"
-                },
-                "rueckgabe_frist": {
-                    "type": "string"
-                }
-            }
-        },
-        "auskunft.DsgvoBescheid": {
-            "type": "object",
-            "properties": {
-                "brief_datum": {
-                    "type": "string"
-                },
-                "frist_bis": {
-                    "type": "string"
-                },
-                "gesamtbetrag": {
-                    "type": "string"
-                },
-                "referenznummer": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "auskunft.DsgvoFoto": {
-            "type": "object",
-            "properties": {
-                "aktualisiert_am": {
-                    "type": "string"
-                },
-                "hinweis": {
-                    "type": "string"
-                },
-                "vorhanden": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "auskunft.DsgvoNachbuchMeldung": {
-            "type": "object",
-            "properties": {
-                "barcode": {
-                    "type": "string"
-                },
-                "ergebnis": {
-                    "type": "string"
-                },
-                "gescannt_am": {
-                    "type": "string"
-                },
-                "grund": {
-                    "type": "string"
-                },
-                "quittiert_am": {
-                    "type": "string"
-                },
-                "rolle": {
-                    "description": "ausleiher | vorbesitzer",
-                    "type": "string"
-                }
-            }
-        },
-        "auskunft.DsgvoSchadensfall": {
+        "auskunft.Schadensfall": {
             "type": "object",
             "properties": {
                 "beschreibung": {
@@ -3910,7 +3910,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auskunft.DsgvoStammdaten": {
+        "auskunft.Stammdaten": {
             "type": "object",
             "properties": {
                 "abgaenger_jahr": {
@@ -3942,7 +3942,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "hat_zugangskonto": {
-                    "description": "HatZugangskonto sagt, ob ein Zugangskonto auf diesen Leser zeigt. Die Anmeldedaten stehen\nin DsgvoAuskunftResponse.Zugangskonto: Sie gehören zum Konto, nicht zum Leser.",
+                    "description": "HatZugangskonto sagt, ob ein Zugangskonto auf diesen Leser zeigt. Die Anmeldedaten stehen\nin Antwort.Zugangskonto: Sie gehören zum Konto, nicht zum Leser.",
                     "type": "boolean"
                 },
                 "hausnummer": {
@@ -3999,7 +3999,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auskunft.DsgvoVerarbeitungsangaben": {
+        "auskunft.Verarbeitungsangaben": {
             "type": "object",
             "properties": {
                 "betroffenenrechte": {
@@ -4025,7 +4025,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auskunft.DsgvoVerwaltungsEintrag": {
+        "auskunft.VerwaltungsEintrag": {
             "type": "object",
             "properties": {
                 "aktion": {
@@ -4039,7 +4039,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auskunft.DsgvoVormerkung": {
+        "auskunft.Vormerkung": {
             "type": "object",
             "properties": {
                 "erstellt_am": {
@@ -5271,7 +5271,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "erledigt_am": {
-                    "description": "beim Klassensatz vor Migration 089 leer",
+                    "description": "bei einem alten Klassensatz leer",
                     "type": "string"
                 },
                 "erledigt_notiz": {
@@ -5740,11 +5740,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "erster_tag": {
-                    "description": "ErsterTag/Startstunde: der Beginn. Beim Rückgabe-Plan GERECHNET aus dem Ende\n(Migration 101), beim Ausgabe-Plan die Vorgabe des Planers.",
+                    "description": "ErsterTag/Startstunde: der Beginn. Beim Rückgabe-Plan gerechnet aus dem Ende,\nbeim Ausgabe-Plan die Vorgabe des Planers.",
                     "type": "string"
                 },
                 "freie_tage": {
-                    "description": "FreieTage: Tage, die dieser Plan überspringt (Migration 099) — bewegliche\nFerientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche\nFeiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).",
+                    "description": "FreieTage: Tage, die dieser Plan überspringt — bewegliche\nFerientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche\nFeiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/repository.LMFFreierTag"
@@ -5757,7 +5757,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "letzter_tag": {
-                    "description": "LetzterTag/LetzteStunde: der Anker des Rückgabe-Plans — Donnerstag vor den\nSommerferien, 4. Stunde (06.09.2026); die Reihenfolge fließt rückwärts\ndavor. Beim Ausgabe-Plan leer (\"\" / 0): sein Anker ist der Beginn.",
+                    "description": "LetzterTag und LetzteStunde sind der Anker des Rückgabe-Plans: Donnerstag vor den\nSommerferien, 4. Stunde; die Reihenfolge fließt rückwärts davor. Beim Ausgabe-Plan leer\n(\"\" und 0): Sein Anker ist der Beginn.",
                     "type": "string"
                 },
                 "schuljahr_beginn": {
@@ -5771,7 +5771,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "veroeffentlicht_am": {
-                    "description": "VeroeffentlichtAm: nil = Entwurf (Migration 100) — nur im Planer sichtbar, keine\nFristen. Gesetzt (RFC 3339) = gilt für Portal, PDF und Frist-Kopplung.",
+                    "description": "VeroeffentlichtAm: nil = Entwurf — nur im Planer sichtbar, keine\nFristen. Gesetzt (RFC 3339) = gilt für Portal, PDF und Frist-Kopplung.",
                     "type": "string"
                 }
             }

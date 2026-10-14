@@ -14,13 +14,13 @@ import (
 // nicht einbinden und führt den Namen der Aktion deshalb als Text; weicht er von dem ab, was
 // diese Tür ins Protokoll schreibt, stünde auf dem Blatt der Name der Aktion.
 func TestBescheid_AuskunftNenntDasErstellenInWorten(t *testing.T) {
-	a := auskunft.DsgvoAuskunftResponse{
+	a := auskunft.Antwort{
 		Art: "Auskunft nach Art. 15 DSGVO",
-		Verwaltung: []auskunft.DsgvoVerwaltungsEintrag{
+		Verwaltung: []auskunft.VerwaltungsEintrag{
 			{Aktion: auditBescheidErstellt, Zeitpunkt: time.Date(2026, 10, 8, 10, 15, 0, 0, time.UTC)},
 		},
 	}
-	roh, err := auskunft.GenerateDsgvoAuskunftPDF(a, pdf.SchuleInfo{Name: "Testschule"})
+	roh, err := auskunft.ErzeugeBlatt(a, pdf.SchuleInfo{Name: "Testschule"})
 	if err != nil {
 		t.Fatal(err)
 	}

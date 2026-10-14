@@ -8,14 +8,14 @@ import (
 	"testing"
 )
 
-// Das dritte Glied der Kette von der Spalte in leser über das Feld in DsgvoStammdaten zur Zeile
+// Das dritte Glied der Kette von der Spalte in leser über das Feld in Stammdaten zur Zeile
 // auf dem Blatt. Das erste hält api.TestDSGVOAuskunft_KenntJedeLeserSpalte, das zweite der
 // Compiler. Der Abschnitt der Stammdaten zählt seine Zeilen von Hand auf: Ohne dieses Gate
 // fehlt ein neues Feld auf dem Blatt, und die gedruckte Auskunft ist kürzer als die abgerufene.
 //
 // Das Gate liest den Quelltext von blatt.go, weil es prüft, was dort von Hand steht. Es
 // verlangt, dass ein Feld gedruckt wird; wie, ist Sache des Abschnitts.
-func TestDsgvoPDF_DrucktJedesStammdatenfeld(t *testing.T) {
+func TestBlatt_DrucktJedesStammdatenfeld(t *testing.T) {
 	// Ausnahmen: Feld → Begründung. Leer, weil jedes Feld eine gespeicherte Angabe über die
 	// Person ist und auf ihr Blatt gehört.
 	ausnahmen := map[string]string{}
@@ -30,9 +30,9 @@ func TestDsgvoPDF_DrucktJedesStammdatenfeld(t *testing.T) {
 		t.Fatal("Liveness: blatt.go enthält keinen Stammdaten-Abschnitt mehr — Gate zeigt ins Leere")
 	}
 
-	felder := reflect.TypeOf(DsgvoStammdaten{})
+	felder := reflect.TypeOf(Stammdaten{})
 	if felder.NumField() < 20 {
-		t.Fatalf("Liveness: nur %d Felder in DsgvoStammdaten", felder.NumField())
+		t.Fatalf("Liveness: nur %d Felder in Stammdaten", felder.NumField())
 	}
 	for i := 0; i < felder.NumField(); i++ {
 		name := felder.Field(i).Name
@@ -40,13 +40,13 @@ func TestDsgvoPDF_DrucktJedesStammdatenfeld(t *testing.T) {
 			continue
 		}
 		if !regexp.MustCompile(`\bst\.` + regexp.QuoteMeta(name) + `\b`).Match(quelle) {
-			t.Errorf("DsgvoStammdaten.%s steht in der abgerufenen Auskunft, aber auf keiner Zeile des PDF "+
+			t.Errorf("Stammdaten.%s steht in der abgerufenen Auskunft, aber auf keiner Zeile des PDF "+
 				"(internal/auskunft/blatt.go) — drucken oder begründet ausnehmen", name)
 		}
 	}
 	for name := range ausnahmen {
 		if _, gefunden := felder.FieldByName(name); !gefunden {
-			t.Errorf("Ausnahme %q nennt kein Feld von DsgvoStammdaten mehr — Eintrag entfernen", name)
+			t.Errorf("Ausnahme %q nennt kein Feld von Stammdaten mehr — Eintrag entfernen", name)
 		}
 	}
 }

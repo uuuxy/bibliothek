@@ -25,7 +25,7 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 	dsgvoZeile(p, tr, "Nachname", k.Nachname)
 	dsgvoZeile(p, tr, "Rolle", dsgvoRolle(k.Rolle))
 	dsgvoZeile(p, tr, "Aktiv", dsgvoJaNein(k.Aktiv))
-	dsgvoZeile(p, tr, "Zugang beantragt am", dsgvoZeitPtr(k.ZugangBeantragtAm))
+	dsgvoZeile(p, tr, "Zugang beantragt am", dsgvoZeitOderStrich(k.ZugangBeantragtAm))
 	dsgvoZeile(p, tr, "Angelegt am", dsgvoZeit(k.ErstelltAm))
 	dsgvoZeile(p, tr, "Zuletzt geändert", dsgvoZeit(k.AktualisiertAm))
 	dsgvoZeile(p, tr, "Klassenleitung", strings.Join(k.Klassenleitungen, ", "))

@@ -31,14 +31,14 @@ import (
 // Lesers Name und Adresse aus dem Löscheintrag tilgt.
 
 // fkAuskunft ruft die Auskunft eines Lesers über ihren Handler ab.
-func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.DsgvoAuskunftResponse {
+func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.Antwort {
 	t.Helper()
 	rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().DsgvoAuskunftHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
 		map[string]string{"id": leserID})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Auskunft: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	var a auskunft.DsgvoAuskunftResponse
+	var a auskunft.Antwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Auskunft lesen: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 		t.Helper()
 		return tuertest.RufeAlsAdmin(t, admin, h, methode, pfad, body, pfadwerte)
 	}
-	auskunftZu := func(leserID string) auskunft.DsgvoAuskunftResponse {
+	auskunftZu := func(leserID string) auskunft.Antwort {
 		t.Helper()
 		return fkAuskunft(t, srv, admin, leserID)
 	}

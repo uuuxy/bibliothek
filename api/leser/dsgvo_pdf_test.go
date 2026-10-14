@@ -16,10 +16,10 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// TestGenerateDsgvoAuskunftPDF stellt sicher, dass der Auskunfts-Generator aus
+// TestErzeugeBlatt stellt sicher, dass der Auskunfts-Generator aus
 // vollständigen Daten ein valides, nicht-triviales PDF erzeugt — inkl. gefüllter
 // Listen (die MultiCell-Umbrüche und optionale Zeiger-Felder auslösen).
-func TestGenerateDsgvoAuskunftPDF(t *testing.T) {
+func TestErzeugeBlatt(t *testing.T) {
 	gebdatum := "2010-05-01"
 	lusd := "LUSD-4711"
 	sperrgrund := "Test-Sperrgrund"
@@ -28,23 +28,23 @@ func TestGenerateDsgvoAuskunftPDF(t *testing.T) {
 	kontext := "Import"
 
 	daten := &dsgvoDaten{
-		stammdaten: &auskunft.DsgvoStammdaten{
+		stammdaten: &auskunft.Stammdaten{
 			ID: "abc-123", BarcodeID: "S-10001", Vorname: "Erika", Nachname: "Mustermann",
 			Klasse: "7b", Geburtsdatum: &gebdatum, AbgaengerJahr: 2030, LUSDID: &lusd,
 			Strasse: "Hauptstr.", Hausnummer: "5", Plz: "60311", Ort: "Frankfurt",
 			ElternEmail: "eltern@example.org", IstGesperrt: true, IstVonHandGesperrt: true,
 			Sperrgrund: &sperrgrund, ErstelltAm: time.Now(), AktualisiertAm: time.Now(),
 		},
-		foto:           auskunft.DsgvoFoto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
-		ausleihen:      []auskunft.DsgvoAusleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
-		schaeden:       []auskunft.DsgvoSchadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
-		vormerkungen:   []auskunft.DsgvoVormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
-		auditEintraege: []auskunft.DsgvoAuditEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
+		foto:           auskunft.Foto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
+		ausleihen:      []auskunft.Ausleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
+		schaeden:       []auskunft.Schadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
+		vormerkungen:   []auskunft.Vormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
+		auditEintraege: []auskunft.ProtokollEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
 	}
 
-	out, err := auskunft.GenerateDsgvoAuskunftPDF(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
+	out, err := auskunft.ErzeugeBlatt(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
 	if err != nil {
-		t.Fatalf("GenerateDsgvoAuskunftPDF: %v", err)
+		t.Fatalf("ErzeugeBlatt: %v", err)
 	}
 	if !bytes.HasPrefix(out, []byte("%PDF")) {
 		t.Errorf("Ausgabe ist kein PDF (Prefix %q)", out[:min(8, len(out))])

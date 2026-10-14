@@ -72,7 +72,7 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 		}
-		var antwort auskunft.DsgvoAuskunftResponse
+		var antwort auskunft.Antwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort lesen: %v", err)
 		}

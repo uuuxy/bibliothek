@@ -112,7 +112,7 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
 	}
 
-	var resp auskunft.DsgvoAuskunftResponse
+	var resp auskunft.Antwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Antwort kein valides JSON: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 	}
 	if resp.Stammdaten.Nachname != "Muster" || !resp.Foto.Vorhanden ||
 		len(resp.Ausleihen) != 1 || len(resp.Schadensfaelle) != 1 ||
-		len(resp.Vormerkungen) != 1 || len(resp.AuditEintraege) != 1 ||
+		len(resp.Vormerkungen) != 1 || len(resp.ProtokollEintraege) != 1 ||
 		len(resp.Verwaltung) != 1 {
 		t.Errorf("Sektionen unvollständig: %+v", resp)
 	}
@@ -192,7 +192,7 @@ func TestDsgvoFristen_OhneEinstellungenGeltenDieVorgaben(t *testing.T) {
 	mock.ExpectQuery(`FROM system_einstellungen`).WillReturnError(errors.New("Datenbank nicht erreichbar"))
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
-	soll := auskunft.DsgvoFristWerte{LesehistorieTage: 1, LernmittelTage: 730, KarenzTage: 90, AuditMonate: 24, AnliegenTage: 365}
+	soll := auskunft.FristWerte{LesehistorieTage: 1, LernmittelTage: 730, KarenzTage: 90, ProtokollMonate: 24, AnliegenTage: 365}
 	if ist := s.dsgvoFristen(context.Background()); ist != soll {
 		t.Errorf("Fristen ohne Einstellungen = %+v, erwartet die Vorgaben %+v", ist, soll)
 	}

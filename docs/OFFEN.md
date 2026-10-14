@@ -480,7 +480,7 @@ Tests und meldet die Stelle. Drei Stellen sieht auch `go vet ./...` nicht oder e
 - Dateien hinter einem Build-Tag (`repository/raster_*_pg_test.go`): `go vet -tags raster
   ./repository/` baut sie.
 - Wandelt ein Paket die Zeile eines anderen in seinen eigenen Typ um (`AbgaengerZeile(z)` in
-  `api/mahnwesen`, `auskunft.DsgvoStammdaten(*zeile)`), müssen die Felder beider Typen gleich
+  `api/mahnwesen`, `auskunft.Stammdaten(*zeile)`), müssen die Felder beider Typen gleich
   heißen: Ein umbenanntes Feld zieht das Feld des Zwillings mit, das Feld in JSON bleibt.
 - Kommentare im Text einer Abfrage (`-- …`) stehen in einer Zeichenkette. Sie werden von Hand
   gesucht und als eigener Commit nachgezogen, weil sich dabei der Text der Abfrage ändert.

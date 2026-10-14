@@ -105,7 +105,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 	}
 
 	rec := rufe(t, srv.leser().DsgvoAuskunftHandler(), "/api/schueler/"+leser+"/dsgvo-auskunft")
-	var a auskunft.DsgvoAuskunftResponse
+	var a auskunft.Antwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}

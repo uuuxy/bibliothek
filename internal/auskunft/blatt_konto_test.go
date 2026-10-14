@@ -11,7 +11,7 @@ import (
 // Die selbst bearbeiteten Vorgänge stehen je Tag und Handlung in einer Zeile, jede Uhrzeit
 // bleibt erhalten — in der Schulzeitzone, damit ein Vorgang kurz nach Mitternacht nicht am
 // Vortag steht.
-func TestDsgvoVorgaengeJeTag(t *testing.T) {
+func TestDSGVOVorgaengeJeTag(t *testing.T) {
 	zeit := func(s string) *time.Time {
 		z, err := time.Parse(time.RFC3339, s)
 		if err != nil {

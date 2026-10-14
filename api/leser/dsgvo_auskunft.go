@@ -15,22 +15,22 @@ import (
 // dsgvoFristen liest Lesehistorie-Befristung, Abgänger-Karenz, Protokoll-Aufbewahrung und
 // die Frist erledigter Anliegen aus den Einstellungen; bei Fehlern gelten die Vorgaben (so
 // arbeiten auch die Jobs).
-func (s *Tueren) dsgvoFristen(ctx context.Context) auskunft.DsgvoFristWerte {
+func (s *Tueren) dsgvoFristen(ctx context.Context) auskunft.FristWerte {
 	einst, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil || einst == nil {
-		return auskunft.DsgvoFristWerte{
+		return auskunft.FristWerte{
 			LesehistorieTage: repository.LesehistorieTageVorgabe,
 			LernmittelTage:   repository.LesehistorieLernmittelTageVorgabe,
 			KarenzTage:       repository.AbgaengerKarenzTageVorgabe,
-			AuditMonate:      repository.ProtokollAufbewahrungMonateVorgabe,
+			ProtokollMonate:  repository.ProtokollAufbewahrungMonateVorgabe,
 			AnliegenTage:     repository.AnliegenTageVorgabe,
 		}
 	}
-	return auskunft.DsgvoFristWerte{
+	return auskunft.FristWerte{
 		LesehistorieTage: repository.TageOderVorgabe(einst.LesehistorieTage, repository.LesehistorieTageVorgabe),
 		LernmittelTage:   repository.TageOderVorgabe(einst.LesehistorieLernmittelTage, repository.LesehistorieLernmittelTageVorgabe),
 		KarenzTage:       repository.AbgaengerKarenzTageOderVorgabe(einst),
-		AuditMonate:      repository.ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate),
+		ProtokollMonate:  repository.ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate),
 		AnliegenTage:     repository.TageOderVorgabe(einst.AnliegenTage, repository.AnliegenTageVorgabe),
 	}
 }
@@ -48,92 +48,92 @@ func alsAntwort[Z, T any](zeilen []Z, err error, als func(Z) T) ([]T, error) {
 	return out, nil
 }
 
-func (s *Tueren) dsgvoQueryStammdaten(ctx context.Context, id string) (*auskunft.DsgvoStammdaten, error) {
+func (s *Tueren) dsgvoQueryStammdaten(ctx context.Context, id string) (*auskunft.Stammdaten, error) {
 	zeile, err := repository.LadeDSGVOStammdaten(ctx, s.DB.Pool, id)
 	if err != nil || zeile == nil {
 		return nil, err
 	}
-	st := auskunft.DsgvoStammdaten(*zeile)
+	st := auskunft.Stammdaten(*zeile)
 	return &st, nil
 }
 
-func (s *Tueren) dsgvoQueryFoto(ctx context.Context, id string) (auskunft.DsgvoFoto, error) {
-	foto := auskunft.DsgvoFoto{Hinweis: "Foto wird verschlüsselt gespeichert; Kopie über die Akte in der Leserdatei abrufbar"}
+func (s *Tueren) dsgvoQueryFoto(ctx context.Context, id string) (auskunft.Foto, error) {
+	foto := auskunft.Foto{Hinweis: "Foto wird verschlüsselt gespeichert; Kopie über die Akte in der Leserdatei abrufbar"}
 	aktualisiert, err := repository.LadeDSGVOFotoStand(ctx, s.DB.Pool, id)
 	if err != nil {
 		return foto, err
 	}
 	if aktualisiert == nil {
-		return auskunft.DsgvoFoto{Vorhanden: false, Hinweis: "Kein Foto gespeichert"}, nil
+		return auskunft.Foto{Vorhanden: false, Hinweis: "Kein Foto gespeichert"}, nil
 	}
 	foto.Vorhanden = true
 	foto.AktualisiertAm = aktualisiert
 	return foto, nil
 }
 
-func (s *Tueren) dsgvoQueryAusleihen(ctx context.Context, id string) ([]auskunft.DsgvoAusleihe, error) {
+func (s *Tueren) dsgvoQueryAusleihen(ctx context.Context, id string) ([]auskunft.Ausleihe, error) {
 	zeilen, err := repository.LadeDSGVOAusleihen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DSGVOAusleiheZeile) auskunft.DsgvoAusleihe {
-		return auskunft.DsgvoAusleihe(z)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOAusleiheZeile) auskunft.Ausleihe {
+		return auskunft.Ausleihe(z)
 	})
 }
 
-func (s *Tueren) dsgvoQuerySchadensfaelle(ctx context.Context, id string) ([]auskunft.DsgvoSchadensfall, error) {
+func (s *Tueren) dsgvoQuerySchadensfaelle(ctx context.Context, id string) ([]auskunft.Schadensfall, error) {
 	zeilen, err := repository.LadeDSGVOSchadensfaelle(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DSGVOSchadensfallZeile) auskunft.DsgvoSchadensfall {
-		return auskunft.DsgvoSchadensfall(z)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOSchadensfallZeile) auskunft.Schadensfall {
+		return auskunft.Schadensfall(z)
 	})
 }
 
-func (s *Tueren) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]auskunft.DsgvoVormerkung, error) {
+func (s *Tueren) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]auskunft.Vormerkung, error) {
 	zeilen, err := repository.LadeDSGVOVormerkungen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DSGVOVormerkungZeile) auskunft.DsgvoVormerkung {
-		return auskunft.DsgvoVormerkung(z)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOVormerkungZeile) auskunft.Vormerkung {
+		return auskunft.Vormerkung(z)
 	})
 }
 
-func (s *Tueren) dsgvoQueryNachbuchMeldungen(ctx context.Context, id string) ([]auskunft.DsgvoNachbuchMeldung, error) {
+func (s *Tueren) dsgvoQueryNachbuchMeldungen(ctx context.Context, id string) ([]auskunft.NachbuchMeldung, error) {
 	zeilen, err := repository.LadeDSGVONachbuchMeldungen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DSGVONachbuchZeile) auskunft.DsgvoNachbuchMeldung {
-		return auskunft.DsgvoNachbuchMeldung(z)
+	return alsAntwort(zeilen, err, func(z repository.DSGVONachbuchZeile) auskunft.NachbuchMeldung {
+		return auskunft.NachbuchMeldung(z)
 	})
 }
 
-func (s *Tueren) dsgvoQueryBescheide(ctx context.Context, id string) ([]auskunft.DsgvoBescheid, error) {
+func (s *Tueren) dsgvoQueryBescheide(ctx context.Context, id string) ([]auskunft.Bescheid, error) {
 	zeilen, err := repository.LadeDSGVOBescheide(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DSGVOBescheidZeile) auskunft.DsgvoBescheid {
-		return auskunft.DsgvoBescheid(z)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOBescheidZeile) auskunft.Bescheid {
+		return auskunft.Bescheid(z)
 	})
 }
 
-func (s *Tueren) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]auskunft.DsgvoAuditEintrag, error) {
+func (s *Tueren) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]auskunft.ProtokollEintrag, error) {
 	zeilen, err := repository.LadeDSGVOProtokollEintraege(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DSGVOProtokollZeile) auskunft.DsgvoAuditEintrag {
-		return auskunft.DsgvoAuditEintrag(z)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOProtokollZeile) auskunft.ProtokollEintrag {
+		return auskunft.ProtokollEintrag(z)
 	})
 }
 
-func (s *Tueren) dsgvoQueryVerwaltungsEintraege(ctx context.Context, id string) ([]auskunft.DsgvoVerwaltungsEintrag, error) {
+func (s *Tueren) dsgvoQueryVerwaltungsEintraege(ctx context.Context, id string) ([]auskunft.VerwaltungsEintrag, error) {
 	zeilen, err := repository.LadeDSGVOVerwaltungsEintraege(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DSGVOVerwaltungZeile) auskunft.DsgvoVerwaltungsEintrag {
-		return auskunft.DsgvoVerwaltungsEintrag(z)
+	return alsAntwort(zeilen, err, func(z repository.DSGVOVerwaltungZeile) auskunft.VerwaltungsEintrag {
+		return auskunft.VerwaltungsEintrag(z)
 	})
 }
 
 // dsgvoDaten bündelt alle personenbezogenen Daten eines Lesers für die Auskunft.
 type dsgvoDaten struct {
-	stammdaten        *auskunft.DsgvoStammdaten
-	foto              auskunft.DsgvoFoto
-	ausleihen         []auskunft.DsgvoAusleihe
-	schaeden          []auskunft.DsgvoSchadensfall
-	vormerkungen      []auskunft.DsgvoVormerkung
-	bescheide         []auskunft.DsgvoBescheid
-	nachbuchMeldungen []auskunft.DsgvoNachbuchMeldung
-	auditEintraege    []auskunft.DsgvoAuditEintrag
-	verwaltung        []auskunft.DsgvoVerwaltungsEintrag
+	stammdaten        *auskunft.Stammdaten
+	foto              auskunft.Foto
+	ausleihen         []auskunft.Ausleihe
+	schaeden          []auskunft.Schadensfall
+	vormerkungen      []auskunft.Vormerkung
+	bescheide         []auskunft.Bescheid
+	nachbuchMeldungen []auskunft.NachbuchMeldung
+	auditEintraege    []auskunft.ProtokollEintrag
+	verwaltung        []auskunft.VerwaltungsEintrag
 	zugangskonto      *repository.DSGVOZugangskonto
 	fruehereKonten    []repository.DSGVOFrueheresZugangskonto
-	verarbeitung      auskunft.DsgvoVerarbeitungsangaben
+	verarbeitung      auskunft.Verarbeitungsangaben
 }
 
 // dsgvoKontoRecht verlangt die Auskunft zusätzlich zum Recht der Route, sobald auf den Leser
@@ -205,7 +205,7 @@ func (s *Tueren) sammleDsgvoDaten(ctx context.Context, id string, darfKonto bool
 		return nil, apierrors.New(http.StatusForbidden,
 			"Die Auskunft über einen Leser mit Zugangskonto verlangt das Recht „Benutzer & Rechte verwalten“.", nil)
 	}
-	verarbeitung := auskunft.DsgvoPflichtangaben(stammdaten.Art, s.dsgvoFristen(ctx))
+	verarbeitung := auskunft.Pflichtangaben(stammdaten.Art, s.dsgvoFristen(ctx))
 
 	return &dsgvoDaten{
 		verarbeitung:      verarbeitung,
@@ -247,7 +247,7 @@ func (s *Tueren) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
 // @Tags         students
 // @Produce      json
 // @Param        id   path      string  true  "Reader ID (UUID)"
-// @Success      200  {object}  auskunft.DsgvoAuskunftResponse
+// @Success      200  {object}  auskunft.Antwort
 // @Failure      404  {object}  map[string]string
 // @Router       /schueler/{id}/dsgvo-auskunft [get]
 func (s *Tueren) DsgvoAuskunftHandler() http.HandlerFunc {
@@ -273,9 +273,9 @@ func (s *Tueren) DsgvoAuskunftHandler() http.HandlerFunc {
 
 // dsgvoAntwort ist die Auskunft als ein Objekt: Die JSON-Antwort und das PDF entstehen beide
 // daraus, damit das Blatt keinen Teil auslässt, den die Antwort nennt. Gate:
-// TestDsgvoPDF_DrucktJedeAngabeDerAuskunft (internal/auskunft).
-func dsgvoAntwort(daten *dsgvoDaten, erstelltAm time.Time) auskunft.DsgvoAuskunftResponse {
-	return auskunft.DsgvoAuskunftResponse{
+// TestBlatt_DrucktJedeAngabeDerAuskunft (internal/auskunft).
+func dsgvoAntwort(daten *dsgvoDaten, erstelltAm time.Time) auskunft.Antwort {
+	return auskunft.Antwort{
 		Art:                   "Auskunft nach Art. 15 DSGVO",
 		ErstelltAm:            erstelltAm,
 		Stammdaten:            *daten.stammdaten,
@@ -285,7 +285,7 @@ func dsgvoAntwort(daten *dsgvoDaten, erstelltAm time.Time) auskunft.DsgvoAuskunf
 		Vormerkungen:          daten.vormerkungen,
 		Bescheide:             daten.bescheide,
 		NachbuchMeldungen:     daten.nachbuchMeldungen,
-		AuditEintraege:        daten.auditEintraege,
+		ProtokollEintraege:    daten.auditEintraege,
 		Verwaltung:            daten.verwaltung,
 		Zugangskonto:          daten.zugangskonto,
 		FruehereZugangskonten: daten.fruehereKonten,

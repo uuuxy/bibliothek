@@ -14,7 +14,7 @@ import (
 //
 // Blindheit: nur die zwei Zahlen an je genau einer Fundstelle. Eine weitere Art von Sicherung
 // oder eine Zahl, die ihre Bedeutung wechselt, sieht er nicht.
-func TestDsgvoSicherungen_FolgenDenQuellen(t *testing.T) {
+func TestDSGVOSicherungen_FolgenDenQuellen(t *testing.T) {
 	faelle := []struct {
 		pfad       string
 		muster     string

@@ -25,9 +25,9 @@ import (
 //     Ausleihen und unbezahlte Forderungen halten ihn. Sein Zugangskonto geht schon beim
 //     Löschen (LegeLeserInPapierkorb).
 //
-// Die Fristen sind die eingestellten, mit denen auch die Jobs rechnen (DsgvoFristWerte), damit
+// Die Fristen sind die eingestellten, mit denen auch die Jobs rechnen (FristWerte), damit
 // eine geänderte Frist hier nicht als Werksvorgabe stehen bleibt.
-func dsgvoVerarbeitungsangabenKollegium(f DsgvoFristWerte) DsgvoVerarbeitungsangaben {
+func dsgvoVerarbeitungsangabenKollegium(f FristWerte) Verarbeitungsangaben {
 	const abgeschaltet = "ohne Frist (Befristung in dieser Installation abgeschaltet)"
 	nachRueckgabe := func(tage int) string {
 		if tage <= 0 {
@@ -39,7 +39,7 @@ func dsgvoVerarbeitungsangabenKollegium(f DsgvoFristWerte) DsgvoVerarbeitungsang
 	if f.AnliegenTage > 0 {
 		anliegen = fmt.Sprintf("%d Tage nach der Erledigung", f.AnliegenTage)
 	}
-	return DsgvoVerarbeitungsangaben{
+	return Verarbeitungsangaben{
 		Zwecke: []string{
 			"Zugangskontrolle: Anmeldung mit der dienstlichen E-Mail-Adresse und Rolle im System",
 			"Nachvollziehbarkeit von Änderungen an Schülerdaten und Einstellungen (Rechenschaftspflicht nach Art. 5 Abs. 2 DSGVO)",
@@ -53,7 +53,7 @@ func dsgvoVerarbeitungsangabenKollegium(f DsgvoFristWerte) DsgvoVerarbeitungsang
 			"die Liste der Zugangskonten und die Protokolle sehen nur Personen, denen die Schule deren Verwaltung übertragen hat. Helfer an der Theke sehen nur Name, Ausweisnummer und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + nachRueckgabe(f.LesehistorieTage) + ", Lernmittel " + nachRueckgabe(f.LernmittelTage) + "; danach automatisch getrennt. " +
 			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Erledigte Wünsche, Meldungen und Klassensatz-Reservierungen: " + anliegen + ". " +
-			"Protokolle " + fmt.Sprintf("%d", f.AuditMonate) + " Monate. Leserdatensatz und Zugangskonto bis zum Ausscheiden; gelöscht werden sie von Hand durch die Schule, das Zugangskonto dabei sofort. " +
+			"Protokolle " + fmt.Sprintf("%d", f.ProtokollMonate) + " Monate. Leserdatensatz und Zugangskonto bis zum Ausscheiden; gelöscht werden sie von Hand durch die Schule, das Zugangskonto dabei sofort. " +
 			"Der gelöschte Leserdatensatz liegt 180 Tage im Papierkorb und wird danach automatisch endgültig gelöscht, solange keine Ausleihe und keine unbezahlte Forderung offen ist. " +
 			dsgvoSicherungen,
 		Herkunft:          "Anlage durch die Bibliothek oder die Verwaltung der Zugangskonten, die eigene Anmeldung mit der dienstlichen E-Mail-Adresse oder die Übernahme aus dem bisherigen Bibliotheksprogramm; Protokolleinträge entstehen bei der Arbeit im System",

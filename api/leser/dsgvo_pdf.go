@@ -48,7 +48,7 @@ func (s *Tueren) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 			Ort:     settings.SchuleOrt,
 		}
 
-		pdfBytes, err := auskunft.GenerateDsgvoAuskunftPDF(dsgvoAntwort(daten, schulzeit.Jetzt()), schule)
+		pdfBytes, err := auskunft.ErzeugeBlatt(dsgvoAntwort(daten, schulzeit.Jetzt()), schule)
 		if err != nil {
 			return apierrors.Internal("PDF-Erzeugung fehlgeschlagen", err)
 		}

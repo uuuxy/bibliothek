@@ -863,12 +863,12 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Compiler merkte es. Ein Test der Tür lässt die Kopplung nach ihrer ersten Änderung scheitern
   und verlangt, dass keine Frist umgeschrieben bleibt (`api/lernmittel/lmf_plan_transaktion_pg_test.go`).
 - Die Auskunft nach Art. 15 DSGVO steht in `internal/auskunft` und nicht in `pdf/`. Antwort und
-  Blatt entstehen aus einem Objekt (`DsgvoAuskunftResponse`), damit das Blatt nichts auslässt,
+  Blatt entstehen aus einem Objekt (`auskunft.Antwort`), damit das Blatt nichts auslässt,
   was die abgerufene Auskunft nennt; eigene Eingabetypen in `pdf/` hießen, 16 Typen zu doppeln.
   Und das Blatt liest die Tabelle der Protokoll-Angaben aus `repository/`
   (`ProtokollAngaben`), die `pdf/` nicht einbinden darf. Die Tür liest die Zeilen, wandelt sie
-  in die Typen der Antwort und reicht die eingestellten Fristen (`DsgvoFristWerte`); die
-  Pflichtangaben formuliert das Paket (`DsgvoPflichtangaben`). Den Namen eines Vorgangs im
+  in die Typen der Antwort und reicht die eingestellten Fristen (`auskunft.FristWerte`); die
+  Pflichtangaben formuliert das Paket (`auskunft.Pflichtangaben`). Den Namen eines Vorgangs im
   Protokoll, den eine Tür schreibt, nennt das Paket als Text; ein Test der Tür hält ihn gegen
   das Blatt (`api/schaden/bescheid_auskunft_test.go`).
 - Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer

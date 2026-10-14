@@ -20,9 +20,9 @@ const (
 	dsgvoZeitFormat  = "02.01.2006, 15:04 Uhr"
 )
 
-// GenerateDsgvoAuskunftPDF setzt die Auskunft als PDF, aus demselben Objekt, das die Tür als
+// ErzeugeBlatt setzt die Auskunft als PDF, aus demselben Objekt, das die Tür als
 // JSON ausliefert: Das Blatt nennt, was die abgerufene Auskunft nennt.
-func GenerateDsgvoAuskunftPDF(a DsgvoAuskunftResponse, schule pdf.SchuleInfo) ([]byte, error) {
+func ErzeugeBlatt(a Antwort, schule pdf.SchuleInfo) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
@@ -37,7 +37,7 @@ func GenerateDsgvoAuskunftPDF(a DsgvoAuskunftResponse, schule pdf.SchuleInfo) ([
 	dsgvoVormerkAbschnitt(p, tr, a.Vormerkungen)
 	dsgvoBescheidAbschnitt(p, tr, a.Bescheide)
 	dsgvoNachbuchAbschnitt(p, tr, a.NachbuchMeldungen)
-	dsgvoAuditAbschnitt(p, tr, a.AuditEintraege)
+	dsgvoProtokollAbschnitt(p, tr, a.ProtokollEintraege)
 	dsgvoVerwaltungAbschnitt(p, tr, a.Verwaltung)
 	dsgvoKontoAbschnitt(p, tr, a.Zugangskonto)
 	dsgvoFruehereKontenAbschnitt(p, tr, a.FruehereZugangskonten)
@@ -50,7 +50,7 @@ func GenerateDsgvoAuskunftPDF(a DsgvoAuskunftResponse, schule pdf.SchuleInfo) ([
 	return buf.Bytes(), nil
 }
 
-func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a DsgvoAuskunftResponse) {
+func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a Antwort) {
 	p.SetFont("Arial", "B", 14)
 	p.Cell(0, 8, tr(schule.Name))
 	p.Ln(7)
@@ -81,30 +81,30 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a 
 		"gespeicherten personenbezogenen Daten sowie die Pflichtangaben nach Art. 15 Abs. 1 DSGVO."), "", "L", false)
 }
 
-func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoStammdaten) {
+func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *Stammdaten) {
 	dsgvoAbschnitt(p, tr, "1. Stammdaten")
 	dsgvoZeile(p, tr, "Interne ID", st.ID)
 	// Jedes Feld der Stammdaten hat in dieser Funktion seine Zeile;
-	// TestDsgvoPDF_DrucktJedesStammdatenfeld liest ihren Quelltext dagegen.
+	// TestBlatt_DrucktJedesStammdatenfeld liest ihren Quelltext dagegen.
 	dsgvoZeile(p, tr, "Art des Lesers", dsgvoLeserart(st.Art))
 	dsgvoZeile(p, tr, "Ausweis-Barcode", st.BarcodeID)
 	dsgvoZeile(p, tr, "Vorname", st.Vorname)
 	dsgvoZeile(p, tr, "Nachname", st.Nachname)
 	dsgvoZeile(p, tr, "Klasse", st.Klasse)
-	dsgvoZeile(p, tr, "Geburtsdatum", dsgvoStrPtr(st.Geburtsdatum))
-	dsgvoZeile(p, tr, "Schuleintritt", dsgvoStrPtr(st.SchulEintrittAm))
+	dsgvoZeile(p, tr, "Geburtsdatum", dsgvoTextOderStrich(st.Geburtsdatum))
+	dsgvoZeile(p, tr, "Schuleintritt", dsgvoTextOderStrich(st.SchulEintrittAm))
 	dsgvoZeile(p, tr, "Abgangsjahr", fmt.Sprint(st.AbgaengerJahr))
-	dsgvoZeile(p, tr, "Abgänger seit", dsgvoZeitPtr(st.AbgaengerSeit))
-	dsgvoZeile(p, tr, "Letzter abgeschlossener Vorgang", dsgvoZeitPtr(st.LetzterVorgangAm))
-	dsgvoZeile(p, tr, "LUSD-ID", dsgvoStrPtr(st.LUSDID))
-	dsgvoZeile(p, tr, "Zuletzt im LUSD-Export bestätigt", dsgvoZeitPtr(st.LUSDBestaetigtAm))
-	dsgvoZeile(p, tr, "Anonymisiert am", dsgvoZeitPtr(st.AnonymisiertAm))
+	dsgvoZeile(p, tr, "Abgänger seit", dsgvoZeitOderStrich(st.AbgaengerSeit))
+	dsgvoZeile(p, tr, "Letzter abgeschlossener Vorgang", dsgvoZeitOderStrich(st.LetzterVorgangAm))
+	dsgvoZeile(p, tr, "LUSD-ID", dsgvoTextOderStrich(st.LUSDID))
+	dsgvoZeile(p, tr, "Zuletzt im LUSD-Export bestätigt", dsgvoZeitOderStrich(st.LUSDBestaetigtAm))
+	dsgvoZeile(p, tr, "Anonymisiert am", dsgvoZeitOderStrich(st.AnonymisiertAm))
 	dsgvoZeile(p, tr, "Straße/Nr.", strings.TrimSpace(st.Strasse+" "+st.Hausnummer))
 	dsgvoZeile(p, tr, "PLZ/Ort", strings.TrimSpace(st.Plz+" "+st.Ort))
 	dsgvoZeile(p, tr, "Eltern-E-Mail", st.ElternEmail)
 	dsgvoZeile(p, tr, "Gesperrt", dsgvoJaNein(st.IstGesperrt))
 	dsgvoZeile(p, tr, "Manuell gesperrt", dsgvoJaNein(st.IstVonHandGesperrt))
-	dsgvoZeile(p, tr, "Sperrgrund", dsgvoStrPtr(st.Sperrgrund))
+	dsgvoZeile(p, tr, "Sperrgrund", dsgvoTextOderStrich(st.Sperrgrund))
 	dsgvoZeile(p, tr, "Abgänger", dsgvoJaNein(st.IstAbgaenger))
 	dsgvoZeile(p, tr, "Erfasst am", dsgvoZeit(st.ErstelltAm))
 	dsgvoZeile(p, tr, "Zuletzt geändert", dsgvoZeit(st.AktualisiertAm))
@@ -135,7 +135,7 @@ func dsgvoLeserart(art string) string {
 	return leserart.Bezeichnung(art)
 }
 
-func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto DsgvoFoto) {
+func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto Foto) {
 	dsgvoAbschnitt(p, tr, "2. Ausweisfoto")
 	dsgvoZeile(p, tr, "Vorhanden", dsgvoJaNein(foto.Vorhanden))
 	if foto.AktualisiertAm != nil {
@@ -144,7 +144,7 @@ func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto DsgvoFoto) 
 	dsgvoZeile(p, tr, "Hinweis", foto.Hinweis)
 }
 
-func dsgvoAusleihAbschnitt(p *gofpdf.Fpdf, tr func(string) string, ausleihen []DsgvoAusleihe) {
+func dsgvoAusleihAbschnitt(p *gofpdf.Fpdf, tr func(string) string, ausleihen []Ausleihe) {
 	dsgvoAbschnitt(p, tr, fmt.Sprintf("3. Ausleihhistorie (%d Einträge)", len(ausleihen)))
 	if len(ausleihen) == 0 {
 		dsgvoLeer(p, tr)
@@ -157,12 +157,12 @@ func dsgvoAusleihAbschnitt(p *gofpdf.Fpdf, tr func(string) string, ausleihen []D
 		}
 		dsgvoEintragTitel(p, tr, a.Gegenstand)
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("Barcode: %s · ausgeliehen: %s · Frist: %s · zurückgegeben: %s",
-			dsgvoLeerWert(a.Barcode), dsgvoDatum(a.AusgeliehenAm),
+			dsgvoWertOderStrich(a.Barcode), dsgvoDatum(a.AusgeliehenAm),
 			dsgvoDatum(a.RueckgabeFrist), rueck))
 	}
 }
 
-func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []DsgvoSchadensfall) {
+func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []Schadensfall) {
 	dsgvoAbschnitt(p, tr, fmt.Sprintf("4. Schadens- und Verlustfälle (%d)", len(schaeden)))
 	if len(schaeden) == 0 {
 		dsgvoLeer(p, tr)
@@ -186,7 +186,7 @@ func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []D
 	}
 }
 
-func dsgvoVormerkAbschnitt(p *gofpdf.Fpdf, tr func(string) string, vormerkungen []DsgvoVormerkung) {
+func dsgvoVormerkAbschnitt(p *gofpdf.Fpdf, tr func(string) string, vormerkungen []Vormerkung) {
 	dsgvoAbschnitt(p, tr, fmt.Sprintf("5. Vormerkungen (%d)", len(vormerkungen)))
 	if len(vormerkungen) == 0 {
 		dsgvoLeer(p, tr)
@@ -202,7 +202,7 @@ func dsgvoVormerkAbschnitt(p *gofpdf.Fpdf, tr func(string) string, vormerkungen 
 // dsgvoBescheidAbschnitt nennt die Schadensersatz-Bescheide, die an diese Person gerichtet
 // waren. Die Positionen stehen als Schadensfälle in Abschnitt 4; hier steht der Brief selbst
 // mit Nummer, Frist, Summe und Zustand.
-func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []DsgvoBescheid) {
+func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []Bescheid) {
 	dsgvoAbschnitt(p, tr, fmt.Sprintf("6. Schadensersatz-Bescheide (%d)", len(bescheide)))
 	if len(bescheide) == 0 {
 		dsgvoLeer(p, tr)
@@ -219,7 +219,7 @@ func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []
 // dsgvoNachbuchAbschnitt nennt die Nachbuch-Meldungen, in denen die Person steht: Die Theke
 // hat ohne Netz gescannt, und beim späteren Buchen wich das Ergebnis vom Scan ab. Eine Meldung
 // nennt keine andere Person, nur die Rolle, in der diese hier beteiligt war.
-func dsgvoNachbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, meldungen []DsgvoNachbuchMeldung) {
+func dsgvoNachbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, meldungen []NachbuchMeldung) {
 	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Meldungen zu Buchungen nach einem Netzausfall (%d)", len(meldungen)))
 	if len(meldungen) == 0 {
 		dsgvoLeer(p, tr)
@@ -237,7 +237,7 @@ func dsgvoNachbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, meldungen []
 			bearbeitet = "bearbeitet am " + dsgvoDatum(*m.QuittiertAm)
 		}
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("Buch: %s · gescannt: %s · beteiligt als %s%s · %s",
-			dsgvoLeerWert(m.Barcode), dsgvoZeit(m.GescanntAm),
+			dsgvoWertOderStrich(m.Barcode), dsgvoZeit(m.GescanntAm),
 			dsgvoNachbuchRolle(m.Rolle), grund, bearbeitet))
 	}
 }
@@ -277,7 +277,7 @@ func dsgvoNachbuchRolle(rolle string) string {
 	return rolle
 }
 
-func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va DsgvoVerarbeitungsangaben) {
+func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va Verarbeitungsangaben) {
 	dsgvoAbschnitt(p, tr, "11. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
 	dsgvoAbsatz(p, tr, "Verarbeitungszwecke", strings.Join(va.Zwecke, "; "))
 	dsgvoAbsatz(p, tr, "Rechtsgrundlage", va.Rechtsgrundlage)
@@ -304,17 +304,17 @@ func dsgvoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, titel string) {
 }
 
 // dsgvoZeile schreibt eine Label:Wert-Zeile (Wert wrappt bei Bedarf).
-func dsgvoZeile(p *gofpdf.Fpdf, tr func(string) string, label, wert string) {
+func dsgvoZeile(p *gofpdf.Fpdf, tr func(string) string, bezeichnung, wert string) {
 	p.SetFont("Arial", "B", 9)
-	p.CellFormat(55, 6, tr(label), "", 0, "L", false, 0, "")
+	p.CellFormat(55, 6, tr(bezeichnung), "", 0, "L", false, 0, "")
 	p.SetFont("Arial", "", 9)
-	p.MultiCell(0, 6, tr(dsgvoLeerWert(wert)), "", "L", false)
+	p.MultiCell(0, 6, tr(dsgvoWertOderStrich(wert)), "", "L", false)
 }
 
 // dsgvoAbsatz schreibt einen fetten Titel über einem umbrechenden Fließtext.
-func dsgvoAbsatz(p *gofpdf.Fpdf, tr func(string) string, label, text string) {
+func dsgvoAbsatz(p *gofpdf.Fpdf, tr func(string) string, bezeichnung, text string) {
 	p.SetFont("Arial", "B", 9)
-	p.MultiCell(0, 5, tr(label), "", "L", false)
+	p.MultiCell(0, 5, tr(bezeichnung), "", "L", false)
 	p.SetFont("Arial", "", 9)
 	p.MultiCell(0, 5, tr(text), "", "L", false)
 	p.Ln(2)
@@ -323,7 +323,7 @@ func dsgvoAbsatz(p *gofpdf.Fpdf, tr func(string) string, label, text string) {
 // dsgvoEintragTitel/-Zeile rendern einen Listeneintrag (fetter Titel + graue Detailzeile).
 func dsgvoEintragTitel(p *gofpdf.Fpdf, tr func(string) string, titel string) {
 	p.SetFont("Arial", "B", 9)
-	p.MultiCell(0, 5, tr(dsgvoLeerWert(titel)), "", "L", false)
+	p.MultiCell(0, 5, tr(dsgvoWertOderStrich(titel)), "", "L", false)
 }
 
 func dsgvoEintragZeile(p *gofpdf.Fpdf, tr func(string) string, text string) {
@@ -341,14 +341,14 @@ func dsgvoLeer(p *gofpdf.Fpdf, tr func(string) string) {
 	p.SetTextColor(0, 0, 0)
 }
 
-func dsgvoStrPtr(s *string) string {
+func dsgvoTextOderStrich(s *string) string {
 	if s == nil {
 		return "—"
 	}
-	return dsgvoLeerWert(*s)
+	return dsgvoWertOderStrich(*s)
 }
 
-func dsgvoLeerWert(s string) string {
+func dsgvoWertOderStrich(s string) string {
 	if strings.TrimSpace(s) == "" {
 		return "—"
 	}
@@ -367,8 +367,8 @@ func dsgvoDatum(t time.Time) string {
 	return t.In(schulzeit.Zone()).Format(dsgvoDatumFormat)
 }
 
-// dsgvoZeitPtr: Zeitpunkt oder Strich — wie dsgvoStrPtr für Texte.
-func dsgvoZeitPtr(t *time.Time) string {
+// dsgvoZeitOderStrich: Zeitpunkt oder Strich — wie dsgvoStrPtr für Texte.
+func dsgvoZeitOderStrich(t *time.Time) string {
 	if t == nil {
 		return "—"
 	}

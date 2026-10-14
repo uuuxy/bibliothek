@@ -68,7 +68,7 @@ var dsgvoVerwaltungsVorgaenge = map[string]string{
 
 // dsgvoVorgang schreibt einen Eintrag der Datensatz-Historie in Worten. Kennt das Blatt den
 // Vorgang nicht, stehen Aktion und Tabelle so da, wie sie gespeichert sind.
-func dsgvoVorgang(e DsgvoAuditEintrag, details map[string]any) string {
+func dsgvoVorgang(e ProtokollEintrag, details map[string]any) string {
 	merker := ""
 	if text, ok := details["action"].(string); ok {
 		merker = text
@@ -105,9 +105,9 @@ func dsgvoVerwaltungsVorgang(aktion string) string {
 	return aktion
 }
 
-func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAuditEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("8. Protokolleinträge zu diesem Datensatz (%d)", len(audit)))
-	if len(audit) == 0 {
+func dsgvoProtokollAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []ProtokollEintrag) {
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("8. Protokolleinträge zu diesem Datensatz (%d)", len(eintraege)))
+	if len(eintraege) == 0 {
 		dsgvoLeer(p, tr)
 		return
 	}
@@ -115,11 +115,11 @@ func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAu
 		"ein Konto der Bibliothek, wo nicht „automatisch“ dabeisteht; welches Konto, nennt dieses Blatt nicht "+
 		"(Art. 15 Abs. 4 DSGVO).")
 	p.Ln(1)
-	for _, e := range audit {
+	for _, e := range eintraege {
 		details, rest := dsgvoDetails(e.Details)
 		zeilen := dsgvoAngabenZeilen(details, e.Tabelle == "schueler", e.Aktion)
 		if e.Gegenstand != "" || e.Barcode != "" {
-			zeilen = append([]string{fmt.Sprintf("%s (Nummer %s)", dsgvoLeerWert(e.Gegenstand), dsgvoLeerWert(e.Barcode))}, zeilen...)
+			zeilen = append([]string{fmt.Sprintf("%s (Nummer %s)", dsgvoWertOderStrich(e.Gegenstand), dsgvoWertOderStrich(e.Barcode))}, zeilen...)
 		} else if e.Tabelle == "ausleihen" && (e.Aktion == "CHECKOUT" || e.Aktion == "RETURN") {
 			zeilen = append([]string{"Das Buch oder Gerät ist nicht mehr im Bestand."}, zeilen...)
 		}
@@ -129,7 +129,7 @@ func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAu
 
 // dsgvoVerwaltungAbschnitt listet die Einträge des Verwaltungsprotokolls (audit_logs), die
 // den Leser nennen.
-func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []DsgvoVerwaltungsEintrag) {
+func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []VerwaltungsEintrag) {
 	dsgvoAbschnitt(p, tr, fmt.Sprintf("9. Verwaltungsprotokolle zu diesem Datensatz (%d)", len(eintraege)))
 	if len(eintraege) == 0 {
 		dsgvoLeer(p, tr)

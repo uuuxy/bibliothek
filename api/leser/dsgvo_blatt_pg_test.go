@@ -28,7 +28,7 @@ import (
 // Leserzeile selbst und einen Schlüssel oder Vorgang, den das Blatt mit seinem Namen druckt.
 //
 // Blind für: Schreiber, die hier nicht aufgerufen werden — das Zusammenführen und den Bescheid
-// (ihre Angaben prüft TestDsgvoAngabenZeilen an der Form, die die Schreiber ablegen).
+// (ihre Angaben prüft TestDSGVOAngabenZeilen an der Form, die die Schreiber ablegen).
 func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -102,9 +102,9 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sammleDsgvoDaten: %v", err)
 	}
-	roh, err := auskunft.GenerateDsgvoAuskunftPDF(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule"})
+	roh, err := auskunft.ErzeugeBlatt(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule"})
 	if err != nil {
-		t.Fatalf("GenerateDsgvoAuskunftPDF: %v", err)
+		t.Fatalf("ErzeugeBlatt: %v", err)
 	}
 	// Mit Leerzeichen verbunden: Eine lange Zeile bricht das Blatt um, die Angabe steht dann in
 	// zwei Textstücken.
