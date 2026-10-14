@@ -32,7 +32,7 @@ func etikettenUeberBuchformular(t *testing.T, srv *Tueren, titelID string) strin
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/x/etiketten?format="+testdaten.EtikettFormatMitVermerk+"&start=1", nil)
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()
-	srv.LabelsHandler()(rec, req)
+	srv.TitelEtiketten()(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Buchformular-Weg: Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -48,7 +48,7 @@ func etikettenUeberDruckCenter(t *testing.T, srv *Tueren, barcode, untergeschobe
 	payload := `{"formatId": "` + testdaten.EtikettFormatMitVermerk + `", "startPosition": 1, "isQR": false,
 		"items": [{"BarcodeID": "` + barcode + `", "Titel": "Probe", "Autor": "", "Topf": "` + untergeschobenerTopf + `"}]}`
 	rec := httptest.NewRecorder()
-	srv.PrintLabelsHandler()(rec, httptest.NewRequest(http.MethodPost, "/api/print/labels", strings.NewReader(payload)))
+	srv.Etikettenbogen()(rec, httptest.NewRequest(http.MethodPost, "/api/print/labels", strings.NewReader(payload)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Druck-Center-Weg: Status %d — %s", rec.Code, rec.Body.String())
 	}

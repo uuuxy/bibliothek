@@ -33,7 +33,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 	// Titel-Tür für Bildschirme außerhalb der Theke (Etiketten-Titelsuche im Druck-Center):
 	// dieselbe Suche wie GET /api/search, aber nur Titel und hinter view_books statt
 	// perform_actions (05.09.2026, Befund-Register Entscheidung 3).
-	mux.Handle("GET /api/buecher/titel/suche", s.RequirePermission("view_books")(s.druck().TitelSucheHandler(bookRepo)))
+	mux.Handle("GET /api/buecher/titel/suche", s.RequirePermission("view_books")(s.druck().TitelSuche(bookRepo)))
 	// Die Exemplar-Liste trägt seit dem 17.09.2026 den heutigen Ersatzwert je Exemplar
 	// (OFFEN.md 9.8, Stufe 2b). Recht bleibt view_books: Was ein Ersatz kostet, ist eine
 	// Angabe über das BUCH — kein Schülerdatum. Gerechnet wird mit derselben Funktion wie
@@ -46,17 +46,17 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 	// leere Liste ab (jsonOrEmpty); Exemplare/Verfügbarkeit bleiben view_books.
 	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_students")(s.katalog().GetTitleBorrowersHandler()))
 	mux.Handle("GET /api/buecher/titel/{id}/historie", s.RequirePermission("view_students")(s.katalog().GetTitleHistoryHandler()))
-	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.druck().LabelsHandler()))
-	mux.Handle("POST /api/print/labels", s.RequirePermission("view_books")(s.druck().PrintLabelsHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.druck().TitelEtiketten()))
+	mux.Handle("POST /api/print/labels", s.RequirePermission("view_books")(s.druck().Etikettenbogen()))
 
 	// Nachdruck: Welche Exemplare haben noch kein Etikett, und Gegenbuchung nach dem Druck.
 	// edit_books statt view_books — die Gegenbuchung ändert Bestandsdaten.
-	mux.Handle("GET /api/exemplare/etiketten-offen", s.RequirePermission("edit_books")(s.druck().EtikettenOffenHandler()))
-	mux.Handle("GET /api/exemplare/etiketten-offen/anzahl", s.RequirePermission("edit_books")(s.druck().EtikettenOffenAnzahlHandler()))
-	mux.Handle("POST /api/exemplare/etiketten-gedruckt", s.RequirePermission("edit_books")(s.druck().EtikettenGedrucktHandler()))
+	mux.Handle("GET /api/exemplare/etiketten-offen", s.RequirePermission("edit_books")(s.druck().EtikettenOffen()))
+	mux.Handle("GET /api/exemplare/etiketten-offen/anzahl", s.RequirePermission("edit_books")(s.druck().EtikettenOffenAnzahl()))
+	mux.Handle("POST /api/exemplare/etiketten-gedruckt", s.RequirePermission("edit_books")(s.druck().EtikettenGedrucktVermerken()))
 	// Der Weg zurück nach Papierstau oder zu weitem Altbestands-Stichtag.
-	mux.Handle("POST /api/exemplare/etiketten-zuruecksetzen", s.RequirePermission("edit_books")(s.druck().EtikettenZuruecksetzenHandler()))
-	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.RequirePermission("edit_books")(s.druck().EtikettenAltbestandHandler()))
+	mux.Handle("POST /api/exemplare/etiketten-zuruecksetzen", s.RequirePermission("edit_books")(s.druck().EtikettenZuruecksetzen()))
+	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.RequirePermission("edit_books")(s.druck().EtikettenAltbestandVermerken()))
 	// Eigentum markierter Exemplare (4.24, Stufe 3): edit_books wie Barcode und Status, Grund
 	// Pflicht, jede Änderung im Protokoll.
 	mux.Handle("PUT /api/exemplare/eigentum", s.RequirePermission("edit_books")(s.katalog().ExemplarEigentumHandler()))

@@ -40,7 +40,7 @@ func etikettenSuchtext(r *http.Request) string {
 	return repository.TiteltextNormalform(r.URL.Query().Get("q"))
 }
 
-// EtikettenOffenHandler listet Exemplare, deren Barcode-Etikett noch nicht gedruckt wurde.
+// EtikettenOffen listet Exemplare, deren Barcode-Etikett noch nicht gedruckt wurde.
 //
 // Der Anlass: Eine Lieferung kann im System freigegeben sein, ohne dass die Etiketten je
 // aus dem Drucker kamen (z. B. weil der Hinweis nach dem Wareneingang weggeklickt wurde).
@@ -62,9 +62,9 @@ func etikettenSuchtext(r *http.Request) string {
 // @Param        status  query   string  false  "offen (Vorgabe) | erledigt | alle"
 // @Success      200  {array}  ExemplarOhneEtikett
 // @Router       /exemplare/etiketten-offen [get]
-func (s *Tueren) EtikettenOffenHandler() http.HandlerFunc {
+func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		zeilen, err := repository.LadeEtikettenExemplare(r.Context(), s.DB.Pool,
+		zeilen, err := repository.LadeEtikettenExemplare(r.Context(), t.DB.Pool,
 			r.URL.Query().Get("status"), etikettenSuchtext(r), etikettenOffenLimit)
 		if err != nil {
 			if errors.Is(err, repository.ErrZeileUnlesbar) {
@@ -85,7 +85,7 @@ func (s *Tueren) EtikettenOffenHandler() http.HandlerFunc {
 	})
 }
 
-// EtikettenOffenAnzahlHandler nennt nur die Anzahl.
+// EtikettenOffenAnzahl nennt nur die Anzahl.
 //
 // Eigene Route statt der Liste, weil der Hinweis im Bestellwesen bei jedem Öffnen lädt:
 // Für eine Zahl 300 Zeilen zu übertragen wäre Verschwendung — und ab dem Limit wäre die
@@ -105,22 +105,22 @@ func (s *Tueren) EtikettenOffenHandler() http.HandlerFunc {
 // @Param        bis     query   string  false  "Stichtag JJJJ-MM-TT (nur mit status=offen sinnvoll)"
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-offen/anzahl [get]
-func (s *Tueren) EtikettenOffenAnzahlHandler() http.HandlerFunc {
+func (t *Tueren) EtikettenOffenAnzahl() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		// Optionaler Stichtag: Damit beantwortet dieselbe Route auch "wie viele Exemplare
 		// wuerde das Aufraeumen des Altbestands treffen?" — die Zahl, die der Betreiber vor
 		// dem Bestaetigen sehen muss.
-		bisStr := strings.TrimSpace(r.URL.Query().Get("bis"))
+		bisText := strings.TrimSpace(r.URL.Query().Get("bis"))
 		var bis *time.Time
-		if bisStr != "" {
-			geparst, err := time.Parse(tuer.DatumsformatISO, bisStr)
+		if bisText != "" {
+			geparst, err := time.Parse(tuer.DatumsformatISO, bisText)
 			if err != nil {
 				return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
 			}
 			bis = &geparst
 		}
 
-		anzahl, err := repository.ZaehleEtikettenExemplare(r.Context(), s.DB.Pool,
+		anzahl, err := repository.ZaehleEtikettenExemplare(r.Context(), t.DB.Pool,
 			r.URL.Query().Get("status"), bis, etikettenSuchtext(r))
 		if err != nil {
 			return apierrors.Internal("Fehler beim Zählen der offenen Etiketten", err)
@@ -131,12 +131,12 @@ func (s *Tueren) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 	})
 }
 
-// EtikettenAltbestandRequest nennt den Stichtag, bis zu dem aufgeraeumt wird.
-type EtikettenAltbestandRequest struct {
+// etikettenAltbestandAnfrage nennt den Stichtag, bis zu dem aufgeraeumt wird.
+type etikettenAltbestandAnfrage struct {
 	Bis string `json:"bis"` // YYYY-MM-DD, einschliesslich
 }
 
-// EtikettenAltbestandHandler vermerkt alle Exemplare bis zu einem Stichtag als gedruckt.
+// EtikettenAltbestandVermerken vermerkt alle Exemplare bis zu einem Stichtag als gedruckt.
 //
 // Der Anlass ist eine Altlast, keine Funktion: etikett_gedruckt wurde bis vor Kurzem
 // NIRGENDS gesetzt. Fuer den gesamten Bestand steht deshalb "kein Etikett" — nicht weil
@@ -157,9 +157,9 @@ type EtikettenAltbestandRequest struct {
 // @Accept       json
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-altbestand [post]
-func (s *Tueren) EtikettenAltbestandHandler() http.HandlerFunc {
+func (t *Tueren) EtikettenAltbestandVermerken() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var req EtikettenAltbestandRequest
+		var req etikettenAltbestandAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
@@ -168,7 +168,7 @@ func (s *Tueren) EtikettenAltbestandHandler() http.HandlerFunc {
 			return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
 		}
 
-		markiert, err := repository.VermerkeAltbestandEtiketten(r.Context(), s.DB.Pool, bis)
+		markiert, err := repository.VermerkeAltbestandEtiketten(r.Context(), t.DB.Pool, bis)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Vermerken des Altbestands", err)
 		}
@@ -178,12 +178,12 @@ func (s *Tueren) EtikettenAltbestandHandler() http.HandlerFunc {
 	})
 }
 
-// EtikettenGedrucktRequest nennt die Exemplare, deren Etiketten gedruckt wurden.
-type EtikettenGedrucktRequest struct {
+// etikettenVermerkAnfrage nennt die Exemplare, deren Etiketten gedruckt wurden.
+type etikettenVermerkAnfrage struct {
 	BarcodeIDs []string `json:"barcode_ids"`
 }
 
-// EtikettenGedrucktHandler bucht den Druck gegen.
+// EtikettenGedrucktVermerken bucht den Druck gegen.
 //
 // Ohne diesen Schritt wäre die Nachdruck-Liste wertlos: etikett_gedruckt wurde bis hierher
 // NIRGENDS auf true gesetzt — der Wert stand seit dem Anlegen der Tabelle auf false und
@@ -195,9 +195,9 @@ type EtikettenGedrucktRequest struct {
 // @Accept       json
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-gedruckt [post]
-func (s *Tueren) EtikettenGedrucktHandler() http.HandlerFunc {
+func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var req EtikettenGedrucktRequest
+		var req etikettenVermerkAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
@@ -205,7 +205,7 @@ func (s *Tueren) EtikettenGedrucktHandler() http.HandlerFunc {
 			return apierrors.BadRequest("keine Exemplare angegeben", nil)
 		}
 
-		markiert, err := repository.VermerkeEtikettenGedruckt(r.Context(), s.DB.Pool, req.BarcodeIDs)
+		markiert, err := repository.VermerkeEtikettenGedruckt(r.Context(), t.DB.Pool, req.BarcodeIDs)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Vermerken der gedruckten Etiketten", err)
 		}
@@ -215,7 +215,7 @@ func (s *Tueren) EtikettenGedrucktHandler() http.HandlerFunc {
 	})
 }
 
-// EtikettenZuruecksetzenHandler nimmt den Vermerk „Etikett gedruckt" wieder zurück.
+// EtikettenZuruecksetzen nimmt den Vermerk „Etikett gedruckt" wieder zurück.
 //
 // Der Weg zurück, den es bis hierher nicht gab. Alle drei Wege setzten das Kennzeichen nur
 // in eine Richtung: der Stapeldruck, der Einzeldruck aus der Buchakte und das einmalige
@@ -240,9 +240,9 @@ func (s *Tueren) EtikettenGedrucktHandler() http.HandlerFunc {
 // @Accept       json
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-zuruecksetzen [post]
-func (s *Tueren) EtikettenZuruecksetzenHandler() http.HandlerFunc {
+func (t *Tueren) EtikettenZuruecksetzen() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var req EtikettenGedrucktRequest
+		var req etikettenVermerkAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
@@ -250,7 +250,7 @@ func (s *Tueren) EtikettenZuruecksetzenHandler() http.HandlerFunc {
 			return apierrors.BadRequest("keine Exemplare angegeben", nil)
 		}
 
-		zurueckgesetzt, err := repository.NimmEtikettenVermerk(r.Context(), s.DB.Pool, req.BarcodeIDs)
+		zurueckgesetzt, err := repository.NimmEtikettenVermerk(r.Context(), t.DB.Pool, req.BarcodeIDs)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Zurücksetzen der Etiketten", err)
 		}

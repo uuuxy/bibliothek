@@ -12,28 +12,28 @@ import (
 	"bibliothek/pdf"
 )
 
-// parseLabelParams liest Format, Startposition und QR-Flag aus den Query-Parametern
+// leseEtikettParameter liest Format, Startposition und QR-Flag aus den Query-Parametern
 // (mit denselben Defaults wie bisher).
-func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool) {
-	formatId = r.URL.Query().Get("format")
-	if formatId == "" {
-		formatId = "avery_3475" // default as before
+func leseEtikettParameter(r *http.Request) (formatID string, start int, alsQR bool) {
+	formatID = r.URL.Query().Get("format")
+	if formatID == "" {
+		formatID = "avery_3475" // default as before
 	}
 
-	startPos = 1
-	if startParam := r.URL.Query().Get("start"); startParam != "" {
-		if parsed, err := strconv.Atoi(startParam); err == nil && parsed > 0 {
-			startPos = parsed
+	start = 1
+	if startText := r.URL.Query().Get("start"); startText != "" {
+		if zahl, err := strconv.Atoi(startText); err == nil && zahl > 0 {
+			start = zahl
 		}
 	}
 
-	isQR = r.URL.Query().Get("qr") == "true"
-	return formatId, startPos, isQR
+	alsQR = r.URL.Query().Get("qr") == "true"
+	return formatID, start, alsQR
 }
 
-// LabelsHandler returns a handler that generates an A4 PDF containing 3x8 Avery labels
+// TitelEtiketten returns a handler that generates an A4 PDF containing 3x8 Avery labels
 // for all copies of a given book title.
-func (s *Tueren) LabelsHandler() http.HandlerFunc {
+func (t *Tueren) TitelEtiketten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -42,19 +42,19 @@ func (s *Tueren) LabelsHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		formatId, startPos, isQR := parseLabelParams(r)
+		formatID, start, alsQR := leseEtikettParameter(r)
 
-		items, err := buchetikett.LadeDesTitels(ctx, s.DB.Pool, id)
+		etiketten, err := buchetikett.LadeDesTitels(ctx, t.DB.Pool, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if len(items) == 0 {
+		if len(etiketten) == 0 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine exemplare für diesen titel vorhanden"))
 			return
 		}
 
-		bogen, err := pdf.GenerateLabelsPDF(formatId, startPos, isQR, buchetikett.PDFEtiketten(items, buchetikett.LadeKopf(ctx, s.DB.Pool)))
+		bogen, err := pdf.GenerateLabelsPDF(formatID, start, alsQR, buchetikett.PDFEtiketten(etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
@@ -69,31 +69,31 @@ func (s *Tueren) LabelsHandler() http.HandlerFunc {
 	}
 }
 
-// PrintLabelsRequest represents a request to generate a PDF label sheet.
-type PrintLabelsRequest struct {
+// etikettenbogenAnfrage represents a request to generate a PDF label sheet.
+type etikettenbogenAnfrage struct {
 	FormatID      string                `json:"formatId"`
-	StartPosition int                   `json:"startPosition"`
-	IsQR          bool                  `json:"isQR"`
-	Items         []buchetikett.Etikett `json:"items"`
+	Startposition int                   `json:"startPosition"`
+	AlsQR         bool                  `json:"isQR"`
+	Etiketten     []buchetikett.Etikett `json:"items"`
 }
 
-// PrintLabelsHandler generates an A4 PDF containing labels dynamically.
-func (s *Tueren) PrintLabelsHandler() http.HandlerFunc {
+// Etikettenbogen generates an A4 PDF containing labels dynamically.
+func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req PrintLabelsRequest
+		var req etikettenbogenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
-		if len(req.Items) == 0 {
+		if len(req.Etiketten) == 0 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine exemplare angegeben"))
 			return
 		}
 
 		ctx := r.Context()
-		buchetikett.ErgaenzeServerfelder(ctx, s.DB.Pool, req.Items)
+		buchetikett.ErgaenzeServerfelder(ctx, t.DB.Pool, req.Etiketten)
 
-		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, buchetikett.PDFEtiketten(req.Items, buchetikett.LadeKopf(ctx, s.DB.Pool)))
+		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.Startposition, req.AlsQR, buchetikett.PDFEtiketten(req.Etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return

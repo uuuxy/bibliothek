@@ -55,7 +55,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	reqGet := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/x/etiketten?format="+format+"&start=1", nil)
 	reqGet.SetPathValue("id", titelID)
 	recGet := httptest.NewRecorder()
-	srv.LabelsHandler()(recGet, reqGet)
+	srv.TitelEtiketten()(recGet, reqGet)
 	if recGet.Code != http.StatusOK {
 		t.Fatalf("Buchformular-Weg: Status %d — %s", recGet.Code, recGet.Body.String())
 	}
@@ -74,7 +74,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	}`
 	reqPost := httptest.NewRequest(http.MethodPost, "/api/print/labels", strings.NewReader(payload))
 	recPost := httptest.NewRecorder()
-	srv.PrintLabelsHandler()(recPost, reqPost)
+	srv.Etikettenbogen()(recPost, reqPost)
 	if recPost.Code != http.StatusOK {
 		t.Fatalf("Druck-Center-Weg: Status %d — %s", recPost.Code, recPost.Body.String())
 	}

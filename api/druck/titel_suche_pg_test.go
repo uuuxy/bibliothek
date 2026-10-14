@@ -37,12 +37,12 @@ func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 	}
 
 	s := &Tueren{Basis: &tuer.Basis{}}
-	h := s.TitelSucheHandler(repository.NewKatalogAbfragen(pool))
-	rufe := func(q string) (int, string, TitelSucheResult) {
+	h := s.TitelSuche(repository.NewKatalogAbfragen(pool))
+	rufe := func(q string) (int, string, titelSucheAntwort) {
 		t.Helper()
 		w := httptest.NewRecorder()
 		h(w, httptest.NewRequest(http.MethodGet, "/api/buecher/titel/suche?q="+url.QueryEscape(q), nil))
-		var res TitelSucheResult
+		var res titelSucheAntwort
 		if w.Code == http.StatusOK {
 			if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
 				t.Fatal(err)
@@ -53,16 +53,16 @@ func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 
 	// Freitext: der Titel, und KEIN Schüler im Körper — weder als Feld noch als Wert.
 	code, body, res := rufe("Türsuche")
-	if code != http.StatusOK || len(res.Books) != 1 || res.Books[0].ID != titelID {
-		t.Errorf("Freitext: HTTP %d, %d Titel (%s)", code, len(res.Books), body)
+	if code != http.StatusOK || len(res.Titel) != 1 || res.Titel[0].ID != titelID {
+		t.Errorf("Freitext: HTTP %d, %d Titel (%s)", code, len(res.Titel), body)
 	}
 	if strings.Contains(body, "Tilda") || strings.Contains(body, "students") || strings.Contains(body, "S-TUER-1") {
 		t.Errorf("die Titel-Tür trägt Schülerdaten: %s", body)
 	}
 
 	// Signatur: die Suchgüte der Theke, die GET /api/books nicht hätte.
-	if _, body, r := rufe("TUER 7"); len(r.Books) != 1 {
-		t.Errorf("Signatur-Suche: %d Treffer (%s)", len(r.Books), body)
+	if _, body, r := rufe("TUER 7"); len(r.Titel) != 1 {
+		t.Errorf("Signatur-Suche: %d Treffer (%s)", len(r.Titel), body)
 	}
 
 	// Leeres q: 400, wie an der Theke.

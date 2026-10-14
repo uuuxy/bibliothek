@@ -20,26 +20,26 @@ import (
 // und knapp 29 Bögen — darüber ist die Absicht fraglicher als die Grenze.
 const MaxSchuelerEtiketten = 600
 
-// SchuelerEtikettenRequest ist die Eingabe des Etikettenbogens.
+// schuelerEtikettenAnfrage ist die Eingabe des Etikettenbogens.
 //
 // Nur IDs, keine Namen: Der Server holt die Angaben selbst. Sonst könnte jeder mit
 // view_students einen Bogen mit beliebigen Namen zu echten Barcode-Nummern drucken —
 // dieselbe Überlegung wie beim Ausweis, dessen Gültigkeitsdatum auch vom Server kommt
 // und nicht aus dem Formular.
-type SchuelerEtikettenRequest struct {
+type schuelerEtikettenAnfrage struct {
 	FormatID      string   `json:"formatId,omitempty"`
-	StartPosition int      `json:"startPosition,omitempty"`
+	Startposition int      `json:"startPosition,omitempty"`
 	SchuelerIDs   []string `json:"schuelerIds,omitempty" validate:"omitempty,dive,required,uuid_oder_leer"`
 	// Muster druckt EIN Beispiel-Etikett statt echter Schüler — der Testdruck des
 	// Ausweis-Designers, mit dem man den Sitz auf dem Klebebogen prüft.
 	Muster bool `json:"muster,omitempty"`
 }
 
-// PrintSchuelerEtikettenHandler liefert den Klebebogen als PDF.
+// SchuelerEtiketten liefert den Klebebogen als PDF.
 // POST /api/print/schueler-etiketten
-func (s *Tueren) PrintSchuelerEtikettenHandler(studentRepo repository.LeserAbfragen) http.HandlerFunc {
+func (t *Tueren) SchuelerEtiketten(leserAbfragen repository.LeserAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req SchuelerEtikettenRequest
+		var req schuelerEtikettenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
@@ -49,13 +49,13 @@ func (s *Tueren) PrintSchuelerEtikettenHandler(studentRepo repository.LeserAbfra
 			return
 		}
 
-		etiketten, status, fehler := s.etikettenDesBogens(r, studentRepo, req)
+		etiketten, status, fehler := t.etikettenDesBogens(r, leserAbfragen, req)
 		if fehler != nil {
 			apierrors.SendHTTPError(w, status, fehler)
 			return
 		}
 
-		bogen, err := pdf.GenerateSchuelerEtikettenPDF(req.FormatID, req.StartPosition, etiketten)
+		bogen, err := pdf.GenerateSchuelerEtikettenPDF(req.FormatID, req.Startposition, etiketten)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("etikettenbogen konnte nicht erzeugt werden: %w", err))
 			return
@@ -74,19 +74,19 @@ func (s *Tueren) PrintSchuelerEtikettenHandler(studentRepo repository.LeserAbfra
 // Ein unbekanntes Format wird abgewiesen und NICHT still auf die Vorgabe gedreht: Wer
 // avery_3475 anfordert und zweckform_l4760 bekommt, merkt es erst am verdruckten Bogen.
 // Gleiche Regel wie bei den Buch-Etiketten (pdf.IstBekanntesEtikettFormat).
-func pruefeBogenParameter(req *SchuelerEtikettenRequest) error {
+func pruefeBogenParameter(req *schuelerEtikettenAnfrage) error {
 	if !pdf.IstBekanntesEtikettFormat(req.FormatID) {
 		return fmt.Errorf("unbekanntes Etikettenformat %q", req.FormatID)
 	}
 	format, _ := pdf.GetLabelFormat(req.FormatID)
 
-	if req.StartPosition == 0 {
-		req.StartPosition = 1
+	if req.Startposition == 0 {
+		req.Startposition = 1
 	}
 	proSeite := format.Cols * format.Rows
-	if req.StartPosition < 1 || req.StartPosition > proSeite {
+	if req.Startposition < 1 || req.Startposition > proSeite {
 		//nolint:staticcheck // ST1005: nutzer-sichtbarer Text im Druckdialog
-		return fmt.Errorf("Startposition %d liegt außerhalb des Bogens (1 bis %d)", req.StartPosition, proSeite)
+		return fmt.Errorf("Startposition %d liegt außerhalb des Bogens (1 bis %d)", req.Startposition, proSeite)
 	}
 	return nil
 }
@@ -94,7 +94,7 @@ func pruefeBogenParameter(req *SchuelerEtikettenRequest) error {
 // etikettenDesBogens liefert den Inhalt: ein Muster oder die markierten Schüler.
 // Zweiter Rückgabewert ist der HTTP-Status zum Fehler — ein Datenbankausfall ist kein
 // Eingabefehler und darf nicht als 400 bei der Theke ankommen.
-func (s *Tueren) etikettenDesBogens(r *http.Request, studentRepo repository.LeserAbfragen, req SchuelerEtikettenRequest) ([]pdf.SchuelerEtikett, int, error) {
+func (t *Tueren) etikettenDesBogens(r *http.Request, leserAbfragen repository.LeserAbfragen, req schuelerEtikettenAnfrage) ([]pdf.SchuelerEtikett, int, error) {
 	if req.Muster {
 		return []pdf.SchuelerEtikett{pdf.MusterSchuelerEtikett}, 0, nil
 	}
@@ -107,7 +107,7 @@ func (s *Tueren) etikettenDesBogens(r *http.Request, studentRepo repository.Lese
 			fmt.Errorf("%d Schüler markiert — höchstens %d je Bogenauftrag", len(req.SchuelerIDs), MaxSchuelerEtiketten)
 	}
 
-	zeilen, err := studentRepo.LadeEtikettZeilen(r.Context(), req.SchuelerIDs)
+	zeilen, err := leserAbfragen.LadeEtikettZeilen(r.Context(), req.SchuelerIDs)
 	if err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("schülerdaten konnten nicht gelesen werden: %w", err)
 	}

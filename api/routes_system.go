@@ -26,8 +26,8 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 
 	// Ausweis-Design (zentral, für alle vernetzten Arbeitsplätze). Lesen breit (jeder,
 	// der Ausweise druckt), Speichern nur administrativ.
-	mux.Handle("GET /api/ausweis-layout", s.RequirePermission("view_students")(s.druck().GetAusweisLayoutHandler()))
-	mux.Handle("PUT /api/ausweis-layout", s.RequirePermission("manage_settings")(s.druck().SaveAusweisLayoutHandler()))
+	mux.Handle("GET /api/ausweis-layout", s.RequirePermission("view_students")(s.druck().AusweisLayout()))
+	mux.Handle("PUT /api/ausweis-layout", s.RequirePermission("manage_settings")(s.druck().AusweisLayoutSchreiben()))
 
 	mailRepo := repository.NewMailEinstellungsAbfragen(dbPool)
 	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.system().GetMailSettingsHandler(mailRepo)))
@@ -93,7 +93,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	// eine aus barcode_seq — die gezogene Nummer ist danach verbraucht. Wer sie nicht
 	// speichern darf (das Barcode-PUT verlangt edit_books), soll sie auch nicht ziehen.
 	mux.Handle("GET /api/barcode/next", s.RequirePermission("edit_books")(s.katalog().NextBarcodeHandler()))
-	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.druck().BarcodeHandler()))
+	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.druck().BarcodeBild()))
 
 	// Signaturen — abgeleitet aus buecher_titel.signatur, nicht aus einer Stammtabelle.
 	// Die frühere Tabelle `signatures` (samt GET/POST /api/signatures) ist mit

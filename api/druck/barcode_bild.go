@@ -11,19 +11,19 @@ import (
 	"bibliothek/pkg/strichcode"
 )
 
-// BarcodeHandler handles on-demand PNG barcode and QR code generation.
-func (s *Tueren) BarcodeHandler() http.HandlerFunc {
+// BarcodeBild handles on-demand PNG barcode and QR code generation.
+func (t *Tueren) BarcodeBild() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		content := r.URL.Query().Get("content")
-		if content == "" {
+		inhalt := r.URL.Query().Get("content")
+		if inhalt == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing content parameter"))
 			return
 		}
 
-		isQR := r.URL.Query().Get("qr") == "true"
-		width, height := resolveBarcodeSize(r, isQR)
+		alsQR := r.URL.Query().Get("qr") == "true"
+		breite, hoehe := leseBarcodeGroesse(r, alsQR)
 
-		pngBytes, err := strichcode.PNG(content, isQR, width, height)
+		bild, err := strichcode.PNG(inhalt, alsQR, breite, hoehe)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -36,26 +36,26 @@ func (s *Tueren) BarcodeHandler() http.HandlerFunc {
 		// Ausweisnummer, und der Browser legte sie mit dem Bild ein Jahr lang ab. Das
 		// PII-Antwort-Gate führt Ausweisnummern als Stufe 1 und prüft diese Route eigens
 		// (adresseTraegtPersonendaten).
-		httpresp.Schreibe(w, pngBytes)
+		httpresp.Schreibe(w, bild)
 	}
 }
 
-// resolveBarcodeSize bestimmt die Zielgröße (Default 300×100, QR 200×200) und übernimmt
+// leseBarcodeGroesse bestimmt die Zielgröße (Default 300×100, QR 200×200) und übernimmt
 // gültige width/height-Query-Parameter.
-func resolveBarcodeSize(r *http.Request, isQR bool) (width, height int) {
-	width, height = 300, 100
-	if isQR {
-		width, height = 200, 200
+func leseBarcodeGroesse(r *http.Request, alsQR bool) (breite, hoehe int) {
+	breite, hoehe = 300, 100
+	if alsQR {
+		breite, hoehe = 200, 200
 	}
-	if wStr := r.URL.Query().Get("width"); wStr != "" {
-		if parsed, err := strconv.Atoi(wStr); err == nil {
-			width = parsed
+	if breiteText := r.URL.Query().Get("width"); breiteText != "" {
+		if zahl, err := strconv.Atoi(breiteText); err == nil {
+			breite = zahl
 		}
 	}
-	if hStr := r.URL.Query().Get("height"); hStr != "" {
-		if parsed, err := strconv.Atoi(hStr); err == nil {
-			height = parsed
+	if hoeheText := r.URL.Query().Get("height"); hoeheText != "" {
+		if zahl, err := strconv.Atoi(hoeheText); err == nil {
+			hoehe = zahl
 		}
 	}
-	return width, height
+	return breite, hoehe
 }
