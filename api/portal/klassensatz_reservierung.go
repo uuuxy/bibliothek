@@ -16,31 +16,31 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// KlassensatzReservierungRequest is the payload for a class-set reservation.
-type KlassensatzReservierungRequest struct {
+// klassensatzReservierungAnfrage is the payload for a class-set reservation.
+type klassensatzReservierungAnfrage struct {
 	TitelID string `json:"titel_id" validate:"omitempty,uuid_oder_leer"`
 	Klasse  string `json:"klasse"`
 	Anzahl  int    `json:"anzahl"`
 	Notiz   string `json:"notiz,omitempty"`
-	// IdempotencyKey: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
+	// IdempotenzSchluessel: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
 	// denselben Schlüssel und wird serverseitig zum No-op (keine zweite Reservierung,
 	// keine zweite Mail). Optional — ohne Schlüssel läuft alles wie bisher.
-	IdempotencyKey string `json:"idempotency_key,omitempty"`
+	IdempotenzSchluessel string `json:"idempotency_key,omitempty"`
 }
 
-// CreateKlassensatzReservierungHandler lets a LEHRER submit a class-set reservation.
+// KlassensatzReservierungAnlegen lets a LEHRER submit a class-set reservation.
 // POST /api/reservierungen/klassensatz
-func (s *Tueren) CreateKlassensatzReservierungHandler() http.HandlerFunc {
-	return s.handleCreateKlassensatzReservierung
+func (t *Tueren) KlassensatzReservierungAnlegen() http.HandlerFunc {
+	return t.legeKlassensatzReservierungAn
 }
 
-// handleCreateKlassensatzReservierung prüft Titel und Bestand und legt die Reservierung an.
-func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *http.Request) {
-	var req KlassensatzReservierungRequest
+// legeKlassensatzReservierungAn prüft Titel und Bestand und legt die Reservierung an.
+func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Request) {
+	var req klassensatzReservierungAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
-	if !validateKlassensatzRequest(w, &req) {
+	if !pruefeKlassensatzAnfrage(w, &req) {
 		return
 	}
 
@@ -51,16 +51,16 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 	}
 
 	ctx := r.Context()
-	repo := repository.NewReservierungsAbfragen(s.DB.Pool)
+	abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
 
 	// Ein Datenbankfehler ist kein „nicht gefunden": Sonst endete ein Verbindungsabbruch
 	// als 404, und die Lehrkraft läse „Buchtitel nicht gefunden" für einen Titel, der da ist.
-	exists, err := repo.IstTitelVorhanden(ctx, req.TitelID)
+	vorhanden, err := abfragen.IstTitelVorhanden(ctx, req.TitelID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
-	if !exists {
+	if !vorhanden {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
 		return
 	}
@@ -69,7 +69,7 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 	// besitzt, erzeugt eine dauerhaft unerfüllbare Aufgabe im Dashboard (Ghost-Order).
 	// Die Wunschmenge wird deshalb gegen den physischen Bestand (nicht ausgesondert)
 	// geprüft.
-	bestand, err := repo.ZaehleTitelBestand(ctx, req.TitelID)
+	bestand, err := abfragen.ZaehleTitelBestand(ctx, req.TitelID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -80,7 +80,7 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 		return
 	}
 
-	newID, neu, err := repo.LegeAn(ctx, req.TitelID, req.Klasse, req.Anzahl, nullableString(req.Notiz), claims.UserID, nullableString(req.IdempotencyKey))
+	id, neu, err := abfragen.LegeAn(ctx, req.TitelID, req.Klasse, req.Anzahl, leerAlsNil(req.Notiz), claims.UserID, leerAlsNil(req.IdempotenzSchluessel))
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -92,54 +92,54 @@ func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 	if !neu {
 		status = "bereits_vorhanden"
 	}
-	tuer.AntworteJSON(w, http.StatusCreated, map[string]string{"id": newID, "status": status})
+	tuer.AntworteJSON(w, http.StatusCreated, map[string]string{"id": id, "status": status})
 }
 
-// GetKlassensatzReservierungenHandler lists all pending class-set reservations for admins.
+// KlassensatzReservierungen lists all pending class-set reservations for admins.
 // GET /api/reservierungen/klassensatz
-func (s *Tueren) GetKlassensatzReservierungenHandler() http.HandlerFunc {
+func (t *Tueren) KlassensatzReservierungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
-		result, err := repo.LadeAlle(r.Context())
+		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
+		liste, err := abfragen.LadeAlle(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		// Ensure we don't return null for empty slices
-		if result == nil {
-			result = []repository.Reservierung{}
+		if liste == nil {
+			liste = []repository.Reservierung{}
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, result)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 	}
 }
 
-// GetKlassensatzReservierungenAnzahlHandler returns the count of open reservations (for red badge).
+// KlassensatzReservierungenAnzahl returns the count of open reservations (for red badge).
 // GET /api/reservierungen/klassensatz/anzahl
-func (s *Tueren) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
+func (t *Tueren) KlassensatzReservierungenAnzahl() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
-		count, err := repo.ZaehleOffene(r.Context())
+		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
+		anzahl, err := abfragen.ZaehleOffene(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, map[string]int{"anzahl": count})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]int{"anzahl": anzahl})
 	}
 }
 
-// OffeneKlassensatzReservierungenHandler liefert die Warteschlange für das
+// OffeneKlassensatzReservierungen liefert die Warteschlange für das
 // Kollegiums-Portal: wer vor der eigenen Reservierung steht (Titel, Klasse, Menge) —
 // bewusst ohne Personendaten des Anfordernden. Eigener Endpunkt, weil die volle
 // Liste (GET /api/reservierungen/klassensatz) hinter view_orders liegt und dem
 // Kollegium verschlossen bleibt.
 // GET /api/reservierungen/klassensatz/offen
-func (s *Tueren) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
+func (t *Tueren) OffeneKlassensatzReservierungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
-		offene, err := repo.LadeOffene(r.Context())
+		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
+		offene, err := abfragen.LadeOffene(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -148,33 +148,33 @@ func (s *Tueren) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
 	}
 }
 
-// MeineKlassensatzReservierungenHandler liefert die EIGENEN Reservierungen der
+// EigeneKlassensatzReservierungen liefert die EIGENEN Reservierungen der
 // angemeldeten Lehrkraft fuers Portal — offene und kuerzlich abgeschlossene samt
 // Bibliotheks-Notiz. GET /api/reservierungen/klassensatz/eigene
 // (Muster und Recht wie GET /api/anliegen/eigene.)
-func (s *Tueren) MeineKlassensatzReservierungenHandler() http.HandlerFunc {
+func (t *Tueren) EigeneKlassensatzReservierungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine sitzung"))
 			return
 		}
-		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
-		meine, err := repo.LadeEigene(r.Context(), claims.UserID)
+		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
+		eigene, err := abfragen.LadeEigene(r.Context(), claims.UserID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.AntworteJSON(w, http.StatusOK, meine)
+		tuer.AntworteJSON(w, http.StatusOK, eigene)
 	}
 }
 
-// ErledigeKlassensatzReservierungHandler schliesst eine Klassensatz-Reservierung ab.
+// KlassensatzReservierungErledigen schliesst eine Klassensatz-Reservierung ab.
 // PUT /api/reservierungen/klassensatz/{id}/erledigen  { "notiz": "24 von 30, Rest bei der 8a" }
 //
 // Der Body ist optional (leer = ohne Notiz): Der Weg bestand vor Migration 088 ohne
 // Body, und ein Client mit altem Bundle soll weiter abschliessen koennen.
-func (s *Tueren) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
+func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -186,8 +186,8 @@ func (s *Tueren) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 			return
 		}
 
-		repo := repository.NewReservierungsAbfragen(s.DB.Pool)
-		erledigt, err := repo.Erledige(r.Context(), id, notiz)
+		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
+		erledigt, err := abfragen.Erledige(r.Context(), id, notiz)
 
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -255,9 +255,9 @@ func klassensatzBereitText(e *repository.ErledigteReservierung) string {
 	return text + "\nDiese Mail wurde automatisch beim Abschliessen der Reservierung verschickt."
 }
 
-// validateKlassensatzRequest prüft die Pflichtfelder und normalisiert die Anzahl
+// pruefeKlassensatzAnfrage prüft die Pflichtfelder und normalisiert die Anzahl
 // (Default 1, Obergrenze 200). ok=false: die Fehlerantwort wurde bereits geschrieben.
-func validateKlassensatzRequest(w http.ResponseWriter, req *KlassensatzReservierungRequest) bool {
+func pruefeKlassensatzAnfrage(w http.ResponseWriter, req *klassensatzReservierungAnfrage) bool {
 	// Klasse oder Kurs ist seit Migration 152 Freitext wie beim Anliegen: Trimmen und Kürzen
 	// machte bis dahin der Auslöser des Klassen-Vokabulars.
 	req.Klasse = kuerze(strings.TrimSpace(req.Klasse), 50)
@@ -275,8 +275,8 @@ func validateKlassensatzRequest(w http.ResponseWriter, req *KlassensatzReservier
 	return true
 }
 
-// nullableString converts an empty string to nil for nullable DB columns.
-func nullableString(s string) *string {
+// leerAlsNil converts an empty string to nil for nullable DB columns.
+func leerAlsNil(s string) *string {
 	if s == "" {
 		return nil
 	}

@@ -9,8 +9,8 @@ import (
 
 func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	// ── PUBLIC ENDPOINTS ──
-	mux.HandleFunc("GET /api/public/opac/suche", s.portal().PublicCatalogSearchHandler())
-	mux.HandleFunc("GET /api/monitor/slides", s.portal().GetMonitorSlidesHandler())
+	mux.HandleFunc("GET /api/public/opac/suche", s.portal().OPACSuche())
+	mux.HandleFunc("GET /api/monitor/slides", s.portal().MonitorFolien())
 
 	// Bestätigungs-Link an den Lieferanten (Migration 063). Kein Login: Der Token aus dem
 	// Link ist der Ausweis, und er öffnet ausschließlich diese eine Bestellung. Das

@@ -26,7 +26,7 @@ import (
 // immer unsichtbar — beim Anliegen steht sie dagegen dauerhaft im Portal
 // (Geschwister-Asymmetrie). Entscheidung 31.08.2026: Portal + Theke lesen sie; dazu
 // erledigt_am (Migration 089), damit „erledigt am …" überhaupt anzeigbar ist.
-func TestMeineKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T) {
+func TestEigeneKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -36,20 +36,20 @@ func TestMeineKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T) 
 	lehrerB := testdaten.LegeKollegiumskontoAn(t, pool, "eigene-b@test.invalid")
 	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Die Physiker", "Jug Due", false, 0)
 
-	offenA := seedKlassensatzReservierung(t, pool, titelID, lehrerA, "07B")
-	fertigA := seedKlassensatzReservierung(t, pool, titelID, lehrerA, "09C")
-	seedKlassensatzReservierung(t, pool, titelID, lehrerB, "05A")
+	offenA := legeReservierungAn(t, pool, titelID, lehrerA, "07B")
+	fertigA := legeReservierungAn(t, pool, titelID, lehrerA, "09C")
+	legeReservierungAn(t, pool, titelID, lehrerB, "05A")
 
 	// Abschluss über den ECHTEN Handler — mit Bibliotheks-Notiz und kaputtem Mailversand:
 	// genau der Fall, in dem die Notiz vorher verloren war.
-	stubSendEmail(t, errors.New("smtp down"))
+	ersetzeMailversand(t, errors.New("smtp down"))
 	body := `{"notiz":"24 von 30, Rest bei der 8a"}`
 	req := httptest.NewRequest(http.MethodPut,
 		"/api/reservierungen/klassensatz/"+fertigA+"/erledigen", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.SetPathValue("id", fertigA)
 	rec := httptest.NewRecorder()
-	srv.ErledigeKlassensatzReservierungHandler()(rec, req)
+	srv.KlassensatzReservierungErledigen()(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Erledigen: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
@@ -104,7 +104,7 @@ func eigeneReservierungen(t *testing.T, srv *Tueren, benutzerID string) []map[st
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: benutzerID}))
 	rec := httptest.NewRecorder()
-	srv.MeineKlassensatzReservierungenHandler()(rec, req)
+	srv.EigeneKlassensatzReservierungen()(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("eigene: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
@@ -115,7 +115,7 @@ func eigeneReservierungen(t *testing.T, srv *Tueren, benutzerID string) []map[st
 	return meine
 }
 
-func seedKlassensatzReservierung(t *testing.T, pool *pgxpool.Pool, titelID, benutzerID, klasse string) string {
+func legeReservierungAn(t *testing.T, pool *pgxpool.Pool, titelID, benutzerID, klasse string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `

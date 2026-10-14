@@ -28,7 +28,7 @@ import (
 // CTE-Query erledigen — pgxmock sähe einen Schema-Drift nicht.
 
 // stubSendEmail ersetzt den Versand für einen Test und stellt ihn danach wieder her.
-func stubSendEmail(t *testing.T, fehler error) {
+func ersetzeMailversand(t *testing.T, fehler error) {
 	t.Helper()
 	alt := mailservice.SendEmail
 	mailservice.SendEmail = func(mailservice.MailRequest) error { return fehler }
@@ -48,7 +48,7 @@ func mailStatusAusAntwort(t *testing.T, rec *httptest.ResponseRecorder) string {
 	return antwort["mail"]
 }
 
-func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
+func TestAnliegenErledigen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -69,7 +69,7 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 			strings.NewReader(`{"notiz":"besorgt"}`))
 		req.SetPathValue("id", anliegenID)
 		rec := httptest.NewRecorder()
-		srv.ErledigeAnliegenHandler()(rec, req)
+		srv.AnliegenErledigen()(rec, req)
 		return rec
 	}
 
@@ -85,21 +85,21 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	}
 
 	t.Run("Versand kaputt → fehlgeschlagen", func(t *testing.T) {
-		stubSendEmail(t, errors.New("smtp down"))
+		ersetzeMailversand(t, errors.New("smtp down"))
 		if got := mailStatusAusAntwort(t, erledige(t, neuesAnliegen(t))); got != "fehlgeschlagen" {
 			t.Fatalf("mail=%q, erwartet fehlgeschlagen", got)
 		}
 	})
 
 	t.Run("Versand ok → versendet", func(t *testing.T) {
-		stubSendEmail(t, nil)
+		ersetzeMailversand(t, nil)
 		if got := mailStatusAusAntwort(t, erledige(t, neuesAnliegen(t))); got != "versendet" {
 			t.Fatalf("mail=%q, erwartet versendet", got)
 		}
 	})
 
 	t.Run("ohne Konto → keine_adresse, Versand wird nicht versucht", func(t *testing.T) {
-		stubSendEmail(t, errors.New("darf nicht aufgerufen werden"))
+		ersetzeMailversand(t, errors.New("darf nicht aufgerufen werden"))
 		var id string
 		if err := pool.QueryRow(ctx, `
 			INSERT INTO lehrer_anliegen (art, titel_text)
@@ -154,7 +154,7 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	})
 }
 
-func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
+func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -189,7 +189,7 @@ func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/api/reservierungen/klassensatz/"+resID+"/erledigen", r)
 		req.SetPathValue("id", resID)
 		rec := httptest.NewRecorder()
-		srv.ErledigeKlassensatzReservierungHandler()(rec, req)
+		srv.KlassensatzReservierungErledigen()(rec, req)
 		return rec, resID
 	}
 	erledige := func(t *testing.T) *httptest.ResponseRecorder {
@@ -198,14 +198,14 @@ func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 	}
 
 	t.Run("Versand kaputt → fehlgeschlagen", func(t *testing.T) {
-		stubSendEmail(t, errors.New("smtp down"))
+		ersetzeMailversand(t, errors.New("smtp down"))
 		if got := mailStatusAusAntwort(t, erledige(t)); got != "fehlgeschlagen" {
 			t.Fatalf("mail=%q, erwartet fehlgeschlagen", got)
 		}
 	})
 
 	t.Run("Versand ok → versendet", func(t *testing.T) {
-		stubSendEmail(t, nil)
+		ersetzeMailversand(t, nil)
 		if got := mailStatusAusAntwort(t, erledige(t)); got != "versendet" {
 			t.Fatalf("mail=%q, erwartet versendet", got)
 		}

@@ -12,7 +12,7 @@ import (
 
 // Die OPAC-Suche schickt die Eingabe zweimal: roh für die Volltextsuche, maskiert für
 // die ILIKE-Vergleiche. Mit dem alten Code (ein Argument) trifft die Erwartung nicht.
-func TestPublicCatalogSearch_LikeJokerWerdenMaskiert(t *testing.T) {
+func TestOPACSuche_LikeJokerWerdenMaskiert(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
@@ -24,7 +24,7 @@ func TestPublicCatalogSearch_LikeJokerWerdenMaskiert(t *testing.T) {
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	rec := httptest.NewRecorder()
-	s.PublicCatalogSearchHandler()(rec, httptest.NewRequest("GET", "/api/public/opac/suche?q=%25", nil))
+	s.OPACSuche()(rec, httptest.NewRequest("GET", "/api/public/opac/suche?q=%25", nil))
 	if rec.Code != 200 {
 		t.Fatalf("Status = %d, Body %s", rec.Code, rec.Body.String())
 	}

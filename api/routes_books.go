@@ -128,34 +128,34 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 	// view_students war das trotzdem gekoppelt: Wer im Kollegiums-Portal reservieren
 	// dürfen sollte, brauchte dasselbe Recht, an dem Schülerdatei und Druck-Center
 	// hängen — die einzige Portal-Funktion zog also die komplette Schülerdatei auf.
-	mux.Handle("POST /api/reservierungen/klassensatz", s.RequirePermission("create_reservations")(s.portal().CreateKlassensatzReservierungHandler()))
-	mux.Handle("GET /api/reservierungen/klassensatz", s.RequirePermission("view_orders")(s.portal().GetKlassensatzReservierungenHandler()))
-	mux.Handle("GET /api/reservierungen/klassensatz/anzahl", s.RequirePermission("view_orders")(s.portal().GetKlassensatzReservierungenAnzahlHandler()))
+	mux.Handle("POST /api/reservierungen/klassensatz", s.RequirePermission("create_reservations")(s.portal().KlassensatzReservierungAnlegen()))
+	mux.Handle("GET /api/reservierungen/klassensatz", s.RequirePermission("view_orders")(s.portal().KlassensatzReservierungen()))
+	mux.Handle("GET /api/reservierungen/klassensatz/anzahl", s.RequirePermission("view_orders")(s.portal().KlassensatzReservierungenAnzahl()))
 	// Warteschlangen-Sicht fürs Kollegium: dasselbe Recht wie das Anlegen — wer
 	// reservieren darf, darf sehen, wer vor ihm dran ist.
-	mux.Handle("GET /api/reservierungen/klassensatz/offen", s.RequirePermission("create_reservations")(s.portal().OffeneKlassensatzReservierungenHandler()))
-	mux.Handle("GET /api/reservierungen/klassensatz/eigene", s.RequirePermission("create_reservations")(s.portal().MeineKlassensatzReservierungenHandler()))
+	mux.Handle("GET /api/reservierungen/klassensatz/offen", s.RequirePermission("create_reservations")(s.portal().OffeneKlassensatzReservierungen()))
+	mux.Handle("GET /api/reservierungen/klassensatz/eigene", s.RequirePermission("create_reservations")(s.portal().EigeneKlassensatzReservierungen()))
 	// Der Katalog, in dem das Kollegium sucht und reserviert, und die Schlagworte, die
 	// darunter als Filter stehen: wie der öffentliche Katalog, dazu Lernmittel und bestellte
 	// Titel (api/portal/katalog_kollegium.go). Dasselbe Recht wie das Reservieren.
-	mux.Handle("GET /api/reservierungen/klassensatz/katalog", s.RequirePermission("create_reservations")(s.portal().KollegiumKatalogSucheHandler()))
-	mux.Handle("GET /api/reservierungen/klassensatz/katalog/filter", s.RequirePermission("create_reservations")(s.portal().KollegiumKatalogFilterHandler()))
+	mux.Handle("GET /api/reservierungen/klassensatz/katalog", s.RequirePermission("create_reservations")(s.portal().KollegiumKatalogSuche()))
+	mux.Handle("GET /api/reservierungen/klassensatz/katalog/filter", s.RequirePermission("create_reservations")(s.portal().KollegiumKatalogFilter()))
 
 	// Geräte-Verwaltung (Bereich im Medienkatalog): Geräte sind Bestand — Rechte wie Bücher.
 	geraeteRepo := repository.NewGeraeteAbfragen(s.DB.Pool)
 	mux.Handle("GET /api/geraete", s.RequirePermission("view_books")(s.katalog().ListGeraeteHandler(geraeteRepo)))
 	mux.Handle("POST /api/geraete", s.RequirePermission("edit_books")(s.katalog().CreateGeraetHandler(geraeteRepo)))
 	mux.Handle("PUT /api/geraete/{id}", s.RequirePermission("edit_books")(s.katalog().UpdateGeraetHandler(geraeteRepo)))
-	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.portal().ErledigeKlassensatzReservierungHandler()))
+	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.portal().KlassensatzReservierungErledigen()))
 
 	// Anliegen der Lehrkräfte (Wunsch/Meldung, Migration 075): Anlegen und die
 	// eigene Statusliste laufen wie die Klassensatz-Reservierung über
 	// create_reservations (das Portal-Recht des Kollegiums — bewusst NICHT
 	// view_students, siehe Kommentar an der Klassensatz-Route). Die Arbeitsliste
 	// und das Abhaken gehören der LMF: view_orders lesend, create_orders schreibend.
-	mux.Handle("POST /api/anliegen", s.RequirePermission("create_reservations")(s.portal().CreateAnliegenHandler()))
-	mux.Handle("GET /api/anliegen/eigene", s.RequirePermission("create_reservations")(s.portal().ListEigeneAnliegenHandler()))
-	mux.Handle("GET /api/anliegen/offen", s.RequirePermission("view_orders")(s.portal().ListOffeneAnliegenHandler()))
-	mux.Handle("GET /api/anliegen/anzahl", s.RequirePermission("view_orders")(s.portal().CountOffeneAnliegenHandler()))
-	mux.Handle("PUT /api/anliegen/{id}/erledigen", s.RequirePermission("create_orders")(s.portal().ErledigeAnliegenHandler()))
+	mux.Handle("POST /api/anliegen", s.RequirePermission("create_reservations")(s.portal().AnliegenAnlegen()))
+	mux.Handle("GET /api/anliegen/eigene", s.RequirePermission("create_reservations")(s.portal().EigeneAnliegen()))
+	mux.Handle("GET /api/anliegen/offen", s.RequirePermission("view_orders")(s.portal().OffeneAnliegen()))
+	mux.Handle("GET /api/anliegen/anzahl", s.RequirePermission("view_orders")(s.portal().OffeneAnliegenAnzahl()))
+	mux.Handle("PUT /api/anliegen/{id}/erledigen", s.RequirePermission("create_orders")(s.portal().AnliegenErledigen()))
 }

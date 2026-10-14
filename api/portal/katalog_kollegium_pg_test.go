@@ -124,7 +124,7 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 
 	// Ohne Anmeldung bleibt es bei der Bücherei.
 	rec = katalogAnfrage(router, "", "/api/public/opac/suche?q=Probe")
-	var oeffentlich []portal.OpacTitel
+	var oeffentlich []portal.OPACTitel
 	if err := json.Unmarshal(rec.Body.Bytes(), &oeffentlich); err != nil || rec.Code != http.StatusOK {
 		t.Fatalf("öffentlicher Katalog: %d %s (%v)", rec.Code, rec.Body.String(), err)
 	}

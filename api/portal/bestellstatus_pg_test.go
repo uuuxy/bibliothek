@@ -98,11 +98,11 @@ func opacGesamt(t *testing.T, pool *pgxpool.Pool, titel string) int {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest("GET", "/api/opac/suche?q="+url.QueryEscape(titel), nil)
 	w := httptest.NewRecorder()
-	srv.PublicCatalogSearchHandler()(w, req)
+	srv.OPACSuche()(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("OPAC-Suche: HTTP %d: %s", w.Code, w.Body.String())
 	}
-	var antwort []OpacTitel
+	var antwort []OPACTitel
 	if err := json.Unmarshal(w.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("OPAC-Antwort unlesbar: %v / %s", err, w.Body.String())
 	}

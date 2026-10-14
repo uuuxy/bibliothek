@@ -20,7 +20,7 @@ import (
 // Verweis darauf. Zwei Regeln der Tür müssen dabei halten: Was nicht öffentlich ist (hier
 // ein Lernmittel), bleibt es, auch wenn sein Schlagwort passt. Und die LIKE-Joker bleiben
 // maskiert — ein „%" darf nicht über die Schlagworte den ganzen Bestand liefern.
-func TestOpacSuche_FindetUeberSchlagwortUndVerweis(t *testing.T) {
+func TestOPACSuche_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -49,11 +49,11 @@ func TestOpacSuche_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	suche := func(q string) []string {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		s.PublicCatalogSearchHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/public/opac/suche?q="+url.QueryEscape(q), nil))
+		s.OPACSuche()(rec, httptest.NewRequest(http.MethodGet, "/api/public/opac/suche?q="+url.QueryEscape(q), nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("q=%q: %d %s", q, rec.Code, rec.Body.String())
 		}
-		var treffer []OpacTitel
+		var treffer []OPACTitel
 		if err := json.Unmarshal(rec.Body.Bytes(), &treffer); err != nil {
 			t.Fatal(err)
 		}

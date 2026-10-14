@@ -33,28 +33,28 @@ const (
 	mailStatusKeineAdresse   = "keine_adresse"
 )
 
-// AnliegenRequest ist die Eingabe der Lehrkraft im Kollegiums-Portal.
+// anliegenAnfrage ist die Eingabe der Lehrkraft im Kollegiums-Portal.
 //
 // Freitext: Am Treffer gemeldet, steht der Titel des Buchs im Text; ohne Buch nennt die
 // Lehrkraft selbst, worum es geht. Die Spalten titel_id und isbn in lehrer_anliegen füllt
 // die Tür nicht — eine Tür, die Felder annimmt, die kein Formular schickt, sieht aus wie
 // eine Funktion.
-type AnliegenRequest struct {
+type anliegenAnfrage struct {
 	Art       string `json:"art" validate:"required"`
 	TitelText string `json:"titel_text" validate:"required"`
 	Klasse    string `json:"klasse,omitempty"`
 	Kommentar string `json:"kommentar,omitempty"`
 }
 
-// CreateAnliegenHandler nimmt eine Meldung entgegen. POST /api/anliegen
-func (s *Tueren) CreateAnliegenHandler() http.HandlerFunc {
+// AnliegenAnlegen nimmt eine Meldung entgegen. POST /api/anliegen
+func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
 			return
 		}
-		var req AnliegenRequest
+		var req anliegenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
@@ -80,8 +80,8 @@ func (s *Tueren) CreateAnliegenHandler() http.HandlerFunc {
 			return
 		}
 
-		repo := repository.NewAnliegenAbfragen(s.DB.Pool)
-		id, err := repo.LegeAn(r.Context(), repository.NeuesAnliegen{
+		abfragen := repository.NewAnliegenAbfragen(t.DB.Pool)
+		id, err := abfragen.LegeAn(r.Context(), repository.NeuesAnliegen{
 			Art:            req.Art,
 			TitelText:      req.TitelText,
 			Klasse:         req.Klasse,
@@ -105,16 +105,16 @@ func kuerze(s string, n int) string {
 	return string(runen[:n])
 }
 
-// ListEigeneAnliegenHandler zeigt der Lehrkraft ihre Anliegen samt Status.
+// EigeneAnliegen zeigt der Lehrkraft ihre Anliegen samt Status.
 // GET /api/anliegen/eigene
-func (s *Tueren) ListEigeneAnliegenHandler() http.HandlerFunc {
+func (t *Tueren) EigeneAnliegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
 			return
 		}
-		anliegen, err := repository.NewAnliegenAbfragen(s.DB.Pool).LadeEigene(r.Context(), claims.UserID)
+		anliegen, err := repository.NewAnliegenAbfragen(t.DB.Pool).LadeEigene(r.Context(), claims.UserID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -123,10 +123,10 @@ func (s *Tueren) ListEigeneAnliegenHandler() http.HandlerFunc {
 	}
 }
 
-// ListOffeneAnliegenHandler ist die Arbeitsliste der LMF. GET /api/anliegen/offen
-func (s *Tueren) ListOffeneAnliegenHandler() http.HandlerFunc {
+// OffeneAnliegen ist die Arbeitsliste der LMF. GET /api/anliegen/offen
+func (t *Tueren) OffeneAnliegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		anliegen, err := repository.NewAnliegenAbfragen(s.DB.Pool).LadeOffene(r.Context())
+		anliegen, err := repository.NewAnliegenAbfragen(t.DB.Pool).LadeOffene(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -135,12 +135,12 @@ func (s *Tueren) ListOffeneAnliegenHandler() http.HandlerFunc {
 	}
 }
 
-// CountOffeneAnliegenHandler speist das Badge an „Bestellungen“ — bis 24.08.2026 zählte
+// OffeneAnliegenAnzahl speist das Badge an „Bestellungen“ — bis 24.08.2026 zählte
 // niemand offene Anliegen, und wer nicht ohnehin bestellen wollte, sah sie nie.
 // GET /api/anliegen/anzahl → { "anzahl": 3 }
-func (s *Tueren) CountOffeneAnliegenHandler() http.HandlerFunc {
+func (t *Tueren) OffeneAnliegenAnzahl() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		n, err := repository.NewAnliegenAbfragen(s.DB.Pool).ZaehleOffene(r.Context())
+		n, err := repository.NewAnliegenAbfragen(t.DB.Pool).ZaehleOffene(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -149,14 +149,14 @@ func (s *Tueren) CountOffeneAnliegenHandler() http.HandlerFunc {
 	}
 }
 
-// ErledigeAnliegenHandler hakt ab und benachrichtigt die Lehrkraft.
+// AnliegenErledigen hakt ab und benachrichtigt die Lehrkraft.
 // PUT /api/anliegen/{id}/erledigen  { "notiz": "bestellt, kommt Anfang September" }
-func (s *Tueren) ErledigeAnliegenHandler() http.HandlerFunc {
-	return s.handleErledigeAnliegen
+func (t *Tueren) AnliegenErledigen() http.HandlerFunc {
+	return t.erledigeAnliegen
 }
 
-// handleErledigeAnliegen hakt das Anliegen ab und benachrichtigt, wer es gestellt hat.
-func (s *Tueren) handleErledigeAnliegen(w http.ResponseWriter, r *http.Request) {
+// erledigeAnliegen hakt das Anliegen ab und benachrichtigt, wer es gestellt hat.
+func (t *Tueren) erledigeAnliegen(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	var body struct {
 		Notiz string `json:"notiz"`
@@ -165,7 +165,7 @@ func (s *Tueren) handleErledigeAnliegen(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	erledigt, err := repository.NewAnliegenAbfragen(s.DB.Pool).Erledige(r.Context(), id, kuerze(strings.TrimSpace(body.Notiz), 500))
+	erledigt, err := repository.NewAnliegenAbfragen(t.DB.Pool).Erledige(r.Context(), id, kuerze(strings.TrimSpace(body.Notiz), 500))
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return

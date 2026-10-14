@@ -22,7 +22,7 @@ import (
 // Der Test schickt `titel_id` und `isbn` trotzdem mit, und zwar mit Werten, die eine Tür mit
 // diesen Feldern annähme: eine echte Titel-Kennung (der Fremdschlüssel hielte) und eine ISBN.
 // Landen beide in der Zeile, ist er rot.
-func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
+func TestAnliegenAnlegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &portal.Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -56,7 +56,7 @@ func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: lehrkraftID}))
 	rec := httptest.NewRecorder()
-	srv.CreateAnliegenHandler()(rec, req)
+	srv.AnliegenAnlegen()(rec, req)
 
 	// Unbekannte Felder sind kein Fehler: Wer sie schickt, bekommt seine Meldung trotzdem
 	// angelegt. Verloren ginge sonst eine Meldung, nicht ein Feld.
@@ -92,7 +92,7 @@ func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 // das Portal nicht mehr: Ein Buch für eine Klasse wird dort reserviert. Und eine Meldung
 // ohne den Satz, was nicht stimmt, nennt nur ein Buch — das Formular verlangt ihn, die Tür
 // hält dieselbe Regel.
-func TestCreateAnliegen_NimmtNurMeldungenMitBeschreibung(t *testing.T) {
+func TestAnliegenAnlegen_NimmtNurMeldungenMitBeschreibung(t *testing.T) {
 	pool, router, token := portalWelt(t)
 	ctx := context.Background()
 

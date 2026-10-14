@@ -10,16 +10,16 @@ import (
 	"bibliothek/repository"
 )
 
-// GetMonitorSlidesHandler bedient GET /api/monitor/slides — den einzigen Endpunkt des
+// MonitorFolien bedient GET /api/monitor/slides — den einzigen Endpunkt des
 // Flur-Monitors: öffentlich, nur Titeldaten (docs/PII_MATRIX.de.md, Stufe 0).
 //
 // Was der Monitor zeigen darf, entscheidet repository.OeffentlichSichtbar — dieselbe
 // Regel wie im Katalog (api/portal/opac.go). Die Folien selbst baut repository.MonitorAbfragen;
 // die Abfragen standen bis zum 30.08.2026 hier im Handler, ohne diese Regel.
-func (s *Tueren) GetMonitorSlidesHandler() http.HandlerFunc {
-	repo := repository.NewMonitorAbfragen(s.DB.Pool)
+func (t *Tueren) MonitorFolien() http.HandlerFunc {
+	abfragen := repository.NewMonitorAbfragen(t.DB.Pool)
 	return func(w http.ResponseWriter, r *http.Request) {
-		slides, err := repo.LadeFolien(r.Context())
+		folien, err := abfragen.LadeFolien(r.Context())
 		if err != nil {
 			// Echter Grund ins Log, nach außen nur die Gattung: Der Endpunkt ist ohne
 			// Anmeldung erreichbar, ein Postgres-Fehlertext gehört nicht auf den Flur.
@@ -27,6 +27,6 @@ func (s *Tueren) GetMonitorSlidesHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("internal server error"))
 			return
 		}
-		tuer.AntworteJSON(w, http.StatusOK, slides)
+		tuer.AntworteJSON(w, http.StatusOK, folien)
 	}
 }

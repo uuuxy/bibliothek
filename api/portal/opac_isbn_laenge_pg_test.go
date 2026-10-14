@@ -17,7 +17,7 @@ import (
 // als Teilstring. Die zehnstellige vom Titelblatt und die dreizehnstellige, unter der die
 // Datenbank den Titel führt (Migration 157), enden auf verschiedene Prüfzeichen: Ohne den
 // Vergleich mit der Normalform des Suchtexts fände die getippte zehnstellige das Buch nicht.
-func TestOpacSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
+func TestOPACSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
@@ -29,14 +29,14 @@ func TestOpacSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	}
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	suche := func(q string) []OpacTitel {
+	suche := func(q string) []OPACTitel {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		s.PublicCatalogSearchHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/public/opac/suche?q="+url.QueryEscape(q), nil))
+		s.OPACSuche()(rec, httptest.NewRequest(http.MethodGet, "/api/public/opac/suche?q="+url.QueryEscape(q), nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("q=%q: %d %s", q, rec.Code, rec.Body.String())
 		}
-		var treffer []OpacTitel
+		var treffer []OPACTitel
 		if err := json.Unmarshal(rec.Body.Bytes(), &treffer); err != nil {
 			t.Fatal(err)
 		}

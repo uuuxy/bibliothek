@@ -131,7 +131,7 @@ func reservierung(t *testing.T, srv *Server, userID, titelID string, anzahl int)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: userID, Rolle: auth.RoleMitarbeiter}))
 	rec := httptest.NewRecorder()
-	srv.portal().CreateKlassensatzReservierungHandler()(rec, req)
+	srv.portal().KlassensatzReservierungAnlegen()(rec, req)
 	return rec
 }
 

@@ -20,7 +20,7 @@ import (
 // „Der Herr der Ringe - Anhänge und Register" mit „Anhänge" nicht, weder über ILIKE noch
 // über den Volltext; mit „Register" schon. Die Titel entstehen hier zerlegt, wie die
 // Bestellung sie aus der DNB schrieb; gesucht wird, wie man tippt: zusammengesetzt.
-func TestOpacSuche_FindetTitelMitZerlegtenUmlauten(t *testing.T) {
+func TestOPACSuche_FindetTitelMitZerlegtenUmlauten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -46,11 +46,11 @@ func TestOpacSuche_FindetTitelMitZerlegtenUmlauten(t *testing.T) {
 	suche := func(q string) []string {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		s.PublicCatalogSearchHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/public/opac/suche?q="+url.QueryEscape(q), nil))
+		s.OPACSuche()(rec, httptest.NewRequest(http.MethodGet, "/api/public/opac/suche?q="+url.QueryEscape(q), nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("q=%q: %d %s", q, rec.Code, rec.Body.String())
 		}
-		var treffer []OpacTitel
+		var treffer []OPACTitel
 		if err := json.Unmarshal(rec.Body.Bytes(), &treffer); err != nil {
 			t.Fatal(err)
 		}

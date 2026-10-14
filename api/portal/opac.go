@@ -20,9 +20,9 @@ const (
 	opacGrenze      = 50
 )
 
-// OpacTitel is a DSGVO-compliant book view for the public catalog.
+// OPACTitel is a DSGVO-compliant book view for the public catalog.
 // Contains no loan data and no reader data.
-type OpacTitel struct {
+type OPACTitel struct {
 	ID         string `json:"id"`
 	Titel      string `json:"titel"`
 	Autor      string `json:"autor"`
@@ -33,8 +33,8 @@ type OpacTitel struct {
 }
 
 // opacTitelAus bildet einen Katalogtreffer auf die Antwort des öffentlichen Katalogs ab.
-func opacTitelAus(t repository.KatalogTreffer) OpacTitel {
-	return OpacTitel{
+func opacTitelAus(t repository.KatalogTreffer) OPACTitel {
+	return OPACTitel{
 		ID: t.ID, Titel: t.Titel, Autor: t.Autor, ISBN: t.ISBN, CoverURL: t.CoverURL,
 		Verfuegbar: t.Verfuegbar, Gesamt: t.Gesamt,
 	}
@@ -46,14 +46,14 @@ func schreibeLeereTrefferliste(w http.ResponseWriter) {
 	httpresp.Schreibe(w, []byte("[]"))
 }
 
-// PublicCatalogSearchHandler handles GET /api/public/opac/suche?q=...
+// OPACSuche handles GET /api/public/opac/suche?q=...
 // Public endpoint: no auth required. Never exposes loan or reader data (DSGVO).
 //
 // Was ohne Anmeldung sichtbar ist (kein Lernmittel, mindestens ein Exemplar im Haus), steht
 // genau einmal in repository.OeffentlichSichtbar — dieselbe Regel wie im Flur-Monitor. Das
 // Kollegium sucht über eine eigene Tür hinter der Anmeldung (katalog_kollegium.go), die
 // auch Lernmittel und bestellte Titel zeigt; die Abfrage ist dieselbe.
-func (s *Tueren) PublicCatalogSearchHandler() http.HandlerFunc {
+func (t *Tueren) OPACSuche() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		if q == "" {
@@ -61,7 +61,7 @@ func (s *Tueren) PublicCatalogSearchHandler() http.HandlerFunc {
 			return
 		}
 
-		treffer, gesamt, err := repository.FindeImKatalog(r.Context(), s.DB.Pool, repository.KatalogSuche{
+		treffer, gesamt, err := repository.FindeImKatalog(r.Context(), t.DB.Pool, repository.KatalogSuche{
 			Sichtbar: repository.OeffentlichSichtbar("bt"),
 			Suchtext: q,
 			Grenze:   opacGrenze,
@@ -71,11 +71,11 @@ func (s *Tueren) PublicCatalogSearchHandler() http.HandlerFunc {
 			return
 		}
 
-		result := make([]OpacTitel, 0, len(treffer))
-		for _, t := range treffer {
-			result = append(result, opacTitelAus(t))
+		liste := make([]OPACTitel, 0, len(treffer))
+		for _, eintrag := range treffer {
+			liste = append(liste, opacTitelAus(eintrag))
 		}
 		w.Header().Set(opacTrefferKopf, strconv.Itoa(gesamt))
-		tuer.AntworteJSON(w, http.StatusOK, result)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 	}
 }

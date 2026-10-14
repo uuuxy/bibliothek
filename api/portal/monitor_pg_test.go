@@ -54,7 +54,7 @@ func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) 
 
 	// Komplett ausgesondert — mit Leser, Cover und jüngstem Datum.
 	ausgesondert := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Ausgesonderter Roman", "Jug Aus", true, 0)
-	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, seedAusgesondertesExemplar(t, pool, ausgesondert, "MON-AUS-1"), leser[1])
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, legeAusgesondertesExemplarAn(t, pool, ausgesondert, "MON-AUS-1"), leser[1])
 
 	// Nur bestellt, noch nicht im Haus — als jüngster Titel wäre er „Neu eingetroffen".
 	bestellt := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Bestellter Roman", "Jug Bes", true, 0)
@@ -64,7 +64,7 @@ func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) 
 		t.Fatalf("bestelltes Exemplar anlegen: %v", err)
 	}
 
-	aufMonitor := monitorAntwortLesen(t, pool).alleTitel()
+	aufMonitor := leseMonitorAntwort(t, pool).alleTitel()
 	for titel, sichtbar := range map[string]bool{
 		"Mathematik Neue Wege 7": false,
 		"Tschick":                true,
@@ -99,13 +99,13 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 		testdaten.LegeSchuelerAn(t, pool, "S-LES-2", "Ben", "5a"),
 		testdaten.LegeSchuelerAn(t, pool, "S-LES-3", "Lea", "5a"),
 	}
-	lehrkraft := seedLehrkraft(t, pool)
+	lehrkraft := legeLehrkraftAn(t, pool)
 
 	// Klassensatz: 30 Exemplare an die Lehrkraft, dazu EIN Schüler und eine anonymisierte
 	// Ausleihe (kein Ausleiher mehr) — 32 Zeilen, ein Leser.
 	welle := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Die Welle", "Jug Rho", true, 20)
 	for i := range 30 {
-		seedLehrerAusleihe(t, pool, testdaten.LegeExemplarAn(t, pool, welle, fmt.Sprintf("LES-WELLE-%d", i), true, ""), lehrkraft)
+		legeAusleiheDerLehrkraftAn(t, pool, testdaten.LegeExemplarAn(t, pool, welle, fmt.Sprintf("LES-WELLE-%d", i), true, ""), lehrkraft)
 	}
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, testdaten.LegeExemplarAn(t, pool, welle, "LES-WELLE-S", true, ""), leser[2])
 	if _, err := pool.Exec(context.Background(), `
@@ -119,7 +119,7 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 	// einmal — zwei offene Ausleihen auf einem Exemplar verbietet die Datenbank), Ben einmal.
 	tschick := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Tschick", "Jug Her", true, 10)
 	tschick1 := testdaten.LegeExemplarAn(t, pool, tschick, "LES-TSCHICK-1", true, "")
-	seedZurueckgegebeneAusleihe(t, pool, tschick1, leser[0])
+	legeZurueckgegebeneAusleiheAn(t, pool, tschick1, leser[0])
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, tschick1, leser[0])
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, testdaten.LegeExemplarAn(t, pool, tschick, "LES-TSCHICK-2", true, ""), leser[1])
 
@@ -127,11 +127,11 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 	// „Buch des Monats".
 	ohneCover := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Roman ohne Cover", "Jug Ohn", false, 5)
 	ohneCover1 := testdaten.LegeExemplarAn(t, pool, ohneCover, "LES-OHNE-1", true, "")
-	seedZurueckgegebeneAusleihe(t, pool, ohneCover1, leser[0])
-	seedZurueckgegebeneAusleihe(t, pool, ohneCover1, leser[1])
+	legeZurueckgegebeneAusleiheAn(t, pool, ohneCover1, leser[0])
+	legeZurueckgegebeneAusleiheAn(t, pool, ohneCover1, leser[1])
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, ohneCover1, leser[2])
 
-	antwort := monitorAntwortLesen(t, pool)
+	antwort := leseMonitorAntwort(t, pool)
 	if antwort.BuchDesMonats == nil || antwort.BuchDesMonats.Titel != "Tschick" {
 		t.Errorf("Buch des Monats: erwartet Tschick (zwei Leser, Cover), bekam %+v — zählt der Monitor Exemplare statt Leser?",
 			antwort.BuchDesMonats)
@@ -147,7 +147,7 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 
 // seedZurueckgegebeneAusleihe bucht eine abgeschlossene Schüler-Ausleihe (vor vier Tagen
 // geliehen, vor drei zurück) — im Fenster, aber das Exemplar ist wieder frei.
-func seedZurueckgegebeneAusleihe(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
+func legeZurueckgegebeneAusleiheAn(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
@@ -158,7 +158,7 @@ func seedZurueckgegebeneAusleihe(t *testing.T, pool *pgxpool.Pool, exemplarID, s
 }
 
 // seedLehrkraft legt ein Kollegiums-Konto an, an das Klassensätze ausgeliehen werden.
-func seedLehrkraft(t *testing.T, pool *pgxpool.Pool) string {
+func legeLehrkraftAn(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `
@@ -172,7 +172,7 @@ func seedLehrkraft(t *testing.T, pool *pgxpool.Pool) string {
 
 // seedLehrerAusleihe bucht eine Ausleihe an eine Lehrkraft (Handapparat/Klassensatz) —
 // je Exemplar eine Zeile, genau wie repository/ausleihe.go es tut.
-func seedLehrerAusleihe(t *testing.T, pool *pgxpool.Pool, exemplarID, benutzerID string) {
+func legeAusleiheDerLehrkraftAn(t *testing.T, pool *pgxpool.Pool, exemplarID, benutzerID string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, ist_handapparat)
@@ -210,12 +210,12 @@ func (a monitorAntwort) alleTitel() map[string]bool {
 }
 
 // monitorAntwortLesen fragt den ÖFFENTLICHEN Monitor-Endpunkt über den echten Handler ab.
-func monitorAntwortLesen(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
+func leseMonitorAntwort(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
 	t.Helper()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/monitor/slides", nil)
 	rec := httptest.NewRecorder()
-	srv.GetMonitorSlidesHandler()(rec, req)
+	srv.MonitorFolien()(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Monitor: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
@@ -228,7 +228,7 @@ func monitorAntwortLesen(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
 
 // seedAusgesondertesExemplar legt ein ausgesondertes Exemplar an (Grund ist Pflicht,
 // chk_aussonderung_grund).
-func seedAusgesondertesExemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) string {
+func legeAusgesondertesExemplarAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `
