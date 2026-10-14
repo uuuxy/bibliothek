@@ -59,13 +59,13 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 		Reason   string `json:"reason"`
 	}
 	if !tuer.LeseAnfrage(w, r, &req) {
-		// LeseAnfrage handles writing its own response for now
+		// LeseAnfrage hat schon geantwortet.
 		return nil
 	}
 
-	// Eine manuelle Sperre OHNE Grund ist genau die "Zombie-Sperre", die der
-	// DB-Constraint chk_schueler_block_reason verhindern soll: Das Personal sähe nur das
-	// rote Flag ohne Kontext. Daher ist der Grund beim Sperren Pflicht (beim Entsperren
+	// Eine manuelle Sperre ohne Grund ist genau die "Zombie-Sperre", die der
+	// DB-Constraint chk_schueler_block_reason verhindern soll: Das Personal sähe nur die
+	// rote Markierung ohne Kontext. Daher ist der Grund beim Sperren Pflicht (beim Entsperren
 	// irrelevant).
 	grund := strings.TrimSpace(req.Reason)
 	if req.IsLocked && grund == "" {
@@ -124,9 +124,9 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	return nil
 }
 
-// protokolliereSperre schreibt das Sperren und das Aufheben ins Protokoll. Best effort wie
-// FRIST_OVERRIDE: Die Änderung gilt, auch wenn das Log klemmt; der Fehlversuch steht im
-// Server-Log. Aufheben ohne bestehende Sperre ändert nichts und schreibt nichts.
+// protokolliereSperre schreibt das Sperren und das Aufheben ins Protokoll. Wie bei
+// FRIST_OVERRIDE gilt die Änderung auch, wenn das Protokoll klemmt; der Fehlversuch steht dann
+// im Log. Aufheben ohne bestehende Sperre ändert nichts und schreibt nichts.
 func protokolliereSperre(r *http.Request, protokollAbfragen repository.ProtokollAbfragen, bearbeiterID, id string, sperren bool, grund string, alt repository.LeserSperrStand) {
 	aktion, details := "LESER_GESPERRT", map[string]any{"schueler_id": id, "grund": grund}
 	if !sperren {

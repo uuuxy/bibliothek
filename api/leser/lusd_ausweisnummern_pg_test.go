@@ -14,17 +14,12 @@ import (
 // Zwei LUSD-Importe dürfen sich nicht ins Gehege kommen — und der Import darf der
 // Handanlage keine Nummer wegnehmen.
 //
-// Das ist die Zusage, die bis zum 16.09.2026 NIEMAND geprüft hat, obwohl es einen Test
-// gab. `repository.AusweisNummer` baute die Nummer aus `time.Now().Unix()%1000000` plus der
-// Zeilennummer. Der Zeitteil wiederholt sich alle 11,6 Tage; zwei Läufe im richtigen
-// Abstand und von ähnlicher Größe erzeugen dieselben Nummern. Der eindeutige Index
-// (uniq_schueler_barcode_active) hätte das quittiert — mit dem Abbruch des GESAMTEN
-// Imports, zu einem Zeitpunkt, den niemand vorhersagen kann.
-//
-// Der alte Test (TestGenerateImportBarcode_UniqueWithinImport) war grün und konnte es
-// nicht sehen: Er prüfte die Eindeutigkeit INNERHALB eines Laufs, und die war nie das
-// Problem. Deshalb steht diese Zusage jetzt an der echten Datenbank, über zwei Läufe und
-// gegen die zweite Vergabestelle.
+// Eine Nummer aus `time.Now().Unix()%1000000` plus der Zeilennummer wiederholte sich alle
+// 11,6 Tage; zwei Läufe im richtigen Abstand und von ähnlicher Größe erzeugten dieselben
+// Nummern, und der eindeutige Index (uniq_schueler_barcode_active) quittierte das mit dem
+// Abbruch des gesamten Imports, zu einem Zeitpunkt, den niemand vorhersagen kann. Ein Test,
+// der nur die Eindeutigkeit innerhalb eines Laufs prüft, sieht das nicht. Deshalb steht
+// diese Zusage an der echten Datenbank, über zwei Läufe und gegen die zweite Vergabestelle.
 func TestLUSDAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -72,15 +67,15 @@ func TestLUSDAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 	lauf(t, "Ampel", "Birne", "Coda")
 	ersteNummern := nummernVon(t, "Ampel", "Birne", "Coda")
 
-	// Jede Nummer trägt die EINE Vorsilbe, und sie hat dieselbe Form wie die der
-	// Handanlage — nicht mehr die der Uhr.
+	// Jede Nummer trägt die eine Vorsilbe, und sie hat dieselbe Form wie die der
+	// Handanlage, nicht die einer Uhrzeit.
 	for _, bc := range ersteNummern {
 		if len(bc) < len(repository.AusweisPraefix) || bc[:len(repository.AusweisPraefix)] != repository.AusweisPraefix {
 			t.Fatalf("Ausweis %q trägt nicht die Vorsilbe %q", bc, repository.AusweisPraefix)
 		}
 	}
 
-	// Zweiter Lauf, unmittelbar danach: KEINE Nummer darf sich wiederholen. Genau hier
+	// Zweiter Lauf, unmittelbar danach: Keine Nummer darf sich wiederholen. Genau hier
 	// wäre der alte Generator gescheitert, sobald der Zeitteil sich wiederholt.
 	lauf(t, "Dattel", "Endivie", "Fenchel")
 	zweiteNummern := nummernVon(t, "Dattel", "Endivie", "Fenchel")
@@ -93,7 +88,7 @@ func TestLUSDAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 		gesehen[bc] = "Zeile " + bc
 	}
 
-	// Und die Gegenprobe zur ZWEITEN Vergabestelle: Die Handanlage zieht aus derselben
+	// Und die Gegenprobe zur zweiten Vergabestelle: Die Handanlage zieht aus derselben
 	// Sequenz und muss über allem liegen, was die Importe vergeben haben. Ein eigener
 	// Zähler gäbe hier eine Nummer aus, die schon hängt — der Fehler aus Migration 068,
 	// eine Tabelle weiter.

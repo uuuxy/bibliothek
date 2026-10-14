@@ -13,14 +13,14 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Papierkorb liefert eine Liste aller weichgelöschten Schüler für den Papierkorb.
+// Papierkorb liefert die Leser im Papierkorb, die jüngsten Löschungen zuerst, höchstens 1000.
 func (t *Tueren) Papierkorb() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// LIMIT gegen unbegrenztes Wachstum: soft-gelöschte Schüler sammeln sich an
+		// LIMIT gegen unbegrenztes Wachstum: Leser im Papierkorb sammeln sich an
 		// (die 180-Tage-Anonymisierung leert die Zeile, entfernt sie aber nicht). Der
-		// Papierkorb ist zum Wiederherstellen der JÜNGSTEN Löschungen da; 1000 ist weit
+		// Papierkorb ist zum Wiederherstellen der jüngsten Löschungen da; 1000 ist weit
 		// über dem realistischen Bestand einer manuell befüllten Papierkorb-Ansicht.
 		const papierkorbGrenze = 1000
 		zeilen, err := repository.LadePapierkorb(ctx, t.DB.Pool, papierkorbGrenze)
@@ -51,7 +51,7 @@ func (t *Tueren) Papierkorb() http.HandlerFunc {
 	}
 }
 
-// LeserWiederherstellen stellt einen weichgelöschten Schüler wieder her.
+// LeserWiederherstellen holt einen Leser aus dem Papierkorb zurück.
 func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -64,20 +64,21 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 
 		// Anonymisierte Papierkorb-Zeilen (anonymized_at gesetzt) sind kein Schüler mehr,
 		// sondern ein Pseudonym ohne Namen — „wiederherstellen" ergäbe einen gesperrten
-		// „Anonym"-Datensatz in der aktiven Liste (Prüfung 22.08.2026). 409 statt Restore.
+		// „Anonym"-Datensatz in der aktiven Liste. 409 statt Wiederherstellen.
 		if anonymisiert, err := repository.IstPapierkorbLeserAnonymisiert(ctx, t.DB.Pool, id); err == nil && anonymisiert {
 			apierrors.SendHTTPError(w, http.StatusConflict,
 				errors.New("dieser Datensatz ist bereits anonymisiert (DSGVO) und kann nicht wiederhergestellt werden"))
 			return
 		}
 
-		// Restore: deleted_at zurücknehmen UND die Lösch-Sperre aufheben. LegeLeserInPapierkorb
-		// setzt ist_gesperrt=true mit block_reason='Systematisch gelöscht'; ohne das
-		// Aufheben bliebe der wiederhergestellte Schüler dauerhaft gesperrt (Zombie-Sperre)
-		// und könnte nichts ausleihen. Eine Sperre aus ANDEREM Grund bleibt bestehen.
+		// Wiederherstellen: deleted_at zurücknehmen und die Lösch-Sperre aufheben.
+		// LegeLeserInPapierkorb setzt ist_gesperrt=true mit block_reason='Systematisch gelöscht';
+		// ohne das Aufheben bliebe der wiederhergestellte Schüler dauerhaft gesperrt
+		// (Zombie-Sperre) und könnte nichts ausleihen. Eine Sperre aus anderem Grund bleibt
+		// bestehen.
 		wiederhergestellt, err := repository.StelleLeserWiederHer(ctx, t.DB.Pool, id)
 		if err != nil {
-			// Drei Teilindizes gelten nur für AKTIVE Zeilen: Namensindex (Migration 108,
+			// Drei Teilindizes gelten nur für aktive Zeilen: Namensindex (Migration 108,
 			// in der Normalform suchnorm), LUSD-ID und Ausweis-Barcode. Solange die Zeile
 			// im Papierkorb liegt, ist ihr Platz frei — ein Import oder eine Handanlage
 			// kann ihn besetzen. Dann ist das Wiederherstellen keine Störung, sondern
@@ -95,7 +96,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 			return
 		}
 
-		// Optional: Audit-Log für Restore anlegen
+		// Das Wiederherstellen ins Protokoll, wenn jemand angemeldet ist.
 		if claims, ok := auth.GetClaims(ctx); ok {
 			t.SchreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
 		}
@@ -107,10 +108,10 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 	}
 }
 
-// wiederherstellungsKollision übersetzt die Eindeutigkeits-Verletzung beim Wiederherstellen in einen
-// Satz, mit dem die Bibliothek etwas anfangen kann. Ohne ihn stand dort „Ein interner
-// Datenbankfehler ist aufgetreten" — eine Sackgasse: Sie nennt weder den Zwilling noch
-// den Weg heraus (Bestands-Durchgang 10.09.2026).
+// wiederherstellungsKollision übersetzt die Eindeutigkeits-Verletzung beim Wiederherstellen
+// in einen Satz, mit dem die Bibliothek etwas anfangen kann. Ohne ihn stünde dort „Ein
+// interner Datenbankfehler ist aufgetreten", eine Sackgasse, die weder den Zwilling noch den
+// Weg heraus nennt.
 //
 // Jeder der drei Indizes ist ein Teilindex auf deleted_at IS NULL; sie greifen also genau
 // in dem Moment, in dem die Zeile wieder aktiv würde.
@@ -134,9 +135,9 @@ func wiederherstellungsKollision(err error) (string, bool) {
 	return "", false
 }
 
-// LeserEndgueltigLoeschen entfernt einen im Papierkorb liegenden Schüler endgültig und
-// DSGVO-konform (Ausleihhistorie/Audit anonymisiert, bezahlte Schäden gelöscht,
-// Datensatz entfernt). Offene Ausleihen/unbezahlte Schäden blockieren die Löschung.
+// LeserEndgueltigLoeschen entfernt einen Leser, der im Papierkorb liegt, endgültig
+// (repository.LoescheLeserEndgueltig); offene Ausleihen und unbezahlte Forderungen
+// verhindern es.
 func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -154,14 +155,13 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 		ctx := r.Context()
 		if err := protokollAbfragen.LoescheLeserEndgueltig(ctx, id, claims.UserID); err != nil {
 			// Blockade (offene Ausleihen / unbezahlte Schäden / nicht im Papierkorb) ist ein
-			// Konflikt. Alles andere NICHT: Bis zum 17.09.2026 bekam jeder Fehler die 409 —
-			// auch ein Verbindungsabbruch. Das schickt die Bibliothek los, einen offenen
-			// Vorgang zu suchen, den es nicht gibt, und verdeckt den echten Fehler.
+			// Konflikt, alles andere nicht: Bekäme jeder Fehler die 409, auch ein
+			// Verbindungsabbruch, suchte die Bibliothek einen offenen Vorgang, den es nicht gibt,
+			// und der echte Fehler bliebe verdeckt.
 			//
-			// Die Form (verschachtelte ifs statt eines switch) ist die im Haus übliche und
-			// keine Geschmacksfrage: Der Fehler-Kollaps-Detektor liest die if-Bedingung und
-			// das ERSTE Statement des Rumpfs. Ein switch darunter sieht er nicht — er hat
-			// diesen Handler beim Umbau am 17.09.2026 zu Recht angemahnt.
+			// Die Form (verschachtelte ifs statt eines switch) ist die im Haus übliche und keine
+			// Geschmacksfrage: Der Fehler-Kollaps-Detektor liest die if-Bedingung und die erste
+			// Anweisung des Rumpfs; einen switch darunter sieht er nicht.
 			if errors.Is(err, repository.ErrLoeschenBlockiert) {
 				apierrors.SendHTTPError(w, http.StatusConflict, err)
 				return

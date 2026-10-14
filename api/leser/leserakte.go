@@ -23,7 +23,8 @@ func leseFotoURL(ctx context.Context, leserAbfragen repository.LeserAbfragen, le
 	return ""
 }
 
-// leserakteAntwort returns master data (with photo_url) and currently borrowed books.
+// leserakteAntwort ist die Akte eines Lesers: Stammdaten mit der Adresse des Fotos und die
+// laufenden Ausleihen.
 type leserakteAntwort struct {
 	ID        string `json:"id"`
 	BarcodeID string `json:"barcode_id"`
@@ -37,7 +38,7 @@ type leserakteAntwort struct {
 	Klasse        string `json:"klasse"`
 	AbgaengerJahr int    `json:"abgaenger_jahr"`
 	// AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem
-	// Bildungsgang gerechnet — NICHT AbgaengerJahr, das die DSGVO-Löschung steuert.
+	// Bildungsgang gerechnet — nicht AbgaengerJahr, das die DSGVO-Löschung steuert.
 	// Der profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt
 	// die Karte "Gültig bis: 31.07.–", obwohl das Repository den Wert kennt.
 	AusweisGueltigBis *int    `json:"ausweis_gueltig_bis,omitempty"`
@@ -56,7 +57,7 @@ type leserakteAntwort struct {
 	Plz                string            `json:"plz"`
 	Ort                string            `json:"ort"`
 	ElternEmail        string            `json:"eltern_email"`
-	// Email ist die SCHUL-Adresse am Konto (benutzer.email), nicht die der Eltern —
+	// Email ist die Schul-Adresse am Konto (benutzer.email), nicht die der Eltern —
 	// bei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.
 	// Leer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte
 	// nachtragbar. Bei einem Schüler steht hier nie etwas.
@@ -70,14 +71,14 @@ type offeneForderungen struct {
 	Summe  float64 `json:"summe"`
 }
 
-// Leserakte returns a student's master data, passport photo URL (if uploaded),
-// and a list of currently borrowed books with their loan and due dates.
-// @Summary      Get student profile details
-// @Description  Retrieves the complete profile for a student by their ID, including active loans and avatar photo URL if present.
+// Leserakte liefert die Akte eines Lesers: Stammdaten, die Adresse des Ausweisfotos, falls
+// eines hochgeladen ist, und die laufenden Ausleihen mit Ausleih- und Rückgabedatum.
+// @Summary      Akte eines Lesers
+// @Description  Die ganze Akte eines Lesers nach seiner Kennung, mit laufenden Ausleihen und der Adresse des Fotos.
 // @Tags         students
 // @Accept       json
 // @Produce      json
-// @Param        id   path      string  true  "Student ID (UUID)"
+// @Param        id   path      string  true  "Kennung des Lesers (UUID)"
 // @Success      200  {object}  leserakteAntwort
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -114,10 +115,10 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 		return apierrors.NotFound("student record not found", nil)
 	}
 
-	// 2. Resolve photo URL if an encrypted photo exists in the DB
+	// 2. Die Adresse des Fotos, falls ein verschlüsseltes Foto in der Datenbank liegt.
 	fotoURL := leseFotoURL(ctx, leserAbfragen, leser)
 
-	// 3. Retrieve currently active loans for this student
+	// 3. Die laufenden Ausleihen des Lesers.
 	entliehen, err := leserAbfragen.LadeLaufendeAusleihen(ctx, id)
 	if err != nil {
 		return apierrors.Internal("Fehler beim Laden der ausgeliehenen Bücher", err)
@@ -142,7 +143,7 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 		}
 	}
 
-	// 4. Construct response and stream as JSON
+	// 4. Die Antwort.
 	antwort := leserakteAntwort{
 		ID:                 leser.ID,
 		BarcodeID:          leser.BarcodeID,
@@ -173,9 +174,9 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 	return nil
 }
 
-// Klassen returns a list of all distinct classes in the database.
-// @Summary      Get list of classes
-// @Description  Retrieves all unique school class names currently assigned to students.
+// Klassen liefert alle Klassen, die einem Schüler zugeordnet sind, ohne Doppelte.
+// @Summary      Klassen
+// @Description  Alle Klassennamen, die gerade einem Schüler zugeordnet sind, ohne Doppelte.
 // @Tags         students
 // @Accept       json
 // @Produce      json

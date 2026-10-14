@@ -20,10 +20,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Die Auskunft über einen Leser MIT Zugangskonto verlangt das Recht für Konten
-// (manage_users), nicht nur das Sonderrecht der Schülerverwaltung (28.09.2026).
+// Die Auskunft über einen Leser mit Zugangskonto verlangt das Recht für Konten
+// (manage_users), nicht nur das Sonderrecht der Schülerverwaltung.
 //
-// Seit dem 24.09.2026 gibt es die Auskunft für jeden Leser. Beim Kollegen mit Konto nennt sie
+// Die Auskunft gibt es für jeden Leser. Beim Kollegen mit Konto nennt sie
 // das Konto, die Kontoereignisse aus dem Verwaltungsprotokoll und jeden selbst bearbeiteten
 // Vorgang, Verwaltungseingriffe samt IP-Adresse. Die Route verlangt manage_students_admin: ab
 // Werk hat es die Leitung, und laut db/seed.go (RechteOptional) ist es zum Delegieren ans
@@ -32,7 +32,7 @@ import (
 // nicht (Migration 122). Über die Auskunft bekam sie das Tätigkeitsprotokoll jedes Kollegen
 // mit Konto, auch das des Administrators.
 //
-// Gegenproben: Dieselbe Rolle bekommt die Auskunft eines Kollegen OHNE Konto (die Regel hängt
+// Gegenproben: Dieselbe Rolle bekommt die Auskunft eines Kollegen ohne Konto (die Regel hängt
 // am Konto, nicht an der Leserart). Der Administrator bekommt die mit Konto. Erteilt der Admin
 // der Leitung manage_users, bekommt auch sie sie (geprüft wird das Recht, nicht die Rolle).
 func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
@@ -148,7 +148,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 			rec.Code, rec.Body.String())
 	}
 
-	// Ein gelöschtes Konto zählt wie ein bestehendes (29.09.2026): Die Auskunft nennt dann das
+	// Ein gelöschtes Konto zählt wie ein bestehendes: Die Auskunft nennt dann das
 	// frühere Konto samt seinen Einträgen, dieselbe Art Daten. Der Ausweis hält die Leserzeile,
 	// wenn das Konto über Benutzer & Rechte fällt.
 	fritz, fritzLeser := konto("Fritz", "fritz@auskunft-recht.invalid", "mitarbeiter")

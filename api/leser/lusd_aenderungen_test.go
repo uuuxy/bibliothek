@@ -14,23 +14,12 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Die Ausweisnummer eines Importzugangs hat DIESELBE Form wie die der Handanlage.
+// Die Ausweisnummer eines Importzugangs hat dieselbe Form wie die der Handanlage.
 //
-// Dieser Test hat zweimal die Seite gewechselt, und seine Geschichte ist die Lehre:
-//
-//  1. Ursprünglich baute der Generator die Nummer aus Nanosekunden. Ab ~50 Neuzugängen
-//     kollidierte er per Geburtstagsparadoxon, der Import brach ab. Ein laufender Zähler
-//     kam dazu, und dieser Test bewies: INNERHALB eines Imports ist alles eindeutig.
-//  2. Genau da war die Lücke. „Innerhalb eines Imports" war nie das Problem. Der Zeitteil
-//     `time.Now().Unix()%1000000` wiederholt sich alle 11,6 Tage, und der Zähler ist bloss
-//     die Zeilennummer — zwei Läufe im richtigen Abstand erzeugen dieselben Nummern. Der
-//     Test konnte das nicht sehen, weil er nur EINEN Lauf betrachtete. Ein grünes Gate am
-//     falschen Ort.
-//
-// Seit dem 16.09.2026 gibt es die Frage nicht mehr: Die Nummern kommen aus derselben
-// Sequenz wie die der Handanlage (AusweisnummernAbfragen.ZieheNaechste, ausweis_nummer_start), einmal je Lauf gezogen
-// und fortlaufend weitergezählt. Dieser Test prüft nur noch die FORM — dass Import und
-// Handanlage dieselbe erzeugen. Dass zwei Läufe sich nicht ins Gehege kommen, prüft
+// Die Nummern kommen aus derselben Sequenz wie die der Handanlage
+// (AusweisnummernAbfragen.ZieheNaechste, ausweis_nummer_start), einmal je Lauf gezogen und
+// fortlaufend weitergezählt. Dieser Test prüft nur die Form: dass Import und Handanlage
+// dieselbe erzeugen. Dass zwei Läufe sich nicht ins Gehege kommen, prüft
 // api/leser/lusd_ausweisnummern_pg_test.go an der echten Datenbank; an einer reinen
 // Formatfunktion wäre es nicht zu beweisen.
 func TestGenerateImportBarcode_WieDieHandanlage(t *testing.T) {
@@ -62,8 +51,8 @@ func lusdSchuelerZeilen(n int) *pgxmock.Rows {
 	return rows
 }
 
-// erwarteEinstellungen: Der Lauf liest die Karenzzeit VOR der Transaktion (leere
-// Tabelle = Vorgabe); ohne diese Erwartung sähe der Mock eine fremde Abfrage.
+// erwarteEinstellungen: Der Lauf liest die Karenzzeit vor der Transaktion (leere
+// Tabelle = Vorgabe); ohne diese Erwartung sähe die Attrappe eine fremde Abfrage.
 func erwarteEinstellungen(mock pgxmock.PgxPoolIface) {
 	mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
@@ -80,12 +69,12 @@ func TestLUSDAenderungen_MassenabgangHaeltVorJedemSchreiben(t *testing.T) {
 	// 10 aktive Schüler in der DB, CSV enthält nur 2 davon → 8 Abgänger (80%).
 	erwarteEinstellungen(mock)
 	mock.ExpectBegin()
-	// apply=true: der Import-Advisory-Lock wird ZUERST genommen (serialisiert Parallel-Läufe).
+	// uebernehmen=true: Zuerst kommt der Advisory-Lock des Imports; er reiht parallele Läufe.
 	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
 	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger`).
 		WillReturnRows(lusdSchuelerZeilen(10))
-	// KEINE Exec-Erwartungen: Die Bremse muss vor dem ersten destruktiven
-	// Statement greifen. Unerwartete Execs ließen den Mock fehlschlagen.
+	// Keine Exec-Erwartungen: Die Bremse muss vor der ersten schreibenden Anweisung
+	// greifen. Unerwartete Exec-Aufrufe ließen die Attrappe fehlschlagen.
 	mock.ExpectRollback()
 
 	records := []lusd.Zeile{

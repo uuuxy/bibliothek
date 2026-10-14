@@ -17,15 +17,15 @@ import (
 // Er entscheidet, in welcher Klasse ein Schüler steht. Zum Schuljahreswechsel wandern
 // alle Jahrgänge gleichzeitig — das ist keine Randbedingung, sondern der Normalfall.
 //
-// Warum als eigener Test und warum mit MEHREREN Schülern: Seit dem Umbau auf
-// aendereBestandsschueler (#441) laufen alle Aktualisierungen als EIN
+// Warum als eigener Test und warum mit mehreren Schülern: Über aendereBestandsschueler
+// laufen alle Aktualisierungen als ein
 // pgx.Batch. Jede Anweisung trägt ihre eigene Ziel-ID im Argument ($9), die Zuordnung
 // entsteht also beim Einreihen. Genau dort kann sie auch kaputtgehen: Verrutschte der
-// Index zwischen Datensatz und ID um eins, bekäme JEDER Schüler die Klasse seines
+// Index zwischen Datensatz und ID um eins, bekäme jeder Schüler die Klasse seines
 // Nachbarn. Alle Klassen hätten sich geändert, kein Fehler wäre geflogen, und ein Test,
 // der nur „Klasse ist nicht mehr die alte" prüft, bliebe grün.
 //
-// Deshalb prüft dieser Test die PAARUNG: Jeder Schüler wird über seine lusd_id gelesen
+// Deshalb prüft dieser Test die Paarung: Jeder Schüler wird über seine lusd_id gelesen
 // und gegen genau die Klasse verglichen, die für ihn im Export stand. Die Schüler
 // bekommen absichtlich unterscheidbare Klassen — bei gleichen Werten wäre eine
 // Verwechslung unsichtbar.
@@ -87,7 +87,7 @@ func TestLUSDImport_KlassenwechselMehrererSchueler(t *testing.T) {
 	}
 
 	// Kein Schüler darf beim Klassenwechsel doppelt entstehen: Ein Bestandsschüler wird
-	// AKTUALISIERT, nicht neu angelegt. Ginge das schief, stünde derselbe Mensch zweimal
+	// aktualisiert, nicht neu angelegt. Ginge das schief, stünde derselbe Mensch zweimal
 	// im Bestand und würde beim nächsten Lauf am Unique-Index hängenbleiben.
 	var anzahl int
 	if err := pool.QueryRow(ctx,
@@ -99,10 +99,10 @@ func TestLUSDImport_KlassenwechselMehrererSchueler(t *testing.T) {
 	}
 }
 
-// TestLUSDImport_LeereKlasseUeberschreibtNicht haelt die COALESCE(NULLIF(...))-Regel fest:
-// Steht im Export fuer einen Schueler KEINE Klasse, behaelt er seine bisherige. Ohne diese
-// Regel wuerde eine luckenhafte Exportspalte die Klassenzuordnung der ganzen Schule leeren —
-// und die Klasse ist die Angabe, an der Ausleihlimits, Mahnwege und Abgaengerlisten haengen.
+// TestLUSDImport_LeereKlasseUeberschreibtNicht hält die COALESCE(NULLIF(...))-Regel fest:
+// Steht im Export für einen Schüler keine Klasse, behält er seine bisherige. Ohne diese
+// Regel würde eine lückenhafte Exportspalte die Klassenzuordnung der ganzen Schule leeren —
+// und die Klasse ist die Angabe, an der Ausleihlimits, Mahnwege und Abgängerlisten hängen.
 func TestLUSDImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -131,23 +131,23 @@ func TestLUSDImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 	}
 }
 
-// TestLUSDImport_MehrereAbgaengerGleichzeitig sichert die zweite heute umgebaute Stelle ab:
-// behandleAbgaenger holt seit #440 die offenen Ausleihen und Schaeden fuer ALLE Abgaenger
-// mit je einer GROUP-BY-Abfrage und loescht die Vormerkungen per ANY($1) — statt drei
-// Abfragen je Schueler. Die Zuordnung entsteht dabei ueber eine Map (schueler_id -> Anzahl).
+// TestLUSDImport_MehrereAbgaengerGleichzeitig sichert die zweite gebündelte Stelle ab:
+// behandleAbgaenger holt die offenen Ausleihen und Schäden für alle Abgänger mit je einer
+// GROUP-BY-Abfrage und löscht die Vormerkungen per ANY($1), statt drei Abfragen je
+// Schüler. Die Zuordnung entsteht dabei über eine Map (schueler_id -> Anzahl).
 //
-// Der Fehlerfall waere still: Greift die Map daneben, wird ein Schueler MIT offener Ausleihe
+// Der Fehlerfall wäre still: Greift die Map daneben, wird ein Schüler mit offener Ausleihe
 // anonymisiert (Name und Rechnungsadresse weg, die Schule bleibt auf dem Buch sitzen) oder
-// einer OHNE Vorgaenge bleibt unnoetig gesperrt. Beides faellt erst Wochen spaeter auf.
+// einer ohne Vorgänge bleibt unnötig gesperrt. Beides fällt erst Wochen später auf.
 //
-// Zum Schuljahresende gehen ganze Jahrgaenge gleichzeitig — mehrere Abgaenger in einem Lauf
+// Zum Schuljahresende gehen ganze Jahrgänge gleichzeitig; mehrere Abgänger in einem Lauf
 // sind der Normalfall, nicht die Ausnahme.
 func TestLUSDImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	// Drei Abgaenger: einer sauber, einer mit offener Ausleihe, einer mit offenem Schaden.
+	// Drei Abgänger: einer sauber, einer mit offener Ausleihe, einer mit offenem Schaden.
 	ids := map[string]string{}
 	for i, name := range []string{"sauber", "ausleihe", "schaden"} {
 		var id string
@@ -160,13 +160,13 @@ func TestLUSDImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 		}
 		ids[name] = id
 	}
-	// Die vorhandenen Helfer benutzen, nicht das SQL nachbauen: schadensfaelle traegt
-	// check_damage_item (entweder exemplar_id ODER geraet_id), ein direkter INSERT ohne
+	// Die vorhandenen Helfer benutzen, nicht das SQL nachbauen: schadensfaelle trägt
+	// check_damage_item (entweder exemplar_id oder geraet_id), ein direkter INSERT ohne
 	// Exemplar scheitert daran.
 	testdaten.LegeOffeneAusleiheAn(t, pool, ids["ausleihe"], "ABGA")
 	testdaten.LegeOffenenSchadenAn(t, pool, ids["schaden"], "ABGS")
 
-	// Der neue Export nennt KEINEN der drei mehr — alle sind Abgänger.
+	// Der neue Export nennt keinen der drei mehr — alle sind Abgänger.
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", Nr: 1},
@@ -174,10 +174,10 @@ func TestLUSDImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 		t.Fatalf("Abgängerlauf scheiterte: %v", err)
 	}
 
-	// Seit dem 02.09.2026 gilt die Karenzzeit (Vorgabe 90 Tage): Auch „sauber" wird NICHT
+	// Es gilt die Karenzzeit (Vorgabe 90 Tage): Auch „sauber" wird nicht
 	// sofort anonymisiert, sondern nur gesperrt — mit dem Karenz-Grund und gestempeltem
 	// abgaenger_seit, damit der nächtliche Job die Frist rechnen kann. Die beiden anderen
-	// tragen offene Vorgaenge und den Grund dafür; anonymisiert wird keiner.
+	// tragen offene Vorgänge und den Grund dafür; anonymisiert wird keiner.
 	sollGrund := map[string]string{
 		"sauber":   repository.AbgaengerSperrgrundKarenz,
 		"ausleihe": repository.AbgaengerSperrgrundOffen,

@@ -11,39 +11,39 @@ import (
 // Gate gegen die andere Hälfte der Datenverlust-Bugklasse — hier am dynamischen
 // UPDATE der Schülerdatei.
 //
-// inventur/schema_paritaet_test.go bewacht die eine Seite: eine SPALTE, die kein Schreiber
-// füllt. Diese Seite ist die gefährlichere, weil sie täglich benutzt wird: ein FELD im
-// Request-Typ, das baueLeserAenderung in der Änderung der Leserzeile nicht nennt.
+// inventur/schema_paritaet_test.go bewacht die eine Seite: eine Spalte, die kein Schreiber
+// füllt. Diese Seite ist die gefährlichere, weil sie täglich benutzt wird: ein Feld im
+// Anfrage-Typ, das baueLeserAenderung in der Änderung der Leserzeile nicht nennt.
 //
-// Was dann passiert, ist genau das Muster, das auf diesem Projekt schon mehrfach zugeschlagen
+// Was dann passiert, ist genau das Muster, das in diesem Projekt schon mehrfach zugeschlagen
 // hat: Das Formular schickt den Wert, der Server nimmt ihn an, antwortet mit HTTP 200 — und
 // speichert ihn nicht. Kein Fehler, keine Lücke im Bildschirm, der alte Wert bleibt stehen.
 // Auffallen kann das nur jemandem, der die Daten hinterher von Hand ansieht.
 //
-// Der Test füllt den Request-Typ per Reflexion — deshalb ist ein NEUES Feld automatisch
+// Der Test füllt den Anfrage-Typ per Reflexion — deshalb ist ein neues Feld automatisch
 // mitgeprüft, ohne dass jemand daran denken muss. Genau das unterscheidet ihn von einem
 // Test, der zwölf Felder aufzählt: Der wäre grün geblieben, als das dreizehnte dazukam.
 
-// Felder des Request-Typs, die absichtlich in KEINE SET-Zuweisung münden. Jedes braucht
+// Felder des Anfrage-Typs, die absichtlich in keine SET-Zuweisung münden. Jedes braucht
 // einen Grund, der über „steht sonst rot" hinausgeht.
 var nichtInsUpdate = map[string]string{
-	// lusd_id hat einen eigenen kontrollierten Pfad (pruefeUndSetzeLUSDID im Handler):
-	// nur nachtragbar wenn leer, eindeutig, auditiert. Ungeprüft in der Änderung genannt,
-	// verknüpfte der Wert den Datensatz mit einer fremden LUSD-Identität
-	// (Betreiber-Entscheidung 18.08.2026). Das FELD wird also sehr wohl geschrieben —
-	// nur nicht hier, sondern nach eigener Prüfung. Test: TestLUSDIDKontrolliertNachtragbar.
+	// lusd_id hat einen eigenen kontrollierten Pfad (pruefeUndSetzeLUSDID in der Tür): nur
+	// nachtragbar, wenn leer, eindeutig und im Protokoll. Ungeprüft in der Änderung genannt,
+	// verknüpfte der Wert den Datensatz mit einer fremden LUSD-Identität. Das Feld wird also sehr
+	// wohl geschrieben, nur nicht hier, sondern nach eigener Prüfung. Test:
+	// TestLUSDIDKontrolliertNachtragbar.
 	"lusd_id": "kontrollierter Pfad pruefeUndSetzeLUSDID (nur nachtragbar wenn leer, eindeutig, auditiert)",
-	// art ebenso (pruefeUndSetzeArt im Handler): Ein Wechsel der Art verschiebt die Zeile
+	// art ebenso (pruefeUndSetzeArt in der Tür): Ein Wechsel der Art verschiebt die Zeile
 	// zwischen zwei Pflichtfeld-Welten. Schüler -> Kollege nähme ihr die LUSD-Bindung und
-	// liesse sie beim nächsten Import als Abgänger durchlaufen; Kollege -> Schüler bricht
+	// ließe sie beim nächsten Import als Abgänger durchlaufen; Kollege -> Schüler bricht
 	// chk_leser_schueler_pflichtfelder (Klasse, Abgängerjahr, Ausweis). Ungeprüft in der
 	// Änderung genannt, käme beides als CHECK-500 zurück statt als Auskunft. Erlaubt ist nur der
 	// Wechsel zwischen Lehrkraft und LiV; geschrieben wird das Feld sehr wohl, nur nach
 	// eigener Prüfung. Test: TestLeserArtAendern (PG).
 	"art": "kontrollierter Pfad pruefeUndSetzeArt (nur zwischen Lehrkraft und LiV, nie über die Schüler-Grenze)",
-	// email steht überhaupt nicht in `leser`, sondern am KONTO (benutzer.email). Sie ist
+	// email steht überhaupt nicht in `leser`, sondern am Konto (benutzer.email). Sie ist
 	// keine Kontaktangabe, sondern der Schlüssel der Anmeldung — geschrieben wird sie
-	// deshalb nicht als Spalte dieser Zeile, sondern indem ein Konto ENTSTEHT
+	// deshalb nicht als Spalte dieser Zeile, sondern indem ein Konto entsteht
 	// (pruefeSchulEmail + trageKontoNach, api/leser/leser_schul_email.go): nachtragbar,
 	// solange keins da ist; danach ist das Feld eine Anzeige und wird in der
 	// Benutzerverwaltung geändert. Verworfen wird sie also nie — ein stilles 200 ohne
@@ -52,11 +52,11 @@ var nichtInsUpdate = map[string]string{
 	"email": "eigener Pfad pruefeSchulEmail (Adresse am Konto, nicht an der Leserzeile — nachtragbar, nicht änderbar)",
 }
 
-// beispielwert liefert einen Wert, den JEDES Feld dieses Typs verträgt.
+// beispielwert liefert einen Wert, den jedes Feld dieses Typs verträgt.
 //
 // „2010-05-04" ist bewusst für alle Strings gewählt: Geburtsdatum wird geparst
-// (leseGeburtsdatum, erwartet YYYY-MM-DD) und würde bei „x" die Anfrage mit 400 abbrechen —
-// der Test hätte dann NICHTS geprüft und wäre trotzdem an der Zusage unten vorbeigelaufen.
+// (leseGeburtsdatum, erwartet JJJJ-MM-TT) und würde bei „x" die Anfrage mit 400 abbrechen —
+// der Test hätte dann nichts geprüft und wäre trotzdem an der Zusage unten vorbeigelaufen.
 func beispielwert(t reflect.Type) reflect.Value {
 	switch t.Kind() {
 	case reflect.String:

@@ -17,15 +17,14 @@ import (
 
 // Ein Kollege wird nicht überfällig — nirgends.
 //
-// Entschieden am 16.09.2026: „kollegen haben keine frist bzw werden einfach nie gesperrt!"
+// Festgelegt ist: „kollegen haben keine frist bzw werden einfach nie gesperrt!"
 //
-// Die Regel gab es schon, sie war nur nicht zu Ende geführt. Eine Ausleihe an jemanden,
-// der kein Schüler ist, ist eine DAUERLEIHE (`ausleihen.ist_handapparat`, gesetzt in
-// legeAusleiheAn und im Geräte-Pfad), und die Sperr-Automatik zählt seit jeher nur
-// Ausleihen mit `ist_handapparat = false`. Die Leserliste und die Übersicht rechneten
-// daneben ihr eigenes „überfällig" aus dem blossen Datum: Nach einem Jahr stand ein
-// Kollege mit roter Zahl in der Leserdatei und als Mahnfall in der Statistik, während die
-// Theke ihn anstandslos bediente — zwei Wahrheiten über dieselbe Ausleihe.
+// Eine Ausleihe an jemanden, der kein Schüler ist, ist eine Dauerleihe
+// (`ausleihen.ist_handapparat`, gesetzt in legeAusleiheAn und im Geräte-Pfad), und die
+// Sperr-Automatik zählt nur Ausleihen mit `ist_handapparat = false`. Rechneten Leserliste und
+// Übersicht daneben ihr eigenes „überfällig" aus dem bloßen Datum, stünde ein Kollege nach
+// einem Jahr mit roter Zahl in der Leserdatei und als Mahnfall in der Statistik, während die
+// Theke ihn anstandslos bedient: zwei Wahrheiten über dieselbe Ausleihe.
 //
 // Gemahnt wurde er nie: Der Mahnlauf joint die Sicht `schueler`
 // (repository/mahnwesen_ueberfaellige.go). Das bleibt so.
@@ -35,16 +34,16 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	// Das Exemplar wird ANGELEGT und nicht im Bestand gesucht: testdaten.LeereBestandsdaten räumt ihn
-	// weg. Ein `LIMIT 1` auf eine leere Tabelle führte hier erst zu einem Skip — und ein
-	// übersprungener Test ist grün, ohne etwas zu belegen (gesehen an der Rot-Probe: Der
-	// Rückbau der Regel liess den Test unverändert „ok" melden).
+	// Das Exemplar wird angelegt und nicht im Bestand gesucht: testdaten.LeereBestandsdaten
+	// räumt ihn weg. Ein `LIMIT 1` auf eine leere Tabelle ließe den Test überspringen, und ein
+	// übersprungener Test ist grün, ohne etwas zu belegen (an der Rot-Probe gesehen: Der
+	// Rückbau der Regel ließ den Test unverändert „ok" melden).
 	var titelID string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO buecher_titel (titel) VALUES ('Frist-Titel') RETURNING id::text`).Scan(&titelID); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
-	// Je Leser ein eigenes Exemplar: `uniq_ausleihen_aktiv_exemplar` lässt nur EINE offene
+	// Je Leser ein eigenes Exemplar: `uniq_ausleihen_aktiv_exemplar` lässt nur eine offene
 	// Ausleihe je Exemplar zu.
 	neuesExemplar := func(t *testing.T, barcode string) string {
 		t.Helper()
@@ -146,7 +145,7 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 	t.Run("die Leserliste zählt den Kollegen nicht als überfällig, den Schüler schon", func(t *testing.T) {
 		zaehleUeberfaellig := func(t *testing.T, leserID string) int {
 			t.Helper()
-			// LadeLeserListe ist die Abfrage der LESERDATEI — sie führt Schüler und
+			// LadeLeserListe ist die Abfrage der Leserdatei — sie führt Schüler und
 			// Kollegium in einer Liste und ist damit die Stelle, an der ein Kollege
 			// überhaupt mit einer Zahl auftauchen kann.
 			stats, err := repository.NewLeserAbfragen(pool).LadeLeserListe(ctx, nil, "Frist", repository.LeserSortierung{})

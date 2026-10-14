@@ -24,25 +24,22 @@ import (
 // in der Liste nicht findet.
 const meldungSchuelerDuplikat = "achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System"
 
-// leserAnlegenAnfrage defines the payload for creating a new reader.
-//
-// Der Name des Typs ist geblieben, der Inhalt ist mehr: Seit dem 16.09.2026 fragt „Neuen
-// Leser anlegen" ZUERST nach der Art. Klasse und Geburtsdatum sind deshalb nicht mehr am
-// Feld als Pflicht markiert, sondern im Handler AN DIE ART GEPAART (pruefeLeserAngaben) —
-// genau so, wie es die Datenbank tut (chk_leser_schueler_pflichtfelder). Zwei Pflichten,
-// die für alle gelten, wären hier dasselbe wie gar keine: Ein Kollege hat keine Klasse.
+// leserAnlegenAnfrage ist ein neuer Leser, gleich welcher Art. „Neuen Leser anlegen" fragt
+// zuerst nach der Art; Klasse und Geburtsdatum sind deshalb nicht am Feld als Pflicht
+// markiert, sondern in der Tür an die Art gepaart (pruefeLeserAngaben), so wie es die
+// Datenbank tut (chk_leser_schueler_pflichtfelder). Zwei Pflichten, die für alle gelten,
+// wären hier dasselbe wie gar keine: Ein Kollege hat keine Klasse.
 type leserAnlegenAnfrage struct {
 	Vorname  string `json:"vorname" validate:"required"`
 	Nachname string `json:"nachname" validate:"required"`
-	// Art: eine aus pkg/leserart. Leer heißt „schueler" — die Vorgabe der
-	// Spalte und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.
+	// Art: eine aus pkg/leserart. Leer heißt „schueler", die Vorgabe der Spalte; ein
+	// Aufrufer, der die Art nicht kennt, legt so weiter Schüler an.
 	Art string `json:"art"`
-	// Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal" dazugehört:
-	// Lehrkraft, LiV, Sekretariat, U-plus (leserart.HatKonto; Absprache vom 16.09.2026).
-	// Bei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie
-	// bekommen kein Konto (Entscheidung vom 30.09.2026).
+	// Email ist die Schuladresse und Pflicht, wo ein Zugang zu „Mein Portal" dazugehört:
+	// Lehrkraft, LiV, Sekretariat, U-plus (leserart.HatKonto). Bei einem Schüler, einem
+	// Praktikum und einem Fachbereich bleibt sie leer; sie bekommen kein Konto.
 	//
-	// Sie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine
+	// Sie ist nicht Kontaktangabe, sondern Schlüssel: An ihr erkennt die Anmeldung eine
 	// Person (IMAP), und über sie greift `benutzer_email_unique`. Genau das verhindert den
 	// Doppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein
 	// Portal" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite
@@ -50,7 +47,7 @@ type leserAnlegenAnfrage struct {
 	Email     string `json:"email"`
 	Klasse    string `json:"klasse"`
 	BarcodeID string `json:"barcode_id"`
-	// Geburtsdatum (YYYY-MM-DD) ist Pflicht für einen SCHÜLER — geprüft im Handler mit
+	// Geburtsdatum (JJJJ-MM-TT) ist Pflicht für einen Schüler, geprüft in der Tür mit
 	// eigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe
 	// errGeburtsdatumPflicht.
 	Geburtsdatum *string `json:"geburtsdatum"`
@@ -64,13 +61,13 @@ const meldungLeserNamensdublette = "achtung: Unter diesem Namen steht bereits ei
 
 // pruefeKollegiumEmail prüft die Schuladresse eines Kollegen mit Zugang (leserart.HatKonto).
 //
-// PFLICHT, und zwar aus einem Grund, der nichts mit Erreichbarkeit zu tun hat: Ohne sie
+// Pflicht, und zwar aus einem Grund, der nichts mit Erreichbarkeit zu tun hat: Ohne sie
 // entsteht kein Konto, und ohne Konto steht die Person zweimal in der Leserdatei, sobald
 // sie sich über „Mein Portal" selbst anmeldet — einmal von Hand, einmal vom Wächter
 // trg_benutzer_hat_leserzeile. Ausweis und Ausleihen hängen dann am ersten Eintrag, die
 // Anmeldung am zweiten, und niemand merkt es.
 //
-// Die Domain wird geprüft, WENN eine freigegeben ist (SELBSTANMELDUNG_DOMAIN). Das ist
+// Die Domain wird geprüft, wenn eine freigegeben ist (SELBSTANMELDUNG_DOMAIN). Das ist
 // keine Förmlichkeit: Angemeldet wird über IMAP gegen den Schulserver. Eine fremde
 // Adresse ergäbe ein Konto, an dem sich niemand anmelden kann — besser jetzt eine klare
 // Meldung als später eine unerklärliche Abweisung.
@@ -85,7 +82,7 @@ func pruefeKollegiumEmail(roh string) error {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
 		return fmt.Errorf("%q ist keine E-Mail-Adresse.", email)
 	}
-	// Vergleich über das LETZTE „@" und die vollständige Domain — dieselbe Regel wie in
+	// Vergleich über das letzte „@" und die vollständige Domain — dieselbe Regel wie in
 	// auth.darfSichSelbstAnmelden. Ein Suffix-Vergleich ließe „boesephilipp-reis-schule.de"
 	// durch.
 	if freigegeben := auth.SelbstanmeldeDomain(); freigegeben != "" {
@@ -100,10 +97,10 @@ func pruefeKollegiumEmail(roh string) error {
 // pruefeLeserAngaben paart die Pflichtfelder an die Art — dieselbe Paarung, die
 // chk_leser_schueler_pflichtfelder in der Datenbank hält.
 //
-// Die Paarung ist der Punkt und nicht der Wert: Am 14.09.2026 hat genau diese Bugklasse
-// die LUSD-Klasse getroffen (ein Gate prüfte den Wert, nicht die Paarung). Ein Schüler
-// ohne Klasse fällt in jeder Klassenliste und jeder Mahnung lautlos hinten runter; ein
-// Kollege MIT Klasse stünde umgekehrt in den Klassenlisten und im LUSD-Abgleich.
+// Die Paarung ist der Punkt und nicht der Wert: Ein Gate, das den Wert prüft und nicht die
+// Paarung, übersieht genau diese Bugklasse. Ein Schüler ohne Klasse fällt in jeder
+// Klassenliste und jeder Mahnung lautlos hinten runter; ein Kollege mit Klasse stünde
+// umgekehrt in den Klassenlisten und im LUSD-Abgleich.
 func pruefeLeserAngaben(req *leserAnlegenAnfrage) error {
 	if !leserart.IstBekannt(req.Art) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
@@ -147,17 +144,17 @@ func pruefeEmailZurArt(art, email string) error {
 	return errors.New(meldungKeinZugang)
 }
 
-// errGeburtsdatumPflicht erklärt dem Sekretariat, WARUM das Datum nicht fehlen darf —
+// errGeburtsdatumPflicht erklärt dem Sekretariat, warum das Datum nicht fehlen darf —
 // eine nackte Validierungsmeldung würde als Schikane gelesen und umgangen.
 var errGeburtsdatumPflicht = errors.New("Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt — ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt.") //nolint:staticcheck // ST1005: nutzer-sichtbarer Text im Anlege-Dialog
 
-// LeserAnlegen inserts a new student record into the database.
-// @Summary      Create student
-// @Description  Creates a new student profile in the library database.
+// LeserAnlegen legt einen Leser an, mit Konto, wo seine Art eines hat.
+// @Summary      Leser anlegen
+// @Description  Legt einen Leser an; bei Lehrkraft, LiV, Sekretariat und U-plus mit Konto zur Schul-E-Mail.
 // @Tags         students
 // @Accept       json
 // @Produce      json
-// @Param        student  body      leserAnlegenAnfrage  true  "Student creation payload"
+// @Param        student  body      leserAnlegenAnfrage  true  "Der neue Leser"
 // @Success      200      {object}  map[string]any
 // @Failure      400      {object}  map[string]string
 // @Failure      401      {object}  map[string]string
@@ -186,8 +183,8 @@ func (t *Tueren) LeserAnlegen() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		// Geburtsdatum ist Pflicht für einen SCHÜLER — nicht als Stammdatum, sondern als
-		// SCHLÜSSEL: Der LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt
+		// Geburtsdatum ist Pflicht für einen Schüler — nicht als Stammdatum, sondern als
+		// Schlüssel: Der LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt
 		// einen von Hand angelegten Schüler ausschließlich über Name + Geburtsdatum wieder
 		// (Adoption bzw. Namensmodus). Ohne Datum entsteht beim nächsten Import zwangsläufig
 		// ein Duplikat.
@@ -205,7 +202,7 @@ func (t *Tueren) LeserAnlegen() http.HandlerFunc {
 
 		// Freischalten ist eine Entscheidung, kein technischer Schritt: Angemeldet wird über
 		// IMAP, ein Passwort gibt es bei uns nicht. Wer ein Konto freischalten darf, sagt
-		// `manage_users` — und nur wer das Recht hat, legt hier ein AKTIVES Konto an.
+		// `manage_users` — und nur wer das Recht hat, legt hier ein aktives Konto an.
 		//
 		// Das Konto entsteht in beiden Fällen. Es muss auch entstehen: Seine eindeutige
 		// E-Mail-Adresse ist das, was den zweiten Eintrag bei der Selbstanmeldung
@@ -225,7 +222,7 @@ func (t *Tueren) LeserAnlegen() http.HandlerFunc {
 }
 
 // legeLeserAn wickelt die Neuanlage in einer Transaktion ab (Duplikatsprüfung,
-// Barcode-Auflösung/-Generierung, Insert, Commit) und liefert die neue Schüler- und
+// Barcode-Auflösung/-Erzeugung, Einfügen, Commit) und liefert die neue Schüler- und
 // Barcode-ID. ok=false: die Fehlerantwort wurde bereits geschrieben.
 func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req leserAnlegenAnfrage, geburtsdatum *time.Time, darfFreischalten bool) (leserID, barcodeID string, ok bool) {
 	tx, err := t.DB.Pool.Begin(ctx)
@@ -240,7 +237,7 @@ func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req les
 		return "", "", false
 	}
 
-	// 2. Resolve/generate barcode_id if not provided
+	// 2. Die Ausweisnummer: die gewünschte oder eine neue aus dem Generator.
 	barcodeID, ok = bestimmeNeueBarcodeID(ctx, tx, w, req.BarcodeID)
 	if !ok {
 		return "", "", false
@@ -248,12 +245,12 @@ func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req les
 
 	// 3. Die Leserzeile anlegen.
 	//
-	// Geschrieben wird die TABELLE `leser` und nicht die Sicht `schueler`: Durch die Sicht
+	// Geschrieben wird die Tabelle `leser` und nicht die Sicht `schueler`: Durch die Sicht
 	// könnte ein Kollege gar nicht entstehen (WITH CHECK OPTION). Die Schüler-Pflichten
-	// hält weiter die Datenbank — chk_leser_schueler_pflichtfelder prüft die PAARUNG von
+	// hält weiter die Datenbank — chk_leser_schueler_pflichtfelder prüft die Paarung von
 	// Art und Klasse/Abgangsjahr/Ausweis, nicht die einzelnen Werte.
 	//
-	// Klasse und Abgangsjahr sind bei einem Kollegen NULL, nicht ”: Ein leerer String wäre
+	// Klasse und Abgangsjahr sind bei einem Kollegen NULL, nicht '': Ein leerer String wäre
 	// eine Klasse namens „nichts", und die Klassenlisten fragen auf NULL.
 	var klasse *string
 	var abgaengerJahr *int
@@ -275,17 +272,17 @@ func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req les
 		return "", "", false
 	}
 
-	// 4. Das Konto einer Lehrkraft — in DERSELBEN Transaktion. Praktikum und Fachbereich
+	// 4. Das Konto einer Lehrkraft — in derselben Transaktion. Praktikum und Fachbereich
 	// bekommen keines (leserart.HatKonto), ein Schüler ohnehin nicht.
 	//
 	// `leser_id` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
-	// NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
+	// nicht anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
 	// hier die zweite — genau der Doppeleintrag, den diese Änderung abschafft.
 	var kontoID string
 	if leserart.HatKonto(req.Art) {
-		// Das Konto entsteht in DERSELBEN Transaktion wie die Leserzeile — scheitert es,
+		// Das Konto entsteht in derselben Transaktion wie die Leserzeile — scheitert es,
 		// darf auch die Zeile nicht stehen bleiben (die belegte Adresse ist der häufige
-		// Fall und heisst: Die Person steht schon da).
+		// Fall und heißt: Die Person steht schon da).
 		params := repository.KollegiumskontoNeu{
 			Vorname:  req.Vorname,
 			Nachname: req.Nachname,
@@ -303,8 +300,8 @@ func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req les
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", "", false
 	}
-	// Dieselbe Spur wie über Benutzer & Rechte (docs/OFFEN.md 5.19): Bis zum 29.09.2026
-	// hinterließ ein Konto, das über die Leserdatei entstand, keinen Eintrag.
+	// Dieselbe Spur wie über Benutzer & Rechte: Auch ein Konto, das über die Leserdatei
+	// entsteht, hinterlässt einen Eintrag im Protokoll.
 	if kontoID != "" {
 		t.ProtokolliereKontoAnlage(ctx, kontoID, strings.ToLower(strings.TrimSpace(req.Email)), "kollegium", req.Vorname, req.Nachname)
 	}
@@ -363,8 +360,8 @@ func antworteAufAnlegeFehler(w http.ResponseWriter, err error, barcodeID string)
 	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 }
 
-// leseAnlageGeburtsdatum parst das Geburtsdatum (YYYY-MM-DD) aus dem Anlage-Request.
-// Der nil-/Leer-Zweig ist seit der Pflicht (errGeburtsdatumPflicht) nur noch Absicherung.
+// leseAnlageGeburtsdatum liest das Geburtsdatum (JJJJ-MM-TT) aus der Anfrage. Der nil- und
+// Leer-Zweig ist wegen der Pflicht (errGeburtsdatumPflicht) nur Absicherung.
 // ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
 func leseAnlageGeburtsdatum(w http.ResponseWriter, roh *string) (*time.Time, bool) {
 	if roh == nil || *roh == "" {
@@ -378,15 +375,15 @@ func leseAnlageGeburtsdatum(w http.ResponseWriter, roh *string) (*time.Time, boo
 	return &t, true
 }
 
-// bestimmeNeueBarcodeID liefert die zu verwendende Barcode-ID: entweder die vom Client
+// bestimmeNeueBarcodeID liefert die zu verwendende Barcode-ID: entweder die von der Oberfläche
 // gewünschte (nach Eindeutigkeitsprüfung) oder eine neu generierte S-Nummer aus der
 // zentralen Sequenz. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
 func bestimmeNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, gewuenscht string) (string, bool) {
 	if gewuenscht == "" {
-		// Use central repository for sequence generation
+		// Die Nummer zieht der Generator der Datenbank.
 		nummernAbfragen := repository.NewAusweisnummernAbfragen(tx)
 		// `leser`, nicht die Sicht `schueler`: Die Sicht zeigt nur Schüler, und die
-		// höchste Nummer kann seit Migration 125 an einem KOLLEGEN hängen. Über die Sicht
+		// höchste Nummer kann seit Migration 125 an einem Kollegen hängen. Über die Sicht
 		// gerechnet gäbe der Generator sie ein zweites Mal aus — und der eindeutige Index
 		// quittierte das als 500 statt mit einer Auskunft. Ein Nummernkreis, zwei
 		// Generatoren: genau der Fehler aus Migration 068, nur eine Tabelle weiter.
@@ -400,7 +397,7 @@ func bestimmeNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter
 	}
 
 	// Die Ausweisnummer gehört genau einer Person — Schüler wie Kollegium. Gefragt wird die
-	// TABELLE `leser` und nicht die Sicht `schueler`: Sonst sähe die Prüfung einen Kollegen
+	// Tabelle `leser` und nicht die Sicht `schueler`: Sonst sähe die Prüfung einen Kollegen
 	// nicht, ließe die Nummer durch, und der eindeutige Index quittierte es als 500 statt
 	// mit einer Auskunft an die Bibliothek (Migration 125).
 	//

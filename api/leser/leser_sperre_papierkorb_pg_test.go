@@ -19,15 +19,15 @@ import (
 
 // Ein manuell gesperrter Schüler muss aus dem Papierkorb zurückkommen — mit seinem Grund.
 //
-// Fund des Komplett-Durchgangs 31.08.2026: LegeLeserInPapierkorb überschrieb block_reason
-// BEDINGUNGSLOS mit 'Systematisch gelöscht' — als einziger Schreiber im Baum; alle
-// anderen (LUSD-Abgang, Versetzung, Sperr-Endpunkt) bewahren einen bestehenden Grund
-// per COALESCE(NULLIF(...)). Folge: Der echte Sperrgrund („Ausweismissbrauch, Eltern
-// informiert") war nach dem Löschen weg, und der Restore erkannte die Zeile an seinem
-// Marker als Lösch-Sperre: ist_gesperrt=false, block_reason=NULL — während
-// is_manually_blocked=true stehen blieb. Das verletzt chk_schueler_block_reason
-// (gesperrt ⇒ Grund nicht leer) → 23514 → 500 „interner Datenbankfehler". Ein manuell
-// gesperrter Schüler ließ sich nach dem Löschen NIE wiederherstellen.
+// Überschriebe LegeLeserInPapierkorb block_reason bedingungslos mit 'Systematisch
+// gelöscht' (alle anderen Schreiber, LUSD-Abgang, Versetzung und Sperr-Endpunkt, bewahren
+// einen bestehenden Grund per COALESCE(NULLIF(...))), wäre der echte Sperrgrund
+// („Ausweismissbrauch, Eltern informiert") nach dem Löschen weg, und das Wiederherstellen
+// erkennte die Zeile an seinem Marker als Lösch-Sperre: ist_gesperrt=false,
+// block_reason=NULL, während is_manually_blocked=true stehen bliebe. Das verletzt
+// chk_schueler_block_reason (gesperrt ⇒ Grund nicht leer) → 23514 → 500 „interner
+// Datenbankfehler"; ein von Hand gesperrter Schüler ließe sich nach dem Löschen nie
+// wiederherstellen.
 func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndWiederherstellen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -111,13 +111,11 @@ func sperrZustand(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, manuel
 
 // Ein zweites Löschen darf die Lösch-Uhr nicht neu stellen.
 //
-// Fund aus dem Bestands-Durchgang 10.09.2026 (Register): LegeLeserInPapierkorb schrieb
-// `deleted_at = CURRENT_TIMESTAMP` bedingungslos, und geprüft wurde davor nur, DASS es
-// den Schüler gibt — nicht, ob er schon im Papierkorb liegt. Wer eine Zeile ein zweites
-// Mal löschte, verschob damit die 180-Tage-Frist der Anonymisierung
-// (repository.PraedikatAnonymisierung liest deleted_at) um die ganze bereits abgelaufene
-// Zeit nach hinten. Still: Die Antwort war beide Male „success", und im Papierkorb sieht
-// man das Datum nur als „gelöscht am".
+// Schriebe LegeLeserInPapierkorb `deleted_at = CURRENT_TIMESTAMP` bedingungslos und prüfte
+// davor nur, dass es den Schüler gibt, nicht, ob er schon im Papierkorb liegt, verschöbe ein
+// zweites Löschen die 180-Tage-Frist der Anonymisierung (repository.PraedikatAnonymisierung
+// liest deleted_at) um die ganze bereits abgelaufene Zeit nach hinten. Still: Die Antwort
+// wäre beide Male „success", und im Papierkorb sieht man das Datum nur als „gelöscht am".
 func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

@@ -29,7 +29,7 @@ func dsgvoAnfrage(t *testing.T, mock pgxmock.PgxPoolIface) *httptest.ResponseRec
 	return rec
 }
 
-// erwarteStammdaten registriert die Stammdaten-Query mit einem vollständigen Schüler.
+// erwarteStammdaten registriert die Abfrage der Stammdaten mit einem vollständigen Schüler.
 func erwarteStammdaten(mock pgxmock.PgxPoolIface) {
 	geb := "2010-04-01"
 	now := time.Now()
@@ -95,11 +95,11 @@ func TestDSGVOAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktion", "zeitstempel", "details"}).
 			AddRow("RESTORE_STUDENT", time.Now(), []byte(`{"schueler_id":"`+dsgvoTestID+`"}`)))
-	// Seit dem 24.09.2026: das Zugangskonto. Ein Schüler hat in der Regel keines.
+	// Das Zugangskonto. Ein Schüler hat in der Regel keines.
 	mock.ExpectQuery(`FROM benutzer\s+WHERE leser_id = \$1`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id"}))
-	// Seit dem 29.09.2026: frühere Zugangskonten über ihren Löscheintrag. Ein Schüler hat keine.
+	// Frühere Zugangskonten über ihren Löscheintrag. Ein Schüler hat keine.
 	mock.ExpectQuery(`FROM audit_log\s+WHERE tabelle = 'benutzer' AND aktion = 'DELETE'`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "timestamp", "email", "rolle"}))

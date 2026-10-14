@@ -19,17 +19,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// schuljahreswechselAntwort liefert die Statistik des Schuljahreswechsels zurück.
-// Bei DryRun=true wurde nichts geschrieben — die Zahlen sind die exakte Vorschau
-// (identisches SQL, Transaktion wird zurückgerollt).
+// schuljahreswechselAntwort sind die Zahlen des Schuljahreswechsels. Bei Probelauf wurde
+// nichts geschrieben; die Zahlen sind die genaue Vorschau (dieselben Abfragen, die
+// Transaktion wird zurückgerollt).
 type schuljahreswechselAntwort struct {
 	Versetzt   int  `json:"promoted_count"`
 	Archiviert int  `json:"archived_count"`
 	Probelauf  bool `json:"dry_run"`
-	// Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt
-	// wurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel
-	// auf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an
-	// niemanden, ohne Fehlermeldung).
+	// Klassenlehrer-Zuordnungen, die mit versetzt oder als Abschlussklasse entfernt wurden.
+	// Bliebe die Zuordnung beim Jahreswechsel auf dem alten Klassennamen stehen, ginge die
+	// Mahnliste der neuen 6a an niemanden, ohne Fehlermeldung.
 	ZuordnungenVersetzt int `json:"mapping_versetzt"`
 	ZuordnungenEntfernt int `json:"mapping_entfernt"`
 	// Zuordnungen, deren Zielname schon belegt war (z. B. '9a' und '09a' laufen
@@ -38,12 +37,11 @@ type schuljahreswechselAntwort struct {
 	Zuordnungskonflikte []string `json:"mapping_konflikte,omitempty"`
 }
 
-// schuljahreswechselAnfrage verlangt eine explizite Bestätigung im Body. Das ist eine
-// zusätzliche serverseitige Sicherung gegen versehentliche oder automatisierte
-// Aufrufe (z. B. ein wiederholter Retry) — bei einem irreversiblen Batch-Vorgang
-// dieser Tragweite reicht eine reine Client-seitige Bestätigung nicht aus.
-// DryRun führt dieselbe Berechnung in einer Transaktion aus und rollt sie zurück:
-// exakte Vorschau ohne Seiteneffekte, ohne Confirm nutzbar.
+// schuljahreswechselAnfrage verlangt eine ausdrückliche Bestätigung im Rumpf: eine Sicherung
+// am Server gegen versehentliche oder automatische Aufrufe (etwa eine Wiederholung); bei einem
+// unumkehrbaren Lauf dieser Tragweite reicht eine Bestätigung in der Oberfläche nicht.
+// Probelauf führt dieselbe Berechnung in einer Transaktion aus und rollt sie zurück: eine
+// genaue Vorschau ohne Wirkung, auch ohne Bestätigung.
 type schuljahreswechselAnfrage struct {
 	Bestaetigt bool `json:"confirm"`
 	Probelauf  bool `json:"dry_run"`
@@ -51,7 +49,7 @@ type schuljahreswechselAnfrage struct {
 
 // Schuljahreswechsel führt den automatischen Schuljahreswechsel durch.
 // @Summary      Automatische Versetzung (Schuljahreswechsel)
-// @Description  Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H/10H, 10R, 13 — repository.AbschlussklasseSQL) automatisch als Abgänger. Erfordert { "confirm": true } im Body; { "dry_run": true } liefert eine exakte Vorschau ohne Änderungen.
+// @Description  Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H/10H, 10R, 13 — repository.AbschlussklasseSQL) automatisch als Abgänger. Erfordert { "confirm": true } im Rumpf der Anfrage; { "dry_run": true } liefert eine exakte Vorschau ohne Änderungen.
 // @Tags         schueler
 // @Accept       json
 // @Produce      json
@@ -86,11 +84,11 @@ func (t *Tueren) Schuljahreswechsel() http.HandlerFunc {
 	}
 }
 
-// fuehreSchuljahreswechselAus wickelt den Versetzungs-Batch in einer einzigen strikten
-// Transaktion ab: entweder wird JEDER Schüler versetzt/archiviert, oder — bei jedem
-// Fehler — keiner (db.SafeRollback greift auf jedem Fehler- UND Panic-Pfad). Im
-// Dry-Run-Modus wird bewusst NICHT committet (dieselbe Berechnung, null Seiteneffekte).
-// ok=false: die Fehlerantwort wurde bereits geschrieben.
+// fuehreSchuljahreswechselAus wickelt den Lauf der Versetzung in einer einzigen strikten
+// Transaktion ab: Entweder wird jeder Schüler versetzt oder archiviert, oder bei jedem Fehler
+// keiner (db.SafeRollback greift auf jedem Fehler- und Panic-Pfad). Im Probelauf wird bewusst
+// nicht committet (dieselbe Berechnung, ohne Wirkung). ok=false: die Fehlerantwort wurde
+// bereits geschrieben.
 func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.ResponseWriter, r *http.Request, anfrage schuljahreswechselAnfrage, kontoID string) (antwort schuljahreswechselAntwort, ok bool) {
 	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
@@ -100,12 +98,12 @@ func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 	defer db.SafeRollback(ctx, tx)
 
 	if !anfrage.Probelauf {
-		// HARTE Serialisierung gegen den Doppellauf. Der COUNT-Check unten allein ist
+		// Harte Serialisierung gegen den Doppellauf. Der COUNT-Check unten allein ist
 		// TOCTOU: Zwei gleichzeitige Klicks (oder zwei Admins) lesen beide 0, bevor einer
-		// committet — und versetzen die GANZE Schule ein zweites Mal (+2 Stufen,
+		// committet — und versetzen die ganze Schule ein zweites Mal (+2 Stufen,
 		// irreversibel). Der Advisory-Lock (transaktionsgebunden, gibt beim Commit/
 		// Rollback automatisch frei) zwingt den zweiten Lauf zu warten, bis der erste
-		// fertig ist; danach sieht dessen COUNT den Audit-Eintrag und antwortet 409.
+		// fertig ist; danach sieht dessen COUNT den Protokolleintrag und antwortet 409.
 		if err := repository.SperreSchuljahreswechsel(ctx, tx); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return antwort, false
@@ -120,11 +118,11 @@ func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 		return antwort, false
 	}
 
-	// Die Klassenlehrer-Zuordnung wandert MIT der Kohorte (dieselbe Transaktion,
+	// Die Klassenlehrer-Zuordnung wandert mit der Kohorte (dieselbe Transaktion,
 	// dieselbe Rechenregel). Die Klassen-Bücherlisten (class_books) bleiben
-	// BEWUSST unangetastet: Sie hängen am Stufen-Namen ("die 8a liest Markl 2"
-	// gilt für jede künftige 8a), nicht an den Menschen — zwei Bedeutungen von
-	// "Klasse", die der Jahreswechsel nicht verwechseln darf (Befund F3).
+	// bewusst unangetastet: Sie hängen am Stufen-Namen ("die 8a liest Markl 2"
+	// gilt für jede künftige 8a), nicht an den Menschen; zwei Bedeutungen von
+	// "Klasse", die der Jahreswechsel nicht verwechseln darf.
 	if err := versetzeKlassenlehrerZuordnung(ctx, tx, &antwort); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return antwort, false
@@ -182,8 +180,8 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, antwort *sch
 	return nil
 }
 
-// leseSchuljahreswechselAnfrage dekodiert den Request-Body und erzwingt die explizite Bestätigung
-// (außer im Dry-Run). ok=false: die Fehlerantwort wurde bereits geschrieben.
+// leseSchuljahreswechselAnfrage liest den Rumpf der Anfrage und verlangt die ausdrückliche
+// Bestätigung (außer im Probelauf). ok=false: die Fehlerantwort wurde bereits geschrieben.
 func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schuljahreswechselAnfrage, bool) {
 	var anfrage schuljahreswechselAnfrage
 	if err := json.NewDecoder(r.Body).Decode(&anfrage); err != nil {
@@ -201,13 +199,13 @@ func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schu
 // 12 Stunden (ein zweiter Lauf würde alle Schüler +2 versetzen). ok=false: die
 // Fehlerantwort (500 oder 409) wurde bereits geschrieben.
 //
-// Das Fenster ist bewusst großzügig: Der Schuljahreswechsel ist ein Batch, der einmal
-// im Jahr läuft. Das frühere 10-Minuten-Fenster ließ genau den wahrscheinlichsten
-// Fehler durch — der Admin bemerkt etwas, korrigiert, und klickt nach einer
-// Viertelstunde erneut, wodurch die ganze Schule ein zweites Mal befördert wird. Ein
-// legitimer Wiederholungslauf nach einem FEHLGESCHLAGENEN Wechsel bleibt möglich: Der
-// Audit-Eintrag wird atomar mit dem Batch committet (finalisiereSchuljahreswechsel),
-// ein abgebrochener Lauf hinterlässt also keinen Eintrag und keine Sperre.
+// Das Fenster ist bewusst großzügig: Der Schuljahreswechsel läuft einmal im Jahr. Ein
+// Fenster von zehn Minuten ließe genau den wahrscheinlichsten Fehler durch: Der Admin bemerkt
+// etwas, korrigiert und klickt nach einer Viertelstunde erneut, und die ganze Schule würde ein
+// zweites Mal versetzt. Ein Wiederholungslauf nach einem fehlgeschlagenen Wechsel bleibt
+// möglich: Der Eintrag im Protokoll wird atomar mit dem Lauf committet
+// (finalisiereSchuljahreswechsel), ein abgebrochener Lauf hinterlässt also keinen Eintrag und
+// keine Sperre.
 func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWriter) bool {
 	juengsteLaeufe, err := repository.ZaehleJuengsteSchuljahreswechsel(ctx, tx)
 	if err != nil {
@@ -222,7 +220,7 @@ func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWrite
 	return true
 }
 
-// finalisiereSchuljahreswechsel schreibt den Audit-Eintrag atomar mit dem Batch (er
+// finalisiereSchuljahreswechsel schreibt den Eintrag im Protokoll atomar mit dem Lauf (er
 // trägt zugleich den Doppellauf-Schutz) und committet die Transaktion. ok=false: die
 // Fehlerantwort wurde bereits geschrieben.
 func (t *Tueren) finalisiereSchuljahreswechsel(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, r *http.Request, kontoID string, versetzt, archiviert int) bool {

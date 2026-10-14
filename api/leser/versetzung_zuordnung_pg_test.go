@@ -16,15 +16,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Befund F3, Kern des Jahreswechsel-Problems: Der Versetzungslauf zählte nur
-// schueler.klasse hoch — die Klassenlehrer-Zuordnung blieb auf den alten Namen
-// stehen, und die Mahnliste der neuen 6a ging an niemanden. Seit 18.08.2026
-// wandert die Zuordnung in derselben Transaktion mit. Die Klassen-Bücherlisten
-// bleiben BEWUSST stehen (Stufen-Semantik, siehe schuljahreswechsel.go).
+// Kern des Jahreswechsels: Zählte der Versetzungslauf nur schueler.klasse hoch, bliebe die
+// Klassenlehrer-Zuordnung auf den alten Namen stehen, und die Mahnliste der neuen 6a ginge
+// an niemanden. Deshalb wandert die Zuordnung in derselben Transaktion mit. Die
+// Klassen-Bücherlisten bleiben bewusst stehen (Stufen-Semantik, siehe schuljahreswechsel.go).
 
 func versetzungAusfuehren(t *testing.T, pool *pgxpool.Pool, dryRun bool) schuljahreswechselAntwort {
 	t.Helper()
-	// Der Audit-Eintrag des Laufs verlangt einen echten Bearbeiter (FK auf benutzer).
+	// Der Protokolleintrag des Laufs verlangt einen echten Bearbeiter (FK auf benutzer).
 	var adminID string
 	if err := pool.QueryRow(context.Background(), `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
@@ -78,7 +77,7 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 		}
 	}
 
-	// Erst der Dry-Run: exakte Vorschau, aber NICHTS geschrieben.
+	// Erst der Probelauf: genaue Vorschau, aber nichts geschrieben.
 	vorschau := versetzungAusfuehren(t, pool, true)
 	if vorschau.ZuordnungenVersetzt != 3 || vorschau.ZuordnungenEntfernt != 1 {
 		t.Fatalf("Vorschau falsch: %+v", vorschau)
@@ -113,8 +112,8 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 }
 
 // TestVersetzungNamenskonflikteStrukturellEliminiert: Der klassische Konfliktfall —
-// '09A' UND '09A' existieren nebeneinander und laufen beide auf '10A' — ist seit dem
-// Klassen-Vokabular (Migration 079) UNMÖGLICH: Der Kanonisierungs-Trigger zieht '09A'
+// '9a' und '09A' existieren nebeneinander und laufen beide auf '10A' — ist seit dem
+// Klassen-Vokabular (Migration 079) unmöglich: Der Kanonisierungs-Trigger zieht '9a'
 // beim Schreiben auf die registrierte Form '09A', und der Primärschlüssel weist die
 // Dublette ab. Der Konflikt-Zweig in versetzeKlassenlehrerZuordnung bleibt als
 // Rückfallebene bestehen; der Lauf selbst ist konfliktfrei.
@@ -131,7 +130,7 @@ func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
 		t.Fatalf("Mapping 9a: %v", err)
 	}
 	// Die Schreibvariante wird kanonisiert und prallt am Primärschlüssel ab — genau
-	// die Vorbedingung des alten Konfliktfalls kann nicht mehr entstehen.
+	// die Vorbedingung des klassischen Konfliktfalls kann nicht entstehen.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ('9a', 'h@schule.example')`); err == nil {
 		t.Fatal("'9a' neben '09A' darf nicht mehr existieren (Kanonisierung + PK), wurde aber angelegt")
@@ -147,11 +146,11 @@ func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
 	}
 }
 
-// TestVersetzungDoppellaufSerialisiert belegt den Advisory-Lock (Nebenläufigkeits-
-// Audit 19.08.2026): Zwei GLEICHZEITIGE Versetzungsläufe dürfen die Schule nicht +2
-// befördern. Der reine COUNT-Check auf audit_logs ist TOCTOU; der pg_advisory_xact_lock
-// serialisiert hart — genau einer gewinnt (200), der andere sieht danach den
-// Audit-Eintrag und bekommt 409. Netto: jede Klasse steigt um GENAU eine Stufe.
+// TestVersetzungDoppellaufSerialisiert belegt den Advisory-Lock: Zwei gleichzeitige
+// Versetzungsläufe dürfen die Schule nicht um zwei Stufen versetzen. Der reine COUNT-Check auf
+// audit_logs ist TOCTOU; der pg_advisory_xact_lock serialisiert hart, genau einer gewinnt
+// (200), der andere sieht danach den Eintrag im Protokoll und bekommt 409. Netto: Jede
+// Klasse steigt um genau eine Stufe.
 func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -217,7 +216,7 @@ func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
 		t.Fatalf("erwartet genau 1×200 + 1×409, war %d×200 / %d×409", ok, konflikt)
 	}
 
-	// Der Schüler steht in 6a — NICHT 7a.
+	// Der Schüler steht in 6a — nicht 7a.
 	var klasse string
 	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE barcode_id='S-DL-1'`).Scan(&klasse); err != nil {
 		t.Fatalf("Klasse lesen: %v", err)

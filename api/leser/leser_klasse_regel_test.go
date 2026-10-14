@@ -6,9 +6,8 @@ import (
 )
 
 // Die Meldung bei Klasse „Lehrer" ist ein Wegweiser: Sie muss den Weg nennen, den es in der
-// Oberfläche gibt, und darf keine Wörter aus dem Code enthalten. Bis zum 16.09.2026 schickte
-// sie nach „System → Benutzerverwaltung" (der Menüpunkt heißt „Benutzer & Rechte") und
-// sprach vom „Handapparat-Weg".
+// Oberfläche gibt („Benutzer & Rechte", nicht „Benutzerverwaltung"), und darf keine Wörter
+// aus dem Code enthalten (etwa „Handapparat-Weg").
 func TestPruefeKlassenname_LehrerMeldungNenntDenEchtenWeg(t *testing.T) {
 	for _, klasse := range []string{"Lehrer", " lehrer ", "LEHRER"} {
 		err := pruefeKlassenname(klasse)

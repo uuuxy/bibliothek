@@ -13,11 +13,10 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Auto-Matching: Eine LUSD-Zeile, deren ID im Bestand fehlt, trifft über
-// Name+Geburtsdatum auf einen bestehenden ID-losen Schüler (Handanlage/Littera).
-// Statt ihn zu duplizieren, wird die LUSD-ID nachgetragen (Adoption) und die
-// Klasse übernommen. Ohne Geburtsdatum oder bei Mehrdeutigkeit wird NICHT
-// adoptiert, sondern regulär neu angelegt. Betreiber-Entscheidung 18.08.2026.
+// Zuordnung im Import: Eine LUSD-Zeile, deren ID im Bestand fehlt, trifft über Name und
+// Geburtsdatum auf einen bestehenden ID-losen Schüler (Handanlage oder Littera). Statt ihn
+// zu duplizieren, wird die LUSD-ID nachgetragen (Adoption) und die Klasse übernommen. Ohne
+// Geburtsdatum oder bei Mehrdeutigkeit wird nicht adoptiert, sondern regulär neu angelegt.
 func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -40,7 +39,7 @@ func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 		Geburtsdatum: &geb, Nr: 1,
 	}
 
-	// Vorschau: als Adoption erkannt, NICHT als Neuzugang.
+	// Vorschau: als Adoption erkannt, nicht als Neuzugang.
 	prev, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
@@ -58,7 +57,7 @@ func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 		t.Errorf("keine Neuzugänge erwartet, waren %d", len(prev.Neuzugaenge))
 	}
 
-	// Anwenden: derselbe Datensatz bekommt die LUSD-ID + neue Klasse, KEIN Duplikat.
+	// Anwenden: derselbe Datensatz bekommt die LUSD-ID + neue Klasse, kein Duplikat.
 	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
@@ -83,7 +82,7 @@ func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	}
 }
 
-// Ohne Geburtsdatum in der CSV-Zeile gibt es keinen sicheren Abgleich — dann NICHT
+// Ohne Geburtsdatum in der CSV-Zeile gibt es keinen sicheren Abgleich — dann nicht
 // adoptieren, sondern regulär als Neuzugang behandeln.
 func TestLUSDZuordnung_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -111,12 +110,12 @@ func TestLUSDZuordnung_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 	}
 }
 
-// Zwei ID-lose Schüler mit gleichem Name+Geburtsdatum (Schreibvarianten) waren bis zum
-// 07.09.2026 MEHRDEUTIG — der Import adoptierte dann keinen. Seit Migration 108 kann
-// dieser Zustand gar nicht entstehen: Der Namensindex rechnet in derselben Normalform wie
-// der LUSD-Schlüssel, die zweite Schreibvariante wird an der Datenbank abgewiesen. Der
-// Test belegt das Verbot UND dass der eine verbliebene Schüler eindeutig adoptiert wird.
-// Die Mehrdeutig-Behandlung im Code bleibt als Sicherheitsnetz stehen.
+// Zwei ID-lose Schüler mit gleichem Namen und Geburtsdatum (Schreibvarianten) wären
+// mehrdeutig, und der Import adoptierte keinen. Seit Migration 108 kann dieser Zustand gar
+// nicht entstehen: Der Namensindex rechnet in derselben Normalform wie der LUSD-Schlüssel,
+// die zweite Schreibvariante wird an der Datenbank abgewiesen. Der Test belegt das Verbot
+// und dass der eine verbliebene Schüler eindeutig adoptiert wird. Die Mehrdeutig-Behandlung
+// im Code bleibt als Sicherheitsnetz stehen.
 func TestLUSDZuordnung_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

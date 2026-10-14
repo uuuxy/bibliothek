@@ -18,12 +18,11 @@ import (
 // Die Art eines Lesers (Migration 123) über die Akte ändern — und die eine Grenze, die
 // dabei zu halten ist.
 //
-// Absprache vom 16.09.2026: „hier steht nirgends ob jemand ein Schüler, LiV, oder lehrer ist."
-// Die Art stand in der Datenbank, im Anlege-Dialog und in der halben Akte, aber der PATCH
-// kannte sie nicht — sie liess sich nirgends berichtigen. Ein Kollege, der als Lehrkraft
-// angelegt wurde und in Wahrheit LiV ist, blieb es für immer.
+// Die Art steht in der Datenbank, im Anlege-Dialog und in der Akte; kennte der PATCH sie
+// nicht, ließe sie sich nirgends berichtigen, und ein Kollege, der als Lehrkraft angelegt
+// wurde und in Wahrheit LiV ist, bliebe es für immer.
 //
-// Die Grenze verläuft NICHT zwischen Lehrkraft und LiV, sondern am Schüler:
+// Die Grenze verläuft nicht zwischen Lehrkraft und LiV, sondern am Schüler:
 //
 //   - Schüler -> Kollege nimmt der Zeile ihre LUSD-Bindung. Mit lusd_id bricht
 //     chk_leser_nur_schueler_werden_abgaenger; ohne sie liefe der Schüler beim nächsten
@@ -31,10 +30,10 @@ import (
 //   - Kollege -> Schüler bricht chk_leser_schueler_pflichtfelder: Klasse, Abgängerjahr
 //     und Ausweisnummer sind für einen Schüler Pflicht, und ein Kollege hat sie nicht.
 //
-// Beide Richtungen müssen als AUSKUNFT zurückkommen (400), nicht als CHECK-Verletzung.
-// Eine 500 macht der Sanitizer zu „Ein interner Datenbankfehler ist aufgetreten" — der
-// Satz sagt niemandem, was zu tun ist, und derselbe Fehler kostete am 22.08.2026 schon
-// einmal die Diagnose (siehe api/leser/leser_aendern.go, Kommentar an den Sperrfeldern).
+// Beide Richtungen müssen als Auskunft zurückkommen (400), nicht als CHECK-Verletzung.
+// Eine 500 macht der Sanitizer zu „Ein interner Datenbankfehler ist aufgetreten"; der Satz
+// sagt niemandem, was zu tun ist (siehe api/leser/leser_aendern.go, Kommentar an den
+// Sperrfeldern).
 func TestLeserArtAendern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -64,8 +63,8 @@ func TestLeserArtAendern(t *testing.T) {
 	legeKollegen := func(t *testing.T, name, art string) string {
 		t.Helper()
 		var id string
-		// In die TABELLE, nicht in die Sicht: `schueler` ist auf art='schueler'
-		// eingeschraenkt und weist einen Kollegen mit "check option for view" ab.
+		// In die Tabelle, nicht in die Sicht: `schueler` ist auf art='schueler'
+		// eingeschränkt und weist einen Kollegen mit "check option for view" ab.
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO leser (vorname, nachname, art) VALUES ('Art', $1, $2) RETURNING id`,
 			name, art).Scan(&id); err != nil {
@@ -107,7 +106,7 @@ func TestLeserArtAendern(t *testing.T) {
 		}
 	})
 
-	// Der Kern: KEINE 500. Der Handler muss die Grenze selbst kennen, statt sie dem
+	// Der Kern: keine 500. Die Tür muss die Grenze selbst kennen, statt sie dem
 	// CHECK zu überlassen.
 	t.Run("Schueler wird nicht zur Lehrkraft", func(t *testing.T) {
 		id := legeSchueler(t, "ART-S1")
@@ -146,9 +145,9 @@ func TestLeserArtAendern(t *testing.T) {
 		}
 	})
 
-	// Das Formular schickt die Art bei JEDEM Speichern mit, auch unveraendert. Waere das
-	// kein No-op, liefe jedes Speichern eines Schuelers in die Ablehnung oben und die
-	// Akte liesse sich gar nicht mehr bearbeiten.
+	// Das Formular schickt die Art bei jedem Speichern mit, auch unverändert. Wäre das keine
+	// leere Änderung, liefe jedes Speichern eines Schülers in die Ablehnung oben, und die Akte
+	// ließe sich gar nicht bearbeiten.
 	t.Run("dieselbe Art ist ein No-op und kein Fehler", func(t *testing.T) {
 		id := legeSchueler(t, "ART-S2")
 		rec := patch(t, id, `{"art":"schueler","vorname":"Neu"}`)
@@ -164,9 +163,9 @@ func TestLeserArtAendern(t *testing.T) {
 		}
 	})
 
-	// Der eigentliche Befund: Wer eine Rolle hat, steht seit Migration 125 mit einer
-	// Leserzeile in der Liste — und an ihr liess sich nichts nachtragen. Der Rumpf hier
-	// ist GENAU der, den das Formular fuer einen Kollegen baut: ohne klasse, ohne
+	// Der eigentliche Fall: Wer eine Rolle hat, steht seit Migration 125 mit einer Leserzeile
+	// in der Liste, und an ihr muss sich etwas nachtragen lassen. Der Rumpf hier ist genau
+	// der, den das Formular für einen Kollegen baut: ohne klasse, ohne
 	// abgaenger_jahr, ohne lusd_id, ohne eltern_email. Mit ihnen (leer) antwortete der
 	// Server „Klasse darf nicht leer sein."
 	t.Run("Adresse eines Kollegen nachtragen", func(t *testing.T) {

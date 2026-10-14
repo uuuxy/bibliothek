@@ -11,24 +11,14 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Befund F4: Lehrkräfte lagen als Schein-Schüler (klasse='lehrer') in der
-// Schüler-Tabelle — mit dem LUSD-Abgleich als tickender Löschfalle. Migration
-// 072 zieht sie auf Personal-Konten um; pruefeKlassenname sperrt beide
-// Eingabetüren. Hier werden Umzug UND Sperren am echten Postgres bewiesen.
-
-// Der Nachspiel-Test der Migration 072 ist am 16.09.2026 entfallen.
+// Eine Lehrkraft als Schein-Schüler (klasse='lehrer') in der Schülerdatei wäre eine tickende
+// Löschfalle: Der LUSD-Abgleich kennt sie nicht und machte sie zum Abgänger. Migration 072 zog
+// solche Zeilen in Konten um; Migration 125 hat das bewusst umgekehrt: Eine Lehrkraft steht
+// wieder in derselben Tabelle wie die Schüler, nur mit einer anderen Art. Die Migration selbst
+// bleibt unverändert im Ordner (eingespielte Migrationen werden nicht angefasst).
 //
-// Er ließ 072 gegen das HEUTIGE Schema laufen und prüfte das Ergebnis von damals: Die
-// Lehrkraft zieht aus der Schülertabelle in ein Konto, ihre Ausleihe hängt danach an
-// `ausleihen.ausleiher_benutzer_id`. Beides gibt es nicht mehr — Migration 125 hat die
-// Spalte und die Ausweisnummer am Konto entfernt, und sie hat das Ziel von 072 bewusst
-// umgekehrt: Eine Lehrkraft steht wieder in derselben Tabelle wie die Schüler, nur mit
-// einer anderen ART. Die Migration selbst bleibt unverändert im Ordner (eingespielte
-// Migrationen werden nicht angefasst); sie ist auf einer gewachsenen Anlage längst
-// gelaufen, lange vor 125.
-//
-// Was von F4 bleibt und weiter geprüft wird, steht darunter: Eine Lehrkraft darf nicht
-// über die Klasse „Lehrer" in die Schülerdatei zurückkommen — an BEIDEN Eingabetüren.
+// Was von 072 bleibt und hier geprüft wird: Eine Lehrkraft darf nicht über die Klasse „Lehrer"
+// in die Schülerdatei zurückkommen, an beiden Eingabetüren (pruefeKlassenname).
 
 // TestKlasseLehrerIstGesperrt beweist beide Eingabetüren (Zwei-Türen-Regel):
 // POST /api/schueler und PATCH-baueLeserAenderung lehnen den Spezialwert ab,
@@ -57,7 +47,7 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 	}
 }
 
-// TestZwillingeAusDerLUSD (Befund F8): Zwei ECHTE Schüler mit gleichem Namen
+// TestZwillingeAusDerLUSD: Zwei echte Schüler mit gleichem Namen
 // und Geburtstag existieren nebeneinander, wenn beide aus der LUSD kommen —
 // während die Handeingabe eines Namens-Datums-Doppels hart abgewiesen bleibt.
 func TestZwillingeAusDerLUSD(t *testing.T) {

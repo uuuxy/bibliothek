@@ -12,22 +12,22 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Übersetzung „Jahrgang → Klassen" für die Leserdatei (OFFEN.md 9.5/Protokoll 6).
+// Die Übersetzung „Jahrgang → Klassen" für die Leserdatei.
 //
-// Das Sichtungsprotokoll des Medienzentrums vom 16.09.2026 nennt beides: Die Schülerdatei
-// habe „keine Sortier- oder Filteroption nach Klassen bzw. Jahrgängen", und unter
-// Anpassungswünschen: „Derzeit ist eine Auswahl nach Klassen möglich. Gemeint ist jedoch
-// eine Auswahl nach Jahrgängen."
+// Das Sichtungsprotokoll des Medienzentrums nennt beides: Die Schülerdatei habe „keine
+// Sortier- oder Filteroption nach Klassen bzw. Jahrgängen", und unter Anpassungswünschen:
+// „Derzeit ist eine Auswahl nach Klassen möglich. Gemeint ist jedoch eine Auswahl nach
+// Jahrgängen."
 //
 // Warum das in Go steht und nicht im SQL: An dieser Schule heißt der elfte Jahrgang „ET",
 // der zwölfte „12T" und der dreizehnte „13T" (Klassenschema, Migration 087). Die Zahl
 // am Anfang der Klasse gibt es für „ET" nicht — genau die liest
-// LMFAbfragen.LadeKlassenMitSchuelern für die Sortierung des LMF-Plans, wo ein 99 als „irgendwo oben"
-// folgenlos ist. Als FILTER wäre dieselbe Zeile falsch: Die Oberstufe fiele heraus, und
-// zwar lautlos — eine leere Liste sieht aus wie „niemand da".
+// LMFAbfragen.LadeKlassenMitSchuelern für die Sortierung des LMF-Plans, wo ein 99 als
+// „irgendwo oben" folgenlos ist. Als Filter wäre dieselbe Zeile falsch: Die Oberstufe fiele
+// heraus, und zwar lautlos — eine leere Liste sieht aus wie „niemand da".
 //
-// Gerechnet wird deshalb mit ausweis.AblaufJahrgang, der EINEN Ableitung, die das
-// Schema dieser Schule kennt (gemessen am 17.09.2026: 05F1→5, 10H1→10, ET→11, 12T→12,
+// Gerechnet wird deshalb mit ausweis.AblaufJahrgang, der einen Ableitung, die das
+// Schema dieser Schule kennt (05F1→5, 10H1→10, ET→11, 12T→12,
 // 13T→13, Q1→12, Q3→13). Eine achte Auslegung des Klassennamens wäre der Anfang genau
 // der Geschichte, die dieses Projekt sonst meidet.
 
@@ -38,7 +38,7 @@ import (
 //
 //   - kein Filter angefragt        → (nil, false, nil): die Liste zeigt alles
 //   - Filter mit Treffern          → (Klassen, false, nil)
-//   - Filter ohne EINE Klasse dazu → (nil, true, nil): die Liste zeigt NICHTS
+//   - Filter ohne eine einzige Klasse → (nil, true, nil): die Liste zeigt nichts
 //
 // Ohne den dritten Fall zeigte ein Jahrgang, zu dem es keine Klasse gibt, die ganze
 // Kartei statt einer leeren Liste — die Sorte Fehler, die niemand bemerkt, weil eine
@@ -70,11 +70,11 @@ func klassenFilter(ctx context.Context, lmfAbfragen *repository.LMFAbfragen, kla
 	return klassen, len(klassen) == 0, nil
 }
 
-// JahrgaengeMitSchuelern nennt die Jahrgänge, in denen tatsächlich jemand ist —
+// jahrgaengeMitSchuelern nennt die Jahrgänge, in denen tatsächlich jemand ist —
 // aufsteigend, ohne Doppelte.
 //
 // Warum der Server das sagt und nicht der Browser: Die Ableitung „Klassenname →
-// Jahrgang" kennt das Schema dieser Schule, und sie soll genau EINMAL existieren. Eine
+// Jahrgang" kennt das Schema dieser Schule, und sie soll genau einmal existieren. Eine
 // zweite Fassung in JavaScript wäre bis zur nächsten Umbenennung einer Klasse still
 // richtig und danach still falsch.
 func jahrgaengeMitSchuelern(ctx context.Context, lmfAbfragen *repository.LMFAbfragen) ([]int, error) {
@@ -98,7 +98,7 @@ func jahrgaengeMitSchuelern(ctx context.Context, lmfAbfragen *repository.LMFAbfr
 
 // Jahrgaenge liefert die besetzten Jahrgänge für das Filter-Auswahlfeld.
 //
-// @Summary      List year groups that currently have students
+// @Summary      Besetzte Jahrgänge
 // @Tags         students
 // @Produce      json
 // @Success      200 {array} int

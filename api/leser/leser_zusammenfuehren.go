@@ -15,14 +15,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Zusammenführen zweier Schülerdatensätze — das Sicherheitsnetz hinter der Umbenennungs-
-// Paarung des LUSD-Imports (internal/lusd/paarung.go). Regeln und SQL stehen in
-// repository/leser_zusammenfuehren.go; hier nur Recht, Rumpf, Fehlerbild und Audit.
+// Zusammenführen zweier Schülerdatensätze, das Sicherheitsnetz hinter der
+// Umbenennungs-Paarung des LUSD-Imports (internal/lusd/paarung.go). Regeln und SQL stehen in
+// repository/leser_zusammenfuehren.go; hier nur Recht, Rumpf, Fehlerbild und Protokoll.
 //
-// Recht merge_students (eigenes Recht seit 03.09.2026, vorher manage_students_admin wie
-// Purge und DSGVO-Auskunft): Es ist ein Eingriff in die
-// Identität zweier Datensätze, unumkehrbar, und Vorgabe vom 02.09.2026 ist, dass
-// ein Admin das tut — nicht der Tresen.
+// Ein eigenes Recht, merge_students: Es ist ein Eingriff in die Identität zweier Datensätze,
+// unumkehrbar, und festgelegt ist, dass ein Admin ihn vornimmt, nicht der Tresen.
 
 type leserZusammenfuehrenAnfrage struct {
 	QuelleID string `json:"quelle_id"`
@@ -63,8 +61,8 @@ func (t *Tueren) LeserZusammenfuehren(protokollAbfragen repository.ProtokollAbfr
 			return apierrors.Internal("Zusammenführen fehlgeschlagen", err)
 		}
 
-		// Admin-Protokoll (audit_logs): welcher Datensatz in welchem aufging, samt Barcodes.
-		// Der RÜCKWEG (Stammdaten der Quelle, gewanderte Zeilen) steht in audit_log am
+		// Protokoll der Verwaltung (audit_logs): welcher Datensatz in welchem aufging, samt
+		// Barcodes. Der Rückweg (Stammdaten der Quelle, gewanderte Zeilen) steht in audit_log am
 		// Ziel, geschrieben in der Transaktion (repository.schreibeRueckwegEintrag).
 		// Schlüssel `schueler_id` für den verbliebenen (Vokabular der Auskunft/Tilgung).
 		if claims, ok := auth.GetClaims(r.Context()); ok {
@@ -86,7 +84,7 @@ func (t *Tueren) LeserZusammenfuehren(protokollAbfragen repository.ProtokollAbfr
 }
 
 // Zusammenfuehrungskandidaten bedient GET /api/schueler/{id}/zusammenfuehren-kandidaten?q=
-// — Suche über ALLE nicht gelöschten Schüler (auch Abgänger und Gesperrte), ohne {id}
+// — Suche über alle nicht gelöschten Schüler (auch Abgänger und Gesperrte), ohne {id}
 // selbst. Die Aktivliste der Schülerdatei blendet Abgänger aus; hier sind sie das Ziel.
 func (t *Tueren) Zusammenfuehrungskandidaten() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {

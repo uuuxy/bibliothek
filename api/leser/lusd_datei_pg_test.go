@@ -18,8 +18,8 @@ import (
 	"bibliothek/internal/xlsxtest"
 )
 
-// Durch die Vordertür: Eine Excel-Datei ohne Schüler-ID geht als Multipart-Upload an den
-// Vorschau-Handler und kommt als Namensmodus-Vorschau zurück. Beweist die Verdrahtung
+// Durch die Vordertür: Eine Excel-Datei ohne Schüler-ID geht als Multipart-Upload an die
+// Tür der Vorschau und kommt als Namensmodus-Vorschau zurück. Beweist die Verdrahtung
 // Upload → Formaterkennung → Parser → Klassifizierung, nicht nur die Einzelteile.
 func TestLUSDVorschau_XLSXOhneIDDurchDieVordertuer(t *testing.T) {
 	pool := pgtest.Pool(t)

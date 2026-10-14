@@ -17,7 +17,7 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Der LUSD-Import DURCH DIE VORDERTÜR — und zwar der schreibende Lauf, mit Kollegium im
+// Der LUSD-Import durch die Vordertür — und zwar der schreibende Lauf, mit Kollegium im
 // Bestand.
 //
 // Die bestehenden Tests prüfen die Einzelteile: die Bestandsabfrage kennt nur Schüler
@@ -27,18 +27,18 @@ import (
 // selbst: Upload → Parser → Klassifizierung → Anwenden → Commit.
 //
 // Genau diese Lücke ist die Bugklasse „Unit grün, Funktion unerreichbar". Seit dem
-// Zusammenlegen der Leser (Migrationen 123–125) liegt das Kollegium in DERSELBEN Tabelle,
+// Zusammenlegen der Leser (Migrationen 123 bis 125) liegt das Kollegium in derselben Tabelle,
 // die der Abgleich bearbeitet — die Frage „klappt der Import noch?" ist deshalb keine
 // Frage an die Einzelteile, sondern an den ganzen Weg.
 //
-// WAS DIESER TEST BEWEIST — und was nicht (am 16.09.2026 durch Rückbau gemessen):
+// Was dieser Test beweist und was nicht (durch Rückbau gemessen):
 //
-//   - Rot wird er, wenn der Import nicht mehr SCHREIBT (Handler auf apply=false
+//   - Rot wird er, wenn der Import nicht mehr schreibt (Tür auf uebernehmen=false
 //     zurückgebaut: Klasse bleibt 07A, der neue Schüler fehlt ganz). Er misst also
 //     wirklich die Kette und nicht sich selbst.
-//   - Rot wird er NICHT, wenn man allein die Schranke `art = 'schueler'` aus der
+//   - Rot wird er nicht, wenn man allein die Schranke `art = 'schueler'` aus der
 //     Bestandsabfrage nimmt. Dann stehen die Kollegen zwar im Bestand, aber der
-//     Namensmodus macht nur aus einem SCHON EINMAL BESTÄTIGTEN Schüler einen Abgänger
+//     Namensmodus macht nur aus einem schon einmal bestätigten Schüler einen Abgänger
 //     (`lusd_bestaetigt_am`, Migration 084) — und ein Kollege ist nie von einem Export
 //     bestätigt worden. Diese zweite Schranke fängt den Fehler ab.
 //
@@ -58,7 +58,7 @@ func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 	//
 	// lusd_bestaetigt_am ist gesetzt: Beide sind schon einmal in einem Export
 	// aufgetaucht. Ohne diesen Stempel macht der Namensmodus aus einem fehlenden Schüler
-	// KEINEN Abgänger, sondern meldet ihn als „nicht im Export" (Migration 084) — eine
+	// keinen Abgänger, sondern meldet ihn als „nicht im Export" (Migration 084) — eine
 	// nie bestätigte Handanlage soll nicht an der ersten Liste zugrunde gehen. Der Test
 	// braucht den Abgänger-Zweig, also stellt er die Lage her, in der es ihn gibt.
 	if _, err := pool.Exec(ctx, `
@@ -67,7 +67,7 @@ func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		       ('S-IMP-2', 'Tim', 'Tschuess', '9b', 2027, DATE '2010-05-06', NOW())`); err != nil {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
-	// Eine Lehrkraft OHNE Konto — so entsteht sie über „Neuen Leser anlegen".
+	// Eine Lehrkraft ohne Konto — so entsteht sie über „Neuen Leser anlegen".
 	var lehrkraftID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO leser (barcode_id, vorname, nachname, art)
@@ -84,10 +84,10 @@ func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 	}
 
 	// ── Der Export: Mia wechselt die Klasse, ein Kind kommt neu dazu, Tim fehlt ──
-	// Namen, die es im Bestand als KOLLEGEN gibt, stehen bewusst NICHT darin: Durch die
-	// LUSD kommen keine Lehrkräfte (16.09.2026).
+	// Namen, die es im Bestand als Kollegen gibt, stehen bewusst nicht darin: Durch die
+	// LUSD kommen keine Lehrkräfte.
 	//
-	// OHNE LUSD-ID-Spalte — das ist der NAMENSMODUS, und er ist der gefährliche: Im
+	// Ohne LUSD-ID-Spalte — das ist der Namensmodus, und er ist der gefährliche: Im
 	// ID-Modus hat ein Kollege gar keine Kennung und fiele schon deshalb nur unter
 	// „nicht abgleichbar". Über den Namen dagegen ist er vollwertig abgleichbar, und was
 	// abgleichbar ist und im Export fehlt, ist ein Abgänger. Genau diese Datei bekommt
@@ -144,7 +144,7 @@ func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 	if len(vorschau.Klassenwechsel) != 1 || vorschau.Klassenwechsel[0].NeueKlasse != "8a" {
 		t.Errorf("Vorschau, Klassenwechsel: %+v", vorschau.Klassenwechsel)
 	}
-	// Genau EIN Abgänger — Tim. Stünden die Kollegen im Bestand des Abgleichs, wären es
+	// Genau ein Abgänger — Tim. Stünden die Kollegen im Bestand des Abgleichs, wären es
 	// drei, und zwei Menschen verlören nach der Karenz ihren Namen.
 	if len(vorschau.Abgaenger) != 1 || vorschau.Abgaenger[0].Nachname != "Tschuess" {
 		t.Fatalf("Vorschau, Abgänger: %+v — Kollegium gehört NICHT dazu", vorschau.Abgaenger)
@@ -186,7 +186,7 @@ func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		t.Errorf("Tim nach dem Import: Abgänger %v, gesperrt %v — erwartet beides", abg, gesperrt)
 	}
 
-	// UND DAS IST DER PUNKT: Beide Kollegen stehen unverändert da.
+	// Und das ist der Punkt: Beide Kollegen stehen unverändert da.
 	for _, fall := range []struct{ name, id string }{
 		{"Lehrkraft ohne Konto", lehrkraftID},
 		{"Kollegiumskonto", kontoLeserID},

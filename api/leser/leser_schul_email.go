@@ -12,26 +12,24 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Schul-E-Mail in der Leserakte — NACHTRAGBAR, nicht änderbar.
+// Die Schul-E-Mail in der Leserakte: nachtragbar, nicht änderbar.
 //
-// Seit dem 16.09.2026 verlangt „Neuer Leser" bei Lehrkraft und LiV die Schul-Adresse:
-// Aus ihr entsteht das Konto, und weil die Selbstanmeldung nur dann eine Zugangsanfrage
-// anlegt, wenn zu der Adresse gar kein Konto existiert, findet sie später genau diesen
-// Eintrag. Für jeden, der VORHER angelegt wurde, gilt das nicht — er steht ohne Adresse
-// und ohne Konto in der Leserdatei und bekommt bei der Selbstanmeldung einen zweiten
-// Eintrag. Reparieren ließ sich das nur durch Zusammenführen HINTERHER; die Akte selbst
-// kannte die Adresse nicht, weder im Formular noch im PATCH.
+// „Neuer Leser" verlangt bei Lehrkraft und LiV die Schul-Adresse: Aus ihr entsteht das Konto,
+// und weil die Selbstanmeldung nur dann eine Zugangsanfrage anlegt, wenn zu der Adresse gar
+// kein Konto existiert, findet sie später genau diesen Eintrag. Wer ohne Adresse in der
+// Leserdatei steht, bekäme bei der Selbstanmeldung einen zweiten Eintrag, und reparieren
+// ließe sich das nur durch Zusammenführen; deshalb lässt sich die Adresse in der Akte
+// nachtragen.
 //
-// Warum nur nachtragen und nicht ändern: Die Adresse IST die Identität des Kontos
-// (Anmeldung über IMAP, benutzer_email_unique). Sie hat bereits eine Tür — die
-// Benutzerverwaltung, mit ihren Regeln und ihrem Recht. Eine zweite Tür, die dasselbe
-// ohne dieselben Regeln tut, ist die Bugklasse „zwei Türen zum selben Zustand". Deshalb
-// gilt hier die Regel der LUSD-ID aus demselben Handler: setzbar, solange nichts da ist;
-// steht etwas da, ist das Feld eine Anzeige.
+// Warum nur nachtragen und nicht ändern: Die Adresse ist die Identität des Kontos (Anmeldung
+// über IMAP, benutzer_email_unique). Sie hat bereits eine Tür, die Benutzerverwaltung, mit
+// ihren Regeln und ihrem Recht. Eine zweite Tür, die dasselbe ohne dieselben Regeln tut, ist
+// die Bugklasse „zwei Türen zum selben Zustand". Deshalb gilt hier die Regel der LUSD-ID aus
+// derselben Tür: setzbar, solange nichts da ist; steht etwas da, ist das Feld eine Anzeige.
 //
-// Das Konto entsteht dabei IMMER, freigeschaltet wird es nur von dem, der das auch sonst
-// darf (manage_users) — dieselbe Paarung wie beim Anlegen. Der Schutz vor dem
-// Doppeleintrag hängt am Dasein des Kontos, nicht an seiner Freischaltung.
+// Das Konto entsteht dabei immer, freigeschaltet wird es nur von dem, der das auch sonst darf
+// (manage_users), dieselbe Paarung wie beim Anlegen. Der Schutz vor dem Doppeleintrag hängt
+// am Dasein des Kontos, nicht an seiner Freischaltung.
 
 // pruefeSchulEmail entscheidet, ob aus der Akte heraus ein Konto entstehen soll.
 //
@@ -73,7 +71,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 
 	if amKonto != "" {
 		if neu == amKonto {
-			return "", true // No-op: Das Formular schickt die angezeigte Adresse mit.
+			return "", true // ohne Wirkung: Das Formular schickt die angezeigte Adresse mit.
 		}
 		if neu == "" {
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
@@ -100,7 +98,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 }
 
 // antworteAufKontoFehler übersetzt das Scheitern der Kontoanlage in die Auskunft, die der
-// Vorgang braucht. Der wichtigste Fall ist die BELEGTE Adresse — sie heisst fast immer,
+// Vorgang braucht. Der wichtigste Fall ist die belegte Adresse — sie heißt fast immer,
 // dass die Person längst im System steht (etwa über die Selbstanmeldung). Das ist eine
 // Auskunft und kein Fehler: Wer sie liest, soll den vorhandenen Eintrag suchen und nicht
 // einen zweiten bauen.
@@ -120,7 +118,7 @@ func antworteAufKontoFehler(w http.ResponseWriter, err error, email string) {
 }
 
 // trageKontoNach legt das Konto zu einer bestehenden Leserzeile an. Namen kommen aus der
-// Zeile SELBST und nicht aus dem Request: Wer im selben Speichern den Namen ändert, soll
+// Zeile selbst und nicht aus der Anfrage: Wer im selben Speichern den Namen ändert, soll
 // ihn nicht in zwei Schreibweisen bekommen — Leserzeile und Konto sind dieselbe Person.
 func (t *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, leserID, email string, aktiv bool) (kontoID string, ok bool) {
 	vorname, nachname, err := repository.LadeLeserName(ctx, t.DB.Pool, leserID)
@@ -147,19 +145,16 @@ func (t *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 	return kontoID, true
 }
 
-// pruefeAusweisLeerung hält die Pflicht zur Ausweisnummer an der ART fest — dieselbe
-// Paarung wie chk_leser_schueler_pflichtfelder in der Datenbank.
+// pruefeAusweisLeerung hält die Pflicht zur Ausweisnummer an der Art fest, dieselbe Paarung
+// wie chk_leser_schueler_pflichtfelder in der Datenbank.
 //
-// Bis zum 16.09.2026 stand die Nummer in der pauschalen Leer-Prüfung des PATCH: „darf
-// nicht leer sein", für jeden. Für den Schüler ist das richtig (ohne Nummer ist er an der
-// Theke nicht zu finden). Für einen Kollegen war es eine Falle: Er DARF ohne dastehen,
-// die Datenbank erlaubt es seit Migration 123 — aber eine einmal eingetragene Nummer
-// wurde er nicht mehr los. Das Formular ließ das leere Feld still weg und meldete
-// „Änderungen gespeichert", der Server hätte es mit 400 abgewiesen. Ein Tippfehler in der
-// Nummer war damit endgültig.
+// Eine pauschale Leer-Prüfung („darf nicht leer sein", für jeden) ist für den Schüler richtig
+// (ohne Nummer ist er an der Theke nicht zu finden), für einen Kollegen eine Falle: Er darf
+// ohne dastehen, die Datenbank erlaubt es seit Migration 123, aber eine einmal eingetragene
+// Nummer würde er nicht mehr los, und ein Tippfehler in der Nummer wäre endgültig.
 //
-// Seit Migration 145 bleibt die Spalte nur bei einem Kollegen ohne aktives Konto leer; hat
-// er eines, zieht die Datenbank beim Leeren eine neue Nummer
+// Seit Migration 145 bleibt die Spalte nur bei einem Kollegen ohne aktives Konto leer; hat er
+// eines, zieht die Datenbank beim Leeren eine neue Nummer
 // (trg_leser_aktives_konto_behaelt_ausweis).
 //
 // ok=false: Die Fehlerantwort steht bereits.

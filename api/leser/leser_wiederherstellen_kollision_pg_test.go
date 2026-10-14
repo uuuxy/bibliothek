@@ -19,14 +19,13 @@ import (
 // Wiederherstellen aus dem Papierkorb kann an einem aktiven Zwilling scheitern — und das
 // ist eine Auskunft, kein Serverfehler.
 //
-// Drei Teilindizes gelten nur für AKTIVE Zeilen (WHERE deleted_at IS NULL): der
-// Namensindex (seit Migration 108 in der Normalform suchnorm), die LUSD-ID und der
-// Ausweis-Barcode. Solange die Zeile im Papierkorb liegt, ist ihr Platz frei — ein
-// Import oder eine Handanlage kann ihn besetzen. Der Restore lief bis zum 12.09.2026
-// blind hinein: 23505 → 500 „Ein interner Datenbankfehler ist aufgetreten" (Register,
-// Bestands-Durchgang 10.09.2026). Für die Bibliothek war das eine Sackgasse — die
-// Meldung nennt weder den Zwilling noch den Weg heraus (zusammenführen, umbenennen,
-// Barcode neu vergeben).
+// Drei Teilindizes gelten nur für aktive Zeilen (WHERE deleted_at IS NULL): der Namensindex
+// (seit Migration 108 in der Normalform suchnorm), die LUSD-ID und der Ausweis-Barcode.
+// Solange die Zeile im Papierkorb liegt, ist ihr Platz frei; ein Import oder eine Handanlage
+// kann ihn besetzen. Liefe das Wiederherstellen blind hinein (23505 → 500 „Ein interner
+// Datenbankfehler ist aufgetreten"), wäre das für die Bibliothek eine Sackgasse: Die Meldung
+// nennt weder den Zwilling noch den Weg heraus (zusammenführen, umbenennen, Barcode neu
+// vergeben).
 func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

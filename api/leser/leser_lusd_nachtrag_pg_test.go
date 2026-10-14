@@ -15,12 +15,11 @@ import (
 	"bibliothek/repository"
 )
 
-// lusd_id ist der einzige Zuordnungsschlüssel des Landesabgleichs (kein Adress-/
-// Geburtsdatum-Fallback im Import). Sie darf über den Schüler-PATCH nur KONTROLLIERT
-// nachgetragen werden: nachtragbar nur wenn leer (Waise adoptieren), eindeutig, und
-// jeder Nachtrag wird auditiert. Ein bestehender Wert wird weder überschrieben noch
-// geleert. Betreiber-Entscheidung 18.08.2026; der automatische Gegenpart ist das
-// Import-Auto-Matching über Name+Geburtsdatum.
+// lusd_id ist der einzige Zuordnungsschlüssel des Landesabgleichs (kein Adress- oder
+// Geburtsdatum-Ersatz im Import). Sie darf über den PATCH nur kontrolliert nachgetragen
+// werden: nachtragbar nur, wenn leer (Waise adoptieren), eindeutig, und jeder Nachtrag steht
+// im Protokoll. Ein bestehender Wert wird weder überschrieben noch geleert. Der automatische
+// Gegenpart ist die Zuordnung im Import über Name und Geburtsdatum.
 func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -127,7 +126,7 @@ func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 		gleich := "LUSD-GLEICH"
 		id := neueID("W-5", &gleich)
 		vorher := auditZaehler()
-		// Formular schickt die bestehende lusd_id UND eine echte Änderung mit.
+		// Formular schickt die bestehende lusd_id und eine echte Änderung mit.
 		rec := patch(id, `{"lusd_id":"LUSD-GLEICH","klasse":"6b"}`)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())

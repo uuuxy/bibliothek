@@ -17,12 +17,10 @@ import (
 
 // Einen Kollegen löschen — und mit ihm seinen Zugang.
 //
-// Entschieden am 16.09.2026: „wenn ein kollege gelöscht wird dann wird alles gelöscht
-// oder nicht das wäre doch das logischste oder nicht." Bis dahin ging das gar nicht: Der ganze
-// Löschweg (Prüfung, Soft-Delete, Papierkorb, Wiederherstellen, endgültiges Entfernen)
-// schrieb gegen die SICHT `schueler`, die nur Schüler zeigt. Bei einem Kollegen traf er
-// null Zeilen und antwortete „nicht gefunden" — deshalb stand der Löschknopf in seiner
-// Akte gar nicht erst (docs/OFFEN.md 5.16 C).
+// Festgelegt ist: „wenn ein kollege gelöscht wird dann wird alles gelöscht oder nicht das
+// wäre doch das logischste oder nicht." Schriebe der Löschweg (Prüfung, Papierkorb,
+// Wiederherstellen, endgültiges Entfernen) gegen die Sicht `schueler`, die nur Schüler
+// zeigt, träfe er bei einem Kollegen null Zeilen und antwortete „nicht gefunden".
 //
 // Das Konto bleibt nicht als abgeschaltete Hülle stehen: Es hielte die Adresse besetzt
 // (benutzer_email_unique), und wer die Person danach neu anlegt, bekäme „steht bereits ein
@@ -45,7 +43,7 @@ func TestKollegeLoeschen(t *testing.T) {
 		return rec
 	}
 
-	// Ein Kollege mit Konto, wie ihn „Neuer Leser" seit dem 16.09.2026 anlegt.
+	// Ein Kollege mit Konto, wie ihn „Neuer Leser" anlegt.
 	kollegeMitKonto := func(t *testing.T, vorname, nachname, email string) (leserID, kontoID string) {
 		t.Helper()
 		if err := pool.QueryRow(ctx, `
@@ -71,8 +69,8 @@ func TestKollegeLoeschen(t *testing.T) {
 		return n
 	}
 
-	// Ein ECHTES Admin-Konto: `audit_log.bearbeiter_id` trägt einen Fremdschlüssel auf
-	// benutzer(id). Eine erfundene UUID liess den Löschweg mit 500 enden — am Protokoll,
+	// Ein echtes Admin-Konto: `audit_log.bearbeiter_id` trägt einen Fremdschlüssel auf
+	// benutzer(id). Eine erfundene UUID ließe den Löschweg mit 500 enden — am Protokoll,
 	// nicht an der Sache.
 	var admin string
 	if err := pool.QueryRow(ctx, `
@@ -174,7 +172,7 @@ func TestKollegeLoeschen(t *testing.T) {
 		if gesperrt {
 			t.Error("der wiederhergestellte Kollege bleibt gesperrt")
 		}
-		// Der Zugang kommt NICHT von allein zurück — er wird über die Schul-E-Mail in der
+		// Der Zugang kommt nicht von allein zurück — er wird über die Schul-E-Mail in der
 		// Akte neu angelegt.
 		if n := zaehle(t, `SELECT count(*) FROM benutzer WHERE leser_id = $1`, leserID); n != 0 {
 			t.Errorf("ein Konto ist wieder aufgetaucht (%d)", n)
@@ -194,8 +192,8 @@ func TestKollegeLoeschen(t *testing.T) {
 
 	t.Run("mit offenen Büchern wird nicht gelöscht", func(t *testing.T) {
 		leserID, _ := kollegeMitKonto(t, "Bert", "Buchoffen", "bert.buchoffen@schule.invalid")
-		// Selbst angelegt statt im Bestand gesucht: testdaten.LeereBestandsdaten räumt ihn weg, und ein
-		// Skip auf leerer Tabelle wäre ein grüner Test ohne Aussage.
+		// Selbst angelegt statt im Bestand gesucht: testdaten.LeereBestandsdaten räumt ihn weg,
+		// und ein übersprungener Test auf leerer Tabelle wäre grün ohne Aussage.
 		var titelID, exemplarID string
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO buecher_titel (titel) VALUES ('Loesch-Titel') RETURNING id::text`).Scan(&titelID); err != nil {

@@ -15,7 +15,7 @@ import (
 
 // Umbenennung ohne Schüler-ID — der ganze Weg an der Datenbank: Vorschau schlägt das
 // Paar vor, der Admin bestätigt, derselbe Datensatz trägt den neuen Namen; unbestätigt
-// bleibt es Abgänger + Neuanlage (jetzt mit Karenz-Sperre statt Anonymisierung).
+// bleibt es Abgänger + Neuanlage (mit Karenz-Sperre statt Anonymisierung).
 
 func umbZeile(line int, vorname, nachname, klasse string, geb, eintritt *time.Time) lusd.Zeile {
 	return lusd.Zeile{Vorname: vorname, Nachname: nachname, Klasse: klasse, Geburtsdatum: geb, EintrittAm: eintritt, Nr: line}
@@ -79,8 +79,8 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	if nachname != "Mueller-Schmidt" || !lusd.IstKlasseGleich(klasse, "06F1") || barcode != "UMB-1" || abg || bestaetigt == nil || time.Since(*bestaetigt) > time.Minute {
 		t.Errorf("Anna: nachname=%q klasse=%q barcode=%q abg=%v bestaetigt=%v", nachname, klasse, barcode, abg, bestaetigt)
 	}
-	// Der Import SCHREIBT den Schuleintritt (Bestand + Neuanlage) — kein Test sah das
-	// bisher, alle säten die Spalte per SQL (Rasterdurchgang 02.09.2026, Rot-Proben P16).
+	// Der Import schreibt den Schuleintritt (Bestand und Neuanlage); ein Test, der die
+	// Spalte per SQL sät, sähe das nicht.
 	if eintrittDB == nil || eintrittDB.Format("2006-01-02") != eintritt.Format("2006-01-02") {
 		t.Errorf("Bestandsschüler: schul_eintritt_am aus dem Export nicht geschrieben: %v", eintrittDB)
 	}
@@ -177,7 +177,7 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 	}
 }
 
-// Ein Abgänger aus einem FRÜHEREN Lauf (gesperrt, in der Karenz) taucht umbenannt
+// Ein Abgänger aus einem früheren Lauf (gesperrt, in der Karenz) taucht umbenannt
 // wieder auf: Paar mit war_abgaenger; bestätigt wird er reaktiviert — entsperrt, ohne
 // Abgänger-Stempel, mit neuem Namen.
 func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {

@@ -10,12 +10,13 @@ import (
 	"bibliothek/internal/service"
 )
 
-// fotoHochladenAnfrage holds the base64 encoded photo payload.
+// fotoHochladenAnfrage ist das Foto als Base64 in einer data-URL.
 type fotoHochladenAnfrage struct {
 	FotoDaten string `json:"photo_data"` // data:image/jpeg;base64,...
 }
 
-// FotoHochladen decodes and registers a student's webcam passport photo.
+// FotoHochladen nimmt das Ausweisfoto aus der Kamera an und speichert es verschlüsselt am
+// Leser (service.SchreibeLeserFoto).
 func (t *Tueren) FotoHochladen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")

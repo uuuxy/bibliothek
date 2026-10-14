@@ -17,9 +17,8 @@ import (
 )
 
 // Ein Konto, das über die Leserdatei entsteht, hinterlässt dieselbe Spur wie über Benutzer &
-// Rechte: USER_CREATE mit ziel_id und der angemeldeten Person als Handelnder (29.09.2026,
-// docs/OFFEN.md 5.19). Vorher schrieb die Neuanlage einer Lehrkraft mit Schul-E-Mail keinen
-// Eintrag; zwei Türen zum selben Zustand, die Rechenschaft hing an der Tür. Über die ziel_id
+// Rechte: USER_CREATE mit ziel_id und der angemeldeten Person als Handelnder. Ohne den
+// Eintrag hinge die Rechenschaft an der Tür, zwei Türen zum selben Zustand. Über die ziel_id
 // findet die Auskunft den Eintrag beim Konto.
 func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
 	pool := pgtest.Pool(t)

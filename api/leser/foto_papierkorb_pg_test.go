@@ -11,15 +11,15 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Das Passbild eines Lesers im Papierkorb wird nicht mehr ausgeliefert.
+// Das Passbild eines Lesers im Papierkorb wird nicht ausgeliefert.
 //
-// Fund (OFFEN.md 5.6): Die Auslieferung verband `schueler_fotos` mit `leser` und fragte
-// nicht nach `deleted_at`. Für jeden sichtbaren Weg ist eine gelöschte Person weg — die
+// Verbände die Auslieferung `schueler_fotos` mit `leser`, ohne nach `deleted_at` zu fragen,
+// käme das Bild weiter heraus. Für jeden sichtbaren Weg ist eine gelöschte Person weg — die
 // Zeile steht nur noch da, damit ein Versehen zurückgeholt werden kann. Ein Passbild, das
 // über die Ausweisnummer weiter herauskommt, macht aus dem Papierkorb ein Archiv.
 //
 // Die Gegenprobe gehört dazu: Ein aktiver Leser bekommt sein Bild weiterhin, sonst wäre
-// der Fix eine Verschlechterung mit grünem Test. Und die Zeile in `schueler_fotos` bleibt
+// der Schutz eine Verschlechterung mit grünem Test. Und die Zeile in `schueler_fotos` bleibt
 // stehen — wer die Person zurückholt, bekommt ihr Bild zurück.
 func TestFotoAuslieferung_NichtAusDemPapierkorb(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -35,7 +35,7 @@ func TestFotoAuslieferung_NichtAusDemPapierkorb(t *testing.T) {
 			RETURNING id`, barcode, geloescht).Scan(&id); err != nil {
 			t.Fatalf("Leser anlegen: %v", err)
 		}
-		// Der Inhalt ist hier gleichgültig: Geprüft wird, OB etwas herauskommt. Ein
+		// Der Inhalt ist hier gleichgültig: Geprüft wird, ob etwas herauskommt. Ein
 		// unlesbarer Geheimtext endet in 500, nicht in 404 — und 500 ist nicht 200.
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO schueler_fotos (schueler_id, foto_encrypted) VALUES ($1, $2)`,

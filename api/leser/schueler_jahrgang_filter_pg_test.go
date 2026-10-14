@@ -10,23 +10,24 @@ import (
 	"bibliothek/repository"
 )
 
-// Gate für den Jahrgangsfilter der Leserdatei (OFFEN.md 9.5, Protokoll 5 und 6).
+// Gate für den Jahrgangsfilter der Leserdatei.
 //
-// Der teure Fall steht ganz unten: die OBERSTUFE. An dieser Schule heißt der elfte
+// Der teure Fall steht ganz unten: die Oberstufe. An dieser Schule heißt der elfte
 // Jahrgang „ET", und ein Filter, der den Jahrgang aus führenden Ziffern liest, findet
 // dort nichts — lautlos, denn eine leere Liste sieht aus wie „niemand in diesem
 // Jahrgang". Genau so rechnet LMFAbfragen.LadeKlassenMitSchuelern für die Sortierung des LMF-Plans
 // (die Zahl am Anfang der Klasse, sonst 99); als Filter wäre dieselbe Zeile falsch.
 //
 // Am echten Postgres, weil geprüft wird, was aus der Kombination aus Klassenbestand und
-// Ableitung herausfällt — ein Mock würde genau die Frage wegdefinieren.
+// Ableitung herausfällt — eine Attrappe würde genau die Frage wegdefinieren.
 func TestJahrgangFilterFindetAuchDieOberstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	lmfRepo := repository.NewLMFAbfragen(pool)
 
-	// Ein Kind je Klasse — LMFAbfragen.LadeKlassenMitSchuelern nennt nur Klassen, in denen jemand ist.
+	// Ein Kind je Klasse: LMFAbfragen.LadeKlassenMitSchuelern nennt nur Klassen, in denen
+	// jemand ist.
 	klassen := map[string]string{"05F1": "Fuenf", "05G2": "Fuenfb", "10H1": "Zehn", "ET": "Elf", "13T": "Dreizehn"}
 	angelegt := []string{}
 	for klasse, name := range klassen {

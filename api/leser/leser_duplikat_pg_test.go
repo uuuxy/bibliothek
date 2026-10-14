@@ -45,7 +45,7 @@ func TestLeserAnlegen_OhneGeburtsdatumAbgewiesen(t *testing.T) {
 }
 
 // TestLeserAnlegen_NamensvetternMitVerschiedenemGeburtsdatum sichert die Zwillings-
-// Regel (#5): Namensgleiche Schüler mit VERSCHIEDENEM Geburtsdatum sind verschiedene
+// Regel: Namensgleiche Schüler mit verschiedenem Geburtsdatum sind verschiedene
 // Personen und müssen beide anlegbar sein.
 func TestLeserAnlegen_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -60,9 +60,9 @@ func TestLeserAnlegen_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
 	}
 }
 
-// TestLeserAnlegen_EchtesDuplikatMitGeburtsdatum: Bei gleichem Namen UND gleichem,
-// bekanntem Geburtsdatum bleibt die Duplikatssperre aktiv (409) — der Fix schwächt die
-// echte Duplikaterkennung nicht ab.
+// TestLeserAnlegen_EchtesDuplikatMitGeburtsdatum: Bei gleichem Namen und gleichem,
+// bekanntem Geburtsdatum bleibt die Duplikatssperre aktiv (409); die Zwillings-Regel schwächt
+// die echte Duplikaterkennung nicht ab.
 func TestLeserAnlegen_EchtesDuplikatMitGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -85,10 +85,10 @@ func legeLeserUeberTuerAn(t *testing.T, srv *Tueren, jsonBody string) (int, stri
 	return rec.Code, rec.Body.String()
 }
 
-// Migration 108: „Derselbe Mensch" in EINER Definition — Handanlage, Index und
+// Migration 108: „Derselbe Mensch" in einer Definition — Handanlage, Index und
 // LUSD-Schlüssel rechnen in suchnorm. „Anna Mueller" nach „Anna Müller" mit gleichem
-// Geburtsdatum ist ein Duplikat (409 mit Hinweis auf die Schreibweise), am alten Stand
-// (lower() in der Prüfung, roher Index) eine zweite Zeile.
+// Geburtsdatum ist ein Duplikat (409 mit Hinweis auf die Schreibweise); mit lower() in der
+// Prüfung und rohem Index wäre es eine zweite Zeile.
 func TestLeserAnlegen_SchreibvarianteIstDuplikat(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

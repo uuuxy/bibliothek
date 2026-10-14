@@ -11,15 +11,15 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// TestLUSDImport_DubletteInDerselbenDatei prüft, was passiert, wenn EIN LUSD-Export
+// TestLUSDImport_DubletteInDerselbenDatei prüft, was passiert, wenn ein LUSD-Export
 // dieselbe lusd_id zweimal enthält (kommt in der Praxis vor, siehe Migration 048).
 //
 // Der Schutz dagegen steckt nicht in einer expliziten Prüfung, sondern in der Reihenfolge:
 // Solange jeder Neuzugang sofort eingefügt wird, sieht repository.FindeAktivenSchuelerZuLUSDID die
 // erste Zeile bereits innerhalb derselben Transaktion und behandelt die zweite als
-// Rückkehrer-Update. Wird das Einfügen dagegen bis zum Schleifenende aufgeschoben
+// Rückkehrer-Änderung. Wird das Einfügen dagegen bis zum Schleifenende aufgeschoben
 // (Batch/CopyFrom), findet die zweite Zeile nichts, beide landen im Batch und kollidieren am
-// partiellen Unique-Index uniq_schueler_lusd_id_active — SQLSTATE 23505 reißt den GESAMTEN
+// partiellen Unique-Index uniq_schueler_lusd_id_active — SQLSTATE 23505 reißt den gesamten
 // Import mit, nicht nur die doppelte Zeile.
 func TestLUSDImport_DubletteInDerselbenDatei(t *testing.T) {
 	pool := pgtest.Pool(t)

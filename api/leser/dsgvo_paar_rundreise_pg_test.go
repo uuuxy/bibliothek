@@ -13,19 +13,19 @@ import (
 )
 
 // Die Rundreise: Was die Auskunft zeigt, muss die Tilgung leeren — am echten Postgres,
-// über die echten Pfade (LegeLeserInPapierkorb → LoescheLeserEndgueltig), über JEDE Quelle der
+// über die echten Pfade (LegeLeserInPapierkorb → LoescheLeserEndgueltig), über jede Quelle der
 // gemeinsamen Liste testdaten.DSGVOLeserQuellen.
 //
 // Drei Prüfungen:
-//  1. VORHER zeigt die Art.-15-Auskunft aus jeder Quelle etwas — sonst ist die
+//  1. Vorher zeigt die Art.-15-Auskunft aus jeder Quelle etwas — sonst ist die
 //     Auskunfts-Hälfte des Paars unvollständig, und das fällt nie auf, weil eine
 //     unvollständige Auskunft gut aussieht.
-//  2. NACHHER findet eine wertbasierte Sonde keinen der markanten Werte (Vorname,
+//  2. Nachher findet eine wertbasierte Sonde keinen der markanten Werte (Vorname,
 //     Barcode, LUSD-ID, Entleiher-Klarname, Eltern-Mail) mehr in den Protokoll-Details —
 //     wertbasiert, damit auch ein Schlüssel auffällt, den heute niemand kennt.
 //     Die nackte Schüler-UUID bleibt bewusst stehen (Rechenschaftspflicht; sie
 //     referenziert nach der Löschung niemanden mehr).
-//  3. Die Artefakte eines ZWEITEN Schülers überleben unangetastet (Über-Tilgung).
+//  3. Die Artefakte eines zweiten Schülers überleben unangetastet (Über-Tilgung).
 //
 // Wächst testdaten.DSGVOLeserQuellen (FK-Ratsche unten), zwingt der default-Zweig der
 // Seed-Schleife diesen Test zum Mitwachsen.
@@ -102,8 +102,8 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 				       ('SCHUELER_ZUSAMMENGEFUEHRT', jsonb_build_object('schueler_id', $1::text, 'barcode', $3::text, 'aufgeloest_barcode', 'RUNDREISE-QUELLE'))`,
 				sid, lusd, barcode)
 		case "schadensersatz_bescheide":
-			// Ein Bescheid mit PII im Snapshot: Er BLEIBT nach dem Purge als Beleg (die
-			// Referenznummer ordnet Zahlungen zu), aber ohne Personenbezug.
+			// Ein Bescheid mit PII im Snapshot: Er bleibt nach dem endgültigen Löschen als
+			// Beleg (die Referenznummer ordnet Zahlungen zu), aber ohne Personenbezug.
 			_, err = pool.Exec(ctx, `
 				INSERT INTO schadensersatz_bescheide
 					(schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis,
@@ -112,7 +112,7 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 					jsonb_build_object('name', $2::text, 'strasse', 'Rundreiseweg'))`, sid, entl)
 		case "benutzer":
 			// Ein Zugangskonto, das auf diesen Leser zeigt (Migration 123). Nach der
-			// Tilgung muss die VERKNÜPFUNG weg sein, das Konto selbst bleibt: Es ist die
+			// Tilgung muss die Verknüpfung weg sein, das Konto selbst bleibt: Es ist die
 			// Anmeldung samt Rechten und gehört der Anlage, nicht dem Leser.
 			_, err = pool.Exec(ctx, `
 				INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id)
@@ -126,7 +126,7 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 		}
 	}
 
-	// Der echte Lösch-Weg beginnt mit dem Soft-Delete — der schreibt den PII-Snapshot
+	// Der echte Lösch-Weg beginnt mit dem Papierkorb; der schreibt den PII-Snapshot
 	// (Vorname, Nachname, Barcode) in audit_log.details, genau die Spur, die die
 	// Tilgung später neutralisieren muss.
 	auditRepo := repository.NewProtokollAbfragen(pool)
@@ -134,7 +134,7 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 		t.Fatalf("LegeLeserInPapierkorb: %v", err)
 	}
 
-	// ── 1. Die Auskunft zeigt VORHER aus jeder Quelle etwas ──
+	// ── 1. Die Auskunft zeigt vorher aus jeder Quelle etwas ──
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	daten, err := srv.sammleDSGVODaten(ctx, sid, true)
 	if err != nil {
@@ -168,8 +168,8 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 		case "nachbuch_meldungen":
 			leer = len(daten.nachbuchMeldungen) == 0
 		case "benutzer":
-			// Die Auskunft nennt, DASS ein Zugangskonto auf diesen Leser zeigt, und seit
-			// dem 24.09.2026 auch das Konto selbst (repository/dsgvo_konto.go).
+			// Die Auskunft nennt, dass ein Zugangskonto auf diesen Leser zeigt, und auch das
+			// Konto selbst (repository/dsgvo_konto.go).
 			leer = daten.stammdaten == nil || !daten.stammdaten.HatZugangskonto ||
 				daten.zugangskonto == nil || daten.zugangskonto.Email != "rundreise-"+sid+"@test.invalid"
 		default:
@@ -181,7 +181,7 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 		}
 	}
 
-	// ── Der echte Lösch-Weg zu Ende: Purge aus dem Papierkorb ──
+	// ── Der echte Lösch-Weg zu Ende: endgültig löschen aus dem Papierkorb ──
 	if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err != nil {
 		t.Fatalf("LoescheLeserEndgueltig: %v", err)
 	}
@@ -240,10 +240,10 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 
 // Die Wachstums-Ratsche des Paars: Jede FK-Spalte auf schueler, die das Schema kennt,
 // muss in testdaten.DSGVOLeserQuellen stehen — und umgekehrt. Wer eine neue Tabelle mit
-// Schülerbezug baut, wird hier rot, bis Auskunft UND Tilgung sie kennen (die Liste
+// Schülerbezug baut, wird hier rot, bis Auskunft und Tilgung sie kennen (die Liste
 // erzwingt beides: den Quelltext-Scan der Auskunft und die Seed-Schleife der Rundreise).
 //
-// Spalten, die Schüler-IDs OHNE FK halten (audit-Details), fängt die Ratsche nicht —
+// Spalten, die Schüler-IDs ohne FK halten (Details im Protokoll), fängt die Ratsche nicht —
 // dafür stehen die wertbasierte Sonde oben und das Schlüssel-Vokabular-Gate
 // (repository/dsgvo_paar_vollstaendigkeit_test.go).
 func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
@@ -286,9 +286,9 @@ func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 	// Tabelle — ausleiher_schueler_id und vorbesitzer_schueler_id). Ohne Treffer gilt
 	// schueler_id.
 	//
-	// leser_id kam mit Migration 123 dazu: Die Tabelle fuehrt seither alle Leser, und die
-	// stillschweigende Annahme „jede Referenz auf schueler heisst *schueler_id" gilt nicht
-	// mehr. Der Detektor erkennt damit MEHR Spalten als vorher, nicht weniger — eine
+	// leser_id kam mit Migration 123 dazu: Die Tabelle führt alle Leser, und die
+	// stillschweigende Annahme „jede Referenz auf schueler heißt *schueler_id" gilt nicht.
+	// Der Detektor erkennt damit mehr Spalten, nicht weniger; eine
 	// unbekannte Referenz fiele sonst durch, und genau das ist der Fall, den er sucht.
 	spaltenImBezug := regexp.MustCompile(`\b[a-z_]*(?:schueler_id|leser_id)\b`)
 	inListe := map[string]bool{}

@@ -10,10 +10,10 @@ import (
 //nolint:staticcheck // ST1005: Endnutzer-Meldung, bewusst großgeschrieben
 var errKlasseLehrerVerboten = errors.New("Lehrkräfte werden nicht als Schüler angelegt. Bitte unter System → Benutzer & Rechte ein Konto mit der Rolle Kollegium anlegen; an der Theke findet man die Lehrkraft dann über ihren Ausweis")
 
-// pruefeKlassenname verteidigt die Trennung aus Migration 072 (Befund F4):
-// 'lehrer' als Klassenname machte eine Schülerzeile heimlich zur Lehrkraft —
-// mit eigener Mahnschiene, still übersprungenem Versetzungslauf und dem
-// LUSD-Abgleich als tickender Löschfalle. Der Wert ist seither gesperrt.
+// pruefeKlassenname verteidigt die Trennung aus Migration 072: 'lehrer' als Klassenname
+// machte eine Schülerzeile heimlich zur Lehrkraft, mit eigener Mahnschiene, still
+// übersprungenem Versetzungslauf und dem LUSD-Abgleich als tickender Löschfalle. Der Wert
+// ist gesperrt.
 func pruefeKlassenname(klasse string) error {
 	if strings.EqualFold(strings.TrimSpace(klasse), "lehrer") {
 		return errKlasseLehrerVerboten

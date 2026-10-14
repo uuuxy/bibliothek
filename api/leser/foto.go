@@ -14,7 +14,7 @@ import (
 )
 
 // Foto lädt das verschlüsselte Foto eines Schülers aus der
-// Datenbank, entschlüsselt es im Arbeitsspeicher und liefert es sicher an den Client aus.
+// Datenbank, entschlüsselt es im Arbeitsspeicher und liefert es an die Oberfläche aus.
 func (t *Tueren) Foto() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -33,14 +33,14 @@ func (t *Tueren) Foto() http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			// Fehler-Kollaps (Sweep 29.08.2026): Ein DB-Fehler war vorher „kein foto".
+			// Ein Fehler der Datenbank ist kein „kein Foto": 500 statt 404.
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		// Foto on the fly entschlüsseln und mit Sicherheits-Headern streamen
+		// Im Arbeitsspeicher entschlüsseln und mit den Sicherheits-Köpfen ausliefern.
 		if err := crypto.SchreibeEntschluesselt(w, verschluesselt, "image/webp"); err != nil {
-			// SchreibeEntschluesselt sendet bereits einen HTTP Error, wenn es hier fehlschlägt
+			// SchreibeEntschluesselt hat dann schon mit einem Fehler geantwortet.
 			return
 		}
 	}

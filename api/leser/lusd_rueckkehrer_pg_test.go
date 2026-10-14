@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// legeGesperrtenAbgaengerAn legt einen als Abgänger gesperrten, NICHT soft-gelöschten Schüler
+// legeGesperrtenAbgaengerAn legt einen als Abgänger gesperrten, nicht soft-gelöschten Schüler
 // mit lusd_id an und liefert dessen ID.
 func legeGesperrtenAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, lusdID string) string {
 	t.Helper()
@@ -30,12 +30,13 @@ func legeGesperrtenAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, lusdID
 	return id
 }
 
-// TestLUSDImport_ReturningBlockedAbgaenger fährt die ECHTE Import-Pipeline
+// TestLUSDImport_ReturningBlockedAbgaenger fährt die echte Import-Pipeline
 // (berechneLUSDAenderungen → lusd.WendeAenderungenAn) mit einem zurückkehrenden, als Abgänger
-// gesperrten Schüler. Der Unit-Test der Runde 6/7 prüfte nur die Aktualisierung des Bestandsschuelers
-// isoliert; er blieb aber unerreichbar, weil ladeAktiveSchueler Abgänger ausfiltert und der
-// Rückkehrer so als Neuzugang am partiellen Unique-Index (lusd_id) kollidierte — der GESAMTE
-// Import scheiterte. Dieser Test sichert die korrekte Weiterleitung end-to-end ab.
+// gesperrten Schüler. Ein Unit-Test, der nur die Aktualisierung des Bestandsschülers prüft,
+// sieht nicht, ob dieser Weg erreichbar ist: Ließe das Laden des Bestands
+// (repository.LadeLUSDBestand) Abgänger weg, käme der Rückkehrer als Neuzugang an den
+// partiellen Unique-Index (lusd_id), und der gesamte Import scheiterte. Dieser Test sichert
+// die Weiterleitung von vorn bis hinten ab.
 func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 	pool := pgtest.Pool(t)
 
@@ -51,7 +52,7 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Fatalf("Import eines Rückkehrers darf nicht fehlschlagen: %v", err)
 		}
 
-		// Genau EINE aktive Zeile für die lusd_id (kein Duplikat, kein Crash).
+		// Genau eine aktive Zeile für die lusd_id (kein Duplikat, kein Crash).
 		var count int
 		if err := pool.QueryRow(ctx,
 			`SELECT count(*) FROM schueler WHERE lusd_id = 'L-RETURN' AND deleted_at IS NULL`).Scan(&count); err != nil {
@@ -115,11 +116,11 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 		}
 	})
 
-	// Bestands-Durchgang 10.09.2026 (Rasterfrage 10: der Rückweg am ERGEBNIS): Der
-	// umbenannte Grund hieß „Sperre wegen offener Vorgänge" — ohne das Präfix der
-	// Automatik. Nach der Rückgabe hob NICHTS die Sperre mehr auf; der nächste Import hielt
-	// sie für eine manuelle und ließ sie stehen. Ein aktiver Schüler blieb dauerhaft
-	// gesperrt, und die Oberfläche kann ist_gesperrt ohne manuelle Sperre nicht aufheben.
+	// Der Rückweg am Ergebnis: Hieße der umbenannte Grund „Sperre wegen offener Vorgänge", ohne
+	// das Präfix der Automatik, höbe nach der Rückgabe nichts die Sperre mehr auf; der nächste
+	// Import hielte sie für eine manuelle und ließe sie stehen. Ein aktiver Schüler bliebe
+	// dauerhaft gesperrt, und die Oberfläche kann ist_gesperrt ohne manuelle Sperre nicht
+	// aufheben.
 	t.Run("Rückkehrer: nach der Rückgabe hebt der nächste Import die Sperre auf", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		ctx := context.Background()

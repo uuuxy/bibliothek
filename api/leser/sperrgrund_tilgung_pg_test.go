@@ -13,12 +13,12 @@ import (
 
 // Der Grund einer Sperre fällt mit der Anonymisierung auch im Admin-Protokoll.
 //
-// repository.AnonymisiereAbgaenger ersetzt block_reason, weil ein alter Grund andere Personen nennen
-// kann. Seit dem 24.09.2026 schreibt die Sperr-Tür denselben Freitext ins Admin-Protokoll
-// (LESER_GESPERRT, LESER_ENTSPERRT: grund), und bis zum 24.09.2026 stand er im Übergehen an
-// der Theke (OVERRIDE_BLOCK: reason). Die Spuren-Tilgung räumte dort nur LUSD-ID und
-// Ausweisnummer; der Grund blieb bis zur Audit-Aufbewahrung (24 Monate) neben der Kennung
-// des Lesers stehen (Rasterdurchgang 24.09.2026).
+// repository.AnonymisiereAbgaenger ersetzt block_reason, weil ein alter Grund andere
+// Personen nennen kann. Die Sperr-Tür schreibt denselben Freitext ins Protokoll der
+// Verwaltung (LESER_GESPERRT, LESER_ENTSPERRT: grund), und das frühere Übergehen an der Theke
+// (OVERRIDE_BLOCK: reason) trug ihn ebenso. Räumte die Spuren-Tilgung dort nur LUSD-ID und
+// Ausweisnummer, bliebe der Grund bis zum Ende der Aufbewahrung (24 Monate) neben der Kennung
+// des Lesers stehen.
 //
 // Rot gesehen am Rückbau: die Schlüssel grund und reason aus der Anweisung
 // „audit_logs (LUSD-ID, Barcodes, Sperrgrund)" in repository.spurTilgungen entfernt — drei
@@ -45,7 +45,7 @@ func TestAnonymisierung_TilgtDenSperrgrundImProtokoll(t *testing.T) {
 			t.Fatalf("Sperr-Tür %s: %d %s", body, rec.Code, rec.Body.String())
 		}
 	}
-	// So schrieb die Theke das Übergehen einer Sperre bis zum 24.09.2026.
+	// So schrieb die Theke das Übergehen einer Sperre früher.
 	if _, err := pool.Exec(ctx, `INSERT INTO audit_logs (aktion, details) VALUES ('OVERRIDE_BLOCK',
 		jsonb_build_object('schueler_id', $1::text, 'reason', 'Ausleihsperre manuell ignoriert (Manuelle Sperre: ' || $2 || ')'))`,
 		id, grund); err != nil {

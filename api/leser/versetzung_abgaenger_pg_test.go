@@ -13,11 +13,11 @@ import (
 	"bibliothek/repository"
 )
 
-// Zweite Tür zum Abgänger (Rasterdurchgang 02.09.2026): Neben dem LUSD-Import macht
+// Zweite Tür zum Abgänger: Neben dem LUSD-Import macht
 // auch die Versetzung (POST /api/students/promote) Schüler zu Abgängern. Sie muss
 // dieselbe Karenz-Uhr stempeln (abgaenger_seit) und dasselbe Sperrgrund-Präfix
-// schreiben — sonst kehrt ein Versetzungs-Abgänger per LUSD als AKTIVER, aber
-// weiterhin GESPERRTER Schüler zurück (Ghost-Block), und seine Karenz läuft über den
+// schreiben — sonst kehrt ein Versetzungs-Abgänger per LUSD als aktiver, aber
+// weiterhin gesperrter Schüler zurück (Ghost-Block), und seine Karenz läuft über den
 // Rückfall aktualisiert_am, den jeder Klick neu stellt.
 func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -47,7 +47,7 @@ func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.
 		t.Errorf("Sperrgrund %q trägt nicht das Präfix %q, das Import und Zusammenführen erkennen", grund, repository.AbgaengerSperrPraefix)
 	}
 
-	// Rückkehr per LUSD-Import: aktiv UND entsperrt, wie beim Import-Abgänger.
+	// Rückkehr per LUSD-Import: aktiv und entsperrt, wie beim Import-Abgänger.
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-VERS", Vorname: "Vera", Nachname: "Versetzt", Klasse: "13"},

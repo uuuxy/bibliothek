@@ -14,9 +14,9 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// „Neuen Leser anlegen" fragt zuerst nach der Art. Ein Schüler entsteht wie bisher; eine
-// Lehrkraft bekommt eine LESERZEILE und KEIN Konto — das holt sie sich über die
-// Selbstanmeldung mit ihrer Schuladresse (16.09.2026).
+// „Neuen Leser anlegen" fragt zuerst nach der Art. Ein Schüler entsteht mit Klasse und
+// Geburtsdatum; eine Lehrkraft bekommt eine Leserzeile und ein Konto zu ihrer Schul-E-Mail,
+// freigeschaltet nur, wenn der Anlegende manage_users hat.
 //
 // Vier Dinge unterscheiden die beiden Wege, und jedes davon wäre einzeln ein stiller
 // Fehler:
@@ -82,11 +82,11 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 	if klasse != "" || abgang != nil {
 		t.Errorf("eine Lehrkraft hat keine Klasse und kein Abgangsjahr: %q / %v", klasse, abgang)
 	}
-	// UMGEKEHRT seit dem 16.09.2026 : Die Leserdatei legt das Konto MIT an, weil die
-	// Schul-E-Mail beim Anlegen Pflicht ist. Nur so findet die spätere Selbstanmeldung über
-	// „Mein Portal" diesen Eintrag wieder, statt einen zweiten anzulegen — der Doppeleintrag
-	// war sonst unbemerkt und von niemandem zu reparieren. Der Zugang selbst bleibt eine
-	// Entscheidung: Freigeschaltet wird nur, wenn der Anlegende `manage_users` hat.
+	// Die Leserdatei legt das Konto mit an, weil die Schul-E-Mail beim Anlegen Pflicht ist.
+	// Nur so findet die spätere Selbstanmeldung über „Mein Portal" diesen Eintrag wieder, statt
+	// einen zweiten anzulegen; der Doppeleintrag bliebe sonst unbemerkt und von niemandem zu
+	// reparieren. Der Zugang selbst bleibt eine Entscheidung: Freigeschaltet wird nur, wenn der
+	// Anlegende `manage_users` hat.
 	if !hatKonto {
 		t.Error("die Leserdatei legt das Konto mit an — sonst steht die Lehrkraft nach der Selbstanmeldung doppelt da")
 	}
@@ -94,12 +94,12 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 	// 2. Derselbe Name ein zweites Mal: Das ist fast immer der Kollege, der sich längst
 	//    selbst angemeldet hat. Zwei Akten teilen seine Ausleihen auf.
 	// Andere Adresse als oben: Sonst schlüge die eindeutige E-Mail zu, und der Test
-	// prüfte nicht mehr die NAMENS-Dublette, die er prüfen will.
+	// prüfte nicht mehr die Namens-Dublette, die er prüfen will.
 	if rec := anlegen(t, `{"art":"lehrkraft","vorname":"Katrin","nachname":"Anlegetest","email":"k.anlegetest2@schule.invalid"}`); rec.Code != http.StatusConflict {
 		t.Errorf("zweiter Eintrag mit demselben Namen: Status %d, erwartet 409 — %s", rec.Code, rec.Body.String())
 	}
 
-	// 3. Ein Schüler geht weiter nur MIT Klasse und Geburtsdatum durch.
+	// 3. Ein Schüler geht weiter nur mit Klasse und Geburtsdatum durch.
 	if rec := anlegen(t, `{"art":"schueler","vorname":"Lena","nachname":"Anlegetest2","klasse":"7a"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("Schüler ohne Geburtsdatum: Status %d, erwartet 400 — %s", rec.Code, rec.Body.String())
 	}
@@ -121,7 +121,7 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 		t.Errorf("ohne Art-Angabe: %q, erwartet \"schueler\"", artOhneAngabe)
 	}
 
-	// 4. Eine Lehrkraft MIT Klasse ist ein Widerspruch: Sie stünde in Klassenlisten und
+	// 4. Eine Lehrkraft mit Klasse ist ein Widerspruch: Sie stünde in Klassenlisten und
 	//    fiele beim nächsten LUSD-Abgleich auf.
 	if rec := anlegen(t, `{"art":"lehrkraft","vorname":"Falk","nachname":"Anlegetest","klasse":"7a","email":"falk.anlegetest@schule.invalid"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("Lehrkraft mit Klasse: Status %d, erwartet 400 — %s", rec.Code, rec.Body.String())

@@ -15,7 +15,7 @@ import (
 	"bibliothek/repository"
 )
 
-// TestLeserWiederherstellen_HebtLoeschSperreAuf sichert #2 ab: Nach dem Wiederherstellen aus
+// TestLeserWiederherstellen_HebtLoeschSperreAuf: Nach dem Wiederherstellen aus
 // dem Papierkorb darf die beim Löschen gesetzte Sperre nicht bestehen bleiben (Zombie-
 // Sperre) — sonst kann der Schüler nichts ausleihen.
 func TestLeserWiederherstellen_HebtLoeschSperreAuf(t *testing.T) {
@@ -61,7 +61,7 @@ func TestLeserWiederherstellen_HebtLoeschSperreAuf(t *testing.T) {
 	}
 }
 
-// TestLeserWiederherstellen_FremdeSperreBleibt: Eine Sperre aus ANDEREM Grund (nicht das
+// TestLeserWiederherstellen_FremdeSperreBleibt: Eine Sperre aus anderem Grund (nicht das
 // Löschen) muss ein Restore überstehen.
 func TestLeserWiederherstellen_FremdeSperreBleibt(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -92,7 +92,7 @@ func TestLeserWiederherstellen_FremdeSperreBleibt(t *testing.T) {
 	}
 }
 
-// TestLUSDRueckkehrer_NameUndStatusZurueckgesetzt sichert #3 ab: Kehrt ein zuvor
+// TestLUSDRueckkehrer_NameUndStatusZurueckgesetzt: Kehrt ein zuvor
 // anonymisierter Abgänger im LUSD-Export zurück, muss sein echter Name übernommen und
 // der Abgänger-/Anonymisierungs-Status aufgehoben werden.
 func TestLUSDRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
@@ -101,7 +101,7 @@ func TestLUSDRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	ctx := context.Background()
 
 	var id string
-	// Anonymisierter Abgänger, wie ihn repository.AnonymisiereAbgaenger hinterlässt: gesperrt MIT
+	// Anonymisierter Abgänger, wie ihn repository.AnonymisiereAbgaenger hinterlässt: gesperrt mit
 	// Grund (chk_schueler_block_reason verlangt ihn).
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id,
@@ -147,15 +147,15 @@ func TestLUSDRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	}
 }
 
-// TestLeserEndgueltigLoeschen_AnonymisiertUndLoescht sichert #1 ab: Das endgültige Löschen aus dem
-// Papierkorb entfernt den Schüler-Datensatz UND anonymisiert die Ausleihhistorie
+// TestLeserEndgueltigLoeschen_AnonymisiertUndLoescht: Das endgültige Löschen aus dem
+// Papierkorb entfernt den Schüler-Datensatz und anonymisiert die Ausleihhistorie
 // (schueler_id = NULL) — die PII verschwindet wirklich, nicht nur der Papierkorb-Eintrag.
 func TestLeserEndgueltigLoeschen_AnonymisiertUndLoescht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	// Schüler im Papierkorb + ein Titel/Exemplar + eine ZURÜCKGEGEBENE (historische) Ausleihe.
+	// Schüler im Papierkorb + ein Titel/Exemplar + eine zurückgegebene (historische) Ausleihe.
 	var sid, tid, eid string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at)
@@ -176,8 +176,8 @@ func TestLeserEndgueltigLoeschen_AnonymisiertUndLoescht(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Prüfung 22.08.2026, A3: Der Purge räumte audit_log, aber nie audit_logs — die
-	// LUSD-ID aus LUSD_ID_NACHGETRAGEN überlebte die Löschung um bis zu 24 Monate.
+	// Das endgültige Löschen räumt audit_log und audit_logs; sonst überlebte die LUSD-ID aus
+	// LUSD_ID_NACHGETRAGEN die Löschung um bis zu 24 Monate.
 	if _, err := pool.Exec(ctx, `INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text, 'lusd_id', 'L-PURGE-7'))`, sid); err != nil {
 		t.Fatal(err)
 	}
@@ -212,8 +212,8 @@ func TestLeserEndgueltigLoeschen_AnonymisiertUndLoescht(t *testing.T) {
 	}
 }
 
-// Prüfung 22.08.2026: Eine anonymisierte Papierkorb-Zeile (Name weg, ANON-Barcode) war
-// wiederherstellbar und landete als gesperrter „Anonym" in der aktiven Liste. Jetzt 409.
+// Eine anonymisierte Papierkorb-Zeile (Name weg, ANON-Barcode) ist nicht wiederherstellbar
+// (409); sonst landete sie als gesperrter „Anonym" in der aktiven Liste.
 func TestLeserWiederherstellen_AnonymisierteZeileBleibtImPapierkorb(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -282,8 +282,8 @@ func TestLeserEndgueltigLoeschen_OffeneAusleiheBlockiert(t *testing.T) {
 	}
 }
 
-// TestAbgaengerRetentionKette sichert die DSGVO-Kette ab, die sonst nie schliesst:
-// Ein Abgänger mit offenem Buch wird gesperrt (Name bleibt) UND bekommt sein
+// TestAbgaengerRetentionKette sichert die DSGVO-Kette ab, die sonst nie schließt:
+// Ein Abgänger mit offenem Buch wird gesperrt (Name bleibt) und bekommt sein
 // abgaenger_jahr aufs Abgangsjahr — nur so erfasst ihn der Cronjob später. Nach der
 // Buchrückgabe entfernt LoescheAbgaengerEndgueltig ihn endgültig (PII weg).
 func TestAbgaengerRetentionKette(t *testing.T) {
@@ -291,7 +291,7 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	// Schüler mit lusd_id + abgaenger_jahr in der ZUKUNFT (Default vom Anlegen),
+	// Schüler mit lusd_id + abgaenger_jahr in der Zukunft (Vorgabe beim Anlegen),
 	// plus ein offenes Buch.
 	zukunft := time.Now().Year() + 5
 	var sid, tid, eid string
@@ -326,7 +326,7 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// abgaenger_jahr muss jetzt das AKTUELLE Jahr sein (nicht mehr die Zukunft) —
+	// abgaenger_jahr muss jetzt das aktuelle Jahr sein (nicht mehr die Zukunft) —
 	// sonst würde der Cronjob-Filter (abgaenger_jahr < cutoff) nie greifen.
 	var jahr int
 	var gesperrt bool
@@ -364,10 +364,9 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 	}
 }
 
-// Die andere Hälfte des Papierkorb-Funds vom 06.09.2026: Die Oberfläche kann den
-// Wiederherstellen-Knopf nur dann an der richtigen Zeile weglassen, wenn die Liste
-// verrät, welche Zeile anonymisiert ist. Bis zu diesem Tag lieferte sie das Feld nicht
-// — der Knopf stand überall, und ein Klick lief in den 409 von
+// Die andere Hälfte: Die Oberfläche kann den Wiederherstellen-Knopf nur dann an der
+// richtigen Zeile weglassen, wenn die Liste verrät, welche Zeile anonymisiert ist. Ohne das
+// Feld stünde der Knopf überall, und ein Klick liefe in den 409 von
 // TestLeserWiederherstellen_AnonymisierteZeileBleibtImPapierkorb (dort: die eine Hälfte).
 func TestPapierkorb_NenntDieAnonymisiertenZeilen(t *testing.T) {
 	pool := pgtest.Pool(t)

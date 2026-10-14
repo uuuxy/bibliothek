@@ -17,11 +17,11 @@ import (
 // lesbares PDF. Inhaltlich identisch zur JSON-Variante (dieselbe sammleDSGVODaten-
 // Quelle), nur menschenlesbar aufbereitet — gedacht zur Aushändigung an die Person bzw.
 // die Erziehungsberechtigten (JSON ist für diesen Zweck ungeeignet). Die Erteilung wird
-// wie bei der JSON-Auskunft im Audit-Log protokolliert (Rechenschaftspflicht).
+// wie bei der JSON-Auskunft im Protokoll festgehalten (Rechenschaftspflicht).
 // @Summary      DSGVO-Betroffenenauskunft (Art. 15) als PDF
 // @Tags         students
 // @Produce      application/pdf
-// @Param        id   path      string  true  "Reader ID (UUID)"
+// @Param        id   path      string  true  "Kennung des Lesers (UUID)"
 // @Success      200  {file}    binary
 // @Router       /schueler/{id}/dsgvo-auskunft/pdf [get]
 func (t *Tueren) DSGVOAuskunftPDF() http.HandlerFunc {

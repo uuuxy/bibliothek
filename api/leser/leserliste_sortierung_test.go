@@ -17,7 +17,7 @@ import (
 // Oberfläche zeigte ihren Pfeil an der geklickten Spalte, und niemand würde je
 // erfahren, dass beides nicht zusammenpasst.
 func TestLeserliste_UnbekannteSortierungIstEin400(t *testing.T) {
-	// Kein Repository nötig: Die Prüfung sitzt VOR jedem Datenbankzugriff. Käme sie
+	// Kein Repository nötig: Die Prüfung sitzt vor jedem Datenbankzugriff. Käme sie
 	// später, stürzte dieser Test am nil-Repository ab — das ist der Nachweis.
 	handler := (&Tueren{Basis: &tuer.Basis{}}).Leserliste(nil, nil)
 
@@ -27,7 +27,7 @@ func TestLeserliste_UnbekannteSortierungIstEin400(t *testing.T) {
 		imKoerper string
 	}{
 		{"unbekannte Spalte", "?sortierung=nachname", "erlaubt sind"},
-		// SQL im Spaltennamen. KEIN Semikolon im Beispiel: Go verwirft seit 1.17 einen
+		// SQL im Spaltennamen. Kein Semikolon im Beispiel: Go verwirft seit 1.17 einen
 		// ganzen Query-Parameter, der ein Semikolon enthält (URL.Query ignoriert ihn
 		// still) — die Anfrage käme also als „keine Sortierung" an und wäre erlaubt.
 		// Das ist zufälliger Schutz; geprüft wird der, der hier gebaut ist.
@@ -51,7 +51,7 @@ func TestLeserliste_UnbekannteSortierungIstEin400(t *testing.T) {
 	}
 }
 
-// Die erlaubten Werte kommen aus DERSELBEN Liste, die das Repository kennt — sonst
+// Die erlaubten Werte kommen aus derselben Liste, die das Repository kennt — sonst
 // erlaubt die Tür etwas, das die Abfrage nicht sortieren kann, oder umgekehrt.
 func TestLeserliste_ErlaubteSortierungen(t *testing.T) {
 	for _, spalte := range repository.LeserSortierspalten {

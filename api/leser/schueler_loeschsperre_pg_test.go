@@ -17,18 +17,16 @@ import (
 // Die Löschsperre: Solange ein Buch draußen ist oder eine Gebühr offen, verschwindet
 // niemand — weder in den Papierkorb noch endgültig, weder von Hand noch nachts.
 //
-// Es gibt FÜNF Türen zu diesem Zustand, und jede hat ihren eigenen Wächter:
+// Es gibt fünf Türen zu diesem Zustand, und jede hat ihren eigenen Wächter:
 //
-//	Soft-Delete (Papierkorb, Oberfläche) → pruefeLeserLoeschbar
-//	LoescheLeserEndgueltig (endgültig, von Hand)   → pruefeKeineOffenenVorgaenge
-//	LoescheAbgaengerEndgueltig (Cronjob, nachts)     → pruefeKeineOffenenVorgaenge
-//	Anonymisierungs-Cronjob              → PraedikatAnonymisierung (jobs-Paket getestet)
-//	LUSD-Import                          → repository.SperreAbgaenger statt anonymisieren
+//	LeserLoeschen (Papierkorb, Oberfläche)       → pruefeLeserLoeschbar
+//	LoescheLeserEndgueltig (endgültig, von Hand) → pruefeKeineOffenenVorgaenge
+//	LoescheAbgaengerEndgueltig (Cronjob, nachts) → pruefeKeineOffenenVorgaenge
+//	Anonymisierungs-Cronjob                      → PraedikatAnonymisierung (jobs-Paket getestet)
+//	LUSD-Import                                  → repository.SperreAbgaenger statt anonymisieren
 //
-// Belegt war davon bisher genau eine (LoescheLeserEndgueltig bei offener Ausleihe). Für die
-// übrigen stand der Schutz teils NUR IM KOMMENTAR — „unbezahlte würden die Löschung
-// blockieren" in jobs/cron_dsgvo_abgaenger_pg_test.go. Genau diese Sorte Zusage hat in
-// diesem Projekt schon einmal nicht gehalten.
+// Für jede steht hier ein Beleg. Ein Schutz, der nur im Kommentar steht („unbezahlte würden
+// die Löschung blockieren"), hat in diesem Projekt schon einmal nicht gehalten.
 //
 // Der Preis eines Fehlers ist hier asymmetrisch: Ein zu früh gelöschter Schüler nimmt
 // die Forderung und die Spur zum Buch mit — beides unwiederbringlich.
@@ -38,7 +36,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
 
-	// baueFall legt einen Schüler mit genau EINEM offenen Vorgang an.
+	// baueFall legt einen Schüler mit genau einem offenen Vorgang an.
 	// vorgang: "ausleihe" = Buch noch draußen, "schaden" = Gebühr unbezahlt.
 	baueFall := func(t *testing.T, marke, vorgang string, imPapierkorb bool) string {
 		t.Helper()
@@ -110,7 +108,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 			}
 			// 400, nicht 500: Das ist eine Regel, kein Störfall — sonst ersetzt der
 			// Sanitizer die Meldung durch „interner Datenbankfehler" und das Personal
-			// erfährt nie, WARUM es nicht geht.
+			// erfährt nie, warum es nicht geht.
 			if status != 400 {
 				t.Errorf("Status %d, erwartet 400 — die Begründung erreicht sonst das Formular nicht", status)
 			}
@@ -146,8 +144,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 //
 // Diese Zusage trägt das ganze Gebäude: Wäre sie falsch, bliebe eine stornierte Gebühr
 // für immer „offen" und der Schüler damit dauerhaft unlöschbar — eine DSGVO-Frist, die
-// nie ablaufen kann, und zwar lautlos. Bisher stand sie nur als Kommentar in
-// repository/lusd_import.go.
+// nie ablaufen kann, und zwar lautlos.
 func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

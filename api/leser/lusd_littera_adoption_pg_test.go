@@ -14,7 +14,7 @@ import (
 
 // Ein aus Littera übernommener Schüler trägt als Herkunftsmarke lusd_id = 'littera:<ID>'
 // (internal/littera/schreiber_personen.go). Kommt derselbe Schüler später über den
-// LUSD-Export mit seiner echten LUSD-ID, muss er ADOPTIERT werden — genau wie eine
+// LUSD-Export mit seiner echten LUSD-ID, muss er adoptiert werden — genau wie eine
 // Handanlage ohne ID. Andernfalls entsteht für jeden Littera-Schüler ein Duplikat:
 // Die Waisen-Suche fragt `lusd_id IS NULL`, der Littera-Schüler fällt durch, die CSV-Zeile
 // wird Neuzugang, und der Unique-Index unique_schueler_name_gebdatum greift nicht, weil

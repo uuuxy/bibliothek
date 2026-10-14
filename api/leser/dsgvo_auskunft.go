@@ -223,7 +223,7 @@ func (t *Tueren) sammleDSGVODaten(ctx context.Context, id string, darfKonto bool
 	}, nil
 }
 
-// protokolliereDSGVOAuskunft schreibt den Rechenschafts-Audit-Eintrag der Auskunft.
+// protokolliereDSGVOAuskunft schreibt die Auskunft ins Protokoll (Rechenschaftspflicht).
 // Ein Fehler wird nur protokolliert, nicht weitergereicht (die Auskunft geht vor).
 func (t *Tueren) protokolliereDSGVOAuskunft(ctx context.Context, id string) {
 	akteur := "SYSTEM"
@@ -239,14 +239,14 @@ func (t *Tueren) protokolliereDSGVOAuskunft(ctx context.Context, id string) {
 
 // DSGVOAuskunft stellt die vollständige Betroffenenauskunft nach
 // Art. 15 DSGVO für einen Leser zusammen, gleich welcher Art (pkg/leserart). Die Erteilung
-// selbst wird im Audit-Log protokolliert (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO).
+// selbst steht im Protokoll (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO).
 //
-// Die Annotationen stehen direkt über dem Handler: swag ordnet sie der folgenden Deklaration
+// Die Anmerkungen stehen direkt über der Tür: swag ordnet sie der folgenden Erklärung
 // zu und übergeht sie an anderer Stelle still.
 // @Summary      DSGVO-Betroffenenauskunft (Art. 15) für einen Leser
 // @Tags         students
 // @Produce      json
-// @Param        id   path      string  true  "Reader ID (UUID)"
+// @Param        id   path      string  true  "Kennung des Lesers (UUID)"
 // @Success      200  {object}  auskunft.Antwort
 // @Failure      404  {object}  map[string]string
 // @Router       /schueler/{id}/dsgvo-auskunft [get]

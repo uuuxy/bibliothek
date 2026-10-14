@@ -44,8 +44,8 @@ func leseLUSDDatei(r *http.Request) (lusd.Datei, error) {
 	return lusd.LeseDatei(inhalt)
 }
 
-// lusdTuer bündelt, was Vorschau und Import gemeinsam haben: Upload-Grenze,
-// Parsen, Fehlerabbildung. apply unterscheidet die beiden Routen.
+// lusdTuer bündelt, was Vorschau und Import gemeinsam haben: Grenze der hochgeladenen Datei,
+// Lesen, Zuordnung der Fehler. uebernehmen unterscheidet die beiden Routen.
 func (t *Tueren) lusdTuer(uebernehmen bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) { t.verarbeiteLUSDDatei(w, r, uebernehmen) }
 }
@@ -100,7 +100,7 @@ func lusdFehlerStatus(err error) int {
 }
 
 // leseUmbenennungsWahl liest das Formularfeld `umbenennungen` (JSON-Liste aus Zeile +
-// schueler_id). Leer heißt: keine Paare bestätigt — dann läuft es wie bisher.
+// schueler_id). Leer heißt: keine Paare bestätigt.
 func leseUmbenennungsWahl(roh string) ([]lusd.UmbenennungWahl, error) {
 	if strings.TrimSpace(roh) == "" {
 		return nil, nil
@@ -112,10 +112,10 @@ func leseUmbenennungsWahl(roh string) ([]lusd.UmbenennungWahl, error) {
 	return wahl, nil
 }
 
-// LUSDVorschau parst die CSV und liefert die Vorschau der Änderungen.
+// LUSDVorschau liest die CSV und liefert die Vorschau der Änderungen.
 func (t *Tueren) LUSDVorschau() http.HandlerFunc { return t.lusdTuer(false) }
 
-// LUSDImport parst die CSV und wendet die Änderungen transaktional an.
+// LUSDImport liest die CSV und übernimmt die Änderungen in einer Transaktion.
 // Ab der Schwelle des Massenabgangs (lusd.MassenabgangFehler) verlangt er das Formularfeld
 // confirm_graduates=true (HTTP 409 sonst) — zweite, bewusste Bestätigung.
 func (t *Tueren) LUSDImport() http.HandlerFunc { return t.lusdTuer(true) }
@@ -130,8 +130,8 @@ func zaehleBestaetigte(paare []lusd.VorschauUmbenennung) int {
 	return n
 }
 
-// protokolliereLUSDImport schreibt den Apply-Lauf ins Admin-Audit: Modus, Zähler je
-// Kategorie und ob der Massenabgang bestätigt wurde. Ohne Namen.
+// protokolliereLUSDImport schreibt den übernehmenden Lauf ins Protokoll der Verwaltung:
+// Modus, Zähler je Kategorie und ob der Massenabgang bestätigt wurde. Ohne Namen.
 func (t *Tueren) protokolliereLUSDImport(r *http.Request, res *lusd.Vorschau, massenabgangBestaetigt bool) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok || t.DB == nil || t.DB.Pool == nil || res == nil {

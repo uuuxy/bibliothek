@@ -15,19 +15,17 @@ import (
 	"bibliothek/repository"
 )
 
-// Sperren hat GENAU EINE Tür.
+// Sperren hat genau eine Tür.
 //
-// Es gab zwei: den Sperr-Endpunkt (PATCH /api/admin/students/{id}/lock), der einen Grund
-// verlangt und ihn beim Entsperren wieder konsistent räumt — und den allgemeinen
-// Schüler-PATCH, der dieselben zwei Spalten ohne jede Prüfung schrieb.
+// Das ist der Sperr-Endpunkt (PATCH /api/admin/students/{id}/lock): Er verlangt einen Grund
+// und räumt ihn beim Entsperren wieder konsistent. Schriebe auch der allgemeine Schüler-PATCH
+// dieselben zwei Spalten, dann ohne jede Prüfung; gemessen, als es beide Türen gab:
 //
-// Gemessen am laufenden Handler, bevor die zweite Tür zuging:
-//
-//	Sperr-Endpunkt ohne Grund   -> 400  "Für eine manuelle Sperre ist ein Grund erforderlich."
+//	Sperr-Endpunkt ohne Grund    -> 400  "Für eine manuelle Sperre ist ein Grund erforderlich."
 //	Allgemeiner PATCH ohne Grund -> 500  "Ein interner Datenbankfehler ist aufgetreten."
 //
 // Der 500er kam von chk_schueler_block_reason, und der Sanitizer ersetzt jede
-// 500-Meldung — auf dem Bildschirm stand also nichts, was weiterhilft. Zwei Türen zu
+// 500-Meldung; auf dem Bildschirm stand also nichts, was weiterhilft. Zwei Türen zu
 // demselben Zustand, von denen nur eine die Regeln kennt: Die falsche geht irgendwann auf.
 func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -63,7 +61,7 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 		return b
 	}
 
-	// 1. Der allgemeine PATCH kann NICHT mehr sperren. Das Feld ist keins mehr, also
+	// 1. Der allgemeine PATCH kann nicht sperren. Er kennt das Feld nicht, also
 	//    bleibt vom Rumpf nichts Änderbares übrig — 400 statt eines 500ers aus der Tiefe.
 	rec := fahre(`{"is_manually_blocked":true}`, srv.LeserAendern(auditRepo))
 	if rec.Code == http.StatusInternalServerError {

@@ -9,11 +9,10 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Vorgabe vom 30.09.2026: Die Klassenleitung rückt mit der Versetzung eine Stufe hoch —
-// außer von 6 nach 7 und von 10 in die Oberstufe. Dort bildet die Schule die Klassen neu,
-// und die neuen Klassen bekommen neue Klassenleitungen. Vorher zählte die Versetzung auch
-// diese Zuordnungen hoch: „06F1" → „07F1", „06G1" → „07G1", „10G1" → „11G1", jeweils mit
-// der alten Lehrkraft.
+// Die Klassenleitung rückt mit der Versetzung eine Stufe hoch, außer von 6 nach 7 und von
+// 10 in die Oberstufe. Dort bildet die Schule die Klassen neu, und die neuen Klassen bekommen
+// neue Klassenleitungen. Zählte die Versetzung auch diese Zuordnungen hoch, entstünden
+// „06F1" → „07F1", „06G1" → „07G1", „10G1" → „11G1", jeweils mit der alten Lehrkraft.
 func TestVersetzungKlassenleitungEntfaelltBeiNeubildung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -33,8 +32,8 @@ func TestVersetzungKlassenleitungEntfaelltBeiNeubildung(t *testing.T) {
 		"06G1": "c@schule.example", // 6 → 7 auch im Gymnasialzweig: entfällt
 		"09G1": "d@schule.example", // 9 → 10: rückt auf den frei gewordenen Namen
 		"10G1": "e@schule.example", // 10 → Oberstufe: entfällt
-		"10R1": "f@schule.example", // Abschlussklasse: entfällt wie bisher
-		"12T1": "g@schule.example", // innerhalb der Oberstufe: rückt hoch wie bisher
+		"10R1": "f@schule.example", // Abschlussklasse: entfällt
+		"12T1": "g@schule.example", // innerhalb der Oberstufe: rückt hoch
 	} {
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ($1, $2)`, klasse, mail); err != nil {

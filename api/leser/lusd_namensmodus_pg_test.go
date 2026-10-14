@@ -62,7 +62,7 @@ func zaehle(t *testing.T, pool *pgxpool.Pool, where string, args ...any) int {
 
 // Der Kernfall des Sekretariats: Schüler von Hand angelegt (mit Geburtsdatum), später
 // kommt der LUSD-Export ohne ID — derselbe Mensch, neue Klasse. Erwartung: zugeordnet,
-// Klasse übernommen, bestätigt, KEIN Duplikat. Der zweite Jahreslauf ändert nichts.
+// Klasse übernommen, bestätigt, kein Duplikat. Der zweite Jahreslauf ändert nichts.
 func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -124,7 +124,7 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 	}
 }
 
-// Abgänger nur mit Gedächtnis: Ein BESTÄTIGTER Schüler, der im Export fehlt, geht ab.
+// Abgänger nur mit Gedächtnis: Ein bestätigter Schüler, der im Export fehlt, geht ab.
 // Eine nie bestätigte Handanlage, die fehlt, bleibt stehen und wird gemeldet. Ein
 // Schüler ohne Geburtsdatum ist nicht abgleichbar und bleibt ebenfalls stehen.
 func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
@@ -210,7 +210,7 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 
 // Mehrdeutig: zwei aktive Zeilen mit demselben Schlüssel (case-sensitiver Unique-Index
 // lässt "Anna Müller"/"anna müller" zu, sofern eine eine Littera-Marke trägt). Die CSV-
-// Zeile wird NICHT zugeordnet und NICHT neu angelegt; beide bleiben unverändert und
+// Zeile wird nicht zugeordnet und nicht neu angelegt; beide bleiben unverändert und
 // werden gemeldet.
 func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -241,11 +241,11 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 	}
 }
 
-// Prüfung 22.08.2026: Modus-Wechsel. Eine Schule importiert erst mit der LANIS-Liste
-// (nur Name, Bestand bleibt ohne Geburtsdatum) und bekommt später einen Export MIT
-// Geburtsdatum. Vorher lag der Bestand nur in ohneSchluessel, jede Zeile wurde „neu" —
-// 1.000 Schüler → 1.000 Duplikate, ein Klick. Jetzt: eindeutiger Namenstreffer wird
-// zugeordnet, das Datum nachgetragen, die Klasse übernommen; mehrdeutig → gemeldet.
+// Modus-Wechsel: Eine Schule importiert erst mit der LANIS-Liste (nur Name, Bestand bleibt
+// ohne Geburtsdatum) und bekommt später einen Export mit Geburtsdatum. Läge der Bestand nur
+// in ohneSchluessel, würde jede Zeile „neu": 1.000 Schüler → 1.000 Duplikate, ein Klick. So
+// wird ein eindeutiger Namenstreffer zugeordnet, das Datum nachgetragen, die Klasse
+// übernommen; mehrdeutig → gemeldet.
 func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

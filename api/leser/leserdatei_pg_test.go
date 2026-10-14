@@ -15,10 +15,10 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Leserdatei am LIVE-PFAD: über den Handler, nicht über das Repository.
+// Die Leserdatei am Live-Pfad: über die Tür, nicht über das Repository.
 //
 // Das Repository allein beweist nur, dass die Abfrage es könnte. Dieser Test beweist,
-// dass die Tür sie auch aufruft — und dass sie das NUR tut, wenn die Ansicht alle Leser
+// dass die Tür sie auch aufruft — und dass sie das nur tut, wenn die Ansicht alle Leser
 // verlangt. An derselben Tür hängen der Reiter „Ehemalige" und die Schülersuche des
 // Vormerkungs-Reiters; für die wäre ein Kollege in der Liste falsch.
 func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
@@ -106,10 +106,8 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 
 // TestLeserdatei_AkteEinerLehrkraft: Die Akte muss jeden Leser öffnen.
 //
-// Bis zum 16.09.2026 las GET /api/schueler/{id} die Sicht `schueler` — bei einer
-// Lehrkraft kam 404 zurück. An der Theke bedeutete das: Der Kollege ist geladen, aber
-// niemand sieht, welche Bücher er hat. Genau deshalb zeigte die Theke ihm nur eine
-// schmale Karte statt seiner Akte.
+// Läse GET /api/schueler/{id} die Sicht `schueler`, käme bei einer Lehrkraft 404 zurück. An
+// der Theke hieße das: Der Kollege ist geladen, aber niemand sieht, welche Bücher er hat.
 func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -180,18 +178,17 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	}
 }
 
-// Zwei Türen, die erst mit der Leserdatei erreichbar wurden und über die Sicht `schueler`
-// liefen. Beide stehen in der Akte eines Kollegen sichtbar da:
+// Zwei Türen, die über die Leserdatei erreichbar sind und über die Sicht `schueler` nichts
+// fänden. Beide stehen in der Akte eines Kollegen sichtbar da:
 //
 //   - Der Sperr-Endpunkt (PATCH /api/admin/students/{id}/lock) antwortete mit „Schüler
 //     nicht gefunden". Ein Knopf, der nur scheitern kann.
-//   - Das Passbild wurde gespeichert, aber nie ausgeliefert: Die Auslieferung verband
-//     das Foto über die Sicht mit seiner Person. Die Akte zeigte weiter die Initialen,
-//     und niemand konnte sagen, warum.
+//   - Das Passbild würde gespeichert, aber nie ausgeliefert, wenn die Auslieferung das
+//     Foto über die Sicht mit seiner Person verbände. Die Akte zeigte weiter die
+//     Initialen, und niemand könnte sagen, warum.
 //
-// Seit dem 24.09.2026 wird ein Kollege nicht mehr gesperrt (entschieden am 16.09.2026,
-// bestätigt am 24.09.2026): Die Tür lehnt es mit einem Satz ab, und eine alte Sperre an
-// seinem Konto lässt sie aufheben — über `leser`, sonst wäre auch das „nicht gefunden".
+// Ein Kollege wird nicht gesperrt: Die Tür lehnt es mit einem Satz ab, und eine alte Sperre
+// an seinem Konto lässt sie aufheben, über `leser`, sonst wäre auch das „nicht gefunden".
 // Rot gesehen am Rückbau: ohne den Fall für Kollegen sperrt die Tür ihn (200).
 func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 	pool := pgtest.Pool(t)

@@ -15,14 +15,14 @@ import (
 	"bibliothek/repository"
 )
 
-// Sonderkonten als Art des Lesers (Migration 153, Entscheidung vom 30.09.2026): Praktikum und
-// Fachbereich brauchen keinen Zugang zu „Mein Portal" — ein Fachbereich ist ein Sammelkonto,
-// das die Kollegen des Fachs benutzen, ein Praktikant leiht aus, meldet sich aber nicht an.
-// Bis dahin verlangte jede Neuanlage im Kollegium eine Schul-E-Mail; ein neues
-// Fachbereich-Konto oder ein Praktikant ohne Schuladresse ließ sich gar nicht anlegen.
+// Sonderkonten als Art des Lesers (Migration 153): Praktikum und Fachbereich brauchen keinen
+// Zugang zu „Mein Portal"; ein Fachbereich ist ein Sammelkonto, das die Kollegen des Fachs
+// benutzen, ein Praktikant leiht aus, meldet sich aber nicht an. Verlangte jede Neuanlage im
+// Kollegium eine Schul-E-Mail, ließe sich ein neues Fachbereich-Konto oder ein Praktikant
+// ohne Schuladresse gar nicht anlegen.
 // Sekretariat und U-plus bleiben wie eine Lehrkraft: mit Adresse und Konto.
 //
-// Geprüft über die echten Handler, Anlegen wie Akte.
+// Geprüft über die echten Türen, Anlegen wie Akte.
 func TestSonderkonten_AnlegenUndAkte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

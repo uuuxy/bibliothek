@@ -19,21 +19,21 @@ import (
 // „Neuer Leser" legt bei einer Lehrkraft das Anmeldekonto gleich mit an — und genau das
 // verhindert den Doppeleintrag.
 //
-// Der Fall, um den es geht (16.09.2026): Eine Lehrkraft wird von Hand in die
-// Leserdatei eingetragen und meldet sich später über „Mein Portal" selbst an. Bis heute
-// entstand dabei ein zweiter Eintrag — `legeZugangsanfrageAn` schreibt das Konto, und der
-// Wächter trg_benutzer_hat_leserzeile hängt eine FRISCHE Leserzeile daran, ohne zu prüfen,
-// ob die Person schon dasteht. Ausweis und Ausleihen blieben am ersten Eintrag, die
-// Anmeldung am zweiten, und niemand merkte es.
+// Der Fall, um den es geht: Eine Lehrkraft wird von Hand in die Leserdatei eingetragen und
+// meldet sich später über „Mein Portal" selbst an. Ohne Konto entstünde dabei ein zweiter
+// Eintrag: `legeZugangsanfrageAn` schreibt das Konto, und der Wächter
+// trg_benutzer_hat_leserzeile hängt eine frische Leserzeile daran, ohne zu prüfen, ob die
+// Person schon dasteht. Ausweis und Ausleihen blieben am ersten Eintrag, die Anmeldung am
+// zweiten, und niemand merkte es.
 //
 // Die Lösung: Die Schul-E-Mail ist beim Anlegen Pflicht. Damit entsteht das
-// Konto sofort — und weil der Anmeldeweg eine Zugangsanfrage NUR anlegt, wenn zu der
+// Konto sofort — und weil der Anmeldeweg eine Zugangsanfrage nur anlegt, wenn zu der
 // Adresse gar kein Konto existiert, findet die spätere Selbstanmeldung das vorhandene und
 // legt nichts Zweites an.
 //
 // Dass die Selbstanmeldung selbst keine Waisen hinterlässt, prüft
 // auth/selbstanmeldung_pg_test.go am echten Anmeldeweg. Hier wird die andere Hälfte
-// geprüft: dass die Handanlage überhaupt ein Konto erzeugt, an genau EINER Leserzeile.
+// geprüft: dass die Handanlage überhaupt ein Konto erzeugt, an genau einer Leserzeile.
 func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -89,7 +89,7 @@ func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 			t.Errorf("Rolle ist %q, erwartet kollegium — eine Rolle vergibt der Admin eigens", rolleStr)
 		}
 
-		// Der Kern: EINE Leserzeile, und das Konto hängt an genau ihr. Liefe der Wächter
+		// Der Kern: eine Leserzeile, und das Konto hängt an genau ihr. Liefe der Wächter
 		// an, stünden hier zwei.
 		if n := zaehleLeser(t, pool, "Wendlandt"); n != 1 {
 			t.Fatalf("erwartet genau eine Leserzeile, gefunden: %d", n)
@@ -118,7 +118,7 @@ func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 	})
 }
 
-// zaehleLeser zählt die Leserzeilen zu einem Nachnamen. Gefragt wird die TABELLE `leser`
+// zaehleLeser zählt die Leserzeilen zu einem Nachnamen. Gefragt wird die Tabelle `leser`
 // und nicht die Sicht `schueler`: Die zeigt nur Schüler, ein Kollege stünde nicht darin —
 // der Test könnte den Doppeleintrag gar nicht sehen, den er beweisen soll.
 func zaehleLeser(t *testing.T, pool *pgxpool.Pool, nachname string) int {

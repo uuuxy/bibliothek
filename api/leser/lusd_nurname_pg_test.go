@@ -12,7 +12,7 @@ import (
 )
 
 // Nur-Name-Modus: Der Export hat weder ID noch Geburtsdatum (LANIS-Klassenliste).
-// Dritte, unsicherste Stufe — deshalb gilt: Gleicher Name doppelt (in der Datei ODER
+// Dritte, unsicherste Stufe — deshalb gilt: Gleicher Name doppelt (in der Datei oder
 // im Bestand) wird nie zugeordnet, nur gemeldet.
 
 func nnDatei(zeilen ...lusd.Zeile) lusd.Datei {
@@ -60,8 +60,8 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 	}
 }
 
-// Gleicher Name zweimal in der DATEI: beide Zeilen gemeldet, keine angefasst, kein
-// Neuzugang. Gleicher Name zweimal im BESTAND: die CSV-Zeile gemeldet, beide bleiben.
+// Gleicher Name zweimal in der Datei: beide Zeilen gemeldet, keine angefasst, kein
+// Neuzugang. Gleicher Name zweimal im Bestand: die CSV-Zeile gemeldet, beide bleiben.
 func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -83,7 +83,8 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Mehrdeutig: die CSV-Zeile "Max Mustermann" + die beiden Bestandszeilen + die zwei "Tom Doppelt".
+	// Mehrdeutig: die CSV-Zeile "Max Mustermann", die beiden Bestandszeilen und die
+	// zwei "Tom Doppelt".
 	if len(prev.Mehrdeutig) != 5 {
 		t.Fatalf("erwartet 5 Mehrdeutig-Einträge, waren %d: %+v", len(prev.Mehrdeutig), prev.Mehrdeutig)
 	}
@@ -105,11 +106,11 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	}
 }
 
-// Prüfung 22.08.2026, Fund A1: Steht ein Name ZWEIMAL in der Datei, sind beide Zeilen
-// mehrdeutig — aber ein bestätigter Bestandsschüler dieses Namens ist deshalb nicht „nicht
-// im Export". Vorher setzte der Mehrdeutig-Zweig `gesehen` nicht, und sammleAbgaenger
-// machte ihn zum Abgänger: Vorschau zeigte ihn unter „wird nicht angefasst" UND unter
-// „Abgänger", Apply anonymisierte ihn.
+// Steht ein Name zweimal in der Datei, sind beide Zeilen mehrdeutig, aber ein bestätigter
+// Bestandsschüler dieses Namens ist deshalb nicht „nicht im Export". Setzte der
+// Mehrdeutig-Zweig `gesehen` nicht, machte sammleAbgaenger ihn zum Abgänger: Die Vorschau
+// zeigte ihn unter „wird nicht angefasst" und unter „Abgänger", der übernehmende Lauf
+// anonymisierte ihn.
 func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -149,10 +150,10 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 	}
 }
 
-// Prüfung 22.08.2026, Fund A2: Im Nur-Name-Modus ist ein Abgänger mit demselben Namen
-// KEIN sicherer Rückkehrer — ein neuer Fünftklässler „Max Alt" landete sonst auf dem
-// Datensatz (Sperre, Schulden, Lesehistorie) des abgegangenen Zehntklässlers. Jetzt:
-// gemeldet als mehrdeutig, nichts angefasst, kein Neuzugang.
+// Im Nur-Name-Modus ist ein Abgänger mit demselben Namen kein sicherer Rückkehrer: Ein neuer
+// Fünftklässler „Max Alt" landete sonst auf dem Datensatz (Sperre, Schulden, Lesehistorie)
+// des abgegangenen Zehntklässlers. Deshalb: gemeldet als mehrdeutig, nichts angefasst, kein
+// Neuzugang.
 func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

@@ -53,13 +53,14 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 	return 0, nil
 }
 
-// LeserLoeschen deletes a student after checking for outstanding loans and unpaid damage cases, logging it to the audit trail.
-// @Summary      Delete student
-// @Description  Transactionally deletes a student from the system, checks for active loans or unpaid damage fees, anonymizes historical loans, and writes to audit_log.
+// LeserLoeschen legt einen Leser in den Papierkorb, wenn er keine offenen Ausleihen und keine
+// offenen Schäden hat, und schreibt den Vorgang ins Protokoll.
+// @Summary      Leser in den Papierkorb legen
+// @Description  Legt den Leser in den Papierkorb (gelöscht und gesperrt, die Daten bleiben), wenn er keine offenen Ausleihen und keine offenen Schäden hat, und schreibt den Vorgang ins Protokoll. Endgültig löscht LeserEndgueltigLoeschen.
 // @Tags         students
 // @Accept       json
 // @Produce      json
-// @Param        id   path      string  true  "Student ID (UUID)"
+// @Param        id   path      string  true  "Kennung des Lesers (UUID)"
 // @Success      200  {object}  map[string]string
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
@@ -103,13 +104,13 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 			return
 		}
 
-		// Transaktionales Löschen mit Audit-Log
+		// In den Papierkorb, in einer Transaktion mit dem Eintrag im Protokoll.
 		if err := protokollAbfragen.LegeLeserInPapierkorb(ctx, id, claims.UserID, "Manuelle Löschung"); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		// Admin audit log
+		// Protokoll der Verwaltung
 		// Schlüssel `schueler_id` wie überall: Auskunft und Tilgung fragen genau diesen
 		// Schlüssel ab (Migration 091 hat die alte `student_id`-Form umgeschlüsselt).
 		details := fmt.Sprintf(`{"schueler_id":"%s"}`, id)
@@ -134,8 +135,7 @@ func leseGeburtsdatum(roh string) (*time.Time, error) {
 	return &t, nil
 }
 
-// LeserAendern aktualisiert editierbare Felder eines Schülers (klasse, abgaenger_jahr).
-// Wird nun auch für das Bearbeiten aller Stammdaten in der UI genutzt.
+// LeserAendern ändert die Stammdaten eines Lesers; ein fehlendes Feld bleibt, wie es ist.
 func (t *Tueren) LeserAendern(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.aendereLeser(w, r, protokollAbfragen)
@@ -266,12 +266,12 @@ func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 // pruefeUndSetzeLUSDID trägt die LUSD-ID kontrolliert nach. Die LUSD-ID ist der
 // einzige Zuordnungsschlüssel des Landesabgleichs (kein Adress-/Geburtsdatum-Fallback
 // im Import); wer sie roh überschreibt, kann still die falsche Identität verknüpfen.
-// Regeln: nur NACHTRAGBAR, wenn bisher leer (Waise adoptieren) — ein bestehender Wert
+// Regeln: nur nachtragbar, wenn bisher leer (Waise adoptieren) — ein bestehender Wert
 // wird nicht überschrieben und nicht geleert; der neue Wert muss eindeutig sein. Der
-// automatische Gegenpart ist das Import-Auto-Matching (Name+Geburtsdatum).
+// automatische Gegenpart ist die Zuordnung im Import (Name und Geburtsdatum).
 //
-// Rückgabe: (nachgetragenerWert, ok). nachgetragenerWert != "" heißt: bitte auditieren.
-// Ist req nil oder ein No-op (gleicher Wert), wird ("", true) zurückgegeben.
+// Rückgabe: (nachgetragenerWert, ok). nachgetragenerWert != "" gehört ins Protokoll. Ohne
+// Anfrage oder mit dem gleichen Wert (ohne Wirkung) ist die Rückgabe ("", true).
 func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter, id string, angefragteLUSDID *string, b *repository.LeserAenderung) (string, bool) {
 	if angefragteLUSDID == nil {
 		return "", true
@@ -289,7 +289,7 @@ func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter
 	}
 
 	if neu == aktuell {
-		return "", true // No-op: Formular schickt den unveränderten Wert mit.
+		return "", true // ohne Wirkung: Das Formular schickt den unveränderten Wert mit.
 	}
 	if aktuell != "" {
 		// Bestehende Verknüpfung: weder überschreiben noch leeren.
@@ -301,7 +301,7 @@ func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter
 		return "", true // war leer, bleibt leer.
 	}
 
-	// Eindeutigkeit VOR dem Schreiben prüfen, damit statt eines 500 am partiellen
+	// Eindeutigkeit vor dem Schreiben prüfen, damit statt eines 500 am partiellen
 	// Unique-Index (uniq_schueler_lusd_id_active) eine klare 409 zurückkommt.
 	belegt, err := repository.HatAndererSchuelerLUSDID(ctx, t.DB.Pool, neu, id)
 	if err != nil {
@@ -318,28 +318,27 @@ func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter
 	return neu, true
 }
 
-// pruefeUndSetzeArt aendert die Art eines Lesers (Migration 123). Erlaubt ist der Wechsel
+// pruefeUndSetzeArt ändert die Art eines Lesers (Migration 123). Erlaubt ist der Wechsel
 // innerhalb des Kollegiums: Lehrkraft, LiV, Praktikum, Sekretariat, U-plus, Fachbereich
-// (Migration 153). Beide Richtungen ueber die Grenze zum Schueler sind zu — und zwar nicht
-// aus Vorsicht, sondern weil jede von ihnen einen echten Schaden anrichtet:
+// (Migration 153). Beide Richtungen über die Grenze zum Schüler sind zu, und zwar nicht aus
+// Vorsicht, sondern weil jede von ihnen einen echten Schaden anrichtet:
 //
-//	Schueler -> Kollege: Die Zeile verliert damit ihre LUSD-Bindung. Traegt sie eine
-//	  lusd_id, bricht chk_leser_nur_schueler_werden_abgaenger; traegt sie keine, waere
-//	  der Schueler beim naechsten Import ein unbekannter Name und liefe als Abgaenger
-//	  samt Anonymisierung durch. Absprache vom 16.09.2026: "ein Schueler kann nie ein Lehrer
-//	  werden!"
-//	Kollege -> Schueler: chk_leser_schueler_pflichtfelder verlangt Klasse, Abgaengerjahr
-//	  UND Ausweisnummer. Ein Kollege hat die ersten beiden nicht; das UPDATE liefe in
+//	Schüler -> Kollege: Die Zeile verliert damit ihre LUSD-Bindung. Trägt sie eine
+//	  lusd_id, bricht chk_leser_nur_schueler_werden_abgaenger; trägt sie keine, wäre der
+//	  Schüler beim nächsten Import ein unbekannter Name und liefe als Abgänger samt
+//	  Anonymisierung durch. Festgelegt ist: „ein Schüler kann nie ein Lehrer werden!"
+//	Kollege -> Schüler: chk_leser_schueler_pflichtfelder verlangt Klasse, Abgängerjahr
+//	  und Ausweisnummer. Ein Kollege hat die ersten beiden nicht; das UPDATE liefe in
 //	  den CHECK und damit in eine 500.
 //
-// Ein Mensch wechselt die Seite nicht. Wer wirklich falsch angelegt wurde, wird
-// geloescht und neu angelegt — ein sichtbarer Vorgang statt einer stillen Umwidmung.
+// Ein Mensch wechselt die Seite nicht. Wer wirklich falsch angelegt wurde, wird gelöscht
+// und neu angelegt: ein sichtbarer Vorgang statt einer stillen Umwidmung.
 //
-// nil heisst "nicht mitgeschickt"; derselbe Wert ist ein No-op, damit das Formular
-// die Art unveraendert mitschicken darf.
+// nil heißt „nicht mitgeschickt"; derselbe Wert bleibt ohne Wirkung, damit das Formular die
+// Art unverändert mitschicken darf.
 //
 // Ein bestehendes Konto bleibt beim Wechsel stehen, auch zu Praktikum oder Fachbereich: Neu
-// angelegt wird dort keines (leserart.HatKonto), ueber ein vorhandenes entscheidet die
+// angelegt wird dort keines (leserart.HatKonto), über ein vorhandenes entscheidet die
 // Benutzerverwaltung.
 func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, id string, angefragteArt *string, b *repository.LeserAenderung) bool {
 	if angefragteArt == nil {
@@ -348,7 +347,7 @@ func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	neu := strings.TrimSpace(*angefragteArt)
 	// Dieselbe Menge wie beim Anlegen (leserart.IstBekannt) und dieselbe wie
 	// chk_leser_art in der Datenbank. Eine unbekannte Art ist ein Tippfehler, kein neuer
-	// Personenkreis — und soll als Auskunft zurueckkommen, nicht als CHECK-500.
+	// Personenkreis, und soll als Auskunft zurückkommen, nicht als CHECK-500.
 	if !leserart.IstBekannt(neu) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
@@ -369,7 +368,7 @@ func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	}
 
 	if neu == aktuell {
-		return true // No-op: Formular schickt den unveraenderten Wert mit.
+		return true // ohne Wirkung: Das Formular schickt den unveränderten Wert mit.
 	}
 	if leserart.IstSchueler(aktuell) || leserart.IstSchueler(neu) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
@@ -392,32 +391,33 @@ type leserAendernAnfrage struct {
 	BarcodeID     *string `json:"barcode_id"`
 	AbgaengerJahr *int    `json:"abgaenger_jahr"`
 	Geburtsdatum  *string `json:"geburtsdatum"`
-	// Art des Lesers (pkg/leserart, Migration 123 und 153). Sie steht hier, weil die Akte
-	// sie zeigen und ein Kollege innerhalb des Kollegiums wechseln koennen muss. Sie hat einen eigenen kontrollierten Pfad (pruefeUndSetzeArt) und liegt
-	// NICHT im generischen Feld-Beutel: Ein Wechsel der Art verschiebt die Zeile
-	// zwischen zwei Pflichtfeld-Welten (chk_leser_schueler_pflichtfelder,
-	// chk_leser_nur_schueler_werden_abgaenger) und liefe roh in einen CHECK — also in
-	// eine 500, die der Sanitizer zu "interner Datenbankfehler" macht.
+	// Art des Lesers (pkg/leserart, Migration 123 und 153). Sie steht hier, weil die Akte sie
+	// zeigen und ein Kollege innerhalb des Kollegiums wechseln können muss. Sie hat einen
+	// eigenen geprüften Pfad (pruefeUndSetzeArt) und gehört nicht in den allgemeinen
+	// Feld-Beutel: Ein Wechsel der Art verschiebt die Zeile zwischen zwei Pflichtfeld-Welten
+	// (chk_leser_schueler_pflichtfelder, chk_leser_nur_schueler_werden_abgaenger) und liefe
+	// roh in einen CHECK, also in eine 500, die der Sanitizer zu "interner Datenbankfehler"
+	// macht.
 	Art *string `json:"art"`
-	// KEINE Sperrfelder hier. Sperren und Entsperren läuft ausschliesslich über
-	// PATCH /api/admin/students/{id}/lock (api/leser/leser_sperre.go) — und das aus zwei
-	// Gründen, die dieser Weg beide nicht erfüllte:
+	// Keine Sperrfelder hier. Sperren und Entsperren läuft ausschließlich über
+	// PATCH /api/admin/students/{id}/lock (api/leser/leser_sperre.go), aus zwei Gründen, die
+	// dieser Weg nicht erfüllen würde:
 	//
-	//   - Der Sperr-Endpunkt verlangt einen GRUND. Über diesen PATCH gesetzt, lief eine
-	//     Sperre ohne Grund in chk_schueler_block_reason und kam als 500 „Ein interner
+	//   - Der Sperr-Endpunkt verlangt einen Grund. Über diesen PATCH gesetzt, liefe eine
+	//     Sperre ohne Grund in chk_schueler_block_reason und käme als 500 „Ein interner
 	//     Datenbankfehler ist aufgetreten" zurück (der Sanitizer ersetzt jede 500-Meldung).
-	//     Derselbe Vorgang, eine Tür weiter: 400 mit dem Satz, was zu tun ist.
-	//   - Beim ENTSPERREN räumt der Sperr-Endpunkt den Grund nur weg, wenn keine
-	//     Systemsperre mehr besteht. Dieser PATCH liess ihn schlicht stehen.
+	//     Derselbe Vorgang eine Tür weiter: 400 mit dem Satz, was zu tun ist.
+	//   - Beim Entsperren räumt der Sperr-Endpunkt den Grund nur weg, wenn keine
+	//     Systemsperre mehr besteht; dieser PATCH ließe ihn stehen.
 	//
 	// Zwei Türen zu demselben Zustand, von denen nur eine die Regeln kennt, sind keine
-	// Bequemlichkeit — die falsche Tür geht irgendwann auf.
+	// Bequemlichkeit: Die falsche Tür geht irgendwann auf.
 	Strasse     *string `json:"strasse"`
 	Hausnummer  *string `json:"hausnummer"`
 	Plz         *string `json:"plz"`
 	Ort         *string `json:"ort"`
 	ElternEmail *string `json:"eltern_email"`
-	// Email ist die SCHUL-Adresse eines Kollegen mit Zugang und steht nicht in `leser`,
+	// Email ist die Schul-Adresse eines Kollegen mit Zugang und steht nicht in `leser`,
 	// sondern am Konto (benutzer.email). Sie liegt deshalb ebenfalls nicht im
 	// generischen Feld-Beutel, sondern hat ihren eigenen Pfad (pruefeSchulEmail,
 	// api/leser/leser_schul_email.go): nachtragbar, solange keine da ist — dann entsteht
@@ -447,22 +447,18 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 
 	// Pflichtfelder lassen sich nicht über den PATCH wegräumen.
 	//
-	// Beim ANLEGEN sind vorname/nachname/klasse `validate:"required"` (leser_anlegen.go);
-	// hier waren sie es nicht, und ein leerer String kam mit 200 durch — der Schüler
-	// verlor Namen, Klasse und Ausweisnummer, die Oberfläche meldete "Änderungen
-	// gespeichert". Bei der Klasse kam ein zweiter Schaden dazu: Aus dem leeren Namen
-	// leitete repository.AbgaengerJahr noch ein Abgängerjahr ab.
+	// Beim Anlegen sind vorname/nachname/klasse `validate:"required"` (leser_anlegen.go); ohne
+	// die Prüfung hier käme ein leerer String mit 200 durch: Der Leser verlöre Namen und
+	// Klasse, die Oberfläche meldete "Änderungen gespeichert", und aus dem leeren Klassennamen
+	// leitete repository.AbgaengerJahr noch ein Abgängerjahr ab. Dass ein Formular geräumte
+	// Felder als JSON-null schickt (im *string nil, „nicht mitgeschickt"), ist Zufall und keine
+	// Regel.
 	//
-	// Dass das bis zum 23.08.2026 nie passierte, war Zufall und keine Regel: Das
-	// Formular schickte geräumte Felder als JSON-null, und null landet im *string als
-	// nil ("nicht mitgeschickt"). Dieselbe Zufälligkeit hielt die Löschung der
-	// Postanschrift auf — sie kam ebenfalls nie an.
-	//
-	// Die Ausweisnummer steht NICHT mehr in dieser Liste: Ihre Pflicht ist an die Art
+	// Die Ausweisnummer steht nicht in dieser Liste: Ihre Pflicht ist an die Art
 	// gepaart, wie in der Datenbank (chk_leser_schueler_pflichtfelder), und die Art steht
 	// hier nicht fest. Ein Schüler ohne Nummer ist an der Theke unauffindbar; ein Kollege
 	// muss eine falsch eingetragene wieder loswerden können — mit aktivem Konto bekommt er
-	// dabei eine neue aus dem Generator (Migration 145). Geprüft wird sie deshalb im Handler
+	// dabei eine neue aus dem Generator (Migration 145). Geprüft wird sie deshalb in der Tür
 	// an der wirklichen Art (pruefeAusweisLeerung).
 	for _, feld := range []struct {
 		bezeichnung string
@@ -498,9 +494,8 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 	}
 
 	if req.Geburtsdatum != nil {
-		// Pflichtfeld seit 21.08.2026 (Schlüssel des LUSD-Abgleichs): POST verlangt es,
-		// PATCH durfte es bis 22.08. mit "" still auf NULL setzen — zweite Tür, gleiche
-		// Regel (Prüfung 22.08., B). Leer = 400, nicht blanken.
+		// Pflichtfeld (Schlüssel des LUSD-Abgleichs): POST verlangt es, also darf der PATCH
+		// es nicht mit "" still auf NULL setzen; zweite Tür, gleiche Regel. Leer = 400.
 		if strings.TrimSpace(*req.Geburtsdatum) == "" {
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 			apierrors.SendHTTPError(w, http.StatusBadRequest,
@@ -515,7 +510,7 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 		b.Geburtsdatum = datum
 	}
 
-	// Ob die Änderung leer ist, prüft der Handler nach pruefeUndSetzeLUSDID: Eine nachgetragene
+	// Ob die Änderung leer ist, prüft die Tür nach pruefeUndSetzeLUSDID: Eine nachgetragene
 	// LUSD-ID ist eine gültige Änderung, und ihr Feld nennt erst dieser Pfad.
 	return b, true
 }

@@ -2357,7 +2357,7 @@ const docTemplate = `{
                 "tags": [
                     "students"
                 ],
-                "summary": "List year groups that currently have students",
+                "summary": "Besetzte Jahrgänge",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2373,7 +2373,7 @@ const docTemplate = `{
         },
         "/klassen": {
             "get": {
-                "description": "Retrieves all unique school class names currently assigned to students.",
+                "description": "Alle Klassennamen, die gerade einem Schüler zugeordnet sind, ohne Doppelte.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2383,7 +2383,7 @@ const docTemplate = `{
                 "tags": [
                     "students"
                 ],
-                "summary": "Get list of classes",
+                "summary": "Klassen",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2948,7 +2948,7 @@ const docTemplate = `{
         },
         "/schueler": {
             "get": {
-                "description": "Retrieves students, optionally filtered by a specific school class or a search term, along with loan counts.",
+                "description": "Die Leser mit der Zahl ihrer Ausleihen, wahlweise gefiltert nach Klasse oder Suchbegriff.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2958,11 +2958,11 @@ const docTemplate = `{
                 "tags": [
                     "students"
                 ],
-                "summary": "List students",
+                "summary": "Leserliste",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "School class to filter by",
+                        "description": "Klasse, nach der gefiltert wird",
                         "name": "klasse",
                         "in": "query"
                     },
@@ -2974,7 +2974,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search term (name or barcode); searches server-side over all students",
+                        "description": "Suchbegriff (Name oder Ausweisnummer); sucht auf dem Server über alle Schüler",
                         "name": "q",
                         "in": "query"
                     },
@@ -3025,7 +3025,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new student profile in the library database.",
+                "description": "Legt einen Leser an; bei Lehrkraft, LiV, Sekretariat und U-plus mit Konto zur Schul-E-Mail.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3035,10 +3035,10 @@ const docTemplate = `{
                 "tags": [
                     "students"
                 ],
-                "summary": "Create student",
+                "summary": "Leser anlegen",
                 "parameters": [
                     {
-                        "description": "Student creation payload",
+                        "description": "Der neue Leser",
                         "name": "student",
                         "in": "body",
                         "required": true,
@@ -3087,7 +3087,7 @@ const docTemplate = `{
         },
         "/schueler/{id}": {
             "get": {
-                "description": "Retrieves the complete profile for a student by their ID, including active loans and avatar photo URL if present.",
+                "description": "Die ganze Akte eines Lesers nach seiner Kennung, mit laufenden Ausleihen und der Adresse des Fotos.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3097,11 +3097,11 @@ const docTemplate = `{
                 "tags": [
                     "students"
                 ],
-                "summary": "Get student profile details",
+                "summary": "Akte eines Lesers",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Student ID (UUID)",
+                        "description": "Kennung des Lesers (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3144,7 +3144,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Transactionally deletes a student from the system, checks for active loans or unpaid damage fees, anonymizes historical loans, and writes to audit_log.",
+                "description": "Legt den Leser in den Papierkorb (gelöscht und gesperrt, die Daten bleiben), wenn er keine offenen Ausleihen und keine offenen Schäden hat, und schreibt den Vorgang ins Protokoll. Endgültig löscht LeserEndgueltigLoeschen.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3154,11 +3154,11 @@ const docTemplate = `{
                 "tags": [
                     "students"
                 ],
-                "summary": "Delete student",
+                "summary": "Leser in den Papierkorb legen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Student ID (UUID)",
+                        "description": "Kennung des Lesers (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3322,7 +3322,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Reader ID (UUID)",
+                        "description": "Kennung des Lesers (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3359,7 +3359,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Reader ID (UUID)",
+                        "description": "Kennung des Lesers (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3456,7 +3456,7 @@ const docTemplate = `{
         },
         "/students/promote": {
             "post": {
-                "description": "Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H/10H, 10R, 13 — repository.AbschlussklasseSQL) automatisch als Abgänger. Erfordert { \"confirm\": true } im Body; { \"dry_run\": true } liefert eine exakte Vorschau ohne Änderungen.",
+                "description": "Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H/10H, 10R, 13 — repository.AbschlussklasseSQL) automatisch als Abgänger. Erfordert { \"confirm\": true } im Rumpf der Anfrage; { \"dry_run\": true } liefert eine exakte Vorschau ohne Änderungen.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4886,18 +4886,18 @@ const docTemplate = `{
             ],
             "properties": {
                 "art": {
-                    "description": "Art: eine aus pkg/leserart. Leer heißt „schueler\" — die Vorgabe der\nSpalte und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.",
+                    "description": "Art: eine aus pkg/leserart. Leer heißt „schueler\", die Vorgabe der Spalte; ein\nAufrufer, der die Art nicht kennt, legt so weiter Schüler an.",
                     "type": "string"
                 },
                 "barcode_id": {
                     "type": "string"
                 },
                 "email": {
-                    "description": "Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal\" dazugehört:\nLehrkraft, LiV, Sekretariat, U-plus (leserart.HatKonto; Absprache vom 16.09.2026).\nBei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie\nbekommen kein Konto (Entscheidung vom 30.09.2026).\n\nSie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
+                    "description": "Email ist die Schuladresse und Pflicht, wo ein Zugang zu „Mein Portal\" dazugehört:\nLehrkraft, LiV, Sekretariat, U-plus (leserart.HatKonto). Bei einem Schüler, einem\nPraktikum und einem Fachbereich bleibt sie leer; sie bekommen kein Konto.\n\nSie ist nicht Kontaktangabe, sondern Schlüssel: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
                     "type": "string"
                 },
                 "geburtsdatum": {
-                    "description": "Geburtsdatum (YYYY-MM-DD) ist Pflicht für einen SCHÜLER — geprüft im Handler mit\neigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe\nerrGeburtsdatumPflicht.",
+                    "description": "Geburtsdatum (JJJJ-MM-TT) ist Pflicht für einen Schüler, geprüft in der Tür mit\neigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe\nerrGeburtsdatumPflicht.",
                     "type": "string"
                 },
                 "klasse": {
@@ -4922,7 +4922,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ausweis_gueltig_bis": {
-                    "description": "AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem\nBildungsgang gerechnet — NICHT AbgaengerJahr, das die DSGVO-Löschung steuert.\nDer profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt\ndie Karte \"Gültig bis: 31.07.–\", obwohl das Repository den Wert kennt.",
+                    "description": "AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem\nBildungsgang gerechnet — nicht AbgaengerJahr, das die DSGVO-Löschung steuert.\nDer profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt\ndie Karte \"Gültig bis: 31.07.–\", obwohl das Repository den Wert kennt.",
                     "type": "integer"
                 },
                 "barcode_id": {
@@ -4935,7 +4935,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "email": {
-                    "description": "Email ist die SCHUL-Adresse am Konto (benutzer.email), nicht die der Eltern —\nbei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.\nLeer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte\nnachtragbar. Bei einem Schüler steht hier nie etwas.",
+                    "description": "Email ist die Schul-Adresse am Konto (benutzer.email), nicht die der Eltern —\nbei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.\nLeer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte\nnachtragbar. Bei einem Schüler steht hier nie etwas.",
                     "type": "string"
                 },
                 "entliehene_buecher": {
@@ -5038,7 +5038,7 @@ const docTemplate = `{
                     }
                 },
                 "mapping_versetzt": {
-                    "description": "Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt\nwurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel\nauf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an\nniemanden, ohne Fehlermeldung).",
+                    "description": "Klassenlehrer-Zuordnungen, die mit versetzt oder als Abschlussklasse entfernt wurden.\nBliebe die Zuordnung beim Jahreswechsel auf dem alten Klassennamen stehen, ginge die\nMahnliste der neuen 6a an niemanden, ohne Fehlermeldung.",
                     "type": "integer"
                 },
                 "promoted_count": {

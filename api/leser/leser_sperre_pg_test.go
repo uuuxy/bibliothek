@@ -18,8 +18,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// sperrTuerAufruf ruft den Sperr-Endpunkt als angemeldeter Akteur — die Tür protokolliert
-// seit dem 24.09.2026, und audit_logs.admin_id zeigt auf einen echten Benutzer.
+// sperrTuerAufruf ruft den Sperr-Endpunkt als angemeldeter Akteur: Die Tür protokolliert,
+// und audit_logs.admin_id zeigt auf einen echten Benutzer.
 func sperrTuerAufruf(t *testing.T, pool *pgxpool.Pool, akteur, id, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -32,9 +32,9 @@ func sperrTuerAufruf(t *testing.T, pool *pgxpool.Pool, akteur, id, body string) 
 	return rec
 }
 
-// TestLeserSperren_VerlangtGrundUndSetztSperrgrund prüft den Lock-Endpoint end-to-end:
+// TestLeserSperren_VerlangtGrundUndSetztSperrgrund prüft den Sperr-Endpunkt von vorn bis hinten:
 // Sperren ohne Grund wird abgelehnt (400), Sperren mit Grund setzt is_manually_blocked und
-// block_reason, Entsperren räumt beides wieder. Vorher konnte der Toggle eine grundlose
+// block_reason, Entsperren räumt beides wieder. Sonst könnte das Umschalten eine grundlose
 // "Zombie-Sperre" anlegen.
 func TestLeserSperren_VerlangtGrundUndSetztSperrgrund(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -86,13 +86,12 @@ func TestLeserSperren_VerlangtGrundUndSetztSperrgrund(t *testing.T) {
 	}
 }
 
-// Aufheben nimmt BEIDE Sperren weg — auch die, die das Programm den Ehemaligen setzt
-// (entschieden am 24.09.2026). Sie lassen an der Theke nur die Rückgabe zu; ohne diese Tür
-// fiel die Sperre der Ehemaligen erst mit dem nächsten LUSD-Import, mit offenem Buch nie.
-// Sperren und Aufheben stehen im Protokoll, das Aufheben mit dem Grund, der galt.
-// Rot gesehen am Rückbau: mit der Anweisung bis zum 24.09.2026 (nur die Sperre von Hand
-// umschalten) bleibt die Sperre der Ehemaligen stehen; ohne protokolliereSperre fehlen beide
-// Einträge.
+// Aufheben nimmt beide Sperren weg, auch die, die das Programm den Ehemaligen setzt. Sie
+// lassen an der Theke nur die Rückgabe zu; ohne diese Tür fiele die Sperre der Ehemaligen
+// erst mit dem nächsten LUSD-Import, mit offenem Buch nie. Sperren und Aufheben stehen im
+// Protokoll, das Aufheben mit dem Grund, der galt. Rot gesehen am Rückbau: Schaltet die
+// Anweisung nur die Sperre von Hand um, bleibt die Sperre der Ehemaligen stehen; ohne
+// protokolliereSperre fehlen beide Einträge.
 func TestSperrTuer_HebtBeideSperrenAufUndProtokolliert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

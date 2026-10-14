@@ -48,14 +48,14 @@ func TestSchuljahreswechsel_VerlangtBestaetigung(t *testing.T) {
 func TestSchuljahreswechsel_ProbelaufRolltZurueckOhneSperreUndProtokoll(t *testing.T) {
 	s, mock := schuljahreswechselTueren(t)
 
-	// Dry-Run: NUR Begin → CTE → Rollback. Kein Doppellauf-Guard, kein
-	// Audit-Insert, kein Commit — sonst wäre die „Vorschau" keine.
+	// Probelauf: nur Begin → CTE → Rollback. Keine Sperre gegen den Doppellauf, kein
+	// Protokolleintrag, kein Commit; sonst wäre die „Vorschau" keine.
 	mock.ExpectBegin()
 	mock.ExpectQuery(`WITH parsed AS`).
-		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit), seit 02.09.2026
+		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit)
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(120, 25))
-	// Seit F3 wandert die Klassenlehrer-Zuordnung mit — auch die Vorschau
-	// rechnet sie durch (und rollt sie zurück).
+	// Die Klassenlehrer-Zuordnung wandert mit; auch die Vorschau rechnet sie
+	// durch (und rollt sie zurück).
 	mock.ExpectQuery(`FROM klassen_lehrer_mapping`).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse", "neue_klasse", "abschluss"}))
 	mock.ExpectRollback()
@@ -100,7 +100,7 @@ func TestSchuljahreswechsel_EchterLaufSchreibtProtokoll(t *testing.T) {
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(`WITH parsed AS`).
-		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit), seit 02.09.2026
+		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit)
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(300, 42))
 	mock.ExpectQuery(`FROM klassen_lehrer_mapping`).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse", "neue_klasse", "abschluss"}))

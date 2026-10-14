@@ -11,15 +11,16 @@ import (
 	"bibliothek/repository"
 )
 
-// Leserliste returns all students, optionally filtered by klasse.
-// @Summary      List students
-// @Description  Retrieves students, optionally filtered by a specific school class or a search term, along with loan counts.
+// Leserliste liefert die Leser, wahlweise gefiltert nach Klasse, Jahrgang, Suchbegriff, Status
+// und Art.
+// @Summary      Leserliste
+// @Description  Die Leser mit der Zahl ihrer Ausleihen, wahlweise gefiltert nach Klasse oder Suchbegriff.
 // @Tags         students
 // @Accept       json
 // @Produce      json
-// @Param        klasse    query   string  false  "School class to filter by"
+// @Param        klasse    query   string  false  "Klasse, nach der gefiltert wird"
 // @Param        jahrgang  query   string  false  "Jahrgang (1–13); filtert über alle Klassen dieses Jahrgangs, Oberstufe eingeschlossen"
-// @Param        q       query     string  false  "Search term (name or barcode); searches server-side over all students"
+// @Param        q       query     string  false  "Suchbegriff (Name oder Ausweisnummer); sucht auf dem Server über alle Schüler"
 // @Param        status  query     string  false  "Leer = aktive Schüler; 'ehemalige' = wer die Schule verlassen hat (ist_abgaenger)"
 // @Param        art     query     string  false  "Leer = nur Schüler; 'alle' = die Leserdatei (Schüler und Kollegium)"
 // @Param        sortierung query  string  false  "Spalte: name | klasse | ausgeliehen; leer = Reihenfolge der Kartei"
@@ -27,13 +28,12 @@ import (
 // @Success      200     {array}   repository.LeserListenZeile
 // @Failure      500     {object}  map[string]string
 // @Router       /schueler [get]
-// lmfRepo liefert die Klassen für den Jahrgangsfilter. Als PARAMETER, nicht über s.DB:
-// Die Handler dieses Pakets bekommen ihre Repositories von außen, und ein Griff nach
-// s.DB.Pool sprengt jeden Test, der die Türen ohne Datenbank baut — genau daran ist
-// TestLeserlisteLeereListeIstArray am 17.09.2026 mit einem nil-Zeiger abgestürzt.
+// lmfAbfragen liefert die Klassen für den Jahrgangsfilter. Als Parameter, nicht über t.DB:
+// Die Türen dieses Pakets bekommen ihre Abfragen von außen, und ein Griff nach t.DB.Pool
+// sprengte jeden Test, der die Türen ohne Datenbank baut (TestLeserlisteLeereListeIstArray).
 func (t *Tueren) Leserliste(leserAbfragen repository.LeserAbfragen, lmfAbfragen *repository.LMFAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		// Klasse ODER Jahrgang — die Klasse gewinnt, wenn beides kommt (sie ist die
+		// Klasse oder Jahrgang — die Klasse gewinnt, wenn beides kommt (sie ist die
 		// genauere Angabe). Die Übersetzung steht in schueler_jahrgang_filter.go.
 		klassen, ohneTreffer, filterFehler := klassenFilter(r.Context(), lmfAbfragen,
 			r.URL.Query().Get("klasse"), r.URL.Query().Get("jahrgang"))
@@ -58,7 +58,7 @@ func (t *Tueren) Leserliste(leserAbfragen repository.LeserAbfragen, lmfAbfragen 
 		// status=ehemalige: der Reiter „Ehemalige / Archiv" — dieselbe Liste mit
 		// umgekehrtem Vorzeichen (ist_abgaenger), kein eigener Endpunkt.
 		//
-		// art=alle: die Leserdatei. Muss AUSDRÜCKLICH angefragt werden, denn an dieser
+		// art=alle: die Leserdatei. Muss ausdrücklich angefragt werden, denn an dieser
 		// Tür hängen drei Ansichten mit verschiedenen Absichten — die Leserdatei, der
 		// Reiter „Ehemalige" und die Schülersuche des Vormerkungs-Reiters. Für die
 		// beiden letzten wäre ein Kollege in der Liste falsch: Eine Vormerkung schickt
@@ -85,11 +85,10 @@ func (t *Tueren) Leserliste(leserAbfragen repository.LeserAbfragen, lmfAbfragen 
 
 // leserSortierung liest Spalte und Richtung aus der Anfrage.
 //
-// Ein unbekannter Spaltenname ist ein 400 und KEINE stille Vorgabe. Der stille
-// Ersatzwert ist in diesem Projekt schon zweimal teuer geworden (zuletzt bei den
-// Einstellungen, Rasterdurchgang 16.09.2026): Die Liste käme sortiert nach irgendetwas
-// zurück, die Oberfläche zeigte ihren Pfeil an der geklickten Spalte, und niemand würde
-// je erfahren, dass beides nicht zusammenpasst. Die Meldung nennt die erlaubten Werte.
+// Ein unbekannter Spaltenname ist ein 400 und keine stille Vorgabe: Die Liste käme sortiert
+// nach irgendetwas zurück, die Oberfläche zeigte ihren Pfeil an der geklickten Spalte, und
+// niemand würde je erfahren, dass beides nicht zusammenpasst. Die Meldung nennt die
+// erlaubten Werte.
 func leserSortierung(r *http.Request) (repository.LeserSortierung, *apierrors.APIError) {
 	spalte := repository.LeserSortierspalte(strings.TrimSpace(r.URL.Query().Get("sortierung")))
 	richtung := strings.TrimSpace(r.URL.Query().Get("richtung"))

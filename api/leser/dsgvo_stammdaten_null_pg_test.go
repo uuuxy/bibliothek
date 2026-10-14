@@ -10,14 +10,14 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Regression: Die DSGVO-Auskunft (Art. 15) scannte die in der DB NULLBAREN Adress-/
-// Kontaktfelder (strasse, hausnummer, plz, ort, eltern_email) in nicht-nullbare
-// Go-strings. Ein Schüler OHNE erfasste Adresse ließ die Auskunft mit HTTP 500
-// "Fehler beim Laden der Stammdaten" abstürzen — das betraf jeden realen Schüler
-// ohne Adresse, nicht nur Demo-Daten. Der COALESCE(...,”)-Fix macht NULL → ”.
+// Die DSGVO-Auskunft (Art. 15) liest Adress- und Kontaktfelder (strasse, hausnummer, plz,
+// ort, eltern_email), die in der Datenbank NULL sein dürfen. Ohne COALESCE auf den leeren
+// Text in Go-Strings gelesen, ließe ein Schüler ohne erfasste Adresse die Auskunft mit HTTP
+// 500 „Fehler beim Laden der Stammdaten" abstürzen, und das träfe jeden echten Schüler ohne
+// Adresse.
 //
-// pgxmock kann das nicht prüfen (es führt kein SQL aus, COALESCE würde umgangen) —
-// daher ein echter PG-Integrationstest, gated auf TEST_DATABASE_URL.
+// pgxmock kann das nicht prüfen (es führt kein SQL aus, COALESCE würde umgangen); daher ein
+// echter Test an Postgres, der TEST_DATABASE_URL braucht.
 func TestStammdaten_OhneAdresseKein500(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

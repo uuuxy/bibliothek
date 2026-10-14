@@ -12,14 +12,14 @@ import (
 )
 
 // Handanlage „Anna Müller", Export „Anna Mueller" (LANIS-Klassenliste, nur Name): derselbe
-// Mensch. Bis 05.09.2026 war der Namensschlüssel lower+trim — „müller" ≠ „mueller" —, und
-// der Import legte „Anna Mueller" neu an und meldete „Anna Müller" als „nicht im Export".
-// Der Rückweg war das Zusammenführen über die Akte, sofern es jemand bemerkte. Seit dem
-// Schlüssel in der Normalform suchnorm (Migration 054) wird zugeordnet: Klasse übernommen,
-// bestätigt, KEIN Duplikat (Befund-Register, Entscheidung 1 vom 05.09.2026).
+// Mensch. Mit lower+trim als Namensschlüssel wäre „müller" ≠ „mueller", der Import legte
+// „Anna Mueller" neu an und meldete „Anna Müller" als „nicht im Export"; der Rückweg wäre das
+// Zusammenführen über die Akte, sofern es jemand bemerkte. Mit dem Schlüssel in der
+// Normalform suchnorm (Migration 054) wird zugeordnet: Klasse übernommen, bestätigt, kein
+// Duplikat.
 //
 // Gegenprobe im selben Lauf: Zwei verschiedene Bestandsschüler, deren Namen erst in der
-// Normalform zusammenfallen („Bauer" und „Baur"), werden NICHT zugeordnet, sondern als
+// Normalform zusammenfallen („Bauer" und „Baur"), werden nicht zugeordnet, sondern als
 // mehrdeutig gemeldet und nicht angefasst — weder neu angelegt noch zu Abgängern gemacht.
 func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 	pool := pgtest.Pool(t)

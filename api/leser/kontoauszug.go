@@ -32,7 +32,8 @@ func ladeKontoauszugBuecher(ctx context.Context, pool db.PgxPoolIface, schuelerI
 	return buecher, nil
 }
 
-// KontoauszugPDF generates a simple receipt of all currently borrowed books for a student.
+// KontoauszugPDF liefert den Kontoauszug eines Lesers als PDF: alle Bücher, die er gerade
+// ausgeliehen hat.
 func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

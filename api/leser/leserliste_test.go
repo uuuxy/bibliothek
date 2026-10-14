@@ -12,16 +12,16 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// TestLeserlisteLeereListeIstArray hält den Fehler fest, an dem die Schülerdatei
-// beim Erst-Deployment abgestürzt ist.
+// TestLeserlisteLeereListeIstArray: Eine leere Leserliste kommt als leeres Array, sonst
+// stürzt die Schülerdatei bei einer frischen Installation ab.
 //
-// Ablauf damals: frische Installation -> noch keine Schüler -> das Repository gibt eine
+// Der Ablauf: frische Installation -> noch keine Schüler -> das Repository gibt eine
 // nil-Slice zurück -> JSON "null" -> im Frontend "students = null" -> students.length
-// wirft "Cannot read properties of null (reading 'length')" und reisst die ganze
-// Ansicht ab (StudentDirectory.svelte, totalCount/filteredCount).
+// wirft "Cannot read properties of null (reading 'length')" und reißt die ganze Ansicht ab
+// (StudentDirectory.svelte).
 //
-// Der Test prüft den echten HTTP-Pfad, nicht nur die Kodierfunktion: Genau hier ist
-// die Zusicherung "eine Liste ist immer ein Array" für den Client sichtbar.
+// Der Test prüft den echten HTTP-Pfad, nicht nur die Kodierfunktion: Genau hier ist die
+// Zusicherung "eine Liste ist immer ein Array" für die Oberfläche sichtbar.
 func TestLeserlisteLeereListeIstArray(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -37,11 +37,11 @@ func TestLeserlisteLeereListeIstArray(t *testing.T) {
 		}))
 
 	server := &Tueren{Basis: &tuer.Basis{}}
-	// lmfRepo = nil: Die Türen haben in diesem Test keine Datenbank, und ohne
-	// Jahrgangsfilter darf die Klassenliste gar nicht erst angefasst werden. Bis zum
-	// 17.09.2026 holte der Handler sie sich über s.DB.Pool — ohne Datenbank
-	// ein nil-Zeiger, und dieser Test stürzte mit SIGSEGV ab statt zu prüfen, was er
-	// prüfen soll. Dass hier nil stehen DARF, ist die Zusicherung.
+	// lmfAbfragen = nil: Die Türen haben in diesem Test keine Datenbank, und ohne
+	// Jahrgangsfilter darf die Klassenliste gar nicht erst angefasst werden. Holte die Tür
+	// sie sich über t.DB.Pool, wäre das ohne Datenbank ein nil-Zeiger, und dieser Test
+	// stürzte mit SIGSEGV ab statt zu prüfen, was er prüfen soll. Dass hier nil stehen darf,
+	// ist die Zusicherung.
 	handler := server.Leserliste(repository.NewLeserAbfragen(mock), nil)
 
 	rec := httptest.NewRecorder()

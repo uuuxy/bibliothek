@@ -16,17 +16,16 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Schul-E-Mail in der Akte NACHTRAGEN — die Reparatur für den Altbestand.
+// Die Schul-E-Mail in der Akte nachtragen: die Reparatur für den Altbestand.
 //
-// Seit dem 16.09.2026 verlangt „Neuer Leser" bei Lehrkraft und LiV die Adresse, und damit
-// entsteht das Konto sofort: Die spätere Selbstanmeldung findet es und legt nichts
-// Zweites an (leser_kollegium_konto_pg_test.go). Für jeden, der VORHER eingetragen wurde,
-// galt das nicht. Er steht ohne Adresse und ohne Konto in der Leserdatei, und die Akte
-// kannte die Adresse nicht einmal als Feld — der Doppeleintrag war nur noch HINTERHER zu
-// reparieren, durch Zusammenführen.
+// „Neuer Leser" verlangt bei Lehrkraft und LiV die Adresse, und damit entsteht das Konto
+// sofort: Die spätere Selbstanmeldung findet es und legt nichts Zweites an
+// (leser_kollegium_konto_pg_test.go). Wer ohne Adresse und ohne Konto in der Leserdatei
+// steht, bekäme bei der Selbstanmeldung einen zweiten Eintrag; ohne das Feld in der Akte
+// wäre das nur hinterher durch Zusammenführen zu reparieren.
 //
-// Geprüft wird hier der ganze Weg über den echten Handler: Adresse nachtragen, Konto
-// entsteht an DERSELBEN Leserzeile, und die Grenzen drumherum (Schüler, belegte Adresse,
+// Geprüft wird hier der ganze Weg über die echte Tür: Adresse nachtragen, Konto
+// entsteht an derselben Leserzeile, und die Grenzen drumherum (Schüler, belegte Adresse,
 // vorhandenes Konto, Freischaltungsrecht).
 func TestSchulEmailNachtragen(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -45,9 +44,9 @@ func TestSchulEmailNachtragen(t *testing.T) {
 		return rec
 	}
 
-	// Ein Kollege von vor dem 16.09.2026: Leserzeile ohne Adresse, ohne Konto. Er wird
-	// DIREKT in die Tabelle geschrieben, weil der Anlegeweg genau das heute nicht mehr
-	// zulässt — der Altbestand ist der Fall, den es zu reparieren gilt.
+	// Ein Kollege aus dem Altbestand: Leserzeile ohne Adresse, ohne Konto. Er wird direkt in
+	// die Tabelle geschrieben, weil der Anlegeweg genau das nicht zulässt; der Altbestand ist
+	// der Fall, den es zu reparieren gilt.
 	altbestand := func(t *testing.T, vorname, nachname, art string) string {
 		t.Helper()
 		var id string
@@ -94,7 +93,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 			t.Error("ohne zugang_beantragt_am sieht der Admin den Antrag nicht in der Freischaltungs-Zeile")
 		}
 
-		// EINE Leserzeile: Der Wächter trg_benutzer_hat_leserzeile darf keine zweite
+		// Eine Leserzeile: Der Wächter trg_benutzer_hat_leserzeile darf keine zweite
 		// angelegt haben — genau der Doppeleintrag, den das hier verhindern soll.
 		if n := zaehleLeser(t, pool, "Altbestand"); n != 1 {
 			t.Fatalf("erwartet genau eine Leserzeile, gefunden: %d", n)
@@ -106,7 +105,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 		if rec := patch(t, id, `{"nachname":"Holung","email":"wieder.holung@schule.invalid"}`, auth.RoleAdmin); rec.Code != http.StatusOK {
 			t.Fatalf("erster Nachtrag: %d %s", rec.Code, rec.Body.String())
 		}
-		// Das Formular schickt die angezeigte Adresse bei JEDEM Speichern mit.
+		// Das Formular schickt die angezeigte Adresse bei jedem Speichern mit.
 		if rec := patch(t, id, `{"nachname":"Holung","email":"wieder.holung@schule.invalid"}`, auth.RoleAdmin); rec.Code != http.StatusOK {
 			t.Fatalf("zweites Speichern: %d %s", rec.Code, rec.Body.String())
 		}
@@ -212,11 +211,9 @@ func TestSchulEmailNachtragen(t *testing.T) {
 // Die Ausweisnummer eines Kollegen ohne aktives Konto lässt sich wieder entfernen, die eines
 // aktiven Kontos wird dabei neu gezogen (Migration 145) — die des Schülers nicht.
 //
-// der Blick auf die fertige Maske am 16.09.2026 brachte den Fall ans Licht: Der
-// Hinweis unter dem Feld sagt dem Kollegen „Leer lassen, solange kein Ausweis gedruckt
-// ist" — leeren ließ es sich aber nicht mehr, sobald einmal etwas drinstand. Das Formular
-// ließ das leere Feld weg und meldete Erfolg, der Server hätte es mit 400 abgewiesen. Ein
-// Tippfehler in der Nummer war damit endgültig.
+// Der Hinweis unter dem Feld sagt dem Kollegen „Leer lassen, solange kein Ausweis gedruckt
+// ist"; ließe sich das Feld nicht mehr leeren, sobald einmal etwas drinsteht, wäre ein
+// Tippfehler in der Nummer endgültig.
 func TestAusweisnummerLeeren(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -256,7 +253,7 @@ func TestAusweisnummerLeeren(t *testing.T) {
 		}
 	})
 
-	// Seit Migration 145 (docs/OFFEN.md 5.16): Hat der Kollege ein aktives Konto, zieht
+	// Seit Migration 145: Hat der Kollege ein aktives Konto, zieht
 	// Leeren eine neue Nummer — die Tippfehler-Nummer ist weg, eine Lücke entsteht nicht.
 	t.Run("mit aktivem Konto kommt eine neue Nummer", func(t *testing.T) {
 		var id string

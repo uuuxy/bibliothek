@@ -17,12 +17,10 @@ import (
 
 // Ein geleertes Stammdatenfeld muss auch in der Datenbank leer werden.
 //
-// Das Formular (useStudentEditForm.svelte.js) baut seine Nutzlast als
-// `strasse: formData.strasse || null` — ein geräumtes Feld geht also als JSON-null
-// raus. In leserAendernAnfrage ist die Spalte ein *string; JSON-null landet dort als
-// nil, und addStr überspringt nil ("nicht mitgeschickt"). Ergebnis: Der alte Wert
-// bleibt stehen, die Oberfläche meldet "Änderungen gespeichert", und beim nächsten
-// Öffnen der Akte steht die gelöschte Adresse wieder da.
+// Das Formular (useStudentEditForm.svelte.js) schickt ein geräumtes Feld als leeren Text.
+// Käme es als JSON-null, landete es in leserAendernAnfrage als nil im *string und hieße
+// „nicht mitgeschickt": Der alte Wert bliebe stehen, die Oberfläche meldete „Änderungen
+// gespeichert", und beim nächsten Öffnen der Akte stünde die gelöschte Adresse wieder da.
 //
 // Das betrifft ausgerechnet die Felder, deren Löschung jemand verlangen kann:
 // eltern_email und die Postanschrift.
@@ -53,7 +51,7 @@ func TestSchuelerFeldLeeren_WirktInDerDatenbank(t *testing.T) {
 		return rec
 	}
 
-	// GENAU der Rumpf, den das Formular schickt, wenn jemand Adresse und
+	// Genau der Rumpf, den das Formular schickt, wenn jemand Adresse und
 	// Eltern-Mail räumt und speichert.
 	rec := fahre(`{"vorname":"Leer","nachname":"Test","geburtsdatum":null,"lusd_id":"",
 	          "klasse":"07a","barcode_id":"LEER-1","abgaenger_jahr":2030,
@@ -83,13 +81,13 @@ func TestSchuelerFeldLeeren_WirktInDerDatenbank(t *testing.T) {
 	}
 }
 
-// Die Gegenrichtung derselben Regel: Pflichtfelder lassen sich NICHT wegräumen.
+// Die Gegenrichtung derselben Regel: Pflichtfelder lassen sich nicht wegräumen.
 //
-// Ohne diese Hälfte wäre der Fix oben ein Tausch von einem Schaden gegen einen
-// grösseren: Sobald das Formular geräumte Felder als leeren String schickt, würde ein
-// leerer Vorname genauso ankommen — und der PATCH schrieb ihn bis zum 23.08.2026 mit
-// 200 durch. Bei der Klasse kam ein zweiter Schaden dazu: repository.AbgaengerJahr
-// leitete aus dem leeren Namen noch ein Abgängerjahr ab.
+// Ohne diese Hälfte wäre der Schutz oben ein Tausch von einem Schaden gegen einen größeren:
+// Sobald das Formular geräumte Felder als leeren String schickt, käme ein leerer Vorname
+// genauso an, und der PATCH schriebe ihn mit 200 durch. Bei der Klasse käme ein zweiter
+// Schaden dazu: repository.AbgaengerJahr leitete aus dem leeren Namen noch ein
+// Abgängerjahr ab.
 func TestSchuelerPflichtfeldLeeren_WirdAbgelehnt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
