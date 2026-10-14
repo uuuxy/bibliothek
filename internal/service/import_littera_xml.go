@@ -18,24 +18,23 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-// ErrKeinKatalogisat kennzeichnet eine hochgeladene XML-Datei, die kein
-// Littera-MAB2-Katalogisat ist (z. B. eine Schlagwort- oder Systematikliste).
-// Der Handler übersetzt diesen Fehler in ein 400 — es ist ein Datei-, kein
-// Serverproblem.
+// ErrKeinKatalogisat meldet eine hochgeladene XML-Datei, die kein Katalogisat aus Littera
+// (MAB2) ist, etwa eine Liste der Schlagworte oder der Systematik. Die Tür antwortet mit 400:
+// Es liegt an der Datei, nicht am Server.
 var ErrKeinKatalogisat = errors.New("die Datei ist kein Littera-Katalogisat-Export (erwartet wird MAB2-XML mit <Katalogisate>-Wurzel)")
 
-// katalogisate repräsentiert die Wurzel des MAB2 XML-Exports
+// katalogisate ist die Wurzel des Exports aus Littera (MAB2-XML).
 type katalogisate struct {
 	XMLName     xml.Name      `xml:"Katalogisate"`
 	Datensaetze []katalogisat `xml:"Katalogisat"`
 }
 
-// katalogisat bündelt die Felder für einen Datensatz (ein Buch/Medium).
+// katalogisat sind die Felder eines Datensatzes, eines Buchs oder Mediums.
 type katalogisat struct {
 	Felder []feld `xml:"Feld"`
 }
 
-// feld repräsentiert ein einzelnes XML-feld aus Littera mit MAB-Code und Wert.
+// feld ist ein Feld des Exports mit seinem Code nach MAB und seinem Wert.
 type feld struct {
 	MAB     string `xml:"MAB,attr"`
 	Reihung string `xml:"Reihung,attr"`
@@ -52,7 +51,6 @@ func (d *ImportDienst) ImportiereLitteraXML(ctx context.Context, datei io.Reader
 	xmlLeser.CharsetReader = charset.NewReaderLabel
 	var wurzel katalogisate
 
-	// Komplette XML-Struktur einlesen
 	if err := xmlLeser.Decode(&wurzel); err != nil {
 		return 0, fmt.Errorf("%w: %v", ErrKeinKatalogisat, err)
 	}
@@ -60,9 +58,8 @@ func (d *ImportDienst) ImportiereLitteraXML(ctx context.Context, datei io.Reader
 		return 0, ErrKeinKatalogisat
 	}
 
-	// Titel sammeln und in EINEM gepipelineten Batch schreiben (statt je Titel
-	// eine eigene DB-Rundreise) — der frühere N+1 ließ den Import mit ~15.000
-	// Titeln gegen eine nicht-lokale DB in Client-Timeouts laufen.
+	// Alle Titel gehen in einem Batch an die Datenbank: Mit einer Rundreise je Titel liefe ein
+	// Import von rund 15.000 Titeln gegen eine entfernte Datenbank in Zeitüberschreitungen.
 	titelListe := make([]repository.Titel, 0, len(wurzel.Datensaetze))
 
 	for _, kat := range wurzel.Datensaetze {
@@ -84,13 +81,10 @@ func (d *ImportDienst) ImportiereLitteraXML(ctx context.Context, datei io.Reader
 // litteraFelder bündelt die aus einem Katalogisat extrahierten MAB-Rohfelder.
 type litteraFelder struct {
 	autor, titel, ort, verlag, isbn, jahrText, signatur, standort string
-	// zielgruppen (MAB 070b: „Sekundarstufe 1", „Lehrer") und schlagwoerter (MAB 710:
-	// „Physik", „Schulbuch", …) — bis zum 02.09.2026 vom Import weggeworfen, obwohl
-	// zwei Drittel der Titel Schlagwörter tragen und sie das Fach nennen. Seit dem
-	// 30.09.2026 kommen die Schlagwörter selbst mit (repository.Titel.Schlagworte).
-	// 070b trägt Litteras Interessenkreise, bis zu fünf je Titel; entschieden am 30.09.2026:
-	// Sie kommen als Schlagworte mit (docs/OFFEN.md 4.20), und die Jahrgangsspanne entsteht aus
-	// allen. Bis dahin gewann der letzte Wert, und „Lehrer" oder „Referendare" gingen verloren.
+	// zielgruppen (MAB 070b, Litteras Interessenkreise wie „Sekundarstufe 1" oder „Lehrer", bis
+	// zu fünf je Titel) und schlagwoerter (MAB 710: „Physik", „Schulbuch") kommen beide als
+	// Schlagworte mit (repository.Titel.Schlagworte); die Jahrgangsspanne entsteht aus allen
+	// Zielgruppen. Zwei Drittel der Titel tragen Schlagwörter, und sie nennen das Fach.
 	zielgruppen   []string
 	schlagwoerter []string
 }
@@ -140,20 +134,20 @@ func titelAusFeldern(f litteraFelder) (repository.Titel, bool) {
 	}
 
 	// Lernmittelfreiheit: Litteras Kennung steht in der Signatur („LMF Bio 7") oder im
-	// Standortfeld 108a („LMF", „LMF/Bibliothek"). Daraus wird das Feld (Migration
-	// 093); Titel und Signatur bleiben, wie Littera sie liefert.
+	// Standortfeld 108a („LMF", „LMF/Bibliothek"). Daraus wird das Feld ist_lernmittel; Titel
+	// und Signatur bleiben, wie Littera sie liefert.
 	lernmittel := lmf.HatKennung(f.signatur) || hatLMFKennung(f.standort)
 	fach, von, bis := kategorisiere(f, lernmittel)
 
 	erscheinungsjahr := 0
 	if len(f.jahrText) >= 4 {
-		// Versuche die ersten 4 Zeichen als Jahr zu parsen
+		// Die ersten vier Zeichen sind das Jahr.
 		if j, err := strconv.Atoi(f.jahrText[:4]); err == nil {
 			erscheinungsjahr = j
 		}
 	}
 
-	// Optional: Wenn Ort vorhanden ist, diesen mit dem Verlag kombinieren
+	// Der Ort steht mit dem Verlag in einem Feld.
 	verlag := f.verlag
 	if f.ort != "" && verlag != "" {
 		verlag = f.ort + " : " + verlag

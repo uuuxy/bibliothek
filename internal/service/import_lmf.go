@@ -7,13 +7,11 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
-// Littera kennzeichnet Lernmittelfreiheits-Bestand (Schulbücher) uneinheitlich:
-// mal als Signatur-Präfix ("LMF Bio 7"), mal im Standort-Feld MAB 108a ("LMF",
-// "LMF/Bibliothek"), in CSV-Exporten als Token in der Kategorie-Spalte
-// ("Buch LMF Ma 6/Gri"). Diese Helfer erkennen das Token — daraus wird seit
-// Migration 093 das Feld buecher_titel.ist_lernmittel. Bis dahin verschob der Import
-// das Wort in den Titel ("LMF-…"), weil nur der Titel gelesen wurde; das ist vorbei,
-// Titel und Signatur bleiben, wie Littera sie liefert.
+// Littera kennzeichnet Schulbücher der Lernmittelfreiheit uneinheitlich: als Vorsilbe der
+// Signatur ("LMF Bio 7"), im Standort, Feld 108a ("LMF", "LMF/Bibliothek"), oder in Exporten
+// als Token in der Spalte Kategorie ("Buch LMF Ma 6/Gri"). Diese Helfer erkennen das Token;
+// daraus wird das Feld buecher_titel.ist_lernmittel, und Titel und Signatur bleiben, wie
+// Littera sie liefert.
 
 // lmfTokenMuster trifft "LMF" nur als eigenständiges Token an Wortgrenzen,
 // damit Wörter wie "Filmfest" oder Signaturen wie "Elmf" nie anschlagen.

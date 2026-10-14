@@ -24,14 +24,15 @@ import (
 // Schuljahr des Termins: Eine mehrjährige Ausleihe folgt dem Plan nicht.
 
 // KoppleLMFPlanFristen gleicht die Fristen ab, nachdem ein ganzer Plan gespeichert,
-// veröffentlicht oder verworfen wurde: alt sind die Zeilen vorher, neu die Zeilen nachher (nil
-// beim Verwerfen). Gelesen und geschrieben wird über ex, die Transaktion der Tür: Plan und
+// veröffentlicht oder verworfen wurde: alt sind die Zeilen davor, neu die Zeilen danach (nil
+// beim Verwerfen). Gelesen und geschrieben wird über q, die Transaktion der Tür: Plan und
 // Fristen gelten zusammen oder zusammen nicht. Liefert die Zahl der umgeschriebenen Ausleihen.
 //
 // Maßgeblich ist der früheste Termin einer Klasse, nicht ihre letzte Zeile: Ein Plan kann eine
 // Klasse zweimal nennen, etwa mit einem nachgeschobenen Termin, und der Ausleihdienst nimmt
-// beim Ausleihen ebenfalls den nächsten Termin nach heute (LMFAbfragen.LadeRueckgabeTerminLage). Mit zwei
-// Regeln hätte dasselbe Schulbuch je nach Weg eine andere Frist.
+// beim Ausleihen ebenfalls den nächsten Termin nach heute
+// (LMFAbfragen.LadeRueckgabeTerminLage). Mit zwei Regeln hätte dasselbe Schulbuch je nach Weg
+// eine andere Frist.
 //
 // Zuerst kehren die Klassen, die im neuen Plan nicht mehr stehen, zum Stichtag zurück, dann
 // bekommt jede Klasse des neuen Plans ihren frühesten Termin.

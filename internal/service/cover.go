@@ -13,7 +13,7 @@ import (
 	"bibliothek/repository"
 )
 
-// CoverDienst handles fetching book covers asynchronously.
+// CoverDienst holt die Cover der Titel im Hintergrund von den Katalogdiensten.
 type CoverDienst struct {
 	pool db.PgxPoolIface
 	// katalog baut den Client für die Katalogdienste. Ein Test stellt die Dienste darüber
@@ -21,7 +21,7 @@ type CoverDienst struct {
 	katalog func() *inventur.MetadatenClient
 }
 
-// NewCoverDienst creates a new CoverDienst.
+// NewCoverDienst baut den Dienst für den Abgleich der Cover.
 func NewCoverDienst(pool db.PgxPoolIface) *CoverDienst {
 	return &CoverDienst{
 		pool:    pool,
@@ -29,47 +29,45 @@ func NewCoverDienst(pool db.PgxPoolIface) *CoverDienst {
 	}
 }
 
-// coverAbgleichArbeiter bestimmt, wie viele Cover gleichzeitig von den externen Quellen
-// (DNB/Google/OpenLibrary) geholt werden. Moderat gewählt: beseitigt den sequenziellen
-// Flaschenhals (bei ~20k Titeln von Stunden auf Minuten), ohne die APIs zu überlasten.
+// coverAbgleichArbeiter ist die Zahl der Cover, die gleichzeitig von DNB, Google und
+// OpenLibrary geholt werden: genug, dass rund 20.000 Titel in Minuten statt Stunden
+// durchlaufen, und wenig genug für die Dienste.
 const coverAbgleichArbeiter = 8
 
-// coverAbgleichTakt drosselt die Titel-Rate GLOBAL über alle Worker. Pro Titel fallen
-// bis zu ~5 externe HTTP-Calls an (DNB-SRU-Lookup + Cover-Kandidaten). Ungedrosselt
-// hämmern 8 Worker beim Altbestands-Backfill (~14.000 Littera-Titel) im zweistelligen
-// req/s-Bereich auf die DNB — ein IP-Block dort würde auch den ISBN-Lookup am
-// Ausleih-Pult lahmlegen, der über dieselbe Quell-IP läuft. 2 Titel/s ⇒ der komplette
-// Altbestand ist in ~2 h durch; die Parallelität glättet dabei nur langsame Downloads.
+// coverAbgleichTakt drosselt alle Arbeiter zusammen auf zwei Titel je Sekunde. Je Titel fallen
+// bis zu fünf Anfragen an; ungedrosselt fragten acht Arbeiter die DNB beim Altbestand (rund
+// 14.000 Titel) zweistellig oft je Sekunde, und eine Sperre dort träfe auch die Suche nach der
+// ISBN an der Theke, die über dieselbe Adresse läuft. Der ganze Altbestand ist so in etwa zwei
+// Stunden durch.
 const coverAbgleichTakt = 500 * time.Millisecond
 
-// coverAbgleichLaeuft verhindert überlappende Sync-Läufe (Start, Cron und manueller
-// Trigger erzeugen jeweils eine neue CoverDienst-Instanz) über einen prozessweiten Guard.
+// coverAbgleichLaeuft verhindert, dass zwei Läufe sich überlappen: Start, Nachtlauf und der
+// Knopf in der Verwaltung bauen je einen eigenen CoverDienst.
 var coverAbgleichLaeuft atomic.Bool
 
 // fehlendesCover ist ein Titel, dessen Cover der Abgleich holen soll.
 type fehlendesCover = repository.TitelMitISBN
 
-// GleicheFehlendeCoverAb lädt für alle Titel ohne lokales Cover die Cover parallel nach.
-// Es werden PENDING- (noch nie versucht) UND FAILED-Titel (erneuter Versuch) verarbeitet,
-// sodass transiente Fehler bei einem späteren Lauf automatisch nachgeholt werden.
+// GleicheFehlendeCoverAb holt für alle Titel ohne eigenes Cover die Cover nach, mehrere
+// zugleich. Auch Titel, deren letzter Versuch scheiterte, kommen wieder dran, damit ein
+// vorübergehender Fehler beim nächsten Lauf verschwindet.
 func (d *CoverDienst) GleicheFehlendeCoverAb() {
 	if !coverAbgleichLaeuft.CompareAndSwap(false, true) {
 		log.Println("Cover Sync: Lauf bereits aktiv – überspringe.")
 		return
 	}
 	defer coverAbgleichLaeuft.Store(false)
-	// Panik-Netz für die ÄUSSERE Goroutine (nicht nur die Worker unten): Diese Funktion
-	// läuft als `go GleicheFehlendeCoverAb()` ohne HTTP-Recovery. Ein Panik hier — etwa
-	// beim Lesen der DB-Zeilen oder im Dispatch — risse sonst den gesamten Prozess mit.
-	// Steht NACH dem Store(false)-Defer, damit auf einem Panik BEIDES läuft: recovern UND
-	// das Running-Flag zurücksetzen (sonst überspringt jeder künftige Lauf für immer).
+	// Das Netz für die äußere Goroutine, nicht nur für die Arbeiter: Die Funktion läuft als `go
+	// d.GleicheFehlendeCoverAb()` ohne die Erholung des HTTP-Servers, und eine Panik risse
+	// sonst den Prozess mit. Es steht nach dem Defer, der den Schalter zurücksetzt, damit bei
+	// einer Panik beides läuft; sonst übersprängen alle künftigen Läufe.
 	defer safego.FangePanic("cover-sync")
 
 	ctx := context.Background()
 
-	// Verarbeitet: noch nie versuchte (PENDING), fehlgeschlagene (FAILED, erneuter Versuch)
-	// sowie Alt-Titel mit externer Cover-URL (FOUND, aber nicht lokal) — diese werden auf
-	// ein lokales WebP migriert, damit nichts mehr extern (mit Hotlink-/Bot-Risiko) lädt.
+	// Die Auswahl: noch nie versucht (PENDING), gescheitert (FAILED) und ältere Titel mit
+	// fremder Cover-Adresse (FOUND, aber nicht lokal). Diese bekommen ein eigenes WebP, damit
+	// kein Cover mehr von fremden Servern lädt.
 	fehlende, err := repository.LadeTitelFuerCoverAbgleich(ctx, d.pool)
 	if err != nil {
 		log.Printf("Cover Sync: Fehler beim Abrufen der fehlenden Cover: %v", err)
@@ -86,15 +84,15 @@ func (d *CoverDienst) GleicheFehlendeCoverAb() {
 	metadaten := d.katalog()
 
 	var gefunden, nichtGefunden, gescheitert atomic.Int64
-	// Gepuffert auf die Zahl der Aufgaben: Der Dispatcher blockiert damit NIE beim Senden.
-	// Stirbt ein Worker (Panik, von seinem eigenen Guard gefangen) und liest nicht mehr,
-	// hinge ein ungepufferter Kanal beim `jobs <- mc` für immer — und coverAbgleichLaeuft
-	// bliebe true, sodass jeder weitere Lauf still übersprungen würde.
+	// Gepuffert auf die Zahl der Aufgaben, damit das Verteilen nie beim Senden wartet: Stirbt
+	// ein Arbeiter (eine Panik, die sein eigenes Netz fängt) und liest nicht mehr, hinge ein
+	// ungepufferter Kanal beim `aufgaben <- titel` für immer, und coverAbgleichLaeuft bliebe
+	// gesetzt, sodass jeder weitere Lauf still übersprungen würde.
 	aufgaben := make(chan fehlendesCover, len(fehlende))
 	var wg sync.WaitGroup
 
-	// Globale Drossel: jeder Worker wartet vor JEDEM Titel auf den Ticker —
-	// damit ist die Gesamtrate unabhängig von der Worker-Zahl hart begrenzt.
+	// Jeder Arbeiter wartet vor jedem Titel auf den Takt; so hängt die Rate nicht an der Zahl
+	// der Arbeiter.
 	takt := time.NewTicker(coverAbgleichTakt)
 	defer takt.Stop()
 
@@ -120,8 +118,8 @@ func (d *CoverDienst) GleicheFehlendeCoverAb() {
 		gefunden.Load(), nichtGefunden.Load(), gescheitert.Load())
 }
 
-// verarbeiteCover verarbeitet einen einzelnen Titel: Cover suchen (lädt es bei Erfolg als
-// lokales WebP), und den Status in der Datenbank entsprechend setzen.
+// verarbeiteCover sucht das Cover eines Titels, legt es bei Erfolg als WebP ab und vermerkt den
+// Stand in der Datenbank.
 func (d *CoverDienst) verarbeiteCover(ctx context.Context, metadaten *inventur.MetadatenClient, titel fehlendesCover, gefunden, nichtGefunden, gescheitert *atomic.Int64) {
 	anfrageCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	treffer, err := metadaten.SucheNachISBN(anfrageCtx, titel.ISBN)
@@ -142,7 +140,8 @@ func (d *CoverDienst) verarbeiteCover(ctx context.Context, metadaten *inventur.M
 	}
 }
 
-// vermerkeCoverStatus aktualisiert den cover_status eines Titels (Best-Effort, geloggt).
+// vermerkeCoverStatus setzt cover_status eines Titels. Ein Fehler steht nur im Log: Der nächste
+// Lauf nimmt den Titel ohnehin wieder.
 func (d *CoverDienst) vermerkeCoverStatus(ctx context.Context, id, status string) {
 	if err := repository.SetzeCoverStatus(ctx, d.pool, id, status); err != nil {
 		log.Printf("Cover Sync: Status %q für Titel %s konnte nicht gesetzt werden: %v", status, id, err)

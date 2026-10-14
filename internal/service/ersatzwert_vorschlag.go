@@ -11,63 +11,51 @@ import (
 	"bibliothek/repository"
 )
 
-// Der Betragsvorschlag für den Dialog „Verlust/Schaden melden" (OFFEN.md 9.3 a).
-//
-// Bis zum 17.09.2026 stand dort eine feste 15,00 € — eine Zahl ohne jeden Bezug zum Buch.
-// Das Protokoll des Medienzentrums vom 16.09.2026 nennt genau das: „weder Einkaufs- bzw.
-// Listenpreise noch Beschädigungsgrade hinterlegt, fehlende Restwertberechnung z.Zt.
-// Handeingabe."
-//
-// ZWEI Regeln, nicht eine — das ist der Grund, warum dieser Handler mehr tut als
-// bescheidVorschlagAus:
+// Der Vorschlag eines Betrags für den Dialog „Verlust/Schaden melden". Eine feste Zahl hätte
+// keinen Bezug zum Buch. Es gelten zwei Regeln, nicht eine; deshalb tut dieser Vorschlag mehr
+// als bescheidVorschlagAus:
 //
 //   - Lernmittel (Landesmittel): die Staffel der Arbeitshilfe zum Erlass vom 17.12.2014.
 //     1. Verleihjahr voller Kaufpreis, dann 80/60/40/20 %, ab dem 6. Jahr 10 %.
 //   - Schülerbücherei (Mittel des Schulträgers): „zuerst Ersatzbeschaffung, sonst Geld in
 //     Höhe des NEUWERTS" (Benutzungsordnung, mittel_konzept.md 1.2). Kein Abschlag für
-//     das Alter — ein fünf Jahre alter Roman kostet in der Ersatzbeschaffung so viel wie
+//     das Alter: Ein fünf Jahre alter Roman kostet in der Ersatzbeschaffung so viel wie
 //     ein neuer.
 //
 // Die Staffel auf ein Büchereibuch anzuwenden wäre bequem und falsch: Sie steht in einer
-// Arbeitshilfe für Schulbücher der Lernmittelfreiheit und gilt dort, weil das Land die
-// Bücher bezahlt hat.
+// Arbeitshilfe für Schulbücher der Lernmittelfreiheit und gilt dort, weil das Land die Bücher
+// bezahlt hat.
 //
-// In BEIDEN Fällen ist es ein Vorschlag, kein Automat: Der Betrag liegt im Ermessen der
-// Schule, der Mensch kann ihn überschreiben, und wenn kein Preis hinterlegt ist, bleibt
-// das Feld bei 0 mit einem Satz, der es sagt. Ein geratener Betrag wäre in einer
-// Forderung gegen Eltern schlimmer als ein leeres Feld.
+// In beiden Fällen ist es ein Vorschlag, kein Automat: Der Betrag liegt im Ermessen der Schule,
+// der Mensch kann ihn überschreiben, und wenn kein Preis hinterlegt ist, bleibt das Feld bei 0
+// mit einem Satz, der es sagt. Ein geratener Betrag wäre in einer Forderung gegen Eltern
+// schlimmer als ein leeres Feld.
 
 // ErsatzwertVorschlag ist die Antwort für den Melde-Dialog.
 type ErsatzwertVorschlag struct {
 	// Betrag ist der Vorschlag in Euro; 0 heißt „kein Preis hinterlegt".
 	Betrag float64 `json:"betrag"`
-	// Herleitung sagt dem Personal, WARUM dieser Betrag vorgeschlagen wird — damit im
+	// Herleitung sagt dem Personal, warum dieser Betrag vorgeschlagen wird — damit im
 	// Dialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung
 	// landet.
 	Herleitung string `json:"herleitung"`
 	// Topf ist das Eigentum des Exemplars und unterscheidet die beiden Regeln (Staffel des
 	// Landes oder Neuwert); die Herleitung benennt sie.
 	Topf string `json:"topf"`
-	// Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt — die Unterscheidung, die 0,00 €
-	// erst lesbar macht: Ergebnis eines Totalschadens oder fehlende Angabe?
+	// Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt; erst damit wird 0,00 € lesbar:
+	// Ergebnis eines Totalschadens oder fehlende Angabe?
 	//
-	// Sie steht als eigenes Feld hier, weil die Oberfläche sie sonst aus dem deutschen
-	// Herleitungssatz lesen müsste, und das tat sie bis zum 17.09.2026 auch
-	// (`startsWith("kein Preis hinterlegt")`). Ein Satz als Schnittstelle hält bis zur
-	// ersten Umformulierung; danach zeigt die Karte still „Ersatzwert heute: 0,00 €" über
-	// einem Buch, dessen Preis bloß niemand erfasst hat.
+	// Es ist ein eigenes Feld, weil die Oberfläche es sonst aus dem deutschen Satz der
+	// Herleitung lesen müsste. Ein Satz als Schnittstelle hält bis zur ersten Umformulierung;
+	// danach zeigte die Karte still „Ersatzwert heute: 0,00 €" über einem Buch, dessen Preis
+	// bloß niemand erfasst hat.
 	Bekannt bool `json:"bekannt"`
 }
 
-// ErsatzwertEingabe sind die Größen, aus denen JEDER Betragsvorschlag entsteht — egal ob
-// er aus einem Exemplar (Melde-Dialog), einer offenen Forderung oder einer überfälligen
-// Ausleihe kommt (Bescheid-Vorschlag).
-//
-// Bis zum 17.09.2026 waren es drei Wege mit ZWEI Rechnungen: Der Melde-Dialog wählte die
-// Regel nach IstLernmittel, die beiden Bescheid-Wege wendeten die Staffel der
-// Arbeitshilfe auf ALLES an — auch auf Büchereibücher, für die sie nicht gilt. Für
-// dasselbe Buch nannten Dialog und Brief damit verschiedene Beträge, und der Brief war
-// der falsche. Ein Typ, eine Rechnung, eine Herleitung.
+// ErsatzwertEingabe sind die Größen, aus denen jeder Betragsvorschlag entsteht, gleich ob er
+// aus einem Exemplar (Melde-Dialog), einer offenen Forderung oder einer überfälligen Ausleihe
+// kommt (Bescheid-Vorschlag). Ein Typ, eine Rechnung, eine Herleitung: Mit zwei Rechnungen
+// nannten Dialog und Brief für dasselbe Buch verschiedene Beträge.
 type ErsatzwertEingabe struct {
 	Kaufpreis       float64
 	Listenpreis     float64
@@ -75,11 +63,10 @@ type ErsatzwertEingabe struct {
 	// Die beiden Größen des Verleihjahrs — nur die Staffel benutzt sie.
 	SchuljahreMitAusleihe int
 	SchuljahreImBestand   int
-	// Topf entscheidet über die REGEL, nicht über einen Faktor: Staffel des Landes für ein
-	// Buch des Landes, sonst Neuwert der Benutzungsordnung. Der Topf ist das Eigentum nach
-	// repository.ExemplarTopfSQL — bis zum 29.09.2026 entschied ist_lernmittel des Titels,
-	// und eine Lektüre aus LMF-Mitteln bekam den Neuwert, obwohl sie dem Land gehört
-	// (entschieden am 29.09.2026, docs/OFFEN.md 4.24).
+	// Topf entscheidet über die Regel, nicht über einen Faktor: Staffel des Landes für ein Buch
+	// des Landes, sonst Neuwert der Benutzungsordnung. Der Topf ist das Eigentum nach
+	// repository.ExemplarTopfSQL und nicht ist_lernmittel des Titels: Eine Lektüre aus Mitteln
+	// des Landes gehört dem Land, auch wenn sie kein Lernmittel ist.
 	Topf string
 }
 
@@ -93,7 +80,7 @@ func (e ErsatzwertEingabe) Rechne(quelle ersatzwert.Preisquelle) ersatzwert.Vors
 		e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
 }
 
-// eingabeAusGroessen: der Weg des Melde-Dialogs.
+// eingabeAusGroessen ist der Weg des Melde-Dialogs.
 func eingabeAusGroessen(g repository.ErsatzwertGroessen) ErsatzwertEingabe {
 	return ErsatzwertEingabe{
 		Kaufpreis: g.Kaufpreis, Listenpreis: g.Listenpreis, ZustandAbschlag: g.ZustandAbschlag,
@@ -113,12 +100,12 @@ func ErsatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.P
 	}
 }
 
-// LadeErsatzwertPreisquelle liest aus den Einstellungen, welcher Preis ab dem zweiten Verleihjahr die
-// Grundlage ist (Anforderungsliste Nr. 3, OFFEN.md 9.8 Stufe 4).
+// LadeErsatzwertPreisquelle liest aus den Einstellungen, welcher Preis ab dem zweiten
+// Verleihjahr die Grundlage ist (Anforderungsliste Nr. 3).
 //
-// Scheitert das Lesen, gilt die Regel der Arbeitshilfe. Das ist die einzige Richtung, die
-// hier zu vertreten ist: Ein Fehler beim Lesen einer Einstellung darf nicht dazu führen,
-// dass eine Forderung nach einer anderen Grundlage entsteht als die davor.
+// Scheitert das Lesen, gilt die Regel der Arbeitshilfe. Das ist die einzige Richtung, die hier
+// zu vertreten ist: Ein Fehler beim Lesen einer Einstellung darf nicht dazu führen, dass eine
+// Forderung nach einer anderen Grundlage entsteht als die davor.
 func LadeErsatzwertPreisquelle(ctx context.Context, pool db.PgxPoolIface) ersatzwert.Preisquelle {
 	einst, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil || einst == nil || !einst.ErsatzwertImmerKaufpreis {
@@ -130,8 +117,7 @@ func LadeErsatzwertPreisquelle(ctx context.Context, pool db.PgxPoolIface) ersatz
 // ErsatzwertHerleitung formuliert, wie der Vorschlag zustande kommt.
 //
 // Der Satz ist kein Beiwerk: Er ist das, was eine Bibliothekskraft im Bescheid nachrechnen
-// kann. Eine Zahl ohne ihn ist für sie dasselbe wie die feste 15,00 €, die bis zum
-// 17.09.2026 im Melde-Dialog stand.
+// kann. Eine Zahl ohne ihn wäre für sie so wenig wert wie eine feste Pauschale.
 func ErsatzwertHerleitung(v ersatzwert.Vorschlag) string {
 	// Dieselbe Regel wie das Feld `bekannt` der Antwort — eine Funktion, nicht zwei
 	// Bedingungen, die zufällig dasselbe sagen.
@@ -154,7 +140,7 @@ func ErsatzwertHerleitung(v ersatzwert.Vorschlag) string {
 	}
 	// Verleihjahr 0 heißt: die Neuwert-Regel der Benutzungsordnung (Bestand des
 	// Schulträgers). Dort gibt es keinen Staffelsatz zu nennen — und der Satz muss
-	// ausdrücklich „ohne ALTERSabschlag" sagen, weil ein Zustandsabschlag gleich
+	// ausdrücklich „ohne Altersabschlag" sagen, weil ein Zustandsabschlag gleich
 	// dahinter stehen kann.
 	satz := fmt.Sprintf("Bücherei-Bestand: Neuwert ohne Altersabschlag, %s (%s)",
 		betrag.Euro(v.BasisPreis), basis)

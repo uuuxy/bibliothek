@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// importTitelNeu sind die Angaben eines Titels, den der Import neu anlegt.
 type importTitelNeu struct {
 	Titel     string
 	Autor     string
@@ -23,14 +24,14 @@ type importTitelNeu struct {
 	Jahr      int
 	Kategorie string
 	Signatur  string
-	// Lernmittel-Feld und seine Ableitungen (Migration 093), siehe titelZeilenFelder.
+	// Lernmittel-Feld und seine Ableitungen, siehe titelZeilenFelder.
 	IstLernmittel bool
 	Fach          string
 	JahrgangVon   int
 	JahrgangBis   int
 }
 
-// spaltenWert liest den getrimmten Wert der über headerMap zugeordneten Spalte.
+// spaltenWert liest den Wert der Spalte schluessel aus der Zeile, ohne Leerraum am Rand.
 func spaltenWert(zeile []string, spalten map[string]int, schluessel string) string {
 	if spalte, ok := spalten[schluessel]; ok && spalte < len(zeile) {
 		return strings.TrimSpace(zeile[spalte])
@@ -38,10 +39,9 @@ func spaltenWert(zeile []string, spalten map[string]int, schluessel string) stri
 	return ""
 }
 
-// bereinigeImportTitel entfernt Streu-Anführungszeichen an den Rändern, wie sie
-// die aus dem Littera-PDF konvertierte Bestands-CSV enthält (`"Elemente Chemie 1`).
-// Ohne diese Bereinigung matcht so eine Zeile nie den Katalogisat-Titel — der
-// Import legt dann eine Dublette an.
+// bereinigeImportTitel entfernt verirrte Anführungszeichen am Rand, wie sie die aus dem PDF von
+// Littera gewonnene Bestandsdatei enthält (`"Elemente Chemie 1`). Sonst träfe so eine Zeile nie
+// den Titel des Katalogisats, und der Import legte eine Dublette an.
 func bereinigeImportTitel(s string) string {
 	return strings.TrimSpace(strings.Trim(strings.TrimSpace(s), `"`))
 }
@@ -50,7 +50,7 @@ func bereinigeImportTitel(s string) string {
 type zeilenFelder struct {
 	titel, signatur, kategorie string
 	// lernmittel: LMF-Token in Kategorie („Buch LMF Ma 6/Gri") oder Signatur („LMF Bio
-	// 7"). Titel und Signatur bleiben unverändert (Migration 093); nur aus der Kategorie
+	// 7"). Titel und Signatur bleiben unverändert; nur aus der Kategorie
 	// wird das Token entfernt, weil sie als Fach-Rückfall in subject landet.
 	lernmittel bool
 	// fach/jahrgang aus dem LMF-Teil („LMF Ma 6" → Mathematik, 6), sonst leer/0.
@@ -58,9 +58,9 @@ type zeilenFelder struct {
 	von, bis int
 }
 
-// titelZeilenFelder liefert die normalisierten Titel-Felder einer Zeile. BEIDE
-// Import-Pässe (Titel sammeln, Exemplare sammeln) müssen diese Funktion verwenden,
-// sonst verfehlt das Titel-Matching die gerade angelegten Titel.
+// titelZeilenFelder liefert die normalisierten Felder des Titels einer Zeile. Beide Durchgänge
+// des Imports (Titel sammeln, Exemplare sammeln) nehmen diese Funktion, sonst fänden die
+// Exemplare die eben angelegten Titel nicht.
 func titelZeilenFelder(zeile []string, spalten map[string]int) zeilenFelder {
 	z := zeilenFelder{
 		titel:     bereinigeImportTitel(spaltenWert(zeile, spalten, "titel")),
@@ -80,10 +80,10 @@ func titelZeilenFelder(zeile []string, spalten map[string]int) zeilenFelder {
 	return z
 }
 
-// sammleNeueTitel identifiziert (erster Pass) die Titel, die neu angelegt werden
-// müssen, weil sie sich weder über ISBN noch über den Titel matchen lassen.
+// sammleNeueTitel sammelt im ersten Durchgang die Titel, die neu angelegt werden, weil weder
+// ISBN noch Titel sie im Bestand finden.
 func sammleNeueTitel(zeilen [][]string, spalten map[string]int, bestand repository.TitelBestand) (map[string]*importTitelNeu, []string) {
-	neueTitel := make(map[string]*importTitelNeu) // key: isbn or titel
+	neueTitel := make(map[string]*importTitelNeu) // Schlüssel: ISBN oder Titel
 	var reihenfolge []string
 
 	for _, zeile := range zeilen[1:] {
@@ -100,9 +100,9 @@ func sammleNeueTitel(zeilen [][]string, spalten map[string]int, bestand reposito
 	return neueTitel, reihenfolge
 }
 
-// baueNeuTitelAusZeile prüft eine Zeile und liefert, falls der Bestand ihren Titel nicht
-// führt, den Cache-Key und den anzulegenden Titel. ok=false bedeutet: Zeile überspringen (leer
-// oder schon im Bestand).
+// baueNeuTitelAusZeile prüft eine Zeile und liefert, wenn der Bestand ihren Titel nicht führt,
+// den Schlüssel und den anzulegenden Titel. ok=false heißt: Die Zeile ist leer oder schon im
+// Bestand.
 func baueNeuTitelAusZeile(zeile []string, spalten map[string]int, bestand repository.TitelBestand) (schluessel string, t *importTitelNeu, ok bool) {
 	z := titelZeilenFelder(zeile, spalten)
 	barcode := spaltenWert(zeile, spalten, "barcode")
@@ -119,7 +119,7 @@ func baueNeuTitelAusZeile(zeile []string, spalten map[string]int, bestand reposi
 		return "", nil, false // schon vorhanden
 	}
 
-	// Needs new title
+	// Der Schlüssel ist die ISBN, ohne sie der normierte Titel.
 	schluessel = isbn
 	if schluessel == "" {
 		schluessel = repository.NormalisiereTitelSchluessel(z.titel)
@@ -144,12 +144,10 @@ func baueNeuTitelAusZeile(zeile []string, spalten map[string]int, bestand reposi
 	}, true
 }
 
-// fachDerZeile: das aus der Lernmittelsignatur gelesene Fach, sonst die Kategorie —
-// aber nur, wenn die als Ganzes ein Fach benennt. Bis 03.09.2026 landete die Spalte
-// ungeprüft in subject; die aus dem Littera-PDF gewonnene Bestands-CSV trägt dort
-// Standorttexte („Buch Pg/Kaf 078829 1. Aufl."), und jeder davon wurde ein eigenes
-// „Fach" in der Systematik (1.677 Zeilen auf dem Test-Server, scripts/
-// repair_fach_kategorie.sql räumt sie ab).
+// fachDerZeile ist das Fach aus der Lernmittelsignatur, sonst die Kategorie, aber nur, wenn sie
+// als Ganzes ein Fach benennt: Die aus dem PDF von Littera gewonnene Bestandsdatei trägt dort
+// Standorttexte („Buch Pg/Kaf 078829 1. Aufl."), und jeder davon würde ein eigenes Fach in der
+// Systematik.
 func fachDerZeile(t *importTitelNeu) string {
 	if t.Fach != "" {
 		return t.Fach
@@ -192,17 +190,18 @@ func legeNeueTitelAn(ctx context.Context, tx pgx.Tx, neueTitel map[string]*impor
 	return len(ids), nil
 }
 
-// sammleExemplare sammelt (zweiter Pass) alle einzufügenden Exemplare, jetzt mit
-// den vollständigen Titel-IDs aus Pass 1.
+// sammleExemplare sammelt im zweiten Durchgang die Exemplare, jetzt mit den Kennungen der Titel
+// aus dem ersten.
 func sammleExemplare(zeilen [][]string, spalten map[string]int, bestand repository.TitelBestand) []repository.ImportExemplar {
 	var exemplare []repository.ImportExemplar
 
 	for i, zeile := range zeilen[1:] {
-		// Identische Titel-Normalisierung wie Pass 1, sonst verfehlt das
-		// Titel-Matching die gerade angelegten Titel.
+		// Dieselbe Normalisierung wie im ersten Durchgang, sonst fänden die Exemplare die eben
+		// angelegten Titel nicht.
 		titel := titelZeilenFelder(zeile, spalten).titel
 
-		// 1. String-Bereinigung & 2. Datentyp-Sicherheit
+		// Unsichtbare Zeichen (BOM, Null-Breite, Steuerzeichen) fallen weg, bevor die Nummer
+		// zählt.
 		barcodeRoh := ""
 		if spalte, ok := spalten["barcode"]; ok && spalte < len(zeile) {
 			barcodeRoh = zeile[spalte]
@@ -213,7 +212,7 @@ func sammleExemplare(zeilen [][]string, spalten map[string]int, bestand reposito
 			continue
 		}
 
-		// 3. Robustes Logging & Fehlerabfang
+		// Eine Zeile ohne Nummer steht im Log und wird übersprungen.
 		if barcode == "" {
 			id := fmt.Sprintf("Zeile %d", i+2)
 			log.Printf("Warnung: Exemplar ID %s hat keinen Barcode", id)
@@ -245,9 +244,8 @@ func sammleExemplare(zeilen [][]string, spalten map[string]int, bestand reposito
 	return exemplare
 }
 
-// sammleSignaturen sammelt je Titel-ID die Signatur aus der Datei (letzte
-// nicht-leere gewinnt). Damit bekommen auch BESTEHENDE Titel ihre Signatur —
-// der Insert-Pfad deckt nur neue Titel ab.
+// sammleSignaturen sammelt je Titel die Signatur aus der Datei; die letzte nicht leere gilt. So
+// bekommen auch bestehende Titel ihre Signatur, das Anlegen deckt nur neue ab.
 func sammleSignaturen(zeilen [][]string, spalten map[string]int, bestand repository.TitelBestand) map[string]string {
 	if _, ok := spalten["signatur"]; !ok {
 		return nil
@@ -279,8 +277,9 @@ func importSignaturen(nachTitel map[string]string) []repository.ImportSignatur {
 	return signaturen
 }
 
-// ImportiereZeilen verarbeitet die in rows übergebenen Daten (aus CSV oder XLSX).
-// Die Spalten werden über die headerMap dynamisch zugeordnet.
+// ImportiereZeilen legt die Titel und Exemplare einer Tabelle (CSV oder XLSX) an; welche Spalte
+// was trägt, sagt spalten (ImportKopfzeile). Zurück kommen die Zahl der neuen Titel und die der
+// neuen Exemplare.
 func (d *ImportDienst) ImportiereZeilen(ctx context.Context, zeilen [][]string, spalten map[string]int) (int, int, error) {
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
