@@ -17,7 +17,7 @@ import (
 )
 
 // ladeMahnVorlageText lädt die Vorlage des Mahnbriefs. Fehlt sie oder ist ein Teil leer, gilt
-// der Standardtext: Der Editor lässt eine leere Vorlage zu, und der Brief hätte dann weder
+// der Vorgabetext: Der Editor lässt eine leere Vorlage zu, und der Brief hätte dann weder
 // Betreff noch Anschreiben.
 func (t *Tueren) ladeMahnVorlageText(ctx context.Context) (betreff, text string) {
 	betreff, text, err := repository.LadeMahnVorlage(ctx, t.DB.Pool)

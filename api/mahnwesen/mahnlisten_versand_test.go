@@ -23,20 +23,18 @@ import (
 // smtpKonfigAusUmgebung pinnt den Lader der Mail-Konfiguration (mailservice) für die
 // Testdauer auf die Umgebung und stellt ihn danach zurück.
 //
-// Nötig seit dem 01.09.2026: Jeder Test, der NewServer aufruft, bindet den Lader
-// per BindeSMTPKonfigAnDatenbank an SEINEN Pool — und die Bindung überlebt ihn.
-// Die Umgebungs-Tests hier waren nur grün, solange in der Dateisortierung des
-// Binaries KEIN NewServer-Test vor ihnen lief; der erste (action_batch_decode)
-// ließ sie kippen: Der Lader las die Seed-Domäne aus der Test-DB statt SMTP_FROM,
-// und die pgxmock-Fälle bekamen eine nie erwartete Konfigurations-Query
-// (Bugklasse „Grün aus Umgebungsgunst" — Reihenfolge als unsichtbare Annahme).
+// Nötig, weil jeder Test, der NewServer aufruft, den Lader per BindeSMTPKonfigAnDatenbank an
+// seinen Pool bindet und die Bindung ihn überlebt. Die Tests mit Umgebung wären sonst nur grün,
+// solange in der Sortierung der Dateien kein Test mit NewServer vor ihnen läuft: Der Lader läse
+// die Domäne aus der Test-Datenbank statt SMTP_FROM, und die Fälle mit pgxmock bekämen eine
+// unerwartete Abfrage der Konfiguration.
 func smtpKonfigAusUmgebung(t *testing.T) {
 	t.Helper()
 	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }))
 }
 
 // Ohne konfigurierten Mailserver (SMTP_HOST leer) → 503, kein Versand. Der Check
-// greift VOR jeder Klassen-Query — pgxmock erwartet keine einzige.
+// greift vor jeder Klassen-Query — pgxmock erwartet keine einzige.
 func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
 	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_HOST", "")
@@ -62,8 +60,8 @@ func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
 	}
 }
 
-// Kern der Datenschutz-Garantie: Klassen OHNE Lehrer-E-Mail oder OHNE Schüler
-// werden übersprungen und erhalten KEINE Mail; gültige Klassen bekommen genau EINE
+// Kern der Datenschutz-Garantie: Klassen ohne Lehrer-E-Mail oder ohne Schüler
+// werden übersprungen und erhalten keine Mail; gültige Klassen bekommen genau eine
 // Mail an genau die hinterlegte Lehrer-Adresse (keine klassenübergreifenden Empfänger).
 func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 	var empfaenger []string
@@ -83,7 +81,7 @@ func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 				{SchuelerID: "s1", Name: "Max", Klasse: "5a", Medien: []repository.UeberfaelligesMedium{{Titel: "Buch", TageUeberfaellig: 5}}},
 			},
 		},
-		{ // keine Lehrer-Mail → übersprungen, DARF NICHT gesendet werden
+		{ // keine Lehrer-Mail → übersprungen, darf nicht gesendet werden
 			Klasse:      "6b",
 			LehrerEmail: "",
 			Schueler: []repository.UeberfaelligerSchueler{
@@ -108,9 +106,8 @@ func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 }
 
 // Schlägt der Versand einer Klasse fehl (abgelehnte Adresse o. ä.), läuft der Rest
-// weiter (Best-Effort) — aber die Klasse zählt als FEHLGESCHLAGEN, nicht als
-// übersprungen: „übersprungen (keine E-Mail hinterlegt)" ist Absicht, ein Ausfall nicht
-// (Prüfung 22.08.2026, A8).
+// weiter (best effort), aber die Klasse zählt als fehlgeschlagen, nicht als übersprungen:
+// „übersprungen (keine E-Mail hinterlegt)" ist Absicht, ein Ausfall nicht.
 func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testing.T) {
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) {
 		return []byte("%PDF-fake"), nil
@@ -137,9 +134,9 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 }
 
 // Mailserver-Fehler (ErrSMTPVersand) bricht den Lauf ab: Das Relay ist weg, jede weitere
-// Klasse hinge nur bis zur Frist. Die Restlichen zählen als fehlgeschlagen, die Meldung
-// sagt es — vorher standen sie unter „übersprungen (keine E-Mail hinterlegt oder keine
-// Fälle)", und der Ausfall sah aus wie Absicht.
+// Klasse hinge nur bis zur Frist. Die übrigen zählen als fehlgeschlagen, und die Meldung sagt
+// es; unter „übersprungen (keine E-Mail hinterlegt oder keine Fälle)" sähe der Ausfall aus wie
+// Absicht.
 func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T) {
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil }
 	var versuche []string
@@ -172,10 +169,10 @@ func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T
 	}
 }
 
-// ── Auswahl & Override ───────────────────────────────────────────────────────
+// ── Auswahl und Umleitung ────────────────────────────────────────────────────
 
 // argFaenger reicht ein Exec-Argument durch und schreibt es mit. pgxmock.AnyArg()
-// würde den Payload zwar passieren lassen, aber nicht herausgeben — und geprüft
+// würde die Angaben zwar passieren lassen, aber nicht herausgeben — und geprüft
 // werden soll genau sein Inhalt.
 type argFaenger struct{ ziel *string }
 
@@ -187,9 +184,9 @@ func (a *argFaenger) Match(v interface{}) bool {
 	return ok
 }
 
-// Der Body ist optional, aber nicht beliebig: Ein FEHLENDES klassen-Feld heisst
-// „alle" (alter Vertrag), ein LEERES Array heisst „niemand" und muss abgewiesen
-// werden. Würden beide gleich behandelt, löste eine leere Auswahl den grössten
+// Der Rumpf ist freiwillig, aber nicht beliebig: Ein fehlendes klassen-Feld heißt
+// „alle" (alter Vertrag), ein leeres Array heißt „niemand" und muss abgewiesen
+// werden. Würden beide gleich behandelt, löste eine leere Auswahl den größten
 // denkbaren Fehlversand aus.
 func TestLeseKlassenVersandAnfrage(t *testing.T) {
 	tests := []struct {
@@ -297,16 +294,16 @@ func TestWaehleKlassen(t *testing.T) {
 	})
 }
 
-// Mit Override-Adresse gehen die Listen an genau diese eine Adresse — auch für
+// Mit Umleitung gehen die Listen an genau diese eine Adresse — auch für
 // Klassen ohne hinterlegte Klassenleitung (das ist der Vertretungsfall, für den
-// das Feld existiert). Klassen OHNE überfällige Fälle bleiben trotzdem aussen vor.
+// das Feld existiert). Klassen ohne überfällige Fälle bleiben trotzdem aussen vor.
 func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 	schueler := []repository.UeberfaelligerSchueler{
 		{SchuelerID: "s1", Name: "Max", Klasse: "x", Medien: []repository.UeberfaelligesMedium{{Titel: "Buch"}}},
 	}
 	original := []repository.MahnwesenKlasse{
 		{Klasse: "5a", LehrerEmail: "lehrer5a@schule.de", Schueler: schueler},
-		{Klasse: "6b", LehrerEmail: "", Schueler: schueler}, // ohne Mapping — sonst übersprungen
+		{Klasse: "6b", LehrerEmail: "", Schueler: schueler}, // ohne Klassenleitung, sonst übersprungen
 		{Klasse: "7c", LehrerEmail: "lehrer7c@schule.de", Schueler: nil},
 	}
 
@@ -332,7 +329,7 @@ func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 	}
 }
 
-// Eine leere Auswahl darf nicht erst in der DB auffallen: Der Handler weist sie ab,
+// Eine leere Auswahl darf nicht erst in der DB auffallen: Die Tür weist sie ab,
 // bevor er auch nur eine Query absetzt.
 func TestMahnlistenVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
 	smtpKonfigAusUmgebung(t)
@@ -358,7 +355,7 @@ func TestMahnlistenVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
 	}
 }
 
-// Revisionssicherheit: Der Audit-Eintrag muss die Override-Adresse im Klartext
+// Revisionssicherheit: Der Eintrag im Protokoll muss die Umleitung im Klartext
 // führen und gültiges JSON sein — auch wenn die Adresse Zeichen enthält, die ein
 // handgebautes JSON-Literal zerrissen hätten (früher: fmt.Sprintf).
 func TestProtokolliereKlassenVersand_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T) {
@@ -389,7 +386,7 @@ func TestProtokolliereKlassenVersand_SchreibtGueltigesJSONMitEmpfaenger(t *testi
 		t.Fatalf("Audit-INSERT fehlt: %v", err)
 	}
 
-	// Der geschriebene Payload muss als JSON parsebar sein (Spalte ist jsonb).
+	// Die geschriebenen Angaben müssen als JSON lesbar sein (Spalte ist jsonb).
 	var geparst klassenVersandProtokoll
 	if err := json.Unmarshal([]byte(details), &geparst); err != nil {
 		t.Fatalf("details ist kein gültiges JSON: %v (%s)", err, details)
@@ -419,7 +416,7 @@ func TestErgaenzeSchulDomain(t *testing.T) {
 	}
 }
 
-// Ohne konfigurierten Absender wird NICHT geraten: Die Eingabe läuft unverändert in
+// Ohne konfigurierten Absender wird nicht geraten: Die Eingabe läuft unverändert in
 // die Adressprüfung und scheitert dort mit einer klaren Meldung.
 func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
 	smtpKonfigAusUmgebung(t)
@@ -431,7 +428,7 @@ func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
 	}
 }
 
-// Der Weg über den echten Body: „mueller" kommt als vollständige Adresse heraus.
+// Der Weg über den echten Rumpf: „mueller" kommt als vollständige Adresse heraus.
 func TestLeseKlassenVersandAnfrage_ErgaenztDomaene(t *testing.T) {
 	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_FROM", "bibliothek@philipp-reis-schule.de")

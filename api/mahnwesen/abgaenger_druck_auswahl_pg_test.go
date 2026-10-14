@@ -13,15 +13,13 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Der Druck der Kontoauszüge folgt der Suche der Oberfläche (entschieden am 21.09.2026).
-//
-// Zwei Kommentare sicherten das seit dem 04.09.2026 zu („was auf dem Bildschirm steht,
-// steht auf dem Papier"), die Tür kannte aber nur `klasse`: Wer „Müller" suchte und
-// druckte, bekam alle Kontoauszüge. Ein einzelner Laufzettel ließ sich gar nicht
-// nachdrucken — der Einzeldruck der Schülerakte hat keine Freigabezeile.
+// Der Druck der Kontoauszüge folgt der Suche der Oberfläche: Was auf dem Bildschirm steht,
+// steht auf dem Papier. Kennte die Tür nur `klasse`, bekäme, wer „Müller" sucht und druckt, alle
+// Kontoauszüge, und ein einzelner Kontoauszug ließe sich nicht nachdrucken; der Einzeldruck der
+// Schülerakte hat keine Freigabezeile.
 //
 // Die Oberfläche schickt bei aktiver Suche die Kennungen der sichtbaren Zeilen. Der Server
-// formuliert die Suche NICHT ein zweites Mal; er schneidet die Kennungen mit seiner
+// formuliert die Suche nicht ein zweites Mal; er schneidet die Kennungen mit seiner
 // eigenen Abgänger-Abfrage. Diese Tests halten am fertigen PDF fest, was daraus folgt.
 
 // kontoauszugPDF ruft den Druck mit der gegebenen Query und liefert Antwort und Text.

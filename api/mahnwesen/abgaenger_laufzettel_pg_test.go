@@ -11,19 +11,19 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// TestLaufzettel_NurAbgaengerMitBuechern sichert Audit-Bug #2 ab: Der Laufzettel-Massendruck
-// darf NUR Abgänger mit noch offenen Büchern enthalten. Vorher (LEFT JOIN) erschien jeder
-// Abgänger — 150 Abgänger, davon 140 ohne Buch, ergaben 140 leere Laufzettel.
-// Abgänger heißt hier seit dem 05.09.2026 wieder: Abschlussklasse, noch an der Schule.
+// TestLaufzettel_NurAbgaengerMitBuechern: Der Massendruck der Kontoauszüge darf nur Abgänger
+// mit noch offenen Büchern enthalten. Mit einem LEFT JOIN erschiene jeder Abgänger, und
+// 150 Abgänger, davon 140 ohne Buch, ergäben 140 leere Seiten. Abgänger heißt hier:
+// Abschlussklasse, noch an der Schule.
 func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	// Abschlussklasse MIT offenem Buch.
+	// Abschlussklasse mit offenem Buch.
 	mitBuch := testdaten.LegeSchuelerAn(t, pool, "AB-1", "Anna", "10R1")
 	testdaten.LegeAusleiheMitFristAn(t, pool, mitBuch, "Physikbuch 10", time.Now().AddDate(0, 0, -3))
-	// Abschlussklasse OHNE Buch — darf keinen (leeren) Laufzettel bekommen.
+	// Abschlussklasse ohne Buch — darf keinen (leeren) Laufzettel bekommen.
 	testdaten.LegeSchuelerAn(t, pool, "AB-2", "Bodo", "10R1")
 	// Kein Abschlussjahrgang, mit Buch — darf nicht auftauchen.
 	kein := testdaten.LegeSchuelerAn(t, pool, "AB-3", "Cleo", "8a")

@@ -11,7 +11,7 @@ import (
 )
 
 // Bausteine der Mail mit der Mahnliste einer Klasse: Blatt, Statistik und Aufbau der Mail. Der
-// Massenversand (mahnwesen_bulk_mail.go) schickt je gewählte Klasse eine Liste an die
+// Massenversand (mahnlisten_versand.go) schickt je gewählte Klasse eine Liste an die
 // Klassenleitung.
 
 // mahnlisteEmpfaenger: Klasse und Zieladresse einer Klassen-Mahnliste.

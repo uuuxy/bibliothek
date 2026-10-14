@@ -9,7 +9,7 @@ import (
 	"bibliothek/repository"
 )
 
-// UeberfaelligeAusleihen returns overdue loans grouped by class and student.
+// UeberfaelligeAusleihen liefert die überfälligen Ausleihen nach Klasse und Schüler.
 // GET /api/mahnwesen
 func (t *Tueren) UeberfaelligeAusleihen(mahnAbfragen *repository.MahnwesenAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

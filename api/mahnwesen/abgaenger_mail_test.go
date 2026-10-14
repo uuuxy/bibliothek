@@ -78,7 +78,7 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 	})
 }
 
-// Eine Mail je Klasse, darin EIN PDF JE SCHÜLER — das ist die fachliche Zusage.
+// Eine Mail je Klasse, darin ein PDF je Schüler; das ist die fachliche Zusage.
 func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
 	var mails []mailservice.MailRequest
 	klassen := []abgaengerKlasse{{
@@ -107,7 +107,7 @@ func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
 	}
 }
 
-// Klassen ohne Adresse oder ohne offene Ausleihen bekommen KEINE Mail.
+// Klassen ohne Adresse oder ohne offene Ausleihen bekommen keine Mail.
 func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 	var empfaenger []string
 	klassen := []abgaengerKlasse{
@@ -128,8 +128,8 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 }
 
 // Ein kaputtes Schüler-PDF darf nicht die ganze Klasse kosten: Der Rest geht raus,
-// nur der eine Anhang fehlt. Fällt JEDES PDF aus, ist die Klasse FEHLGESCHLAGEN —
-// bis zum 31.08.2026 zählte sie als „übersprungen", also als Absicht.
+// nur der eine Anhang fehlt. Fällt jedes PDF aus, ist die Klasse fehlgeschlagen, nicht
+// „übersprungen": Das wäre Absicht.
 func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 	kaputt := func(e pdf.KontoauszugEintrag) ([]byte, error) {
 		if e.Schueler.Vorname == "Kaputt" {
@@ -169,7 +169,7 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 	}
 }
 
-// Mit Override gehen ALLE gewählten Klassen an diese eine Adresse — und die
+// Mit Umleitung gehen alle gewählten Klassen an diese eine Adresse — und die
 // geladenen Daten bleiben unangetastet.
 func TestLenkeAbgaengerUm(t *testing.T) {
 	original := []abgaengerKlasse{
@@ -209,7 +209,7 @@ func TestAbgaengerKontoauszuegeVersenden_LeereAuswahlOhneDBZugriff(t *testing.T)
 	}
 }
 
-// Regression: Das Mapping wird von Menschen gepflegt, die Klassen kommen aus dem
+// Rückschritt: Die Klassenleitungen pflegen Menschen, die Klassen kommen aus dem
 // LUSD-Import. „5A" gegen „5a" oder ein mitkopiertes Leerzeichen darf den Versand
 // nicht kosten — vorher meldete die Oberfläche „keine E-Mail" und der Lauf
 // übersprang die Klasse still, obwohl die Adresse hinterlegt war.
@@ -226,9 +226,9 @@ func TestWaehleAbgaengerKlassen_SchreibweiseDerKlassenleitungEgal(t *testing.T) 
 	}
 }
 
-// SMTP-Ausfall ist FEHLGESCHLAGEN (nicht „übersprungen") und bricht den Lauf ab —
-// dieselbe Regel wie beim Mahnlauf. Bis zum 31.08.2026 zählte er als übersprungen,
-// und die Rückmeldung erklärte ihn als „keine E-Mail hinterlegt".
+// Ein SMTP-Ausfall ist fehlgeschlagen (nicht „übersprungen") und bricht den Lauf ab, dieselbe
+// Regel wie beim Mahnlauf; als übersprungen erklärte ihn die Rückmeldung mit „keine E-Mail
+// hinterlegt".
 func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.T) {
 	klassen := []abgaengerKlasse{
 		{Klasse: "10a", Empfaenger: "kl10a@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Max", "M", "10a")}},

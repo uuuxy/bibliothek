@@ -10,14 +10,14 @@ import (
 	"bibliothek/repository"
 )
 
-// klassenleitung associates a class with the class teacher's e-mail address.
+// klassenleitung ordnet einer Klasse die Adresse ihrer Klassenleitung zu.
 type klassenleitung struct {
 	Klasse      string `json:"klasse"`
 	LehrerEmail string `json:"lehrer_email"`
 	ErstelltAm  string `json:"erstellt_am,omitempty"`
 }
 
-// Klassenleitungen returns all class → teacher-e-mail mappings.
+// Klassenleitungen liefert alle Klassen mit der Adresse ihrer Klassenleitung.
 // GET /api/klassen-mapping
 func (t *Tueren) Klassenleitungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +40,7 @@ func (t *Tueren) Klassenleitungen() http.HandlerFunc {
 	}
 }
 
-// KlassenleitungSetzen creates or updates a class → teacher-e-mail mapping.
+// KlassenleitungSetzen trägt die Adresse der Klassenleitung einer Klasse ein oder ändert sie.
 // POST /api/klassen-mapping  { "klasse": "5b", "lehrer_email": "..." }
 func (t *Tueren) KlassenleitungSetzen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +83,7 @@ func (t *Tueren) KlassenleitungSetzen() http.HandlerFunc {
 	}
 }
 
-// KlassenleitungLoeschen removes a class → teacher-e-mail mapping.
+// KlassenleitungLoeschen nimmt die Adresse der Klassenleitung einer Klasse heraus.
 // DELETE /api/klassen-mapping/{klasse}
 func (t *Tueren) KlassenleitungLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +100,7 @@ func (t *Tueren) KlassenleitungLoeschen() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		// 204 für etwas, das nie existierte, wäre ein Phantom-Erfolg (Sweep 31.08.2026).
+		// 204 für etwas, das nie existierte, wäre ein Erfolg, den es nicht gab.
 		if getroffen == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
 			return

@@ -15,11 +15,9 @@ import (
 	"bibliothek/internal/tuertest"
 )
 
-// Die Abgängerliste in ihrer ursprünglichen Bedeutung (Register, Entscheidung 2 vom
-// 05.09.2026): Abschlussklassen mit offenen Büchern, noch an der Schule, zum Einsammeln
-// vor der Entlassung. Vom 25.06. bis 05.09.2026 filterte sie stattdessen ist_abgaenger
-// („fehlt im LUSD-Export") — ein anderer Begriff unter demselben Namen, den jede Sitzung
-// als Wahrheit übernahm. Diese Tests halten die Bedeutung am echten SQL fest.
+// Die Abgängerliste meint Abschlussklassen mit offenen Büchern, noch an der Schule, zum
+// Einsammeln vor der Entlassung, nicht ist_abgaenger („fehlt im LUSD-Export"), einen anderen
+// Begriff unter demselben Namen. Diese Tests halten die Bedeutung am echten SQL fest.
 
 // abgaengerAntwort ruft GET /api/abgaenger — die Ansicht, aus der heraus gedruckt und
 // versendet wird — und liefert die ganze Antwort samt Saisonfenster.

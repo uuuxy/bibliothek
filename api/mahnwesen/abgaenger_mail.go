@@ -33,12 +33,11 @@ type abgaengerKlasse struct {
 // Datenschutz wie im Mahnwesen: Es wird an die Lehrkraft gemailt, nicht an die
 // (meist minderjährigen) Schüler, und jede Lehrkraft bekommt ausschließlich die
 // eigene Klasse — kein TO/CC über mehrere Betroffene. override_email ist auch hier
-// die einzige Abweichung und steht deshalb im Klartext im Audit-Log.
+// die einzige Abweichung und steht deshalb im Klartext im Protokoll.
 //
-// BEWUSST OHNE FERIEN-SPERRE, anders als der Mahnlauf: Der Schulabgang fällt
-// regelmäßig in die Sommerferien. Eine Sperre würde die Rückgabe-Abwicklung genau
-// dann blockieren, wenn sie stattfindet. Der Kontoauszug ist auch keine Mahnung,
-// sondern die Abschluss-Übersicht eines beendeten Ausleihkontos.
+// Ohne Sperre in den Ferien, anders als der Mahnlauf: Der Schulabgang fällt regelmäßig in die
+// Sommerferien, und eine Sperre blockierte die Rückgabe genau dann, wenn sie stattfindet. Der
+// Kontoauszug ist auch keine Mahnung, sondern die Übersicht eines beendeten Ausleihkontos.
 //
 // POST /api/abgaenger/mail
 func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
@@ -89,7 +88,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 			Unbekannt:   unbekannt,
 		}
 
-		// Absicht vor dem Versand protokollieren — siehe logKlassenVersandAudit.
+		// Absicht vor dem Versand protokollieren, siehe protokolliereKlassenVersand.
 		audit.Phase = "start"
 		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
@@ -109,12 +108,11 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 	}
 }
 
-// ladeKlassenleitungsAdressen lädt das Klassenlehrer-Mapping als Nachschlagetabelle.
+// ladeKlassenleitungsAdressen lädt die Klassenleitungen als Nachschlagetabelle.
 //
-// Anders als bei der Mahnliste (best-effort) bricht ein Fehler hier den Versand ab:
-// Ohne Mapping wäre JEDE Klasse „ohne Adresse" und der Lauf meldete fröhlich
-// „0 versendet, 12 übersprungen" — ein stiller Totalausfall, der wie ein Ergebnis
-// aussieht.
+// Anders als bei der Mahnliste bricht ein Fehler hier den Versand ab: Ohne die Tabelle wäre
+// jede Klasse „ohne Adresse", und der Lauf meldete „0 versendet, 12 übersprungen", ein stiller
+// Ausfall, der wie ein Ergebnis aussieht.
 func (t *Tueren) ladeKlassenleitungsAdressen(ctx context.Context) (map[string]string, error) {
 	return repository.LadeKlassenleitungsAdressen(ctx, t.DB.Pool)
 }
@@ -183,30 +181,25 @@ func abgaengerKlassennamen(klassen []abgaengerKlasse) []string {
 	return namen
 }
 
-// erzeugeKontoauszugPDF erzeugt den Kontoauszug EINES Abgängers — mit
-// Unterschriftszeile, also exakt das Blatt, das auch aus dem Druck fällt.
+// erzeugeKontoauszugPDF erzeugt den Kontoauszug eines Abgängers mit Unterschriftszeile, also
+// genau das Blatt, das auch aus dem Druck fällt.
 func erzeugeKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
 	return pdf.GenerateKontoauszugBatch([]pdf.KontoauszugEintrag{e}, true)
 }
 
-// versendeAbgaengerKontoauszuege verschickt je Klasse eine Mail mit einem PDF je
-// Abgänger. generatePDF/sendMail sind injiziert, damit die Skip- und
-// Adressierungslogik ohne echten PDF-/Mailversand testbar bleibt.
+// versendeAbgaengerKontoauszuege verschickt je Klasse eine Mail mit einem PDF je Abgänger.
+// erzeugePDF und sendeMail kommen als Parameter, damit sich das Überspringen und die
+// Adressierung ohne echten PDF- und Mailversand prüfen lassen.
 //
-// Best-Effort auf zwei Ebenen: Ein fehlgeschlagenes Schüler-PDF kostet nur diesen
-// einen Anhang, nicht die ganze Klasse — 29 fertige Kontoauszüge wegen eines
-// kaputten zurückzuhalten wäre der teurere Fehler. Erst wenn KEIN Anhang übrig
-// bleibt, zählt die Klasse als übersprungen.
-// Drei Ausgänge statt zwei (31.08.2026): „übersprungen" ist Absicht (keine Adresse,
-// keine Fälle), „fehlgeschlagen" ist ein Problem (alle PDFs kaputt, Versand
-// abgelehnt). Vorher zählte der SMTP-Ausfall als übersprungen, die Rückmeldung
-// erklärte ihn als „keine E-Mail hinterlegt oder keine offenen Ausleihen" — am
-// Zeugnistag mit totem Relay stand da „0 versendet, 12 übersprungen", niemand
-// sendete nach. Ein Mailserver-Fehler (ErrSMTPVersand) bricht ab wie beim
-// Mahnlauf: Jede weitere Klasse hinge sonst bis zu 70 s am toten Relay. Gezählt wird
-// danach wie dort (versendeKlassenMahnungen): Eine Klasse ohne Adresse oder ohne
-// Auszüge bleibt übersprungen, jede andere zählt als fehlgeschlagen. Kontoauszüge
-// doppelt zu senden ist unschädlich — der Lauf darf einfach wiederholt werden.
+// Best effort auf zwei Ebenen: Ein gescheitertes PDF kostet nur diesen einen Anhang, nicht die
+// ganze Klasse; 29 fertige Kontoauszüge wegen eines kaputten zurückzuhalten wäre der teurere
+// Fehler. Drei Ausgänge: „übersprungen" ist Absicht (keine Adresse, keine Auszüge),
+// „fehlgeschlagen" ist ein Problem (alle PDFs kaputt, Versand abgelehnt); als „übersprungen"
+// erklärt, sähe ein toter Mailserver am Zeugnistag aus wie Absicht, und niemand sendete nach.
+// Ein Mailserver-Fehler (ErrSMTPVersand) bricht ab wie beim Mahnlauf, weil jede weitere Klasse
+// sonst bis zu 70 s am toten Relay hinge; danach zählt eine Klasse ohne Adresse oder ohne
+// Auszüge als übersprungen, jede andere als fehlgeschlagen. Kontoauszüge doppelt zu senden ist
+// unschädlich, der Lauf darf wiederholt werden.
 func versendeAbgaengerKontoauszuege(
 	klassen []abgaengerKlasse,
 	erzeugePDF func(pdf.KontoauszugEintrag) ([]byte, error),

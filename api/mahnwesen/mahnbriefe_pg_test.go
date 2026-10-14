@@ -16,8 +16,8 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// TestMahnbriefeDrucken_NurOffeneHochzaehlen sichert #4 ab: Der Bulk-Mahnlauf zählt
-// die Mahnstufe NUR für noch offene Ausleihen hoch und liest die PDF-Daten innerhalb
+// TestMahnbriefeDrucken_NurOffeneHochzaehlen: Der Druck der Mahnbriefe zählt
+// die Mahnstufe nur für noch offene Ausleihen hoch und liest die PDF-Daten innerhalb
 // derselben Transaktion. Ein zwischen Aufbereiten und Druck zurückgegebenes Buch darf
 // weder gemahnt (Mahnstufe) noch aufs PDF geraten.
 func TestMahnbriefeDrucken_NurOffeneHochzaehlen(t *testing.T) {

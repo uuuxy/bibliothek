@@ -20,12 +20,12 @@ import (
 	"bibliothek/repository"
 )
 
-// klassenVersandAnfrage ist der optionale Body jedes klassenweisen Massenversands
-// (Mahnlauf, Abgänger-Kontoauszüge). Bewusst EIN Typ für beide: Die gefährliche
-// Regel darunter — leere Auswahl heißt „niemand", nicht „alle" — darf es nur an
+// klassenVersandAnfrage ist der freiwillige Rumpf jedes Massenversands an Klassen (Mahnlauf,
+// Kontoauszüge der Abgänger). Ein Typ für beide, weil es die gefährliche Regel darunter
+// (leere Auswahl heißt „niemand", nicht „alle") nur an
 // einer Stelle geben.
 //
-// Klassen ist bewusst ein Zeiger, weil „Feld fehlt" und „leeres Array" hier NICHT
+// Klassen ist bewusst ein Zeiger, weil „Feld fehlt" und „leeres Array" hier nicht
 // dasselbe bedeuten dürfen:
 //
 //	nil (Feld fehlt)  → alle überfälligen Klassen (Vertrag vor dem Konfigurations-Dialog)
@@ -38,10 +38,9 @@ type klassenVersandAnfrage struct {
 	Umleitung string    `json:"override_email"`
 }
 
-// klassenVersandAntwort ist die Antwort von POST /api/mail/send-bulk-overdue.
-// failed_count zählt Klassen, deren Versand FEHLSCHLUG — getrennt von skipped (keine
-// Adresse / keine Fälle). Bis 22.08.2026 landeten SMTP-Ausfälle bei „übersprungen (keine
-// E-Mail hinterlegt oder keine Fälle)" — ein Ausfall sah aus wie Absicht (Prüfung A8).
+// klassenVersandAntwort ist die Antwort von POST /api/mail/send-bulk-overdue und
+// POST /api/abgaenger/mail. failed_count zählt Klassen, deren Versand fehlschlug, getrennt von
+// skipped (keine Adresse, keine Fälle): Sonst sähe ein Ausfall aus wie Absicht.
 type klassenVersandAntwort struct {
 	Versendet      int    `json:"sent_count"`
 	Uebersprungen  int    `json:"skipped_count"`
@@ -53,31 +52,26 @@ type klassenVersandAntwort struct {
 // MahnlistenVersenden verschickt die Mahnliste der gewählten überfälligen Klassen
 // an die jeweilige Klassenleitung — eine E-Mail pro Klasse an genau eine Adresse.
 //
-// Datenschutz by design (bewusst identisch zum Einzelversand /api/mahnwesen/senden):
-// Es wird NICHT an einzelne, i.d.R. minderjährige Schüler gemailt, sondern an die
-// Lehrkraft, die die Schüler informiert. Jede Lehrkraft erhält ausschließlich die
-// eigene Klassenliste — es gibt also keine klassenübergreifende Offenlegung von
-// Empfängern oder Mahn-Status (kein TO/CC über mehrere Betroffene). Der Massenversand
-// wird auditiert (Rechenschaftspflicht, Art. 5 (2) DSGVO).
+// Datenschutz: Die Liste geht nicht an einzelne, meist minderjährige Schüler, sondern an die
+// Lehrkraft, die die Schüler informiert. Jede Lehrkraft erhält nur die eigene Klassenliste, es
+// gibt also keine Offenlegung von Empfängern oder Mahnstand über Klassen hinweg (kein TO/CC
+// über mehrere Betroffene). Der Massenversand steht im Protokoll (Rechenschaftspflicht,
+// Art. 5 (2) DSGVO).
 //
-// AUSNAHME override_email: Damit gehen die Listen ALLER gewählten Klassen an eine
-// einzige, von Hand eingetippte Adresse (Vertretungsfall, Sekretariat, Probelauf).
-// Das ist eine bewusste Abweichung von „jede Lehrkraft nur die eigene Klasse" — ein
-// Empfänger sieht dann die Namen mehrerer Klassen. Deshalb: weiterhin eine Mail je
-// Klasse (kein Sammel-PDF, kein CC), und die Adresse wird im Audit-Log namentlich
-// festgehalten, nicht nur als Zähler.
+// Ausnahme override_email: Damit gehen die Listen aller gewählten Klassen an eine einzige, von
+// Hand eingetippte Adresse (Vertretung, Sekretariat, Probelauf). Ein Empfänger sieht dann die
+// Namen mehrerer Klassen. Deshalb bleibt es bei einer Mail je Klasse (kein Sammel-PDF, kein
+// CC), und die Adresse steht namentlich im Protokoll, nicht nur als Zähler.
 //
-// INVARIANTE: Der Mail-Versand erhöht die Mahnstufe NICHT. Die Stufenerhöhung ist ein
-// physischer Verwaltungsakt und passiert ausschließlich beim PDF-Druck
-// (mahnwesen_bulk.go). Die Mail ist ein „Friendly Reminder" VOR der Eskalation — und
-// verhält sich bewusst identisch zum Einzelversand (system-konsistent, keine
-// Button-abhängige Sonderlogik). Siehe docs/invarianten.md §1.
+// Invariante: Der Mailversand erhöht die Mahnstufe nicht. Sie steigt nur beim Druck der
+// Mahnbriefe (mahnbriefe.go), dem Verwaltungsakt; die Mail ist eine Erinnerung vor der
+// Eskalation. Siehe docs/invarianten.md §1.
 // POST /api/mail/send-bulk-overdue
 func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// 1. Auswahl aus dem Body lesen. Fehlt der Body ganz, bleibt es beim alten
+		// 1. Auswahl aus dem Rumpf lesen. Fehlt der Rumpf ganz, bleibt es beim alten
 		//    Vertrag „alle überfälligen Klassen an ihre Klassenleitungen".
 		req, err := leseKlassenVersandAnfrage(r)
 		if err != nil {
@@ -86,14 +80,12 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		}
 
 		// 2. Ohne konfigurierten Mailserver kein Massenversand.
-		//    (Die Ferien-/Schließzeit-Sperre stand hier bis Migration 102 — ohne
-		//    Schreiber der Tabelle griff sie nie.)
 		if !mailservice.SMTPKonfiguriert() {
 			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
 			return
 		}
 
-		// 4. Alle überfälligen Klassen laden (leerer Filter = alle Klassen) und die
+		// 3. Alle überfälligen Klassen laden (leerer Filter = alle Klassen) und die
 		//    Auswahl des Aufrufers darauf anwenden.
 		alle, err := mahnAbfragen.LadeUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
@@ -102,12 +94,12 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		}
 		gewaehlt, unbekannt := waehleKlassen(nurKlassen(alle), req.Klassen)
 
-		// 5. Optional: Empfänger auf eine einzelne Adresse umlenken.
+		// 4. Optional: Empfänger auf eine einzelne Adresse umlenken.
 		if req.Umleitung != "" {
 			gewaehlt = lenkeKlassenUm(gewaehlt, req.Umleitung)
 		}
 
-		// 6. Absicht protokollieren, BEVOR die erste Mail rausgeht. Ein Eintrag erst
+		// 5. Absicht protokollieren, bevor die erste Mail rausgeht. Ein Eintrag erst
 		//    danach hätte genau im teuersten Fall eine Lücke: Bricht der Prozess nach
 		//    300 versendeten Mahnungen ab, stünde nirgends, wer den Lauf ausgelöst hat
 		//    und an welche Adresse er ging.
@@ -119,12 +111,12 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 			Unbekannt:   unbekannt,
 		})
 
-		// 7. Je Klasse eine eigene Mahnliste versenden.
-		//    erzeugeMahnliste/SendEmail werden injiziert, damit die Skip- und
-		//    Adressierungslogik ohne echten PDF-/Mailversand testbar bleibt.
+		// 6. Je Klasse eine eigene Mahnliste versenden. erzeugeMahnliste und SendEmail kommen
+		//    als Parameter, damit sich das Überspringen und die Adressierung ohne echten
+		//    PDF- und Mailversand prüfen lassen.
 		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, mailservice.SendEmail)
 
-		// 8. Ergebnis protokollieren.
+		// 7. Ergebnis protokollieren.
 		t.protokolliereKlassenVersand(r, "BULK_OVERDUE_MAIL", klassenVersandProtokoll{
 			Phase:          "ende",
 			Klassen:        klassennamen(gewaehlt),
@@ -147,10 +139,9 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 	}
 }
 
-// leseKlassenVersandAnfrage liest die optionale Auswahl aus dem Request-Body und
-// weist alles zurück, was einen Massenversand an den falschen Empfänger schicken
-// würde. Ein fehlender Body ist gültig (= alle Klassen, alter Vertrag), ein
-// kaputter nicht.
+// leseKlassenVersandAnfrage liest die freiwillige Auswahl aus dem Rumpf und weist alles
+// zurück, was einen Massenversand an den falschen Empfänger schicken würde. Ein fehlender Rumpf
+// ist gültig (alle Klassen), ein kaputter nicht.
 func leseKlassenVersandAnfrage(r *http.Request) (klassenVersandAnfrage, error) {
 	var req klassenVersandAnfrage
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
@@ -191,7 +182,7 @@ func leseKlassenVersandAnfrage(r *http.Request) (klassenVersandAnfrage, error) {
 // mitzutippen ist reine Fehlerquelle, und ein Vertipper darin fällt niemandem auf
 // (der Lauf meldet Erfolg, die Post kommt nie an).
 //
-// Die Domäne wird NICHT im Code festgeschrieben, sondern aus der Absenderadresse
+// Die Domäne wird nicht im Code festgeschrieben, sondern aus der Absenderadresse
 // des Systems abgeleitet — derselben, mit der auch verschickt wird. Damit folgt sie
 // automatisch der Konfiguration in der Oberfläche und stimmt auch nach einem
 // Domänenwechsel noch. Ist keine konfiguriert, bleibt die Eingabe unverändert und
@@ -236,8 +227,8 @@ func nurKlassen(gruppen []repository.MahnwesenKlasse) []repository.MahnwesenKlas
 // zurück, welche angeforderten Klassen es gar nicht (mehr) gibt.
 //
 // Die Unbekannten werden nicht verschluckt, sondern auditiert: Sonst wäre ein
-// Format-Versatz zwischen Frontend und DB („5a" vs. „05A") ein dauerhaft stiller
-// Nullversand — der Lauf meldet Erfolg und niemand bekommt Post.
+// Format-Versatz zwischen Oberfläche und Datenbank („5a" gegen „05A") ein dauerhaft stiller
+// Nullversand: Der Lauf meldet Erfolg, und niemand bekommt Post.
 func waehleKlassen(alle []repository.MahnwesenKlasse, auswahl *[]string) (gewaehlt []repository.MahnwesenKlasse, unbekannt []string) {
 	if auswahl == nil {
 		return alle, nil
@@ -265,11 +256,11 @@ func waehleKlassen(alle []repository.MahnwesenKlasse, auswahl *[]string) (gewaeh
 	return gewaehlt, unbekannt
 }
 
-// lenkeKlassenUm lenkt den Empfänger ALLER gewählten Klassen auf eine Adresse um.
+// lenkeKlassenUm lenkt den Empfänger aller gewählten Klassen auf eine Adresse um.
 //
-// Die Klassen werden kopiert, nicht mutiert: Die geladenen Repository-Daten bleiben
-// unangetastet, und die Skip-Logik von versendeKlassenMahnungen greift unverändert
-// weiter (Klassen ohne Fälle bleiben aussen vor, auch mit Override-Adresse).
+// Die Klassen werden kopiert, nicht verändert: Die geladenen Daten bleiben unangetastet, und
+// versendeKlassenMahnungen überspringt weiter Klassen ohne Fälle, auch mit umgeleiteter
+// Adresse.
 func lenkeKlassenUm(klassen []repository.MahnwesenKlasse, empfaenger string) []repository.MahnwesenKlasse {
 	umgelenkt := make([]repository.MahnwesenKlasse, len(klassen))
 	copy(umgelenkt, klassen)
@@ -311,11 +302,10 @@ func mahnlistenMeldung(erg versandErgebnis, umleitung string) string {
 	return text
 }
 
-// versandErgebnis trennt drei Ausgänge, die vorher ein Zähler waren: gesendet,
-// übersprungen (keine Adresse / keine Fälle — Absicht) und fehlgeschlagen (PDF- oder
-// Versandfehler — ein Problem). Abgebrochen: nach einem Mailserver-Fehler
-// (ErrSMTPVersand) wurden die restlichen Klassen nicht mehr versucht — sonst hinge
-// jeder weitere Versuch bis zu 70 s am toten Relay; sie zählen als fehlgeschlagen.
+// versandErgebnis trennt drei Ausgänge: versendet, übersprungen (keine Adresse, keine Fälle:
+// Absicht) und fehlgeschlagen (PDF- oder Versandfehler: ein Problem). Abgebrochen: Nach einem
+// Mailserver-Fehler (ErrSMTPVersand) werden die übrigen Klassen nicht mehr versucht, weil
+// jeder weitere Versuch bis zu 70 s am toten Relay hinge; sie zählen als fehlgeschlagen.
 type versandErgebnis struct {
 	Versendet, Uebersprungen, Fehlgeschlagen int
 	Abgebrochen                              bool
@@ -324,12 +314,13 @@ type versandErgebnis struct {
 // versendeKlassenMahnungen erzeugt je Klasse das Mahn-PDF und mailt es an die
 // hinterlegte Klassenleitung. Klassen ohne E-Mail oder ohne überfällige Schüler
 // werden übersprungen. Ein Fehler bei einer einzelnen Klasse (PDF, abgelehnte Adresse)
-// bricht den Lauf NICHT ab, zählt aber als FEHLGESCHLAGEN — nicht als übersprungen. Ein
+// bricht den Lauf nicht ab, zählt aber als fehlgeschlagen — nicht als übersprungen. Ein
 // Mailserver-Fehler (ErrSMTPVersand) bricht ab: Das Relay ist weg, jede weitere Klasse
 // hinge nur bis zur Frist; die Restlichen zählen als fehlgeschlagen.
 //
-// generatePDF und sendMail sind injiziert (Produktion: erzeugeMahnliste/SendEmail),
-// damit die Skip- und Adressierungslogik ohne echten PDF-/Mailversand testbar ist.
+// erzeugePDF und sendeMail kommen als Parameter (im Betrieb erzeugeMahnliste und SendEmail),
+// damit sich das Überspringen und die Adressierung ohne echten PDF- und Mailversand prüfen
+// lassen.
 func versendeKlassenMahnungen(
 	klassen []repository.MahnwesenKlasse,
 	erzeugePDF func([]repository.MahnwesenKlasse) ([]byte, error),
@@ -374,11 +365,11 @@ func versendeKlassenMahnungen(
 	return erg
 }
 
-// klassenVersandProtokoll ist der details-Payload jedes klassenweisen Massenversands
-// (BULK_OVERDUE_MAIL, ABGAENGER_KONTOAUSZUG_MAIL).
+// klassenVersandProtokoll sind die Angaben (details) im Protokoll jedes Massenversands an
+// Klassen (BULK_OVERDUE_MAIL, ABGAENGER_KONTOAUSZUG_MAIL).
 //
 // Er beantwortet die Frage, die im Zweifel jemand von aussen stellt: Wer hat wann
-// wie viele Mahnungen an WEN geschickt? Die Override-Adresse steht deshalb im
+// wie viele Mahnungen an wen geschickt? Die Umleitung steht deshalb im
 // Klartext im Log — sie ist der Unterschied zwischen „ging an die Klassenleitungen"
 // und „ging an eine von Hand eingetippte Adresse".
 type klassenVersandProtokoll struct {
@@ -395,14 +386,12 @@ type klassenVersandProtokoll struct {
 	Abgebrochen    bool     `json:"abgebrochen,omitempty"`
 }
 
-// protokolliereKlassenVersand protokolliert einen Massenversand im audit_logs — analog
-// zum Import-Audit. Die Aktion kommt vom Aufrufer, der Payload ist für alle
-// klassenweisen Versände derselbe.
+// protokolliereKlassenVersand schreibt einen Massenversand ins Protokoll (audit_logs). Die
+// Aktion kommt vom Aufrufer, die Angaben sind für alle Massenversände an Klassen dieselben.
 //
-// Der Payload wird marshalled, nicht zusammengesetzt: Seit die frei eingetippte
-// Override-Adresse mit im Detail steht, würde ein handgebautes JSON-Literal bei
-// einem Anführungszeichen in der Eingabe kaputtes JSON in eine jsonb-Spalte
-// schreiben — der INSERT scheitert, und der Lauf verlöre still seinen Log-Eintrag.
+// Die Angaben werden mit json.Marshal erzeugt, nicht zusammengesetzt: Ein Anführungszeichen in
+// der frei eingetippten Umleitung machte ein handgebautes JSON-Literal kaputt, der INSERT in die
+// jsonb-Spalte scheiterte, und der Lauf verlöre still seinen Eintrag.
 func (t *Tueren) protokolliereKlassenVersand(r *http.Request, aktion string, details klassenVersandProtokoll) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
@@ -413,10 +402,10 @@ func (t *Tueren) protokolliereKlassenVersand(r *http.Request, aktion string, det
 		log.Printf("%s: Audit-Details nicht serialisierbar: %v", aktion, err)
 		return
 	}
-	// Vom Request-Kontext abgekoppelt: Der Ende-Eintrag kommt NACH dem Versand, und ein
-	// Lauf über viele Klassen überlebt die 15-s-TimeoutMiddleware — mit r.Context() wäre
-	// der INSERT still gescheitert, und genau der Eintrag mit den Zahlen fehlte
-	// (Prüfung 22.08.2026, A8). Claims bleiben erhalten (WithoutCancel behält Werte).
+	// Vom Kontext der Anfrage abgekoppelt: Der Eintrag am Ende kommt nach dem Versand, und ein
+	// Lauf über viele Klassen überlebt die 15-s-TimeoutMiddleware; mit r.Context() schlüge der
+	// INSERT still fehl, und genau der Eintrag mit den Zahlen fehlte. Die Claims bleiben erhalten
+	// (WithoutCancel behält die Werte).
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
 	defer abbruch()
 	t.SchreibeAdminProtokoll(ctx, claims.UserID, aktion, clientip.AusAnfrage(r), string(inhalt))

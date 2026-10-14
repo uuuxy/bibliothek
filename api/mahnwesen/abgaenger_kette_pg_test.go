@@ -28,17 +28,17 @@ import (
 // wird endgültig entfernt. Was davor schiefgeht, merkt niemand mehr — der Schüler ist weg,
 // die Bücher sind weg, und die Zahlen sehen aus wie immer.
 //
-// Was hier NICHT noch einmal geprüft wird: Sperre, Blockade und Purge selbst; das steht in
+// Was hier nicht noch einmal geprüft wird: Sperre, Blockade und Purge selbst; das steht in
 // TestAbgaengerRetentionKette. Hier geht es um die Übergänge dazwischen, die keiner ansieht:
 //
-//   - Liste und Kontoauszug sind ZWEI Abfragen mit zwei verschiedenen Klassen-Vergleichen
+//   - Liste und Kontoauszug sind zwei Abfragen mit zwei verschiedenen Klassen-Vergleichen
 //     (die Liste normalisiert per lower/btrim, der Kontoauszug vergleicht exakt). Der
 //     Kommentar im Code sagt „Papier und Mail zeigen denselben Stand" — das ist eine
 //     Behauptung, kein Test.
-//   - Der Kontoauszug geht als EIN PDF JE SCHÜLER raus. Ob in Annas PDF auch Annas Bücher
+//   - Der Kontoauszug geht als ein PDF je Schüler raus. Ob in Annas PDF auch Annas Bücher
 //     stehen, hat bisher nichts geprüft: Der vorhandene Test zählt Anhänge und erzeugt die
 //     PDFs mit einem Platzhalter.
-//   - Nach der Rückgabe muss der Abgänger aus BEIDEN Ansichten verschwinden. Bleibt er in
+//   - Nach der Rückgabe muss der Abgänger aus beiden Ansichten verschwinden. Bleibt er in
 //     einer, bekommt eine Lehrkraft im nächsten Lauf einen Kontoauszug für ein Buch, das
 //     längst im Regal steht.
 //   - Die Löschung anonymisiert die Ausleihhistorie (schueler_id = NULL), statt sie zu
@@ -91,7 +91,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 
 	// Zwei Abgänger derselben Abschlussklasse und einer aus einer anderen — plus die
 	// Schreibweise, an der sich schon zweimal etwas aufgehängt hat: Schülerdaten "9H",
-	// Mapping "9h ".
+	// Klassenleitung "9h ".
 	anna, annaAusleihe := abgaengerMitBuch(t, pool, "S-ABG-1", "Anna", "9H", "Annas Buch")
 	ben, benAusleihe := abgaengerMitBuch(t, pool, "S-ABG-2", "Ben", "9H", "Bens Buch")
 	abgaengerMitBuch(t, pool, "S-ABG-3", "Cem", "10R1", "Cems Buch")
@@ -108,7 +108,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 		}
 	}
 
-	// Die Liste muss die Klassenleitung schon VOR dem Versand nennen, sonst kann niemand
+	// Die Liste muss die Klassenleitung schon vor dem Versand nennen, sonst kann niemand
 	// sehen, dass eine Klasse gleich stillschweigend übersprungen wird.
 	for _, e := range liste {
 		if e.Vorname == "Anna" && e.LehrerEmail != "leitung9h@schule.invalid" {
@@ -116,7 +116,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 		}
 	}
 
-	// 2. Versand NUR für die 9H.
+	// 2. Versand nur für die 9H.
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":["09H"]}`))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(ctx, auth.ClaimsContextKey,
@@ -134,7 +134,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 		t.Fatalf("erwartet genau eine Mail ohne Übersprungene: %s", antwort)
 	}
 
-	// 3. Was wirklich rausging: eine Mail, zwei PDFs, jedes mit den Büchern SEINES Schülers.
+	// 3. Was wirklich rausging: eine Mail, zwei PDFs, jedes mit den Büchern seines Schülers.
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
 	if !strings.Contains(nachricht, "leitung9h@schule.invalid") {
 		t.Errorf("Mail ging nicht an die Klassenleitung der 9H:\n%s", smtptest.Kopf(nachricht))
@@ -148,7 +148,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	benPDF := pdftest.Texte(t, []byte(smtptest.DateiAusMail(t, nachricht, "Ben")))
 	pruefeKontoauszug(t, benPDF, "Ben", "Bens Buch", []string{"Annas Buch", "Cems Buch"})
 
-	// 4. Anna gibt ihr Buch zurück — und verschwindet aus BEIDEN Ansichten.
+	// 4. Anna gibt ihr Buch zurück — und verschwindet aus beiden Ansichten.
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = now() WHERE id = $1`, annaAusleihe); err != nil {
 		t.Fatalf("Rückgabe: %v", err)
 	}
@@ -161,9 +161,9 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 		t.Error("Ben ist mit Annas Rückgabe aus der Ansicht gefallen")
 	}
 
-	// 5. Der unumkehrbare Schritt — und was er stehen lassen MUSS. Vorher geht die Kohorte
-	// von der Schule: Der LUSD-Import findet Anna und Ben im Herbst nicht mehr und lässt sie
-	// so zurück (Flag + ABG). Erst DANN ist die Löschung überhaupt Thema.
+	// 5. Der unumkehrbare Schritt und was er stehen lassen muss. Vorher geht die Kohorte von
+	// der Schule: Der LUSD-Import findet Anna und Ben im Herbst nicht mehr und lässt sie so zurück
+	// (Kennzeichen und ABG). Erst dann ist die Löschung überhaupt Thema.
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, klasse = 'ABG', abgaenger_seit = now()
 		WHERE id = ANY($1)`, []string{anna, ben}); err != nil {
 		t.Fatalf("Abgang laut LUSD: %v", err)

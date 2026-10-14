@@ -1,10 +1,10 @@
 package mahnwesen
 
-// Leere Vorlage ⇒ leerer Brief (Sweep 01.09.2026, Fund F7): loadMahnungTemplate
-// fiel nur bei DB-FEHLER auf den Standardtext zurück — eine versehentlich leer
-// gespeicherte Vorlage (der Editor lässt '' durch, die Spalten sind NOT NULL,
-// aber '' ist erlaubt) erzeugte Mahnbriefe ohne Betreff und ohne Anschreiben.
-// Die Bestell-Schwester (service.LadeBestellMailVorlage) prüfte von Anfang an auf leer.
+// Eine leer gespeicherte Vorlage darf keinen leeren Brief ergeben: ladeMahnVorlageText fällt
+// auch dann auf den Vorgabetext zurück, nicht nur bei einem Fehler der Datenbank. Der Editor
+// lässt '' durch (die Spalten sind NOT NULL, aber '' ist erlaubt), und es entstünden
+// Mahnbriefe ohne Betreff und ohne Anschreiben. Die Vorlage der Bestellung
+// (service.LadeBestellMailVorlage) prüft ebenso auf leer.
 // Echtes Postgres, weil genau das Zusammenspiel aus gespeicherter Zeile und
 // Fallback-Entscheidung geprüft wird.
 

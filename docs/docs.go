@@ -46,14 +46,14 @@ const docTemplate = `{
         },
         "/abgaenger/pdf": {
             "get": {
-                "description": "Generates a printable PDF for graduating students with their unreturned books (season 01.05.–31.07.).",
+                "description": "Je Abgänger eine Seite mit den noch nicht zurückgegebenen Büchern, in der Saison vom 01.05. bis 31.07.",
                 "produces": [
                     "application/pdf"
                 ],
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get Kontoauszug PDF",
+                "summary": "Kontoauszüge der Abgänger als PDF",
                 "parameters": [
                     {
                         "type": "string",

@@ -1,13 +1,12 @@
 package mahnwesen
 
-// graduates.go — die Abgängerliste: Abschlussklassen mit offenen Büchern, noch an der
-// Schule, sichtbar in der Saison (Mai bis Juli). Daraus entstehen die Kontoauszüge zum
-// Einsammeln vor der Entlassung (Druck hier, Versand in graduates_mail.go).
+// Die Abgängerliste: Abschlussklassen mit offenen Büchern, noch an der Schule, sichtbar in der
+// Saison (Mai bis Juli). Daraus entstehen die Kontoauszüge zum Einsammeln vor der Entlassung
+// (Druck hier, Versand in abgaenger_mail.go).
 //
 // „Abgänger" heißt hier, was die Schule damit meint: die Kinder, die zum Schuljahresende
-// gehen. Wer laut LUSD schon WEG ist (ist_abgaenger = true, Klasse ABG), steht nicht hier,
-// sondern im Mahnwesen — zwei Bedeutungen, die vom 25.06. bis 05.09.2026 denselben Namen
-// trugen (Register, Entscheidung 2).
+// gehen. Wer laut LUSD schon weg ist (ist_abgaenger = true, Klasse ABG), steht nicht hier,
+// sondern im Mahnwesen; zwei Bedeutungen unter einem Namen hielte jeder Leser für eine.
 
 import (
 	"bytes"
@@ -89,18 +88,17 @@ func (t *Tueren) Abgaenger() http.HandlerFunc {
 	}
 }
 
-// ladeAbgaengerKontoauszuege lädt die Abgänger MIT noch offenen Ausleihen als Kontoauszug-
-// Einträge (ein Eintrag je Abgänger, seine Bücher gruppiert). Genutzt für den Stapel-
-// Kontoauszug beim Schulabgang (der frühere „Laufzettel" — jetzt ein Kontoauszug mit
-// Unterschriftszeile). Ein Abgänger ohne offene Bücher braucht keinen: deshalb INNER JOIN
-// auf ausleihen (früher LEFT JOIN) — sonst kamen beim Massendruck von 150 Abgängern 140
-// komplett leere Seiten aus dem Drucker.
+// ladeAbgaengerKontoauszuege lädt die Abgänger mit noch offenen Ausleihen als
+// Kontoauszug-Einträge (ein Eintrag je Abgänger, seine Bücher gruppiert), für den
+// Stapel-Kontoauszug beim Schulabgang mit Unterschriftszeile. Ein Abgänger ohne offene Bücher
+// braucht keinen: Mit einem LEFT JOIN statt des INNER JOIN auf ausleihen kämen beim Massendruck
+// von 150 Abgängern 140 leere Seiten aus dem Drucker.
 //
 // Ein leerer klasse-Filter ("") liefert alle Abgänger; sonst nur die genannte Klasse (für
 // den klassenweisen Druck via /api/abgaenger/pdf?klasse=…).
 //
 // nurIDs engt zusätzlich auf genannte Schüler ein (nil = keine Einengung). Es ist ein
-// SCHNITT mit dieser Abfrage, keine zweite Auswahl: Wer nicht Abgänger mit offenem Buch
+// Schnitt mit dieser Abfrage, keine zweite Auswahl: Wer nicht Abgänger mit offenem Buch
 // ist, bekommt auch mit seiner Kennung keine Seite. So folgt der Druck der Suche der
 // Oberfläche, ohne dass der Server die Suche ein zweites Mal formuliert.
 func (t *Tueren) ladeAbgaengerKontoauszuege(ctx context.Context, klasse string, nurIDs []string) ([]pdf.KontoauszugEintrag, error) {
@@ -135,11 +133,10 @@ func (t *Tueren) ladeAbgaengerKontoauszuege(ctx context.Context, klasse string, 
 	return eintraege, nil
 }
 
-// AbgaengerKontoauszuegePDF erzeugt die Kontoauszüge der Abgänger als PDF (eine Seite
-// je Schüler, mit Freigabezeile). Hieß früher „Laufzettel" — der Name hing dem
-// Dokument noch an, obwohl längst der Kontoauszug erzeugt wird.
-// @Summary      Get Kontoauszug PDF
-// @Description  Generates a printable PDF for graduating students with their unreturned books (season 01.05.–31.07.).
+// AbgaengerKontoauszuegePDF erzeugt die Kontoauszüge der Abgänger als PDF, eine Seite je
+// Schüler mit Freigabezeile.
+// @Summary      Kontoauszüge der Abgänger als PDF
+// @Description  Je Abgänger eine Seite mit den noch nicht zurückgegebenen Büchern, in der Saison vom 01.05. bis 31.07.
 // @Tags         admin
 // @Produce      application/pdf
 // @Param        klasse  query  string  false  "nur diese Klasse"
@@ -177,8 +174,7 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 			return
 		}
 
-		// Der Abgänger-„Laufzettel" ist jetzt ein Kontoauszug MIT Unterschriftszeile
-		// (eine Seite je Abgänger). Ein Dokument statt zweier — Freigabezeile optional.
+		// Der Kontoauszug der Abgänger trägt die Unterschriftszeile (eine Seite je Abgänger).
 		pdfDaten, err := pdf.GenerateKontoauszugBatch(eintraege, true)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -205,7 +201,7 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 //
 // Drei Fälle, und der mittlere ist der gefährliche:
 //
-//   - `ids` fehlt → nil: keine Einengung, es gilt nur der Klassenfilter (wie bisher).
+//   - `ids` fehlt → nil: keine Einengung, es gilt nur der Klassenfilter.
 //   - `ids` ist da, aber leer → Fehler. Eine Suche ohne Treffer darf nicht als „keine
 //     Einengung" gelesen werden — sonst druckte „nichts gefunden" alle Kontoauszüge.
 //     Fehlendes Feld und leeres Feld bedeuten hier Verschiedenes.

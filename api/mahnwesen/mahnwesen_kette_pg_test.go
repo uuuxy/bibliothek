@@ -28,18 +28,18 @@ import (
 //
 // Jedes Glied ist geprüft, aber jedes für sich und mit nachgespielten Antworten: Die
 // Überfälligkeits-Abfrage kennt bisher nur pgxmock — ihr SQL ist also nie gegen ein echtes
-// Postgres gelaufen. Genau dort entscheidet sich, WER gemahnt wird.
+// Postgres gelaufen. Genau dort entscheidet sich, wer gemahnt wird.
 //
 // Die Übergänge, an denen es still auseinanderlaufen kann:
 //
 //   - Die Leihfrist kommt aus einer Einstellung. Käme sie in der Datenbank anders an,
 //     würde zu früh oder gar nicht gemahnt — beides fällt erst Wochen später auf.
 //   - Die Klassenleitung wird über den Klassennamen zugeordnet. Schülerdaten kommen aus
-//     dem LUSD-Import, das Mapping tippt ein Mensch: "5A" gegen "5a " ist der Normalfall,
+//     dem LUSD-Import, die Klassenleitungen tippt ein Mensch: "5A" gegen "5a " ist der Normalfall,
 //     nicht die Ausnahme. Ohne Adresse wird die Klasse still übersprungen ("skipped") —
 //     der Lauf meldet Erfolg, und die Mahnung geht nie raus.
-//   - Jede Lehrkraft darf NUR die eigene Klasse sehen (Datenminimierung).
-//   - Die Mail erhöht die Mahnstufe NICHT (Invariante §1, docs/invarianten.md): Das ist ein
+//   - Jede Lehrkraft darf nur die eigene Klasse sehen (Datenminimierung).
+//   - Die Mail erhöht die Mahnstufe nicht (Invariante §1, docs/invarianten.md): Das ist ein
 //     freundlicher Hinweis vor der Eskalation, nicht die Eskalation selbst.
 
 // inDieVergangenheit macht eine laufende Ausleihe überfällig. Der einzige Weg, "sechs
@@ -61,9 +61,9 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 
 	// 1. Die Einstellung, aus der die Frist entsteht. Bewusst kein Vielfaches von 7 und
 	//    kein Standardwert: Ein übersehener Fallback (21 Tage) fiele sonst nicht auf.
-	//    Seit dem 24.09.2026 rücken Fristen auf den nächsten Schultag — am 24.09.2026 landen
-	//    13 und 21 Tage beide in den Herbstferien und damit auf demselben Montag. Deshalb
-	//    ab 13 die erste Tageszahl, deren Frist sich von der des Fallbacks unterscheidet.
+	// Fristen rücken auf den nächsten Schultag; am 24.09.2026 landen 13 und 21 Tage beide in
+	// den Herbstferien und damit auf demselben Montag. Deshalb ab 13 die erste Tageszahl, deren
+	// Frist sich von der des Fallbacks unterscheidet.
 	tage := 13
 	for tage%7 == 0 || lmfplan.Hessen().Tagesfrist(time.Now(), tage).Equal(lmfplan.Hessen().Tagesfrist(time.Now(), 21)) {
 		tage++
@@ -78,10 +78,10 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Roman ohne Kennzeichen", "B-MAHN-1")
 	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Zweiter Roman", "B-MAHN-2")
 
-	// Schreibweise absichtlich verschieden: Schülerdaten "5A", Mapping "5a " mit
+	// Schreibweise absichtlich verschieden: Schülerdaten "5A", Klassenleitung "5a " mit
 	// Leerzeichen — genau die Kombination, die aus dem LUSD-Import und einem Formular
 	// entsteht. Seit Migration 079 kanonisiert das Klassen-Vokabular beide beim
-	// Schreiben auf DIESELBE registrierte Schreibweise; die Mail muss trotzdem (bzw.
+	// Schreiben auf dieselbe registrierte Schreibweise; die Mail muss trotzdem (bzw.
 	// gerade deshalb) ankommen. Welche Schreibweise gewinnt, entscheidet der
 	// Erstschreiber — der Test liest sie unten aus der DB, wie es auch die UI tut.
 	anna := testdaten.LegeSchuelerAn(t, pool, "S-MAHN-1", "Anna", "5A")
@@ -97,18 +97,16 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// 2. Ausleihe über den echten Dienst → die Frist muss aus der Einstellung stammen.
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
 	frist := testdaten.BucheAusleiheUeberDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
-	// Beide Seiten durch DIESELBE Produktionsdefinition schicken (seit dem 24.09.2026
-	// lmfplan.Ferientabelle.Tagesfrist, davor schulzeit.TagesEnde), statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
-	// in der Schul-Zeitzone (Europe/Berlin), der Test lief mit time.Now() in der Zeitzone des
-	// Runners. Auf dem UTC-CI sind das ab 22:00 UTC zwei verschiedene Kalendertage — genau
-	// daran war dieser Test in der Nacht auf den 22.08.2026 rot (erwartet 03.09., war 04.09.),
-	// und nur in diesem Zwei-Stunden-Fenster. Die Schwestern in
-	// internal/service/frist_test.go (istGleicherTag) wurden beim Zeit-Sweep am 19.08.2026 schon
-	// so normalisiert; dieser Test hier wurde damals übersehen.
-	// Nachstellbar ohne Warten auf Mitternacht: TZ=Pacific/Midway go test ./api/ -run TestMahnkette
-	// AddDate NACH der Umrechnung in die Schulzeitzone — sonst rechnet der Test im
-	// Runner-Kalender und weicht am DST-Ende (24.10., 22–23 UTC) um einen Tag ab
-	// (Prüfung 22.08.2026). Tagesfrist rechnet genau so.
+	// Beide Seiten durch dieselbe Definition des Betriebs schicken
+	// (lmfplan.Ferientabelle.Tagesfrist), statt Kalendertage in der Zeitzone des Testrechners zu
+	// vergleichen: Die Frist entsteht in der Schul-Zeitzone (Europe/Berlin), time.Now() steht in
+	// der Zeitzone des Runners. Auf dem UTC-CI sind das ab 22:00 UTC zwei verschiedene
+	// Kalendertage. internal/service/frist_test.go (istGleicherTag) normalisiert ebenso.
+	// Nachstellbar ohne Warten auf Mitternacht:
+	// TZ=Pacific/Midway go test ./api/mahnwesen/ -run TestMahnkette
+	// AddDate nach der Umrechnung in die Schulzeitzone, sonst rechnet der Test im Kalender des
+	// Runners und weicht am Ende der Sommerzeit (24.10., 22–23 UTC) um einen Tag ab. Tagesfrist
+	// rechnet genau so.
 	erwartet := lmfplan.Hessen().Tagesfrist(time.Now(), tage)
 	if !schulzeit.TagesEnde(frist).Equal(erwartet) {
 		t.Fatalf("Rückgabefrist = %s, erwartet den %s (%d Tage aus der Einstellung)",
@@ -135,7 +133,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 		}
 	}
 
-	// 4. Der Lauf selbst: NUR Annas Klasse auswählen (in der Schreibweise, die die
+	// 4. Der Lauf selbst: nur Annas Klasse auswählen (in der Schreibweise, die die
 	// Kanonisierung gespeichert hat — die UI bietet exakt diese Liste an).
 	sitzungen := tuertest.MailAbfangen(t)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -143,7 +141,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue",
 		strings.NewReader(fmt.Sprintf(`{"klassen":[%q]}`, annaKlasse)))
 	req.Header.Set("Content-Type", "application/json")
-	// Ohne Claims schreibt der Handler kein Audit — und dieser Lauf MUSS auditiert werden.
+	// Ohne Claims schreibt die Tür keinen Eintrag ins Protokoll, und dieser Lauf braucht einen.
 	req = req.WithContext(context.WithValue(ctx, auth.ClaimsContextKey,
 		&auth.Claims{UserID: bearbeiter, Rolle: auth.RoleAdmin}))
 
@@ -152,9 +150,9 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	// BEIDE Zahlen, nicht nur sent_count: Der Testserver nimmt genau EINE Sitzung an, ein
+	// Beide Zahlen, nicht nur sent_count: Der Testserver nimmt genau eine Sitzung an, ein
 	// zweiter Versand scheitert also an der Verbindung und zählt als "skipped". Ohne diese
-	// Zeile bestünde der Test auch dann, wenn der Lauf an ALLE Klassen ginge — die Mail an
+	// Zeile bestünde der Test auch dann, wenn der Lauf an alle Klassen ginge — die Mail an
 	// die falsche Klassenleitung wäre schon raus, und der Test bliebe grün.
 	if antwort := rec.Body.String(); !strings.Contains(antwort, `"sent_count":1`) ||
 		!strings.Contains(antwort, `"skipped_count":0`) {
