@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bibliothek/api/leser"
 	"bibliothek/db"
 	"bibliothek/repository"
 	"net/http"
@@ -61,7 +60,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	// Der Druck zählt die Mahnung: dasselbe Recht wie der Mahnversand (create_orders), nicht
 	// das Leserecht der Seite.
 	mux.Handle("POST /api/admin/mahnungen/bulk-print", s.RequirePermission("create_orders")(s.mahnwesen().MahnbriefeDrucken()))
-	mux.Handle("GET /api/print/kontoauszug/{schueler_id}", s.RequirePermission("view_students")(leser.PrintKontoauszugHandler(s.DB.Pool)))
+	mux.Handle("GET /api/print/kontoauszug/{schueler_id}", s.RequirePermission("view_students")(s.leser().PrintKontoauszugHandler()))
 
 	// Dashboard & Stats
 	mux.Handle("GET /api/dashboard/summary", s.RequirePermission("view_students")(s.system().MahnUebersicht()))

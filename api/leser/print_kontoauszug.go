@@ -33,7 +33,7 @@ func queryKontoauszugBuecher(ctx context.Context, dbPool db.PgxPoolIface, schuel
 }
 
 // PrintKontoauszugHandler generates a simple receipt of all currently borrowed books for a student.
-func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
+func (s *Tueren) PrintKontoauszugHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -44,8 +44,8 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			return
 		}
 
-		kopf, err := repository.LadeKontoauszugKopf(ctx, dbPool, schuelerID)
-		s := pdf.KontoauszugSchueler(kopf)
+		kopf, err := repository.LadeKontoauszugKopf(ctx, s.DB.Pool, schuelerID)
+		schueler := pdf.KontoauszugSchueler(kopf)
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return
@@ -55,7 +55,7 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			return
 		}
 
-		buecher, err := queryKontoauszugBuecher(ctx, dbPool, schuelerID)
+		buecher, err := queryKontoauszugBuecher(ctx, s.DB.Pool, schuelerID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -66,13 +66,13 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			return
 		}
 
-		pdfBytes, err := pdf.GenerateKontoauszug(s, buecher)
+		pdfBytes, err := pdf.GenerateKontoauszug(schueler, buecher)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		filename := fmt.Sprintf("Kontoauszug_%s_%s.pdf", s.Vorname, s.Nachname)
+		filename := fmt.Sprintf("Kontoauszug_%s_%s.pdf", schueler.Vorname, schueler.Nachname)
 
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="%s"`, filename))
