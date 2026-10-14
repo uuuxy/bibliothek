@@ -17,12 +17,11 @@ import (
 	"bibliothek/repository"
 )
 
-// Der Frist-Override darf bei einem GESPERRTEN Schüler die Sanktion nicht aushebeln:
-// Eine Frist in die Zukunft macht die Ausleihe wieder "nicht überfällig" und löscht
-// die Mahn-Eskalation — genau das, was die beiden Verlängerungs-Endpunkte auf
-// demselben Recht ausdrücklich verbieten. Ein VORGEZOGENES Datum (Rückruf) bleibt
-// erlaubt, weil es die Sperre nicht aufhebt. Und jeder Override wird auditiert.
-// Live gefunden 18.08.2026 (Rollen×Aktionen-Prüfung); vorher ging beides ungeprüft.
+// Die Frist von Hand darf bei einem gesperrten Schüler die Sanktion nicht aushebeln: Eine
+// Frist in der Zukunft macht die Ausleihe wieder "nicht überfällig" und löscht die
+// Mahn-Eskalation, genau das, was die beiden Verlängerungen auf demselben Recht ausdrücklich
+// verbieten. Ein vorgezogenes Datum (Rückruf) bleibt erlaubt, weil es die Sperre nicht
+// aufhebt. Und jede Frist von Hand steht im Protokoll.
 func TestAusleihFristSetzen_SperrKonsistenzUndAudit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -91,9 +90,8 @@ func TestAusleihFristSetzen_SperrKonsistenzUndAudit(t *testing.T) {
 		}
 	})
 
-	// Ein Kollege wird nie gesperrt (16.09. und 24.09.2026) — auch hier nicht, wenn an seinem
-	// Konto noch eine Sperre von früher steht. Rot gesehen am Rückbau: ohne die Art in
-	// pruefeAusleihSperre 403.
+	// Ein Kollege wird nie gesperrt, auch hier nicht, wenn an seinem Konto noch eine alte
+	// Sperre steht. Rot gesehen am Rückbau: ohne die Art in pruefeAusleihSperre 403.
 	t.Run("Kollege mit alter Sperre + Zukunftsdatum geht durch", func(t *testing.T) {
 		var kollege string
 		if err := pool.QueryRow(ctx, `
@@ -126,10 +124,10 @@ func TestAusleihFristSetzen_SperrKonsistenzUndAudit(t *testing.T) {
 	})
 }
 
-// TestAusleihFristSetzen_TagesendeInSchulzeitzone belegt die eine Definition von "Tagesende"
-// (Zeit-Sweep 19.08.2026): Der Frist-Override setzt 23:59:59 in der Schulzeitzone (Berlin),
-// nicht roh in UTC. Sonst wäre eine überschriebene Frist zum selben Datum 1–2 h später
-// fällig als eine regulär berechnete — zwei Antworten auf dieselbe fachliche Frage.
+// TestAusleihFristSetzen_TagesendeInSchulzeitzone belegt die eine Definition von "Tagesende":
+// Die Frist von Hand setzt 23:59:59 in der Schulzeitzone (Berlin), nicht roh in UTC. Sonst
+// wäre eine gesetzte Frist zum selben Datum 1–2 h später fällig als eine regulär berechnete,
+// zwei Antworten auf dieselbe fachliche Frage.
 func TestAusleihFristSetzen_TagesendeInSchulzeitzone(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -168,7 +166,7 @@ func TestAusleihFristSetzen_TagesendeInSchulzeitzone(t *testing.T) {
 		t.Fatalf("Frist lesen: %v", err)
 	}
 	fristUTC := frist.UTC()
-	// Muss der 15.07. um 21:59:59 UTC sein (= 23:59:59 Berlin/CEST) — NICHT 23:59:59 UTC.
+	// Muss der 15.07. um 21:59:59 UTC sein (= 23:59:59 Berlin/CEST) — nicht 23:59:59 UTC.
 	if fristUTC.Hour() != 21 || fristUTC.Day() != 15 || fristUTC.Month() != time.July {
 		t.Errorf("Frist muss Berliner Tagesende sein (21:59:59Z am 15.07.), war %s", fristUTC.Format(time.RFC3339))
 	}

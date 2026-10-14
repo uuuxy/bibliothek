@@ -10,14 +10,15 @@ import (
 	"bibliothek/repository"
 )
 
-// vormerkungAnfrage is the body for POST /api/vormerkungen.
+// vormerkungAnfrage ist eine neue Vormerkung (POST /api/vormerkungen).
 type vormerkungAnfrage struct {
 	TitelID    string `json:"titel_id" validate:"required,uuid_oder_leer"`
 	Notiz      string `json:"notiz,omitempty"`
 	SchuelerID string `json:"schueler_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 }
 
-// Vormerkungen handles GET /api/vormerkungen?titel_id=...
+// Vormerkungen liefert die Vormerkungen eines Titels oder eines Schülers
+// (GET /api/vormerkungen?titel_id=…&schueler_id=…).
 func (t *Tueren) Vormerkungen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
@@ -49,7 +50,7 @@ func (t *Tueren) Vormerkungen(vormerkungsAbfragen repository.VormerkungsAbfragen
 	})
 }
 
-// VormerkungAnlegen handles POST /api/vormerkungen.
+// VormerkungAnlegen legt eine Vormerkung an (POST /api/vormerkungen).
 func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req vormerkungAnfrage
@@ -80,7 +81,7 @@ func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen repository.VormerkungsAbf
 	})
 }
 
-// VormerkungLoeschen handles DELETE /api/vormerkungen/{id}.
+// VormerkungLoeschen löscht eine Vormerkung (DELETE /api/vormerkungen/{id}).
 func (t *Tueren) VormerkungLoeschen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

@@ -14,9 +14,9 @@ import (
 )
 
 // GET /api/search erkennt Scans exakt (Treffer), ohne zu buchen: Exemplar-Barcode,
-// Littera-Etikett (EAN-13 → Mediennummer) und Schülerausweis — dieselbe Reihenfolge wie
-// die Theke (verarbeiteOhneVorsilbe), nur als Auskunft. Grundlage der globalen Suchleiste
-// (03.09.2026): Buch → Buchakte, Ausweis → Schülerakte.
+// Littera-Etikett (EAN-13 → Mediennummer) und Schülerausweis, dieselbe Reihenfolge wie die
+// Theke (verarbeiteOhneVorsilbe), nur als Auskunft. Damit springt die globale Suchleiste
+// direkt zur Akte: Buch → Buchakte, Ausweis → Schülerakte.
 func TestSuche_ErkenntScansOhneZuBuchen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -59,9 +59,9 @@ func TestSuche_ErkenntScansOhneZuBuchen(t *testing.T) {
 		t.Errorf("Ausweis: %+v", r.Treffer)
 	}
 	// Der Ausweis eines Kollegen ist derselbe Sprung: Die Akte ist eine Maske für jeden, und
-	// die Theke löst ihn längst über FindeZuBarcode auf. Bis zum 21.09.2026 fragte die
-	// Scan-Erkennung als einzige Stelle noch die Sicht `schueler` — Treffer nil, und die
-	// Suchleiste fiel auf die unscharfe Namenssuche zurück (OFFEN.md 5.19).
+	// die Theke löst ihn über FindeZuBarcode auf. Fragte die Scan-Erkennung die Sicht
+	// `schueler`, wäre Treffer nil, und die Suchleiste fiele auf die unscharfe Namenssuche
+	// zurück.
 	if r := suche("A-KOLL-77"); r.Treffer == nil || r.Treffer.Typ != "schueler" || r.Treffer.ID != kollegeID {
 		t.Errorf("Ausweis eines Kollegen: %+v — want Treffer auf %s", r.Treffer, kollegeID)
 	}

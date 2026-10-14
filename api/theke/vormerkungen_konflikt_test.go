@@ -25,11 +25,10 @@ func (v vormerkungsAttrappe) LegeAn(context.Context, string, string, string) (st
 	return "", v.err
 }
 
-// Die zweite Vormerkung desselben Schülers auf denselben Titel ist ein Konflikt (409),
-// kein Serverfehler. Bis zum 12.09.2026 lief der Constraint-Fehler in den Sammel-Zweig
-// apierrors.Internal: Die Theke bekam 500 und „Fehler beim Erstellen der Vormerkung" —
-// dieselbe Meldung wie bei einem kaputten Server, und keine Auskunft darüber, ob die
-// erste Vormerkung noch steht.
+// Die zweite Vormerkung desselben Schülers auf denselben Titel ist ein Konflikt (409), kein
+// Serverfehler. Liefe der Fehler der Einschränkung in den Sammel-Zweig apierrors.Internal,
+// bekäme die Theke 500 und „Fehler beim Erstellen der Vormerkung", dieselbe Meldung wie bei
+// einem kaputten Server, und keine Auskunft darüber, ob die erste Vormerkung noch steht.
 func TestVormerkungAnlegen_ZweiteIstKonflikt(t *testing.T) {
 	faelle := []struct {
 		name   string

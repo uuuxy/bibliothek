@@ -14,13 +14,11 @@ import (
 
 // Die Suche antwortet auf eine Anfrage mit Doppelpunkt, ohne zu stolpern.
 //
-// Bis zum 17.09.2026 hing dieser Test an einer FESTEN Adresse auf die Entwicklungs-Datenbank
-// (Port 5434, Passwort im Quelltext) und übersprang sich selbst, sobald sie nicht antwortete.
-// Auf jedem anderen Rechner — und in der CI — lief er damit stillschweigend nie: ein Test,
-// der grün aussieht, weil er gar nicht stattfindet (OFFEN.md 5.10).
-//
-// Jetzt derselbe Weg wie jeder andere Postgres-Test im Haus: `pgtest.Pool` überspringt nur,
-// wenn TEST_DATABASE_URL fehlt, und das ist eine sichtbare Entscheidung statt eines Zufalls.
+// Der Test nimmt denselben Weg wie jeder andere Postgres-Test im Haus: `pgtest.Pool`
+// überspringt nur, wenn TEST_DATABASE_URL fehlt. Eine feste Adresse auf die
+// Entwicklungs-Datenbank, die sich bei fehlender Antwort selbst überspränge, liefe auf jedem
+// anderen Rechner und in der CI still nie: ein Test, der grün aussieht, weil er gar nicht
+// stattfindet.
 func TestSuche_AnfrageMitDoppelpunkt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	database := &db.Database{Pool: pool}

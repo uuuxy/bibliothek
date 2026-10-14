@@ -6490,14 +6490,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "abholbereit": {
-                    "description": "Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung\n01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten\nSchüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;\nPII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).",
+                    "description": "Abholbereit: Abholfach-Hinweis beim Scan eines Ausweises; die Kraft an der Theke sieht\nsofort, dass für den gescannten Schüler ein vorgemerktes Buch im Abholfach liegt. Titel\nund Frist, keine IDs; PII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu\nName).",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/theke.abholbereiteVormerkung"
                     }
                 },
                 "auflagen_hinweis": {
-                    "description": "AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die\nKinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5) — Klasse, diese\nAuflage und die anderen mit der Zahl der Kinder, keine Namen. PII-Matrix: Stufe 1 wie\ndie übrige Theken-Antwort (die Klasse des Kindes steht dort ohnehin).",
+                    "description": "AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die\nKinder derselben Klasse schon haben; Klasse, diese Auflage und die anderen mit der Zahl\nder Kinder, keine Namen. PII-Matrix: Stufe 1 wie die übrige Theken-Antwort (die Klasse\ndes Kindes steht dort ohnehin).",
                     "allOf": [
                         {
                             "$ref": "#/definitions/repository.AuflagenMischung"
@@ -6505,82 +6505,53 @@ const docTemplate = `{
                     ]
                 },
                 "aufsicht_informieren": {
-                    "description": "AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen\nSchadensersatz-Bescheid — die Schulaufsicht ist unverzüglich zu informieren (#597).\nGetrennt von Message, weil es eine Aufgabe ist und keine Erfolgsmeldung.",
+                    "description": "AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen\nSchadensersatz-Bescheid; die Schulaufsicht ist unverzüglich zu informieren. Getrennt von\nMeldung, weil es eine Aufgabe ist und keine Erfolgsmeldung.",
                     "type": "string"
                 },
                 "book": {
-                    "description": "Book copy details if applicable",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/repository.Exemplar"
-                        }
-                    ]
+                    "$ref": "#/definitions/repository.Exemplar"
                 },
                 "due_date": {
-                    "description": "Return deadline for check-outs",
                     "type": "string"
                 },
                 "fremdrueckgabe": {
-                    "description": "Flag for returns from another reader",
                     "type": "boolean"
                 },
                 "geraet": {
-                    "description": "Hardware details if applicable",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/repository.Geraet"
-                        }
-                    ]
+                    "$ref": "#/definitions/repository.Geraet"
                 },
                 "has_vormerkung": {
-                    "description": "True if returned book has a pending reservation",
                     "type": "boolean"
                 },
                 "loan_id": {
-                    "description": "Loan UUID (for Undo support on returns)",
                     "type": "string"
                 },
                 "message": {
-                    "description": "Informational message for the frontend",
                     "type": "string"
                 },
                 "regalfreigabe_barcode": {
-                    "description": "RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the\nregular shelf because the student took a different copy of the same title.",
+                    "description": "RegalfreigabeBarcode: das vorgemerkte Exemplar im Abholfach, das zurück ins Regal muss,\nweil der Leser ein anderes Exemplar desselben Titels genommen hat.",
                     "type": "string"
                 },
                 "search_results": {
-                    "description": "Full-text search list",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/repository.Titel"
                     }
                 },
                 "student": {
-                    "description": "Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe thekenLeser)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/theke.thekenLeser"
-                        }
-                    ]
+                    "$ref": "#/definitions/theke.thekenLeser"
                 },
                 "type": {
-                    "description": "\"student\", \"ausleihe\", \"rueckgabe\", \"search_results\", \"info\"",
                     "type": "string"
                 },
                 "vorbesitzer": {
-                    "description": "Original borrower if foreign return (Theken-Sicht)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/theke.thekenLeser"
-                        }
-                    ]
+                    "$ref": "#/definitions/theke.thekenLeser"
                 },
                 "vormerkung_titel": {
-                    "description": "Title name of the reserved book",
                     "type": "string"
                 },
                 "vormerkung_user": {
-                    "description": "Reserved for: student name \u0026 class",
                     "type": "string"
                 }
             }
@@ -6601,7 +6572,7 @@ const docTemplate = `{
                     }
                 },
                 "gesendet_am": {
-                    "description": "GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN\nUhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die\nScan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch\ngehende Uhr nicht erkennen.",
+                    "description": "GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von derselben\nUhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die\nScan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch\ngehende Uhr nicht erkennen.",
                     "type": "string"
                 }
             }
@@ -6705,7 +6676,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "ist_gesperrt": {
-                    "description": "Operative Flags, keine Personendaten: Die Theke muss sehen, dass eine\nAusleihe blockiert ist. Der Grund (block_reason) bleibt draußen — er\nkann sensiblen Freitext tragen und kommt bei Bedarf als Fehlermeldung\nder jeweiligen Aktion an.",
+                    "description": "Angaben für den Betrieb, keine Personendaten: Die Theke muss sehen, dass eine Ausleihe\nblockiert ist. Der Grund (block_reason) bleibt draußen; er kann sensiblen Freitext tragen\nund kommt bei Bedarf als Fehlermeldung der jeweiligen Aktion an.",
                     "type": "boolean"
                 },
                 "klasse": {

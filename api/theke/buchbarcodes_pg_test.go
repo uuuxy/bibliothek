@@ -12,13 +12,12 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Die Barcode-Liste der Theke am echten Postgres (Stufe 2, Commit 12).
+// Die Barcode-Liste der Theke am echten Postgres.
 //
-// Geprüft wird, worauf sich die Offline-Einordnung verlässt: Die Liste enthält JEDES nicht
-// ausgesonderte Exemplar (eine gekappte Liste machte vorhandene Bücher offline zu
-// „unklar"), sie enthält KEIN ausgesondertes, sie ändert ihren Stand, wenn sich der
-// Bestand ändert, und bei unverändertem Stand antwortet sie 304 statt die Liste erneut zu
-// schicken. Rot am alten Code: Die Route gab es nicht.
+// Geprüft wird, worauf sich die Offline-Einordnung verlässt: Die Liste enthält jedes
+// Exemplar, auch die ausgesonderten (eine gekappte Liste machte vorhandene Bücher offline zu
+// „unklar"), sie ändert ihren Stand, wenn sich der Bestand ändert, und bei unverändertem
+// Stand antwortet sie 304 statt die Liste erneut zu schicken.
 func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -70,8 +69,8 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	}
 	// Ein ausgesondertes Exemplar gehört hinein: Kommt ein verloren gemeldetes Buch offline
 	// zurück, holt das Nachbuchen es in den Umlauf („nur_reaktiviert"). Fehlte seine Nummer,
-	// gälte es an der Theke als unklar und sperrte die Zuordnung (Rasterdurchgang 15.09.2026,
-	// OFFEN.md 5.15). Die Nummer bleibt eine Buchnummer, auch wenn das Buch abgeschrieben ist.
+	// gälte es an der Theke als unklar und sperrte die Zuordnung. Die Nummer bleibt eine
+	// Buchnummer, auch wenn das Buch abgeschrieben ist.
 	if !enthalten["B-BC-WEG"] {
 		t.Error("ein ausgesondertes Exemplar fehlt in der Liste — offline gälte es als unklar, obwohl das Nachbuchen es zurückholt")
 	}
@@ -90,8 +89,8 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	if rec.Body.Len() != 0 {
 		t.Errorf("304 mit Rumpf (%d Byte)", rec.Body.Len())
 	}
-	// Die 304 trägt den Kopf der 200 (RFC 9110, 15.4.5). Ohne ihn stünde dort seit dem
-	// 30.09.2026 die Vorgabe no-store der Schnittstelle (OFFEN.md 5.29).
+	// Die 304 trägt den Kopf der 200 (RFC 9110, 15.4.5). Ohne ihn stünde dort die Vorgabe
+	// no-store der Schnittstelle.
 	if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
 		t.Errorf("304: Cache-Control %q, erwartet no-cache wie an der 200", cc)
 	}
@@ -113,7 +112,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 		t.Errorf("Anzahl %d, erwartet %d", zweite.Anzahl, antwort.Anzahl+1)
 	}
 
-	// Ein GELÖSCHTES Exemplar ändert den Stand ebenfalls — das ist der Fall, für den die
+	// Ein gelöschtes Exemplar ändert den Stand ebenfalls — das ist der Fall, für den die
 	// Anzahl im Stand steht: Beim Löschen ändert sich max(aktualisiert_am) nicht, wenn das
 	// gelöschte Exemplar nicht das zuletzt geänderte war. Ohne die Anzahl behielte der
 	// Theken-Rechner eine Nummer, die es nicht mehr gibt.

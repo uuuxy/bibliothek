@@ -9,10 +9,9 @@ import (
 	"bibliothek/internal/service"
 )
 
-// TestStatusDesFehlers: Der Status entscheidet an der Theke, welche Meldung
-// erscheint, und landet mit der Antwort im Idempotenz-Cache. Über die Handler-Tests war
-// bis zum 29.09.2026 nur „gesperrt → 403" abgesichert; 404, 400 und 409 ließen sich
-// vertauschen, ohne dass ein Test rot wurde.
+// TestStatusDesFehlers: Der Status entscheidet an der Theke, welche Meldung erscheint, und
+// landet mit der Antwort in der Ablage. Der Test hält jede Zuordnung fest, damit sich 404,
+// 400 und 409 nicht unbemerkt vertauschen.
 func TestStatusDesFehlers(t *testing.T) {
 	faelle := []struct {
 		name     string

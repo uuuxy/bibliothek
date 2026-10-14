@@ -1,16 +1,16 @@
 package theke
 
-// Das Live-Signal der Meldungsliste (Schritt C des Offline-Baus, OFFEN.md Abschnitt 2).
+// Das Live-Signal der Meldungsliste.
 //
 // Die Liste hängt am Band jedes Arbeitsplatzes. Ohne Signal zeigte der zweite Arbeitsplatz
-// seine Zahl bis zur nächsten Anmeldung weiter — bei einer Theke mit zwei Rechnern heißt
-// das: Einer quittiert, der andere sieht die erledigte Meldung den ganzen Tag.
+// seine Zahl bis zur nächsten Anmeldung weiter; bei einer Theke mit zwei Rechnern hieße das:
+// Einer quittiert, der andere sieht die erledigte Meldung den ganzen Tag.
 //
-// Gemeldet wird an der WIRKUNG, nicht an einer Liste der Ergebnisse, die eine Meldung
-// erzeugen: Welche das sind, weiß der Dienst; eine zweite Liste im Handler stimmte genau
-// bis zur nächsten Meldung, die jemand hinzufügt. Deshalb zählt der Handler vorher und
-// nachher — und genau das prüft dieser Test: Ein Nachbuchen OHNE Abweichung schweigt, eines
-// MIT Abweichung meldet sich.
+// Gemeldet wird an der Wirkung, nicht an einer Liste der Ergebnisse, die eine Meldung
+// erzeugen: Welche das sind, weiß der Dienst; eine zweite Liste in der Tür stimmte genau bis
+// zur nächsten Meldung, die jemand hinzufügt. Deshalb zählt die Tür vorher und nachher, und
+// genau das prüft dieser Test: Ein Nachbuchen ohne Abweichung schweigt, eines mit Abweichung
+// meldet sich.
 
 import (
 	"bufio"
@@ -74,7 +74,7 @@ func TestNachbuchMeldungen_SSESignalBeiAenderung(t *testing.T) {
 		}
 	}
 	// Auf der Leitung liegt mehr als diese eine Sorte: Der Online-Scan meldet `action`.
-	// Gewartet wird deshalb AUF das Ereignis, nicht auf das nächste.
+	// Gewartet wird deshalb auf dieses Ereignis, nicht auf das nächste.
 	warteAuf := func(was string) {
 		t.Helper()
 		for i := 0; i < 8; i++ {

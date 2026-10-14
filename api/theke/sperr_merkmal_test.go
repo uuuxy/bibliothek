@@ -1,14 +1,14 @@
 package theke
 
-// X-Sperre — das Merkmal, an dem der Sperr-Dialog der Theke wählt, was er anbietet:
+// X-Sperre ist das Merkmal, an dem der Sperr-Dialog der Theke wählt, was er anbietet:
 // „uebergehbar" das einmalige Übergehen (Forderung, Überfällig-Automatik), „leser" das
-// Aufheben der Sperre am Leser (seit dem 24.09.2026, service/sperr_merkmal.go; rot gesehen
-// am Rückbau: sperrMerkmal ohne den Fall „leser" — der Header bleibt leer).
+// Aufheben der Sperre am Leser (internal/service/sperr_merkmal.go; rot gesehen am Rückbau:
+// sperrMerkmal ohne den Fall „leser", der Kopf bleibt leer).
 //
-// Bis zum 13.09.2026 entschied das Frontend am Wortlaut der 403-Meldung. Die Schadens-
-// Sperre („1 unbezahlte(r) Schadensfall/-fälle offen") traf keins der Stichwörter: kein
-// Dialog, kein Override, obwohl der Server es erlaubt (am Stack nachgestellt). Der Body
-// bleibt die eine kanonische Fehlerform {"error": …}; das Merkmal steht im Header.
+// Entschiede die Oberfläche am Wortlaut der 403-Meldung, träfe die Schadens-Sperre („1
+// unbezahlte(r) Schadensfall/-fälle offen") keins der Stichwörter: kein Dialog, kein
+// Übergehen, obwohl der Server es erlaubt. Der Rumpf bleibt die eine Fehlerform
+// {"error": …}; das Merkmal steht im Kopf.
 
 import (
 	"context"
@@ -113,8 +113,8 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer mock.Close()
-		// Seit dem 15.09.2026 (Commit 7): Reservierung VOR der Arbeit, Antwort danach in die
-		// Reservierung (repository/idempotenz.go).
+		// Reservierung vor der Arbeit, die Antwort danach in die Reservierung
+		// (repository/idempotenz.go).
 		mock.ExpectQuery("INSERT INTO idempotency_keys").
 			WithArgs(schluessel, repository.IdempotenzReservierungsfrist.Seconds()).
 			WillReturnRows(pgxmock.NewRows([]string{"idempotency_key"}).AddRow(schluessel))

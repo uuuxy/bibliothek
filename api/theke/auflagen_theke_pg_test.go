@@ -18,7 +18,7 @@ import (
 	"bibliothek/sse"
 )
 
-// Gemischte Auflagen an der Theke (docs/OFFEN.md 4.18, Stufe 5): Bekommt ein Kind eine Auflage,
+// Gemischte Auflagen an der Theke: Bekommt ein Kind eine Auflage,
 // während Kinder seiner Klasse eine andere desselben Buchs haben, trägt die Antwort des Scans
 // den Hinweis. Geprüft über den Live-Pfad — POST /api/action mit dem echten Omnibox- und
 // Ausleih-Dienst —, denn nur so ist belegt, dass der Hinweis von der Buchung bis in die JSON-

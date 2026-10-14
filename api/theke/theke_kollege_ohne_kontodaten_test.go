@@ -9,15 +9,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Theken-Antwort trägt von einem Kollegen nur Identität — keine Anschrift, keine
-// Kontaktdaten, kein Geburtsdatum. Gemessen an der SERIALISIERTEN Antwort, nicht am Typ:
-// Genau dieses JSON bekommt der Helfer, denn /api/action hängt am Recht perform_actions,
-// das auch die Helfer-Rolle trägt.
-//
-// Bis zum 07.09.2026 lief hier das volle Konto durch — mit E-Mail, Rolle und Anlagedatum.
-// Seit Migration 125 ist ein Kollege ein LESER und läuft durch dieselbe Theken-Sicht wie
-// ein Schüler (thekenLeser); dieser Test hält fest, dass die Beschränkung dabei nicht
-// verloren gegangen ist.
+// Die Theken-Antwort trägt von einem Kollegen nur Identität, keine Anschrift, keine
+// Kontaktdaten, kein Geburtsdatum. Gemessen an der serialisierten Antwort, nicht am Typ:
+// Genau dieses JSON bekommt der Helfer, denn /api/action hängt am Recht perform_actions, das
+// auch die Helfer-Rolle trägt. Ein Kollege ist ein Leser (Migration 125) und läuft durch
+// dieselbe Theken-Sicht wie ein Schüler (thekenLeser); das volle Konto mit E-Mail, Rolle und
+// Anlagedatum gehört nicht hinein.
 func TestEingabeAntwort_KollegeOhneKontodaten(t *testing.T) {
 	gebdatum := "1980-04-01"
 	voll := &repository.Leser{

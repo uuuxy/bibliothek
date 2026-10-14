@@ -14,19 +14,18 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Nachbuch-Tür der Theke (Stufe 2 des Offline-Baus, Commit 11, OFFEN.md 2.2).
+// Die Nachbuch-Tür der Theke.
 //
-// Der Theken-Rechner schickt seine Warteschlange, der Server bucht je Eintrag die
-// WIRKLICHKEIT und antwortet je Eintrag mit einem Ergebnis. Abweichungen vom Scan stehen
-// zusätzlich als Nachbuch-Meldung am Server, bis jemand sie quittiert — nichts
-// verschwindet still (entschieden am 13.09.2026, c).
+// Der Theken-Rechner schickt seine Warteschlange, der Server bucht je Eintrag die Wirklichkeit
+// und antwortet je Eintrag mit einem Ergebnis. Abweichungen vom Scan stehen zusätzlich als
+// Nachbuch-Meldung am Server, bis jemand sie quittiert; nichts verschwindet still.
 //
-// Der Handler ist dünn: Er prüft die Form, misst die Uhr des Rechners, klärt den
+// Die Tür ist dünn: Sie prüft die Form, misst die Uhr des Rechners, klärt den
 // Idempotenz-Schlüssel (nachbuchen_schluessel.go) und reicht durch. Die Regeln liegen im
-// Dienst (internal/service/nachbuchen.go), das SQL im repository — wie überall.
+// Dienst (internal/service/nachbuchen.go), das SQL im repository, wie überall.
 
 // nachbuchenHoechstens: 1–50 Einträge je Aufruf. Mehr wäre eine Transaktion, die zu lange
-// offen steht; die Theke schickt in Portionen (Stufe 3).
+// offen steht; die Theke schickt in Portionen.
 const nachbuchenHoechstens = 50
 
 // uhrVersatzWarnenAb: Ab diesem Versatz steht die Uhr des Theken-Rechners im Log. Gebucht wird
@@ -36,7 +35,7 @@ const uhrVersatzWarnenAb = 2 * time.Minute
 
 // nachbuchAnfrage ist eine Portion der Warteschlange.
 type nachbuchAnfrage struct {
-	// GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN
+	// GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von derselben
 	// Uhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die
 	// Scan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch
 	// gehende Uhr nicht erkennen.
@@ -88,12 +87,12 @@ type nachbuchAntwort struct {
 
 // nachbuchWiederholen: Der Server konnte diesen Eintrag nicht beurteilen (Datenbank weg, oder
 // eine Buchung unter demselben Schlüssel läuft noch). Er bleibt auf dem Theken-Rechner liegen und
-// wird später erneut geschickt — deshalb steht er NICHT in den Ergebnissen der Meldungstabelle.
+// wird später erneut geschickt — deshalb steht er nicht in den Ergebnissen der Meldungstabelle.
 const nachbuchWiederholen = "wiederholen"
 
 // nachbuchBereitsGebucht: Der Online-Versand unter demselben Schlüssel hat den Scan schon
 // vollständig gebucht, nur seine Antwort kam nicht an. Nichts wird gebucht, nichts gemeldet;
-// Daten trägt die damals gebuchte Wirkung. Kein Wort der Meldungstabelle.
+// Daten trägt die online gebuchte Wirkung. Kein Wort der Meldungstabelle.
 const nachbuchBereitsGebucht = "bereits_gebucht"
 
 // WarteschlangeNachbuchen nimmt eine Portion der Warteschlange entgegen.
@@ -228,7 +227,7 @@ func (t *Tueren) zaehleMeldungen(ctx context.Context) (int, bool) {
 
 // meldeMeldungsstand sagt allen Arbeitsplätzen, dass sich die Zahl der offenen Meldungen
 // geändert hat. Ohne Inhalt: Die Zeilen nennen Schüler und Vorbesitzer, und die Leitung
-// geht an JEDE Sitzung — auch an die eines Helfers, der die Liste nicht sehen darf. Wer
+// geht an jede Sitzung — auch an die eines Helfers, der die Liste nicht sehen darf. Wer
 // sie sehen darf, holt sie sich hinter seinem Recht ab.
 func (t *Tueren) meldeMeldungsstand() {
 	if t.Broker != nil {

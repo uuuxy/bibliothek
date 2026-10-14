@@ -8,8 +8,8 @@ import (
 	"bibliothek/repository"
 )
 
-// vollerTestLeser trägt in JEDEM sensiblen Feld einen Markerwert. Taucht einer
-// der Marker in einer Kiosk-Antwort auf, ist die Datenminimierung gerissen.
+// vollerTestLeser trägt in jedem sensiblen Feld einen Markerwert. Taucht einer
+// der Marker in einer Theken-Antwort auf, ist die Datenminimierung gerissen.
 func vollerTestLeser() repository.Leser {
 	geb := "2012-05-14"
 	return repository.Leser{
@@ -21,7 +21,7 @@ func vollerTestLeser() repository.Leser {
 	}
 }
 
-// verbotenInThekenAntwort sind die Feldinhalte UND Schlüssel, die eine Antwort
+// verbotenInThekenAntwort sind die Feldinhalte und Schlüssel, die eine Antwort
 // auf einem perform_actions-Endpunkt (Theke/Helfer) nie tragen darf —
 // Sicherheitsbefund bewertung/sicherheitsbefund-kiosk-suche.md.
 var verbotenInThekenAntwort = []string{
@@ -58,7 +58,7 @@ func TestThekenAntwortenOhneSchuelerPII(t *testing.T) {
 	suche := suchErgebnis{Leser: zuThekenLesern([]repository.Leser{s})}
 	pruefeThekenLeserJSON(t, suche, "suchErgebnis")
 
-	// Was die Theke BRAUCHT, muss drinbleiben — sonst wäre der leichteste Weg,
+	// Was die Theke braucht, muss drinbleiben — sonst wäre der leichteste Weg,
 	// diesen Test grün zu bekommen, eine leere Antwort.
 	raw, err := json.Marshal(resp)
 	if err != nil {

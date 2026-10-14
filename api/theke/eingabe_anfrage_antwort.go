@@ -7,49 +7,51 @@ import (
 	"bibliothek/repository"
 )
 
-// EingabeAnfrage holds the parameters for the Omnibox dispatcher.
+// EingabeAnfrage ist ein Scan oder eine Suche an der Theke (POST /api/action).
 type EingabeAnfrage struct {
 	Text string `json:"query" validate:"required"`
-	// AktiverLeserID ist die Person, die gerade an der Theke steht. Bis Migration 125
-	// gab es active_student_id UND active_teacher_id; welche gefüllt war, entschied,
-	// in welche Spalte die Ausleihe ging.
+	// AktiverLeserID ist die Person, die gerade an der Theke steht, gleich welcher Art:
+	// Schüler und Kollegen stehen in einer Tabelle (Migration 125), und die Ausleihe hat eine
+	// Spalte für beide.
 	AktiverLeserID       *string `json:"active_leser_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 	ChecklisteBestaetigt bool    `json:"confirmed_checklist,omitempty"`
 	SperreUebergehen     bool    `json:"override_block,omitempty"`
 	IdempotenzSchluessel string  `json:"idempotency_key,omitempty"`
 }
 
-// eingabeAntwort is the polymorphic output payload returned by the Omnibox.
+// eingabeAntwort ist die Antwort der Theke auf eine Eingabe: service.OmniboxErgebnis in der
+// Form für JSON, mit der Theken-Sicht auf den Leser (thekenLeser) statt des vollen
+// Datensatzes. Was die Felder bedeuten, steht dort.
 type eingabeAntwort struct {
-	Art             string               `json:"type"`                       // "student", "ausleihe", "rueckgabe", "search_results", "info"
-	Meldung         string               `json:"message,omitempty"`          // Informational message for the frontend
-	Leser           *thekenLeser         `json:"student,omitempty"`          // Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe thekenLeser)
-	Exemplar        *repository.Exemplar `json:"book,omitempty"`             // Book copy details if applicable
-	Geraet          *repository.Geraet   `json:"geraet,omitempty"`           // Hardware details if applicable
-	Frist           *time.Time           `json:"due_date,omitempty"`         // Return deadline for check-outs
-	AusleiheID      *string              `json:"loan_id,omitempty"`          // Loan UUID (for Undo support on returns)
-	Fremdrueckgabe  bool                 `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another reader
-	Vorbesitzer     *thekenLeser         `json:"vorbesitzer,omitempty"`      // Original borrower if foreign return (Theken-Sicht)
-	Treffer         []repository.Titel   `json:"search_results,omitempty"`   // Full-text search list
-	HatVormerkung   bool                 `json:"has_vormerkung,omitempty"`   // True if returned book has a pending reservation
-	VormerkungTitel string               `json:"vormerkung_titel,omitempty"` // Title name of the reserved book
-	VorgemerktFuer  string               `json:"vormerkung_user,omitempty"`  // Reserved for: student name & class
-	// RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the
-	// regular shelf because the student took a different copy of the same title.
+	Art             string               `json:"type"`
+	Meldung         string               `json:"message,omitempty"`
+	Leser           *thekenLeser         `json:"student,omitempty"`
+	Exemplar        *repository.Exemplar `json:"book,omitempty"`
+	Geraet          *repository.Geraet   `json:"geraet,omitempty"`
+	Frist           *time.Time           `json:"due_date,omitempty"`
+	AusleiheID      *string              `json:"loan_id,omitempty"`
+	Fremdrueckgabe  bool                 `json:"fremdrueckgabe,omitempty"`
+	Vorbesitzer     *thekenLeser         `json:"vorbesitzer,omitempty"`
+	Treffer         []repository.Titel   `json:"search_results,omitempty"`
+	HatVormerkung   bool                 `json:"has_vormerkung,omitempty"`
+	VormerkungTitel string               `json:"vormerkung_titel,omitempty"`
+	VorgemerktFuer  string               `json:"vormerkung_user,omitempty"`
+	// RegalfreigabeBarcode: das vorgemerkte Exemplar im Abholfach, das zurück ins Regal muss,
+	// weil der Leser ein anderes Exemplar desselben Titels genommen hat.
 	RegalfreigabeBarcode string `json:"regalfreigabe_barcode,omitempty"`
 	// AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen
-	// Schadensersatz-Bescheid — die Schulaufsicht ist unverzüglich zu informieren (#597).
-	// Getrennt von Message, weil es eine Aufgabe ist und keine Erfolgsmeldung.
+	// Schadensersatz-Bescheid; die Schulaufsicht ist unverzüglich zu informieren. Getrennt von
+	// Meldung, weil es eine Aufgabe ist und keine Erfolgsmeldung.
 	AufsichtInformieren string `json:"aufsicht_informieren,omitempty"`
-	// Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung
-	// 01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten
-	// Schüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;
-	// PII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).
+	// Abholbereit: Abholfach-Hinweis beim Scan eines Ausweises; die Kraft an der Theke sieht
+	// sofort, dass für den gescannten Schüler ein vorgemerktes Buch im Abholfach liegt. Titel
+	// und Frist, keine IDs; PII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu
+	// Name).
 	Abholbereit []abholbereiteVormerkung `json:"abholbereit,omitempty"`
 	// AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die
-	// Kinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5) — Klasse, diese
-	// Auflage und die anderen mit der Zahl der Kinder, keine Namen. PII-Matrix: Stufe 1 wie
-	// die übrige Theken-Antwort (die Klasse des Kindes steht dort ohnehin).
+	// Kinder derselben Klasse schon haben; Klasse, diese Auflage und die anderen mit der Zahl
+	// der Kinder, keine Namen. PII-Matrix: Stufe 1 wie die übrige Theken-Antwort (die Klasse
+	// des Kindes steht dort ohnehin).
 	AuflagenHinweis *repository.AuflagenMischung `json:"auflagen_hinweis,omitempty"`
 }
 
@@ -59,7 +61,9 @@ type abholbereiteVormerkung struct {
 	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
 }
 
-// thekenEreignis represents the data broadcasted to SSE clients on updates.
+// thekenEreignis ist die Meldung „action" der Live-Leitung nach einer Ausleihe oder Rückgabe.
+// Jedes angemeldete Konto bekommt sie; einen Namen trägt sie deshalb nicht (PII-Matrix,
+// Stufe 0).
 type thekenEreignis struct {
 	Art        string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
 	LeserID    string `json:"student_id,omitempty"`
@@ -69,7 +73,8 @@ type thekenEreignis struct {
 	Zeitpunkt  int64  `json:"timestamp"`
 }
 
-// sendeThekenEreignis broadcasts the action event as JSON via SSE stream.
+// sendeThekenEreignis schickt das Ereignis über die Live-Leitung; ohne Exemplar (Gerät)
+// schickt es nichts.
 func (t *Tueren) sendeThekenEreignis(antwort eingabeAntwort) {
 	if antwort.Exemplar == nil {
 		return

@@ -1,12 +1,12 @@
 package theke
 
-// Die Uhr des Theken-Rechners an der Nachbuch-Tür (Rasterdurchgang 15.09.2026, OFFEN.md 5.15).
+// Die Uhr des Theken-Rechners an der Nachbuch-Tür.
 //
-// Der Scan-Zeitpunkt kommt vom Rechner, der Bewegungsstempel vom Server. Bis hierher wurde der
-// Scan nur nach oben auf die Serverzeit gekappt: Ging die Uhr des Rechners vor, lag eine offline
-// gebuchte Rückgabe nach der jüngeren Online-Ausleihe eines anderen Kindes und beendete sie. Jetzt
-// schickt der Rechner mit jeder Portion seine Uhrzeit beim Versand; der Server misst daran den
-// Versatz und rechnet die Scan-Zeitpunkte der Portion auf seine Uhr um.
+// Der Scan-Zeitpunkt kommt vom Rechner, der Bewegungsstempel vom Server. Würde der Scan nur
+// nach oben auf die Serverzeit gekappt, läge bei vorgehender Uhr eine offline gebuchte
+// Rückgabe nach der jüngeren Online-Ausleihe eines anderen Kindes und beendete sie. Deshalb
+// schickt der Rechner mit jeder Portion seine Uhrzeit beim Versand; der Server misst daran
+// den Versatz und rechnet die Scan-Zeitpunkte der Portion auf seine Uhr um.
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func (w *nachbuchWelt) ausleiheOffen(t *testing.T, schueler string) bool {
 }
 
 // Theke 1 geht 15 Minuten vor. Anna gibt dort offline zurück; danach leiht Theke 2 dasselbe Buch
-// online an Ben. Beim Nachbuchen muss die Rückgabe VOR Bens Ausleihe liegen: veraltet, Bens
+// online an Ben. Beim Nachbuchen muss die Rückgabe vor Bens Ausleihe liegen: veraltet, Bens
 // Ausleihe bleibt.
 func TestNachbuchen_Uhr_VorgehendeUhrBeendetKeineJuengereAusleihe(t *testing.T) {
 	w := baueNachbuchWelt(t)

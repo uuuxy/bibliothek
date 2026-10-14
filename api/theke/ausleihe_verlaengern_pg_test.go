@@ -20,10 +20,9 @@ import (
 	"bibliothek/repository"
 )
 
-// pruefeFrist belegt die neue Frist auf die Sekunde: Seit dem 24.09.2026 rechnet die
-// Verlängerung mit der Uhr des Servers (s.jetzt) statt mit CURRENT_TIMESTAMP, der Test setzt
-// sie fest. Vorher prüfte er mit einem Tag Toleranz gegen time.Now() — das hätte weder das
-// Tagesende noch den nächsten Schultag gesehen.
+// pruefeFrist belegt die neue Frist auf die Sekunde: Die Verlängerung rechnet mit der Uhr
+// des Servers statt mit CURRENT_TIMESTAMP, und der Test setzt sie fest. Mit einem Tag Toleranz
+// gegen time.Now() sähe er weder das Tagesende noch den nächsten Schultag.
 func pruefeFrist(t *testing.T, frist, soll time.Time) {
 	t.Helper()
 	if !frist.Equal(soll) {
@@ -35,11 +34,10 @@ func TestAusleiheVerlaengern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	// Create a test student
+	// Zwei Schüler, der zweite ist gesperrt.
 	sid1 := testdaten.LegeSchuelerAn(t, pool, "S-EXT-1", "Normal", "5a")
 	sidGesperrt := testdaten.LegeSchuelerAn(t, pool, "S-EXT-2", "Gesperrt", "5b")
 
-	// Manually block the second student
 	_, err := pool.Exec(context.Background(), "UPDATE schueler SET ist_gesperrt = true, block_reason = 'Mahnung' WHERE id = $1", sidGesperrt)
 	if err != nil {
 		t.Fatalf("Failed to block student: %v", err)
@@ -47,14 +45,14 @@ func TestAusleiheVerlaengern(t *testing.T) {
 
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
 
-	// Create loans
+	// Ausleihen mit einer längst abgelaufenen Frist.
 	ausleiheNormal := testdaten.LegeAusleiheMitFristAn(t, pool, sid1, "Testbuch Normal", alteFrist)
 	ausleiheGesperrt := testdaten.LegeAusleiheMitFristAn(t, pool, sidGesperrt, "Testbuch Gesperrt", alteFrist)
 
 	// Eine eigene Ausleihe für den Fall, dass die neue Frist in die Ferien fällt.
 	ausleiheFerien := testdaten.LegeAusleiheMitFristAn(t, pool, sid1, "Testbuch Ferien", alteFrist)
 
-	// Create a returned loan
+	// Eine zurückgegebene Ausleihe.
 	ausleiheReturned := testdaten.LegeAusleiheMitFristAn(t, pool, sid1, "Testbuch Returned", alteFrist)
 	_, err = pool.Exec(context.Background(), "UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1", ausleiheReturned)
 	if err != nil {
@@ -85,28 +83,28 @@ func TestAusleiheVerlaengern(t *testing.T) {
 					t.Errorf("Expected success=true, got %v", resp["success"])
 				}
 
-				// Die Verlaengerung rechnet ab GREATEST(alte Frist, jetzt) — siehe
-				// api/theke/ausleihe.go. Bei einer laengst ueberfaelligen Ausleihe (hier 2023)
-				// ist das HEUTE, nicht die alte Frist: Sonst käme eine Verlaengerung
-				// heraus, die im Moment der Buchung schon wieder abgelaufen ist.
+				// Die Verlängerung rechnet ab dem späteren von alter Frist und heute
+				// (api/theke/ausleihe.go). Bei einer längst überfälligen Ausleihe (hier 2023)
+				// ist das heute, nicht die alte Frist: Sonst käme eine Verlängerung heraus,
+				// die im Moment der Buchung schon wieder abgelaufen ist.
 				// Heute plus 14 Tage, auf das Tagesende: Montag 16.11.2026.
 				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.November, 16))
 			},
 		},
 		{
 			name:           "Happy Path - Falls back to 28 days if interval missing",
-			ausleiheID:     ausleiheNormal, // Using same loan is fine, we just update it again
+			ausleiheID:     ausleiheNormal, // dieselbe Ausleihe, sie wird erneut verlängert
 			jetzt:          november,
-			extensionDays:  0, // Will trigger fallback to 28
+			extensionDays:  0, // ohne Einstellung gelten 28 Tage
 			expectedStatus: http.StatusOK,
 			verify: func(t *testing.T, resp map[string]interface{}) {
 				// Der vorige Fall hat die Frist bereits auf den 16.11. gesetzt. Die liegt
-				// in der ZUKUNFT, also rechnet die Verlängerung ab ihr: 16.11. plus 28 Tage.
+				// in der Zukunft, also rechnet die Verlängerung ab ihr: 16.11. plus 28 Tage.
 				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.December, 14))
 			},
 		},
 		{
-			// Entscheidung vom 24.09.2026: Donnerstag 24.09.2026 plus 21 Tage ist der 15.10.,
+			// Donnerstag 24.09.2026 plus 21 Tage ist der 15.10.,
 			// mitten in den Herbstferien (05.10.–17.10.) — die Frist ist der Montag danach.
 			name:           "Frist in den Herbstferien rückt auf den nächsten Schultag",
 			ausleiheID:     ausleiheFerien,
@@ -132,9 +130,9 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			name:           "Error - Missing ausleihe_id",
 			ausleiheID:     "",
 			extensionDays:  28,
-			expectedStatus: http.StatusBadRequest, // Mux will match the /extend/ route, handler will return 400
+			expectedStatus: http.StatusBadRequest, // der Mux trifft /extend/, die Tür antwortet 400
 			setupRoute: func(mux *http.ServeMux, s *Tueren, settingsRepo repository.EinstellungsAbfragen) {
-				// We map it directly to test the handler's internal check for ""
+				// Direkt eingehängt, damit die Tür selbst die leere Kennung prüft.
 				mux.Handle("POST /extend/", s.AusleiheVerlaengern(settingsRepo))
 			},
 			verify: func(t *testing.T, resp map[string]interface{}) {},
@@ -196,10 +194,10 @@ func TestAusleiheVerlaengern(t *testing.T) {
 				}
 				tt.verify(t, resp)
 			} else if tt.verify != nil && rec.Code != http.StatusOK {
-				// For error cases we also want to decode
+				// Auch eine Fehlerantwort wird gelesen.
 				var resp map[string]interface{}
 				if rec.Body.Len() > 0 {
-					_ = json.NewDecoder(rec.Body).Decode(&resp) //nolint:errcheck // Error cases don't strictly require JSON
+					_ = json.NewDecoder(rec.Body).Decode(&resp) //nolint:errcheck // eine Fehlerantwort muss kein JSON sein
 				}
 				tt.verify(t, resp)
 			}

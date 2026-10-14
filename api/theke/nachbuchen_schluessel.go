@@ -11,11 +11,11 @@ import (
 	"bibliothek/repository"
 )
 
-// Der Idempotenz-Schlüssel an der Nachbuch-Tür (Rasterdurchgang 15.09.2026, OFFEN.md 5.15).
+// Der Idempotenz-Schlüssel an der Nachbuch-Tür.
 //
-// Der Theken-Rechner benutzt für einen Scan EINEN Schlüssel: zuerst beim Online-Versand, und wenn
-// dessen Antwort nicht ankommt, beim Nachbuchen. Die Tür liest darum, WAS unter dem Schlüssel
-// steht, nicht nur, OB etwas steht:
+// Der Theken-Rechner benutzt für einen Scan ein und denselben Schlüssel: zuerst beim
+// Online-Versand, und wenn dessen Antwort nicht ankommt, beim Nachbuchen. Die Tür liest darum,
+// was unter dem Schlüssel steht, nicht nur, ob etwas steht:
 //
 //   - nichts: ein gewöhnlicher Offline-Scan — reservieren, buchen, Ergebnis ablegen;
 //   - eine Reservierung ohne Antwort: die Online-Buchung läuft noch — „wiederholen";

@@ -9,10 +9,10 @@ import (
 	"bibliothek/internal/service"
 )
 
-// TestSperrgrundBleibtOhneViewStudentsGeheim: Der Freitext aus schueler.block_reason
-// kann Zahlungsrückstände oder Familieninterna nennen (PII-Matrix Stufe 2). Die Theke
-// erfährt DASS gesperrt ist — das WARUM nur mit view_students. Am 18.08.2026 live mit
-// Helfer-Konto belegt: vor dem Fix kam der volle Text („… Fall Jugendamt") durch.
+// TestSperrgrundBleibtOhneViewStudentsGeheim: Der Freitext aus schueler.block_reason kann
+// Zahlungsrückstände oder Familieninterna nennen (PII-Matrix Stufe 2). Die Theke erfährt,
+// dass gesperrt ist, den Grund aber nur mit view_students. Ohne die Kürzung käme der volle Text
+// („… Fall Jugendamt") bei einem Helfer-Konto durch.
 func TestSperrgrundBleibtOhneViewStudentsGeheim(t *testing.T) {
 	grund := "Eltern zahlen Schadensrechnung nicht - Fall Jugendamt"
 	sperrFehler := &service.SperrgrundFehler{

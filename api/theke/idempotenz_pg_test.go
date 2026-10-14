@@ -1,12 +1,12 @@
 package theke
 
-// Idempotenz hält (OFFEN.md 2.2, Commit 7). Bis zum 15.09.2026 wurde die Antwort erst NACH der
-// Arbeit gespeichert, mit dem Request-Context; nichts reservierte den Schlüssel vorher. Eine
-// zweite Anfrage mit demselben Schlüssel, die NACH dem Commit der ersten und VOR dem Speichern
-// ihrer Antwort eintraf, fand keinen Cache und lief neu: Das Buch lag schon beim Kind, also
-// wurde es zurückgenommen. Zwei Theken-Tabs, ein Scanner-Doppelklick oder ein Nachbuchen, das
-// den abgebrochenen Online-Versand wiederholt — und die Ausleihe war weg. (Die gleichzeitige
-// Form fängt der Unique-Index; nur die Form „nach dem Commit" ist offen.)
+// Idempotenz hält auch nach dem Commit. Würde die Antwort erst nach der Arbeit gespeichert und
+// reservierte nichts den Schlüssel vorher, fände eine zweite Anfrage mit demselben Schlüssel,
+// die nach dem Commit der ersten und vor dem Speichern ihrer Antwort eintrifft, nichts in der
+// Ablage und liefe neu: Das Buch läge schon beim Kind und würde zurückgenommen. Zwei
+// Theken-Tabs, ein Scanner-Doppelklick oder ein Nachbuchen, das den abgebrochenen
+// Online-Versand wiederholt, und die Ausleihe wäre weg. (Die gleichzeitige Form fängt der
+// Unique-Index; dieser Test prüft die Form „nach dem Commit".)
 
 import (
 	"context"

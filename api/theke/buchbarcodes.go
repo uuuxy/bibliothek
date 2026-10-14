@@ -14,23 +14,24 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Barcode-Liste der Theke (Stufe 2 des Offline-Baus, Commit 12, OFFEN.md 2.2).
+// Die Barcode-Liste der Theke für die Arbeit ohne Netz.
 //
 // Ohne Netz muss der Theken-Rechner eine nackte Ziffernfolge selbst einordnen: Buch oder
 // Ausweis? Die Vorsilben B-/LMF- und S-/L- sagen es; die Littera-Etiketten des Altbestands
 // und die alten Ausweise sagen es nicht — ein Schülerausweis liefert gemessen
 // `B97601826457`, ein Buchetikett eine 13-stellige EAN. Verwechselt der Rechner beides,
 // laufen die folgenden Bücher auf die falsche Person, und das fällt erst beim Nachbuchen
-// auf (entschieden am 13.09.2026).
+// auf.
 //
 // Deshalb hält der Rechner die Barcodes aller Exemplare, auch der ausgesonderten (das
 // Nachbuchen holt ein zurückgekommenes Buch in den Umlauf). Ein 13-stelliges Littera-Etikett
 // rechnet der Rechner zuerst selbst auf die Nummer zurück (frontend/src/lib/litteraEtikett.js,
 // dieselben Prüffälle wie der Server); steht die Nummer auf der Liste, ist sie ein Buch; sonst
-// gilt sie als unklar und sperrt die Zuordnung, bis ein eindeutiger Ausweis kommt. KEINE
+// gilt sie als unklar und sperrt die Zuordnung, bis ein eindeutiger Ausweis kommt. Keine
 // Personendaten: nur Buchnummern.
 //
-// Bewusst OHNE LIMIT — anders als jede andere Listen-Route (vgl. api/system/protokoll_grenze_pg_test.go).
+// Bewusst ohne LIMIT, anders als jede andere Listen-Route
+// (vgl. api/system/protokoll_grenze_pg_test.go).
 // Eine halbe Liste wäre schlimmer als keine: Die fehlenden Bücher gälten offline als
 // „unklar", und niemand sähe, dass es an der Kappung liegt. Der Umfang ist durch den
 // Bestand begrenzt und wächst nicht von selbst weiter (rund 35.000 Exemplare erwartet,
@@ -66,21 +67,20 @@ func (t *Tueren) Buchbarcodes() http.HandlerFunc {
 		ctx := r.Context()
 		begonnen := time.Now()
 
-		// Der Stand kommt aus Anzahl und jüngster Änderung — eine Abfrage über den Index,
-		// ohne die Liste zu lesen. Ein unveränderter Bestand spart damit die ganze
-		// Auslieferung. Ausgesonderte zählen nicht mit: Sie fehlen auch in der Liste,
-		// also muss ihr Wegfallen den Stand ändern.
+		// Der Stand kommt aus Anzahl und jüngster Änderung, eine Abfrage ohne die Liste.
+		// Ein unveränderter Bestand spart damit die ganze Auslieferung. Ausgesonderte zählen
+		// mit, denn sie stehen auch in der Liste.
 		kennzahl, err := repository.LadeBuchbarcodeStand(ctx, t.DB.Pool)
 		if err != nil {
 			return apierrors.Internal("Buch-Barcodes konnten nicht gezählt werden", err)
 		}
 		stand := buchbarcodesStand(kennzahl)
 
-		// no-cache an der 200 und an der 304: Eine 304 bringt den Cache-Control-Kopf mit,
-		// den die 200 hätte (RFC 9110, 15.4.5). Bis zum 30.09.2026 fehlte er an der 304;
-		// seitdem stünde dort sonst die Vorgabe no-store der Schnittstelle
-		// (internal/middleware/sicherheitskopfzeilen.go). no-cache statt no-store, weil die Liste nur
-		// Buchnummern trägt: erneut fragen, aber der ETag darf sparen.
+		// no-cache an der 200 und an der 304: Eine 304 bringt den Cache-Control-Kopf mit, den
+		// die 200 hätte (RFC 9110, 15.4.5); fehlte er, stünde an der 304 die Vorgabe no-store
+		// der Schnittstelle (internal/middleware/sicherheitskopfzeilen.go). no-cache statt
+		// no-store, weil die Liste nur Buchnummern trägt: erneut fragen, aber der ETag darf
+		// sparen.
 		w.Header().Set("Cache-Control", "no-cache")
 
 		// Unverändert: Der Rechner behält seine Liste. Das ist der Normalfall — der
@@ -153,12 +153,12 @@ func schreibeGezaehlt(w http.ResponseWriter, daten any) (int, error) {
 // zaehlendeSchreiber zählt die Bytes der Antwort, bevor die Kette sie packt: Die Zahl im
 // Log nennt die Größe der Liste, wie der Theken-Rechner sie hält.
 //
-// CodeQL meldet hier go/reflected-xss (Alarm 30, 15.09.2026) und liegt falsch. Der
+// CodeQL meldet hier go/reflected-xss (Alarm 30) und liegt falsch. Der
 // gemeldete Weg führt vom Anfragekörper des Mahnwesens über mailservice/mail_sender.go zu
 // `part.Write([]byte(req.Body))` — und von dort hierher: `part` ist ein io.Writer, und
-// CodeQL löst den Aufruf gegen JEDE Write([]byte)-Methode des Programms auf, auch gegen
+// CodeQL löst den Aufruf gegen jede Write([]byte)-Methode des Programms auf, auch gegen
 // diese. In Wirklichkeit schreibt die Mail nie in diesen Schreiber, und die Antwort
-// dieses Handlers enthält keinen Wert aus der Anfrage: nur den Stand (SHA-256 über
+// dieser Tür enthält keinen Wert aus der Anfrage: nur den Stand (SHA-256 über
 // Bestandszahlen), die Anzahl und die Barcodes aus der Datenbank. Wer den Alarm erneut
 // sieht: Es ist die Überannäherung der Schnittstellen-Auflösung, nicht der Content-Type.
 type zaehlendeSchreiber struct {

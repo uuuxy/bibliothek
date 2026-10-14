@@ -1,11 +1,11 @@
 package theke
 
-// Die Nachbuch-Tür und der Idempotenz-Schlüssel am echten Postgres (Rasterdurchgang 15.09.2026,
-// OFFEN.md 5.15). Der Theken-Rechner benutzt für einen Scan EINEN Schlüssel: zuerst beim
-// Online-Versand, und wenn dessen Antwort nicht ankommt, beim Nachbuchen. Bis hierher fragte die
-// Tür nur, OB unter dem Schlüssel etwas steht, und ließ den Eintrag dann an jeder späteren Bewegung
-// vorbei. Die Online-Buchungen laufen hier über die echte Theken-Route (EingabeVerarbeiten), damit unter
-// dem Schlüssel genau das steht, was der Online-Weg speichert.
+// Die Nachbuch-Tür und der Idempotenz-Schlüssel am echten Postgres. Der Theken-Rechner
+// benutzt für einen Scan ein und denselben Schlüssel: zuerst beim Online-Versand, und wenn
+// dessen Antwort nicht ankommt, beim Nachbuchen. Fragte die Tür nur, ob unter dem Schlüssel
+// etwas steht, ließe sie den Eintrag an jeder späteren Bewegung vorbei. Die Online-Buchungen
+// laufen hier über die echte Theken-Route (EingabeVerarbeiten), damit unter dem Schlüssel
+// genau das steht, was der Online-Weg speichert.
 
 import (
 	"context"

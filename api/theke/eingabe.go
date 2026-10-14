@@ -17,10 +17,10 @@ import (
 	"bibliothek/repository"
 )
 
-// Merkmal einer Sperre (service/sperr_merkmal.go): Am Header wählt der Dialog der Theke,
-// was er anbietet — „uebergehbar" das einmalige Übergehen, „leser" das Aufheben der Sperre
-// am Leser. Das Cache-Feld trägt es durch eine Wiederholung mit demselben
-// Idempotenz-Schlüssel (sperr_merkmal_test.go).
+// Merkmal einer Sperre (internal/service/sperr_merkmal.go): Am Kopf der Antwort wählt der
+// Dialog der Theke, was er anbietet: „uebergehbar" das einmalige Übergehen, „leser" das
+// Aufheben der Sperre am Leser. Das Feld in der Ablage trägt es durch eine Wiederholung mit
+// demselben Idempotenz-Schlüssel (sperr_merkmal_test.go).
 const (
 	sperrKopf        = "X-Sperre"
 	sperrUebergehbar = "uebergehbar"
@@ -40,12 +40,11 @@ func sperrMerkmal(err error) string {
 	return ""
 }
 
-// ohneSperrgrund nimmt einem Sperr-Fehler den Freitext (block_reason), wenn der
-// Aufrufer ihn nicht sehen darf. Die Theke erfährt weiterhin DASS gesperrt ist
-// (403, generische Meldung) — aber nicht das WARUM: Der Grund kann Zahlungs-
-// rückstände oder Familieninterna nennen (PII-Matrix Stufe 2, Fund vom
-// 18.08.2026 am Live-Pfad mit Helfer-Konto). Dieselbe Grenze wie die
-// Geräteliste: view_students entscheidet, nicht die Route.
+// ohneSperrgrund nimmt einem Sperr-Fehler den Freitext (block_reason), wenn der Aufrufer ihn
+// nicht sehen darf. Die Theke erfährt weiterhin, dass gesperrt ist (403, allgemeine Meldung),
+// aber nicht, warum: Der Grund kann Zahlungsrückstände oder Familieninterna nennen
+// (PII-Matrix Stufe 2). Dieselbe Grenze wie die Geräteliste: view_students entscheidet, nicht
+// die Route.
 func ohneSperrgrund(err error, darfGrundSehen bool) error {
 	var sg *service.SperrgrundFehler
 	if err == nil || darfGrundSehen || !errors.As(err, &sg) {
@@ -70,8 +69,8 @@ func statusDesFehlers(err error) int {
 }
 
 // idempotenzLage ist das Ergebnis von erlangeIdempotenz: genau eines der drei gilt, oder
-// keines (kein Schlüssel, oder die Datenbank hat die Reservierung verweigert — dann läuft
-// die Anfrage ohne Schutz, wie vor dem 15.09.2026).
+// keines (kein Schlüssel, oder die Datenbank hat die Reservierung verweigert; dann läuft die
+// Anfrage ohne Schutz).
 type idempotenzLage struct {
 	reserviert bool                          // der Schlüssel gehört dieser Anfrage
 	antwort    *repository.IdempotenzAntwort // eine frühere Anfrage hat schon geantwortet
@@ -87,12 +86,12 @@ func (t *Tueren) idempotenzWartezeit() time.Duration {
 	return 3 * time.Second
 }
 
-// erlangeIdempotenz reserviert den Schlüssel VOR der Arbeit (Commit 7, 15.09.2026). Bis dahin
-// wurde die Antwort erst nach der Arbeit eingefügt: Eine zweite Anfrage mit demselben
-// Schlüssel, die nach dem Commit der ersten und vor dem Speichern ihrer Antwort eintraf,
-// fand nichts und buchte neu — das Buch lag schon beim Kind, also wurde es zurückgenommen
-// (idempotenz_pg_test.go). Läuft die Arbeit noch, wartet die zweite Anfrage auf die Antwort;
-// ist die Reservierung nach einem Serverfehler freigegeben worden, übernimmt sie den Schlüssel.
+// erlangeIdempotenz reserviert den Schlüssel vor der Arbeit. Würde die Antwort erst danach
+// eingefügt, fände eine zweite Anfrage mit demselben Schlüssel, die nach dem Commit der ersten
+// und vor dem Speichern ihrer Antwort eintrifft, nichts und buchte neu: Das Buch läge schon
+// beim Kind und würde zurückgenommen (idempotenz_pg_test.go). Läuft die Arbeit noch, wartet
+// die zweite Anfrage auf die Antwort; ist die Reservierung nach einem Serverfehler
+// freigegeben, übernimmt sie den Schlüssel.
 func (t *Tueren) erlangeIdempotenz(ctx context.Context, schluessel string) idempotenzLage {
 	if schluessel == "" {
 		return idempotenzLage{}
@@ -117,16 +116,17 @@ func (t *Tueren) erlangeIdempotenz(ctx context.Context, schluessel string) idemp
 	}
 }
 
-// IdempotenzSpeicherfrist sagt, wie lange legeAntwortAb nach der Arbeit noch schreiben darf — mit
-// WithoutCancel, also auch nach Ablauf der Bearbeitungsfrist. Bearbeitungsfrist plus diese
-// Frist müssen unter repository.IdempotenzReservierungsfrist bleiben, sonst kann die
+// IdempotenzSpeicherfrist sagt, wie lange legeAntwortAb nach der Arbeit noch schreiben darf,
+// mit WithoutCancel, also auch nach Ablauf der Bearbeitungsfrist. Bearbeitungsfrist plus
+// diese Frist müssen unter repository.IdempotenzReservierungsfrist bleiben, sonst kann die
 // Waisenübernahme einen Besitzer treffen, der noch lebt (api/idempotenz_fristen_test.go).
 const IdempotenzSpeicherfrist = 5 * time.Second
 
-// legeAntwortAb schreibt die Antwort in die Reservierung — mit WithoutCancel (Vorbild
-// api/mahnwesen/mahnlisten_versand.go): Bricht der Aufrufer ab, nachdem die Buchung committet ist, muss
-// die Antwort trotzdem stehen, sonst bucht die Wiederholung neu. Ein Serverfehler wird nicht
-// gespeichert, sondern gibt den Schlüssel frei: Die Wiederholung soll es neu versuchen.
+// legeAntwortAb schreibt die Antwort in die Reservierung, mit WithoutCancel (Vorbild
+// api/mahnwesen/mahnlisten_versand.go): Bricht der Aufrufer ab, nachdem die Buchung
+// committet ist, muss die Antwort trotzdem stehen, sonst bucht die Wiederholung neu. Ein
+// Serverfehler wird nicht gespeichert, sondern gibt den Schlüssel frei: Die Wiederholung soll
+// es neu versuchen.
 func (t *Tueren) legeAntwortAb(ctx context.Context, schluessel string, daten interface{}, status int) {
 	if schluessel == "" {
 		return
@@ -177,14 +177,15 @@ func (t *Tueren) antworteAusAblage(w http.ResponseWriter, antwort *repository.Id
 	return true
 }
 
-// EingabeVerarbeiten dispatches requests from the Omnibox.
+// EingabeVerarbeiten nimmt Scan und Suche der Omnibox an (POST /api/action).
 func (t *Tueren) EingabeVerarbeiten(omnibox service.OmniboxDienst) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.verarbeiteEingabe(w, r, omnibox)
 	}
 }
 
-// verarbeiteEingabe nimmt einen Scan oder eine Suche der Theke entgegen und reicht sie an die Omnibox.
+// verarbeiteEingabe nimmt einen Scan oder eine Suche der Theke entgegen und reicht sie an die
+// Omnibox.
 func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnibox service.OmniboxDienst) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
@@ -229,14 +230,14 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 	})
 
 	if err != nil {
-		// Vor dem Cachen kürzen — sonst läge der Freitext im Idempotenz-Cache.
+		// Vor dem Ablegen kürzen, sonst läge der Freitext in der Ablage.
 		err = ohneSperrgrund(err, t.HatRecht(r, "view_students"))
 		status := statusDesFehlers(err)
 		ablageDaten := map[string]string{"error": err.Error()}
 		if merkmal := sperrMerkmal(err); merkmal != "" {
-			// Merkmal für den Sperr-Dialog der Theke — im Header, damit der Body die
-			// eine kanonische Fehlerform behält, und im Cache, damit eine Wiederholung
-			// es nicht verliert (sperr_merkmal_test.go).
+			// Merkmal für den Sperr-Dialog der Theke: im Kopf, damit der Rumpf die eine
+			// Fehlerform behält, und in der Ablage, damit eine Wiederholung es nicht verliert
+			// (sperr_merkmal_test.go).
 			w.Header().Set(sperrKopf, merkmal)
 			ablageDaten[sperrAblageFeld] = merkmal
 		}
@@ -245,12 +246,11 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 		return
 	}
 
-	// Map to API response
 	antwort := zurEingabeAntwort(ergebnis)
 
 	t.legeAntwortAb(ctx, req.IdempotenzSchluessel, antwort, http.StatusOK)
 
-	// Broadcast updates to all monitoring dashboards (SSE)
+	// Nach Ausleihe und Rückgabe erfahren es die übrigen Arbeitsplätze über die Live-Leitung.
 	if antwort.Art == "ausleihe" || antwort.Art == "rueckgabe" {
 		t.sendeThekenEreignis(*antwort)
 	}
@@ -283,7 +283,7 @@ func zurEingabeAntwort(ergebnis *service.OmniboxErgebnis) *eingabeAntwort {
 	}
 }
 
-// zuAbholbereitenVormerkungen überträgt den Abholfach-Hinweis in die API-Form.
+// zuAbholbereitenVormerkungen überträgt den Abholfach-Hinweis in die Form der Antwort.
 func zuAbholbereitenVormerkungen(vs []service.AbholbereiteVormerkung) []abholbereiteVormerkung {
 	if len(vs) == 0 {
 		return nil

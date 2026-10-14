@@ -8,7 +8,6 @@ var stilBestand = map[string]stilZahl{
 	"api/bestellung":         {Fach: 45, Verb: 17, Kuerzel: 0, Datei: 11, Datum: 6},
 	"api/katalog":            {Fach: 68, Verb: 43, Kuerzel: 2, Datei: 15, Datum: 17},
 	"api/leser":              {Fach: 36, Verb: 22, Kuerzel: 12, Datei: 12, Datum: 23},
-	"api/theke":              {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 12},
 	"apierrors":              {Fach: 3, Verb: 5, Kuerzel: 0, Datei: 0, Datum: 2},
 	"auth":                   {Fach: 30, Verb: 10, Kuerzel: 0, Datei: 3, Datum: 13},
 	"cmd/littera-altbestand": {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},

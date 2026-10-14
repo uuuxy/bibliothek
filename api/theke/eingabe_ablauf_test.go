@@ -36,38 +36,38 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 	studentID := "student-1"
 	staffID := "staff-1"
 
-	// Mock StudentRepo.GetByID
+	// Der Leser nach seiner Kennung.
 	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason, coalesce\\(strasse, ''\\), coalesce\\(hausnummer, ''\\), coalesce\\(plz, ''\\), coalesce\\(ort, ''\\), coalesce\\(eltern_email, ''\\), anonymized_at IS NOT NULL, art FROM leser WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email", "anonymisiert", "art"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", 0, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", "", false, "schueler"))
 
-	// 2. ladeEinstellungen inside bestimmeFrist
+	// Die Einstellungen für die Frist (ladeEinstellungen in bestimmeFrist).
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", testdaten.ZeigerAuf("5")).
 			AddRow("standard_ausleihfrist_tage", testdaten.ZeigerAuf("14")))
 
-	// 3. Mock tx begin
+	// Die Transaktion beginnt.
 	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
 
-	// 4. Mock lock on schueler
+	// Die Zeile des Lesers wird gesperrt.
 	mock.ExpectExec("SELECT id FROM leser WHERE id = \\$1 FOR UPDATE").
 		WithArgs(studentID).
 		WillReturnResult(pgxmock.NewResult("SELECT", 1))
 
-	// 5. Mock count active loans
+	// Die offenen Ausleihen des Lesers werden gezählt.
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM ausleihen a JOIN buecher_exemplare be ON a\\.exemplar_id = be\\.id JOIN buecher_titel bt ON be\\.titel_id = bt\\.id WHERE a\\.schueler_id = \\$1 AND a\\.rueckgabe_am IS NULL").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
-	// 6. Mock AusleihAbfragen.SperreOffene (returns 0 rows -> no active loan)
+	// AusleihAbfragen.SperreOffene findet keine offene Ausleihe des Exemplars.
 	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
 		WithArgs(copy.ID).
 		WillReturnRows(pgxmock.NewRows([]string{}))
 
-	// Sperrgründe erst jetzt — nach dem Lesen der Ausleihe, weil die eigene Rückgabe nie
-	// gesperrt ist (seit 11.09.2026): offene Schäden (0), Einstellungen, Überfällige (0).
+	// Sperrgründe erst jetzt, nach dem Lesen der Ausleihe, weil die eigene Rückgabe nie
+	// gesperrt ist: offene Schäden (0), Einstellungen, Überfällige (0).
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle WHERE schueler_id = \\$1 AND ist_bezahlt = false").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, 0.0))
@@ -81,17 +81,17 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 		WithArgs(studentID, 14).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
-	// 7. ladeEinstellungen inside early limit check
+	// Die Einstellungen für die Prüfung der Höchstzahl.
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", testdaten.ZeigerAuf("5")).
 			AddRow("standard_ausleihfrist_tage", testdaten.ZeigerAuf("14")))
-	// Check reservation
+	// Liegt das Exemplar für jemanden bereit?
 	mock.ExpectQuery("SELECT v.schueler_id, s.vorname, s.nachname FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id WHERE v.bereitgestellt_exemplar_id = \\$1 AND v.status = 'abholbereit' AND v.bereitgestellt_bis > CURRENT_TIMESTAMP").
 		WithArgs(copy.ID).
 		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}))
 
-	// Mock AusleihAbfragen.LegeAn
+	// Die Ausleihe (AusleihAbfragen.LegeAn).
 	mock.ExpectQuery("INSERT INTO ausleihen").
 		WithArgs(copy.ID, studentID, pgxmock.AnyArg(), staffID, false, pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
@@ -100,13 +100,13 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 		WithArgs(copy.ID, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	// Delete Vormerkung: liefert jetzt bereitgestellt_exemplar_id via RETURNING
-	// (Regal-Hinweis-Erkennung). Hier ohne offene Vormerkung -> ErrNoRows.
+	// Die eigene Vormerkung fällt weg; RETURNING liefert bereitgestellt_exemplar_id für den
+	// Hinweis aufs Regal. Hier gibt es keine, also ErrNoRows.
 	mock.ExpectQuery("DELETE FROM vormerkungen WHERE titel_id = \\$1 AND schueler_id = \\$2").
 		WithArgs(copy.TitelID, studentID).
 		WillReturnError(pgx.ErrNoRows)
 
-	// Audit-Zeile in DERSELBEN Transaktion, vor dem Commit (seit 07.09.2026).
+	// Die Zeile im Protokoll in derselben Transaktion, vor dem Commit.
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -144,16 +144,16 @@ func TestRueckgabeAnDerTheke(t *testing.T) {
 	barcode := "B-9999"
 	staffID := "staff-1"
 
-	// Mock FindeExemplar
+	// Das Exemplar zum Barcode (FindeExemplar).
 	mock.ExpectQuery("SELECT e\\.id, e\\.titel_id, coalesce\\(e\\.barcode_id, ''\\), coalesce\\(e\\.zustand_notiz, ''\\), e\\.erworben_am, coalesce\\(e\\.ist_ausleihbar, false\\), coalesce\\(e\\.ist_ausgesondert, false\\), e\\.erstellt_am, e\\.aktualisiert_am, coalesce\\(t\\.titel, ''\\), coalesce\\(t\\.autor, ''\\), coalesce\\(t\\.verlag, ''\\), coalesce\\(t\\.isbn, ''\\), coalesce\\(t\\.cover_url, ''\\), coalesce\\(t\\.medientyp, ''\\), coalesce\\(t\\.signatur, ''\\), t\\.mehrjahresband, coalesce\\(t\\.jahrgang_bis, 0\\), t\\.ist_lernmittel, coalesce\\(t\\.erweiterte_eigenschaften, '\\{\\}'::jsonb\\) FROM buecher_exemplare e JOIN buecher_titel t ON e\\.titel_id = t\\.id WHERE e\\.barcode_id = \\$1 LIMIT 1").
 		WithArgs(barcode).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "zustand_notiz", "erworben_am", "ist_ausleihbar", "ist_ausgesondert", "erstellt_am", "aktualisiert_am", "titel", "autor", "verlag", "isbn", "cover_url", "medientyp", "signatur", "mehrjahresband", "jahrgang_bis", "ist_lernmittel", "erweiterte_eigenschaften"}).
 			AddRow(copyID, "titel-1", barcode, "", time.Now(), true, false, time.Now(), time.Now(), "Testbuch", "", "", "", "", "", "", false, 0, false, map[string]any{}))
 
-	// Mock Tx
+	// Die Transaktion beginnt.
 	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
 
-	// Mock AusleihAbfragen.SperreOffene -> return an active loan
+	// AusleihAbfragen.SperreOffene findet die offene Ausleihe.
 	activeLoanID := "loan-1"
 	studentID := "student-1"
 	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
@@ -161,13 +161,13 @@ func TestRueckgabeAnDerTheke(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
 			AddRow(activeLoanID, &copyID, &studentID, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, &staffID, nil, false, false))
 
-	// Student lookup fallback
+	// Der Leser der Ausleihe.
 	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason, coalesce\\(strasse, ''\\), coalesce\\(hausnummer, ''\\), coalesce\\(plz, ''\\), coalesce\\(ort, ''\\), coalesce\\(eltern_email, ''\\), anonymized_at IS NOT NULL, art FROM leser WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email", "anonymisiert", "art"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", 0, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", "", false, "schueler"))
 
-	// AusleihAbfragen.BucheRueckgabe
+	// Die Rückgabe (AusleihAbfragen.BucheRueckgabe).
 	mock.ExpectExec("UPDATE ausleihen").
 		WithArgs(staffID, false, activeLoanID, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -175,13 +175,13 @@ func TestRueckgabeAnDerTheke(t *testing.T) {
 		WithArgs(activeLoanID, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	// Vormerkungs-Zuteilung: niemand wartet. Seit dem 31.08.2026 wird ein Fehler dieser
-	// Abfrage nicht mehr verschluckt — der Mock muss sie daher ausdrücklich kennen.
+	// Zuteilung an eine Vormerkung: Niemand wartet. Ein Fehler dieser Abfrage wird nicht
+	// verschluckt, deshalb muss die Attrappe sie ausdrücklich kennen.
 	mock.ExpectQuery("SELECT v.id, s.vorname, s.nachname").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)
 
-	// Audit-Zeile in DERSELBEN Transaktion, vor dem Commit (seit 07.09.2026).
+	// Die Zeile im Protokoll in derselben Transaktion, vor dem Commit.
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))

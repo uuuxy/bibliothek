@@ -20,20 +20,22 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// fristAnfrage holds the JSON payload for manually overriding a due date.
+// fristAnfrage ist die Frist, die von Hand gesetzt wird.
 type fristAnfrage struct {
-	FaelligAm string `json:"faellig_am" validate:"required"` // ISO 8601 or YYYY-MM-DD
+	FaelligAm string `json:"faellig_am" validate:"required"` // Zeitstempel nach RFC 3339 oder nur der Tag nach ISO 8601
 }
 
-// AusleiheVerlaengern extends the due date of a single loan by the standard book interval (e.g. 28 days).
+// AusleiheVerlaengern verlängert eine Ausleihe um die Frist für Bücher aus den Einstellungen
+// (ohne Einstellung 28 Tage).
 func (t *Tueren) AusleiheVerlaengern(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.verlaengereAusleihe(w, r, einstellungsAbfragen)
 	}
 }
 
-// verlaengereAusleihe verlängert eine einzelne Ausleihe. Als Top-Level-Methode ausgelagert,
-// damit die Frühabbrüche nicht zusätzlich als Closure-Verschachtelung zählen (S3776).
+// verlaengereAusleihe verlängert eine einzelne Ausleihe. Als eigene Methode ausgelagert,
+// damit die frühen Rücksprünge nicht zusätzlich als Verschachtelung in der Closure zählen
+// (Sonar S3776).
 func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, einstellungsAbfragen repository.EinstellungsAbfragen) {
 	ausleiheID := r.PathValue("ausleihe_id")
 	if ausleiheID == "" {
@@ -112,7 +114,8 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 	})
 }
 
-// AusleihFristSetzen manually overrides the due date of an active loan.
+// AusleihFristSetzen setzt die Frist einer laufenden Ausleihe von Hand
+// (PATCH /api/admin/ausleihen/{id}/faelligkeit).
 func (t *Tueren) AusleihFristSetzen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.setzeAusleihFrist(w, r, protokollAbfragen)
@@ -173,10 +176,9 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 		return
 	}
 
-	// Ein manuell überschriebenes Fälligkeitsdatum ist ein Eingriff in eine Sanktion
-	// (Mahnfristen, Auto-Sperre) — er gehört revisionssicher protokolliert, genau wie
-	// der Checkout-Override (OVERRIDE_BLOCK). Best effort: Der Eingriff gilt, auch wenn
-	// das Log klemmt, aber der Fehlversuch steht wenigstens im Server-Log.
+	// Eine von Hand gesetzte Frist ist ein Eingriff in eine Sanktion (Mahnfristen, Sperre durch
+	// das Programm); sie gehört ins Protokoll wie das Übergehen beim Ausleihen (OVERRIDE_BLOCK).
+	// Der Eingriff gilt auch, wenn das Protokoll klemmt; der Fehlversuch steht dann im Log.
 	if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
 		"ausleihe_id": id,
 		"neue_frist":  gesetzteFrist.Format(time.RFC3339),
@@ -191,9 +193,9 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 }
 
 // leseFaelligAm liest die Frist als Zeitstempel (ISO 8601) oder als Datum. Ein Datum gilt bis
-// zum Tagesende in der Schulzeitzone, nach derselben Definition wie service.CalculateDueDate:
-// Roh in UTC wäre die überschriebene Frist ein bis zwei Stunden später fällig als eine
-// berechnete zum selben Datum.
+// zum Tagesende in der Schulzeitzone, nach derselben Definition wie die berechnete Frist
+// (schulzeit.TagesEnde): Roh in UTC wäre die gesetzte Frist ein bis zwei Stunden später fällig
+// als eine berechnete zum selben Datum.
 func leseFaelligAm(text string) (time.Time, error) {
 	if zeitstempel, err := time.Parse(time.RFC3339, text); err == nil {
 		return zeitstempel, nil
@@ -236,12 +238,11 @@ func (t *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, a
 	return gesperrt, grund, true
 }
 
-// pruefeAusleihSperre prüft, ob eine Sperre am Leser die Verlängerung dieser Ausleihe
-// anhält, und liefert den Grund. Es entscheidet die Regel der Theke
-// (service.PruefeSperreAmLeser): beim Schulbuch nur die Sperre von Hand, beim Kollegen keine;
-// ein anonymisierter Datensatz und der Papierkorb bekommen nichts.
-// Bis zum 29.09.2026 stand hier eine eigene Abfrage, die jede Sperre zählte — auch die der
-// Ehemaligen beim Schulbuch, das die Theke demselben Kind ausgibt.
+// pruefeAusleihSperre prüft, ob eine Sperre am Leser die Verlängerung dieser Ausleihe anhält,
+// und liefert den Grund. Es entscheidet die Regel der Theke (service.PruefeSperreAmLeser):
+// beim Schulbuch nur die Sperre von Hand, beim Kollegen keine; ein anonymisierter Datensatz
+// und der Papierkorb bekommen nichts. Eine eigene Abfrage, die jede Sperre zählte, hielte
+// auch die Ehemaligen beim Schulbuch an, das die Theke demselben Kind ausgibt.
 func (t *Tueren) pruefeAusleihSperre(ctx context.Context, ausleiheID string) (bool, string, error) {
 	leserID, lernmittel, err := repository.LadeLeserUndLernmittelDerAusleihe(ctx, t.DB.Pool, ausleiheID)
 	if err != nil || leserID == nil {
