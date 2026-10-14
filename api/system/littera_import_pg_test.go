@@ -50,9 +50,9 @@ func ladeImport(t *testing.T, rufeRoh func(t *testing.T, methode, pfad string, r
 }
 
 // importAntwort liest die Zähler der Antwort.
-func importAntwort(t *testing.T, rec *httptest.ResponseRecorder) system.LitteraImportResponse {
+func importAntwort(t *testing.T, rec *httptest.ResponseRecorder) system.LitteraImportAntwort {
 	t.Helper()
-	var a system.LitteraImportResponse
+	var a system.LitteraImportAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Antwort unlesbar (%s): %v", rec.Body.String(), err)
 	}
@@ -89,11 +89,11 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
 		a := importAntwort(t, rec)
-		if a.Type != "csv" {
-			t.Errorf("Art %q, erwartet csv", a.Type)
+		if a.Art != "csv" {
+			t.Errorf("Art %q, erwartet csv", a.Art)
 		}
-		if a.NewTitles != 2 || a.ImportedCopies != 2 {
-			t.Errorf("gemeldet: %d Titel, %d Exemplare — erwartet 2 und 2", a.NewTitles, a.ImportedCopies)
+		if a.NeueTitel != 2 || a.ImportierteExemplare != 2 {
+			t.Errorf("gemeldet: %d Titel, %d Exemplare — erwartet 2 und 2", a.NeueTitel, a.ImportierteExemplare)
 		}
 		// Die Antwort ist nicht der Beleg: nachgezählt in der Datenbank.
 		if titel, exemplare := zaehle(t); titel != 2 || exemplare != 2 {
@@ -131,8 +131,8 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
-		if a := importAntwort(t, rec); a.Type != "xlsx" || a.NewTitles != 1 {
-			t.Errorf("Art %q, %d neue Titel — erwartet xlsx und 1", a.Type, a.NewTitles)
+		if a := importAntwort(t, rec); a.Art != "xlsx" || a.NeueTitel != 1 {
+			t.Errorf("Art %q, %d neue Titel — erwartet xlsx und 1", a.Art, a.NeueTitel)
 		}
 		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id = 'IMP-B1'`); n != 1 {

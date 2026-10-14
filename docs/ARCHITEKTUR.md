@@ -641,7 +641,7 @@ HTTP-Anfrage
 | `repository/`           | 21.844 Zeilen, 167 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
 | `internal/service/`     | 5.093 Zeilen, 36 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`ausleih*.go`, `rueckgabe.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, womit ein neuer Plan beginnt (Rahmen und Reihenfolge) und seine Verteilung über die Schultage, Importe, Littera-Etiketten        |
 | `internal/lusd/`        | 1.776 Zeilen, 8 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/leser/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
-| `internal/bereitschaft/` | 973 Zeilen, 11 Dateien    | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert (`bereitschaft.go`, die Prüfungen in Dateien nach ihrer Sache), die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
+| `internal/bereitschaft/` | 973 Zeilen, 11 Dateien    | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert (`bereitschaft.go`, die Prüfungen in Dateien nach ihrer Sache), die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/leser/dsgvo_auskunft.go` und `api/leser/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
 | `inventur/`             | 6.547 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.793 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
@@ -988,7 +988,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Passworts und die Vorgaben für Port und Absender. Auch der Aufbau einer Mail mit Anlagen
   und ihr Versand stehen dort (`mail_sender.go`: `MailRequest`, `SendEmail`). Die Tür
   bestimmt, an wen was geht und was ihre Antwort über den Versand sagt: den Status zu einem
-  Versandfehler (`mailFehlerStatus`, `api/system/mail_settings.go`) und die Werte des Felds `mail`
+  Versandfehler (`mailFehlerStatus`, `api/system/mail_einstellungen.go`) und die Werte des Felds `mail`
   (`api/portal/anliegen.go`). Ein Test stellt die Konfiguration über
   `mailservice.TauscheKonfigLaderFuerTest` ein.
 - Was jede Tür braucht, steht in `api/tuer`: `AntworteJSON` und `LeseAnfrage`, die
@@ -3748,7 +3748,7 @@ in `pdf/` (die Datei der Tür hat 189 Zeilen), die Regeln des LMF-Plans in
 (die größte hat 192 Zeilen). In Funktionen ohne einen Typ aus `net/http` stehen in den
 Themen 3.162 Zeilen in 209 Funktionen, am Morgen 3.665 in 232; die meisten tragen
 `leser/dsgvo_auskunft.go` (193), `mahnwesen/abgaenger_mail.go` (159) und
-`system/betriebsbereitschaft_handler.go` (132). Was davon an der Tür bleibt und warum, steht
+`system/betriebsbereitschaft.go` (132). Was davon an der Tür bleibt und warum, steht
 in 5.2.2 (Tür und Abfrage).
 
 Dass kein Thema ein anderes einbindet, hält seit dem 13.10.2026

@@ -28,12 +28,12 @@ import (
 // BereitschaftsAlarm sammelt die Lage, prüft sie und mailt kritische Befunde.
 // Läuft NUR im echten Betrieb: Die lokale .env zeigt auf den echten Schul-SMTP —
 // ein Entwicklungsrechner darf niemals Alarm-Mails auslösen.
-func (s *Tueren) BereitschaftsAlarm(ctx context.Context) {
-	settingsRepo := repository.NewEinstellungsAbfragen(s.DB.Pool)
-	mailRepo := repository.NewMailEinstellungsAbfragen(s.DB.Pool)
-	zustandRepo := repository.NewBetriebszustandAbfragen(s.DB.Pool)
+func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
+	einstellungsAbfragen := repository.NewEinstellungsAbfragen(t.DB.Pool)
+	mailAbfragen := repository.NewMailEinstellungsAbfragen(t.DB.Pool)
+	zustandAbfragen := repository.NewBetriebszustandAbfragen(t.DB.Pool)
 
-	lage := s.sammleLage(ctx, settingsRepo, mailRepo, zustandRepo)
+	lage := t.sammleLage(ctx, einstellungsAbfragen, mailAbfragen, zustandAbfragen)
 	if !bereitschaft.IstEchterBetrieb(lage.Umgebung) {
 		return
 	}
@@ -44,7 +44,7 @@ func (s *Tueren) BereitschaftsAlarm(ctx context.Context) {
 		return
 	}
 
-	admins, err := zustandRepo.LadeAktiveAdmins(ctx)
+	admins, err := zustandAbfragen.LadeAktiveAdmins(ctx)
 	if err != nil {
 		log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e), aber Admin-Konten nicht lesbar (%v)", kritische, err)
 		return

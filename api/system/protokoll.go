@@ -12,8 +12,8 @@ import (
 	"bibliothek/repository"
 )
 
-// AuditLogEntry represents a joined row in the audit log table.
-type AuditLogEntry struct {
+// protokollEintrag represents a joined row in the audit log table.
+type protokollEintrag struct {
 	ID                 string    `json:"id"`
 	Tabelle            string    `json:"tabelle"`
 	Aktion             string    `json:"aktion"`
@@ -28,7 +28,7 @@ type AuditLogEntry struct {
 	Akteur string `json:"akteur"`
 }
 
-// auditLogMaxZeilen begrenzt das Logbuch auf die jüngsten Einträge.
+// protokollMaxZeilen begrenzt das Logbuch auf die jüngsten Einträge.
 //
 // Vorher holte die Abfrage die GESAMTE Tabelle. Auf dem Prüfstand mit 247.000 Zeilen
 // waren das 72 MB JSON in einer Antwort: Der Server lieferte sie in 0,6 s, aber der
@@ -38,32 +38,32 @@ type AuditLogEntry struct {
 //
 // 1000 wie beim Schwester-Endpunkt GetAdminAuditLogsHandler — der hatte die Grenze von
 // Anfang an, dieser war der Ausreißer.
-const auditLogMaxZeilen = 1000
+const protokollMaxZeilen = 1000
 
-// GetAuditLogsHandler returns logs of immutable security events.
+// Protokoll returns logs of immutable security events.
 // @Summary      Get audit logs
 // @Description  Retrieves the most recent 1000 records of the system's audit trail, newest first.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Success      200  {array}   AuditLogEntry
+// @Success      200  {array}   protokollEintrag
 // @Failure      500  {object}  map[string]string
 // @Router       /audit [get]
-func (s *Tueren) GetAuditLogsHandler() http.HandlerFunc {
+func (t *Tueren) Protokoll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		zeilen, err := repository.LadeProtokoll(ctx, s.DB.Pool, auditLogMaxZeilen)
+		zeilen, err := repository.LadeProtokoll(ctx, t.DB.Pool, protokollMaxZeilen)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		logs := []AuditLogEntry{}
+		liste := []protokollEintrag{}
 		for _, z := range zeilen {
-			logs = append(logs, AuditLogEntry(z))
+			liste = append(liste, protokollEintrag(z))
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, logs)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 	}
 }

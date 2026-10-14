@@ -13,7 +13,7 @@ import (
 	"bibliothek/repository"
 )
 
-// GetSettingsHandler returns all system settings.
+// Einstellungen returns all system settings.
 // @Summary      Get system settings
 // @Description  Retrieves global configuration values like loan limits, grace periods, and feature flags.
 // @Tags         system
@@ -22,19 +22,19 @@ import (
 // @Success      200  {object}  repository.SystemEinstellungen
 // @Failure      500  {object}  map[string]string
 // @Router       /einstellungen [post]
-func (s *Tueren) GetSettingsHandler(settingsRepo repository.EinstellungsAbfragen) http.HandlerFunc {
+func (t *Tueren) Einstellungen(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
-		settings, err := settingsRepo.Lade(ctx)
+		einstellungen, err := einstellungsAbfragen.Lade(ctx)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
 		}
-		tuer.AntworteJSON(w, http.StatusOK, settings)
+		tuer.AntworteJSON(w, http.StatusOK, einstellungen)
 		return nil
 	})
 }
 
-// UpdateSettingsHandler persists system settings.
+// EinstellungenSchreiben persists system settings.
 // @Summary      Update system settings
 // @Description  Saves global configuration values. Nur mitgeschickte Felder werden geschrieben; fehlende bleiben unveraendert. Requires admin privileges.
 // @Tags         system
@@ -45,15 +45,15 @@ func (s *Tueren) GetSettingsHandler(settingsRepo repository.EinstellungsAbfragen
 // @Failure      400       {object}  map[string]string
 // @Failure      500       {object}  map[string]string
 // @Router       /einstellungen/speichern [post]
-func (s *Tueren) UpdateSettingsHandler(settingsRepo repository.EinstellungsAbfragen) http.HandlerFunc {
+func (t *Tueren) EinstellungenSchreiben(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		return s.handleUpdateSettings(w, r, settingsRepo)
+		return t.schreibeEinstellungen(w, r, einstellungsAbfragen)
 	})
 }
 
-// handleUpdateSettings prüft den Patch, speichert ihn, protokolliert die Änderung und meldet neue
+// schreibeEinstellungen prüft den Patch, speichert ihn, protokolliert die Änderung und meldet neue
 // Sitzungsfristen an die offenen Arbeitsplätze.
-func (s *Tueren) handleUpdateSettings(w http.ResponseWriter, r *http.Request, settingsRepo repository.EinstellungsAbfragen) error {
+func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, einstellungsAbfragen repository.EinstellungsAbfragen) error {
 	// Patch statt vollem Objekt: Der Rumpf trägt nur die Felder einer Kategorie
 	// (repository/einstellungen_patch.go). Ein volles Objekt dekodierte hier zu lauter Nullwerten
 	// und setzte beim Speichern die übrigen Kategorien zurück.
@@ -81,17 +81,17 @@ func (s *Tueren) handleUpdateSettings(w http.ResponseWriter, r *http.Request, se
 		return apierrors.BadRequest(err.Error(), err)
 	}
 
-	if err := settingsRepo.Schreibe(r.Context(), &req); err != nil {
+	if err := einstellungsAbfragen.Schreibe(r.Context(), &req); err != nil {
 		return apierrors.Internal("Fehler beim Speichern der Einstellungen", err)
 	}
-	s.protokolliereEinstellungen(r, req)
+	t.protokolliereEinstellungen(r, req)
 
 	// Die Sitzungsfristen holt jeder Tab nur einmal beim Anmelden (App.svelte).
 	// Das Signal erreicht auch offene Tabs an anderen Arbeitsplätzen; die Werte
 	// holen sich die Clients per GET /api/einstellungen/sitzung — dort sitzt die
 	// Vorgaben-Logik, hier wäre sie dupliziert.
-	if s.Broker != nil && (req.ThekeLeerenMinuten != nil || req.SperreMinuten != nil) {
-		s.Broker.Broadcast("sitzungsfristen", "{}")
+	if t.Broker != nil && (req.ThekeLeerenMinuten != nil || req.SperreMinuten != nil) {
+		t.Broker.Broadcast("sitzungsfristen", "{}")
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -128,37 +128,37 @@ func normalisiereLernmittelAngaben(req *repository.EinstellungenPatch) error {
 
 // protokolliereEinstellungen schreibt den gespeicherten Patch ins Protokoll; die IP-Adresse
 // wird nicht gespeichert.
-func (s *Tueren) protokolliereEinstellungen(r *http.Request, req repository.EinstellungenPatch) {
+func (t *Tueren) protokolliereEinstellungen(r *http.Request, req repository.EinstellungenPatch) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return
 	}
-	detailsBytes, merr := json.Marshal(req)
+	details, merr := json.Marshal(req)
 	if merr != nil {
 		log.Printf("audit: Settings-Details konnten nicht serialisiert werden: %v", merr)
 		return
 	}
-	s.SchreibeAdminProtokoll(r.Context(), claims.UserID, "UPDATE_SETTINGS", "", string(detailsBytes))
+	t.SchreibeAdminProtokoll(r.Context(), claims.UserID, "UPDATE_SETTINGS", "", string(details))
 }
 
-// SitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients: Minuten bis die
+// sitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients: Minuten bis die
 // Theken-Ansicht den geladenen Schüler fallen lässt, Minuten bis zum Sperrbildschirm.
 // 0 = aus.
-type SitzungsEinstellungen struct {
+type sitzungsEinstellungen struct {
 	ThekeLeerenMinuten int `json:"theke_leeren_minuten"`
 	SperreMinuten      int `json:"sperre_minuten"`
 }
 
-// GetSitzungsEinstellungenHandler liefert die Sitzungs-Fristen an jeden angemeldeten Client.
-func (s *Tueren) GetSitzungsEinstellungenHandler(settingsRepo repository.EinstellungsAbfragen) http.HandlerFunc {
+// SitzungsEinstellungen liefert die Sitzungs-Fristen an jeden angemeldeten Client.
+func (t *Tueren) SitzungsEinstellungen(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		settings, err := settingsRepo.Lade(r.Context())
+		einstellungen, err := einstellungsAbfragen.Lade(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
 		}
-		tuer.AntworteJSON(w, http.StatusOK, SitzungsEinstellungen{
-			ThekeLeerenMinuten: repository.TageOderVorgabe(settings.ThekeLeerenMinuten, repository.ThekeLeerenMinutenVorgabe),
-			SperreMinuten:      repository.TageOderVorgabe(settings.SperreMinuten, repository.SperreMinutenVorgabe),
+		tuer.AntworteJSON(w, http.StatusOK, sitzungsEinstellungen{
+			ThekeLeerenMinuten: repository.TageOderVorgabe(einstellungen.ThekeLeerenMinuten, repository.ThekeLeerenMinutenVorgabe),
+			SperreMinuten:      repository.TageOderVorgabe(einstellungen.SperreMinuten, repository.SperreMinutenVorgabe),
 		})
 		return nil
 	})

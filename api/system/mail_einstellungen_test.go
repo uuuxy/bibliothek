@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func mailTestServer(t *testing.T) (*Tueren, pgxmock.PgxPoolIface) {
+func mailTestTueren(t *testing.T) (*Tueren, pgxmock.PgxPoolIface) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -45,24 +45,24 @@ func erwarteMailKonfig(mock pgxmock.PgxPoolIface, host, port, absender string) {
 			AddRow(host, port, "", []byte{}, absender))
 }
 
-func postTestmail(t *testing.T, s *Tueren, body string) *httptest.ResponseRecorder {
+func sendeTestmail(t *testing.T, s *Tueren, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/settings/mail/test", strings.NewReader(body))
 	rec := httptest.NewRecorder()
-	s.PostTestMailSettingsHandler()(rec, req)
+	s.TestmailSenden()(rec, req)
 	return rec
 }
 
 // Der eigentliche Beweis: 200 bedeutet, dass eine Nachricht wirklich über SMTP
 // hinausgegangen ist — mit genau einem Empfänger und ohne geschmuggelte Kopfzeile.
-func TestPostTestMail_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
+func TestTestmailSenden_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
 	// Testserver ohne STARTTLS — siehe mailservice.sichereVerbindung.
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
-	s, mock := mailTestServer(t)
+	s, mock := mailTestTueren(t)
 	erwarteMailKonfig(mock, host, port, "bibliothek@schule.de")
 
-	rec := postTestmail(t, s, `{"to":"admin@schule.de"}`)
+	rec := sendeTestmail(t, s, `{"to":"admin@schule.de"}`)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
@@ -85,12 +85,12 @@ func TestPostTestMail_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
 // Ein unerreichbarer Server ist der häufigste Fall (falscher Port, Tippfehler im
 // Host) — und der, an dem sich zeigt, ob die Diagnose beim Admin ankommt: Als 500
 // dampft apierrors sie auf "Ein interner Datenbankfehler ist aufgetreten" ein.
-func TestPostTestMail_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
+func TestTestmailSenden_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 	host, port := smtptest.GeschlossenerPort(t)
-	s, mock := mailTestServer(t)
+	s, mock := mailTestTueren(t)
 	erwarteMailKonfig(mock, host, port, "bibliothek@schule.de")
 
-	rec := postTestmail(t, s, `{"to":"admin@schule.de"}`)
+	rec := sendeTestmail(t, s, `{"to":"admin@schule.de"}`)
 
 	if rec.Code != http.StatusBadGateway {
 		t.Fatalf("erwartet 502 (Zielserver versagt), bekam %d: %s", rec.Code, rec.Body.String())
@@ -122,7 +122,7 @@ func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 	t.Setenv("SMTP_PORT", "2525")
 	t.Setenv("SMTP_FROM", "umgebung@schule.de")
 
-	_, mock := mailTestServer(t)
+	_, mock := mailTestTueren(t)
 	erwarteMailKonfig(mock, host, port, "gespeichert@schule.de")
 	mailservice.BindeSMTPKonfigAnDatenbank(mock)
 	t.Cleanup(func() {
@@ -167,14 +167,14 @@ func TestSendEmail_OhneKonfigurationMeldetOffeneEinstellung(t *testing.T) {
 // mit Tippfehler kam bisher in die Datenbank und fiel erst im Testversand auf — als
 // 500, die der Admin als Datenbankfehler zu lesen bekam, obwohl sein eigenes Feld
 // die Ursache war. Leer bleibt erlaubt (der Versand setzt seinen Standardabsender).
-func TestUpdateMailSettings_UnbrauchbarerAbsenderKommtNichtInDieDatenbank(t *testing.T) {
-	s, mock := mailTestServer(t)
+func TestMailEinstellungenSchreiben_UnbrauchbarerAbsenderKommtNichtInDieDatenbank(t *testing.T) {
+	s, mock := mailTestTueren(t)
 	repo := repository.NewMailEinstellungsAbfragen(mock)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings/mail",
 		strings.NewReader(`{"smtp_host":"smtp.schule.de","smtp_port":"587","sender_email":"bibliothek(at)schule.de"}`))
 	rec := httptest.NewRecorder()
-	s.UpdateMailSettingsHandler(repo)(rec, req)
+	s.MailEinstellungenSchreiben(repo)(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
@@ -189,16 +189,16 @@ func TestUpdateMailSettings_UnbrauchbarerAbsenderKommtNichtInDieDatenbank(t *tes
 
 // Kein Empfänger, keine Verbindung: Der Fehler steht vor der SMTP-Sitzung, nicht
 // erst darin — sonst hinge die Meldung von der Laune des Zielservers ab.
-func TestPostTestMail_OhneEmpfaengerKeinVerbindungsversuch(t *testing.T) {
+func TestTestmailSenden_OhneEmpfaengerKeinVerbindungsversuch(t *testing.T) {
 	for name, body := range map[string]string{
 		"leer":            `{"to":""}`,
 		"nur Leerzeichen": `{"to":"   "}`,
 		"Feld fehlt":      `{}`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			s, mock := mailTestServer(t)
+			s, mock := mailTestTueren(t)
 
-			rec := postTestmail(t, s, body)
+			rec := sendeTestmail(t, s, body)
 
 			if rec.Code != http.StatusBadRequest {
 				t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
@@ -213,7 +213,7 @@ func TestPostTestMail_OhneEmpfaengerKeinVerbindungsversuch(t *testing.T) {
 // Eine unbrauchbare Adresse ist ein Eingabefehler des Admins (400) und keine
 // Serverstörung (500) — nur so unterscheidet das Formular sie von einem SMTP-Ausfall.
 // Die letzte Variante ist der Kopfzeilen-Schmuggel aus dem CodeQL-Fund.
-func TestPostTestMail_UnbrauchbareAdresseIstEinEingabefehler(t *testing.T) {
+func TestTestmailSenden_UnbrauchbareAdresseIstEinEingabefehler(t *testing.T) {
 	for name, adresse := range map[string]string{
 		"ohne @":              `kein-empfaenger`,
 		"nur Name":            `Admin`,
@@ -221,9 +221,9 @@ func TestPostTestMail_UnbrauchbareAdresseIstEinEingabefehler(t *testing.T) {
 		"Bcc eingeschmuggelt": `admin@schule.de>\r\nBcc: mitleser@example.com`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			s, mock := mailTestServer(t)
+			s, mock := mailTestTueren(t)
 
-			rec := postTestmail(t, s, `{"to":"`+adresse+`"}`)
+			rec := sendeTestmail(t, s, `{"to":"`+adresse+`"}`)
 
 			if rec.Code != http.StatusBadRequest {
 				t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())

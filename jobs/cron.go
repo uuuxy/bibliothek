@@ -69,7 +69,7 @@ func (s *Scheduler) Start() {
 	// Ohne BACKUP_ENCRYPTION_KEY überspringt sich der Job (jobs/backup.go) — still. Das
 	// ist der gefährlichste Zustand, den dieses System kennt: Es läuft alles normal, und
 	// erst wenn jemand ein Backup BRAUCHT, stellt sich heraus, dass es nie eines gab.
-	// Der Admin-Wächter (api/system/backup_status.go) meldet den Fall zwar als "critical",
+	// Der Admin-Wächter (api/system/backup_stand.go) meldet den Fall zwar als "critical",
 	// dafür muss aber jemand ins Dashboard sehen. Diese Zeile steht im Startprotokoll.
 	if os.Getenv("BACKUP_ENCRYPTION_KEY") == "" {
 		log.Printf("ACHTUNG: BACKUP_ENCRYPTION_KEY ist nicht gesetzt — es werden KEINE " +

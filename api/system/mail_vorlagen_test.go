@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUpdateMailTemplateHandler_Success(t *testing.T) {
+func TestMailVorlageAendern_Erfolg(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 	defer mock.Close()
@@ -41,7 +41,7 @@ func TestUpdateMailTemplateHandler_Success(t *testing.T) {
 		WithArgs("Neuer Betreff", "Neuer Text", "mahnung_1").
 		WillReturnRows(pgxmock.NewRows([]string{"typ", "betreff_neu", "text_neu"}).AddRow("mahnung_1", true, true))
 
-	server.UpdateMailTemplateHandler().ServeHTTP(w, req)
+	server.MailVorlageAendern().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -53,7 +53,7 @@ func TestUpdateMailTemplateHandler_Success(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpdateMailTemplateHandler_MissingID(t *testing.T) {
+func TestMailVorlageAendern_OhneKennung(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 	defer mock.Close()
@@ -77,12 +77,12 @@ func TestUpdateMailTemplateHandler_MissingID(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	server.UpdateMailTemplateHandler().ServeHTTP(w, req)
+	server.MailVorlageAendern().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func TestUpdateMailTemplateHandler_InvalidJSON(t *testing.T) {
+func TestMailVorlageAendern_UngueltigesJSON(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 	defer mock.Close()
@@ -97,12 +97,12 @@ func TestUpdateMailTemplateHandler_InvalidJSON(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	server.UpdateMailTemplateHandler().ServeHTTP(w, req)
+	server.MailVorlageAendern().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func TestUpdateMailTemplateHandler_DBError(t *testing.T) {
+func TestMailVorlageAendern_Datenbankfehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 	defer mock.Close()
@@ -129,7 +129,7 @@ func TestUpdateMailTemplateHandler_DBError(t *testing.T) {
 		WithArgs("Neuer Betreff", "Neuer Text", "mahnung_1").
 		WillReturnError(errors.New("db error"))
 
-	server.UpdateMailTemplateHandler().ServeHTTP(w, req)
+	server.MailVorlageAendern().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 

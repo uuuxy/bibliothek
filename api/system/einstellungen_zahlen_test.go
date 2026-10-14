@@ -22,7 +22,7 @@ import (
 // Dieselbe Entscheidung wie beim LMF-Stichtag und den Sommerferien: Unlesbares wird
 // abgelehnt. Der Test steht an der Tür und nicht am Sammler, weil genau dort gemessen
 // wurde — und weil „gespeichert" die Antwort des Servers ist, nicht die einer Funktion.
-func TestUpdateSettings_ZahlAusserhalbDerSpanneWirdAbgelehnt(t *testing.T) {
+func TestEinstellungenSchreiben_ZahlAusserhalbDerSpanneWirdAbgelehnt(t *testing.T) {
 	faelle := []struct {
 		name    string
 		rumpf   string
@@ -42,10 +42,10 @@ func TestUpdateSettings_ZahlAusserhalbDerSpanneWirdAbgelehnt(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			repo := &attrappeSettingsRepo{}
+			repo := &einstellungsAttrappe{}
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPut, "/api/einstellungen", strings.NewReader(f.rumpf))
-			(&Tueren{Basis: &tuer.Basis{}}).UpdateSettingsHandler(repo).ServeHTTP(w, r)
+			(&Tueren{Basis: &tuer.Basis{}}).EinstellungenSchreiben(repo).ServeHTTP(w, r)
 			if w.Code != f.erwarte {
 				t.Errorf("Status %d, want %d — %s", w.Code, f.erwarte, w.Body.String())
 			}
@@ -59,12 +59,12 @@ func TestUpdateSettings_ZahlAusserhalbDerSpanneWirdAbgelehnt(t *testing.T) {
 // Die Meldung nennt das Feld beim Namen, unter dem es in der Oberfläche steht, und
 // sagt, dass nichts gespeichert wurde. Eine 400 ohne Feldnamen schickt den Menschen
 // in ein Formular mit fünfzehn Zahlen.
-func TestUpdateSettings_MeldungNenntFeldUndSpanne(t *testing.T) {
-	repo := &attrappeSettingsRepo{}
+func TestEinstellungenSchreiben_MeldungNenntFeldUndSpanne(t *testing.T) {
+	repo := &einstellungsAttrappe{}
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPut, "/api/einstellungen",
 		strings.NewReader(`{"max_overdue_items": 999999, "frist_buch_tage": 0}`))
-	(&Tueren{Basis: &tuer.Basis{}}).UpdateSettingsHandler(repo).ServeHTTP(w, r)
+	(&Tueren{Basis: &tuer.Basis{}}).EinstellungenSchreiben(repo).ServeHTTP(w, r)
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("Status %d, want 400", w.Code)

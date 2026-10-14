@@ -77,7 +77,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "view_graduates", true},
 	{"ADMIN", "view_stats", true},
 	{"ADMIN", "audit_logs", true},
-	// audit_details: die Tresen-Auskunft (api/system/audit_tresen_auskunft.go) — der eine
+	// audit_details: die Tresen-Auskunft (api/system/tresen_auskunft.go) — der eine
 	// zweckgebundene Leseweg in audit_log.details. Bewusst eigenes Recht statt
 	// audit_logs: Das Logbuch ist Stufe 0, die Auskunft nennt Namen (Stufe 2).
 	// Neue Rechte erreichen Bestandsanlagen über den Seed (fehlende Zeile wird

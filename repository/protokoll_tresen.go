@@ -1,6 +1,6 @@
 package repository
 
-// Die Abfragen der Tresen-Auskunft (api/system/audit_tresen_auskunft.go): der eine Leseweg in
+// Die Abfragen der Tresen-Auskunft (api/system/tresen_auskunft.go): der eine Leseweg in
 // die Details des Protokolls, an einen Zweck gebunden. Es sind Funktionen über Datenbank und
 // keine Methoden an ProtokollAbfragen: Die Schnittstelle trägt die Schreibwege, und für das
 // Lesen müsste sonst jede Attrappe wachsen.

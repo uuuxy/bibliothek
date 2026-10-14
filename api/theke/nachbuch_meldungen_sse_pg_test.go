@@ -42,7 +42,7 @@ func TestNachbuchMeldungen_SSESignalBeiAenderung(t *testing.T) {
 		stream.Close()
 		t.Fatalf("SSE-Strom nicht erreichbar: %v", err)
 	}
-	// Reihenfolge wie in api/system/settings_sse_test.go: erst den Client-Body schließen, dann den
+	// Reihenfolge wie in api/system/einstellungen_sse_test.go: erst den Client-Body schließen, dann den
 	// Broker beenden — sonst wartet httptest.Server.Close auf eine Verbindung, die noch
 	// auf Ereignisse horcht, und der Test hängt bis zum Paket-Timeout.
 	t.Cleanup(func() {

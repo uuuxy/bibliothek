@@ -33,16 +33,16 @@ import (
 	"bibliothek/repository"
 )
 
-// TresenExemplar ist ein Exemplar, das der Barcode heute oder früher bezeichnete.
-type TresenExemplar struct {
+// tresenExemplar ist ein Exemplar, das der Barcode heute oder früher bezeichnete.
+type tresenExemplar struct {
 	Titel string `json:"titel"`
 	// Status: "im_bestand", "ausgesondert" oder "geloescht" (nur noch im Protokoll).
 	Status string `json:"status"`
 }
 
-// TresenEreignis ist ein Ausleih-/Rückgabevorgang aus dem Protokoll. Bewusst ohne
+// tresenEreignis ist ein Ausleih-/Rückgabevorgang aus dem Protokoll. Bewusst ohne
 // IDs: Für den Tresen zählt der Name, nicht der Schlüssel (Datenminimierung).
-type TresenEreignis struct {
+type tresenEreignis struct {
 	Zeitpunkt time.Time `json:"zeitpunkt"`
 	Aktion    string    `json:"aktion"` // CHECKOUT | RETURN
 	// Entleiher ist der Klarname (Schüler oder Lehrkraft) — leer, wenn der
@@ -55,11 +55,11 @@ type TresenEreignis struct {
 	Bearbeiter           string `json:"bearbeiter"`
 }
 
-// TresenAuskunft ist die Antwort der Barcode-Suche.
-type TresenAuskunft struct {
+// tresenAuskunft ist die Antwort der Barcode-Suche.
+type tresenAuskunft struct {
 	Barcode    string           `json:"barcode"`
-	Exemplare  []TresenExemplar `json:"exemplare"`
-	Ereignisse []TresenEreignis `json:"ereignisse"`
+	Exemplare  []tresenExemplar `json:"exemplare"`
+	Ereignisse []tresenEreignis `json:"ereignisse"`
 }
 
 // tresenMaxEreignisse kappt die Vorgangsliste — ein Schulbuch sieht selten mehr als
@@ -67,12 +67,12 @@ type TresenAuskunft struct {
 // Bugklasse dieses Projekts (siehe auditLogMaxZeilen).
 const tresenMaxEreignisse = 100
 
-// tresenEreignis deutet eine Protokollzeile: der Leser (Schüler oder Kollege) vor dem
+// deuteTresenEreignis deutet eine Protokollzeile: der Leser (Schüler oder Kollege) vor dem
 // Konto alter Einträge, und ohne auflösbaren Namen ist der Personenbezug getilgt — keine
 // leere Zelle. Bei einem Kollegen steht statt der Klasse die Art; dieselben Wörter wie
 // frontend/src/lib/leserArt.js (leserart.KlasseOderArt).
-func tresenEreignis(z repository.TresenEreignisZeile) TresenEreignis {
-	e := TresenEreignis{Zeitpunkt: z.Zeitpunkt, Aktion: z.Aktion, Bearbeiter: z.BearbeiterName}
+func deuteTresenEreignis(z repository.TresenEreignisZeile) tresenEreignis {
+	e := tresenEreignis{Zeitpunkt: z.Zeitpunkt, Aktion: z.Aktion, Bearbeiter: z.BearbeiterName}
 	switch {
 	case z.LeserName != "":
 		e.Entleiher, e.Klasse = z.LeserName, leserart.KlasseOderArt(z.LeserKlasse, z.LeserArt)
@@ -86,16 +86,16 @@ func tresenEreignis(z repository.TresenEreignisZeile) TresenEreignis {
 	return e
 }
 
-// TresenAuskunftHandler beantwortet GET /api/audit/tresen-auskunft?barcode=…
-func (s *Tueren) TresenAuskunftHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
+// TresenAuskunft beantwortet GET /api/audit/tresen-auskunft?barcode=…
+func (t *Tueren) TresenAuskunft(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.handleTresenAuskunft(w, r, auditRepo)
+		t.gibTresenAuskunft(w, r, protokollAbfragen)
 	}
 }
 
-// handleTresenAuskunft sucht die Exemplare zum Barcode und ihre Vorgänge und protokolliert den
+// gibTresenAuskunft sucht die Exemplare zum Barcode und ihre Vorgänge und protokolliert den
 // Blick, bevor er antwortet.
-func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen) {
+func (t *Tueren) gibTresenAuskunft(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	barcode := strings.TrimSpace(r.URL.Query().Get("barcode"))
 	if barcode == "" || len(barcode) > 64 {
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
@@ -103,27 +103,27 @@ func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 		return
 	}
 
-	exemplarZeilen, err := repository.FindeTresenExemplare(r.Context(), s.DB.Pool, barcode)
+	exemplarZeilen, err := repository.FindeTresenExemplare(r.Context(), t.DB.Pool, barcode)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
-	exemplare := []TresenExemplar{}
+	exemplare := []tresenExemplar{}
 	ids := make([]string, 0, len(exemplarZeilen))
 	for _, z := range exemplarZeilen {
 		ids = append(ids, z.ExemplarID)
-		exemplare = append(exemplare, TresenExemplar{Titel: z.Titel, Status: z.Status})
+		exemplare = append(exemplare, tresenExemplar{Titel: z.Titel, Status: z.Status})
 	}
 
-	ereignisse := []TresenEreignis{}
+	ereignisse := []tresenEreignis{}
 	if len(ids) > 0 {
-		zeilen, err := repository.FindeTresenEreignisse(r.Context(), s.DB.Pool, ids, tresenMaxEreignisse)
+		zeilen, err := repository.FindeTresenEreignisse(r.Context(), t.DB.Pool, ids, tresenMaxEreignisse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		for _, z := range zeilen {
-			ereignisse = append(ereignisse, tresenEreignis(z))
+			ereignisse = append(ereignisse, deuteTresenEreignis(z))
 		}
 	}
 
@@ -136,7 +136,7 @@ func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 			errors.New("keine sitzung im kontext"))
 		return
 	}
-	if err := auditRepo.ProtokolliereAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
+	if err := protokollAbfragen.ProtokolliereAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
 		clientip.AusAnfrage(r), map[string]any{
 			"barcode":            barcode,
 			"treffer_exemplare":  len(exemplare),
@@ -146,7 +146,7 @@ func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 		return
 	}
 
-	tuer.AntworteJSON(w, http.StatusOK, TresenAuskunft{
+	tuer.AntworteJSON(w, http.StatusOK, tresenAuskunft{
 		Barcode: barcode, Exemplare: exemplare, Ereignisse: ereignisse,
 	})
 }

@@ -16,12 +16,12 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 
 	// ── EINSTELLUNGEN (Settings) ──
 	settingsRepo := repository.NewEinstellungsAbfragen(dbPool)
-	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_settings")(s.system().GetSettingsHandler(settingsRepo)))
-	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_settings")(s.system().UpdateSettingsHandler(settingsRepo)))
+	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_settings")(s.system().Einstellungen(settingsRepo)))
+	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_settings")(s.system().EinstellungenSchreiben(settingsRepo)))
 	// Sitzungs-Fristen (Theke leeren, Sperrbildschirm) braucht JEDER angemeldete Client —
 	// auch Helfer und Kollegium, die /api/einstellungen nicht lesen dürfen. Nur die zwei
 	// Zahlen, keine Schul- oder Betriebsdaten.
-	mux.Handle("GET /api/einstellungen/sitzung", s.VerlangeAnmeldung()(s.system().GetSitzungsEinstellungenHandler(settingsRepo)))
+	mux.Handle("GET /api/einstellungen/sitzung", s.VerlangeAnmeldung()(s.system().SitzungsEinstellungen(settingsRepo)))
 
 	// Ausweis-Design (zentral, für alle vernetzten Arbeitsplätze). Lesen breit (jeder,
 	// der Ausweise druckt), Speichern nur administrativ.
@@ -29,13 +29,13 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	mux.Handle("PUT /api/ausweis-layout", s.RequirePermission("manage_settings")(s.druck().AusweisLayoutSchreiben()))
 
 	mailRepo := repository.NewMailEinstellungsAbfragen(dbPool)
-	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.system().GetMailSettingsHandler(mailRepo)))
-	mux.Handle("PUT /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.system().UpdateMailSettingsHandler(mailRepo)))
-	mux.Handle("POST /api/admin/settings/mail/test", s.RequirePermission("manage_settings")(s.system().PostTestMailSettingsHandler()))
+	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.system().MailEinstellungen(mailRepo)))
+	mux.Handle("PUT /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.system().MailEinstellungenSchreiben(mailRepo)))
+	mux.Handle("POST /api/admin/settings/mail/test", s.RequirePermission("manage_settings")(s.system().TestmailSenden()))
 
 	// Permissions
 	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.benutzer().RechteMatrix()))
-	mux.Handle("GET /api/admin/system/backup-status", s.RequirePermission("manage_settings")(s.system().BackupStatusHandler()))
+	mux.Handle("GET /api/admin/system/backup-status", s.RequirePermission("manage_settings")(s.system().BackupStand()))
 	// Die Verallgemeinerung des Backup-Waechters: Was ist eingerichtet, aber nicht in
 	// Betrieb? Siehe internal/bereitschaft/bereitschaft.go.
 	//
@@ -43,18 +43,18 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	// und sah bei einem Umbruch keinen Schutz-Wrapper — es meldete die Route als ungeschuetzt,
 	// obwohl RequirePermission dranhing. Lieber eine lange Zeile als ein Gate, das man
 	// entschaerfen muss.
-	mux.Handle("GET /api/admin/system/betriebsbereitschaft", s.RequirePermission("manage_settings")(s.system().BetriebsbereitschaftHandler(settingsRepo, mailRepo, repository.NewBetriebszustandAbfragen(dbPool))))
+	mux.Handle("GET /api/admin/system/betriebsbereitschaft", s.RequirePermission("manage_settings")(s.system().Betriebsbereitschaft(settingsRepo, mailRepo, repository.NewBetriebszustandAbfragen(dbPool))))
 	mux.Handle("PUT /api/admin/permissions", s.RequirePermission("manage_users")(s.benutzer().RollenRechtSetzen()))
 
 	// Audit & Transactions
-	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.system().GetAuditLogsHandler()))
+	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.system().Protokoll()))
 	// Der EINE zweckgebundene Leseweg in audit_log.details (Tresen-Fall) — eigenes
-	// Recht, jeder Abruf protokolliert sich selbst. Siehe api/system/audit_tresen_auskunft.go.
-	mux.Handle("GET /api/audit/tresen-auskunft", s.RequirePermission("audit_details")(s.system().TresenAuskunftHandler(auditRepo)))
+	// Recht, jeder Abruf protokolliert sich selbst. Siehe api/system/tresen_auskunft.go.
+	mux.Handle("GET /api/audit/tresen-auskunft", s.RequirePermission("audit_details")(s.system().TresenAuskunft(auditRepo)))
 
 	// Mail Templates
-	mux.Handle("GET /api/mail-templates", s.RequirePermission("manage_settings")(s.system().GetMailTemplatesHandler()))
-	mux.Handle("PUT /api/mail-templates/{id}", s.RequirePermission("manage_settings")(s.system().UpdateMailTemplateHandler()))
+	mux.Handle("GET /api/mail-templates", s.RequirePermission("manage_settings")(s.system().MailVorlagen()))
+	mux.Handle("PUT /api/mail-templates/{id}", s.RequirePermission("manage_settings")(s.system().MailVorlageAendern()))
 
 	// Print / Reports
 	mux.Handle("GET /api/print/rechnung/{schueler_id}", s.RequirePermission("view_students")(s.schaden().RechnungPDF()))
@@ -64,7 +64,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	mux.Handle("GET /api/print/kontoauszug/{schueler_id}", s.RequirePermission("view_students")(leser.PrintKontoauszugHandler(s.DB.Pool)))
 
 	// Dashboard & Stats
-	mux.Handle("GET /api/dashboard/summary", s.RequirePermission("view_students")(s.system().GetDashboardSummaryHandler()))
+	mux.Handle("GET /api/dashboard/summary", s.RequirePermission("view_students")(s.system().MahnUebersicht()))
 	// view_stats, nicht view_students: Der Schalter, den ein Admin in der Rechte-Oberfläche
 	// umlegt, heißt "Statistiken anzeigen" — und das Menü blendet den Punkt genau danach ein
 	// (frontend/src/lib/menu.js). Die Route verlangte bis zum 23.08.2026 view_students. Beide
@@ -73,7 +73,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	// er habe sie entzogen), view_stats AN ohne view_students zeigte einen Menüpunkt, der
 	// jedes Mal 403 lieferte. Die Antwort trägt keine Personendaten (PII-Matrix Stufe 0),
 	// view_students war also auch fachlich die falsche Schranke.
-	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.system().GetStatisticsHandler()))
+	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.system().Statistik()))
 
 	// Lookups
 	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.katalog().GetSystematicsHandler()))
@@ -85,7 +85,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.P
 	mux.Handle("GET /api/faecher", s.RequirePermission("view_books")(s.katalog().GetFaecherHandler()))
 
 	// Audit Logs
-	mux.Handle("GET /api/admin/auditlog", s.RequirePermission("manage_users")(s.system().GetAdminAuditLogsHandler()))
+	mux.Handle("GET /api/admin/auditlog", s.RequirePermission("manage_users")(s.system().VerwaltungsProtokoll()))
 
 	// Barcodes & Etiketten
 	// edit_books statt view_books: Der Endpunkt zeigt keine Nummer mehr an, er VERGIBT

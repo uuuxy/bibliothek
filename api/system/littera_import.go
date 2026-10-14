@@ -22,57 +22,57 @@ import (
 )
 
 // Audit-/Log-Quellen.
-const litteraImportSource = "littera import file"
+const litteraImportQuelle = "littera import file"
 
-// LitteraImportResponse meldet zurück, was ein Littera-Import bewegt hat. Die Zähler
+// LitteraImportAntwort meldet zurück, was ein Littera-Import bewegt hat. Die Zähler
 // tragen omitempty, weil je nach Dateiart nur ein Teil davon gefüllt wird: Das
 // Katalogisat-XML bringt Titel, die Bestands-CSV bringt Exemplare.
-type LitteraImportResponse struct {
-	NewTitles      int    `json:"new_titles_count,omitempty"`
-	ImportedCopies int    `json:"imported_copies_count,omitempty"`
-	UpdatedTitles  int    `json:"updated_titles_count,omitempty"`
-	Type           string `json:"type"` // "csv", "xml" or "xlsx"
+type LitteraImportAntwort struct {
+	NeueTitel            int    `json:"new_titles_count,omitempty"`
+	ImportierteExemplare int    `json:"imported_copies_count,omitempty"`
+	GeaenderteTitel      int    `json:"updated_titles_count,omitempty"`
+	Art                  string `json:"type"` // "csv", "xml" or "xlsx"
 }
 
 // leseUploadInhalt begrenzt, parst und liest die hochgeladene Datei. Bei Fehler
 // wird bereits geantwortet und ok=false zurückgegeben.
-func (s *Tueren) leseUploadInhalt(w http.ResponseWriter, r *http.Request, maxBytes int64) (content []byte, filename string, ok bool) {
+func (t *Tueren) leseUploadInhalt(w http.ResponseWriter, r *http.Request, maxBytes int64) (inhalt []byte, dateiname string, ok bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 	if err := r.ParseMultipartForm(maxBytes); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return nil, "", false
 	}
 
-	file, fileHeader, err := r.FormFile("file")
+	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return nil, "", false
 	}
-	defer closeutil.Schliesse(file, litteraImportSource)
+	defer closeutil.Schliesse(datei, litteraImportQuelle)
 
-	content, err = io.ReadAll(file)
+	inhalt, err = io.ReadAll(datei)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return nil, "", false
 	}
-	return content, fileHeader.Filename, true
+	return inhalt, dateiKopf.Filename, true
 }
 
 // istLitteraXML erkennt ein MAB2-XML-Katalogisat an Endung oder Inhalt.
-func istLitteraXML(filename, contentStr string) bool {
-	lowerName := strings.ToLower(filename)
-	lowerContent := strings.ToLower(contentStr)
-	return strings.HasSuffix(lowerName, ".xml") ||
-		strings.Contains(lowerContent, "<?xml") ||
-		strings.Contains(lowerContent, "<katalogisat")
+func istLitteraXML(dateiname, inhaltText string) bool {
+	nameKlein := strings.ToLower(dateiname)
+	inhaltKlein := strings.ToLower(inhaltText)
+	return strings.HasSuffix(nameKlein, ".xml") ||
+		strings.Contains(inhaltKlein, "<?xml") ||
+		strings.Contains(inhaltKlein, "<katalogisat")
 }
 
 // leseTabellarischeDaten liest die Zeilen aus einer XLSX- oder CSV-Datei.
-func leseTabellarischeDaten(filename string, content []byte, contentStr string) (rows [][]string, isXLSX bool, err error) {
-	if strings.HasSuffix(strings.ToLower(filename), ".xlsx") {
-		rows, err := xlsxgrenze.LeseMappe(bytes.NewReader(content), func(f *excelize.File) ([][]string, error) {
-			sheetName := f.GetSheetName(f.GetActiveSheetIndex())
-			return f.GetRows(sheetName, excelize.Options{RawCellValue: true})
+func leseTabellarischeDaten(dateiname string, inhalt []byte, inhaltText string) (zeilen [][]string, istXLSX bool, err error) {
+	if strings.HasSuffix(strings.ToLower(dateiname), ".xlsx") {
+		zeilen, err := xlsxgrenze.LeseMappe(bytes.NewReader(inhalt), func(f *excelize.File) ([][]string, error) {
+			blatt := f.GetSheetName(f.GetActiveSheetIndex())
+			return f.GetRows(blatt, excelize.Options{RawCellValue: true})
 		})
 		switch {
 		case xlsxgrenze.IstUnlesbar(err):
@@ -80,50 +80,50 @@ func leseTabellarischeDaten(filename string, content []byte, contentStr string) 
 		case err != nil:
 			return nil, true, fmt.Errorf("failed to get excel rows: %w", err)
 		}
-		return rows, true, nil
+		return zeilen, true, nil
 	}
 
-	reader := csv.NewReader(strings.NewReader(contentStr))
-	reader.Comma = service.ImportTrennzeichen(contentStr)
-	reader.LazyQuotes = true
-	rows, err = reader.ReadAll()
+	csvLeser := csv.NewReader(strings.NewReader(inhaltText))
+	csvLeser.Comma = service.ImportTrennzeichen(inhaltText)
+	csvLeser.LazyQuotes = true
+	zeilen, err = csvLeser.ReadAll()
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to read csv content: %w", err)
 	}
-	return rows, false, nil
+	return zeilen, false, nil
 }
 
-// importHeaderMitPflichtspalten baut die Spaltenzuordnung und prüft die
+// importKopfMitPflichtspalten baut die Spaltenzuordnung und prüft die
 // Pflichtspalten (Titel, Barcode).
-func importHeaderMitPflichtspalten(rows [][]string) (map[string]int, error) {
-	if len(rows) < 1 {
+func importKopfMitPflichtspalten(zeilen [][]string) (map[string]int, error) {
+	if len(zeilen) < 1 {
 		return nil, fmt.Errorf("empty file")
 	}
-	headerMap := service.ImportKopfzeile(rows[0])
-	if _, ok := headerMap["titel"]; !ok {
+	kopf := service.ImportKopfzeile(zeilen[0])
+	if _, ok := kopf["titel"]; !ok {
 		return nil, fmt.Errorf("missing required column: titel")
 	}
-	if _, ok := headerMap["barcode"]; !ok {
+	if _, ok := kopf["barcode"]; !ok {
 		return nil, fmt.Errorf("missing required column: barcode/exemplarnummer")
 	}
-	return headerMap, nil
+	return kopf, nil
 }
 
-// logImportAudit schreibt einen Audit-Log-Eintrag, sofern ein Nutzer im Kontext ist.
-func (s *Tueren) logImportAudit(r *http.Request, aktion, details string) {
+// protokolliereImport schreibt einen Audit-Log-Eintrag, sofern ein Nutzer im Kontext ist.
+func (t *Tueren) protokolliereImport(r *http.Request, aktion, details string) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return
 	}
-	s.SchreibeAdminProtokoll(r.Context(), claims.UserID, aktion, clientip.AusAnfrage(r), details)
+	t.SchreibeAdminProtokoll(r.Context(), claims.UserID, aktion, clientip.AusAnfrage(r), details)
 }
 
 // verarbeiteLitteraXML importiert ein MAB2-XML-Katalogisat und antwortet.
 // Eine Datei, die kein Katalogisat ist (z. B. Schlagwort-/Systematik-Export),
 // ist ein Nutzer-Formatfehler und wird als 400 gemeldet, nicht als 500.
-func (s *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, content []byte) {
-	importSvc := service.NewImportDienst(repository.NewKatalogAbfragen(s.DB.Pool), s.DB.Pool)
-	importedCount, err := importSvc.ImportiereLitteraXML(r.Context(), bytes.NewReader(content))
+func (t *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, inhalt []byte) {
+	importDienst := service.NewImportDienst(repository.NewKatalogAbfragen(t.DB.Pool), t.DB.Pool)
+	geaenderteTitel, err := importDienst.ImportiereLitteraXML(r.Context(), bytes.NewReader(inhalt))
 	if err != nil {
 		status := http.StatusInternalServerError
 		if errors.Is(err, service.ErrKeinKatalogisat) {
@@ -133,7 +133,7 @@ func (s *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, co
 		return
 	}
 
-	s.logImportAudit(r, "LITTERA_IMPORT", fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount))
+	t.protokolliereImport(r, "LITTERA_IMPORT", fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, geaenderteTitel))
 
 	// Typisierte Antwort wie CSV/XLSX (Sweep 01.09.2026, Fund A2): Vorher
 	// antwortete NUR dieser Zweig mit einer losen Map — das Struct-Feld
@@ -141,134 +141,134 @@ func (s *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, co
 	// den Zähler still verschluckt (omitempty auf int 0 entfernt den Schlüssel,
 	// das Widget zeigte "undefined bestehende Titel"). Die Zusatzschlüssel der
 	// Map (imported_count, message) las kein Konsument (gegengeprüft).
-	tuer.AntworteJSON(w, http.StatusOK, LitteraImportResponse{
-		UpdatedTitles: importedCount,
-		Type:          "xml",
+	tuer.AntworteJSON(w, http.StatusOK, LitteraImportAntwort{
+		GeaenderteTitel: geaenderteTitel,
+		Art:             "xml",
 	})
 }
 
-// LitteraImportHandler nimmt eine Littera-Ausgabedatei entgegen und verzweigt anhand der
+// LitteraImport nimmt eine Littera-Ausgabedatei entgegen und verzweigt anhand der
 // Dateiendung auf den passenden Leser (CSV, MAB2-XML, XLSX). Die Grenze von 100 MB ist
 // bewusst großzügig: Das Katalogisat der Schule liegt bei rund 14.000 Titeln.
-func (s *Tueren) LitteraImportHandler() http.HandlerFunc {
+func (t *Tueren) LitteraImport() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		content, filename, ok := s.leseUploadInhalt(w, r, 100<<20) // 100 MB limit
+		inhalt, dateiname, ok := t.leseUploadInhalt(w, r, 100<<20) // 100 MB limit
 		if !ok {
 			return
 		}
 
-		contentStr := string(content)
-		if istLitteraXML(filename, contentStr) {
-			s.verarbeiteLitteraXML(w, r, content)
+		inhaltText := string(inhalt)
+		if istLitteraXML(dateiname, inhaltText) {
+			t.verarbeiteLitteraXML(w, r, inhalt)
 			return
 		}
 
-		rows, isXLSX, err := leseTabellarischeDaten(filename, content, contentStr)
+		zeilen, istXLSX, err := leseTabellarischeDaten(dateiname, inhalt, inhaltText)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
 
-		headerMap, err := importHeaderMitPflichtspalten(rows)
+		kopf, err := importKopfMitPflichtspalten(zeilen)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
 
-		importSvc := service.NewImportDienst(repository.NewKatalogAbfragen(s.DB.Pool), s.DB.Pool)
-		newTitlesCount, importedCopiesCount, err := importSvc.ImportiereZeilen(r.Context(), rows, headerMap)
+		importDienst := service.NewImportDienst(repository.NewKatalogAbfragen(t.DB.Pool), t.DB.Pool)
+		neueTitel, importierteExemplare, err := importDienst.ImportiereZeilen(r.Context(), zeilen, kopf)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		s.logImportAudit(r, "LITTERA_IMPORT", fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitlesCount, importedCopiesCount))
+		t.protokolliereImport(r, "LITTERA_IMPORT", fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, neueTitel, importierteExemplare))
 
-		importType := "csv"
-		if isXLSX {
-			importType = "xlsx"
+		art := "csv"
+		if istXLSX {
+			art = "xlsx"
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, LitteraImportResponse{
-			NewTitles:      newTitlesCount,
-			ImportedCopies: importedCopiesCount,
-			Type:           importType,
+		tuer.AntworteJSON(w, http.StatusOK, LitteraImportAntwort{
+			NeueTitel:            neueTitel,
+			ImportierteExemplare: importierteExemplare,
+			Art:                  art,
 		})
 	}
 }
 
-// BestandImportHandler verarbeitet den Upload der finalen Bestands-CSV.
+// BestandImport verarbeitet den Upload der finalen Bestands-CSV.
 //
 // Er nutzt denselben robusten Pfad wie der Littera-Import (Trennzeichen-Erkennung,
 // namensbasiertes Spalten-Mapping, Titel-Dedup über ImportiereZeilen). Dadurch ist es
 // egal, ob die Datei Komma- oder Semikolon-getrennt ist bzw. die Zustand-Spalte
 // enthält — ein Formatfehler des Nutzers wird als 400 (nicht 500) gemeldet.
-func (s *Tueren) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 20<<20)
 	if err := r.ParseMultipartForm(20 << 20); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	file, fileHeader, err := r.FormFile("file")
+	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine Datei hochgeladen"))
 		return
 	}
-	defer closeutil.Schliesse(file, litteraImportSource)
+	defer closeutil.Schliesse(datei, litteraImportQuelle)
 
-	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
+	if !strings.HasSuffix(strings.ToLower(dateiKopf.Filename), ".csv") {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("es werden nur CSV-Dateien akzeptiert"))
 		return
 	}
 
-	content, err := io.ReadAll(file)
+	inhalt, err := io.ReadAll(datei)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
-	contentStr := string(content)
+	inhaltText := string(inhalt)
 
-	reader := csv.NewReader(strings.NewReader(contentStr))
-	reader.Comma = service.ImportTrennzeichen(contentStr)
-	reader.LazyQuotes = true
-	rows, err := reader.ReadAll()
+	csvLeser := csv.NewReader(strings.NewReader(inhaltText))
+	csvLeser.Comma = service.ImportTrennzeichen(inhaltText)
+	csvLeser.LazyQuotes = true
+	zeilen, err := csvLeser.ReadAll()
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err))
 		return
 	}
-	if len(rows) < 2 {
+	if len(zeilen) < 2 {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("die CSV enthält keine Datenzeilen"))
 		return
 	}
 
-	headerMap := service.ImportKopfzeile(rows[0])
-	if _, ok := headerMap["titel"]; !ok {
+	kopf := service.ImportKopfzeile(zeilen[0])
+	if _, ok := kopf["titel"]; !ok {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Titel"))
 		return
 	}
-	if _, ok := headerMap["barcode"]; !ok {
+	if _, ok := kopf["barcode"]; !ok {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Barcode/Exemplarnummer"))
 		return
 	}
 
-	bookRepo := repository.NewKatalogAbfragen(s.DB.Pool)
-	importSvc := service.NewImportDienst(bookRepo, s.DB.Pool)
+	katalogAbfragen := repository.NewKatalogAbfragen(t.DB.Pool)
+	importDienst := service.NewImportDienst(katalogAbfragen, t.DB.Pool)
 
-	newTitles, importedCopies, err := importSvc.ImportiereZeilen(r.Context(), rows, headerMap)
+	neueTitel, importierteExemplare, err := importDienst.ImportiereZeilen(r.Context(), zeilen, kopf)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if claims, ok := auth.GetClaims(r.Context()); ok {
-		details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitles, importedCopies)
-		s.SchreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.AusAnfrage(r), details)
+		details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, neueTitel, importierteExemplare)
+		t.SchreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.AusAnfrage(r), details)
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
-		"new_titles_count":      newTitles,
-		"imported_copies_count": importedCopies,
+		"new_titles_count":      neueTitel,
+		"imported_copies_count": importierteExemplare,
 		"message":               "Bestands-CSV erfolgreich importiert",
 	})
 }

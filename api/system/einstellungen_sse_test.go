@@ -24,7 +24,7 @@ import (
 // Geprüft am echten Strom, nicht an einer Attrappe des Brokers: erst ein Patch OHNE
 // Sitzungsfelder, dann einer MIT — das nächste Ereignis auf der Leitung muss
 // `sitzungsfristen` sein. Hätte der erste Patch gesendet, stünde ein Ereignis davor.
-func TestUpdateSettings_SitzungsfristenSendenSSESignal(t *testing.T) {
+func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.Start(ctx)
@@ -79,7 +79,7 @@ func TestUpdateSettings_SitzungsfristenSendenSSESignal(t *testing.T) {
 		t.Helper()
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPut, "/api/einstellungen", strings.NewReader(rumpf))
-		s.UpdateSettingsHandler(&attrappeSettingsRepo{}).ServeHTTP(w, r)
+		s.EinstellungenSchreiben(&einstellungsAttrappe{}).ServeHTTP(w, r)
 		if w.Code != http.StatusOK {
 			t.Fatalf("Speichern scheiterte (%d): %s", w.Code, w.Body.String())
 		}

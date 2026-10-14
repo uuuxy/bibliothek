@@ -15,7 +15,7 @@ import (
 // 2. März. Die beiden Nachbarn (Sommerferien, Eingangsjahrgänge) wurden am 06.09. genau
 // dafür geprüft — der Stichtag nicht, obwohl ein Kommentar das behauptete
 // (Bestands-Durchgang, Bugklasse „Schutz, den nur ein Kommentar behauptet").
-func TestUpdateSettings_LmfStichtagIstEinKalendertag(t *testing.T) {
+func TestEinstellungenSchreiben_LmfStichtagIstEinKalendertag(t *testing.T) {
 	faelle := []struct {
 		wert    string
 		erwarte int
@@ -31,11 +31,11 @@ func TestUpdateSettings_LmfStichtagIstEinKalendertag(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.wert, func(t *testing.T) {
-			repo := &attrappeSettingsRepo{}
+			repo := &einstellungsAttrappe{}
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPut, "/api/einstellungen",
 				strings.NewReader(`{"lmf_stichtag": "`+f.wert+`"}`))
-			(&Tueren{Basis: &tuer.Basis{}}).UpdateSettingsHandler(repo).ServeHTTP(w, r)
+			(&Tueren{Basis: &tuer.Basis{}}).EinstellungenSchreiben(repo).ServeHTTP(w, r)
 			if w.Code != f.erwarte {
 				t.Errorf("Stichtag %q: Status %d, want %d — %s", f.wert, w.Code, f.erwarte, w.Body.String())
 			}

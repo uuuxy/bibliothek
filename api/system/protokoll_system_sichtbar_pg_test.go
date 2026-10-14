@@ -14,7 +14,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// TestAuditLogZeigtSystemEintraege sichert einen Befund aus dem Audit vom 01.08.2026 ab:
+// TestProtokollZeigtSystemEintraege sichert einen Befund aus dem Audit vom 01.08.2026 ab:
 //
 // /api/audit verband audit_log per INNER JOIN mit benutzer. Systemgesteuerte Vorgaenge
 // schreiben aber bewusst OHNE bearbeiter_id und mit akteur='SYSTEM' — DSGVO-Bereinigung,
@@ -24,7 +24,7 @@ import (
 // nachvollziehen kann, was ohne Aufsicht am Bestand und an Schuelerdaten passiert ist.
 // Ausgerechnet dieser Teil fehlte in der Anzeige — und zwar lautlos, weil eine kuerzere
 // Liste nach nichts aussieht.
-func TestAuditLogZeigtSystemEintraege(t *testing.T) {
+func TestProtokollZeigtSystemEintraege(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -62,17 +62,17 @@ func TestAuditLogZeigtSystemEintraege(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	srv.GetAuditLogsHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/audit", nil))
+	srv.Protokoll().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/audit", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, Koerper: %s", rec.Code, rec.Body.String())
 	}
 
-	var eintraege []AuditLogEntry
+	var eintraege []protokollEintrag
 	if err := json.Unmarshal(rec.Body.Bytes(), &eintraege); err != nil {
 		t.Fatalf("Antwort unlesbar: %v", err)
 	}
 
-	var system, nutzer *AuditLogEntry
+	var system, nutzer *protokollEintrag
 	for i := range eintraege {
 		switch eintraege[i].Tabelle {
 		case systemTabelle:

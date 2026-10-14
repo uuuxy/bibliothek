@@ -7,7 +7,7 @@
 //
 // Die Prüfungen sind eine reine Funktion über eine Lage: Sie lassen sich ganz testen, ohne
 // Umgebungsvariablen zu verbiegen oder eine Datenbank zu brauchen. Die Lage trägt die Tür
-// zusammen (api/system/betriebsbereitschaft_handler.go).
+// zusammen (api/system/betriebsbereitschaft.go).
 package bereitschaft
 
 import (
@@ -71,7 +71,7 @@ type Lage struct {
 	// angelegt werden (auth/selbstanmeldung.go).
 	SelbstanmeldeDomain string
 
-	// Aus den Einstellungen in der Datenbank, nicht aus der .env (api/system/mail_settings.go)
+	// Aus den Einstellungen in der Datenbank, nicht aus der .env (api/system/mail_einstellungen.go)
 	OeffentlicheAdresse string
 	SMTPHost            string
 	// Die beiden Ausnahmeschalter des Mailversands (mailservice/versand.go), je „steht auf
@@ -107,7 +107,7 @@ type Lage struct {
 
 	// Das nächtliche Backup überspringt sich ohne Schlüssel und steht still, wenn der
 	// Zeitplan stirbt. Die tägliche Alarm-Mail speist sich aus den Befunden, deshalb steht
-	// hier, was auch das Abzeichen im Rahmen der Anwendung misst (api/system/backup_status.go).
+	// hier, was auch das Abzeichen im Rahmen der Anwendung misst (api/system/backup_stand.go).
 	// LetztesBackup nil: noch nie gelaufen. Jetzt wird übergeben, damit sich die
 	// Altersrechnung testen lässt.
 	BackupSchluesselGesetzt bool

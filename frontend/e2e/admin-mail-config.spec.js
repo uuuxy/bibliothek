@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, csrfToken, seedSQL, uniqueSuffix } from './helpers.js';
 
-// Der geglückte Versand steht bewusst NICHT hier, sondern in api/system/mail_settings_test.go
+// Der geglückte Versand steht bewusst NICHT hier, sondern in api/system/mail_einstellungen_test.go
 // (Fake-SMTP-Server, der die Nachricht annimmt und sich befragen lässt): Die
 // SMTP-Konfiguration des lokalen Stacks zeigt auf den Schulserver — ein E2E-Test des
 // Versandwegs würde echte Mails verschicken. Was nur hier zu prüfen ist, ist der

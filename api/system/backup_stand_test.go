@@ -17,17 +17,17 @@ import (
 // das in jedem Fall "warning" gewesen und hätte die Alters-Schwellen verdeckt.
 const starkerTestSchluessel = "ein-hinreichend-langer-testschluessel-32+"
 
-func doBackupStatus(t *testing.T) *httptest.ResponseRecorder {
+func rufeBackupStand(t *testing.T) *httptest.ResponseRecorder {
 	t.Helper()
 	s := &Tueren{Basis: &tuer.Basis{}}
 	req := httptest.NewRequest(http.MethodGet, "/api/admin/system/backup-status", nil)
 	rec := httptest.NewRecorder()
-	s.BackupStatusHandler()(rec, req)
+	s.BackupStand()(rec, req)
 	return rec
 }
 
-// writeBackupFile legt eine Backup-Datei mit definiertem Alter an.
-func writeBackupFile(t *testing.T, dir string, age time.Duration) {
+// schreibeBackupDatei legt eine Backup-Datei mit definiertem Alter an.
+func schreibeBackupDatei(t *testing.T, dir string, age time.Duration) {
 	t.Helper()
 	f := filepath.Join(dir, "backup_2026-07-09.sql.gz.enc")
 	if err := os.WriteFile(f, []byte("x"), 0600); err != nil {
@@ -39,23 +39,23 @@ func writeBackupFile(t *testing.T, dir string, age time.Duration) {
 	}
 }
 
-func TestBackupStatus_MissingKeyIsCritical(t *testing.T) {
+func TestBackupStand_OhneSchluesselKritisch(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("BACKUP_DIR", dir)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "")
-	writeBackupFile(t, dir, time.Hour) // frisches Backup ändert nichts: ohne Key läuft der Job still leer
+	schreibeBackupDatei(t, dir, time.Hour) // frisches Backup ändert nichts: ohne Key läuft der Job still leer
 
-	body := doBackupStatus(t).Body.String()
+	body := rufeBackupStand(t).Body.String()
 	if !strings.Contains(body, `"status":"critical"`) || !strings.Contains(body, `"encryption_key_set":false`) {
 		t.Errorf("fehlender Key muss critical sein: %s", body)
 	}
 }
 
-func TestBackupStatus_EmptyDirIsCriticalNotCrash(t *testing.T) {
+func TestBackupStand_LeeresVerzeichnisKritischOhneAbsturz(t *testing.T) {
 	t.Setenv("BACKUP_DIR", t.TempDir()) // leer
 	t.Setenv("BACKUP_ENCRYPTION_KEY", starkerTestSchluessel)
 
-	rec := doBackupStatus(t)
+	rec := rufeBackupStand(t)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("leeres Verzeichnis darf nicht crashen: %d", rec.Code)
 	}
@@ -65,11 +65,11 @@ func TestBackupStatus_EmptyDirIsCriticalNotCrash(t *testing.T) {
 	}
 }
 
-func TestBackupStatus_MissingDirIsCriticalNotCrash(t *testing.T) {
+func TestBackupStand_FehlendesVerzeichnisKritischOhneAbsturz(t *testing.T) {
 	t.Setenv("BACKUP_DIR", filepath.Join(t.TempDir(), "gibt-es-nicht"))
 	t.Setenv("BACKUP_ENCRYPTION_KEY", starkerTestSchluessel)
 
-	rec := doBackupStatus(t)
+	rec := rufeBackupStand(t)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"status":"critical"`) {
 		t.Errorf("fehlendes Verzeichnis = sauberer critical: %d %s", rec.Code, rec.Body.String())
 	}
@@ -79,13 +79,13 @@ func TestBackupStatus_MissingDirIsCriticalNotCrash(t *testing.T) {
 // offline gut durchprobierbar. Eine kurze Passphrase ist damit das schwache Glied.
 // Das Format bleibt unverändert (sonst wären alte Backups unlesbar); stattdessen
 // meldet der Wächter den Zustand ins Admin-Dashboard.
-func TestBackupStatus_KurzerSchluesselIstWarnung(t *testing.T) {
+func TestBackupStand_KurzerSchluesselIstWarnung(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("BACKUP_DIR", dir)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "kurz123")
-	writeBackupFile(t, dir, time.Hour) // frisch — ohne die Schlüsselprüfung wäre das "ok"
+	schreibeBackupDatei(t, dir, time.Hour) // frisch — ohne die Schlüsselprüfung wäre das "ok"
 
-	body := doBackupStatus(t).Body.String()
+	body := rufeBackupStand(t).Body.String()
 	if !strings.Contains(body, `"status":"warning"`) {
 		t.Errorf("kurze Passphrase muss warnen, Body: %s", body)
 	}
@@ -96,17 +96,17 @@ func TestBackupStatus_KurzerSchluesselIstWarnung(t *testing.T) {
 
 // Gegenprobe: Ein fehlendes Backup bleibt critical und wird von der Schlüsselwarnung
 // nicht auf "warning" heruntergestuft.
-func TestBackupStatus_KurzerSchluesselStuftCriticalNichtHerab(t *testing.T) {
+func TestBackupStand_KurzerSchluesselStuftCriticalNichtHerab(t *testing.T) {
 	t.Setenv("BACKUP_DIR", t.TempDir()) // leer
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "kurz123")
 
-	body := doBackupStatus(t).Body.String()
+	body := rufeBackupStand(t).Body.String()
 	if !strings.Contains(body, `"status":"critical"`) {
 		t.Errorf("kein Backup bleibt critical, Body: %s", body)
 	}
 }
 
-func TestBackupStatus_Thresholds(t *testing.T) {
+func TestBackupStand_Schwellen(t *testing.T) {
 	cases := []struct {
 		age  time.Duration
 		want string
@@ -119,9 +119,9 @@ func TestBackupStatus_Thresholds(t *testing.T) {
 		dir := t.TempDir()
 		t.Setenv("BACKUP_DIR", dir)
 		t.Setenv("BACKUP_ENCRYPTION_KEY", starkerTestSchluessel)
-		writeBackupFile(t, dir, c.age)
+		schreibeBackupDatei(t, dir, c.age)
 
-		body := doBackupStatus(t).Body.String()
+		body := rufeBackupStand(t).Body.String()
 		if !strings.Contains(body, c.want) {
 			t.Errorf("Alter %v: erwartet %s, Body: %s", c.age, c.want, body)
 		}
@@ -133,7 +133,7 @@ func TestBackupStatus_Thresholds(t *testing.T) {
 
 // newestBackupTime nimmt die jüngste Sicherung nach Änderungszeit — nicht die
 // lexikographisch letzte (die Liste ist nach Namen sortiert, die Zeit steht am Inode).
-func TestNewestBackupTime_NimmtDieJuengste(t *testing.T) {
+func TestJuengstesBackup_NimmtDieJuengste(t *testing.T) {
 	dir := t.TempDir()
 	for name, alter := range map[string]time.Duration{
 		"backup_2026-09-01.sql.gz.enc": 5 * time.Hour,
@@ -149,11 +149,11 @@ func TestNewestBackupTime_NimmtDieJuengste(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	got := newestBackupTime(dir)
+	got := juengstesBackup(dir)
 	if got == nil || time.Since(*got) > 90*time.Minute || time.Since(*got) < 30*time.Minute {
 		t.Errorf("jüngste Sicherung ist ~1 h alt, bekam %v", got)
 	}
-	if newestBackupTime(filepath.Join(dir, "nein")) != nil {
+	if juengstesBackup(filepath.Join(dir, "nein")) != nil {
 		t.Errorf("fehlendes Verzeichnis = nil")
 	}
 }

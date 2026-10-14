@@ -22,13 +22,13 @@ func TestBetriebsbereitschaft_GesamtIstDieSchaerfsteStufeDerBefunde(t *testing.T
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	rec := httptest.NewRecorder()
-	srv.BetriebsbereitschaftHandler(repository.NewEinstellungsAbfragen(pool),
+	srv.Betriebsbereitschaft(repository.NewEinstellungsAbfragen(pool),
 		repository.NewMailEinstellungsAbfragen(pool), repository.NewBetriebszustandAbfragen(pool)).
 		ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/admin/system/betriebsbereitschaft", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 	}
-	var antwort BetriebsbereitschaftResponse
+	var antwort betriebsbereitschaftAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatal(err)
 	}

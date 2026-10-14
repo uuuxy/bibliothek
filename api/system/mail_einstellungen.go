@@ -16,36 +16,36 @@ import (
 	"bibliothek/repository"
 )
 
-// MailSettingsResponse ist die Mail-Konfiguration, wie die Oberfläche sie sehen darf.
+// mailEinstellungenAntwort ist die Mail-Konfiguration, wie die Oberfläche sie sehen darf.
 // Das Passwort verlässt den Server NIE — stattdessen sagt HasPassword nur, ob eines
 // hinterlegt ist.
-type MailSettingsResponse struct {
-	SMTPHost    string `json:"smtp_host"`
-	SMTPPort    string `json:"smtp_port"`
-	SMTPUser    string `json:"smtp_user"`
-	SenderEmail string `json:"sender_email"`
-	HasPassword bool   `json:"has_password"`
+type mailEinstellungenAntwort struct {
+	SMTPHost      string `json:"smtp_host"`
+	SMTPPort      string `json:"smtp_port"`
+	SMTPBenutzer  string `json:"smtp_user"`
+	AbsenderEmail string `json:"sender_email"`
+	HatPasswort   bool   `json:"has_password"`
 }
 
-// MailSettingsRequest ist die eingehende Mail-Konfiguration. Ein leeres SMTPPassword
+// mailEinstellungenAnfrage ist die eingehende Mail-Konfiguration. Ein leeres SMTPPassword
 // bedeutet „unverändert lassen": Sonst würde jedes Speichern der Einstellungsseite das
 // Passwort löschen, weil die Oberfläche es gar nicht kennt (siehe MailSettingsResponse).
-type MailSettingsRequest struct {
-	SMTPHost     string `json:"smtp_host"`
-	SMTPPort     string `json:"smtp_port"`
-	SMTPUser     string `json:"smtp_user"`
-	SMTPPassword string `json:"smtp_password"` // Optional, if empty will retain old password
-	SenderEmail  string `json:"sender_email"`
+type mailEinstellungenAnfrage struct {
+	SMTPHost      string `json:"smtp_host"`
+	SMTPPort      string `json:"smtp_port"`
+	SMTPBenutzer  string `json:"smtp_user"`
+	SMTPPasswort  string `json:"smtp_password"` // Optional, if empty will retain old password
+	AbsenderEmail string `json:"sender_email"`
 }
 
-// GetMailSettingsHandler gibt die Mail-Konfiguration zurück
-func (s *Tueren) GetMailSettingsHandler(mailRepo *repository.MailEinstellungsAbfragen) http.HandlerFunc {
+// MailEinstellungen gibt die Mail-Konfiguration zurück
+func (t *Tueren) MailEinstellungen(mailAbfragen *repository.MailEinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		config, err := mailRepo.Lade(ctx)
+		konfig, err := mailAbfragen.Lade(ctx)
 		if err != nil {
 			// Falls noch keine Konfiguration existiert, geben wir leere Werte zurück (bzw. Defaults)
-			config = &repository.MailEinstellungen{
+			konfig = &repository.MailEinstellungen{
 				SMTPHost:      "localhost",
 				SMTPPort:      "1025",
 				SMTPBenutzer:  "",
@@ -53,22 +53,22 @@ func (s *Tueren) GetMailSettingsHandler(mailRepo *repository.MailEinstellungsAbf
 			}
 		}
 
-		resp := MailSettingsResponse{
-			SMTPHost:    config.SMTPHost,
-			SMTPPort:    config.SMTPPort,
-			SMTPUser:    config.SMTPBenutzer,
-			SenderEmail: config.AbsenderEmail,
-			HasPassword: len(config.SMTPPasswortVerschluesselt) > 0,
+		antwort := mailEinstellungenAntwort{
+			SMTPHost:      konfig.SMTPHost,
+			SMTPPort:      konfig.SMTPPort,
+			SMTPBenutzer:  konfig.SMTPBenutzer,
+			AbsenderEmail: konfig.AbsenderEmail,
+			HatPasswort:   len(konfig.SMTPPasswortVerschluesselt) > 0,
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, resp)
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
 	}
 }
 
-// UpdateMailSettingsHandler speichert die Mail-Konfiguration
-func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailEinstellungsAbfragen) http.HandlerFunc {
+// MailEinstellungenSchreiben speichert die Mail-Konfiguration
+func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req MailSettingsRequest
+		var req mailEinstellungenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
@@ -77,17 +77,17 @@ func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailEinstellungs
 		// Tippfehler ließ sich bisher speichern und fiel erst im Testversand auf — dort
 		// als 500, die der Admin als Datenbankfehler zu lesen bekam. Leer ist erlaubt,
 		// dafür setzt der Versand seinen Standardabsender ein.
-		if sender := strings.TrimSpace(req.SenderEmail); sender != "" {
-			parsed, err := mail.ParseAddress(sender)
+		if absender := strings.TrimSpace(req.AbsenderEmail); absender != "" {
+			adresse, err := mail.ParseAddress(absender)
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err))
 				return
 			}
-			req.SenderEmail = parsed.Address
+			req.AbsenderEmail = adresse.Address
 		}
 
 		ctx := r.Context()
-		err := mailRepo.Schreibe(ctx, req.SMTPHost, req.SMTPPort, req.SMTPUser, req.SMTPPassword, req.SenderEmail)
+		err := mailAbfragen.Schreibe(ctx, req.SMTPHost, req.SMTPPort, req.SMTPBenutzer, req.SMTPPasswort, req.AbsenderEmail)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -95,17 +95,17 @@ func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailEinstellungs
 
 		// Admin audit log
 		if claims, ok := auth.GetClaims(r.Context()); ok {
-			detailsBytes, merr := json.Marshal(map[string]interface{}{
+			details, merr := json.Marshal(map[string]interface{}{
 				"smtp_host":        req.SMTPHost,
 				"smtp_port":        req.SMTPPort,
-				"smtp_user":        req.SMTPUser,
-				"sender_email":     req.SenderEmail,
-				"password_changed": req.SMTPPassword != "",
+				"smtp_user":        req.SMTPBenutzer,
+				"sender_email":     req.AbsenderEmail,
+				"password_changed": req.SMTPPasswort != "",
 			})
 			if merr != nil {
 				log.Printf("audit: Mail-Settings-Details konnten nicht serialisiert werden: %v", merr)
 			} else {
-				s.SchreibeAdminProtokoll(ctx, claims.UserID, "UPDATE_MAIL_SETTINGS", "", string(detailsBytes))
+				t.SchreibeAdminProtokoll(ctx, claims.UserID, "UPDATE_MAIL_SETTINGS", "", string(details))
 			}
 		}
 
@@ -113,8 +113,8 @@ func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailEinstellungs
 	}
 }
 
-// PostTestMailSettingsHandler sendet eine Test-E-Mail mit der aktuellen Konfiguration
-func (s *Tueren) PostTestMailSettingsHandler() http.HandlerFunc {
+// TestmailSenden sendet eine Test-E-Mail mit der aktuellen Konfiguration
+func (t *Tueren) TestmailSenden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			To string `json:"to"`
@@ -123,8 +123,8 @@ func (s *Tueren) PostTestMailSettingsHandler() http.HandlerFunc {
 			return
 		}
 
-		to := strings.TrimSpace(req.To)
-		if to == "" {
+		an := strings.TrimSpace(req.To)
+		if an == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("empfänger-E-Mail-Adresse fehlt"))
 			return
 		}
@@ -133,14 +133,14 @@ func (s *Tueren) PostTestMailSettingsHandler() http.HandlerFunc {
 		// ist ein Client-Fehler (400) und keine Serverstörung (500) — nur so kann das
 		// Formular sie von einem echten SMTP-Ausfall unterscheiden. Die Hürde in
 		// SendTestMail bleibt trotzdem stehen, sie schützt die anderen Aufrufer.
-		parsed, err := mail.ParseAddress(to)
+		adresse, err := mail.ParseAddress(an)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err))
 			return
 		}
 
 		ctx := r.Context()
-		err = mailservice.SendTestMail(ctx, s.DB.Pool, parsed.Address)
+		err = mailservice.SendTestMail(ctx, t.DB.Pool, adresse.Address)
 		if err != nil {
 			// mailFehlerStatus: 502, wenn der Zielserver versagt hat — nur so erreicht
 			// die Diagnose (falscher Port, abgelehnte Zugangsdaten, Zertifikatsname)

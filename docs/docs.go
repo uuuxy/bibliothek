@@ -318,7 +318,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/system.AuditLogEntry"
+                                "$ref": "#/definitions/system.protokollEintrag"
                             }
                         }
                     },
@@ -6422,7 +6422,7 @@ const docTemplate = `{
                 }
             }
         },
-        "system.AuditLogEntry": {
+        "system.protokollEintrag": {
             "type": "object",
             "properties": {
                 "akteur": {

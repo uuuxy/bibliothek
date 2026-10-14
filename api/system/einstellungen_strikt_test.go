@@ -20,7 +20,7 @@ import (
 // Skript, ein zweiter Client. Genau deren stiller Verlust ist die teuerste Klasse
 // dieses Projekts: 200 zurück, nichts gespeichert, "erfolgreich" auf dem Bildschirm
 // (23.08.2026, Commit 488f51d9).
-func TestUpdateSettings_UnbekanntesFeldWirdAbgelehnt(t *testing.T) {
+func TestEinstellungenSchreiben_UnbekanntesFeldWirdAbgelehnt(t *testing.T) {
 	faelle := []struct {
 		name    string
 		rumpf   string
@@ -47,12 +47,12 @@ func TestUpdateSettings_UnbekanntesFeldWirdAbgelehnt(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			repo := &attrappeSettingsRepo{}
+			repo := &einstellungsAttrappe{}
 			s := &Tueren{Basis: &tuer.Basis{}}
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPut, "/api/einstellungen", strings.NewReader(f.rumpf))
 
-			s.UpdateSettingsHandler(repo).ServeHTTP(w, r)
+			s.EinstellungenSchreiben(repo).ServeHTTP(w, r)
 
 			if w.Code != f.erwarte {
 				t.Errorf("Status %d, erwartet %d — Antwort: %s", w.Code, f.erwarte, w.Body.String())
@@ -64,16 +64,16 @@ func TestUpdateSettings_UnbekanntesFeldWirdAbgelehnt(t *testing.T) {
 	}
 }
 
-// attrappeSettingsRepo merkt sich nur, ob gespeichert wurde.
-type attrappeSettingsRepo struct {
+// einstellungsAttrappe merkt sich nur, ob gespeichert wurde.
+type einstellungsAttrappe struct {
 	gespeichert bool
 }
 
-func (a *attrappeSettingsRepo) Lade(ctx context.Context) (*repository.SystemEinstellungen, error) {
+func (a *einstellungsAttrappe) Lade(ctx context.Context) (*repository.SystemEinstellungen, error) {
 	return &repository.SystemEinstellungen{}, nil
 }
 
-func (a *attrappeSettingsRepo) Schreibe(ctx context.Context, p *repository.EinstellungenPatch) error {
+func (a *einstellungsAttrappe) Schreibe(ctx context.Context, p *repository.EinstellungenPatch) error {
 	a.gespeichert = true
 	return nil
 }

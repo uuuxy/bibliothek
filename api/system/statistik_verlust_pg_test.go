@@ -37,7 +37,7 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	srv.GetStatisticsHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/statistiken", nil))
+	srv.Statistik().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/statistiken", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -70,7 +70,7 @@ func TestStatistik_BestelltesZaehltNichtZumBestand(t *testing.T) {
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, imBestand, testdaten.LegeSchuelerAn(t, pool, "SB-LESER", "Statistik", "07A"))
 
 	rec := httptest.NewRecorder()
-	srv.GetStatisticsHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/statistiken", nil))
+	srv.Statistik().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/statistiken", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 	}

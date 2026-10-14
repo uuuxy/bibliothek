@@ -15,7 +15,7 @@ import (
 // Der LMF-Filter muss in ALLEN drei Statistik-Queries ankommen (Renner,
 // Ladenhüter, Kennzahlen) — pgxmock matcht per Regex, ein fehlendes
 // Filter-Fragment ließe die Erwartung fehlschlagen.
-func TestGetStatistics_TypeFilterReachesAllQueries(t *testing.T) {
+func TestStatistik_BestandsFilterErreichtJedeAbfrage(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -35,7 +35,7 @@ func TestGetStatistics_TypeFilterReachesAllQueries(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/api/statistiken?type=lmf", nil)
 	rec := httptest.NewRecorder()
-	server.GetStatisticsHandler()(rec, req)
+	server.Statistik()(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())

@@ -62,7 +62,7 @@ func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.UpdateSettingsHandler(repository.NewEinstellungsAbfragen(pool)).ServeHTTP(rec, req)
+		srv.EinstellungenSchreiben(repository.NewEinstellungsAbfragen(pool)).ServeHTTP(rec, req)
 		return rec
 	}
 

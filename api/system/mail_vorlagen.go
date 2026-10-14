@@ -12,38 +12,38 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// GetMailTemplatesHandler gibt alle Mail-Vorlagen zurück
-func (s *Tueren) GetMailTemplatesHandler() http.HandlerFunc {
+// MailVorlagen gibt alle Mail-Vorlagen zurück
+func (t *Tueren) MailVorlagen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		vorlagen, err := repository.LadeMailVorlagen(ctx, s.DB.Pool)
+		vorlagen, err := repository.LadeMailVorlagen(ctx, t.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
 			return
 		}
 
-		type MailTemplate struct {
-			ID        string `json:"id"`
-			Typ       string `json:"typ"`
-			Betreff   string `json:"betreff"`
-			TextBody  string `json:"text_body"`
-			UpdatedAt string `json:"updated_at"`
+		type mailVorlage struct {
+			ID          string `json:"id"`
+			Typ         string `json:"typ"`
+			Betreff     string `json:"betreff"`
+			TextBody    string `json:"text_body"`
+			GeaendertAm string `json:"updated_at"`
 		}
 
-		var templates []MailTemplate
+		var liste []mailVorlage
 		for _, v := range vorlagen {
-			templates = append(templates, MailTemplate{
+			liste = append(liste, mailVorlage{
 				ID: v.ID, Typ: v.Typ, Betreff: v.Betreff, TextBody: v.TextBody,
-				UpdatedAt: v.AktualisiertAm.Format(time.RFC3339),
+				GeaendertAm: v.AktualisiertAm.Format(time.RFC3339),
 			})
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, templates)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 	}
 }
 
-// UpdateMailTemplateHandler aktualisiert eine Mail-Vorlage
-func (s *Tueren) UpdateMailTemplateHandler() http.HandlerFunc {
+// MailVorlageAendern aktualisiert eine Mail-Vorlage
+func (t *Tueren) MailVorlageAendern() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -62,7 +62,7 @@ func (s *Tueren) UpdateMailTemplateHandler() http.HandlerFunc {
 		ctx := r.Context()
 		// Der Stand davor sagt, was sich geändert hat: Im Protokoll stehen die Vorlage und
 		// die Namen der geänderten Felder, nicht der Wortlaut.
-		typ, betreffNeu, textNeu, err := repository.AendereMailVorlage(ctx, s.DB.Pool, id, req.Betreff, req.TextBody)
+		typ, betreffNeu, textNeu, err := repository.AendereMailVorlage(ctx, t.DB.Pool, id, req.Betreff, req.TextBody)
 		// Eine unbekannte Vorlage ist ein Fehler, kein „Erfolgreich gespeichert".
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("mail-Vorlage nicht gefunden"))
@@ -72,7 +72,7 @@ func (s *Tueren) UpdateMailTemplateHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
 			return
 		}
-		s.ProtokolliereGeaenderteFelder(ctx, tuer.AktionMailvorlageGeaendert, map[string]any{"vorlage": typ},
+		t.ProtokolliereGeaenderteFelder(ctx, tuer.AktionMailvorlageGeaendert, map[string]any{"vorlage": typ},
 			tuer.GeaenderteFelder(tuer.FeldWechsel{Name: "betreff", Geaendert: betreffNeu}, tuer.FeldWechsel{Name: "text", Geaendert: textNeu}))
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"message": "Erfolgreich gespeichert"})

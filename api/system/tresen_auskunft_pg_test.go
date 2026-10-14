@@ -78,17 +78,17 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 
 // rufeTresenAuskunft führt den Handler mit Sitzung im Kontext aus (so, wie die
 // Middleware sie nach RequirePermission hinterlegt) und liest die Antwort.
-func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) TresenAuskunft {
+func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) tresenAuskunft {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/audit/tresen-auskunft?barcode="+barcode, nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.TresenAuskunftHandler(repository.NewProtokollAbfragen(srv.DB.Pool)).ServeHTTP(rec, req)
+	srv.TresenAuskunft(repository.NewProtokollAbfragen(srv.DB.Pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, Körper: %s", rec.Code, rec.Body.String())
 	}
-	var auskunft TresenAuskunft
+	var auskunft tresenAuskunft
 	if err := json.Unmarshal(rec.Body.Bytes(), &auskunft); err != nil {
 		t.Fatalf("Antwort unlesbar: %v", err)
 	}
@@ -226,7 +226,7 @@ func TestTresenAuskunftOhneBarcode(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 	req := httptest.NewRequest(http.MethodGet, "/api/audit/tresen-auskunft", nil)
 	rec := httptest.NewRecorder()
-	srv.TresenAuskunftHandler(nil).ServeHTTP(rec, req)
+	srv.TresenAuskunft(nil).ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("erwartet 400 ohne barcode, war %d", rec.Code)
 	}
