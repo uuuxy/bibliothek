@@ -15,7 +15,7 @@ import (
 // Die Datenbank läuft im Image in UTC. Ein Zeitpunkt um 00:30 Berliner Zeit gehört dort
 // noch zum Vortag, und zwei Prädikate haben genau daran gehangen:
 //
-//   - Der Mahnlauf („höchstens einmal am Tag", api/mahnwesen/mahnwesen_bulk.go): Der Tag wechselte
+//   - Der Mahnlauf („höchstens einmal am Tag", api/mahnwesen/mahnbriefe.go): Der Tag wechselte
 //     um 2 Uhr Berliner Zeit statt um Mitternacht. Ein Lauf kurz nach Mitternacht galt als
 //     „heute schon gemahnt" und wurde übersprungen.
 //   - „Heute zurückgegeben" (ZaehleRueckgabenHeute): Eine Rückgabe zwischen 0 und 2 Uhr zählte

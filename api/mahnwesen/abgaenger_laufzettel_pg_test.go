@@ -30,9 +30,9 @@ func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	testdaten.LegeAusleiheMitFristAn(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	students, err := srv.queryAbgaengerKontoauszug(ctx, "", nil)
+	students, err := srv.ladeAbgaengerKontoauszuege(ctx, "", nil)
 	if err != nil {
-		t.Fatalf("queryAbgaengerKontoauszug: %v", err)
+		t.Fatalf("ladeAbgaengerKontoauszuege: %v", err)
 	}
 
 	if len(students) != 1 {

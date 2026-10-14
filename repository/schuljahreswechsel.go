@@ -36,7 +36,7 @@ func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db Datenbank) (int, e
 
 // sqlVersetzeSchueler zählt Klassenbezeichnungen um eine Stufe hoch und markiert
 // Abschlussklassen als Abgänger. Wer Abschlussklasse ist, sagt allein AbschlussklasseSQL,
-// dieselbe Regel, nach der die Abgängerliste (api/mahnwesen/graduates.go) diese Klassen von Mai
+// dieselbe Regel, nach der die Abgängerliste (api/mahnwesen/abgaenger.go) diese Klassen von Mai
 // bis Juli zum Einsammeln zeigt.
 //
 // Zwei Regeln hält die Anweisung:

@@ -10,41 +10,41 @@ import (
 	"bibliothek/repository"
 )
 
-// KlassenLehrerMapping associates a class with the class teacher's e-mail address.
-type KlassenLehrerMapping struct {
+// klassenleitung associates a class with the class teacher's e-mail address.
+type klassenleitung struct {
 	Klasse      string `json:"klasse"`
 	LehrerEmail string `json:"lehrer_email"`
 	ErstelltAm  string `json:"erstellt_am,omitempty"`
 }
 
-// GetKlassenMappingHandler returns all class → teacher-e-mail mappings.
+// Klassenleitungen returns all class → teacher-e-mail mappings.
 // GET /api/klassen-mapping
-func (s *Tueren) GetKlassenMappingHandler() http.HandlerFunc {
+func (t *Tueren) Klassenleitungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		zeilen, err := repository.LadeKlassenleitungen(ctx, s.DB.Pool)
+		zeilen, err := repository.LadeKlassenleitungen(ctx, t.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		mappings := []KlassenLehrerMapping{}
+		liste := []klassenleitung{}
 		for _, z := range zeilen {
-			mappings = append(mappings, KlassenLehrerMapping{
+			liste = append(liste, klassenleitung{
 				Klasse: z.Klasse, LehrerEmail: z.LehrerEmail, ErstelltAm: z.ErstelltAm.Format("2006-01-02"),
 			})
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, mappings)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 	}
 }
 
-// UpsertKlassenMappingHandler creates or updates a class → teacher-e-mail mapping.
+// KlassenleitungSetzen creates or updates a class → teacher-e-mail mapping.
 // POST /api/klassen-mapping  { "klasse": "5b", "lehrer_email": "..." }
-func (s *Tueren) UpsertKlassenMappingHandler() http.HandlerFunc {
+func (t *Tueren) KlassenleitungSetzen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req KlassenLehrerMapping
+		var req klassenleitung
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
@@ -63,7 +63,7 @@ func (s *Tueren) UpsertKlassenMappingHandler() http.HandlerFunc {
 
 		// Der Stand davor entscheidet über den Protokolleintrag: neu eingetragen, geändert
 		// oder dieselbe Adresse noch einmal gespeichert.
-		neu, unveraendert, err := repository.SetzeKlassenleitung(ctx, s.DB.Pool, req.Klasse, req.LehrerEmail)
+		neu, unveraendert, err := repository.SetzeKlassenleitung(ctx, t.DB.Pool, req.Klasse, req.LehrerEmail)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -75,7 +75,7 @@ func (s *Tueren) UpsertKlassenMappingHandler() http.HandlerFunc {
 			if neu {
 				art = "eingetragen"
 			}
-			s.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungGeaendert,
+			t.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungGeaendert,
 				map[string]any{"klasse": req.Klasse, "art": art})
 		}
 
@@ -83,9 +83,9 @@ func (s *Tueren) UpsertKlassenMappingHandler() http.HandlerFunc {
 	}
 }
 
-// DeleteKlassenMappingHandler removes a class → teacher-e-mail mapping.
+// KlassenleitungLoeschen removes a class → teacher-e-mail mapping.
 // DELETE /api/klassen-mapping/{klasse}
-func (s *Tueren) DeleteKlassenMappingHandler() http.HandlerFunc {
+func (t *Tueren) KlassenleitungLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		klasse := r.PathValue("klasse")
 		if klasse == "" {
@@ -95,7 +95,7 @@ func (s *Tueren) DeleteKlassenMappingHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		getroffen, err := repository.LoescheKlassenleitung(ctx, s.DB.Pool, klasse)
+		getroffen, err := repository.LoescheKlassenleitung(ctx, t.DB.Pool, klasse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -105,7 +105,7 @@ func (s *Tueren) DeleteKlassenMappingHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
 			return
 		}
-		s.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungEntfernt, map[string]any{"klasse": klasse})
+		t.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungEntfernt, map[string]any{"klasse": klasse})
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

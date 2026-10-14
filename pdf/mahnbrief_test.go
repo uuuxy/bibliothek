@@ -2,7 +2,7 @@ package pdf
 
 // Der Mahnbrief, geprüft am gedruckten Blatt: ein Brief nach DIN 5008 für das Fensterkuvert.
 // Der Erzeuger kennt weder Abfragen noch Einstellungen. Den Weg über die Tür prüft
-// api/mahnwesen/mahnwesen_bulk_frist_pg_test.go, das Füllen der Eingabe api/mahnwesen/mahnwesen_bulk_test.go.
+// api/mahnwesen/mahnbriefe_frist_pg_test.go, das Füllen der Eingabe api/mahnwesen/mahnbriefe_test.go.
 
 import (
 	"bytes"

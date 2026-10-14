@@ -26,7 +26,7 @@ import (
 func abgaengerAntwort(t *testing.T, srv *Tueren) AbgaengerAntwort {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	srv.GetGraduatesHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
+	srv.Abgaenger()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Abgängerliste: Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -103,7 +103,7 @@ func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	srv.GetGraduatesPDFHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger/pdf", nil))
+	srv.AbgaengerKontoauszuegePDF()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger/pdf", nil))
 	if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "01.05.") {
 		t.Errorf("PDF außerhalb der Saison: Status %d — %s (erwartet 404 mit den Saisondaten)", rec.Code, rec.Body.String())
 	}
@@ -111,7 +111,7 @@ func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":["9H1"]}`))
 	req.Header.Set("Content-Type", "application/json")
 	rec = httptest.NewRecorder()
-	srv.SendAbgaengerKontoauszuegeHandler()(rec, req)
+	srv.AbgaengerKontoauszuegeVersenden()(rec, req)
 	if rec.Code != http.StatusConflict {
 		t.Errorf("Versand außerhalb der Saison: Status %d — %s (erwartet 409)", rec.Code, rec.Body.String())
 	}

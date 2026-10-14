@@ -16,11 +16,11 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// TestBulkPrintMahnungen_NurOffeneHochzaehlen sichert #4 ab: Der Bulk-Mahnlauf zählt
+// TestMahnbriefeDrucken_NurOffeneHochzaehlen sichert #4 ab: Der Bulk-Mahnlauf zählt
 // die Mahnstufe NUR für noch offene Ausleihen hoch und liest die PDF-Daten innerhalb
 // derselben Transaktion. Ein zwischen Aufbereiten und Druck zurückgegebenes Buch darf
 // weder gemahnt (Mahnstufe) noch aufs PDF geraten.
-func TestBulkPrintMahnungen_NurOffeneHochzaehlen(t *testing.T) {
+func TestMahnbriefeDrucken_NurOffeneHochzaehlen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -36,13 +36,13 @@ func TestBulkPrintMahnungen_NurOffeneHochzaehlen(t *testing.T) {
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	body, err := json.Marshal(BulkPrintRequest{AusleihIDs: []string{loanOffen, loanZurueck}})
+	body, err := json.Marshal(MahnbriefeAnfrage{AusleihIDs: []string{loanOffen, loanZurueck}})
 	if err != nil {
 		t.Fatalf("Request serialisieren: %v", err)
 	}
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/mahnungen/bulk-print", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
-	srv.BulkPrintMahnungenHandler()(rec, req)
+	srv.MahnbriefeDrucken()(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())

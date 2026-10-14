@@ -39,7 +39,7 @@ func TestLeereMahnvorlageFaelltAufStandardtextZurueck(t *testing.T) {
 		t.Fatalf("Vorlage leeren: %v", err)
 	}
 
-	betreff, textBody := srv.loadMahnungTemplate(ctx)
+	betreff, textBody := srv.ladeMahnVorlageText(ctx)
 	if strings.TrimSpace(betreff) == "" || strings.TrimSpace(textBody) == "" {
 		t.Errorf("leere Vorlage muss den Standardtext liefern, kam: betreff=%q text=%q", betreff, textBody)
 	}

@@ -70,7 +70,7 @@ func namenAus(liste []AbgaengerZeile) map[string]bool {
 
 func kontoauszugNamen(t *testing.T, srv *Tueren) map[string]bool {
 	t.Helper()
-	eintraege, err := srv.queryAbgaengerKontoauszug(context.Background(), "", nil)
+	eintraege, err := srv.ladeAbgaengerKontoauszuege(context.Background(), "", nil)
 	if err != nil {
 		t.Fatalf("Kontoauszug laden: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	req = req.WithContext(context.WithValue(ctx, auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.SendAbgaengerKontoauszuegeHandler()(rec, req)
+	srv.AbgaengerKontoauszuegeVersenden()(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Versand: Status %d — %s", rec.Code, rec.Body.String())

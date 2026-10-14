@@ -120,7 +120,7 @@ Grund, nicht der Geschmack.
 | F1 | **Ein Eingabefeld für alle Scans** (Omnibox). Ohne Präfix wird in der Reihenfolge Buch → Ausweis → Volltextsuche aufgelöst.                   | `internal/service/omnibox.go`, FACHKONZEPT §1 |
 | F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag 31. Juli bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Kollegium als Dauerleihe (gespeichert wird ein Jahr, überfällig wird sie nie). | `internal/service/frist.go`, `pkg/lmf`, `pkg/lmfplan` |
 | F3 | **Bis zu 8 Kiosk-Stationen gleichzeitig** am selben Bestand, ohne Doppelbuchung und ohne Phantom-Erfolg.                                      | `migrations/033_unique_active_loan.sql`, `sse/`  |
-| F4 | **Mahnwesen**: Mahnstufe steigt ausschließlich beim PDF-Druck (dem physischen Verwaltungsakt), nie beim Mailversand; Listen gehen an die Klassenleitung, nie an Schüler. | `api/mahnwesen/mahnwesen_bulk.go`                          |
+| F4 | **Mahnwesen**: Mahnstufe steigt ausschließlich beim PDF-Druck (dem physischen Verwaltungsakt), nie beim Mailversand; Listen gehen an die Klassenleitung, nie an Schüler. | `api/mahnwesen/mahnbriefe.go`                          |
 | F5 | **Schülerdaten unter DSGVO**: Löschfristen, Karenz, Anonymisierung, verschlüsselte Fotos, Auskunftsrecht, Audit-Trail.                        | `jobs/cron_dsgvo*.go`, `internal/crypto`, [SECURITY.md](SECURITY.md) |
 | F6 | **Öffentliche Seiten ohne Anmeldung** (Katalog `/katalog`, Monitor `/monitor`) — Titeldaten ja, Personendaten nie.                            | `api/portal/opac.go`, `api/portal/monitor.go`, FACHKONZEPT §16 |
 | F7 | **Kollegiums-Portal** mit Selbstanmeldung über das Schulpostfach, Klassensatz-Reservierung und Meldungen.                                     | `auth/selbstanmeldung.go`, `frontend/src/lib/KollegiumPortal.svelte` |
@@ -675,7 +675,7 @@ Rate-Limit und die Abmeldung.
   Name ihrer Datei: der Menüpunkt, in den Einstellungen die Kategorie. Die Einstellungen
   tragen Kategorien mehrerer Themen. Die Lieferanten stehen bei der Bestellung, die
   Schlagworte beim Katalog, „LUSD & Versetzung" bei den Lesern und die Adressen der
-  Klassenleitungen („Mahnwesen-Routing") beim Mahnwesen (`api/mahnwesen/klassen_mapping.go`),
+  Klassenleitungen („Mahnwesen-Routing") beim Mahnwesen (`api/mahnwesen/klassenleitung.go`),
   auch wenn ihre Routen neben denen der Leser angemeldet sind. Bei der Systempflege steht,
   was die Einstellungen selbst speichern, und die Mail-Einrichtung. Die nächste freie
   Exemplarnummer ruft die Buchmaske und steht beim Katalog, den Kontoauszug ruft die
@@ -831,7 +831,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Überschriften und Zahlen wie die Liste (`api/katalog/bestandsbuch_test.go`). Die Mahnliste bekommt
   je Schüler eine Seite aus den Gruppen der Abfrage (`mahnlisteSeiten`,
   `api/mahnwesen/mahnwesen_mail.go`), der Mahnbrief je Schüler Anschrift und Bücher aus den Zeilen der
-  Abfrage (`mahnbriefEmpfaenger`, `api/mahnwesen/mahnwesen_bulk.go`); Betreff, Text und Absenderzeile
+  Abfrage (`mahnbriefEmpfaenger`, `api/mahnwesen/mahnbriefe.go`); Betreff, Text und Absenderzeile
   lädt die Tür aus Vorlage und Einstellungen. Das Bestellanschreiben bekommt Betreff und Vermerk
   als fertige Texte zum Topf der Bestellung und den Weg der Etiketten als Wert
   (`bestellanschreiben`, `api/bestellung/bestellmail_anhaenge.go`); den Satz dazu wählt der Brief.
@@ -1651,7 +1651,7 @@ Details: [LUSD.md](LUSD.md).
 Überfällige ermitteln  →  Mahnliste je Klasse
         │
         ├─ Mail an die Klassenleitung        → Mahnstufe bleibt unverändert
-        └─ PDF-Druck (api/mahnwesen/mahnwesen_bulk.go) → Mahnstufe steigt, genau hier
+        └─ PDF-Druck (api/mahnwesen/mahnbriefe.go) → Mahnstufe steigt, genau hier
 ```
 
 Die Mahnstufe steigt **nur** beim PDF-Druck, weil der Druck der physische Verwaltungsakt
@@ -3393,7 +3393,7 @@ gemahnt.
 zeilenweise nachgeprüft: Es gibt wirklich nur diese eine Schreibstelle. Mahnlisten gehen an
 die Klassenleitung, nie an Schüler.
 
-**Fundstelle.** `api/mahnwesen/mahnwesen_bulk.go`, [invarianten.md](invarianten.md).
+**Fundstelle.** `api/mahnwesen/mahnbriefe.go`, [invarianten.md](invarianten.md).
 
 ---
 
@@ -3739,7 +3739,7 @@ Dateien, `inventur/` 6.547 und `internal/service` 5.246. Die Dateien von `api/`,
 höchstens 208, die größten sind `router.go` (379) und `middleware.go` (366). Von den 137
 Dateien der Themen hat die Hälfte höchstens 112 Zeilen, neun von zehn höchstens 277, vier
 haben über 400 (gezählt am 13.10.2026 abends): `leser/student_update.go` (555),
-`lernmittel/lmf_plan.go` (490), `mahnwesen/mahnwesen_bulk_mail.go` (423) und
+`lernmittel/lmf_plan.go` (490), `mahnwesen/mahnlisten_versand.go` (423) und
 `leser/student_create.go` (420). Am Morgen desselben Tages waren es sechs, die drei größten
 `lernmittel/lmf_plan.go` (692), die Türen des Bescheids in einer Datei (623) und
 `bestellung/bestellbericht_handler.go` (567): Der Erzeuger des Bestellberichts steht jetzt
@@ -3747,7 +3747,7 @@ in `pdf/` (die Datei der Tür hat 189 Zeilen), die Regeln des LMF-Plans in
 `internal/service`, und die Türen des Bescheids stehen je Schritt in einer eigenen Datei
 (die größte hat 192 Zeilen). In Funktionen ohne einen Typ aus `net/http` stehen in den
 Themen 3.162 Zeilen in 209 Funktionen, am Morgen 3.665 in 232; die meisten tragen
-`leser/dsgvo_auskunft.go` (193), `mahnwesen/graduates_mail.go` (159) und
+`leser/dsgvo_auskunft.go` (193), `mahnwesen/abgaenger_mail.go` (159) und
 `system/betriebsbereitschaft_handler.go` (132). Was davon an der Tür bleibt und warum, steht
 in 5.2.2 (Tür und Abfrage).
 
@@ -4513,7 +4513,7 @@ Einstieg.
 | **LMF / Lernmittelfreiheit**| Schulbücher, die die Schule dem Schüler für ein Schuljahr leiht. Feste Jahresfrist (Stichtag 31. Juli) statt rollierender Frist                                          | `pkg/lmf`, `buecher_titel.ist_lernmittel`                    |
 | **LMF-Plan**                | Termine je Klasse für Büchertausch (vor den Sommerferien) und Bücherausgabe (danach). Ein Termin **verschiebt die Frist**                                                | `lmf_plaene`, `lmf_termine`, `pkg/lmfplan`                  |
 | **LUSD**                    | Das Schulverwaltungssystem des Landes. Liefert Schülerdaten als Bericht (`.xlsx`) — in der Praxis **ohne** Schüler-ID                                                     | `api/lusd*.go`, [LUSD.md](LUSD.md)                       |
-| **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `api/mahnwesen/mahnwesen_bulk.go`                                     |
+| **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `api/mahnwesen/mahnbriefe.go`                                     |
 | **Mehrjahresband**          | Lernmittel, das über seine Jahrgangsspanne beim selben Kind bleibt, statt am Rückgabetermin der Klasse zurückzukommen | `buecher_titel.mehrjahresband` (Migration 134) |
 | **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
 | **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/theke/nachbuchen_handler.go`, `internal/service/nachbuchen.go` |

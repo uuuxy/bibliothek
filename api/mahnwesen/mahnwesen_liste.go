@@ -9,19 +9,19 @@ import (
 	"bibliothek/repository"
 )
 
-// GetMahnwesenHandler returns overdue loans grouped by class and student.
+// UeberfaelligeAusleihen returns overdue loans grouped by class and student.
 // GET /api/mahnwesen
-func (s *Tueren) GetMahnwesenHandler(mahnRepo *repository.MahnwesenAbfragen) http.HandlerFunc {
+func (t *Tueren) UeberfaelligeAusleihen(mahnAbfragen *repository.MahnwesenAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		klassen, err := mahnRepo.LadeUeberfaelligeNachKlasse(ctx, "")
+		klassen, err := mahnAbfragen.LadeUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		heuteRetourniert, err := mahnRepo.ZaehleRueckgabenHeute(ctx)
+		heuteRetourniert, err := mahnAbfragen.ZaehleRueckgabenHeute(ctx)
 		if err != nil {
 			log.Printf("mahnwesen: Anzahl heutiger Rückgaben konnte nicht ermittelt werden: %v", err)
 		}

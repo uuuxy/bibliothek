@@ -9,7 +9,7 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 // den Kalender nicht stellen, prüft aber in JEDEM Zustand etwas Echtes: in der Saison
 // die Zeilen und den PDF-Export, außerhalb den Hinweis — und dass ein Schüler der 9H1
 // mit offenem Buch dann trotzdem NICHT erscheint. Beide Zustände deterministisch:
-// api/mahnwesen/graduates_pg_test.go mit gestellter Uhr.
+// api/mahnwesen/abgaenger_pg_test.go mit gestellter Uhr.
 test('Abgänger: Abschlussklasse mit offenem Buch — Saison entscheidet über Liste und PDF', async ({
 	page
 }) => {

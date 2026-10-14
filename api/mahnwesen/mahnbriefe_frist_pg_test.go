@@ -53,7 +53,7 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 	// drucke schickt die Auswahl an die Tür, wie es „Mahnbriefe drucken" tut.
 	drucke := func(t *testing.T, ausleihIDs ...string) *httptest.ResponseRecorder {
 		t.Helper()
-		body, err := json.Marshal(mahnwesen.BulkPrintRequest{AusleihIDs: ausleihIDs})
+		body, err := json.Marshal(mahnwesen.MahnbriefeAnfrage{AusleihIDs: ausleihIDs})
 		if err != nil {
 			t.Fatalf("Auswahl serialisieren: %v", err)
 		}

@@ -25,11 +25,11 @@ import (
 // ausgelagerte Bestandsliste versteckt sich vor dem Gate (siehe die Lehre aus
 // dem Verwaisten-Komponenten-Test des Frontends).
 var registriertePrivilegFelder = map[string]string{
-	"api/theke/action_types.go:override_block":            "Gate an der HTTP-Grenze: nur mit HatRecht(edit_students), sonst wird das Feld ignoriert (154c1f85)",
-	"api/mahnwesen/mahnwesen_bulk_mail.go:override_email": "Route hinter create_orders (nur Mitarbeiter/Admin); Umleitung dokumentiert und namentlich auditiert",
-	"internal/lusd/lauf.go:skipped_no_id":                 "Antwort-Zähler, kein Request-Feld",
-	"api/mahnwesen/mahnwesen_bulk_mail.go:skipped_count":  "Antwort-Zähler, kein Request-Feld",
-	"api/mahnwesen/mahnwesen_bulk_mail.go:skipped":        "Antwort-Zähler, kein Request-Feld",
+	"api/theke/action_types.go:override_block":           "Gate an der HTTP-Grenze: nur mit HatRecht(edit_students), sonst wird das Feld ignoriert (154c1f85)",
+	"api/mahnwesen/mahnlisten_versand.go:override_email": "Route hinter create_orders (nur Mitarbeiter/Admin); Umleitung dokumentiert und namentlich auditiert",
+	"internal/lusd/lauf.go:skipped_no_id":                "Antwort-Zähler, kein Request-Feld",
+	"api/mahnwesen/mahnlisten_versand.go:skipped_count":  "Antwort-Zähler, kein Request-Feld",
+	"api/mahnwesen/mahnlisten_versand.go:skipped":        "Antwort-Zähler, kein Request-Feld",
 }
 
 var (

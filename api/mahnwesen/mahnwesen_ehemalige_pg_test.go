@@ -151,18 +151,18 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 			t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
 		}
 		var antwort struct {
-			Sent    int `json:"sent_count"`
-			Skipped int `json:"skipped_count"`
-			Failed  int `json:"failed_count"`
+			Versendet      int `json:"sent_count"`
+			Uebersprungen  int `json:"skipped_count"`
+			Fehlgeschlagen int `json:"failed_count"`
 		}
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort lesen: %v — %s", err, rec.Body.String())
 		}
 		// Der Testserver nimmt eine Sitzung an. Ginge die Gruppe der Ehemaligen als zweite
 		// Mail hinaus, stünde sie hier als übersprungen oder fehlgeschlagen.
-		if antwort.Sent != 1 || antwort.Skipped != 0 || antwort.Failed != 0 {
+		if antwort.Versendet != 1 || antwort.Uebersprungen != 0 || antwort.Fehlgeschlagen != 0 {
 			t.Errorf("Mahnlauf: %d verschickt, %d übersprungen, %d fehlgeschlagen — erwartet genau die Mail der 08H3",
-				antwort.Sent, antwort.Skipped, antwort.Failed)
+				antwort.Versendet, antwort.Uebersprungen, antwort.Fehlgeschlagen)
 		}
 		nachricht := smtptest.WarteAufMail(t, sitzungen)
 		if !strings.Contains(nachricht, "leitung-nora@schule.invalid") {
@@ -185,13 +185,13 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 			t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
 		}
 		var antwort struct {
-			Sent int `json:"sent_count"`
+			Versendet int `json:"sent_count"`
 		}
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort lesen: %v — %s", err, rec.Body.String())
 		}
-		if antwort.Sent != 0 {
-			t.Errorf("Mahnlauf für die Gruppe der Ehemaligen: %d Mail verschickt, erwartet keine", antwort.Sent)
+		if antwort.Versendet != 0 {
+			t.Errorf("Mahnlauf für die Gruppe der Ehemaligen: %d Mail verschickt, erwartet keine", antwort.Versendet)
 		}
 		select {
 		case s := <-sitzungen:

@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 046: Mahnstufen-Spalten auf ausleihen
 -- =============================================================================
--- Der Bulk-Mahnlauf (api/mahnwesen/mahnwesen_bulk.go) schreibt seit jeher
+-- Der Bulk-Mahnlauf (api/mahnwesen/mahnbriefe.go) schreibt seit jeher
 --   UPDATE ausleihen SET mahnstufe = mahnstufe + 1, letztes_mahndatum = ...
 -- die Spalten waren aber weder in schema.sql noch in einer Migration definiert
 -- (Schema-Drift). Auf einer frisch aus schema.sql/Migrationen gebauten DB brach

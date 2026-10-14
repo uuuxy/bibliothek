@@ -58,7 +58,7 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 		// (am Wareneingang nachgestellt: 500 statt 400).
 		{"Verluste endgültig löschen, leeres Element", s.inventurlauf().VerlusteEndgueltigLoeschen(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":[""]}`},
 		{"Wareneingang einbuchen, leeres Element", s.bestellung().BulkReceiveOrderHandler(), http.MethodPost, "/api/bestellungen/bulk-receive", `{"exemplar_ids":[""]}`},
-		{"Mahnbriefe drucken, leeres Element", s.mahnwesen().BulkPrintMahnungenHandler(), http.MethodPost, "/api/mahnwesen/bulk-print", `{"ausleih_ids":[""]}`},
+		{"Mahnbriefe drucken, leeres Element", s.mahnwesen().MahnbriefeDrucken(), http.MethodPost, "/api/mahnwesen/bulk-print", `{"ausleih_ids":[""]}`},
 		{"Schüler-Etiketten, leeres Element", s.druck().SchuelerEtiketten(nil), http.MethodPost, "/api/print/schueler-etiketten", `{"formatId":"x","schuelerIds":[""]}`},
 		{"Fehlbestand ?session_id in urn-Form", s.inventurlauf().Fehlbestand(), http.MethodGet, "/api/inventur/fehlbestand?session_id=" + urnForm, ""},
 		{"Inventur abschließen, urn-Form", s.inventurlauf().InventurAbschliessen(), http.MethodPost, "/api/inventur/finish", `{"session_id":"` + urnForm + `"}`},

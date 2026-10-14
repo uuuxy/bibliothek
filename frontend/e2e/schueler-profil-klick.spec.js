@@ -20,7 +20,7 @@ test('Abgänger-Zeile klickbar → Schülerprofil öffnet sich', async ({ page }
 	// Abschlussklasse MIT offenem Buch — nur solche erscheinen in der Abgänger-Ansicht,
 	// und nur in der Saison (01.05.–31.07.); außerhalb wird der Test übersprungen, die
 	// Verdrahtung deckt dann AbgaengerTabelle.test.js, die Liste
-	// api/mahnwesen/graduates_pg_test.go.
+	// api/mahnwesen/abgaenger_pg_test.go.
 	seedSQL(`
 		WITH t AS (
 			INSERT INTO buecher_titel (titel) VALUES ('E2E-Abg-Titel ${s}') RETURNING id

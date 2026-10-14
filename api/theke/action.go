@@ -124,7 +124,7 @@ func (s *Tueren) erlangeIdempotenz(ctx context.Context, key string) idempotenzLa
 const IdempotenzSpeicherfrist = 5 * time.Second
 
 // saveToCache schreibt die Antwort in die Reservierung — mit WithoutCancel (Vorbild
-// api/mahnwesen/mahnwesen_bulk_mail.go): Bricht der Aufrufer ab, nachdem die Buchung committet ist, muss
+// api/mahnwesen/mahnlisten_versand.go): Bricht der Aufrufer ab, nachdem die Buchung committet ist, muss
 // die Antwort trotzdem stehen, sonst bucht die Wiederholung neu. Ein Serverfehler wird nicht
 // gespeichert, sondern gibt den Schlüssel frei: Die Wiederholung soll es neu versuchen.
 func (s *Tueren) saveToCache(ctx context.Context, key string, data interface{}, status int) {

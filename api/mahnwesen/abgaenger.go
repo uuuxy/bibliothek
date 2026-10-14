@@ -50,9 +50,9 @@ type AbgaengerAntwort struct {
 	Abgaenger []AbgaengerZeile `json:"abgaenger"`
 }
 
-// queryGraduatesBasic liefert eine Zeile je Abgänger mit offenen Ausleihen.
-func (s *Tueren) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, error) {
-	liste, err := repository.LadeAbgaengerMitOffenenAusleihen(ctx, s.DB.Pool)
+// ladeAbgaengerZeilen liefert eine Zeile je Abgänger mit offenen Ausleihen.
+func (t *Tueren) ladeAbgaengerZeilen(ctx context.Context) ([]AbgaengerZeile, error) {
+	liste, err := repository.LadeAbgaengerMitOffenenAusleihen(ctx, t.DB.Pool)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (s *Tueren) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, err
 	return zeilen, nil
 }
 
-// GetGraduatesHandler liefert die Abgängerliste samt Saisonfenster.
+// Abgaenger liefert die Abgängerliste samt Saisonfenster.
 // @Summary      Abgängerliste
 // @Description  Abschlussklassen (9H/10H, 10R, 13) mit noch offenen Büchern, in der Saison vom 01.05. bis 31.07.; außerhalb leer mit offen=false.
 // @Tags         admin
@@ -71,14 +71,14 @@ func (s *Tueren) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, err
 // @Success      200  {object}  AbgaengerAntwort
 // @Failure      500  {object}  map[string]string
 // @Router       /abgaenger [get]
-func (s *Tueren) GetGraduatesHandler() http.HandlerFunc {
+func (t *Tueren) Abgaenger() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		antwort := AbgaengerAntwort{
-			Fenster:   abgaengerFensterFuer(s.Jetzt()),
+			Fenster:   abgaengerFensterFuer(t.Jetzt()),
 			Abgaenger: []AbgaengerZeile{},
 		}
 		if antwort.Fenster.Offen {
-			zeilen, err := s.queryGraduatesBasic(r.Context())
+			zeilen, err := t.ladeAbgaengerZeilen(r.Context())
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
@@ -89,7 +89,7 @@ func (s *Tueren) GetGraduatesHandler() http.HandlerFunc {
 	}
 }
 
-// queryAbgaengerKontoauszug lädt die Abgänger MIT noch offenen Ausleihen als Kontoauszug-
+// ladeAbgaengerKontoauszuege lädt die Abgänger MIT noch offenen Ausleihen als Kontoauszug-
 // Einträge (ein Eintrag je Abgänger, seine Bücher gruppiert). Genutzt für den Stapel-
 // Kontoauszug beim Schulabgang (der frühere „Laufzettel" — jetzt ein Kontoauszug mit
 // Unterschriftszeile). Ein Abgänger ohne offene Bücher braucht keinen: deshalb INNER JOIN
@@ -103,24 +103,24 @@ func (s *Tueren) GetGraduatesHandler() http.HandlerFunc {
 // SCHNITT mit dieser Abfrage, keine zweite Auswahl: Wer nicht Abgänger mit offenem Buch
 // ist, bekommt auch mit seiner Kennung keine Seite. So folgt der Druck der Suche der
 // Oberfläche, ohne dass der Server die Suche ein zweites Mal formuliert.
-func (s *Tueren) queryAbgaengerKontoauszug(ctx context.Context, klasse string, nurIDs []string) ([]pdf.KontoauszugEintrag, error) {
-	ausleihen, err := repository.LadeAbgaengerAusleihen(ctx, s.DB.Pool, klasse, nurIDs)
+func (t *Tueren) ladeAbgaengerKontoauszuege(ctx context.Context, klasse string, nurIDs []string) ([]pdf.KontoauszugEintrag, error) {
+	ausleihen, err := repository.LadeAbgaengerAusleihen(ctx, t.DB.Pool, klasse, nurIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	studMap := map[string]*pdf.KontoauszugEintrag{}
-	studOrder := make([]string, 0)
+	nachSchueler := map[string]*pdf.KontoauszugEintrag{}
+	reihenfolge := make([]string, 0)
 	for _, a := range ausleihen {
-		if _, ok := studMap[a.SchuelerID]; !ok {
-			studMap[a.SchuelerID] = &pdf.KontoauszugEintrag{
+		if _, ok := nachSchueler[a.SchuelerID]; !ok {
+			nachSchueler[a.SchuelerID] = &pdf.KontoauszugEintrag{
 				Schueler: pdf.KontoauszugSchueler{Vorname: a.Vorname, Nachname: a.Nachname, Klasse: a.Klasse},
 				Buecher:  []pdf.KontoauszugBuch{},
 			}
-			studOrder = append(studOrder, a.SchuelerID)
+			reihenfolge = append(reihenfolge, a.SchuelerID)
 		}
 
-		studMap[a.SchuelerID].Buecher = append(studMap[a.SchuelerID].Buecher, pdf.KontoauszugBuch{
+		nachSchueler[a.SchuelerID].Buecher = append(nachSchueler[a.SchuelerID].Buecher, pdf.KontoauszugBuch{
 			Titel:          a.Titel,
 			Barcode:        a.ExemplarBarcode,
 			Ausleihdatum:   a.AusgeliehenAm,
@@ -128,14 +128,14 @@ func (s *Tueren) queryAbgaengerKontoauszug(ctx context.Context, klasse string, n
 		})
 	}
 
-	result := make([]pdf.KontoauszugEintrag, 0, len(studOrder))
-	for _, id := range studOrder {
-		result = append(result, *studMap[id])
+	eintraege := make([]pdf.KontoauszugEintrag, 0, len(reihenfolge))
+	for _, id := range reihenfolge {
+		eintraege = append(eintraege, *nachSchueler[id])
 	}
-	return result, nil
+	return eintraege, nil
 }
 
-// GetGraduatesPDFHandler erzeugt die Kontoauszüge der Abgänger als PDF (eine Seite
+// AbgaengerKontoauszuegePDF erzeugt die Kontoauszüge der Abgänger als PDF (eine Seite
 // je Schüler, mit Freigabezeile). Hieß früher „Laufzettel" — der Name hing dem
 // Dokument noch an, obwohl längst der Kontoauszug erzeugt wird.
 // @Summary      Get Kontoauszug PDF
@@ -145,13 +145,13 @@ func (s *Tueren) queryAbgaengerKontoauszug(ctx context.Context, klasse string, n
 // @Param        klasse  query  string  false  "nur diese Klasse"
 // @Param        ids     query  string  false  "nur diese Schüler (Kennungen, mit Komma getrennt) — der Schnitt mit der Abgängerliste"
 // @Router       /abgaenger/pdf [get]
-func (s *Tueren) GetGraduatesPDFHandler() http.HandlerFunc {
+func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		// Außerhalb der Saison gibt es keinen Ausdruck — dieselbe Regel wie die Liste,
 		// sonst druckte ein direkter Aufruf im Oktober, was der Bildschirm nicht zeigt.
-		if fenster := abgaengerFensterFuer(s.Jetzt()); !fenster.Offen {
+		if fenster := abgaengerFensterFuer(t.Jetzt()); !fenster.Offen {
 			apierrors.SendHTTPError(w, http.StatusNotFound, abgaengerAusserhalbDerSaison(fenster))
 			return
 		}
@@ -160,47 +160,47 @@ func (s *Tueren) GetGraduatesPDFHandler() http.HandlerFunc {
 		klasse := r.URL.Query().Get("klasse")
 
 		// Optional: nur die Schüler, die die Oberfläche gerade zeigt (aktive Suche).
-		nurIDs, err := abgaengerAuswahlAusQuery(r.URL.Query())
+		nurIDs, err := leseAbgaengerAuswahl(r.URL.Query())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
 
-		result, err := s.queryAbgaengerKontoauszug(ctx, klasse, nurIDs)
+		eintraege, err := t.ladeAbgaengerKontoauszuege(ctx, klasse, nurIDs)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		if len(result) == 0 {
+		if len(eintraege) == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("no graduates found"))
 			return
 		}
 
 		// Der Abgänger-„Laufzettel" ist jetzt ein Kontoauszug MIT Unterschriftszeile
 		// (eine Seite je Abgänger). Ein Dokument statt zweier — Freigabezeile optional.
-		pdfBytes, err := pdf.GenerateKontoauszugBatch(result, true)
+		pdfDaten, err := pdf.GenerateKontoauszugBatch(eintraege, true)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		filename := "Kontoauszuege_Abgaenger.pdf"
+		dateiname := "Kontoauszuege_Abgaenger.pdf"
 		switch {
 		case nurIDs != nil:
-			filename = "Kontoauszuege_Auswahl.pdf"
+			dateiname = "Kontoauszuege_Auswahl.pdf"
 		case klasse != "":
-			filename = fmt.Sprintf("Kontoauszuege_Klasse_%s.pdf", klasse)
+			dateiname = fmt.Sprintf("Kontoauszuege_Klasse_%s.pdf", klasse)
 		}
 
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
-		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
-		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
+		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
+		http.ServeContent(w, r, dateiname, time.Now(), bytes.NewReader(pdfDaten))
 	}
 }
 
-// abgaengerAuswahlAusQuery liest den Parameter `ids` des Kontoauszug-Drucks: die Kennungen
+// leseAbgaengerAuswahl liest den Parameter `ids` des Kontoauszug-Drucks: die Kennungen
 // der Schüler, die die Oberfläche bei aktiver Suche gerade zeigt, mit Komma getrennt.
 //
 // Drei Fälle, und der mittlere ist der gefährliche:
@@ -211,7 +211,7 @@ func (s *Tueren) GetGraduatesPDFHandler() http.HandlerFunc {
 //     Fehlendes Feld und leeres Feld bedeuten hier Verschiedenes.
 //   - jede Kennung muss eine UUID in der Form sein, die die Datenbank annimmt (400 statt
 //     500, pkg/kennung).
-func abgaengerAuswahlAusQuery(q url.Values) ([]string, error) {
+func leseAbgaengerAuswahl(q url.Values) ([]string, error) {
 	if !q.Has("ids") {
 		return nil, nil
 	}

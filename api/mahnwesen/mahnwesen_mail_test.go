@@ -71,10 +71,10 @@ func TestMahnlisteSeiten_OhneSchuelerKeineSeite(t *testing.T) {
 // Die Mail an die Klassenleitung nennt Klasse, Tag und die zwei Zahlen und trägt die Liste als
 // Anhang. Der Tag ist der der Schule: im Betreff und im Text in der deutschen Form, im
 // Dateinamen in der sortierbaren.
-func TestBaueMahnMailRequest_NenntKlasseTagUndZahlenUndTraegtDieListe(t *testing.T) {
+func TestBaueMahnMail_NenntKlasseTagUndZahlenUndTraegtDieListe(t *testing.T) {
 	liste := []byte("%PDF-Probe")
 	vorher := schulzeit.Jetzt()
-	mail := baueMahnMailRequest(mahnwesenSendenRequest{Klasse: "07B", Email: "leitung7b@schule.invalid"}, liste, 3, 5)
+	mail := baueMahnMail(mahnlisteEmpfaenger{Klasse: "07B", Email: "leitung7b@schule.invalid"}, liste, 3, 5)
 	nachher := schulzeit.Jetzt()
 
 	// Läuft der Test über Mitternacht, gilt der Tag davor oder danach.

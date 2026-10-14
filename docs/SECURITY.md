@@ -677,7 +677,7 @@ geprüft):** Sie wird im Schülerprofil als `mailto:`-Link angezeigt
 vorhanden" geführt, und die Vorlage `MAHNUNG_ELTERN` füllt den **gedruckten**
 Elternbrief (`pdf/mahnbrief.go`). **Es geht keine automatische E-Mail an Eltern** —
 Mahn-Mails des Bulk-Laufs gehen an die **Klassenleitungen**
-(`api/mahnwesen/mahnwesen_bulk_mail.go`). Bis zum 22.08.2026 behauptete dieser Abschnitt „E-Mail
+(`api/mahnwesen/mahnlisten_versand.go`). Bis zum 22.08.2026 behauptete dieser Abschnitt „E-Mail
 für Eltern-Mahnungen"; das war Absicht, nicht Zustand. Entscheidung: **Doku an den Code
 angeglichen, keine Eltern-Mahnmail gebaut** — § 15 SchDSV erlaubt die Eltern-E-Mail nur
 für erforderliche Schulkommunikation, und der gedruckte Brief plus Klassenleitung deckt

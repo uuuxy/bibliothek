@@ -23,7 +23,7 @@ func TestMahnbriefDruck_EinstellungenUnlesbar_KeinBriefKeineMahnstufe(t *testing
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "MB-LESEFEHLER", "Mia", "7a")
 	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch über der Frist", time.Now().AddDate(0, 0, -30))
-	rumpf, err := json.Marshal(BulkPrintRequest{AusleihIDs: []string{ausleihe}})
+	rumpf, err := json.Marshal(MahnbriefeAnfrage{AusleihIDs: []string{ausleihe}})
 	if err != nil {
 		t.Fatalf("Anfrage bauen: %v", err)
 	}
@@ -32,7 +32,7 @@ func TestMahnbriefDruck_EinstellungenUnlesbar_KeinBriefKeineMahnstufe(t *testing
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/mahnungen/bulk-print", bytes.NewReader(rumpf))
 		rec := httptest.NewRecorder()
-		srv.BulkPrintMahnungenHandler()(rec, req)
+		srv.MahnbriefeDrucken()(rec, req)
 		return rec
 	}
 

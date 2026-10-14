@@ -63,9 +63,9 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.leser().GetClassesHandler(studentRepo)))
 	// Die besetzten Jahrgänge fürs Filter-Auswahlfeld der Leserdatei (OFFEN.md 9.5).
 	mux.Handle("GET /api/jahrgaenge", s.RequirePermission("view_students")(s.leser().JahrgaengeHandler(lmfKlassenRepo)))
-	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_settings")(s.mahnwesen().GetKlassenMappingHandler()))
-	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_settings")(s.mahnwesen().UpsertKlassenMappingHandler()))
-	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_settings")(s.mahnwesen().DeleteKlassenMappingHandler()))
+	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_settings")(s.mahnwesen().Klassenleitungen()))
+	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_settings")(s.mahnwesen().KlassenleitungSetzen()))
+	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_settings")(s.mahnwesen().KlassenleitungLoeschen()))
 
 	// LUSD Import
 	// import_students statt manage_users: Das Recht war geseedet und in der
@@ -81,11 +81,11 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("POST /api/students/promote", s.RequirePermission("manage_students_admin")(s.leser().PromoteStudentsHandler()))
 
 	// Abgänger (Graduates)
-	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.mahnwesen().GetGraduatesHandler()))
-	mux.Handle("GET /api/abgaenger/pdf", s.RequirePermission("view_graduates")(s.mahnwesen().GetGraduatesPDFHandler()))
+	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.mahnwesen().Abgaenger()))
+	mux.Handle("GET /api/abgaenger/pdf", s.RequirePermission("view_graduates")(s.mahnwesen().AbgaengerKontoauszuegePDF()))
 	// Versand ist mehr als Lesen: dasselbe Recht wie der Mahnlauf (create_orders),
 	// nicht das reine view_graduates der Liste.
-	mux.Handle("POST /api/abgaenger/mail", s.RequirePermission("create_orders")(s.mahnwesen().SendAbgaengerKontoauszuegeHandler()))
+	mux.Handle("POST /api/abgaenger/mail", s.RequirePermission("create_orders")(s.mahnwesen().AbgaengerKontoauszuegeVersenden()))
 
 	// Kiosk / Damage
 	damageRepo := repository.NewSchadensAbfragen(s.DB.Pool)
@@ -118,8 +118,8 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.RequirePermission("edit_students")(s.schaden().ForderungStornieren(auditRepoGebuehren)))
 
 	// Mahnwesen
-	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.mahnwesen().GetMahnwesenHandler(mahnRepo)))
+	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.mahnwesen().UeberfaelligeAusleihen(mahnRepo)))
 	// Massenversand: je überfällige Klasse eine Mahnliste an die Klassenleitung
-	// (privacy-by-design — nie direkt an Schüler; siehe api/mahnwesen/mahnwesen_bulk_mail.go).
-	mux.Handle("POST /api/mail/send-bulk-overdue", s.RequirePermission("create_orders")(s.mahnwesen().SendBulkOverdueHandler(mahnRepo)))
+	// (privacy-by-design — nie direkt an Schüler; siehe api/mahnwesen/mahnlisten_versand.go).
+	mux.Handle("POST /api/mail/send-bulk-overdue", s.RequirePermission("create_orders")(s.mahnwesen().MahnlistenVersenden(mahnRepo)))
 }

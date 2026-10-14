@@ -28,7 +28,7 @@ import (
 func kontoauszugPDF(t *testing.T, srv *Tueren, query string) (*httptest.ResponseRecorder, string) {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	srv.GetGraduatesPDFHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger/pdf"+query, nil))
+	srv.AbgaengerKontoauszuegePDF()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger/pdf"+query, nil))
 	if rec.Code != http.StatusOK {
 		return rec, ""
 	}

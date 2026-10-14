@@ -37,7 +37,7 @@ func smtpKonfigAusUmgebung(t *testing.T) {
 
 // Ohne konfigurierten Mailserver (SMTP_HOST leer) → 503, kein Versand. Der Check
 // greift VOR jeder Klassen-Query — pgxmock erwartet keine einzige.
-func TestSendBulkOverdueHandler_SmtpFehlt(t *testing.T) {
+func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
 	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_HOST", "")
 
@@ -52,7 +52,7 @@ func TestSendBulkOverdueHandler_SmtpFehlt(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
 	rec := httptest.NewRecorder()
-	server.SendBulkOverdueHandler(mahnRepo)(rec, req)
+	server.MahnlistenVersenden(mahnRepo)(rec, req)
 
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("erwartet 503 ohne SMTP, bekam %d: %s", rec.Code, rec.Body.String())
@@ -99,8 +99,8 @@ func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 
 	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
 
-	if erg.Sent != 1 || erg.Skipped != 2 || erg.Failed != 0 {
-		t.Fatalf("sent=%d skipped=%d failed=%d, want sent=1 skipped=2 failed=0", erg.Sent, erg.Skipped, erg.Failed)
+	if erg.Versendet != 1 || erg.Uebersprungen != 2 || erg.Fehlgeschlagen != 0 {
+		t.Fatalf("sent=%d skipped=%d failed=%d, want sent=1 skipped=2 failed=0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
 	}
 	if len(empfaenger) != 1 || empfaenger[0] != "lehrer5a@schule.de" {
 		t.Fatalf("Empfänger = %v, want genau [lehrer5a@schule.de] — keine Mail an Klassen ohne Adresse!", empfaenger)
@@ -131,7 +131,7 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 	}
 
 	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
-	if erg.Sent != 1 || erg.Skipped != 0 || erg.Failed != 1 || erg.Abgebrochen {
+	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 1 || erg.Abgebrochen {
 		t.Fatalf("%+v, want sent=1 skipped=0 failed=1 nicht abgebrochen (Einzelfehler = fehlgeschlagen, Lauf läuft weiter)", erg)
 	}
 }
@@ -160,13 +160,13 @@ func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T
 		{Klasse: "5d", LehrerEmail: "", Schueler: schueler},
 	}
 	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
-	if erg.Sent != 1 || erg.Failed != 2 || erg.Skipped != 1 || !erg.Abgebrochen {
+	if erg.Versendet != 1 || erg.Fehlgeschlagen != 2 || erg.Uebersprungen != 1 || !erg.Abgebrochen {
 		t.Fatalf("%+v, want sent=1 failed=2 (5b + nicht versuchte 5c) skipped=1 abgebrochen", erg)
 	}
 	if len(versuche) != 2 {
 		t.Fatalf("nach dem Mailserver-Fehler darf keine weitere Klasse versucht werden: %v", versuche)
 	}
-	msg := bulkOverdueMeldung(erg, "")
+	msg := mahnlistenMeldung(erg, "")
 	if !strings.Contains(msg, "2 FEHLGESCHLAGEN") || !strings.Contains(msg, "abgebrochen") {
 		t.Fatalf("Meldung nennt den Ausfall nicht: %q", msg)
 	}
@@ -191,7 +191,7 @@ func (a *argFaenger) Match(v interface{}) bool {
 // „alle" (alter Vertrag), ein LEERES Array heisst „niemand" und muss abgewiesen
 // werden. Würden beide gleich behandelt, löste eine leere Auswahl den grössten
 // denkbaren Fehlversand aus.
-func TestParseKlassenVersandRequest(t *testing.T) {
+func TestLeseKlassenVersandAnfrage(t *testing.T) {
 	tests := []struct {
 		name        string
 		body        string
@@ -225,7 +225,7 @@ func TestParseKlassenVersandRequest(t *testing.T) {
 			}
 			req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", body)
 
-			got, err := parseKlassenVersandRequest(req)
+			got, err := leseKlassenVersandAnfrage(req)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("Fehler erwartet, bekam keinen (%+v)", got)
@@ -242,8 +242,8 @@ func TestParseKlassenVersandRequest(t *testing.T) {
 			} else if !reflect.DeepEqual(*got.Klassen, tt.wantKlassen) {
 				t.Fatalf("Klassen = %v, want %v", *got.Klassen, tt.wantKlassen)
 			}
-			if got.OverrideEmail != tt.wantEmail {
-				t.Fatalf("OverrideEmail = %q, want %q", got.OverrideEmail, tt.wantEmail)
+			if got.Umleitung != tt.wantEmail {
+				t.Fatalf("Umleitung = %q, want %q", got.Umleitung, tt.wantEmail)
 			}
 		})
 	}
@@ -300,7 +300,7 @@ func TestWaehleKlassen(t *testing.T) {
 // Mit Override-Adresse gehen die Listen an genau diese eine Adresse — auch für
 // Klassen ohne hinterlegte Klassenleitung (das ist der Vertretungsfall, für den
 // das Feld existiert). Klassen OHNE überfällige Fälle bleiben trotzdem aussen vor.
-func TestZieleAufOverride_LenktAlleKlassenUm(t *testing.T) {
+func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 	schueler := []repository.UeberfaelligerSchueler{
 		{SchuelerID: "s1", Name: "Max", Klasse: "x", Medien: []repository.UeberfaelligesMedium{{Titel: "Buch"}}},
 	}
@@ -310,7 +310,7 @@ func TestZieleAufOverride_LenktAlleKlassenUm(t *testing.T) {
 		{Klasse: "7c", LehrerEmail: "lehrer7c@schule.de", Schueler: nil},
 	}
 
-	umgelenkt := zieleAufOverride(original, "sekretariat@schule.de")
+	umgelenkt := lenkeKlassenUm(original, "sekretariat@schule.de")
 
 	var empfaenger []string
 	erg := versendeKlassenMahnungen(
@@ -319,8 +319,8 @@ func TestZieleAufOverride_LenktAlleKlassenUm(t *testing.T) {
 		func(m mailservice.MailRequest) error { empfaenger = append(empfaenger, m.To); return nil },
 	)
 
-	if erg.Sent != 2 || erg.Skipped != 1 {
-		t.Fatalf("sent=%d skipped=%d, want sent=2 skipped=1 (7c hat keine Fälle)", erg.Sent, erg.Skipped)
+	if erg.Versendet != 2 || erg.Uebersprungen != 1 {
+		t.Fatalf("sent=%d skipped=%d, want sent=2 skipped=1 (7c hat keine Fälle)", erg.Versendet, erg.Uebersprungen)
 	}
 	for _, e := range empfaenger {
 		if e != "sekretariat@schule.de" {
@@ -334,7 +334,7 @@ func TestZieleAufOverride_LenktAlleKlassenUm(t *testing.T) {
 
 // Eine leere Auswahl darf nicht erst in der DB auffallen: Der Handler weist sie ab,
 // bevor er auch nur eine Query absetzt.
-func TestSendBulkOverdueHandler_LeereAuswahlOhneDBZugriff(t *testing.T) {
+func TestMahnlistenVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
 	smtpKonfigAusUmgebung(t)
 	for _, body := range []string{`{"klassen":[]}`, `{"klassen":["5a"],"override_email":"kein-mail"}`} {
 		mock, err := pgxmock.NewPool()
@@ -345,7 +345,7 @@ func TestSendBulkOverdueHandler_LeereAuswahlOhneDBZugriff(t *testing.T) {
 		server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 		req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", strings.NewReader(body))
 		rec := httptest.NewRecorder()
-		server.SendBulkOverdueHandler(repository.NewMahnwesenAbfragen(mock))(rec, req)
+		server.MahnlistenVersenden(repository.NewMahnwesenAbfragen(mock))(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Body %s: erwartet 400, bekam %d: %s", body, rec.Code, rec.Body.String())
@@ -361,7 +361,7 @@ func TestSendBulkOverdueHandler_LeereAuswahlOhneDBZugriff(t *testing.T) {
 // Revisionssicherheit: Der Audit-Eintrag muss die Override-Adresse im Klartext
 // führen und gültiges JSON sein — auch wenn die Adresse Zeichen enthält, die ein
 // handgebautes JSON-Literal zerrissen hätten (früher: fmt.Sprintf).
-func TestLogKlassenVersandAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T) {
+func TestProtokolliereKlassenVersand_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -377,12 +377,12 @@ func TestLogKlassenVersandAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T)
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{UserID: "admin-1"}))
 
-	server.logKlassenVersandAudit(req, "BULK_OVERDUE_MAIL", klassenVersandAudit{
+	server.protokolliereKlassenVersand(req, "BULK_OVERDUE_MAIL", klassenVersandProtokoll{
 		Phase:         "ende",
 		Klassen:       []string{"5a", "6b"},
-		OverrideEmail: `"seltsam"@schule.de`,
-		Sent:          2,
-		Skipped:       0,
+		Umleitung:     `"seltsam"@schule.de`,
+		Versendet:     2,
+		Uebersprungen: 0,
 	})
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -390,12 +390,12 @@ func TestLogKlassenVersandAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T)
 	}
 
 	// Der geschriebene Payload muss als JSON parsebar sein (Spalte ist jsonb).
-	var geparst klassenVersandAudit
+	var geparst klassenVersandProtokoll
 	if err := json.Unmarshal([]byte(details), &geparst); err != nil {
 		t.Fatalf("details ist kein gültiges JSON: %v (%s)", err, details)
 	}
-	if geparst.OverrideEmail != `"seltsam"@schule.de` {
-		t.Fatalf("OverrideEmail = %q — die Adresse muss unverfälscht im Log stehen", geparst.OverrideEmail)
+	if geparst.Umleitung != `"seltsam"@schule.de` {
+		t.Fatalf("Umleitung = %q — die Adresse muss unverfälscht im Log stehen", geparst.Umleitung)
 	}
 }
 
@@ -432,18 +432,18 @@ func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
 }
 
 // Der Weg über den echten Body: „mueller" kommt als vollständige Adresse heraus.
-func TestParseKlassenVersandRequest_ErgaenztDomaene(t *testing.T) {
+func TestLeseKlassenVersandAnfrage_ErgaenztDomaene(t *testing.T) {
 	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_FROM", "bibliothek@philipp-reis-schule.de")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail",
 		strings.NewReader(`{"klassen":["9h"],"override_email":" mueller "}`))
 
-	got, err := parseKlassenVersandRequest(req)
+	got, err := leseKlassenVersandAnfrage(req)
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if got.OverrideEmail != "mueller@philipp-reis-schule.de" {
-		t.Fatalf("OverrideEmail = %q, want mueller@philipp-reis-schule.de", got.OverrideEmail)
+	if got.Umleitung != "mueller@philipp-reis-schule.de" {
+		t.Fatalf("Umleitung = %q, want mueller@philipp-reis-schule.de", got.Umleitung)
 	}
 }

@@ -30,7 +30,7 @@ func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	rec := httptest.NewRecorder()
-	srv.mahnwesen().GetGraduatesHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
+	srv.mahnwesen().Abgaenger()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Abgängerliste: Status %d — %s", rec.Code, rec.Body.String())
 	}

@@ -90,7 +90,7 @@ func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
 	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
 		func(m mailservice.MailRequest) error { mails = append(mails, m); return nil })
 
-	if erg.Sent != 1 || erg.Skipped != 0 || erg.Failed != 0 {
+	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 0 {
 		t.Fatalf("%+v, want sent=1", erg)
 	}
 	if len(mails) != 1 {
@@ -119,8 +119,8 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
 		func(m mailservice.MailRequest) error { empfaenger = append(empfaenger, m.To); return nil })
 
-	if erg.Sent != 1 || erg.Skipped != 2 || erg.Failed != 0 {
-		t.Fatalf("sent=%d skipped=%d failed=%d, want 1/2/0", erg.Sent, erg.Skipped, erg.Failed)
+	if erg.Versendet != 1 || erg.Uebersprungen != 2 || erg.Fehlgeschlagen != 0 {
+		t.Fatalf("sent=%d skipped=%d failed=%d, want 1/2/0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
 	}
 	if len(empfaenger) != 1 || empfaenger[0] != "lehrer5a@schule.de" {
 		t.Fatalf("Empfänger = %v, want nur lehrer5a@schule.de", empfaenger)
@@ -147,7 +147,7 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 		Eintraege:  []pdf.KontoauszugEintrag{eintrag("Kaputt", "Fall", "5a"), eintrag("Heile", "Welt", "5a")},
 	}}, kaputt, sammeln)
 
-	if erg.Sent != 1 || erg.Skipped != 0 || erg.Failed != 0 {
+	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 0 {
 		t.Fatalf("%+v, want sent=1 — ein kaputtes PDF darf die Klasse nicht blockieren", erg)
 	}
 	if len(mails[0].Attachments) != 1 {
@@ -161,7 +161,7 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 		Eintraege:  []pdf.KontoauszugEintrag{eintrag("Kaputt", "Fall", "6b")},
 	}}, kaputt, sammeln)
 
-	if erg.Sent != 0 || erg.Skipped != 0 || erg.Failed != 1 {
+	if erg.Versendet != 0 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 1 {
 		t.Fatalf("%+v, want failed=1 — alle PDFs kaputt ist ein Problem, keine Absicht; und ohne Anhang keine leere Mail", erg)
 	}
 	if len(mails) != 0 {
@@ -171,12 +171,12 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 
 // Mit Override gehen ALLE gewählten Klassen an diese eine Adresse — und die
 // geladenen Daten bleiben unangetastet.
-func TestLenkeAbgaengerAufOverride(t *testing.T) {
+func TestLenkeAbgaengerUm(t *testing.T) {
 	original := []abgaengerKlasse{
 		{Klasse: "5a", Empfaenger: "lehrer5a@schule.de"},
 		{Klasse: "6b", Empfaenger: ""},
 	}
-	umgelenkt := lenkeAbgaengerAufOverride(original, "sekretariat@schule.de")
+	umgelenkt := lenkeAbgaengerUm(original, "sekretariat@schule.de")
 
 	for _, k := range umgelenkt {
 		if k.Empfaenger != "sekretariat@schule.de" {
@@ -189,7 +189,7 @@ func TestLenkeAbgaengerAufOverride(t *testing.T) {
 }
 
 // Eine leere Auswahl heißt „niemand": abgewiesen, bevor eine Query läuft.
-func TestSendAbgaengerKontoauszuege_LeereAuswahlOhneDBZugriff(t *testing.T) {
+func TestAbgaengerKontoauszuegeVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -199,7 +199,7 @@ func TestSendAbgaengerKontoauszuege_LeereAuswahlOhneDBZugriff(t *testing.T) {
 	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":[]}`))
 	rec := httptest.NewRecorder()
-	server.SendAbgaengerKontoauszuegeHandler()(rec, req)
+	server.AbgaengerKontoauszuegeVersenden()(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
@@ -213,7 +213,7 @@ func TestSendAbgaengerKontoauszuege_LeereAuswahlOhneDBZugriff(t *testing.T) {
 // LUSD-Import. „5A" gegen „5a" oder ein mitkopiertes Leerzeichen darf den Versand
 // nicht kosten — vorher meldete die Oberfläche „keine E-Mail" und der Lauf
 // übersprang die Klasse still, obwohl die Adresse hinterlegt war.
-func TestWaehleAbgaengerKlassen_SchreibweiseDesMappingsEgal(t *testing.T) {
+func TestWaehleAbgaengerKlassen_SchreibweiseDerKlassenleitungEgal(t *testing.T) {
 	eintraege := []pdf.KontoauszugEintrag{eintrag("Max", "Mustermann", "5a")}
 	adressen := map[string]string{
 		repository.KlassenSchluessel(" 5A "): "nberger@philipp-reis-schule.de",
@@ -243,7 +243,7 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 			}
 			return nil
 		})
-	if erg.Sent != 1 || erg.Failed != 1 || erg.Abgebrochen {
+	if erg.Versendet != 1 || erg.Fehlgeschlagen != 1 || erg.Abgebrochen {
 		t.Fatalf("%+v, want sent=1 failed=1 ohne Abbruch", erg)
 	}
 
@@ -252,7 +252,7 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 		func(mailservice.MailRequest) error {
 			return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand)
 		})
-	if !erg.Abgebrochen || erg.Failed != 2 || erg.Sent != 0 {
+	if !erg.Abgebrochen || erg.Fehlgeschlagen != 2 || erg.Versendet != 0 {
 		t.Fatalf("%+v, want Abbruch mit failed=2", erg)
 	}
 }
@@ -281,7 +281,7 @@ func TestVersendeAbgaengerKontoauszuege_NachAbbruchBleibtUebersprungenUebersprun
 			}
 			return nil
 		})
-	if erg.Sent != 1 || erg.Failed != 2 || erg.Skipped != 2 || !erg.Abgebrochen {
+	if erg.Versendet != 1 || erg.Fehlgeschlagen != 2 || erg.Uebersprungen != 2 || !erg.Abgebrochen {
 		t.Errorf("%+v, erwartet sent=1 failed=2 (10b und die nicht versuchte 10e) skipped=2 (10c, 10d) abgebrochen", erg)
 	}
 	if pdfs != 2 {

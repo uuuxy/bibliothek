@@ -148,7 +148,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 		&auth.Claims{UserID: bearbeiter, Rolle: auth.RoleAdmin}))
 
 	rec := httptest.NewRecorder()
-	srv.SendBulkOverdueHandler(mahnRepo)(rec, req)
+	srv.MahnlistenVersenden(mahnRepo)(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
 	}

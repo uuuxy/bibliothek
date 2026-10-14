@@ -14,8 +14,8 @@ import (
 // Massenversand (mahnwesen_bulk_mail.go) schickt je gewählte Klasse eine Liste an die
 // Klassenleitung.
 
-// mahnwesenSendenRequest: Klasse und Zieladresse einer Klassen-Mahnliste.
-type mahnwesenSendenRequest struct {
+// mahnlisteEmpfaenger: Klasse und Zieladresse einer Klassen-Mahnliste.
+type mahnlisteEmpfaenger struct {
 	Klasse string `json:"klasse"`
 	Email  string `json:"email"`
 }
@@ -48,40 +48,40 @@ func erzeugeMahnliste(klassen []repository.MahnwesenKlasse) ([]byte, error) {
 	return pdf.GenerateMahnlistePDF(mahnlisteSeiten(klassen))
 }
 
-func zaehleMahnStatistik(klassen []repository.MahnwesenKlasse) (totalSchueler, totalMedien int) {
+func mahnStatistik(klassen []repository.MahnwesenKlasse) (schuelerGesamt, medienGesamt int) {
 	for _, kl := range klassen {
-		totalSchueler += len(kl.Schueler)
+		schuelerGesamt += len(kl.Schueler)
 		for _, sch := range kl.Schueler {
-			totalMedien += len(sch.Medien)
+			medienGesamt += len(sch.Medien)
 		}
 	}
-	return totalSchueler, totalMedien
+	return schuelerGesamt, medienGesamt
 }
 
-// baueMahnMailRequest baut die E-Mail (Text + PDF-Anhang) für eine Klassen-Mahnliste.
-func baueMahnMailRequest(req mahnwesenSendenRequest, pdfBytes []byte, totalSchueler, totalMedien int) mailservice.MailRequest {
-	emailBody := fmt.Sprintf(
+// baueMahnMail baut die E-Mail (Text + PDF-Anhang) für eine Klassen-Mahnliste.
+func baueMahnMail(empfaenger mahnlisteEmpfaenger, pdfDaten []byte, schuelerGesamt, medienGesamt int) mailservice.MailRequest {
+	text := fmt.Sprintf(
 		"Sehr geehrte Damen und Herren,\n\n"+
 			"anbei erhalten Sie die aktuelle Mahnliste der Schulbibliothek für die Klasse %s (Stand: %s).\n\n"+
 			"Betroffene Schüler/innen: %d\n"+
 			"Überfällige Medien gesamt: %d\n\n"+
 			"Bitte informieren Sie die betroffenen Schüler/innen über die ausstehenden Rückgaben.\n\n"+
 			"Mit freundlichen Grüßen,\nSchulbibliothek",
-		req.Klasse,
+		empfaenger.Klasse,
 		schulzeit.Jetzt().Format(tuer.DatumsformatDE),
-		totalSchueler,
-		totalMedien,
+		schuelerGesamt,
+		medienGesamt,
 	)
 
 	return mailservice.MailRequest{
-		To:      req.Email,
-		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
-		Body:    emailBody,
+		To:      empfaenger.Email,
+		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", empfaenger.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
+		Body:    text,
 		Attachments: []mailservice.MailAttachment{
 			{
-				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatISO)),
+				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", empfaenger.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatISO)),
 				ContentType: tuer.ContentTypePDF,
-				Data:        pdfBytes,
+				Data:        pdfDaten,
 			},
 		},
 	}

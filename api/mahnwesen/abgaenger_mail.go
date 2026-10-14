@@ -23,7 +23,7 @@ type abgaengerKlasse struct {
 	Eintraege  []pdf.KontoauszugEintrag
 }
 
-// SendAbgaengerKontoauszuegeHandler mailt die Kontoauszüge der gewählten
+// AbgaengerKontoauszuegeVersenden mailt die Kontoauszüge der gewählten
 // Abgangsklassen an die jeweilige Klassenleitung — eine E-Mail je Klasse, darin ein
 // PDF je Abgänger.
 //
@@ -41,11 +41,11 @@ type abgaengerKlasse struct {
 // sondern die Abschluss-Übersicht eines beendeten Ausleihkontos.
 //
 // POST /api/abgaenger/mail
-func (s *Tueren) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
+func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		req, err := parseKlassenVersandRequest(r)
+		req, err := leseKlassenVersandAnfrage(r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -58,65 +58,65 @@ func (s *Tueren) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 
 		// Dieselbe Saison wie Liste und Druck: Außerhalb gäbe es nichts zu versenden —
 		// und ein Lauf im Oktober schickte den Klassenleitungen die laufende Ausleihe.
-		if fenster := abgaengerFensterFuer(s.Jetzt()); !fenster.Offen {
+		if fenster := abgaengerFensterFuer(t.Jetzt()); !fenster.Offen {
 			apierrors.SendHTTPError(w, http.StatusConflict, abgaengerAusserhalbDerSaison(fenster))
 			return
 		}
 
 		// Dieselbe Abfrage, die auch der Druck benutzt (leerer Filter = alle Klassen).
 		// Papier und Mail zeigen damit garantiert denselben Stand.
-		eintraege, err := s.queryAbgaengerKontoauszug(ctx, "", nil)
+		eintraege, err := t.ladeAbgaengerKontoauszuege(ctx, "", nil)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		adressen, err := s.klassenlehrerAdressen(ctx)
+		adressen, err := t.ladeKlassenleitungsAdressen(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, req.Klassen)
-		if req.OverrideEmail != "" {
-			gewaehlt = lenkeAbgaengerAufOverride(gewaehlt, req.OverrideEmail)
+		if req.Umleitung != "" {
+			gewaehlt = lenkeAbgaengerUm(gewaehlt, req.Umleitung)
 		}
 
-		audit := klassenVersandAudit{
-			Klassen:       abgaengerKlassennamen(gewaehlt),
-			AlleKlassen:   req.Klassen == nil,
-			OverrideEmail: req.OverrideEmail,
-			Unbekannt:     unbekannt,
+		audit := klassenVersandProtokoll{
+			Klassen:     abgaengerKlassennamen(gewaehlt),
+			AlleKlassen: req.Klassen == nil,
+			Umleitung:   req.Umleitung,
+			Unbekannt:   unbekannt,
 		}
 
 		// Absicht vor dem Versand protokollieren — siehe logKlassenVersandAudit.
 		audit.Phase = "start"
-		s.logKlassenVersandAudit(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
+		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		erg := versendeAbgaengerKontoauszuege(gewaehlt, generateKontoauszugPDF, mailservice.SendEmail)
+		erg := versendeAbgaengerKontoauszuege(gewaehlt, erzeugeKontoauszugPDF, mailservice.SendEmail)
 
 		audit.Phase = "ende"
-		audit.Sent, audit.Skipped, audit.Failed, audit.Abgebrochen = erg.Sent, erg.Skipped, erg.Failed, erg.Abgebrochen
-		s.logKlassenVersandAudit(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
+		audit.Versendet, audit.Uebersprungen, audit.Fehlgeschlagen, audit.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen
+		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		tuer.AntworteJSON(w, http.StatusOK, bulkOverdueResponse{
-			SentCount:    erg.Sent,
-			SkippedCount: erg.Skipped,
-			FailedCount:  erg.Failed,
-			Abgebrochen:  erg.Abgebrochen,
-			Message:      abgaengerVersandMeldung(erg, req.OverrideEmail),
+		tuer.AntworteJSON(w, http.StatusOK, klassenVersandAntwort{
+			Versendet:      erg.Versendet,
+			Uebersprungen:  erg.Uebersprungen,
+			Fehlgeschlagen: erg.Fehlgeschlagen,
+			Abgebrochen:    erg.Abgebrochen,
+			Meldung:        abgaengerVersandMeldung(erg, req.Umleitung),
 		})
 	}
 }
 
-// klassenlehrerAdressen lädt das Klassenlehrer-Mapping als Nachschlagetabelle.
+// ladeKlassenleitungsAdressen lädt das Klassenlehrer-Mapping als Nachschlagetabelle.
 //
 // Anders als bei der Mahnliste (best-effort) bricht ein Fehler hier den Versand ab:
 // Ohne Mapping wäre JEDE Klasse „ohne Adresse" und der Lauf meldete fröhlich
 // „0 versendet, 12 übersprungen" — ein stiller Totalausfall, der wie ein Ergebnis
 // aussieht.
-func (s *Tueren) klassenlehrerAdressen(ctx context.Context) (map[string]string, error) {
-	return repository.LadeKlassenleitungsAdressen(ctx, s.DB.Pool)
+func (t *Tueren) ladeKlassenleitungsAdressen(ctx context.Context) (map[string]string, error) {
+	return repository.LadeKlassenleitungsAdressen(ctx, t.DB.Pool)
 }
 
 // waehleAbgaengerKlassen gruppiert die Kontoauszüge nach Klasse, hängt den
@@ -164,9 +164,9 @@ func waehleAbgaengerKlassen(
 	return gewaehlt, unbekannt
 }
 
-// lenkeAbgaengerAufOverride setzt den Empfänger aller gewählten Klassen auf eine
+// lenkeAbgaengerUm setzt den Empfänger aller gewählten Klassen auf eine
 // Adresse. Kopie statt Mutation — die geladenen Daten bleiben unangetastet.
-func lenkeAbgaengerAufOverride(klassen []abgaengerKlasse, empfaenger string) []abgaengerKlasse {
+func lenkeAbgaengerUm(klassen []abgaengerKlasse, empfaenger string) []abgaengerKlasse {
 	umgelenkt := make([]abgaengerKlasse, len(klassen))
 	copy(umgelenkt, klassen)
 	for i := range umgelenkt {
@@ -183,9 +183,9 @@ func abgaengerKlassennamen(klassen []abgaengerKlasse) []string {
 	return namen
 }
 
-// generateKontoauszugPDF erzeugt den Kontoauszug EINES Abgängers — mit
+// erzeugeKontoauszugPDF erzeugt den Kontoauszug EINES Abgängers — mit
 // Unterschriftszeile, also exakt das Blatt, das auch aus dem Druck fällt.
-func generateKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
+func erzeugeKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
 	return pdf.GenerateKontoauszugBatch([]pdf.KontoauszugEintrag{e}, true)
 }
 
@@ -209,44 +209,44 @@ func generateKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
 // doppelt zu senden ist unschädlich — der Lauf darf einfach wiederholt werden.
 func versendeAbgaengerKontoauszuege(
 	klassen []abgaengerKlasse,
-	generatePDF func(pdf.KontoauszugEintrag) ([]byte, error),
-	sendMail func(mailservice.MailRequest) error,
+	erzeugePDF func(pdf.KontoauszugEintrag) ([]byte, error),
+	sendeMail func(mailservice.MailRequest) error,
 ) versandErgebnis {
 	var erg versandErgebnis
 	for _, kl := range klassen {
 		if kl.Empfaenger == "" || len(kl.Eintraege) == 0 {
-			erg.Skipped++
+			erg.Uebersprungen++
 			continue
 		}
 		if erg.Abgebrochen {
-			erg.Failed++
+			erg.Fehlgeschlagen++
 			continue
 		}
 
-		anhaenge := baueKontoauszugAnhaenge(kl, generatePDF)
+		anhaenge := baueKontoauszugAnhaenge(kl, erzeugePDF)
 		if len(anhaenge) == 0 {
 			// Jedes einzelne PDF dieser Klasse ist gescheitert — das ist ein Problem,
 			// keine Absicht.
-			erg.Failed++
+			erg.Fehlgeschlagen++
 			continue
 		}
 
-		if err := sendMail(baueAbgaengerMailRequest(kl, anhaenge)); err != nil {
+		if err := sendeMail(baueAbgaengerMail(kl, anhaenge)); err != nil {
 			log.Printf("abgaenger-kontoauszug: Versand an Klasse %s (%s) fehlgeschlagen: %v", kl.Klasse, kl.Empfaenger, err)
-			erg.Failed++
+			erg.Fehlgeschlagen++
 			if errors.Is(err, mailservice.ErrSMTPVersand) {
 				erg.Abgebrochen = true
 			}
 			continue
 		}
-		erg.Sent++
+		erg.Versendet++
 	}
 	return erg
 }
 
 func baueKontoauszugAnhaenge(
 	kl abgaengerKlasse,
-	generatePDF func(pdf.KontoauszugEintrag) ([]byte, error),
+	erzeugePDF func(pdf.KontoauszugEintrag) ([]byte, error),
 ) []mailservice.MailAttachment {
 	// Leerzeichen und Schrägstriche aus dem Namen halten — ein Anhang „Kontoauszug_Max
 	// Mustermann.pdf" ist beim Weiterreichen unhandlich, ein „/" darin sogar kaputt.
@@ -254,7 +254,7 @@ func baueKontoauszugAnhaenge(
 
 	anhaenge := make([]mailservice.MailAttachment, 0, len(kl.Eintraege))
 	for _, e := range kl.Eintraege {
-		pdfBytes, err := generatePDF(e)
+		pdfDaten, err := erzeugePDF(e)
 		if err != nil {
 			log.Printf("abgaenger-kontoauszug: PDF für %s %s (%s) fehlgeschlagen: %v",
 				e.Schueler.Vorname, e.Schueler.Nachname, kl.Klasse, err)
@@ -263,14 +263,14 @@ func baueKontoauszugAnhaenge(
 		anhaenge = append(anhaenge, mailservice.MailAttachment{
 			Name:        sauber.Replace(fmt.Sprintf("Kontoauszug_%s_%s.pdf", e.Schueler.Vorname, e.Schueler.Nachname)),
 			ContentType: tuer.ContentTypePDF,
-			Data:        pdfBytes,
+			Data:        pdfDaten,
 		})
 	}
 	return anhaenge
 }
 
-func baueAbgaengerMailRequest(kl abgaengerKlasse, anhaenge []mailservice.MailAttachment) mailservice.MailRequest {
-	body := fmt.Sprintf(
+func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.MailAttachment) mailservice.MailRequest {
+	text := fmt.Sprintf(
 		"Sehr geehrte Damen und Herren,\n\n"+
 			"anbei erhalten Sie die Kontoauszüge der Abgänger der Klasse %s (Stand: %s).\n\n"+
 			"Betroffene Schüler/innen: %d\n\n"+
@@ -286,7 +286,7 @@ func baueAbgaengerMailRequest(kl abgaengerKlasse, anhaenge []mailservice.MailAtt
 	return mailservice.MailRequest{
 		To:          kl.Empfaenger,
 		Subject:     fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
-		Body:        body,
+		Body:        text,
 		Attachments: anhaenge,
 	}
 }
@@ -294,17 +294,17 @@ func baueAbgaengerMailRequest(kl abgaengerKlasse, anhaenge []mailservice.MailAtt
 // abgaengerVersandMeldung nennt den Empfänger mit: „12 versendet" allein verrät
 // nicht, ob die Auszüge an die Klassenleitungen oder an eine handgetippte Adresse
 // gingen.
-func abgaengerVersandMeldung(erg versandErgebnis, override string) string {
-	if erg.Sent == 0 && erg.Skipped == 0 && erg.Failed == 0 {
+func abgaengerVersandMeldung(erg versandErgebnis, umleitung string) string {
+	if erg.Versendet == 0 && erg.Uebersprungen == 0 && erg.Fehlgeschlagen == 0 {
 		return "Keine der gewählten Klassen hat noch offene Ausleihen – nichts versendet."
 	}
 	ziel := "an die Klassenleitungen"
-	if override != "" {
-		ziel = "an " + override
+	if umleitung != "" {
+		ziel = "an " + umleitung
 	}
-	text := fmt.Sprintf("Kontoauszüge von %d Klasse(n) %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen).", erg.Sent, ziel, erg.Skipped)
-	if erg.Failed > 0 {
-		text += fmt.Sprintf(" %d FEHLGESCHLAGEN — nicht zugestellt.", erg.Failed)
+	text := fmt.Sprintf("Kontoauszüge von %d Klasse(n) %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen).", erg.Versendet, ziel, erg.Uebersprungen)
+	if erg.Fehlgeschlagen > 0 {
+		text += fmt.Sprintf(" %d FEHLGESCHLAGEN — nicht zugestellt.", erg.Fehlgeschlagen)
 	}
 	if erg.Abgebrochen {
 		text += " Lauf nach Mailserver-Fehler abgebrochen; bitte Mail-Server prüfen und erneut senden (doppelte Kontoauszüge sind unschädlich)."
