@@ -28,21 +28,21 @@ func inventurStarten(t *testing.T, srv *Tueren, benutzerID, rumpf string) *httpt
 	req := httptest.NewRequest(http.MethodPost, "/api/inventur/start", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.InventurStartHandler()(rec, tuertest.AlsBenutzer(req, benutzerID))
+	srv.InventurStarten()(rec, tuertest.AlsBenutzer(req, benutzerID))
 	return rec
 }
 
 // inventurGestartet verlangt eine 200 und liefert die Antwort.
-func inventurGestartet(t *testing.T, rec *httptest.ResponseRecorder) InventurStartResponse {
+func inventurGestartet(t *testing.T, rec *httptest.ResponseRecorder) startAntwort {
 	t.Helper()
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
-	var antwort InventurStartResponse
+	var antwort startAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Antwort nicht lesbar: %v (%s)", err, rec.Body.String())
 	}
-	if antwort.SessionID == "" {
+	if antwort.LaufID == "" {
 		t.Fatalf("Antwort ohne Kennung der Inventur: %s", rec.Body.String())
 	}
 	return antwort
@@ -85,9 +85,9 @@ func offeneInventuren(t *testing.T, pool *pgxpool.Pool) int {
 
 // Erwartet wird, was im Regal stehen kann: nicht das verliehene, das ausgesonderte und
 // das gesperrte Exemplar. Die Inventur trägt den Benutzer, der sie gestartet hat.
-func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
+func TestInventurStarten_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	ctx := context.Background()
@@ -103,22 +103,22 @@ func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 	testdaten.LegeOffeneAusleiheAn(t, pool, testdaten.LegeSchuelerAn(t, pool, "IS-S1", "Leihkind", "07A"), "IS-VERLIEHEN")
 
 	antwort := inventurGestartet(t, inventurStarten(t, srv, admin, `{"type":"global"}`))
-	if antwort.Scope != "global" || antwort.Label != "Gesamtbestand" || antwort.Erwartet != 2 {
+	if antwort.Bereich != "global" || antwort.Bezeichnung != "Gesamtbestand" || antwort.Erwartet != 2 {
 		t.Errorf("Antwort %+v, erwartet global, „Gesamtbestand“ und 2 Exemplare", antwort)
 	}
 	if n := pgtest.ZaehleZeilen(t, pool, `
 		SELECT count(*) FROM inventur_sessions
 		WHERE id = $1 AND scope_type = 'global' AND gestartet_von = $2 AND abgeschlossen_am IS NULL`,
-		antwort.SessionID, admin); n != 1 {
+		antwort.LaufID, admin); n != 1 {
 		t.Error("die Inventur steht nicht offen und mit dem angemeldeten Benutzer in der Datenbank")
 	}
 }
 
 // Die Signatur gilt ohne Leerzeichen am Rand, in der Bezeichnung wie im Bereich: Die
 // Bezeichnung darf keinen anderen Bereich nennen, als die Inventur erfasst.
-func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
+func TestInventurStarten_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
@@ -126,21 +126,21 @@ func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 	inventurTitel(t, pool, "BIB Mat 5", "", 5, 6, "IS-M1")
 
 	antwort := inventurGestartet(t, inventurStarten(t, srv, admin, `{"type":"signature","signatur":"  BIB Deu "}`))
-	if antwort.Scope != "signature" || antwort.Label != "Signatur BIB Deu" || antwort.Erwartet != 2 {
+	if antwort.Bereich != "signature" || antwort.Bezeichnung != "Signatur BIB Deu" || antwort.Erwartet != 2 {
 		t.Errorf("Antwort %+v, erwartet signature, „Signatur BIB Deu“ und 2 Exemplare", antwort)
 	}
 	if n := pgtest.ZaehleZeilen(t, pool,
 		`SELECT count(*) FROM inventur_sessions WHERE id = $1 AND scope_signatur = 'BIB Deu' AND scope_label = 'Signatur BIB Deu'`,
-		antwort.SessionID); n != 1 {
+		antwort.LaufID); n != 1 {
 		t.Error("Bereich und Bezeichnung stehen nicht ohne die Leerzeichen in der Datenbank")
 	}
 }
 
 // Fach und Klasse grenzen den Bereich ein und stehen beide in der Bezeichnung; ein Fach
 // allein gilt für alle Klassen.
-func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
+func TestInventurStarten_FilterNachFachUndKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
@@ -151,12 +151,12 @@ func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
 	inventurTitel(t, pool, "LMF Deu 5", "Inventurfach Deutsch", 5, 6, "IS-F4")
 
 	antwort := inventurGestartet(t, inventurStarten(t, srv, admin, `{"type":"filter","subject":"Inventurfach Mathe","grade":5}`))
-	if antwort.Scope != "filter" || antwort.Label != "Inventurfach Mathe · Kl. 5" || antwort.Erwartet != 2 {
+	if antwort.Bereich != "filter" || antwort.Bezeichnung != "Inventurfach Mathe · Kl. 5" || antwort.Erwartet != 2 {
 		t.Errorf("Antwort %+v, erwartet filter, „Inventurfach Mathe · Kl. 5“ und 2 Exemplare", antwort)
 	}
 
 	antwort = inventurGestartet(t, inventurStarten(t, srv, admin, `{"type":"filter","subject":"Inventurfach Deutsch"}`))
-	if antwort.Label != "Inventurfach Deutsch" || antwort.Erwartet != 1 {
+	if antwort.Bezeichnung != "Inventurfach Deutsch" || antwort.Erwartet != 1 {
 		t.Errorf("Antwort %+v, erwartet „Inventurfach Deutsch“ und 1 Exemplar", antwort)
 	}
 	if n := offeneInventuren(t, pool); n != 2 {
@@ -166,9 +166,9 @@ func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
 
 // Ein belegter Bereich ist eine Lage und keine Störung: 409, mit dem Satz, der sagt,
 // welche Inventur im Weg steht. Eine zweite Inventur entsteht dabei nicht.
-func TestInventurStart_BelegterBereichIst409(t *testing.T) {
+func TestInventurStarten_BelegterBereichIst409(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-B1")

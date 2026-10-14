@@ -19,12 +19,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestInventurScan_FremderScopeNichtErfasst sichert #3 (Cross-Contamination) ab: Ein Buch
+// TestScanVerbuchen_FremderScopeNichtErfasst sichert #3 (Cross-Contamination) ab: Ein Buch
 // außerhalb des Session-Scopes (Mathe-Buch, während eine Deutsch-Inventur läuft) wird mit
 // 409 abgewiesen und NICHT in der Deutsch-Session verbucht. Vorher speicherte der Handler
 // den Scan trotz Scope-Warnung ab — beim Abschluss der Mathe-Inventur fehlte das Exemplar
 // dann in deren Erfassungen und wurde als VERLUST gebucht, obwohl es physisch vorlag.
-func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
+func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
@@ -59,9 +59,9 @@ func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
 
 	// Die 409-Antwort muss strukturiert sein: echter Titel + Status "ausser_scope" + Warntext,
 	// damit das Frontend kein "Unbekanntes Buch" anzeigt, sondern eine klare Warnung.
-	var payload InventurScanResponse
+	var payload scanAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
-		t.Fatalf("409-Body nicht als InventurScanResponse lesbar: %v (%s)", err, rec.Body.String())
+		t.Fatalf("409-Body nicht als scanAntwort lesbar: %v (%s)", err, rec.Body.String())
 	}
 	if payload.Status != "ausser_scope" {
 		t.Errorf("Status: erwartet \"ausser_scope\", war %q", payload.Status)
@@ -80,22 +80,22 @@ func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
 	}
 }
 
-func inventurScan(t *testing.T, srv *Tueren, sessionID, barcode string) *httptest.ResponseRecorder {
+func inventurScan(t *testing.T, srv *Tueren, laufID, barcode string) *httptest.ResponseRecorder {
 	t.Helper()
-	body := fmt.Sprintf(`{"session_id":%q,"barcode_id":%q}`, sessionID, barcode)
+	body := fmt.Sprintf(`{"session_id":%q,"barcode_id":%q}`, laufID, barcode)
 	req := httptest.NewRequest(http.MethodPost, "/api/inventur/scan", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.InventurScanHandler().ServeHTTP(rec, req)
+	srv.ScanVerbuchen().ServeHTTP(rec, req)
 	return rec
 }
 
-func erfasstFuer(t *testing.T, pool *pgxpool.Pool, sessionID, exemplarID string) int {
+func erfasstFuer(t *testing.T, pool *pgxpool.Pool, laufID, exemplarID string) int {
 	t.Helper()
 	var n int
 	if err := pool.QueryRow(context.Background(),
 		`SELECT count(*) FROM inventur_erfassungen WHERE session_id = $1 AND exemplar_id = $2`,
-		sessionID, exemplarID).Scan(&n); err != nil {
+		laufID, exemplarID).Scan(&n); err != nil {
 		t.Fatalf("Erfassung zählen: %v", err)
 	}
 	return n
@@ -103,7 +103,7 @@ func erfasstFuer(t *testing.T, pool *pgxpool.Pool, sessionID, exemplarID string)
 
 // Ein unbekannter Barcode bekommt am Scanner einen Satz, den das Personal lesen kann. Der
 // Fehlertext der Datenbank gehört ins Log, nicht auf den Bildschirm.
-func TestInventurScan_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T) {
+func TestScanVerbuchen_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
@@ -131,10 +131,10 @@ func TestInventurScan_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T)
 	}
 }
 
-// TestInventurScan_Fehlerfaelle sichert diverse Edge Cases und Fehlerabbrüche ab,
+// TestScanVerbuchen_Fehlerfaelle sichert diverse Edge Cases und Fehlerabbrüche ab,
 // wie eine fehlende/unbekannte Session, unbekannte oder ausgesonderte Exemplare
 // sowie Warnungen bei ausgeliehenen Büchern.
-func TestInventurScan_Fehlerfaelle(t *testing.T) {
+func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
@@ -176,7 +176,7 @@ func TestInventurScan_Fehlerfaelle(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		sessionID  string
+		laufID     string
 		barcode    string
 		wantCode   int
 		wantStatus string
@@ -190,12 +190,12 @@ func TestInventurScan_Fehlerfaelle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rec := inventurScan(t, srv, tt.sessionID, tt.barcode)
+			rec := inventurScan(t, srv, tt.laufID, tt.barcode)
 			if rec.Code != tt.wantCode {
 				t.Errorf("erwartet %d, war %d: %s", tt.wantCode, rec.Code, rec.Body.String())
 			}
 			if tt.wantStatus != "" {
-				var payload InventurScanResponse
+				var payload scanAntwort
 				if err := json.Unmarshal(rec.Body.Bytes(), &payload); err == nil {
 					if payload.Status != tt.wantStatus {
 						t.Errorf("Status: erwartet %q, war %q", tt.wantStatus, payload.Status)

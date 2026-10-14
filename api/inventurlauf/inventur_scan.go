@@ -17,8 +17,8 @@ const meldungUnbekannterBarcode = "Zu diesem Barcode gibt es kein Exemplar."
 
 // ladeExemplarFuerScan lädt die für die Inventur-Logik nötigen Exemplardetails.
 // ok=false: die Fehlerantwort (404 bei unbekanntem Barcode, sonst 500) wurde bereits geschrieben.
-func ladeExemplarFuerScan(ctx context.Context, invRepo *repository.InventurAbfragen, w http.ResponseWriter, barcodeID string) (*repository.InventurExemplar, bool) {
-	res, err := invRepo.LadeExemplar(ctx, barcodeID)
+func ladeExemplarFuerScan(ctx context.Context, abfragen *repository.InventurAbfragen, w http.ResponseWriter, barcodeID string) (*repository.InventurExemplar, bool) {
+	exemplar, err := abfragen.LadeExemplar(ctx, barcodeID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			// Der Satz steht am Scanner unter „Unbekanntes Buch“; der Fehler der Datenbank geht ins Log.
@@ -28,28 +28,28 @@ func ladeExemplarFuerScan(ctx context.Context, invRepo *repository.InventurAbfra
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
-	return res, true
+	return exemplar, true
 }
 
-// inventurWarnungen sammelt nicht-blockierende Hinweise zu einem gescannten Exemplar.
+// scanWarnungen sammelt nicht-blockierende Hinweise zu einem gescannten Exemplar.
 // Der Scope ist KEINE Warnung mehr, sondern eine harte Abweisung (siehe Handler): ein
 // Buch außerhalb des Scopes darf gar nicht erst in dieser Session verbucht werden.
-func inventurWarnungen(isLent bool) []string {
+func scanWarnungen(istVerliehen bool) []string {
 	var warnungen []string
-	if isLent {
+	if istVerliehen {
 		warnungen = append(warnungen, "Buch ist laut System aktuell ausgeliehen.")
 	}
 	return warnungen
 }
 
-// InventurScanRequest is the payload for checking in an item during inventory.
-type InventurScanRequest struct {
-	SessionID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
+// scanAnfrage is the payload for checking in an item during inventory.
+type scanAnfrage struct {
+	LaufID    string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
 	BarcodeID string `json:"barcode_id"`
 }
 
-// InventurScanResponse provides feedback to the frontend after a scan attempt.
-type InventurScanResponse struct {
+// scanAntwort provides feedback to the frontend after a scan attempt.
+type scanAntwort struct {
 	BarcodeID string   `json:"barcode_id"`
 	Titel     string   `json:"titel"`
 	CoverURL  string   `json:"cover_url,omitempty"`
@@ -57,41 +57,41 @@ type InventurScanResponse struct {
 	Warnungen []string `json:"warnungen,omitempty"`
 }
 
-// InventurScanHandler verbucht einen Exemplar-Scan in einer laufenden Session.
+// ScanVerbuchen verbucht einen Exemplar-Scan in einer laufenden Session.
 // @Summary      Scan a copy during inventory
 // @Description  Records that a physical copy was present, bound to the given session.
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        body  body      InventurScanRequest   true  "Session and barcode"
-// @Success      200   {object}  InventurScanResponse
+// @Param        body  body      scanAnfrage   true  "Session and barcode"
+// @Success      200   {object}  scanAntwort
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
 // @Failure      409   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/scan [post]
-func (s *Tueren) InventurScanHandler() http.HandlerFunc {
-	return s.handleInventurScan
+func (t *Tueren) ScanVerbuchen() http.HandlerFunc {
+	return t.verbucheScan
 }
 
-// handleInventurScan verbucht einen einzelnen Inventur-Scan. Bewusst als Top-Level-Methode
+// verbucheScan verbucht einen einzelnen Inventur-Scan. Bewusst als Top-Level-Methode
 // statt Inline-Closure, damit die vielen Frühabbrüche nicht zusätzlich als Verschachtelung
 // zählen (SonarQube S3776).
-func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
-	var req InventurScanRequest
+func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
+	var req scanAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
-	if req.SessionID == "" {
+	if req.LaufID == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
 		return
 	}
 
 	ctx := r.Context()
-	invRepo := repository.NewInventurAbfragen(s.DB.Pool)
+	abfragen := repository.NewInventurAbfragen(t.DB.Pool)
 
 	// Session muss offen sein — sonst ist der Scan gegenstandslos (404).
-	session, err := invRepo.LadeLauf(ctx, req.SessionID)
+	lauf, err := abfragen.LadeLauf(ctx, req.LaufID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
@@ -101,16 +101,16 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, ok := ladeExemplarFuerScan(ctx, invRepo, w, req.BarcodeID)
+	exemplar, ok := ladeExemplarFuerScan(ctx, abfragen, w, req.BarcodeID)
 	if !ok {
 		return
 	}
-	if res.IstAusgesondert {
+	if exemplar.IstAusgesondert {
 		apierrors.SendHTTPError(w, http.StatusConflict, fmt.Errorf("exemplar %s ist bereits ausgesondert", req.BarcodeID))
 		return
 	}
 
-	imScope, err := invRepo.IstExemplarImBereich(ctx, res.ExemplarID, session.Bereich())
+	imBereich, err := abfragen.IstExemplarImBereich(ctx, exemplar.ExemplarID, lauf.Bereich())
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -127,18 +127,18 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	// den Warntext zeigen — nicht "Unbekanntes Buch" — und den Scan als Warnung rendern,
 	// ohne ihn mitzuzählen. Der Status "ausser_scope" macht den Fall clientseitig
 	// unterscheidbar.
-	if !imScope {
-		tuer.AntworteJSON(w, http.StatusConflict, InventurScanResponse{
+	if !imBereich {
+		tuer.AntworteJSON(w, http.StatusConflict, scanAntwort{
 			BarcodeID: req.BarcodeID,
-			Titel:     res.Titel,
-			CoverURL:  res.CoverURL,
+			Titel:     exemplar.Titel,
+			CoverURL:  exemplar.CoverURL,
 			Status:    "ausser_scope",
 			Warnungen: []string{"Buch gehört nicht zum Bereich dieser Inventur — es wurde NICHT erfasst. Bitte im zuständigen Inventur-Bereich scannen."},
 		})
 		return
 	}
 
-	if err := invRepo.VerbucheScan(ctx, req.SessionID, res.ExemplarID); err != nil {
+	if err := abfragen.VerbucheScan(ctx, req.LaufID, exemplar.ExemplarID); err != nil {
 		// Die Session wurde inzwischen abgeschlossen (Multi-Scanner-Wettlauf) — der Scan
 		// ist gegenstandslos, aber kein Serverfehler. 409 mit klarer Meldung.
 		if errors.Is(err, repository.ErrInventurAbgeschlossen) {
@@ -150,11 +150,11 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tuer.AntworteJSON(w, http.StatusOK, InventurScanResponse{
+	tuer.AntworteJSON(w, http.StatusOK, scanAntwort{
 		BarcodeID: req.BarcodeID,
-		Titel:     res.Titel,
-		CoverURL:  res.CoverURL,
+		Titel:     exemplar.Titel,
+		CoverURL:  exemplar.CoverURL,
 		Status:    "erfasst",
-		Warnungen: inventurWarnungen(res.IstVerliehen),
+		Warnungen: scanWarnungen(exemplar.IstVerliehen),
 	})
 }

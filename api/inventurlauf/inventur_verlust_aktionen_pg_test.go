@@ -28,7 +28,7 @@ import (
 
 // inventurReset leert Bestand und Inventuren. Eine offene Inventur aus einem früheren Test
 // sperrt sonst die neue: Je Bereich darf nur ein Durchgang offen sein.
-func inventurReset(t *testing.T, pool *pgxpool.Pool) {
+func leereInventur(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Inventuren leeren: %v", err)
@@ -47,12 +47,12 @@ func verlustLage(t *testing.T, pool *pgxpool.Pool, barcodes ...string) map[strin
 	for _, b := range barcodes {
 		lage[b] = testdaten.LegeExemplarAn(t, pool, titelID, b, true, "")
 	}
-	var sessionID string
+	var laufID string
 	if err := pool.QueryRow(ctx,
-		`INSERT INTO inventur_sessions (scope_type) VALUES ('global') RETURNING id`).Scan(&sessionID); err != nil {
+		`INSERT INTO inventur_sessions (scope_type) VALUES ('global') RETURNING id`).Scan(&laufID); err != nil {
 		t.Fatalf("Inventur anlegen: %v", err)
 	}
-	gebucht, err := repository.NewInventurAbfragen(pool).SchliesseLaufAb(ctx, sessionID, repository.InventurBereich{}, testdaten.LegeBearbeiterAn(t, pool))
+	gebucht, err := repository.NewInventurAbfragen(pool).SchliesseLaufAb(ctx, laufID, repository.InventurBereich{}, testdaten.LegeBearbeiterAn(t, pool))
 	if err != nil {
 		t.Fatalf("Inventur abschließen: %v", err)
 	}
@@ -107,7 +107,7 @@ func verlusteLoeschen(t *testing.T, srv *Tueren, benutzerID, rumpf string) *http
 	req := httptest.NewRequest(http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.InventurVerlusteLoeschenHandler()(rec, tuertest.AlsBenutzer(req, benutzerID))
+	srv.VerlusteEndgueltigLoeschen()(rec, tuertest.AlsBenutzer(req, benutzerID))
 	return rec
 }
 
@@ -117,15 +117,15 @@ func verlustGefunden(t *testing.T, srv *Tueren, benutzerID, exemplarID string) *
 	req := httptest.NewRequest(http.MethodPost, "/api/buecher/exemplare/"+exemplarID+"/gefunden", nil)
 	req.SetPathValue("id", exemplarID)
 	rec := httptest.NewRecorder()
-	srv.InventurVerlustGefundenHandler()(rec, tuertest.AlsBenutzer(req, benutzerID))
+	srv.FundMelden()(rec, tuertest.AlsBenutzer(req, benutzerID))
 	return rec
 }
 
 // Gelöscht wird, was als Verlust gebucht ist, und die Antwort nennt genau diese
 // Exemplare. Die Oberfläche nimmt nur die genannten Zeilen aus ihrer Liste.
-func TestVerlusteLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) {
+func TestVerlusteEndgueltigLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
@@ -169,9 +169,9 @@ func TestVerlusteLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) {
 
 // Ist keines der Exemplare als Verlust gebucht, bleibt alles stehen. Die Liste der
 // gelöschten ist dann leer und nicht null, weil die Oberfläche ihre Zeilen darüber filtert.
-func TestVerlusteLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
+func TestVerlusteEndgueltigLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal", 0), "VLH-REGAL-2", true, "")
@@ -193,9 +193,9 @@ func TestVerlusteLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
 // Hängt an einem Exemplar eine offene Forderung, wird der ganze Stapel abgewiesen. Die
 // Antwort ist eine 409 mit dem Barcode: Bei einer 500 ersetzt der Server den Text durch
 // eine neutrale Meldung, und niemand sieht, welches Exemplar im Weg steht.
-func TestVerlusteLoeschen_OffeneForderungIst409MitBarcode(t *testing.T) {
+func TestVerlusteEndgueltigLoeschen_OffeneForderungIst409MitBarcode(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
@@ -223,9 +223,9 @@ func TestVerlusteLoeschen_OffeneForderungIst409MitBarcode(t *testing.T) {
 }
 
 // Eine Anfrage ohne Exemplare, ohne lesbaren Rumpf oder ohne Anmeldung löscht nichts.
-func TestVerlusteLoeschen_Abweisungen(t *testing.T) {
+func TestVerlusteEndgueltigLoeschen_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	lage := verlustLage(t, pool, "VLH-BLEIBT")
@@ -255,9 +255,9 @@ func TestVerlusteLoeschen_Abweisungen(t *testing.T) {
 // Der Fund bringt das Exemplar zurück in den Umlauf, steht im Bericht und beendet die
 // Forderung, die das Buch abgerechnet hat. Die Antwort nennt Zahl und Betrag; daraus baut
 // die Oberfläche ihre Meldung.
-func TestVerlustGefunden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
+func TestFundMelden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
@@ -269,7 +269,7 @@ func TestVerlustGefunden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
-	var antwort VerlustGefundenResponse
+	var antwort fundAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Antwort nicht lesbar: %v (%s)", err, rec.Body.String())
 	}
@@ -303,9 +303,9 @@ func TestVerlustGefunden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
 
 // Liegt der Bescheid zur Forderung schon bei der Schulaufsicht, storniert die Schule
 // nichts. Die Antwort trägt dann den Hinweis mit der Nummer des Bescheids.
-func TestVerlustGefunden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
+func TestFundMelden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	testdaten.LeereBescheide(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
@@ -326,7 +326,7 @@ func TestVerlustGefunden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
-	var antwort VerlustGefundenResponse
+	var antwort fundAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Antwort nicht lesbar: %v (%s)", err, rec.Body.String())
 	}
@@ -349,9 +349,9 @@ func TestVerlustGefunden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
 // Gibt es unter der Kennung keinen offenen Verlust, antwortet die Route mit 404 und
 // bucht nichts: bei einer unbekannten Kennung, bei einem Exemplar im Regal und beim
 // zweiten Klick auf denselben Fund.
-func TestVerlustGefunden_OhneOffenenVerlustIst404(t *testing.T) {
+func TestFundMelden_OhneOffenenVerlustIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
@@ -381,9 +381,9 @@ func TestVerlustGefunden_OhneOffenenVerlustIst404(t *testing.T) {
 }
 
 // Ohne Anmeldung und ohne Kennung bleibt der Verlust gebucht.
-func TestVerlustGefunden_Abweisungen(t *testing.T) {
+func TestFundMelden_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	inventurReset(t, pool)
+	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	exemplarID := verlustLage(t, pool, "VGH-3")["VGH-3"]

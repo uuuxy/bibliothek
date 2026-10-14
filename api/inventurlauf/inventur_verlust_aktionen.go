@@ -15,10 +15,10 @@ import (
 	"bibliothek/repository"
 )
 
-// InventurVerlustGefundenHandler markiert ein Exemplar der aktuellen Session als beim
+// FundMelden markiert ein Exemplar der aktuellen Session als beim
 // Nachsuchen wiedergefunden und bringt es zurück in Umlauf.
 // @Router /buecher/exemplare/{id}/gefunden [post]
-func (s *Tueren) InventurVerlustGefundenHandler() http.HandlerFunc {
+func (t *Tueren) FundMelden() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -30,14 +30,14 @@ func (s *Tueren) InventurVerlustGefundenHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		tx, err := s.DB.Pool.Begin(ctx)
+		tx, err := t.DB.Pool.Begin(ctx)
 		if err != nil {
 			return apierrors.Internal("Transaktion konnte nicht gestartet werden", err)
 		}
 		defer db.SafeRollback(ctx, tx)
 
-		invRepo := repository.NewInventurAbfragen(tx)
-		gefunden, befund, err := invRepo.MarkiereVerlustAlsGefunden(ctx, id, claims.UserID)
+		abfragen := repository.NewInventurAbfragen(tx)
+		gefunden, befund, err := abfragen.MarkiereVerlustAlsGefunden(ctx, id, claims.UserID)
 		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
 			// Zwischen Lesen und Zurückholen verschwunden — kein Serverfehler, nichts gebucht.
 			return apierrors.NotFound("kein offener Verlust mit dieser ID", err)
@@ -54,7 +54,7 @@ func (s *Tueren) InventurVerlustGefundenHandler() http.HandlerFunc {
 		// Die Folge für die Forderung steht in der Antwort: Der Bericht sagt, dass die
 		// Forderung storniert ist — oder dass die Aufsicht zu informieren ist, weil der
 		// Bescheid dort schon liegt (dann bleibt sie offen).
-		tuer.AntworteJSON(w, http.StatusOK, VerlustGefundenResponse{
+		tuer.AntworteJSON(w, http.StatusOK, fundAntwort{
 			Status:                "ok",
 			StornierteForderungen: befund.StornierteForderungen,
 			StornierterBetrag:     befund.StornierterBetrag,
@@ -64,9 +64,9 @@ func (s *Tueren) InventurVerlustGefundenHandler() http.HandlerFunc {
 	})
 }
 
-// VerlustGefundenResponse ist die Antwort der Fund-Meldung: was mit der Forderung
+// fundAntwort ist die Antwort der Fund-Meldung: was mit der Forderung
 // geschah, die das Buch abgerechnet hatte.
-type VerlustGefundenResponse struct {
+type fundAntwort struct {
 	Status                string  `json:"status"`
 	StornierteForderungen int     `json:"stornierte_forderungen"`
 	StornierterBetrag     float64 `json:"stornierter_betrag"`
@@ -74,22 +74,22 @@ type VerlustGefundenResponse struct {
 	Hinweis string `json:"hinweis,omitempty"`
 }
 
-// verlustLoeschenRequest benennt die endgültig zu löschenden Exemplare.
-type verlustLoeschenRequest struct {
+// verlusteLoeschenAnfrage benennt die endgültig zu löschenden Exemplare.
+type verlusteLoeschenAnfrage struct {
 	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,required,uuid_oder_leer"`
 }
 
-// InventurVerlusteLoeschenHandler löscht als Verlust gebuchte Exemplare endgültig.
+// VerlusteEndgueltigLoeschen löscht als Verlust gebuchte Exemplare endgültig.
 // Bewusst NICHT der allgemeine Lösch-Weg (der soft löscht, siehe DeleteCopyHandler) —
 // diese Route rührt ausschliesslich Exemplare an, die schon als VERLUST gelten.
 // @Router /buecher/exemplare/verlust-endgueltig-loeschen [post]
-func (s *Tueren) InventurVerlusteLoeschenHandler() http.HandlerFunc {
-	return apierrors.Wrap(s.handleInventurVerlusteLoeschen)
+func (t *Tueren) VerlusteEndgueltigLoeschen() http.HandlerFunc {
+	return apierrors.Wrap(t.loescheVerlusteEndgueltig)
 }
 
-// handleInventurVerlusteLoeschen löscht die genannten Verlust-Exemplare in einer Transaktion.
-func (s *Tueren) handleInventurVerlusteLoeschen(w http.ResponseWriter, r *http.Request) error {
-	var req verlustLoeschenRequest
+// loescheVerlusteEndgueltig löscht die genannten Verlust-Exemplare in einer Transaktion.
+func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Request) error {
+	var req verlusteLoeschenAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return nil
 	}
@@ -102,14 +102,14 @@ func (s *Tueren) handleInventurVerlusteLoeschen(w http.ResponseWriter, r *http.R
 	}
 
 	ctx := r.Context()
-	tx, err := s.DB.Pool.Begin(ctx)
+	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
 		return apierrors.Internal("Transaktion konnte nicht gestartet werden", err)
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	invRepo := repository.NewInventurAbfragen(tx)
-	geloeschteIDs, err := invRepo.LoescheVerlusteEndgueltig(ctx, req.ExemplarIDs, claims.UserID)
+	abfragen := repository.NewInventurAbfragen(tx)
+	geloeschteIDs, err := abfragen.LoescheVerlusteEndgueltig(ctx, req.ExemplarIDs, claims.UserID)
 	if err != nil {
 		// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Als
 		// Internal ersetzte der Sanitizer den Text durch „interner Datenbankfehler"

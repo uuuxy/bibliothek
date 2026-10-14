@@ -2025,7 +2025,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/inventurlauf.AbgeschlosseneInventurDTO"
+                                "$ref": "#/definitions/inventurlauf.abgeschlossenerLauf"
                             }
                         }
                     },
@@ -2060,7 +2060,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/inventurlauf.InventurAbortRequest"
+                            "$ref": "#/definitions/inventurlauf.verwerfenAnfrage"
                         }
                     }
                 ],
@@ -2146,7 +2146,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/inventurlauf.InventurFinishRequest"
+                            "$ref": "#/definitions/inventurlauf.abschlussAnfrage"
                         }
                     }
                 ],
@@ -2154,7 +2154,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventurlauf.InventurFinishResponse"
+                            "$ref": "#/definitions/inventurlauf.abschlussAntwort"
                         }
                     },
                     "400": {
@@ -2207,7 +2207,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/inventurlauf.InventurScanRequest"
+                            "$ref": "#/definitions/inventurlauf.scanAnfrage"
                         }
                     }
                 ],
@@ -2215,7 +2215,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventurlauf.InventurScanResponse"
+                            "$ref": "#/definitions/inventurlauf.scanAntwort"
                         }
                     },
                     "400": {
@@ -2272,7 +2272,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/inventurlauf.InventurSessionDTO"
+                                "$ref": "#/definitions/inventurlauf.offenerLauf"
                             }
                         }
                     },
@@ -2308,7 +2308,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/inventurlauf.InventurStartRequest"
+                            "$ref": "#/definitions/inventurlauf.startAnfrage"
                         }
                     }
                 ],
@@ -2316,7 +2316,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventurlauf.InventurStartResponse"
+                            "$ref": "#/definitions/inventurlauf.startAntwort"
                         }
                     },
                     "400": {
@@ -4221,7 +4221,7 @@ const docTemplate = `{
                 }
             }
         },
-        "inventurlauf.AbgeschlosseneInventurDTO": {
+        "inventurlauf.abgeschlossenerLauf": {
             "type": "object",
             "properties": {
                 "abgeschlossen_am": {
@@ -4244,7 +4244,7 @@ const docTemplate = `{
                 }
             }
         },
-        "inventurlauf.InventurAbortRequest": {
+        "inventurlauf.abschlussAnfrage": {
             "type": "object",
             "properties": {
                 "session_id": {
@@ -4252,15 +4252,7 @@ const docTemplate = `{
                 }
             }
         },
-        "inventurlauf.InventurFinishRequest": {
-            "type": "object",
-            "properties": {
-                "session_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "inventurlauf.InventurFinishResponse": {
+        "inventurlauf.abschlussAntwort": {
             "type": "object",
             "properties": {
                 "fehlbestand": {
@@ -4275,41 +4267,7 @@ const docTemplate = `{
                 }
             }
         },
-        "inventurlauf.InventurScanRequest": {
-            "type": "object",
-            "properties": {
-                "barcode_id": {
-                    "type": "string"
-                },
-                "session_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "inventurlauf.InventurScanResponse": {
-            "type": "object",
-            "properties": {
-                "barcode_id": {
-                    "type": "string"
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "string"
-                },
-                "warnungen": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "inventurlauf.InventurSessionDTO": {
+        "inventurlauf.offenerLauf": {
             "type": "object",
             "properties": {
                 "erfasst": {
@@ -4332,7 +4290,41 @@ const docTemplate = `{
                 }
             }
         },
-        "inventurlauf.InventurStartRequest": {
+        "inventurlauf.scanAnfrage": {
+            "type": "object",
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventurlauf.scanAntwort": {
+            "type": "object",
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "warnungen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "inventurlauf.startAnfrage": {
             "type": "object",
             "properties": {
                 "grade": {
@@ -4353,7 +4345,7 @@ const docTemplate = `{
                 }
             }
         },
-        "inventurlauf.InventurStartResponse": {
+        "inventurlauf.startAntwort": {
             "type": "object",
             "properties": {
                 "erwartet": {
@@ -4365,6 +4357,14 @@ const docTemplate = `{
                 "scope": {
                     "type": "string"
                 },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventurlauf.verwerfenAnfrage": {
+            "type": "object",
+            "properties": {
                 "session_id": {
                     "type": "string"
                 }

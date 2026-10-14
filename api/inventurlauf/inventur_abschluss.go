@@ -13,13 +13,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// InventurFinishRequest benennt die abzuschließende Session.
-type InventurFinishRequest struct {
-	SessionID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
+// abschlussAnfrage benennt die abzuschließende Session.
+type abschlussAnfrage struct {
+	LaufID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
 }
 
-// InventurFinishResponse contains the outcome statistics of the completed inventory.
-type InventurFinishResponse struct {
+// abschlussAntwort contains the outcome statistics of the completed inventory.
+type abschlussAntwort struct {
 	VerlorenGemeldet int `json:"verloren_gemeldet"`
 
 	// Fehlbestand nennt die betroffenen Exemplare, nicht nur ihre Anzahl. Vorher stand
@@ -27,7 +27,7 @@ type InventurFinishResponse struct {
 	Fehlbestand []repository.InventurVerlust `json:"fehlbestand"`
 }
 
-// InventurFinishHandler schließt eine Inventur-Session ab: Alle im Scope erwarteten,
+// InventurAbschliessen schließt eine Inventur-Session ab: Alle im Scope erwarteten,
 // aber in DIESER Session nicht erfassten (und nicht verliehenen) Exemplare werden als
 // Verlust markiert. Der Fortschritt paralleler Sessions bleibt unberührt.
 //
@@ -36,22 +36,22 @@ type InventurFinishResponse struct {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        body  body      InventurFinishRequest   true  "Session to finalize"
-// @Success      200   {object}  InventurFinishResponse
+// @Param        body  body      abschlussAnfrage   true  "Session to finalize"
+// @Success      200   {object}  abschlussAntwort
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/finish [post]
-func (s *Tueren) InventurFinishHandler() http.HandlerFunc {
-	return s.handleInventurFinish
+func (t *Tueren) InventurAbschliessen() http.HandlerFunc {
+	return t.schliesseInventurAb
 }
 
-func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
-	var req InventurFinishRequest
+func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
+	var req abschlussAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
-	if req.SessionID == "" {
+	if req.LaufID == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
 		return
 	}
@@ -65,20 +65,20 @@ func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	tx, err := s.DB.Pool.Begin(ctx)
+	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	invRepo := repository.NewInventurAbfragen(tx)
+	abfragen := repository.NewInventurAbfragen(tx)
 
 	// Session in derselben Transaktion EXKLUSIV sperren (FOR UPDATE): verhindert den
 	// doppelten Abschluss UND koordiniert gegen gleichzeitige Scans (die die Zeile
 	// FOR SHARE halten) — der Verlust-Snapshot wird erst gezogen, wenn kein Scan mehr
 	// offen ist. Liefert zugleich den gespeicherten Scope für das Verlust-Update.
-	session, err := invRepo.SperreLaufFuerAbschluss(ctx, req.SessionID)
+	lauf, err := abfragen.SperreLaufFuerAbschluss(ctx, req.LaufID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
@@ -88,7 +88,7 @@ func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := invRepo.SchliesseLaufAb(ctx, session.ID, session.Bereich(), claims.UserID)
+	verloren, err := abfragen.SchliesseLaufAb(ctx, lauf.ID, lauf.Bereich(), claims.UserID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -97,7 +97,7 @@ func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 	// In DERSELBEN Transaktion gelesen, vor dem Commit: Danach ist der Fehlbestand
 	// zwar dauerhaft gespeichert, aber ein Fehler beim Lesen dürfte den Abschluss
 	// nicht mehr zurückrollen — die Aussonderung wäre dann schon geschrieben.
-	fehlbestand, err := invRepo.LadeVerluste(ctx, session.ID)
+	fehlbestand, err := abfragen.LadeVerluste(ctx, lauf.ID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -108,13 +108,13 @@ func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tuer.AntworteJSON(w, http.StatusOK, InventurFinishResponse{
-		VerlorenGemeldet: count,
+	tuer.AntworteJSON(w, http.StatusOK, abschlussAntwort{
+		VerlorenGemeldet: verloren,
 		Fehlbestand:      fehlbestand,
 	})
 }
 
-// InventurFehlbestandHandler liefert den Fehlbestand einer bereits abgeschlossenen
+// Fehlbestand liefert den Fehlbestand einer bereits abgeschlossenen
 // Inventur.
 //
 // Der Abschluss nennt die Liste zwar sofort, aber genau in dem Moment steht man mit dem
@@ -128,18 +128,18 @@ func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 // @Param        session_id  query  string  true  "Session"
 // @Success      200  {array}  repository.InventurVerlust
 // @Router       /inventur/fehlbestand [get]
-func (s *Tueren) InventurFehlbestandHandler() http.HandlerFunc {
+func (t *Tueren) Fehlbestand() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		sessionID, err := tuer.LeseUUIDParameter(r, "session_id")
+		laufID, err := tuer.LeseUUIDParameter(r, "session_id")
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), nil)
 		}
-		if sessionID == "" {
+		if laufID == "" {
 			return apierrors.BadRequest("session_id fehlt", nil)
 		}
 
-		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
-		liste, err := invRepo.LadeVerluste(r.Context(), sessionID)
+		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
+		liste, err := abfragen.LadeVerluste(r.Context(), laufID)
 		if err != nil {
 			return apierrors.Internal("Fehlbestand konnte nicht geladen werden", err)
 		}

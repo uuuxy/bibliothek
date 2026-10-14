@@ -64,10 +64,10 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 			t.Fatalf("Scan %s: erwartet 200, war %d: %s", scan.barcode, rec.Code, rec.Body.String())
 		}
 	}
-	if rec := inventurPost(t, srv.InventurFinishHandler(), "/api/inventur/finish", geprueft.ID, testdaten.LegeBearbeiterAn(t, pool)); rec.Code != http.StatusOK {
+	if rec := inventurPost(t, srv.InventurAbschliessen(), "/api/inventur/finish", geprueft.ID, testdaten.LegeBearbeiterAn(t, pool)); rec.Code != http.StatusOK {
 		t.Fatalf("Abschluss: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
-	if rec := inventurPost(t, srv.InventurAbortHandler(), "/api/inventur/abort", verworfen.ID, ""); rec.Code != http.StatusOK {
+	if rec := inventurPost(t, srv.InventurVerwerfen(), "/api/inventur/abort", verworfen.ID, ""); rec.Code != http.StatusOK {
 		t.Fatalf("Verwerfen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
 
@@ -116,7 +116,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 
 	// Ein zweites Verwerfen der abgeschlossenen Inventur bleibt 200 (der Bereich ist frei),
 	// macht aus dem Abschluss aber kein Verwerfen.
-	if rec := inventurPost(t, srv.InventurAbortHandler(), "/api/inventur/abort", geprueft.ID, ""); rec.Code != http.StatusOK {
+	if rec := inventurPost(t, srv.InventurVerwerfen(), "/api/inventur/abort", geprueft.ID, ""); rec.Code != http.StatusOK {
 		t.Fatalf("Verwerfen einer abgeschlossenen Inventur: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
 	for _, zeile := range abgeschlosseneInventuren(t, srv) {
@@ -150,9 +150,9 @@ func TestInventurVerworfen_DatenbankHaeltDieRegel(t *testing.T) {
 	}
 }
 
-func inventurPost(t *testing.T, h http.Handler, pfad, sessionID, benutzerID string) *httptest.ResponseRecorder {
+func inventurPost(t *testing.T, h http.Handler, pfad, laufID, benutzerID string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, pfad, strings.NewReader(fmt.Sprintf(`{"session_id":%q}`, sessionID)))
+	req := httptest.NewRequest(http.MethodPost, pfad, strings.NewReader(fmt.Sprintf(`{"session_id":%q}`, laufID)))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, tuertest.AlsBenutzer(req, benutzerID))
@@ -162,7 +162,7 @@ func inventurPost(t *testing.T, h http.Handler, pfad, sessionID, benutzerID stri
 func abgeschlosseneInventuren(t *testing.T, srv *Tueren) []map[string]any {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	srv.ListAbgeschlosseneInventurenHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/inventur/abgeschlossen", nil))
+	srv.AbgeschlosseneInventuren().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/inventur/abgeschlossen", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Liste früherer Inventuren: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}

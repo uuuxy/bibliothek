@@ -9,29 +9,29 @@ import (
 	"bibliothek/repository"
 )
 
-// InventurSessionDTO ist die Frontend-Sicht auf eine laufende Session.
-type InventurSessionDTO struct {
-	SessionID   string `json:"session_id"`
-	Scope       string `json:"scope"`
-	Label       string `json:"label"`
+// offenerLauf ist die Frontend-Sicht auf eine laufende Session.
+type offenerLauf struct {
+	LaufID      string `json:"session_id"`
+	Bereich     string `json:"scope"`
+	Bezeichnung string `json:"label"`
 	GestartetAm string `json:"gestartet_am"`
 	Erfasst     int    `json:"erfasst"`
 	Erwartet    int    `json:"erwartet"`
 }
 
-// AbgeschlosseneInventurDTO ist die Frontend-Sicht auf eine fertige Inventur. Sie
+// abgeschlossenerLauf ist die Frontend-Sicht auf eine fertige Inventur. Sie
 // trägt nur, was für die Auswahl nötig ist: wann, welcher Bereich, wie viele Verluste,
 // und ob sie verworfen wurde — dann ist der Bereich nicht geprüft, auch ohne Verlust.
-type AbgeschlosseneInventurDTO struct {
-	SessionID       string `json:"session_id"`
-	Label           string `json:"label"`
+type abgeschlossenerLauf struct {
+	LaufID          string `json:"session_id"`
+	Bezeichnung     string `json:"label"`
 	AbgeschlossenAm string `json:"abgeschlossen_am"`
 	Erfasst         int    `json:"erfasst"`
 	Verluste        int    `json:"verluste"`
 	Verworfen       bool   `json:"verworfen"`
 }
 
-// ListAbgeschlosseneInventurenHandler liefert die zuletzt abgeschlossenen Inventuren.
+// AbgeschlosseneInventuren liefert die zuletzt abgeschlossenen Inventuren.
 //
 // Sie sind der fehlende Schlüssel zu GET /api/inventur/fehlbestand: Der Endpunkt
 // verlangt eine session_id, und die war aus der Oberfläche nicht zu bekommen, weil die
@@ -43,110 +43,110 @@ type AbgeschlosseneInventurDTO struct {
 // @Summary      List completed inventory sessions
 // @Tags         inventory
 // @Produce      json
-// @Success      200   {array}   AbgeschlosseneInventurDTO
+// @Success      200   {array}   abgeschlossenerLauf
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/abgeschlossen [get]
-func (s *Tueren) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
+func (t *Tueren) AbgeschlosseneInventuren() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
+		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
 
-		sessions, err := invRepo.LadeAbgeschlosseneLaeufe(r.Context(), 10)
+		laeufe, err := abfragen.LadeAbgeschlosseneLaeufe(r.Context(), 10)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		out := make([]AbgeschlosseneInventurDTO, 0, len(sessions))
-		for i := range sessions {
+		liste := make([]abgeschlossenerLauf, 0, len(laeufe))
+		for i := range laeufe {
 			abgeschlossen := ""
-			if sessions[i].AbgeschlossenAm != nil {
-				abgeschlossen = *sessions[i].AbgeschlossenAm
+			if laeufe[i].AbgeschlossenAm != nil {
+				abgeschlossen = *laeufe[i].AbgeschlossenAm
 			}
-			out = append(out, AbgeschlosseneInventurDTO{
-				SessionID:       sessions[i].ID,
-				Label:           sessions[i].Bezeichnung,
+			liste = append(liste, abgeschlossenerLauf{
+				LaufID:          laeufe[i].ID,
+				Bezeichnung:     laeufe[i].Bezeichnung,
 				AbgeschlossenAm: abgeschlossen,
-				Erfasst:         sessions[i].Erfasst,
-				Verluste:        sessions[i].Verluste,
-				Verworfen:       sessions[i].Verworfen,
+				Erfasst:         laeufe[i].Erfasst,
+				Verluste:        laeufe[i].Verluste,
+				Verworfen:       laeufe[i].Verworfen,
 			})
 		}
-		tuer.AntworteJSON(w, http.StatusOK, out)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 	}
 }
 
-// ListInventurSessionsHandler liefert alle laufenden Inventur-Sessions. Das Frontend
+// LaufendeInventuren liefert alle laufenden Inventur-Sessions. Das Frontend
 // zeigt sie an, damit eine Lehrkraft eine bereits laufende Inventur fortsetzt, statt
 // (vergeblich) eine zweite im selben Scope zu starten.
 //
 // @Summary      List running inventory sessions
 // @Tags         inventory
 // @Produce      json
-// @Success      200   {array}   InventurSessionDTO
+// @Success      200   {array}   offenerLauf
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/sessions [get]
-func (s *Tueren) ListInventurSessionsHandler() http.HandlerFunc {
+func (t *Tueren) LaufendeInventuren() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
+		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
 
-		sessions, err := invRepo.LadeOffeneLaeufe(ctx)
+		laeufe, err := abfragen.LadeOffeneLaeufe(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		out := make([]InventurSessionDTO, 0, len(sessions))
-		for i := range sessions {
-			erwartet, err := invRepo.ZaehleBereich(ctx, sessions[i].Bereich())
+		liste := make([]offenerLauf, 0, len(laeufe))
+		for i := range laeufe {
+			erwartet, err := abfragen.ZaehleBereich(ctx, laeufe[i].Bereich())
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
-			out = append(out, InventurSessionDTO{
-				SessionID:   sessions[i].ID,
-				Scope:       sessions[i].BereichArt,
-				Label:       sessions[i].Bezeichnung,
-				GestartetAm: sessions[i].GestartetAm,
-				Erfasst:     sessions[i].Erfasst,
+			liste = append(liste, offenerLauf{
+				LaufID:      laeufe[i].ID,
+				Bereich:     laeufe[i].BereichArt,
+				Bezeichnung: laeufe[i].Bezeichnung,
+				GestartetAm: laeufe[i].GestartetAm,
+				Erfasst:     laeufe[i].Erfasst,
 				Erwartet:    erwartet,
 			})
 		}
-		tuer.AntworteJSON(w, http.StatusOK, out)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 	}
 }
 
-// InventurAbortRequest benennt die abzubrechende Session.
-type InventurAbortRequest struct {
-	SessionID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
+// verwerfenAnfrage benennt die abzubrechende Session.
+type verwerfenAnfrage struct {
+	LaufID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
 }
 
-// InventurAbortHandler verwirft eine Session ohne Verlustbuchung — für abgebrochene
+// InventurVerwerfen verwirft eine Session ohne Verlustbuchung — für abgebrochene
 // oder hängengebliebene Inventuren. Danach ist der Scope wieder für einen Neustart frei.
 //
 // @Summary      Abort an inventory session
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        body  body      InventurAbortRequest   true  "Session to abort"
+// @Param        body  body      verwerfenAnfrage   true  "Session to abort"
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/abort [post]
-func (s *Tueren) InventurAbortHandler() http.HandlerFunc {
+func (t *Tueren) InventurVerwerfen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req InventurAbortRequest
+		var req verwerfenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
-		if req.SessionID == "" {
+		if req.LaufID == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
 			return
 		}
 
 		ctx := r.Context()
-		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
-		if err := invRepo.VerwerfeLauf(ctx, req.SessionID); err != nil {
+		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
+		if err := abfragen.VerwerfeLauf(ctx, req.LaufID); err != nil {
 			if errors.Is(err, repository.ErrInventurlaufNichtGefunden) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
 				return

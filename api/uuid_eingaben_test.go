@@ -49,19 +49,19 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 		methode, pfad string
 		rumpf         string
 	}{
-		{"Fehlbestand ?session_id", s.inventurlauf().InventurFehlbestandHandler(), http.MethodGet, "/api/inventur/fehlbestand?session_id=session_id", ""},
-		{"Inventur abschließen", s.inventurlauf().InventurFinishHandler(), http.MethodPost, "/api/inventur/finish", `{"session_id":"x"}`},
-		{"Inventur abbrechen", s.inventurlauf().InventurAbortHandler(), http.MethodPost, "/api/inventur/abort", `{"session_id":"x"}`},
-		{"Verluste endgültig löschen", s.inventurlauf().InventurVerlusteLoeschenHandler(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":["x"]}`},
+		{"Fehlbestand ?session_id", s.inventurlauf().Fehlbestand(), http.MethodGet, "/api/inventur/fehlbestand?session_id=session_id", ""},
+		{"Inventur abschließen", s.inventurlauf().InventurAbschliessen(), http.MethodPost, "/api/inventur/finish", `{"session_id":"x"}`},
+		{"Inventur abbrechen", s.inventurlauf().InventurVerwerfen(), http.MethodPost, "/api/inventur/abort", `{"session_id":"x"}`},
+		{"Verluste endgültig löschen", s.inventurlauf().VerlusteEndgueltigLoeschen(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":["x"]}`},
 		// Eine leere Kennung IN einer Liste: uuid_oder_leer lässt "" durch, `required` hinter
 		// `dive` nicht. Bis zum 08.10.2026 erreichten diese vier Türen damit die Datenbank
 		// (am Wareneingang nachgestellt: 500 statt 400).
-		{"Verluste endgültig löschen, leeres Element", s.inventurlauf().InventurVerlusteLoeschenHandler(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":[""]}`},
+		{"Verluste endgültig löschen, leeres Element", s.inventurlauf().VerlusteEndgueltigLoeschen(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":[""]}`},
 		{"Wareneingang einbuchen, leeres Element", s.bestellung().BulkReceiveOrderHandler(), http.MethodPost, "/api/bestellungen/bulk-receive", `{"exemplar_ids":[""]}`},
 		{"Mahnbriefe drucken, leeres Element", s.mahnwesen().BulkPrintMahnungenHandler(), http.MethodPost, "/api/mahnwesen/bulk-print", `{"ausleih_ids":[""]}`},
 		{"Schüler-Etiketten, leeres Element", s.druck().SchuelerEtiketten(nil), http.MethodPost, "/api/print/schueler-etiketten", `{"formatId":"x","schuelerIds":[""]}`},
-		{"Fehlbestand ?session_id in urn-Form", s.inventurlauf().InventurFehlbestandHandler(), http.MethodGet, "/api/inventur/fehlbestand?session_id=" + urnForm, ""},
-		{"Inventur abschließen, urn-Form", s.inventurlauf().InventurFinishHandler(), http.MethodPost, "/api/inventur/finish", `{"session_id":"` + urnForm + `"}`},
+		{"Fehlbestand ?session_id in urn-Form", s.inventurlauf().Fehlbestand(), http.MethodGet, "/api/inventur/fehlbestand?session_id=" + urnForm, ""},
+		{"Inventur abschließen, urn-Form", s.inventurlauf().InventurAbschliessen(), http.MethodPost, "/api/inventur/finish", `{"session_id":"` + urnForm + `"}`},
 		{"Schüler zusammenführen, urn-Form", s.leser().ZusammenfuehrenSchuelerHandler(nil), http.MethodPost, "/api/schueler/11111111-1111-1111-1111-111111111111/zusammenfuehren", `{"quelle_id":"` + urnForm + `"}`},
 	}
 	for _, f := range faelle {

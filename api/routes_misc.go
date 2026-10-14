@@ -44,19 +44,19 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	mux.Handle("GET /api/search", s.RequirePermission("perform_actions")(searchHandler))
 
 	// Inventory
-	mux.Handle("GET /api/inventur/sessions", s.RequirePermission("inventory_scan")(s.inventurlauf().ListInventurSessionsHandler()))
-	mux.Handle("POST /api/inventur/start", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurStartHandler()))
-	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.inventurlauf().InventurScanHandler()))
-	mux.Handle("POST /api/inventur/finish", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurFinishHandler()))
+	mux.Handle("GET /api/inventur/sessions", s.RequirePermission("inventory_scan")(s.inventurlauf().LaufendeInventuren()))
+	mux.Handle("POST /api/inventur/start", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurStarten()))
+	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.inventurlauf().ScanVerbuchen()))
+	mux.Handle("POST /api/inventur/finish", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurAbschliessen()))
 	// Der Fehlbestand einer bereits abgeschlossenen Inventur — zum Nachsuchen und Ausdrucken.
 	// Beide gehören zusammen: /abgeschlossen liefert die session_id, /fehlbestand die
 	// Liste dazu. Ohne die erste war die zweite aus der Oberfläche nicht erreichbar.
-	mux.Handle("GET /api/inventur/abgeschlossen", s.RequirePermission("manage_inventory")(s.inventurlauf().ListAbgeschlosseneInventurenHandler()))
-	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurFehlbestandHandler()))
-	mux.Handle("POST /api/inventur/abort", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurAbortHandler()))
+	mux.Handle("GET /api/inventur/abgeschlossen", s.RequirePermission("manage_inventory")(s.inventurlauf().AbgeschlosseneInventuren()))
+	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("manage_inventory")(s.inventurlauf().Fehlbestand()))
+	mux.Handle("POST /api/inventur/abort", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurVerwerfen()))
 	// Handlungsspielraum für den Fehlbestandsbericht: wiedergefunden oder endgültig weg.
-	mux.Handle("POST /api/buecher/exemplare/{id}/gefunden", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurVerlustGefundenHandler()))
-	mux.Handle("POST /api/buecher/exemplare/verlust-endgueltig-loeschen", s.RequirePermission("manage_inventory")(s.inventurlauf().InventurVerlusteLoeschenHandler()))
+	mux.Handle("POST /api/buecher/exemplare/{id}/gefunden", s.RequirePermission("manage_inventory")(s.inventurlauf().FundMelden()))
+	mux.Handle("POST /api/buecher/exemplare/verlust-endgueltig-loeschen", s.RequirePermission("manage_inventory")(s.inventurlauf().VerlusteEndgueltigLoeschen()))
 
 	// Smart Scanner (Tresen-Weiche) — Teil der Kiosk-Kernfunktion, siehe /api/action.
 

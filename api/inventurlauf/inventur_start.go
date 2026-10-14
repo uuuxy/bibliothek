@@ -12,51 +12,51 @@ import (
 	"bibliothek/repository"
 )
 
-// InventurStartRequest holds the parameters needed to define the scope
+// startAnfrage holds the parameters needed to define the scope
 // of a new physical stock-take (inventory).
-type InventurStartRequest struct {
-	Type string `json:"type"` // "global" | "signature" | "filter"
+type startAnfrage struct {
+	Art string `json:"type"` // "global" | "signature" | "filter"
 	// Signatur ist bei "signature" ein Präfix von buecher_titel.signatur, also eine
 	// Regaladresse: "BIB Deu" erfasst auch "BIB Deu 5 KRÜ" (Migration 060). Früher
 	// stand hier eine signature_id auf eine Tabelle, die niemand pflegte.
 	Signatur *string `json:"signatur,omitempty"`
-	Subject  *string `json:"subject,omitempty"` // bei "filter": Fach (buecher_titel.subject)
-	Grade    *int    `json:"grade,omitempty"`   // bei "filter": Klasse (Jahrgangsbereich enthält)
+	Fach     *string `json:"subject,omitempty"` // bei "filter": Fach (buecher_titel.subject)
+	Jahrgang *int    `json:"grade,omitempty"`   // bei "filter": Klasse (Jahrgangsbereich enthält)
 }
 
 // signaturNormalisiert liefert die getrimmte Signatur — eine Quelle für Label und Scope,
 // damit das Label nie einen anderen Bereich benennt, als die Session tatsächlich erfasst.
-func (req InventurStartRequest) signaturNormalisiert() string {
-	if req.Signatur == nil {
+func (a startAnfrage) signaturNormalisiert() string {
+	if a.Signatur == nil {
 		return ""
 	}
-	return strings.TrimSpace(*req.Signatur)
+	return strings.TrimSpace(*a.Signatur)
 }
 
-// scope leitet den auswertbaren Scope aus dem Request ab.
-func (req InventurStartRequest) scope() repository.InventurBereich {
-	switch req.Type {
+// bereich leitet den auswertbaren Scope aus dem Request ab.
+func (a startAnfrage) bereich() repository.InventurBereich {
+	switch a.Art {
 	case "signature":
-		sig := req.signaturNormalisiert()
-		return repository.InventurBereich{Signatur: &sig}
+		signatur := a.signaturNormalisiert()
+		return repository.InventurBereich{Signatur: &signatur}
 	case "filter":
-		return repository.InventurBereich{Fach: req.Subject, Jahrgang: req.Grade}
+		return repository.InventurBereich{Fach: a.Fach, Jahrgang: a.Jahrgang}
 	default:
 		return repository.InventurBereich{}
 	}
 }
 
-// InventurStartResponse returns the new session and the number of copies expected.
-type InventurStartResponse struct {
-	SessionID string `json:"session_id"`
-	Scope     string `json:"scope"`
-	Label     string `json:"label"`
-	Erwartet  int    `json:"erwartet"`
+// startAntwort returns the new session and the number of copies expected.
+type startAntwort struct {
+	LaufID      string `json:"session_id"`
+	Bereich     string `json:"scope"`
+	Bezeichnung string `json:"label"`
+	Erwartet    int    `json:"erwartet"`
 }
 
-// validateInventurStart prüft Typ und die je Typ erforderlichen Scope-Felder.
-func validateInventurStart(w http.ResponseWriter, req InventurStartRequest) bool {
-	switch req.Type {
+// pruefeStartAnfrage prüft Typ und die je Typ erforderlichen Scope-Felder.
+func pruefeStartAnfrage(w http.ResponseWriter, req startAnfrage) bool {
+	switch req.Art {
 	case "global":
 		return true
 	case "signature":
@@ -68,7 +68,7 @@ func validateInventurStart(w http.ResponseWriter, req InventurStartRequest) bool
 		}
 		return true
 	case "filter":
-		if req.Subject == nil && req.Grade == nil {
+		if req.Fach == nil && req.Jahrgang == nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("filter scope requires at least 'subject' or 'grade'"))
 			return false
 		}
@@ -79,27 +79,27 @@ func validateInventurStart(w http.ResponseWriter, req InventurStartRequest) bool
 	}
 }
 
-// scopeLabelFuer bestimmt die Anzeigebezeichnung des Inventur-Scopes. Seit Migration 060
+// bezeichnungFuer bestimmt die Anzeigebezeichnung des Inventur-Scopes. Seit Migration 060
 // braucht der Signatur-Fall keinen DB-Zugriff mehr: Die Signatur IST ihre Bezeichnung.
-func scopeLabelFuer(req InventurStartRequest) string {
-	switch req.Type {
+func bezeichnungFuer(req startAnfrage) string {
+	switch req.Art {
 	case "signature":
 		return "Signatur " + req.signaturNormalisiert()
 	case "filter":
-		return filterLabel(req)
+		return filterBezeichnung(req)
 	default:
 		return "Gesamtbestand"
 	}
 }
 
-// filterLabel baut ein lesbares Scope-Label, z. B. "Mathematik · Kl. 5", "Deutsch" oder "Kl. 7".
-func filterLabel(req InventurStartRequest) string {
+// filterBezeichnung baut ein lesbares Scope-Label, z. B. "Mathematik · Kl. 5", "Deutsch" oder "Kl. 7".
+func filterBezeichnung(req startAnfrage) string {
 	var teile []string
-	if req.Subject != nil && *req.Subject != "" {
-		teile = append(teile, *req.Subject)
+	if req.Fach != nil && *req.Fach != "" {
+		teile = append(teile, *req.Fach)
 	}
-	if req.Grade != nil {
-		teile = append(teile, fmt.Sprintf("Kl. %d", *req.Grade))
+	if req.Jahrgang != nil {
+		teile = append(teile, fmt.Sprintf("Kl. %d", *req.Jahrgang))
 	}
 	if len(teile) == 0 {
 		return "Teilbestand"
@@ -107,7 +107,7 @@ func filterLabel(req InventurStartRequest) string {
 	return strings.Join(teile, " · ")
 }
 
-// InventurStartHandler eröffnet eine neue Inventur-Session für den gewählten Scope.
+// InventurStarten eröffnet eine neue Inventur-Session für den gewählten Scope.
 //
 // Anders als früher wird KEIN globaler Zustand mehr zurückgesetzt: Jede Session hat
 // ihren eigenen, session-gebundenen Fortschritt. Läuft für denselben Scope bereits
@@ -119,19 +119,19 @@ func filterLabel(req InventurStartRequest) string {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        body  body      InventurStartRequest   true  "Scope configuration"
-// @Success      200   {object}  InventurStartResponse
+// @Param        body  body      startAnfrage   true  "Scope configuration"
+// @Success      200   {object}  startAntwort
 // @Failure      400   {object}  map[string]string
 // @Failure      409   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/start [post]
-func (s *Tueren) InventurStartHandler() http.HandlerFunc {
+func (t *Tueren) InventurStarten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req InventurStartRequest
+		var req startAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
-		if !validateInventurStart(w, req) {
+		if !pruefeStartAnfrage(w, req) {
 			return
 		}
 
@@ -141,9 +141,9 @@ func (s *Tueren) InventurStartHandler() http.HandlerFunc {
 			benutzerID = claims.UserID
 		}
 
-		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
+		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
 
-		session, err := invRepo.LegeLaufAn(ctx, req.Type, req.scope(), scopeLabelFuer(req), benutzerID)
+		lauf, err := abfragen.LegeLaufAn(ctx, req.Art, req.bereich(), bezeichnungFuer(req), benutzerID)
 		if err != nil {
 			// Identischer Scope läuft schon ODER der gewünschte überschneidet sich mit
 			// einer offenen Inventur — beides ist ein bewusster 409, kein Serverfehler.
@@ -155,17 +155,17 @@ func (s *Tueren) InventurStartHandler() http.HandlerFunc {
 			return
 		}
 
-		erwartet, err := invRepo.LadeLaufMitErwartung(ctx, session.ID)
+		erwartet, err := abfragen.LadeLaufMitErwartung(ctx, lauf.ID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, InventurStartResponse{
-			SessionID: session.ID,
-			Scope:     session.BereichArt,
-			Label:     session.Bezeichnung,
-			Erwartet:  erwartet.Erwartet,
+		tuer.AntworteJSON(w, http.StatusOK, startAntwort{
+			LaufID:      lauf.ID,
+			Bereich:     lauf.BereichArt,
+			Bezeichnung: lauf.Bezeichnung,
+			Erwartet:    erwartet.Erwartet,
 		})
 	}
 }
