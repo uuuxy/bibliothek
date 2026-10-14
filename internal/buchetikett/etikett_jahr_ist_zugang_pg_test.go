@@ -10,10 +10,9 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// „Ansch.J.“ auf dem Etikett ist das Jahr, in dem das Buch in den Bestand kam. Seit
-// Migration 129 steht dieser Tag in zugang_am; erworben_am ist im Bestellweg der Bestelltag.
-// Ein im Dezember bestelltes, im Januar geliefertes Buch trug auf dem Etikett das alte Jahr
-// und stand im Zugangsbuch im neuen (Rasterdurchgang 22.09.2026, Frage 13).
+// „Ansch.J.“ auf dem Etikett ist das Jahr, in dem das Buch in den Bestand kam (zugang_am);
+// erworben_am ist im Bestellweg der Bestelltag. Ein im Dezember bestelltes, im Januar
+// geliefertes Buch trägt auf dem Etikett das Jahr, unter dem es im Zugangsbuch steht.
 func TestEtikett_AnschaffungsjahrIstDasZugangsjahr(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

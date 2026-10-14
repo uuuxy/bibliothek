@@ -26,34 +26,32 @@ type Etikett struct {
 	Titel     string
 	Autor     string
 	ISBN      string
-	// AnschaffungsJahr ist das Jahr aus buecher_exemplare.erworben_am und steht als
-	// "Ansch.J. 2016" auf dem Etikett. Leer = Zeile entfällt (etwa bei Vorab-Etiketten
-	// für eine Bestellung, deren Exemplare es noch gar nicht gibt).
+	// AnschaffungsJahr ist das Jahr des Zugangs (zugang_am, sonst erworben_am) und steht als
+	// „Ansch.J. 2016" auf dem Etikett. Leer entfällt die Zeile, etwa auf Vorab-Etiketten für
+	// eine Bestellung, deren Exemplare es noch nicht gibt.
 	AnschaffungsJahr string
-	// Signatur ist buecher_titel.signatur (z. B. "LMF-Deutsch 5"). Leer = Zeile entfällt,
-	// genau wie bei AnschaffungsJahr.
+	// Signatur ist buecher_titel.signatur (etwa „LMF-Deutsch 5"). Leer entfällt die Zeile.
 	Signatur string
 	// Topf ist der Topf des Exemplars (repository.ExemplarTopfSQL) und entscheidet, welcher
-	// Eigentumsvermerk auf dem Etikett steht (Kopf.vermerkFuer). Er kommt immer vom
-	// Server: json:"-", damit ihn kein Druckauftrag aus dem Browser mitbringen kann. Leer =
+	// Eigentumsvermerk auf dem Etikett steht (Kopf.vermerkFuer). Er kommt nur vom Server,
+	// deshalb json:"-": Kein Druckauftrag aus dem Browser kann ihn mitbringen. Leer heißt
 	// Exemplar unbekannt (Vorab-Druck), dann gilt der allgemeine Vermerk.
 	Topf string `json:"-"`
 }
 
-// Kopf trägt die schulweiten Angaben, die auf jedem Etikett stehen. Sie kommen aus den
-// Systemeinstellungen und nicht aus dem einzelnen Exemplar: Das Etikett nennt die Schule, der
-// das Buch gehört, und zeigt im Verlustfall den Weg zurück.
+// Kopf trägt die Angaben der Schule, die auf jedem Etikett stehen. Sie kommen aus den
+// Einstellungen und nicht vom einzelnen Exemplar: Das Etikett nennt die Schule, der das Buch
+// gehört, und zeigt im Verlustfall den Weg zurück.
 type Kopf struct {
-	Schulname        string // z. B. "Philipp-Reis-Schule, Friedrichsdorf"
-	Eigentumsvermerk string // z. B. "Eigentum des Landes Hessen"
+	Schulname        string // etwa „Philipp-Reis-Schule, Friedrichsdorf"
+	Eigentumsvermerk string // etwa „Eigentum des Landes Hessen"
 	// EigentumsvermerkSchuelerbuecherei gilt für Exemplare aus Mitteln des Schulträgers.
-	// Leer heißt kein Vermerk; eine Werksvorgabe gibt es hier nicht.
+	// Leer heißt kein Vermerk; eine Vorgabe gibt es dafür nicht.
 	EigentumsvermerkSchuelerbuecherei string
 }
 
-// vermerkFuer wählt den Eigentumsvermerk nach dem Topf des Exemplars: Das Eigentum folgt dem
-// Geld. Eine Stelle für beide Erzeuger (kleines Etikett ab 30 mm, großes Lernmittel-Etikett);
-// PDFEtiketten ruft sie je Exemplar und reicht den gewählten Vermerk weiter.
+// vermerkFuer wählt den Eigentumsvermerk nach dem Topf des Exemplars, weil das Eigentum dem
+// Geld folgt. Eine Stelle für beide Erzeuger (kleines Etikett, großes Lernmittel-Etikett).
 func (k Kopf) vermerkFuer(topf string) string {
 	if topf == mitteltopf.Schultraeger {
 		return k.EigentumsvermerkSchuelerbuecherei
@@ -61,12 +59,9 @@ func (k Kopf) vermerkFuer(topf string) string {
 	return k.Eigentumsvermerk
 }
 
-// LadeKopf lädt Schulname und Eigentumsvermerk aus den Systemeinstellungen.
-//
-// Fehlt der Schulname, bleibt die Zeile LEER statt auf einen erfundenen Wert
-// zurückzufallen: Ein Etikett, das die falsche Schule nennt, führt ein gefundenes Buch
-// in die Irre. Der Eigentumsvermerk hat dagegen eine sinnvolle Vorgabe, weil er für
-// alle Bücher desselben Trägers gleich lautet.
+// LadeKopf lädt Schulname und Eigentumsvermerk aus den Einstellungen. Sind sie nicht lesbar,
+// bleibt der Schulname leer statt erfunden, weil ein Etikett mit der falschen Schule ein
+// gefundenes Buch in die Irre führt; der Eigentumsvermerk nimmt die Vorgabe.
 func LadeKopf(ctx context.Context, pool db.PgxPoolIface) Kopf {
 	einstellungen, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
@@ -76,11 +71,9 @@ func LadeKopf(ctx context.Context, pool db.PgxPoolIface) Kopf {
 	return KopfAus(einstellungen)
 }
 
-// KopfAus baut den Kopf aus den Einstellungen: eine Stelle für Selbstdruck,
-// Lieferanten-Link und Mailanhang, damit die Regel „leer = Werksvorgabe" nur einmal steht.
-//
-// Die Werksvorgabe gilt nur für den allgemeinen Vermerk. Der Vermerk der Schülerbücherei
-// bleibt leer, wenn nichts hinterlegt ist — leer heißt dort kein Vermerk.
+// KopfAus baut den Kopf aus den Einstellungen, eine Stelle für Selbstdruck, Lieferanten-Link
+// und Mailanhang. Ein leerer allgemeiner Vermerk nimmt die Vorgabe; der Vermerk der
+// Schülerbücherei bleibt leer, weil leer dort kein Vermerk heißt.
 func KopfAus(einstellungen *repository.SystemEinstellungen) Kopf {
 	kopf := Kopf{
 		Schulname:                         einstellungen.SchuleName,
@@ -93,10 +86,9 @@ func KopfAus(einstellungen *repository.SystemEinstellungen) Kopf {
 	return kopf
 }
 
-// PDFEtiketten füllt die Eingabe der Etiketten-Erzeuger aus den Etiketten eines Auftrags
-// und dem Kopf aus den Einstellungen. Der Eigentumsvermerk wird hier je Exemplar gewählt,
-// für alle Druckwege an dieser einen Stelle: Der Erzeuger kennt den Topf nicht und druckt
-// den Vermerk, den er bekommt.
+// PDFEtiketten füllt die Eingabe der Etiketten-Erzeuger aus den Etiketten eines Auftrags und
+// dem Kopf. Der Eigentumsvermerk wird hier je Exemplar gewählt, für alle Druckwege an einer
+// Stelle: Der Erzeuger kennt den Topf nicht und druckt den Vermerk, den er bekommt.
 func PDFEtiketten(auftrag []Etikett, kopf Kopf) []pdf.BuchEtikett {
 	etiketten := make([]pdf.BuchEtikett, 0, len(auftrag))
 	for _, e := range auftrag {

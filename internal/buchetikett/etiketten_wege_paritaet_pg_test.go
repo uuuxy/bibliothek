@@ -12,23 +12,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Dieselben Daten auf beiden Wegen zum Etikett.
+// Dieselben Daten auf beiden Wegen zum Etikett. LadeDesTitels (Druck-Center) und
+// LadeDerBestellung (Lieferanten-Link) sind zwei Abfragen für dieselbe Frage; wer eine
+// erweitert und die andere vergisst, bekommt zwei verschiedene Aufkleber für dasselbe Buch,
+// und jeder Weg für sich funktioniert.
 //
-// Diese Bugklasse hat das Projekt zweimal getroffen, und beide Male fiel sie erst im
-// Betrieb auf, weil jeder Weg für sich funktionierte:
-//
-//   - Die Signatur stand im Selbstdruck, fehlte aber im Lieferanten-Mailanhang
-//     (Commit „Signatur erreicht den Lieferanten-Mailanhang").
-//   - Das Anschaffungsjahr stand im Selbstdruck, fehlte aber auf der Lieferantenseite
-//     (05.08.2026, gefunden erst beim Vergleich mit dem Foto der physischen Vorlage).
-//
-// Es gibt zwei getrennte Abfragen für dieselbe Frage — LadeDesTitels (Druck-Center)
-// und LadeDerBestellung (Lieferanten-Link). Wer eine erweitert und die andere
-// vergisst, bekommt kein rotes Gate, sondern zwei verschiedene Aufkleber für dasselbe
-// Buch. Dieser Test vergleicht sie Feld für Feld.
-//
-// Verglichen wird, was auf dem Etikett LANDET: Barcode, Titel, Autor, Anschaffungsjahr,
-// Signatur. Die ISBN bleibt außen vor — sie wird von keinem der Generatoren gezeichnet.
+// Verglichen wird, was auf dem Etikett steht: Barcode, Titel, Autor, Anschaffungsjahr,
+// Signatur. Die ISBN zeichnet keiner der Erzeuger.
 func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

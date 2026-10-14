@@ -8,7 +8,7 @@ import (
 	"bibliothek/repository"
 )
 
-// LadeDesTitels lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
+// LadeDesTitels lädt die Etiketten aller Exemplare eines Titels, die nicht ausgesondert sind.
 func LadeDesTitels(ctx context.Context, datenbank repository.Datenbank, titelID string) ([]Etikett, error) {
 	zeilen, err := repository.LadeEtikettDatenDesTitels(ctx, datenbank, titelID)
 	if err != nil {
@@ -17,12 +17,10 @@ func LadeDesTitels(ctx context.Context, datenbank repository.Datenbank, titelID 
 	return etikettenAus(zeilen), nil
 }
 
-// LadeDerBestellung holt die Exemplare EINER Bestellung, beschränkt auf die
-// Positionen, die auch auf dem Barcodebogen der Bestellmail standen.
-//
-// Ohne die Einschränkung über mit_vorab_barcode bekäme der Lieferant Etiketten für
-// Exemplare, die bewusst ohne Vorab-Barcode bestellt wurden — die beklebt dann die
-// Bibliothek selbst, und beide würden dasselbe Buch bekleben.
+// LadeDerBestellung lädt die Etiketten der Exemplare einer Bestellung, beschränkt auf die
+// Positionen, die auch auf dem Barcodebogen der Bestellmail standen. Exemplare ohne
+// Vorab-Barcode beklebt die Bibliothek selbst; bekäme der Lieferant auch ihre Etiketten,
+// würden beide dasselbe Buch bekleben.
 func LadeDerBestellung(ctx context.Context, datenbank repository.Datenbank, bestellungID string) ([]Etikett, error) {
 	zeilen, err := repository.LadeEtikettDatenDerBestellung(ctx, datenbank, bestellungID)
 	if err != nil {
@@ -31,23 +29,14 @@ func LadeDerBestellung(ctx context.Context, datenbank repository.Datenbank, best
 	return etikettenAus(zeilen), nil
 }
 
-// ErgaenzeServerfelder füllt die Etikettenfelder nach, die NICHT aus der Anfrage
-// stammen: Anschaffungsjahr und Signatur.
+// ErgaenzeServerfelder füllt die Felder eines Druckauftrags nach, die nur der Server kennt:
+// Anschaffungsjahr, Signatur und Topf. Das Druck-Center schickt nur Barcode, Titel und Autor;
+// ein Feld, das die Oberfläche mitschicken muss, wird irgendwann vergessen.
 //
-// Der Nachdruck-Dialog schickt nur Barcode, Titel und Autor — beides stünde sonst nie
-// auf einem nachgedruckten Etikett. Es dem Client mitzugeben wäre der falsche Weg: Es
-// ist Serverwissen, und ein Feld, das die Oberfläche mitschicken MUSS, wird irgendwann
-// vergessen (dieselbe Klasse Fehler hat hier schon Buchdaten still verschluckt).
-//
-// Genau das ist der Signatur passiert: Diese Nachfüllung gab es zuerst nur fürs Jahr,
-// also trug dasselbe Buch je nach Druckweg einen anderen Aufkleber — über
-// GET /api/buecher/titel/{id}/etiketten mit Signatur, über POST /api/print/labels ohne.
 // Wer hier ein Feld ergänzt, ergänzt es auch in LadeDesTitels und LadeDerBestellung;
-// TestEtikettenWegeDruckenDasselbe hält die Wege am fertigen PDF zusammen.
-//
-// Eine Abfrage für alle Barcodes, kein N+1. Unbekannte Barcodes bleiben unangetastet —
-// beim Vorab-Druck für eine Bestellung existieren die Exemplare noch gar nicht, dort
-// ist das der richtige Zustand und kein Fehler.
+// TestEtikettenWegeDruckenDasselbe hält die Wege am fertigen PDF zusammen. Unbekannte
+// Barcodes bleiben unangetastet, weil es beim Vorab-Druck für eine Bestellung die Exemplare
+// noch nicht gibt.
 func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, etiketten []Etikett) {
 	barcodes := make([]string, 0, len(etiketten))
 	for i := range etiketten {
