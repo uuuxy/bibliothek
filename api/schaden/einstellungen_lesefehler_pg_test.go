@@ -73,7 +73,7 @@ func TestErsatzforderung_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)
 		req.SetPathValue("schueler_id", sid)
 		rec := httptest.NewRecorder()
-		PrintRechnungHandler(datenbank)(rec, req)
+		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}).PrintRechnungHandler()(rec, req)
 		return rec
 	}
 

@@ -130,7 +130,7 @@ func TestPrintRechnung_AlleForderungenAufBescheid(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)
 	req.SetPathValue("schueler_id", sid)
 	rec := httptest.NewRecorder()
-	PrintRechnungHandler(pool)(rec, req)
+	srv.PrintRechnungHandler()(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("Status %d, want 404 — die Forderung steht schon auf einem Bescheid, eine "+

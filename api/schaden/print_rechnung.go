@@ -33,9 +33,9 @@ func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID 
 }
 
 // PrintRechnungHandler generates the invoice for lost books of a student.
-func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
+func (s *Tueren) PrintRechnungHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handlePrintRechnung(w, r, dbPool)
+		handlePrintRechnung(w, r, s.DB.Pool)
 	}
 }
 
