@@ -13,9 +13,9 @@ import (
 	"bibliothek/repository"
 )
 
-// Einstellungen returns all system settings.
-// @Summary      Get system settings
-// @Description  Retrieves global configuration values like loan limits, grace periods, and feature flags.
+// Einstellungen liefert alle Einstellungen.
+// @Summary      Einstellungen
+// @Description  Alle Einstellungen, etwa die Grenzen der Ausleihe, Fristen und Schalter.
 // @Tags         system
 // @Accept       json
 // @Produce      json
@@ -34,9 +34,9 @@ func (t *Tueren) Einstellungen(einstellungsAbfragen repository.EinstellungsAbfra
 	})
 }
 
-// EinstellungenSchreiben persists system settings.
-// @Summary      Update system settings
-// @Description  Saves global configuration values. Nur mitgeschickte Felder werden geschrieben; fehlende bleiben unveraendert. Requires admin privileges.
+// EinstellungenSchreiben speichert die Einstellungen einer Kategorie.
+// @Summary      Einstellungen speichern
+// @Description  Speichert nur die mitgeschickten Felder; fehlende bleiben unverändert. Verlangt das Recht manage_settings.
 // @Tags         system
 // @Accept       json
 // @Produce      json
@@ -63,7 +63,7 @@ func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, e
 	// und die Oberfläche trotzdem "gespeichert" meldet.
 	var req repository.EinstellungenPatch
 	if !tuer.LeseAnfrageStreng(w, r, &req) {
-		return nil // Error is already sent by LeseAnfrageStreng
+		return nil // LeseAnfrageStreng hat schon geantwortet.
 	}
 
 	if req.IstLeer() {
@@ -88,7 +88,7 @@ func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, e
 
 	// Die Sitzungsfristen holt jeder Tab nur einmal beim Anmelden (App.svelte).
 	// Das Signal erreicht auch offene Tabs an anderen Arbeitsplätzen; die Werte
-	// holen sich die Clients per GET /api/einstellungen/sitzung — dort sitzt die
+	// holen sich die Oberflächen per GET /api/einstellungen/sitzung — dort sitzt die
 	// Vorgaben-Logik, hier wäre sie dupliziert.
 	if t.Broker != nil && (req.ThekeLeerenMinuten != nil || req.SperreMinuten != nil) {
 		t.Broker.Broadcast("sitzungsfristen", "{}")
@@ -141,15 +141,16 @@ func (t *Tueren) protokolliereEinstellungen(r *http.Request, req repository.Eins
 	t.SchreibeAdminProtokoll(r.Context(), claims.UserID, "UPDATE_SETTINGS", "", string(details))
 }
 
-// sitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients: Minuten bis die
-// Theken-Ansicht den geladenen Schüler fallen lässt, Minuten bis zum Sperrbildschirm.
+// sitzungsEinstellungen sind die zwei Fristen, nach denen die Oberfläche ohne Eingabe handelt:
+// Minuten bis die Theken-Ansicht den geladenen Schüler fallen lässt, Minuten bis zum
+// Sperrbildschirm.
 // 0 = aus.
 type sitzungsEinstellungen struct {
 	ThekeLeerenMinuten int `json:"theke_leeren_minuten"`
 	SperreMinuten      int `json:"sperre_minuten"`
 }
 
-// SitzungsEinstellungen liefert die Sitzungs-Fristen an jeden angemeldeten Client.
+// SitzungsEinstellungen liefert die Fristen der Sitzung an jede angemeldete Oberfläche.
 func (t *Tueren) SitzungsEinstellungen(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		einstellungen, err := einstellungsAbfragen.Lade(r.Context())

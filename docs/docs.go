@@ -301,7 +301,7 @@ const docTemplate = `{
         },
         "/audit": {
             "get": {
-                "description": "Retrieves the most recent 1000 records of the system's audit trail, newest first.",
+                "description": "Die jüngsten 1000 Einträge des Protokolls der Vorgänge, die neuesten zuerst.",
                 "consumes": [
                     "application/json"
                 ],
@@ -311,7 +311,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get audit logs",
+                "summary": "Protokoll",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1642,7 +1642,7 @@ const docTemplate = `{
         },
         "/einstellungen": {
             "post": {
-                "description": "Retrieves global configuration values like loan limits, grace periods, and feature flags.",
+                "description": "Alle Einstellungen, etwa die Grenzen der Ausleihe, Fristen und Schalter.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1652,7 +1652,7 @@ const docTemplate = `{
                 "tags": [
                     "system"
                 ],
-                "summary": "Get system settings",
+                "summary": "Einstellungen",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1674,7 +1674,7 @@ const docTemplate = `{
         },
         "/einstellungen/speichern": {
             "post": {
-                "description": "Saves global configuration values. Nur mitgeschickte Felder werden geschrieben; fehlende bleiben unveraendert. Requires admin privileges.",
+                "description": "Speichert nur die mitgeschickten Felder; fehlende bleiben unverändert. Verlangt das Recht manage_settings.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1684,7 +1684,7 @@ const docTemplate = `{
                 "tags": [
                     "system"
                 ],
-                "summary": "Update system settings",
+                "summary": "Einstellungen speichern",
                 "parameters": [
                     {
                         "description": "Nur die Felder der gespeicherten Kategorie",

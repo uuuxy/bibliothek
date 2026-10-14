@@ -9,7 +9,7 @@ import (
 )
 
 // Der Alarm-Formatter als reine Funktion: Kritisches kommt mit allen vier Angaben
-// in die Mail, Warnungen nur als Zahl, und ohne Kritisches gibt es KEINE Mail —
+// in die Mail, Warnungen nur als Zahl, und ohne Kritisches gibt es keine Mail —
 // ein Alarm, der bei Warnungen feuert, wird stummgeschaltet.
 func TestFormatiereAlarmMail(t *testing.T) {
 	t.Run("ohne Kritisches keine Mail", func(t *testing.T) {
@@ -46,9 +46,8 @@ func TestFormatiereAlarmMail(t *testing.T) {
 	})
 }
 
-// Die Empfängerwahl (Betreiber-Wunsch 17.08.2026): konfiguriert schlägt Verteiler,
-// Müll ohne @ fällt raus, und ganz ohne Konfiguration greift der Admin-Rückfall —
-// ein Alarm, der niemanden erreicht, ist keiner.
+// Die Wahl der Empfänger: konfiguriert schlägt Verteiler, Müll ohne @ fällt raus, und ganz
+// ohne Konfiguration greift der Admin-Rückfall; ein Alarm, der niemanden erreicht, ist keiner.
 func TestWaehleAlarmEmpfaenger(t *testing.T) {
 	admins := []repository.AdminKonto{
 		{Name: "Nina Berger", Email: "nberger@philipp-reis-schule.de"},

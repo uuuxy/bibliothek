@@ -1,23 +1,16 @@
 package system
 
-// audit_tresen_auskunft.go — der EINE zweckgebundene Leseweg in audit_log.details.
+// Der eine zweckgebundene Leseweg in audit_log.details. Das Protokoll speichert zu Lösch- und
+// Ausleihvorgängen Angaben (Barcodes, schueler_id), die die Anwendung sonst nirgends zeigt
+// (Datenminimierung, PII-Matrix: /api/audit ist Stufe 0). Liegt ein Buch auf dem Tresen, dessen
+// Exemplar längst gelöscht ist, steht nur dort, wem es gehörte.
 //
-// Betreiber-Entscheidung 01.09.2026 (Befund-Register): Das Prüfprotokoll speichert
-// zu Lösch- und Ausleihvorgängen Details (Barcode-Snapshots, schueler_id), aber die
-// Anwendung zeigt sie bewusst nirgends an (Datenminimierung, PII-Matrix: /api/audit
-// ist Stufe 0). Der eine Fall, der dadurch unlösbar wurde: Ein Buch liegt auf dem
-// Tresen, sein Exemplar ist längst gelöscht — wem gehörte es? Die Information
-// existiert im Protokoll, war aber unerreichbar.
-//
-// Der Zuschnitt ist eng und bleibt es: NUR Barcode-Suche, eigenes Recht
-// (audit_details, ab Werk nur ADMIN), Stufe 2 in der PII-Matrix, und jeder Abruf
-// wird selbst protokolliert (audit_logs, mit IP) — wer nachschlägt, hinterlässt
-// dieselbe Spur wie eine DSGVO-Auskunft. Nach DSGVO-Tilgung oder Lesehistorie-
-// Befristung (details ohne schueler_id) zeigt auch dieser Weg bewusst nichts mehr:
-// Er liest nur, was rechtlich noch da sein darf, und stellt nichts wieder her.
-//
-// Die Abfragen selbst stehen in repository/protokoll_tresen.go (Schichtungs-Regel:
-// ein Handler formuliert kein SQL).
+// Der Zuschnitt ist eng: nur die Suche nach einem Barcode, ein eigenes Recht (audit_details,
+// ab Werk nur ADMIN), Stufe 2 in der PII-Matrix, und jeder Abruf schreibt selbst einen Eintrag
+// ins Protokoll (audit_logs, mit IP); wer nachschlägt, hinterlässt dieselbe Spur wie bei einer
+// DSGVO-Auskunft. Nach Tilgung oder Befristung der Lesehistorie (details ohne schueler_id)
+// zeigt auch dieser Weg nichts mehr: Er liest nur, was rechtlich noch da sein darf. Die
+// Abfragen stehen in repository/protokoll_tresen.go.
 
 import (
 	"errors"
@@ -64,7 +57,7 @@ type tresenAuskunft struct {
 
 // tresenMaxEreignisse kappt die Vorgangsliste — ein Schulbuch sieht selten mehr als
 // ein Dutzend Entleiher, und unbegrenzte Listen-Endpunkte sind eine bekannte
-// Bugklasse dieses Projekts (siehe auditLogMaxZeilen).
+// Bugklasse dieses Projekts (siehe protokollMaxZeilen).
 const tresenMaxEreignisse = 100
 
 // deuteTresenEreignis deutet eine Protokollzeile: der Leser (Schüler oder Kollege) vor dem

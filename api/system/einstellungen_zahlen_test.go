@@ -11,17 +11,17 @@ import (
 
 // Eine Zahl außerhalb ihrer Spanne wird abgewiesen, nicht still ersetzt.
 //
-// Gemessen am 16.09.2026 über genau diese Tür (Rasterdurchgang, OFFEN.md 5.18):
+// Ohne die Prüfung an dieser Tür:
 //
-//   - `{"max_ausleihen_schueler": 0}` wurde als 5 GESPEICHERT. Die Antwort war 200, die
-//     Oberfläche zeigte danach 5, und im Prüfprotokoll stand die 0 aus dem Request —
-//     drei Stellen, drei verschiedene Wahrheiten über denselben Klick.
-//   - `{"max_overdue_items": 999999}` wurde unverändert übernommen. Damit ist die
+//   - `{"max_ausleihen_schueler": 0}` würde als 5 gespeichert. Die Antwort wäre 200, die
+//     Oberfläche zeigte danach 5, und im Protokoll stünde die 0 aus der Anfrage: drei Stellen,
+//     drei verschiedene Wahrheiten über denselben Klick.
+//   - `{"max_overdue_items": 999999}` würde unverändert übernommen. Damit wäre die
 //     Sperr-Automatik aus der Oberfläche abschaltbar, ohne dass irgendwo „aus" steht.
 //
 // Dieselbe Entscheidung wie beim LMF-Stichtag und den Sommerferien: Unlesbares wird
-// abgelehnt. Der Test steht an der Tür und nicht am Sammler, weil genau dort gemessen
-// wurde — und weil „gespeichert" die Antwort des Servers ist, nicht die einer Funktion.
+// abgelehnt. Der Test steht an der Tür und nicht am Sammler, weil „gespeichert" die Antwort
+// des Servers ist, nicht die einer Funktion.
 func TestEinstellungenSchreiben_ZahlAusserhalbDerSpanneWirdAbgelehnt(t *testing.T) {
 	faelle := []struct {
 		name    string

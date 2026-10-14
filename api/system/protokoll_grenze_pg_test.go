@@ -15,13 +15,12 @@ import (
 
 // TestProtokollIstBegrenzt belegt, dass /api/audit nicht die gesamte Tabelle ausliefert.
 //
-// Vorher stand in der Abfrage kein LIMIT. Mit 247.000 Zeilen ergab das eine Antwort von
-// 72 MB: Der Server lieferte sie in 0,6 s, aber der Browser kam mit dem Parsen und dem
-// Bauen ebenso vieler Tabellenzeilen nicht mehr zurecht — die Seite blieb leer, und der
-// E2E-Test für die System-Logs lief in den Timeout. Das Logbuch wächst im Betrieb
-// unbegrenzt weiter, der Fall tritt also zwangsläufig ein.
+// Ohne LIMIT ergäben 247.000 Zeilen eine Antwort von 72 MB: Der Server lieferte sie in
+// 0,6 s, aber der Browser käme mit dem Lesen und dem Bauen ebenso vieler Tabellenzeilen nicht
+// mehr zurecht, und die Seite bliebe leer. Das Logbuch wächst im Betrieb unbegrenzt, der Fall
+// tritt also zwangsläufig ein.
 //
-// Geprüft wird an einer echten Datenbank mit MEHR Zeilen, als die Grenze zulässt. Ein
+// Geprüft wird an einer echten Datenbank mit mehr Zeilen, als die Grenze zulässt. Ein
 // Test gegen eine kleine Tabelle wäre wertlos — er wäre auch ohne LIMIT grün.
 func TestProtokollIstBegrenzt(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -69,7 +68,7 @@ func TestProtokollIstBegrenzt(t *testing.T) {
 			len(eintraege), protokollMaxZeilen, ueberschuss)
 	}
 
-	// Und es sind die JÜNGSTEN. Eine Grenze, die die ältesten liefert, wäre schlimmer als
+	// Und es sind die jüngsten. Eine Grenze, die die ältesten liefert, wäre schlimmer als
 	// keine: Das Logbuch zeigte dauerhaft nur die Vergangenheit, und niemand bemerkte es.
 	if eintraege[0].Zeitstempel.Before(eintraege[1].Zeitstempel) {
 		t.Fatalf("Reihenfolge falsch: erster Eintrag (%s) ist älter als der zweite (%s)",

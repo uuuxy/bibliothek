@@ -17,7 +17,7 @@ import (
 )
 
 // mailEinstellungenAntwort ist die Mail-Konfiguration, wie die Oberfläche sie sehen darf.
-// Das Passwort verlässt den Server NIE — stattdessen sagt HasPassword nur, ob eines
+// Das Passwort verlässt den Server nie; stattdessen sagt HatPasswort nur, ob eines
 // hinterlegt ist.
 type mailEinstellungenAntwort struct {
 	SMTPHost      string `json:"smtp_host"`
@@ -27,14 +27,14 @@ type mailEinstellungenAntwort struct {
 	HatPasswort   bool   `json:"has_password"`
 }
 
-// mailEinstellungenAnfrage ist die eingehende Mail-Konfiguration. Ein leeres SMTPPassword
+// mailEinstellungenAnfrage ist die eingehende Mail-Konfiguration. Ein leeres SMTPPasswort
 // bedeutet „unverändert lassen": Sonst würde jedes Speichern der Einstellungsseite das
-// Passwort löschen, weil die Oberfläche es gar nicht kennt (siehe MailSettingsResponse).
+// Passwort löschen, weil die Oberfläche es gar nicht kennt (siehe mailEinstellungenAntwort).
 type mailEinstellungenAnfrage struct {
 	SMTPHost      string `json:"smtp_host"`
 	SMTPPort      string `json:"smtp_port"`
 	SMTPBenutzer  string `json:"smtp_user"`
-	SMTPPasswort  string `json:"smtp_password"` // Optional, if empty will retain old password
+	SMTPPasswort  string `json:"smtp_password"` // leer: das gespeicherte Passwort bleibt
 	AbsenderEmail string `json:"sender_email"`
 }
 
@@ -44,7 +44,7 @@ func (t *Tueren) MailEinstellungen(mailAbfragen *repository.MailEinstellungsAbfr
 		ctx := r.Context()
 		konfig, err := mailAbfragen.Lade(ctx)
 		if err != nil {
-			// Falls noch keine Konfiguration existiert, geben wir leere Werte zurück (bzw. Defaults)
+			// Gibt es noch keine Konfiguration, kommen die Vorgaben zurück.
 			konfig = &repository.MailEinstellungen{
 				SMTPHost:      "localhost",
 				SMTPPort:      "1025",
@@ -74,9 +74,9 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 		}
 
 		// Absender beim Speichern prüfen, nicht erst beim Versand: Eine Adresse mit
-		// Tippfehler ließ sich bisher speichern und fiel erst im Testversand auf — dort
-		// als 500, die der Admin als Datenbankfehler zu lesen bekam. Leer ist erlaubt,
-		// dafür setzt der Versand seinen Standardabsender ein.
+		// Tippfehler fiele sonst erst im Testversand auf, als 500, die der Admin als
+		// Datenbankfehler läse. Leer ist erlaubt; dann setzt der Versand seinen
+		// Vorgabe-Absender ein.
 		if absender := strings.TrimSpace(req.AbsenderEmail); absender != "" {
 			adresse, err := mail.ParseAddress(absender)
 			if err != nil {
@@ -93,7 +93,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 			return
 		}
 
-		// Admin audit log
+		// Protokoll der Verwaltung
 		if claims, ok := auth.GetClaims(r.Context()); ok {
 			details, merr := json.Marshal(map[string]interface{}{
 				"smtp_host":        req.SMTPHost,
@@ -130,7 +130,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 		}
 
 		// Die Adresse hier prüfen, nicht erst im Versand: Eine unbrauchbare Eingabe
-		// ist ein Client-Fehler (400) und keine Serverstörung (500) — nur so kann das
+		// ist ein Eingabefehler (400) und keine Störung des Servers (500) — nur so kann das
 		// Formular sie von einem echten SMTP-Ausfall unterscheiden. Die Hürde in
 		// SendTestMail bleibt trotzdem stehen, sie schützt die anderen Aufrufer.
 		adresse, err := mail.ParseAddress(an)

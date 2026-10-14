@@ -78,7 +78,7 @@ func TestBackupStand_FehlendesVerzeichnisKritischOhneAbsturz(t *testing.T) {
 // Der AES-Schlüssel wird per SHA-256 aus der Passphrase abgeleitet — schnell, also
 // offline gut durchprobierbar. Eine kurze Passphrase ist damit das schwache Glied.
 // Das Format bleibt unverändert (sonst wären alte Backups unlesbar); stattdessen
-// meldet der Wächter den Zustand ins Admin-Dashboard.
+// meldet der Wächter den Zustand an die Oberfläche.
 func TestBackupStand_KurzerSchluesselIstWarnung(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("BACKUP_DIR", dir)
@@ -131,7 +131,7 @@ func TestBackupStand_Schwellen(t *testing.T) {
 	}
 }
 
-// newestBackupTime nimmt die jüngste Sicherung nach Änderungszeit — nicht die
+// juengstesBackup nimmt die jüngste Sicherung nach Änderungszeit — nicht die
 // lexikographisch letzte (die Liste ist nach Namen sortiert, die Zeit steht am Inode).
 func TestJuengstesBackup_NimmtDieJuengste(t *testing.T) {
 	dir := t.TempDir()

@@ -9,9 +9,9 @@ import (
 	"bibliothek/repository"
 )
 
-// mahnUebersicht holds key metrics for the library reporting dashboard.
+// mahnUebersicht sind die Kennzahlen der überfälligen Ausleihen für die Statistik-Seite.
 //
-// Bewusst OHNE personenbezogene Einzeldaten: Diese Zusammenfassung speist die
+// Bewusst ohne personenbezogene Einzeldaten: Diese Zusammenfassung speist die
 // Statistik-Seite (Analyse-Kontext). Klarnamen der (minderjährigen) Schüler samt
 // entliehenem Titel gehören dort nicht hin — das wäre Zweckentfremdung und verletzt
 // die Datenminimierung (Art. 5 Abs. 1 lit. c DSGVO); zudem sind Lesegewohnheiten
@@ -30,8 +30,8 @@ type ueberfaelligZeitspanne struct {
 	Anzahl      int    `json:"count"`
 }
 
-// MahnUebersicht gibt aggregierte Daten für das Dashboard zurück (z.B. Mahnungen).
-// Liefert ausschliesslich anonyme Aggregate — siehe DashboardSummary.
+// MahnUebersicht liefert die Kennzahlen der überfälligen Ausleihen, nur zusammengefasst und
+// ohne Namen (siehe mahnUebersicht).
 func (t *Tueren) MahnUebersicht() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

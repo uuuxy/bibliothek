@@ -1,10 +1,9 @@
 package system
 
-// backup_status.go — Backup-Status-Wächter für das Admin-Dashboard.
-// Der nächtliche Backup-Job (jobs/backup.go) überspringt sich STILL, wenn
-// BACKUP_ENCRYPTION_KEY fehlt — ohne diesen Endpunkt fiele das erst beim
-// Restore-Versuch auf. Der Wächter prüft Key-Präsenz und das Alter der
-// jüngsten backup_*.sql.gz.enc-Datei im BACKUP_DIR.
+// Der Wächter der Backups. Der nächtliche Backup-Job (jobs/backup.go) überspringt sich still,
+// wenn BACKUP_ENCRYPTION_KEY fehlt; ohne diese Tür fiele das erst beim Versuch einer
+// Wiederherstellung auf. Der Wächter prüft den Schlüssel und das Alter der jüngsten
+// backup_*.sql.gz.enc-Datei im BACKUP_DIR.
 
 import (
 	"net/http"
@@ -23,7 +22,7 @@ type backupStandAntwort struct {
 	Status            string     `json:"status"`              // "ok" | "warning" | "critical"
 }
 
-// juengstesBackup liefert den ModTime der jüngsten Backup-Datei oder nil,
+// juengstesBackup liefert die Änderungszeit der jüngsten Backup-Datei oder nil,
 // wenn (noch) keine existiert. Ein fehlendes Verzeichnis ist kein Fehler,
 // sondern schlicht "kein Backup vorhanden".
 func juengstesBackup(verzeichnis string) *time.Time {
@@ -43,7 +42,8 @@ func juengstesBackup(verzeichnis string) *time.Time {
 	return &juengstes
 }
 
-// BackupStand liefert den Backup-Zustand fürs Admin-Badge.
+// BackupStand liefert den Zustand der Backups für den Fuß der Navigation und die Warnung
+// über dem Inhalt.
 // GET /api/admin/system/backup-status
 func (t *Tueren) BackupStand() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +53,7 @@ func (t *Tueren) BackupStand() http.HandlerFunc {
 
 		verzeichnis := os.Getenv("BACKUP_DIR")
 		if verzeichnis == "" {
-			verzeichnis = "./backups" // identischer Default wie jobs/backup.go
+			verzeichnis = "./backups" // dieselbe Vorgabe wie jobs/backup.go
 		}
 		letztes := juengstesBackup(verzeichnis)
 

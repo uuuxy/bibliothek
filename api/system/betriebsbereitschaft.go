@@ -1,6 +1,6 @@
 package system
 
-// betriebsbereitschaft_handler.go — trägt die Lage zusammen und liefert sie aus.
+// Die Tür der Betriebsbereitschaft trägt die Lage zusammen und liefert sie aus.
 //
 // Die Regeln stehen in internal/bereitschaft und sind ohne Umgebungsvariablen und ohne
 // Datenbank prüfbar. Hier steht, was Umgebung, Einstellungen und Datenbank befragt.
@@ -28,7 +28,7 @@ type betriebsbereitschaftAntwort struct {
 	Befunde []bereitschaft.Befund `json:"befunde"`
 }
 
-// sammleLage trägt die Lage zusammen — geteilt zwischen dem Handler (Seite) und dem
+// sammleLage trägt die Lage zusammen, geteilt zwischen der Tür (Seite) und dem
 // Bereitschafts-Alarm (tägliche Mail). Zwei Sammler wären zwei Listen, die
 // auseinanderlaufen: Der Alarm meldete dann „alles gut", während die Seite rot zeigt.
 func (t *Tueren) sammleLage(
@@ -61,7 +61,7 @@ func (t *Tueren) sammleLage(
 		einstellungenInDieLage(&lage, einstellungen)
 	}
 
-	// DSGVO-Löschroutinen: Zustand statt Log, und zwar für ALLE, nicht nur die
+	// DSGVO-Löschroutinen: Zustand statt Log, und zwar für alle, nicht nur die
 	// Anonymisierung. Bei Fehler bleibt die Liste nil → Warnung „nicht erhoben" statt
 	// eines falschen „alles gut".
 	if rueckstand, err := zustandAbfragen.ZaehleLoeschRueckstand(ctx); err == nil {
@@ -140,13 +140,13 @@ func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandAbfragen *repos
 // sicherungUndFerienInDieLage trägt den Stand der Backups, die Reichweite der Ferientabelle
 // und das Ergebnis der Restore-Probe ein.
 func sicherungUndFerienInDieLage(ctx context.Context, zustandAbfragen *repository.BetriebszustandAbfragen, lage *bereitschaft.Lage) {
-	// Backup-Zustand aus derselben Quelle wie das Dashboard-Badge (backup_status.go).
+	// Zustand der Backups aus derselben Quelle wie BackupStand (backup_stand.go).
 	schluessel := os.Getenv("BACKUP_ENCRYPTION_KEY")
 	lage.BackupSchluesselGesetzt = schluessel != ""
 	lage.BackupSchluesselSchwach = jobs.SchluesselIstSchwach(schluessel)
 	backupVerzeichnis := os.Getenv("BACKUP_DIR")
 	if backupVerzeichnis == "" {
-		backupVerzeichnis = "./backups" // identischer Default wie jobs/backup.go
+		backupVerzeichnis = "./backups" // dieselbe Vorgabe wie jobs/backup.go
 	}
 	lage.LetztesBackup = juengstesBackup(backupVerzeichnis)
 	// Schulzeitzone, nicht die Zone des Containers: Mit TZ=UTC wäre `Jetzt.Year()` in der

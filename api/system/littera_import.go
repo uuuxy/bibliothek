@@ -21,7 +21,7 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// Audit-/Log-Quellen.
+// Stelle im Log, wenn das Schließen der hochgeladenen Datei scheitert.
 const litteraImportQuelle = "littera import file"
 
 // LitteraImportAntwort meldet zurück, was ein Littera-Import bewegt hat. Die Zähler
@@ -34,8 +34,8 @@ type LitteraImportAntwort struct {
 	Art                  string `json:"type"` // "csv", "xml" or "xlsx"
 }
 
-// leseUploadInhalt begrenzt, parst und liest die hochgeladene Datei. Bei Fehler
-// wird bereits geantwortet und ok=false zurückgegeben.
+// leseUploadInhalt begrenzt die Anfrage, zerlegt die Mehrteil-Form und liest die
+// hochgeladene Datei. Bei Fehler ist schon geantwortet, und ok ist false.
 func (t *Tueren) leseUploadInhalt(w http.ResponseWriter, r *http.Request, maxBytes int64) (inhalt []byte, dateiname string, ok bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 	if err := r.ParseMultipartForm(maxBytes); err != nil {
@@ -109,7 +109,7 @@ func importKopfMitPflichtspalten(zeilen [][]string) (map[string]int, error) {
 	return kopf, nil
 }
 
-// protokolliereImport schreibt einen Audit-Log-Eintrag, sofern ein Nutzer im Kontext ist.
+// protokolliereImport schreibt einen Eintrag ins Protokoll, wenn jemand angemeldet ist.
 func (t *Tueren) protokolliereImport(r *http.Request, aktion, details string) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
@@ -135,12 +135,9 @@ func (t *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, in
 
 	t.protokolliereImport(r, "LITTERA_IMPORT", fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, geaenderteTitel))
 
-	// Typisierte Antwort wie CSV/XLSX (Sweep 01.09.2026, Fund A2): Vorher
-	// antwortete NUR dieser Zweig mit einer losen Map — das Struct-Feld
-	// UpdatedTitles wurde nirgends gesetzt, und jede Vereinheitlichung hätte
-	// den Zähler still verschluckt (omitempty auf int 0 entfernt den Schlüssel,
-	// das Widget zeigte "undefined bestehende Titel"). Die Zusatzschlüssel der
-	// Map (imported_count, message) las kein Konsument (gegengeprüft).
+	// Dieselbe typisierte Antwort wie CSV und XLSX: Mit einer losen Map bliebe GeaenderteTitel
+	// ungesetzt, omitempty nähme den Zähler still weg, und die Oberfläche zeigte „undefined
+	// bestehende Titel".
 	tuer.AntworteJSON(w, http.StatusOK, LitteraImportAntwort{
 		GeaenderteTitel: geaenderteTitel,
 		Art:             "xml",
@@ -152,7 +149,7 @@ func (t *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, in
 // bewusst großzügig: Das Katalogisat der Schule liegt bei rund 14.000 Titeln.
 func (t *Tueren) LitteraImport() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inhalt, dateiname, ok := t.leseUploadInhalt(w, r, 100<<20) // 100 MB limit
+		inhalt, dateiname, ok := t.leseUploadInhalt(w, r, 100<<20) // höchstens 100 MB
 		if !ok {
 			return
 		}

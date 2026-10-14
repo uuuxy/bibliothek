@@ -12,7 +12,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Der LMF-Filter muss in ALLEN drei Statistik-Queries ankommen (Renner,
+// Der LMF-Filter muss in allen drei Statistik-Queries ankommen (Renner,
 // Ladenhüter, Kennzahlen) — pgxmock matcht per Regex, ein fehlendes
 // Filter-Fragment ließe die Erwartung fehlschlagen.
 func TestStatistik_BestandsFilterErreichtJedeAbfrage(t *testing.T) {

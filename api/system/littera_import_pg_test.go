@@ -20,13 +20,12 @@ import (
 
 // Die beiden Türen, über die der Bestand der Schule ins Programm kommt:
 // POST /api/import/littera (Katalogisat-XML, CSV, XLSX) und POST
-// /api/admin/import-bestand (die endgültige Bestands-CSV). Vor dem Echtstart läuft hier
-// der ganze Katalog durch; gemessen am 07.10.2026 führte kein Go-Test 0,7 % der Datei aus
-// (OFFEN.md 5.10).
+// /api/admin/import-bestand (die endgültige Bestands-CSV). Vor dem Echtstart läuft hier der
+// ganze Katalog durch.
 //
-// Geprüft wird über den ganzen Router mit Sitzung, nicht am nackten Handler: Die Tür hängt
-// an Recht (manage_inventory), CSRF und der Mehrteil-Form, und genau dort saßen in diesem
-// Projekt schon Fehler, die der isolierte Handler nicht zeigte.
+// Geprüft wird über den ganzen Router mit Sitzung, nicht an der nackten Tür: Sie hängt an
+// Recht (manage_inventory), CSRF und der Mehrteil-Form, und genau dort saßen in diesem Projekt
+// schon Fehler, die die Tür allein nicht zeigte.
 //
 // Je Zusicherung eine Gegenprobe: Was abgewiesen wird, darf nichts geschrieben haben.
 
@@ -143,12 +142,11 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 	// Der Weg aus pkg/xlsxgrenze am Live-Pfad: Eine Datei, die excelize nicht lesen kann,
 	// ist eine Auskunft (400) und kein Serverfehler.
 	//
-	// Was dieser Fall NICHT belegt: Keine der vier Eingaben löst einen Absturz der
-	// Bibliothek aus, und ob der OLE-Container VOR excelize abgewiesen wird, ist von hier
-	// aus nicht zu sehen — ohne die Abweisung lehnt excelize ihn selbst ab, auch mit 400
-	// (am 08.10.2026 als Rot-Probe gefahren, sie blieb grün). Beides steht im Test des
-	// Pakets (pkg/xlsxgrenze/lesemappe_test.go), wo der Absturz herstellbar und der
-	// Fehlerwert unterscheidbar ist. Hier steht, dass die Tür nicht mit 500 antwortet.
+	// Was dieser Fall nicht belegt: Keine der vier Eingaben löst einen Absturz der Bibliothek
+	// aus, und ob der OLE-Container vor excelize abgewiesen wird, ist von hier aus nicht zu sehen;
+	// ohne die Abweisung lehnt excelize ihn selbst ab, auch mit 400. Beides steht im Test des
+	// Pakets (pkg/xlsxgrenze/lesemappe_test.go), wo der Absturz herstellbar und der Fehlerwert
+	// unterscheidbar ist. Hier steht, dass die Tür nicht mit 500 antwortet.
 	t.Run("XLSX unlesbar: 400, kein Serverfehler", func(t *testing.T) {
 		vorherT, vorherE := zaehle(t)
 		faelle := map[string][]byte{
@@ -224,10 +222,9 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 		}
-		// Der Wortlaut DIESER Abweisung, nicht irgendeiner mit „CSV" darin: Ohne die Prüfung
+		// Der Wortlaut dieser Abweisung, nicht irgendeiner mit „CSV" darin: Ohne die Prüfung
 		// der Endung läuft die Arbeitsmappe in den CSV-Leser und scheitert dort mit
-		// „CSV konnte nicht gelesen werden" — auch ein 400, aber aus einem anderen Grund.
-		// Die Rot-Probe am 08.10.2026 war mit der früheren, lockeren Prüfung grün.
+		// „CSV konnte nicht gelesen werden", auch ein 400, aber aus einem anderen Grund.
 		if !strings.Contains(rec.Body.String(), "nur CSV-Dateien") {
 			t.Errorf("die Meldung ist nicht die der Endungs-Prüfung: %s", rec.Body.String())
 		}

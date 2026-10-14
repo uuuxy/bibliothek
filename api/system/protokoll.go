@@ -1,7 +1,6 @@
 package system
 
-// audit_handler.go — Handler for the immutable audit log.
-// The audit trail records all sensitive delete/cancel operations performed by staff.
+// Das Protokoll der Vorgänge (audit_log) zum Lesen, die jüngsten Einträge zuerst.
 
 import (
 	"net/http"
@@ -12,7 +11,7 @@ import (
 	"bibliothek/repository"
 )
 
-// protokollEintrag represents a joined row in the audit log table.
+// protokollEintrag ist eine Zeile des Protokolls der Vorgänge mit dem Namen des Bearbeiters.
 type protokollEintrag struct {
 	ID                 string    `json:"id"`
 	Tabelle            string    `json:"tabelle"`
@@ -28,21 +27,14 @@ type protokollEintrag struct {
 	Akteur string `json:"akteur"`
 }
 
-// protokollMaxZeilen begrenzt das Logbuch auf die jüngsten Einträge.
-//
-// Vorher holte die Abfrage die GESAMTE Tabelle. Auf dem Prüfstand mit 247.000 Zeilen
-// waren das 72 MB JSON in einer Antwort: Der Server lieferte sie in 0,6 s, aber der
-// Browser musste sie parsen und ebenso viele Tabellenzeilen bauen — die Seite kam nicht
-// mehr zum Vorschein, der E2E-Test lief in den Timeout. Das Logbuch wächst im Betrieb
-// unbegrenzt weiter, der Fall tritt also zwangsläufig ein.
-//
-// 1000 wie beim Schwester-Endpunkt GetAdminAuditLogsHandler — der hatte die Grenze von
-// Anfang an, dieser war der Ausreißer.
+// protokollMaxZeilen begrenzt das Logbuch auf die jüngsten Einträge: Auf dem Prüfstand mit
+// 247.000 Zeilen wäre die ganze Tabelle eine Antwort von 72 MB JSON, die der Browser nicht mehr
+// darstellt, und das Logbuch wächst im Betrieb unbegrenzt. 1000 wie bei VerwaltungsProtokoll.
 const protokollMaxZeilen = 1000
 
-// Protokoll returns logs of immutable security events.
-// @Summary      Get audit logs
-// @Description  Retrieves the most recent 1000 records of the system's audit trail, newest first.
+// Protokoll liefert die jüngsten 1000 Einträge des Protokolls der Vorgänge.
+// @Summary      Protokoll
+// @Description  Die jüngsten 1000 Einträge des Protokolls der Vorgänge, die neuesten zuerst.
 // @Tags         admin
 // @Accept       json
 // @Produce      json

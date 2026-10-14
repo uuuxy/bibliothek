@@ -14,16 +14,13 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// TestProtokollZeigtSystemEintraege sichert einen Befund aus dem Audit vom 01.08.2026 ab:
+// TestProtokollZeigtSystemEintraege: /api/audit zeigt auch Einträge des Systems. Sie
+// haben keine bearbeiter_id und akteur='SYSTEM' (DSGVO-Bereinigung, Backups, automatische
+// Sperren); mit einem INNER JOIN auf benutzer fielen genau diese Zeilen heraus.
 //
-// /api/audit verband audit_log per INNER JOIN mit benutzer. Systemgesteuerte Vorgaenge
-// schreiben aber bewusst OHNE bearbeiter_id und mit akteur='SYSTEM' — DSGVO-Bereinigung,
-// Backups, automatische Sperren. Der Inner Join hat genau diese Zeilen aussortiert.
-//
-// Das ist kein Schoenheitsfehler: Ein Pruefprotokoll wird gefuehrt, damit man
-// nachvollziehen kann, was ohne Aufsicht am Bestand und an Schuelerdaten passiert ist.
-// Ausgerechnet dieser Teil fehlte in der Anzeige — und zwar lautlos, weil eine kuerzere
-// Liste nach nichts aussieht.
+// Ein Protokoll wird geführt, damit man nachvollziehen kann, was ohne Aufsicht am Bestand und
+// an Schülerdaten passiert ist. Fehlte dieser Teil, fiele es nicht auf, weil eine kürzere Liste
+// nach nichts aussieht.
 func TestProtokollZeigtSystemEintraege(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -38,7 +35,7 @@ func TestProtokollZeigtSystemEintraege(t *testing.T) {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = $1`, "audit-"+suffix+"@example.org")
 	})
 
-	// Ein Eintrag MIT Bearbeiter ...
+	// Ein Eintrag mit Bearbeiter ...
 	var bearbeiterID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
@@ -53,7 +50,7 @@ func TestProtokollZeigtSystemEintraege(t *testing.T) {
 		t.Fatalf("Nutzer-Eintrag anlegen: %v", err)
 	}
 
-	// ... und einer OHNE, so wie ProtokolliereSystemAktion ihn schreibt.
+	// ... und einer ohne, so wie ProtokolliereSystemAktion ihn schreibt.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur)
 		VALUES ($1, 'DELETE', gen_random_uuid(), NULL, 'SYSTEM')
@@ -92,7 +89,7 @@ func TestProtokollZeigtSystemEintraege(t *testing.T) {
 		t.Errorf("System-Eintrag sollte keinen Bearbeiter tragen, war %q", system.BearbeiterID)
 	}
 
-	// Der Eintrag MIT Bearbeiter darf durch den LEFT JOIN nichts verloren haben.
+	// Der Eintrag mit Bearbeiter darf durch den LEFT JOIN nichts verloren haben.
 	if nutzer == nil {
 		t.Fatal("der Eintrag mit Bearbeiter fehlt")
 	}

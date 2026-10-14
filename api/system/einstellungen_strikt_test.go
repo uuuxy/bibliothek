@@ -14,12 +14,11 @@ import (
 // Der Einstellungs-Endpunkt dekodiert streng: Ein Feld, das der Patch nicht kennt, ist
 // ein Fehler (400) und kein stiller Verlust.
 //
-// Warum das ein eigener Test ist und nicht der Paritäts-Ratsche nebenan überlassen
-// bleibt: Die Ratsche prüft den Code von heute (Kategorien gegen Struct). Sie sagt
-// nichts über einen ANDEREN Absender — eine alte Oberfläche im Browser-Cache, ein
-// Skript, ein zweiter Client. Genau deren stiller Verlust ist die teuerste Klasse
-// dieses Projekts: 200 zurück, nichts gespeichert, "erfolgreich" auf dem Bildschirm
-// (23.08.2026, Commit 488f51d9).
+// Ein eigener Test und nicht der Paritäts-Ratsche nebenan überlassen: Sie prüft den Code von heute
+// (Kategorien gegen Struct) und sagt nichts über einen anderen Absender, eine alte Oberfläche im
+// Browser-Cache, ein Skript, eine zweite Oberfläche. Genau deren stiller Verlust ist die
+// teuerste Fehlerklasse dieses Projekts: 200 zurück, nichts gespeichert, „erfolgreich" auf dem
+// Bildschirm.
 func TestEinstellungenSchreiben_UnbekanntesFeldWirdAbgelehnt(t *testing.T) {
 	faelle := []struct {
 		name    string

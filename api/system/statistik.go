@@ -10,9 +10,9 @@ import (
 	"strconv"
 )
 
-// leseListenGrenze begrenzt den ?limit=-Parameter für die Renner-/Ladenhüter-
-// Listen. Default 5 (Dashboard-Kacheln); das Drill-Down-Panel lädt einmalig
-// mehr und filtert rein clientseitig. Hartes Cap gegen Missbrauch.
+// leseListenGrenze begrenzt den Parameter ?limit= für die Listen der Renner und Ladenhüter.
+// Vorgabe 5 (Kacheln der Übersicht); die Detailseite lädt einmalig mehr (limit=100) und
+// filtert dann in der Oberfläche. Höchstens 200, gegen Missbrauch.
 func leseListenGrenze(wert string) int {
 	grenze, err := strconv.Atoi(wert)
 	if err != nil || grenze < 1 {
@@ -24,12 +24,11 @@ func leseListenGrenze(wert string) int {
 	return grenze
 }
 
-// Statistik returns analytical metadata details.
-// Optional query parameters:
-//   - ?zeitraum=all|schuljahr|monat filtert das Renner-Ranking zeitlich.
-//   - ?type=lmf|freihand filtert ALLE Kennzahlen und Listen auf den
-//     LMF-Bestand (Lernmittel, Titel-Präfix „lmf-") bzw. die Schülerbücherei.
-//     Ohne Parameter: Gesamtbestand.
+// Statistik liefert die Kennzahlen und Listen der Statistik. Parameter, beide wahlweise:
+//   - ?zeitraum=all|schuljahr|monat grenzt das Ranking der Renner zeitlich ein.
+//   - ?type=lmf|freihand grenzt alle Kennzahlen und Listen auf den Bestand der Lernmittel
+//     (Titel mit dem Anfang „lmf-") oder die Schülerbücherei ein.
+//     Ohne Parameter: der ganze Bestand.
 func (t *Tueren) Statistik() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -38,13 +37,13 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		bestandsFilter, bestandsName := repository.BestandsFilterBedingung(r.URL.Query().Get("type"))
 		listenGrenze := leseListenGrenze(r.URL.Query().Get("limit"))
 
-		// 1. Beliebteste Titel (Die Renner) — inkl. Drill-Down-Feldern
+		// 1. Beliebteste Titel (die Renner), mit den Feldern der Detailseite
 		renner := repository.LadeRenner(ctx, t.DB.Pool, ausleihenFilter, bestandsFilter, listenGrenze)
 
-		// 2. Ladenhüter (No checkouts since 2 years or never) — inkl. Drill-Down-Feldern
+		// 2. Ladenhüter (seit zwei Jahren oder nie ausgeliehen), mit den Feldern der Detailseite
 		ladenhueter := repository.LadeLadenhueter(ctx, t.DB.Pool, bestandsFilter, listenGrenze)
 
-		// 3. Verlust-, Finanz- und Zirkulationskennzahlen (EIN aggregierter Scan)
+		// 3. Verlust-, Finanz- und Zirkulationskennzahlen (ein aggregierter Scan)
 		kennzahlen, err := repository.LadeBestandKennzahlen(ctx, t.DB.Pool, bestandsFilter)
 		if err != nil {
 			log.Printf("stats: Bestandskennzahlen konnten nicht ermittelt werden: %v", err)
@@ -52,7 +51,7 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		}
 
 		// 4. Aktivitäts-Zeitreihe (Ausleihen/Rückgaben je Monat, letzte 12 Monate).
-		//    Bewusst NICHT vom ?zeitraum-Parameter abhängig: der Trend definiert sein
+		//    Bewusst nicht vom ?zeitraum-Parameter abhängig: der Trend definiert sein
 		//    eigenes 12-Monats-Fenster; der Bestand-Filter (LMF/Freihand) gilt aber.
 		monatsTrend := repository.LadeMonatsTrend(ctx, t.DB.Pool, bestandsFilter)
 

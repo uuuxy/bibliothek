@@ -1,11 +1,11 @@
 package system
 
-// PG-Integrationstests für die Tresen-Auskunft (audit_tresen_auskunft.go).
+// PG-Integrationstests für die Tresen-Auskunft (tresen_auskunft.go).
 //
 // Echtes Postgres statt pgxmock, weil die geprüfte Logik in SQL lebt (JSONB-Suche
 // in audit_log.details, LEFT JOINs auf gelöschte Personen) — und weil die Ereignisse
-// von den ECHTEN Schreibern stammen sollen (ProtokolliereAusleihe, EndgueltigLoescheVerlust-
-// Exemplare, TilgeSchuelerSpuren), nicht von nachgestellten INSERTs: Nur so prüft
+// von den echten Schreibern stammen sollen (ProtokolliereAusleihe, LoescheVerlusteEndgueltig,
+// TilgeSchuelerSpuren), nicht von nachgestellten INSERTs: Nur so prüft
 // der Test den Live-Pfad und nicht die eigene Annahme über dessen Format.
 
 import (
@@ -76,7 +76,7 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 	return w
 }
 
-// rufeTresenAuskunft führt den Handler mit Sitzung im Kontext aus (so, wie die
+// rufeTresenAuskunft führt die Tür mit Sitzung im Kontext aus (so, wie die
 // Middleware sie nach RequirePermission hinterlegt) und liest die Antwort.
 func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) tresenAuskunft {
 	t.Helper()
@@ -96,8 +96,8 @@ func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) tres
 }
 
 // Der namensgebende Fall: Exemplar ausgeliehen, zurückgegeben, als Verlust gebucht
-// und ENDGÜLTIG gelöscht — die Zeile in buecher_exemplare existiert nicht mehr.
-// Die Auskunft muss den Weg über den Audit-Snapshot finden und den Entleiher nennen.
+// und endgültig gelöscht — die Zeile in buecher_exemplare existiert nicht mehr.
+// Die Auskunft muss den Weg über die Angaben im Protokoll finden und den Entleiher nennen.
 func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -112,8 +112,8 @@ func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 		return auditRepo.ProtokolliereRueckgabe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID)
 	})
 
-	// Verlust buchen und über den echten Löschpfad endgültig entfernen — der
-	// schreibt den Barcode-Snapshot, an dem die Auskunft hängt.
+	// Verlust buchen und über den echten Löschpfad endgültig entfernen; der schreibt den
+	// Barcode ins Protokoll, und daran hängt die Auskunft.
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST'
@@ -232,10 +232,10 @@ func TestTresenAuskunftOhneBarcode(t *testing.T) {
 	}
 }
 
-// Ein Kollege leiht seit Migration 125 wie jeder Leser: ProtokolliereAusleihe bekommt seine Leser-Id
-// als schuelerID, benutzerID bleibt leer (alle acht Aufrufer). Die Auskunft löste den Namen
-// bis zum 22.09.2026 über die SICHT `schueler` auf — für einen Kollegen fand sie nichts und
-// meldete „Personenbezug getilgt", obwohl Person und Bezug da sind (OFFEN.md 5.19).
+// Ein Kollege leiht wie jeder Leser (Migration 125): ProtokolliereAusleihe bekommt seine
+// Leser-Id als schuelerID, benutzerID bleibt leer (alle acht Aufrufer). Löste die Auskunft den
+// Namen über die Sicht `schueler` auf, fände sie für einen Kollegen nichts und meldete
+// „Personenbezug getilgt", obwohl Person und Bezug da sind.
 func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

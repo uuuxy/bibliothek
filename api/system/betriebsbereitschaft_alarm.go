@@ -1,13 +1,11 @@
 package system
 
-// betriebsbereitschaft_alarm.go — der Wächter, der sich meldet, statt gelesen werden
-// zu müssen.
+// Der Wächter, der sich meldet, statt gelesen werden zu müssen.
 //
 // Die Selbstprüfung (System → Einstellungen → Betriebsbereitschaft) beantwortet, was
-// eingerichtet, aber nicht in Betrieb ist — aber nur für den, der hinschaut. Genau so
-// lief das Backup wochenlang nicht (BACKUP_ENCRYPTION_KEY kam nicht im Container an):
-// Der Wächter existierte, gehört hat ihn niemand. Dieser Alarm schickt KRITISCHE
-// Befunde täglich per Mail an alle aktiven Admins — täglich, solange sie bestehen:
+// eingerichtet, aber nicht in Betrieb ist, doch nur dem, der hinschaut; ein Backup, das nicht
+// läuft, bliebe so unbemerkt. Dieser Alarm schickt kritische Befunde täglich per Mail an alle
+// aktiven Admins, täglich, solange sie bestehen:
 // Kritisch soll drücken.
 //
 // Warnungen lösen bewusst keine Mail aus (die Demo-Daten-Warnung wäre Dauerrauschen,
@@ -26,7 +24,7 @@ import (
 )
 
 // BereitschaftsAlarm sammelt die Lage, prüft sie und mailt kritische Befunde.
-// Läuft NUR im echten Betrieb: Die lokale .env zeigt auf den echten Schul-SMTP —
+// Läuft nur im echten Betrieb: Die lokale .env zeigt auf den echten Schul-SMTP —
 // ein Entwicklungsrechner darf niemals Alarm-Mails auslösen.
 func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 	einstellungsAbfragen := repository.NewEinstellungsAbfragen(t.DB.Pool)
@@ -55,9 +53,9 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 		return
 	}
 
-	// Jede Mail nennt ALLE Empfänger: Wer sie liest, sieht sofort, wohin die Alarme
-	// gehen — ein unbekannter Name in dieser Zeile ist selbst ein Befund (genau so
-	// fiel am 16.08.2026 ein nie autorisiertes Admin-Konto auf).
+	// Jede Mail nennt alle Empfänger: Wer sie liest, sieht sofort, wohin die Alarme gehen,
+	// und ein unbekannter Name in dieser Zeile ist selbst ein Befund (ein nie autorisiertes
+	// Admin-Konto fiele so auf).
 	textkoerper += "\nDiese Mail ging an " + beschreibung + "\n"
 
 	for _, an := range empfaenger {
@@ -109,12 +107,12 @@ func formatiereAlarmMail(befunde []bereitschaft.Befund) (betreff, textkoerper st
 	return betreff, sb.String(), len(kritischeBefunde)
 }
 
-// waehleAlarmEmpfaenger bestimmt, wohin die Kritisch-Alarme gehen (Betreiber-Wunsch
-// 17.08.2026): Ist in den Einstellungen alarm_empfaenger gesetzt (kommaseparierte
-// Adressen), gehen sie GENAU dorthin — sonst an alle aktiven Admin-Konten. Der
-// Rückfall ist Absicht: Ein Alarm, der niemanden erreicht, ist keiner. Einträge ohne
-// "@" werden verworfen (Tippfehler sollen den Verteiler nicht stumm leeren, solange
-// noch gültige Adressen übrig sind — ganz ohne gültige greift der Rückfall).
+// waehleAlarmEmpfaenger bestimmt, wohin die kritischen Alarme gehen: Ist in den
+// Einstellungen alarm_empfaenger gesetzt (Adressen mit Komma getrennt), gehen sie genau
+// dorthin, sonst an alle aktiven Admin-Konten. Der Rückfall ist Absicht: Ein Alarm, der
+// niemanden erreicht, ist keiner. Einträge ohne "@" fallen weg, damit ein Tippfehler den
+// Verteiler nicht leert, solange gültige Adressen übrig sind; ohne gültige greift der
+// Rückfall.
 func waehleAlarmEmpfaenger(konfiguriert string, admins []repository.AdminKonto) (an []string, beschreibung string) {
 	for _, teil := range strings.Split(konfiguriert, ",") {
 		adresse := strings.TrimSpace(teil)

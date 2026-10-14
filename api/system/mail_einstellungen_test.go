@@ -1,8 +1,8 @@
 package system
 
-// mail_settings_test.go — Der Testversand ist der einzige Knopf, mit dem ein Admin
-// die SMTP-Konfiguration prüfen kann. Sein Wert hängt vollständig daran, dass 200
-// wirklich "versendet" heißt und ein Fehlschlag sagt, was schiefgelaufen ist.
+// Der Testversand ist der einzige Knopf, mit dem ein Admin die SMTP-Konfiguration prüfen
+// kann. Sein Wert hängt vollständig daran, dass 200 wirklich "versendet" heißt und ein
+// Fehlschlag sagt, was schiefgelaufen ist.
 //
 // Warum hier ein echter (falscher) SMTP-Server läuft und nicht in der E2E-Suite:
 // Die lokale Stack-Konfiguration zeigt auf den Schulserver — ein E2E-Test, der den
@@ -104,15 +104,12 @@ func TestTestmailSenden_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 	}
 }
 
-// Der Kern des Umbaus vom 30.07.2026: Der echte Versand (Mahnungen, Abgänger,
-// Bestellungen) benutzt die in der Oberfläche gespeicherte Konfiguration — nicht die
-// Umgebungsvariablen des Containers.
-//
-// Vorher las der Testversand die Datenbank und jeder echte Versand die Umgebung. Wer
-// den SMTP-Server im Admin-Bereich umstellte, änderte am Versand nichts, und der
-// Test-Knopf bestätigte eine Konfiguration, die kein Mahnlauf jemals benutzt hat.
-// Deshalb steht hier die Umgebung absichtlich auf einem falschen Server: Landet die
-// Mail trotzdem beim Fake-SMTP aus der Datenbank, ist die Frage beantwortet.
+// Der echte Versand (Mahnungen, Abgänger, Bestellungen) benutzt die in der Oberfläche
+// gespeicherte Konfiguration, nicht die Umgebungsvariablen des Containers. Sonst änderte, wer
+// den SMTP-Server im Admin-Bereich umstellt, am Versand nichts, und der Test-Knopf bestätigte
+// eine Konfiguration, die kein Mahnlauf benutzt. Deshalb steht hier die Umgebung absichtlich
+// auf einem falschen Server: Landet die Mail trotzdem beim Test-SMTP aus der Datenbank, ist die
+// Frage beantwortet.
 func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 	// Testserver ohne STARTTLS — siehe mailservice.sichereVerbindung.
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")

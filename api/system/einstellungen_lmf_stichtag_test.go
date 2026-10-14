@@ -10,11 +10,9 @@ import (
 )
 
 // Der Lernmittel-Stichtag trägt jede Lernmittel-Frist und den Rückweg des LMF-Plans.
-// Bis zum 10.09.2026 prüfte ihn der Server nicht: „30.06." wurde gespeichert und
-// angezeigt, gerechnet wurde still mit 07-31; „06-31" wurde zum 1. Juli, „02-30" zum
-// 2. März. Die beiden Nachbarn (Sommerferien, Eingangsjahrgänge) wurden am 06.09. genau
-// dafür geprüft — der Stichtag nicht, obwohl ein Kommentar das behauptete
-// (Bestands-Durchgang, Bugklasse „Schutz, den nur ein Kommentar behauptet").
+// Prüfte ihn der Server nicht, würde „30.06." gespeichert und angezeigt, gerechnet aber still
+// mit 07-31; „06-31" würde zum 1. Juli, „02-30" zum 2. März. Die Nachbarn (Sommerferien,
+// Eingangsjahrgänge) prüft der Server ebenso.
 func TestEinstellungenSchreiben_LmfStichtagIstEinKalendertag(t *testing.T) {
 	faelle := []struct {
 		wert    string

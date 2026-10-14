@@ -9,7 +9,7 @@ import (
 	"bibliothek/repository"
 )
 
-// verwaltungsEintrag ist eine Zeile des Admin-Prüfprotokolls, wie die Oberfläche sie
+// verwaltungsEintrag ist eine Zeile des Protokolls der Verwaltung, wie die Oberfläche sie
 // anzeigt. AdminID ist bewusst nullbar: Systemgetriebene Einträge (Cron, Migration)
 // haben keinen Bearbeiter, sollen aber trotzdem im Protokoll stehen.
 type verwaltungsEintrag struct {
@@ -22,7 +22,7 @@ type verwaltungsEintrag struct {
 	Zeitstempel time.Time `json:"zeitstempel"`
 }
 
-// VerwaltungsProtokoll fetches the latest 1000 admin audit logs in descending order.
+// VerwaltungsProtokoll liefert die jüngsten 1000 Einträge des Protokolls der Verwaltung.
 func (t *Tueren) VerwaltungsProtokoll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

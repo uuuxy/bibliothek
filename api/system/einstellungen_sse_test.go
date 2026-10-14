@@ -14,15 +14,15 @@ import (
 )
 
 // Die Sitzungsfristen (Theke leeren, Sperrbildschirm) holt jeder Tab genau einmal beim
-// Anmelden (App.svelte). Ohne Signal liefe ein offener Tab am ZWEITEN Arbeitsplatz bis
+// Anmelden (App.svelte). Ohne Signal liefe ein offener Tab am zweiten Arbeitsplatz bis
 // zum nächsten F5 mit den alten Fristen weiter — im Zweifel mit einer Sperre, die der
 // Admin gerade abgeschaltet hat, oder ohne die, die er gerade eingeschaltet hat.
 // Deshalb: Speichern der Sitzungsfelder sendet `sitzungsfristen` über die bestehende
 // SSE-Leitung; die Werte selbst holen sich die Tabs per GET (dort sitzt die
 // Vorgaben-Logik, hier wäre sie dupliziert).
 //
-// Geprüft am echten Strom, nicht an einer Attrappe des Brokers: erst ein Patch OHNE
-// Sitzungsfelder, dann einer MIT — das nächste Ereignis auf der Leitung muss
+// Geprüft am echten Strom, nicht an einer Attrappe des Brokers: erst ein Patch ohne
+// Sitzungsfelder, dann einer mit — das nächste Ereignis auf der Leitung muss
 // `sitzungsfristen` sein. Hätte der erste Patch gesendet, stünde ein Ereignis davor.
 func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 	broker := sse.NewBroker()
@@ -36,12 +36,12 @@ func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 		stream.Close()
 		t.Fatalf("SSE-Strom nicht erreichbar: %v", err)
 	}
-	// Abbau in DIESER Reihenfolge — und in einem Cleanup statt in defers: Ein
-	// `defer stream.Close()` lief vor `cancel()` und vor dem Schließen des Client-Bodys.
-	// httptest.Server.Close wartet aber auf alle aktiven Verbindungen, und der
-	// Strom-Handler (sse.streamEvents) beendet sich erst, wenn der Client geht
-	// (r.Context) oder der Broker herunterfährt (clientChan). Beides stand noch aus —
-	// der Test hing bis zum 10-Minuten-Timeout des Pakets und riss den Pre-Push mit.
+	// Abbau in dieser Reihenfolge und in einem Cleanup statt in defers: Ein
+	// `defer stream.Close()` liefe vor `cancel()` und vor dem Schließen des Antwort-Rumpfs.
+	// httptest.Server.Close wartet aber auf alle aktiven Verbindungen, und die Funktion
+	// des Stroms (sse.streamEvents) endet erst, wenn der Empfänger geht (r.Context) oder
+	// der Broker herunterfährt (clientChan). Beides stünde noch aus; der Test hinge bis
+	// zum 10-Minuten-Timeout des Pakets und risse den Pre-Push mit.
 	t.Cleanup(func() {
 		if cerr := resp.Body.Close(); cerr != nil {
 			t.Logf("SSE-Strom schließen: %v", cerr)
