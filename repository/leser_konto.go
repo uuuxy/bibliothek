@@ -118,13 +118,13 @@ type KollegiumskontoNeu struct {
 //
 // Liefert die Kennung des neuen Kontos: Mit ihr schreibt der Aufrufer den Protokolleintrag
 // über das Konto (ziel_id), an dem die Auskunft es findet — auch nachdem es gelöscht ist.
-func LegeKollegiumskontoAn(ctx context.Context, q KontoSchreiber, params KollegiumskontoNeu) (string, error) {
+func LegeKollegiumskontoAn(ctx context.Context, q KontoSchreiber, neu KollegiumskontoNeu) (string, error) {
 	var kontoID string
 	err := q.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id, zugang_beantragt_am)
 		VALUES ($1, $2, $3, 'kollegium', $4, $5, CASE WHEN $4 THEN NULL ELSE CURRENT_TIMESTAMP END)
 		RETURNING id::text
-	`, params.Vorname, params.Nachname, strings.ToLower(strings.TrimSpace(params.Email)), params.Aktiv, params.LeserID).Scan(&kontoID)
+	`, neu.Vorname, neu.Nachname, strings.ToLower(strings.TrimSpace(neu.Email)), neu.Aktiv, neu.LeserID).Scan(&kontoID)
 	if errors.Is(err, pgx.ErrNoRows) || (err == nil && kontoID == "") {
 		return "", ErrKontoNichtEntstanden
 	}

@@ -18,12 +18,12 @@ type KatalogAbfragen interface {
 
 	// FindeTitel führt eine Volltextsuche (german tsvector) über Titel, Autoren und ISBNs aus
 	// und sortiert die Ergebnisse nach ihrer Relevanz (ts_rank).
-	FindeTitel(ctx context.Context, queryText string) ([]Titel, error)
+	FindeTitel(ctx context.Context, suchtext string) ([]Titel, error)
 
 	// FindeTitelUnscharf sucht tokenweise über Titel, Autor, ISBN und Signatur mit
 	// einer Ergebnismengenbegrenzung. Zweiter Rückgabewert ist die Gesamtzahl der
 	// Treffer vor dem Limit (siehe LeserAbfragen.FindeUnscharf).
-	FindeTitelUnscharf(ctx context.Context, queryText string, limit int) ([]Titel, int, error)
+	FindeTitelUnscharf(ctx context.Context, suchtext string, limit int) ([]Titel, int, error)
 
 	// LadeTitel sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.
 	LadeTitel(ctx context.Context, tx pgx.Tx, id string) (*Titel, error)
@@ -46,15 +46,15 @@ type KatalogAbfragen interface {
 	IstExemplarImBestand(ctx context.Context, id string) (bool, error)
 
 	// ErzeugeBarcodes erzeugt eine Serie fortlaufender Buch-Barcodes (Präfix "B-") über eine DB-Sequence.
-	ErzeugeBarcodes(ctx context.Context, count int) ([]string, error)
+	ErzeugeBarcodes(ctx context.Context, anzahl int) ([]string, error)
 
 	// LegeExemplareAn führt BulkInsertCopies innerhalb einer expliziten SQL-Transaktion aus.
-	LegeExemplareAn(ctx context.Context, tx pgx.Tx, copies []ExemplarNeu) error
+	LegeExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ExemplarNeu) error
 
 	// SchreibeTitel speichert viele Titel in einem einzigen gepipelineten
 	// Batch (statt je Titel eine eigene Rundreise) und liefert die Zahl der
 	// verarbeiteten Titel. Titel ohne ISBN werden per Titel dedupliziert.
-	SchreibeTitel(ctx context.Context, titles []Titel) (int, error)
+	SchreibeTitel(ctx context.Context, titel []Titel) (int, error)
 }
 
 // pgKatalogAbfragen implementiert das KatalogAbfragen für PostgreSQL.

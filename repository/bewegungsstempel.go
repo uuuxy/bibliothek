@@ -9,8 +9,8 @@ import (
 // sqlStempelVor ist der neue Wert von letzte_bewegung_am für einen Schreiber mit übergebenem
 // Zeitpunkt (nil = jetzt): der spätere von altem Stempel und Zeitpunkt. GREATEST übergeht NULL,
 // ein Exemplar ohne Stempel bekommt also den Zeitpunkt.
-func sqlStempelVor(param string) string {
-	return `GREATEST(letzte_bewegung_am, COALESCE(` + param + `::timestamptz, CURRENT_TIMESTAMP))`
+func sqlStempelVor(platzhalter string) string {
+	return `GREATEST(letzte_bewegung_am, COALESCE(` + platzhalter + `::timestamptz, CURRENT_TIMESTAMP))`
 }
 
 // sqlStempelJetzt ist dasselbe für Schreiber ohne Zeitpunkt. CURRENT_TIMESTAMP ist der Beginn

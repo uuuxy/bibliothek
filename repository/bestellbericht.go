@@ -55,31 +55,31 @@ func LadeBerichtBestellungen(ctx context.Context, db Datenbank, von, bisExklusiv
 	}
 	defer orderRows.Close()
 
-	orders := make([]BerichtBestellung, 0)
-	orderIndex := map[string]int{}
+	bestellungen := make([]BerichtBestellung, 0)
+	platzJeBestellung := map[string]int{}
 	for orderRows.Next() {
 		var o BerichtBestellung
 		if err := orderRows.Scan(&o.ID, &o.LieferantName, &o.Kundennummer,
 			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.Mittel); err != nil {
 			return nil, nil, err
 		}
-		orderIndex[o.ID] = len(orders)
-		orders = append(orders, o)
+		platzJeBestellung[o.ID] = len(bestellungen)
+		bestellungen = append(bestellungen, o)
 	}
 	if err := orderRows.Err(); err != nil {
 		return nil, nil, err
 	}
-	return orders, orderIndex, nil
+	return bestellungen, platzJeBestellung, nil
 }
 
 // LadeBerichtPositionen lädt die Positionen aller Bestellungen nach und hängt sie
 // den passenden Orders an.
-func LadeBerichtPositionen(ctx context.Context, db Datenbank, orders []BerichtBestellung, orderIndex map[string]int) error {
-	if len(orders) == 0 {
+func LadeBerichtPositionen(ctx context.Context, db Datenbank, bestellungen []BerichtBestellung, platzJeBestellung map[string]int) error {
+	if len(bestellungen) == 0 {
 		return nil
 	}
-	ids := make([]string, len(orders))
-	for i, o := range orders {
+	ids := make([]string, len(bestellungen))
+	for i, o := range bestellungen {
 		ids[i] = o.ID
 	}
 	posRows, err := db.Query(ctx, `
@@ -97,8 +97,8 @@ func LadeBerichtPositionen(ctx context.Context, db Datenbank, orders []BerichtBe
 		if err := posRows.Scan(&bestellungID, &pos.TitelName, &pos.ISBN, &pos.Menge, &pos.Einzelpreis); err != nil {
 			return err
 		}
-		if idx, ok := orderIndex[bestellungID]; ok {
-			orders[idx].Positionen = append(orders[idx].Positionen, pos)
+		if idx, ok := platzJeBestellung[bestellungID]; ok {
+			bestellungen[idx].Positionen = append(bestellungen[idx].Positionen, pos)
 		}
 	}
 	return posRows.Err()
