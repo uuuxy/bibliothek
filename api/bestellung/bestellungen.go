@@ -18,7 +18,7 @@ import (
 	"bibliothek/repository"
 )
 
-// bestellPosition represents a single item to order from the cart
+// bestellPosition ist eine Zeile des Warenkorbs.
 type bestellPosition struct {
 	TitelID         string  `json:"titel_id" validate:"required,uuid_oder_leer"`
 	Menge           int     `json:"menge"`
@@ -26,17 +26,17 @@ type bestellPosition struct {
 	MitVorabBarcode bool    `json:"generate_barcodes"`
 }
 
-// bestellungAnlegenAnfrage ist ein kompletter Warenkorb an EINEN Lieferanten. Die Bestellung
+// bestellungAnlegenAnfrage ist ein kompletter Warenkorb an genau einen Lieferanten. Die Bestellung
 // entsteht daraus in einer Transaktion — schlägt eine Position fehl, geht keine raus.
 type bestellungAnlegenAnfrage struct {
 	LieferantID string            `json:"supplier_id" validate:"omitempty,uuid_oder_leer"`
 	Positionen  []bestellPosition `json:"items" validate:"dive"`
-	// IdempotenzSchluessel: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
-	// denselben Schlüssel; die zweite Anfrage wird zum No-op (keine zweite Bestellung,
-	// keine zweite Lieferanten-Mail). Optional — ohne Schlüssel läuft alles wie bisher.
+	// IdempotenzSchluessel: von der Oberfläche je Absenden vergeben. Ein Doppelklick schickt
+	// denselben Schlüssel; die zweite Anfrage bewirkt nichts (keine zweite Bestellung, keine
+	// zweite Lieferanten-Mail). Wahlweise: Ohne Schlüssel läuft die Anfrage ohne diesen Schutz.
 	IdempotenzSchluessel string `json:"idempotency_key,omitempty"`
 	// Mittel: der Topf dieser Bestellung — 'land' (Lernmittelfreiheit) oder
-	// 'schultraeger' (Schülerbücherei), siehe pkg/mitteltopf. PFLICHT: Der Vermerk
+	// 'schultraeger' (Schülerbücherei), siehe pkg/mitteltopf. Pflicht: Der Vermerk
 	// muss auf der Bestellung stehen, und ein Standardwert wäre eine stille Zuordnung
 	// zum falschen Topf. Ein gemischter Warenkorb schickt zwei Anfragen — eine je Topf.
 	Mittel string `json:"mittel"`
@@ -92,7 +92,7 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 		return
 	}
 
-	// Doppelklick: dieselbe Bestellung lief schon durch — KEINE zweite Mail, keine
+	// Doppelklick: dieselbe Bestellung lief schon durch — keine zweite Mail, keine
 	// zweite Bestellung. Die erste Anfrage hat Mail und Etiketten bereits erledigt.
 	if res.BereitsVorhanden {
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
@@ -148,12 +148,8 @@ func statusDesBestellfehlers(err error) int {
 	}
 }
 
-// istPlaceholderSMTP ist entfallen: Die Platzhalter-Erkennung steckt jetzt in
-// mailservice.SMTPKonfig.IstKonfiguriert und gilt damit für alle Versender — vorher
-// kannte nur die Bestell-Abwicklung sie.
-
-// Zulauf returns a list of ordered copies that are currently in transit,
-// grouped by creation date and supplier.
+// Zulauf liefert die bestellten, noch nicht eingetroffenen Exemplare, je Bestellung
+// gruppiert (service.LadeZulauf).
 func (t *Tueren) Zulauf() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -177,7 +173,7 @@ type bestellSucheAnfrage struct {
 const dnbAusfallKopf = "X-DNB-Ausfall"
 
 // BestellSuche sucht einen Titel zum Bestellen, zuerst im eigenen Katalog und
-// zusätzlich bei der DNB. Der Metadaten-Client wird EINMAL beim Registrieren der Route
+// zusätzlich bei der DNB. Der Metadaten-Client wird einmal beim Registrieren der Route
 // gebaut, nicht je Anfrage — er hält seinen eigenen HTTP-Client mit Zeitgrenze.
 func (t *Tueren) BestellSuche() http.HandlerFunc {
 	return t.sucheBestellung(inventur.NeuerMetadatenClient())
@@ -212,12 +208,12 @@ func (t *Tueren) sucheBestellung(metadaten *inventur.MetadatenClient) http.Handl
 	}
 }
 
-// wareneingangBuchenAnfrage represents the payload for bulk receiving an order.
+// wareneingangBuchenAnfrage sind die Exemplare, die aus dem Zulauf in den Bestand gehen.
 type wareneingangBuchenAnfrage struct {
 	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,required,uuid_oder_leer"`
 }
 
-// WareneingangBuchen marks all pre-allocated items for a specific order group as received.
+// WareneingangBuchen bucht die markierten Exemplare aus dem Zulauf in den Bestand.
 func (t *Tueren) WareneingangBuchen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req wareneingangBuchenAnfrage

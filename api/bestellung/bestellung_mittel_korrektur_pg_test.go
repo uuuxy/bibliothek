@@ -18,11 +18,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Der Rückweg für den Topf einer Bestellung — am Live-Pfad über den Handler, mit Audit.
+// Der Rückweg für den Topf einer Bestellung, am Live-Pfad über die Tür, mit Protokoll.
 //
 // Drei Dinge müssen zusammen wahr sein: Die Spalte trägt den neuen Topf, das
-// Admin-Audit-Log kennt von/nach/Grund, und ohne Grund oder mit unbekanntem Topf passiert
-// NICHTS — weder Zeile noch Protokoll. Der Kundennummer-Beleg der Bestellung bleibt
+// Protokoll der Verwaltung kennt von/nach/Grund, und ohne Grund oder mit unbekanntem Topf passiert
+// nichts — weder Zeile noch Protokoll. Der Kundennummer-Beleg der Bestellung bleibt
 // unangetastet: Er ist die Abschrift dessen, was der Händler bekommen hat.
 
 // korrigiereTopfUeberTuer ruft PUT /api/bestellungen/{id}/mittel als angemeldeter
@@ -98,7 +98,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 		t.Errorf("Kundennummer auf dem Beleg wurde umgeschrieben: %q → %q", kundennummerVorher, kundennummerNachher)
 	}
 
-	// 2. Das Audit kennt von, nach und Grund — als JSON gelesen, nicht als Text verglichen
+	// 2. Das Protokoll kennt von, nach und Grund — als JSON gelesen, nicht als Text verglichen
 	//    (jsonb rendert mit eigenen Leerzeichen).
 	var detailsRoh []byte
 	err := pool.QueryRow(ctx, `SELECT details FROM audit_logs WHERE aktion = $1`, aktionBestellungMittelKorrigiert).Scan(&detailsRoh)
@@ -116,7 +116,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 		}
 	}
 
-	// 3. Dieselbe Korrektur noch einmal: kein zweiter Audit-Eintrag, geaendert=false.
+	// 3. Dieselbe Korrektur noch einmal: kein zweiter Eintrag im Protokoll, geaendert=false.
 	rec = korrigiereTopfUeberTuer(t, srv, pool, id, `{"mittel":"schultraeger","grund":"nochmal"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"geaendert":false`) {
 		t.Errorf("Wiederholung: %d %s — muss 200 mit geaendert=false sein", rec.Code, rec.Body.String())
@@ -176,7 +176,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 	}
 }
 
-// Alt-Bestellung „ohne Zuordnung" (NULL): Der Rückweg ordnet sie zu, das Audit nennt
+// Alt-Bestellung „ohne Zuordnung" (NULL): Der Rückweg ordnet sie zu, das Protokoll nennt
 // von="" — so ist im Protokoll sichtbar, dass hier erstmals zugeordnet wurde.
 func TestBestellungTopfKorrektur_OrdnetAltBestellungOhneZuordnungZu(t *testing.T) {
 	pool := pgtest.Pool(t)

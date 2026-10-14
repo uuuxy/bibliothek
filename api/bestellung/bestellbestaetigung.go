@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// bestellungBestaetigenAnfrage ist der Body von PUT /api/bestellungen/{id}/bestaetigen.
+// bestellungBestaetigenAnfrage ist der Rumpf von PUT /api/bestellungen/{id}/bestaetigen.
 type bestellungBestaetigenAnfrage struct {
 	// EtikettenGroesse: welche Etikettengröße der Lieferant (laut externer Rückmeldung,
 	// z. B. per Naacher-Link) letztlich gewählt/gedruckt hat.
@@ -23,7 +23,7 @@ type bestellungBestaetigenAnfrage struct {
 	EtikettenFormat string `json:"etiketten_format"`
 }
 
-// bestellungImBestaetigungsweg beantwortet für BEIDE Bestätigungs-Handler dieselbe Frage:
+// bestellungImBestaetigungsweg beantwortet für beide Bestätigungs-Türen dieselbe Frage:
 // Gehört diese Bestellung überhaupt zum Bestätigungs-Weg?
 // Die Abfrage und ihre zwei Wege stehen an repository.IstBestellungImBestaetigungsweg.
 func (t *Tueren) bestellungImBestaetigungsweg(ctx context.Context, id string) (bool, error) {
@@ -46,7 +46,7 @@ func (t *Tueren) BestellungBestaetigen() http.HandlerFunc {
 // eigene Verschachtelungsebene, und dadurch wiegt jedes `if` in diesem Rumpf eins mehr.
 // Als Closure kam die Funktion auf 18 und riss die Schwelle von 15 — obwohl sie nichts
 // weiter tut als sechs Vorbedingungen der Reihe nach abzuräumen. Verschoben, nicht
-// zerschnitten: Die Abfolge bleibt am Stück lesbar (vgl. die übrigen Handler).
+// zerschnitten: Die Abfolge bleibt am Stück lesbar (vgl. die übrigen Türen).
 func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {

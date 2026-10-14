@@ -11,14 +11,14 @@ import (
 
 // Bestellbedarf liefert den Bestellbedarf.
 //
-// Default ist der LMF-Bestand (Lernmittel): Nachbestellt werden praktisch nur
+// Vorgabe ist der LMF-Bestand (Lernmittel): Nachbestellt werden praktisch nur
 // Lernmittel-Klassensätze; im Freihandbestand steht meist ein einzelnes Prüf- oder
 // Leseexemplar, das bewusst ein Einzelstück bleibt. Ohne diese Vorauswahl bestand die
 // Liste zu ~99% aus Titeln, die niemand nachbestellen will — bei realem Bestand
 // tausende Einträge, die die Ansicht unbenutzbar machten.
 //
 // ?type=freihand oder ?type=alle bleiben möglich; für Einzelfälle ausserhalb der
-// Lernmittel gibt es ausserdem die Titelsuche im Bestellworkspace.
+// Lernmittel gibt es ausserdem die Titelsuche des Bestellwesens.
 func (t *Tueren) Bestellbedarf() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		bedarf, err := t.bestellbedarfMitEinstellungen(r.Context(), r)
@@ -31,7 +31,7 @@ func (t *Tueren) Bestellbedarf() http.HandlerFunc {
 }
 
 // bestellbedarfMitEinstellungen liefert den Bestellbedarf gemäß Konfiguration: Warnung aus →
-// leere Liste; sonst gefiltert auf gesamt < Schwelle. Eine Quelle für Ansicht UND
+// leere Liste; sonst gefiltert auf gesamt < Schwelle. Eine Quelle für Ansicht und
 // PDF-Export, damit beide nie auseinanderlaufen.
 func (t *Tueren) bestellbedarfMitEinstellungen(ctx context.Context, r *http.Request) ([]repository.Bestellbedarf, error) {
 	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)

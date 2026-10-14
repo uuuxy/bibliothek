@@ -14,8 +14,7 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// POST /api/bestellungen weist einen Warenkorb ab, den es nicht buchen kann. Gemessen am
-// 08.10.2026 führte kein Go-Test die Zuordnung dieser Fehler aus (OFFEN.md 5.10).
+// POST /api/bestellungen weist einen Warenkorb ab, den es nicht buchen kann.
 //
 // Über den ganzen Router mit Sitzung. Jede Ablehnung ist eine Auskunft mit einem Satz, an
 // dem sich der Warenkorb berichtigen lässt, und sie hat nichts gebucht: keine Bestellung

@@ -14,16 +14,15 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Hauptlieferant darf höchstens EINER sein.
+// Hauptlieferant darf höchstens einer sein.
 //
-// An diesem einen Merkmal hängen drei Dinge, die vorher drei getrennte Schalter waren
-// (Migration 066): Vorauswahl im Bestellformular, der Bestelllink (Etikettengröße +
+// An diesem einen Merkmal hängen drei Dinge (Migration 066): Vorauswahl im Bestellformular,
 // Bestätigung) und ob die Exemplare als etikettiert gelten. Zwei Hauptlieferanten wären
 // ein stiller Fehler — beide bekämen den Link zur selben Bestellung, wer zuerst bestätigt
 // gewinnt, und bei der Vorauswahl entschiede die Sortierung.
 //
-// Geprüft wird über die HTTP-Handler, nicht über den Setzer allein: Die Falle liegt genau
-// dort, wo der Handler das Merkmal direkt ins INSERT/UPDATE schreiben würde. Mit dem
+// Geprüft wird über die Türen, nicht über den Setzer allein: Die Falle liegt genau
+// dort, wo die Tür das Merkmal direkt ins INSERT/UPDATE schreiben würde. Mit dem
 // Teil-Index wirft das einen 500er, sobald ein anderer es schon trägt — ein Fehler, den
 // ein Test auf den Setzer niemals sieht.
 func TestNurEinHauptlieferant(t *testing.T) {
@@ -45,7 +44,7 @@ func TestNurEinHauptlieferant(t *testing.T) {
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("Lieferant %s anlegen: Status %d — %s", name, rec.Code, rec.Body.String())
 		}
-		// ID aus der Antwort, NICHT über den Namen nachschlagen: testdaten.LeereBestandsdaten leert die
+		// ID aus der Antwort, nicht über den Namen nachschlagen: testdaten.LeereBestandsdaten leert die
 		// Lieferanten nicht, und andere Tests im selben Paketlauf legen Händler mit denselben
 		// Namen an — die Suche träfe dann den älteren.
 		var antwort lieferantAntwort
@@ -81,13 +80,13 @@ func TestNurEinHauptlieferant(t *testing.T) {
 		t.Fatalf("nach dem Anlegen: %d Hauptlieferanten (%s), erwartet genau Naacher (%s)", anzahl, id, naacher)
 	}
 
-	// 1. Ein ZWEITER darf an der Datenbank gar nicht erst entstehen.
+	// 1. Ein zweiter darf an der Datenbank gar nicht erst entstehen.
 	if _, err := pool.Exec(ctx,
 		`UPDATE lieferanten SET ist_hauptlieferant = true WHERE id = $1`, cornelsen); err == nil {
 		t.Fatal("zwei Hauptlieferanten müssen an idx_lieferanten_ein_hauptlieferant scheitern")
 	}
 
-	// 2. Über die Oberfläche wandert die Rolle — ohne 500, weil der Handler erst räumt.
+	// 2. Über die Oberfläche wandert die Rolle, ohne 500, weil die Tür erst räumt.
 	if rec := aendern(cornelsen, "Cornelsen", true); rec.Code != http.StatusOK {
 		t.Fatalf("Hauptlieferant umhängen: Status %d — %s\n"+
 			"→ Genau so äußert sich ein Handler, der das Merkmal direkt ins UPDATE schreibt: "+
@@ -116,7 +115,7 @@ func TestNurEinHauptlieferant(t *testing.T) {
 	}
 }
 
-// Der Hauptlieferant steht in der Liste OBEN.
+// Der Hauptlieferant steht in der Liste oben.
 //
 // Das Bestellformular wählt den ersten Eintrag vor. Käme die Liste alphabetisch, gewänne
 // ein beliebiger Händler und die Vorauswahl wäre wirkungslos — ein Schalter, der nichts
@@ -127,7 +126,7 @@ func TestHauptlieferantStehtInDerListeOben(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	// Absichtlich so benannt, dass der Hauptlieferant alphabetisch HINTEN stünde.
+	// Absichtlich so benannt, dass der Hauptlieferant alphabetisch hinten stünde.
 	testdaten.LegeLieferantAn(t, pool, "Aaa-Cornelsen", false)
 	testdaten.LegeLieferantAn(t, pool, "Zzz-Naacher", true)
 

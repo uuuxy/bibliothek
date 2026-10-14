@@ -17,14 +17,14 @@ import (
 	"bibliothek/repository"
 )
 
-// Eine Bestellung kennt ihren Topf (Migration 109) — belegt am echten Handler und an der
-// Zeile in bestellungen_verlauf, nicht am Request-Struct.
+// Eine Bestellung kennt ihren Topf (Migration 109), belegt an der echten Tür und an der
+// Zeile in bestellungen_verlauf, nicht an der Anfrage.
 //
 // Ohne Topf: 400 an der Tür, keine Bestellung, keine reservierten Barcodes. Mit Topf: die
 // Spalte trägt ihn, und die Kundennummer auf dem Beleg ist die des Topfs — die zweite
 // Nummer des Händlers, falls hinterlegt, sonst die erste.
 
-// bestelleMitTopf löst eine Bestellung über den echten HTTP-Handler aus; mittel "" heißt:
+// bestelleMitTopf löst eine Bestellung über die echte Tür aus; mittel "" heißt:
 // das Feld fehlt im Rumpf.
 func bestelleMitTopf(t *testing.T, srv *Tueren, lieferantID, titelID, mittel string) *httptest.ResponseRecorder {
 	t.Helper()
@@ -58,7 +58,7 @@ func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant); n != 0 {
 		t.Errorf("%d Bestellung(en) trotz fehlendem Topf angelegt", n)
 	}
-	// Keine Exemplare reserviert — die Prüfung sitzt VOR dem ersten Datenbankzugriff.
+	// Keine Exemplare reserviert — die Prüfung sitzt vor dem ersten Datenbankzugriff.
 	var exemplare int
 	if err := pool.QueryRow(context.Background(), `SELECT count(*) FROM buecher_exemplare`).Scan(&exemplare); err != nil {
 		t.Fatal(err)
@@ -75,7 +75,7 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Topf", 0)
 
-	// Händler MIT zweiter Kundennummer für den Schulträger …
+	// Händler mit zweiter Kundennummer für den Schulträger …
 	mitZweiter := testdaten.LegeLieferantAn(t, pool, "ZweiKonten", false)
 	if _, err := pool.Exec(ctx, `UPDATE lieferanten SET kundennummer_schultraeger = 'BIB-77' WHERE id = $1`, mitZweiter); err != nil {
 		t.Fatal(err)
@@ -113,7 +113,7 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 	}
 }
 
-// Der CHECK in der Datenbank ist die zweite Tür: Auch wer an Handler und Service vorbei
+// Der CHECK in der Datenbank ist die zweite Tür: Auch wer an Tür und Dienst vorbei
 // schreibt, bekommt keinen dritten Topf hinein.
 func TestBestellungMittelPruefungInDerDatenbank(t *testing.T) {
 	pool := pgtest.Pool(t)

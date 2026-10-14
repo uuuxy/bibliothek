@@ -12,13 +12,13 @@ import (
 	"bibliothek/pkg/mitteltopf"
 )
 
-// Der Topf auf der Bestätigungsseite und an der Etiketten-Tür (OFFEN.md 4.11, entschieden
-// am 21.09.2026) — am echten Weg: Bestellung → Token → HTTP-Aufruf.
+// Der Topf auf der Bestätigungsseite und an der Etiketten-Tür, am echten Weg: Bestellung →
+// Token → HTTP-Aufruf.
 //
-// Der Händler bekommt am selben Tag zwei gleich aussehende Links, und bis hierher bot auch
-// die Bestellung für die Schülerbücherei das große Lernmittel-Etikett „Eigentum des Landes"
-// an. Die Seite nennt jetzt den Topf, und die TÜR verweigert das große Etikett — ein
-// versteckter Knopf allein ließe die Adresse offen.
+// Der Händler bekommt am selben Tag zwei gleich aussehende Links, und die Bestellung für die
+// Schülerbücherei darf das große Lernmittel-Etikett „Eigentum des Landes" nicht anbieten. Die
+// Seite nennt den Topf, und die Tür verweigert das große Etikett; ein versteckter Knopf allein
+// ließe die Adresse offen.
 func TestLieferantenSeite_TopfUndGrossesEtikett(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

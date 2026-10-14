@@ -10,7 +10,7 @@ import (
 	"bibliothek/repository"
 )
 
-// bestellhistorieUebersicht sind die Kennzahlen über den GESAMTEN Bestellverlauf.
+// bestellhistorieUebersicht sind die Kennzahlen über den gesamten Bestellverlauf.
 //
 // Sie haben einen eigenen Endpunkt, weil die Liste gedeckelt ist (siehe
 // bestellhistorieVorgabeGrenze). Würde die Oberfläche ihre Summen aus den geladenen
@@ -29,7 +29,7 @@ type bestellhistorieUebersicht struct {
 	NachMittel []bestellhistorieTopf `json:"nach_mittel"`
 }
 
-// bestellhistorieTopf sind die Kennzahlen EINES Topfes.
+// bestellhistorieTopf sind die Kennzahlen eines Topfes.
 type bestellhistorieTopf struct {
 	// Mittel ist der Wert der Spalte; leer = ohne Zuordnung.
 	Mittel          string  `json:"mittel"`

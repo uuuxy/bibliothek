@@ -16,19 +16,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Detailansicht einer Bestellung steht und fällt mit zwei Verbindungen, die es
-// beide erst seit kurzem gibt und die beide unsichtbar reissen können:
+// Die Detailansicht einer Bestellung steht und fällt mit zwei Verbindungen, die beide
+// unsichtbar reissen können:
 //
 //  1. bestellungen_positionen → buecher_titel (Autor, Verlag, Cover)
 //  2. buecher_exemplare.bestellung_id → die tatsächlich gelieferten Bücher
 //
-// Punkt 2 ist der eigentliche Zugewinn und war bis Migration 063 unmöglich. Ein Test,
-// der nur den Statuscode prüft, würde 200 und eine leere Exemplarliste durchwinken —
-// also genau den Zustand, wegen dem die aufklappende Zeile vorher nichts wert war.
+// Punkt 2 ist der eigentliche Zugewinn (Migration 063). Ein Test, der nur den Statuscode
+// prüft, würde 200 und eine leere Exemplarliste durchwinken, also genau den Zustand, in dem
+// die aufklappende Zeile nichts wert wäre.
 //
 // Nullbare Spalten sind hier kein Nebenschauplatz: autor, verlag und cover_url dürfen
 // leer sein, und ein NULL in einem nicht-nullbaren Go-Typ ist in diesem Projekt eine
-// wiederkehrende 500er-Quelle. Der Test legt deshalb einen Titel MIT und einen OHNE
+// wiederkehrende 500er-Quelle. Der Test legt deshalb einen Titel mit und einen ohne
 // diese Angaben an.
 
 func holeDetail(t *testing.T, srv *Tueren, pool *pgxpool.Pool, bestellungID string) repository.BestellungDetail {
@@ -98,10 +98,10 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 		}
 	}
 
-	// Zwei Exemplare aus DIESER Bestellung, eines davon noch ohne Etikett …
+	// Zwei Exemplare aus dieser Bestellung, eines davon noch ohne Etikett …
 	exemplarAusBestellung(t, pool, mitAngaben, bestellung, "DETAIL-0001", true)
 	exemplarAusBestellung(t, pool, mitAngaben, bestellung, "DETAIL-0002", false)
-	// … und eines desselben Titels OHNE Bestellbezug (Altbestand). Es darf nicht
+	// … und eines desselben Titels ohne Bestellbezug (Altbestand). Es darf nicht
 	// auftauchen: Sonst zeigte der Beleg Bücher, die nie in diesem Karton lagen.
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'ALTBESTAND-1')`,
@@ -134,7 +134,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 			leer.Autor, leer.Verlag, leer.CoverURL)
 	}
 
-	// Der eigentliche Zugewinn: die Exemplare DIESER Lieferung, mit ihren Nummern.
+	// Der eigentliche Zugewinn: die Exemplare dieser Lieferung, mit ihren Nummern.
 	if len(detail.Exemplare) != 2 {
 		t.Fatalf("Exemplare = %d, want 2 (Altbestand ohne bestellung_id gehört nicht dazu)",
 			len(detail.Exemplare))

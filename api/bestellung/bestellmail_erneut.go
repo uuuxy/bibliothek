@@ -23,10 +23,10 @@ const aktionBestellmailErneutGesendet = "BESTELLMAIL_ERNEUT_GESENDET"
 // gescheitert ist. Die Mail entsteht aus der gespeicherten Bestellung über denselben Weg wie
 // die erste (sendeBestellmail) und geht an die heutige Adresse des Lieferanten.
 //
-// @Summary      Resend the order e-mail after a failed dispatch
+// @Summary      Bestellmail nach gescheitertem Versand erneut senden
 // @Tags         orders
 // @Produce      json
-// @Param        id   path      string  true  "Order ID"
+// @Param        id   path      string  true  "Kennung der Bestellung"
 // @Success      200  {object}  map[string]any
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -102,10 +102,10 @@ const aktionBestellmailVermerkEntfernt = "BESTELLMAIL_VERMERK_ENTFERNT"
 // senden: Die Bibliothek hat den Händler auf anderem Weg erreicht, etwa am Telefon. „Erneut
 // senden" brächte die Bestellung sonst ein zweites Mal zu ihm.
 //
-// @Summary      Dismiss the failed-dispatch note of an order without sending
+// @Summary      Vermerk über den gescheiterten Versand entfernen, ohne zu senden
 // @Tags         orders
 // @Produce      json
-// @Param        id   path      string  true  "Order ID"
+// @Param        id   path      string  true  "Kennung der Bestellung"
 // @Success      200  {object}  map[string]any
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string

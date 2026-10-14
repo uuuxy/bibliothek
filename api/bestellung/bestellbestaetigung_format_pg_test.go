@@ -25,10 +25,10 @@ import (
 // Die Formatwahl des Lieferanten — am echten Endpunkt, nicht am Generator.
 //
 // Warum es diese Datei zusätzlich zu pdf/etikett_layout_test.go gibt: Der dortige Test ruft
-// GenerateLabelsPDF direkt auf und belegt, dass der Generator das Raster beachtet. Als der
-// Lieferanten-Weg beim Rückbau probeweise wieder auf das feste "zweckform_l4760" gesetzt
-// wurde, blieb er GRÜN — er sieht die Durchreichung gar nicht. Genau diese Lücke ist die
-// Bugklasse dieses Projekts: ein Gate, das eine Stelle prüft, die niemand kaputtmacht.
+// GenerateLabelsPDF direkt auf und belegt, dass der Generator das Raster beachtet. Setzt man
+// den Lieferanten-Weg beim Rückbau probeweise wieder auf das feste "zweckform_l4760", bleibt er
+// grün; er sieht die Durchreichung gar nicht. Genau diese Lücke ist die Bugklasse dieses
+// Projekts: ein Gate, das eine Stelle prüft, die niemand kaputtmacht.
 //
 // Hier läuft deshalb der echte Weg: Bestellung → Token → HTTP-Aufruf mit ?format= →
 // fertiges PDF.
@@ -78,7 +78,7 @@ func bestellungMitEtikettenAus(t *testing.T, srv *Tueren, pool *pgxpool.Pool, me
 }
 
 // Das Gate: Dasselbe Bestellvolumen muss je nach gewähltem Raster auf unterschiedlich
-// viele Blätter kommen — über den ÖFFENTLICHEN Endpunkt.
+// viele Blätter kommen — über den öffentlichen Endpunkt.
 //
 // 25 Exemplare: 3×7 = 21 je Bogen → 2 Blätter, 4×13 = 52 je Bogen → 1 Blatt.
 // Bliebe das Format irgendwo auf dem Weg liegen, wären beide Antworten gleich.
@@ -145,10 +145,10 @@ func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 	}
 }
 
-// Ein unbekanntes Raster wird ABGEWIESEN und nicht still auf die Vorgabe gedreht.
+// Ein unbekanntes Raster wird abgewiesen und nicht still auf die Vorgabe gedreht.
 //
 // pdf.GetLabelFormat liefert bei Unbekanntem stillschweigend zweckform_l4760 zurück. Würde
-// der Handler das übernehmen, druckte der Lieferant nach einem Tippfehler im falschen
+// die Tür das übernehmen, druckte der Lieferant nach einem Tippfehler im falschen
 // Raster — und merkte es erst am verschnittenen Bogen.
 func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)

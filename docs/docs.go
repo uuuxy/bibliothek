@@ -680,11 +680,11 @@ const docTemplate = `{
                 "tags": [
                     "orders"
                 ],
-                "summary": "Resend the order e-mail after a failed dispatch",
+                "summary": "Bestellmail nach gescheitertem Versand erneut senden",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Order ID",
+                        "description": "Kennung der Bestellung",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -743,11 +743,11 @@ const docTemplate = `{
                 "tags": [
                     "orders"
                 ],
-                "summary": "Dismiss the failed-dispatch note of an order without sending",
+                "summary": "Vermerk über den gescheiterten Versand entfernen, ohne zu senden",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Order ID",
+                        "description": "Kennung der Bestellung",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -802,17 +802,17 @@ const docTemplate = `{
                 "tags": [
                     "orders"
                 ],
-                "summary": "Correct the funding pot of an existing order",
+                "summary": "Topf einer bestehenden Bestellung korrigieren",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Order ID",
+                        "description": "Kennung der Bestellung",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "New pot and reason",
+                        "description": "Neuer Topf und Grund",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -4180,7 +4180,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bestelllink_ohne_adresse": {
-                    "description": "BestelllinkOhneAdresse: Es gibt einen Hauptlieferanten, aber keine öffentliche\nAdresse — seine Bestellmails gehen also ohne Bestätigungs-Link raus.\n\nBeides zusammen ergibt erst die Aussage: Ohne Hauptlieferant verschickt das System\ngar keine Links, dann fehlt auch nichts. Die Oberfläche soll das VOR dem Bestellen\nsagen können, nicht erst als Warnung hinterher (siehe bestellVersandMeldung).",
+                    "description": "BestelllinkOhneAdresse: Es gibt einen Hauptlieferanten, aber keine öffentliche\nAdresse — seine Bestellmails gehen also ohne Bestätigungs-Link raus.\n\nBeides zusammen ergibt erst die Aussage: Ohne Hauptlieferant verschickt das System\ngar keine Links, dann fehlt auch nichts. Die Oberfläche soll das vor dem Bestellen\nsagen können, nicht erst als Warnung hinterher (siehe bestellVersandMeldung).",
                     "type": "boolean"
                 },
                 "preise_erfassen": {

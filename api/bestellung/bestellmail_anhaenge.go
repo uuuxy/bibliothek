@@ -41,16 +41,14 @@ type bestellMail struct {
 	// MitVorabBarcodes: Für mindestens eine Position wurden Barcodes reserviert.
 	MitVorabBarcodes bool
 	// IstHauptlieferant: Der Händler beklebt die Bücher selbst und wählt dafür die
-	// Etikettengröße — er bekommt deshalb BEIDE Formate statt nur des kleinen.
+	// Etikettengröße — er bekommt deshalb beide Formate statt nur des kleinen.
 	IstHauptlieferant bool
 	// MitBestaetigungsLink: In der Mail steht der Link auf die Bestellseite. Dann liegen
-	// die Etikettenbögen DORT und nicht an der Mail — siehe bestellAnhaenge.
+	// die Etikettenbögen dort und nicht an der Mail — siehe bestellAnhaenge.
 	MitBestaetigungsLink bool
-	// EtikettKopf: Schulname und Eigentumsvermerke für die Etikettenbögen, fertig gebaut
-	// von buchetikett.KopfAus. Bis zum 01.09.2026 nagelte dieser Mailweg den Vermerk auf die
-	// Werksvorgabe fest, während Selbstdruck und Lieferanten-Link die Einstellung lasen —
-	// zwei Wege zum selben Buch, zwei verschiedene Aufkleber. Seit dem 21.09.2026 baut
-	// er den Kopf gar nicht mehr selbst.
+	// EtikettKopf: Schulname und Eigentumsvermerke für die Etikettenbögen, fertig gebaut von
+	// buchetikett.KopfAus wie im Selbstdruck und hinter dem Lieferanten-Link. Baute dieser
+	// Mailweg den Kopf selbst, ergäben zwei Wege zum selben Buch zwei verschiedene Aufkleber.
 	EtikettKopf buchetikett.Kopf
 	Schule      pdf.SchuleInfo
 	// Mittel: der Topf der Bestellung (mitteltopf.Land / mitteltopf.Schultraeger) —
@@ -83,19 +81,19 @@ func verschickeBestellmail(m bestellMail) error {
 // bestellAnhaenge stellt die Anlagen der Bestellmail zusammen.
 //
 // Die Etikettenbögen sind der springende Punkt. Geht ein Bestätigungs-Link mit, hängen
-// sie NICHT an der Mail: Der Händler holt sie über den Link, und genau dieser Weg trägt
+// sie nicht an der Mail: Der Händler holt sie über den Link, und genau dieser Weg trägt
 // die Bestätigung, die in der Bestellhistorie erscheint. Lägen die fertigen Bögen daneben
 // im Postfach, druckte er sie von dort — und die Schule wartete auf eine Bestätigung, die
 // nie kommt, obwohl die Bücher längst beklebt unterwegs sind.
 //
-// Ohne Link bleibt es beim alten Weg (Rückfallebene): Der Bogen MUSS dann beiliegen,
+// Ohne Link bleibt es beim alten Weg (Rückfallebene): Der Bogen muss dann beiliegen,
 // sonst kann der Händler gar nicht bekleben.
 func bestellAnhaenge(m bestellMail) ([]mailservice.MailAttachment, error) {
 	mitBarcodebogen := m.MitVorabBarcodes && len(m.Etiketten) > 0
 
-	// Eine Entscheidung, an der ALLES hängt: die Bögen, die CSV und der Satz im
-	// Anschreiben, der auf sie verweist. Vorher stand der Satz unabhängig davon im
-	// Brief — der Lieferant wurde auf eine Anlage hingewiesen, die nicht existierte.
+	// Eine Entscheidung, an der alles hängt: die Bögen, die CSV und der Satz im
+	// Anschreiben, der auf sie verweist. Stünde der Satz unabhängig davon im Brief, wiese er
+	// den Lieferanten auf eine Anlage hin, die es nicht gibt.
 	weg := pdf.OhneEtiketten
 	switch {
 	case mitBarcodebogen && m.MitBestaetigungsLink:
@@ -159,9 +157,9 @@ func bestellanschreiben(positionen []bestellterTitel, weg pdf.EtikettenWeg, mitt
 func erzeugeBarcodeCSV(etiketten []buchetikett.Etikett) ([]byte, error) {
 	var buf bytes.Buffer
 	schreiber := csv.NewWriter(&buf)
-	schreiber.Comma = ';' // European CSV format
+	schreiber.Comma = ';' // Semikolon, wie Tabellenprogramme in Europa es erwarten
 
-	// Header
+	// Kopfzeile
 	if err := schreiber.Write([]string{"ISBN", "Titel", "Autor", "Barcode"}); err != nil {
 		return nil, err
 	}

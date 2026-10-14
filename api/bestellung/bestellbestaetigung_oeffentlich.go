@@ -18,7 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Diese Datei bedient die EINZIGE Seite des Systems, die ohne Anmeldung etwas verändern
+// Diese Datei bedient die einzige Seite des Systems, die ohne Anmeldung etwas verändern
 // darf: die Bestätigungsseite des Lieferanten. Der Token aus dem Link ist der Ausweis.
 //
 // Der Zuschnitt ist bewusst eng — wer den Link hat, erreicht genau eine Bestellung und
@@ -56,7 +56,7 @@ type oeffentlicheBestellung struct {
 	// GrossesEtikett: Gehört zu dieser Bestellung das große Lernmittel-Etikett? Bei einer
 	// Bestellung für die Schülerbücherei nicht — die Tür liefert es dann auch nicht.
 	GrossesEtikett bool `json:"grosses_etikett"`
-	// EtikettenFormate sind die Bogenraster, unter denen der Lieferant für die KLEINEN
+	// EtikettenFormate sind die Bogenraster, unter denen der Lieferant für die kleinen
 	// Etiketten wählen kann — er druckt auf sein eigenes Material, und davon gibt es
 	// verschiedene. Die Liste kommt aus dem Backend, damit ein neues Format nicht an
 	// zwei Stellen nachgetragen werden muss.
@@ -72,7 +72,7 @@ type oeffentlicheBestellung struct {
 
 // bestellungPerToken übersetzt den Token aus dem Link in eine Bestell-ID.
 //
-// Unbekannt und abgelaufen sind bewusst DERSELBE Fall (pgx.ErrNoRows): Ein Unterschied
+// Unbekannt und abgelaufen sind bewusst derselbe Fall (pgx.ErrNoRows): Ein Unterschied
 // in der Antwort verriete, dass ein geratener Token einmal echt war.
 func (t *Tueren) bestellungPerToken(ctx context.Context, token string) (string, error) {
 	if token == "" {
@@ -149,13 +149,13 @@ func (t *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	return &a, nil
 }
 
-// oeffentlichBestaetigenAnfrage ist der Body des Bestätigens durch den Lieferanten.
+// oeffentlichBestaetigenAnfrage ist der Rumpf des Bestätigens durch den Lieferanten.
 type oeffentlichBestaetigenAnfrage struct {
-	// EtikettenGroesse ist OPTIONAL ('klein'/'gross'/''): Die Schule braucht die Angabe
+	// EtikettenGroesse ist wahlweise ('klein'/'gross'/''): Die Schule braucht die Angabe
 	// nicht, der Lieferant druckt selbst. Die Seite schickt mit, was sie geladen hat —
 	// mehr als eine Notiz in der Historie ist es nicht, und ein leerer Wert ist erlaubt.
 	EtikettenGroesse string `json:"etiketten_groesse"`
-	// EtikettenFormat ist ebenfalls OPTIONAL und nur bei 'klein' aussagekräftig: auf
+	// EtikettenFormat ist ebenfalls wahlweise und nur bei 'klein' aussagekräftig: auf
 	// welchem Bogenraster der Lieferant gedruckt hat. Für die Bibliothek ist das die
 	// Antwort auf "wie sehen die Aufkleber aus, die gleich ankommen?".
 	EtikettenFormat string `json:"etiketten_format"`

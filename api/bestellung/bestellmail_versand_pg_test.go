@@ -20,19 +20,19 @@ import (
 	"bibliothek/repository"
 )
 
-// Was kommt beim Händler WIRKLICH an?
+// Was kommt beim Händler wirklich an?
 //
-// Am 06.08.2026 ging eine Bestellung an den Hauptlieferanten raus, die Oberfläche meldete
-// "erfolgreich gesendet", und in der Mail lagen vier PDFs — aber kein Bestätigungs-Link.
-// Kein einziger Test war rot: Die Link-Erzeugung, die öffentliche Seite und die Bestätigung
-// waren alle für sich in Ordnung. Es fehlte eine EINSTELLUNG, und ihr Fehlen fiel auf dem
-// Weg von der Einstellung bis in die Mail nirgends auf.
+// Eine Bestellung kann an den Hauptlieferanten rausgehen, die Oberfläche meldet
+// "erfolgreich gesendet", in der Mail liegen vier PDFs, aber kein Bestätigungs-Link, und kein
+// Test ist rot: Link-Erzeugung, öffentliche Seite und Bestätigung sind je für sich in Ordnung.
+// Fehlt eine Einstellung, fällt das auf dem Weg von der Einstellung bis in die Mail nirgends
+// auf.
 //
 // Deshalb steht dieses Gate am Ende der Kette, an der fertigen Nachricht auf dem Draht:
-// echter Handler, echte Transaktion, echter SMTP-Versand — nur der Mailserver ist ein
-// Testserver, damit niemals eine Mail an den Schulserver rausgeht (siehe internal/smtptest).
+// echte Tür, echte Transaktion, echter SMTP-Versand; nur der Mailserver ist ein Testserver,
+// damit niemals eine Mail an den Schulserver rausgeht (siehe internal/smtptest).
 
-// bestelleUeberTuer löst eine Bestellung über den echten HTTP-Handler aus und liefert
+// bestelleUeberTuer löst eine Bestellung über die echte Tür aus und liefert
 // die Antwort.
 func bestelleUeberTuer(t *testing.T, srv *Tueren, lieferantID, titelID string) *httptest.ResponseRecorder {
 	t.Helper()
@@ -60,12 +60,12 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
 
-	// Der Link IST der Ablauf: Ohne ihn kann der Händler nicht bestätigen, und genau das
+	// Der Link ist der Ablauf selbst: Ohne ihn kann der Händler nicht bestätigen, und genau das
 	// war der gemeldete Fehler.
 	if !strings.Contains(nachricht, "https://bib.example.invalid/bestellung/") {
 		t.Errorf("kein Bestätigungs-Link in der Mail:\n%s", smtptest.Kopf(nachricht))
 	}
-	// Und die Etiketten liegen NICHT daneben im Postfach: Wer sie von dort druckt,
+	// Und die Etiketten liegen nicht daneben im Postfach: Wer sie von dort druckt,
 	// klickt den Link nie — die Schule wartete dann auf eine Bestätigung, die nie kommt.
 	for _, name := range []string{"etiketten_klein", "etiketten_gross"} {
 		if strings.Contains(nachricht, name) {
@@ -81,7 +81,7 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 
 // Die Gegenrichtung — und der eigentliche Vorfall: keine öffentliche Adresse hinterlegt.
 // Die Mail geht raus (die Bestellung ist ja gebucht), aber sie sagt es, statt "erfolgreich"
-// zu melden. Und der Etikettenbogen MUSS dann beiliegen: Der Händler beklebt trotzdem
+// zu melden. Und der Etikettenbogen muss dann beiliegen: Der Händler beklebt trotzdem
 // selbst, seine Exemplare gelten bereits als etikettiert.
 func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -207,7 +207,7 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	}
 }
 
-// bestelleMitSchluessel löst eine Bestellung über den echten Handler MIT Idempotenz-
+// bestelleMitSchluessel löst eine Bestellung über die echte Tür mit Idempotenz-
 // Schlüssel aus.
 func bestelleMitSchluessel(t *testing.T, srv *Tueren, lieferantID, titelID, key string) *httptest.ResponseRecorder {
 	t.Helper()
@@ -223,8 +223,8 @@ func bestelleMitSchluessel(t *testing.T, srv *Tueren, lieferantID, titelID, key 
 }
 
 // TestBestellungIdempotenz belegt den Doppelklick-Schutz (Migration 077): Zwei
-// Bestellungen mit DEMSELBEN Idempotenz-Schlüssel erzeugen nur EINE Bestellung und
-// GENAU EINE Lieferanten-Mail; die zweite meldet „bereits erfasst".
+// Bestellungen mit demselben Idempotenz-Schlüssel erzeugen nur eine Bestellung und
+// genau eine Lieferanten-Mail; die zweite meldet „bereits erfasst".
 func TestBestellungIdempotenz(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -263,7 +263,7 @@ func TestBestellungIdempotenz(t *testing.T) {
 		t.Fatalf("genau 1 Bestellung erwartet, waren %d", anzahl)
 	}
 
-	// KEINE zweite Mail: Der Kanal darf jetzt leer sein.
+	// Keine zweite Mail: Der Kanal darf jetzt leer sein.
 	select {
 	case s := <-sitzungen:
 		t.Fatalf("es ging eine ZWEITE Mail raus (Doppelklick nicht abgefangen): %s", smtptest.Kopf(s.Nachricht))

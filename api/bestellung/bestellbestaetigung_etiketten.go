@@ -16,7 +16,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Etikettenseite des Lieferanten-Links. Sie druckt GENAU die Etiketten, die auch im
+// Die Etikettenseite des Lieferanten-Links. Sie druckt genau die Etiketten, die auch im
 // Mailanhang lagen — dieselben Barcodes, dieselbe Auswahl, dieselben Generatoren
 // (klein = Bogen wie im Druck-Center, groß = Lernmittel-Etikett). Zwei Wege zum selben
 // Buch dürfen nicht zwei verschiedene Aufkleber ergeben.

@@ -15,21 +15,19 @@ import (
 
 // Der Hauptlieferant lässt sich nicht nebenbei wegklicken.
 //
-// Gefunden am 07.09.2026 beim Befragen des Fremdschlüssels
-// `bestellungen_verlauf.lieferant_id -> lieferanten` (Frage 12, Gegenrichtung Schema).
-// Der Fremdschlüssel selbst war die harmlose Hälfte: ON DELETE SET NULL, und die
-// Bestellung hält Name und E-Mail des Händlers als eigene Abschrift — die Historie
-// überlebt das Löschen unbeschadet.
+// Der Fremdschlüssel `bestellungen_verlauf.lieferant_id -> lieferanten` ist die harmlose
+// Hälfte: ON DELETE SET NULL, und die Bestellung hält Name und E-Mail des Händlers als eigene
+// Abschrift; die Historie überlebt das Löschen unbeschadet.
 //
-// Der LÖSCHWEG daneben war das Problem. „Löschen" in der Lieferantenverwaltung fragt
-// nicht nach (ein Klick, kein Dialog), und getroffen werden konnte auch der EINE
-// Händler, an dem der ganze Bestellweg hängt: Bestellmail, Bestätigungs-Link und die
-// Etiketten-Entscheidung „der Händler beklebt selbst". Danach hatte die Schule keinen
-// Hauptlieferanten mehr — ohne Meldung, ohne Spur, die Liste zeigte nur einen Händler
-// weniger. Dieselbe Klasse wie „Feature hängt an ungesetzter Einstellung", nur dass hier
-// jemand den Schalter aktiv umlegt, ohne es zu merken.
+// Gefährlich wäre der Löschweg daneben. „Löschen" in der Lieferantenverwaltung fragt nicht
+// nach (ein Klick, kein Dialog), und getroffen werden könnte auch der eine Händler, an dem der
+// ganze Bestellweg hängt: Bestellmail, Bestätigungs-Link und die Etiketten-Entscheidung „der
+// Händler beklebt selbst". Danach hätte die Schule keinen Hauptlieferanten mehr, ohne Meldung
+// und ohne Spur; die Liste zeigte nur einen Händler weniger. Dieselbe Klasse wie „Feature
+// hängt an ungesetzter Einstellung", nur dass hier jemand den Schalter aktiv umlegt, ohne es
+// zu merken.
 //
-// Die Regel sitzt im Handler, nicht im Formular: Die Verwaltung ist nicht die einzige
+// Die Regel sitzt in der Tür, nicht im Formular: Die Verwaltung ist nicht die einzige
 // Tür, und ein Hinweis, den nur ein Bildschirm kennt, ist keine Regel.
 func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)

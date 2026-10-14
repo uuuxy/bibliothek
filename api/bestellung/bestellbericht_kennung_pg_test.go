@@ -11,13 +11,13 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Der Lieferanten-Filter des Bestellberichts wird an der Tür geprüft (OFFEN.md 5.12).
+// Der Lieferanten-Filter des Bestellberichts wird an der Tür geprüft.
 //
-// `lieferant_id` kam über eine Query-Variable (`q := r.URL.Query(); q.Get(…)`) herein —
-// die eine Schreibweise, die die UUID-Ratsche (uuid_eingaben_test.go) bis zum 22.09.2026
-// nicht sah. Der Wert ging ungeprüft in `AND lieferant_id = $n`; ein Text wie `x` endete
-// als `invalid input syntax for type uuid` (22P02) und damit als 500 — ein Bedienfehler,
-// der aussah wie ein Serverausfall. Am echten Postgres, weil nur der die 22P02 wirft.
+// `lieferant_id` kommt über eine Query-Variable (`q := r.URL.Query(); q.Get(…)`) herein, eine
+// Schreibweise, die die UUID-Ratsche (uuid_eingaben_test.go) eigens erkennen muss. Ungeprüft
+// ginge der Wert in `AND lieferant_id = $n`; ein Text wie `x` endete als
+// `invalid input syntax for type uuid` (22P02) und damit als 500, ein Bedienfehler, der
+// aussähe wie ein Serverausfall. Am echten Postgres, weil nur der die 22P02 wirft.
 func TestBestellbericht_LieferantIDWirdAnDerTuerGeprueft(t *testing.T) {
 	pool := pgtest.Pool(t)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

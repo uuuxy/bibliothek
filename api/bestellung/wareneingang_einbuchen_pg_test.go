@@ -13,8 +13,7 @@ import (
 )
 
 // POST /api/bestellungen/bulk-receive bucht markierte Exemplare aus dem Zulauf in den
-// Bestand: ausleihbar, ohne Bestellstatus, ohne die Notiz „Im Zulauf". Gemessen am
-// 07.10.2026 führte kein Go-Test mehr als 4,3 % dieses Wegs aus (OFFEN.md 5.10).
+// Bestand: ausleihbar, ohne Bestellstatus, ohne die Notiz „Im Zulauf".
 //
 // Über den ganzen Router mit Sitzung. Was die Tür ablehnt, darf nichts gebucht haben.
 

@@ -13,17 +13,17 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Der Round-Trip der zweiten Kundennummer (Schülerbücherei, Migration 109) über die
-// ECHTEN Türen: anlegen, lesen, ändern, wieder lesen.
+// Hin und zurück mit der zweiten Kundennummer (Schülerbücherei, Migration 109) über die
+// echten Türen: anlegen, lesen, ändern, wieder lesen.
 //
-// Warum am ganzen Weg und nicht am Handler allein: Die Bugklasse hier heißt „still
+// Warum am ganzen Weg und nicht an der Tür allein: Die Bugklasse hier heißt „still
 // verworfenes JSON-Feld" — ein Feld, das die Maske schickt, der Server annimmt und
 // irgendwo zwischen Struct, SQL und Antwort verliert. Das fällt in keinem Unit-Test auf,
 // weil jede Hälfte für sich stimmt; auffallen würde es erst, wenn der Händler die
 // Rechnung für die Schülerbücherei auf das Lernmittel-Konto stellt.
 //
-// Der dritte Fall ist der wichtige: Eine Anfrage OHNE das Feld darf die hinterlegte
-// Nummer NICHT löschen (nil = unverändert), ein leerer String schon (ausdrücklich
+// Der dritte Fall ist der wichtige: Eine Anfrage ohne das Feld darf die hinterlegte
+// Nummer nicht löschen (nil = unverändert), ein leerer String schon (ausdrücklich
 // gelöscht). Ohne diese Unterscheidung genügte ein Aufrufer, der das Feld nicht kennt,
 // um die Nummer stillschweigend zu verlieren.
 
@@ -105,7 +105,7 @@ func TestLieferantZweitnummer_HinUndZurueckUeberDieEchtenTueren(t *testing.T) {
 		t.Errorf("Liste nach dem Anlegen: %q, want %q", got, "BIB-ZWEI")
 	}
 
-	// 2. Ändern MIT Feld: neuer Wert gilt.
+	// 2. Ändern mit Feld: neuer Wert gilt.
 	geaendert := lieferantAendernUeberTuer(t, srv, angelegt.ID,
 		`{"name":"Zweitnummer-Haendler","email":"zwei@example.invalid","customerNumber":"K-EINS","kundennummer_schultraeger":"BIB-DREI"}`)
 	if geaendert.KundennummerSchultraeger != "BIB-DREI" {
@@ -115,8 +115,8 @@ func TestLieferantZweitnummer_HinUndZurueckUeberDieEchtenTueren(t *testing.T) {
 		t.Errorf("Liste nach dem Ändern: %q, want %q", got, "BIB-DREI")
 	}
 
-	// 3. Ändern OHNE Feld: die Nummer bleibt. Das ist der Kern — ein Aufrufer, der das
-	//    Feld nicht kennt (alter Client, anderes Werkzeug), darf sie nicht löschen.
+	// 3. Ändern ohne Feld: die Nummer bleibt. Das ist der Kern — ein Aufrufer, der das
+	//    Feld nicht kennt (alte Oberfläche, anderes Werkzeug), darf sie nicht löschen.
 	ohneFeld := lieferantAendernUeberTuer(t, srv, angelegt.ID,
 		`{"name":"Zweitnummer-Haendler NEU","email":"zwei@example.invalid","customerNumber":"K-EINS"}`)
 	if ohneFeld.KundennummerSchultraeger != "BIB-DREI" {
@@ -126,7 +126,7 @@ func TestLieferantZweitnummer_HinUndZurueckUeberDieEchtenTueren(t *testing.T) {
 		t.Errorf("OHNE Feld wurde die Zweitnummer gelöscht: %q, want %q", got, "BIB-DREI")
 	}
 
-	// 4. Leerer String: ausdrücklich gelöscht — die Unterscheidung muss in BEIDE
+	// 4. Leerer String: ausdrücklich gelöscht — die Unterscheidung muss in beide
 	//    Richtungen funktionieren, sonst ist die Nummer nicht mehr wegzubekommen.
 	geleert := lieferantAendernUeberTuer(t, srv, angelegt.ID,
 		`{"name":"Zweitnummer-Haendler NEU","email":"zwei@example.invalid","customerNumber":"K-EINS","kundennummer_schultraeger":""}`)

@@ -1,11 +1,10 @@
 package bestellung
 
-// Eigentumsvermerk auf den gemailten Etikettenbögen (Sweep 01.09.2026, Fund P2):
-// Bis dahin nagelte der Mailweg den Vermerk auf die Werksvorgabe „Eigentum des
-// Landes Hessen" fest, während Selbstdruck (buchetikett.LadeKopf) und Lieferanten-Link
-// die Einstellung etikett_eigentumsvermerk lasen — zwei Wege zum selben Buch,
-// zwei verschiedene Aufkleber. Geprüft am fertigen PDF-Inhaltsstrom (pdftest.Suchtext),
-// wie alle Etiketten-Gates.
+// Eigentumsvermerk auf den gemailten Etikettenbögen: Der Mailweg liest die Einstellung
+// etikett_eigentumsvermerk wie Selbstdruck (buchetikett.LadeKopf) und Lieferanten-Link. Hielte
+// er die Werksvorgabe „Eigentum des Landes Hessen" fest, ergäben zwei Wege zum selben Buch
+// zwei verschiedene Aufkleber. Geprüft am fertigen PDF-Inhaltsstrom (pdftest.Suchtext), wie
+// alle Etiketten-Gates.
 
 import (
 	"strings"
@@ -61,7 +60,7 @@ func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T
 }
 
 // Das große Lernmittel-Etikett („Eigentum des Landes") geht nur mit, wenn die Bestellung
-// nicht der Schülerbücherei gilt (OFFEN.md 4.11, entschieden am 21.09.2026). Die
+// nicht der Schülerbücherei gilt. Die
 // Alt-Bestellung ohne Zuordnung behält beide Größen.
 func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
 	faelle := []struct {
@@ -97,9 +96,9 @@ func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
 	}
 }
 
-// Der Eigentumsvermerk folgt dem Topf des Exemplars (OFFEN.md 4.21, entschieden am
-// 21.09.2026) — am fertigen PDF beider Erzeuger. Bis dahin trug ein Buch der
-// Schülerbücherei, bezahlt vom Schulträger, den Aufdruck „Eigentum des Landes Hessen".
+// Der Eigentumsvermerk folgt dem Topf des Exemplars, am fertigen PDF beider Erzeuger: Ein
+// Buch der Schülerbücherei, bezahlt vom Schulträger, trägt nicht den Aufdruck „Eigentum des
+// Landes Hessen".
 func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 	const land, stadt = "Eigentum des Landes Hessen", "Eigentum der Stadt Friedrichsdorf"
 
@@ -121,7 +120,7 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 			labels := einTestEtikett()
 			labels[0].Topf = f.topf
 
-			// Hauptlieferant + Land-Bestellung: beide Bögen entstehen, klein UND groß.
+			// Hauptlieferant + Land-Bestellung: beide Bögen entstehen, klein und groß.
 			boegen, err := etikettenboegen(labels, kopf, true, mitteltopf.Land)
 			if err != nil {
 				t.Fatalf("etikettenboegen: %v", err)

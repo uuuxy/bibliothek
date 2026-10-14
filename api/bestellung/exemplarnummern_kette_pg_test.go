@@ -20,12 +20,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Exemplarnummern — EINE Nummer über die ganze Kette.
+// Die Exemplarnummern — eine Nummer über die ganze Kette.
 //
 // Die Frage aus dem Betrieb: "Gibt es die Nummern dann auch wirklich?" Sie entstehen beim
 // Bestellen aus einer Sequenz, wandern in die Mail, auf den Aufkleber des Händlers, und
 // müssen Wochen später am gelieferten Buch gescannt werden. Jedes Glied für sich ist
-// geprüft; brechen kann die Kette an den ÜBERGÄNGEN — eine Nummer im Anhang, die in der
+// geprüft; brechen kann die Kette an den Übergängen — eine Nummer im Anhang, die in der
 // Datenbank fehlt, wäre ein Aufkleber auf einem Buch, das niemand kennt.
 //
 // Deshalb hier kein Einzelglied, sondern der Durchlauf: bestellen → Nummern aus dem
@@ -81,7 +81,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 		t.Fatalf("Datenbank hat %v, die Mail nennt %v — die Nummern laufen auseinander", ausDB, ausMail)
 	}
 
-	// 3. Und dieselben Nummern stehen GEDRUCKT auf dem Bogen hinter dem Link. Der Bogen
+	// 3. Und dieselben Nummern stehen gedruckt auf dem Bogen hinter dem Link. Der Bogen
 	//    ist der zweite Weg zu denselben Daten (er liest neu aus der Datenbank); genau an
 	//    solchen Nahtstellen sind hier schon zweimal Felder verlorengegangen.
 	treffer := linkMuster.FindStringSubmatch(nachricht)
@@ -120,7 +120,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 		t.Fatalf("Wareneingang: %v", err)
 	}
 
-	// 6. Der Scan am Buch. Code39 druckt den Inhalt in GROSSBUCHSTABEN — die Nummer muss
+	// 6. Der Scan am Buch. Code39 druckt den Inhalt in Großbuchstaben — die Nummer muss
 	//    also genau so gefunden werden, wie sie auf dem Aufkleber steht.
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	for _, barcode := range ausMail {
@@ -134,7 +134,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	}
 }
 
-// nichtImZulauf meldet die Exemplare, die der Wareneingang NICHT anbietet.
+// nichtImZulauf meldet die Exemplare, die der Wareneingang nicht anbietet.
 func nichtImZulauf(gruppen []*service.Zulaufgruppe, ids []string) []string {
 	angeboten := map[string]bool{}
 	for _, g := range gruppen {

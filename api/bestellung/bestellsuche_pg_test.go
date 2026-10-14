@@ -19,8 +19,8 @@ import (
 )
 
 // POST /api/bestellungen/suche sucht einen Titel zum Bestellen im eigenen Katalog und in der
-// DNB. Gemessen am 08.10.2026 führte kein Go-Test die Tür aus (13,3 %, OFFEN.md 5.10); die
-// Suche dahinter prüft internal/service/bestellsuche_test.go mit nachgespielten Datenbank-Antworten.
+// DNB. Die Suche dahinter prüft internal/service/bestellsuche_test.go mit nachgespielten
+// Datenbank-Antworten.
 //
 // Hier mit echter Datenbank und nachgestellter DNB: was die Person im Bestellwesen an einem
 // Treffer abliest, bevor sie bestellt — ob der Titel schon im Haus ist und wie viele

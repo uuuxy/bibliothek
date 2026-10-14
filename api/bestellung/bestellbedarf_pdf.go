@@ -16,7 +16,7 @@ import (
 )
 
 // BestellbedarfPDF exportiert den Bestellbedarf als PDF — dieselbe Auswahl und
-// Reihenfolge wie die Ansicht (Default LMF, knappste zuerst, siehe Bestellbedarf).
+// Reihenfolge wie die Ansicht (Vorgabe LMF, knappste zuerst, siehe Bestellbedarf).
 func (t *Tueren) BestellbedarfPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		bedarf, err := t.bestellbedarfMitEinstellungen(r.Context(), r)
@@ -41,15 +41,14 @@ func (t *Tueren) BestellbedarfPDF() http.HandlerFunc {
 	}
 }
 
-// baueBestelllistePDF setzt die Tabelle. Getrennt vom Handler, damit das Layout ohne
+// baueBestelllistePDF setzt die Tabelle. Getrennt von der Tür, damit das Layout ohne
 // HTTP-Kontext lesbar (und testbar) bleibt.
 //
-// schwelle ist der konfigurierte Soll-Bestand — dieselbe Zahl, die bestimmt, WELCHE
-// Titel überhaupt auf der Liste stehen. Bis zum 30.07.2026 rechnete die Spalte
-// „Nachbestellmenge" stattdessen mit dem Feld meldebestand aus dem Titel, das seit der
-// Umstellung auf die Schwelle niemand mehr pflegt: Es steht auf der Vorgabe 5. Bei
-// einer Schwelle von 30 und 10 vorhandenen Exemplaren stand auf der Bestellliste für
-// den Händler „−5". Die Auswahl kam aus der einen Zahl, die Menge aus der anderen.
+// schwelle ist der konfigurierte Soll-Bestand, dieselbe Zahl, die bestimmt, welche Titel
+// überhaupt auf der Liste stehen. Das Feld meldebestand am Titel pflegt niemand mehr (es steht
+// auf der Vorgabe 5): Rechnete die Spalte „Nachbestellmenge" damit, stünde bei einer Schwelle
+// von 30 und 10 vorhandenen Exemplaren „−5" auf der Bestellliste für den Händler, die Auswahl
+// käme aus der einen Zahl und die Menge aus der anderen.
 func baueBestelllistePDF(bedarf []repository.Bestellbedarf, schwelle int) *gofpdf.Fpdf {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
@@ -75,7 +74,7 @@ func baueBestelllistePDF(bedarf []repository.Bestellbedarf, schwelle int) *gofpd
 		pdf.CellFormat(12, 6, strconv.Itoa(schwelle), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(12, 6, strconv.Itoa(b.VerfuegbarBestand), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(12, 6, strconv.Itoa(b.GesamtBestand), "1", 0, "C", false, 0, "")
-		// Nachbestellmenge = fehlende EIGENE Exemplare (Soll − Gesamtbestand), nicht
+		// Nachbestellmenge = fehlende eigene Exemplare (Soll − Gesamtbestand), nicht
 		// − Verfügbar: verliehene Exemplare kommen zurück und müssen nicht ersetzt
 		// werden. Sonst überbestellte man um die Zahl der gerade ausgeliehenen Bücher.
 		pdf.CellFormat(14, 6, strconv.Itoa(nachbestellmenge(schwelle, b.GesamtBestand)), "1", 1, "C", false, 0, "")

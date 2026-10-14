@@ -59,12 +59,12 @@ func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
 	}
 }
 
-// Der Vermerk des Topfs steht auf dem FERTIGEN Anschreiben — und nie der des anderen.
+// Der Vermerk des Topfs steht auf dem fertigen Anschreiben — und nie der des anderen.
 //
-// Geprüft am entpackten PDF-Inhaltsstrom (internal/pdftest), nicht am Eingabetext: Bis zum
-// 10.09.2026 stand auf jedem Anschreiben „für unsere Schulbibliothek", auch für
-// Lernmittel-Klassensätze — der Händler hätte danach den falschen Nachlass gewährt, und
-// am Bildschirm sah es niemand, weil das PDF erst im Postfach des Händlers aufgeht.
+// Geprüft am entpackten PDF-Inhaltsstrom (internal/pdftest), nicht am Eingabetext: Stünde
+// auf jedem Anschreiben „für unsere Schulbibliothek", auch für Lernmittel-Klassensätze,
+// gewährte der Händler danach den falschen Nachlass, und am Bildschirm sähe es niemand, weil
+// das PDF erst im Postfach des Händlers aufgeht.
 func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T) {
 	items := []bestellterTitel{{Titel: "Mathematik 7", Autor: "Autor", ISBN: "978", Menge: 30}}
 	schule := pdf.SchuleInfo{Name: "Testschule"}
@@ -89,8 +89,8 @@ func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T
 					t.Errorf("%q fehlt auf dem Anschreiben für %s", wort, mittel)
 				}
 			}
-			// Der ANDERE Topf darf nicht vorkommen — das ist der eigentliche Fehler von
-			// vorher. Für den Schulträger-Brief heißt das: „Lernmittelfreiheit" darf nur
+			// Der andere Topf darf nicht vorkommen, das ist der eigentliche Fehler. Für den
+			// Schulträger-Brief heißt das: „Lernmittelfreiheit" darf nur
 			// in der Verneinung stehen; der Brief nennt es einmal („keine Beschaffung im
 			// Rahmen der Lernmittelfreiheit"), also prüfen wir das Eigentums-Wort.
 			if mittel == mitteltopf.Schultraeger && strings.Contains(text, "Sammelbestellung") {

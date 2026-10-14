@@ -14,13 +14,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Bestellhistorie ist gedeckelt — und ihre Kennzahlen sind es NICHT.
+// Die Bestellhistorie ist gedeckelt — und ihre Kennzahlen sind es nicht.
 //
 // Beides gehört zusammen geprüft: Ein Limit allein macht aus „Gesamtausgaben" still eine
 // Teilsumme, die aussieht wie eine Gesamtsumme. Genau das wäre schlimmer als der lange
 // Ladevorgang, den das Limit behebt (2,45 MB / 3,9 s auf einer gewachsenen Datenbank).
 //
-// Die Tests messen DIFFERENZEN statt absoluter Zahlen: Sie teilen sich die Test-DB mit
+// Die Tests messen Differenzen statt absoluter Zahlen: Sie teilen sich die Test-DB mit
 // dem übrigen Paket, und eine Erwartung wie „genau 6 Bestellungen" wäre grün, solange
 // dieser Test allein läuft, und rot in der vollen Suite.
 
@@ -122,9 +122,9 @@ func TestBestellhistorie_HoechstgrenzeIstNichtVerhandelbar(t *testing.T) {
 	}
 }
 
-// Positionen dürfen nur für die geladenen Bestellungen kommen. Vorher holte die Abfrage
-// die Positionen ALLER Bestellungen und warf die überzähligen beim Zuordnen weg — mit
-// dem Limit wäre das der teuerste Teil der Anfrage geblieben.
+// Positionen dürfen nur für die geladenen Bestellungen kommen. Holte die Abfrage die
+// Positionen aller Bestellungen und würfe die überzähligen beim Zuordnen weg, bliebe das trotz
+// der Grenze der teuerste Teil der Anfrage.
 func TestBestellhistorie_PositionenNurFuerGeladeneBestellungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

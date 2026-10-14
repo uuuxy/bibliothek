@@ -9,20 +9,20 @@ import (
 	"bibliothek/repository"
 )
 
-// bestellhistorieVorgabeGrenze / -MaxLimit deckeln die Liste.
+// bestellhistorieVorgabeGrenze und bestellhistorieHoechstGrenze deckeln die Liste.
 //
-// Ohne Grenze lieferte dieser Endpunkt ALLE Bestellungen samt Positionen: auf einer
+// Ohne Grenze lieferte dieser Endpunkt alle Bestellungen samt Positionen: auf einer
 // gewachsenen Datenbank (5.257 Bestellungen) waren das 2,45 MB und 3,9 Sekunden, und es
-// wird jedes Schuljahr mehr. Dieselbe Bugklasse hatte das Audit-Log (247k Zeilen, 72 MB).
+// wird jedes Schuljahr mehr. Dieselbe Bugklasse hatte das Protokoll (247k Zeilen, 72 MB).
 //
-// Die Summen im Kopf der Oberfläche dürfen davon NICHT abhängen — sie kommen aus
+// Die Summen im Kopf der Oberfläche dürfen davon nicht abhängen — sie kommen aus
 // /api/bestellhistorie/uebersicht und zählen weiterhin alles.
 const (
 	bestellhistorieVorgabeGrenze = 200
 	bestellhistorieHoechstGrenze = 500
 )
 
-// Bestellhistorie returns the most recent orders with their line items.
+// Bestellhistorie liefert die jüngsten Bestellungen mit ihren Positionen.
 func (t *Tueren) Bestellhistorie() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

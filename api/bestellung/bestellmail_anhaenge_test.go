@@ -10,12 +10,12 @@ import (
 	"bibliothek/pkg/mitteltopf"
 )
 
-// Was hängt an der Bestellmail — und was ausdrücklich NICHT?
+// Was hängt an der Bestellmail — und was ausdrücklich nicht?
 //
-// Der Hauptlieferant bekam bis zum 06.08.2026 beide fertigen Etikettenbögen ins Postfach
-// UND einen Link, über den er dieselben Bögen abrufen und dabei bestätigen sollte. Wer die
-// Anlage druckt, klickt den Link nie: Die Bücher kommen beklebt an, die Bestellhistorie
-// wartet weiter auf eine Bestätigung, und niemand merkt, dass das Warten sinnlos ist.
+// Bekäme der Hauptlieferant beide fertigen Etikettenbögen ins Postfach und dazu einen Link,
+// über den er dieselben Bögen abrufen und dabei bestätigen soll, klickte er den Link nie: Wer
+// die Anlage druckt, braucht ihn nicht. Die Bücher kämen beklebt an, die Bestellhistorie
+// wartete weiter auf eine Bestätigung, und niemand merkte, dass das Warten sinnlos ist.
 //
 // Geprüft wird an den Dateinamen der fertigen Anlagen, nicht an Zwischenzuständen — das
 // ist das, was im Postfach des Händlers ankommt.
@@ -74,7 +74,7 @@ func TestBestellAnhaenge_MitLinkKeineEtikettenbogen(t *testing.T) {
 	pruefeEnthalten(t, namen, "bestellanschreiben", "barcode_mapping")
 }
 
-// Rückfallebene: Ohne Link (keine öffentliche Adresse hinterlegt) MUSS der Bogen beiliegen
+// Rückfallebene: Ohne Link (keine öffentliche Adresse hinterlegt) muss der Bogen beiliegen
 // — sonst hat der Händler nichts zum Bekleben, und die Exemplare gelten trotzdem schon als
 // etikettiert (siehe BestellDienst.LegeAn, beklebtGeliefert).
 func TestBestellAnhaenge_OhneLinkLiegenDieBoegenBei(t *testing.T) {

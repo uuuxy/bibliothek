@@ -67,13 +67,13 @@ func TestBestellbedarfAbfrage(t *testing.T) {
 
 // TestBestellbedarfFilterVorgabeIstLMF sichert die fachliche Vorauswahl ab: Nachbestellt
 // werden Lernmittel; der Freihandbestand besteht überwiegend aus bewussten
-// Einzelstücken (Prüf-/Leseexemplare). Ohne diesen Default enthielt die Liste
-// praktisch den gesamten Katalog und war unbenutzbar.
+// Einzelstücken (Prüf-/Leseexemplare). Ohne diese Vorgabe enthielte die Liste
+// praktisch den gesamten Katalog und wäre unbenutzbar.
 func TestBestellbedarfFilterVorgabeIstLMF(t *testing.T) {
 	faelle := []struct {
 		name, query, wantFragment string
 	}{
-		// Seit Migration 093 ist das Prädikat die Spalte buecher_titel.ist_lernmittel.
+		// Das Prädikat ist die Spalte buecher_titel.ist_lernmittel (Migration 093).
 		{"ohne Parameter", "", "AND t.ist_lernmittel"},
 		{"type=lmf", "?type=lmf", "AND t.ist_lernmittel"},
 		{"type=freihand", "?type=freihand", "AND NOT t.ist_lernmittel"},
@@ -100,13 +100,13 @@ func TestBestellbedarfLeereListeIstArray(t *testing.T) {
 	}
 	defer mock.Close()
 
-	// Der Handler liest zuerst die Einstellungen (Warnung aktiv? Schwelle?), dann den
+	// Die Tür liest zuerst die Einstellungen (Warnung aktiv? Schwelle?), dann den
 	// Bestellbedarf — beide Queries müssen der Reihe nach erwartet werden. Leere
-	// Settings-Zeilen ⇒ Defaults (Warnung an, Schwelle 3).
+	// Zeilen der Einstellungen ⇒ Vorgaben (Warnung an, Schwelle 3).
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 	mock.ExpectQuery("WITH titel AS").
-		WithArgs(3). // Default-Schwelle (leere Settings ⇒ Default 3)
+		WithArgs(3). // Vorgabe der Schwelle (leere Einstellungen ⇒ 3)
 		WillReturnRows(pgxmock.NewRows(bedarfSpalten()))
 
 	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
@@ -118,11 +118,10 @@ func TestBestellbedarfLeereListeIstArray(t *testing.T) {
 	}
 }
 
-// Die Nachbestellmenge steht auf einem Dokument, das an einen Händler geht, und wird
-// von niemandem gegengelesen. Bis zum 30.07.2026 rechnete sie mit dem Titel-Feld
-// meldebestand, das seit der Umstellung auf die Bestellbedarf-Schwelle niemand mehr
-// pflegt (Vorgabe 5) — während die Auswahl der Titel längst der Schwelle folgte. Bei
-// Schwelle 30 und 10 vorhandenen Exemplaren stand dort "-5".
+// Die Nachbestellmenge steht auf einem Dokument, das an einen Händler geht, und wird von
+// niemandem gegengelesen. Rechnete sie mit dem Titel-Feld meldebestand, das niemand mehr pflegt
+// (Vorgabe 5), während die Auswahl der Titel der Schwelle folgt, stünde bei Schwelle 30 und 10
+// vorhandenen Exemplaren dort "-5".
 func TestNachbestellmenge(t *testing.T) {
 	faelle := map[string]struct {
 		schwelle, gesamt, want int

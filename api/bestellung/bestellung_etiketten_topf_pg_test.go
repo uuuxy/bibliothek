@@ -20,7 +20,7 @@ import (
 // zwei Wege des Hauses prüft api/druck/etiketten_topf_pg_test.go.
 
 // Die beiden Wege zum Händler: der Lieferanten-Link (buchetikett.LadeDerBestellung) und der
-// Mailanhang (Etiketten aus BestellDienst.LegeAn). Bestellt wird ein LERNMITTEL-Titel für die
+// Mailanhang (Etiketten aus BestellDienst.LegeAn). Bestellt wird ein Lernmittel-Titel für die
 // Schülerbücherei — der Fall, in dem Titel und Bestellung einander widersprechen.
 func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -47,7 +47,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	}
 	pdftest.Aufdruck(t, "Lieferanten-Link", pdftest.Suchtext(t, rec.Body.Bytes()), testdaten.VermerkStadt, testdaten.VermerkLand)
 
-	// Weg 4: der Mailanhang, mit dem Kopf, den der Bestell-Handler baut.
+	// Weg 4: der Mailanhang, mit dem Kopf, den die Tür der Bestellung baut.
 	einstellungen, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
 		t.Fatalf("Einstellungen lesen: %v", err)

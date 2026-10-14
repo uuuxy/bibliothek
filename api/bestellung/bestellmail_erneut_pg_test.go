@@ -124,7 +124,7 @@ func (l *bestellmailLage) bestelle(t *testing.T, lieferantID, titelID string) (s
 	return id, rec
 }
 
-// gescheitertAm liest über die Detail-Route, ob die Bestellung einen gescheiterten Versand trägt.
+// gescheitert liest über die Detail-Route, ob die Bestellung einen gescheiterten Versand trägt.
 func (l *bestellmailLage) gescheitert(t *testing.T, bestellungID string) bool {
 	t.Helper()
 	rec := l.rufe(t, http.MethodGet, "/api/bestellhistorie/"+bestellungID, "")

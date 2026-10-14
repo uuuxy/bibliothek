@@ -24,8 +24,8 @@ import (
 // geht es um die Übergänge, an denen sie sonst aneinander vorbeilaufen.
 
 // TestBestellablauf_LinkUndEtiketten deckt die Stelle ab, an der die Etikettenseite
-// falsch liegen könnte: Sie darf nur die Exemplare DIESER Bestellung und nur die
-// Positionen MIT Vorab-Barcode enthalten — sonst bekleben Lieferant und Bibliothek
+// falsch liegen könnte: Sie darf nur die Exemplare dieser Bestellung und nur die
+// Positionen mit Vorab-Barcode enthalten — sonst bekleben Lieferant und Bibliothek
 // dasselbe Buch doppelt.
 func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -65,7 +65,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 		t.Fatalf("Exemplare mit Bestellbezug = %d, want 5", zugeordnet)
 	}
 
-	// Nur die drei Exemplare der Position MIT Vorab-Barcode gehören auf den Bogen.
+	// Nur die drei Exemplare der Position mit Vorab-Barcode gehören auf den Bogen.
 	etiketten, err := buchetikett.LadeDerBestellung(ctx, pool, res.BestellungID)
 	if err != nil {
 		t.Fatalf("Etiketten laden: %v", err)
@@ -75,8 +75,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	}
 	// „Ansch.J." steht auf der physischen Etikettenvorlage der Schule (Foto vom
 	// Lernmittel-Etikett: Schulname / Titel / Ansch.J. / Barcode / Exemplar-Nr. /
-	// Eigentumsvermerk / Ausleihtabelle). Es fehlte hier zunächst, weil das Etikett dem
-	// Mailanhang gleichen sollte — der trug es aber selbst nicht. Beide Wege tragen es jetzt.
+	// Eigentumsvermerk / Ausleihtabelle). Beide Wege, Etikettenseite und Mailanhang, tragen es.
 	jahr := strconv.Itoa(time.Now().Year())
 	for _, e := range etiketten {
 		if e.AnschaffungsJahr != jahr {
@@ -112,7 +111,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	}
 }
 
-// Lieferanten ohne den externen Schritt bekommen KEINEN Token. Sonst läge zu jeder
+// Lieferanten ohne den externen Schritt bekommen keinen Token. Sonst läge zu jeder
 // Bestellung ein gültiger Link ohne Empfänger herum — mehr Angriffsfläche ohne Nutzen.
 func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	pool := pgtest.Pool(t)

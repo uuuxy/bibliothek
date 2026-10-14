@@ -11,15 +11,15 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Bestelldetail liefert EINE Bestellung mit allem, was zu ihr gehört.
+// Bestelldetail liefert eine Bestellung mit allem, was zu ihr gehört.
 //
 // Warum ein eigener Endpunkt und nicht mehr Felder in /api/bestellhistorie: Diese Liste
-// ist auf 200 Bestellungen gedeckelt, WEIL sie ohne Grenze 2,45 MB und knapp vier
+// ist auf 200 Bestellungen gedeckelt, weil sie ohne Grenze 2,45 MB und knapp vier
 // Sekunden gebraucht hat. Autor, Verlag, Cover und die Exemplarliste an jede der 200
 // Zeilen zu hängen, holte genau dieses Problem zurück — für Daten, von denen jeweils
 // eine einzige Bestellung angesehen wird.
 //
-// Kein SQL in dieser Datei: Ein neuer Handler nimmt repository/ (siehe schichtung_ratsche_test.go).
+// Kein SQL in dieser Datei: Eine neue Tür nimmt repository/ (siehe schichtung_ratsche_test.go).
 func (t *Tueren) Bestelldetail(bestelldetailAbfragen repository.BestelldetailAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")

@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// lieferantAntwort represents the supplier data sent to the client.
+// lieferantAntwort ist ein Lieferant, wie die Oberfläche ihn zeigt.
 type lieferantAntwort struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
@@ -23,7 +23,7 @@ type lieferantAntwort struct {
 	Kundennummer string    `json:"customerNumber"`
 	ErstelltAm   time.Time `json:"erstellt_am"`
 
-	// IstHauptlieferant: Der EINE Händler, über den die Schule bestellt. Siehe
+	// IstHauptlieferant: Der eine Händler, über den die Schule bestellt. Siehe
 	// repository.Lieferant — an diesem einen Merkmal hängen Vorauswahl, Bestelllink und
 	// Nachdruck-Liste gemeinsam.
 	IstHauptlieferant bool `json:"ist_hauptlieferant"`
@@ -33,7 +33,7 @@ type lieferantAntwort struct {
 	KundennummerSchultraeger string `json:"kundennummer_schultraeger"`
 }
 
-// lieferantAnlegenAnfrage holds the payload for creating a new supplier.
+// lieferantAnlegenAnfrage ist ein neuer Lieferant.
 type lieferantAnlegenAnfrage struct {
 	Name         string `json:"name"`
 	Email        string `json:"email"`
@@ -45,9 +45,9 @@ type lieferantAnlegenAnfrage struct {
 
 	// KundennummerSchultraeger: optional; leer heißt „dieselbe Nummer wie customerNumber".
 	//
-	// Zeiger, weil das FEHLENDE Feld etwas anderes bedeutet als das LEERE (Bugklasse
+	// Zeiger, weil das fehlende Feld etwas anderes bedeutet als das leere (Bugklasse
 	// „Fehlendes Feld, zwei Bedeutungen"): nil = unverändert lassen, "" = ausdrücklich
-	// löschen. Ein plain string machte jede Anfrage ohne dieses Feld zum stillen Blanking
+	// löschen. Ein einfacher string machte jede Anfrage ohne dieses Feld zum stillen Leeren
 	// — eine Kundennummer, die verschwindet, fällt erst auf, wenn der Händler die Rechnung
 	// auf das falsche Konto stellt. Beim Anlegen (POST) ist nil schlicht leer.
 	KundennummerSchultraeger *string `json:"kundennummer_schultraeger"`
@@ -78,7 +78,7 @@ type lieferantAendernAnfrage struct {
 // setzeHauptlieferant macht genau einen Lieferanten zum Hauptlieferanten und nimmt das
 // Merkmal allen anderen — in dieser Reihenfolge, in einer Transaktion.
 //
-// Die REIHENFOLGE ist der Schutz, nicht nur Kosmetik: Der Teil-Index
+// Die Reihenfolge ist der Schutz, nicht nur Kosmetik: Der Teil-Index
 // idx_lieferanten_ein_hauptlieferant lässt nur eine Zeile mit true zu. Würde erst der
 // neue gesetzt und danach der alte geräumt, bräche das UPDATE mit einer
 // Unique-Verletzung ab — und zwar erst beim zweiten Wechsel, also lange nach dem Einbau.
@@ -99,7 +99,7 @@ func setzeHauptlieferant(ctx context.Context, pool db.PgxPoolIface, id string) e
 	return tx.Commit(ctx)
 }
 
-// Lieferanten returns a list of all suppliers.
+// Lieferanten liefert alle Lieferanten, den Hauptlieferanten zuerst.
 func (t *Tueren) Lieferanten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -121,7 +121,7 @@ func (t *Tueren) Lieferanten() http.HandlerFunc {
 	}
 }
 
-// LieferantAnlegen adds a new supplier.
+// LieferantAnlegen legt einen Lieferanten an.
 func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req lieferantAnlegenAnfrage
@@ -145,7 +145,7 @@ func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 		t.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantAngelegt,
 			map[string]any{"lieferant_id": neueID, "name": req.Name})
 
-		// Bewusst NICHT im INSERT: Gibt es schon einen Hauptlieferanten, bräche der
+		// Bewusst nicht im INSERT: Gibt es schon einen Hauptlieferanten, bräche der
 		// Teil-Index den Anlegevorgang ab — der neue Lieferant wäre gar nicht erst
 		// entstanden, nur weil ein Haken gesetzt war. Erst anlegen, dann umschalten;
 		// dabei räumt setzeHauptlieferant den bisherigen weg.
@@ -168,7 +168,7 @@ func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 	}
 }
 
-// LieferantAendern updates name, email and customer number of an existing supplier.
+// LieferantAendern ändert die genannten Felder eines Lieferanten; ein fehlendes Feld bleibt.
 func (t *Tueren) LieferantAendern() http.HandlerFunc {
 	return t.aendereLieferant
 }
@@ -229,8 +229,8 @@ func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 }
 
 // schreibeLieferant schreibt Merkmal und Stammdaten in einer Transaktion und liefert den Stand
-// davor und danach. Bis zum 08.10.2026 waren es zwei Schritte: Scheiterte das Merkmal, waren
-// die Stammdaten schon geschrieben.
+// davor und danach. In zwei Schritten wären die Stammdaten schon geschrieben, wenn das
+// Merkmal scheitert.
 //
 // Zuerst das Merkmal, dann die Stammdaten: Der Setzer sperrt den bisherigen Hauptlieferanten
 // vor der eigenen Zeile, wie beim Anlegen. Ein unbekannter Lieferant ist pgx.ErrNoRows; was der
@@ -263,10 +263,9 @@ func (t *Tueren) schreibeLieferant(ctx context.Context, id string, req lieferant
 	return alt, neu, tx.Commit(ctx)
 }
 
-// LieferantLoeschen removes a supplier.
+// LieferantLoeschen löscht einen Lieferanten, den Hauptlieferanten nicht.
 func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Go 1.22+ routing path parameter resolution
 		id := r.PathValue("id")
 		if id == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing supplier ID"))
@@ -277,15 +276,14 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 
 		// Den Hauptlieferanten nicht einfach wegnehmen.
 		//
-		// Gefunden am 07.09.2026 beim Befragen von `bestellungen_verlauf.lieferant_id ->
-		// lieferanten` (Frage 12): Der Fremdschlüssel selbst ist harmlos — die Bestellung
-		// hält Name und E-Mail als eigene Abschrift, SET NULL nimmt ihr nichts. Der
-		// LÖSCHWEG daneben war das Problem. „Löschen" in der Lieferantenverwaltung fragt
-		// nicht nach, und getroffen werden konnte auch der EINE Händler, an dem der ganze
-		// Bestellweg hängt: Bestellmail, Bestätigungs-Link (bestellbestaetigung.go)
-		// und die Etiketten-Entscheidung „der Händler beklebt selbst" (bestellmail_anhaenge.go).
-		// Danach gab es keinen Hauptlieferanten mehr, und niemand erfuhr davon — die
-		// Oberfläche zeigte nur einen Händler weniger.
+		// Der Fremdschlüssel `bestellungen_verlauf.lieferant_id -> lieferanten` ist harmlos:
+		// Die Bestellung hält Name und E-Mail als eigene Abschrift, SET NULL nimmt ihr nichts.
+		// Gefährlich wäre der Löschweg daneben: „Löschen" in der Lieferantenverwaltung fragt
+		// nicht nach, und getroffen werden könnte auch der eine Händler, an dem der ganze
+		// Bestellweg hängt: Bestellmail, Bestätigungs-Link (bestellbestaetigung.go) und die
+		// Etiketten-Entscheidung „der Händler beklebt selbst" (bestellmail_anhaenge.go). Danach
+		// gäbe es keinen Hauptlieferanten mehr, und niemand erführe davon; die Oberfläche zeigte
+		// nur einen Händler weniger.
 		//
 		// Kein Sonderfall in der Oberfläche, sondern hier: Die Verwaltung ist nicht die
 		// einzige Tür, und ein Hinweis, den nur ein Formular kennt, ist keine Regel. Der

@@ -20,7 +20,7 @@ import (
 // Der Bestätigungs-Link ist der einzige schreibende Zugang ohne Anmeldung. Diese Tests
 // gehen ihn am echten Postgres durch — vom Token bis zum zweiten Klick.
 
-// bestellungMitToken legt eine Bestellung samt Link-Token an und liefert den KLARTEXT.
+// bestellungMitToken legt eine Bestellung samt Link-Token an und liefert den Klartext.
 func bestellungMitToken(t *testing.T, pool *pgxpool.Pool, lieferantID string, gueltigTage int) (bestellungID, token string) {
 	t.Helper()
 	token, hash, err := bestelllink.ErzeugeToken()

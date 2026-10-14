@@ -18,7 +18,7 @@ import (
 // lädt, und schickte beim Speichern jedes Feld zurück, auch das Merkmal Hauptlieferant. Hatte
 // inzwischen ein anderer Platz einen anderen Händler zum Hauptlieferanten gemacht, nahm das
 // Korrigieren einer E-Mail ihm das Merkmal wieder. Merkmal und Stammdaten schrieb die Tür in
-// zwei Schritten. Geprüft über die Handler am echten Postgres.
+// zwei Schritten. Geprüft über die Türen am echten Postgres.
 func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

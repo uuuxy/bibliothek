@@ -16,18 +16,17 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Der Rückweg für den Topf einer Bestellung (Raster-Durchgang 10.09.2026, Frage 10).
+// Der Rückweg für den Topf einer Bestellung.
 //
-// Eine Bestellung im falschen Topf ließ sich bis hierher nicht korrigieren: Der Topf
-// wurde beim Auslösen geschrieben, und danach gab es keine Tür mehr. Für die Berichte,
-// die nach Topf rechnen, stünde sie dauerhaft im falschen Block — und Alt-Bestellungen
-// „ohne Zuordnung" (Migration 109, Backfill nur bei eindeutigen Fällen) blieben es für
-// immer.
+// Ohne diese Tür ließe sich eine Bestellung im falschen Topf nicht korrigieren: Der Topf wird
+// beim Auslösen geschrieben. Für die Berichte, die nach Topf rechnen, stünde sie dauerhaft im
+// falschen Block, und Alt-Bestellungen „ohne Zuordnung" (Migration 109, Backfill nur bei
+// eindeutigen Fällen) blieben es für immer.
 //
-// Was die Korrektur NICHT tut: Sie ändert weder das Anschreiben, das der Händler bekommen
-// hat, noch die Kundennummer auf dem Beleg — beides ist die Abschrift dessen, was
-// rausging. Korrigiert wird die eigene Zuordnung, aus der die Schule rechnet. Deshalb
-// ist der Grund Pflicht und der Eingriff steht im Admin-Audit-Log mit von/nach.
+// Was die Korrektur nicht tut: Sie ändert weder das Anschreiben, das der Händler bekommen hat,
+// noch die Kundennummer auf dem Beleg; beides ist die Abschrift dessen, was rausging.
+// Korrigiert wird die eigene Zuordnung, aus der die Schule rechnet. Deshalb ist der Grund
+// Pflicht, und der Eingriff steht im Protokoll der Verwaltung mit von/nach.
 
 // mittelKorrigierenAnfrage ist die Eingabe für BestellungMittelKorrigieren.
 type mittelKorrigierenAnfrage struct {
@@ -35,17 +34,17 @@ type mittelKorrigierenAnfrage struct {
 	Grund  string `json:"grund"`
 }
 
-// aktionBestellungMittelKorrigiert ist die Aktion im Admin-Audit-Log.
+// aktionBestellungMittelKorrigiert ist die Aktion im Protokoll der Verwaltung.
 const aktionBestellungMittelKorrigiert = "BESTELLUNG_MITTEL_KORRIGIERT"
 
 // BestellungMittelKorrigieren setzt den Topf einer bestehenden Bestellung neu.
 //
-// @Summary      Correct the funding pot of an existing order
+// @Summary      Topf einer bestehenden Bestellung korrigieren
 // @Tags         orders
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string                  true  "Order ID"
-// @Param        body  body      mittelKorrigierenAnfrage  true  "New pot and reason"
+// @Param        id    path      string                  true  "Kennung der Bestellung"
+// @Param        body  body      mittelKorrigierenAnfrage  true  "Neuer Topf und Grund"
 // @Success      200   {object}  map[string]any
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
@@ -105,8 +104,9 @@ func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-// protokolliereMittelKorrektur protokolliert die Korrektur — dasselbe Muster wie der LMF-Plan
-// (api/lernmittel/lmf_plan_protokoll.go): ohne Anmeldung oder ohne Datenbank gibt es nichts zu schreiben.
+// protokolliereMittelKorrektur protokolliert die Korrektur, nach demselben Muster wie der
+// LMF-Plan (api/lernmittel/lmf_plan_protokoll.go): Ohne Anmeldung oder ohne Datenbank gibt es
+// nichts zu schreiben.
 func (t *Tueren) protokolliereMittelKorrektur(r *http.Request, bestellungID, von, nach, grund string) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {

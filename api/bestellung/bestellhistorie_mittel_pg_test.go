@@ -17,13 +17,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Historie und Kennzahlen nach Topf (#596, Bauplan 7.3 Schritt 4).
+// Historie und Kennzahlen nach Topf.
 //
 // Die Bestellhistorie ist der Ort, an dem die Bibliothekskraft eine Bestellung
 // wiederfindet — und der einzige, an dem sich der Topf einer Alt-Bestellung nachtragen
-// lässt (Rückweg, 7.3 Nr. 6). Ohne Filter muss sie dafür durch 200 Zeilen blättern.
+// lässt (Rückweg). Ohne Filter muss sie dafür durch 200 Zeilen blättern.
 //
-// Die Kennzahlen im Kopf zählen ALLE Bestellungen, nicht nur die geladenen. Je Topf
+// Die Kennzahlen im Kopf zählen alle Bestellungen, nicht nur die geladenen. Je Topf
 // aufgeteilt müssen sie zusammen wieder die Gesamtzahl ergeben — sonst steht auf dem
 // Bildschirm eine Aufteilung, die eine andere Summe hat als die Summe darüber.
 func TestBestellhistorieNachTopf(t *testing.T) {
