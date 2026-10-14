@@ -23,14 +23,11 @@ import (
 //   - POST /api/print/labels — die Etiketten-Verwaltung im Druck-Center. Sie schickt nur
 //     Barcode, Titel und Autor; alles Weitere muss der Server nachtragen.
 //
-// Genau an dieser Naht ist die Signatur verlorengegangen: Nachgetragen wurde zuerst nur
-// das Anschaffungsjahr, also trug dasselbe Buch je nach gedrücktem Knopf einen anderen
-// Aufkleber — und beide Wege lieferten HTTP 200 mit einem tadellosen PDF. Kein Test auf
-// Statuscode oder Dateigröße kann das sehen; der bestehende Paritätstest sah es auch
-// nicht, weil er zwei DB-Abfragen vergleicht und dieser Weg über den Browser läuft.
-//
-// Deshalb: beide Handler über echtes HTTP fahren, das POST mit exakt der Nutzlast aus
-// labels.svelte.js, und die gedruckten Texte vergleichen.
+// An dieser Naht geht ein Feld verloren, ohne dass Status oder Größe der Datei es zeigen: Beide
+// Wege liefern 200 und ein gültiges PDF. Der Vergleich der Abfragen in internal/buchetikett
+// sieht es nicht, weil dieser Weg über den Browser läuft. Der Test fährt deshalb beide Türen
+// über HTTP, das POST mit der Nutzlast aus labels.svelte.js, und vergleicht die gedruckten
+// Texte.
 func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -61,7 +58,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	}
 
 	// Weg 2: Druck-Center — genau die Nutzlast aus labels.svelte.js (triggerPrint):
-	// nur BarcodeID, Titel und Autor. Wird hier ein Feld ergänzt, gehört es NICHT hierher,
+	// nur BarcodeID, Titel und Autor. Wird hier ein Feld ergänzt, gehört es nicht hierher,
 	// sondern in buchetikett.ErgaenzeServerfelder.
 	payload := `{
 		"formatId": "` + format + `",
@@ -82,7 +79,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	buchformular := pdftest.Texte(t, recGet.Body.Bytes())
 	druckzentrum := pdftest.Texte(t, recPost.Body.Bytes())
 
-	// Erst die Gegenprobe gegen den stillen Durchmarsch: Stünde die Signatur auf KEINEM
+	// Erst die Gegenprobe gegen den stillen Durchmarsch: Stünde die Signatur auf keinem
 	// der beiden Bögen, wären sie immer noch gleich — und der Vergleich unten grün,
 	// obwohl genau das der Fehler ist, den dieser Test fangen soll.
 	for _, fall := range []struct {

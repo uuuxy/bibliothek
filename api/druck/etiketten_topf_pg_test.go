@@ -15,15 +15,14 @@ import (
 	"bibliothek/pkg/mitteltopf"
 )
 
-// Der Eigentumsvermerk folgt dem Topf des Exemplars — an allen vier Wegen, die
-// Etikettendaten bauen, geprüft am fertigen PDF (OFFEN.md 4.21, entschieden am 21.09.2026).
-// Hier stehen die zwei Wege des Hauses, Buchformular und Druck-Center; die zwei Wege zum
-// Händler prüft api/bestellung/bestellung_etiketten_topf_pg_test.go.
+// Der Eigentumsvermerk folgt dem Topf des Exemplars, an allen vier Wegen, die Etikettendaten
+// bauen, geprüft am fertigen PDF. Hier stehen die zwei Wege des Hauses, Buchformular und
+// Druck-Center; die zwei Wege zum Händler prüft
+// api/bestellung/bestellung_etiketten_topf_pg_test.go.
 //
-// Die Regel (repository.ExemplarTopfSQL): zuerst die Zuordnung der Bestellung, und wo es
-// keine gibt, ist_lernmittel am Titel. Bis zum 21.09.2026 trug jedes Etikett ab 30 mm den
-// EINEN Vermerk „Eigentum des Landes Hessen" — auch das Buch der Schülerbücherei, das der
-// Schulträger bezahlt hat.
+// Die Regel (repository.ExemplarTopfSQL): zuerst das Eigentum am Exemplar, dann die Zuordnung
+// der Bestellung, sonst ist_lernmittel am Titel. So trägt das Buch der Schülerbücherei, das der
+// Schulträger bezahlt hat, nicht den Vermerk des Landes.
 
 // etikettenUeberBuchformular druckt über GET /api/buecher/titel/{id}/etiketten
 // (buchetikett.LadeDesTitels).
@@ -40,9 +39,9 @@ func etikettenUeberBuchformular(t *testing.T, srv *Tueren, titelID string) strin
 }
 
 // etikettenUeberDruckCenter druckt über POST /api/print/labels
-// (buchetikett.ErgaenzeServerfelder). Die
-// Nutzlast trägt zusätzlich ein Feld „Topf" mit dem FALSCHEN Wert: Der Topf kommt vom
-// Server, und ein Druckauftrag aus dem Browser darf ihn nicht mitbringen können.
+// (buchetikett.ErgaenzeServerfelder). Die Nutzlast trägt zusätzlich ein Feld „Topf" mit dem
+// falschen Wert: Der Topf kommt vom Server, und ein Druckauftrag aus dem Browser darf ihn nicht
+// mitbringen können.
 func etikettenUeberDruckCenter(t *testing.T, srv *Tueren, barcode, untergeschobenerTopf string) string {
 	t.Helper()
 	payload := `{"formatId": "` + testdaten.EtikettFormatMitVermerk + `", "startPosition": 1, "isQR": false,
@@ -78,7 +77,7 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 		{"Bestellung Schülerbücherei, Titel ist Lernmittel", true, mitteltopf.Schultraeger, true, "", testdaten.VermerkStadt, testdaten.VermerkLand},
 		{"Bestellung Lernmittelfreiheit, Titel ist keins", true, mitteltopf.Land, false, "", testdaten.VermerkLand, testdaten.VermerkStadt},
 		{"Alt-Bestellung ohne Zuordnung, Lernmittel", true, "", true, "", testdaten.VermerkLand, testdaten.VermerkStadt},
-		// Das Eigentum am Exemplar schlägt beides (4.24): die Lektüre aus LMF-Mitteln, die
+		// Das Eigentum am Exemplar schlägt beides: die Lektüre aus LMF-Mitteln, die
 		// Littera dem Land zuschreibt, und ein ausdrücklich umgesetztes Exemplar einer Bestellung.
 		{"Altbestand, kein Lernmittel, Eigentum Land", false, "", false, mitteltopf.Land, testdaten.VermerkLand, testdaten.VermerkStadt},
 		{"Bestellung Lernmittelfreiheit, Eigentum Schulträger", true, mitteltopf.Land, true, mitteltopf.Schultraeger, testdaten.VermerkStadt, testdaten.VermerkLand},
@@ -116,7 +115,7 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 
 			pdftest.Aufdruck(t, "Buchformular", etikettenUeberBuchformular(t, srv, titelID), f.want, f.nicht)
 
-			// Dem Druck-Center wird der jeweils ANDERE Topf untergeschoben.
+			// Dem Druck-Center wird der jeweils andere Topf untergeschoben.
 			falsch := mitteltopf.Schultraeger
 			if f.want == testdaten.VermerkStadt {
 				falsch = mitteltopf.Land
@@ -126,8 +125,8 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 	}
 }
 
-// Der Topf kommt vom Server (json:"-" an BarcodeLabelDetail.Topf). Bei einem Barcode, den
-// die Datenbank nicht kennt — Vorab-Druck —, trägt buchetikett.ErgaenzeServerfelder nichts nach; ein
+// Der Topf kommt vom Server (json:"-" an buchetikett.Etikett.Topf). Bei einem Barcode, den die
+// Datenbank nicht kennt (Vorab-Druck), trägt buchetikett.ErgaenzeServerfelder nichts nach; ein
 // vom Browser mitgeschicktes „Topf" bliebe dann stehen und wählte den Vermerk.
 func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
 	pool := pgtest.Pool(t)

@@ -19,8 +19,7 @@ import (
 )
 
 // GET und PUT /api/ausweis-layout: Das Design der Ausweise liegt am Server, damit alle
-// Arbeitsplätze dasselbe drucken. Gemessen am 08.10.2026 führte kein Go-Test das Speichern
-// aus (api/druck/ausweis_layout.go 33,3 %, OFFEN.md 5.10).
+// Arbeitsplätze dasselbe drucken.
 //
 // Über den ganzen Router mit Sitzung. Die Zusagen: Was gespeichert ist, kommt Byte für Byte
 // zurück. Was die Tür abweist, lässt das gespeicherte Design stehen. Und „noch kein Design"

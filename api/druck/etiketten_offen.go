@@ -16,21 +16,19 @@ import (
 // die Titelsuche im Druck-Center gedacht.
 const etikettenOffenLimit = 300
 
-// ExemplarOhneEtikett ist eine Zeile der Nachdruck-Liste. Die Feldnamen barcode_id/titel/
-// autor sind KEIN Zufall: In genau dieser Form nimmt der Etikettendruck seine Aufträge
-// entgegen (printQueue → labels.svelte.js), die Liste kann also direkt übergeben werden.
+// ExemplarOhneEtikett ist eine Zeile der Nachdruck-Liste. Die Namen in JSON (barcode_id, titel,
+// autor) sind die der Aufträge, die frontend/src/lib/stores/labels.svelte.js druckt, damit die
+// Oberfläche die Liste unverändert übergeben kann.
 type ExemplarOhneEtikett struct {
 	BarcodeID string `json:"barcode_id"`
 	Titel     string `json:"titel"`
 	Autor     string `json:"autor"`
-	// ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, Migration 129;
-	// Rückfall erworben_am für Zeilen ohne Zugangsdatum). Bis zum 22.09.2026 hieß das Feld
-	// erworben_am und trug im Bestellweg den Bestelltag.
+	// ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, für Zeilen ohne
+	// Zugangsdatum erworben_am).
 	ZugangAm string `json:"zugang_am"`
 
-	// EtikettGedruckt gehört dazu, seit die Liste auch bereits erledigte Exemplare zeigen
-	// kann (status=erledigt|alle). Ohne das Feld liesse sich in der gemischten Ansicht
-	// nicht unterscheiden, welche Zeile noch ein Etikett braucht.
+	// EtikettGedruckt unterscheidet in den Ansichten status=erledigt und status=alle die
+	// Zeilen, die noch ein Etikett brauchen.
 	EtikettGedruckt bool `json:"etikett_gedruckt"`
 }
 
@@ -40,20 +38,13 @@ func etikettenSuchtext(r *http.Request) string {
 	return repository.TiteltextNormalform(r.URL.Query().Get("q"))
 }
 
-// EtikettenOffen listet Exemplare, deren Barcode-Etikett noch nicht gedruckt wurde.
+// EtikettenOffen listet die Exemplare, deren Etikett nicht als gedruckt vermerkt ist, die
+// neuesten zuerst: Gesucht wird meist die Lieferung von gestern.
 //
-// Der Anlass: Eine Lieferung kann im System freigegeben sein, ohne dass die Etiketten je
-// aus dem Drucker kamen (z. B. weil der Hinweis nach dem Wareneingang weggeklickt wurde).
-// Danach gab es keinen Weg mehr zu genau diesen Exemplaren zurück — man hätte jeden Titel
-// einzeln suchen müssen, ohne zu wissen, welche es sind.
-//
-// Sortiert wird NEUESTE ZUERST. Das ist der praktische Fall: Gesucht wird die Lieferung von
-// gestern, nicht ein Exemplar von 2019.
-//
-// Mit status=erledigt oder status=alle zeigt sie zusätzlich Exemplare, die bereits als
-// gedruckt vermerkt sind. Das ist der Weg zurück: Nach einem Papierstau oder einem zu weit
-// gefassten Altbestands-Stichtag sind Exemplare als erledigt vermerkt, ohne dass ein
-// Etikett existiert — vorher waren sie damit dauerhaft aus der Liste verschwunden.
+// Sie führt zu einer Lieferung, die freigegeben wurde, ohne dass ihre Etiketten aus dem Drucker
+// kamen, etwa weil der Hinweis nach dem Wareneingang weggeklickt wurde. Mit status=erledigt
+// oder status=alle zeigt sie auch vermerkte Exemplare: Nach einem Papierstau oder einem zu
+// späten Stichtag tragen sie den Vermerk, aber kein Etikett.
 //
 // @Summary      Exemplare ohne gedrucktes Etikett
 // @Tags         books
@@ -73,8 +64,8 @@ func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 			return apierrors.Internal("Fehler beim Laden der offenen Etiketten", err)
 		}
 
-		// Nie nil: Eine leere Liste muss als [] beim Client ankommen, sonst bricht dort
-		// .length ab (siehe TestListStudentsLeereListeIstArray).
+		// Nie nil: Eine leere Liste kommt als [] an; an null bricht die Oberfläche bei .length
+		// ab.
 		liste := make([]ExemplarOhneEtikett, 0, len(zeilen))
 		for _, z := range zeilen {
 			liste = append(liste, ExemplarOhneEtikett(z))
@@ -85,17 +76,12 @@ func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 	})
 }
 
-// EtikettenOffenAnzahl nennt nur die Anzahl.
+// EtikettenOffenAnzahl zählt mit denselben Filtern wie EtikettenOffen (status, q), aber ohne
+// deren Grenze von 300 Zeilen.
 //
-// Eigene Route statt der Liste, weil der Hinweis im Bestellwesen bei jedem Öffnen lädt:
-// Für eine Zahl 300 Zeilen zu übertragen wäre Verschwendung — und ab dem Limit wäre die
-// Zahl schlicht falsch (die Liste ist gedeckelt, der Bestand nicht).
-//
-// Seit dem 04.09.2026 versteht sie dieselben Filter wie die Liste (status, q). Der Grund
-// steht in der Fusszeile der Liste: Die zeigt hoechstens 300 Zeilen, sagte aber nicht, wie
-// viele es insgesamt sind — am Reiter stand "30674", darunter lagen 300, und nichts
-// verband die beiden Zahlen. Ohne die Filter haette die Fusszeile in "Erledigt" und
-// "Alle" eine Zahl aus der falschen Menge genannt.
+// Eine eigene Tür, weil der Hinweis im Bestellwesen die Zahl bei jedem Öffnen lädt und die
+// Liste ab 300 eine falsche Zahl nennte. Die Fußzeile der Liste sagt mit ihr, wie viele
+// Exemplare es über die gezeigten hinaus gibt.
 //
 // @Summary      Anzahl der Exemplare ohne gedrucktes Etikett
 // @Tags         books
@@ -107,9 +93,8 @@ func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 // @Router       /exemplare/etiketten-offen/anzahl [get]
 func (t *Tueren) EtikettenOffenAnzahl() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		// Optionaler Stichtag: Damit beantwortet dieselbe Route auch "wie viele Exemplare
-		// wuerde das Aufraeumen des Altbestands treffen?" — die Zahl, die der Betreiber vor
-		// dem Bestaetigen sehen muss.
+		// Mit Stichtag nennt dieselbe Tür, wie viele Exemplare das Aufräumen des Altbestands
+		// träfe: die Zahl, die der Betreiber vor dem Bestätigen sieht.
 		bisText := strings.TrimSpace(r.URL.Query().Get("bis"))
 		var bis *time.Time
 		if bisText != "" {
@@ -131,26 +116,18 @@ func (t *Tueren) EtikettenOffenAnzahl() http.HandlerFunc {
 	})
 }
 
-// etikettenAltbestandAnfrage nennt den Stichtag, bis zu dem aufgeraeumt wird.
+// etikettenAltbestandAnfrage nennt den Stichtag, bis zu dem aufgeräumt wird.
 type etikettenAltbestandAnfrage struct {
-	Bis string `json:"bis"` // YYYY-MM-DD, einschliesslich
+	Bis string `json:"bis"` // JJJJ-MM-TT, einschließlich
 }
 
 // EtikettenAltbestandVermerken vermerkt alle Exemplare bis zu einem Stichtag als gedruckt.
 //
-// Der Anlass ist eine Altlast, keine Funktion: etikett_gedruckt wurde bis vor Kurzem
-// NIRGENDS gesetzt. Fuer den gesamten Bestand steht deshalb "kein Etikett" — nicht weil
-// keins da waere, sondern weil es nie jemand vermerkt hat. Die Nachdruck-Liste zeigt so
-// den ganzen Bestand, und der Hinweis im Bestellwesen nennt eine Zahl, die nichts bedeutet.
-//
-// BEWUSST KEINE MIGRATION. Eine Migration haette beim Update stillschweigend zugeschlagen —
-// und dabei genau die Exemplare mitversteckt, die wirklich kein Etikett haben (die
-// Lieferung, wegen der die Liste ueberhaupt gebaut wurde). Der Stichtag gehoert dem
-// Betreiber: Er weiss, ab wann sein Regal beklebt ist, und sieht vorher, wie viele Zeilen
-// es trifft.
-//
-// Umkehrbar ist das nicht — deshalb nennt die Oberflaeche die Zahl vorher und verlangt
-// eine ausdrueckliche Bestaetigung.
+// Für den Altbestand hat niemand ein Etikett vermerkt, und ohne Vermerk zeigt die
+// Nachdruck-Liste den ganzen Bestand. Den Stichtag wählt der Betreiber, weil nur er weiß, ab
+// wann sein Regal beklebt ist; eine Migration träfe auch die Lieferung, die wirklich kein
+// Etikett hat. Die Oberfläche nennt vorher die Zahl und verlangt eine Bestätigung;
+// zurücknehmen lässt sich der Vermerk mit EtikettenZuruecksetzen.
 //
 // @Summary      Etiketten des Altbestands als gedruckt vermerken
 // @Tags         books
@@ -178,17 +155,14 @@ func (t *Tueren) EtikettenAltbestandVermerken() http.HandlerFunc {
 	})
 }
 
-// etikettenVermerkAnfrage nennt die Exemplare, deren Etiketten gedruckt wurden.
+// etikettenVermerkAnfrage nennt die Exemplare, deren Vermerk „Etikett gedruckt" gesetzt oder
+// zurückgenommen wird.
 type etikettenVermerkAnfrage struct {
 	BarcodeIDs []string `json:"barcode_ids"`
 }
 
-// EtikettenGedrucktVermerken bucht den Druck gegen.
-//
-// Ohne diesen Schritt wäre die Nachdruck-Liste wertlos: etikett_gedruckt wurde bis hierher
-// NIRGENDS auf true gesetzt — der Wert stand seit dem Anlegen der Tabelle auf false und
-// blieb es. Die Liste hätte also dauerhaft den kompletten Bestand angezeigt statt der
-// Nachzügler, und der Haken "erledigt" wäre eine Anzeige ohne Bedeutung gewesen.
+// EtikettenGedrucktVermerken bucht den Druck gegen. Ohne den Vermerk bliebe jedes Exemplar in
+// der Nachdruck-Liste, und ihr Haken „erledigt" bedeutete nichts.
 //
 // @Summary      Etiketten als gedruckt markieren
 // @Tags         books
@@ -217,23 +191,11 @@ func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
 
 // EtikettenZuruecksetzen nimmt den Vermerk „Etikett gedruckt" wieder zurück.
 //
-// Der Weg zurück, den es bis hierher nicht gab. Alle drei Wege setzten das Kennzeichen nur
-// in eine Richtung: der Stapeldruck, der Einzeldruck aus der Buchakte und das einmalige
-// Aufräumen des Altbestands. Ging dabei etwas schief, war das Exemplar dauerhaft aus der
-// Liste verschwunden — und niemand konnte es zurückholen.
-//
-// Die beiden Fälle aus dem Betrieb:
-//
-//  1. PAPIERSTAU. Der Druck wird gegengebucht, sobald das PDF erzeugt ist (siehe
-//     vermerkeGedruckt in frontend/src/lib/stores/labels.svelte.js) — ob das Etikett
-//     wirklich aus dem Drucker kam, weiss das Programm nicht. Bleibt der Bogen im Gerät,
-//     gelten die Exemplare als erledigt.
-//  2. ZU WEITER STICHTAG. Beim Altbestand-Aufräumen einen zu späten Tag gewählt, und die
-//     frische Lieferung ohne Etikett verschwindet mit. Diese Aktion war deshalb bisher
-//     ausdrücklich als unumkehrbar dokumentiert (docs/abnahme_checkliste.md, Flow 4).
-//
-// Damit ist sie es nicht mehr — und das macht auch das Markieren von Hand erst
-// unbedenklich: Keine der beiden Richtungen ist noch eine Einbahnstrasse.
+// Ob ein Etikett aus dem Drucker kam, weiß das Programm nicht: Der Druck wird gegengebucht,
+// sobald das PDF erzeugt ist (vermerkeGedruckt in frontend/src/lib/stores/labels.svelte.js),
+// und ein zu später Stichtag beim Altbestand trifft auch die frische Lieferung. Nach einem
+// Papierstau oder einem solchen Stichtag holt diese Tür die Exemplare in die Liste zurück; erst
+// damit ist auch das Vermerken von Hand unbedenklich.
 //
 // @Summary      Etiketten wieder als offen markieren
 // @Tags         books

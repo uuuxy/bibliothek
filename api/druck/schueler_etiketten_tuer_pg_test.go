@@ -20,7 +20,7 @@ import (
 
 // POST /api/print/schueler-etiketten liefert den Klebebogen mit Name, Klasse und Barcode
 // markierter Schüler. Den Erzeuger des PDFs prüft pdf/etikett_schueler_test.go; hier steht
-// die Tür davor, die gemessen am 07.10.2026 kein Go-Test ausführte (2,3 %, OFFEN.md 5.10).
+// die Tür davor.
 //
 // Ihre Zusagen, je mit Gegenprobe: Der Bogen trägt, was in der Datenbank steht — die
 // Anfrage nennt nur Kennungen, keine Namen. Ein unbekanntes Format wird abgewiesen statt
@@ -61,7 +61,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 			t.Errorf("Content-Type %q, erwartet ein PDF", typ)
 		}
 		text := pdftest.Suchtext(t, rec.Body.Bytes())
-		// Erwartet wird, was in der Zeile STEHT, nicht was der Test angelegt hat: Die Klasse
+		// Erwartet wird, was in der Zeile steht, nicht was der Test angelegt hat: Die Klasse
 		// „7b" speichert der Trigger trg_schueler_klasse_vokabular in der Form der Schule.
 		var nachname, vorname, klasse string
 		if err := pool.QueryRow(t.Context(),

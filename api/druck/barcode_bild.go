@@ -11,7 +11,8 @@ import (
 	"bibliothek/pkg/strichcode"
 )
 
-// BarcodeBild handles on-demand PNG barcode and QR code generation.
+// BarcodeBild liefert den Parameter content als Strichcode oder, mit qr=true, als QR-Code im
+// Format PNG.
 func (t *Tueren) BarcodeBild() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		inhalt := r.URL.Query().Get("content")
@@ -30,18 +31,16 @@ func (t *Tueren) BarcodeBild() http.HandlerFunc {
 		}
 
 		w.Header().Set(tuer.HeaderContentType, "image/png")
-		// Kein eigener Cache-Control-Kopf: no-store wie jede Antwort unter /api/
-		// (internal/middleware/sicherheitskopfzeilen.go). Bis zum 30.09.2026 stand hier „public,
-		// max-age=31536000". Die Adresse trägt den Inhalt, beim Ausweis also die
-		// Ausweisnummer, und der Browser legte sie mit dem Bild ein Jahr lang ab. Das
-		// PII-Antwort-Gate führt Ausweisnummern als Stufe 1 und prüft diese Route eigens
-		// (adresseTraegtPersonendaten).
+		// Kein eigener Cache-Control-Kopf: Es gilt no-store wie für jede Antwort unter /api/
+		// (internal/middleware/sicherheitskopfzeilen.go). Die Adresse trägt den Inhalt, beim
+		// Ausweis die Ausweisnummer, und der Browser legte sie mit dem Bild ab; die Prüfung der
+		// Antworten auf Personendaten führt die Route deshalb eigens (adresseTraegtPersonendaten).
 		httpresp.Schreibe(w, bild)
 	}
 }
 
-// leseBarcodeGroesse bestimmt die Zielgröße (Default 300×100, QR 200×200) und übernimmt
-// gültige width/height-Query-Parameter.
+// leseBarcodeGroesse liest Breite und Höhe aus den Parametern width und height; ohne gültige
+// Angabe gilt 300×100, für einen QR-Code 200×200.
 func leseBarcodeGroesse(r *http.Request, alsQR bool) (breite, hoehe int) {
 	breite, hoehe = 300, 100
 	if alsQR {

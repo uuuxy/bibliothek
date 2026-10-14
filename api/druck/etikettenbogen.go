@@ -12,12 +12,12 @@ import (
 	"bibliothek/pdf"
 )
 
-// leseEtikettParameter liest Format, Startposition und QR-Flag aus den Query-Parametern
-// (mit denselben Defaults wie bisher).
+// leseEtikettParameter liest Format, Startposition und QR-Schalter aus den Parametern der
+// Adresse; ohne Angabe gilt das Format avery_3475 ab Position 1.
 func leseEtikettParameter(r *http.Request) (formatID string, start int, alsQR bool) {
 	formatID = r.URL.Query().Get("format")
 	if formatID == "" {
-		formatID = "avery_3475" // default as before
+		formatID = "avery_3475"
 	}
 
 	start = 1
@@ -31,8 +31,8 @@ func leseEtikettParameter(r *http.Request) (formatID string, start int, alsQR bo
 	return formatID, start, alsQR
 }
 
-// TitelEtiketten returns a handler that generates an A4 PDF containing 3x8 Avery labels
-// for all copies of a given book title.
+// TitelEtiketten liefert die Etiketten aller Exemplare eines Titels als Bogen im PDF; die
+// Angaben liest der Server selbst (buchetikett.LadeDesTitels).
 func (t *Tueren) TitelEtiketten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -69,7 +69,8 @@ func (t *Tueren) TitelEtiketten() http.HandlerFunc {
 	}
 }
 
-// etikettenbogenAnfrage represents a request to generate a PDF label sheet.
+// etikettenbogenAnfrage ist ein Druckauftrag aus dem Druck-Center: Format, Startposition und
+// die Etiketten.
 type etikettenbogenAnfrage struct {
 	FormatID      string                `json:"formatId"`
 	Startposition int                   `json:"startPosition"`
@@ -77,7 +78,9 @@ type etikettenbogenAnfrage struct {
 	Etiketten     []buchetikett.Etikett `json:"items"`
 }
 
-// Etikettenbogen generates an A4 PDF containing labels dynamically.
+// Etikettenbogen liefert die Etiketten eines Druckauftrags als Bogen im PDF. Signatur,
+// Anschaffungsjahr und Topf trägt der Server nach (buchetikett.ErgaenzeServerfelder), weil der
+// Browser nur Barcode, Titel und Autor schickt.
 func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req etikettenbogenAnfrage

@@ -15,21 +15,17 @@ import (
 	"bibliothek/repository"
 )
 
-// GET /api/buecher/titel/suche — die Titel-Tür für Bildschirme außerhalb der Theke
-// (Etiketten-Titelsuche im Druck-Center; Befund-Register, Entscheidung 3 vom 05.09.2026).
-//
-// Bis dahin rief der Druckbildschirm GET /api/search (perform_actions): dieselbe Suche,
-// aber mit Schüler-Kiosk-Daten in der Antwort, die er nie zeigte — und gekoppelt an das
-// Theken-Recht, obwohl der Bildschirm nur Titel braucht. Die Suchgüte muss die der Theke
-// bleiben (KatalogAbfragen.FindeTitelUnscharf: Signatur, ISBN, Umlaut-Normalisierung) — die Inventur-Liste
-// GET /api/books kann das nicht, deshalb ist das eine eigene Tür und kein Umzug dorthin.
+// GET /api/buecher/titel/suche sucht Titel für Bildschirme außerhalb der Theke, etwa die
+// Etiketten im Druck-Center. Sie liefert keine Schüler und hängt nicht am Recht der Theke
+// (perform_actions). Die Suchgüte bleibt die der Theke (KatalogAbfragen.FindeTitelUnscharf:
+// Signatur, ISBN, Umlaut-Normalform); die Liste GET /api/books kann das nicht.
 func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Türsuche Testband", "TUER 7", 1)
-	testdaten.LegeExemplarAn(t, pool, titelID, "B-TUER-1", true, "") // ohne Exemplar zeigt die Tür keinen Titel (OFFEN.md 9.4)
+	testdaten.LegeExemplarAn(t, pool, titelID, "B-TUER-1", true, "") // ohne Exemplar zeigt die Tür keinen Titel
 	// Ein Schüler mit demselben Suchwort — er darf in der Antwort nicht auftauchen.
 	if _, err := pool.Exec(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('S-TUER-1', 'Tilda', 'Türsuche', '07A', 2031)`); err != nil {
@@ -51,7 +47,7 @@ func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 		return w.Code, w.Body.String(), res
 	}
 
-	// Freitext: der Titel, und KEIN Schüler im Körper — weder als Feld noch als Wert.
+	// Freitext: der Titel, und kein Schüler im Körper — weder als Feld noch als Wert.
 	code, body, res := rufe("Türsuche")
 	if code != http.StatusOK || len(res.Titel) != 1 || res.Titel[0].ID != titelID {
 		t.Errorf("Freitext: HTTP %d, %d Titel (%s)", code, len(res.Titel), body)

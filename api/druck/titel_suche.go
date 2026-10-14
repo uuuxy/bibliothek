@@ -16,15 +16,13 @@ type titelSucheAntwort struct {
 	Gesamtzahl int                `json:"books_total"`
 }
 
-// TitelSuche ist die Titel-Hälfte von SearchHandler als eigene Tür (view_books).
+// TitelSuche sucht Titel für die Etiketten im Druck-Center und braucht dafür nur das Recht
+// view_books.
 //
-// Die Etiketten-Titelsuche im Druck-Center rief bis 05.09.2026 GET /api/search und las aus
-// der Antwort nur `books` — die Schüler-Kiosk-Daten darin zeigte sie nie, holte sie aber
-// mit; und weil /api/search am Theken-Recht perform_actions hängt, meldete der
-// Druckbildschirm ohne dieses Recht nur noch „Suche nicht möglich". Die Inventur-Liste
-// GET /api/books wäre keine Alternative: Sie sucht per ILIKE über Titel/Autor/ISBN, ohne
-// Signatur und ohne Umlaut-Normalisierung — KatalogAbfragen.FindeTitelUnscharf ist die Suchgüte der Theke,
-// und die bleibt hier erhalten.
+// Die Suche der Theke (GET /api/search) hängt am Recht perform_actions und liefert neben den
+// Titeln Schüler, die der Druck nicht zeigt; die Liste GET /api/books sucht ohne Signatur und
+// ohne Umlaut-Normalform. Diese Tür sucht deshalb mit der Abfrage der Theke,
+// KatalogAbfragen.FindeTitelUnscharf.
 func (t *Tueren) TitelSuche(katalogAbfragen repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		suchtext := strings.TrimSpace(r.URL.Query().Get("q"))

@@ -4209,14 +4209,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "etikett_gedruckt": {
-                    "description": "EtikettGedruckt gehört dazu, seit die Liste auch bereits erledigte Exemplare zeigen\nkann (status=erledigt|alle). Ohne das Feld liesse sich in der gemischten Ansicht\nnicht unterscheiden, welche Zeile noch ein Etikett braucht.",
+                    "description": "EtikettGedruckt unterscheidet in den Ansichten status=erledigt und status=alle die\nZeilen, die noch ein Etikett brauchen.",
                     "type": "boolean"
                 },
                 "titel": {
                     "type": "string"
                 },
                 "zugang_am": {
-                    "description": "ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, Migration 129;\nRückfall erworben_am für Zeilen ohne Zugangsdatum). Bis zum 22.09.2026 hieß das Feld\nerworben_am und trug im Bestellweg den Bestelltag.",
+                    "description": "ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, für Zeilen ohne\nZugangsdatum erworben_am).",
                     "type": "string"
                 }
             }
@@ -4793,7 +4793,7 @@ const docTemplate = `{
                     }
                 },
                 "ausgelassen_regel": {
-                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(service.LmfPlanLaesstAus). Der Planer klappt sie unter „bleiben draußen\" ein, auch bei\neinem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte sonst\njede Klasse der Schule offen an.",
+                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(service.IstAusgelassenImLMFPlan). Der Planer klappt sie unter „bleiben draußen\" ein, auch bei\neinem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte sonst\njede Klasse der Schule offen an.",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -4863,7 +4863,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rahmen": {
-                    "description": "Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LmfPlanRahmenVorgabe).",
+                    "description": "Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LMFPlanRahmenVorgabe).",
                     "allOf": [
                         {
                             "$ref": "#/definitions/lernmittel.LmfPlanRahmenVorgabe"
@@ -6405,7 +6405,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bekannt": {
-                    "description": "Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt — die Unterscheidung, die 0,00 €\nerst lesbar macht: Ergebnis eines Totalschadens oder fehlende Angabe?\n\nSie steht als eigenes Feld hier, weil die Oberfläche sie sonst aus dem deutschen\nHerleitungssatz lesen müsste, und das tat sie bis zum 17.09.2026 auch\n(` + "`" + `startsWith(\"kein Preis hinterlegt\")` + "`" + `). Ein Satz als Schnittstelle hält bis zur\nersten Umformulierung; danach zeigt die Karte still „Ersatzwert heute: 0,00 €\" über\neinem Buch, dessen Preis bloß niemand erfasst hat.",
+                    "description": "Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt; erst damit wird 0,00 € lesbar:\nErgebnis eines Totalschadens oder fehlende Angabe?\n\nEs ist ein eigenes Feld, weil die Oberfläche es sonst aus dem deutschen Satz der\nHerleitung lesen müsste. Ein Satz als Schnittstelle hält bis zur ersten Umformulierung;\ndanach zeigte die Karte still „Ersatzwert heute: 0,00 €\" über einem Buch, dessen Preis\nbloß niemand erfasst hat.",
                     "type": "boolean"
                 },
                 "betrag": {
@@ -6413,7 +6413,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "herleitung": {
-                    "description": "Herleitung sagt dem Personal, WARUM dieser Betrag vorgeschlagen wird — damit im\nDialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung\nlandet.",
+                    "description": "Herleitung sagt dem Personal, warum dieser Betrag vorgeschlagen wird — damit im\nDialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung\nlandet.",
                     "type": "string"
                 },
                 "topf": {

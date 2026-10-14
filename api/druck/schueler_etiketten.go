@@ -30,7 +30,7 @@ type schuelerEtikettenAnfrage struct {
 	FormatID      string   `json:"formatId,omitempty"`
 	Startposition int      `json:"startPosition,omitempty"`
 	SchuelerIDs   []string `json:"schuelerIds,omitempty" validate:"omitempty,dive,required,uuid_oder_leer"`
-	// Muster druckt EIN Beispiel-Etikett statt echter Schüler — der Testdruck des
+	// Muster druckt ein Beispiel-Etikett statt echter Schüler — der Testdruck des
 	// Ausweis-Designers, mit dem man den Sitz auf dem Klebebogen prüft.
 	Muster bool `json:"muster,omitempty"`
 }
@@ -71,7 +71,7 @@ func (t *Tueren) SchuelerEtiketten(leserAbfragen repository.LeserAbfragen) http.
 
 // pruefeBogenParameter prüft Format und Startposition und setzt die Vorgabe ein.
 //
-// Ein unbekanntes Format wird abgewiesen und NICHT still auf die Vorgabe gedreht: Wer
+// Ein unbekanntes Format wird abgewiesen und nicht still auf die Vorgabe gedreht: Wer
 // avery_3475 anfordert und zweckform_l4760 bekommt, merkt es erst am verdruckten Bogen.
 // Gleiche Regel wie bei den Buch-Etiketten (pdf.IstBekanntesEtikettFormat).
 func pruefeBogenParameter(req *schuelerEtikettenAnfrage) error {

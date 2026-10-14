@@ -18,13 +18,11 @@ import (
 // MaxAusweisLayoutBytes begrenzt das Design (Base64-Logos können groß werden).
 const MaxAusweisLayoutBytes = 5 << 20 // 5 MiB
 
-// AusweisLayout liefert das gespeicherte Ausweis-Design als JSON.
-// Ist noch keines gespeichert, wird "{}" zurückgegeben, damit das Frontend sauber
-// auf seine Defaults zurückfällt.
+// AusweisLayout liefert das gespeicherte Design der Ausweise als JSON und "{}", solange keines
+// gespeichert ist; dann nimmt die Oberfläche ihre Vorgaben.
 //
-// Ein Lesefehler ist kein „noch keines": Der Designer speichert nach einem leeren Objekt
-// seine Vorgabewerte, für alle Arbeitsplätze. Der Fehler wird deshalb vor dem leeren Wert
-// geprüft — nach einem gescheiterten Scan ist der Wert immer leer.
+// Der Fehler wird vor dem leeren Wert geprüft, weil der Wert nach einem gescheiterten Scan
+// immer leer ist: Auf "{}" speichert der Designer seine Vorgaben, für alle Arbeitsplätze.
 func (t *Tueren) AusweisLayout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		wert, err := repository.LadeAusweisLayout(r.Context(), t.DB.Pool)
@@ -38,11 +36,12 @@ func (t *Tueren) AusweisLayout() http.HandlerFunc {
 			wert = "{}"
 		}
 		w.Header().Set(tuer.HeaderContentType, "application/json; charset=utf-8")
-		_, _ = w.Write([]byte(wert)) //nolint:errcheck // Antwort bereits committet
+		_, _ = w.Write([]byte(wert)) //nolint:errcheck // Die Antwort ist schon gesendet.
 	}
 }
 
-// AusweisLayoutSchreiben speichert das Ausweis-Design (validiertes JSON) zentral.
+// AusweisLayoutSchreiben speichert das Design der Ausweise für alle Arbeitsplätze. Es nimmt
+// nur gültiges JSON bis MaxAusweisLayoutBytes an.
 func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAusweisLayoutBytes+1))
