@@ -16,7 +16,7 @@ var zulaufSpalten = []string{"id", "titel_id", "erstellt_am", "zustand_notiz", "
 
 const zulaufAbfrage = `LEFT JOIN bestellungen_verlauf b ON b\.id = e\.bestellung_id\s*WHERE e\.ist_ausleihbar = false\s*AND e\.bestellstatus IS NOT NULL\s*AND e\.ist_ausgesondert = false\s*ORDER BY e\.erstellt_am DESC`
 
-func TestGetIncomingShipments_GruppiertNachBestellung(t *testing.T) {
+func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -41,7 +41,7 @@ func TestGetIncomingShipments_GruppiertNachBestellung(t *testing.T) {
 
 	mock.ExpectQuery(zulaufAbfrage).WillReturnRows(rows)
 
-	groups, err := GetIncomingShipments(context.Background(), mock)
+	groups, err := LadeZulauf(context.Background(), mock)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -65,19 +65,19 @@ func TestGetIncomingShipments_GruppiertNachBestellung(t *testing.T) {
 	for _, g := range groups {
 		soll, bekannt := erwartet[g.ID]
 		if !bekannt {
-			t.Errorf("unerwartete Gruppe %q (%s / %s)", g.ID, g.Date, g.SupplierName)
+			t.Errorf("unerwartete Gruppe %q (%s / %s)", g.ID, g.Datum, g.LieferantName)
 			continue
 		}
 		gesehen[g.ID] = true
-		if g.Date != soll.datum || g.SupplierName != soll.lieferant {
-			t.Errorf("%s: %s / %s, erwartet %s / %s", g.ID, g.Date, g.SupplierName, soll.datum, soll.lieferant)
+		if g.Datum != soll.datum || g.LieferantName != soll.lieferant {
+			t.Errorf("%s: %s / %s, erwartet %s / %s", g.ID, g.Datum, g.LieferantName, soll.datum, soll.lieferant)
 		}
-		if len(g.Items) != soll.posten {
-			t.Errorf("%s: %d Positionen erwartet, bekam %d", g.ID, soll.posten, len(g.Items))
+		if len(g.Posten) != soll.posten {
+			t.Errorf("%s: %d Positionen erwartet, bekam %d", g.ID, soll.posten, len(g.Posten))
 			continue
 		}
-		if g.Items[0].Menge != soll.menge {
-			t.Errorf("%s: Menge %d erwartet, bekam %d", g.ID, soll.menge, g.Items[0].Menge)
+		if g.Posten[0].Menge != soll.menge {
+			t.Errorf("%s: Menge %d erwartet, bekam %d", g.ID, soll.menge, g.Posten[0].Menge)
 		}
 	}
 	for id := range erwartet {
@@ -88,10 +88,10 @@ func TestGetIncomingShipments_GruppiertNachBestellung(t *testing.T) {
 	// Die Position nennt Titel, ISBN und Cover aus ihren Spalten und ihre Exemplare, das
 	// zuerst gelesene zuerst.
 	for _, g := range groups {
-		if g.ID != "B1" || len(g.Items) != 1 {
+		if g.ID != "B1" || len(g.Posten) != 1 {
 			continue
 		}
-		p := g.Items[0]
+		p := g.Posten[0]
 		if p.TitelID != "t1" || p.Titel != "Titel 1" || p.ISBN != "123" || p.CoverURL != "cover1" ||
 			len(p.ExemplarIDs) != 2 || p.ExemplarIDs[0] != "ex1" || p.ExemplarIDs[1] != "ex2" {
 			t.Errorf("Position der Bestellung B1: %+v", *p)
@@ -107,7 +107,7 @@ func TestGetIncomingShipments_GruppiertNachBestellung(t *testing.T) {
 	}
 }
 
-func TestGetIncomingShipments_QueryError(t *testing.T) {
+func TestLadeZulauf_QueryError(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -117,7 +117,7 @@ func TestGetIncomingShipments_QueryError(t *testing.T) {
 	expectedErr := errors.New("db error")
 	mock.ExpectQuery(zulaufAbfrage).WillReturnError(expectedErr)
 
-	_, err = GetIncomingShipments(context.Background(), mock)
+	_, err = LadeZulauf(context.Background(), mock)
 	if !errors.Is(err, expectedErr) {
 		t.Fatalf("expected error %v, got %v", expectedErr, err)
 	}

@@ -15,29 +15,29 @@ import (
 
 // Ein Warenkorb mit zwei Positionen: Betrag und Menge der Bestellung sind die Summe über
 // beide, und Zusammenfassung, Etiketten und Positionen nennen jede von ihnen.
-func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
+func TestLegeBestellungAn_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Summen", false)
 	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Summe Eins", 0)
 	zweiter := testdaten.TitelMitMeldebestand(t, pool, "LMF-Summe Zwei", 0)
 
-	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel: mitteltopf.Land, SupplierID: lieferant,
-		Items: []service.BestellAuftragPosition{
-			{TitelID: erster, Menge: 3, Preis: 10, GenerateBarcodes: true},
-			{TitelID: zweiter, Menge: 2, Preis: 4.5, GenerateBarcodes: true},
+	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel: mitteltopf.Land, LieferantID: lieferant,
+		Positionen: []service.BestellAuftragPosition{
+			{TitelID: erster, Menge: 3, Preis: 10, MitVorabBarcode: true},
+			{TitelID: zweiter, Menge: 2, Preis: 4.5, MitVorabBarcode: true},
 		},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)
 	}
-	if res.TotalAllocated != 5 || len(res.SummaryItems) != 2 || len(res.Labels) != 5 {
+	if res.Menge != 5 || len(res.BestellteTitel) != 2 || len(res.Etiketten) != 5 {
 		t.Errorf("Ergebnis: %d Exemplare, %d Zeilen, %d Etiketten; erwartet 5, 2 und 5",
-			res.TotalAllocated, len(res.SummaryItems), len(res.Labels))
+			res.Menge, len(res.BestellteTitel), len(res.Etiketten))
 	}
 
 	var betrag float64
@@ -61,18 +61,18 @@ func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
 // Ohne gültigen Topf legt das Anlegen nichts an, auch wenn kein Aufrufer vorher prüft: Die
 // Tür prüft den Topf selbst, das Anlegen ist die zweite Stelle. Abgelehnt wird mit dem Fehler
 // des Vokabulars, bevor ein Barcode reserviert ist.
-func TestProcessOrder_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
+func TestLegeBestellungAn_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.Haendler(t, pool, "Ohne Topf", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Ohne-Topf", 0)
 
 	for _, mittel := range []string{"", "kreis"} {
-		res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-			Mittel: mittel, SupplierID: lieferant,
-			Items: []service.BestellAuftragPosition{{TitelID: titel, Menge: 2, Preis: 10, GenerateBarcodes: true}},
+		res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+			Mittel: mittel, LieferantID: lieferant,
+			Positionen: []service.BestellAuftragPosition{{TitelID: titel, Menge: 2, Preis: 10, MitVorabBarcode: true}},
 		})
 		if !errors.Is(err, mitteltopf.ErrUngueltig) {
 			t.Errorf("Topf %q: Fehler %v und Ergebnis %+v, erwartet mitteltopf.ErrUngueltig", mittel, err, res)
@@ -92,11 +92,11 @@ func TestProcessOrder_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 // Jede Spalte einer Position trägt ihr Feld: Titel und ISBN als Abschrift, Menge, Einzelpreis
 // und die Angabe zum Vorab-Barcode. Die Anweisung reiht die Werte nach ihrer Stelle auf;
 // deshalb sind sie je Feld und je Position verschieden.
-func TestProcessOrder_JedePositionStehtInIhrenSpalten(t *testing.T) {
+func TestLegeBestellungAn_JedePositionStehtInIhrenSpalten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.Haendler(t, pool, "Spalten", false)
 	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Spalte Eins", 0)
 	zweiter := testdaten.TitelMitMeldebestand(t, pool, "LMF-Spalte Zwei", 0)
@@ -106,11 +106,11 @@ func TestProcessOrder_JedePositionStehtInIhrenSpalten(t *testing.T) {
 		}
 	}
 
-	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel: mitteltopf.Land, SupplierID: lieferant,
-		Items: []service.BestellAuftragPosition{
-			{TitelID: erster, Menge: 3, Preis: 10.5, GenerateBarcodes: true},
-			{TitelID: zweiter, Menge: 2, Preis: 4.25, GenerateBarcodes: false},
+	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel: mitteltopf.Land, LieferantID: lieferant,
+		Positionen: []service.BestellAuftragPosition{
+			{TitelID: erster, Menge: 3, Preis: 10.5, MitVorabBarcode: true},
+			{TitelID: zweiter, Menge: 2, Preis: 4.25, MitVorabBarcode: false},
 		},
 	})
 	if err != nil {

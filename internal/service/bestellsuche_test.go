@@ -21,7 +21,7 @@ func (t *orderMockTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return t.roundTripFunc(req)
 }
 
-func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
+func TestFindeZumBestellen_ReturnsCombinedResults(t *testing.T) {
 	mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -81,7 +81,7 @@ func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"isbn_normalform"}).
 			AddRow("9780987654321"))
 
-	results, dnbAusfall, err := SearchOrders(ctx, mock, metaClient, "TestBook")
+	results, dnbAusfall, err := FindeZumBestellen(ctx, mock, metaClient, "TestBook")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -94,19 +94,19 @@ func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
 	}
 
 	// Jedes Feld des eigenen Treffers kommt aus seiner Spalte; jede trägt einen eigenen Wert.
-	lokal := OrderSearchItem{
+	lokal := BestellTreffer{
 		ID: "id-1", Titel: "Lokales Buch", Autor: "Autor A", ISBN: "9781234567890", Verlag: "Verlag X",
-		CoverURL: "cover-lokal", Signatur: "SIG-1", Source: "local", CurrentStock: 3, IstLernmittel: true,
+		CoverURL: "cover-lokal", Signatur: "SIG-1", Quelle: "local", Bestand: 3, IstLernmittel: true,
 	}
 	if results[0] != lokal {
 		t.Errorf("eigener Treffer:\n  ist  %+v\n  soll %+v", results[0], lokal)
 	}
 
-	if results[1].Source != "dnb" || results[1].Titel != "DNB Buch" {
+	if results[1].Quelle != "dnb" || results[1].Titel != "DNB Buch" {
 		t.Errorf("unexpected DNB result: %+v", results[1])
 	}
 
-	if !results[1].IsDuplicate {
+	if !results[1].IstDublette {
 		t.Errorf("expected DNB result to be marked as duplicate")
 	}
 
@@ -115,7 +115,7 @@ func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
 	}
 }
 
-func TestSearchOrders_LocalOnlyWhenDNBFails(t *testing.T) {
+func TestFindeZumBestellen_LocalOnlyWhenDNBFails(t *testing.T) {
 	mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -139,7 +139,7 @@ func TestSearchOrders_LocalOnlyWhenDNBFails(t *testing.T) {
 	metaClient := inventur.NeuerMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
-	results, dnbAusfall, err := SearchOrders(ctx, mock, metaClient, "TestBook")
+	results, dnbAusfall, err := FindeZumBestellen(ctx, mock, metaClient, "TestBook")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -152,8 +152,8 @@ func TestSearchOrders_LocalOnlyWhenDNBFails(t *testing.T) {
 		t.Fatalf("expected 1 result, got %d", len(results))
 	}
 
-	if results[0].Source != "local" {
-		t.Errorf("expected local result, got %s", results[0].Source)
+	if results[0].Quelle != "local" {
+		t.Errorf("expected local result, got %s", results[0].Quelle)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -161,7 +161,7 @@ func TestSearchOrders_LocalOnlyWhenDNBFails(t *testing.T) {
 	}
 }
 
-func TestSearchOrders_DNBOnlyWhenLocalFails(t *testing.T) {
+func TestFindeZumBestellen_DNBOnlyWhenLocalFails(t *testing.T) {
 	mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -212,7 +212,7 @@ func TestSearchOrders_DNBOnlyWhenLocalFails(t *testing.T) {
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"isbn_normalform"}))
 
-	results, dnbAusfall, err := SearchOrders(ctx, mock, metaClient, "TestBook")
+	results, dnbAusfall, err := FindeZumBestellen(ctx, mock, metaClient, "TestBook")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -224,8 +224,8 @@ func TestSearchOrders_DNBOnlyWhenLocalFails(t *testing.T) {
 		t.Fatalf("expected 1 result, got %d", len(results))
 	}
 
-	if results[0].Source != "dnb" {
-		t.Errorf("expected DNB result, got %s", results[0].Source)
+	if results[0].Quelle != "dnb" {
+		t.Errorf("expected DNB result, got %s", results[0].Quelle)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -233,7 +233,7 @@ func TestSearchOrders_DNBOnlyWhenLocalFails(t *testing.T) {
 	}
 }
 
-func TestBaueDNBSuchItem(t *testing.T) {
+func TestBaueDNBTreffer(t *testing.T) {
 	ergebnis := inventur.MetadatenErgebnis{
 		ISBN:     "978-3-16-148410-0",
 		Titel:    "Test Titel",
@@ -247,7 +247,7 @@ func TestBaueDNBSuchItem(t *testing.T) {
 		"9783161484100": {},
 	}
 
-	item := baueDNBSuchItem(ergebnis, existing)
+	item := baueDNBTreffer(ergebnis, existing)
 
 	if item.Titel != "Test Titel" {
 		t.Errorf("erwartet Titel 'Test Titel', bekam %q", item.Titel)
@@ -255,28 +255,28 @@ func TestBaueDNBSuchItem(t *testing.T) {
 	if item.CoverURL != "http://example.com/cover.jpg" {
 		t.Errorf("erwartet CoverURL 'http://example.com/cover.jpg', bekam %q", item.CoverURL)
 	}
-	if !item.IsDuplicate {
-		t.Errorf("erwartet, dass IsDuplicate true ist")
+	if !item.IstDublette {
+		t.Errorf("erwartet, dass IstDublette true ist")
 	}
 
 	ergebnisOhneCover := ergebnis
 	ergebnisOhneCover.CoverURL = ""
 
 	existingLeer := map[string]struct{}{}
-	item2 := baueDNBSuchItem(ergebnisOhneCover, existingLeer)
+	item2 := baueDNBTreffer(ergebnisOhneCover, existingLeer)
 
 	if item2.CoverURL != "https://portal.dnb.de/opac/mvb/cover?isbn=978-3-16-148410-0" {
 		t.Errorf("erwartet DNB Cover-Fallback, bekam %q", item2.CoverURL)
 	}
-	if item2.IsDuplicate {
-		t.Errorf("erwartet, dass IsDuplicate false ist")
+	if item2.IstDublette {
+		t.Errorf("erwartet, dass IstDublette false ist")
 	}
 }
 
 // Die DNB nennt eine ISBN mit Bindestrichen und bei älteren Sätzen zehnstellig, der Katalog
 // führt sie in der Normalform: Der Treffer heißt „Vorhanden", nicht „Neu". Eine zehnstellige
 // Nummer mit falschem Prüfzeichen ist keine andere Schreibweise der dreizehnstelligen.
-func TestBaueDNBSuchItem_VorhandenInJederSchreibweise(t *testing.T) {
+func TestBaueDNBTreffer_VorhandenInJederSchreibweise(t *testing.T) {
 	for name, f := range map[string]struct {
 		dnb, imKatalog string
 		vorhanden      bool
@@ -288,9 +288,9 @@ func TestBaueDNBSuchItem_VorhandenInJederSchreibweise(t *testing.T) {
 		"ohne ISBN":                         {"", "9783551551672", false},
 	} {
 		treffer := inventur.MetadatenErgebnis{ISBN: f.dnb, Titel: "Probe"}
-		item := baueDNBSuchItem(treffer, map[string]struct{}{f.imKatalog: {}})
-		if item.IsDuplicate != f.vorhanden {
-			t.Errorf("%s: IsDuplicate = %v, erwartet %v", name, item.IsDuplicate, f.vorhanden)
+		item := baueDNBTreffer(treffer, map[string]struct{}{f.imKatalog: {}})
+		if item.IstDublette != f.vorhanden {
+			t.Errorf("%s: IstDublette = %v, erwartet %v", name, item.IstDublette, f.vorhanden)
 		}
 	}
 }

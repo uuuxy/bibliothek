@@ -70,12 +70,12 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 	if s := bestellstatus(weg); s != nil {
 		t.Errorf("Aussondern ließ bestellstatus=%q stehen", *s)
 	}
-	gruppen, err := service.GetIncomingShipments(ctx, pool)
+	gruppen, err := service.LadeZulauf(ctx, pool)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, g := range gruppen {
-		for _, it := range g.Items {
+		for _, it := range g.Posten {
 			for _, id := range it.ExemplarIDs {
 				if id == weg {
 					t.Errorf("ausgesondertes Exemplar steht im Wareneingang")
@@ -83,8 +83,8 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 			}
 		}
 	}
-	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewProtokollAbfragen(pool), service.BulkReceiveParams{
-		ExemplarIDs: []string{weg}, AdminID: testdaten.AdminFuerAudit(t, pool), IPAddr: "",
+	if _, err := service.BucheWareneingang(ctx, pool, repository.NewProtokollAbfragen(pool), service.WareneingangAngaben{
+		ExemplarIDs: []string{weg}, BearbeiterID: testdaten.AdminFuerAudit(t, pool), IPAdresse: "",
 	}); err != nil {
 		t.Logf("Wareneingang meldet: %v", err)
 	}

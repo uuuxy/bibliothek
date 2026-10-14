@@ -20,10 +20,10 @@ import (
 
 // OrderItemRequest represents a single item to order from the cart
 type OrderItemRequest struct {
-	TitelID          string  `json:"titel_id" validate:"required,uuid_oder_leer"`
-	Menge            int     `json:"menge"`
-	Preis            float64 `json:"preis"`
-	GenerateBarcodes bool    `json:"generate_barcodes"`
+	TitelID         string  `json:"titel_id" validate:"required,uuid_oder_leer"`
+	Menge           int     `json:"menge"`
+	Preis           float64 `json:"preis"`
+	MitVorabBarcode bool    `json:"generate_barcodes"`
 }
 
 // SubmitOrderRequest ist ein kompletter Warenkorb an EINEN Lieferanten. Die Bestellung
@@ -49,15 +49,15 @@ func bestellAuftrag(req SubmitOrderRequest) service.BestellAuftrag {
 		positionen = append(positionen, service.BestellAuftragPosition(item))
 	}
 	return service.BestellAuftrag{
-		SupplierID:     req.SupplierID,
-		Items:          positionen,
-		IdempotencyKey: req.IdempotencyKey,
-		Mittel:         req.Mittel,
+		LieferantID:          req.SupplierID,
+		Positionen:           positionen,
+		IdempotenzSchluessel: req.IdempotencyKey,
+		Mittel:               req.Mittel,
 	}
 }
 
 // SubmitOrderHandler legt die Bestellung aus dem Warenkorb an und verschickt die Bestellmail.
-func (s *Tueren) SubmitOrderHandler(orderSvc *service.OrderService) http.HandlerFunc {
+func (s *Tueren) SubmitOrderHandler(orderSvc *service.BestellDienst) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleSubmitOrder(w, r, orderSvc)
 	}
@@ -65,7 +65,7 @@ func (s *Tueren) SubmitOrderHandler(orderSvc *service.OrderService) http.Handler
 
 // handleSubmitOrder speichert die Bestellung und verschickt danach die Mail an den Lieferanten;
 // die Bestellung gilt auch, wenn der Versand ausbleibt.
-func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *service.OrderService) {
+func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *service.BestellDienst) {
 	var req SubmitOrderRequest
 	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
@@ -86,7 +86,7 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 
 	ctx := r.Context()
 
-	res, err := orderSvc.ProcessOrder(ctx, bestellAuftrag(req))
+	res, err := orderSvc.LegeAn(ctx, bestellAuftrag(req))
 	if err != nil {
 		apierrors.SendHTTPError(w, mapProcessOrderError(err), err)
 		return
@@ -97,8 +97,8 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	if res.BereitsVorhanden {
 		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
-			"message":     fmt.Sprintf("Bestellung an %s war bereits erfasst (Doppelklick) — es wurde keine zweite Bestellung ausgelöst.", res.SupplierName),
-			"ordered_qty": res.TotalAllocated,
+			"message":     fmt.Sprintf("Bestellung an %s war bereits erfasst (Doppelklick) — es wurde keine zweite Bestellung ausgelöst.", res.LieferantName),
+			"ordered_qty": res.Menge,
 		})
 		return
 	}
@@ -108,8 +108,8 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
-			"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.SupplierName),
-			"ordered_qty": res.TotalAllocated,
+			"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.LieferantName),
+			"ordered_qty": res.Menge,
 		})
 		return
 	}
@@ -121,21 +121,21 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "warning",
-			"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
-			"ordered_qty": res.TotalAllocated,
+			"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.LieferantEmail),
+			"ordered_qty": res.Menge,
 		})
 		return
 	}
 
-	status, meldung := bestellVersandMeldung(res.SupplierName, res.IstHauptlieferant && !mitLink)
+	status, meldung := bestellVersandMeldung(res.LieferantName, res.IstHauptlieferant && !mitLink)
 	tuer.RespondJSON(w, http.StatusOK, map[string]any{
 		"status":      status,
 		"message":     meldung,
-		"ordered_qty": res.TotalAllocated,
+		"ordered_qty": res.Menge,
 	})
 }
 
-// mapProcessOrderError ordnet die benannten Ablehnungen von ProcessOrder ihrem Status zu.
+// mapProcessOrderError ordnet die benannten Ablehnungen von BestellDienst.LegeAn ihrem Status zu.
 // Alles andere ist ein Serverfehler, dessen Text die Tür nicht ausgibt.
 func mapProcessOrderError(err error) int {
 	switch {
@@ -157,7 +157,7 @@ func mapProcessOrderError(err error) int {
 func (s *Tueren) GetIncomingShipmentsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		groups, err := service.GetIncomingShipments(ctx, s.DB.Pool)
+		groups, err := service.LadeZulauf(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -194,12 +194,12 @@ func (s *Tueren) sucheBestellung(metaClient *inventur.MetadatenClient) http.Hand
 
 		query := strings.TrimSpace(req.Query)
 		if query == "" {
-			tuer.RespondJSON(w, http.StatusOK, []service.OrderSearchItem{})
+			tuer.RespondJSON(w, http.StatusOK, []service.BestellTreffer{})
 			return
 		}
 
 		ctx := r.Context()
-		results, dnbAusfall, err := service.SearchOrders(ctx, s.DB.Pool, metaClient, query)
+		results, dnbAusfall, err := service.FindeZumBestellen(ctx, s.DB.Pool, metaClient, query)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -238,10 +238,10 @@ func (s *Tueren) BulkReceiveOrderHandler() http.HandlerFunc {
 
 		auditRepo := repository.NewProtokollAbfragen(s.DB.Pool)
 
-		receivedItems, err := service.BulkReceiveOrder(ctx, s.DB.Pool, auditRepo, service.BulkReceiveParams{
-			ExemplarIDs: req.ExemplarIDs,
-			AdminID:     adminID,
-			IPAddr:      clientip.AusAnfrage(r),
+		receivedItems, err := service.BucheWareneingang(ctx, s.DB.Pool, auditRepo, service.WareneingangAngaben{
+			ExemplarIDs:  req.ExemplarIDs,
+			BearbeiterID: adminID,
+			IPAdresse:    clientip.AusAnfrage(r),
 		})
 		if err != nil {
 			if errors.Is(err, service.ErrNichtsEinzubuchen) {

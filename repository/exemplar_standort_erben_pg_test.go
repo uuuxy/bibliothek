@@ -59,11 +59,11 @@ func erbWege() []erbWeg {
 			}
 		}},
 		{"Bestellung", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
-			svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
-			if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-				Mittel:     mitteltopf.Land,
-				SupplierID: testdaten.Haendler(t, pool, "Händler "+titel.isbn, false),
-				Items:      []service.BestellAuftragPosition{{TitelID: titel.id, Menge: 2, Preis: 10, GenerateBarcodes: true}},
+			svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+			if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
+				Mittel:      mitteltopf.Land,
+				LieferantID: testdaten.Haendler(t, pool, "Händler "+titel.isbn, false),
+				Positionen:  []service.BestellAuftragPosition{{TitelID: titel.id, Menge: 2, Preis: 10, MitVorabBarcode: true}},
 			}); err != nil {
 				t.Fatalf("Bestellung: %v", err)
 			}

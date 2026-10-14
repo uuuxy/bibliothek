@@ -81,7 +81,7 @@ func (s *Tueren) erneuereBestaetigungsToken(ctx context.Context, bestellungID st
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	gueltigBis, err = repository.ErneuereBestaetigungsToken(ctx, s.DB.Pool, bestellungID, hash, service.BestelllinkTage(ctx, s.DB.Pool))
+	gueltigBis, err = repository.ErneuereBestaetigungsToken(ctx, s.DB.Pool, bestellungID, hash, service.LadeBestelllinkTage(ctx, s.DB.Pool))
 	if err != nil {
 		return "", time.Time{}, err
 	}

@@ -28,9 +28,9 @@ const (
 	bestellMailVorgabeText    = "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie unsere Buchbestellung vom {{.Datum}} (Kundennummer: {{.Kundennummer}}) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.\n\nDiese Bestellung: {{.Mittel}} — den Vermerk finden Sie auch im Anschreiben; bitte führen Sie ihn auf der Rechnung.\n\nBestellte Titel: {{.AnzahlTitel}}\nGesamtanzahl Exemplare: {{.AnzahlExemplare}}\n\nMit freundlichen Grüßen,\nSchulbibliothek"
 )
 
-// BestellVorlage lädt Betreff und Text der Bestellmail. Fehlt die gespeicherte Vorlage, ist ein
+// LadeBestellMailVorlage lädt Betreff und Text der Bestellmail. Fehlt die gespeicherte Vorlage, ist ein
 // Feld leer oder lässt sie sich nicht lesen, gilt der Text oben.
-func BestellVorlage(ctx context.Context, pool db.PgxPoolIface) (betreff, text string) {
+func LadeBestellMailVorlage(ctx context.Context, pool db.PgxPoolIface) (betreff, text string) {
 	betreff, text, err := repository.LadeBestellVorlage(ctx, pool)
 	if err != nil || betreff == "" || text == "" {
 		return bestellMailVorgabeBetreff, bestellMailVorgabeText
@@ -59,40 +59,40 @@ type BestellMailWerte struct {
 // LoeseBestellMailAuf ersetzt die Platzhalter der Bestellvorlage in Betreff und Text. Setzt die
 // Vorlage den Topf oder den Link nicht selbst, hängt die Funktion sie an: Der Vermerk ist
 // Pflicht auf der Bestellung, und ohne den Link bestätigt der Händler nicht.
-func LoeseBestellMailAuf(betreff, text string, w BestellMailWerte) (subject, body string) {
+func LoeseBestellMailAuf(betreff, text string, werte BestellMailWerte) (betreffFertig, textFertig string) {
 	// Ohne gültigen Topf bleiben Platzhalter und Vermerk aus. Verschickt wird eine solche Mail
 	// nicht: Ihr Anschreiben lehnt den Topf ab.
-	texte, err := mitteltopf.TexteFuer(w.Mittel)
+	texte, err := mitteltopf.TexteFuer(werte.Mittel)
 	if err != nil {
 		texte = mitteltopf.Texte{}
 	}
-	replacer := strings.NewReplacer(
+	ersetzer := strings.NewReplacer(
 		"{{.Datum}}", schulzeit.Jetzt().Format(datumsformatDE),
-		"{{.Kundennummer}}", w.Kundennummer,
-		"{{.AnzahlTitel}}", strconv.Itoa(w.AnzahlTitel),
-		"{{.AnzahlExemplare}}", strconv.Itoa(w.AnzahlExemplare),
-		"{{.BestaetigungsLink}}", w.Link,
-		"{{.LinkGueltigBis}}", linkFrist(w.GueltigBis),
+		"{{.Kundennummer}}", werte.Kundennummer,
+		"{{.AnzahlTitel}}", strconv.Itoa(werte.AnzahlTitel),
+		"{{.AnzahlExemplare}}", strconv.Itoa(werte.AnzahlExemplare),
+		"{{.BestaetigungsLink}}", werte.Link,
+		"{{.LinkGueltigBis}}", linkFrist(werte.GueltigBis),
 		platzhalterMittel, texte.Kurz,
 	)
-	subject, body = ergaenzeMittelVermerk(replacer.Replace(betreff), replacer.Replace(text), betreff, text, texte)
-	return subject, ergaenzeLinkAbsatz(body, text, w.Link, w.GueltigBis)
+	betreffFertig, textFertig = ergaenzeMittelVermerk(ersetzer.Replace(betreff), ersetzer.Replace(text), betreff, text, texte)
+	return betreffFertig, ergaenzeLinkAbsatz(textFertig, text, werte.Link, werte.GueltigBis)
 }
 
 // ergaenzeMittelVermerk hängt den Topf an, wo die Vorlage {{.Mittel}} nicht selbst setzt: an
 // den Betreff als Zusatz, an den Text als eigenen Absatz. Geprüft wird die rohe Vorlage, wie
 // in ergaenzeLinkAbsatz. Ohne Topf bleibt alles unverändert.
-func ergaenzeMittelVermerk(subject, body, rohBetreff, rohText string, texte mitteltopf.Texte) (string, string) {
+func ergaenzeMittelVermerk(betreff, text, rohBetreff, rohText string, texte mitteltopf.Texte) (string, string) {
 	if texte.Kurz == "" {
-		return subject, body
+		return betreff, text
 	}
 	if !strings.Contains(rohBetreff, platzhalterMittel) {
-		subject += " – " + texte.Kurz
+		betreff += " – " + texte.Kurz
 	}
 	if !strings.Contains(rohText, platzhalterMittel) {
-		body += "\n\n" + texte.Vermerk + " Bitte führen Sie diesen Vermerk auch auf der Rechnung."
+		text += "\n\n" + texte.Vermerk + " Bitte führen Sie diesen Vermerk auch auf der Rechnung."
 	}
-	return subject, body
+	return betreff, text
 }
 
 // linkAbsatz trägt den Link, wenn die Vorlage ihn nicht selbst setzt.
@@ -112,8 +112,8 @@ func linkFrist(gueltigBis *time.Time) string {
 // ergaenzeLinkAbsatz hängt den Link an, falls die Vorlage keinen Platzhalter dafür hat. Geprüft
 // wird die rohe Vorlage: Nach dem Ersetzen ist nicht mehr zu sehen, ob der Platzhalter je da
 // war.
-func ergaenzeLinkAbsatz(aufgeloest, rohesTemplate, link string, gueltigBis *time.Time) string {
-	if link == "" || strings.Contains(rohesTemplate, "{{.BestaetigungsLink}}") {
+func ergaenzeLinkAbsatz(aufgeloest, rohText, link string, gueltigBis *time.Time) string {
+	if link == "" || strings.Contains(rohText, "{{.BestaetigungsLink}}") {
 		return aufgeloest
 	}
 	frist := linkFrist(gueltigBis)
@@ -122,3 +122,8 @@ func ergaenzeLinkAbsatz(aufgeloest, rohesTemplate, link string, gueltigBis *time
 	}
 	return aufgeloest + fmt.Sprintf(linkAbsatz, link, frist)
 }
+
+// Mehrfach genutzte Domaenen-Literale (SonarQube go:S1192).
+const (
+	datumsformatDE = "02.01.2006" // TT.MM.JJJJ
+)

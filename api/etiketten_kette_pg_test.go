@@ -79,17 +79,17 @@ func enthaeltBarcode(liste []druck.ExemplarOhneEtikett, barcode string) bool {
 
 // wareneingang bucht alle noch nicht freigegebenen Exemplare ein — wie der Knopf im
 // Bestellwesen, über denselben Dienst.
-func wareneingang(t *testing.T, pool *pgxpool.Pool) []service.ReceivedItem {
+func wareneingang(t *testing.T, pool *pgxpool.Pool) []service.EingebuchtesExemplar {
 	t.Helper()
 	ctx := context.Background()
 	ids := testdaten.ExemplarIDsDerBestellung(t, pool)
 	if len(ids) == 0 {
 		t.Fatal("nichts einzubuchen — der Testaufbau hat keine Exemplare erzeugt")
 	}
-	items, err := service.BulkReceiveOrder(ctx, pool, repository.NewProtokollAbfragen(pool), service.BulkReceiveParams{
-		ExemplarIDs: ids,
-		AdminID:     "",
-		IPAddr:      "127.0.0.1",
+	items, err := service.BucheWareneingang(ctx, pool, repository.NewProtokollAbfragen(pool), service.WareneingangAngaben{
+		ExemplarIDs:  ids,
+		BearbeiterID: "",
+		IPAdresse:    "127.0.0.1",
 	})
 	if err != nil {
 		t.Fatalf("Wareneingang: %v", err)
@@ -108,7 +108,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	lieferant := testdaten.Haendler(t, pool, "Cornelsen-Kette", false)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Etikettenkette", 0)
 
-	bestellTuer := srv.bestellung().SubmitOrderHandler(service.NewOrderService(srv.DB, repository.NewKatalogAbfragen(pool)))
+	bestellTuer := srv.bestellung().SubmitOrderHandler(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool)))
 	if rec := tuertest.Bestelle(t, bestellTuer, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung: Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -182,7 +182,7 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Etikettenkette", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
 
-	bestellTuer := srv.bestellung().SubmitOrderHandler(service.NewOrderService(srv.DB, repository.NewKatalogAbfragen(pool)))
+	bestellTuer := srv.bestellung().SubmitOrderHandler(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool)))
 	if rec := tuertest.Bestelle(t, bestellTuer, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung: Status %d — %s", rec.Code, rec.Body.String())
 	}

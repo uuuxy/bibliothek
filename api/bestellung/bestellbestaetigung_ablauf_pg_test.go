@@ -33,18 +33,18 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	ctx := context.Background()
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	svc := service.NewOrderService(srv.DB, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	mitBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mit-Barcode", 0)
 	ohneBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Ohne-Barcode", 0)
 
-	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel:     mitteltopf.Land,
-		SupplierID: lieferant,
-		Items: []service.BestellAuftragPosition{
-			{TitelID: mitBarcode, Menge: 3, Preis: 10, GenerateBarcodes: true},
-			{TitelID: ohneBarcode, Menge: 2, Preis: 10, GenerateBarcodes: false},
+	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel:      mitteltopf.Land,
+		LieferantID: lieferant,
+		Positionen: []service.BestellAuftragPosition{
+			{TitelID: mitBarcode, Menge: 3, Preis: 10, MitVorabBarcode: true},
+			{TitelID: ohneBarcode, Menge: 2, Preis: 10, MitVorabBarcode: false},
 		},
 	})
 	if err != nil {
@@ -83,15 +83,15 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 			t.Fatalf("Etikett der Seite trägt Anschaffungsjahr %q, want %q", e.AnschaffungsJahr, jahr)
 		}
 	}
-	for _, e := range res.Labels {
+	for _, e := range res.Etiketten {
 		if e.AnschaffungsJahr != jahr {
 			t.Fatalf("Etikett des Mailanhangs trägt Anschaffungsjahr %q, want %q", e.AnschaffungsJahr, jahr)
 		}
 	}
 
-	if len(etiketten) != len(res.Labels) {
+	if len(etiketten) != len(res.Etiketten) {
 		t.Fatalf("Seite zeigt %d Etiketten, die Bestellmail enthielt %d — beide Wege müssen dieselben sein",
-			len(etiketten), len(res.Labels))
+			len(etiketten), len(res.Etiketten))
 	}
 
 	// Und die Seite muss über den echten Token erreichbar sein, in beiden Größen.
@@ -120,15 +120,15 @@ func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	ctx := context.Background()
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	svc := service.NewOrderService(srv.DB, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Normalo", false)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Normal", 0)
 
-	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel:     mitteltopf.Land,
-		SupplierID: lieferant,
-		Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: true}},
+	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel:      mitteltopf.Land,
+		LieferantID: lieferant,
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

@@ -8,10 +8,10 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Der UPDATE…RETURNING-Kern von BulkReceiveOrder (Regex für pgxmock).
+// Der UPDATE…RETURNING-Kern von BucheWareneingang (Regex für pgxmock).
 const bulkReceiveQuery = `UPDATE buecher_exemplare e\s+SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL\s+FROM buecher_titel t\s+WHERE e\.titel_id = t\.id\s+AND e\.ist_ausleihbar = false\s+(?:--[^\n]*\s+)*AND e\.bestellstatus IS NOT NULL\s+AND e\.ist_ausgesondert = false\s+AND e\.id = ANY\(\$1\)\s+RETURNING e\.barcode_id, t\.titel, coalesce\(t\.autor, ''\) AS autor, e\.etikett_gedruckt`
 
-func TestBulkReceiveOrder_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
+func TestBucheWareneingang_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -31,10 +31,10 @@ func TestBulkReceiveOrder_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
 		WithArgs(pgxmock.AnyArg(), "BULK_RECEIVE_ITEMS", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-	items, err := BulkReceiveOrder(t.Context(), mock, repository.NewProtokollAbfragen(mock), BulkReceiveParams{
-		ExemplarIDs: ids,
-		AdminID:     "admin-1",
-		IPAddr:      "127.0.0.1",
+	items, err := BucheWareneingang(t.Context(), mock, repository.NewProtokollAbfragen(mock), WareneingangAngaben{
+		ExemplarIDs:  ids,
+		BearbeiterID: "admin-1",
+		IPAdresse:    "127.0.0.1",
 	})
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
@@ -55,7 +55,7 @@ func TestBulkReceiveOrder_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
 	}
 }
 
-func TestBulkReceiveOrder_NoMatchingCopiesReturnsError(t *testing.T) {
+func TestBucheWareneingang_NoMatchingCopiesReturnsError(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -68,10 +68,10 @@ func TestBulkReceiveOrder_NoMatchingCopiesReturnsError(t *testing.T) {
 		WithArgs(ids).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "titel", "autor", "etikett_gedruckt"}))
 
-	items, err := BulkReceiveOrder(t.Context(), mock, repository.NewProtokollAbfragen(mock), BulkReceiveParams{
-		ExemplarIDs: ids,
-		AdminID:     "admin-1",
-		IPAddr:      "127.0.0.1",
+	items, err := BucheWareneingang(t.Context(), mock, repository.NewProtokollAbfragen(mock), WareneingangAngaben{
+		ExemplarIDs:  ids,
+		BearbeiterID: "admin-1",
+		IPAdresse:    "127.0.0.1",
 	})
 	if err == nil {
 		t.Fatalf("erwartet Fehler bei leerem Ergebnis, bekam Items: %+v", items)

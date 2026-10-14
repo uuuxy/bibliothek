@@ -58,15 +58,15 @@ func bestellungMitEtiketten(t *testing.T, srv *Tueren, pool *pgxpool.Pool, menge
 func bestellungMitEtikettenAus(t *testing.T, srv *Tueren, pool *pgxpool.Pool, menge int, mittel string) string {
 	t.Helper()
 	ctx := context.Background()
-	svc := service.NewOrderService(srv.DB, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Formatprobe", 0)
 
-	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel:     mittel,
-		SupplierID: lieferant,
-		Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: menge, Preis: 10, GenerateBarcodes: true}},
+	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel:      mittel,
+		LieferantID: lieferant,
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: menge, Preis: 10, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

@@ -22,17 +22,17 @@ func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
 		IdempotencyKey: "schluessel-1",
 		Mittel:         mitteltopf.Schultraeger,
 		Items: []OrderItemRequest{
-			{TitelID: "titel-1", Menge: 3, Preis: 9.5, GenerateBarcodes: true},
-			{TitelID: "titel-2", Menge: 7, Preis: 12.25, GenerateBarcodes: true},
+			{TitelID: "titel-1", Menge: 3, Preis: 9.5, MitVorabBarcode: true},
+			{TitelID: "titel-2", Menge: 7, Preis: 12.25, MitVorabBarcode: true},
 		},
 	}
 	will := service.BestellAuftrag{
-		SupplierID:     "lieferant-1",
-		IdempotencyKey: "schluessel-1",
-		Mittel:         mitteltopf.Schultraeger,
-		Items: []service.BestellAuftragPosition{
-			{TitelID: "titel-1", Menge: 3, Preis: 9.5, GenerateBarcodes: true},
-			{TitelID: "titel-2", Menge: 7, Preis: 12.25, GenerateBarcodes: true},
+		LieferantID:          "lieferant-1",
+		IdempotenzSchluessel: "schluessel-1",
+		Mittel:               mitteltopf.Schultraeger,
+		Positionen: []service.BestellAuftragPosition{
+			{TitelID: "titel-1", Menge: 3, Preis: 9.5, MitVorabBarcode: true},
+			{TitelID: "titel-2", Menge: 7, Preis: 12.25, MitVorabBarcode: true},
 		},
 	}
 	ist := bestellAuftrag(anfrage)
@@ -44,29 +44,29 @@ func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
 	}
 	// Eine Position ohne Vorab-Barcode bleibt ohne: Der Händler bekäme sonst Etiketten für
 	// Exemplare, die ohne bestellt sind.
-	anfrage.Items[1].GenerateBarcodes = false
-	if bestellAuftrag(anfrage).Items[1].GenerateBarcodes {
+	anfrage.Items[1].MitVorabBarcode = false
+	if bestellAuftrag(anfrage).Positionen[1].MitVorabBarcode {
 		t.Error("eine Position ohne Vorab-Barcode kommt mit Vorab-Barcode im Auftrag an")
 	}
 }
 
 func TestBestellmailDatenAus_FuelltJedesFeldAusDerBestellung(t *testing.T) {
 	ablauf := time.Date(2027, time.March, 4, 12, 0, 0, 0, time.UTC)
-	ergebnis := &service.OrderResult{
-		SupplierName:       "Lieferant",
-		SupplierEmail:      "haendler@example.invalid",
-		CustomerNumber:     "K-7",
-		TotalAllocated:     5,
+	ergebnis := &service.BestellErgebnis{
+		LieferantName:      "Lieferant",
+		LieferantEmail:     "haendler@example.invalid",
+		Kundennummer:       "K-7",
+		Menge:              5,
 		IstHauptlieferant:  true,
 		BestellungID:       "bestellung-1",
 		BestaetigungsToken: "token-1",
 		LinkGueltigBis:     &ablauf,
 		Mittel:             mitteltopf.Schultraeger,
-		SummaryItems: []service.BestellterTitel{
+		BestellteTitel: []service.BestellterTitel{
 			{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Verlag: "Verlag 1", Menge: 3},
 			{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Verlag: "Verlag 2", Menge: 2},
 		},
-		Labels: []service.BestellEtikett{
+		Etiketten: []service.BestellEtikett{
 			{BarcodeID: "B-1", Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", AnschaffungsJahr: "2027", Signatur: "Sig 1", Topf: mitteltopf.Schultraeger},
 			{BarcodeID: "B-2", Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", AnschaffungsJahr: "2026", Signatur: "Sig 2", Topf: mitteltopf.Land},
 		},

@@ -13,7 +13,7 @@ import (
 // ganze Wareneingang wäre ein 500 (Bugklasse „NULL-Scan", die nur ein PG-Test sieht).
 // Dazu die Gruppierung selbst: zwei Töpfe am selben Tag beim selben Händler sind zwei
 // Gruppen, das Datum ist der Kalendertag der Schule.
-func TestGetIncomingShipments_AmPostgres(t *testing.T) {
+func TestLadeZulauf_AmPostgres(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
@@ -68,18 +68,18 @@ func TestGetIncomingShipments_AmPostgres(t *testing.T) {
 		t.Fatalf("Exemplar ohne Notiz anlegen: %v", err)
 	}
 
-	groups, err := GetIncomingShipments(ctx, pool)
+	groups, err := LadeZulauf(ctx, pool)
 	if err != nil {
-		t.Fatalf("GetIncomingShipments: %v", err)
+		t.Fatalf("LadeZulauf: %v", err)
 	}
 	// Nur die Gruppen dieses Titels — andere Tests desselben Pakets dürfen eigene Zeilen halten.
 	menge := map[string]int{}
 	datum := map[string]string{}
 	for _, g := range groups {
-		for _, it := range g.Items {
+		for _, it := range g.Posten {
 			if it.TitelID == titelID {
-				menge[g.SupplierName+"/"+g.ID] += it.Menge
-				datum[g.SupplierName+"/"+g.ID] = g.Date
+				menge[g.LieferantName+"/"+g.ID] += it.Menge
+				datum[g.LieferantName+"/"+g.ID] = g.Datum
 			}
 		}
 	}

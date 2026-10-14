@@ -18,7 +18,7 @@ import (
 // bestellungFuerLieferant legt eine bestellungen_verlauf-Zeile für den Test an.
 //
 // Den Bestätigungs-Token bekommt die Bestellung genau dann, wenn ihr Lieferant der
-// Hauptlieferant ist — dieselbe Kopplung wie in insertBestellverlauf. Ohne sie prüfte der
+// Hauptlieferant ist — dieselbe Kopplung wie in schreibeBestellkopf. Ohne sie prüfte der
 // Test einen Zustand, den der Produktivcode nie erzeugt: eine Bestellung bei einem
 // Hauptlieferanten, die selbst gar keinen Link bekommen hat.
 func bestellungFuerLieferant(t *testing.T, pool *pgxpool.Pool, lieferantID string) string {

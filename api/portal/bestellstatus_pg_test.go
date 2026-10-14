@@ -63,10 +63,10 @@ func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 		t.Fatalf("Exemplar-ID: %v", err)
 	}
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	if _, err := service.BulkReceiveOrder(ctx, pool, auditRepo, service.BulkReceiveParams{
-		ExemplarIDs: []string{exemplarID},
-		AdminID:     "00000000-0000-0000-0000-000000000001",
-		IPAddr:      "",
+	if _, err := service.BucheWareneingang(ctx, pool, auditRepo, service.WareneingangAngaben{
+		ExemplarIDs:  []string{exemplarID},
+		BearbeiterID: "00000000-0000-0000-0000-000000000001",
+		IPAdresse:    "",
 	}); err != nil {
 		t.Fatalf("Wareneingang: %v", err)
 	}

@@ -841,7 +841,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Bestellung einen Topf, den die Reihenfolge nicht nennt, entsteht kein Blatt: Sie stünde in
   keinem Block und fehlte in jeder Summe.
 - Das Anlegen einer Bestellung steht in `internal/service` (`bestellung_anlegen.go`,
-  `ProcessOrder`) und kennt weder die Anfrage noch den Druckauftrag der Tür. Die Tür füllt den
+  `BestellDienst.LegeAn`) und kennt weder die Anfrage noch den Druckauftrag der Tür. Die Tür füllt den
   Auftrag aus der Anfrage (`bestellAuftrag`, `api/bestellung/orders_handler.go`) und die Angaben der
   Bestellmail aus dem Ergebnis (`bestellmailDatenAus`, `api/bestellung/bestellmail_versand.go`).
   Position, bestellter Titel und Etikett haben in beiden Paketen dieselben Felder, die Tür
@@ -933,9 +933,10 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Normalform; jetzt gilt in beiden die Normalform. Das Fach eines neuen Titels registriert
   `LegeImportTitelAn` selbst in der Systematik, bevor es schreibt: `subject` ist ein
   Fremdschlüssel, und ein Aufrufer kann den Schritt so nicht auslassen.
-- Wareneingang und Bestellsuche (`internal/service/order_service.go`) gruppieren den Zulauf
-  nach Bestellung, hängen die Treffer der DNB an die des eigenen Katalogs, merken an ihnen an,
-  welche ISBN ein Titel schon trägt, und schreiben das Einbuchen ins Protokoll. Ihre
+- Zulauf, Bestellsuche und Wareneingang (`internal/service/zulauf.go`, `bestellsuche.go`,
+  `wareneingang.go`) gruppieren den Zulauf nach Bestellung, hängen die Treffer der DNB an die
+  des eigenen Katalogs, merken an ihnen an, welche ISBN ein Titel schon trägt, und schreiben
+  das Einbuchen ins Protokoll. Ihre
   Anweisungen stehen in `repository/bestellung_zulauf.go` (`LadeExemplareImZulauf`,
   `BucheZulaufEin`) und `repository/bestellsuche.go` (`FindeTitelZumBestellen`,
   `FindeISBNsImKatalog`). Das Cover einer Zeile formuliert `sqlCoverOderDNB` einmal für Zulauf,
@@ -1710,7 +1711,7 @@ Der Händler druckt über denselben Link seine Etiketten und bestätigt die Best
 Das ist der einzige schreibende Pfad ohne Anmeldung — und er steht als solcher in der
 Allowlist von `routes_authz_coverage_test.go`. Wie Token, Hash, Adresse und Frist des Links
 entstehen, steht in `pkg/bestelllink`; die eingestellte Frist liest
-`service.BestelllinkTage`, beim Bestellen wie bei „Neuen Link erzeugen". Ob eine öffentliche
+`service.LadeBestelllinkTage`, beim Bestellen wie bei „Neuen Link erzeugen". Ob eine öffentliche
 Adresse hinterlegt ist, fragt jede Stelle über `SystemEinstellungen.AdresseFuerLinks`
 (`repository/einstellungen.go`): die Warnung im Warenkorb, „Neuen Link erzeugen", der
 erneute Versand, die Bestellmail und die Selbstprüfung. Ein Feld aus lauter Leerzeichen ist

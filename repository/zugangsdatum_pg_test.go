@@ -52,8 +52,8 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 
 	// 2. Tür „Wareneingang": Der Zugang ist der Tag der Lieferung.
 	geliefert := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-WARENEINGANG")
-	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewProtokollAbfragen(pool), service.BulkReceiveParams{
-		ExemplarIDs: []string{geliefert}, AdminID: "", IPAddr: "",
+	if _, err := service.BucheWareneingang(ctx, pool, repository.NewProtokollAbfragen(pool), service.WareneingangAngaben{
+		ExemplarIDs: []string{geliefert}, BearbeiterID: "", IPAdresse: "",
 	}); err != nil {
 		t.Fatalf("Wareneingang: %v", err)
 	}

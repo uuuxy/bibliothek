@@ -23,7 +23,7 @@ import (
 //
 // Warum ein Go-Test und kein E2E: Der Weg über POST /api/bestellungen verschickt die
 // Bestellung per Mail. Der lokale Stack trägt den echten Schulserver in der Umgebung —
-// ein Test, der dort Bestellmails auslöst, ist das Risiko nicht wert. ProcessOrder ist
+// ein Test, der dort Bestellmails auslöst, ist das Risiko nicht wert. BestellDienst.LegeAn ist
 // ohnehin die Stelle, an der entschieden wird; hier wird sie direkt geprüft.
 
 // offeneEtiketten zählt, wie viele Exemplare des Titels auf der Nachdruck-Liste stünden.
@@ -41,12 +41,12 @@ func offeneEtiketten(t *testing.T, pool *pgxpool.Pool, titelID string) int {
 	return n
 }
 
-func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
+func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	beklebtID := testdaten.Haendler(t, pool, "Beklebt", true)
 	selbstID := testdaten.Haendler(t, pool, "Selbst", false)
@@ -54,18 +54,18 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 	titelBeklebt := testdaten.TitelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
 	titelSelbst := testdaten.TitelMitMeldebestand(t, pool, "LMF-Selbst", 0)
 
-	if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel:     mitteltopf.Land,
-		SupplierID: beklebtID,
-		Items:      []service.BestellAuftragPosition{{TitelID: titelBeklebt, Menge: 2, Preis: 10, GenerateBarcodes: true}},
+	if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel:      mitteltopf.Land,
+		LieferantID: beklebtID,
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titelBeklebt, Menge: 2, Preis: 10, MitVorabBarcode: true}},
 	}); err != nil {
 		t.Fatalf("Bestellung beim beklebenden Händler: %v", err)
 	}
 
-	if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel:     mitteltopf.Land,
-		SupplierID: selbstID,
-		Items:      []service.BestellAuftragPosition{{TitelID: titelSelbst, Menge: 2, Preis: 10, GenerateBarcodes: true}},
+	if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel:      mitteltopf.Land,
+		LieferantID: selbstID,
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titelSelbst, Menge: 2, Preis: 10, MitVorabBarcode: true}},
 	}); err != nil {
 		t.Fatalf("Bestellung beim normalen Händler: %v", err)
 	}
@@ -93,53 +93,53 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 	}
 }
 
-// Die Etiketten im Lieferanten-Mailanhang entstehen aus ProcessOrder, NICHT aus dem
+// Die Etiketten im Lieferanten-Mailanhang entstehen aus BestellDienst.LegeAn, NICHT aus dem
 // Druck-Center-Pfad (buchetikett.LadeDesTitels) — die Signatur muss deshalb hier ankommen, über
 // die echte Kette KatalogAbfragen.LadeTitel → buchetikett.Etikett. Ein Unit-Test, der Signatur
 // direkt ans Struct schreibt, beweist das nicht: Genau so blieb sie im Mailanhang leer.
-func TestProcessOrder_LabelsTragenSignatur(t *testing.T) {
+func TestLegeBestellungAn_LabelsTragenSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "MitSignatur", false)
 	titel := testdaten.TitelMitSignatur(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
 
-	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel:     mitteltopf.Land,
-		SupplierID: lieferant,
-		Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: true}},
+	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel:      mitteltopf.Land,
+		LieferantID: lieferant,
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)
 	}
 
-	if len(res.Labels) != 1 {
-		t.Fatalf("Labels = %d, erwartet 1", len(res.Labels))
+	if len(res.Etiketten) != 1 {
+		t.Fatalf("Labels = %d, erwartet 1", len(res.Etiketten))
 	}
-	if got := res.Labels[0].Signatur; got != "LMF-Deutsch 5" {
+	if got := res.Etiketten[0].Signatur; got != "LMF-Deutsch 5" {
 		t.Errorf("Label-Signatur = %q, erwartet %q — der Mailanhang an den Lieferanten bliebe ohne Signatur", got, "LMF-Deutsch 5")
 	}
 }
 
 // Ohne erzeugten Barcode steht für die Position nichts auf dem Bogen — der Händler kann
 // nichts aufkleben, also bleibt das Etikett unsere Aufgabe, auch wenn er sonst beklebt.
-func TestProcessOrder_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
+func TestLegeBestellungAn_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "BeklebtOhneBogen", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-OhneBogen", 0)
 
-	if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel:     mitteltopf.Land,
-		SupplierID: lieferant,
-		Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: false}},
+	if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel:      mitteltopf.Land,
+		LieferantID: lieferant,
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, MitVorabBarcode: false}},
 	}); err != nil {
 		t.Fatalf("Bestellung ohne Barcodebogen: %v", err)
 	}

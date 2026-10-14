@@ -57,15 +57,15 @@ func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Frist", 0)
-	bestelle := func() *service.OrderResult {
+	bestelle := func() *service.BestellErgebnis {
 		t.Helper()
-		res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-			Mittel:     mitteltopf.Land,
-			SupplierID: lieferant,
-			Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: true}},
+		res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+			Mittel:      mitteltopf.Land,
+			LieferantID: lieferant,
+			Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, MitVorabBarcode: true}},
 		})
 		if err != nil {
 			t.Fatalf("Bestellung: %v", err)

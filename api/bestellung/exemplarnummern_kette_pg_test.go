@@ -102,7 +102,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	}
 
 	// 4. Bis zur Lieferung steht das Exemplar im Zulauf und ist nicht ausleihbar.
-	zulauf, err := service.GetIncomingShipments(ctx, pool)
+	zulauf, err := service.LadeZulauf(ctx, pool)
 	if err != nil {
 		t.Fatalf("Zulauf laden: %v", err)
 	}
@@ -112,10 +112,10 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	}
 
 	// 5. Wareneingang: dieselben Exemplare werden ausleihbar, die Nummer bleibt.
-	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewProtokollAbfragen(pool), service.BulkReceiveParams{
-		ExemplarIDs: ids,
-		AdminID:     "",
-		IPAddr:      "127.0.0.1",
+	if _, err := service.BucheWareneingang(ctx, pool, repository.NewProtokollAbfragen(pool), service.WareneingangAngaben{
+		ExemplarIDs:  ids,
+		BearbeiterID: "",
+		IPAdresse:    "127.0.0.1",
 	}); err != nil {
 		t.Fatalf("Wareneingang: %v", err)
 	}
@@ -135,10 +135,10 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 }
 
 // nichtImZulauf meldet die Exemplare, die der Wareneingang NICHT anbietet.
-func nichtImZulauf(gruppen []*service.ShipmentGroup, ids []string) []string {
+func nichtImZulauf(gruppen []*service.Zulaufgruppe, ids []string) []string {
 	angeboten := map[string]bool{}
 	for _, g := range gruppen {
-		for _, item := range g.Items {
+		for _, item := range g.Posten {
 			for _, id := range item.ExemplarIDs {
 				angeboten[id] = true
 			}

@@ -10,7 +10,7 @@ import (
 // Die Bestellung bleibt versandfähig, was auch immer mit der gespeicherten Vorlage ist: Gilt sie
 // nicht ganz, gilt der Vorgabetext ganz. Am echten Postgres, weil das Zusammenspiel aus
 // gespeicherter Zeile und Rückfall geprüft wird; der Editor lässt ein leeres Feld durch.
-func TestBestellVorlage_RueckfallAufDenVorgabetext(t *testing.T) {
+func TestLadeBestellMailVorlage_RueckfallAufDenVorgabetext(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
@@ -44,7 +44,7 @@ func TestBestellVorlage_RueckfallAufDenVorgabetext(t *testing.T) {
 	})
 	pruefe := func(fall, willBetreff, willText string) {
 		t.Helper()
-		betreff, text := BestellVorlage(ctx, pool)
+		betreff, text := LadeBestellMailVorlage(ctx, pool)
 		if betreff != willBetreff || text != willText {
 			t.Errorf("%s: Betreff %q und Text %q, erwartet %q und %q", fall, betreff, text, willBetreff, willText)
 		}
@@ -65,7 +65,7 @@ func TestBestellVorlage_RueckfallAufDenVorgabetext(t *testing.T) {
 	setze("Eigener Betreff", "Eigener Text")
 	abgebrochen, abbruch := context.WithCancel(ctx)
 	abbruch()
-	if betreff, text := BestellVorlage(abgebrochen, pool); betreff != bestellMailVorgabeBetreff || text != bestellMailVorgabeText {
+	if betreff, text := LadeBestellMailVorlage(abgebrochen, pool); betreff != bestellMailVorgabeBetreff || text != bestellMailVorgabeText {
 		t.Errorf("Lesefehler: Betreff %q und Text %q, erwartet den Vorgabetext", betreff, text)
 	}
 }

@@ -497,7 +497,7 @@ erkennt, bekommt vor dem Umbenennen ein Merkmal, das den Namen überlebt
 umbenannten Dateinamen in Dokumenten und Kommentaren meldet `go test ./docs/`. Steht der Kommentar über dem Feld eines Anfrage- oder
 Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o docs`. Führt ein
 anderes Paket einen eigenen Bezeichner desselben Namens (`inventur.NewBookRepository`, das Feld
-`GenerateBarcodes` in `internal/service`), bleibt er: Die Suche als Text gilt deshalb nur im
+`CustomerNumber` in `api/bestellung`), bleibt er: Die Suche als Text gilt deshalb nur im
 Ordner des Pakets und für die Form `paket.Name`.
 
 **Was seinen Namen behält:** Adressen, Feldnamen in JSON, Tabellen und Spalten

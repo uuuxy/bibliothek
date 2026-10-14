@@ -20,7 +20,7 @@ import (
 
 // POST /api/bestellungen/suche sucht einen Titel zum Bestellen im eigenen Katalog und in der
 // DNB. Gemessen am 08.10.2026 führte kein Go-Test die Tür aus (13,3 %, OFFEN.md 5.10); die
-// Suche dahinter prüft order_service_test.go mit nachgespielten Datenbank-Antworten.
+// Suche dahinter prüft internal/service/bestellsuche_test.go mit nachgespielten Datenbank-Antworten.
 //
 // Hier mit echter Datenbank und nachgestellter DNB: was die Person im Bestellwesen an einem
 // Treffer abliest, bevor sie bestellt — ob der Titel schon im Haus ist und wie viele
@@ -61,14 +61,14 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 
 	// ausfall ist der Kopf der jüngsten Antwort, mit dem die Tür einen Ausfall der DNB nennt.
 	var ausfall string
-	suche := func(t *testing.T, dnb http.RoundTripper, rumpf string) (int, []service.OrderSearchItem, string) {
+	suche := func(t *testing.T, dnb http.RoundTripper, rumpf string) (int, []service.BestellTreffer, string) {
 		t.Helper()
 		client := inventur.NeuerMetadatenClient()
 		client.SetzeHTTPClientFuerTest(&http.Client{Transport: dnb})
 		rec := httptest.NewRecorder()
 		srv.sucheBestellung(client)(rec, httptest.NewRequest(http.MethodPost, "/api/bestellungen/suche", strings.NewReader(rumpf)))
 		ausfall = rec.Header().Get(dnbAusfallKopf)
-		var treffer []service.OrderSearchItem
+		var treffer []service.BestellTreffer
 		if rec.Code == http.StatusOK {
 			if err := json.Unmarshal(rec.Body.Bytes(), &treffer); err != nil {
 				t.Fatalf("Antwort unlesbar (%s): %v", rec.Body.String(), err)
@@ -76,10 +76,10 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		}
 		return rec.Code, treffer, rec.Body.String()
 	}
-	aus := func(treffer []service.OrderSearchItem, quelle string) []service.OrderSearchItem {
-		var gefiltert []service.OrderSearchItem
+	aus := func(treffer []service.BestellTreffer, quelle string) []service.BestellTreffer {
+		var gefiltert []service.BestellTreffer
 		for _, tr := range treffer {
-			if tr.Source == quelle {
+			if tr.Quelle == quelle {
 				gefiltert = append(gefiltert, tr)
 			}
 		}
@@ -95,8 +95,8 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		if len(lokal) != 1 || lokal[0].ID != imHaus {
 			t.Fatalf("Treffer aus dem Katalog: %+v — erwartet genau den Probeband", lokal)
 		}
-		if lokal[0].CurrentStock != 1 {
-			t.Errorf("Bestand %d, erwartet 1 (zwei Exemplare, eines ausgesondert)", lokal[0].CurrentStock)
+		if lokal[0].Bestand != 1 {
+			t.Errorf("Bestand %d, erwartet 1 (zwei Exemplare, eines ausgesondert)", lokal[0].Bestand)
 		}
 		if !lokal[0].IstLernmittel {
 			t.Error("der Treffer trägt das Merkmal Lernmittel nicht; daran hängt der Vorschlag für den Topf")
@@ -116,8 +116,8 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		}
 		for _, tr := range dnb {
 			// Die Suche gibt die ISBN der DNB ohne Bindestriche aus.
-			if erwartet := tr.ISBN == strings.ReplaceAll(isbn10, "-", ""); tr.IsDuplicate != erwartet {
-				t.Errorf("%q (ISBN %s): vorhanden = %v, erwartet %v", tr.Titel, tr.ISBN, tr.IsDuplicate, erwartet)
+			if erwartet := tr.ISBN == strings.ReplaceAll(isbn10, "-", ""); tr.IstDublette != erwartet {
+				t.Errorf("%q (ISBN %s): vorhanden = %v, erwartet %v", tr.Titel, tr.ISBN, tr.IstDublette, erwartet)
 			}
 		}
 	})

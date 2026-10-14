@@ -199,8 +199,8 @@ func TestZugangsbuch_ZulaufIstKeinZugang(t *testing.T) {
 	unterwegs := bestellt("ZUL-UNTERWEGS")
 	geliefert := bestellt("ZUL-GELIEFERT")
 
-	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewProtokollAbfragen(pool), service.BulkReceiveParams{
-		ExemplarIDs: []string{geliefert}, AdminID: "", IPAddr: "",
+	if _, err := service.BucheWareneingang(ctx, pool, repository.NewProtokollAbfragen(pool), service.WareneingangAngaben{
+		ExemplarIDs: []string{geliefert}, BearbeiterID: "", IPAdresse: "",
 	}); err != nil {
 		t.Fatalf("Wareneingang: %v", err)
 	}

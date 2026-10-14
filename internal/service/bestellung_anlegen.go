@@ -19,19 +19,19 @@ import (
 // im Zulauf entstehen in einer Transaktion, die Barcodes werden dabei reserviert. Die Tür prüft
 // die Anfrage, füllt den Auftrag und verschickt danach die Mail an den Lieferanten.
 
-// OrderService legt Bestellungen an.
-type OrderService struct {
-	db           *db.Database
-	bookRepo     repository.KatalogAbfragen
-	supplierRepo repository.LieferantenAbfragen
+// BestellDienst legt Bestellungen an.
+type BestellDienst struct {
+	datenbank           *db.Database
+	katalogAbfragen     repository.KatalogAbfragen
+	lieferantenAbfragen repository.LieferantenAbfragen
 }
 
-// NewOrderService erstellt eine neue OrderService-Instanz.
-func NewOrderService(database *db.Database, bookRepo repository.KatalogAbfragen) *OrderService {
-	return &OrderService{
-		db:           database,
-		bookRepo:     bookRepo,
-		supplierRepo: repository.NewLieferantenAbfragen(database.Pool),
+// NewBestellDienst erstellt eine neue BestellDienst-Instanz.
+func NewBestellDienst(datenbank *db.Database, katalogAbfragen repository.KatalogAbfragen) *BestellDienst {
+	return &BestellDienst{
+		datenbank:           datenbank,
+		katalogAbfragen:     katalogAbfragen,
+		lieferantenAbfragen: repository.NewLieferantenAbfragen(datenbank.Pool),
 	}
 }
 
@@ -40,18 +40,18 @@ type BestellAuftragPosition struct {
 	TitelID string
 	Menge   int
 	Preis   float64
-	// GenerateBarcodes sagt, ob die Exemplare dieser Position auf dem Barcodebogen für den
+	// MitVorabBarcode sagt, ob die Exemplare dieser Position auf dem Barcodebogen für den
 	// Lieferanten stehen.
-	GenerateBarcodes bool
+	MitVorabBarcode bool
 }
 
 // BestellAuftrag ist ein Warenkorb an einen Lieferanten, wie die Tür ihn aus der Anfrage füllt.
 type BestellAuftrag struct {
-	SupplierID string
-	Items      []BestellAuftragPosition
-	// IdempotencyKey vergibt die Oberfläche je Absende-Vorgang; ein Doppelklick schickt
+	LieferantID string
+	Positionen  []BestellAuftragPosition
+	// IdempotenzSchluessel vergibt die Oberfläche je Absende-Vorgang; ein Doppelklick schickt
 	// denselben. Leer heißt: ohne diesen Schutz.
-	IdempotencyKey string
+	IdempotenzSchluessel string
 	// Mittel ist der Topf der Bestellung (mitteltopf.Land / mitteltopf.Schultraeger), Pflicht.
 	Mittel string
 }
@@ -81,14 +81,14 @@ type BestellEtikett struct {
 	Topf string
 }
 
-// OrderResult ist das Ergebnis einer angelegten Bestellung.
-type OrderResult struct {
-	SupplierName   string
-	SupplierEmail  string
-	CustomerNumber string
-	Labels         []BestellEtikett
-	SummaryItems   []BestellterTitel
-	TotalAllocated int
+// BestellErgebnis ist das Ergebnis einer angelegten Bestellung.
+type BestellErgebnis struct {
+	LieferantName  string
+	LieferantEmail string
+	Kundennummer   string
+	Etiketten      []BestellEtikett
+	BestellteTitel []BestellterTitel
+	Menge          int
 	// IstHauptlieferant steuert, ob die Bestellmail zusätzlich das große Lernmittel-Etikett
 	// anhängt (repository.Lieferant).
 	IstHauptlieferant bool
@@ -104,7 +104,7 @@ type OrderResult struct {
 	// (Doppelklick). Die Tür verschickt dann keine zweite Mail.
 	BereitsVorhanden bool
 	// Mittel ist der Topf dieser Bestellung (mitteltopf.Land / mitteltopf.Schultraeger). Er
-	// steuert den Vermerk in Anschreiben und Mail; CustomerNumber ist schon die Nummer dieses
+	// steuert den Vermerk in Anschreiben und Mail; Kundennummer ist schon die Nummer dieses
 	// Topfs (Lieferant.KundennummerFuer).
 	Mittel string
 }
@@ -118,24 +118,24 @@ var (
 	ErrMengeUngueltig     = errors.New("die Menge muss zwischen 1 und 200 liegen")
 )
 
-// bestellItemResult bündelt die aus einer einzelnen Bestellposition erzeugten Daten.
-type bestellItemResult struct {
-	summary  BestellterTitel
-	position repository.BestellpositionNeu
-	copies   []repository.ExemplarNeu
-	labels   []BestellEtikett
-	betrag   float64
+// positionsErgebnis bündelt die aus einer einzelnen Bestellposition erzeugten Daten.
+type positionsErgebnis struct {
+	bestellterTitel BestellterTitel
+	position        repository.BestellpositionNeu
+	exemplare       []repository.ExemplarNeu
+	etiketten       []BestellEtikett
+	betrag          float64
 }
 
-// ProcessOrder legt die Bestellung in einer Transaktion an und reserviert ihre Barcodes.
-func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*OrderResult, error) {
+// LegeAn legt die Bestellung in einer Transaktion an und reserviert ihre Barcodes.
+func (d *BestellDienst) LegeAn(ctx context.Context, auftrag BestellAuftrag) (*BestellErgebnis, error) {
 	// Der Topf ist Pflicht und wird vor jedem Datenbankzugriff geprüft, damit keine Barcodes
 	// für eine Bestellung reserviert werden, die es nicht geben wird.
-	if !mitteltopf.IstGueltig(req.Mittel) {
+	if !mitteltopf.IstGueltig(auftrag.Mittel) {
 		return nil, mitteltopf.ErrUngueltig
 	}
 
-	supplier, err := s.supplierRepo.Lade(ctx, req.SupplierID)
+	lieferant, err := d.lieferantenAbfragen.Lade(ctx, auftrag.LieferantID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrLieferantUnbekannt
@@ -148,40 +148,40 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*O
 	// es bei der Bestellmail.
 	var token, tokenHash string
 	linkTage := bestelllink.TageVorgabe
-	if supplier.IstHauptlieferant {
+	if lieferant.IstHauptlieferant {
 		token, tokenHash, err = bestelllink.ErzeugeToken()
 		if err != nil {
 			return nil, fmt.Errorf("bestaetigungs-token: %w", err)
 		}
-		linkTage = BestelllinkTage(ctx, s.db.Pool)
+		linkTage = LadeBestelllinkTage(ctx, d.datenbank.Pool)
 	}
 
-	tx, err := s.db.Pool.Begin(ctx)
+	tx, err := d.datenbank.Pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	posten, err := s.verarbeiteBestellItems(ctx, tx, req, supplier)
+	posten, err := d.verarbeitePositionen(ctx, tx, auftrag, lieferant)
 	if err != nil {
 		return nil, err
 	}
 
 	// Der Bestellkopf kommt vor den Exemplaren: Sie tragen ihre bestellung_id, und die gibt es
 	// erst, wenn der Kopf geschrieben ist. Keine der beiden Einfügungen liest die andere; die
-	// Barcodes sind in verarbeiteBestellItems schon reserviert, und der Kopf zählt nur die dort
+	// Barcodes sind in verarbeitePositionen schon reserviert, und der Kopf zählt nur die dort
 	// errechneten Summen.
-	bestellungID, linkGueltigBis, err := s.insertBestellverlauf(ctx, tx, req, supplier, posten, tokenHash, linkTage)
-	if errors.Is(err, ErrBestellungDuplikat) {
+	bestellungID, linkGueltigBis, err := d.schreibeBestellkopf(ctx, tx, auftrag, lieferant, posten, tokenHash, linkTage)
+	if errors.Is(err, errBestellungDuplikat) {
 		// Doppelklick: Dieselbe Bestellung lief schon durch. Die Transaktion wird zurückgerollt,
 		// die hier reservierten Exemplare verschwinden wieder, und gemeldet wird die bestehende
 		// Bestellung.
-		return s.ladeBestehendeBestellung(ctx, req.IdempotencyKey)
+		return d.ladeBestehendeBestellung(ctx, auftrag.IdempotenzSchluessel)
 	}
 	if err != nil {
 		return nil, err
 	}
-	if err := s.schreibeExemplareUndPositionen(ctx, tx, bestellungID, posten); err != nil {
+	if err := d.schreibeExemplareUndPositionen(ctx, tx, bestellungID, posten); err != nil {
 		return nil, err
 	}
 
@@ -189,15 +189,15 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*O
 		return nil, err
 	}
 
-	return &OrderResult{
-		SupplierName:       supplier.Name,
-		SupplierEmail:      supplier.Email,
-		CustomerNumber:     supplier.KundennummerFuer(req.Mittel),
-		Mittel:             req.Mittel,
-		Labels:             posten.labels,
-		SummaryItems:       posten.summary,
-		TotalAllocated:     posten.menge,
-		IstHauptlieferant:  supplier.IstHauptlieferant,
+	return &BestellErgebnis{
+		LieferantName:      lieferant.Name,
+		LieferantEmail:     lieferant.Email,
+		Kundennummer:       lieferant.KundennummerFuer(auftrag.Mittel),
+		Mittel:             auftrag.Mittel,
+		Etiketten:          posten.etiketten,
+		BestellteTitel:     posten.bestellteTitel,
+		Menge:              posten.menge,
+		IstHauptlieferant:  lieferant.IstHauptlieferant,
 		BestellungID:       bestellungID,
 		BestaetigungsToken: token,
 		LinkGueltigBis:     linkGueltigBis,
@@ -206,49 +206,49 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*O
 
 // bestellPosten ist, was die Positionen eines Warenkorbs zusammen ergeben.
 type bestellPosten struct {
-	labels       []BestellEtikett
-	summary      []BestellterTitel
-	positionen   []repository.BestellpositionNeu
-	copies       []repository.ExemplarNeu
-	gesamtbetrag float64
-	menge        int
+	etiketten      []BestellEtikett
+	bestellteTitel []BestellterTitel
+	positionen     []repository.BestellpositionNeu
+	exemplare      []repository.ExemplarNeu
+	gesamtbetrag   float64
+	menge          int
 }
 
-// verarbeiteBestellItems prüft jede Position, reserviert ihre Barcodes und sammelt Exemplare,
+// verarbeitePositionen prüft jede Position, reserviert ihre Barcodes und sammelt Exemplare,
 // Etiketten und Summen der Bestellung.
-func (s *OrderService) verarbeiteBestellItems(ctx context.Context, tx pgx.Tx, req BestellAuftrag, supplier *repository.Lieferant) (bestellPosten, error) {
-	posten := bestellPosten{labels: make([]BestellEtikett, 0), summary: make([]BestellterTitel, 0)}
-	for i, item := range req.Items {
-		res, err := s.verarbeiteBestellItem(ctx, tx, item, supplier)
+func (d *BestellDienst) verarbeitePositionen(ctx context.Context, tx pgx.Tx, auftrag BestellAuftrag, lieferant *repository.Lieferant) (bestellPosten, error) {
+	posten := bestellPosten{etiketten: make([]BestellEtikett, 0), bestellteTitel: make([]BestellterTitel, 0)}
+	for i, position := range auftrag.Positionen {
+		erg, err := d.verarbeitePosition(ctx, tx, position, lieferant)
 		if err != nil {
 			// Die Nummer zählt wie die Liste im Warenkorb, der die Positionen in dieser
 			// Reihenfolge schickt.
 			return bestellPosten{}, fmt.Errorf("%w (Position %d)", err, i+1)
 		}
-		posten.summary = append(posten.summary, res.summary)
-		posten.positionen = append(posten.positionen, res.position)
-		posten.copies = append(posten.copies, res.copies...)
+		posten.bestellteTitel = append(posten.bestellteTitel, erg.bestellterTitel)
+		posten.positionen = append(posten.positionen, erg.position)
+		posten.exemplare = append(posten.exemplare, erg.exemplare...)
 		// Der Topf jedes Etiketts ist der Topf dieser Bestellung, derselbe Wert, den
 		// repository.ExemplarTopfSQL später aus bestellungen_verlauf.mittel liest. Die Exemplare
 		// entstehen erst in dieser Transaktion und lassen sich noch nicht abfragen.
 		// TestEtikettenWegeDruckenDasselbe hält die Wege am PDF zusammen.
-		for i := range res.labels {
-			res.labels[i].Topf = req.Mittel
+		for i := range erg.etiketten {
+			erg.etiketten[i].Topf = auftrag.Mittel
 		}
-		posten.labels = append(posten.labels, res.labels...)
-		posten.gesamtbetrag += res.betrag
-		posten.menge += res.position.Menge
+		posten.etiketten = append(posten.etiketten, erg.etiketten...)
+		posten.gesamtbetrag += erg.betrag
+		posten.menge += erg.position.Menge
 	}
 	return posten, nil
 }
 
 // schreibeExemplareUndPositionen hängt die Exemplare an den geschriebenen Bestellkopf und
 // schreibt sie und die Positionen.
-func (s *OrderService) schreibeExemplareUndPositionen(ctx context.Context, tx pgx.Tx, bestellungID string, posten bestellPosten) error {
-	for i := range posten.copies {
-		posten.copies[i].BestellungID = bestellungID
+func (d *BestellDienst) schreibeExemplareUndPositionen(ctx context.Context, tx pgx.Tx, bestellungID string, posten bestellPosten) error {
+	for i := range posten.exemplare {
+		posten.exemplare[i].BestellungID = bestellungID
 	}
-	if err := s.bookRepo.LegeExemplareAn(ctx, tx, posten.copies); err != nil {
+	if err := d.katalogAbfragen.LegeExemplareAn(ctx, tx, posten.exemplare); err != nil {
 		return fmt.Errorf("bulk insert error: %w", err)
 	}
 	if err := repository.SchreibeBestellpositionen(ctx, tx, bestellungID, posten.positionen); err != nil {
@@ -257,16 +257,16 @@ func (s *OrderService) schreibeExemplareUndPositionen(ctx context.Context, tx pg
 	return nil
 }
 
-// verarbeiteBestellItem prüft eine Bestellposition, lädt den Titel, reserviert die Barcodes und
+// verarbeitePosition prüft eine Bestellposition, lädt den Titel, reserviert die Barcodes und
 // erzeugt die Exemplare samt ihren Etiketten.
-func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, item BestellAuftragPosition, supplier *repository.Lieferant) (*bestellItemResult, error) {
-	supplierName := supplier.Name
+func (d *BestellDienst) verarbeitePosition(ctx context.Context, tx pgx.Tx, position BestellAuftragPosition, lieferant *repository.Lieferant) (*positionsErgebnis, error) {
+	lieferantName := lieferant.Name
 
-	if item.Menge <= 0 || item.Menge > 200 {
-		return nil, fmt.Errorf("%w, angegeben ist %d", ErrMengeUngueltig, item.Menge)
+	if position.Menge <= 0 || position.Menge > 200 {
+		return nil, fmt.Errorf("%w, angegeben ist %d", ErrMengeUngueltig, position.Menge)
 	}
 
-	title, err := s.bookRepo.LadeTitel(ctx, tx, item.TitelID)
+	titel, err := d.katalogAbfragen.LadeTitel(ctx, tx, position.TitelID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrTitelUnbekannt
@@ -274,37 +274,37 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 		return nil, err
 	}
 
-	res := &bestellItemResult{
-		summary: BestellterTitel{
-			Titel:  title.Titel,
-			Autor:  title.Autor,
-			ISBN:   title.ISBN,
-			Verlag: title.Verlag,
-			Menge:  item.Menge,
+	erg := &positionsErgebnis{
+		bestellterTitel: BestellterTitel{
+			Titel:  titel.Titel,
+			Autor:  titel.Autor,
+			ISBN:   titel.ISBN,
+			Verlag: titel.Verlag,
+			Menge:  position.Menge,
 		},
 		position: repository.BestellpositionNeu{
-			TitelID:         item.TitelID,
-			TitelName:       title.Titel,
-			ISBN:            title.ISBN,
-			Menge:           item.Menge,
-			Einzelpreis:     item.Preis,
-			MitVorabBarcode: item.GenerateBarcodes,
+			TitelID:         position.TitelID,
+			TitelName:       titel.Titel,
+			ISBN:            titel.ISBN,
+			Menge:           position.Menge,
+			Einzelpreis:     position.Preis,
+			MitVorabBarcode: position.MitVorabBarcode,
 		},
-		betrag: float64(item.Menge) * item.Preis,
+		betrag: float64(position.Menge) * position.Preis,
 	}
 
 	// Jedes Exemplar bekommt seinen Barcode schon mit der Bestellung, auch ohne Barcodebogen.
-	barcodes, err := s.bookRepo.ErzeugeBarcodes(ctx, item.Menge)
+	barcodes, err := d.katalogAbfragen.ErzeugeBarcodes(ctx, position.Menge)
 	if err != nil {
 		return nil, fmt.Errorf("sequence error: %w", err)
 	}
 
 	// Text für Menschen und Status für das Programm sind getrennt: Die Notiz nennt den
 	// Lieferanten, die Spalte steuert den Weg des Exemplars.
-	statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
+	statusText := fmt.Sprintf("Im Zulauf - %s", lieferantName)
 	bestellstatus := "im_zulauf"
-	if !item.GenerateBarcodes {
-		statusText = fmt.Sprintf("Bestellt (ohne Vorab-Barcode) - %s", supplierName)
+	if !position.MitVorabBarcode {
+		statusText = fmt.Sprintf("Bestellt (ohne Vorab-Barcode) - %s", lieferantName)
 		bestellstatus = "bestellt"
 	}
 
@@ -313,28 +313,28 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 	// müssen zutreffen: Ohne erzeugten Barcode steht für diese Position nichts auf dem
 	// Barcodebogen, der Händler kann nichts aufkleben, und das Etikett bleibt Aufgabe der
 	// Schule.
-	beklebtGeliefert := supplier.IstHauptlieferant && item.GenerateBarcodes
+	beklebtGeliefert := lieferant.IstHauptlieferant && position.MitVorabBarcode
 
-	for i := 0; i < item.Menge; i++ {
+	for i := 0; i < position.Menge; i++ {
 		barcodeID := barcodes[i]
-		res.copies = append(res.copies, repository.ExemplarNeu{
-			TitelID:         item.TitelID,
+		erg.exemplare = append(erg.exemplare, repository.ExemplarNeu{
+			TitelID:         position.TitelID,
 			BarcodeID:       barcodeID,
 			ZustandNotiz:    statusText,
 			Bestellstatus:   bestellstatus,
 			IstAusleihbar:   false,
 			EtikettGedruckt: beklebtGeliefert,
-			Einkaufspreis:   item.Preis,
+			Einkaufspreis:   position.Preis,
 		})
 
 		// Auf den Barcodebogen für den Lieferanten kommt das Exemplar nur auf Wunsch.
-		if item.GenerateBarcodes {
-			res.labels = append(res.labels, BestellEtikett{
+		if position.MitVorabBarcode {
+			erg.etiketten = append(erg.etiketten, BestellEtikett{
 				BarcodeID: barcodeID,
-				Titel:     title.Titel,
-				Autor:     title.Autor,
-				ISBN:      title.ISBN,
-				Signatur:  title.Signatur,
+				Titel:     titel.Titel,
+				Autor:     titel.Autor,
+				ISBN:      titel.ISBN,
+				Signatur:  titel.Signatur,
 				// Die Exemplare entstehen in dieser Transaktion mit erworben_am = heute. Das
 				// Jahr ist also bekannt und stimmt mit dem überein, was die Seite des
 				// Lieferanten später aus der Datenbank liest.
@@ -343,32 +343,32 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 		}
 	}
 
-	return res, nil
+	return erg, nil
 }
 
-// insertBestellverlauf schreibt den Bestellkopf und liefert die erzeugte Bestell-ID. Vom
+// schreibeBestellkopf schreibt den Bestellkopf und liefert die erzeugte Bestell-ID. Vom
 // Warenkorb stehen dort nur die Summen: Gesamtbetrag und Zahl der Exemplare. tokenHash ist
 // leer, wenn dieser Lieferant keinen Bestätigungs-Link bekommt.
-func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req BestellAuftrag, supplier *repository.Lieferant, posten bestellPosten, tokenHash string, linkTage int) (string, *time.Time, error) {
+func (d *BestellDienst) schreibeBestellkopf(ctx context.Context, tx pgx.Tx, auftrag BestellAuftrag, lieferant *repository.Lieferant, posten bestellPosten, tokenHash string, linkTage int) (string, *time.Time, error) {
 	// Die Kundennummer ist die des Topfs (Lieferant.KundennummerFuer): Händler führen Lernmittel
 	// und Bibliothek oft als getrennte Kundenkonten. Sie steht als Abschrift auf der
 	// Bestellung, wie Name und Adresse, damit der Beleg auch nach einer Änderung am Lieferanten
 	// stimmt.
 	bestellungID, linkGueltigBis, err := repository.LegeBestellkopfAn(ctx, tx, repository.BestellkopfNeu{
-		LieferantID:          req.SupplierID,
-		LieferantName:        supplier.Name,
-		LieferantEmail:       supplier.Email,
-		Kundennummer:         supplier.KundennummerFuer(req.Mittel),
+		LieferantID:          auftrag.LieferantID,
+		LieferantName:        lieferant.Name,
+		LieferantEmail:       lieferant.Email,
+		Kundennummer:         lieferant.KundennummerFuer(auftrag.Mittel),
 		Gesamtbetrag:         posten.gesamtbetrag,
 		Menge:                posten.menge,
 		TokenHash:            tokenHash,
 		LinkTage:             linkTage,
-		IdempotenzSchluessel: leerAlsNil(req.IdempotencyKey),
-		Mittel:               req.Mittel,
+		IdempotenzSchluessel: leerAlsNil(auftrag.IdempotenzSchluessel),
+		Mittel:               auftrag.Mittel,
 	})
 	// Keine Zeile: Ein Doppelklick mit demselben Schlüssel lief am Unique-Index auf.
 	if errors.Is(err, pgx.ErrNoRows) {
-		return "", nil, ErrBestellungDuplikat
+		return "", nil, errBestellungDuplikat
 	}
 	if err != nil {
 		return "", nil, fmt.Errorf("bestellverlauf insert: %w", err)
@@ -385,21 +385,21 @@ func leerAlsNil(s string) *string {
 	return &s
 }
 
-// ErrBestellungDuplikat meldet, dass es zu diesem Idempotenz-Schlüssel schon eine Bestellung
-// gibt (Doppelklick). ProcessOrder liefert dann die bestehende Bestellung mit
+// errBestellungDuplikat meldet, dass es zu diesem Idempotenz-Schlüssel schon eine Bestellung
+// gibt (Doppelklick). LegeAn liefert dann die bestehende Bestellung mit
 // BereitsVorhanden.
-var ErrBestellungDuplikat = errors.New("bestellung mit diesem idempotenz-schlüssel existiert bereits")
+var errBestellungDuplikat = errors.New("bestellung mit diesem idempotenz-schlüssel existiert bereits")
 
 // ladeBestehendeBestellung liest die Bestellung, die es zum Idempotenz-Schlüssel schon gibt,
 // am Pool und außerhalb der zurückgerollten Transaktion. Das Ergebnis trägt nur die Meldung;
 // Etiketten und Mail gab es beim ersten Lauf.
-func (s *OrderService) ladeBestehendeBestellung(ctx context.Context, idempotenzSchluessel string) (*OrderResult, error) {
-	var res OrderResult
-	res.BereitsVorhanden = true
+func (d *BestellDienst) ladeBestehendeBestellung(ctx context.Context, idempotenzSchluessel string) (*BestellErgebnis, error) {
+	var erg BestellErgebnis
+	erg.BereitsVorhanden = true
 	var err error
-	res.BestellungID, res.SupplierName, res.TotalAllocated, err = repository.LadeBestellungZuIdempotenzSchluessel(ctx, s.db.Pool, idempotenzSchluessel)
+	erg.BestellungID, erg.LieferantName, erg.Menge, err = repository.LadeBestellungZuIdempotenzSchluessel(ctx, d.datenbank.Pool, idempotenzSchluessel)
 	if err != nil {
 		return nil, fmt.Errorf("bestehende bestellung laden: %w", err)
 	}
-	return &res, nil
+	return &erg, nil
 }

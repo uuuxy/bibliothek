@@ -20,7 +20,7 @@ import (
 // zwei Wege des Hauses prüft api/druck/etiketten_topf_pg_test.go.
 
 // Die beiden Wege zum Händler: der Lieferanten-Link (buchetikett.LadeDerBestellung) und der
-// Mailanhang (Etiketten aus ProcessOrder). Bestellt wird ein LERNMITTEL-Titel für die
+// Mailanhang (Etiketten aus BestellDienst.LegeAn). Bestellt wird ein LERNMITTEL-Titel für die
 // Schülerbücherei — der Fall, in dem Titel und Bestellung einander widersprechen.
 func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -29,12 +29,12 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	svc := service.NewOrderService(srv.DB, repository.NewKatalogAbfragen(pool))
-	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
-		Mittel:     mitteltopf.Schultraeger,
-		SupplierID: testdaten.Haendler(t, pool, "Naacher", true),
-		Items: []service.BestellAuftragPosition{{
-			TitelID: testdaten.TitelMitMeldebestand(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, GenerateBarcodes: true}},
+	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
+	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+		Mittel:      mitteltopf.Schultraeger,
+		LieferantID: testdaten.Haendler(t, pool, "Naacher", true),
+		Positionen: []service.BestellAuftragPosition{{
+			TitelID: testdaten.TitelMitMeldebestand(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

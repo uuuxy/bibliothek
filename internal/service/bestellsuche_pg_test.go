@@ -7,7 +7,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// TestSearchLocalOrders_LiefertSignatur belegt, dass die lokale Bestellsuche die
+// TestFindeImKatalog_LiefertSignatur belegt, dass die lokale Bestellsuche die
 // Regalsignatur eines bereits katalogisierten Titels mitliefert — Voraussetzung
 // dafür, dass der Bestellkorb sie anzeigen und "die vorhandene Systematik
 // übernehmen" statt sie zu verschweigen. Gated auf TEST_DATABASE_URL, siehe
@@ -20,7 +20,7 @@ import (
 // Genau so hat er ab dem ersten weiteren PG-Test in diesem Paket die komplette
 // Suite in den 10-Minuten-Timeout gezogen; der eigene DROP SCHEMA mitten im
 // Binary hätte zudem jedem nachfolgenden Test die Tabellen weggezogen.
-func TestSearchLocalOrders_LiefertSignatur(t *testing.T) {
+func TestFindeImKatalog_LiefertSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
@@ -36,15 +36,15 @@ func TestSearchLocalOrders_LiefertSignatur(t *testing.T) {
 		}
 	})
 
-	results := searchLocalOrders(ctx, pool, "Effi Briest")
+	results := findeImKatalog(ctx, pool, "Effi Briest")
 	if len(results) != 1 {
 		t.Fatalf("Treffer = %d, want 1", len(results))
 	}
 	if results[0].Signatur != "Pg" {
 		t.Errorf("Signatur = %q, want %q", results[0].Signatur, "Pg")
 	}
-	if results[0].Source != "local" {
-		t.Errorf("Source = %q, want %q", results[0].Source, "local")
+	if results[0].Quelle != "local" {
+		t.Errorf("Source = %q, want %q", results[0].Quelle, "local")
 	}
 }
 
@@ -52,7 +52,7 @@ func TestSearchLocalOrders_LiefertSignatur(t *testing.T) {
 // zehnstellige vom Titelblatt und die dreizehnstellige, unter der die Datenbank den Titel
 // führt (Migration 157), enden auf verschiedene Prüfzeichen: Ohne den Vergleich mit der
 // Normalform des Suchtexts hieße ein vorhandenes Buch in der Bestellsuche „nicht gefunden".
-func TestSearchLocalOrders_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
+func TestFindeImKatalog_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const zehn, dreizehn = "0306406152", "9780306406157"
@@ -70,12 +70,12 @@ func TestSearchLocalOrders_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) 
 	}
 
 	for _, suchtext := range []string{zehn, "0-306-40615-2", dreizehn, "978-0-306-40615-7"} {
-		treffer := searchLocalOrders(ctx, pool, suchtext)
+		treffer := findeImKatalog(ctx, pool, suchtext)
 		if len(treffer) != 1 || treffer[0].ID != id || treffer[0].ISBN != dreizehn {
 			t.Errorf("Suche %q: %+v, erwartet den Titel %s unter %s", suchtext, treffer, id, dreizehn)
 		}
 	}
-	if treffer := searchLocalOrders(ctx, pool, "0306406153"); len(treffer) != 0 {
+	if treffer := findeImKatalog(ctx, pool, "0306406153"); len(treffer) != 0 {
 		t.Errorf("falsches Prüfzeichen: %d Treffer, erwartet keinen", len(treffer))
 	}
 }
@@ -85,7 +85,7 @@ func TestSearchLocalOrders_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) 
 // (Migration 160), der Suchtext geht in dieselbe Form: Sonst hieße ein vorhandenes Buch in
 // der Bestellsuche „nicht gefunden" und würde ein zweites Mal aufgenommen. Die Suchtexte
 // enden mitten im Wort, damit der Volltext nicht aushilft.
-func TestSearchLocalOrders_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
+func TestFindeImKatalog_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	geschuetzt := string(rune(0x00A0))
@@ -108,12 +108,12 @@ func TestSearchLocalOrders_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing
 		"leerraumprobe la" + geschuetzt + "pes",
 		"Camus,  Alb",
 	} {
-		treffer := searchLocalOrders(ctx, pool, suchtext)
+		treffer := findeImKatalog(ctx, pool, suchtext)
 		if len(treffer) != 1 || treffer[0].ID != id || treffer[0].Titel != "Leerraumprobe La Peste" {
 			t.Errorf("Suche %+q: %+v, erwartet den Titel %s", suchtext, treffer, id)
 		}
 	}
-	if treffer := searchLocalOrders(ctx, pool, "Leerraumprobe LaPes"); len(treffer) != 0 {
+	if treffer := findeImKatalog(ctx, pool, "Leerraumprobe LaPes"); len(treffer) != 0 {
 		t.Errorf("ohne Leerzeichen: %d Treffer, erwartet keinen", len(treffer))
 	}
 }

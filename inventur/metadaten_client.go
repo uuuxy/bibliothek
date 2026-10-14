@@ -72,7 +72,7 @@ func NeuerMetadatenClient() *MetadatenClient {
 // SetzeHTTPClientFuerTest injiziert einen HTTP-Client mit eigenem Transport. Der Zweck
 // ist ausschließlich, in Tests ANDERER Pakete den echten Netzzugriff zu kappen (DNB/
 // Google/OpenLibrary): Innerhalb von inventur reicht das unexportierte httpClient-Feld,
-// aber ein order_service-Test in internal/service kommt sonst nur über unsafe/reflect an
+// aber ein Test der Bestellsuche in internal/service kommt sonst nur über unsafe/reflect an
 // das Feld — genau die Fragilität, die bei einer Feldumbenennung still bricht. Diese
 // eine exportierte Naht macht den Weg sicher und benennt ihn ehrlich.
 func (c *MetadatenClient) SetzeHTTPClientFuerTest(hc *http.Client) {

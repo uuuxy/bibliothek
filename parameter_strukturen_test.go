@@ -39,7 +39,7 @@ import (
 var parameterStrukturen = map[string]string{
 	"fristAngaben":           "fehlendes Feld = 0 Tage Frist und damit eine falsche Mahnung",
 	"BarcodePruefOptionen":   "fehlendes Feld = leere Ausschluss-ID oder leere Meldung",
-	"BulkReceiveParams":      "fehlendes Feld = Wareneingang ohne Bearbeiter oder ohne IP im Protokoll",
+	"WareneingangAngaben":    "fehlendes Feld = Wareneingang ohne Bearbeiter oder ohne IP im Protokoll",
 	"Kuerzung":               "fehlendes Feld = Übernahme-Protokoll ohne Quelle, Kennung oder Wert",
 	"rueckwegEintrag":        "fehlendes Feld = Rückweg-Spur des Zusammenführens ohne Bezug",
 	"zusammengefuehrtesZiel": "fehlendes Feld = Zielsatz ohne Herkunft",

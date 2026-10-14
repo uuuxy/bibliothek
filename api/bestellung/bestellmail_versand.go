@@ -33,21 +33,21 @@ type bestellmailDaten struct {
 // bestellmailDatenAus füllt die Angaben der Mail aus der eben angelegten Bestellung. Positionen
 // und Etiketten haben in internal/service dieselben Felder wie hier; der Topf jedes Etiketts
 // kommt mit der Bestellung und nicht aus einer Anfrage.
-func bestellmailDatenAus(res *service.OrderResult) bestellmailDaten {
-	positionen := make([]OrderedItem, 0, len(res.SummaryItems))
-	for _, p := range res.SummaryItems {
+func bestellmailDatenAus(res *service.BestellErgebnis) bestellmailDaten {
+	positionen := make([]OrderedItem, 0, len(res.BestellteTitel))
+	for _, p := range res.BestellteTitel {
 		positionen = append(positionen, OrderedItem(p))
 	}
-	etiketten := make([]buchetikett.Etikett, 0, len(res.Labels))
-	for _, e := range res.Labels {
+	etiketten := make([]buchetikett.Etikett, 0, len(res.Etiketten))
+	for _, e := range res.Etiketten {
 		etiketten = append(etiketten, buchetikett.Etikett(e))
 	}
 	return bestellmailDaten{
-		Empfaenger:        res.SupplierEmail,
-		Kundennummer:      res.CustomerNumber,
+		Empfaenger:        res.LieferantEmail,
+		Kundennummer:      res.Kundennummer,
 		Mittel:            res.Mittel,
 		Positionen:        positionen,
-		Exemplare:         res.TotalAllocated,
+		Exemplare:         res.Menge,
 		Etiketten:         etiketten,
 		IstHauptlieferant: res.IstHauptlieferant,
 		Token:             res.BestaetigungsToken,
@@ -72,7 +72,7 @@ func (s *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 		Ort:     settings.SchuleOrt,
 	}
 
-	betreff, textBody := service.BestellVorlage(ctx, s.DB.Pool)
+	betreff, textBody := service.LadeBestellMailVorlage(ctx, s.DB.Pool)
 	// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht dann
 	// ohne Bestätigungsschritt raus. Ein Link auf den internen Servernamen wäre beim
 	// Lieferanten wertlos und sähe trotzdem echt aus.
