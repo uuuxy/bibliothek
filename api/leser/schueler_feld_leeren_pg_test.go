@@ -19,7 +19,7 @@ import (
 //
 // Das Formular (useStudentEditForm.svelte.js) baut seine Nutzlast als
 // `strasse: formData.strasse || null` — ein geräumtes Feld geht also als JSON-null
-// raus. In patchStudentRequest ist die Spalte ein *string; JSON-null landet dort als
+// raus. In leserAendernAnfrage ist die Spalte ein *string; JSON-null landet dort als
 // nil, und addStr überspringt nil ("nicht mitgeschickt"). Ergebnis: Der alte Wert
 // bleibt stehen, die Oberfläche meldet "Änderungen gespeichert", und beim nächsten
 // Öffnen der Akte steht die gelöschte Adresse wieder da.
@@ -49,7 +49,7 @@ func TestSchuelerFeldLeeren_WirktInDerDatenbank(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 
@@ -112,7 +112,7 @@ func TestSchuelerPflichtfeldLeeren_WirdAbgelehnt(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("%s gab %d statt 400 — ein Pflichtfeld liess sich leeren", rumpf, rec.Code)
 		}

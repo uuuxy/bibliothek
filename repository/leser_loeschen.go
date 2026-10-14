@@ -67,7 +67,7 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 	// DELETE SET NULL, die Einträge verlieren nur den Verweis.
 	//
 	// Aus dem Papierkorb kommt die Leserzeile ohne Zugang zurück. Den legt man an, indem man in
-	// der Akte die Schul-E-Mail nachträgt (api/leser/student_schul_email.go).
+	// der Akte die Schul-E-Mail nachträgt (api/leser/leser_schul_email.go).
 	var kontenGeloescht int64
 	if !leserart.IstSchueler(art) {
 		if kontenGeloescht, err = a.loescheKontenDerLeserzeile(ctx, tx, leserID, bearbeiterID); err != nil {

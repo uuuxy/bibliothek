@@ -15,7 +15,7 @@ import (
 )
 
 // Das Passbild eines Kollegen: Die Akte ist eine Maske für jeden und zeigt auch ihm den
-// Kamera-Knopf. Auslieferung (api/leser/photo_serve.go) und Upload lesen deshalb beide die
+// Kamera-Knopf. Auslieferung (api/leser/foto.go) und Upload lesen deshalb beide die
 // Tabelle `leser`, nicht die Sicht `schueler`; sonst antwortet der Upload einem Kollegen
 // „schüler nicht gefunden" (404).
 func TestSchreibeLeserFoto_AuchFuerKollegen(t *testing.T) {

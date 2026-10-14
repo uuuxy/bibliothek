@@ -18,7 +18,7 @@ import (
 // Statt ihn zu duplizieren, wird die LUSD-ID nachgetragen (Adoption) und die
 // Klasse übernommen. Ohne Geburtsdatum oder bei Mehrdeutigkeit wird NICHT
 // adoptiert, sondern regulär neu angelegt. Betreiber-Entscheidung 18.08.2026.
-func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
+func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -41,7 +41,7 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	}
 
 	// Vorschau: als Adoption erkannt, NICHT als Neuzugang.
-	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
+	prev, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -59,7 +59,7 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	}
 
 	// Anwenden: derselbe Datensatz bekommt die LUSD-ID + neue Klasse, KEIN Duplikat.
-	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, true, true); err != nil {
+	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	var anzahl int
@@ -85,7 +85,7 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 
 // Ohne Geburtsdatum in der CSV-Zeile gibt es keinen sicheren Abgleich — dann NICHT
 // adoptieren, sondern regulär als Neuzugang behandeln.
-func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
+func TestLUSDZuordnung_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -99,7 +99,7 @@ func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 	}
 
 	rec := lusd.Zeile{LUSDID: "LUSD-ADOPT-2", Vorname: "Tom", Nachname: "Waise", Klasse: "8b", Geburtsdatum: nil}
-	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
+	prev, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 // der LUSD-Schlüssel, die zweite Schreibvariante wird an der Datenbank abgewiesen. Der
 // Test belegt das Verbot UND dass der eine verbliebene Schüler eindeutig adoptiert wird.
 // Die Mehrdeutig-Behandlung im Code bleibt als Sicherheitsnetz stehen.
-func TestLusdAutoMatching_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T) {
+func TestLUSDZuordnung_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -137,7 +137,7 @@ func TestLusdAutoMatching_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T)
 	}
 
 	rec := lusd.Zeile{LUSDID: "LUSD-AMB", Vorname: "Anna", Nachname: "Zwilling", Klasse: "8c", Geburtsdatum: &geb}
-	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
+	prev, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}

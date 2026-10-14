@@ -1,0 +1,241 @@
+package leser
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/auth"
+	"bibliothek/db"
+	"bibliothek/pkg/clientip"
+	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// schuljahreswechselAntwort liefert die Statistik des Schuljahreswechsels zurück.
+// Bei DryRun=true wurde nichts geschrieben — die Zahlen sind die exakte Vorschau
+// (identisches SQL, Transaktion wird zurückgerollt).
+type schuljahreswechselAntwort struct {
+	Versetzt   int  `json:"promoted_count"`
+	Archiviert int  `json:"archived_count"`
+	Probelauf  bool `json:"dry_run"`
+	// Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt
+	// wurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel
+	// auf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an
+	// niemanden, ohne Fehlermeldung).
+	ZuordnungenVersetzt int `json:"mapping_versetzt"`
+	ZuordnungenEntfernt int `json:"mapping_entfernt"`
+	// Zuordnungen, deren Zielname schon belegt war (z. B. '9a' und '09a' laufen
+	// beide auf '10a'): Sie bleiben unverändert stehen und werden hier genannt,
+	// statt den ganzen Lauf scheitern zu lassen.
+	Zuordnungskonflikte []string `json:"mapping_konflikte,omitempty"`
+}
+
+// schuljahreswechselAnfrage verlangt eine explizite Bestätigung im Body. Das ist eine
+// zusätzliche serverseitige Sicherung gegen versehentliche oder automatisierte
+// Aufrufe (z. B. ein wiederholter Retry) — bei einem irreversiblen Batch-Vorgang
+// dieser Tragweite reicht eine reine Client-seitige Bestätigung nicht aus.
+// DryRun führt dieselbe Berechnung in einer Transaktion aus und rollt sie zurück:
+// exakte Vorschau ohne Seiteneffekte, ohne Confirm nutzbar.
+type schuljahreswechselAnfrage struct {
+	Bestaetigt bool `json:"confirm"`
+	Probelauf  bool `json:"dry_run"`
+}
+
+// Schuljahreswechsel führt den automatischen Schuljahreswechsel durch.
+// @Summary      Automatische Versetzung (Schuljahreswechsel)
+// @Description  Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H/10H, 10R, 13 — repository.AbschlussklasseSQL) automatisch als Abgänger. Erfordert { "confirm": true } im Body; { "dry_run": true } liefert eine exakte Vorschau ohne Änderungen.
+// @Tags         schueler
+// @Accept       json
+// @Produce      json
+// @Param        body body schuljahreswechselAnfrage true "Bestätigung"
+// @Success      200  {object}  schuljahreswechselAntwort
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      409  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /students/promote [post]
+func (t *Tueren) Schuljahreswechsel() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		claims, ok := auth.GetClaims(ctx)
+		if !ok {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+			return
+		}
+
+		anfrage, ok := leseSchuljahreswechselAnfrage(w, r)
+		if !ok {
+			return
+		}
+
+		antwort, ok := t.fuehreSchuljahreswechselAus(ctx, w, r, anfrage, claims.UserID)
+		if !ok {
+			return
+		}
+		antwort.Probelauf = anfrage.Probelauf
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
+	}
+}
+
+// fuehreSchuljahreswechselAus wickelt den Versetzungs-Batch in einer einzigen strikten
+// Transaktion ab: entweder wird JEDER Schüler versetzt/archiviert, oder — bei jedem
+// Fehler — keiner (db.SafeRollback greift auf jedem Fehler- UND Panic-Pfad). Im
+// Dry-Run-Modus wird bewusst NICHT committet (dieselbe Berechnung, null Seiteneffekte).
+// ok=false: die Fehlerantwort wurde bereits geschrieben.
+func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.ResponseWriter, r *http.Request, anfrage schuljahreswechselAnfrage, kontoID string) (antwort schuljahreswechselAntwort, ok bool) {
+	tx, err := t.DB.Pool.Begin(ctx)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return antwort, false
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	if !anfrage.Probelauf {
+		// HARTE Serialisierung gegen den Doppellauf. Der COUNT-Check unten allein ist
+		// TOCTOU: Zwei gleichzeitige Klicks (oder zwei Admins) lesen beide 0, bevor einer
+		// committet — und versetzen die GANZE Schule ein zweites Mal (+2 Stufen,
+		// irreversibel). Der Advisory-Lock (transaktionsgebunden, gibt beim Commit/
+		// Rollback automatisch frei) zwingt den zweiten Lauf zu warten, bis der erste
+		// fertig ist; danach sieht dessen COUNT den Audit-Eintrag und antwortet 409.
+		if err := repository.SperreSchuljahreswechsel(ctx, tx); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return antwort, false
+		}
+		if !pruefeDoppellaufSchutz(ctx, tx, w) {
+			return antwort, false
+		}
+	}
+
+	if antwort.Versetzt, antwort.Archiviert, err = repository.VersetzeSchueler(ctx, tx, schulzeit.Zone().String()); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return antwort, false
+	}
+
+	// Die Klassenlehrer-Zuordnung wandert MIT der Kohorte (dieselbe Transaktion,
+	// dieselbe Rechenregel). Die Klassen-Bücherlisten (class_books) bleiben
+	// BEWUSST unangetastet: Sie hängen am Stufen-Namen ("die 8a liest Markl 2"
+	// gilt für jede künftige 8a), nicht an den Menschen — zwei Bedeutungen von
+	// "Klasse", die der Jahreswechsel nicht verwechseln darf (Befund F3).
+	if err := versetzeKlassenlehrerZuordnung(ctx, tx, &antwort); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return antwort, false
+	}
+
+	if !anfrage.Probelauf {
+		if !t.finalisiereSchuljahreswechsel(ctx, tx, w, r, kontoID, antwort.Versetzt, antwort.Archiviert) {
+			return antwort, false
+		}
+	}
+	return antwort, true
+}
+
+// versetzeKlassenlehrerZuordnung zählt die Klassennamen der Lehrer-Zuordnung mit
+// derselben Regel hoch wie repository.VersetzeSchueler die Schüler. Absteigend nach
+// Stufe, damit '9a' erst nach dem Wegzug von '10a' auf den freien Namen rücken
+// kann; Abschlussklassen-Zeilen werden entfernt (die Kohorte verlässt die
+// Schule). Ebenso die Zeilen der Jahrgänge 6 und 10: Nach
+// der 6 und nach der 10 bildet die Schule die Klassen neu — aus der Förderstufe
+// werden die Zweige, aus der 10 die Oberstufe —, und die neuen Klassen bekommen
+// neue Klassenleitungen. Hochgezählt landete die Zuordnung auf „07F1" oder
+// „11G1", Klassen, die es an der Schule nicht gibt, mit der alten Lehrkraft.
+// Der Konflikt-Zweig (Zielname belegt → Zeile bleibt stehen und wird
+// gemeldet) ist seit dem Klassen-Vokabular (Migration 079) Rückfallebene: Die
+// klassische Ursache — '9a' und '09a' nebeneinander, beide → '10a' — kann durch
+// die Kanonisierung nicht mehr entstehen. Er bleibt, damit ein Namenskonflikt
+// den Schuljahreswechsel auch künftig nie scheitern lässt.
+func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, antwort *schuljahreswechselAntwort) error {
+	zeilen, err := repository.LadeKlassenleitungVersetzungen(ctx, tx)
+	if err != nil {
+		return err
+	}
+
+	for _, z := range zeilen {
+		if z.Entfaellt {
+			if _, err := repository.LoescheKlassenleitung(ctx, tx, z.Alt); err != nil {
+				return err
+			}
+			antwort.ZuordnungenEntfernt++
+			continue
+		}
+		belegt, err := repository.IstKlassenleitungVorhanden(ctx, tx, z.Neu)
+		if err != nil {
+			return err
+		}
+		if belegt {
+			antwort.Zuordnungskonflikte = append(antwort.Zuordnungskonflikte, z.Alt+" -> "+z.Neu)
+			continue
+		}
+		if err := repository.BenenneKlassenleitungUm(ctx, tx, z.Neu, z.Alt); err != nil {
+			return err
+		}
+		antwort.ZuordnungenVersetzt++
+	}
+	return nil
+}
+
+// leseSchuljahreswechselAnfrage dekodiert den Request-Body und erzwingt die explizite Bestätigung
+// (außer im Dry-Run). ok=false: die Fehlerantwort wurde bereits geschrieben.
+func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schuljahreswechselAnfrage, bool) {
+	var anfrage schuljahreswechselAnfrage
+	if err := json.NewDecoder(r.Body).Decode(&anfrage); err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiger oder fehlender Request-Body"))
+		return anfrage, false
+	}
+	if !anfrage.Probelauf && !anfrage.Bestaetigt {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(`bestätigung erforderlich: { "confirm": true } im Body senden`))
+		return anfrage, false
+	}
+	return anfrage, true
+}
+
+// pruefeDoppellaufSchutz verhindert einen zweiten Schuljahreswechsel innerhalb von
+// 12 Stunden (ein zweiter Lauf würde alle Schüler +2 versetzen). ok=false: die
+// Fehlerantwort (500 oder 409) wurde bereits geschrieben.
+//
+// Das Fenster ist bewusst großzügig: Der Schuljahreswechsel ist ein Batch, der einmal
+// im Jahr läuft. Das frühere 10-Minuten-Fenster ließ genau den wahrscheinlichsten
+// Fehler durch — der Admin bemerkt etwas, korrigiert, und klickt nach einer
+// Viertelstunde erneut, wodurch die ganze Schule ein zweites Mal befördert wird. Ein
+// legitimer Wiederholungslauf nach einem FEHLGESCHLAGENEN Wechsel bleibt möglich: Der
+// Audit-Eintrag wird atomar mit dem Batch committet (finalisiereSchuljahreswechsel),
+// ein abgebrochener Lauf hinterlässt also keinen Eintrag und keine Sperre.
+func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWriter) bool {
+	juengsteLaeufe, err := repository.ZaehleJuengsteSchuljahreswechsel(ctx, tx)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+	if juengsteLaeufe > 0 {
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			errors.New("schuljahreswechsel wurde vor wenigen Minuten bereits durchgeführt — ein erneuter Lauf würde alle Schüler doppelt versetzen"))
+		return false
+	}
+	return true
+}
+
+// finalisiereSchuljahreswechsel schreibt den Audit-Eintrag atomar mit dem Batch (er
+// trägt zugleich den Doppellauf-Schutz) und committet die Transaktion. ok=false: die
+// Fehlerantwort wurde bereits geschrieben.
+func (t *Tueren) finalisiereSchuljahreswechsel(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, r *http.Request, kontoID string, versetzt, archiviert int) bool {
+	if err := repository.SchreibeAdminProtokoll(ctx, tx, kontoID, repository.AktionSchuljahreswechsel, clientip.AusAnfrage(r),
+		fmt.Sprintf(`{"versetzt": %d, "abgaenger": %d}`, versetzt, archiviert)); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+	log.Printf("Schuljahreswechsel durchgeführt (Benutzer %s): %d Schüler versetzt, %d neue Abgänger", kontoID, versetzt, archiviert)
+	return true
+}

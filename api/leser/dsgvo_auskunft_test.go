@@ -19,18 +19,18 @@ import (
 
 const dsgvoTestID = "11111111-1111-1111-1111-111111111111"
 
-func dsgvoRequest(t *testing.T, mock pgxmock.PgxPoolIface) *httptest.ResponseRecorder {
+func dsgvoAnfrage(t *testing.T, mock pgxmock.PgxPoolIface) *httptest.ResponseRecorder {
 	t.Helper()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+dsgvoTestID+"/dsgvo-auskunft", nil)
 	req.SetPathValue("id", dsgvoTestID)
 	rec := httptest.NewRecorder()
-	s.DsgvoAuskunftHandler()(rec, req)
+	s.DSGVOAuskunft()(rec, req)
 	return rec
 }
 
-// expectStammdaten registriert die Stammdaten-Query mit einem vollständigen Schüler.
-func expectStammdaten(mock pgxmock.PgxPoolIface) {
+// erwarteStammdaten registriert die Stammdaten-Query mit einem vollständigen Schüler.
+func erwarteStammdaten(mock pgxmock.PgxPoolIface) {
 	geb := "2010-04-01"
 	now := time.Now()
 	mock.ExpectQuery(`SELECT id, COALESCE\(barcode_id, ''\) AS barcode_id, vorname, nachname`).
@@ -56,14 +56,14 @@ func expectStammdaten(mock pgxmock.PgxPoolIface) {
 		))
 }
 
-func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
+func TestDSGVOAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer mock.Close()
 
-	expectStammdaten(mock)
+	erwarteStammdaten(mock)
 	fotoZeit := time.Now().Add(-24 * time.Hour)
 	mock.ExpectQuery(`SELECT aktualisiert_am FROM schueler_fotos`).
 		WithArgs(dsgvoTestID).
@@ -107,7 +107,7 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-	rec := dsgvoRequest(t, mock)
+	rec := dsgvoAnfrage(t, mock)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
 	}
@@ -137,7 +137,7 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 	}
 }
 
-func TestDsgvoAuskunft_UnbekannterSchuelerIst404(t *testing.T) {
+func TestDSGVOAuskunft_UnbekannterSchuelerIst404(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
@@ -148,20 +148,20 @@ func TestDsgvoAuskunft_UnbekannterSchuelerIst404(t *testing.T) {
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id"})) // keine Zeile
 
-	rec := dsgvoRequest(t, mock)
+	rec := dsgvoAnfrage(t, mock)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("erwartet 404, bekam %d: %s", rec.Code, rec.Body.String())
 	}
 }
 
-func TestDsgvoAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
+func TestDSGVOAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer mock.Close()
 
-	expectStammdaten(mock)
+	erwarteStammdaten(mock)
 	mock.ExpectQuery(`SELECT aktualisiert_am FROM schueler_fotos`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktualisiert_am"})) // kein Foto
@@ -174,7 +174,7 @@ func TestDsgvoAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").
 		WillReturnError(errors.New("audit kaputt"))
 
-	rec := dsgvoRequest(t, mock)
+	rec := dsgvoAnfrage(t, mock)
 	if rec.Code != http.StatusOK {
 		t.Errorf("Audit-Fehler darf die Auskunft nicht blockieren: %d %s", rec.Code, rec.Body.String())
 	}
@@ -183,7 +183,7 @@ func TestDsgvoAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
 // Sind die Einstellungen nicht lesbar, nennt die Auskunft die Vorgaben, jede an ihrer Stelle:
 // Lesehistorie der Bücherei 1 Tag, der Lernmittel 730 Tage, Karenz 90 Tage, Protokolle 24
 // Monate, erledigte Anliegen 365 Tage.
-func TestDsgvoFristen_OhneEinstellungenGeltenDieVorgaben(t *testing.T) {
+func TestDSGVOFristen_OhneEinstellungenGeltenDieVorgaben(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)

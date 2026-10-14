@@ -9,7 +9,7 @@
 // Die zwei Funde, die hier zusammenkommen:
 //
 //  1. `restoreStudent` hatte kein `else`. Nach 180 Tagen im Papierkorb anonymisiert der
-//     nächtliche DSGVO-Lauf die Zeile; RestoreStudentHandler weist die Wiederherstellung
+//     nächtliche DSGVO-Lauf die Zeile; LeserWiederherstellen weist die Wiederherstellung
 //     dann mit 409 ab — richtig so, ein Pseudonym ist kein Schüler mehr. Die Oberfläche
 //     zeigte den Knopf trotzdem an jeder Zeile, und ein Klick tat NICHTS: keine Meldung,
 //     keine Änderung, kein Nachladen. Eine Tür, die sich nicht öffnet und nicht sagt,

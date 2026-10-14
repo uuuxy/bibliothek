@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { schuelerRechte, darfAuskunftUeber } from './schuelerRechte.js';
 
 // Die DSGVO-Auskunft über einen Leser mit Zugangskonto verlangt am Server zusätzlich
-// manage_users (api/leser/dsgvo_auskunft.go, TestDsgvoAuskunft_KontoVerlangtKontenrecht). Die Akte
+// manage_users (api/leser/dsgvo_auskunft.go, TestDSGVOAuskunft_KontoVerlangtKontenrecht). Die Akte
 // bietet den Knopf nach derselben Regel an — sonst stünde er bei der Leitung da und endete
 // mit 403.
 describe('darfAuskunftUeber', () => {

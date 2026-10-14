@@ -65,10 +65,10 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 
 	// 1. Der allgemeine PATCH kann NICHT mehr sperren. Das Feld ist keins mehr, also
 	//    bleibt vom Rumpf nichts Änderbares übrig — 400 statt eines 500ers aus der Tiefe.
-	rec := fahre(`{"is_manually_blocked":true}`, srv.PatchStudentHandler(auditRepo))
+	rec := fahre(`{"is_manually_blocked":true}`, srv.LeserAendern(auditRepo))
 	if rec.Code == http.StatusInternalServerError {
 		t.Errorf("PATCH mit Sperrfeld gibt %d — der alte 500er aus chk_schueler_block_reason ist zurück.\n"+
-			"→ Sperren gehört ausschliesslich in LockStudentHandler; dort gibt es einen Grund und eine Meldung.",
+			"→ Sperren gehört ausschliesslich in LeserSperren; dort gibt es einen Grund und eine Meldung.",
 			rec.Code)
 	}
 	if gesperrt() {
@@ -76,7 +76,7 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	}
 
 	// 2. Und der Sperr-Endpunkt erklärt weiterhin, was fehlt, statt abzustürzen.
-	rec = fahre(`{"is_locked":true}`, srv.LockStudentHandler(auditRepo))
+	rec = fahre(`{"is_locked":true}`, srv.LeserSperren(auditRepo))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("Sperr-Endpunkt ohne Grund: Status %d, erwartet 400 — %s", rec.Code, rec.Body.String())
 	}
@@ -88,7 +88,7 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	}
 
 	// 3. Mit Grund geht es — sonst prüfte der Test nur, dass nichts funktioniert.
-	rec = fahre(`{"is_locked":true,"reason":"Bücher nicht zurückgegeben"}`, srv.LockStudentHandler(auditRepo))
+	rec = fahre(`{"is_locked":true,"reason":"Bücher nicht zurückgegeben"}`, srv.LeserSperren(auditRepo))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Sperren mit Grund: Status %d — %s", rec.Code, rec.Body.String())
 	}

@@ -10,7 +10,7 @@ import "testing"
 // Blind für: dieselben Formen wie die Ratsche der Tilgung (sammleStellenMit); die Einträge an der
 // Leserzeile selbst (Papierkorb, Zusammenführen), die keine Kennung in details tragen; die
 // Schlüssel verschachtelter Objekte. Dafür steht der Test am echten Weg,
-// api.TestDsgvoBlatt_ProtokollzeilenInWorten.
+// api.TestDSGVOBlatt_ProtokollzeilenInWorten.
 func TestProtokollSchluessel_FuerDieAuskunftEingeordnet(t *testing.T) {
 	for _, merkmal := range []string{"schueler_id", "ziel_id"} {
 		stellen := sammleStellenMit(t, merkmal)

@@ -47,7 +47,7 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 		rec := httptest.NewRecorder()
-		srv.CreateStudentHandler().ServeHTTP(rec, req)
+		srv.LeserAnlegen().ServeHTTP(rec, req)
 		return rec
 	}
 

@@ -35,7 +35,7 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 		nmZeile(2, "Anna", "Mueller", "06A", nil),
 		nmZeile(3, "Tom", "Bauer", "08B", nil),
 	}}
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 			len(prev.Mehrdeutig), len(prev.Abgaenger))
 	}
 
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "suchnorm(nachname) = suchnorm('Müller')"); n != 1 {

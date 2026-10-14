@@ -12,7 +12,7 @@ const patchMock = vi.mocked(apiClient.patch);
 /**
  * Ein geräumtes Feld muss den Server als LEERER STRING erreichen, nicht als null.
  *
- * Der Hintergrund steht im Backend (api/leser/student_update.go): Die Stammdatenfelder sind
+ * Der Hintergrund steht im Backend (api/leser/leser_aendern.go): Die Stammdatenfelder sind
  * dort *string, und JSON-null bedeutet nil — "nicht mitgeschickt, Spalte in Ruhe
  * lassen". Bis zum 23.08.2026 baute dieses Formular seine Nutzlast als
  * `strasse: formData.strasse || null`; wer eine Adresse oder die Eltern-Mail löschte,
@@ -223,7 +223,7 @@ describe('useStudentEditForm.save', () => {
 		// sie beim nächsten Öffnen wieder vor. Der Hinweis unter dem Feld („Leer lassen,
 		// solange kein Ausweis gedruckt ist") war damit eine Zusage, die die Maske nicht
 		// hielt. Seit die Pflicht im Server an die ART gepaart ist (pruefeAusweisLeerung,
-		// api/leser/student_schul_email.go — TestAusweisnummerLeeren belegt beide Seiten), geht
+		// api/leser/leser_schul_email.go — TestAusweisnummerLeeren belegt beide Seiten), geht
 		// das leere Feld mit und leert die Spalte wirklich.
 		it('schickt die geleerte Ausweisnummer beim Kollegen MIT — sonst wäre das Leeren ein stilles No-op', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));

@@ -68,7 +68,7 @@
 
 	{#if onLock}
 		<!-- Beschriftung nach dem einen Prädikat (sperrStatus.js): Seit dem 24.09.2026 hebt der
-		     Knopf JEDE Sperre am Leser auf, auch die der Ehemaligen (api/leser/student_lock.go). Bis
+		     Knopf JEDE Sperre am Leser auf, auch die der Ehemaligen (api/leser/leser_sperre.go). Bis
 		     dahin löste er nur die Sperre von Hand und stand bei einem gesperrten Ehemaligen auf
 		     „Schüler sperren".
 		     Ein Kollege wird nie gesperrt: Der Knopf bleibt an seiner Stelle, verschlossen, mit

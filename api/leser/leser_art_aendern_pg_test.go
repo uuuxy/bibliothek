@@ -34,7 +34,7 @@ import (
 // Beide Richtungen müssen als AUSKUNFT zurückkommen (400), nicht als CHECK-Verletzung.
 // Eine 500 macht der Sanitizer zu „Ein interner Datenbankfehler ist aufgetreten" — der
 // Satz sagt niemandem, was zu tun ist, und derselbe Fehler kostete am 22.08.2026 schon
-// einmal die Diagnose (siehe api/leser/student_update.go, Kommentar an den Sperrfeldern).
+// einmal die Diagnose (siehe api/leser/leser_aendern.go, Kommentar an den Sperrfeldern).
 func TestLeserArtAendern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -48,7 +48,7 @@ func TestLeserArtAendern(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 

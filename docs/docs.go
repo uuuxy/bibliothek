@@ -3043,7 +3043,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/leser.CreateStudentRequest"
+                            "$ref": "#/definitions/leser.leserAnlegenAnfrage"
                         }
                     }
                 ],
@@ -3111,7 +3111,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/leser.StudentProfileResponse"
+                            "$ref": "#/definitions/leser.leserakteAntwort"
                         }
                     },
                     "400": {
@@ -3474,7 +3474,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/leser.promoteStudentsRequest"
+                            "$ref": "#/definitions/leser.schuljahreswechselAnfrage"
                         }
                     }
                 ],
@@ -3482,7 +3482,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/leser.PromoteStudentsResponse"
+                            "$ref": "#/definitions/leser.schuljahreswechselAntwort"
                         }
                     },
                     "400": {
@@ -4878,7 +4878,7 @@ const docTemplate = `{
                 }
             }
         },
-        "leser.CreateStudentRequest": {
+        "leser.leserAnlegenAnfrage": {
             "type": "object",
             "required": [
                 "nachname",
@@ -4911,46 +4911,7 @@ const docTemplate = `{
                 }
             }
         },
-        "leser.OffeneForderungen": {
-            "type": "object",
-            "properties": {
-                "anzahl": {
-                    "type": "integer"
-                },
-                "summe": {
-                    "type": "number"
-                }
-            }
-        },
-        "leser.PromoteStudentsResponse": {
-            "type": "object",
-            "properties": {
-                "archived_count": {
-                    "type": "integer"
-                },
-                "dry_run": {
-                    "type": "boolean"
-                },
-                "mapping_entfernt": {
-                    "type": "integer"
-                },
-                "mapping_konflikte": {
-                    "description": "Zuordnungen, deren Zielname schon belegt war (z. B. '9a' und '09a' laufen\nbeide auf '10a'): Sie bleiben unverändert stehen und werden hier genannt,\nstatt den ganzen Lauf scheitern zu lassen.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "mapping_versetzt": {
-                    "description": "Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt\nwurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel\nauf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an\nniemanden, ohne Fehlermeldung).",
-                    "type": "integer"
-                },
-                "promoted_count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "leser.StudentProfileResponse": {
+        "leser.leserakteAntwort": {
             "type": "object",
             "properties": {
                 "abgaenger_jahr": {
@@ -5014,10 +4975,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "offene_forderungen": {
-                    "description": "OffeneForderungen ist der Kontozustand neben der Sperre: Die Akte zeigt ihn in jedem\nReiter, ohne die Liste der Forderungen abzurufen.",
+                    "description": "offeneForderungen ist der Kontozustand neben der Sperre: Die Akte zeigt ihn in jedem\nReiter, ohne die Liste der Forderungen abzurufen.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/leser.OffeneForderungen"
+                            "$ref": "#/definitions/leser.offeneForderungen"
                         }
                     ]
                 },
@@ -5035,7 +4996,18 @@ const docTemplate = `{
                 }
             }
         },
-        "leser.promoteStudentsRequest": {
+        "leser.offeneForderungen": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "type": "integer"
+                },
+                "summe": {
+                    "type": "number"
+                }
+            }
+        },
+        "leser.schuljahreswechselAnfrage": {
             "type": "object",
             "properties": {
                 "confirm": {
@@ -5043,6 +5015,34 @@ const docTemplate = `{
                 },
                 "dry_run": {
                     "type": "boolean"
+                }
+            }
+        },
+        "leser.schuljahreswechselAntwort": {
+            "type": "object",
+            "properties": {
+                "archived_count": {
+                    "type": "integer"
+                },
+                "dry_run": {
+                    "type": "boolean"
+                },
+                "mapping_entfernt": {
+                    "type": "integer"
+                },
+                "mapping_konflikte": {
+                    "description": "Zuordnungen, deren Zielname schon belegt war (z. B. '9a' und '09a' laufen\nbeide auf '10a'): Sie bleiben unverändert stehen und werden hier genannt,\nstatt den ganzen Lauf scheitern zu lassen.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mapping_versetzt": {
+                    "description": "Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt\nwurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel\nauf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an\nniemanden, ohne Fehlermeldung).",
+                    "type": "integer"
+                },
+                "promoted_count": {
+                    "type": "integer"
                 }
             }
         },

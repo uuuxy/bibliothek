@@ -41,7 +41,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: rolle}))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 
@@ -195,7 +195,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.GetStudentProfileHandler(repository.NewLeserAbfragen(pool))(rec, req)
+		srv.Leserakte(repository.NewLeserAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Profil: %d %s", rec.Code, rec.Body.String())
 		}
@@ -230,7 +230,7 @@ func TestAusweisnummerLeeren(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 
@@ -343,7 +343,7 @@ func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Antwort %d: %s", rec.Code, rec.Body.String())
 		}

@@ -16,7 +16,7 @@ import (
 // Die Auskunft als Blatt trägt den Kopf der Schule aus den Einstellungen. Sind sie nicht lesbar,
 // entsteht kein Blatt, und im Protokoll steht keine erteilte Auskunft: Der Eintrag hält fest,
 // dass die Person ihr Blatt bekommen hat.
-func TestDsgvoAuskunftPDF_EinstellungenUnlesbar_KeinBlattKeinEintrag(t *testing.T) {
+func TestDSGVOAuskunftPDF_EinstellungenUnlesbar_KeinBlattKeinEintrag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	admin := testdaten.LegeBearbeiterAn(t, pool)
@@ -24,7 +24,7 @@ func TestDsgvoAuskunftPDF_EinstellungenUnlesbar_KeinBlattKeinEintrag(t *testing.
 
 	rufe := func(datenbank db.PgxPoolIface) *httptest.ResponseRecorder {
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}
-		return tuertest.RufeAlsAdmin(t, admin, srv.DsgvoAuskunftPDFHandler(), http.MethodGet,
+		return tuertest.RufeAlsAdmin(t, admin, srv.DSGVOAuskunftPDF(), http.MethodGet,
 			"/api/schueler/"+leserID+"/dsgvo-auskunft/pdf", "", map[string]string{"id": leserID})
 	}
 	eintraege := func() int {

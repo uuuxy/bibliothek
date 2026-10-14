@@ -96,7 +96,7 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.GetStudentProfileHandler(repository.NewLeserAbfragen(pool))(rec, req)
+		srv.Leserakte(repository.NewLeserAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Profil %s: %d %s", id, rec.Code, rec.Body.String())
 		}

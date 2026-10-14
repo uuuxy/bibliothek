@@ -19,7 +19,7 @@ import (
 //
 // Es gibt FÜNF Türen zu diesem Zustand, und jede hat ihren eigenen Wächter:
 //
-//	Soft-Delete (Papierkorb, Oberfläche) → pruefeSchuelerLoeschbar
+//	Soft-Delete (Papierkorb, Oberfläche) → pruefeLeserLoeschbar
 //	LoescheLeserEndgueltig (endgültig, von Hand)   → pruefeKeineOffenenVorgaenge
 //	LoescheAbgaengerEndgueltig (Cronjob, nachts)     → pruefeKeineOffenenVorgaenge
 //	Anonymisierungs-Cronjob              → PraedikatAnonymisierung (jobs-Paket getestet)
@@ -104,7 +104,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 	for _, vorgang := range []string{"ausleihe", "schaden"} {
 		t.Run("Papierkorb blockiert bei "+vorgang, func(t *testing.T) {
 			sid := baueFall(t, "SP-SOFT", vorgang, false)
-			status, err := srv.pruefeSchuelerLoeschbar(ctx, sid)
+			status, err := srv.pruefeLeserLoeschbar(ctx, sid)
 			if err == nil {
 				t.Fatalf("Soft-Delete trotz offenem Vorgang (%s) erlaubt", vorgang)
 			}

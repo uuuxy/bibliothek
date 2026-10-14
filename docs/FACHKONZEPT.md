@@ -236,7 +236,7 @@ mitten im Jahr dazukommen. Sie speist sich aus zwei Quellen, die verschieden alt
 
 - **Handliste (`class_books`, Quelle `hand`)** hängt am **Klassennamen**. „Die 7R2 liest
   Mathe 7“ gilt für jede künftige 7R2, deshalb lässt die Versetzung sie bewusst stehen
-  (`api/leser/student_promotion.go`, Befund F3). Sie veraltet nicht von selbst und muss von Hand
+  (`api/leser/schuljahreswechsel.go`, Befund F3). Sie veraltet nicht von selbst und muss von Hand
   gepflegt werden — dafür sieht sie auch Gruppen unter fünf Kindern.
 - **Aus Ausleihen (Quelle `ausleihe`)** hängt an den **Kindern**: bei jedem Aufruf neu
   gerechnet über `klassen_normkey(schueler.klasse)`, nie gespeichert. Halten mehr als die
@@ -612,7 +612,7 @@ zweiten. Freigeschaltet wird das Konto nur, wenn der Anlegende `manage_users` ha
 entsteht eine Zugangsanfrage wie bei der Selbstanmeldung. Die Adresse steht dabei an genau
 EINER Stelle, am Konto (`benutzer.email`, `UNIQUE lower(email)`) — eine zweite Spalte an der
 Leserzeile gibt es bewusst nicht. Die Akte liest sie vom Konto; fehlt sie, lässt sie sich dort
-nachtragen, ändern lässt sie sich nur in „Benutzer & Rechte" (`api/leser/student_schul_email.go`).
+nachtragen, ändern lässt sie sich nur in „Benutzer & Rechte" (`api/leser/leser_schul_email.go`).
 
 **Ausweise:** Alle Leser ziehen ihre Nummer aus EINEM Nummernkreis (Migration 125), und
 alle neuen Nummern tragen die Vorsilbe `A-` (§1). Eine `A-`-Nummer vergibt das Programm nur

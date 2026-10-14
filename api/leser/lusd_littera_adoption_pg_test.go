@@ -19,7 +19,7 @@ import (
 // Die Waisen-Suche fragt `lusd_id IS NULL`, der Littera-Schüler fällt durch, die CSV-Zeile
 // wird Neuzugang, und der Unique-Index unique_schueler_name_gebdatum greift nicht, weil
 // er Zeilen mit gesetzter lusd_id ausnimmt (Migration 074).
-func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
+func TestLUSDZuordnung_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -39,7 +39,7 @@ func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 		Geburtsdatum: &geb, Nr: 1,
 	}
 
-	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
+	prev, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 			len(prev.Adoptionen), len(prev.Neuzugaenge))
 	}
 
-	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, true, true); err != nil {
+	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	var anzahl int

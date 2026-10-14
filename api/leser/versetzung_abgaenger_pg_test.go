@@ -31,7 +31,7 @@ func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.
 		t.Fatal(err)
 	}
 	resp := versetzungAusfuehren(t, pool, false)
-	if resp.ArchivedCount != 1 {
+	if resp.Archiviert != 1 {
 		t.Fatalf("Versetzung sollte genau einen Abgänger machen: %+v", resp)
 	}
 
@@ -49,7 +49,7 @@ func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.
 
 	// Rückkehr per LUSD-Import: aktiv UND entsperrt, wie beim Import-Abgänger.
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
+	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-VERS", Vorname: "Vera", Nachname: "Versetzt", Klasse: "13"},
 	}, true, true); err != nil {
 		t.Fatal(err)

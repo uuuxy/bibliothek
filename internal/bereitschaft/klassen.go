@@ -55,7 +55,7 @@ func fehlendeEintraege(menge, referenz []string) []string {
 
 // pruefeKlassenDrift zeigt, wo Schüler, Zuordnung der Klassenleitung und Bücherlisten nicht
 // mehr am selben Klassennamen hängen. Der Jahreswechsel versetzt die Zuordnung mit
-// (api/leser/student_promotion.go), eine Umbenennung von Hand oder ein LUSD-Import nicht.
+// (api/leser/schuljahreswechsel.go), eine Umbenennung von Hand oder ein LUSD-Import nicht.
 // Eine Warnung, weil eine Klasse ohne Zuordnung gewollt sein kann; man soll nur sehen,
 // dass ihre Mahnmail niemanden erreicht.
 func pruefeKlassenDrift(l Lage) Befund {

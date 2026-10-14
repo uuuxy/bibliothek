@@ -27,7 +27,7 @@ func TestDSGVOAuskunftLiestJedeSchuelerQuelle(t *testing.T) {
 		muster := regexp.MustCompile(`(?i)(FROM|JOIN)\s+` + q.Tabelle + `\b`)
 		if !muster.Match(quelltext) {
 			t.Errorf("die Art.-15-Auskunft liest %s nicht (Bezug: %s) — %s braucht eine "+
-				"Abfrage über diese Tabelle, und sammleDsgvoDaten muss sie aufrufen, sonst ist die "+
+				"Abfrage über diese Tabelle, und sammleDSGVODaten muss sie aufrufen, sonst ist die "+
 				"Auskunft unvollständig.", q.Tabelle, q.Bezug, dsgvoAuskunftAbfragen)
 		}
 	}

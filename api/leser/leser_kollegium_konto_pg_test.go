@@ -46,7 +46,7 @@ func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: rolle}))
 		rec := httptest.NewRecorder()
-		srv.CreateStudentHandler()(rec, req)
+		srv.LeserAnlegen()(rec, req)
 		return rec
 	}
 

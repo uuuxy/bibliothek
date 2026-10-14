@@ -42,7 +42,7 @@ export function schuelerRechte(user) {
 
 /**
  * Bietet die Akte DIESES Lesers die DSGVO-Auskunft an? `profil.email` ist die Adresse am
- * Zugangskonto (api/leser/student_profile.go); leer heißt: kein Konto.
+ * Zugangskonto (api/leser/leserakte.go); leer heißt: kein Konto.
  * @param {ReturnType<typeof schuelerRechte>} rechte
  * @param {{ email?: string } | null | undefined} profil
  * @returns {boolean}

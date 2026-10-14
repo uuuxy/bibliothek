@@ -25,7 +25,7 @@ import (
 // nicht sehen: Er prüfte die Eindeutigkeit INNERHALB eines Laufs, und die war nie das
 // Problem. Deshalb steht diese Zusage jetzt an der echten Datenbank, über zwei Läufe und
 // gegen die zweite Vergabestelle.
-func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
+func TestLUSDAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -112,7 +112,7 @@ func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
-	naechste, ok := resolveNeueBarcodeID(ctx, tx, nil, "")
+	naechste, ok := bestimmeNeueBarcodeID(ctx, tx, nil, "")
 	if !ok {
 		t.Fatal("die Handanlage konnte keine Nummer ziehen")
 	}

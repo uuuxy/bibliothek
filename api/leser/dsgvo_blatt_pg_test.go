@@ -29,7 +29,7 @@ import (
 //
 // Blind für: Schreiber, die hier nicht aufgerufen werden — das Zusammenführen und den Bescheid
 // (ihre Angaben prüft TestDSGVOAngabenZeilen an der Form, die die Schreiber ablegen).
-func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
+func TestDSGVOBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -98,9 +98,9 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	daten, err := srv.sammleDsgvoDaten(ctx, sid, true)
+	daten, err := srv.sammleDSGVODaten(ctx, sid, true)
 	if err != nil {
-		t.Fatalf("sammleDsgvoDaten: %v", err)
+		t.Fatalf("sammleDSGVODaten: %v", err)
 	}
 	roh, err := auskunft.ErzeugeBlatt(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule"})
 	if err != nil {

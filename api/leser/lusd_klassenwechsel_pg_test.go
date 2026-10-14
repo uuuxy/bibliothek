@@ -13,7 +13,7 @@ import (
 	"bibliothek/repository"
 )
 
-// TestLusdImport_KlassenwechselMehrererSchueler sichert den Zweck des LUSD-Imports ab:
+// TestLUSDImport_KlassenwechselMehrererSchueler sichert den Zweck des LUSD-Imports ab:
 // Er entscheidet, in welcher Klasse ein Schüler steht. Zum Schuljahreswechsel wandern
 // alle Jahrgänge gleichzeitig — das ist keine Randbedingung, sondern der Normalfall.
 //
@@ -29,7 +29,7 @@ import (
 // und gegen genau die Klasse verglichen, die für ihn im Export stand. Die Schüler
 // bekommen absichtlich unterscheidbare Klassen — bei gleichen Werten wäre eine
 // Verwechslung unsichtbar.
-func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
+func TestLUSDImport_KlassenwechselMehrererSchueler(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -65,7 +65,7 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 	}
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	if _, err := s.computeLusdChanges(ctx, records, true, true); err != nil {
+	if _, err := s.berechneLUSDAenderungen(ctx, records, true, true); err != nil {
 		t.Fatalf("Import mit Klassenwechseln scheiterte: %v", err)
 	}
 
@@ -99,11 +99,11 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 	}
 }
 
-// TestLusdImport_LeereKlasseUeberschreibtNicht haelt die COALESCE(NULLIF(...))-Regel fest:
+// TestLUSDImport_LeereKlasseUeberschreibtNicht haelt die COALESCE(NULLIF(...))-Regel fest:
 // Steht im Export fuer einen Schueler KEINE Klasse, behaelt er seine bisherige. Ohne diese
 // Regel wuerde eine luckenhafte Exportspalte die Klassenzuordnung der ganzen Schule leeren —
 // und die Klasse ist die Angabe, an der Ausleihlimits, Mahnwege und Abgaengerlisten haengen.
-func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
+func TestLUSDImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -115,7 +115,7 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 	}
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
+	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-LEER", Vorname: "Greta", Nachname: "Gruen", Klasse: "", Nr: 1},
 	}, true, true); err != nil {
 		t.Fatalf("Import scheiterte: %v", err)
@@ -131,7 +131,7 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 	}
 }
 
-// TestLusdImport_MehrereAbgaengerGleichzeitig sichert die zweite heute umgebaute Stelle ab:
+// TestLUSDImport_MehrereAbgaengerGleichzeitig sichert die zweite heute umgebaute Stelle ab:
 // behandleAbgaenger holt seit #440 die offenen Ausleihen und Schaeden fuer ALLE Abgaenger
 // mit je einer GROUP-BY-Abfrage und loescht die Vormerkungen per ANY($1) — statt drei
 // Abfragen je Schueler. Die Zuordnung entsteht dabei ueber eine Map (schueler_id -> Anzahl).
@@ -142,7 +142,7 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 //
 // Zum Schuljahresende gehen ganze Jahrgaenge gleichzeitig — mehrere Abgaenger in einem Lauf
 // sind der Normalfall, nicht die Ausnahme.
-func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
+func TestLUSDImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -168,7 +168,7 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 
 	// Der neue Export nennt KEINEN der drei mehr — alle sind Abgänger.
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
+	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", Nr: 1},
 	}, true, true); err != nil {
 		t.Fatalf("Abgängerlauf scheiterte: %v", err)
@@ -217,7 +217,7 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 		[]string{ids["sauber"], ids["ausleihe"], ids["schaden"]}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
+	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", Nr: 1},
 	}, true, true); err != nil {
 		t.Fatalf("zweiter Abgängerlauf scheiterte: %v", err)

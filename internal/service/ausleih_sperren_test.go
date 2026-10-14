@@ -121,7 +121,7 @@ func TestAusleihSperren_KollegeWirdNieGesperrt(t *testing.T) {
 }
 
 // Ein anonymisierter Datensatz ist keine Person mehr: nichts, auch kein Lernmittel. Ohne
-// Merkmal — aufheben lässt sich diese Sperre nicht (api/leser/student_lock.go lehnt ab).
+// Merkmal — aufheben lässt sich diese Sperre nicht (api/leser/leser_sperre.go lehnt ab).
 func TestAusleihSperren_AnonymisiertBekommtNichts(t *testing.T) {
 	leser := schueler(func(s *repository.Leser) {
 		s.IstAnonymisiert, s.IstGesperrt, s.Sperrgrund = true, true, strPtr("Abgänger anonymisiert")

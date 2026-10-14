@@ -43,7 +43,7 @@ import (
 // Ohne den dritten Fall zeigte ein Jahrgang, zu dem es keine Klasse gibt, die ganze
 // Kartei statt einer leeren Liste — die Sorte Fehler, die niemand bemerkt, weil eine
 // volle Liste nach „geht" aussieht.
-func klassenFilter(ctx context.Context, lmfRepo *repository.LMFAbfragen, klasse, jahrgang string) (klassen []string, leer bool, err error) {
+func klassenFilter(ctx context.Context, lmfAbfragen *repository.LMFAbfragen, klasse, jahrgang string) (klassen []string, leer bool, err error) {
 	if klasse != "" {
 		return []string{klasse}, false, nil
 	}
@@ -51,14 +51,14 @@ func klassenFilter(ctx context.Context, lmfRepo *repository.LMFAbfragen, klasse,
 		return nil, false, nil
 	}
 
-	gesucht, convErr := strconv.Atoi(jahrgang)
-	if convErr != nil || gesucht < 1 || gesucht > 13 {
+	gesucht, wandelFehler := strconv.Atoi(jahrgang)
+	if wandelFehler != nil || gesucht < 1 || gesucht > 13 {
 		// Ein unlesbarer Jahrgang ist kein Grund, alles zu zeigen: Wer nach „Jahrgang 5"
 		// filtert und sich vertippt, bekommt lieber nichts als die ganze Schule.
 		return nil, true, nil
 	}
 
-	alle, err := lmfRepo.LadeKlassenMitSchuelern(ctx)
+	alle, err := lmfAbfragen.LadeKlassenMitSchuelern(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -77,8 +77,8 @@ func klassenFilter(ctx context.Context, lmfRepo *repository.LMFAbfragen, klasse,
 // Jahrgang" kennt das Schema dieser Schule, und sie soll genau EINMAL existieren. Eine
 // zweite Fassung in JavaScript wäre bis zur nächsten Umbenennung einer Klasse still
 // richtig und danach still falsch.
-func jahrgaengeMitSchuelern(ctx context.Context, lmfRepo *repository.LMFAbfragen) ([]int, error) {
-	alle, err := lmfRepo.LadeKlassenMitSchuelern(ctx)
+func jahrgaengeMitSchuelern(ctx context.Context, lmfAbfragen *repository.LMFAbfragen) ([]int, error) {
+	alle, err := lmfAbfragen.LadeKlassenMitSchuelern(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -96,16 +96,16 @@ func jahrgaengeMitSchuelern(ctx context.Context, lmfRepo *repository.LMFAbfragen
 	return jahrgaenge, nil
 }
 
-// JahrgaengeHandler liefert die besetzten Jahrgänge für das Filter-Auswahlfeld.
+// Jahrgaenge liefert die besetzten Jahrgänge für das Filter-Auswahlfeld.
 //
 // @Summary      List year groups that currently have students
 // @Tags         students
 // @Produce      json
 // @Success      200 {array} int
 // @Router       /jahrgaenge [get]
-func (s *Tueren) JahrgaengeHandler(lmfRepo *repository.LMFAbfragen) http.HandlerFunc {
+func (t *Tueren) Jahrgaenge(lmfAbfragen *repository.LMFAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		jahrgaenge, err := jahrgaengeMitSchuelern(r.Context(), lmfRepo)
+		jahrgaenge, err := jahrgaengeMitSchuelern(r.Context(), lmfAbfragen)
 		if err != nil {
 			return apierrors.Internal("Jahrgänge konnten nicht gelesen werden", err)
 		}

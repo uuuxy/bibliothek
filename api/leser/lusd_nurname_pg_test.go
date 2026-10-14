@@ -35,14 +35,14 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 		nmZeile(3, "Ben", "Ohne", "6b", nil),
 		nmZeile(4, "Neu", "Kind", "5c", nil),
 	)
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
 	if prev.Modus != "name" || len(prev.Klassenwechsel) != 2 || len(prev.Neuzugaenge) != 1 || len(prev.Mehrdeutig) != 0 || len(prev.NichtAbgleichbar) != 0 {
 		t.Fatalf("Vorschau falsch: %+v", prev)
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "lower(nachname) IN ('hand','ohne','kind')"); n != 3 {
@@ -79,7 +79,7 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 		nmZeile(4, "Tom", "Doppelt", "5a", nil),
 		nmZeile(5, "Tom", "Doppelt", "5b", nil),
 	)
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	if len(prev.Neuzugaenge) != 0 || len(prev.Klassenwechsel) != 1 || len(prev.Abgaenger) != 0 {
 		t.Fatalf("Vorschau falsch: neu=%d wechsel=%d abgänger=%d", len(prev.Neuzugaenge), len(prev.Klassenwechsel), len(prev.Abgaenger))
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "nachname='Mustermann' AND klasse IN ('05A','09C')"); n != 2 {
@@ -126,7 +126,7 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 		zeilen = append(zeilen, nmZeile(4+i, "Ruhig", "Kind"+string(rune('A'+i)), "8a", nil))
 	}
 	datei := nnDatei(zeilen...)
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 	if len(prev.Mehrdeutig) != 2 {
 		t.Fatalf("erwartet 2 Mehrdeutig-Zeilen, waren %d", len(prev.Mehrdeutig))
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	var abg bool
@@ -164,14 +164,14 @@ func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
 		t.Fatal(err)
 	}
 	datei := nnDatei(nmZeile(2, "Max", "Alt", "5a", nil))
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(prev.Rueckkehrer) != 0 || len(prev.Mehrdeutig) != 1 || len(prev.Neuzugaenge) != 0 {
 		t.Fatalf("Nur-Name: Abgänger-Namensvetter muss mehrdeutig sein, nicht Rückkehrer/neu: %+v", prev)
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	var abg, gesperrt bool

@@ -29,7 +29,7 @@ import (
 //
 // Wächst testdaten.DSGVOLeserQuellen (FK-Ratsche unten), zwingt der default-Zweig der
 // Seed-Schleife diesen Test zum Mitwachsen.
-func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
+func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -93,9 +93,9 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 				}
 			}
 		case "audit_logs":
-			// Verwaltungsprotokolle, wie sie student_update.go (LUSD_ID_NACHGETRAGEN)
-			// und student_deleted.go (RESTORE/PURGE) schreiben.
-			// … und das Zusammenführen (student_zusammenfuehren.go) legt beide Ausweis-
+			// Verwaltungsprotokolle, wie sie leser_aendern.go (LUSD_ID_NACHGETRAGEN)
+			// und papierkorb.go (RESTORE/PURGE) schreiben.
+			// … und das Zusammenführen (leser_zusammenfuehren.go) legt beide Ausweis-
 			// Barcodes ab — der Kanarienwert hier ist der Barcode der Rundreise.
 			_, err = pool.Exec(ctx, `INSERT INTO audit_logs (aktion, details)
 				VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text, 'lusd_id', $2::text)),
@@ -136,9 +136,9 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 
 	// ── 1. Die Auskunft zeigt VORHER aus jeder Quelle etwas ──
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	daten, err := srv.sammleDsgvoDaten(ctx, sid, true)
+	daten, err := srv.sammleDSGVODaten(ctx, sid, true)
 	if err != nil {
-		t.Fatalf("sammleDsgvoDaten vor der Löschung: %v", err)
+		t.Fatalf("sammleDSGVODaten vor der Löschung: %v", err)
 	}
 	for _, q := range testdaten.DSGVOLeserQuellen {
 		leer := false
@@ -155,7 +155,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 			leer = len(daten.vormerkungen) == 0
 		case "audit_log":
 			lesehistorie := false
-			for _, e := range daten.auditEintraege {
+			for _, e := range daten.protokollEintraege {
 				if e.Aktion == "CHECKOUT" {
 					lesehistorie = true
 				}
@@ -177,7 +177,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		}
 		if leer {
 			t.Errorf("die Auskunft zeigt nichts aus %s (Bezug: %s), obwohl dort Daten liegen — "+
-				"diese Quelle fehlt in sammleDsgvoDaten oder wird falsch abgefragt", q.Tabelle, q.Bezug)
+				"diese Quelle fehlt in sammleDSGVODaten oder wird falsch abgefragt", q.Tabelle, q.Bezug)
 		}
 	}
 

@@ -56,7 +56,7 @@ var parameterStrukturen = map[string]string{
 	"Rahmen":            "fehlendes Feld = Plan ohne Startstunde oder mit 0 Stunden je Tag, also ohne Plätze",
 	"Ende":              "fehlendes Feld = Rückgabe-Plan ohne Anker oder mit 0 Stunden je Tag, also still leer",
 	"paarSignale":       "fehlendes Feld = ein Signal der Umbenennungs-Paarung zählt still nie",
-	"schuelerAenderung": "fehlendes Feld = Nachtrag ohne Protokolleintrag oder Schul-E-Mail ohne Konto",
+	"leserAenderung":    "fehlendes Feld = Nachtrag ohne Protokolleintrag oder Schul-E-Mail ohne Konto",
 	"nachbuchAbsender":  "fehlendes Feld = Nachbuchung ohne Bearbeiter, mit unberichtigter Uhr oder ohne Entscheidung über den Sperrgrund",
 	"BestellMailWerte":  "fehlendes Feld = Bestellmail ohne Kundennummer, ohne Bestätigungs-Link oder ohne den Vermerk zum Topf",
 }

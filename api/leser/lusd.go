@@ -21,49 +21,49 @@ import (
 
 // abgaengerKarenzTage liest die Karenzzeit aus den Einstellungen; ohne lesbare
 // Einstellungen gilt die Vorgabe — derselbe Rückfall wie im nächtlichen Job.
-func (s *Tueren) abgaengerKarenzTage(ctx context.Context) int {
-	einst, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
+func (t *Tueren) abgaengerKarenzTage(ctx context.Context) int {
+	einst, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 	if err != nil {
 		return repository.AbgaengerKarenzTageVorgabe
 	}
 	return repository.AbgaengerKarenzTageOderVorgabe(einst)
 }
 
-// readLusdUpload liest die hochgeladene Datei und übergibt sie dem Parser des Pakets lusd.
-func readLusdUpload(r *http.Request) (lusd.Datei, error) {
-	file, _, err := r.FormFile("csvFile")
+// leseLUSDDatei liest die hochgeladene Datei und übergibt sie dem Parser des Pakets lusd.
+func leseLUSDDatei(r *http.Request) (lusd.Datei, error) {
+	datei, _, err := r.FormFile("csvFile")
 	if err != nil {
 		return lusd.Datei{}, fmt.Errorf("CSV-Datei fehlt: %w", err)
 	}
-	defer closeutil.Schliesse(file, "lusd upload")
+	defer closeutil.Schliesse(datei, "lusd upload")
 
-	content, err := io.ReadAll(file)
+	inhalt, err := io.ReadAll(datei)
 	if err != nil {
 		return lusd.Datei{}, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err)
 	}
-	return lusd.LeseDatei(content)
+	return lusd.LeseDatei(inhalt)
 }
 
-// lusdUploadHandler bündelt, was Vorschau und Import gemeinsam haben: Upload-Grenze,
+// lusdTuer bündelt, was Vorschau und Import gemeinsam haben: Upload-Grenze,
 // Parsen, Fehlerabbildung. apply unterscheidet die beiden Routen.
-func (s *Tueren) lusdUploadHandler(apply bool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) { s.handleLusdUpload(w, r, apply) }
+func (t *Tueren) lusdTuer(uebernehmen bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) { t.verarbeiteLUSDDatei(w, r, uebernehmen) }
 }
 
-// handleLusdUpload liest die Datei, fährt den Lauf und antwortet mit Vorschau oder Ergebnis.
-func (s *Tueren) handleLusdUpload(w http.ResponseWriter, r *http.Request, apply bool) {
+// verarbeiteLUSDDatei liest die Datei, fährt den Lauf und antwortet mit Vorschau oder Ergebnis.
+func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, uebernehmen bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return
 	}
-	datei, err := readLusdUpload(r)
+	datei, err := leseLUSDDatei(r)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return
 	}
-	lauf := lusd.Lauf{Anwenden: apply, MassenabgangBestaetigt: apply && r.FormValue("confirm_graduates") == "true"}
-	if apply {
+	lauf := lusd.Lauf{Anwenden: uebernehmen, MassenabgangBestaetigt: uebernehmen && r.FormValue("confirm_graduates") == "true"}
+	if uebernehmen {
 		if lauf.Umbenennungen, err = leseUmbenennungsWahl(r.FormValue("umbenennungen")); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -71,16 +71,16 @@ func (s *Tueren) handleLusdUpload(w http.ResponseWriter, r *http.Request, apply 
 	}
 	// Die Karenzzeit vor der Transaktion des Laufs lesen: eine Einstellung, kein Teil des
 	// Bestands, den der Lauf vergleicht.
-	lauf.KarenzTage = s.abgaengerKarenzTage(r.Context())
-	res, err := lusd.FuehreAus(r.Context(), s.DB.Pool, datei, lauf)
+	lauf.KarenzTage = t.abgaengerKarenzTage(r.Context())
+	res, err := lusd.FuehreAus(r.Context(), t.DB.Pool, datei, lauf)
 	if err != nil {
 		apierrors.SendHTTPError(w, lusdFehlerStatus(err), err)
 		return
 	}
-	if apply {
+	if uebernehmen {
 		// Der Import ist der einzige Weg, der Schülernamen unumkehrbar anonymisiert. Ins
 		// Protokoll gehen Akteur, Modus und Zähler, keine Namen.
-		s.protokolliereLusdImport(r, res, lauf.MassenabgangBestaetigt)
+		t.protokolliereLUSDImport(r, res, lauf.MassenabgangBestaetigt)
 	}
 	tuer.AntworteJSON(w, http.StatusOK, res)
 }
@@ -88,12 +88,12 @@ func (s *Tueren) handleLusdUpload(w http.ResponseWriter, r *http.Request, apply 
 // lusdFehlerStatus ordnet den Fehler eines Laufs ein: Der Massenabgang wartet auf eine
 // Bestätigung (409), eine überholte Umbenennungs-Auswahl ist eine Fehleingabe (400).
 func lusdFehlerStatus(err error) int {
-	var massErr *lusd.MassenabgangFehler
-	var wahlErr *lusd.UmbenennungUngueltigFehler
+	var massenFehler *lusd.MassenabgangFehler
+	var wahlFehler *lusd.UmbenennungUngueltigFehler
 	switch {
-	case errors.As(err, &massErr):
+	case errors.As(err, &massenFehler):
 		return http.StatusConflict
-	case errors.As(err, &wahlErr):
+	case errors.As(err, &wahlFehler):
 		return http.StatusBadRequest
 	}
 	return http.StatusInternalServerError
@@ -112,13 +112,13 @@ func leseUmbenennungsWahl(roh string) ([]lusd.UmbenennungWahl, error) {
 	return wahl, nil
 }
 
-// PostLusdPreviewHandler parst die CSV und liefert die Vorschau der Änderungen.
-func (s *Tueren) PostLusdPreviewHandler() http.HandlerFunc { return s.lusdUploadHandler(false) }
+// LUSDVorschau parst die CSV und liefert die Vorschau der Änderungen.
+func (t *Tueren) LUSDVorschau() http.HandlerFunc { return t.lusdTuer(false) }
 
-// PostLusdImportHandler parst die CSV und wendet die Änderungen transaktional an.
+// LUSDImport parst die CSV und wendet die Änderungen transaktional an.
 // Ab der Schwelle des Massenabgangs (lusd.MassenabgangFehler) verlangt er das Formularfeld
 // confirm_graduates=true (HTTP 409 sonst) — zweite, bewusste Bestätigung.
-func (s *Tueren) PostLusdImportHandler() http.HandlerFunc { return s.lusdUploadHandler(true) }
+func (t *Tueren) LUSDImport() http.HandlerFunc { return t.lusdTuer(true) }
 
 func zaehleBestaetigte(paare []lusd.VorschauUmbenennung) int {
 	n := 0
@@ -130,11 +130,11 @@ func zaehleBestaetigte(paare []lusd.VorschauUmbenennung) int {
 	return n
 }
 
-// protokolliereLusdImport schreibt den Apply-Lauf ins Admin-Audit: Modus, Zähler je
+// protokolliereLUSDImport schreibt den Apply-Lauf ins Admin-Audit: Modus, Zähler je
 // Kategorie und ob der Massenabgang bestätigt wurde. Ohne Namen.
-func (s *Tueren) protokolliereLusdImport(r *http.Request, res *lusd.Vorschau, massenabgangBestaetigt bool) {
+func (t *Tueren) protokolliereLUSDImport(r *http.Request, res *lusd.Vorschau, massenabgangBestaetigt bool) {
 	claims, ok := auth.GetClaims(r.Context())
-	if !ok || s.DB == nil || s.DB.Pool == nil || res == nil {
+	if !ok || t.DB == nil || t.DB.Pool == nil || res == nil {
 		return
 	}
 	details := map[string]any{
@@ -153,7 +153,7 @@ func (s *Tueren) protokolliereLusdImport(r *http.Request, res *lusd.Vorschau, ma
 		"karenz_tage":              res.KarenzTage,
 		"massenabgang_bestaetigt":  massenabgangBestaetigt,
 	}
-	if err := repository.NewProtokollAbfragen(s.DB.Pool).
+	if err := repository.NewProtokollAbfragen(t.DB.Pool).
 		ProtokolliereAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("LUSD-Import: Audit-Eintrag fehlgeschlagen: %v", err)
 	}

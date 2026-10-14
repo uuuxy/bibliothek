@@ -12,7 +12,7 @@ import (
 )
 
 // Forderungen erledigen: bar bezahlt oder storniert. Eine offene Forderung sperrt das Löschen
-// eines Schülers und den LUSD-Abgleich (pruefeSchuelerLoeschbar, der Abgleich prüft
+// eines Schülers und den LUSD-Abgleich (pruefeLeserLoeschbar, der Abgleich prüft
 // ist_bezahlt = false); deshalb braucht jede einen Weg zu ihrem Ende.
 //
 // Recht: edit_students wie beim Anlegen (POST /api/damage/report), nicht bloß eine Sitzung:

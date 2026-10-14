@@ -75,7 +75,7 @@ func istKollegium(leser *repository.Leser) bool {
 // api/theke/eingabe.go).
 func pruefeSperrschalter(leser *repository.Leser, lernmittel bool) error {
 	if leser.IstAnonymisiert {
-		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/leser/student_lock.go lehnt ab).
+		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/leser/leser_sperre.go lehnt ab).
 		return fmt.Errorf("%w: der Datensatz ist anonymisiert", ErrGesperrt)
 	}
 	if leser.IstVonHandGesperrt {

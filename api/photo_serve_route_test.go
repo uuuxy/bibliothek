@@ -11,7 +11,7 @@ import (
 
 // Das Foto-GET wurde nie ausgeliefert: Drei Stellen im Code bauen die Bild-URL als
 // /api/schueler/<barcode>/photo (foto.go, leser_liste.go,
-// resolveFotoURL), aber die Route hieß {id} — und ValidateUUIDParamsMiddleware prüft
+// leseFotoURL), aber die Route hieß {id} — und ValidateUUIDParamsMiddleware prüft
 // genau diesen Namen gegen das UUID-Format. Jeder echte Barcode ("S-abg1-ms3p73…")
 // lief damit in 400, bevor der Handler überhaupt lief.
 //
@@ -31,7 +31,7 @@ func TestFotoGetRouteNutztBarcodePlatzhalter(t *testing.T) {
 	if m[1] == "id" {
 		t.Errorf(`Foto-GET nutzt wieder den Platzhalter {id}. ValidateUUIDParamsMiddleware prüft `+
 			`ausschließlich "id" gegen das UUID-Format und weist damit jeden Barcode mit 400 ab — `+
-			`genau die URL, die resolveFotoURL erzeugt. Gefunden: {%s}`, m[1])
+			`genau die URL, die leseFotoURL erzeugt. Gefunden: {%s}`, m[1])
 	}
 }
 

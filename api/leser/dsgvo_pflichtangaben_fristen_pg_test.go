@@ -25,7 +25,7 @@ import (
 // seiner Stelle im Satz: Eine vergessene Einstellung behauptete sonst still die Werksvorgabe,
 // und zwei vertauschte Fristen stünden beide im Text. Die Frist erledigter Anliegen nennt nur
 // die Auskunft eines Kollegen, deshalb steht eine Kollegin daneben.
-func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
+func TestDSGVOAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -68,7 +68,7 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", nil)
 		req.SetPathValue("id", leserID)
 		rec := httptest.NewRecorder()
-		srv.DsgvoAuskunftHandler()(rec, req)
+		srv.DSGVOAuskunft()(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 		}
@@ -108,7 +108,7 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 // Gegenprobe zur Untergrenze: Eine unplausible 0 in den Einstellungen darf der
 // betroffenen Person nicht als „0 Monate" gemeldet werden — dieselbe Untergrenze wie beim
 // Löschjob (repository.ProtokollAufbewahrungMonateOderVorgabe).
-func TestDsgvoAuskunft_ProtokollfristUnterUntergrenzeMeldetVorgabe(t *testing.T) {
+func TestDSGVOAuskunft_ProtokollfristUnterUntergrenzeMeldetVorgabe(t *testing.T) {
 	if got := repository.ProtokollAufbewahrungMonateOderVorgabe(nil); got != repository.ProtokollAufbewahrungMonateVorgabe {
 		t.Errorf("ohne Einstellung: %d, want %d", got, repository.ProtokollAufbewahrungMonateVorgabe)
 	}

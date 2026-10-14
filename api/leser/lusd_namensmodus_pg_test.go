@@ -78,7 +78,7 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 		nmZeile(3, "Leo", "Littera", "7b", testdaten.Datum(2012, 1, 2)),
 		nmZeile(4, "Neu", "Kind", "5c", testdaten.Datum(2014, 9, 9)),
 	)
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 		len(prev.Abgaenger) != 0 || len(prev.Adoptionen) != 0 || len(prev.Mehrdeutig) != 0 {
 		t.Fatalf("Vorschau falsch: %+v", prev)
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 
@@ -115,7 +115,7 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 	}
 
 	// Zweiter Jahreslauf mit derselben Datei: nichts zu tun, niemand geht ab.
-	prev2, err := s.computeLusd(ctx, datei, false, false)
+	prev2, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,7 @@ func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 	ohneID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Ohne", nachname: "Datum", klasse: "8b", barcode: "NM-5"})
 
 	datei := nmDatei(nmZeile(2, "Anders", "Jemand", "5a", testdaten.Datum(2014, 4, 4)))
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +151,7 @@ func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 	if len(prev.NichtAbgleichbar) != 1 || prev.NichtAbgleichbar[0].ID != ohneID {
 		t.Fatalf("Schüler ohne Geburtsdatum muss als „nicht abgleichbar“ gemeldet werden: %+v", prev.NichtAbgleichbar)
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatal(err)
 	}
 	var abg bool
@@ -185,14 +185,14 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 	}
 
 	datei := nmDatei(nmZeile(2, "Rück", "Kehrer", "10a", testdaten.Datum(2010, 6, 6)))
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(prev.Rueckkehrer) != 1 || len(prev.Neuzugaenge) != 0 {
 		t.Fatalf("erwartet 1 Rückkehrer, 0 Neuzugänge: %+v", prev)
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "nachname='Kehrer'"); n != 1 {
@@ -223,14 +223,14 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "anna", nachname: "müller", klasse: "7b", barcode: "NM-8", geb: testdaten.Datum(2012, 7, 7), lusdID: &marke})
 
 	datei := nmDatei(nmZeile(2, "Anna", "Müller", "8a", testdaten.Datum(2012, 7, 7)))
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(prev.Mehrdeutig) == 0 || len(prev.Neuzugaenge) != 0 || len(prev.Klassenwechsel) != 0 {
 		t.Fatalf("erwartet Mehrdeutig-Meldung ohne Neuzugang/Wechsel: %+v", prev)
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "lower(nachname)='müller'"); n != 2 {
@@ -261,7 +261,7 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 		nmZeile(2, "Lisa", "Lanis", "6a", testdaten.Datum(2013, 3, 3)),
 		nmZeile(3, "Paul", "Doppel", "7a", testdaten.Datum(2012, 4, 4)),
 	)
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 	if len(prev.NichtAbgleichbar) != 2 {
 		t.Fatalf("nur die beiden Pauls bleiben nicht abgleichbar, waren %d", len(prev.NichtAbgleichbar))
 	}
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "nachname IN ('Lanis','Doppel')"); n != 3 {

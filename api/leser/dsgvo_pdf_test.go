@@ -35,11 +35,11 @@ func TestErzeugeBlatt(t *testing.T) {
 			ElternEmail: "eltern@example.org", IstGesperrt: true, IstVonHandGesperrt: true,
 			Sperrgrund: &sperrgrund, ErstelltAm: time.Now(), AktualisiertAm: time.Now(),
 		},
-		foto:           auskunft.Foto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
-		ausleihen:      []auskunft.Ausleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
-		schaeden:       []auskunft.Schadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
-		vormerkungen:   []auskunft.Vormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
-		auditEintraege: []auskunft.ProtokollEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
+		foto:               auskunft.Foto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
+		ausleihen:          []auskunft.Ausleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
+		schaeden:           []auskunft.Schadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
+		vormerkungen:       []auskunft.Vormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
+		protokollEintraege: []auskunft.ProtokollEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
 	}
 
 	out, err := auskunft.ErzeugeBlatt(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
@@ -54,24 +54,24 @@ func TestErzeugeBlatt(t *testing.T) {
 	}
 }
 
-func dsgvoPDFRequest(t *testing.T, mock pgxmock.PgxPoolIface, pathID string) *httptest.ResponseRecorder {
+func dsgvoPDFAnfrage(t *testing.T, mock pgxmock.PgxPoolIface, pathID string) *httptest.ResponseRecorder {
 	t.Helper()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+pathID+"/dsgvo-auskunft/pdf", nil)
 	req.SetPathValue("id", pathID)
 	rec := httptest.NewRecorder()
-	s.DsgvoAuskunftPDFHandler()(rec, req)
+	s.DSGVOAuskunftPDF()(rec, req)
 	return rec
 }
 
-func TestDsgvoAuskunftPDFHandler_Success(t *testing.T) {
+func TestDSGVOAuskunftPDF_Erfolg(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer mock.Close()
 
-	expectStammdaten(mock)
+	erwarteStammdaten(mock)
 	fotoZeit := time.Now().Add(-24 * time.Hour)
 	mock.ExpectQuery(`SELECT aktualisiert_am FROM schueler_fotos`).
 		WithArgs(dsgvoTestID).
@@ -124,7 +124,7 @@ func TestDsgvoAuskunftPDFHandler_Success(t *testing.T) {
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-	rec := dsgvoPDFRequest(t, mock, dsgvoTestID)
+	rec := dsgvoPDFAnfrage(t, mock, dsgvoTestID)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
@@ -143,20 +143,20 @@ func TestDsgvoAuskunftPDFHandler_Success(t *testing.T) {
 	}
 }
 
-func TestDsgvoAuskunftPDFHandler_MissingID(t *testing.T) {
+func TestDSGVOAuskunftPDF_OhneKennung(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer mock.Close()
 
-	rec := dsgvoPDFRequest(t, mock, "")
+	rec := dsgvoPDFAnfrage(t, mock, "")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
 	}
 }
 
-func TestDsgvoAuskunftPDFHandler_NotFound(t *testing.T) {
+func TestDSGVOAuskunftPDF_Unbekannt(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
@@ -167,7 +167,7 @@ func TestDsgvoAuskunftPDFHandler_NotFound(t *testing.T) {
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id"})) // keine Zeile
 
-	rec := dsgvoPDFRequest(t, mock, dsgvoTestID)
+	rec := dsgvoPDFAnfrage(t, mock, dsgvoTestID)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("erwartet 404, bekam %d: %s", rec.Code, rec.Body.String())
 	}

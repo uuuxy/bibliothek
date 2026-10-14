@@ -53,7 +53,7 @@ func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
 		return rec
 	}
 
-	if rec := alsAdmin(srv.CreateStudentHandler(), http.MethodPost, "/api/schueler",
+	if rec := alsAdmin(srv.LeserAnlegen(), http.MethodPost, "/api/schueler",
 		`{"vorname":"Lena","nachname":"Leserdatei","art":"lehrkraft","email":"lena@leserdatei-anlage.invalid"}`,
 		nil); rec.Code != http.StatusCreated {
 		t.Fatalf("Lehrkraft mit Zugang anlegen: Status %d — %s", rec.Code, rec.Body.String())
@@ -74,7 +74,7 @@ func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
 		t.Errorf("USER_CREATE mit ziel_id des neuen Kontos: %d Einträge, erwartet 1", eintraege)
 	}
 
-	rec := alsAdmin(srv.DsgvoAuskunftHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
+	rec := alsAdmin(srv.DSGVOAuskunft(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
 		map[string]string{"id": leserID})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Auskunft: Status %d — %s", rec.Code, rec.Body.String())

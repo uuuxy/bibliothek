@@ -51,7 +51,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, adresse, nil)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 		rec := httptest.NewRecorder()
-		srv.ListStudentsHandler(studentRepo, repository.NewLMFAbfragen(pool)).ServeHTTP(rec, req)
+		srv.Leserliste(studentRepo, repository.NewLMFAbfragen(pool)).ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("GET %s: Status %d, %s", adresse, rec.Code, rec.Body.String())
 		}
@@ -134,12 +134,12 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	req.SetPathValue("id", lehrkraftID)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 	rec := httptest.NewRecorder()
-	srv.GetStudentProfileHandler(studentRepo).ServeHTTP(rec, req)
+	srv.Leserakte(studentRepo).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Akte einer Lehrkraft: Status %d, %s", rec.Code, rec.Body.String())
 	}
-	var akte StudentProfileResponse
+	var akte leserakteAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &akte); err != nil {
 		t.Fatalf("Antwort lesen: %v (%s)", err, rec.Body.String())
 	}
@@ -167,11 +167,11 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	req2.SetPathValue("id", schuelerID)
 	req2 = req2.WithContext(context.WithValue(req2.Context(), auth.ClaimsContextKey, claims))
 	rec2 := httptest.NewRecorder()
-	srv.GetStudentProfileHandler(studentRepo).ServeHTTP(rec2, req2)
+	srv.Leserakte(studentRepo).ServeHTTP(rec2, req2)
 	if rec2.Code != http.StatusOK {
 		t.Fatalf("Akte eines Schülers: Status %d, %s", rec2.Code, rec2.Body.String())
 	}
-	var schuelerAkte StudentProfileResponse
+	var schuelerAkte leserakteAntwort
 	if err := json.Unmarshal(rec2.Body.Bytes(), &schuelerAkte); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 		req.SetPathValue("id", id)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 		rec := httptest.NewRecorder()
-		srv.LockStudentHandler(repository.NewProtokollAbfragen(pool)).ServeHTTP(rec, req)
+		srv.LeserSperren(repository.NewProtokollAbfragen(pool)).ServeHTTP(rec, req)
 		return rec
 	}
 	gesperrt := func() bool {
@@ -271,7 +271,7 @@ func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 	fotoReq.SetPathValue("barcode_id", "SPERR-1")
 	fotoReq = fotoReq.WithContext(context.WithValue(fotoReq.Context(), auth.ClaimsContextKey, claims))
 	fotoRec := httptest.NewRecorder()
-	srv.ServeStudentPhotoHandler().ServeHTTP(fotoRec, fotoReq)
+	srv.Foto().ServeHTTP(fotoRec, fotoReq)
 	if fotoRec.Code == http.StatusNotFound {
 		t.Error("das Passbild eines Kollegen wird gespeichert, aber nicht ausgeliefert — die Akte zeigt weiter Initialen")
 	}

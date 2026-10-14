@@ -1038,7 +1038,7 @@ zehn mit Typen einer Anfrage oder Antwort, Füll-Funktionen und Helfern mehrerer
 (`lernmittel/lmf_plan_live.go`, `system/betriebsbereitschaft_alarm.go`,
 `mahnwesen/abgaenger_fenster.go`, `mahnwesen/mahnwesen_mail.go`,
 `schaden/bescheid_schnappschuss.go`, `bestellung/bestellmail_anhaenge.go`,
-`bestellung/bestellmail_versand.go`, `leser/student_klasse_regel.go`,
+`bestellung/bestellmail_versand.go`, `leser/leser_klasse_regel.go`,
 `theke/eingabe_anfrage_antwort.go`, `theke/theken_leser.go`). Der Bestand sieht eine Datei nicht, die
 `net/http` nur für Statuswerte einbindet (`theke/nachbuchen_schluessel.go`), und keine Regel
 in einer Datei mit Tür; die sechs Dateien mit den meisten Zeilen ohne Anfrage sind dafür
@@ -1555,7 +1555,7 @@ Welcher Pfad welche Zeile sperrt:
 | Schaden erfassen           | die **Ausleihe**-Zeile — der Schuldner wird aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
 | Rückgabe (Trigger, seit Migration 137) | die **Leser**-Zeile des Ausleihers, **nach** der Ausleihe — gegen die festgelegte Folge ([Kapitel 11](#11-risiken-und-technische-schulden), R2) | `trg_leser_stempel_rueckgabe` (`schema.sql`)          |
 | Verlängerung (seit 24.09.2026) | die **Ausleihe**-Zeile; die neue Frist rechnet Go, nicht mehr SQL      | `verlaengereAusleihe` (`api/theke/ausleihe.go`)                      |
-| Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LockStudentHandler` (`api/leser/student_lock.go`)                   |
+| Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LeserSperren` (`api/leser/leser_sperre.go`)                         |
 | Auflagen zusammenfassen und lösen | erst die Advisory-Sperre der Auflagen, dann die **Titel**-Zeilen, nach `id` geordnet | `sperreAuflagen` (`repository/auflagen.go`)   |
 | Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`repository/schlagworte_pflege.go`) |
 | Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `repository/bescheid_*.go`, `inventurlauf_abschluss.go`, `schueler_zusammenfuehren.go`, `bestellung_mittel.go`, `forderung_erledigen.go` |
@@ -2579,7 +2579,7 @@ wenn man ihn einmal gebraucht hat.
   Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren. Bleibt eine Probe grün,
   misst der Test den Fall nicht. So aufgefallen am 09.10.2026: Ein Test las geleerte Spalten
   mit `coalesce(spalte, '')` zurück und unterschied NULL nicht von leerem Text; die Regel „leer
-  wird NULL" prüft seitdem ein Test mit `IS NULL` (`api/leser/student_update_pg_test.go`). Reicht eine
+  wird NULL" prüft seitdem ein Test mit `IS NULL` (`api/leser/leser_aendern_pg_test.go`). Reicht eine
   Tür mehrere Werte gleichen Typs weiter (Fristen, Titel und Autor), gehört je Wert eine Probe
   mit dem Nachbarwert dazu: Ein Test, der jeden Wert irgendwo im Text sucht, bleibt bei
   vertauschten Feldern grün ([sweeps.md](sweeps.md), „Erwartung ohne Stelle").
@@ -3221,8 +3221,8 @@ verhindert, dass ein Schüler seine Art wechselt; innerhalb des Kollegiums läss
 
 **Fundstelle.** Migrationen 123–125, `docs/schreibpfade_gegen_sicht_test.go`,
 `db/sicht_schueler_vollstaendig_pg_test.go`. Der frühere Umweg ist seit Migration 072
-geschlossen; `api/leser/student_klasse_regel.go` weist `lehrer` als Klassennamen an beiden Türen
-ab (`api/leser/student_create.go`, `api/leser/student_update.go`).
+geschlossen; `api/leser/leser_klasse_regel.go` weist `lehrer` als Klassennamen an beiden Türen
+ab (`api/leser/leser_anlegen.go`, `api/leser/leser_aendern.go`).
 
 ---
 
@@ -3738,9 +3738,9 @@ Dateien, `inventur/` 6.547 und `internal/service` 5.246. Die Dateien von `api/`,
 13.10.2026 nach dem Umzug aller Themen: Die Hälfte hat höchstens 125 Zeilen, neun von zehn
 höchstens 208, die größten sind `router.go` (379) und `middleware.go` (366). Von den 137
 Dateien der Themen hat die Hälfte höchstens 112 Zeilen, neun von zehn höchstens 277, vier
-haben über 400 (gezählt am 13.10.2026 abends): `leser/student_update.go` (555),
+haben über 400 (gezählt am 13.10.2026 abends): `leser/leser_aendern.go` (555),
 `lernmittel/lmf_plan.go` (490), `mahnwesen/mahnlisten_versand.go` (423) und
-`leser/student_create.go` (420). Am Morgen desselben Tages waren es sechs, die drei größten
+`leser/leser_anlegen.go` (420). Am Morgen desselben Tages waren es sechs, die drei größten
 `lernmittel/lmf_plan.go` (692), die Türen des Bescheids in einer Datei (623) und
 `bestellung/bestellbericht.go` (567): Der Erzeuger des Bestellberichts steht jetzt
 in `pdf/` (die Datei der Tür hat 189 Zeilen), die Regeln des LMF-Plans in

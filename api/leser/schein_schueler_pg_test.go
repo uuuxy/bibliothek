@@ -31,7 +31,7 @@ import (
 // über die Klasse „Lehrer" in die Schülerdatei zurückkommen — an BEIDEN Eingabetüren.
 
 // TestKlasseLehrerIstGesperrt beweist beide Eingabetüren (Zwei-Türen-Regel):
-// POST /api/schueler und PATCH-baueSchuelerUpdate lehnen den Spezialwert ab,
+// POST /api/schueler und PATCH-baueLeserAenderung lehnen den Spezialwert ab,
 // bevor eine Datenbank berührt wird.
 func TestKlasseLehrerIstGesperrt(t *testing.T) {
 	s := &Tueren{Basis: &tuer.Basis{}}
@@ -40,16 +40,16 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 		strings.NewReader(`{"vorname":"Neu","nachname":"Lehrkraft","klasse":" Lehrer ","barcode_id":"X-1","geburtsdatum":"1980-01-01"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	s.CreateStudentHandler()(w, req)
+	s.LeserAnlegen()(w, req)
 	// Der Wegweiser nennt die Rolle, unter der eine Lehrkraft angelegt wird (Wortlaut:
-	// student_klasse_regel_test.go). „Benutzer & Rechte" steht im JSON als &.
+	// leser_klasse_regel_test.go). „Benutzer & Rechte" steht im JSON als &.
 	if w.Code != 400 || !strings.Contains(w.Body.String(), "Rolle Kollegium") {
 		t.Errorf("POST mit klasse='Lehrer' muss 400 mit Wegweiser liefern, got %d: %s", w.Code, w.Body.String())
 	}
 
 	klasse := "LEHRER"
 	w2 := httptest.NewRecorder()
-	if _, ok := baueSchuelerUpdate(w2, &patchStudentRequest{Klasse: &klasse}); ok {
+	if _, ok := baueLeserAenderung(w2, &leserAendernAnfrage{Klasse: &klasse}); ok {
 		t.Error("PATCH mit klasse='LEHRER' muss abgelehnt werden")
 	}
 	if w2.Code != 400 {
@@ -57,10 +57,10 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 	}
 }
 
-// TestZwillingeAusDerLusd (Befund F8): Zwei ECHTE Schüler mit gleichem Namen
+// TestZwillingeAusDerLUSD (Befund F8): Zwei ECHTE Schüler mit gleichem Namen
 // und Geburtstag existieren nebeneinander, wenn beide aus der LUSD kommen —
 // während die Handeingabe eines Namens-Datums-Doppels hart abgewiesen bleibt.
-func TestZwillingeAusDerLusd(t *testing.T) {
+func TestZwillingeAusDerLUSD(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	testdaten.LeereBestandsdaten(t, pool)

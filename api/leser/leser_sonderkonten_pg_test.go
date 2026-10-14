@@ -35,7 +35,7 @@ func TestSonderkonten_AnlegenUndAkte(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/api/schueler", strings.NewReader(rumpf))
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 		rec := httptest.NewRecorder()
-		srv.CreateStudentHandler()(rec, req)
+		srv.LeserAnlegen()(rec, req)
 		return rec
 	}
 	patch := func(t *testing.T, id, rumpf string) *httptest.ResponseRecorder {
@@ -44,7 +44,7 @@ func TestSonderkonten_AnlegenUndAkte(t *testing.T) {
 		req.SetPathValue("id", id)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 	zeile := func(t *testing.T, nachname string) (id, art string, konten int) {

@@ -32,9 +32,9 @@ func TestStammdaten_OhneAdresseKein500(t *testing.T) {
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	st, err := srv.dsgvoQueryStammdaten(ctx, id)
+	st, err := srv.dsgvoStammdaten(ctx, id)
 	if err != nil {
-		t.Fatalf("dsgvoQueryStammdaten darf bei fehlender Adresse nicht scheitern (500-Regression): %v", err)
+		t.Fatalf("dsgvoStammdaten darf bei fehlender Adresse nicht scheitern (500-Regression): %v", err)
 	}
 	if st == nil {
 		t.Fatal("Stammdaten unerwartet nil")

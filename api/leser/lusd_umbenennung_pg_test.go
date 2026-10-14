@@ -43,7 +43,7 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	}
 	datei := lusd.Datei{Zeilen: zeilen, Modus: lusd.ModusName}
 
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 		t.Errorf("Vorschau nennt Karenz %d, erwartet Vorgabe 90", prev.KarenzTage)
 	}
 
-	res, err := s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
+	res, err := s.berechneLUSDLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
 		Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: annaID}}})
 	if err != nil {
 		t.Fatalf("Apply: %v", err)
@@ -95,7 +95,7 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 		t.Error("die offene Ausleihe hängt nicht mehr an Anna")
 	}
 
-	prev2, err := s.computeLusd(ctx, datei, false, false)
+	prev2, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Anna", "Schulz", "06F1", geb, nil)}}
 
 	err := func() error {
-		_, err := s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
+		_, err := s.berechneLUSDLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
 			Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: "00000000-0000-0000-0000-000000000000"}}})
 		return err
 	}()
@@ -128,7 +128,7 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 		t.Fatal("die abgewiesene Wahl hat trotzdem geschrieben")
 	}
 
-	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply ohne Wahl: %v", err)
 	}
 	if n := zaehle(t, pool, "nachname IN ('Müller','Schulz')"); n != 2 {
@@ -157,14 +157,14 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 	benID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Ben", Nachname: "Meier", Klasse: "06B", Barcode: "UMB-3", Geburtsdatum: testdaten.Datum(2012, 1, 1)})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Ben", "Meier", "07B", testdaten.Datum(2012, 1, 10), nil)}}
 
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(prev.Umbenennungen) != 1 || prev.Umbenennungen[0].Sicher || prev.Umbenennungen[0].NeuGeburtsdatum != "2012-01-10" {
 		t.Fatalf("erwartet ein vermutliches Paar mit neuem Datum: %+v", prev.Umbenennungen)
 	}
-	if _, err := s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
+	if _, err := s.berechneLUSDLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
 		Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: benID}}}); err != nil {
 		t.Fatal(err)
 	}
@@ -190,14 +190,14 @@ func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {
 	altID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Cem", Nachname: "Yilmaz", Klasse: "08C", Barcode: "UMB-4", Geburtsdatum: geb, SchulEintrittAm: eintritt, IstAbgaenger: true})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Cem", "Yılmaz-Kaya", "09C", geb, eintritt)}}
 
-	prev, err := s.computeLusd(ctx, datei, false, false)
+	prev, err := s.berechneLUSD(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(prev.Umbenennungen) != 1 || !prev.Umbenennungen[0].WarAbgaenger || !prev.Umbenennungen[0].Sicher {
 		t.Fatalf("erwartet sicheres Paar mit früherem Abgänger: %+v", prev.Umbenennungen)
 	}
-	if _, err := s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
+	if _, err := s.berechneLUSDLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
 		Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: altID}}}); err != nil {
 		t.Fatal(err)
 	}

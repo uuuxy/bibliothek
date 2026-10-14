@@ -11,7 +11,7 @@
 -- (repository/sequence_pg_test.go, api/leser/leser_schul_email_nachtragen_pg_test.go,
 -- repository/leser_zusammenfuehren_kollegium_pg_test.go):
 --
---   1. Der PATCH der Akte leert die Spalte (api/leser/student_update.go).
+--   1. Der PATCH der Akte leert die Spalte (api/leser/leser_aendern.go).
 --   2. Die Benutzerverwaltung schreibt ein leeres Feld als NULL (repository.UpdateUser).
 --   3. Das Zusammenführen hängt ein aktives Konto an eine Zeile ohne Nummer
 --      (repository.ZusammenfuehrenSchueler: Das Ziel behält seine Nummer, auch keine).

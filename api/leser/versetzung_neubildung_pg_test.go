@@ -43,7 +43,7 @@ func TestVersetzungKlassenleitungEntfaelltBeiNeubildung(t *testing.T) {
 	}
 
 	echt := versetzungAusfuehren(t, pool, false)
-	if echt.MappingVersetzt != 3 || echt.MappingEntfernt != 4 || len(echt.MappingKonflikte) != 0 {
+	if echt.ZuordnungenVersetzt != 3 || echt.ZuordnungenEntfernt != 4 || len(echt.Zuordnungskonflikte) != 0 {
 		t.Fatalf("Lauf: erwartet 3 hochgerückt, 4 entfallen, keine Konflikte — %+v", echt)
 	}
 

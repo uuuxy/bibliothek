@@ -88,7 +88,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	// Abgerufen vom Administrator: Die Auskunft über einen Leser mit Konto verlangt seit dem
-	// 28.09.2026 manage_users (TestDsgvoAuskunft_KontoVerlangtKontenrecht).
+	// 28.09.2026 manage_users (TestDSGVOAuskunft_KontoVerlangtKontenrecht).
 	adminKonto, _ := legeKontoAn("Ada", "ada@auskunft-kollege.invalid")
 	rufe := func(t *testing.T, h http.HandlerFunc, pfad string) *httptest.ResponseRecorder {
 		t.Helper()
@@ -104,7 +104,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 		return rec
 	}
 
-	rec := rufe(t, srv.leser().DsgvoAuskunftHandler(), "/api/schueler/"+leser+"/dsgvo-auskunft")
+	rec := rufe(t, srv.leser().DSGVOAuskunft(), "/api/schueler/"+leser+"/dsgvo-auskunft")
 	var a auskunft.Antwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
@@ -153,7 +153,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 		}
 	}
 
-	pdfRec := rufe(t, srv.leser().DsgvoAuskunftPDFHandler(), "/api/schueler/"+leser+"/dsgvo-auskunft/pdf")
+	pdfRec := rufe(t, srv.leser().DSGVOAuskunftPDF(), "/api/schueler/"+leser+"/dsgvo-auskunft/pdf")
 	blatt := strings.Join(pdftest.Texte(t, pdfRec.Body.Bytes()), "\n")
 	for _, soll := range []string{"(Lehrkraft)", "kora@auskunft-kollege.invalid", "Kanari-Wunschtitel", "Konto angelegt"} {
 		if !strings.Contains(blatt, soll) {

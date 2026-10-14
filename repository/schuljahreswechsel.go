@@ -41,7 +41,7 @@ func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db Datenbank) (int, e
 //
 // Zwei Regeln hält die Anweisung:
 //   - klasse ist NOT NULL (schema.sql): Abgänger bekommen 'ABG' wie beim LUSD-Import
-//     (computeLusdChanges), damit beide Wege dieselbe Konvention schreiben.
+//     (berechneLUSDAenderungen), damit beide Wege dieselbe Konvention schreiben.
 //   - lpad erhält führende Nullen ('05a' → '06a'), ohne beim Stellenwechsel zu kürzen
 //     ('09' → '10'; greatest() verhindert, dass lpad abschneidet).
 var sqlVersetzeSchueler = `

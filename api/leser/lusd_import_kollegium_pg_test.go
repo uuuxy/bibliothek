@@ -46,7 +46,7 @@ import (
 // Test (TestLUSDBestandKenntNurSchueler). Vier Schranken hintereinander, jede mit eigenem
 // Nachweis — Bestandsabfrage, Bestätigungsstempel, die Sicht beim Schreiben und der CHECK
 // in der Datenbank.
-func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
+func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -120,9 +120,9 @@ func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, admin))
 		rec := httptest.NewRecorder()
 		if pfad == "/api/lusd/import" {
-			srv.PostLusdImportHandler().ServeHTTP(rec, req)
+			srv.LUSDImport().ServeHTTP(rec, req)
 		} else {
-			srv.PostLusdPreviewHandler().ServeHTTP(rec, req)
+			srv.LUSDVorschau().ServeHTTP(rec, req)
 		}
 		var res lusd.Vorschau
 		if rec.Code == http.StatusOK {

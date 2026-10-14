@@ -41,7 +41,7 @@ func TestKollegeLoeschen(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: alsKonto, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.DeleteStudentHandler(auditRepo)(rec, req)
+		srv.LeserLoeschen(auditRepo)(rec, req)
 		return rec
 	}
 
@@ -134,7 +134,7 @@ func TestKollegeLoeschen(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.GetDeletedStudentsHandler()(rec, req)
+		srv.Papierkorb()(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Papierkorb: %d %s", rec.Code, rec.Body.String())
 		}
@@ -156,7 +156,7 @@ func TestKollegeLoeschen(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.RestoreStudentHandler()(rec, req)
+		srv.LeserWiederherstellen()(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("wiederherstellen: %d %s", rec.Code, rec.Body.String())
 		}

@@ -9,18 +9,18 @@ import (
 // Testsichten auf den LUSD-Import: der Lauf über den Pool des Servers, mit der Karenzzeit
 // aus den Einstellungen, wie die Tür ihn fährt.
 
-// computeLusdLauf fährt den Lauf mit den genannten Vorgaben.
-func (s *Tueren) computeLusdLauf(ctx context.Context, datei lusd.Datei, lauf lusd.Lauf) (*lusd.Vorschau, error) {
-	lauf.KarenzTage = s.abgaengerKarenzTage(ctx)
-	return lusd.FuehreAus(ctx, s.DB.Pool, datei, lauf)
+// berechneLUSDLauf fährt den Lauf mit den genannten Vorgaben.
+func (t *Tueren) berechneLUSDLauf(ctx context.Context, datei lusd.Datei, lauf lusd.Lauf) (*lusd.Vorschau, error) {
+	lauf.KarenzTage = t.abgaengerKarenzTage(ctx)
+	return lusd.FuehreAus(ctx, t.DB.Pool, datei, lauf)
 }
 
-// computeLusd ist der Lauf ohne Umbenennungs-Wahl.
-func (s *Tueren) computeLusd(ctx context.Context, datei lusd.Datei, apply bool, allowMassGraduation bool) (*lusd.Vorschau, error) {
-	return s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: apply, MassenabgangBestaetigt: allowMassGraduation})
+// berechneLUSD ist der Lauf ohne Umbenennungs-Wahl.
+func (t *Tueren) berechneLUSD(ctx context.Context, datei lusd.Datei, apply bool, allowMassGraduation bool) (*lusd.Vorschau, error) {
+	return t.berechneLUSDLauf(ctx, datei, lusd.Lauf{Anwenden: apply, MassenabgangBestaetigt: allowMassGraduation})
 }
 
-// computeLusdChanges ist computeLusd für Zeilen im Abgleich über die LUSD-ID.
-func (s *Tueren) computeLusdChanges(ctx context.Context, records []lusd.Zeile, apply bool, allowMassGraduation bool) (*lusd.Vorschau, error) {
-	return s.computeLusd(ctx, lusd.Datei{Zeilen: records, Modus: lusd.ModusID}, apply, allowMassGraduation)
+// berechneLUSDAenderungen ist berechneLUSD für Zeilen im Abgleich über die LUSD-ID.
+func (t *Tueren) berechneLUSDAenderungen(ctx context.Context, records []lusd.Zeile, apply bool, allowMassGraduation bool) (*lusd.Vorschau, error) {
+	return t.berechneLUSD(ctx, lusd.Datei{Zeilen: records, Modus: lusd.ModusID}, apply, allowMassGraduation)
 }

@@ -33,7 +33,7 @@ import (
 // fkAuskunft ruft die Auskunft eines Lesers über ihren Handler ab.
 func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.Antwort {
 	t.Helper()
-	rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().DsgvoAuskunftHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
+	rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().DSGVOAuskunft(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
 		map[string]string{"id": leserID})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Auskunft: Status %d — %s", rec.Code, rec.Body.String())
@@ -218,7 +218,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	// blatt liest den Text der gedruckten Auskunft.
 	blatt := func(t *testing.T, leserID string) string {
 		t.Helper()
-		rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().DsgvoAuskunftPDFHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft/pdf", "",
+		rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().DSGVOAuskunftPDF(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft/pdf", "",
 			map[string]string{"id": leserID})
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Auskunft als PDF: Status %d — %s", rec.Code, rec.Body.String())
@@ -279,7 +279,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 			VALUES ('lehrkraft', 'Nora', 'Nachtrag', 'KE-AUSWEIS-1') RETURNING id::text`).Scan(&leserID); err != nil {
 			t.Fatalf("Leser anlegen: %v", err)
 		}
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().PatchStudentHandler(auditRepo), http.MethodPatch, "/api/schueler/"+leserID,
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().LeserAendern(auditRepo), http.MethodPatch, "/api/schueler/"+leserID,
 			`{"vorname":"Nora","nachname":"Nachtrag","email":"`+email+`"}`, map[string]string{"id": leserID}); rec.Code != http.StatusOK {
 			t.Fatalf("Schul-E-Mail nachtragen: Status %d — %s", rec.Code, rec.Body.String())
 		}

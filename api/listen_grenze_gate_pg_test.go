@@ -44,7 +44,7 @@ import (
 var listenGrenze = map[string]string{
 	"GET /api/audit $":            "LIMIT 1000, die jüngsten zuerst (auditLogMaxZeilen, api/system/protokoll.go)",
 	"GET /api/admin/auditlog $":   "LIMIT 1000, die jüngsten zuerst (api/system/verwaltungs_protokoll.go)",
-	"GET /api/schueler/deleted $": "LIMIT 1000, die jüngsten Löschungen zuerst (papierkorbLimit, api/leser/student_deleted.go)",
+	"GET /api/schueler/deleted $": "LIMIT 1000, die jüngsten Löschungen zuerst (papierkorbGrenze, api/leser/papierkorb.go)",
 	"GET /api/books $.data": "Kappung bei 50000 Titeln mit Warnung im Log (listBooksSicherheitsLimit, " +
 		"inventur/datenbank_buecher_leser.go)",
 	"GET /api/signaturen $": "keine Obergrenze in der Abfrage; eine Zeile je Regaladresse (GROUP BY über die " +

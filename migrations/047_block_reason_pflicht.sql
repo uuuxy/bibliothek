@@ -8,7 +8,7 @@
 --
 -- Alle automatischen Sperr-Pfade setzen ihren Grund selbst mit:
 --   * Abgänger-Sync (api/lusd_apply.go: sperreAbgaenger / anonymisiereAbgaenger),
---   * Schuljahreswechsel (api/leser/student_promotion.go),
+--   * Schuljahreswechsel (api/leser/schuljahreswechsel.go),
 --   * Soft-Delete (repository/audit_users.go: DeleteStudent).
 -- Die MANUELLE Sperre läuft über is_manually_blocked und ist NICHT betroffen.
 --

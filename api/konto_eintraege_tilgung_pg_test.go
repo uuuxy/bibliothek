@@ -124,7 +124,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.leser().DeleteStudentHandler(auditRepo)(rec, req)
+		srv.leser().LeserLoeschen(auditRepo)(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Leserzeile in den Papierkorb: Status %d — %s", rec.Code, rec.Body.String())
 		}

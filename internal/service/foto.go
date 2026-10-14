@@ -29,7 +29,7 @@ var (
 // Ausweisnummer hat.
 func SchreibeLeserFoto(ctx context.Context, pool db.PgxPoolIface, leserID string, base64Text string) (string, error) {
 	// Die Ausweisnummer kommt aus der Tabelle leser, nicht aus der Sicht schueler: Die Akte
-	// bietet den Kamera-Knopf jedem Leser an, und die Auslieferung (api/leser/photo_serve.go)
+	// bietet den Kamera-Knopf jedem Leser an, und die Auslieferung (api/leser/foto.go)
 	// liest das Bild über dieselbe Tabelle (TestSchreibeLeserFoto_AuchFuerKollegen). Ein
 	// Kollege aus der Selbstanmeldung hat noch keine Nummer: Das Bild wird gespeichert, eine
 	// Adresse gibt es erst mit der Nummer.
