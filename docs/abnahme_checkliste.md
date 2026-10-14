@@ -1,6 +1,6 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
-> Stand: 2026-10-08. Für die Abnahme mit dem Sekretariat.
+> Stand: 2026-10-14. Für die Abnahme mit dem Sekretariat.
 > Alle fünf Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie
@@ -13,9 +13,10 @@
 > Dort entscheidet ein Mensch über eine einzelne Person, und die Freischaltung ist
 > zurücknehmbar.
 >
-> **Ausnahme beachten:** Flow 1–3 und 5 lassen sich nachbessern, Flow 4 (Altbestand-Etiketten)
-> **nicht**. Dort ist die Vorschau-Zahl die einzige Kontrolle vor einer endgültigen
-> Änderung — sie verdient einen zweiten Blick.
+> **Flow 4 genau ansehen:** Ein zu später Stichtag lässt die frische Lieferung still aus der
+> Liste der fehlenden Etiketten verschwinden. Zurückholen lässt sie sich nur Exemplar für
+> Exemplar und nur, wenn es jemand bemerkt; die Vorschau-Zahl verdient deshalb einen zweiten
+> Blick.
 
 ---
 
@@ -124,11 +125,12 @@ Bestand nach dem Erledigen stimmt.
 
 ---
 
-## 4. Altbestand-Etiketten aufräumen (einmalig, **nicht umkehrbar**)
+## 4. Altbestand-Etiketten aufräumen (einmalig)
 
-⚠️ **Der einzige Flow ohne Rückweg.** Alle anderen Aktionen dieser Checkliste lassen sich
-nachbessern — diese nicht. Es gibt keinen Knopf, der einen zu weit gefassten Stichtag
-zurücknimmt. Vorher ein Backup ziehen.
+⚠️ **Der Rückweg geht nur Exemplar für Exemplar.** Kein Knopf nimmt einen zu weit gefassten
+Stichtag als Ganzes zurück. Druck-Center → **Fehlende Etiketten** → **Erledigt** zeigt die
+vermerkten Exemplare, die neuesten zuerst; markieren und **Wieder als offen vermerken**. Für
+eine Lieferung genügt das, für den halben Bestand nicht. Vorher ein Backup ziehen.
 
 **Mit dem Neuaufbau am Schulserver entfällt dieser Flow** ([OFFEN.md](OFFEN.md) 7.7): Die
 Littera-Übernahme setzt den Vermerk selbst, weil der Altbestand seine Etiketten trägt. Gebraucht
@@ -156,7 +158,8 @@ Betreiber — die Software kann es nicht wissen und rät deshalb bewusst nicht.
 frische Lieferung, die noch gar kein Etikett hat, still aus der Liste — und niemand
 bemerkt es, weil eine leere Liste wie ein erledigter Stapel aussieht. Im Zweifel den
 Stichtag **früher** setzen: Zu wenig aufgeräumt ist folgenlos (die Zeilen bleiben sichtbar
-und lassen sich jederzeit erneut aufräumen), zu viel aufgeräumt ist es nicht.
+und lassen sich jederzeit erneut aufräumen), zu viel aufgeräumt muss Exemplar für Exemplar
+zurückgeholt werden.
 
 **Eingebaute Bremsen:**
 
