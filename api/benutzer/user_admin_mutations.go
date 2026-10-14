@@ -12,22 +12,6 @@ import (
 	"bibliothek/repository"
 )
 
-// auditiereBenutzerMutation protokolliert Anlage/Änderung eines Kontos revisionssicher.
-//
-// Bis zum 16.08.2026 hinterließen Konten-Anlage und Rollenvergabe KEINE Spur — als auf
-// Prod vier aktive Admin-Konten auftauchten, war nicht mehr feststellbar, wer sie wann
-// angelegt hatte (der Alarm-Mail-Vorfall). Best effort: Ein Audit-Fehler bricht die
-// Mutation nicht ab, aber er steht im Log.
-func (s *Tueren) auditiereBenutzerMutation(r *http.Request, aktion string, details map[string]any) {
-	s.auditiereKonto(r.Context(), aktion, details)
-}
-
-// auditiereKonto schreibt einen Eintrag über ein Konto mit der angemeldeten Person als
-// Handelnder — für Türen, die nur den Kontext in der Hand haben.
-func (s *Tueren) auditiereKonto(ctx context.Context, aktion string, details map[string]any) {
-	s.ProtokolliereVerwaltung(ctx, aktion, details)
-}
-
 // CreateUserRequest holds payload data for user creation.
 type CreateUserRequest struct {
 	BarcodeID string `json:"barcode_id"`
@@ -191,8 +175,10 @@ func (s *Tueren) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 		return
 	}
 
-	// Der Eintrag nennt den Stand nach der Änderung, auch für Felder, die der Rumpf nicht nannte.
-	s.auditiereBenutzerMutation(r, "USER_UPDATE", map[string]any{
+	// Konten und Rollen stehen im Protokoll, damit sich feststellen lässt, wer ein Konto wann
+	// angelegt oder geändert hat. Der Eintrag nennt den Stand nach der Änderung, auch für
+	// Felder, die der Rumpf nicht nannte.
+	s.ProtokolliereVerwaltung(r.Context(), "USER_UPDATE", map[string]any{
 		"ziel_id": id, "email": stand.Email, "rolle": stand.Rolle, "aktiv": stand.Aktiv,
 	})
 

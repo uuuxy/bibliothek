@@ -142,7 +142,7 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 	// Audit: Ein Konto, das ohne Administrator entstanden ist, braucht erst recht eine
 	// Spur — sonst steht später eine Zeile in benutzer, von der niemand sagen kann, wer
 	// sie wann angelegt hat (der Vorfall mit den vier Admin-Konten). admin_id ist das
-	// neue Konto selbst: Es hat sich angemeldet. Best effort wie auditiereBenutzerMutation.
+	// neue Konto selbst: Es hat sich angemeldet. Best effort wie tuer.Basis.ProtokolliereVerwaltung.
 	// ziel_id trägt die Kennung des Kontos wie bei USER_CREATE: admin_id leert sich, wenn das
 	// Konto gelöscht wird, und die Auskunft fände den Eintrag dann nicht mehr.
 	details, err := json.Marshal(map[string]any{"ziel_id": u.id, "email": strings.ToLower(email), "rolle": "kollegium", "aktiv": false})
