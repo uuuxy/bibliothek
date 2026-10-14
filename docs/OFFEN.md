@@ -177,7 +177,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] Unter `internal/` die neun Pakete, die `repository` nicht einbinden.
 - [x] `repository/`.
 - [ ] Die übrigen acht Pakete unter `internal/` ohne `internal/service` (Reihenfolge in 5.66).
-- [ ] `internal/service`.
+- [x] `internal/service`.
 - [ ] `api/tuer`, die zwölf Themen unter `api/`, `api/`.
 - [ ] `inventur/`, `auth/`, `jobs/`, `pdf/`, `mailservice/`, `db/`, `sse/`, `apierrors/`, `cmd/`
   und das Wurzelpaket.
@@ -444,11 +444,12 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 41 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+**Fertig sind 42 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
 gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
 Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
 `middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), `repository` und
-von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera` und `lusd`.
+von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera`, `lusd` und
+`service`.
 
 **Ein Paket ist fertig, wenn:**
 
@@ -505,12 +506,13 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- Testdateien: 612 Kommentarzeilen mit Datum in 324 von 905 Dateien (gezählt am 14.10.2026 an
-  Zeilen, die ganz Kommentar sind); 29 Dateien vergleichen mit testify, das Regelwerk lässt
-  nur das Paket `testing` zu (Decisions, „Use package testing"). In `repository/` sind die
-  Tests umgestellt; dort bleiben acht Zeilen mit Datum, fünf nennen Testdaten (ein Termin, ein
-  Ferientag) und drei stehen im Kopf der datierten Nachstellungen hinter dem Build-Tag
-  `raster`.
+- Testdateien: 500 Kommentarzeilen mit Datum in 270 von 907 Dateien (gezählt am 14.10.2026
+  nach `internal/service` an Zeilen, die ganz Kommentar sind, ohne das Datum einer Quelle); 29
+  Dateien vergleichen mit testify, das Regelwerk lässt nur das Paket `testing` zu (Decisions,
+  „Use package testing"). In `repository/` sind die Tests umgestellt; dort bleiben acht Zeilen
+  mit Datum, fünf nennen Testdaten (ein Termin, ein Ferientag) und drei stehen im Kopf der
+  datierten Nachstellungen hinter dem Build-Tag `raster`. In `internal/service` bleiben 15,
+  alle Testdaten (feste Uhr, Ferien, Planwochen).
 - Fehlertexte: 59 Stellen tragen `//nolint:staticcheck` (ST1005), weil der Text des Fehlers
   die Meldung an der Oberfläche ist. Das Regelwerk schreibt Fehlertexte klein und ohne
   Satzzeichen (Decisions, „Error strings"). Den Satz vom Fehler trennt schon
