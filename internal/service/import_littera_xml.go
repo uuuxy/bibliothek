@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"bibliothek/db"
 	"bibliothek/internal/littera"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/lmf"
@@ -25,77 +24,66 @@ import (
 // Serverproblem.
 var ErrKeinKatalogisat = errors.New("die Datei ist kein Littera-Katalogisat-Export (erwartet wird MAB2-XML mit <Katalogisate>-Wurzel)")
 
-// Katalogisate repräsentiert die Wurzel des MAB2 XML-Exports
-type Katalogisate struct {
-	XMLName xml.Name      `xml:"Katalogisate"`
-	Items   []Katalogisat `xml:"Katalogisat"`
+// katalogisate repräsentiert die Wurzel des MAB2 XML-Exports
+type katalogisate struct {
+	XMLName     xml.Name      `xml:"Katalogisate"`
+	Datensaetze []katalogisat `xml:"Katalogisat"`
 }
 
-// Katalogisat bündelt die Felder für einen Datensatz (ein Buch/Medium).
-type Katalogisat struct {
-	Felder []Feld `xml:"Feld"`
+// katalogisat bündelt die Felder für einen Datensatz (ein Buch/Medium).
+type katalogisat struct {
+	Felder []feld `xml:"Feld"`
 }
 
-// Feld repräsentiert ein einzelnes XML-Feld aus Littera mit MAB-Code und Wert.
-type Feld struct {
+// feld repräsentiert ein einzelnes XML-feld aus Littera mit MAB-Code und Wert.
+type feld struct {
 	MAB     string `xml:"MAB,attr"`
 	Reihung string `xml:"Reihung,attr"`
-	Value   string `xml:",chardata"`
+	Wert    string `xml:",chardata"`
 }
 
-// ImportService stellt Geschäftslogik für Datenimporte bereit.
-type ImportService struct {
-	bookRepo repository.KatalogAbfragen
-	db       db.PgxPoolIface
-}
-
-// NewImportService erstellt einen neuen ImportService.
-func NewImportService(bookRepo repository.KatalogAbfragen, dbPool db.PgxPoolIface) *ImportService {
-	return &ImportService{bookRepo: bookRepo, db: dbPool}
-}
-
-// ParseLitteraXML liest die MAB2-XML-Datei ein und speichert die Bücher in der Datenbank.
+// ImportiereLitteraXML liest die MAB2-XML-Datei ein und speichert die Bücher in der Datenbank.
 // Ist die Datei kein Katalogisat (falsche Wurzel, kaputtes XML, keine Datensätze),
 // kommt ein ErrKeinKatalogisat zurück.
-func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) (int, error) {
-	decoder := xml.NewDecoder(xmlData)
+func (d *ImportDienst) ImportiereLitteraXML(ctx context.Context, datei io.Reader) (int, error) {
+	xmlLeser := xml.NewDecoder(datei)
 	// Littera exportiert je nach Version auch ISO-8859-1/Windows-1252 —
 	// ohne CharsetReader bricht der Decoder bei deklarierten Nicht-UTF-8-Encodings ab.
-	decoder.CharsetReader = charset.NewReaderLabel
-	var root Katalogisate
+	xmlLeser.CharsetReader = charset.NewReaderLabel
+	var wurzel katalogisate
 
 	// Komplette XML-Struktur einlesen
-	if err := decoder.Decode(&root); err != nil {
+	if err := xmlLeser.Decode(&wurzel); err != nil {
 		return 0, fmt.Errorf("%w: %v", ErrKeinKatalogisat, err)
 	}
-	if len(root.Items) == 0 {
+	if len(wurzel.Datensaetze) == 0 {
 		return 0, ErrKeinKatalogisat
 	}
 
 	// Titel sammeln und in EINEM gepipelineten Batch schreiben (statt je Titel
 	// eine eigene DB-Rundreise) — der frühere N+1 ließ den Import mit ~15.000
 	// Titeln gegen eine nicht-lokale DB in Client-Timeouts laufen.
-	books := make([]repository.Titel, 0, len(root.Items))
+	titelListe := make([]repository.Titel, 0, len(wurzel.Datensaetze))
 
-	for _, kat := range root.Items {
-		book, ok := bookTitleAusFelder(parseKatalogisat(kat))
+	for _, kat := range wurzel.Datensaetze {
+		titel, ok := titelAusFeldern(leseKatalogisat(kat))
 		if !ok {
 			continue
 		}
-		books = append(books, book)
+		titelListe = append(titelListe, titel)
 	}
 
-	importedCount, err := s.bookRepo.SchreibeTitel(ctx, books)
+	anzahl, err := d.katalogAbfragen.SchreibeTitel(ctx, titelListe)
 	if err != nil {
 		return 0, err
 	}
 
-	return importedCount, nil
+	return anzahl, nil
 }
 
 // litteraFelder bündelt die aus einem Katalogisat extrahierten MAB-Rohfelder.
 type litteraFelder struct {
-	autor, titel, ort, verlag, isbn, jahrStr, signatur, standort string
+	autor, titel, ort, verlag, isbn, jahrText, signatur, standort string
 	// zielgruppen (MAB 070b: „Sekundarstufe 1", „Lehrer") und schlagwoerter (MAB 710:
 	// „Physik", „Schulbuch", …) — bis zum 02.09.2026 vom Import weggeworfen, obwohl
 	// zwei Drittel der Titel Schlagwörter tragen und sie das Fach nennen. Seit dem
@@ -107,46 +95,46 @@ type litteraFelder struct {
 	schlagwoerter []string
 }
 
-// parseKatalogisat extrahiert die relevanten MAB-Felder eines Datensatzes.
-func parseKatalogisat(kat Katalogisat) litteraFelder {
+// leseKatalogisat extrahiert die relevanten MAB-Felder eines Datensatzes.
+func leseKatalogisat(kat katalogisat) litteraFelder {
 	var f litteraFelder
-	for _, feld := range kat.Felder {
-		mab := strings.TrimSpace(feld.MAB)
+	for _, eintrag := range kat.Felder {
+		mab := strings.TrimSpace(eintrag.MAB)
 		// Erst die Zeichen, dann der Rand, wie in der Übernahme: Ein Titel nur aus
 		// Nichtsortierzeichen ist leer und fällt weg.
-		val := strings.TrimSpace(littera.OhneNichtsortierzeichen(feld.Value))
+		wert := strings.TrimSpace(littera.OhneNichtsortierzeichen(eintrag.Wert))
 
 		switch mab {
 		case "100":
-			f.autor = val
+			f.autor = wert
 		case "108a":
-			f.standort = val
+			f.standort = wert
 		case "310":
-			f.titel = val
+			f.titel = wert
 		case "410":
-			f.ort = val
+			f.ort = wert
 		case "412":
-			f.verlag = val
+			f.verlag = wert
 		case "425":
-			f.jahrStr = val
+			f.jahrText = wert
 		case "540":
-			f.isbn = isbnutil.OhneTrenner(val)
+			f.isbn = isbnutil.OhneTrenner(wert)
 		case "700":
-			if feld.Reihung == "1" {
-				f.signatur = val
+			if eintrag.Reihung == "1" {
+				f.signatur = wert
 			}
 		case "710":
-			f.schlagwoerter = append(f.schlagwoerter, val)
+			f.schlagwoerter = append(f.schlagwoerter, wert)
 		case "070b":
-			f.zielgruppen = append(f.zielgruppen, val)
+			f.zielgruppen = append(f.zielgruppen, wert)
 		}
 	}
 	return f
 }
 
-// bookTitleAusFelder wandelt die Rohfelder in einen Titel um. ok=false bedeutet:
+// titelAusFeldern wandelt die Rohfelder in einen Titel um. ok=false bedeutet:
 // der Datensatz hat keinen Titel und wird übersprungen.
-func bookTitleAusFelder(f litteraFelder) (repository.Titel, bool) {
+func titelAusFeldern(f litteraFelder) (repository.Titel, bool) {
 	if f.titel == "" {
 		return repository.Titel{}, false // Ein Titel ist zwingend erforderlich
 	}
@@ -158,10 +146,10 @@ func bookTitleAusFelder(f litteraFelder) (repository.Titel, bool) {
 	fach, von, bis := kategorisiere(f, lernmittel)
 
 	erscheinungsjahr := 0
-	if len(f.jahrStr) >= 4 {
+	if len(f.jahrText) >= 4 {
 		// Versuche die ersten 4 Zeichen als Jahr zu parsen
-		if y, err := strconv.Atoi(f.jahrStr[:4]); err == nil {
-			erscheinungsjahr = y
+		if j, err := strconv.Atoi(f.jahrText[:4]); err == nil {
+			erscheinungsjahr = j
 		}
 	}
 

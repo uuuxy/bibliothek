@@ -204,7 +204,7 @@ func (s *Tueren) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 	// Scheitert das, bleibt die Liste stehen und die Werte fehlen: Der Ersatzwert
 	// ist eine Auskunft, kein Grund, die Exemplar-Liste zu verweigern.
 	if groessen, err := bescheidRepo.LadeGroessenFuerTitel(ctx, id); err == nil {
-		quelle := service.ErsatzwertPreisquelle(ctx, s.DB.Pool)
+		quelle := service.LadeErsatzwertPreisquelle(ctx, s.DB.Pool)
 		for i := range copies {
 			g, da := groessen[copies[i].ID]
 			if !da {

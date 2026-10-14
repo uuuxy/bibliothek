@@ -113,13 +113,13 @@ func ErsatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.P
 	}
 }
 
-// ErsatzwertPreisquelle liest aus den Einstellungen, welcher Preis ab dem zweiten Verleihjahr die
+// LadeErsatzwertPreisquelle liest aus den Einstellungen, welcher Preis ab dem zweiten Verleihjahr die
 // Grundlage ist (Anforderungsliste Nr. 3, OFFEN.md 9.8 Stufe 4).
 //
 // Scheitert das Lesen, gilt die Regel der Arbeitshilfe. Das ist die einzige Richtung, die
 // hier zu vertreten ist: Ein Fehler beim Lesen einer Einstellung darf nicht dazu führen,
 // dass eine Forderung nach einer anderen Grundlage entsteht als die davor.
-func ErsatzwertPreisquelle(ctx context.Context, pool db.PgxPoolIface) ersatzwert.Preisquelle {
+func LadeErsatzwertPreisquelle(ctx context.Context, pool db.PgxPoolIface) ersatzwert.Preisquelle {
 	einst, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil || einst == nil || !einst.ErsatzwertImmerKaufpreis {
 		return ersatzwert.PreisquelleListenpreis

@@ -20,7 +20,7 @@ import (
 // Frist ist dessen Stichtag. Bis zum 14.09.2026 war sie am Termintag der Termin selbst
 // (heute 23:59) und danach der 31.07. des laufenden Schuljahres, ein Tag in den Ferien:
 // Nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.
-func TestLmfFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testing.T) {
+func TestLMFFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	rueckgabePlanJuni2027(t, pool)
@@ -110,7 +110,7 @@ func rueckgabePlanJuni2027(t *testing.T, pool *pgxpool.Pool) {
 // Schuljahre später — der Rückgabetermin der Klasse geht ihn nichts an. Ist der Termin
 // schon vorbei, rechnet die Frist vom folgenden Schuljahr aus, und eines der Jahre steckt
 // in diesem Sprung: 31.07.2029, nicht 2030. Rot gesehen am Rückbau von AddDate und -1.
-func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
+func TestLMFFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	rueckgabePlanJuni2027(t, pool)
@@ -155,7 +155,7 @@ func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 // Titels: Ohne das Kästchen „Mehrjahresband" ist ein Schulbuch mit Spanne bis Jahrgang 11 ein
 // gewöhnliches Schulbuch und folgt dem Termin der Klasse. Ein Buch der Bücherei geht der
 // Termin nichts an, es bekommt die Leihfrist für Bücher.
-func TestLmfFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
+func TestLMFFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	rueckgabePlanJuni2027(t, pool)

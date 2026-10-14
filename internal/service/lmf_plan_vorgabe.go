@@ -23,19 +23,19 @@ const (
 	lmfPlanStundenJeTagVorgabe = 6
 )
 
-// LmfPlanFerien sind die Sommerferien, an denen sich ein Plan ausrichtet. Von und Bis sind
+// LMFPlanFerien sind die Sommerferien, an denen sich ein Plan ausrichtet. Von und Bis sind
 // Kalendertage (JJJJ-MM-TT) und leer, wenn die Ferientabelle das Jahr nicht kennt.
-type LmfPlanFerien struct {
+type LMFPlanFerien struct {
 	Jahr    int
 	Von     string
 	Bis     string
 	Bekannt bool
 }
 
-// LmfPlanRahmen ist der Rahmen, mit dem ein neuer Plan beginnt: beim Rückgabe-Plan das Ende
+// LMFPlanRahmen ist der Rahmen, mit dem ein neuer Plan beginnt: beim Rückgabe-Plan das Ende
 // (Donnerstag vor den Ferien, 4. Stunde), beim Ausgabe-Plan der Beginn (erster Schultag nach
 // den Ferien, 2. Stunde). Ein leerer Tag heißt: Ferien nicht bekannt.
-type LmfPlanRahmen struct {
+type LMFPlanRahmen struct {
 	ErsterTag    string
 	Startstunde  int
 	LetzterTag   string
@@ -43,10 +43,10 @@ type LmfPlanRahmen struct {
 	StundenJeTag int
 }
 
-// LmfPlanSommerferien nennt die Ferien zum Plan: für einen laufenden Plan die, an denen er
+// LMFPlanSommerferien nennt die Ferien zum Plan: für einen laufenden Plan die, an denen er
 // hängt, sonst die nächsten von heute aus, vor denen der Tausch und nach denen die Ausgabe
 // liegt.
-func LmfPlanSommerferien(art string, plan *repository.LMFPlan, laufend bool, jetzt time.Time, tab lmfplan.Ferientabelle) (LmfPlanFerien, lmfplan.Zeitraum) {
+func LMFPlanSommerferien(art string, plan *repository.LMFPlan, laufend bool, jetzt time.Time, tab lmfplan.Ferientabelle) (LMFPlanFerien, lmfplan.Zeitraum) {
 	rueckgabe := art == repository.LMFTerminRueckgabe
 	var z lmfplan.Zeitraum
 	var jahr int
@@ -70,7 +70,7 @@ func LmfPlanSommerferien(art string, plan *repository.LMFPlan, laufend bool, jet
 			}
 		}
 	}
-	f := LmfPlanFerien{Jahr: jahr, Bekannt: ok}
+	f := LMFPlanFerien{Jahr: jahr, Bekannt: ok}
 	if ok {
 		f.Von, f.Bis = z.Von.Format(time.DateOnly), z.Bis.Format(time.DateOnly)
 	}
@@ -97,9 +97,9 @@ func lmfPlanEigeneFerien(rueckgabe bool, plan *repository.LMFPlan, jetzt time.Ti
 	return z, jahr, ok
 }
 
-// LmfPlanRahmenVorgabe baut den Rahmen eines neuen Plans aus den Ferien.
-func LmfPlanRahmenVorgabe(art string, f LmfPlanFerien, z lmfplan.Zeitraum) LmfPlanRahmen {
-	v := LmfPlanRahmen{Startstunde: lmfPlanStartstundeVorgabe, LetzteStunde: lmfPlanLetzteStundeVorgabe, StundenJeTag: lmfPlanStundenJeTagVorgabe}
+// LMFPlanRahmenVorgabe baut den Rahmen eines neuen Plans aus den Ferien.
+func LMFPlanRahmenVorgabe(art string, f LMFPlanFerien, z lmfplan.Zeitraum) LMFPlanRahmen {
+	v := LMFPlanRahmen{Startstunde: lmfPlanStartstundeVorgabe, LetzteStunde: lmfPlanLetzteStundeVorgabe, StundenJeTag: lmfPlanStundenJeTagVorgabe}
 	if !f.Bekannt {
 		return v
 	}

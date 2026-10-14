@@ -15,48 +15,48 @@ import (
 
 // Woher die Reihenfolge eines neuen Plans kommt. Die Werte stehen in der Antwort an den Planer.
 const (
-	LmfPlanQuelleVorjahr = "vorjahr"
-	LmfPlanQuelleRegel   = "regel"
+	lmfPlanQuelleVorjahr = "vorjahr"
+	lmfPlanQuelleRegel   = "regel"
 )
 
-// LmfPlanReihenfolge ist die Reihenfolge, mit der ein neuer Plan beginnt: die Zeilen und die
+// LMFPlanReihenfolge ist die Reihenfolge, mit der ein neuer Plan beginnt: die Zeilen und die
 // Klassen, die draußen bleiben.
-type LmfPlanReihenfolge struct {
+type LMFPlanReihenfolge struct {
 	// Quelle nennt, woher sie kommt: aus dem letzten Plan der Art oder aus der Regel.
 	Quelle      string
 	Zeilen      []repository.LMFPlanZeile
 	Ausgelassen []string
 }
 
-// LmfPlanLaesstAus ist die eine Regel, welche Klasse nicht in den Plan einer Art gehört. Der
+// IstAusgelassenImLMFPlan ist die eine Regel, welche Klasse nicht in den Plan einer Art gehört. Der
 // Büchertausch lässt die Oberstufe aus, sie organisiert sich selbst; die Ausgabe nach den
 // Ferien alles außer den Eingangsjahrgängen, nur die neu gebildeten Klassen bekommen Bücher.
 // Der Vorschlag und die Liste „bleiben draußen" des Planers fragen sie hier.
-func LmfPlanLaesstAus(art string, eingang []int, k repository.KlasseImPlan) bool {
+func IstAusgelassenImLMFPlan(art string, eingang []int, k repository.KlasseImPlan) bool {
 	if art == repository.LMFTerminAusgabe {
 		return !slices.Contains(eingang, k.Jahrgang)
 	}
 	return k.Oberstufe
 }
 
-// LmfPlanReihenfolgeVorgabe baut die Reihenfolge, mit der ein neuer Plan beginnt: das Vorjahr,
+// LMFPlanReihenfolgeVorgabe baut die Reihenfolge, mit der ein neuer Plan beginnt: das Vorjahr,
 // wenn es eines gibt, ergänzt um Klassen, die inzwischen neu sind; sonst die Regel. Klassen ohne
 // Schüler bleiben aus dem Vorjahr erhalten, eine „7G6" kann wiederkommen; der Planer markiert
 // sie. Beim Ausgabe-Plan kommen nur die Eingangsjahrgänge in die Reihenfolge, alle anderen
 // Klassen stehen unter den ausgelassenen.
-func LmfPlanReihenfolgeVorgabe(art string, eingang []int, vorjahr bool, st repository.LMFPlanStand, klassen []repository.KlasseImPlan) LmfPlanReihenfolge {
-	v := LmfPlanReihenfolge{Quelle: LmfPlanQuelleRegel, Zeilen: []repository.LMFPlanZeile{}, Ausgelassen: []string{}}
+func LMFPlanReihenfolgeVorgabe(art string, eingang []int, vorjahr bool, stand repository.LMFPlanStand, klassen []repository.KlasseImPlan) LMFPlanReihenfolge {
+	v := LMFPlanReihenfolge{Quelle: lmfPlanQuelleRegel, Zeilen: []repository.LMFPlanZeile{}, Ausgelassen: []string{}}
 	bekannt := map[string]bool{}
 	if vorjahr {
-		v.Quelle = LmfPlanQuelleVorjahr
-		for _, z := range st.Zeilen {
+		v.Quelle = lmfPlanQuelleVorjahr
+		for _, z := range stand.Zeilen {
 			v.Zeilen = append(v.Zeilen, repository.LMFPlanZeile{Klassen: z.Klassen, Vermerk: z.Vermerk})
 			for _, k := range z.Klassen {
 				bekannt[repository.KlassenSchluessel(k)] = true
 			}
 		}
-		v.Ausgelassen = append(v.Ausgelassen, st.Ausgelassen...)
-		for _, k := range st.Ausgelassen {
+		v.Ausgelassen = append(v.Ausgelassen, stand.Ausgelassen...)
+		for _, k := range stand.Ausgelassen {
 			bekannt[repository.KlassenSchluessel(k)] = true
 		}
 	}
@@ -64,13 +64,13 @@ func LmfPlanReihenfolgeVorgabe(art string, eingang []int, vorjahr bool, st repos
 		if bekannt[repository.KlassenSchluessel(k.Name)] {
 			continue
 		}
-		if LmfPlanLaesstAus(art, eingang, k) {
+		if IstAusgelassenImLMFPlan(art, eingang, k) {
 			v.Ausgelassen = append(v.Ausgelassen, k.Name)
 			continue
 		}
 		v.Zeilen = append(v.Zeilen, repository.LMFPlanZeile{Klassen: []string{k.Name}})
 	}
-	if v.Quelle == LmfPlanQuelleRegel {
+	if v.Quelle == lmfPlanQuelleRegel {
 		// Die zwei Zeilen ohne Klasse, mit denen die Pläne der Schule enden: wer nicht dran war,
 		// und dann das Aufräumen. Das Vorjahr bringt sie von selbst mit; die Regel setzt sie,
 		// damit der erste Plan aussieht wie der der Schule.
@@ -81,12 +81,12 @@ func LmfPlanReihenfolgeVorgabe(art string, eingang []int, vorjahr bool, st repos
 	return v
 }
 
-// LmfPlanVorbei sagt, ob der letzte Platz des Plans vor dem heutigen Kalendertag der Schule
+// IstLMFPlanVorbei sagt, ob der letzte Platz des Plans vor dem heutigen Kalendertag der Schule
 // liegt; bei einem Plan ohne Zeilen zählt sein erster Tag. Der Planer bietet dann den nächsten
 // Plan an.
-func LmfPlanVorbei(st repository.LMFPlanStand, jetzt time.Time) bool {
-	letzter := st.Plan.ErsterTag
-	for _, z := range st.Zeilen {
+func IstLMFPlanVorbei(stand repository.LMFPlanStand, jetzt time.Time) bool {
+	letzter := stand.Plan.ErsterTag
+	for _, z := range stand.Zeilen {
 		if z.Datum > letzter {
 			letzter = z.Datum
 		}
@@ -99,10 +99,10 @@ func LmfPlanVorbei(st repository.LMFPlanStand, jetzt time.Time) bool {
 // vor den Ferien nur abgeben: Abschlussklassen und Klassen, die neu gebildet werden.
 const lmfPlanVermerkNurRueckgabe = "nur Rückgabe"
 
-// BelegeLmfPlanVermerkNurRueckgabe belegt den Vermerk der Zeilen vor, in denen jede Klasse nur
+// BelegeVermerkNurRueckgabeVor belegt den Vermerk der Zeilen vor, in denen jede Klasse nur
 // abgibt, außer der Vermerk aus dem Vorjahr sagt es schon. Danach gehört der Text der
 // Bibliothek: Sie kann ihn ändern oder löschen, nichts rechnet ihn nach.
-func BelegeLmfPlanVermerkNurRueckgabe(zeilen []repository.LMFPlanZeile, nurRueckgabe []string) {
+func BelegeVermerkNurRueckgabeVor(zeilen []repository.LMFPlanZeile, nurRueckgabe []string) {
 	ist := map[string]bool{}
 	for _, k := range nurRueckgabe {
 		ist[repository.KlassenSchluessel(k)] = true

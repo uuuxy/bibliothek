@@ -93,7 +93,7 @@ func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 		return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 	}
 	// Welcher Preis die Grundlage ist, steht in denselben Einstellungen (Stufe 4).
-	quelle := service.ErsatzwertPreisquelle(ctx, s.DB.Pool)
+	quelle := service.LadeErsatzwertPreisquelle(ctx, s.DB.Pool)
 
 	vorschlag := BescheidVorschlag{
 		FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(tuer.DateFormatISO),

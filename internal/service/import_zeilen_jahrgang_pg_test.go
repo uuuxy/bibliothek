@@ -9,7 +9,7 @@ import (
 
 // Der Sammelimport legt einen Titel ohne Lernmittel-Signatur ohne Jahrgang an: NULL in beiden
 // Spalten (Migration 162), keine Vorgabe.
-func TestImportDynamic_OhneJahrgangBleibtUnbekannt(t *testing.T) {
+func TestImportiereZeilen_OhneJahrgangBleibtUnbekannt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const barcode = "JAHRGANG-PROBE-162-1"
@@ -32,9 +32,9 @@ func TestImportDynamic_OhneJahrgangBleibtUnbekannt(t *testing.T) {
 		{"Titel", "Barcode"},
 		{"Jahrgang-Probe ohne Angabe", barcode},
 	}
-	neueTitel, _, err := NewImportService(nil, pool).ImportDynamic(ctx, rows, map[string]int{"titel": 0, "barcode": 1})
+	neueTitel, _, err := NewImportDienst(nil, pool).ImportiereZeilen(ctx, rows, map[string]int{"titel": 0, "barcode": 1})
 	if err != nil {
-		t.Fatalf("ImportDynamic: %v", err)
+		t.Fatalf("ImportiereZeilen: %v", err)
 	}
 	if neueTitel != 1 {
 		t.Fatalf("%d neue Titel, erwartet 1", neueTitel)
@@ -53,7 +53,7 @@ func TestImportDynamic_OhneJahrgangBleibtUnbekannt(t *testing.T) {
 
 // Nennt die Lernmittel-Signatur mehrere Jahrgänge, steht die Spanne als „von" und „bis" am
 // Titel. Mit einem einzigen Jahrgang fiele nicht auf, wenn die zwei Werte vertauscht ankämen.
-func TestImportDynamic_SignaturMitSpanne(t *testing.T) {
+func TestImportiereZeilen_SignaturMitSpanne(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const barcode = "JAHRGANG-PROBE-163-1"
@@ -76,9 +76,9 @@ func TestImportDynamic_SignaturMitSpanne(t *testing.T) {
 		{"Titel", "Barcode", "Signatur"},
 		{"Jahrgang-Probe mit Spanne", barcode, "LMF Bio 7-9"},
 	}
-	neueTitel, _, err := NewImportService(nil, pool).ImportDynamic(ctx, rows, map[string]int{"titel": 0, "barcode": 1, "signatur": 2})
+	neueTitel, _, err := NewImportDienst(nil, pool).ImportiereZeilen(ctx, rows, map[string]int{"titel": 0, "barcode": 1, "signatur": 2})
 	if err != nil {
-		t.Fatalf("ImportDynamic: %v", err)
+		t.Fatalf("ImportiereZeilen: %v", err)
 	}
 	if neueTitel != 1 {
 		t.Fatalf("%d neue Titel, erwartet 1", neueTitel)

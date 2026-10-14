@@ -11,7 +11,7 @@ import (
 
 // Die Anweisungen des Bestands-Imports: Eine Liste nennt je Zeile einen Titel und die Nummer
 // eines Exemplars, das schon im Regal steht. Welche Zeile zu welchem Titel gehört, entscheidet
-// internal/service (import_dynamic.go) über den Titelbestand (TitelBestand.TitelZu); hier steht,
+// internal/service (import_zeilen.go) über den Titelbestand (TitelBestand.TitelZu); hier steht,
 // was geschrieben wird.
 
 // LegeImportTitelAn legt die Titel an, die der Bestands-Import im Bestand nicht gefunden hat,

@@ -101,7 +101,7 @@ func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.
 	antwort := map[string]any{"status": "success"}
 	if g, groessenErr := bescheidRepo.LadeGroessenFuerExemplar(ctx, id); groessenErr == nil {
-		v := service.ErsatzwertVorschlagAus(g, service.ErsatzwertPreisquelle(ctx, s.DB.Pool))
+		v := service.ErsatzwertVorschlagAus(g, service.LadeErsatzwertPreisquelle(ctx, s.DB.Pool))
 		antwort["ersatzwert"] = v.Betrag
 		antwort["ersatzwert_herleitung"] = v.Herleitung
 		antwort["ersatzwert_bekannt"] = v.Bekannt

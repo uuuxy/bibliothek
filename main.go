@@ -379,7 +379,7 @@ func main() {
 	httpServer := startServer(port, server)
 
 	// 7. Autostart: Resume downloading missing covers
-	go service.NewCoverService(database.Pool).SyncMissingCoversAsync()
+	go service.NewCoverDienst(database.Pool).GleicheFehlendeCoverAb()
 
 	// Block until signal is received
 	<-ctx.Done()

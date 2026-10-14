@@ -36,7 +36,7 @@ func (s *Tueren) UploadStudentPhotoHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		photoURL, err := service.UploadStudentPhoto(ctx, s.DB.Pool, id, req.PhotoData)
+		photoURL, err := service.SchreibeLeserFoto(ctx, s.DB.Pool, id, req.PhotoData)
 		if err != nil {
 			if errors.Is(err, service.ErrFotoLeserUnbekannt) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)

@@ -9,7 +9,7 @@
 // ein transparentes 1×1-GIF aus (bewusst 200 statt 404, gegen Konsolen-Spam).
 //
 // Genau das ist der Normalfall: Der Cover-Sync migriert jedes gefundene Cover auf einen
-// lokalen Pfad, damit nichts mehr extern lädt (internal/service/cover_service.go). Wer
+// lokalen Pfad, damit nichts mehr extern lädt (internal/service/cover.go). Wer
 // solche Titel durch den Proxy schickt, bekommt also zuverlässig ein leeres Bild —
 // sichtbar geworden als "Kein Coverbild hinterlegt" in der Großansicht, obwohl das
 // Miniaturbild derselben Zeile das Cover zeigte (es lädt den Pfad direkt).

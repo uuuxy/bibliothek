@@ -189,7 +189,7 @@ func TestSammleExemplare(t *testing.T) {
 	}
 }
 
-func TestImportDynamic_EmptyRows(t *testing.T) {
+func TestImportiereZeilen_EmptyRows(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -203,14 +203,14 @@ func TestImportDynamic_EmptyRows(t *testing.T) {
 	mock.ExpectCommit()
 	mock.ExpectRollback() // SafeRollback
 
-	svc := NewImportService(nil, mock)
+	svc := NewImportDienst(nil, mock)
 
 	headerMap := map[string]int{"titel": 0, "isbn": 1, "barcode": 2}
 	rows := [][]string{{"Titel", "ISBN", "Barcode"}} // Only header
 
-	newTitles, newCopies, err := svc.ImportDynamic(context.Background(), rows, headerMap)
+	newTitles, newCopies, err := svc.ImportiereZeilen(context.Background(), rows, headerMap)
 	if err != nil {
-		t.Errorf("ImportDynamic() error = %v", err)
+		t.Errorf("ImportiereZeilen() error = %v", err)
 	}
 	if newTitles != 0 {
 		t.Errorf("newTitles = %v, want 0", newTitles)
@@ -244,7 +244,7 @@ func TestSpaltenWert(t *testing.T) {
 
 // This adds proper unit coverage for import_dynamic.go.
 
-func TestSammleSignaturUpdatesDynamic(t *testing.T) {
+func TestSammleSignaturen_UeberISBNOderTitel(t *testing.T) {
 	headerMap := map[string]int{"titel": 0, "isbn": 1, "signatur": 2}
 	rows := [][]string{
 		{"Titel", "ISBN", "Signatur"},
@@ -255,7 +255,7 @@ func TestSammleSignaturUpdatesDynamic(t *testing.T) {
 
 	lookup := bestandMit(map[string]string{"111": "id1"}, map[string]string{"Bekannt2": "id2"})
 
-	updates := sammleSignaturUpdates(rows, headerMap, lookup)
+	updates := sammleSignaturen(rows, headerMap, lookup)
 	if len(updates) != 2 {
 		t.Fatalf("len(updates) = %v, want 2", len(updates))
 	}
@@ -281,7 +281,7 @@ func TestFachDerZeile_KategorieNurWennFach(t *testing.T) {
 		{"", "", ""},
 	}
 	for _, f := range faelle {
-		got := fachDerZeile(&importNewTitle{Fach: f.fach, Kategorie: f.kategorie})
+		got := fachDerZeile(&importTitelNeu{Fach: f.fach, Kategorie: f.kategorie})
 		if got != f.want {
 			t.Errorf("fachDerZeile(Fach=%q, Kategorie=%q) = %q, want %q", f.fach, f.kategorie, got, f.want)
 		}

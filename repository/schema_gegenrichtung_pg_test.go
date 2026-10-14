@@ -436,7 +436,7 @@ var triggerBestand = []string{
 	// zusammensetzen; die DNB-Antwort tut das in inventur.dekodiereMARC, die Schlagworte in
 	// repository.schlagwortNormalform, die Titelschlüssel beider Importe (Katalogisat und
 	// Listenimport) in repository.NormalisiereTitelSchluessel
-	// (internal/service/import_dynamic_nfc_pg_test.go). Die Signatur ist bewusst
+	// (internal/service/import_zeilen_nfc_pg_test.go). Die Signatur ist bewusst
 	// nicht dabei.
 	// Migration 160: Derselbe Trigger, jetzt unter dem Namen der Form,
 	// nimmt Leerraum am Rand weg und macht aus Leerraum in Folge ein Leerzeichen

@@ -38,7 +38,7 @@ func (s *Tueren) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
 
 // lmfPlanNurRueckgabe nennt aus allen Klassen, die der Planer zeigt (Vokabular, Zeilen,
 // Vorschlag, Auslassungen), die, die vor den Ferien nur abgeben; leer beim Ausgabe-Plan. Aus
-// ihnen belegt service.BelegeLmfPlanVermerkNurRueckgabe den Vermerk des Vorschlags vor.
+// ihnen belegt service.BelegeVermerkNurRueckgabeVor den Vermerk des Vorschlags vor.
 func (s *Tueren) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LMFAbfragen, art string, a LmfPlanStandAntwort, eingang []int) ([]string, error) {
 	if art != repository.LMFTerminRueckgabe {
 		return []string{}, nil
@@ -120,7 +120,7 @@ func (s *Tueren) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort
 	if antwort.LMFPlanStand, err = repo.VeroeffentlichePlan(r.Context(), tx, st.Plan.ID, s.Jetzt()); err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
 	}
-	if antwort.FristenAngepasst, err = service.KoppleLmfPlanFristen(r.Context(), repo, tx, art, nil, antwort.Zeilen); err != nil {
+	if antwort.FristenAngepasst, err = service.KoppleLMFPlanFristen(r.Context(), repo, tx, art, nil, antwort.Zeilen); err != nil {
 		return keine, false, apierrors.Internal("Fristen koppeln", err)
 	}
 	if err := tx.Commit(r.Context()); err != nil {

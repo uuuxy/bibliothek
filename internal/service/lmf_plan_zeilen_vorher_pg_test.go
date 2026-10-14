@@ -17,7 +17,7 @@ import (
 // Klassen, die im neuen Plan fehlen, kehren zum Stichtag zurück. Ein Entwurf hat keine Frist
 // gesetzt, und der Plan eines anderen Schuljahres bleibt neben dem neuen stehen: Beide liefern
 // keine Zeile, sonst nähme das Speichern Fristen zurück, die der neue Plan nie gesetzt hat.
-func TestLmfPlanZeilenVorher(t *testing.T) {
+func TestLadeLMFPlanZeilenVorher(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	repo := repository.NewLMFAbfragen(pool)
@@ -32,7 +32,7 @@ func TestLmfPlanZeilenVorher(t *testing.T) {
 	const art = repository.LMFTerminRueckgabe
 	lies := func(ersterTag string) []repository.LMFPlanZeile {
 		t.Helper()
-		zeilen, err := LmfPlanZeilenVorher(ctx, repo, art, ersterTag)
+		zeilen, err := LadeLMFPlanZeilenVorher(ctx, repo, art, ersterTag)
 		if err != nil {
 			t.Fatalf("Zeilen vorher zum %s: %v", ersterTag, err)
 		}
@@ -85,10 +85,10 @@ func TestLmfPlanZeilenVorher(t *testing.T) {
 	}
 
 	// Eine andere Art hat keinen Plan, und ein unlesbarer Tag ist ein Fehler.
-	if z, err := LmfPlanZeilenVorher(ctx, repo, repository.LMFTerminAusgabe, "2027-06-21"); err != nil || z != nil {
+	if z, err := LadeLMFPlanZeilenVorher(ctx, repo, repository.LMFTerminAusgabe, "2027-06-21"); err != nil || z != nil {
 		t.Errorf("andere Art: %+v, %v; erwartet keine Zeile und keinen Fehler", z, err)
 	}
-	if _, err := LmfPlanZeilenVorher(ctx, repo, art, "kein Datum"); err == nil {
+	if _, err := LadeLMFPlanZeilenVorher(ctx, repo, art, "kein Datum"); err == nil {
 		t.Error("unlesbarer erster Tag: kein Fehler")
 	}
 }

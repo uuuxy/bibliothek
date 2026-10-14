@@ -424,7 +424,7 @@ mitgesichert:
 - **Schülerfotos** liegen verschlüsselt in der Datenbank (`schueler_fotos.foto_encrypted`)
   und sind damit vom pg_dump abgedeckt — es gehen keine personenbezogenen Daten verloren.
 - **Geladene Cover sind reproduzierbar**: Der Cover-Sync-Job (alle 6 h + bei Serverstart,
-  `internal/service/cover_service.go`) lädt PENDING/FAILED-Titel gedrosselt
+  `internal/service/cover.go`) lädt PENDING/FAILED-Titel gedrosselt
   (2 Titel/s) von DNB/Google/OpenLibrary nach. **Achtung:** Einen Titel mit lokalem
   `/uploads/`-Pfad fasst der Job nie an, egal was `cover_status` sagt — nach einem Restore
   ohne Volume deshalb Status UND Pfad einmalig zurücksetzen, dann lädt der nächste Lauf nach:

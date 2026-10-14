@@ -85,7 +85,7 @@ unklar): **Büchertausch vor den Sommerferien** (`art = rueckgabe`): alle Klasse
 und bekommen direkt die neuen Bücher; Abschlussklassen (`AbschlussklasseSQL`) und Klassen,
 deren nächster Jahrgang ein Eingangsjahrgang ist (die 6er → 7H/7R/7G), geben **nur
 zurück** (`nurRueckgabeSQL`). Der Vorschlag belegt den Vermerk dieser Zeilen mit „nur
-Rückgabe" vor (`service.BelegeLmfPlanVermerkNurRueckgabe`); danach gehört der Text der Bibliothek, und Planer,
+Rückgabe" vor (`service.BelegeVermerkNurRueckgabeVor`); danach gehört der Text der Bibliothek, und Planer,
 Portal und PDF zeigen den Vermerk (seit 06.09.2026 kein eigenes Feld mehr).
 **Bücherausgabe nach den Sommerferien** (`art = ausgabe`): nur die neu gebildeten Klassen
 der **Eingangsjahrgänge** (Einstellung `lmf_eingangsjahrgaenge`, Vorgabe „5, 7",
@@ -155,7 +155,7 @@ dann noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück —
 Klasse noch einen Nachzügler-Termin vor sich hat. Bis zum
 14.09.2026 war am Termintag der Termin selbst die Frist und danach der Stichtag des laufenden
 Schuljahres — ein Tag in den Ferien. Beim Speichern eines Plans folgt
-der Bestand (`service.KoppleLmfPlanFristen`): Klassen, die aus dem Plan fallen, kehren zum Stichtag
+der Bestand (`service.KoppleLMFPlanFristen`): Klassen, die aus dem Plan fallen, kehren zum Stichtag
 zurück — genau die Fristen, die auf ihrem alten Termin-Tag lagen —, jede Klasse des neuen
 Plans bekommt ihren Termin (`SetzeLernmittelFristFuerKlassen`: Schüler außerhalb des
 Papierkorbs, nicht anonymisiert, ohne Sperre von Hand — die Sperre der Ehemaligen zählt beim

@@ -24,16 +24,16 @@ var (
 	ErrFotoUnlesbar = errors.New("das bild ist nicht lesbar")
 )
 
-// UploadStudentPhoto verarbeitet den Base64-String eines Fotos, konvertiert ihn zu WebP,
+// SchreibeLeserFoto verarbeitet den Base64-String eines Fotos, konvertiert ihn zu WebP,
 // verschlüsselt ihn per AES und speichert ihn in der Datenbank ab.
-func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID string, base64DataStr string) (string, error) {
+func SchreibeLeserFoto(ctx context.Context, pool db.PgxPoolIface, leserID string, base64Text string) (string, error) {
 	// 1. Die Ausweisnummer des LESERS — Tabelle `leser`, nicht die Sicht `schueler`: Die
 	// Akte bietet den Kamera-Knopf jedem Leser an, und die Auslieferung (api/leser/photo_serve.go)
 	// liest sein Bild über dieselbe Tabelle. Über die Sicht bekam ein Kollege hier 404
-	// (TestUploadStudentPhoto_AuchFuerKollegen). COALESCE, weil ein Kollege aus der
+	// (TestSchreibeLeserFoto_AuchFuerKollegen). COALESCE, weil ein Kollege aus der
 	// Selbstanmeldung noch keine Nummer hat (OFFEN.md 5.16 C) — das Bild wird gespeichert,
 	// eine Bild-URL gibt es wie in resolveFotoURL erst mit der Nummer.
-	barcodeID, err := repository.LadeAusweisnummerDesLesers(ctx, dbPool, studentID)
+	barcodeID, err := repository.LadeAusweisnummerDesLesers(ctx, pool, leserID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", ErrFotoLeserUnbekannt
@@ -42,35 +42,35 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 	}
 
 	// 2. Decode base64 image data
-	base64Data := strings.TrimPrefix(base64DataStr, "data:image/jpeg;base64,")
-	base64Data = strings.TrimPrefix(base64Data, "data:image/png;base64,")
+	base64Daten := strings.TrimPrefix(base64Text, "data:image/jpeg;base64,")
+	base64Daten = strings.TrimPrefix(base64Daten, "data:image/png;base64,")
 
-	imgBytes, err := base64.StdEncoding.DecodeString(base64Data)
+	bild, err := base64.StdEncoding.DecodeString(base64Daten)
 	if err != nil {
 		return "", fmt.Errorf("%w: ungültiges base64-format: %w", ErrFotoUnlesbar, err)
 	}
 
 	// 3. Konvertierung nach WebP. Die Umwandlung rechnet nur auf den übergebenen Bytes;
 	// scheitert sie, liegt es am Bild (kein JPEG oder PNG, zu groß), nicht am Server.
-	webpBytes, err := imageutil.AlsWebP(imgBytes, 80)
+	webp, err := imageutil.AlsWebP(bild, 80)
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrFotoUnlesbar, err)
 	}
 
 	// 4. Verschlüsseln der WebP-Bytes
-	encryptedData, err := crypto.Verschluessele(webpBytes)
+	verschluesselt, err := crypto.Verschluessele(webp)
 	if err != nil {
 		return "", fmt.Errorf("fehler bei der fotostrukturierung: %w", err)
 	}
 
 	// 5. In der Datenbank abspeichern (Upsert in schueler_fotos)
-	if err := repository.SchreibeFoto(ctx, dbPool, studentID, encryptedData); err != nil {
+	if err := repository.SchreibeFoto(ctx, pool, leserID, verschluesselt); err != nil {
 		return "", fmt.Errorf("fehler beim speichern des fotos in der db: %w", err)
 	}
 
 	if barcodeID == "" {
 		return "", nil
 	}
-	photoURL := fmt.Sprintf("/api/schueler/%s/photo", barcodeID)
-	return photoURL, nil
+	fotoURL := fmt.Sprintf("/api/schueler/%s/photo", barcodeID)
+	return fotoURL, nil
 }

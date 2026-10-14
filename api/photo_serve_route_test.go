@@ -10,7 +10,7 @@ import (
 )
 
 // Das Foto-GET wurde nie ausgeliefert: Drei Stellen im Code bauen die Bild-URL als
-// /api/schueler/<barcode>/photo (photo_service.go, leser_liste.go,
+// /api/schueler/<barcode>/photo (foto.go, leser_liste.go,
 // resolveFotoURL), aber die Route hieß {id} — und ValidateUUIDParamsMiddleware prüft
 // genau diesen Namen gegen das UUID-Format. Jeder echte Barcode ("S-abg1-ms3p73…")
 // lief damit in 400, bevor der Handler überhaupt lief.

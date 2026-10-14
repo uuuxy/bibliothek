@@ -155,7 +155,7 @@ func spaltenDa(zeilen []map[string]string, namen ...string) error {
 
 // lernmittelUndFach liest Lernmittel, Fach und Jahrgang aus der Signatur und nimmt das Fach aus
 // den Schlagworten, wo die Signatur keins nennt — dieselbe Reihenfolge wie der
-// Katalogisat-Import (kategorisiere in internal/service/import_service.go), und wie dort nur,
+// Katalogisat-Import (kategorisiere in internal/service/import_littera_xml.go), und wie dort nur,
 // wenn die Schlagworte genau ein Fach nennen: lieber leer als falsch (lmf.FachAusSchlagworten).
 // In der Sicherung von 2010 tragen 258 Titel ein Fach aus der Signatur, aus den Schlagworten
 // 2.945 mehr.

@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type importNewTitle struct {
+type importTitelNeu struct {
 	Titel     string
 	Autor     string
 	Verlag    string
@@ -31,9 +31,9 @@ type importNewTitle struct {
 }
 
 // spaltenWert liest den getrimmten Wert der über headerMap zugeordneten Spalte.
-func spaltenWert(row []string, headerMap map[string]int, key string) string {
-	if idx, ok := headerMap[key]; ok && idx < len(row) {
-		return strings.TrimSpace(row[idx])
+func spaltenWert(zeile []string, spalten map[string]int, schluessel string) string {
+	if spalte, ok := spalten[schluessel]; ok && spalte < len(zeile) {
+		return strings.TrimSpace(zeile[spalte])
 	}
 	return ""
 }
@@ -61,11 +61,11 @@ type zeilenFelder struct {
 // titelZeilenFelder liefert die normalisierten Titel-Felder einer Zeile. BEIDE
 // Import-Pässe (Titel sammeln, Exemplare sammeln) müssen diese Funktion verwenden,
 // sonst verfehlt das Titel-Matching die gerade angelegten Titel.
-func titelZeilenFelder(row []string, headerMap map[string]int) zeilenFelder {
+func titelZeilenFelder(zeile []string, spalten map[string]int) zeilenFelder {
 	z := zeilenFelder{
-		titel:     bereinigeImportTitel(spaltenWert(row, headerMap, "titel")),
-		signatur:  spaltenWert(row, headerMap, "signatur"),
-		kategorie: spaltenWert(row, headerMap, "kategorie"),
+		titel:     bereinigeImportTitel(spaltenWert(zeile, spalten, "titel")),
+		signatur:  spaltenWert(zeile, spalten, "signatur"),
+		kategorie: spaltenWert(zeile, spalten, "kategorie"),
 	}
 	if !hatLMFKennung(z.kategorie) && !hatLMFKennung(z.signatur) {
 		return z
@@ -82,30 +82,30 @@ func titelZeilenFelder(row []string, headerMap map[string]int) zeilenFelder {
 
 // sammleNeueTitel identifiziert (erster Pass) die Titel, die neu angelegt werden
 // müssen, weil sie sich weder über ISBN noch über den Titel matchen lassen.
-func sammleNeueTitel(rows [][]string, headerMap map[string]int, bestand repository.TitelBestand) (map[string]*importNewTitle, []string) {
-	newTitlesMap := make(map[string]*importNewTitle) // key: isbn or titel
-	var newTitlesOrder []string
+func sammleNeueTitel(zeilen [][]string, spalten map[string]int, bestand repository.TitelBestand) (map[string]*importTitelNeu, []string) {
+	neueTitel := make(map[string]*importTitelNeu) // key: isbn or titel
+	var reihenfolge []string
 
-	for _, row := range rows[1:] {
-		cacheKey, t, ok := baueNeuTitelAusZeile(row, headerMap, bestand)
+	for _, zeile := range zeilen[1:] {
+		schluessel, t, ok := baueNeuTitelAusZeile(zeile, spalten, bestand)
 		if !ok {
 			continue
 		}
-		if _, exists := newTitlesMap[cacheKey]; exists {
+		if _, da := neueTitel[schluessel]; da {
 			continue
 		}
-		newTitlesMap[cacheKey] = t
-		newTitlesOrder = append(newTitlesOrder, cacheKey)
+		neueTitel[schluessel] = t
+		reihenfolge = append(reihenfolge, schluessel)
 	}
-	return newTitlesMap, newTitlesOrder
+	return neueTitel, reihenfolge
 }
 
 // baueNeuTitelAusZeile prüft eine Zeile und liefert, falls der Bestand ihren Titel nicht
 // führt, den Cache-Key und den anzulegenden Titel. ok=false bedeutet: Zeile überspringen (leer
 // oder schon im Bestand).
-func baueNeuTitelAusZeile(row []string, headerMap map[string]int, bestand repository.TitelBestand) (cacheKey string, t *importNewTitle, ok bool) {
-	z := titelZeilenFelder(row, headerMap)
-	barcode := spaltenWert(row, headerMap, "barcode")
+func baueNeuTitelAusZeile(zeile []string, spalten map[string]int, bestand repository.TitelBestand) (schluessel string, t *importTitelNeu, ok bool) {
+	z := titelZeilenFelder(zeile, spalten)
+	barcode := spaltenWert(zeile, spalten, "barcode")
 	if z.titel == "" || barcode == "" {
 		return "", nil, false
 	}
@@ -113,26 +113,26 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, bestand reposi
 	// Die Form, in der die Datenbank speichert: Nennt die Datei dasselbe Buch zehn- und
 	// dreizehnstellig, ist es ein Titel. Als zwei Schlüssel ergäbe es zwei INSERTs, und der
 	// zweite scheiterte am UNIQUE-Index.
-	isbn := isbnutil.Normalform(isbnutil.OhneTrenner(spaltenWert(row, headerMap, "isbn")))
+	isbn := isbnutil.Normalform(isbnutil.OhneTrenner(spaltenWert(zeile, spalten, "isbn")))
 
 	if _, bekannt := bestand.TitelZu(isbn, z.titel); bekannt {
 		return "", nil, false // schon vorhanden
 	}
 
 	// Needs new title
-	cacheKey = isbn
-	if cacheKey == "" {
-		cacheKey = repository.NormalisiereTitelSchluessel(z.titel)
+	schluessel = isbn
+	if schluessel == "" {
+		schluessel = repository.NormalisiereTitelSchluessel(z.titel)
 	}
 
 	var jahr int
-	if j, err := strconv.Atoi(spaltenWert(row, headerMap, "jahr")); err == nil {
+	if j, err := strconv.Atoi(spaltenWert(zeile, spalten, "jahr")); err == nil {
 		jahr = j
 	}
-	return cacheKey, &importNewTitle{
+	return schluessel, &importTitelNeu{
 		Titel:         z.titel,
-		Autor:         spaltenWert(row, headerMap, "autor"),
-		Verlag:        spaltenWert(row, headerMap, "verlag"),
+		Autor:         spaltenWert(zeile, spalten, "autor"),
+		Verlag:        spaltenWert(zeile, spalten, "verlag"),
 		ISBN:          isbn,
 		Jahr:          jahr,
 		Kategorie:     z.kategorie,
@@ -150,7 +150,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, bestand reposi
 // Standorttexte („Buch Pg/Kaf 078829 1. Aufl."), und jeder davon wurde ein eigenes
 // „Fach" in der Systematik (1.677 Zeilen auf dem Test-Server, scripts/
 // repair_fach_kategorie.sql räumt sie ab).
-func fachDerZeile(t *importNewTitle) string {
+func fachDerZeile(t *importTitelNeu) string {
 	if t.Fach != "" {
 		return t.Fach
 	}
@@ -159,7 +159,7 @@ func fachDerZeile(t *importNewTitle) string {
 
 // alsTitel füllt den Titel, wie die Datenbankschicht ihn anlegt. Das Fach kommt aus der
 // Lernmittelsignatur („LMF Ma 6" → Mathematik), sonst aus der Kategorie (fachDerZeile).
-func (t *importNewTitle) alsTitel() repository.Titel {
+func (t *importTitelNeu) alsTitel() repository.Titel {
 	return repository.Titel{
 		Titel:            t.Titel,
 		Autor:            t.Autor,
@@ -174,19 +174,19 @@ func (t *importNewTitle) alsTitel() repository.Titel {
 	}
 }
 
-// fuegeNeueTitelEin legt die neuen Titel an und trägt sie im Bestand nach: Die Exemplare
+// legeNeueTitelAn legt die neuen Titel an und trägt sie im Bestand nach: Die Exemplare
 // derselben Datei finden sie im zweiten Durchgang.
-func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, bestand repository.TitelBestand) (int, error) {
-	neu := make([]repository.Titel, 0, len(newTitlesOrder))
-	for _, key := range newTitlesOrder {
-		neu = append(neu, newTitlesMap[key].alsTitel())
+func legeNeueTitelAn(ctx context.Context, tx pgx.Tx, neueTitel map[string]*importTitelNeu, reihenfolge []string, bestand repository.TitelBestand) (int, error) {
+	neu := make([]repository.Titel, 0, len(reihenfolge))
+	for _, schluessel := range reihenfolge {
+		neu = append(neu, neueTitel[schluessel].alsTitel())
 	}
 	ids, err := repository.LegeImportTitelAn(ctx, tx, neu)
 	if err != nil {
 		return 0, err
 	}
-	for i, key := range newTitlesOrder {
-		t := newTitlesMap[key]
+	for i, schluessel := range reihenfolge {
+		t := neueTitel[schluessel]
 		bestand.Merke(t.ISBN, t.Titel, ids[i])
 	}
 	return len(ids), nil
@@ -194,20 +194,20 @@ func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*
 
 // sammleExemplare sammelt (zweiter Pass) alle einzufügenden Exemplare, jetzt mit
 // den vollständigen Titel-IDs aus Pass 1.
-func sammleExemplare(rows [][]string, headerMap map[string]int, bestand repository.TitelBestand) []repository.ImportExemplar {
-	var copiesToInsert []repository.ImportExemplar
+func sammleExemplare(zeilen [][]string, spalten map[string]int, bestand repository.TitelBestand) []repository.ImportExemplar {
+	var exemplare []repository.ImportExemplar
 
-	for i, row := range rows[1:] {
+	for i, zeile := range zeilen[1:] {
 		// Identische Titel-Normalisierung wie Pass 1, sonst verfehlt das
 		// Titel-Matching die gerade angelegten Titel.
-		titel := titelZeilenFelder(row, headerMap).titel
+		titel := titelZeilenFelder(zeile, spalten).titel
 
 		// 1. String-Bereinigung & 2. Datentyp-Sicherheit
-		barcodeRaw := ""
-		if idx, ok := headerMap["barcode"]; ok && idx < len(row) {
-			barcodeRaw = row[idx]
+		barcodeRoh := ""
+		if spalte, ok := spalten["barcode"]; ok && spalte < len(zeile) {
+			barcodeRoh = zeile[spalte]
 		}
-		barcode := strings.TrimSpace(strings.Trim(barcodeRaw, "\uFEFF\u200B\x00\r\n\t"))
+		barcode := strings.TrimSpace(strings.Trim(barcodeRoh, "\uFEFF\u200B\x00\r\n\t"))
 
 		if titel == "" {
 			continue
@@ -220,7 +220,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, bestand reposito
 			continue
 		}
 
-		isbn := isbnutil.OhneTrenner(spaltenWert(row, headerMap, "isbn"))
+		isbn := isbnutil.OhneTrenner(spaltenWert(zeile, spalten, "isbn"))
 		titelID, _ := bestand.TitelZu(isbn, titel)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
@@ -228,13 +228,13 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, bestand reposito
 		// landet als Zustandsnotiz. Fehlt die Spalte, ist das Exemplar
 		// standardmäßig ausleihbar.
 		istAusleihbar := true
-		zustand := spaltenWert(row, headerMap, "zustand")
+		zustand := spaltenWert(zeile, spalten, "zustand")
 		if strings.EqualFold(zustand, "verliehen") {
 			istAusleihbar = false
 		}
 
 		if titelID != "" {
-			copiesToInsert = append(copiesToInsert, repository.ImportExemplar{
+			exemplare = append(exemplare, repository.ImportExemplar{
 				TitelID:       titelID,
 				Barcode:       barcode,
 				IstAusleihbar: istAusleihbar,
@@ -242,36 +242,36 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, bestand reposito
 			})
 		}
 	}
-	return copiesToInsert
+	return exemplare
 }
 
-// sammleSignaturUpdates sammelt je Titel-ID die Signatur aus der Datei (letzte
+// sammleSignaturen sammelt je Titel-ID die Signatur aus der Datei (letzte
 // nicht-leere gewinnt). Damit bekommen auch BESTEHENDE Titel ihre Signatur —
 // der Insert-Pfad deckt nur neue Titel ab.
-func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, bestand repository.TitelBestand) map[string]string {
-	if _, ok := headerMap["signatur"]; !ok {
+func sammleSignaturen(zeilen [][]string, spalten map[string]int, bestand repository.TitelBestand) map[string]string {
+	if _, ok := spalten["signatur"]; !ok {
 		return nil
 	}
 
-	updates := make(map[string]string)
-	for _, row := range rows[1:] {
-		z := titelZeilenFelder(row, headerMap)
+	nachTitel := make(map[string]string)
+	for _, zeile := range zeilen[1:] {
+		z := titelZeilenFelder(zeile, spalten)
 		if z.titel == "" || z.signatur == "" {
 			continue
 		}
-		isbn := isbnutil.OhneTrenner(spaltenWert(row, headerMap, "isbn"))
+		isbn := isbnutil.OhneTrenner(spaltenWert(zeile, spalten, "isbn"))
 		if id, bekannt := bestand.TitelZu(isbn, z.titel); bekannt {
-			updates[id] = z.signatur
+			nachTitel[id] = z.signatur
 		}
 	}
-	return updates
+	return nachTitel
 }
 
 // importSignaturen bringt die gesammelten Signaturen in die Form der Datenbankschicht. Trägt
 // eine Signatur Litteras LMF-Kennung, markiert der Import den Titel zugleich als Lernmittel.
-func importSignaturen(updates map[string]string) []repository.ImportSignatur {
-	signaturen := make([]repository.ImportSignatur, 0, len(updates))
-	for id, signatur := range updates {
+func importSignaturen(nachTitel map[string]string) []repository.ImportSignatur {
+	signaturen := make([]repository.ImportSignatur, 0, len(nachTitel))
+	for id, signatur := range nachTitel {
 		signaturen = append(signaturen, repository.ImportSignatur{
 			TitelID: id, Signatur: signatur, Lernmittel: lmf.HatKennung(signatur),
 		})
@@ -279,10 +279,10 @@ func importSignaturen(updates map[string]string) []repository.ImportSignatur {
 	return signaturen
 }
 
-// ImportDynamic verarbeitet die in rows übergebenen Daten (aus CSV oder XLSX).
+// ImportiereZeilen verarbeitet die in rows übergebenen Daten (aus CSV oder XLSX).
 // Die Spalten werden über die headerMap dynamisch zugeordnet.
-func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, headerMap map[string]int) (int, int, error) {
-	tx, err := s.db.Begin(ctx)
+func (d *ImportDienst) ImportiereZeilen(ctx context.Context, zeilen [][]string, spalten map[string]int) (int, int, error) {
+	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -293,31 +293,31 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 		return 0, 0, err
 	}
 
-	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, bestand)
+	neueTitel, reihenfolge := sammleNeueTitel(zeilen, spalten, bestand)
 
-	newTitlesCount, err := fuegeNeueTitelEin(ctx, tx, newTitlesMap, newTitlesOrder, bestand)
+	anzahlTitel, err := legeNeueTitelAn(ctx, tx, neueTitel, reihenfolge, bestand)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	signaturen := importSignaturen(sammleSignaturUpdates(rows, headerMap, bestand))
+	signaturen := importSignaturen(sammleSignaturen(zeilen, spalten, bestand))
 	if err := repository.SetzeImportSignaturen(ctx, tx, signaturen); err != nil {
 		return 0, 0, err
 	}
 
-	copiesToInsert := sammleExemplare(rows, headerMap, bestand)
+	exemplare := sammleExemplare(zeilen, spalten, bestand)
 
-	importedCopiesCount, skippedCount, err := repository.LegeImportExemplareAn(ctx, tx, copiesToInsert)
+	anzahlExemplare, uebersprungen, err := repository.LegeImportExemplareAn(ctx, tx, exemplare)
 	if err != nil {
 		return 0, 0, err
 	}
-	if skippedCount > 0 {
-		log.Printf("Warnung: %d Exemplare wurden übersprungen (bereits vorhanden)", skippedCount)
+	if uebersprungen > 0 {
+		log.Printf("Warnung: %d Exemplare wurden übersprungen (bereits vorhanden)", uebersprungen)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, 0, err
 	}
 
-	return newTitlesCount, importedCopiesCount, nil
+	return anzahlTitel, anzahlExemplare, nil
 }

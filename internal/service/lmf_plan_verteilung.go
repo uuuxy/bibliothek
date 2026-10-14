@@ -9,45 +9,45 @@ import (
 	"bibliothek/repository"
 )
 
-// LmfPlanEntwurf ist ein geprüfter Plan vor dem Rechnen: Rahmen, Zeilen, je Zeile der feste
+// LMFPlanEntwurf ist ein geprüfter Plan vor dem Rechnen: Rahmen, Zeilen, je Zeile der feste
 // Platz (nil, wenn sie fließt) und die ausgelassenen Klassen. Die Tür füllt ihn aus der Anfrage.
-type LmfPlanEntwurf struct {
+type LMFPlanEntwurf struct {
 	Plan        repository.LMFPlan
 	Zeilen      []repository.LMFPlanZeile
 	Fest        []*lmfplan.Platz
 	Ausgelassen []string
 }
 
-// VerteileLmfPlan rechnet die Plätze der Zeilen über die Schultage, also ohne die freien Tage
+// VerteileLMFPlan rechnet die Plätze der Zeilen über die Schultage, also ohne die freien Tage
 // des Plans und die Feiertage und Ferien aus pkg/lmfplan, und nennt die Ausfälle vom ersten Tag
 // bis zum letzten Platz. Der Rückgabe-Plan fließt vom Ende her rückwärts; sein Beginn
 // (e.Plan.ErsterTag und Startstunde) ist danach der früheste Platz.
-func VerteileLmfPlan(e *LmfPlanEntwurf) ([]lmfplan.Platz, []lmfplan.Ausfall, error) {
-	rueckwaerts := e.Plan.Art == repository.LMFTerminRueckgabe
-	ankerTag := e.Plan.ErsterTag
+func VerteileLMFPlan(entwurf *LMFPlanEntwurf) ([]lmfplan.Platz, []lmfplan.Ausfall, error) {
+	rueckwaerts := entwurf.Plan.Art == repository.LMFTerminRueckgabe
+	ankerTag := entwurf.Plan.ErsterTag
 	if rueckwaerts {
-		ankerTag = e.Plan.LetzterTag
+		ankerTag = entwurf.Plan.LetzterTag
 	}
 	anker, err := schulzeit.Kalendertag(ankerTag)
 	if err != nil {
 		return nil, nil, err
 	}
-	frei, err := lmfPlanFreieZeitraeume(e.Plan.FreieTage)
+	frei, err := lmfPlanFreieZeitraeume(entwurf.Plan.FreieTage)
 	if err != nil {
 		return nil, nil, err
 	}
 	var plaetze []lmfplan.Platz
 	if rueckwaerts {
-		ende := lmfplan.Ende{LetzterTag: anker, LetzteStunde: e.Plan.LetzteStunde, StundenJeTag: e.Plan.StundenJeTag}
-		plaetze = lmfplan.VerteileRueckwaerts(ende, e.Fest, lmfplan.Schultage(frei))
+		ende := lmfplan.Ende{LetzterTag: anker, LetzteStunde: entwurf.Plan.LetzteStunde, StundenJeTag: entwurf.Plan.StundenJeTag}
+		plaetze = lmfplan.VerteileRueckwaerts(ende, entwurf.Fest, lmfplan.Schultage(frei))
 		if b, ok := lmfplan.Beginn(plaetze); ok {
-			e.Plan.ErsterTag, e.Plan.Startstunde = b.Datum.Format(time.DateOnly), b.Stunde
+			entwurf.Plan.ErsterTag, entwurf.Plan.Startstunde = b.Datum.Format(time.DateOnly), b.Stunde
 		}
 	} else {
-		r := lmfplan.Rahmen{ErsterTag: anker, Startstunde: e.Plan.Startstunde, StundenJeTag: e.Plan.StundenJeTag}
-		plaetze = lmfplan.VerteileMit(r, e.Fest, lmfplan.Schultage(frei))
+		r := lmfplan.Rahmen{ErsterTag: anker, Startstunde: entwurf.Plan.Startstunde, StundenJeTag: entwurf.Plan.StundenJeTag}
+		plaetze = lmfplan.VerteileMit(r, entwurf.Fest, lmfplan.Schultage(frei))
 	}
-	ersterTag, err := schulzeit.Kalendertag(e.Plan.ErsterTag)
+	ersterTag, err := schulzeit.Kalendertag(entwurf.Plan.ErsterTag)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -56,8 +56,8 @@ func VerteileLmfPlan(e *LmfPlanEntwurf) ([]lmfplan.Platz, []lmfplan.Ausfall, err
 	// hat einen je Zeile, außer bei weniger als einer Stunde je Tag; dann geben beide eine leere
 	// Liste zurück. Die Tür verlangt 1 bis 12. Die Zusicherung steht trotzdem hier, weil Vorschau
 	// und Speichern mit plaetze[i] zugreifen und ein Indexfehler keine lesbare Meldung ist.
-	if len(plaetze) != len(e.Zeilen) {
-		return nil, nil, fmt.Errorf("verteilung: %d Plätze für %d Zeilen", len(plaetze), len(e.Zeilen))
+	if len(plaetze) != len(entwurf.Zeilen) {
+		return nil, nil, fmt.Errorf("verteilung: %d Plätze für %d Zeilen", len(plaetze), len(entwurf.Zeilen))
 	}
 	return plaetze, ausfaelle, nil
 }

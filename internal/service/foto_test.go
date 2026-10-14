@@ -11,7 +11,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestUploadStudentPhoto(t *testing.T) {
+func TestSchreibeLeserFoto(t *testing.T) {
 	// Set the required master key for encryption
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 
@@ -33,7 +33,7 @@ func TestUploadStudentPhoto(t *testing.T) {
 			WithArgs("student-123", pgxmock.AnyArg()).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-		photoURL, err := UploadStudentPhoto(context.Background(), mock, "student-123", validBase64)
+		photoURL, err := SchreibeLeserFoto(context.Background(), mock, "student-123", validBase64)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -59,7 +59,7 @@ func TestUploadStudentPhoto(t *testing.T) {
 			WithArgs("student-not-found").
 			WillReturnError(pgx.ErrNoRows)
 
-		photoURL, err := UploadStudentPhoto(context.Background(), mock, "student-not-found", validBase64)
+		photoURL, err := SchreibeLeserFoto(context.Background(), mock, "student-not-found", validBase64)
 		if err == nil {
 			t.Error("expected error, got nil")
 		}
@@ -92,7 +92,7 @@ func TestUploadStudentPhoto(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("barcode-123"))
 
 		invalidBase64 := "data:image/png;base64,invalid-base-64!!!"
-		photoURL, err := UploadStudentPhoto(context.Background(), mock, "student-123", invalidBase64)
+		photoURL, err := SchreibeLeserFoto(context.Background(), mock, "student-123", invalidBase64)
 		if !errors.Is(err, ErrFotoUnlesbar) {
 			t.Errorf("expected ErrFotoUnlesbar, got %v", err)
 		}
@@ -120,7 +120,7 @@ func TestUploadStudentPhoto(t *testing.T) {
 			WithArgs("student-123", pgxmock.AnyArg()).
 			WillReturnError(errors.New("db error"))
 
-		photoURL, err := UploadStudentPhoto(context.Background(), mock, "student-123", validBase64)
+		photoURL, err := SchreibeLeserFoto(context.Background(), mock, "student-123", validBase64)
 		if err == nil {
 			t.Error("expected error, got nil")
 		}

@@ -15,9 +15,9 @@ import (
 // 12, und beide Verteiler liefern genau dann einen Platz je Eintrag; bei 0 geben sie eine leere
 // Liste zurück, und Vorschau wie Speichern griffen mit plaetze[i] hinein. Ein Indexfehler
 // mitten im Speichern ist keine Meldung, die jemand lesen kann.
-func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
-	entwurf := func(stundenJeTag int) LmfPlanEntwurf {
-		return LmfPlanEntwurf{
+func TestVerteileLMFPlan_PlatzJeZeile(t *testing.T) {
+	entwurf := func(stundenJeTag int) LMFPlanEntwurf {
+		return LMFPlanEntwurf{
 			Plan: repository.LMFPlan{
 				Art: repository.LMFTerminAusgabe, ErsterTag: "2026-09-10",
 				Startstunde: 1, StundenJeTag: stundenJeTag,
@@ -30,7 +30,7 @@ func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
 
 	t.Run("Verteiler liefert nichts", func(t *testing.T) {
 		e := entwurf(0)
-		plaetze, _, err := VerteileLmfPlan(&e)
+		plaetze, _, err := VerteileLMFPlan(&e)
 		if err == nil {
 			t.Fatalf("kein Fehler bei %d Plätzen für %d Zeilen — der nächste Zugriff wäre plaetze[i]",
 				len(plaetze), len(e.Zeilen))
@@ -42,7 +42,7 @@ func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
 
 	t.Run("Normalfall bleibt unberührt", func(t *testing.T) {
 		e := entwurf(6)
-		plaetze, _, err := VerteileLmfPlan(&e)
+		plaetze, _, err := VerteileLMFPlan(&e)
 		if err != nil {
 			t.Fatalf("gültiger Rahmen abgelehnt: %v", err)
 		}
@@ -55,9 +55,9 @@ func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
 // Ein freier Tag des Plans wird übersprungen und mit seinem Grund als Ausfall genannt; ohne
 // Grund heißt er „freier Tag". Der 10.09.2026 ist ein Donnerstag, bei einer Stunde je Tag
 // liegt jede Zeile auf einem eigenen Schultag.
-func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
-	entwurf := func(frei []repository.LMFFreierTag) LmfPlanEntwurf {
-		return LmfPlanEntwurf{
+func TestVerteileLMFPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
+	entwurf := func(frei []repository.LMFFreierTag) LMFPlanEntwurf {
+		return LMFPlanEntwurf{
 			Plan: repository.LMFPlan{
 				Art: repository.LMFTerminAusgabe, ErsterTag: "2026-09-10",
 				Startstunde: 1, StundenJeTag: 1, FreieTage: frei,
@@ -68,7 +68,7 @@ func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
 	}
 
 	e := entwurf([]repository.LMFFreierTag{{Datum: "2026-09-11", Grund: "Pädagogischer Tag"}, {Datum: "2026-09-14"}})
-	plaetze, ausfaelle, err := VerteileLmfPlan(&e)
+	plaetze, ausfaelle, err := VerteileLMFPlan(&e)
 	if err != nil {
 		t.Fatalf("Plan mit freien Tagen abgelehnt: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
 	}
 
 	e = entwurf([]repository.LMFFreierTag{{Datum: "kein Datum"}})
-	if _, _, err := VerteileLmfPlan(&e); err == nil {
+	if _, _, err := VerteileLMFPlan(&e); err == nil {
 		t.Error("ein freier Tag ohne lesbares Datum muss die Verteilung abbrechen")
 	}
 }
@@ -96,7 +96,7 @@ func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
 // Der Rückgabe-Plan fließt von seinem Ende rückwärts, und sein Beginn ist danach der früheste
 // Platz; der Ausgabe-Plan fließt von seinem Beginn vorwärts und behält ihn. Der 25.06.2026 ist
 // ein Donnerstag, bei zwei Stunden je Tag liegen drei Zeilen auf zwei Tagen.
-func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *testing.T) {
+func TestVerteileLMFPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *testing.T) {
 	zeilen := []repository.LMFPlanZeile{{Klassen: []string{"10R1"}}, {Klassen: []string{"09H1"}}, {Klassen: []string{"08R1"}}}
 	plaetzeAls := func(plaetze []lmfplan.Platz) string {
 		var s []string
@@ -106,7 +106,7 @@ func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *tes
 		return strings.Join(s, ",")
 	}
 
-	rueck := LmfPlanEntwurf{
+	rueck := LMFPlanEntwurf{
 		Plan: repository.LMFPlan{
 			Art: repository.LMFTerminRueckgabe, LetzterTag: "2026-06-25", LetzteStunde: 2, StundenJeTag: 2,
 			// Der Beginn der Anfrage zählt nicht, die Verteilung rechnet ihn.
@@ -114,7 +114,7 @@ func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *tes
 		},
 		Zeilen: zeilen, Fest: []*lmfplan.Platz{nil, nil, nil},
 	}
-	plaetze, _, err := VerteileLmfPlan(&rueck)
+	plaetze, _, err := VerteileLMFPlan(&rueck)
 	if err != nil {
 		t.Fatalf("Rückgabe-Plan: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *tes
 		t.Errorf("Rückgabe-Plan: Beginn %s Stunde %d, erwartet den frühesten Platz (24.06., 2. Stunde)", rueck.Plan.ErsterTag, rueck.Plan.Startstunde)
 	}
 
-	aus := LmfPlanEntwurf{
+	aus := LMFPlanEntwurf{
 		Plan: repository.LMFPlan{
 			Art: repository.LMFTerminAusgabe, ErsterTag: "2026-06-25", Startstunde: 2, StundenJeTag: 2,
 			// Ein Ende in der Anfrage zählt beim Ausgabe-Plan nicht.
@@ -133,7 +133,7 @@ func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *tes
 		},
 		Zeilen: zeilen, Fest: []*lmfplan.Platz{nil, nil, nil},
 	}
-	plaetze, ausfaelle, err := VerteileLmfPlan(&aus)
+	plaetze, ausfaelle, err := VerteileLMFPlan(&aus)
 	if err != nil {
 		t.Fatalf("Ausgabe-Plan: %v", err)
 	}
@@ -149,13 +149,13 @@ func TestVerteileLmfPlan_RueckgabeFliesstRueckwaertsUndTraegtDenBeginnEin(t *tes
 }
 
 // Ein Rahmen ohne lesbaren Anker bricht die Verteilung ab, statt am Kalendertag null zu rechnen.
-func TestVerteileLmfPlan_AnkerOhneDatumIstEinFehler(t *testing.T) {
+func TestVerteileLMFPlan_AnkerOhneDatumIstEinFehler(t *testing.T) {
 	for _, plan := range []repository.LMFPlan{
 		{Art: repository.LMFTerminRueckgabe, LetzterTag: "", LetzteStunde: 1, StundenJeTag: 6, ErsterTag: "2026-06-25"},
 		{Art: repository.LMFTerminAusgabe, ErsterTag: "kein Datum", Startstunde: 1, StundenJeTag: 6},
 	} {
-		e := LmfPlanEntwurf{Plan: plan, Zeilen: []repository.LMFPlanZeile{{Klassen: []string{"05F1"}}}, Fest: []*lmfplan.Platz{nil}}
-		if _, _, err := VerteileLmfPlan(&e); err == nil {
+		e := LMFPlanEntwurf{Plan: plan, Zeilen: []repository.LMFPlanZeile{{Klassen: []string{"05F1"}}}, Fest: []*lmfplan.Platz{nil}}
+		if _, _, err := VerteileLMFPlan(&e); err == nil {
 			t.Errorf("%s-Plan ohne lesbaren Anker: kein Fehler", plan.Art)
 		}
 	}
@@ -165,7 +165,7 @@ func TestVerteileLmfPlan_AnkerOhneDatumIstEinFehler(t *testing.T) {
 // überspringt einen freien Tag auch beim Rückwärtsfließen, und eine Zeile mit festem Platz
 // behält ihn, die übrigen fließen um ihn herum. Die Woche vom 22. bis 25.06.2026 hat vier
 // Schultage.
-func TestVerteileLmfPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T) {
+func TestVerteileLMFPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T) {
 	zeilen := []repository.LMFPlanZeile{{Klassen: []string{"10R1"}}, {Klassen: []string{"09H1"}}, {Klassen: []string{"08R1"}}}
 	platz := func(tag, stunde int) *lmfplan.Platz {
 		return &lmfplan.Platz{Datum: time.Date(2026, time.June, tag, 0, 0, 0, 0, schulzeit.Zone()), Stunde: stunde}
@@ -177,8 +177,8 @@ func TestVerteileLmfPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T
 		}
 		return strings.Join(s, ",")
 	}
-	rueckgabe := func(stundenJeTag int, frei []repository.LMFFreierTag, fest []*lmfplan.Platz) LmfPlanEntwurf {
-		return LmfPlanEntwurf{
+	rueckgabe := func(stundenJeTag int, frei []repository.LMFFreierTag, fest []*lmfplan.Platz) LMFPlanEntwurf {
+		return LMFPlanEntwurf{
 			Plan: repository.LMFPlan{
 				Art: repository.LMFTerminRueckgabe, LetzterTag: "2026-06-25", LetzteStunde: stundenJeTag, StundenJeTag: stundenJeTag,
 				ErsterTag: "2026-06-25", Startstunde: stundenJeTag, FreieTage: frei,
@@ -188,7 +188,7 @@ func TestVerteileLmfPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T
 	}
 
 	e := rueckgabe(1, []repository.LMFFreierTag{{Datum: "2026-06-24", Grund: "Studientag"}}, []*lmfplan.Platz{nil, nil, nil})
-	plaetze, ausfaelle, err := VerteileLmfPlan(&e)
+	plaetze, ausfaelle, err := VerteileLMFPlan(&e)
 	if err != nil {
 		t.Fatalf("Rückgabe-Plan mit freiem Tag: %v", err)
 	}
@@ -200,21 +200,21 @@ func TestVerteileLmfPlan_FreieTageUndFestePlaetzeInBeidenRichtungen(t *testing.T
 	}
 
 	e = rueckgabe(2, []repository.LMFFreierTag{}, []*lmfplan.Platz{platz(22, 1), nil, nil})
-	if plaetze, _, err = VerteileLmfPlan(&e); err != nil {
+	if plaetze, _, err = VerteileLMFPlan(&e); err != nil {
 		t.Fatalf("Rückgabe-Plan mit festem Platz: %v", err)
 	}
 	if got := plaetzeAls(plaetze); got != "2026-06-22/1,2026-06-25/1,2026-06-25/2" {
 		t.Errorf("Rückgabe-Plan mit festem Platz: Plätze %s, erwartet die erste Zeile am 22.06. in der 1. Stunde", got)
 	}
 
-	aus := LmfPlanEntwurf{
+	aus := LMFPlanEntwurf{
 		Plan: repository.LMFPlan{
 			Art: repository.LMFTerminAusgabe, ErsterTag: "2026-06-25", Startstunde: 1, StundenJeTag: 2,
 			FreieTage: []repository.LMFFreierTag{},
 		},
 		Zeilen: zeilen, Fest: []*lmfplan.Platz{nil, platz(26, 2), nil},
 	}
-	if plaetze, _, err = VerteileLmfPlan(&aus); err != nil {
+	if plaetze, _, err = VerteileLMFPlan(&aus); err != nil {
 		t.Fatalf("Ausgabe-Plan mit festem Platz: %v", err)
 	}
 	if got := plaetzeAls(plaetze); got != "2026-06-25/1,2026-06-26/2,2026-06-25/2" {

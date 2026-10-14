@@ -49,7 +49,7 @@ func raeumeImportProbe(t *testing.T, pool *pgxpool.Pool, barcodes, titel []strin
 // Der Bestands-Import schreibt jede Spalte der Datei an ihre Stelle, am Titel wie am Exemplar.
 // Jede Spalte trägt einen eigenen Wert: Mit gleichen fiele nicht auf, wenn zwei vertauscht
 // ankämen. Die Datei nennt drei neue Titel, damit auffällt, wenn ein Exemplar am falschen hängt.
-func TestImportDynamic_JedeSpalteKommtAnIhrerStelleAn(t *testing.T) {
+func TestImportiereZeilen_JedeSpalteKommtAnIhrerStelleAn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	barcodes := []string{"FELDER-PROBE-562-1", "FELDER-PROBE-562-2", "FELDER-PROBE-562-3", "FELDER-PROBE-562-4"}
@@ -66,9 +66,9 @@ func TestImportDynamic_JedeSpalteKommtAnIhrerStelleAn(t *testing.T) {
 		{sachbuch, "Autor des Sachbuchs", "Verlag des Sachbuchs", "", "2001", "Mathematik", "Ma 12", barcodes[2], ""},
 		{rechenbuch, "", "", "", "", "Buch LMF Ma 6/Gri", "Ma 6 Rech", barcodes[3], ""},
 	}
-	neueTitel, neueExemplare, err := NewImportService(nil, pool).ImportDynamic(ctx, datei, kopf)
+	neueTitel, neueExemplare, err := NewImportDienst(nil, pool).ImportiereZeilen(ctx, datei, kopf)
 	if err != nil {
-		t.Fatalf("ImportDynamic: %v", err)
+		t.Fatalf("ImportiereZeilen: %v", err)
 	}
 	if neueTitel != 3 || neueExemplare != 4 {
 		t.Errorf("%d neue Titel und %d neue Exemplare gemeldet, erwartet 3 und 4", neueTitel, neueExemplare)
@@ -116,7 +116,7 @@ func TestImportDynamic_JedeSpalteKommtAnIhrerStelleAn(t *testing.T) {
 
 	// Dieselbe Datei ein zweites Mal: Jede Nummer gibt es schon. Kein Exemplar entsteht doppelt,
 	// und der Import meldet keines als neu.
-	neueTitel, neueExemplare, err = NewImportService(nil, pool).ImportDynamic(ctx, datei, kopf)
+	neueTitel, neueExemplare, err = NewImportDienst(nil, pool).ImportiereZeilen(ctx, datei, kopf)
 	if err != nil {
 		t.Fatalf("zweiter Lauf: %v", err)
 	}
@@ -136,7 +136,7 @@ func TestImportDynamic_JedeSpalteKommtAnIhrerStelleAn(t *testing.T) {
 // Führt die Systematik ein Fach in anderer Schreibweise als die Datei, trägt der neue Titel die
 // Schreibweise der Systematik: subject ist ein Fremdschlüssel auf ihre Bezeichnung, mit der
 // Schreibweise der Datei scheiterte der ganze Import.
-func TestImportDynamic_FachInDerSchreibweiseDerSystematik(t *testing.T) {
+func TestImportiereZeilen_FachInDerSchreibweiseDerSystematik(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	barcodes := []string{"FACH-PROBE-562-1"}
@@ -160,12 +160,12 @@ func TestImportDynamic_FachInDerSchreibweiseDerSystematik(t *testing.T) {
 		t.Fatal("die Systematik führt das Fach schon; die Probe braucht es in eigener Schreibweise")
 	}
 
-	neueTitel, _, err := NewImportService(nil, pool).ImportDynamic(ctx, [][]string{
+	neueTitel, _, err := NewImportDienst(nil, pool).ImportiereZeilen(ctx, [][]string{
 		{"Titel", "Kategorie", "Barcode"},
 		{titel, "Arbeitslehre", barcodes[0]},
 	}, map[string]int{"titel": 0, "kategorie": 1, "barcode": 2})
 	if err != nil {
-		t.Fatalf("ImportDynamic: %v", err)
+		t.Fatalf("ImportiereZeilen: %v", err)
 	}
 	if fach := liesImportTitel(t, pool, titel).Fach; neueTitel != 1 || fach != "ARBEITSLEHRE" {
 		t.Errorf("%d neue Titel, Fach %q — erwartet 1 und die Schreibweise der Systematik, ARBEITSLEHRE", neueTitel, fach)
@@ -175,7 +175,7 @@ func TestImportDynamic_FachInDerSchreibweiseDerSystematik(t *testing.T) {
 // Die Signatur aus der Datei kommt auch an einen Titel, den es schon gibt. Trägt sie die
 // Kennung der Lernmittel, wird der Titel als Lernmittel markiert; ohne Kennung bleibt ein
 // gesetztes Kennzeichen stehen, und eine leere Angabe lässt die Signatur, wie sie ist.
-func TestImportDynamic_SignaturAmVorhandenenTitel(t *testing.T) {
+func TestImportiereZeilen_SignaturAmVorhandenenTitel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	barcodes := []string{"SIGNATUR-PROBE-562-1", "SIGNATUR-PROBE-562-2", "SIGNATUR-PROBE-562-3"}
@@ -190,14 +190,14 @@ func TestImportDynamic_SignaturAmVorhandenenTitel(t *testing.T) {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 
-	neueTitel, neueExemplare, err := NewImportService(nil, pool).ImportDynamic(ctx, [][]string{
+	neueTitel, neueExemplare, err := NewImportDienst(nil, pool).ImportiereZeilen(ctx, [][]string{
 		{"Titel", "Signatur", "Barcode"},
 		{wirdLernmittel, "LMF Deu 5", barcodes[0]},
 		{bleibtLernmittel, "Eng 6 a", barcodes[1]},
 		{ohneAngabe, "", barcodes[2]},
 	}, map[string]int{"titel": 0, "signatur": 1, "barcode": 2})
 	if err != nil {
-		t.Fatalf("ImportDynamic: %v", err)
+		t.Fatalf("ImportiereZeilen: %v", err)
 	}
 	if neueTitel != 0 || neueExemplare != 3 {
 		t.Errorf("%d neue Titel und %d neue Exemplare gemeldet, erwartet 0 und 3", neueTitel, neueExemplare)
@@ -221,7 +221,7 @@ func TestImportDynamic_SignaturAmVorhandenenTitel(t *testing.T) {
 // (repository.LadeTitelBestand). Solche Paare ließen die Migrationen 140 und 157 stehen; der
 // zweite Titel kommt deshalb am Trigger vorbei in die Tabelle. Beide Reihenfolgen, weil die
 // Regel nicht davon abhängen darf, welchen der zwei die Datenbank zuerst liefert.
-func TestImportDynamic_DoppelteISBNTrifftDenTitelInNormalform(t *testing.T) {
+func TestImportiereZeilen_DoppelteISBNTrifftDenTitelInNormalform(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
@@ -267,12 +267,12 @@ func TestImportDynamic_DoppelteISBNTrifftDenTitelInNormalform(t *testing.T) {
 				lege(titelNormal, f.normal)
 			}
 
-			neueTitel, neueExemplare, err := NewImportService(nil, pool).ImportDynamic(ctx, [][]string{
+			neueTitel, neueExemplare, err := NewImportDienst(nil, pool).ImportiereZeilen(ctx, [][]string{
 				{"Titel", "ISBN", "Barcode"},
 				{inDerDatei, f.isbnDerDatei, f.barcode},
 			}, map[string]int{"titel": 0, "isbn": 1, "barcode": 2})
 			if err != nil {
-				t.Fatalf("ImportDynamic: %v", err)
+				t.Fatalf("ImportiereZeilen: %v", err)
 			}
 			var amTitel string
 			if err := pool.QueryRow(ctx, `

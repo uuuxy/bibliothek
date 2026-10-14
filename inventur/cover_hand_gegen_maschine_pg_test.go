@@ -8,7 +8,7 @@ import (
 )
 
 // Ein von Hand hochgeladenes Cover ist die Entscheidung eines Menschen. Der Cover-Sync
-// (internal/service/cover_service.go) wählt seine Titel aber über cover_status — und den
+// (internal/service/cover.go) wählt seine Titel aber über cover_status — und den
 // setzten die Hand-Wege nie: Ein neuer Titel steht auf 'PENDING', die Bibliothekarin lädt
 // das richtige Cover hoch, und beim nächsten Lauf (alle 6 Stunden, beim Neustart) stand
 // wieder das DNB-Cover der falschen Auflage da, ohne Meldung (Bestands-Durchgang

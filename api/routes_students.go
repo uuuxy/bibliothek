@@ -47,7 +47,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Photos — die beiden Richtungen sprechen bewusst UNTERSCHIEDLICHE Kennungen an:
 	// hochgeladen wird über die Schüler-UUID (der Aufrufer kennt den Datensatz),
 	// ausgeliefert über den Barcode. Letzteres ist kein Zufall: resolveFotoURL
-	// (api/leser/student_profile.go), leser_liste.go und photo_service.go bauen
+	// (api/leser/student_profile.go), leser_liste.go und foto.go bauen
 	// die Bild-URL alle drei als /api/schueler/<barcode>/photo, und das Frontend rendert
 	// sie unverändert als <img src>.
 	//

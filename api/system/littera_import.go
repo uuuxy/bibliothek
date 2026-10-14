@@ -122,8 +122,8 @@ func (s *Tueren) logImportAudit(r *http.Request, aktion, details string) {
 // Eine Datei, die kein Katalogisat ist (z. B. Schlagwort-/Systematik-Export),
 // ist ein Nutzer-Formatfehler und wird als 400 gemeldet, nicht als 500.
 func (s *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, content []byte) {
-	importSvc := service.NewImportService(repository.NewKatalogAbfragen(s.DB.Pool), s.DB.Pool)
-	importedCount, err := importSvc.ParseLitteraXML(r.Context(), bytes.NewReader(content))
+	importSvc := service.NewImportDienst(repository.NewKatalogAbfragen(s.DB.Pool), s.DB.Pool)
+	importedCount, err := importSvc.ImportiereLitteraXML(r.Context(), bytes.NewReader(content))
 	if err != nil {
 		status := http.StatusInternalServerError
 		if errors.Is(err, service.ErrKeinKatalogisat) {
@@ -175,8 +175,8 @@ func (s *Tueren) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		importSvc := service.NewImportService(repository.NewKatalogAbfragen(s.DB.Pool), s.DB.Pool)
-		newTitlesCount, importedCopiesCount, err := importSvc.ImportDynamic(r.Context(), rows, headerMap)
+		importSvc := service.NewImportDienst(repository.NewKatalogAbfragen(s.DB.Pool), s.DB.Pool)
+		newTitlesCount, importedCopiesCount, err := importSvc.ImportiereZeilen(r.Context(), rows, headerMap)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -200,7 +200,7 @@ func (s *Tueren) LitteraImportHandler() http.HandlerFunc {
 // BestandImportHandler verarbeitet den Upload der finalen Bestands-CSV.
 //
 // Er nutzt denselben robusten Pfad wie der Littera-Import (Trennzeichen-Erkennung,
-// namensbasiertes Spalten-Mapping, Titel-Dedup über ImportDynamic). Dadurch ist es
+// namensbasiertes Spalten-Mapping, Titel-Dedup über ImportiereZeilen). Dadurch ist es
 // egal, ob die Datei Komma- oder Semikolon-getrennt ist bzw. die Zustand-Spalte
 // enthält — ein Formatfehler des Nutzers wird als 400 (nicht 500) gemeldet.
 func (s *Tueren) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
@@ -253,9 +253,9 @@ func (s *Tueren) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bookRepo := repository.NewKatalogAbfragen(s.DB.Pool)
-	importSvc := service.NewImportService(bookRepo, s.DB.Pool)
+	importSvc := service.NewImportDienst(bookRepo, s.DB.Pool)
 
-	newTitles, importedCopies, err := importSvc.ImportDynamic(r.Context(), rows, headerMap)
+	newTitles, importedCopies, err := importSvc.ImportiereZeilen(r.Context(), rows, headerMap)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return

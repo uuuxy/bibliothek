@@ -3,7 +3,7 @@ package lernmittel
 // lmf_plan.go — die Türen des LMF-Plans: lesen, rechnen und speichern, verwerfen.
 //
 // Der Plan ist ein Rahmen und eine Reihenfolge von Zeilen (Klassen, Vermerk). Datum und Stunde
-// jeder Zeile rechnet der Server über die Schultage (service.VerteileLmfPlan, pkg/lmfplan); eine
+// jeder Zeile rechnet der Server über die Schultage (service.VerteileLMFPlan, pkg/lmfplan); eine
 // Zeile kann ihren Platz fest vorgeben, die anderen fließen um sie herum. Der Rahmen hängt an
 // der Art: Der Büchertausch vor den Sommerferien endet (letzter_tag, letzte_stunde) und fließt
 // rückwärts, sein Beginn ist gerechnet; die Ausgabe nach den Ferien beginnt (erster_tag,
@@ -11,7 +11,7 @@ package lernmittel
 // "vorschau": true, damit es keinen JavaScript-Zwilling der Verteilung gibt.
 //
 // Je Art und Schuljahr gibt es einen Plan. GET liefert den neuesten der Art und, wenn keiner
-// läuft, die Reihenfolge für den nächsten (service.LmfPlanReihenfolgeVorgabe). Gespeichert wird
+// läuft, die Reihenfolge für den nächsten (service.LMFPlanReihenfolgeVorgabe). Gespeichert wird
 // ein Entwurf; erst das Veröffentlichen macht ihn sichtbar und setzt Fristen
 // (lmf_plan_veroeffentlichung.go).
 
@@ -34,13 +34,13 @@ import (
 )
 
 // LmfPlanVorschlag ist die Reihenfolge, mit der ein neuer Plan beginnt
-// (service.LmfPlanReihenfolgeVorgabe), mit seinem Rahmen.
+// (service.LMFPlanReihenfolgeVorgabe), mit seinem Rahmen.
 type LmfPlanVorschlag struct {
 	// Quelle: "vorjahr" (der letzte Plan der Art) oder "regel" (Abschluss zuerst).
 	Quelle      string                    `json:"quelle"`
 	Zeilen      []repository.LMFPlanZeile `json:"zeilen"`
 	Ausgelassen []string                  `json:"ausgelassen"`
-	// Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LmfPlanRahmenVorgabe).
+	// Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LMFPlanRahmenVorgabe).
 	Rahmen LmfPlanRahmenVorgabe `json:"rahmen"`
 }
 
@@ -81,7 +81,7 @@ type LmfPlanStandAntwort struct {
 	// im Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.
 	Klassen []string `json:"klassen"`
 	// AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt
-	// (service.LmfPlanLaesstAus). Der Planer klappt sie unter „bleiben draußen" ein, auch bei
+	// (service.IstAusgelassenImLMFPlan). Der Planer klappt sie unter „bleiben draußen" ein, auch bei
 	// einem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte sonst
 	// jede Klasse der Schule offen an.
 	AusgelassenRegel []string `json:"ausgelassen_regel"`
@@ -136,7 +136,7 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 	default:
 		plan := stand.Plan
 		antwort.Plan, antwort.Zeilen, antwort.Ausgelassen = &plan, stand.Zeilen, stand.Ausgelassen
-		antwort.Vorbei = service.LmfPlanVorbei(stand, s.Jetzt())
+		antwort.Vorbei = service.IstLMFPlanVorbei(stand, s.Jetzt())
 	}
 	// Klassen mit aktiven Schülern. LeserAbfragen.LadeKlassen zählt Abgänger mit; die Klasse eines
 	// Abgängers ohne aktive Schüler stünde im Planer sonst als „mit Schülern".
@@ -148,20 +148,20 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 	antwort.AusgelassenRegel = []string{}
 	for _, k := range klassen {
 		antwort.Klassen = append(antwort.Klassen, k.Name)
-		if service.LmfPlanLaesstAus(art, eingang, k) {
+		if service.IstAusgelassenImLMFPlan(art, eingang, k) {
 			antwort.AusgelassenRegel = append(antwort.AusgelassenRegel, k.Name)
 		}
 	}
 	laufend := antwort.Plan != nil && !antwort.Vorbei
-	sommerferien, ferien := service.LmfPlanSommerferien(art, antwort.Plan, laufend, s.Jetzt(), ferientabelle)
+	sommerferien, ferien := service.LMFPlanSommerferien(art, antwort.Plan, laufend, s.Jetzt(), ferientabelle)
 	antwort.Sommerferien = LmfPlanSommerferien(sommerferien)
 	if !laufend {
-		reihenfolge := service.LmfPlanReihenfolgeVorgabe(art, eingang, antwort.Plan != nil, stand, klassen)
+		reihenfolge := service.LMFPlanReihenfolgeVorgabe(art, eingang, antwort.Plan != nil, stand, klassen)
 		antwort.Vorschlag = &LmfPlanVorschlag{
 			Quelle:      reihenfolge.Quelle,
 			Zeilen:      reihenfolge.Zeilen,
 			Ausgelassen: reihenfolge.Ausgelassen,
-			Rahmen:      LmfPlanRahmenVorgabe(service.LmfPlanRahmenVorgabe(art, sommerferien, ferien)),
+			Rahmen:      LmfPlanRahmenVorgabe(service.LMFPlanRahmenVorgabe(art, sommerferien, ferien)),
 		}
 	}
 	if antwort.Vorschlag != nil {
@@ -171,7 +171,7 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 		if err != nil {
 			return apierrors.Internal("Klassen einordnen", err)
 		}
-		service.BelegeLmfPlanVermerkNurRueckgabe(antwort.Vorschlag.Zeilen, nurRueckgabe)
+		service.BelegeVermerkNurRueckgabeVor(antwort.Vorschlag.Zeilen, nurRueckgabe)
 	}
 	tuer.RespondJSON(w, http.StatusOK, antwort)
 	return nil
@@ -229,8 +229,8 @@ type LmfPlanSpeicherAntwort struct {
 const lmfPlanMaxZeilen = 400
 
 // pruefeLmfPlan prüft die Anfrage und füllt daraus den Entwurf, den der Dienst verteilt.
-func pruefeLmfPlan(art string, req lmfPlanRequest) (service.LmfPlanEntwurf, error) {
-	e := service.LmfPlanEntwurf{Plan: repository.LMFPlan{Art: art, StundenJeTag: req.StundenJeTag, FreieTage: []repository.LMFFreierTag{}}}
+func pruefeLmfPlan(art string, req lmfPlanRequest) (service.LMFPlanEntwurf, error) {
+	e := service.LMFPlanEntwurf{Plan: repository.LMFPlan{Art: art, StundenJeTag: req.StundenJeTag, FreieTage: []repository.LMFFreierTag{}}}
 	if e.Plan.StundenJeTag < 1 || e.Plan.StundenJeTag > 12 {
 		return e, errors.New("stunden_je_tag muss zwischen 1 und 12 liegen")
 	}
@@ -364,7 +364,7 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 		return keine, false, apierrors.BadRequest(err.Error(), err)
 	}
 	repo := repository.NewLMFAbfragen(s.DB.Pool)
-	plaetze, ausgefallen, err := service.VerteileLmfPlan(&e)
+	plaetze, ausgefallen, err := service.VerteileLMFPlan(&e)
 	if err != nil {
 		return keine, false, apierrors.Internal("Verteilung rechnen", err)
 	}
@@ -373,8 +373,8 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 		return lmfPlanVorschauAntwort(e, plaetze, ausfaelle), true, nil
 	}
 	// Den alten Stand dieses Schuljahres lesen: Klassen, die ihren Termin verlieren,
-	// kehren zum Stichtag zurück (service.KoppleLmfPlanFristen).
-	alt, err := service.LmfPlanZeilenVorher(r.Context(), repo, art, e.Plan.ErsterTag)
+	// kehren zum Stichtag zurück (service.KoppleLMFPlanFristen).
+	alt, err := service.LadeLMFPlanZeilenVorher(r.Context(), repo, art, e.Plan.ErsterTag)
 	if err != nil {
 		return keine, false, apierrors.Internal("alten Plan lesen", err)
 	}
@@ -394,7 +394,7 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 	// veröffentlichter Plan bleibt es, und seine Korrektur gilt sofort.
 	var angepasst int64
 	if stand.Plan.VeroeffentlichtAm != nil {
-		if angepasst, err = service.KoppleLmfPlanFristen(r.Context(), repo, tx, art, alt, stand.Zeilen); err != nil {
+		if angepasst, err = service.KoppleLMFPlanFristen(r.Context(), repo, tx, art, alt, stand.Zeilen); err != nil {
 			return keine, false, apierrors.Internal("Fristen koppeln", err)
 		}
 	}
@@ -420,7 +420,7 @@ func lmfPlanAusfaelle(ausfaelle []lmfplan.Ausfall) []LmfPlanAusfall {
 }
 
 // lmfPlanVorschauAntwort trägt die gerechneten Plätze in die Zeilen des Entwurfs ein.
-func lmfPlanVorschauAntwort(e service.LmfPlanEntwurf, plaetze []lmfplan.Platz, ausfaelle []LmfPlanAusfall) LmfPlanSpeicherAntwort {
+func lmfPlanVorschauAntwort(e service.LMFPlanEntwurf, plaetze []lmfplan.Platz, ausfaelle []LmfPlanAusfall) LmfPlanSpeicherAntwort {
 	for i := range e.Zeilen {
 		e.Zeilen[i].Position = i + 1
 		e.Zeilen[i].Datum = plaetze[i].Datum.Format(tuer.DateFormatISO)
@@ -476,7 +476,7 @@ func (s *Tueren) verwerfeLmfPlan(r *http.Request) (int64, error) {
 	// Nur ein veröffentlichter Plan hat Fristen gesetzt, die zurückkehren müssen.
 	var angepasst int64
 	if st.Plan.VeroeffentlichtAm != nil {
-		if angepasst, err = service.KoppleLmfPlanFristen(r.Context(), repo, tx, art, st.Zeilen, nil); err != nil {
+		if angepasst, err = service.KoppleLMFPlanFristen(r.Context(), repo, tx, art, st.Zeilen, nil); err != nil {
 			return 0, apierrors.Internal("Fristen koppeln", err)
 		}
 	}

@@ -12,7 +12,7 @@ import (
 
 // Die eine Regel, welche Klasse nicht in den Plan einer Art gehört. Der Vorschlag und die Liste
 // „bleiben draußen" des Planers (ausgelassen_regel) fragen dieselbe.
-func TestLmfPlanLaesstAus(t *testing.T) {
+func TestIstAusgelassenImLMFPlan(t *testing.T) {
 	eingang := []int{5, 7}
 	f := func(name string, jg int, ober bool) repository.KlasseImPlan {
 		return repository.KlasseImPlan{Name: name, Jahrgang: jg, Oberstufe: ober}
@@ -31,7 +31,7 @@ func TestLmfPlanLaesstAus(t *testing.T) {
 		{repository.LMFTerminAusgabe, f("12T1", 12, true), true},
 	}
 	for _, c := range faelle {
-		if ist := LmfPlanLaesstAus(c.art, eingang, c.k); ist != c.soll {
+		if ist := IstAusgelassenImLMFPlan(c.art, eingang, c.k); ist != c.soll {
 			t.Errorf("%s %s: ausgelassen=%v, erwartet %v", c.art, c.k.Name, ist, c.soll)
 		}
 	}
@@ -40,14 +40,14 @@ func TestLmfPlanLaesstAus(t *testing.T) {
 // Die Reihenfolge aus der Regel endet wie der Plan der Schule: nach den Klassen „Nachzügler" und
 // „Aufräumen" (Zeilen ohne Klasse); beim Ausgabe-Plan stehen davor nur die Eingangsjahrgänge.
 // Das Vorjahr bringt seine eigenen Zeilen mit, ohne Zusatz.
-func TestLmfPlanReihenfolgeVorgabe_RegelEndetMitNachzueglerUndAufraeumen(t *testing.T) {
+func TestLMFPlanReihenfolgeVorgabe_RegelEndetMitNachzueglerUndAufraeumen(t *testing.T) {
 	klassen := []repository.KlasseImPlan{
 		{Name: "10R1", Jahrgang: 10, Abschluss: true},
 		{Name: "07G1", Jahrgang: 7},
 		{Name: "05F1", Jahrgang: 5},
 		{Name: "12T1", Jahrgang: 12, Oberstufe: true},
 	}
-	v := LmfPlanReihenfolgeVorgabe(repository.LMFTerminAusgabe, []int{5, 7}, false, repository.LMFPlanStand{}, klassen)
+	v := LMFPlanReihenfolgeVorgabe(repository.LMFTerminAusgabe, []int{5, 7}, false, repository.LMFPlanStand{}, klassen)
 	vermerke := make([]string, 0, len(v.Zeilen))
 	for _, z := range v.Zeilen {
 		if len(z.Klassen) > 0 {
@@ -64,7 +64,7 @@ func TestLmfPlanReihenfolgeVorgabe_RegelEndetMitNachzueglerUndAufraeumen(t *test
 	}
 	// Vorjahr: nur die eigenen Zeilen.
 	st := repository.LMFPlanStand{Zeilen: []repository.LMFPlanZeile{{Klassen: []string{"07G1"}}}}
-	if v := LmfPlanReihenfolgeVorgabe(repository.LMFTerminAusgabe, []int{5, 7}, true, st, klassen); len(v.Zeilen) != 2 {
+	if v := LMFPlanReihenfolgeVorgabe(repository.LMFTerminAusgabe, []int{5, 7}, true, st, klassen); len(v.Zeilen) != 2 {
 		t.Errorf("Vorjahr-Vorschlag: %d Zeilen, erwartet 2 (07G1 + neue 05F1)", len(v.Zeilen))
 	}
 }
@@ -73,7 +73,7 @@ func TestLmfPlanReihenfolgeVorgabe_RegelEndetMitNachzueglerUndAufraeumen(t *test
 // das Merkmal „fest" gehören dem alten Plan. Klassen, die der alte Plan schon nennt, in einer
 // Zeile oder unter den ausgelassenen, kommen nicht ein zweites Mal dazu, auch nicht in anderer
 // Schreibweise; neue Klassen stehen hinten oder nach der Regel draußen.
-func TestLmfPlanReihenfolgeVorgabe_VorjahrBringtKlassenUndVermerkOhnePlatz(t *testing.T) {
+func TestLMFPlanReihenfolgeVorgabe_VorjahrBringtKlassenUndVermerkOhnePlatz(t *testing.T) {
 	st := repository.LMFPlanStand{
 		Zeilen: []repository.LMFPlanZeile{
 			{Position: 1, Datum: "2026-06-24", Stunde: 3, Fest: true, Klassen: []string{"10R1", "09H1"}, Vermerk: "nur Rückgabe"},
@@ -87,9 +87,9 @@ func TestLmfPlanReihenfolgeVorgabe_VorjahrBringtKlassenUndVermerkOhnePlatz(t *te
 		{Name: "07G1", Jahrgang: 7},   // neu
 		{Name: "12T1", Jahrgang: 12, Oberstufe: true},
 	}
-	ist := LmfPlanReihenfolgeVorgabe(repository.LMFTerminRueckgabe, []int{5, 7}, true, st, klassen)
-	will := LmfPlanReihenfolge{
-		Quelle: LmfPlanQuelleVorjahr,
+	ist := LMFPlanReihenfolgeVorgabe(repository.LMFTerminRueckgabe, []int{5, 7}, true, st, klassen)
+	will := LMFPlanReihenfolge{
+		Quelle: lmfPlanQuelleVorjahr,
 		Zeilen: []repository.LMFPlanZeile{
 			{Klassen: []string{"10R1", "09H1"}, Vermerk: "nur Rückgabe"},
 			{Klassen: []string{}, Vermerk: "Aufräumen"},
@@ -101,12 +101,12 @@ func TestLmfPlanReihenfolgeVorgabe_VorjahrBringtKlassenUndVermerkOhnePlatz(t *te
 		t.Errorf("Reihenfolge aus dem Vorjahr =\n%+v\nerwartet\n%+v", ist, will)
 	}
 	// Ohne Vorjahr gilt die Regel, und was im Stand steht, zählt nicht.
-	regel := LmfPlanReihenfolgeVorgabe(repository.LMFTerminRueckgabe, []int{5, 7}, false, st, klassen)
-	if regel.Quelle != LmfPlanQuelleRegel || len(regel.Zeilen) != 5 || !reflect.DeepEqual(regel.Ausgelassen, []string{"12T1"}) {
+	regel := LMFPlanReihenfolgeVorgabe(repository.LMFTerminRueckgabe, []int{5, 7}, false, st, klassen)
+	if regel.Quelle != lmfPlanQuelleRegel || len(regel.Zeilen) != 5 || !reflect.DeepEqual(regel.Ausgelassen, []string{"12T1"}) {
 		t.Errorf("Reihenfolge aus der Regel: %+v, erwartet drei Klassen, Nachzügler und Aufräumen und die Oberstufe draußen", regel)
 	}
 	// Leere Listen statt nil: Der Planer bekommt `[]`.
-	leer := LmfPlanReihenfolgeVorgabe(repository.LMFTerminAusgabe, nil, true, repository.LMFPlanStand{}, nil)
+	leer := LMFPlanReihenfolgeVorgabe(repository.LMFTerminAusgabe, nil, true, repository.LMFPlanStand{}, nil)
 	if leer.Zeilen == nil || leer.Ausgelassen == nil {
 		t.Errorf("leere Reihenfolge trägt nil: %+v", leer)
 	}
@@ -114,7 +114,7 @@ func TestLmfPlanReihenfolgeVorgabe_VorjahrBringtKlassenUndVermerkOhnePlatz(t *te
 
 // Ein Plan ist vorbei, wenn sein letzter Platz vor dem heutigen Kalendertag der Schule liegt.
 // Am Tag des letzten Platzes läuft er noch, bis Mitternacht in der Zone der Schule.
-func TestLmfPlanVorbei(t *testing.T) {
+func TestIstLMFPlanVorbei(t *testing.T) {
 	in := func(j int, m time.Month, d, h, min int) time.Time {
 		return time.Date(j, m, d, h, min, 0, 0, schulzeit.Zone())
 	}
@@ -139,7 +139,7 @@ func TestLmfPlanVorbei(t *testing.T) {
 		{"ohne Zeilen zählt der erste Tag", ohneZeilen, in(2026, time.June, 22, 12, 0), false},
 		{"ohne Zeilen, am Tag nach dem ersten", ohneZeilen, in(2026, time.June, 23, 0, 1), true},
 	} {
-		if ist := LmfPlanVorbei(f.st, f.jetzt); ist != f.want {
+		if ist := IstLMFPlanVorbei(f.st, f.jetzt); ist != f.want {
 			t.Errorf("%s: vorbei=%v, erwartet %v", f.name, ist, f.want)
 		}
 	}
@@ -147,7 +147,7 @@ func TestLmfPlanVorbei(t *testing.T) {
 
 // Der Vermerk „nur Rückgabe" wird vorbelegt, wenn jede Klasse der Zeile nur abgibt. Ein
 // vorhandener Vermerk bleibt dahinter stehen; sagt er es schon, bleibt die Zeile, wie sie ist.
-func TestBelegeLmfPlanVermerkNurRueckgabe(t *testing.T) {
+func TestBelegeVermerkNurRueckgabeVor(t *testing.T) {
 	zeilen := []repository.LMFPlanZeile{
 		{Klassen: []string{"10R1", "09H1"}},                                // alle geben nur ab
 		{Klassen: []string{"10R1", "07G1"}},                                // eine tauscht
@@ -157,7 +157,7 @@ func TestBelegeLmfPlanVermerkNurRueckgabe(t *testing.T) {
 		{Klassen: []string{" 10r1"}},                                       // andere Schreibweise
 		{Klassen: []string{"07G1"}},                                        // tauscht
 	}
-	BelegeLmfPlanVermerkNurRueckgabe(zeilen, []string{"10R1", "09h1 "})
+	BelegeVermerkNurRueckgabeVor(zeilen, []string{"10R1", "09h1 "})
 	will := []string{"nur Rückgabe", "", "nur Rückgabe · Ausflug", "NUR RÜCKGABE, dann Zeugnis", "Aufräumen", "nur Rückgabe", ""}
 	for i, z := range zeilen {
 		if z.Vermerk != will[i] {
@@ -166,7 +166,7 @@ func TestBelegeLmfPlanVermerkNurRueckgabe(t *testing.T) {
 	}
 	// Ohne Klassen, die nur abgeben, bleibt jede Zeile leer.
 	ohne := []repository.LMFPlanZeile{{Klassen: []string{"10R1"}}}
-	BelegeLmfPlanVermerkNurRueckgabe(ohne, nil)
+	BelegeVermerkNurRueckgabeVor(ohne, nil)
 	if ohne[0].Vermerk != "" {
 		t.Errorf("ohne Klassen, die nur abgeben: Vermerk %q", ohne[0].Vermerk)
 	}

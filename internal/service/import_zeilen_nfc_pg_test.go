@@ -15,7 +15,7 @@ import (
 // („a" + U+0308, so liefert die DNB Umlaute), muss er den gespeicherten treffen; sonst legt der
 // Import ihn ein zweites Mal an (Rasterdurchgang vom 30.09.2026). Die zerlegten Zeichen stehen
 // als Escape, damit kein Editor sie still zusammensetzt.
-func TestImportDynamic_ZerlegterTitelTrifftGespeicherten(t *testing.T) {
+func TestImportiereZeilen_ZerlegterTitelTrifftGespeicherten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const barcode = "NFC-PROBE-154-1"
@@ -46,10 +46,10 @@ func TestImportDynamic_ZerlegterTitelTrifftGespeicherten(t *testing.T) {
 		{"Titel", "Barcode"},
 		{"NFC-Probe Anha\u0308nge und Register", barcode},
 	}
-	neueTitel, neueExemplare, err := NewImportService(nil, pool).
-		ImportDynamic(ctx, rows, map[string]int{"titel": 0, "barcode": 1})
+	neueTitel, neueExemplare, err := NewImportDienst(nil, pool).
+		ImportiereZeilen(ctx, rows, map[string]int{"titel": 0, "barcode": 1})
 	if err != nil {
-		t.Fatalf("ImportDynamic: %v", err)
+		t.Fatalf("ImportiereZeilen: %v", err)
 	}
 	var anExemplar string
 	if err := pool.QueryRow(ctx, `SELECT titel_id::text FROM buecher_exemplare WHERE barcode_id = $1`, barcode).
@@ -66,7 +66,7 @@ func TestImportDynamic_ZerlegterTitelTrifftGespeicherten(t *testing.T) {
 // Wörtern. Littera führt Titel mit zwei Leerzeichen in Folge und mit geschütztem Leerzeichen;
 // kommt so ein Titel ein zweites Mal aus einer Datei, muss er den gespeicherten treffen
 // (repository.NormalisiereTitelSchluessel), sonst legt der Import ihn noch einmal an.
-func TestImportDynamic_TitelMitLeerraumInFolgeTrifftGespeicherten(t *testing.T) {
+func TestImportiereZeilen_TitelMitLeerraumInFolgeTrifftGespeicherten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	barcodes := []string{"LEERRAUM-PROBE-160-1", "LEERRAUM-PROBE-160-2"}
@@ -105,10 +105,10 @@ func TestImportDynamic_TitelMitLeerraumInFolgeTrifftGespeicherten(t *testing.T) 
 		{"Leerraum-Probe  La Peste /" + geschuetzt + "1", barcodes[0]}, // wie in Littera
 		{"Leerraum-Probe La Peste / 1", barcodes[1]},                   // wie gespeichert
 	}
-	neueTitel, neueExemplare, err := NewImportService(nil, pool).
-		ImportDynamic(ctx, rows, map[string]int{"titel": 0, "barcode": 1})
+	neueTitel, neueExemplare, err := NewImportDienst(nil, pool).
+		ImportiereZeilen(ctx, rows, map[string]int{"titel": 0, "barcode": 1})
 	if err != nil {
-		t.Fatalf("ImportDynamic: %v", err)
+		t.Fatalf("ImportiereZeilen: %v", err)
 	}
 	var amTitel int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM buecher_exemplare WHERE barcode_id = ANY ($1) AND titel_id = $2`,

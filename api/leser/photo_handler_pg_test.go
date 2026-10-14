@@ -24,7 +24,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Der Foto-Upload über seine Route. Den Dienst prüfen internal/service/photo_service*_test.go;
+// Der Foto-Upload über seine Route. Den Dienst prüfen internal/service/foto*_test.go;
 // hier steht, was die Route dazutut: welche Eingabe sie mit welchem Status abweist und
 // dass die Antwort für jede Ausweisnummer lesbar bleibt. Die Kamera-Maske liest die
 // Adresse des Bildes aus dieser Antwort.

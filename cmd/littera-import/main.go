@@ -72,8 +72,8 @@ func run(args []string, getenv func(string) string, stdout io.Writer) error {
 	}
 	defer pool.Close()
 
-	importSvc := service.NewImportService(repository.NewKatalogAbfragen(pool), pool)
-	count, err := importSvc.ParseLitteraXML(ctx, file)
+	importSvc := service.NewImportDienst(repository.NewKatalogAbfragen(pool), pool)
+	count, err := importSvc.ImportiereLitteraXML(ctx, file)
 	if err != nil {
 		return fmt.Errorf("import fehlgeschlagen: %w", err)
 	}

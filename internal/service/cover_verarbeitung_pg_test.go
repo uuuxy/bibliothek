@@ -21,7 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// processCover holt für einen Titel der Auswahl das Cover und schreibt Ergebnis und Stand.
+// verarbeiteCover holt für einen Titel der Auswahl das Cover und schreibt Ergebnis und Stand.
 // Gemessen am 08.10.2026 führte kein Test die Funktion aus (cover_service.go 18,2 %,
 // OFFEN.md 5.10).
 //
@@ -93,9 +93,9 @@ func probeBild(t *testing.T) []byte {
 }
 
 // coverTitel legt einen Titel in dem Stand an, in dem ihn die Auswahl des Abgleichs findet.
-func coverTitel(t *testing.T, pool *pgxpool.Pool, isbn, status, url string) missingCover {
+func coverTitel(t *testing.T, pool *pgxpool.Pool, isbn, status, url string) fehlendesCover {
 	t.Helper()
-	var mc missingCover
+	var mc fehlendesCover
 	if err := pool.QueryRow(context.Background(), `
 		INSERT INTO buecher_titel (titel, isbn, cover_status, cover_url)
 		VALUES ('Cover-Probe ' || $1, $1, $2, NULLIF($3, ''))
@@ -131,13 +131,13 @@ func inDerAuswahl(t *testing.T, pool *pgxpool.Pool, id string) bool {
 	return n == 1
 }
 
-func verarbeite(pool *pgxpool.Pool, k katalog, mc missingCover) (gefunden, ohneCover, gescheitert int64) {
+func verarbeite(pool *pgxpool.Pool, k katalog, mc fehlendesCover) (gefunden, ohneCover, gescheitert int64) {
 	var found, notFound, failed atomic.Int64
-	NewCoverService(pool).processCover(context.Background(), k.client(), mc, &found, &notFound, &failed)
+	NewCoverDienst(pool).verarbeiteCover(context.Background(), k.client(), mc, &found, &notFound, &failed)
 	return found.Load(), notFound.Load(), failed.Load()
 }
 
-func TestProcessCover_SchreibtErgebnisUndStand(t *testing.T) {
+func TestVerarbeiteCover_SchreibtErgebnisUndStand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Chdir(t.TempDir())
 	bild := probeBild(t)
@@ -206,7 +206,7 @@ func TestProcessCover_SchreibtErgebnisUndStand(t *testing.T) {
 // Zwischen der Auswahl und dem Schreiben liegt die Laufzeit des Abgleichs, beim Altbestand
 // Stunden. Lädt in dieser Zeit jemand ein Cover von Hand hoch, bleibt es stehen, mit seinem
 // Stand — gleich, was der Abgleich für den Titel findet.
-func TestProcessCover_HandUploadWaehrendDesLaufsBleibt(t *testing.T) {
+func TestVerarbeiteCover_HandUploadWaehrendDesLaufsBleibt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Chdir(t.TempDir())
 	const handCover = "/uploads/covers/von-hand.webp"
@@ -241,11 +241,11 @@ func TestProcessCover_HandUploadWaehrendDesLaufsBleibt(t *testing.T) {
 
 // Ein ganzer Lauf fasst jeden Titel der Auswahl an, lässt die übrigen in Ruhe und gibt den
 // Lauf danach wieder frei.
-func TestSyncMissingCovers_EinLaufUeberDieAuswahl(t *testing.T) {
+func TestGleicheFehlendeCoverAb_EinLaufUeberDieAuswahl(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Chdir(t.TempDir())
-	coverSyncRunning.Store(false)
-	t.Cleanup(func() { coverSyncRunning.Store(false) })
+	coverAbgleichLaeuft.Store(false)
+	t.Cleanup(func() { coverAbgleichLaeuft.Store(false) })
 	const handCover = "/uploads/covers/von-hand.webp"
 
 	offen := coverTitel(t, pool, "9789991940014", "PENDING", "")
@@ -264,11 +264,11 @@ func TestSyncMissingCovers_EinLaufUeberDieAuswahl(t *testing.T) {
 		t.Fatalf("%d Titel in der Auswahl, erwartet die zwei dieses Tests und höchstens wenige Reste", inAuswahl)
 	}
 
-	svc := NewCoverService(pool)
+	svc := NewCoverDienst(pool)
 	svc.katalog = katalog{dnbSatz: true, cover: probeBild(t)}.client
-	svc.SyncMissingCoversAsync()
+	svc.GleicheFehlendeCoverAb()
 
-	for name, mc := range map[string]missingCover{"unversucht": offen, "zuvor gescheitert": gescheitert} {
+	for name, mc := range map[string]fehlendesCover{"unversucht": offen, "zuvor gescheitert": gescheitert} {
 		if status, url := coverStand(t, pool, mc.ID); status != "FOUND" || !strings.HasPrefix(url, "/uploads/cover_auto_") {
 			t.Errorf("%s: Stand %q, Cover %q — erwartet FOUND und eine lokale Datei", name, status, url)
 		}
@@ -279,30 +279,30 @@ func TestSyncMissingCovers_EinLaufUeberDieAuswahl(t *testing.T) {
 	if status, url := coverStand(t, pool, abgeschrieben.ID); status != "NOT_FOUND" || url != "" {
 		t.Errorf("Titel ohne Cover bei allen Diensten: Stand %q, Cover %q — der Lauf hat ihn erneut gefragt", status, url)
 	}
-	if coverSyncRunning.Load() {
+	if coverAbgleichLaeuft.Load() {
 		t.Error("nach dem Lauf steht der Merker noch: Jeder weitere Lauf würde übersprungen")
 	}
 }
 
 // Start, Zeitplan und Handauslösung bauen je einen eigenen Dienst und teilen sich nur den
 // Merker. Ein zweiter Lauf, während einer läuft, tut nichts und lässt den Merker stehen.
-func TestSyncMissingCovers_ZweiterLaufWirdUebersprungen(t *testing.T) {
+func TestGleicheFehlendeCoverAb_ZweiterLaufWirdUebersprungen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	coverSyncRunning.Store(true)
-	t.Cleanup(func() { coverSyncRunning.Store(false) })
+	coverAbgleichLaeuft.Store(true)
+	t.Cleanup(func() { coverAbgleichLaeuft.Store(false) })
 	offen := coverTitel(t, pool, "9789991940052", "PENDING", "")
 
-	svc := NewCoverService(pool)
+	svc := NewCoverDienst(pool)
 	svc.katalog = func() *inventur.MetadatenClient {
 		t.Error("der übersprungene Lauf fragt die Katalogdienste")
 		return katalog{}.client()
 	}
-	svc.SyncMissingCoversAsync()
+	svc.GleicheFehlendeCoverAb()
 
 	if status, _ := coverStand(t, pool, offen.ID); status != "PENDING" {
 		t.Errorf("Stand %q — der übersprungene Lauf hat den Titel angefasst", status)
 	}
-	if !coverSyncRunning.Load() {
+	if !coverAbgleichLaeuft.Load() {
 		t.Error("der übersprungene Lauf hat den Merker des laufenden zurückgesetzt")
 	}
 }

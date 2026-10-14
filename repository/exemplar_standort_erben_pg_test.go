@@ -52,8 +52,8 @@ func erbWege() []erbWeg {
 		}},
 		{"Listenimport mit Exemplarnummern", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
 			rows := [][]string{{"Titel", "Barcode"}, {titel.name, titel.isbn + "-L1"}, {titel.name, titel.isbn + "-L2"}}
-			neueTitel, neueExemplare, err := service.NewImportService(nil, pool).
-				ImportDynamic(ctx, rows, map[string]int{"titel": 0, "barcode": 1})
+			neueTitel, neueExemplare, err := service.NewImportDienst(nil, pool).
+				ImportiereZeilen(ctx, rows, map[string]int{"titel": 0, "barcode": 1})
 			if err != nil || neueTitel != 0 || neueExemplare != 2 {
 				t.Fatalf("Import: %v, %d neue Titel, %d neue Exemplare — erwartet 0 und 2", err, neueTitel, neueExemplare)
 			}

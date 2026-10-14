@@ -18,7 +18,7 @@ import (
 //
 // Zwei Zahlen für dieselbe Vorgabe brauchen deshalb ein Gate, nicht nur einen Fix: Ohne
 // es zieht der nächste Wechsel der Schulorganisation eine Seite nach und die andere nicht.
-func TestLmfPlanVorgabeIstInGoUndImPlanerDieselbe(t *testing.T) {
+func TestLMFPlanVorgabeIstInGoUndImPlanerDieselbe(t *testing.T) {
 	pfad := filepath.Join("..", "..", "frontend", "src", "lib", "lmfplanDienst.js")
 	roh, err := os.ReadFile(pfad)
 	if err != nil {

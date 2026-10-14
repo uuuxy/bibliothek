@@ -807,15 +807,15 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   (`SignaturGruppe(zeile)`). Sie bleiben in `api/`, außer ein Fachpaket verarbeitet die Antwort
   selbst weiter: Die Typen der Auskunft stehen mit ihrem Blatt in `internal/auskunft`. Dasselbe
   gilt gegenüber `internal/service`: Ferien und Rahmen eines neuen LMF-Plans rechnet
-  `service.LmfPlanSommerferien` und `service.LmfPlanRahmenVorgabe` in eigenen Typen, die Tür
+  `service.LMFPlanSommerferien` und `service.LMFPlanRahmenVorgabe` in eigenen Typen, die Tür
   wandelt sie in die Typen ihrer Antwort (`api/lernmittel/lmf_plan.go`). Ebenso die
-  Reihenfolge, mit der ein neuer Plan beginnt (`service.LmfPlanReihenfolgeVorgabe`), und die
+  Reihenfolge, mit der ein neuer Plan beginnt (`service.LMFPlanReihenfolgeVorgabe`), und die
   Ausfälle der Verteilung (`lmfPlanAusfaelle`). In der anderen Richtung prüft die Tür die
-  Anfrage und füllt daraus den Entwurf (`pruefeLmfPlan`, `service.LmfPlanEntwurf`); die
-  Verteilung über die Schultage rechnet der Dienst (`service.VerteileLmfPlan`). Dort stehen
+  Anfrage und füllt daraus den Entwurf (`pruefeLmfPlan`, `service.LMFPlanEntwurf`); die
+  Verteilung über die Schultage rechnet der Dienst (`service.VerteileLMFPlan`). Dort stehen
   auch die Regeln, die die Tür nur fragt: welche Klassen eine Art auslässt, wann ein Plan
   vorbei ist, welcher Vermerk vorbelegt wird (`lmf_plan_reihenfolge.go`) und welcher Plan
-  beim Speichern als vorher zählt (`LmfPlanZeilenVorher`, `lmf_frist_kopplung.go`).
+  beim Speichern als vorher zählt (`LadeLMFPlanZeilenVorher`, `lmf_frist_kopplung.go`).
 - `repository/` und `pdf/` kennen einander nicht. Die Tür füllt die Typen der PDF-Erzeuger
   aus den Zeilen. Hängt ein gedruckter Text an einer Regel, die `pdf/` nicht kennt, wählt die
   Tür ihn und reicht den fertigen Text: Den Eigentumsvermerk eines Etiketts bestimmt der Topf
@@ -857,7 +857,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   (`bestellVersandMeldung`). Das Gate der Platzhalter liest den Renderer beim Dateinamen
   (`mail_vorlagen_platzhalter_test.go`); zieht er um, zieht der Pfad dort mit.
 - Fachlogik, die in der Transaktion einer Tür läuft, bekommt diese Transaktion und keinen
-  Pool daneben: `service.KoppleLmfPlanFristen` liest die Einstellungen
+  Pool daneben: `service.KoppleLMFPlanFristen` liest die Einstellungen
   (`repository.LadeEinstellungen`) und schreibt die Fristen über denselben Zugang. Mit Pool
   und Transaktion als Nachbar-Argumenten ließe sich die Kopplung am Pool rufen, und kein
   Compiler merkte es. Ein Test der Tür lässt die Kopplung nach ihrer ersten Änderung scheitern
@@ -918,7 +918,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Bedingung „kein lokales Cover" steht einmal (`coverNichtLokal`) und gilt in der Auswahl wie
   in beiden Schreibanweisungen: Zwischen Auswählen und Schreiben liegt die Laufzeit des
   Abgleichs, und ein in dieser Zeit von Hand hochgeladenes Cover bleibt stehen.
-- Der Bestands-Import (`internal/service/import_dynamic.go`) liest die Zeilen der Datei,
+- Der Bestands-Import (`internal/service/import_zeilen.go`) liest die Zeilen der Datei,
   ordnet sie Titeln zu und zählt; seine Anweisungen stehen in `repository/bestandsimport.go`.
   Was er mit dem Katalog-Import gemeinsam hat, steht einmal: Beide laden den Titelbestand mit
   `LadeTitelBestand`, beide fragen ihn mit derselben Methode, zu welchem Titel eine Zeile
@@ -4207,8 +4207,8 @@ Fenstern bekannt ist:
   Initiale. Anlass zum Bauen: Nach der Littera-Übernahme fehlen in den Katalogen merklich
   Cover, die es bei der DNB gibt.
 - Der Cover-Abgleich fragt eine ISBN, die kein Katalogdienst kennt, alle sechs Stunden und bei
-  jedem Start neu (am Code gelesen am 02.10.2026): `processCover`
-  (`internal/service/cover_service.go`) setzt `FAILED`, sobald die Abfrage einen Fehler
+  jedem Start neu (am Code gelesen am 02.10.2026): `verarbeiteCover`
+  (`internal/service/cover.go`) setzt `FAILED`, sobald die Abfrage einen Fehler
   liefert, und „nicht gefunden" ist dort ein Fehler; `NOT_FOUND` gibt es nur für einen Treffer
   ohne Cover. Je Titel sind das bis zu fünf Anfragen an DNB, Google Books und OpenLibrary,
   gedrosselt auf zwei Titel je Sekunde. Wie viele Titel es trifft, zeigt
@@ -4274,7 +4274,7 @@ Fenstern bekannt ist:
   mit gleicher ISBN und anderem Text, 1.748 mit gleichem Text bei anderer oder fehlender ISBN) —
   „Harry Potter und der Feuerkelch" steht als Buch, Taschenbuch und DVD in der Datei und wird
   ein Titel. Ein zweiter Lauf ändert 789 Titel; der letzte passende Eintrag gewinnt. Der Import
-  aus CSV und Excel (`internal/service/import_dynamic.go`) gleicht ebenso ab, dort nicht
+  aus CSV und Excel (`internal/service/import_zeilen.go`) gleicht ebenso ab, dort nicht
   gemessen; die Übernahme aus der Sicherung (`internal/littera`), mit der der Echtbetrieb
   beginnt, tut es nicht. Der Katalog am Testserver stammt aus diesem Import. Anlass zum Bauen:
   Das Katalogisat wird wieder ein Weg in den Echtbetrieb, oder ein gepflegter Katalog soll es

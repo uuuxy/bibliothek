@@ -19,7 +19,7 @@ import (
 // `leser`, damit sein Bild herauskommt. Der Upload las bis zum 22.09.2026 aber noch die
 // Sicht `schueler` und antwortete einem Kollegen „schüler nicht gefunden" (404) — die eine
 // Richtung war repariert, die andere nicht (OFFEN.md 5.19).
-func TestUploadStudentPhoto_AuchFuerKollegen(t *testing.T) {
+func TestSchreibeLeserFoto_AuchFuerKollegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
@@ -36,9 +36,9 @@ func TestUploadStudentPhoto_AuchFuerKollegen(t *testing.T) {
 		}
 	})
 
-	// 10×10 Pixel PNG, dieselbe Probe wie photo_service_test.go.
+	// 10×10 Pixel PNG, dieselbe Probe wie foto_test.go.
 	const bild = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAF0lEQVR4nGL5z4APMOGVHbHSgAAAAP//RM4BFjLZ0j4AAAAASUVORK5CYII="
-	url, err := UploadStudentPhoto(ctx, pool, kollegeID, bild)
+	url, err := SchreibeLeserFoto(ctx, pool, kollegeID, bild)
 	if err != nil {
 		t.Fatalf("Upload für einen Kollegen: %v", err)
 	}
@@ -57,7 +57,7 @@ func TestUploadStudentPhoto_AuchFuerKollegen(t *testing.T) {
 // Ein zweites Foto ersetzt das erste: Es bleibt bei einer Zeile je Leser, und in ihr steht
 // das neue Bild. Bliebe das alte stehen, zeigte der Ausweis nach einem neuen Foto weiter das
 // vom Vorjahr, und die Antwort des Uploads hätte trotzdem Erfolg gemeldet.
-func TestUploadStudentPhoto_ZweitesFotoErsetztDasErste(t *testing.T) {
+func TestSchreibeLeserFoto_ZweitesFotoErsetztDasErste(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
@@ -105,11 +105,11 @@ func TestUploadStudentPhoto_ZweitesFotoErsetztDasErste(t *testing.T) {
 		return klar
 	}
 
-	if _, err := UploadStudentPhoto(ctx, pool, leserID, bild(color.RGBA{R: 200, A: 255})); err != nil {
+	if _, err := SchreibeLeserFoto(ctx, pool, leserID, bild(color.RGBA{R: 200, A: 255})); err != nil {
 		t.Fatalf("erstes Foto: %v", err)
 	}
 	erstes := gespeichert()
-	if _, err := UploadStudentPhoto(ctx, pool, leserID, bild(color.RGBA{B: 200, A: 255})); err != nil {
+	if _, err := SchreibeLeserFoto(ctx, pool, leserID, bild(color.RGBA{B: 200, A: 255})); err != nil {
 		t.Fatalf("zweites Foto: %v", err)
 	}
 	zweites := gespeichert()

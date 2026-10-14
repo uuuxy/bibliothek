@@ -23,7 +23,7 @@ import (
 // an den Stichtag zurück; eine Frist von Hand bleibt stehen. Angefasst werden nur Fristen im
 // Schuljahr des Termins: Eine mehrjährige Ausleihe folgt dem Plan nicht.
 
-// KoppleLmfPlanFristen gleicht die Fristen ab, nachdem ein ganzer Plan gespeichert,
+// KoppleLMFPlanFristen gleicht die Fristen ab, nachdem ein ganzer Plan gespeichert,
 // veröffentlicht oder verworfen wurde: alt sind die Zeilen vorher, neu die Zeilen nachher (nil
 // beim Verwerfen). Gelesen und geschrieben wird über ex, die Transaktion der Tür: Plan und
 // Fristen gelten zusammen oder zusammen nicht. Liefert die Zahl der umgeschriebenen Ausleihen.
@@ -35,21 +35,21 @@ import (
 //
 // Zuerst kehren die Klassen, die im neuen Plan nicht mehr stehen, zum Stichtag zurück, dann
 // bekommt jede Klasse des neuen Plans ihren frühesten Termin.
-func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LMFAbfragen, ex repository.Datenbank, art string, alt, neu []repository.LMFPlanZeile) (int64, error) {
+func KoppleLMFPlanFristen(ctx context.Context, lmfAbfragen *repository.LMFAbfragen, q repository.Datenbank, art string, alt, neu []repository.LMFPlanZeile) (int64, error) {
 	if art != repository.LMFTerminRueckgabe {
 		return 0, nil
 	}
 	termine := fruehesteTermineJeKlasse(neu)
 	var gesamt int64
 	for _, z := range alt {
-		n, err := loeseLmfFristenVomTermin(ctx, repo, ex, z.Datum, ohneTermin(z.Klassen, termine))
+		n, err := loeseLMFFristenVomTermin(ctx, lmfAbfragen, q, z.Datum, ohneTermin(z.Klassen, termine))
 		if err != nil {
 			return gesamt, err
 		}
 		gesamt += n
 	}
 	for _, datum := range sortierteSchluessel(termine) {
-		n, err := setzeLmfFristenAufTermin(ctx, repo, ex, datum, termine[datum])
+		n, err := setzeLMFFristenAufTermin(ctx, lmfAbfragen, q, datum, termine[datum])
 		if err != nil {
 			return gesamt, err
 		}
@@ -58,12 +58,12 @@ func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LMFAbfragen, ex 
 	return gesamt, nil
 }
 
-// LmfPlanZeilenVorher liest die Zeilen des Plans, den das Speichern gleich ersetzt: der Plan
+// LadeLMFPlanZeilenVorher liest die Zeilen des Plans, den das Speichern gleich ersetzt: der Plan
 // derselben Art im Schuljahr des ersten Tages. Sie sind das „alt" der Kopplung. Leer, wenn es
 // keinen gibt oder er noch Entwurf ist; ein Entwurf hat keine Frist gesetzt, die zurückkehren
 // müsste.
-func LmfPlanZeilenVorher(ctx context.Context, repo *repository.LMFAbfragen, art, ersterTag string) ([]repository.LMFPlanZeile, error) {
-	st, err := repo.LadeNeuestenPlan(ctx, art)
+func LadeLMFPlanZeilenVorher(ctx context.Context, lmfAbfragen *repository.LMFAbfragen, art, ersterTag string) ([]repository.LMFPlanZeile, error) {
+	stand, err := lmfAbfragen.LadeNeuestenPlan(ctx, art)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -74,16 +74,16 @@ func LmfPlanZeilenVorher(ctx context.Context, repo *repository.LMFAbfragen, art,
 	if err != nil {
 		return nil, err
 	}
-	if st.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format(time.DateOnly) || st.Plan.VeroeffentlichtAm == nil {
+	if stand.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format(time.DateOnly) || stand.Plan.VeroeffentlichtAm == nil {
 		// Anderes Schuljahr: das Speichern legt einen neuen Plan an, der alte bleibt.
 		return nil, nil
 	}
-	return st.Zeilen, nil
+	return stand.Zeilen, nil
 }
 
-// loeseLmfFristenVomTermin bringt die Fristen der Klassen, die ihren Rückgabe-Termin an diesem
+// loeseLMFFristenVomTermin bringt die Fristen der Klassen, die ihren Rückgabe-Termin an diesem
 // Tag verlieren, zurück zum Stichtag.
-func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LMFAbfragen, ex repository.Datenbank, datum string, verlierer []string) (int64, error) {
+func loeseLMFFristenVomTermin(ctx context.Context, lmfAbfragen *repository.LMFAbfragen, q repository.Datenbank, datum string, verlierer []string) (int64, error) {
 	if len(verlierer) == 0 {
 		return 0, nil
 	}
@@ -91,7 +91,7 @@ func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LMFAbfragen,
 	if err != nil {
 		return 0, err
 	}
-	einstellungen, err := repository.LadeEinstellungen(ctx, ex)
+	einstellungen, err := repository.LadeEinstellungen(ctx, q)
 	if err != nil {
 		return 0, err
 	}
@@ -100,12 +100,12 @@ func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LMFAbfragen,
 	// gestanden hätten. Und nur Fristen, die auf dem Termin lagen: Eine Frist von Hand bleibt.
 	stichtag := repository.LMFStichtagImSchuljahr(altTag, einstellungen.LMFStichtag)
 	von, bis := schuljahrGrenzen(altTag)
-	return repo.SetzeLernmittelFristFuerKlassen(ctx, ex, verlierer,
+	return lmfAbfragen.SetzeLernmittelFristFuerKlassen(ctx, q, verlierer,
 		schulzeit.TagesEnde(stichtag), von, bis, &altTag)
 }
 
-// setzeLmfFristenAufTermin setzt die Fristen der Klassen eines Rückgabe-Termins auf dessen Tag.
-func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LMFAbfragen, ex repository.Datenbank, datum string, klassen []string) (int64, error) {
+// setzeLMFFristenAufTermin setzt die Fristen der Klassen eines Rückgabe-Termins auf dessen Tag.
+func setzeLMFFristenAufTermin(ctx context.Context, lmfAbfragen *repository.LMFAbfragen, q repository.Datenbank, datum string, klassen []string) (int64, error) {
 	if len(klassen) == 0 {
 		return 0, nil
 	}
@@ -114,7 +114,7 @@ func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LMFAbfragen,
 		return 0, err
 	}
 	von, bis := schuljahrGrenzen(neuTag)
-	return repo.SetzeLernmittelFristFuerKlassen(ctx, ex, klassen,
+	return lmfAbfragen.SetzeLernmittelFristFuerKlassen(ctx, q, klassen,
 		schulzeit.TagesEnde(neuTag), von, bis, nil)
 }
 

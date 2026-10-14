@@ -104,7 +104,7 @@ func standortVon(e Exemplar, vermerkeDesTitels []string) (standort string, vomTi
 
 // hatLernmittelVermerk meldet, ob ein Vermerk am Titel den Bestand der Lernmittelfreiheit nennt
 // („LMF", „LMF/Bibliothek"). Der Import der Titelliste liest denselben Vermerk aus MAB 108a
-// (service.bookTitleAusFelder); ohne ihn kämen Lernmittel ohne LMF-Signatur als
+// (service.titelAusFeldern); ohne ihn kämen Lernmittel ohne LMF-Signatur als
 // Bibliotheksbücher an.
 func hatLernmittelVermerk(vermerke []string) bool {
 	for _, v := range vermerke {

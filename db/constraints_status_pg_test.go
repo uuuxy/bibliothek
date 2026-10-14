@@ -32,7 +32,7 @@ func TestStatusConstraints(t *testing.T) {
 
 	t.Run("cover_status nur bekannte Werte", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			// Kleinschreibung ist ein echter Fehler: die Retry-Auswahl im CoverService
+			// Kleinschreibung ist ein echter Fehler: die Retry-Auswahl im CoverDienst
 			// vergleicht exakt gegen die GROSS-Werte.
 			erwarteConstraintVerletzung(t, tx, "chk_cover_status",
 				`INSERT INTO buecher_titel (titel, cover_status) VALUES ('X', 'pending')`)

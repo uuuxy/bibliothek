@@ -16,7 +16,7 @@ import (
 // Katalogdienste. Die Hand-Wege setzen den Status seitdem (inventur/repository_metadata.go);
 // dieses Prädikat schützt zusätzlich die Titel, die schon vorher so hochgeladen wurden
 // (Bestands-Durchgang, Bugklasse „Maschine gegen Hand").
-func TestCoverSyncAuswahl_LaesstLokaleCoverInRuhe(t *testing.T) {
+func TestCoverAbgleichAuswahl_LaesstLokaleCoverInRuhe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	faelle := map[string]struct {

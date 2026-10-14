@@ -12,10 +12,10 @@ import (
 // Der Katalog-Import liest einen Wert wie die Übernahme (littera.leseTitel): erst die
 // Nichtsortierzeichen weg, dann der Rand. Andersherum bliebe das Leerzeichen neben einem
 // Zeichen stehen, und ein Titel nur aus Nichtsortierzeichen käme ohne Wortlaut in den Katalog.
-func TestParseKatalogisat_NichtsortierzeichenVorDemRand(t *testing.T) {
+func TestLeseKatalogisat_NichtsortierzeichenVorDemRand(t *testing.T) {
 	lies := func(roh string) (litteraFelder, bool) {
-		f := parseKatalogisat(Katalogisat{Felder: []Feld{{MAB: "310 ", Value: roh}}})
-		_, ok := bookTitleAusFelder(f)
+		f := leseKatalogisat(katalogisat{Felder: []feld{{MAB: "310 ", Wert: roh}}})
+		_, ok := titelAusFeldern(f)
 		return f, ok
 	}
 	for _, roh := range []string{"¬ ¬", " ¬ ", "¬¬", "  "} {
@@ -36,9 +36,9 @@ func TestParseKatalogisat_NichtsortierzeichenVorDemRand(t *testing.T) {
 }
 
 // Falsche XML-Dateien (z. B. der Schlagwort-Export systematik+.xml mit
-// <Schlagworte>-Wurzel) sind Nutzer-Formatfehler: ParseLitteraXML muss sie als
+// <Schlagworte>-Wurzel) sind Nutzer-Formatfehler: ImportiereLitteraXML muss sie als
 // ErrKeinKatalogisat melden, damit der Handler 400 statt 500 antwortet.
-func TestParseLitteraXML_FalscheWurzelIstKeinKatalogisat(t *testing.T) {
+func TestImportiereLitteraXML_FalscheWurzelIstKeinKatalogisat(t *testing.T) {
 	tests := []struct {
 		name string
 		xml  string
@@ -49,10 +49,10 @@ func TestParseLitteraXML_FalscheWurzelIstKeinKatalogisat(t *testing.T) {
 		{"gar kein XML", `Titel,Autor,Barcode`},
 	}
 
-	svc := NewImportService(&stubBookRepo{}, nil)
+	svc := NewImportDienst(&stubBookRepo{}, nil)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := svc.ParseLitteraXML(context.Background(), strings.NewReader(tt.xml))
+			_, err := svc.ImportiereLitteraXML(context.Background(), strings.NewReader(tt.xml))
 			if !errors.Is(err, ErrKeinKatalogisat) {
 				t.Errorf("err = %v, want ErrKeinKatalogisat", err)
 			}
@@ -105,10 +105,10 @@ func TestTitelZeilenFelder_LMFAusKategorieUndSignatur(t *testing.T) {
 	}
 }
 
-// sammleSignaturUpdates trägt Signaturen für BESTEHENDE Titel nach — aber nur,
+// sammleSignaturen trägt Signaturen für BESTEHENDE Titel nach — aber nur,
 // wenn die Datei überhaupt eine Signatur-Spalte hat und der Wert nicht leer ist
 // (das Rücken-Etikett gewinnt, leer überschreibt nie).
-func TestSammleSignaturUpdates(t *testing.T) {
+func TestSammleSignaturen(t *testing.T) {
 	headerMap := map[string]int{"titel": 0, "signatur": 1, "barcode": 2}
 	rows := [][]string{
 		{"Titel", "Signatur", "Barcode"},
@@ -118,13 +118,13 @@ func TestSammleSignaturUpdates(t *testing.T) {
 	}
 	lookup := bestandMit(nil, map[string]string{"Faust": "id-faust"})
 
-	updates := sammleSignaturUpdates(rows, headerMap, lookup)
+	updates := sammleSignaturen(rows, headerMap, lookup)
 	if len(updates) != 1 || updates["id-faust"] != "De GOE" {
 		t.Errorf("updates = %v, want {id-faust: De GOE}", updates)
 	}
 
 	// Ohne Signatur-Spalte: gar keine Updates (nil)
-	if u := sammleSignaturUpdates(rows, map[string]int{"titel": 0}, lookup); u != nil {
+	if u := sammleSignaturen(rows, map[string]int{"titel": 0}, lookup); u != nil {
 		t.Errorf("ohne Signatur-Spalte: updates = %v, want nil", u)
 	}
 }

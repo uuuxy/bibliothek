@@ -22,7 +22,7 @@ import (
 // 28.06.; der Tausch endet Donnerstag, den 24.06.; das Fenster ist Fr 25. bis So 27.06.
 // Ab dem ersten Ferientag stimmte die Rechnung von allein wieder — deshalb steht der
 // 28.06. als Gegenprobe mit drin: Der Umbau darf dort nichts ändern.
-func TestLmfPlanVorschlagGehtUeberDieFerienDesVorigenPlansHinaus(t *testing.T) {
+func TestLMFPlanVorschlagGehtUeberDieFerienDesVorigenPlansHinaus(t *testing.T) {
 	tab := lmfplan.Hessen()
 	tag := func(datum string) time.Time {
 		t.Helper()
@@ -52,7 +52,7 @@ func TestLmfPlanVorschlagGehtUeberDieFerienDesVorigenPlansHinaus(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			// laufend=false: In all diesen Fällen ist der Plan vorbei (oder es gibt keinen).
-			ferien, _ := LmfPlanSommerferien(repository.LMFTerminRueckgabe, f.plan, false, tag(f.heute), tab)
+			ferien, _ := LMFPlanSommerferien(repository.LMFTerminRueckgabe, f.plan, false, tag(f.heute), tab)
 			if !ferien.Bekannt {
 				t.Fatalf("heute %s: Ferienjahr %d unbekannt — Tabelle zu kurz?", f.heute, ferien.Jahr)
 			}
@@ -68,13 +68,13 @@ func TestLmfPlanVorschlagGehtUeberDieFerienDesVorigenPlansHinaus(t *testing.T) {
 // Ein laufender Ausgabe-Plan hängt an den Ferien seines Schuljahres, auch wenn sie schon vorbei
 // sind. Von heute aus gerechnet wären die nächsten Ferien die des folgenden Jahres, und der
 // Planer zeigte neben dem laufenden Plan die falschen.
-func TestLmfPlanSommerferien_LaufenderAusgabePlanBehaeltDieFerienSeinesSchuljahres(t *testing.T) {
+func TestLMFPlanSommerferien_LaufenderAusgabePlanBehaeltDieFerienSeinesSchuljahres(t *testing.T) {
 	tab := lmfplan.Hessen()
 	heute := time.Date(2027, time.August, 10, 10, 0, 0, 0, schulzeit.Zone())
 	plan := &repository.LMFPlan{Art: repository.LMFTerminAusgabe, ErsterTag: "2027-08-09", LetzterTag: "2027-08-11"}
 
-	ferien, zeitraum := LmfPlanSommerferien(repository.LMFTerminAusgabe, plan, true, heute, tab)
-	if will := (LmfPlanFerien{Jahr: 2027, Von: "2027-06-28", Bis: "2027-08-06", Bekannt: true}); ferien != will {
+	ferien, zeitraum := LMFPlanSommerferien(repository.LMFTerminAusgabe, plan, true, heute, tab)
+	if will := (LMFPlanFerien{Jahr: 2027, Von: "2027-06-28", Bis: "2027-08-06", Bekannt: true}); ferien != will {
 		t.Errorf("laufender Ausgabe-Plan: Ferien %+v, erwartet %+v", ferien, will)
 	}
 	if von, bis := zeitraum.Von.Format(time.DateOnly), zeitraum.Bis.Format(time.DateOnly); von != ferien.Von || bis != ferien.Bis {
@@ -83,11 +83,11 @@ func TestLmfPlanSommerferien_LaufenderAusgabePlanBehaeltDieFerienSeinesSchuljahr
 
 	// Gegenprobe: Ohne Plan sind es am selben Tag die Ferien 2028, und nach dem Ende des Plans
 	// richtet sich sein Nachfolger an ihnen aus.
-	if ohne, _ := LmfPlanSommerferien(repository.LMFTerminAusgabe, nil, false, heute, tab); ohne.Jahr != 2028 {
+	if ohne, _ := LMFPlanSommerferien(repository.LMFTerminAusgabe, nil, false, heute, tab); ohne.Jahr != 2028 {
 		t.Errorf("ohne Plan am 10.08.2027: Ferien %d, erwartet 2028", ohne.Jahr)
 	}
 	danach := time.Date(2027, time.August, 20, 10, 0, 0, 0, schulzeit.Zone())
-	if nachfolger, _ := LmfPlanSommerferien(repository.LMFTerminAusgabe, plan, false, danach, tab); nachfolger.Jahr != 2028 {
+	if nachfolger, _ := LMFPlanSommerferien(repository.LMFTerminAusgabe, plan, false, danach, tab); nachfolger.Jahr != 2028 {
 		t.Errorf("Nachfolger des Ausgabe-Plans 2027: Ferien %d, erwartet 2028", nachfolger.Jahr)
 	}
 }

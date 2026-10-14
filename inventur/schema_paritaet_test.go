@@ -34,7 +34,7 @@ var nichtVonUpdateBook = map[string]string{
 	"erstellt_am":   "wird beim Anlegen gesetzt und danach nie wieder",
 	"sort_order":    "laufende Nummer aus dem Anlegen (SERIAL), ohne Schreiber; die Dublettenkontrolle liest sie als Reihenfolge des Anlegens",
 	"search_vector": "GENERATED ALWAYS — Postgres pflegt die Spalte, ein Schreibversuch wäre ein Fehler",
-	"cover_status":  "gehört der asynchronen Cover-Beschaffung (internal/service/cover_service.go)",
+	"cover_status":  "gehört der asynchronen Cover-Beschaffung (internal/service/cover.go)",
 	"werk_id": "gehört repository/auflagen.go (FasseAuflagenZusammen, LoeseAuflage, Migration 148): " +
 		"Dort stehen die Regeln — nur Lernmittel, zwei Gruppen werden eine, ein Werk mit weniger " +
 		"als zwei Titeln fällt. UpdateBook schriebe den Wert ohne sie.",

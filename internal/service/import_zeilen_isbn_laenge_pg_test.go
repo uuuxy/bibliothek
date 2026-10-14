@@ -11,7 +11,7 @@ import (
 // speichert eine zehnstellige ISBN dreizehnstellig (Migration 157); nennt die Datei dasselbe
 // Buch in beiden Längen, ist es ein Titel mit zwei Exemplaren. Als zwei Schlüssel ergab es
 // zwei INSERTs, und der zweite scheiterte am UNIQUE-Index — der ganze Import.
-func TestImportDynamic_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
+func TestImportiereZeilen_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const zehn, dreizehn = "0306406152", "9780306406157"
@@ -28,13 +28,13 @@ func TestImportDynamic_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 	t.Cleanup(raeume)
 
 	kopf := map[string]int{"titel": 0, "isbn": 1, "barcode": 2}
-	neueTitel, neueExemplare, err := NewImportService(nil, pool).ImportDynamic(ctx, [][]string{
+	neueTitel, neueExemplare, err := NewImportDienst(nil, pool).ImportiereZeilen(ctx, [][]string{
 		{"Titel", "ISBN", "Barcode"},
 		{"Advanced Organic Chemistry", "0-306-40615-2", barcodes[0]},
 		{"Advanced Organic Chemistry, Part A", "978-0-306-40615-7", barcodes[1]},
 	}, kopf)
 	if err != nil {
-		t.Fatalf("ImportDynamic: %v", err)
+		t.Fatalf("ImportiereZeilen: %v", err)
 	}
 	if neueTitel != 1 || neueExemplare != 2 {
 		t.Errorf("beide Längen in einer Datei: %d neue Titel, %d neue Exemplare, erwartet 1 und 2", neueTitel, neueExemplare)
@@ -42,7 +42,7 @@ func TestImportDynamic_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 
 	// Ein zweiter Lauf nennt das Buch nur zehnstellig, unter einem dritten Titeltext: Das
 	// Exemplar kommt an den vorhandenen Titel.
-	neueTitel, neueExemplare, err = NewImportService(nil, pool).ImportDynamic(ctx, [][]string{
+	neueTitel, neueExemplare, err = NewImportDienst(nil, pool).ImportiereZeilen(ctx, [][]string{
 		{"Titel", "ISBN", "Barcode"},
 		{"Organic Chemistry", zehn, barcodes[2]},
 	}, kopf)

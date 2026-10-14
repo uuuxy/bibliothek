@@ -84,7 +84,7 @@ func (s *stubBookRepo) SchreibeTitel(_ context.Context, titles []repository.Tite
 // Der Katalogisat-Import lässt Titel und Signatur, wie Littera sie liefert, und setzt
 // das Feld (Migration 093). Bis dahin schnitt er „LMF" aus der Signatur und stellte
 // es dem Titel voran — „LMF-Biologie heute 7" auf jeder Cover-Kachel.
-func TestParseLitteraXML_LMFUndSignatur(t *testing.T) {
+func TestImportiereLitteraXML_LMFUndSignatur(t *testing.T) {
 	// Vier Katalogisate wie im echten Littera-4.5-Export:
 	// 1. LMF-Kennung im Standort-Feld 108a, Signatur ist eine Regaladresse; Fach aus
 	//    den Schlagwörtern, Jahrgang aus der Zielgruppe
@@ -127,11 +127,11 @@ func TestParseLitteraXML_LMFUndSignatur(t *testing.T) {
 </Katalogisate>`
 
 	repo := &stubBookRepo{}
-	svc := NewImportService(repo, nil)
+	svc := NewImportDienst(repo, nil)
 
-	count, err := svc.ParseLitteraXML(context.Background(), strings.NewReader(xmlDaten))
+	count, err := svc.ImportiereLitteraXML(context.Background(), strings.NewReader(xmlDaten))
 	if err != nil {
-		t.Fatalf("ParseLitteraXML: %v", err)
+		t.Fatalf("ImportiereLitteraXML: %v", err)
 	}
 	if count != 4 {
 		t.Fatalf("importierte Titel = %d, want 4", count)
@@ -170,7 +170,7 @@ func TestKategorisiere_TitelheuristikNurBeiLernmitteln(t *testing.T) {
 // am 30.09.2026: als Schlagworte übernehmen). Sie kommen hinter den Schlagwörtern mit, und die
 // Spanne entsteht aus allen: Bis dahin gewann der letzte Wert — hier „Lehrer" —, und die
 // Spanne blieb leer. Das Fach kommt weiter nur aus den Schlagwörtern.
-func TestParseLitteraXML_InteressenkreiseAlsSchlagworte(t *testing.T) {
+func TestImportiereLitteraXML_InteressenkreiseAlsSchlagworte(t *testing.T) {
 	xmlDaten := `<?xml version="1.0"?>
 <Katalogisate>
   <Katalogisat>
@@ -186,8 +186,8 @@ func TestParseLitteraXML_InteressenkreiseAlsSchlagworte(t *testing.T) {
 </Katalogisate>`
 
 	repo := &stubBookRepo{}
-	if _, err := NewImportService(repo, nil).ParseLitteraXML(context.Background(), strings.NewReader(xmlDaten)); err != nil {
-		t.Fatalf("ParseLitteraXML: %v", err)
+	if _, err := NewImportDienst(repo, nil).ImportiereLitteraXML(context.Background(), strings.NewReader(xmlDaten)); err != nil {
+		t.Fatalf("ImportiereLitteraXML: %v", err)
 	}
 	if len(repo.titles) != 1 {
 		t.Fatalf("%d Titel, want 1", len(repo.titles))

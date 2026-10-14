@@ -100,7 +100,7 @@ func (s *Scheduler) Start() {
 	// und transiente FAILED-Fälle). Der Re-Entrancy-Guard verhindert Überlappung mit dem
 	// Start-Lauf. Lokales WebP wird dabei erzeugt.
 	if _, err := s.cron.AddFunc("0 */6 * * *", func() {
-		service.NewCoverService(s.db).SyncMissingCoversAsync()
+		service.NewCoverDienst(s.db).GleicheFehlendeCoverAb()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register cover resync job: %v", err)
 	}
