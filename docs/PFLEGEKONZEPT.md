@@ -385,7 +385,8 @@ Gemessen am 13.10.2026 am Go-Code ohne Tests: 566 Dateien, 2.616 Funktionen.
   [OFFEN.md](OFFEN.md) 5.66).
 - Die Datenbankschicht ist ein Ordner mit 167 Dateien; gefunden wird dort über den Namen der
   Datei. Warum sie ein Paket bleibt, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2.
-- Die größte Datei hat 907 Zeilen (`internal/bereitschaft/bereitschaft.go`).
+- Die größte Datei hat 629 Zeilen (`repository/leser_zusammenfuehren.go`, gemessen am
+  14.10.2026).
 - Um den Code: 3.294 Commits seit dem 29.05.2026, die Zahl der Projektregeln (`CLAUDE.md`,
   [invarianten.md](invarianten.md), [sweeps.md](sweeps.md)), ein Architektur-Dokument von
   4.623 Zeilen und Wissen außerhalb des Repositorys (Abschnitt 7).
