@@ -13,30 +13,30 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// abschlussAnfrage benennt die abzuschließende Session.
+// abschlussAnfrage nennt den Lauf, der abgeschlossen wird.
 type abschlussAnfrage struct {
 	LaufID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
 }
 
-// abschlussAntwort contains the outcome statistics of the completed inventory.
+// abschlussAntwort nennt, was der Abschluss als Verlust gebucht hat.
 type abschlussAntwort struct {
 	VerlorenGemeldet int `json:"verloren_gemeldet"`
 
-	// Fehlbestand nennt die betroffenen Exemplare, nicht nur ihre Anzahl. Vorher stand
-	// hier allein die Zahl — mit „47 Verluste" kann niemand ins Regal gehen und nachsehen.
+	// Fehlbestand nennt die Exemplare, nicht nur ihre Zahl: Mit „47 Verluste" kann niemand im
+	// Regal nachsehen.
 	Fehlbestand []repository.InventurVerlust `json:"fehlbestand"`
 }
 
-// InventurAbschliessen schließt eine Inventur-Session ab: Alle im Scope erwarteten,
-// aber in DIESER Session nicht erfassten (und nicht verliehenen) Exemplare werden als
-// Verlust markiert. Der Fortschritt paralleler Sessions bleibt unberührt.
+// InventurAbschliessen schließt einen Lauf ab: Jedes Exemplar, das der Bereich erwartet, das
+// dieser Lauf nicht erfasst hat und das nicht verliehen ist, wird als Verlust gebucht. Andere
+// offene Läufe bleiben unberührt.
 //
-// @Summary      Finalize an inventory session
-// @Description  Marks scope items not scanned in this session as lost and closes it.
+// @Summary      Inventur abschließen
+// @Description  Bucht, was der Bereich erwartet und der Lauf nicht erfasst hat, als Verlust und schließt den Lauf.
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        body  body      abschlussAnfrage   true  "Session to finalize"
+// @Param        body  body      abschlussAnfrage   true  "Lauf"
 // @Success      200   {object}  abschlussAntwort
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
@@ -74,10 +74,10 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 
 	abfragen := repository.NewInventurAbfragen(tx)
 
-	// Session in derselben Transaktion EXKLUSIV sperren (FOR UPDATE): verhindert den
-	// doppelten Abschluss UND koordiniert gegen gleichzeitige Scans (die die Zeile
-	// FOR SHARE halten) — der Verlust-Snapshot wird erst gezogen, wenn kein Scan mehr
-	// offen ist. Liefert zugleich den gespeicherten Scope für das Verlust-Update.
+	// Den Lauf in dieser Transaktion exklusiv sperren (FOR UPDATE): Das verhindert einen
+	// doppelten Abschluss und wartet auf laufende Scans, die die Zeile mit FOR SHARE halten;
+	// die Verluste werden erst bestimmt, wenn kein Scan mehr offen ist. Die Sperre liefert
+	// zugleich den gespeicherten Bereich.
 	lauf, err := abfragen.SperreLaufFuerAbschluss(ctx, req.LaufID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -94,7 +94,7 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// In DERSELBEN Transaktion gelesen, vor dem Commit: Danach ist der Fehlbestand
+	// In derselben Transaktion gelesen, vor dem Commit: Danach ist der Fehlbestand
 	// zwar dauerhaft gespeichert, aber ein Fehler beim Lesen dürfte den Abschluss
 	// nicht mehr zurückrollen — die Aussonderung wäre dann schon geschrieben.
 	fehlbestand, err := abfragen.LadeVerluste(ctx, lauf.ID)
@@ -119,13 +119,13 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 //
 // Der Abschluss nennt die Liste zwar sofort, aber genau in dem Moment steht man mit dem
 // Scanner im Regal und will sie nicht am Bildschirm lesen. Ohne diesen Weg wäre sie nach
-// dem Schliessen der Ansicht verloren — und nachrechnen kann man sie nicht, weil die
-// Exemplare durch die Aussonderung aus dem Scope fallen.
+// dem Schließen der Ansicht verloren, und nachrechnen kann man sie nicht, weil die
+// Exemplare durch die Aussonderung aus dem Bereich fallen.
 //
 // @Summary      Fehlbestand einer abgeschlossenen Inventur
 // @Tags         inventur
 // @Produce      json
-// @Param        session_id  query  string  true  "Session"
+// @Param        session_id  query  string  true  "Lauf"
 // @Success      200  {array}  repository.InventurVerlust
 // @Router       /inventur/fehlbestand [get]
 func (t *Tueren) Fehlbestand() http.HandlerFunc {

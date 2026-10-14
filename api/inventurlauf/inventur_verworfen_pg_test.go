@@ -22,12 +22,12 @@ import (
 )
 
 // Eine verworfene Inventur steht nicht als „vollständig" in der Liste früherer Inventuren
-// (docs/OFFEN.md 5.32, Migration 149).
+// (Migration 149).
 //
 // Zwei Bereiche, beide ohne Verlust beendet: der eine abgeschlossen, nachdem sein einziges
-// Buch gescannt war; der andere verworfen, nachdem eines von zwei Büchern gescannt war. Die
-// Liste lieferte für beide dasselbe (verluste 0), und der Bildschirm schrieb bei beiden
-// „vollständig". Geprüft über die Routen, die der Bildschirm ruft.
+// Buch gescannt war; der andere verworfen, nachdem eines von zwei Büchern gescannt war. Ohne
+// das Feld verworfen lieferte die Liste für beide dasselbe (verluste 0), und der Bildschirm
+// schriebe bei beiden „vollständig". Geprüft über die Routen, die der Bildschirm ruft.
 func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

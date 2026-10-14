@@ -1,8 +1,7 @@
 package inventurlauf
 
-// inventur_verlust_aktionen.go — Handlungsspielraum für den Fehlbestandsbericht:
-// ein als Verlust gebuchtes Exemplar kann wiedergefunden (zurück in Umlauf) oder
-// endgültig gelöscht werden. Vorher war der Bericht reine Anzeige ohne Folgehandlung.
+// Die zwei Knöpfe des Fehlbestandsberichts: Ein als Verlust gebuchtes Exemplar wird
+// wiedergefunden und geht zurück in den Umlauf, oder es wird endgültig gelöscht.
 
 import (
 	"errors"
@@ -15,8 +14,8 @@ import (
 	"bibliothek/repository"
 )
 
-// FundMelden markiert ein Exemplar der aktuellen Session als beim
-// Nachsuchen wiedergefunden und bringt es zurück in Umlauf.
+// FundMelden bucht ein als Verlust gebuchtes Exemplar als beim Nachsuchen wiedergefunden und
+// bringt es zurück in den Umlauf.
 // @Router /buecher/exemplare/{id}/gefunden [post]
 func (t *Tueren) FundMelden() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
@@ -79,9 +78,9 @@ type verlusteLoeschenAnfrage struct {
 	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,required,uuid_oder_leer"`
 }
 
-// VerlusteEndgueltigLoeschen löscht als Verlust gebuchte Exemplare endgültig.
-// Bewusst NICHT der allgemeine Lösch-Weg (der soft löscht, siehe DeleteCopyHandler) —
-// diese Route rührt ausschliesslich Exemplare an, die schon als VERLUST gelten.
+// VerlusteEndgueltigLoeschen löscht als Verlust gebuchte Exemplare endgültig. Der allgemeine
+// Weg zum Löschen sondert nur aus (ProtokollAbfragen.SondereExemplarAus); diese Tür rührt nur
+// Exemplare an, die schon als Verlust gelten.
 // @Router /buecher/exemplare/verlust-endgueltig-loeschen [post]
 func (t *Tueren) VerlusteEndgueltigLoeschen() http.HandlerFunc {
 	return apierrors.Wrap(t.loescheVerlusteEndgueltig)
@@ -113,8 +112,8 @@ func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Als
 		// Internal ersetzte der Sanitizer den Text durch „interner Datenbankfehler"
-		// (apierrors.SendHTTPError) — die Bedienung erführe nie, WELCHES Exemplar
-		// warum im Weg steht. Wrap gibt die Message eines APIError unverändert aus.
+		// (apierrors.SendHTTPError), und die Bedienung erführe nie, welches Exemplar warum
+		// im Weg steht. Wrap gibt die Meldung eines APIError unverändert aus.
 		if errors.Is(err, repository.ErrVerlustNochGebunden) {
 			return apierrors.Conflict(err.Error(), err)
 		}
@@ -125,7 +124,7 @@ func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Reques
 	}
 	// Beide Angaben: die Zahl für die Meldung, die IDs, damit die Oberfläche genau
 	// die Zeilen entfernt, die wirklich weg sind — und nicht die, die sie angefragt
-	// hatte. Nie nil, damit der Client [] statt null bekommt.
+	// hatte. Nie nil, damit die Oberfläche [] statt null bekommt.
 	if geloeschteIDs == nil {
 		geloeschteIDs = []string{}
 	}

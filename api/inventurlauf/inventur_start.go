@@ -12,20 +12,20 @@ import (
 	"bibliothek/repository"
 )
 
-// startAnfrage holds the parameters needed to define the scope
-// of a new physical stock-take (inventory).
+// startAnfrage nennt den Bereich einer neuen Inventur: den ganzen Bestand, ein Regal über den
+// Anfang der Signatur oder Fach und Klasse.
 type startAnfrage struct {
 	Art string `json:"type"` // "global" | "signature" | "filter"
-	// Signatur ist bei "signature" ein Präfix von buecher_titel.signatur, also eine
-	// Regaladresse: "BIB Deu" erfasst auch "BIB Deu 5 KRÜ" (Migration 060). Früher
-	// stand hier eine signature_id auf eine Tabelle, die niemand pflegte.
+	// Signatur ist bei "signature" der Anfang von buecher_titel.signatur, also eine
+	// Regaladresse: "BIB Deu" erfasst auch "BIB Deu 5 KRÜ".
 	Signatur *string `json:"signatur,omitempty"`
 	Fach     *string `json:"subject,omitempty"` // bei "filter": Fach (buecher_titel.subject)
 	Jahrgang *int    `json:"grade,omitempty"`   // bei "filter": Klasse (Jahrgangsbereich enthält)
 }
 
-// signaturNormalisiert liefert die getrimmte Signatur — eine Quelle für Label und Scope,
-// damit das Label nie einen anderen Bereich benennt, als die Session tatsächlich erfasst.
+// signaturNormalisiert liefert die Signatur ohne Leerzeichen am Rand. Bezeichnung und Bereich
+// nehmen sie beide von hier, damit die Bezeichnung nie einen anderen Bereich nennt, als der
+// Lauf erfasst.
 func (a startAnfrage) signaturNormalisiert() string {
 	if a.Signatur == nil {
 		return ""
@@ -33,7 +33,7 @@ func (a startAnfrage) signaturNormalisiert() string {
 	return strings.TrimSpace(*a.Signatur)
 }
 
-// bereich leitet den auswertbaren Scope aus dem Request ab.
+// bereich leitet aus der Anfrage den Bereich ab, den die Abfragen auswerten.
 func (a startAnfrage) bereich() repository.InventurBereich {
 	switch a.Art {
 	case "signature":
@@ -46,7 +46,7 @@ func (a startAnfrage) bereich() repository.InventurBereich {
 	}
 }
 
-// startAntwort returns the new session and the number of copies expected.
+// startAntwort nennt den neuen Lauf und die Zahl der Exemplare, die er erwartet.
 type startAntwort struct {
 	LaufID      string `json:"session_id"`
 	Bereich     string `json:"scope"`
@@ -54,14 +54,14 @@ type startAntwort struct {
 	Erwartet    int    `json:"erwartet"`
 }
 
-// pruefeStartAnfrage prüft Typ und die je Typ erforderlichen Scope-Felder.
+// pruefeStartAnfrage prüft die Art des Bereichs und die Felder, die sie verlangt.
 func pruefeStartAnfrage(w http.ResponseWriter, req startAnfrage) bool {
 	switch req.Art {
 	case "global":
 		return true
 	case "signature":
-		// Leerstring abweisen: Er wäre ein Präfix JEDER Signatur und machte aus der
-		// Regal-Inventur unbemerkt eine Gesamtinventur.
+		// Eine leere Signatur abweisen: Sie wäre der Anfang jeder Signatur und machte aus der
+		// Inventur eines Regals unbemerkt eine über den ganzen Bestand.
 		if req.signaturNormalisiert() == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("signatur ist erforderlich, wenn type 'signature' ist"))
 			return false
@@ -79,8 +79,8 @@ func pruefeStartAnfrage(w http.ResponseWriter, req startAnfrage) bool {
 	}
 }
 
-// bezeichnungFuer bestimmt die Anzeigebezeichnung des Inventur-Scopes. Seit Migration 060
-// braucht der Signatur-Fall keinen DB-Zugriff mehr: Die Signatur IST ihre Bezeichnung.
+// bezeichnungFuer bestimmt die Bezeichnung des Bereichs, die die Oberfläche zeigt. Für eine
+// Signatur braucht sie keine Datenbank: Die Signatur ist ihre Bezeichnung.
 func bezeichnungFuer(req startAnfrage) string {
 	switch req.Art {
 	case "signature":
@@ -92,7 +92,8 @@ func bezeichnungFuer(req startAnfrage) string {
 	}
 }
 
-// filterBezeichnung baut ein lesbares Scope-Label, z. B. "Mathematik · Kl. 5", "Deutsch" oder "Kl. 7".
+// filterBezeichnung baut eine lesbare Bezeichnung, z. B. "Mathematik · Kl. 5", "Deutsch" oder
+// "Kl. 7".
 func filterBezeichnung(req startAnfrage) string {
 	var teile []string
 	if req.Fach != nil && *req.Fach != "" {
@@ -107,19 +108,18 @@ func filterBezeichnung(req startAnfrage) string {
 	return strings.Join(teile, " · ")
 }
 
-// InventurStarten eröffnet eine neue Inventur-Session für den gewählten Scope.
+// InventurStarten beginnt einen Lauf für den gewählten Bereich.
 //
-// Anders als früher wird KEIN globaler Zustand mehr zurückgesetzt: Jede Session hat
-// ihren eigenen, session-gebundenen Fortschritt. Läuft für denselben Scope bereits
-// eine Session, antwortet der Handler mit 409 — der bisherige stille globale Reset
-// (der den Fortschritt eines parallel scannenden Kollegen löschte) entfällt.
+// Jeder Lauf zählt seinen eigenen Fortschritt. Ist der Bereich schon von einem offenen Lauf
+// belegt, antwortet die Tür mit 409, statt etwas zurückzusetzen: Dort könnte gerade jemand
+// scannen.
 //
-// @Summary      Start an inventory session
-// @Description  Opens a new inventory session for the chosen scope (global, per signature, or a Fach/Klasse filter).
+// @Summary      Inventur beginnen
+// @Description  Beginnt einen Lauf für den gewählten Bereich: den ganzen Bestand, eine Signatur oder Fach und Klasse.
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        body  body      startAnfrage   true  "Scope configuration"
+// @Param        body  body      startAnfrage   true  "Bereich"
 // @Success      200   {object}  startAntwort
 // @Failure      400   {object}  map[string]string
 // @Failure      409   {object}  map[string]string
@@ -145,8 +145,8 @@ func (t *Tueren) InventurStarten() http.HandlerFunc {
 
 		lauf, err := abfragen.LegeLaufAn(ctx, req.Art, req.bereich(), bezeichnungFuer(req), benutzerID)
 		if err != nil {
-			// Identischer Scope läuft schon ODER der gewünschte überschneidet sich mit
-			// einer offenen Inventur — beides ist ein bewusster 409, kein Serverfehler.
+			// Derselbe Bereich läuft schon, oder der gewünschte überschneidet sich mit einem
+			// offenen Lauf: beides 409, kein Fehler des Servers.
 			if errors.Is(err, repository.ErrInventurLaeuftBereits) || errors.Is(err, repository.ErrInventurUeberlappt) {
 				apierrors.SendHTTPError(w, http.StatusConflict, err)
 				return

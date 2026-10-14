@@ -9,7 +9,7 @@ import (
 	"bibliothek/repository"
 )
 
-// offenerLauf ist die Frontend-Sicht auf eine laufende Session.
+// offenerLauf ist ein offener Lauf, wie die Oberfläche ihn zeigt.
 type offenerLauf struct {
 	LaufID      string `json:"session_id"`
 	Bereich     string `json:"scope"`
@@ -19,9 +19,9 @@ type offenerLauf struct {
 	Erwartet    int    `json:"erwartet"`
 }
 
-// abgeschlossenerLauf ist die Frontend-Sicht auf eine fertige Inventur. Sie
-// trägt nur, was für die Auswahl nötig ist: wann, welcher Bereich, wie viele Verluste,
-// und ob sie verworfen wurde — dann ist der Bereich nicht geprüft, auch ohne Verlust.
+// abgeschlossenerLauf ist eine fertige Inventur, wie die Oberfläche sie zur Auswahl zeigt:
+// wann, welcher Bereich, wie viele Verluste und ob sie verworfen wurde; dann ist der Bereich
+// nicht geprüft, auch ohne Verlust.
 type abgeschlossenerLauf struct {
 	LaufID          string `json:"session_id"`
 	Bezeichnung     string `json:"label"`
@@ -31,16 +31,14 @@ type abgeschlossenerLauf struct {
 	Verworfen       bool   `json:"verworfen"`
 }
 
-// AbgeschlosseneInventuren liefert die zuletzt abgeschlossenen Inventuren.
+// AbgeschlosseneInventuren liefert die zehn zuletzt abgeschlossenen Inventuren.
 //
-// Sie sind der fehlende Schlüssel zu GET /api/inventur/fehlbestand: Der Endpunkt
-// verlangt eine session_id, und die war aus der Oberfläche nicht zu bekommen, weil die
-// Session-Liste nur laufende Inventuren zeigt. Der Fehlbestand lag damit ausschließlich
-// im Arbeitsspeicher des Browsers, der die Inventur abgeschlossen hatte — nach einem
-// Neuladen oder an einem zweiten Arbeitsplatz war er weg, obwohl die Daten in
-// inventur_verluste dauerhaft gespeichert sind.
+// Über sie kommt die Oberfläche an die Kennung für GET /api/inventur/fehlbestand: Die Liste
+// der laufenden Inventuren nennt eine fertige nicht mehr, und ohne Kennung bliebe der
+// Fehlbestand nach einem Neuladen oder an einem zweiten Arbeitsplatz unerreichbar, obwohl er
+// in inventur_verluste gespeichert ist.
 //
-// @Summary      List completed inventory sessions
+// @Summary      Abgeschlossene Inventuren
 // @Tags         inventory
 // @Produce      json
 // @Success      200   {array}   abgeschlossenerLauf
@@ -75,11 +73,11 @@ func (t *Tueren) AbgeschlosseneInventuren() http.HandlerFunc {
 	}
 }
 
-// LaufendeInventuren liefert alle laufenden Inventur-Sessions. Das Frontend
-// zeigt sie an, damit eine Lehrkraft eine bereits laufende Inventur fortsetzt, statt
-// (vergeblich) eine zweite im selben Scope zu starten.
+// LaufendeInventuren liefert alle offenen Läufe. Die Oberfläche zeigt sie, damit eine
+// Lehrkraft eine laufende Inventur fortsetzt, statt vergeblich eine zweite im selben Bereich
+// zu starten.
 //
-// @Summary      List running inventory sessions
+// @Summary      Laufende Inventuren
 // @Tags         inventory
 // @Produce      json
 // @Success      200   {array}   offenerLauf
@@ -116,19 +114,19 @@ func (t *Tueren) LaufendeInventuren() http.HandlerFunc {
 	}
 }
 
-// verwerfenAnfrage benennt die abzubrechende Session.
+// verwerfenAnfrage nennt den Lauf, der verworfen wird.
 type verwerfenAnfrage struct {
 	LaufID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
 }
 
-// InventurVerwerfen verwirft eine Session ohne Verlustbuchung — für abgebrochene
-// oder hängengebliebene Inventuren. Danach ist der Scope wieder für einen Neustart frei.
+// InventurVerwerfen verwirft einen Lauf, ohne Verluste zu buchen, etwa eine abgebrochene oder
+// hängen gebliebene Inventur. Danach ist der Bereich für einen neuen Lauf frei.
 //
-// @Summary      Abort an inventory session
+// @Summary      Inventur verwerfen
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        body  body      verwerfenAnfrage   true  "Session to abort"
+// @Param        body  body      verwerfenAnfrage   true  "Lauf"
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string

@@ -2018,7 +2018,7 @@ const docTemplate = `{
                 "tags": [
                     "inventory"
                 ],
-                "summary": "List completed inventory sessions",
+                "summary": "Abgeschlossene Inventuren",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2052,10 +2052,10 @@ const docTemplate = `{
                 "tags": [
                     "inventory"
                 ],
-                "summary": "Abort an inventory session",
+                "summary": "Inventur verwerfen",
                 "parameters": [
                     {
-                        "description": "Session to abort",
+                        "description": "Lauf",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2107,7 +2107,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session",
+                        "description": "Lauf",
                         "name": "session_id",
                         "in": "query",
                         "required": true
@@ -2128,7 +2128,7 @@ const docTemplate = `{
         },
         "/inventur/finish": {
             "post": {
-                "description": "Marks scope items not scanned in this session as lost and closes it.",
+                "description": "Bucht, was der Bereich erwartet und der Lauf nicht erfasst hat, als Verlust und schließt den Lauf.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2138,10 +2138,10 @@ const docTemplate = `{
                 "tags": [
                     "inventory"
                 ],
-                "summary": "Finalize an inventory session",
+                "summary": "Inventur abschließen",
                 "parameters": [
                     {
-                        "description": "Session to finalize",
+                        "description": "Lauf",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2189,7 +2189,7 @@ const docTemplate = `{
         },
         "/inventur/scan": {
             "post": {
-                "description": "Records that a physical copy was present, bound to the given session.",
+                "description": "Vermerkt im genannten Lauf, dass das Exemplar im Regal steht.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2199,10 +2199,10 @@ const docTemplate = `{
                 "tags": [
                     "inventory"
                 ],
-                "summary": "Scan a copy during inventory",
+                "summary": "Exemplar in der Inventur scannen",
                 "parameters": [
                     {
-                        "description": "Session and barcode",
+                        "description": "Lauf und Barcode",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2265,7 +2265,7 @@ const docTemplate = `{
                 "tags": [
                     "inventory"
                 ],
-                "summary": "List running inventory sessions",
+                "summary": "Laufende Inventuren",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2290,7 +2290,7 @@ const docTemplate = `{
         },
         "/inventur/start": {
             "post": {
-                "description": "Opens a new inventory session for the chosen scope (global, per signature, or a Fach/Klasse filter).",
+                "description": "Beginnt einen Lauf für den gewählten Bereich: den ganzen Bestand, eine Signatur oder Fach und Klasse.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2300,10 +2300,10 @@ const docTemplate = `{
                 "tags": [
                     "inventory"
                 ],
-                "summary": "Start an inventory session",
+                "summary": "Inventur beginnen",
                 "parameters": [
                     {
-                        "description": "Scope configuration",
+                        "description": "Bereich",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -4256,7 +4256,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "fehlbestand": {
-                    "description": "Fehlbestand nennt die betroffenen Exemplare, nicht nur ihre Anzahl. Vorher stand\nhier allein die Zahl — mit „47 Verluste\" kann niemand ins Regal gehen und nachsehen.",
+                    "description": "Fehlbestand nennt die Exemplare, nicht nur ihre Zahl: Mit „47 Verluste\" kann niemand im\nRegal nachsehen.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/repository.InventurVerlust"
@@ -4332,7 +4332,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "signatur": {
-                    "description": "Signatur ist bei \"signature\" ein Präfix von buecher_titel.signatur, also eine\nRegaladresse: \"BIB Deu\" erfasst auch \"BIB Deu 5 KRÜ\" (Migration 060). Früher\nstand hier eine signature_id auf eine Tabelle, die niemand pflegte.",
+                    "description": "Signatur ist bei \"signature\" der Anfang von buecher_titel.signatur, also eine\nRegaladresse: \"BIB Deu\" erfasst auch \"BIB Deu 5 KRÜ\".",
                     "type": "string"
                 },
                 "subject": {

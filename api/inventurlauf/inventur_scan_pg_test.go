@@ -19,11 +19,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestScanVerbuchen_FremderScopeNichtErfasst sichert #3 (Cross-Contamination) ab: Ein Buch
-// außerhalb des Session-Scopes (Mathe-Buch, während eine Deutsch-Inventur läuft) wird mit
-// 409 abgewiesen und NICHT in der Deutsch-Session verbucht. Vorher speicherte der Handler
-// den Scan trotz Scope-Warnung ab — beim Abschluss der Mathe-Inventur fehlte das Exemplar
-// dann in deren Erfassungen und wurde als VERLUST gebucht, obwohl es physisch vorlag.
+// TestScanVerbuchen_FremderBereichNichtErfasst: Ein Buch außerhalb des Bereichs (ein
+// Mathebuch, während eine Inventur für Deutsch läuft) wird mit 409 abgewiesen und nicht im
+// Lauf für Deutsch verbucht. Sonst fehlte es beim Abschluss der Inventur für Mathematik und
+// würde als Verlust gebucht, obwohl es im Regal steht.
 func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -47,7 +46,7 @@ func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	// Mathe-Buch in Deutsch-Session -> 409, NICHT erfasst.
+	// Mathebuch im Lauf für Deutsch: 409, nicht erfasst.
 	rec := inventurScan(t, srv, session.ID, barcodeMathe)
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Fremd-Scope-Scan: erwartet 409, war %d: %s", rec.Code, rec.Body.String())
@@ -58,7 +57,7 @@ func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 	}
 
 	// Die 409-Antwort muss strukturiert sein: echter Titel + Status "ausser_scope" + Warntext,
-	// damit das Frontend kein "Unbekanntes Buch" anzeigt, sondern eine klare Warnung.
+	// damit die Oberfläche kein "Unbekanntes Buch" anzeigt, sondern eine Warnung.
 	var payload scanAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("409-Body nicht als scanAntwort lesbar: %v (%s)", err, rec.Body.String())
@@ -73,7 +72,7 @@ func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 		t.Error("409-Antwort trägt keinen Warntext")
 	}
 
-	// Deutsch-Buch in Deutsch-Session -> 200, regulär erfasst (Gegenprobe).
+	// Deutschbuch im Lauf für Deutsch: 200, erfasst (Gegenprobe).
 	rec = inventurScan(t, srv, session.ID, barcodeDeutsch)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Scope-konformer Scan: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
@@ -131,9 +130,8 @@ func TestScanVerbuchen_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T
 	}
 }
 
-// TestScanVerbuchen_Fehlerfaelle sichert diverse Edge Cases und Fehlerabbrüche ab,
-// wie eine fehlende/unbekannte Session, unbekannte oder ausgesonderte Exemplare
-// sowie Warnungen bei ausgeliehenen Büchern.
+// TestScanVerbuchen_Fehlerfaelle prüft die Abweisungen und die Warnung: ein fehlender oder
+// unbekannter Lauf, ein unbekanntes oder ausgesondertes Exemplar und ein ausgeliehenes Buch.
 func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -147,7 +145,7 @@ func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 	barcodeDeutsch := "B-D-" + suffix
 	testdaten.LegeExemplarMitSignaturAn(t, pool, sigDeutsch, barcodeDeutsch)
 
-	// Ausgesondertes Exemplar (durch Setzen des zustand_notiz und eines Triggers / manuelles Update)
+	// Ausgesondertes Exemplar, direkt in der Zeile gesetzt
 	barcodeAusgesondert := "B-A-" + suffix
 	exAusgesondert := testdaten.LegeExemplarMitSignaturAn(t, pool, sigDeutsch, barcodeAusgesondert)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausgesondert = true, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, exAusgesondert); err != nil {
@@ -158,7 +156,7 @@ func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 	barcodeLent := "B-L-" + suffix
 	exLent := testdaten.LegeExemplarMitSignaturAn(t, pool, sigDeutsch, barcodeLent)
 	var userID string
-	// Die Ausleihe hängt an der LESERZEILE des Kontos (Migration 125).
+	// Die Ausleihe hängt an der Leserzeile des Kontos (Migration 125).
 	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv) VALUES ('Test', 'User', 'test@example.com', 'admin', true) RETURNING leser_id`).Scan(&userID); err != nil {
 		t.Fatalf("User anlegen: %v", err)
 	}

@@ -26,7 +26,7 @@ import (
 // hier steht, was erst die Route dazutut: Die Transaktion wird festgeschrieben, eine
 // gebundene Lage kommt als 409 mit Klartext an, und die Antwort nennt, was geschah.
 
-// inventurReset leert Bestand und Inventuren. Eine offene Inventur aus einem früheren Test
+// leereInventur leert Bestand und Inventuren. Eine offene Inventur aus einem früheren Test
 // sperrt sonst die neue: Je Bereich darf nur ein Durchgang offen sein.
 func leereInventur(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
