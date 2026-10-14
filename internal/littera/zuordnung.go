@@ -19,8 +19,8 @@ type Gruppenbefund struct {
 //
 // Solange die Liste nicht leer ist, schreibt der Personenlauf nichts: cmd/littera-altbestand
 // prüft sie vor dem Bestand und im Trockenlauf, SchreibePersonen noch einmal vor der ersten
-// Person. Bis zum 28.09.2026 übersprang der Lauf solche Leser einzeln; ihre Bücher stünden
-// danach als verfügbar im Regal (Sicherung von 2010: 42 Konten, 341 Ausleihen).
+// Person. Einzeln übersprungen, stünden ihre Bücher als verfügbar im Regal (Sicherung von
+// 2010: 42 Konten, 341 Ausleihen).
 func OhneZuordnung(ab *Altbestand) []Gruppenbefund {
 	jeGruppe := map[string]*Gruppenbefund{}
 	gruppeDes := map[string]string{} // Leser.ID → Lesergruppe

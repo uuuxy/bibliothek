@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Littera-Schlagworte kommen mit der Übernahme (docs/OFFEN.md 4.20, Stufe 2, entschieden am
-// 30.09.2026), über den einen Schreibpfad der Anwendung, und das Fach kommt aus ihnen, wo die
+// Die Littera-Schlagworte kommen mit der Übernahme, über den einen Schreibpfad der Anwendung,
+// und das Fach kommt aus ihnen, wo die
 // Signatur keins nennt — wie beim Katalogisat-Import. Am echten Postgres: Was der Bericht
 // meldet, muss in titel_schlagworte stehen.
 func TestSchreibeSchlagworte_AlleWoerterUeberDenSchreibpfad(t *testing.T) {
@@ -107,8 +107,8 @@ func schlagworteAm(t *testing.T, pool *pgxpool.Pool, titelID string) []string {
 	return w
 }
 
-// Die Interessenkreise kommen als Schlagworte mit (docs/OFFEN.md 4.20, entschieden am
-// 30.09.2026), hinter den Schlagworten des Titels und über denselben Schreibpfad; ein
+// Die Interessenkreise kommen als Schlagworte mit, hinter den Schlagworten des Titels und über
+// denselben Schreibpfad; ein
 // gleichlautendes Wort („U plus") zählt einmal. Die Stufe ergibt die Jahrgangsspanne, wo die
 // Signatur keine nennt; das Fach kommt nur aus den Schlagworten. Am echten Postgres.
 func TestSchreibeSchlagworte_InteressenkreiseKommenMit(t *testing.T) {

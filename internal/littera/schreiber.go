@@ -31,7 +31,7 @@ type Optionen struct {
 	Barcodes      Barcodequelle
 	BatchGroesse  int // Titel je Transaktion
 	SchuljahrEnde int // Jahr, in dem das laufende Schuljahr endet (2026/27 → 2027)
-	// LehrkraefteInaktiv legt Lehrkräfte auf aktiv=false. Das ist die AUSNAHME, nicht die
+	// LehrkraefteInaktiv legt Lehrkräfte auf aktiv=false. Das ist die Ausnahme, nicht die
 	// Vorgabe: Die Ausweis-Abfrage der Omnibox verlangt aktiv=true, eine inaktive
 	// Lehrkraft wäre also am Scanner unauffindbar. Den Login sperrt ohnehin schon die
 	// Platzhalter-Adresse (siehe schreiber_personen.go).
@@ -86,10 +86,9 @@ func NewSchreiber(pool *pgxpool.Pool, prot *uebernahme.Protokoll, opt Optionen) 
 
 // PruefeZielbestand bricht ab, wenn schon einmal ein Littera-Import gelaufen ist.
 //
-// Ein zweiter Lauf legt jeden Titel und jedes Exemplar ein weites Mal an — es gibt
-// keinen natürlichen Schlüssel, an dem Postgres das verhindern könnte. Der Bestand wäre
-// danach doppelt und ließe sich nur noch über die Reihenfolge der UUIDs auseinander­
-// sortieren. Deshalb wird vorher gezählt, statt hinterher zu erklären.
+// Ein zweiter Lauf legte jeden Titel und jedes Exemplar ein weiteres Mal an: Es gibt keinen
+// natürlichen Schlüssel, an dem Postgres das verhindern könnte, und der doppelte Bestand ließe
+// sich nur über die Reihenfolge der UUIDs trennen. Deshalb wird vorher gezählt.
 func (s *Schreiber) PruefeZielbestand(ctx context.Context) error {
 	var titel, exemplare, schueler int
 	err := s.pool.QueryRow(ctx, `

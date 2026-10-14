@@ -15,12 +15,10 @@ func leser(id, nummer, klasse string, art LeserArt) Leser {
 }
 
 // TestSonderkontenKommenMitIhrerArt: Praktikanten, Sekretariat, U-plus und die Sammelkonten
-// der Fachbereiche sind keine Schüler, aber Entleiher. Bis zum 28.09.2026 ließ der Lauf sie
-// aus — in der Sicherung von 2010 42 Konten, und mit ihnen 341 Ausleihen, deren Bücher danach
-// als verfügbar gegolten hätten. Bis zum 30.09.2026 kamen sie als „lehrkraft" an, und ihre
-// Littera-Gruppe stand nur im Protokoll. Jetzt trägt die Leserzeile die Art (Migration 153);
-// Sekretariat und U-plus bekommen ein Konto mit Platzhalter-Adresse wie eine Lehrkraft,
-// Praktikum und Fachbereich keins (leserart.HatKonto).
+// der Fachbereiche sind keine Schüler, aber Leser mit Ausleihen; in der Sicherung von 2010 sind
+// es 42 Konten mit 341 Ausleihen, deren Bücher ohne sie als verfügbar gälten. Die Leserzeile
+// trägt die Art; Sekretariat und U-plus bekommen ein Konto mit Platzhalter-Adresse wie eine
+// Lehrkraft, Praktikum und Fachbereich keins (leserart.HatKonto).
 func TestSonderkontenKommenMitIhrerArt(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -67,7 +65,7 @@ func TestSonderkontenKommenMitIhrerArt(t *testing.T) {
 }
 
 // TestLeserOhneZuordnungSchreibtNiemanden: Eine Gruppe ohne Art hält den Lauf an, bevor die
-// erste Person geschrieben ist — auch die zugeordneten nicht (Entscheidung vom 28.09.2026).
+// erste Person geschrieben ist — auch die zugeordneten nicht.
 // Ein Lauf, der sie ausließe, verlöre ihre Ausleihen; einer, der erst die anderen schreibt,
 // müsste nach dem Zuordnen auf eine neue Datenbank.
 func TestLeserOhneZuordnungSchreibtNiemanden(t *testing.T) {
@@ -92,9 +90,9 @@ func TestLeserOhneZuordnungSchreibtNiemanden(t *testing.T) {
 	}
 }
 
-// TestLehrkraftUndLiVBekommenIhrePersonenart: Littera führt Referendare in einer eigenen Gruppe.
-// Bis zum 15.09.2026 übersprang der Lauf sie als unklar; jetzt kommen sie ins Kollegium, mit der
-// Personenart „liv" (Lehrkraft im Vorbereitungsdienst), Lehrkräfte mit „lehrkraft".
+// TestLehrkraftUndLiVBekommenIhrePersonenart: Littera führt Referendare in einer eigenen
+// Gruppe. Sie kommen ins Kollegium mit der Personenart „liv" (Lehrkraft im
+// Vorbereitungsdienst), Lehrkräfte mit „lehrkraft".
 func TestLehrkraftUndLiVBekommenIhrePersonenart(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -111,7 +109,7 @@ func TestLehrkraftUndLiVBekommenIhrePersonenart(t *testing.T) {
 	if bericht.Kollegium != 2 || !bericht.AbgleichOK {
 		t.Fatalf("beide gehören ins Kollegium, gemeldet: %+v", bericht)
 	}
-	// Ausweis und Art stehen seit Migration 125 an der Leserzeile des Kontos, nicht am Konto.
+	// Ausweis und Art stehen an der Leserzeile des Kontos, nicht am Konto.
 	if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = '31' AND art = 'lehrkraft'`); n != 1 {
 		t.Errorf("die Lehrkraft soll als Art „lehrkraft“ geführt werden, gefunden: %d", n)
 	}
@@ -151,10 +149,9 @@ func TestAbgaengerBekommenEinJahr(t *testing.T) {
 }
 
 // TestSchuelerOhneJahrgangBekommtDenRueckfall: „Im Ausland" trägt die Klasse „AUS", aus der
-// sich kein Abgangsjahr ablesen lässt. Bis zum 28.09.2026 ließ der Lauf solche Schüler samt
-// Ausleihen aus; jetzt bekommen sie das Jahr, das die Anwendung bei Handanlage und LUSD-Import
-// für eine Klasse ohne Jahrgang einsetzt (repository.AbgangsjahrOhneKlasse) — und die Warnung
-// sagt, dass es ein Platzhalter ist.
+// sich kein Abgangsjahr ablesen lässt. Solche Schüler bekommen samt Ausleihen das Jahr, das die
+// Anwendung bei Handanlage und LUSD-Import für eine Klasse ohne Jahrgang einsetzt
+// (repository.AbgangsjahrOhneKlasse), und die Warnung sagt, dass es ein Platzhalter ist.
 func TestSchuelerOhneJahrgangBekommtDenRueckfall(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -187,7 +184,7 @@ func TestSchuelerOhneJahrgangBekommtDenRueckfall(t *testing.T) {
 }
 
 // TestLehrkraftOhneMailBekommtUnzustellbarenPlatzhalter: benutzer.email ist NOT NULL
-// UNIQUE, im Altbestand fehlt sie bei 157 von 158 Lehrkräften. Der Platzhalter MUSS auf
+// UNIQUE, im Altbestand fehlt sie bei 157 von 158 Lehrkräften. Der Platzhalter muss auf
 // eine nicht auflösbare Domäne zeigen — ein erfundener Wert unter der Schuldomäne ginge
 // irgendwann an eine echte, fremde Person.
 func TestLehrkraftOhneMailBekommtUnzustellbarenPlatzhalter(t *testing.T) {
@@ -264,7 +261,7 @@ func TestDoppelteAusweisnummerWeichtAus(t *testing.T) {
 }
 
 // TestErsatznummerKommtNieWieder: Die Ersatznummer A-<Littera-Kennung> erfindet der Lauf
-// selbst — sie ist eine Vergabe im Nummernkreis des Generators (docs/OFFEN.md 5.23). Sie
+// selbst — sie ist eine Vergabe im Nummernkreis des Generators. Sie
 // darf keine Nummer sein, die schon einmal in der Leserdatei stand: nicht die eines Lesers
 // im Papierkorb, nicht eine ausgeschiedene, und nicht dieselbe Zahl in anderer Schreibweise
 // (A-04908 und A-4908) und keine Ersatzform eines Lesers im Papierkorb (A-4910-2). Deren Karte
@@ -320,10 +317,8 @@ func TestErsatznummerKommtNieWieder(t *testing.T) {
 }
 
 // TestFremdLeserNummerGewinnt: Der Ausweis liefert beim Scannen die Nummer seines Herstellers
-// (gemessen „B97601826457"); Littera hält sie in FremdLeserNummer. Steht eine da, wird SIE die
-// Ausweisnummer — nicht die Lesernummer. Bis zum 15.09.2026 wurde die Tabelle eingelesen und
-// nie geschrieben: Nach dem Personenlauf hätte kein alter Ausweis seine Person gefunden
-// (OFFEN.md 5.15).
+// (gemessen „B97601826457"); Littera hält sie in FremdLeserNummer. Steht eine da, wird sie die
+// Ausweisnummer, nicht die Lesernummer; sonst fände kein alter Ausweis seine Person.
 func TestFremdLeserNummerGewinnt(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -360,10 +355,10 @@ func TestFremdLeserNummerGewinnt(t *testing.T) {
 }
 
 // TestAusweisnummerGleichBuchBarcodeWeichtAus: Lesernummern sind kleine Zahlen, und im Bestand
-// tragen Tausende Bücher nackte Mediennummern (Server, 15.09.2026: 30.658). Die Theke löst eine
+// tragen Tausende Bücher nackte Mediennummern (auf dem Server 30.658). Die Theke löst eine
 // Nummer ohne Vorsilbe zuerst als Buch auf (resolveOhnePraefix) — ein Schüler mit derselben
 // Nummer buchte beim Klick in der Namenssuche oder beim Scan seines neuen Ausweises das Buch.
-// Eine Nummer, die schon ein Buch trägt, ist deshalb vergeben (OFFEN.md 5.15).
+// Eine Nummer, die schon ein Buch trägt, ist deshalb vergeben.
 func TestAusweisnummerGleichBuchBarcodeWeichtAus(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -396,10 +391,8 @@ func TestAusweisnummerGleichBuchBarcodeWeichtAus(t *testing.T) {
 }
 
 // TestErsatznummerWeichtVergebenerNummerAus: Die Ersatznummer „L-<Littera-Nummer>" kann schon
-// vergeben sein, etwa von Hand an eine Lehrkraft. Vor Migration 125 galt die Eindeutigkeit nur
-// je Tabelle, und die Theke suchte bei „L-" zuerst unter den Schülern — der Ausweis der
-// Lehrkraft lud still den Schüler (Rasterdurchgang 15.09.2026). Heute wäre es kein stiller
-// Fehlgriff mehr, sondern ein abgewiesener Import; ausweichen soll er trotzdem.
+// vergeben sein, etwa von Hand an eine Lehrkraft. Die Datenbank wiese den Import dann ab;
+// ausweichen soll er trotzdem.
 func TestErsatznummerWeichtVergebenerNummerAus(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -443,7 +436,7 @@ func TestErsatznummerWeichtVergebenerNummerAus(t *testing.T) {
 
 // TestMehrereKartenWerdenProtokolliert: Hat ein Leser mehrere Karten hinterlegt, gilt die
 // zuletzt angelegte (leseAusweisnummern) — mit einer älteren Karte findet die Theke niemanden.
-// Das gehört ins Protokoll; bis zum 15.09.2026 las niemand AusweisMehrfach.
+// Das gehört ins Protokoll.
 func TestMehrereKartenWerdenProtokolliert(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -509,7 +502,7 @@ func TestAdressenWerdenNichtUebernommen(t *testing.T) {
 }
 
 // TestImportierteLehrkraftIstAmScannerAuffindbar schliesst den Kreis zwischen Import und
-// Ausleihpfad: Die Theke sucht bei jedem Ausweis unter den LESERN (Migration 125). Landete
+// Ausleihpfad: Die Theke sucht bei jedem Ausweis unter den Lesern. Landete
 // die importierte Lehrkraft nur in der Kontentabelle, waere jeder gedruckte Lehrerausweis
 // wertlos — und gemerkt haette man es erst an der Theke.
 //

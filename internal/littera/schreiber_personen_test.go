@@ -134,7 +134,7 @@ func TestPersonenlaufAbgangsjahr(t *testing.T) {
 		t.Errorf("expected 2027, false; got %d, %v", jahr, rueckfall)
 	}
 
-	// 3. Uncalculable class („Im Ausland“, AUS): the application's fallback, marked for the warning
+	// 3. Uncalculable class („Im Ausland“, aus): the application's fallback, marked for the warning
 	l3 := Leser{Klasse: "AUS", Art: ArtSchueler}
 	jahr, rueckfall = p.abgangsjahr(l3)
 	if !rueckfall || jahr != 2031 {
@@ -171,9 +171,9 @@ func TestPersonenlaufKuerze(t *testing.T) {
 
 // TestPersonenlaufMailadresse_ProtokollOhneEchteAdresse ist das Gegenstück zum
 // Datenschutz-Gate in internal/uebernahme: Dort geht es um den Wert, den Postgres
-// meldet, hier um den, den wir selbst hineinschreiben. Bis zum 23.08.2026 stand die
-// kollidierende Adresse als Kennung in `littera_import.log` — unverschlüsselt, ohne
-// Frist. Die Lesernummer reicht, um die Zeile in der Quelldatei wiederzufinden.
+// meldet, hier um den, den der Lauf selbst hineinschreibt. `littera_import.log` ist
+// unverschlüsselt und ohne Frist; die Lesernummer reicht, um die Zeile in der Quelldatei
+// wiederzufinden.
 func TestPersonenlaufMailadresse_ProtokollOhneEchteAdresse(t *testing.T) {
 	pfad := t.TempDir() + "/prot.log"
 	prot, err := uebernahme.NewProtokoll(pfad, "littera_id")

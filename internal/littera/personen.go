@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-// funktionVerfasser ist der Funktionsschlüssel des VERFASSERS in Personen_Zuordnung.
+// funktionVerfasser ist der Funktionsschlüssel des Verfassers in Personen_Zuordnung.
 //
 // Die Tabelle Personen_Funktionen führt 1 = Illustrator, 2 = Herausgeber,
-// 3 = Redakteur und so fort — die 0 steht dort NICHT. Sie ist die Vorgabe: eine
+// 3 = Redakteur und so fort — die 0 steht dort nicht. Sie ist die Vorgabe: eine
 // Zuordnung ohne besondere Funktion ist die Verfasserschaft selbst. Gemessen am
 // Altbestand entfallen 19.191 von 20.562 Zuordnungen auf die 0.
 const funktionVerfasser = "0"
@@ -64,7 +64,7 @@ func ohneBestandsmarken(autor string) string {
 //
 // Die Namen stehen in Katalogform („Neebe, Reinhard"), teils auch nur als Nachname
 // („Linder") oder als Sammelangabe („Dorn . Bader") — so, wie sie am Buch stehen.
-// Bewusst KEINE Umsortierung auf „Vorname Nachname": Der Katalog dieser Anwendung
+// Bewusst keine Umsortierung auf „Vorname Nachname": Der Katalog dieser Anwendung
 // zeigt den Autor als Text, und eine automatische Umstellung würde bei den
 // Sammelangaben Unsinn erzeugen.
 func lesePersonen(r io.Reader) (map[string]string, error) {

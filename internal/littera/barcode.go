@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Litteras Barcodefeld ist keine Nummer, sondern die ZEICHENKETTE FÜR DEN DRUCK: Sie
+// Litteras Barcodefeld ist keine Nummer, sondern die Zeichenkette für den Druck: Sie
 // wird in einer Barcode-Schrift gesetzt, in der jedes Zeichen das Balkenmuster einer
 // Ziffer trägt. Ein Etikett sieht so aus:
 //
@@ -23,14 +23,12 @@ import (
 // Länge und Prüfzeichen. Zwei Alphabete für dieselben Ziffern, damit gleiche Ziffern
 // nebeneinander unterscheidbare Balken ergeben.
 //
-// Die Zeichenkette IST der EAN-13 des Etiketts, gesetzt in einer EAN-13-Schrift: Die erste
+// Die Zeichenkette ist der EAN-13 des Etiketts, gesetzt in einer EAN-13-Schrift: Die erste
 // Ziffer steht vor dem Startzeichen, die linke Hälfte wählt je Ziffer zwischen den Reihen
 // `qwertz…` und `asdf…` (die EAN-Parität, aus der ein Scanner die erste Ziffer liest), die
 // rechte Hälfte steht in der Reihe `yxcv…`, das letzte Zeichen ist die EAN-Prüfziffer.
-// Nachgemessen am 28.09.2026 an allen 61.520 Exemplaren der Sicherung von 2010: Parität und
-// Prüfziffer stimmen bei allen (siehe etikettZiffern). Bis dahin stand hier, die Etiketten
-// seien „inzwischen durchweg EAN-13" und die Zeichenkette beschreibe eine abgelöste
-// Generation — es ist dieselbe Generation.
+// An allen 61.520 Exemplaren der Sicherung von 2010 stimmen Parität und Prüfziffer (siehe
+// etikettZiffern).
 //
 // Ohne die Längenangabe an vorletzter Stelle wäre die Nummer übrigens nicht eindeutig
 // rekonstruierbar: 81 und 810 ergäben beide `100000`.
@@ -147,12 +145,8 @@ func etikettZiffern(roh string) (string, bool) {
 // der Sicherung von 2010 (61.518 gleich; die zwei anderen tragen in der Spalte die
 // Bibliotheksnummer 0, auf dem Etikett 0395).
 //
-// Bis zum 28.09.2026 füllte EtikettBarcode LINKS auf sechs Stellen auf und setzte an Stelle
-// 12 fest eine 6 — abgeleitet aus zwei 6-stelligen Nummern, bei denen beide Regeln dasselbe
-// ergeben. Für jede kürzere Nummer entstand ein Barcode, den kein Etikett trägt; in der
-// Sicherung von 2010 hat keine Nummer mehr als fünf Stellen, getroffen hätte es also jedes
-// ihrer 61.520 Exemplare. Der Scanner rechnete schon richtig zurück (dekodiereLitteraEtikett
-// in internal/service); dass Übernahme und Scanner übereinstimmen, prüft
+// Der Scanner rechnet denselben Wert zurück (dekodiereLitteraEtikett in internal/service);
+// dass Übernahme und Scanner übereinstimmen, prüft
 // internal/service/littera_etikett_uebernahme_test.go.
 //
 // Aufdruck und Scanwert sind verschiedene Werte — dieselbe Falle wie beim Schülerausweis,

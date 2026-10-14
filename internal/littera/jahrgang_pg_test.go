@@ -7,7 +7,7 @@ import (
 )
 
 // Sagt Littera nichts über den Jahrgang (keine Lernmittel-Signatur, kein Interessenkreis),
-// bleibt er am übernommenen Titel unbekannt: NULL in beiden Spalten (Migration 162). Mit einer
+// bleibt er am übernommenen Titel unbekannt: NULL in beiden Spalten. Mit einer
 // Vorgabe wären diese Titel von denen mit dem Interessenkreis „Sekundarstufe 1" (5 bis 10)
 // nicht zu unterscheiden.
 func TestJahrgangOhneAngabeBleibtUnbekannt(t *testing.T) {

@@ -33,7 +33,7 @@ func TestAbgaengerJahr(t *testing.T) {
 		// Ein zu frueher Wert wuerde einen Schueler archivieren, der noch da ist.
 		{"05F1", 2035, true, "Foerderstufe rechnet vorsichtig bis 13"},
 
-		// Wiederholer ueber dem Abschlussjahrgang: geht am Ende DIESES Jahres,
+		// Wiederholer ueber dem Abschlussjahrgang: geht am Ende dieses Jahres,
 		// nicht rueckwirkend.
 		{"10H1", 2027, true, "ueber dem Abschlussjahrgang — nicht in die Vergangenheit"},
 

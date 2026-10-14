@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Werte aus dem echten Export (littera_sav.mdb, 04.08.2026).
+// Werte aus dem echten Export (littera_sav.mdb).
 const gruppenCSV = `Buchungsdatum,Buchungsnummer,KurzBez,Untergruppe,Obergruppe
 ,1,"UNDEF","Undefinierte Untergruppe",1
 ,22,"07H1","Schüler",5
@@ -33,21 +33,20 @@ func TestArtAusUntergruppe(t *testing.T) {
 		warum  string
 	}{
 		"22": {ArtSchueler, "07H1", "regulaere Klasse"},
-		// Der Fall, den man leicht uebersieht: Die Oberstufe ist eine EIGENE
+		// Der Fall, den man leicht uebersieht: Die Oberstufe ist eine eigene
 		// Untergruppe, aber selbstverstaendlich sind das Schueler.
 		"71": {ArtSchueler, "11T1", "Sekundarstufe II sind auch Schueler"},
 		"90": {ArtLehrkraft, "Lehrer", "Lehrkraft"},
 		"91": {ArtLehrkraft, "Lehrerin", "Lehrkraft"},
 		"95": {ArtAbgegangen, "Ab", "ehemalige Schueler"},
-		// Entscheidung vom 28.09.2026: keine Schueler, aber Entleiher — ins Kollegium; seit dem
-		// 30.09.2026 je mit eigener Art (Migration 153).
+		// Keine Schüler, aber Leser mit Ausleihen: ins Kollegium, je mit eigener Art.
 		"96":  {ArtPraktikum, "Prakt", "Praktikant ist weder Schueler noch Lehrkraft"},
 		"97":  {ArtFachbereich, "FB-Ek", "Fachbereich ist ein Sammelkonto, keine Person"},
 		"122": {ArtSekretariat, "Sekr.", "Sekretariat"},
 		"129": {ArtUPlus, "U+", "U-plus: Vertretungskraefte"},
 		// Schueler auf Zeit im Ausland: Schueler mit der Littera-Klasse.
 		"98": {ArtSchueler, "Ausl", "Im Ausland bleibt Schueler"},
-		// Ohne Zuordnung heisst ohne Zuordnung — NICHT stillschweigend Schueler; der Lauf
+		// Ohne Zuordnung heisst ohne Zuordnung — nicht stillschweigend Schueler; der Lauf
 		// haelt an (OhneZuordnung). Die Bezeichnung zaehlt ohne Leerraum („ IMPORT").
 		"1":   {ArtUnbekannt, "UNDEF", "undefiniert"},
 		"123": {ArtUnbekannt, "IMPORT", "Importgruppe ohne Zuordnung"},
@@ -74,7 +73,7 @@ func TestReferendareSindLiV(t *testing.T) {
 	}
 }
 
-// Buchungsnummer ist der INTERNE Schluessel (Ziel von Verleih.Leser), Lesernummer die
+// Buchungsnummer ist der interne Schlüssel (Ziel von Verleih.Leser), Lesernummer die
 // Ausweisnummer. Die letzte Zeile hat keine Buchungsnummer — sie faellt heraus.
 const leserCSV = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe,Geburtsdatum,eMail,Adresse,PLZ,Ort
 1,1001,"Anna","Schuelerin",22,"05/03/95 00:00:00","","Hauptstr. 1","61250","Usingen"
@@ -116,7 +115,7 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 		t.Errorf("Lehrkraft falsch eingeordnet: %+v", leser[2])
 	}
 
-	// DER Punkt: Lehrkraefte duerfen nicht in der Schuelermenge landen.
+	// der Punkt: Lehrkraefte duerfen nicht in der Schuelermenge landen.
 	schueler := nurArt(leser, ArtSchueler)
 	if len(schueler) != 2 {
 		t.Fatalf("erwartet 2 Schueler, waren %d", len(schueler))
@@ -144,7 +143,7 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 }
 
 // TestUnbekannteArtWirdNichtZuSchueler haelt die vorsichtige Vorgabe fest: Was nicht
-// eindeutig zugeordnet werden kann, wird NICHT stillschweigend zum Schueler gemacht —
+// eindeutig zugeordnet werden kann, wird nicht stillschweigend zum Schueler gemacht —
 // der Personenlauf haelt an, bis es zugeordnet ist (OhneZuordnung).
 func TestUnbekannteArtWirdNichtZuSchueler(t *testing.T) {
 	gruppen := map[string]lesergruppe{"1": {Klasse: "UNDEF", Bezeichnung: "Undefinierte Untergruppe", Art: ArtUnbekannt}}

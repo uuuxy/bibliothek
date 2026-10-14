@@ -8,9 +8,9 @@ import (
 
 // Die Platzhalter-Domäne steht an zwei Stellen — hier und in repository.
 //
-// Hier, weil die Übernahme die Ersatzadressen BAUT (schreiber_personen.go: die
+// Hier, weil die Übernahme die Ersatzadressen baut (schreiber_personen.go: die
 // Leserdatei aus Littera führt keine Adressen, ein Konto braucht aber eine). Dort, weil
-// das Zusammenführen sie WIEDERERKENNEN muss: Ein Konto unter dieser Domäne ist kein
+// das Zusammenführen sie wiedererkennen muss: Ein Konto unter dieser Domäne ist kein
 // Zugang, sondern Füllmaterial, und darf einem echten weichen.
 //
 // Zwei Stellen, weil repository dieses Paket nicht importieren darf — littera importiert

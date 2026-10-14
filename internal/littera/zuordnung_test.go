@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// TestOhneZuordnungNenntGruppeUndZahlen: Der Halt vor dem ersten Schreiben muss sagen, WELCHE
-// Gruppe in Littera zuzuordnen ist und was an ihr hängt — Personen UND Ausleihen, denn die
+// TestOhneZuordnungNenntGruppeUndZahlen: Der Halt vor dem ersten Schreiben muss sagen, welche
+// Gruppe in Littera zuzuordnen ist und was an ihr hängt — Personen und Ausleihen, denn die
 // Ausleihen sind der Schaden (das Buch gälte als verfügbar). Ein Name steht dabei nirgends.
 func TestOhneZuordnungNenntGruppeUndZahlen(t *testing.T) {
 	undef := func(id string) Leser {

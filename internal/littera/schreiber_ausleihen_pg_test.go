@@ -30,7 +30,7 @@ func ausleihe(id, exemplar, leserID string, tage int) Ausleihe {
 }
 
 // TestAusleiheTrifftDieRichtigeSpalte: ausleihen trägt den Entleiher polymorph, und
-// check_loan_borrower lässt genau EINE der beiden Spalten zu. Eine Lehrkraft in
+// check_loan_borrower lässt genau eine der beiden Spalten zu. Eine Lehrkraft in
 // schueler_id wäre nicht nur falsch, sie käme gar nicht erst durch.
 func TestAusleiheTrifftDieRichtigeSpalte(t *testing.T) {
 	pool := pgTestPool(t)
@@ -60,8 +60,8 @@ func TestAusleiheTrifftDieRichtigeSpalte(t *testing.T) {
 		`SELECT count(*) FROM ausleihen WHERE schueler_id IS NOT NULL AND NOT ist_handapparat`); n != 1 {
 		t.Errorf("die Schülerausleihe muss an schueler_id hängen, gefunden: %d", n)
 	}
-	// Seit Migration 125 hängen beide an derselben Spalte; die Lehrerausleihe erkennt man
-	// an der ART des Lesers und bleibt als Dauerleihe gekennzeichnet (ist_handapparat).
+	// Beide hängen an derselben Spalte; die Ausleihe einer Lehrkraft erkennt man an der Art des
+	// Lesers, und sie bleibt als Dauerleihe gekennzeichnet (ist_handapparat).
 	if n := zaehle(t, pool, `SELECT count(*) FROM ausleihen a
 		 JOIN leser l ON l.id = a.schueler_id
 		WHERE l.art = 'lehrkraft' AND a.ist_handapparat`); n != 1 {
@@ -70,7 +70,7 @@ func TestAusleiheTrifftDieRichtigeSpalte(t *testing.T) {
 }
 
 // TestZweiteOffeneAusleiheWirdAbgelehnt: uniq_ausleihen_aktiv_exemplar lässt höchstens
-// EINE offene Ausleihe je Exemplar zu — ein Buch liegt nicht bei zwei Leuten. Ohne die
+// eine offene Ausleihe je Exemplar zu — ein Buch liegt nicht bei zwei Leuten. Ohne die
 // Vorsortierung liefe die zweite Zeile in einen 23505 mitten im Batch.
 func TestZweiteOffeneAusleiheWirdAbgelehnt(t *testing.T) {
 	pool := pgTestPool(t)
@@ -92,7 +92,7 @@ func TestZweiteOffeneAusleiheWirdAbgelehnt(t *testing.T) {
 	if bericht.Geschrieben != 1 || bericht.Doppelbelegung != 1 {
 		t.Errorf("1 geschrieben / 1 Doppelbelegung erwartet, gemeldet: %+v", bericht)
 	}
-	// Es muss die JÜNGERE gewinnen — die ältere ist die Karteileiche.
+	// Es muss die jüngere gewinnen — die ältere ist die Karteileiche.
 	var schuelerBarcode string
 	err = pool.QueryRow(context.Background(), `
 		SELECT s.barcode_id FROM ausleihen a JOIN schueler s ON s.id = a.schueler_id`).Scan(&schuelerBarcode)

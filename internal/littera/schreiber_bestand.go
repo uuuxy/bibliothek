@@ -33,7 +33,7 @@ type BestandBericht struct {
 	EigentumLand, EigentumSchultraeger, VermerkOhneZuordnung, VermerkUnbekannt int
 
 	// Woher das Fach der geschriebenen Titel kam: aus der Lernmittel-Signatur oder, wo sie
-	// keins nennt, aus den Schlagworten (lernmittelUndFach, seit dem 30.09.2026).
+	// keins nennt, aus den Schlagworten (lernmittelUndFach).
 	FachAusSignatur, FachAusSchlagworten int
 
 	// Standorte der geschriebenen Exemplare (standort.go): aus dem eigenen Sonderstandort
@@ -46,9 +46,8 @@ type BestandBericht struct {
 	ExemplarIDs map[string]string
 }
 
-// ist_lernmittel, subject, jahrgang_von/bis (Migration 093): aus der
-// Littera-Signatur „LMF Deu 7 / Bie" gelesen (pkg/lmf.Zerlege). Ohne Jahrgang bleibt
-// die Spanne leer (unbekannt, Migration 162).
+// ist_lernmittel, subject, jahrgang_von/bis: aus der Littera-Signatur „LMF Deu 7 / Bie"
+// gelesen (pkg/lmf.Zerlege). Ohne Jahrgang bleibt die Spanne leer, also unbekannt.
 const sqlTitelEinfuegen = `
 	INSERT INTO buecher_titel
 		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr,
@@ -58,13 +57,13 @@ const sqlTitelEinfuegen = `
 	        $11, NULLIF($12, ''), NULLIF($13, 0), NULLIF($14, 0), $15)
 	RETURNING id`
 
-// etikett_gedruckt ($7): Altbestand traegt seine Littera-Etiketten physisch —
-// siehe gleiche Begruendung am Bestands-Import (repository/bestandsimport.go). Ausnahme ist
-// eine neu vergebene Nummer (klaereBarcodes, ohneEtikett): Die traegt kein Etikett.
+// etikett_gedruckt ($7): Altbestand trägt seine Littera-Etiketten physisch —
+// siehe gleiche Begründung am Bestands-Import (repository/bestandsimport.go). Ausnahme ist
+// eine neu vergebene Nummer (klaereBarcodes, ohneEtikett): Die trägt kein Etikett.
 //
-// eigentum ($8, Migration 150): aus dem Littera-Vermerk, NULL ohne Zuordnung (eigentum.go).
-// eigentum_quelle (Migration 151) ist dann 'littera' — die Datenbank verlangt beide oder keins.
-// standort ($9, Migration 158): Sonderstandort des Exemplars oder Vermerk am Titel, NULL ohne.
+// eigentum ($8): aus dem Littera-Vermerk, NULL ohne Zuordnung (eigentum.go).
+// eigentum_quelle ist dann 'littera'; die Datenbank verlangt beide oder keins.
+// standort ($9): Sonderstandort des Exemplars oder Vermerk am Titel, NULL ohne.
 const sqlExemplarEinfuegen = `
 	INSERT INTO buecher_exemplare
 		(titel_id, barcode_id, erworben_am, ist_ausleihbar, einkaufspreis,
@@ -74,10 +73,10 @@ const sqlExemplarEinfuegen = `
 
 // SchreibeBestand überträgt Titel und Exemplare.
 //
-// Die atomare Einheit ist der TITEL, nicht das Exemplar: Die Stückzahl der Quelle wird
+// Die atomare Einheit ist der Titel, nicht das Exemplar: Die Stückzahl der Quelle wird
 // vollständig zu Exemplar-Zeilen. Ein Titel mit 5 Stück, dem nur drei folgen, wäre ein stiller
 // Bestandsfehler, den niemand je bemerkt. Entweder ein Titel kommt vollständig an — oder
-// gar nicht, und dann steht er als FEHLER im Protokoll.
+// gar nicht, und dann steht er als Fehler im Protokoll.
 func (s *Schreiber) SchreibeBestand(ctx context.Context, ab *Altbestand) (BestandBericht, error) {
 	bericht := BestandBericht{
 		QuellTitel:     len(ab.Titel),
@@ -272,7 +271,7 @@ func (l *bestandslauf) schreibeTitel(
 		return "", nil, reservierteISBN, err
 	}
 
-	// subject ist FK auf die Systematik (Migration 078): das Fach im Savepoint
+	// subject ist FK auf die Systematik: das Fach im Savepoint
 	// registrieren, bevor der Titel es trägt.
 	lern, _ := l.lernmittel(t)
 	kanonisch, err := repository.StelleFaecherSicher(ctx, tx, []string{lern.Fach})
@@ -351,7 +350,7 @@ func (l *bestandslauf) schreibeExemplare(
 }
 
 // lernmittelfelder ist, was die Littera-Signatur eines Titels über Lernmittel, Fach
-// und Jahrgang sagt (Migration 093).
+// und Jahrgang sagt.
 type lernmittelfelder struct {
 	IstLernmittel            bool
 	Fach                     string

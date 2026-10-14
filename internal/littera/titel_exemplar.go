@@ -1,26 +1,20 @@
 // Package littera liest einen Littera-Altbestand und bildet ihn auf die Begriffe
 // dieser Anwendung ab.
 //
-// Warum CSV und nicht ODBC: Das frühere Werkzeug cmd/littera_migration sprach die
-// Access-Datei über den Treiber „Microsoft Access Driver (*.mdb, *.accdb)" an — den gibt
-// es nur unter Windows. Weder der Rechner, auf dem gearbeitet wird, noch der Container,
-// in dem die Anwendung läuft, können ihn laden. `mdb-export` erzeugt aus derselben Datei
-// CSV, läuft überall, und das Ergebnis lässt sich als Textdatei prüfen und versionieren.
+// Gelesen wird CSV aus `mdb-export`, nicht die Access-Datei über ODBC: Den Treiber gibt es nur
+// unter Windows, weder auf dem Arbeitsrechner noch im Container. `mdb-export` läuft überall,
+// und das Ergebnis lässt sich als Textdatei prüfen.
 //
-// Warum überhaupt neu: Die Abfragen im alten Werkzeug lauteten
-// `SELECT TitelID, Titel, Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL`. Keine dieser
-// Spalten existiert — bis auf ISBN. Der Kommentar dort sagt es offen („Wir nehmen hier
-// Standardnamen an"): Es ist ein Gerüst, das nie an eine echte Littera-Datei angepasst
-// wurde. Gemessen am Altbestand vom 03.08.2026 heißen sie:
+// Die Spalten heißen anders, als man raten würde:
 //
-//	Titel.Buchungsnummer      statt TitelID
-//	Titel.Haupttitel          statt Titel
-//	Titel.Verfasserangabe     statt Autor   (Urheber ist fast durchgängig leer)
-//	Titel.Erscheinungsjahr    statt Jahr    (Text, nicht Zahl)
-//	Titel.Verlag              ist ein SCHLÜSSEL auf die Tabelle Verlag, kein Freitext
-//	Exemplar.Buchungsnummer   statt ExemplarID
-//	Exemplar.Titel            statt TitelID
-//	Exemplar.Zugangsdatum     statt ErworbenAm
+//	Titel.Buchungsnummer      Schlüssel des Titels
+//	Titel.Haupttitel          der Titel
+//	Titel.Verfasserangabe     der Autor (Urheber ist fast durchgängig leer)
+//	Titel.Erscheinungsjahr    Text, nicht Zahl
+//	Titel.Verlag              ein Schlüssel auf die Tabelle Verlag, kein Freitext
+//	Exemplar.Buchungsnummer   Schlüssel des Exemplars
+//	Exemplar.Titel            Schlüssel des Titels
+//	Exemplar.Zugangsdatum     Tag des Zugangs
 //
 // Die Signatur steht überhaupt nicht am Titel, sondern zweiteilig am Exemplar
 // (Sig1 = Regaladresse, Sig2 = Kürzel des Titels darin).
@@ -64,7 +58,7 @@ type Exemplar struct {
 	// Bibliotheksnummer geht in den EAN-13 des Etiketts ein (siehe EtikettBarcode).
 	Bibliotheksnummer string
 	TitelID           string // Fremdschlüssel auf Titel.Buchungsnummer
-	Barcode           string // Litteras Druckzeichenkette, NICHT der Scanwert (siehe barcodeInhalt)
+	Barcode           string // Litteras Druckzeichenkette, nicht der Scanwert (siehe barcodeInhalt)
 	Signatur          string // Sig1 + Sig2, zusammengesetzt
 	Zugangsdatum      string // Rohform, wie exportiert (MM/DD/YY HH:MM:SS)
 	Preis             float64
@@ -144,7 +138,7 @@ func leseTitel(r io.Reader) ([]Titel, error) {
 // Littera führt drei Kandidaten. Im Altbestand ist `Urheber` fast durchgängig leer,
 // `Verfasserangabe` trägt den Namen in Lesefassung („Reinhard Neebe"), und
 // `Haupteintrag` wiederholt bei Sachbüchern schlicht den Titel — der taugt deshalb
-// NICHT als Rückfall, sonst stünde der Buchtitel im Autorenfeld.
+// nicht als Rückfall, sonst stünde der Buchtitel im Autorenfeld.
 //
 // Bestandsvermerke fliegen raus (siehe ohneBestandsmarken): In 2.316 Titeln steht in
 // diesem Freitextfeld „Buchbestand Bibliothek" oder „LMF" statt oder neben einem Namen.
@@ -169,7 +163,7 @@ func freitext(wert string) string {
 	return strings.TrimSpace(OhneNichtsortierzeichen(wert))
 }
 
-// jahrAus wandelt das als TEXT geführte Erscheinungsjahr in eine Zahl.
+// jahrAus wandelt das als Text geführte Erscheinungsjahr in eine Zahl.
 //
 // Im Altbestand steht dort auch „[1997]", „ca. 2003" oder Leerstring. Ein hartes
 // strconv.Atoi würde solche Zeilen verwerfen; hier werden die ersten vier
@@ -232,8 +226,8 @@ func leseExemplare(r io.Reader) ([]Exemplar, error) {
 // zusammen: Sig1 ist die Regaladresse („LMF Deu 7"), Sig2 das Kürzel des Titels darin
 // („Bie"). Auf dem Etikett steht beides untereinander, geschrieben „LMF Deu 7 / Bie".
 //
-// Die Trennung mit " / " ist kein Schmuck: Der Inventur-Scope liest die Signatur als
-// Präfix mit Grenze am LEERZEICHEN (repository.signaturPraefixBedingung). Ein Regal
+// Die Trennung mit " / " ist kein Schmuck: Der Bereich einer Inventur liest die Signatur als
+// Präfix mit Grenze am Leerzeichen (repository.signaturPraefixBedingung). Ein Regal
 // „LMF Deu 7" trifft damit „LMF Deu 7 / Bie" — ohne die Leerzeichen um den Schrägstrich
 // hieße die Adresse „LMF Deu 7/Bie" und das Regal fände sein eigenes Buch nicht.
 //
@@ -298,14 +292,14 @@ func leseVerlage(r io.Reader) (map[string]string, error) {
 
 // signaturJeTitel verdichtet die Exemplar-Signaturen auf eine je Titel.
 //
-// Nötig, weil Littera die Signatur am EXEMPLAR führt, diese Anwendung sie aber am Titel
-// (buecher_titel.signatur, seit Migration 038 die einzige Quelle). Gemessen am
-// Altbestand tragen 98 von 10.454 Titeln uneinheitliche Exemplar-Signaturen — knapp 1 %.
+// Nötig, weil Littera die Signatur am Exemplar führt, diese Anwendung sie aber am Titel
+// (buecher_titel.signatur). Im Altbestand tragen 98 von 10.454 Titeln uneinheitliche
+// Exemplar-Signaturen, knapp 1 %.
 //
 // Für diese Fälle gewinnt der häufigste Wert, und der Titel wird in `abweichend`
-// zurückgegeben. Bewusst nicht „der erste gewinnt": Das hinge von der Zeilenreihenfolge
-// des Exports ab und wäre nicht reproduzierbar. Die Liste ist da, damit die Abweichungen
-// protokolliert werden können statt still zu verschwinden.
+// zurückgegeben. Nicht „der erste gewinnt", weil das von der Zeilenreihenfolge des Exports
+// abhinge. Die Liste ist da, damit die Abweichungen im Protokoll stehen, statt still zu
+// verschwinden.
 func signaturJeTitel(exemplare []Exemplar) (signaturen map[string]string, abweichend []string) {
 	haeufigkeit := map[string]map[string]int{}
 	for _, e := range exemplare {

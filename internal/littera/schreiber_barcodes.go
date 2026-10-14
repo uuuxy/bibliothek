@@ -10,7 +10,7 @@ import (
 
 // klaereBarcodes bestimmt für jedes Exemplar den Barcode, mit dem es geschrieben wird.
 //
-// Das geschieht VOR dem Schreiben und in einem Zug, aus dem gleichen Grund, aus dem
+// Das geschieht vor dem Schreiben und in einem Zug, aus dem gleichen Grund, aus dem
 // KlaereISBN vor dem Titel-INSERT läuft: buecher_exemplare.barcode_id ist UNIQUE, und ein
 // 23505 mitten in einem Titel kostet nicht das Exemplar, sondern den ganzen Titel — bei
 // einem Klassensatz mit 354 Stück also 354 Bücher wegen einer doppelten Nummer.
@@ -19,7 +19,7 @@ import (
 // hier eine frische Nummer aus barcode_seq und eine WARNUNG — abgewertet übernommen
 // statt verloren, dieselbe Haltung wie bei der ISBN.
 //
-// Auch der VORHANDENE Bestand wird eingelesen. Läuft der Import in eine Datenbank, in der
+// Auch der vorhandene Bestand wird eingelesen. Läuft der Import in eine Datenbank, in der
 // schon Exemplare stehen, wäre jede Überschneidung sonst ein Titelverlust.
 //
 // ohneEtikett nennt die Exemplare mit neu vergebener Nummer. Diese Nummer steht auf keinem
@@ -97,7 +97,7 @@ func (s *Schreiber) barcodeWunsch(e Exemplar, fremd string) string {
 //
 // Weichen Etikett und Rechnung ab, hat sich eine Spalte nach dem Druck geändert. In der
 // Sicherung von 2010 zweimal: Die Bibliotheksnummer steht auf 0, das Etikett trägt 0395
-// (gemessen am 28.09.2026). Dann gilt das Etikett, mit Vermerk im Protokoll.
+// (gemessen). Dann gilt das Etikett, mit Vermerk im Protokoll.
 func (s *Schreiber) etikettAmBuch(e Exemplar) (string, bool) {
 	gerechnet, gerechnetOK := EtikettBarcode(e.Exemplarnummer, e.Bibliotheksnummer)
 	gedruckt, gedrucktOK := etikettZiffern(e.Barcode)

@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// SchlagwortBericht ist die Bilanz der Schlagworte (docs/OFFEN.md 4.20, Stufe 2).
+// SchlagwortBericht ist die Bilanz der Schlagworte.
 type SchlagwortBericht struct {
 	QuellTitel       int // Titel mit mindestens einer Zuordnung in Littera
 	QuellZuordnungen int // Zeilen in Schlag_zuord
@@ -26,9 +26,8 @@ type SchlagwortBericht struct {
 	// Die Verweise werden gezählt, nicht übernommen (schlagworte.go).
 	VerweisWoerter, VerweisZuordnungen int
 
-	// Die Interessenkreise kommen als Schlagworte mit (schlagworte.go, entschieden am
-	// 30.09.2026); gezählt wie die Schlagworte an der Quelle. Titel, Zuordnungen und der
-	// Abgleich oben schließen sie ein.
+	// Die Interessenkreise kommen als Schlagworte mit (schlagworte.go), gezählt wie die
+	// Schlagworte an der Quelle. Titel, Zuordnungen und der Abgleich oben schließen sie ein.
 	KreisQuellTitel, KreisQuellZuordnungen, KreisOhneWort int
 
 	IstZuordnungen int // tatsächlicher Zuwachs in titel_schlagworte

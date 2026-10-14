@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// Die Schlagworte aus Littera (docs/OFFEN.md 4.20, Stufe 2): Lesen und die Herkunft des Fachs,
+// Die Schlagworte aus Littera: Lesen und die Herkunft des Fachs,
 // ohne Datenbank.
 
 const (
@@ -80,7 +80,7 @@ func TestLernmittelUndFach_SignaturVorSchlagworten(t *testing.T) {
 	}
 }
 
-// Die Interessenkreise (entschieden am 30.09.2026, docs/OFFEN.md 4.20): Lesen wie die
+// Die Interessenkreise: Lesen wie die
 // Schlagworte, über IntZuMed ohne Sortierung, und eine fehlende Spalte bricht ab.
 func TestInteressenkreiseJeTitel_LesenWieSchlagworte(t *testing.T) {
 	kreise, err := leseInteressenkreise(strings.NewReader(`Buchungsdatum,Buchungsnummer,Interessenskreis,Zugriff_art,Zugriff_von,Zugriff_terminal

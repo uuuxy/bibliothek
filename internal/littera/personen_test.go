@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Kopfzeilen und Werte stammen aus dem echten Export (littera_sav.mdb, 04.08.2026).
+// Kopfzeilen und Werte stammen aus dem echten Export (littera_sav.mdb).
 const personenCSV = `Buchungsdatum,Buchungsnummer,Name,Flags
 "06/15/01 10:06:38",1,"Neebe, Reinhard","0000"
 "07/10/01 15:40:54",3,"Dorn . Bader","0000"
@@ -36,7 +36,7 @@ func TestAutorenJeTitel(t *testing.T) {
 	}
 	autoren := zuordnungen.Autoren
 
-	// Zwei Verfasser, in Erfassungsreihenfolge (Buchungsnummer 3 vor 4) — NICHT
+	// Zwei Verfasser, in Erfassungsreihenfolge (Buchungsnummer 3 vor 4) — nicht
 	// alphabetisch: Bei einem Schulbuch ist der Erstgenannte der Hauptverfasser.
 	if autoren["17"] != "Kuhn; Linder" {
 		t.Errorf("Titel 17: erwartet \"Kuhn; Linder\", war %q", autoren["17"])
@@ -47,7 +47,7 @@ func TestAutorenJeTitel(t *testing.T) {
 		t.Errorf("Titel 19: %q", autoren["19"])
 	}
 
-	// Titel 20 hat NUR einen Illustrator (Funktion 1) — das ist kein Verfasser.
+	// Titel 20 hat nur einen Illustrator (Funktion 1) — das ist kein Verfasser.
 	if _, da := autoren["20"]; da {
 		t.Errorf("Illustrator darf nicht als Autor gelten, war %q", autoren["20"])
 	}
@@ -65,7 +65,7 @@ func TestAutorenJeTitel(t *testing.T) {
 
 func TestAutorenReihenfolgeIstErfassungsreihenfolge(t *testing.T) {
 	personen := map[string]string{"1": "Zweiter", "2": "Erster"}
-	// Buchungsnummer 10 (Person 1) kommt VOR 11 (Person 2) — obwohl "Erster"
+	// Buchungsnummer 10 (Person 1) kommt vor 11 (Person 2) — obwohl "Erster"
 	// alphabetisch vorne stuende.
 	const zuo = `Buchungsnummer,Titel,Person,Funktion
 10,5,1,0

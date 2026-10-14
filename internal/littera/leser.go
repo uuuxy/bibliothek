@@ -7,7 +7,7 @@ import (
 
 // LeserArt sagt, wohin ein Littera-Leser gehört.
 //
-// Littera führt alle Personen in EINER Tabelle `Leser` — Schüler, Lehrkräfte,
+// Littera führt alle Personen in einer Tabelle `Leser` — Schüler, Lehrkräfte,
 // Praktikanten, das Sekretariat und sogar Sammelkonten der Fachbereiche. Diese
 // Anwendung trennt sie: Schüler nach `schueler`, alle anderen ins Kollegium, jeweils mit
 // ihrer Art an der Leserzeile (leser.art, ZielArt). Ohne diese Einordnung landeten
@@ -22,9 +22,9 @@ const (
 	// Untergruppe", „IMPORT"), und für eine Lesergruppe, die in Leser_UG fehlt. Mit solchen
 	// Lesern hält der Personenlauf an, bevor er etwas schreibt (OhneZuordnung): Ausgelassen
 	// fehlten ihre Ausleihen, und die Bücher stünden als verfügbar im Regal. Zugeordnet wird
-	// in Littera selbst oder hier in artAusUntergruppe (Entscheidung vom 28.09.2026).
+	// in Littera selbst oder hier in artAusUntergruppe.
 	ArtUnbekannt LeserArt = iota
-	// ArtSchueler umfasst „Schüler" UND „Sekundarstufe II": Die Oberstufenklassen
+	// ArtSchueler umfasst „Schüler" und „Sekundarstufe II": Die Oberstufenklassen
 	// (11T1, 12T3, 13T5) sind eine eigene Untergruppe, aber selbstverständlich Schüler.
 	// Ebenso „Im Ausland": Sie kommen mit der Littera-Klasse („AUS"), die richtige trägt der
 	// LUSD-Import nach; das Abgangsjahr ist der Rückfall für eine Klasse ohne Jahrgang
@@ -35,15 +35,11 @@ const (
 	// ArtAbgegangen sind ehemalige Schüler — Untergruppe „Abgegangen". Gehören als
 	// Abgänger in die Schülerdatei, nicht als aktive Schüler.
 	ArtAbgegangen
-	// ArtPraktikum sind Praktikanten: keine Schüler, aber Entleiher. Sie kommen ins
+	// ArtPraktikum sind Praktikanten: keine Schüler, aber Leser mit Ausleihen. Sie kommen ins
 	// Kollegium, werden also nicht gemahnt, und bekommen kein Konto (leserart.HatKonto).
-	// Bis zum 28.09.2026 übernahm der Lauf die Sonderkonten nicht, und mit ihnen fehlten ihre
-	// Ausleihen; bis zum 30.09.2026 kamen sie als „lehrkraft" an, und ihre Littera-Gruppe
-	// stand nur im Protokoll (docs/OFFEN.md 5.18).
 	ArtPraktikum
-	// ArtLiV sind Referendare — in Hessen LiV, Lehrkraft im Vorbereitungsdienst. Sie gehören ins
-	// Kollegium mit der Art „liv" (Migration 119). Bis zum 15.09.2026 fielen sie unter
-	// ArtUnbekannt und wurden nicht übernommen.
+	// ArtLiV sind Referendare, in Hessen LiV (Lehrkraft im Vorbereitungsdienst). Sie gehören ins
+	// Kollegium mit der Art „liv".
 	ArtLiV
 	// ArtSekretariat ist das Sekretariat: Kollegium mit Konto, wie eine Lehrkraft.
 	ArtSekretariat
@@ -55,8 +51,8 @@ const (
 	ArtFachbereich
 )
 
-// ZielArt ist die Art der Leserzeile, in der ein Littera-Leser landet (chk_leser_art,
-// Migration 153); "" für einen Leser ohne Zuordnung, den der Lauf nicht schreibt.
+// ZielArt ist die Art der Leserzeile, in der ein Littera-Leser landet (chk_leser_art); "" für
+// einen Leser ohne Zuordnung, den der Lauf nicht schreibt.
 func (a LeserArt) ZielArt() string {
 	switch a {
 	case ArtSchueler, ArtAbgegangen:
@@ -86,12 +82,12 @@ type lesergruppe struct {
 
 // Leser ist eine Person aus dem Littera-Altbestand.
 //
-// ACHTUNG, zwei Nummern mit verschiedenen Aufgaben:
+// Zwei Nummern mit verschiedenen Aufgaben:
 //
-//   - ID = `Buchungsnummer` ist der INTERNE Schlüssel. Darauf zeigt `Verleih.Leser` —
+//   - ID = `Buchungsnummer` ist der interne Schlüssel. Darauf zeigt `Verleih.Leser` —
 //     gemessen: 15.615 von 15.615 Ausleihen treffen darüber, über `Lesernummer` nur 792.
 //   - Lesernummer ist die Ausweisnummer, die der Schüler in der Hand hält. Sie gehört
-//     nach `schueler.barcode_id`, taugt aber NICHT zum Verknüpfen der Ausleihen.
+//     nach `schueler.barcode_id`, taugt aber nicht zum Verknüpfen der Ausleihen.
 //
 // Wer die beiden verwechselt, hängt die Ausleihen an die falschen Personen — und das
 // fällt erst auf, wenn ein Schüler die Bücher eines anderen zurückbringen soll.
@@ -113,7 +109,7 @@ type Leser struct {
 
 // artAusUntergruppe ordnet die Untergruppen-Bezeichnung einer Art zu.
 //
-// Bewusst über die BEZEICHNUNG und nicht über die Nummer: Die Nummern sind
+// Bewusst über die Bezeichnung und nicht über die Nummer: Die Nummern sind
 // installationsspezifisch vergeben (Fachbereiche liegen zwischen den Klassen), die
 // Bezeichnungen sind sprechend und über Littera-Installationen hinweg stabil.
 func artAusUntergruppe(bezeichnung string) LeserArt {
@@ -164,7 +160,7 @@ func leseLesergruppen(r io.Reader) (map[string]lesergruppe, error) {
 
 // leseLeser liest die Tabelle `Leser` und ordnet jede Person über die Lesergruppe ein.
 //
-// Die Klasse steht NICHT am Leser: Sie kommt aus Leser_UG.KurzBez. Die naheliegende
+// Die Klasse steht nicht am Leser: Sie kommt aus Leser_UG.KurzBez. Die naheliegende
 // Tabelle `LeserSchueler` (mit Jahrgang, Abgang, Klassenlehrer) ist im Altbestand
 // vollständig leer — 705 Zeilen, alle Werte 0. Wer darauf baut, baut auf nichts.
 func leseLeser(r io.Reader, gruppen map[string]lesergruppe) ([]Leser, error) {

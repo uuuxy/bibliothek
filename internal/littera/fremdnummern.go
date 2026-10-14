@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Fremdnummern sind Barcodes, die NICHT von Littera vergeben wurden.
+// Fremdnummern sind Barcodes, die nicht von Littera vergeben wurden.
 //
 // Der Schülerausweis der Schule trägt die Nummer seines Herstellers — gemessen an einer
 // echten Karte `B97601826457`, während darunter nur `[0395] 37` aufgedruckt steht.

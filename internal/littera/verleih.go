@@ -9,7 +9,7 @@ import (
 // datumsFormate sind die Schreibweisen, in denen mdb-export Access-Zeitstempel ausgibt.
 //
 // Access speichert Datum und Zeit gemeinsam; der Export schreibt US-Reihenfolge
-// (Monat/Tag/Jahr) mit ZWEISTELLIGEM Jahr. Go legt bei "06" die Grenze bei 69: 69–99
+// (Monat/Tag/Jahr) mit zweistelligem Jahr. Go legt bei "06" die Grenze bei 69: 69–99
 // werden 19xx, 00–68 werden 20xx. Das passt zu diesem Bestand — Geburtsdaten wie
 // "05/03/95" sind 1995, Ausleihen wie "08/03/01" sind 2001.
 var datumsFormate = []string{
@@ -60,7 +60,7 @@ func geburtsdatumAus(roh string, jetzt time.Time) (time.Time, bool) {
 type Ausleihe struct {
 	ID         string
 	ExemplarID string // FK auf Exemplar.Buchungsnummer
-	// LeserID zeigt auf Leser.BUCHUNGSNUMMER, nicht auf die Lesernummer — siehe die
+	// LeserID zeigt auf Leser.Buchungsnummer, nicht auf die Lesernummer — siehe die
 	// Warnung am Typ Leser. Über die Lesernummer träfen nur 792 von 15.615 Ausleihen.
 	LeserID string
 
@@ -71,13 +71,13 @@ type Ausleihe struct {
 	Mahnungen      int
 }
 
-// IstOffen sagt, ob das Buch noch beim Entleiher ist.
+// IstOffen sagt, ob das Buch noch beim Leser ist.
 func (a Ausleihe) IstOffen() bool { return !a.Zurueckgegeben }
 
 // leseAusleihen liest die Tabelle `Verleih`.
 //
 // Zwei Fallstricke stecken in den Spaltennamen:
-//   - `Rückgabedatum` ist die FRIST, nicht die Rückgabe. Die tatsächliche Rückgabe
+//   - `Rückgabedatum` ist die Frist, nicht die Rückgabe. Die tatsächliche Rückgabe
 //     steht in `IstRückgabedatum`. Wer die beiden vertauscht, bucht jede Ausleihe als
 //     sofort zurückgegeben — und der Bestand stünde als vollständig da, während
 //     tausende Bücher bei Schülern liegen.
@@ -95,7 +95,7 @@ func leseAusleihen(r io.Reader) ([]Ausleihe, error) {
 		exemplar := strings.TrimSpace(z["Exemplar"])
 		leser := strings.TrimSpace(z["Leser"])
 		if exemplar == "" || leser == "" {
-			continue // ohne Buch oder ohne Entleiher ist die Zeile nicht buchbar
+			continue // ohne Buch oder ohne Leser ist die Zeile nicht buchbar
 		}
 
 		a := Ausleihe{
@@ -125,7 +125,7 @@ func istWahr(roh string) bool {
 	return false
 }
 
-// NurOffene liefert die Ausleihen, bei denen das Buch noch beim Entleiher ist.
+// NurOffene liefert die Ausleihen, bei denen das Buch noch beim Leser ist.
 //
 // Das ist die Menge, die beim Import wirklich zählt: Ohne sie startet das System mit
 // „alles verfügbar", obwohl tausende Bücher bei Schülern liegen — und jede Ausleihe
@@ -142,8 +142,8 @@ func NurOffene(ausleihen []Ausleihe) []Ausleihe {
 
 // OhneExemplar meldet Ausleihen, deren Exemplar es im Bestand nicht (mehr) gibt.
 //
-// Im Altbestand betrifft das genau EINE von 15.615 Zeilen — ein Datenfehler in Littera,
-// kein Zuordnungsfehler. Der Import muss solche Zeilen ueberspringen UND melden: Sie
+// Im Altbestand betrifft das genau eine von 15.615 Zeilen — ein Datenfehler in Littera,
+// kein Zuordnungsfehler. Der Import muss solche Zeilen ueberspringen und melden: Sie
 // blind zu schreiben scheitert am Fremdschluessel und reisst den ganzen Lauf mit; sie
 // stillschweigend zu verwerfen verschweigt, dass ein Buch verliehen war.
 func OhneExemplar(ausleihen []Ausleihe, bekannteExemplare map[string]bool) []Ausleihe {

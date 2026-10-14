@@ -29,14 +29,14 @@ type Altbestand struct {
 
 	// Ausweisnummern bildet Leser.Buchungsnummer → Barcode des Schülerausweises ab,
 	// Fremdbarcodes Exemplar.Buchungsnummer → Barcode am Buch. Beide stammen aus
-	// Littera-Tabellen für FREMDE Nummern (siehe fremdnummern.go) und sind leer, wenn die
+	// Littera-Tabellen für fremde Nummern (siehe fremdnummern.go) und sind leer, wenn die
 	// Schule keine herstellerbedruckten Ausweise oder Ersatzetiketten benutzt.
 	Ausweisnummern map[string]string
 	Fremdbarcodes  map[string]string
 	// AusweisMehrfach nennt Leser mit mehr als einer hinterlegten Karte.
 	AusweisMehrfach []string
 
-	// Schlagworte der Titel (schlagworte.go, docs/OFFEN.md 4.20).
+	// Schlagworte der Titel (schlagworte.go).
 	Schlagworte SchlagwortQuelle
 	// Interessenkreise der Titel, geschrieben als Schlagworte (schlagworte.go); die
 	// Verweis-Zähler bleiben hier leer.
@@ -70,20 +70,19 @@ const (
 	dateiLeser             = "leser.csv"
 	dateiLeserUG           = "leser_ug.csv"
 	dateiVerleih           = "verleih.csv"
-	// Die Schlagworte sind Pflicht wie die übrigen (seit dem 30.09.2026, docs/OFFEN.md 4.20):
-	// Fehlte eine Datei, kämen die Titel still ohne ihre Schlagworte an. Littera führt alle vier
-	// Tabellen schon im Stand von 2010, die beiden Verweis-Tabellen dort leer.
+	// Die Schlagworte sind Pflicht wie die übrigen: Fehlte eine Datei, kämen die Titel still ohne
+	// ihre Schlagworte an. Littera führt alle vier Tabellen schon im Stand von 2010, die beiden
+	// Verweis-Tabellen dort leer.
 	dateiSchlagworte          = "schlagworte.csv"
 	dateiSchlagZuord          = "schlag_zuord.csv"
 	dateiVerweiseSchlagworte  = "verweise_schlagworte.csv"
 	dateiVerweisZuSchlagworte = "verweis_zu_schlagworte.csv"
-	// Die Interessenkreise ebenso (seit dem 30.09.2026, docs/OFFEN.md 4.20); die Sicherung von
-	// 2010 führt beide Tabellen.
+	// Die Interessenkreise ebenso; die Sicherung von 2010 führt beide Tabellen.
 	dateiInteressenkreise = "interessenskreis.csv"
 	dateiIntZuMed         = "intzumed.csv"
-	// Die beiden Fremdnummern-Tabellen sind OPTIONAL: In einer Installation ohne
-	// herstellerbedruckte Ausweise sind sie leer, und mdb-export erzeugt die Dateien
-	// dann gar nicht erst. Fehlen sie, läuft der Import mit den Littera-eigenen Nummern.
+	// Die beiden Tabellen der Fremdnummern sind freiwillig: In einer Installation ohne
+	// herstellerbedruckte Ausweise sind sie leer, und mdb-export erzeugt die Dateien dann nicht.
+	// Fehlen sie, läuft der Import mit den Littera-eigenen Nummern.
 	dateiFremdLeserNummer = "fremdlesernummer.csv"
 	dateiFremdBarcode     = "fremdbarcode.csv"
 )
@@ -248,7 +247,7 @@ func mitDatei[T any](verzeichnis, name string, lies func(io.Reader) (T, error)) 
 
 // exemplareJeTitel gruppiert die Exemplare nach ihrem Titel.
 //
-// Der Schreibpfad braucht diese Sicht, weil der TITEL die atomare Einheit ist: Er trägt
+// Der Schreibpfad braucht diese Sicht, weil der Titel die atomare Einheit ist: Er trägt
 // Exemplar-Zeilen, und ein Titel mit 5 Stück, dem nur drei Exemplare folgen, wäre ein
 // stiller Bestandsfehler.
 func exemplareJeTitel(exemplare []Exemplar) map[string][]Exemplar {

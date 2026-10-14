@@ -17,9 +17,7 @@ import (
 // Anfang.
 //
 // Alle drei Leser gehen durch leseTabelle; geprüft wird trotzdem jeder, weil jeder den
-// Fehler selbst weiterreichen muss. (Zusammengeführt aus den PRs #603, #605, #612,
-// die denselben Kopfzeilen-Zweig dreimal abdeckten und den Abbruch nach der Kopfzeile
-// keinmal.)
+// Fehler selbst weiterreichen muss.
 func TestLeseTabellen_KaputterExportIstEinFehler(t *testing.T) {
 	simuliert := errors.New("simulierter Lesefehler")
 

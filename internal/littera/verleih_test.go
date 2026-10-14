@@ -29,7 +29,7 @@ func TestLeseAusleihen(t *testing.T) {
 	if !offen.IstOffen() {
 		t.Error("erste Zeile ist nicht zurueckgegeben, muss offen sein")
 	}
-	// DER Fallstrick: Rueckgabedatum ist die FRIST, nicht die Rueckgabe.
+	// der Fallstrick: Rueckgabedatum ist die Frist, nicht die Rueckgabe.
 	if offen.Frist.Format("2006-01-02") != "2011-07-31" {
 		t.Errorf("Frist falsch gelesen: %v", offen.Frist)
 	}
@@ -70,7 +70,7 @@ func TestNurOffene(t *testing.T) {
 	}
 }
 
-// TestZurueckgegebenIstEigenesKennzeichen haelt fest, dass der Zustand NICHT aus dem
+// TestZurueckgegebenIstEigenesKennzeichen haelt fest, dass der Zustand nicht aus dem
 // Rueckgabedatum abgeleitet werden darf: Im Altbestand gibt es zurueckgegebene
 // Ausleihen ohne eingetragenes IstRueckgabedatum. Wer daraus schliesst, fuehrt sie
 // als offen — und das Buch waere in der neuen Anwendung dauerhaft blockiert.
@@ -107,7 +107,7 @@ func TestDatumAus(t *testing.T) {
 		}
 	}
 
-	// Leer und Unsinn liefern KEINE Null-Zeit als gueltigen Wert: Ein 0001-01-01 saehe
+	// Leer und Unsinn liefern keine Null-Zeit als gueltigen Wert: Ein 0001-01-01 saehe
 	// in der Datenbank echt aus und faellt erst als 2000 Jahre alte Mahnung auf.
 	for _, roh := range []string{"", "  ", "kein Datum", "31/31/31"} {
 		if d, ok := datumAus(roh); ok {

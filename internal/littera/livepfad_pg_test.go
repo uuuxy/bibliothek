@@ -7,15 +7,15 @@ import (
 	"bibliothek/repository"
 )
 
-// TestUebernommeneDatenUeberDenLivePfad liest die geschriebenen Zeilen mit dem CODE DER
-// ANWENDUNG zurück, nicht mit eigenem SQL.
+// TestUebernommeneDatenUeberDenLivePfad liest die geschriebenen Zeilen mit dem Code der
+// Anwendung zurück, nicht mit eigenem SQL.
 //
 // Der Grund ist eine Fehlerklasse, die dieses Projekt schon zweimal getroffen hat: Ein
 // Import schreibt sauber, die Zählungen stimmen, und trotzdem fällt die Oberfläche mit
 // „cannot scan NULL" um — weil eine nullbare Spalte in der Anwendung in einem
 // nicht-nullbaren Go-Typ landet. Der Schreibpfad lässt bearbeiter_id und
 // rueckgabe_bearbeiter_id leer (bei einer Altbestandsübernahme gibt es niemanden, der
-// ausgegeben hat) und setzt schueler_id ODER ausleiher_benutzer_id, nie beide. Genau die
+// ausgegeben hat) und setzt schueler_id oder ausleiher_benutzer_id, nie beide. Genau die
 // Kombination muss leseAusleihe aushalten.
 //
 // Eigenes SELECT im Test würde das nie zeigen: Es scheitert nicht am NULL, sondern an
@@ -56,8 +56,8 @@ func TestUebernommeneDatenUeberDenLivePfad(t *testing.T) {
 		if loan.BearbeiterID != nil {
 			t.Errorf("%s: bearbeiter_id soll leer bleiben, gelesen: %v", name, *loan.BearbeiterID)
 		}
-		// Seit Migration 125 gibt es EINE Ausleiher-Spalte; sie muss gesetzt sein — auch
-		// bei der Lehrerausleihe, die vorher in der zweiten stand.
+		// Die Ausleihe hat eine Spalte für den Leser; sie muss gesetzt sein, auch bei der
+		// Ausleihe einer Lehrkraft.
 		if loan.SchuelerID == nil {
 			t.Errorf("%s: die Ausleihe hat keinen Ausleiher", name)
 		}

@@ -18,7 +18,7 @@ func TestZuordnungAusVermerk(t *testing.T) {
 		{"land hessen", true, "Land Hessen", mitteltopf.Land},
 		{"  Land   Hessen ", true, "Land Hessen", mitteltopf.Land},
 		{"Hochtaunuskreis", true, "Hochtaunuskreis", mitteltopf.Schultraeger},
-		// Bekannt, aber ohne Zuordnung, bis die Schule sie bestätigt (OFFEN.md 4.24).
+		// Bekannt, aber ohne Zuordnung, bis die Schule sie bestätigt.
 		{"Philipp-Reis-Schule", true, "Philipp-Reis-Schule", ""},
 		{"Bibliothek", true, "Bibliothek", ""},
 		{"Förderverein", true, "Förderverein", ""},

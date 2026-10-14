@@ -81,9 +81,8 @@ func TestGeburtsdatumAus(t *testing.T) {
 // TestEtikettBarcode rechnet gegen echte Etiketten: vier gescannte Bücher und drei
 // Druckzeichenketten aus TestBarcodeInhalt.
 //
-// Bis zum 28.09.2026 standen hier für 808 und 61512 „0008080039569" und „0615120039566" —
-// nicht gemessen, sondern aus der Annahme gerechnet, kürzere Nummern würden links
-// aufgefüllt. Ihre eigenen Druckzeichenketten zwei Tests weiter oben sagen etwas anderes.
+// Die Werte für kurze Nummern (808, 61512) stammen aus ihren Druckzeichenketten, nicht aus
+// der Annahme, kürzere Nummern würden links aufgefüllt.
 func TestEtikettBarcode(t *testing.T) {
 	faelle := []struct {
 		exemplarnummer string

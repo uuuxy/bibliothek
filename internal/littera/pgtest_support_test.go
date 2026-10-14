@@ -16,9 +16,8 @@ import (
 // Integrationstests für den Littera-Schreibpfad — gegen echtes Postgres, weil der
 // Prüfgegenstand die COMMITs der Batch-Transaktionen sind (siehe testSchreiber).
 //
-// Pool-Aufbau, Advisory-Lock und Notbremse liegen seit dem 31.08.2026 in
-// internal/pgtest (vorher fünffach kopiert); hier stehen nur noch die Helfer
-// dieses Pakets.
+// Pool-Aufbau, Advisory-Lock und Notbremse liegen in internal/pgtest; hier stehen nur die
+// Helfer dieses Pakets.
 func pgTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	return pgtest.Pool(t)

@@ -6,8 +6,8 @@ import (
 )
 
 // Die Kopfzeilen und Beispielsätze stammen 1:1 aus dem Altbestand des Sekretariats
-// (littera_sav.mdb, exportiert am 04.08.2026) — nicht aus einer ausgedachten Struktur.
-// Genau daran ist das alte Werkzeug gescheitert: Es fragte Spalten ab, die es nie gab.
+// (littera_sav.mdb), nicht aus einer ausgedachten Struktur: Ein Werkzeug, das Spalten nach
+// Vermutung abfragt, liest nichts.
 
 const titelCSV = `Buchungsdatum,Buchungsnummer,Haupttitel,Untertitel,ISBN,Erscheinungsjahr,Verlag,Urheber,Verfasserangabe,Haupteintrag,Annotation
 "08/03/01 11:41:58",2,"Geschichte und Geschehen I","",978-3-12-415600-6,1997,11,"","","Geschichte und Geschehen I",""
@@ -39,7 +39,7 @@ func TestLeseTitel_EchteSpaltennamen(t *testing.T) {
 	if titel[1].Autor != "Reinhard Neebe" {
 		t.Errorf("Autor aus Verfasserangabe erwartet, war %q", titel[1].Autor)
 	}
-	// ... Haupteintrag NICHT: Er wiederholt bei Sachbuechern den Titel, und der haette
+	// ... Haupteintrag nicht: Er wiederholt bei Sachbuechern den Titel, und der haette
 	// hier als Autorenname gestanden.
 	if titel[0].Autor == titel[0].Haupttitel && titel[0].Autor != "" {
 		t.Errorf("Haupteintrag darf nicht als Autor durchschlagen: %q", titel[0].Autor)
@@ -102,7 +102,7 @@ func TestLeseExemplare_SignaturUndFremdschluessel(t *testing.T) {
 }
 
 // TestSignaturTrifftDenInventurBereich ist der Test, der die beiden Welten verbindet:
-// Die aus Littera zusammengesetzte Signatur MUSS von der Praefix-Regel des
+// Die aus Littera zusammengesetzte Signatur muss von der Praefix-Regel des
 // Inventur-Scopes getroffen werden. Sonst zeigt der Katalog ein Regal an, das die
 // Inventur nicht findet.
 //
@@ -111,7 +111,7 @@ func TestSignaturTrifftDenInventurBereich(t *testing.T) {
 	voll := SignaturAus("LMF Deu 7", "Bie")
 	regal := "LMF Deu 7"
 
-	// Nachbildung von repository.signaturPraefixBedingung in Go: gleich ODER
+	// Nachbildung von repository.signaturPraefixBedingung in Go: gleich oder
 	// Praefix mit folgendem Leerzeichen.
 	trifft := voll == regal || strings.HasPrefix(voll, regal+" ")
 	if !trifft {
@@ -121,7 +121,7 @@ func TestSignaturTrifftDenInventurBereich(t *testing.T) {
 	// Gegenprobe: Das Nachbarregal darf nicht hineinreichen.
 	nachbar := "LMF Deu"
 	if voll == nachbar || strings.HasPrefix(voll, nachbar+" ") {
-		// "LMF Deu" IST ein gueltiges Oberregal von "LMF Deu 7" — das ist gewollt.
+		// "LMF Deu" ist ein gueltiges Oberregal von "LMF Deu 7" — das ist gewollt.
 		t.Logf("Oberregal %q umfasst %q (beabsichtigt)", nachbar, voll)
 	}
 	fremd := "LMF De"
@@ -151,7 +151,7 @@ func TestSignaturJeTitel_HaeufigsterWertUndAbweichungen(t *testing.T) {
 		t.Error("Titel ohne Signatur darf keinen Eintrag bekommen")
 	}
 
-	// Die Abweichung MUSS gemeldet werden — sonst verschwindet eine echte
+	// Die Abweichung muss gemeldet werden — sonst verschwindet eine echte
 	// Regalabweichung still im Import.
 	if len(abweichend) != 1 || abweichend[0] != "1" {
 		t.Errorf("Titel 1 muss als abweichend gemeldet werden, war %v", abweichend)

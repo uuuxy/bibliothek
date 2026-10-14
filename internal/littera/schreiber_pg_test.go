@@ -57,7 +57,7 @@ const (
 )
 
 // TestBestandUeberlebtEinzelnenZeilenfehler ist der Kern: ein kollidierender Datensatz in
-// der Mitte darf die anderen nicht mitreißen — und die übrigen müssen COMMITTET sein.
+// der Mitte darf die anderen nicht mitreißen — und die übrigen müssen committet sein.
 //
 // Der Fall, den das absichert: Postgres versetzt die Transaktion beim ersten Fehler in
 // den Abbruchzustand (25P02); ohne Savepoint scheitert danach jedes Statement und der
@@ -108,7 +108,7 @@ func TestTitelKommtGanzOderGarNicht(t *testing.T) {
 	ab.Exemplare = append(ab.Exemplare,
 		Exemplar{ID: "E7b", Exemplarnummer: "700", Bibliotheksnummer: testBibliothek, TitelID: "7"},
 		Exemplar{ID: "E7c", Exemplarnummer: "701", Bibliotheksnummer: testBibliothek, TitelID: "7"})
-	// Das ZWEITE von drei Exemplaren scheitert — der Titel selbst steht dann schon.
+	// Das zweite von drei Exemplaren scheitert — der Titel selbst steht dann schon.
 	erzwingeZeilenfehler(t, pool, "buecher_exemplare", "barcode_id", etikett(t, "700"))
 
 	bericht, err := s.SchreibeBestand(context.Background(), ab)
@@ -124,8 +124,8 @@ func TestTitelKommtGanzOderGarNicht(t *testing.T) {
 }
 
 // TestStockEntsprichtDenExemplaren: Die Stückzahl der Quelle muss vollständig als
-// Exemplar-Zeilen ankommen — die frühere stock-Spalte ist gefallen (Migration 073,
-// Befund F5), die Live-Zählung über buecher_exemplare ist die eine Wahrheit.
+// Exemplar-Zeilen ankommen; gezählt wird über buecher_exemplare, eine eigene Spalte für den
+// Bestand gibt es nicht.
 func TestStockEntsprichtDenExemplaren(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -204,7 +204,7 @@ func TestVorhandeneISBNKollidiertNicht(t *testing.T) {
 }
 
 // TestBarcodeAusLitteraBleibtErhalten: die Etiketten kleben schon auf 61.520 Büchern.
-// Geschrieben werden muss der Wert, den der SCANNER liest — der EAN-13 — und nicht die
+// Geschrieben werden muss der Wert, den der Scanner liest — der EAN-13 — und nicht die
 // Exemplarnummer, die im Klartext danebensteht. Sonst wäre der ganze Bestand bis zur
 // Neubeklebung nicht auffindbar.
 func TestBarcodeAusLitteraBleibtErhalten(t *testing.T) {
@@ -325,8 +325,8 @@ func TestNeueNummerStehtInFehlendeEtiketten(t *testing.T) {
 	})
 }
 
-// TestSignaturLandetAmTitel: buecher_titel.signatur ist seit Migration 060 die einzige
-// Quelle des Inventur-Scopes, und der schneidet als Präfix am LEERZEICHEN. Steht dort
+// TestSignaturLandetAmTitel: buecher_titel.signatur ist die einzige
+// Quelle des Bereichs einer Inventur, und der schneidet als Präfix am Leerzeichen. Steht dort
 // nichts, findet keine Inventur ihr Regal.
 func TestSignaturLandetAmTitel(t *testing.T) {
 	pool := pgTestPool(t)
@@ -383,7 +383,7 @@ func TestWiederholterLaufWirdAbgelehnt(t *testing.T) {
 //
 // Nötig, weil die Vorläufe des Schreibers (Barcodes, ISBN) genau die Kollisionen abfangen,
 // die man sonst zum Provozieren nähme — sie kommen gar nicht erst bis zum INSERT. Was hier
-// geprüft werden soll, liegt aber dahinter: dass ein Fehler MITTEN in der Transaktion nur
+// geprüft werden soll, liegt aber dahinter: dass ein Fehler mitten in der Transaktion nur
 // diesen einen Datensatz kostet. SQLSTATE 23514 ist bewusst gewählt: Es ist ein
 // Zeilenfehler im Sinne des Pakets uebernahme (istZeilenfehler), wie ihn jeder CHECK und jeder
 // UNIQUE-Index liefert, den eine spätere Migration hinzufügen mag.
@@ -479,14 +479,14 @@ func TestEigentumsvermerkKommtMit(t *testing.T) {
 		t.Errorf("der Wortlaut eines unbekannten Vermerks steht im Protokoll:\n%s", log)
 	}
 
-	// Wer Eigentum setzt, nennt die Quelle (Migration 151): littera, sonst keine.
+	// Wer Eigentum setzt, nennt die Quelle: littera, sonst keine.
 	if n := zaehle(t, pool, `SELECT count(*) FROM buecher_exemplare
 		WHERE (eigentum IS NOT NULL AND eigentum_quelle = 'littera') OR (eigentum IS NULL AND eigentum_quelle IS NULL)`); n != 5 {
 		t.Errorf("Quelle des Eigentums: %d von 5 Exemplaren stimmen", n)
 	}
 
 	// Die Datenbank hält das Vokabular (chk_exemplar_eigentum). Mit Quelle, damit allein diese
-	// Bedingung greifen kann und nicht die Kopplung aus Migration 151.
+	// Bedingung greifen kann und nicht die Kopplung.
 	_, err = pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'stadt', eigentum_quelle = 'littera'`)
 	if err == nil || !strings.Contains(err.Error(), `"chk_exemplar_eigentum"`) {
 		t.Errorf("eigentum = 'stadt' — erwartet die Abweisung durch chk_exemplar_eigentum, war: %v", err)

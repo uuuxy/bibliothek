@@ -10,10 +10,9 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
-// Die Schlagworte der Titel (docs/OFFEN.md 4.20, Stufe 2, entschieden am 30.09.2026: alle
-// mitnehmen). Littera führt sie in der Tabelle Schlagworte (Buchungsnummer → SuchWort) und
-// ordnet sie über Schlag_zuord den Titeln zu — dieselbe Form wie die Verfasser über Personen
-// und Personen_Zuordnung (personen.go).
+// Die Schlagworte der Titel kommen alle mit. Littera führt sie in der Tabelle Schlagworte
+// (Buchungsnummer → SuchWort) und ordnet sie über Schlag_zuord den Titeln zu, in derselben Form
+// wie die Verfasser über Personen und Personen_Zuordnung (personen.go).
 //
 // Die Verweise (Verweise_Schlagworte, Verweis_Zu_Schlagworte) werden gezählt, nicht
 // übernommen: In der Sicherung von 2010 sind beide Tabellen leer, und wie Littera sie
@@ -33,16 +32,15 @@ type SchlagwortQuelle struct {
 	VerweisWoerter, VerweisZuordnungen int
 }
 
-// Die Interessenkreise (entschieden am 30.09.2026, docs/OFFEN.md 4.20: als Schlagworte
-// übernehmen). Littera führt sie als eigene Liste, gedacht als „thematische Gliederung des
-// Belletristikbereiches (z.B. Krimi, Heimat)" (Handbuch). An dieser Schule sind es Zielgruppen:
-// in der Sicherung von 2010 36 Werte an 8.902 Titeln — Sekundarstufe 1 und 2, Lehrer (1.813
-// Titel), Referendare (986), DAZ-Schüler (209). Die Form gleicht den Schlagworten: Tabelle
-// Interessenskreis (Buchungsnummer → Interessenskreis), über IntZuMed den Titeln zugeordnet.
-// Littera selbst kann jeden Interessenkreis samt aller Titel in ein Schlagwort umwandeln; hier
-// geschieht das beim Schreiben (SchreibeSchlagworte), und die Stufe ergibt die Jahrgangsspanne
-// (lernmittelUndFach), wie im Katalogisat-Import. An Lesern (IntZuLeser) hat die Schule sie nie
-// benutzt; die Tabelle wird nicht gelesen.
+// Die Interessenkreise kommen als Schlagworte mit. Littera führt sie als eigene Liste, gedacht
+// als „thematische Gliederung des Belletristikbereiches (z.B. Krimi, Heimat)" (Handbuch). An
+// dieser Schule sind es Zielgruppen: in der Sicherung von 2010 36 Werte an 8.902 Titeln,
+// Sekundarstufe 1 und 2, Lehrer (1.813 Titel), Referendare (986), DAZ-Schüler (209). Die Form
+// gleicht den Schlagworten: Tabelle Interessenskreis (Buchungsnummer → Interessenskreis), über
+// IntZuMed den Titeln zugeordnet. Littera selbst kann jeden Interessenkreis samt aller Titel in
+// ein Schlagwort umwandeln; hier geschieht das beim Schreiben (SchreibeSchlagworte), und die
+// Stufe ergibt die Jahrgangsspanne (lernmittelUndFach), wie im Katalogisat-Import. An Lesern
+// (IntZuLeser) hat die Schule sie nie benutzt; die Tabelle wird nicht gelesen.
 
 // leseSchlagworte liest die Tabelle `Schlagworte` als Buchungsnummer → Wort.
 func leseSchlagworte(r io.Reader) (map[string]string, error) {
@@ -157,10 +155,10 @@ func spaltenDa(zeilen []map[string]string, namen ...string) error {
 
 // lernmittelUndFach liest Lernmittel, Fach und Jahrgang aus der Signatur und nimmt das Fach aus
 // den Schlagworten, wo die Signatur keins nennt — dieselbe Reihenfolge wie der
-// Katalogisat-Import (kategorisiere in internal/service/import_service.go, seit dem
-// 02.09.2026), und wie dort nur, wenn die Schlagworte genau ein Fach nennen: lieber leer als
-// falsch (lmf.FachAusSchlagworten). Bis zum 30.09.2026 las die Übernahme nur die Signatur; in
-// der Sicherung von 2010 trugen so 258 Titel ein Fach, mit den Schlagworten 2.945 mehr.
+// Katalogisat-Import (kategorisiere in internal/service/import_service.go), und wie dort nur,
+// wenn die Schlagworte genau ein Fach nennen: lieber leer als falsch (lmf.FachAusSchlagworten).
+// In der Sicherung von 2010 tragen 258 Titel ein Fach aus der Signatur, aus den Schlagworten
+// 2.945 mehr.
 // ausSchlagworten sagt, ob das Fach aus den Schlagworten kam.
 //
 // Die Jahrgangsspanne kommt aus den Interessenkreisen, wo die Signatur keine nennt

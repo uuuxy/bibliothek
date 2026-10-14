@@ -28,11 +28,7 @@ type PersonenBericht struct {
 	Zielleser map[string]Zielleser
 }
 
-// Zielleser sagt, in welcher Tabelle eine Person gelandet ist. Die Ausleihe muss genau
-// eine der beiden Spalten setzen (check_loan_borrower).
-// Zielleser ist die Leserzeile, an der die Ausleihen dieser Person hängen. Vor
-// Migration 125 standen hier zwei IDs — eine für Schüler, eine für Lehrkräfte —, und der
-// Ausleihteil musste raten, welche gefüllt ist.
+// Zielleser ist die Leserzeile, an der die Ausleihen einer übernommenen Person hängen.
 type Zielleser struct {
 	LeserID string
 	// IstSchueler trennt nur noch die Zählung im Bericht und die Dauerleihe.
@@ -46,7 +42,7 @@ type Zielleser struct {
 // greift nur, wenn es gesetzt ist — ohne es legt der spätere LUSD-Import dieselben
 // Schüler ein zweites Mal an.
 //
-// NICHT übernommen werden Anschrift und E-Mail, obwohl Littera sie führt (Adresse bei
+// Nicht übernommen werden Anschrift und E-Mail, obwohl Littera sie führt (Adresse bei
 // 1.927 von 1.991). Ihr Zweck laut schema.sql ist der Versand von Schadens-Rechnungen und
 // Eltern-Mahnungen; die gepflegte Quelle dafür ist die LUSD. Eine Anschrift aus einem
 // Altbestand ist im Zweifel veraltet, und eine Rechnung an die falsche Adresse ist
@@ -63,16 +59,15 @@ const sqlSchuelerEinfuegen = `
 // RFC 2606 dauerhaft reserviert und wird von keinem Mailserver aufgelöst. Ein erfundener
 // Wert unter der Schuldomäne ginge dagegen irgendwann an eine echte, fremde Person.
 //
-// DIESE Adresse ist auch der Grund, warum importierte Lehrkräfte trotzdem aktiv=true
+// Diese Adresse ist auch der Grund, warum importierte Lehrkräfte trotzdem aktiv=true
 // bekommen dürfen: Die Anmeldung läuft ausschließlich über IMAP gegen den Schul-
-// Mailserver (auth/handlers.go), und littera-4908@littera.invalid gibt es dort nicht.
+// Mailserver (auth/imap.go), und littera-4908@littera.invalid gibt es dort nicht.
 // Login und Ausweis sind damit über das richtige Feld getrennt — nicht über aktiv, das
 // die Omnibox für die Ausweis-Suche braucht.
 const platzhalterDomain = "@littera.invalid"
 
-// Das Konto trägt seit Migration 125 weder Ausweis noch Personenart; beides gehört zur
-// Leserzeile, die der Trigger trg_benutzer_hat_leserzeile mit anlegt und deren ID hier
-// zurückkommt.
+// Das Konto trägt weder Ausweis noch Personenart; beides gehört zur Leserzeile, die der
+// Trigger trg_benutzer_hat_leserzeile mit anlegt und deren ID hier zurückkommt.
 const sqlKontoEinfuegen = `
 	INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, erstellt_am)
 	VALUES ($1,$2,$3,'kollegium',$4,$5)
@@ -81,9 +76,9 @@ const sqlKontoEinfuegen = `
 const sqlLeserzeileNachtragen = `
 	UPDATE leser SET barcode_id = $1, art = $2 WHERE id = $3`
 
-// Praktikum und Fachbereich bekommen kein Konto (leserart.HatKonto, Entscheidung vom
-// 30.09.2026): nur die Leserzeile, an der ihre Ausleihen hängen. Keine Platzhalter-Adresse —
-// es gibt nichts, womit sie sich anmelden sollten.
+// Praktikum und Fachbereich bekommen kein Konto (leserart.HatKonto), nur die Leserzeile, an
+// der ihre Ausleihen hängen. Eine Platzhalter-Adresse brauchen sie nicht, weil sie sich nicht
+// anmelden.
 const sqlLeserOhneKontoEinfuegen = `
 	INSERT INTO leser (barcode_id, vorname, nachname, art, erstellt_am)
 	VALUES ($1,$2,$3,$4,$5)
@@ -134,8 +129,8 @@ func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (Perso
 	return bericht, nil
 }
 
-// zaehlePersonen zählt die Leserzeilen, nicht die Konten: Praktikum und Fachbereich kommen
-// ohne Konto an (bis zum 30.09.2026 zählte hier benutzer mit der Rolle kollegium).
+// zaehlePersonen zählt die Leserzeilen, nicht die Konten, weil Praktikum und Fachbereich ohne
+// Konto ankommen.
 func (s *Schreiber) zaehlePersonen(ctx context.Context) (schueler, kollegium int, err error) {
 	err = s.pool.QueryRow(ctx, `
 		SELECT (SELECT count(*) FROM leser WHERE art = 'schueler'),
@@ -152,7 +147,7 @@ type personenlauf struct {
 	bericht         *PersonenBericht
 	belegteAusweise map[string]bool
 	// verbrauchteAusweise hält die Ersatzvergabe aus jeder Nummer heraus, die schon einmal an
-	// einer Leserzeile stand — auch im Papierkorb, auch ausgeschieden (Migration 146) —, jede
+	// einer Leserzeile stand — auch im Papierkorb, auch ausgeschieden —, jede
 	// A-Nummer zusätzlich ohne führende Nullen (sqlVerbrauchteAusweise). Die eigene Karte einer
 	// Person prüft nur belegteAusweise: Sie gehört dieser Person.
 	verbrauchteAusweise map[string]bool
@@ -170,12 +165,12 @@ type personenlauf struct {
 // Vorsichtsmaßnahme wie bei den Barcodes: Eine Kollision mit vorhandenen Zeilen kostet
 // sonst die ganze Person.
 func (p *personenlauf) belegeVor(ctx context.Context) error {
-	// EINE Abfrage über alle Ausweisnummern — sie stehen seit Migration 125 an einem Ort.
+	// eine Abfrage über alle Ausweisnummern, die an einem Ort stehen.
 	if err := p.lade(ctx, `SELECT barcode_id FROM leser WHERE deleted_at IS NULL AND barcode_id IS NOT NULL`, p.belegteAusweise); err != nil {
 		return err
 	}
 	// Die Ersatznummer erfindet dieser Lauf selbst; sie darf keine sein, die schon einmal einer
-	// Person gehörte (docs/OFFEN.md 5.23).
+	// Person gehörte.
 	if err := p.lade(ctx, sqlVerbrauchteAusweise, p.verbrauchteAusweise); err != nil {
 		return err
 	}
@@ -262,8 +257,7 @@ func (p *personenlauf) verarbeitePerson(ctx context.Context, tx pgx.Tx, l Leser)
 
 // schreibePerson legt die Person nach ihrer Art an: Schüler in die Schülerdatei, im Kollegium
 // mit Konto, wo eines dazugehört (leserart.HatKonto), sonst nur die Leserzeile. Die
-// Littera-Gruppe steht seit dem 30.09.2026 als Art an der Leserzeile (ZielArt) und nicht mehr
-// nur im Protokoll.
+// Littera-Gruppe steht als Art an der Leserzeile (ZielArt).
 func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Zielleser, error) {
 	ziel := l.Art.ZielArt()
 	switch {
@@ -319,9 +313,9 @@ func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser)
 //
 // Jede andere Klasse ohne Jahrgang („AUS" der Gruppe „Im Ausland") bekommt, was die
 // Anwendung dafür überall einsetzt, Handanlage wie LUSD-Import (repository.AbgangsjahrOhneKlasse),
-// und rueckfall=true für die Warnung. Bis zum 28.09.2026 wurde ein solcher Schüler samt seinen
-// Ausleihen ausgelassen — mit der Begründung, ein geratenes Jahr archiviere ihn still; eine
-// Archivierung nach dem Abgangsjahr gibt es aber nicht (siehe AbgangsjahrOhneKlasse).
+// und rueckfall=true für die Warnung. Ausgelassen fehlten der Schüler und seine Ausleihen; ein
+// Archivieren nach dem Abgangsjahr, das ein geschätztes Jahr gefährlich machte, gibt es nicht
+// (siehe AbgangsjahrOhneKlasse).
 func (p *personenlauf) abgangsjahr(l Leser) (jahr int, rueckfall bool) {
 	if jahr, ok := abgaengerJahr(l.Klasse, p.s.opt.SchuljahrEnde); ok {
 		return jahr, false
@@ -380,10 +374,8 @@ func (p *personenlauf) schreibeOhneKonto(ctx context.Context, tx pgx.Tx, l Leser
 // kollidieren zwei Leser über dieselbe Lesernummer.
 //
 // Die Nummer ist die, die der Ausweis beim Scannen liefert: Steht in FremdLeserNummer eine
-// Herstellernummer, gewinnt sie gegen die Lesernummer (fremdnummern.go). Bis zum 15.09.2026
-// wurde sie eingelesen und nie geschrieben — nach dem Personenlauf hätte kein alter Ausweis
-// seine Person gefunden (OFFEN.md 5.15). Vergeben ist außerdem jede Nummer, die schon ein
-// Buch trägt.
+// Herstellernummer, gewinnt sie gegen die Lesernummer (fremdnummern.go); ohne sie fände kein
+// alter Ausweis seine Person. Vergeben ist außerdem jede Nummer, die schon ein Buch trägt.
 func (p *personenlauf) ausweis(l Leser) string {
 	nummer := l.Lesernummer
 	if karte := p.karten[l.ID]; karte != "" {
@@ -404,7 +396,7 @@ func (p *personenlauf) ausweis(l Leser) string {
 	}
 	// Auch die Ersatznummer kann schon vergeben sein, etwa von Hand an eine Lehrkraft.
 	//
-	// „A-" wie Ausweis (16.09.2026) statt des früheren „L-": Ein Buchstabe auf dem
+	// „A-" wie Ausweis statt des früheren „L-": Ein Buchstabe auf dem
 	// Ausweis soll nichts über die Person behaupten — wer jemand ist, steht in den
 	// Stammdaten. Die Theke liest „L-" weiterhin, damit Nummern aus früheren Läufen
 	// scannen; vergeben wird es nicht mehr.
@@ -442,19 +434,17 @@ const sqlVerbrauchteAusweise = `
 // istErsatzFrei sagt, ob eine selbst erfundene Nummer vergeben werden darf: Sie steht weder an
 // einer aktiven Leserzeile noch an einem Buch, und sie stand nie an einer Person — auch nicht
 // als dieselbe Zahl in anderer Schreibweise (A-04908 und A-4908). Deren Karte buchte sonst an
-// der Theke auf die übernommene Person (docs/OFFEN.md 5.23).
+// der Theke auf die übernommene Person.
 func (p *personenlauf) istErsatzFrei(nummer string) bool {
 	return !p.belegteAusweise[nummer] && !p.buchBarcodes[nummer] && !p.verbrauchteAusweise[nummer]
 }
 
 // mailadresse liefert die echte Adresse oder einen unzustellbaren Platzhalter.
 //
-// Die kollidierende Adresse steht bewusst NICHT im Protokoll — dort stand sie bis zum
-// 23.08.2026 als Kennung. `littera_import.log` ist eine unverschlüsselte Datei im
-// Arbeitsverzeichnis ohne Frist und ohne Löschregel; bei einer Leser-Übernahme
-// kollidieren Adressen reihenweise (Familien mit einer gemeinsamen Adresse, Sammelkonten),
-// und jede Kollision hätte eine echte Adresse dort abgelegt. Wer sie braucht, findet sie
-// in der Quelldatei neben der Lesernummer — die Zeile bleibt damit reparierbar.
+// Die kollidierende Adresse steht nicht im Protokoll: `littera_import.log` ist eine
+// unverschlüsselte Datei im Arbeitsverzeichnis ohne Frist und ohne Löschregel, und bei einer
+// Übernahme kollidieren Adressen reihenweise (Familien mit einer gemeinsamen Adresse,
+// Sammelkonten). Wer die Adresse braucht, findet sie in der Quelldatei neben der Lesernummer.
 func (p *personenlauf) mailadresse(l Leser) string {
 	echt := kleinOhneRand(l.EMail)
 	if echt != "" && !p.belegteMails[echt] {

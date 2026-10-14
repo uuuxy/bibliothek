@@ -7,19 +7,18 @@ import (
 	"testing"
 )
 
-// TestEchterAltbestand prüft die Zuordnung gegen den ECHTEN Littera-Export statt gegen
-// Beispielzeilen — dieselbe Idee wie bei den PG-Tests: gegated über eine Umgebungsvariable,
-// damit CI ohne die Dateien grün bleibt.
+// TestEchterAltbestand prüft die Zuordnung gegen den echten Littera-Export statt gegen
+// Beispielzeilen. Er läuft nur mit einer Umgebungsvariable, damit CI ohne die Dateien grün
+// bleibt.
 //
 //	mdb-export littera_sav.mdb Titel    > $LITTERA_CSV_DIR/titel.csv
 //	mdb-export littera_sav.mdb Exemplar > $LITTERA_CSV_DIR/exemplar.csv
 //	mdb-export littera_sav.mdb Verlag   > $LITTERA_CSV_DIR/verlag.csv
 //	LITTERA_CSV_DIR=... go test ./internal/littera/
 //
-// Der Kern ist die Verwaisungs-Prüfung: Wenn auch nur EIN Exemplar seinen Titel nicht
-// findet, stimmt die Fremdschlüssel-Zuordnung nicht — und genau daran wäre das alte
-// Werkzeug gescheitert, das `TitelID` statt `Titel` las. Beim Lauf gegen den Altbestand
-// vom 03.08.2026: 10.732 Titel, 61.520 Exemplare, 0 verwaist.
+// Der Kern ist die Prüfung auf verwaiste Exemplare: Findet auch nur eines seinen Titel nicht,
+// stimmt die Zuordnung über den Fremdschlüssel nicht. Der Altbestand der Schule hat 10.732
+// Titel, 61.520 Exemplare und kein verwaistes.
 func TestEchterAltbestand(t *testing.T) {
 	basis := os.Getenv("LITTERA_CSV_DIR")
 	if basis == "" {
@@ -36,7 +35,7 @@ func TestEchterAltbestand(t *testing.T) {
 		t.Fatalf("nur %d Exemplare gelesen — sieht nach falscher oder leerer Datei aus", len(exemplare))
 	}
 
-	// DIE Invariante: Jedes Exemplar muss seinen Titel finden.
+	// die Invariante: Jedes Exemplar muss seinen Titel finden.
 	bekannt := make(map[string]bool, len(titel))
 	for _, ti := range titel {
 		bekannt[ti.ID] = true
@@ -91,9 +90,9 @@ func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
 				beispiel = e.Barcode + " → " + nummer + ", Spalte sagt " + e.Exemplarnummer
 			}
 		}
-		// Der volle EAN-13: Die Rechnung aus den Spalten muss das Etikett ergeben, wo die
-		// Spalten dieselben Nummern tragen wie das Etikett. Bis zum 28.09.2026 prüfte diese
-		// Schleife nur die Nummer — die falsche Rechnung für kurze Nummern sah sie nicht.
+		// Der volle EAN-13: Die Rechnung aus den Spalten muss das Etikett ergeben, wo die Spalten
+		// dieselben Nummern tragen wie das Etikett. Die Nummer allein sähe eine falsche Rechnung für
+		// kurze Nummern nicht.
 		ean, eanOK := etikettZiffern(e.Barcode)
 		if !eanOK {
 			keinEAN++
@@ -214,7 +213,7 @@ func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 	return leser
 }
 
-// pruefeAusleihen belegt, dass jede Ausleihe ihr Exemplar UND ihren Entleiher findet.
+// pruefeAusleihen belegt, dass jede Ausleihe ihr Exemplar und ihren Entleiher findet.
 // Eine Ausleihe ins Leere waere beim Schreiben ein Fremdschluesselfehler — und der
 // bricht den Import mitten in der Transaktion ab.
 func pruefeAusleihen(t *testing.T, basis string, leser []Leser, exemplare []Exemplar) {
@@ -255,7 +254,7 @@ func pruefeAusleihen(t *testing.T, basis string, leser []Leser, exemplare []Exem
 			ohneDatum++
 		}
 	}
-	// Der Entleiher MUSS immer gefunden werden: Verleih.Leser zeigt auf
+	// Der Entleiher muss immer gefunden werden: Verleih.Leser zeigt auf
 	// Leser.Buchungsnummer. Waere hier auch nur eine Zeile offen, haette man den
 	// falschen Schluessel erwischt (ueber Lesernummer treffen nur 792 von 15.615).
 	if ohneLeser > 0 {
@@ -333,7 +332,7 @@ func pruefeAutorenAbdeckung(t *testing.T, basis string, titel []Titel) {
 		t.Errorf("nur %d von %d Titeln haben einen Autor — Funktionsschluessel pruefen",
 			nachher, len(titel))
 	}
-	// Und die Gegenprobe auf die QUALITAET: Das Verfasserfeld wurde in dieser Bibliothek
+	// Und die Gegenprobe auf die Qualität: Das Verfasserfeld wurde in dieser Bibliothek
 	// jahrelang auch zum Kennzeichnen des Bestands benutzt. Ohne bestandsmarken stuende
 	// bei 7.131 Titeln „Buchbestand Bibliothek" mitten in der Autorenangabe — eine hohe
 	// Abdeckung, die im Katalog schlicht falsch ist.

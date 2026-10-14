@@ -34,7 +34,7 @@ const sqlAusleiheEinfuegen = `
 
 // SchreibeAusleihen überträgt die Ausleihen.
 //
-// Der Fremdschlüssel auf den Entleiher zeigt in Littera auf Leser.BUCHUNGSNUMMER, nicht
+// Der Fremdschlüssel auf den Leser zeigt in Littera auf Leser.Buchungsnummer, nicht
 // auf die Lesernummer — über die zweite träfen nur 792 von 15.615 Zeilen, und die
 // getroffenen wären die falschen Personen.
 //
@@ -88,7 +88,7 @@ type ausleihlauf struct {
 // aufgeht — jede von ihnen wird einzeln protokolliert.
 //
 // Die Doppelbelegung ist die unauffälligste der drei: uniq_ausleihen_aktiv_exemplar
-// lässt höchstens EINE offene Ausleihe je Exemplar zu. Im Altbestand tragen zwei
+// lässt höchstens eine offene Ausleihe je Exemplar zu. Im Altbestand tragen zwei
 // Exemplare je zwei offene Ausleihen — ein Buch kann nicht bei zwei Leuten liegen. Es
 // gewinnt die jüngste; die ältere ist die Karteileiche.
 func (l *ausleihlauf) aussortieren(ausleihen []Ausleihe) []buchbar {

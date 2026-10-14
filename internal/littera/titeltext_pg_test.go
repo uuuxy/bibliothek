@@ -8,8 +8,8 @@ import (
 
 // Littera führt Titel mit zwei Leerzeichen in Folge und mit geschütztem Leerzeichen (in der
 // Sicherung von 2010: 103 und 11 von 10.732 Titeln). Die Übernahme liest den Wortlaut, wie
-// er steht; die Datenbank speichert ihn mit einem Leerzeichen zwischen den Wörtern
-// (Migration 160), an dieser Tür wie an jeder anderen. Der Weg hier: von der Zeile des
+// er steht; die Datenbank speichert ihn mit einem Leerzeichen zwischen den Wörtern,
+// an dieser Tür wie an jeder anderen. Der Weg hier: von der Zeile des
 // Exports bis in die Tabelle.
 func TestTitelKommtOhneLeerraumInFolge(t *testing.T) {
 	pool := pgTestPool(t)
