@@ -16,13 +16,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Der Nachdruck eines Bescheids ist derselbe Brief — auch bei den Angaben der Schule
-// (docs/OFFEN.md 5.2). Bis zum 23.09.2026 las er Schulanschrift, Geschäftszeichen,
-// Bearbeiter, Zahlstelle, Bankverbindung, Aufsicht und Schulleitung live aus den
-// Einstellungen: Nach einem Wechsel der Schulleitung trug der Nachdruck eines alten
-// Bescheids die neue Unterschrift, nach einem Kontowechsel das neue Konto. Den Empfänger
-// hielt der Bescheid schon fest (TestBescheidNachdruck_BleibtDerselbeBrief); die Absenderseite
-// jetzt auch (Migration 141).
+// Der Nachdruck eines Bescheids ist derselbe Brief, auch bei den Angaben der Schule:
+// Schulanschrift, Geschäftszeichen, Bearbeiter, Zahlstelle, Bankverbindung, Aufsicht und
+// Schulleitung stehen im Schnappschuss (Migration 141). Läse der Nachdruck sie aus den
+// Einstellungen, trüge ein alter Bescheid nach einem Wechsel der Schulleitung die neue
+// Unterschrift, nach einem Kontowechsel das neue Konto. Den Empfänger hält der Bescheid ebenso
+// fest (TestBescheidNachdruck_BleibtDerselbeBrief).
 func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -46,7 +45,7 @@ func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Die Schule ändert ihre Angaben NACH dem Brief.
+	// Die Schule ändert ihre Angaben nach dem Brief.
 	for k, v := range map[string]string{
 		"bescheid_schulleitung":   "Neue Leitung",
 		"schule_name":             "Umbenannte Schule",

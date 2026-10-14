@@ -27,14 +27,14 @@ func TestElternbriefPDF_Erfolg(t *testing.T) {
 
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
-	// Mock fetchDamageCaseInfo query
+	// Attrappe: der Fall (ladeSchadensfallBrief).
 	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "strasse", "hausnummer", "plz", "ort", "titel", "barcode_id", "ist_lernmittel", "auf_bescheid"}).
 		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Musterweg", "3", "61169", "Musterstadt", "Das Buch", "B-123", true, false)
 	mock.ExpectQuery("SELECT sf.beschreibung, sf.betrag, sf.erstellt_am, s.vorname, s.nachname, s.klasse, COALESCE").
 		WithArgs(caseID).
 		WillReturnRows(rows)
 
-	// Mock system settings query
+	// Attrappe: die Einstellungen.
 	settingsRows := pgxmock.NewRows([]string{"schluessel", "wert"}).
 		AddRow("schule_name", "Testschule").
 		AddRow("schule_strasse", "Teststr").
@@ -44,7 +44,7 @@ func TestElternbriefPDF_Erfolg(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(settingsRows)
 
-	// Mock markElternbriefGenerated
+	// Attrappe: der Vermerk (merkeElternbriefErzeugt).
 	mock.ExpectExec("UPDATE schadensfaelle").
 		WithArgs(caseID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -104,7 +104,7 @@ func TestElternbriefPDF_UnbekannterFall(t *testing.T) {
 func TestElternbriefPDF_OhneKennung(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 	req := httptest.NewRequest(http.MethodGet, "/api/schadensfaelle//pdf", nil)
-	// We deliberately leave id empty
+	// Die Kennung bleibt absichtlich leer.
 	rec := httptest.NewRecorder()
 
 	srv.ElternbriefPDF().ServeHTTP(rec, req)
@@ -153,19 +153,19 @@ func TestElternbriefPDF_Schreibfehler(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
-	// Mock fetchDamageCaseInfo query
+	// Attrappe: der Fall (ladeSchadensfallBrief).
 	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "strasse", "hausnummer", "plz", "ort", "titel", "barcode_id", "ist_lernmittel", "auf_bescheid"}).
 		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Musterweg", "3", "61169", "Musterstadt", "Das Buch", "B-123", true, false)
 	mock.ExpectQuery("SELECT sf.beschreibung").
 		WithArgs(caseID).
 		WillReturnRows(rows)
 
-	// Mock system settings query
+	// Attrappe: die Einstellungen.
 	settingsRows := pgxmock.NewRows([]string{"schluessel", "wert"})
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(settingsRows)
 
-	// Mock markElternbriefGenerated
+	// Attrappe: der Vermerk (merkeElternbriefErzeugt).
 	mock.ExpectExec("UPDATE schadensfaelle").
 		WithArgs(caseID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -174,12 +174,12 @@ func TestElternbriefPDF_Schreibfehler(t *testing.T) {
 	req.SetPathValue("id", caseID)
 	rec := httptest.NewRecorder()
 
-	// Use a mock response writer that simulates an error
+	// Ein Schreiber, der beim Schreiben scheitert.
 	errWriter := &fehlerSchreiber{ResponseWriter: rec}
 
 	srv.ElternbriefPDF().ServeHTTP(errWriter, req)
 
-	// Handler log output error but returns HTTP 200 before the error, so code should be 200
+	// Die Tür schreibt den Fehler ins Log, hat den Status 200 aber schon gesendet.
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected 200 for writer error (headers sent), got %d", rec.Code)
 	}
@@ -199,19 +199,19 @@ func TestElternbriefPDF_VermerkScheitert(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
-	// Mock fetchDamageCaseInfo query
+	// Attrappe: der Fall (ladeSchadensfallBrief).
 	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "strasse", "hausnummer", "plz", "ort", "titel", "barcode_id", "ist_lernmittel", "auf_bescheid"}).
 		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Musterweg", "3", "61169", "Musterstadt", "Das Buch", "B-123", true, false)
 	mock.ExpectQuery("SELECT sf.beschreibung").
 		WithArgs(caseID).
 		WillReturnRows(rows)
 
-	// Mock system settings query
+	// Attrappe: die Einstellungen.
 	settingsRows := pgxmock.NewRows([]string{"schluessel", "wert"})
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(settingsRows)
 
-	// Mock markElternbriefGenerated with an error
+	// Attrappe: Der Vermerk (merkeElternbriefErzeugt) scheitert.
 	mock.ExpectExec("UPDATE schadensfaelle").
 		WithArgs(caseID).
 		WillReturnError(errors.New("db error"))
@@ -241,7 +241,7 @@ func TestElternbriefPDF_FallUnlesbar(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
-	// Return wrong type to trigger scan error
+	// Ein falscher Typ, damit das Lesen der Zeile scheitert.
 	rows := pgxmock.NewRows([]string{"beschreibung"}).
 		AddRow("Wasserschaden")
 	mock.ExpectQuery("SELECT sf.beschreibung").

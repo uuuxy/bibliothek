@@ -14,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ElternbriefPDF generates a formal PDF notification letter ("Elternbrief")
-// for a student responsible for library book damage, marking the record in the DB.
+// ElternbriefPDF liefert den Elternbrief zu einem Schadensfall als PDF und vermerkt am Fall,
+// dass er erzeugt ist.
 func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -38,7 +38,7 @@ func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 		// Steht die Forderung auf einem Schadensersatz-Bescheid, gilt der Bescheid: Ein
 		// Elternbrief daneben nennte sie ein zweites Mal, mit eigener Frist und eigenem
 		// Zahlungsweg. Dieselbe Regel wie bei der Ersatzforderung
-		// (repository.LadeOffeneForderungenOhneBescheid); docs/OFFEN.md 5.2, 23.09.2026.
+		// (repository.LadeOffeneForderungenOhneBescheid).
 		if aufBescheid {
 			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
 				"die Forderung steht auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, kein Elternbrief"))
@@ -73,7 +73,7 @@ func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 
 		t.merkeElternbriefErzeugt(ctx, id)
 
-		// Stream the generated PDF
+		// Das PDF senden.
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=elternbrief_%s.pdf", info.SchuelerNachname))
 

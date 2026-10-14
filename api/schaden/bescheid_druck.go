@@ -21,10 +21,10 @@ import (
 // BescheidPDF liefert den Brief — beim ersten Mal und bei jedem Nachdruck
 // derselbe, aus dem Snapshot.
 //
-// @Summary      Print (or reprint) a compensation notice
+// @Summary      Bescheid drucken oder nachdrucken
 // @Tags         schadensersatz
 // @Produce      application/pdf
-// @Param        id path string true "Notice ID"
+// @Param        id path string true "Kennung des Bescheids"
 // @Success      200 {file} file
 // @Router       /bescheide/{id}/pdf [get]
 func (t *Tueren) BescheidPDF(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
@@ -77,8 +77,8 @@ func (t *Tueren) bescheidBrief(ctx context.Context, bescheidAbfragen repository.
 	if err != nil {
 		return pdf.BescheidBrief{}, nil, apierrors.Internal("Positionen konnten nicht gelesen werden", err)
 	}
-	// Die Angaben der Schule, wie sie im Brief standen (Migration 141). Ein Bescheid von
-	// vorher hat keinen Schnappschuss; für ihn gelten die Einstellungen von heute.
+	// Die Angaben der Schule, wie sie im Brief standen. Ein älterer Bescheid ohne
+	// Schnappschuss nimmt die Einstellungen von heute.
 	absender, err := bescheidAbfragen.LadeAbsenderSnapshot(ctx, id)
 	if err != nil {
 		return pdf.BescheidBrief{}, nil, apierrors.Internal("Angaben der Schule konnten nicht gelesen werden", err)

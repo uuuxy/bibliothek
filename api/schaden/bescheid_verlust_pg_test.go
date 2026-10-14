@@ -196,8 +196,8 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 
 // Die Lage ändert sich, während der Dialog offen steht. Drei Fälle, jeder ein 409 ohne
 // Brief, ohne verbrauchte Nummer, ohne beendete Ausleihe: das Buch kam zurück, jemand
-// hat den Verlust in der Akte gemeldet, das Buch gehört einem anderen Kind. Rot am alten
-// Code gesehen (Prüfung ausgehängt): Brief über ein Buch, das im Regal steht.
+// hat den Verlust in der Akte gemeldet, das Buch gehört einem anderen Kind. Ohne die Prüfung
+// entstünde ein Brief über ein Buch, das im Regal steht.
 func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

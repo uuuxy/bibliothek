@@ -32,7 +32,8 @@ func ladeRechnungPosten(ctx context.Context, datenbank db.PgxPoolIface, schueler
 	return zeilen, nil
 }
 
-// RechnungPDF generates the invoice for lost books of a student.
+// RechnungPDF liefert die Ersatzforderung an die Eltern eines Schülers als PDF: alle offenen
+// Forderungen, die auf keinem Bescheid stehen.
 func (t *Tueren) RechnungPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		liefereRechnung(w, r, t.DB.Pool)
@@ -43,7 +44,7 @@ func (t *Tueren) RechnungPDF() http.HandlerFunc {
 func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.PgxPoolIface) {
 	ctx := r.Context()
 
-	// extract schueler_id from the URL path: /api/print/rechnung/{id}
+	// Die Kennung des Schülers steht im Pfad: /api/print/rechnung/{schueler_id}
 	idText := r.PathValue("schueler_id")
 	schuelerID, err := uuid.Parse(idText)
 	if err != nil {

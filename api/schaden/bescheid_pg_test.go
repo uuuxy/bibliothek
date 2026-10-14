@@ -45,11 +45,9 @@ func bescheidErstellenUeberTuer(t *testing.T, srv *Tueren, pool *pgxpool.Pool, s
 
 // Ein Bescheid trägt den Wortlaut der Lernmittelfreiheit („Eigentum des Landes …") und
 // die Bankverbindung des Landes. Der Topf „schultraeger" hat noch keinen eigenen Brief
-// (Konzept 4.7, Etappe 3) — bis dahin wies der Server ihn nicht ab, und der Dialog
-// schickte ihn, sobald keine gewählte Forderung ein Lernmittel war: Die Eltern bekamen
-// für ein Buch der Schülerbücherei einen Landes-Bescheid mit Landeskonto (Bestands-
-// Durchgang 10.09.2026). Ebenso wenig darf ein Nicht-Lernmittel auf einen Landes-
-// Bescheid. Beides wird abgewiesen, ohne eine Nummer zu verbrauchen.
+// (Konzept 4.7). Nähme der Server ihn an, bekämen die Eltern für ein Buch der Schülerbücherei
+// einen Landes-Bescheid mit Landeskonto. Ebenso wenig darf ein Nicht-Lernmittel auf einen
+// Landes-Bescheid. Beides wird abgewiesen, ohne eine Nummer zu verbrauchen.
 func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -181,7 +179,7 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 		t.Errorf("die Antwort nennt die nicht zugeordnete Forderung nicht: %s", rec.Body.String())
 	}
 
-	// Und die Nummer des abgewiesenen Briefs ist NICHT verbraucht: Die Transaktion ist
+	// Und die Nummer des abgewiesenen Briefs ist nicht verbraucht: Die Transaktion ist
 	// zurückgerollt, der Zähler steht auf 1.
 	var letzte int
 	if err := pool.QueryRow(context.Background(),
@@ -200,7 +198,7 @@ func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
-	// Bewusst OHNE testdaten.SetzeBescheidAngaben; Reste aus anderen Tests räumen.
+	// Bewusst ohne testdaten.SetzeBescheidAngaben; Reste aus anderen Tests räumen.
 	for _, k := range []string{"bescheid_bereich_nr", "bescheid_schulnummer", "bescheid_aufsicht", "bescheid_schulleitung"} {
 		if _, err := pool.Exec(ctx, `DELETE FROM system_einstellungen WHERE schluessel = $1`, k); err != nil {
 			t.Fatal(err)
@@ -373,10 +371,9 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 }
 
 // Ein Bescheid, dessen Forderungen bezahlt oder storniert sind, ist erledigt (Konzept 4.3:
-// „abgeleitet"). Bis zum 10.09.2026 hatte der Zustand „erledigt" keinen Schreiber: Die
-// Familie zahlte fristgerecht, und nach 28 Tagen stand der Brief ganz oben als „Frist
-// abgelaufen", die Zahl am Reiter stieg, und die Übergabe an die Schulaufsicht ging mit
-// einem Klick durch — ein bezahlter Fall zur Vollstreckung (Bestands-Durchgang).
+// „abgeleitet"). Sonst stünde der Brief einer Familie, die fristgerecht zahlte, nach 28 Tagen
+// ganz oben als „Frist abgelaufen", die Zahl am Reiter stiege, und die Übergabe an die
+// Schulaufsicht ginge mit einem Klick durch: ein bezahlter Fall zur Vollstreckung.
 func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -456,7 +453,7 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Umzug NACH dem Brief.
+	// Umzug nach dem Brief.
 	if _, err := pool.Exec(ctx,
 		`UPDATE schueler SET strasse = 'Neuweg', ort = 'Neustadt' WHERE id = $1`, sid); err != nil {
 		t.Fatal(err)

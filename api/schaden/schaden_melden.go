@@ -10,8 +10,8 @@ import (
 	"bibliothek/repository"
 )
 
-// SchadenMelden handles POST /api/damage/report
-// Sets ist_ausgesondert = true, inserts into schadensfaelle, and ends the loan.
+// SchadenMelden meldet einen Verlust oder Schaden (POST /api/damage/report): Das Exemplar wird
+// ausgesondert, die Forderung angelegt und die Ausleihe beendet.
 func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
@@ -26,9 +26,9 @@ func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) htt
 			SchuelerID   string `json:"schueler_id" validate:"omitempty,uuid_oder_leer"`
 			ExemplarID   string `json:"copy_id" validate:"omitempty,uuid_oder_leer"`
 			Beschreibung string `json:"beschreibung"`
-			// Art: Fallgruppe des Bescheids — Pflicht, ohne stillen Vorgabewert. Bis zum
-			// 10.09.2026 fehlte das Feld, jede Forderung bekam den DEFAULT 'beschaedigt',
-			// und der Bescheid nannte ein verlorenes Buch „beschädigt zurückgegeben".
+			// Art: Fallgruppe des Bescheids, Pflicht und ohne stillen Vorgabewert: Mit der
+			// Vorgabe 'beschaedigt' der Spalte nennte der Bescheid ein verlorenes Buch „beschädigt
+			// zurückgegeben".
 			Art    string  `json:"art"`
 			Betrag float64 `json:"betrag"`
 		}

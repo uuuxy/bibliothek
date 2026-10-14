@@ -16,12 +16,11 @@ import (
 	"github.com/google/uuid"
 )
 
-// Der Schadensersatz folgt dem Eigentum (docs/OFFEN.md 4.24, Stufe 2, entschieden am
-// 29.09.2026): wem die Forderung zusteht, nach welcher Regel ihr Betrag vorgeschlagen wird
-// und auf welches Konto der Brief verweist. Bis dahin entschied überall ist_lernmittel des
-// Titels.
+// Der Schadensersatz folgt dem Eigentum: wem die Forderung zusteht, nach welcher Regel ihr
+// Betrag vorgeschlagen wird und auf welches Konto der Brief verweist. ist_lernmittel des Titels
+// allein entschiede falsch.
 //
-// Die beiden Fälle, in denen das auseinanderlief: eine Lektüre aus LMF-Mitteln (kein
+// Die beiden Fälle, in denen das auseinanderläuft: eine Lektüre aus LMF-Mitteln (kein
 // Lernmittel-Titel, Littera sagt „Land Hessen") und ein Schulbuch, das der Schulträger
 // bezahlt hat (Lernmittel-Titel, Bestellung aus seinen Mitteln).
 func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {

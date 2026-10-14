@@ -13,11 +13,11 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Die Frist eines Bescheids kommt aus der Anfrage (POST /api/schueler/{id}/bescheide) und
-// wurde nur daraufhin geprüft, ob sie ein Datum ist (docs/OFFEN.md 5.2). Eine Frist von
-// heute oder gestern machte den Bescheid sofort übergabefähig; eine Frist wie 2062 ging als
-// Kassenjahr in die Referenznummer, und eine Zahlung wäre nicht zuzuordnen. Die Arbeitshilfe
-// nennt eine „Vierwochen-Frist", die sich „in der Regel ab dem Briefdatum" berechnet.
+// Die Frist eines Bescheids kommt aus der Anfrage (POST /api/schueler/{id}/bescheide) und muss
+// mehr sein als ein Datum. Eine Frist von heute oder gestern machte den Bescheid sofort
+// übergabefähig; eine Frist wie 2062 ginge als Kassenjahr in die Referenznummer, und eine
+// Zahlung wäre nicht zuzuordnen. Die Arbeitshilfe nennt eine „Vierwochen-Frist", die sich „in
+// der Regel ab dem Briefdatum" berechnet.
 func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

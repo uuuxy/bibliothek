@@ -30,12 +30,12 @@ type bescheidVorschlagPosition struct {
 	Herleitung string `json:"herleitung"`
 	// Topf ist das Eigentum des Exemplars (repository.ExemplarTopfSQL): Bücher des Landes
 	// gehen an das Land, alles andere an den Schulträger; leer bei einem Geräteschaden. Ein
-	// Brief trägt genau einen Topf. Bis zum 29.09.2026 stand hier ist_lernmittel des Titels.
+	// Brief trägt genau einen Topf.
 	Topf string `json:"topf"`
 }
 
 // bescheidVorschlagAusleihe ist ein überfälliges Buch ohne Forderung: Es kommt mit dem
-// Brief als Verlust in die Bücher (Stufe 2). Betrag und Herleitung wie bei einer Position.
+// Brief als Verlust in die Bücher. Betrag und Herleitung wie bei einer Position.
 type bescheidVorschlagAusleihe struct {
 	AusleiheID  string  `json:"ausleihe_id"`
 	Titel       string  `json:"titel"`
@@ -56,8 +56,8 @@ type bescheidVorschlagAntwort struct {
 	Klasse       string                      `json:"klasse"`
 	FristBis     string                      `json:"frist_bis"`
 	Positionen   []bescheidVorschlagPosition `json:"positionen"`
-	// Ausleihen: überfällige Bücher, die noch keine Forderung tragen. Seit dem
-	// 15.09.2026 (Stufe 2) braucht es keine Verlustmeldung je Buch mehr vor dem Brief.
+	// Ausleihen: überfällige Bücher, die noch keine Forderung tragen; sie brauchen vor dem
+	// Brief keine Verlustmeldung je Buch.
 	Ausleihen []bescheidVorschlagAusleihe `json:"ausleihen"`
 	// FehlendeAngaben nennt die Einstellungen, ohne die kein Bescheid entstehen kann.
 	// Der Dialog zeigt sie, statt den Knopf stumm zu sperren.
@@ -67,10 +67,10 @@ type bescheidVorschlagAntwort struct {
 // BescheidVorschlag liefert die offenen Forderungen eines Schülers mit
 // Betragsvorschlag.
 //
-// @Summary      Proposal for a new compensation notice
+// @Summary      Vorschlag für einen neuen Bescheid
 // @Tags         schadensersatz
 // @Produce      json
-// @Param        id path string true "Student ID"
+// @Param        id path string true "Kennung des Schülers"
 // @Success      200 {object} bescheidVorschlagAntwort
 // @Router       /schueler/{id}/bescheid-vorschlag [get]
 func (t *Tueren) BescheidVorschlag(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
@@ -92,7 +92,7 @@ func (t *Tueren) schlageBescheidVor(w http.ResponseWriter, r *http.Request, besc
 	if err != nil {
 		return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 	}
-	// Welcher Preis die Grundlage ist, steht in denselben Einstellungen (Stufe 4).
+	// Welcher Preis die Grundlage ist, steht in denselben Einstellungen.
 	quelle := service.LadeErsatzwertPreisquelle(ctx, t.DB.Pool)
 
 	vorschlag := bescheidVorschlagAntwort{
@@ -130,12 +130,10 @@ func (t *Tueren) schlageBescheidVor(w http.ResponseWriter, r *http.Request, besc
 	return nil
 }
 
-// bescheidVorschlagAus rechnet den Staffel-Vorschlag für eine offene Forderung.
-//
-// Seit Migration 127 mit echtem Listenpreis und dem Zustand des Exemplars: Die
-// Arbeitshilfe verlangt ab dem zweiten Verleihjahr den Neupreis zum Zeitpunkt des
-// Verlusts. Bis zum 17.09.2026 stand hier eine harte 0, und die Staffel wich immer auf
-// den Kaufpreis aus. Ist kein Listenpreis erfasst, tut sie das weiterhin — und sagt es.
+// bescheidVorschlagAus rechnet den Staffel-Vorschlag für eine offene Forderung, mit
+// Listenpreis und Zustand des Exemplars: Die Arbeitshilfe verlangt ab dem zweiten Verleihjahr
+// den Neupreis zum Zeitpunkt des Verlusts. Ist kein Listenpreis erfasst, weicht die Staffel
+// auf den Kaufpreis aus und sagt es.
 func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisquelle) bescheidVorschlagPosition {
 	v := service.ErsatzwertEingabe{
 		Kaufpreis: f.Kaufpreis, Listenpreis: f.Listenpreis, ZustandAbschlag: f.ZustandAbschlag,

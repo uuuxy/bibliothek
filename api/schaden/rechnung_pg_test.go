@@ -15,12 +15,11 @@ import (
 	"github.com/google/uuid"
 )
 
-// Die Rechnung an die Eltern darf keine Forderung verlieren, weil ein Bezug fehlt
-// (Bestands-Durchgang 06.09.2026). `schadensfaelle.exemplar_id` und `.ausleihe_id` sind
-// nullbar — Letzteres steht auf ON DELETE SET NULL —, und `geraet_id` wartet als dritte
-// Bezugsspalte. Mit den früheren INNER JOINs fiel so eine Forderung lautlos aus dem
-// Brief: Der Betrag war zu klein, oder es hieß „keine offenen Schadensfälle", während
-// die Akte offene Beträge zeigte und der Schüler gesperrt blieb.
+// Die Rechnung an die Eltern darf keine Forderung verlieren, weil ein Bezug fehlt.
+// `schadensfaelle.exemplar_id` und `.ausleihe_id` sind nullbar (Letzteres steht auf ON DELETE
+// SET NULL), und `geraet_id` wartet als dritte Bezugsspalte. Mit INNER JOINs fiele so eine
+// Forderung lautlos aus dem Brief: Der Betrag wäre zu klein, oder es hieße „keine offenen
+// Schadensfälle", während die Akte offene Beträge zeigt und der Schüler gesperrt bleibt.
 func TestLadeRechnungPosten_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -33,7 +32,7 @@ func TestLadeRechnungPosten_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 	// Ein Geräteschaden: exemplar_id NULL, ausleihe_id NULL — genau die Form, die
-	// check_damage_item ausdrücklich erlaubt und die den alten INNER JOINs entging.
+	// check_damage_item ausdrücklich erlaubt und die INNER JOINs entginge.
 	var geraetID uuid.UUID
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO geraete (modellname, barcode_id) VALUES ('iPad 9. Gen.', 'G-RECH-1') RETURNING id`).
@@ -69,11 +68,11 @@ func TestLadeRechnungPosten_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 }
 
 // Eine Forderung, die schon auf einem Schadensersatz-Bescheid steht, gehört nicht auf die
-// Ersatzforderung (docs/OFFEN.md 1.1, 13.09.2026). Der Bescheid verlangt die Überweisung mit
-// Referenznummer aufs Konto des Landes, die Ersatzforderung „bar in der Bibliothek". Stünde
-// dieselbe Forderung auf beiden Briefen, bekämen die Eltern zwei Zahlungsaufforderungen mit zwei
-// verschiedenen Zahlungswegen. Der Bescheid entsteht hier über den echten Handler, damit der Test
-// genau die Form trifft, die der Betrieb schreibt.
+// Ersatzforderung. Der Bescheid verlangt die Überweisung mit Referenznummer aufs Konto des
+// Landes, die Ersatzforderung „bar in der Bibliothek". Stünde dieselbe Forderung auf beiden
+// Briefen, bekämen die Eltern zwei Zahlungsaufforderungen mit zwei verschiedenen Zahlungswegen.
+// Der Bescheid entsteht hier über die echte Tür, damit der Test genau die Form trifft, die der
+// Betrieb schreibt.
 func TestLadeRechnungPosten_ForderungAufEinemBescheidBleibtDraussen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

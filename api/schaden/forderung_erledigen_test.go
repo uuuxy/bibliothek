@@ -13,8 +13,8 @@ import (
 	"bibliothek/repository"
 )
 
-// Die HTTP-Schicht der Gebühren-Erledigung: Statuscode-Mapping der Sentinels
-// (404/409 statt sanitiertem 500), Pflicht-Grund beim Storno, 401 ohne Session.
+// Die Türen zum Erledigen einer Forderung: die Zuordnung der Fehler zu einem Status (404/409
+// statt eines bereinigten 500), der Pflicht-Grund beim Storno, 401 ohne Sitzung.
 // Das SQL-Verhalten selbst sichert repository/forderung_erledigen_pg_test.go.
 
 type gebuehrAttrappe struct {
@@ -96,7 +96,7 @@ func TestZahlungVerbuchen(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort parsen: %v", err)
 		}
-		// Die Meldung muss den Konflikt benennen — nicht der sanitierte 500-Text.
+		// Die Meldung muss den Konflikt benennen, nicht der bereinigte Text einer 500.
 		if !strings.Contains(antwort["error"], "bereits bezahlt oder storniert") {
 			t.Errorf("Fehlermeldung = %q, erwartet den Konflikt-Text", antwort["error"])
 		}

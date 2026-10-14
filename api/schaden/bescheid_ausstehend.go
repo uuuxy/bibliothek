@@ -12,7 +12,7 @@ import (
 // keinem Bescheid stehen — die Zeilen „Bescheid noch nicht erstellt" im Reiter
 // „Schadensersatz" des Mahnwesens.
 //
-// @Summary      Students with open claims that are not on a notice yet
+// @Summary      Schüler mit offenen Forderungen ohne Bescheid
 // @Tags         schadensersatz
 // @Produce      json
 // @Success      200 {array} repository.ForderungOhneBescheid

@@ -11,14 +11,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Gebühren-Erledigung: Bis 16.08.2026 konnte die Anwendung Schadensfälle nur
-// ANLEGEN — weder Barzahlung noch Storno hatten eine Tür. Jede reale Gebühr blieb
-// damit ewig offen und blockierte Schülerlöschung und LUSD-Abgleich dauerhaft
-// (pruefeSchuelerLoeschbar bzw. der Abgleich prüfen ist_bezahlt = false).
+// Forderungen erledigen: bar bezahlt oder storniert. Eine offene Forderung sperrt das Löschen
+// eines Schülers und den LUSD-Abgleich (pruefeSchuelerLoeschbar, der Abgleich prüft
+// ist_bezahlt = false); deshalb braucht jede einen Weg zu ihrem Ende.
 //
-// Rechte: edit_students, symmetrisch zum Anlegen (POST /api/damage/report). Bewusst
-// NICHT "nur eingeloggt": Kiosk-Arbeitsplätze sind dauerhaft mit der Helfer-Rolle
-// angemeldet — Gebühren erledigen dürfen nur Rollen, die Schülerdaten bearbeiten.
+// Recht: edit_students wie beim Anlegen (POST /api/damage/report), nicht bloß eine Sitzung:
+// Arbeitsplätze am Kiosk sind dauerhaft mit der Rolle Helfer angemeldet, und Forderungen
+// erledigen dürfen nur Rollen, die Schülerdaten bearbeiten.
 
 // SchadensfaelleDesSchuelers liefert alle Schadensfälle eines Schülers für
 // die Gebühren-Sektion der Schülerakte (GET /api/schueler/{id}/schadensfaelle).
@@ -37,10 +36,9 @@ func (t *Tueren) SchadensfaelleDesSchuelers(schadensAbfragen repository.Schadens
 	})
 }
 
-// erledigungsFehler mappt die Sentinel-Fehler der Repo-Schicht auf HTTP-Codes.
-// 409 statt 500 ist hier tragend: Am Mehrplatz-System ist "eine Kollegin war
-// schneller" der Normalfall — der Sanitizer würde einen 500 zu "interner
-// Datenbankfehler" verschlucken und die eigentliche Ursache verstecken.
+// erledigungsFehler ordnet die Fehler der Abfragen einem Status zu. 409 statt 500 trägt hier:
+// Am Mehrplatz-System ist „eine Kollegin war schneller" der Normalfall, und der Sanitizer
+// machte aus einem 500 „interner Datenbankfehler" und versteckte die Ursache.
 func erledigungsFehler(err error, aktion string) error {
 	if errors.Is(err, repository.ErrSchadensfallNichtGefunden) {
 		return apierrors.NotFound(err.Error(), err)
@@ -52,7 +50,7 @@ func erledigungsFehler(err error, aktion string) error {
 }
 
 // ZahlungVerbuchen verbucht die Zahlung (POST /api/schadensfaelle/{id}/bezahlt).
-// Kein Request-Body: Der Betrag kommt IMMER aus der Datenbank, nie vom Client.
+// Ohne Rumpf: Der Betrag kommt immer aus der Datenbank, nie von der Oberfläche.
 func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
@@ -67,7 +65,7 @@ func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen
 	})
 }
 
-// ForderungStornieren storniert eine Gebühr mit zwingender Begründung
+// ForderungStornieren storniert eine Forderung mit Pflicht-Begründung
 // (POST /api/schadensfaelle/{id}/storno).
 func (t *Tueren) ForderungStornieren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {

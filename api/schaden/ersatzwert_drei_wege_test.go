@@ -9,15 +9,13 @@ import (
 	"bibliothek/repository"
 )
 
-// DREI Türen, EIN Betrag — das Gate gegen die Ungleichheit, die es bis zum 17.09.2026 gab.
+// Drei Türen, ein Betrag. Wählt ein Weg die Regel anders als die anderen (der Melde-Dialog
+// nach dem Titel, die Wege zum Bescheid die Staffel für alles), nennt der Dialog für ein zehn
+// Jahre altes Büchereibuch 14,00 € und der Brief 1,40 €. Die Staffel steht aber in einer
+// Arbeitshilfe für Lehrwerke der Lernmittelfreiheit, und das Geld der Bücherei gehört dem
+// Schulträger.
 //
-// Der Melde-Dialog wählte die Regel nach IstLernmittel, die beiden Bescheid-Wege wendeten
-// die Staffel der Arbeitshilfe auf ALLES an. Für ein zehn Jahre altes Büchereibuch nannte
-// der Dialog 14,00 € und der Brief 1,40 € — und der Brief war der falsche: Die Staffel
-// steht in einer Arbeitshilfe für Lehrwerke der Lernmittelfreiheit, das Geld der Bücherei
-// gehört dem Schulträger.
-//
-// Geprüft wird mit DENSELBEN Zahlen über alle drei Wege. Der Test vergleicht sie
+// Geprüft wird mit denselben Zahlen über alle drei Wege. Der Test vergleicht sie
 // gegeneinander, nicht gegen eine abgetippte Erwartung: Wer die Rechnung ändert, ändert
 // alle drei oder wird hier rot.
 func TestDreiWegeNennenDenselbenBetrag(t *testing.T) {

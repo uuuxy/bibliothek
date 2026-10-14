@@ -13,12 +13,11 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Der Elternbrief je Schadensfall (GET /api/schadensfaelle/{id}/pdf) prüfte nicht, ob die
-// Forderung schon auf einem Schadensersatz-Bescheid steht (docs/OFFEN.md 5.2). Dann stünde
-// dieselbe Forderung auf zwei Briefen mit zwei Fristen und zwei Zahlungswegen. Die
-// Ersatzforderung hält diese Regel seit dem 13.09.2026 (api/schaden/rechnung.go,
-// bescheid_id IS NULL); die Oberfläche öffnet den Elternbrief nicht mehr, über die Adresse
-// blieb er erreichbar.
+// Der Elternbrief je Schadensfall (GET /api/schadensfaelle/{id}/pdf) prüft, ob die Forderung
+// schon auf einem Schadensersatz-Bescheid steht. Sonst stünde dieselbe Forderung auf zwei
+// Briefen mit zwei Fristen und zwei Zahlungswegen. Dieselbe Regel hält die Ersatzforderung
+// (api/schaden/rechnung.go, bescheid_id IS NULL); die Oberfläche öffnet den Elternbrief dann
+// nicht, über die Adresse ist er aber erreichbar.
 func TestElternbrief_ForderungAufEinemBescheidBekommtKeinenBrief(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

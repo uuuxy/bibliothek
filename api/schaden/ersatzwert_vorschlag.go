@@ -14,10 +14,10 @@ import (
 
 // ErsatzwertVorschlag liefert den Betragsvorschlag für ein Exemplar.
 //
-// @Summary      Suggest a replacement amount for a copy
+// @Summary      Betragsvorschlag für ein Exemplar
 // @Tags         schadensersatz
 // @Produce      json
-// @Param        id path string true "Copy ID"
+// @Param        id path string true "Kennung des Exemplars"
 // @Success      200 {object} service.ErsatzwertVorschlag
 // @Failure      404 {object} apierrors.APIError
 // @Router       /buecher/exemplare/{id}/ersatzwert-vorschlag [get]

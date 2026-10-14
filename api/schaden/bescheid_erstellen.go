@@ -36,12 +36,12 @@ type bescheidErstellenAnfrage struct {
 
 // BescheidErstellen schreibt den Bescheid und liefert ihn zurück.
 //
-// @Summary      Create a compensation notice for a student
+// @Summary      Bescheid für einen Schüler erstellen
 // @Tags         schadensersatz
 // @Accept       json
 // @Produce      json
-// @Param        id path string true "Student ID"
-// @Param        body body bescheidErstellenAnfrage true "Pot, deadline and positions"
+// @Param        id path string true "Kennung des Schülers"
+// @Param        body body bescheidErstellenAnfrage true "Topf, Frist und Positionen"
 // @Success      201 {object} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [post]
 func (t *Tueren) BescheidErstellen(bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
@@ -129,9 +129,9 @@ func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 	if !mitteltopf.IstGueltig(req.Mittel) {
 		return time.Time{}, apierrors.BadRequest(mitteltopf.ErrUngueltig.Error(), mitteltopf.ErrUngueltig)
 	}
-	// Der Brief kennt nur einen Wortlaut und ein Konto: die des Landes. Die Rechnung
-	// der Schülerbücherei (Mittel des Schulträgers) ist Etappe 3 — bis dahin gäbe
-	// „schultraeger" einen Landes-Bescheid mit Landeskonto für ein Buch des Trägers.
+	// Der Brief kennt nur einen Wortlaut und ein Konto: die des Landes. Für die Bücher der
+	// Schülerbücherei (Mittel des Schulträgers) gibt es noch keinen Brief; „schultraeger" gäbe
+	// sonst einen Landes-Bescheid mit Landeskonto für ein Buch des Trägers.
 	if req.Mittel != mitteltopf.Land {
 		//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 		return time.Time{}, apierrors.Conflict("Ein Bescheid entsteht nur für Lernmittel des Landes. Die Rechnung für Bücher der Schülerbücherei ist noch nicht gebaut.",
@@ -149,7 +149,7 @@ func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 	// Frühestens morgen: Eine Frist von heute oder gestern machte den Bescheid sofort
 	// übergabefähig. Höchstens ein Jahr voraus: Ihr Jahr geht als Kassenjahr in die
 	// Referenznummer, ein Tippfehler (2062) gäbe eine Nummer, der keine Zahlung zugeordnet
-	// wird. Die Arbeitshilfe nennt eine „Vierwochen-Frist … ab dem Briefdatum" (OFFEN.md 5.2).
+	// wird. Die Arbeitshilfe nennt eine „Vierwochen-Frist … ab dem Briefdatum".
 	jetzt := schulzeit.Jetzt()
 	heute := time.Date(jetzt.Year(), jetzt.Month(), jetzt.Day(), 0, 0, 0, 0, schulzeit.Zone())
 	if !frist.After(heute) {

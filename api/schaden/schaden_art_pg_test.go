@@ -18,11 +18,9 @@ import (
 // Die Fallgruppe einer Forderung („nicht zurückgegeben" oder „beschädigt") entscheidet,
 // welches Kästchen der Schadensersatz-Bescheid ankreuzt und ob er die Rückgabe verlangt.
 //
-// Bis zum 10.09.2026 schrieb kein Produktivpfad die Spalte schadensfaelle.art: Der Dialog
-// „Verlust/Schaden melden" hatte nur einen Freitext (Vorgabe „Verloren"), und jede neue
-// Forderung bekam den DEFAULT 'beschaedigt'. Der Bescheid behauptete dann gegenüber den
-// Eltern, das Kind habe ein verlorenes Buch „so stark beschädigt zurückgegeben"
-// (Bestands-Durchgang, Bugklasse „Zustand ohne Eingang").
+// Die Meldung muss sie schreiben: Mit der Vorgabe 'beschaedigt' der Spalte behauptete der
+// Bescheid gegenüber den Eltern, das Kind habe ein verlorenes Buch „so stark beschädigt
+// zurückgegeben".
 func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

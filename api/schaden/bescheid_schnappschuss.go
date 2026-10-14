@@ -12,12 +12,11 @@ import (
 // Schule und den Empfänger, je als Karte. Schreiben und Zurücklesen einer Karte stehen
 // nebeneinander, weil beide dieselben Schlüssel nennen.
 
-// bescheidAbsenderAus: die Angaben der Schule, wie sie auf dem Bescheid stehen, als Karte
-// für den Schnappschuss (Migration 141). EINE Zuordnung für beide Wege: Beim Erstellen
-// speichert der Bescheid diese Karte; beim Nachdruck liest der Brief sie zurück — und fehlt
-// sie (Bescheid von vor Migration 141), entsteht dieselbe Karte aus den Einstellungen von
-// heute. Zahlstelle und Bankverbindung tragen dabei schon ihre Vorgaben
-// (BescheidAngabenAus), also genau das, was im Brief stand.
+// bescheidAbsenderAus: die Angaben der Schule, wie sie auf dem Bescheid stehen, als Karte für
+// den Schnappschuss. Eine Zuordnung für beide Wege: Beim Erstellen speichert der Bescheid diese
+// Karte; beim Nachdruck liest der Brief sie zurück, und fehlt sie (ein älterer Bescheid),
+// entsteht dieselbe Karte aus den Einstellungen von heute. Zahlstelle und Bankverbindung tragen
+// dabei schon ihre Vorgaben (BescheidAngabenAus), also genau das, was im Brief stand.
 func bescheidAbsenderAus(angaben repository.BescheidAngaben, schule repository.SchuleAngaben) map[string]string {
 	return map[string]string{
 		"schule_name":       schule.Name,

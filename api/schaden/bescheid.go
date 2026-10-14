@@ -26,7 +26,8 @@ import (
 // Nichts davon läuft automatisch: Jede Referenznummer wird unwiderruflich verbraucht, und
 // jeder Betrag ist eine Entscheidung der Schule.
 
-// aktionBescheidErstellt und aktionBescheidUebergeben sind die Aktionen im Admin-Audit-Log.
+// aktionBescheidErstellt und aktionBescheidUebergeben sind die Aktionen im Protokoll der
+// Verwaltung.
 const (
 	aktionBescheidErstellt   = "SCHADENSERSATZ_BESCHEID_ERSTELLT"
 	aktionBescheidUebergeben = "SCHADENSERSATZ_BESCHEID_UEBERGEBEN"
@@ -63,7 +64,7 @@ func protokolliereBescheid(ctx context.Context, t *Tueren, protokollAbfragen rep
 
 // Bescheide liefert die Bescheide — die Arbeitsliste des Sekretariats.
 //
-// @Summary      List compensation notices
+// @Summary      Bescheide
 // @Tags         schadensersatz
 // @Produce      json
 // @Param        status query string false "offen = nur nicht übergebene"
@@ -82,10 +83,10 @@ func (t *Tueren) Bescheide(bescheidAbfragen repository.BescheidAbfragen) http.Ha
 
 // BescheideDesSchuelers liefert die Bescheide eines Schülers für die Akte.
 //
-// @Summary      List a student's compensation notices
+// @Summary      Bescheide eines Schülers
 // @Tags         schadensersatz
 // @Produce      json
-// @Param        id path string true "Student ID"
+// @Param        id path string true "Kennung des Schülers"
 // @Success      200 {array} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [get]
 func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
@@ -108,10 +109,10 @@ func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen repository.BescheidAbfra
 // Kein Cron: Die Übergabe ist eine Handlung des Sekretariats (Original und Buchungsbeleg
 // gehen aus dem Haus). Eine Automatik über Nacht wäre eine stille Zustandsänderung.
 //
-// @Summary      Mark a notice as handed over after the deadline
+// @Summary      Bescheid nach Fristablauf übergeben
 // @Tags         schadensersatz
 // @Produce      json
-// @Param        id path string true "Notice ID"
+// @Param        id path string true "Kennung des Bescheids"
 // @Success      200 {object} map[string]any
 // @Router       /bescheide/{id}/uebergeben [post]
 func (t *Tueren) BescheidUebergeben(bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {

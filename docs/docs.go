@@ -552,7 +552,7 @@ const docTemplate = `{
                 "tags": [
                     "schadensersatz"
                 ],
-                "summary": "List compensation notices",
+                "summary": "Bescheide",
                 "parameters": [
                     {
                         "type": "string",
@@ -582,7 +582,7 @@ const docTemplate = `{
                 "tags": [
                     "schadensersatz"
                 ],
-                "summary": "Students with open claims that are not on a notice yet",
+                "summary": "Schüler mit offenen Forderungen ohne Bescheid",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -604,11 +604,11 @@ const docTemplate = `{
                 "tags": [
                     "schadensersatz"
                 ],
-                "summary": "Print (or reprint) a compensation notice",
+                "summary": "Bescheid drucken oder nachdrucken",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Notice ID",
+                        "description": "Kennung des Bescheids",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -632,11 +632,11 @@ const docTemplate = `{
                 "tags": [
                     "schadensersatz"
                 ],
-                "summary": "Mark a notice as handed over after the deadline",
+                "summary": "Bescheid nach Fristablauf übergeben",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Notice ID",
+                        "description": "Kennung des Bescheids",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -996,11 +996,11 @@ const docTemplate = `{
                 "tags": [
                     "schadensersatz"
                 ],
-                "summary": "Suggest a replacement amount for a copy",
+                "summary": "Betragsvorschlag für ein Exemplar",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Copy ID",
+                        "description": "Kennung des Exemplars",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3221,11 +3221,11 @@ const docTemplate = `{
                 "tags": [
                     "schadensersatz"
                 ],
-                "summary": "Proposal for a new compensation notice",
+                "summary": "Vorschlag für einen neuen Bescheid",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Student ID",
+                        "description": "Kennung des Schülers",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3249,11 +3249,11 @@ const docTemplate = `{
                 "tags": [
                     "schadensersatz"
                 ],
-                "summary": "List a student's compensation notices",
+                "summary": "Bescheide eines Schülers",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Student ID",
+                        "description": "Kennung des Schülers",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3281,17 +3281,17 @@ const docTemplate = `{
                 "tags": [
                     "schadensersatz"
                 ],
-                "summary": "Create a compensation notice for a student",
+                "summary": "Bescheid für einen Schüler erstellen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Student ID",
+                        "description": "Kennung des Schülers",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Pot, deadline and positions",
+                        "description": "Topf, Frist und Positionen",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -6310,7 +6310,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "ausleihen": {
-                    "description": "Ausleihen: überfällige Bücher, die noch keine Forderung tragen. Seit dem\n15.09.2026 (Stufe 2) braucht es keine Verlustmeldung je Buch mehr vor dem Brief.",
+                    "description": "Ausleihen: überfällige Bücher, die noch keine Forderung tragen; sie brauchen vor dem\nBrief keine Verlustmeldung je Buch.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/schaden.bescheidVorschlagAusleihe"
@@ -6396,7 +6396,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "topf": {
-                    "description": "Topf ist das Eigentum des Exemplars (repository.ExemplarTopfSQL): Bücher des Landes\ngehen an das Land, alles andere an den Schulträger; leer bei einem Geräteschaden. Ein\nBrief trägt genau einen Topf. Bis zum 29.09.2026 stand hier ist_lernmittel des Titels.",
+                    "description": "Topf ist das Eigentum des Exemplars (repository.ExemplarTopfSQL): Bücher des Landes\ngehen an das Land, alles andere an den Schulträger; leer bei einem Geräteschaden. Ein\nBrief trägt genau einen Topf.",
                     "type": "string"
                 }
             }
