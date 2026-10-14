@@ -12,16 +12,20 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Pruefer ist der gemeinsame Struct-Validator für alle Eingangs-Payloads. Bewusst EINE
-// Instanz: validator.New() baut bei jedem Aufruf einen eigenen Regel-Cache auf.
+// Pruefer prüft die Felder einer Anfrage nach ihren validate-Tags. Es gibt nur diesen einen:
+// validator.New() legt bei jedem Aufruf einen eigenen Cache der Regeln an.
 var Pruefer = newPruefer()
 
-// regelUUIDOderLeer: Eine Kennung, die als UUID in die Datenbank geht, muss eine sein —
-// sonst kommt `invalid input syntax for type uuid` (22P02) als 500 zurück (ZAP-Lauf
-// 13.09.2026, uuid_eingaben_test.go). Leer bleibt erlaubt: Die Handler melden „… fehlt"
-// selbst, und optionale Felder kommen vom Frontend auch als "". Das eingebaute `uuid` kann
-// das nicht — `omitempty,uuid` weist einen *string, der auf "" zeigt, mit 400 ab.
-// Schreibweise am Feld: `validate:"omitempty,uuid_oder_leer"` (Listen: `omitempty,dive,uuid_oder_leer`).
+// regelUUIDOderLeer verlangt eine UUID oder nichts. Eine Kennung, die als UUID in die Datenbank
+// geht, muss eine sein, sonst kommt `invalid input syntax for type uuid` (22P02) als 500
+// zurück; uuid_eingaben_test.go hält das an jeder Tür. Leer bleibt erlaubt, weil die Türen „…
+// fehlt“ selbst melden und optionale Felder von der Oberfläche auch als "" kommen; das
+// eingebaute `uuid` kann das nicht, `omitempty,uuid` weist einen *string, der auf "" zeigt, mit
+// 400 ab.
+//
+// Am Feld steht `validate:"omitempty,uuid_oder_leer"`, an einer Liste
+// `validate:"omitempty,dive,required,uuid_oder_leer"`: Ohne `required` ginge ein leeres Element
+// durch.
 const regelUUIDOderLeer = "uuid_oder_leer"
 
 func newPruefer() *validator.Validate {
@@ -35,8 +39,8 @@ func newPruefer() *validator.Validate {
 	return v
 }
 
-// Pruefmeldung übersetzt eine ungültige Kennung in einen Satz; alle anderen
-// Validierungsfehler bleiben, wie sie sind.
+// Pruefmeldung macht aus dem Fehler einer ungültigen Kennung einen Satz für die Oberfläche;
+// jeden anderen Prüffehler gibt sie unverändert zurück.
 func Pruefmeldung(err error) error {
 	var fehler validator.ValidationErrors
 	if errors.As(err, &fehler) {
@@ -49,8 +53,9 @@ func Pruefmeldung(err error) error {
 	return err
 }
 
-// LeseUUIDParameter liest einen Query-Parameter, der eine UUID sein muss. Leer bleibt leer;
-// alles andere, das keine UUID ist, ist ein Bedienfehler statt eines 500 aus Postgres.
+// LeseUUIDParameter liest einen Parameter der Adresse, der eine UUID sein muss. Leer bleibt
+// leer; ein anderer Wert, der keine UUID ist, wird ein Fehler, den die Tür als Bedienfehler
+// meldet, statt eines 500 aus Postgres.
 func LeseUUIDParameter(r *http.Request, name string) (string, error) {
 	wert := r.URL.Query().Get(name)
 	if wert != "" && !kennung.IstUUID(wert) {
@@ -59,20 +64,15 @@ func LeseUUIDParameter(r *http.Request, name string) (string, error) {
 	return wert, nil
 }
 
-// LeseAnfrageStreng ist DecodeAndValidate mit einem Unterschied: Ein Feld, das
-// das Ziel-Struct nicht kennt, ist ein FEHLER (400) statt eines stillen Verlusts.
+// LeseAnfrageStreng liest wie LeseAnfrage, lehnt aber ein Feld, das das Ziel nicht kennt, mit
+// 400 ab, statt es still zu verwerfen.
 //
-// Warum nicht überall? Weil mehrere Endpunkte bewusst das ganze Objekt entgegennehmen,
-// das sie vorher ausgeliefert haben — samt der Felder, die nur der Server füllt
-// (`id`, `verfuegbar`, `gesamt`, `sortOrder` beim Buch). Für die wäre Strenge kein
-// Gewinn, sondern ein 400 auf einem Bildschirm, der heute funktioniert.
-//
-// Wo die Nutzlast dagegen aus einer GESCHLOSSENEN Liste entsteht — die
-// Einstellungs-Kategorien bauen ihren Patch aus benannten Schlüsseln —, ist ein
-// unbekanntes Feld immer ein Fehler, und zwar der teuerste: Am 23.08.2026 schickte die
-// Mail-Kategorie ihre Felder noch in Unterstrich-Schreibweise, der Decoder verwarf sie
-// still, und die Oberfläche meldete "gespeichert" (Commit 488f51d9). Genau diese
-// Klasse — 200 trotz Datenverlust — ist die teuerste des Projekts.
+// Nicht jede Tür liest streng: Mehrere nehmen das ganze Objekt zurück, das sie ausgeliefert
+// haben, samt der Felder, die nur der Server füllt (`id`, `verfuegbar`, `gesamt`, `sortOrder`
+// am Titel); dort brächte Strenge nur ein 400. Entsteht der Rumpf dagegen aus einer
+// geschlossenen Liste benannter Schlüssel, wie bei den Kategorien der Einstellungen, ist ein
+// unbekanntes Feld immer ein Fehler. Ohne Strenge verschwände es still, und die Oberfläche
+// meldete „gespeichert“: 200 trotz Datenverlust, die teuerste Klasse von Fehlern im Projekt.
 func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
@@ -87,9 +87,9 @@ func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) b
 	return true
 }
 
-// LeseAnfrage decodes the JSON request body and validates the struct. Unbekannte
-// Felder werden dabei still verworfen — wo das nicht in Ordnung ist, steht
-// DecodeStrictAndValidate darüber.
+// LeseAnfrage liest den JSON-Rumpf der Anfrage in das Ziel und prüft seine Felder. Bei einem
+// Fehler hat sie die Antwort (400) schon geschrieben und liefert false. Ein Feld, das das Ziel
+// nicht kennt, verwirft sie still; wo das nicht genügt, gilt LeseAnfrageStreng.
 func LeseAnfrage[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
 	if err := json.NewDecoder(r.Body).Decode(ziel); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)

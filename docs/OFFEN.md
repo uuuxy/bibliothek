@@ -179,7 +179,8 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [ ] Die übrigen acht Pakete unter `internal/` ohne `internal/service` (Reihenfolge in 5.66).
   Offen sind noch `tuertest` und `routertest`; sie folgen nach `api/`.
 - [x] `internal/service`.
-- [ ] `api/tuer`, die zwölf Themen unter `api/`, `api/`.
+- [x] `api/tuer`.
+- [ ] Die zwölf Themen unter `api/`, dann `api/`.
 - [ ] `inventur/`, `auth/`, `jobs/`, `pdf/`, `mailservice/`, `db/`, `sse/`, `apierrors/`, `cmd/`
   und das Wurzelpaket.
 - [ ] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
@@ -445,12 +446,12 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 43 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+**Fertig sind 44 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
 gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
 Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
 `middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), `repository` und
 von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera`, `lusd`,
-`service` und `testdaten`.
+`service` und `testdaten`, dazu `api/tuer`.
 
 **Ein Paket ist fertig, wenn:**
 

@@ -6,22 +6,20 @@ import (
 	"bibliothek/pkg/httpresp"
 )
 
-// AntworteJSON encodes the payload as JSON and sends it with the given HTTP status code.
-// It sets the Content-Type header to application/json.
+// AntworteJSON schreibt die Antwort mit dem Status als JSON.
 func AntworteJSON(w http.ResponseWriter, status int, antwort any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	httpresp.SchreibeJSON(w, antwort)
 }
 
-// AntworteErfolg is a convenience function that sends a {"status": "success"} JSON response.
+// AntworteErfolg antwortet mit {"status": "success"}, wo eine Tür nichts anderes zurückgibt.
 func AntworteErfolg(w http.ResponseWriter) {
 	AntworteJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }
 
-// Mehrfach genutzte String-Literale, zentral definiert (SonarQube go:S1192).
-
-// HTTP-Header-Namen.
+// Namen der Kopffelder einer HTTP-Antwort. Sie stehen hier statt als Text an jeder Tür, weil
+// SonarQube wiederholte Zeichenketten meldet (go:S1192).
 const (
 	HeaderContentType        = "Content-Type"
 	HeaderContentDisposition = "Content-Disposition"
@@ -29,13 +27,13 @@ const (
 	HeaderCacheControl       = "Cache-Control"
 )
 
-// Content-Type-Werte.
+// Werte des Kopffelds Content-Type.
 const (
 	ContentTypeJSON = "application/json"
 	ContentTypePDF  = "application/pdf"
 )
 
-// Fehlermeldungen, die mehrere Handler wörtlich gleich ausgeben.
+// Meldungen, die mehrere Türen wörtlich gleich ausgeben.
 const (
 	MeldungIDLeer                = "id darf nicht leer sein"
 	MeldungEinstellungenUnlesbar = "Einstellungen konnten nicht gelesen werden"

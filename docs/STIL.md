@@ -28,6 +28,8 @@ fest, was erreicht ist. Neuer Code folgt den Regeln von Anfang an.
   Geschlecht des Typs wechselten), `Err…` für einen Fehlerwert, `Test…`, `Must…`, `main`,
   `init` und die Methoden fremder Schnittstellen (`Error`, `String`, `ServeHTTP`, `Scan`,
   `Close`).
+- Ein Name, der ein Kopffeld von HTTP oder dessen Wert nennt, folgt dem Protokoll
+  (`HeaderContentType`, `ContentTypePDF`): Wer ihn liest, sucht das Feld unter seinem Namen.
 - Pakete der Technik tragen die im Go-Umfeld üblichen Kurznamen (`api`, `db`, `auth`, `jobs`,
   `repository`, `service`, `pkg`, `internal`); ein Paket mit Fachbezug heißt deutsch (`leser`,
   `mahnwesen`).

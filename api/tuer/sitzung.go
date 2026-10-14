@@ -9,8 +9,8 @@ import (
 	"bibliothek/auth"
 )
 
-// PruefeSitzung liest das Session-Cookie und verifiziert das Token. Bei Fehler
-// werden der passende HTTP-Status und der Fehler zurückgegeben.
+// PruefeSitzung liest das Cookie der Sitzung und prüft das Token. Bei einem Fehler liefert sie
+// dazu den Status, mit dem die Tür antwortet.
 func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
@@ -19,10 +19,9 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 		}
 		return nil, http.StatusBadRequest, err
 	}
-	// VerifyToken prüft neben Signatur und Blacklist auch den Echtzeit-Kontostatus
-	// (aktiv / nicht gelöscht) und die Sperre nach Inaktivität direkt in der DB — siehe
-	// auth.Authenticator.VerifyToken. Deshalb ist hier keine zusätzliche
-	// Zombie-Session-Prüfung nötig.
+	// VerifyToken prüft neben Signatur und Sperrliste auch, ob das Konto noch aktiv und die
+	// Sitzung nach Inaktivität nicht gesperrt ist, beides in der Datenbank; eine zweite Prüfung
+	// braucht es hier nicht.
 	claims, err := b.Auth.VerifyToken(cookie.Value)
 	if errors.Is(err, auth.ErrPruefungGestoert) {
 		// Datenbank-Aussetzer: abgelehnt, aber nicht als abgelaufene Sitzung. Eine 401
@@ -42,10 +41,10 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 	return claims, 0, nil
 }
 
-// sendeSitzungsfehler schickt den Fehler aus ClaimsAusRequest an den Client. Beim 503
-// (Datenbank-Aussetzer) sieht der Client nur den Sentinel-Satz: Die Ursache, die
-// VerifyToken mitwrappt, ist Betriebsinnenleben und gehört ins Log, nicht in die Meldung
-// für die Theke (Register 12.09.2026, siehe apierrors.SendHTTPErrorMitMeldung).
+// sendeSitzungsfehler schickt den Fehler aus PruefeSitzung an den Client. Beim 503 (Aussetzer
+// der Datenbank) sieht er nur den Satz von auth.ErrPruefungGestoert: Die Ursache, die
+// VerifyToken mitliefert, gehört ins Log und nicht in die Meldung an der Theke
+// (apierrors.SendHTTPErrorMitMeldung).
 func sendeSitzungsfehler(w http.ResponseWriter, status int, err error) {
 	if errors.Is(err, auth.ErrPruefungGestoert) {
 		apierrors.SendHTTPErrorMitMeldung(w, status, auth.ErrPruefungGestoert.Error(), err)
@@ -54,30 +53,21 @@ func sendeSitzungsfehler(w http.ResponseWriter, status int, err error) {
 	apierrors.SendHTTPError(w, status, err)
 }
 
-// erlaubeZugriff injiziert die Claims in den Request-Kontext und ruft den nächsten
-// Handler auf.
+// erlaubeZugriff legt die Angaben der Sitzung in den Kontext der Anfrage und ruft next.
 func erlaubeZugriff(w http.ResponseWriter, r *http.Request, next http.Handler, claims *auth.Claims) {
 	ctx := context.WithValue(r.Context(), auth.ClaimsContextKey, claims)
 	next.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// VerlangeAnmeldung verlangt nur eine gültige Sitzung, kein bestimmtes Recht.
+// VerlangeAnmeldung verlangt eine gültige Sitzung und kein bestimmtes Recht: für Endpunkte, die
+// jede angemeldete Rolle öffnet. Welche das sind, hält api/nur_sitzung_liste_test.go fest;
+// keiner davon darf Schülerdaten führen.
 //
-// Für Endpunkte, die JEDER angemeldete Client öffnet, unabhängig von seiner Rolle. Heute
-// sind es vier (Stand 06.09.2026, im Rasterdurchgang nachgezählt — der Satz behauptete
-// vorher „genau einer", und ein Kommentar, der eine Schutzbehauptung aufstellt, muss
-// stimmen): der SSE-Stream /events, den der authStore direkt nach dem Login aufbaut,
-// GET /api/einstellungen/sitzung, und die zwei lesenden Wege zum LMF-Plan
-// (/api/lmf-termine und dessen PDF — veröffentlichter Plan, Klassennamen ohne
-// Schülerbezug, PII-Matrix Stufe 0). Der Stream war der erste Fall und bleibt die
-// Begründung:
-// Ihn an ein Fachrecht zu hängen war eine Zeitbombe: Wer das Recht nicht hat, bekommt
-// keine saubere Absage, sondern eine Reconnect-Schleife plus das Offline-Overlay aus
-// App.svelte, das nach 25 s ohne Herzschlag zuschlägt. Für die Helfer-Rolle war das schon
-// einmal der Grund, den Stream von view_students auf perform_actions umzuhängen (siehe
-// routes_system.go) — mit der Portal-Rolle KOLLEGIUM wäre derselbe Fehler ein zweites Mal
-// aufgetreten. Der Stream trägt nur operative Aktions-Events (Typ, IDs, Buchtitel,
-// Zeitstempel) und keine Schüler-PII, deshalb ist die Sitzung hier die richtige Schwelle.
+// Der erste Fall war der SSE-Stream /events, den die Oberfläche direkt nach der Anmeldung
+// aufbaut. Hinge er an einem Fachrecht, bekäme eine Rolle ohne dieses Recht keine Absage,
+// sondern eine Schleife neuer Verbindungen und nach 25 s ohne Herzschlag das Offline-Overlay
+// aus App.svelte. Der Stream trägt nur Ereignisse der Theke (Art, Kennungen, Titel, Zeit) und
+// keine Schülerdaten; deshalb genügt hier die Sitzung.
 func (b *Basis) VerlangeAnmeldung() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

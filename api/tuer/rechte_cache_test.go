@@ -11,10 +11,9 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// leereWaehrendAbfrage stellt das Rennen deterministisch nach: WÄHREND eine
-// Berechtigungs-Entscheidung aus der DB unterwegs ist (nach dem Lesen, vor dem
-// Cache-Schreiben), schlägt die Invalidierung zu — z. B. weil ein Admin genau jetzt
-// die Rechte-Matrix geändert hat.
+// leereWaehrendAbfrage stellt das Rennen fest nach: Während eine Entscheidung aus der Datenbank
+// unterwegs ist (nach dem Lesen, vor dem Schreiben in den Cache), wird der Cache geleert, etwa
+// weil ein Admin gerade die Rechte geändert hat.
 type leereWaehrendAbfrage struct {
 	pgxmock.PgxPoolIface
 	imFlug func()
@@ -28,11 +27,9 @@ func (p *leereWaehrendAbfrage) QueryRow(ctx context.Context, sql string, args ..
 	return row
 }
 
-// TestRechteCache_UeberholteEntscheidungBleibtDraussen schließt das 60-Sekunden-Fenster
-// aus dem Nebenläufigkeits-Audit (19.08.): Die Invalidierung nach einer Rechteänderung
-// leert zwar den Cache — aber ein Request, der den ALTEN Stand kurz vorher aus der DB
-// gelesen hatte, schrieb ihn DANACH wieder hinein. Das entzogene Recht wirkte dann bis
-// zu 60 s weiter. Eine überholte Entscheidung darf den Cache nicht mehr erreichen.
+// TestRechteCache_UeberholteEntscheidungBleibtDraussen: Eine Anfrage, die den alten Stand kurz
+// vor einer Rechteänderung gelesen hat, schreibt ihn nach dem Leeren nicht zurück in den Cache.
+// Sonst wirkte das entzogene Recht bis zu 60 s weiter.
 func TestRechteCache_UeberholteEntscheidungBleibtDraussen(t *testing.T) {
 	LeereRechteCache() // globaler Cache darf nicht zwischen Tests lecken
 	mock, err := pgxmock.NewPool()
@@ -53,15 +50,15 @@ func TestRechteCache_UeberholteEntscheidungBleibtDraussen(t *testing.T) {
 		t.Fatalf("Berechtigung ermitteln: %v", err)
 	}
 
-	// Der laufende Request durfte mit dem gelesenen Stand antworten — aber der Cache
-	// darf die überholte Entscheidung nicht halten: Der nächste Request muss frisch lesen.
+	// Die laufende Anfrage durfte mit dem gelesenen Stand antworten, der Cache hält ihn aber
+	// nicht: Die nächste Anfrage liest neu.
 	if _, found := rechtImCache(schluessel); found {
 		t.Fatal("überholte Entscheidung wurde NACH der Invalidierung gecacht — das entzogene Recht wirkt bis zu 60 s weiter")
 	}
 }
 
-// Die Naht für Tests legt genau die Entscheidung ab, die BesitztRecht und die Rechteprüfung
-// der Routen lesen, und die Invalidierung nimmt sie zurück.
+// Die Naht für Tests legt genau die Entscheidung ab, die HatRecht und die Prüfung der Routen
+// lesen, und das Leeren des Caches nimmt sie zurück.
 func TestMerkeRechtFuerTest_LegtDieEntscheidungAb(t *testing.T) {
 	LeereRechteCache()
 	t.Cleanup(LeereRechteCache)

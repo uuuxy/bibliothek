@@ -1,7 +1,7 @@
-// Package tuer trägt, was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Rechte
-// einer Anfrage prüfen, einen Vorgang der Verwaltung ins Protokoll schreiben, die Uhr der
-// Schule. Es steht unter den Türen, damit ein Paket mit den Türen eines Themas es einbinden
-// kann; api/ selbst ließe sich von dort nicht einbinden.
+// Package tuer trägt, was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Sitzung
+// und die Rechte einer Anfrage prüfen, einen Vorgang der Verwaltung ins Protokoll schreiben,
+// die Uhr der Schule. Es steht unter den Türen, damit ein Paket mit den Türen eines Themas es
+// einbinden kann; api/ selbst ließe sich von dort nicht einbinden.
 package tuer
 
 import (
