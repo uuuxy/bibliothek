@@ -9,7 +9,7 @@ import (
 	"bibliothek/repository"
 )
 
-// bestellhistorieStandardLimit / -MaxLimit deckeln die Liste.
+// bestellhistorieVorgabeGrenze / -MaxLimit deckeln die Liste.
 //
 // Ohne Grenze lieferte dieser Endpunkt ALLE Bestellungen samt Positionen: auf einer
 // gewachsenen Datenbank (5.257 Bestellungen) waren das 2,45 MB und 3,9 Sekunden, und es
@@ -18,19 +18,19 @@ import (
 // Die Summen im Kopf der Oberfläche dürfen davon NICHT abhängen — sie kommen aus
 // /api/bestellhistorie/uebersicht und zählen weiterhin alles.
 const (
-	bestellhistorieStandardLimit = 200
-	bestellhistorieMaxLimit      = 500
+	bestellhistorieVorgabeGrenze = 200
+	bestellhistorieHoechstGrenze = 500
 )
 
-// GetBestellhistorieHandler returns the most recent orders with their line items.
-func (s *Tueren) GetBestellhistorieHandler() http.HandlerFunc {
+// Bestellhistorie returns the most recent orders with their line items.
+func (t *Tueren) Bestellhistorie() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		limit := bestellhistorieStandardLimit
+		grenze := bestellhistorieVorgabeGrenze
 		if roh := r.URL.Query().Get("limit"); roh != "" {
 			if n, err := strconv.Atoi(roh); err == nil && n > 0 {
-				limit = min(n, bestellhistorieMaxLimit)
+				grenze = min(n, bestellhistorieHoechstGrenze)
 			}
 		}
 
@@ -43,22 +43,22 @@ func (s *Tueren) GetBestellhistorieHandler() http.HandlerFunc {
 			return
 		}
 
-		orders, orderIndex, err := repository.LadeBestellVerlauf(ctx, s.DB.Pool, limit, mittel)
+		bestellungen, bestellIndex, err := repository.LadeBestellVerlauf(ctx, t.DB.Pool, grenze, mittel)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		if len(orders) == 0 {
-			tuer.AntworteJSON(w, http.StatusOK, orders)
+		if len(bestellungen) == 0 {
+			tuer.AntworteJSON(w, http.StatusOK, bestellungen)
 			return
 		}
 
-		if err := repository.LadeBestellVerlaufPositionen(ctx, s.DB.Pool, orders, orderIndex); err != nil {
+		if err := repository.LadeBestellVerlaufPositionen(ctx, t.DB.Pool, bestellungen, bestellIndex); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, orders)
+		tuer.AntworteJSON(w, http.StatusOK, bestellungen)
 	}
 }

@@ -40,20 +40,20 @@ func bestellungMitToken(t *testing.T, pool *pgxpool.Pool, lieferantID string, gu
 	return bestellungID, token
 }
 
-func getOeffentlicheBestellung(srv *Tueren, token string) *httptest.ResponseRecorder {
+func holeOeffentlicheBestellung(srv *Tueren, token string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, "/api/public/bestellung/"+token, nil)
 	req.SetPathValue("token", token)
 	rec := httptest.NewRecorder()
-	srv.OeffentlicheBestellungHandler().ServeHTTP(rec, req)
+	srv.OeffentlicheBestellung().ServeHTTP(rec, req)
 	return rec
 }
 
-func postOeffentlichBestaetigen(srv *Tueren, token, body string) *httptest.ResponseRecorder {
+func bestaetigeUeberLink(srv *Tueren, token, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodPost, "/api/public/bestellung/"+token+"/bestaetigen", strings.NewReader(body))
 	req.SetPathValue("token", token)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.OeffentlichBestaetigenHandler().ServeHTTP(rec, req)
+	srv.OeffentlichBestaetigen().ServeHTTP(rec, req)
 	return rec
 }
 
@@ -68,11 +68,11 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	bestellungID, token := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
-	rec := getOeffentlicheBestellung(srv, token)
+	rec := holeOeffentlicheBestellung(srv, token)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
 	}
-	var ansicht OeffentlicheBestellung
+	var ansicht oeffentlicheBestellung
 	if err := json.Unmarshal(rec.Body.Bytes(), &ansicht); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 		t.Fatalf("Ansicht = %+v, want Naacher und unbestätigt", ansicht)
 	}
 
-	if rec := postOeffentlichBestaetigen(srv, token, `{"etiketten_groesse":"gross"}`); rec.Code != http.StatusOK {
+	if rec := bestaetigeUeberLink(srv, token, `{"etiketten_groesse":"gross"}`); rec.Code != http.StatusOK {
 		t.Fatalf("POST Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
 	}
 
@@ -108,10 +108,10 @@ func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	_, token := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
-	if rec := postOeffentlichBestaetigen(srv, token, `{}`); rec.Code != http.StatusOK {
+	if rec := bestaetigeUeberLink(srv, token, `{}`); rec.Code != http.StatusOK {
 		t.Fatalf("erster POST = %d, want 200", rec.Code)
 	}
-	rec := postOeffentlichBestaetigen(srv, token, `{}`)
+	rec := bestaetigeUeberLink(srv, token, `{}`)
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("zweiter POST = %d, want 409, body: %s", rec.Code, rec.Body.String())
 	}
@@ -133,10 +133,10 @@ func TestOeffentlicheBestaetigung_AbgelaufenUndUnbekannt(t *testing.T) {
 	}
 	for name, token := range faelle {
 		t.Run(name, func(t *testing.T) {
-			if rec := getOeffentlicheBestellung(srv, token); rec.Code != http.StatusNotFound {
+			if rec := holeOeffentlicheBestellung(srv, token); rec.Code != http.StatusNotFound {
 				t.Fatalf("GET = %d, want 404", rec.Code)
 			}
-			if rec := postOeffentlichBestaetigen(srv, token, `{}`); rec.Code != http.StatusNotFound {
+			if rec := bestaetigeUeberLink(srv, token, `{}`); rec.Code != http.StatusNotFound {
 				t.Fatalf("POST = %d, want 404", rec.Code)
 			}
 		})
@@ -163,7 +163,7 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/bestaetigungs-link", nil)
 	req.SetPathValue("id", bestellungID)
 	rec := httptest.NewRecorder()
-	srv.NeuerBestaetigungsLinkHandler().ServeHTTP(rec, req)
+	srv.BestaetigungsLinkErneuern().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
 	}
@@ -178,11 +178,11 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 		t.Fatalf("Link = %q — erwartet Adresse aus den Einstellungen", antwort.Link)
 	}
 
-	if rec := getOeffentlicheBestellung(srv, alterToken); rec.Code != http.StatusNotFound {
+	if rec := holeOeffentlicheBestellung(srv, alterToken); rec.Code != http.StatusNotFound {
 		t.Fatalf("alter Token = %d, want 404 (er muss tot sein)", rec.Code)
 	}
 	neuerToken := strings.TrimPrefix(antwort.Link, "https://bib.example.invalid/bestellung/")
-	if rec := getOeffentlicheBestellung(srv, neuerToken); rec.Code != http.StatusOK {
+	if rec := holeOeffentlicheBestellung(srv, neuerToken); rec.Code != http.StatusOK {
 		t.Fatalf("neuer Token = %d, want 200", rec.Code)
 	}
 }
@@ -202,11 +202,11 @@ func TestNeuerLink_AdresseAusLeerzeichenLaesstDenAltenLinkGelten(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/bestaetigungs-link", nil)
 	req.SetPathValue("id", bestellungID)
 	rec := httptest.NewRecorder()
-	srv.NeuerBestaetigungsLinkHandler().ServeHTTP(rec, req)
+	srv.BestaetigungsLinkErneuern().ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "keine öffentliche Adresse") {
 		t.Errorf("Status %d, erwartet 400 mit dem Hinweis auf die fehlende Adresse: %s", rec.Code, rec.Body.String())
 	}
-	if rec := getOeffentlicheBestellung(srv, alterToken); rec.Code != http.StatusOK {
+	if rec := holeOeffentlicheBestellung(srv, alterToken); rec.Code != http.StatusOK {
 		t.Errorf("der alte Link antwortet mit %d, erwartet 200: Er gilt weiter, solange kein neuer entsteht", rec.Code)
 	}
 }

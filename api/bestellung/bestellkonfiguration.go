@@ -8,9 +8,9 @@ import (
 	"bibliothek/repository"
 )
 
-// BestellKonfiguration nennt die Systemeinstellungen, nach denen sich die Oberfläche des
+// bestellKonfiguration nennt die Systemeinstellungen, nach denen sich die Oberfläche des
 // Bestellwesens richtet.
-type BestellKonfiguration struct {
+type bestellKonfiguration struct {
 	PreiseErfassen bool `json:"preise_erfassen"`
 	// BestelllinkOhneAdresse: Es gibt einen Hauptlieferanten, aber keine öffentliche
 	// Adresse — seine Bestellmails gehen also ohne Bestätigungs-Link raus.
@@ -21,7 +21,7 @@ type BestellKonfiguration struct {
 	BestelllinkOhneAdresse bool `json:"bestelllink_ohne_adresse"`
 }
 
-// BestellKonfigurationHandler liefert die Anzeige-Regeln des Bestellwesens.
+// BestellKonfiguration liefert die Anzeige-Regeln des Bestellwesens.
 //
 // Eigene, schmale Route statt GET /api/einstellungen: Die vollständigen Einstellungen
 // verlangen manage_users, das Bestellwesen aber nur view_orders. Wer bestellen darf, müsste
@@ -36,23 +36,23 @@ type BestellKonfiguration struct {
 // @Summary      Anzeige-Regeln des Bestellwesens
 // @Tags         orders
 // @Produce      json
-// @Success      200  {object}  BestellKonfiguration
+// @Success      200  {object}  bestellKonfiguration
 // @Router       /bestellungen/konfiguration [get]
-func (s *Tueren) BestellKonfigurationHandler(settingsRepo repository.EinstellungsAbfragen, supplierRepo repository.LieferantenAbfragen) http.HandlerFunc {
+func (t *Tueren) BestellKonfiguration(einstellungsAbfragen repository.EinstellungsAbfragen, lieferantenAbfragen repository.LieferantenAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		settings, err := settingsRepo.Lade(r.Context())
+		einstellungen, err := einstellungsAbfragen.Lade(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Bestell-Konfiguration", err)
 		}
 
-		hauptlieferant, err := supplierRepo.HatHauptlieferant(r.Context())
+		hauptlieferant, err := lieferantenAbfragen.HatHauptlieferant(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Bestell-Konfiguration", err)
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, BestellKonfiguration{
-			PreiseErfassen:         settings.PreiseErfassen,
-			BestelllinkOhneAdresse: hauptlieferant && settings.AdresseFuerLinks() == "",
+		tuer.AntworteJSON(w, http.StatusOK, bestellKonfiguration{
+			PreiseErfassen:         einstellungen.PreiseErfassen,
+			BestelllinkOhneAdresse: hauptlieferant && einstellungen.AdresseFuerLinks() == "",
 		})
 		return nil
 	})

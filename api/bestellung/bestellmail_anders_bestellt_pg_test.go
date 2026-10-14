@@ -19,14 +19,14 @@ import (
 // erreicht hat, behielt ihn; „Erneut senden" hätte sie ein zweites Mal zu ihm gebracht.
 // DELETE /api/bestellungen/{id}/mail nimmt den Vermerk, ohne zu senden.
 
-const auditBestellmailVermerkEntferntTest = "BESTELLMAIL_VERMERK_ENTFERNT"
+const aktionBestellmailVermerkEntfernt = "BESTELLMAIL_VERMERK_ENTFERNT"
 
 // andersBestelltLage ist die Lage der Bestellmail-Tests, die den Eintrag der neuen Tür abräumt.
 func andersBestelltLage(t *testing.T, kennung string) *bestellmailLage {
 	t.Helper()
 	l := bestellmailLageAnlegen(t, kennung)
 	t.Cleanup(func() {
-		pgtest.RaeumeAuf(t, l.pool, `DELETE FROM audit_logs WHERE aktion = $1`, auditBestellmailVermerkEntferntTest)
+		pgtest.RaeumeAuf(t, l.pool, `DELETE FROM audit_logs WHERE aktion = $1`, aktionBestellmailVermerkEntfernt)
 	})
 	return l
 }
@@ -80,7 +80,7 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 	var details []byte
 	if err := l.pool.QueryRow(t.Context(), `
 		SELECT coalesce(admin_id::text, ''), details->>'bestellung_id', details
-		FROM audit_logs WHERE aktion = $1`, auditBestellmailVermerkEntferntTest).Scan(&wer, &protokollierte, &details); err != nil {
+		FROM audit_logs WHERE aktion = $1`, aktionBestellmailVermerkEntfernt).Scan(&wer, &protokollierte, &details); err != nil {
 		t.Fatalf("Protokolleintrag lesen (genau einer erwartet): %v", err)
 	}
 	if wer != l.adminID || protokollierte != bestellung {
@@ -99,7 +99,7 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 	}
 	var eintraege int
 	if err := l.pool.QueryRow(t.Context(),
-		`SELECT count(*) FROM audit_logs WHERE aktion = $1`, auditBestellmailVermerkEntferntTest).Scan(&eintraege); err != nil {
+		`SELECT count(*) FROM audit_logs WHERE aktion = $1`, aktionBestellmailVermerkEntfernt).Scan(&eintraege); err != nil {
 		t.Fatal(err)
 	}
 	if eintraege != 1 {
@@ -161,7 +161,7 @@ func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 	}
 	var eintraege int
 	if err := l.pool.QueryRow(t.Context(),
-		`SELECT count(*) FROM audit_logs WHERE aktion = $1`, auditBestellmailVermerkEntferntTest).Scan(&eintraege); err != nil {
+		`SELECT count(*) FROM audit_logs WHERE aktion = $1`, aktionBestellmailVermerkEntfernt).Scan(&eintraege); err != nil {
 		t.Fatal(err)
 	}
 	if eintraege != 0 {

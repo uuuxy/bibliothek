@@ -105,7 +105,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, "/api/bestellungen/bericht.pdf?"+query, nil)
 		rec := httptest.NewRecorder()
-		srv.GetBestellBerichtPDFHandler().ServeHTTP(rec, req)
+		srv.BestellberichtPDF().ServeHTTP(rec, req)
 		return rec
 	}
 	blatt := func(t *testing.T, query string) []string {

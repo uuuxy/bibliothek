@@ -15,23 +15,23 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// ExportReordersPDFHandler exportiert den Bestellbedarf als PDF — dieselbe Auswahl und
-// Reihenfolge wie die Ansicht (Default LMF, knappste zuerst, siehe GetReordersHandler).
-func (s *Tueren) ExportReordersPDFHandler() http.HandlerFunc {
+// BestellbedarfPDF exportiert den Bestellbedarf als PDF — dieselbe Auswahl und
+// Reihenfolge wie die Ansicht (Default LMF, knappste zuerst, siehe Bestellbedarf).
+func (t *Tueren) BestellbedarfPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		reorders, err := s.reordersMitSettings(r.Context(), r)
+		bedarf, err := t.bestellbedarfMitEinstellungen(r.Context(), r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(r.Context())
+		einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		pdf := baueBestelllistePDF(reorders, settings.BestellbedarfSchwelle)
+		pdf := baueBestelllistePDF(bedarf, einstellungen.BestellbedarfSchwelle)
 
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set("Content-Disposition", "attachment; filename=bestellliste.pdf")
@@ -50,7 +50,7 @@ func (s *Tueren) ExportReordersPDFHandler() http.HandlerFunc {
 // Umstellung auf die Schwelle niemand mehr pflegt: Es steht auf der Vorgabe 5. Bei
 // einer Schwelle von 30 und 10 vorhandenen Exemplaren stand auf der Bestellliste für
 // den Händler „−5". Die Auswahl kam aus der einen Zahl, die Menge aus der anderen.
-func baueBestelllistePDF(reorders []repository.Bestellbedarf, schwelle int) *gofpdf.Fpdf {
+func baueBestelllistePDF(bedarf []repository.Bestellbedarf, schwelle int) *gofpdf.Fpdf {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 	pdf.SetMargins(15, 15, 15)
@@ -68,7 +68,7 @@ func baueBestelllistePDF(reorders []repository.Bestellbedarf, schwelle int) *gof
 	schreibeBestelllisteKopf(pdf, tr)
 
 	pdf.SetFont("Arial", "", 8)
-	for _, b := range reorders {
+	for _, b := range bedarf {
 		pdf.CellFormat(62, 6, tr(b.Titel), "1", 0, "L", false, 0, "")
 		pdf.CellFormat(35, 6, tr(b.Autor), "1", 0, "L", false, 0, "")
 		pdf.CellFormat(33, 6, tr(b.ISBN), "1", 0, "L", false, 0, "")

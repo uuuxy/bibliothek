@@ -30,7 +30,7 @@ func TestBestellbericht_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}
 		req := httptest.NewRequest(http.MethodGet, "/api/bestellungen/bericht.pdf?von=2019-09-01&bis=2019-09-30", nil)
 		rec := httptest.NewRecorder()
-		srv.GetBestellBerichtPDFHandler().ServeHTTP(rec, req)
+		srv.BestellberichtPDF().ServeHTTP(rec, req)
 		return rec
 	}
 
@@ -62,7 +62,7 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 		Exemplare:         1,
 		IstHauptlieferant: true,
 		Token:             "token-lesefehler",
-		Positionen:        []OrderedItem{{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Verlag: "Verlag 1", Menge: 1}},
+		Positionen:        []bestellterTitel{{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Verlag: "Verlag 1", Menge: 1}},
 	}
 
 	t.Run("gestört", func(t *testing.T) {

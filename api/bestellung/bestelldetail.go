@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// GetBestelldetailHandler liefert EINE Bestellung mit allem, was zu ihr gehört.
+// Bestelldetail liefert EINE Bestellung mit allem, was zu ihr gehört.
 //
 // Warum ein eigener Endpunkt und nicht mehr Felder in /api/bestellhistorie: Diese Liste
 // ist auf 200 Bestellungen gedeckelt, WEIL sie ohne Grenze 2,45 MB und knapp vier
@@ -20,7 +20,7 @@ import (
 // eine einzige Bestellung angesehen wird.
 //
 // Kein SQL in dieser Datei: Ein neuer Handler nimmt repository/ (siehe schichtung_ratsche_test.go).
-func (s *Tueren) GetBestelldetailHandler(repo repository.BestelldetailAbfragen) http.HandlerFunc {
+func (t *Tueren) Bestelldetail(bestelldetailAbfragen repository.BestelldetailAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -28,7 +28,7 @@ func (s *Tueren) GetBestelldetailHandler(repo repository.BestelldetailAbfragen) 
 			return
 		}
 
-		detail, err := repo.Lade(r.Context(), id)
+		detail, err := bestelldetailAbfragen.Lade(r.Context(), id)
 		if err != nil {
 			// 404 statt 500: Eine unbekannte ID ist keine Störung, sondern ein veralteter
 			// Verweis — und der Sanitizer macht aus jeder 500 ohnehin "interner

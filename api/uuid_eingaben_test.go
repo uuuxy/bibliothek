@@ -57,7 +57,7 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 		// `dive` nicht. Bis zum 08.10.2026 erreichten diese vier Türen damit die Datenbank
 		// (am Wareneingang nachgestellt: 500 statt 400).
 		{"Verluste endgültig löschen, leeres Element", s.inventurlauf().VerlusteEndgueltigLoeschen(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":[""]}`},
-		{"Wareneingang einbuchen, leeres Element", s.bestellung().BulkReceiveOrderHandler(), http.MethodPost, "/api/bestellungen/bulk-receive", `{"exemplar_ids":[""]}`},
+		{"Wareneingang einbuchen, leeres Element", s.bestellung().WareneingangBuchen(), http.MethodPost, "/api/bestellungen/bulk-receive", `{"exemplar_ids":[""]}`},
 		{"Mahnbriefe drucken, leeres Element", s.mahnwesen().MahnbriefeDrucken(), http.MethodPost, "/api/mahnwesen/bulk-print", `{"ausleih_ids":[""]}`},
 		{"Schüler-Etiketten, leeres Element", s.druck().SchuelerEtiketten(nil), http.MethodPost, "/api/print/schueler-etiketten", `{"formatId":"x","schuelerIds":[""]}`},
 		{"Fehlbestand ?session_id in urn-Form", s.inventurlauf().Fehlbestand(), http.MethodGet, "/api/inventur/fehlbestand?session_id=" + urnForm, ""},

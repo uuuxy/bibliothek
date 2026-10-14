@@ -27,12 +27,12 @@ func testEtiketten() []buchetikett.Etikett {
 	}
 }
 
-func testBestellMail() BestellMail {
-	return BestellMail{
+func testBestellMail() bestellMail {
+	return bestellMail{
 		Empfaenger:       "haendler@example.invalid",
 		Betreff:          "Buchbestellung",
 		Text:             "Sehr geehrte Damen und Herren,",
-		Positionen:       []OrderedItem{{Titel: "Mathematik 5", Autor: "Autor", ISBN: "978", Menge: 2}},
+		Positionen:       []bestellterTitel{{Titel: "Mathematik 5", Autor: "Autor", ISBN: "978", Menge: 2}},
 		Etiketten:        testEtiketten(),
 		MitVorabBarcodes: true,
 		Schule:           pdf.SchuleInfo{Name: "Testschule"},
@@ -42,7 +42,7 @@ func testBestellMail() BestellMail {
 
 // anhangNamen liefert die Dateinamen ohne das angehängte Datum, damit die Erwartung nicht
 // morgen eine andere ist.
-func anhangNamen(t *testing.T, m BestellMail) []string {
+func anhangNamen(t *testing.T, m bestellMail) []string {
 	t.Helper()
 	anhaenge, err := bestellAnhaenge(m)
 	if err != nil {

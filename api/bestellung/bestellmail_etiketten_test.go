@@ -17,7 +17,7 @@ import (
 	"bibliothek/repository"
 )
 
-func testEtikettLabels() []buchetikett.Etikett {
+func einTestEtikett() []buchetikett.Etikett {
 	return []buchetikett.Etikett{{
 		BarcodeID: "BM-TEST-1", Titel: "Bestellmail-Testband", Autor: "Prüfer", ISBN: "9783123456789",
 	}}
@@ -26,7 +26,7 @@ func testEtikettLabels() []buchetikett.Etikett {
 func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 	kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{
 		SchuleName: "Testschule", EtikettEigentumsvermerk: "Eigentum des Kreises Wetterau"})
-	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, mitteltopf.Land)
+	boegen, err := etikettenboegen(einTestEtikett(), kopf, false, mitteltopf.Land)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -49,7 +49,7 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 
 func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T) {
 	kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
-	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, mitteltopf.Land)
+	boegen, err := etikettenboegen(einTestEtikett(), kopf, false, mitteltopf.Land)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
-			boegen, err := etikettenboegen(testEtikettLabels(), kopf, f.istHauptlieferant, f.mittel)
+			boegen, err := etikettenboegen(einTestEtikett(), kopf, f.istHauptlieferant, f.mittel)
 			if err != nil {
 				t.Fatalf("etikettenboegen: %v", err)
 			}
@@ -118,7 +118,7 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{
 				SchuleName: "Testschule", EtikettEigentumsvermerkSchuelerbuecherei: f.vermerkSB})
-			labels := testEtikettLabels()
+			labels := einTestEtikett()
 			labels[0].Topf = f.topf
 
 			// Hauptlieferant + Land-Bestellung: beide Bögen entstehen, klein UND groß.

@@ -37,7 +37,7 @@ func bestelleMitTopf(t *testing.T, srv *Tueren, lieferantID, titelID, mittel str
 	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	handler := srv.SubmitOrderHandler(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool)))
+	handler := srv.BestellungAnlegen(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool)))
 	handler(rec, req)
 	return rec
 }
@@ -115,7 +115,7 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 
 // Der CHECK in der Datenbank ist die zweite Tür: Auch wer an Handler und Service vorbei
 // schreibt, bekommt keinen dritten Topf hinein.
-func TestBestellungMittelCheckInDerDatenbank(t *testing.T) {
+func TestBestellungMittelPruefungInDerDatenbank(t *testing.T) {
 	pool := pgtest.Pool(t)
 	_, err := pool.Exec(context.Background(), `
 		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)

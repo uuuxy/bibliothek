@@ -9,7 +9,7 @@ import (
 	"bibliothek/repository"
 )
 
-// GetReordersHandler liefert den Bestellbedarf.
+// Bestellbedarf liefert den Bestellbedarf.
 //
 // Default ist der LMF-Bestand (Lernmittel): Nachbestellt werden praktisch nur
 // Lernmittel-Klassensätze; im Freihandbestand steht meist ein einzelnes Prüf- oder
@@ -19,35 +19,35 @@ import (
 //
 // ?type=freihand oder ?type=alle bleiben möglich; für Einzelfälle ausserhalb der
 // Lernmittel gibt es ausserdem die Titelsuche im Bestellworkspace.
-func (s *Tueren) GetReordersHandler() http.HandlerFunc {
+func (t *Tueren) Bestellbedarf() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		reorders, err := s.reordersMitSettings(r.Context(), r)
+		bedarf, err := t.bestellbedarfMitEinstellungen(r.Context(), r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.AntworteJSON(w, http.StatusOK, reorders)
+		tuer.AntworteJSON(w, http.StatusOK, bedarf)
 	}
 }
 
-// reordersMitSettings liefert den Bestellbedarf gemäß Konfiguration: Warnung aus →
+// bestellbedarfMitEinstellungen liefert den Bestellbedarf gemäß Konfiguration: Warnung aus →
 // leere Liste; sonst gefiltert auf gesamt < Schwelle. Eine Quelle für Ansicht UND
 // PDF-Export, damit beide nie auseinanderlaufen.
-func (s *Tueren) reordersMitSettings(ctx context.Context, r *http.Request) ([]repository.Bestellbedarf, error) {
-	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
+func (t *Tueren) bestellbedarfMitEinstellungen(ctx context.Context, r *http.Request) ([]repository.Bestellbedarf, error) {
+	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if !settings.BestellbedarfWarnungAktiv {
+	if !einstellungen.BestellbedarfWarnungAktiv {
 		return []repository.Bestellbedarf{}, nil
 	}
-	return repository.LadeBestellbedarf(ctx, s.DB.Pool, reorderFilter(r), settings.BestellbedarfSchwelle)
+	return repository.LadeBestellbedarf(ctx, t.DB.Pool, bestellbedarfFilter(r), einstellungen.BestellbedarfSchwelle)
 }
 
-// reorderFilter liest ?type= und fällt auf den LMF-Bestand zurück (siehe
-// GetReordersHandler). Das SQL-Fragment ist serverkontrolliert, der Parameter wählt
+// bestellbedarfFilter liest ?type= und fällt auf den LMF-Bestand zurück (siehe
+// Bestellbedarf). Das SQL-Fragment ist serverkontrolliert, der Parameter wählt
 // nur zwischen festen Varianten.
-func reorderFilter(r *http.Request) string {
+func bestellbedarfFilter(r *http.Request) string {
 	typ := r.URL.Query().Get("type")
 	if typ == "" {
 		typ = "lmf"

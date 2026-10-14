@@ -32,11 +32,11 @@ import (
 // echter Handler, echte Transaktion, echter SMTP-Versand — nur der Mailserver ist ein
 // Testserver, damit niemals eine Mail an den Schulserver rausgeht (siehe internal/smtptest).
 
-// bestelleUeberHandler löst eine Bestellung über den echten HTTP-Handler aus und liefert
+// bestelleUeberTuer löst eine Bestellung über den echten HTTP-Handler aus und liefert
 // die Antwort.
-func bestelleUeberHandler(t *testing.T, srv *Tueren, lieferantID, titelID string) *httptest.ResponseRecorder {
+func bestelleUeberTuer(t *testing.T, srv *Tueren, lieferantID, titelID string) *httptest.ResponseRecorder {
 	t.Helper()
-	return tuertest.Bestelle(t, srv.SubmitOrderHandler(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool))), lieferantID, titelID)
+	return tuertest.Bestelle(t, srv.BestellungAnlegen(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool))), lieferantID, titelID)
 }
 
 func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *testing.T) {
@@ -50,7 +50,7 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Link", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Link", 0)
 
-	rec := bestelleUeberHandler(t, srv, lieferant, titel)
+	rec := bestelleUeberTuer(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
@@ -94,7 +94,7 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneAdresse", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneAdresse", 0)
 
-	rec := bestelleUeberHandler(t, srv, lieferant, titel)
+	rec := bestelleUeberTuer(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
@@ -127,7 +127,7 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Zahlen", false)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Zahlen", 0)
 
-	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
+	if rec := bestelleUeberTuer(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
 
@@ -153,7 +153,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Topf", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Topf", 0)
 
-	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
+	if rec := bestelleUeberTuer(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
 	var gueltigBis time.Time
@@ -194,7 +194,7 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.SubmitOrderHandler(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool)))(rec, req)
+	srv.BestellungAnlegen(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool)))(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
@@ -217,7 +217,7 @@ func bestelleMitSchluessel(t *testing.T, srv *Tueren, lieferantID, titelID, key 
 	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	handler := srv.SubmitOrderHandler(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool)))
+	handler := srv.BestellungAnlegen(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool)))
 	handler(rec, req)
 	return rec
 }

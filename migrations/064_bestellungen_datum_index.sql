@@ -11,7 +11,7 @@
 -- macht die Absicht lesbar.
 --
 -- Derselbe Index bedient den Bestellbericht: Der filtert
--- `bestelldatum >= $1 AND bestelldatum < $2` (api/bestellung/bestellbericht_handler.go) und suchte
+-- `bestelldatum >= $1 AND bestelldatum < $2` (api/bestellung/bestellbericht.go) und suchte
 -- den Zeitraum bisher ebenfalls über einen vollen Durchlauf.
 CREATE INDEX IF NOT EXISTS idx_bestellungen_verlauf_datum
 	ON bestellungen_verlauf (bestelldatum DESC);

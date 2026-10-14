@@ -19,7 +19,7 @@ type bestellmailDaten struct {
 	Empfaenger   string
 	Kundennummer string
 	Mittel       string
-	Positionen   []OrderedItem
+	Positionen   []bestellterTitel
 	// Exemplare ist die bestellte Menge über alle Positionen.
 	Exemplare int
 	// Etiketten sind die Exemplare der Positionen mit Vorab-Barcode.
@@ -34,9 +34,9 @@ type bestellmailDaten struct {
 // und Etiketten haben in internal/service dieselben Felder wie hier; der Topf jedes Etiketts
 // kommt mit der Bestellung und nicht aus einer Anfrage.
 func bestellmailDatenAus(res *service.BestellErgebnis) bestellmailDaten {
-	positionen := make([]OrderedItem, 0, len(res.BestellteTitel))
+	positionen := make([]bestellterTitel, 0, len(res.BestellteTitel))
 	for _, p := range res.BestellteTitel {
-		positionen = append(positionen, OrderedItem(p))
+		positionen = append(positionen, bestellterTitel(p))
 	}
 	etiketten := make([]buchetikett.Etikett, 0, len(res.Etiketten))
 	for _, e := range res.Etiketten {
@@ -58,26 +58,26 @@ func bestellmailDatenAus(res *service.BestellErgebnis) bestellmailDaten {
 // sendeBestellmail baut die Mail aus Vorlage und Einstellungen und verschickt sie. mitLink
 // sagt, ob der Bestätigungs-Link darin steht. Der erste und der erneute Versand gehen beide
 // hier durch, damit der Lieferant beide Male dieselbe Mail bekommt.
-func (s *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitLink bool, err error) {
+func (t *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitLink bool, err error) {
 	// Ein Lesefehler ist ein Fehler: Mit den Vorgaben ginge die Mail ohne die Angaben der Schule
 	// und ohne Link hinaus. Der Aufrufer vermerkt den Versand dann als gescheitert.
-	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
+	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 	if err != nil {
 		return false, fmt.Errorf("einstellungen lesen: %w", err)
 	}
 	schule := pdf.SchuleInfo{
-		Name:    settings.SchuleName,
-		Strasse: settings.SchuleStrasse,
-		PLZ:     settings.SchulePLZ,
-		Ort:     settings.SchuleOrt,
+		Name:    einstellungen.SchuleName,
+		Strasse: einstellungen.SchuleStrasse,
+		PLZ:     einstellungen.SchulePLZ,
+		Ort:     einstellungen.SchuleOrt,
 	}
 
-	betreff, textBody := service.LadeBestellMailVorlage(ctx, s.DB.Pool)
+	betreffVorlage, textVorlage := service.LadeBestellMailVorlage(ctx, t.DB.Pool)
 	// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht dann
 	// ohne Bestätigungsschritt raus. Ein Link auf den internen Servernamen wäre beim
 	// Lieferanten wertlos und sähe trotzdem echt aus.
-	link := bestelllink.Adresse(settings.AdresseFuerLinks(), d.Token)
-	subject, body := service.LoeseBestellMailAuf(betreff, textBody, service.BestellMailWerte{
+	link := bestelllink.Adresse(einstellungen.AdresseFuerLinks(), d.Token)
+	betreff, text := service.LoeseBestellMailAuf(betreffVorlage, textVorlage, service.BestellMailWerte{
 		Kundennummer:    d.Kundennummer,
 		AnzahlTitel:     len(d.Positionen),
 		AnzahlExemplare: d.Exemplare,
@@ -86,17 +86,17 @@ func (s *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 		Mittel:          d.Mittel,
 	})
 
-	err = verschickeBestellmail(BestellMail{
+	err = verschickeBestellmail(bestellMail{
 		Empfaenger:           d.Empfaenger,
-		Betreff:              subject,
-		Text:                 body,
+		Betreff:              betreff,
+		Text:                 text,
 		Positionen:           d.Positionen,
 		Etiketten:            d.Etiketten,
 		MitVorabBarcodes:     len(d.Etiketten) > 0,
 		IstHauptlieferant:    d.IstHauptlieferant,
 		MitBestaetigungsLink: link != "",
 		Schule:               schule,
-		EtikettKopf:          buchetikett.KopfAus(settings),
+		EtikettKopf:          buchetikett.KopfAus(einstellungen),
 		Mittel:               d.Mittel,
 	})
 	return link != "", err
@@ -124,10 +124,10 @@ const fristBestellmailVermerk = 5 * time.Second
 // Vermerk hängt nicht an der Anfrage: Hat der Browser das Warten aufgegeben, während der
 // Mailserver nicht antwortete, steht er trotzdem an der Bestellung. Klemmt das Schreiben,
 // steht es im Server-Log; die Bestellung selbst ist gespeichert.
-func (s *Tueren) merkeBestellmailGescheitert(ctx context.Context, bestellungID string) {
+func (t *Tueren) merkeBestellmailGescheitert(ctx context.Context, bestellungID string) {
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), fristBestellmailVermerk)
 	defer abbruch()
-	if err := repository.MerkeBestellmailGescheitert(ctx, s.DB.Pool, bestellungID); err != nil {
+	if err := repository.MerkeBestellmailGescheitert(ctx, t.DB.Pool, bestellungID); err != nil {
 		log.Printf("Bestellung %s: Vermerk über den gescheiterten Mailversand nicht geschrieben: %v", bestellungID, err)
 	}
 }

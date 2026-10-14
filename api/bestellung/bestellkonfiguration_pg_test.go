@@ -28,12 +28,12 @@ func TestBestellKonfiguration_WarntWennDerLinkNichtEntstehenKann(t *testing.T) {
 	ohneAdresse := func() bool {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		srv.BestellKonfigurationHandler(repository.NewEinstellungsAbfragen(pool), repository.NewLieferantenAbfragen(pool)).
+		srv.BestellKonfiguration(repository.NewEinstellungsAbfragen(pool), repository.NewLieferantenAbfragen(pool)).
 			ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen/konfiguration", nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 		}
-		var antwort BestellKonfiguration
+		var antwort bestellKonfiguration
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort lesen: %v", err)
 		}

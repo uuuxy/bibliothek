@@ -62,7 +62,7 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 			ziel += "?mittel=" + filter
 		}
 		rec := httptest.NewRecorder()
-		srv.GetBestellhistorieHandler()(rec, httptest.NewRequest(http.MethodGet, ziel, nil))
+		srv.Bestellhistorie()(rec, httptest.NewRequest(http.MethodGet, ziel, nil))
 		if rec.Code != http.StatusOK {
 			return nil, rec.Code
 		}
@@ -112,12 +112,12 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 
 	t.Run("Kennzahlen je Topf ergeben zusammen die Gesamtzahl", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		srv.GetBestellhistorieUebersichtHandler()(rec,
+		srv.BestellhistorieUebersicht()(rec,
 			httptest.NewRequest(http.MethodGet, "/api/bestellhistorie/uebersicht", nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 		}
-		var u BestellhistorieUebersicht
+		var u bestellhistorieUebersicht
 		if err := json.Unmarshal(rec.Body.Bytes(), &u); err != nil {
 			t.Fatalf("Antwort lesen: %v", err)
 		}

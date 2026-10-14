@@ -62,7 +62,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Kette", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Kette", 0)
 
-	rec := bestelleUeberHandler(t, srv, lieferant, titel)
+	rec := bestelleUeberTuer(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung: Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -92,7 +92,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	req.SetPathValue("token", treffer[1])
 	req.SetPathValue("groesse", "gross")
 	bogen := httptest.NewRecorder()
-	srv.OeffentlicheEtikettenHandler()(bogen, req)
+	srv.OeffentlicheEtiketten()(bogen, req)
 	if bogen.Code != http.StatusOK {
 		t.Fatalf("Etikettenbogen über den Link: Status %d", bogen.Code)
 	}

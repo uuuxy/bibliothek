@@ -15,8 +15,8 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// OrderedItem ist ein bestellter Titel mit seiner Menge, wie Anschreiben und Mail ihn nennen.
-type OrderedItem struct {
+// bestellterTitel ist ein bestellter Titel mit seiner Menge, wie Anschreiben und Mail ihn nennen.
+type bestellterTitel struct {
 	Titel  string
 	Autor  string
 	ISBN   string
@@ -24,19 +24,19 @@ type OrderedItem struct {
 	Menge  int
 }
 
-// BestellMail bündelt alles, was die Bestellmail an den Lieferanten braucht.
+// bestellMail bündelt alles, was die Bestellmail an den Lieferanten braucht.
 //
 // Als Struct und nicht als Parameterreihe: Die Mail hängt an drei unabhängigen Wahrheiten
 // (Vorab-Barcodes ja/nein, Hauptlieferant ja/nein, Link ja/nein), und drei aufeinander
 // folgende bool-Argumente im Aufruf sind genau die Sorte Stelle, an der eine Vertauschung
 // niemandem auffällt — die Mail geht ja trotzdem raus.
-type BestellMail struct {
+type bestellMail struct {
 	Empfaenger string
 	// Betreff und Text sind bereits aus der Vorlage BESTELLUNG_HAENDLER aufgelöst; hier wird
 	// nichts aus der Datenbank gelesen.
 	Betreff    string
 	Text       string
-	Positionen []OrderedItem
+	Positionen []bestellterTitel
 	Etiketten  []buchetikett.Etikett
 	// MitVorabBarcodes: Für mindestens eine Position wurden Barcodes reserviert.
 	MitVorabBarcodes bool
@@ -60,20 +60,20 @@ type BestellMail struct {
 }
 
 // verschickeBestellmail erzeugt die Anlagen und verschickt die Bestellmail an den Lieferanten.
-func verschickeBestellmail(m BestellMail) error {
+func verschickeBestellmail(m bestellMail) error {
 	anhaenge, err := bestellAnhaenge(m)
 	if err != nil {
 		return err
 	}
 
-	mailReq := mailservice.MailRequest{
+	nachricht := mailservice.MailRequest{
 		To:          m.Empfaenger,
 		Subject:     m.Betreff,
 		Body:        m.Text,
 		Attachments: anhaenge,
 	}
 
-	if err := mailservice.SendEmail(mailReq); err != nil {
+	if err := mailservice.SendEmail(nachricht); err != nil {
 		log.Printf("Failed to send order email to %s: %v", m.Empfaenger, err)
 		return err
 	}
@@ -90,7 +90,7 @@ func verschickeBestellmail(m BestellMail) error {
 //
 // Ohne Link bleibt es beim alten Weg (Rückfallebene): Der Bogen MUSS dann beiliegen,
 // sonst kann der Händler gar nicht bekleben.
-func bestellAnhaenge(m BestellMail) ([]mailservice.MailAttachment, error) {
+func bestellAnhaenge(m bestellMail) ([]mailservice.MailAttachment, error) {
 	mitBarcodebogen := m.MitVorabBarcodes && len(m.Etiketten) > 0
 
 	// Eine Entscheidung, an der ALLES hängt: die Bögen, die CSV und der Satz im
@@ -108,12 +108,12 @@ func bestellAnhaenge(m BestellMail) ([]mailservice.MailAttachment, error) {
 	if err != nil {
 		return nil, err
 	}
-	summaryPDF, err := pdf.GenerateBestellanschreibenPDF(anschreiben, m.Schule)
+	anschreibenPDF, err := pdf.GenerateBestellanschreibenPDF(anschreiben, m.Schule)
 	if err != nil {
 		return nil, err
 	}
 	anhaenge := []mailservice.MailAttachment{
-		{Name: datiertName("bestellanschreiben", "pdf"), ContentType: tuer.ContentTypePDF, Data: summaryPDF},
+		{Name: datiertName("bestellanschreiben", "pdf"), ContentType: tuer.ContentTypePDF, Data: anschreibenPDF},
 	}
 	if !mitBarcodebogen {
 		return anhaenge, nil
@@ -121,7 +121,7 @@ func bestellAnhaenge(m BestellMail) ([]mailservice.MailAttachment, error) {
 
 	// Die Barcode-Liste geht in beiden Fällen mit: Sie ist die Zuordnung Barcode↔Titel für
 	// die Warenwirtschaft des Händlers, kein Druckerzeugnis — der Link ersetzt sie nicht.
-	barcodeCSV, err := GenerateBarcodeCSV(m.Etiketten)
+	barcodeCSV, err := erzeugeBarcodeCSV(m.Etiketten)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func bestellAnhaenge(m BestellMail) ([]mailservice.MailAttachment, error) {
 // bestellanschreiben füllt die Eingabe des Anschreibens. Betreff und Vermerk kommen aus den
 // Texten zum Topf (pkg/mitteltopf); ein unbekannter Topf ist ein Fehler und kein Brief ohne
 // Vermerk.
-func bestellanschreiben(positionen []OrderedItem, weg pdf.EtikettenWeg, mittel string) (pdf.Bestellanschreiben, error) {
+func bestellanschreiben(positionen []bestellterTitel, weg pdf.EtikettenWeg, mittel string) (pdf.Bestellanschreiben, error) {
 	texte, err := mitteltopf.TexteFuer(mittel)
 	if err != nil {
 		return pdf.Bestellanschreiben{}, err
@@ -154,26 +154,26 @@ func bestellanschreiben(positionen []OrderedItem, weg pdf.EtikettenWeg, mittel s
 	return pdf.Bestellanschreiben{Betreff: texte.Betreff, Vermerk: texte.Vermerk, Etiketten: weg, Positionen: zeilen}, nil
 }
 
-// GenerateBarcodeCSV schreibt die Zuordnung von Barcode und ISBN für die Warenwirtschaft des
+// erzeugeBarcodeCSV schreibt die Zuordnung von Barcode und ISBN für die Warenwirtschaft des
 // Lieferanten.
-func GenerateBarcodeCSV(labels []buchetikett.Etikett) ([]byte, error) {
+func erzeugeBarcodeCSV(etiketten []buchetikett.Etikett) ([]byte, error) {
 	var buf bytes.Buffer
-	writer := csv.NewWriter(&buf)
-	writer.Comma = ';' // European CSV format
+	schreiber := csv.NewWriter(&buf)
+	schreiber.Comma = ';' // European CSV format
 
 	// Header
-	if err := writer.Write([]string{"ISBN", "Titel", "Autor", "Barcode"}); err != nil {
+	if err := schreiber.Write([]string{"ISBN", "Titel", "Autor", "Barcode"}); err != nil {
 		return nil, err
 	}
 
-	for _, l := range labels {
+	for _, e := range etiketten {
 		// Schutz vor Formel-Injection (CWE-1236): Titel/Autor stammen aus Katalog-Importen.
-		if err := writer.Write(csvutil.EntschaerfeZeile([]string{l.ISBN, l.Titel, l.Autor, l.BarcodeID})); err != nil {
+		if err := schreiber.Write(csvutil.EntschaerfeZeile([]string{e.ISBN, e.Titel, e.Autor, e.BarcodeID})); err != nil {
 			return nil, err
 		}
 	}
-	writer.Flush()
-	return buf.Bytes(), writer.Error()
+	schreiber.Flush()
+	return buf.Bytes(), schreiber.Error()
 }
 
 // etikettenboegen erzeugt die Etiketten-PDFs für die Mail: immer den kleinen Bogen, für
@@ -183,21 +183,21 @@ func GenerateBarcodeCSV(labels []buchetikett.Etikett) ([]byte, error) {
 //
 // Der Kopf kommt fertig herein (buchetikett.KopfAus) — derselbe wie im Selbstdruck und hinter
 // dem Lieferanten-Link, damit alle drei Wege zum selben Buch denselben Aufkleber ergeben.
-func etikettenboegen(labels []buchetikett.Etikett, kopf buchetikett.Kopf, istHauptlieferant bool, mittel string) ([]mailservice.MailAttachment, error) {
+func etikettenboegen(bestellEtiketten []buchetikett.Etikett, kopf buchetikett.Kopf, istHauptlieferant bool, mittel string) ([]mailservice.MailAttachment, error) {
 	// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
 	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
 	// diese Angaben.
-	etiketten := buchetikett.PDFEtiketten(labels, kopf)
-	labelDoc, err := pdf.GenerateLabelsPDF("zweckform_l4760", 1, false, etiketten)
+	etiketten := buchetikett.PDFEtiketten(bestellEtiketten, kopf)
+	bogen, err := pdf.GenerateLabelsPDF("zweckform_l4760", 1, false, etiketten)
 	if err != nil {
 		return nil, err
 	}
-	var labelBuf bytes.Buffer
-	if err := labelDoc.Output(&labelBuf); err != nil {
+	var bogenPuffer bytes.Buffer
+	if err := bogen.Output(&bogenPuffer); err != nil {
 		return nil, err
 	}
 	boegen := []mailservice.MailAttachment{
-		{Name: datiertName("etiketten_klein", "pdf"), ContentType: tuer.ContentTypePDF, Data: labelBuf.Bytes()},
+		{Name: datiertName("etiketten_klein", "pdf"), ContentType: tuer.ContentTypePDF, Data: bogenPuffer.Bytes()},
 	}
 
 	if !istHauptlieferant || !mitteltopf.HatGrossesLernmittelEtikett(mittel) {

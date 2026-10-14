@@ -15,13 +15,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// SupplierResponse represents the supplier data sent to the client.
-type SupplierResponse struct {
-	ID             string    `json:"id"`
-	Name           string    `json:"name"`
-	Email          string    `json:"email"`
-	CustomerNumber string    `json:"customerNumber"`
-	ErstelltAm     time.Time `json:"erstellt_am"`
+// lieferantAntwort represents the supplier data sent to the client.
+type lieferantAntwort struct {
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	Kundennummer string    `json:"customerNumber"`
+	ErstelltAm   time.Time `json:"erstellt_am"`
 
 	// IstHauptlieferant: Der EINE Händler, über den die Schule bestellt. Siehe
 	// repository.Lieferant — an diesem einen Merkmal hängen Vorauswahl, Bestelllink und
@@ -33,11 +33,11 @@ type SupplierResponse struct {
 	KundennummerSchultraeger string `json:"kundennummer_schultraeger"`
 }
 
-// CreateSupplierRequest holds the payload for creating a new supplier.
-type CreateSupplierRequest struct {
-	Name           string `json:"name"`
-	Email          string `json:"email"`
-	CustomerNumber string `json:"customerNumber"`
+// lieferantAnlegenAnfrage holds the payload for creating a new supplier.
+type lieferantAnlegenAnfrage struct {
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Kundennummer string `json:"customerNumber"`
 
 	// IstHauptlieferant ist bewusst ein einfaches bool und kein *bool: Fehlt das Feld,
 	// gilt false — also ein Händler, der einfach nur die Bestellmail bekommt.
@@ -55,22 +55,22 @@ type CreateSupplierRequest struct {
 
 // kundennummerSchultraeger liefert den getrimmten Wert für das Anlegen — dort ist ein
 // fehlendes Feld schlicht leer, es gibt noch keinen Stand, der erhalten bleiben könnte.
-func kundennummerSchultraeger(req CreateSupplierRequest) string {
+func kundennummerSchultraeger(req lieferantAnlegenAnfrage) string {
 	if req.KundennummerSchultraeger == nil {
 		return ""
 	}
 	return strings.TrimSpace(*req.KundennummerSchultraeger)
 }
 
-// UpdateSupplierRequest nennt, was an einem Lieferanten geändert wird. Ein fehlendes Feld
+// lieferantAendernAnfrage nennt, was an einem Lieferanten geändert wird. Ein fehlendes Feld
 // bleibt, wie es ist: Die Maske schickt nur, was sie seit dem Öffnen geändert hat, damit sie
 // nichts überschreibt, was ein anderer Platz inzwischen gespeichert hat — auch nicht das
 // Merkmal Hauptlieferant. Ein unbekanntes Feld lehnt die Tür ab. Eine leere zweite
 // Kundennummer heißt „dieselbe wie die erste".
-type UpdateSupplierRequest struct {
+type lieferantAendernAnfrage struct {
 	Name                     *string `json:"name"`
 	Email                    *string `json:"email"`
-	CustomerNumber           *string `json:"customerNumber"`
+	Kundennummer             *string `json:"customerNumber"`
 	IstHauptlieferant        *bool   `json:"ist_hauptlieferant"`
 	KundennummerSchultraeger *string `json:"kundennummer_schultraeger"`
 }
@@ -99,68 +99,68 @@ func setzeHauptlieferant(ctx context.Context, pool db.PgxPoolIface, id string) e
 	return tx.Commit(ctx)
 }
 
-// ListSuppliersHandler returns a list of all suppliers.
-func (s *Tueren) ListSuppliersHandler() http.HandlerFunc {
+// Lieferanten returns a list of all suppliers.
+func (t *Tueren) Lieferanten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		// Der Hauptlieferant zuerst: Das Bestellformular nimmt sonst den alphabetisch
 		// ersten, und die Vorauswahl bliebe wirkungslos.
-		zeilen, err := repository.LadeLieferanten(ctx, s.DB.Pool)
+		zeilen, err := repository.LadeLieferanten(ctx, t.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		suppliers := make([]SupplierResponse, 0, len(zeilen))
+		lieferanten := make([]lieferantAntwort, 0, len(zeilen))
 		for _, z := range zeilen {
-			suppliers = append(suppliers, SupplierResponse(z))
+			lieferanten = append(lieferanten, lieferantAntwort(z))
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, suppliers)
+		tuer.AntworteJSON(w, http.StatusOK, lieferanten)
 	}
 }
 
-// CreateSupplierHandler adds a new supplier.
-func (s *Tueren) CreateSupplierHandler() http.HandlerFunc {
+// LieferantAnlegen adds a new supplier.
+func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req CreateSupplierRequest
+		var req lieferantAnlegenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
-		if req.Name == "" || req.Email == "" || req.CustomerNumber == "" {
+		if req.Name == "" || req.Email == "" || req.Kundennummer == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber are required"))
 			return
 		}
 
 		ctx := r.Context()
 
-		newID, erstelltAm, err := repository.LegeLieferantAn(ctx, s.DB.Pool, req.Name, req.Email, req.CustomerNumber, kundennummerSchultraeger(req))
+		neueID, erstelltAm, err := repository.LegeLieferantAn(ctx, t.DB.Pool, req.Name, req.Email, req.Kundennummer, kundennummerSchultraeger(req))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		// An diese Adresse gehen Bestellungen. Der Eintrag nennt den Händler, nicht die Adresse.
-		s.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantAngelegt,
-			map[string]any{"lieferant_id": newID, "name": req.Name})
+		t.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantAngelegt,
+			map[string]any{"lieferant_id": neueID, "name": req.Name})
 
 		// Bewusst NICHT im INSERT: Gibt es schon einen Hauptlieferanten, bräche der
 		// Teil-Index den Anlegevorgang ab — der neue Lieferant wäre gar nicht erst
 		// entstanden, nur weil ein Haken gesetzt war. Erst anlegen, dann umschalten;
 		// dabei räumt setzeHauptlieferant den bisherigen weg.
 		if req.IstHauptlieferant {
-			if err := setzeHauptlieferant(ctx, s.DB.Pool, newID); err != nil {
+			if err := setzeHauptlieferant(ctx, t.DB.Pool, neueID); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
 		}
 
-		tuer.AntworteJSON(w, http.StatusCreated, SupplierResponse{
-			ID:                       newID,
+		tuer.AntworteJSON(w, http.StatusCreated, lieferantAntwort{
+			ID:                       neueID,
 			Name:                     req.Name,
 			Email:                    req.Email,
-			CustomerNumber:           req.CustomerNumber,
+			Kundennummer:             req.Kundennummer,
 			ErstelltAm:               erstelltAm,
 			IstHauptlieferant:        req.IstHauptlieferant,
 			KundennummerSchultraeger: kundennummerSchultraeger(req),
@@ -168,24 +168,24 @@ func (s *Tueren) CreateSupplierHandler() http.HandlerFunc {
 	}
 }
 
-// UpdateSupplierHandler updates name, email and customer number of an existing supplier.
-func (s *Tueren) UpdateSupplierHandler() http.HandlerFunc {
-	return s.handleUpdateSupplier
+// LieferantAendern updates name, email and customer number of an existing supplier.
+func (t *Tueren) LieferantAendern() http.HandlerFunc {
+	return t.aendereLieferant
 }
 
-func (s *Tueren) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing supplier ID"))
 		return
 	}
 
-	var req UpdateSupplierRequest
+	var req lieferantAendernAnfrage
 	// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
 	if !tuer.LeseAnfrageStreng(w, r, &req) {
 		return
 	}
-	for _, wert := range []*string{req.Name, req.Email, req.CustomerNumber} {
+	for _, wert := range []*string{req.Name, req.Email, req.Kundennummer} {
 		if wert != nil && *wert == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber must not be empty"))
 			return
@@ -197,7 +197,7 @@ func (s *Tueren) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	alt, neu, err := s.aendereLieferant(ctx, id, req)
+	alt, neu, err := t.schreibeLieferant(ctx, id, req)
 	if errors.Is(err, pgx.ErrNoRows) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 		return
@@ -207,7 +207,7 @@ func (s *Tueren) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.ProtokolliereGeaenderteFelder(ctx, tuer.AktionLieferantGeaendert,
+	t.ProtokolliereGeaenderteFelder(ctx, tuer.AktionLieferantGeaendert,
 		map[string]any{"lieferant_id": id, "name": neu.Name},
 		tuer.GeaenderteFelder(
 			tuer.FeldWechsel{Name: "name", Geaendert: alt.Name != neu.Name},
@@ -218,25 +218,25 @@ func (s *Tueren) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		))
 
 	// Die Antwort nennt den gespeicherten Stand, nicht die Eingabe.
-	tuer.AntworteJSON(w, http.StatusOK, SupplierResponse{
+	tuer.AntworteJSON(w, http.StatusOK, lieferantAntwort{
 		ID:                       id,
 		Name:                     neu.Name,
 		Email:                    neu.Email,
-		CustomerNumber:           neu.Kundennummer,
+		Kundennummer:             neu.Kundennummer,
 		IstHauptlieferant:        neu.Haupt,
 		KundennummerSchultraeger: neu.Zweitnummer,
 	})
 }
 
-// aendereLieferant schreibt Merkmal und Stammdaten in einer Transaktion und liefert den Stand
+// schreibeLieferant schreibt Merkmal und Stammdaten in einer Transaktion und liefert den Stand
 // davor und danach. Bis zum 08.10.2026 waren es zwei Schritte: Scheiterte das Merkmal, waren
 // die Stammdaten schon geschrieben.
 //
 // Zuerst das Merkmal, dann die Stammdaten: Der Setzer sperrt den bisherigen Hauptlieferanten
 // vor der eigenen Zeile, wie beim Anlegen. Ein unbekannter Lieferant ist pgx.ErrNoRows; was der
 // Setzer bis dahin geräumt hat, rollt mit zurück.
-func (s *Tueren) aendereLieferant(ctx context.Context, id string, req UpdateSupplierRequest) (alt, neu repository.LieferantStand, err error) {
-	tx, err := s.DB.Pool.Begin(ctx)
+func (t *Tueren) schreibeLieferant(ctx context.Context, id string, req lieferantAendernAnfrage) (alt, neu repository.LieferantStand, err error) {
+	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
 		return alt, neu, err
 	}
@@ -255,7 +255,7 @@ func (s *Tueren) aendereLieferant(ctx context.Context, id string, req UpdateSupp
 		}
 	}
 
-	alt, neu, err = repository.AendereLieferantStammdaten(ctx, tx, id, req.Name, req.Email, req.CustomerNumber, req.KundennummerSchultraeger)
+	alt, neu, err = repository.AendereLieferantStammdaten(ctx, tx, id, req.Name, req.Email, req.Kundennummer, req.KundennummerSchultraeger)
 	if err != nil {
 		return alt, neu, err
 	}
@@ -263,8 +263,8 @@ func (s *Tueren) aendereLieferant(ctx context.Context, id string, req UpdateSupp
 	return alt, neu, tx.Commit(ctx)
 }
 
-// DeleteSupplierHandler removes a supplier.
-func (s *Tueren) DeleteSupplierHandler() http.HandlerFunc {
+// LieferantLoeschen removes a supplier.
+func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Go 1.22+ routing path parameter resolution
 		id := r.PathValue("id")
@@ -282,7 +282,7 @@ func (s *Tueren) DeleteSupplierHandler() http.HandlerFunc {
 		// hält Name und E-Mail als eigene Abschrift, SET NULL nimmt ihr nichts. Der
 		// LÖSCHWEG daneben war das Problem. „Löschen" in der Lieferantenverwaltung fragt
 		// nicht nach, und getroffen werden konnte auch der EINE Händler, an dem der ganze
-		// Bestellweg hängt: Bestellmail, Bestätigungs-Link (bestellbestaetigung_handler.go)
+		// Bestellweg hängt: Bestellmail, Bestätigungs-Link (bestellbestaetigung.go)
 		// und die Etiketten-Entscheidung „der Händler beklebt selbst" (bestellmail_anhaenge.go).
 		// Danach gab es keinen Hauptlieferanten mehr, und niemand erfuhr davon — die
 		// Oberfläche zeigte nur einen Händler weniger.
@@ -291,7 +291,7 @@ func (s *Tueren) DeleteSupplierHandler() http.HandlerFunc {
 		// einzige Tür, und ein Hinweis, den nur ein Formular kennt, ist keine Regel. Der
 		// Weg bleibt offen — erst einen anderen zum Hauptlieferanten machen (oder den
 		// Schalter abwählen), dann löschen.
-		istHaupt, name, err := repository.LadeLieferantHauptUndName(ctx, s.DB.Pool, id)
+		istHaupt, name, err := repository.LadeLieferantHauptUndName(ctx, t.DB.Pool, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
@@ -308,7 +308,7 @@ func (s *Tueren) DeleteSupplierHandler() http.HandlerFunc {
 			return
 		}
 
-		geloescht, err := repository.LoescheLieferant(ctx, s.DB.Pool, id)
+		geloescht, err := repository.LoescheLieferant(ctx, t.DB.Pool, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -318,7 +318,7 @@ func (s *Tueren) DeleteSupplierHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 			return
 		}
-		s.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantGeloescht,
+		t.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantGeloescht,
 			map[string]any{"lieferant_id": id, "name": name})
 
 		w.WriteHeader(http.StatusNoContent)

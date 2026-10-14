@@ -17,11 +17,11 @@ import (
 // tuertest.LeereFelder auf.
 
 func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
-	anfrage := SubmitOrderRequest{
-		SupplierID:     "lieferant-1",
-		IdempotencyKey: "schluessel-1",
-		Mittel:         mitteltopf.Schultraeger,
-		Items: []OrderItemRequest{
+	anfrage := bestellungAnlegenAnfrage{
+		LieferantID:          "lieferant-1",
+		IdempotenzSchluessel: "schluessel-1",
+		Mittel:               mitteltopf.Schultraeger,
+		Positionen: []bestellPosition{
 			{TitelID: "titel-1", Menge: 3, Preis: 9.5, MitVorabBarcode: true},
 			{TitelID: "titel-2", Menge: 7, Preis: 12.25, MitVorabBarcode: true},
 		},
@@ -44,7 +44,7 @@ func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
 	}
 	// Eine Position ohne Vorab-Barcode bleibt ohne: Der Händler bekäme sonst Etiketten für
 	// Exemplare, die ohne bestellt sind.
-	anfrage.Items[1].MitVorabBarcode = false
+	anfrage.Positionen[1].MitVorabBarcode = false
 	if bestellAuftrag(anfrage).Positionen[1].MitVorabBarcode {
 		t.Error("eine Position ohne Vorab-Barcode kommt mit Vorab-Barcode im Auftrag an")
 	}
@@ -79,7 +79,7 @@ func TestBestellmailDatenAus_FuelltJedesFeldAusDerBestellung(t *testing.T) {
 		IstHauptlieferant: true,
 		Token:             "token-1",
 		LinkGueltigBis:    &ablauf,
-		Positionen: []OrderedItem{
+		Positionen: []bestellterTitel{
 			{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Verlag: "Verlag 1", Menge: 3},
 			{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Verlag: "Verlag 2", Menge: 2},
 		},

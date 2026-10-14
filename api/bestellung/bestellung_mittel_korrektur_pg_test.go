@@ -25,10 +25,10 @@ import (
 // NICHTS — weder Zeile noch Protokoll. Der Kundennummer-Beleg der Bestellung bleibt
 // unangetastet: Er ist die Abschrift dessen, was der Händler bekommen hat.
 
-// korrigiereTopfUeberHandler ruft PUT /api/bestellungen/{id}/mittel als angemeldeter
+// korrigiereTopfUeberTuer ruft PUT /api/bestellungen/{id}/mittel als angemeldeter
 // Bearbeiter (echter Benutzer in den Claims — audit_logs.admin_id zeigt auf benutzer,
 // ein erfundener Akteur ließe den Protokolleintrag still scheitern).
-func korrigiereTopfUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool, bestellungID, rumpf string) *httptest.ResponseRecorder {
+func korrigiereTopfUeberTuer(t *testing.T, srv *Tueren, pool *pgxpool.Pool, bestellungID, rumpf string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/mittel", strings.NewReader(rumpf))
 	req.SetPathValue("id", bestellungID)
@@ -36,7 +36,7 @@ func korrigiereTopfUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool, b
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.UpdateBestellungMittelHandler()(rec, req)
+	srv.BestellungMittelKorrigieren()(rec, req)
 	return rec
 }
 
@@ -70,7 +70,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 	}
 
 	// 1. Korrektur Land → Schulträger mit Grund.
-	rec = korrigiereTopfUeberHandler(t, srv, pool, id, `{"mittel":"schultraeger","grund":"Titel war falsch als Lernmittel gekennzeichnet"}`)
+	rec = korrigiereTopfUeberTuer(t, srv, pool, id, `{"mittel":"schultraeger","grund":"Titel war falsch als Lernmittel gekennzeichnet"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Korrektur: %d %s", rec.Code, rec.Body.String())
 	}
@@ -101,7 +101,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 	// 2. Das Audit kennt von, nach und Grund — als JSON gelesen, nicht als Text verglichen
 	//    (jsonb rendert mit eigenen Leerzeichen).
 	var detailsRoh []byte
-	err := pool.QueryRow(ctx, `SELECT details FROM audit_logs WHERE aktion = $1`, auditBestellungMittelKorrigiert).Scan(&detailsRoh)
+	err := pool.QueryRow(ctx, `SELECT details FROM audit_logs WHERE aktion = $1`, aktionBestellungMittelKorrigiert).Scan(&detailsRoh)
 	if err != nil {
 		t.Fatalf("Audit-Eintrag fehlt: %v", err)
 	}
@@ -117,12 +117,12 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 	}
 
 	// 3. Dieselbe Korrektur noch einmal: kein zweiter Audit-Eintrag, geaendert=false.
-	rec = korrigiereTopfUeberHandler(t, srv, pool, id, `{"mittel":"schultraeger","grund":"nochmal"}`)
+	rec = korrigiereTopfUeberTuer(t, srv, pool, id, `{"mittel":"schultraeger","grund":"nochmal"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"geaendert":false`) {
 		t.Errorf("Wiederholung: %d %s — muss 200 mit geaendert=false sein", rec.Code, rec.Body.String())
 	}
 	var anzahl int
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE aktion = $1`, auditBestellungMittelKorrigiert).Scan(&anzahl); err != nil {
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE aktion = $1`, aktionBestellungMittelKorrigiert).Scan(&anzahl); err != nil {
 		t.Fatal(err)
 	}
 	if anzahl != 1 {
@@ -155,7 +155,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 		`{"mittel":"kreis","grund":"x"}`,
 		`{"grund":"x"}`,
 	} {
-		if rec := korrigiereTopfUeberHandler(t, srv, pool, id, rumpf); rec.Code != http.StatusBadRequest {
+		if rec := korrigiereTopfUeberTuer(t, srv, pool, id, rumpf); rec.Code != http.StatusBadRequest {
 			t.Errorf("%s: Status %d, want 400: %s", rumpf, rec.Code, rec.Body.String())
 		}
 	}
@@ -163,7 +163,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 		t.Errorf("Topf wurde trotz abgewiesener Anfrage verändert: %v", got)
 	}
 	var anzahl int
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE aktion = $1`, auditBestellungMittelKorrigiert).Scan(&anzahl); err != nil {
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE aktion = $1`, aktionBestellungMittelKorrigiert).Scan(&anzahl); err != nil {
 		t.Fatal(err)
 	}
 	if anzahl != 0 {
@@ -171,7 +171,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 	}
 
 	unbekannt := "00000000-0000-0000-0000-000000000000"
-	if rec := korrigiereTopfUeberHandler(t, srv, pool, unbekannt, `{"mittel":"land","grund":"x"}`); rec.Code != http.StatusNotFound {
+	if rec := korrigiereTopfUeberTuer(t, srv, pool, unbekannt, `{"mittel":"land","grund":"x"}`); rec.Code != http.StatusNotFound {
 		t.Errorf("unbekannte Bestellung: Status %d, want 404", rec.Code)
 	}
 }
@@ -188,7 +188,7 @@ func TestBestellungTopfKorrektur_OrdnetAltBestellungOhneZuordnungZu(t *testing.T
 	}
 
 	id := testdaten.LegeBestellungOhneTopfAn(t, pool, "alt-ohne-zuordnung", nil)
-	rec := korrigiereTopfUeberHandler(t, srv, pool, id, `{"mittel":"land","grund":"Rechnung liegt vor, war Lernmittel"}`)
+	rec := korrigiereTopfUeberTuer(t, srv, pool, id, `{"mittel":"land","grund":"Rechnung liegt vor, war Lernmittel"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"von":""`) {
 		t.Fatalf("Alt-Bestellung zuordnen: %d %s", rec.Code, rec.Body.String())
 	}

@@ -39,8 +39,8 @@ func TestBerichtTitelAbleiten(t *testing.T) {
 
 // Beide Tage des Zeitraums sind Pflicht und stehen als JJJJ-MM-TT da; gelesen werden sie als
 // Kalendertage der Schule. Die Meldung nennt den Parameter, an dem es liegt.
-func TestParseBerichtZeitraum(t *testing.T) {
-	von, bis, err := parseBerichtZeitraum("2026-09-01", "2026-09-30")
+func TestLeseBerichtZeitraum(t *testing.T) {
+	von, bis, err := leseBerichtZeitraum("2026-09-01", "2026-09-30")
 	if err != nil {
 		t.Fatalf("gültiger Zeitraum: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestParseBerichtZeitraum(t *testing.T) {
 		{"01.09.2026", "2026-09-30", "'von'"},
 		{"2026-09-01", "2026-09-31", "'bis'"},
 	} {
-		_, _, err := parseBerichtZeitraum(f.von, f.bis)
+		_, _, err := leseBerichtZeitraum(f.von, f.bis)
 		if err == nil {
 			t.Errorf("von=%q bis=%q: kein Fehler", f.von, f.bis)
 			continue

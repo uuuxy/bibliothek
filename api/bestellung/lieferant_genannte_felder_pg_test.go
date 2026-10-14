@@ -32,7 +32,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	// brechen bei einer Ablehnung ab.
 	anlegen := func(t *testing.T, name string, haupt bool) string {
 		t.Helper()
-		return lieferantAnlegenUeberHandler(t, srv, `{"name":"`+name+`","email":"`+strings.ToLower(name)+
+		return lieferantAnlegenUeberTuer(t, srv, `{"name":"`+name+`","email":"`+strings.ToLower(name)+
 			`@test.invalid","customerNumber":"K-`+name+`","kundennummer_schultraeger":"S-`+name+
 			`","ist_hauptlieferant":`+map[bool]string{true: "true", false: "false"}[haupt]+`}`).ID
 	}
@@ -42,7 +42,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/api/lieferanten/"+id, strings.NewReader(rumpf))
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		srv.UpdateSupplierHandler()(rec, req)
+		srv.LieferantAendern()(rec, req)
 		return rec.Code
 	}
 	type stand struct {
@@ -64,19 +64,19 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	neu := anlegen(t, "NGF-Neu", false)
 
 	// Ein anderer Platz macht den zweiten Händler zum Hauptlieferanten; er nennt nur das Merkmal.
-	lieferantAendernUeberHandler(t, srv, neu, `{"ist_hauptlieferant":true}`)
+	lieferantAendernUeberTuer(t, srv, neu, `{"ist_hauptlieferant":true}`)
 	if a, n := lies(t, alt), lies(t, neu); a.haupt || !n.haupt || n.name != "NGF-Neu" || n.zweitnummer != "S-NGF-Neu" {
 		t.Fatalf("nach dem Umhängen: alt %+v, neu %+v — erwartet das Merkmal beim zweiten, sonst nichts geändert", a, n)
 	}
 
 	// Die Maske vom Morgen (der erste trug das Merkmal noch) korrigiert nur seine E-Mail.
-	antwort := lieferantAendernUeberHandler(t, srv, alt, `{"email":"korrigiert@test.invalid"}`)
+	antwort := lieferantAendernUeberTuer(t, srv, alt, `{"email":"korrigiert@test.invalid"}`)
 	if a, n := lies(t, alt), lies(t, neu); a.email != "korrigiert@test.invalid" || a.haupt || !n.haupt ||
 		a.name != "NGF-Alt" || a.nummer != "K-NGF-Alt" || a.zweitnummer != "S-NGF-Alt" {
 		t.Errorf("nach dem Korrigieren der E-Mail: alt %+v, neu %+v — das Merkmal bleibt beim zweiten, die übrigen Felder stehen", a, n)
 	}
 	// Die Antwort nennt den gespeicherten Stand, auch für Felder, die der Rumpf nicht nannte.
-	if antwort.Name != "NGF-Alt" || antwort.Email != "korrigiert@test.invalid" || antwort.CustomerNumber != "K-NGF-Alt" ||
+	if antwort.Name != "NGF-Alt" || antwort.Email != "korrigiert@test.invalid" || antwort.Kundennummer != "K-NGF-Alt" ||
 		antwort.KundennummerSchultraeger != "S-NGF-Alt" || antwort.IstHauptlieferant {
 		t.Errorf("die Antwort nennt nicht den gespeicherten Stand: %+v", antwort)
 	}
@@ -84,7 +84,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	// Die Gegenrichtung: Wer am Hauptlieferanten selbst etwas korrigiert, nennt das Merkmal
 	// nicht. Gälte ein fehlendes Merkmal als abgewählt, verlöre er es mit jeder Korrektur.
 	t.Run("der Hauptlieferant behält das Merkmal, wenn der Rumpf es nicht nennt", func(t *testing.T) {
-		antwort := lieferantAendernUeberHandler(t, srv, neu, `{"email":"ngf-neu-korrigiert@test.invalid"}`)
+		antwort := lieferantAendernUeberTuer(t, srv, neu, `{"email":"ngf-neu-korrigiert@test.invalid"}`)
 		if n := lies(t, neu); !n.haupt || n.email != "ngf-neu-korrigiert@test.invalid" {
 			t.Errorf("nach dem Korrigieren der E-Mail am Hauptlieferanten: %+v — erwartet die neue Adresse und weiter das Merkmal", n)
 		}
@@ -95,7 +95,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 
 	t.Run("ein Rumpf ohne Feld ändert nichts", func(t *testing.T) {
 		vorher := lies(t, alt)
-		lieferantAendernUeberHandler(t, srv, alt, `{}`)
+		lieferantAendernUeberTuer(t, srv, alt, `{}`)
 		if nachher := lies(t, alt); nachher != vorher {
 			t.Errorf("der Stand hat sich geändert: %+v, vorher %+v", nachher, vorher)
 		}
@@ -115,7 +115,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	})
 
 	t.Run("eine leere zweite Kundennummer heißt dieselbe wie die erste", func(t *testing.T) {
-		lieferantAendernUeberHandler(t, srv, alt, `{"kundennummer_schultraeger":" "}`)
+		lieferantAendernUeberTuer(t, srv, alt, `{"kundennummer_schultraeger":" "}`)
 		if s := lies(t, alt); s.zweitnummer != "" || s.nummer != "K-NGF-Alt" {
 			t.Errorf("nach dem Leeren: %+v", s)
 		}
@@ -133,7 +133,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	})
 
 	t.Run("das Merkmal lässt sich abwählen, ohne es jemand anderem zu geben", func(t *testing.T) {
-		lieferantAendernUeberHandler(t, srv, neu, `{"ist_hauptlieferant":false}`)
+		lieferantAendernUeberTuer(t, srv, neu, `{"ist_hauptlieferant":false}`)
 		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM lieferanten WHERE ist_hauptlieferant`); n != 0 {
 			t.Errorf("%d Hauptlieferanten nach dem Abwählen, erwartet 0", n)
 		}

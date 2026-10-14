@@ -358,7 +358,7 @@ des Schulträgers (Schülerbücherei) beschafft wird.
   Brief ernst nimmt, gewährt auf Lernmittel den falschen Nachlass.
 - **Ein Lieferant hatte EINE Kundennummer.** Händler führen für Lernmittel und Bibliothek
   oft getrennte Kundenkonten (anderer Nachlass, andere Rechnungsstelle).
-- **Der Bestellbedarf ist Lernmittel** (`reorderFilter`: Vorgabe `lmf`), die Titelsuche
+- **Der Bestellbedarf ist Lernmittel** (`bestellbedarfFilter`: Vorgabe `lmf`), die Titelsuche
   liefert alles. Ein über die DNB-Suche NEU angelegter Titel (`upsertTitelAusMetadaten`)
   bekam **kein** `ist_lernmittel` — ein neues Schulbuch entstand als Bücherei-Titel und
   blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).

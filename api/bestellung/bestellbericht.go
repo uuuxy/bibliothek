@@ -13,18 +13,18 @@ import (
 	"bibliothek/repository"
 )
 
-// parseBerichtZeitraum liest die zwei Tage des Zeitraums (JJJJ-MM-TT) als Kalendertage der
+// leseBerichtZeitraum liest die zwei Tage des Zeitraums (JJJJ-MM-TT) als Kalendertage der
 // Schule; beide sind Pflicht. In UTC gelesen zählte eine Bestellung aus der ersten Stunde eines
 // Monats zum Monat davor.
-func parseBerichtZeitraum(vonStr, bisStr string) (time.Time, time.Time, error) {
-	if vonStr == "" || bisStr == "" {
+func leseBerichtZeitraum(vonText, bisText string) (time.Time, time.Time, error) {
+	if vonText == "" || bisText == "" {
 		return time.Time{}, time.Time{}, fmt.Errorf("parameter 'von' und 'bis' erforderlich (YYYY-MM-DD)")
 	}
-	von, err := schulzeit.Kalendertag(vonStr)
+	von, err := schulzeit.Kalendertag(vonText)
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'von': %w", err)
 	}
-	bis, err := schulzeit.Kalendertag(bisStr)
+	bis, err := schulzeit.Kalendertag(bisText)
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'bis': %w", err)
 	}
@@ -72,7 +72,7 @@ func leseBerichtAnfrage(r *http.Request) (berichtAnfrage, error) {
 		jahresansicht: q.Get("jahresansicht") == "true",
 	}
 	var err error
-	if a.von, a.bis, err = parseBerichtZeitraum(a.vonText, a.bisText); err != nil {
+	if a.von, a.bis, err = leseBerichtZeitraum(a.vonText, a.bisText); err != nil {
 		return berichtAnfrage{}, err
 	}
 	// Geprüft wie jede Kennung aus der Query (tuer.LeseUUIDParameter): Ein Rohtext wie `x` ginge
@@ -90,7 +90,7 @@ func leseBerichtAnfrage(r *http.Request) (berichtAnfrage, error) {
 	return a, nil
 }
 
-// GetBestellBerichtPDFHandler liefert den Bericht über die Bestellungen eines Zeitraums als PDF.
+// BestellberichtPDF liefert den Bericht über die Bestellungen eines Zeitraums als PDF.
 // Den Erzeuger trägt pdf/bestellbericht.go; die Tür prüft die Eingabe, liest die Bestellungen
 // und füllt seine Eingabe.
 //
@@ -102,7 +102,7 @@ func leseBerichtAnfrage(r *http.Request) (berichtAnfrage, error) {
 //	mittel        wahlweise: nur die Bestellungen eines Topfs
 //	titel         wahlweise: eigene Überschrift
 //	jahresansicht true, wahlweise: dazu die Übersichten nach Monat und nach Lieferant
-func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
+func (t *Tueren) BestellberichtPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		a, err := leseBerichtAnfrage(r)
@@ -111,42 +111,42 @@ func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
 			return
 		}
 
-		orders, orderIndex, err := repository.LadeBerichtBestellungen(ctx, s.DB.Pool, a.von, a.bis.AddDate(0, 0, 1), a.lieferantID, a.mittel)
+		bestellungen, bestellIndex, err := repository.LadeBerichtBestellungen(ctx, t.DB.Pool, a.von, a.bis.AddDate(0, 0, 1), a.lieferantID, a.mittel)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		if err := repository.LadeBerichtPositionen(ctx, s.DB.Pool, orders, orderIndex); err != nil {
+		if err := repository.LadeBerichtPositionen(ctx, t.DB.Pool, bestellungen, bestellIndex); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		// Ein Lesefehler ist ein Fehler: Mit den Vorgaben stünde das Blatt ohne den Kopf der
 		// Schule da, und die Vorgabe entschiede, ob es Beträge nennt.
-		settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
+		einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 			return
 		}
 		schule := pdf.SchuleInfo{
-			Name:    settings.SchuleName,
-			Strasse: settings.SchuleStrasse,
-			PLZ:     settings.SchulePLZ,
-			Ort:     settings.SchuleOrt,
+			Name:    einstellungen.SchuleName,
+			Strasse: einstellungen.SchuleStrasse,
+			PLZ:     einstellungen.SchulePLZ,
+			Ort:     einstellungen.SchuleOrt,
 		}
 
-		toepfe, err := bestellberichtToepfe(orders)
+		toepfe, err := bestellberichtToepfe(bestellungen)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		pdfBytes, err := pdf.GenerateBestellberichtPDF(pdf.Bestellbericht{
+		pdfDaten, err := pdf.GenerateBestellberichtPDF(pdf.Bestellbericht{
 			Titel:         a.titel,
 			Von:           a.von,
 			Bis:           a.bis,
 			Jahresansicht: a.jahresansicht,
-			MitPreisen:    settings.PreiseErfassen,
+			MitPreisen:    einstellungen.PreiseErfassen,
 			Toepfe:        toepfe,
 		}, schule)
 		if err != nil {
@@ -158,7 +158,7 @@ func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(pdfBytes) //nolint:errcheck
+		_, _ = w.Write(pdfDaten) //nolint:errcheck
 	}
 }
 
@@ -166,13 +166,13 @@ func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
 // Block in der Reihenfolge der Berichte, unter seiner Beschriftung; ein Topf ohne Bestellung
 // bekommt keinen. Bestellungen ohne Zuordnung stehen in einem eigenen Block und werden keinem
 // Topf zugeschlagen.
-func bestellberichtToepfe(orders []repository.BerichtBestellung) ([]pdf.BestellberichtTopf, error) {
+func bestellberichtToepfe(bestellungen []repository.BerichtBestellung) ([]pdf.BestellberichtTopf, error) {
 	reihenfolge := mitteltopf.Reihenfolge()
 	toepfe := make([]pdf.BestellberichtTopf, 0, len(reihenfolge))
 	zugeordnet := 0
 	for _, topf := range reihenfolge {
 		block := pdf.BestellberichtTopf{Beschriftung: mitteltopf.Beschriftung(topf)}
-		for _, o := range orders {
+		for _, o := range bestellungen {
 			if o.Mittel == topf {
 				block.Bestellungen = append(block.Bestellungen, bestellberichtBestellung(o))
 			}
@@ -185,9 +185,9 @@ func bestellberichtToepfe(orders []repository.BerichtBestellung) ([]pdf.Bestellb
 	}
 	// Eine Bestellung mit einem Topf, den die Reihenfolge nicht nennt, fehlte auf dem Blatt und
 	// in jeder Summe. Das Blatt geht in die Abrechnung, deshalb entsteht dann keins.
-	if zugeordnet != len(orders) {
+	if zugeordnet != len(bestellungen) {
 		return nil, fmt.Errorf("bestellbericht: %d von %d Bestellungen tragen einen Topf, den der Bericht nicht kennt",
-			len(orders)-zugeordnet, len(orders))
+			len(bestellungen)-zugeordnet, len(bestellungen))
 	}
 	return toepfe, nil
 }

@@ -13,8 +13,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// BestaetigenRequest ist der Body von PUT /api/bestellungen/{id}/bestaetigen.
-type BestaetigenRequest struct {
+// bestellungBestaetigenAnfrage ist der Body von PUT /api/bestellungen/{id}/bestaetigen.
+type bestellungBestaetigenAnfrage struct {
 	// EtikettenGroesse: welche Etikettengröße der Lieferant (laut externer Rückmeldung,
 	// z. B. per Naacher-Link) letztlich gewählt/gedruckt hat.
 	EtikettenGroesse string `json:"etiketten_groesse"`
@@ -26,35 +26,35 @@ type BestaetigenRequest struct {
 // bestellungImBestaetigungsweg beantwortet für BEIDE Bestätigungs-Handler dieselbe Frage:
 // Gehört diese Bestellung überhaupt zum Bestätigungs-Weg?
 // Die Abfrage und ihre zwei Wege stehen an repository.IstBestellungImBestaetigungsweg.
-func (s *Tueren) bestellungImBestaetigungsweg(ctx context.Context, id string) (bool, error) {
-	return repository.IstBestellungImBestaetigungsweg(ctx, s.DB.Pool, id)
+func (t *Tueren) bestellungImBestaetigungsweg(ctx context.Context, id string) (bool, error) {
+	return repository.IstBestellungImBestaetigungsweg(ctx, t.DB.Pool, id)
 }
 
-// BestaetigenBestellungHandler trägt einen rein externen Vorgang nach: Lieferanten wie
+// BestellungBestaetigen trägt einen rein externen Vorgang nach: Lieferanten wie
 // Naacher wählen über ihren eigenen Link die Etikettengröße und bestätigen die
 // Bestellung selbst — Bibliosys bekommt davon keine automatische Rückmeldung. Dieser
 // Endpunkt lässt jemanden aus der Bibliothek diesen Status manuell nachtragen, damit er
 // in der Bestellhistorie sichtbar ist.
-func (s *Tueren) BestaetigenBestellungHandler() http.HandlerFunc {
-	return s.bestaetigenBestellung
+func (t *Tueren) BestellungBestaetigen() http.HandlerFunc {
+	return t.trageBestaetigungNach
 }
 
-// bestaetigenBestellung steht auf der obersten Ebene und nicht als Closure in
-// BestaetigenBestellungHandler.
+// trageBestaetigungNach steht auf der obersten Ebene und nicht als Closure in
+// BestellungBestaetigen.
 //
 // Das ist keine Stilfrage: Für die Cognitive-Complexity-Messung zählt eine Closure als
 // eigene Verschachtelungsebene, und dadurch wiegt jedes `if` in diesem Rumpf eins mehr.
 // Als Closure kam die Funktion auf 18 und riss die Schwelle von 15 — obwohl sie nichts
 // weiter tut als sechs Vorbedingungen der Reihe nach abzuräumen. Verschoben, nicht
 // zerschnitten: Die Abfolge bleibt am Stück lesbar (vgl. die übrigen Handler).
-func (s *Tueren) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing bestellung id"))
 		return
 	}
 
-	var req BestaetigenRequest
+	var req bestellungBestaetigenAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
@@ -69,7 +69,7 @@ func (s *Tueren) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	imBestaetigungsweg, err := s.bestellungImBestaetigungsweg(ctx, id)
+	imBestaetigungsweg, err := t.bestellungImBestaetigungsweg(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
@@ -87,7 +87,7 @@ func (s *Tueren) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 	// 'bibliothek' hält fest, dass hier jemand aus dem Haus nachgetragen hat. Über den
 	// Link bestätigt der Lieferant selbst und die Spalte trägt 'lieferant' — dieselbe
 	// Statuszeile, aber eine andere Aussage.
-	bereits, err := s.bestaetigeBestellung(ctx, id, req.EtikettenGroesse, req.EtikettenFormat, "bibliothek")
+	bereits, err := t.bestaetigeBestellung(ctx, id, req.EtikettenGroesse, req.EtikettenFormat, "bibliothek")
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -106,6 +106,6 @@ func (s *Tueren) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 // bestaetigeBestellung trägt die Bestätigung ein und meldet über bereits=true, dass sie schon
 // vorlag. Der Link und der Nachtrag von Hand laufen beide hier durch: eine Stelle, an der der
 // Zustand kippt. Die Anweisung steht an repository.BestaetigeBestellung.
-func (s *Tueren) bestaetigeBestellung(ctx context.Context, bestellungID, groesse, format, durch string) (bereits bool, err error) {
-	return repository.BestaetigeBestellung(ctx, s.DB.Pool, bestellungID, groesse, format, durch)
+func (t *Tueren) bestaetigeBestellung(ctx context.Context, bestellungID, groesse, format, durch string) (bereits bool, err error) {
+	return repository.BestaetigeBestellung(ctx, t.DB.Pool, bestellungID, groesse, format, durch)
 }

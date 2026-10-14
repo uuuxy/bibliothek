@@ -106,7 +106,7 @@ func TestBestelllinkFrist_NeuerLinkBekommtDieEingestellteFrist(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/bestaetigungs-link", nil)
 	req.SetPathValue("id", bestellungID)
 	rec := httptest.NewRecorder()
-	srv.NeuerBestaetigungsLinkHandler().ServeHTTP(rec, req)
+	srv.BestaetigungsLinkErneuern().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}

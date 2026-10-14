@@ -101,7 +101,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 		req.SetPathValue("token", res.BestaetigungsToken)
 		req.SetPathValue("groesse", groesse)
 		rec := httptest.NewRecorder()
-		srv.OeffentlicheEtikettenHandler().ServeHTTP(rec, req)
+		srv.OeffentlicheEtiketten().ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Etiketten %s: Status = %d, want 200, body: %s", groesse, rec.Code, rec.Body.String())

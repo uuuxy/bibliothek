@@ -836,13 +836,13 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   als fertige Texte zum Topf der Bestellung und den Weg der Etiketten als Wert
   (`bestellanschreiben`, `api/bestellung/bestellmail_anhaenge.go`); den Satz dazu wählt der Brief.
   Der Bestellbericht bekommt je Topf einen Block mit fertiger Beschriftung, in der Reihenfolge
-  der Berichte (`bestellberichtToepfe`, `api/bestellung/bestellbericht_handler.go`); der
+  der Berichte (`bestellberichtToepfe`, `api/bestellung/bestellbericht.go`); der
   Erzeuger druckt die Blöcke seiner Eingabe und kennt die Töpfe der Schule nicht. Trägt eine
   Bestellung einen Topf, den die Reihenfolge nicht nennt, entsteht kein Blatt: Sie stünde in
   keinem Block und fehlte in jeder Summe.
 - Das Anlegen einer Bestellung steht in `internal/service` (`bestellung_anlegen.go`,
   `BestellDienst.LegeAn`) und kennt weder die Anfrage noch den Druckauftrag der Tür. Die Tür füllt den
-  Auftrag aus der Anfrage (`bestellAuftrag`, `api/bestellung/orders_handler.go`) und die Angaben der
+  Auftrag aus der Anfrage (`bestellAuftrag`, `api/bestellung/bestellungen.go`) und die Angaben der
   Bestellmail aus dem Ergebnis (`bestellmailDatenAus`, `api/bestellung/bestellmail_versand.go`).
   Position, bestellter Titel und Etikett haben in beiden Paketen dieselben Felder, die Tür
   wandelt per Typumwandlung; ein Feld, das nur eine Seite bekommt, übersetzt nicht mehr. Den
@@ -3742,7 +3742,7 @@ haben über 400 (gezählt am 13.10.2026 abends): `leser/student_update.go` (555)
 `lernmittel/lmf_plan.go` (490), `mahnwesen/mahnlisten_versand.go` (423) und
 `leser/student_create.go` (420). Am Morgen desselben Tages waren es sechs, die drei größten
 `lernmittel/lmf_plan.go` (692), die Türen des Bescheids in einer Datei (623) und
-`bestellung/bestellbericht_handler.go` (567): Der Erzeuger des Bestellberichts steht jetzt
+`bestellung/bestellbericht.go` (567): Der Erzeuger des Bestellberichts steht jetzt
 in `pdf/` (die Datei der Tür hat 189 Zeilen), die Regeln des LMF-Plans in
 `internal/service`, und die Türen des Bescheids stehen je Schritt in einer eigenen Datei
 (die größte hat 192 Zeilen). In Funktionen ohne einen Typ aus `net/http` stehen in den

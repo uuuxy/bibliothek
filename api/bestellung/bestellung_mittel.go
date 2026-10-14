@@ -29,41 +29,41 @@ import (
 // rausging. Korrigiert wird die eigene Zuordnung, aus der die Schule rechnet. Deshalb
 // ist der Grund Pflicht und der Eingriff steht im Admin-Audit-Log mit von/nach.
 
-// MittelKorrekturRequest ist die Eingabe für UpdateBestellungMittelHandler.
-type MittelKorrekturRequest struct {
+// mittelKorrigierenAnfrage ist die Eingabe für BestellungMittelKorrigieren.
+type mittelKorrigierenAnfrage struct {
 	Mittel string `json:"mittel"`
 	Grund  string `json:"grund"`
 }
 
-// auditBestellungMittelKorrigiert ist die Aktion im Admin-Audit-Log.
-const auditBestellungMittelKorrigiert = "BESTELLUNG_MITTEL_KORRIGIERT"
+// aktionBestellungMittelKorrigiert ist die Aktion im Admin-Audit-Log.
+const aktionBestellungMittelKorrigiert = "BESTELLUNG_MITTEL_KORRIGIERT"
 
-// UpdateBestellungMittelHandler setzt den Topf einer bestehenden Bestellung neu.
+// BestellungMittelKorrigieren setzt den Topf einer bestehenden Bestellung neu.
 //
 // @Summary      Correct the funding pot of an existing order
 // @Tags         orders
 // @Accept       json
 // @Produce      json
 // @Param        id    path      string                  true  "Order ID"
-// @Param        body  body      MittelKorrekturRequest  true  "New pot and reason"
+// @Param        body  body      mittelKorrigierenAnfrage  true  "New pot and reason"
 // @Success      200   {object}  map[string]any
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
 // @Router       /bestellungen/{id}/mittel [put]
-func (s *Tueren) UpdateBestellungMittelHandler() http.HandlerFunc {
-	return s.korrigiereBestellungMittel
+func (t *Tueren) BestellungMittelKorrigieren() http.HandlerFunc {
+	return t.korrigiereBestellungMittel
 }
 
-// korrigiereBestellungMittel steht wie bestaetigenBestellung auf der obersten Ebene —
+// korrigiereBestellungMittel steht wie trageBestaetigungNach auf der obersten Ebene —
 // eine Closure zählt für die Komplexitätsmessung als eigene Ebene.
-func (s *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing bestellung id"))
 		return
 	}
 
-	var req MittelKorrekturRequest
+	var req mittelKorrigierenAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
@@ -78,7 +78,7 @@ func (s *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	vorher, err := repository.KorrigiereBestellungMittel(r.Context(), s.DB.Pool, id, req.Mittel)
+	vorher, err := repository.KorrigiereBestellungMittel(r.Context(), t.DB.Pool, id, req.Mittel)
 	if errors.Is(err, pgx.ErrNoRows) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
 		return
@@ -94,7 +94,7 @@ func (s *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	}
 	geaendert := von != req.Mittel
 	if geaendert {
-		s.auditiereMittelKorrektur(r, id, von, req.Mittel, grund)
+		t.protokolliereMittelKorrektur(r, id, von, req.Mittel, grund)
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
@@ -105,19 +105,19 @@ func (s *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-// auditiereMittelKorrektur protokolliert die Korrektur — dasselbe Muster wie der LMF-Plan
+// protokolliereMittelKorrektur protokolliert die Korrektur — dasselbe Muster wie der LMF-Plan
 // (api/lernmittel/lmf_plan_protokoll.go): ohne Anmeldung oder ohne Datenbank gibt es nichts zu schreiben.
-func (s *Tueren) auditiereMittelKorrektur(r *http.Request, bestellungID, von, nach, grund string) {
+func (t *Tueren) protokolliereMittelKorrektur(r *http.Request, bestellungID, von, nach, grund string) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return
 	}
-	if s.DB == nil || s.DB.Pool == nil {
+	if t.DB == nil || t.DB.Pool == nil {
 		return
 	}
 	details := map[string]any{"bestellung_id": bestellungID, "von": von, "nach": nach, "grund": grund}
-	if err := repository.NewProtokollAbfragen(s.DB.Pool).
-		ProtokolliereAdminAktion(r.Context(), claims.UserID, auditBestellungMittelKorrigiert, clientip.AusAnfrage(r), details); err != nil {
-		log.Printf("Audit %s fehlgeschlagen: %v", auditBestellungMittelKorrigiert, err)
+	if err := repository.NewProtokollAbfragen(t.DB.Pool).
+		ProtokolliereAdminAktion(r.Context(), claims.UserID, aktionBestellungMittelKorrigiert, clientip.AusAnfrage(r), details); err != nil {
+		log.Printf("Audit %s fehlgeschlagen: %v", aktionBestellungMittelKorrigiert, err)
 	}
 }

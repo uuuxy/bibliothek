@@ -14,13 +14,13 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// reorderSpalten spiegelt die Projektion aus LadeBestellbedarf.
-func reorderSpalten() []string {
+// bedarfSpalten spiegelt die Projektion aus LadeBestellbedarf.
+func bedarfSpalten() []string {
 	return []string{"id", "titel", "autor", "isbn", "verlag", "signatur",
 		"erscheinungsjahr", "cover_url", "meldebestand", "verfuegbar", "gesamt", "ist_lernmittel", "auflagen"}
 }
 
-func TestQueryReorders(t *testing.T) {
+func TestBestellbedarfAbfrage(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("Mock-Pool konnte nicht erstellt werden: %v", err)
@@ -34,7 +34,7 @@ func TestQueryReorders(t *testing.T) {
 	// prüft der PG-Test; hier geht es um die Projektion beider Bestandszahlen.
 	mock.ExpectQuery("WITH titel AS").
 		WithArgs(5).
-		WillReturnRows(pgxmock.NewRows(reorderSpalten()).
+		WillReturnRows(pgxmock.NewRows(bedarfSpalten()).
 			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3, true, []byte(nil)))
 
 	results, err := repository.LadeBestellbedarf(context.Background(), server.DB.Pool, "", 5)
@@ -65,11 +65,11 @@ func TestQueryReorders(t *testing.T) {
 	}
 }
 
-// TestReorderFilterDefaultIstLMF sichert die fachliche Vorauswahl ab: Nachbestellt
+// TestBestellbedarfFilterVorgabeIstLMF sichert die fachliche Vorauswahl ab: Nachbestellt
 // werden Lernmittel; der Freihandbestand besteht überwiegend aus bewussten
 // Einzelstücken (Prüf-/Leseexemplare). Ohne diesen Default enthielt die Liste
 // praktisch den gesamten Katalog und war unbenutzbar.
-func TestReorderFilterDefaultIstLMF(t *testing.T) {
+func TestBestellbedarfFilterVorgabeIstLMF(t *testing.T) {
 	faelle := []struct {
 		name, query, wantFragment string
 	}{
@@ -84,16 +84,16 @@ func TestReorderFilterDefaultIstLMF(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, "/api/bestellungen"+f.query, nil)
-			if got := reorderFilter(r); got != f.wantFragment {
+			if got := bestellbedarfFilter(r); got != f.wantFragment {
 				t.Errorf("erwartet %q, war %q", f.wantFragment, got)
 			}
 		})
 	}
 }
 
-// TestGetReordersLeereListeIstArray: wie bei der Schülerliste darf eine leere Liste
+// TestBestellbedarfLeereListeIstArray: wie bei der Schülerliste darf eine leere Liste
 // nicht als null herausgehen — das Frontend ruft .length darauf auf.
-func TestGetReordersLeereListeIstArray(t *testing.T) {
+func TestBestellbedarfLeereListeIstArray(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("Mock-Pool konnte nicht erstellt werden: %v", err)
@@ -107,11 +107,11 @@ func TestGetReordersLeereListeIstArray(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 	mock.ExpectQuery("WITH titel AS").
 		WithArgs(3). // Default-Schwelle (leere Settings ⇒ Default 3)
-		WillReturnRows(pgxmock.NewRows(reorderSpalten()))
+		WillReturnRows(pgxmock.NewRows(bedarfSpalten()))
 
 	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	rec := httptest.NewRecorder()
-	server.GetReordersHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen", nil))
+	server.Bestellbedarf().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen", nil))
 
 	if body := strings.TrimSpace(rec.Body.String()); body != "[]" {
 		t.Errorf("erwartet [], war: %s", body)

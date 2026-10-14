@@ -40,7 +40,7 @@ var nichtVonUpdateBook = map[string]string{
 		"als zwei Titeln fällt. UpdateBook schriebe den Wert ohne sie.",
 	"meldebestand": "Altbestand: Die Spalte wird NUR gelesen und von keinem Codepfad geschrieben. " +
 		"Die Bestellschwelle kommt seit dem Umbau aus den Einstellungen, der Wert wird laut " +
-		"api/bestellung/reorders.go nur noch informativ mitgeliefert.",
+		"api/bestellung/bestellbedarf.go nur noch informativ mitgeliefert.",
 }
 
 // spaltenAusSchema liest die Spalten einer Tabelle aus schema.sql — aus dem CREATE TABLE

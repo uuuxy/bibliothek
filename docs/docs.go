@@ -666,7 +666,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bestellung.BestellKonfiguration"
+                            "$ref": "#/definitions/bestellung.bestellKonfiguration"
                         }
                     }
                 }
@@ -817,7 +817,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/bestellung.MittelKorrekturRequest"
+                            "$ref": "#/definitions/bestellung.mittelKorrigierenAnfrage"
                         }
                     }
                 ],
@@ -4176,7 +4176,7 @@ const docTemplate = `{
                 }
             }
         },
-        "bestellung.BestellKonfiguration": {
+        "bestellung.bestellKonfiguration": {
             "type": "object",
             "properties": {
                 "bestelllink_ohne_adresse": {
@@ -4188,7 +4188,7 @@ const docTemplate = `{
                 }
             }
         },
-        "bestellung.MittelKorrekturRequest": {
+        "bestellung.mittelKorrigierenAnfrage": {
             "type": "object",
             "properties": {
                 "grund": {

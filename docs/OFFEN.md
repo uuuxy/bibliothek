@@ -266,7 +266,7 @@ Etiketten, Bestätigung) und für das Uptime-Signal `/health`, das nur `healthy`
 meldet. Mehr nicht: Das CSRF-Cookie für die Bestätigung setzt schon der erste Abruf
 (`refreshCSRFCookie` in `api/csrf.go`), der Aufruf von `/api/auth/me` beim Laden
 (`restoreSession`) darf scheitern, und die Seite zeigt keine Personendaten — Titel, ISBN, Menge,
-Schule, Lieferant, Topf, Kundennummer (`api/bestellung/bestellbestaetigung_public.go`).
+Schule, Lieferant, Topf, Kundennummer (`api/bestellung/bestellbestaetigung_oeffentlich.go`).
 
 **Zu bauen, vor dem Echtstart:** Der Eingang (Caddy) lässt von außen nur diese Pfade durch; was
 nicht ausdrücklich freigegeben ist, bleibt zu. In den Einstellungen die öffentliche Adresse

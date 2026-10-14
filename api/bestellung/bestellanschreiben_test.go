@@ -12,7 +12,7 @@ import (
 )
 
 // anschreibenBlatt druckt das Anschreiben, wie die Anlagen der Bestellmail es tun.
-func anschreibenBlatt(positionen []OrderedItem, schule pdf.SchuleInfo, weg pdf.EtikettenWeg, mittel string) ([]byte, error) {
+func anschreibenBlatt(positionen []bestellterTitel, schule pdf.SchuleInfo, weg pdf.EtikettenWeg, mittel string) ([]byte, error) {
 	anschreiben, err := bestellanschreiben(positionen, weg, mittel)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func anschreibenBlatt(positionen []OrderedItem, schule pdf.SchuleInfo, weg pdf.E
 // das die Eingabe später dazubekommt und das niemand füllt, fällt an tuertest.LeereFelder auf. Den Verlag
 // druckt das Anschreiben nicht.
 func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
-	positionen := []OrderedItem{
+	positionen := []bestellterTitel{
 		{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Verlag: "Verlag 1", Menge: 30},
 		{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Verlag: "Verlag 2", Menge: 2},
 	}
@@ -66,7 +66,7 @@ func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
 // Lernmittel-Klassensätze — der Händler hätte danach den falschen Nachlass gewährt, und
 // am Bildschirm sah es niemand, weil das PDF erst im Postfach des Händlers aufgeht.
 func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T) {
-	items := []OrderedItem{{Titel: "Mathematik 7", Autor: "Autor", ISBN: "978", Menge: 30}}
+	items := []bestellterTitel{{Titel: "Mathematik 7", Autor: "Autor", ISBN: "978", Menge: 30}}
 	schule := pdf.SchuleInfo{Name: "Testschule"}
 
 	// Die Wörter, an denen die beiden Töpfe im Brief zu unterscheiden sind. Kurz
@@ -116,7 +116,7 @@ func TestBestellanschreibenVerweigertUnbekanntenTopf(t *testing.T) {
 	}
 }
 
-// Die Mail-Anlagen hängen am selben Schalter: Ein BestellMail ohne Topf scheitert an der
+// Die Mail-Anlagen hängen am selben Schalter: Ein bestellMail ohne Topf scheitert an der
 // Anschreiben-Erzeugung, bevor irgendetwas verschickt wird.
 func TestBestellAnhaengeOhneTopfScheitern(t *testing.T) {
 	m := testBestellMail()

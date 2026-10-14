@@ -41,12 +41,12 @@ func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
 		rumpf := `{"name":"` + name + `","email":"` + name + `@test.invalid","customerNumber":"K-` + name +
 			`","ist_hauptlieferant":` + map[bool]string{true: "true", false: "false"}[haupt] + `}`
 		rec := httptest.NewRecorder()
-		srv.CreateSupplierHandler()(rec,
+		srv.LieferantAnlegen()(rec,
 			httptest.NewRequest(http.MethodPost, "/api/lieferanten", strings.NewReader(rumpf)))
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("Lieferant %s anlegen: Status %d — %s", name, rec.Code, rec.Body.String())
 		}
-		var antwort SupplierResponse
+		var antwort lieferantAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort lesen: %v", err)
 		}
@@ -58,7 +58,7 @@ func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
 		rec := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, "/api/lieferanten/"+id, nil)
 		r.SetPathValue("id", id)
-		srv.DeleteSupplierHandler()(rec, r)
+		srv.LieferantLoeschen()(rec, r)
 		return rec
 	}
 
@@ -93,7 +93,7 @@ func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
 	up := httptest.NewRequest(http.MethodPut, "/api/lieferanten/"+haupt, strings.NewReader(rumpf))
 	up.SetPathValue("id", haupt)
 	upRec := httptest.NewRecorder()
-	srv.UpdateSupplierHandler()(upRec, up)
+	srv.LieferantAendern()(upRec, up)
 	if upRec.Code != http.StatusOK {
 		t.Fatalf("Schalter abwählen: Status %d — %s", upRec.Code, upRec.Body.String())
 	}

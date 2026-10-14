@@ -18,23 +18,23 @@ import (
 	"bibliothek/repository"
 )
 
-// OrderItemRequest represents a single item to order from the cart
-type OrderItemRequest struct {
+// bestellPosition represents a single item to order from the cart
+type bestellPosition struct {
 	TitelID         string  `json:"titel_id" validate:"required,uuid_oder_leer"`
 	Menge           int     `json:"menge"`
 	Preis           float64 `json:"preis"`
 	MitVorabBarcode bool    `json:"generate_barcodes"`
 }
 
-// SubmitOrderRequest ist ein kompletter Warenkorb an EINEN Lieferanten. Die Bestellung
+// bestellungAnlegenAnfrage ist ein kompletter Warenkorb an EINEN Lieferanten. Die Bestellung
 // entsteht daraus in einer Transaktion — schlägt eine Position fehl, geht keine raus.
-type SubmitOrderRequest struct {
-	SupplierID string             `json:"supplier_id" validate:"omitempty,uuid_oder_leer"`
-	Items      []OrderItemRequest `json:"items" validate:"dive"`
-	// IdempotencyKey: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
+type bestellungAnlegenAnfrage struct {
+	LieferantID string            `json:"supplier_id" validate:"omitempty,uuid_oder_leer"`
+	Positionen  []bestellPosition `json:"items" validate:"dive"`
+	// IdempotenzSchluessel: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
 	// denselben Schlüssel; die zweite Anfrage wird zum No-op (keine zweite Bestellung,
 	// keine zweite Lieferanten-Mail). Optional — ohne Schlüssel läuft alles wie bisher.
-	IdempotencyKey string `json:"idempotency_key,omitempty"`
+	IdempotenzSchluessel string `json:"idempotency_key,omitempty"`
 	// Mittel: der Topf dieser Bestellung — 'land' (Lernmittelfreiheit) oder
 	// 'schultraeger' (Schülerbücherei), siehe pkg/mitteltopf. PFLICHT: Der Vermerk
 	// muss auf der Bestellung stehen, und ein Standardwert wäre eine stille Zuordnung
@@ -43,39 +43,39 @@ type SubmitOrderRequest struct {
 }
 
 // bestellAuftrag füllt den Auftrag an das Anlegen der Bestellung aus der Anfrage.
-func bestellAuftrag(req SubmitOrderRequest) service.BestellAuftrag {
-	positionen := make([]service.BestellAuftragPosition, 0, len(req.Items))
-	for _, item := range req.Items {
-		positionen = append(positionen, service.BestellAuftragPosition(item))
+func bestellAuftrag(req bestellungAnlegenAnfrage) service.BestellAuftrag {
+	positionen := make([]service.BestellAuftragPosition, 0, len(req.Positionen))
+	for _, position := range req.Positionen {
+		positionen = append(positionen, service.BestellAuftragPosition(position))
 	}
 	return service.BestellAuftrag{
-		LieferantID:          req.SupplierID,
+		LieferantID:          req.LieferantID,
 		Positionen:           positionen,
-		IdempotenzSchluessel: req.IdempotencyKey,
+		IdempotenzSchluessel: req.IdempotenzSchluessel,
 		Mittel:               req.Mittel,
 	}
 }
 
-// SubmitOrderHandler legt die Bestellung aus dem Warenkorb an und verschickt die Bestellmail.
-func (s *Tueren) SubmitOrderHandler(orderSvc *service.BestellDienst) http.HandlerFunc {
+// BestellungAnlegen legt die Bestellung aus dem Warenkorb an und verschickt die Bestellmail.
+func (t *Tueren) BestellungAnlegen(bestellDienst *service.BestellDienst) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.handleSubmitOrder(w, r, orderSvc)
+		t.legeBestellungAn(w, r, bestellDienst)
 	}
 }
 
-// handleSubmitOrder speichert die Bestellung und verschickt danach die Mail an den Lieferanten;
+// legeBestellungAn speichert die Bestellung und verschickt danach die Mail an den Lieferanten;
 // die Bestellung gilt auch, wenn der Versand ausbleibt.
-func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *service.BestellDienst) {
-	var req SubmitOrderRequest
+func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestellDienst *service.BestellDienst) {
+	var req bestellungAnlegenAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
-	if req.SupplierID == "" {
+	if req.LieferantID == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("supplier_id is required"))
 		return
 	}
-	if len(req.Items) == 0 {
+	if len(req.Positionen) == 0 {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
 		return
 	}
@@ -86,9 +86,9 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 
 	ctx := r.Context()
 
-	res, err := orderSvc.LegeAn(ctx, bestellAuftrag(req))
+	res, err := bestellDienst.LegeAn(ctx, bestellAuftrag(req))
 	if err != nil {
-		apierrors.SendHTTPError(w, mapProcessOrderError(err), err)
+		apierrors.SendHTTPError(w, statusDesBestellfehlers(err), err)
 		return
 	}
 
@@ -105,7 +105,7 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 
 	if !mailservice.SMTPKonfiguriert() {
 		log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
-		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
+		t.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
 			"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.LieferantName),
@@ -114,11 +114,11 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		return
 	}
 
-	mitLink, err := s.sendeBestellmail(ctx, bestellmailDatenAus(res))
+	mitLink, err := t.sendeBestellmail(ctx, bestellmailDatenAus(res))
 	if err != nil {
 		// Die Bestellung ist gespeichert, die Mail nicht raus: Der Vermerk an der Bestellung
 		// bleibt, wenn diese Meldung vom Bildschirm verschwunden ist.
-		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
+		t.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "warning",
 			"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.LieferantEmail),
@@ -135,9 +135,9 @@ func (s *Tueren) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	})
 }
 
-// mapProcessOrderError ordnet die benannten Ablehnungen von BestellDienst.LegeAn ihrem Status zu.
+// statusDesBestellfehlers ordnet die benannten Ablehnungen von BestellDienst.LegeAn ihrem Status zu.
 // Alles andere ist ein Serverfehler, dessen Text die Tür nicht ausgibt.
-func mapProcessOrderError(err error) int {
+func statusDesBestellfehlers(err error) int {
 	switch {
 	case errors.Is(err, service.ErrLieferantUnbekannt), errors.Is(err, service.ErrTitelUnbekannt):
 		return http.StatusNotFound
@@ -152,23 +152,23 @@ func mapProcessOrderError(err error) int {
 // mailservice.SMTPKonfig.IstKonfiguriert und gilt damit für alle Versender — vorher
 // kannte nur die Bestell-Abwicklung sie.
 
-// GetIncomingShipmentsHandler returns a list of ordered copies that are currently in transit,
+// Zulauf returns a list of ordered copies that are currently in transit,
 // grouped by creation date and supplier.
-func (s *Tueren) GetIncomingShipmentsHandler() http.HandlerFunc {
+func (t *Tueren) Zulauf() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		groups, err := service.LadeZulauf(ctx, s.DB.Pool)
+		gruppen, err := service.LadeZulauf(ctx, t.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.AntworteJSON(w, http.StatusOK, groups)
+		tuer.AntworteJSON(w, http.StatusOK, gruppen)
 	}
 }
 
-// OrderSearchRequest trägt den Suchbegriff der Bestellsuche — ISBN oder Freitext.
-type OrderSearchRequest struct {
-	Query string `json:"query"`
+// bestellSucheAnfrage trägt den Suchbegriff der Bestellsuche — ISBN oder Freitext.
+type bestellSucheAnfrage struct {
+	Suchtext string `json:"query"`
 }
 
 // dnbAusfallKopf sagt der Bestellsuche, dass die DNB nicht geantwortet hat und die Liste nur
@@ -176,30 +176,30 @@ type OrderSearchRequest struct {
 // X-Treffer-Gesamt an der Katalogsuche (api/portal/opac.go).
 const dnbAusfallKopf = "X-DNB-Ausfall"
 
-// SearchOrdersHandler sucht einen Titel zum Bestellen, zuerst im eigenen Katalog und
+// BestellSuche sucht einen Titel zum Bestellen, zuerst im eigenen Katalog und
 // zusätzlich bei der DNB. Der Metadaten-Client wird EINMAL beim Registrieren der Route
 // gebaut, nicht je Anfrage — er hält seinen eigenen HTTP-Client mit Zeitgrenze.
-func (s *Tueren) SearchOrdersHandler() http.HandlerFunc {
-	return s.sucheBestellung(inventur.NeuerMetadatenClient())
+func (t *Tueren) BestellSuche() http.HandlerFunc {
+	return t.sucheBestellung(inventur.NeuerMetadatenClient())
 }
 
 // sucheBestellung ist die Tür mit ihrem Client für die DNB als Parameter: Ein Test stellt
 // die Antwort der DNB nach, wie bei isbnZuTitel.
-func (s *Tueren) sucheBestellung(metaClient *inventur.MetadatenClient) http.HandlerFunc {
+func (t *Tueren) sucheBestellung(metadaten *inventur.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req OrderSearchRequest
+		var req bestellSucheAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
 
-		query := strings.TrimSpace(req.Query)
-		if query == "" {
+		suchtext := strings.TrimSpace(req.Suchtext)
+		if suchtext == "" {
 			tuer.AntworteJSON(w, http.StatusOK, []service.BestellTreffer{})
 			return
 		}
 
 		ctx := r.Context()
-		results, dnbAusfall, err := service.FindeZumBestellen(ctx, s.DB.Pool, metaClient, query)
+		treffer, dnbAusfall, err := service.FindeZumBestellen(ctx, t.DB.Pool, metadaten, suchtext)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -208,19 +208,19 @@ func (s *Tueren) sucheBestellung(metaClient *inventur.MetadatenClient) http.Hand
 			w.Header().Set(dnbAusfallKopf, "1")
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, results)
+		tuer.AntworteJSON(w, http.StatusOK, treffer)
 	}
 }
 
-// BulkReceiveRequest represents the payload for bulk receiving an order.
-type BulkReceiveRequest struct {
+// wareneingangBuchenAnfrage represents the payload for bulk receiving an order.
+type wareneingangBuchenAnfrage struct {
 	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,required,uuid_oder_leer"`
 }
 
-// BulkReceiveOrderHandler marks all pre-allocated items for a specific order group as received.
-func (s *Tueren) BulkReceiveOrderHandler() http.HandlerFunc {
+// WareneingangBuchen marks all pre-allocated items for a specific order group as received.
+func (t *Tueren) WareneingangBuchen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req BulkReceiveRequest
+		var req wareneingangBuchenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
@@ -231,16 +231,16 @@ func (s *Tueren) BulkReceiveOrderHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		var adminID string
+		var bearbeiterID string
 		if claims, ok := auth.GetClaims(ctx); ok {
-			adminID = claims.UserID
+			bearbeiterID = claims.UserID
 		}
 
-		auditRepo := repository.NewProtokollAbfragen(s.DB.Pool)
+		protokollAbfragen := repository.NewProtokollAbfragen(t.DB.Pool)
 
-		receivedItems, err := service.BucheWareneingang(ctx, s.DB.Pool, auditRepo, service.WareneingangAngaben{
+		eingebucht, err := service.BucheWareneingang(ctx, t.DB.Pool, protokollAbfragen, service.WareneingangAngaben{
 			ExemplarIDs:  req.ExemplarIDs,
-			BearbeiterID: adminID,
+			BearbeiterID: bearbeiterID,
 			IPAdresse:    clientip.AusAnfrage(r),
 		})
 		if err != nil {
@@ -254,8 +254,8 @@ func (s *Tueren) BulkReceiveOrderHandler() http.HandlerFunc {
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":         "success",
-			"received_count": len(receivedItems),
-			"received_items": receivedItems,
+			"received_count": len(eingebucht),
+			"received_items": eingebucht,
 		})
 	}
 }

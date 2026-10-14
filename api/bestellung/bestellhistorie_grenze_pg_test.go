@@ -28,7 +28,7 @@ func holeHistorie(t *testing.T, srv *Tueren, query string) []repository.BestellV
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/bestellhistorie"+query, nil)
 	rec := httptest.NewRecorder()
-	srv.GetBestellhistorieHandler().ServeHTTP(rec, req)
+	srv.Bestellhistorie().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Historie Status = %d, body: %s", rec.Code, rec.Body.String())
 	}
@@ -40,15 +40,15 @@ func holeHistorie(t *testing.T, srv *Tueren, query string) []repository.BestellV
 	return orders
 }
 
-func holeUebersicht(t *testing.T, srv *Tueren) BestellhistorieUebersicht {
+func holeUebersicht(t *testing.T, srv *Tueren) bestellhistorieUebersicht {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	srv.GetBestellhistorieUebersichtHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellhistorie/uebersicht", nil))
+	srv.BestellhistorieUebersicht().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellhistorie/uebersicht", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Übersicht Status = %d, body: %s", rec.Code, rec.Body.String())
 	}
 
-	var u BestellhistorieUebersicht
+	var u bestellhistorieUebersicht
 	if err := json.Unmarshal(rec.Body.Bytes(), &u); err != nil {
 		t.Fatalf("Übersicht lesen: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
 
 // Die Obergrenze muss auch dann halten, wenn jemand ?limit=99999 anhängt — sonst wäre
 // der Deckel eine Bitte und keine Grenze.
-func TestBestellhistorie_MaxLimitIstNichtVerhandelbar(t *testing.T) {
+func TestBestellhistorie_HoechstgrenzeIstNichtVerhandelbar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -110,15 +110,15 @@ func TestBestellhistorie_MaxLimitIstNichtVerhandelbar(t *testing.T) {
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO bestellungen_verlauf (lieferant_id, lieferant_name, lieferant_email, kundennummer, anzahl_exemplare)
 		SELECT $1, 'Massen-Test', 'masse@example.invalid', 'K-MASSE', 1 FROM generate_series(1, $2)
-	`, lieferant, bestellhistorieMaxLimit+20); err != nil {
+	`, lieferant, bestellhistorieHoechstGrenze+20); err != nil {
 		t.Fatalf("Massendaten anlegen: %v", err)
 	}
 
-	if geladen := holeHistorie(t, srv, "?limit=99999"); len(geladen) != bestellhistorieMaxLimit {
-		t.Fatalf("geladen: %d, want %d (Obergrenze)", len(geladen), bestellhistorieMaxLimit)
+	if geladen := holeHistorie(t, srv, "?limit=99999"); len(geladen) != bestellhistorieHoechstGrenze {
+		t.Fatalf("geladen: %d, want %d (Obergrenze)", len(geladen), bestellhistorieHoechstGrenze)
 	}
-	if geladen := holeHistorie(t, srv, ""); len(geladen) != bestellhistorieStandardLimit {
-		t.Fatalf("ohne Parameter geladen: %d, want %d (Vorgabe)", len(geladen), bestellhistorieStandardLimit)
+	if geladen := holeHistorie(t, srv, ""); len(geladen) != bestellhistorieVorgabeGrenze {
+		t.Fatalf("ohne Parameter geladen: %d, want %d (Vorgabe)", len(geladen), bestellhistorieVorgabeGrenze)
 	}
 }
 

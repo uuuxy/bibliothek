@@ -144,10 +144,10 @@ var fkAktionenBestand = []string{
 	"SET NULL  vormerkungen.bereitgestellt_exemplar_id -> buecher_exemplare",
 	// Befragt: Die harmlose Hälfte — die Bestellung hält Name und E-Mail
 	// des Händlers als eigene Abschrift, die Historie überlebt das Löschen unbeschadet
-	// (api/bestellung/bestellbestaetigung_handler.go COALESCEt ausdrücklich dagegen). Der Löschweg
+	// (api/bestellung/bestellbestaetigung.go COALESCEt ausdrücklich dagegen). Der Löschweg
 	// daneben war der Fund: Er nahm auch den Hauptlieferanten, an dem Bestellmail,
 	// Bestätigungs-Link und Etiketten-Verhalten hängen — ohne Rückfrage und ohne Meldung.
-	// Seit 07.09. weist der Handler das ab (api/bestellung/supplier_handler.go).
+	// Seit 07.09. weist der Handler das ab (api/bestellung/lieferanten.go).
 	"SET NULL  bestellungen_verlauf.lieferant_id -> lieferanten",
 	// Befragt: Elternteil ohne Löschweg (siehe CASCADE oben) — ruht.
 	"SET NULL  buecher_exemplare.bestellung_id -> bestellungen_verlauf",

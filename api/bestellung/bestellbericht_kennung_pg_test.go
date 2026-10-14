@@ -24,7 +24,7 @@ func TestBestellbericht_LieferantIDWirdAnDerTuerGeprueft(t *testing.T) {
 	rufe := func(lieferantID string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/bestellungen/bericht.pdf?von=2026-09-01&bis=2026-09-30&lieferant_id="+lieferantID, nil)
 		rec := httptest.NewRecorder()
-		srv.GetBestellBerichtPDFHandler().ServeHTTP(rec, req)
+		srv.BestellberichtPDF().ServeHTTP(rec, req)
 		return rec
 	}
 

@@ -27,35 +27,35 @@ import (
 // gelöscht). Ohne diese Unterscheidung genügte ein Aufrufer, der das Feld nicht kennt,
 // um die Nummer stillschweigend zu verlieren.
 
-// lieferantAnlegenUeberHandler legt einen Lieferanten über POST /api/lieferanten an.
-func lieferantAnlegenUeberHandler(t *testing.T, srv *Tueren, rumpf string) SupplierResponse {
+// lieferantAnlegenUeberTuer legt einen Lieferanten über POST /api/lieferanten an.
+func lieferantAnlegenUeberTuer(t *testing.T, srv *Tueren, rumpf string) lieferantAntwort {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/api/lieferanten", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.CreateSupplierHandler()(rec, req)
+	srv.LieferantAnlegen()(rec, req)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
-	var resp SupplierResponse
+	var resp lieferantAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
 	return resp
 }
 
-// lieferantAendernUeberHandler schickt PUT /api/lieferanten/{id} und liefert die Antwort.
-func lieferantAendernUeberHandler(t *testing.T, srv *Tueren, id, rumpf string) SupplierResponse {
+// lieferantAendernUeberTuer schickt PUT /api/lieferanten/{id} und liefert die Antwort.
+func lieferantAendernUeberTuer(t *testing.T, srv *Tueren, id, rumpf string) lieferantAntwort {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPut, "/api/lieferanten/"+id, strings.NewReader(rumpf))
 	req.SetPathValue("id", id)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.UpdateSupplierHandler()(rec, req)
+	srv.LieferantAendern()(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Ändern: Status %d, want 200: %s", rec.Code, rec.Body.String())
 	}
-	var resp SupplierResponse
+	var resp lieferantAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
@@ -67,11 +67,11 @@ func lieferantAendernUeberHandler(t *testing.T, srv *Tueren, id, rumpf string) S
 func zweitnummerAusListe(t *testing.T, srv *Tueren, id string) string {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	srv.ListSuppliersHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/lieferanten", nil))
+	srv.Lieferanten()(rec, httptest.NewRequest(http.MethodGet, "/api/lieferanten", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Liste: Status %d: %s", rec.Code, rec.Body.String())
 	}
-	var liste []SupplierResponse
+	var liste []lieferantAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
 		t.Fatalf("Liste lesen: %v", err)
 	}
@@ -84,12 +84,12 @@ func zweitnummerAusListe(t *testing.T, srv *Tueren, id string) string {
 	return ""
 }
 
-func TestLieferantZweitnummer_RoundTripUeberDieEchtenTueren(t *testing.T) {
+func TestLieferantZweitnummer_HinUndZurueckUeberDieEchtenTueren(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	angelegt := lieferantAnlegenUeberHandler(t, srv, `{"name":"Zweitnummer-Haendler","email":"zwei@example.invalid",
+	angelegt := lieferantAnlegenUeberTuer(t, srv, `{"name":"Zweitnummer-Haendler","email":"zwei@example.invalid",
 		"customerNumber":"K-EINS","kundennummer_schultraeger":" BIB-ZWEI "}`)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM lieferanten WHERE id = $1`, angelegt.ID); err != nil {
@@ -106,7 +106,7 @@ func TestLieferantZweitnummer_RoundTripUeberDieEchtenTueren(t *testing.T) {
 	}
 
 	// 2. Ändern MIT Feld: neuer Wert gilt.
-	geaendert := lieferantAendernUeberHandler(t, srv, angelegt.ID,
+	geaendert := lieferantAendernUeberTuer(t, srv, angelegt.ID,
 		`{"name":"Zweitnummer-Haendler","email":"zwei@example.invalid","customerNumber":"K-EINS","kundennummer_schultraeger":"BIB-DREI"}`)
 	if geaendert.KundennummerSchultraeger != "BIB-DREI" {
 		t.Errorf("Antwort nach dem Ändern: %q, want %q", geaendert.KundennummerSchultraeger, "BIB-DREI")
@@ -117,7 +117,7 @@ func TestLieferantZweitnummer_RoundTripUeberDieEchtenTueren(t *testing.T) {
 
 	// 3. Ändern OHNE Feld: die Nummer bleibt. Das ist der Kern — ein Aufrufer, der das
 	//    Feld nicht kennt (alter Client, anderes Werkzeug), darf sie nicht löschen.
-	ohneFeld := lieferantAendernUeberHandler(t, srv, angelegt.ID,
+	ohneFeld := lieferantAendernUeberTuer(t, srv, angelegt.ID,
 		`{"name":"Zweitnummer-Haendler NEU","email":"zwei@example.invalid","customerNumber":"K-EINS"}`)
 	if ohneFeld.KundennummerSchultraeger != "BIB-DREI" {
 		t.Errorf("Antwort ohne Feld: %q — die Antwort spiegelt die Eingabe statt des Stands", ohneFeld.KundennummerSchultraeger)
@@ -128,7 +128,7 @@ func TestLieferantZweitnummer_RoundTripUeberDieEchtenTueren(t *testing.T) {
 
 	// 4. Leerer String: ausdrücklich gelöscht — die Unterscheidung muss in BEIDE
 	//    Richtungen funktionieren, sonst ist die Nummer nicht mehr wegzubekommen.
-	geleert := lieferantAendernUeberHandler(t, srv, angelegt.ID,
+	geleert := lieferantAendernUeberTuer(t, srv, angelegt.ID,
 		`{"name":"Zweitnummer-Haendler NEU","email":"zwei@example.invalid","customerNumber":"K-EINS","kundennummer_schultraeger":""}`)
 	if geleert.KundennummerSchultraeger != "" {
 		t.Errorf("Antwort nach dem Leeren: %q, want leer", geleert.KundennummerSchultraeger)
@@ -158,7 +158,7 @@ func TestLieferantZweitnummer_UnbekannterLieferantIst404(t *testing.T) {
 	req.SetPathValue("id", id)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.UpdateSupplierHandler()(rec, req)
+	srv.LieferantAendern()(rec, req)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("Status %d, want 404: %s", rec.Code, rec.Body.String())
 	}

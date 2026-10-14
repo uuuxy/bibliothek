@@ -37,7 +37,7 @@ type LieferantenZeile struct {
 	ID                       string
 	Name                     string
 	Email                    string
-	CustomerNumber           string
+	Kundennummer             string
 	ErstelltAm               time.Time
 	IstHauptlieferant        bool
 	KundennummerSchultraeger string
@@ -59,7 +59,7 @@ func LadeLieferanten(ctx context.Context, db Datenbank) ([]LieferantenZeile, err
 	lieferanten := []LieferantenZeile{}
 	for rows.Next() {
 		var l LieferantenZeile
-		if err := rows.Scan(&l.ID, &l.Name, &l.Email, &l.CustomerNumber, &l.ErstelltAm, &l.IstHauptlieferant, &l.KundennummerSchultraeger); err != nil {
+		if err := rows.Scan(&l.ID, &l.Name, &l.Email, &l.Kundennummer, &l.ErstelltAm, &l.IstHauptlieferant, &l.KundennummerSchultraeger); err != nil {
 			return nil, err
 		}
 		lieferanten = append(lieferanten, l)

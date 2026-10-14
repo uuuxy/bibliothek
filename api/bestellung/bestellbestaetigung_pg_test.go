@@ -40,18 +40,18 @@ func bestellungFuerLieferant(t *testing.T, pool *pgxpool.Pool, lieferantID strin
 	return id
 }
 
-func putBestaetigen(srv *Tueren, bestellungID, body string) *httptest.ResponseRecorder {
+func bestaetigeVonHand(srv *Tueren, bestellungID, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/bestaetigen", strings.NewReader(body))
 	req.SetPathValue("id", bestellungID)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.BestaetigenBestellungHandler().ServeHTTP(rec, req)
+	srv.BestellungBestaetigen().ServeHTTP(rec, req)
 	return rec
 }
 
 // Der externe Bestätigungsschritt (Naacher-Link) lässt sich in Bibliosys nachtragen,
 // wenn der Lieferant dafür freigeschaltet ist.
-func TestBestaetigenBestellung_Erfolg(t *testing.T) {
+func TestBestellungBestaetigen_Erfolg(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -60,7 +60,7 @@ func TestBestaetigenBestellung_Erfolg(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
-	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"gross"}`)
+	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"gross"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
 	}
@@ -82,7 +82,7 @@ func TestBestaetigenBestellung_Erfolg(t *testing.T) {
 
 // Ein Lieferant ohne das Flag bietet den Schritt nicht an — Bestätigen muss abgelehnt
 // werden, sonst könnte jede Bestellung fälschlich als "extern bestätigt" markiert werden.
-func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
+func TestBestellungBestaetigen_LieferantOhneFlag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -90,7 +90,7 @@ func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Normalhaendler", false)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
-	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"klein"}`)
+	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"klein"}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("Status = %d, want 400, body: %s", rec.Code, rec.Body.String())
 	}
@@ -98,7 +98,7 @@ func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
 
 // Ein zweites Bestätigen derselben Bestellung darf die erste Angabe nicht stillschweigend
 // überschreiben — das wäre ein falsches Bild vom tatsächlichen externen Vorgang.
-func TestBestaetigenBestellung_DoppeltBestaetigenGibt409(t *testing.T) {
+func TestBestellungBestaetigen_DoppeltBestaetigenGibt409(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -106,18 +106,18 @@ func TestBestaetigenBestellung_DoppeltBestaetigenGibt409(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher2", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
-	if rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"klein"}`); rec.Code != http.StatusOK {
+	if rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"klein"}`); rec.Code != http.StatusOK {
 		t.Fatalf("erste Bestätigung: Status = %d, body: %s", rec.Code, rec.Body.String())
 	}
 
-	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"gross"}`)
+	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"gross"}`)
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status = %d, want 409, body: %s", rec.Code, rec.Body.String())
 	}
 }
 
 // Ein ungültiger Wert für etiketten_groesse muss vor jeder DB-Abfrage abgelehnt werden.
-func TestBestaetigenBestellung_UngueltigeGroesse(t *testing.T) {
+func TestBestellungBestaetigen_UngueltigeGroesse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -125,7 +125,7 @@ func TestBestaetigenBestellung_UngueltigeGroesse(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher3", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
-	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"mittel"}`)
+	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"mittel"}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("Status = %d, want 400, body: %s", rec.Code, rec.Body.String())
 	}

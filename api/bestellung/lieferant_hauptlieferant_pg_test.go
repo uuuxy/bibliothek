@@ -40,7 +40,7 @@ func TestNurEinHauptlieferant(t *testing.T) {
 	anlegen := func(name string, haupt bool) string {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		srv.CreateSupplierHandler()(rec,
+		srv.LieferantAnlegen()(rec,
 			httptest.NewRequest(http.MethodPost, "/api/lieferanten", strings.NewReader(nutzlast(name, haupt))))
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("Lieferant %s anlegen: Status %d — %s", name, rec.Code, rec.Body.String())
@@ -48,7 +48,7 @@ func TestNurEinHauptlieferant(t *testing.T) {
 		// ID aus der Antwort, NICHT über den Namen nachschlagen: testdaten.LeereBestandsdaten leert die
 		// Lieferanten nicht, und andere Tests im selben Paketlauf legen Händler mit denselben
 		// Namen an — die Suche träfe dann den älteren.
-		var antwort SupplierResponse
+		var antwort lieferantAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort auf das Anlegen von %s lesen: %v", name, err)
 		}
@@ -60,7 +60,7 @@ func TestNurEinHauptlieferant(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/api/lieferanten/x", strings.NewReader(nutzlast(name, haupt)))
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		srv.UpdateSupplierHandler()(rec, req)
+		srv.LieferantAendern()(rec, req)
 		return rec
 	}
 
@@ -132,12 +132,12 @@ func TestHauptlieferantStehtInDerListeOben(t *testing.T) {
 	testdaten.LegeLieferantAn(t, pool, "Zzz-Naacher", true)
 
 	rec := httptest.NewRecorder()
-	srv.ListSuppliersHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/lieferanten", nil).WithContext(ctx))
+	srv.Lieferanten()(rec, httptest.NewRequest(http.MethodGet, "/api/lieferanten", nil).WithContext(ctx))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Liste laden: Status %d — %s", rec.Code, rec.Body.String())
 	}
 
-	var liste []SupplierResponse
+	var liste []lieferantAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
 		t.Fatalf("Liste lesen: %v", err)
 	}

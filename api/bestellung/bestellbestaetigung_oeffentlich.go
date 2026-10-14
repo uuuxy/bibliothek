@@ -27,15 +27,15 @@ import (
 // Bestand. Die Preise fehlen bewusst: Der Lieferant kennt seine eigenen, und was er
 // nicht braucht, gehört nicht in eine Seite ohne Login.
 
-// OeffentlichePosition ist eine Bestellzeile, wie der Lieferant sie sehen darf.
-type OeffentlichePosition struct {
+// oeffentlichePosition ist eine Bestellzeile, wie der Lieferant sie sehen darf.
+type oeffentlichePosition struct {
 	TitelName string `json:"titel_name"`
 	ISBN      string `json:"isbn"`
 	Menge     int    `json:"menge"`
 }
 
-// OeffentlicheBestellung ist die Ansicht hinter dem Link.
-type OeffentlicheBestellung struct {
+// oeffentlicheBestellung ist die Ansicht hinter dem Link.
+type oeffentlicheBestellung struct {
 	SchuleName string `json:"schule_name"`
 	// SchuleAnschrift steht unter dem Namen. Für einen Empfänger, der diesen Link aus
 	// einer Mail öffnet, ist die Absenderangabe der einzige Beleg, wessen Bestellung er
@@ -49,7 +49,7 @@ type OeffentlicheBestellung struct {
 	Kundennummer    string                 `json:"kundennummer"`
 	Bestelldatum    time.Time              `json:"bestelldatum"`
 	AnzahlExemplare int                    `json:"anzahl_exemplare"`
-	Positionen      []OeffentlichePosition `json:"positionen"`
+	Positionen      []oeffentlichePosition `json:"positionen"`
 	// EtikettenVorhanden: Standen Positionen mit Vorab-Barcode in dieser Bestellung?
 	// Ohne sie zeigt die Seite keine Druckknöpfe, statt leere PDFs anzubieten.
 	EtikettenVorhanden bool `json:"etiketten_vorhanden"`
@@ -74,11 +74,11 @@ type OeffentlicheBestellung struct {
 //
 // Unbekannt und abgelaufen sind bewusst DERSELBE Fall (pgx.ErrNoRows): Ein Unterschied
 // in der Antwort verriete, dass ein geratener Token einmal echt war.
-func (s *Tueren) bestellungPerToken(ctx context.Context, token string) (string, error) {
+func (t *Tueren) bestellungPerToken(ctx context.Context, token string) (string, error) {
 	if token == "" {
 		return "", pgx.ErrNoRows
 	}
-	return repository.LadeBestellungZuTokenHash(ctx, s.DB.Pool, bestelllink.Hash(token))
+	return repository.LadeBestellungZuTokenHash(ctx, t.DB.Pool, bestelllink.Hash(token))
 }
 
 // sendeTokenFehler bildet jeden Zugriffsfehler auf 404 ab — abgelaufen, zurückgezogen
@@ -91,18 +91,18 @@ func sendeTokenFehler(w http.ResponseWriter, err error) {
 	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 }
 
-// OeffentlicheBestellungHandler liefert die Bestellung hinter dem Link (GET, ohne Login).
-func (s *Tueren) OeffentlicheBestellungHandler() http.HandlerFunc {
+// OeffentlicheBestellung liefert die Bestellung hinter dem Link (GET, ohne Login).
+func (t *Tueren) OeffentlicheBestellung() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		bestellungID, err := s.bestellungPerToken(ctx, r.PathValue("token"))
+		bestellungID, err := t.bestellungPerToken(ctx, r.PathValue("token"))
 		if err != nil {
 			sendeTokenFehler(w, err)
 			return
 		}
 
-		ansicht, err := s.ladeOeffentlicheBestellung(ctx, bestellungID)
+		ansicht, err := t.ladeOeffentlicheBestellung(ctx, bestellungID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -112,12 +112,12 @@ func (s *Tueren) OeffentlicheBestellungHandler() http.HandlerFunc {
 }
 
 // ladeOeffentlicheBestellung baut die Ansicht aus Kopf, Positionen und Schulname.
-func (s *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID string) (*OeffentlicheBestellung, error) {
-	kopf, err := repository.LadeOeffentlichenBestellkopf(ctx, s.DB.Pool, bestellungID)
+func (t *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID string) (*oeffentlicheBestellung, error) {
+	kopf, err := repository.LadeOeffentlichenBestellkopf(ctx, t.DB.Pool, bestellungID)
 	if err != nil {
 		return nil, err
 	}
-	a := OeffentlicheBestellung{
+	a := oeffentlicheBestellung{
 		LieferantName:      kopf.LieferantName,
 		Kundennummer:       kopf.Kundennummer,
 		Bestelldatum:       kopf.Bestelldatum,
@@ -126,31 +126,31 @@ func (s *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 		LinkGueltigBis:     kopf.LinkGueltigBis,
 		EtikettenVorhanden: kopf.EtikettenVorhanden,
 	}
-	if t, err := mitteltopf.TexteFuer(kopf.Mittel); err == nil {
-		a.Mittel = t.Kurz
+	if texte, err := mitteltopf.TexteFuer(kopf.Mittel); err == nil {
+		a.Mittel = texte.Kurz
 	}
 	a.GrossesEtikett = mitteltopf.HatGrossesLernmittelEtikett(kopf.Mittel)
 
-	positionen, err := repository.LadeOeffentlichePositionen(ctx, s.DB.Pool, bestellungID)
+	positionen, err := repository.LadeOeffentlichePositionen(ctx, t.DB.Pool, bestellungID)
 	if err != nil {
 		return nil, err
 	}
-	a.Positionen = make([]OeffentlichePosition, 0, len(positionen))
+	a.Positionen = make([]oeffentlichePosition, 0, len(positionen))
 	for _, pos := range positionen {
-		a.Positionen = append(a.Positionen, OeffentlichePosition(pos))
+		a.Positionen = append(a.Positionen, oeffentlichePosition(pos))
 	}
 
 	// Der Schulname sagt dem Lieferanten, wessen Bestellung er vor sich hat — bei
 	// mehreren Schulen im selben Postfach ist das keine Zierde, sondern die Zuordnung.
-	a.SchuleName = buchetikett.LadeKopf(ctx, s.DB.Pool).Schulname
-	a.SchuleAnschrift = s.schulAnschrift(ctx)
+	a.SchuleName = buchetikett.LadeKopf(ctx, t.DB.Pool).Schulname
+	a.SchuleAnschrift = t.schulAnschrift(ctx)
 	a.EtikettenFormate = pdf.LabelFormatAuswahl()
 	a.EtikettenFormatVorgabe = pdf.StandardLabelFormat
 	return &a, nil
 }
 
-// OeffentlichBestaetigenRequest ist der Body des Bestätigens durch den Lieferanten.
-type OeffentlichBestaetigenRequest struct {
+// oeffentlichBestaetigenAnfrage ist der Body des Bestätigens durch den Lieferanten.
+type oeffentlichBestaetigenAnfrage struct {
 	// EtikettenGroesse ist OPTIONAL ('klein'/'gross'/''): Die Schule braucht die Angabe
 	// nicht, der Lieferant druckt selbst. Die Seite schickt mit, was sie geladen hat —
 	// mehr als eine Notiz in der Historie ist es nicht, und ein leerer Wert ist erlaubt.
@@ -161,18 +161,18 @@ type OeffentlichBestaetigenRequest struct {
 	EtikettenFormat string `json:"etiketten_format"`
 }
 
-// OeffentlichBestaetigenHandler nimmt die Bestätigung des Lieferanten entgegen.
-func (s *Tueren) OeffentlichBestaetigenHandler() http.HandlerFunc {
+// OeffentlichBestaetigen nimmt die Bestätigung des Lieferanten entgegen.
+func (t *Tueren) OeffentlichBestaetigen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		bestellungID, err := s.bestellungPerToken(ctx, r.PathValue("token"))
+		bestellungID, err := t.bestellungPerToken(ctx, r.PathValue("token"))
 		if err != nil {
 			sendeTokenFehler(w, err)
 			return
 		}
 
-		var req OeffentlichBestaetigenRequest
+		var req oeffentlichBestaetigenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
@@ -185,7 +185,7 @@ func (s *Tueren) OeffentlichBestaetigenHandler() http.HandlerFunc {
 			return
 		}
 
-		bereits, err := s.bestaetigeBestellung(ctx, bestellungID, req.EtikettenGroesse, req.EtikettenFormat, "lieferant")
+		bereits, err := t.bestaetigeBestellung(ctx, bestellungID, req.EtikettenGroesse, req.EtikettenFormat, "lieferant")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -201,16 +201,16 @@ func (s *Tueren) OeffentlichBestaetigenHandler() http.HandlerFunc {
 
 // schulAnschrift baut die einzeilige Anschrift aus den Systemeinstellungen. Leere Felder
 // fallen samt Trenner weg — eine Zeile wie „, 61381" wäre schlechter als keine.
-func (s *Tueren) schulAnschrift(ctx context.Context) string {
-	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
+func (t *Tueren) schulAnschrift(ctx context.Context) string {
+	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 	if err != nil {
 		return ""
 	}
 	teile := []string{}
-	if strasse := strings.TrimSpace(settings.SchuleStrasse); strasse != "" {
+	if strasse := strings.TrimSpace(einstellungen.SchuleStrasse); strasse != "" {
 		teile = append(teile, strasse)
 	}
-	ortszeile := strings.TrimSpace(settings.SchulePLZ + " " + settings.SchuleOrt)
+	ortszeile := strings.TrimSpace(einstellungen.SchulePLZ + " " + einstellungen.SchuleOrt)
 	if ortszeile != "" {
 		teile = append(teile, ortszeile)
 	}

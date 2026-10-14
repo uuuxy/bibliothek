@@ -44,7 +44,7 @@ func etikettenBogenHolen(t *testing.T, srv *Tueren, token, groesse, format strin
 	req.SetPathValue("token", token)
 	req.SetPathValue("groesse", groesse)
 	rec := httptest.NewRecorder()
-	srv.OeffentlicheEtikettenHandler().ServeHTTP(rec, req)
+	srv.OeffentlicheEtiketten().ServeHTTP(rec, req)
 	return rec
 }
 
@@ -206,7 +206,7 @@ func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 3)
 
-	koerper, err := json.Marshal(OeffentlichBestaetigenRequest{
+	koerper, err := json.Marshal(oeffentlichBestaetigenAnfrage{
 		EtikettenGroesse: "klein",
 		EtikettenFormat:  "standard_52",
 	})
@@ -218,7 +218,7 @@ func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
 	req.SetPathValue("token", token)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.OeffentlichBestaetigenHandler().ServeHTTP(rec, req)
+	srv.OeffentlichBestaetigen().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Bestätigen: Status = %d, body: %s", rec.Code, rec.Body.String())

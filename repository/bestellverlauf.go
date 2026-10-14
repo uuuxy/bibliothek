@@ -20,7 +20,7 @@ type BestellVerlaufPosition struct {
 	// dieser Lieferung: Das ist, was die Liste zum Nachdrucken beim Filtern auf den Titel
 	// zeigt. Die Zahl trägt den Verweis dorthin; ohne sie öffnete er in der Hälfte der Fälle
 	// eine leere Liste. Welche Exemplare aus dieser Lieferung stammen, zeigt die Detailansicht
-	// (api/bestellung/bestelldetail_handler.go).
+	// (api/bestellung/bestelldetail.go).
 	EtikettenOffen int `json:"etiketten_offen"`
 }
 
