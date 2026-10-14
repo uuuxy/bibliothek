@@ -8,28 +8,23 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Sperren einer neuen Ausleihe — EIN Prüfweg für Buch und Gerät (docs/OFFEN.md 4.4,
-// entschieden am 24.09.2026). Bis dahin gab es zwei, und sie widersprachen sich: Das Buch
-// prüfte nur Schüler und ließ jede Sperre übergehen, das Gerät prüfte jeden Leser und ließ
-// keine übergehen.
+// Die Sperren einer neuen Ausleihe: ein Prüfweg für Buch, Gerät und Nachbuchen, damit alle drei
+// derselben Regel folgen. Sie richtet sich danach, wer gesperrt hat:
 //
-// Die Regel richtet sich danach, WER gesperrt hat:
-//
-//   - Eine Sperre am Leser — von Hand (is_manually_blocked) oder die, die das Programm den
-//     Ehemaligen setzt (ist_gesperrt: Versetzung, LUSD-Import) — lässt an der Theke nur die
-//     Rückgabe zu. Aufgehoben wird sie in der Akte (PATCH /api/admin/students/{id}/lock).
-//     So hält es Littera: „Eine Rückgabe von Medien ist auch bei gesperrten Lesern möglich!
-//     Für eine Ausleihe muss jedoch die Sperre zunächst in den Leserstammdaten aufgehoben
-//     werden!"
+//   - Eine Sperre am Leser, von Hand (is_manually_blocked) oder vom Programm für die Ehemaligen
+//     (ist_gesperrt: Versetzung, LUSD-Import), lässt an der Theke nur die Rückgabe zu.
+//     Aufgehoben wird sie in der Akte (PATCH /api/admin/students/{id}/lock). So hält es
+//     Littera: „Eine Rückgabe von Medien ist auch bei gesperrten Lesern möglich! Für eine
+//     Ausleihe muss jedoch die Sperre zunächst in den Leserstammdaten aufgehoben werden!"
 //   - Eine offene Forderung und die Überfällig-Automatik sind Hinweise des Programms. Wer
 //     Schülerdaten ändern darf, übergeht sie (override_block wirkt nur mit edit_students,
-//     api/theke/action.go); das Protokoll hält es fest. Gezählt wird jede offene Forderung, gleich
-//     aus welchem Topf — ein Konto je Leser wie in Littera.
+//     api/theke/action.go); das Protokoll hält es fest. Gezählt wird jede offene Forderung,
+//     gleich aus welchem Topf: ein Konto je Leser wie in Littera.
 //   - Beim Lernmittel gilt nur die Sperre von Hand, die Entscheidung eines Menschen. Die
-//     Schule am 22.09.2026: „Für die Lernmittel darf es keinerlei automatische ‚Sperrung'
-//     geben, auch nicht eine Sperrung, die bestimmte Personen aufheben können."
-//   - Ein Kollege wird nie gesperrt (entschieden am 16.09.2026, bestätigt am 24.09.2026). Er
-//     hat keine Frist und bekommt keine Forderung; eine Sperre an seinem Konto zählt nicht.
+//     Schule verlangt: „Für die Lernmittel darf es keinerlei automatische ‚Sperrung' geben,
+//     auch nicht eine Sperrung, die bestimmte Personen aufheben können."
+//   - Ein Kollege wird nie gesperrt. Er hat keine Frist und bekommt keine Forderung; eine
+//     Sperre an seinem Konto zählt nicht.
 //   - Ein anonymisierter Datensatz ist keine Person mehr: Er bekommt nichts, auch kein
 //     Lernmittel, und die Sperre lässt sich nicht aufheben.
 
@@ -43,7 +38,7 @@ type sperrLage struct {
 	einst *ausleihEinstellungen
 }
 
-// pruefeAusleihSperren prüft die Sperren für eine NEUE Ausleihe an leser. Eine Rückgabe
+// pruefeAusleihSperren prüft die Sperren für eine neue Ausleihe an leser. Eine Rückgabe
 // prüft sie nie: Wer gesperrt ist, muss zurückgeben können. q trägt die Abfragen — am Scan
 // der Pool, beim Nachbuchen die Transaktion des Eintrags. uebergehen ist override_block.
 func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *repository.Leser, lernmittel, uebergehen bool) (sperrLage, error) {
@@ -56,11 +51,11 @@ func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *re
 	return pruefeHinweise(ctx, q, leser.ID, uebergehen)
 }
 
-// PruefeSperreAmLeser ist der Teil der Regel, den auch die Verlängerung fragt (Einzel-
-// verlängerung und Frist von Hand, api/theke/ausleihe.go): Hält eine Sperre am Leser diese Ausleihe
-// an? Beim Schulbuch nur die von Hand, beim Kollegen keine; der anonymisierte Datensatz bekommt
-// nichts. Entschieden am 28.09.2026: Der Satz der Schule gilt auch für die Ehemaligen und auch
-// bei der Verlängerung. Die Hinweise (Forderung, überfällig) halten eine Verlängerung nicht an.
+// PruefeSperreAmLeser ist der Teil der Regel, den auch die Verlängerung fragt
+// (Einzelverlängerung und Frist von Hand, api/theke/ausleihe.go): Hält eine Sperre am Leser
+// diese Ausleihe an? Beim Schulbuch nur die von Hand, beim Kollegen keine; der anonymisierte
+// Datensatz bekommt nichts. Der Satz der Schule zum Lernmittel gilt auch für die Ehemaligen und
+// bei der Verlängerung; die Hinweise (Forderung, überfällig) halten eine Verlängerung nicht an.
 func PruefeSperreAmLeser(leser *repository.Leser, lernmittel bool) error {
 	if istKollegium(leser) {
 		return nil
@@ -68,14 +63,16 @@ func PruefeSperreAmLeser(leser *repository.Leser, lernmittel bool) error {
 	return pruefeSperrschalter(leser, lernmittel)
 }
 
-// istKollegium: jede Art außer Schüler; leer heißt Schüler (leserart.IstKollegium).
+// istKollegium sagt, ob der Leser zum Kollegium gehört: jede Art außer Schüler, leer heißt
+// Schüler (leserart.IstKollegium).
 func istKollegium(leser *repository.Leser) bool {
 	return leserart.IstKollegium(leser.Art)
 }
 
 // pruefeSperrschalter prüft die zwei Schalter am Leser. Ihr Merkmal (SperreAmLeser) sagt der
 // Theke, dass sie nichts übergehen, sondern die Sperre aufheben lässt. Der Grund steht im
-// SperrgrundFehler; wer view_students nicht hat, bekommt ihn nicht (api.ohneSperrgrund).
+// SperrgrundFehler; wer view_students nicht hat, bekommt ihn nicht (ohneSperrgrund in
+// api/theke/action.go).
 func pruefeSperrschalter(leser *repository.Leser, lernmittel bool) error {
 	if leser.IstAnonymisiert {
 		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/leser/student_lock.go lehnt ab).
@@ -142,7 +139,8 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 	return lage, nil
 }
 
-const aktionUebergehen = "override-block" // Override-Kennung bei Ausleih-Blockade
+// aktionUebergehen nennt im Log den Eintrag, der ein Übergehen festhalten sollte.
+const aktionUebergehen = "override-block"
 
 // protokolliereUebergangen schreibt je übergangenen Hinweis einen Eintrag (OVERRIDE_BLOCK).
 // Aufgerufen wird sie, wenn die Ausleihe entstanden ist, nicht schon bei der Prüfung: Am

@@ -7,10 +7,10 @@ import (
 	"bibliothek/repository"
 )
 
-// ScanTreffer ist die Antwort auf „was ist das?" für einen gescannten oder getippten
-// Wert — OHNE Wirkung. Die Theke (VerarbeiteEingabe) bucht; die globale Suchleiste springt
-// nur hin. Beide erkennen dasselbe: Exemplar-Barcode (auch als Littera-EAN-13), dann
-// Schülerausweis. Typ "" = kein exakter Treffer, die Volltextsuche entscheidet.
+// ScanTreffer ist die Antwort auf „was ist das?" für einen gescannten oder getippten Wert, ohne
+// Wirkung. Die Theke (VerarbeiteEingabe) bucht; die globale Suchleiste springt nur hin. Beide
+// erkennen dasselbe: Exemplar (auch über das Etikett von Littera), dann Ausweis. Typ "" heißt
+// kein genauer Treffer, die Suche entscheidet.
 type ScanTreffer struct {
 	Typ     string `json:"typ"` // "exemplar" | "schueler"
 	ID      string `json:"id"`
@@ -31,7 +31,7 @@ func ErkenneScan(ctx context.Context, katalogAbfragen repository.KatalogAbfragen
 			return &ScanTreffer{Typ: "exemplar", ID: exemplar.ID, TitelID: exemplar.TitelID, Barcode: exemplar.BarcodeID}, nil
 		}
 	}
-	// Ein LESER, nicht nur ein Schüler: Die Akte ist eine Maske für jeden, und die Theke
+	// Ein Leser, nicht nur ein Schüler: Die Akte ist eine Maske für jeden, und die Theke
 	// löst denselben Ausweis über dieselbe Funktion auf. Der Typ heißt weiter "schueler" —
 	// er benennt das Sprungziel (die Akte), nicht die Art der Person.
 	leser, err := leserAbfragen.FindeZuBarcode(ctx, text)
@@ -44,8 +44,8 @@ func ErkenneScan(ctx context.Context, katalogAbfragen repository.KatalogAbfragen
 	return nil, nil
 }
 
-// exemplarKandidaten: der Wert selbst und — falls er ein Littera-Etikett ist — die
-// rückgerechnete Mediennummer.
+// exemplarKandidaten sind der Wert selbst und, wenn er ein Etikett von Littera ist, die
+// zurückgerechnete Mediennummer.
 func exemplarKandidaten(text string) []string {
 	kandidaten := []string{text}
 	if nummer, istEtikett := dekodiereLitteraEtikett(text); istEtikett {

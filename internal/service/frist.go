@@ -12,8 +12,9 @@ import (
 	"bibliothek/repository"
 )
 
-// fristAngaben fasst die Parameter für die Fristenberechnung zusammen,
-// um die Anzahl der Funktionsargumente übersichtlich zu halten.
+// fristAngaben sind die Angaben, aus denen berechneFrist die Frist rechnet. Ein fehlendes Feld
+// wäre der Nullwert und damit eine Frist von 0 Tagen; parameter_strukturen_test.go verlangt
+// deshalb, dass jedes Literal jedes Feld setzt.
 type fristAngaben struct {
 	IstLernmittel   bool
 	Medientyp       string
@@ -21,54 +22,40 @@ type fristAngaben struct {
 	FristBuchTage   int
 	FristMedienTage int
 	ZusatzJahre     int
-	// Sommerferien: Text der Einstellung „sommerferien" (ausleihEinstellungen.Sommerferien);
-	// leer heißt Programmtabelle.
+	// Sommerferien ist der Text der Einstellung „sommerferien"
+	// (ausleihEinstellungen.Sommerferien); leer heißt die Tabelle des Programms.
 	Sommerferien string
 }
 
-// berechneFrist berechnet das Rückgabedatum auf Basis von Lernmittel-Kennzeichen,
-// Medientyp und den definierten Standardfristen.
-//
-// jetzt ist die Uhr des Aufrufers (bestimmeFrist reicht die des Dienstes durch), damit
-// die Frist um den Rückgabetermin mit fester Uhr prüfbar ist.
+// berechneFrist rechnet die Frist aus dem Kennzeichen des Lernmittels, dem Medientyp und den
+// eingestellten Fristen. jetzt ist die Uhr des Aufrufers, damit Tests die Frist um einen
+// Rückgabetermin mit fester Uhr prüfen können.
 func berechneFrist(jetzt time.Time, angaben fristAngaben) time.Time {
-	// In Schul-Zeitzone rechnen, damit sowohl der Jahreswechsel-Stichtag (August)
-	// als auch das "Ende des Tages" (23:59:59) deterministisch sind — unabhängig
-	// von der Server-Zeitzone. now.Location() ist dadurch schulzeit.Zone().
+	// In der Zone der Schule gerechnet hängen Stichtag und Tagesende nicht von der Zone des
+	// Servers ab.
 	ortszeit := jetzt.In(schulzeit.Zone())
 
-	// 1. Fall: Lernmittelfreiheit (Schulbücher)
-	// Schulbücher (buecher_titel.ist_lernmittel) werden für das gesamte Schuljahr
-	// ausgeliehen. Sie müssen spätestens am definierten Stichtag (standardmäßig 31. Juli)
-	// zurückgegeben werden.
+	// Ein Lernmittel bleibt das Schuljahr über beim Kind, bis zum Stichtag (Vorgabe: 31. Juli).
 	if angaben.IstLernmittel {
-		// Der nächste Stichtag ab heute — DIE Rechnung, die auch der Rückweg des
-		// LMF-Plans benutzt (repository.LMFStichtagAbTag). Bis zum 06.09.2026 stand sie
-		// hier ein zweites Mal und rechnete „ab August ins nächste Kalenderjahr"; das
-		// stimmt nur für einen Stichtag von Januar bis Juli. Ein Stichtag ab August
-		// ergab hier den Termin des FOLGENDEN Schuljahres — dreizehn Monate Frist —,
-		// während der Rückweg denselben Stichtag ein Jahr früher setzte.
+		// Der nächste Stichtag ab heute; der Rückweg des LMF-Plans nimmt dieselbe Rechnung
+		// (repository.LMFStichtagAbTag), damit beide für denselben Tag denselben Stichtag
+		// finden.
 		stichtag := repository.LMFStichtagAbTag(ortszeit, angaben.LMFStichtag)
-		// Mehrjährige Ausleihen (Zieljahrgang über der Klasse des Entleihers) laufen
-		// entsprechend viele Stichtage weiter.
+		// Ein Band über mehrere Jahrgänge läuft entsprechend viele Stichtage weiter.
 		stichtag = stichtag.AddDate(angaben.ZusatzJahre, 0, 0)
 		return schulzeit.TagesEnde(stichtag)
 	}
 
-	// 2. Fall: Audiovisuelle/Digitale Medien
-	// Medien wie CDs, DVDs oder Audio-Dateien haben aufgrund der höheren Nachfrage
-	// eine verkürzte Ausleihfrist (fristMedienTage).
+	// CDs, DVDs und Hörbücher sind gefragter und haben die kürzere Frist FristMedienTage.
 	medientyp := strings.ToLower(angaben.Medientyp)
 	if strings.Contains(medientyp, "cd") || strings.Contains(medientyp, "dvd") || strings.Contains(medientyp, "audio") {
 		return lmfplan.FerientabelleAus(angaben.Sommerferien).Tagesfrist(ortszeit, angaben.FristMedienTage)
 	}
 
-	// 3. Fall: Reguläre Bücher
-	// Standardleihfrist für normale Buchbestände (fristBuchTage).
 	return lmfplan.FerientabelleAus(angaben.Sommerferien).Tagesfrist(ortszeit, angaben.FristBuchTage)
 }
 
-// leseJahrgang extrahiert den Jahrgang aus dem Klassen-String.
+// leseJahrgang liest den Jahrgang aus dem Namen der Klasse; 0 heißt unbekannt.
 func leseJahrgang(klasse string) int {
 	gross := strings.ToUpper(strings.TrimSpace(klasse))
 	if strings.HasPrefix(gross, "E") || gross == "EF" {
@@ -80,7 +67,7 @@ func leseJahrgang(klasse string) int {
 	if strings.HasPrefix(gross, "Q3") || strings.HasPrefix(gross, "Q4") {
 		return 13
 	}
-	// Fallback auf Extraktion der ersten Zahl
+	// Sonst die erste Zahl im Namen.
 	zahlen := regexp.MustCompile(`\d+`)
 	treffer := zahlen.FindString(gross)
 	if treffer != "" {
@@ -91,22 +78,22 @@ func leseJahrgang(klasse string) int {
 	return 0
 }
 
-// bestimmeFrist ermittelt das Fälligkeitsdatum für eine neue Buchausleihe.
-// Hierbei werden Sonderaktionen wie der Ferien-Leseclub ausgewertet, um reguläre Leihfristen zu überschreiben.
-// bestimmeFrist rechnet die Frist ab der Uhr des Dienstes (jetzt).
+// bestimmeFrist bestimmt die Frist einer neuen Ausleihe ab der Uhr des Dienstes.
 func (d *ausleihDienst) bestimmeFrist(ctx context.Context, exemplar *repository.Exemplar, klasse string) (time.Time, error) {
 	return d.bestimmeFristAm(ctx, exemplar, klasse, d.heute())
 }
 
-// bestimmeFristAm rechnet die Frist ab einem gegebenen Tag — beim Nachbuchen der
-// Scan-Zeitpunkt (Frist, Mahnwesen und Lesehistorie rechnen ab dem Scan), am Online-Scan jetzt.
+// bestimmeFristAm bestimmt die Frist einer Ausleihe ab dem Tag heute: beim Nachbuchen ab dem
+// Scan, weil Frist, Mahnwesen und Lesehistorie ab dem Scan rechnen. Der LMF-Plan der Klasse und
+// der Ferien-Leseclub gehen der gewöhnlichen Frist vor.
 func (d *ausleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repository.Exemplar, klasse string, heute time.Time) (time.Time, error) {
 	einst, err := d.ladeEinstellungen(ctx)
 	heute = heute.In(schulzeit.Zone())
 	zusatzJahre := mehrjahresbandJahre(exemplar, klasse)
 
 	if err != nil {
-		// Bei einem Datenbankfehler greifen wir auf feste Notfall-Standardwerte zurück
+		// Lassen sich die Einstellungen nicht lesen, gelten feste Werte, damit die Ausleihe
+		// nicht an der Frist scheitert.
 		return berechneFrist(heute, fristAngaben{
 			IstLernmittel:   exemplar.IstLernmittel,
 			Medientyp:       exemplar.Medientyp,
@@ -125,7 +112,6 @@ func (d *ausleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repositor
 		return frist, nil
 	}
 
-	// Reguläre Fristenberechnung
 	return berechneFrist(heute, fristAngaben{
 		IstLernmittel:   exemplar.IstLernmittel,
 		Medientyp:       exemplar.Medientyp,
@@ -137,9 +123,9 @@ func (d *ausleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repositor
 	}), nil
 }
 
-// mehrjahresbandJahre: Ein Mehrjahresband (Migration 134) bleibt bis zum Ende von JahrgangBis
-// beim Kind. Die Jahre über das laufende Schuljahr hinaus sind der Abstand zwischen der Klasse
-// des Kindes und JahrgangBis; ein Kind über der Spanne bekommt ein Schuljahr wie jedes andere.
+// mehrjahresbandJahre zählt die Jahre, die ein Band über mehrere Jahrgänge über das laufende
+// Schuljahr hinaus beim Kind bleibt: den Abstand zwischen seiner Klasse und JahrgangBis. Ein
+// Kind über der Spanne bekommt ein Schuljahr wie jedes andere.
 func mehrjahresbandJahre(exemplar *repository.Exemplar, klasse string) int {
 	if exemplar.Mehrjahresband && exemplar.JahrgangBis > 0 && klasse != "" {
 		jahrgang := leseJahrgang(klasse)
@@ -150,18 +136,19 @@ func mehrjahresbandJahre(exemplar *repository.Exemplar, klasse string) int {
 	return 0
 }
 
-// ladeLMFPlanFrist liefert die Frist eines Schulbuchs, wenn der LMF-Plan der Klasse sie bestimmt:
+// ladeLMFPlanFrist liefert die Frist eines Schulbuchs, wenn der LMF-Plan der Klasse sie
+// bestimmt:
 //
-//   - Steht der Rückgabetermin der Klasse bevor, ist er die Frist — vor dem globalen Stichtag,
-//     und nur für die einjährige Ausleihe. Ein Mehrjahresband bleibt beim Kind und rechnet
-//     weiter über den Stichtag.
+//   - Steht der Rückgabetermin der Klasse bevor, ist er die Frist, vor dem allgemeinen
+//     Stichtag, und nur für die einjährige Ausleihe. Ein Band über mehrere Jahrgänge bleibt
+//     beim Kind und rechnet weiter über den Stichtag.
 //   - Am oder nach dem Rückgabetermin gibt die Klasse ein neu ausgegebenes Schulbuch erst im
-//     nächsten Schuljahr zurück, die Frist ist dessen Stichtag — auch wenn noch ein
-//     Nachzügler-Termin folgt. Mit dem Stichtag des laufenden Schuljahres wäre die Klasse nach
-//     den Ferien überfällig und nach 14 Tagen gesperrt.
-//   - Beim Mehrjahresband steckt in diesem Sprung schon eines der verbleibenden Jahre, deshalb
-//     additionalYears-1: Ein Kind der 7 mit einem Band bis Jahrgang 9, ausgegeben nach dem
-//     Termin im Juli 2027, gibt ihn am 31.07.2029 zurück.
+//     nächsten Schuljahr zurück; die Frist ist dessen Stichtag, auch wenn noch ein Termin für
+//     Nachzügler folgt. Mit dem Stichtag des laufenden Schuljahres wäre die Klasse nach den
+//     Ferien überfällig und nach 14 Tagen gesperrt.
+//   - Beim Band über mehrere Jahrgänge steckt in diesem Sprung schon eines der verbleibenden
+//     Jahre, deshalb zusatzJahre-1: Ein Kind der 7 mit einem Band bis Jahrgang 9, ausgegeben
+//     nach dem Termin im Juli, gibt ihn am Ende der Klasse 9 zurück.
 //
 // Ein Fehler beim Nachschlagen hält die Ausleihe nicht an: Dann gilt der Stichtag.
 func (d *ausleihDienst) ladeLMFPlanFrist(ctx context.Context, exemplar *repository.Exemplar, klasse string, heute time.Time, einst *ausleihEinstellungen, zusatzJahre int) (time.Time, bool) {
@@ -179,10 +166,9 @@ func (d *ausleihDienst) ladeLMFPlanFrist(ctx context.Context, exemplar *reposito
 	return time.Time{}, false
 }
 
-// leseclubFrist: Ist die Ferien-Leseclub-Aktion aktiv und ein Zieldatum eingestellt, ist es die
-// Frist aller regulären Bestände (ausgenommen Lernmittel) — aber nur, solange es nicht vorbei
-// ist. Bleibt der Schalter nach den Ferien an, wäre das vergangene Ferienende sonst die Frist
-// jeder neuen Ausleihe: sofort überfällig, nach 14 Tagen gesperrt. Dann gilt die reguläre Frist.
+// leseclubFrist liefert das Zieldatum des Ferien-Leseclubs als Frist aller Bestände außer den
+// Lernmitteln, solange es nicht vorbei ist. Bliebe der Schalter nach den Ferien an, wäre sonst
+// jede neue Ausleihe sofort überfällig und nach 14 Tagen gesperrt.
 func leseclubFrist(exemplar *repository.Exemplar, einst *ausleihEinstellungen, heute time.Time) (time.Time, bool) {
 	if !exemplar.IstLernmittel && einst.FerienLeseclubAktiv && einst.FerienLeseclubZieldatum != nil {
 		t, err := time.Parse("2006-01-02", *einst.FerienLeseclubZieldatum)

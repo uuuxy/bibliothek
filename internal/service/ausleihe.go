@@ -9,64 +9,62 @@ import (
 	"bibliothek/repository"
 )
 
-// AusleihErgebnis beschreibt das Ergebnis einer Ausleih- oder Rückgabeoperation eines Buches.
+// AusleihErgebnis ist das Ergebnis einer Ausleihe oder Rückgabe eines Buchs.
 type AusleihErgebnis struct {
-	// Art spezifiziert die Art des Ergebnisses (z. B. "ausleihe", "rueckgabe", "info").
+	// Art ist "ausleihe" oder "rueckgabe".
 	Art string
-	// Exemplar enthält die Daten des betroffenen Buchexemplars.
+	// Exemplar ist das gebuchte Exemplar.
 	Exemplar *repository.Exemplar
-	// Leser ist das Schülerprofil, falls die Aktion für einen Schüler durchgeführt wurde.
+	// Leser ist der Leser, dessen Konto sich geändert hat: der Ausleiher, bei einer
+	// Fremdrückgabe am Scan der Vorbesitzer.
 	Leser *repository.Leser
-	// Frist gibt das berechnete Rückgabedatum an (nur bei erfolgreicher Ausleihe).
+	// Frist ist die Rückgabefrist einer Ausleihe.
 	Frist *time.Time
-	// AusleiheID ist die eindeutige ID des Ausleihvorgangs.
+	// AusleiheID ist die Kennung der gebuchten Ausleihe.
 	AusleiheID *string
-	// Fremdrueckgabe gibt an, ob das Buch von jemand anderem als dem Entleiher zurückgegeben wurde.
+	// Fremdrueckgabe sagt, ob jemand anderes als der Ausleiher das Buch zurückgebracht hat.
 	Fremdrueckgabe bool
-	// Vorbesitzer ist der LESER, der das Buch zuvor ausgeliehen hatte (bei Fremdrückgabe).
-	// Ein zweites Feld für Lehrkräfte gab es bis Migration 125; es gibt nur noch Leser.
+	// Vorbesitzer ist bei einer Fremdrückgabe der Leser, der das Buch ausgeliehen hatte.
 	Vorbesitzer *repository.Leser
-	// HatVormerkung ist wahr, wenn für das Buch eine Vormerkung vorliegt und es nun für den nächsten Schüler bereitgestellt wurde.
+	// HatVormerkung sagt, dass das zurückgegebene Buch jetzt für einen wartenden Schüler
+	// bereitliegt.
 	HatVormerkung bool
 	// VormerkungTitel ist der Titel des vorgemerkten Buchs.
 	VormerkungTitel string
-	// VorgemerktFuer ist der Name (und ggf. Klasse) des Schülers, für den das Buch reserviert wurde.
+	// VorgemerktFuer nennt Name und Klasse des Schülers, für den das Buch bereitliegt.
 	VorgemerktFuer string
-	// RegalfreigabeBarcode ist gesetzt, wenn für diesen Schüler ein ANDERES Exemplar
-	// desselben Titels im Reservierungsfach lag, er sich aber ein Freihand-Exemplar
-	// genommen hat. Das reservierte Exemplar muss zurück ins normale Regal — sonst
-	// bleibt es als "Geisterbuch" im Fach liegen, obwohl es laut DB verfügbar ist.
+	// RegalfreigabeBarcode ist gesetzt, wenn für den Schüler ein anderes Exemplar desselben
+	// Titels im Abholfach lag und er ein Exemplar aus dem Regal genommen hat. Das Exemplar im
+	// Fach muss zurück ins Regal; sonst läge es dort, obwohl es frei ausleihbar ist.
 	RegalfreigabeBarcode string
-	// AuflagenHinweis ist gesetzt, wenn das ausgeliehene Schulbuch eine Auflage eines Buchs
-	// ist, von dem Kinder derselben Klasse gerade eine ANDERE Auflage haben (docs/OFFEN.md
-	// 4.18, Stufe 5: „Die Ausgabe warnt, wenn eine Klasse gemischte Auflagen bekommt"). Nur
-	// ein Hinweis — die Ausleihe ist gebucht.
+	// AuflagenHinweis ist gesetzt, wenn Kinder derselben Klasse eine andere Auflage des
+	// ausgeliehenen Schulbuchs haben. Er ist nur ein Hinweis, die Ausleihe ist gebucht.
 	AuflagenHinweis *repository.AuflagenMischung
 }
 
-// AusleihDienst steuert die Geschäftsregeln und Transaktionen rund um das Ausleihen und Zurückgeben von Büchern.
+// AusleihDienst bucht Ausleihe und Rückgabe eines Buchs an der Theke, je in einer Transaktion.
 type AusleihDienst interface {
-	// BucheAmLeser wickelt die Ausleihe eines Buchexemplars an den aktiven Leser ab.
-	// Falls das Exemplar bereits von jemand anderem ausgeliehen war, wird dieses zuerst automatisch zurückgegeben
-	// (Fremdrückgabe) und danach für den neuen Ausleiher verbucht.
+	// BucheAmLeser bucht ein Exemplar, das bei geöffnetem Leser gescannt wurde: Ein freies
+	// leiht es ihm aus, sein eigenes nimmt es zurück. Steht das Exemplar auf jemand anderem,
+	// nimmt es das Exemplar nur dort zurück; ausleihen kann es erst der nächste Scan.
 	BucheAmLeser(ctx context.Context, exemplar *repository.Exemplar, aktiverLeserID *string, bearbeiterID string, uebergehen bool) (*AusleihErgebnis, error)
 
-	// NimmZurueck wickelt die direkte Rückgabe eines Buchexemplars ab (ohne dass ein neuer Ausleiher aktiv ist).
+	// NimmZurueck bucht die Rückgabe eines Exemplars, das ohne geöffneten Leser gescannt wurde.
 	// Ein freies Exemplar ist hier ein Fehler: Ausgeliehen wird über den Ausweis, nicht
-	// dadurch, dass ein angemeldetes Konto ein Buch in die Hand nimmt.
+	// dadurch, dass ein angemeldetes Konto ein Buch scannt.
 	NimmZurueck(ctx context.Context, exemplar *repository.Exemplar, bearbeiterID string) (*AusleihErgebnis, error)
 }
 
-// ausleihDienst implementiert den AusleihDienst unter Verwendung von Repositories.
+// ausleihDienst erfüllt AusleihDienst und NachbuchDienst: Der Scan am Netz und das Nachbuchen
+// buchen mit denselben Schranken und Schreibern.
 type ausleihDienst struct {
 	pool              db.PgxPoolIface
 	leserAbfragen     repository.LeserAbfragen
 	katalogAbfragen   repository.KatalogAbfragen
 	ausleihAbfragen   repository.AusleihAbfragen
 	protokollAbfragen repository.ProtokollAbfragen
-	// jetzt ist die Uhr der Fristberechnung; nil heißt time.Now. Tests setzen einen festen
-	// Tag, um die Frist am Tag vor, am und nach dem Rückgabetermin zu prüfen (Bugklasse
-	// „Frist am Tag des Ereignisses", docs/sweeps.md).
+	// jetzt ist die Uhr der Fristen; nil heißt time.Now. Tests setzen einen festen Tag, um die
+	// Frist am Tag vor, am und nach einem Rückgabetermin zu prüfen.
 	jetzt func() time.Time
 }
 
@@ -78,7 +76,7 @@ func (d *ausleihDienst) heute() time.Time {
 	return time.Now().In(schulzeit.Zone())
 }
 
-// NewAusleihDienst erzeugt eine neue Instanz des standardmäßigen AusleihDienst.
+// NewAusleihDienst baut den Dienst für Ausleihe und Rückgabe.
 func NewAusleihDienst(pool db.PgxPoolIface, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) AusleihDienst {
 	return &ausleihDienst{
 		pool:              pool,

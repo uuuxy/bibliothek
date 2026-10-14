@@ -6,31 +6,28 @@ import (
 )
 
 var (
-	// ErrNichtGefunden wird zurückgegeben, wenn ein angeforderter Datensatz (z. B. Schüler oder Buch) nicht existiert.
+	// ErrNichtGefunden meldet, dass es den gesuchten Leser, das Exemplar oder das Gerät nicht
+	// gibt (404).
 	ErrNichtGefunden = errors.New("eintrag nicht gefunden")
-	// ErrGesperrt wird zurückgegeben, wenn eine Ausleihe wegen einer Sperre verweigert wird.
-	//
-	// Der Text nennt bewusst KEINE Person: Er ist der Kopf jeder Sperrmeldung, und das
-	// Gerät ist der Gegenbeweis. Bis zum 17.09.2026 stand hier „ausleihe für diese/n
-	// Schüler/in ist gesperrt"; beim gesperrten GERÄT las die Theke damit „ausleihe für
-	// diese/n Schüler/in ist gesperrt: Gerät ist aktuell gesperrt" — die Bibliothekskraft
-	// sucht dann nach einem Kind, das es gar nicht gibt. Wer betroffen ist, sagt der
-	// angehängte Grund; wer an der Theke steht, steht auf dem Bildschirm.
+	// ErrGesperrt meldet, dass eine Sperre die Ausleihe verweigert (403). Sein Text nennt keine
+	// Person, weil er der Kopf jeder Sperrmeldung ist, auch der eines gesperrten Geräts; wer
+	// betroffen ist, sagt der angehängte Grund.
 	ErrGesperrt = errors.New("die ausleihe ist gesperrt")
-	// ErrKonflikt wird zurückgegeben, wenn eine Aktion mit bestehenden Reservierungen oder Sperren kollidiert.
+	// ErrKonflikt meldet, dass eine Ausleihe mit einer Vormerkung oder einer gleichzeitigen
+	// Buchung zusammenstößt (409).
 	ErrKonflikt = errors.New("conflict")
-	// ErrUngueltigerZustand wird zurückgegeben, wenn sich ein Objekt oder eine Transaktion in einem ungültigen Zustand befindet.
+	// ErrUngueltigerZustand meldet, dass das Exemplar, das Gerät oder die Eingabe den Vorgang
+	// nicht zulässt, etwa ein ausgesondertes Exemplar oder kein geöffneter Leser.
 	ErrUngueltigerZustand = errors.New("ungültiger Transaktionszustand")
 )
 
-// meldung liefert einen Fehler der Art art (ErrNichtGefunden, ErrKonflikt, ErrUngueltigerZustand), dessen
-// Text allein die Meldung für die Theke ist. Die Texte dieser drei Arten sind interne
-// Bezeichnungen: api/theke/action.go zeigt err.Error(), und mit fmt.Errorf("%w: …") stand bis zum
-// 28.09.2026 davor „ungültiger Transaktionszustand:", „conflict:" oder „eintrag nicht gefunden:"
-// (Generalprobe, OFFEN 5.33). errors.Is erkennt die Art weiter; an ihr hängt der HTTP-Status.
+// meldung liefert einen Fehler der Art art (ErrNichtGefunden, ErrKonflikt,
+// ErrUngueltigerZustand), dessen Text allein die Meldung für die Theke ist: Die Theke zeigt
+// err.Error(), und der Text der Art ist eine interne Bezeichnung. errors.Is erkennt die Art
+// weiter; an ihr hängt der HTTP-Status.
 //
-// ErrGesperrt bleibt bei fmt.Errorf: „die ausleihe ist gesperrt" ist ein Satz, und er ist mit
-// Absicht der Kopf jeder Sperrmeldung.
+// ErrGesperrt geht nicht hierüber: Sein Text ist ein Satz und mit Absicht der Kopf jeder
+// Sperrmeldung.
 func meldung(art error, format string, args ...any) error {
 	return &meldungsfehler{art: art, text: fmt.Sprintf(format, args...)}
 }

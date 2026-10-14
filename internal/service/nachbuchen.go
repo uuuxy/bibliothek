@@ -14,28 +14,26 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Die Nachbuch-Tür (Stufe 2 des Offline-Baus, Commit 11, OFFEN.md 2.2).
+// Das Nachbuchen: Ein Vorgang, den die Theke ohne Netz gescannt hat, kommt später an. Gebucht
+// wird die Wirklichkeit, nicht der Scan: Lag das Buch inzwischen bei jemand anderem, wird dort
+// zurückgenommen und neu ausgeliehen; beim selben Kind wird nichts umgekehrt; ist der Scan
+// älter als die letzte Bewegung des Exemplars, wird er abgewiesen. Was vom Scan abweicht, steht
+// als Meldung, nichts verschwindet still.
 //
-// Ein offline gescannter Vorgang kommt später an. Gebucht wird die WIRKLICHKEIT, nicht der
-// Scan (entschieden am 13.09.2026, c): Lag das Buch inzwischen bei jemand anderem, wird
-// dort zurückgenommen und neu ausgeliehen; beim selben Kind wird nichts umgekehrt; ist der
-// Scan älter als die letzte Bewegung des Exemplars, wird er abgewiesen. Was vom Scan
-// abweicht, steht als Meldung (Migration 117), nichts verschwindet still.
-//
-// Je Eintrag EINE Transaktion, Sperren in der Reihenfolge Schüler → Ausleihe → Exemplar
-// (docs/invarianten.md, Abschnitt 1) — dieselbe wie der Online-Scan, sonst verklemmen
-// sie sich gegeneinander. Die Rücknahme beim Vorbesitzer steht VOR dem Savepoint und
-// bleibt, wenn die neue Ausleihe an Sperre, Limit oder Vormerkung scheitert; nur sie
-// meldet dann nicht_gebucht. Zeit: der Scan-Zeitpunkt, höchstens Serverzeit — Ausleih- und
-// Rückgabedatum, Frist und Bewegungsstempel rechnen ab dem Scan.
+// Je Eintrag eine Transaktion, gesperrt in der Reihenfolge Schüler, Ausleihe, Exemplar
+// (docs/invarianten.md, Abschnitt 1) wie beim Scan am Netz, sonst verklemmen sie sich
+// gegeneinander. Die Rücknahme beim Vorbesitzer steht vor dem Savepoint und bleibt, wenn die
+// neue Ausleihe an Sperre, Limit oder Vormerkung scheitert; nur die Ausleihe meldet dann
+// nicht_gebucht. Gerechnet wird ab dem Scan, höchstens ab der Zeit des Servers: Ausleih- und
+// Rückgabedatum, Frist und Bewegungsstempel.
 
-// NachbuchDienst ist die Tür des Nachbuchens; erfüllt vom Ausleih-Service.
+// NachbuchDienst bucht die Einträge nach, die eine Theke ohne Netz gesammelt hat.
 type NachbuchDienst interface {
 	BucheNach(ctx context.Context, eintrag NachbuchEintrag) (*NachbuchErgebnis, error)
 }
 
-// NewNachbuchDienst baut die Tür auf demselben Rumpf wie der Ausleih-Service — dieselben
-// Schranken, dieselben Schreiber.
+// NewNachbuchDienst baut den Dienst auf ausleihDienst, damit das Nachbuchen dieselben Schranken
+// und Schreiber hat wie der Scan am Netz.
 func NewNachbuchDienst(pool db.PgxPoolIface, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) NachbuchDienst {
 	return &ausleihDienst{pool: pool, leserAbfragen: leserAbfragen, katalogAbfragen: katalogAbfragen, ausleihAbfragen: ausleihAbfragen, protokollAbfragen: protokollAbfragen}
 }
@@ -55,18 +53,16 @@ type NachbuchEintrag struct {
 	// UhrVersatz ist der gemessene Versatz der Uhr des Theken-Rechners: Serverzeit beim Empfang
 	// der Portion minus Sendezeit des Rechners. Er wird auf GescanntAm addiert, bevor der Wächter
 	// vergleicht — Bewegungsstempel sind Serverzeit. Ohne ihn beendete eine offline gebuchte
-	// Rückgabe von einem vorgehenden Rechner die jüngere Online-Ausleihe eines anderen Kindes
-	// (Rasterdurchgang 15.09.2026, OFFEN.md 5.15).
+	// Rückgabe von einem vorgehenden Rechner die jüngere Online-Ausleihe eines anderen Kindes.
 	UhrVersatz     time.Duration
 	LeserID        *string // Person, wenn der Rechner sie beim Scan noch auflösen konnte
 	AusweisBarcode *string // sonst der offline gescannte Ausweis
-	// NachFremdrueckgabeVon: Der Online-Versand unter demselben Schlüssel hat nur die
-	// Fremdrückgabe dieser Ausleihe gebucht (das Buch stand auf jemand anderem), seine Antwort
-	// kam nicht an. Die Ausleihe an die Person des Eintrags fehlt noch. Der Wächter lässt den
-	// Eintrag durch, wenn sich das Exemplar seit dieser Rückgabe nicht bewegt hat; gebucht wird
-	// frühestens ab der Rückgabe. Bis zum 15.09.2026 hieß das SchluesselBekannt und galt für
-	// JEDE gespeicherte Antwort — auch für eine vollständige Ausleihe, nach der das Buch
-	// zurückgegeben worden war: Das Nachbuchen lieh es erneut aus (OFFEN.md 5.15).
+	// NachFremdrueckgabeVon ist gesetzt, wenn der Versand am Netz unter demselben Schlüssel nur
+	// die Fremdrückgabe dieser Ausleihe gebucht hat (das Buch stand auf jemand anderem) und
+	// seine Antwort nicht ankam. Die Ausleihe an die Person des Eintrags fehlt noch. Der
+	// Wächter lässt den Eintrag durch, wenn sich das Exemplar seit dieser Rückgabe nicht bewegt
+	// hat; gebucht wird frühestens ab der Rückgabe. Nach einer vollständigen Ausleihe gilt es
+	// nicht: Das Nachbuchen liehe ein inzwischen zurückgegebenes Buch sonst erneut aus.
 	NachFremdrueckgabeVon *string
 	BearbeiterID          string
 }
@@ -235,12 +231,8 @@ func (d *ausleihDienst) loeseExemplar(ctx context.Context, barcode string) (*rep
 	return nil, nil
 }
 
-// loesePerson bestimmt, wer ausleiht: die schon aufgelöste Person des Eintrags, sonst der
-// offline gescannte Ausweis. Bleibt der Ausweis unbekannt, steht sein Text in der Meldung.
-//
-// Bis Migration 125 stand hier zweimal dasselbe — einmal für Schüler, einmal für
-// Lehrkräfte, mit der Reihenfolge „Schüler vor Lehrkraft" als stiller Entscheidung für
-// den Fall, dass eine Nummer in beiden Tabellen steht. Diesen Fall gibt es nicht mehr.
+// loesePerson bestimmt, wer ausleiht: die schon aufgelöste Person des Eintrags, sonst der ohne
+// Netz gescannte Ausweis. Bleibt der Ausweis unbekannt, steht sein Text in der Meldung.
 func (d *ausleihDienst) loesePerson(ctx context.Context, l *nachbuchLage) error {
 	e := l.eintrag
 	if e.LeserID != nil && *e.LeserID != "" {

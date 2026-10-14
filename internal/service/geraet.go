@@ -15,35 +15,36 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// GeraeteErgebnis beschreibt das Ergebnis einer Geräte-Aktion wie Ausleihe, Rückgabe oder Checklisten-Anforderung.
+// GeraeteErgebnis ist das Ergebnis eines Scans an einem Gerät: Ausleihe, Rückgabe oder die
+// Bitte, die Checkliste des Zubehörs zu bestätigen.
 type GeraeteErgebnis struct {
-	// Art definiert den Typ des Ergebnisses (z. B. "ausleihe", "rueckgabe", "geraet_check").
+	// Art ist "ausleihe", "rueckgabe" oder "geraet_check", wenn erst die Checkliste bestätigt
+	// werden muss.
 	Art string
-	// Geraet enthält die Stammdaten des betroffenen Geräts.
+	// Geraet ist das gescannte Gerät.
 	Geraet *repository.Geraet
-	// Leser ist der Leser, für den die Aktion durchgeführt wurde.
+	// Leser ist der Leser, an den das Gerät ausgeliehen wurde.
 	Leser *repository.Leser
-	// Frist gibt die berechnete Rückgabefrist für das Gerät an (nur bei Ausleihe).
+	// Frist ist die Rückgabefrist einer Ausleihe.
 	Frist *time.Time
-	// AusleiheID ist die ID des verknüpften Ausleihdatensatzes.
+	// AusleiheID ist die Kennung der gebuchten Ausleihe.
 	AusleiheID *string
-	// Fremdrueckgabe ist wahr, wenn das Gerät von einer anderen Person als dem Ausleiher zurückgegeben wurde.
+	// Fremdrueckgabe sagt, ob jemand anderes als der Ausleiher das Gerät zurückgebracht hat.
 	Fremdrueckgabe bool
-	// Vorbesitzer ist der Leser, der das Gerät zuletzt ausgeliehen hatte (bei Fremdrückgabe).
+	// Vorbesitzer ist bei einer Fremdrückgabe der Leser, der das Gerät ausgeliehen hatte.
 	Vorbesitzer *repository.Leser
 }
 
-// GeraeteDienst definiert die Schnittstelle für alle Aktionen rund um Hardware-Geräte (z. B. Laptops, Tablets).
+// GeraeteDienst bucht den Scan eines Geräts (Laptop, Tablet).
 type GeraeteDienst interface {
-	// VerarbeiteScan verarbeitet das Scannen eines Geräts. Je nach Zustand wird das Gerät
-	// entweder ausgeliehen (falls frei) oder zurückgegeben (falls aktuell ausgeliehen).
-	// Zudem wird geprüft, ob eine Zubehör-Checkliste vor der Ausleihe bestätigt werden muss.
-	// overrideBlock übergeht die Hinweise (offene Forderung, Überfällig-Automatik), nicht
-	// die Sperre am Leser — wie beim Buch (pruefeAusleihSperren).
+	// VerarbeiteScan leiht ein freies Gerät dem geöffneten Leser aus und nimmt ein verliehenes
+	// zurück. Hat das Gerät Zubehör, muss vor der Ausleihe die Checkliste bestätigt sein.
+	// uebergehen übergeht die Hinweise (offene Forderung, Überfällig-Automatik), nicht die
+	// Sperre am Leser, wie beim Buch (pruefeAusleihSperren).
 	VerarbeiteScan(ctx context.Context, nummer string, aktiverLeserID *string, checklisteBestaetigt, uebergehen bool, bearbeiterID string) (*GeraeteErgebnis, error)
 }
 
-// geraeteDienst ist die Standard-Implementierung des GeraeteDienst.
+// geraeteDienst erfüllt GeraeteDienst.
 type geraeteDienst struct {
 	pool              db.PgxPoolIface
 	leserAbfragen     repository.LeserAbfragen
@@ -51,7 +52,7 @@ type geraeteDienst struct {
 	protokollAbfragen repository.ProtokollAbfragen
 }
 
-// NewGeraeteDienst erstellt eine neue Instanz des Standard-Geräteservice.
+// NewGeraeteDienst baut den Dienst für Geräte.
 func NewGeraeteDienst(pool db.PgxPoolIface, leserAbfragen repository.LeserAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) GeraeteDienst {
 	return &geraeteDienst{
 		pool:              pool,
@@ -88,10 +89,10 @@ func pruefeGeraetAusleihbar(g repository.Geraet) error {
 	return nil
 }
 
-// ladeAkteur ermittelt den aktiven Leser und prüft die Sperren der Ausleihe auf demselben Weg
-// wie beim Buch (pruefeAusleihSperren). Ein Gerät ist kein Lernmittel: Es gelten die Sperre
-// am Leser und beide Hinweise. Die Rückgabe nimmt ladeRueckgeber, ein gesperrter Leser muss
-// sein Gerät zurückgeben können. Die Lage geht mit zurück: leiheGeraetAus rechnet aus ihren
+// ladeAkteur lädt den geöffneten Leser und prüft die Sperren der Ausleihe auf demselben Weg wie
+// beim Buch (pruefeAusleihSperren). Ein Gerät ist kein Lernmittel: Es gelten die Sperre am
+// Leser und beide Hinweise. Die Rückgabe nimmt ladeRueckgeber, weil ein gesperrter Leser sein
+// Gerät zurückgeben können muss. Die Lage geht mit zurück: leiheGeraetAus rechnet aus ihren
 // Einstellungen die Frist und protokolliert, was übergangen wurde.
 func (d *geraeteDienst) ladeAkteur(ctx context.Context, aktiverLeserID *string, uebergehen bool) (*repository.Leser, sperrLage, error) {
 	leser, err := d.ladeRueckgeber(ctx, aktiverLeserID)
@@ -112,8 +113,8 @@ func (d *geraeteDienst) ladeAkteur(ctx context.Context, aktiverLeserID *string, 
 	return leser, lage, nil
 }
 
-// ladeRueckgeber ermittelt den aktiven Leser aus dem gescannten Ausweis, ohne
-// Sperrprüfung. Die Rückgabe braucht ihn nur, um eine Fremdrückgabe zu erkennen.
+// ladeRueckgeber lädt den geöffneten Leser ohne Prüfung der Sperren. Die Rückgabe braucht ihn
+// nur, um eine Fremdrückgabe zu erkennen.
 func (d *geraeteDienst) ladeRueckgeber(ctx context.Context, aktiverLeserID *string) (*repository.Leser, error) {
 	if aktiverLeserID == nil || *aktiverLeserID == "" {
 		return nil, nil
@@ -128,35 +129,32 @@ func (d *geraeteDienst) ladeRueckgeber(ctx context.Context, aktiverLeserID *stri
 	return leser, nil
 }
 
-// leiheGeraetAus behandelt Fall A: das freie Gerät wird an den aktiven Leser ausgeliehen.
-// geraeteLeihfristTage ist die Standard-Leihfrist für Hardware (2 Wochen).
+// geraeteLeihfristTage ist die Leihfrist eines Geräts in Tagen.
 const geraeteLeihfristTage = 14
 
-// geraeteRueckgabeFrist ist die Geräte-Leihfrist als Tagesfrist wie die der Bücher
-// (frist.go): Tagesende in der Schul-Zeitzone (Europe/Berlin), und fällt der Tag auf ein
-// Wochenende, einen Feiertag oder in die Ferien, der nächste Schultag. Ohne die
-// Normalisierung fiel die Frist auf die Sekunde genau N Tage später in der Server-Zeitzone
-// (im Docker-Container UTC); ein um 10:00 MESZ geliehenes Gerät wäre 08:00 UTC fällig, was
-// Mahnläufe und die "heute/morgen fällig"-Anzeige verschob.
+// geraeteRueckgabeFrist ist die Leihfrist eines Geräts als Tagesfrist wie die der Bücher
+// (frist.go): Tagesende in der Zone der Schule, und fällt der Tag auf ein Wochenende, einen
+// Feiertag oder in die Ferien, der nächste Schultag. Ohne das Tagesende fiele die Frist auf die
+// Sekunde genau 14 Tage später in der Zone des Servers, und Mahnlauf und die Anzeige „heute
+// fällig" lägen daneben.
 func geraeteRueckgabeFrist(ab time.Time, kalender lmfplan.Ferientabelle) time.Time {
 	return kalender.Tagesfrist(ab, geraeteLeihfristTage)
 }
 
+// leiheGeraetAus leiht das freie Gerät dem geöffneten Leser aus.
 func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Leser, lage sperrLage, bearbeiterID string) (*GeraeteErgebnis, error) {
 	if leser == nil {
 		return nil, meldung(ErrUngueltigerZustand, "Bitte scannen Sie zuerst einen Ausweis")
 	}
 
-	// Standard-Hardware-Leihfrist beträgt 14 Tage (2 Wochen), auf das Tagesende in der
-	// Schul-Zeitzone normalisiert (analog zu den Buch-Fristen).
 	sommerferien := ""
 	if lage.einst != nil {
 		sommerferien = lage.einst.Sommerferien
 	}
 	frist := geraeteRueckgabeFrist(time.Now(), lmfplan.FerientabelleAus(sommerferien))
 	erg := &GeraeteErgebnis{Leser: leser}
-	// Ein Schreiber für jeden Leser. Nicht-Schüler bekommen das Gerät als Dauerleihe —
-	// dieselbe Regel wie beim Buch (legeAusleiheAn).
+	// Wer kein Schüler ist, bekommt das Gerät als Dauerleihe, dieselbe Regel wie beim Buch
+	// (legeAusleiheAn).
 	ausleiheID, err := repository.LeiheGeraetAus(ctx, tx, repository.GeraeteAusleihe{
 		GeraetID:       g.ID,
 		LeserID:        leser.ID,
@@ -175,7 +173,7 @@ func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 		return nil, err
 	}
 
-	// Revisionssicheres Audit-Log schreiben.
+	// Der Eintrag ins Protokoll steht in der Transaktion der Ausleihe.
 	if err := d.protokollAbfragen.ProtokolliereAusleihe(ctx, tx, g.ID, leser.ID, "", bearbeiterID); err != nil {
 		return nil, err
 	}
@@ -192,8 +190,8 @@ func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 	return erg, nil
 }
 
-// findeVorbesitzer stellt fest, ob eine Fremdrückgabe vorliegt (Rückgeber ≠ Ausleiher)
-// und lädt in diesem Fall die Stammdaten des ursprünglichen Ausleihers in resp.
+// findeVorbesitzer sagt, ob es eine Fremdrückgabe ist (der Rückgeber ist nicht der Ausleiher),
+// und legt dann den Ausleiher als Vorbesitzer in erg.
 func (d *geraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, erg *GeraeteErgebnis) (bool, error) {
 	if offeneAusleihe.SchuelerID == nil {
 		return false, nil
@@ -210,7 +208,7 @@ func (d *geraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *re
 	return true, nil
 }
 
-// gibGeraetZurueck behandelt Fall B: das ausgeliehene Gerät wird zurückgegeben.
+// gibGeraetZurueck nimmt das verliehene Gerät zurück.
 func (d *geraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, bearbeiterID string) (*GeraeteErgebnis, error) {
 	erg := &GeraeteErgebnis{}
 
@@ -223,7 +221,7 @@ func (d *geraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repo
 		return nil, err
 	}
 
-	// Revisionssicheres Audit-Log für die Rückgabe schreiben.
+	// Der Eintrag ins Protokoll steht in der Transaktion der Rückgabe.
 	if offeneAusleihe.SchuelerID != nil {
 		if err := d.protokollAbfragen.ProtokolliereRueckgabe(ctx, tx, g.ID, *offeneAusleihe.SchuelerID, "", bearbeiterID); err != nil {
 			return nil, err
@@ -242,7 +240,7 @@ func (d *geraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repo
 	return erg, nil
 }
 
-// VerarbeiteScan implementiert die Geschäftslogik für die Ausleihe und Rückgabe von Geräten.
+// VerarbeiteScan bucht den Scan eines Geräts.
 func (d *geraeteDienst) VerarbeiteScan(
 	ctx context.Context,
 	nummer string,
@@ -256,7 +254,6 @@ func (d *geraeteDienst) VerarbeiteScan(
 		return nil, err
 	}
 
-	// Transaktion starten, um den Ausleihprozess atomar und thread-sicher zu gestalten.
 	tx, err := d.ausleihAbfragen.BeginneTx(ctx)
 	if err != nil {
 		return nil, err
@@ -285,10 +282,10 @@ func (d *geraeteDienst) VerarbeiteScan(
 		return nil, err
 	}
 
-	// Checklisten-Regel: Hat das Gerät Zubehör und der Benutzer hat es noch nicht
-	// bestätigt, unterbrechen wir und fordern die Bestätigung an. Das Übergehen einer Sperre
-	// geht hier nicht verloren: Die Theke schickt override_block mit der Bestätigung erneut
-	// (OmniboxChecklistDialog.svelte), und protokolliert wird erst in leiheGeraetAus.
+	// Hat das Gerät Zubehör und ist die Checkliste noch nicht bestätigt, endet der Scan mit der
+	// Bitte darum. Das Übergehen einer Sperre geht dabei nicht verloren: Die Theke schickt
+	// override_block mit der Bestätigung erneut (OmniboxChecklistDialog.svelte), und
+	// protokolliert wird erst in leiheGeraetAus.
 	if g.Zubehoer != "" && !checklisteBestaetigt {
 		return &GeraeteErgebnis{Art: "geraet_check", Geraet: &g}, nil
 	}

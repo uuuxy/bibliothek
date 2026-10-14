@@ -2,13 +2,11 @@ package service
 
 import "log"
 
-// meldeProtokollFehler protokolliert einen fehlgeschlagenen Admin-Audit-Eintrag (ProtokolliereAdminAktion:
-// Sperr-Override, Wareneingang-Sammelbuchung), ohne den Vorgang abzubrechen — diese
-// Einträge stehen NEBEN dem Geschäftsvorgang, nicht in seiner Transaktion.
-//
-// Für Ausleihe und Rückgabe gilt das seit dem 07.09.2026 nicht mehr: ProtokolliereAusleihe und
-// ProtokolliereRueckgabe schreiben in die Transaktion der Buchung, vor deren Commit; scheitert die
-// Spur, scheitert die Buchung laut (Register B, Persistenz-Audit).
+// meldeProtokollFehler schreibt ins Log, wenn ein Eintrag der Verwaltung
+// (ProtokolliereAdminAktion: übergangene Sperre, Wareneingang) nicht geschrieben werden konnte.
+// Diese Einträge stehen neben dem Vorgang und nicht in seiner Transaktion, deshalb bricht ihr
+// Fehler den Vorgang nicht ab. Ausleihe und Rückgabe schreiben ihren Eintrag dagegen in der
+// Transaktion der Buchung, und ein Fehler dort lässt die Buchung scheitern.
 func meldeProtokollFehler(aktion string, err error) {
 	if err != nil {
 		log.Printf("audit: %s konnte nicht protokolliert werden: %v", aktion, err)

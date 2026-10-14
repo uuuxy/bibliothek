@@ -13,10 +13,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// bucheRueckgabeNach: Absicht „Rückgabe". Lag das Buch bei jemandem, endet die Ausleihe
-// zum Scan-Zeitpunkt — auch wenn es nicht die Person des Eintrags war (Fremdrückgabe).
-// War es nicht verliehen, gibt es nichts zu buchen: nur_reaktiviert, wenn es abgeschrieben
-// war (dann ist die Forderung beendet), sonst nicht_gebucht.
+// bucheRueckgabeNach bucht die Absicht „Rückgabe". Lag das Buch bei jemandem, endet die
+// Ausleihe zum Zeitpunkt des Scans, auch wenn es nicht die Person des Eintrags war
+// (Fremdrückgabe). War es nicht verliehen, gibt es nichts zu buchen: nur_reaktiviert, wenn es
+// abgeschrieben war (dann ist die Forderung beendet), sonst nicht_gebucht.
 func (d *ausleihDienst) bucheRueckgabeNach(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
 	if l.offeneAusleihe == nil {
 		return d.verarbeiteRueckgabeOhneAusleihe(ctx, tx, l)
@@ -46,9 +46,9 @@ func (d *ausleihDienst) bucheRueckgabeNach(ctx context.Context, tx pgx.Tx, l *na
 	return &NachbuchErgebnis{Ergebnis: repository.NachbuchZurueckgegeben, Gebucht: erg}, nil
 }
 
-// verarbeiteRueckgabeOhneAusleihe: Das Buch war nicht verliehen, es gibt nichts zurückzunehmen. War es
-// abgeschrieben, ist es jetzt wieder im Umlauf (nur_reaktiviert), und die Meldung nennt, was mit
-// der Forderung geschah; sonst nicht_gebucht.
+// verarbeiteRueckgabeOhneAusleihe beantwortet eine Rückgabe, bei der das Buch nicht verliehen
+// war. War es abgeschrieben, ist es jetzt wieder im Umlauf (nur_reaktiviert), und die Meldung
+// nennt, was mit der Forderung geschah; sonst nicht_gebucht.
 func (d *ausleihDienst) verarbeiteRueckgabeOhneAusleihe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
 	if !l.reaktiviert {
 		verwerfeStill(ctx, tx)
@@ -71,9 +71,9 @@ func (d *ausleihDienst) verarbeiteRueckgabeOhneAusleihe(ctx context.Context, tx 
 	return &NachbuchErgebnis{Ergebnis: repository.NachbuchNurReaktiviert, Grund: grund, AufsichtHinweis: hinweis}, nil
 }
 
-// bucheAusleiheNach: Absicht „Ausleihe". Beim selben Kind wird nichts umgekehrt
-// (bereits_ausgeliehen). Lag das Buch bei jemand anderem, wird dort zurückgenommen — vor
-// dem Savepoint, damit die Rücknahme bleibt, wenn die neue Ausleihe an Sperre, Limit oder
+// bucheAusleiheNach bucht die Absicht „Ausleihe". Beim selben Kind wird nichts umgekehrt
+// (bereits_ausgeliehen). Lag das Buch bei jemand anderem, wird dort zurückgenommen, vor dem
+// Savepoint, damit die Rücknahme bleibt, wenn die neue Ausleihe an Sperre, Limit oder
 // Vormerkung scheitert.
 func (d *ausleihDienst) bucheAusleiheNach(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
 	if l.offeneAusleihe != nil && istEigeneAusleihe(l) {
@@ -194,11 +194,11 @@ func (d *ausleihDienst) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l
 	return abweisung, nil
 }
 
-// errScanVeraltet: die Rückgabe läge vor der Ausleihe (check_return_date).
+// errScanVeraltet meldet, dass die Rückgabe vor der Ausleihe läge (check_return_date).
 var errScanVeraltet = errors.New("scan veraltet")
 
-// beendeAusleiheZumScan beendet die aktive Ausleihe zum Scan-Zeitpunkt, bedient die Vormerkung und
-// schreibt das Protokoll; liefert den Vorbesitzer für Antwort und Meldung.
+// beendeAusleiheZumScan beendet die offene Ausleihe zum Zeitpunkt des Scans, bedient die
+// Vormerkung und schreibt das Protokoll; es liefert den Vorbesitzer für Ergebnis und Meldung.
 func (d *ausleihDienst) beendeAusleiheZumScan(ctx context.Context, tx pgx.Tx, l *nachbuchLage, fremd bool, erg *AusleihErgebnis) (*repository.Leser, error) {
 	aktiv := l.offeneAusleihe
 	if err := repository.BucheRueckgabeZum(ctx, tx, aktiv.ID, l.eintrag.BearbeiterID, fremd, &l.gescannt); err != nil {
@@ -222,7 +222,7 @@ func (d *ausleihDienst) beendeAusleiheZumScan(ctx context.Context, tx pgx.Tx, l 
 	return d.leserAbfragen.Finde(ctx, *aktiv.SchuelerID)
 }
 
-// baueNachbuchVorgang baut den Ausleih-Kontext mit der Frist ab dem Scan-Zeitpunkt.
+// baueNachbuchVorgang baut den Vorgang der Ausleihe mit der Frist ab dem Scan.
 func (d *ausleihDienst) baueNachbuchVorgang(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*ausleihVorgang, error) {
 	vorgang := &ausleihVorgang{leserID: l.leser.ID, leser: l.leser}
 	if !vorgang.istSchueler() {
@@ -237,9 +237,9 @@ func (d *ausleihDienst) baueNachbuchVorgang(ctx context.Context, tx pgx.Tx, l *n
 	return vorgang, nil
 }
 
-// pruefeNachbuchSchranken sind dieselben Schranken wie am Online-Scan — Sperren, Ausleihlimit,
-// fremde Vormerkung —, die Zählungen laufen über die Transaktion des Eintrags. Übergehen
-// gibt es beim Nachbuchen nicht: Niemand steht daneben.
+// pruefeNachbuchSchranken prüft dieselben Schranken wie der Scan am Netz (Sperren,
+// Ausleihlimit, fremde Vormerkung); gezählt wird in der Transaktion des Eintrags. Übergehen
+// gibt es beim Nachbuchen nicht, weil niemand daneben steht.
 func (d *ausleihDienst) pruefeNachbuchSchranken(ctx context.Context, q pgx.Tx, l *nachbuchLage, vorgang *ausleihVorgang) error {
 	if _, err := pruefeAusleihSperren(ctx, q, l.leser, l.exemplar.IstLernmittel, false); err != nil {
 		return err
@@ -256,9 +256,9 @@ func (d *ausleihDienst) pruefeNachbuchSchranken(ctx context.Context, q pgx.Tx, l
 	return d.pruefeVormerkungKonflikt(ctx, q, l.exemplar.ID, vorgang, true)
 }
 
-// verwerfeStill verwirft die Transaktion, wenn fachlich nichts zu buchen ist. Ein Fehler
-// beim Rollback wird protokolliert, nicht gemeldet: Gebucht wurde ohnehin nichts, und der
-// Aufrufer soll seine fachliche Antwort behalten.
+// verwerfeStill verwirft die Transaktion, wenn fachlich nichts zu buchen ist. Ein Fehler dabei
+// steht im Log und wird nicht gemeldet: Gebucht wurde ohnehin nichts, und der Aufrufer soll
+// seine fachliche Antwort behalten.
 func verwerfeStill(ctx context.Context, tx pgx.Tx) {
 	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
 		log.Printf("nachbuchen: Rollback fehlgeschlagen: %v", err)

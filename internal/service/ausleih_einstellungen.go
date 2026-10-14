@@ -6,24 +6,28 @@ import (
 	"bibliothek/repository"
 )
 
-// ausleihEinstellungen repräsentiert die Konfigurationsparameter des Ausleihsystems,
-// die in der Datenbanktabelle `system_einstellungen` verwaltet werden.
+// ausleihEinstellungen sind die Einstellungen, die Ausleihe und Sperren brauchen. Die Felder
+// heißen wie in repository.SystemEinstellungen; TestAusleihEinstellungenAus hält beide gleich.
 type ausleihEinstellungen struct {
-	// FristBuchTage definiert die Standardleihfrist für normale Bücher in Tagen.
+	// FristBuchTage ist die Frist gewöhnlicher Bücher in Tagen.
 	FristBuchTage int
-	// FristMedienTage definiert die Leihfrist für Sonder-Medien (CDs, DVDs, Hörbücher) in Tagen.
+	// FristMedienTage ist die Frist für CDs, DVDs und Hörbücher in Tagen.
 	FristMedienTage int
-	// MaxAusleihenSchueler begrenzt die Anzahl der gleichzeitig ausgeliehenen regulären Bücher pro Schüler.
+	// MaxAusleihenSchueler begrenzt die gleichzeitigen Ausleihen eines Schülers außer den
+	// Lernmitteln.
 	MaxAusleihenSchueler int
-	// LMFStichtag bestimmt den jährlichen Rückgabetermin für Schulbücher der Lernmittelfreiheit (z. B. "07-31").
+	// LMFStichtag ist der jährliche Rückgabetag der Lernmittel als „MM-TT".
 	LMFStichtag string
-	// FerienLeseclubAktiv ist wahr, wenn die verlängerte Ausleihe für den Ferien-Leseclub aktiv ist.
+	// FerienLeseclubAktiv sagt, ob der Ferien-Leseclub läuft.
 	FerienLeseclubAktiv bool
-	// FerienLeseclubZieldatum definiert das feste Rückgabedatum für alle Leseclub-Ausleihen.
+	// FerienLeseclubZieldatum ist das gemeinsame Rückgabedatum der Ausleihen im
+	// Ferien-Leseclub.
 	FerienLeseclubZieldatum *string
-	// UeberfaelligKarenzTage: Anzahl der Toleranztage bevor ein Schüler blockiert wird.
+	// UeberfaelligKarenzTage sind die Tage, die ein Medium überfällig sein darf, bevor es für
+	// die Sperr-Automatik zählt.
 	UeberfaelligKarenzTage int
-	// UeberfaelligSperreAbMedien: Anzahl der überfälligen Medien ab denen blockiert wird.
+	// UeberfaelligSperreAbMedien ist die Zahl überfälliger Medien, ab der die Sperr-Automatik
+	// greift.
 	UeberfaelligSperreAbMedien int
 	// Sommerferien ist der Text der Einstellung „sommerferien" — die Jahre, die die Schule
 	// neben der Programmtabelle eingetragen hat. Leer heißt: nur die Programmtabelle.

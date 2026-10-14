@@ -11,12 +11,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// deuteAnlegeFehler übersetzt eine Unique-Verletzung (Migration 033: höchstens eine aktive
-// Ausleihe je Exemplar/Gerät) in einen sauberen Konflikt. Das tritt auf, wenn ein zweiter
-// zeitgleicher Checkout dasselbe Exemplar greifen will — dann ist 409 (statt 500) korrekt.
-// legeAusleiheAn schreibt die Ausleihe und behandelt den einen Fall, den der
-// INSERT nicht selbst entscheiden kann: Er prallt am eindeutigen Index ab, weil
-// zwischen Freiprüfung und Schreiben ein anderer Vorgang das Exemplar verbucht hat.
+// legeAusleiheAn schreibt die Ausleihe. Prallt sie am eindeutigen Index ab, weil zwischen
+// Prüfung und Schreiben ein anderer Vorgang das Exemplar gebucht hat, entscheidet
+// deuteAusleiheKonflikt, ob das ein Fehler ist.
 func (d *ausleihDienst) legeAusleiheAn(
 	ctx context.Context,
 	tx pgx.Tx,
@@ -24,9 +21,7 @@ func (d *ausleihDienst) legeAusleiheAn(
 	vorgang *ausleihVorgang,
 	bearbeiterID string,
 ) (*repository.Ausleihe, error) {
-	// Ein Schreiber für jeden Leser (Migration 125). Die Dauerleihe bleibt an die Art
-	// geknüpft — sie war vorher an die Tabelle geknüpft, was dasselbe war: Wer kein
-	// Schüler ist, bekommt das Buch fürs Schuljahr und zählt nicht in die
+	// Wer kein Schüler ist, bekommt das Buch als Dauerleihe und zählt nicht in die
 	// Überfällig-Automatik (repository.ZaehleUeberfaelligeAusleihen).
 	ausleihe, err := d.ausleihAbfragen.LegeAn(ctx, tx, exemplar.ID, vorgang.leserID, bearbeiterID, vorgang.frist, !vorgang.istSchueler())
 	if err == nil {
@@ -45,20 +40,11 @@ func (d *ausleihDienst) legeAusleiheAn(
 	return nil, deutung
 }
 
-// deuteAusleiheKonflikt beantwortet die Frage, die nach einem abgeprallten INSERT
-// wirklich zählt: WER hat das Exemplar jetzt?
-//
-// Zwischen der Freiprüfung und dem Schreiben hat ein anderer Vorgang es verbucht.
-// Zwei sehr verschiedene Fälle:
-//
-//   - Derselbe Ausleiher (Handscanner feuert doppelt, ungeduldiges zweites Enter):
-//     Der gewünschte Zustand ist bereits hergestellt. Die bestehende Ausleihe wird
-//     zurückgemeldet — der Scan war wirkungslos, aber nicht falsch. Genau dafür war
-//     das ON CONFLICT gedacht.
-//   - Ein anderer Ausleiher: Hier MUSS der Arbeitsplatz einen Fehler sehen. Vorher
-//     bekam er "ausgeliehen an <eigenen Schüler>" gemeldet, während das Buch auf
-//     jemand anderem stand — grüner Blitz, Erfolgston, und die Kraft gibt das Buch
-//     heraus. Auffällig wird das erst bei der Inventur.
+// deuteAusleiheKonflikt klärt nach einem abgeprallten Schreiben, wer das Exemplar jetzt hat.
+// Derselbe Leser (der Scanner hat doppelt ausgelöst) hat den gewünschten Zustand schon: Die
+// bestehende Ausleihe kommt zurück, der Scan war wirkungslos, aber nicht falsch. Ein anderer
+// Leser ist ein Fehler, den der Arbeitsplatz sehen muss; sonst gäbe die Theke ein Buch heraus,
+// das auf jemand anderem steht.
 //
 // Read Committed: Die fremde Transaktion ist committet, ein neues SELECT sieht sie.
 func (d *ausleihDienst) deuteAusleiheKonflikt(
@@ -89,14 +75,17 @@ func istSelberAusleiher(aktiv *repository.Ausleihe, vorgang *ausleihVorgang) boo
 	return aktiv.SchuelerID != nil && *aktiv.SchuelerID == vorgang.leserID
 }
 
-// errAusleiheBereitsVorhanden ist kein Fehler nach außen, sondern das Signal an
-// verarbeiteAusleihe, mit der bestehenden Ausleihe weiterzumachen (doppelter Scan).
+// errAusleiheBereitsVorhanden ist kein Fehler nach außen, sondern das Zeichen an
+// legeAusleiheAn, mit der bestehenden Ausleihe weiterzumachen (doppelter Scan).
 type errAusleiheBereitsVorhanden struct{ ausleihe *repository.Ausleihe }
 
 func (e errAusleiheBereitsVorhanden) Error() string {
 	return "ausleihe besteht bereits für denselben Ausleiher"
 }
 
+// deuteAnlegeFehler übersetzt die Verletzung des eindeutigen Index (höchstens eine offene
+// Ausleihe je Exemplar oder Gerät) in einen Konflikt: Ein zweiter gleichzeitiger Scan desselben
+// Exemplars bekommt 409 statt 500.
 func deuteAnlegeFehler(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -127,7 +116,7 @@ func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repos
 	erg.RegalfreigabeBarcode = barcode
 }
 
-// verarbeiteAusleihe handles the case where the book is currently available (not checked out).
+// verarbeiteAusleihe bucht die Ausleihe eines freien Exemplars an den geöffneten Leser.
 func (d *ausleihDienst) verarbeiteAusleihe(
 	ctx context.Context,
 	tx pgx.Tx,
@@ -166,7 +155,7 @@ func (d *ausleihDienst) verarbeiteAusleihe(
 	return erg, nil
 }
 
-// ladeAuflagenHinweis fragt NACH der Buchung, ob die Klasse gemischte Auflagen bekommt
+// ladeAuflagenHinweis fragt nach der Buchung, ob die Klasse gemischte Auflagen bekommt
 // (repository.LadeAuflagenMischungInKlasse). Ein Fehler hier darf die gebuchte Ausleihe nicht
 // als gescheitert melden: Er landet im Log, und die Theke zeigt keinen Hinweis.
 func (d *ausleihDienst) ladeAuflagenHinweis(ctx context.Context, titelID, schuelerID string) *repository.AuflagenMischung {
@@ -178,7 +167,8 @@ func (d *ausleihDienst) ladeAuflagenHinweis(ctx context.Context, titelID, schuel
 	return m
 }
 
-// verarbeiteEigeneRueckgabe handles the case where the active user returns their own book.
+// verarbeiteEigeneRueckgabe bucht die Rückgabe, wenn der geöffnete Leser sein eigenes Buch
+// scannt.
 func (d *ausleihDienst) verarbeiteEigeneRueckgabe(
 	ctx context.Context,
 	tx pgx.Tx,
@@ -192,7 +182,8 @@ func (d *ausleihDienst) verarbeiteEigeneRueckgabe(
 		return nil, err
 	}
 
-	// Eigene Vormerkung des zurückgebenden Schülers überspringen (Monopolisierungs-Schutz).
+	// Die eigene Vormerkung des Schülers zählt nicht, sonst stellte er sich das Buch selbst
+	// wieder bereit.
 	if err := d.bedieneVormerkung(ctx, tx, exemplar, erg, offeneAusleihe.SchuelerID); err != nil {
 		return nil, err
 	}
@@ -212,12 +203,10 @@ func (d *ausleihDienst) verarbeiteEigeneRueckgabe(
 	return erg, nil
 }
 
-// verarbeiteFremdrueckgabe: In einer aktiven Sitzung wird ein Buch gescannt, das auf
-// jemand ANDEREN verbucht ist. Bewusst NUR eine Rückgabe beim Vorbesitzer —
-// kein automatisches Umbuchen auf die aktive Sitzung (Produktentscheidung
-// 10.07.: Freund-Rückgaben landeten sonst still auf dem falschen Konto).
-// Soll das Buch an die aktive Sitzung: einfach erneut scannen — das Buch ist
-// jetzt frei und der zweite Scan läuft als normale Ausleihe (verarbeiteAusleihe).
+// verarbeiteFremdrueckgabe nimmt ein Buch zurück, das bei geöffnetem Leser gescannt wurde und
+// auf jemand anderem steht. Es bucht nur die Rückgabe und nicht auf den geöffneten Leser um:
+// Bringt ein Kind das Buch eines Freundes zurück, landete es sonst still auf dem falschen
+// Konto. Soll der geöffnete Leser das Buch haben, leiht es der nächste Scan aus.
 func (d *ausleihDienst) verarbeiteFremdrueckgabe(
 	ctx context.Context,
 	tx pgx.Tx,
@@ -226,9 +215,8 @@ func (d *ausleihDienst) verarbeiteFremdrueckgabe(
 	bearbeiterID string,
 	erg *AusleihErgebnis,
 ) (*AusleihErgebnis, error) {
-	// Der Vorbesitzer ist ein Leser — Schüler oder Kollege. Deshalb LeserAbfragen.Finde und
-	// nicht GetByID: Letzteres liest die Sicht `schueler` und meldete für das Buch eines
-	// Kollegen „Vorbesitzer unbekannt".
+	// Der Vorbesitzer kann ein Kollege sein: LeserAbfragen.Finde liest alle Leser, die Sicht
+	// schueler nur die Schüler.
 	var vorbesitzer *repository.Leser
 	var err error
 
@@ -243,8 +231,8 @@ func (d *ausleihDienst) verarbeiteFremdrueckgabe(
 		return nil, err
 	}
 
-	// Vormerkungs-Hinweis wie bei jeder Rückgabe: das Buch wird gerade frei. Die eigene
-	// Vormerkung des Vorbesitzers wird übersprungen (Monopolisierungs-Schutz).
+	// Wie bei jeder Rückgabe wird das Buch frei, und eine wartende Vormerkung bekommt es; die
+	// des Vorbesitzers zählt nicht.
 	if err := d.bedieneVormerkung(ctx, tx, exemplar, erg, offeneAusleihe.SchuelerID); err != nil {
 		return nil, err
 	}
@@ -262,8 +250,8 @@ func (d *ausleihDienst) verarbeiteFremdrueckgabe(
 	erg.Art = "rueckgabe"
 	erg.Exemplar = exemplar
 	erg.AusleiheID = &offeneAusleihe.ID
-	// Student = Vorbesitzer: SSE-Livesync zielt auf das Konto, das sich
-	// geändert hat; die aktive Sitzung bleibt clientseitig unangetastet.
+	// Leser ist der Vorbesitzer: Die Aktualisierung der anderen Arbeitsplätze trifft das Konto,
+	// das sich geändert hat, und der geöffnete Leser bleibt, wie er ist.
 	erg.Leser = vorbesitzer
 	erg.Fremdrueckgabe = true
 	erg.Vorbesitzer = vorbesitzer

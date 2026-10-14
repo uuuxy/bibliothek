@@ -10,9 +10,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// zaehleAktiveSchuelerAusleihen setzt einen Row-Level-Lock auf den Schüler
-// (FOR UPDATE, gegen parallele Ausleihen) und zählt dessen reguläre (Nicht-LMF-)
-// Ausleihen. Für Nicht-Schüler ist das Ergebnis 0.
+// zaehleAktiveSchuelerAusleihen sperrt die Zeile des Schülers (FOR UPDATE), damit zwei
+// gleichzeitige Ausleihen das Limit nicht gemeinsam überschreiten, und zählt seine Ausleihen
+// außer den Lernmitteln. Für alle anderen Leser ist das Ergebnis 0.
 func (d *ausleihDienst) zaehleAktiveSchuelerAusleihen(ctx context.Context, tx pgx.Tx, vorgang *ausleihVorgang) (int, error) {
 	if !vorgang.istSchueler() {
 		return 0, nil
@@ -24,9 +24,8 @@ func (d *ausleihDienst) zaehleAktiveSchuelerAusleihen(ctx context.Context, tx pg
 	return repository.ZaehleOffeneBuechereiAusleihen(ctx, tx, vorgang.leserID)
 }
 
-// istEigeneRueckgabe erkennt, ob der aktive Ausleiher sein eigenes Buch scannt
-// (also eine reguläre Rückgabe statt einer Fremdrückgabe). Eine Spalte, ein Vergleich:
-// Vorher waren es zwei, und ob der richtige griff, entschied der borrowerType.
+// istEigeneRueckgabe sagt, ob der geöffnete Leser sein eigenes Buch scannt; dann ist es eine
+// gewöhnliche Rückgabe und keine Fremdrückgabe.
 func istEigeneRueckgabe(vorgang *ausleihVorgang, offeneAusleihe *repository.Ausleihe) bool {
 	if offeneAusleihe == nil {
 		return false
@@ -34,9 +33,8 @@ func istEigeneRueckgabe(vorgang *ausleihVorgang, offeneAusleihe *repository.Ausl
 	return offeneAusleihe.SchuelerID != nil && *offeneAusleihe.SchuelerID == vorgang.leserID
 }
 
-// pruefeSchuelerAusleihlimit erzwingt das Ausleihlimit für Schüler. Ausgenommen sind
-// LMF-Bücher und jede Rückgabe — bei einer Rückgabe entsteht keine Ausleihe, die gegen
-// das Limit zählen könnte.
+// pruefeSchuelerAusleihlimit hält das Ausleihlimit eines Schülers. Lernmittel und jede Rückgabe
+// sind ausgenommen: Bei einer Rückgabe entsteht keine Ausleihe, die zählen könnte.
 func (d *ausleihDienst) pruefeSchuelerAusleihlimit(ctx context.Context, vorgang *ausleihVorgang, exemplar *repository.Exemplar, anzahlOffene int, neueAusleihe bool) error {
 	if !vorgang.istSchueler() {
 		return nil
@@ -54,10 +52,9 @@ func (d *ausleihDienst) pruefeSchuelerAusleihlimit(ctx context.Context, vorgang 
 	return nil
 }
 
-// pruefeVormerkungKonflikt blockiert die Ausleihe, wenn das Exemplar für einen
-// anderen Schüler abholbereit reserviert ist. Bei jeder Rückgabe entfällt die Prüfung —
-// auch bei der Fremdrückgabe, die das Exemplar nur zurücknimmt (die Vormerkung bedient
-// danach bedieneVormerkung).
+// pruefeVormerkungKonflikt weist die Ausleihe ab, wenn das Exemplar für einen anderen Schüler
+// abholbereit liegt. Bei jeder Rückgabe entfällt die Prüfung, auch bei der Fremdrückgabe, die
+// das Exemplar nur zurücknimmt; die Vormerkung bedient danach bedieneVormerkung.
 func (d *ausleihDienst) pruefeVormerkungKonflikt(ctx context.Context, tx pgx.Tx, exemplarID string, vorgang *ausleihVorgang, neueAusleihe bool) error {
 	if !neueAusleihe {
 		return nil
@@ -72,9 +69,9 @@ func (d *ausleihDienst) pruefeVormerkungKonflikt(ctx context.Context, tx pgx.Tx,
 	return nil
 }
 
-// BucheAmLeser wickelt die Ausleihe eines Buchexemplars an den aktiven LESER ab.
-// Wenn das Buch bereits ausgeliehen ist, entscheidet die Methode, ob es sich um eine reguläre Rückgabe handelt
-// (Ausleiher scannt sein eigenes Buch) oder um eine Fremdrückgabe mit anschließender Neuausleihe.
+// BucheAmLeser leiht ein freies Exemplar dem geöffneten Leser aus. Ist es verliehen, ist der
+// Scan eine Rückgabe: beim Leser selbst eine gewöhnliche, bei jemand anderem eine
+// Fremdrückgabe.
 func (d *ausleihDienst) BucheAmLeser(
 	ctx context.Context,
 	exemplar *repository.Exemplar,
@@ -84,19 +81,17 @@ func (d *ausleihDienst) BucheAmLeser(
 ) (*AusleihErgebnis, error) {
 	erg := &AusleihErgebnis{}
 
-	// Sicherheitsschranke: Nur ausleihbare Exemplare dürfen verarbeitet werden
 	if !exemplar.IstAusleihbar {
 		return nil, meldung(ErrUngueltigerZustand, "Dieses Buchexemplar ist nicht ausleihbar")
 	}
 
-	// 1. Ausleiher und Frist auflösen (ausleih_vorgang.go). Die Sperrprüfung folgt
-	// erst nach dem Lesen der Ausleihe — sie hängt davon ab, ob das Buch diesem Ausleiher gehört.
+	// Die Sperren prüft erst der Schritt nach dem Lesen der Ausleihe: Sie hängen davon ab, ob
+	// das Buch diesem Leser gehört.
 	vorgang, err := d.ladeVorgang(ctx, exemplar, aktiverLeserID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Transaktion gegen Race Conditions
 	tx, err := d.ausleihAbfragen.BeginneTx(ctx)
 	if err != nil {
 		return nil, err
@@ -114,23 +109,18 @@ func (d *ausleihDienst) BucheAmLeser(
 	}
 
 	istEigene := istEigeneRueckgabe(vorgang, offeneAusleihe)
-	// Eine Ausleihe entsteht nur am freien Exemplar. Beide Rückgabe-Fälle nehmen bloß
-	// zurück — die Fremdrückgabe kennt den Ausleiher der Sitzung nicht einmal
-	// (verarbeiteFremdrueckgabe bekommt keinen ausleihVorgang).
+	// Eine Ausleihe entsteht nur am freien Exemplar. Beide Rückgaben nehmen bloß zurück; die
+	// Fremdrückgabe bekommt den Vorgang nicht einmal.
 	neueAusleihe := offeneAusleihe == nil
 
-	// 3. Die Schranken der Ausleihe — Sperrgründe, Ausleihlimit, fremde Vormerkung — nur,
-	// wenn wirklich eine Ausleihe entsteht. Sie liefen bis zum 11.09.2026 beim Auflösen des
-	// Ausleihers, bevor feststand, wem das Buch gehört (ein wegen Überfälligkeit gesperrtes
-	// Kind wurde mit genau diesen Büchern abgewiesen), und danach bis zum 12.09.2026 an
-	// `!isReturningThis` — was die Fremdrückgabe einschloss: Wer gesperrt oder am Limit war,
-	// konnte das Buch eines Mitschülers nicht abgeben, während dieselbe Rückgabe ohne offene
-	// Sitzung (NimmZurueck) durchging. Die Ausleihe liegt hier unter FOR UPDATE, der
-	// Fall kann sich bis zum Commit nicht mehr ändern.
+	// Die Schranken der Ausleihe (Sperren, Ausleihlimit, fremde Vormerkung) gelten nur, wenn
+	// wirklich eine Ausleihe entsteht: Wer gesperrt oder am Limit ist, muss sein Buch und auch
+	// das eines Mitschülers abgeben können. Die Ausleihe liegt hier unter FOR UPDATE, der Fall
+	// ändert sich bis zum Commit nicht mehr.
 	//
-	// Die Sperren gelten der Art nach (pruefeAusleihSperren: ein Kollege wird nie gesperrt);
-	// bis zum 24.09.2026 stand dafür hier ein istSchueler() davor. Gezählt wird über den
-	// Pool wie bisher; ein einfaches SELECT wartet auf keine Zeilensperre dieser Transaktion.
+	// Die Sperren gelten der Art des Lesers nach (pruefeAusleihSperren: ein Kollege wird nie
+	// gesperrt). Gezählt wird über den Pool; ein einfaches SELECT wartet auf keine Zeilensperre
+	// dieser Transaktion.
 	if neueAusleihe {
 		lage, err := pruefeAusleihSperren(ctx, d.pool, vorgang.leser, exemplar.IstLernmittel, uebergehen)
 		if err != nil {
@@ -147,7 +137,6 @@ func (d *ausleihDienst) BucheAmLeser(
 		return nil, err
 	}
 
-	// 5. Fall-Logik ausführen (ausleihe_faelle.go)
 	if offeneAusleihe == nil {
 		return d.verarbeiteAusleihe(ctx, tx, exemplar, vorgang, bearbeiterID, erg)
 	}
