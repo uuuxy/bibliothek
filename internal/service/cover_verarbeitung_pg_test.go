@@ -22,8 +22,6 @@ import (
 )
 
 // verarbeiteCover holt für einen Titel der Auswahl das Cover und schreibt Ergebnis und Stand.
-// Gemessen am 08.10.2026 führte kein Test die Funktion aus (cover_service.go 18,2 %,
-// OFFEN.md 5.10).
 //
 // Echte Datenbank, nachgestellte Katalogdienste. Die Cover-Datei landet in einem
 // Wegwerf-Verzeichnis (t.Chdir), nicht im Paket.

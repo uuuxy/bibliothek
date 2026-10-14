@@ -8,11 +8,11 @@ import (
 	"bibliothek/repository"
 )
 
-// TestEchteKartennummerFindetDenSchueler prueft die GEMESSENE Nummer eines echten
-// Schuelerausweises: aufgedruckt "[0395] 37", gescannt "B97601826457".
+// TestEchteKartennummerFindetDenSchueler prüft die gemessene Nummer eines echten
+// Schülerausweises: aufgedruckt "[0395] 37", gescannt "B97601826457".
 //
-// Die faengt mit "B" an — und "B-" ist bei uns das Buch-Praefix. Der Abstand zwischen
-// "funktioniert" und "jeder Ausweis landet im Buch-Handler" ist genau ein Bindestrich.
+// Sie fängt mit "B" an, und "B-" ist bei uns die Vorsilbe eines Buchs. Zwischen „funktioniert"
+// und „jeder Ausweis landet beim Buch" liegt genau ein Bindestrich.
 func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 	const karte = "B97601826457"
 	svc := &omniboxDienst{
@@ -30,14 +30,11 @@ func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 	}
 }
 
-// TestLehrerausweisOhnePraefix ist die Luecke, die lange offen war.
-//
-// Lehrkraefte standen in `benutzer`, Schueler in `schueler`. Die praefixlose Aufloesung
-// fragte nur Buecher und Schueler ab — ein gescannter Lehrerausweis lief deshalb bis in
-// die Volltextsuche und meldete „keine Treffer". Nicht weil die Karte falsch waere:
-// Littera kennt gar keinen Unterschied zwischen Schueler- und Lehrerausweis, es steht nur
-// ein anderes Wort auf dem Aufdruck. Seit Migration 125 stehen beide in EINER Tabelle; die
-// Antwort heisst darum fuer beide „student" und traegt die Art.
+// TestLehrerausweisOhnePraefix: Ein Lehrerausweis ohne Vorsilbe lädt die Lehrkraft. Littera
+// kennt keinen Unterschied zwischen Schüler- und Lehrerausweis, auf dem Aufdruck steht nur ein
+// anderes Wort; fragte die Auflösung ohne Vorsilbe nur Bücher und Schüler ab, liefe der Ausweis
+// bis in die Volltextsuche und meldete „keine Treffer". Beide stehen in der Tabelle leser; die
+// Antwort heißt darum für beide „student" und trägt die Art.
 func TestLehrerausweisOhnePraefix(t *testing.T) {
 	const karte = "B97601826458"
 	svc := &omniboxDienst{
@@ -58,9 +55,9 @@ func TestLehrerausweisOhnePraefix(t *testing.T) {
 	}
 }
 
-// TestUnbekannteKarteLandetInDerSuche: die Ausweis-Stufe darf den Rueckfall nicht
-// schlucken. Ein getippter Titel ist genau dieser Fall — er ist weder Buchbarcode noch
-// Ausweis und muss in der Volltextsuche landen (Frage vom 16.09.2026).
+// TestUnbekannteKarteLandetInDerSuche: Die Ausweis-Stufe darf den Rückfall nicht schlucken. Ein
+// getippter Titel ist genau dieser Fall — er ist weder Buchbarcode noch Ausweis und muss in der
+// Volltextsuche landen.
 func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 	svc := &omniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
@@ -81,9 +78,8 @@ func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 }
 
 // TestLitteraErsatznummerFindetDenSchueler: Die Littera-Übernahme gibt einem Schüler ohne
-// eindeutige Ausweisnummer „L-<Littera-Nummer>" (internal/littera, ausweis). Bis zum
-// 15.09.2026 schickte die Theke jedes „L-" in den Lehrkraft-Zweig — der Schüler war weder
-// über den neu gedruckten Ausweis noch über die Namenssuche ladbar (OFFEN.md 5.15).
+// eindeutige Ausweisnummer „L-<Littera-Nummer>" (internal/littera, ausweis). „L-" sagt nur
+// „Ausweis", nicht „Lehrkraft": Der Schüler muss über den neu gedruckten Ausweis zu laden sein.
 func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 	svc := &omniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},

@@ -14,7 +14,7 @@ const loescheVormerkungAbfrage = "DELETE FROM vormerkungen WHERE titel_id = \\$1
 
 // TestRegalfreigabe_AnderesExemplar deckt den "Geisterbuch"-Fall ab: Für den Schüler
 // lag Exemplar A im Reservierungsfach, er nimmt aber Exemplar B (Freihand). Die
-// erfüllte Vormerkung wird gelöscht UND der Barcode von A als Regal-Hinweis gemeldet,
+// erfüllte Vormerkung wird gelöscht und der Barcode von A als Regal-Hinweis gemeldet,
 // damit A nicht unauffindbar im Fach liegen bleibt.
 func TestRegalfreigabe_AnderesExemplar(t *testing.T) {
 	mock, err := pgxmock.NewPool()
@@ -57,7 +57,7 @@ func TestRegalfreigabe_SelbesExemplar(t *testing.T) {
 
 	mock.ExpectQuery(loescheVormerkungAbfrage).WithArgs("titel1", "s1").
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
-	// KEIN barcode-Lookup erwartet.
+	// kein barcode-Lookup erwartet.
 
 	resp := &AusleihErgebnis{}
 	entferneErfuellteVormerkung(context.Background(), tx, copyA, "s1", resp)

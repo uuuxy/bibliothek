@@ -83,7 +83,7 @@ func TestTitelZeilenFelder_LMFAusKategorieUndSignatur(t *testing.T) {
 	headerMap := map[string]int{"titel": 0, "kategorie": 1, "signatur": 2}
 
 	// LMF-Token in der Kategorie (Bestands-CSV-Fall): Titel und Signatur bleiben, wie
-	// sie sind (Migration 093); aus dem LMF-Teil kommen Fach und Jahrgang.
+	// sie sind; aus dem LMF-Teil kommen Fach und Jahrgang.
 	z := titelZeilenFelder([]string{"Deutschbuch 9", "Buch LMF Ma 6", "De 9"}, headerMap)
 	if z.titel != "Deutschbuch 9" || z.kategorie != "Buch Ma 6" || z.signatur != "De 9" || !z.lernmittel {
 		t.Errorf("Kategorie-LMF: %+v", z)
@@ -105,7 +105,7 @@ func TestTitelZeilenFelder_LMFAusKategorieUndSignatur(t *testing.T) {
 	}
 }
 
-// sammleSignaturen trägt Signaturen für BESTEHENDE Titel nach — aber nur,
+// sammleSignaturen trägt Signaturen für bestehende Titel nach — aber nur,
 // wenn die Datei überhaupt eine Signatur-Spalte hat und der Wert nicht leer ist
 // (das Rücken-Etikett gewinnt, leer überschreibt nie).
 func TestSammleSignaturen(t *testing.T) {

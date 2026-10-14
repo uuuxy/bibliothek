@@ -14,17 +14,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Händler, die die Bücher vor der Lieferung selbst mit UNSEREN Barcodes bekleben.
+// Händler, die die Bücher vor der Lieferung selbst mit unseren Barcodes bekleben.
 //
-// Anlass: etikett_gedruckt am Exemplar bedeutet „WIR haben gedruckt", nicht „am Buch
-// klebt ein Etikett". Ein fertig beklebt geliefertes Buch war deshalb von einem
-// unbeklebten nicht zu unterscheiden — es stand dauerhaft auf der Nachdruck-Liste und
-// entwertete den Hinweis im Bestellwesen mit einer Zahl, die niemand abarbeiten kann.
+// etikett_gedruckt am Exemplar bedeutet „wir haben gedruckt", nicht „am Buch klebt ein
+// Etikett". Ohne eigenes Merkmal wäre ein fertig beklebt geliefertes Buch von einem unbeklebten
+// nicht zu unterscheiden: Es stünde dauerhaft auf der Nachdruck-Liste und entwertete den
+// Hinweis im Bestellwesen mit einer Zahl, die niemand abarbeiten kann.
 //
-// Warum ein Go-Test und kein E2E: Der Weg über POST /api/bestellungen verschickt die
-// Bestellung per Mail. Der lokale Stack trägt den echten Schulserver in der Umgebung —
-// ein Test, der dort Bestellmails auslöst, ist das Risiko nicht wert. BestellDienst.LegeAn ist
-// ohnehin die Stelle, an der entschieden wird; hier wird sie direkt geprüft.
+// Warum ein Go-Test und kein E2E: Der Weg über POST /api/bestellungen verschickt die Bestellung
+// per Mail. Der lokale Stack trägt den echten Schulserver in der Umgebung — ein Test, der dort
+// Bestellmails auslöst, ist das Risiko nicht wert. BestellDienst.LegeAn ist ohnehin die Stelle,
+// an der entschieden wird; hier wird sie direkt geprüft.
 
 // offeneEtiketten zählt, wie viele Exemplare des Titels auf der Nachdruck-Liste stünden.
 // Bewusst dieselbe Bedingung wie repository.EtikettOffenBedingung.
@@ -93,7 +93,7 @@ func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 	}
 }
 
-// Die Etiketten im Lieferanten-Mailanhang entstehen aus BestellDienst.LegeAn, NICHT aus dem
+// Die Etiketten im Lieferanten-Mailanhang entstehen aus BestellDienst.LegeAn, nicht aus dem
 // Druck-Center-Pfad (buchetikett.LadeDesTitels) — die Signatur muss deshalb hier ankommen, über
 // die echte Kette KatalogAbfragen.LadeTitel → buchetikett.Etikett. Ein Unit-Test, der Signatur
 // direkt ans Struct schreibt, beweist das nicht: Genau so blieb sie im Mailanhang leer.

@@ -1,12 +1,10 @@
 package service
 
-// Rückgabe trotz Sperre. Bis zum 13.09.2026 prüfte VerarbeiteScan die Sperren des
-// Geräts (ist_ausleihbar = false, etwa nach der Defekt-Meldung) und des aktiven Schülers,
-// BEVOR feststand, ob ausgeliehen oder zurückgegeben wird. Ein verliehenes Gerät, das
-// danach als defekt gemeldet wurde, ließ sich an der Theke nicht mehr zurücknehmen: 403
-// „Gerät ist aktuell gesperrt", die Ausleihe blieb offen (am Stack nachgestellt). Die
-// Sperren gelten der Ausleihe, nicht der Rückgabe. Echtes Postgres über den echten
-// Service: Die Rückgabe sperrt die Ausleihe per FOR UPDATE in einer Transaktion.
+// Rückgabe trotz Sperre. Die Sperren des Geräts (ist_ausleihbar = false, etwa nach der
+// Defekt-Meldung) und des aktiven Schülers gelten der Ausleihe, nicht der Rückgabe: Ein
+// verliehenes Gerät, das danach als defekt gemeldet wurde, muss sich an der Theke zurücknehmen
+// lassen, statt mit 403 „Gerät ist aktuell gesperrt" offen zu bleiben. Echtes Postgres über den
+// echten Dienst: Die Rückgabe sperrt die Ausleihe per FOR UPDATE in einer Transaktion.
 
 import (
 	"context"
@@ -31,7 +29,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 	`, "geraete-theke-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
-	// Die Lehrkraft ist ein LESER (Migration 125) — das Gerät hängt an ihrer Leserzeile,
+	// Die Lehrkraft ist ein Leser — das Gerät hängt an ihrer Leserzeile,
 	// nicht an ihrem Konto.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)

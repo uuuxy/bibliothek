@@ -11,12 +11,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Antwort der Schule vom 22.09.2026 (docs/OFFEN.md 9.3 c): Die Lernmittelfreiheit in Hessen
-// lässt keine automatische Sperre zu — auch keine, die jemand übergehen kann. Ein Kind mit
-// unbezahlter Forderung bekommt sein Schulbuch ohne Override; dasselbe Kind wird beim Buch
-// der Schülerbücherei weiter abgewiesen. Beide Fälle laufen über den Live-Pfad der Theke
-// (BucheAmLeser), nicht über die Prüffunktion allein: Nur so ist belegt, dass das
-// Exemplar an der Weiche ankommt. Rot gesehen am Rückbau der Weiche (22.09.2026).
+// Antwort der Schule: Die Lernmittelfreiheit in Hessen lässt keine automatische Sperre zu —
+// auch keine, die jemand übergehen kann. Ein Kind mit unbezahlter Forderung bekommt sein
+// Schulbuch ohne Override; dasselbe Kind wird beim Buch der Schülerbücherei weiter abgewiesen.
+// Beide Fälle laufen über den Live-Pfad der Theke (BucheAmLeser), nicht über die Prüffunktion
+// allein: Nur so ist belegt, dass das Exemplar an der Weiche ankommt. Rot gesehen am Rückbau
+// der Weiche.
 func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

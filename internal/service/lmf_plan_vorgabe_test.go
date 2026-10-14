@@ -9,19 +9,20 @@ import (
 	"bibliothek/repository"
 )
 
-// Drei Tage im Jahr überschrieb „Plan speichern" den laufenden Plan.
+// „Plan speichern" darf den laufenden Plan nicht überschreiben, auch nicht an den drei Tagen
+// zwischen Büchertausch und Ferien.
 //
-// Register 06.09.2026: Zwischen dem Donnerstag, an dem der Büchertausch endet, und dem
-// Montag, an dem die Sommerferien beginnen, ist der Rückgabe-Plan „vorbei" (letzter
-// Platz < heute) — der Planer bietet den Vorschlag fürs nächste Jahr an. Der Vorschlag
-// fragte aber Naechste(heute), und das nennt in diesen drei Tagen noch DIESELBEN Ferien
-// wie der abgelaufene Plan. Daraus wurde derselbe schuljahr_beginn, und der Upsert
-// (ON CONFLICT art, schuljahr_beginn) traf den alten, weiterhin veröffentlichten Plan.
+// Zwischen dem Donnerstag, an dem der Büchertausch endet, und dem Montag, an dem die
+// Sommerferien beginnen, ist der Rückgabe-Plan „vorbei" (letzter Platz < heute) — der Planer
+// bietet den Vorschlag fürs nächste Jahr an. Fragte der Vorschlag Naechste(heute), nennte das
+// in diesen drei Tagen noch dieselben Ferien wie der abgelaufene Plan; daraus würde derselbe
+// schuljahr_beginn, und der Upsert (ON CONFLICT art, schuljahr_beginn) träfe den alten,
+// weiterhin veröffentlichten Plan.
 //
-// Gerechnet an der echten Tabelle (lmfplan.Hessen): Ferien 2027 beginnen Montag, den
-// 28.06.; der Tausch endet Donnerstag, den 24.06.; das Fenster ist Fr 25. bis So 27.06.
-// Ab dem ersten Ferientag stimmte die Rechnung von allein wieder — deshalb steht der
-// 28.06. als Gegenprobe mit drin: Der Umbau darf dort nichts ändern.
+// Gerechnet an der echten Tabelle (lmfplan.Hessen): Ferien 2027 beginnen Montag, den 28.06.;
+// der Tausch endet Donnerstag, den 24.06.; das Fenster ist Fr 25. bis So 27.06. Ab dem ersten
+// Ferientag stimmt die Rechnung auch ohne den Vorgriff — deshalb steht der 28.06. als
+// Gegenprobe mit drin: Dort darf sich nichts ändern.
 func TestLMFPlanVorschlagGehtUeberDieFerienDesVorigenPlansHinaus(t *testing.T) {
 	tab := lmfplan.Hessen()
 	tag := func(datum string) time.Time {

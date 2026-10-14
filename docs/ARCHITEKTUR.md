@@ -959,7 +959,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   (`ZaehleUeberfaelligeAusleihen`: offen, kein Gerät, keine Dauerleihe, länger überfällig als
   die Kulanz). Den Hinweis auf das Abholfach beim Scan eines Ausweises liest
   `LadeAbholbereiteTitel`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
-  (`omnibox_service.go`).
+  (`internal/service/omnibox.go`).
 - Fristen und Sperr-Schwellen liest die Ausleihe über `repository.LadeEinstellungen`
   (`ladeAusleihEinstellungen`, `internal/service/ausleih_einstellungen.go`) und nimmt daraus neun Felder
   (`ausleihEinstellungenAus`). Die Zeilen der Einstellungen liest und bildet damit eine Stelle

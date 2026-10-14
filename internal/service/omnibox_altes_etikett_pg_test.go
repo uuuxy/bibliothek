@@ -1,19 +1,18 @@
 package service
 
-// Ein Ausweis oder Etikett von VOR dem 17.09.2026 wird weiter gelesen (OFFEN.md 9.2).
+// Ein Ausweis oder Etikett im alten Druck wird weiter gelesen.
 //
-// Bis dahin druckte die Anwendung Code 39 MIT Prüfzeichen. Das Zeichen steht in den
-// Strichcode-Daten: Unter der Karte steht „A-10003", das Lesegerät liefert „A-100037".
-// Der Server suchte eine Nummer, die es nicht gibt — und weil ein unbekannter Scan nur
-// eine leere Trefferliste erzeugt, sah es an der Theke aus, als täte der Scanner nichts.
+// Der alte Druck ist Code 39 mit Prüfzeichen. Das Zeichen steht in den Strichcode-Daten: Unter
+// der Karte steht „A-10003", das Lesegerät liefert „A-100037". Sucht der Server diese Nummer,
+// findet er nichts — und weil ein unbekannter Scan nur eine leere Trefferliste erzeugt, sähe es
+// an der Theke aus, als täte der Scanner nichts.
 //
-// Gedruckt wird seither Code 128 ohne Prüfzeichen. Die Karten und Etiketten von vorher
-// sind aber im Umlauf und sollen weiter funktionieren — das war von Anfang an gefordert.
+// Gedruckt wird Code 128 ohne Prüfzeichen; die Karten und Etiketten im alten Druck sind aber im
+// Umlauf und müssen weiter funktionieren.
 //
-// Geprüft am ECHTEN Service gegen echtes Postgres, nicht an der Zeichenrechnung: Dass
-// Mod 43 stimmt, steht in pkg/code39. Hier geht es um die Frage, die nur der Live-Pfad
-// beantwortet — kommt am Ende eine Ausleihe zustande, und findet ein alter Ausweis sein
-// Kind?
+// Geprüft am echten Dienst gegen echtes Postgres, nicht an der Zeichenrechnung: Dass Mod 43
+// stimmt, steht in pkg/code39. Hier geht es um die Frage, die nur der Live-Pfad beantwortet —
+// kommt am Ende eine Ausleihe zustande, und findet ein alter Ausweis sein Kind?
 
 import (
 	"context"
@@ -123,9 +122,9 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 	})
 
 	t.Run("ein altes Buchetikett bucht eine Ausleihe", func(t *testing.T) {
-		// Der Live-Pfad, nicht nur die Auflösung: Nach diesem Scan muss eine Ausleihe in
-		// der Datenbank stehen. Ein „gefunden, aber nichts gebucht" wäre an der Theke
-		// dasselbe Ärgernis wie vorher.
+		// Der Live-Pfad, nicht nur die Auflösung: Nach diesem Scan muss eine Ausleihe in der
+		// Datenbank stehen. Ein „gefunden, aber nichts gebucht" wäre an der Theke dasselbe
+		// Ärgernis wie ein Scan ohne Treffer.
 		gescannt := wieGedruckt(t, buchNummer)
 
 		res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{
@@ -162,7 +161,7 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 	})
 
 	t.Run("ein Scan OHNE Prüfzeichen bleibt unverändert", func(t *testing.T) {
-		// Der Normalfall seit dem 17.09.2026: Code 128, kein Prüfzeichen. Er muss auf dem
+		// Der Normalfall: Code 128, kein Prüfzeichen. Er muss auf dem
 		// direkten Weg gefunden werden — ohne dass die Nachsicht ihn anfasst.
 		res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: ausweis, BearbeiterID: mitarbeiterID})
 		if err != nil {

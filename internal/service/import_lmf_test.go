@@ -81,9 +81,9 @@ func (s *titelSchreiberAttrappe) SchreibeTitel(_ context.Context, titles []repos
 	return len(titles), nil
 }
 
-// Der Katalogisat-Import lässt Titel und Signatur, wie Littera sie liefert, und setzt
-// das Feld (Migration 093). Bis dahin schnitt er „LMF" aus der Signatur und stellte
-// es dem Titel voran — „LMF-Biologie heute 7" auf jeder Cover-Kachel.
+// Der Katalogisat-Import lässt Titel und Signatur, wie Littera sie liefert, und setzt das Feld
+// ist_lernmittel: Aus der Signatur geschnitten und dem Titel vorangestellt, stünde
+// „LMF-Biologie heute 7" auf jeder Cover-Kachel.
 func TestImportiereLitteraXML_LMFUndSignatur(t *testing.T) {
 	// Vier Katalogisate wie im echten Littera-4.5-Export:
 	// 1. LMF-Kennung im Standort-Feld 108a, Signatur ist eine Regaladresse; Fach aus
@@ -166,10 +166,10 @@ func TestKategorisiere_TitelheuristikNurBeiLernmitteln(t *testing.T) {
 	}
 }
 
-// Littera führt bis zu fünf Interessenkreise je Titel in 070b (docs/OFFEN.md 4.20, entschieden
-// am 30.09.2026: als Schlagworte übernehmen). Sie kommen hinter den Schlagwörtern mit, und die
-// Spanne entsteht aus allen: Bis dahin gewann der letzte Wert — hier „Lehrer" —, und die
-// Spanne blieb leer. Das Fach kommt weiter nur aus den Schlagwörtern.
+// Littera führt bis zu fünf Interessenkreise je Titel in 070b; sie werden als Schlagworte
+// übernommen. Sie kommen hinter den Schlagwörtern mit, und die Spanne entsteht aus allen:
+// Gewönne der letzte Wert — hier „Lehrer" —, bliebe die Spanne leer. Das Fach kommt nur aus den
+// Schlagwörtern.
 func TestImportiereLitteraXML_InteressenkreiseAlsSchlagworte(t *testing.T) {
 	xmlDaten := `<?xml version="1.0"?>
 <Katalogisate>

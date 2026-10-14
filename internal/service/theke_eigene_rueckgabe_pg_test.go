@@ -11,11 +11,11 @@ import (
 	"bibliothek/repository"
 )
 
-// Register 10.09.2026 (Theke, B): In offener Sitzung scannt die Theke ein Buch, das das
-// Kind selbst ausgeliehen hat — das ist eine Rückgabe. Die Sperrprüfung lief aber vor der
-// Rückgabe-Erkennung: Ein Kind, das wegen überfälliger Bücher gesperrt ist, kam mit genau
-// diesen Büchern und wurde abgewiesen. Weiter ging es nur mit „Sperre übergehen", und das
-// Protokoll hielt eine übergangene Sperre fest statt einer Rückgabe.
+// In offener Sitzung scannt die Theke ein Buch, das das Kind selbst ausgeliehen hat — das ist
+// eine Rückgabe. Liefe die Sperrprüfung vor der Rückgabe-Erkennung, würde ein Kind, das wegen
+// überfälliger Bücher gesperrt ist, mit genau diesen Büchern abgewiesen; weiter ginge es nur
+// mit „Sperre übergehen", und das Protokoll hielte eine übergangene Sperre fest statt einer
+// Rückgabe.
 func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -75,13 +75,12 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	}
 }
 
-// Der Zwilling dazu (Raster-Durchgang 12.09.2026 über die Änderungen vom 11.09.): Die
-// Theke scannt in offener Sitzung ein Buch, das einem ANDEREN Kind gehört. Das ist eine
-// Fremdrückgabe — verarbeiteFremdrueckgabe gibt nur zurück, für das Kind in der Sitzung
-// entsteht KEINE Ausleihe. Die Schranken der Ausleihe (Sperre, Ausleihlimit) liefen
-// trotzdem, weil sie an `!isReturningThis` hingen statt an „es entsteht eine Ausleihe":
-// Wer gesperrt oder am Limit war, konnte das Buch eines Mitschülers nicht abgeben,
-// während dieselbe Rückgabe ohne offene Sitzung (NimmZurueck) durchging.
+// Der Zwilling dazu: Die Theke scannt in offener Sitzung ein Buch, das einem anderen Kind
+// gehört. Das ist eine Fremdrückgabe — verarbeiteFremdrueckgabe gibt nur zurück, für das Kind
+// in der Sitzung entsteht keine Ausleihe. Die Schranken der Ausleihe (Sperre, Ausleihlimit)
+// hängen deshalb daran, dass eine Ausleihe entsteht: Sonst könnte, wer gesperrt oder am Limit
+// ist, das Buch eines Mitschülers nicht abgeben, während dieselbe Rückgabe ohne offene Sitzung
+// (NimmZurueck) durchgeht.
 func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

@@ -229,7 +229,7 @@ func TestVerarbeiteAusleihe_CommitFehler(t *testing.T) {
 		WithArgs(uuidCopy, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	// Die Audit-Zeile steht seit 07.09.2026 VOR dem Commit in derselben Transaktion.
+	// Der Protokolleintrag steht vor dem Commit in derselben Transaktion.
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("ausleihen", "CHECKOUT", uuidCopy, ptr(staffID), "USER", nilStr, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))

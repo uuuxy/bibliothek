@@ -43,8 +43,8 @@ func TestVerarbeiteEingabe_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 }
 
 // TestVerarbeiteEingabe_UnbekanntesEtikettFaelltAufSuche: Eine formal gültige
-// Littera-EAN, deren Mediennummer NICHT im Bestand ist, darf keine Aktion
-// auslösen — sie läuft wie bisher in die Volltextsuche.
+// Littera-EAN, deren Mediennummer nicht im Bestand ist, darf keine Aktion
+// auslösen — sie läuft in die Volltextsuche.
 func TestVerarbeiteEingabe_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
 	svc := &omniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},

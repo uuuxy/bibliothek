@@ -7,14 +7,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Stubs für das präfixlose Fallback-Routing: Buch → Ausweis → Volltextsuche.
-// Alle nicht überschriebenen Interface-Methoden stammen aus dem eingebetteten
-// Nil-Interface und dürfen in diesen Tests nicht aufgerufen werden.
+// Attrappen für die Weiche ohne Vorsilbe: Buch → Ausweis → Volltextsuche. Alle nicht
+// überschriebenen Methoden stammen aus der eingebetteten leeren Schnittstelle und dürfen in
+// diesen Tests nicht aufgerufen werden.
 //
-// Seit Migration 125 gibt es EINE Ausweis-Stufe: Der Scan sucht einen LESER, und ob das ein
-// Schüler oder ein Kollege ist, steht als Art an ihm. Vorher waren es zwei Stufen über zwei
-// Tabellen, und ihre Reihenfolge entschied bei einer doppelt vergebenen Nummer still, wen
-// die Theke lädt.
+// Es gibt eine Ausweis-Stufe: Der Scan sucht einen Leser, und ob das ein Schüler oder ein
+// Kollege ist, steht als Art an ihm. Zwei Stufen über zwei Tabellen ließen ihre Reihenfolge bei
+// einer doppelt vergebenen Nummer still entscheiden, wen die Theke lädt.
 
 type weicheKatalogAttrappe struct {
 	repository.KatalogAbfragen
@@ -87,10 +86,9 @@ func (r *weicheLeserAttrappe) Finde(_ context.Context, id string) (*repository.L
 }
 
 // TestVerarbeiteEingabe_LeserAusDerTrefferliste: Wer an der Theke einen Namen tippt und einen
-// Treffer anklickt, muss diesen Leser geladen bekommen — auch wenn er keine
-// Ausweisnummer hat. Bis zum 16.09.2026 setzte die Auswahl die Ausweisnummer in die
-// Scanleiste und schickte sie los; bei einem Kollegen aus der Selbstanmeldung war die
-// leer, und der Klick tat nichts.
+// Treffer anklickt, muss diesen Leser geladen bekommen — auch wenn er keine Ausweisnummer hat.
+// Die Auswahl schickt deshalb die Kennung, nicht die Ausweisnummer: Bei einem Kollegen aus der
+// Selbstanmeldung ist die leer, und der Klick täte nichts.
 func TestVerarbeiteEingabe_LeserAusDerTrefferliste(t *testing.T) {
 	svc := &omniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},

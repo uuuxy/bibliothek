@@ -10,12 +10,11 @@ import (
 	"bibliothek/repository"
 )
 
-// Der Cover-Sync darf ein lokal liegendes Cover nicht anfassen — egal, was cover_status
-// sagt. Bis zum 10.09.2026 wählte er jeden Titel auf 'PENDING'/'FAILED', auch mit einem
-// von Hand hochgeladenen /uploads/-Cover, und überschrieb es mit dem Treffer der
-// Katalogdienste. Die Hand-Wege setzen den Status seitdem (inventur/repository_metadata.go);
-// dieses Prädikat schützt zusätzlich die Titel, die schon vorher so hochgeladen wurden
-// (Bestands-Durchgang, Bugklasse „Maschine gegen Hand").
+// Der Cover-Abgleich darf ein lokal liegendes Cover nicht anfassen, egal, was cover_status
+// sagt: Sonst überschreibt der Treffer der Katalogdienste ein von Hand hochgeladenes
+// /uploads/-Cover. Die Wege von Hand setzen den Status selbst
+// (inventur/repository_metadata.go); die Auswahl schützt auch Titel, deren Status nicht dazu
+// passt (Bugklasse „Maschine gegen Hand").
 func TestCoverAbgleichAuswahl_LaesstLokaleCoverInRuhe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -69,13 +68,12 @@ func TestCoverAbgleichAuswahl_LaesstLokaleCoverInRuhe(t *testing.T) {
 	}
 }
 
-// Das Rezept aus docs/DEPLOYMENT.md („nach einem Restore ohne Volume") — wörtlich
-// ausgeführt. Bis zum 21.09.2026 setzte es nur cover_status = 'PENDING'; die Auswahl oben
-// schließt lokale Pfade aber seit dem 10.09.2026 aus, das Rezept tat also nichts, und die
-// Doku versprach „dann heilt der nächste Lauf alles nach".
+// Das Rezept aus docs/DEPLOYMENT.md („nach einem Restore ohne Volume"), wörtlich ausgeführt: Es
+// muss die Titel in die Auswahl bringen. cover_status = 'PENDING' allein genügt nicht, weil die
+// Auswahl oben lokale Pfade ausschließt; der nächste Lauf heilte dann nichts.
 //
-// In einer Transaktion, die zurückgerollt wird: Das Rezept trifft JEDEN Titel mit lokalem
-// Pfad, und die Pakete teilen sich eine Datenbank.
+// In einer Transaktion, die zurückgerollt wird: Das Rezept trifft jeden Titel mit lokalem Pfad,
+// und die Pakete teilen sich eine Datenbank.
 func TestCoverRezeptNachRestore_WirktAufDieAuswahl(t *testing.T) {
 	roh, err := os.ReadFile("../../docs/DEPLOYMENT.md")
 	if err != nil {

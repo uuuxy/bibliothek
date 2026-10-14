@@ -115,10 +115,9 @@ func TestBerechneFrist_LMF_StichtagVorgabe(t *testing.T) {
 	}
 }
 
-// Der Regelfall bei manueller Neuanlage über die Admin-Oberfläche: Der Titel bleibt
-// Seit Migration 093 entscheidet allein das Feld — Titel und Signatur dürfen beliebig
-// heißen. Das war der Fehler von 2026: ein Klartext-Titel mit „LMF" nur in der Signatur
-// bekam die 21-Tage-Frist.
+// Der Regelfall bei manueller Neuanlage über die Admin-Oberfläche: Ein Titel in Klartext trägt
+// „LMF" nur in der Signatur. Es entscheidet allein das Feld, Titel und Signatur dürfen beliebig
+// heißen; das Schulbuch bekommt den Stichtag, nicht die 21-Tage-Frist.
 func TestBerechneFrist_LMF_NurInSignatur(t *testing.T) {
 	got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	if got.Month() != time.July || got.Day() != 31 {
@@ -263,10 +262,10 @@ func TestBestimmeFrist_LeseclubGehtVor(t *testing.T) {
 	}
 }
 
-// Bestands-Durchgang 10.09.2026: Blieb der Leseclub nach den Ferien eingeschaltet, bekam
-// jede neue Ausleihe das VERGANGENE Ferienende als Frist — sofort überfällig, nach 14
-// Tagen gesperrt, und das Mahnwesen erfasste sie am selben Tag. Die Theke zeigt die Frist
-// beim Ausleihen nicht an; niemand hätte es bemerkt. Ein Zieldatum vor heute gilt nicht.
+// Bleibt der Leseclub nach den Ferien eingeschaltet, bekäme jede neue Ausleihe das vergangene
+// Ferienende als Frist: sofort überfällig, nach 14 Tagen gesperrt, am selben Tag im Mahnwesen.
+// Die Theke zeigt die Frist beim Ausleihen nicht an, niemand bemerkte es. Ein Zieldatum vor
+// heute gilt deshalb nicht.
 func TestBestimmeFrist_LeseclubVergangenGiltNicht(t *testing.T) {
 	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
@@ -425,13 +424,12 @@ func TestLadeEinstellungen_LeererWertFaelltAufVorgabeZurueck(t *testing.T) {
 	}
 }
 
-// Am oder nach dem Rückgabetermin der Klasse (Entscheidung vom 13.09.2026; docs/OFFEN.md 1.4):
-// Die Frist ist der Stichtag des FOLGENDEN Schuljahres. Bis zum 14.09.2026 war sie am Termintag
-// der Termin selbst (heute 23:59) und danach der Stichtag des laufenden Schuljahres — in den
-// Ferien; nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.
-// Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je einen Fall hat (Bugklasse
-// „Frist am Tag des Ereignisses"); die Lage kommt hier aus dem Mock, am echten Postgres prüft
-// sie lmf_frist_termintag_pg_test.go.
+// Am oder nach dem Rückgabetermin der Klasse ist die Frist der Stichtag des folgenden
+// Schuljahres. Wäre es der Termin selbst (heute 23:59) oder der Stichtag des laufenden
+// Schuljahres, ein Tag in den Ferien, stünde nach den Ferien die ganze Klasse überfällig da und
+// wäre nach 14 Tagen gesperrt. Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je
+// einen Fall hat (Bugklasse „Frist am Tag des Ereignisses"); die Lage kommt hier aus pgxmock,
+// am echten Postgres prüft sie lmf_frist_termintag_pg_test.go.
 func TestBestimmeFrist_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
 	termin := time.Date(2027, time.June, 29, 0, 0, 0, 0, schulzeit.Zone())
 	faelle := []struct {

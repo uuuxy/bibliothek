@@ -14,12 +14,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Nachbuch-Tür am echten Postgres — die Server-Hälfte der Nachweisliste (OFFEN.md 2.3):
-// Umbuchung, Doppelscan, gesperrter Ausweis (Rücknahme bleibt), Rückgabe vor älterer
-// Bewegung (veraltet), gleicher Schlüssel nach abgebrochenem Online-Versand (nachgeholt),
-// verloren gemeldetes Buch (Forderung endet, Hinweis in der Meldung), zwei parallele
-// Aufrufe auf ein Exemplar, unbekanntes Buch, unbekannter Ausweis. Rot am alten Code: Die
-// Tür existierte nicht.
+// Die Nachbuch-Tür am echten Postgres — die Server-Hälfte der Nachweisliste: Umbuchung,
+// Doppelscan, gesperrter Ausweis (Rücknahme bleibt), Rückgabe vor älterer Bewegung (veraltet),
+// gleicher Schlüssel nach abgebrochenem Online-Versand (nachgeholt), verloren gemeldetes Buch
+// (Forderung endet, Hinweis in der Meldung), zwei parallele Aufrufe auf ein Exemplar,
+// unbekanntes Buch, unbekannter Ausweis.
 
 type nbWelt struct {
 	pool                      *pgxpool.Pool
@@ -236,9 +235,9 @@ func TestBucheNach_WaechterUndFremdrueckgabe(t *testing.T) {
 	}
 }
 
-// Ein verloren gemeldetes Buch kommt zurück: Der Scan liegt NACH der Verlustmeldung — das
+// Ein verloren gemeldetes Buch kommt zurück: Der Scan liegt nach der Verlustmeldung — das
 // Kind bringt das Buch, nachdem die Mahnung es abgeschrieben hat. Die Verlustmeldung ist eine
-// Bewegung (seit Migration 132 auch über den Status-Editor, der nicht selbst stempelte);
+// Bewegung, auch über den Status-Editor (den Stempel setzt die Datenbank, Migration 132);
 // ein Scan davor wäre veraltet (TestBucheNach_RueckgabeVorDerVerlustmeldungIstVeraltet).
 func TestBucheNach_VerlorenGemeldetesBuchKommtZurueck(t *testing.T) {
 	w := nbAufbau(t)
@@ -262,7 +261,7 @@ func TestBucheNach_VerlorenGemeldetesBuchKommtZurueck(t *testing.T) {
 }
 
 // verlorenGemeldet bucht den Verlust so, wie der Status-Editor es tut (ohne eigenen Stempel;
-// den setzt seit Migration 132 die Datenbank), und legt die Forderung dazu.
+// den setzt die Datenbank, Migration 132), und legt die Forderung dazu.
 func verlorenGemeldet(t *testing.T, w *nbWelt) string {
 	t.Helper()
 	ctx := context.Background()
@@ -277,11 +276,10 @@ func verlorenGemeldet(t *testing.T, w *nbWelt) string {
 	return schadensfallID
 }
 
-// Die Gegenprobe: Ein Rückgabe-Scan, der VOR der Verlustmeldung liegt, beschreibt eine
-// Wirklichkeit, die es nicht mehr gibt — „eine Rückgabe hinter einer neueren Buchung weist
-// er ab" (FACHKONZEPT 18.4). Bis zum 22.09.2026 kam er durch, wenn der Verlust über den
-// Status-Editor gebucht war (kein Stempel), und wurde abgewiesen, wenn er über „Schaden
-// melden" kam (Stempel) — zwei Türen, zwei Antworten (OFFEN.md 5.15). Das Buch bleibt
+// Die Gegenprobe: Ein Rückgabe-Scan, der vor der Verlustmeldung liegt, beschreibt eine
+// Wirklichkeit, die es nicht mehr gibt — „eine Rückgabe hinter einer neueren Buchung weist er
+// ab" (FACHKONZEPT 18.4). Das gilt gleich, ob der Verlust über den Status-Editor (ohne eigenen
+// Stempel) oder über „Schaden melden" gebucht wurde: zwei Türen, eine Antwort. Das Buch bleibt
 // abgeschrieben, die Forderung bleibt offen; die Meldung nennt den Grund.
 func TestBucheNach_RueckgabeVorDerVerlustmeldungIstVeraltet(t *testing.T) {
 	w := nbAufbau(t)

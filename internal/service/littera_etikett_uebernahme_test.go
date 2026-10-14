@@ -9,13 +9,10 @@ import (
 // Die Übernahme schreibt den EAN-13 vom Littera-Etikett nach barcode_id
 // (littera.EtikettBarcode), der Scanner rechnet einen gescannten EAN-13 auf die Nummer zurück
 // (dekodiereLitteraEtikett). Beide beschreiben dasselbe Etikett und müssen deshalb dieselbe
-// Form kennen.
-//
-// Bis zum 28.09.2026 gab es diesen Test nicht, und die beiden rechneten verschieden: Die
-// Übernahme füllte links auf und setzte an Stelle 12 fest eine 6, der Scanner (nach zwei
-// echten Scans) rechts auf und las an Stelle 12 die Stellenzahl. Für jede Nummer unter sechs
-// Stellen schrieb die Übernahme damit einen Barcode, den kein Etikett trägt. Der
-// Zwilling-Test daneben band nur den Scanner an die Theke ohne Netz.
+// Form kennen: Füllte die eine Seite links auf und setzte an Stelle 12 fest eine 6, die andere
+// rechts auf und läse an Stelle 12 die Stellenzahl, schriebe die Übernahme für jede Nummer
+// unter sechs Stellen einen Barcode, den kein Etikett trägt. Der Zwilling-Test daneben bindet
+// nur den Scanner an die Theke ohne Netz.
 //
 // Blindheit: Der Test prüft, dass die zwei Rechnungen zueinander passen, nicht, dass sie zum
 // Etikett passen; das tun die Messwerte in internal/littera/barcode_test.go.

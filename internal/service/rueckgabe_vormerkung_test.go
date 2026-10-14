@@ -14,13 +14,12 @@ import (
 
 // Die Rückgabe darf kein Abholfach behaupten, das es nicht gibt.
 //
-// Bis zum 31.08.2026 wurde ein Fehlschlag des vormerkungen-UPDATEs nur geloggt, die
-// Antwortfelder (HasVormerkung, VormerkungUser) wurden trotzdem gesetzt und der
-// Aufrufer committete: Der Arbeitsplatz meldete „Reserviert für Max M. — ins Abholfach
-// legen", in der Datenbank stand die Vormerkung weiter auf 'wartend'. Das Buch lag im
-// Fach UND war frei ausleihbar; der Wartende sah in seinem Profil nichts, und der
-// Verfall-Cron griff mangels bereitgestellt_bis nie. Auch ein Transportfehler des
-// SELECTs galt still als „keine Vormerkung".
+// Scheitert das UPDATE der Vormerkung, setzt die Antwort weder HatVormerkung noch
+// VorgemerktFuer, und der Aufrufer committet nicht: Sonst meldet der Arbeitsplatz „Reserviert
+// für Max M. — ins Abholfach legen", während die Vormerkung in der Datenbank weiter auf
+// 'wartend' steht. Das Buch läge im Fach und wäre frei ausleihbar, der Wartende sähe in seinem
+// Profil nichts, und der Verfall griffe mangels bereitgestellt_bis nie. Auch ein
+// Transportfehler des SELECTs ist ein Fehler, nicht „keine Vormerkung".
 func TestBedieneVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 	ctx := context.Background()
 	copy := &repository.Exemplar{ID: "11111111-1111-1111-1111-111111111111",

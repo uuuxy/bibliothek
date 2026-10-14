@@ -4,8 +4,8 @@ package katalog
 //
 // Rechte wie beim Buchbestand: Lesen view_books, Pflegen edit_books — Geräte SIND
 // Bestand. Das G--Präfix ist Pflicht: Die Omnibox routet Scans darüber zum
-// device_service; ein Gerät ohne G- wäre am Kiosk unauffindbar (die präfixlose
-// Auflösung kennt nur Buch → Schüler → Lehrer → Suche).
+// Gerätedienst (internal/service/geraet.go); ein Gerät ohne G- wäre am Kiosk unauffindbar
+// (die Auflösung ohne Vorsilbe kennt nur Buch → Ausweis → Suche).
 
 import (
 	"errors"

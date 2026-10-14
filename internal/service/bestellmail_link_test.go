@@ -34,7 +34,7 @@ func TestBestellmail_LinkWirdAngehaengtWennVorlageIhnNichtKennt(t *testing.T) {
 	}
 }
 
-// Die ausgelieferte Vorlage (Migration 052 = derselbe Text wie der Fallback) enthält
+// Die ausgelieferte Vorlage (Migration 052, derselbe Text wie die Vorgabe) enthält
 // keinen Platzhalter. Fiele das eines Tages um, wäre der Anhänge-Pfad tot Code — und
 // dieser Test der einzige Ort, an dem das auffällt.
 func TestBestellmail_AusgelieferteVorlageBrauchtDenAnhaengePfad(t *testing.T) {
@@ -48,7 +48,7 @@ func TestBestellmail_AusgelieferteVorlageBrauchtDenAnhaengePfad(t *testing.T) {
 	}
 }
 
-// Vorlage MIT Platzhalter: Der Link gehört an die vorgesehene Stelle — und darf nicht
+// Vorlage mit Platzhalter: Der Link gehört an die vorgesehene Stelle — und darf nicht
 // zusätzlich unten angehängt werden.
 func TestBestellmail_PlatzhalterWirdErsetztUndNichtVerdoppelt(t *testing.T) {
 	vorlage := "Guten Tag,\n\nBestätigung hier: {{.BestaetigungsLink}}\n\nViele Grüße"
@@ -101,9 +101,9 @@ func TestBestellmail_FristStehtAlsDatumInDerMail(t *testing.T) {
 	}
 }
 
-// Die Frist ist der Kalendertag der SCHULE. Der Ablauf kommt als TIMESTAMPTZ aus der
+// Die Frist ist der Kalendertag der Schule. Der Ablauf kommt als TIMESTAMPTZ aus der
 // Datenbank und trägt die Zone des Servers (im Container UTC): 22:30 UTC am 29.09. ist in
-// Friedrichsdorf schon der 30.09. — bis zum 21.09.2026 stand in der Mail der 29.
+// Friedrichsdorf schon der 30.09., und den muss die Mail nennen.
 func TestBestellmail_FristIstDerKalendertagDerSchule(t *testing.T) {
 	bis := time.Date(2026, 9, 29, 22, 30, 0, 0, time.UTC)
 	_, body := LoeseBestellMailAuf("Betreff", "anbei die Bestellung.",

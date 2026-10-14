@@ -1,6 +1,6 @@
 package service
 
-// Der eine Prüfweg für Buch und Gerät (pruefeAusleihSperren, entschieden am 24.09.2026).
+// Der eine Prüfweg für Buch und Gerät (pruefeAusleihSperren).
 // Die Mocks erwarten jede Abfrage einzeln: Läuft eine Regel, die nicht laufen dürfte, meldet
 // pgxmock die unerwartete Query als Fehler; fehlt eine, meldet es ExpectationsWereMet.
 // Den Live-Pfad der Theke gegen echtes Postgres hält internal/service/ausleih_sperren_pg_test.go; die
@@ -76,7 +76,7 @@ func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
 	}
 }
 
-// Beim Lernmittel gilt nur die Sperre von Hand (Antwort der Schule vom 22.09.2026: keine
+// Beim Lernmittel gilt nur die Sperre von Hand (Antwort der Schule: keine
 // automatische Sperrung, „auch nicht eine Sperrung, die bestimmte Personen aufheben
 // können"). Die Sperre der Ehemaligen setzt das Programm — sie zählt dort nicht, und keine
 // der zwei Automatiken fragt die Datenbank.
@@ -103,9 +103,8 @@ func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 	})
 }
 
-// Ein Kollege wird nie gesperrt (16.09. und 24.09.2026) — auch nicht, wenn an seinem Konto
-// noch eine Sperre steht, die der Knopf bis zum 24.09.2026 setzen konnte. Keine Abfrage:
-// Forderung und Überfällig zählen bei ihm nicht.
+// Ein Kollege wird nie gesperrt — auch nicht, wenn an seinem Konto noch eine Sperre von Hand
+// steht. Keine Abfrage: Forderung und Überfällig zählen bei ihm nicht.
 func TestAusleihSperren_KollegeWirdNieGesperrt(t *testing.T) {
 	for _, art := range []string{"lehrkraft", "liv"} {
 		leser := &repository.Leser{ID: "k1", Art: art, IstVonHandGesperrt: true, IstGesperrt: true, Sperrgrund: strPtr("alt")}
@@ -136,8 +135,8 @@ func TestAusleihSperren_AnonymisiertBekommtNichts(t *testing.T) {
 }
 
 // Offene Forderung und Überfällig-Automatik sind Hinweise: ohne override_block gesperrt, mit
-// ihm durch — und in sperrLage.uebergangen fürs Protokoll. Bis zum 13.09.2026 entschied die
-// Theke am Wortlaut, und die Schadens-Sperre bekam keinen Dialog; das Merkmal hält es.
+// ihm durch — und in sperrLage.uebergangen fürs Protokoll. Die Theke entscheidet am Merkmal,
+// nicht am Wortlaut der Meldung; sonst bekäme die Sperre wegen eines Schadens keinen Dialog.
 func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 	forderung := func(mock pgxmock.PgxPoolIface) {
 		mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle").

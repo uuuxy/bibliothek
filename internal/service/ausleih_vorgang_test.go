@@ -20,8 +20,8 @@ type leserAttrappe struct {
 	err   error
 }
 
-// Finde ist die Abfrage des Ausleihpfads seit Migration 125: Sie liest die TABELLE
-// und findet damit auch einen Kollegen.
+// Finde ist die Abfrage des Ausleihpfads: Sie liest die Tabelle leser, nicht die Sicht
+// schueler, und findet damit auch einen Kollegen.
 func (m *leserAttrappe) Finde(ctx context.Context, id string) (*repository.Leser, error) {
 	return m.leser, m.err
 }

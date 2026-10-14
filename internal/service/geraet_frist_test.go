@@ -33,8 +33,8 @@ func TestGeraeteRueckgabeFrist_TagesendeSchulzeitzone(t *testing.T) {
 }
 
 // Die Geräte-Frist zählt in Tagen wie die eines Buchs und rückt wie sie auf den nächsten
-// Schultag (Entscheidung vom 24.09.2026): Montag 21.09.2026 plus 14 Tage ist der 05.10., der
-// erste Tag der Herbstferien — fällig ist das Gerät am Montag danach, dem 19.10.
+// Schultag: Montag 21.09.2026 plus 14 Tage ist der 05.10., der erste Tag der Herbstferien —
+// fällig ist das Gerät am Montag danach, dem 19.10.
 func TestGeraeteRueckgabeFrist_FerienRueckenAufDenSchultag(t *testing.T) {
 	loc := schulzeit.Zone()
 	frist := geraeteRueckgabeFrist(time.Date(2026, time.September, 21, 10, 0, 0, 0, loc), lmfplan.Hessen())

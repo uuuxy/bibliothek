@@ -1,11 +1,10 @@
 package service
 
-// Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung 01.09.2026):
-// Schüler scannen nicht selbst — beim Scan des Ausweises durch die Mitarbeiterin
-// muss die Antwort die abholbereiten Vormerkungen des Schülers tragen, damit
-// das Buch aus dem Abholfach direkt mitgegeben wird, statt dort die Abholfrist
-// abzuwarten. Echtes Postgres über den ECHTEN Service (NewOmniboxDienst mit
-// echten Repos): geprüft wird der Live-Pfad des Scans, nicht ein Stub.
+// Abholfach-Hinweis beim Schüler-Scan: Schüler scannen nicht selbst — beim Scan des Ausweises
+// durch die Mitarbeiterin muss die Antwort die abholbereiten Vormerkungen des Schülers tragen,
+// damit das Buch aus dem Abholfach direkt mitgegeben wird, statt dort die Abholfrist
+// abzuwarten. Echtes Postgres über den echten Dienst (NewOmniboxDienst mit echten Abfragen):
+// Geprüft wird der Live-Pfad des Scans, nicht eine Attrappe.
 
 import (
 	"context"
@@ -41,7 +40,7 @@ func TestSchuelerScanTraegtAbholfachHinweis(t *testing.T) {
 	`, titelID, schuelerID); err != nil {
 		t.Fatalf("Vormerkung anlegen: %v", err)
 	}
-	// Zweite, noch WARTENDE Vormerkung — sie darf im Hinweis NICHT auftauchen,
+	// Zweite, noch wartende Vormerkung — sie darf im Hinweis nicht auftauchen,
 	// sonst schickt die Theke jemanden ans Abholfach, in dem nichts liegt.
 	var wartenderTitelID string
 	if err := pool.QueryRow(ctx, `

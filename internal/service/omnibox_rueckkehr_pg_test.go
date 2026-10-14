@@ -1,17 +1,17 @@
 package service
 
-// Das abgeschriebene Buch kommt doch zurück (#597, Etappe 2).
+// Das abgeschriebene Buch kommt doch zurück.
 //
-// Ist ein Lernmittel als „nicht zurückgegeben" abgerechnet, steht die Forderung beim
-// Kind: Sperre, Löschblockade, ein Bescheid über den Wiederbeschaffungswert. Legt das
-// Kind das Buch später auf die Theke, hat der Scan bis zum 12.09.2026 nur „Buch
-// reaktiviert" gemeldet — die Forderung blieb offen, und niemand sah es.
+// Ist ein Lernmittel als „nicht zurückgegeben" abgerechnet, steht die Forderung beim Kind:
+// Sperre, Löschblockade, ein Bescheid über den Wiederbeschaffungswert. Legt das Kind das Buch
+// später auf die Theke, darf der Scan nicht nur „Buch reaktiviert" melden: Die Forderung bliebe
+// offen, und niemand sähe es.
 //
-// Vor der Übergabe an die Schulaufsicht gehört die Forderung storniert. Danach nicht:
-// Der Fall liegt bei der Aufsicht, die Schule muss sie unverzüglich informieren
-// (Leitfaden LMF Nr. 12.7). Dafür trägt der Bescheid `rueckgabe_nach_uebergabe`.
+// Vor der Übergabe an die Schulaufsicht gehört die Forderung storniert. Danach nicht: Der Fall
+// liegt bei der Aufsicht, die Schule muss sie unverzüglich informieren (Leitfaden LMF Nr.
+// 12.7). Dafür trägt der Bescheid `rueckgabe_nach_uebergabe`.
 //
-// Echtes Postgres über den ECHTEN Service — geprüft wird der Live-Pfad des Scans.
+// Echtes Postgres über den echten Dienst — geprüft wird der Live-Pfad des Scans.
 
 import (
 	"context"
@@ -199,9 +199,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		t.Fatalf("Exemplar anlegen: %v", err)
 	}
 	// Der Schaden entsteht auf dem einzigen Weg, den es dafür gibt: Ausleihe, dann
-	// „Verlust/Schaden melden" aus der Schülerakte mit der Art „beschädigt". Bis zum
-	// 16.09.2026 stand hier MarkCopyDefekt — eine Tür ohne Aufrufer, die mit
-	// Migration 125 zur Hälfte in einen SQL-Fehler lief und deshalb entfernt ist.
+	// „Verlust/Schaden melden" aus der Schülerakte mit der Art „beschädigt".
 	exDefekt, err := bookRepo.FindeExemplar(ctx, barcodeDefekt)
 	if err != nil {
 		t.Fatalf("Exemplar lesen: %v", err)

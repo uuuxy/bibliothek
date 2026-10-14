@@ -33,7 +33,7 @@ func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 		// Zwei Exemplare derselben Bestellung und desselben Titels: eine Gruppe, eine Position, Menge 2.
 		AddRow("ex1", "t1", bestellt, "Im Zulauf - "+haendler, "Titel 1", "123", "cover1", ptr("B1"), &haendler, &bestellt).
 		AddRow("ex2", "t1", bestellt, "Im Zulauf - "+haendler, "Titel 1", "123", "cover1", ptr("B1"), &haendler, &bestellt).
-		// Zweiter Topf am selben Tag beim selben Händler: eigene Gruppe (bis 21.09.2026 dieselbe).
+		// Zweiter Topf am selben Tag beim selben Händler: eigene Gruppe.
 		AddRow("ex3", "t2", bestellt, "Bestellt (ohne Vorab-Barcode) - "+haendler, "Titel 2", "456", "cover2", ptr("B2"), &haendler, &bestellt).
 		// Altbestand ohne Bestellung (vor Migration 063): der Name kommt aus der Notiz.
 		AddRow("ex4", "t3", alt, "Im Zulauf - Lieferant A", "Titel 3", "", "", nil, nil, nil).
@@ -46,7 +46,7 @@ func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Die Erwartung steht als Tabelle da, damit auch eine FEHLENDE Gruppe auffällt —
+	// Die Erwartung steht als Tabelle da, damit auch eine fehlende Gruppe auffällt —
 	// eine Schleife mit if/else prüft nur die Gruppen, die tatsächlich kamen.
 	erwartet := map[string]struct {
 		datum, lieferant string

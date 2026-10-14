@@ -8,16 +8,15 @@ import (
 	"testing"
 )
 
-// Der Rahmen eines neuen Plans steht in Go und im Planer — mit denselben Zahlen (#593).
+// Der Rahmen eines neuen Plans steht in Go und im Planer — mit denselben Zahlen.
 //
-// Der Server schlägt den Rahmen vor (2. Stunde Beginn, 4. Stunde Ende, 6 Stunden je Tag —
-// die 1. gehört der Klassenleitung). Der Planer hält denselben Rahmen als Zustand VOR dem
-// ersten Laden: `leererEntwurf()`. Dort stand die Startstunde auf 1 — verdeckt, solange
-// der Vorschlag des Servers eintrifft und gewinnt, und sichtbar in dem Moment, in dem er
-// ausbleibt.
+// Der Server schlägt den Rahmen vor (2. Stunde Beginn, 4. Stunde Ende, 6 Stunden je Tag — die
+// 1. gehört der Klassenleitung). Der Planer hält denselben Rahmen als Zustand vor dem ersten
+// Laden: `leererEntwurf()`. Eine abweichende Zahl dort bleibt verdeckt, solange der Vorschlag
+// des Servers eintrifft und gewinnt, und wird sichtbar in dem Moment, in dem er ausbleibt.
 //
-// Zwei Zahlen für dieselbe Vorgabe brauchen deshalb ein Gate, nicht nur einen Fix: Ohne
-// es zieht der nächste Wechsel der Schulorganisation eine Seite nach und die andere nicht.
+// Zwei Zahlen für dieselbe Vorgabe brauchen deshalb eine Prüfung: Ohne sie zieht der nächste
+// Wechsel der Schulorganisation eine Seite nach und die andere nicht.
 func TestLMFPlanVorgabeIstInGoUndImPlanerDieselbe(t *testing.T) {
 	pfad := filepath.Join("..", "..", "frontend", "src", "lib", "lmfplanDienst.js")
 	roh, err := os.ReadFile(pfad)

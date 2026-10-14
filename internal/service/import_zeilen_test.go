@@ -242,8 +242,6 @@ func TestSpaltenWert(t *testing.T) {
 	}
 }
 
-// This adds proper unit coverage for import_dynamic.go.
-
 func TestSammleSignaturen_UeberISBNOderTitel(t *testing.T) {
 	headerMap := map[string]int{"titel": 0, "isbn": 1, "signatur": 2}
 	rows := [][]string{
@@ -267,10 +265,10 @@ func TestSammleSignaturen_UeberISBNOderTitel(t *testing.T) {
 	}
 }
 
-// Die Kategorie-Spalte wird nur dann zum Fach, wenn sie ein Fach IST. Die aus dem
-// Littera-PDF gewonnene Bestands-CSV trug dort Standorttexte („Buch Pg/Kaf 078829");
-// der Rückfall machte daraus 1.677 „Fächer" samt Systematik-Zeilen (Test-Server,
-// 19.08.2026) — im Portal-Reiter Schulbücher stand je Titel eine eigene Fach-Kachel.
+// Die Kategorie-Spalte wird nur dann zum Fach, wenn sie ein Fach ist. Die aus dem Littera-PDF
+// gewonnene Bestands-CSV trug dort Standorttexte („Buch Pg/Kaf 078829"); als Rückfall genommen,
+// wurden daraus am Test-Server 1.677 „Fächer" samt Systematik-Zeilen, und im Portal-Reiter
+// Schulbücher stand je Titel eine eigene Fach-Kachel.
 func TestFachDerZeile_KategorieNurWennFach(t *testing.T) {
 	faelle := []struct{ fach, kategorie, want string }{
 		{"Mathematik", "Buch Ma 6/Gri", "Mathematik"}, // Lernmittelsignatur schlägt Kategorie

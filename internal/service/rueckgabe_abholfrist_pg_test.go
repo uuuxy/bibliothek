@@ -13,10 +13,9 @@ import (
 )
 
 // Kommt ein vorgemerktes Buch zurück, liegt es drei Tage bereit; fällt das Ende auf ein
-// Wochenende, einen Feiertag oder in die Ferien, bis zum nächsten Schultag (entschieden am
-// 28.09.2026). Am echten Postgres über bedieneVormerkung mit fester Uhr; alles in einer
-// Transaktion, die am Ende zurückrollt. Das Nachrücken prüft repository
-// (vormerkung_abholfrist_pg_test.go).
+// Wochenende, einen Feiertag oder in die Ferien, bis zum nächsten Schultag. Am echten Postgres
+// über bedieneVormerkung mit fester Uhr; alles in einer Transaktion, die am Ende zurückrollt.
+// Das Nachrücken prüft repository (vormerkung_abholfrist_pg_test.go).
 func TestRueckgabe_AbholfristMitFesterUhr(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

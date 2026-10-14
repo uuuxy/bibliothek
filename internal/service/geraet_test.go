@@ -52,15 +52,14 @@ func (s gesperrterLeserAttrappe) Finde(context.Context, string) (*repository.Les
 	return s.leser, nil
 }
 
-// TestGeraeteAusleiheRespektiertManuelleSperre belegt die Lücke, die der Nebenläufigkeits-
-// Audit nebenbei fand (19.08.2026): Der Geräte-Pfad prüfte nur ist_gesperrt. Ein von der
-// Bibliothek MANUELL gesperrter Schüler (is_manually_blocked, z. B. unbezahlte Schäden)
-// konnte trotzdem ein Gerät ausleihen — obwohl er kein Buch bekäme. Seit dem 24.09.2026
-// prüfen Buch und Gerät über denselben Weg (pruefeAusleihSperren): Die Sperre am Leser hält
-// auch mit override_block — aufgehoben wird sie in der Akte.
+// TestGeraeteAusleiheRespektiertManuelleSperre: Ein von der Bibliothek von Hand gesperrter
+// Schüler (is_manually_blocked, z. B. unbezahlte Schäden) bekommt kein Gerät, wie er kein Buch
+// bekäme; ist_gesperrt allein genügt dem Geräte-Pfad nicht. Buch und Gerät prüfen über
+// denselben Weg (pruefeAusleihSperren): Die Sperre am Leser hält auch mit override_block —
+// aufgehoben wird sie in der Akte.
 func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 	sid := "s1"
-	// Nur manuell gesperrt → blockiert VOR jeder Pool-Nutzung (Flag-Check zuerst).
+	// Nur manuell gesperrt → blockiert vor jeder Pool-Nutzung (Flag-Check zuerst).
 	svc := &geraeteDienst{leserAbfragen: gesperrterLeserAttrappe{
 		leser: &repository.Leser{ID: sid, Art: "schueler", IstVonHandGesperrt: true}}}
 	for _, uebergehen := range []bool{false, true} {
@@ -71,10 +70,9 @@ func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 	}
 }
 
-// TestGeraeteAusleiheRespektiertAutomatikSperren belegt die Betreiber-Entscheidung
-// (19.08.2026): Die Geräte-Ausleihe wendet dieselben AUTOMATIK-Sperren an wie der
-// Buch-Pfad (unbezahlte Schäden, Überfällig-Automatik). Seit dem 24.09.2026 lassen sie sich
-// am Gerät übergehen wie am Buch (docs/OFFEN.md 4.4).
+// TestGeraeteAusleiheRespektiertAutomatikSperren: Die Geräte-Ausleihe wendet dieselben
+// automatischen Sperren an wie der Buch-Pfad (unbezahlte Schäden, Überfällig-Automatik), und
+// sie lassen sich am Gerät übergehen wie am Buch.
 func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 	sid := "s1"
 	neu := func(t *testing.T, vorbereiten func(pgxmock.PgxPoolIface)) (*geraeteDienst, pgxmock.PgxPoolIface) {
@@ -136,7 +134,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 	})
 }
 
-// Ein Kollege wird nie gesperrt (16.09. und 24.09.2026): keine Sperre, keine Zählung. Die
+// Ein Kollege wird nie gesperrt: keine Sperre, keine Zählung. Die
 // Einstellungen liest ladeAkteur trotzdem — genau einmal, für die Frist (Sommerferien).
 // Rot gesehen am Rückbau: ohne das Nachladen in ladeAkteur fehlen sie.
 func TestGeraeteAusleiheKollegeOhneSperre(t *testing.T) {

@@ -50,9 +50,9 @@ func TestImportKopfzeile(t *testing.T) {
 	}
 }
 
-// Regressionstest: Signatur ist das Rücken-Etikett (buecher_titel.signatur) und
-// KEIN Barcode-Alias. Das frühere Mapping signatur→barcode hat Signaturen als
-// Exemplar-Barcodes importiert und die echte Barcode-Spalte verdrängt.
+// Die Signatur ist das Rücken-Etikett (buecher_titel.signatur) und kein Barcode-Alias: Als
+// Barcode gelesen, kämen Signaturen als Exemplar-Barcodes in den Bestand und verdrängten die
+// echte Barcode-Spalte.
 func TestImportKopfzeile_SignaturIstKeinBarcode(t *testing.T) {
 	m := ImportKopfzeile([]string{"Titel", "Signatur", "Barcode"})
 	if idx, ok := m["signatur"]; !ok || idx != 1 {

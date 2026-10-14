@@ -9,24 +9,22 @@ import (
 	"testing"
 )
 
-// Die Vorsilben eines Scans stehen ZWEIMAL im Baum — und müssen dasselbe heißen.
+// Die Vorsilben eines Scans stehen zweimal im Baum — und müssen dasselbe heißen.
 //
-// Ohne Netz ordnet der Theken-Rechner jeden Scan selbst ein (frontend/src/lib/
-// scanEinordnen.js): `A-`/`S-`/`L-` sind ein Ausweis, `B-`/`LMF-` ein Buch, `G-` ein
-// Gerät. Mit Netz entscheidet der Switch in omnibox.go dieselbe Frage. Bis zum
-// 17.09.2026 hielt die beiden Seiten nur ein Kommentar zusammen („dieselbe Menge wie im
-// Server-Switch"), und schon beim Aufschreiben dieses Tests stimmte das nicht mehr:
-// `LMF-` fehlte im Switch und kam nur über den Umweg verarbeiteOhneVorsilbe zum selben
-// Ergebnis.
+// Ohne Netz ordnet der Theken-Rechner jeden Scan selbst ein
+// (frontend/src/lib/scanEinordnen.js): `A-`/`S-`/`L-` sind ein Ausweis, `B-`/`LMF-` ein Buch,
+// `G-` ein Gerät. Mit Netz entscheidet der Switch in omnibox.go dieselbe Frage. Ein Kommentar
+// allein hält zwei Seiten nicht zusammen: Fehlt eine Vorsilbe im Switch, kommt sie vielleicht
+// nur über einen Umweg (verarbeiteOhneVorsilbe) zum selben Ergebnis, und niemand merkt es.
 //
-// Was eine Abweichung kostet: Eine neue Vorsilbe an EINER Stelle fällt zwar laut aus
-// (ohne Netz „unklar", beim Nachbuchen „nicht gebucht") — aber erst im Betrieb, an der
-// Theke, vor einem Kind. Das Muster für dieses Gate steht im Haus:
-// internal/littera/platzhalter_domain_test.go hält zwei Konstanten gegeneinander; hier
-// sind es zwei Sprachen, also wird die JS-Datei gelesen.
+// Was eine Abweichung kostet: Eine neue Vorsilbe an einer Stelle fällt zwar laut aus (ohne Netz
+// „unklar", beim Nachbuchen „nicht gebucht") — aber erst im Betrieb, an der Theke, vor einem
+// Kind. Das Muster für diese Prüfung steht im Haus: internal/littera/platzhalter_domain_test.go
+// hält zwei Konstanten gegeneinander; hier sind es zwei Sprachen, also wird die JS-Datei
+// gelesen.
 //
-// Der Test prüft die BEDEUTUNG, nicht die Schreibweise: Er ordnet jeder Vorsilbe auf
-// beiden Seiten eine Art zu (ausweis · buch · geraet) und vergleicht die Zuordnungen.
+// Der Test prüft die Bedeutung, nicht die Schreibweise: Er ordnet jeder Vorsilbe auf beiden
+// Seiten eine Art zu (ausweis · buch · geraet) und vergleicht die Zuordnungen.
 
 func TestVorsilben_OhneNetzUndMitNetzBedeutenDasselbe(t *testing.T) {
 	js := vorsilbenAusScanEinordnen(t)
@@ -124,11 +122,11 @@ func vorsilbenAusOmniboxSwitch(t *testing.T) map[string]string {
 		t.Fatalf("omnibox.go nicht lesbar: %v", err)
 	}
 	quelle := string(roh)
-	// Gelesen wird `verarbeite`, nicht VerarbeiteEingabe: Dort steht der Switch seit dem
-	// 17.09.2026: VerarbeiteEingabe ist seither die Hülle, die einem Aufdruck mit
-	// Code-39-Prüfzeichen eine zweite Chance gibt, und enthält selbst keine Vorsilbe mehr.
-	// Aufgefallen ist der Umzug genau hier — der Sanity-Floor am Ende dieser Funktion
-	// meldete „nichts gemessen (js=6, go=0)", statt still grün zu bleiben.
+	// Gelesen wird `verarbeite`, nicht VerarbeiteEingabe: Dort steht der Switch.
+	// VerarbeiteEingabe ist die Hülle, die einem Aufdruck mit Code-39-Prüfzeichen eine zweite
+	// Chance gibt, und enthält selbst keine Vorsilbe. Zieht der Switch um, meldet die
+	// Nicht-leer-Garantie am Ende dieser Funktion „nichts gemessen", statt still grün zu
+	// bleiben.
 	const switchFunktion = "func (d *omniboxDienst) verarbeite"
 	start := strings.Index(quelle, switchFunktion)
 	if start < 0 {

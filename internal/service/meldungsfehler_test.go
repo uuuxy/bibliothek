@@ -12,12 +12,11 @@ import (
 	"testing"
 )
 
-// TestMeldungZeigtNurDieMeldung: Die Theke zeigt err.Error() (api/theke/action.go). Bis zum 28.09.2026
-// las sie dort etwa „Fehler: ungültiger Transaktionszustand: Bitte scannen Sie zuerst einen
-// Ausweis" oder „Fehler: conflict: dieses Exemplar wurde soeben bereits ausgeliehen" — die
-// Bezeichnung der Fehlerart ist kein Satz für den Bildschirm (M3, Word choice: „UI text should be
-// understandable by anyone, anywhere"). Die Art bleibt für errors.Is erhalten, auch eingewickelt,
-// denn an ihr hängt der HTTP-Status.
+// TestMeldungZeigtNurDieMeldung: Die Theke zeigt err.Error() (api/theke/action.go). Stünde dort
+// die Bezeichnung der Fehlerart vor der Meldung („Fehler: conflict: dieses Exemplar wurde
+// soeben bereits ausgeliehen"), wäre es kein Satz für den Bildschirm (M3, Word choice: „UI text
+// should be understandable by anyone, anywhere"). Die Art bleibt für errors.Is erhalten, auch
+// eingewickelt, denn an ihr hängt der HTTP-Status.
 func TestMeldungZeigtNurDieMeldung(t *testing.T) {
 	for _, art := range []error{ErrUngueltigerZustand, ErrKonflikt, ErrNichtGefunden} {
 		err := meldung(art, "Buchexemplar %s ist ausgesondert", "4711")
@@ -38,11 +37,10 @@ func TestMeldungZeigtNurDieMeldung(t *testing.T) {
 var ohneBezeichnung = map[string]bool{"ErrUngueltigerZustand": true, "ErrKonflikt": true, "ErrNichtGefunden": true}
 
 // TestFehlerartenNurUeberMeldung: Kein fmt.Errorf im Bestand wickelt eine dieser Arten ein —
-// sonst stünde ihre Bezeichnung wieder vor der Meldung an der Theke. Am 28.09.2026 waren es 19
-// Stellen in internal/service.
+// sonst stünde ihre Bezeichnung wieder vor der Meldung an der Theke.
 //
-// Blindheit: Gesehen wird fmt.Errorf mit der Art als Argument, in Go-Dateien außer Tests
-// (im Paket service als Name, anderswo als service.Name). errors.Join oder ein eigener Wrapper
+// Blindheit: Gesehen wird fmt.Errorf mit der Art als Argument, in Go-Dateien außer Tests (im
+// Paket service als Name, anderswo als service.Name). errors.Join oder ein eigener Wrapper
 // fallen nicht auf.
 func TestFehlerartenNurUeberMeldung(t *testing.T) {
 	fset := token.NewFileSet()

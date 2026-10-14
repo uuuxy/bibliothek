@@ -15,11 +15,10 @@ import (
 )
 
 // Die Frist eines Schulbuchs um den Rückgabetermin der Klasse, am echten Postgres und mit
-// fester Uhr (docs/OFFEN.md 1.4, Entscheidung 13.09.2026): Am Tag davor ist der Termin die
-// Frist. Am Termintag und danach gibt es das Buch erst im nächsten Schuljahr zurück — die
-// Frist ist dessen Stichtag. Bis zum 14.09.2026 war sie am Termintag der Termin selbst
-// (heute 23:59) und danach der 31.07. des laufenden Schuljahres, ein Tag in den Ferien:
-// Nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.
+// fester Uhr: Am Tag davor ist der Termin die Frist. Am Termintag und danach gibt es das Buch
+// erst im nächsten Schuljahr zurück — die Frist ist dessen Stichtag. Wäre es der Termin selbst
+// (heute 23:59) oder der 31.07. des laufenden Schuljahres, ein Tag in den Ferien, stünde nach
+// den Ferien die ganze Klasse überfällig da und wäre nach 14 Tagen gesperrt.
 func TestLMFFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -105,11 +104,11 @@ func rueckgabePlanJuni2027(t *testing.T, pool *pgxpool.Pool) {
 
 }
 
-// Mehrjahresband (Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6): Ein Titel mit
-// Spanne bis Jahrgang 11 und gesetztem Schalter bekommt bei einem Kind der 9 den Stichtag zwei
-// Schuljahre später — der Rückgabetermin der Klasse geht ihn nichts an. Ist der Termin
-// schon vorbei, rechnet die Frist vom folgenden Schuljahr aus, und eines der Jahre steckt
-// in diesem Sprung: 31.07.2029, nicht 2030. Rot gesehen am Rückbau von AddDate und -1.
+// Mehrjahresband (Antwort der Schule): Ein Titel mit Spanne bis Jahrgang 11 und gesetztem
+// Schalter bekommt bei einem Kind der 9 den Stichtag zwei Schuljahre später — der
+// Rückgabetermin der Klasse geht ihn nichts an. Ist der Termin schon vorbei, rechnet die Frist
+// vom folgenden Schuljahr aus, und eines der Jahre steckt in diesem Sprung: 31.07.2029, nicht
+// 2030. Rot gesehen am Rückbau von AddDate und -1.
 func TestLMFFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

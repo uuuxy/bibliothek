@@ -1,15 +1,14 @@
 package service
 
-// Eine Lehrkraft OHNE Ausweisnummer muss ausleihen können: Bis ein Ausweis gedruckt ist,
-// steht sie an der Theke über die Namenssuche zur Verfügung, und ihre Kennung geht als
-// aktiver Leser in die Buchung.
+// Eine Lehrkraft ohne Ausweisnummer muss ausleihen können: Bis ein Ausweis gedruckt ist, steht
+// sie an der Theke über die Namenssuche zur Verfügung, und ihre Kennung geht als aktiver Leser
+// in die Buchung.
 //
-// Bis zum 15.09.2026 machte die Buch-Ausleihe an eine Lehrkraft aus JEDEM Fehler „Aktives
-// Lehrerprofil nicht gefunden" (404). Zwei Folgen: Ein Datenbank-Aussetzer sah aus wie ein
-// Bedienfehler, und eine Lehrkraft ohne Ausweis scheiterte am Scan der NULL-Spalte in einen
-// string — ebenfalls als 404. Seit Migration 125 liest der Ausleihpfad die Leserzeile
-// (Finde) und damit dieselbe Quelle wie die Theke; die NULL-Spalte kommt als
-// coalesce, und die Frist entscheidet die Art.
+// Der Ausleihpfad liest die Leserzeile (Finde) und damit dieselbe Quelle wie die Theke; die
+// NULL-Spalte der Ausweisnummer kommt als coalesce, und die Frist entscheidet die Art. Ein
+// Fehler darf dabei nicht zu „nicht gefunden" (404) werden: Sonst sähe ein Datenbank-Aussetzer
+// aus wie ein Bedienfehler, und die Lehrkraft ohne Ausweis scheiterte am Scan der NULL-Spalte
+// in einen string.
 
 import (
 	"context"
@@ -26,9 +25,9 @@ func TestLadeVorgang_LehrkraftOhneAusweis(t *testing.T) {
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	// Seit Migration 136 bekommt ein aktives Konto eine Nummer, seit 145 behält es eine.
-	// Ohne Nummer ist eine Lehrkraft seitdem nur ohne aktives Konto — etwa ohne Schul-Adresse,
-	// solange die Akte keine nachgetragen hat. Der Ausleihpfad muss den Zustand tragen.
+	// Ein aktives Konto bekommt eine Nummer und behält sie (Migrationen 136 und 145). Ohne
+	// Nummer ist eine Lehrkraft nur ohne aktives Konto — etwa ohne Schul-Adresse, solange die
+	// Akte keine nachgetragen hat. Der Ausleihpfad muss den Zustand tragen.
 	var leserID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO leser (vorname, nachname, art) VALUES ('Ohne', $1, 'lehrkraft') RETURNING id

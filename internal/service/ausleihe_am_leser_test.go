@@ -26,8 +26,7 @@ func schuelerVorgang(id string) *ausleihVorgang {
 }
 
 // lehrkraftVorgang ist der Gegenpart: ein Leser, der kein Schüler ist. Die Schülerregeln
-// (Limit, Vormerkung, Zählung) hängen seit Migration 125 an der ART, nicht mehr daran, aus
-// welcher Tabelle der Ausleiher kam.
+// (Limit, Vormerkung, Zählung) hängen an der Art des Lesers.
 func lehrkraftVorgang(id string) *ausleihVorgang {
 	return &ausleihVorgang{leserID: id, leser: &repository.Leser{ID: id, Art: "lehrkraft"}}
 }
@@ -36,8 +35,8 @@ func buchMitTitel(titel string) *repository.Exemplar {
 	return &repository.Exemplar{Titel: titel, Medientyp: "Buch", IstAusleihbar: true}
 }
 
-// lernmittel bildet ein Schulbuch ab: Seit Migration 093 zählt allein das Feld,
-// Titel und Signatur sind freier Text.
+// lernmittel bildet ein Schulbuch ab: Es zählt allein das Feld IstLernmittel, Titel und
+// Signatur sind freier Text.
 func lernmittel(titel string) *repository.Exemplar {
 	return &repository.Exemplar{Titel: titel, IstLernmittel: true, Medientyp: "Buch", IstAusleihbar: true}
 }
@@ -83,10 +82,8 @@ func TestPruefeAusleihlimit_LMFBuchIstAusgenommen(t *testing.T) {
 }
 
 func TestPruefeAusleihlimit_LMFNurInSignaturIstAusgenommen(t *testing.T) {
-	// Von Hand über die Admin-Oberfläche angelegte Schulbücher tragen das
-	// LMF-Kennzeichen nur in der Signatur, nicht im Titel — das darf sie nicht ins
-	// Ausleihlimit laufen lassen (der Fehler, den diese Prüfung ursprünglich beheben
-	// sollte, nur über den anderen Weg ins System gekommen).
+	// Von Hand über die Admin-Oberfläche angelegte Schulbücher tragen das LMF-Kennzeichen nur
+	// in der Signatur, nicht im Titel; auch sie zählen nicht zum Ausleihlimit.
 	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
 	erwarteEinstellungen(mock, "5")
@@ -101,10 +98,9 @@ func TestPruefeAusleihlimit_LMFNurInSignaturIstAusgenommen(t *testing.T) {
 }
 
 func TestPruefeAusleihlimit_RueckgabeIstAusgenommen(t *testing.T) {
-	// Bei einer Rückgabe entsteht keine Ausleihe — weder bei der eigenen noch bei der
-	// fremden (das Buch eines Mitschülers, abgegeben während jemand an der Theke steht).
-	// Das Limit darf keine davon blockieren; bis zum 12.09.2026 scheiterte die
-	// Fremdrückgabe am Limit des Kindes in der Sitzung.
+	// Bei einer Rückgabe entsteht keine Ausleihe — weder bei der eigenen noch bei der fremden
+	// (das Buch eines Mitschülers, abgegeben während jemand an der Theke steht). Das Limit darf
+	// keine davon blockieren, auch nicht das Limit des Kindes in der Sitzung.
 	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
 
@@ -119,8 +115,8 @@ func TestPruefeAusleihlimit_RueckgabeIstAusgenommen(t *testing.T) {
 }
 
 func TestPruefeAusleihlimit_LehrkraftOhneLimit(t *testing.T) {
-	// Für Lehrkräfte (Handapparat) gilt kein Limit — die Regel greift vor jeder
-	// Settings-Abfrage, daher ist hier bewusst KEINE Query zu erwarten.
+	// Für Lehrkräfte (Handapparat) gilt kein Limit — die Regel greift vor jeder Abfrage der
+	// Einstellungen, daher erwartet pgxmock hier keine.
 	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
 
@@ -218,9 +214,9 @@ func TestLadeVorgang_UnbekannterLeser(t *testing.T) {
 	}
 }
 
-// Ein Datenbank-Aussetzer ist kein „nicht gefunden": Bis zum 15.09.2026 wurde JEDER Fehler
-// zu ErrNichtGefunden (404), und die Theke meldete einen Verbindungsabbruch als Bedienfehler.
-// Für den Offline-Betrieb (OFFEN.md 2, Entscheidung (d)) muss der Aussetzer durchkommen.
+// Ein Datenbank-Aussetzer ist kein „nicht gefunden": Als ErrNichtGefunden (404) meldete die
+// Theke einen Verbindungsabbruch als Bedienfehler. Für den Betrieb ohne Netz muss der Aussetzer
+// als solcher durchkommen.
 func TestLadeVorgang_DatenbankfehlerBleibtFehler(t *testing.T) {
 	stoerung := errors.New("connection reset by peer")
 	svc, _, mock := newVorgangDienst(t, nil)

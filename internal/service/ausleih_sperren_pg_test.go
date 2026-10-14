@@ -1,9 +1,8 @@
 package service_test
 
-// Der eine Prüfweg für Buch und Gerät am Live-Pfad der Theke (service.pruefeAusleihSperren,
-// entschieden am 24.09.2026): das Buch über BucheAmLeser, das Gerät über die
-// Omnibox wie beim Scan (VerarbeiteEingabe mit „G-"). Jeder Test nennt die Probe, an der er rot
-// wurde.
+// Der eine Prüfweg für Buch und Gerät am Live-Pfad der Theke (pruefeAusleihSperren): das Buch
+// über BucheAmLeser, das Gerät über die Omnibox wie beim Scan (VerarbeiteEingabe mit „G-").
+// Jeder Test nennt die Probe, an der er rot wurde.
 
 import (
 	"context"
@@ -137,7 +136,7 @@ func istSperreAmLeser(err error) bool {
 // und beim Gerät, auch mit override_block; kein Protokolleintrag, denn nichts wurde
 // übergangen. Wie Littera: aufheben in den Leserdaten.
 // Rot gesehen am Rückbau: pruefeAusleihSperren lässt die Sperre am Leser mit override_block
-// durch, wie bis zum 24.09.2026 am Buch — das Buch geht raus.
+// durch — das Buch geht raus.
 func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 	th := neueSperrTheke(t)
 	buecherei, schulbuch := th.bestand(t, "SVH")
@@ -169,7 +168,7 @@ func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 
 // Die Sperre, die das Programm den Ehemaligen setzt, hält Bücherei und Gerät auf wie die von
 // Hand. Beim Schulbuch zählt sie nicht: Die Schule schließt jede automatische Sperre am
-// Lernmittel aus (22.09.2026) — das Kind der 10R, das in die E-Phase geht, bekommt seine
+// Lernmittel aus — das Kind der 10R, das in die E-Phase geht, bekommt seine
 // Schulbücher, ohne dass jemand etwas übergehen muss.
 // Rot gesehen am Rückbau: `&& !lernmittel` aus pruefeSperrschalter entfernt — das Schulbuch
 // wird abgewiesen.
@@ -223,9 +222,8 @@ func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {
 	}
 }
 
-// Ein Kollege wird nie gesperrt (16.09. und 24.09.2026) — auch nicht mit einer Sperre von
-// Hand, die der Knopf bis zum 24.09.2026 setzen konnte, und nicht mit einer Forderung von vor
-// dem 16.09.2026. Am Buch galt das schon, am Gerät hielt ihn bis dahin die eigene Prüfung auf.
+// Ein Kollege wird nie gesperrt — auch nicht mit einer Sperre von Hand, die noch an seinem
+// Konto steht, und nicht mit einer offenen Forderung; am Buch wie am Gerät.
 // Rot gesehen am Rückbau: die Prüfung auf istKollegium entfernt — Buch und Gerät abgewiesen.
 func TestTheke_KollegeWirdNieGesperrt(t *testing.T) {
 	th := neueSperrTheke(t)
@@ -257,7 +255,7 @@ func TestTheke_KollegeWirdNieGesperrt(t *testing.T) {
 
 // Eine offene Forderung zählt aus jedem Topf — auch die für ein verlorenes Schulbuch (Topf
 // des Landes) hält Bücherei und Gerät auf, ein Konto je Leser wie in Littera. Sie ist ein
-// Hinweis: override_block übergeht sie, am Buch wie seit dem 24.09.2026 am Gerät, und das
+// Hinweis: override_block übergeht sie, am Buch wie am Gerät, und das
 // Protokoll hält es fest — erst wenn die Ausleihe steht. Die Zubehör-Liste liegt beim Gerät
 // zwischen Prüfung und Ausleihe; sie schreibt nichts.
 // Rot gesehen am Rückbau: ladeAkteur gibt override_block nicht an pruefeAusleihSperren weiter
@@ -317,8 +315,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 }
 
 // Übergangen ist erst, was ausgeliehen wurde. Weist nach der Sperre noch das Ausleihlimit ab,
-// steht nichts im Protokoll — bis zum 24.09.2026 schrieb die Prüfung den Eintrag, bevor
-// feststand, ob überhaupt ausgeliehen wird.
+// steht nichts im Protokoll: Der Eintrag entsteht erst, wenn feststeht, dass ausgeliehen wird.
 // Rot gesehen am Rückbau: protokolliereUebergangen in BucheAmLeser direkt hinter
 // die Prüfung gezogen — ein Eintrag ohne Ausleihe.
 func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {

@@ -14,7 +14,7 @@ import (
 // und im selben Schritt die Ausleihe bucht: Beides muss zusammen gelingen oder zusammen
 // scheitern. Getrennt wäre eines von beiden möglich: das Buch zurück im Regal und die Forderung
 // weiter offen (das Kind bliebe gesperrt), oder die Forderung storniert, ohne dass das Buch
-// wieder ausleihbar ist. Der Online-Scan (omnibox_service.holeExemplarZurueck) und der Fund im
+// wieder ausleihbar ist. Der Online-Scan (omniboxDienst.holeExemplarZurueck) und der Fund im
 // Fehlbestandsbericht (MarkiereVerlustAlsGefunden) legen ihre Transaktion selbst darum.
 //
 // 0 Zeilen heißt: Das Exemplar ist zwischen Nachschlagen und Ändern verschwunden; dann darf

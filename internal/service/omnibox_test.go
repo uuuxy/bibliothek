@@ -22,7 +22,7 @@ func (m *festerLeserAttrappe) FindeZuBarcode(ctx context.Context, barcode string
 	return m.leser, m.err
 }
 
-// TestVerarbeiteAusweis: Ein gescannter Ausweis liefert seit Migration 125 EINEN Leser —
+// TestVerarbeiteAusweis: Ein gescannter Ausweis liefert einen Leser —
 // Schüler wie Kollegium, unterscheidbar an der Art. Eine unbekannte Nummer bleibt ein
 // lauter Fehler und verschwindet nicht in der Volltextsuche; ein Datenbankfehler kommt als
 // solcher durch, statt sich als „nicht registriert" zu tarnen.
@@ -81,7 +81,8 @@ func TestVerarbeiteAusweis(t *testing.T) {
 }
 
 func TestNewOmniboxDienst(t *testing.T) {
-	// Setup zero-value dependencies (we just need to verify they get injected correctly)
+	// Nullwerte genügen: Geprüft wird nur, dass der Erzeuger jede Abhängigkeit in ihr Feld
+	// legt.
 	var pool db.PgxPoolIface
 	var studentRepo repository.LeserAbfragen
 	var bookRepo repository.KatalogAbfragen
@@ -89,7 +90,6 @@ func TestNewOmniboxDienst(t *testing.T) {
 	var loanSvc AusleihDienst
 	var deviceSvc GeraeteDienst
 
-	// Act
 	svc := NewOmniboxDienst(
 		pool,
 		studentRepo,
@@ -99,7 +99,6 @@ func TestNewOmniboxDienst(t *testing.T) {
 		deviceSvc,
 	)
 
-	// Assert
 	if svc == nil {
 		t.Fatalf("Expected NewOmniboxDienst to return a non-nil instance")
 	}
@@ -109,7 +108,6 @@ func TestNewOmniboxDienst(t *testing.T) {
 		t.Fatalf("Expected implementation to be of type *omniboxDienst, got %T", svc)
 	}
 
-	// Verify all dependencies were injected
 	if impl.pool != pool {
 		t.Errorf("Expected pool to be injected")
 	}
@@ -130,7 +128,7 @@ func TestNewOmniboxDienst(t *testing.T) {
 	}
 }
 
-// katalogAttrappe is a partial mock for repository.KatalogAbfragen
+// katalogAttrappe erfüllt von repository.KatalogAbfragen nur FindeExemplar.
 type katalogAttrappe struct {
 	repository.KatalogAbfragen
 	findeExemplar func(ctx context.Context, barcode string) (*repository.Exemplar, error)
@@ -143,7 +141,7 @@ func (m *katalogAttrappe) FindeExemplar(ctx context.Context, barcode string) (*r
 	return nil, nil
 }
 
-// ausleihDienstAttrappe is a partial mock for AusleihDienst
+// ausleihDienstAttrappe erfüllt AusleihDienst mit Funktionen, die jeder Test selbst setzt.
 type ausleihDienstAttrappe struct {
 	AusleihDienst
 	bucheAmLeser func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error)
@@ -356,7 +354,6 @@ func TestVerarbeiteSuche(t *testing.T) {
 				if resp.Art != tt.expectedType {
 					t.Errorf("Expected response type %q, got %q", tt.expectedType, resp.Art)
 				}
-				// Verify the exact content
 				if len(resp.Treffer) != len(tt.mockTitles) {
 					t.Errorf("Expected %d search results, got %d", len(tt.mockTitles), len(resp.Treffer))
 				}

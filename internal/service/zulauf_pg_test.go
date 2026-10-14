@@ -60,9 +60,9 @@ func TestLadeZulauf_AmPostgres(t *testing.T) {
 		}
 	}
 
-	// Ein Exemplar im Zulauf ohne Notiz: zustand_notiz ist nullbar. Die Bestellung schreibt
-	// sie immer, aber ein anderer Schreiber muss es nicht — bis zum 22.09.2026 machte
-	// dieses eine Exemplar den ganzen Wareneingang zum 500 („cannot scan NULL into *string").
+	// Ein Exemplar im Zulauf ohne Notiz: zustand_notiz ist nullbar. Die Bestellung schreibt sie
+	// immer, aber ein anderer Schreiber muss es nicht — dieses eine Exemplar darf den
+	// Wareneingang nicht zum 500 machen („cannot scan NULL into *string").
 	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
 		VALUES ($1, 'ZUL-PROBE-5', false, 'bestellt')`, titelID); err != nil {
 		t.Fatalf("Exemplar ohne Notiz anlegen: %v", err)

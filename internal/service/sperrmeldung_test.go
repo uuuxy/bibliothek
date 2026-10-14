@@ -5,13 +5,12 @@ import (
 	"testing"
 )
 
-// Die Sperrmeldung eines GERÄTS darf kein Kind erfinden.
+// Die Sperrmeldung eines Geräts darf kein Kind erfinden.
 //
-// Fund (OFFEN.md 5.9, offen seit 3899cf18): ErrGesperrt trug den Satz „ausleihe für
-// diese/n Schüler/in ist gesperrt", und der Geräte-Pfad hängte „Gerät ist aktuell
-// gesperrt" an. An der Theke stand damit eine Meldung über ein Kind, das an diesem
-// Vorgang gar nicht beteiligt ist — die Bibliothekskraft sucht nach einer Sperre, die
-// es nicht gibt.
+// Trüge ErrGesperrt den Satz „ausleihe für diese/n Schüler/in ist gesperrt" und hängte der
+// Geräte-Pfad „Gerät ist aktuell gesperrt" an, stünde an der Theke eine Meldung über ein Kind,
+// das an diesem Vorgang gar nicht beteiligt ist — die Bibliothekskraft suchte nach einer
+// Sperre, die es nicht gibt.
 func TestSperrmeldung_NenntKeinKindWennKeinesBeteiligtIst(t *testing.T) {
 	if strings.Contains(strings.ToLower(ErrGesperrt.Error()), "schüler") {
 		t.Errorf("ErrGesperrt nennt ein Kind: %q. Der Text ist der Kopf JEDER Sperrmeldung, "+

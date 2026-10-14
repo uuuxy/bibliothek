@@ -42,7 +42,7 @@ func TestVerarbeiteFremdrueckgabe_Schueler(t *testing.T) {
 
 	resp := &AusleihErgebnis{}
 
-	// mock bedieneVormerkung internals
+	// bedieneVormerkung findet keine Vormerkung.
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit()
 
@@ -64,10 +64,9 @@ func TestVerarbeiteFremdrueckgabe_Schueler(t *testing.T) {
 	}
 }
 
-// Auch das Buch eines Kollegen muss bei der Fremdrückgabe seinen Vorbesitzer NENNEN. Das
-// ging vor Migration 125 über eine zweite Spalte und eine zweite Abfrage in die
-// Kontentabelle; jetzt ist es derselbe Weg wie beim Schüler — Finde, nicht die
-// Sicht `schueler`, sonst bliebe der Vorbesitzer namenlos.
+// Auch das Buch eines Kollegen muss bei der Fremdrückgabe seinen Vorbesitzer nennen. Es ist
+// derselbe Weg wie beim Schüler — Finde, nicht die Sicht `schueler`, sonst bliebe der
+// Vorbesitzer namenlos.
 func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
 	svc, _, mockPool := newVorgangDienst(t, &repository.Leser{
 		ID: "t1", Vorname: "Hans", Nachname: "Lehrer", Art: "lehrkraft",
@@ -91,7 +90,7 @@ func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
 
 	resp := &AusleihErgebnis{}
 
-	// mock bedieneVormerkung internals
+	// bedieneVormerkung findet keine Vormerkung.
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit()
 

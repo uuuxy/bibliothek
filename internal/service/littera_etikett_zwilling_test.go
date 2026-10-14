@@ -13,8 +13,8 @@ import (
 // (dekodiereLitteraEtikett). Ohne Netz muss der Theken-Rechner dasselbe tun
 // (frontend/src/lib/litteraEtikett.js) und die Nummer dann in der Barcode-Liste nachschlagen:
 // Die Liste führt nur die Nummern, und auf dem Server tragen 30.658 von 34.777 Exemplaren die
-// nackte Nummer (Rasterdurchgang 15.09.2026, OFFEN.md 5.15). Rechneten die beiden Seiten
-// verschieden, gälte ein Buch offline als unklar, das online gebucht wird — oder umgekehrt.
+// nackte Nummer. Rechneten die beiden Seiten verschieden, gälte ein Buch offline als unklar,
+// das online gebucht wird — oder umgekehrt.
 //
 // Beide Seiten lesen dieselben Fälle. Dieser Test prüft die Go-Seite und dass der Vitest die
 // Datei wirklich einliest; der Vitest prüft die JavaScript-Seite.

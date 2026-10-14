@@ -9,7 +9,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Gate für die ZWEI Regeln des Betragsvorschlags (OFFEN.md 9.3 a).
+// Prüfung für die zwei Regeln des Betragsvorschlags.
 //
 // Der teure Fehler wäre, die Staffel der Arbeitshilfe auf den Bestand der Schülerbücherei
 // anzuwenden: Sie gehört dem Schulträger, und dessen Benutzungsordnung verlangt „zuerst
@@ -17,7 +17,7 @@ import (
 // Abschlag für das Alter. Ein zehn Jahre altes Büchereibuch mit 10 % anzusetzen, weil die
 // Staffel das für Schulbücher sagt, verschenkt das Geld eines fremden Trägers.
 //
-// Deshalb steht hier für JEDE Regel ein Fall mit einem ALTEN Buch: Bei Lernmitteln muss
+// Deshalb steht hier für jede Regel ein Fall mit einem alten Buch: Bei Lernmitteln muss
 // der Abschlag greifen, bei Büchereibüchern darf er es nicht.
 func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 	faelle := []struct {
@@ -26,7 +26,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		wantBetrag    float64
 		wantImSatz    string
 		wantNichtSatz string
-		// wantOhnePreis: Dem Betrag liegt KEIN Preis zugrunde. Die Vorgabe ist bewusst
+		// wantOhnePreis: Dem Betrag liegt kein Preis zugrunde. Die Vorgabe ist bewusst
 		// „Preis vorhanden" — ein neuer Fall, der ihn vergisst, wird laut statt still.
 		wantOhnePreis bool
 	}{
@@ -79,7 +79,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 			wantNichtSatz: "Verleihjahr",
 		},
 		{
-			// DER Fall, für den dieses Gate da ist: Nach der Staffel wären es 10 % =
+			// der Fall, für den diese Prüfung da ist: Nach der Staffel wären es 10 % =
 			// 1,20 €. Die Benutzungsordnung kennt diesen Abschlag nicht.
 			name: "Büchereibuch, zehn Jahre alt — TROTZDEM voller Neuwert",
 			groessen: repository.ErsatzwertGroessen{
@@ -113,10 +113,10 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 			if !strings.Contains(got.Herleitung, f.wantImSatz) {
 				t.Errorf("Herleitung = %q, erwartet darin %q", got.Herleitung, f.wantImSatz)
 			}
-			// Das Feld, NICHT der Satz: Die Oberfläche entscheidet daran, ob sie „Ersatzwert
-			// heute: 0,00 €" schreibt oder schweigt. Bis zum 17.09.2026 las sie stattdessen
-			// den Anfang der Herleitung — ein deutscher Satz als Schnittstelle, den dieser
-			// Test hier hätte umformulieren können, ohne dass vorn etwas rot geworden wäre.
+			// Das Feld, nicht der Satz: Die Oberfläche entscheidet daran, ob sie „Ersatzwert
+			// heute: 0,00 €" schreibt oder schweigt. Läse sie den Anfang der Herleitung, wäre
+			// ein deutscher Satz die Schnittstelle: Ihn könnte dieser Test umformulieren, ohne
+			// dass vorn etwas rot wird.
 			if got.Bekannt == f.wantOhnePreis {
 				t.Errorf("Bekannt = %v bei Betrag %.2f (%q) — erwartet %v",
 					got.Bekannt, got.Betrag, got.Herleitung, !f.wantOhnePreis)
@@ -137,10 +137,9 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 // Die Herleitung nennt den Zustands-Abschlag — der Satz ist der Teil, den ein Mensch
 // nachrechnet.
 //
-// Gate für die zweite Hälfte derselben Lücke: Dass die ZAHL den Abschlag enthält, prüft
-// pkg/ersatzwert. Ob der SATZ ihn nennt, prüfte bis hierher niemand — und ein Betrag, der
-// unerklärt um ein Fünftel kleiner ist als die Staffel, ist im Gespräch mit Eltern
-// schlimmer als gar keine Begründung.
+// Prüfung für die zweite Hälfte derselben Lücke: Dass die Zahl den Abschlag enthält, prüft
+// pkg/ersatzwert, hier geht es um den Satz. Ein Betrag, der unerklärt um ein Fünftel kleiner
+// ist als die Staffel, ist im Gespräch mit Eltern schlimmer als gar keine Begründung.
 func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 	// 60 % von 41,50 € = 24,90 €, abzüglich 20 % für den Zustand = 19,92 €.
 	mitAbschlag := repository.ErsatzwertGroessen{
@@ -159,7 +158,7 @@ func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 		}
 	}
 
-	// Ohne Abschlag darf der Satz ihn NICHT nennen: „abzüglich 0 %" liest sich wie ein
+	// Ohne Abschlag darf der Satz ihn nicht nennen: „abzüglich 0 %" liest sich wie ein
 	// Fehler und lädt zur Rückfrage ein, die es nicht braucht.
 	ohneAbschlag := mitAbschlag
 	ohneAbschlag.ZustandAbschlag = 0

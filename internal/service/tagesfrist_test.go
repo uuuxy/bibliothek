@@ -12,10 +12,9 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Entscheidung vom 24.09.2026: Eine Frist, die in Tagen zählt, rückt auf den nächsten
-// Schultag, wenn sie auf ein Wochenende, einen Feiertag oder in die Ferien fällt. Der Anlass
-// ist dieser Tag selbst: Donnerstag 24.09.2026 plus 21 Tage ist der 15.10., mitten in den
-// Herbstferien (05.10.–17.10.2026).
+// Eine Frist, die in Tagen zählt, rückt auf den nächsten Schultag, wenn sie auf ein Wochenende,
+// einen Feiertag oder in die Ferien fällt: Donnerstag 24.09.2026 plus 21 Tage ist der 15.10.,
+// mitten in den Herbstferien (05.10.–17.10.2026).
 func TestBerechneFrist_FristRuecktAufDenNaechstenSchultag(t *testing.T) {
 	berlin := schulzeit.Zone()
 	am := func(j int, m time.Month, d int) time.Time { return time.Date(j, m, d, 10, 0, 0, 0, berlin) }

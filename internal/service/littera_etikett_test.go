@@ -2,7 +2,7 @@ package service
 
 import "testing"
 
-// Die beiden Referenzfälle sind ECHTE Scans aus der Schulbibliothek (18.08.2026),
+// Die beiden Referenzfälle sind echte Scans aus der Schulbibliothek,
 // keine konstruierten Werte — die Regel muss genau diese Messungen erklären.
 func TestDekodiereLitteraEtikett(t *testing.T) {
 	faelle := []struct {

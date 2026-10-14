@@ -13,18 +13,13 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Wer ein FREIES Buch scannt, ohne dass ein Ausweis vorliegt, bekommt eine Meldung — keine
+// Wer ein freies Buch scannt, ohne dass ein Ausweis vorliegt, bekommt eine Meldung — keine
 // Ausleihe auf den eigenen Namen.
 //
-// Bis zum 16.09.2026 gab es hier einen Sonderweg: Scannte ein angemeldetes
-// Kollegiumskonto ein freies Buch, buchte das System es SOFORT auf diese Person, ein Jahr
-// Frist. Wer Rückläufer sortiert, sammelte damit still Bücher auf seinem eigenen Namen —
-// und merkte es erst, wenn die Mahnung kam oder die Inventur das Buch vermisste. Die
-// Vorgeschichte zeigt, wie unauffällig so ein Zweig ist: Er verglich die Rolle wortwörtlich
-// mit „LEHRER", Migration 069 benannte sie in „KOLLEGIUM" um, und der Zweig war fast vier
-// Monate lang tot, ohne dass es jemandem auffiel.
-//
-// Ausgeliehen wird über den Ausweis. Dieser Test hält die Tür zu.
+// Buchte das System ein freies Buch, das ein angemeldetes Kollegiumskonto scannt, sofort auf
+// diese Person, sammelte, wer Rückläufer sortiert, still Bücher auf seinem eigenen Namen — und
+// merkte es erst, wenn die Mahnung käme oder die Inventur das Buch vermisste. Ausgeliehen wird
+// über den Ausweis. Dieser Test hält die Tür zu.
 type selbstausleiheAttrappe struct {
 	repository.AusleihAbfragen
 	pool      pgxmock.PgxPoolIface

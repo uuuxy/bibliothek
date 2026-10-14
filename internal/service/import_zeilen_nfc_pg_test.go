@@ -9,12 +9,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Seit Migration 154 speichert die Datenbank Titeltexte zusammengesetzt (NFC,
+// Die Datenbank speichert Titeltexte zusammengesetzt (NFC, Migration 154,
 // trg_titel_text_normalform). Der Listenimport erkennt einen vorhandenen Titel ohne ISBN an
-// seinem Text (repository.NormalisiereTitelSchluessel). Kommt derselbe Titel in der Datei zerlegt an
-// („a" + U+0308, so liefert die DNB Umlaute), muss er den gespeicherten treffen; sonst legt der
-// Import ihn ein zweites Mal an (Rasterdurchgang vom 30.09.2026). Die zerlegten Zeichen stehen
-// als Escape, damit kein Editor sie still zusammensetzt.
+// seinem Text (repository.NormalisiereTitelSchluessel). Kommt derselbe Titel in der Datei
+// zerlegt an („a" + U+0308, so liefert die DNB Umlaute), muss er den gespeicherten treffen;
+// sonst legt der Import ihn ein zweites Mal an. Die zerlegten Zeichen stehen als Escape, damit
+// kein Editor sie still zusammensetzt.
 func TestImportiereZeilen_ZerlegterTitelTrifftGespeicherten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -62,8 +62,8 @@ func TestImportiereZeilen_ZerlegterTitelTrifftGespeicherten(t *testing.T) {
 	}
 }
 
-// Seit Migration 160 speichert die Datenbank Titeltexte mit einem Leerzeichen zwischen den
-// Wörtern. Littera führt Titel mit zwei Leerzeichen in Folge und mit geschütztem Leerzeichen;
+// Die Datenbank speichert Titeltexte mit einem Leerzeichen zwischen den Wörtern (Migration
+// 160). Littera führt Titel mit zwei Leerzeichen in Folge und mit geschütztem Leerzeichen;
 // kommt so ein Titel ein zweites Mal aus einer Datei, muss er den gespeicherten treffen
 // (repository.NormalisiereTitelSchluessel), sonst legt der Import ihn noch einmal an.
 func TestImportiereZeilen_TitelMitLeerraumInFolgeTrifftGespeicherten(t *testing.T) {

@@ -58,8 +58,8 @@ func TestVerarbeiteRueckgabe_RueckgabeFehler(t *testing.T) {
 
 	copy := &repository.Exemplar{ID: "copy1"}
 	staffID := "staff1"
-	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
-	// Mitarbeiter selbst ist, der das Buch zurückbringt.
+	// Der Ausleiher steht in einer Spalte — auch, wenn es der Mitarbeiter selbst ist, der das
+	// Buch zurückbringt.
 	leserID := "leser1"
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &AusleihErgebnis{}
@@ -105,8 +105,8 @@ func TestVerarbeiteRueckgabe_CommitFehler(t *testing.T) {
 
 	copy := &repository.Exemplar{ID: "copy1", TitelID: "t1"}
 	staffID := "staff1"
-	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
-	// Mitarbeiter selbst ist, der das Buch zurückbringt.
+	// Der Ausleiher steht in einer Spalte — auch, wenn es der Mitarbeiter selbst ist, der das
+	// Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &AusleihErgebnis{}
 
@@ -150,8 +150,8 @@ func TestVerarbeiteRueckgabe_Gelingt(t *testing.T) {
 
 	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
 	staffID := "staff1"
-	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
-	// Mitarbeiter selbst ist, der das Buch zurückbringt.
+	// Der Ausleiher steht in einer Spalte — auch, wenn es der Mitarbeiter selbst ist, der das
+	// Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &AusleihErgebnis{}
 
@@ -213,8 +213,8 @@ func TestVerarbeiteRueckgabe_VormerkungAktiviert(t *testing.T) {
 
 	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
 	staffID := "staff1"
-	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
-	// Mitarbeiter selbst ist, der das Buch zurückbringt.
+	// Der Ausleiher steht in einer Spalte — auch, wenn es der Mitarbeiter selbst ist, der das
+	// Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &AusleihErgebnis{}
 

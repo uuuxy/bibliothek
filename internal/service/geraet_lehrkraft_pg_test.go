@@ -1,17 +1,14 @@
 package service
 
-// Wer ein Gerät bekommt: ein aktiver LESER — Schüler wie Kollegium (Migration 125).
+// Wer ein Gerät bekommt: ein aktiver Leser — Schüler wie Kollegium.
 //
-// Bis zum 13.09.2026 übernahm die Geräte-Ausleihe die Kennung des Ausleihers ungeprüft:
-// Eine unbekannte endete als Fremdschlüssel-Verletzung und damit als 500 „…da verknüpfte
-// Daten existieren" (am Stack nachgestellt). Bis zum 16.09.2026 entschied danach die
-// Personenart des KONTOS, wer als Lehrkraft gilt — ein Admin ohne dieses Feld bekam kein
-// Gerät, obwohl er vor der Theke stand. Beides ist hier abgesichert.
+// Eine unbekannte Kennung des Ausleihers wird abgewiesen, bevor sie als
+// Fremdschlüssel-Verletzung und damit als 500 „…da verknüpfte Daten existieren" endet. Wer als
+// Lehrkraft gilt, entscheidet die Art des Lesers, nicht die Personenart des Kontos: Auch ein
+// Admin ohne dieses Feld bekommt sein Gerät.
 //
-// Bis zum 24.09.2026 bekam eine von Hand gesperrte Lehrkraft hier kein Gerät, am Buch aber
-// jedes. Entschieden ist: Ein Kollege wird nie gesperrt (16.09. und 24.09.2026) — auch am
-// Gerät nicht (pruefeAusleihSperren). Den gesperrten Schüler hält
-// geraet_rueckgabe_sperre_pg_test.go.
+// Ein Kollege wird nie gesperrt, auch am Gerät nicht (pruefeAusleihSperren). Den gesperrten
+// Schüler hält geraet_rueckgabe_sperre_pg_test.go.
 //
 // Wer kein Schüler ist, bekommt das Gerät als Dauerleihe (ausleihen.ist_handapparat), ein
 // Schüler nicht: dieselbe Regel wie beim Buch. Ohne das Merkmal stünde die Lehrkraft nach
@@ -34,8 +31,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	// vonHandGesperrt: der Zustand, den der Knopf in der Akte bis zum 24.09.2026 auch einem
-	// Kollegen setzen konnte.
+	// vonHandGesperrt: eine Sperre von Hand, wie sie noch an einem Kollegen stehen kann.
 	legeLeserAn := func(kuerzel, art string, vonHandGesperrt bool) string {
 		t.Helper()
 		var id string

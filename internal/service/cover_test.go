@@ -35,8 +35,8 @@ func (panikDatenbank) Query(context.Context, string, ...any) (pgx.Rows, error) {
 	panic("boom aus dem cover-sync (simuliert)")
 }
 
-// TestGleicheFehlendeCoverAbUeberlebtPanik: Ein Panik in der ÄUSSEREN Sync-Goroutine darf
-// den Prozess NICHT mitreissen (safego.FangePanic) — und muss coverAbgleichLaeuft zurücksetzen,
+// TestGleicheFehlendeCoverAbUeberlebtPanik: Eine Panik in der äußeren Sync-Goroutine darf
+// den Prozess nicht mitreißen (safego.FangePanic) — und muss coverAbgleichLaeuft zurücksetzen,
 // sonst überspringt jeder künftige Lauf für immer.
 func TestGleicheFehlendeCoverAbUeberlebtPanik(t *testing.T) {
 	coverAbgleichLaeuft.Store(false)

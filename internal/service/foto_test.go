@@ -12,7 +12,7 @@ import (
 )
 
 func TestSchreibeLeserFoto(t *testing.T) {
-	// Set the required master key for encryption
+	// Der Upload verschlüsselt das Foto mit diesem Schlüssel.
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 
 	// 10x10 red pixel png image base64
