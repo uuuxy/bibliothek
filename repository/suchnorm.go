@@ -51,12 +51,16 @@ func suchnorm(s string) string {
 	s = b.String()
 	// Sequenziell wie replace(replace(replace(replace(…)))) in SQL — NewReplacer wäre ein
 	// einziger Durchlauf mit anderer Überlappungsregel („sss").
-	s = strings.ReplaceAll(s, "ss", "s")
-	s = strings.ReplaceAll(s, "ue", "u")
-	s = strings.ReplaceAll(s, "oe", "o")
-	s = strings.ReplaceAll(s, "ae", "a")
-	return s
+	// Bolt: However, NewReplacer actually yields the same output as sequential ReplaceAll for these specific non-overlapping substrings.
+	return suchnormReplacer.Replace(s)
 }
+
+var suchnormReplacer = strings.NewReplacer(
+	"ss", "s",
+	"ue", "u",
+	"oe", "o",
+	"ae", "a",
+)
 
 // unaccentZerlegung zerlegt in Grundbuchstabe + Akzent (NFD), wirft die Akzente
 // (Kategorie Mn) weg und setzt wieder zusammen.
