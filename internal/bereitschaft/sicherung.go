@@ -23,9 +23,9 @@ func pruefeAuslagerung(l Lage) Befund {
 	return b
 }
 
-// pruefeRestoreProbe beurteilt das Ergebnis der wöchentlichen Wiederherstellungs-Probe
-// (jobs/restore_probe.go). Ein Backup, das sich nicht einspielen lässt, ist so viel
-// wert wie keins — und man erfährt es sonst im schlechtesten Moment.
+// pruefeRestoreProbe beurteilt das Ergebnis der wöchentlichen Probe (jobs/restore_probe.go).
+// Ein Backup, das sich nicht einspielen lässt, ist so viel wert wie keins, und ohne die
+// Probe erfährt man es im schlechtesten Moment.
 func pruefeRestoreProbe(l Lage, echt bool) Befund {
 	b := Befund{Bereich: "Restore-Probe"}
 	switch {
@@ -58,10 +58,9 @@ func pruefeRestoreProbe(l Lage, echt bool) Befund {
 	return b
 }
 
-// pruefeBackupAlter hebt den Backup-Wächter des Dashboard-Badges in die Befunde —
-// und damit in die tägliche Kritisch-Alarm-Mail. Die Schwellen und ihre Anwendung
-// (jobs.BackupStatus) bleiben die eine Quelle; hier wird nur
-// übersetzt, damit Badge und Alarm nie auseinanderlaufen.
+// pruefeBackupAlter bringt den Zustand des Backups in die Befunde und damit in die tägliche
+// Alarm-Mail. Die Schwellen stehen nur in jobs.BackupStatus, damit das Abzeichen im Rahmen
+// der Anwendung und der Alarm nicht auseinanderlaufen.
 func pruefeBackupAlter(l Lage, echt bool) Befund {
 	b := Befund{Bereich: "Nächtliches Backup"}
 	if !echt {

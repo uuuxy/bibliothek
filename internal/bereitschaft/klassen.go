@@ -53,14 +53,11 @@ func fehlendeEintraege(menge, referenz []string) []string {
 	return fehlt
 }
 
-// pruefeKlassenDrift macht die Text-Verbindungen des Klassennamens sichtbar
-// (Befund F3, bewertung/datenbank-pruefbericht.md): Schüler, Klassenlehrer-
-// Zuordnung und Bücherlisten hängen nur an übereinstimmenden Namen. Der
-// Jahreswechsel versetzt die Zuordnung seit 18.08.2026 mit (api/leser/student_promotion.go),
-// aber Umbenennungen von Hand oder LUSD-Umschichtungen können weiter driften —
-// und ohne diese Prüfung merkt es niemand, bis eine Mahnliste leer läuft.
-// Bewusst nur Warnung: Eine Klasse ohne Lehrkraft-Zuordnung kann gewollt sein
-// (die Mahnmail geht dann eben an niemanden — genau das soll man hier sehen).
+// pruefeKlassenDrift zeigt, wo Schüler, Zuordnung der Klassenleitung und Bücherlisten nicht
+// mehr am selben Klassennamen hängen. Der Jahreswechsel versetzt die Zuordnung mit
+// (api/leser/student_promotion.go), eine Umbenennung von Hand oder ein LUSD-Import nicht.
+// Eine Warnung, weil eine Klasse ohne Zuordnung gewollt sein kann; man soll nur sehen,
+// dass ihre Mahnmail niemanden erreicht.
 func pruefeKlassenDrift(l Lage) Befund {
 	b := Befund{Bereich: "Klassen-Zuordnung"}
 	if l.KlassenOhneLehrkraft == nil || l.VerwaisteZuordnungen == nil || l.VerwaisteBuecherliste == nil {

@@ -22,7 +22,7 @@ func pruefeBestelllink(l Lage) Befund {
 func pruefeMailversand(l Lage) Befund {
 	b := Befund{Bereich: "Mailversand (Mahnwesen)"}
 	// Die Ausnahmeschalter zuerst: Sie schwächen den Versand auch dann, wenn sonst alles
-	// eingerichtet ist — und genau dann sähe der Bereich ohne diese Zeilen „ok" aus.
+	// eingerichtet ist, und gerade dann sähe der Bereich ohne sie „ok" aus.
 	var schalter []string
 	if l.SMTPKlartextErlaubt {
 		schalter = append(schalter, "SMTP_ALLOW_PLAINTEXT")

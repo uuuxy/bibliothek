@@ -5,15 +5,12 @@ import (
 	"strings"
 )
 
-// pruefeLoeschroutinen: Tun die nächtlichen Löschroutinen, was sie sollen? Das Kriterium
-// ist der ZUSTAND — wie viele Zeilen müssten seit mindestens einem Tag weg sein und sind
-// es nicht —, nicht ein Log: Ein Job, der still scheitert, schreibt keine Zeile, die
-// jemand liest, aber er hinterlässt genau diesen Rückstand.
+// pruefeLoeschroutinen fragt, ob die nächtlichen Löschroutinen tun, was sie sollen. Gemessen
+// wird der Rückstand, nicht ein Log: Ein Job, der still scheitert, schreibt keine Zeile, die
+// jemand liest, aber er hinterlässt Zeilen, die seit mehr als einem Tag weg sein müssten.
 //
-// Die Zahlen kommen aus repository.ZaehleLoeschRueckstand, und die stellt bewusst
-// DIESELBEN Fragen wie die Jobs — Wort für Wort denselben SQL-Ausdruck aus
-// repository/loeschfristen.go, nur als count(*) und mit einem Tag Kulanz. Zwei getrennt
-// gepflegte Bedingungen wären der schlimmste denkbare Zustand: ein Wächter, der
+// Die Zahlen kommen aus BetriebszustandAbfragen.ZaehleLoeschRueckstand mit denselben
+// SQL-Ausdrücken wie die Jobs (repository/loeschfristen.go), damit der Wächter nicht
 // beruhigt, während der Job schläft.
 func pruefeLoeschroutinen(l Lage) Befund {
 	b := Befund{Bereich: "DSGVO-Löschroutinen"}
@@ -60,11 +57,9 @@ func pruefeLoeschroutinen(l Lage) Befund {
 // jede Herbst-Mahnung, länger ließe die Akte Jahre stehen.
 const EhemaligeOffenSeitTagen = 365
 
-// pruefeEhemaligeOffen: Bleibt jemand, der die Schule verlassen hat, mit Name und
-// Anschrift stehen, weil ein Vorgang nie geschlossen wurde? Kein Automatismus — was zu
-// tun ist (Verlust buchen, Forderung stellen oder stornieren), entscheidet ein Mensch;
-// der Wächter hält nur fest, DASS es zu tun ist. Danach greifen Karenz und Löschung von
-// selbst.
+// pruefeEhemaligeOffen meldet Ehemalige, die mit Name und Anschrift stehen bleiben, weil ein
+// Vorgang nie geschlossen wurde. Was zu tun ist (Verlust buchen, Forderung stellen oder
+// stornieren), entscheidet ein Mensch; danach greifen Karenz und Löschung von selbst.
 func pruefeEhemaligeOffen(l Lage) Befund {
 	b := Befund{Bereich: "Ehemalige mit offenen Vorgängen"}
 	if l.EhemaligeMitOffenenVorgaengen == nil {
@@ -87,14 +82,13 @@ func pruefeEhemaligeOffen(l Lage) Befund {
 	return b
 }
 
-// NachbuchOffenSeitTagen ist die Schwelle des Wächters: zwei Wochen (Entscheidung vom
-// 13.09.2026). Eine Meldung, die so lange niemand quittiert, hat niemand angesehen.
+// NachbuchOffenSeitTagen ist die Schwelle des Wächters: zwei Wochen. Eine Meldung, die so
+// lange niemand quittiert, hat niemand angesehen.
 const NachbuchOffenSeitTagen = 14
 
-// pruefeNachbuchMeldungenOffen: Abweichungen zwischen Offline-Scan und Wirklichkeit —
-// umgebuchte Bücher, abgewiesene Ausleihen, veraltete Scans — stehen als Meldung, bis
-// jemand aus der Bibliothek sie quittiert. Der Wächter hält fest, DASS sie liegen bleiben;
-// was daraus folgt (Buch suchen, Kind ansprechen), entscheidet ein Mensch.
+// pruefeNachbuchMeldungenOffen meldet Abweichungen zwischen Offline-Scan und Wirklichkeit
+// (umgebuchte Bücher, abgewiesene Ausleihen, veraltete Scans), die niemand quittiert hat.
+// Was daraus folgt, etwa ein Buch suchen oder ein Kind ansprechen, entscheidet ein Mensch.
 func pruefeNachbuchMeldungenOffen(l Lage) Befund {
 	b := Befund{Bereich: "Nachbuch-Meldungen der Theke"}
 	if l.NachbuchMeldungenOffen == nil {

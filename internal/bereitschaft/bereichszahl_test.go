@@ -6,18 +6,11 @@ import (
 	"testing"
 )
 
-// Gate gegen eine Zahl, die niemand nachzieht: FACHKONZEPT.md sagt, wie viele Bereiche die
-// Betriebsbereitschaft prüft, und Pruefe sagt es noch einmal — als Liste.
+// FACHKONZEPT.md nennt die Zahl der geprüften Bereiche, und Pruefe liefert sie als Liste.
+// Eine Zahl im Text wird still falsch: Wer einen Bereich ergänzt, liest den Text nicht.
 //
-// Anlass (Raster-Durchgang 12.09.2026): Bis zum 11.09.2026 stand im FACHKONZEPT „Geprüft
-// werden fünfzehn Bereiche", während Pruefe schon sechzehn Befunde lieferte. Aufgefallen
-// ist das nur, weil derselbe Commit den siebzehnten Bereich baute und die Zahl anfasste.
-// Eine Zahl in der Prosa ist die billigste Art, ein Dokument still falsch werden zu lassen:
-// Wer sie liest, prüft nicht nach, und wer einen Bereich ergänzt, liest die Prosa nicht.
-//
-// Grenze: Das Gate prüft die ZAHL, nicht die Aufzählung dahinter — die nennt ausdrücklich
-// nur einen Teil („darunter"). Ein neuer Bereich muss also die Zahl nachziehen; ob er auch
-// beschrieben gehört, bleibt eine Frage an den Menschen.
+// Geprüft wird nur die Zahl, nicht die Aufzählung dahinter, die ausdrücklich nur einen Teil
+// nennt („darunter"); ob ein neuer Bereich beschrieben gehört, entscheidet ein Mensch.
 func TestFachkonzeptNenntDieZahlDerGeprueftenBereiche(t *testing.T) {
 	zahlwoerter := map[string]int{
 		"zehn": 10, "elf": 11, "zwölf": 12, "dreizehn": 13, "vierzehn": 14, "fünfzehn": 15,

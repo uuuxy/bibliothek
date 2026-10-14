@@ -4,10 +4,9 @@ import (
 	"strings"
 )
 
-// pruefeBescheidAngaben: Kann das Sekretariat einen Schadensersatz-Bescheid erstellen?
-// Die Liste kommt aus BescheidAngaben.FehlendeAngaben — derselben Funktion, mit der das
-// Erstellen abweist. Warnung, nicht kritisch: Solange niemand einen Bescheid braucht,
-// fällt nichts aus; die Schule soll es vorher wissen, nicht erst am Tag des Falls.
+// pruefeBescheidAngaben fragt, ob sich ein Schadensersatz-Bescheid erstellen lässt. Eine
+// Warnung, weil nichts ausfällt, solange niemand einen Bescheid braucht; die Schule soll
+// die Lücke vorher kennen und nicht erst am Tag des Falls.
 func pruefeBescheidAngaben(l Lage) Befund {
 	b := Befund{Bereich: "Schadensersatz-Bescheid"}
 	if l.BescheidFehlend == nil {

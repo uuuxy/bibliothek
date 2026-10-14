@@ -18,19 +18,16 @@ func pruefeDemodaten(l Lage) Befund {
 	b.Folge = "Statistik, Mahnwesen und Bestellbedarf mischen echte Zahlen mit Fiktion. " +
 		"Demo-Eltern-Adressen enden auf example.invalid, ein Mahnlauf erreicht sie nie."
 	// Nicht der Block am Anfang von seed_demo.sql: Der bricht auf einem benutzten System an
-	// Schäden ab (RESTRICT) und lässt Bescheide und Inventur-Verluste ohne Bezug stehen.
+	// Schäden ab (RESTRICT) und lässt Bescheide und Verluste der Inventur ohne Bezug stehen.
 	b.Abhilfe = "Vor dem Echtstart scripts/entferne_demo_daten.sql ausführen: erst ohne Schalter " +
 		"(Vorschau, zeigt jede Verflechtung mit echten Daten), dann mit -v ausfuehren=ja. " +
 		"Der Aufruf steht im Kopf der Datei."
 	return b
 }
 
-// pruefeBeispielLieferanten: Vom 30.05. bis zum 07.09.2026 legte der erste Programmstart
-// drei Beispiel-Lieferanten an — damals gewollt, damit das Bestellwesen ohne Vorarbeit
-// bedienbar war. Das Problem war nie die Absicht, sondern der Ort: Startdaten im
-// Boot-Pfad sind auf einer echten Anlage von echten Händlern nicht zu unterscheiden. Wer
-// einen davon im Bestellformular wählte, bekam eine Historie mit „gesendet“ — und keine
-// Bücher. Kritisch, nicht Warnung: Der Schaden ist still und trifft eine echte Bestellung.
+// pruefeBeispielLieferanten meldet Lieferanten aus früheren Startdaten, die auf einer
+// echten Anlage nicht von echten Händlern zu unterscheiden sind. Eine Bestellung an sie
+// steht als „gesendet" in der Historie, und keine Bücher kommen; deshalb kritisch.
 func pruefeBeispielLieferanten(l Lage) Befund {
 	b := Befund{Bereich: "Lieferanten"}
 	switch {

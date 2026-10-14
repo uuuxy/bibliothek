@@ -10,11 +10,9 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Drift-Kette am echten Postgres: Seed schreibt die Vorgabe, das Repository
-// liest sie zurück, die Prüfung meldet Deckung — und nach EINEM von Hand
-// verstellten Wert (genau so entsteht Drift: DO NOTHING lässt die alte Zeile
-// stehen) meldet sie exakt diese eine Zeile. Reine Funktionstests können die
-// Paarung Seed↔Tabelle↔Leser nicht beweisen; genau die ist hier die Aussage.
+// Die Kette an Postgres: Der Seed schreibt die Vorgabe, die Abfrage liest sie zurück, die
+// Prüfung meldet Deckung, und nach einem von Hand verstellten Wert meldet sie genau diese
+// eine Zeile. Dass Seed, Tabelle und Abfrage zusammenpassen, zeigt nur dieser Test.
 func TestRechteVorgabe_DriftKetteAmEchtenPostgres(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -37,8 +35,8 @@ func TestRechteVorgabe_DriftKetteAmEchtenPostgres(t *testing.T) {
 		t.Fatalf("frisch geseedet muss OK sein, ist %q: %s", b.Stufe, b.Befund)
 	}
 
-	// (2) Drift nachstellen: eine Live-Zeile kippt (wie eine Alt-Anlage nach
-	// einer Code-Änderung — oder ein Admin-Eingriff).
+	// (2) Abweichung nachstellen: Eine Zeile kippt, wie auf einer älteren Anlage nach einer
+	// Änderung im Code oder nach einem Eingriff der Verwaltung.
 	if _, err := pool.Exec(ctx,
 		`UPDATE role_permissions SET allowed = true WHERE role = 'HELFER' AND permission = 'view_students'`); err != nil {
 		t.Fatalf("Drift stellen: %v", err)

@@ -5,11 +5,10 @@ import (
 	"testing"
 )
 
-// Optionale Rechte (db.RechteOptional) sind zum Umschalten GEBAUT: Schaltet ein
-// Admin dem Helfer die Vormerkungen zu, ist das der vorgesehene Gebrauch — keine
-// Drift. Ohne diese Ausnahme stünde jede nutzende Anlage dauerhaft gelb, und
-// Dauerwarnungen erziehen zum Wegsehen. Die Existenz-Prüfung bleibt scharf:
-// Verschwindet die Zeile ganz, fehlt die Tür in der Rechte-Matrix — Warnung.
+// Freigestellte Rechte (db.RechteOptional) sind zum Umschalten da: Schaltet ein Admin dem
+// Helfer die Vormerkungen zu, ist das keine Abweichung, sonst stünde jede Anlage, die das
+// nutzt, dauerhaft auf Warnung. Verschwindet die Zeile ganz, fehlt die Tür in der
+// Rechte-Matrix, und die Warnung kommt.
 func TestBetriebsbereitschaft_OptionalesRechtIstKeineDrift(t *testing.T) {
 	t.Run("eingeschaltet ist kein Befund", func(t *testing.T) {
 		l := lageEingerichtet()
@@ -29,9 +28,8 @@ func TestBetriebsbereitschaft_OptionalesRechtIstKeineDrift(t *testing.T) {
 	})
 }
 
-// Viele Abweichungen dürfen die Auskunft nicht fluten: gezeigt werden sechs,
-// der Rest wird gezählt. (Der Extremfall — leere, aber lesbare Tabelle — meldet
-// JEDE Vorgabe-Zeile als fehlend.)
+// Viele Abweichungen dürfen die Auskunft nicht fluten: Gezeigt werden sechs, der Rest wird
+// gezählt. Eine leere, aber lesbare Tabelle meldet jede Zeile der Vorgabe als fehlend.
 func TestBetriebsbereitschaft_RechteAbweichungenWerdenGekappt(t *testing.T) {
 	l := lageEingerichtet()
 	l.RechteLive = map[string]map[string]bool{}

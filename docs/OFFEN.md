@@ -444,10 +444,11 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 36 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+**Fertig sind 37 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
 gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
 Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
-`middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), und `repository`.
+`middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), `repository` und
+von den Paketen darüber `bereitschaft`.
 
 **Ein Paket ist fertig, wenn:**
 

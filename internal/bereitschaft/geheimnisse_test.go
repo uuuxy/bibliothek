@@ -31,15 +31,14 @@ func TestIstGeheimnisSchutzScharf(t *testing.T) {
 	}
 }
 
-// Die Liste der Beispiel-Geheimnisse ist mit main.go geteilt. Bricht sie, startet der
-// Server mit einem öffentlich bekannten Schlüssel — deshalb hier festgehalten.
+// Die Liste der Beispiel-Geheimnisse teilt sich die Selbstprüfung mit main.go. Fehlt ein
+// Wert, startet der Server mit einem öffentlich bekannten Schlüssel.
 func TestIstBeispielGeheimnis(t *testing.T) {
 	for _, wert := range []string{
 		"super-secret-default-key-at-least-32-bytes",
 		"super-secure-aes-key-32-chars-ok",
 		"supergeheim_lokal",
-		// Die .env.example-Platzhalter — genau die, die beim cp .env.example .env
-		// stehen bleiben (Sicherheits-Audit 07.09.2026):
+		// Die Platzhalter aus .env.example, die nach cp .env.example .env stehen bleiben:
 		"super-secret-key-that-is-at-least-32-bytes-long",
 		"your-32-character-encryption-key",
 	} {
@@ -54,10 +53,9 @@ func TestIstBeispielGeheimnis(t *testing.T) {
 	}
 }
 
-// Der Wächter kennt die Platzhalter aus .env.example — gelesen aus der DATEI, nicht aus
-// einer Kopie hier: Ändert jemand die Beispielwerte, ohne den Wächter nachzuziehen,
-// wird dieser Test rot statt der Wächter blind (Sicherheits-Audit 07.09.2026: genau
-// das war passiert — drei alte Compose-Defaults gesperrt, die zwei Beispielwerte nicht).
+// Der Wächter kennt die Platzhalter aus .env.example. Der Test liest sie aus der Datei, nicht
+// aus einer Kopie: Ändert jemand die Beispielwerte, ohne den Wächter nachzuziehen, wird er
+// rot, statt dass der Wächter blind wird.
 func TestIstBeispielGeheimnis_KenntEnvExample(t *testing.T) {
 	inhalt, err := os.ReadFile("../../.env.example")
 	if err != nil {

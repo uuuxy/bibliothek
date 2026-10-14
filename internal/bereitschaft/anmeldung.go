@@ -23,12 +23,11 @@ func pruefeAnmeldung(l Lage, echt bool) Befund {
 	return b
 }
 
-// pruefeSelbstanmeldung: Ohne SELBSTANMELDUNG_DOMAIN bekommt eine Lehrkraft mit
-// RICHTIGEM Passwort „invalid email or password“ und nach fünf Versuchen eine Sperre —
-// eine tote Tür, die wie ein Tippfehler aussieht. Der Serverstart protokolliert den
-// Zustand zwar (auth.SelbstanmeldungStatus), aber ein Log liest niemand, der gerade
-// eine Lehrkraft am Telefon hat. Warnung, nicht kritisch: Die Schule KANN alle 160
-// Konten von Hand anlegen — sie soll nur wissen, dass sie das gerade tut.
+// pruefeSelbstanmeldung meldet eine leere SELBSTANMELDUNG_DOMAIN. Ohne sie wird eine
+// Lehrkraft ohne Konto auch mit richtigem Passwort abgewiesen und nach fünf Versuchen
+// gesperrt, was wie ein Tippfehler aussieht; der Start schreibt es nur ins Log
+// (auth.SelbstanmeldungStatus). Eine Warnung, weil die Schule die Konten auch von Hand
+// anlegen kann und es nur wissen soll.
 func pruefeSelbstanmeldung(l Lage) Befund {
 	b := Befund{Bereich: "Selbstanmeldung Kollegium"}
 	if l.SelbstanmeldeDomain == "" {

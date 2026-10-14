@@ -8,14 +8,9 @@ import (
 	"bibliothek/db"
 )
 
-// pruefeAdminKonten macht sichtbar, WER Vollzugriff hat und die Alarm-Mails erhält.
-//
-// Anlass (16.08.2026 abends): Die erste Kritisch-Mail ging an ein Admin-Konto, von
-// dem der Betreiber nichts wusste — auf Prod lagen VIER aktive Admins, drei davon
-// ohne bekannte Herkunft (die Konten-Anlage war bis dahin unauditiert). Eine Liste
-// auf dieser Seite hätte das Wochen früher gezeigt. Bewusst Stufe OK, solange
-// überhaupt Admins existieren: Mehrere Admins können völlig richtig sein — die
-// Seite URTEILT nicht, sie zeigt. Wer hier einen unbekannten Namen liest, handelt.
+// pruefeAdminKonten zeigt, wer Vollzugriff hat und die Alarm-Mails erhält, damit ein
+// unbekanntes Admin-Konto auffällt. Die Stufe bleibt ok, solange es Admins gibt: Mehrere
+// können richtig sein, und die Seite zeigt, ohne zu urteilen.
 func pruefeAdminKonten(l Lage) Befund {
 	b := Befund{Bereich: "Admin-Konten"}
 	switch {
@@ -41,16 +36,12 @@ func pruefeAdminKonten(l Lage) Befund {
 	return b
 }
 
-// pruefeRechteVorgabe vergleicht die Live-Rechte mit der Code-Vorgabe (db.RechteVorgabe).
+// pruefeRechteVorgabe vergleicht die Rechte in der Datenbank mit der Vorgabe im Code
+// (db.RechteVorgabe). Der Seed schreibt nur fehlende Zeilen, eine geänderte Vorgabe
+// erreicht eine bestehende Anlage also nie von selbst.
 //
-// Der Seed schreibt nur FEHLENDE Zeilen (ON CONFLICT DO NOTHING) — ändert sich die
-// Vorgabe im Code, erreicht sie eine bestehende Anlage nie von selbst. Genau so sah
-// das Kollegium wochenlang nur einen Teil seiner Menüpunkte, und niemand merkte es.
-//
-// Eine Abweichung ist bewusst nur eine WARNUNG, kein Fehler: role_permissions ist
-// über die Oberfläche einstellbar, die Abweichung kann eine Admin-Entscheidung sein.
-// Die Prüfung urteilt nicht darüber — sie macht die Abweichung sichtbar, damit ein
-// Mensch entscheidet. Repariert wird hier nichts.
+// Eine Abweichung ist eine Warnung und wird nicht repariert: role_permissions lässt sich in
+// der Oberfläche einstellen, und die Abweichung kann eine Entscheidung der Verwaltung sein.
 func pruefeRechteVorgabe(l Lage) Befund {
 	b := Befund{Bereich: "Rechte-Vorgabe"}
 	if l.RechteLive == nil {
@@ -68,7 +59,7 @@ func pruefeRechteVorgabe(l Lage) Befund {
 		return b
 	}
 
-	// Map-Reihenfolge ist Zufall — sortieren, damit Anzeige und Tests stabil sind.
+	// Die Reihenfolge einer Map ist Zufall; sortiert bleiben Anzeige und Tests stabil.
 	sort.Strings(abweichungen)
 	const zeigeMax = 6
 	gezeigt := abweichungen
@@ -106,16 +97,16 @@ func rechteAbweichungen(live map[string]map[string]bool) []string {
 		case !vorhanden:
 			abweichungen = append(abweichungen,
 				fmt.Sprintf("%s/%s fehlt live (Vorgabe: %s)", v.Role, v.Permission, anAus(v.Allowed)))
-		// Optionale Paare (db.RechteOptional): Der Haken in der Rechte-Matrix ist
-		// dort der vorgesehene Gebrauch, kein Drift — nur die Existenz zählt.
+		// Bei einem freigestellten Paar (db.RechteOptional) ist der Haken in der
+		// Rechte-Matrix der vorgesehene Gebrauch; nur ob die Zeile da ist, zählt.
 		case db.RechteOptional[v.Role+"/"+v.Permission]:
 		case liveWert != v.Allowed:
 			abweichungen = append(abweichungen,
 				fmt.Sprintf("%s/%s live %s, Vorgabe %s", v.Role, v.Permission, anAus(liveWert), anAus(v.Allowed)))
 		}
 	}
-	// Gegenrichtung: Live-Zeilen, deren Rolle oder Recht die Vorgabe nicht kennt —
-	// Reste alter Vokabulare (z. B. eine umbenannte Rolle) oder Tippfehler im Editor.
+	// Gegenrichtung: Zeilen, deren Rolle oder Recht die Vorgabe nicht kennt, etwa eine
+	// umbenannte Rolle oder ein Tippfehler im Editor.
 	for rolle, zeile := range live {
 		for recht, erlaubt := range zeile {
 			if _, kennt := vorgabe[rolle][recht]; !kennt {

@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-// ferientabelleVorlaufJahre: Wie viele Jahre vor dem Ende der Tabelle die Warnung
-// kommt. Zwei — die KMK beschließt den nächsten Block Jahre im Voraus, und der Plan
-// für den Sommer wird im Frühjahr gemacht.
+// ferientabelleVorlaufJahre sagt, wie viele Jahre vor dem Ende der Tabelle die Warnung
+// kommt. Zwei, weil die KMK den nächsten Block Jahre im Voraus beschließt und der Plan für
+// den Sommer im Frühjahr entsteht.
 const ferientabelleVorlaufJahre = 2
 
-// pruefeFerientabelle: Reichen die hinterlegten Sommerferien noch weit genug?
+// pruefeFerientabelle fragt, ob die hinterlegten Sommerferien noch weit genug reichen.
 func pruefeFerientabelle(l Lage) Befund {
 	b := Befund{Bereich: "Ferientabelle"}
 	if l.Jetzt.Year()+ferientabelleVorlaufJahre > l.FerientabelleBis {
@@ -27,8 +27,8 @@ func pruefeFerientabelle(l Lage) Befund {
 	return b
 }
 
-// pruefeUebrigeFerien: Kennen die Leihfristen die Herbst-, Weihnachts- und Osterferien
-// noch weit genug? Derselbe Vorlauf wie bei den Sommerferien.
+// pruefeUebrigeFerien fragt, ob die Leihfristen die Herbst-, Weihnachts- und Osterferien
+// noch weit genug kennen, mit demselben Vorlauf wie bei den Sommerferien.
 func pruefeUebrigeFerien(l Lage) Befund {
 	b := Befund{Bereich: "Ferien für Leihfristen"}
 	if l.Jetzt.Year()+ferientabelleVorlaufJahre > l.UebrigeFerienBis {

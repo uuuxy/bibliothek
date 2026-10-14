@@ -51,8 +51,8 @@ func TestTrageKlassenEin(t *testing.T) {
 	}
 }
 
-// Die Klassen-Drift-Prüfung (F3): nicht erhoben ≠ alles verbunden, und jede
-// gerissene Text-Verbindung wird benannt statt still geschluckt.
+// Die Prüfung der Klassen unterscheidet „nicht erhoben" von „alles verbunden" und nennt jede
+// gerissene Verbindung, statt sie still zu schlucken.
 func TestKlassenDrift(t *testing.T) {
 	t.Run("nicht erhoben ist eine Warnung, kein OK", func(t *testing.T) {
 		l := lageEingerichtet()

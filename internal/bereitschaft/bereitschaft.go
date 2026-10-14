@@ -17,28 +17,26 @@ import (
 	"bibliothek/repository"
 )
 
-// Stufen eines Befundes. Bewusst nur drei — eine feinere Skala liest niemand.
+// Stufen eines Befundes. Es sind drei, weil eine feinere Skala niemand liest.
 const (
 	StufeOK       = "ok"       // eingerichtet und in Betrieb
 	StufeWarnung  = "warnung"  // läuft, aber nicht wie gedacht
-	StufeKritisch = "kritisch" // vor dem Echtbetrieb zwingend zu klären
+	StufeKritisch = "kritisch" // vor dem Echtbetrieb zu klären
 )
 
-// Zwei Formulierungen sagen mehrere Prüfungen wörtlich gleich. Sie stehen hier an
-// einer Stelle, damit die Selbstprüfung nicht in vier Tonfällen spricht (go:S1192).
+// Mehrere Prüfungen nennen diese Abhilfe wörtlich gleich; sie steht einmal, damit die
+// Selbstprüfung nicht in verschiedenen Tonfällen spricht.
 const abhilfeDBNeuLaden = "Datenbankverbindung prüfen und die Seite neu laden."
 
-// befundNichtImEchtbetrieb formuliert den Befund für einen Bereich, den es außerhalb
-// des echten Betriebs bewusst nicht gibt — kein Mangel, sondern die Umgebung.
+// befundNichtImEchtbetrieb formuliert den Befund für einen Bereich, den es außerhalb des
+// echten Betriebs mit Absicht nicht gibt: kein Mangel, sondern die Umgebung.
 func befundNichtImEchtbetrieb(was, umgebung string) string {
 	return was + " — in " + umgebung + " ist das richtig so."
 }
 
-// Befund ist eine Zeile der Selbstprüfung.
-//
-// Vier Felder, weil drei nicht reichen: „Was ist" (Befund) beantwortet nicht, „warum das
-// zählt" (Folge) — und ohne „was zu tun ist" (Abhilfe) landet die Meldung auf einem
-// Zettel statt in der .env.
+// Befund ist eine Zeile der Selbstprüfung. Neben dem Befund stehen die Folge und die
+// Abhilfe, weil eine Meldung ohne „warum zählt das" und „was ist zu tun" niemanden zum
+// Handeln bringt.
 type Befund struct {
 	Bereich string `json:"bereich"`
 	Stufe   string `json:"stufe"`
@@ -47,7 +45,9 @@ type Befund struct {
 	Abhilfe string `json:"abhilfe"`
 }
 
-// Lage ist der Zustand, über den geurteilt wird — eingesammelt vom Handler.
+// Lage ist der Zustand, über den die Prüfungen urteilen; die Tür trägt ihn zusammen. Ein
+// Zeiger oder eine Liste mit nil heißt „nicht erhoben" und wird gewarnt; die leere Liste
+// heißt „geprüft, nichts gefunden".
 type Lage struct {
 	Umgebung string
 
@@ -61,114 +61,90 @@ type Lage struct {
 	GeheimnisSchutzScharf bool
 	JWTGeheimnis          string
 	Schluessel            string
-	// SchluesselProbe: Ließ sich je verschlüsselter Spalte ein Wert mit dem laufenden
-	// APP_ENCRYPTION_KEY entschlüsseln? nil: nicht lesbar.
+	// SchluesselProbe sagt je verschlüsselter Spalte, ob sich ein Wert mit dem laufenden
+	// APP_ENCRYPTION_KEY entschlüsseln ließ. nil: nicht lesbar.
 	SchluesselProbe *repository.SchluesselProbe
 
 	// Anmeldung
 	IMAPHost string
-	// SelbstanmeldeDomain: SELBSTANMELDUNG_DOMAIN — leer heißt, Kollegium muss von Hand
+	// SelbstanmeldeDomain ist SELBSTANMELDUNG_DOMAIN. Leer heißt, das Kollegium muss von Hand
 	// angelegt werden (auth/selbstanmeldung.go).
 	SelbstanmeldeDomain string
 
-	// Aus den Einstellungen (Datenbank, nicht .env — siehe api/system/mail_settings.go)
+	// Aus den Einstellungen in der Datenbank, nicht aus der .env (api/system/mail_settings.go)
 	OeffentlicheAdresse string
 	SMTPHost            string
-	// Die beiden Ausnahmeschalter des Mailversands (mailservice/versand.go), jeweils
-	// „steht auf true". Bis zum 21.09.2026 reichte Compose sie nicht durch; seitdem wirken
-	// sie im Container, und nur der Klartext-Schalter schrieb je eine Logzeile.
+	// Die beiden Ausnahmeschalter des Mailversands (mailservice/versand.go), je „steht auf
+	// true".
 	SMTPUnsicheresTLSErlaubt bool
 	SMTPKlartextErlaubt      bool
 
-	// Bestand: was scripts/seed_demo.sql angelegt hat (Schüler DEMO-S-, Exemplare DEMO-B-).
+	// Was scripts/seed_demo.sql angelegt hat (Schüler DEMO-S-, Exemplare DEMO-B-).
 	DemoSchueler  int
 	DemoExemplare int
 
-	// Lieferanten mit einer Kennung der alten Startdaten (db/seed.go 30.05.–07.09.2026,
-	// Migration 107): Beispiel-Adresse oder Beispiel-Kundennummer. Eine Bestellung an so
-	// einen Eintrag geht wirklich raus — an niemanden. nil: nicht lesbar.
+	// BeispielLieferanten nennt die Lieferanten mit einer Kennung der früheren Startdaten
+	// (Migration 107): Beispiel-Adresse oder Beispiel-Kundennummer. Eine Bestellung an so
+	// einen Eintrag geht wirklich hinaus, an niemanden. nil: nicht lesbar.
 	BeispielLieferanten []string
 
-	// Live-Rechte (role_permissions) als Rolle→Recht→erlaubt. nil heisst: nicht
-	// lesbar — bewusst unterschieden von der leeren Map, denn „leer" würde jede
-	// Vorgabe-Zeile als fehlend melden und die Auskunft in Lärm ertränken.
+	// RechteLive hält die Rechte aus role_permissions als Rolle → Recht → erlaubt. nil heißt
+	// „nicht lesbar"; die leere Map meldete jede Zeile der Vorgabe als fehlend.
 	RechteLive map[string]map[string]bool
 
-	// Aktive Admin-Konten ("Name (mail)"). nil: nicht lesbar.
+	// Aktive Admin-Konten („Name (Mail)"). nil: nicht lesbar.
 	AdminKonten []string
 
-	// Konfigurierte Alarm-Empfaenger (Einstellung alarm_empfaenger, kommasepariert).
-	// Leer = die Kritisch-Alarme gehen an alle aktiven Admin-Konten.
+	// AlarmEmpfaenger ist die Einstellung alarm_empfaenger, durch Komma getrennt. Leer gehen
+	// die Kritisch-Alarme an alle aktiven Admin-Konten.
 	AlarmEmpfaenger string
 
-	// Klassen-Drift (Befund F3): Die Klassennamen verbinden Schüler,
-	// Klassenlehrer-Zuordnung und Bücherlisten nur als übereinstimmender Text —
-	// reißt der Text, meldet nichts einen Fehler, Mahnlisten laufen still leer.
-	// nil heißt jeweils: nicht erhoben (Warnung), leere Liste: alles verbunden.
+	// Die Klassennamen verbinden Schüler, Zuordnung der Klassenleitung und Bücherlisten nur
+	// als gleicher Text; reißt er, meldet nichts einen Fehler, und die Mahnliste läuft leer.
 	KlassenOhneLehrkraft  []string // Klassen bis Jahrgang 10 mit aktiven Schülern, ohne Zuordnungs-Zeile
 	VerwaisteZuordnungen  []string // Zuordnungs-Zeilen ohne aktive Schüler
 	VerwaisteBuecherliste []string // class_books-Klassen ohne aktive Schüler
 
-	// Nächtliches Backup (Ausfallmatrix 20.08.2026, B3): Der Job überspringt sich
-	// still bei fehlendem Key und steht still, wenn der Cron stirbt. Das sah bisher
-	// nur das Dashboard-Badge (api/system/backup_status.go) — die tägliche Kritisch-Alarm-Mail
-	// speist sich aus DIESEN Befunden und blieb stumm. nil LetztesBackup: noch nie
-	// gelaufen. Jetzt ist injiziert, damit die Altersrechnung testbar bleibt.
+	// Das nächtliche Backup überspringt sich ohne Schlüssel und steht still, wenn der
+	// Zeitplan stirbt. Die tägliche Alarm-Mail speist sich aus den Befunden, deshalb steht
+	// hier, was auch das Abzeichen im Rahmen der Anwendung misst (api/system/backup_status.go).
+	// LetztesBackup nil: noch nie gelaufen. Jetzt wird übergeben, damit sich die
+	// Altersrechnung testen lässt.
 	BackupSchluesselGesetzt bool
 	BackupSchluesselSchwach bool
 	LetztesBackup           *time.Time
 	Jetzt                   time.Time
 
-	// Ferientabelle (06.09.2026): Der LMF-Planer belegt den letzten Tag des
-	// Büchertauschs aus den Sommerferien Hessen vor (pkg/lmfplan/sommerferien.go, KMK-
-	// Beschluss in Sechsjahresblöcken, plus die Jahre aus der Einstellung
-	// „Sommerferien"). Läuft die Tabelle aus, steht der Planer ohne Vorgabe da — still.
-	// Das letzte bekannte Jahr, damit die Warnung hier steht, wo sie jemand liest, und
-	// die Abhilfe eine Einstellung ist, nicht ein Programm-Update.
+	// FerientabelleBis ist das letzte Jahr, für das Sommerferien bekannt sind
+	// (pkg/lmfplan/sommerferien.go und die Einstellung „Sommerferien"). Danach belegt der
+	// LMF-Planer den letzten Tag des Büchertauschs nicht mehr vor.
 	FerientabelleBis int
 
-	// Ferien für Leihfristen (24.09.2026): Herbst-, Weihnachts- und Osterferien Hessen
-	// stehen als Tabelle im Programm (pkg/lmfplan/uebrige_ferien.go); eine Leihfrist, die in
-	// sie fällt, rückt auf den nächsten Schultag. Das Jahr, in dem die letzten dieser
-	// Ferien enden — danach rücken die Fristen nur noch über Wochenende, Feiertag und
-	// Sommerferien. Anders als bei den Sommerferien gibt es keine Einstellung dafür.
+	// UebrigeFerienBis ist das Jahr, in dem die letzten bekannten Herbst-, Weihnachts- und
+	// Osterferien enden (pkg/lmfplan/uebrige_ferien.go). Danach rückt eine Leihfrist nur
+	// noch über Wochenende, Feiertag und Sommerferien; eine Einstellung dafür gibt es nicht.
 	UebrigeFerienBis int
 
-	// Restore-Probe (Schema-Erweiterung 21.08.2026): Ob das jüngste Backup
-	// WIEDERHERSTELLBAR ist, beweist wöchentlich jobs.RunRestoreProbe — ein Backup,
-	// das sich nicht einspielen lässt, ist exakt so viel wert wie keins. nil: noch
-	// nie gelaufen (oder Ergebnis nicht lesbar).
+	// RestoreProbe ist das Ergebnis der wöchentlichen Probe, ob sich das jüngste Backup
+	// einspielen lässt (jobs/restore_probe.go). nil: noch nie gelaufen oder nicht lesbar.
 	RestoreProbe *jobs.RestoreProbeErgebnis
 
-	// DSGVO-Löschroutinen: je eine Zeile pro Routine mit der Anzahl überfälliger, nicht
-	// gelöschter Datensätze. nil heißt „nicht erhoben" (Warnung) — bewusst unterschieden
-	// von der leeren Liste, die „geprüft, nichts überfällig" bedeutet.
-	//
-	// Bis zum 23.08.2026 stand hier ein einzelner Zähler für die Anonymisierung: EINE
-	// Routine. Die endgültige Abgänger-Löschung, die Befristung der Lesehistorie, die der
-	// Anliegen und die Aufbewahrung des Protokolls liefen jede Nacht unbeobachtet — und keine von ihnen
-	// hatte zu diesem Zeitpunkt jemals auch nur eine Zeile gelöscht (das Projekt war 86
-	// Tage alt, die kürzeste Frist 90 Tage). Der erste echte Löschvorgang stand noch
-	// bevor; ein stiller Fehlschlag wäre erst aufgefallen, wenn jemand fragt, warum
-	// Daten von vor zwei Jahren noch da sind.
+	// LoeschRueckstand nennt je Löschroutine die Datensätze, die seit mindestens einem Tag
+	// gelöscht sein müssten. Ein stiller Fehlschlag fiele sonst erst auf, wenn jemand fragt,
+	// warum Daten von vor zwei Jahren noch da sind.
 	LoeschRueckstand []repository.LoeschRueckstand
 
-	// Ehemalige mit offenen Vorgängen seit mehr als einem Jahr (Register 05.09.2026,
-	// Entscheidung 1): Ein offenes Buch oder eine unbezahlte Forderung schützt den
-	// Datensatz vor Anonymisierung und Löschung — richtig, solange jemand mahnt oder
-	// abrechnet. Schließt niemand den Vorgang, bleibt Name und Anschrift auf Dauer, und
-	// keine Routine meldet es. nil: nicht erhoben.
+	// EhemaligeMitOffenenVorgaengen zählt Ehemalige, deren offenes Buch oder unbezahlte
+	// Forderung seit mehr als einem Jahr besteht. Der offene Vorgang schützt Name und
+	// Anschrift vor Anonymisierung und Löschung, und keine Routine meldet es.
 	EhemaligeMitOffenenVorgaengen *int
 
-	// Schadensersatz-Bescheid (11.09.2026): die Pflichtangaben, die noch fehlen — aus
-	// derselben Funktion, mit der die Bescheid-Tür abweist (BescheidAngaben.FehlendeAngaben).
-	// Ohne diese Zeile fiel die Lücke erst auf, wenn ein Bescheid gebraucht wurde.
-	// nil: nicht erhoben; leere Liste: alles da.
+	// BescheidFehlend nennt die Pflichtangaben, ohne die die Tür einen Schadensersatz-Bescheid
+	// abweist, aus derselben Funktion (BescheidAngaben.FehlendeAngaben).
 	BescheidFehlend []string
 
-	// Nachbuch-Meldungen (Migration 117), die seit mehr als 14 Tagen niemand quittiert
-	// hat: Abweichungen zwischen Offline-Scan und Wirklichkeit, die jemand ansehen muss.
-	// nil: nicht erhoben.
+	// NachbuchMeldungenOffen zählt die Nachbuch-Meldungen der Theke, die seit mehr als 14
+	// Tagen niemand quittiert hat: Abweichungen zwischen Offline-Scan und Wirklichkeit.
 	NachbuchMeldungenOffen *int
 }
 
@@ -183,7 +159,7 @@ func IstEchterBetrieb(umgebung string) bool {
 	return true
 }
 
-// Pruefe wendet alle Regeln auf eine Lage an. Reine Funktion, keine Seiteneffekte.
+// Pruefe wendet alle Regeln auf eine Lage an und liefert je Bereich einen Befund.
 func Pruefe(l Lage) []Befund {
 	echt := IstEchterBetrieb(l.Umgebung)
 

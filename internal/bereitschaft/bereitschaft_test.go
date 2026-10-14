@@ -10,10 +10,8 @@ import (
 	"bibliothek/repository"
 )
 
-// Eine Lage, in der ALLES eingerichtet ist. Ausgangspunkt aller Fälle unten: Jeder Test
-// nimmt genau eine Sache weg und prüft, dass genau diese eine gemeldet wird.
-// Fester Bezugspunkt statt time.Now(): Die Altersrechnung des Backup-Befundes soll im
-// Test nicht an der Wanduhr hängen.
+// testJetzt ist der feste Bezugspunkt statt time.Now(): Die Altersrechnung des Backups soll
+// im Test nicht an der Wanduhr hängen.
 var testJetzt = time.Date(2026, 8, 20, 12, 0, 0, 0, time.UTC)
 
 // vorStunden liefert einen Zeitpunkt n Stunden vor testJetzt.
@@ -22,6 +20,8 @@ func vorStunden(n int) *time.Time {
 	return &ts
 }
 
+// lageEingerichtet liefert eine Lage, in der alles eingerichtet ist. Jeder Fall unten nimmt
+// genau eine Sache weg und prüft, dass genau diese gemeldet wird.
 func lageEingerichtet() Lage {
 	return Lage{
 		Umgebung:              "production",
@@ -38,15 +38,15 @@ func lageEingerichtet() Lage {
 		SMTPHost:              "srv1.philipp-reis-schule.de",
 		DemoSchueler:          0,
 		DemoExemplare:         0,
-		// Lieferanten: erhoben, keiner trägt eine Kennung des alten Seeds.
+		// Lieferanten: erhoben, keiner trägt eine Kennung der früheren Startdaten.
 		BeispielLieferanten: []string{},
 		RechteLive:          rechteWieVorgabe(),
 		AdminKonten:         []string{"Nina Berger (nberger@philipp-reis-schule.de)"},
-		// Klassen-Drift (F3): erhoben und leer = alles verbunden.
+		// Klassen: erhoben und leer, also alles verbunden.
 		KlassenOhneLehrkraft:  []string{},
 		VerwaisteZuordnungen:  []string{},
 		VerwaisteBuecherliste: []string{},
-		// Nächtliches Backup (B3): Key stark, letzter Lauf heute Nacht.
+		// Nächtliches Backup: Schlüssel stark, letzter Lauf heute Nacht.
 		BackupSchluesselGesetzt: true,
 		BackupSchluesselSchwach: false,
 		LetztesBackup:           vorStunden(10),
@@ -56,7 +56,7 @@ func lageEingerichtet() Lage {
 			Zeitpunkt: *vorStunden(3 * 24), Erfolg: true,
 			BackupDatei: "backup_2026-08-17T023000Z.sql.gz.enc", Tabellen: 31,
 		},
-		// DSGVO-Löschroutinen: alle erhoben, nichts überfällig, keine Frist auf 0.
+		// Löschroutinen: alle erhoben, nichts überfällig, keine Frist auf 0.
 		LoeschRueckstand: rueckstandSauber(),
 		// Ehemalige mit offenen Vorgängen: erhoben, keiner.
 		EhemaligeMitOffenenVorgaengen: zahl(0),
@@ -76,9 +76,8 @@ func lageEingerichtet() Lage {
 // zahl liefert einen Zeiger auf n — für die „erhoben"-Felder der Lage.
 func zahl(n int) *int { return &n }
 
-// rechteWieVorgabe baut die Live-Rechte deckungsgleich zur Code-Vorgabe — der
-// Ausgangspunkt „keine Drift". Jeder Rechte-Testfall verstellt davon ausgehend
-// genau eine Zeile.
+// rechteWieVorgabe baut die Rechte der Datenbank genau wie die Vorgabe im Code. Jeder Fall
+// zu den Rechten verstellt davon ausgehend genau eine Zeile.
 func rechteWieVorgabe() map[string]map[string]bool {
 	live := map[string]map[string]bool{}
 	for _, v := range db.RechteVorgabe {
@@ -109,10 +108,8 @@ func bereiche(befunde []Befund) []string {
 	return out
 }
 
-// Die Gegenprobe zuerst: Ist alles eingerichtet, darf NICHTS gemeldet werden.
-//
-// Ohne sie wäre ein Wächter, der immer meckert, von einem, der richtig meckert, nicht zu
-// unterscheiden — und ein Wächter, der immer rot ist, wird abgeschaltet statt gelesen.
+// Die Gegenprobe zuerst: Ist alles eingerichtet, wird nichts gemeldet. Ohne sie wäre ein
+// Wächter, der immer meldet, von einem, der richtig meldet, nicht zu unterscheiden.
 func TestBetriebsbereitschaft_EingerichteteAnlageIstStill(t *testing.T) {
 	for _, b := range Pruefe(lageEingerichtet()) {
 		if b.Stufe != StufeOK {
@@ -127,8 +124,8 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 		aendere func(*Lage)
 		bereich string
 		stufe   string
-		// Ein Wort, das im Befund oder in der Abhilfe vorkommen MUSS. Verhindert, dass
-		// eine Meldung zwar die richtige Stufe trägt, aber von etwas anderem spricht.
+		// Ein Wort, das im Befund oder in der Abhilfe vorkommen muss, damit eine Meldung
+		// mit der richtigen Stufe nicht von etwas anderem spricht.
 		enthaelt string
 	}{
 		{
@@ -270,7 +267,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			enthaelt: "2000",
 		},
 		{
-			// Halber Cleanup: Schüler weg, Exemplare noch da — bis 07.09.2026 grün.
+			// Halb aufgeräumt: Schüler weg, Exemplare noch da.
 			name:     "Demo-Exemplare ohne Demo-Schüler",
 			aendere:  func(l *Lage) { l.DemoExemplare = 300 },
 			bereich:  "Demo-Daten",
@@ -278,7 +275,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			enthaelt: "300 Demo-Exemplare",
 		},
 		{
-			// Die alten Startdaten: Bestellung geht raus, Bücher kommen nie.
+			// Die früheren Startdaten: Die Bestellung geht hinaus, Bücher kommen nie.
 			name:     "Beispiel-Lieferant im Bestand",
 			aendere:  func(l *Lage) { l.BeispielLieferanten = []string{"Klett Verlag"} },
 			bereich:  "Lieferanten",
@@ -293,8 +290,8 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			enthaelt: "nicht geprüft",
 		},
 		{
-			// Die Kollegium-Wunde: Der Seed fasst bestehende Zeilen nie an — ein im
-			// Code geänderter Wert erreicht die Anlage nicht, die Live-Zeile bleibt.
+			// Der Seed fasst bestehende Zeilen nie an: Ein im Code geänderter Wert erreicht
+			// die Anlage nicht, die Zeile in der Datenbank bleibt.
 			name:     "Rechte-Wert weicht von der Vorgabe ab",
 			aendere:  func(l *Lage) { l.RechteLive["HELFER"]["view_students"] = true },
 			bereich:  "Rechte-Vorgabe",
@@ -309,8 +306,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			enthaelt: "ADMIN/manage_users fehlt live",
 		},
 		{
-			// Reste alter Vokabulare — etwa eine umbenannte Rolle, deren Zeilen die
-			// Migration nicht mitnahm.
+			// Eine umbenannte Rolle, deren Zeilen die Migration nicht mitnahm.
 			name:     "verwaiste Live-Zeile",
 			aendere:  func(l *Lage) { l.RechteLive["LEHRER"] = map[string]bool{"view_books": true} },
 			bereich:  "Rechte-Vorgabe",
@@ -325,8 +321,8 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			enthaelt: "nicht gelesen",
 		},
 		{
-			// Ohne aktiven Admin erreichen die Kritisch-Alarme niemanden — und
-			// niemand kann das System verwalten.
+			// Ohne aktiven Admin erreichen die Kritisch-Alarme niemanden, und niemand kann
+			// das System verwalten.
 			name:     "kein aktives Admin-Konto",
 			aendere:  func(l *Lage) { l.AdminKonten = []string{} },
 			bereich:  "Admin-Konten",
@@ -340,9 +336,8 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			stufe:    StufeWarnung,
 			enthaelt: "nicht gelesen",
 		},
-		// Nächtliches Backup (Ausfallmatrix 20.08.2026, B3): Erst mit diesen Befunden
-		// erreicht ein stehender Backup-Job die tägliche Kritisch-Alarm-Mail — vorher
-		// sah ihn nur das Dashboard-Badge, und nur, wer die Seite öffnete.
+		// Nächtliches Backup: Mit diesen Befunden erreicht ein stehender Backup-Job die
+		// tägliche Alarm-Mail.
 		{
 			name:     "Backup-Key fehlt",
 			aendere:  func(l *Lage) { l.BackupSchluesselGesetzt = false },
@@ -378,9 +373,8 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			stufe:    StufeWarnung,
 			enthaelt: "zu kurz",
 		},
-		// Restore-Probe (Schema-Erweiterung 21.08.2026): Ein Backup, das sich nicht
-		// einspielen lässt, ist so viel wert wie keins — und ohne diese Befunde
-		// erführe das niemand vor dem Ernstfall.
+		// Restore-Probe: Ein Backup, das sich nicht einspielen lässt, ist so viel wert wie
+		// keins, und ohne diese Befunde erführe das niemand vor dem Ernstfall.
 		{
 			name:     "Restore-Probe nie gelaufen",
 			aendere:  func(l *Lage) { l.RestoreProbe = nil },
@@ -436,8 +430,8 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 				t.Errorf("%s meldet einen Mangel, sagt aber nicht, warum er zählt", b.Bereich)
 			}
 
-			// Und die anderen Bereiche bleiben still: Ein Wächter, bei dem eine fehlende
-			// Einstellung fünf Meldungen auslöst, ist nicht zu gebrauchen.
+			// Die anderen Bereiche bleiben still: Löst eine fehlende Einstellung fünf
+			// Meldungen aus, ist der Wächter nicht zu gebrauchen.
 			for _, andere := range befunde {
 				if andere.Bereich != f.bereich && andere.Stufe != StufeOK {
 					t.Errorf("Nebenwirkung: %s meldet %q, obwohl nur %q verstellt wurde",
@@ -448,8 +442,8 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 	}
 }
 
-// Auf dem Entwicklungsrechner sind mock-Anmeldung und Beispiel-Geheimnisse RICHTIG.
-// Meldete die Prüfung sie dort als Mangel, wäre sie dauerhaft rot — und damit wertlos.
+// Auf dem Entwicklungsrechner sind mock-Anmeldung und Beispiel-Geheimnisse richtig. Meldete
+// die Prüfung sie dort als Mangel, wäre sie dauerhaft rot und damit wertlos.
 func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
 	for _, env := range []string{"local", "development", "test"} {
 		l := lageEingerichtet()
@@ -458,8 +452,7 @@ func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
 		l.JWTGeheimnis = "super-secret-default-key-at-least-32-bytes"
 		l.Schluessel = "super-secure-aes-key-32-chars-ok"
 		l.GeheimnisSchutzScharf = false
-		// Auf dem Entwicklungsrechner gibt es weder Key noch Backup-Dateien —
-		// dauerhaft rot wäre der Wächter wertlos.
+		// Auf dem Entwicklungsrechner gibt es weder Schlüssel noch Backup-Dateien.
 		l.BackupSchluesselGesetzt = false
 		l.LetztesBackup = nil
 
@@ -472,8 +465,8 @@ func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
 	}
 }
 
-// rueckstandSauber: alle Routinen erhoben, keine überfällige Zeile, keine Frist auf 0 —
-// der Ausgangspunkt „die Nacht hat getan, was sie soll".
+// rueckstandSauber liefert den Rückstand einer Nacht, die getan hat, was sie soll: alle
+// Routinen erhoben, keine überfällige Zeile, keine Frist auf 0.
 func rueckstandSauber() []repository.LoeschRueckstand {
 	return []repository.LoeschRueckstand{
 		{Routine: "Schüler-Anonymisierung", Frist: "180 Tage (gelöscht) / 360 Tage (Abgänger)"},

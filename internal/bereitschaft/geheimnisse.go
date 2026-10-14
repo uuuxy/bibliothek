@@ -2,26 +2,17 @@ package bereitschaft
 
 import "strings"
 
-// IstBeispielGeheimnis meldet, ob ein Wert eines der mitgelieferten
-// Beispiel-Geheimnisse ist.
-//
-// Die Liste stand bis zum 11.08.2026 fest verdrahtet in main.go. Sie hier ein zweites Mal
-// aufzuschreiben hätte genau die Fehlerart erzeugt, gegen die diese Datei antritt: zwei
-// Listen, die auseinanderlaufen, und eine Selbstprüfung, die „alles gut" meldet, während
-// der Server aus demselben Grund den Start verweigert.
+// IstBeispielGeheimnis meldet, ob ein Wert eines der mitgelieferten Beispiel-Geheimnisse
+// ist. Der Start (main.go) und die Selbstprüfung fragen dieselbe Liste; zwei Listen liefen
+// auseinander, und die Seite meldete „alles gut", während der Server den Start verweigert.
 func IstBeispielGeheimnis(wert string) bool {
 	switch wert {
 	case "super-secret-default-key-at-least-32-bytes", // Default aus docker-compose.yml (JWT)
 		"super-secure-aes-key-32-chars-ok", // Default aus docker-compose.yml (AES)
 		"supergeheim_lokal",
-		// Platzhalter aus .env.example (07.09.2026, Sicherheits-Audit): Wer die Datei
-		// nach .env kopiert und nur die per docker-compose `:?` erzwungenen Werte
-		// (POSTGRES_PASSWORD, IMAP_HOST) setzt, ließ diese beiden unverändert — und der
-		// Server startete mit APP_ENV=production trotz scharfem ENFORCE_PROD_SECRETS,
-		// weil der Wächter genau die im Repository lesbaren Beispielwerte nicht kannte.
-		// Beide erfüllen zugleich die Längenprüfung, fielen also durch jede andere
-		// Schranke. Die Selbstprüfung nutzt dieselbe Liste (betriebsbereitschaft_handler),
-		// meldete die Absicherung also fälschlich als „scharf".
+		// Die Platzhalter aus .env.example: Wer die Datei nach .env kopiert und nur die
+		// Werte setzt, die docker-compose mit `:?` verlangt, behält diese beiden. Sie
+		// erfüllen die Längenprüfung und fallen durch keine andere Schranke.
 		"super-secret-key-that-is-at-least-32-bytes-long", // .env.example JWT_SECRET
 		"your-32-character-encryption-key":                // .env.example APP_ENCRYPTION_KEY
 		return true
@@ -34,10 +25,9 @@ func IstBeispielGeheimnis(wert string) bool {
 // meldet (pruefeGeheimnisse). Eine Funktion für beide, sonst sagt die Seite „scharf", während
 // der Server aus demselben Grund durchstartet.
 //
-// Die Vorgabe ist an: Mit „aus, solange niemand ENFORCE_PROD_SECRETS=true schreibt" liefe der
-// Schulserver nach einer vergessenen Zeile in der .env mit dem JWT-Schlüssel aus dem
-// Repository, und Admin-Sitzungen wären fälschbar, ohne dass etwas rot würde. Aus ist sie nur,
-// wenn
+// Die Vorgabe ist an, weil sonst eine vergessene Zeile in der .env genügte, damit der
+// Schulserver mit dem JWT-Schlüssel aus dem Repository läuft und Admin-Sitzungen fälschbar
+// sind. Aus ist sie nur, wenn
 //
 //   - die Umgebung eine Spielwiese ist (APP_ENV=local/development/test) und die Variable nicht
 //     gesetzt ist: Dort sind die Beispielwerte die richtigen Werte; oder
@@ -87,13 +77,11 @@ func pruefeGeheimnisse(l Lage, echt bool) Befund {
 	return b
 }
 
-// pruefeSchluesselPasstZumBestand: Passt APP_ENCRYPTION_KEY zu dem, was in der Datenbank
-// verschlüsselt liegt? Der Fall dahinter ist die Wiederherstellung auf einem neuen Server:
-// Die Sicherung bringt die Daten zurück, die .env nicht — sie steht in keiner Sicherung.
-// Mit einem neuen Schlüssel startet das System ohne Meldung, und gemerkt wird es erst am
-// leeren Schülerfoto oder an der Mahnmail, die nicht rausgeht.
-//
-// Kritisch ohne Blick auf APP_ENV: Ein unlesbarer Bestand ist auf jedem System ein Fehler.
+// pruefeSchluesselPasstZumBestand fragt, ob APP_ENCRYPTION_KEY zu dem passt, was in der
+// Datenbank verschlüsselt liegt. Nach einer Wiederherstellung auf einem neuen Server bringt
+// die Sicherung die Daten zurück, aber nicht die .env; mit einem neuen Schlüssel startet das
+// System ohne Meldung, und gemerkt wird es erst am leeren Schülerfoto. Kritisch in jeder
+// Umgebung, weil ein unlesbarer Bestand überall ein Fehler ist.
 func pruefeSchluesselPasstZumBestand(l Lage) Befund {
 	b := Befund{Bereich: "Schlüssel und Bestand"}
 	switch {

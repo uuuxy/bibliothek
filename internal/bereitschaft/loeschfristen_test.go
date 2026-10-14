@@ -5,9 +5,8 @@ import (
 	"testing"
 )
 
-// Prüfung 22.08.2026: Die DSGVO-Anonymisierung lief zweimal monatelang ins Leere; nur eine
-// Logzeile wusste es. Jetzt urteilt die Selbstprüfung über den ZUSTAND — seit dem
-// 23.08.2026 über den ALLER Löschroutinen, nicht nur der Anonymisierung.
+// Die Selbstprüfung urteilt über den Rückstand aller Löschroutinen, weil eine Routine, die
+// ins Leere läuft, nur eine Logzeile hinterlässt.
 func TestPruefeLoeschroutinen(t *testing.T) {
 	t.Run("nicht erhoben ist eine Warnung, kein OK", func(t *testing.T) {
 		if b := pruefeLoeschroutinen(Lage{LoeschRueckstand: nil}); b.Stufe != StufeWarnung {
@@ -22,8 +21,7 @@ func TestPruefeLoeschroutinen(t *testing.T) {
 		}
 	})
 
-	// Der eigentliche Zugewinn: JEDE Routine muss den Alarm allein auslösen können.
-	// Vorher konnte das nur die Anonymisierung — die anderen liefen unbeobachtet.
+	// Jede Routine muss den Alarm allein auslösen können.
 	for i, r := range rueckstandSauber() {
 		t.Run("überfällig: "+r.Routine, func(t *testing.T) {
 			stand := rueckstandSauber()
@@ -50,8 +48,8 @@ func TestPruefeLoeschroutinen(t *testing.T) {
 		}
 	})
 
-	// Rangfolge: Ein echter Rückstand darf nicht von einer abgeschalteten Frist
-	// verdeckt werden — sonst meldete die Seite „Warnung", während Daten stehen bleiben.
+	// Ein echter Rückstand darf nicht von einer abgeschalteten Frist verdeckt werden, sonst
+	// meldete die Seite „Warnung", während Daten stehen bleiben.
 	t.Run("Rückstand schlägt abgeschaltete Frist", func(t *testing.T) {
 		stand := rueckstandSauber()
 		stand[2].Aus = true
