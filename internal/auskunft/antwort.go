@@ -13,7 +13,7 @@ import (
 
 // Stammdaten sind alle im Leserdatensatz gespeicherten Stammdaten, auch der Zeitpunkt des
 // Löschens und der Sperrgrund: Die Auskunft nennt alles, was gespeichert ist
-// (api.TestDSGVOAuskunft_KenntJedeLeserSpalte hält jede Spalte von leser dagegen). Die Felder
+// (TestDSGVOAuskunft_KenntJedeLeserSpalte in repository hält jede Spalte von leser dagegen). Die Felder
 // stehen in der Reihenfolge von repository.DSGVOStammdatenZeile, sonst greift die Typumwandlung
 // der Tür nicht.
 type Stammdaten struct {

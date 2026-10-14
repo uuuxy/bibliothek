@@ -367,7 +367,7 @@ func dsgvoDatum(t time.Time) string {
 	return t.In(schulzeit.Zone()).Format(dsgvoDatumFormat)
 }
 
-// dsgvoZeitOderStrich: Zeitpunkt oder Strich — wie dsgvoStrPtr für Texte.
+// dsgvoZeitOderStrich liefert den Zeitpunkt oder einen Strich, wie dsgvoTextOderStrich für Texte.
 func dsgvoZeitOderStrich(t *time.Time) string {
 	if t == nil {
 		return "—"

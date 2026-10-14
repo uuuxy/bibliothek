@@ -16,10 +16,10 @@ import (
 // Die gedruckte Auskunft enthält, was die abgerufene enthält: Die Person bekommt das PDF, nicht
 // das JSON.
 //
-// Das Gate hängt am Merkmal, nicht an einer Liste: Es füllt jedes Feld der Auskunft
+// Die Prüfung hängt am Merkmal, nicht an einer Liste: Es füllt jedes Feld der Auskunft
 // (Antwort, per Reflexion) mit einem eigenen Prüfwert, erzeugt daraus das PDF
 // und verlangt jeden Wert auf dem Blatt. Ein neues Feld oder ein neuer Teil der Auskunft ist
-// damit geprüft, ohne dass jemand dieses Gate anfasst.
+// damit geprüft, ohne dass jemand diese Prüfung anfasst.
 //
 // Zeitpunkte prüft es am Datum (TT.MM.JJJJ) in der Schulzeitzone: Jeder liegt auf 23:30 UTC,
 // in Berlin also schon am nächsten Tag. Ein Abschnitt, der die Zone des Servers druckt (der
@@ -37,9 +37,9 @@ func TestBlatt_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 	var a Antwort
 	w := &pruefwerte{pfade: map[string]bool{}}
 	w.fuelle(t, reflect.ValueOf(&a).Elem(), "")
-	// Selbstprobe: Läuft die Reflexion künftig leer, soll das Gate auffallen.
+	// Selbstprobe: Läuft die Reflexion künftig leer, soll die Prüfung auffallen.
 	if len(w.erwartet) < 50 {
-		t.Fatalf("Liveness: nur %d Angaben in der Auskunft gefunden", len(w.erwartet))
+		t.Fatalf("Nicht-leer-Garantie: nur %d Angaben in der Auskunft gefunden", len(w.erwartet))
 	}
 
 	roh, err := ErzeugeBlatt(a, pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
@@ -48,7 +48,7 @@ func TestBlatt_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 	}
 	blatt := strings.Join(pdftest.Texte(t, roh), "\n")
 	if !strings.Contains(blatt, "Stammdaten") {
-		t.Fatal("Liveness: der Leser findet nicht einmal die Überschrift „Stammdaten“")
+		t.Fatal("Nicht-leer-Garantie: der Leser findet nicht einmal die Überschrift „Stammdaten“")
 	}
 
 	for _, e := range w.erwartet {
@@ -123,7 +123,7 @@ func (w *pruefwerte) fuelle(t *testing.T, v reflect.Value, pfad string) {
 	case v.Kind() == reflect.Bool:
 		v.SetBool(true) // Blindheit, siehe oben
 	default:
-		t.Fatalf("%s: den Typ %s kennt das Gate nicht — in fuelle ergänzen", pfad, v.Type())
+		t.Fatalf("%s: den Typ %s kennt die Prüfung nicht — in fuelle ergänzen", pfad, v.Type())
 	}
 }
 

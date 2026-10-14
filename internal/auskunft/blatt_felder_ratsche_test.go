@@ -9,11 +9,11 @@ import (
 )
 
 // Das dritte Glied der Kette von der Spalte in leser über das Feld in Stammdaten zur Zeile
-// auf dem Blatt. Das erste hält api.TestDSGVOAuskunft_KenntJedeLeserSpalte, das zweite der
-// Compiler. Der Abschnitt der Stammdaten zählt seine Zeilen von Hand auf: Ohne dieses Gate
+// auf dem Blatt. Das erste hält TestDSGVOAuskunft_KenntJedeLeserSpalte in repository, das zweite der
+// Compiler. Der Abschnitt der Stammdaten zählt seine Zeilen von Hand auf: Ohne diese Prüfung
 // fehlt ein neues Feld auf dem Blatt, und die gedruckte Auskunft ist kürzer als die abgerufene.
 //
-// Das Gate liest den Quelltext von blatt.go, weil es prüft, was dort von Hand steht. Es
+// Die Prüfung liest den Quelltext von blatt.go, weil sie prüft, was dort von Hand steht. Sie
 // verlangt, dass ein Feld gedruckt wird; wie, ist Sache des Abschnitts.
 func TestBlatt_DrucktJedesStammdatenfeld(t *testing.T) {
 	// Ausnahmen: Feld → Begründung. Leer, weil jedes Feld eine gespeicherte Angabe über die
@@ -25,14 +25,14 @@ func TestBlatt_DrucktJedesStammdatenfeld(t *testing.T) {
 		t.Fatalf("blatt.go lesen: %v", err)
 	}
 	// Nicht-leer-Garantie: Liest die Datei sich künftig anders (umbenannt, aufgeteilt),
-	// soll das Gate auffallen und nicht stumm alles durchlassen.
+	// soll die Prüfung auffallen und nicht stumm alles durchlassen.
 	if !strings.Contains(string(quelle), "dsgvoStammdatenAbschnitt") {
-		t.Fatal("Liveness: blatt.go enthält keinen Stammdaten-Abschnitt mehr — Gate zeigt ins Leere")
+		t.Fatal("Nicht-leer-Garantie: blatt.go enthält keinen Stammdaten-Abschnitt mehr, die Prüfung zeigt ins Leere")
 	}
 
 	felder := reflect.TypeOf(Stammdaten{})
 	if felder.NumField() < 20 {
-		t.Fatalf("Liveness: nur %d Felder in Stammdaten", felder.NumField())
+		t.Fatalf("Nicht-leer-Garantie: nur %d Felder in Stammdaten", felder.NumField())
 	}
 	for i := 0; i < felder.NumField(); i++ {
 		name := felder.Field(i).Name
