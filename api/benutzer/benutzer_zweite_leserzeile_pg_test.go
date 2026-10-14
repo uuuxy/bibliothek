@@ -23,7 +23,7 @@ import (
 // Repariert wurde das mit „Zusammenführen"; entstehen soll es gar nicht. Der Weg zum
 // Konto an einer vorhandenen Leserzeile ist die Schul-E-Mail in der Akte
 // (LegeKollegiumskontoAn) — dorthin verweist die Antwort.
-func TestBenutzerAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
+func TestKontoAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -46,7 +46,7 @@ func TestBenutzerAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, admin))
 		rec := httptest.NewRecorder()
-		srv.CreateUserHandler(userRepo).ServeHTTP(rec, req)
+		srv.KontoAnlegen(userRepo).ServeHTTP(rec, req)
 		return rec
 	}
 	zaehleLeser := func(t *testing.T, nachname string) int {

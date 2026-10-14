@@ -19,7 +19,7 @@ import (
 // Was das Löschen eines Zugangskontos ablehnt, über die Tür: das eigene Konto, das Konto
 // eines Administrators durch jemanden ohne Adminrechte, ein Konto mit offenen Ausleihen und
 // eine unbekannte Kennung. Jede Ablehnung lässt das Konto stehen; erst der letzte Fall löscht.
-func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
+func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -56,7 +56,7 @@ func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 		}
 		rec := httptest.NewRecorder()
-		srv.DeleteUserHandler(auditRepo, userRepo)(rec, req)
+		srv.KontoLoeschen(auditRepo, userRepo)(rec, req)
 		return rec
 	}
 	alsAdmin := &auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}
@@ -97,7 +97,7 @@ func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 
 // Ein Konto zu ändern, das es nicht gibt, ist ein 404 und hinterlässt keinen Eintrag im
 // Protokoll: Der Eintrag beschriebe eine Änderung, die nie stattfand.
-func TestBenutzerAendern_UnbekannteKennungOhneProtokoll(t *testing.T) {
+func TestKontoAendern_UnbekannteKennungOhneProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -117,7 +117,7 @@ func TestBenutzerAendern_UnbekannteKennungOhneProtokoll(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.UpdateUserHandler(repository.NewKontoAbfragen(pool))(rec, req)
+	srv.KontoAendern(repository.NewKontoAbfragen(pool))(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())

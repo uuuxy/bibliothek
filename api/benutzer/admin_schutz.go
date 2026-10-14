@@ -38,10 +38,10 @@ func istAdminRolle(rolle string) bool {
 	return strings.EqualFold(strings.TrimSpace(rolle), string(auth.RoleAdmin))
 }
 
-// aufruferIstAdmin liest die Rolle des Aufrufers aus den Claims. Die stammt aus der
+// istAufruferAdmin liest die Rolle des Aufrufers aus den Claims. Die stammt aus der
 // Datenbank, nicht aus dem signierten Token — auth.VerifyToken überschreibt sie bei
 // jeder Anfrage, eine Herabstufung wirkt also sofort.
-func aufruferIstAdmin(r *http.Request) bool {
+func istAufruferAdmin(r *http.Request) bool {
 	claims, ok := auth.GetClaims(r.Context())
 	return ok && istAdminRolle(string(claims.Rolle))
 }
@@ -49,7 +49,7 @@ func aufruferIstAdmin(r *http.Request) bool {
 // pruefeAdminVergabe verlangt Administratorrechte, wenn die gewünschte Rolle "admin"
 // ist. Bei Verstoß wird die HTTP-Antwort geschrieben und false geliefert.
 func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle string) bool {
-	if !istAdminRolle(gewuenschteRolle) || aufruferIstAdmin(r) {
+	if !istAdminRolle(gewuenschteRolle) || istAufruferAdmin(r) {
 		return true
 	}
 	apierrors.SendHTTPError(w, http.StatusForbidden,
@@ -60,11 +60,11 @@ func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle
 // pruefeAdminZiel verlangt Administratorrechte, wenn das Ziel HEUTE ein Administrator
 // ist — unabhängig davon, welches Feld geändert werden soll. Ein unbekanntes Ziel
 // (kein Treffer) lässt die Prüfung passieren; darüber entscheidet der Handler.
-func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request, userRepo repository.KontoAbfragen, id string) bool {
-	if aufruferIstAdmin(r) {
+func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen, id string) bool {
+	if istAufruferAdmin(r) {
 		return true
 	}
-	rolle, err := userRepo.LadeRolle(ctx, id)
+	rolle, err := kontoAbfragen.LadeRolle(ctx, id)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false

@@ -15,7 +15,7 @@ import (
 	"bibliothek/repository"
 )
 
-// TestListUsersLiefertEchteRechte sichert Audit-Punkt 8 ab.
+// TestKonten_LiefernEchteRechte sichert Audit-Punkt 8 ab.
 //
 // GET /api/benutzer meldete die Rechte aus einer hartkodierten Liste, die sich
 // "analog zum Login" nannte, es aber nicht war: Sie nannte manage_settings,
@@ -25,7 +25,7 @@ import (
 //
 // Der Test prueft beides: dass die erfundenen Namen verschwunden sind UND dass ein
 // tatsaechlich vergebenes Recht ankommt.
-func TestListUsersLiefertEchteRechte(t *testing.T) {
+func TestKonten_LiefernEchteRechte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -68,18 +68,18 @@ func TestListUsersLiefertEchteRechte(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	srv.ListUsersHandler(repository.NewKontoAbfragen(pool)).
+	srv.Konten(repository.NewKontoAbfragen(pool)).
 		ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/benutzer", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, Koerper: %s", rec.Code, rec.Body.String())
 	}
 
-	var benutzer []UserResponse
+	var benutzer []kontoAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &benutzer); err != nil {
 		t.Fatalf("Antwort unlesbar: %v", err)
 	}
 
-	var unserer *UserResponse
+	var unserer *kontoAntwort
 	for i := range benutzer {
 		if benutzer[i].Email == email {
 			unserer = &benutzer[i]
@@ -92,7 +92,7 @@ func TestListUsersLiefertEchteRechte(t *testing.T) {
 	// Die erfundenen Namen duerfen nirgends mehr auftauchen — bei KEINEM Benutzer.
 	erfunden := map[string]bool{"manage_settings": true, "print_classes": true, "view_media": true}
 	for _, b := range benutzer {
-		for _, p := range b.Permissions {
+		for _, p := range b.Rechte {
 			if erfunden[p] {
 				t.Errorf("erfundenes Recht %q in der Benutzerliste (Rolle %s)", p, b.Rolle)
 			}
@@ -100,8 +100,8 @@ func TestListUsersLiefertEchteRechte(t *testing.T) {
 	}
 
 	// Und das echte Recht muss ankommen.
-	if !enthaelt(unserer.Permissions, "view_books") {
-		t.Errorf("echtes Recht view_books fehlt, geliefert wurde: %v", unserer.Permissions)
+	if !enthaelt(unserer.Rechte, "view_books") {
+		t.Errorf("echtes Recht view_books fehlt, geliefert wurde: %v", unserer.Rechte)
 	}
 }
 

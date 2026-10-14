@@ -15,7 +15,7 @@ import (
 // Anlegen und Ändern nichts zu tun haben: kein Selbstlöschen, keine Admin-Konten ohne
 // Adminrechte, und aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Fehler.
 
-// DeleteUserHandler deletes a user and logs it in the audit log.
+// KontoLoeschen deletes a user and logs it in the audit log.
 // @Summary      Delete user
 // @Description  Deletes a system user by their ID and registers the deletion in the audit log.
 // @Tags         admin
@@ -27,15 +27,15 @@ import (
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer/{id} [delete]
-func (s *Tueren) DeleteUserHandler(auditRepo repository.ProtokollAbfragen, userRepo repository.KontoAbfragen) http.HandlerFunc {
+func (t *Tueren) KontoLoeschen(protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.handleDeleteUser(w, r, auditRepo, userRepo)
+		t.loescheKonto(w, r, protokollAbfragen, kontoAbfragen)
 	}
 }
 
-// handleDeleteUser prüft, ob das Konto gelöscht werden darf, und ordnet die Ablehnungen des
+// loescheKonto prüft, ob das Konto gelöscht werden darf, und ordnet die Ablehnungen des
 // Löschens ein.
-func (s *Tueren) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen, userRepo repository.KontoAbfragen) {
+func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen repository.KontoAbfragen) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
@@ -58,11 +58,11 @@ func (s *Tueren) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditR
 	// Ohne diese Prüfung wäre die Rechtetrennung an der Bearbeitung wirkungslos:
 	// Wer den letzten Administrator nicht ändern darf, aber löschen kann, entfernt
 	// damit auch jede Instanz, die eine Selbstbeförderung noch zurücknehmen könnte.
-	if !pruefeAdminZiel(ctx, w, r, userRepo, id) {
+	if !pruefeAdminZiel(ctx, w, r, kontoAbfragen, id) {
 		return
 	}
 
-	err := auditRepo.LoescheKonto(ctx, id, claims.UserID)
+	err := protokollAbfragen.LoescheKonto(ctx, id, claims.UserID)
 	if err != nil {
 		// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
 		// Der Admin muss die Bücher erst zurückbuchen.

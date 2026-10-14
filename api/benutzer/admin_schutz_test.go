@@ -12,40 +12,40 @@ import (
 	"bibliothek/repository"
 )
 
-// eskalationsRepo erfüllt KontoAbfragen und beantwortet nur die Fragen, die die Trennung der
+// eskalationsAttrappe erfüllt KontoAbfragen und beantwortet nur die Fragen, die die Trennung der
 // Rechte braucht. Die eingebettete Schnittstelle hält die Attrappe klein: Jede Methode, die
 // sie nicht überschreibt, bricht beim Aufruf ab und zeigt so, dass die Tür mehr tut als hier
 // abgebildet.
-type eskalationsRepo struct {
+type eskalationsAttrappe struct {
 	repository.KontoAbfragen
 	rollen    map[string]string // Benutzer-ID → aktuelle Rolle
 	geaendert bool
 	angelegt  bool
 }
 
-func (r *eskalationsRepo) LadeRolle(_ context.Context, id string) (string, error) {
-	return r.rollen[id], nil
+func (a *eskalationsAttrappe) LadeRolle(_ context.Context, id string) (string, error) {
+	return a.rollen[id], nil
 }
 
-func (r *eskalationsRepo) IstEmailVergeben(_ context.Context, _, _ string) (bool, error) {
+func (a *eskalationsAttrappe) IstEmailVergeben(_ context.Context, _, _ string) (bool, error) {
 	return false, nil
 }
 
-func (r *eskalationsRepo) IstAusweisnummerVergeben(_ context.Context, _, _ string) (bool, error) {
+func (a *eskalationsAttrappe) IstAusweisnummerVergeben(_ context.Context, _, _ string) (bool, error) {
 	return false, nil
 }
 
-func (r *eskalationsRepo) HatLeserzeileOhneKonto(_ context.Context, _, _ string) (bool, error) {
+func (a *eskalationsAttrappe) HatLeserzeileOhneKonto(_ context.Context, _, _ string) (bool, error) {
 	return false, nil
 }
 
-func (r *eskalationsRepo) LegeAn(_ context.Context, _ *string, _, _, _, _ string) (string, error) {
-	r.angelegt = true
+func (a *eskalationsAttrappe) LegeAn(_ context.Context, _ *string, _, _, _, _ string) (string, error) {
+	a.angelegt = true
 	return "neu-1", nil
 }
 
-func (r *eskalationsRepo) Aendere(_ context.Context, _ repository.KontoAenderung) (repository.KontoStand, error) {
-	r.geaendert = true
+func (a *eskalationsAttrappe) Aendere(_ context.Context, _ repository.KontoAenderung) (repository.KontoStand, error) {
+	a.geaendert = true
 	return repository.KontoStand{}, nil
 }
 
@@ -64,14 +64,14 @@ const rumpfAdmin = `{"vorname":"Eva","nachname":"Neu","email":"eva@schule.de","r
 // Weg 1: Selbstbeförderung. Ein MITARBEITER mit manage_users bearbeitet den EIGENEN
 // Datensatz und trägt sich als Admin ein.
 func TestSelbstbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/mitarbeiter-1", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
 	req.SetPathValue("id", "mitarbeiter-1")
 	w := httptest.NewRecorder()
 
-	srv.UpdateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAendern(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
 		t.Errorf("Selbstbeförderung zum Admin: Status %d, erwartet 403", w.Code)
@@ -85,7 +85,7 @@ func TestSelbstbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 // UNVERÄNDERTER Rolle speichern können. Die Vorgängerfassung lehnte genau das ab
 // („eigene Admin-Rolle kann nicht herabgestuft werden") und ließ nur die Beförderung zu.
 func TestEigenerDatensatzMitGleicherRolleBleibtSpeicherbar(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Max","nachname":"Neuername","email":"max@schule.de","rolle":"mitarbeiter","aktiv":true}`
@@ -93,7 +93,7 @@ func TestEigenerDatensatzMitGleicherRolleBleibtSpeicherbar(t *testing.T) {
 	req.SetPathValue("id", "mitarbeiter-1")
 	w := httptest.NewRecorder()
 
-	srv.UpdateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAendern(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("eigener Datensatz mit gleicher Rolle: Status %d, erwartet 200 (Rumpf: %s)", w.Code, w.Body.String())
@@ -105,14 +105,14 @@ func TestEigenerDatensatzMitGleicherRolleBleibtSpeicherbar(t *testing.T) {
 
 // Weg 2: Fremdbeförderung — einen zweiten Benutzer zum Admin machen.
 func TestFremdbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"kollege-1": "HELFER"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"kollege-1": "HELFER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/kollege-1", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
 	req.SetPathValue("id", "kollege-1")
 	w := httptest.NewRecorder()
 
-	srv.UpdateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAendern(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
 		t.Errorf("Fremdbeförderung: Status %d, erwartet 403", w.Code)
@@ -124,13 +124,13 @@ func TestFremdbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 
 // Weg 2b: Denselben Weg über die Neuanlage.
 func TestAdminNeuanlageOhneAdminrechteWirdAbgelehnt(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	req := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
 	w := httptest.NewRecorder()
 
-	srv.CreateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAnlegen(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
 		t.Errorf("Admin-Neuanlage: Status %d, erwartet 403", w.Code)
@@ -147,7 +147,7 @@ func TestAdminNeuanlageOhneAdminrechteWirdAbgelehnt(t *testing.T) {
 // umschreibt, meldet sich anschließend mit den EIGENEN Zugangsdaten an und erhält die
 // Admin-Sitzung. Die Rolle im Rumpf bleibt dabei unverdächtig "admin".
 func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"admin-1": "ADMIN"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-1": "ADMIN"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"angreifer@schule.de","rolle":"admin","aktiv":true}`
@@ -155,7 +155,7 @@ func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 
-	srv.UpdateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAendern(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
 		t.Errorf("E-Mail-Übernahme eines Admin-Kontos: Status %d, erwartet 403", w.Code)
@@ -173,7 +173,7 @@ func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
 // pruefeAdminZiel entfernen, ohne dass ein Gate rot wird — und mit ihm den Schutz gegen
 // „Admin herabstufen, E-Mail übernehmen, danach in Ruhe wieder hochstufen".
 func TestAdminHerabstufenDurchNichtAdminWirdAbgelehnt(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"admin-1": "ADMIN"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-1": "ADMIN"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"angreifer@schule.de","rolle":"mitarbeiter","aktiv":true}`
@@ -181,7 +181,7 @@ func TestAdminHerabstufenDurchNichtAdminWirdAbgelehnt(t *testing.T) {
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 
-	srv.UpdateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAendern(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
 		t.Errorf("Herabstufung eines Admins durch Nicht-Admin: Status %d, erwartet 403", w.Code)
@@ -193,12 +193,12 @@ func TestAdminHerabstufenDurchNichtAdminWirdAbgelehnt(t *testing.T) {
 
 // Ein Administrator muss all das weiterhin dürfen — sonst ist die Kontoverwaltung kaputt.
 func TestAdminDarfWeiterhinAdminsAnlegenUndBearbeiten(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"admin-2": "ADMIN"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-2": "ADMIN"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	neu := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "admin-1", auth.RoleAdmin)
 	wNeu := httptest.NewRecorder()
-	srv.CreateUserHandler(repo).ServeHTTP(wNeu, neu)
+	srv.KontoAnlegen(repo).ServeHTTP(wNeu, neu)
 	if wNeu.Code != http.StatusOK {
 		t.Errorf("Admin legt Admin an: Status %d, erwartet 200 (%s)", wNeu.Code, wNeu.Body.String())
 	}
@@ -206,7 +206,7 @@ func TestAdminDarfWeiterhinAdminsAnlegenUndBearbeiten(t *testing.T) {
 	aend := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-2", rumpfAdmin, "admin-1", auth.RoleAdmin)
 	aend.SetPathValue("id", "admin-2")
 	wAend := httptest.NewRecorder()
-	srv.UpdateUserHandler(repo).ServeHTTP(wAend, aend)
+	srv.KontoAendern(repo).ServeHTTP(wAend, aend)
 	if wAend.Code != http.StatusOK {
 		t.Errorf("Admin bearbeitet Admin: Status %d, erwartet 200 (%s)", wAend.Code, wAend.Body.String())
 	}
@@ -215,7 +215,7 @@ func TestAdminDarfWeiterhinAdminsAnlegenUndBearbeiten(t *testing.T) {
 // Und der Normalfall bleibt offen: manage_users verwaltet Konten unterhalb der
 // Administratorebene weiterhin ohne Einschränkung.
 func TestManageUsersDarfNichtAdminKontenWeiterhinBearbeiten(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"helfer-1": "HELFER"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"helfer-1": "HELFER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Hilde","nachname":"Helfer","email":"hilde@schule.de","rolle":"helfer","aktiv":true}`
@@ -223,7 +223,7 @@ func TestManageUsersDarfNichtAdminKontenWeiterhinBearbeiten(t *testing.T) {
 	req.SetPathValue("id", "helfer-1")
 	w := httptest.NewRecorder()
 
-	srv.UpdateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAendern(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Helfer bearbeiten: Status %d, erwartet 200 (%s)", w.Code, w.Body.String())
@@ -240,7 +240,7 @@ func TestManageUsersDarfNichtAdminKontenWeiterhinBearbeiten(t *testing.T) {
 // kein Fall für pruefeAdminVergabe), und der Aufrufer IST Admin (also kein Fall für
 // pruefeAdminZiel).
 func TestAdminKannSichNichtSelbstHerabstufen(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"admin-1": "ADMIN"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-1": "ADMIN"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"chef@schule.de","rolle":"mitarbeiter","aktiv":true}`
@@ -248,7 +248,7 @@ func TestAdminKannSichNichtSelbstHerabstufen(t *testing.T) {
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 
-	srv.UpdateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAendern(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
 		t.Errorf("Selbstherabstufung eines Admins: Status %d, erwartet 403", w.Code)
@@ -260,7 +260,7 @@ func TestAdminKannSichNichtSelbstHerabstufen(t *testing.T) {
 
 // Die eigene Abmeldung aus dem System bleibt ebenfalls gesperrt.
 func TestEigeneDeaktivierungWirdAbgelehnt(t *testing.T) {
-	repo := &eskalationsRepo{rollen: map[string]string{"admin-1": "ADMIN"}}
+	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-1": "ADMIN"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"chef@schule.de","rolle":"admin","aktiv":false}`
@@ -268,7 +268,7 @@ func TestEigeneDeaktivierungWirdAbgelehnt(t *testing.T) {
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 
-	srv.UpdateUserHandler(repo).ServeHTTP(w, req)
+	srv.KontoAendern(repo).ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
 		t.Errorf("Selbstdeaktivierung: Status %d, erwartet 403", w.Code)
@@ -308,12 +308,12 @@ func TestSchutzregelnBeiEinzelnenFeldern(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			repo := &eskalationsRepo{rollen: f.rollen}
+			repo := &eskalationsAttrappe{rollen: f.rollen}
 			req := anfrageAls(t, http.MethodPut, "/api/benutzer/"+f.ziel, f.rumpf, f.aufrufer, f.aufruferRolle)
 			req.SetPathValue("id", f.ziel)
 			w := httptest.NewRecorder()
 
-			(&Tueren{Basis: &tuer.Basis{}}).UpdateUserHandler(repo).ServeHTTP(w, req)
+			(&Tueren{Basis: &tuer.Basis{}}).KontoAendern(repo).ServeHTTP(w, req)
 
 			if w.Code != f.status {
 				t.Errorf("Status %d, erwartet %d (%s)", w.Code, f.status, w.Body.String())

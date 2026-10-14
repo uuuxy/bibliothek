@@ -1,6 +1,6 @@
 package benutzer
 
-// user_admin.go — Handlers for system user and role-permission management.
+// konten_liste.go — Handlers for system user and role-permission management.
 // Covers: listing/creating/updating/deleting staff accounts and reading/writing
 // the role_permissions table.
 
@@ -16,8 +16,8 @@ import (
 	"bibliothek/repository"
 )
 
-// UserResponse holds public user data sent to administrative screens.
-type UserResponse struct {
+// kontoAntwort holds public user data sent to administrative screens.
+type kontoAntwort struct {
 	ID         string    `json:"id"`
 	BarcodeID  string    `json:"barcode_id"`
 	Vorname    string    `json:"vorname"`
@@ -33,24 +33,24 @@ type UserResponse struct {
 	// braucht sie, um von einem offenen Antrag aus nach der gleichnamigen Leserzeile zu
 	// suchen, die noch KEIN Konto hat — der Altbestand, bei dem die Selbstanmeldung sonst
 	// einen zweiten Eintrag erzeugt (UserManagementZugangsanfragen.svelte).
-	LeserID     string   `json:"leser_id"`
-	Permissions []string `json:"permissions"`
+	LeserID string   `json:"leser_id"`
+	Rechte  []string `json:"permissions"`
 }
 
-// ListUsersHandler returns a list of all system users.
+// Konten returns a list of all system users.
 // @Summary      List system users
 // @Description  Retrieves all administrative and staff users registered in the system.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Success      200  {array}   UserResponse
+// @Success      200  {array}   kontoAntwort
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer [get]
-func (s *Tueren) ListUsersHandler(userRepo repository.KontoAbfragen) http.HandlerFunc {
+func (t *Tueren) Konten(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		users, err := userRepo.LadeAlle(ctx)
+		konten, err := kontoAbfragen.LadeAlle(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -58,26 +58,26 @@ func (s *Tueren) ListUsersHandler(userRepo repository.KontoAbfragen) http.Handle
 
 		// EINMAL fuer alle Rollen laden, nicht je Benutzer: Sonst wird aus einer Liste
 		// mit zwanzig Eintraegen eine Abfragelawine gegen dieselben vier Rollen.
-		rechteJeRolle, err := s.rechteAllerRollen(ctx)
+		rechteJeRolle, err := t.rechteAllerRollen(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		responseUsers := []UserResponse{}
-		for _, u := range users {
-			ur := UserResponse{
-				ID:         u.ID,
-				BarcodeID:  u.BarcodeID,
-				Vorname:    u.Vorname,
-				Nachname:   u.Nachname,
-				Email:      u.Email,
-				Rolle:      strings.ToLower(u.Rolle),
-				Aktiv:      u.Aktiv,
-				ErstelltAm: u.ErstelltAm,
+		liste := []kontoAntwort{}
+		for _, konto := range konten {
+			eintrag := kontoAntwort{
+				ID:         konto.ID,
+				BarcodeID:  konto.BarcodeID,
+				Vorname:    konto.Vorname,
+				Nachname:   konto.Nachname,
+				Email:      konto.Email,
+				Rolle:      strings.ToLower(konto.Rolle),
+				Aktiv:      konto.Aktiv,
+				ErstelltAm: konto.ErstelltAm,
 
-				ZugangBeantragtAm: u.ZugangBeantragtAm,
-				LeserID:           u.LeserID,
+				ZugangBeantragtAm: konto.ZugangBeantragtAm,
+				LeserID:           konto.LeserID,
 			}
 
 			// Die echten Rechte aus role_permissions, nicht mehr eine feste Liste.
@@ -87,15 +87,15 @@ func (s *Tueren) ListUsersHandler(userRepo repository.KontoAbfragen) http.Handle
 			// Rechte, die es im System gar nicht gibt (kein RequirePermission, kein Seed).
 			// Wer die Benutzerliste ansah, bekam also erfundene Angaben, waehrend Login und
 			// /api/auth/me die tatsaechlichen Rechte laden. Audit-Befund vom 01.08.2026.
-			ur.Permissions = rechteJeRolle[ur.Rolle]
-			if ur.Permissions == nil {
-				ur.Permissions = []string{}
+			eintrag.Rechte = rechteJeRolle[eintrag.Rolle]
+			if eintrag.Rechte == nil {
+				eintrag.Rechte = []string{}
 			}
 
-			responseUsers = append(responseUsers, ur)
+			liste = append(liste, eintrag)
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, responseUsers)
+		tuer.AntworteJSON(w, http.StatusOK, liste)
 	}
 }
 
@@ -106,8 +106,8 @@ func (s *Tueren) ListUsersHandler(userRepo repository.KontoAbfragen) http.Handle
 // Rechte, unabhaengig davon, was in der Tabelle steht.
 //
 // Die Rollen kommen kleingeschrieben zurueck, passend zu UserResponse.Rolle.
-func (s *Tueren) rechteAllerRollen(ctx context.Context) (map[string][]string, error) {
-	rechte, err := repository.LadeErlaubteRechteJeRolle(ctx, s.DB.Pool)
+func (t *Tueren) rechteAllerRollen(ctx context.Context) (map[string][]string, error) {
+	rechte, err := repository.LadeErlaubteRechteJeRolle(ctx, t.DB.Pool)
 	if err != nil {
 		return nil, err
 	}

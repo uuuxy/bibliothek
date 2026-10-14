@@ -22,7 +22,7 @@ import (
 // Geprüft am Live-Pfad, also über die Handler der Benutzerverwaltung und nicht über rohes
 // SQL: Der Trigger allein beweist nur, dass die Datenbank es täte; dieser Test beweist,
 // dass die Verwaltung auch dort ankommt, wo die Theke nachsieht.
-func TestBenutzerBekommtLeserzeile(t *testing.T) {
+func TestKontoBekommtLeserzeile(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -51,7 +51,7 @@ func TestBenutzerBekommtLeserzeile(t *testing.T) {
 	}
 	anlegen := func(t *testing.T, body string) {
 		t.Helper()
-		if rec := fahre(srv.CreateUserHandler(userRepo), http.MethodPost, "", body); rec.Code != http.StatusOK {
+		if rec := fahre(srv.KontoAnlegen(userRepo), http.MethodPost, "", body); rec.Code != http.StatusOK {
 			t.Fatalf("Anlegen (%s): Status %d, %s", body, rec.Code, rec.Body.String())
 		}
 	}
@@ -103,7 +103,7 @@ func TestBenutzerBekommtLeserzeile(t *testing.T) {
 		anlegen(t, `{"vorname":"Alt","nachname":"Name","email":"`+email+`","rolle":"mitarbeiter"}`)
 		kontoID, _, _, _ := liesLeser(t, email)
 
-		rec := fahre(srv.UpdateUserHandler(userRepo), http.MethodPut, kontoID,
+		rec := fahre(srv.KontoAendern(userRepo), http.MethodPut, kontoID,
 			`{"vorname":"Neu","nachname":"Name","email":"`+email+`","rolle":"mitarbeiter","aktiv":true,"barcode_id":"LZ-2"}`)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Ändern: Status %d, %s", rec.Code, rec.Body.String())
@@ -117,7 +117,7 @@ func TestBenutzerBekommtLeserzeile(t *testing.T) {
 	})
 
 	t.Run("die Benutzerliste nennt keine Personenart mehr", func(t *testing.T) {
-		rec := fahre(srv.ListUsersHandler(userRepo), http.MethodGet, "", "")
+		rec := fahre(srv.Konten(userRepo), http.MethodGet, "", "")
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Liste: Status %d", rec.Code)
 		}

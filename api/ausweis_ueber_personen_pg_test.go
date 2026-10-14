@@ -116,7 +116,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 
 	t.Run("Lehrkraft anlegen mit der Nummer eines Schülers", func(t *testing.T) {
 		schueler(t, "AW118-D")
-		rec := fahre(srv.benutzer().CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer", "",
+		rec := fahre(srv.benutzer().KontoAnlegen(userRepo), http.MethodPost, "/api/benutzer", "",
 			`{"barcode_id":"AW118-D","vorname":"Dora","nachname":"Doppel","email":"d@ausweis118.invalid","rolle":"kollegium"}`)
 		pruefe(t, rec, http.StatusBadRequest, "bereits")
 	})
@@ -124,7 +124,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	t.Run("Lehrkraft ändern auf die Nummer eines Schülers", func(t *testing.T) {
 		schueler(t, "AW118-E")
 		id := lehrkraft(t, "AW118-E-L", "e@ausweis118.invalid")
-		rec := fahre(srv.benutzer().UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+id, id,
+		rec := fahre(srv.benutzer().KontoAendern(userRepo), http.MethodPut, "/api/benutzer/"+id, id,
 			`{"barcode_id":"AW118-E","vorname":"Leh","nachname":"Rer","email":"e@ausweis118.invalid","rolle":"kollegium","aktiv":true}`)
 		pruefe(t, rec, http.StatusBadRequest, "bereits")
 	})
@@ -135,7 +135,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 		if err := repository.NewProtokollAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
-		rec := fahre(srv.benutzer().CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer", "",
+		rec := fahre(srv.benutzer().KontoAnlegen(userRepo), http.MethodPost, "/api/benutzer", "",
 			`{"barcode_id":"AW118-F","vorname":"Fia","nachname":"Frei","email":"f@ausweis118.invalid","rolle":"kollegium"}`)
 		pruefe(t, rec, http.StatusOK, "")
 	})

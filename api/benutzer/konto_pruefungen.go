@@ -12,21 +12,21 @@ import (
 )
 
 // Feldprüfungen der Benutzerverwaltung: Rolle normalisieren, E-Mail und Barcode auf
-// Eindeutigkeit prüfen. Bewusst getrennt von den Handlern (user_admin_mutations.go) und
-// von der Rechtetrennung (user_admin_eskalation.go) — drei verschiedene Fragen:
+// Eindeutigkeit prüfen. Bewusst getrennt von den Handlern (konto_anlegen_aendern.go) und
+// von der Rechtetrennung (admin_schutz.go) — drei verschiedene Fragen:
 // „ist die Eingabe wohlgeformt", „wer ruft auf", „was macht der Endpunkt".
 
-// normalisiereBenutzerRolle bildet die Eingaberolle auf einen gültigen DB-Enum-Wert
+// normalisiereRolle bildet die Eingaberolle auf einen gültigen DB-Enum-Wert
 // ab; unbekannte Rollen werden auf "mitarbeiter" zurückgesetzt.
 //
 // Die Rückfallebene ist die HARMLOSESTE Rolle, nicht die nächstliegende: Ein Tippfehler
 // darf niemals nach oben führen. Wer "admin" schreiben will, muss es exakt treffen — und
 // die Vergabe gestattet zusätzlich nur pruefeAdminVergabe.
-func normalisiereBenutzerRolle(rolle string) string {
-	dbEnumRole := strings.ToLower(strings.TrimSpace(rolle))
-	switch dbEnumRole {
+func normalisiereRolle(rolle string) string {
+	klein := strings.ToLower(strings.TrimSpace(rolle))
+	switch klein {
 	case "admin", "leitung", "kollegium", "mitarbeiter", "helfer":
-		return dbEnumRole
+		return klein
 	default:
 		return "mitarbeiter"
 	}
@@ -39,13 +39,13 @@ func normalisiereBenutzerRolle(rolle string) string {
 // Die Eindeutigkeit ist hier mehr als Datenhygiene: Die Anmeldung findet den Benutzer
 // über seine E-Mail (auth/handlers.go). Zwei Datensätze mit derselben Adresse hießen,
 // dass nicht mehr feststeht, wessen Konto ein Login öffnet.
-func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, email, excludeID string) bool {
-	exists, err := userRepo.IstEmailVergeben(ctx, email, excludeID)
+func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, email, ausgenommeneID string) bool {
+	vergeben, err := kontoAbfragen.IstEmailVergeben(ctx, email, ausgenommeneID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
 	}
-	if exists {
+	if vergeben {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
 		return false
 	}
@@ -60,8 +60,8 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo r
 // Schul-E-Mail in der Akte (LegeKollegiumskontoAn); dorthin verweist die Antwort (409).
 //
 // Was zählt, entscheidet KontoAbfragen.HatLeserzeileOhneKonto.
-func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, vorname, nachname string) bool {
-	vorhanden, err := userRepo.HatLeserzeileOhneKonto(ctx, vorname, nachname)
+func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, vorname, nachname string) bool {
+	vorhanden, err := kontoAbfragen.HatLeserzeileOhneKonto(ctx, vorname, nachname)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
@@ -74,30 +74,30 @@ func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, 
 	return true
 }
 
-// BarcodePruefOptionen bündelt die Parameter für die Prüfung der Barcode-Eindeutigkeit.
-type BarcodePruefOptionen struct {
-	BarcodeID   string
-	ExcludeID   string
-	KonfliktMsg string
+// ausweisPruefung bündelt die Parameter für die Prüfung der Barcode-Eindeutigkeit.
+type ausweisPruefung struct {
+	nummer          string
+	ausgenommeneID  string
+	konfliktmeldung string
 }
 
-// pruefeBarcodeEindeutig liefert den optionalen Barcode-Pointer und validiert dessen
+// pruefeAusweisnummerEindeutig liefert den optionalen Barcode-Pointer und validiert dessen
 // Eindeutigkeit. Ist kein Barcode gesetzt, wird (nil, true) geliefert. Bei Konflikt
 // oder DB-Fehler wird die HTTP-Antwort direkt geschrieben (ok=false).
-func pruefeBarcodeEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, opt BarcodePruefOptionen) (barcode *string, ok bool) {
-	if opt.BarcodeID == "" {
+func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, pruefung ausweisPruefung) (nummer *string, ok bool) {
+	if pruefung.nummer == "" {
 		return nil, true
 	}
-	exists, err := userRepo.IstAusweisnummerVergeben(ctx, opt.BarcodeID, opt.ExcludeID)
+	vergeben, err := kontoAbfragen.IstAusweisnummerVergeben(ctx, pruefung.nummer, pruefung.ausgenommeneID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
-	if exists {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(opt.KonfliktMsg))
+	if vergeben {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(pruefung.konfliktmeldung))
 		return nil, false
 	}
-	return &opt.BarcodeID, true
+	return &pruefung.nummer, true
 }
 
 // meldeAusweisKollision übersetzt die Ablehnung der Datenbank beim Eintragen einer

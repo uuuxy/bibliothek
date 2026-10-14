@@ -38,7 +38,7 @@ const (
 	// der Systempflege — manage_users (Benutzer & Rechte) und manage_settings
 	// (Einstellungen). Eine Erhebung, die der Admin an der E-Mail-Adresse vornimmt, und
 	// KEIN Administrator: Ein Admin-Konto bleibt ihr verschlossen
-	// (api/benutzer/user_admin_eskalation.go).
+	// (api/benutzer/admin_schutz.go).
 	RoleLeitung Role = "LEITUNG"
 	// RoleMitarbeiter repräsentiert Bibliotheksmitarbeiter, die das tägliche Ausleihgeschäft durchführen.
 	RoleMitarbeiter Role = "MITARBEITER"

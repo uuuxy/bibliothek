@@ -58,7 +58,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 	t.Run("Mitarbeiter mit manage_users wird abgewiesen", func(t *testing.T) {
 		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
 		w := httptest.NewRecorder()
-		srv.UpdatePermissionsHandler().ServeHTTP(w, req)
+		srv.RollenRechtSetzen().ServeHTTP(w, req)
 
 		if w.Code != http.StatusForbidden {
 			t.Errorf("Status %d, erwartet 403", w.Code)
@@ -71,7 +71,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 	t.Run("Admin darf", func(t *testing.T) {
 		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions", rumpf, "admin-1", auth.RoleAdmin)
 		w := httptest.NewRecorder()
-		srv.UpdatePermissionsHandler().ServeHTTP(w, req)
+		srv.RollenRechtSetzen().ServeHTTP(w, req)
 
 		if w.Code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200 (%s)", w.Code, w.Body.String())
@@ -88,7 +88,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions",
 			`{"role":"mitarbeiter","permission":"audit_logz","allowed":true}`, "admin-1", auth.RoleAdmin)
 		w := httptest.NewRecorder()
-		srv.UpdatePermissionsHandler().ServeHTTP(w, req)
+		srv.RollenRechtSetzen().ServeHTTP(w, req)
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Status %d, erwartet 400 — ein Tippfehler darf nicht als Erfolg durchgehen", w.Code)
@@ -99,7 +99,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions",
 			`{"role":"hausmeister","permission":"audit_logs","allowed":true}`, "admin-1", auth.RoleAdmin)
 		w := httptest.NewRecorder()
-		srv.UpdatePermissionsHandler().ServeHTTP(w, req)
+		srv.RollenRechtSetzen().ServeHTTP(w, req)
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Status %d, erwartet 400", w.Code)

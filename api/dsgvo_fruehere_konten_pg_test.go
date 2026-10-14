@@ -71,7 +71,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 
 	// Tür 1: Benutzer & Rechte. Anlegen und Ändern schreiben USER_CREATE und USER_UPDATE mit
 	// ziel_id; der Ausweis hält die Leserzeile, wenn das Konto fällt.
-	if rec := alsAdmin(srv.benutzer().CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer",
+	if rec := alsAdmin(srv.benutzer().KontoAnlegen(userRepo), http.MethodPost, "/api/benutzer",
 		`{"barcode_id":"FK-AUSWEIS-1","vorname":"Frieda","nachname":"Frueher","email":"frieda@fruehere-konten.invalid","rolle":"mitarbeiter"}`,
 		nil); rec.Code != http.StatusOK {
 		t.Fatalf("Konto anlegen: Status %d — %s", rec.Code, rec.Body.String())
@@ -81,12 +81,12 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 		Scan(&kontoID, &leserID); err != nil {
 		t.Fatalf("Konto lesen: %v", err)
 	}
-	if rec := alsAdmin(srv.benutzer().UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
+	if rec := alsAdmin(srv.benutzer().KontoAendern(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
 		`{"barcode_id":"FK-AUSWEIS-1","vorname":"Frieda","nachname":"Frueher","email":"frieda@fruehere-konten.invalid","rolle":"helfer","aktiv":true}`,
 		map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 		t.Fatalf("Konto ändern: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	if rec := alsAdmin(srv.benutzer().DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
+	if rec := alsAdmin(srv.benutzer().KontoLoeschen(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
 		map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 		t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -121,7 +121,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 		RETURNING id::text`).Scan(&olga); err != nil {
 		t.Fatalf("Zugangsanfrage anlegen: %v", err)
 	}
-	if rec := alsAdmin(srv.benutzer().DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+olga, "",
+	if rec := alsAdmin(srv.benutzer().KontoLoeschen(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+olga, "",
 		map[string]string{"id": olga}); rec.Code != http.StatusOK {
 		t.Fatalf("Zugangsanfrage ablehnen (Konto löschen): Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -227,7 +227,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	}
 	loescheKonto := func(t *testing.T, kontoID string) {
 		t.Helper()
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().KontoLoeschen(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -248,7 +248,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 		}
 		kontoID, leserID := konto(t, email)
 		// Freischalten gibt dem Konto eine Ausweisnummer; sie hält die Leserzeile, wenn das Konto fällt.
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().KontoAendern(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
 			`{"barcode_id":"","vorname":"Selma","nachname":"Selbst","email":"`+email+`","rolle":"kollegium","aktiv":true}`,
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto freischalten: Status %d — %s", rec.Code, rec.Body.String())

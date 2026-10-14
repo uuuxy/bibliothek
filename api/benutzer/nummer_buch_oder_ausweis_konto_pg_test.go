@@ -91,7 +91,7 @@ func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 
 	t.Run("Konto anlegen mit der Nummer eines Buchs", func(t *testing.T) {
 		buch(t, "N131-A")
-		rec := fahre(srv.CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer", "",
+		rec := fahre(srv.KontoAnlegen(userRepo), http.MethodPost, "/api/benutzer", "",
 			`{"barcode_id":"N131-A","vorname":"Anna","nachname":"Anlage","email":"a@nummer131.invalid","rolle":"kollegium"}`)
 		pruefe(t, rec, http.StatusConflict, "Buch")
 	})
@@ -99,13 +99,13 @@ func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 	t.Run("Konto ändern auf die Nummer eines Buchs", func(t *testing.T) {
 		buch(t, "N131-B")
 		id := konto(t, "b@nummer131.invalid")
-		rec := fahre(srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+id, id,
+		rec := fahre(srv.KontoAendern(userRepo), http.MethodPut, "/api/benutzer/"+id, id,
 			`{"barcode_id":"N131-B","vorname":"Leh","nachname":"Rer","email":"b@nummer131.invalid","rolle":"kollegium","aktiv":true}`)
 		pruefe(t, rec, http.StatusConflict, "Buch")
 	})
 
 	t.Run("Gegenprobe: eine freie Nummer geht durch", func(t *testing.T) {
-		rec := fahre(srv.CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer", "",
+		rec := fahre(srv.KontoAnlegen(userRepo), http.MethodPost, "/api/benutzer", "",
 			`{"barcode_id":"N131-FREI","vorname":"Clara","nachname":"Frei","email":"c@nummer131.invalid","rolle":"kollegium"}`)
 		pruefe(t, rec, http.StatusOK, "")
 		var getragen string

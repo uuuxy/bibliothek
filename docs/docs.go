@@ -230,7 +230,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/benutzer.PermissionSetting"
+                                "$ref": "#/definitions/benutzer.rollenRecht"
                             }
                         }
                     },
@@ -264,7 +264,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/benutzer.UpdatePermissionsRequest"
+                            "$ref": "#/definitions/benutzer.rollenRechtAnfrage"
                         }
                     }
                 ],
@@ -353,7 +353,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/benutzer.UserResponse"
+                                "$ref": "#/definitions/benutzer.kontoAntwort"
                             }
                         }
                     },
@@ -387,7 +387,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/benutzer.CreateUserRequest"
+                            "$ref": "#/definitions/benutzer.kontoAnlegenAnfrage"
                         }
                     }
                 ],
@@ -449,7 +449,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/benutzer.UpdateUserRequest"
+                            "$ref": "#/definitions/benutzer.kontoAendernAnfrage"
                         }
                     }
                 ],
@@ -4056,7 +4056,30 @@ const docTemplate = `{
                 }
             }
         },
-        "benutzer.CreateUserRequest": {
+        "benutzer.kontoAendernAnfrage": {
+            "type": "object",
+            "properties": {
+                "aktiv": {
+                    "type": "boolean"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "rolle": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                }
+            }
+        },
+        "benutzer.kontoAnlegenAnfrage": {
             "type": "object",
             "required": [
                 "email",
@@ -4082,58 +4105,7 @@ const docTemplate = `{
                 }
             }
         },
-        "benutzer.PermissionSetting": {
-            "type": "object",
-            "properties": {
-                "allowed": {
-                    "type": "boolean"
-                },
-                "permission": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
-        "benutzer.UpdatePermissionsRequest": {
-            "type": "object",
-            "properties": {
-                "allowed": {
-                    "type": "boolean"
-                },
-                "permission": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
-        "benutzer.UpdateUserRequest": {
-            "type": "object",
-            "properties": {
-                "aktiv": {
-                    "type": "boolean"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "rolle": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
-        "benutzer.UserResponse": {
+        "benutzer.kontoAntwort": {
             "type": "object",
             "properties": {
                 "aktiv": {
@@ -4172,6 +4144,34 @@ const docTemplate = `{
                 },
                 "zugang_beantragt_am": {
                     "description": "ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);\nnull = keiner. Die Oberfläche unterscheidet daran „wartet\" von „deaktiviert\".",
+                    "type": "string"
+                }
+            }
+        },
+        "benutzer.rollenRecht": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "boolean"
+                },
+                "permission": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "benutzer.rollenRechtAnfrage": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "boolean"
+                },
+                "permission": {
+                    "type": "string"
+                },
+                "role": {
                     "type": "string"
                 }
             }

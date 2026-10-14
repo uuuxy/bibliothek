@@ -85,7 +85,7 @@ func (s *Tueren) DeleteStudentHandler(auditRepo repository.ProtokollAbfragen) ht
 		// Niemand löscht seine eigene Leserzeile. Beim Kollegium fiele damit auch das
 		// eigene Konto (LegeLeserInPapierkorb) — der Löschende spielte sich mitten im Vorgang
 		// selbst aus der Anmeldung. Die Benutzerverwaltung hält dieselbe Regel für Konten
-		// (DeleteUserHandler, „eigenes Konto kann nicht gelöscht werden").
+		// (benutzer.Tueren.KontoLoeschen, „eigenes Konto kann nicht gelöscht werden").
 		eigene, err := repository.LadeLeserIDVonKonto(ctx, s.DB.Pool, claims.UserID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

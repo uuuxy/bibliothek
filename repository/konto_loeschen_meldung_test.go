@@ -6,7 +6,7 @@ import (
 )
 
 // ErrKontoHatAusleihen erscheint in der Verwaltung der Konten als Meldung (409 beim Löschen,
-// api/benutzer/user_admin_loeschen.go). Sie beschreibt den Zustand so, wie ihn die Bibliothek
+// api/benutzer/konto_loeschen.go). Sie beschreibt den Zustand so, wie ihn die Bibliothek
 // kennt, mit ausgeliehenen Büchern und ohne ein Wort aus dem Code.
 func TestErrKontoHatAusleihen_OhneWortAusDemCode(t *testing.T) {
 	meldung := ErrKontoHatAusleihen.Error()
