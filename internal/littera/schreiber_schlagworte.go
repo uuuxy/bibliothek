@@ -72,7 +72,7 @@ func (s *Schreiber) SchreibeSchlagworte(ctx context.Context, ab *Altbestand, bes
 	auftraege := s.schlagwortAuftraege(ab, bestand, &b)
 	for i := 0; i < len(auftraege); i += s.opt.BatchGroesse {
 		ende := min(i+s.opt.BatchGroesse, len(auftraege))
-		if err := s.schlagworteEinBatch(ctx, auftraege[i:ende], &b); err != nil {
+		if err := s.schreibeSchlagwortBatch(ctx, auftraege[i:ende], &b); err != nil {
 			return b, fmt.Errorf("abgebrochen ab Titel %s: %w", auftraege[i].litteraID, err)
 		}
 	}
@@ -142,8 +142,8 @@ func (s *Schreiber) bereiteSchlagworteVor(t Titel, roh []string, b *SchlagwortBe
 	return woerter
 }
 
-// schlagworteEinBatch schreibt eine Transaktion voller Titel, jeden im eigenen Savepoint.
-func (s *Schreiber) schlagworteEinBatch(ctx context.Context, auftraege []schlagwortAuftrag, b *SchlagwortBericht) error {
+// schreibeSchlagwortBatch schreibt eine Transaktion voller Titel, jeden im eigenen Savepoint.
+func (s *Schreiber) schreibeSchlagwortBatch(ctx context.Context, auftraege []schlagwortAuftrag, b *SchlagwortBericht) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("konnte die Transaktion nicht öffnen: %w", err)

@@ -12,7 +12,7 @@ import (
 // 10.732 Titeln eine Angabe in 1.033 verschiedenen Werten („1. Aufl.", „2.", „Sonderausg."),
 // keiner länger als 50 Zeichen; 23 haben ein Leerzeichen am Rand, 4 zwei Leerzeichen in Folge.
 func TestLeseTitel_Auflage(t *testing.T) {
-	titel, err := LeseTitel(strings.NewReader("Buchungsnummer,Haupttitel,Auflage\n" +
+	titel, err := leseTitel(strings.NewReader("Buchungsnummer,Haupttitel,Auflage\n" +
 		`1,"Faust","2. Aufl. "` + "\n" +
 		`2,"Die Welle",""` + "\n" +
 		`3,"Zeile ohne die Spalte"` + "\n"))

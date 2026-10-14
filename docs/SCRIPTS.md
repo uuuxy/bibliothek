@@ -60,7 +60,7 @@ Buchetikett liest — eine **EAN-13**, nicht die daneben gedruckte Exemplarnumme
 Belegt an vier gescannten Büchern und an allen 61.520 Exemplaren der Sicherung von 2010.
 Litteras Spalte `Barcode` ist dieselbe EAN-13, gesetzt für eine EAN-13-Schrift
 (`8 *pkpööp#-c.bc-*` ergibt `8080000039530`); Parität und Prüfziffer stimmen bei allen
-61.520. Die Übernahme nimmt deshalb diese Zeichenkette als Etikett (`littera.EtikettZiffern`)
+61.520. Die Übernahme nimmt deshalb diese Zeichenkette als Etikett (`littera.etikettZiffern`)
 und rechnet aus Exemplar- und Bibliotheksnummer (`littera.EtikettBarcode`) nur, wenn sie
 fehlt. Weichen beide ab, gilt das Etikett, mit Vermerk im Protokoll; in der Sicherung von
 2010 zweimal (Bibliotheksnummer 0 in der Spalte, 0395 auf dem Etikett). Der Bestand bleibt

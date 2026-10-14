@@ -23,7 +23,7 @@ func TestBarcodeInhalt(t *testing.T) {
 		{"6 *qgaspp#-c.bby*", "61512", "0395"},
 	}
 	for _, f := range faelle {
-		nummer, bib, ok := BarcodeInhalt(f.roh)
+		nummer, bib, ok := barcodeInhalt(f.roh)
 		if !ok {
 			t.Errorf("%q wurde nicht erkannt", f.roh)
 			continue
@@ -38,7 +38,7 @@ func TestBarcodeInhalt(t *testing.T) {
 // darf niemand raten, was auf dem Buch klebt.
 func TestBarcodeInhaltLehntUnbekanntesAb(t *testing.T) {
 	for _, roh := range []string{"", "B-00042", "8 *pkpööp*", "8 *pkpöö?#-c.bc-*", "*pkpööp#-c.bc-*"} {
-		if _, _, ok := BarcodeInhalt(roh); ok {
+		if _, _, ok := barcodeInhalt(roh); ok {
 			t.Errorf("%q hätte abgelehnt werden müssen", roh)
 		}
 	}
@@ -60,7 +60,7 @@ func TestGeburtsdatumAus(t *testing.T) {
 		{"12/01/26 00:00:00", 1926}, // noch nicht eingetreten – muss zurückgeholt werden
 	}
 	for _, f := range faelle {
-		got, ok := GeburtsdatumAus(f.roh, jetzt)
+		got, ok := geburtsdatumAus(f.roh, jetzt)
 		if !ok {
 			t.Errorf("%q wurde nicht gelesen", f.roh)
 			continue
@@ -73,7 +73,7 @@ func TestGeburtsdatumAus(t *testing.T) {
 		}
 	}
 
-	if _, ok := GeburtsdatumAus("", jetzt); ok {
+	if _, ok := geburtsdatumAus("", jetzt); ok {
 		t.Error("ein leeres Geburtsdatum darf nicht als gültig durchgehen")
 	}
 }
@@ -109,7 +109,7 @@ func TestEtikettBarcode(t *testing.T) {
 		if len(got) != 13 {
 			t.Errorf("EAN-13 muss 13 Stellen haben, %q hat %d", got, len(got))
 		}
-		if p := EAN13Pruefziffer(got[:12]); string('0'+rune(p)) != got[12:] {
+		if p := ean13Pruefziffer(got[:12]); string('0'+rune(p)) != got[12:] {
 			t.Errorf("%q trägt eine falsche Prüfziffer", got)
 		}
 	}
@@ -145,12 +145,12 @@ func TestEtikettZiffern(t *testing.T) {
 		{"5 *pafopö#-c.bbc*", "5014900039553"}, // in Littera zweimal, einmal mit Bibliotheksnummer 0
 	}
 	for _, f := range faelle {
-		ean, ok := EtikettZiffern(f.roh)
+		ean, ok := etikettZiffern(f.roh)
 		if !ok || ean != f.ean {
 			t.Errorf("%q → %q (%v), erwartet %q", f.roh, ean, ok, f.ean)
 			continue
 		}
-		nummer, bib, _ := BarcodeInhalt(f.roh)
+		nummer, bib, _ := barcodeInhalt(f.roh)
 		if gerechnet, _ := EtikettBarcode(nummer, bib); gerechnet != ean {
 			t.Errorf("%q: aus %s/%s gerechnet %q, das Etikett trägt %q", f.roh, nummer, bib, gerechnet, ean)
 		}
@@ -168,7 +168,7 @@ func TestEtikettZifferLehntAb(t *testing.T) {
 		"8 *pkpööp#pc.bc-*", // rechte Hälfte aus der falschen Reihe
 		"8 *pkpöö?#-c.bc-*", // unbekanntes Zeichen
 	} {
-		if ean, ok := EtikettZiffern(roh); ok {
+		if ean, ok := etikettZiffern(roh); ok {
 			t.Errorf("%q hätte abgelehnt werden müssen, ergab %q", roh, ean)
 		}
 	}

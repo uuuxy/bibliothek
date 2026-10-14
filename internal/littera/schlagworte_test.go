@@ -26,11 +26,11 @@ const (
 )
 
 func TestSchlagworteJeTitel_ReihenfolgeUndLuecken(t *testing.T) {
-	woerter, err := LeseSchlagworte(strings.NewReader(schlagworteCSV))
+	woerter, err := leseSchlagworte(strings.NewReader(schlagworteCSV))
 	if err != nil {
 		t.Fatal(err)
 	}
-	q, err := SchlagworteJeTitel(woerter, strings.NewReader(schlagZuordCSV))
+	q, err := schlagworteJeTitel(woerter, strings.NewReader(schlagZuordCSV))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,11 +51,11 @@ func TestSchlagworteJeTitel_ReihenfolgeUndLuecken(t *testing.T) {
 // Heißt eine Spalte anders (etwa in einer anders ausgegebenen Sicherung), bricht das Lesen ab.
 // Still leer gelesen, fiele jedes Wort als leer weg, und der Lauf meldete Erfolg.
 func TestSchlagworte_FehlendeSpalteBrichtAb(t *testing.T) {
-	if _, err := LeseSchlagworte(strings.NewReader("Buchungsnummer,Suchwort\n11,Weimar\n")); err == nil ||
+	if _, err := leseSchlagworte(strings.NewReader("Buchungsnummer,Suchwort\n11,Weimar\n")); err == nil ||
 		!strings.Contains(err.Error(), "SuchWort") {
 		t.Errorf("Spalte Suchwort statt SuchWort: Fehler %v, erwartet einer, der SuchWort nennt", err)
 	}
-	if _, err := SchlagworteJeTitel(map[string]string{}, strings.NewReader("Buchungsnummer,Titel\n1,7\n")); err == nil {
+	if _, err := schlagworteJeTitel(map[string]string{}, strings.NewReader("Buchungsnummer,Titel\n1,7\n")); err == nil {
 		t.Error("Schlag_zuord ohne Spalte Schlagwort: kein Fehler")
 	}
 }
@@ -83,14 +83,14 @@ func TestLernmittelUndFach_SignaturVorSchlagworten(t *testing.T) {
 // Die Interessenkreise (entschieden am 30.09.2026, docs/OFFEN.md 4.20): Lesen wie die
 // Schlagworte, über IntZuMed ohne Sortierung, und eine fehlende Spalte bricht ab.
 func TestInteressenkreiseJeTitel_LesenWieSchlagworte(t *testing.T) {
-	kreise, err := LeseInteressenkreise(strings.NewReader(`Buchungsdatum,Buchungsnummer,Interessenskreis,Zugriff_art,Zugriff_von,Zugriff_terminal
+	kreise, err := leseInteressenkreise(strings.NewReader(`Buchungsdatum,Buchungsnummer,Interessenskreis,Zugriff_art,Zugriff_von,Zugriff_terminal
 "06/15/01 09:00:35",1,"Sekundarstufe 2","ANLAGE","Büchereileiter",0
 "07/12/01 10:11:20",3,"Lehrer","ANLAGE","Büchereileiter",0
 `))
 	if err != nil {
 		t.Fatal(err)
 	}
-	q, err := InteressenkreiseJeTitel(kreise, strings.NewReader(`Buchungsdatum,Buchungsnummer,Titel,Interessenskreis,Zugriff_art,Zugriff_von,Zugriff_terminal
+	q, err := interessenkreiseJeTitel(kreise, strings.NewReader(`Buchungsdatum,Buchungsnummer,Titel,Interessenskreis,Zugriff_art,Zugriff_von,Zugriff_terminal
 "06/15/01 13:02:46",21,10,3,"ANLAGE","Büchereileiter",0
 "06/15/01 13:02:46",20,10,1,"ANLAGE","Büchereileiter",0
 "06/15/01 13:02:46",22,11,9,"ANLAGE","Büchereileiter",0
@@ -104,7 +104,7 @@ func TestInteressenkreiseJeTitel_LesenWieSchlagworte(t *testing.T) {
 	if q.Zuordnungen != 3 || q.OhneWort != 1 {
 		t.Errorf("Zuordnungen %d, ohne Wort %d — erwartet 3 und 1", q.Zuordnungen, q.OhneWort)
 	}
-	if _, err := LeseInteressenkreise(strings.NewReader("Buchungsnummer,Interessenkreis\n1,Lehrer\n")); err == nil ||
+	if _, err := leseInteressenkreise(strings.NewReader("Buchungsnummer,Interessenkreis\n1,Lehrer\n")); err == nil ||
 		!strings.Contains(err.Error(), "Interessenskreis") {
 		t.Errorf("Spalte Interessenkreis statt Interessenskreis: Fehler %v, erwartet einer, der die Spalte nennt", err)
 	}

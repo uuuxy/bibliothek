@@ -57,7 +57,7 @@ func TestLeseExemplare_Eigentumsvermerk(t *testing.T) {
 1,2,"B-1","Ga","Bos"," Land Hessen "
 2,2,"B-2","Ga","Bos",""
 `
-	ex, err := LeseExemplare(strings.NewReader(csv))
+	ex, err := leseExemplare(strings.NewReader(csv))
 	if err != nil {
 		t.Fatalf("Exemplare lesen: %v", err)
 	}

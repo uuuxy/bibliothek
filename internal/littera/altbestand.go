@@ -61,31 +61,31 @@ type Altbestand struct {
 //	mdb-export littera_sav.mdb Interessenskreis       > interessenskreis.csv
 //	mdb-export littera_sav.mdb IntZuMed               > intzumed.csv
 const (
-	DateiTitel             = "titel.csv"
-	DateiExemplar          = "exemplar.csv"
-	DateiVerlag            = "verlag.csv"
-	DateiMedienart         = "medienart.csv"
-	DateiPersonen          = "personen.csv"
-	DateiPersonenZuordnung = "personen_zuordnung.csv"
-	DateiLeser             = "leser.csv"
-	DateiLeserUG           = "leser_ug.csv"
-	DateiVerleih           = "verleih.csv"
+	dateiTitel             = "titel.csv"
+	dateiExemplar          = "exemplar.csv"
+	dateiVerlag            = "verlag.csv"
+	dateiMedienart         = "medienart.csv"
+	dateiPersonen          = "personen.csv"
+	dateiPersonenZuordnung = "personen_zuordnung.csv"
+	dateiLeser             = "leser.csv"
+	dateiLeserUG           = "leser_ug.csv"
+	dateiVerleih           = "verleih.csv"
 	// Die Schlagworte sind Pflicht wie die übrigen (seit dem 30.09.2026, docs/OFFEN.md 4.20):
 	// Fehlte eine Datei, kämen die Titel still ohne ihre Schlagworte an. Littera führt alle vier
 	// Tabellen schon im Stand von 2010, die beiden Verweis-Tabellen dort leer.
-	DateiSchlagworte          = "schlagworte.csv"
-	DateiSchlagZuord          = "schlag_zuord.csv"
-	DateiVerweiseSchlagworte  = "verweise_schlagworte.csv"
-	DateiVerweisZuSchlagworte = "verweis_zu_schlagworte.csv"
+	dateiSchlagworte          = "schlagworte.csv"
+	dateiSchlagZuord          = "schlag_zuord.csv"
+	dateiVerweiseSchlagworte  = "verweise_schlagworte.csv"
+	dateiVerweisZuSchlagworte = "verweis_zu_schlagworte.csv"
 	// Die Interessenkreise ebenso (seit dem 30.09.2026, docs/OFFEN.md 4.20); die Sicherung von
 	// 2010 führt beide Tabellen.
-	DateiInteressenkreise = "interessenskreis.csv"
-	DateiIntZuMed         = "intzumed.csv"
+	dateiInteressenkreise = "interessenskreis.csv"
+	dateiIntZuMed         = "intzumed.csv"
 	// Die beiden Fremdnummern-Tabellen sind OPTIONAL: In einer Installation ohne
 	// herstellerbedruckte Ausweise sind sie leer, und mdb-export erzeugt die Dateien
 	// dann gar nicht erst. Fehlen sie, läuft der Import mit den Littera-eigenen Nummern.
-	DateiFremdLeserNummer = "fremdlesernummer.csv"
-	DateiFremdBarcode     = "fremdbarcode.csv"
+	dateiFremdLeserNummer = "fremdlesernummer.csv"
+	dateiFremdBarcode     = "fremdbarcode.csv"
 )
 
 // LeseAltbestandMit liest alle Tabellen aus einem Verzeichnis mit mdb-export-CSVs und nimmt
@@ -98,23 +98,23 @@ func LeseAltbestandMit(verzeichnis string, regel Standortregel) (*Altbestand, er
 	ab := &Altbestand{}
 	var err error
 
-	if ab.Titel, err = mitDatei(verzeichnis, DateiTitel, LeseTitel); err != nil {
+	if ab.Titel, err = mitDatei(verzeichnis, dateiTitel, leseTitel); err != nil {
 		return nil, err
 	}
-	if ab.Exemplare, err = mitDatei(verzeichnis, DateiExemplar, LeseExemplare); err != nil {
+	if ab.Exemplare, err = mitDatei(verzeichnis, dateiExemplar, leseExemplare); err != nil {
 		return nil, err
 	}
 	regel.wendeStandortregelAn(ab.Exemplare)
-	if ab.Verlage, err = mitDatei(verzeichnis, DateiVerlag, VerlagNamen); err != nil {
+	if ab.Verlage, err = mitDatei(verzeichnis, dateiVerlag, leseVerlage); err != nil {
 		return nil, err
 	}
-	if ab.Medienarten, err = mitDatei(verzeichnis, DateiMedienart, MedienartNamen); err != nil {
+	if ab.Medienarten, err = mitDatei(verzeichnis, dateiMedienart, leseMedienarten); err != nil {
 		return nil, err
 	}
 	if err = leseAutoren(verzeichnis, ab, regel); err != nil {
 		return nil, err
 	}
-	if err = leseSchlagworte(verzeichnis, ab); err != nil {
+	if err = leseSchlagworteUndInteressenkreise(verzeichnis, ab); err != nil {
 		return nil, err
 	}
 	if err = leseLeserUndAusleihen(verzeichnis, ab); err != nil {
@@ -125,7 +125,7 @@ func LeseAltbestandMit(verzeichnis string, regel Standortregel) (*Altbestand, er
 		return nil, err
 	}
 
-	ab.Signaturen, ab.SignaturAbweichend = SignaturJeTitel(ab.Exemplare)
+	ab.Signaturen, ab.SignaturAbweichend = signaturJeTitel(ab.Exemplare)
 	return ab, nil
 }
 
@@ -140,15 +140,15 @@ func leseFremdnummern(verzeichnis string, ab *Altbestand) error {
 	ab.Ausweisnummern = map[string]string{}
 	ab.Fremdbarcodes = map[string]string{}
 
-	if vorhanden(verzeichnis, DateiFremdLeserNummer) {
-		erg, err := mitDatei(verzeichnis, DateiFremdLeserNummer, leseAusweisPaare)
+	if istVorhanden(verzeichnis, dateiFremdLeserNummer) {
+		erg, err := mitDatei(verzeichnis, dateiFremdLeserNummer, leseAusweisPaare)
 		if err != nil {
 			return err
 		}
 		ab.Ausweisnummern, ab.AusweisMehrfach = erg.nummern, erg.mehrfach
 	}
-	if vorhanden(verzeichnis, DateiFremdBarcode) {
-		barcodes, err := mitDatei(verzeichnis, DateiFremdBarcode, LeseFremdbarcodes)
+	if istVorhanden(verzeichnis, dateiFremdBarcode) {
+		barcodes, err := mitDatei(verzeichnis, dateiFremdBarcode, leseFremdbarcodes)
 		if err != nil {
 			return err
 		}
@@ -157,7 +157,7 @@ func leseFremdnummern(verzeichnis string, ab *Altbestand) error {
 	return nil
 }
 
-// ausweispaare bündelt die zwei Rückgabewerte von LeseAusweisnummern, damit mitDatei
+// ausweispaare bündelt die zwei Rückgabewerte von leseAusweisnummern, damit mitDatei
 // (das genau einen Wert liefert) sie durchreichen kann.
 type ausweispaare struct {
 	nummern  map[string]string
@@ -165,67 +165,67 @@ type ausweispaare struct {
 }
 
 func leseAusweisPaare(r io.Reader) (ausweispaare, error) {
-	nummern, mehrfach, err := LeseAusweisnummern(r)
+	nummern, mehrfach, err := leseAusweisnummern(r)
 	return ausweispaare{nummern: nummern, mehrfach: mehrfach}, err
 }
 
-func vorhanden(verzeichnis, name string) bool {
+func istVorhanden(verzeichnis, name string) bool {
 	_, err := os.Stat(filepath.Join(verzeichnis, name))
 	return err == nil
 }
 
 func leseAutoren(verzeichnis string, ab *Altbestand, regel Standortregel) error {
-	personen, err := mitDatei(verzeichnis, DateiPersonen, LesePersonen)
+	personen, err := mitDatei(verzeichnis, dateiPersonen, lesePersonen)
 	if err != nil {
 		return err
 	}
-	z, err := mitDatei(verzeichnis, DateiPersonenZuordnung,
-		func(r io.Reader) (Zuordnungen, error) { return LeseZuordnungen(personen, r, regel) })
+	z, err := mitDatei(verzeichnis, dateiPersonenZuordnung,
+		func(r io.Reader) (personenZuordnungen, error) { return lesePersonenZuordnungen(personen, r, regel) })
 	if err != nil {
 		return err
 	}
 	for i := range ab.Titel {
 		ab.Titel[i].Autor = ohneVermerke(ab.Titel[i].Autor, z.VermerkNamen)
 	}
-	ab.Titel = MitAutoren(ab.Titel, z.Autoren)
+	ab.Titel = mitAutoren(ab.Titel, z.Autoren)
 	ab.Standortvermerke = z.Standortvermerke
 	return nil
 }
 
-func leseSchlagworte(verzeichnis string, ab *Altbestand) error {
-	woerter, err := mitDatei(verzeichnis, DateiSchlagworte, LeseSchlagworte)
+func leseSchlagworteUndInteressenkreise(verzeichnis string, ab *Altbestand) error {
+	woerter, err := mitDatei(verzeichnis, dateiSchlagworte, leseSchlagworte)
 	if err != nil {
 		return err
 	}
-	if ab.Schlagworte, err = mitDatei(verzeichnis, DateiSchlagZuord,
-		func(r io.Reader) (SchlagwortQuelle, error) { return SchlagworteJeTitel(woerter, r) }); err != nil {
+	if ab.Schlagworte, err = mitDatei(verzeichnis, dateiSchlagZuord,
+		func(r io.Reader) (SchlagwortQuelle, error) { return schlagworteJeTitel(woerter, r) }); err != nil {
 		return err
 	}
-	if ab.Schlagworte.VerweisWoerter, err = mitDatei(verzeichnis, DateiVerweiseSchlagworte, zaehleZeilen); err != nil {
+	if ab.Schlagworte.VerweisWoerter, err = mitDatei(verzeichnis, dateiVerweiseSchlagworte, zaehleZeilen); err != nil {
 		return err
 	}
-	if ab.Schlagworte.VerweisZuordnungen, err = mitDatei(verzeichnis, DateiVerweisZuSchlagworte, zaehleZeilen); err != nil {
+	if ab.Schlagworte.VerweisZuordnungen, err = mitDatei(verzeichnis, dateiVerweisZuSchlagworte, zaehleZeilen); err != nil {
 		return err
 	}
-	kreise, err := mitDatei(verzeichnis, DateiInteressenkreise, LeseInteressenkreise)
+	kreise, err := mitDatei(verzeichnis, dateiInteressenkreise, leseInteressenkreise)
 	if err != nil {
 		return err
 	}
-	ab.Interessenkreise, err = mitDatei(verzeichnis, DateiIntZuMed,
-		func(r io.Reader) (SchlagwortQuelle, error) { return InteressenkreiseJeTitel(kreise, r) })
+	ab.Interessenkreise, err = mitDatei(verzeichnis, dateiIntZuMed,
+		func(r io.Reader) (SchlagwortQuelle, error) { return interessenkreiseJeTitel(kreise, r) })
 	return err
 }
 
 func leseLeserUndAusleihen(verzeichnis string, ab *Altbestand) error {
-	gruppen, err := mitDatei(verzeichnis, DateiLeserUG, LeseLesergruppen)
+	gruppen, err := mitDatei(verzeichnis, dateiLeserUG, leseLesergruppen)
 	if err != nil {
 		return err
 	}
-	if ab.Leser, err = mitDatei(verzeichnis, DateiLeser,
-		func(r io.Reader) ([]Leser, error) { return LeseLeser(r, gruppen) }); err != nil {
+	if ab.Leser, err = mitDatei(verzeichnis, dateiLeser,
+		func(r io.Reader) ([]Leser, error) { return leseLeser(r, gruppen) }); err != nil {
 		return err
 	}
-	ab.Ausleihen, err = mitDatei(verzeichnis, DateiVerleih, LeseAusleihen)
+	ab.Ausleihen, err = mitDatei(verzeichnis, dateiVerleih, leseAusleihen)
 	return err
 }
 
@@ -246,12 +246,12 @@ func mitDatei[T any](verzeichnis, name string, lies func(io.Reader) (T, error)) 
 	return wert, nil
 }
 
-// ExemplareJeTitel gruppiert die Exemplare nach ihrem Titel.
+// exemplareJeTitel gruppiert die Exemplare nach ihrem Titel.
 //
 // Der Schreibpfad braucht diese Sicht, weil der TITEL die atomare Einheit ist: Er trägt
 // Exemplar-Zeilen, und ein Titel mit 5 Stück, dem nur drei Exemplare folgen, wäre ein
 // stiller Bestandsfehler.
-func ExemplareJeTitel(exemplare []Exemplar) map[string][]Exemplar {
+func exemplareJeTitel(exemplare []Exemplar) map[string][]Exemplar {
 	jeTitel := make(map[string][]Exemplar)
 	for _, e := range exemplare {
 		jeTitel[e.TitelID] = append(jeTitel[e.TitelID], e)

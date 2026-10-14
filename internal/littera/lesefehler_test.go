@@ -25,15 +25,15 @@ func TestLeseTabellen_KaputterExportIstEinFehler(t *testing.T) {
 
 	leser := map[string]func(io.Reader) (int, error){
 		"Titel": func(r io.Reader) (int, error) {
-			z, err := LeseTitel(r)
+			z, err := leseTitel(r)
 			return len(z), err
 		},
 		"Exemplare": func(r io.Reader) (int, error) {
-			z, err := LeseExemplare(r)
+			z, err := leseExemplare(r)
 			return len(z), err
 		},
 		"Leser": func(r io.Reader) (int, error) {
-			z, err := LeseLeser(r, nil)
+			z, err := leseLeser(r, nil)
 			return len(z), err
 		},
 	}

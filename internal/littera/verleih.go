@@ -17,13 +17,13 @@ var datumsFormate = []string{
 	"01/02/06",
 }
 
-// DatumAus liest einen Littera-Zeitstempel. Zweiter Rückgabewert ist false bei leerem
+// datumAus liest einen Littera-Zeitstempel. Zweiter Rückgabewert ist false bei leerem
 // oder unlesbarem Wert — der Aufrufer entscheidet dann, ob das ein Fehler ist.
 //
 // Bewusst keine „Notfall-Null-Zeit": Ein Datum, das als 0001-01-01 durchrutscht, sieht
 // in der Datenbank wie ein gültiger Wert aus und fällt erst auf, wenn jemand eine
 // 2000 Jahre überfällige Mahnung in der Hand hält.
-func DatumAus(roh string) (time.Time, bool) {
+func datumAus(roh string) (time.Time, bool) {
 	roh = strings.TrimSpace(roh)
 	if roh == "" {
 		return time.Time{}, false
@@ -36,7 +36,7 @@ func DatumAus(roh string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-// GeburtsdatumAus liest ein Geburtsdatum und holt es zurück in die Vergangenheit.
+// geburtsdatumAus liest ein Geburtsdatum und holt es zurück in die Vergangenheit.
 //
 // Die Jahrhundertgrenze bei „06" liegt in Go fest auf 69: 69–99 werden 19xx, 00–68
 // werden 20xx. Für Ausleihdaten stimmt das, für Geburtsdaten nicht. Gemessen am
@@ -45,8 +45,8 @@ func DatumAus(roh string) (time.Time, bool) {
 //
 // Ein Geburtsdatum in der Zukunft ist immer falsch, also wird ein Jahrhundert abgezogen.
 // jetzt wird übergeben, damit der Test nicht von der Systemuhr abhängt.
-func GeburtsdatumAus(roh string, jetzt time.Time) (time.Time, bool) {
-	t, ok := DatumAus(roh)
+func geburtsdatumAus(roh string, jetzt time.Time) (time.Time, bool) {
+	t, ok := datumAus(roh)
 	if !ok {
 		return time.Time{}, false
 	}
@@ -71,10 +71,10 @@ type Ausleihe struct {
 	Mahnungen      int
 }
 
-// Offen sagt, ob das Buch noch beim Entleiher ist.
-func (a Ausleihe) Offen() bool { return !a.Zurueckgegeben }
+// IstOffen sagt, ob das Buch noch beim Entleiher ist.
+func (a Ausleihe) IstOffen() bool { return !a.Zurueckgegeben }
 
-// LeseAusleihen liest die Tabelle `Verleih`.
+// leseAusleihen liest die Tabelle `Verleih`.
 //
 // Zwei Fallstricke stecken in den Spaltennamen:
 //   - `Rückgabedatum` ist die FRIST, nicht die Rückgabe. Die tatsächliche Rückgabe
@@ -84,7 +84,7 @@ func (a Ausleihe) Offen() bool { return !a.Zurueckgegeben }
 //   - `Zurückgegeben` ist ein eigenes Kennzeichen und nicht aus dem Vorhandensein von
 //     `IstRückgabedatum` ableitbar; im Altbestand gibt es zurückgegebene Ausleihen
 //     ohne eingetragenes Rückgabedatum.
-func LeseAusleihen(r io.Reader) ([]Ausleihe, error) {
+func leseAusleihen(r io.Reader) ([]Ausleihe, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err
@@ -102,12 +102,12 @@ func LeseAusleihen(r io.Reader) ([]Ausleihe, error) {
 			ID:             strings.TrimSpace(z["Buchungsnummer"]),
 			ExemplarID:     exemplar,
 			LeserID:        leser,
-			Zurueckgegeben: wahrheitswert(z["Zurückgegeben"]),
+			Zurueckgegeben: istWahr(z["Zurückgegeben"]),
 			Mahnungen:      zahlOderNull(z["Mahnungen"]),
 		}
-		a.AusgeliehenAm, _ = DatumAus(z["Verleihdatum"])
-		a.Frist, _ = DatumAus(z["Rückgabedatum"])
-		if r, ok := DatumAus(z["IstRückgabedatum"]); ok {
+		a.AusgeliehenAm, _ = datumAus(z["Verleihdatum"])
+		a.Frist, _ = datumAus(z["Rückgabedatum"])
+		if r, ok := datumAus(z["IstRückgabedatum"]); ok {
 			a.RueckgabeAm = r
 		}
 		ausleihen = append(ausleihen, a)
@@ -115,9 +115,9 @@ func LeseAusleihen(r io.Reader) ([]Ausleihe, error) {
 	return ausleihen, nil
 }
 
-// wahrheitswert liest Litteras Boolean-Export. mdb-export schreibt 0/1, je nach
+// istWahr liest Litteras Boolean-Export. mdb-export schreibt 0/1, je nach
 // Fassung auch "True"/"False".
-func wahrheitswert(roh string) bool {
+func istWahr(roh string) bool {
 	switch strings.ToLower(strings.TrimSpace(roh)) {
 	case "1", "true", "wahr", "-1": // -1 ist Access' interne Wahrheit
 		return true
@@ -133,7 +133,7 @@ func wahrheitswert(roh string) bool {
 func NurOffene(ausleihen []Ausleihe) []Ausleihe {
 	var offen []Ausleihe
 	for _, a := range ausleihen {
-		if a.Offen() {
+		if a.IstOffen() {
 			offen = append(offen, a)
 		}
 	}

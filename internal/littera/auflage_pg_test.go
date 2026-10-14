@@ -17,7 +17,7 @@ func TestAuflageKommtMit(t *testing.T) {
 	s, protokoll := testSchreiber(t, pool, nil)
 	ctx := context.Background()
 
-	gelesen, err := LeseTitel(strings.NewReader(
+	gelesen, err := leseTitel(strings.NewReader(
 		"Buchungsnummer,Haupttitel,Auflage,Verlag,Medienart\n" +
 			`1,"Faust","13. völlig überarb.  Aufl. ",1,1` + "\n" +
 			`2,"Die Welle","",1,1` + "\n" +

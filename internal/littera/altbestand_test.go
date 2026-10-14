@@ -54,7 +54,7 @@ func TestEchterAltbestand(t *testing.T) {
 
 	// Die Signatur ist der Grund, warum der Bestand ueberhaupt auffindbar ist. Wenn sie
 	// bei der Mehrheit fehlt, stimmt die Spaltenzuordnung (Sig1/Sig2) nicht.
-	signaturen, abweichend := SignaturJeTitel(exemplare)
+	signaturen, abweichend := signaturJeTitel(exemplare)
 	if len(signaturen)*10 < len(titel)*9 {
 		t.Errorf("nur %d von %d Titeln haben eine Signatur — Sig1/Sig2 pruefen",
 			len(signaturen), len(titel))
@@ -80,7 +80,7 @@ func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
 	abweichend, unlesbar, keinEAN, falschGerechnet, andereBib := 0, 0, 0, 0, 0
 	var beispiel, beispielRechnung string
 	for _, e := range exemplare {
-		nummer, bib, ok := BarcodeInhalt(e.Barcode)
+		nummer, bib, ok := barcodeInhalt(e.Barcode)
 		if !ok {
 			unlesbar++
 			continue
@@ -94,12 +94,12 @@ func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
 		// Der volle EAN-13: Die Rechnung aus den Spalten muss das Etikett ergeben, wo die
 		// Spalten dieselben Nummern tragen wie das Etikett. Bis zum 28.09.2026 prüfte diese
 		// Schleife nur die Nummer — die falsche Rechnung für kurze Nummern sah sie nicht.
-		ean, eanOK := EtikettZiffern(e.Barcode)
+		ean, eanOK := etikettZiffern(e.Barcode)
 		if !eanOK {
 			keinEAN++
 			continue
 		}
-		if spalte, _ := zifferngefuellt(e.Bibliotheksnummer, etikettBibLen); spalte != bib {
+		if spalte, _ := zifferngefuellt(e.Bibliotheksnummer, etikettBibLaenge); spalte != bib {
 			andereBib++ // am Altbestand zweimal: Spalte 0, Etikett 0395 — die Übernahme nimmt das Etikett
 			continue
 		}
@@ -118,7 +118,7 @@ func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
 			"barcode_id waere dann falsch", abweichend, beispiel)
 	}
 	if keinEAN > 0 {
-		t.Errorf("%d Druckzeichenketten sind kein EAN-13 (Paritaet oder Pruefziffer) – EtikettZiffern pruefen", keinEAN)
+		t.Errorf("%d Druckzeichenketten sind kein EAN-13 (Paritaet oder Pruefziffer) – etikettZiffern pruefen", keinEAN)
 	}
 	if falschGerechnet > 0 {
 		t.Errorf("%d Etiketten weichen von EtikettBarcode ab (%s) – die Rechnung stimmt nicht", falschGerechnet, beispielRechnung)
@@ -140,7 +140,7 @@ func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 		t.Skipf("leser_ug.csv fehlt — Leser-Pruefung uebersprungen: %v", err)
 	}
 	t.Cleanup(func() { _ = gf.Close() }) //nolint:errcheck // Testaufraeumen
-	gruppen, err := LeseLesergruppen(gf)
+	gruppen, err := leseLesergruppen(gf)
 	if err != nil {
 		t.Fatalf("Lesergruppen: %v", err)
 	}
@@ -150,14 +150,14 @@ func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 		t.Skipf("leser.csv fehlt — Leser-Pruefung uebersprungen: %v", err)
 	}
 	t.Cleanup(func() { _ = lf.Close() }) //nolint:errcheck // Testaufraeumen
-	leser, err := LeseLeser(lf, gruppen)
+	leser, err := leseLeser(lf, gruppen)
 	if err != nil {
 		t.Fatalf("Leser lesen: %v", err)
 	}
 
-	schueler := NurArt(leser, ArtSchueler)
-	lehrkraefte := NurArt(leser, ArtLehrkraft)
-	abgegangen := NurArt(leser, ArtAbgegangen)
+	schueler := nurArt(leser, ArtSchueler)
+	lehrkraefte := nurArt(leser, ArtLehrkraft)
+	abgegangen := nurArt(leser, ArtAbgegangen)
 
 	if len(schueler) == 0 || len(lehrkraefte) == 0 {
 		t.Fatalf("Einordnung greift nicht: %d Schueler, %d Lehrkraefte",
@@ -183,11 +183,11 @@ func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 		}
 	}
 
-	sonderkonten := len(NurArt(leser, ArtPraktikum)) + len(NurArt(leser, ArtSekretariat)) +
-		len(NurArt(leser, ArtUPlus)) + len(NurArt(leser, ArtFachbereich))
+	sonderkonten := len(nurArt(leser, ArtPraktikum)) + len(nurArt(leser, ArtSekretariat)) +
+		len(nurArt(leser, ArtUPlus)) + len(nurArt(leser, ArtFachbereich))
 	t.Logf("Leser: %d gesamt — %d Schueler, %d Lehrkraefte, %d abgegangen, %d Sonderkonten, %d unklar",
 		len(leser), len(schueler), len(lehrkraefte), len(abgegangen),
-		sonderkonten, len(NurArt(leser, ArtUnbekannt)))
+		sonderkonten, len(nurArt(leser, ArtUnbekannt)))
 
 	// schueler.abgaenger_jahr ist NOT NULL. Jeder Schueler, der geschrieben werden
 	// soll, braucht also einen Wert — sonst bricht der Import auf halber Strecke ab.
@@ -195,12 +195,12 @@ func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 	ohneJahr, abschlussklassen := 0, 0
 	unbekannteKlassen := map[string]int{}
 	for _, s := range schueler {
-		if _, ok := AbgaengerJahr(s.Klasse, schuljahrEnde); !ok {
+		if _, ok := abgaengerJahr(s.Klasse, schuljahrEnde); !ok {
 			ohneJahr++
 			unbekannteKlassen[s.Klasse]++
 			continue
 		}
-		if IstAbschlussklasse(s.Klasse) {
+		if istAbschlussklasse(s.Klasse) {
 			abschlussklassen++
 		}
 	}
@@ -226,7 +226,7 @@ func pruefeAusleihen(t *testing.T, basis string, leser []Leser, exemplare []Exem
 	}
 	t.Cleanup(func() { _ = vf.Close() }) //nolint:errcheck // Testaufraeumen
 
-	ausleihen, err := LeseAusleihen(vf)
+	ausleihen, err := leseAusleihen(vf)
 	if err != nil {
 		t.Fatalf("Ausleihen lesen: %v", err)
 	}
@@ -294,7 +294,7 @@ func pruefeAutorenAbdeckung(t *testing.T, basis string, titel []Titel) {
 	}
 	t.Cleanup(func() { _ = pf.Close() }) //nolint:errcheck // Testaufraeumen
 
-	personen, err := LesePersonen(pf)
+	personen, err := lesePersonen(pf)
 	if err != nil {
 		t.Fatalf("Personen lesen: %v", err)
 	}
@@ -305,7 +305,7 @@ func pruefeAutorenAbdeckung(t *testing.T, basis string, titel []Titel) {
 	}
 	t.Cleanup(func() { _ = zf.Close() }) //nolint:errcheck // Testaufraeumen
 
-	zuordnungen, err := LeseZuordnungen(personen, zf, Standortregel{})
+	zuordnungen, err := lesePersonenZuordnungen(personen, zf, Standortregel{})
 	if err != nil {
 		t.Fatalf("Zuordnung lesen: %v", err)
 	}
@@ -318,7 +318,7 @@ func pruefeAutorenAbdeckung(t *testing.T, basis string, titel []Titel) {
 		}
 	}
 	nachher := 0
-	for _, ti := range MitAutoren(titel, autoren) {
+	for _, ti := range mitAutoren(titel, autoren) {
 		if ti.Autor != "" {
 			nachher++
 		}
@@ -338,7 +338,7 @@ func pruefeAutorenAbdeckung(t *testing.T, basis string, titel []Titel) {
 	// bei 7.131 Titeln „Buchbestand Bibliothek" mitten in der Autorenangabe — eine hohe
 	// Abdeckung, die im Katalog schlicht falsch ist.
 	verschmutzt := 0
-	for _, ti := range MitAutoren(titel, autoren) {
+	for _, ti := range mitAutoren(titel, autoren) {
 		for _, teil := range strings.Split(ti.Autor, "; ") {
 			if bestandsmarken[teil] {
 				verschmutzt++
@@ -366,7 +366,7 @@ func ladeTitel(t *testing.T, pfad string) []Titel {
 			t.Logf("Datei schliessen: %v", err)
 		}
 	})
-	titel, err := LeseTitel(f)
+	titel, err := leseTitel(f)
 	if err != nil {
 		t.Fatalf("Titel lesen: %v", err)
 	}
@@ -384,7 +384,7 @@ func ladeExemplare(t *testing.T, pfad string) []Exemplar {
 			t.Logf("Datei schliessen: %v", err)
 		}
 	})
-	ex, err := LeseExemplare(f)
+	ex, err := leseExemplare(f)
 	if err != nil {
 		t.Fatalf("Exemplare lesen: %v", err)
 	}

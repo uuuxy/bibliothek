@@ -9,7 +9,7 @@ import (
 	"bibliothek/internal/uebernahme"
 )
 
-func TestLowerTrim(t *testing.T) {
+func TestKleinOhneRand(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
@@ -23,8 +23,8 @@ func TestLowerTrim(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			if got := lowerTrim(tt.input); got != tt.expected {
-				t.Errorf("lowerTrim(%q) = %q, want %q", tt.input, got, tt.expected)
+			if got := kleinOhneRand(tt.input); got != tt.expected {
+				t.Errorf("kleinOhneRand(%q) = %q, want %q", tt.input, got, tt.expected)
 			}
 		})
 	}

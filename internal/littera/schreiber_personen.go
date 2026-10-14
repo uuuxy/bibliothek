@@ -24,16 +24,16 @@ type PersonenBericht struct {
 	IstKollegium int
 	AbgleichOK   bool
 
-	// EntleiherIDs bildet Littera-Leser → Ziel ab. Der Ausleihteil braucht sie.
-	EntleiherIDs map[string]Entleiher
+	// Zielleser bildet Littera-Leser → Ziel ab. Der Ausleihteil braucht sie.
+	Zielleser map[string]Zielleser
 }
 
-// Entleiher sagt, in welcher Tabelle eine Person gelandet ist. Die Ausleihe muss genau
+// Zielleser sagt, in welcher Tabelle eine Person gelandet ist. Die Ausleihe muss genau
 // eine der beiden Spalten setzen (check_loan_borrower).
-// Entleiher ist die Leserzeile, an der die Ausleihen dieser Person hängen. Vor
+// Zielleser ist die Leserzeile, an der die Ausleihen dieser Person hängen. Vor
 // Migration 125 standen hier zwei IDs — eine für Schüler, eine für Lehrkräfte —, und der
 // Ausleihteil musste raten, welche gefüllt ist.
-type Entleiher struct {
+type Zielleser struct {
 	LeserID string
 	// IstSchueler trennt nur noch die Zählung im Bericht und die Dauerleihe.
 	IstSchueler bool
@@ -73,7 +73,7 @@ const platzhalterDomain = "@littera.invalid"
 // Das Konto trägt seit Migration 125 weder Ausweis noch Personenart; beides gehört zur
 // Leserzeile, die der Trigger trg_benutzer_hat_leserzeile mit anlegt und deren ID hier
 // zurückkommt.
-const sqlBenutzerEinfuegen = `
+const sqlKontoEinfuegen = `
 	INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, erstellt_am)
 	VALUES ($1,$2,$3,'kollegium',$4,$5)
 	RETURNING leser_id`
@@ -98,8 +98,8 @@ const sqlLeserOhneKontoEinfuegen = `
 // weder raten noch auslassen: zuordnen, dann laufen.
 func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (PersonenBericht, error) {
 	bericht := PersonenBericht{
-		QuellLeser:   len(ab.Leser),
-		EntleiherIDs: make(map[string]Entleiher, len(ab.Leser)),
+		QuellLeser: len(ab.Leser),
+		Zielleser:  make(map[string]Zielleser, len(ab.Leser)),
 	}
 	if offen := OhneZuordnung(ab); len(offen) > 0 {
 		return bericht, fmt.Errorf("Leser ohne Zuordnung, es wurde keine Person geschrieben: %v", offen)
@@ -117,10 +117,10 @@ func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (Perso
 	for _, id := range ab.AusweisMehrfach {
 		lauf.mehrereKarten[id] = true
 	}
-	if err := lauf.vorbelegen(ctx); err != nil {
+	if err := lauf.belegeVor(ctx); err != nil {
 		return bericht, err
 	}
-	if err := lauf.alleBatches(ctx, ab.Leser); err != nil {
+	if err := lauf.verarbeiteAlle(ctx, ab.Leser); err != nil {
 		return bericht, err
 	}
 
@@ -166,10 +166,10 @@ type personenlauf struct {
 	mehrereKarten map[string]bool
 }
 
-// vorbelegen liest die schon vergebenen Ausweisnummern und Adressen ein — dieselbe
+// belegeVor liest die schon vergebenen Ausweisnummern und Adressen ein — dieselbe
 // Vorsichtsmaßnahme wie bei den Barcodes: Eine Kollision mit vorhandenen Zeilen kostet
 // sonst die ganze Person.
-func (p *personenlauf) vorbelegen(ctx context.Context) error {
+func (p *personenlauf) belegeVor(ctx context.Context) error {
 	// EINE Abfrage über alle Ausweisnummern — sie stehen seit Migration 125 an einem Ort.
 	if err := p.lade(ctx, `SELECT barcode_id FROM leser WHERE deleted_at IS NULL AND barcode_id IS NOT NULL`, p.belegteAusweise); err != nil {
 		return err
@@ -206,17 +206,17 @@ func (p *personenlauf) lade(ctx context.Context, sql string, ziel map[string]boo
 	return nil
 }
 
-func (p *personenlauf) alleBatches(ctx context.Context, leser []Leser) error {
+func (p *personenlauf) verarbeiteAlle(ctx context.Context, leser []Leser) error {
 	for i := 0; i < len(leser); i += p.s.opt.BatchGroesse {
 		ende := min(i+p.s.opt.BatchGroesse, len(leser))
-		if err := p.einBatch(ctx, leser[i:ende]); err != nil {
+		if err := p.verarbeiteBatch(ctx, leser[i:ende]); err != nil {
 			return fmt.Errorf("abgebrochen ab Leser %s: %w", leser[i].ID, err)
 		}
 	}
 	return nil
 }
 
-func (p *personenlauf) einBatch(ctx context.Context, batch []Leser) error {
+func (p *personenlauf) verarbeiteBatch(ctx context.Context, batch []Leser) error {
 	tx, err := p.s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("konnte die Transaktion nicht öffnen: %w", err)
@@ -224,7 +224,7 @@ func (p *personenlauf) einBatch(ctx context.Context, batch []Leser) error {
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
 	for _, l := range batch {
-		if err := p.einePerson(ctx, tx, l); err != nil {
+		if err := p.verarbeitePerson(ctx, tx, l); err != nil {
 			return err
 		}
 	}
@@ -234,8 +234,8 @@ func (p *personenlauf) einBatch(ctx context.Context, batch []Leser) error {
 	return nil
 }
 
-func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error {
-	var neu Entleiher
+func (p *personenlauf) verarbeitePerson(ctx context.Context, tx pgx.Tx, l Leser) error {
+	var neu Zielleser
 	erg, err := uebernahme.ImSavepoint(ctx, tx, "littera_id="+l.ID, func(sp pgx.Tx) error {
 		var innerErr error
 		neu, innerErr = p.schreibePerson(ctx, sp, l)
@@ -251,7 +251,7 @@ func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error
 		return nil
 	}
 
-	p.bericht.EntleiherIDs[l.ID] = neu
+	p.bericht.Zielleser[l.ID] = neu
 	if neu.IstSchueler {
 		p.bericht.Schueler++
 	} else {
@@ -264,7 +264,7 @@ func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error
 // mit Konto, wo eines dazugehört (leserart.HatKonto), sonst nur die Leserzeile. Die
 // Littera-Gruppe steht seit dem 30.09.2026 als Art an der Leserzeile (ZielArt) und nicht mehr
 // nur im Protokoll.
-func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
+func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Zielleser, error) {
 	ziel := l.Art.ZielArt()
 	switch {
 	case leserart.IstSchueler(ziel):
@@ -276,14 +276,14 @@ func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (
 	}
 	// SchreibePersonen lässt keinen Leser ohne Art herein (OhneZuordnung); kommt doch einer
 	// an, bricht der Lauf ab, statt ihn irgendwo einzusortieren.
-	return Entleiher{}, fmt.Errorf("Leser %s hat keine Art (%d)", l.ID, l.Art)
+	return Zielleser{}, fmt.Errorf("Leser %s hat keine Art (%d)", l.ID, l.Art)
 }
 
-func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
+func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser) (Zielleser, error) {
 	jahr, rueckfall := p.abgangsjahr(l)
 
 	var geburtsdatum *time.Time
-	if g, ok := GeburtsdatumAus(l.Geburtsdatum, p.s.opt.Jetzt); ok {
+	if g, ok := geburtsdatumAus(l.Geburtsdatum, p.s.opt.Jetzt); ok {
 		geburtsdatum = &g
 	}
 
@@ -300,14 +300,14 @@ func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser)
 		geburtsdatum, jahr, l.Art == ArtAbgegangen, herkunft, p.s.opt.Jetzt,
 	).Scan(&id)
 	if err != nil {
-		return Entleiher{}, fmt.Errorf("beim Schüler %s %s: %w", l.Vorname, l.Nachname, err)
+		return Zielleser{}, fmt.Errorf("beim Schüler %s %s: %w", l.Vorname, l.Nachname, err)
 	}
 	if rueckfall {
 		p.s.prot.Warnung(l.ID, l.Lesernummer, fmt.Sprintf(
 			"Klasse „%s“ nennt keinen Jahrgang – Abgangsjahr %d eingesetzt wie bei der Handanlage; "+
 				"das richtige setzt der Abgang (Versetzung, LUSD-Import)", l.Klasse, jahr))
 	}
-	return Entleiher{LeserID: id, IstSchueler: true}, nil
+	return Zielleser{LeserID: id, IstSchueler: true}, nil
 }
 
 // abgangsjahr rechnet das Abgangsjahr aus der Klasse.
@@ -323,7 +323,7 @@ func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser)
 // Ausleihen ausgelassen — mit der Begründung, ein geratenes Jahr archiviere ihn still; eine
 // Archivierung nach dem Abgangsjahr gibt es aber nicht (siehe AbgangsjahrOhneKlasse).
 func (p *personenlauf) abgangsjahr(l Leser) (jahr int, rueckfall bool) {
-	if jahr, ok := AbgaengerJahr(l.Klasse, p.s.opt.SchuljahrEnde); ok {
+	if jahr, ok := abgaengerJahr(l.Klasse, p.s.opt.SchuljahrEnde); ok {
 		return jahr, false
 	}
 	if l.Art == ArtAbgegangen {
@@ -332,36 +332,36 @@ func (p *personenlauf) abgangsjahr(l Leser) (jahr int, rueckfall bool) {
 	return repository.AbgangsjahrOhneKlasse(p.s.opt.Jetzt), true
 }
 
-func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
+func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser) (Zielleser, error) {
 	art := l.Art.ZielArt()
 	var leserID string
-	err := tx.QueryRow(ctx, sqlBenutzerEinfuegen,
+	err := tx.QueryRow(ctx, sqlKontoEinfuegen,
 		p.kuerze(l, "vorname", l.Vorname, uebernahme.MaxMedientyp),
 		p.kuerze(l, "nachname", l.Nachname, uebernahme.MaxMedientyp),
-		p.mailadresse(l), !p.s.opt.LehrerInaktiv, p.s.opt.Jetzt,
+		p.mailadresse(l), !p.s.opt.LehrkraefteInaktiv, p.s.opt.Jetzt,
 	).Scan(&leserID)
 	if err != nil {
-		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: %w", l.Vorname, l.Nachname, err)
+		return Zielleser{}, fmt.Errorf("bei der Lehrkraft %s %s: %w", l.Vorname, l.Nachname, err)
 	}
 	tag, err := tx.Exec(ctx, sqlLeserzeileNachtragen,
 		uebernahme.Nullbar(p.ausweis(l)), art, leserID)
 	if err != nil {
-		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: %w", l.Vorname, l.Nachname, err)
+		return Zielleser{}, fmt.Errorf("bei der Lehrkraft %s %s: %w", l.Vorname, l.Nachname, err)
 	}
 	// 0 Zeilen hieße: Das Konto kam ohne Leserzeile. Ohne diese Prüfung liefe die
 	// Übernahme durch und meldete eine Lehrkraft als geschrieben, deren Ausweis und Art
 	// nirgends stehen — an der Theke wäre sie nicht auffindbar.
 	if tag.RowsAffected() == 0 {
-		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: die Leserzeile fehlt",
+		return Zielleser{}, fmt.Errorf("bei der Lehrkraft %s %s: die Leserzeile fehlt",
 			l.Vorname, l.Nachname)
 	}
-	return Entleiher{LeserID: leserID}, nil
+	return Zielleser{LeserID: leserID}, nil
 }
 
 // schreibeOhneKonto legt Praktikum und Fachbereich als Leserzeile ohne Konto an. Ausweis und
 // Name wie im Kollegium; kein Geburtsdatum, keine Klasse (chk_leser_schueler_pflichtfelder
 // gilt nur für Schüler).
-func (p *personenlauf) schreibeOhneKonto(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
+func (p *personenlauf) schreibeOhneKonto(ctx context.Context, tx pgx.Tx, l Leser) (Zielleser, error) {
 	var leserID string
 	err := tx.QueryRow(ctx, sqlLeserOhneKontoEinfuegen,
 		uebernahme.Nullbar(p.ausweis(l)),
@@ -370,9 +370,9 @@ func (p *personenlauf) schreibeOhneKonto(ctx context.Context, tx pgx.Tx, l Leser
 		l.Art.ZielArt(), p.s.opt.Jetzt,
 	).Scan(&leserID)
 	if err != nil {
-		return Entleiher{}, fmt.Errorf("beim Konto %s %s: %w", l.Vorname, l.Nachname, err)
+		return Zielleser{}, fmt.Errorf("beim Konto %s %s: %w", l.Vorname, l.Nachname, err)
 	}
-	return Entleiher{LeserID: leserID}, nil
+	return Zielleser{LeserID: leserID}, nil
 }
 
 // ausweis liefert die Ausweisnummer und weicht bei Kollision auf die Littera-interne
@@ -411,9 +411,9 @@ func (p *personenlauf) ausweis(l Leser) string {
 	//
 	// Die Ersatznummer liegt im Nummernkreis des Generators (ausweis_nummer_start): Die
 	// Littera-Kennungen reichten 2010 bis 6845 und wachsen mit jeder Anlage. Deshalb weicht sie
-	// jeder Nummer aus, die schon einmal einer Person gehörte (ersatzFrei).
+	// jeder Nummer aus, die schon einmal einer Person gehörte (istErsatzFrei).
 	ersatz := "A-" + l.ID
-	for n := 2; !p.ersatzFrei(ersatz); n++ {
+	for n := 2; !p.istErsatzFrei(ersatz); n++ {
 		ersatz = fmt.Sprintf("A-%s-%d", l.ID, n)
 	}
 	grund := "Ausweisnummer bereits vergeben"
@@ -439,11 +439,11 @@ const sqlVerbrauchteAusweise = `
 	UNION
 	SELECT 'A-' || nummer FROM ausweisnummern_ausgeschieden`
 
-// ersatzFrei sagt, ob eine selbst erfundene Nummer vergeben werden darf: Sie steht weder an
+// istErsatzFrei sagt, ob eine selbst erfundene Nummer vergeben werden darf: Sie steht weder an
 // einer aktiven Leserzeile noch an einem Buch, und sie stand nie an einer Person — auch nicht
 // als dieselbe Zahl in anderer Schreibweise (A-04908 und A-4908). Deren Karte buchte sonst an
 // der Theke auf die übernommene Person (docs/OFFEN.md 5.23).
-func (p *personenlauf) ersatzFrei(nummer string) bool {
+func (p *personenlauf) istErsatzFrei(nummer string) bool {
 	return !p.belegteAusweise[nummer] && !p.buchBarcodes[nummer] && !p.verbrauchteAusweise[nummer]
 }
 
@@ -456,7 +456,7 @@ func (p *personenlauf) ersatzFrei(nummer string) bool {
 // und jede Kollision hätte eine echte Adresse dort abgelegt. Wer sie braucht, findet sie
 // in der Quelldatei neben der Lesernummer — die Zeile bleibt damit reparierbar.
 func (p *personenlauf) mailadresse(l Leser) string {
-	echt := lowerTrim(l.EMail)
+	echt := kleinOhneRand(l.EMail)
 	if echt != "" && !p.belegteMails[echt] {
 		p.belegteMails[echt] = true
 		return echt
@@ -476,7 +476,7 @@ func (p *personenlauf) kuerze(l Leser, feld, wert string, max int) string {
 	return uebernahme.Kuerze(uebernahme.Kuerzung{Protokoll: p.s.prot, QuellID: l.ID, Kennung: l.Lesernummer, Feld: feld, Wert: wert, Max: max})
 }
 
-// lowerTrim bringt eine Adresse auf die Form, in der benutzer.email verglichen wird.
-func lowerTrim(s string) string {
+// kleinOhneRand bringt eine Adresse auf die Form, in der benutzer.email verglichen wird.
+func kleinOhneRand(s string) string {
 	return strings.ToLower(strings.TrimSpace(s))
 }

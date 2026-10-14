@@ -77,8 +77,8 @@ func (a LeserArt) ZielArt() string {
 	return ""
 }
 
-// Lesergruppe ist eine Zeile aus `Leser_UG` — Klassenbezeichnung plus Art.
-type Lesergruppe struct {
+// lesergruppe ist eine Zeile aus `Leser_UG` — Klassenbezeichnung plus Art.
+type lesergruppe struct {
 	Klasse      string // KurzBez: "07H1", "12T3" — die Klasse, wie sie an der Schule heißt
 	Bezeichnung string // Untergruppe, wie Littera sie führt: „Schüler", „Fachbereich Erdkunde"
 	Art         LeserArt
@@ -141,19 +141,19 @@ func artAusUntergruppe(bezeichnung string) LeserArt {
 	return ArtUnbekannt
 }
 
-// LeseLesergruppen liest `Leser_UG` als Schlüssel → Klasse + Art.
-func LeseLesergruppen(r io.Reader) (map[string]Lesergruppe, error) {
+// leseLesergruppen liest `Leser_UG` als Schlüssel → Klasse + Art.
+func leseLesergruppen(r io.Reader) (map[string]lesergruppe, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err
 	}
-	gruppen := make(map[string]Lesergruppe, len(zeilen))
+	gruppen := make(map[string]lesergruppe, len(zeilen))
 	for _, z := range zeilen {
 		id := strings.TrimSpace(z["Buchungsnummer"])
 		if id == "" {
 			continue
 		}
-		gruppen[id] = Lesergruppe{
+		gruppen[id] = lesergruppe{
 			Klasse:      strings.TrimSpace(z["KurzBez"]),
 			Bezeichnung: strings.TrimSpace(z["Untergruppe"]),
 			Art:         artAusUntergruppe(z["Untergruppe"]),
@@ -162,12 +162,12 @@ func LeseLesergruppen(r io.Reader) (map[string]Lesergruppe, error) {
 	return gruppen, nil
 }
 
-// LeseLeser liest die Tabelle `Leser` und ordnet jede Person über die Lesergruppe ein.
+// leseLeser liest die Tabelle `Leser` und ordnet jede Person über die Lesergruppe ein.
 //
 // Die Klasse steht NICHT am Leser: Sie kommt aus Leser_UG.KurzBez. Die naheliegende
 // Tabelle `LeserSchueler` (mit Jahrgang, Abgang, Klassenlehrer) ist im Altbestand
 // vollständig leer — 705 Zeilen, alle Werte 0. Wer darauf baut, baut auf nichts.
-func LeseLeser(r io.Reader, gruppen map[string]Lesergruppe) ([]Leser, error) {
+func leseLeser(r io.Reader, gruppen map[string]lesergruppe) ([]Leser, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err
@@ -200,9 +200,9 @@ func LeseLeser(r io.Reader, gruppen map[string]Lesergruppe) ([]Leser, error) {
 	return leser, nil
 }
 
-// NurArt filtert die Leser einer Art heraus — der Schreibpfad bekommt so genau die
+// nurArt filtert die Leser einer Art heraus — der Schreibpfad bekommt so genau die
 // Menge, die in seine Zieltabelle gehört, statt selbst sortieren zu müssen.
-func NurArt(leser []Leser, art LeserArt) []Leser {
+func nurArt(leser []Leser, art LeserArt) []Leser {
 	var treffer []Leser
 	for _, l := range leser {
 		if l.Art == art {

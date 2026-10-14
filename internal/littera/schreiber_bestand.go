@@ -95,14 +95,14 @@ func (s *Schreiber) SchreibeBestand(ctx context.Context, ab *Altbestand) (Bestan
 	if err != nil {
 		return bericht, err
 	}
-	isbns, err := s.vorhandeneISBNs(ctx)
+	isbns, err := s.ladeVorhandeneISBNs(ctx)
 	if err != nil {
 		return bericht, err
 	}
 
 	lauf := &bestandslauf{s: s, ab: ab, barcodes: barcodes, ohneEtikett: ohneEtikett, isbns: isbns,
-		exemplareJeTitel: ExemplareJeTitel(ab.Exemplare), bericht: &bericht}
-	if err := lauf.alleBatches(ctx); err != nil {
+		exemplareJeTitel: exemplareJeTitel(ab.Exemplare), bericht: &bericht}
+	if err := lauf.verarbeiteAlle(ctx); err != nil {
 		return bericht, err
 	}
 
@@ -137,24 +137,24 @@ type bestandslauf struct {
 	bericht          *BestandBericht
 }
 
-// alleBatches schreibt die Titel in Transaktionen von BatchGroesse Stück.
+// verarbeiteAlle schreibt die Titel in Transaktionen von BatchGroesse Stück.
 //
 // Meldet ein Batch einen Fehler, ist die Übernahme zu Ende: dann betrifft er nicht mehr
 // einen einzelnen Datensatz, sondern die Verbindung oder die Transaktion selbst.
 // Weiterzulaufen hieße, Tausende Zeilen „übersprungen" zu protokollieren, die in
 // Wahrheit nie versucht wurden.
-func (l *bestandslauf) alleBatches(ctx context.Context) error {
+func (l *bestandslauf) verarbeiteAlle(ctx context.Context) error {
 	titel := l.ab.Titel
 	for i := 0; i < len(titel); i += l.s.opt.BatchGroesse {
 		ende := min(i+l.s.opt.BatchGroesse, len(titel))
-		if err := l.einBatch(ctx, titel[i:ende]); err != nil {
+		if err := l.verarbeiteBatch(ctx, titel[i:ende]); err != nil {
 			return fmt.Errorf("abgebrochen ab Titel %s: %w", titel[i].ID, err)
 		}
 	}
 	return nil
 }
 
-func (l *bestandslauf) einBatch(ctx context.Context, batch []Titel) error {
+func (l *bestandslauf) verarbeiteBatch(ctx context.Context, batch []Titel) error {
 	tx, err := l.s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("konnte die Transaktion nicht öffnen: %w", err)
@@ -162,7 +162,7 @@ func (l *bestandslauf) einBatch(ctx context.Context, batch []Titel) error {
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
 	for _, t := range batch {
-		if err := l.einTitel(ctx, tx, t); err != nil {
+		if err := l.verarbeiteTitel(ctx, tx, t); err != nil {
 			return err
 		}
 	}
@@ -175,8 +175,8 @@ func (l *bestandslauf) einBatch(ctx context.Context, batch []Titel) error {
 	return nil
 }
 
-// einTitel schreibt einen Titel samt Exemplaren in einem Savepoint und bucht das Ergebnis.
-func (l *bestandslauf) einTitel(ctx context.Context, tx pgx.Tx, t Titel) error {
+// verarbeiteTitel schreibt einen Titel samt Exemplaren in einem Savepoint und bucht das Ergebnis.
+func (l *bestandslauf) verarbeiteTitel(ctx context.Context, tx pgx.Tx, t Titel) error {
 	var titelID string
 	var exemplarIDs map[string]string
 	var reservierteISBN string
@@ -222,7 +222,7 @@ func (l *bestandslauf) einTitel(ctx context.Context, tx pgx.Tx, t Titel) error {
 // bucheStandorte zählt, woher die Standorte der Exemplare eines übernommenen Titels kamen.
 func (l *bestandslauf) bucheStandorte(titelID string) {
 	for _, e := range l.exemplareJeTitel[titelID] {
-		switch standort, vomTitel := StandortVon(e, l.ab.Standortvermerke[titelID]); {
+		switch standort, vomTitel := standortVon(e, l.ab.Standortvermerke[titelID]); {
 		case vomTitel:
 			l.bericht.StandortVomTitel++
 		case standort != "":
@@ -320,7 +320,7 @@ func (l *bestandslauf) schreibeExemplare(
 			"littera_signatur":   e.Signatur,
 			"littera_exemplarnr": e.Exemplarnummer,
 		}
-		// Nur ein Vermerk aus der festen Liste kommt mit; ein unbekannter meldet einTitel.
+		// Nur ein Vermerk aus der festen Liste kommt mit; ein unbekannter meldet verarbeiteTitel.
 		vermerk, _ := zuordnungAusVermerk(e.Eigentumsvermerk)
 		if vermerk.Wortlaut != "" {
 			werte["littera_eigentumsvermerk"] = vermerk.Wortlaut
@@ -329,7 +329,7 @@ func (l *bestandslauf) schreibeExemplare(
 		if err != nil {
 			return nil, err
 		}
-		standort, _ := StandortVon(e, l.ab.Standortvermerke[e.TitelID])
+		standort, _ := standortVon(e, l.ab.Standortvermerke[e.TitelID])
 		batch.Queue(sqlExemplarEinfuegen, titelID, barcode,
 			erworbenAm(e, l.s.opt.Jetzt), e.Preis, eigenschaften, l.s.opt.Jetzt, !l.ohneEtikett[e.ID],
 			vermerk.Eigentum,
@@ -368,7 +368,7 @@ func (l *bestandslauf) lernmittel(t Titel) (lernmittelfelder, bool) {
 func (ab *Altbestand) lernmittelFuer(titelID string) (lernmittelfelder, bool) {
 	lern, ausSchlagworten := lernmittelUndFach(ab.Signaturen[titelID],
 		ab.Schlagworte.JeTitel[titelID], ab.Interessenkreise.JeTitel[titelID])
-	if nenntLernmittel(ab.Standortvermerke[titelID]) {
+	if hatLernmittelVermerk(ab.Standortvermerke[titelID]) {
 		lern.IstLernmittel = true
 	}
 	return lern, ausSchlagworten
@@ -427,7 +427,7 @@ func (l *bestandslauf) felder(t Titel) titelfelder {
 // erworbenAm liefert das Zugangsdatum; ohne lesbaren Wert das Datum des Laufs.
 // buecher_exemplare.erworben_am ist NOT NULL.
 func erworbenAm(e Exemplar, ersatz time.Time) time.Time {
-	if t, ok := DatumAus(e.Zugangsdatum); ok {
+	if t, ok := datumAus(e.Zugangsdatum); ok {
 		return t
 	}
 	return ersatz

@@ -42,9 +42,9 @@ func (r Standortregel) istVermerk(name string, dritteStelle bool) bool {
 	return bestandsmarken[name] || (dritteStelle && !strings.Contains(name, ","))
 }
 
-// anDritterStelle liest die Stelle aus `Flags`. mdb-export lässt am Ende der Kette
+// istAnDritterStelle liest die Stelle aus `Flags`. mdb-export lässt am Ende der Kette
 // gelegentlich ein Zeichen weg; gezählt wird deshalb von vorn.
-func anDritterStelle(flags string) bool {
+func istAnDritterStelle(flags string) bool {
 	flags = strings.TrimSpace(flags)
 	return len(flags) > stelleDritterVerfasser && flags[stelleDritterVerfasser] == '1'
 }
@@ -93,20 +93,20 @@ func (r Standortregel) wendeStandortregelAn(exemplare []Exemplar) {
 	}
 }
 
-// StandortVon ist der Standort, mit dem ein Exemplar ankommt: sein eigener Sonderstandort,
+// standortVon ist der Standort, mit dem ein Exemplar ankommt: sein eigener Sonderstandort,
 // sonst der Vermerk seines Titels. vomTitel sagt, welche der beiden Stellen ihn liefert.
-func StandortVon(e Exemplar, vermerkeDesTitels []string) (standort string, vomTitel bool) {
+func standortVon(e Exemplar, vermerkeDesTitels []string) (standort string, vomTitel bool) {
 	if e.Sonderstandort != "" {
 		return e.Sonderstandort, false
 	}
 	return strings.Join(vermerkeDesTitels, "; "), len(vermerkeDesTitels) > 0
 }
 
-// nenntLernmittel meldet, ob ein Vermerk am Titel den Bestand der Lernmittelfreiheit nennt
+// hatLernmittelVermerk meldet, ob ein Vermerk am Titel den Bestand der Lernmittelfreiheit nennt
 // („LMF", „LMF/Bibliothek"). Der Import der Titelliste liest denselben Vermerk aus MAB 108a
 // (service.bookTitleAusFelder); ohne ihn kämen Lernmittel ohne LMF-Signatur als
 // Bibliotheksbücher an.
-func nenntLernmittel(vermerke []string) bool {
+func hatLernmittelVermerk(vermerke []string) bool {
 	for _, v := range vermerke {
 		if lmf.HatVermerk(v) {
 			return true
@@ -140,13 +140,13 @@ func ZaehleStandorte(ab *Altbestand) StandortBilanz {
 		for _, v := range liste {
 			vermerke[v]++
 		}
-		if nenntLernmittel(liste) && !lernmittelAusSignatur(ab.Signaturen[titelID]).IstLernmittel {
+		if hatLernmittelVermerk(liste) && !lernmittelAusSignatur(ab.Signaturen[titelID]).IstLernmittel {
 			b.LernmittelNurVermerk++
 		}
 	}
 	sonder := map[string]int{}
 	for _, e := range ab.Exemplare {
-		switch _, vomTitel := StandortVon(e, ab.Standortvermerke[e.TitelID]); {
+		switch _, vomTitel := standortVon(e, ab.Standortvermerke[e.TitelID]); {
 		case e.Sonderstandort != "":
 			sonder[e.Sonderstandort]++
 			b.ExemplareEigen++

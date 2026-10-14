@@ -188,7 +188,7 @@ Zwei Folgerungen:
    unterscheiden sich die Exemplar-Signaturen untereinander. (Eine frühere Rohzählung
    ergab 98 — sie zählte den Platzhalter `0` als eigenen Wert mit; `SignaturAus`
    verwirft ihn.) Für 99,3 % ist die Titel-Ebene verlustfrei; für die übrigen nimmt
-   `SignaturJeTitel` den häufigsten Wert und meldet den Titel als abweichend, statt
+   `signaturJeTitel` den häufigsten Wert und meldet den Titel als abweichend, statt
    still den ersten zu nehmen.
 
 **Jedes Exemplar behält seine eigene Signatur:** Sie steht in `erweiterte_eigenschaften` unter
@@ -291,10 +291,10 @@ Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
   Bestandsvermerke (siehe unten; die frühere Angabe 10.002 zählte sie mit). Mehrfachverfasser sind der
   Normalfall (6.178 Titel haben genau zwei) und werden in Erfassungsreihenfolge mit
   `; ` verbunden, nicht alphabetisch: Der Erstgenannte ist der Hauptverfasser.
-* **Medienart — erledigt** (`MedienartNamen`, gleiche Bauart wie `Verlag`).
-* **Leser — erledigt** (`LeseLeser`, `LeseLesergruppen`, `NurArt`): Einordnung nach
+* **Medienart — erledigt** (`leseMedienarten`, gleiche Bauart wie `Verlag`).
+* **Leser — erledigt** (`leseLeser`, `leseLesergruppen`, `nurArt`): Einordnung nach
   `LeserArt`, Klasse aus `Leser_UG`.
-* **Abgangsjahr — erledigt** (`AbgaengerJahr`, `IstAbschlussklasse`). `schueler.abgaenger_jahr`
+* **Abgangsjahr — erledigt** (`abgaengerJahr`, `istAbschlussklasse`). `schueler.abgaenger_jahr`
   ist NOT NULL, Litteras `Abmeldedatum` aber bei **0 von 1.991** gefüllt — der Wert wird
   aus der Klasse gerechnet. Die Abschlussklassen sind **9H, 10R und 13**; die Regel ist
   nicht neu erfunden, sondern aus `repository/schuljahreswechsel.go` (`is_graduating`) übernommen,
@@ -306,7 +306,7 @@ Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
   `repository.AbgangsjahrOhneKlasse`) und eine Warnung im Protokoll.
   Am Altbestand: für 1.720 von 1.734 Schülern ableitbar (die 14 „Im Ausland" nicht), davon
   232 in einer Abschlussklasse.
-* **Ausleihen — erledigt** (`LeseAusleihen`, `NurOffene`, `OhneExemplar`, `OhneFrist`).
+* **Ausleihen — erledigt** (`leseAusleihen`, `NurOffene`, `OhneExemplar`, `OhneFrist`).
 * **Schreibpfad nach Postgres — erledigt** (`cmd/littera-altbestand`, siehe unten).
 
 ## Der Schreibpfad — gemessen an einem echten Lauf
@@ -340,7 +340,7 @@ Ausleihen.
 `Exemplar.Barcode` ist keine Nummer, sondern die Zeichenkette für den Etikettendruck:
 `8 *pkpööp#-c.bc-*`. Die Ziffern liegen auf zwei Tastaturreihen (`qwertzuiop` und
 `asdfghjklö` stehen beide für 1–9 und 0), dahinter Bibliotheksnummer (0395), Länge und
-Prüfzeichen. Aufgelöst in `littera.BarcodeInhalt`; gegen den Altbestand stimmen **61.520
+Prüfzeichen. Aufgelöst in `littera.barcodeInhalt`; gegen den Altbestand stimmen **61.520
 von 61.520** mit der Spalte `Exemplarnummer` überein.
 
 Damit steht fest, dass die vorhandenen Etiketten die Exemplarnummer tragen — der Import
@@ -356,7 +356,7 @@ SCRIPTS.md, Abschnitt 1).
 Nachtrag 28.09.2026: Die Übernahme schreibt die EAN-13 des Etiketts nach `barcode_id`, nicht
 die Exemplarnummer. Die Spalte `Barcode` ist diese EAN-13 in der Setzform einer EAN-13-Schrift
 (Parität und Prüfziffer stimmen an allen 61.520 Exemplaren) und wird als Etikett übernommen
-(`littera.EtikettZiffern`). `littera.EtikettBarcode` rechnete bis dahin für Nummern unter
+(`littera.etikettZiffern`). `littera.EtikettBarcode` rechnete bis dahin für Nummern unter
 sechs Stellen links aufgefüllt und mit einer festen 6 an Stelle 12 — anders als die beiden
 Scans oben; getroffen hätte es jedes Exemplar dieser Sicherung. Siehe [SCRIPTS.md](SCRIPTS.md).
 
@@ -382,7 +382,7 @@ Bibliothek"). Nach der Bereinigung (`bestandsmarken`, wirkt auch auf den Freitex
 
 **Geburtsdaten landeten in der Zukunft.** Go legt die Jahrhundertgrenze bei zweistelligen
 Jahren fest auf 69. Für Ausleihdaten stimmt das, für Geburtsdaten nicht: 69 Personen —
-Lehrkräfte der Jahrgänge 1946 bis 1968 — kamen als 2046 bis 2068 an. `GeburtsdatumAus`
+Lehrkräfte der Jahrgänge 1946 bis 1968 — kamen als 2046 bis 2068 an. `geburtsdatumAus`
 holt jedes Datum in der Zukunft um ein Jahrhundert zurück.
 
 ### Was NICHT übernommen wird

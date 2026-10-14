@@ -11,7 +11,7 @@ import (
 // Versetzungslauf (repository/schuljahreswechsel.go: substring(klasse from '^\d+')).
 var klassenMuster = regexp.MustCompile(`^(\d+)(.*)$`)
 
-// AbschlussJahrgang liefert den Jahrgang, nach dem ein Zweig die Schule verlässt.
+// abschlussJahrgang liefert den Jahrgang, nach dem ein Zweig die Schule verlässt.
 //
 // Die Regel ist NICHT hier erfunden: Der Versetzungslauf markiert seit jeher genau
 // 9H, 10R und 13 als Abgänger (repository/schuljahreswechsel.go, is_graduating). Diese Funktion
@@ -30,7 +30,7 @@ var klassenMuster = regexp.MustCompile(`^(\d+)(.*)$`)
 // bewusst der LÄNGSTE Weg. Solange der Schüler da ist, steht das Jahr nur im Profil; als
 // Abgänger markieren ihn Versetzung und LUSD-Import, und beide setzen dann das tatsächliche
 // Jahr. Ein zu später Wert kostet also nichts, ein zu früher stünde falsch in der Akte.
-func AbschlussJahrgang(zweigUndZug string) (int, bool) {
+func abschlussJahrgang(zweigUndZug string) (int, bool) {
 	rest := strings.ToUpper(strings.TrimSpace(zweigUndZug))
 	if rest == "" {
 		return 0, false
@@ -48,7 +48,7 @@ func AbschlussJahrgang(zweigUndZug string) (int, bool) {
 	return 0, false
 }
 
-// AbgaengerJahr rechnet aus, in welchem Kalenderjahr ein Schüler die Schule verlässt.
+// abgaengerJahr rechnet aus, in welchem Kalenderjahr ein Schüler die Schule verlässt.
 //
 // schuljahrEnde ist das Jahr, in dem das AKTUELLE Schuljahr endet (Schuljahr 2026/27 →
 // 2027). Ein Siebtklässler im Hauptschulzweig verlässt die Schule nach Jahrgang 9, also
@@ -59,7 +59,7 @@ func AbschlussJahrgang(zweigUndZug string) (int, bool) {
 // Stelle tritt, hängt an der Gruppe und steht beim Aufrufer (personenlauf.abgangsjahr —
 // „Abgegangen", „Im Ausland"); ein Schüler einer gewöhnlichen Klasse ohne Jahrgang wird
 // nicht übernommen und steht als FEHLER im Protokoll.
-func AbgaengerJahr(klasse string, schuljahrEnde int) (int, bool) {
+func abgaengerJahr(klasse string, schuljahrEnde int) (int, bool) {
 	treffer := klassenMuster.FindStringSubmatch(strings.TrimSpace(klasse))
 	if treffer == nil {
 		return 0, false
@@ -68,7 +68,7 @@ func AbgaengerJahr(klasse string, schuljahrEnde int) (int, bool) {
 	if err != nil || jahrgang <= 0 {
 		return 0, false
 	}
-	abschluss, ok := AbschlussJahrgang(treffer[2])
+	abschluss, ok := abschlussJahrgang(treffer[2])
 	if !ok {
 		return 0, false
 	}
@@ -82,9 +82,9 @@ func AbgaengerJahr(klasse string, schuljahrEnde int) (int, bool) {
 	return schuljahrEnde + verbleibend, true
 }
 
-// IstAbschlussklasse sagt, ob eine Klasse am Ende dieses Schuljahres abgeht —
+// istAbschlussklasse sagt, ob eine Klasse am Ende dieses Schuljahres abgeht —
 // dieselbe Aussage, die der Versetzungslauf über is_graduating trifft.
-func IstAbschlussklasse(klasse string) bool {
+func istAbschlussklasse(klasse string) bool {
 	treffer := klassenMuster.FindStringSubmatch(strings.TrimSpace(klasse))
 	if treffer == nil {
 		return false
@@ -93,6 +93,6 @@ func IstAbschlussklasse(klasse string) bool {
 	if err != nil {
 		return false
 	}
-	abschluss, ok := AbschlussJahrgang(treffer[2])
+	abschluss, ok := abschlussJahrgang(treffer[2])
 	return ok && jahrgang >= abschluss
 }

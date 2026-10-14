@@ -28,7 +28,7 @@ import (
 // `qwertz…` und `asdf…` (die EAN-Parität, aus der ein Scanner die erste Ziffer liest), die
 // rechte Hälfte steht in der Reihe `yxcv…`, das letzte Zeichen ist die EAN-Prüfziffer.
 // Nachgemessen am 28.09.2026 an allen 61.520 Exemplaren der Sicherung von 2010: Parität und
-// Prüfziffer stimmen bei allen (siehe EtikettZiffern). Bis dahin stand hier, die Etiketten
+// Prüfziffer stimmen bei allen (siehe etikettZiffern). Bis dahin stand hier, die Etiketten
 // seien „inzwischen durchweg EAN-13" und die Zeichenkette beschreibe eine abgelöste
 // Generation — es ist dieselbe Generation.
 //
@@ -47,12 +47,12 @@ var barcodeZiffern = func() map[rune]int {
 	return m
 }()
 
-// BarcodeInhalt entschlüsselt die Druckzeichenkette eines Littera-Etiketts.
+// barcodeInhalt entschlüsselt die Druckzeichenkette eines Littera-Etiketts.
 //
 // Zurück kommen die Exemplarnummer und die Bibliotheksnummer, so wie sie auf dem
 // Etikett stehen. ok ist false, wenn die Zeichenkette dem Muster nicht folgt — dann darf
 // niemand raten, was auf dem Buch klebt.
-func BarcodeInhalt(roh string) (exemplarnummer, bibliotheksnummer string, ok bool) {
+func barcodeInhalt(roh string) (exemplarnummer, bibliotheksnummer string, ok bool) {
 	treffer := barcodeMuster.FindStringSubmatch(strings.TrimSpace(roh))
 	if treffer == nil {
 		return "", "", false
@@ -95,10 +95,10 @@ var eanParitaet = [10]string{
 	"ABBAAB", "ABBBAA", "ABABAB", "ABABBA", "ABBABA",
 }
 
-// EtikettZiffern liest aus der Druckzeichenkette die dreizehn Ziffern, die ein Scanner vom
+// etikettZiffern liest aus der Druckzeichenkette die dreizehn Ziffern, die ein Scanner vom
 // Etikett liefert. ok nur, wenn Parität und Prüfziffer stimmen — sonst ist die Zeichenkette
 // kein EAN-13, und niemand darf raten.
-func EtikettZiffern(roh string) (string, bool) {
+func etikettZiffern(roh string) (string, bool) {
 	treffer := barcodeMuster.FindStringSubmatch(strings.TrimSpace(roh))
 	if treffer == nil {
 		return "", false
@@ -128,7 +128,7 @@ func EtikettZiffern(roh string) (string, bool) {
 		return "", false
 	}
 	ean := treffer[1] + ziffern
-	if EAN13Pruefziffer(ean[:12]) != int(ean[12]-'0') {
+	if ean13Pruefziffer(ean[:12]) != int(ean[12]-'0') {
 		return "", false
 	}
 	return ean, true
@@ -158,8 +158,8 @@ func EtikettZiffern(roh string) (string, bool) {
 // Aufdruck und Scanwert sind verschiedene Werte — dieselbe Falle wie beim Schülerausweis,
 // wo unter dem Strichcode „[0395] 37" steht, der Scanner aber „B97601826457" liefert.
 const (
-	etikettNummerLen = 7 // erste Ziffer und linke Hälfte des EAN-13
-	etikettBibLen    = 4
+	etikettNummerLaenge = 7 // erste Ziffer und linke Hälfte des EAN-13
+	etikettBibLaenge    = 4
 )
 
 // EtikettBarcode baut den Wert, den ein Scanner vom Buchetikett liest.
@@ -172,19 +172,19 @@ const (
 // unterscheiden, und Littera vergibt solche Nummern nicht.
 func EtikettBarcode(exemplarnummer, bibliotheksnummer string) (string, bool) {
 	nr := strings.TrimSpace(exemplarnummer)
-	if _, ok := zifferngefuellt(nr, etikettNummerLen); !ok || nr[0] == '0' {
+	if _, ok := zifferngefuellt(nr, etikettNummerLaenge); !ok || nr[0] == '0' {
 		return "", false
 	}
-	bib, bibOK := zifferngefuellt(bibliotheksnummer, etikettBibLen)
+	bib, bibOK := zifferngefuellt(bibliotheksnummer, etikettBibLaenge)
 	if !bibOK {
 		return "", false
 	}
-	rumpf := nr + strings.Repeat("0", etikettNummerLen-len(nr)) + bib + strconv.Itoa(len(nr))
-	return rumpf + string('0'+rune(EAN13Pruefziffer(rumpf))), true
+	rumpf := nr + strings.Repeat("0", etikettNummerLaenge-len(nr)) + bib + strconv.Itoa(len(nr))
+	return rumpf + string('0'+rune(ean13Pruefziffer(rumpf))), true
 }
 
-// EAN13Pruefziffer rechnet die Prüfziffer über die ersten zwölf Stellen.
-func EAN13Pruefziffer(zwoelf string) int {
+// ean13Pruefziffer rechnet die Prüfziffer über die ersten zwölf Stellen.
+func ean13Pruefziffer(zwoelf string) int {
 	summe := 0
 	for i, r := range zwoelf {
 		gewicht := 1

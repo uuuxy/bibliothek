@@ -18,7 +18,7 @@ func testSchreiberOhneDB(t *testing.T, anpassen func(*Optionen)) (*Schreiber, fu
 	}
 	t.Cleanup(prot.Schliesse)
 
-	opt := StandardOptionen(time.Date(2026, 8, 4, 12, 0, 0, 0, time.UTC))
+	opt := OptionenVorgabe(time.Date(2026, 8, 4, 12, 0, 0, 0, time.UTC))
 	if anpassen != nil {
 		anpassen(&opt)
 	}
@@ -34,7 +34,7 @@ func testSchreiberOhneDB(t *testing.T, anpassen func(*Optionen)) (*Schreiber, fu
 		return string(b)
 	}
 	// Pool ist nil
-	return NeuerSchreiber(nil, prot, opt), lies
+	return NewSchreiber(nil, prot, opt), lies
 }
 
 func TestFristVorAusgabeWirdGemeldet(t *testing.T) {
@@ -83,14 +83,14 @@ func TestKeineFristWirdDurchVerleihdatumErsetzt(t *testing.T) {
 	}
 }
 
-func TestBuchbarBleibtOffen(t *testing.T) {
+func TestBuchbarIstOffen(t *testing.T) {
 	b1 := buchbar{RueckgabeAm: nil}
-	if !b1.bleibtOffen() {
+	if !b1.istOffen() {
 		t.Errorf("Erwartet, dass Buchung ohne RueckgabeAm offen bleibt")
 	}
 	jetzt := time.Now()
 	b2 := buchbar{RueckgabeAm: &jetzt}
-	if b2.bleibtOffen() {
+	if b2.istOffen() {
 		t.Errorf("Erwartet, dass Buchung mit RueckgabeAm nicht offen bleibt")
 	}
 }
@@ -113,25 +113,25 @@ func TestFristRegulaerBleibtErhalten(t *testing.T) {
 	}
 }
 
-func TestBeideEndenGefunden(t *testing.T) {
+func TestHatBeideEnden(t *testing.T) {
 	s, protokoll := testSchreiberOhneDB(t, nil)
 
 	l := &ausleihlauf{
 		s:         s,
 		bericht:   &AusleihBericht{},
 		exemplare: map[string]string{"E1": "UUID1"},
-		entleiher: map[string]Entleiher{"L1": {LeserID: "S1", IstSchueler: true}},
+		entleiher: map[string]Zielleser{"L1": {LeserID: "S1", IstSchueler: true}},
 	}
 
 	// Gutfall
 	aGut := Ausleihe{ID: "A1", ExemplarID: "E1", LeserID: "L1"}
-	if !l.beideEndenGefunden(aGut) {
+	if !l.hatBeideEnden(aGut) {
 		t.Errorf("Erwartet true, wenn beide Enden gefunden wurden")
 	}
 
 	// Ohne Exemplar
 	aOhneEx := Ausleihe{ID: "A2", ExemplarID: "E2", LeserID: "L1"}
-	if l.beideEndenGefunden(aOhneEx) {
+	if l.hatBeideEnden(aOhneEx) {
 		t.Errorf("Erwartet false, wenn Exemplar fehlt")
 	}
 	if l.bericht.OhneExemplar != 1 {
@@ -143,11 +143,11 @@ func TestBeideEndenGefunden(t *testing.T) {
 
 	// Ohne Entleiher
 	aOhneEnt := Ausleihe{ID: "A3", ExemplarID: "E1", LeserID: "L2"}
-	if l.beideEndenGefunden(aOhneEnt) {
+	if l.hatBeideEnden(aOhneEnt) {
 		t.Errorf("Erwartet false, wenn Entleiher fehlt")
 	}
-	if l.bericht.OhneEntleiher != 1 {
-		t.Errorf("Erwartet OhneEntleiher = 1, bekommen %d", l.bericht.OhneEntleiher)
+	if l.bericht.OhneLeser != 1 {
+		t.Errorf("Erwartet OhneLeser = 1, bekommen %d", l.bericht.OhneLeser)
 	}
 	if !strings.Contains(protokoll(), "der Entleiher wurde nicht übernommen") {
 		t.Errorf("Erwartet Protokollierung des fehlenden Entleihers")
@@ -201,7 +201,7 @@ func TestAussortieren(t *testing.T) {
 			"E1": "UUID1",
 			"E2": "UUID2",
 		},
-		entleiher: map[string]Entleiher{
+		entleiher: map[string]Zielleser{
 			"L1": {LeserID: "S1", IstSchueler: true},
 			"L2": {LeserID: "S2", IstSchueler: true},
 		},
@@ -228,8 +228,8 @@ func TestAussortieren(t *testing.T) {
 		t.Errorf("Erwartet Ausleihe A2, bekommen %s", ergebnis[0].ID)
 	}
 
-	if l.bericht.OhneEntleiher != 1 {
-		t.Errorf("Erwartet OhneEntleiher = 1, bekommen %d", l.bericht.OhneEntleiher)
+	if l.bericht.OhneLeser != 1 {
+		t.Errorf("Erwartet OhneLeser = 1, bekommen %d", l.bericht.OhneLeser)
 	}
 	if l.bericht.OhneExemplar != 1 {
 		t.Errorf("Erwartet OhneExemplar = 1, bekommen %d", l.bericht.OhneExemplar)

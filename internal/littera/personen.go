@@ -60,14 +60,14 @@ func ohneBestandsmarken(autor string) string {
 	return strings.Join(behalten, "; ")
 }
 
-// LesePersonen liest die Tabelle `Personen` als Schlüssel → Name.
+// lesePersonen liest die Tabelle `Personen` als Schlüssel → Name.
 //
 // Die Namen stehen in Katalogform („Neebe, Reinhard"), teils auch nur als Nachname
 // („Linder") oder als Sammelangabe („Dorn . Bader") — so, wie sie am Buch stehen.
 // Bewusst KEINE Umsortierung auf „Vorname Nachname": Der Katalog dieser Anwendung
 // zeigt den Autor als Text, und eine automatische Umstellung würde bei den
 // Sammelangaben Unsinn erzeugen.
-func LesePersonen(r io.Reader) (map[string]string, error) {
+func lesePersonen(r io.Reader) (map[string]string, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err
@@ -94,31 +94,31 @@ type autorZuordnung struct {
 	dritteStelle bool
 }
 
-// Zuordnungen sind, was `Personen_Zuordnung` je Titel hergibt: die Verfasser und die
+// personenZuordnungen sind, was `Personen_Zuordnung` je Titel hergibt: die Verfasser und die
 // Standortvermerke. VermerkNamen nennt jeden Namen, der an irgendeinem Titel als Vermerk
 // erkannt ist.
-type Zuordnungen struct {
+type personenZuordnungen struct {
 	Autoren          map[string]string
 	Standortvermerke map[string][]string
 	VermerkNamen     map[string]bool
 }
 
-// LeseZuordnungen liest Verfasser und Standortvermerke in einem Durchgang: Ein Eintrag ist
+// lesePersonenZuordnungen liest Verfasser und Standortvermerke in einem Durchgang: Ein Eintrag ist
 // das eine oder das andere, nie beides.
 //
 // Die Verfasser kommen von hier, weil Titel.Verfasserangabe nur bei 2.877 von 10.732 Titeln
 // gefüllt ist (27 %); über die Personen-Zuordnung sind es 9.904 (92 %). Mehrere Verfasser
 // stehen mit „; " in der Reihenfolge der Erfassung (Buchungsnummer der Zuordnung), nicht
 // alphabetisch: Bei einem Schulbuch ist der erstgenannte der Hauptverfasser.
-func LeseZuordnungen(personen map[string]string, zuordnungen io.Reader, regel Standortregel) (Zuordnungen, error) {
+func lesePersonenZuordnungen(personen map[string]string, zuordnungen io.Reader, regel Standortregel) (personenZuordnungen, error) {
 	zeilen, err := leseTabelle(zuordnungen)
 	if err != nil {
-		return Zuordnungen{}, err
+		return personenZuordnungen{}, err
 	}
 
 	jeTitel := sammleVerfasserZuordnungen(zeilen)
 
-	erg := Zuordnungen{
+	erg := personenZuordnungen{
 		Autoren:          make(map[string]string, len(jeTitel)),
 		Standortvermerke: map[string][]string{},
 		VermerkNamen:     map[string]bool{},
@@ -157,7 +157,7 @@ func sammleVerfasserZuordnungen(zeilen []map[string]string) map[string][]autorZu
 			lfd = 0
 		}
 		jeTitel[titelID] = append(jeTitel[titelID],
-			autorZuordnung{titelID, personID, lfd, anDritterStelle(z["Flags"])})
+			autorZuordnung{titelID, personID, lfd, istAnDritterStelle(z["Flags"])})
 	}
 	return jeTitel
 }
@@ -180,13 +180,13 @@ func namenInErfassungsreihenfolge(liste []autorZuordnung, personen map[string]st
 	return namen
 }
 
-// MitAutoren ergänzt die Titel um die aufgelösten Verfasser.
+// mitAutoren ergänzt die Titel um die aufgelösten Verfasser.
 //
 // Die Personen-Zuordnung gewinnt gegen Titel.Verfasserangabe: Sie ist die gepflegte,
 // normalisierte Quelle (eine Person, ein Datensatz), während die Verfasserangabe ein
 // freier Text am Titel ist. Wo die Zuordnung nichts liefert, bleibt die vorhandene
 // Angabe stehen — sie ist besser als ein leeres Feld.
-func MitAutoren(titel []Titel, autoren map[string]string) []Titel {
+func mitAutoren(titel []Titel, autoren map[string]string) []Titel {
 	ergebnis := make([]Titel, len(titel))
 	copy(ergebnis, titel)
 	for i := range ergebnis {
@@ -197,10 +197,10 @@ func MitAutoren(titel []Titel, autoren map[string]string) []Titel {
 	return ergebnis
 }
 
-// MedienartNamen liest die Nachschlagetabelle `Medienart` als Schlüssel → Bezeichnung.
+// leseMedienarten liest die Nachschlagetabelle `Medienart` als Schlüssel → Bezeichnung.
 //
 // Titel.Medienart ist eine Zahl; ohne diese Auflösung stünde im Katalog „3" statt „Buch".
-func MedienartNamen(r io.Reader) (map[string]string, error) {
+func leseMedienarten(r io.Reader) (map[string]string, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err

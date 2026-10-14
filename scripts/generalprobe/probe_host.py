@@ -19,7 +19,7 @@ csv.field_size_limit(10**9)
 
 # Litteras Spalte Barcode ist der EAN-13 in EAN-Schrift-Setzform (docs/SCRIPTS.md, Abschnitt 1):
 # „8 *pkpööp#-c.bc-*" — die Tastaturreihen stehen für die Ziffern 1…9, 0. Hier unabhängig von
-# littera.EtikettZiffern gelesen: Die Probe soll prüfen, ob der Wert vom Etikett an der Theke
+# littera.etikettZiffern gelesen: Die Probe soll prüfen, ob der Wert vom Etikett an der Theke
 # ein Buch findet, nicht ob der Code mit sich selbst übereinstimmt.
 ZIFFER = {z: (i + 1) % 10 for reihe in ("qwertzuiop", "asdfghjklö", "yxcvbnm,.-") for i, z in enumerate(reihe)}
 SETZFORM = re.compile(r"^(\d) \*(.{6})#(.{4})(.)(.)\*$")

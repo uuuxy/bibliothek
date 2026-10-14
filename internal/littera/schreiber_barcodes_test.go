@@ -15,7 +15,7 @@ func TestSchreiber_barcodeWunsch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewProtokoll: %v", err)
 	}
-	s := NeuerSchreiber(nil, prot, StandardOptionen(time.Now()))
+	s := NewSchreiber(nil, prot, OptionenVorgabe(time.Now()))
 
 	t.Run("Fremdbarcode gewinnt", func(t *testing.T) {
 		e := Exemplar{ID: "E1", Exemplarnummer: "101", Bibliotheksnummer: "1"}
@@ -28,9 +28,9 @@ func TestSchreiber_barcodeWunsch(t *testing.T) {
 	})
 
 	t.Run("Opt BarcodeNeu liefert leeren Wunsch", func(t *testing.T) {
-		opt := StandardOptionen(time.Now())
+		opt := OptionenVorgabe(time.Now())
 		opt.Barcodes = BarcodeNeu
-		sNeu := NeuerSchreiber(nil, prot, opt)
+		sNeu := NewSchreiber(nil, prot, opt)
 
 		e := Exemplar{ID: "E2", Exemplarnummer: "102", Bibliotheksnummer: "2"}
 		got := sNeu.barcodeWunsch(e, "")
@@ -101,14 +101,14 @@ func TestSchreiber_barcodeWunsch(t *testing.T) {
 	})
 }
 
-func TestSchreiber_naechsterFreier(t *testing.T) {
+func TestSchreiber_zieheNaechstenFreien(t *testing.T) {
 	s := &Schreiber{}
 
 	t.Run("nimmt ersten freien Barcode", func(t *testing.T) {
 		vorrat := []string{"B-1", "B-2", "B-3"}
 		belegt := map[string]bool{"B-1": true}
 
-		got, rest, err := s.naechsterFreier(context.Background(), vorrat, belegt)
+		got, rest, err := s.zieheNaechstenFreien(context.Background(), vorrat, belegt)
 		if err != nil {
 			t.Fatalf("unerwarteter Fehler: %v", err)
 		}

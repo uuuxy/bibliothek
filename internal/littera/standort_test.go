@@ -41,13 +41,13 @@ const standortZuordnungCSV = `Buchungsdatum,Buchungsnummer,Titel,Person,Funktion
 "07/10/01 15:41:03",19,23,2,0,` + flagsErster + `
 `
 
-func leseStandortZuordnungen(t *testing.T, regel Standortregel) Zuordnungen {
+func leseStandortZuordnungen(t *testing.T, regel Standortregel) personenZuordnungen {
 	t.Helper()
-	personen, err := LesePersonen(strings.NewReader(standortPersonenCSV))
+	personen, err := lesePersonen(strings.NewReader(standortPersonenCSV))
 	if err != nil {
 		t.Fatalf("Personen lesen: %v", err)
 	}
-	z, err := LeseZuordnungen(personen, strings.NewReader(standortZuordnungCSV), regel)
+	z, err := lesePersonenZuordnungen(personen, strings.NewReader(standortZuordnungCSV), regel)
 	if err != nil {
 		t.Fatalf("Zuordnung lesen: %v", err)
 	}
@@ -144,7 +144,7 @@ func TestStandortVon(t *testing.T) {
 		{Exemplar{}, nil, "", false},
 	}
 	for _, f := range faelle {
-		standort, vomTitel := StandortVon(f.e, f.vermerke)
+		standort, vomTitel := standortVon(f.e, f.vermerke)
 		if standort != f.standort || vomTitel != f.vomTitel {
 			t.Errorf("StandortVon(%q, %q) = %q, %v — erwartet %q, %v",
 				f.e.Sonderstandort, f.vermerke, standort, vomTitel, f.standort, f.vomTitel)
@@ -213,7 +213,7 @@ func TestLeseExemplareLiestSonderstandort(t *testing.T) {
 1,17,101,"Ea 1"," Videoschrank ","Videoschrank","Xyz"
 2,17,102,"Ea 1","","","Xyz"
 `
-	exemplare, err := LeseExemplare(strings.NewReader(csv))
+	exemplare, err := leseExemplare(strings.NewReader(csv))
 	if err != nil {
 		t.Fatalf("Exemplare lesen: %v", err)
 	}
@@ -228,9 +228,9 @@ func schreibeExport(t *testing.T, dateien map[string]string) string {
 	t.Helper()
 	verzeichnis := t.TempDir()
 	for _, name := range []string{
-		DateiTitel, DateiExemplar, DateiVerlag, DateiMedienart, DateiPersonen, DateiPersonenZuordnung,
-		DateiLeser, DateiLeserUG, DateiVerleih, DateiSchlagworte, DateiSchlagZuord,
-		DateiVerweiseSchlagworte, DateiVerweisZuSchlagworte, DateiInteressenkreise, DateiIntZuMed,
+		dateiTitel, dateiExemplar, dateiVerlag, dateiMedienart, dateiPersonen, dateiPersonenZuordnung,
+		dateiLeser, dateiLeserUG, dateiVerleih, dateiSchlagworte, dateiSchlagZuord,
+		dateiVerweiseSchlagworte, dateiVerweisZuSchlagworte, dateiInteressenkreise, dateiIntZuMed,
 	} {
 		inhalt, da := dateien[name]
 		if !da {
@@ -247,18 +247,18 @@ func schreibeExport(t *testing.T, dateien map[string]string) string {
 // eine Ausnahme des Aufrufers trifft beide Stellen.
 func TestLeseAltbestandMitStandorten(t *testing.T) {
 	verzeichnis := schreibeExport(t, map[string]string{
-		DateiTitel: `Buchungsnummer,Haupttitel,Verfasserangabe
+		dateiTitel: `Buchungsnummer,Haupttitel,Verfasserangabe
 17,"Klassensatz","Neebe, Reinhard ; Bibliothek Klassensatz Regal 11"
 24,"Nur Freitext","Bibliothek Klassensatz Regal 11"
 20,"Ohne Komma","Louise Carleton-Gertsch"
 `,
-		DateiExemplar: `Buchungsnummer,Titel,Exemplarnummer,Sig1,Sonderstandort,Sig2
+		dateiExemplar: `Buchungsnummer,Titel,Exemplarnummer,Sig1,Sonderstandort,Sig2
 1,17,101,"Ea 1","","Xyz"
 2,17,102,"Ea 1","Lehrerschrank","Xyz"
 3,24,103,"Ea 1","4711 Mustermann, Max","Xyz"
 `,
-		DateiPersonen:          standortPersonenCSV,
-		DateiPersonenZuordnung: standortZuordnungCSV,
+		dateiPersonen:          standortPersonenCSV,
+		dateiPersonenZuordnung: standortZuordnungCSV,
 	})
 
 	ab, err := LeseAltbestandMit(verzeichnis, Standortregel{KeinStandort: map[string]bool{
@@ -287,7 +287,7 @@ func TestLeseAltbestandMitStandorten(t *testing.T) {
 
 	standort := map[string]string{}
 	for _, e := range ab.Exemplare {
-		standort[e.ID], _ = StandortVon(e, ab.Standortvermerke[e.TitelID])
+		standort[e.ID], _ = standortVon(e, ab.Standortvermerke[e.TitelID])
 	}
 	erwartet := map[string]string{"1": "Bibliothek Klassensatz Regal 11", "2": "Lehrerschrank", "3": ""}
 	if !reflect.DeepEqual(standort, erwartet) {

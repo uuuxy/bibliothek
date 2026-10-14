@@ -26,11 +26,11 @@ const zuordnungCSV = `Buchungsdatum,Buchungsnummer,Titel,Person,Funktion
 `
 
 func TestAutorenJeTitel(t *testing.T) {
-	personen, err := LesePersonen(strings.NewReader(personenCSV))
+	personen, err := lesePersonen(strings.NewReader(personenCSV))
 	if err != nil {
 		t.Fatalf("Personen lesen: %v", err)
 	}
-	zuordnungen, err := LeseZuordnungen(personen, strings.NewReader(zuordnungCSV), Standortregel{})
+	zuordnungen, err := lesePersonenZuordnungen(personen, strings.NewReader(zuordnungCSV), Standortregel{})
 	if err != nil {
 		t.Fatalf("Zuordnung lesen: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestAutorenReihenfolgeIstErfassungsreihenfolge(t *testing.T) {
 10,5,1,0
 11,5,2,0
 `
-	zuordnungen, err := LeseZuordnungen(personen, strings.NewReader(zuo), Standortregel{})
+	zuordnungen, err := lesePersonenZuordnungen(personen, strings.NewReader(zuo), Standortregel{})
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestMitAutoren_ZuordnungGewinntUndLaesstBestehendesStehen(t *testing.T) {
 	}
 	autoren := map[string]string{"1": "Aufgeloest, Anna", "3": "Neu, Norbert"}
 
-	ergebnis := MitAutoren(titel, autoren)
+	ergebnis := mitAutoren(titel, autoren)
 
 	// Die gepflegte Zuordnung gewinnt gegen den Freitext ...
 	if ergebnis[0].Autor != "Aufgeloest, Anna" {
@@ -103,18 +103,18 @@ func TestMitAutoren_ZuordnungGewinntUndLaesstBestehendesStehen(t *testing.T) {
 		t.Errorf("leeres Feld muss gefuellt werden, war %q", ergebnis[2].Autor)
 	}
 
-	// Die Eingabe bleibt unangetastet — MitAutoren arbeitet auf einer Kopie.
+	// Die Eingabe bleibt unangetastet — mitAutoren arbeitet auf einer Kopie.
 	if titel[0].Autor != "Freitext aus Verfasserangabe" {
-		t.Error("MitAutoren darf die uebergebene Liste nicht veraendern")
+		t.Error("mitAutoren darf die uebergebene Liste nicht veraendern")
 	}
 }
 
-func TestMedienartNamen(t *testing.T) {
+func TestLeseMedienarten(t *testing.T) {
 	const csv = `Buchungsdatum,Buchungsnummer,Medienart,KurzBez
 ,1,"Buch","BU"
 ,2,"CD-ROM","CD"
 `
-	namen, err := MedienartNamen(strings.NewReader(csv))
+	namen, err := leseMedienarten(strings.NewReader(csv))
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}

@@ -9,7 +9,7 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
-// Der Katalog-Import liest einen Wert wie die Übernahme (littera.LeseTitel): erst die
+// Der Katalog-Import liest einen Wert wie die Übernahme (littera.leseTitel): erst die
 // Nichtsortierzeichen weg, dann der Rand. Andersherum bliebe das Leerzeichen neben einem
 // Zeichen stehen, und ein Titel nur aus Nichtsortierzeichen käme ohne Wortlaut in den Katalog.
 func TestParseKatalogisat_NichtsortierzeichenVorDemRand(t *testing.T) {

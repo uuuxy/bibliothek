@@ -1,7 +1,7 @@
 // littera-altbestand überträgt einen Littera-Export nach PostgreSQL.
 //
-// Die Quelle sind die CSV-Dateien, die `mdb-export` aus littera_sav.mdb erzeugt (siehe
-// internal/littera.Dateien) — nicht die Access-Datei selbst: Deren ODBC-Treiber gibt es
+// Die Quelle sind die CSV-Dateien, die `mdb-export` aus littera_sav.mdb erzeugt (die Namen
+// stehen in internal/littera/altbestand.go) — nicht die Access-Datei selbst: Deren ODBC-Treiber gibt es
 // nur unter Windows, weder auf dem Arbeitsrechner noch im Container.
 //
 // Aufruf:
@@ -243,7 +243,7 @@ func uebertrage(s schalter, ab *littera.Altbestand) int {
 		return exitAbgebrochen
 	}
 
-	schreiber := littera.NeuerSchreiber(pool, prot, optionen(s))
+	schreiber := littera.NewSchreiber(pool, prot, optionen(s))
 	if !s.erzwingen {
 		if err := schreiber.PruefeZielbestand(ctx); err != nil {
 			log.Printf("FEHLER: %v", err)
@@ -259,10 +259,10 @@ func uebertrage(s schalter, ab *littera.Altbestand) int {
 }
 
 func optionen(s schalter) littera.Optionen {
-	opt := littera.StandardOptionen(time.Now())
+	opt := littera.OptionenVorgabe(time.Now())
 	opt.Barcodes = littera.Barcodequelle(s.barcodes)
 	opt.BatchGroesse = s.batch
-	opt.LehrerInaktiv = s.lehrerInaktiv
+	opt.LehrkraefteInaktiv = s.lehrerInaktiv
 	if s.schuljahrEnde > 0 {
 		opt.SchuljahrEnde = s.schuljahrEnde
 	}
@@ -323,7 +323,7 @@ func rueckgabewert(b littera.Bericht) int {
 	switch {
 	case b.Abbruch != nil:
 		return exitAbgebrochen
-	case b.Vollstaendig():
+	case b.IstVollstaendig():
 		return exitOK
 	default:
 		return exitUnvollstaendig
@@ -360,7 +360,7 @@ func drucke(b littera.Bericht, s schalter) {
 		log.Printf("Ausleihen  Quelle %6d", a.QuellAusleihen)
 		log.Printf("           geschrieben %6d; ohne Exemplar %d, ohne Entleiher %d, "+
 			"Doppelbelegung %d, Fehler %d",
-			a.Geschrieben, a.OhneExemplar, a.OhneEntleiher, a.Doppelbelegung, a.Uebersprungen)
+			a.Geschrieben, a.OhneExemplar, a.OhneLeser, a.Doppelbelegung, a.Uebersprungen)
 		if a.FristVorAusgabe > 0 {
 			log.Printf("           %d Ausleihen tragen eine Frist VOR dem Verleihdatum", a.FristVorAusgabe)
 		}

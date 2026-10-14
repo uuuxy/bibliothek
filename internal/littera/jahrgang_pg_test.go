@@ -16,7 +16,7 @@ func TestJahrgangOhneAngabeBleibtUnbekannt(t *testing.T) {
 	s, _ := testSchreiber(t, pool, nil)
 	ctx := context.Background()
 
-	gelesen, err := LeseTitel(strings.NewReader(
+	gelesen, err := leseTitel(strings.NewReader(
 		"Buchungsnummer,Haupttitel,Verlag,Medienart\n" +
 			`1,"Faust",1,1` + "\n" +
 			`2,"Die Welle",1,1` + "\n"))
@@ -51,7 +51,7 @@ func TestJahrgangAusDerSignatur_SpanneUndEinJahr(t *testing.T) {
 	s, _ := testSchreiber(t, pool, nil)
 	ctx := context.Background()
 
-	gelesen, err := LeseTitel(strings.NewReader(
+	gelesen, err := leseTitel(strings.NewReader(
 		"Buchungsnummer,Haupttitel,Verlag,Medienart\n" +
 			`1,"Natur und Technik",1,1` + "\n" +
 			`2,"Deutschbuch",1,1` + "\n"))

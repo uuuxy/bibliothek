@@ -22,7 +22,7 @@ const gruppenCSV = `Buchungsdatum,Buchungsnummer,KurzBez,Untergruppe,Obergruppe
 `
 
 func TestArtAusUntergruppe(t *testing.T) {
-	gruppen, err := LeseLesergruppen(strings.NewReader(gruppenCSV))
+	gruppen, err := leseLesergruppen(strings.NewReader(gruppenCSV))
 	if err != nil {
 		t.Fatalf("Gruppen lesen: %v", err)
 	}
@@ -86,11 +86,11 @@ const leserCSV = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe,Geburt
 `
 
 func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
-	gruppen, err := LeseLesergruppen(strings.NewReader(gruppenCSV))
+	gruppen, err := leseLesergruppen(strings.NewReader(gruppenCSV))
 	if err != nil {
 		t.Fatalf("Gruppen: %v", err)
 	}
-	leser, err := LeseLeser(strings.NewReader(leserCSV), gruppen)
+	leser, err := leseLeser(strings.NewReader(leserCSV), gruppen)
 	if err != nil {
 		t.Fatalf("Leser: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 	}
 
 	// DER Punkt: Lehrkraefte duerfen nicht in der Schuelermenge landen.
-	schueler := NurArt(leser, ArtSchueler)
+	schueler := nurArt(leser, ArtSchueler)
 	if len(schueler) != 2 {
 		t.Fatalf("erwartet 2 Schueler, waren %d", len(schueler))
 	}
@@ -130,10 +130,10 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 		}
 	}
 
-	if len(NurArt(leser, ArtLehrkraft)) != 1 {
+	if len(nurArt(leser, ArtLehrkraft)) != 1 {
 		t.Error("Lehrkraft-Menge falsch")
 	}
-	if len(NurArt(leser, ArtAbgegangen)) != 1 {
+	if len(nurArt(leser, ArtAbgegangen)) != 1 {
 		t.Error("Abgaenger-Menge falsch")
 	}
 	// Die Gruppe reist mit: Das Protokoll nennt sie fuer ein Kollegium-Konto, und der Halt
@@ -147,15 +147,15 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 // eindeutig zugeordnet werden kann, wird NICHT stillschweigend zum Schueler gemacht —
 // der Personenlauf haelt an, bis es zugeordnet ist (OhneZuordnung).
 func TestUnbekannteArtWirdNichtZuSchueler(t *testing.T) {
-	gruppen := map[string]Lesergruppe{"1": {Klasse: "UNDEF", Bezeichnung: "Undefinierte Untergruppe", Art: ArtUnbekannt}}
+	gruppen := map[string]lesergruppe{"1": {Klasse: "UNDEF", Bezeichnung: "Undefinierte Untergruppe", Art: ArtUnbekannt}}
 	const csv = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe
 50,2001,"Unklar","Fall",1
 `
-	leser, err := LeseLeser(strings.NewReader(csv), gruppen)
+	leser, err := leseLeser(strings.NewReader(csv), gruppen)
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
-	if len(NurArt(leser, ArtSchueler)) != 0 {
+	if len(nurArt(leser, ArtSchueler)) != 0 {
 		t.Error("unklare Zuordnung darf nicht als Schueler durchgehen")
 	}
 	if leser[0].Art != ArtUnbekannt {
@@ -169,7 +169,7 @@ func TestLeserOhneGruppe(t *testing.T) {
 	const csv = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe
 51,3001,"Ohne","Gruppe",9999
 `
-	leser, err := LeseLeser(strings.NewReader(csv), map[string]Lesergruppe{})
+	leser, err := leseLeser(strings.NewReader(csv), map[string]lesergruppe{})
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}

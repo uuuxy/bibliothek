@@ -44,13 +44,13 @@ type SchlagwortQuelle struct {
 // (lernmittelUndFach), wie im Katalogisat-Import. An Lesern (IntZuLeser) hat die Schule sie nie
 // benutzt; die Tabelle wird nicht gelesen.
 
-// LeseSchlagworte liest die Tabelle `Schlagworte` als Buchungsnummer → Wort.
-func LeseSchlagworte(r io.Reader) (map[string]string, error) {
+// leseSchlagworte liest die Tabelle `Schlagworte` als Buchungsnummer → Wort.
+func leseSchlagworte(r io.Reader) (map[string]string, error) {
 	return leseWortliste(r, "SuchWort")
 }
 
-// LeseInteressenkreise liest die Tabelle `Interessenskreis` als Buchungsnummer → Wort.
-func LeseInteressenkreise(r io.Reader) (map[string]string, error) {
+// leseInteressenkreise liest die Tabelle `Interessenskreis` als Buchungsnummer → Wort.
+func leseInteressenkreise(r io.Reader) (map[string]string, error) {
 	return leseWortliste(r, "Interessenskreis")
 }
 
@@ -78,14 +78,14 @@ type schlagwortZuordnung struct {
 	sortierung, lfd int // lfd: Buchungsnummer der Zuordnung — hält die Erfassungsreihenfolge
 }
 
-// SchlagworteJeTitel löst die Schlagworte der Titel über Schlag_zuord auf.
-func SchlagworteJeTitel(woerter map[string]string, zuordnungen io.Reader) (SchlagwortQuelle, error) {
+// schlagworteJeTitel löst die Schlagworte der Titel über Schlag_zuord auf.
+func schlagworteJeTitel(woerter map[string]string, zuordnungen io.Reader) (SchlagwortQuelle, error) {
 	return woerterJeTitel(woerter, zuordnungen, "Schlagwort")
 }
 
-// InteressenkreiseJeTitel löst die Interessenkreise der Titel über IntZuMed auf. IntZuMed hat
+// interessenkreiseJeTitel löst die Interessenkreise der Titel über IntZuMed auf. IntZuMed hat
 // keine Spalte Sortierung; die Reihenfolge ist die der Erfassung.
-func InteressenkreiseJeTitel(woerter map[string]string, zuordnungen io.Reader) (SchlagwortQuelle, error) {
+func interessenkreiseJeTitel(woerter map[string]string, zuordnungen io.Reader) (SchlagwortQuelle, error) {
 	return woerterJeTitel(woerter, zuordnungen, "Interessenskreis")
 }
 

@@ -45,13 +45,13 @@ func TestAbgaengerJahr(t *testing.T) {
 	}
 
 	for _, f := range faelle {
-		jahr, ok := AbgaengerJahr(f.klasse, schuljahrEnde)
+		jahr, ok := abgaengerJahr(f.klasse, schuljahrEnde)
 		if ok != f.ok {
-			t.Errorf("AbgaengerJahr(%q): ok=%v, erwartet %v (%s)", f.klasse, ok, f.ok, f.warum)
+			t.Errorf("abgaengerJahr(%q): ok=%v, erwartet %v (%s)", f.klasse, ok, f.ok, f.warum)
 			continue
 		}
 		if ok && jahr != f.erwartet {
-			t.Errorf("AbgaengerJahr(%q) = %d, erwartet %d (%s)", f.klasse, jahr, f.erwartet, f.warum)
+			t.Errorf("abgaengerJahr(%q) = %d, erwartet %d (%s)", f.klasse, jahr, f.erwartet, f.warum)
 		}
 	}
 }
@@ -59,13 +59,13 @@ func TestAbgaengerJahr(t *testing.T) {
 func TestIstAbschlussklasse(t *testing.T) {
 	abschluss := []string{"09H1", "10R2", "13T5", "13G1"}
 	for _, k := range abschluss {
-		if !IstAbschlussklasse(k) {
+		if !istAbschlussklasse(k) {
 			t.Errorf("%q muss Abschlussklasse sein", k)
 		}
 	}
 	weiter := []string{"07H1", "09R1", "12T3", "05F1", "10G4"}
 	for _, k := range weiter {
-		if IstAbschlussklasse(k) {
+		if istAbschlussklasse(k) {
 			t.Errorf("%q ist KEINE Abschlussklasse", k)
 		}
 	}
@@ -80,15 +80,15 @@ func TestAbschlussJahrgang(t *testing.T) {
 		"G4": 13, "T5": 13, "F1": 13,
 	}
 	for zweig, erwartet := range faelle {
-		got, ok := AbschlussJahrgang(zweig)
+		got, ok := abschlussJahrgang(zweig)
 		if !ok || got != erwartet {
-			t.Errorf("AbschlussJahrgang(%q) = %d/%v, erwartet %d", zweig, got, ok, erwartet)
+			t.Errorf("abschlussJahrgang(%q) = %d/%v, erwartet %d", zweig, got, ok, erwartet)
 		}
 	}
-	if _, ok := AbschlussJahrgang("X1"); ok {
+	if _, ok := abschlussJahrgang("X1"); ok {
 		t.Error("unbekannter Zweig darf nicht auflösen")
 	}
-	if _, ok := AbschlussJahrgang(""); ok {
+	if _, ok := abschlussJahrgang(""); ok {
 		t.Error("leerer Zweig darf nicht auflösen")
 	}
 }

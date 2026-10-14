@@ -29,7 +29,7 @@ import (
 func (s *Schreiber) klaereBarcodes(
 	ctx context.Context, exemplare []Exemplar, fremd map[string]string,
 ) (zuweisung map[string]string, ohneEtikett map[string]bool, err error) {
-	belegt, err := s.vorhandeneBarcodes(ctx)
+	belegt, err := s.ladeVorhandeneBarcodes(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -92,7 +92,7 @@ func (s *Schreiber) barcodeWunsch(e Exemplar, fremd string) string {
 }
 
 // etikettAmBuch liefert den EAN-13 des Littera-Etiketts. Maßgeblich ist die
-// Druckzeichenkette: Sie ist das Etikett selbst, in EAN-13-Schrift gesetzt (EtikettZiffern).
+// Druckzeichenkette: Sie ist das Etikett selbst, in EAN-13-Schrift gesetzt (etikettZiffern).
 // Gerechnet wird nur, wenn sie fehlt oder kein EAN-13 ist.
 //
 // Weichen Etikett und Rechnung ab, hat sich eine Spalte nach dem Druck geändert. In der
@@ -100,7 +100,7 @@ func (s *Schreiber) barcodeWunsch(e Exemplar, fremd string) string {
 // (gemessen am 28.09.2026). Dann gilt das Etikett, mit Vermerk im Protokoll.
 func (s *Schreiber) etikettAmBuch(e Exemplar) (string, bool) {
 	gerechnet, gerechnetOK := EtikettBarcode(e.Exemplarnummer, e.Bibliotheksnummer)
-	gedruckt, gedrucktOK := EtikettZiffern(e.Barcode)
+	gedruckt, gedrucktOK := etikettZiffern(e.Barcode)
 	switch {
 	case gedrucktOK && gerechnetOK && gedruckt != gerechnet:
 		s.prot.Warnung(e.ID, e.Exemplarnummer, "das Etikett trägt "+gedruckt+
@@ -115,7 +115,7 @@ func (s *Schreiber) etikettAmBuch(e Exemplar) (string, bool) {
 	return gerechnet, gerechnetOK
 }
 
-func (s *Schreiber) vorhandeneBarcodes(ctx context.Context) (map[string]bool, error) {
+func (s *Schreiber) ladeVorhandeneBarcodes(ctx context.Context) (map[string]bool, error) {
 	rows, err := s.pool.Query(ctx, `SELECT barcode_id FROM buecher_exemplare`)
 	if err != nil {
 		return nil, fmt.Errorf("konnte die vorhandenen Barcodes nicht lesen: %w", err)
@@ -153,7 +153,7 @@ func (s *Schreiber) vergebeNeueBarcodes(
 	}
 
 	for _, e := range exemplare {
-		bc, rest, err := s.naechsterFreier(ctx, vorrat, belegt)
+		bc, rest, err := s.zieheNaechstenFreien(ctx, vorrat, belegt)
 		if err != nil {
 			return err
 		}
@@ -164,14 +164,14 @@ func (s *Schreiber) vergebeNeueBarcodes(
 	return nil
 }
 
-// naechsterFreier nimmt die erste noch unbelegte Nummer aus dem Vorrat und zieht nach,
+// zieheNaechstenFreien nimmt die erste noch unbelegte Nummer aus dem Vorrat und zieht nach,
 // wenn er leer ist.
 //
 // Die Prüfung gegen belegt ist nötig, weil barcode_seq nur die von der Anwendung
 // erzeugten B-Nummern kennt: Ein von Hand vergebenes „B-00042" steht in der Tabelle,
 // aber nicht in der Sequenz. Die Sequenz wächst streng, der Vorrat läuft also nach
 // endlich vielen Versuchen an den vorhandenen Nummern vorbei.
-func (s *Schreiber) naechsterFreier(
+func (s *Schreiber) zieheNaechstenFreien(
 	ctx context.Context, vorrat []string, belegt map[string]bool,
 ) (string, []string, error) {
 	for versuch := 0; versuch <= len(belegt)+1; versuch++ {
@@ -213,12 +213,12 @@ func (s *Schreiber) zieheBarcodes(ctx context.Context, anzahl int) ([]string, er
 	return codes, nil
 }
 
-// vorhandeneISBNs füllt die Dublettenerkennung mit dem, was schon in der Datenbank steht.
+// ladeVorhandeneISBNs füllt die Dublettenerkennung mit dem, was schon in der Datenbank steht.
 //
 // buecher_titel.isbn ist UNIQUE. Ohne diese Vorbelegung liefe ein Titel, dessen ISBN
 // bereits vergeben ist, in einen 23505 — und ginge samt aller Exemplare verloren, obwohl
 // eine verworfene ISBN völlig ausgereicht hätte.
-func (s *Schreiber) vorhandeneISBNs(ctx context.Context) (map[string]string, error) {
+func (s *Schreiber) ladeVorhandeneISBNs(ctx context.Context) (map[string]string, error) {
 	rows, err := s.pool.Query(ctx, `SELECT isbn FROM buecher_titel WHERE isbn IS NOT NULL`)
 	if err != nil {
 		return nil, fmt.Errorf("konnte die vorhandenen ISBNs nicht lesen: %w", err)

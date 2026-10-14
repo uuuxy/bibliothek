@@ -16,7 +16,7 @@ type AusleihBericht struct {
 	QuellAusleihen  int
 	Geschrieben     int
 	OhneExemplar    int // das Buch gibt es im übernommenen Bestand nicht
-	OhneEntleiher   int // die Person wurde nicht übernommen
+	OhneLeser       int // die Person wurde nicht übernommen
 	Doppelbelegung  int // zweite offene Ausleihe desselben Exemplars
 	Uebersprungen   int // an einem Schreibfehler gescheitert
 	FristVorAusgabe int
@@ -53,8 +53,8 @@ func (s *Schreiber) SchreibeAusleihen(
 	}
 
 	lauf := &ausleihlauf{s: s, bericht: &bericht,
-		exemplare: bestand.ExemplarIDs, entleiher: personen.EntleiherIDs}
-	if err := lauf.alleBatches(ctx, lauf.aussortieren(ab.Ausleihen)); err != nil {
+		exemplare: bestand.ExemplarIDs, entleiher: personen.Zielleser}
+	if err := lauf.verarbeiteAlle(ctx, lauf.aussortieren(ab.Ausleihen)); err != nil {
 		return bericht, err
 	}
 
@@ -75,13 +75,13 @@ type buchbar struct {
 	RueckgabeAm *time.Time
 }
 
-func (b buchbar) bleibtOffen() bool { return b.RueckgabeAm == nil }
+func (b buchbar) istOffen() bool { return b.RueckgabeAm == nil }
 
 type ausleihlauf struct {
 	s         *Schreiber
 	bericht   *AusleihBericht
 	exemplare map[string]string    // Littera-Exemplar → UUID
-	entleiher map[string]Entleiher // Littera-Leser → Ziel
+	entleiher map[string]Zielleser // Littera-Leser → Ziel
 }
 
 // aussortieren siebt die nicht buchbaren Zeilen aus, bevor auch nur eine Transaktion
@@ -101,18 +101,18 @@ func (l *ausleihlauf) aussortieren(ausleihen []Ausleihe) []buchbar {
 	offenJeExemplar := map[string]bool{}
 	liste := make([]buchbar, 0, len(sortiert))
 	for _, a := range sortiert {
-		if !l.beideEndenGefunden(a) {
+		if !l.hatBeideEnden(a) {
 			continue
 		}
 		b := buchbar{Ausleihe: a, RueckgabeAm: l.rueckgabeAm(a)}
-		if b.bleibtOffen() && offenJeExemplar[a.ExemplarID] {
+		if b.istOffen() && offenJeExemplar[a.ExemplarID] {
 			l.bericht.Doppelbelegung++
 			l.s.prot.Fehler(a.ID, a.ExemplarID,
 				"zweite offene Ausleihe desselben Exemplars – ein Buch liegt nur bei einer Person; "+
 					"die jüngere Ausleihe wurde übernommen, diese nicht")
 			continue
 		}
-		if b.bleibtOffen() {
+		if b.istOffen() {
 			offenJeExemplar[a.ExemplarID] = true
 		}
 		l.meldeFristVorAusgabe(a)
@@ -121,7 +121,7 @@ func (l *ausleihlauf) aussortieren(ausleihen []Ausleihe) []buchbar {
 	return liste
 }
 
-func (l *ausleihlauf) beideEndenGefunden(a Ausleihe) bool {
+func (l *ausleihlauf) hatBeideEnden(a Ausleihe) bool {
 	if _, ok := l.exemplare[a.ExemplarID]; !ok {
 		l.bericht.OhneExemplar++
 		l.s.prot.Fehler(a.ID, a.ExemplarID,
@@ -129,7 +129,7 @@ func (l *ausleihlauf) beideEndenGefunden(a Ausleihe) bool {
 		return false
 	}
 	if _, ok := l.entleiher[a.LeserID]; !ok {
-		l.bericht.OhneEntleiher++
+		l.bericht.OhneLeser++
 		l.s.prot.Fehler(a.ID, a.LeserID,
 			"der Entleiher wurde nicht übernommen (seine eigene FEHLER-Zeile nennt den Grund, "+
 				"oder er fehlt in Leser) – Ausleihe nicht übernommen")
@@ -167,17 +167,17 @@ func (l *ausleihlauf) rueckgabeAm(a Ausleihe) *time.Time {
 	return &t
 }
 
-func (l *ausleihlauf) alleBatches(ctx context.Context, ausleihen []buchbar) error {
+func (l *ausleihlauf) verarbeiteAlle(ctx context.Context, ausleihen []buchbar) error {
 	for i := 0; i < len(ausleihen); i += l.s.opt.BatchGroesse {
 		ende := min(i+l.s.opt.BatchGroesse, len(ausleihen))
-		if err := l.einBatch(ctx, ausleihen[i:ende]); err != nil {
+		if err := l.verarbeiteBatch(ctx, ausleihen[i:ende]); err != nil {
 			return fmt.Errorf("abgebrochen ab Ausleihe %s: %w", ausleihen[i].ID, err)
 		}
 	}
 	return nil
 }
 
-func (l *ausleihlauf) einBatch(ctx context.Context, batch []buchbar) error {
+func (l *ausleihlauf) verarbeiteBatch(ctx context.Context, batch []buchbar) error {
 	tx, err := l.s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("konnte die Transaktion nicht öffnen: %w", err)
@@ -185,7 +185,7 @@ func (l *ausleihlauf) einBatch(ctx context.Context, batch []buchbar) error {
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
 	for _, a := range batch {
-		if err := l.eineAusleihe(ctx, tx, a); err != nil {
+		if err := l.verarbeiteAusleihe(ctx, tx, a); err != nil {
 			return err
 		}
 	}
@@ -195,7 +195,7 @@ func (l *ausleihlauf) einBatch(ctx context.Context, batch []buchbar) error {
 	return nil
 }
 
-func (l *ausleihlauf) eineAusleihe(ctx context.Context, tx pgx.Tx, a buchbar) error {
+func (l *ausleihlauf) verarbeiteAusleihe(ctx context.Context, tx pgx.Tx, a buchbar) error {
 	erg, err := uebernahme.ImSavepoint(ctx, tx, "littera_id="+a.ID, func(sp pgx.Tx) error {
 		return l.schreibeAusleihe(ctx, sp, a)
 	})

@@ -21,14 +21,14 @@ import (
 // Deshalb sind die beiden Dateien beim Einlesen optional — aber wenn sie da sind, gewinnen
 // sie gegen die Littera-eigenen Nummern.
 
-// LeseAusweisnummern liest `FremdLeserNummer` als Leser-Buchungsnummer → Ausweisnummer.
+// leseAusweisnummern liest `FremdLeserNummer` als Leser-Buchungsnummer → Ausweisnummer.
 //
 // Die Tabelle ist von Haus aus in der anderen Richtung geführt (eine Person kann mehrere
 // Karten haben, etwa nach einem Verlust). Für den Import zählt die umgekehrte Richtung:
 // Welche Nummer schreiben wir dieser Person auf den Ausweis? Bei mehreren gewinnt die
 // zuletzt gelesene Zeile — Littera hängt neue Karten hinten an — und alle Kandidaten
 // stehen in `mehrfach`, damit der Bericht sie nennen kann.
-func LeseAusweisnummern(r io.Reader) (nummern map[string]string, mehrfach []string, err error) {
+func leseAusweisnummern(r io.Reader) (nummern map[string]string, mehrfach []string, err error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, nil, err
@@ -48,12 +48,12 @@ func LeseAusweisnummern(r io.Reader) (nummern map[string]string, mehrfach []stri
 	return nummern, mehrfach, nil
 }
 
-// LeseFremdbarcodes liest `FremdBarcode` als Exemplar-Buchungsnummer → Barcode.
+// leseFremdbarcodes liest `FremdBarcode` als Exemplar-Buchungsnummer → Barcode.
 //
 // Betrifft Exemplare, die ein Ersatzetikett aus fremder Quelle bekommen haben (etwa
 // verlagseigene Aufkleber). Steht hier etwas, klebt genau das am Buch — und nicht die
 // Littera-Exemplarnummer.
-func LeseFremdbarcodes(r io.Reader) (map[string]string, error) {
+func leseFremdbarcodes(r io.Reader) (map[string]string, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err

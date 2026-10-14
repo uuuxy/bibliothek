@@ -24,7 +24,7 @@ func TestJahrOderNil(t *testing.T) {
 	}
 }
 
-func TestJsonEigenschaften(t *testing.T) {
+func TestJSONEigenschaften(t *testing.T) {
 	werte := map[string]string{
 		"quelle": "littera",
 		"leer":   "",

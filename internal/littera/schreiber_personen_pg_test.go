@@ -126,7 +126,7 @@ func TestLehrkraftUndLiVBekommenIhrePersonenart(t *testing.T) {
 }
 
 // TestAbgaengerBekommenEinJahr: schueler.abgaenger_jahr ist NOT NULL, die Gruppe
-// „Abgegangen" trägt als Klassenbezeichnung aber nur „Ab" — daraus rechnet AbgaengerJahr
+// „Abgegangen" trägt als Klassenbezeichnung aber nur „Ab" — daraus rechnet abgaengerJahr
 // nichts aus. Ohne die Sonderregel scheiterten alle 71 Abgänger am NOT NULL.
 func TestAbgaengerBekommenEinJahr(t *testing.T) {
 	pool := pgTestPool(t)
@@ -442,7 +442,7 @@ func TestErsatznummerWeichtVergebenerNummerAus(t *testing.T) {
 }
 
 // TestMehrereKartenWerdenProtokolliert: Hat ein Leser mehrere Karten hinterlegt, gilt die
-// zuletzt angelegte (LeseAusweisnummern) — mit einer älteren Karte findet die Theke niemanden.
+// zuletzt angelegte (leseAusweisnummern) — mit einer älteren Karte findet die Theke niemanden.
 // Das gehört ins Protokoll; bis zum 15.09.2026 las niemand AusweisMehrfach.
 func TestMehrereKartenWerdenProtokolliert(t *testing.T) {
 	pool := pgTestPool(t)

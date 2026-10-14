@@ -18,7 +18,7 @@ func TestTitelKommtOhneLeerraumInFolge(t *testing.T) {
 	ctx := context.Background()
 	geschuetzt := string(rune(0x00A0))
 
-	gelesen, err := LeseTitel(strings.NewReader(
+	gelesen, err := leseTitel(strings.NewReader(
 		"Buchungsnummer,Haupttitel,Untertitel,Verfasserangabe,Verlag,Medienart\n" +
 			`1,"¬La¬  Peste","Roman  in fünf Teilen","Camus,  Albert",1,1` + "\n" +
 			`2,"Mumienherz. ¬Die¬ Rückkehr des Seth /` + geschuetzt + `1","","",1,1` + "\n"))

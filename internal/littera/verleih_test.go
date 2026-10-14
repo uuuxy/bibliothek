@@ -15,7 +15,7 @@ const verleihCSV = `Buchungsdatum,Buchungsnummer,Exemplar,Leser,Verleihdatum,Rü
 `
 
 func TestLeseAusleihen(t *testing.T) {
-	ausleihen, err := LeseAusleihen(strings.NewReader(verleihCSV))
+	ausleihen, err := leseAusleihen(strings.NewReader(verleihCSV))
 	if err != nil {
 		t.Fatalf("Ausleihen lesen: %v", err)
 	}
@@ -26,7 +26,7 @@ func TestLeseAusleihen(t *testing.T) {
 	}
 
 	offen := ausleihen[0]
-	if !offen.Offen() {
+	if !offen.IstOffen() {
 		t.Error("erste Zeile ist nicht zurueckgegeben, muss offen sein")
 	}
 	// DER Fallstrick: Rueckgabedatum ist die FRIST, nicht die Rueckgabe.
@@ -41,7 +41,7 @@ func TestLeseAusleihen(t *testing.T) {
 	}
 
 	zurueck := ausleihen[1]
-	if zurueck.Offen() {
+	if zurueck.IstOffen() {
 		t.Error("zweite Zeile ist zurueckgegeben")
 	}
 	if zurueck.RueckgabeAm.Format("2006-01-02") != "2009-09-10" {
@@ -78,11 +78,11 @@ func TestZurueckgegebenIstEigenesKennzeichen(t *testing.T) {
 	const csv = `Buchungsnummer,Exemplar,Leser,Verleihdatum,Rückgabedatum,IstRückgabedatum,Zurückgegeben
 20,100,200,"09/01/09 00:00:00","09/15/09 00:00:00",,1
 `
-	ausleihen, err := LeseAusleihen(strings.NewReader(csv))
+	ausleihen, err := leseAusleihen(strings.NewReader(csv))
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
-	if ausleihen[0].Offen() {
+	if ausleihen[0].IstOffen() {
 		t.Error("Zurueckgegeben=1 ohne Rueckgabedatum muss trotzdem als zurueckgegeben gelten")
 	}
 	if len(NurOffene(ausleihen)) != 0 {
@@ -97,7 +97,7 @@ func TestDatumAus(t *testing.T) {
 		"12/24/10":          "2010-12-24", // auch ohne Uhrzeit
 	}
 	for roh, erwartet := range faelle {
-		d, ok := DatumAus(roh)
+		d, ok := datumAus(roh)
 		if !ok {
 			t.Errorf("DatumAus(%q) nicht gelesen", roh)
 			continue
@@ -110,7 +110,7 @@ func TestDatumAus(t *testing.T) {
 	// Leer und Unsinn liefern KEINE Null-Zeit als gueltigen Wert: Ein 0001-01-01 saehe
 	// in der Datenbank echt aus und faellt erst als 2000 Jahre alte Mahnung auf.
 	for _, roh := range []string{"", "  ", "kein Datum", "31/31/31"} {
-		if d, ok := DatumAus(roh); ok {
+		if d, ok := datumAus(roh); ok {
 			t.Errorf("DatumAus(%q) haette scheitern muessen, lieferte %v", roh, d)
 		}
 	}
@@ -118,22 +118,22 @@ func TestDatumAus(t *testing.T) {
 
 func TestWahrheitswert(t *testing.T) {
 	for _, wahr := range []string{"1", "True", "true", "-1", "WAHR"} {
-		if !wahrheitswert(wahr) {
+		if !istWahr(wahr) {
 			t.Errorf("%q muss wahr sein", wahr)
 		}
 	}
 	for _, falsch := range []string{"0", "False", "", "nein"} {
-		if wahrheitswert(falsch) {
+		if istWahr(falsch) {
 			t.Errorf("%q muss falsch sein", falsch)
 		}
 	}
 }
 
-func TestAusleiheOffenIstGegenteilVonZurueckgegeben(t *testing.T) {
-	if (Ausleihe{Zurueckgegeben: true}).Offen() {
+func TestAusleiheIstOffen_GegenteilVonZurueckgegeben(t *testing.T) {
+	if (Ausleihe{Zurueckgegeben: true}).IstOffen() {
 		t.Error("zurueckgegeben darf nicht offen sein")
 	}
-	if !(Ausleihe{Zurueckgegeben: false}).Offen() {
+	if !(Ausleihe{Zurueckgegeben: false}).IstOffen() {
 		t.Error("nicht zurueckgegeben muss offen sein")
 	}
 	_ = time.Time{}

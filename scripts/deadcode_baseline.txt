@@ -62,17 +62,17 @@ internal/smtptest/anhang.go: unreachable func: PDFAusMail
 internal/smtptest/anhang.go: unreachable func: mimeGrenze
 
 # Episodischer Littera-Werkzeugkasten: Prüfwerkzeug für die noch ausstehende
-# Littera-Migration (nächster Lauf nach frischem Littera-Backup). BarcodeInhalt
+# Littera-Migration (nächster Lauf nach frischem Littera-Backup). barcodeInhalt
 # liest aus Litteras Druckzeichenkette (dem EAN-13 in der Setzform einer
 # EAN-13-Schrift) Exemplar- und Bibliotheksnummer und dient als Gegenprobe zu den
 # Spalten — 61.520 von 61.520 stimmen überein. Der Lauf hängt an LITTERA_CSV_DIR
 # und braucht die echten Altdaten, die nicht im Repo liegen. Den EAN-13 selbst
-# liest seit dem 28.09.2026 EtikettZiffern im Schreibpfad (über entschluessele,
-# deshalb steht das hier nicht mehr); BarcodeInhalt bleibt die Gegenprobe.
-internal/littera/abgang.go: unreachable func: IstAbschlussklasse
-internal/littera/barcode.go: unreachable func: BarcodeInhalt
+# liest seit dem 28.09.2026 etikettZiffern im Schreibpfad (über entschluessele,
+# deshalb steht das hier nicht mehr); barcodeInhalt bleibt die Gegenprobe.
+internal/littera/abgang.go: unreachable func: istAbschlussklasse
+internal/littera/barcode.go: unreachable func: barcodeInhalt
 internal/littera/barcode.go: unreachable func: entschluesseleZiffer
-internal/littera/leser.go: unreachable func: NurArt
+internal/littera/leser.go: unreachable func: nurArt
 
 # Selbstdeklarierter Test-/Langlauf-Helfer (siehe Doc-Kommentar der Methode);
 # wird von den pgtest-Support-Dateien mehrerer Pakete benutzt.

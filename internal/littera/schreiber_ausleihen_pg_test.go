@@ -107,11 +107,11 @@ func TestZweiteOffeneAusleiheWirdAbgelehnt(t *testing.T) {
 	}
 }
 
-// TestAusleiheOhneEntleiherWirdGemeldet: Eine Ausleihe, deren Entleiher nicht angekommen
+// TestAusleiheOhneLeserWirdGemeldet: Eine Ausleihe, deren Entleiher nicht angekommen
 // ist (an einem Schreibfehler gescheitert, oder in Leser gar nicht vorhanden). Sie blind zu
 // schreiben scheiterte am Fremdschlüssel und risse den ganzen Lauf mit; sie
 // stillschweigend zu verwerfen verschwiege, dass ein Buch verliehen war.
-func TestAusleiheOhneEntleiherWirdGemeldet(t *testing.T) {
+func TestAusleiheOhneLeserWirdGemeldet(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
 	s, protokoll := testSchreiber(t, pool, nil)
@@ -128,7 +128,7 @@ func TestAusleiheOhneEntleiherWirdGemeldet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SchreibeAusleihen: %v", err)
 	}
-	if bericht.Geschrieben != 0 || bericht.OhneEntleiher != 1 || bericht.OhneExemplar != 1 {
+	if bericht.Geschrieben != 0 || bericht.OhneLeser != 1 || bericht.OhneExemplar != 1 {
 		t.Errorf("0 geschrieben, je 1 ohne Entleiher/Exemplar erwartet, gemeldet: %+v", bericht)
 	}
 	text := protokoll()
@@ -158,7 +158,7 @@ func TestAusleihenDesFachbereichsKommenAlsDauerleihe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SchreibeAusleihen: %v", err)
 	}
-	if bericht.Geschrieben != 2 || bericht.OhneEntleiher != 0 || !bericht.AbgleichOK {
+	if bericht.Geschrieben != 2 || bericht.OhneLeser != 0 || !bericht.AbgleichOK {
 		t.Fatalf("beide Ausleihen müssen ankommen, gemeldet: %+v", bericht)
 	}
 	for barcode, dauerleihe := range map[string]bool{"301": true, "302": false} {

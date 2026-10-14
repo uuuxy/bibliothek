@@ -96,8 +96,8 @@ func TestOptionen(t *testing.T) {
 	if string(opt.Barcodes) != "neu" {
 		t.Errorf("Barcodes = %v, want 'neu'", opt.Barcodes)
 	}
-	if !opt.LehrerInaktiv {
-		t.Error("LehrerInaktiv = false, want true")
+	if !opt.LehrkraefteInaktiv {
+		t.Error("LehrkraefteInaktiv = false, want true")
 	}
 	if opt.SchuljahrEnde != 2025 {
 		t.Errorf("SchuljahrEnde = %v, want 2025", opt.SchuljahrEnde)

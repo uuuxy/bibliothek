@@ -57,14 +57,14 @@ type Titel struct {
 //
 //   - ID = `Buchungsnummer` ist der interne Schlüssel. Darauf zeigt `Verleih.Exemplar`.
 //   - Exemplarnummer ist die Nummer, die auf dem Etikett am Buch steht. Sie ist der
-//     Kandidat für `buecher_exemplare.barcode_id` (siehe BarcodeInhalt).
+//     Kandidat für `buecher_exemplare.barcode_id` (siehe barcodeInhalt).
 type Exemplar struct {
 	ID             string // Buchungsnummer — Ziel des Fremdschlüssels in Verleih
 	Exemplarnummer string // die Nummer, die im Klartext auf dem Etikett steht
 	// Bibliotheksnummer geht in den EAN-13 des Etiketts ein (siehe EtikettBarcode).
 	Bibliotheksnummer string
 	TitelID           string // Fremdschlüssel auf Titel.Buchungsnummer
-	Barcode           string // Litteras Druckzeichenkette, NICHT der Scanwert (siehe BarcodeInhalt)
+	Barcode           string // Litteras Druckzeichenkette, NICHT der Scanwert (siehe barcodeInhalt)
 	Signatur          string // Sig1 + Sig2, zusammengesetzt
 	Zugangsdatum      string // Rohform, wie exportiert (MM/DD/YY HH:MM:SS)
 	Preis             float64
@@ -111,8 +111,8 @@ func leseTabelle(r io.Reader) ([]map[string]string, error) {
 	return zeilen, nil
 }
 
-// LeseTitel liest die Tabelle `Titel`.
-func LeseTitel(r io.Reader) ([]Titel, error) {
+// leseTitel liest die Tabelle `Titel`.
+func leseTitel(r io.Reader) ([]Titel, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err
@@ -198,8 +198,8 @@ func jahrAus(roh string) int {
 	return jahr
 }
 
-// LeseExemplare liest die Tabelle `Exemplar`.
-func LeseExemplare(r io.Reader) ([]Exemplar, error) {
+// leseExemplare liest die Tabelle `Exemplar`.
+func leseExemplare(r io.Reader) ([]Exemplar, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err
@@ -276,11 +276,11 @@ func preisAus(roh string) float64 {
 	return wert
 }
 
-// VerlagNamen liest die Nachschlagetabelle `Verlag` als Schlüssel → Name.
+// leseVerlage liest die Nachschlagetabelle `Verlag` als Schlüssel → Name.
 //
 // Titel.Verlag ist eine Zahl, kein Freitext — ohne diese Auflösung stünde im Katalog
 // „11" statt „Klett".
-func VerlagNamen(r io.Reader) (map[string]string, error) {
+func leseVerlage(r io.Reader) (map[string]string, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err
@@ -296,7 +296,7 @@ func VerlagNamen(r io.Reader) (map[string]string, error) {
 	return namen, nil
 }
 
-// SignaturJeTitel verdichtet die Exemplar-Signaturen auf eine je Titel.
+// signaturJeTitel verdichtet die Exemplar-Signaturen auf eine je Titel.
 //
 // Nötig, weil Littera die Signatur am EXEMPLAR führt, diese Anwendung sie aber am Titel
 // (buecher_titel.signatur, seit Migration 038 die einzige Quelle). Gemessen am
@@ -306,7 +306,7 @@ func VerlagNamen(r io.Reader) (map[string]string, error) {
 // zurückgegeben. Bewusst nicht „der erste gewinnt": Das hinge von der Zeilenreihenfolge
 // des Exports ab und wäre nicht reproduzierbar. Die Liste ist da, damit die Abweichungen
 // protokolliert werden können statt still zu verschwinden.
-func SignaturJeTitel(exemplare []Exemplar) (signaturen map[string]string, abweichend []string) {
+func signaturJeTitel(exemplare []Exemplar) (signaturen map[string]string, abweichend []string) {
 	haeufigkeit := map[string]map[string]int{}
 	for _, e := range exemplare {
 		if e.Signatur == "" {

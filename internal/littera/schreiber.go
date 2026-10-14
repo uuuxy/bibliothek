@@ -15,7 +15,7 @@ type Barcodequelle string
 
 const (
 	// BarcodeLittera übernimmt den EAN-13, den das Etikett am Buch trägt: Litteras Spalte
-	// Barcode (EtikettZiffern), gerechnet aus Exemplar- und Bibliotheksnummer nur, wenn sie
+	// Barcode (etikettZiffern), gerechnet aus Exemplar- und Bibliotheksnummer nur, wenn sie
 	// fehlt (EtikettBarcode). Das ist der Wert, den der Scanner liest, nicht die daneben
 	// gedruckte Exemplarnummer (61.520 von 61.520 der Sicherung von 2010 geprüft). Der
 	// Bestand bleibt damit ohne Neubeklebung scannbar.
@@ -26,34 +26,34 @@ const (
 	BarcodeNeu Barcodequelle = "neu"
 )
 
-// Optionen steuern den Lauf. Die Vorgaben stehen in StandardOptionen.
+// Optionen steuern den Lauf. Die Vorgaben stehen in OptionenVorgabe.
 type Optionen struct {
 	Barcodes      Barcodequelle
 	BatchGroesse  int // Titel je Transaktion
 	SchuljahrEnde int // Jahr, in dem das laufende Schuljahr endet (2026/27 → 2027)
-	// LehrerInaktiv legt Lehrkräfte auf aktiv=false. Das ist die AUSNAHME, nicht die
+	// LehrkraefteInaktiv legt Lehrkräfte auf aktiv=false. Das ist die AUSNAHME, nicht die
 	// Vorgabe: Die Ausweis-Abfrage der Omnibox verlangt aktiv=true, eine inaktive
 	// Lehrkraft wäre also am Scanner unauffindbar. Den Login sperrt ohnehin schon die
 	// Platzhalter-Adresse (siehe schreiber_personen.go).
-	LehrerInaktiv bool
-	Jetzt         time.Time
+	LehrkraefteInaktiv bool
+	Jetzt              time.Time
 }
 
-// StandardOptionen liefert die Vorgaben für einen Lauf zum Zeitpunkt jetzt.
+// OptionenVorgabe liefert die Vorgaben für einen Lauf zum Zeitpunkt jetzt.
 //
 // Das Schuljahr endet im Sommer: Ab August zählt bereits das nächste Kalenderjahr.
 // Dieselbe Auslegung wie im Versetzungslauf.
-func StandardOptionen(jetzt time.Time) Optionen {
+func OptionenVorgabe(jetzt time.Time) Optionen {
 	schuljahrEnde := jetzt.Year()
 	if jetzt.Month() >= time.August {
 		schuljahrEnde++
 	}
 	return Optionen{
-		Barcodes:      BarcodeLittera,
-		BatchGroesse:  200,
-		SchuljahrEnde: schuljahrEnde,
-		LehrerInaktiv: false,
-		Jetzt:         jetzt,
+		Barcodes:           BarcodeLittera,
+		BatchGroesse:       200,
+		SchuljahrEnde:      schuljahrEnde,
+		LehrkraefteInaktiv: false,
+		Jetzt:              jetzt,
 	}
 }
 
@@ -68,10 +68,10 @@ type Schreiber struct {
 	opt  Optionen
 }
 
-// NeuerSchreiber baut den Schreiber für einen Übernahmelauf. Eine BatchGroesse von 0
+// NewSchreiber baut den Schreiber für einen Übernahmelauf. Eine BatchGroesse von 0
 // bedeutet „Vorgabe nehmen" (200) — der Aufrufer muss die Zahl nicht kennen, und eine
 // versehentliche 0 legt nicht den ganzen Lauf still.
-func NeuerSchreiber(pool *pgxpool.Pool, prot *uebernahme.Protokoll, opt Optionen) *Schreiber {
+func NewSchreiber(pool *pgxpool.Pool, prot *uebernahme.Protokoll, opt Optionen) *Schreiber {
 	if opt.BatchGroesse <= 0 {
 		opt.BatchGroesse = 200
 	}
@@ -125,8 +125,8 @@ type Bericht struct {
 	Abbruch   error
 }
 
-// Vollstaendig sagt, ob jeder Quelldatensatz angekommen ist.
-func (b Bericht) Vollstaendig() bool {
+// IstVollstaendig sagt, ob jeder Quelldatensatz angekommen ist.
+func (b Bericht) IstVollstaendig() bool {
 	return b.Abbruch == nil && b.Fehler == 0 && b.Bestand.AbgleichOK && b.Schlagworte.AbgleichOK &&
 		b.Personen.AbgleichOK && b.Ausleihen.AbgleichOK
 }

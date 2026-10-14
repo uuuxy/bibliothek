@@ -49,7 +49,7 @@ func testSchreiber(t *testing.T, pool *pgxpool.Pool, anpassen func(*Optionen)) (
 	}
 	t.Cleanup(prot.Schliesse)
 
-	opt := StandardOptionen(time.Date(2026, 8, 4, 12, 0, 0, 0, time.UTC))
+	opt := OptionenVorgabe(time.Date(2026, 8, 4, 12, 0, 0, 0, time.UTC))
 	opt.BatchGroesse = 3 // klein, damit die Tests mehrere Transaktionen durchlaufen
 	if anpassen != nil {
 		anpassen(&opt)
@@ -65,7 +65,7 @@ func testSchreiber(t *testing.T, pool *pgxpool.Pool, anpassen func(*Optionen)) (
 		}
 		return string(b)
 	}
-	return NeuerSchreiber(pool, prot, opt), lies
+	return NewSchreiber(pool, prot, opt), lies
 }
 
 func zaehle(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) int {

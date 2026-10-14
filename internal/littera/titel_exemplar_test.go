@@ -17,7 +17,7 @@ const titelCSV = `Buchungsdatum,Buchungsnummer,Haupttitel,Untertitel,ISBN,Ersche
 `
 
 func TestLeseTitel_EchteSpaltennamen(t *testing.T) {
-	titel, err := LeseTitel(strings.NewReader(titelCSV))
+	titel, err := leseTitel(strings.NewReader(titelCSV))
 	if err != nil {
 		t.Fatalf("Titel lesen: %v", err)
 	}
@@ -76,7 +76,7 @@ const exemplarCSV = `Buchungsnummer,Titel,Barcode,Sig1,Sig2,Zugangsdatum,Preis
 `
 
 func TestLeseExemplare_SignaturUndFremdschluessel(t *testing.T) {
-	ex, err := LeseExemplare(strings.NewReader(exemplarCSV))
+	ex, err := leseExemplare(strings.NewReader(exemplarCSV))
 	if err != nil {
 		t.Fatalf("Exemplare lesen: %v", err)
 	}
@@ -101,13 +101,13 @@ func TestLeseExemplare_SignaturUndFremdschluessel(t *testing.T) {
 	}
 }
 
-// TestSignaturTrifftDenInventurScope ist der Test, der die beiden Welten verbindet:
+// TestSignaturTrifftDenInventurBereich ist der Test, der die beiden Welten verbindet:
 // Die aus Littera zusammengesetzte Signatur MUSS von der Praefix-Regel des
 // Inventur-Scopes getroffen werden. Sonst zeigt der Katalog ein Regal an, das die
 // Inventur nicht findet.
 //
 // Die Regel schneidet am Leerzeichen — deshalb " / " und nicht "/".
-func TestSignaturTrifftDenInventurScope(t *testing.T) {
+func TestSignaturTrifftDenInventurBereich(t *testing.T) {
 	voll := SignaturAus("LMF Deu 7", "Bie")
 	regal := "LMF Deu 7"
 
@@ -139,7 +139,7 @@ func TestSignaturJeTitel_HaeufigsterWertUndAbweichungen(t *testing.T) {
 		{TitelID: "3", Signatur: ""}, // ohne Signatur: gar kein Eintrag
 	}
 
-	signaturen, abweichend := SignaturJeTitel(exemplare)
+	signaturen, abweichend := signaturJeTitel(exemplare)
 
 	if signaturen["1"] != "LMF Deu 7 / Bie" {
 		t.Errorf("haeufigster Wert erwartet, war %q", signaturen["1"])
@@ -158,12 +158,12 @@ func TestSignaturJeTitel_HaeufigsterWertUndAbweichungen(t *testing.T) {
 	}
 }
 
-func TestVerlagNamen(t *testing.T) {
+func TestLeseVerlage(t *testing.T) {
 	const verlagCSV = `Buchungsdatum,Buchungsnummer,Verlag,Ort
 ,7,"Goldmann","Stuttgart"
 "03/05/03 15:17:54",8,"Fischer","Frankfurt a.M."
 `
-	namen, err := VerlagNamen(strings.NewReader(verlagCSV))
+	namen, err := leseVerlage(strings.NewReader(verlagCSV))
 	if err != nil {
 		t.Fatalf("Verlage lesen: %v", err)
 	}
@@ -179,7 +179,7 @@ func TestCSVMitKommaImFeld(t *testing.T) {
 	const csvMitKomma = `Buchungsnummer,Haupttitel,Annotation,ISBN
 5,"Titel, mit Komma","Eine Zusammenfassung, die ein Komma enthaelt",978-3-12-000000-0
 `
-	titel, err := LeseTitel(strings.NewReader(csvMitKomma))
+	titel, err := leseTitel(strings.NewReader(csvMitKomma))
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}

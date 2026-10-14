@@ -27,7 +27,7 @@ func TestLeseTitel_OhneNichtsortierzeichen(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			titel, err := LeseTitel(strings.NewReader(kopf + `7,"` + f.roh + `","¬Ein¬ Untertitel","","¬Der¬ Verfasser"` + "\n"))
+			titel, err := leseTitel(strings.NewReader(kopf + `7,"` + f.roh + `","¬Ein¬ Untertitel","","¬Der¬ Verfasser"` + "\n"))
 			if err != nil {
 				t.Fatalf("Titel lesen: %v", err)
 			}
@@ -50,7 +50,7 @@ func TestLeseTitel_OhneNichtsortierzeichen(t *testing.T) {
 // Ein Titel, der nur aus den Zeichen besteht, ist leer und bekommt den Platzhalter des
 // Schreibers („[ohne Titel, Littera …]").
 func TestLeseTitel_NurNichtsortierzeichenIstLeer(t *testing.T) {
-	titel, err := LeseTitel(strings.NewReader("Buchungsnummer,Haupttitel\n7,\"¬ ¬\"\n"))
+	titel, err := leseTitel(strings.NewReader("Buchungsnummer,Haupttitel\n7,\"¬ ¬\"\n"))
 	if err != nil {
 		t.Fatalf("Titel lesen: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestLesePersonen_OhneNichtsortierzeichen(t *testing.T) {
 3,"Gruber, Hans-Martin ¬"
 4,"¬"
 `
-	namen, err := LesePersonen(strings.NewReader(csv))
+	namen, err := lesePersonen(strings.NewReader(csv))
 	if err != nil {
 		t.Fatalf("Personen lesen: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestEchterAltbestand_OhneNichtsortierzeichen(t *testing.T) {
 			t.Logf("Datei schliessen: %v", err)
 		}
 	})
-	personen, err := LesePersonen(pf)
+	personen, err := lesePersonen(pf)
 	if err != nil {
 		t.Fatalf("Personen lesen: %v", err)
 	}

@@ -15,7 +15,7 @@ func TestLeseAusweisnummern(t *testing.T) {
 3,
 `
 	r := strings.NewReader(csv)
-	nummern, mehrfach, err := LeseAusweisnummern(r)
+	nummern, mehrfach, err := leseAusweisnummern(r)
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestLeseAusweisnummern(t *testing.T) {
 
 func TestLeseAusweisnummernLesefehler(t *testing.T) {
 	r := &fehlerReader{}
-	_, _, err := LeseAusweisnummern(r)
+	_, _, err := leseAusweisnummern(r)
 	if err == nil {
 		t.Fatal("erwartet Fehler bei Lesefehler")
 	}
@@ -54,7 +54,7 @@ func TestLeseFremdbarcodes(t *testing.T) {
 3,
 `
 	r := strings.NewReader(csv)
-	barcodes, err := LeseFremdbarcodes(r)
+	barcodes, err := leseFremdbarcodes(r)
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestLeseFremdbarcodes(t *testing.T) {
 
 func TestLeseFremdbarcodesLesefehler(t *testing.T) {
 	r := &fehlerReader{}
-	_, err := LeseFremdbarcodes(r)
+	_, err := leseFremdbarcodes(r)
 	if err == nil {
 		t.Fatal("erwartet Fehler bei Lesefehler")
 	}

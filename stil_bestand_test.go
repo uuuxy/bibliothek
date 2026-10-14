@@ -27,7 +27,7 @@ var stilBestand = map[string]stilZahl{
 	"cmd/stresstest":         {Fach: 4, Verb: 2, Kuerzel: 0, Datei: 0, Datum: 0},
 	"db":                     {Fach: 5, Verb: 5, Kuerzel: 0, Datei: 0, Datum: 13},
 	"internal/auskunft":      {Fach: 5, Verb: 1, Kuerzel: 14, Datei: 0, Datum: 0},
-	"internal/littera":       {Fach: 1, Verb: 1, Kuerzel: 0, Datei: 0, Datum: 27},
+	"internal/littera":       {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 27},
 	"internal/lusd":          {Fach: 7, Verb: 4, Kuerzel: 13, Datei: 0, Datum: 6},
 	"internal/service":       {Fach: 105, Verb: 30, Kuerzel: 19, Datei: 10, Datum: 41},
 	"internal/testdaten":     {Fach: 1, Verb: 9, Kuerzel: 1, Datei: 0, Datum: 2},
