@@ -44,7 +44,7 @@ func (s *Tueren) LabelsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		formatId, startPos, isQR := parseLabelParams(r)
 
-		items, err := buchetikett.DesTitels(ctx, s.DB.Pool, id)
+		items, err := buchetikett.LadeDesTitels(ctx, s.DB.Pool, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -54,7 +54,7 @@ func (s *Tueren) LabelsHandler() http.HandlerFunc {
 			return
 		}
 
-		bogen, err := pdf.GenerateLabelsPDF(formatId, startPos, isQR, buchetikett.BuchEtiketten(items, buchetikett.LadeEtikettKopf(ctx, s.DB.Pool)))
+		bogen, err := pdf.GenerateLabelsPDF(formatId, startPos, isQR, buchetikett.PDFEtiketten(items, buchetikett.LadeKopf(ctx, s.DB.Pool)))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
@@ -71,10 +71,10 @@ func (s *Tueren) LabelsHandler() http.HandlerFunc {
 
 // PrintLabelsRequest represents a request to generate a PDF label sheet.
 type PrintLabelsRequest struct {
-	FormatID      string                           `json:"formatId"`
-	StartPosition int                              `json:"startPosition"`
-	IsQR          bool                             `json:"isQR"`
-	Items         []buchetikett.BarcodeLabelDetail `json:"items"`
+	FormatID      string                `json:"formatId"`
+	StartPosition int                   `json:"startPosition"`
+	IsQR          bool                  `json:"isQR"`
+	Items         []buchetikett.Etikett `json:"items"`
 }
 
 // PrintLabelsHandler generates an A4 PDF containing labels dynamically.
@@ -93,7 +93,7 @@ func (s *Tueren) PrintLabelsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		buchetikett.ErgaenzeServerfelder(ctx, s.DB.Pool, req.Items)
 
-		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, buchetikett.BuchEtiketten(req.Items, buchetikett.LadeEtikettKopf(ctx, s.DB.Pool)))
+		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, buchetikett.PDFEtiketten(req.Items, buchetikett.LadeKopf(ctx, s.DB.Pool)))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return

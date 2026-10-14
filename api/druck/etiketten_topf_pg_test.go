@@ -26,7 +26,7 @@ import (
 // Schulträger bezahlt hat.
 
 // etikettenUeberBuchformular druckt über GET /api/buecher/titel/{id}/etiketten
-// (buchetikett.DesTitels).
+// (buchetikett.LadeDesTitels).
 func etikettenUeberBuchformular(t *testing.T, srv *Tueren, titelID string) string {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/x/etiketten?format="+testdaten.EtikettFormatMitVermerk+"&start=1", nil)

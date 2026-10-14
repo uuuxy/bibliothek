@@ -41,7 +41,7 @@ func TestEtiketten_OhneAusgesonderteExemplare(t *testing.T) {
 		}
 	}
 
-	items, err := DesTitels(ctx, pool, titel)
+	items, err := LadeDesTitels(ctx, pool, titel)
 	if err != nil {
 		t.Fatalf("Etiketten laden: %v", err)
 	}

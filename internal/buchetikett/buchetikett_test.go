@@ -8,23 +8,23 @@ import (
 	"bibliothek/pkg/mitteltopf"
 )
 
-// Die Erzeuger in pdf/ drucken, was BuchEtiketten ihnen reicht. Ein Feld, das hier fehlt,
+// Die Erzeuger in pdf/ drucken, was PDFEtiketten ihnen reicht. Ein Feld, das hier fehlt,
 // fehlt auf dem Etikett aller Druckwege, und weder Status noch Dateigröße zeigen es.
 
 // Jedes Feld der Eingabe kommt aus seiner Quelle; die Werte sind je Feld verschieden, damit
 // eine Vertauschung auffällt.
-func TestBuchEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
-	kopf := EtikettKopf{
+func TestPDFEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
+	kopf := Kopf{
 		Schulname:                         "Schule",
 		Eigentumsvermerk:                  "Vermerk Land",
 		EigentumsvermerkSchuelerbuecherei: "Vermerk Bücherei",
 	}
-	item := BarcodeLabelDetail{
+	item := Etikett{
 		BarcodeID: "B-1", Titel: "Titel", Autor: "Autor", ISBN: "ISBN",
 		AnschaffungsJahr: "2016", Signatur: "Signatur", Topf: mitteltopf.Land,
 	}
 
-	etiketten := BuchEtiketten([]BarcodeLabelDetail{item}, kopf)
+	etiketten := PDFEtiketten([]Etikett{item}, kopf)
 	if len(etiketten) != 1 {
 		t.Fatalf("%d Etiketten aus einem Auftrag, erwartet 1", len(etiketten))
 	}
@@ -41,7 +41,7 @@ func TestBuchEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
 	wert := reflect.ValueOf(etiketten[0])
 	for i := 0; i < wert.NumField(); i++ {
 		if wert.Field(i).IsZero() {
-			t.Errorf("pdf.BuchEtikett.%s bleibt leer: BuchEtiketten füllt das Feld nicht",
+			t.Errorf("pdf.BuchEtikett.%s bleibt leer: PDFEtiketten füllt das Feld nicht",
 				wert.Type().Field(i).Name)
 		}
 	}
@@ -49,15 +49,15 @@ func TestBuchEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
 
 // Der Vermerk folgt dem Topf des Exemplars. Ohne Topf (Vorab-Druck, Exemplar unbekannt) gilt
 // der allgemeine Vermerk; ein Buch der Schülerbücherei trägt ohne eigenen Vermerk keinen.
-func TestBuchEtiketten_VermerkFolgtDemTopf(t *testing.T) {
-	kopf := EtikettKopf{Eigentumsvermerk: "Vermerk Land", EigentumsvermerkSchuelerbuecherei: "Vermerk Bücherei"}
-	items := []BarcodeLabelDetail{
+func TestPDFEtiketten_VermerkFolgtDemTopf(t *testing.T) {
+	kopf := Kopf{Eigentumsvermerk: "Vermerk Land", EigentumsvermerkSchuelerbuecherei: "Vermerk Bücherei"}
+	items := []Etikett{
 		{BarcodeID: "B-1", Topf: mitteltopf.Land},
 		{BarcodeID: "B-2", Topf: mitteltopf.Schultraeger},
 		{BarcodeID: "B-3"},
 	}
 
-	etiketten := BuchEtiketten(items, kopf)
+	etiketten := PDFEtiketten(items, kopf)
 	if len(etiketten) != len(items) {
 		t.Fatalf("%d Etiketten aus %d Aufträgen", len(etiketten), len(items))
 	}
@@ -71,7 +71,7 @@ func TestBuchEtiketten_VermerkFolgtDemTopf(t *testing.T) {
 		}
 	}
 
-	ohne := BuchEtiketten(items, EtikettKopf{Eigentumsvermerk: "Vermerk Land"})
+	ohne := PDFEtiketten(items, Kopf{Eigentumsvermerk: "Vermerk Land"})
 	if ohne[1].Eigentumsvermerk != "" {
 		t.Errorf("Schülerbücherei ohne hinterlegten Vermerk: %q gedruckt, erwartet keinen", ohne[1].Eigentumsvermerk)
 	}

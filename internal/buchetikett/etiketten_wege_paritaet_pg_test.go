@@ -22,8 +22,8 @@ import (
 //   - Das Anschaffungsjahr stand im Selbstdruck, fehlte aber auf der Lieferantenseite
 //     (05.08.2026, gefunden erst beim Vergleich mit dem Foto der physischen Vorlage).
 //
-// Es gibt zwei getrennte Abfragen für dieselbe Frage — DesTitels (Druck-Center)
-// und DerBestellung (Lieferanten-Link). Wer eine erweitert und die andere
+// Es gibt zwei getrennte Abfragen für dieselbe Frage — LadeDesTitels (Druck-Center)
+// und LadeDerBestellung (Lieferanten-Link). Wer eine erweitert und die andere
 // vergisst, bekommt kein rotes Gate, sondern zwei verschiedene Aufkleber für dasselbe
 // Buch. Dieser Test vergleicht sie Feld für Feld.
 //
@@ -54,12 +54,12 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	}
 
 	// Weg 1: Druck-Center (Selbstdruck aus dem Bestand)
-	selbstdruck, err := DesTitels(ctx, pool, titel)
+	selbstdruck, err := LadeDesTitels(ctx, pool, titel)
 	if err != nil {
 		t.Fatalf("Selbstdruck-Etiketten laden: %v", err)
 	}
 	// Weg 2: Lieferantenseite hinter dem Bestätigungs-Link
-	lieferantenweg, err := DerBestellung(ctx, pool, res.BestellungID)
+	lieferantenweg, err := LadeDerBestellung(ctx, pool, res.BestellungID)
 	if err != nil {
 		t.Fatalf("Lieferanten-Etiketten laden: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 			len(selbstdruck), len(lieferantenweg))
 	}
 
-	nachBarcode := map[string]BarcodeLabelDetail{}
+	nachBarcode := map[string]Etikett{}
 	for _, e := range lieferantenweg {
 		nachBarcode[e.BarcodeID] = e
 	}

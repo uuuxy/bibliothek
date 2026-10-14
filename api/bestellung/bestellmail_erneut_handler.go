@@ -161,7 +161,7 @@ func (s *Tueren) baueBestellmailErneut(ctx context.Context, bestellungID string,
 		daten.Exemplare += p.Menge
 	}
 
-	etiketten, err := buchetikett.DerBestellung(ctx, s.DB.Pool, bestellungID)
+	etiketten, err := buchetikett.LadeDerBestellung(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		return bestellmailDaten{}, err
 	}

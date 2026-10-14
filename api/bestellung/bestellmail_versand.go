@@ -23,7 +23,7 @@ type bestellmailDaten struct {
 	// Exemplare ist die bestellte Menge über alle Positionen.
 	Exemplare int
 	// Etiketten sind die Exemplare der Positionen mit Vorab-Barcode.
-	Etiketten         []buchetikett.BarcodeLabelDetail
+	Etiketten         []buchetikett.Etikett
 	IstHauptlieferant bool
 	// Token ist der Klartext für den Bestätigungs-Link, leer ohne Bestätigungsschritt.
 	Token          string
@@ -38,9 +38,9 @@ func bestellmailDatenAus(res *service.OrderResult) bestellmailDaten {
 	for _, p := range res.SummaryItems {
 		positionen = append(positionen, OrderedItem(p))
 	}
-	etiketten := make([]buchetikett.BarcodeLabelDetail, 0, len(res.Labels))
+	etiketten := make([]buchetikett.Etikett, 0, len(res.Labels))
 	for _, e := range res.Labels {
-		etiketten = append(etiketten, buchetikett.BarcodeLabelDetail(e))
+		etiketten = append(etiketten, buchetikett.Etikett(e))
 	}
 	return bestellmailDaten{
 		Empfaenger:        res.SupplierEmail,
@@ -96,7 +96,7 @@ func (s *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 		IstHauptlieferant:    d.IstHauptlieferant,
 		MitBestaetigungsLink: link != "",
 		Schule:               schule,
-		EtikettKopf:          buchetikett.EtikettKopfAus(settings),
+		EtikettKopf:          buchetikett.KopfAus(settings),
 		Mittel:               d.Mittel,
 	})
 	return link != "", err

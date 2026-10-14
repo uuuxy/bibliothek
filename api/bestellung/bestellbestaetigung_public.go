@@ -142,7 +142,7 @@ func (s *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 
 	// Der Schulname sagt dem Lieferanten, wessen Bestellung er vor sich hat — bei
 	// mehreren Schulen im selben Postfach ist das keine Zierde, sondern die Zuordnung.
-	a.SchuleName = buchetikett.LadeEtikettKopf(ctx, s.DB.Pool).Schulname
+	a.SchuleName = buchetikett.LadeKopf(ctx, s.DB.Pool).Schulname
 	a.SchuleAnschrift = s.schulAnschrift(ctx)
 	a.EtikettenFormate = pdf.LabelFormatAuswahl()
 	a.EtikettenFormatVorgabe = pdf.StandardLabelFormat

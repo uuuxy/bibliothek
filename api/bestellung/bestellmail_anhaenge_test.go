@@ -20,8 +20,8 @@ import (
 // Geprüft wird an den Dateinamen der fertigen Anlagen, nicht an Zwischenzuständen — das
 // ist das, was im Postfach des Händlers ankommt.
 
-func testEtiketten() []buchetikett.BarcodeLabelDetail {
-	return []buchetikett.BarcodeLabelDetail{
+func testEtiketten() []buchetikett.Etikett {
+	return []buchetikett.Etikett{
 		{BarcodeID: "B-10001", Titel: "Mathematik 5", Autor: "Autor", Signatur: "LMF-Mathe 5"},
 		{BarcodeID: "B-10002", Titel: "Mathematik 5", Autor: "Autor", Signatur: "LMF-Mathe 5"},
 	}

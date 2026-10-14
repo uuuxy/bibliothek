@@ -54,9 +54,9 @@ func TestEtikett_AnschaffungsjahrIstDasZugangsjahr(t *testing.T) {
 		t.Fatalf("Altbestand anlegen: %v", err)
 	}
 
-	zeilen, err := DesTitels(ctx, pool, titelID)
+	zeilen, err := LadeDesTitels(ctx, pool, titelID)
 	if err != nil {
-		t.Fatalf("DesTitels: %v", err)
+		t.Fatalf("LadeDesTitels: %v", err)
 	}
 	jahr := map[string]string{}
 	for _, z := range zeilen {

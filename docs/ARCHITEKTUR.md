@@ -819,14 +819,14 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
 - `repository/` und `pdf/` kennen einander nicht. Die Tür füllt die Typen der PDF-Erzeuger
   aus den Zeilen. Hängt ein gedruckter Text an einer Regel, die `pdf/` nicht kennt, wählt die
   Tür ihn und reicht den fertigen Text: Den Eigentumsvermerk eines Etiketts bestimmt der Topf
-  des Exemplars, `buchetikett.BuchEtiketten` setzt ihn je Exemplar in
+  des Exemplars, `buchetikett.PDFEtiketten` setzt ihn je Exemplar in
   `pdf.BuchEtikett`, neben dem Schulnamen aus den Einstellungen, und der Erzeuger druckt, was
   dort steht. Den Typ füllt nur diese Funktion (`etikett_eingabe_ratsche_test.go`). Sie steht
-  seit dem 12.10.2026 mit dem Typ des Druckauftrags aus dem Browser (`BarcodeLabelDetail`) und
+  seit dem 12.10.2026 mit dem Typ des Druckauftrags aus dem Browser (`buchetikett.Etikett`) und
   dem Kopf der Schule in `internal/buchetikett`, unter den Türen: Das Druck-Center und die
   Bestellung drucken beide Buchetiketten. Das Feld des Druckauftrags für den Topf nimmt aus
   einer Anfrage nichts an. Ein Test hält jedes Feld der Eingabe gegen seine Quelle
-  (`internal/buchetikett/buch_etiketten_test.go`). Das Blatt eines Bestandsbuchs entsteht aus der Antwort für
+  (`internal/buchetikett/buchetikett_test.go`). Das Blatt eines Bestandsbuchs entsteht aus der Antwort für
   den Bildschirm (`abgangsbuchBlatt`, `zugangsbuchBlatt`): Es trägt dieselben Abschnitte,
   Überschriften und Zahlen wie die Liste (`api/katalog/bestandsbuch_test.go`). Die Mahnliste bekommt
   je Schüler eine Seite aus den Gruppen der Abfrage (`mahnlisteSeiten`,
@@ -2395,11 +2395,11 @@ der Leinwand und sperrt das Speichern. Einen weiteren Abrufer hält
 **Etiketten: drei Wege zum selben Blatt.** Ein Buch-Etikett entsteht über „Barcodes
 drucken" am Titel (`GET /api/buecher/titel/{id}/etiketten`), über das Druck-Center
 (`POST /api/print/labels`) und für den Händler (Seite und Mailanhang). Die Daten lädt
-`internal/buchetikett` auf jedem der drei Wege: `DesTitels`, `ErgaenzeServerfelder` und
-`DerBestellung`. Das Druck-Center schickt nur Nummer, Titel und Autor; was der Server
+`internal/buchetikett` auf jedem der drei Wege: `LadeDesTitels`, `ErgaenzeServerfelder` und
+`LadeDerBestellung`. Das Druck-Center schickt nur Nummer, Titel und Autor; was der Server
 weiß — Anschaffungsjahr, Signatur, Eigentum —, trägt `ErgaenzeServerfelder` nach. Ein neues
 Feld auf dem Etikett gehört an alle drei Wege und in `pdf.BuchEtikett`, die Eingabe der
-Erzeuger, die `buchetikett.BuchEtiketten` für alle Wege füllt. Das Gate liest den gedruckten Text:
+Erzeuger, die `buchetikett.PDFEtiketten` für alle Wege füllt. Das Gate liest den gedruckten Text:
 `api/druck/etiketten_pdf_paritaet_pg_test.go` fährt die Handler, entpackt die Inhaltsströme des PDF
 und vergleicht die Textstücke; Statuscode und Dateigröße sind bei einem fehlenden Feld
 dieselben. Einen eigenen Endpunkt für ein einzelnes Etikett gibt es seit dem 24.09.2026 nicht

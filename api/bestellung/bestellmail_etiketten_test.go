@@ -2,7 +2,7 @@ package bestellung
 
 // Eigentumsvermerk auf den gemailten Etikettenbögen (Sweep 01.09.2026, Fund P2):
 // Bis dahin nagelte der Mailweg den Vermerk auf die Werksvorgabe „Eigentum des
-// Landes Hessen" fest, während Selbstdruck (buchetikett.LadeEtikettKopf) und Lieferanten-Link
+// Landes Hessen" fest, während Selbstdruck (buchetikett.LadeKopf) und Lieferanten-Link
 // die Einstellung etikett_eigentumsvermerk lasen — zwei Wege zum selben Buch,
 // zwei verschiedene Aufkleber. Geprüft am fertigen PDF-Inhaltsstrom (pdftest.Suchtext),
 // wie alle Etiketten-Gates.
@@ -17,14 +17,14 @@ import (
 	"bibliothek/repository"
 )
 
-func testEtikettLabels() []buchetikett.BarcodeLabelDetail {
-	return []buchetikett.BarcodeLabelDetail{{
+func testEtikettLabels() []buchetikett.Etikett {
+	return []buchetikett.Etikett{{
 		BarcodeID: "BM-TEST-1", Titel: "Bestellmail-Testband", Autor: "Prüfer", ISBN: "9783123456789",
 	}}
 }
 
 func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
-	kopf := buchetikett.EtikettKopfAus(&repository.SystemEinstellungen{
+	kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{
 		SchuleName: "Testschule", EtikettEigentumsvermerk: "Eigentum des Kreises Wetterau"})
 	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, mitteltopf.Land)
 	if err != nil {
@@ -48,7 +48,7 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 }
 
 func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T) {
-	kopf := buchetikett.EtikettKopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
+	kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
 	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, mitteltopf.Land)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
@@ -77,7 +77,7 @@ func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			kopf := buchetikett.EtikettKopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
+			kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
 			boegen, err := etikettenboegen(testEtikettLabels(), kopf, f.istHauptlieferant, f.mittel)
 			if err != nil {
 				t.Fatalf("etikettenboegen: %v", err)
@@ -116,7 +116,7 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			kopf := buchetikett.EtikettKopfAus(&repository.SystemEinstellungen{
+			kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{
 				SchuleName: "Testschule", EtikettEigentumsvermerkSchuelerbuecherei: f.vermerkSB})
 			labels := testEtikettLabels()
 			labels[0].Topf = f.topf

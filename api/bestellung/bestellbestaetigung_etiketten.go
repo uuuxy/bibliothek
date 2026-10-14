@@ -75,7 +75,7 @@ func (s *Tueren) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	etiketten, err := buchetikett.DerBestellung(ctx, s.DB.Pool, bestellungID)
+	etiketten, err := buchetikett.LadeDerBestellung(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -101,8 +101,8 @@ func (s *Tueren) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 //
 // format gilt nur für "klein" — das große Lernmittel-Etikett hat ein festes Raster
 // (2×2 auf A4) und wird ausgeschnitten, nicht auf vorgestanzte Bögen gedruckt.
-func (s *Tueren) baueEtikettenPDF(ctx context.Context, groesse, format string, etiketten []buchetikett.BarcodeLabelDetail) ([]byte, error) {
-	eingabe := buchetikett.BuchEtiketten(etiketten, buchetikett.LadeEtikettKopf(ctx, s.DB.Pool))
+func (s *Tueren) baueEtikettenPDF(ctx context.Context, groesse, format string, etiketten []buchetikett.Etikett) ([]byte, error) {
+	eingabe := buchetikett.PDFEtiketten(etiketten, buchetikett.LadeKopf(ctx, s.DB.Pool))
 
 	if groesse == "gross" {
 		return pdf.GenerateLernmittelEtikettenPDF(eingabe)

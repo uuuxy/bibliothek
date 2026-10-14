@@ -1,14 +1,14 @@
 package main
 
 // Ratsche: Die Eingabe der Buchetiketten (pdf.BuchEtikett) füllt im Produktivcode nur die
-// Funktion BuchEtiketten in internal/buchetikett/buchetikett.go.
+// Funktion PDFEtiketten in internal/buchetikett/buchetikett.go.
 //
 // Die Erzeuger in pdf/ kennen den Topf eines Exemplars nicht und drucken den
-// Eigentumsvermerk, den sie bekommen. Welcher gilt, entscheidet BuchEtiketten für alle
+// Eigentumsvermerk, den sie bekommen. Welcher gilt, entscheidet PDFEtiketten für alle
 // Druckwege. Ein zweiter Füller wählte den Vermerk nach eigener Regel oder gar nicht, und
 // dasselbe Buch trüge je nach Druckweg einen anderen Aufdruck.
 //
-// Regel: Außerhalb von pdf/ nennt keine Produktivdatei den Typ, außer in BuchEtiketten. Wer
+// Regel: Außerhalb von pdf/ nennt keine Produktivdatei den Typ, außer in PDFEtiketten. Wer
 // nur das Ergebnis der Funktion weiterreicht, braucht den Namen nicht.
 //
 // Blindheit: ein Füller, der den Typ nie nennt (Reflection, eine Funktion in pdf/ selbst).
@@ -81,8 +81,8 @@ func etikettEingabeNennungen(t *testing.T, pfad string, quelle any) []string {
 	return nennungen
 }
 
-func TestEtikettEingabe_NurBuchEtikettenFuelltSie(t *testing.T) {
-	const erlaubt = "internal/buchetikett/buchetikett.go:BuchEtiketten"
+func TestEtikettEingabe_NurPDFEtikettenFuelltSie(t *testing.T) {
+	const erlaubt = "internal/buchetikett/buchetikett.go:PDFEtiketten"
 	var fremd []string
 	inErlaubter := 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
@@ -119,8 +119,8 @@ func TestEtikettEingabe_NurBuchEtikettenFuelltSie(t *testing.T) {
 	}
 	if len(fremd) > 0 {
 		slices.Sort(fremd)
-		t.Errorf("pdf.%s wird außerhalb von BuchEtiketten genannt: %v. Die Eingabe der Etiketten-"+
-			"Erzeuger füllt nur BuchEtiketten (internal/buchetikett); dort wird der Eigentumsvermerk je "+
+		t.Errorf("pdf.%s wird außerhalb von PDFEtiketten genannt: %v. Die Eingabe der Etiketten-"+
+			"Erzeuger füllt nur PDFEtiketten (internal/buchetikett); dort wird der Eigentumsvermerk je "+
 			"Exemplar gewählt. Einen weiteren Druckweg über diese Funktion führen.",
 			etikettEingabeTyp, slices.Compact(fremd))
 	}

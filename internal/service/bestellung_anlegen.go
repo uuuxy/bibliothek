@@ -67,7 +67,7 @@ type BestellterTitel struct {
 }
 
 // BestellEtikett ist das Etikett eines bestellten Exemplars für den Barcodebogen des
-// Lieferanten. Die Felder sind die des Druckauftrags der Tür (api.BarcodeLabelDetail), sie
+// Lieferanten. Die Felder sind die des Druckauftrags der Tür (buchetikett.Etikett), sie
 // wandelt per Typumwandlung.
 type BestellEtikett struct {
 	BarcodeID string

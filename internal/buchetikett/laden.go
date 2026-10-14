@@ -8,22 +8,22 @@ import (
 	"bibliothek/repository"
 )
 
-// DesTitels lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
-func DesTitels(ctx context.Context, datenbank repository.Datenbank, id string) ([]BarcodeLabelDetail, error) {
-	zeilen, err := repository.LadeEtikettDatenDesTitels(ctx, datenbank, id)
+// LadeDesTitels lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
+func LadeDesTitels(ctx context.Context, datenbank repository.Datenbank, titelID string) ([]Etikett, error) {
+	zeilen, err := repository.LadeEtikettDatenDesTitels(ctx, datenbank, titelID)
 	if err != nil {
 		return nil, err
 	}
 	return etikettenAus(zeilen), nil
 }
 
-// DerBestellung holt die Exemplare EINER Bestellung, beschränkt auf die
+// LadeDerBestellung holt die Exemplare EINER Bestellung, beschränkt auf die
 // Positionen, die auch auf dem Barcodebogen der Bestellmail standen.
 //
 // Ohne die Einschränkung über mit_vorab_barcode bekäme der Lieferant Etiketten für
 // Exemplare, die bewusst ohne Vorab-Barcode bestellt wurden — die beklebt dann die
 // Bibliothek selbst, und beide würden dasselbe Buch bekleben.
-func DerBestellung(ctx context.Context, datenbank repository.Datenbank, bestellungID string) ([]BarcodeLabelDetail, error) {
+func LadeDerBestellung(ctx context.Context, datenbank repository.Datenbank, bestellungID string) ([]Etikett, error) {
 	zeilen, err := repository.LadeEtikettDatenDerBestellung(ctx, datenbank, bestellungID)
 	if err != nil {
 		return nil, err
@@ -42,17 +42,17 @@ func DerBestellung(ctx context.Context, datenbank repository.Datenbank, bestellu
 // Genau das ist der Signatur passiert: Diese Nachfüllung gab es zuerst nur fürs Jahr,
 // also trug dasselbe Buch je nach Druckweg einen anderen Aufkleber — über
 // GET /api/buecher/titel/{id}/etiketten mit Signatur, über POST /api/print/labels ohne.
-// Wer hier ein Feld ergänzt, ergänzt es auch in DesTitels und DerBestellung;
+// Wer hier ein Feld ergänzt, ergänzt es auch in LadeDesTitels und LadeDerBestellung;
 // TestEtikettenWegeDruckenDasselbe hält die Wege am fertigen PDF zusammen.
 //
 // Eine Abfrage für alle Barcodes, kein N+1. Unbekannte Barcodes bleiben unangetastet —
 // beim Vorab-Druck für eine Bestellung existieren die Exemplare noch gar nicht, dort
 // ist das der richtige Zustand und kein Fehler.
-func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, items []BarcodeLabelDetail) {
-	barcodes := make([]string, 0, len(items))
-	for i := range items {
-		if items[i].BarcodeID != "" {
-			barcodes = append(barcodes, items[i].BarcodeID)
+func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, etiketten []Etikett) {
+	barcodes := make([]string, 0, len(etiketten))
+	for i := range etiketten {
+		if etiketten[i].BarcodeID != "" {
+			barcodes = append(barcodes, etiketten[i].BarcodeID)
 		}
 	}
 	if len(barcodes) == 0 {
@@ -69,11 +69,11 @@ func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, i
 		return
 	}
 
-	for i := range items {
-		if felder, ok := bekannt[items[i].BarcodeID]; ok {
-			items[i].AnschaffungsJahr = felder.Jahr
-			items[i].Signatur = felder.Signatur
-			items[i].Topf = felder.Topf
+	for i := range etiketten {
+		if felder, ok := bekannt[etiketten[i].BarcodeID]; ok {
+			etiketten[i].AnschaffungsJahr = felder.Jahr
+			etiketten[i].Signatur = felder.Signatur
+			etiketten[i].Topf = felder.Topf
 		}
 	}
 }

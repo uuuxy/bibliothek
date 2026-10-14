@@ -19,7 +19,7 @@ import (
 // Es gibt zwei Wege zum selben Etikett, und sie holen ihre Daten verschieden:
 //
 //   - GET /api/buecher/titel/{id}/etiketten — „Barcodes drucken" im Buchformular,
-//     liest alles selbst aus der DB (buchetikett.DesTitels).
+//     liest alles selbst aus der DB (buchetikett.LadeDesTitels).
 //   - POST /api/print/labels — die Etiketten-Verwaltung im Druck-Center. Sie schickt nur
 //     Barcode, Titel und Autor; alles Weitere muss der Server nachtragen.
 //

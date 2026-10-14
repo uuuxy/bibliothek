@@ -19,7 +19,7 @@ import (
 // Der Eigentumsvermerk folgt dem Topf des Exemplars, auch auf den zwei Wegen zum Händler. Die
 // zwei Wege des Hauses prüft api/druck/etiketten_topf_pg_test.go.
 
-// Die beiden Wege zum Händler: der Lieferanten-Link (buchetikett.DerBestellung) und der
+// Die beiden Wege zum Händler: der Lieferanten-Link (buchetikett.LadeDerBestellung) und der
 // Mailanhang (Etiketten aus ProcessOrder). Bestellt wird ein LERNMITTEL-Titel für die
 // Schülerbücherei — der Fall, in dem Titel und Bestellung einander widersprechen.
 func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T) {
@@ -53,7 +53,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}
 	// Die Etiketten gehen durch dieselbe Füll-Funktion wie an der Tür der Bestellung.
-	boegen, err := etikettenboegen(bestellmailDatenAus(res).Etiketten, buchetikett.EtikettKopfAus(einstellungen), true, res.Mittel)
+	boegen, err := etikettenboegen(bestellmailDatenAus(res).Etiketten, buchetikett.KopfAus(einstellungen), true, res.Mittel)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
