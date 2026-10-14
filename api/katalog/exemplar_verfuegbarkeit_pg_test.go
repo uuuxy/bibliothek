@@ -74,16 +74,16 @@ func verfuegbarkeitNach(t *testing.T, srv *Tueren, titelID, barcode string) bool
 
 func TestExemplarliste_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Verfuegbarkeit", 1)
-	schueler := testdaten.SeedSchueler(t, pool, "S-VERF-1", "Verf", "7a")
+	titel := testdaten.LegeTitelAn(t, pool, "Verfuegbarkeit", 1)
+	schueler := testdaten.LegeSchuelerAn(t, pool, "S-VERF-1", "Verf", "7a")
 
-	testdaten.Exemplar(t, pool, titel, "BC-FREI", true, "") // nie verliehen
-	verliehen := testdaten.Exemplar(t, pool, titel, "BC-VERLIEHEN", true, "")
-	zurueck := testdaten.Exemplar(t, pool, titel, "BC-ZURUECK", true, "")
+	testdaten.LegeExemplarAn(t, pool, titel, "BC-FREI", true, "") // nie verliehen
+	verliehen := testdaten.LegeExemplarAn(t, pool, titel, "BC-VERLIEHEN", true, "")
+	zurueck := testdaten.LegeExemplarAn(t, pool, titel, "BC-ZURUECK", true, "")
 
 	// ALLE Zeitstempel entstehen in SQL, keiner in Go.
 	//
@@ -134,10 +134,10 @@ func TestExemplarliste_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 // Exemplarkarte im Katalog ruft dieselbe Route auch für frisch angelegte Titel auf.
 func TestExemplarliste_TitelOhneExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Ohne Exemplare", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Ohne Exemplare", 0)
 
 	if zeilen := exemplarZeilen(t, srv, titel); len(zeilen) != 0 {
 		t.Errorf("erwartet: leere Liste, bekommen: %d Zeilen", len(zeilen))

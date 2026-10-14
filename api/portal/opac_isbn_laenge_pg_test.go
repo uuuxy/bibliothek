@@ -19,11 +19,11 @@ import (
 // Vergleich mit der Normalform des Suchtexts fände die getippte zehnstellige das Buch nicht.
 func TestOpacSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	const titel = "Advanced Organic Chemistry"
-	id := testdaten.TitelMitSignatur(t, pool, titel, "", 0)
-	testdaten.Exemplar(t, pool, id, "B-ISBN-OPAC-1", true, "")
+	id := testdaten.LegeTitelMitSignaturAn(t, pool, titel, "", 0)
+	testdaten.LegeExemplarAn(t, pool, id, "B-ISBN-OPAC-1", true, "")
 	if _, err := pool.Exec(t.Context(), `UPDATE buecher_titel SET isbn = '0306406152' WHERE id = $1`, id); err != nil {
 		t.Fatal(err)
 	}

@@ -27,10 +27,10 @@ import (
 //  3. Ein Statuswechsel ohne das Feld lässt den erfassten Schaden stehen.
 func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	testdaten.AusleihbaresExemplar(t, pool, "Atlas mit Wasserrand", "B-ABW-1")
+	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Atlas mit Wasserrand", "B-ABW-1")
 	var exID, titelID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id, titel_id FROM buecher_exemplare WHERE barcode_id = 'B-ABW-1'`,
@@ -48,7 +48,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 		req.SetPathValue("id", exID)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
-		statusTuer.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
+		statusTuer.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status setzen (%s): erwartet 200, war %d: %s", koerper, rec.Code, rec.Body.String())
 		}
@@ -156,10 +156,10 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 // Beschädigungsgrad.
 func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	testdaten.AusleihbaresExemplar(t, pool, "Mathematik 8", "B-EW-1")
+	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Mathematik 8", "B-EW-1")
 	var exID, titelID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id, titel_id FROM buecher_exemplare WHERE barcode_id = 'B-EW-1'`,
@@ -225,10 +225,10 @@ func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 // Exemplar-Liste, Betrag und Begründung in der Antwort.
 func TestExemplarliste_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	testdaten.AusleihbaresExemplar(t, pool, "Geschichte 9", "B-GRD-1")
+	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Geschichte 9", "B-GRD-1")
 	var exID, titelID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id, titel_id FROM buecher_exemplare WHERE barcode_id = 'B-GRD-1'`,

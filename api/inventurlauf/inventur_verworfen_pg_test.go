@@ -34,7 +34,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Sessions leeren: %v", err)
 	}
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	sigGeprueft := "INV-Geprueft-" + suffix
@@ -42,9 +42,9 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 	barcodeGeprueft := "B-G-" + suffix
 	barcodeGescannt := "B-V1-" + suffix
 	barcodeLiegtNoch := "B-V2-" + suffix
-	testdaten.SeedSignaturMitExemplar(t, pool, sigGeprueft, barcodeGeprueft)
-	testdaten.SeedSignaturMitExemplar(t, pool, sigVerworfen, barcodeGescannt)
-	testdaten.SeedSignaturMitExemplar(t, pool, sigVerworfen, barcodeLiegtNoch)
+	testdaten.LegeExemplarMitSignaturAn(t, pool, sigGeprueft, barcodeGeprueft)
+	testdaten.LegeExemplarMitSignaturAn(t, pool, sigVerworfen, barcodeGescannt)
+	testdaten.LegeExemplarMitSignaturAn(t, pool, sigVerworfen, barcodeLiegtNoch)
 
 	invRepo := repository.NewInventurAbfragen(pool)
 	geprueft, err := invRepo.LegeLaufAn(ctx, "signature", repository.InventurBereich{Signatur: &sigGeprueft}, "Geprüft", "")
@@ -64,7 +64,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 			t.Fatalf("Scan %s: erwartet 200, war %d: %s", scan.barcode, rec.Code, rec.Body.String())
 		}
 	}
-	if rec := inventurPost(t, srv.InventurFinishHandler(), "/api/inventur/finish", geprueft.ID, testdaten.AdminFuerAudit(t, pool)); rec.Code != http.StatusOK {
+	if rec := inventurPost(t, srv.InventurFinishHandler(), "/api/inventur/finish", geprueft.ID, testdaten.LegeBearbeiterAn(t, pool)); rec.Code != http.StatusOK {
 		t.Fatalf("Abschluss: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
 	if rec := inventurPost(t, srv.InventurAbortHandler(), "/api/inventur/abort", verworfen.ID, ""); rec.Code != http.StatusOK {
@@ -134,7 +134,7 @@ func TestInventurVerworfen_DatenbankHaeltDieRegel(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Sessions leeren: %v", err)
 	}
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	sig := fmt.Sprintf("INV-Regel-%d", time.Now().UnixNano())
 	session, err := repository.NewInventurAbfragen(pool).LegeLaufAn(ctx, "signature",

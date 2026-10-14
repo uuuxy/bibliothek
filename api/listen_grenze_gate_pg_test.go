@@ -200,7 +200,7 @@ func TestListenNennenIhreGrenze(t *testing.T) {
 	t.Setenv("RATE_LIMIT", "100000")
 	// Ein definierter Anfang: Was ein früherer Test liegen ließ, änderte sonst, welche Felder
 	// einer Antwort gefüllt sind.
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
 		t.Fatalf("InitPermissions: %v", err)
 	}

@@ -19,10 +19,10 @@ import (
 // bleibt stehen: Ein Brief ohne Absender wäre gezählt und nicht zu gebrauchen.
 func TestMahnbriefDruck_EinstellungenUnlesbar_KeinBriefKeineMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
-	sid := testdaten.SeedSchueler(t, pool, "MB-LESEFEHLER", "Mia", "7a")
-	ausleihe := testdaten.SeedAusleihe(t, pool, sid, "Buch über der Frist", time.Now().AddDate(0, 0, -30))
+	sid := testdaten.LegeSchuelerAn(t, pool, "MB-LESEFEHLER", "Mia", "7a")
+	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch über der Frist", time.Now().AddDate(0, 0, -30))
 	rumpf, err := json.Marshal(BulkPrintRequest{AusleihIDs: []string{ausleihe}})
 	if err != nil {
 		t.Fatalf("Anfrage bauen: %v", err)
@@ -36,14 +36,14 @@ func TestMahnbriefDruck_EinstellungenUnlesbar_KeinBriefKeineMahnstufe(t *testing
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.EinstellungenLesen})
+	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Der Brief entsteht ohne die Absenderzeile der Schule", rec.Code)
 	}
 	if bytes.HasPrefix(rec.Body.Bytes(), []byte("%PDF-")) {
 		t.Error("trotz Lesefehler kommt ein Brief zurück")
 	}
-	if stufe, datum := testdaten.MahnState(t, pool, ausleihe); stufe != 0 || datum != nil {
+	if stufe, datum := testdaten.LadeMahnstufe(t, pool, ausleihe); stufe != 0 || datum != nil {
 		t.Errorf("Mahnstufe %d, Mahndatum %v: Die Mahnung ist gezählt, obwohl kein Brief entstand", stufe, datum)
 	}
 
@@ -52,7 +52,7 @@ func TestMahnbriefDruck_EinstellungenUnlesbar_KeinBriefKeineMahnstufe(t *testing
 	if rec.Code != http.StatusOK || !bytes.HasPrefix(rec.Body.Bytes(), []byte("%PDF-")) {
 		t.Errorf("ungestört: Status %d, erwartet 200 mit einem Brief", rec.Code)
 	}
-	if stufe, _ := testdaten.MahnState(t, pool, ausleihe); stufe != 1 {
+	if stufe, _ := testdaten.LadeMahnstufe(t, pool, ausleihe); stufe != 1 {
 		t.Errorf("ungestört: Mahnstufe %d, erwartet 1", stufe)
 	}
 }

@@ -37,14 +37,14 @@ func kontoauszugPDF(t *testing.T, srv *Tueren, query string) (*httptest.Response
 
 func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
-	anna := testdaten.SchuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
-	testdaten.SchuelerMitBuch(t, pool, "S-2", "Bea", "9H1")
-	cem := testdaten.SchuelerMitBuch(t, pool, "S-3", "Cem", "10R1")
+	anna := testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-1", "Anna", "9H1")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-2", "Bea", "9H1")
+	cem := testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-3", "Cem", "10R1")
 	// Kein Abgänger: 10G1 ist keine Abschlussklasse. Hat ein Buch, steht aber nicht in der
 	// Liste — und darf auch über seine Kennung keine Seite bekommen.
-	finn := testdaten.SchuelerMitBuch(t, pool, "S-6", "Finn", "10G1")
+	finn := testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-6", "Finn", "10G1")
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 
@@ -126,8 +126,8 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 // Außerhalb der Saison bleibt es beim 404 — auch mit einer Auswahl.
 func TestAbgaengerDruck_AuswahlAendertDieSaisonNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	anna := testdaten.SchuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
+	testdaten.LeereBestandsdaten(t, pool)
+	anna := testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-1", "Anna", "9H1")
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
 	rec, _ := kontoauszugPDF(t, srv, "?ids="+anna)

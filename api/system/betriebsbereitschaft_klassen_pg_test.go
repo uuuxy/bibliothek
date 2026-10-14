@@ -18,14 +18,14 @@ import (
 // Klassen: Eine Buchliste oder Zuordnung dafür ist nicht verwaist.
 func TestKlassenZuordnungKenntDieOberstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	for i, klasse := range []string{"07G1", "10R2", "ET1", "12T1", "13T2"} {
-		testdaten.SeedSchueler(t, pool, fmt.Sprintf("KL-%d", i), "Kind", klasse)
+		testdaten.LegeSchuelerAn(t, pool, fmt.Sprintf("KL-%d", i), "Kind", klasse)
 	}
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Buch einer Klassenliste", 1)
+	titel := testdaten.LegeTitelAn(t, pool, "Buch einer Klassenliste", 1)
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO class_books (class_name, book_id) VALUES ('ET1', $1), ('09H9', $1)`, titel); err != nil {
 		t.Fatalf("Buchlisten anlegen: %v", err)

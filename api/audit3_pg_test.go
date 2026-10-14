@@ -47,18 +47,18 @@ func markiereGemahntUndUeberfaellig(t *testing.T, pool *pgxpool.Pool, ausleiheID
 // bleibt die Mahnstufe erhalten (Eskalation berechtigt).
 func TestGlobalExtendLMF_ResetMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	vergangenheit := time.Now().AddDate(0, 0, -60)
 
 	// Klasse 9z: wird in die Zukunft verlängert -> Reset erwartet.
-	sidZ := testdaten.SeedSchueler(t, pool, "S-MST-Z", "Mona", "9z")
-	loanReset := testdaten.SeedAusleihe(t, pool, sidZ, "LMF-Mathe 9", vergangenheit)
+	sidZ := testdaten.LegeSchuelerAn(t, pool, "S-MST-Z", "Mona", "9z")
+	loanReset := testdaten.LegeAusleiheMitFristAn(t, pool, sidZ, "LMF-Mathe 9", vergangenheit)
 	markiereGemahntUndUeberfaellig(t, pool, loanReset, 2, vergangenheit)
 
 	// Klasse 9y: "Verlängerung" auf ein vergangenes Datum -> Mahnstufe bleibt.
-	sidY := testdaten.SeedSchueler(t, pool, "S-MST-Y", "Bodo", "9y")
-	loanKeep := testdaten.SeedAusleihe(t, pool, sidY, "LMF-Deutsch 9", vergangenheit)
+	sidY := testdaten.LegeSchuelerAn(t, pool, "S-MST-Y", "Bodo", "9y")
+	loanKeep := testdaten.LegeAusleiheMitFristAn(t, pool, sidY, "LMF-Deutsch 9", vergangenheit)
 	markiereGemahntUndUeberfaellig(t, pool, loanKeep, 2, vergangenheit)
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -97,12 +97,12 @@ func globalExtend(t *testing.T, srv *Server, klasse, datum string) *httptest.Res
 // Reservierung als unlösbare Aufgabe im Dashboard hängen.
 func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	tid := testdaten.TitelMitMeldebestand(t, pool, "Klassenlektuere", 0)
+	tid := testdaten.LegeTitelAn(t, pool, "Klassenlektuere", 0)
 	for i := 0; i < 5; i++ {
-		testdaten.Exemplar(t, pool, tid, fmt.Sprintf("BC-KL-%d", i), true, "")
+		testdaten.LegeExemplarAn(t, pool, tid, fmt.Sprintf("BC-KL-%d", i), true, "")
 	}
 	var uid string
 	if err := pool.QueryRow(ctx,
@@ -140,16 +140,16 @@ func reservierung(t *testing.T, srv *Server, userID, titelID string, anzahl int)
 // Nur ein alter (>2 Jahre im Bestand), nie ausgeliehener Titel ist ein echter Ladenhüter.
 func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	altTid := testdaten.TitelMitMeldebestand(t, pool, "Uralt nie ausgeliehen", 0)
+	altTid := testdaten.LegeTitelAn(t, pool, "Uralt nie ausgeliehen", 0)
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, erstellt_am)
 		 VALUES ($1, 'BC-OLD', true, now() - INTERVAL '3 years')`, altTid); err != nil {
 		t.Fatalf("altes Exemplar: %v", err)
 	}
-	neuTid := testdaten.TitelMitMeldebestand(t, pool, "Frischer Neuzugang", 0)
+	neuTid := testdaten.LegeTitelAn(t, pool, "Frischer Neuzugang", 0)
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, erstellt_am)
 		 VALUES ($1, 'BC-NEW', true, now())`, neuTid); err != nil {
@@ -176,14 +176,14 @@ func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
 // gingen "Zombie-Mahnungen" an den ehemaligen Klassenlehrer (DSGVO-Verstoß).
 func TestMahnwesen_KeineZombieMahnungFuerGeloeschte(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	pastFrist := time.Now().AddDate(0, 0, -10)
-	aktiv := testdaten.SeedSchueler(t, pool, "MZ-1", "Nils", "7a")
-	testdaten.SeedAusleihe(t, pool, aktiv, "Mahnbuch A", pastFrist)
-	geloescht := testdaten.SeedSchueler(t, pool, "MZ-2", "Greta", "7a")
-	testdaten.SeedAusleihe(t, pool, geloescht, "Mahnbuch B", pastFrist)
+	aktiv := testdaten.LegeSchuelerAn(t, pool, "MZ-1", "Nils", "7a")
+	testdaten.LegeAusleiheMitFristAn(t, pool, aktiv, "Mahnbuch A", pastFrist)
+	geloescht := testdaten.LegeSchuelerAn(t, pool, "MZ-2", "Greta", "7a")
+	testdaten.LegeAusleiheMitFristAn(t, pool, geloescht, "Mahnbuch B", pastFrist)
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = now() WHERE id = $1`, geloescht); err != nil {
 		t.Fatalf("Schüler löschen: %v", err)
 	}

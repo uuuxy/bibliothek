@@ -19,7 +19,7 @@ import (
 // einem kritischen Befund, sähe die Seite auf den ersten Blick in Ordnung aus.
 func TestBetriebsbereitschaft_GesamtIstDieSchaerfsteStufeDerBefunde(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	rec := httptest.NewRecorder()
 	srv.BetriebsbereitschaftHandler(repository.NewEinstellungsAbfragen(pool),

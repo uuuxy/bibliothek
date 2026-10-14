@@ -11,22 +11,22 @@ import (
 	"bibliothek/repository"
 )
 
-// AusleiheUeberDenDienst leiht ein Exemplar an einen Schüler aus — über denselben Dienst,
+// BucheAusleiheUeberDienst leiht ein Exemplar an einen Schüler aus — über denselben Dienst,
 // den auch der Scanner benutzt, damit die Frist wirklich aus den Einstellungen kommt und
 // nicht aus dem Test.
-func AusleiheUeberDenDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerID, bearbeiterID string) time.Time {
+func BucheAusleiheUeberDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerID, bearbeiterID string) time.Time {
 	t.Helper()
 	ctx := context.Background()
 
-	bookRepo := repository.NewKatalogAbfragen(pool)
-	loanSvc := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), bookRepo,
+	katalog := repository.NewKatalogAbfragen(pool)
+	dienst := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), katalog,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 
-	exemplar, err := bookRepo.FindeExemplar(ctx, barcode)
+	exemplar, err := katalog.FindeExemplar(ctx, barcode)
 	if err != nil {
 		t.Fatalf("Exemplar %s laden: %v", barcode, err)
 	}
-	if _, err := loanSvc.BucheAmLeser(ctx, exemplar, &schuelerID, bearbeiterID, false); err != nil {
+	if _, err := dienst.BucheAmLeser(ctx, exemplar, &schuelerID, bearbeiterID, false); err != nil {
 		t.Fatalf("Ausleihe von %s: %v", barcode, err)
 	}
 

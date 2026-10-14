@@ -50,7 +50,7 @@ func mailStatusAusAntwort(t *testing.T, rec *httptest.ResponseRecorder) string {
 
 func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -156,7 +156,7 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 
 func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

@@ -23,10 +23,10 @@ import (
 // ohne und mit der Einstellung.
 func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	testdaten.AusleihbaresExemplar(t, pool, "Erdkunde 8", "B-GRT-1")
+	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Erdkunde 8", "B-GRT-1")
 	var exID, titelID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id, titel_id FROM buecher_exemplare WHERE barcode_id = 'B-GRT-1'`,
@@ -46,7 +46,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 		t.Fatalf("Exemplar vorbereiten: %v", err)
 	}
 	// Der Vorschlag zum Bescheid nennt überfällige Bücher eines Schülers.
-	schuelerID := testdaten.SeedSchueler(t, pool, "S-GRT-1", "Gesa", "8a")
+	schuelerID := testdaten.LegeSchuelerAn(t, pool, "S-GRT-1", "Gesa", "8a")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 		VALUES ($1, $2, now() - interval '40 days')`, exID, schuelerID); err != nil {
@@ -58,7 +58,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	bescheidRepo := repository.NewBescheidAbfragen(pool)
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	rufe := func(t *testing.T, h http.Handler, methode, pfad, rumpf, kennung string, ziel any) {
 		t.Helper()
 		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))

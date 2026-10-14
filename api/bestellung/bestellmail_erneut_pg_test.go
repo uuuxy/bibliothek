@@ -75,7 +75,7 @@ type bestellmailLage struct {
 func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 	t.Helper()
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	authenticator, err := auth.NewAuthenticator("bestellmail-erneut-testgeheimnis-32-by!!", pool, time.Hour)
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
@@ -167,8 +167,8 @@ func (l *bestellmailLage) inListeGescheitert(t *testing.T, bestellungID string) 
 func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "erneut")
 	testdaten.SetzeOeffentlicheAdresse(t, l.pool, "https://bib.example.invalid")
-	lieferant := testdaten.Haendler(t, l.pool, "Naacher-Erneut", true)
-	titel := testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Erneut", 0)
+	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-Erneut", true)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Erneut", 0)
 
 	// 1. Der Mailserver ist nicht erreichbar: Die Bestellung ist gespeichert und trägt den Vermerk.
 	mailserverNichtErreichbar(t, nil)
@@ -275,8 +275,8 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "ohne")
 	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }))
 
-	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Ohne", false)
-	bestellung, _ := l.bestelle(t, lieferant, testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Ohne", 0))
+	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Ohne", false)
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Ohne", 0))
 	if !l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt keinen Vermerk, obwohl kein Mailserver eingerichtet ist")
 	}
@@ -293,8 +293,8 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "nur")
 	sitzungen := tuertest.MailAbfangen(t)
-	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Nur", false)
-	bestellung, _ := l.bestelle(t, lieferant, testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Nur", 0))
+	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Nur", false)
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Nur", 0))
 	smtptest.WarteAufMail(t, sitzungen)
 	if l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt einen Vermerk, obwohl die Mail rausging")
@@ -319,8 +319,8 @@ func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 // Bestellung: Der Vermerk gilt dann nicht mehr, und die Mail geht nicht noch einmal raus.
 func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "bestaetigt")
-	lieferant := testdaten.Haendler(t, l.pool, "Naacher-Bestaetigt", true)
-	titel := testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Bestaetigt", 0)
+	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-Bestaetigt", true)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Bestaetigt", 0)
 
 	mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
@@ -356,8 +356,8 @@ func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 // erneuten Senden, das der Bestellung den Vermerk für die Dauer des Versuchs nimmt.
 func TestBestellmail_VermerkAuchWennDieAnfrageAbgebrochenIst(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "abbruch")
-	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Abbruch", false)
-	titel := testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Abbruch", 0)
+	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Abbruch", false)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Abbruch", 0)
 
 	// abgebrochen schickt die Anfrage und bricht sie ab, sobald der Versand begonnen hat.
 	abgebrochen := func(pfad, rumpf string) {

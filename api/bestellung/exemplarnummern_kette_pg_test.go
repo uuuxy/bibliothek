@@ -52,15 +52,15 @@ var linkMuster = regexp.MustCompile(`/bestellung/([A-Za-z0-9_-]{20,})`)
 
 func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Kette", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Kette", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Kette", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Kette", 0)
 
 	rec := bestelleUeberHandler(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
@@ -76,7 +76,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 
 	// 2. Dieselben Nummern müssen als Exemplare existieren — sonst klebt der Händler
 	//    Aufkleber auf Bücher, die das System nicht kennt.
-	ausDB := testdaten.BarcodesDerBestellung(t, pool)
+	ausDB := testdaten.LadeBarcodesDerBestellung(t, pool)
 	if strings.Join(ausDB, ",") != strings.Join(ausMail, ",") {
 		t.Fatalf("Datenbank hat %v, die Mail nennt %v — die Nummern laufen auseinander", ausDB, ausMail)
 	}
@@ -106,7 +106,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Zulauf laden: %v", err)
 	}
-	ids := testdaten.ExemplarIDsDerBestellung(t, pool)
+	ids := testdaten.LadeExemplarIDsDerBestellung(t, pool)
 	if fehlend := nichtImZulauf(zulauf, ids); len(fehlend) > 0 {
 		t.Fatalf("%d Exemplare fehlen im Wareneingang — sie wären nur noch über die Datenbank auffindbar", len(fehlend))
 	}

@@ -30,7 +30,7 @@ import (
 // vorhandenes Konto, Freischaltungsrecht).
 func TestSchulEmailNachtragen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -219,7 +219,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 // Tippfehler in der Nummer war damit endgültig.
 func TestAusweisnummerLeeren(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -326,7 +326,7 @@ func TestAusweisnummerLeeren(t *testing.T) {
 // Ein zweites Speichern derselben Werte schreibt keinen zweiten Eintrag.
 func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

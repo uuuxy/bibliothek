@@ -15,7 +15,7 @@ import (
 // geliefertes Buch trägt auf dem Etikett das Jahr, unter dem es im Zugangsbuch steht.
 func TestEtikett_AnschaffungsjahrIstDasZugangsjahr(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var titelID string

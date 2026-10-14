@@ -76,7 +76,7 @@ func TestAusweisnummer_KommtNieWieder(t *testing.T) {
 		}},
 	} {
 		t.Run(fall.name, func(t *testing.T) {
-			testdaten.ResetBestandsdaten(t, pool)
+			testdaten.LeereBestandsdaten(t, pool)
 			schueler(t, pool, "A-10049")
 			id := neu(t, fall.art, "A-10050")
 			fall.weg(t, id)
@@ -91,7 +91,7 @@ func TestAusweisnummer_KommtNieWieder(t *testing.T) {
 
 	// Weich gelöscht bleibt die Nummer in der Zeile stehen; auch sie kommt nicht wieder.
 	t.Run("in den Papierkorb gelegt", func(t *testing.T) {
-		testdaten.ResetBestandsdaten(t, pool)
+		testdaten.LeereBestandsdaten(t, pool)
 		id := neu(t, "schueler", "A-10050")
 		ausfuehren(t, `UPDATE leser SET deleted_at = now() WHERE id = $1`, id)
 		if got := naechsteAusweisnummer(t, pool); got != 10051 {
@@ -103,7 +103,7 @@ func TestAusweisnummer_KommtNieWieder(t *testing.T) {
 	// ausgäbe. Der Trigger lässt sie aus, statt an chk_ausweisnummer_ausgeschieden_positiv zu
 	// scheitern — sonst ließe sich der Leser nicht mehr löschen.
 	t.Run("A-0 lässt sich löschen", func(t *testing.T) {
-		testdaten.ResetBestandsdaten(t, pool)
+		testdaten.LeereBestandsdaten(t, pool)
 		id := neu(t, "schueler", "A-00000")
 		ausfuehren(t, `DELETE FROM leser WHERE id = $1`, id)
 		if got := naechsteAusweisnummer(t, pool); got != 10001 {
@@ -115,7 +115,7 @@ func TestAusweisnummer_KommtNieWieder(t *testing.T) {
 	// eines Schülers im Papierkorb (TestAusweisnummer_UeberSchuelerUndKollegium): etwa die
 	// alte Karte, die ein zurückgekehrter Schüler noch in der Hand hat.
 	t.Run("von Hand bleibt sie eintragbar", func(t *testing.T) {
-		testdaten.ResetBestandsdaten(t, pool)
+		testdaten.LeereBestandsdaten(t, pool)
 		id := neu(t, "schueler", "A-10050")
 		ausfuehren(t, `DELETE FROM leser WHERE id = $1`, id)
 		neu(t, "schueler", "A-10050")

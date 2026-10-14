@@ -30,7 +30,7 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	t.Setenv("RATE_LIMIT", "100000")
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
@@ -79,11 +79,11 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 	pool, router, token := portalWelt(t)
 	ctx := context.Background()
 
-	buecherei := testdaten.TitelMitSignatur(t, pool, "Probe Mondflug", "", 0)
-	testdaten.Exemplar(t, pool, buecherei, "B-KK-1", true, "")
-	lernmittel := testdaten.TitelMitSignatur(t, pool, "LMF-Probe Physik 9", "", 0)
-	testdaten.Exemplar(t, pool, lernmittel, "B-KK-2", true, "")
-	bestellt := testdaten.TitelMitSignatur(t, pool, "Probe Sternkarte", "", 0)
+	buecherei := testdaten.LegeTitelMitSignaturAn(t, pool, "Probe Mondflug", "", 0)
+	testdaten.LegeExemplarAn(t, pool, buecherei, "B-KK-1", true, "")
+	lernmittel := testdaten.LegeTitelMitSignaturAn(t, pool, "LMF-Probe Physik 9", "", 0)
+	testdaten.LegeExemplarAn(t, pool, lernmittel, "B-KK-2", true, "")
+	bestellt := testdaten.LegeTitelMitSignaturAn(t, pool, "Probe Sternkarte", "", 0)
 	for _, barcode := range []string{"B-KK-3", "B-KK-4"} {
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
@@ -91,13 +91,13 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 			t.Fatalf("bestelltes Exemplar: %v", err)
 		}
 	}
-	ausgesondert := testdaten.TitelMitSignatur(t, pool, "Probe Altband", "", 0)
+	ausgesondert := testdaten.LegeTitelMitSignaturAn(t, pool, "Probe Altband", "", 0)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, ist_ausgesondert, aussonderung_grund)
 		VALUES ($1, 'B-KK-5', false, true, 'AUSSORTIERT')`, ausgesondert); err != nil {
 		t.Fatalf("ausgesondertes Exemplar: %v", err)
 	}
-	testdaten.TitelMitSignatur(t, pool, "Probe Leertitel", "", 0)
+	testdaten.LegeTitelMitSignaturAn(t, pool, "Probe Leertitel", "", 0)
 
 	// Das Kollegium: Bücherei, Lernmittel und der bestellte Titel, alphabetisch.
 	rec := katalogAnfrage(router, token, "/api/reservierungen/klassensatz/katalog?q=Probe")
@@ -155,8 +155,8 @@ func TestKollegiumKatalog_FilterlisteUndGefilterteSuche(t *testing.T) {
 
 	titel := func(name string, woerter ...string) string {
 		t.Helper()
-		id := testdaten.TitelMitSignatur(t, pool, name, "", 0)
-		testdaten.Exemplar(t, pool, id, "B-FILTER-"+name, true, "")
+		id := testdaten.LegeTitelMitSignaturAn(t, pool, name, "", 0)
+		testdaten.LegeExemplarAn(t, pool, id, "B-FILTER-"+name, true, "")
 		if _, err := repository.SetzeSchlagworte(ctx, pool, id, woerter); err != nil {
 			t.Fatal(err)
 		}
@@ -169,7 +169,7 @@ func TestKollegiumKatalog_FilterlisteUndGefilterteSuche(t *testing.T) {
 		titel(fmt.Sprintf("Sternfahrt %02d", i), "Weltraum")
 	}
 	// Ein markiertes Wort, das nur ein Titel ohne Exemplar trägt, findet nichts.
-	ohneExemplar := testdaten.TitelMitSignatur(t, pool, "Leerband", "", 0)
+	ohneExemplar := testdaten.LegeTitelMitSignaturAn(t, pool, "Leerband", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, ohneExemplar, []string{"Vergriffen"}); err != nil {
 		t.Fatal(err)
 	}

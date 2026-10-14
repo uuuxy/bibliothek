@@ -54,7 +54,7 @@ func (z *zwischenzeitlich) VerarbeiteEingabe(ctx context.Context, q service.Omni
 
 func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 

@@ -47,7 +47,7 @@ func (p poolMitLesefehlerBei) QueryRow(ctx context.Context, sql string, args ...
 
 func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	_, rufe := routertest.MitAufruf(t, pool)
 	ohneDesign := func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
@@ -155,7 +155,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 // das Design der Schule.
 func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	const design = `{"printMode":"karte","front":[{"id":"e1"}],"back":[]}`
 	if _, err := pool.Exec(t.Context(), `
 		INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)

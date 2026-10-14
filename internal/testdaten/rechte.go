@@ -7,10 +7,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// GenauEinRecht stellt die MITARBEITER-Rolle in role_permissions auf exakt ein erlaubtes
+// SetzeGenauEinRecht stellt die MITARBEITER-Rolle in role_permissions auf exakt ein erlaubtes
 // Recht; ein leeres Recht nimmt ihr alle. Den Zwischenspeicher der Rechteprüfung leert es
 // nicht: Tests von Türen rufen tuertest.SetzeGenauEinRecht.
-func GenauEinRecht(t *testing.T, pool *pgxpool.Pool, recht string) {
+func SetzeGenauEinRecht(t *testing.T, pool *pgxpool.Pool, recht string) {
 	t.Helper()
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`); err != nil {

@@ -19,16 +19,16 @@ import (
 // der Weiche.
 func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	bearbeiter := testdaten.AdminFuerAudit(t, pool)
-	kind := testdaten.SeedSchueler(t, pool, "S-LMF-SPERRE-1", "Forderung", "9H1")
+	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
+	kind := testdaten.LegeSchuelerAn(t, pool, "S-LMF-SPERRE-1", "Forderung", "9H1")
 
 	// Die Forderung hängt an einem verlorenen Buch der Schülerbücherei.
-	buecherei := testdaten.TitelMitMeldebestand(t, pool, "Roman ohne Kennung", 1)
-	verloren := testdaten.Exemplar(t, pool, buecherei, "B-LMF-SPERRE-0", true, "")
-	testdaten.AusleiheUeberDenDienst(t, pool, "B-LMF-SPERRE-0", kind, bearbeiter)
+	buecherei := testdaten.LegeTitelAn(t, pool, "Roman ohne Kennung", 1)
+	verloren := testdaten.LegeExemplarAn(t, pool, buecherei, "B-LMF-SPERRE-0", true, "")
+	testdaten.BucheAusleiheUeberDienst(t, pool, "B-LMF-SPERRE-0", kind, bearbeiter)
 	if _, err := pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
 		VALUES ($1, $2, 'Verloren', 12.00, 'nicht_zurueckgegeben')`, verloren, kind); err != nil {
 		t.Fatalf("Forderung anlegen: %v", err)
@@ -39,8 +39,8 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 		`INSERT INTO buecher_titel (titel, ist_lernmittel) VALUES ('Mathe 9', true) RETURNING id`).Scan(&lernmittel); err != nil {
 		t.Fatalf("Lernmittel-Titel anlegen: %v", err)
 	}
-	testdaten.Exemplar(t, pool, lernmittel, "B-LMF-SPERRE-1", true, "")
-	testdaten.Exemplar(t, pool, buecherei, "B-LMF-SPERRE-2", true, "")
+	testdaten.LegeExemplarAn(t, pool, lernmittel, "B-LMF-SPERRE-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, buecherei, "B-LMF-SPERRE-2", true, "")
 
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanSvc := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), bookRepo,

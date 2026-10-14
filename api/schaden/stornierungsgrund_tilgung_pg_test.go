@@ -26,7 +26,7 @@ import (
 // ihrem Titel gelöscht, Leserzeile vorher zusammengeführt.
 func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -50,8 +50,8 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 	// storniere legt dem Leser eine offene Forderung an und storniert sie über die Tür.
 	storniere := func(t *testing.T, leserID, kennung, grund string) (forderungID, titelID string) {
 		t.Helper()
-		titelID = testdaten.TitelMitMeldebestand(t, pool, "Stornotitel "+kennung, 1)
-		exemplarID := testdaten.Exemplar(t, pool, titelID, "EX-STORNO-"+kennung, true, "")
+		titelID = testdaten.LegeTitelAn(t, pool, "Stornotitel "+kennung, 1)
+		exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "EX-STORNO-"+kennung, true, "")
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 			 VALUES ($1, $2, 'Wasserschaden', 12.50) RETURNING id`, exemplarID, leserID).Scan(&forderungID); err != nil {
@@ -99,7 +99,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("Anonymisierung", func(t *testing.T) {
 		const grund = "STORNO-PROBE-A Mutter von Max Muster hat angerufen"
-		leser := testdaten.SeedSchueler(t, pool, "S-STORNO-A", "Anna", "07A")
+		leser := testdaten.LegeSchuelerAn(t, pool, "S-STORNO-A", "Anna", "07A")
 		forderung, _ := storniere(t, leser, "A", grund)
 		stehtAnBeidenStellen(t, grund)
 
@@ -126,7 +126,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("endgültiges Löschen", func(t *testing.T) {
 		const grund = "STORNO-PROBE-B Vater von Ben Beispiel war am Telefon"
-		leser := testdaten.SeedSchueler(t, pool, "S-STORNO-B", "Ben", "07B")
+		leser := testdaten.LegeSchuelerAn(t, pool, "S-STORNO-B", "Ben", "07B")
 		storniere(t, leser, "B", grund)
 		stehtAnBeidenStellen(t, grund)
 
@@ -144,7 +144,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("Forderung vorher mit ihrem Titel gelöscht", func(t *testing.T) {
 		const grund = "STORNO-PROBE-C Oma von Cem Probe bringt das Buch"
-		leser := testdaten.SeedSchueler(t, pool, "S-STORNO-C", "Cem", "07C")
+		leser := testdaten.LegeSchuelerAn(t, pool, "S-STORNO-C", "Cem", "07C")
 		_, titelID := storniere(t, leser, "C", grund)
 		stehtAnBeidenStellen(t, grund)
 
@@ -164,8 +164,8 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("Leserzeile vorher zusammengeführt", func(t *testing.T) {
 		const grund = "STORNO-PROBE-D Schwester von Dana Doppelt hat bezahlt"
-		ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Dana", Nachname: "Doppelt", Klasse: "07A", Barcode: "S-STORNO-D1", Geb: testdaten.Datum(2012, 6, 6)})
-		quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Dana", Nachname: "Doppelt-Alt", Klasse: "07A", Barcode: "S-STORNO-D2", Geb: testdaten.Datum(2012, 6, 6)})
+		ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Dana", Nachname: "Doppelt", Klasse: "07A", Barcode: "S-STORNO-D1", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
+		quelle := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Dana", Nachname: "Doppelt-Alt", Klasse: "07A", Barcode: "S-STORNO-D2", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
 		storniere(t, quelle, "D", grund)
 		stehtAnBeidenStellen(t, grund)
 

@@ -23,7 +23,7 @@ func TestDSGVOAuskunftLiestJedeSchuelerQuelle(t *testing.T) {
 		t.Fatalf("%s lesen: %v", dsgvoAuskunftAbfragen, err)
 	}
 
-	for _, q := range testdaten.DsgvoSchuelerQuellen {
+	for _, q := range testdaten.DSGVOLeserQuellen {
 		muster := regexp.MustCompile(`(?i)(FROM|JOIN)\s+` + q.Tabelle + `\b`)
 		if !muster.Match(quelltext) {
 			t.Errorf("die Art.-15-Auskunft liest %s nicht (Bezug: %s) — %s braucht eine "+
@@ -88,14 +88,14 @@ func TestAuditDetails_EinSchluesselFuerDenSchueler(t *testing.T) {
 // prüfen Auskunft und Tilgung diese Tabelle nicht mehr, und die übrigen Prüfungen bleiben grün.
 func TestDSGVOQuellenOhneFremdschluessel_BleibenInDerListe(t *testing.T) {
 	ohneFremdschluessel := map[string]bool{}
-	for _, q := range testdaten.DsgvoSchuelerQuellen {
-		if !q.MitFK {
+	for _, q := range testdaten.DSGVOLeserQuellen {
+		if !q.MitFremdschluessel {
 			ohneFremdschluessel[q.Tabelle] = true
 		}
 	}
 	for _, tabelle := range []string{"leser", "audit_log", "audit_logs"} {
 		if !ohneFremdschluessel[tabelle] {
-			t.Errorf("testdaten.DsgvoSchuelerQuellen führt %s nicht mehr als Quelle ohne Fremdschlüssel: "+
+			t.Errorf("testdaten.DSGVOLeserQuellen führt %s nicht mehr als Quelle ohne Fremdschlüssel: "+
 				"Auskunft und Tilgung prüft an dieser Tabelle dann nichts mehr", tabelle)
 		}
 	}

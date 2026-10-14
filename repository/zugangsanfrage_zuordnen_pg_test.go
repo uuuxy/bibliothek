@@ -29,7 +29,7 @@ import (
 // ihre Leserzeilen von Hand an und gehen am Wächter vorbei.
 func TestZugangsanfrageZuordnen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// legeAltbestandAn ist der Kollege, der schon dasteht: Ausweis, ein Buch, kein Konto.
@@ -41,7 +41,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 			vorname, nachname, barcode).Scan(&id); err != nil {
 			t.Fatalf("Altbestand anlegen: %v", err)
 		}
-		testdaten.SeedOffeneAusleihe(t, pool, id, praefix)
+		testdaten.LegeOffeneAusleiheAn(t, pool, id, praefix)
 		return id
 	}
 
@@ -165,7 +165,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 // Schul-Mailserver. Es stehen zwei Konten da, aber nur ein Zugang.
 func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Der übernommene Eintrag: Ausweis, Buch und ein Konto mit Ersatzadresse.
@@ -180,7 +180,7 @@ func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 		`UPDATE leser SET barcode_id = 'ZO-LIT-1' WHERE id = $1`, ziel); err != nil {
 		t.Fatalf("Ausweis nachtragen: %v", err)
 	}
-	testdaten.SeedOffeneAusleihe(t, pool, ziel, "ZOL")
+	testdaten.LegeOffeneAusleiheAn(t, pool, ziel, "ZOL")
 
 	// Dieselbe Person meldet sich selbst an — zweites Konto, zweite Leserzeile.
 	var echtesKonto, waise string
@@ -234,7 +234,7 @@ func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 // still jedes zweite Konto abräumen.
 func TestZugangsanfrageZuordnen_ZweiEchteKontenBrechenWeiterAb(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var ziel, quelle string

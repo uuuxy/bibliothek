@@ -37,7 +37,7 @@ import (
 // der Leitung manage_users, bekommt auch sie sie (geprüft wird das Recht, nicht die Rolle).
 func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Die Rechtezeile der Leitung steht je nach Lauf schon da (Seed anderer Tests). Sie wird

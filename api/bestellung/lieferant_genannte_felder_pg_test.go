@@ -21,7 +21,7 @@ import (
 // zwei Schritten. Geprüft über die Handler am echten Postgres.
 func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	// Andere Tests im selben Paketlauf lassen Lieferanten stehen, auch einen Hauptlieferanten.

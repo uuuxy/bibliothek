@@ -23,7 +23,7 @@ import (
 // Marke über die Leitung; was vor ihr ankommt, hat der Schritt gesendet.
 func TestLmfPlan_SignalNurNachDemSchreiben(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	raeumePlaene := func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Pläne aufräumen: %v", err)
@@ -94,7 +94,7 @@ func TestLmfPlan_SignalNurNachDemSchreiben(t *testing.T) {
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: broker}}
-	testdaten.SeedSchueler(t, pool, "SIG-1", "Anna", "9H1")
+	testdaten.LegeSchuelerAn(t, pool, "SIG-1", "Anna", "9H1")
 	rahmen := `"letzte_stunde":4,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]`
 	plan := `{"letzter_tag":"2027-06-28",` + rahmen + `}`
 	korrektur := `{"letzter_tag":"2027-06-30",` + rahmen + `}`

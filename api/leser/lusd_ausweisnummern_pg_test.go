@@ -27,7 +27,7 @@ import (
 // gegen die zweite Vergabestelle.
 func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	lauf := func(t *testing.T, namen ...string) {

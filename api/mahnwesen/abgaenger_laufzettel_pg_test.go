@@ -17,17 +17,17 @@ import (
 // Abgänger heißt hier seit dem 05.09.2026 wieder: Abschlussklasse, noch an der Schule.
 func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Abschlussklasse MIT offenem Buch.
-	mitBuch := testdaten.SeedSchueler(t, pool, "AB-1", "Anna", "10R1")
-	testdaten.SeedAusleihe(t, pool, mitBuch, "Physikbuch 10", time.Now().AddDate(0, 0, -3))
+	mitBuch := testdaten.LegeSchuelerAn(t, pool, "AB-1", "Anna", "10R1")
+	testdaten.LegeAusleiheMitFristAn(t, pool, mitBuch, "Physikbuch 10", time.Now().AddDate(0, 0, -3))
 	// Abschlussklasse OHNE Buch — darf keinen (leeren) Laufzettel bekommen.
-	testdaten.SeedSchueler(t, pool, "AB-2", "Bodo", "10R1")
+	testdaten.LegeSchuelerAn(t, pool, "AB-2", "Bodo", "10R1")
 	// Kein Abschlussjahrgang, mit Buch — darf nicht auftauchen.
-	kein := testdaten.SeedSchueler(t, pool, "AB-3", "Cleo", "8a")
-	testdaten.SeedAusleihe(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
+	kein := testdaten.LegeSchuelerAn(t, pool, "AB-3", "Cleo", "8a")
+	testdaten.LegeAusleiheMitFristAn(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	students, err := srv.queryAbgaengerKontoauszug(ctx, "", nil)

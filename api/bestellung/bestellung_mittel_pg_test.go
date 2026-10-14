@@ -44,10 +44,10 @@ func bestelleMitTopf(t *testing.T, srv *Tueren, lieferantID, titelID, mittel str
 
 func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "OhneTopf", false)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-OhneTopf", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "OhneTopf", false)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-OhneTopf", 0)
 
 	for _, mittel := range []string{"", "kreis"} {
 		rec := bestelleMitTopf(t, srv, lieferant, titel, mittel)
@@ -70,18 +70,18 @@ func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 
 func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Topf", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Topf", 0)
 
 	// Händler MIT zweiter Kundennummer für den Schulträger …
-	mitZweiter := testdaten.Haendler(t, pool, "ZweiKonten", false)
+	mitZweiter := testdaten.LegeLieferantAn(t, pool, "ZweiKonten", false)
 	if _, err := pool.Exec(ctx, `UPDATE lieferanten SET kundennummer_schultraeger = 'BIB-77' WHERE id = $1`, mitZweiter); err != nil {
 		t.Fatal(err)
 	}
 	// … und einer ohne.
-	ohneZweite := testdaten.Haendler(t, pool, "EinKonto", false)
+	ohneZweite := testdaten.LegeLieferantAn(t, pool, "EinKonto", false)
 
 	faelle := []struct {
 		name, lieferant, mittel, kundennummer string

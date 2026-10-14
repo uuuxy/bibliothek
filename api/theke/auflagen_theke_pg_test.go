@@ -25,7 +25,7 @@ import (
 // Antwort reist. Die Regeln der Zählung prüft repository/auflagen_klasse_pg_test.go.
 func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)
@@ -59,7 +59,7 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, t2 := range []string{alt, alt, alt, neu, neu} {
-		testdaten.Exemplar(t, pool, t2, fmt.Sprintf("B-518T-%d", i), true, "")
+		testdaten.LegeExemplarAn(t, pool, t2, fmt.Sprintf("B-518T-%d", i), true, "")
 	}
 
 	studentRepo := repository.NewLeserAbfragen(pool)

@@ -41,14 +41,14 @@ func bestelleUeberHandler(t *testing.T, srv *Tueren, lieferantID, titelID string
 
 func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Link", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Link", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Link", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Link", 0)
 
 	rec := bestelleUeberHandler(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
@@ -85,14 +85,14 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 // selbst, seine Exemplare gelten bereits als etikettiert.
 func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Naacher-OhneAdresse", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-OhneAdresse", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneAdresse", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneAdresse", 0)
 
 	rec := bestelleUeberHandler(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
@@ -118,14 +118,14 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 // kommt beim Händler nicht als zwei Titel in einem Exemplar an.
 func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Zahlen", false)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Zahlen", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Zahlen", false)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Zahlen", 0)
 
 	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
@@ -144,14 +144,14 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 // trotzdem vollständig aus.
 func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Topf", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Topf", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Topf", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Topf", 0)
 
 	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
@@ -178,15 +178,15 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 // Etiketten des Barcodebogens, und eine Position ohne Vorab-Barcode hat keine.
 func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Naacher-OhneBarcode", false)
-	mitBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-MitBarcode", 0)
-	ohneBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-OhneBarcode", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneBarcode", false)
+	mitBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-MitBarcode", 0)
+	ohneBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneBarcode", 0)
 
 	rumpf := fmt.Sprintf(`{"supplier_id":%q,"mittel":"land","items":[
 		{"titel_id":%q,"menge":2,"preis":9.5,"generate_barcodes":true},
@@ -227,14 +227,14 @@ func bestelleMitSchluessel(t *testing.T, srv *Tueren, lieferantID, titelID, key 
 // GENAU EINE Lieferanten-Mail; die zweite meldet „bereits erfasst".
 func TestBestellungIdempotenz(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "IdemLieferant", false)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Idem", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "IdemLieferant", false)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Idem", 0)
 	key := "33333333-3333-3333-3333-333333333333"
 
 	rec1 := bestelleMitSchluessel(t, srv, lieferant, titel, key)

@@ -25,7 +25,7 @@ import (
 // Test gegen eine kleine Tabelle wäre wertlos — er wäre auch ohne LIMIT grün.
 func TestAuditLogIstBegrenzt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Ein Bearbeiter, an dem der JOIN hängt. Ohne ihn liefert die Abfrage gar nichts,

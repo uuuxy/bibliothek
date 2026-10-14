@@ -22,7 +22,7 @@ import (
 // Ablehnung schreibt nichts, auch keinen Protokolleintrag; erst der bestätigte Lauf tut beides.
 func TestLusdUpload_AblehnungenUeberDieRoute(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

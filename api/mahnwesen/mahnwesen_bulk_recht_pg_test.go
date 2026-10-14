@@ -28,7 +28,7 @@ import (
 // und die Mahnung ist gezählt. Ohne sie bewiese das 403 nur, dass die Anfrage scheitert.
 func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv("RATE_LIMIT", "100000")
 	ctx := context.Background()
 
@@ -66,8 +66,8 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		tuer.InvalidatePermissionCache()
 	})
 
-	leser := testdaten.SeedSchueler(t, pool, "MR-1", "Mona", "7a")
-	ausleihe := testdaten.SeedAusleihe(t, pool, leser, "Buch zum Mahnrecht", time.Now().AddDate(0, 0, -30))
+	leser := testdaten.LegeSchuelerAn(t, pool, "MR-1", "Mona", "7a")
+	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, leser, "Buch zum Mahnrecht", time.Now().AddDate(0, 0, -30))
 
 	drucke := func() *httptest.ResponseRecorder {
 		req := tuertest.JSONPost("/api/admin/mahnungen/bulk-print", `{"ausleih_ids":["`+ausleihe+`"]}`)
@@ -85,7 +85,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	if rumpf := rec.Body.String(); !strings.Contains(rumpf, "keine Berechtigung") {
 		t.Fatalf("das 403 kam nicht vom Rechte-Wächter: %s", rumpf)
 	}
-	if stufe, datum := testdaten.MahnState(t, pool, ausleihe); stufe != 0 || datum != nil {
+	if stufe, datum := testdaten.LadeMahnstufe(t, pool, ausleihe); stufe != 0 || datum != nil {
 		t.Errorf("abgewiesener Druck hat gezählt: Mahnstufe %d, Mahndatum %v", stufe, datum)
 	}
 
@@ -97,7 +97,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	if kopf := rec.Body.Bytes(); len(kopf) < 4 || string(kopf[:4]) != "%PDF" {
 		t.Fatalf("Antwort ist kein PDF (Kopf: %q)", pdftest.ErsteBytes(rec.Body.Bytes(), 8))
 	}
-	if stufe, datum := testdaten.MahnState(t, pool, ausleihe); stufe != 1 || datum == nil {
+	if stufe, datum := testdaten.LadeMahnstufe(t, pool, ausleihe); stufe != 1 || datum == nil {
 		t.Errorf("gedruckter Brief: Mahnstufe %d (erwartet 1), Mahndatum %v", stufe, datum)
 	}
 }

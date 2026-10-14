@@ -23,7 +23,7 @@ func nnDatei(zeilen ...lusd.Zeile) lusd.Datei {
 // übernommen, bestätigt, kein Duplikat. Neuzugang entsteht ohne ID und ohne Datum.
 func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -64,7 +64,7 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 // Neuzugang. Gleicher Name zweimal im BESTAND: die CSV-Zeile gemeldet, beide bleiben.
 func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -112,7 +112,7 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 // „Abgänger", Apply anonymisierte ihn.
 func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -155,7 +155,7 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 // gemeldet als mehrdeutig, nichts angefasst, kein Neuzugang.
 func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

@@ -20,7 +20,7 @@ import (
 // adoptiert, sondern regulär neu angelegt. Betreiber-Entscheidung 18.08.2026.
 func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -87,7 +87,7 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 // adoptieren, sondern regulär als Neuzugang behandeln.
 func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -119,7 +119,7 @@ func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 // Die Mehrdeutig-Behandlung im Code bleibt als Sicherheitsnetz stehen.
 func TestLusdAutoMatching_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

@@ -20,14 +20,14 @@ import (
 // nennt eine „Vierwochen-Frist", die sich „in der Regel ab dem Briefdatum" berechnet.
 func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	sid := testdaten.SeedSchueler(t, pool, "S-FRIST", "Fristprobe", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Chemie 8")
-	f := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "FRIST-1", true, ""),
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-FRIST", "Fristprobe", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Chemie 8")
+	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "FRIST-1", true, ""),
 		"nicht_zurueckgegeben", "Chemie 8 nicht zurück")
 
 	heute := schulzeit.Jetzt()
@@ -56,7 +56,7 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 		testdaten.BescheidRumpf(tag(1), map[string]float64{f: 18.00})); rec.Code != http.StatusCreated {
 		t.Fatalf("Frist morgen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
-	f2 := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "FRIST-2", true, ""),
+	f2 := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "FRIST-2", true, ""),
 		"beschaedigt", "Chemie 8 beschädigt")
 	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f2: 9.00})); rec.Code != http.StatusCreated {
@@ -68,14 +68,14 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 // späteren Prüfungen, genannt wird die erste. Keine von ihnen legt einen Bescheid an.
 func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	sid := testdaten.SeedSchueler(t, pool, "S-ABL", "Ablehnung", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Physik 8")
-	f := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "ABL-1", true, ""),
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-ABL", "Ablehnung", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Physik 8")
+	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "ABL-1", true, ""),
 		"nicht_zurueckgegeben", "Physik 8 nicht zurück")
 	position := `[{"schadensfall_id":"` + f + `","betrag":18.00}]`
 	const unbekannt = "00000000-0000-0000-0000-00000000dead"

@@ -24,7 +24,7 @@ import (
 // Routers gestellt wird.
 func TestLmfPlan_UeberDenRouter_StehtAufDerBasisDesServers(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	raeumePlaene := func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM lmf_plaene`) }
 	raeumePlaene()
 	t.Cleanup(raeumePlaene)

@@ -21,7 +21,7 @@ import (
 // eine unbekannte Kennung. Jede Ablehnung lässt das Konto stehen; erst der letzte Fall löscht.
 func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
@@ -46,7 +46,7 @@ func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT leser_id::text FROM benutzer WHERE id = $1`, mitBuch).Scan(&leserMitBuch); err != nil {
 		t.Fatalf("Leserzeile des Kontos lesen: %v", err)
 	}
-	testdaten.SeedAusleihe(t, pool, leserMitBuch, "Handapparat Loeschtuer", time.Now().Add(30*24*time.Hour))
+	testdaten.LegeAusleiheMitFristAn(t, pool, leserMitBuch, "Handapparat Loeschtuer", time.Now().Add(30*24*time.Hour))
 
 	loesche := func(ziel string, claims *auth.Claims) *httptest.ResponseRecorder {
 		t.Helper()
@@ -99,7 +99,7 @@ func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 // Protokoll: Der Eintrag beschriebe eine Änderung, die nie stattfand.
 func TestBenutzerAendern_UnbekannteKennungOhneProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

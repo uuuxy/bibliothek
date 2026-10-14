@@ -26,16 +26,16 @@ func umbZeile(line int, vorname, nachname, klasse string, geb, eintritt *time.Ti
 // und der nächste Lauf mit derselben Datei ist leer.
 func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	geb, eintritt := testdaten.Datum(2013, 5, 4), testdaten.Datum(2024, 8, 19)
 
-	annaID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-1", Geb: geb, Eintritt: eintritt})
-	testdaten.SeedOffeneAusleihe(t, pool, annaID, "UMB1")
+	annaID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-1", Geburtsdatum: geb, SchulEintrittAm: eintritt})
+	testdaten.LegeOffeneAusleiheAn(t, pool, annaID, "UMB1")
 	// Unbeteiligte, damit die Massenabgang-Bremse nicht die Sicht verstellt.
 	for i := 0; i < 12; i++ {
-		testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ruhig", Nachname: "Kind" + string(rune('A'+i)), Klasse: "07A", Barcode: "UMB-R" + string(rune('A'+i)), Geb: testdaten.Datum(2012, 1, 1+i)})
+		testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Ruhig", Nachname: "Kind" + string(rune('A'+i)), Klasse: "07A", Barcode: "UMB-R" + string(rune('A'+i)), Geburtsdatum: testdaten.Datum(2012, 1, 1+i)})
 	}
 	zeilen := []lusd.Zeile{umbZeile(2, "Anna", "Mueller-Schmidt", "06F1", geb, eintritt)}
 	for i := 0; i < 12; i++ {
@@ -108,12 +108,12 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 // Anonymisierung. Und eine Wahl, die die Vorschau nie gemacht hat, wird abgewiesen.
 func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	geb := testdaten.Datum(2013, 5, 4)
 
-	annaID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-2", Geb: geb})
+	annaID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-2", Geburtsdatum: geb})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Anna", "Schulz", "06F1", geb, nil)}}
 
 	err := func() error {
@@ -150,11 +150,11 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 // nächste Lauf wieder nicht.
 func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	benID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ben", Nachname: "Meier", Klasse: "06B", Barcode: "UMB-3", Geb: testdaten.Datum(2012, 1, 1)})
+	benID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Ben", Nachname: "Meier", Klasse: "06B", Barcode: "UMB-3", Geburtsdatum: testdaten.Datum(2012, 1, 1)})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Ben", "Meier", "07B", testdaten.Datum(2012, 1, 10), nil)}}
 
 	prev, err := s.computeLusd(ctx, datei, false, false)
@@ -182,12 +182,12 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 // Abgänger-Stempel, mit neuem Namen.
 func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	geb, eintritt := testdaten.Datum(2011, 3, 3), testdaten.Datum(2022, 8, 22)
 
-	altID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Cem", Nachname: "Yilmaz", Klasse: "08C", Barcode: "UMB-4", Geb: geb, Eintritt: eintritt, Abgaenger: true})
+	altID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Cem", Nachname: "Yilmaz", Klasse: "08C", Barcode: "UMB-4", Geburtsdatum: geb, SchulEintrittAm: eintritt, IstAbgaenger: true})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Cem", "Yılmaz-Kaya", "09C", geb, eintritt)}}
 
 	prev, err := s.computeLusd(ctx, datei, false, false)

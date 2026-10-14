@@ -65,7 +65,7 @@ func zaehle(t *testing.T, pool *pgxpool.Pool, where string, args ...any) int {
 // Klasse übernommen, bestätigt, KEIN Duplikat. Der zweite Jahreslauf ändert nichts.
 func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	litteraID := "littera:77"
@@ -129,7 +129,7 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 // Schüler ohne Geburtsdatum ist nicht abgleichbar und bleibt ebenfalls stehen.
 func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -175,7 +175,7 @@ func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 // Unique-Index unique_schueler_name_gebdatum.
 func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -214,7 +214,7 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 // werden gemeldet.
 func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	marke := "littera:5"
@@ -248,7 +248,7 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 // zugeordnet, das Datum nachgetragen, die Klasse übernommen; mehrdeutig → gemeldet.
 func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

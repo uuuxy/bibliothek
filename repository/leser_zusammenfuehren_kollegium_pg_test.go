@@ -28,7 +28,7 @@ import (
 // steht die Grenze jetzt ausdrücklich im Code, und dieser Test hält sie fest.
 func TestZusammenfuehrenKollegium(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	legeLeser := func(t *testing.T, vorname, nachname, art, barcode string) string {

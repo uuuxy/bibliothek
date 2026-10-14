@@ -28,13 +28,13 @@ import (
 // erledigt_am (Migration 089), damit „erledigt am …" überhaupt anzeigbar ist.
 func TestMeineKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lehrerA := testdaten.SeedPortalLehrkraft(t, pool, "eigene-a@test.invalid")
-	lehrerB := testdaten.SeedPortalLehrkraft(t, pool, "eigene-b@test.invalid")
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Die Physiker", "Jug Due", false, 0)
+	lehrerA := testdaten.LegeKollegiumskontoAn(t, pool, "eigene-a@test.invalid")
+	lehrerB := testdaten.LegeKollegiumskontoAn(t, pool, "eigene-b@test.invalid")
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Die Physiker", "Jug Due", false, 0)
 
 	offenA := seedKlassensatzReservierung(t, pool, titelID, lehrerA, "07B")
 	fertigA := seedKlassensatzReservierung(t, pool, titelID, lehrerA, "09C")

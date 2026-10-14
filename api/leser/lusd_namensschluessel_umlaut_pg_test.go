@@ -23,7 +23,7 @@ import (
 // mehrdeutig gemeldet und nicht angefasst — weder neu angelegt noch zu Abgängern gemacht.
 func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

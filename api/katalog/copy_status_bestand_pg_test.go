@@ -21,17 +21,17 @@ import (
 // Bestands) und rechnet die Regel von AendereExemplarStatus nicht selbst nach.
 func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	handler := srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(pool))
-	titelID := testdaten.TitelMitSignatur(t, pool, "Status-Titel", "Sta 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Status-Titel", "Sta 1", 0)
 
 	ausgesondert := func(barcode string) string {
 		t.Helper()
-		id := testdaten.Exemplar(t, pool, titelID, barcode, true, "")
-		if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+		id := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
+		if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 			t.Fatalf("aussondern %s: %v", barcode, err)
 		}
 		return id
@@ -47,11 +47,11 @@ func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 		koerper   string
 		imBestand bool
 	}{
-		{"bestellt, als gesperrt gespeichert: bleibt bestellt", testdaten.ZulaufExemplar(t, pool, titelID, "STA-ZULAUF-SPERRE"), gesperrt, false},
-		{"bestellt, freigegeben: im Bestand", testdaten.ZulaufExemplar(t, pool, titelID, "STA-ZULAUF-FREI"), frei, true},
-		{"bestellt, ausgesondert: nicht im Bestand", testdaten.ZulaufExemplar(t, pool, titelID, "STA-ZULAUF-WEG"), verloren, false},
+		{"bestellt, als gesperrt gespeichert: bleibt bestellt", testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "STA-ZULAUF-SPERRE"), gesperrt, false},
+		{"bestellt, freigegeben: im Bestand", testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "STA-ZULAUF-FREI"), frei, true},
+		{"bestellt, ausgesondert: nicht im Bestand", testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "STA-ZULAUF-WEG"), verloren, false},
 		{"ausgesondert, als gesperrt gespeichert: wieder im Bestand", ausgesondert("STA-WEG-SPERRE"), gesperrt, true},
-		{"im Bestand, gesperrt: bleibt im Bestand", testdaten.Exemplar(t, pool, titelID, "STA-BESTAND", true, ""), gesperrt, true},
+		{"im Bestand, gesperrt: bleibt im Bestand", testdaten.LegeExemplarAn(t, pool, titelID, "STA-BESTAND", true, ""), gesperrt, true},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -59,7 +59,7 @@ func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 			req.SetPathValue("id", f.id)
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
-			handler.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
+			handler.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
 			if rec.Code != http.StatusOK {
 				t.Fatalf("Status speichern: HTTP %d: %s", rec.Code, rec.Body.String())
 			}

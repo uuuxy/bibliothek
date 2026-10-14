@@ -44,7 +44,7 @@ type nbTuer struct {
 func nbTuerAufbau(t *testing.T) *nbTuer {
 	t.Helper()
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	w := &nbTuer{pool: pool}
@@ -62,9 +62,9 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 	w.ben = eins("Ben", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, 'Ben', 'Zweiter', '07B', 2031) RETURNING id`, "S-TB-"+suffix)
 	w.carla = eins("Carla", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, block_reason)
 		VALUES ($1, 'Carla', 'Gesperrt', '07B', 2031, true, 'Testsperre') RETURNING id`, "S-TC-"+suffix)
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Nachbuch-Tür-Band", "NBT", false, 0)
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Nachbuch-Tür-Band", "NBT", false, 0)
 	w.code = "B-NBT-" + suffix
-	w.exemplarID = testdaten.Exemplar(t, pool, titelID, w.code, true, "")
+	w.exemplarID = testdaten.LegeExemplarAn(t, pool, titelID, w.code, true, "")
 
 	studentRepo := repository.NewLeserAbfragen(pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)

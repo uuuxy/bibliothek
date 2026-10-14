@@ -29,7 +29,7 @@ import (
 
 func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	_, rufe := routertest.MitAufruf(t, pool)
 
 	bogen := func(t *testing.T, rumpf any) *httptest.ResponseRecorder {
@@ -50,7 +50,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 		}
 	}
 
-	schueler := testdaten.SeedSchueler(t, pool, "S-ETI-001", "Lea", "7b")
+	schueler := testdaten.LegeSchuelerAn(t, pool, "S-ETI-001", "Lea", "7b")
 
 	t.Run("der Bogen trägt Name, Klasse und Barcode aus der Datenbank", func(t *testing.T) {
 		rec := bogen(t, map[string]any{"schuelerIds": []string{schueler}})

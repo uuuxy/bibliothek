@@ -17,7 +17,7 @@ import (
 func TestVersetzungKlassenleitungEntfaelltBeiNeubildung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	if _, err := pool.Exec(ctx, `DELETE FROM klassen_lehrer_mapping`); err != nil {
 		t.Fatalf("Mapping leeren: %v", err)
 	}

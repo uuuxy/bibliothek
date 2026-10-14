@@ -17,7 +17,7 @@ import (
 // keinem Regal vorkommt (gemessen am Testserver am 22.09.2026: 0 Titel mit „BIB").
 func TestUpsertTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -54,7 +54,7 @@ func TestUpsertTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *testin
 // genau wie beim manuellen Anlegen über das Buchformular.
 func TestUpsertTitelAusMetadaten_OhneKategorieBleibtSignaturLeer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -74,11 +74,11 @@ func TestUpsertTitelAusMetadaten_OhneKategorieBleibtSignaturLeer(t *testing.T) {
 // unverändert übernommen (angezeigt), nicht durch einen frischen Vorschlag ersetzt.
 func TestFindeLokalenTitel_LiefertVorhandeneSignaturUnveraendert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	testdaten.TitelMitSignatur(t, pool, "Effi Briest", "Pg", 5)
+	testdaten.LegeTitelMitSignaturAn(t, pool, "Effi Briest", "Pg", 5)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = $1 WHERE titel = $2`, "9783150001", "Effi Briest"); err != nil {
 		t.Fatalf("ISBN nachtragen: %v", err)
 	}

@@ -33,7 +33,7 @@ func zugangsdatum(t *testing.T, pool *pgxpool.Pool, id string) *time.Time {
 
 func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	// Der Kalendertag der Schule, nicht der des Testprozesses: zugang_am ist ein DATE,
 	// und der Trigger bildet es seit Migration 130 in Europe/Berlin. Mit time.Now() hinge
@@ -42,16 +42,16 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	// Lauf in der CI wäre genau dann rot. Gleiche Lesart wie im
 	// Nachbartest (api/katalog/zugangsbuch_pg_test.go).
 	heute := time.Now().In(schulzeit.Zone())
-	titelID := testdaten.TitelMitSignatur(t, pool, "Zugangsdatum-Titel", "Zdt 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Zugangsdatum-Titel", "Zdt 1", 0)
 
 	// 1. Ein Exemplar im Zulauf hat kein Zugangsdatum. Es ist bestellt, nicht da.
-	imZulauf := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-ZULAUF")
+	imZulauf := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ZDT-ZULAUF")
 	if tag := zugangsdatum(t, pool, imZulauf); tag != nil {
 		t.Fatalf("Exemplar im Zulauf trägt ein Zugangsdatum (%s) — bestellt ist nicht zugegangen", tag)
 	}
 
 	// 2. Tür „Wareneingang": Der Zugang ist der Tag der Lieferung.
-	geliefert := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-WARENEINGANG")
+	geliefert := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ZDT-WARENEINGANG")
 	if _, err := service.BucheWareneingang(ctx, pool, repository.NewProtokollAbfragen(pool), service.WareneingangAngaben{
 		ExemplarIDs: []string{geliefert}, BearbeiterID: "", IPAdresse: "",
 	}); err != nil {
@@ -66,7 +66,7 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	}
 
 	// 3. Tür „Freigeben" im Status-Editor — dieselbe Wirkung, anderer Schreiber.
-	freigegeben := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-FREIGABE")
+	freigegeben := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ZDT-FREIGABE")
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	if err := bookRepo.AendereExemplarStatus(ctx, freigegeben, true, false, "", nil, ""); err != nil {
 		t.Fatalf("Freigeben: %v", err)
@@ -76,8 +76,8 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	}
 
 	// 4. Ein bestelltes Exemplar, das nie ankommt und ausgebucht wird, ist kein Zugang.
-	nieGekommen := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-NIE")
-	if err := bookRepo.AendereExemplarStatus(ctx, nieGekommen, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	nieGekommen := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ZDT-NIE")
+	if err := bookRepo.AendereExemplarStatus(ctx, nieGekommen, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Aussondern aus dem Zulauf: %v", err)
 	}
 	if tag := zugangsdatum(t, pool, nieGekommen); tag != nil {
@@ -91,9 +91,9 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 // Halbjahres wäre leer.
 func TestZugangsdatum_AnlageAusserhalbDerBestellung(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	titelID := testdaten.TitelMitSignatur(t, pool, "Altbestands-Titel", "Zdt 2", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Altbestands-Titel", "Zdt 2", 0)
 
 	var alt string
 	if err := pool.QueryRow(ctx, `

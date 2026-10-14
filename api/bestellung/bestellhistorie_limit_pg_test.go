@@ -62,8 +62,8 @@ func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
 
 	vorher := holeUebersicht(t, srv)
 
-	mitBestaetigung := testdaten.Haendler(t, pool, "Naacher-Uebersicht", true)
-	ohneBestaetigung := testdaten.Haendler(t, pool, "Normalo-Uebersicht", false)
+	mitBestaetigung := testdaten.LegeLieferantAn(t, pool, "Naacher-Uebersicht", true)
+	ohneBestaetigung := testdaten.LegeLieferantAn(t, pool, "Normalo-Uebersicht", false)
 
 	// Drei wartende, eine bestätigte, zwei ohne den externen Schritt.
 	for i := 0; i < 3; i++ {
@@ -105,7 +105,7 @@ func TestBestellhistorie_MaxLimitIstNichtVerhandelbar(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Masse", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Masse", true)
 	// In einer Anweisung, damit der Test schnell bleibt: mehr Zeilen als die Obergrenze.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO bestellungen_verlauf (lieferant_id, lieferant_name, lieferant_email, kundennummer, anzahl_exemplare)
@@ -127,11 +127,11 @@ func TestBestellhistorie_MaxLimitIstNichtVerhandelbar(t *testing.T) {
 // dem Limit wäre das der teuerste Teil der Anfrage geblieben.
 func TestBestellhistorie_PositionenNurFuerGeladeneBestellungen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Positionen", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Positionen", true)
 	for i := 0; i < 3; i++ {
 		id := bestellungFuerLieferant(t, pool, lieferant)
 		if _, err := pool.Exec(ctx, `

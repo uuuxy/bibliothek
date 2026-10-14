@@ -10,26 +10,26 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// SeedAusleihe legt Titel, Exemplar und eine offene Ausleihe mit der Frist an und liefert die
+// LegeAusleiheMitFristAn legt Titel, Exemplar und eine offene Ausleihe mit der Frist an und liefert die
 // Kennung der Ausleihe.
-func SeedAusleihe(t *testing.T, pool *pgxpool.Pool, schuelerID, titel string, frist time.Time) string {
+func LegeAusleiheMitFristAn(t *testing.T, pool *pgxpool.Pool, schuelerID, titel string, frist time.Time) string {
 	t.Helper()
 	ctx := context.Background()
-	tid := TitelMitMeldebestand(t, pool, titel, 1)
-	eid := Exemplar(t, pool, tid, "BC-"+titel, true, "")
-	var aid string
+	titelID := LegeTitelAn(t, pool, titel, 1)
+	exemplarID := LegeExemplarAn(t, pool, titelID, "BC-"+titel, true, "")
+	var ausleiheID string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 		 VALUES ($1, $2, $3) RETURNING id`,
-		eid, schuelerID, frist).Scan(&aid); err != nil {
+		exemplarID, schuelerID, frist).Scan(&ausleiheID); err != nil {
 		t.Fatalf("Ausleihe für %q anlegen: %v", titel, err)
 	}
-	return aid
+	return ausleiheID
 }
 
-// SeedLeserAusleihe bucht eine Ausleihe von vor zwei Tagen: innerhalb jedes Zeitfensters des
+// LegeAusleiheVorZweiTagenAn bucht eine Ausleihe von vor zwei Tagen: innerhalb jedes Zeitfensters des
 // Monitors. Die Zeit kommt aus der Datenbank, weil die Fenster dort gerechnet werden.
-func SeedLeserAusleihe(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
+func LegeAusleiheVorZweiTagenAn(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
@@ -39,20 +39,20 @@ func SeedLeserAusleihe(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID 
 	}
 }
 
-// SeedOffeneAusleihe hängt dem Schüler eine noch nicht zurückgegebene Ausleihe an.
-func SeedOffeneAusleihe(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
+// LegeOffeneAusleiheAn hängt dem Schüler eine noch nicht zurückgegebene Ausleihe an.
+func LegeOffeneAusleiheAn(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
 	t.Helper()
-	titelID := TitelMitMeldebestand(t, pool, "Titel-"+barcodePraefix, 1)
-	exID := Exemplar(t, pool, titelID, "EX-"+barcodePraefix, true, "")
+	titelID := LegeTitelAn(t, pool, "Titel-"+barcodePraefix, 1)
+	exemplarID := LegeExemplarAn(t, pool, titelID, "EX-"+barcodePraefix, true, "")
 	if _, err := pool.Exec(context.Background(),
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
-		 VALUES ($1, $2, now() + interval '14 days')`, exID, schuelerID); err != nil {
+		 VALUES ($1, $2, now() + interval '14 days')`, exemplarID, schuelerID); err != nil {
 		t.Fatalf("offene Ausleihe anlegen: %v", err)
 	}
 }
 
-// FristVon liest die Rückgabefrist einer Ausleihe.
-func FristVon(t *testing.T, pool *pgxpool.Pool, ausleiheID string) time.Time {
+// LadeFrist liest die Rückgabefrist einer Ausleihe.
+func LadeFrist(t *testing.T, pool *pgxpool.Pool, ausleiheID string) time.Time {
 	t.Helper()
 	var frist time.Time
 	if err := pool.QueryRow(context.Background(),
@@ -67,8 +67,8 @@ func FristEnde(j int, m time.Month, d int) time.Time {
 	return time.Date(j, m, d, 23, 59, 59, 0, schulzeit.Zone())
 }
 
-// MahnState liest Mahnstufe und letztes Mahndatum einer Ausleihe.
-func MahnState(t *testing.T, pool *pgxpool.Pool, ausleiheID string) (int, *time.Time) {
+// LadeMahnstufe liest Mahnstufe und letztes Mahndatum einer Ausleihe.
+func LadeMahnstufe(t *testing.T, pool *pgxpool.Pool, ausleiheID string) (int, *time.Time) {
 	t.Helper()
 	var stufe int
 	var datum *time.Time
@@ -80,10 +80,10 @@ func MahnState(t *testing.T, pool *pgxpool.Pool, ausleiheID string) (int, *time.
 	return stufe, datum
 }
 
-// SchuelerMitBuch legt einen aktiven Schüler mit genau einem offenen Buch an.
-func SchuelerMitBuch(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
+// LegeSchuelerMitAusleiheAn legt einen aktiven Schüler mit genau einem offenen Buch an.
+func LegeSchuelerMitAusleiheAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
-	id := SeedSchueler(t, pool, barcode, vorname, klasse)
-	SeedAusleihe(t, pool, id, "Buch "+vorname, time.Now().AddDate(0, 0, -3))
+	id := LegeSchuelerAn(t, pool, barcode, vorname, klasse)
+	LegeAusleiheMitFristAn(t, pool, id, "Buch "+vorname, time.Now().AddDate(0, 0, -3))
 	return id
 }

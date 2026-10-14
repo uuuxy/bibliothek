@@ -26,7 +26,7 @@ import (
 // Fachbereich ist keine Lehrkraft (Migration 153).
 func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var titelID, ex1, ex2, ex3, schuelerID, lehrerID, fachbereichID string

@@ -29,7 +29,7 @@ import (
 // schreibt deshalb auch nichts — sonst stünde im Protokoll jeder Zwischenstand.
 func TestLmfPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -58,8 +58,8 @@ func TestLmfPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 		}
 		return schulzeit.TagesEnde(x)
 	}
-	anna := testdaten.SeedSchueler(t, pool, "AUD-1", "Anna", "9H1")
-	testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Audit", tag("2027-07-31"))
+	anna := testdaten.LegeSchuelerAn(t, pool, "AUD-1", "Anna", "9H1")
+	testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Mathe 9 Audit", tag("2027-07-31"))
 
 	// Wie lmfPlanAufruf, aber mit angemeldetem Benutzer im Kontext — ohne ihn schreibt
 	// kein Audit, und der Test wäre grün, ohne etwas zu belegen.

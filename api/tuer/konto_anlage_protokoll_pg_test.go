@@ -23,7 +23,7 @@ func TestProtokolliereKontoAnlage_JedeAngabeUnterIhremNamen(t *testing.T) {
 	}
 	raeume()
 	t.Cleanup(raeume)
-	adminID := testdaten.AdminKonto(t, pool, "konto-anlage-protokoll@example.org", "Paula", "Protokoll")
+	adminID := testdaten.LegeAdminKontoAn(t, pool, "konto-anlage-protokoll@example.org", "Paula", "Protokoll")
 
 	s := &Basis{DB: &db.Database{Pool: pool}}
 	ctx := context.WithValue(t.Context(), auth.ClaimsContextKey, &auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin})

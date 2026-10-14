@@ -19,7 +19,7 @@ import (
 // sonst wird die Pflicht als Schikane gelesen.
 func TestCreateStudent_OhneGeburtsdatumAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	for _, body := range []string{
@@ -49,7 +49,7 @@ func TestCreateStudent_OhneGeburtsdatumAbgewiesen(t *testing.T) {
 // Personen und müssen beide anlegbar sein.
 func TestCreateStudent_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5a","geburtsdatum":"2012-01-02"}`); code != http.StatusCreated {
@@ -65,7 +65,7 @@ func TestCreateStudent_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
 // echte Duplikaterkennung nicht ab.
 func TestCreateStudent_EchtesDuplikatMitGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Anna","nachname":"Schmidt","klasse":"6a","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {
@@ -91,7 +91,7 @@ func createStudent(t *testing.T, srv *Tueren, jsonBody string) (int, string) {
 // (lower() in der Prüfung, roher Index) eine zweite Zeile.
 func TestCreateStudent_SchreibvarianteIstDuplikat(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Anna","nachname":"Müller","klasse":"06G1","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {

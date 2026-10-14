@@ -20,7 +20,7 @@ import (
 // in der Datenbank und mit demselben Wortlaut im Protokoll.
 func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

@@ -29,11 +29,11 @@ import (
 // Barcode neu vergeben).
 func TestRestore_KollisionMitAktivemZwillingIstKonflikt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "restore-kollision@test.invalid")
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "restore-kollision@test.invalid")
 
 	// Eine Zeile in den Papierkorb legen und danach ihren Platz besetzen.
 	vorbereiten := func(t *testing.T, anlegen, zwilling string) string {

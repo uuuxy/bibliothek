@@ -16,32 +16,32 @@ import (
 // Bedarf, und die vorgeschlagene Menge wäre zu hoch.
 func TestLadeBestellbedarf_GesamtNichtVerfuegbar(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	schueler := testdaten.SeedSchueler(t, pool, "R-1", "Ida", "5a")
+	schueler := testdaten.LegeSchuelerAn(t, pool, "R-1", "Ida", "5a")
 
 	// A) Voll verliehener Klassensatz: 30 Exemplare, alle ausgeliehen (verfügbar 0, gesamt 30),
 	// Schwelle 5: kein Grund zu bestellen.
-	tVoll := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe 7", 5)
+	tVoll := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7", 5)
 	for i := 0; i < 30; i++ {
-		e := testdaten.Exemplar(t, pool, tVoll, barcodeN("V", i), true, "")
+		e := testdaten.LegeExemplarAn(t, pool, tVoll, barcodeN("V", i), true, "")
 		leiheExemplarAus(t, pool, e, schueler)
 	}
 
 	// B) Echter Fehlbestand: nur 3 eigene Exemplare (gesamt 3 < Meldebestand 5).
-	tKnapp := testdaten.TitelMitMeldebestand(t, pool, "LMF-Deutsch 5", 5)
+	tKnapp := testdaten.LegeTitelAn(t, pool, "LMF-Deutsch 5", 5)
 	for i := 0; i < 3; i++ {
-		testdaten.Exemplar(t, pool, tKnapp, barcodeN("K", i), true, "")
+		testdaten.LegeExemplarAn(t, pool, tKnapp, barcodeN("K", i), true, "")
 	}
 
 	// C) Schon bestellt: 2 eigene und 3 als bestellt vermerkte Exemplare ergeben gesamt 5. Der
 	// Bedarf ist gedeckt, weil die bestellten im Gesamtbestand mitzählen.
-	tBestellt := testdaten.TitelMitMeldebestand(t, pool, "LMF-Bio 6", 5)
-	testdaten.Exemplar(t, pool, tBestellt, "BE-1", true, "")
-	testdaten.Exemplar(t, pool, tBestellt, "BE-2", true, "")
+	tBestellt := testdaten.LegeTitelAn(t, pool, "LMF-Bio 6", 5)
+	testdaten.LegeExemplarAn(t, pool, tBestellt, "BE-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, tBestellt, "BE-2", true, "")
 	for i := 0; i < 3; i++ {
-		testdaten.Exemplar(t, pool, tBestellt, barcodeN("BE", i+3), false, "bestellt")
+		testdaten.LegeExemplarAn(t, pool, tBestellt, barcodeN("BE", i+3), false, "bestellt")
 	}
 
 	// Schwelle 5, wie der Meldebestand der drei Titel.
@@ -74,12 +74,12 @@ func TestLadeBestellbedarf_GesamtNichtVerfuegbar(t *testing.T) {
 // mit gesamt 3 erscheint bei Schwelle 5 und fehlt bei Schwelle 2.
 func TestLadeBestellbedarf_SchwelleSteuert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	tKnapp := testdaten.TitelMitMeldebestand(t, pool, "LMF-Physik 8", 5) // meldebestand pauschal 5
+	tKnapp := testdaten.LegeTitelAn(t, pool, "LMF-Physik 8", 5) // meldebestand pauschal 5
 	for i := 0; i < 3; i++ {
-		testdaten.Exemplar(t, pool, tKnapp, barcodeN("P", i), true, "")
+		testdaten.LegeExemplarAn(t, pool, tKnapp, barcodeN("P", i), true, "")
 	}
 
 	filter := bestellbedarfFilterLMF()
@@ -105,12 +105,12 @@ func TestLadeBestellbedarf_SchwelleSteuert(t *testing.T) {
 // Maske). Auch ein solches Buch fällt unter die Schwelle.
 func TestLadeBestellbedarf_LMFNurInSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	tID := testdaten.TitelMitSignatur(t, pool, "Mathematik Neue Wege 9", "LMF Ma", 5)
+	tID := testdaten.LegeTitelMitSignaturAn(t, pool, "Mathematik Neue Wege 9", "LMF Ma", 5)
 	for i := 0; i < 3; i++ {
-		testdaten.Exemplar(t, pool, tID, barcodeN("S", i), true, "")
+		testdaten.LegeExemplarAn(t, pool, tID, barcodeN("S", i), true, "")
 	}
 
 	reorders, err := repository.LadeBestellbedarf(ctx, pool, bestellbedarfFilterLMF(), 5)
@@ -154,16 +154,16 @@ func barcodeN(prefix string, i int) string {
 // Buch.
 func TestLadeBestellbedarf_ZaehltAmBuch(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	// CASCADE nimmt buecher_titel mit (werk_id verweist auf werke); deshalb vor dem Anlegen.
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)
 	}
 
-	alt := testdaten.TitelMitMeldebestand(t, pool, "LMF-Lambacher Schweizer 7", 5)
-	neu := testdaten.TitelMitMeldebestand(t, pool, "LMF-Lambacher Schweizer 7 (Neubearbeitung)", 5)
-	einzeln := testdaten.TitelMitMeldebestand(t, pool, "LMF-Physik 8", 5)
+	alt := testdaten.LegeTitelAn(t, pool, "LMF-Lambacher Schweizer 7", 5)
+	neu := testdaten.LegeTitelAn(t, pool, "LMF-Lambacher Schweizer 7 (Neubearbeitung)", 5)
+	einzeln := testdaten.LegeTitelAn(t, pool, "LMF-Physik 8", 5)
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_titel
 		SET erscheinungsjahr = CASE WHEN id = $1::uuid THEN 2019 ELSE 2023 END,
@@ -172,10 +172,10 @@ func TestLadeBestellbedarf_ZaehltAmBuch(t *testing.T) {
 		WHERE id IN ($1::uuid, $2::uuid)`, alt, neu); err != nil {
 		t.Fatalf("Auflagen beschriften: %v", err)
 	}
-	testdaten.Exemplar(t, pool, alt, "ALT-1", true, "")
-	testdaten.Exemplar(t, pool, alt, "ALT-2", true, "")
-	testdaten.Exemplar(t, pool, neu, "NEU-1", true, "")
-	testdaten.Exemplar(t, pool, einzeln, "EIN-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, alt, "ALT-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, alt, "ALT-2", true, "")
+	testdaten.LegeExemplarAn(t, pool, neu, "NEU-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, einzeln, "EIN-1", true, "")
 	if _, err := repository.FasseAuflagenZusammen(ctx, pool, alt, neu); err != nil {
 		t.Fatalf("zusammenfassen: %v", err)
 	}

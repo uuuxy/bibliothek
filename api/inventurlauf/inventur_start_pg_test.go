@@ -74,7 +74,7 @@ func inventurTitel(t *testing.T, pool *pgxpool.Pool, signatur, fach string, von,
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 	for _, b := range barcodes {
-		testdaten.Exemplar(t, pool, titelID, b, true, "")
+		testdaten.LegeExemplarAn(t, pool, titelID, b, true, "")
 	}
 }
 
@@ -89,18 +89,18 @@ func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	ctx := context.Background()
 
-	titelID := testdaten.TitelMitSignatur(t, pool, "Lesebuch 5", "BIB Deu 5 KRÜ", 0)
-	testdaten.Exemplar(t, pool, titelID, "IS-1", true, "")
-	testdaten.Exemplar(t, pool, titelID, "IS-2", true, "")
-	testdaten.Exemplar(t, pool, titelID, "IS-GESPERRT", false, "")
-	ausgesondert := testdaten.Exemplar(t, pool, titelID, "IS-WEG", true, "")
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Lesebuch 5", "BIB Deu 5 KRÜ", 0)
+	testdaten.LegeExemplarAn(t, pool, titelID, "IS-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, titelID, "IS-2", true, "")
+	testdaten.LegeExemplarAn(t, pool, titelID, "IS-GESPERRT", false, "")
+	ausgesondert := testdaten.LegeExemplarAn(t, pool, titelID, "IS-WEG", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausgesondert = true, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, ausgesondert); err != nil {
 		t.Fatalf("Exemplar aussondern: %v", err)
 	}
-	testdaten.SeedOffeneAusleihe(t, pool, testdaten.SeedSchueler(t, pool, "IS-S1", "Leihkind", "07A"), "IS-VERLIEHEN")
+	testdaten.LegeOffeneAusleiheAn(t, pool, testdaten.LegeSchuelerAn(t, pool, "IS-S1", "Leihkind", "07A"), "IS-VERLIEHEN")
 
 	antwort := inventurGestartet(t, inventurStarten(t, srv, admin, `{"type":"global"}`))
 	if antwort.Scope != "global" || antwort.Label != "Gesamtbestand" || antwort.Erwartet != 2 {
@@ -120,7 +120,7 @@ func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-D1", "IS-D2")
 	inventurTitel(t, pool, "BIB Mat 5", "", 5, 6, "IS-M1")
@@ -142,7 +142,7 @@ func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	inventurFach(t, pool, "Inventurfach Mathe")
 	inventurFach(t, pool, "Inventurfach Deutsch")
@@ -170,7 +170,7 @@ func TestInventurStart_BelegterBereichIst409(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-B1")
 
 	inventurGestartet(t, inventurStarten(t, srv, admin, `{"type":"global"}`))

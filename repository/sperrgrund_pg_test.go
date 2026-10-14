@@ -17,7 +17,7 @@ import (
 // Schüler ohne block_reason darf gar nicht erst entstehen.
 func TestSperrgrund_ConstraintLehntGesperrtOhneGrundAb(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	_, err := pool.Exec(ctx,
@@ -43,10 +43,10 @@ func TestSperrgrund_ConstraintLehntGesperrtOhneGrundAb(t *testing.T) {
 // dabei einen aussagekräftigen Grund, damit das Personal im Profil sieht, warum.
 func TestSperreAbgaenger_SetztGrund(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	sid := testdaten.SeedSchueler(t, pool, "BR-3", "Abgang", "10a")
+	sid := testdaten.LegeSchuelerAn(t, pool, "BR-3", "Abgang", "10a")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -72,10 +72,10 @@ func TestSperreAbgaenger_SetztGrund(t *testing.T) {
 // festen, PII-freien Grund (kein evtl. altbelasteter Grund bleibt stehen).
 func TestAnonymisiereAbgaenger_SetztFestenGrund(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	sid := testdaten.SeedSchueler(t, pool, "BR-4", "Anon", "10a")
+	sid := testdaten.LegeSchuelerAn(t, pool, "BR-4", "Anon", "10a")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {

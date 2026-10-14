@@ -22,14 +22,14 @@ import (
 // und kein Exemplar, auch nicht für die Positionen vor der abgelehnten.
 func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	_, rufe := routertest.MitAufruf(t, pool)
-	lieferant := testdaten.Haendler(t, pool, "Abgelehnt", false)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Abgelehnt", false)
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM lieferanten WHERE id = $1`, lieferant)
 	})
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Titel im Warenkorb", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Titel im Warenkorb", 0)
 
 	position := func(titelID string, menge int) string {
 		return fmt.Sprintf(`{"titel_id":%q,"menge":%d,"preis":9.5,"generate_barcodes":true}`, titelID, menge)

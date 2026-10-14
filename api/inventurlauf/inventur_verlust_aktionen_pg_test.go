@@ -33,7 +33,7 @@ func inventurReset(t *testing.T, pool *pgxpool.Pool) {
 	if _, err := pool.Exec(context.Background(), `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Inventuren leeren: %v", err)
 	}
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 }
 
 // verlustLage legt die Exemplare an und bucht sie über einen Inventurabschluss als
@@ -42,17 +42,17 @@ func inventurReset(t *testing.T, pool *pgxpool.Pool) {
 func verlustLage(t *testing.T, pool *pgxpool.Pool, barcodes ...string) map[string]string {
 	t.Helper()
 	ctx := context.Background()
-	titelID := testdaten.TitelMitMeldebestand(t, pool, "Verlust-Titel", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "Verlust-Titel", 0)
 	lage := make(map[string]string, len(barcodes))
 	for _, b := range barcodes {
-		lage[b] = testdaten.Exemplar(t, pool, titelID, b, true, "")
+		lage[b] = testdaten.LegeExemplarAn(t, pool, titelID, b, true, "")
 	}
 	var sessionID string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO inventur_sessions (scope_type) VALUES ('global') RETURNING id`).Scan(&sessionID); err != nil {
 		t.Fatalf("Inventur anlegen: %v", err)
 	}
-	gebucht, err := repository.NewInventurAbfragen(pool).SchliesseLaufAb(ctx, sessionID, repository.InventurBereich{}, testdaten.AdminFuerAudit(t, pool))
+	gebucht, err := repository.NewInventurAbfragen(pool).SchliesseLaufAb(ctx, sessionID, repository.InventurBereich{}, testdaten.LegeBearbeiterAn(t, pool))
 	if err != nil {
 		t.Fatalf("Inventur abschließen: %v", err)
 	}
@@ -127,10 +127,10 @@ func TestVerlusteLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	lage := verlustLage(t, pool, "VLH-1", "VLH-2")
-	imRegal := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Im Regal", 0), "VLH-REGAL", true, "")
+	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal", 0), "VLH-REGAL", true, "")
 
 	rec := verlusteLoeschen(t, srv, admin, verlustRumpf(t, lage["VLH-1"], imRegal, lage["VLH-2"]))
 	if rec.Code != http.StatusOK {
@@ -173,8 +173,8 @@ func TestVerlusteLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
-	imRegal := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Im Regal", 0), "VLH-REGAL-2", true, "")
+	admin := testdaten.LegeBearbeiterAn(t, pool)
+	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal", 0), "VLH-REGAL-2", true, "")
 
 	rec := verlusteLoeschen(t, srv, admin, verlustRumpf(t, imRegal))
 	if rec.Code != http.StatusOK {
@@ -197,10 +197,10 @@ func TestVerlusteLoeschen_OffeneForderungIst409MitBarcode(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	lage := verlustLage(t, pool, "VLH-FREI", "VLH-GEB")
-	schuelerID := testdaten.SeedSchueler(t, pool, "VLH-S1", "Forderungskind", "07A")
+	schuelerID := testdaten.LegeSchuelerAn(t, pool, "VLH-S1", "Forderungskind", "07A")
 	forderung := verlustForderung(t, pool, schuelerID, lage["VLH-GEB"], "beschaedigt", 12.50, nil)
 
 	rec := verlusteLoeschen(t, srv, admin, verlustRumpf(t, lage["VLH-FREI"], lage["VLH-GEB"]))
@@ -227,7 +227,7 @@ func TestVerlusteLoeschen_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	lage := verlustLage(t, pool, "VLH-BLEIBT")
 
 	faelle := []struct {
@@ -259,10 +259,10 @@ func TestVerlustGefunden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	exemplarID := verlustLage(t, pool, "VGH-1")["VGH-1"]
-	schuelerID := testdaten.SeedSchueler(t, pool, "VGH-S1", "Fundkind", "07A")
+	schuelerID := testdaten.LegeSchuelerAn(t, pool, "VGH-S1", "Fundkind", "07A")
 	forderung := verlustForderung(t, pool, schuelerID, exemplarID, "nicht_zurueckgegeben", 24.90, nil)
 
 	rec := verlustGefunden(t, srv, admin, exemplarID)
@@ -306,13 +306,13 @@ func TestVerlustGefunden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
 func TestVerlustGefunden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	testdaten.BescheidReset(t, pool)
+	testdaten.LeereBescheide(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	ctx := context.Background()
 
 	exemplarID := verlustLage(t, pool, "VGH-B")["VGH-B"]
-	schuelerID := testdaten.SeedSchueler(t, pool, "VGH-S2", "Bescheidkind", "08A")
+	schuelerID := testdaten.LegeSchuelerAn(t, pool, "VGH-S2", "Bescheidkind", "08A")
 	var bescheidID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schadensersatz_bescheide (schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis, status, uebergeben_am)
@@ -353,10 +353,10 @@ func TestVerlustGefunden_OhneOffenenVerlustIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	exemplarID := verlustLage(t, pool, "VGH-2")["VGH-2"]
-	imRegal := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Im Regal", 0), "VGH-REGAL", true, "")
+	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal", 0), "VGH-REGAL", true, "")
 
 	if rec := verlustGefunden(t, srv, admin, "00000000-0000-0000-0000-000000000000"); rec.Code != http.StatusNotFound {
 		t.Errorf("unbekannte Kennung: Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
@@ -385,7 +385,7 @@ func TestVerlustGefunden_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	exemplarID := verlustLage(t, pool, "VGH-3")["VGH-3"]
 
 	if rec := verlustGefunden(t, srv, "", exemplarID); rec.Code != http.StatusUnauthorized {

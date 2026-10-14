@@ -22,7 +22,7 @@ import (
 // zugeordnete Schüler-Ausleihe → Name und Klasse.
 func TestTitleHistory_GetrennteAusleiheIstAnonymNichtLehrer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var titelID, exemplarID, schuelerID, lehrerID string

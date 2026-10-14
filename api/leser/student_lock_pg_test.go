@@ -38,9 +38,9 @@ func sperrTuerAufruf(t *testing.T, pool *pgxpool.Pool, akteur, id, body string) 
 // "Zombie-Sperre" anlegen.
 func TestLockStudentHandler_RequiresReasonAndSetsBlockReason(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	akteur := testdaten.AdminFuerAudit(t, pool)
+	akteur := testdaten.LegeBearbeiterAn(t, pool)
 
 	var id string
 	if err := pool.QueryRow(ctx,
@@ -95,11 +95,11 @@ func TestLockStudentHandler_RequiresReasonAndSetsBlockReason(t *testing.T) {
 // Einträge.
 func TestSperrTuer_HebtBeideSperrenAufUndProtokolliert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	akteur := testdaten.AdminFuerAudit(t, pool)
+	akteur := testdaten.LegeBearbeiterAn(t, pool)
 
-	id := testdaten.SeedSchueler(t, pool, "S-SPERRTUER-1", "Ehemalig", "10R1")
+	id := testdaten.LegeSchuelerAn(t, pool, "S-SPERRTUER-1", "Ehemalig", "10R1")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id = $1`, id); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
@@ -184,16 +184,16 @@ func TestSperrTuer_HebtBeideSperrenAufUndProtokolliert(t *testing.T) {
 // Rot gesehen am Rückbau: ohne die zwei Fälle antwortet die Tür 200 und schaltet um.
 func TestSperrTuer_PapierkorbUndAnonymisiertBleiben(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	akteur := testdaten.AdminFuerAudit(t, pool)
+	akteur := testdaten.LegeBearbeiterAn(t, pool)
 
-	anonym := testdaten.SeedSchueler(t, pool, "S-SPERRTUER-A", "Anonym", "10R1")
+	anonym := testdaten.LegeSchuelerAn(t, pool, "S-SPERRTUER-A", "Anonym", "10R1")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}
-	geloescht := testdaten.SeedSchueler(t, pool, "S-SPERRTUER-P", "Papierkorb", "07A")
+	geloescht := testdaten.LegeSchuelerAn(t, pool, "S-SPERRTUER-P", "Papierkorb", "07A")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = NOW(), ist_gesperrt = true,
 		block_reason = 'Systematisch gelöscht' WHERE id = $1`, geloescht); err != nil {
 		t.Fatalf("löschen: %v", err)

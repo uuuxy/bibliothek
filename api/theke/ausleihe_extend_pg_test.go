@@ -33,11 +33,11 @@ func pruefeFrist(t *testing.T, frist, soll time.Time) {
 
 func TestExtendLoanHandler(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	// Create a test student
-	sid1 := testdaten.SeedSchueler(t, pool, "S-EXT-1", "Normal", "5a")
-	sidGesperrt := testdaten.SeedSchueler(t, pool, "S-EXT-2", "Gesperrt", "5b")
+	sid1 := testdaten.LegeSchuelerAn(t, pool, "S-EXT-1", "Normal", "5a")
+	sidGesperrt := testdaten.LegeSchuelerAn(t, pool, "S-EXT-2", "Gesperrt", "5b")
 
 	// Manually block the second student
 	_, err := pool.Exec(context.Background(), "UPDATE schueler SET ist_gesperrt = true, block_reason = 'Mahnung' WHERE id = $1", sidGesperrt)
@@ -48,14 +48,14 @@ func TestExtendLoanHandler(t *testing.T) {
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
 
 	// Create loans
-	ausleiheNormal := testdaten.SeedAusleihe(t, pool, sid1, "Testbuch Normal", alteFrist)
-	ausleiheGesperrt := testdaten.SeedAusleihe(t, pool, sidGesperrt, "Testbuch Gesperrt", alteFrist)
+	ausleiheNormal := testdaten.LegeAusleiheMitFristAn(t, pool, sid1, "Testbuch Normal", alteFrist)
+	ausleiheGesperrt := testdaten.LegeAusleiheMitFristAn(t, pool, sidGesperrt, "Testbuch Gesperrt", alteFrist)
 
 	// Eine eigene Ausleihe für den Fall, dass die neue Frist in die Ferien fällt.
-	ausleiheFerien := testdaten.SeedAusleihe(t, pool, sid1, "Testbuch Ferien", alteFrist)
+	ausleiheFerien := testdaten.LegeAusleiheMitFristAn(t, pool, sid1, "Testbuch Ferien", alteFrist)
 
 	// Create a returned loan
-	ausleiheReturned := testdaten.SeedAusleihe(t, pool, sid1, "Testbuch Returned", alteFrist)
+	ausleiheReturned := testdaten.LegeAusleiheMitFristAn(t, pool, sid1, "Testbuch Returned", alteFrist)
 	_, err = pool.Exec(context.Background(), "UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1", ausleiheReturned)
 	if err != nil {
 		t.Fatalf("Failed to mark loan as returned: %v", err)
@@ -90,7 +90,7 @@ func TestExtendLoanHandler(t *testing.T) {
 				// ist das HEUTE, nicht die alte Frist: Sonst käme eine Verlaengerung
 				// heraus, die im Moment der Buchung schon wieder abgelaufen ist.
 				// Heute plus 14 Tage, auf das Tagesende: Montag 16.11.2026.
-				pruefeFrist(t, testdaten.FristVon(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.November, 16))
+				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.November, 16))
 			},
 		},
 		{
@@ -102,7 +102,7 @@ func TestExtendLoanHandler(t *testing.T) {
 			verify: func(t *testing.T, resp map[string]interface{}) {
 				// Der vorige Fall hat die Frist bereits auf den 16.11. gesetzt. Die liegt
 				// in der ZUKUNFT, also rechnet die Verlängerung ab ihr: 16.11. plus 28 Tage.
-				pruefeFrist(t, testdaten.FristVon(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.December, 14))
+				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.December, 14))
 			},
 		},
 		{
@@ -114,7 +114,7 @@ func TestExtendLoanHandler(t *testing.T) {
 			extensionDays:  21,
 			expectedStatus: http.StatusOK,
 			verify: func(t *testing.T, resp map[string]interface{}) {
-				pruefeFrist(t, testdaten.FristVon(t, pool, ausleiheFerien), testdaten.FristEnde(2026, time.October, 19))
+				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheFerien), testdaten.FristEnde(2026, time.October, 19))
 			},
 		},
 		{
@@ -211,21 +211,21 @@ func TestExtendLoanHandler(t *testing.T) {
 // wer view_students hat (wie an der Theke, ohneSperrgrund). Gelingt sie, beginnt die Mahnfolge neu.
 func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	tuer.InvalidatePermissionCache()
 	t.Cleanup(tuer.InvalidatePermissionCache)
 	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
 
 	const grund = "Schadensrechnung offen - Familie"
-	gesperrt := testdaten.SeedSchueler(t, pool, "S-VG-1", "Gesperrt", "5a")
+	gesperrt := testdaten.LegeSchuelerAn(t, pool, "S-VG-1", "Gesperrt", "5a")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET is_manually_blocked = true, block_reason = $2 WHERE id = $1`, gesperrt, grund); err != nil {
 		t.Fatalf("Sperre setzen: %v", err)
 	}
-	frei := testdaten.SeedSchueler(t, pool, "S-VG-2", "Frei", "5a")
+	frei := testdaten.LegeSchuelerAn(t, pool, "S-VG-2", "Frei", "5a")
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
-	ausleiheGesperrt := testdaten.SeedAusleihe(t, pool, gesperrt, "Buch der Gesperrten", alteFrist)
-	ausleiheFrei := testdaten.SeedAusleihe(t, pool, frei, "Buch des Freien", alteFrist)
+	ausleiheGesperrt := testdaten.LegeAusleiheMitFristAn(t, pool, gesperrt, "Buch der Gesperrten", alteFrist)
+	ausleiheFrei := testdaten.LegeAusleiheMitFristAn(t, pool, frei, "Buch des Freien", alteFrist)
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET mahnstufe = 2, letztes_mahndatum = CURRENT_TIMESTAMP WHERE id = $1`, ausleiheFrei); err != nil {
 		t.Fatalf("Mahnstufe setzen: %v", err)
 	}
@@ -255,7 +255,7 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 	if admin.Code != http.StatusForbidden || !strings.Contains(admin.Body.String(), grund) {
 		t.Errorf("Admin: Status %d, erwartet 403 mit dem Grund der Sperre: %s", admin.Code, admin.Body.String())
 	}
-	if frist := testdaten.FristVon(t, pool, ausleiheGesperrt); !frist.Equal(alteFrist) {
+	if frist := testdaten.LadeFrist(t, pool, ausleiheGesperrt); !frist.Equal(alteFrist) {
 		t.Errorf("die abgelehnte Verlängerung hat die Frist geschrieben: %s", frist.Format(time.RFC3339))
 	}
 
@@ -271,7 +271,7 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 	if mahnstufe != 0 || gemahnt {
 		t.Errorf("nach der Verlängerung: Mahnstufe %d, Mahndatum gesetzt %v — erwartet 0 und false", mahnstufe, gemahnt)
 	}
-	if frist := testdaten.FristVon(t, pool, ausleiheFrei); !frist.After(time.Now()) {
+	if frist := testdaten.LadeFrist(t, pool, ausleiheFrei); !frist.After(time.Now()) {
 		t.Errorf("die neue Frist %s liegt nicht in der Zukunft", frist.Format(time.RFC3339))
 	}
 }
@@ -280,8 +280,8 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 // Tabelle des Programms nicht kennt. Sind die Einstellungen nicht lesbar, gelten 28 Tage.
 func TestExtendLoan_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	sid := testdaten.SeedSchueler(t, pool, "S-VF-1", "Ferien", "5a")
+	testdaten.LeereBestandsdaten(t, pool)
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-VF-1", "Ferien", "5a")
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
 
 	verlaengere := func(ausleiheID string, jetzt time.Time, einstellungen repository.EinstellungsAbfragen) {
@@ -298,18 +298,18 @@ func TestExtendLoan_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing
 
 	// Montag 30.06.2031 plus 21 Tage ist Montag, der 21.07.2031 — nach den Einstellungen mitten
 	// in den Sommerferien (07.07.–15.08.), die Frist ist der Montag danach.
-	inDenFerien := testdaten.SeedAusleihe(t, pool, sid, "Buch vor den Ferien", alteFrist)
+	inDenFerien := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch vor den Ferien", alteFrist)
 	verlaengere(inDenFerien, time.Date(2031, time.June, 30, 10, 0, 0, 0, schulzeit.Zone()), &tuertest.EinstellungenAttrappe{
 		Einstellungen: &repository.SystemEinstellungen{
 			FristBuchTage: 21,
 			Sommerferien:  `[{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"}]`,
 		},
 	})
-	pruefeFrist(t, testdaten.FristVon(t, pool, inDenFerien), testdaten.FristEnde(2031, time.August, 18))
+	pruefeFrist(t, testdaten.LadeFrist(t, pool, inDenFerien), testdaten.FristEnde(2031, time.August, 18))
 
 	// Montag 02.11.2026 plus 28 Tage ist Montag, der 30.11.2026.
-	ohneEinstellungen := testdaten.SeedAusleihe(t, pool, sid, "Buch ohne Einstellungen", alteFrist)
+	ohneEinstellungen := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch ohne Einstellungen", alteFrist)
 	verlaengere(ohneEinstellungen, time.Date(2026, time.November, 2, 10, 0, 0, 0, schulzeit.Zone()),
 		&tuertest.EinstellungenAttrappe{Fehler: errors.New("einstellungen nicht lesbar")})
-	pruefeFrist(t, testdaten.FristVon(t, pool, ohneEinstellungen), testdaten.FristEnde(2026, time.November, 30))
+	pruefeFrist(t, testdaten.LadeFrist(t, pool, ohneEinstellungen), testdaten.FristEnde(2026, time.November, 30))
 }

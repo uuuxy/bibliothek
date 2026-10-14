@@ -23,7 +23,7 @@ import (
 // Eigenschaften existiert bereits.", ohne Name und Geburtsdatum zu nennen.
 func TestLeserAendern_NameUndGeburtsdatumSchonVergeben(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(

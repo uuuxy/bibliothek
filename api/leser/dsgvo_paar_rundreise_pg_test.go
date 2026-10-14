@@ -14,7 +14,7 @@ import (
 
 // Die Rundreise: Was die Auskunft zeigt, muss die Tilgung leeren — am echten Postgres,
 // über die echten Pfade (LegeLeserInPapierkorb → LoescheLeserEndgueltig), über JEDE Quelle der
-// gemeinsamen Liste testdaten.DsgvoSchuelerQuellen.
+// gemeinsamen Liste testdaten.DSGVOLeserQuellen.
 //
 // Drei Prüfungen:
 //  1. VORHER zeigt die Art.-15-Auskunft aus jeder Quelle etwas — sonst ist die
@@ -27,11 +27,11 @@ import (
 //     referenziert nach der Löschung niemanden mehr).
 //  3. Die Artefakte eines ZWEITEN Schülers überleben unangetastet (Über-Tilgung).
 //
-// Wächst testdaten.DsgvoSchuelerQuellen (FK-Ratsche unten), zwingt der default-Zweig der
+// Wächst testdaten.DSGVOLeserQuellen (FK-Ratsche unten), zwingt der default-Zweig der
 // Seed-Schleife diesen Test zum Mitwachsen.
 func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	const (
@@ -43,10 +43,10 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		fremdEnt = "Fremdkind Bleibt"
 	)
 
-	sid := testdaten.SeedSchueler(t, pool, barcode, vorname, "5a")
-	fremd := testdaten.SeedSchueler(t, pool, "S-RUND-FREMD", "Fremdkind", "5a")
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Rundreise-Titel", "Aut Or", false, 0)
-	exID := testdaten.Exemplar(t, pool, titelID, "RUND-EX-1", true, "")
+	sid := testdaten.LegeSchuelerAn(t, pool, barcode, vorname, "5a")
+	fremd := testdaten.LegeSchuelerAn(t, pool, "S-RUND-FREMD", "Fremdkind", "5a")
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Rundreise-Titel", "Aut Or", false, 0)
+	exID := testdaten.LegeExemplarAn(t, pool, titelID, "RUND-EX-1", true, "")
 
 	if _, err := pool.Exec(ctx, `
 		UPDATE schueler SET lusd_id = $2, eltern_email = $3, strasse = 'Rundreiseweg'
@@ -56,7 +56,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 
 	// Je Quelle der gemeinsamen Liste ein Artefakt — der default-Zweig hält die
 	// Schleife mit der Liste im Gleichschritt.
-	for _, q := range testdaten.DsgvoSchuelerQuellen {
+	for _, q := range testdaten.DSGVOLeserQuellen {
 		var err error
 		switch q.Tabelle {
 		case "leser":
@@ -140,7 +140,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sammleDsgvoDaten vor der Löschung: %v", err)
 	}
-	for _, q := range testdaten.DsgvoSchuelerQuellen {
+	for _, q := range testdaten.DSGVOLeserQuellen {
 		leer := false
 		switch q.Tabelle {
 		case "leser":
@@ -239,7 +239,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 }
 
 // Die Wachstums-Ratsche des Paars: Jede FK-Spalte auf schueler, die das Schema kennt,
-// muss in testdaten.DsgvoSchuelerQuellen stehen — und umgekehrt. Wer eine neue Tabelle mit
+// muss in testdaten.DSGVOLeserQuellen stehen — und umgekehrt. Wer eine neue Tabelle mit
 // Schülerbezug baut, wird hier rot, bis Auskunft UND Tilgung sie kennen (die Liste
 // erzwingt beides: den Quelltext-Scan der Auskunft und die Seed-Schleife der Rundreise).
 //
@@ -292,8 +292,8 @@ func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 	// unbekannte Referenz fiele sonst durch, und genau das ist der Fall, den er sucht.
 	spaltenImBezug := regexp.MustCompile(`\b[a-z_]*(?:schueler_id|leser_id)\b`)
 	inListe := map[string]bool{}
-	for _, q := range testdaten.DsgvoSchuelerQuellen {
-		if !q.MitFK {
+	for _, q := range testdaten.DSGVOLeserQuellen {
+		if !q.MitFremdschluessel {
 			continue
 		}
 		spalten := spaltenImBezug.FindAllString(q.Bezug, -1)
@@ -308,7 +308,7 @@ func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 	for fk := range imSchema {
 		if !inListe[fk] {
 			t.Errorf("das Schema kennt die Schüler-Referenz %s, die DSGVO-Quellenliste nicht — "+
-				"in testdaten.DsgvoSchuelerQuellen aufnehmen und Auskunft UND Tilgung nachziehen "+
+				"in testdaten.DSGVOLeserQuellen aufnehmen und Auskunft UND Tilgung nachziehen "+
 				"(internal/testdaten/dsgvo.go)", fk)
 		}
 	}

@@ -22,7 +22,7 @@ import (
 // mit dem Grund (409), keinen 500 — und beim Wiederherstellen einen Satz mit dem Ausweg.
 func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RoleAdmin}

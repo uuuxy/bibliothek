@@ -21,13 +21,13 @@ import (
 // keine Garantie.
 func TestTilgeSchuelerSpuren_TilgtAuchDieLesehistorie(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	sid := testdaten.SeedSchueler(t, pool, "S-TILG-1", "Mia", "5a")
-	fremd := testdaten.SeedSchueler(t, pool, "S-TILG-2", "Ben", "5a")
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Tilgungs-Titel", "Jug Til", false, 0)
-	exID := testdaten.Exemplar(t, pool, titelID, "TILG-1", true, "")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-TILG-1", "Mia", "5a")
+	fremd := testdaten.LegeSchuelerAn(t, pool, "S-TILG-2", "Ben", "5a")
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Tilgungs-Titel", "Jug Til", false, 0)
+	exID := testdaten.LegeExemplarAn(t, pool, titelID, "TILG-1", true, "")
 
 	// Zwei Protokollzeilen wie sie die Ausleihe/Rückgabe schreibt (protokoll.go):
 	// die des Schülers und die eines anderen — die fremde muss stehen bleiben.

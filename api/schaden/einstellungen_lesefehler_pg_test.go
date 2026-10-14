@@ -20,9 +20,9 @@ import (
 
 func TestElternbrief_EinstellungenUnlesbar_KeinBriefKeinVermerk(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	sid := testdaten.SeedSchueler(t, pool, "S-BRIEF-LESEFEHLER", "Elternbriefkind", "08G2")
-	testdaten.SeedOffenerSchaden(t, pool, sid, "BRIEF-LF")
+	testdaten.LeereBestandsdaten(t, pool)
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BRIEF-LESEFEHLER", "Elternbriefkind", "08G2")
+	testdaten.LegeOffenenSchadenAn(t, pool, sid, "BRIEF-LF")
 	var fall string
 	if err := pool.QueryRow(context.Background(),
 		`SELECT id FROM schadensfaelle WHERE schueler_id = $1`, sid).Scan(&fall); err != nil {
@@ -42,7 +42,7 @@ func TestElternbrief_EinstellungenUnlesbar_KeinBriefKeinVermerk(t *testing.T) {
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.EinstellungenLesen})
+	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Der Brief entsteht mit den Vorgaben statt mit den Angaben der Schule", rec.Code)
 	}
@@ -65,9 +65,9 @@ func TestElternbrief_EinstellungenUnlesbar_KeinBriefKeinVermerk(t *testing.T) {
 
 func TestErsatzforderung_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	sid := testdaten.SeedSchueler(t, pool, "S-RECH-LESEFEHLER", "Rechnungskind", "08G2")
-	testdaten.SeedOffenerSchaden(t, pool, sid, "RECH-LF")
+	testdaten.LeereBestandsdaten(t, pool)
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-RECH-LESEFEHLER", "Rechnungskind", "08G2")
+	testdaten.LegeOffenenSchadenAn(t, pool, sid, "RECH-LF")
 
 	rufe := func(datenbank db.PgxPoolIface) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)
@@ -77,7 +77,7 @@ func TestErsatzforderung_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.EinstellungenLesen})
+	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Die Ersatzforderung entsteht mit den Vorgaben statt mit den Angaben der Schule", rec.Code)
 	}

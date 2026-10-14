@@ -23,7 +23,7 @@ import (
 // die Akte offene Beträge zeigte und der Schüler gesperrt blieb.
 func TestQueryRechnungItems_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var schuelerID uuid.UUID
@@ -76,18 +76,18 @@ func TestQueryRechnungItems_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 // genau die Form trifft, die der Betrieb schreibt.
 func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 
-	sid := testdaten.SeedSchueler(t, pool, "S-RECH-BESCH", "Rechnungskind", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Deutsch 8")
-	exAufBescheid := testdaten.Exemplar(t, pool, titelID, "RECH-BESCH-1", true, "")
-	exOhneBescheid := testdaten.Exemplar(t, pool, titelID, "RECH-BESCH-2", true, "")
-	fAufBescheid := testdaten.BescheidForderung(t, pool, sid, exAufBescheid, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
-	testdaten.BescheidForderung(t, pool, sid, exOhneBescheid, "beschaedigt", "Deutsch 8 beschädigt")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-RECH-BESCH", "Rechnungskind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Deutsch 8")
+	exAufBescheid := testdaten.LegeExemplarAn(t, pool, titelID, "RECH-BESCH-1", true, "")
+	exOhneBescheid := testdaten.LegeExemplarAn(t, pool, titelID, "RECH-BESCH-2", true, "")
+	fAufBescheid := testdaten.LegeForderungAn(t, pool, sid, exAufBescheid, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
+	testdaten.LegeForderungAn(t, pool, sid, exOhneBescheid, "beschaedigt", "Deutsch 8 beschädigt")
 
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fAufBescheid: 24.90}))
@@ -113,15 +113,15 @@ func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T
 // die Akte offene Beträge zeigt.
 func TestPrintRechnung_AlleForderungenAufBescheid(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	sid := testdaten.SeedSchueler(t, pool, "S-RECH-ALLE", "Bescheidkind", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Englisch 8")
-	ex := testdaten.Exemplar(t, pool, titelID, "RECH-ALLE-1", true, "")
-	f := testdaten.BescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 8 nicht zurück")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-RECH-ALLE", "Bescheidkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Englisch 8")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "RECH-ALLE-1", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 8 nicht zurück")
 	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 19.50})); rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())

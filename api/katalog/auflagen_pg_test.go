@@ -20,7 +20,7 @@ import (
 // Übersetzung der fachlichen Fehler in 400 mit Text und 404.
 func TestTitelAuflagen_TuerDerTitelmaske(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)

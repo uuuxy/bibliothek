@@ -13,6 +13,6 @@ import (
 // So zeigt jede Antwort, was das Recht ihrer Matrix-Zeile ALLEIN öffnet.
 func SetzeGenauEinRecht(t *testing.T, pool *pgxpool.Pool, recht string) {
 	t.Helper()
-	testdaten.GenauEinRecht(t, pool, recht)
+	testdaten.SetzeGenauEinRecht(t, pool, recht)
 	tuer.InvalidatePermissionCache()
 }

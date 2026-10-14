@@ -31,14 +31,14 @@ import (
 // Status-Editor.
 func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Tueren-Titel", "Jug Tue", false, 0)
-	verliehen := testdaten.Exemplar(t, pool, titelID, "TUER-VERLIEHEN", true, "")
-	frei := testdaten.Exemplar(t, pool, titelID, "TUER-FREI", true, "")
-	sid := testdaten.SeedSchueler(t, pool, "S-TUER-1", "Mia", "5a")
-	testdaten.SeedLeserAusleihe(t, pool, verliehen, sid)
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Tueren-Titel", "Jug Tue", false, 0)
+	verliehen := testdaten.LegeExemplarAn(t, pool, titelID, "TUER-VERLIEHEN", true, "")
+	frei := testdaten.LegeExemplarAn(t, pool, titelID, "TUER-FREI", true, "")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-TUER-1", "Mia", "5a")
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, verliehen, sid)
 
 	statusAussondern := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPut, "/api/buecher/exemplare/"+id+"/status",
@@ -47,7 +47,7 @@ func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		// Türen mit Datenbank: Der Erfolgsfall fragt den Ersatzwert nach (9.8, Stufe 2b).
-		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
+		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
 		return rec
 	}
 	istAusgesondert := func(id string) bool {

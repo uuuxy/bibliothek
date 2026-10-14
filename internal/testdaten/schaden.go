@@ -10,9 +10,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// BescheidReset leert Bescheide und Nummernkreis. ResetBestandsdaten nimmt beide nicht mit: Der
+// LeereBescheide leert Bescheide und Nummernkreis. LeereBestandsdaten nimmt beide nicht mit: Der
 // Bescheid hängt am Schüler mit ON DELETE SET NULL, und der Zähler der Nummern steht für sich.
-func BescheidReset(t *testing.T, pool *pgxpool.Pool) {
+func LeereBescheide(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(),
 		`TRUNCATE schadensersatz_bescheide, schadensersatz_nummern CASCADE`); err != nil {
@@ -20,9 +20,9 @@ func BescheidReset(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-// BescheidAngabenSetzen hinterlegt die Pflichtangaben, ohne die kein Bescheid entsteht, und
+// SetzeBescheidAngaben hinterlegt die Pflichtangaben, ohne die kein Bescheid entsteht, und
 // entfernt sie am Ende des Tests.
-func BescheidAngabenSetzen(t *testing.T, pool *pgxpool.Pool) {
+func SetzeBescheidAngaben(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 	werte := map[string]string{
@@ -52,19 +52,19 @@ func BescheidAngabenSetzen(t *testing.T, pool *pgxpool.Pool) {
 	})
 }
 
-// BescheidLernmittel legt einen Lernmittel-Titel an: Nur deren Forderungen gehören auf einen
+// LegeLernmittelAn legt einen Lernmittel-Titel an: Nur deren Forderungen gehören auf einen
 // Bescheid des Landes.
-func BescheidLernmittel(t *testing.T, pool *pgxpool.Pool, titel string) string {
+func LegeLernmittelAn(t *testing.T, pool *pgxpool.Pool, titel string) string {
 	t.Helper()
-	id := SeedMonitorTitel(t, pool, titel, "Autor", true, 0)
+	id := LegeTitelMitCoverUndAlterAn(t, pool, titel, "Autor", true, 0)
 	if _, err := pool.Exec(context.Background(), `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, id); err != nil {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
 	return id
 }
 
-// BescheidForderung legt eine offene Forderung an und liefert ihre Kennung.
-func BescheidForderung(t *testing.T, pool *pgxpool.Pool, schuelerID, exemplarID, art, beschreibung string) string {
+// LegeForderungAn legt eine offene Forderung an und liefert ihre Kennung.
+func LegeForderungAn(t *testing.T, pool *pgxpool.Pool, schuelerID, exemplarID, art, beschreibung string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `
@@ -88,14 +88,14 @@ func BescheidRumpf(frist string, betraege map[string]float64) string {
 // In28Tagen ist der Kalendertag in 28 Tagen, als Frist eines Bescheids.
 func In28Tagen() string { return time.Now().AddDate(0, 0, 28).Format("2006-01-02") }
 
-// SeedOffenerSchaden hängt dem Schüler einen unbezahlten Schadensfall an.
-func SeedOffenerSchaden(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
+// LegeOffenenSchadenAn hängt dem Schüler einen unbezahlten Schadensfall an.
+func LegeOffenenSchadenAn(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
 	t.Helper()
-	titelID := TitelMitMeldebestand(t, pool, "SchadenTitel-"+barcodePraefix, 1)
-	exID := Exemplar(t, pool, titelID, "SEX-"+barcodePraefix, true, "")
+	titelID := LegeTitelAn(t, pool, "SchadenTitel-"+barcodePraefix, 1)
+	exemplarID := LegeExemplarAn(t, pool, titelID, "SEX-"+barcodePraefix, true, "")
 	if _, err := pool.Exec(context.Background(),
 		`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, ist_bezahlt)
-		 VALUES ($1, $2, 'Wasserschaden', 12.50, false)`, exID, schuelerID); err != nil {
+		 VALUES ($1, $2, 'Wasserschaden', 12.50, false)`, exemplarID, schuelerID); err != nil {
 		t.Fatalf("offenen Schaden anlegen: %v", err)
 	}
 }

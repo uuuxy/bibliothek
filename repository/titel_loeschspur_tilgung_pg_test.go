@@ -25,7 +25,7 @@ import (
 // aus repository.spurTilgungen entfernt — alle vier Einträge behalten Name und Freitext.
 func TestAnonymisierung_TilgtNameUndFreitextDerTitelLoeschspur(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	const name, freitext = "Spurprobe Klarname", "FREITEXT-PROBE Buch im Bus liegen gelassen"
 
@@ -44,7 +44,7 @@ func TestAnonymisierung_TilgtNameUndFreitextDerTitelLoeschspur(t *testing.T) {
 			`INSERT INTO buecher_titel (titel, autor) VALUES ($1, 'Test') RETURNING id`, titel).Scan(&titelID); err != nil {
 			t.Fatalf("Titel anlegen: %v", err)
 		}
-		exemplarID := testdaten.Exemplar(t, pool, titelID, barcode, true, "")
+		exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag) VALUES ($1, $2, $3, 12.50)`,
 			exemplarID, schuelerID, freitext); err != nil {
@@ -60,7 +60,7 @@ func TestAnonymisierung_TilgtNameUndFreitextDerTitelLoeschspur(t *testing.T) {
 	einzeln := titelMitSpur("Löschspur einzeln", "TLS-EX-1")
 	gesammelt := titelMitSpur("Löschspur gesammelt", "TLS-EX-2")
 
-	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, einzeln, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, einzeln, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("einzelnen Titel löschen: %v", err)
 	}
 	if err := inventur.NewBookRepository(pool).DeleteBooks(ctx, []string{gesammelt}); err != nil {
@@ -116,19 +116,19 @@ func TestAnonymisierung_TilgtNameUndFreitextDerTitelLoeschspur(t *testing.T) {
 // Anonymisierung der verbliebenen Zeile Name und Freitext nicht mehr.
 func TestAnonymisierung_TilgtDieLoeschspurAuchNachDemZusammenfuehren(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	const name, freitext = "Doppelt Spurprobe", "FREITEXT-PROBE Einband abgerissen"
 
-	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Erst", Nachname: "Spurprobe", Klasse: "07A", Barcode: "TLZ-1", Geb: testdaten.Datum(2012, 5, 5)})
-	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Doppelt", Nachname: "Spurprobe", Klasse: "07A", Barcode: "TLZ-2", Geb: testdaten.Datum(2012, 5, 5)})
+	ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Erst", Nachname: "Spurprobe", Klasse: "07A", Barcode: "TLZ-1", Geburtsdatum: testdaten.Datum(2012, 5, 5)})
+	quelle := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Doppelt", Nachname: "Spurprobe", Klasse: "07A", Barcode: "TLZ-2", Geburtsdatum: testdaten.Datum(2012, 5, 5)})
 
 	var titelID string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO buecher_titel (titel, autor) VALUES ('Löschspur vor dem Zusammenführen', 'Test') RETURNING id`).Scan(&titelID); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
-	exemplarID := testdaten.Exemplar(t, pool, titelID, "TLZ-EX-1", true, "")
+	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "TLZ-EX-1", true, "")
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag) VALUES ($1, $2, $3, 12.50)`,
 		exemplarID, quelle, freitext); err != nil {
@@ -138,7 +138,7 @@ func TestAnonymisierung_TilgtDieLoeschspurAuchNachDemZusammenfuehren(t *testing.
 		`INSERT INTO vormerkungen (titel_id, schueler_id, status) VALUES ($1, $2, 'wartend')`, titelID, quelle); err != nil {
 		t.Fatalf("Vormerkung anlegen: %v", err)
 	}
-	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {

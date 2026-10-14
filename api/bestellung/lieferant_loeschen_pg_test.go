@@ -33,7 +33,7 @@ import (
 // Tür, und ein Hinweis, den nur ein Bildschirm kennt, ist keine Regel.
 func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	anlegen := func(name string, haupt bool) string {

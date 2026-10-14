@@ -25,7 +25,7 @@ import (
 func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	books := repository.NewKatalogAbfragen(pool)
 
 	zulauf := func(titel, barcode string) string {
@@ -64,7 +64,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 2. Aussondern: kein Zulauf mehr, nicht im Wareneingang, und einbuchen belebt es nicht.
 	weg := zulauf("Zulauf-Storno-Titel", "ZL-STORNO")
-	if err := books.AendereExemplarStatus(ctx, weg, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := books.AendereExemplarStatus(ctx, weg, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("DecommissionCopy: %v", err)
 	}
 	if s := bestellstatus(weg); s != nil {
@@ -84,7 +84,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 		}
 	}
 	if _, err := service.BucheWareneingang(ctx, pool, repository.NewProtokollAbfragen(pool), service.WareneingangAngaben{
-		ExemplarIDs: []string{weg}, BearbeiterID: testdaten.AdminFuerAudit(t, pool), IPAdresse: "",
+		ExemplarIDs: []string{weg}, BearbeiterID: testdaten.LegeBearbeiterAn(t, pool), IPAdresse: "",
 	}); err != nil {
 		t.Logf("Wareneingang meldet: %v", err)
 	}

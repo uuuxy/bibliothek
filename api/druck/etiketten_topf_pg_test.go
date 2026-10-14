@@ -85,7 +85,7 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			testdaten.ResetBestandsdaten(t, pool)
+			testdaten.LeereBestandsdaten(t, pool)
 			testdaten.SetzeVermerkSchuelerbuecherei(t, pool, testdaten.VermerkStadt)
 
 			var titelID string
@@ -96,7 +96,7 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 			}
 			var bestellungID *string
 			if f.bestellt {
-				lieferant := testdaten.Haendler(t, pool, "Topf-Händler", false)
+				lieferant := testdaten.LegeLieferantAn(t, pool, "Topf-Händler", false)
 				var id string
 				if err := pool.QueryRow(ctx, `
 					INSERT INTO bestellungen_verlauf
@@ -131,7 +131,7 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 // vom Browser mitgeschicktes „Topf" bliebe dann stehen und wählte den Vermerk.
 func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.SetzeVermerkSchuelerbuecherei(t, pool, testdaten.VermerkStadt)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

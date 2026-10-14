@@ -31,7 +31,7 @@ import (
 // Verwechslung unsichtbar.
 func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Bestand: sechs aktive Schüler, jeder in einer anderen Klasse.
@@ -105,7 +105,7 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 // und die Klasse ist die Angabe, an der Ausleihlimits, Mahnwege und Abgaengerlisten haengen.
 func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	if _, err := pool.Exec(ctx,
@@ -144,7 +144,7 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 // sind der Normalfall, nicht die Ausnahme.
 func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Drei Abgaenger: einer sauber, einer mit offener Ausleihe, einer mit offenem Schaden.
@@ -163,8 +163,8 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	// Die vorhandenen Helfer benutzen, nicht das SQL nachbauen: schadensfaelle traegt
 	// check_damage_item (entweder exemplar_id ODER geraet_id), ein direkter INSERT ohne
 	// Exemplar scheitert daran.
-	testdaten.SeedOffeneAusleihe(t, pool, ids["ausleihe"], "ABGA")
-	testdaten.SeedOffenerSchaden(t, pool, ids["schaden"], "ABGS")
+	testdaten.LegeOffeneAusleiheAn(t, pool, ids["ausleihe"], "ABGA")
+	testdaten.LegeOffenenSchadenAn(t, pool, ids["schaden"], "ABGS")
 
 	// Der neue Export nennt KEINEN der drei mehr — alle sind Abgänger.
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

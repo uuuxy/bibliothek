@@ -23,7 +23,7 @@ import (
 // Kennung, die Übersetzung der fachlichen Fehler in 400 und 404.
 func TestTitelSchlagworte_TuerDesBestellkorbs(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
@@ -110,7 +110,7 @@ func TestTitelSchlagworte_TuerDesBestellkorbs(t *testing.T) {
 
 func TestSchlagwortVorschlaege_AusDemBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)

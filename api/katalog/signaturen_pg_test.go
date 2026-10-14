@@ -32,18 +32,18 @@ import (
 func TestSignaturScope_PraefixMitGrenze(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	basis := "BIB Deu " + suffix
 
 	// Im Regal: die Signatur selbst und ein Unterfach darunter.
-	exGenau := testdaten.SeedSignaturMitExemplar(t, pool, basis, "SIG-GENAU-"+suffix)
-	exUnter := testdaten.SeedSignaturMitExemplar(t, pool, basis+" 5 KRUE", "SIG-UNTER-"+suffix)
+	exGenau := testdaten.LegeExemplarMitSignaturAn(t, pool, basis, "SIG-GENAU-"+suffix)
+	exUnter := testdaten.LegeExemplarMitSignaturAn(t, pool, basis+" 5 KRUE", "SIG-UNTER-"+suffix)
 	// NICHT im Regal: gleiche Zeichenfolge, aber ohne Grenze am Leerzeichen.
-	exNachbar := testdaten.SeedSignaturMitExemplar(t, pool, basis+"X", "SIG-NACHBAR-"+suffix)
+	exNachbar := testdaten.LegeExemplarMitSignaturAn(t, pool, basis+"X", "SIG-NACHBAR-"+suffix)
 	// NICHT im Regal: voellig andere Signatur.
-	exFremd := testdaten.SeedSignaturMitExemplar(t, pool, "LMF Mat "+suffix, "SIG-FREMD-"+suffix)
+	exFremd := testdaten.LegeExemplarMitSignaturAn(t, pool, "LMF Mat "+suffix, "SIG-FREMD-"+suffix)
 
 	invRepo := repository.NewInventurAbfragen(pool)
 	scope := repository.InventurBereich{Signatur: &basis}
@@ -75,13 +75,13 @@ func TestSignaturScope_PraefixMitGrenze(t *testing.T) {
 // inventarisieren, als die Liste anzeigt.
 func TestSignaturenEndpunkte(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	basis := "BIB Gesch " + suffix
-	testdaten.SeedSignaturMitExemplar(t, pool, basis, "SIGE-A-"+suffix)
-	testdaten.SeedSignaturMitExemplar(t, pool, basis+" 7", "SIGE-B-"+suffix)
-	testdaten.SeedSignaturMitExemplar(t, pool, basis+"X", "SIGE-C-"+suffix)
+	testdaten.LegeExemplarMitSignaturAn(t, pool, basis, "SIGE-A-"+suffix)
+	testdaten.LegeExemplarMitSignaturAn(t, pool, basis+" 7", "SIGE-B-"+suffix)
+	testdaten.LegeExemplarMitSignaturAn(t, pool, basis+"X", "SIGE-C-"+suffix)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -144,7 +144,7 @@ func TestSignaturenEndpunkte(t *testing.T) {
 // einem einzigen Titel. Schreiber (littera.SignaturAus) und Leser stehen im selben Test.
 func TestSignaturenListe_FasstNachRegaladresseZusammen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	regal := "Sk " + suffix
@@ -158,7 +158,7 @@ func TestSignaturenListe_FasstNachRegaladresseZusammen(t *testing.T) {
 		littera.SignaturAus(nachbar, "Abc"),
 	}
 	for i, aufschrift := range aufschriften {
-		testdaten.SeedSignaturMitExemplar(t, pool, aufschrift, fmt.Sprintf("SIGR-%d-%s", i, suffix))
+		testdaten.LegeExemplarMitSignaturAn(t, pool, aufschrift, fmt.Sprintf("SIGR-%d-%s", i, suffix))
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

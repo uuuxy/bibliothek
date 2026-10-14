@@ -49,8 +49,8 @@ import (
 // an — noch an der Schule (ist_abgaenger = false), so wie die Liste ihn im Juni sieht.
 func abgaengerMitBuch(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse, titel string) (schuelerID, ausleiheID string) {
 	t.Helper()
-	schuelerID = testdaten.SeedSchueler(t, pool, barcode, vorname, klasse)
-	ausleiheID = testdaten.SeedAusleihe(t, pool, schuelerID, titel, time.Now().AddDate(0, 0, -3))
+	schuelerID = testdaten.LegeSchuelerAn(t, pool, barcode, vorname, klasse)
+	ausleiheID = testdaten.LegeAusleiheMitFristAn(t, pool, schuelerID, titel, time.Now().AddDate(0, 0, -3))
 	return schuelerID, ausleiheID
 }
 
@@ -83,7 +83,7 @@ func kontoauszugNamen(t *testing.T, srv *Tueren) map[string]bool {
 
 func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	sitzungen := tuertest.MailAbfangen(t)
@@ -95,8 +95,8 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	anna, annaAusleihe := abgaengerMitBuch(t, pool, "S-ABG-1", "Anna", "9H", "Annas Buch")
 	ben, benAusleihe := abgaengerMitBuch(t, pool, "S-ABG-2", "Ben", "9H", "Bens Buch")
 	abgaengerMitBuch(t, pool, "S-ABG-3", "Cem", "10R1", "Cems Buch")
-	testdaten.Klassenleitung(t, pool, "9h ", "leitung9h@schule.invalid")
-	testdaten.Klassenleitung(t, pool, "10R1", "leitung10r1@schule.invalid")
+	testdaten.SetzeKlassenleitung(t, pool, "9h ", "leitung9h@schule.invalid")
+	testdaten.SetzeKlassenleitung(t, pool, "10R1", "leitung10r1@schule.invalid")
 
 	// 1. Beide Ansichten müssen dieselben Personen kennen.
 	liste := abgaengerListe(t, srv)
@@ -120,7 +120,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":["09H"]}`))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(ctx, auth.ClaimsContextKey,
-		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.SendAbgaengerKontoauszuegeHandler()(rec, req)
 

@@ -34,7 +34,7 @@ func eigentumSetzen(t *testing.T, srv *Tueren, pool *pgxpool.Pool, ids []string,
 	req := httptest.NewRequest(http.MethodPut, "/api/exemplare/eigentum", strings.NewReader(string(rumpf)))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.ExemplarEigentumHandler()(rec, req)
 	return rec
@@ -75,27 +75,27 @@ func pruefeKarte(t *testing.T, karten map[string]map[string]any, barcode, eigent
 
 func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lektuere := testdaten.TitelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
-	einfach := testdaten.Exemplar(t, pool, lektuere, "EE-VORGABE", true, "")
-	ausLittera := testdaten.Exemplar(t, pool, lektuere, "EE-LITTERA", true, "")
+	lektuere := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les", 0)
+	einfach := testdaten.LegeExemplarAn(t, pool, lektuere, "EE-VORGABE", true, "")
+	ausLittera := testdaten.LegeExemplarAn(t, pool, lektuere, "EE-LITTERA", true, "")
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare SET eigentum = 'land', eigentum_quelle = 'littera',
 		       erweiterte_eigenschaften = '{"littera_eigentumsvermerk": "Land Hessen"}'
 		WHERE id = $1`, ausLittera); err != nil {
 		t.Fatalf("Littera-Stand: %v", err)
 	}
-	foerderverein := testdaten.Exemplar(t, pool, lektuere, "EE-FOERDERVEREIN", true, "")
+	foerderverein := testdaten.LegeExemplarAn(t, pool, lektuere, "EE-FOERDERVEREIN", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare
 		SET erweiterte_eigenschaften = '{"littera_eigentumsvermerk": "Förderverein"}' WHERE id = $1`, foerderverein); err != nil {
 		t.Fatalf("Vermerk ohne Zuordnung: %v", err)
 	}
-	bestellt := testdaten.Exemplar(t, pool, lektuere, "EE-BESTELLT", true, "")
+	bestellt := testdaten.LegeExemplarAn(t, pool, lektuere, "EE-BESTELLT", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET bestellung_id = $2 WHERE id = $1`,
-		bestellt, testdaten.TopfBestellung(t, mitteltopf.Land)); err != nil {
+		bestellt, testdaten.LegeBestellungAn(t, mitteltopf.Land)); err != nil {
 		t.Fatalf("Bestellung: %v", err)
 	}
 

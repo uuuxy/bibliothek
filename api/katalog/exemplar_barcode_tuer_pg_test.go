@@ -19,12 +19,12 @@ import (
 // vom Etikett den Platzhalter.
 func TestExemplarBarcodeAendern_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Tuer", 0)
-	platzhalter := testdaten.Exemplar(t, pool, titel, "AUTO-TUER-1", true, "")
-	testdaten.Exemplar(t, pool, titel, "TUER-BELEGT", true, "")
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Tuer", 0)
+	platzhalter := testdaten.LegeExemplarAn(t, pool, titel, "AUTO-TUER-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, titel, "TUER-BELEGT", true, "")
 	barcodeVon := func(id string) string {
 		t.Helper()
 		var barcode string

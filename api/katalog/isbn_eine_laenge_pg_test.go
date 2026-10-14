@@ -27,7 +27,7 @@ import (
 // steht unter 3499500252 ein anderes Buch als unter 9783499500251.
 func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	lege := func(titel, isbn string) (id string) {
 		t.Helper()

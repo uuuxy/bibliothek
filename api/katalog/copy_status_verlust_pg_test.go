@@ -22,10 +22,10 @@ import (
 // verschwand still aus der Statistik. Jetzt ist der Default VERLUST.
 func TestCopyStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	testdaten.AusleihbaresExemplar(t, pool, "Verlust-Roman", "B-VL-1")
+	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Verlust-Roman", "B-VL-1")
 	var exID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id FROM buecher_exemplare WHERE barcode_id = 'B-VL-1'`).Scan(&exID); err != nil {
@@ -39,7 +39,7 @@ func TestCopyStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 	req.SetPathValue("id", exID)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
+	handler.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status setzen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}

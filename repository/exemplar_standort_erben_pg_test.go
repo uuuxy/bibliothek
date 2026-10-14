@@ -62,7 +62,7 @@ func erbWege() []erbWeg {
 			svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 			if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
 				Mittel:      mitteltopf.Land,
-				LieferantID: testdaten.Haendler(t, pool, "Händler "+titel.isbn, false),
+				LieferantID: testdaten.LegeLieferantAn(t, pool, "Händler "+titel.isbn, false),
 				Positionen:  []service.BestellAuftragPosition{{TitelID: titel.id, Menge: 2, Preis: 10, MitVorabBarcode: true}},
 			}); err != nil {
 				t.Fatalf("Bestellung: %v", err)
@@ -82,13 +82,13 @@ type erbLage struct {
 
 func TestExemplarStandort_NeuesExemplarErbt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Ein Nachbar mit eigenem Standort: Die Regel liest nur die Exemplare des eigenen Titels.
-	nachbar := testdaten.TitelMitSignatur(t, pool, "Nachbar im Keller", "Ju Nac", 0)
+	nachbar := testdaten.LegeTitelMitSignaturAn(t, pool, "Nachbar im Keller", "Ju Nac", 0)
 	for i := range 2 {
-		id := testdaten.Exemplar(t, pool, nachbar, fmt.Sprintf("ERB-NACHBAR-%d", i), true, "")
+		id := testdaten.LegeExemplarAn(t, pool, nachbar, fmt.Sprintf("ERB-NACHBAR-%d", i), true, "")
 		if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET standort = 'Keller' WHERE id = $1`, id); err != nil {
 			t.Fatalf("Nachbar: %v", err)
 		}
@@ -155,7 +155,7 @@ func stelleErbLageHer(t *testing.T, pool *pgxpool.Pool, titel erbTitel, lage erb
 		}
 	}
 	for i, standort := range lage.imBestand {
-		id := testdaten.Exemplar(t, pool, titel.id, fmt.Sprintf("ERB-ALT-%s-%d", titel.isbn, i), true, "")
+		id := testdaten.LegeExemplarAn(t, pool, titel.id, fmt.Sprintf("ERB-ALT-%s-%d", titel.isbn, i), true, "")
 		if standort != "" {
 			setze(id, `standort = $2`, standort)
 		}
@@ -163,8 +163,8 @@ func stelleErbLageHer(t *testing.T, pool *pgxpool.Pool, titel erbTitel, lage erb
 	if !lage.mitRand {
 		return
 	}
-	weg := testdaten.Exemplar(t, pool, titel.id, "ERB-ALT-"+titel.isbn+"-WEG", true, "")
+	weg := testdaten.LegeExemplarAn(t, pool, titel.id, "ERB-ALT-"+titel.isbn+"-WEG", true, "")
 	setze(weg, `standort = 'Keller', ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT'`)
-	bestellt := testdaten.Exemplar(t, pool, titel.id, "ERB-ALT-"+titel.isbn+"-BESTELLT", false, "")
+	bestellt := testdaten.LegeExemplarAn(t, pool, titel.id, "ERB-ALT-"+titel.isbn+"-BESTELLT", false, "")
 	setze(bestellt, `bestellstatus = 'bestellt'`)
 }

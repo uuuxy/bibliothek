@@ -33,7 +33,7 @@ import (
 // labels.svelte.js, und die gedruckten Texte vergleichen.
 func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -44,12 +44,12 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 		format    = "avery_3475"
 	)
 
-	titelID := testdaten.TitelMitSignatur(t, pool, buchtitel, signatur, 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, buchtitel, signatur, 0)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = $1 WHERE id = $2`, autor, titelID); err != nil {
 		t.Fatalf("Autor setzen: %v", err)
 	}
-	testdaten.Exemplar(t, pool, titelID, "B-ETI-1", true, "")
-	testdaten.Exemplar(t, pool, titelID, "B-ETI-2", true, "")
+	testdaten.LegeExemplarAn(t, pool, titelID, "B-ETI-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, titelID, "B-ETI-2", true, "")
 
 	// Weg 1: Buchformular — der Server liest alles selbst.
 	reqGet := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/x/etiketten?format="+format+"&start=1", nil)

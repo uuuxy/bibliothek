@@ -71,7 +71,7 @@ func leserZeileSchueler(t *testing.T, barcode, vorname, nachname, klasse string)
 // Bestand zieht, liefert Kollegen nicht mit. Was sie nicht sieht, kann sie nicht sperren.
 func TestLUSDBestandKenntNurSchueler(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	schuelerID := leserZeileSchueler(t, "S-LUSD-1", "Mia", "Muster", "7a")

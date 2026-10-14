@@ -26,9 +26,9 @@ import (
 // Benutzerverwaltung und der Leserdatei, mit endgültigem Löschen und mit Anonymisierung.
 func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
@@ -145,7 +145,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	// der Nachtlauf. Das Konto hängt an der Leserzeile des Schülers; die Benutzerverwaltung
 	// ändert und löscht es.
 	t.Run("Konto gelöscht, Leser anonymisiert", func(t *testing.T) {
-		leserID := testdaten.SeedSchueler(t, pool, "S-KE-HELFER", "Hanna", "09A")
+		leserID := testdaten.LegeSchuelerAn(t, pool, "S-KE-HELFER", "Hanna", "09A")
 		const adresse = "hanna@konto-eintraege.invalid"
 		var kontoID string
 		if err := pool.QueryRow(ctx, `

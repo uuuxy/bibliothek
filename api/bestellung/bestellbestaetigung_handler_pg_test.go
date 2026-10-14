@@ -53,11 +53,11 @@ func putBestaetigen(srv *Tueren, bestellungID, body string) *httptest.ResponseRe
 // wenn der Lieferant dafür freigeschaltet ist.
 func TestBestaetigenBestellung_Erfolg(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"gross"}`)
@@ -84,10 +84,10 @@ func TestBestaetigenBestellung_Erfolg(t *testing.T) {
 // werden, sonst könnte jede Bestellung fälschlich als "extern bestätigt" markiert werden.
 func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Normalhaendler", false)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Normalhaendler", false)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"klein"}`)
@@ -100,10 +100,10 @@ func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
 // überschreiben — das wäre ein falsches Bild vom tatsächlichen externen Vorgang.
 func TestBestaetigenBestellung_DoppeltBestaetigenGibt409(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher2", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher2", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	if rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"klein"}`); rec.Code != http.StatusOK {
@@ -119,10 +119,10 @@ func TestBestaetigenBestellung_DoppeltBestaetigenGibt409(t *testing.T) {
 // Ein ungültiger Wert für etiketten_groesse muss vor jeder DB-Abfrage abgelehnt werden.
 func TestBestaetigenBestellung_UngueltigeGroesse(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher3", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher3", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"mittel"}`)

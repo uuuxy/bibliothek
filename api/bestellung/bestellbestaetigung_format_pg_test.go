@@ -60,8 +60,8 @@ func bestellungMitEtikettenAus(t *testing.T, srv *Tueren, pool *pgxpool.Pool, me
 	ctx := context.Background()
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Formatprobe", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Formatprobe", 0)
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mittel,
@@ -84,7 +84,7 @@ func bestellungMitEtikettenAus(t *testing.T, srv *Tueren, pool *pgxpool.Pool, me
 // Bliebe das Format irgendwo auf dem Weg liegen, wären beide Antworten gleich.
 func TestLieferantenEtiketten_FormatWirktBisInsPDF(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 25)
@@ -126,7 +126,7 @@ func TestLieferantenEtiketten_FormatWirktBisInsPDF(t *testing.T) {
 // einen brauchbaren Bogen — die Formatwahl darf keine neue Pflicht sein.
 func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 25)
@@ -152,7 +152,7 @@ func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 // Raster — und merkte es erst am verschnittenen Bogen.
 func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 3)
@@ -171,7 +171,7 @@ func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
 // ändern, sonst behauptete die Oberfläche eine Wahl, die es nicht gibt.
 func TestLieferantenEtiketten_GrossIgnoriertDasRaster(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 5)
@@ -200,7 +200,7 @@ func TestLieferantenEtiketten_GrossIgnoriertDasRaster(t *testing.T) {
 // Bibliothek nicht, wie die Aufkleber aussehen, die gleich ankommen.
 func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -244,7 +244,7 @@ func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
 // Auswahl und er druckt weiter im Zweckform-Raster.
 func TestOeffentlicheBestellung_LiefertDieFormatauswahl(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

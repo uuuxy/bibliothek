@@ -21,7 +21,7 @@ import (
 // Rückfall aktualisiert_am, den jeder Klick neu stellt.
 func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string
@@ -54,7 +54,7 @@ func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.
 	}, true, true); err != nil {
 		t.Fatal(err)
 	}
-	gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
+	gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
 	if gesperrt || abgaenger || reason != nil {
 		t.Errorf("Versetzungs-Abgänger kehrt als Ghost-Block zurück: gesperrt=%v abgaenger=%v grund=%v", gesperrt, abgaenger, reason)
 	}

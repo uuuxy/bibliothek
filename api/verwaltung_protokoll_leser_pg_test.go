@@ -18,7 +18,7 @@ import (
 // Aufrufers; die Mail-Einstellungen speichern keine Adresse und kein Passwort.
 func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
@@ -53,7 +53,7 @@ func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
 	}
 
 	t.Run("Leserdatei", func(t *testing.T) {
-		id := testdaten.SeedSchueler(t, pool, "A-91001", "Protokoll", "07A")
+		id := testdaten.LegeSchuelerAn(t, pool, "A-91001", "Protokoll", "07A")
 		// leserEintrag prüft, dass der jüngste Eintrag der Aktion diesen Leser und eine Adresse nennt.
 		leserEintrag := func(t *testing.T, aktion string) {
 			t.Helper()

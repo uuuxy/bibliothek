@@ -21,11 +21,11 @@ import (
 // Beide lesen repository.AbschlussklasseSQL; dieser Test hält fest, dass das so bleibt.
 func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	for i, k := range []string{"9H1", "09h2", "10H1", "10R1", "10R2", "13", "10G1", "8H1", "9R1", "5F1", "12"} {
-		testdaten.SchuelerMitBuch(t, pool, "P-"+string(rune('A'+i)), "Kind"+k, k)
+		testdaten.LegeSchuelerMitAusleiheAn(t, pool, "P-"+string(rune('A'+i)), "Kind"+k, k)
 	}
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
@@ -43,7 +43,7 @@ func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 		ausListe[z.Vorname] = true
 	}
 
-	admin := testdaten.AdminKonto(t, pool, "paar-versetzung@test.invalid", "Paar", "Versetzung")
+	admin := testdaten.LegeAdminKontoAn(t, pool, "paar-versetzung@test.invalid", "Paar", "Versetzung")
 	if rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().PromoteStudentsHandler(), http.MethodPost,
 		"/api/students/promote", `{"confirm": true}`, nil); rec.Code != http.StatusOK {
 		t.Fatalf("Versetzung: Status %d — %s", rec.Code, rec.Body.String())

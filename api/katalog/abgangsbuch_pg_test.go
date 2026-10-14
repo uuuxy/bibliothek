@@ -20,22 +20,22 @@ import (
 // viel oder zu wenig fällt niemandem auf, der die Liste nicht selbst nachzählt.
 func TestAbgangsbuch_ZeitraumUndToepfe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	lmf := testdaten.TitelMitSignatur(t, pool, "Mathebuch 7", "Mat 7", 0)
+	lmf := testdaten.LegeTitelMitSignaturAn(t, pool, "Mathebuch 7", "Mat 7", 0)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, lmf); err != nil {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
-	buecherei := testdaten.TitelMitSignatur(t, pool, "Gregs Tagebuch", "Jug Gre", 0)
+	buecherei := testdaten.LegeTitelMitSignaturAn(t, pool, "Gregs Tagebuch", "Jug Gre", 0)
 
 	// Vier Abgänge: zwei im Halbjahr (je Topf einer), einer am Tag davor, einer am Tag
 	// danach. Die beiden Ränder sind der Punkt — der 15.9. gehört noch zum Halbjahr, das
 	// an ihm endet, der 16.9. schon zum nächsten.
 	stempel := func(titelID, barcode, grund string, wann time.Time) {
 		t.Helper()
-		id := testdaten.Exemplar(t, pool, titelID, barcode, true, "")
+		id := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 		if _, err := pool.Exec(ctx, `
 			UPDATE buecher_exemplare
 			SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = $2
@@ -58,7 +58,7 @@ func TestAbgangsbuch_ZeitraumUndToepfe(t *testing.T) {
 	stempel(lmf, "AB-SPAET", "AUSSORTIERT", tag(2026, time.September, 16, 1))      // Tag danach
 
 	// Und einer ohne Datum: der Altbestand, den es nicht zuzuordnen gibt.
-	ohne := testdaten.Exemplar(t, pool, buecherei, "AB-OHNE", true, "")
+	ohne := testdaten.LegeExemplarAn(t, pool, buecherei, "AB-OHNE", true, "")
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false,
 		       aussonderung_grund = 'BESTANDSKORREKTUR' WHERE id = $1`, ohne); err != nil {
@@ -109,13 +109,13 @@ func TestAbgangsbuch_ZeitraumUndToepfe(t *testing.T) {
 // in keinem Nachweis mehr als Abgang stehen.
 func TestAbgangsbuch_ZurueckgeholtesStehtNichtDrin(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titelID := testdaten.TitelMitSignatur(t, pool, "Irrtum", "Irr 1", 0)
-	id := testdaten.Exemplar(t, pool, titelID, "AB-IRRTUM", true, "")
-	if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Irrtum", "Irr 1", 0)
+	id := testdaten.LegeExemplarAn(t, pool, titelID, "AB-IRRTUM", true, "")
+	if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
 	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
@@ -140,22 +140,22 @@ func TestAbgangsbuch_ZurueckgeholtesStehtNichtDrin(t *testing.T) {
 // gehört es auch nicht ins Abgangsbuch.
 func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "abgang-zulauf@test.invalid")
-	titelID := testdaten.TitelMitSignatur(t, pool, "Nie geliefert", "Nie 1", 0)
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "abgang-zulauf@test.invalid")
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Nie geliefert", "Nie 1", 0)
 
-	geloescht := testdaten.ZulaufExemplar(t, pool, titelID, "AB-ZULAUF-LOESCHEN")
+	geloescht := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AB-ZULAUF-LOESCHEN")
 	if err := auditRepo.SondereExemplarAus(ctx, geloescht, bearbeiter); err != nil {
 		t.Fatalf("bestelltes Exemplar löschen: %v", err)
 	}
-	ausgesondert := testdaten.ZulaufExemplar(t, pool, titelID, "AB-ZULAUF-STATUS")
-	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, ausgesondert, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	ausgesondert := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AB-ZULAUF-STATUS")
+	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, ausgesondert, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
 	// Gegenprobe: Dieselbe Tür an einem Exemplar aus dem Bestand ist ein Abgang.
-	imBestand := testdaten.Exemplar(t, pool, titelID, "AB-BESTAND", true, "")
+	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "AB-BESTAND", true, "")
 	if err := auditRepo.SondereExemplarAus(ctx, imBestand, bearbeiter); err != nil {
 		t.Fatalf("Exemplar aus dem Bestand löschen: %v", err)
 	}
@@ -192,9 +192,9 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 // das Exemplar eingetroffen war.
 func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "abgang-geloescht@test.invalid")
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "abgang-geloescht@test.invalid")
 	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
 	geloescht := func() int {
 		t.Helper()
@@ -209,9 +209,9 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	}
 
 	// Titel löschen: ein Exemplar aus dem Bestand, eines aus dem Zulauf.
-	titelID := testdaten.TitelMitSignatur(t, pool, "Mit Zulauf geloescht", "Zul 1", 0)
-	testdaten.Exemplar(t, pool, titelID, "AG-BESTAND", true, "")
-	testdaten.ZulaufExemplar(t, pool, titelID, "AG-ZULAUF")
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Mit Zulauf geloescht", "Zul 1", 0)
+	testdaten.LegeExemplarAn(t, pool, titelID, "AG-BESTAND", true, "")
+	testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AG-ZULAUF")
 	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
@@ -220,9 +220,9 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	}
 
 	// Verlust endgültig löschen: ein bestelltes Exemplar, im Status-Editor als verloren ausgebucht.
-	zweiterTitel := testdaten.TitelMitSignatur(t, pool, "Nie geliefert, verloren", "Zul 2", 0)
-	verloren := testdaten.ZulaufExemplar(t, pool, zweiterTitel, "AG-ZULAUF-VERLOREN")
-	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, verloren, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	zweiterTitel := testdaten.LegeTitelMitSignaturAn(t, pool, "Nie geliefert, verloren", "Zul 2", 0)
+	verloren := testdaten.LegeExemplarImZulaufAn(t, pool, zweiterTitel, "AG-ZULAUF-VERLOREN")
+	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, verloren, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
 	entfernt, err := repository.NewInventurAbfragen(pool).LoescheVerlusteEndgueltig(ctx, []string{verloren}, bearbeiter)
@@ -313,7 +313,7 @@ func TestAbgangsbuchPDF_LeererZeitraumSagtEs(t *testing.T) {
 // Halbjahr, das jemand unterschrieben hat, darf nicht stillschweigend eine Zeile verlieren.
 func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
@@ -326,8 +326,8 @@ func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 
-	titelID := testdaten.TitelMitSignatur(t, pool, "Bald geloescht", "Loe 1", 0)
-	exID := testdaten.Exemplar(t, pool, titelID, "AB-WEG", true, "")
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Bald geloescht", "Loe 1", 0)
+	exID := testdaten.LegeExemplarAn(t, pool, titelID, "AB-WEG", true, "")
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT'

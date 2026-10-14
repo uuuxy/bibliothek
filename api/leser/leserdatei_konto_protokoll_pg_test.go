@@ -23,10 +23,10 @@ import (
 // findet die Auskunft den Eintrag beim Konto.
 func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
 	ctx := context.Background()
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	t.Cleanup(func() {
 		for _, sql := range []string{

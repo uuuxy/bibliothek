@@ -29,8 +29,8 @@ type sperrTheke struct {
 func neueSperrTheke(t *testing.T) *sperrTheke {
 	t.Helper()
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	// Geräte räumt testdaten.ResetBestandsdaten nicht weg.
+	testdaten.LeereBestandsdaten(t, pool)
+	// Geräte räumt testdaten.LeereBestandsdaten nicht weg.
 	aufraeumen := func() {
 		for _, sql := range []string{
 			`DELETE FROM ausleihen WHERE geraet_id IN (SELECT id FROM geraete WHERE barcode_id LIKE 'G-SPERRWEG-%')`,
@@ -55,7 +55,7 @@ func neueSperrTheke(t *testing.T) *sperrTheke {
 		katalog:    books,
 		ausleihe:   loanSvc,
 		omnibox:    service.NewOmniboxDienst(pool, students, books, loans, loanSvc, deviceSvc),
-		bearbeiter: testdaten.AdminFuerAudit(t, pool),
+		bearbeiter: testdaten.LegeBearbeiterAn(t, pool),
 	}
 }
 
@@ -116,15 +116,15 @@ func (th *sperrTheke) uebergangen(t *testing.T, leserID string) int {
 // bestand legt je ein Buch der Schülerbücherei und ein Schulbuch an, beide ausleihbar.
 func (th *sperrTheke) bestand(t *testing.T, praefix string) (buecherei, schulbuch string) {
 	t.Helper()
-	roman := testdaten.TitelMitMeldebestand(t, th.pool, "Roman "+praefix, 1)
+	roman := testdaten.LegeTitelAn(t, th.pool, "Roman "+praefix, 1)
 	var lmf string
 	if err := th.pool.QueryRow(context.Background(),
 		`INSERT INTO buecher_titel (titel, ist_lernmittel) VALUES ($1, true) RETURNING id`, "Mathe "+praefix).Scan(&lmf); err != nil {
 		t.Fatalf("Lernmittel-Titel anlegen: %v", err)
 	}
 	buecherei, schulbuch = "B-"+praefix+"-R", "B-"+praefix+"-L"
-	testdaten.Exemplar(t, th.pool, roman, buecherei, true, "")
-	testdaten.Exemplar(t, th.pool, lmf, schulbuch, true, "")
+	testdaten.LegeExemplarAn(t, th.pool, roman, buecherei, true, "")
+	testdaten.LegeExemplarAn(t, th.pool, lmf, schulbuch, true, "")
 	return buecherei, schulbuch
 }
 
@@ -140,7 +140,7 @@ func istSperreAmLeser(err error) bool {
 func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 	th := neueSperrTheke(t)
 	buecherei, schulbuch := th.bestand(t, "SVH")
-	kind := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-1", "Handsperre", "07A")
+	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-1", "Handsperre", "07A")
 	if _, err := th.pool.Exec(context.Background(),
 		`UPDATE schueler SET is_manually_blocked = true, block_reason = 'Ausweis verloren' WHERE id = $1`, kind); err != nil {
 		t.Fatalf("sperren: %v", err)
@@ -175,7 +175,7 @@ func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 	th := neueSperrTheke(t)
 	buecherei, schulbuch := th.bestand(t, "EHM")
-	kind := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-2", "Ehemalig", "10R1")
+	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-2", "Ehemalig", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Automatisierte Abgänger-Sperre (Schuljahreswechsel)' WHERE id = $1`, kind); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
@@ -207,7 +207,7 @@ func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {
 	th := neueSperrTheke(t)
 	_, schulbuch := th.bestand(t, "ANO")
-	anonym := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-3", "Anonym", "10R1")
+	anonym := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-3", "Anonym", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
@@ -234,8 +234,8 @@ func TestTheke_KollegeWirdNieGesperrt(t *testing.T) {
 		VALUES ('A-SPERRWEG-K', 'Kollege', 'Gesperrt', 'lehrkraft', true, 'Altlast') RETURNING id`).Scan(&kollege); err != nil {
 		t.Fatalf("Kollegen anlegen: %v", err)
 	}
-	altesBuch := testdaten.TitelMitMeldebestand(t, th.pool, "Altes Buch KOL", 1)
-	verloren := testdaten.Exemplar(t, th.pool, altesBuch, "B-KOL-ALT", false, "")
+	altesBuch := testdaten.LegeTitelAn(t, th.pool, "Altes Buch KOL", 1)
+	verloren := testdaten.LegeExemplarAn(t, th.pool, altesBuch, "B-KOL-ALT", false, "")
 	if _, err := th.pool.Exec(context.Background(), `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
 		VALUES ($1, $2, 'Verloren', 12.00, 'nicht_zurueckgegeben')`, verloren, kollege); err != nil {
 		t.Fatalf("alte Forderung anlegen: %v", err)
@@ -265,10 +265,10 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 	th := neueSperrTheke(t)
 	ctx := context.Background()
 	buecherei, schulbuch := th.bestand(t, "FOR")
-	kind := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-4", "Forderung", "08B")
+	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-4", "Forderung", "08B")
 
 	// Die Forderung hängt an einem verlorenen Schulbuch — Topf des Landes.
-	testdaten.AusleiheUeberDenDienst(t, th.pool, schulbuch, kind, th.bearbeiter)
+	testdaten.BucheAusleiheUeberDienst(t, th.pool, schulbuch, kind, th.bearbeiter)
 	var ex string
 	if err := th.pool.QueryRow(ctx, `SELECT id FROM buecher_exemplare WHERE barcode_id = $1`, schulbuch).Scan(&ex); err != nil {
 		t.Fatal(err)
@@ -344,12 +344,12 @@ func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
 	}
 
 	buecherei, _ := th.bestand(t, "LIM")
-	kind := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-5", "Limit", "08B")
-	erstes := testdaten.TitelMitMeldebestand(t, th.pool, "Erstes Buch LIM", 1)
-	testdaten.Exemplar(t, th.pool, erstes, "B-LIM-1", true, "")
-	testdaten.AusleiheUeberDenDienst(t, th.pool, "B-LIM-1", kind, th.bearbeiter) // das Limit ist erreicht
-	altes := testdaten.TitelMitMeldebestand(t, th.pool, "Verlorenes Buch LIM", 1)
-	verloren := testdaten.Exemplar(t, th.pool, altes, "B-LIM-ALT", false, "")
+	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-5", "Limit", "08B")
+	erstes := testdaten.LegeTitelAn(t, th.pool, "Erstes Buch LIM", 1)
+	testdaten.LegeExemplarAn(t, th.pool, erstes, "B-LIM-1", true, "")
+	testdaten.BucheAusleiheUeberDienst(t, th.pool, "B-LIM-1", kind, th.bearbeiter) // das Limit ist erreicht
+	altes := testdaten.LegeTitelAn(t, th.pool, "Verlorenes Buch LIM", 1)
+	verloren := testdaten.LegeExemplarAn(t, th.pool, altes, "B-LIM-ALT", false, "")
 	if _, err := th.pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
 		VALUES ($1, $2, 'Verloren', 9.00, 'nicht_zurueckgegeben')`, verloren, kind); err != nil {
 		t.Fatalf("Forderung anlegen: %v", err)

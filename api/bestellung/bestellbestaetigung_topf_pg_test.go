@@ -38,7 +38,7 @@ func TestLieferantenSeite_TopfUndGrossesEtikett(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			testdaten.ResetBestandsdaten(t, pool)
+			testdaten.LeereBestandsdaten(t, pool)
 			srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 			anlegenMit := f.mittel

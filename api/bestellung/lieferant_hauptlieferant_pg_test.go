@@ -28,7 +28,7 @@ import (
 // ein Test auf den Setzer niemals sieht.
 func TestNurEinHauptlieferant(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
@@ -45,7 +45,7 @@ func TestNurEinHauptlieferant(t *testing.T) {
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("Lieferant %s anlegen: Status %d — %s", name, rec.Code, rec.Body.String())
 		}
-		// ID aus der Antwort, NICHT über den Namen nachschlagen: testdaten.ResetBestandsdaten leert die
+		// ID aus der Antwort, NICHT über den Namen nachschlagen: testdaten.LeereBestandsdaten leert die
 		// Lieferanten nicht, und andere Tests im selben Paketlauf legen Händler mit denselben
 		// Namen an — die Suche träfe dann den älteren.
 		var antwort SupplierResponse
@@ -123,13 +123,13 @@ func TestNurEinHauptlieferant(t *testing.T) {
 // tut, ist schlimmer als keiner, weil man sich auf ihn verlässt.
 func TestHauptlieferantStehtInDerListeOben(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Absichtlich so benannt, dass der Hauptlieferant alphabetisch HINTEN stünde.
-	testdaten.Haendler(t, pool, "Aaa-Cornelsen", false)
-	testdaten.Haendler(t, pool, "Zzz-Naacher", true)
+	testdaten.LegeLieferantAn(t, pool, "Aaa-Cornelsen", false)
+	testdaten.LegeLieferantAn(t, pool, "Zzz-Naacher", true)
 
 	rec := httptest.NewRecorder()
 	srv.ListSuppliersHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/lieferanten", nil).WithContext(ctx))

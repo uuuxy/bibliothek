@@ -25,15 +25,15 @@ import (
 // (Bestands-Durchgang, Bugklasse „Zustand ohne Eingang").
 func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	melde := func(barcode, rumpfZusatz string) (*httptest.ResponseRecorder, string) {
 		t.Helper()
-		sid := testdaten.SeedSchueler(t, pool, "S-ART-"+barcode, "Artkind"+barcode, "07A")
-		ex := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Arttitel-"+barcode, 1), "EX-ART-"+barcode, true, "")
+		sid := testdaten.LegeSchuelerAn(t, pool, "S-ART-"+barcode, "Artkind"+barcode, "07A")
+		ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Arttitel-"+barcode, 1), "EX-ART-"+barcode, true, "")
 		var loan string
 		if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 			VALUES ($1, $2, now() + interval '14 days') RETURNING id`, ex, sid).Scan(&loan); err != nil {

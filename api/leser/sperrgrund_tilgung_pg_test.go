@@ -25,9 +25,9 @@ import (
 // Einträge der Tür und der alte OVERRIDE_BLOCK behalten den Grund.
 func TestAnonymisierung_TilgtDenSperrgrundImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	akteur := testdaten.AdminFuerAudit(t, pool)
+	akteur := testdaten.LegeBearbeiterAn(t, pool)
 	const grund = "SPERRGRUND-PROBE Mutter von Max Muster zahlt nicht"
 
 	var id string

@@ -19,19 +19,19 @@ import (
 // Gegenprobe.
 func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	titelID := testdaten.TitelMitSignatur(t, pool, "Statistik Zulauf", "Sta 1", 0)
-	nie := testdaten.ZulaufExemplar(t, pool, titelID, "ST-ZULAUF")
-	imBestand := testdaten.Exemplar(t, pool, titelID, "ST-BESTAND", true, "")
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Zulauf", "Sta 1", 0)
+	nie := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ST-ZULAUF")
+	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "ST-BESTAND", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET einkaufspreis = 20 WHERE id = ANY($1)`,
 		[]string{nie, imBestand}); err != nil {
 		t.Fatalf("Preis setzen: %v", err)
 	}
 	buecher := repository.NewKatalogAbfragen(pool)
 	for _, id := range []string{nie, imBestand} {
-		if err := buecher.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+		if err := buecher.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 			t.Fatalf("als verloren ausbuchen: %v", err)
 		}
 	}
@@ -62,12 +62,12 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 // Gesamtbestand und unter den aktiven Exemplaren, und die Zirkulationsquote teilte durch es mit.
 func TestStatistik_BestelltesZaehltNichtZumBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	titelID := testdaten.TitelMitSignatur(t, pool, "Statistik Bestand", "Sta 2", 0)
-	testdaten.ZulaufExemplar(t, pool, titelID, "SB-ZULAUF")
-	imBestand := testdaten.Exemplar(t, pool, titelID, "SB-BESTAND", true, "")
-	testdaten.SeedLeserAusleihe(t, pool, imBestand, testdaten.SeedSchueler(t, pool, "SB-LESER", "Statistik", "07A"))
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Bestand", "Sta 2", 0)
+	testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "SB-ZULAUF")
+	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "SB-BESTAND", true, "")
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, imBestand, testdaten.LegeSchuelerAn(t, pool, "SB-LESER", "Statistik", "07A"))
 
 	rec := httptest.NewRecorder()
 	srv.GetStatisticsHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/statistiken", nil))

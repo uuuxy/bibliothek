@@ -31,15 +31,15 @@ import (
 //     erneut mit „Systematisch gelöscht".
 func TestDeleteCopy_VerliehenIst400_PhantomIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Ausbuch-Titel", "Jug Aus", false, 0)
-	verliehen := testdaten.Exemplar(t, pool, titelID, "DEL-VERLIEHEN", true, "")
-	frei := testdaten.Exemplar(t, pool, titelID, "DEL-FREI", true, "Eselsohr S. 12")
-	sid := testdaten.SeedSchueler(t, pool, "S-DEL-1", "Mia", "5a")
-	testdaten.SeedLeserAusleihe(t, pool, verliehen, sid)
-	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "ausbucher@test.invalid")
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Ausbuch-Titel", "Jug Aus", false, 0)
+	verliehen := testdaten.LegeExemplarAn(t, pool, titelID, "DEL-VERLIEHEN", true, "")
+	frei := testdaten.LegeExemplarAn(t, pool, titelID, "DEL-FREI", true, "Eselsohr S. 12")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-DEL-1", "Mia", "5a")
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, verliehen, sid)
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "ausbucher@test.invalid")
 
 	loesche := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/buecher/exemplare/"+id, nil)

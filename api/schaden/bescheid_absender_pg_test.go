@@ -25,16 +25,16 @@ import (
 // jetzt auch (Migration 141).
 func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewBescheidAbfragen(pool)
 
-	sid := testdaten.SeedSchueler(t, pool, "S-ABSENDER", "Absenderkind", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Biologie 8")
-	f := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "ABSENDER-1", true, ""),
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-ABSENDER", "Absenderkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Biologie 8")
+	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "ABSENDER-1", true, ""),
 		"nicht_zurueckgegeben", "Biologie 8 nicht zurück")
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 21.50}))

@@ -61,11 +61,11 @@ func postOeffentlichBestaetigen(srv *Tueren, token, body string) *httptest.Respo
 // und die Bibliothek sieht in der Historie, dass ER es war und nicht jemand im Haus.
 func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	bestellungID, token := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
 	rec := getOeffentlicheBestellung(srv, token)
@@ -102,10 +102,10 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 // bestätigt, während jemand im Haus dasselbe nachträgt. Genau einer gewinnt.
 func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	_, token := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
 	if rec := postOeffentlichBestaetigen(srv, token, `{}`); rec.Code != http.StatusOK {
@@ -121,10 +121,10 @@ func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 // dass ein geratener Token einmal echt war.
 func TestOeffentlicheBestaetigung_AbgelaufenUndUnbekannt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	_, abgelaufen := bestellungMitToken(t, pool, lieferant, -1)
 
 	faelle := map[string]string{
@@ -147,11 +147,11 @@ func TestOeffentlicheBestaetigung_AbgelaufenUndUnbekannt(t *testing.T) {
 // die Mail an die falsche Adresse, darf der verschickte Link nicht weiterleben.
 func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
 	if _, err := pool.Exec(ctx,
@@ -192,9 +192,9 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 // Lieferant hat, und die Antwort trüge einen leeren.
 func TestNeuerLink_AdresseAusLeerzeichenLaesstDenAltenLinkGelten(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "   ")
 	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })

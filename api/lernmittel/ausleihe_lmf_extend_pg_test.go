@@ -22,19 +22,19 @@ import (
 // landete in der Mahnung. Der Filter muss über pkg/lmf laufen, konsistent zum Rest.
 func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	const klasse = "5a"
-	sid := testdaten.SeedSchueler(t, pool, "S-LMF-1", "Fritz", klasse)
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-LMF-1", "Fritz", klasse)
 
 	alteFrist := time.Date(2025, 9, 1, 23, 59, 59, 0, time.UTC)
 
 	// Drei LMF-Schreibvarianten (alle müssen verlängert werden) + ein Freihand-Titel
 	// (darf NICHT angefasst werden).
-	bindestrich := testdaten.SeedAusleihe(t, pool, sid, "LMF-Mathe 5", alteFrist)
-	leerBindestrich := testdaten.SeedAusleihe(t, pool, sid, "LMF - Deutsch 5", alteFrist)
-	leer := testdaten.SeedAusleihe(t, pool, sid, "LMF Bio 5", alteFrist)
-	freihand := testdaten.SeedAusleihe(t, pool, sid, "Der Hobbit", alteFrist)
+	bindestrich := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "LMF-Mathe 5", alteFrist)
+	leerBindestrich := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "LMF - Deutsch 5", alteFrist)
+	leer := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "LMF Bio 5", alteFrist)
+	freihand := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Der Hobbit", alteFrist)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/lmf/global-extend",
@@ -59,7 +59,7 @@ func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
 		{"LMF Bio 5 (Leerzeichen)", leer, true},
 		{"Der Hobbit (Freihand)", freihand, false},
 	} {
-		frist := testdaten.FristVon(t, pool, tc.id)
+		frist := testdaten.LadeFrist(t, pool, tc.id)
 		if tc.verlängert && !frist.Equal(neu) {
 			t.Errorf("%s: Frist nicht verlängert — erwartet %s, war %s (LMF-Schreibvariante übersehen)",
 				tc.name, neu, frist)

@@ -43,16 +43,16 @@ func offeneEtiketten(t *testing.T, pool *pgxpool.Pool, titelID string) int {
 
 func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
-	beklebtID := testdaten.Haendler(t, pool, "Beklebt", true)
-	selbstID := testdaten.Haendler(t, pool, "Selbst", false)
+	beklebtID := testdaten.LegeLieferantAn(t, pool, "Beklebt", true)
+	selbstID := testdaten.LegeLieferantAn(t, pool, "Selbst", false)
 
-	titelBeklebt := testdaten.TitelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
-	titelSelbst := testdaten.TitelMitMeldebestand(t, pool, "LMF-Selbst", 0)
+	titelBeklebt := testdaten.LegeTitelAn(t, pool, "LMF-Beklebt", 0)
+	titelSelbst := testdaten.LegeTitelAn(t, pool, "LMF-Selbst", 0)
 
 	if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
@@ -99,13 +99,13 @@ func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 // direkt ans Struct schreibt, beweist das nicht: Genau so blieb sie im Mailanhang leer.
 func TestLegeBestellungAn_EtikettenTragenSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
-	lieferant := testdaten.Haendler(t, pool, "MitSignatur", false)
-	titel := testdaten.TitelMitSignatur(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "MitSignatur", false)
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
@@ -128,13 +128,13 @@ func TestLegeBestellungAn_EtikettenTragenSignatur(t *testing.T) {
 // nichts aufkleben, also bleibt das Etikett unsere Aufgabe, auch wenn er sonst beklebt.
 func TestLegeBestellungAn_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
-	lieferant := testdaten.Haendler(t, pool, "BeklebtOhneBogen", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-OhneBogen", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "BeklebtOhneBogen", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-OhneBogen", 0)
 
 	if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,

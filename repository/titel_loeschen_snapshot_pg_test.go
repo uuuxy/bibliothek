@@ -21,13 +21,13 @@ import (
 // unsichtbar.
 func TestLoescheTitel_TresenAuskunftFindetGeloeschteExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Snapshot-Titel", "Sig Snap", false, 0)
-	testdaten.Exemplar(t, pool, titelID, "SNAP-TITELDEL-1", true, "")
-	testdaten.Exemplar(t, pool, titelID, "SNAP-TITELDEL-2", true, "")
-	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "titelloescher@test.invalid")
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Snapshot-Titel", "Sig Snap", false, 0)
+	testdaten.LegeExemplarAn(t, pool, titelID, "SNAP-TITELDEL-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, titelID, "SNAP-TITELDEL-2", true, "")
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "titelloescher@test.invalid")
 
 	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)

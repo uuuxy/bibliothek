@@ -24,7 +24,7 @@ import (
 // Schülerbücherei — der Fall, in dem Titel und Bestellung einander widersprechen.
 func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.SetzeVermerkSchuelerbuecherei(t, pool, testdaten.VermerkStadt)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -32,9 +32,9 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Schultraeger,
-		LieferantID: testdaten.Haendler(t, pool, "Naacher", true),
+		LieferantID: testdaten.LegeLieferantAn(t, pool, "Naacher", true),
 		Positionen: []service.BestellAuftragPosition{{
-			TitelID: testdaten.TitelMitMeldebestand(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, MitVorabBarcode: true}},
+			TitelID: testdaten.LegeTitelAn(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

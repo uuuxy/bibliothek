@@ -17,11 +17,11 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// ResetBestandsdaten leert Bestands-, Bestell- und Personendaten zwischen Tests. klassen und
+// LeereBestandsdaten leert Bestands-, Bestell- und Personendaten zwischen Tests. klassen und
 // ausweisnummern_ausgeschieden gehören dazu: Der Trigger der Klassen-Schreibweise und der
 // Generator der Ausweisnummern lesen sie, und ein Rest aus einem früheren Test änderte, was der
 // nächste speichert.
-func ResetBestandsdaten(t *testing.T, pool *pgxpool.Pool) {
+func LeereBestandsdaten(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
 		TRUNCATE buecher_exemplare, buecher_titel, ausleihen, leser, benutzer, klassen,
@@ -46,5 +46,5 @@ func SaisonUhr() time.Time { return time.Date(2026, time.June, 15, 10, 0, 0, 0, 
 // WinterUhr ist eine feste Uhr außerhalb der Saison der Abgänger.
 func WinterUhr() time.Time { return time.Date(2026, time.October, 15, 10, 0, 0, 0, schulzeit.Zone()) }
 
-// Ptr liefert einen Zeiger auf den Text.
-func Ptr(s string) *string { return &s }
+// ZeigerAuf liefert einen Zeiger auf den Text.
+func ZeigerAuf(s string) *string { return &s }

@@ -80,7 +80,7 @@ func pruefeAussonderungsEintrag(t *testing.T, pool *pgxpool.Pool, exemplarID, be
 
 func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
@@ -88,8 +88,8 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	})
 
 	t.Run("Status in der Buchakte", func(t *testing.T) {
-		titelID := testdaten.TitelMitSignatur(t, pool, "Spur Status", "Spu 1", 0)
-		ex := testdaten.Exemplar(t, pool, titelID, "SPUR-STATUS-1", true, "")
+		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Status", "Spu 1", 0)
+		ex := testdaten.LegeExemplarAn(t, pool, titelID, "SPUR-STATUS-1", true, "")
 		status := func(rumpf string) int {
 			return rufe(t, http.MethodPut, "/api/buecher/exemplare/"+ex+"/status", rumpf).Code
 		}
@@ -117,8 +117,8 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 		pruefeAussonderungsEintrag(t, pool, ex, adminID, repository.AussonderungsWegStatus, "VERLUST")
 
 		// Ein verliehenes Exemplar lehnt die Tür ab; die Ablehnung schreibt nichts.
-		verliehen := testdaten.Exemplar(t, pool, titelID, "SPUR-STATUS-2", true, "")
-		testdaten.SeedLeserAusleihe(t, pool, verliehen, testdaten.SeedSchueler(t, pool, "S-SPUR-1", "Mia", "5a"))
+		verliehen := testdaten.LegeExemplarAn(t, pool, titelID, "SPUR-STATUS-2", true, "")
+		testdaten.LegeAusleiheVorZweiTagenAn(t, pool, verliehen, testdaten.LegeSchuelerAn(t, pool, "S-SPUR-1", "Mia", "5a"))
 		rec := rufe(t, http.MethodPut, "/api/buecher/exemplare/"+verliehen+"/status",
 			`{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":""}`)
 		if rec.Code != http.StatusBadRequest {
@@ -130,9 +130,9 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	})
 
 	t.Run("kleinerer Bestand in Buch bearbeiten", func(t *testing.T) {
-		titelID := testdaten.TitelMitSignatur(t, pool, "Spur Bestand", "Spu 2", 0)
+		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Bestand", "Spu 2", 0)
 		for i := 1; i <= 3; i++ {
-			testdaten.Exemplar(t, pool, titelID, fmt.Sprintf("SPUR-BESTAND-%d", i), true, "")
+			testdaten.LegeExemplarAn(t, pool, titelID, fmt.Sprintf("SPUR-BESTAND-%d", i), true, "")
 		}
 		bestand := func(rumpf string) {
 			t.Helper()
@@ -187,9 +187,9 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	})
 
 	t.Run("Abschluss einer Inventur", func(t *testing.T) {
-		titelID := testdaten.TitelMitSignatur(t, pool, "Spur Inventur", "SpuInv 1", 0)
-		gezaehlt := testdaten.Exemplar(t, pool, titelID, "SPUR-INV-1", true, "")
-		fehlt := testdaten.Exemplar(t, pool, titelID, "SPUR-INV-2", true, "")
+		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Inventur", "SpuInv 1", 0)
+		gezaehlt := testdaten.LegeExemplarAn(t, pool, titelID, "SPUR-INV-1", true, "")
+		fehlt := testdaten.LegeExemplarAn(t, pool, titelID, "SPUR-INV-2", true, "")
 		signatur := "SpuInv"
 		invRepo := repository.NewInventurAbfragen(pool)
 		session, err := invRepo.LegeLaufAn(ctx, "signature",

@@ -63,7 +63,7 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 func TestZwillingeAusDerLusd(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	for i, lusd := range []string{"LUSD-F8-1", "LUSD-F8-2"} {
 		if _, err := pool.Exec(ctx, `

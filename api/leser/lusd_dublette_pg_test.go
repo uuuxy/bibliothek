@@ -23,7 +23,7 @@ import (
 // Import mit, nicht nur die doppelte Zeile.
 func TestLusdImport_DubletteInDerselbenDatei(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

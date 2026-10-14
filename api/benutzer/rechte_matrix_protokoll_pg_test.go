@@ -23,7 +23,7 @@ import (
 // keinen Eintrag.
 func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(

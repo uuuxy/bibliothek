@@ -28,7 +28,7 @@ import (
 // mit derselben Adresse (vor der Anlage dieses Kontos).
 func TestDsgvoAuskunft_Kollege(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	exec := func(sql string, args ...any) {
 		t.Helper()
@@ -65,7 +65,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 	}
 	konto, leser := legeKontoAn("Kora", "kora@auskunft-kollege.invalid")
 	fremdKonto, _ := legeKontoAn("Fremda", "fremda@auskunft-kollege.invalid")
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Kanari-Klassensatz", "Aut Or", false, 0)
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Kanari-Klassensatz", "Aut Or", false, 0)
 
 	exec(`INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ('KA-07B', 'KORA@auskunft-kollege.invalid')`)
 	exec(`INSERT INTO lehrer_anliegen (art, titel_text, klasse, kommentar, angefordert_von)
@@ -166,7 +166,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 // findet die Auskunft den Eintrag, auch wenn die Adresse später geändert wird.
 func TestKontoAnlage_ProtokollTraegtZielID(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	t.Cleanup(func() {
 		for _, sql := range []string{

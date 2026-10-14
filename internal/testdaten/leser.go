@@ -10,8 +10,8 @@ import (
 	"bibliothek/repository"
 )
 
-// SeedSchueler legt einen Schüler mit dem Nachnamen „Test“ an.
-func SeedSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
+// LegeSchuelerAn legt einen Schüler mit dem Nachnamen „Test“ an.
+func LegeSchuelerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -23,8 +23,8 @@ func SeedSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse str
 	return id
 }
 
-// SeedAbgaengerRet legt einen Schüler an, der als Abgänger markiert ist.
-func SeedAbgaengerRet(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
+// LegeAbgaengerAn legt einen Schüler an, der als Abgänger markiert ist.
+func LegeAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -36,17 +36,17 @@ func SeedAbgaengerRet(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse
 	return id
 }
 
-// UmbSchueler sind die Angaben für LegeUmbSchuelerAn. Ein Abgänger entsteht gesperrt, mit dem
+// LUSDSchuelerNeu sind die Angaben für LegeLUSDSchuelerAn. Ein Abgänger entsteht gesperrt, mit dem
 // Sperrgrund der Abgänger und einer Karenz, die seit zehn Tagen läuft.
-type UmbSchueler struct {
+type LUSDSchuelerNeu struct {
 	Vorname, Nachname, Klasse, Barcode string
-	Geb, Eintritt                      *time.Time
-	Abgaenger                          bool
+	Geburtsdatum, SchulEintrittAm      *time.Time
+	IstAbgaenger                       bool
 }
 
-// LegeUmbSchuelerAn legt einen Schüler mit Geburtsdatum und Eintritt an, vom LUSD-Import vor
+// LegeLUSDSchuelerAn legt einen Schüler mit Geburtsdatum und Eintritt an, vom LUSD-Import vor
 // einem Jahr bestätigt.
-func LegeUmbSchuelerAn(t *testing.T, pool *pgxpool.Pool, s UmbSchueler) string {
+func LegeLUSDSchuelerAn(t *testing.T, pool *pgxpool.Pool, s LUSDSchuelerNeu) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `
@@ -56,14 +56,14 @@ func LegeUmbSchuelerAn(t *testing.T, pool *pgxpool.Pool, s UmbSchueler) string {
 		        CASE WHEN $7 THEN '`+repository.AbgaengerSperrgrundKarenz+`' END,
 		        CASE WHEN $7 THEN NOW() - interval '10 days' END)
 		RETURNING id`,
-		s.Vorname, s.Nachname, s.Klasse, s.Barcode, s.Geb, s.Eintritt, s.Abgaenger).Scan(&id); err != nil {
+		s.Vorname, s.Nachname, s.Klasse, s.Barcode, s.Geburtsdatum, s.SchulEintrittAm, s.IstAbgaenger).Scan(&id); err != nil {
 		t.Fatalf("Schüler %s %s anlegen: %v", s.Vorname, s.Nachname, err)
 	}
 	return id
 }
 
-// SeedPortalLehrkraft legt ein Konto des Kollegiums an.
-func SeedPortalLehrkraft(t *testing.T, pool *pgxpool.Pool, email string) string {
+// LegeKollegiumskontoAn legt ein Konto des Kollegiums an.
+func LegeKollegiumskontoAn(t *testing.T, pool *pgxpool.Pool, email string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `
@@ -76,8 +76,8 @@ func SeedPortalLehrkraft(t *testing.T, pool *pgxpool.Pool, email string) string 
 	return id
 }
 
-// AdminFuerAudit legt das Admin-Konto an, auf das ein Protokolleintrag zeigt.
-func AdminFuerAudit(t *testing.T, pool *pgxpool.Pool) string {
+// LegeBearbeiterAn legt das Admin-Konto an, auf das ein Protokolleintrag zeigt.
+func LegeBearbeiterAn(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
 	var id string
 	err := pool.QueryRow(context.Background(), `
@@ -91,8 +91,8 @@ func AdminFuerAudit(t *testing.T, pool *pgxpool.Pool) string {
 	return id
 }
 
-// Klassenleitung trägt die Adresse der Klassenleitung einer Klasse ein.
-func Klassenleitung(t *testing.T, pool *pgxpool.Pool, klasse, email string) {
+// SetzeKlassenleitung trägt die Adresse der Klassenleitung einer Klasse ein.
+func SetzeKlassenleitung(t *testing.T, pool *pgxpool.Pool, klasse, email string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
 		INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ($1, $2)
@@ -108,10 +108,10 @@ func ZusammenfuehrenAuftrag(ziel, quelle string) repository.ZusammenfuehrenAuftr
 	return repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}
 }
 
-// AdminKonto legt ein aktives Admin-Konto mit dieser Adresse an und nennt seine Kennung. Die
+// LegeAdminKontoAn legt ein aktives Admin-Konto mit dieser Adresse an und nennt seine Kennung. Die
 // Adresse gehört dem Test: Zwei Tests teilen sich so kein Konto und zählen nicht die
 // Protokolleinträge des anderen.
-func AdminKonto(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname string) string {
+func LegeAdminKontoAn(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `
@@ -124,13 +124,13 @@ func AdminKonto(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname strin
 	return id
 }
 
-// LeseSchuelerStatus liest, ob ein Schüler gesperrt und als Abgänger geführt ist, dazu seinen
+// LadeSchuelerStatus liest, ob ein Schüler gesperrt und als Abgänger geführt ist, dazu seinen
 // Sperrgrund und Vornamen.
-func LeseSchuelerStatus(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, abgaenger bool, reason *string, vorname string) {
+func LadeSchuelerStatus(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, abgaenger bool, sperrgrund *string, vorname string) {
 	t.Helper()
 	if err := pool.QueryRow(context.Background(),
 		`SELECT ist_gesperrt, ist_abgaenger, block_reason, vorname FROM schueler WHERE id = $1`, id).
-		Scan(&gesperrt, &abgaenger, &reason, &vorname); err != nil {
+		Scan(&gesperrt, &abgaenger, &sperrgrund, &vorname); err != nil {
 		t.Fatalf("Status lesen: %v", err)
 	}
 	return

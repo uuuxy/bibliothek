@@ -25,12 +25,12 @@ import (
 // eines übernimmt.
 func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := testdaten.TitelMitSignatur(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg", "Erste Liebe"}); err != nil {
 		t.Fatal(err)
 	}
@@ -70,12 +70,12 @@ func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T
 // Tür die DNB nicht, und einen Vorschlag gibt es nicht.
 func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := testdaten.TitelMitSignatur(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg"}); err != nil {
 		t.Fatal(err)
 	}
@@ -122,12 +122,12 @@ func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 // schlagwort_vorschlaege_neu. Angelegt wird davon nichts, am Titel steht nichts.
 func TestISBNZuTitel_NormdatenVorhandenUndNeu(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := testdaten.TitelMitSignatur(t, pool, "Der Process", "", 0)
+	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Der Process", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Kafka <Franz>", "Krieg"}); err != nil {
 		t.Fatal(err)
 	}

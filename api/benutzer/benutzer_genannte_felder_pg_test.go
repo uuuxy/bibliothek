@@ -21,9 +21,9 @@ import (
 // Geprüft über die Handler der Benutzerverwaltung am echten Postgres.
 func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	t.Cleanup(func() {

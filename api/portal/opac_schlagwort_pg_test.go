@@ -22,16 +22,16 @@ import (
 // maskiert — ein „%" darf nicht über die Schlagworte den ganzen Bestand liefern.
 func TestOpacSuche_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
 
-	mondflug := testdaten.TitelMitSignatur(t, pool, "Mondflug", "", 0)
-	testdaten.Exemplar(t, pool, mondflug, "B-OPAC-1", true, "")
-	physik := testdaten.TitelMitSignatur(t, pool, "LMF-Physik 9", "", 0) // Lernmittel: nie im öffentlichen Katalog
-	testdaten.Exemplar(t, pool, physik, "B-OPAC-2", true, "")
+	mondflug := testdaten.LegeTitelMitSignaturAn(t, pool, "Mondflug", "", 0)
+	testdaten.LegeExemplarAn(t, pool, mondflug, "B-OPAC-1", true, "")
+	physik := testdaten.LegeTitelMitSignaturAn(t, pool, "LMF-Physik 9", "", 0) // Lernmittel: nie im öffentlichen Katalog
+	testdaten.LegeExemplarAn(t, pool, physik, "B-OPAC-2", true, "")
 	for _, id := range []string{mondflug, physik} {
 		if _, err := repository.SetzeSchlagworte(ctx, pool, id, []string{"Weltraum"}); err != nil {
 			t.Fatal(err)

@@ -34,30 +34,30 @@ import (
 // Tagen, Cover, jüngstes Anlagedatum) — alle müssen zu sein.
 func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	leser := []string{
-		testdaten.SeedSchueler(t, pool, "S-MON-1", "Mia", "5a"),
-		testdaten.SeedSchueler(t, pool, "S-MON-2", "Ben", "5a"),
+		testdaten.LegeSchuelerAn(t, pool, "S-MON-1", "Mia", "5a"),
+		testdaten.LegeSchuelerAn(t, pool, "S-MON-2", "Ben", "5a"),
 	}
 
 	// Schulbuch, dessen Kennzeichen NUR in der Signatur steht — die manuelle Neuanlage
 	// schreibt es dorthin, der Sammelimport in den Titel (pkg/lmf kennt beide Wege).
-	lmf := testdaten.SeedMonitorTitel(t, pool, "Mathematik Neue Wege 7", "LMF Mathe 7", true, 0)
+	lmf := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Mathematik Neue Wege 7", "LMF Mathe 7", true, 0)
 	for i, sid := range leser {
-		testdaten.SeedLeserAusleihe(t, pool, testdaten.Exemplar(t, pool, lmf, fmt.Sprintf("MON-LMF-%d", i), true, ""), sid)
+		testdaten.LegeAusleiheVorZweiTagenAn(t, pool, testdaten.LegeExemplarAn(t, pool, lmf, fmt.Sprintf("MON-LMF-%d", i), true, ""), sid)
 	}
 
 	// Freihand-Roman: das Einzige, was beide Seiten zeigen dürfen.
-	tschick := testdaten.SeedMonitorTitel(t, pool, "Tschick", "Jug Her", true, 10)
-	testdaten.SeedLeserAusleihe(t, pool, testdaten.Exemplar(t, pool, tschick, "MON-TSCHICK-1", true, ""), leser[0])
+	tschick := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Tschick", "Jug Her", true, 10)
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, testdaten.LegeExemplarAn(t, pool, tschick, "MON-TSCHICK-1", true, ""), leser[0])
 
 	// Komplett ausgesondert — mit Leser, Cover und jüngstem Datum.
-	ausgesondert := testdaten.SeedMonitorTitel(t, pool, "Ausgesonderter Roman", "Jug Aus", true, 0)
-	testdaten.SeedLeserAusleihe(t, pool, seedAusgesondertesExemplar(t, pool, ausgesondert, "MON-AUS-1"), leser[1])
+	ausgesondert := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Ausgesonderter Roman", "Jug Aus", true, 0)
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, seedAusgesondertesExemplar(t, pool, ausgesondert, "MON-AUS-1"), leser[1])
 
 	// Nur bestellt, noch nicht im Haus — als jüngster Titel wäre er „Neu eingetroffen".
-	bestellt := testdaten.SeedMonitorTitel(t, pool, "Bestellter Roman", "Jug Bes", true, 0)
+	bestellt := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Bestellter Roman", "Jug Bes", true, 0)
 	if _, err := pool.Exec(context.Background(), `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
 		VALUES ($1, 'MON-BES-1', false, 'bestellt')`, bestellt); err != nil {
@@ -92,22 +92,22 @@ func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) 
 // (Entscheidung 30.08.2026, Frage-Runde 2c).
 func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	leser := []string{
-		testdaten.SeedSchueler(t, pool, "S-LES-1", "Mia", "5a"),
-		testdaten.SeedSchueler(t, pool, "S-LES-2", "Ben", "5a"),
-		testdaten.SeedSchueler(t, pool, "S-LES-3", "Lea", "5a"),
+		testdaten.LegeSchuelerAn(t, pool, "S-LES-1", "Mia", "5a"),
+		testdaten.LegeSchuelerAn(t, pool, "S-LES-2", "Ben", "5a"),
+		testdaten.LegeSchuelerAn(t, pool, "S-LES-3", "Lea", "5a"),
 	}
 	lehrkraft := seedLehrkraft(t, pool)
 
 	// Klassensatz: 30 Exemplare an die Lehrkraft, dazu EIN Schüler und eine anonymisierte
 	// Ausleihe (kein Ausleiher mehr) — 32 Zeilen, ein Leser.
-	welle := testdaten.SeedMonitorTitel(t, pool, "Die Welle", "Jug Rho", true, 20)
+	welle := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Die Welle", "Jug Rho", true, 20)
 	for i := range 30 {
-		seedLehrerAusleihe(t, pool, testdaten.Exemplar(t, pool, welle, fmt.Sprintf("LES-WELLE-%d", i), true, ""), lehrkraft)
+		seedLehrerAusleihe(t, pool, testdaten.LegeExemplarAn(t, pool, welle, fmt.Sprintf("LES-WELLE-%d", i), true, ""), lehrkraft)
 	}
-	testdaten.SeedLeserAusleihe(t, pool, testdaten.Exemplar(t, pool, welle, "LES-WELLE-S", true, ""), leser[2])
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, testdaten.LegeExemplarAn(t, pool, welle, "LES-WELLE-S", true, ""), leser[2])
 	if _, err := pool.Exec(context.Background(), `
 		INSERT INTO ausleihen (exemplar_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 		SELECT id, NOW() - interval '2 days', NOW() + interval '21 days', NOW() - interval '1 day'
@@ -117,19 +117,19 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 
 	// Drei Ausleihen, zwei Leser: Mia leiht Tschick zweimal (erst zurückgeben, dann noch
 	// einmal — zwei offene Ausleihen auf einem Exemplar verbietet die Datenbank), Ben einmal.
-	tschick := testdaten.SeedMonitorTitel(t, pool, "Tschick", "Jug Her", true, 10)
-	tschick1 := testdaten.Exemplar(t, pool, tschick, "LES-TSCHICK-1", true, "")
+	tschick := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Tschick", "Jug Her", true, 10)
+	tschick1 := testdaten.LegeExemplarAn(t, pool, tschick, "LES-TSCHICK-1", true, "")
 	seedZurueckgegebeneAusleihe(t, pool, tschick1, leser[0])
-	testdaten.SeedLeserAusleihe(t, pool, tschick1, leser[0])
-	testdaten.SeedLeserAusleihe(t, pool, testdaten.Exemplar(t, pool, tschick, "LES-TSCHICK-2", true, ""), leser[1])
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, tschick1, leser[0])
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, testdaten.LegeExemplarAn(t, pool, tschick, "LES-TSCHICK-2", true, ""), leser[1])
 
 	// Drei Leser nacheinander, aber kein Cover: führt „Beliebt" an, ist aber kein
 	// „Buch des Monats".
-	ohneCover := testdaten.SeedMonitorTitel(t, pool, "Roman ohne Cover", "Jug Ohn", false, 5)
-	ohneCover1 := testdaten.Exemplar(t, pool, ohneCover, "LES-OHNE-1", true, "")
+	ohneCover := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Roman ohne Cover", "Jug Ohn", false, 5)
+	ohneCover1 := testdaten.LegeExemplarAn(t, pool, ohneCover, "LES-OHNE-1", true, "")
 	seedZurueckgegebeneAusleihe(t, pool, ohneCover1, leser[0])
 	seedZurueckgegebeneAusleihe(t, pool, ohneCover1, leser[1])
-	testdaten.SeedLeserAusleihe(t, pool, ohneCover1, leser[2])
+	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, ohneCover1, leser[2])
 
 	antwort := monitorAntwortLesen(t, pool)
 	if antwort.BuchDesMonats == nil || antwort.BuchDesMonats.Titel != "Tschick" {

@@ -56,7 +56,7 @@ func versetzungAusfuehren(t *testing.T, pool *pgxpool.Pool, dryRun bool) Promote
 func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	if _, err := pool.Exec(ctx, `DELETE FROM klassen_lehrer_mapping`); err != nil {
 		t.Fatalf("Mapping leeren: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	if _, err := pool.Exec(ctx, `DELETE FROM klassen_lehrer_mapping`); err != nil {
 		t.Fatalf("Mapping leeren: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
 func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	var adminID string
 	if err := pool.QueryRow(ctx, `

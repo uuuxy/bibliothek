@@ -21,15 +21,15 @@ import (
 // schicken. Rot am alten Code: Die Route gab es nicht.
 func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Barcode-Titel", "Aut Or", false, 0)
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Barcode-Titel", "Aut Or", false, 0)
 	da := []string{"B-BC-0001", "1234567890123", "LMF-BC-0003"}
 	for _, b := range da {
-		testdaten.Exemplar(t, pool, titelID, b, true, "")
+		testdaten.LegeExemplarAn(t, pool, titelID, b, true, "")
 	}
-	weg := testdaten.Exemplar(t, pool, titelID, "B-BC-WEG", true, "")
+	weg := testdaten.LegeExemplarAn(t, pool, titelID, "B-BC-WEG", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, weg); err != nil {
 		t.Fatalf("aussondern: %v", err)
@@ -97,7 +97,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	}
 
 	// Ein neues Exemplar ändert den Stand — sonst holte der Rechner es nie.
-	testdaten.Exemplar(t, pool, titelID, "B-BC-NEU", true, "")
+	testdaten.LegeExemplarAn(t, pool, titelID, "B-BC-NEU", true, "")
 	rec = hole(`"` + antwort.Stand + `"`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("nach einem neuen Exemplar: Status %d, erwartet 200 mit neuer Liste", rec.Code)

@@ -61,7 +61,7 @@ func importAntwort(t *testing.T, rec *httptest.ResponseRecorder) system.LitteraI
 
 func TestLitteraImport_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	adminID, _, rufeRoh := importWelt(t, pool)
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion IN ('LITTERA_IMPORT', 'BESTAND_IMPORT')`)
@@ -192,7 +192,7 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 
 func TestBestandImport_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	adminID, _, rufeRoh := importWelt(t, pool)
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTAND_IMPORT'`)

@@ -20,7 +20,7 @@ import (
 // Jahrgangsfilter der Leserdatei, der LMF-Planer und die Abgängerliste.
 func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -44,11 +44,11 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 
-	fuenfte := testdaten.SeedSchueler(t, pool, "KLZ-S-1", "Fuenfte", "05F1")
-	neunte := testdaten.SeedSchueler(t, pool, "KLZ-S-2", "Neunte", "09H1")
+	fuenfte := testdaten.LegeSchuelerAn(t, pool, "KLZ-S-1", "Fuenfte", "05F1")
+	neunte := testdaten.LegeSchuelerAn(t, pool, "KLZ-S-2", "Neunte", "09H1")
 	// Die Abgängerliste nennt nur, wer noch ein Buch hat.
-	titelID := testdaten.TitelMitMeldebestand(t, pool, "Ziffernfolge Testband", 0)
-	exemplarID := testdaten.Exemplar(t, pool, titelID, "KLZ-B-1", false, "")
+	titelID := testdaten.LegeTitelAn(t, pool, "Ziffernfolge Testband", 0)
+	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "KLZ-B-1", false, "")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, bearbeiter_id)
 		VALUES ($1, $2, now() - interval '30 days', now() + interval '30 days', $3)`,
@@ -89,8 +89,8 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 
 	// Die zweite Klasse beginnt mit Nullen: Ihre ersten neun Ziffern ergeben 0, die ganze
 	// Folge ist trotzdem zu lang.
-	testdaten.SeedSchueler(t, pool, "KLZ-S-3", "Buchnummer", "9783123456789")
-	testdaten.SeedSchueler(t, pool, "KLZ-S-4", "Nullen", "0000000009999999999")
+	testdaten.LegeSchuelerAn(t, pool, "KLZ-S-3", "Buchnummer", "9783123456789")
+	testdaten.LegeSchuelerAn(t, pool, "KLZ-S-4", "Nullen", "0000000009999999999")
 
 	t.Run("mit Klassen aus langen Ziffernfolgen", pruefe)
 }

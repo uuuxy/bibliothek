@@ -20,7 +20,7 @@ import (
 // Regel auslässt; und die Vorschau nennt die Ausfälle zwischen erstem Tag und letztem Platz.
 func TestLmfPlan_StandFuerDenPlaner(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	raeume := func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM lmf_plaene`); err != nil {
@@ -30,7 +30,7 @@ func TestLmfPlan_StandFuerDenPlaner(t *testing.T) {
 	raeume()
 	t.Cleanup(raeume)
 	for i, klasse := range []string{"5F1", "6F1", "7G2", "9H1", "Q1", "12T1"} {
-		testdaten.SeedSchueler(t, pool, "ST-"+string(rune('1'+i)), "Kind", klasse)
+		testdaten.LegeSchuelerAn(t, pool, "ST-"+string(rune('1'+i)), "Kind", klasse)
 	}
 	// Die Uhr steht auf dem 06.09.2026; die nächsten Sommerferien beginnen am 28.06.2027.
 	srv.Uhr = func() time.Time { return time.Date(2026, 9, 6, 10, 0, 0, 0, schulzeit.Zone()) }

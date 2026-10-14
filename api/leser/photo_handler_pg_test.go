@@ -84,10 +84,10 @@ func fotoZeilen(t *testing.T, pool *pgxpool.Pool, schuelerID string) int {
 // und ein zweites Bild ersetzt das erste.
 func TestFotoUpload_SpeichertVerschluesseltUndNenntDieAdresse(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	schuelerID := testdaten.SeedSchueler(t, pool, "FOTO-1", "Fotokind", "07A")
+	schuelerID := testdaten.LegeSchuelerAn(t, pool, "FOTO-1", "Fotokind", "07A")
 
 	rec := fotoHochladen(t, srv, schuelerID, fotoRumpf(t, fotoJPEG(t)))
 	if rec.Code != http.StatusOK {
@@ -126,10 +126,10 @@ func TestFotoUpload_SpeichertVerschluesseltUndNenntDieAdresse(t *testing.T) {
 // Fehler.
 func TestFotoUpload_AntwortLesbarBeiSonderzeichenInDerAusweisnummer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	schuelerID := testdaten.SeedSchueler(t, pool, `FO"TO\2`, "Sonderkind", "07A")
+	schuelerID := testdaten.LegeSchuelerAn(t, pool, `FO"TO\2`, "Sonderkind", "07A")
 
 	rec := fotoHochladen(t, srv, schuelerID, fotoRumpf(t, fotoJPEG(t)))
 	if rec.Code != http.StatusOK {
@@ -144,10 +144,10 @@ func TestFotoUpload_AntwortLesbarBeiSonderzeichenInDerAusweisnummer(t *testing.T
 // gespeichert. Eine 500 meldete eine Störung des Servers, die es nicht gibt.
 func TestFotoUpload_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	schuelerID := testdaten.SeedSchueler(t, pool, "FOTO-3", "Abweiskind", "07A")
+	schuelerID := testdaten.LegeSchuelerAn(t, pool, "FOTO-3", "Abweiskind", "07A")
 	keinBild := base64.StdEncoding.EncodeToString([]byte("das ist kein Bild"))
 
 	// meldung: der Teil, den die Maske dem Menschen zeigt; leer heißt, nur der Status zählt.

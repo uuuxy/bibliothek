@@ -30,19 +30,19 @@ import (
 // gesperrter Schüler ließ sich nach dem Löschen NIE wiederherstellen.
 func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndRestore(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "papierkorb@test.invalid")
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "papierkorb@test.invalid")
 
-	gesperrt := testdaten.SeedSchueler(t, pool, "S-SPERRE-1", "Mia", "5a")
+	gesperrt := testdaten.LegeSchuelerAn(t, pool, "S-SPERRE-1", "Mia", "5a")
 	if _, err := pool.Exec(ctx, `
 		UPDATE schueler SET is_manually_blocked = true, ist_gesperrt = true,
 		       block_reason = 'Ausweismissbrauch, Eltern informiert' WHERE id = $1`, gesperrt); err != nil {
 		t.Fatalf("manuelle Sperre setzen: %v", err)
 	}
-	frei := testdaten.SeedSchueler(t, pool, "S-SPERRE-2", "Ben", "5a")
+	frei := testdaten.LegeSchuelerAn(t, pool, "S-SPERRE-2", "Ben", "5a")
 
 	loeschen := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+id, nil)
@@ -120,12 +120,12 @@ func sperrZustand(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, manuel
 // man das Datum nur als „gelöscht am".
 func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "papierkorb-uhr@test.invalid")
-	schueler := testdaten.SeedSchueler(t, pool, "S-UHR-1", "Uri", "5a")
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "papierkorb-uhr@test.invalid")
+	schueler := testdaten.LegeSchuelerAn(t, pool, "S-UHR-1", "Uri", "5a")
 
 	loeschen := func() *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+schueler, nil)

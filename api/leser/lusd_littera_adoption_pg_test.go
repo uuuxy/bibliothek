@@ -21,7 +21,7 @@ import (
 // er Zeilen mit gesetzter lusd_id ausnimmt (Migration 074).
 func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

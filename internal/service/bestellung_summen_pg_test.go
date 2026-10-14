@@ -17,13 +17,13 @@ import (
 // beide, und Zusammenfassung, Etiketten und Positionen nennen jede von ihnen.
 func TestLegeBestellungAn_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
-	lieferant := testdaten.Haendler(t, pool, "Summen", false)
-	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Summe Eins", 0)
-	zweiter := testdaten.TitelMitMeldebestand(t, pool, "LMF-Summe Zwei", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Summen", false)
+	erster := testdaten.LegeTitelAn(t, pool, "LMF-Summe Eins", 0)
+	zweiter := testdaten.LegeTitelAn(t, pool, "LMF-Summe Zwei", 0)
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel: mitteltopf.Land, LieferantID: lieferant,
@@ -63,11 +63,11 @@ func TestLegeBestellungAn_ZweiPositionenZaehlenZusammen(t *testing.T) {
 // des Vokabulars, bevor ein Barcode reserviert ist.
 func TestLegeBestellungAn_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
-	lieferant := testdaten.Haendler(t, pool, "Ohne Topf", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Ohne-Topf", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Ohne Topf", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Ohne-Topf", 0)
 
 	for _, mittel := range []string{"", "kreis"} {
 		res, err := svc.LegeAn(ctx, service.BestellAuftrag{
@@ -94,12 +94,12 @@ func TestLegeBestellungAn_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 // deshalb sind sie je Feld und je Position verschieden.
 func TestLegeBestellungAn_JedePositionStehtInIhrenSpalten(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
-	lieferant := testdaten.Haendler(t, pool, "Spalten", false)
-	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Spalte Eins", 0)
-	zweiter := testdaten.TitelMitMeldebestand(t, pool, "LMF-Spalte Zwei", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Spalten", false)
+	erster := testdaten.LegeTitelAn(t, pool, "LMF-Spalte Eins", 0)
+	zweiter := testdaten.LegeTitelAn(t, pool, "LMF-Spalte Zwei", 0)
 	for titel, isbn := range map[string]string{erster: "9783161484100", zweiter: "9780306406157"} {
 		if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = $2 WHERE id = $1`, titel, isbn); err != nil {
 			t.Fatalf("ISBN setzen: %v", err)

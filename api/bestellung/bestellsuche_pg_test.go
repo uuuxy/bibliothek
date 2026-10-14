@@ -35,7 +35,7 @@ func dnbSatz(isbn, titel string) string {
 
 func TestBestellsuche_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Der Katalog führt die ISBN dreizehnstellig; die zehnstellige Form desselben Buchs endet
@@ -47,8 +47,8 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		VALUES ('Bestellsuche Probeband', 'Muster, Erika', $1, true) RETURNING id`, isbn13).Scan(&imHaus); err != nil {
 		t.Fatal(err)
 	}
-	testdaten.Exemplar(t, pool, imHaus, "BSU-1", true, "")
-	testdaten.Exemplar(t, pool, imHaus, "BSU-2", true, "")
+	testdaten.LegeExemplarAn(t, pool, imHaus, "BSU-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, imHaus, "BSU-2", true, "")
 	if _, err := pool.Exec(t.Context(), `
 		UPDATE buecher_exemplare SET ist_ausgesondert = true, aussonderung_grund = 'AUSSORTIERT', ist_ausleihbar = false
 		WHERE barcode_id = 'BSU-2'`); err != nil {

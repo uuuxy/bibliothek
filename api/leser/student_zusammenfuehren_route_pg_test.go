@@ -51,13 +51,13 @@ func zrKonto(t *testing.T, pool *pgxpool.Pool, leserID string) {
 
 func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 
-	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Route", Klasse: "07A", Barcode: "ZR-1", Geb: testdaten.Datum(2012, 3, 3), Abgaenger: true})
-	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Neu", Nachname: "Route", Klasse: "08A", Barcode: "ZR-2", Geb: testdaten.Datum(2012, 3, 3)})
-	testdaten.SeedOffeneAusleihe(t, pool, quelle, "ZRQ")
+	ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Alt", Nachname: "Route", Klasse: "07A", Barcode: "ZR-1", Geburtsdatum: testdaten.Datum(2012, 3, 3), IstAbgaenger: true})
+	quelle := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Neu", Nachname: "Route", Klasse: "08A", Barcode: "ZR-2", Geburtsdatum: testdaten.Datum(2012, 3, 3)})
+	testdaten.LegeOffeneAusleiheAn(t, pool, quelle, "ZRQ")
 
 	rec := zusammenfuehrenUeberRoute(t, srv, pool, admin, ziel, zrRumpf(quelle))
 	if rec.Code != http.StatusOK {
@@ -100,7 +100,7 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 	ctx := context.Background()
 
 	schueler := func(t *testing.T, nachname, barcode string) string {
-		return testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Zr", Nachname: nachname, Klasse: "07A", Barcode: barcode, Geb: testdaten.Datum(2012, 5, 5)})
+		return testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Zr", Nachname: nachname, Klasse: "07A", Barcode: barcode, Geburtsdatum: testdaten.Datum(2012, 5, 5)})
 	}
 	faelle := []struct {
 		name   string
@@ -146,8 +146,8 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			testdaten.ResetBestandsdaten(t, pool)
-			admin := testdaten.AdminFuerAudit(t, pool)
+			testdaten.LeereBestandsdaten(t, pool)
+			admin := testdaten.LegeBearbeiterAn(t, pool)
 			ziel, quelle := f.lage(t)
 			vorher := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM leser`)
 
@@ -171,10 +171,10 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 // Eine Anfrage ohne brauchbare Quelle erreicht die Datenbank nicht.
 func TestZusammenfuehrenRoute_UnbrauchbareAnfrage(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	admin := testdaten.AdminFuerAudit(t, pool)
-	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Zr", Nachname: "Ziel", Klasse: "07A", Barcode: "ZR-U1", Geb: testdaten.Datum(2012, 6, 6)})
+	admin := testdaten.LegeBearbeiterAn(t, pool)
+	ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Zr", Nachname: "Ziel", Klasse: "07A", Barcode: "ZR-U1", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
 
 	for name, rumpf := range map[string]string{
 		"Quelle fehlt":      `{}`,

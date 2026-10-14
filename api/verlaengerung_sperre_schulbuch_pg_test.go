@@ -51,7 +51,7 @@ type sperrFristFall struct {
 func sperrFristLageAnlegen(t *testing.T) *sperrFristLage {
 	t.Helper()
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	l := &sperrFristLage{
 		pool:      pool,
@@ -66,23 +66,23 @@ func sperrFristLageAnlegen(t *testing.T) *sperrFristLage {
 			t.Fatalf("%s sperren: %v", was, err)
 		}
 	}
-	ehemalig := testdaten.SeedSchueler(t, pool, "S-VSP-1", "Ehemalig", "10R1")
+	ehemalig := testdaten.LegeSchuelerAn(t, pool, "S-VSP-1", "Ehemalig", "10R1")
 	sperre(ehemalig, "Ehemaligen", `UPDATE leser SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Automatisierte Abgänger-Sperre (Schuljahreswechsel)' WHERE id = $1`)
-	vonHand := testdaten.SeedSchueler(t, pool, "S-VSP-2", "VonHand", "10R1")
+	vonHand := testdaten.LegeSchuelerAn(t, pool, "S-VSP-2", "VonHand", "10R1")
 	sperre(vonHand, "von Hand", `UPDATE leser SET is_manually_blocked = true, block_reason = 'Buchverlust' WHERE id = $1`)
-	anonym := testdaten.SeedSchueler(t, pool, "S-VSP-3", "Anonym", "10R1")
+	anonym := testdaten.LegeSchuelerAn(t, pool, "S-VSP-3", "Anonym", "10R1")
 	sperre(anonym, "anonymisiert", `UPDATE leser SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`)
-	papierkorb := testdaten.SeedSchueler(t, pool, "S-VSP-4", "Papierkorb", "10R1")
+	papierkorb := testdaten.LegeSchuelerAn(t, pool, "S-VSP-4", "Papierkorb", "10R1")
 	sperre(papierkorb, "Papierkorb", `UPDATE leser SET deleted_at = NOW(), ist_gesperrt = true,
 		block_reason = 'Systematisch gelöscht' WHERE id = $1`)
 
-	l.ehemaligSchulbuch = testdaten.SeedAusleihe(t, pool, ehemalig, "LMF Mathe 10 Ehemalig", l.alteFrist)
-	l.ehemaligBuecherei = testdaten.SeedAusleihe(t, pool, ehemalig, "Roman Ehemalig", l.alteFrist)
-	l.vonHandSchulbuch = testdaten.SeedAusleihe(t, pool, vonHand, "LMF Mathe 10 VonHand", l.alteFrist)
-	l.anonymSchulbuch = testdaten.SeedAusleihe(t, pool, anonym, "LMF Mathe 10 Anonym", l.alteFrist)
-	l.papierkorbSchulbuch = testdaten.SeedAusleihe(t, pool, papierkorb, "LMF Mathe 10 Papierkorb", l.alteFrist)
+	l.ehemaligSchulbuch = testdaten.LegeAusleiheMitFristAn(t, pool, ehemalig, "LMF Mathe 10 Ehemalig", l.alteFrist)
+	l.ehemaligBuecherei = testdaten.LegeAusleiheMitFristAn(t, pool, ehemalig, "Roman Ehemalig", l.alteFrist)
+	l.vonHandSchulbuch = testdaten.LegeAusleiheMitFristAn(t, pool, vonHand, "LMF Mathe 10 VonHand", l.alteFrist)
+	l.anonymSchulbuch = testdaten.LegeAusleiheMitFristAn(t, pool, anonym, "LMF Mathe 10 Anonym", l.alteFrist)
+	l.papierkorbSchulbuch = testdaten.LegeAusleiheMitFristAn(t, pool, papierkorb, "LMF Mathe 10 Papierkorb", l.alteFrist)
 	return l
 }
 
@@ -100,7 +100,7 @@ func (l *sperrFristLage) faelle() []sperrFristFall {
 // pruefeFrist: Bewegt hat sich genau, was gehen darf.
 func (l *sperrFristLage) pruefeFrist(t *testing.T, f sperrFristFall) {
 	t.Helper()
-	bewegt := !testdaten.FristVon(t, l.pool, f.id).Equal(l.alteFrist)
+	bewegt := !testdaten.LadeFrist(t, l.pool, f.id).Equal(l.alteFrist)
 	if bewegt != f.geht {
 		t.Errorf("%s: Frist bewegt=%v, erwartet %v", f.was, bewegt, f.geht)
 	}

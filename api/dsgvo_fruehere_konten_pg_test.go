@@ -47,9 +47,9 @@ func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.Antwo
 
 func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
@@ -187,9 +187,9 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	t.Setenv("IMAP_HOST", "mock")
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "konto-eintraege.invalid")
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	admin := testdaten.AdminFuerAudit(t, pool)
+	admin := testdaten.LegeBearbeiterAn(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)

@@ -21,16 +21,16 @@ import (
 
 func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	lernmittel := testdaten.TitelMitSignatur(t, pool, "Mathebuch 7", "Mat 7", 0)
+	lernmittel := testdaten.LegeTitelMitSignaturAn(t, pool, "Mathebuch 7", "Mat 7", 0)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, lernmittel); err != nil {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
-	lektuere := testdaten.TitelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
-	traeger := testdaten.TopfBestellung(t, mitteltopf.Schultraeger)
+	lektuere := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les", 0)
+	traeger := testdaten.LegeBestellungAn(t, mitteltopf.Schultraeger)
 
 	abgang := func(titelID, barcode string, bestellung *string, eigentum string) {
 		t.Helper()
@@ -79,12 +79,12 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 
 func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	titelID := testdaten.TitelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
-	land := testdaten.TopfBestellung(t, mitteltopf.Land)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les", 0)
+	land := testdaten.LegeBestellungAn(t, mitteltopf.Land)
 
 	zugang := func(barcode string, bestellung *string, eigentum string) {
 		t.Helper()

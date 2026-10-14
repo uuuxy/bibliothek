@@ -40,7 +40,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 	pool := pgtest.Pool(t)
 
 	t.Run("beglichener Rückkehrer wird reaktiviert und entsperrt", func(t *testing.T) {
-		testdaten.ResetBestandsdaten(t, pool)
+		testdaten.LeereBestandsdaten(t, pool)
 		ctx := context.Background()
 		id := seedGesperrterAbgaenger(t, pool, "OLD-1", "L-RETURN")
 
@@ -61,7 +61,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Errorf("erwartet genau 1 aktive Zeile für L-RETURN, waren %d", count)
 		}
 
-		gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
+		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
 		if gesperrt {
 			t.Error("beglichener Rückkehrer bleibt gesperrt (Ghost-Block) — Pipeline reaktiviert nicht")
 		}
@@ -81,13 +81,13 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 	})
 
 	t.Run("Rückkehrer mit offener Ausleihe bleibt gesperrt, Grund umbenannt", func(t *testing.T) {
-		testdaten.ResetBestandsdaten(t, pool)
+		testdaten.LeereBestandsdaten(t, pool)
 		ctx := context.Background()
 		id := seedGesperrterAbgaenger(t, pool, "OLD-2", "L-DEBT")
 
 		// Noch offene Ausleihe des Rückkehrers.
-		titelID := testdaten.TitelMitMeldebestand(t, pool, "Schuldbuch", 1)
-		exID := testdaten.Exemplar(t, pool, titelID, "EX-DEBT", true, "")
+		titelID := testdaten.LegeTitelAn(t, pool, "Schuldbuch", 1)
+		exID := testdaten.LegeExemplarAn(t, pool, titelID, "EX-DEBT", true, "")
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 			 VALUES ($1, $2, now() + interval '14 days')`, exID, id); err != nil {
@@ -101,7 +101,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Fatalf("Import darf nicht fehlschlagen: %v", err)
 		}
 
-		gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
+		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
 		if !gesperrt {
 			t.Error("Rückkehrer mit offener Ausleihe muss gesperrt bleiben")
 		}
@@ -121,11 +121,11 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 	// sie für eine manuelle und ließ sie stehen. Ein aktiver Schüler blieb dauerhaft
 	// gesperrt, und die Oberfläche kann ist_gesperrt ohne manuelle Sperre nicht aufheben.
 	t.Run("Rückkehrer: nach der Rückgabe hebt der nächste Import die Sperre auf", func(t *testing.T) {
-		testdaten.ResetBestandsdaten(t, pool)
+		testdaten.LeereBestandsdaten(t, pool)
 		ctx := context.Background()
 		id := seedGesperrterAbgaenger(t, pool, "OLD-3", "L-DEBT3")
-		titelID := testdaten.TitelMitMeldebestand(t, pool, "Schuldbuch-3", 1)
-		exID := testdaten.Exemplar(t, pool, titelID, "EX-DEBT3", true, "")
+		titelID := testdaten.LegeTitelAn(t, pool, "Schuldbuch-3", 1)
+		exID := testdaten.LegeExemplarAn(t, pool, titelID, "EX-DEBT3", true, "")
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 			 VALUES ($1, $2, now() + interval '14 days')`, exID, id); err != nil {
@@ -142,7 +142,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 		if _, err := s.computeLusdChanges(ctx, zeile, true, true); err != nil {
 			t.Fatalf("zweiter Import: %v", err)
 		}
-		gesperrt, _, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
+		gesperrt, _, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
 		if gesperrt || reason != nil {
 			t.Errorf("nach der Rückgabe noch gesperrt (Grund %v) — die Sperre wird nie mehr aufgehoben", reason)
 		}

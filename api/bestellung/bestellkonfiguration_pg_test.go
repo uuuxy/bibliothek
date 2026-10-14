@@ -18,7 +18,7 @@ import (
 // Leerzeichen ist keine Adresse, daraus entstünde kein Link.
 func TestBestellKonfiguration_WarntWennDerLinkNichtEntstehenKann(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	// Ein Hauptlieferant aus einem früheren Test dieses Laufs zählte sonst mit.
 	if _, err := pool.Exec(t.Context(), `UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant`); err != nil {
 		t.Fatalf("bisherigen Hauptlieferanten räumen: %v", err)
@@ -44,7 +44,7 @@ func TestBestellKonfiguration_WarntWennDerLinkNichtEntstehenKann(t *testing.T) {
 	if ohneAdresse() {
 		t.Error("ohne Hauptlieferant warnt die Konfiguration, obwohl kein Link verschickt würde")
 	}
-	testdaten.Haendler(t, pool, "Naacher", true)
+	testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	if !ohneAdresse() {
 		t.Error("Hauptlieferant ohne öffentliche Adresse: keine Warnung")
 	}

@@ -20,7 +20,7 @@ import (
 // Statuscode und Satz für jeden fachlichen Fehler, UUID-Prüfung vor der Datenbank.
 func TestSchlagwortPflege_Tueren(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)

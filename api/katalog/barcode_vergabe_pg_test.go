@@ -110,17 +110,17 @@ func barcodeBestand(t *testing.T, pool *pgxpool.Pool) map[string]bool {
 // CopyFrom entstehen, verlor nicht die Position, sondern die ganze Bestellung.
 func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Vergabe", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Vergabe", 0)
 
 	// 1. Eine Bestellung mit Vorab-Barcodes bringt den Bestand auf Stand.
 	bestelleExemplare(t, pool, bookRepo, titel, 2)
 
 	// 2. Ein Altbestands-Exemplar bekommt über den Knopf eine interne Nummer.
-	platzhalter := testdaten.Exemplar(t, pool, titel, "SYS-1", true, "")
+	platzhalter := testdaten.LegeExemplarAn(t, pool, titel, "SYS-1", true, "")
 	handNummer := naechsteInterneNummer(t, srv)
 	if err := bookRepo.SetzeExemplarBarcode(context.Background(), platzhalter, handNummer); err != nil {
 		t.Fatalf("Handvergabe von %s: %v", handNummer, err)
@@ -140,13 +140,13 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 // ein noch existierendes Etikett zeigt damit auf ein anderes Buch.
 func TestBarcodeVergabe_GeloeschteNummerWirdNichtRecycelt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Recycling", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Recycling", 0)
 
 	vergeben := naechsteInterneNummer(t, srv)
-	id := testdaten.Exemplar(t, pool, titel, vergeben, true, "")
+	id := testdaten.LegeExemplarAn(t, pool, titel, vergeben, true, "")
 
 	if _, err := pool.Exec(context.Background(),
 		`DELETE FROM buecher_exemplare WHERE id = $1`, id); err != nil {
@@ -165,11 +165,11 @@ func TestBarcodeVergabe_GeloeschteNummerWirdNichtRecycelt(t *testing.T) {
 // hinweggehen, statt eine bereits vergebene Nummer auszugeben.
 func TestBarcodeVergabe_UeberspringtVonHandVergebeneNummern(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Drift", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Drift", 0)
 
 	// Von Hand weit über den Stand der Sequenz hinaus vergeben.
 	var stand int64
@@ -177,7 +177,7 @@ func TestBarcodeVergabe_UeberspringtVonHandVergebeneNummern(t *testing.T) {
 		t.Fatalf("Sequenzstand lesen: %v", err)
 	}
 	for i := int64(1); i <= 5; i++ {
-		testdaten.Exemplar(t, pool, titel, fmt.Sprintf("B-%05d", stand+i), true, "")
+		testdaten.LegeExemplarAn(t, pool, titel, fmt.Sprintf("B-%05d", stand+i), true, "")
 	}
 
 	belegt := barcodeBestand(t, pool)

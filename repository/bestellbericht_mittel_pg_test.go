@@ -20,7 +20,7 @@ import (
 // Liste, in der auch der andere Topf steht. An der Datenbank, weil die Einengung im SQL steht.
 func TestBestellberichtFiltertNachTopf(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 

@@ -29,15 +29,15 @@ import (
 // dasselbe Buch doppelt.
 func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
-	mitBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mit-Barcode", 0)
-	ohneBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Ohne-Barcode", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
+	mitBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mit-Barcode", 0)
+	ohneBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Ohne-Barcode", 0)
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
@@ -116,14 +116,14 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 // Bestellung ein gültiger Link ohne Empfänger herum — mehr Angriffsfläche ohne Nutzen.
 func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
-	lieferant := testdaten.Haendler(t, pool, "Normalo", false)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Normal", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Normalo", false)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Normal", 0)
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,

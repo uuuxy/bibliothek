@@ -20,7 +20,7 @@ import (
 // daher ein echter PG-Integrationstest, gated auf TEST_DATABASE_URL.
 func TestStammdaten_OhneAdresseKein500(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string

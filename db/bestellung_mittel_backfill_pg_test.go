@@ -21,21 +21,21 @@ import (
 
 func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE bestellungen_verlauf CASCADE`); err != nil {
 		t.Fatal(err)
 	}
 
-	lernmittel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe 7", 0)
-	lernmittel2 := testdaten.TitelMitMeldebestand(t, pool, "LMF-Deutsch 7", 0)
-	buecherei := testdaten.TitelMitMeldebestand(t, pool, "Tribute von Panem", 0)
+	lernmittel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7", 0)
+	lernmittel2 := testdaten.LegeTitelAn(t, pool, "LMF-Deutsch 7", 0)
+	buecherei := testdaten.LegeTitelAn(t, pool, "Tribute von Panem", 0)
 
-	nurLernmittel := testdaten.AltBestellung(t, pool, "nur-lernmittel", []string{lernmittel, lernmittel2})
-	nurBuecherei := testdaten.AltBestellung(t, pool, "nur-buecherei", []string{buecherei})
-	gemischt := testdaten.AltBestellung(t, pool, "gemischt", []string{lernmittel, buecherei})
-	titelWeg := testdaten.AltBestellung(t, pool, "titel-geloescht", []string{lernmittel, ""})
-	ohnePositionen := testdaten.AltBestellung(t, pool, "leer", nil)
+	nurLernmittel := testdaten.LegeBestellungOhneTopfAn(t, pool, "nur-lernmittel", []string{lernmittel, lernmittel2})
+	nurBuecherei := testdaten.LegeBestellungOhneTopfAn(t, pool, "nur-buecherei", []string{buecherei})
+	gemischt := testdaten.LegeBestellungOhneTopfAn(t, pool, "gemischt", []string{lernmittel, buecherei})
+	titelWeg := testdaten.LegeBestellungOhneTopfAn(t, pool, "titel-geloescht", []string{lernmittel, ""})
+	ohnePositionen := testdaten.LegeBestellungOhneTopfAn(t, pool, "leer", nil)
 
 	migration, err := os.ReadFile(filepath.Join("..", "migrations", "109_bestellung_mittel.sql"))
 	if err != nil {
@@ -46,8 +46,8 @@ func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 	}
 
 	erwartet := map[string]*string{
-		nurLernmittel:  testdaten.Ptr("land"),
-		nurBuecherei:   testdaten.Ptr("schultraeger"),
+		nurLernmittel:  testdaten.ZeigerAuf("land"),
+		nurBuecherei:   testdaten.ZeigerAuf("schultraeger"),
 		gemischt:       nil,
 		titelWeg:       nil,
 		ohnePositionen: nil,

@@ -81,7 +81,7 @@ func TestDSGVOKontoQuellen_DeckenSichMitDemSchema(t *testing.T) {
 
 func TestDSGVOAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	exec := func(sql string, args ...any) {
 		t.Helper()
@@ -99,10 +99,10 @@ func TestDSGVOAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 	}
 	// Die Betroffene der bearbeiteten Vorgänge — nichts von ihr darf in Beas Auskunft stehen.
 	const schuelerBarcode = "S-QUELLEN-KANARI"
-	schuelerin := testdaten.SeedSchueler(t, pool, schuelerBarcode, "Kanarina", "5a")
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Kanari-Titel", "Aut Or", false, 0)
-	ex1 := testdaten.Exemplar(t, pool, titelID, "EX-KANARI-1", true, "")
-	ex2 := testdaten.Exemplar(t, pool, titelID, "EX-KANARI-2", true, "")
+	schuelerin := testdaten.LegeSchuelerAn(t, pool, schuelerBarcode, "Kanarina", "5a")
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Kanari-Titel", "Aut Or", false, 0)
+	ex1 := testdaten.LegeExemplarAn(t, pool, titelID, "EX-KANARI-1", true, "")
+	ex2 := testdaten.LegeExemplarAn(t, pool, titelID, "EX-KANARI-2", true, "")
 
 	// Je Quelle: Eintrag anlegen und sagen, woran die Auskunft ihn zeigt.
 	erwartet := map[string]func(k *repository.DSGVOZugangskonto) bool{}
@@ -168,7 +168,7 @@ func TestDSGVOAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 		case "klassensatz_reservierungen.angefordert_von":
 			// Ein eigener Titel: Der Titel der eigenen Reservierung gehört in Beas Auskunft,
 			// der Titel, den die Schülerin ausgeliehen hat, nicht.
-			eigenerTitel := testdaten.SeedMonitorTitel(t, pool, "Beas Klassensatz-Titel", "Aut Or", false, 0)
+			eigenerTitel := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Beas Klassensatz-Titel", "Aut Or", false, 0)
 			exec(`INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, angefordert_von)
 				VALUES ($1, '5a', 25, $2)`, eigenerTitel, konto)
 			erwartet[quelle] = anfrage("klassensatz")

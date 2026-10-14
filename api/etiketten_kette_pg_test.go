@@ -82,7 +82,7 @@ func enthaeltBarcode(liste []druck.ExemplarOhneEtikett, barcode string) bool {
 func wareneingang(t *testing.T, pool *pgxpool.Pool) []service.EingebuchtesExemplar {
 	t.Helper()
 	ctx := context.Background()
-	ids := testdaten.ExemplarIDsDerBestellung(t, pool)
+	ids := testdaten.LadeExemplarIDsDerBestellung(t, pool)
 	if len(ids) == 0 {
 		t.Fatal("nichts einzubuchen — der Testaufbau hat keine Exemplare erzeugt")
 	}
@@ -99,14 +99,14 @@ func wareneingang(t *testing.T, pool *pgxpool.Pool) []service.EingebuchtesExempl
 
 func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Cornelsen-Kette", false)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Etikettenkette", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Cornelsen-Kette", false)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Etikettenkette", 0)
 
 	bestellTuer := srv.bestellung().SubmitOrderHandler(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool)))
 	if rec := tuertest.Bestelle(t, bestellTuer, lieferant, titel); rec.Code != http.StatusOK {
@@ -114,7 +114,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	}
 	smtptest.WarteAufMail(t, sitzungen)
 
-	barcodes := testdaten.BarcodesDerBestellung(t, pool)
+	barcodes := testdaten.LadeBarcodesDerBestellung(t, pool)
 	if len(barcodes) != 2 {
 		t.Fatalf("Exemplare = %v, erwartet 2", barcodes)
 	}
@@ -173,14 +173,14 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 // Zeilen erneut anfasst.
 func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Etikettenkette", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Etikettenkette", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Beklebt", 0)
 
 	bestellTuer := srv.bestellung().SubmitOrderHandler(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool)))
 	if rec := tuertest.Bestelle(t, bestellTuer, lieferant, titel); rec.Code != http.StatusOK {
@@ -188,7 +188,7 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	}
 	smtptest.WarteAufMail(t, sitzungen)
 
-	barcodes := testdaten.BarcodesDerBestellung(t, pool)
+	barcodes := testdaten.LadeBarcodesDerBestellung(t, pool)
 	liste, anzahl := offeneEtikettenUeberHandler(t, srv)
 	if anzahl != 0 || len(liste) != 0 {
 		t.Fatalf("vor dem Wareneingang stehen %d Zeilen (Zähler %d) auf der Nachdruck-Liste — "+
@@ -241,7 +241,7 @@ func postJSON(t *testing.T, handler http.HandlerFunc, pfad string, body map[stri
 // schlimmer ist als gar keine, weil sie glaubwuerdig aussieht.
 func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
@@ -319,7 +319,7 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 // Littera stand, findet seine Etiketten trotzdem.
 func TestEtikettenkette_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()

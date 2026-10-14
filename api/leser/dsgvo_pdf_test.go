@@ -115,8 +115,8 @@ func TestDsgvoAuskunftPDFHandler_Success(t *testing.T) {
 	for range 2 {
 		mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
 			WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-				AddRow("schule_name", testdaten.Ptr("Test School")).
-				AddRow("schule_ort", testdaten.Ptr("Test City")))
+				AddRow("schule_name", testdaten.ZeigerAuf("Test School")).
+				AddRow("schule_ort", testdaten.ZeigerAuf("Test City")))
 	}
 
 	// Der Eintrag über die erteilte Auskunft folgt dem Blatt.

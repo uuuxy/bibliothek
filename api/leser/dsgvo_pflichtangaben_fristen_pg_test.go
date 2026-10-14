@@ -27,7 +27,7 @@ import (
 // die Auskunft eines Kollegen, deshalb steht eine Kollegin daneben.
 func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Krumme Werte: Die Vorgaben (1 und 730 Tage Lesehistorie, 90 Tage Karenz, 24 Monate
@@ -55,7 +55,7 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 		}
 	})
 
-	sid := testdaten.SeedSchueler(t, pool, "S-FRISTEN-PROBE", "Fristenkind", "5F1")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-FRISTEN-PROBE", "Fristenkind", "5F1")
 	var kollege string
 	if err := pool.QueryRow(ctx, `INSERT INTO leser (vorname, nachname, art)
 		VALUES ('Frieda', 'Fristenkollegin', 'lehrkraft') RETURNING id`).Scan(&kollege); err != nil {

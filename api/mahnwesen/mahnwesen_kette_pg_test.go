@@ -56,7 +56,7 @@ func inDieVergangenheit(t *testing.T, pool *pgxpool.Pool, schuelerID string, tag
 
 func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// 1. Die Einstellung, aus der die Frist entsteht. Bewusst kein Vielfaches von 7 und
@@ -75,8 +75,8 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	}
 
 	// Kein LMF im Titel: Schulbücher laufen bis zum Stichtag im Sommer, nicht nach Tagen.
-	testdaten.AusleihbaresExemplar(t, pool, "Roman ohne Kennzeichen", "B-MAHN-1")
-	testdaten.AusleihbaresExemplar(t, pool, "Zweiter Roman", "B-MAHN-2")
+	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Roman ohne Kennzeichen", "B-MAHN-1")
+	testdaten.LegeAusleihbaresExemplarAn(t, pool, "Zweiter Roman", "B-MAHN-2")
 
 	// Schreibweise absichtlich verschieden: Schülerdaten "5A", Mapping "5a " mit
 	// Leerzeichen — genau die Kombination, die aus dem LUSD-Import und einem Formular
@@ -84,10 +84,10 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// Schreiben auf DIESELBE registrierte Schreibweise; die Mail muss trotzdem (bzw.
 	// gerade deshalb) ankommen. Welche Schreibweise gewinnt, entscheidet der
 	// Erstschreiber — der Test liest sie unten aus der DB, wie es auch die UI tut.
-	anna := testdaten.SeedSchueler(t, pool, "S-MAHN-1", "Anna", "5A")
-	ben := testdaten.SeedSchueler(t, pool, "S-MAHN-2", "Ben", "6B")
-	testdaten.Klassenleitung(t, pool, "5a ", "leitung5a@schule.invalid")
-	testdaten.Klassenleitung(t, pool, "6B", "leitung6b@schule.invalid")
+	anna := testdaten.LegeSchuelerAn(t, pool, "S-MAHN-1", "Anna", "5A")
+	ben := testdaten.LegeSchuelerAn(t, pool, "S-MAHN-2", "Ben", "6B")
+	testdaten.SetzeKlassenleitung(t, pool, "5a ", "leitung5a@schule.invalid")
+	testdaten.SetzeKlassenleitung(t, pool, "6B", "leitung6b@schule.invalid")
 
 	var annaKlasse string
 	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE id = $1::uuid`, anna).Scan(&annaKlasse); err != nil {
@@ -95,8 +95,8 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	}
 
 	// 2. Ausleihe über den echten Dienst → die Frist muss aus der Einstellung stammen.
-	bearbeiter := testdaten.AdminFuerAudit(t, pool)
-	frist := testdaten.AusleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
+	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
+	frist := testdaten.BucheAusleiheUeberDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
 	// Beide Seiten durch DIESELBE Produktionsdefinition schicken (seit dem 24.09.2026
 	// lmfplan.Ferientabelle.Tagesfrist, davor schulzeit.TagesEnde), statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
 	// in der Schul-Zeitzone (Europe/Berlin), der Test lief mit time.Now() in der Zeitzone des
@@ -114,7 +114,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 		t.Fatalf("Rückgabefrist = %s, erwartet den %s (%d Tage aus der Einstellung)",
 			frist.Format("02.01.2006"), erwartet.Format("02.01.2006"), tage)
 	}
-	testdaten.AusleiheUeberDenDienst(t, pool, "B-MAHN-2", ben, bearbeiter)
+	testdaten.BucheAusleiheUeberDienst(t, pool, "B-MAHN-2", ben, bearbeiter)
 
 	// 3. Überfällig werden lassen — und prüfen, wen die Abfrage findet.
 	inDieVergangenheit(t, pool, anna, 9)

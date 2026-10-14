@@ -18,11 +18,11 @@ import (
 // korrigieren, ohne über das große Buchformular zu gehen.
 func TestUpdateTitelSignaturHandler_SpeichertNeueSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	titelID := testdaten.TitelMitSignatur(t, pool, "Die Tribute von Panem", "BIB Jugendbuch", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Tribute von Panem", "BIB Jugendbuch", 0)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+titelID+"/signatur",
 		strings.NewReader(`{"signatur":"JF Panem"}`))
@@ -49,7 +49,7 @@ func TestUpdateTitelSignaturHandler_SpeichertNeueSignatur(t *testing.T) {
 // existierende Titel-ID sauber als 404 gemeldet wird statt als 500.
 func TestUpdateTitelSignaturHandler_UnbekannteIDGibt404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	unbekannteID := "00000000-0000-0000-0000-000000000000"

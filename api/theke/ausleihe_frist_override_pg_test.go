@@ -25,7 +25,7 @@ import (
 // Live gefunden 18.08.2026 (Rollen×Aktionen-Prüfung); vorher ging beides ungeprüft.
 func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Echter Benutzer für den Audit-FK (audit_logs.admin_id).
@@ -38,15 +38,15 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 		t.Fatalf("Test-Admin: %v", err)
 	}
 
-	sidNormal := testdaten.SeedSchueler(t, pool, "S-FO-1", "Normal", "5a")
-	sidGesperrt := testdaten.SeedSchueler(t, pool, "S-FO-2", "Gesperrt", "5b")
+	sidNormal := testdaten.LegeSchuelerAn(t, pool, "S-FO-1", "Normal", "5a")
+	sidGesperrt := testdaten.LegeSchuelerAn(t, pool, "S-FO-2", "Gesperrt", "5b")
 	if _, err := pool.Exec(ctx, "UPDATE schueler SET is_manually_blocked = true, block_reason = 'Buchverlust' WHERE id = $1", sidGesperrt); err != nil {
 		t.Fatalf("Sperre setzen: %v", err)
 	}
 
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
-	ausleiheNormal := testdaten.SeedAusleihe(t, pool, sidNormal, "Buch Normal", alteFrist)
-	ausleiheGesperrt := testdaten.SeedAusleihe(t, pool, sidGesperrt, "Buch Gesperrt", alteFrist)
+	ausleiheNormal := testdaten.LegeAusleiheMitFristAn(t, pool, sidNormal, "Buch Normal", alteFrist)
+	ausleiheGesperrt := testdaten.LegeAusleiheMitFristAn(t, pool, sidGesperrt, "Buch Gesperrt", alteFrist)
 
 	zukunft := time.Now().AddDate(1, 0, 0).Format("2006-01-02")
 	vergangenheit := "2022-06-01"
@@ -101,7 +101,7 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 			VALUES ('Frist', 'Kollege', 'lehrkraft', true, 'alt') RETURNING id`).Scan(&kollege); err != nil {
 			t.Fatalf("Kollegen anlegen: %v", err)
 		}
-		ausleiheKollege := testdaten.SeedAusleihe(t, pool, kollege, "Buch Kollege", alteFrist)
+		ausleiheKollege := testdaten.LegeAusleiheMitFristAn(t, pool, kollege, "Buch Kollege", alteFrist)
 		if w := call(ausleiheKollege, zukunft); w.Code != http.StatusOK {
 			t.Fatalf("erwartet 200, war %d: %s", w.Code, w.Body.String())
 		}
@@ -132,7 +132,7 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 // fällig als eine regulär berechnete — zwei Antworten auf dieselbe fachliche Frage.
 func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var adminID string
@@ -143,8 +143,8 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 		RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Test-Admin: %v", err)
 	}
-	sid := testdaten.SeedSchueler(t, pool, "S-TZ-1", "Zone", "5a")
-	ausleihe := testdaten.SeedAusleihe(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-TZ-1", "Zone", "5a")
+	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
@@ -179,7 +179,7 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 // die Mahnstufe zurück — ein vorgezogenes Datum lässt sie stehen.
 func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var adminID string
@@ -188,10 +188,10 @@ func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 		VALUES ('Tür', 'Admin', 'frist-tuer@test.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Test-Admin: %v", err)
 	}
-	sid := testdaten.SeedSchueler(t, pool, "S-FT-1", "Tuer", "5a")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-FT-1", "Tuer", "5a")
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
-	ausleihe := testdaten.SeedAusleihe(t, pool, sid, "Buch Tuer", alteFrist)
-	zurueck := testdaten.SeedAusleihe(t, pool, sid, "Buch zurueck", alteFrist)
+	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch Tuer", alteFrist)
+	zurueck := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch zurueck", alteFrist)
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1`, zurueck); err != nil {
 		t.Fatalf("Rückgabe buchen: %v", err)
 	}

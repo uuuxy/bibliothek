@@ -24,7 +24,7 @@ import (
 // Hier über die echten Handler: Die Bibliothek bekommt eine Auskunft, keinen 500.
 func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)

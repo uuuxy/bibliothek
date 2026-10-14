@@ -13,10 +13,10 @@ import (
 // ein überzähliges Etikett alle folgenden. Die Gegenprobe: Die übrigen Exemplare bleiben.
 func TestEtiketten_OhneAusgesonderteExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Etikett-Aussonderung", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Etikett-Aussonderung", 0)
 	for _, b := range []struct {
 		barcode      string
 		ausgesondert bool

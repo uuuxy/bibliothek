@@ -24,7 +24,7 @@ import (
 // Mengen.
 func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	// Die Proben tragen ihren Namen und liegen im Jahr 2019, vor jeder anderen Bestellung der
 	// Testdatenbank: Der Bericht zählt alle Bestellungen seines Zeitraums.

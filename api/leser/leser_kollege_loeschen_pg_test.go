@@ -29,7 +29,7 @@ import (
 // Zugang" — über einen Eintrag, der im Papierkorb liegt und nirgends zu sehen ist.
 func TestKollegeLoeschen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
@@ -194,7 +194,7 @@ func TestKollegeLoeschen(t *testing.T) {
 
 	t.Run("mit offenen Büchern wird nicht gelöscht", func(t *testing.T) {
 		leserID, _ := kollegeMitKonto(t, "Bert", "Buchoffen", "bert.buchoffen@schule.invalid")
-		// Selbst angelegt statt im Bestand gesucht: testdaten.ResetBestandsdaten räumt ihn weg, und ein
+		// Selbst angelegt statt im Bestand gesucht: testdaten.LeereBestandsdaten räumt ihn weg, und ein
 		// Skip auf leerer Tabelle wäre ein grüner Test ohne Aussage.
 		var titelID, exemplarID string
 		if err := pool.QueryRow(ctx,

@@ -31,13 +31,13 @@ import (
 // (ihre Angaben prüft TestDSGVOAngabenZeilen an der Form, die die Schreiber ablegen).
 func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	sid := testdaten.SeedSchueler(t, pool, "S-BLATT-1", "Blattkind", "7a")
-	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "blatt-bearbeiter@test.invalid")
-	titelID := testdaten.SeedMonitorTitel(t, pool, "Blatt-Titel Mathematik", "Aut Or", false, 0)
-	exID := testdaten.Exemplar(t, pool, titelID, "BLATT-EX-1", true, "")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BLATT-1", "Blattkind", "7a")
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "blatt-bearbeiter@test.invalid")
+	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Blatt-Titel Mathematik", "Aut Or", false, 0)
+	exID := testdaten.LegeExemplarAn(t, pool, titelID, "BLATT-EX-1", true, "")
 	auditRepo := repository.NewProtokollAbfragen(pool)
 
 	// Ausleihe und Rückgabe.
@@ -143,7 +143,7 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	if fund := regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`).FindString(protokoll); fund != "" {
 		t.Errorf("in den Abschnitten 8 und 9 steht die Kennung %s", fund)
 	}
-	// Das Konto, das gebucht hat (testdaten.SeedPortalLehrkraft: Portal Lehrkraft), und der Löscheintrag
+	// Das Konto, das gebucht hat (testdaten.LegeKollegiumskontoAn: Portal Lehrkraft), und der Löscheintrag
 	// eines Kontos, den Abschnitt 10 nennt.
 	for _, nicht := range []string{"blatt-bearbeiter@test.invalid", "Portal", "Blattkonto", "127.0.0.1"} {
 		if strings.Contains(protokoll, nicht) {

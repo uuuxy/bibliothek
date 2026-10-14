@@ -42,7 +42,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 	// vorgang: "ausleihe" = Buch noch draußen, "schaden" = Gebühr unbezahlt.
 	baueFall := func(t *testing.T, marke, vorgang string, imPapierkorb bool) string {
 		t.Helper()
-		testdaten.ResetBestandsdaten(t, pool)
+		testdaten.LeereBestandsdaten(t, pool)
 
 		papierkorb := "NULL"
 		if imPapierkorb {
@@ -150,7 +150,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 // repository/lusd_import.go.
 func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var sid, tid, eid, aid, fallID string

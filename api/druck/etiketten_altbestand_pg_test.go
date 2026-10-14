@@ -17,10 +17,10 @@ import (
 // Bestellung. Die Antwort nennt die Zahl der Exemplare, die vorher keinen Vermerk hatten.
 func TestEtikettenAltbestand_StichtagTrifftNurDenAltbestand(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 	_, rufe := routertest.MitAufruf(t, pool)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "Altbestand Etiketten", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Altbestand Etiketten", 0)
 
 	type zeile struct {
 		barcode, erworben, bestellstatus, grund string

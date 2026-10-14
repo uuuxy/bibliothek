@@ -19,7 +19,7 @@ func AdminSitzung(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname str
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	adminID = testdaten.AdminKonto(t, pool, email, vorname, nachname)
+	adminID = testdaten.LegeAdminKontoAn(t, pool, email, vorname, nachname)
 	sitzung, err = anmeldung.GenerateToken(adminID, "PG-TEST-1", auth.RoleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)

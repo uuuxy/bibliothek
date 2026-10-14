@@ -63,11 +63,11 @@ func exemplarAusBestellung(t *testing.T, pool *pgxpool.Pool, titelID, bestellung
 
 func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Detail", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Detail", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	// Ein vollständig gepflegter Titel …
@@ -79,7 +79,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 		t.Fatalf("Titel mit Angaben: %v", err)
 	}
 	// … und einer, bei dem autor/verlag/cover_url NULL sind.
-	ohneAngaben := testdaten.TitelMitMeldebestand(t, pool, "Titel ohne Angaben", 5)
+	ohneAngaben := testdaten.LegeTitelAn(t, pool, "Titel ohne Angaben", 5)
 
 	for _, p := range []struct {
 		titelID string

@@ -31,7 +31,7 @@ import (
 // demselben Zustand, von denen nur eine die Regeln kennt: Die falsche geht irgendwann auf.
 func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

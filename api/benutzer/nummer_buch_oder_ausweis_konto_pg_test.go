@@ -23,7 +23,7 @@ import (
 // (Rasterdurchgang 22.09.2026, Frage 5: stille Fehler).
 func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)

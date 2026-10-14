@@ -31,11 +31,11 @@ import (
 // (repository/mahnwesen_ueberfaellige.go). Das bleibt so.
 func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	// Das Exemplar wird ANGELEGT und nicht im Bestand gesucht: testdaten.ResetBestandsdaten räumt ihn
+	// Das Exemplar wird ANGELEGT und nicht im Bestand gesucht: testdaten.LeereBestandsdaten räumt ihn
 	// weg. Ein `LIMIT 1` auf eine leere Tabelle führte hier erst zu einem Skip — und ein
 	// übersprungener Test ist grün, ohne etwas zu belegen (gesehen an der Rot-Probe: Der
 	// Rückbau der Regel liess den Test unverändert „ok" melden).

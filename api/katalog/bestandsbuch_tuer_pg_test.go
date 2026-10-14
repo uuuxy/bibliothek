@@ -22,22 +22,22 @@ import (
 // Datenbank im Zeitraum, je Topf unter seiner Überschrift, und keine Zeile von außerhalb.
 func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	_, rufe := routertest.MitAufruf(t, pool)
 	ctx := t.Context()
 	tag := func(m time.Month, d int) time.Time {
 		return time.Date(2026, m, d, 12, 0, 0, 0, schulzeit.Zone())
 	}
 
-	lernmittel := testdaten.TitelMitSignatur(t, pool, "Mathebuch 7", "Mat 7", 0)
+	lernmittel := testdaten.LegeTitelMitSignaturAn(t, pool, "Mathebuch 7", "Mat 7", 0)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, lernmittel); err != nil {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
-	buecherei := testdaten.TitelMitSignatur(t, pool, "Gregs Tagebuch", "Jug Gre", 0)
+	buecherei := testdaten.LegeTitelMitSignaturAn(t, pool, "Gregs Tagebuch", "Jug Gre", 0)
 
 	abgang := func(titelID, barcode string, wann time.Time) {
 		t.Helper()
-		id := testdaten.Exemplar(t, pool, titelID, barcode, true, "")
+		id := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 		if _, err := pool.Exec(ctx, `
 			UPDATE buecher_exemplare
 			SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST'

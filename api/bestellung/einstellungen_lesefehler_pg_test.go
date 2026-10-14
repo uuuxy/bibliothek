@@ -24,7 +24,7 @@ import (
 
 func TestBestellbericht_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	rufe := func(datenbank db.PgxPoolIface) *httptest.ResponseRecorder {
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}
@@ -34,7 +34,7 @@ func TestBestellbericht_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.EinstellungenLesen})
+	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Der Bericht entsteht mit den Vorgaben statt mit den Angaben der Schule", rec.Code)
 	}
@@ -51,7 +51,7 @@ func TestBestellbericht_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 
 func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bibliothek.example.invalid")
 	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
 
@@ -67,7 +67,7 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 
 	t.Run("gestört", func(t *testing.T) {
 		sitzungen := tuertest.MailAbfangen(t)
-		gestoert := testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.EinstellungenLesen}
+		gestoert := testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen}
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: gestoert}}}
 
 		_, err := srv.sendeBestellmail(context.Background(), daten)

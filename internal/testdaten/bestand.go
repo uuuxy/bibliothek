@@ -9,9 +9,9 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
-// TitelMitMeldebestand legt einen Titel mit Meldebestand an. Trägt der Titel die Kennung der
+// LegeTitelAn legt einen Titel mit Meldebestand an. Trägt der Titel die Kennung der
 // Lernmittel („LMF-Mathe 7“), entsteht er als Lernmittel.
-func TitelMitMeldebestand(t *testing.T, pool *pgxpool.Pool, titel string, meldebestand int) string {
+func LegeTitelAn(t *testing.T, pool *pgxpool.Pool, titel string, meldebestand int) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -22,9 +22,9 @@ func TitelMitMeldebestand(t *testing.T, pool *pgxpool.Pool, titel string, meldeb
 	return id
 }
 
-// TitelMitSignatur legt einen Titel mit Signatur an; Lernmittel, wenn Titel oder Signatur die
+// LegeTitelMitSignaturAn legt einen Titel mit Signatur an; Lernmittel, wenn Titel oder Signatur die
 // Kennung der Lernmittel tragen.
-func TitelMitSignatur(t *testing.T, pool *pgxpool.Pool, titel, signatur string, meldebestand int) string {
+func LegeTitelMitSignaturAn(t *testing.T, pool *pgxpool.Pool, titel, signatur string, meldebestand int) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -35,9 +35,9 @@ func TitelMitSignatur(t *testing.T, pool *pgxpool.Pool, titel, signatur string, 
 	return id
 }
 
-// SeedMonitorTitel legt einen Titel mit Signatur an, wahlweise mit Cover, angelegt vor alterTage
+// LegeTitelMitCoverUndAlterAn legt einen Titel mit Signatur an, wahlweise mit Cover, angelegt vor alterTage
 // Tagen: Das Datum steuert „Neu eingetroffen“ am Monitor, das Cover seine Cover-Pflicht.
-func SeedMonitorTitel(t *testing.T, pool *pgxpool.Pool, titel, signatur string, mitCover bool, alterTage int) string {
+func LegeTitelMitCoverUndAlterAn(t *testing.T, pool *pgxpool.Pool, titel, signatur string, mitCover bool, alterTage int) string {
 	t.Helper()
 	var cover *string
 	if mitCover {
@@ -54,9 +54,9 @@ func SeedMonitorTitel(t *testing.T, pool *pgxpool.Pool, titel, signatur string, 
 	return id
 }
 
-// SeedSignaturMitExemplar legt einen Titel unter der Signatur mit einem ausleihbaren Exemplar an
+// LegeExemplarMitSignaturAn legt einen Titel unter der Signatur mit einem ausleihbaren Exemplar an
 // und liefert die Kennung des Exemplars.
-func SeedSignaturMitExemplar(t *testing.T, pool *pgxpool.Pool, signatur, barcode string) string {
+func LegeExemplarMitSignaturAn(t *testing.T, pool *pgxpool.Pool, signatur, barcode string) string {
 	t.Helper()
 	var titelID string
 	if err := pool.QueryRow(context.Background(),
@@ -64,11 +64,11 @@ func SeedSignaturMitExemplar(t *testing.T, pool *pgxpool.Pool, signatur, barcode
 		signatur+"-Buch", signatur).Scan(&titelID); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
-	return Exemplar(t, pool, titelID, barcode, true, "")
+	return LegeExemplarAn(t, pool, titelID, barcode, true, "")
 }
 
-// Exemplar legt ein Exemplar mit Barcode, Verleihstatus und Notiz an.
-func Exemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string, ausleihbar bool, notiz string) string {
+// LegeExemplarAn legt ein Exemplar mit Barcode, Verleihstatus und Notiz an.
+func LegeExemplarAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode string, ausleihbar bool, notiz string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -80,9 +80,9 @@ func Exemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string, ausleih
 	return id
 }
 
-// ZulaufExemplar legt ein Exemplar an, wie es das Bestellwesen anlegt: nicht ausleihbar, mit
+// LegeExemplarImZulaufAn legt ein Exemplar an, wie es das Bestellwesen anlegt: nicht ausleihbar, mit
 // Bestellstatus und dem heutigen Tag als erworben_am (Vorgabe der Spalte).
-func ZulaufExemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) string {
+func LegeExemplarImZulaufAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `
@@ -93,9 +93,9 @@ func ZulaufExemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) s
 	return id
 }
 
-// AusleihbaresExemplar legt Titel und Exemplar an, das sofort ausgeliehen werden kann.
-func AusleihbaresExemplar(t *testing.T, pool *pgxpool.Pool, titel, barcode string) {
+// LegeAusleihbaresExemplarAn legt Titel und Exemplar an, das sofort ausgeliehen werden kann.
+func LegeAusleihbaresExemplarAn(t *testing.T, pool *pgxpool.Pool, titel, barcode string) {
 	t.Helper()
-	titelID := TitelMitMeldebestand(t, pool, titel, 0)
-	Exemplar(t, pool, titelID, barcode, true, "")
+	titelID := LegeTitelAn(t, pool, titel, 0)
+	LegeExemplarAn(t, pool, titelID, barcode, true, "")
 }

@@ -19,10 +19,10 @@ import (
 // (03.09.2026): Buch → Buchakte, Ausweis → Schülerakte.
 func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	titelID := testdaten.TitelMitMeldebestand(t, pool, "Sprungbuch", 1)
-	exID := testdaten.Exemplar(t, pool, titelID, "B-SPRUNG-1", true, "")
+	titelID := testdaten.LegeTitelAn(t, pool, "Sprungbuch", 1)
+	exID := testdaten.LegeExemplarAn(t, pool, titelID, "B-SPRUNG-1", true, "")
 	var schuelerID string
 	if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('S-SPRUNG-1', 'Greta', 'Sprung', '07A', 2031) RETURNING id`).Scan(&schuelerID); err != nil {

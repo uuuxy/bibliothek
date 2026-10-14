@@ -21,15 +21,15 @@ import (
 // Signatur. Die ISBN zeichnet keiner der Erzeuger.
 func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
-	lieferant := testdaten.Haendler(t, pool, "Naacher-Paritaet", true)
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Paritaet", true)
 	// Signatur und Autor sind gesetzt: Zwei leere Felder wären auf beiden Wegen gleich, auch
 	// wenn eine der Abfragen das Feld nicht läse.
-	titel := testdaten.TitelMitSignatur(t, pool, "LMF-Paritaet", "LMF-Deutsch 5", 0)
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "LMF-Paritaet", "LMF-Deutsch 5", 0)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = 'Autorin der Probe' WHERE id = $1`, titel); err != nil {
 		t.Fatalf("Autor setzen: %v", err)
 	}

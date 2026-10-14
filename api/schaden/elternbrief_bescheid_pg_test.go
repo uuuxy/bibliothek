@@ -21,17 +21,17 @@ import (
 // blieb er erreichbar.
 func TestElternbrief_ForderungAufEinemBescheidBekommtKeinenBrief(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 
-	sid := testdaten.SeedSchueler(t, pool, "S-EBRIEF", "Briefkind", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Mathematik 8")
-	fAuf := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "EBRIEF-1", true, ""),
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-EBRIEF", "Briefkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Mathematik 8")
+	fAuf := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "EBRIEF-1", true, ""),
 		"nicht_zurueckgegeben", "Mathematik 8 nicht zurück")
-	fOhne := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "EBRIEF-2", true, ""),
+	fOhne := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "EBRIEF-2", true, ""),
 		"beschaedigt", "Mathematik 8 beschädigt")
 	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fAuf: 24.90})); rec.Code != http.StatusCreated {

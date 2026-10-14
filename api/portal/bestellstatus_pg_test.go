@@ -28,7 +28,7 @@ import (
 func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	var titelID string
 	if err := pool.QueryRow(ctx, `

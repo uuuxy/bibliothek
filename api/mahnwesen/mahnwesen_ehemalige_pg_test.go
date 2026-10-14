@@ -27,7 +27,7 @@ import (
 // Gruppe, und diese Gruppe geht an keine Klassenleitung.
 func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -58,8 +58,8 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 
 	// Erik ging mitten im Jahr aus der 08H3 und hat sein Buch noch. So markiert ihn der
 	// Abgleich mit der LUSD: Ehemaliger, die Klasse bleibt stehen.
-	erik := testdaten.SeedSchueler(t, pool, "EHM-S-1", "Erik", "08H3")
-	testdaten.SeedAusleihe(t, pool, erik, "Atlas Alt", abgelaufen)
+	erik := testdaten.LegeSchuelerAn(t, pool, "EHM-S-1", "Erik", "08H3")
+	testdaten.LegeAusleiheMitFristAn(t, pool, erik, "Atlas Alt", abgelaufen)
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatalf("Transaktion: %v", err)
@@ -72,9 +72,9 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	}
 
 	// Nora ist in der 07H3 und wird versetzt; ihre Klassenleitung zieht mit.
-	nora := testdaten.SeedSchueler(t, pool, "EHM-S-2", "Nora", "07H3")
-	testdaten.SeedAusleihe(t, pool, nora, "Atlas Neu", abgelaufen)
-	testdaten.Klassenleitung(t, pool, "07H3", "leitung-nora@schule.invalid")
+	nora := testdaten.LegeSchuelerAn(t, pool, "EHM-S-2", "Nora", "07H3")
+	testdaten.LegeAusleiheMitFristAn(t, pool, nora, "Atlas Neu", abgelaufen)
+	testdaten.SetzeKlassenleitung(t, pool, "07H3", "leitung-nora@schule.invalid")
 
 	if rec := rufe(tuertest.JSONPost("/api/students/promote", `{"confirm":true}`)); rec.Code != http.StatusOK {
 		t.Fatalf("Versetzung: Status %d — %s", rec.Code, rec.Body.String())
@@ -95,7 +95,7 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 			"erwartet beide in 08H3 und die Klassenleitung von Nora", klasseErik, klasseNora, leitung)
 	}
 	// Eine Zuordnung unter dem Namen der Gruppe macht aus ihr keine Klasse.
-	testdaten.Klassenleitung(t, pool, "Ehemalige", "niemand@schule.invalid")
+	testdaten.SetzeKlassenleitung(t, pool, "Ehemalige", "niemand@schule.invalid")
 
 	t.Run("die Mahnliste führt den Ehemaligen als eigene Gruppe ohne Klassenleitung", func(t *testing.T) {
 		rec := rufe(httptest.NewRequest(http.MethodGet, "/api/mahnwesen", nil))

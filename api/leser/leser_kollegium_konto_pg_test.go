@@ -36,7 +36,7 @@ import (
 // geprüft: dass die Handanlage überhaupt ein Konto erzeugt, an genau EINER Leserzeile.
 func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

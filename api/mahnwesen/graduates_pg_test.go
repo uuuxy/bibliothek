@@ -39,24 +39,24 @@ func abgaengerAntwort(t *testing.T, srv *Tueren) AbgaengerAntwort {
 
 func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 
 	// Drin: Abschlussklassen mit Buch, in jeder Schreibweise, die das Vokabular zulässt.
-	testdaten.SchuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
-	testdaten.SchuelerMitBuch(t, pool, "S-2", "Bea", "09h2")
-	testdaten.SchuelerMitBuch(t, pool, "S-3", "Cem", "10R1")
-	testdaten.SchuelerMitBuch(t, pool, "S-4", "Dana", "13")
-	testdaten.SchuelerMitBuch(t, pool, "S-5", "Emil", "10H1")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-1", "Anna", "9H1")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-2", "Bea", "09h2")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-3", "Cem", "10R1")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-4", "Dana", "13")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-5", "Emil", "10H1")
 	// Draußen: kein Abschlussjahrgang, obwohl mit Buch.
-	testdaten.SchuelerMitBuch(t, pool, "S-6", "Finn", "10G1")
-	testdaten.SchuelerMitBuch(t, pool, "S-7", "Gül", "8H1")
-	testdaten.SchuelerMitBuch(t, pool, "S-8", "Hans", "9R1")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-6", "Finn", "10G1")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-7", "Gül", "8H1")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-8", "Hans", "9R1")
 	// Draußen: Abschlussklasse, aber nichts mehr offen — nichts einzusammeln.
-	testdaten.SeedSchueler(t, pool, "S-9", "Ida", "9H1")
+	testdaten.LegeSchuelerAn(t, pool, "S-9", "Ida", "9H1")
 	// Draußen: laut LUSD schon weg (ist_abgaenger, Klasse ABG) — mit Buch, aber das ist
 	// Sache des Mahnwesens, nicht dieser Liste.
-	weg := testdaten.SeedAbgaengerRet(t, pool, "S-10", "Jo", "ABG")
-	testdaten.SeedAusleihe(t, pool, weg, "Buch Jo", time.Now().AddDate(0, 0, -3))
+	weg := testdaten.LegeAbgaengerAn(t, pool, "S-10", "Jo", "ABG")
+	testdaten.LegeAusleiheMitFristAn(t, pool, weg, "Buch Jo", time.Now().AddDate(0, 0, -3))
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	antwort := abgaengerAntwort(t, srv)
@@ -88,10 +88,10 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 // Gegenprobe im selben Test: dieselben Daten, Uhr auf Juni, und die Zeile ist da.
 func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	tuertest.MailAbfangen(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
 
-	testdaten.SchuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
+	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-1", "Anna", "9H1")
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
 
 	antwort := abgaengerAntwort(t, srv)

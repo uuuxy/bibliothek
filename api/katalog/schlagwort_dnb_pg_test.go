@@ -24,12 +24,12 @@ import (
 // sie kennt, Normdatei-Wörter außerhalb der Liste getrennt als neu. Geschrieben wird nichts.
 func TestDnbSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := testdaten.TitelMitSignatur(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg", "Fantasy"}); err != nil {
 		t.Fatal(err)
 	}

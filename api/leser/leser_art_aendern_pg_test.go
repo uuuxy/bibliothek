@@ -37,7 +37,7 @@ import (
 // einmal die Diagnose (siehe api/leser/student_update.go, Kommentar an den Sperrfeldern).
 func TestLeserArtAendern(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 

@@ -23,7 +23,7 @@ import (
 // Import-Auto-Matching über Name+Geburtsdatum.
 func TestLusdIDKontrolliertNachtragbar(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var adminID string

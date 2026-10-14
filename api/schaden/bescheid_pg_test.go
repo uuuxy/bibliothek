@@ -37,7 +37,7 @@ func bescheidErstellenUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool
 	req.SetPathValue("id", schuelerID)
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.BescheidErstellenHandler(repository.NewBescheidAbfragen(pool), repository.NewProtokollAbfragen(pool))(rec, req)
 	return rec
@@ -52,14 +52,14 @@ func bescheidErstellenUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool
 // Bescheid. Beides wird abgewiesen, ohne eine Nummer zu verbrauchen.
 func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-TOPF", "Topfkind", "08G2")
-	roman := testdaten.SeedMonitorTitel(t, pool, "Roman der Buecherei", "Autor", true, 0)
-	f := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, roman, "BESCH-TOPF-1", true, ""), "beschaedigt", "Roman beschädigt")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-TOPF", "Topfkind", "08G2")
+	roman := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Roman der Buecherei", "Autor", true, 0)
+	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, roman, "BESCH-TOPF-1", true, ""), "beschaedigt", "Roman beschädigt")
 
 	for _, mittel := range []string{"land", "schultraeger"} {
 		rumpf := fmt.Sprintf(`{"mittel":%q,"frist_bis":%q,"positionen":[{"schadensfall_id":%q,"betrag":12.00}]}`,
@@ -81,18 +81,18 @@ func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
 
 func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-1", "Bescheidkind", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Mathematik 7")
-	ex1 := testdaten.Exemplar(t, pool, titelID, "BESCH-EX-1", true, "")
-	ex2 := testdaten.Exemplar(t, pool, titelID, "BESCH-EX-2", true, "")
-	f1 := testdaten.BescheidForderung(t, pool, sid, ex1, "nicht_zurueckgegeben", "Mathematik 7 nicht zurück")
-	f2 := testdaten.BescheidForderung(t, pool, sid, ex2, "beschaedigt", "Mathematik 7 beschädigt")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-1", "Bescheidkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Mathematik 7")
+	ex1 := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-1", true, "")
+	ex2 := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-2", true, "")
+	f1 := testdaten.LegeForderungAn(t, pool, sid, ex1, "nicht_zurueckgegeben", "Mathematik 7 nicht zurück")
+	f2 := testdaten.LegeForderungAn(t, pool, sid, ex2, "beschaedigt", "Mathematik 7 beschädigt")
 
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f1: 24.90, f2: 12.00}))
@@ -157,15 +157,15 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 // dieselbe Forderung, und die Zahlung wäre nicht zuordenbar.
 func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-2", "Zweitkind", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Deutsch 8")
-	ex := testdaten.Exemplar(t, pool, titelID, "BESCH-EX-3", true, "")
-	f := testdaten.BescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-2", "Zweitkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Deutsch 8")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-3", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
 
 	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.50})); rec.Code != http.StatusCreated {
@@ -197,10 +197,10 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 // Ohne die Pflichtangaben entsteht kein Bescheid — und keine Nummer.
 func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
-	// Bewusst OHNE testdaten.BescheidAngabenSetzen; Reste aus anderen Tests räumen.
+	// Bewusst OHNE testdaten.SetzeBescheidAngaben; Reste aus anderen Tests räumen.
 	for _, k := range []string{"bescheid_bereich_nr", "bescheid_schulnummer", "bescheid_aufsicht", "bescheid_schulleitung"} {
 		if _, err := pool.Exec(ctx, `DELETE FROM system_einstellungen WHERE schluessel = $1`, k); err != nil {
 			t.Fatal(err)
@@ -208,10 +208,10 @@ func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
 	}
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-3", "Ohneangaben", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Englisch 9")
-	ex := testdaten.Exemplar(t, pool, titelID, "BESCH-EX-4", true, "")
-	f := testdaten.BescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 9 nicht zurück")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-3", "Ohneangaben", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Englisch 9")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-4", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 9 nicht zurück")
 
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 20.00}))
@@ -246,20 +246,20 @@ func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
 // RETURNING sperrt die Zeile des Generators, die Nebenläufigen warten.
 func TestBescheidNummernkreis_ParallelKeineDoppelte(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	const anzahl = 8
-	titelID := testdaten.BescheidLernmittel(t, pool, "Parallelbuch")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Parallelbuch")
 	type auftrag struct{ sid, forderung string }
 	auftraege := make([]auftrag, 0, anzahl)
 	for i := 0; i < anzahl; i++ {
-		sid := testdaten.SeedSchueler(t, pool, fmt.Sprintf("S-PARALLEL-%d", i), fmt.Sprintf("Parallelkind%d", i), "08G2")
-		ex := testdaten.Exemplar(t, pool, titelID, fmt.Sprintf("PARALLEL-EX-%d", i), true, "")
-		auftraege = append(auftraege, auftrag{sid, testdaten.BescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Parallelbuch")})
+		sid := testdaten.LegeSchuelerAn(t, pool, fmt.Sprintf("S-PARALLEL-%d", i), fmt.Sprintf("Parallelkind%d", i), "08G2")
+		ex := testdaten.LegeExemplarAn(t, pool, titelID, fmt.Sprintf("PARALLEL-EX-%d", i), true, "")
+		auftraege = append(auftraege, auftrag{sid, testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Parallelbuch")})
 	}
 
 	frist := testdaten.In28Tagen()
@@ -311,17 +311,17 @@ func TestBescheidNummernkreis_ParallelKeineDoppelte(t *testing.T) {
 // Die Übergabe geht erst nach Fristablauf und nur einmal.
 func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewBescheidAbfragen(pool)
 
-	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-4", "Fristkind", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Physik 9")
-	ex := testdaten.Exemplar(t, pool, titelID, "BESCH-EX-5", true, "")
-	f := testdaten.BescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Physik 9 nicht zurück")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-4", "Fristkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Physik 9")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-5", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Physik 9 nicht zurück")
 
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 22.00}))
@@ -338,7 +338,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/api/bescheide/"+b.ID+"/uebergeben", nil)
 		req.SetPathValue("id", b.ID)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+			&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.BescheidUebergebenHandler(repo, repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
@@ -379,16 +379,16 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 // einem Klick durch — ein bezahlter Fall zur Vollstreckung (Bestands-Durchgang).
 func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewBescheidAbfragen(pool)
 
-	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-BEZ", "Zahlkind", "08G2")
-	titelID := testdaten.BescheidLernmittel(t, pool, "Biologie 8")
-	f := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "BESCH-BEZ-1", true, ""), "nicht_zurueckgegeben", "Biologie 8 nicht zurück")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-BEZ", "Zahlkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Biologie 8")
+	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-BEZ-1", true, ""), "nicht_zurueckgegeben", "Biologie 8 nicht zurück")
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid, testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.00}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
@@ -398,7 +398,7 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Bezahlt über den echten Pfad, danach ist die Frist vorbei.
-	if err := repository.NewProtokollAbfragen(pool).VerbucheZahlung(ctx, f, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := repository.NewProtokollAbfragen(pool).VerbucheZahlung(ctx, f, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Bezahlt: %v", err)
 	}
 	if _, err := pool.Exec(ctx, `UPDATE schadensersatz_bescheide SET frist_bis = CURRENT_DATE - 1 WHERE id = $1`, b.ID); err != nil {
@@ -430,21 +430,21 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 // auch wenn der Schüler inzwischen umgezogen ist. Dafür ist der Snapshot da.
 func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	testdaten.BescheidReset(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
-	testdaten.BescheidAngabenSetzen(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewBescheidAbfragen(pool)
 
-	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-5", "Umzugskind", "08G2")
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-5", "Umzugskind", "08G2")
 	if _, err := pool.Exec(ctx,
 		`UPDATE schueler SET strasse = 'Altweg', hausnummer = '1', plz = '11111', ort = 'Altstadt' WHERE id = $1`, sid); err != nil {
 		t.Fatal(err)
 	}
-	titelID := testdaten.BescheidLernmittel(t, pool, "Chemie 9")
-	ex := testdaten.Exemplar(t, pool, titelID, "BESCH-EX-6", true, "")
-	f := testdaten.BescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Chemie 9 nicht zurück")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Chemie 9")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-6", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Chemie 9 nicht zurück")
 
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 19.90}))

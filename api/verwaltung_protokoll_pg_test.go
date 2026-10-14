@@ -21,7 +21,7 @@ import (
 // Eine Anfrage, die nichts ändert, und eine abgelehnte schreiben keinen Eintrag.
 func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 	adminID, rufe := routertest.MitAufruf(t, pool)
 
@@ -195,8 +195,8 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 	})
 
 	t.Run("Lernmittel einer Klasse verlängern", func(t *testing.T) {
-		kind := testdaten.SeedSchueler(t, pool, "S-VPR-1", "Protokoll", "5a")
-		testdaten.SeedAusleihe(t, pool, kind, "LMF Protokoll 5", testdaten.FristEnde(2027, time.March, 31))
+		kind := testdaten.LegeSchuelerAn(t, pool, "S-VPR-1", "Protokoll", "5a")
+		testdaten.LegeAusleiheMitFristAn(t, pool, kind, "LMF Protokoll 5", testdaten.FristEnde(2027, time.March, 31))
 
 		rec := rufe(t, http.MethodPost, "/api/ausleihen/global-extend-lmf",
 			`{"klasse":"5a","neues_rueckgabe_datum":"2027-06-30"}`)
@@ -246,7 +246,7 @@ func fmtFelder(wert any) string {
 // Protokoll, mit den Wörtern und der Zahl der Titel. Eine abgelehnte Anfrage schreibt nichts.
 func TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
