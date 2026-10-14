@@ -40,6 +40,7 @@
 								appState.triggerStudentScan = b.schueler_barcode;
 								onBack();
 							}}
+							aria-label="Akte von {b.schueler_name} {b.schueler_nachname} öffnen"
 							class="text-sm font-semibold text-on-surface hover:text-primary text-left cursor-pointer truncate block"
 						>
 							{b.schueler_name}

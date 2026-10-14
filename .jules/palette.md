@@ -22,3 +22,6 @@
 ## 2026-09-05 - ARIA Labels on Icon-only Buttons
 **Learning:** When using components like `<Trash2>` inside a `<button>` without visible text, the `title` attribute alone is insufficient for screen readers. An explicit `aria-label` must be provided on the button element itself.
 **Action:** Always ensure icon-only buttons include an `aria-label` attribute describing their function, regardless of whether a `title` attribute (for tooltips) is present.
+## 2026-10-14 - Added aria-label to student name buttons
+**Learning:** Found that the button used for opening a student profile or triggering a scan in `BorrowersListe.svelte` only contained the student name text, which lacks proper context for screen readers regarding the action it performs.
+**Action:** Added an `aria-label` attribute (e.g., "Akte von {name} öffnen") to clarify the action to screen reader users.
