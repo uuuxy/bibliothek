@@ -88,7 +88,7 @@ type OmniboxEingabe struct {
 // OmniboxDienst verarbeitet alle Eingaben aus der zentralen Suche/Scan-Leiste (Omnibox).
 type OmniboxDienst interface {
 	// VerarbeiteEingabe wertet eine Eingabe (Eingabestring) aus und steuert die passende Domänen-Aktion an.
-	VerarbeiteEingabe(ctx context.Context, q OmniboxEingabe) (*OmniboxErgebnis, error)
+	VerarbeiteEingabe(ctx context.Context, eingabe OmniboxEingabe) (*OmniboxErgebnis, error)
 }
 
 // omniboxDienst ist die Standard-Implementierung des OmniboxDienst.

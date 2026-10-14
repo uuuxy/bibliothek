@@ -31,7 +31,7 @@ import (
 
 // NachbuchDienst ist die Tür des Nachbuchens; erfüllt vom Ausleih-Service.
 type NachbuchDienst interface {
-	BucheNach(ctx context.Context, e NachbuchEintrag) (*NachbuchErgebnis, error)
+	BucheNach(ctx context.Context, eintrag NachbuchEintrag) (*NachbuchErgebnis, error)
 }
 
 // NewNachbuchDienst baut die Tür auf demselben Rumpf wie der Ausleih-Service — dieselben

@@ -40,7 +40,7 @@ type GeraeteDienst interface {
 	// Zudem wird geprüft, ob eine Zubehör-Checkliste vor der Ausleihe bestätigt werden muss.
 	// overrideBlock übergeht die Hinweise (offene Forderung, Überfällig-Automatik), nicht
 	// die Sperre am Leser — wie beim Buch (pruefeAusleihSperren).
-	VerarbeiteScan(ctx context.Context, query string, aktiverLeserID *string, checklisteBestaetigt, uebergehen bool, bearbeiterID string) (*GeraeteErgebnis, error)
+	VerarbeiteScan(ctx context.Context, nummer string, aktiverLeserID *string, checklisteBestaetigt, uebergehen bool, bearbeiterID string) (*GeraeteErgebnis, error)
 }
 
 // geraeteDienst ist die Standard-Implementierung des GeraeteDienst.
