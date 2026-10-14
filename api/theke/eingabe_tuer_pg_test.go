@@ -20,7 +20,7 @@ import (
 
 // Die Theken-Tür weist ab, bevor gebucht wird: ohne Sitzung, ohne Suchtext, und solange eine
 // Anfrage mit demselben Schlüssel noch arbeitet. In keinem der Fälle wird der Dienst gerufen.
-func TestActionHandler_AblehnungenVorDerBuchung(t *testing.T) {
+func TestEingabeVerarbeiten_AblehnungenVorDerBuchung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}, IdempotenzWartezeit: 150 * time.Millisecond}
@@ -34,7 +34,7 @@ func TestActionHandler_AblehnungenVorDerBuchung(t *testing.T) {
 				&auth.Claims{Rolle: auth.RoleAdmin, UserID: "u1"}))
 		}
 		w := httptest.NewRecorder()
-		srv.ActionHandler(dienst)(w, req)
+		srv.EingabeVerarbeiten(dienst)(w, req)
 		return w
 	}
 
@@ -66,11 +66,11 @@ func TestActionHandler_AblehnungenVorDerBuchung(t *testing.T) {
 }
 
 // Die Nachbuch-Tür nimmt ohne Sitzung nichts an; der Dienst wird nicht gerufen.
-func TestNachbuchenHandler_OhneSitzung(t *testing.T) {
+func TestWarteschlangeNachbuchen_OhneSitzung(t *testing.T) {
 	rumpf := `{"gesendet_am":"2026-09-01T10:00:00Z","eintraege":[{"schluessel":"` + uuid.NewString() +
 		`","absicht":"ausleihe","barcode":"B-1","gescannt_am":"2026-09-01T09:59:00Z"}]}`
 	rec := httptest.NewRecorder()
-	(&Tueren{Basis: &tuer.Basis{}}).NachbuchenHandler(nachbuchFehler{})(rec, httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(rumpf)))
+	(&Tueren{Basis: &tuer.Basis{}}).WarteschlangeNachbuchen(nachbuchFehler{})(rec, httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(rumpf)))
 	if rec.Code != http.StatusUnauthorized || !strings.Contains(rec.Body.String(), "nicht angemeldet") {
 		t.Errorf("ohne Sitzung: Status %d, erwartet 401 mit „nicht angemeldet“: %s", rec.Code, rec.Body.String())
 	}

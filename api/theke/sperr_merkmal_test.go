@@ -44,7 +44,7 @@ func helferOhneRechte(t *testing.T) {
 	tuer.MerkeRechtFuerTest("helfer", "edit_students", false)
 }
 
-func aktionAnfrage(schluessel string) *http.Request {
+func scanAnfrage(schluessel string) *http.Request {
 	body := `{"query":"B-123","active_leser_id":"22222222-2222-2222-2222-222222222222","idempotency_key":"` + schluessel + `"}`
 	req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
 	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
@@ -75,7 +75,7 @@ func TestSperrMerkmalImHeader(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			(&Tueren{Basis: &tuer.Basis{}}).ActionHandler(&sperrOmnibox{fehler: f.fehler})(w, aktionAnfrage(""))
+			(&Tueren{Basis: &tuer.Basis{}}).EingabeVerarbeiten(&sperrOmnibox{fehler: f.fehler})(w, scanAnfrage(""))
 			if w.Code != http.StatusForbidden {
 				t.Fatalf("Status %d, erwartet 403: %s", w.Code, w.Body.String())
 			}
@@ -89,10 +89,10 @@ func TestSperrMerkmalImHeader(t *testing.T) {
 	}
 }
 
-// merkmalImCache prüft, dass das zwischengespeicherte Fehler-JSON das Merkmal trägt.
-type merkmalImCache struct{ wert string }
+// merkmalInDerAblage prüft, dass das zwischengespeicherte Fehler-JSON das Merkmal trägt.
+type merkmalInDerAblage struct{ wert string }
 
-func (m merkmalImCache) Match(v any) bool {
+func (m merkmalInDerAblage) Match(v any) bool {
 	roh, ok := v.([]byte)
 	if !ok {
 		return false
@@ -103,7 +103,7 @@ func (m merkmalImCache) Match(v any) bool {
 
 // Eine wiederholte Anfrage mit demselben Idempotenz-Schlüssel kommt aus dem Cache. Ohne
 // das Merkmal im Cache verlöre sie den Dialog.
-func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
+func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 	helferOhneRechte(t)
 	const schluessel = "sperr-merkmal-1"
 
@@ -119,13 +119,13 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 			WithArgs(schluessel, repository.IdempotenzReservierungsfrist.Seconds()).
 			WillReturnRows(pgxmock.NewRows([]string{"idempotency_key"}).AddRow(schluessel))
 		mock.ExpectExec("UPDATE idempotency_keys SET response_data").
-			WithArgs(schluessel, merkmalImCache{"uebergehbar"}, http.StatusForbidden).
+			WithArgs(schluessel, merkmalInDerAblage{"uebergehbar"}, http.StatusForbidden).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		w := httptest.NewRecorder()
 		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 		fehler := service.UebergehbareSperre(fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrGesperrt))
-		s.ActionHandler(&sperrOmnibox{fehler: fehler})(w, aktionAnfrage(schluessel))
+		s.EingabeVerarbeiten(&sperrOmnibox{fehler: fehler})(w, scanAnfrage(schluessel))
 
 		if got := w.Header().Get("X-Sperre"); got != "uebergehbar" {
 			t.Errorf("X-Sperre = %q", got)
@@ -150,7 +150,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
-		s.ActionHandler(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, aktionAnfrage(schluessel))
+		s.EingabeVerarbeiten(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, scanAnfrage(schluessel))
 
 		if w.Code != http.StatusForbidden || w.Header().Get("X-Sperre") != "uebergehbar" {
 			t.Errorf("Wiederholung: Status %d, X-Sperre %q", w.Code, w.Header().Get("X-Sperre"))
@@ -168,13 +168,13 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 			WithArgs(schluesselLeser, repository.IdempotenzReservierungsfrist.Seconds()).
 			WillReturnRows(pgxmock.NewRows([]string{"idempotency_key"}).AddRow(schluesselLeser))
 		mock.ExpectExec("UPDATE idempotency_keys SET response_data").
-			WithArgs(schluesselLeser, merkmalImCache{"leser"}, http.StatusForbidden).
+			WithArgs(schluesselLeser, merkmalInDerAblage{"leser"}, http.StatusForbidden).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		w := httptest.NewRecorder()
 		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 		fehler := &service.SperrgrundFehler{Kern: service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)), Grund: "x"}
-		s.ActionHandler(&sperrOmnibox{fehler: fehler})(w, aktionAnfrage(schluesselLeser))
+		s.EingabeVerarbeiten(&sperrOmnibox{fehler: fehler})(w, scanAnfrage(schluesselLeser))
 		if got := w.Header().Get("X-Sperre"); got != "leser" {
 			t.Errorf("X-Sperre = %q, erwartet leser", got)
 		}
@@ -194,7 +194,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"response_data", "status_code"}).
 				AddRow([]byte(`{"error":"die ausleihe ist gesperrt: Manuelle Sperre — bitte an die Bibliotheksleitung wenden","sperre":"leser"}`), http.StatusForbidden))
 		w = httptest.NewRecorder()
-		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: wieder}}}).ActionHandler(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, aktionAnfrage(schluesselLeser))
+		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: wieder}}}).EingabeVerarbeiten(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, scanAnfrage(schluesselLeser))
 		if w.Code != http.StatusForbidden || w.Header().Get("X-Sperre") != "leser" {
 			t.Errorf("Wiederholung: Status %d, X-Sperre %q", w.Code, w.Header().Get("X-Sperre"))
 		}

@@ -97,13 +97,13 @@ func (o *overrideSpyOmnibox) VerarbeiteEingabe(_ context.Context, q service.Omni
 func actionSiehtOverride(rolle string) bool {
 	spy := &overrideSpyOmnibox{}
 	s := &Server{}
-	// Echte UUID: Eine Schüler-ID, die keine ist, weist ActionHandler seit dem 13.09.2026
+	// Echte UUID: Eine Schüler-ID, die keine ist, weist EingabeVerarbeiten seit dem 13.09.2026
 	// vor der Rechteprüfung mit 400 ab (uuid_eingaben_test.go).
 	body := `{"query":"B-123","active_leser_id":"22222222-2222-2222-2222-222222222222","override_block":true}`
 	req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle), UserID: "u1"}))
 	w := httptest.NewRecorder()
-	s.theke().ActionHandler(spy)(w, req)
+	s.theke().EingabeVerarbeiten(spy)(w, req)
 	return spy.gesehenerOverride
 }
 

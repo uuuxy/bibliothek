@@ -44,7 +44,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 		}
 		req = req.WithContext(t.Context())
 		rec := httptest.NewRecorder()
-		srv.BuchbarcodesHandler()(rec, req)
+		srv.Buchbarcodes()(rec, req)
 		return rec
 	}
 
@@ -52,7 +52,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 	}
-	var antwort BuchbarcodesResponse
+	var antwort buchbarcodesAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Antwort ist kein JSON: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("nach einem neuen Exemplar: Status %d, erwartet 200 mit neuer Liste", rec.Code)
 	}
-	var zweite BuchbarcodesResponse
+	var zweite buchbarcodesAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &zweite); err != nil {
 		t.Fatalf("zweite Antwort: %v", err)
 	}
@@ -124,7 +124,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("nach dem Löschen: Status %d, erwartet 200 mit neuer Liste", rec.Code)
 	}
-	var dritte BuchbarcodesResponse
+	var dritte buchbarcodesAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &dritte); err != nil {
 		t.Fatalf("dritte Antwort: %v", err)
 	}

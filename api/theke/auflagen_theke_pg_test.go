@@ -71,15 +71,15 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 	omnibox := service.NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 
-	scan := func(barcode, leser string) ActionResponse {
+	scan := func(barcode, leser string) eingabeAntwort {
 		t.Helper()
 		req := httptest.NewRequest("POST", "/api/action",
 			strings.NewReader(fmt.Sprintf(`{"query":%q,"active_leser_id":%q}`, barcode, leser)))
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{Rolle: auth.Role("mitarbeiter"), UserID: mitarbeiter}))
 		rec := httptest.NewRecorder()
-		srv.ActionHandler(omnibox)(rec, req)
-		var antwort ActionResponse
+		srv.EingabeVerarbeiten(omnibox)(rec, req)
+		var antwort eingabeAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil || rec.Code != 200 {
 			t.Fatalf("Scan %s: %d %s", barcode, rec.Code, rec.Body.String())
 		}
@@ -87,8 +87,8 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 	}
 
 	// Zwei Kinder der 7b bekommen die 3. Auflage — kein Hinweis, die Klasse ist einheitlich.
-	if a := scan("B-518T-0", kind("S-518T-1", "7b")); a.Type != "ausleihe" || a.AuflagenHinweis != nil {
-		t.Fatalf("erste Ausleihe: Typ %q, Hinweis %+v — erwartet Ausleihe ohne Hinweis", a.Type, a.AuflagenHinweis)
+	if a := scan("B-518T-0", kind("S-518T-1", "7b")); a.Art != "ausleihe" || a.AuflagenHinweis != nil {
+		t.Fatalf("erste Ausleihe: Typ %q, Hinweis %+v — erwartet Ausleihe ohne Hinweis", a.Art, a.AuflagenHinweis)
 	}
 	if a := scan("B-518T-1", kind("S-518T-2", "7b")); a.AuflagenHinweis != nil {
 		t.Errorf("zweite Ausleihe derselben Auflage: Hinweis %+v — erwartet keiner", a.AuflagenHinweis)
@@ -96,8 +96,8 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 
 	// Das dritte Kind bekommt die 4. Auflage: Hinweis mit Klasse und den zwei anderen.
 	a := scan("B-518T-3", kind("S-518T-3", "7b"))
-	if a.Type != "ausleihe" {
-		t.Fatalf("Typ %q — die Ausleihe muss gebucht sein, der Hinweis ändert daran nichts", a.Type)
+	if a.Art != "ausleihe" {
+		t.Fatalf("Typ %q — die Ausleihe muss gebucht sein, der Hinweis ändert daran nichts", a.Art)
 	}
 	h := a.AuflagenHinweis
 	if h == nil || h.Klasse != "07B" || h.Auflage != "4. Aufl." || len(h.Andere) != 1 ||

@@ -2,7 +2,7 @@ package theke
 
 import "bibliothek/repository"
 
-// SchuelerKiosk ist die Theken-Sicht auf einen LESER: genau die Felder, die
+// thekenLeser ist die Theken-Sicht auf einen LESER: genau die Felder, die
 // Ausleihe und Suche an der Scanner-Station brauchen — Identität, Klasse und
 // die Sperr-Flags. Wohnanschrift, Eltern-Mail und Geburtsdatum fehlen hier
 // BEWUSST und dürfen nie dazukommen: /api/action und /api/search hängen am
@@ -11,7 +11,7 @@ import "bibliothek/repository"
 // Bis 18.08.2026 lief hier der volle repository.Leser-Datensatz durch —
 // Sicherheitsbefund bewertung/sicherheitsbefund-kiosk-suche.md. Die vollen
 // Profile gibt es weiterhin, aber nur hinter view_students (/api/schueler…).
-type SchuelerKiosk struct {
+type thekenLeser struct {
 	ID string `json:"id"`
 	// Art: eine aus pkg/leserart (Migration 125 und 153). Die Theke zeigt sie am
 	// Treffer an — sonst stünde ein Kollege ohne Klasse da wie ein Schüler mit fehlender
@@ -25,32 +25,32 @@ type SchuelerKiosk struct {
 	// Ausleihe blockiert ist. Der Grund (block_reason) bleibt draußen — er
 	// kann sensiblen Freitext tragen und kommt bei Bedarf als Fehlermeldung
 	// der jeweiligen Aktion an.
-	IstGesperrt       bool `json:"ist_gesperrt"`
-	IsManuallyBlocked bool `json:"is_manually_blocked"`
+	IstGesperrt        bool `json:"ist_gesperrt"`
+	IstVonHandGesperrt bool `json:"is_manually_blocked"`
 }
 
-// zumKioskSchueler reduziert einen vollen Schülerdatensatz auf die Theken-Sicht.
-func zumKioskSchueler(s *repository.Leser) *SchuelerKiosk {
-	if s == nil {
+// zumThekenLeser reduziert einen vollen Schülerdatensatz auf die Theken-Sicht.
+func zumThekenLeser(leser *repository.Leser) *thekenLeser {
+	if leser == nil {
 		return nil
 	}
-	return &SchuelerKiosk{
-		ID:                s.ID,
-		Art:               s.Art,
-		BarcodeID:         s.BarcodeID,
-		Vorname:           s.Vorname,
-		Nachname:          s.Nachname,
-		Klasse:            s.Klasse,
-		IstGesperrt:       s.IstGesperrt,
-		IsManuallyBlocked: s.IstVonHandGesperrt,
+	return &thekenLeser{
+		ID:                 leser.ID,
+		Art:                leser.Art,
+		BarcodeID:          leser.BarcodeID,
+		Vorname:            leser.Vorname,
+		Nachname:           leser.Nachname,
+		Klasse:             leser.Klasse,
+		IstGesperrt:        leser.IstGesperrt,
+		IstVonHandGesperrt: leser.IstVonHandGesperrt,
 	}
 }
 
-// zuKioskSchuelern reduziert eine Trefferliste (Suche) auf die Theken-Sicht.
-func zuKioskSchuelern(students []repository.Leser) []SchuelerKiosk {
-	kiosk := make([]SchuelerKiosk, 0, len(students))
-	for i := range students {
-		kiosk = append(kiosk, *zumKioskSchueler(&students[i]))
+// zuThekenLesern reduziert eine Trefferliste (Suche) auf die Theken-Sicht.
+func zuThekenLesern(leser []repository.Leser) []thekenLeser {
+	sicht := make([]thekenLeser, 0, len(leser))
+	for i := range leser {
+		sicht = append(sicht, *zumThekenLeser(&leser[i]))
 	}
-	return kiosk
+	return sicht
 }

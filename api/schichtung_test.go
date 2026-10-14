@@ -87,9 +87,9 @@ var dateienOhneTuer = []string{
 	"schaden/schaden.go",
 	"system/betriebsbereitschaft_alarm.go",
 	"system/system.go",
-	"theke/action_types.go",
-	"theke/schueler_kiosk.go",
+	"theke/eingabe_anfrage_antwort.go",
 	"theke/theke.go",
+	"theke/theken_leser.go",
 	"tuer/tuer.go",
 	"tuer/verwaltung_protokoll.go",
 }

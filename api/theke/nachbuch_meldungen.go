@@ -15,17 +15,17 @@ import (
 // Ausleiher und Vorbesitzer nennen; der Zähler fürs Band ist eine Zahl ohne Personenbezug
 // und gehört jeder Theken-Rolle (perform_actions). Die SQL liegt in repository/.
 
-// NachbuchMeldungenListeHandler liefert die offenen Meldungen (?alle=1: auch quittierte).
+// NachbuchMeldungen liefert die offenen Meldungen (?alle=1: auch quittierte).
 // @Summary      Nachbuch-Meldungen
 // @Tags         theke
 // @Produce      json
 // @Param        alle query bool false "auch quittierte"
 // @Success      200 {array} repository.NachbuchMeldung
 // @Router       /action/nachbuch-meldungen [get]
-func (s *Tueren) NachbuchMeldungenListeHandler() http.HandlerFunc {
+func (t *Tueren) NachbuchMeldungen() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		nurOffen := r.URL.Query().Get("alle") != "1"
-		liste, err := repository.LadeNachbuchMeldungen(r.Context(), s.DB.Pool, nurOffen)
+		liste, err := repository.LadeNachbuchMeldungen(r.Context(), t.DB.Pool, nurOffen)
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldungen konnten nicht gelesen werden", err)
 		}
@@ -34,15 +34,15 @@ func (s *Tueren) NachbuchMeldungenListeHandler() http.HandlerFunc {
 	})
 }
 
-// NachbuchMeldungenAnzahlHandler ist der Zähler fürs Band an der Theke.
+// NachbuchMeldungenAnzahl ist der Zähler fürs Band an der Theke.
 // @Summary      Anzahl offener Nachbuch-Meldungen
 // @Tags         theke
 // @Produce      json
 // @Success      200 {object} map[string]int
 // @Router       /action/nachbuch-meldungen/anzahl [get]
-func (s *Tueren) NachbuchMeldungenAnzahlHandler() http.HandlerFunc {
+func (t *Tueren) NachbuchMeldungenAnzahl() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		n, err := repository.ZaehleOffeneNachbuchMeldungen(r.Context(), s.DB.Pool)
+		n, err := repository.ZaehleOffeneNachbuchMeldungen(r.Context(), t.DB.Pool)
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldungen konnten nicht gezählt werden", err)
 		}
@@ -51,7 +51,7 @@ func (s *Tueren) NachbuchMeldungenAnzahlHandler() http.HandlerFunc {
 	})
 }
 
-// NachbuchMeldungQuittierenHandler quittiert eine offene Meldung — nur eine offene: Eine
+// NachbuchMeldungQuittieren quittiert eine offene Meldung — nur eine offene: Eine
 // schon quittierte oder unbekannte ist 404, kein stiller Erfolg.
 // @Summary      Nachbuch-Meldung quittieren
 // @Tags         theke
@@ -59,7 +59,7 @@ func (s *Tueren) NachbuchMeldungenAnzahlHandler() http.HandlerFunc {
 // @Param        id path string true "Meldungs-ID"
 // @Success      200 {object} map[string]string
 // @Router       /action/nachbuch-meldungen/{id}/quittieren [post]
-func (s *Tueren) NachbuchMeldungQuittierenHandler() http.HandlerFunc {
+func (t *Tueren) NachbuchMeldungQuittieren() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -70,7 +70,7 @@ func (s *Tueren) NachbuchMeldungQuittierenHandler() http.HandlerFunc {
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
-		err := repository.QuittiereNachbuchMeldung(r.Context(), s.DB.Pool, id, claims.UserID)
+		err := repository.QuittiereNachbuchMeldung(r.Context(), t.DB.Pool, id, claims.UserID)
 		if errors.Is(err, repository.ErrNachbuchMeldungNichtOffen) {
 			return apierrors.NotFound("keine offene Nachbuch-Meldung mit dieser ID", err)
 		}
@@ -79,7 +79,7 @@ func (s *Tueren) NachbuchMeldungQuittierenHandler() http.HandlerFunc {
 		}
 		// Eine Meldung weniger: Das Band der anderen Arbeitsplätze zeigt sonst weiter die
 		// alte Zahl, bis dort jemand neu anmeldet.
-		s.meldeMeldungsstand()
+		t.meldeMeldungsstand()
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		return nil
 	})

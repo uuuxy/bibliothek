@@ -103,10 +103,10 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 
 	zweite := httptest.NewRecorder()
 	dazwischen := &zwischenzeitlich{echt: echt, fertig: make(chan struct{})}
-	dazwischen.zweite = func() { srv.ActionHandler(echt)(zweite, anfrage()) }
+	dazwischen.zweite = func() { srv.EingabeVerarbeiten(echt)(zweite, anfrage()) }
 
 	erste := httptest.NewRecorder()
-	srv.ActionHandler(dazwischen)(erste, anfrage())
+	srv.EingabeVerarbeiten(dazwischen)(erste, anfrage())
 	select {
 	case <-dazwischen.fertig:
 	case <-time.After(10 * time.Second):
@@ -117,11 +117,11 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 	}
 
 	typ := func(w *httptest.ResponseRecorder) string {
-		var resp ActionResponse
+		var resp eingabeAntwort
 		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 			return "kein JSON: " + w.Body.String()
 		}
-		return resp.Type
+		return resp.Art
 	}
 	if erste.Code != http.StatusOK || typ(erste) != "ausleihe" {
 		t.Fatalf("erste Anfrage: Status %d, Typ %q, Body %s", erste.Code, typ(erste), erste.Body.String())

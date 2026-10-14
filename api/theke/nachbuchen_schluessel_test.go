@@ -28,10 +28,10 @@ func TestOnlineGebucht(t *testing.T) {
 		if ok != f.gebucht {
 			t.Errorf("%s: gebucht %v, erwartet %v", f.name, ok, f.gebucht)
 		}
-		if !ok && gebucht.Type != "" {
-			t.Errorf("%s: nicht gebucht, liefert aber eine Antwort vom Typ %q", f.name, gebucht.Type)
+		if !ok && gebucht.Art != "" {
+			t.Errorf("%s: nicht gebucht, liefert aber eine Antwort vom Typ %q", f.name, gebucht.Art)
 		}
-		if ok && gebucht.Type == "" {
+		if ok && gebucht.Art == "" {
 			t.Errorf("%s: gebucht, aber ohne Inhalt", f.name)
 		}
 	}

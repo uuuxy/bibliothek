@@ -1039,7 +1039,7 @@ zehn mit Typen einer Anfrage oder Antwort, Füll-Funktionen und Helfern mehrerer
 `mahnwesen/abgaenger_fenster.go`, `mahnwesen/mahnwesen_mail.go`,
 `schaden/bescheid_schnappschuss.go`, `bestellung/bestellmail_anhaenge.go`,
 `bestellung/bestellmail_versand.go`, `leser/student_klasse_regel.go`,
-`theke/action_types.go`, `theke/schueler_kiosk.go`). Der Bestand sieht eine Datei nicht, die
+`theke/eingabe_anfrage_antwort.go`, `theke/theken_leser.go`). Der Bestand sieht eine Datei nicht, die
 `net/http` nur für Statuswerte einbindet (`theke/nachbuchen_schluessel.go`), und keine Regel
 in einer Datei mit Tür; die sechs Dateien mit den meisten Zeilen ohne Anfrage sind dafür
 gelesen (oben, „Neben einer Tür"). Als Anweisung zählt auch eine Massenkopie (`CopyFrom`): Sie nennt Tabelle und
@@ -1554,7 +1554,7 @@ Welcher Pfad welche Zeile sperrt:
 | Nachbuchen                 | **zwei** Sperren in der festgelegten Folge: `leser`, dann `buecher_exemplare` | `SperreLeserzeile`, `SperreExemplarzeile` (`repository/ausleihe_zeilensperren.go`); die Folge bestimmt `internal/service/nachbuchen.go` |
 | Schaden erfassen           | die **Ausleihe**-Zeile — der Schuldner wird aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
 | Rückgabe (Trigger, seit Migration 137) | die **Leser**-Zeile des Ausleihers, **nach** der Ausleihe — gegen die festgelegte Folge ([Kapitel 11](#11-risiken-und-technische-schulden), R2) | `trg_leser_stempel_rueckgabe` (`schema.sql`)          |
-| Verlängerung (seit 24.09.2026) | die **Ausleihe**-Zeile; die neue Frist rechnet Go, nicht mehr SQL      | `handleExtendLoan` (`api/theke/ausleihe.go`)                         |
+| Verlängerung (seit 24.09.2026) | die **Ausleihe**-Zeile; die neue Frist rechnet Go, nicht mehr SQL      | `verlaengereAusleihe` (`api/theke/ausleihe.go`)                      |
 | Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LockStudentHandler` (`api/leser/student_lock.go`)                   |
 | Auflagen zusammenfassen und lösen | erst die Advisory-Sperre der Auflagen, dann die **Titel**-Zeilen, nach `id` geordnet | `sperreAuflagen` (`repository/auflagen.go`)   |
 | Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`repository/schlagworte_pflege.go`) |
@@ -2898,7 +2898,7 @@ wenn man ihn einmal gebraucht hat.
   `repository/dsgvo_paar_vollstaendigkeit_test.go` hält die drei seither in der Liste.
   Mit der Theke (13.10.2026) kam dazu: Trägt eine Datei Türen zweier Themen, wird die fremde
   Tür vorher in eine eigene Datei geschnitten und mit dem Werkzeug in ihr Thema gezogen (die
-  Titelsuche des Druck-Centers aus `search.go`, die Verlängerung der Lernmittel einer Klasse
+  Titelsuche des Druck-Centers aus `suche.go`, die Verlängerung der Lernmittel einer Klasse
   aus `ausleihe.go`). Ein Feld des Servers, das nur ein Thema liest, zieht an den Typ des
   Themas: Die Liste nennt es hinter dem Typ (`typ Server Tueren Basis IdempotenzWartezeit`),
   der Typ des Themas bekommt es vor dem Lauf von Hand, am Server entfällt es danach. Braucht
@@ -3467,7 +3467,7 @@ wird über `performance.now()` gegen die Wanduhr gehalten, weil sie oft genau da
 wird, wenn das Netz zurückkommt. Die Stapel-Tür blieb „eine Version länger" für Theken-Tabs mit
 altem Stand (v3.0.0) und ist seit dem 22.09.2026 entfernt.
 
-**Fundstelle.** `api/theke/nachbuchen_handler.go`, `internal/service/nachbuchen.go`,
+**Fundstelle.** `api/theke/nachbuchen.go`, `internal/service/nachbuchen.go`,
 `frontend/src/lib/stores/offlineSync.svelte.js`.
 
 ---
@@ -4129,7 +4129,7 @@ Fenstern bekannt ist:
   Schulnetz sind nicht gemessen (im Browser: F12, Netzwerk, Zeile `books`). Anlass zum Bauen:
   Der Katalog öffnet am Server spürbar verzögert. Dann beantwortet der Server einen
   unveränderten Bestand mit 304 statt mit der Liste, wie bei den Buchnummern der Theke
-  (`api/theke/buchbarcodes_handler.go`).
+  (`api/theke/buchbarcodes.go`).
 - Breite der Textfelder: Textfelder folgen Material 3 (Text fields, Guidelines: „Text fields
   shouldn’t span the full width of a large screen"; entschieden am 03.10.2026). Umgesetzt ist das
   in der Maske „Buch bearbeiten" (Felder bis 704 px); die übrigen Masken sind nicht
@@ -4316,7 +4316,7 @@ Fenstern bekannt ist:
   die Maske wissen, ob etwas geändert ist (wie `uiStore.verlassenSperre` beim LMF-Planer).
 - Die Live-Leitung (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
   trägt zu jeder Buchung die Kennung des Lesers, die Buchnummer und den Titel
-  (`broadcastActionEvent`). Jedes angemeldete Konto bekommt sie, auch das Kollegium ohne
+  (`sendeThekenEreignis`). Jedes angemeldete Konto bekommt sie, auch das Kollegium ohne
   Leserecht; einen Namen trägt sie nicht (PII-Matrix, Stufe 0). Gelesen am 01.10.2026, nicht
   nachgestellt. Zuhörer sind nur die Theke und die Abgänger-Seite. Frage mit Anlass: Braucht
   die Meldung die Kennung des Lesers für jeden Empfänger?
@@ -4407,7 +4407,7 @@ Fenstern bekannt ist:
   mitbringt. Neue PDFs nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
   umstellen, mit den PDF-Gates.
 - Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
-  Konsument; bei den Geräten `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
+  Konsument.
 - Die Prüfung der UUID-Pfadparameter (`ValidateUUIDParamsMiddleware`) sitzt in
   `RequirePermission`. Eine Route mit `{id}`, `{schueler_id}` oder `{ausleihe_id}` unter
   `VerlangeAnmeldung` liefe an ihr vorbei, und die Kennung ginge ungeprüft an die Datenbank.
@@ -4516,7 +4516,7 @@ Einstieg.
 | **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `api/mahnwesen/mahnbriefe.go`                                     |
 | **Mehrjahresband**          | Lernmittel, das über seine Jahrgangsspanne beim selben Kind bleibt, statt am Rückgabetermin der Klasse zurückzukommen | `buecher_titel.mehrjahresband` (Migration 134) |
 | **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
-| **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/theke/nachbuchen_handler.go`, `internal/service/nachbuchen.go` |
+| **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/theke/nachbuchen.go`, `internal/service/nachbuchen.go`         |
 | **Omnibox**                 | Das **eine** Eingabefeld des Tresens für alle Scans und Suchen                                                                                                          | `internal/service/omnibox.go`, `frontend/src/lib/Omnibox.svelte` |
 | **OPAC**                    | Der öffentliche Katalog unter `/katalog` — ohne Anmeldung, ohne Personendaten                                                                                            | `api/portal/opac.go`                                               |
 | **Regaladresse**            | Der Teil einer Signatur vor „ / ". Vorschläge, die Seite „Signaturen" und die Auswahl der Inventur fassen nach ihr zusammen; am Titel bleibt die ganze Aufschrift | `sqlSignaturRegaladresse` (`repository/signatur_praefix.go`) |

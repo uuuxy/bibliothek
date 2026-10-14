@@ -8,9 +8,9 @@ import (
 	"bibliothek/repository"
 )
 
-// vollerTestStudent trägt in JEDEM sensiblen Feld einen Markerwert. Taucht einer
+// vollerTestLeser trägt in JEDEM sensiblen Feld einen Markerwert. Taucht einer
 // der Marker in einer Kiosk-Antwort auf, ist die Datenminimierung gerissen.
-func vollerTestStudent() repository.Leser {
+func vollerTestLeser() repository.Leser {
 	geb := "2012-05-14"
 	return repository.Leser{
 		ID: "s-1", BarcodeID: "20240001737", Vorname: "Mia", Nachname: "Muster",
@@ -21,42 +21,42 @@ func vollerTestStudent() repository.Leser {
 	}
 }
 
-// verbotenInKioskAntwort sind die Feldinhalte UND Schlüssel, die eine Antwort
+// verbotenInThekenAntwort sind die Feldinhalte UND Schlüssel, die eine Antwort
 // auf einem perform_actions-Endpunkt (Theke/Helfer) nie tragen darf —
 // Sicherheitsbefund bewertung/sicherheitsbefund-kiosk-suche.md.
-var verbotenInKioskAntwort = []string{
+var verbotenInThekenAntwort = []string{
 	"MARKER-STRASSE", "MARKER-ELTERN", "MARKER-PLZ", "MARKER-ORT", "MARKER-NR",
 	"2012-05-14", "strasse", "eltern_email", "geburtsdatum", "plz", "block_reason",
 }
 
-func pruefeKioskJSON(t *testing.T, wert any, kontext string) {
+func pruefeThekenLeserJSON(t *testing.T, wert any, kontext string) {
 	t.Helper()
 	raw, err := json.Marshal(wert)
 	if err != nil {
 		t.Fatalf("%s: marshal: %v", kontext, err)
 	}
-	for _, verboten := range verbotenInKioskAntwort {
+	for _, verboten := range verbotenInThekenAntwort {
 		if strings.Contains(string(raw), verboten) {
 			t.Errorf("%s enthält %q — Schüler-PII auf einem Theken-Endpunkt:\n%s", kontext, verboten, raw)
 		}
 	}
 }
 
-// TestKioskAntwortenOhneSchuelerPII beweist die Zusage an beiden Ausgängen:
+// TestThekenAntwortenOhneSchuelerPII beweist die Zusage an beiden Ausgängen:
 // die Scan-Antwort (/api/action, inkl. Vorbesitzer bei Fremdrückgabe) und die
 // Suchtrefferliste (/api/search) reduzieren auf die Theken-Sicht.
-func TestKioskAntwortenOhneSchuelerPII(t *testing.T) {
-	s := vollerTestStudent()
+func TestThekenAntwortenOhneSchuelerPII(t *testing.T) {
+	s := vollerTestLeser()
 
-	resp := ActionResponse{
-		Type:        "ausleihe",
-		Student:     zumKioskSchueler(&s),
-		Vorbesitzer: zumKioskSchueler(&s),
+	resp := eingabeAntwort{
+		Art:         "ausleihe",
+		Leser:       zumThekenLeser(&s),
+		Vorbesitzer: zumThekenLeser(&s),
 	}
-	pruefeKioskJSON(t, resp, "ActionResponse")
+	pruefeThekenLeserJSON(t, resp, "eingabeAntwort")
 
-	suche := UnifiedSearchResult{Students: zuKioskSchuelern([]repository.Leser{s})}
-	pruefeKioskJSON(t, suche, "UnifiedSearchResult")
+	suche := suchErgebnis{Leser: zuThekenLesern([]repository.Leser{s})}
+	pruefeThekenLeserJSON(t, suche, "suchErgebnis")
 
 	// Was die Theke BRAUCHT, muss drinbleiben — sonst wäre der leichteste Weg,
 	// diesen Test grün zu bekommen, eine leere Antwort.
@@ -71,7 +71,7 @@ func TestKioskAntwortenOhneSchuelerPII(t *testing.T) {
 	}
 
 	// Leere Trefferliste bleibt ein leeres Array, kein null (Frontend iteriert).
-	leer, err := json.Marshal(UnifiedSearchResult{Students: zuKioskSchuelern(nil)})
+	leer, err := json.Marshal(suchErgebnis{Leser: zuThekenLesern(nil)})
 	if err != nil {
 		t.Fatalf("marshal leer: %v", err)
 	}

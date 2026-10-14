@@ -42,8 +42,8 @@ import (
 // bequem" kippt.
 const buchbarcodesWarnAb = 4 << 20 // 4 MB
 
-// BuchbarcodesResponse ist die Liste für den Theken-Rechner.
-type BuchbarcodesResponse struct {
+// buchbarcodesAntwort ist die Liste für den Theken-Rechner.
+type buchbarcodesAntwort struct {
 	// Stand ist der Merker dieser Fassung — derselbe Wert wie im ETag. Der Rechner legt
 	// ihn neben die Liste und schickt ihn beim nächsten Holen mit.
 	Stand string `json:"stand"`
@@ -53,15 +53,15 @@ type BuchbarcodesResponse struct {
 	Barcodes []string `json:"barcodes"`
 }
 
-// BuchbarcodesHandler liefert die Barcodes aller Exemplare, auch der ausgesonderten.
+// Buchbarcodes liefert die Barcodes aller Exemplare, auch der ausgesonderten.
 // @Summary      Buch-Barcodes für die Theke
 // @Description  Alle Barcodes aller Exemplare (auch ausgesonderter), damit die Theke ohne Netz Buch von Ausweis unterscheiden kann. Littera-Etiketten rechnet die Theke selbst auf die Nummer zurück. Mit ETag; unverändert antwortet 304.
 // @Tags         theke
 // @Produce      json
-// @Success      200 {object} BuchbarcodesResponse
+// @Success      200 {object} buchbarcodesAntwort
 // @Success      304 "unverändert"
 // @Router       /action/buchbarcodes [get]
-func (s *Tueren) BuchbarcodesHandler() http.HandlerFunc {
+func (t *Tueren) Buchbarcodes() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 		begonnen := time.Now()
@@ -70,7 +70,7 @@ func (s *Tueren) BuchbarcodesHandler() http.HandlerFunc {
 		// ohne die Liste zu lesen. Ein unveränderter Bestand spart damit die ganze
 		// Auslieferung. Ausgesonderte zählen nicht mit: Sie fehlen auch in der Liste,
 		// also muss ihr Wegfallen den Stand ändern.
-		kennzahl, err := repository.LadeBuchbarcodeStand(ctx, s.DB.Pool)
+		kennzahl, err := repository.LadeBuchbarcodeStand(ctx, t.DB.Pool)
 		if err != nil {
 			return apierrors.Internal("Buch-Barcodes konnten nicht gezählt werden", err)
 		}
@@ -91,25 +91,25 @@ func (s *Tueren) BuchbarcodesHandler() http.HandlerFunc {
 			return nil
 		}
 
-		barcodes, err := repository.LadeBuchbarcodes(ctx, s.DB.Pool, kennzahl.Anzahl)
+		barcodes, err := repository.LadeBuchbarcodes(ctx, t.DB.Pool, kennzahl.Anzahl)
 		if err != nil {
 			return apierrors.Internal("Buch-Barcodes konnten nicht gelesen werden", err)
 		}
-		antwort := BuchbarcodesResponse{Stand: stand, Anzahl: len(barcodes), Barcodes: barcodes}
+		antwort := buchbarcodesAntwort{Stand: stand, Anzahl: len(barcodes), Barcodes: barcodes}
 
 		w.Header().Set("ETag", `"`+stand+`"`)
-		bytes, err := schreibeGezaehlt(w, antwort)
+		groesse, err := schreibeGezaehlt(w, antwort)
 		if err != nil {
 			// Nach dem ersten geschriebenen Byte hilft kein Statuscode mehr — nur das Log.
 			log.Printf("buchbarcodes: Antwort abgebrochen (%d Einträge): %v", antwort.Anzahl, err)
 			return nil
 		}
-		if bytes > buchbarcodesWarnAb {
-			log.Printf("buchbarcodes: WARNUNG %d Einträge, %d Byte vor dem Packen in %s — die Liste ist größer als erwartet; vor dem nächsten Ausbau die Annahme prüfen (api/theke/buchbarcodes_handler.go)",
-				antwort.Anzahl, bytes, time.Since(begonnen).Round(time.Millisecond))
+		if groesse > buchbarcodesWarnAb {
+			log.Printf("buchbarcodes: WARNUNG %d Einträge, %d Byte vor dem Packen in %s — die Liste ist größer als erwartet; vor dem nächsten Ausbau die Annahme prüfen (api/theke/buchbarcodes.go)",
+				antwort.Anzahl, groesse, time.Since(begonnen).Round(time.Millisecond))
 			return nil
 		}
-		log.Printf("buchbarcodes: %d Einträge, %d Byte vor dem Packen in %s ausgeliefert", antwort.Anzahl, bytes, time.Since(begonnen).Round(time.Millisecond))
+		log.Printf("buchbarcodes: %d Einträge, %d Byte vor dem Packen in %s ausgeliefert", antwort.Anzahl, groesse, time.Since(begonnen).Round(time.Millisecond))
 		return nil
 	})
 }

@@ -26,21 +26,21 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	// perform_actions (nicht view_students): das ist die Kiosk-/Terminal-Kernfunktion
 	// (Ausleihe/Rückgabe/Scan/Suche). So kann die Helfer-Rolle am Terminal arbeiten,
 	// OHNE die breiten view_students-Rechte (Schülerlisten, Mahnwesen, Bulk-Mahndruck).
-	actionHandler := s.theke().ActionHandler(omniboxSvc)
+	actionHandler := s.theke().EingabeVerarbeiten(omniboxSvc)
 	mux.Handle("POST /api/action", s.RequirePermission("perform_actions")(actionHandler))
 	// Nachbuchen der Offline-Warteschlange (Stufe 2): dieselbe Theken-Rolle wie der Scan.
-	mux.Handle("POST /api/action/nachbuchen", s.RequirePermission("perform_actions")(s.theke().NachbuchenHandler(nachbuchSvc)))
+	mux.Handle("POST /api/action/nachbuchen", s.RequirePermission("perform_actions")(s.theke().WarteschlangeNachbuchen(nachbuchSvc)))
 	// Buch-Barcodes für die Offline-Einordnung (Stufe 2): nur Nummern, keine Personendaten.
-	mux.Handle("GET /api/action/buchbarcodes", s.RequirePermission("perform_actions")(s.theke().BuchbarcodesHandler()))
+	mux.Handle("GET /api/action/buchbarcodes", s.RequirePermission("perform_actions")(s.theke().Buchbarcodes()))
 	// Nachbuch-Meldungen (Migration 117): Liste und Quittieren nur mit view_students — die
 	// Zeilen nennen Ausleiher und Vorbesitzer (entschieden am 13.09.2026); der Zähler
 	// fürs Band ist eine Zahl und darf jeder Theken-Rolle gehören.
-	mux.Handle("GET /api/action/nachbuch-meldungen", s.RequirePermission("view_students")(s.theke().NachbuchMeldungenListeHandler()))
-	mux.Handle("GET /api/action/nachbuch-meldungen/anzahl", s.RequirePermission("perform_actions")(s.theke().NachbuchMeldungenAnzahlHandler()))
-	mux.Handle("POST /api/action/nachbuch-meldungen/{id}/quittieren", s.RequirePermission("view_students")(s.theke().NachbuchMeldungQuittierenHandler()))
+	mux.Handle("GET /api/action/nachbuch-meldungen", s.RequirePermission("view_students")(s.theke().NachbuchMeldungen()))
+	mux.Handle("GET /api/action/nachbuch-meldungen/anzahl", s.RequirePermission("perform_actions")(s.theke().NachbuchMeldungenAnzahl()))
+	mux.Handle("POST /api/action/nachbuch-meldungen/{id}/quittieren", s.RequirePermission("view_students")(s.theke().NachbuchMeldungQuittieren()))
 
 	// Unified Fuzzy Search
-	searchHandler := s.theke().SearchHandler(studentRepo, bookRepo)
+	searchHandler := s.theke().Suche(studentRepo, bookRepo)
 	mux.Handle("GET /api/search", s.RequirePermission("perform_actions")(searchHandler))
 
 	// Inventory

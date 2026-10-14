@@ -25,7 +25,7 @@ const (
 	sperrKopf        = "X-Sperre"
 	sperrUebergehbar = "uebergehbar"
 	sperrAmLeser     = "leser"
-	sperrCacheFeld   = "sperre"
+	sperrAblageFeld  = "sperre"
 )
 
 // sperrMerkmal liest das Merkmal aus der Fehlerkette; leer heißt: keine Sperre, die die
@@ -54,7 +54,7 @@ func ohneSperrgrund(err error, darfGrundSehen bool) error {
 	return fmt.Errorf("%w — bitte an die Bibliotheksleitung wenden", sg.Kern)
 }
 
-func mapServiceErrorToStatus(err error) int {
+func statusDesFehlers(err error) int {
 	switch {
 	case errors.Is(err, service.ErrNichtGefunden):
 		return http.StatusNotFound
@@ -80,9 +80,9 @@ type idempotenzLage struct {
 
 // idempotenzWartezeit: wie lange eine Anfrage auf die Antwort einer laufenden mit demselben
 // Schlüssel wartet, bevor sie „in Arbeit" meldet. Tests setzen IdempotenzWartezeit.
-func (s *Tueren) idempotenzWartezeit() time.Duration {
-	if s.IdempotenzWartezeit > 0 {
-		return s.IdempotenzWartezeit
+func (t *Tueren) idempotenzWartezeit() time.Duration {
+	if t.IdempotenzWartezeit > 0 {
+		return t.IdempotenzWartezeit
 	}
 	return 3 * time.Second
 }
@@ -93,13 +93,13 @@ func (s *Tueren) idempotenzWartezeit() time.Duration {
 // fand nichts und buchte neu — das Buch lag schon beim Kind, also wurde es zurückgenommen
 // (idempotenz_pg_test.go). Läuft die Arbeit noch, wartet die zweite Anfrage auf die Antwort;
 // ist die Reservierung nach einem Serverfehler freigegeben worden, übernimmt sie den Schlüssel.
-func (s *Tueren) erlangeIdempotenz(ctx context.Context, key string) idempotenzLage {
-	if key == "" {
+func (t *Tueren) erlangeIdempotenz(ctx context.Context, schluessel string) idempotenzLage {
+	if schluessel == "" {
 		return idempotenzLage{}
 	}
-	frist := time.Now().Add(s.idempotenzWartezeit())
+	frist := time.Now().Add(t.idempotenzWartezeit())
 	for {
-		reserviert, antwort, err := repository.ReserviereIdempotenzSchluessel(ctx, s.DB.Pool, key)
+		reserviert, antwort, err := repository.ReserviereIdempotenzSchluessel(ctx, t.DB.Pool, schluessel)
 		if err != nil {
 			log.Printf("idempotenz: Schlüssel nicht reservierbar, Anfrage läuft ohne Schutz: %v", err)
 			return idempotenzLage{}
@@ -117,96 +117,96 @@ func (s *Tueren) erlangeIdempotenz(ctx context.Context, key string) idempotenzLa
 	}
 }
 
-// IdempotenzSpeicherfrist sagt, wie lange saveToCache nach der Arbeit noch schreiben darf — mit
+// IdempotenzSpeicherfrist sagt, wie lange legeAntwortAb nach der Arbeit noch schreiben darf — mit
 // WithoutCancel, also auch nach Ablauf der Bearbeitungsfrist. Bearbeitungsfrist plus diese
 // Frist müssen unter repository.IdempotenzReservierungsfrist bleiben, sonst kann die
 // Waisenübernahme einen Besitzer treffen, der noch lebt (api/idempotenz_fristen_test.go).
 const IdempotenzSpeicherfrist = 5 * time.Second
 
-// saveToCache schreibt die Antwort in die Reservierung — mit WithoutCancel (Vorbild
+// legeAntwortAb schreibt die Antwort in die Reservierung — mit WithoutCancel (Vorbild
 // api/mahnwesen/mahnlisten_versand.go): Bricht der Aufrufer ab, nachdem die Buchung committet ist, muss
 // die Antwort trotzdem stehen, sonst bucht die Wiederholung neu. Ein Serverfehler wird nicht
 // gespeichert, sondern gibt den Schlüssel frei: Die Wiederholung soll es neu versuchen.
-func (s *Tueren) saveToCache(ctx context.Context, key string, data interface{}, status int) {
-	if key == "" {
+func (t *Tueren) legeAntwortAb(ctx context.Context, schluessel string, daten interface{}, status int) {
+	if schluessel == "" {
 		return
 	}
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), IdempotenzSpeicherfrist)
 	defer abbruch()
 	if status >= 500 {
-		if _, err := repository.GibIdempotenzSchluesselFrei(ctx, s.DB.Pool, key); err != nil {
+		if _, err := repository.GibIdempotenzSchluesselFrei(ctx, t.DB.Pool, schluessel); err != nil {
 			log.Printf("idempotenz: Schlüssel nach Serverfehler nicht freigegeben: %v", err)
 		}
 		return
 	}
-	respData, err := json.Marshal(data)
+	antwortDaten, err := json.Marshal(daten)
 	if err != nil {
 		log.Printf("idempotenz: Antwort konnte nicht serialisiert werden: %v", err)
 		return
 	}
-	if err := repository.SchreibeIdempotenzAntwort(ctx, s.DB.Pool, key, respData, status); err != nil {
+	if err := repository.SchreibeIdempotenzAntwort(ctx, t.DB.Pool, schluessel, antwortDaten, status); err != nil {
 		log.Printf("idempotenz: Antwort nicht gespeichert: %v", err)
 	}
 }
 
-// serveCachedActionResponse liefert die gespeicherte Antwort aus, falls unversehrt.
+// antworteAusAblage liefert die gespeicherte Antwort aus, falls unversehrt.
 // true = Antwort wurde gesendet (Aufrufer beendet); false = beschädigter Eintrag, Aufrufer
 // berechnet neu.
-func (s *Tueren) serveCachedActionResponse(w http.ResponseWriter, antwort *repository.IdempotenzAntwort) bool {
-	cachedRespJSON, cachedStatus := antwort.Daten, antwort.Status
+func (t *Tueren) antworteAusAblage(w http.ResponseWriter, antwort *repository.IdempotenzAntwort) bool {
+	daten, status := antwort.Daten, antwort.Status
 
-	if cachedStatus >= 400 {
-		var errData map[string]string
-		if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
+	if status >= 400 {
+		var fehlerDaten map[string]string
+		if uerr := json.Unmarshal(daten, &fehlerDaten); uerr != nil {
 			log.Printf("idempotenz: beschädigte Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
 			return false
 		}
-		if merkmal := errData[sperrCacheFeld]; merkmal == sperrUebergehbar || merkmal == sperrAmLeser {
+		if merkmal := fehlerDaten[sperrAblageFeld]; merkmal == sperrUebergehbar || merkmal == sperrAmLeser {
 			w.Header().Set(sperrKopf, merkmal)
 		}
-		apierrors.SendHTTPError(w, cachedStatus, errors.New(errData["error"]))
+		apierrors.SendHTTPError(w, status, errors.New(fehlerDaten["error"]))
 		return true
 	}
 
-	var cachedResp ActionResponse
-	if uerr := json.Unmarshal(cachedRespJSON, &cachedResp); uerr != nil {
+	var gespeichert eingabeAntwort
+	if uerr := json.Unmarshal(daten, &gespeichert); uerr != nil {
 		log.Printf("idempotenz: beschädigte Antwort im Cache, wird neu berechnet: %v", uerr)
 		return false
 	}
-	tuer.AntworteJSON(w, cachedStatus, cachedResp)
+	tuer.AntworteJSON(w, status, gespeichert)
 	return true
 }
 
-// ActionHandler dispatches requests from the Omnibox.
-func (s *Tueren) ActionHandler(omniboxSvc service.OmniboxDienst) http.HandlerFunc {
+// EingabeVerarbeiten dispatches requests from the Omnibox.
+func (t *Tueren) EingabeVerarbeiten(omnibox service.OmniboxDienst) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.handleAction(w, r, omniboxSvc)
+		t.verarbeiteEingabe(w, r, omnibox)
 	}
 }
 
-// handleAction nimmt einen Scan oder eine Suche der Theke entgegen und reicht sie an die Omnibox.
-func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc service.OmniboxDienst) {
+// verarbeiteEingabe nimmt einen Scan oder eine Suche der Theke entgegen und reicht sie an die Omnibox.
+func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnibox service.OmniboxDienst) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
 		return
 	}
 
-	var req ActionRequest
+	var req EingabeAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
-	req.Query = strings.TrimSpace(req.Query)
-	if req.Query == "" {
+	req.Text = strings.TrimSpace(req.Text)
+	if req.Text == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("such- oder Barcode-Abfrage ist leer"))
 		return
 	}
 
 	ctx := r.Context()
 
-	lage := s.erlangeIdempotenz(ctx, req.IdempotencyKey)
-	if lage.antwort != nil && s.serveCachedActionResponse(w, lage.antwort) {
+	lage := t.erlangeIdempotenz(ctx, req.IdempotenzSchluessel)
+	if lage.antwort != nil && t.antworteAusAblage(w, lage.antwort) {
 		return
 	}
 	if lage.inArbeit {
@@ -220,77 +220,77 @@ func (s *Tueren) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 	// das Feld ohne das Recht setzt, wird behandelt, als hätte er es nicht gesetzt. Übergangen
 	// werden am Buch wie am Gerät nur die Hinweise (offene Forderung, Überfällig-Automatik),
 	// keine Sperre am Leser.
-	res, err := omniboxSvc.VerarbeiteEingabe(ctx, service.OmniboxEingabe{
-		Text:                 req.Query,
-		AktiverLeserID:       req.ActiveLeserID,
-		ChecklisteBestaetigt: req.ConfirmedChecklist,
+	ergebnis, err := omnibox.VerarbeiteEingabe(ctx, service.OmniboxEingabe{
+		Text:                 req.Text,
+		AktiverLeserID:       req.AktiverLeserID,
+		ChecklisteBestaetigt: req.ChecklisteBestaetigt,
 		BearbeiterID:         claims.UserID,
-		SperreUebergehen:     req.OverrideBlock && s.HatRecht(r, "edit_students"),
+		SperreUebergehen:     req.SperreUebergehen && t.HatRecht(r, "edit_students"),
 	})
 
 	if err != nil {
 		// Vor dem Cachen kürzen — sonst läge der Freitext im Idempotenz-Cache.
-		err = ohneSperrgrund(err, s.HatRecht(r, "view_students"))
-		status := mapServiceErrorToStatus(err)
-		cacheDaten := map[string]string{"error": err.Error()}
+		err = ohneSperrgrund(err, t.HatRecht(r, "view_students"))
+		status := statusDesFehlers(err)
+		ablageDaten := map[string]string{"error": err.Error()}
 		if merkmal := sperrMerkmal(err); merkmal != "" {
 			// Merkmal für den Sperr-Dialog der Theke — im Header, damit der Body die
 			// eine kanonische Fehlerform behält, und im Cache, damit eine Wiederholung
 			// es nicht verliert (sperr_merkmal_test.go).
 			w.Header().Set(sperrKopf, merkmal)
-			cacheDaten[sperrCacheFeld] = merkmal
+			ablageDaten[sperrAblageFeld] = merkmal
 		}
-		s.saveToCache(ctx, req.IdempotencyKey, cacheDaten, status)
+		t.legeAntwortAb(ctx, req.IdempotenzSchluessel, ablageDaten, status)
 		apierrors.SendHTTPError(w, status, err)
 		return
 	}
 
 	// Map to API response
-	resp := mapOmniboxResultToActionResponse(res)
+	antwort := zurEingabeAntwort(ergebnis)
 
-	s.saveToCache(ctx, req.IdempotencyKey, resp, http.StatusOK)
+	t.legeAntwortAb(ctx, req.IdempotenzSchluessel, antwort, http.StatusOK)
 
 	// Broadcast updates to all monitoring dashboards (SSE)
-	if resp.Type == "ausleihe" || resp.Type == "rueckgabe" {
-		s.broadcastActionEvent(*resp)
+	if antwort.Art == "ausleihe" || antwort.Art == "rueckgabe" {
+		t.sendeThekenEreignis(*antwort)
 	}
 
-	tuer.AntworteJSON(w, http.StatusOK, resp)
+	tuer.AntworteJSON(w, http.StatusOK, antwort)
 }
 
-func mapOmniboxResultToActionResponse(res *service.OmniboxErgebnis) *ActionResponse {
-	if res == nil {
+func zurEingabeAntwort(ergebnis *service.OmniboxErgebnis) *eingabeAntwort {
+	if ergebnis == nil {
 		return nil
 	}
-	return &ActionResponse{
-		Type:                 res.Art,
-		Message:              res.Meldung,
-		Student:              zumKioskSchueler(res.Leser),
-		Book:                 res.Exemplar,
-		Geraet:               res.Geraet,
-		DueDate:              res.Frist,
-		LoanID:               res.AusleiheID,
-		Fremdrueckgabe:       res.Fremdrueckgabe,
-		Vorbesitzer:          zumKioskSchueler(res.Vorbesitzer),
-		SearchResults:        res.Treffer,
-		HasVormerkung:        res.HatVormerkung,
-		VormerkungTitel:      res.VormerkungTitel,
-		VormerkungUser:       res.VorgemerktFuer,
-		RegalfreigabeBarcode: res.RegalfreigabeBarcode,
-		AufsichtInformieren:  res.AufsichtInformieren,
-		Abholbereit:          zuAbholbereitInfos(res.Abholbereit),
-		AuflagenHinweis:      res.AuflagenHinweis,
+	return &eingabeAntwort{
+		Art:                  ergebnis.Art,
+		Meldung:              ergebnis.Meldung,
+		Leser:                zumThekenLeser(ergebnis.Leser),
+		Exemplar:             ergebnis.Exemplar,
+		Geraet:               ergebnis.Geraet,
+		Frist:                ergebnis.Frist,
+		AusleiheID:           ergebnis.AusleiheID,
+		Fremdrueckgabe:       ergebnis.Fremdrueckgabe,
+		Vorbesitzer:          zumThekenLeser(ergebnis.Vorbesitzer),
+		Treffer:              ergebnis.Treffer,
+		HatVormerkung:        ergebnis.HatVormerkung,
+		VormerkungTitel:      ergebnis.VormerkungTitel,
+		VorgemerktFuer:       ergebnis.VorgemerktFuer,
+		RegalfreigabeBarcode: ergebnis.RegalfreigabeBarcode,
+		AufsichtInformieren:  ergebnis.AufsichtInformieren,
+		Abholbereit:          zuAbholbereitenVormerkungen(ergebnis.Abholbereit),
+		AuflagenHinweis:      ergebnis.AuflagenHinweis,
 	}
 }
 
-// zuAbholbereitInfos überträgt den Abholfach-Hinweis in die API-Form.
-func zuAbholbereitInfos(vs []service.AbholbereiteVormerkung) []AbholbereitInfo {
+// zuAbholbereitenVormerkungen überträgt den Abholfach-Hinweis in die API-Form.
+func zuAbholbereitenVormerkungen(vs []service.AbholbereiteVormerkung) []abholbereiteVormerkung {
 	if len(vs) == 0 {
 		return nil
 	}
-	out := make([]AbholbereitInfo, 0, len(vs))
+	out := make([]abholbereiteVormerkung, 0, len(vs))
 	for _, v := range vs {
-		out = append(out, AbholbereitInfo{Titel: v.Titel, BereitgestelltBis: v.BereitgestelltBis})
+		out = append(out, abholbereiteVormerkung{Titel: v.Titel, BereitgestelltBis: v.BereitgestelltBis})
 	}
 	return out
 }

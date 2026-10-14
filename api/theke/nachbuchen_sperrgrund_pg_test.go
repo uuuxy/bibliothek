@@ -24,14 +24,14 @@ func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 	helferOhneRechte(t)
 	// Der Helfer darf an die Tür (perform_actions), aber keine Schülerdaten ansehen.
 	tuer.MerkeRechtFuerTest("helfer", "perform_actions", true)
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	ctx := context.Background()
 	const grund = "Eltern zahlen Schadensrechnung nicht - Fall Jugendamt"
 	if _, err := w.pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt = false, is_manually_blocked = true, block_reason = $2 WHERE id = $1`, w.carla, grund); err != nil {
 		t.Fatalf("Sperre von Hand setzen: %v", err)
 	}
 
-	nachbuchenAls := func(rolle auth.Role, schluessel string) NachbuchenErgebnis {
+	nachbuchenAls := func(rolle auth.Role, schluessel string) nachbuchErgebnis {
 		t.Helper()
 		body, err := json.Marshal(map[string]any{"gesendet_am": time.Now(), "eintraege": []map[string]any{
 			w.eintrag(schluessel, "ausleihe", &w.carla, time.Now().Add(-time.Minute)),
@@ -40,13 +40,13 @@ func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 			t.Fatalf("Rumpf: %v", err)
 		}
 		req := httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(string(body)))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: rolle, UserID: w.staff}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: rolle, UserID: w.bearbeiter}))
 		rec := httptest.NewRecorder()
-		w.srv.NachbuchenHandler(w.nachbuch)(rec, req)
+		w.srv.WarteschlangeNachbuchen(w.nachbuch)(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Nachbuchen als %s: Status %d, %s", rolle, rec.Code, rec.Body.String())
 		}
-		var resp NachbuchenResponse
+		var resp nachbuchAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil || len(resp.Ergebnisse) != 1 {
 			t.Fatalf("Antwort als %s: %v, %s", rolle, err, rec.Body.String())
 		}
@@ -90,14 +90,14 @@ func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 func TestNachbuchen_WiederholtePortionTraegtKeinenSperrgrund(t *testing.T) {
 	helferOhneRechte(t)
 	tuer.MerkeRechtFuerTest("helfer", "perform_actions", true)
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	ctx := context.Background()
 	const grund = "Eltern zahlen Schadensrechnung nicht - Fall Jugendamt"
 	if _, err := w.pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt = false, is_manually_blocked = true, block_reason = $2 WHERE id = $1`, w.carla, grund); err != nil {
 		t.Fatalf("Sperre von Hand setzen: %v", err)
 	}
 
-	nachbuchenAls := func(rolle auth.Role, schluessel string) NachbuchenErgebnis {
+	nachbuchenAls := func(rolle auth.Role, schluessel string) nachbuchErgebnis {
 		t.Helper()
 		body, err := json.Marshal(map[string]any{"gesendet_am": time.Now(), "eintraege": []map[string]any{
 			w.eintrag(schluessel, "ausleihe", &w.carla, time.Now().Add(-time.Minute)),
@@ -106,13 +106,13 @@ func TestNachbuchen_WiederholtePortionTraegtKeinenSperrgrund(t *testing.T) {
 			t.Fatalf("Rumpf: %v", err)
 		}
 		req := httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(string(body)))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: rolle, UserID: w.staff}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: rolle, UserID: w.bearbeiter}))
 		rec := httptest.NewRecorder()
-		w.srv.NachbuchenHandler(w.nachbuch)(rec, req)
+		w.srv.WarteschlangeNachbuchen(w.nachbuch)(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Nachbuchen als %s: Status %d, %s", rolle, rec.Code, rec.Body.String())
 		}
-		var resp NachbuchenResponse
+		var resp nachbuchAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil || len(resp.Ergebnisse) != 1 {
 			t.Fatalf("Antwort als %s: %v, %s", rolle, err, rec.Body.String())
 		}

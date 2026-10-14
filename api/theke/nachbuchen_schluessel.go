@@ -39,20 +39,20 @@ import (
 
 // nachbuchAblage ist die Form eines abgelegten Ergebnisses der Tür in idempotency_keys.
 type nachbuchAblage struct {
-	Nachbuchen *NachbuchenErgebnis `json:"nachbuchen"`
+	Nachbuchen *nachbuchErgebnis `json:"nachbuchen"`
 }
 
 // nachbuchSchluesselLage sagt, was mit einem Eintrag geschieht: Entweder steht die Antwort schon
 // fest, oder der Schlüssel gehört dieser Anfrage und es wird gebucht.
 type nachbuchSchluesselLage struct {
-	antwort           *NachbuchenErgebnis
+	antwort           *nachbuchErgebnis
 	fremdrueckgabeVon *string                       // Ausnahme des Wächters, nur beim Buchen
 	online            *repository.IdempotenzAntwort // übernommene Online-Antwort, beim Serverfehler zurücklegen
 }
 
 // ergreifeNachbuchSchluessel liest den Schlüssel und entscheidet nach der Liste im Kopf.
-func (s *Tueren) ergreifeNachbuchSchluessel(ctx context.Context, e NachbuchenEintrag) (nachbuchSchluesselLage, error) {
-	reserviert, antwort, err := repository.ReserviereIdempotenzSchluessel(ctx, s.DB.Pool, e.Schluessel)
+func (t *Tueren) ergreifeNachbuchSchluessel(ctx context.Context, e nachbuchEintrag) (nachbuchSchluesselLage, error) {
+	reserviert, antwort, err := repository.ReserviereIdempotenzSchluessel(ctx, t.DB.Pool, e.Schluessel)
 	if err != nil {
 		return nachbuchSchluesselLage{}, err
 	}
@@ -70,14 +70,14 @@ func (s *Tueren) ergreifeNachbuchSchluessel(ctx context.Context, e NachbuchenEin
 	var fremdrueckgabeVon *string
 	if gebucht, ok := onlineGebucht(antwort); ok {
 		if !nurFremdrueckgabeVorAusleihe(gebucht, e.Absicht) {
-			return nachbuchSchluesselLage{antwort: &NachbuchenErgebnis{
+			return nachbuchSchluesselLage{antwort: &nachbuchErgebnis{
 				Schluessel: e.Schluessel, Ergebnis: nachbuchBereitsGebucht, Daten: &gebucht,
 			}}, nil
 		}
-		fremdrueckgabeVon = gebucht.LoanID
+		fremdrueckgabeVon = gebucht.AusleiheID
 	}
 
-	uebernommen, err := repository.UebernimmIdempotenzAntwort(ctx, s.DB.Pool, e.Schluessel, *antwort)
+	uebernommen, err := repository.UebernimmIdempotenzAntwort(ctx, t.DB.Pool, e.Schluessel, *antwort)
 	if err != nil {
 		return nachbuchSchluesselLage{}, err
 	}
@@ -89,13 +89,13 @@ func (s *Tueren) ergreifeNachbuchSchluessel(ctx context.Context, e NachbuchenEin
 
 // onlineGebucht liest aus der Antwort des Online-Versands die gebuchte Ausleihe oder Rückgabe.
 // false bei einer Fehlerantwort und bei einer Ausweis- oder Suchantwort: Dort wurde nichts gebucht.
-func onlineGebucht(antwort *repository.IdempotenzAntwort) (ActionResponse, bool) {
+func onlineGebucht(antwort *repository.IdempotenzAntwort) (eingabeAntwort, bool) {
 	if antwort.Status < http.StatusOK || antwort.Status >= http.StatusMultipleChoices {
-		return ActionResponse{}, false
+		return eingabeAntwort{}, false
 	}
-	var gebucht ActionResponse
-	if json.Unmarshal(antwort.Daten, &gebucht) != nil || (gebucht.Type != "ausleihe" && gebucht.Type != "rueckgabe") {
-		return ActionResponse{}, false
+	var gebucht eingabeAntwort
+	if json.Unmarshal(antwort.Daten, &gebucht) != nil || (gebucht.Art != "ausleihe" && gebucht.Art != "rueckgabe") {
+		return eingabeAntwort{}, false
 	}
 	return gebucht, true
 }
@@ -105,20 +105,20 @@ func onlineGebucht(antwort *repository.IdempotenzAntwort) (ActionResponse, bool)
 // Ausnahme; der Eintrag gilt dann als vollständig gebucht. Die Kennung geht als UUID an Postgres,
 // darum die strenge Form (kennung.IstUUID) — uuid.Parse nähme auch `urn:uuid:…` an
 // (api/uuid_eingaben_test.go).
-func nurFremdrueckgabeVorAusleihe(gebucht ActionResponse, absicht string) bool {
-	if gebucht.Type != "rueckgabe" || !gebucht.Fremdrueckgabe || absicht != service.NachbuchAbsichtAusleihe || gebucht.LoanID == nil {
+func nurFremdrueckgabeVorAusleihe(gebucht eingabeAntwort, absicht string) bool {
+	if gebucht.Art != "rueckgabe" || !gebucht.Fremdrueckgabe || absicht != service.NachbuchAbsichtAusleihe || gebucht.AusleiheID == nil {
 		return false
 	}
-	return kennung.IstUUID(*gebucht.LoanID)
+	return kennung.IstUUID(*gebucht.AusleiheID)
 }
 
-func nachbuchNochInArbeit(e NachbuchenEintrag) *NachbuchenErgebnis {
-	return &NachbuchenErgebnis{Schluessel: e.Schluessel, Ergebnis: nachbuchWiederholen, Grund: "wird gerade gebucht"}
+func nachbuchNochInArbeit(e nachbuchEintrag) *nachbuchErgebnis {
+	return &nachbuchErgebnis{Schluessel: e.Schluessel, Ergebnis: nachbuchWiederholen, Grund: "wird gerade gebucht"}
 }
 
 // legeNachbuchErgebnisAb schreibt das Ergebnis in die Reservierung — mit WithoutCancel wie
-// saveToCache: Bricht der Rechner nach dem Buchen ab, soll die Wiederholung das Ergebnis finden.
-func (s *Tueren) legeNachbuchErgebnisAb(ctx context.Context, erg NachbuchenErgebnis) {
+// legeAntwortAb: Bricht der Rechner nach dem Buchen ab, soll die Wiederholung das Ergebnis finden.
+func (t *Tueren) legeNachbuchErgebnisAb(ctx context.Context, erg nachbuchErgebnis) {
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), IdempotenzSpeicherfrist)
 	defer abbruch()
 	daten, err := json.Marshal(nachbuchAblage{Nachbuchen: &erg})
@@ -126,23 +126,23 @@ func (s *Tueren) legeNachbuchErgebnisAb(ctx context.Context, erg NachbuchenErgeb
 		log.Printf("nachbuchen: Ergebnis zu %s nicht serialisierbar: %v", erg.Schluessel, err)
 		return
 	}
-	if err := repository.SchreibeIdempotenzAntwort(ctx, s.DB.Pool, erg.Schluessel, daten, http.StatusOK); err != nil {
+	if err := repository.SchreibeIdempotenzAntwort(ctx, t.DB.Pool, erg.Schluessel, daten, http.StatusOK); err != nil {
 		log.Printf("nachbuchen: Ergebnis zu %s nicht abgelegt: %v", erg.Schluessel, err)
 	}
 }
 
 // gibNachbuchSchluesselZurueck räumt nach einem Serverfehler: Eine übernommene Online-Antwort
 // kommt zurück, eine eigene Reservierung wird freigegeben.
-func (s *Tueren) gibNachbuchSchluesselZurueck(ctx context.Context, schluessel string, lage nachbuchSchluesselLage) {
+func (t *Tueren) gibNachbuchSchluesselZurueck(ctx context.Context, schluessel string, lage nachbuchSchluesselLage) {
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), IdempotenzSpeicherfrist)
 	defer abbruch()
 	if lage.online != nil {
-		if err := repository.StelleIdempotenzAntwortWiederHer(ctx, s.DB.Pool, schluessel, *lage.online); err != nil {
+		if err := repository.StelleIdempotenzAntwortWiederHer(ctx, t.DB.Pool, schluessel, *lage.online); err != nil {
 			log.Printf("nachbuchen: Online-Antwort zu %s nicht zurückgelegt: %v", schluessel, err)
 		}
 		return
 	}
-	if _, err := repository.GibIdempotenzSchluesselFrei(ctx, s.DB.Pool, schluessel); err != nil {
+	if _, err := repository.GibIdempotenzSchluesselFrei(ctx, t.DB.Pool, schluessel); err != nil {
 		log.Printf("nachbuchen: Schlüssel %s nicht freigegeben: %v", schluessel, err)
 	}
 }

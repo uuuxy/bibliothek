@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Die Warteschlangen-ID IST der Idempotenz-Schlüssel: baueBatchPayload schickt sie
 // als idempotency_key, und der Server beantwortet einen bekannten Schlüssel aus dem
-// Cache statt die Aktion erneut auszuführen (api/theke/action.go).
+// Cache statt die Aktion erneut auszuführen (api/theke/eingabe.go).
 //
 // Beim Einspielen einer Sicherung muss diese ID deshalb mitwandern. Ohne sie vergibt
 // enqueueOfflineAction eine frische UUID — und dieselbe Datei zweimal eingespielt

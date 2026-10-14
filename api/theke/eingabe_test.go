@@ -9,11 +9,11 @@ import (
 	"bibliothek/internal/service"
 )
 
-// TestMapServiceErrorToStatus: Der Status entscheidet an der Theke, welche Meldung
+// TestStatusDesFehlers: Der Status entscheidet an der Theke, welche Meldung
 // erscheint, und landet mit der Antwort im Idempotenz-Cache. Über die Handler-Tests war
 // bis zum 29.09.2026 nur „gesperrt → 403" abgesichert; 404, 400 und 409 ließen sich
 // vertauschen, ohne dass ein Test rot wurde.
-func TestMapServiceErrorToStatus(t *testing.T) {
+func TestStatusDesFehlers(t *testing.T) {
 	faelle := []struct {
 		name     string
 		err      error
@@ -33,8 +33,8 @@ func TestMapServiceErrorToStatus(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if got := mapServiceErrorToStatus(f.err); got != f.erwartet {
-				t.Errorf("mapServiceErrorToStatus(%v) = %d, erwartet %d", f.err, got, f.erwartet)
+			if got := statusDesFehlers(f.err); got != f.erwartet {
+				t.Errorf("statusDesFehlers(%v) = %d, erwartet %d", f.err, got, f.erwartet)
 			}
 		})
 	}

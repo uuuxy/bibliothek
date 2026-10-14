@@ -86,9 +86,9 @@ func TestVormerkungen_UngueltigeKennungErreichtRepositoryNicht(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			repo := &vormerkungRepoZaehler{}
-			h := s.theke().CreateVormerkungHandler(repo)
+			h := s.theke().VormerkungAnlegen(repo)
 			if f.liste {
-				h = s.theke().ListVormerkungHandler(repo)
+				h = s.theke().Vormerkungen(repo)
 			}
 			if status := tuertest.AntwortOhneDB(t, h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
 				t.Fatalf("Status %d, erwartet 400", status)
@@ -106,16 +106,16 @@ func TestVormerkungen_UngueltigeKennungErreichtRepositoryNicht(t *testing.T) {
 func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 	leer := ""
 	gut := "11111111-1111-1111-1111-111111111111"
-	if err := tuer.Pruefer.Struct(theke.ActionRequest{Query: "B-1", ActiveLeserID: &leer}); err != nil {
+	if err := tuer.Pruefer.Struct(theke.EingabeAnfrage{Text: "B-1", AktiverLeserID: &leer}); err != nil {
 		t.Fatalf("leerer Zeiger abgewiesen: %v", err)
 	}
-	if err := tuer.Pruefer.Struct(theke.ActionRequest{Query: "B-1", ActiveLeserID: &gut}); err != nil {
+	if err := tuer.Pruefer.Struct(theke.EingabeAnfrage{Text: "B-1", AktiverLeserID: &gut}); err != nil {
 		t.Fatalf("gültige UUID abgewiesen: %v", err)
 	}
-	if err := tuer.Pruefer.Struct(theke.ActionRequest{Query: "B-1"}); err != nil {
+	if err := tuer.Pruefer.Struct(theke.EingabeAnfrage{Text: "B-1"}); err != nil {
 		t.Fatalf("nil-Zeiger abgewiesen: %v", err)
 	}
-	if err := tuer.Pruefer.Struct(theke.ActionRequest{Query: "B-1", ActiveLeserID: &[]string{"x"}[0]}); err == nil {
+	if err := tuer.Pruefer.Struct(theke.EingabeAnfrage{Text: "B-1", AktiverLeserID: &[]string{"x"}[0]}); err == nil {
 		t.Fatal("„x“ als active_leser_id durchgelassen")
 	} else if msg := tuer.Pruefmeldung(err).Error(); !strings.Contains(msg, "ungültige Kennung") {
 		t.Fatalf("Meldung %q nennt die Kennung nicht", msg)
@@ -123,7 +123,7 @@ func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 
 	s := &Server{}
 	repo := &vormerkungRepoZaehler{}
-	status := tuertest.AntwortOhneDB(t, s.theke().CreateVormerkungHandler(repo), http.MethodPost, "/api/vormerkungen",
+	status := tuertest.AntwortOhneDB(t, s.theke().VormerkungAnlegen(repo), http.MethodPost, "/api/vormerkungen",
 		`{"titel_id":"`+gut+`","schueler_id":""}`)
 	if status != http.StatusCreated || !repo.gerufen {
 		t.Fatalf("gültige Vormerkung mit leerer schueler_id: Status %d, Repository gerufen=%v", status, repo.gerufen)

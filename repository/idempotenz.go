@@ -22,7 +22,7 @@ import (
 // Server ist zwischen Reservierung und Antwort gestorben, nicht: Er arbeitet noch. Das stimmt
 // nur, solange jede Arbeit unter dem Schlüssel vor Ablauf dieser Frist abgebrochen und ihre
 // Antwort abgelegt ist: Die TimeoutMiddleware (api.StandardBearbeitungsfrist) beendet die
-// Arbeit, saveToCache (api/theke, IdempotenzSpeicherfrist) schreibt danach noch.
+// Arbeit, legeAntwortAb (api/theke, IdempotenzSpeicherfrist) schreibt danach noch.
 // api/idempotenz_fristen_test.go hält die drei Werte aneinander.
 const IdempotenzReservierungsfrist = 60 * time.Second
 

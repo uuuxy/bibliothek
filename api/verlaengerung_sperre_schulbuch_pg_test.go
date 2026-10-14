@@ -109,7 +109,7 @@ func (l *sperrFristLage) pruefeFrist(t *testing.T, f sperrFristFall) {
 func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_Einzeln(t *testing.T) {
 	l := sperrFristLageAnlegen(t)
 	mux := http.NewServeMux()
-	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", l.srv.theke().ExtendLoanHandler(&tuertest.EinstellungenAttrappe{
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", l.srv.theke().AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
 		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 28},
 	}))
 	for _, f := range l.faelle() {
@@ -137,7 +137,7 @@ func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_FristVonHand(t *testing.T
 		t.Fatalf("Test-Admin: %v", err)
 	}
 	mux := http.NewServeMux()
-	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", l.srv.theke().OverrideDueDateHandler(repository.NewProtokollAbfragen(l.pool)))
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", l.srv.theke().AusleihFristSetzen(repository.NewProtokollAbfragen(l.pool)))
 	// Ein Datum in der Zukunft — nur dann prüft der Weg die Sperre (ein Rückruf bleibt erlaubt).
 	zukunft := time.Now().AddDate(1, 0, 0).Format("2006-01-02")
 	for _, f := range l.faelle() {

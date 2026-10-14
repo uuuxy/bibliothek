@@ -85,7 +85,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/theke.BuchbarcodesResponse"
+                            "$ref": "#/definitions/theke.buchbarcodesAntwort"
                         }
                     },
                     "304": {
@@ -197,7 +197,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/theke.NachbuchenRequest"
+                            "$ref": "#/definitions/theke.nachbuchAnfrage"
                         }
                     }
                 ],
@@ -205,7 +205,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/theke.NachbuchenResponse"
+                            "$ref": "#/definitions/theke.nachbuchAntwort"
                         }
                     }
                 }
@@ -6455,7 +6455,7 @@ const docTemplate = `{
                 }
             }
         },
-        "theke.AbholbereitInfo": {
+        "theke.abholbereiteVormerkung": {
             "type": "object",
             "properties": {
                 "bereitgestellt_bis": {
@@ -6466,14 +6466,34 @@ const docTemplate = `{
                 }
             }
         },
-        "theke.ActionResponse": {
+        "theke.buchbarcodesAntwort": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "description": "Anzahl spart dem Rechner das Zählen und macht die Antwort im Log lesbar.",
+                    "type": "integer"
+                },
+                "barcodes": {
+                    "description": "Barcodes: alle Buchnummern, aufsteigend — nur Nummern, keine Personendaten.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stand": {
+                    "description": "Stand ist der Merker dieser Fassung — derselbe Wert wie im ETag. Der Rechner legt\nihn neben die Liste und schickt ihn beim nächsten Holen mit.",
+                    "type": "string"
+                }
+            }
+        },
+        "theke.eingabeAntwort": {
             "type": "object",
             "properties": {
                 "abholbereit": {
                     "description": "Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung\n01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten\nSchüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;\nPII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/theke.AbholbereitInfo"
+                        "$ref": "#/definitions/theke.abholbereiteVormerkung"
                     }
                 },
                 "auflagen_hinweis": {
@@ -6536,10 +6556,10 @@ const docTemplate = `{
                     }
                 },
                 "student": {
-                    "description": "Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe SchuelerKiosk)",
+                    "description": "Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe thekenLeser)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/theke.SchuelerKiosk"
+                            "$ref": "#/definitions/theke.thekenLeser"
                         }
                     ]
                 },
@@ -6551,7 +6571,7 @@ const docTemplate = `{
                     "description": "Original borrower if foreign return (Theken-Sicht)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/theke.SchuelerKiosk"
+                            "$ref": "#/definitions/theke.thekenLeser"
                         }
                     ]
                 },
@@ -6565,27 +6585,43 @@ const docTemplate = `{
                 }
             }
         },
-        "theke.BuchbarcodesResponse": {
+        "theke.nachbuchAnfrage": {
             "type": "object",
+            "required": [
+                "eintraege",
+                "gesendet_am"
+            ],
             "properties": {
-                "anzahl": {
-                    "description": "Anzahl spart dem Rechner das Zählen und macht die Antwort im Log lesbar.",
-                    "type": "integer"
-                },
-                "barcodes": {
-                    "description": "Barcodes: alle Buchnummern, aufsteigend — nur Nummern, keine Personendaten.",
+                "eintraege": {
                     "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/theke.nachbuchEintrag"
                     }
                 },
-                "stand": {
-                    "description": "Stand ist der Merker dieser Fassung — derselbe Wert wie im ETag. Der Rechner legt\nihn neben die Liste und schickt ihn beim nächsten Holen mit.",
+                "gesendet_am": {
+                    "description": "GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN\nUhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die\nScan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch\ngehende Uhr nicht erkennen.",
                     "type": "string"
                 }
             }
         },
-        "theke.NachbuchenEintrag": {
+        "theke.nachbuchAntwort": {
+            "type": "object",
+            "properties": {
+                "ergebnisse": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/theke.nachbuchErgebnis"
+                    }
+                },
+                "uhr_versatz_sekunden": {
+                    "description": "UhrVersatzSekunden ist der gemessene Versatz der Rechner-Uhr (Serverzeit minus Rechnerzeit):\nnegativ = die Uhr des Rechners geht vor. Die Theke kann eine falsch gehende Uhr damit melden.",
+                    "type": "integer"
+                }
+            }
+        },
+        "theke.nachbuchEintrag": {
             "type": "object",
             "required": [
                 "absicht",
@@ -6624,7 +6660,7 @@ const docTemplate = `{
                 }
             }
         },
-        "theke.NachbuchenErgebnis": {
+        "theke.nachbuchErgebnis": {
             "type": "object",
             "properties": {
                 "aufsicht_informieren": {
@@ -6635,7 +6671,7 @@ const docTemplate = `{
                     "description": "Daten ist die gebuchte Wirkung in der Form des Theken-Scans (bei Erfolg und bei\nbereits_gebucht die Wirkung des Online-Versands).",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/theke.ActionResponse"
+                            "$ref": "#/definitions/theke.eingabeAntwort"
                         }
                     ]
                 },
@@ -6652,43 +6688,7 @@ const docTemplate = `{
                 }
             }
         },
-        "theke.NachbuchenRequest": {
-            "type": "object",
-            "required": [
-                "eintraege",
-                "gesendet_am"
-            ],
-            "properties": {
-                "eintraege": {
-                    "type": "array",
-                    "maxItems": 50,
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/theke.NachbuchenEintrag"
-                    }
-                },
-                "gesendet_am": {
-                    "description": "GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN\nUhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die\nScan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch\ngehende Uhr nicht erkennen.",
-                    "type": "string"
-                }
-            }
-        },
-        "theke.NachbuchenResponse": {
-            "type": "object",
-            "properties": {
-                "ergebnisse": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/theke.NachbuchenErgebnis"
-                    }
-                },
-                "uhr_versatz_sekunden": {
-                    "description": "UhrVersatzSekunden ist der gemessene Versatz der Rechner-Uhr (Serverzeit minus Rechnerzeit):\nnegativ = die Uhr des Rechners geht vor. Die Theke kann eine falsch gehende Uhr damit melden.",
-                    "type": "integer"
-                }
-            }
-        },
-        "theke.SchuelerKiosk": {
+        "theke.thekenLeser": {
             "type": "object",
             "properties": {
                 "art": {

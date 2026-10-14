@@ -28,7 +28,7 @@ import (
 )
 
 func TestNachbuchMeldungen_SSESignalBeiAenderung(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -125,7 +125,7 @@ func TestNachbuchMeldungen_SSESignalBeiAenderung(t *testing.T) {
 	req := w.sitzung(httptest.NewRequest(http.MethodPost,
 		"/api/action/nachbuch-meldungen/"+liste[0].ID+"/quittieren", nil))
 	req.SetPathValue("id", liste[0].ID)
-	w.srv.NachbuchMeldungQuittierenHandler()(rec, req)
+	w.srv.NachbuchMeldungQuittieren()(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Quittieren: Status %d, %s", rec.Code, rec.Body.String())
 	}

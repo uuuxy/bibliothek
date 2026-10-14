@@ -13,15 +13,15 @@ import (
 	"bibliothek/repository"
 )
 
-// vormerkungRepoStub gibt genau den Fehler zurück, den der Test braucht — die Frage hier
+// vormerkungsAttrappe gibt genau den Fehler zurück, den der Test braucht — die Frage hier
 // ist die Einordnung im Handler, nicht die Abfrage in der Datenbank (die steht in
 // repository/vormerkung_pg_test.go am echten Constraint).
-type vormerkungRepoStub struct {
+type vormerkungsAttrappe struct {
 	repository.VormerkungsAbfragen
 	err error
 }
 
-func (v vormerkungRepoStub) LegeAn(context.Context, string, string, string) (string, error) {
+func (v vormerkungsAttrappe) LegeAn(context.Context, string, string, string) (string, error) {
 	return "", v.err
 }
 
@@ -30,7 +30,7 @@ func (v vormerkungRepoStub) LegeAn(context.Context, string, string, string) (str
 // apierrors.Internal: Die Theke bekam 500 und „Fehler beim Erstellen der Vormerkung" —
 // dieselbe Meldung wie bei einem kaputten Server, und keine Auskunft darüber, ob die
 // erste Vormerkung noch steht.
-func TestCreateVormerkung_ZweiteIstKonflikt(t *testing.T) {
+func TestVormerkungAnlegen_ZweiteIstKonflikt(t *testing.T) {
 	faelle := []struct {
 		name   string
 		err    error
@@ -43,7 +43,7 @@ func TestCreateVormerkung_ZweiteIstKonflikt(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			s := &Tueren{Basis: &tuer.Basis{}}
-			h := s.CreateVormerkungHandler(vormerkungRepoStub{err: f.err})
+			h := s.VormerkungAnlegen(vormerkungsAttrappe{err: f.err})
 			req := httptest.NewRequest(http.MethodPost, "/api/vormerkungen",
 				strings.NewReader(`{"titel_id":"11111111-1111-1111-1111-111111111111","schueler_id":"22222222-2222-2222-2222-222222222222"}`))
 			req.Header.Set("Content-Type", "application/json")

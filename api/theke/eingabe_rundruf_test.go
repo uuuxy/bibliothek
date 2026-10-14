@@ -26,7 +26,7 @@ func (o *festeOmnibox) VerarbeiteEingabe(context.Context, service.OmniboxEingabe
 // Nach einer Ausleihe und nach einer Rückgabe an der Theke geht ein Rundruf an die
 // Arbeitsplätze; ein gescannter Ausweis und ein Hinweis ohne Buchung lösen keinen aus. Geprüft am Strom: Nach jedem Scan
 // geht eine Marke über die Leitung, und was vor ihr ankommt, hat der Scan gesendet.
-func TestActionHandler_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
+func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.Start(ctx)
@@ -83,7 +83,7 @@ func TestActionHandler_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{Rolle: auth.RoleAdmin, UserID: "u1"}))
 		w := httptest.NewRecorder()
-		(&Tueren{Basis: &tuer.Basis{Broker: broker}}).ActionHandler(&festeOmnibox{ergebnis})(w, req)
+		(&Tueren{Basis: &tuer.Basis{Broker: broker}}).EingabeVerarbeiten(&festeOmnibox{ergebnis})(w, req)
 		if w.Code != http.StatusOK {
 			t.Fatalf("Scan mit Ergebnis %q: Status %d: %s", ergebnis.Art, w.Code, w.Body.String())
 		}

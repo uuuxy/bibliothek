@@ -14,7 +14,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestHandleStudentCheckoutFlow(t *testing.T) {
+func TestAusleiheAnDerTheke(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
@@ -125,7 +125,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	}
 }
 
-func TestHandleBookReturn(t *testing.T) {
+func TestRueckgabeAnDerTheke(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
@@ -190,16 +190,16 @@ func TestHandleBookReturn(t *testing.T) {
 	claims := &auth.Claims{UserID: staffID, Rolle: auth.RoleMitarbeiter}
 
 	res, err := omniboxSvc.VerarbeiteEingabe(context.Background(), service.OmniboxEingabe{Text: barcode, BearbeiterID: claims.UserID})
-	var resp ActionResponse
+	var resp eingabeAntwort
 	if res != nil {
-		resp = *mapOmniboxResultToActionResponse(res)
+		resp = *zurEingabeAntwort(res)
 	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if resp.Type != "rueckgabe" {
-		t.Errorf("expected type 'rueckgabe', got '%s'", resp.Type)
+	if resp.Art != "rueckgabe" {
+		t.Errorf("expected type 'rueckgabe', got '%s'", resp.Art)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

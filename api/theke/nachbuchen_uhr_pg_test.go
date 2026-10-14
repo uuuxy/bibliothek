@@ -21,12 +21,12 @@ import (
 )
 
 type nachbuchUhrAntwort struct {
-	Ergebnisse         []NachbuchenErgebnis `json:"ergebnisse"`
-	UhrVersatzSekunden *int                 `json:"uhr_versatz_sekunden"`
+	Ergebnisse         []nachbuchErgebnis `json:"ergebnisse"`
+	UhrVersatzSekunden *int               `json:"uhr_versatz_sekunden"`
 }
 
 // nachbuchenMitUhr schickt eine Portion mit der Sendezeit des Rechners; gesendet nil lässt das Feld weg.
-func (w *nbTuer) nachbuchenMitUhr(t *testing.T, gesendet *time.Time, eintraege ...map[string]any) (int, nachbuchUhrAntwort) {
+func (w *nachbuchWelt) nachbuchenMitUhr(t *testing.T, gesendet *time.Time, eintraege ...map[string]any) (int, nachbuchUhrAntwort) {
 	t.Helper()
 	rumpf := map[string]any{"eintraege": eintraege}
 	if gesendet != nil {
@@ -37,7 +37,7 @@ func (w *nbTuer) nachbuchenMitUhr(t *testing.T, gesendet *time.Time, eintraege .
 		t.Fatalf("Rumpf: %v", err)
 	}
 	rec := httptest.NewRecorder()
-	w.srv.NachbuchenHandler(w.nachbuch)(rec, w.sitzung(httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(string(body)))))
+	w.srv.WarteschlangeNachbuchen(w.nachbuch)(rec, w.sitzung(httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(string(body)))))
 	var antwort nachbuchUhrAntwort
 	if rec.Code == http.StatusOK {
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
@@ -47,7 +47,7 @@ func (w *nbTuer) nachbuchenMitUhr(t *testing.T, gesendet *time.Time, eintraege .
 	return rec.Code, antwort
 }
 
-func (w *nbTuer) ausleiheOffen(t *testing.T, schueler string) bool {
+func (w *nachbuchWelt) ausleiheOffen(t *testing.T, schueler string) bool {
 	t.Helper()
 	var n int
 	if err := w.pool.QueryRow(context.Background(), `
@@ -61,9 +61,9 @@ func (w *nbTuer) ausleiheOffen(t *testing.T, schueler string) bool {
 // online an Ben. Beim Nachbuchen muss die Rückgabe VOR Bens Ausleihe liegen: veraltet, Bens
 // Ausleihe bleibt.
 func TestNachbuchen_Uhr_VorgehendeUhrBeendetKeineJuengereAusleihe(t *testing.T) {
-	w := nbTuerAufbau(t)
-	if code, r := w.onlineScan(t, uuid.NewString(), w.anna); code != http.StatusOK || r.Type != "ausleihe" {
-		t.Fatalf("Online-Ausleihe an Anna: %d %q", code, r.Type)
+	w := baueNachbuchWelt(t)
+	if code, r := w.onlineScan(t, uuid.NewString(), w.anna); code != http.StatusOK || r.Art != "ausleihe" {
+		t.Fatalf("Online-Ausleihe an Anna: %d %q", code, r.Art)
 	}
 	vorgehen := 15 * time.Minute
 	echteRueckgabe := time.Now()
@@ -73,8 +73,8 @@ func TestNachbuchen_Uhr_VorgehendeUhrBeendetKeineJuengereAusleihe(t *testing.T) 
 	if code, r := w.onlineScan(t, uuid.NewString(), w.ben); code != http.StatusOK || !r.Fremdrueckgabe {
 		t.Fatalf("Fremdrückgabe an Theke 2: %d fremd=%v", code, r.Fremdrueckgabe)
 	}
-	if code, r := w.onlineScan(t, uuid.NewString(), w.ben); code != http.StatusOK || r.Type != "ausleihe" {
-		t.Fatalf("Online-Ausleihe an Ben: %d %q", code, r.Type)
+	if code, r := w.onlineScan(t, uuid.NewString(), w.ben); code != http.StatusOK || r.Art != "ausleihe" {
+		t.Fatalf("Online-Ausleihe an Ben: %d %q", code, r.Art)
 	}
 
 	gesendet := time.Now().Add(vorgehen)
@@ -97,9 +97,9 @@ func TestNachbuchen_Uhr_VorgehendeUhrBeendetKeineJuengereAusleihe(t *testing.T) 
 // Ohne Umrechnung läge die Rückgabe vor der Ausleihe und würde als veraltet abgewiesen — Anna
 // behielte ein Buch, das im Regal steht.
 func TestNachbuchen_Uhr_NachgehendeUhrBuchtDieRueckgabe(t *testing.T) {
-	w := nbTuerAufbau(t)
-	if code, r := w.onlineScan(t, uuid.NewString(), w.anna); code != http.StatusOK || r.Type != "ausleihe" {
-		t.Fatalf("Online-Ausleihe an Anna: %d %q", code, r.Type)
+	w := baueNachbuchWelt(t)
+	if code, r := w.onlineScan(t, uuid.NewString(), w.anna); code != http.StatusOK || r.Art != "ausleihe" {
+		t.Fatalf("Online-Ausleihe an Anna: %d %q", code, r.Art)
 	}
 	nachgehen := 15 * time.Minute
 	time.Sleep(200 * time.Millisecond)
@@ -124,7 +124,7 @@ func TestNachbuchen_Uhr_NachgehendeUhrBuchtDieRueckgabe(t *testing.T) {
 // Ohne Sendezeit lässt sich der Versatz nicht messen: Die Portion wird abgewiesen, nicht mit
 // ungeprüfter Uhr gebucht.
 func TestNachbuchen_Uhr_OhneSendezeitAbgewiesen(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	code, _ := w.nachbuchenMitUhr(t, nil, w.eintrag(uuid.NewString(), "ausleihe", &w.anna, time.Now()))
 	if code != http.StatusBadRequest {
 		t.Errorf("Status %d, erwartet 400", code)

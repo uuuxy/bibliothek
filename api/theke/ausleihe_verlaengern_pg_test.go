@@ -31,7 +31,7 @@ func pruefeFrist(t *testing.T, frist, soll time.Time) {
 	}
 }
 
-func TestExtendLoanHandler(t *testing.T) {
+func TestAusleiheVerlaengern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
@@ -135,7 +135,7 @@ func TestExtendLoanHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest, // Mux will match the /extend/ route, handler will return 400
 			setupRoute: func(mux *http.ServeMux, s *Tueren, settingsRepo repository.EinstellungsAbfragen) {
 				// We map it directly to test the handler's internal check for ""
-				mux.Handle("POST /extend/", s.ExtendLoanHandler(settingsRepo))
+				mux.Handle("POST /extend/", s.AusleiheVerlaengern(settingsRepo))
 			},
 			verify: func(t *testing.T, resp map[string]interface{}) {},
 		},
@@ -172,7 +172,7 @@ func TestExtendLoanHandler(t *testing.T) {
 			if tt.setupRoute != nil {
 				tt.setupRoute(mux, srv, settingsRepo)
 			} else {
-				mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.ExtendLoanHandler(settingsRepo))
+				mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(settingsRepo))
 			}
 
 			path := "/api/ausleihen/" + tt.ausleiheID + "/verlaengern"
@@ -209,7 +209,7 @@ func TestExtendLoanHandler(t *testing.T) {
 
 // Die Verlängerung einer gesperrten Ausleihe wird abgelehnt, und den Grund der Sperre liest nur,
 // wer view_students hat (wie an der Theke, ohneSperrgrund). Gelingt sie, beginnt die Mahnfolge neu.
-func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
+func TestAusleiheVerlaengern_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -232,7 +232,7 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	mux := http.NewServeMux()
-	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.ExtendLoanHandler(&tuertest.EinstellungenAttrappe{
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
 		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},
 	}))
 	verlaengere := func(ausleiheID string, rolle auth.Role) *httptest.ResponseRecorder {
@@ -278,7 +278,7 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 
 // Die Verlängerung rechnet mit den Sommerferien aus den Einstellungen, auch für ein Jahr, das die
 // Tabelle des Programms nicht kennt. Sind die Einstellungen nicht lesbar, gelten 28 Tage.
-func TestExtendLoan_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing.T) {
+func TestAusleiheVerlaengern_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-VF-1", "Ferien", "5a")
@@ -288,7 +288,7 @@ func TestExtendLoan_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing
 		t.Helper()
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: func() time.Time { return jetzt }}}
 		mux := http.NewServeMux()
-		mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.ExtendLoanHandler(einstellungen))
+		mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(einstellungen))
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/ausleihen/"+ausleiheID+"/verlaengern", nil))
 		if rec.Code != http.StatusOK {

@@ -34,18 +34,18 @@ const nachbuchenHoechstens = 50
 // Rechners gestellt werden sollte.
 const uhrVersatzWarnenAb = 2 * time.Minute
 
-// NachbuchenRequest ist eine Portion der Warteschlange.
-type NachbuchenRequest struct {
+// nachbuchAnfrage ist eine Portion der Warteschlange.
+type nachbuchAnfrage struct {
 	// GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN
 	// Uhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die
 	// Scan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch
 	// gehende Uhr nicht erkennen.
-	GesendetAm time.Time           `json:"gesendet_am" validate:"required"`
-	Eintraege  []NachbuchenEintrag `json:"eintraege" validate:"required,min=1,max=50,dive"`
+	GesendetAm time.Time         `json:"gesendet_am" validate:"required"`
+	Eintraege  []nachbuchEintrag `json:"eintraege" validate:"required,min=1,max=50,dive"`
 }
 
-// NachbuchenEintrag ist ein offline gescannter Vorgang.
-type NachbuchenEintrag struct {
+// nachbuchEintrag ist ein offline gescannter Vorgang.
+type nachbuchEintrag struct {
 	// Schluessel ist der Idempotenz-Schlüssel des Eintrags — derselbe, den der
 	// Online-Versand benutzt hätte. Daran erkennt der Server einen abgebrochenen Versand.
 	Schluessel string `json:"schluessel" validate:"required,uuid"`
@@ -62,8 +62,8 @@ type NachbuchenEintrag struct {
 	AusweisBarcode *string `json:"ausweis_barcode,omitempty"`
 }
 
-// NachbuchenErgebnis ist die Antwort zu einem Eintrag.
-type NachbuchenErgebnis struct {
+// nachbuchErgebnis ist die Antwort zu einem Eintrag.
+type nachbuchErgebnis struct {
 	Schluessel string `json:"schluessel"`
 	// Ergebnis: ausgeliehen · umgebucht · bereits_ausgeliehen · zurueckgegeben ·
 	// nur_reaktiviert · nicht_gebucht · veraltet · bereits_gebucht · wiederholen.
@@ -72,18 +72,18 @@ type NachbuchenErgebnis struct {
 	Grund string `json:"grund,omitempty"`
 	// Daten ist die gebuchte Wirkung in der Form des Theken-Scans (bei Erfolg und bei
 	// bereits_gebucht die Wirkung des Online-Versands).
-	Daten *ActionResponse `json:"daten,omitempty"`
+	Daten *eingabeAntwort `json:"daten,omitempty"`
 	// AufsichtInformieren: Das Buch stand auf einem Bescheid, der schon bei der
 	// Schulaufsicht liegt — eigenes Feld, weil das eine Aufgabe ist, keine Meldung.
 	AufsichtInformieren string `json:"aufsicht_informieren,omitempty"`
 }
 
-// NachbuchenResponse ist die Antwort auf eine Portion.
-type NachbuchenResponse struct {
+// nachbuchAntwort ist die Antwort auf eine Portion.
+type nachbuchAntwort struct {
 	// UhrVersatzSekunden ist der gemessene Versatz der Rechner-Uhr (Serverzeit minus Rechnerzeit):
 	// negativ = die Uhr des Rechners geht vor. Die Theke kann eine falsch gehende Uhr damit melden.
-	UhrVersatzSekunden int                  `json:"uhr_versatz_sekunden"`
-	Ergebnisse         []NachbuchenErgebnis `json:"ergebnisse"`
+	UhrVersatzSekunden int                `json:"uhr_versatz_sekunden"`
+	Ergebnisse         []nachbuchErgebnis `json:"ergebnisse"`
 }
 
 // nachbuchWiederholen: Der Server konnte diesen Eintrag nicht beurteilen (Datenbank weg, oder
@@ -96,23 +96,23 @@ const nachbuchWiederholen = "wiederholen"
 // Daten trägt die damals gebuchte Wirkung. Kein Wort der Meldungstabelle.
 const nachbuchBereitsGebucht = "bereits_gebucht"
 
-// NachbuchenHandler nimmt eine Portion der Warteschlange entgegen.
+// WarteschlangeNachbuchen nimmt eine Portion der Warteschlange entgegen.
 // @Summary      Offline-Warteschlange nachbuchen
 // @Description  Bucht je Eintrag die Wirklichkeit (Umbuchung, Rückgabe, Rückholen) und meldet jede Abweichung vom Scan.
 // @Tags         theke
 // @Accept       json
 // @Produce      json
-// @Param        body body NachbuchenRequest true "Einträge der Warteschlange"
-// @Success      200 {object} NachbuchenResponse
+// @Param        body body nachbuchAnfrage true "Einträge der Warteschlange"
+// @Success      200 {object} nachbuchAntwort
 // @Router       /action/nachbuchen [post]
-func (s *Tueren) NachbuchenHandler(nachbuchSvc service.NachbuchDienst) http.HandlerFunc {
+func (t *Tueren) WarteschlangeNachbuchen(nachbuchDienst service.NachbuchDienst) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		return s.handleNachbuchen(w, r, nachbuchSvc)
+		return t.bucheWarteschlangeNach(w, r, nachbuchDienst)
 	})
 }
 
-// handleNachbuchen bucht eine Portion der Warteschlange, Eintrag für Eintrag.
-func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbuchSvc service.NachbuchDienst) error {
+// bucheWarteschlangeNach bucht eine Portion der Warteschlange, Eintrag für Eintrag.
+func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, nachbuchDienst service.NachbuchDienst) error {
 	// Die Empfangszeit wird vor dem Einlesen festgehalten. Der gemessene Versatz enthält die
 	// Laufzeit der Anfrage bis hierher: Umgerechnet liegt ein Scan um diese Laufzeit zu spät,
 	// im Schulnetz Millisekunden — weniger, als ein Buch braucht, um von einer Theke zur
@@ -122,7 +122,7 @@ func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 	if !ok {
 		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
 	}
-	var req NachbuchenRequest
+	var req nachbuchAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return nil
 	}
@@ -137,22 +137,22 @@ func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 	}
 
 	ctx := r.Context()
-	antwort := NachbuchenResponse{
+	antwort := nachbuchAntwort{
 		UhrVersatzSekunden: int(versatz.Round(time.Second) / time.Second),
-		Ergebnisse:         make([]NachbuchenErgebnis, 0, len(req.Eintraege)),
+		Ergebnisse:         make([]nachbuchErgebnis, 0, len(req.Eintraege)),
 	}
 	// Die Zahl vor dem Nachbuchen. Gemeldet wird hinterher an der Wirkung, nicht an
 	// einer Liste der Ergebnisse, die eine Meldung erzeugen: Welche das sind, weiß der
 	// Dienst, und eine zweite Liste hier wäre die zweite Wahrheitsquelle — sie stimmte
 	// genau bis zur nächsten Meldung, die jemand hinzufügt.
-	offenVorher, zaehlbar := s.zaehleMeldungen(ctx)
-	absender := nachbuchAbsender{staffID: claims.UserID, uhrVersatz: versatz, darfSperrgrundSehen: s.HatRecht(r, "view_students")}
+	offenVorher, zaehlbar := t.zaehleMeldungen(ctx)
+	absender := nachbuchAbsender{bearbeiterID: claims.UserID, uhrVersatz: versatz, darfSperrgrundSehen: t.HatRecht(r, "view_students")}
 	for _, e := range req.Eintraege {
-		antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, absender))
+		antwort.Ergebnisse = append(antwort.Ergebnisse, t.bucheEintragNach(ctx, nachbuchDienst, e, absender))
 	}
 	if zaehlbar {
-		if offenNachher, ok := s.zaehleMeldungen(ctx); ok && offenNachher != offenVorher {
-			s.meldeMeldungsstand()
+		if offenNachher, ok := t.zaehleMeldungen(ctx); ok && offenNachher != offenVorher {
+			t.meldeMeldungsstand()
 		}
 	}
 	tuer.AntworteJSON(w, http.StatusOK, antwort)
@@ -162,7 +162,7 @@ func (s *Tueren) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 // nachbuchAbsender ist, was für jeden Eintrag einer Portion gleich ist: wer sie schickt, wie
 // seine Uhr geht und ob er den Freitext einer Sperre lesen darf (view_students).
 type nachbuchAbsender struct {
-	staffID             string
+	bearbeiterID        string
 	uhrVersatz          time.Duration
 	darfSperrgrundSehen bool
 }
@@ -171,29 +171,29 @@ type nachbuchAbsender struct {
 // Aufrufs: Die übrigen Einträge sollen durchlaufen, und der gescheiterte bleibt auf dem
 // Rechner liegen („wiederholen"). Schweigen wäre hier das Schlimmste — die Theke hielte
 // ihn für erledigt, und erledigt ist nur, was der Server gebucht hat.
-func (s *Tueren) bucheEintragNach(ctx context.Context, svc service.NachbuchDienst, e NachbuchenEintrag, absender nachbuchAbsender) NachbuchenErgebnis {
-	lage, err := s.ergreifeNachbuchSchluessel(ctx, e)
+func (t *Tueren) bucheEintragNach(ctx context.Context, dienst service.NachbuchDienst, e nachbuchEintrag, absender nachbuchAbsender) nachbuchErgebnis {
+	lage, err := t.ergreifeNachbuchSchluessel(ctx, e)
 	if err != nil {
 		log.Printf("nachbuchen: Schlüssel %s nicht lesbar: %v", e.Schluessel, err)
-		return NachbuchenErgebnis{Schluessel: e.Schluessel, Ergebnis: nachbuchWiederholen, Grund: "Server nicht erreichbar"}
+		return nachbuchErgebnis{Schluessel: e.Schluessel, Ergebnis: nachbuchWiederholen, Grund: "Server nicht erreichbar"}
 	}
 	if lage.antwort != nil {
 		fertig := *lage.antwort
 		fertig.Schluessel = e.Schluessel
 		return fertig
 	}
-	erg, err := svc.BucheNach(ctx, service.NachbuchEintrag{
+	erg, err := dienst.BucheNach(ctx, service.NachbuchEintrag{
 		Schluessel: e.Schluessel, Absicht: e.Absicht, Barcode: e.Barcode,
 		GescanntAm: e.GescanntAm, UhrVersatz: absender.uhrVersatz,
 		LeserID: e.LeserID, AusweisBarcode: e.AusweisBarcode,
-		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, BearbeiterID: absender.staffID,
+		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, BearbeiterID: absender.bearbeiterID,
 	})
 	if err != nil {
 		log.Printf("nachbuchen: Eintrag %s konnte nicht gebucht werden: %v", e.Schluessel, err)
-		s.gibNachbuchSchluesselZurueck(ctx, e.Schluessel, lage)
-		return NachbuchenErgebnis{Schluessel: e.Schluessel, Ergebnis: nachbuchWiederholen, Grund: "konnte nicht gebucht werden"}
+		t.gibNachbuchSchluesselZurueck(ctx, e.Schluessel, lage)
+		return nachbuchErgebnis{Schluessel: e.Schluessel, Ergebnis: nachbuchWiederholen, Grund: "konnte nicht gebucht werden"}
 	}
-	out := NachbuchenErgebnis{
+	out := nachbuchErgebnis{
 		Schluessel: e.Schluessel, Ergebnis: erg.Ergebnis, Grund: erg.Grund,
 		AufsichtInformieren: erg.AufsichtHinweis,
 	}
@@ -204,9 +204,9 @@ func (s *Tueren) bucheEintragNach(ctx context.Context, svc service.NachbuchDiens
 		out.Grund = ohneSperrgrund(erg.Schranke, false).Error()
 	}
 	if erg.Gebucht != nil {
-		out.Daten = mapOmniboxResultToActionResponse(service.OmniboxErgebnisAus(erg.Gebucht))
+		out.Daten = zurEingabeAntwort(service.OmniboxErgebnisAus(erg.Gebucht))
 	}
-	s.legeNachbuchErgebnisAb(ctx, out)
+	t.legeNachbuchErgebnisAb(ctx, out)
 	if erg.Schranke != nil {
 		// Die Antwort an diesen Absender kürzt dieselbe Funktion wie an der Online-Theke.
 		out.Grund = ohneSperrgrund(erg.Schranke, absender.darfSperrgrundSehen).Error()
@@ -217,8 +217,8 @@ func (s *Tueren) bucheEintragNach(ctx context.Context, svc service.NachbuchDiens
 // zaehleMeldungen liefert die Zahl der offenen Nachbuch-Meldungen. Der zweite Wert ist
 // false, wenn sie sich nicht lesen ließ — dann wird nichts gemeldet, statt eine Änderung
 // zu behaupten. Der Zähler holt sich seinen Stand bei der nächsten Anmeldung ohnehin neu.
-func (s *Tueren) zaehleMeldungen(ctx context.Context) (int, bool) {
-	n, err := repository.ZaehleOffeneNachbuchMeldungen(ctx, s.DB.Pool)
+func (t *Tueren) zaehleMeldungen(ctx context.Context) (int, bool) {
+	n, err := repository.ZaehleOffeneNachbuchMeldungen(ctx, t.DB.Pool)
 	if err != nil {
 		log.Printf("nachbuchen: Meldungen nicht zählbar: %v", err)
 		return 0, false
@@ -230,8 +230,8 @@ func (s *Tueren) zaehleMeldungen(ctx context.Context) (int, bool) {
 // geändert hat. Ohne Inhalt: Die Zeilen nennen Schüler und Vorbesitzer, und die Leitung
 // geht an JEDE Sitzung — auch an die eines Helfers, der die Liste nicht sehen darf. Wer
 // sie sehen darf, holt sie sich hinter seinem Recht ab.
-func (s *Tueren) meldeMeldungsstand() {
-	if s.Broker != nil {
-		s.Broker.Broadcast("nachbuch-meldungen", "{}")
+func (t *Tueren) meldeMeldungsstand() {
+	if t.Broker != nil {
+		t.Broker.Broadcast("nachbuch-meldungen", "{}")
 	}
 }

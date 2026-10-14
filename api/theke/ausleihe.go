@@ -20,21 +20,21 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// OverrideDueDateRequest holds the JSON payload for manually overriding a due date.
-type OverrideDueDateRequest struct {
+// fristAnfrage holds the JSON payload for manually overriding a due date.
+type fristAnfrage struct {
 	FaelligAm string `json:"faellig_am" validate:"required"` // ISO 8601 or YYYY-MM-DD
 }
 
-// ExtendLoanHandler extends the due date of a single loan by the standard book interval (e.g. 28 days).
-func (s *Tueren) ExtendLoanHandler(settingsRepo repository.EinstellungsAbfragen) http.HandlerFunc {
+// AusleiheVerlaengern extends the due date of a single loan by the standard book interval (e.g. 28 days).
+func (t *Tueren) AusleiheVerlaengern(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.handleExtendLoan(w, r, settingsRepo)
+		t.verlaengereAusleihe(w, r, einstellungsAbfragen)
 	}
 }
 
-// handleExtendLoan verlängert eine einzelne Ausleihe. Als Top-Level-Methode ausgelagert,
+// verlaengereAusleihe verlängert eine einzelne Ausleihe. Als Top-Level-Methode ausgelagert,
 // damit die Frühabbrüche nicht zusätzlich als Closure-Verschachtelung zählen (S3776).
-func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settingsRepo repository.EinstellungsAbfragen) {
+func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, einstellungsAbfragen repository.EinstellungsAbfragen) {
 	ausleiheID := r.PathValue("ausleihe_id")
 	if ausleiheID == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende ausleihe_id"))
@@ -46,23 +46,23 @@ func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	// Sanktions-Konsistenz: Ist das Buch an einen gesperrten Schüler verliehen, darf die
 	// Frist nicht verlängert werden — die Sperre soll zur Rückgabe zwingen, nicht durch
 	// eine Verlängerung ausgehebelt werden. Welche Sperre zählt, sagt die Regel der Theke
-	// (checkAusleiheGesperrt): Beim Schulbuch nur die von Hand, beim Kollegen keine.
-	gesperrt, blockReason, geprueft := s.sperreDerAusleihe(ctx, w, ausleiheID, "Einzel-Verlängerung")
+	// (pruefeAusleihSperre): Beim Schulbuch nur die von Hand, beim Kollegen keine.
+	gesperrt, grund, geprueft := t.sperreDerAusleihe(ctx, w, ausleiheID, "Einzel-Verlängerung")
 	if !geprueft {
 		return
 	}
 	if gesperrt {
-		msg := "Verlängerung nicht möglich: Ausleihe gesperrt"
+		meldung := "Verlängerung nicht möglich: Ausleihe gesperrt"
 		// Der Sperr-Freitext ist Verwaltungsinformation (PII-Matrix Stufe 2) —
 		// dieselbe view_students-Grenze wie bei /api/action (ohneSperrgrund).
-		if blockReason != "" && s.HatRecht(r, "view_students") {
-			msg += " (" + blockReason + ")"
+		if grund != "" && t.HatRecht(r, "view_students") {
+			meldung += " (" + grund + ")"
 		}
-		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New(msg))
+		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New(meldung))
 		return
 	}
 
-	extensionDays, sommerferien := verlaengerungsRegel(ctx, settingsRepo)
+	tage, sommerferien := verlaengerungsRegel(ctx, einstellungsAbfragen)
 
 	// Gerechnet wird ab dem späteren von altem Fristende und heute: Wer vor Fristablauf
 	// verlängert, verliert die verbleibenden Tage nicht, und eine lange überfällige Ausleihe
@@ -70,7 +70,7 @@ func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	// Ausleihe (lmfplan.Ferientabelle.Tagesfrist), und die Mahnfolge beginnt neu — sonst
 	// überspränge dasselbe Buch beim nächsten Überziehen die erste Mahnstufe. Die Zeile bleibt
 	// gesperrt, bis die neue Frist steht, damit zwei Verlängerungen zugleich nacheinander rechnen.
-	tx, err := s.DB.Pool.Begin(ctx)
+	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
 		log.Printf("Fehler beim Starten der Transaktion (Einzel-Verlaengerung): %v", err)
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
@@ -88,13 +88,13 @@ func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
-	basis := s.Jetzt()
+	basis := t.Jetzt()
 	if alteFrist.After(basis) {
 		basis = alteFrist
 	}
-	neueFrist := lmfplan.FerientabelleAus(sommerferien).Tagesfrist(basis, extensionDays)
+	neueFrist := lmfplan.FerientabelleAus(sommerferien).Tagesfrist(basis, tage)
 
-	_, newFrist, err := repository.VerlaengereAusleihe(ctx, tx, ausleiheID, neueFrist)
+	_, gesetzteFrist, err := repository.VerlaengereAusleihe(ctx, tx, ausleiheID, neueFrist)
 	if err != nil {
 		log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
@@ -108,19 +108,19 @@ func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
 		"success":               true,
-		"neues_rueckgabe_datum": newFrist,
+		"neues_rueckgabe_datum": gesetzteFrist,
 	})
 }
 
-// OverrideDueDateHandler manually overrides the due date of an active loan.
-func (s *Tueren) OverrideDueDateHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
+// AusleihFristSetzen manually overrides the due date of an active loan.
+func (t *Tueren) AusleihFristSetzen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.handleOverrideDueDate(w, r, auditRepo)
+		t.setzeAusleihFrist(w, r, protokollAbfragen)
 	}
 }
 
-// handleOverrideDueDate setzt die Frist einer laufenden Ausleihe von Hand.
-func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen) {
+// setzeAusleihFrist setzt die Frist einer laufenden Ausleihe von Hand.
+func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
@@ -133,12 +133,12 @@ func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 		return
 	}
 
-	var req OverrideDueDateRequest
+	var req fristAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
 	}
 
-	newDate, err := leseFaelligAm(req.FaelligAm)
+	neuesDatum, err := leseFaelligAm(req.FaelligAm)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return
@@ -150,8 +150,8 @@ func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 	// gesperrten Lesers wieder „nicht überfällig", setzte die Mahnfolge zurück und hebelte so
 	// die Sperre aus, die aus überfälligen Ausleihen berechnet wird. Ein vorgezogenes Datum
 	// (Rückruf) bleibt auch bei Sperre erlaubt: Es hebt die Sanktion nicht auf.
-	if newDate.After(time.Now()) {
-		gesperrt, _, geprueft := s.sperreDerAusleihe(ctx, w, ausleiheID, "Frist-Überschreibung")
+	if neuesDatum.After(time.Now()) {
+		gesperrt, _, geprueft := t.sperreDerAusleihe(ctx, w, ausleiheID, "Frist-Überschreibung")
 		if !geprueft {
 			return
 		}
@@ -162,7 +162,7 @@ func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 		}
 	}
 
-	id, newFrist, err := repository.SetzeAusleihFrist(ctx, s.DB.Pool, ausleiheID, newDate)
+	id, gesetzteFrist, err := repository.SetzeAusleihFrist(ctx, t.DB.Pool, ausleiheID, neuesDatum)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
@@ -177,16 +177,16 @@ func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 	// (Mahnfristen, Auto-Sperre) — er gehört revisionssicher protokolliert, genau wie
 	// der Checkout-Override (OVERRIDE_BLOCK). Best effort: Der Eingriff gilt, auch wenn
 	// das Log klemmt, aber der Fehlversuch steht wenigstens im Server-Log.
-	if logErr := auditRepo.ProtokolliereAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
+	if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
 		"ausleihe_id": id,
-		"neue_frist":  newFrist.Format(time.RFC3339),
-	}); logErr != nil {
-		log.Printf("Audit für Frist-Überschreibung fehlgeschlagen: %v", logErr)
+		"neue_frist":  gesetzteFrist.Format(time.RFC3339),
+	}); protokollFehler != nil {
+		log.Printf("Audit für Frist-Überschreibung fehlgeschlagen: %v", protokollFehler)
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
 		"success":    true,
-		"faellig_am": newFrist,
+		"faellig_am": gesetzteFrist,
 	})
 }
 
@@ -207,23 +207,23 @@ func leseFaelligAm(text string) (time.Time, error) {
 
 // verlaengerungsRegel liefert die Tage einer Verlängerung und die Sommerferien aus den
 // Einstellungen. Sind sie nicht lesbar, gelten 28 Tage und die Ferientabelle des Programms.
-func verlaengerungsRegel(ctx context.Context, settingsRepo repository.EinstellungsAbfragen) (tage int, sommerferien string) {
-	settings, err := settingsRepo.Lade(ctx)
+func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen repository.EinstellungsAbfragen) (tage int, sommerferien string) {
+	einstellungen, err := einstellungsAbfragen.Lade(ctx)
 	if err != nil {
 		return 28, ""
 	}
 	tage = 28
-	if settings.FristBuchTage > 0 {
-		tage = settings.FristBuchTage
+	if einstellungen.FristBuchTage > 0 {
+		tage = einstellungen.FristBuchTage
 	}
-	return tage, settings.Sommerferien
+	return tage, einstellungen.Sommerferien
 }
 
-// sperreDerAusleihe fragt die Regel der Theke (checkAusleiheGesperrt) für eine Verlängerung oder
+// sperreDerAusleihe fragt die Regel der Theke (pruefeAusleihSperre) für eine Verlängerung oder
 // eine Frist von Hand. Fehlt die Ausleihe oder scheitert die Prüfung, ist die Anfrage hier
 // beantwortet und geprueft false.
-func (s *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, ausleiheID, vorgang string) (gesperrt bool, grund string, geprueft bool) {
-	gesperrt, grund, err := s.checkAusleiheGesperrt(ctx, ausleiheID)
+func (t *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, ausleiheID, vorgang string) (gesperrt bool, grund string, geprueft bool) {
+	gesperrt, grund, err := t.pruefeAusleihSperre(ctx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 		return false, "", false
@@ -236,18 +236,18 @@ func (s *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, a
 	return gesperrt, grund, true
 }
 
-// checkAusleiheGesperrt prüft, ob eine Sperre am Leser die Verlängerung dieser Ausleihe
+// pruefeAusleihSperre prüft, ob eine Sperre am Leser die Verlängerung dieser Ausleihe
 // anhält, und liefert den Grund. Es entscheidet die Regel der Theke
 // (service.PruefeSperreAmLeser): beim Schulbuch nur die Sperre von Hand, beim Kollegen keine;
 // ein anonymisierter Datensatz und der Papierkorb bekommen nichts.
 // Bis zum 29.09.2026 stand hier eine eigene Abfrage, die jede Sperre zählte — auch die der
 // Ehemaligen beim Schulbuch, das die Theke demselben Kind ausgibt.
-func (s *Tueren) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (bool, string, error) {
-	leserID, lernmittel, err := repository.LadeLeserUndLernmittelDerAusleihe(ctx, s.DB.Pool, ausleiheID)
+func (t *Tueren) pruefeAusleihSperre(ctx context.Context, ausleiheID string) (bool, string, error) {
+	leserID, lernmittel, err := repository.LadeLeserUndLernmittelDerAusleihe(ctx, t.DB.Pool, ausleiheID)
 	if err != nil || leserID == nil {
 		return false, "", err
 	}
-	leser, err := repository.NewLeserAbfragen(s.DB.Pool).Finde(ctx, *leserID)
+	leser, err := repository.NewLeserAbfragen(t.DB.Pool).Finde(ctx, *leserID)
 	if err != nil {
 		return false, "", err
 	}

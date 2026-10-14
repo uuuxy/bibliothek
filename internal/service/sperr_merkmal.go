@@ -3,7 +3,7 @@ package service
 import "errors"
 
 // Die zwei Merkmale einer Ausleihsperre. Die Tür setzt dafür den Kopf X-Sperre
-// (api/theke/action.go), und daran wählt der Dialog der Theke, was er anbietet
+// (api/theke/eingabe.go), und daran wählt der Dialog der Theke, was er anbietet
 // (OmniboxBlockAlert.svelte):
 //
 //   - uebergehbar: ein Hinweis des Programms (offene Forderung, Überfällig-Automatik). Wer
@@ -17,7 +17,7 @@ import "errors"
 // „Sperre" oder „überfällig", und den Sperrgrund sieht nicht jeder (ausleih_vorgang_test.go,
 // api/theke/sperr_merkmal_test.go).
 //
-// Bei SperrgrundFehler gehört das Merkmal in Kern: ohneSperrgrund (api/theke/action.go) baut
+// Bei SperrgrundFehler gehört das Merkmal in Kern: ohneSperrgrund (api/theke/eingabe.go) baut
 // den Fehler für Aufrufer ohne view_students aus Kern neu, ein Merkmal außen herum ginge dabei
 // verloren.
 type uebergehbareSperre struct{ err error }

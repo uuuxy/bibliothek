@@ -16,9 +16,9 @@ import (
 //
 // Bis zum 07.09.2026 lief hier das volle Konto durch — mit E-Mail, Rolle und Anlagedatum.
 // Seit Migration 125 ist ein Kollege ein LESER und läuft durch dieselbe Theken-Sicht wie
-// ein Schüler (SchuelerKiosk); dieser Test hält fest, dass die Beschränkung dabei nicht
+// ein Schüler (thekenLeser); dieser Test hält fest, dass die Beschränkung dabei nicht
 // verloren gegangen ist.
-func TestActionResponse_KollegeOhneKontodaten(t *testing.T) {
+func TestEingabeAntwort_KollegeOhneKontodaten(t *testing.T) {
 	gebdatum := "1980-04-01"
 	voll := &repository.Leser{
 		ID: "leser-1", BarcodeID: "L-0001", Vorname: "Frieda", Nachname: "Fachlehrerin",
@@ -27,7 +27,7 @@ func TestActionResponse_KollegeOhneKontodaten(t *testing.T) {
 		Strasse:      "Schulstraße", Hausnummer: "7", Plz: "61250", Ort: "Usingen",
 		ElternEmail: "frieda.fachlehrerin@philipp-reis-schule.de",
 	}
-	resp := mapOmniboxResultToActionResponse(&service.OmniboxErgebnis{
+	resp := zurEingabeAntwort(&service.OmniboxErgebnis{
 		Art: "student", Leser: voll, Vorbesitzer: voll,
 	})
 	raw, err := json.Marshal(resp)

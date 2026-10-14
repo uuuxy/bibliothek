@@ -4,7 +4,7 @@ package theke
 // OFFEN.md 5.15). Der Theken-Rechner benutzt für einen Scan EINEN Schlüssel: zuerst beim
 // Online-Versand, und wenn dessen Antwort nicht ankommt, beim Nachbuchen. Bis hierher fragte die
 // Tür nur, OB unter dem Schlüssel etwas steht, und ließ den Eintrag dann an jeder späteren Bewegung
-// vorbei. Die Online-Buchungen laufen hier über die echte Theken-Route (ActionHandler), damit unter
+// vorbei. Die Online-Buchungen laufen hier über die echte Theken-Route (EingabeVerarbeiten), damit unter
 // dem Schlüssel genau das steht, was der Online-Weg speichert.
 
 import (
@@ -32,22 +32,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type nbTuer struct {
-	pool                    *pgxpool.Pool
-	srv                     *Tueren
-	online                  service.OmniboxDienst
-	nachbuch                service.NachbuchDienst
-	staff, anna, ben, carla string
-	code, exemplarID        string
+type nachbuchWelt struct {
+	pool                         *pgxpool.Pool
+	srv                          *Tueren
+	online                       service.OmniboxDienst
+	nachbuch                     service.NachbuchDienst
+	bearbeiter, anna, ben, carla string
+	code, exemplarID             string
 }
 
-func nbTuerAufbau(t *testing.T) *nbTuer {
+func baueNachbuchWelt(t *testing.T) *nachbuchWelt {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	w := &nbTuer{pool: pool}
+	w := &nachbuchWelt{pool: pool}
 	eins := func(was, sql string, args ...any) string {
 		t.Helper()
 		var id string
@@ -56,7 +56,7 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 		}
 		return id
 	}
-	w.staff = eins("Mitarbeiter", `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+	w.bearbeiter = eins("Mitarbeiter", `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
 		VALUES ('Tür', 'Prüfer', $1, 'mitarbeiter', true) RETURNING id`, "nbtuer-"+suffix+"@schule.invalid")
 	w.anna = eins("Anna", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, 'Anna', 'Erste', '07B', 2031) RETURNING id`, "S-TA-"+suffix)
 	w.ben = eins("Ben", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, 'Ben', 'Zweiter', '07B', 2031) RETURNING id`, "S-TB-"+suffix)
@@ -78,28 +78,28 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 	return w
 }
 
-func (w *nbTuer) sitzung(req *http.Request) *http.Request {
+func (w *nachbuchWelt) sitzung(req *http.Request) *http.Request {
 	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{Rolle: auth.Role("mitarbeiter"), UserID: w.staff}))
+		&auth.Claims{Rolle: auth.Role("mitarbeiter"), UserID: w.bearbeiter}))
 }
 
 // onlineScan scannt das Buch an der Online-Theke; schueler "" heißt: niemand geladen.
-func (w *nbTuer) onlineScan(t *testing.T, schluessel, schueler string) (int, ActionResponse) {
+func (w *nachbuchWelt) onlineScan(t *testing.T, schluessel, schueler string) (int, eingabeAntwort) {
 	t.Helper()
 	body := fmt.Sprintf(`{"query":%q,"idempotency_key":%q`, w.code, schluessel)
 	if schueler != "" {
 		body += fmt.Sprintf(`,"active_leser_id":%q`, schueler)
 	}
 	rec := httptest.NewRecorder()
-	w.srv.ActionHandler(w.online)(rec, w.sitzung(httptest.NewRequest(http.MethodPost, "/api/action", strings.NewReader(body+"}"))))
-	var resp ActionResponse
+	w.srv.EingabeVerarbeiten(w.online)(rec, w.sitzung(httptest.NewRequest(http.MethodPost, "/api/action", strings.NewReader(body+"}"))))
+	var resp eingabeAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Online-Scan: Status %d, keine JSON-Antwort: %v (%s)", rec.Code, err, rec.Body.String())
 	}
 	return rec.Code, resp
 }
 
-func (w *nbTuer) eintrag(schluessel, absicht string, schueler *string, gescannt time.Time) map[string]any {
+func (w *nachbuchWelt) eintrag(schluessel, absicht string, schueler *string, gescannt time.Time) map[string]any {
 	e := map[string]any{"schluessel": schluessel, "absicht": absicht, "barcode": w.code, "gescannt_am": gescannt}
 	if schueler != nil {
 		e["leser_id"] = *schueler
@@ -107,18 +107,18 @@ func (w *nbTuer) eintrag(schluessel, absicht string, schueler *string, gescannt 
 	return e
 }
 
-func (w *nbTuer) nachbuchenMit(t *testing.T, svc service.NachbuchDienst, eintraege ...map[string]any) []NachbuchenErgebnis {
+func (w *nachbuchWelt) nachbuchenMit(t *testing.T, svc service.NachbuchDienst, eintraege ...map[string]any) []nachbuchErgebnis {
 	t.Helper()
 	body, err := json.Marshal(map[string]any{"eintraege": eintraege, "gesendet_am": time.Now()})
 	if err != nil {
 		t.Fatalf("Rumpf: %v", err)
 	}
 	rec := httptest.NewRecorder()
-	w.srv.NachbuchenHandler(svc)(rec, w.sitzung(httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(string(body)))))
+	w.srv.WarteschlangeNachbuchen(svc)(rec, w.sitzung(httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(string(body)))))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Nachbuchen: Status %d, %s", rec.Code, rec.Body.String())
 	}
-	var resp NachbuchenResponse
+	var resp nachbuchAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Antwort: %v", err)
 	}
@@ -128,12 +128,12 @@ func (w *nbTuer) nachbuchenMit(t *testing.T, svc service.NachbuchDienst, eintrae
 	return resp.Ergebnisse
 }
 
-func (w *nbTuer) nachbuchen(t *testing.T, eintraege ...map[string]any) []NachbuchenErgebnis {
+func (w *nachbuchWelt) nachbuchen(t *testing.T, eintraege ...map[string]any) []nachbuchErgebnis {
 	t.Helper()
 	return w.nachbuchenMit(t, w.nachbuch, eintraege...)
 }
 
-func (w *nbTuer) offen(t *testing.T) (n int, bei string) {
+func (w *nachbuchWelt) offen(t *testing.T) (n int, bei string) {
 	t.Helper()
 	if err := w.pool.QueryRow(context.Background(), `
 		SELECT count(*), coalesce(max(schueler_id::text), '') FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`, w.exemplarID).Scan(&n, &bei); err != nil {
@@ -142,7 +142,7 @@ func (w *nbTuer) offen(t *testing.T) (n int, bei string) {
 	return
 }
 
-func (w *nbTuer) meldungen(t *testing.T, schluessel ...string) int {
+func (w *nachbuchWelt) meldungen(t *testing.T, schluessel ...string) int {
 	t.Helper()
 	var n int
 	if err := w.pool.QueryRow(context.Background(), `SELECT count(*) FROM nachbuch_meldungen WHERE idempotency_key = ANY($1::uuid[])`, schluessel).Scan(&n); err != nil {
@@ -155,14 +155,14 @@ func (w *nbTuer) meldungen(t *testing.T, schluessel ...string) int {
 // Anna gibt das Buch danach an einer anderen Theke zurück. Das Nachbuchen darf es ihr nicht erneut
 // ausleihen — sonst wird sie für ein abgegebenes Buch gemahnt.
 func TestNachbuchen_Schluessel_OnlineGebuchtDanachZurueckgegeben(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	scan := time.Now()
 	k := uuid.NewString()
-	if code, r := w.onlineScan(t, k, w.anna); code != http.StatusOK || r.Type != "ausleihe" {
-		t.Fatalf("Online-Ausleihe: %d %q", code, r.Type)
+	if code, r := w.onlineScan(t, k, w.anna); code != http.StatusOK || r.Art != "ausleihe" {
+		t.Fatalf("Online-Ausleihe: %d %q", code, r.Art)
 	}
-	if code, r := w.onlineScan(t, uuid.NewString(), ""); code != http.StatusOK || r.Type != "rueckgabe" {
-		t.Fatalf("Online-Rückgabe: %d %q", code, r.Type)
+	if code, r := w.onlineScan(t, uuid.NewString(), ""); code != http.StatusOK || r.Art != "rueckgabe" {
+		t.Fatalf("Online-Rückgabe: %d %q", code, r.Art)
 	}
 
 	erg := w.nachbuchen(t, w.eintrag(k, "ausleihe", &w.anna, scan))
@@ -172,7 +172,7 @@ func TestNachbuchen_Schluessel_OnlineGebuchtDanachZurueckgegeben(t *testing.T) {
 	if n, _ := w.offen(t); n != 0 {
 		t.Errorf("Anna hat das Buch zurückgegeben, das Nachbuchen hat es ihr erneut ausgeliehen (%d offen)", n)
 	}
-	if erg[0].Daten == nil || erg[0].Daten.Type != "ausleihe" {
+	if erg[0].Daten == nil || erg[0].Daten.Art != "ausleihe" {
 		t.Errorf("die Antwort nennt die gebuchte Wirkung nicht: %+v", erg[0].Daten)
 	}
 	if m := w.meldungen(t, k); m != 0 {
@@ -183,7 +183,7 @@ func TestNachbuchen_Schluessel_OnlineGebuchtDanachZurueckgegeben(t *testing.T) {
 // Die Theke schickt eine Portion nach einem Timeout erneut, obwohl der erste Aufruf gebucht hat.
 // Die Wiederholung bekommt dieselben Ergebnisse, und es entstehen keine Meldungen.
 func TestNachbuchen_Schluessel_WiederholtePortion(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	jetzt := time.Now()
 	k1, k2 := uuid.NewString(), uuid.NewString()
 	portion := []map[string]any{
@@ -212,14 +212,14 @@ func TestNachbuchen_Schluessel_WiederholtePortion(t *testing.T) {
 // bucht nur die Fremdrückgabe; die Antwort geht verloren, die Ausleihe an Anna liegt in der
 // Warteschlange. Das Nachbuchen holt sie nach, obwohl der Scan vor der Rücknahme liegt.
 func TestNachbuchen_Schluessel_NachFremdrueckgabeWirdAusgeliehen(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	if code, _ := w.onlineScan(t, uuid.NewString(), w.ben); code != http.StatusOK {
 		t.Fatalf("Online-Ausleihe an Ben: %d", code)
 	}
 	scan := time.Now()
 	k := uuid.NewString()
-	if code, r := w.onlineScan(t, k, w.anna); code != http.StatusOK || r.Type != "rueckgabe" || !r.Fremdrueckgabe {
-		t.Fatalf("Fremdrückgabe: %d %q fremd=%v", code, r.Type, r.Fremdrueckgabe)
+	if code, r := w.onlineScan(t, k, w.anna); code != http.StatusOK || r.Art != "rueckgabe" || !r.Fremdrueckgabe {
+		t.Fatalf("Fremdrückgabe: %d %q fremd=%v", code, r.Art, r.Fremdrueckgabe)
 	}
 	erg := w.nachbuchen(t, w.eintrag(k, "ausleihe", &w.anna, scan))
 	if erg[0].Ergebnis != repository.NachbuchAusgeliehen {
@@ -242,7 +242,7 @@ func TestNachbuchen_Schluessel_NachFremdrueckgabeWirdAusgeliehen(t *testing.T) {
 // Dieselbe Lage, aber das Buch wurde nach der Fremdrückgabe bewegt (Ben leiht es erneut und gibt es
 // zurück). Dann gilt die Ausnahme nicht: Der Scan ist veraltet.
 func TestNachbuchen_Schluessel_NachFremdrueckgabeBewegt(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	if code, _ := w.onlineScan(t, uuid.NewString(), w.ben); code != http.StatusOK {
 		t.Fatalf("Online-Ausleihe an Ben: %d", code)
 	}
@@ -251,11 +251,11 @@ func TestNachbuchen_Schluessel_NachFremdrueckgabeBewegt(t *testing.T) {
 	if code, r := w.onlineScan(t, k, w.anna); code != http.StatusOK || !r.Fremdrueckgabe {
 		t.Fatalf("Fremdrückgabe: %d fremd=%v", code, r.Fremdrueckgabe)
 	}
-	if code, r := w.onlineScan(t, uuid.NewString(), w.ben); code != http.StatusOK || r.Type != "ausleihe" {
-		t.Fatalf("erneute Ausleihe an Ben: %d %q", code, r.Type)
+	if code, r := w.onlineScan(t, uuid.NewString(), w.ben); code != http.StatusOK || r.Art != "ausleihe" {
+		t.Fatalf("erneute Ausleihe an Ben: %d %q", code, r.Art)
 	}
-	if code, r := w.onlineScan(t, uuid.NewString(), ""); code != http.StatusOK || r.Type != "rueckgabe" {
-		t.Fatalf("Rückgabe von Ben: %d %q", code, r.Type)
+	if code, r := w.onlineScan(t, uuid.NewString(), ""); code != http.StatusOK || r.Art != "rueckgabe" {
+		t.Fatalf("Rückgabe von Ben: %d %q", code, r.Art)
 	}
 	erg := w.nachbuchen(t, w.eintrag(k, "ausleihe", &w.anna, scan))
 	if erg[0].Ergebnis != repository.NachbuchVeraltet {
@@ -269,7 +269,7 @@ func TestNachbuchen_Schluessel_NachFremdrueckgabeBewegt(t *testing.T) {
 // Läuft die Online-Buchung unter dem Schlüssel noch, darf die Tür nicht daneben buchen: Der Eintrag
 // bleibt auf dem Rechner.
 func TestNachbuchen_Schluessel_OnlineBuchungLaeuftNoch(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	k := uuid.NewString()
 	if _, err := w.pool.Exec(context.Background(), `INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, '{"in_arbeit": true}', 0)`, k); err != nil {
 		t.Fatalf("Reservierung: %v", err)
@@ -286,7 +286,7 @@ func TestNachbuchen_Schluessel_OnlineBuchungLaeuftNoch(t *testing.T) {
 // Hat der Online-Versand nichts gebucht (Sperre, 403 gespeichert), ist der Eintrag ein gewöhnlicher
 // Scan — der Wächter gilt. Das Buch wurde seitdem bewegt: veraltet.
 func TestNachbuchen_Schluessel_OnlineAbgewiesenWaechterGilt(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	scan := time.Now()
 	k := uuid.NewString()
 	if code, _ := w.onlineScan(t, k, w.carla); code != http.StatusForbidden {
@@ -307,7 +307,7 @@ func TestNachbuchen_Schluessel_OnlineAbgewiesenWaechterGilt(t *testing.T) {
 // Zwei Aufrufe mit derselben Portion gleichzeitig: genau eine Buchung, keine Meldung, und keiner
 // bekommt ein anderes Ergebnis als „ausgeliehen" oder „wiederholen".
 func TestNachbuchen_Schluessel_ZweiGleichzeitigeAufrufe(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	k := uuid.NewString()
 	e := w.eintrag(k, "ausleihe", &w.anna, time.Now().Add(-time.Minute))
 	var wg sync.WaitGroup
@@ -350,7 +350,7 @@ func (nachbuchFehler) BucheNach(context.Context, service.NachbuchEintrag) (*serv
 // Scheitert das Nachbuchen am Server, bleibt die Online-Antwort unter dem Schlüssel stehen — sonst
 // verlöre die nächste Runde, dass der Online-Versand die Fremdrückgabe schon gebucht hat.
 func TestNachbuchen_Schluessel_ServerfehlerLaesstOnlineAntwortStehen(t *testing.T) {
-	w := nbTuerAufbau(t)
+	w := baueNachbuchWelt(t)
 	if code, _ := w.onlineScan(t, uuid.NewString(), w.ben); code != http.StatusOK {
 		t.Fatalf("Online-Ausleihe an Ben: %d", code)
 	}

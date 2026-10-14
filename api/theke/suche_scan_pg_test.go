@@ -17,7 +17,7 @@ import (
 // Littera-Etikett (EAN-13 → Mediennummer) und Schülerausweis — dieselbe Reihenfolge wie
 // die Theke (verarbeiteOhneVorsilbe), nur als Auskunft. Grundlage der globalen Suchleiste
 // (03.09.2026): Buch → Buchakte, Ausweis → Schülerakte.
-func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
+func TestSuche_ErkenntScansOhneZuBuchen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -37,15 +37,15 @@ func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := &Tueren{Basis: &tuer.Basis{}}
-	h := s.SearchHandler(repository.NewLeserAbfragen(pool), repository.NewKatalogAbfragen(pool))
-	suche := func(q string) UnifiedSearchResult {
+	h := s.Suche(repository.NewLeserAbfragen(pool), repository.NewKatalogAbfragen(pool))
+	suche := func(q string) suchErgebnis {
 		t.Helper()
 		w := httptest.NewRecorder()
 		h(w, httptest.NewRequest(http.MethodGet, "/api/search?q="+q, nil))
 		if w.Code != http.StatusOK {
 			t.Fatalf("%s: HTTP %d %s", q, w.Code, w.Body.String())
 		}
-		var res UnifiedSearchResult
+		var res suchErgebnis
 		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
 			t.Fatal(err)
 		}
@@ -65,8 +65,8 @@ func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 	if r := suche("A-KOLL-77"); r.Treffer == nil || r.Treffer.Typ != "schueler" || r.Treffer.ID != kollegeID {
 		t.Errorf("Ausweis eines Kollegen: %+v — want Treffer auf %s", r.Treffer, kollegeID)
 	}
-	if r := suche("Sprung"); r.Treffer != nil || len(r.Students) != 1 || len(r.Books) != 1 {
-		t.Errorf("Freitext: treffer=%+v schueler=%d buecher=%d", r.Treffer, len(r.Students), len(r.Books))
+	if r := suche("Sprung"); r.Treffer != nil || len(r.Leser) != 1 || len(r.Titel) != 1 {
+		t.Errorf("Freitext: treffer=%+v schueler=%d buecher=%d", r.Treffer, len(r.Leser), len(r.Titel))
 	}
 	// Nichts gebucht: das Exemplar hat keine offene Ausleihe.
 	var offen int

@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-// TestMeldungZeigtNurDieMeldung: Die Theke zeigt err.Error() (api/theke/action.go). Stünde dort
+// TestMeldungZeigtNurDieMeldung: Die Theke zeigt err.Error() (api/theke/eingabe.go). Stünde dort
 // die Bezeichnung der Fehlerart vor der Meldung („Fehler: conflict: dieses Exemplar wurde
 // soeben bereits ausgeliehen"), wäre es kein Satz für den Bildschirm (M3, Word choice: „UI text
 // should be understandable by anyone, anywhere"). Die Art bleibt für errors.Is erhalten, auch

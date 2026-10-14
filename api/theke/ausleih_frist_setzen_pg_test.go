@@ -23,7 +23,7 @@ import (
 // demselben Recht ausdrücklich verbieten. Ein VORGEZOGENES Datum (Rückruf) bleibt
 // erlaubt, weil es die Sperre nicht aufhebt. Und jeder Override wird auditiert.
 // Live gefunden 18.08.2026 (Rollen×Aktionen-Prüfung); vorher ging beides ungeprüft.
-func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
+func TestAusleihFristSetzen_SperrKonsistenzUndAudit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -55,7 +55,7 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 		auditRepo := repository.NewProtokollAbfragen(pool)
 		mux := http.NewServeMux()
-		mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(auditRepo))
+		mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.AusleihFristSetzen(auditRepo))
 		req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleiheID+"/faelligkeit",
 			strings.NewReader(`{"faellig_am":"`+datum+`"}`))
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
@@ -93,7 +93,7 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 
 	// Ein Kollege wird nie gesperrt (16.09. und 24.09.2026) — auch hier nicht, wenn an seinem
 	// Konto noch eine Sperre von früher steht. Rot gesehen am Rückbau: ohne die Art in
-	// checkAusleiheGesperrt 403.
+	// pruefeAusleihSperre 403.
 	t.Run("Kollege mit alter Sperre + Zukunftsdatum geht durch", func(t *testing.T) {
 		var kollege string
 		if err := pool.QueryRow(ctx, `
@@ -126,11 +126,11 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 	})
 }
 
-// TestOverrideDueDate_TagesendeInSchulzeitzone belegt die eine Definition von "Tagesende"
+// TestAusleihFristSetzen_TagesendeInSchulzeitzone belegt die eine Definition von "Tagesende"
 // (Zeit-Sweep 19.08.2026): Der Frist-Override setzt 23:59:59 in der Schulzeitzone (Berlin),
 // nicht roh in UTC. Sonst wäre eine überschriebene Frist zum selben Datum 1–2 h später
 // fällig als eine regulär berechnete — zwei Antworten auf dieselbe fachliche Frage.
-func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
+func TestAusleihFristSetzen_TagesendeInSchulzeitzone(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -149,7 +149,7 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	mux := http.NewServeMux()
-	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(auditRepo))
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.AusleihFristSetzen(auditRepo))
 
 	// Sommerdatum (CEST, +02:00): Berliner Tagesende 23:59:59 = 21:59:59 UTC.
 	req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleihe+"/faelligkeit",
@@ -177,7 +177,7 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 // Die Frist von Hand, über die Tür: Eine Ablehnung schreibt weder Frist noch Protokoll. Ein
 // Zeitstempel gilt wörtlich, ein Datum als Tagesende, und nur eine Frist in der Zukunft setzt
 // die Mahnstufe zurück — ein vorgezogenes Datum lässt sie stehen.
-func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
+func TestAusleihFristSetzen_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -201,7 +201,7 @@ func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	mux := http.NewServeMux()
-	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(repository.NewProtokollAbfragen(pool)))
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.AusleihFristSetzen(repository.NewProtokollAbfragen(pool)))
 	rufe := func(ausleiheID, rumpf string, angemeldet bool) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleiheID+"/faelligkeit", strings.NewReader(rumpf))
