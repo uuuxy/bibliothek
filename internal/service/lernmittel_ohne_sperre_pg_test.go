@@ -23,7 +23,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	ctx := context.Background()
 
 	bearbeiter := testdaten.AdminFuerAudit(t, pool)
-	kind := testdaten.SchuelerAnlegen(t, pool, "Forderung", "9H1", "S-LMF-SPERRE-1")
+	kind := testdaten.SeedSchueler(t, pool, "S-LMF-SPERRE-1", "Forderung", "9H1")
 
 	// Die Forderung hängt an einem verlorenen Buch der Schülerbücherei.
 	buecherei := testdaten.TitelMitMeldebestand(t, pool, "Roman ohne Kennung", 1)

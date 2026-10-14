@@ -140,7 +140,7 @@ func istSperreAmLeser(err error) bool {
 func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 	th := neueSperrTheke(t)
 	buecherei, schulbuch := th.bestand(t, "SVH")
-	kind := testdaten.SchuelerAnlegen(t, th.pool, "Handsperre", "07A", "S-SPERRWEG-1")
+	kind := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-1", "Handsperre", "07A")
 	if _, err := th.pool.Exec(context.Background(),
 		`UPDATE schueler SET is_manually_blocked = true, block_reason = 'Ausweis verloren' WHERE id = $1`, kind); err != nil {
 		t.Fatalf("sperren: %v", err)
@@ -175,7 +175,7 @@ func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 	th := neueSperrTheke(t)
 	buecherei, schulbuch := th.bestand(t, "EHM")
-	kind := testdaten.SchuelerAnlegen(t, th.pool, "Ehemalig", "10R1", "S-SPERRWEG-2")
+	kind := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-2", "Ehemalig", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Automatisierte Abgänger-Sperre (Schuljahreswechsel)' WHERE id = $1`, kind); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
@@ -207,7 +207,7 @@ func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {
 	th := neueSperrTheke(t)
 	_, schulbuch := th.bestand(t, "ANO")
-	anonym := testdaten.SchuelerAnlegen(t, th.pool, "Anonym", "10R1", "S-SPERRWEG-3")
+	anonym := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-3", "Anonym", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
@@ -265,7 +265,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 	th := neueSperrTheke(t)
 	ctx := context.Background()
 	buecherei, schulbuch := th.bestand(t, "FOR")
-	kind := testdaten.SchuelerAnlegen(t, th.pool, "Forderung", "08B", "S-SPERRWEG-4")
+	kind := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-4", "Forderung", "08B")
 
 	// Die Forderung hängt an einem verlorenen Schulbuch — Topf des Landes.
 	testdaten.AusleiheUeberDenDienst(t, th.pool, schulbuch, kind, th.bearbeiter)
@@ -344,7 +344,7 @@ func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
 	}
 
 	buecherei, _ := th.bestand(t, "LIM")
-	kind := testdaten.SchuelerAnlegen(t, th.pool, "Limit", "08B", "S-SPERRWEG-5")
+	kind := testdaten.SeedSchueler(t, th.pool, "S-SPERRWEG-5", "Limit", "08B")
 	erstes := testdaten.TitelMitMeldebestand(t, th.pool, "Erstes Buch LIM", 1)
 	testdaten.Exemplar(t, th.pool, erstes, "B-LIM-1", true, "")
 	testdaten.AusleiheUeberDenDienst(t, th.pool, "B-LIM-1", kind, th.bearbeiter) // das Limit ist erreicht

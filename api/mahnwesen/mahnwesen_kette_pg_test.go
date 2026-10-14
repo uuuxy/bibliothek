@@ -84,8 +84,8 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// Schreiben auf DIESELBE registrierte Schreibweise; die Mail muss trotzdem (bzw.
 	// gerade deshalb) ankommen. Welche Schreibweise gewinnt, entscheidet der
 	// Erstschreiber — der Test liest sie unten aus der DB, wie es auch die UI tut.
-	anna := testdaten.SchuelerAnlegen(t, pool, "Anna", "5A", "S-MAHN-1")
-	ben := testdaten.SchuelerAnlegen(t, pool, "Ben", "6B", "S-MAHN-2")
+	anna := testdaten.SeedSchueler(t, pool, "S-MAHN-1", "Anna", "5A")
+	ben := testdaten.SeedSchueler(t, pool, "S-MAHN-2", "Ben", "6B")
 	testdaten.Klassenleitung(t, pool, "5a ", "leitung5a@schule.invalid")
 	testdaten.Klassenleitung(t, pool, "6B", "leitung6b@schule.invalid")
 

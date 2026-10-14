@@ -99,7 +99,7 @@ func TestSperrTuer_HebtBeideSperrenAufUndProtokolliert(t *testing.T) {
 	ctx := context.Background()
 	akteur := testdaten.AdminFuerAudit(t, pool)
 
-	id := testdaten.SchuelerAnlegen(t, pool, "Ehemalig", "10R1", "S-SPERRTUER-1")
+	id := testdaten.SeedSchueler(t, pool, "S-SPERRTUER-1", "Ehemalig", "10R1")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id = $1`, id); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
@@ -188,12 +188,12 @@ func TestSperrTuer_PapierkorbUndAnonymisiertBleiben(t *testing.T) {
 	ctx := context.Background()
 	akteur := testdaten.AdminFuerAudit(t, pool)
 
-	anonym := testdaten.SchuelerAnlegen(t, pool, "Anonym", "10R1", "S-SPERRTUER-A")
+	anonym := testdaten.SeedSchueler(t, pool, "S-SPERRTUER-A", "Anonym", "10R1")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}
-	geloescht := testdaten.SchuelerAnlegen(t, pool, "Papierkorb", "07A", "S-SPERRTUER-P")
+	geloescht := testdaten.SeedSchueler(t, pool, "S-SPERRTUER-P", "Papierkorb", "07A")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = NOW(), ist_gesperrt = true,
 		block_reason = 'Systematisch gelöscht' WHERE id = $1`, geloescht); err != nil {
 		t.Fatalf("löschen: %v", err)

@@ -22,7 +22,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	ctx := context.Background()
 
 	bearbeiter := testdaten.AdminFuerAudit(t, pool)
-	kind := testdaten.SchuelerAnlegen(t, pool, "Gesperrt", "9H1", "S-SPERRE-1")
+	kind := testdaten.SeedSchueler(t, pool, "S-SPERRE-1", "Gesperrt", "9H1")
 	testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Titel Sperre", 1), "B-SPERRE-1", true, "")
 	testdaten.AusleiheUeberDenDienst(t, pool, "B-SPERRE-1", kind, bearbeiter)
 
@@ -159,9 +159,9 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	}
 
 	// 1. Das Kind an der Theke ist gesperrt — das Buch gehört einem anderen.
-	eigentuemer1 := testdaten.SchuelerAnlegen(t, pool, "Eigentuemer", "9H2", "S-FREMD-EIG1")
+	eigentuemer1 := testdaten.SeedSchueler(t, pool, "S-FREMD-EIG1", "Eigentuemer", "9H2")
 	testdaten.AusleiheUeberDenDienst(t, pool, "B-FREMD-1", eigentuemer1, bearbeiter)
-	gesperrt := testdaten.SchuelerAnlegen(t, pool, "Gesperrt", "9H2", "S-FREMD-SPERRE")
+	gesperrt := testdaten.SeedSchueler(t, pool, "S-FREMD-SPERRE", "Gesperrt", "9H2")
 	if _, err := pool.Exec(ctx,
 		`UPDATE schueler SET ist_gesperrt = true, block_reason = 'Test: Sperre' WHERE id = $1`, gesperrt); err != nil {
 		t.Fatalf("Sperre setzen: %v", err)
@@ -169,9 +169,9 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	fremdrueckgabe(t, "B-FREMD-1", gesperrt, eigentuemer1)
 
 	// 2. Das Kind an der Theke ist am Ausleihlimit — das Buch gehört einem anderen.
-	eigentuemer2 := testdaten.SchuelerAnlegen(t, pool, "Eigentuemer2", "9H2", "S-FREMD-EIG2")
+	eigentuemer2 := testdaten.SeedSchueler(t, pool, "S-FREMD-EIG2", "Eigentuemer2", "9H2")
 	testdaten.AusleiheUeberDenDienst(t, pool, "B-FREMD-2", eigentuemer2, bearbeiter)
-	amLimit := testdaten.SchuelerAnlegen(t, pool, "AmLimit", "9H2", "S-FREMD-LIMIT")
+	amLimit := testdaten.SeedSchueler(t, pool, "S-FREMD-LIMIT", "AmLimit", "9H2")
 	testdaten.AusleiheUeberDenDienst(t, pool, "B-FREMD-3", amLimit, bearbeiter)
 	fremdrueckgabe(t, "B-FREMD-2", amLimit, eigentuemer2)
 }

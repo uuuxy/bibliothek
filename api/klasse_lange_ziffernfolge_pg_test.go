@@ -44,8 +44,8 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 
-	fuenfte := testdaten.SchuelerAnlegen(t, pool, "Fuenfte", "05F1", "KLZ-S-1")
-	neunte := testdaten.SchuelerAnlegen(t, pool, "Neunte", "09H1", "KLZ-S-2")
+	fuenfte := testdaten.SeedSchueler(t, pool, "KLZ-S-1", "Fuenfte", "05F1")
+	neunte := testdaten.SeedSchueler(t, pool, "KLZ-S-2", "Neunte", "09H1")
 	// Die Abgängerliste nennt nur, wer noch ein Buch hat.
 	titelID := testdaten.TitelMitMeldebestand(t, pool, "Ziffernfolge Testband", 0)
 	exemplarID := testdaten.Exemplar(t, pool, titelID, "KLZ-B-1", false, "")
@@ -89,8 +89,8 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 
 	// Die zweite Klasse beginnt mit Nullen: Ihre ersten neun Ziffern ergeben 0, die ganze
 	// Folge ist trotzdem zu lang.
-	testdaten.SchuelerAnlegen(t, pool, "Buchnummer", "9783123456789", "KLZ-S-3")
-	testdaten.SchuelerAnlegen(t, pool, "Nullen", "0000000009999999999", "KLZ-S-4")
+	testdaten.SeedSchueler(t, pool, "KLZ-S-3", "Buchnummer", "9783123456789")
+	testdaten.SeedSchueler(t, pool, "KLZ-S-4", "Nullen", "0000000009999999999")
 
 	t.Run("mit Klassen aus langen Ziffernfolgen", pruefe)
 }

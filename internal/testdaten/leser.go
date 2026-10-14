@@ -23,20 +23,6 @@ func SeedSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse str
 	return id
 }
 
-// SchuelerAnlegen legt einen Schüler mit dem Nachnamen „Testschueler“ an.
-func SchuelerAnlegen(t *testing.T, pool *pgxpool.Pool, vorname, klasse, barcode string) string {
-	t.Helper()
-	var id string
-	err := pool.QueryRow(context.Background(), `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, $2, 'Testschueler', $3, 2030) RETURNING id`,
-		barcode, vorname, klasse).Scan(&id)
-	if err != nil {
-		t.Fatalf("Schüler %s anlegen: %v", vorname, err)
-	}
-	return id
-}
-
 // SeedAbgaengerRet legt einen Schüler an, der als Abgänger markiert ist.
 func SeedAbgaengerRet(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()

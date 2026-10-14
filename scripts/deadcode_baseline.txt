@@ -106,7 +106,6 @@ internal/testdaten/bestand.go: unreachable func: Exemplar
 internal/testdaten/bestand.go: unreachable func: ZulaufExemplar
 internal/testdaten/bestand.go: unreachable func: AusleihbaresExemplar
 internal/testdaten/leser.go: unreachable func: SeedSchueler
-internal/testdaten/leser.go: unreachable func: SchuelerAnlegen
 internal/testdaten/leser.go: unreachable func: SeedAbgaengerRet
 internal/testdaten/leser.go: unreachable func: LegeUmbSchuelerAn
 internal/testdaten/leser.go: unreachable func: SeedPortalLehrkraft
