@@ -63,9 +63,7 @@ type AbholbereitInfo struct {
 type ActionEvent struct {
 	Event     string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
 	StudentID string `json:"student_id,omitempty"`
-	TeacherID string `json:"teacher_id,omitempty"`
 	CopyID    string `json:"copy_id,omitempty"`
-	GeraetID  string `json:"geraet_id,omitempty"`
 	BarcodeID string `json:"barcode_id"`
 	Titel     string `json:"titel"`
 	Timestamp int64  `json:"timestamp"`
