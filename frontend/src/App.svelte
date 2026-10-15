@@ -8,7 +8,7 @@
 	import { uiStore } from './lib/stores/uiStore.svelte.js';
 	import { starteHintergrundAbrufe } from './lib/stores/hintergrundAbrufe.svelte.js';
 	import { appState } from './inventur/lib/store.svelte.js';
-	import { printQueue } from './lib/stores/printQueue.svelte.js';
+	import { druckWarteschlange } from './lib/stores/druckWarteschlange.svelte.js';
 	import { idleLock } from './lib/stores/idleLock.svelte.js';
 
 	import Login from './lib/components/auth/Login.svelte';
@@ -67,7 +67,7 @@
 	});
 
 	$effect(() => {
-		if (printQueue.copies) {
+		if (druckWarteschlange.copies) {
 			// 'druck-center' ist der App-Route-Name (Router.svelte); 'labels' ist nur der
 			// INTERNE Unter-Tab in DruckCenter. Vorher stand hier 'labels' — den kennt der
 			// Router nicht, also rendert <main> nichts → weiße Seite beim Etikettendruck.

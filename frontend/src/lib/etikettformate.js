@@ -5,8 +5,8 @@
  * Maßgeblich bleibt `pdf/etikett_formate.go`; `etikettformate-konsistenz.test.js` hält
  * diese Datei dagegen. Es gibt sie, weil mit den Schüler-Etiketten (24.08.2026) eine
  * zweite Oberfläche dieselben Bögen anbietet: Vorher stand die Liste hartkodiert in
- * `LabelLayoutOptionen.svelte`, und die Stückzahlen ein zweites Mal in
- * `stores/labels.svelte.js`. Eine dritte Kopie in der Ausweis-Werkzeugleiste wäre genau
+ * `EtikettLayoutOptionen.svelte`, und die Stückzahlen ein zweites Mal in
+ * `stores/etiketten.svelte.js`. Eine dritte Kopie in der Ausweis-Werkzeugleiste wäre genau
  * die Bauform, die in diesem Projekt schon mehrfach auseinandergelaufen ist.
  *
  * KEIN Abruf vom Server: Am 31.08.2026 geprüft und ENTSCHIEDEN so gelassen (Register,

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/svelte';
-import CardFace from './CardFace.svelte';
+import Kartenseite from './Kartenseite.svelte';
 import { idStore, defaultFrontElements } from './idDesignerStore.svelte.js';
 import { heileAltBaender } from './idDesignAltbestand.js';
 
@@ -13,7 +13,7 @@ import { heileAltBaender } from './idDesignAltbestand.js';
  * deshalb das Wort „Schülerausweis".
  *
  * Gemessen wird an der gerenderten Karte, nicht an der Hilfsfunktion: Der Weg von der
- * Art bis auf das Papier führt über CardFace, und genau der war unterbrochen.
+ * Art bis auf das Papier führt über Kartenseite, und genau der war unterbrochen.
  */
 
 /** @param {string} art */
@@ -34,7 +34,7 @@ beforeEach(() => {
 
 describe('Aufschrift des Ausweises', () => {
 	it('nennt den Ausweis einer Lehrkraft „Lehrerausweis"', () => {
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: leser('lehrkraft'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Lehrerausweis');
@@ -42,7 +42,7 @@ describe('Aufschrift des Ausweises', () => {
 	});
 
 	it('nennt den Ausweis einer LiV ebenfalls „Lehrerausweis"', () => {
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: leser('liv'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Lehrerausweis');
@@ -51,7 +51,7 @@ describe('Aufschrift des Ausweises', () => {
 	// Die Sonderkonten (Migration 153) sind keine Lehrkräfte: Ihre Karte heißt „Leserausweis",
 	// das Wort, das Littera für jeden Ausweis führt (30.09.2026).
 	it('nennt den Ausweis eines Praktikums „Leserausweis"', () => {
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: leser('praktikum'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Leserausweis');
@@ -59,7 +59,7 @@ describe('Aufschrift des Ausweises', () => {
 	});
 
 	it('bleibt beim Schüler „Schülerausweis"', () => {
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: leser('schueler'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Schülerausweis');
@@ -68,7 +68,7 @@ describe('Aufschrift des Ausweises', () => {
 
 	it('nennt eine Zeile ohne Art „Schülerausweis" — das ist die Vorgabe der Spalte', () => {
 		const ohneArt = { ...leser('schueler'), art: undefined };
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: ohneArt, barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Schülerausweis');
@@ -77,14 +77,14 @@ describe('Aufschrift des Ausweises', () => {
 
 describe('Gültigkeit auf der Karte', () => {
 	it('steht beim Schüler', () => {
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: leser('schueler'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Gültig bis: 31.07.2027');
 	});
 
 	it('fehlt beim Kollegen — sein Ausweis läuft mit keinem Schuljahr ab', () => {
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: {
 				side: 'front',
 				student: { ...leser('lehrkraft'), ausweis_gueltig_bis: null },
@@ -169,7 +169,7 @@ describe('Gespeichertes Design von früher', () => {
 				style: { fontSize: 6.5 }
 			}
 		]);
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: leser('lehrkraft'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Lehrerausweis');

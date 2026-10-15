@@ -10,8 +10,8 @@ vi.mock('../../apiFetch.js', () => ({
 }));
 
 import { apiFetch } from '../../apiFetch.js';
-import { labelStore } from '../../stores/labels.svelte.js';
-import LabelBarcodeSchritt from './LabelBarcodeSchritt.svelte';
+import { labelStore } from '../../stores/etiketten.svelte.js';
+import EtikettBarcodeSchritt from './EtikettBarcodeSchritt.svelte';
 
 const apiFetchMock = vi.mocked(apiFetch);
 const KEIN_EXEMPLAR = 'Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann.';
@@ -27,7 +27,7 @@ describe('Druck-Center, Schritt 2: Exemplare nicht geladen', () => {
 	it('zeigt den Ladefehler mit „Erneut versuchen“ und lädt darauf die Liste', async () => {
 		apiFetchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 500 }));
 		await labelStore.selectBookTitle({ id: 't1', titel: 'Titel', autor: '' });
-		const k = render(LabelBarcodeSchritt);
+		const k = render(EtikettBarcodeSchritt);
 
 		expect(k.getByRole('alert').textContent).toContain('Exemplare nicht geladen');
 		expect(k.queryByText(KEIN_EXEMPLAR)).toBeNull();
@@ -44,7 +44,7 @@ describe('Druck-Center, Schritt 2: Exemplare nicht geladen', () => {
 	it('nennt einen Titel ohne Exemplar weiter beim Namen', async () => {
 		apiFetchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true, json: async () => [] }));
 		await labelStore.selectBookTitle({ id: 't2', titel: 'Titel', autor: '' });
-		const k = render(LabelBarcodeSchritt);
+		const k = render(EtikettBarcodeSchritt);
 
 		expect(k.getByText(KEIN_EXEMPLAR)).toBeTruthy();
 		expect(k.queryByRole('alert')).toBeNull();
@@ -72,7 +72,7 @@ describe('Druck-Center, Schritt 2: Angabe hinter der Nummer', () => {
 			})
 		);
 		await labelStore.selectBookTitle({ id: 't3', titel: 'Titel', autor: '' });
-		const k = render(LabelBarcodeSchritt);
+		const k = render(EtikettBarcodeSchritt);
 		await waitFor(() => expect(k.getByText('B-0000002')).toBeTruthy());
 
 		const zeile = (/** @type {string} */ nummer) =>

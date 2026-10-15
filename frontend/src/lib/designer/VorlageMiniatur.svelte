@@ -2,7 +2,7 @@
      für die Vorlagen-Galerie. Zeichnet die VORLAGENDATEN (vorlage(kennung)), nicht den
      Store: Die Galerie zeigt, was man bekäme, nicht was man hat.
 
-     Bewusst kein CardFace: Das liest den Store und rendert echte Barcode-Bilder vom
+     Bewusst kein Kartenseite: Das liest den Store und rendert echte Barcode-Bilder vom
      Server — sieben Miniaturen hießen sieben Barcode-Requests bei jedem Öffnen. Hier
      genügt die Gestalt: Flächen in Farbe, Texte mit Musterinhalt, Foto/Logo als graue
      Blöcke, der Barcode als Streifenmuster. Die Karte wird in echten mm gezeichnet und

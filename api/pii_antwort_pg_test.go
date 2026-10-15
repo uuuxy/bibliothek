@@ -494,7 +494,7 @@ func antwortText(t *testing.T, resp *httptest.ResponseRecorder) string {
 // verrät, deren Adresse aber eine Kennung tragen kann. Der Browser legt mit der Antwort
 // auch ihre Adresse ab — für sie gilt deshalb dieselbe Regel wie ab Stufe 1.
 var adresseTraegtPersonendaten = map[string]string{
-	"GET /api/barcode": "content= trägt beim Ausweis die Ausweisnummer (frontend/src/lib/designer/CardFace.svelte); " +
+	"GET /api/barcode": "content= trägt beim Ausweis die Ausweisnummer (frontend/src/lib/designer/Kartenseite.svelte); " +
 		"bis zum 30.09.2026 legte der Browser das Bild samt Adresse ein Jahr lang ab.",
 }
 

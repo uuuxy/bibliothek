@@ -1,5 +1,5 @@
 <!-- @component ZahlenFeld — beschriftetes Zahlenfeld des Ausweis-Designers (mm/pt).
-     War ein Snippet in PropertiesPanel; als eigene Datei kann auch der
+     War ein Snippet in Eigenschaften; als eigene Datei kann auch der
      Text-Bereich es benutzen, ohne dass beide dasselbe zweimal beschreiben.
 
      Rundet auf eine Nachkommastelle: Der Designer rechnet in mm mit

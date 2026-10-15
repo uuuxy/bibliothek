@@ -1150,7 +1150,7 @@ frontend/src
 │   ├─ menu.js           EINZIGE Wahrheitsquelle: welche Rolle erreicht welche Seite
 │   ├─ Omnibox.svelte    Das Eingabefeld des Tresens
 │   ├─ stores/*.svelte.js Geteilter Zustand (Runes-Singletons): authStore, uiStore,
-│   │                     omnibox, offlineSync, printQueue, toastStore, mahnwesen*, …
+│   │                     omnibox, offlineSync, druckWarteschlange, toastStore, mahnwesen*, …
 │   └─ …                 Fachansichten (Leserakte, Buchakte, Mahnwesen, LmfPlan,
 │                         DruckCenter, KollegiumPortal, Betriebsbereitschaft, Monitor, …)
 ├─ inventur/             Die Katalog-Oberfläche des Untermoduls (eigene lib/ + routes/)
@@ -1165,7 +1165,7 @@ frontend/src
 | `stores/omnibox`     | Eingabe, Auflösung, Warteschlange, Sperrdialog, Leserauswahl, Zusammenführen                                        |
 | `stores/offlineSync` | IndexedDB-Warteschlange; entfernt einen Eintrag **nur** bei einem endgültigen Serverurteil                         |
 | `stores/authStore`   | Sitzungszustand, Rechte-Map für die Blende, Abmeldung                                                              |
-| `stores/printQueue`  | Sammelt Etiketten/Ausweise für den Stapeldruck                                                                     |
+| `stores/druckWarteschlange`  | Sammelt Etiketten/Ausweise für den Stapeldruck                                                                     |
 | `inventur/`          | Katalogpflege, Import, Cover — spiegelt die Grenze des Backend-Untermoduls                                          |
 
 **Regeln, die im Frontend architektonisch tragen:**
@@ -2368,13 +2368,13 @@ zusammengehört (Gruß und Unterschrift), prüft seinen Platz als Ganzes.
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
 zweimal: `designer/CanvasElement.svelte` auf dem Bildschirm, mit den Griffen zum Bearbeiten,
-und `designer/CardFace.svelte` für das Papier. `CardFace` ist die eine Quelle für den
+und `designer/Kartenseite.svelte` für das Papier. `Kartenseite` ist die eine Quelle für den
 Testdruck des Designers, den Stapeldruck aus der Leserdatei und den Einzeldruck aus der Akte.
 Wo die beiden auseinanderlaufen, sieht man es nur auf dem Papier (24.08.2026: Der Testdruck
 ließ leere Bildfelder weg, die der Bildschirm als gestrichelten Rahmen zeigte). Daraus folgen
-drei Regeln. Eine neue Elementart wird an drei Stellen gebaut — `CardFace`, `CanvasElement`,
-`PropertiesPanel`; der Server speichert das Layout als Ganzes und prüft die Arten nicht.
-Platzhalter für leere Felder zeichnet `CardFace` nur, wenn der Designer es verlangt
+drei Regeln. Eine neue Elementart wird an drei Stellen gebaut — `Kartenseite`, `CanvasElement`,
+`Eigenschaften`; der Server speichert das Layout als Ganzes und prüft die Arten nicht.
+Platzhalter für leere Felder zeichnet `Kartenseite` nur, wenn der Designer es verlangt
 (`platzhalter`): Ein echter Ausweis trägt nie „PASSBILD", weil ein Foto fehlt. Die Größe
 des Strichcodes rechnet eine Funktion für beide (`strichcodeBildOptionenFuerElement` in
 `strichcodeBild.js`). Farbflächen der Vorlagen sind Elemente der Art `box`, keine Bilder: Ein

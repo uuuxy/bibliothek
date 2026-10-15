@@ -11,7 +11,7 @@ import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 //
 // Maßgeblich ist pdf/etikett_formate.go. Das Frontend führt seit dem 24.08.2026 GENAU EINE
 // eigene Kopie davon: src/lib/etikettformate.js. Vorher waren es zwei (Liste in
-// LabelLayoutOptionen.svelte, Stückzahlen in stores/labels.svelte.js), und mit den
+// EtikettLayoutOptionen.svelte, Stückzahlen in stores/etiketten.svelte.js), und mit den
 // Schüler-Etiketten wäre die Ausweis-Werkzeugleiste die dritte geworden.
 //
 // Bewusst KEIN Umbau des Druck-Centers auf die Server-Liste: Die Bestätigungsseite des

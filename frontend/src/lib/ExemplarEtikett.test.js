@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import BuchakteExemplare from './BuchakteExemplare.svelte';
 import { authStore } from './stores/authStore.svelte.js';
-import { printQueue, clearPrintQueue } from './stores/printQueue.svelte.js';
+import { druckWarteschlange, clearPrintQueue } from './stores/druckWarteschlange.svelte.js';
 
 vi.mock('../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
 
 /**
  * Das Etikett eines Exemplars entsteht im Druck-Center, auf dem Bogen nach der Vorlage
- * (OFFEN.md 5.5). Die Buchakte übergibt nur — über dieselbe printQueue wie Wareneingang und
+ * (OFFEN.md 5.5). Die Buchakte übergibt nur — über dieselbe druckWarteschlange wie Wareneingang und
  * Nachdruck. Den Knopf bekommt nur, wer das Druck-Center öffnen darf: Sonst stellte der
  * Router den gesperrten Reiter zurück, und der Klick endete auf dem ersten erlaubten.
  */
@@ -34,7 +34,7 @@ describe('Etikett aus der Buchakte', () => {
 
 		await fireEvent.click(/** @type {HTMLElement} */ (etikettKnopf()));
 
-		expect(printQueue.copies).toEqual([
+		expect(druckWarteschlange.copies).toEqual([
 			{ barcode_id: 'B-10001', titel: 'Seydlitz Geographie', autor: 'Anna Autorin' }
 		]);
 	});

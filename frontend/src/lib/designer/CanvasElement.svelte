@@ -3,8 +3,8 @@
 	/**
 	 * @file CanvasElement.svelte
 	 * EIN Element auf dem Reißbrett des Ausweis-Designers: Darstellung je Elementart
-	 * plus Auswahl-Ring und Skalier-Griffe. Aus CanvasArea.svelte herausgelöst
-	 * (01.09.2026), als das Flächen-Element ('box') dazukam — CanvasArea stand im
+	 * plus Auswahl-Ring und Skalier-Griffe. Aus CanvasFlaeche.svelte herausgelöst
+	 * (01.09.2026), als das Flächen-Element ('box') dazukam — CanvasFlaeche stand im
 	 * eingefrorenen Größen-Bestand, und die Element-Darstellung ist der Teil, der mit
 	 * jeder Elementart weiterwächst. Drag-/Resize-MECHANIK bleibt drüben: Die
 	 * Fensterlistener und ihr Aufräumen gehören an eine Stelle.
@@ -104,7 +104,7 @@
 	{:else if isBarcode}
 		<div class="w-full h-full flex flex-col items-center justify-center">
 			{#if student}
-				<!-- Dieselbe Größenregel wie auf dem Papier (CardFace), aus EINER Funktion. -->
+				<!-- Dieselbe Größenregel wie auf dem Papier (Kartenseite), aus EINER Funktion. -->
 				<img
 					src={strichcodeBildUrl(
 						student.barcode_id,

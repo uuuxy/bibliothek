@@ -1,4 +1,4 @@
-<!-- @component StatistikDetailPage — Vollwertige, deep-linkbare Detailseite für die
+<!-- @component StatistikDetail — Vollwertige, deep-linkbare Detailseite für die
      Statistik-Listen (Renner / Ladenhüter). Ersetzt das frühere Slide-in-Panel: eigene
      URL (/statistiken/renner|ladenhueter), funktionierender Zurück-Button, refresh-fest.
      Lädt die volle Liste selbst (limit=100); alle Filter laufen rein clientseitig. -->

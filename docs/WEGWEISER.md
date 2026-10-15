@@ -46,7 +46,7 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Inventur                                | `UnifiedInventory.svelte`                                                                | `api/inventurlauf/inventurlauf.go` |
 | Schuljahreswechsel (LMF-Plan)           | `LmfPlan.svelte`                                                                         | `api/lernmittel/lernmittel.go`     |
 | Benutzer & Rechte                       | `Berechtigungen.svelte`                                                                  | `api/benutzer/benutzer.go`         |
-| Einstellungen, Statistiken, System-Logs | `Einstellungen.svelte`, `StatsDashboard.svelte`, `SystemLogs.svelte`                    | `api/system/system.go`             |
+| Einstellungen, Statistiken, System-Logs | `Einstellungen.svelte`, `Statistik.svelte`, `SystemLogs.svelte`                    | `api/system/system.go`             |
 | Mein Portal, öffentlicher Katalog       | `KollegiumPortal.svelte`, `OpacSearch.svelte`                                            | `api/portal/portal.go`             |
 
 Der Medienkatalog ist ein eigenes Untermodul: Titelliste, Buchmaske und Import haben ihre

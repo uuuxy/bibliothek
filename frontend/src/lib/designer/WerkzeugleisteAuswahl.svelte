@@ -1,4 +1,4 @@
-<!-- @component ToolbarAuswahl — die drei Einstellungen der Ausweis-Werkstatt:
+<!-- @component WerkzeugleisteAuswahl — die drei Einstellungen der Ausweis-Werkstatt:
      welcher Barcode, welcher Kartenhintergrund, welche Vergrößerung.
      Eigene Datei, damit die Werkzeugleiste selbst nur noch die drei Reihen
      zusammensetzt.
@@ -24,7 +24,7 @@
 		$props();
 
 	const BARCODE_TYPEN = [
-		// Wert historisch 'code39', gedruckt wird Code 128 — siehe LabelLayoutOptionen.
+		// Wert historisch 'code39', gedruckt wird Code 128 — siehe EtikettLayoutOptionen.
 		{ value: 'code39', label: 'Strichcode (Code 128)' },
 		{ value: 'qr', label: 'QR-Code (2D)' }
 	];

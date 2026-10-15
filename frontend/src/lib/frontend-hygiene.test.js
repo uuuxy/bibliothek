@@ -41,9 +41,9 @@ const PIXELGROESSE = /text-\[[0-9.]+(px|rem|em|pt)\]/;
 // eine Miniatur davon — die Schrift gehört dort zum Bild, nicht zur Bedienoberfläche,
 // und muss mit ihm skalieren. Eine Rolle aus der Skala wäre hier schlicht zu groß.
 const ZEICHNUNGEN = [
-	'src/lib/components/labels/LabelPreview.svelte', // 42,3-mm-Etikett in Originalgröße
+	'src/lib/components/etiketten/EtikettVorschau.svelte', // 42,3-mm-Etikett in Originalgröße
 	'src/lib/designer/CanvasElement.svelte', // Ausweiskarte in mm auf dem Reißbrett
-	'src/lib/designer/CardFace.svelte' // dieselbe Karte im Druck, Größen in echten Punkten
+	'src/lib/designer/Kartenseite.svelte' // dieselbe Karte im Druck, Größen in echten Punkten
 ];
 
 // ── Ratsche ─────────────────────────────────────────────────────────────────
@@ -61,7 +61,7 @@ const EMOJI_BESTAND = [
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/bestellungen/Warenkorb.svelte',
 	'src/lib/components/layout/RouteFallback.svelte',
-	'src/lib/designer/Toolbar.svelte'
+	'src/lib/designer/Werkzeugleiste.svelte'
 ];
 
 describe('Oberflächen-Hygiene', () => {

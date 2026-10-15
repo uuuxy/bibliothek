@@ -365,7 +365,7 @@ export function sendBackward(side, id) {
  * Die Seite ist ein Parameter (wie bei addImageElements): Die Funktion schrieb früher
  * fest auf die Rückseite, weshalb die Toolbar den „+ Text"-Button auf der Vorderseite
  * ausblenden musste. Gerendert wurden Text-Elemente aber schon immer auf beiden Seiten
- * (CardFace.svelte führt 'text' in der isText-Liste) — es fehlte nur der Weg, auf der
+ * (Kartenseite.svelte führt 'text' in der isText-Liste) — es fehlte nur der Weg, auf der
  * Vorderseite eines anzulegen.
  *
  * @param {'front'|'back'} side

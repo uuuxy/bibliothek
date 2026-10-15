@@ -1,8 +1,8 @@
 <script>
 	import AusweisDesigner from './AusweisDesigner.svelte';
 	import KlassenDruckEinstieg from './components/leser/KlassenDruckEinstieg.svelte';
-	import LabelPrinter from './LabelPrinter.svelte';
-	import EtikettenNachdruck from './components/labels/EtikettenNachdruck.svelte';
+	import Etikettendruck from './Etikettendruck.svelte';
+	import EtikettenNachdruck from './components/etiketten/EtikettenNachdruck.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
@@ -55,7 +55,7 @@
 		     (deren max-w-6xl mx-auto bei anderer Fensterbreite auseinandergelaufen wäre). -->
 		{#if activeTab === 'labels'}
 			<div class="animate-fade-in h-full py-6">
-				<LabelPrinter />
+				<Etikettendruck />
 			</div>
 		{:else if activeTab === 'nachdruck'}
 			<!-- Nach dem Übergeben direkt zum Etikettendruck: Die Auswahl liegt dort schon

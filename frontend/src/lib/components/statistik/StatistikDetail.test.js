@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/svelte';
-import StatistikDetailPage from './StatistikDetailPage.svelte';
+import StatistikDetail from './StatistikDetail.svelte';
 import { apiFetch } from '../../apiFetch.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
 
@@ -24,7 +24,7 @@ beforeEach(() => {
 
 describe('Statistik-Detailseite', () => {
 	it('nennt je Titel Zahl und Autor', async () => {
-		const screen = render(StatistikDetailPage);
+		const screen = render(StatistikDetail);
 		expect(await screen.findByText('Brücke nach Terabithia')).toBeTruthy();
 		expect(screen.getByText('12×')).toBeTruthy();
 		expect(screen.getByText('2 von 2 Einträgen')).toBeTruthy();
@@ -33,7 +33,7 @@ describe('Statistik-Detailseite', () => {
 	// Ohne Cover steht die Initiale wie in der Übersicht und in den übrigen Listen
 	// (ui/BuchCover), nicht ein Buch-Emoji.
 	it('zeigt ohne Cover die Initiale statt eines Emojis', async () => {
-		const screen = render(StatistikDetailPage);
+		const screen = render(StatistikDetail);
 		const zeile = (await screen.findByText('Brücke nach Terabithia')).closest('li');
 		expect(zeile?.textContent).not.toContain('📖');
 		expect(zeile?.firstElementChild?.textContent?.trim()).toBe('B');

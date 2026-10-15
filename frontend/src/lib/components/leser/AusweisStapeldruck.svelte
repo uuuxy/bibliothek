@@ -1,7 +1,7 @@
 <!-- @component AusweisStapeldruck — versteckte Druckfläche für einen Stapel Ausweise aus
      der Schülerdatei.
 
-     Zeichnet über PrintPreview und damit über dieselbe CardFace-Quelle wie der Einzeldruck
+     Zeichnet über Druckvorschau und damit über dieselbe Kartenseite-Quelle wie der Einzeldruck
      der Akte (Ausweiskarte) und die Vorschau im Ausweis-Designer: Ein eigener Renderer
      ergäbe eine zweite Karte, die niemand pflegt. Ob Karten oder Etiketten gedruckt werden,
      entscheidet das gespeicherte Design (idStore.printMode); die Schülerdatei legt fest,
@@ -10,7 +10,7 @@
 	import { onMount } from 'svelte';
 	import { idStore } from '../../designer/idDesignerStore.svelte.js';
 	import { ladeAusweisDesign } from '../../designer/ausweisDesignLaden.js';
-	import PrintPreview from '../../designer/PrintPreview.svelte';
+	import Druckvorschau from '../../designer/Druckvorschau.svelte';
 
 	/** @type {{ students: any[] }} */
 	let { students } = $props();
@@ -25,4 +25,4 @@
 	});
 </script>
 
-<PrintPreview {students} barcodeType={idStore.barcodeType} {timestamp} />
+<Druckvorschau {students} barcodeType={idStore.barcodeType} {timestamp} />

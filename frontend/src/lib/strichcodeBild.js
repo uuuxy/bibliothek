@@ -46,7 +46,7 @@ export const MINDESTHOEHE_MM = 8;
  * Elements im Designer.
  *
  * Bis zum 22.09.2026 hatten beide Renderer feste Pixelwerte (200 × 50, QR 80 × 80) — und
- * das Papier (CardFace) obendrein eine feste Anzeigehöhe von 8 mm, egal wie hoch das
+ * das Papier (Kartenseite) obendrein eine feste Anzeigehöhe von 8 mm, egal wie hoch das
  * Element im Designer gezogen war. Der Bildschirm skalierte ins Element, das Papier
  * nicht: zwei Renderer, zwei Größen (OFFEN.md 5.5). Jetzt kommt die Größe aus dem
  * Element, in Druckauflösung, für beide Renderer aus dieser einen Funktion.

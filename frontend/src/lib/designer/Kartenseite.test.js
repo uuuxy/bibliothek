@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/svelte';
-import CardFace from './CardFace.svelte';
+import Kartenseite from './Kartenseite.svelte';
 import { idStore } from './idDesignerStore.svelte.js';
 import { strichcodeBildOptionenFuerElement } from '../strichcodeBild.js';
 
 /**
  * Der Testdruck des Ausweis-Designers und der echte Ausweis rendern beide über
- * CardFace — und müssen sich an genau EINER Stelle unterscheiden: bei leeren Bild-,
+ * Kartenseite — und müssen sich an genau EINER Stelle unterscheiden: bei leeren Bild-,
  * Logo- und Passbildfeldern.
  *
  * Der gemeldete Fehler (24.08.2026): „Testausdruck im Druck-Center bringt nicht das,
  * was man sieht — beim Schüler stimmt es." Ursache war kein Layoutfehler, sondern
  * genau dieser Unterschied ins Leere gedreht. Die Leinwand zeichnet für Logo und
- * Passbild einen gestrichelten Rahmen; CardFace liess beide Felder ersatzlos weg,
+ * Passbild einen gestrichelten Rahmen; Kartenseite liess beide Felder ersatzlos weg,
  * wenn kein Inhalt da war. Der Platzhalter-Schüler des Designers hat kein Foto, ein
  * frisch aufgesetztes Design kein Logo — auf dem Testdruck fehlten deshalb ausgerechnet
  * die zwei flächenkritischen Felder, die man darauf prüfen will. Beim echten Schüler
@@ -58,9 +58,9 @@ beforeEach(() => {
 	];
 });
 
-describe('CardFace: leere Bildfelder', () => {
+describe('Kartenseite: leere Bildfelder', () => {
 	it('zeigt sie im Testdruck des Designers als beschrifteten Rahmen', () => {
-		const { getByText } = render(CardFace, {
+		const { getByText } = render(Kartenseite, {
 			props: {
 				side: 'front',
 				student: SCHUELER_OHNE_FOTO,
@@ -74,7 +74,7 @@ describe('CardFace: leere Bildfelder', () => {
 	});
 
 	it('lässt sie auf dem echten Ausweis leer — ohne Rahmen und ohne Aufschrift', () => {
-		const { queryByText } = render(CardFace, {
+		const { queryByText } = render(Kartenseite, {
 			props: { side: 'front', student: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
 		});
 
@@ -99,7 +99,7 @@ describe('CardFace: leere Bildfelder', () => {
 			}
 		];
 
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: null, barcodeType: 'code39' }
 		});
 
@@ -112,7 +112,7 @@ describe('CardFace: leere Bildfelder', () => {
 	it('zeigt das echte Logo statt des Rahmens, sobald eines hinterlegt ist', () => {
 		idStore.front.elements[0].content = 'data:image/png;base64,AAAA';
 
-		const { queryByText, getByAltText } = render(CardFace, {
+		const { queryByText, getByAltText } = render(Kartenseite, {
 			props: {
 				side: 'front',
 				student: SCHUELER_OHNE_FOTO,
@@ -131,7 +131,7 @@ describe('CardFace: leere Bildfelder', () => {
 // zog, sah es auf dem Bildschirm größer und auf dem Ausweis unverändert. Jetzt füllt das
 // Bild das Element, und seine Pixelgröße kommt aus den Millimetern des Elements — für
 // beide Renderer aus strichcodeBildOptionenFuerElement.
-describe('CardFace: Strichcode folgt dem Element', () => {
+describe('Kartenseite: Strichcode folgt dem Element', () => {
 	const barcodeElement = (/** @type {number} */ hoehe) => ({
 		id: 'barcode',
 		type: 'barcode',
@@ -146,7 +146,7 @@ describe('CardFace: Strichcode folgt dem Element', () => {
 
 	it('fordert das Bild in der Größe des Elements an, nicht in festen Pixeln', () => {
 		idStore.front.elements = [barcodeElement(20)];
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
 		});
 		const img = /** @type {HTMLImageElement} */ (container.querySelector('img[alt="Barcode"]'));
@@ -156,7 +156,7 @@ describe('CardFace: Strichcode folgt dem Element', () => {
 
 	it('gibt dem Bild keine feste Höhe mehr — es füllt das Element', () => {
 		idStore.front.elements = [barcodeElement(20)];
-		const { container } = render(CardFace, {
+		const { container } = render(Kartenseite, {
 			props: { side: 'front', student: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
 		});
 		const img = /** @type {HTMLImageElement} */ (container.querySelector('img[alt="Barcode"]'));

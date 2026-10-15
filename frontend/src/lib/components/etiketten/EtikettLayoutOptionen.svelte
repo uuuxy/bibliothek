@@ -1,9 +1,9 @@
-<!-- @component LabelLayoutOptionen — Schritt 3 des Druck-Centers: Wie das Blatt
+<!-- @component EtikettLayoutOptionen — Schritt 3 des Druck-Centers: Wie das Blatt
      bedruckt wird (Format, Startfeld auf angebrochenen Bögen, Barcode-Art,
      Hilfsrahmen). Steht getrennt, weil es die einzige Gruppe ist, die nichts über
      den INHALT der Etiketten sagt. -->
 <script>
-	import { labelStore } from '../../stores/labels.svelte.js';
+	import { labelStore } from '../../stores/etiketten.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';

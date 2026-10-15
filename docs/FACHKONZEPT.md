@@ -1007,7 +1007,7 @@ der hat nicht stattgefunden.
 
 **Bekannte Lücken (offen, keine davon im Gate versteckt):**
 
-- Der Ausweis-Designer (Zeichenfläche `designer/CanvasArea`) ist Maus- und Touch-Arbeit ohne
+- Der Ausweis-Designer (Zeichenfläche `designer/CanvasFlaeche`) ist Maus- und Touch-Arbeit ohne
   Tastaturweg.
 - Die PDFs (maroto/gofpdf) sind ungetaggt — HTML-Druckweg oder begründete Ausnahme, offen
   ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).

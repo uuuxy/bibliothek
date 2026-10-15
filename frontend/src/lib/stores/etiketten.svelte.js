@@ -1,9 +1,9 @@
-// stores/labels.svelte.js
+// stores/etiketten.svelte.js
 // Status- und Logikverwaltung für den Etikettendruck (Svelte 5 Runes)
 
 import { apiFetch } from '../apiFetch.js';
 import { felderProBogen } from '../etikettformate.js';
-import { printQueue, clearPrintQueue } from './printQueue.svelte.js';
+import { druckWarteschlange, clearPrintQueue } from './druckWarteschlange.svelte.js';
 import { toastStore } from './toastStore.svelte.js';
 import { normalisiereScan } from '../scanEinordnen.js';
 import { dekodiereLitteraEtikett } from '../litteraEtikett.js';
@@ -98,8 +98,8 @@ function createLabelStore() {
 
 	/** @type {Array<{isBlank?: boolean, barcode_id?: string, titel?: string, autor?: string}>} */
 	let finalLabels = $derived.by(() => {
-		if ((printQueue.copies?.length ?? 0) > 0) {
-			const copies = /** @type {any[]} */ (printQueue.copies);
+		if ((druckWarteschlange.copies?.length ?? 0) > 0) {
+			const copies = /** @type {any[]} */ (druckWarteschlange.copies);
 			const rawList = copies.map((c) => ({
 				barcode_id: c.barcode_id,
 				titel: c.titel,

@@ -8,10 +8,10 @@
 	import { idStore, serializeDesign } from './designer/idDesignerStore.svelte.js';
 	import { erzeugeDesignAblage } from './designer/idDesignPersistenz.svelte.js';
 	import { oeffneEtikettenbogen } from './schuelerEtiketten.js';
-	import CanvasArea from './designer/CanvasArea.svelte';
-	import PrintPreview from './designer/PrintPreview.svelte';
-	import PropertiesPanel from './designer/PropertiesPanel.svelte';
-	import Toolbar from './designer/Toolbar.svelte';
+	import CanvasFlaeche from './designer/CanvasFlaeche.svelte';
+	import Druckvorschau from './designer/Druckvorschau.svelte';
+	import Eigenschaften from './designer/Eigenschaften.svelte';
+	import Werkzeugleiste from './designer/Werkzeugleiste.svelte';
 
 	let selectedId = $state(/** @type {string|null} */ (null));
 	let side = $state(/** @type {"front"|"back"} */ ('front'));
@@ -144,7 +144,7 @@
 	</div>
 
 	<!-- printMode zentral aus idStore, nicht lokal — Begruendung in AusweisStapeldruck.svelte -->
-	<Toolbar
+	<Werkzeugleiste
 		{zoom}
 		onZoom={(v) => {
 			zoom = v;
@@ -168,7 +168,7 @@
 	/>
 
 	<div class="w-full flex flex-col lg:flex-row gap-5">
-		<CanvasArea
+		<CanvasFlaeche
 			{side}
 			{selectedId}
 			onSelect={(id) => {
@@ -179,7 +179,7 @@
 			barcodeType={idStore.barcodeType}
 		/>
 
-		<PropertiesPanel {selectedId} {side} />
+		<Eigenschaften {selectedId} {side} />
 	</div>
 </div>
 
@@ -187,4 +187,4 @@
      Kartendrucker prüfen lässt, bevor ein Stapel echter Ausweise durchläuft.
      Echte Schüler druckt dieser Bildschirm nicht mehr — das tut die Schülerdatei
      (markieren → „Ausweise drucken"). -->
-<PrintPreview students={[muster]} barcodeType={idStore.barcodeType} {timestamp} platzhalter />
+<Druckvorschau students={[muster]} barcodeType={idStore.barcodeType} {timestamp} platzhalter />

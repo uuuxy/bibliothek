@@ -11,8 +11,8 @@ vi.mock('../../apiFetch.js', () => ({
 }));
 
 import { apiFetch } from '../../apiFetch.js';
-import { labelStore } from '../../stores/labels.svelte.js';
-import LabelPreview from './LabelPreview.svelte';
+import { labelStore } from '../../stores/etiketten.svelte.js';
+import EtikettVorschau from './EtikettVorschau.svelte';
 
 // Die Vorschau zeichnet den gewählten Bogen in zwei Dritteln der Größe: Spalten, Etikett und
 // Ränder kommen aus dem Format (etikettformate.js, gehalten gegen pdf/etikett_formate.go).
@@ -47,7 +47,7 @@ describe('Druck-Center: Vorschau je Etikettenformat', () => {
 	}
 
 	it('zeichnet Raster, Etikett und Ränder des gewählten Bogens', () => {
-		render(LabelPreview);
+		render(EtikettVorschau);
 
 		expect(gezeichnet('zweckform_l4760')).toEqual({
 			spalten: 'repeat(3, minmax(0, 42.3mm))',
@@ -101,7 +101,7 @@ describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
 		).children.length;
 
 	it('nennt bei mehr Etiketten, als auf einen Bogen passen, die Zahl der Bogen', async () => {
-		const screen = render(LabelPreview);
+		const screen = render(EtikettVorschau);
 		await waehleTitelMit(50);
 
 		expect(felder()).toBe(21);
@@ -109,7 +109,7 @@ describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
 	});
 
 	it('zählt freigelassene Felder zum Bogen und nicht zu den Etiketten', async () => {
-		const screen = render(LabelPreview);
+		const screen = render(EtikettVorschau);
 		await waehleTitelMit(41);
 		labelStore.startPosition = 3;
 		flushSync();
@@ -119,7 +119,7 @@ describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
 	});
 
 	it('zeigt bei einem einzigen Bogen keine Zeile darunter', async () => {
-		const screen = render(LabelPreview);
+		const screen = render(EtikettVorschau);
 		await waehleTitelMit(21);
 
 		expect(felder()).toBe(21);

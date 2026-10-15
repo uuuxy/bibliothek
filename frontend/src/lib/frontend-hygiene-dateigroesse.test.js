@@ -26,12 +26,12 @@ const BESTAND = {
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 212,
 	'src/lib/Bestellwesen.svelte': 232,
 	'src/lib/Omnibox.svelte': 217,
-	'src/lib/StatsDashboard.svelte': 351,
+	'src/lib/Statistik.svelte': 351,
 	'src/lib/Leserakte.svelte': 230,
 	'src/lib/UnifiedInventory.svelte': 237,
 	'src/lib/Konten.svelte': 208,
-	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
-	'src/lib/components/stats/StatsTrendChart.svelte': 242,
+	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 364,
+	'src/lib/components/statistik/StatistikVerlauf.svelte': 242,
 	'src/lib/components/leser/LusdImport.svelte': 311,
 	'src/lib/components/leser/Schuljahreswechsel.svelte': 209
 };

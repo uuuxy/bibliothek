@@ -9,7 +9,7 @@ vi.mock('../apiFetch.js', () => ({
 }));
 
 import { apiFetch } from '../apiFetch.js';
-import { labelStore } from './labels.svelte.js';
+import { labelStore } from './etiketten.svelte.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 

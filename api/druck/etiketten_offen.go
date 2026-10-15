@@ -17,7 +17,7 @@ import (
 const etikettenOffenLimit = 300
 
 // ExemplarOhneEtikett ist eine Zeile der Nachdruck-Liste. Die Namen in JSON (barcode_id, titel,
-// autor) sind die der Aufträge, die frontend/src/lib/stores/labels.svelte.js druckt, damit die
+// autor) sind die der Aufträge, die frontend/src/lib/stores/etiketten.svelte.js druckt, damit die
 // Oberfläche die Liste unverändert übergeben kann.
 type ExemplarOhneEtikett struct {
 	BarcodeID string `json:"barcode_id"`
@@ -192,7 +192,7 @@ func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
 // EtikettenZuruecksetzen nimmt den Vermerk „Etikett gedruckt" wieder zurück.
 //
 // Ob ein Etikett aus dem Drucker kam, weiß das Programm nicht: Der Druck wird gegengebucht,
-// sobald das PDF erzeugt ist (vermerkeGedruckt in frontend/src/lib/stores/labels.svelte.js),
+// sobald das PDF erzeugt ist (vermerkeGedruckt in frontend/src/lib/stores/etiketten.svelte.js),
 // und ein zu später Stichtag beim Altbestand trifft auch die frische Lieferung. Nach einem
 // Papierstau oder einem solchen Stichtag holt diese Tür die Exemplare in die Liste zurück; erst
 // damit ist auch das Vermerken von Hand unbedenklich.

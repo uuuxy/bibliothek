@@ -3,7 +3,7 @@
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { erlaubteTabs, hatRecht } from './menu.js';
-	import { printQueue } from './stores/printQueue.svelte.js';
+	import { druckWarteschlange } from './stores/druckWarteschlange.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
 	import ExemplarKarte from './components/ExemplarKarte.svelte';
@@ -36,7 +36,9 @@
 
 	/** Dieselbe Übergabe wie Wareneingang und Nachdruck — das Druck-Center öffnet sich selbst. */
 	function etikettDrucken(/** @type {any} */ ex) {
-		printQueue.copies = [{ barcode_id: ex.barcode_id, titel: book.title, autor: book.author }];
+		druckWarteschlange.copies = [
+			{ barcode_id: ex.barcode_id, titel: book.title, autor: book.author }
+		];
 	}
 
 	/** @param {string} id */

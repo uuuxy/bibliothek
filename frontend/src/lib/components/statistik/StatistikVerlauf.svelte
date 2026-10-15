@@ -1,4 +1,4 @@
-<!-- @component StatsTrendChart — Aktivitäts-Zeitreihe (Ausleihen + Rückgaben je Monat,
+<!-- @component StatistikVerlauf — Aktivitäts-Zeitreihe (Ausleihen + Rückgaben je Monat,
      letzte 12 Monate) als schlankes Inline-SVG. Zwei Serien derselben Einheit → EINE
      gemeinsame Y-Achse (kein Dual-Axis). Farben: erste zwei validierte Kategorial-Slots
      (Blau/Orange, CVD-geprüft). Legende immer vorhanden, Hover-Tooltip je Monat, und

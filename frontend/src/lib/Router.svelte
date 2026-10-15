@@ -15,12 +15,12 @@
 	import Bestandsbuecher from './components/bestand/Bestandsbuecher.svelte';
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import SignaturenView from './SignaturenView.svelte';
-	import StatsDashboard from './StatsDashboard.svelte';
+	import Statistik from './Statistik.svelte';
 	import Schuelerdatei from './Schuelerdatei.svelte';
 	import Schulklassen from './Schulklassen.svelte';
 	import KollegiumPortal from './KollegiumPortal.svelte';
 	import Mahnwesen from './Mahnwesen.svelte';
-	import StatistikDetailPage from './components/stats/StatistikDetailPage.svelte';
+	import StatistikDetail from './components/statistik/StatistikDetail.svelte';
 	import Einstellungen from './Einstellungen.svelte';
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
@@ -117,9 +117,9 @@
 		     min-h-0: ohne das behält der Flex-Item seine implizite min-height:auto und kann
 		     nicht unter seine Inhaltshöhe schrumpfen — das Dashboard könnte seine Karten dann
 		     nicht auf die Viewport-Höhe deckeln. -->
-		<div class="w-full flex-1 min-h-0 flex flex-col animate-fade-in"><StatsDashboard /></div>
+		<div class="w-full flex-1 min-h-0 flex flex-col animate-fade-in"><Statistik /></div>
 	{:else if uiStore.activeTab === 'stats_detail'}
-		<div class="w-full animate-fade-in"><StatistikDetailPage /></div>
+		<div class="w-full animate-fade-in"><StatistikDetail /></div>
 	{:else if uiStore.activeTab === 'system-logs'}
 		<div class="w-full animate-fade-in h-full"><SystemLogs /></div>
 	{:else if uiStore.activeTab === 'druck-center'}

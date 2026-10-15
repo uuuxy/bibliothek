@@ -195,7 +195,7 @@
 {/if}
 
 {#if st.profile}
-	<!-- Die Abweichung liegt auf dem Profil, nicht in CardFace: So drucken Profil, Klassensatz
+	<!-- Die Abweichung liegt auf dem Profil, nicht in Kartenseite: So drucken Profil, Klassensatz
 	     und Designer dieselbe Karte. -->
 	<Ausweiskarte
 		profile={{ ...st.profile, ausweis_gueltig_bis: gueltigBisEffektiv }}

@@ -3,13 +3,13 @@
 	import { formatEuro as euro } from './utils/format.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import OverdueWidget from './OverdueWidget.svelte';
-	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
+	import StatistikVerlauf from './components/statistik/StatistikVerlauf.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Segmente from './components/ui/Segmente.svelte';
 	import BuchCover from './components/ui/BuchCover.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
-	import { statistikAbruf } from './components/stats/statistikAbruf.svelte.js';
+	import { statistikAbruf } from './components/statistik/statistikAbruf.svelte.js';
 	import { ChartColumn, ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
 
 	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau (Absprache vom 06.09.2026: „wieder grau?").
@@ -308,7 +308,7 @@
 			     Beide Cards teilen sich exakt dieselbe feste Höhe → die Reihe kippt nie. -->
 			<div class="shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
 				<div class="lg:col-span-2 {FLAECHE} p-5 h-72 flex flex-col">
-					<StatsTrendChart data={stats.monats_trend ?? []} />
+					<StatistikVerlauf data={stats.monats_trend ?? []} />
 				</div>
 				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
 				<div class="{FLAECHE} p-5 h-72 flex flex-col">

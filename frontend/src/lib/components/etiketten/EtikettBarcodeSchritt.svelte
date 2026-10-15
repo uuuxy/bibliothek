@@ -1,11 +1,11 @@
-<!-- @component LabelBarcodeSchritt — Schritt 2 des Druck-Centers: WELCHE Barcodes
+<!-- @component EtikettBarcodeSchritt — Schritt 2 des Druck-Centers: WELCHE Barcodes
      aufs Blatt kommen. Zwei Wege, die einander ausschließen — vorhandene Exemplare
      abhaken oder eine Reihe neuer Nummern erzeugen.
 
      Der Platzhalter im else-Zweig ist Absicht: Ohne ihn spränge die Schrittfolge von
      1 auf 3 und sähe aus wie ein übersprungener Schritt. -->
 <script>
-	import { labelStore } from '../../stores/labels.svelte.js';
+	import { labelStore } from '../../stores/etiketten.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Feld from '../ui/Feld.svelte';

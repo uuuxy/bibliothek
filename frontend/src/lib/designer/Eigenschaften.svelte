@@ -1,13 +1,13 @@
 <script>
 	/**
-	 * @file PropertiesPanel.svelte
+	 * @file Eigenschaften.svelte
 	 * Eigenschaften des ausgewählten Ausweis-Elements. Was JEDES Element hat, steht
 	 * hier: Lage, Größe, Ebene, Sichtbarkeit. Die artspezifischen Teile hängen an
-	 * el.type — Schrift in PropertiesText, Bild-Upload weiter unten; photo und
+	 * el.type — Schrift in EigenschaftenText, Bild-Upload weiter unten; photo und
 	 * barcode bringen ihre Bedienung am Element selbst mit.
 	 */
 	import { idStore, bringForward, sendBackward, removeElement } from './idDesignerStore.svelte.js';
-	import PropertiesText from './PropertiesText.svelte';
+	import EigenschaftenText from './EigenschaftenText.svelte';
 	import ZahlenFeld from './ZahlenFeld.svelte';
 	import Kaestchen from '../components/ui/Kaestchen.svelte';
 	import Switch from '../components/ui/Switch.svelte';
@@ -150,7 +150,7 @@
 		</div>
 
 		{#if isTextType && el.style}
-			<PropertiesText {el} istDynamisch={isDynamic} schriften={fontFamilies} />
+			<EigenschaftenText {el} istDynamisch={isDynamic} schriften={fontFamilies} />
 		{/if}
 
 		<!-- Farbfläche: Füllfarbe und Eckenradius. Der Farbwähler trägt Label und Höhe von

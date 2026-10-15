@@ -1,6 +1,6 @@
-<!-- @component PropertiesText — Textformatierung des ausgewählten Ausweis-Elements.
+<!-- @component EigenschaftenText — Textformatierung des ausgewählten Ausweis-Elements.
 
-     Getrennt von PropertiesPanel, weil dort ALLES für ALLE Elementarten steht:
+     Getrennt von Eigenschaften, weil dort ALLES für ALLE Elementarten steht:
      Lage, Größe, Ebene, Sichtbarkeit. Schrift betrifft nur Textelemente — und bei
      dynamischen Feldern (Name, Klasse …) kommt der Inhalt aus den Schülerdaten,
      deshalb fehlt dort das Inhaltsfeld. -->

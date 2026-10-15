@@ -38,7 +38,7 @@ test('Fehlende Etiketten: Exemplare finden, auswählen und an den Druck übergeb
 	await page.getByRole('button', { name: /2 an den Druck übergeben/ }).click();
 
 	// BEWEIS 1: Die Übergabe landet im Etikettendruck — dort steht die Vorschau bereit.
-	// Es gibt keinen zweiten Druckweg; die Auswahl geht durch dieselbe printQueue wie
+	// Es gibt keinen zweiten Druckweg; die Auswahl geht durch dieselbe druckWarteschlange wie
 	// der Wareneingang.
 	await expect(page.getByRole('button', { name: 'A4-Bogen drucken' })).toBeEnabled();
 });

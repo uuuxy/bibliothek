@@ -1,4 +1,4 @@
-<!-- @component ToolbarDruck — die oberste Zeile des Ausweis-Designers: womit gedruckt
+<!-- @component WerkzeugleisteDruck — die oberste Zeile des Ausweis-Designers: womit gedruckt
      wird, und der Testdruck dazu.
 
      „A4-Bogen" stand hier bis zum 24.08.2026 und meinte acht Kartenabbilder auf einem
@@ -9,7 +9,7 @@
      Die Wahl gilt nicht nur hier — der Stapeldruck der Schülerdatei folgt ihr ebenfalls
      (idStore.printMode). Der Designer legt fest WIE gedruckt wird, die Schülerdatei WER.
 
-     Eigene Datei, weil Toolbar.svelte mit dieser Zeile über die 200 gelaufen wäre. -->
+     Eigene Datei, weil Werkzeugleiste.svelte mit dieser Zeile über die 200 gelaufen wäre. -->
 <script>
 	import { Printer } from '@lucide/svelte';
 	import { idStore } from './idDesignerStore.svelte.js';

@@ -1,6 +1,6 @@
 <script>
 	/**
-	 * @file CanvasArea.svelte
+	 * @file CanvasFlaeche.svelte
 	 * Interactive canvas for the ID card designer. Die Darstellung der einzelnen
 	 * Elemente (inkl. Auswahl-Ring und Skalier-Griffe) liegt in CanvasElement.svelte;
 	 * hier wohnt die Drag-/Resize-Mechanik, weil Fensterlistener und ihr Aufräumen an

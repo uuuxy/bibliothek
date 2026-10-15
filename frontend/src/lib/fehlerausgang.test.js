@@ -37,7 +37,7 @@ const BESTAND = {
 		1,
 		'Klassenliste; der Weg über die Schülerdatei bleibt'
 	],
-	'src/lib/stores/labels.svelte.js': [
+	'src/lib/stores/etiketten.svelte.js': [
 		1,
 		'Klassengruppen als Filter (die Titelsuche daneben ist behoben)'
 	],

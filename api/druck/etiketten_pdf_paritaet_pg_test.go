@@ -26,7 +26,7 @@ import (
 // An dieser Naht geht ein Feld verloren, ohne dass Status oder Größe der Datei es zeigen: Beide
 // Wege liefern 200 und ein gültiges PDF. Der Vergleich der Abfragen in internal/buchetikett
 // sieht es nicht, weil dieser Weg über den Browser läuft. Der Test fährt deshalb beide Türen
-// über HTTP, das POST mit der Nutzlast aus labels.svelte.js, und vergleicht die gedruckten
+// über HTTP, das POST mit der Nutzlast aus etiketten.svelte.js, und vergleicht die gedruckten
 // Texte.
 func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -57,7 +57,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 		t.Fatalf("Buchformular-Weg: Status %d — %s", recGet.Code, recGet.Body.String())
 	}
 
-	// Weg 2: Druck-Center — genau die Nutzlast aus labels.svelte.js (triggerPrint):
+	// Weg 2: Druck-Center — genau die Nutzlast aus etiketten.svelte.js (triggerPrint):
 	// nur BarcodeID, Titel und Autor. Wird hier ein Feld ergänzt, gehört es nicht hierher,
 	// sondern in buchetikett.ErgaenzeServerfelder.
 	payload := `{

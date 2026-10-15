@@ -11,7 +11,7 @@ import {
  * einem abgestimmten Layout, danach ist alles wie gewohnt frei editierbar.
  *
  * Flächen (Kopfband, Fußband, Seitenband, Streifen) sind 'box'-Elemente: ein Rechteck
- * mit Füllfarbe und optionalen runden Ecken, das CardFace/CanvasElement als schlichtes
+ * mit Füllfarbe und optionalen runden Ecken, das Kartenseite/CanvasElement als schlichtes
  * div rendern. Bis zum 01.09.2026 waren sie eingebettete SVG-Bilder — deren Farbe war
  * nicht editierbar, und object-contain ließ am Kartenrand weiße Streifen stehen.
  * Einzig das Wellen-Motiv (Reis-Welle) bleibt ein SVG-Bild: 40 Balken sind kein
@@ -24,7 +24,7 @@ import {
  *     Logofelder lässt der Druck einfach weg.
  *   - Keine Klassen-/Schuljahreszeile — der Ausweis gilt die ganze Schulzeit
  *     (Begründung am details-Filter in idDesignerStore.applySeite).
- *   - Der Barcode liegt IMMER auf heller Fläche: CardFace rendert die Nummer dunkel,
+ *   - Der Barcode liegt IMMER auf heller Fläche: Kartenseite rendert die Nummer dunkel,
  *     auf dunklem Grund wäre sie unlesbar.
  */
 

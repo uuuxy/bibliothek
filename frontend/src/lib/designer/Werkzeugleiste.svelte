@@ -1,6 +1,6 @@
 <script>
 	/**
-	 * @file Toolbar.svelte
+	 * @file Werkzeugleiste.svelte
 	 * Top control bar for the canvas ID-card designer.
 	 *
 	 * Runes in use:
@@ -19,8 +19,8 @@
 	} from './idDesignerStore.svelte.js';
 	import { KARTEN_HINTERGRUENDE } from './kartenFarben.js';
 	import Button from '../components/ui/Button.svelte';
-	import ToolbarAuswahl from './ToolbarAuswahl.svelte';
-	import ToolbarDruck from './ToolbarDruck.svelte';
+	import WerkzeugleisteAuswahl from './WerkzeugleisteAuswahl.svelte';
+	import WerkzeugleisteDruck from './WerkzeugleisteDruck.svelte';
 
 	/** @type {HTMLInputElement | undefined} */
 	let bildUploadEl = $state();
@@ -82,9 +82,9 @@
 </script>
 
 <div class="w-full space-y-4 no-print">
-	<ToolbarDruck {printMode} {onPrintMode} {side} {onPrint} />
+	<WerkzeugleisteDruck {printMode} {onPrintMode} {side} {onPrint} />
 
-	<ToolbarAuswahl
+	<WerkzeugleisteAuswahl
 		{barcodeType}
 		{onBarcodeType}
 		{currentTheme}

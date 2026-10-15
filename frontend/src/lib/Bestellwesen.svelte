@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { ChevronLeft } from '@lucide/svelte';
-	import { printQueue } from './stores/printQueue.svelte.js';
+	import { druckWarteschlange } from './stores/druckWarteschlange.svelte.js';
 	import { bestellStore } from './stores/bestellStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
@@ -66,7 +66,7 @@
 		// Der stehende Streifen ist weg, die ÜBERGABE aber nicht: Wer gerade eingebucht hat,
 		// soll genau DIESE Exemplare drucken koennen — nicht sie zwischen tausenden offenen
 		// Etiketten im Druck-Center wiederfinden muessen. Deshalb eine Snackbar mit Aktion
-		// (M3: genau eine Folgehandlung), die printQueue.copies wie zuvor befuellt.
+		// (M3: genau eine Folgehandlung), die druckWarteschlange.copies wie zuvor befuellt.
 		//
 		// Der Unterschied zum Streifen ist die Lebensdauer: Der Hinweis beschreibt einen
 		// MOMENT. Der dauerhafte Zustand („es liegen Etiketten an") steht im Badge am
@@ -79,7 +79,7 @@
 				{
 					label: 'Etiketten drucken',
 					onClick: () => {
-						printQueue.copies = ohneEtikett;
+						druckWarteschlange.copies = ohneEtikett;
 					}
 				}
 			);

@@ -22,7 +22,7 @@ func anfrageBremse(jeSekunde int) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Bilder und Uploads sind ausgenommen, weil ein Seitenaufruf oft Dutzende Bilder
 			// gleichzeitig lädt. /api/barcode gehört in dieselbe Klasse: Die Vorschau der
-			// Etiketten (LabelPreview.svelte) zeichnet einen ganzen A4-Bogen (52 Etiketten) und
+			// Etiketten (EtikettVorschau.svelte) zeichnet einen ganzen A4-Bogen (52 Etiketten) und
 			// ruft je Etikett ein <img src="/api/barcode…"> fast gleichzeitig ab; das sprengte
 			// die 50 Anfragen je Sekunde und lieferte 429 (angemeldet, view_books, kleine
 			// PNGs). Der Browser legt die Bilder nicht ab

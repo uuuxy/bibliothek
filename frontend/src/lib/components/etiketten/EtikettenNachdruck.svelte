@@ -6,7 +6,7 @@
      danach führte kein Weg mehr zu genau diesen Exemplaren zurück. Man hätte jeden Titel
      einzeln suchen müssen, ohne zu wissen, welche es überhaupt sind.
 
-     Kein zweiter Druckweg: Die Auswahl geht in dieselbe printQueue, die auch der
+     Kein zweiter Druckweg: Die Auswahl geht in dieselbe druckWarteschlange, die auch der
      Wareneingang benutzt, und wird vom Etikettendruck nebenan gesetzt.
 
      Aufbau seit dem M3-Durchgang am 04.09.2026: EINE Aktionszeile unter der Suche, in der
@@ -18,7 +18,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiGet, apiPost } from '../../apiFetch.js';
-	import { printQueue } from '../../stores/printQueue.svelte.js';
+	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Printer, Eraser, Undo2 } from '@lucide/svelte';
@@ -149,7 +149,7 @@
 	function uebergeben() {
 		const auswahl = offen.filter((e) => gewaehlt.includes(e.barcode_id));
 		if (auswahl.length === 0) return;
-		printQueue.copies = auswahl.map((e) => ({
+		druckWarteschlange.copies = auswahl.map((e) => ({
 			barcode_id: e.barcode_id,
 			titel: e.titel,
 			autor: e.autor

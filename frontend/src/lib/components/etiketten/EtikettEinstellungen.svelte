@@ -3,16 +3,16 @@
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Printer } from '@lucide/svelte';
-	import { labelStore } from '../../stores/labels.svelte.js';
-	import { printQueue } from '../../stores/printQueue.svelte.js';
-	import LabelBarcodeSchritt from './LabelBarcodeSchritt.svelte';
-	import LabelLayoutOptionen from './LabelLayoutOptionen.svelte';
+	import { labelStore } from '../../stores/etiketten.svelte.js';
+	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
+	import EtikettBarcodeSchritt from './EtikettBarcodeSchritt.svelte';
+	import EtikettLayoutOptionen from './EtikettLayoutOptionen.svelte';
 	import Select from '../ui/Select.svelte';
 </script>
 
 <div class="lg:col-span-7 space-y-6 text-left">
-	{#if (printQueue.copies?.length ?? 0) > 0}
-		{@const anzahl = printQueue.copies?.length ?? 0}
+	{#if (druckWarteschlange.copies?.length ?? 0) > 0}
+		{@const anzahl = druckWarteschlange.copies?.length ?? 0}
 		<div
 			class="animate-fade-in space-y-4 border-l-2 border-primary bg-primary-container/50 p-4 text-left text-on-primary-container"
 		>
@@ -129,8 +129,8 @@
 			</div>
 		</div>
 
-		<LabelBarcodeSchritt />
+		<EtikettBarcodeSchritt />
 	{/if}
 
-	<LabelLayoutOptionen />
+	<EtikettLayoutOptionen />
 </div>

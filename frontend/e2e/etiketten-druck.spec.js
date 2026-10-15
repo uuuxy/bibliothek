@@ -58,7 +58,7 @@ test('Etiketten: Titel-Bogen und freier Labeldruck liefern echte PDFs', async ({
 });
 
 // Regression: Der Druck-Vorschlag nach dem Wareneingang führte auf eine WEISSE SEITE.
-// Ursache: App.svelte setzte beim gefüllten printQueue activeTab='labels' — diesen Tab
+// Ursache: App.svelte setzte beim gefüllten druckWarteschlange activeTab='labels' — diesen Tab
 // kennt der Router nicht (der App-Route-Name ist 'druck-center'; 'labels' ist nur der
 // interne Unter-Tab in DruckCenter), also rendert <main> nichts. Der bisherige Etiketten-
 // Test deckte nur die Server-PDF-Endpunkte ab, nie diesen UI-Handoff.
@@ -97,13 +97,13 @@ test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße 
 
 	// Die Übergabe an den Etikettendruck liegt jetzt in der Snackbar-Aktion (M3: genau
 	// eine Folgehandlung) statt in einem stehenden Vorschlagsstreifen. Der geprüfte Pfad
-	// ist derselbe: printQueue.copies bekommt GENAU die Exemplare dieser Lieferung.
+	// ist derselbe: druckWarteschlange.copies bekommt GENAU die Exemplare dieser Lieferung.
 	const printBtn = page.getByRole('button', { name: 'Etiketten drucken' });
 	await expect(printBtn).toBeVisible();
 	await printBtn.click();
 
-	// BEWEIS: Diese Meldung stammt aus dem Etikettendruck (LabelSettings) und erscheint
-	// NUR, wenn printQueue.copies dort ankommt. Vor dem Fix war die Seite leer, der Text
+	// BEWEIS: Diese Meldung stammt aus dem Etikettendruck (EtikettEinstellungen) und erscheint
+	// NUR, wenn druckWarteschlange.copies dort ankommt. Vor dem Fix war die Seite leer, der Text
 	// existierte nie. Er beweist beide Hälften: Navigation UND Queue-Übergabe.
 	// Die Zahl hängt am Zulauf der Test-Datenbank: „1 Etikett" und „3 Etiketten".
 	await expect(page.getByText(/\d+ Etikett(en)? zum Drucken übernommen/)).toBeVisible();

@@ -1,7 +1,7 @@
 /**
  * Gate: Welche Druck-Sektion des Ausweis-Designers ist bei welcher Betriebsart sichtbar?
  *
- * PrintPreview.svelte legt versteckte Sektionen ins Dokument — je eine für Vorder- und
+ * Druckvorschau.svelte legt versteckte Sektionen ins Dokument — je eine für Vorder- und
  * Rückseite der Ausweiskarte. Welche davon auf dem Papier landet, entscheidet keine
  * Bedingung im Markup, sondern allein die CSS-Kaskade aus drei Quellen:
  * Tailwinds `hidden`/`print:block`, druck-grundlagen.css und druck-ausweise.css. Das
@@ -19,7 +19,7 @@
  * dazukommt, ist die Frage „welche druckt eigentlich?" sofort wieder da.
  *
  * Der Prüfaufbau baut das Markup NICHT nach, sondern liest die vier Klassenlisten aus
- * PrintPreview.svelte und die Svelte-Scope-Klasse aus dem gebauten CSS. Eine umbenannte
+ * Druckvorschau.svelte und die Svelte-Scope-Klasse aus dem gebauten CSS. Eine umbenannte
  * Sektion lässt das Gate deshalb abbrechen, statt weiter eine Aussage über Klassen zu
  * treffen, die es nicht mehr gibt.
  *
@@ -41,7 +41,7 @@ function abbruch(grund) {
 }
 
 // --- 1. Die echten Klassenlisten aus der Komponente lesen ---------------------------
-const quelle = path.join(wurzel, 'src/lib/designer/PrintPreview.svelte');
+const quelle = path.join(wurzel, 'src/lib/designer/Druckvorschau.svelte');
 if (!fs.existsSync(quelle)) abbruch(`${quelle} gibt es nicht mehr.`);
 const markup = fs.readFileSync(quelle, 'utf8');
 
@@ -52,7 +52,7 @@ for (const [, liste] of markup.matchAll(/class="(print-rendered-output[^"]*)"/g)
 	// wörtlich in der Prüfseite — alles andere wäre Markup-Injektion in das Gate
 	// (CodeQL #22) und ohnehin ein Zeichen, dass der Regex daneben gegriffen hat.
 	if (!/^[-\w :./![\]%]+$/.test(liste)) {
-		abbruch(`Klassenliste mit unerwarteten Zeichen in PrintPreview.svelte: "${liste}"`);
+		abbruch(`Klassenliste mit unerwarteten Zeichen in Druckvorschau.svelte: "${liste}"`);
 	}
 	const name = /print-section-[a-z0-9-]+/.exec(liste)?.[0];
 	if (name) klassen[name] = liste;
@@ -60,7 +60,7 @@ for (const [, liste] of markup.matchAll(/class="(print-rendered-output[^"]*)"/g)
 const ERWARTET = ['print-section-card', 'print-section-back-card'];
 for (const name of ERWARTET) {
 	if (!klassen[name])
-		abbruch(`PrintPreview.svelte führt keine Sektion "${name}" mehr — Gate veraltet.`);
+		abbruch(`Druckvorschau.svelte führt keine Sektion "${name}" mehr — Gate veraltet.`);
 }
 
 // --- 2. Svelte-Scope-Klasse aus dem gebauten CSS holen ------------------------------

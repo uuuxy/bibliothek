@@ -344,7 +344,7 @@ Vermerk.
   `bg-surface` fällt durch. Drei Stellen tragen so `rounded-2xl`: in der Buchakte das Formular
   „Schüler vormerken" (`BuchakteVormerkungen.svelte`), im Mahnwesen der Kasten „Keine offenen
   Schadensersatz-Fälle" (`BescheideTabelle.svelte`), im Ausweis-Designer die Auswahl
-  (`designer/ToolbarAuswahl.svelte`). Nächster Schritt: die Erkennung auf den ganzen Rahmen
+  (`designer/WerkzeugleisteAuswahl.svelte`). Nächster Schritt: die Erkennung auf den ganzen Rahmen
   erweitern und die drei auf `rounded-xl` stellen; der Sperrbildschirm trägt als Dialog 28 px
   und bleibt. Sichtbar sind je 4 px an der Ecke. Kategorie B.
 - **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Alle zehn Jobs der vier

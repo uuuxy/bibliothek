@@ -1,8 +1,8 @@
 <script>
 	import { strichcodeBildUrl } from '../../strichcodeBild.js';
 	import { etikettFormat } from '../../etikettformate.js';
-	import { labelStore } from '../../stores/labels.svelte.js';
-	import { printQueue } from '../../stores/printQueue.svelte.js';
+	import { labelStore } from '../../stores/etiketten.svelte.js';
+	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 
 	// Das Blatt ist in echten Millimetern gezeichnet, zwei Drittel von A4. Ist die Spalte
 	// schmaler, wird es als Ganzes verkleinert (wie designer/VorlageMiniatur); die Hülle nimmt
@@ -34,7 +34,7 @@
 		>A4 Etiketten-Vorschau · {format.kurz}</span
 	>
 
-	{#if !labelStore.selectedTitle && (printQueue.copies?.length ?? 0) === 0}
+	{#if !labelStore.selectedTitle && (druckWarteschlange.copies?.length ?? 0) === 0}
 		<div class="grow flex flex-col items-center justify-center text-on-surface-variant py-12">
 			<span>Kein Buch ausgewählt</span>
 			<span class="mt-1 text-xs text-on-surface-variant"

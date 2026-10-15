@@ -32,7 +32,7 @@ function routenKomponenten() {
 // Nur Elemente auf der OBERSTEN Ebene: Was in einer Karte, einem Dialog oder einem
 // Snippet steht, darf sehr wohl eine Flaeche haben — das ist ja der Sinn einer Karte.
 // (Ein frueherer Anlauf las die erste `class=`-Zeile nach dem </script> und griff
-// deshalb daneben: bei Mahnwesen traf er einen Toast, bei StatsDashboard ein <svg>.)
+// deshalb daneben: bei Mahnwesen traf er einen Toast, bei Statistik ein <svg>.)
 const OBERSTE_ELEMENTE = /^<[a-zA-Z][^>]*>/gm;
 const VERBOTEN = /\bbg-|\bmax-w-/;
 
@@ -74,7 +74,7 @@ describe('Seitengeruest', () => {
 	it('gibt keiner Route einen eigenen Seitentitel', () => {
 		// Genau eine Ausnahme, und die ist keine: Die Statistik-Detailseite sagt, WELCHE
 		// Liste man sieht (Renner oder Ladenhueter). Das kann die Navigation nicht.
-		const AUSNAHMEN = ['lib/components/stats/StatistikDetailPage.svelte'];
+		const AUSNAHMEN = ['lib/components/statistik/StatistikDetail.svelte'];
 
 		const gefunden = routenKomponenten()
 			.filter((pfad) => /<h1\b/.test(readFileSync(pfad, 'utf8')))

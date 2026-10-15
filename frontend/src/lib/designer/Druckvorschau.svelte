@@ -1,6 +1,6 @@
 <script>
 	/**
-	 * @file PrintPreview.svelte
+	 * @file Druckvorschau.svelte
 	 * Versteckte Druck-Ausgabe-Sektionen (Ausweis-Designer, Stapeldruck der Schülerdatei),
 	 * die von der Druck-Engine gerendert werden. Der Auslöser setzt data-print-mode/-side
 	 * am <body>; die CSS unten und styles/druck-ausweise.css zeigen die passende Sektion.
@@ -13,17 +13,17 @@
 	 * Etikettenbogen, und der entsteht serverseitig als PDF (schuelerEtiketten.js) und
 	 * nicht über die Druck-CSS des Browsers. Deshalb bleiben hier nur die zwei Karten.
 	 *
-	 * Jede Sektion rendert pro Schüler eine Karte über CardFace — dieselbe Render-Quelle
+	 * Jede Sektion rendert pro Schüler eine Karte über Kartenseite — dieselbe Render-Quelle
 	 * wie der profilseitige Einzeldruck (Ausweiskarte).
 	 */
 	import { idStore } from './idDesignerStore.svelte.js';
-	import CardFace from './CardFace.svelte';
+	import Kartenseite from './Kartenseite.svelte';
 	import { kartenStil } from './kartenFarben.js';
 
 	/**
 	 * `platzhalter` reicht der Ausweis-Designer durch: Sein Testdruck soll leere Bild- und
 	 * Passbildfelder als Rahmen zeigen, der echte Stapeldruck aus der Schuelerdatei
-	 * niemals (siehe CardFace.svelte).
+	 * niemals (siehe Kartenseite.svelte).
 	 *
 	 * @type {{ students: any[], barcodeType: 'code39'|'qr', timestamp: number, platzhalter?: boolean }}
 	 */
@@ -34,7 +34,7 @@
 <div class="print-rendered-output print-section-card hidden print:block">
 	{#each students as student (student.id)}
 		<div class="print-card-box" style={kartenStil(idStore.front.theme)}>
-			<CardFace side="front" {student} {barcodeType} {timestamp} {platzhalter} />
+			<Kartenseite side="front" {student} {barcodeType} {timestamp} {platzhalter} />
 		</div>
 	{/each}
 </div>
@@ -43,7 +43,7 @@
 <div class="print-rendered-output print-section-back-card hidden">
 	{#each students as _student (_student.id)}
 		<div class="print-card-box" style={kartenStil(idStore.back.theme)}>
-			<CardFace side="back" student={null} {barcodeType} {timestamp} {platzhalter} />
+			<Kartenseite side="back" student={null} {barcodeType} {timestamp} {platzhalter} />
 		</div>
 	{/each}
 </div>

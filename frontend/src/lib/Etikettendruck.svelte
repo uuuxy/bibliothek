@@ -1,9 +1,9 @@
 <script>
 	import { Printer } from '@lucide/svelte';
 	import { onMount } from 'svelte';
-	import { labelStore } from './stores/labels.svelte.js';
-	import LabelSettings from './components/labels/LabelSettings.svelte';
-	import LabelPreview from './components/labels/LabelPreview.svelte';
+	import { labelStore } from './stores/etiketten.svelte.js';
+	import EtikettEinstellungen from './components/etiketten/EtikettEinstellungen.svelte';
+	import EtikettVorschau from './components/etiketten/EtikettVorschau.svelte';
 	import Button from './components/ui/Button.svelte';
 
 	onMount(() => {
@@ -13,8 +13,8 @@
 
 <div class="w-full space-y-6 no-print text-on-surface animate-fade-in">
 	<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-		<LabelSettings />
-		<LabelPreview />
+		<EtikettEinstellungen />
+		<EtikettVorschau />
 	</div>
 
 	<!-- Der Druckknopf steht am Ende: Er wird erst scharf, wenn ein Titel gewählt ist, und
