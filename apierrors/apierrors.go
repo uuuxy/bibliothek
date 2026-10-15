@@ -134,9 +134,10 @@ func MitFehlerantwort(tuer TuerMitFehler) http.HandlerFunc {
 }
 
 // AntworteFehler schreibt den Fehler ins Log und antwortet mit einer Meldung, die keine
-// Einzelheit des Servers verrät. Unter 500 ist der Text des Fehlers die Meldung; heraus
-// gefiltert wird nur, was istDatenbankFehler erkennt. Gehört die Ursache eines Fehlers nicht
-// an die Oberfläche, nimmt der Rufer AntworteFehlerMitMeldung.
+// Einzelheit des Servers verrät. Unter 500 ist die Meldung eines Fehlers vom Typ Fehler in der
+// Kette die Meldung, sonst der Text des Fehlers; heraus gefiltert wird nur, was
+// istDatenbankFehler erkennt. Gehört die Ursache eines Fehlers nicht an die Oberfläche, nimmt
+// der Rufer AntworteFehlerMitMeldung.
 func AntworteFehler(w http.ResponseWriter, status int, ursache error) {
 	AntworteFehlerMitMeldung(w, status, "", ursache)
 }
@@ -145,7 +146,8 @@ func AntworteFehler(w http.ResponseWriter, status int, ursache error) {
 // Meldung geht hinaus, die Ursache ganz ins Log. Der Rufer nennt den Satz, weil eine Ursache wie
 // ein Verbindungsabriss weder SQL noch eine Bedingung nennt und am Filter vorbeiginge.
 //
-// Eine leere Meldung nimmt den Text des Fehlers. Ohne Ursache steht die Meldung im Log, wie sonst
+// Eine leere Meldung nimmt die Meldung eines Fehlers vom Typ Fehler in der Kette, wie
+// MitFehlerantwort, sonst den Text des Fehlers. Ohne Ursache steht die Meldung im Log, wie sonst
 // die Ursache. Ein 500 bleibt auch mit Meldung neutral; eine Diagnose braucht 400, 409 oder 502.
 func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string, ursache error) {
 	if istAbbruch(ursache) {
@@ -162,9 +164,12 @@ func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string,
 	}
 
 	if status != http.StatusInternalServerError {
+		var fehler *Fehler
 		switch {
 		case meldung != "":
 			text = meldung
+		case errors.As(ursache, &fehler):
+			text = fehler.Meldung
 		case ursache != nil:
 			text = ursache.Error()
 		}

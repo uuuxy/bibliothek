@@ -226,3 +226,25 @@ func TestAntworteFehlerMitMeldung_OhneUrsacheWieMitFehlerwert(t *testing.T) {
 		t.Errorf("logZeile ohne Meldung und Ursache = %q, erwartet keinen Eintrag", zeile)
 	}
 }
+
+// Eine Prüfung neben der Tür liefert ihren Satz als Fehler mit Meldung. AntworteFehler schickt
+// diese Meldung hinaus wie MitFehlerantwort, auch wenn der Fehler eine Ursache trägt oder
+// eingewickelt ist; die Ursache steht nur im Log.
+func TestAntworteFehler_FehlerMitMeldungSchicktDieMeldung(t *testing.T) {
+	ursache := errors.New("leser.klasse leer")
+	for name, err := range map[string]error{
+		"ohne Ursache": BadRequest("Klasse fehlt.", nil),
+		"mit Ursache":  BadRequest("Klasse fehlt.", ursache),
+		"eingewickelt": fmt.Errorf("leser anlegen: %w", BadRequest("Klasse fehlt.", ursache)),
+	} {
+		rec := httptest.NewRecorder()
+		AntworteFehler(rec, http.StatusBadRequest, err)
+		if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "Klasse fehlt." {
+			t.Errorf("%s: AntworteFehler = %q, erwartet %q", name, meldung, "Klasse fehlt.")
+		}
+		zeile, ok := logZeile(http.StatusBadRequest, "", err)
+		if !ok || !strings.Contains(zeile, "Klasse fehlt.") {
+			t.Errorf("%s: logZeile = %q, %v, erwartet einen Eintrag mit der Meldung", name, zeile, ok)
+		}
+	}
+}
