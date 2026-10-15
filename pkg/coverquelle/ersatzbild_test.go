@@ -4,43 +4,22 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
 
 func TestIstErsatzbild(t *testing.T) {
-	bild := []byte("irgendein bild")
-	if IstErsatzbild(bild) {
-		t.Fatal("ein unbekanntes Bild gilt als Ersatzbild")
-	}
-	vergiss := MerkeErsatzbildFuerTest(bild)
-	if !IstErsatzbild(bild) {
-		t.Error("das gemerkte Bild wird nicht erkannt")
-	}
-	if IstErsatzbild([]byte("ein anderes bild")) {
-		t.Error("ein anderes Bild gilt als Ersatzbild")
-	}
-	vergiss()
-	if IstErsatzbild(bild) {
-		t.Error("nach dem Zurücknehmen gilt das Bild weiter als Ersatzbild")
+	if IstErsatzbild([]byte("irgendein bild")) {
+		t.Error("IstErsatzbild(irgendein bild) = true, erwartet false")
 	}
 	if len(ersatzbilder) != 2 {
 		t.Errorf("%d Ersatzbilder in der Liste, erwartet die zwei von Google Books", len(ersatzbilder))
 	}
-}
-
-// Zurückgenommen wird nur die eigene Angabe: Stand das Bild schon in der Liste, steht es
-// danach weiter dort. Sonst fehlte allen späteren Tests des Pakets ein Eintrag des Programms.
-func TestMerkeErsatzbildFuerTest_BekanntesBildBleibtBekannt(t *testing.T) {
-	bild := []byte("ein bild, das schon in der liste steht")
-	summe := pruefsumme(bild)
-	ersatzbilder[summe] = true
-	t.Cleanup(func() { delete(ersatzbilder, summe) })
-
-	MerkeErsatzbildFuerTest(bild)()
-
-	if !IstErsatzbild(bild) {
-		t.Error("das Zurücknehmen hat einen Eintrag entfernt, der vorher schon galt")
+	for summe := range ersatzbilder {
+		if len(summe) != 64 || strings.Trim(summe, "0123456789abcdef") != "" {
+			t.Errorf("Eintrag %q ist keine SHA-256 in Kleinbuchstaben; pruefsumme träfe ihn nie", summe)
+		}
 	}
 }
 

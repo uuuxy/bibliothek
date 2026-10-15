@@ -50,9 +50,8 @@ const coverDownloadsProSekunde = 30
 // coverDownloadBremse bremst die Fehltreffer je Adresse des Aufrufers.
 var coverDownloadBremse = ratelimit.New(coverDownloadsProSekunde)
 
-// coverCacheVerzeichnis ist eine Variable, damit Tests den Cache in ein Wegwerf-
-// Verzeichnis legen können, ohne das Arbeitsverzeichnis zu wechseln.
-var coverCacheVerzeichnis = "uploads/covers"
+// coverCacheVerzeichnis ist die Ablage der umgewandelten Cover im Betrieb.
+const coverCacheVerzeichnis = "uploads/covers"
 
 // istCoverCacheSchluessel prüft den vom Aufrufer gewählten Namen, bevor daraus ein Dateiname
 // wird. Zulässig sind Ziffern, Trennstriche und ein abschließendes X (Prüfziffer der ISBN-10),
@@ -125,26 +124,56 @@ func baueSichereCoverURL(adresse string) (string, bool) {
 // braucht.
 var coverHTTPClient = safehttp.NewClient(20 * time.Second)
 
-// holeUndKonvertiereCover lädt das Cover herunter und legt es als WebP im Cache-Verzeichnis
-// ab; eine angefangene Datei entfernt schreibeCoverAlsWebP bei einem Fehler wieder.
-func holeUndKonvertiereCover(ctx context.Context, root *os.Root, adresse, dateiname string) error {
-	rohBytes, err := holeCoverBytes(ctx, adresse)
+// coverAbruf ist, womit die Tür ein Cover holt, erkennt und ablegt. Der Nullwert ist der
+// Betrieb; ein Test setzt einen Client gegen eine Attrappe, eine Ablage im Wegwerf-Ordner oder
+// ein eigenes Ersatzbild, ohne Zustand anderer Tests zu berühren.
+type coverAbruf struct {
+	client        *http.Client      // nil: coverHTTPClient
+	verzeichnis   string            // leer: coverCacheVerzeichnis
+	istErsatzbild func([]byte) bool // nil: coverquelle.IstErsatzbild
+}
+
+func (c coverAbruf) httpClient() *http.Client {
+	if c.client != nil {
+		return c.client
+	}
+	return coverHTTPClient
+}
+
+func (c coverAbruf) ablage() string {
+	if c.verzeichnis != "" {
+		return c.verzeichnis
+	}
+	return coverCacheVerzeichnis
+}
+
+func (c coverAbruf) ersatzbild(antwort []byte) bool {
+	if c.istErsatzbild != nil {
+		return c.istErsatzbild(antwort)
+	}
+	return coverquelle.IstErsatzbild(antwort)
+}
+
+// holeUndKonvertiere lädt das Cover herunter und legt es als WebP im Cache-Verzeichnis ab;
+// eine angefangene Datei entfernt schreibeCoverAlsWebP bei einem Fehler wieder.
+func (c coverAbruf) holeUndKonvertiere(ctx context.Context, root *os.Root, adresse, dateiname string) error {
+	rohBytes, err := c.holeBytes(ctx, adresse)
 	if err != nil {
 		return err
 	}
 	return schreibeCoverAlsWebP(root, dateiname, rohBytes)
 }
 
-// holeCoverBytes holt die Antwort der Quelle und weist ab, was kein Cover ist, bevor
-// irgendetwas dekodiert wird.
-func holeCoverBytes(ctx context.Context, adresse string) ([]byte, error) {
+// holeBytes holt die Antwort der Quelle und weist ab, was kein Cover ist, bevor irgendetwas
+// dekodiert wird.
+func (c coverAbruf) holeBytes(ctx context.Context, adresse string) ([]byte, error) {
 	anfrage, err := http.NewRequestWithContext(ctx, http.MethodGet, adresse, nil)
 	if err != nil {
 		return nil, err
 	}
 	anfrage.Header.Set("User-Agent", "Inventur/1.0")
 
-	antwort, err := coverHTTPClient.Do(anfrage)
+	antwort, err := c.httpClient().Do(anfrage)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +205,7 @@ func holeCoverBytes(ctx context.Context, adresse string) ([]byte, error) {
 	}
 	// Ein Ersatzbild der Quelle ist kein Cover: Der Aufrufer zeigt dann die nächste Quelle
 	// oder die Initiale des Titels.
-	if coverquelle.IstErsatzbild(rohBytes) {
+	if c.ersatzbild(rohBytes) {
 		return nil, errors.New("cover download: die Quelle hat zu dieser ISBN kein Cover (Ersatzbild)")
 	}
 	if err := imageutil.PruefeBildgroesse(rohBytes); err != nil {
@@ -245,7 +274,7 @@ func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	verzeichnis := coverCacheVerzeichnis
+	verzeichnis := t.cover.ablage()
 	if err := os.MkdirAll(verzeichnis, 0750); err != nil {
 		liefereTransparentesGIF(w)
 		return
@@ -293,7 +322,7 @@ func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fehlt es, laden und umwandeln.
-	if err := holeUndKonvertiereCover(r.Context(), root, sichereURL, dateiname); err != nil {
+	if err := t.cover.holeUndKonvertiere(r.Context(), root, sichereURL, dateiname); err != nil {
 		liefereTransparentesGIF(w)
 		return
 	}

@@ -18,7 +18,6 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
-	"bibliothek/pkg/coverquelle"
 
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -45,9 +44,9 @@ func pngEinfarbig(t *testing.T, c color.RGBA) []byte {
 	return b.Bytes()
 }
 
-// coverQuelleAttrappe biegt coverHTTPClient auf einen lokalen TLS-Server um, der je Pfad ein
-// anderes Bild liefert, und zählt die Downloads.
-func coverQuelleAttrappe(t *testing.T) *int {
+// coverQuelleAttrappe liefert einen Abruf gegen einen lokalen TLS-Server, der je Pfad ein
+// anderes Bild liefert, mit einer Ablage im Wegwerf-Ordner, und zählt die Downloads.
+func coverQuelleAttrappe(t *testing.T) (*int, coverAbruf) {
 	t.Helper()
 	downloads := 0
 	rot := pngEinfarbig(t, color.RGBA{255, 0, 0, 255})
@@ -65,19 +64,13 @@ func coverQuelleAttrappe(t *testing.T) *int {
 	}))
 	t.Cleanup(stub.Close)
 
-	orig := coverHTTPClient
-	coverHTTPClient = &http.Client{Transport: &http.Transport{
+	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec // Wegwerf-Zertifikat des Teststubs
 		DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
 			return net.Dial("tcp", stub.Listener.Addr().String())
 		},
 	}}
-	t.Cleanup(func() { coverHTTPClient = orig })
-
-	origDir := coverCacheVerzeichnis
-	coverCacheVerzeichnis = t.TempDir() + "/covers"
-	t.Cleanup(func() { coverCacheVerzeichnis = origDir })
-	return &downloads
+	return &downloads, coverAbruf{client: client, verzeichnis: t.TempDir() + "/covers"}
 }
 
 func mockPool(t *testing.T) pgxmock.PgxPoolIface {
@@ -107,9 +100,9 @@ func erwarteKatalog(mock pgxmock.PgxPoolIface, coverURLs ...string) {
 }
 
 func TestCover_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
-	downloads := coverQuelleAttrappe(t)
+	downloads, abruf := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}, cover: abruf}
 
 	echt := "https://covers.openlibrary.org/b/isbn/" + testISBN + "-L.jpg"
 	erwarteKatalog(mock, echt)
@@ -127,9 +120,9 @@ func TestCover_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
 }
 
 func TestCover_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
-	downloads := coverQuelleAttrappe(t)
+	downloads, abruf := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}, cover: abruf}
 
 	// Gespeichert ist die http-Form mit Trennstrich-ISBN — der Vergleich läuft über die
 	// geprüfte Form, nicht den rohen Text.
@@ -151,9 +144,9 @@ func TestCover_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
 // Zwei erlaubte Adressen derselben ISBN teilen sich keine Datei: Wer die eine zuerst
 // holt, bestimmt nicht, was unter der anderen liegt.
 func TestCover_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
-	coverQuelleAttrappe(t)
+	_, abruf := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}, cover: abruf}
 
 	kandidaten := coverKandidatenFuerISBN(testISBN)
 	erwarteKatalog(mock, "") // ISBN im Katalog, aber ohne gespeichertes Cover
@@ -161,7 +154,7 @@ func TestCover_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
 	erwarteKatalog(mock, "")
 	holeCover(s, testISBN, kandidaten[1])
 
-	eintraege, err := os.ReadDir(coverCacheVerzeichnis)
+	eintraege, err := os.ReadDir(abruf.verzeichnis)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,9 +166,9 @@ func TestCover_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
 // Ohne Anmeldung nur Katalog-ISBNs: Sonst wäre der Endpunkt ein Plattenfüller — jede
 // erfundene Nummer eine Datei.
 func TestCover_UnbekannteISBNOhneAnmeldungWirdNichtGeladen(t *testing.T) {
-	downloads := coverQuelleAttrappe(t)
+	downloads, abruf := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}, cover: abruf}
 
 	mock.ExpectQuery("FROM buecher_titel WHERE regexp_replace").WithArgs("9780000000001").
 		WillReturnRows(pgxmock.NewRows([]string{"cover_url"}))
@@ -188,8 +181,8 @@ func TestCover_UnbekannteISBNOhneAnmeldungWirdNichtGeladen(t *testing.T) {
 
 // Ohne erreichbare Datenbank wird nichts geholt — im Zweifel kein Download.
 func TestCover_OhneDatenbankKeinDownload(t *testing.T) {
-	downloads := coverQuelleAttrappe(t)
-	s := &Tueren{Basis: &tuer.Basis{}}
+	downloads, abruf := coverQuelleAttrappe(t)
+	s := &Tueren{Basis: &tuer.Basis{}, cover: abruf}
 	rr := holeCover(s, testISBN, coverKandidatenFuerISBN(testISBN)[1])
 	if !bytes.Equal(rr.Body.Bytes(), transparentesGIF) || *downloads != 0 {
 		t.Fatalf("Download ohne Datenbank (Downloads %d)", *downloads)
@@ -222,11 +215,12 @@ func TestCoverKandidaten_MusterGleichWieImFrontend(t *testing.T) {
 // mit „image not available" in voller Größe und Status 200. Das Ersatzbild wird nicht als
 // Cover abgelegt; der Aufrufer bekommt das 1×1-GIF und geht zur nächsten Quelle.
 func TestCover_ErsatzbildWirdNichtAlsCoverAbgelegt(t *testing.T) {
-	downloads := coverQuelleAttrappe(t)
+	downloads, abruf := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
-	// Der Stub antwortet auf jede Adresse mit demselben blauen Bild.
-	t.Cleanup(coverquelle.MerkeErsatzbildFuerTest(pngEinfarbig(t, color.RGBA{0, 0, 255, 255})))
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}, cover: abruf}
+	// Der Stub antwortet auf jede Adresse mit demselben blauen Bild; das gilt hier als Ersatzbild.
+	blau := pngEinfarbig(t, color.RGBA{0, 0, 255, 255})
+	s.cover.istErsatzbild = func(antwort []byte) bool { return bytes.Equal(antwort, blau) }
 
 	erwarteKatalog(mock, "") // ISBN im Katalog, ohne gespeichertes Cover
 	rr := holeCover(s, testISBN, coverKandidatenFuerISBN(testISBN)[0])
@@ -237,7 +231,7 @@ func TestCover_ErsatzbildWirdNichtAlsCoverAbgelegt(t *testing.T) {
 	if *downloads != 1 {
 		t.Errorf("Downloads = %d; erwartet 1 — gefragt wird die Quelle, abgelegt wird nichts", *downloads)
 	}
-	if eintraege, err := os.ReadDir(coverCacheVerzeichnis); err != nil || len(eintraege) != 0 {
+	if eintraege, err := os.ReadDir(abruf.verzeichnis); err != nil || len(eintraege) != 0 {
 		t.Errorf("Dateien im Zwischenspeicher: %d (%v), erwartet keine", len(eintraege), err)
 	}
 }

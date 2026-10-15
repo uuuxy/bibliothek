@@ -13,4 +13,6 @@ import "bibliothek/api/tuer"
 // Zeiger: Datenbank, Anmeldung, Live-Leitung und Uhr gibt es so einmal, für jedes Thema dieselben.
 type Tueren struct {
 	*tuer.Basis
+	// cover holt Cover von fremden Quellen; der Nullwert ist der Betrieb.
+	cover coverAbruf
 }

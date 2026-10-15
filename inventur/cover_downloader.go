@@ -36,8 +36,9 @@ const coverAbruferKennung = "Inventur/1.0"
 const openLibraryLeeresCover = "https://covers.openlibrary.org/b/isbn/-L.jpg"
 
 // ladeCoverBytes lädt die Bilddaten einer whitelisteten Cover-URL (SSRF-Schutz) und
-// verwirft Nicht-Bild-Antworten (Bot-Schranken-HTML). Liefert nil bei jedem Fehler.
-func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) []byte {
+// verwirft Nicht-Bild-Antworten (Bot-Schranken-HTML) und Ersatzbilder der Quelle, die
+// istErsatzbild erkennt. Liefert nil bei jedem Fehler.
+func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string, istErsatzbild func([]byte) bool) []byte {
 	if coverURL == "" || coverURL == openLibraryLeeresCover {
 		return nil
 	}
@@ -88,7 +89,7 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 		return nil
 	}
 	// Ein Ersatzbild der Quelle ist kein Cover; die nächste Quelle ist dran.
-	if coverquelle.IstErsatzbild(inhalt) {
+	if istErsatzbild(inhalt) {
 		return nil
 	}
 	return inhalt
@@ -117,7 +118,7 @@ func speichereCoverDatei(fertig []byte, isbn, endung string) string {
 // und gibt den lokalen Pfad zurück. Im Fehlerfall oder wenn es sich um Platzhalter handelt,
 // wird die Original-URL (oder leer) zurückgegeben.
 func speichereCoverLokal(ctx context.Context, client *http.Client, coverURL string, isbn string) string {
-	inhalt := ladeCoverBytes(ctx, client, coverURL)
+	inhalt := ladeCoverBytes(ctx, client, coverURL, coverquelle.IstErsatzbild)
 	if inhalt == nil {
 		return ""
 	}

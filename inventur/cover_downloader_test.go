@@ -22,7 +22,7 @@ func TestLadeCoverBytes(t *testing.T) {
 
 	t.Run("empty url", func(t *testing.T) {
 		client := &http.Client{}
-		ergebnis := ladeCoverBytes(ctx, client, "")
+		ergebnis := ladeCoverBytes(ctx, client, "", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
 			t.Errorf("expected nil, got %v", ergebnis)
 		}
@@ -30,7 +30,7 @@ func TestLadeCoverBytes(t *testing.T) {
 
 	t.Run("openLibrary placeholder url", func(t *testing.T) {
 		client := &http.Client{}
-		ergebnis := ladeCoverBytes(ctx, client, openLibraryLeeresCover)
+		ergebnis := ladeCoverBytes(ctx, client, openLibraryLeeresCover, coverquelle.IstErsatzbild)
 		if ergebnis != nil {
 			t.Errorf("expected nil, got %v", ergebnis)
 		}
@@ -38,7 +38,7 @@ func TestLadeCoverBytes(t *testing.T) {
 
 	t.Run("invalid url format", func(t *testing.T) {
 		client := &http.Client{}
-		ergebnis := ladeCoverBytes(ctx, client, "http://%42")
+		ergebnis := ladeCoverBytes(ctx, client, "http://%42", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
 			t.Errorf("expected nil, got %v", ergebnis)
 		}
@@ -46,7 +46,7 @@ func TestLadeCoverBytes(t *testing.T) {
 
 	t.Run("disallowed host", func(t *testing.T) {
 		client := &http.Client{}
-		ergebnis := ladeCoverBytes(ctx, client, "https://evil.com/img.png")
+		ergebnis := ladeCoverBytes(ctx, client, "https://evil.com/img.png", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
 			t.Errorf("expected nil, got %v", ergebnis)
 		}
@@ -60,7 +60,7 @@ func TestLadeCoverBytes(t *testing.T) {
 				},
 			},
 		}
-		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
+		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
 			t.Errorf("expected nil, got %v", ergebnis)
 		}
@@ -77,7 +77,7 @@ func TestLadeCoverBytes(t *testing.T) {
 				},
 			},
 		}
-		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
+		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
 			t.Errorf("expected nil, got %v", ergebnis)
 		}
@@ -97,7 +97,7 @@ func TestLadeCoverBytes(t *testing.T) {
 				},
 			},
 		}
-		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
+		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
 			t.Errorf("expected nil, got %v", ergebnis)
 		}
@@ -118,7 +118,7 @@ func TestLadeCoverBytes(t *testing.T) {
 				},
 			},
 		}
-		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
+		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
 		if !bytes.Equal(ergebnis, expectedBytes) {
 			t.Errorf("expected %v, got %v", expectedBytes, ergebnis)
 		}
@@ -138,11 +138,11 @@ func TestLadeCoverBytes_ErsatzbildIstKeinCover(t *testing.T) {
 	}}
 	const adresse = "https://books.google.com/books/content?vid=ISBN:9783551551672&printsec=frontcover&img=1&zoom=1"
 
-	if got := ladeCoverBytes(context.Background(), client, adresse); !bytes.Equal(got, bild) {
+	if got := ladeCoverBytes(context.Background(), client, adresse, coverquelle.IstErsatzbild); !bytes.Equal(got, bild) {
 		t.Fatalf("ein gewöhnliches Bild kommt nicht an: %q", got)
 	}
-	t.Cleanup(coverquelle.MerkeErsatzbildFuerTest(bild))
-	if got := ladeCoverBytes(context.Background(), client, adresse); got != nil {
+	istErsatzbild := func(antwort []byte) bool { return bytes.Equal(antwort, bild) }
+	if got := ladeCoverBytes(context.Background(), client, adresse, istErsatzbild); got != nil {
 		t.Errorf("das Ersatzbild kommt als Cover zurück (%d Bytes)", len(got))
 	}
 }

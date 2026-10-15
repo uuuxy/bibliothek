@@ -35,9 +35,7 @@ func TestHoleUndKonvertiereCover_AbweisungenLegenNichtsAb(t *testing.T) {
 		}
 	}))
 	t.Cleanup(stub.Close)
-	orig := coverHTTPClient
-	coverHTTPClient = stub.Client()
-	t.Cleanup(func() { coverHTTPClient = orig })
+	abruf := coverAbruf{client: stub.Client()}
 
 	root, err := os.OpenRoot(t.TempDir())
 	if err != nil {
@@ -55,7 +53,7 @@ func TestHoleUndKonvertiereCover_AbweisungenLegenNichtsAb(t *testing.T) {
 		{"/zu-gross", "überschreitet 10 MB"},
 		{"/kein-bild", "Bild-Header"},
 	} {
-		err := holeUndKonvertiereCover(context.Background(), root, stub.URL+f.pfad, "cover.webp")
+		err := abruf.holeUndKonvertiere(context.Background(), root, stub.URL+f.pfad, "cover.webp")
 		if err == nil || !strings.Contains(err.Error(), f.meldung) {
 			t.Errorf("%s: Fehler %v, erwartet eine Abweisung mit %q", f.pfad, err, f.meldung)
 		}
@@ -64,7 +62,7 @@ func TestHoleUndKonvertiereCover_AbweisungenLegenNichtsAb(t *testing.T) {
 		}
 	}
 
-	if err := holeUndKonvertiereCover(context.Background(), root, stub.URL+"/bild", "cover.webp"); err != nil {
+	if err := abruf.holeUndKonvertiere(context.Background(), root, stub.URL+"/bild", "cover.webp"); err != nil {
 		t.Fatalf("ein Bild wird abgewiesen: %v", err)
 	}
 	if info, err := root.Stat("cover.webp"); err != nil || info.Size() == 0 {

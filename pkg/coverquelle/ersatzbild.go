@@ -25,18 +25,9 @@ func pruefsumme(antwort []byte) string {
 }
 
 // IstErsatzbild sagt, ob die Antwort einer Cover-Quelle eines der bekannten Ersatzbilder ist.
+// Die Liste ändert sich zur Laufzeit nicht; wer ein eigenes Bild als Ersatzbild prüfen will,
+// gibt dem Abruf eine eigene Erkennung (die echten stehen als Prüfsumme im Programm, nicht als
+// Datei im Repository).
 func IstErsatzbild(antwort []byte) bool {
 	return ersatzbilder[pruefsumme(antwort)]
-}
-
-// MerkeErsatzbildFuerTest lässt einen Test ein eigenes Bild als Ersatzbild gelten: Die echten
-// stehen als Prüfsumme im Programm, nicht als Datei im Repository. Der Rückgabewert nimmt
-// die Angabe zurück; ein Bild, das schon in der Liste stand, bleibt dort.
-func MerkeErsatzbildFuerTest(bild []byte) (vergiss func()) {
-	summe := pruefsumme(bild)
-	if ersatzbilder[summe] {
-		return func() { /* Das Bild stand schon in der Liste; es bleibt dort. */ }
-	}
-	ersatzbilder[summe] = true
-	return func() { delete(ersatzbilder, summe) }
 }
