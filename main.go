@@ -60,10 +60,10 @@ func startServer(port string, server *api.Server) *http.Server {
 		// Senden des Rumpfes: Wer korrekte Header schickt, "Content-Length: 10000000"
 		// ankündigt und danach ein Byte pro Minute nachreicht, hielt bisher Verbindung,
 		// Goroutine und ggf. eine Datenbankverbindung beliebig lange fest. Die
-		// TimeoutMiddleware half dagegen nicht — ein Kontext-Deadline bricht kein
+		// fristMiddleware half dagegen nicht — ein Kontext-Deadline bricht kein
 		// blockierendes Read auf der Verbindung ab.
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       api.StandardLesefrist,
+		ReadTimeout:       api.LesefristVorgabe,
 
 		// IdleTimeout gilt zwischen zwei Anfragen derselben Keep-Alive-Verbindung.
 		// Ohne den Wert übernimmt Go hier ReadTimeout — was funktioniert, aber die
@@ -75,7 +75,7 @@ func startServer(port string, server *api.Server) *http.Server {
 		// globaler Wert würde jede Live-Verbindung nach Ablauf kappen — die Oberfläche
 		// verlöre reihum ihre Aktualisierung, ohne dass ein Fehler sichtbar würde.
 		// Die Schreibrichtung begrenzt stattdessen Caddy (write_timeout 600s) und für
-		// die Bearbeitungsdauer die TimeoutMiddleware (api.RequestFrist).
+		// die Bearbeitungsdauer die fristMiddleware (api.anfrageFrist).
 	}
 
 	// Start server asynchronously

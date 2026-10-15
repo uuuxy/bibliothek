@@ -28,7 +28,7 @@ import (
 // Gemessen wird am Merkmal: jede Funktion in api/ und seinen Unterordnern, die SendEmail oder
 // den Versand aus mailservice erreicht, und jede Route, deren Anmeldung eine solche Funktion
 // nennt. Blind für einen Versand über ein Paket außerhalb von api/, für Routen außerhalb von
-// mux.Handle in routes*.go und router.go, für eine Adresse, die die Oberfläche aus Teilen
+// mux.Handle in routen*.go und router.go, für eine Adresse, die die Oberfläche aus Teilen
 // zusammensetzt, und dafür, ob die genannte Frist lang genug ist (das hält
 // TestMailFristen_DeckenDenVersandAb für die zwei Konstanten).
 func TestMailRouten_AufruferTragenEigeneFrist(t *testing.T) {
@@ -71,7 +71,7 @@ func TestMailFristen_DeckenDenVersandAb(t *testing.T) {
 		t.Errorf("FRIST_MAILVERSAND_MS ist %d ms, ein Versand darf %d ms dauern: Die Oberfläche gäbe "+
 			"vor dem Server auf", einzel, hoechstens)
 	}
-	if lang := int(LangLaufendeFrist / time.Millisecond); sammel != lang {
+	if lang := int(langLaufendeFrist / time.Millisecond); sammel != lang {
 		t.Errorf("FRIST_SAMMELVERSAND_MS ist %d ms, die Frist der lang laufenden Vorgänge %d ms", sammel, lang)
 	}
 }
@@ -241,9 +241,9 @@ var (
 // und behält die, die eine sendende Funktion nennen.
 func mailRouten(t *testing.T, sendet map[string]bool) []mailRoute {
 	t.Helper()
-	dateien, err := filepath.Glob("routes_*.go")
+	dateien, err := filepath.Glob("routen_*.go")
 	if err != nil {
-		t.Fatalf("glob routes_*.go: %v", err)
+		t.Fatalf("glob routen_*.go: %v", err)
 	}
 	var routen []mailRoute
 	gelesen := 0

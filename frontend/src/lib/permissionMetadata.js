@@ -2,7 +2,7 @@
 // Aus der Komponente ausgelagert (Daten statt Markup) — hält PermissionManager schlank.
 //
 // Jede Beschreibung nennt, was der Server unter diesem Recht tatsächlich freigibt —
-// abgelesen an den RequirePermission-Aufrufen in api/routes_*.go, nicht aus der
+// abgelesen an den verlangeRecht-Aufrufen in api/routen_*.go, nicht aus der
 // Erinnerung. Bis zum 24.08.2026 beschrieb z. B. edit_books nur „Schadensnotizen",
 // öffnete aber auch Barcode, Status, Aussonderung, Verlängerung, Geräte und
 // Systematik. Wer ein Recht anhand seines Textes erteilt, muss dem Text trauen können.

@@ -190,7 +190,7 @@ func (a *Authenticator) VerifyTokenTrotzSperre(tokenString string) (*Claims, err
 	// Die Rolle aus der DB überschreibt die im Token signierte. Genau hier lag eine
 	// Lücke: Deaktivieren wirkte sofort, eine HERABSTUFUNG aber nicht. Ein zum HELFER
 	// zurückgestufter Admin behielt seine Admin-Rechte, weil die Autorisierung
-	// (api.RequirePermission) claims.Rolle auswertet — bis zu 12 h lang, und über den
+	// (api.verlangeRecht) claims.Rolle auswertet — bis zu 12 h lang, und über den
 	// Sliding-Refresh, der die alte Rolle in jedes Folgetoken weiterschrieb, faktisch
 	// unbegrenzt. Der DB-Treffer dafür kostet nichts extra: Diese Abfrage lief für den
 	// aktiv-Status ohnehin schon bei jedem Request.
@@ -218,6 +218,6 @@ func (a *Authenticator) ladeKontoStatus(userID string) (Role, error) {
 		return "", errors.New("user account is deactivated")
 	}
 	// Großschreibung wie die Role-Konstanten; role_permissions vergleicht zwar per
-	// UPPER(), der Admin-Bypass in RequirePermission aber per EqualFold auf diesen Wert.
+	// UPPER(), der Admin-Bypass in verlangeRecht aber per EqualFold auf diesen Wert.
 	return Role(strings.ToUpper(strings.TrimSpace(rolle))), nil
 }

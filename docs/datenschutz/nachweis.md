@@ -126,15 +126,15 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 
 | Zusage                                                                                       | Test                                                                                                   |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Katalog, Monitor und Bilder liefern keine Personendaten; jede Adresse liefert höchstens ihre Stufe | `api/pii_antwort_gate_pg_test.go` ruft jede lesende Adresse mit dem Recht ihrer Zeile auf und sucht in der Antwort nach eingestreuten Prüfwerten |
-| Jede Adresse des Programms ist eingestuft und verlangt ein Recht                              | `api/pii_matrix_test.go`, `api/routes_authz_coverage_test.go`                                           |
+| Katalog, Monitor und Bilder liefern keine Personendaten; jede Adresse liefert höchstens ihre Stufe | `api/pii_antwort_pg_test.go` ruft jede lesende Adresse mit dem Recht ihrer Zeile auf und sucht in der Antwort nach eingestreuten Prüfwerten |
+| Jede Adresse des Programms ist eingestuft und verlangt ein Recht                              | `api/pii_matrix_test.go`, `api/geschuetzte_routen_test.go`                                           |
 | Ohne das Recht wird jeder schreibende Aufruf abgewiesen, auch am Menü vorbei                  | `api/rechte_schreibwege_pg_test.go`                                                                     |
 | Die Löschläufe halten Frist und Reihenfolge; Löschlauf und Warnung folgen derselben Regel     | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `jobs/cron_dsgvo_lesehistorie_pg_test.go`, `jobs/cron_dsgvo_anliegen_pg_test.go`, `jobs/cron_dsgvo_kulanz_pg_test.go`, `jobs/loeschrueckstand_paarung_pg_test.go`, `repository/nachtlauf_ratsche_test.go` |
 | Die Anonymisierung entfernt, was an der Person hängt                                          | `api/leser/dsgvo_paar_rundreise_pg_test.go` (Grenze: Abschnitt 9)                                              |
 | Die Auskunft druckt jede Angabe, die sie enthält; Protokolleinträge stehen in Worten da, ohne Kennungen des Programms und ohne das buchende Konto | `internal/auskunft/blatt_vollstaendig_test.go`, `api/leser/dsgvo_blatt_pg_test.go`, `repository/protokoll_auskunft_test.go` |
 | Eine Sicherung lässt sich zurückspielen                                                       | `jobs/backup_drill_pg_test.go`, `jobs/restore_probe_pg_test.go`; im Betrieb die Probe jeden Sonntag      |
 | Update und Sicherung von Hand löschen je nur ihre eigenen verschlüsselten Sicherungen; jeden unverschlüsselten Rest löschen und melden beide | `docs/backup_ablage_test.go`                                                                            |
-| Antworten mit Personendaten legt der Browser nicht ab                                       | `api/pii_antwort_gate_pg_test.go` verlangt an jeder lesenden Adresse ab Stufe 1 den Kopf `Cache-Control: no-store` |
+| Antworten mit Personendaten legt der Browser nicht ab                                       | `api/pii_antwort_pg_test.go` verlangt an jeder lesenden Adresse ab Stufe 1 den Kopf `Cache-Control: no-store` |
 | Mail geht nie unverschlüsselt hinaus                                                          | `mailservice/versand_test.go`                                                                           |
 | Die Theke leert sich und sperrt nach der eingestellten Zeit                                   | `frontend/src/lib/stores/idleLock.test.js`                                                              |
 

@@ -182,7 +182,7 @@ describe('Menü-Sichtbarkeit', () => {
 		//
 		// Der Test prüft die Sektion UND das Recht: Ein späterer Umzug soll nicht
 		// unbemerkt auch die Tür verschieben. Die Bestandsbücher hängen an view_books wie
-		// ihre vier Routen (api/routes_books.go); die Helfer haben view_orders ab Werk
+		// ihre vier Routen (api/routen_katalog.go); die Helfer haben view_orders ab Werk
 		// NICHT, ein Platz im Bestellwesen hätte sie ausgesperrt.
 		const gruppe = (/** @type {string} */ id) =>
 			menuGroups.find((g) => g.items.some((i) => i.id === id))?.name;

@@ -5,7 +5,7 @@ import { uiLogin } from './helpers.js';
 //
 // Nachgestellt am 14.09.2026: handleLogout schickt POST /api/auth/logout ab, verwirft jeden
 // Fehler und zeigt sofort die Anmeldung. Das Löschcookie setzt aber nur die Antwort des
-// Servers (api/logout_handler.go). Ohne Netz kommt keine an: Das HttpOnly-Cookie bleibt im
+// Servers (api/abmeldung.go). Ohne Netz kommt keine an: Das HttpOnly-Cookie bleibt im
 // Browser, und nach dem nächsten Neuladen mit Netz meldet restoreSession die vorige Person
 // wieder an. An einem geteilten Theken-Rechner arbeitet dann der Nächste unter fremdem Konto.
 //

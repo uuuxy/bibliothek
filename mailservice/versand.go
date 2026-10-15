@@ -22,7 +22,7 @@ import (
 // Fristen des SMTP-Transports. Ohne sie war smtp.Dial der klassische Ewig-Hänger
 // (Ausfallmatrix 20.08.2026): Ein Server, der die TCP-Verbindung annimmt und dann
 // schweigt (Firewall-Blackhole, überlasteter Relay), blockierte die Goroutine
-// unbegrenzt — die Context-Deadline der TimeoutMiddleware bricht kein blockierendes
+// unbegrenzt — die Context-Deadline der fristMiddleware bricht kein blockierendes
 // Read auf einem Socket ab. Am schwersten traf das den Kritisch-Alarm-Wächter selbst:
 // Hängt SendEmail dort, steht seine Ticker-Schleife für immer, und der Mechanismus,
 // der stille Ausfälle melden soll, ist selbst still ausgefallen.

@@ -22,9 +22,9 @@ Daneben stehen: `pdf/` setzt Blätter und Etiketten, `mailservice/` verschickt M
 läuft nachts, `auth/` meldet an. Die Tabellen der Datenbank beschreibt `schema.sql`, jede
 Änderung daran ist ein Schritt in `migrations/`.
 
-Welche Adresse zu welcher Tür führt und welches Recht sie verlangt, steht in fünf Listen:
-`api/routes_books.go`, `api/routes_students.go`, `api/routes_orders.go`,
-`api/routes_system.go` und `api/routes_misc.go`. Alle Adressen mit ihren Aufrufern in der
+Welche Adresse zu welcher Tür führt und welches Recht sie verlangt, steht in sechs Listen:
+`api/routen_katalog.go`, `api/routen_leser.go`, `api/routen_bestellung.go`,
+`api/routen_system.go`, `api/routen_oeffentlich.go` und `api/routen_theke.go`. Alle Adressen mit ihren Aufrufern in der
 Oberfläche nennt [api_inventar.md](api_inventar.md).
 
 ## Vom Menüpunkt zum Code
@@ -62,7 +62,7 @@ Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bi
 | eine Regel der Ausleihe ändern                | `internal/service/frist.go`, `internal/service/ausleih_sperren.go`                                                             |
 | eine Abfrage ändern                           | `repository/`, die Datei heißt wie die Sache (`repository/auflagen.go`)                                                             |
 | eine Tabelle oder Spalte ergänzen             | ein neuer Schritt in `migrations/` und derselbe Stand in `schema.sql`; `db/migrations_schema_paritaet_pg_test.go` hält beide gleich |
-| eine neue Adresse anlegen                     | die Tür im Ordner ihres Themas, Adresse und Recht in der passenden Liste `api/routes_*.go`                                          |
+| eine neue Adresse anlegen                     | die Tür im Ordner ihres Themas, Adresse und Recht in der passenden Liste `api/routen_*.go`                                          |
 | festlegen, was eine Rolle ab Werk darf        | `db/seed.go`                                                                                                                        |
 | einen Menüpunkt ändern                        | `frontend/src/lib/menu.js`                                                                                                          |
 | eine Kategorie der Einstellungen ändern       | `frontend/src/lib/components/settings/kategorien.js`                                                                                |

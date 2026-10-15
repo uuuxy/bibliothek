@@ -38,7 +38,7 @@ func TestNurSitzungRoutenSindBenannt(t *testing.T) {
 	// injizierte Fassung `config.RequireAuthenticated(…)` im inventur-Paket.
 	registrierung := regexp.MustCompile(`(?:handler\.)?mux\.Handle(?:Func)?\("([^"]+)"[^)]*(?:VerlangeAnmeldung|RequireAuthenticated)`)
 
-	dateien, err := filepath.Glob("routes_*.go")
+	dateien, err := filepath.Glob("routen_*.go")
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}

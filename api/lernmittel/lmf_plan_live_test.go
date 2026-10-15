@@ -28,7 +28,7 @@ func TestJederLMFPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 	handler := lmfPlanSchreibHandler(t)
 	if len(handler) < 3 {
 		t.Fatalf("nur %d schreibende LMF-Plan-Routen gefunden (%v) — erwartet mindestens 3 "+
-			"(speichern, verwerfen, veröffentlichen). Ist api/routes_books.go umformuliert? "+
+			"(speichern, verwerfen, veröffentlichen). Ist api/routen_katalog.go umformuliert? "+
 			"Dann greift dieses Gate nicht mehr.", len(handler), handler)
 	}
 
@@ -66,13 +66,13 @@ func TestJederLMFPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 	}
 }
 
-// lmfPlanSchreibHandler liest aus der Routenliste api/routes_books.go die Namen der Türen
+// lmfPlanSchreibHandler liest aus der Routenliste api/routen_katalog.go die Namen der Türen
 // hinter schreibenden /api/lmf-plan-Routen (PUT, POST, DELETE, PATCH).
 func lmfPlanSchreibHandler(t *testing.T) []string {
 	t.Helper()
-	inhalt, err := os.ReadFile(filepath.Join("..", "routes_books.go"))
+	inhalt, err := os.ReadFile(filepath.Join("..", "routen_katalog.go"))
 	if err != nil {
-		t.Fatalf("api/routes_books.go lesen: %v", err)
+		t.Fatalf("api/routen_katalog.go lesen: %v", err)
 	}
 	// Die Tür steht hinter dem Zugang des Servers zu diesem Thema. Eine schreibende Route
 	// ohne ihn wird gemeldet: Ihre Tür läge sonst außerhalb dieser Prüfung.

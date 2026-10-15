@@ -1,5 +1,5 @@
 // Welche Aktionen die Schüler-Ansichten anbieten, entscheidet das Recht — dasselbe,
-// das der Server an der jeweiligen Route verlangt (api/routes_students*.go).
+// das der Server an der jeweiligen Route verlangt (api/routen_leser.go).
 //
 // Bis zum 24.08.2026 fragten StudentDirectory, StudentProfile und ihre Bauteile
 // `role === 'admin'`; ein Schalter auf der Berechtigungsseite blieb dort wirkungslos,

@@ -91,7 +91,7 @@ func (t *Tueren) Konten(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc
 }
 
 // rechteAllerRollen liefert die freigeschalteten Rechte je Rolle aus role_permissions,
-// derselben Tabelle, aus der Anmeldung und RequirePermission lesen.
+// derselben Tabelle, aus der Anmeldung und verlangeRecht lesen.
 //
 // Admin bekommt "*" wie bei der Anmeldung und in der Prüfung der Rechte: Ein Admin hat alle
 // Rechte, gleich was in der Tabelle steht. Die Rollen kommen klein geschrieben zurück, wie

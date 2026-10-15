@@ -271,7 +271,7 @@ type piiAufruf struct {
 // die Route EXAKT wie in der Matrix.
 func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 	return map[string]piiAufruf{
-		// routes_students.go
+		// routen_leser.go
 		"GET /api/schueler":                     {URL: "/api/schueler", Positiv: []string{"Vogelbeere"}},
 		"GET /api/schueler/{id}":                {URL: "/api/schueler/" + w.schuelerID, Positiv: []string{"Kanariweg", "kanari-eltern@example.org"}},
 		"GET /api/schueler/{id}/dsgvo-auskunft": {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft", Positiv: []string{"Kanariweg"}},
@@ -335,7 +335,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/bescheide/{id}/pdf":   {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
 		"GET /api/mahnwesen":            {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
 
-		// routes_books.go
+		// routen_katalog.go
 		"GET /api/buecher/titel/{id}/exemplare": {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},
 		"GET /api/buecher/titel/suche":          {URL: "/api/buecher/titel/suche?q=Antwortgate", Positiv: []string{"Antwortgate Testband"}},
 		"GET /api/buecher/titel/{id}/ausleiher": {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
@@ -369,7 +369,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/anliegen/offen":                            {URL: "/api/anliegen/offen"},
 		"GET /api/anliegen/anzahl":                           {URL: "/api/anliegen/anzahl"},
 
-		// routes_misc.go
+		// routen_oeffentlich.go und routen_theke.go
 		"GET /api/public/opac/suche":                             {URL: "/api/public/opac/suche?q=Antwortgate"},
 		"GET /api/monitor/slides":                                {URL: "/api/monitor/slides"},
 		"GET /api/public/bestellung/{token}":                     {URL: "/api/public/bestellung/gate-dummy-token"},
@@ -379,7 +379,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/inventur/abgeschlossen":                        {URL: "/api/inventur/abgeschlossen"},
 		"GET /api/inventur/fehlbestand":                          {URL: "/api/inventur/fehlbestand"},
 
-		// routes_orders.go
+		// routen_bestellung.go
 		"GET /api/bestellungen/konfiguration": {URL: "/api/bestellungen/konfiguration"},
 		"GET /api/bestellungen":               {URL: "/api/bestellungen"},
 		"GET /api/bestellungen/pdf":           {URL: "/api/bestellungen/pdf"},
@@ -390,7 +390,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/lieferanten":                {URL: "/api/lieferanten"},
 		"GET /api/bestellungen/zulauf":        {URL: "/api/bestellungen/zulauf"},
 
-		// routes_system.go
+		// routen_system.go
 		"GET /api/benutzer":                          {URL: "/api/benutzer"},
 		"GET /api/einstellungen":                     {URL: "/api/einstellungen"},
 		"GET /api/einstellungen/sitzung":             {URL: "/api/einstellungen/sitzung"},
@@ -799,11 +799,11 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 	}
 }
 
-// TestPIIAntwortGateErkenntVerstoss ist die Gegenprobe am Detektor: Ein Gate,
+// TestPIIAntwortPruefungErkenntVerstoss ist die Gegenprobe am Detektor: Ein Gate,
 // dessen Kanarien nie anschlagen können, meldet ewig „alles gut". Wir stellen
 // die Verletzung nach, die das Gate fangen soll — eine Stufe-0-Route, deren
 // Antwort einen Stufe-3-Wert trüge, MUSS den Vergleich reißen.
-func TestPIIAntwortGateErkenntVerstoss(t *testing.T) {
+func TestPIIAntwortPruefungErkenntVerstoss(t *testing.T) {
 	for _, verboten := range verboteneKanarien(0) {
 		if !strings.Contains((`{"schueler":[{"strasse":"Kanariweg","ort":"Kanaristadt","eltern":"kanari-eltern@example.org","grund":"Kanarigrund","lusd":"LUSD-KANARI-7","geb":"2013-07-19","gebDe":"19.07.2013","schaden":"Kanarischaden","name":"Pruefkanari Zugvogel Vogelbeere","bc":"SBK-KANARI-1 SBK-KANARI-2"}]}`), verboten) {
 			t.Errorf("Kanarie %q würde in einer JSON-Antwort nicht erkannt — Suchlogik prüfen", verboten)

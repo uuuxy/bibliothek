@@ -207,7 +207,7 @@ export const menuGroups = [
 				// Nachweis zum Stichtag (15.3./15.9.), den jemand ausdruckt und abheftet.
 				//
 				// Recht: view_books wie der übrige Blick auf den Bestand — die vier Türen
-				// dahinter verlangen dasselbe (api/routes_books.go), und ein Menüpunkt, der
+				// dahinter verlangen dasselbe (api/routen_katalog.go), und ein Menüpunkt, der
 				// enger ist als seine Route, schützt nichts: Die Adresse bleibt offen. Wer den
 				// Nachweis wirklich auf das Sekretariat begrenzen will, hängt BEIDE Seiten auf
 				// manage_inventory um (Helfer und Kollegium haben es ab Werk nicht, db/seed.go).

@@ -218,7 +218,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | #  | Randbedingung                                                                 | Hintergrund und Konsequenz                                                                                                                                                                               |
 | -- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | T1 | **Go 1.27.2**, Version identisch in `go.mod` und `Dockerfile`                 | Zwei Versionen wären zwei Verhalten. Genutzt werden ausdrücklich neuere Fähigkeiten: Methoden-Routing im `net/http`-Mux (`GET /api/...`), `os.OpenRoot` gegen Path-Traversal, `slog` als Standard-Logger. |
-| T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`api/router.go`, `api/middleware.go`, `api/tuer/rechte.go`, `api/tuer/sitzung.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`routes_authz_coverage_test.go`). |
+| T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`api/router.go`, `api/middleware.go`, `api/tuer/rechte.go`, `api/tuer/sitzung.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`geschuetzte_routen_test.go`). |
 | T3 | **PostgreSQL 18** über `pgx/v5` (Pool), keine ORM-Schicht                     | SQL steht im Repository-Paket sichtbar da. Constraints sind ein Entwurfsmittel, nicht eine Absicherung „unten" — siehe [invarianten.md](invarianten.md).                                                |
 | T4 | **CGO_ENABLED=1** für das Hauptbinary                                         | `chai2010/webp` (Cover-Dekodierung) braucht CGO. Folge: Der Build braucht `build-base` im Builder-Image; die CLI-Werkzeuge werden dagegen mit `CGO_ENABLED=0` gebaut.                                      |
 | T5 | **Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript**                       | Typsicherheit kommt über JSDoc + `svelte-check --fail-on-warnings`, nicht über `.ts`. Eine Umstellung wäre ein Umbau von rund 300 Komponenten und ist bewusst nicht erfolgt.                                    |
@@ -258,7 +258,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen der Themen heißen noch `s`, wie am Server, von dem sie stammen; mit ihrem Paket bekommen sie `t` ([STIL.md](STIL.md), Abschnitt 4). | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
 | **Komponenten-Größe Frontend**                    | ≤ 200 Zeilen je **neuer** `.svelte`-Datei; der Altbestand darüber darf nicht wachsen.                                                                                                                              | Ratsche `frontend/src/lib/frontend-hygiene-dateigroesse.test.js`     |
 | **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menu.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
-| **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede Sitzung genügt, `VerlangeAnmeldung()`; öffentliche Routen stehen in einer Allowlist.                        | `api/routes_authz_coverage_test.go`                                  |
+| **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `verlangeRecht(...)` oder, wo jede Sitzung genügt, `VerlangeAnmeldung()`; öffentliche Routen stehen in einer Allowlist.                        | `api/geschuetzte_routen_test.go`                                  |
 | **Fundstellen beim Namen**                        | In der Dokumentation werden Constraint-, Index-, Datei- und Paketnamen genannt — keine Zeilennummern und keine Migrationsnummern als Beleg (eine Datei existiert weiter, auch wenn eine spätere Migration sie aufhebt). | `docs/invarianten_fundstellen_test.go`                               |
 | **Stand-Angaben**                                 | Kein Dokument behauptet im Kopf einen Stand, unter dem es jüngere Vorgänge beschreibt.                                                                                                                             | `docs/stand_angaben_test.go` (jede `.md` unter `docs/`)              |
 | **Keine Changelog-Datei**                         | Die Commit-Historie ist Teil der Dokumentation; Erledigtes wird aus `OFFEN.md` gelöscht, nicht archiviert.                                                                                                          | Entscheidung vom 15.09.2026                                          |
@@ -381,7 +381,7 @@ graph TB
 | **Browser → Backend**            | HTTPS, JSON über `/api`, `POST /login`          | eingehend       | Security-Header/CSP, CORS auf die Schuldomain, Body-Limit 100 MB, Timeouts, Rate-Limit, CSRF (Double-Submit), JWT im HttpOnly-Cookie |
 | **Backend → Browser (Echtzeit)** | Server-Sent Events, `GET /events`               | ausgehend       | Nur authentifiziert (`VerlangeAnmeldung`); Heartbeat alle 15 s; **kein** `WriteTimeout` am Server, weil der Strom nie endet     |
 | **Statische Auslieferung**       | SPA aus `frontend/dist`, PWA-Service-Worker      | ausgehend       | Dateizugriffe OS-seitig an `dist/` gebunden (`os.OpenRoot`); ein unbekannter `/api/`-Pfad antwortet 404 statt App-Shell            |
-| **Cover-Dateien**                | `GET /uploads/...`                              | ausgehend       | **Bewusst ohne Anmeldung** (Katalog/Monitor brauchen Cover); in der Allowlist von `routes_authz_coverage_test.go` vermerkt          |
+| **Cover-Dateien**                | `GET /uploads/...`                              | ausgehend       | **Bewusst ohne Anmeldung** (Katalog/Monitor brauchen Cover); in der Allowlist von `geschuetzte_routen_test.go` vermerkt          |
 | **Backend → PostgreSQL**         | Postgres-Wire über `pgx/v5`-Pool                | ausgehend       | Netz nur intern; Passwort aus `.env`; `pg_dump` erhält es über eine temporäre `.pgpass`, nicht über `PGPASSWORD`                    |
 | **Backend → IMAP**               | IMAP über implizites TLS, Port 993, min. TLS 1.2 | ausgehend       | Feste Cipher-Auswahl; `IMAP_HOST=mock` akzeptiert in Entwicklung/Test jedes Passwort und wird beim Start laut protokolliert         |
 | **Backend → SMTP**               | SMTP mit **erzwungenem** STARTTLS und Zertifikatsprüfung | ausgehend | Bietet der Server kein STARTTLS, bricht der Versand ab (`ErrSMTPKlartext`); nur ein ausdrückliches `SMTP_ALLOW_PLAINTEXT=true` erlaubt es. Kopfzeilen werden gegen CR/LF-Einschmuggelung geprüft |
@@ -427,7 +427,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 | -- | ------------------------------------------------------------------------------------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | L1 | **Geschichteter Monolith**, ein Deployable: Handler → Service → Repository                        | Q5, Betrieb          | Ein Betreiber, ein Host, eine Datenbank. Ein Schnitt in Dienste würde Transaktionsgrenzen zerreißen, die heute die Korrektheit tragen (Ausleihe = eine Transaktion über Schüler, Ausleihe, Exemplar).            |
 | L2 | **Die Datenbank ist die letzte Instanz**, nicht die Applikation                                   | Q1                   | Zwei Stationen können dieselbe Zeile ohne gemeinsame Sperre anfassen. Erst der partielle Unique-Index macht die zweite aktive Ausleihe *strukturell unmöglich*; Code-Prüfungen sind umgehbar, sobald ein zweiter Schreibpfad entsteht. |
-| L3 | **Autorisierung pro Route, nicht global**                                                          | Q2                   | Eine globale Kette kennt die Route nicht, die sie schützt. `RequirePermission` sitzt **hinter** dem Routing (nur dort ist `r.PathValue` gefüllt) und prüft Recht, Kontostatus und UUID-Form in einem Zug. Ein Coverage-Gate zählt jede ungeschützte Route auf. |
+| L3 | **Autorisierung pro Route, nicht global**                                                          | Q2                   | Eine globale Kette kennt die Route nicht, die sie schützt. `verlangeRecht` sitzt **hinter** dem Routing (nur dort ist `r.PathValue` gefüllt) und prüft Recht, Kontostatus und UUID-Form in einem Zug. Ein Coverage-Gate zählt jede ungeschützte Route auf. |
 | L4 | **Echtzeit über SSE, ohne Event-Loop**                                                             | Q1, Q4, Betrieb      | Alle Stationen sehen denselben Zustand nach dem Commit. Der Broker hält seinen Zustand hinter einem `RWMutex` statt hinter Kanälen — die frühere Kanal-Bauweise verhinderte das Herunterfahren und machte **jeden** Deploy zum `os.Exit(1)`. |
 | L5 | **Idempotenz als Vertrag der Schreibtüren**                                                        | Q1, Q4               | Ein Scan darf doppelt ankommen (Netz, Nachbuchen, nervöse Hand). Der Idempotenz-Key liefert die gespeicherte Antwort zurück; 5xx wird nie gecacht, damit ein Wiederholen möglich bleibt.                          |
 | L6 | **Der Tresen arbeitet auch ohne Netz weiter**                                                      | Q4                   | Scans landen in IndexedDB und gehen später durch die **Nachbuch-Tür**, die den Scan-Zeitpunkt buchen, einen Schlüssel genau einmal buchen und jede Abweichung als Meldung festhalten kann. Schweigen des Servers gilt nicht als Erfolg. |
@@ -590,14 +590,14 @@ HTTP-Anfrage
    ├─ 6 HTTPSRedirect ────────── nur wenn der Proxy es anzeigt
    ├─ 7 Lesefrist-Erweiterung ── hebt ReadTimeout für Import-Routen an (VOR dem Body-Lesen)
    ├─ 8 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts
-   ├─ 9 Timeout ──────────────── Kontext-Deadline je Route (StandardBearbeitungsfrist)
+   ├─ 9 Timeout ──────────────── Kontext-Deadline je Route (bearbeitungsfristVorgabe)
    ├─10 RateLimit ────────────── je Client-IP (pkg/clientip: genau ein Proxy-Hop)
    ├─11 CSRF ─────────────────── Double-Submit-Cookie, Refresh-Route ausgenommen
    ├─12 Kompression ──────────── gzip für JSON, den CSV-Export und die Textdateien der Oberfläche; der SSE-Strom läuft daran vorbei
    │
    ▼  http.ServeMux (Methoden-Routing, Go 1.22+)
    │
-   ├─ RequirePermission("…") / VerlangeAnmeldung()
+   ├─ verlangeRecht("…") / VerlangeAnmeldung()
    │     └─ Cookie → JWT prüfen → Kontostatus in der DB → Recht (Cache 60 s, Epoche)
    │        → UUID-Pfadparameter prüfen  ← hier, weil r.PathValue erst nach dem Routing gefüllt ist
    ▼
@@ -615,7 +615,7 @@ HTTP-Anfrage
 > **Warum Auth nicht in der globalen Kette sitzt:** Eine Middleware außen um den Mux
 > gelegt kennt die aufgelöste Route nicht. Die UUID-Prüfung hing dort einmal und lief
 > deshalb **nie** (`r.PathValue("id")` ist vor dem Routing leer, Audit-Befund vom
-> 01.08.2026). Seither sitzt sie in `RequirePermission`. Zugleich ist die frühere
+> 01.08.2026). Seither sitzt sie in `verlangeRecht`. Zugleich ist die frühere
 > `RBACBlockMiddleware` mit ihrer hartkodierten Pfad-Allowlist entfallen: Sie überstimmte
 > die konfigurierbare Rechtetabelle und entzog Rechte, die der Admin gerade vergeben hatte.
 
@@ -685,7 +685,7 @@ Rate-Limit und die Abmeldung.
   Themen eine Tür, steht sie bei dem Thema, dessen Daten sie liest: die Liste der Klassen bei
   den Lesern, Verlängern und Frist von Hand an einer Ausleihe und die Vormerkungen bei der
   Theke.
-- Die Routenlisten bleiben in `api/` (`routes_*.go`): Dort steht jede Tür mit Adresse und
+- Die Routenlisten bleiben in `api/` (`routen_*.go`): Dort steht jede Tür mit Adresse und
   Recht. Sie erreichen ein Thema über den Zugang des Servers, eine Methode mit dem Namen des
   Themas (`s.lernmittel().LMFPlanSchreiben()`, erklärt in `api/router.go`). Der Zugang
   reicht dem Thema die Basis des Servers als Zeiger, keine Kopie: Was am Server gestellt
@@ -995,7 +995,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   ließe sich von dort nicht einbinden. Der Typ `tuer.Basis` trägt
   Datenbank, Anmeldung, Live-Leitung und Uhr mit den Methoden dazu. `api.Server` bettet ihn
   ein: Eine Tür schreibt weiter `s.DB` und `s.HatRecht(…)`, und die Routenlisten rufen
-  `s.RequirePermission(…)` wie bisher. Ein Literal nennt die vier Felder über die Basis
+  `s.verlangeRecht(…)` wie bisher. Ein Literal nennt die vier Felder über die Basis
   (`&Server{Basis: tuer.Basis{DB: …}}`). Router, Routenlisten und die Kette der Middleware
   bleiben in `api/`.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
@@ -1126,7 +1126,7 @@ jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht ab
 | `robfig/cron/v3`                                               | `jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
 | `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
 | `google/uuid`                                                  | `api`, `cmd/seed`                                                | Kennungen erzeugen                                                                      |
-| `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/middleware_kompression.go`)                                    |
+| `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/kompression.go`)                                    |
 | `swaggo/swag`, `swaggo/http-swagger`                           | `docs`, `api`                                                    | Swagger, nur lokal (A23)                                                                |
 | `golang.org/x/crypto`                                          | `internal/backupkrypto`                                          | scrypt-Schlüsselableitung des Backups                                                   |
 | `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `pkg/imageutil`, `inventur`, `internal/service`, `repository`    | Bildformate; Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) |
@@ -1270,7 +1270,7 @@ Stand **nach** der Invalidierung zurückschreiben — und er wirkte bis zu 60 s 
 Die Datei trägt die Prüfung für eine Route (`PruefeRecht`) und die in einer Tür (`HatRecht`);
 beide lesen denselben Zwischenspeicher. Eine Route, der jede Sitzung genügt, prüft
 `VerlangeAnmeldung` in `api/tuer/sitzung.go`.
-`RequirePermission` steht beim Router (`api/middleware.go`): Es setzt die Prüfung der
+`verlangeRecht` steht beim Router (`api/middleware.go`): Es setzt die Prüfung der
 Pfadparameter davor, und deren Liste gehört zu den Routen. Ein Test legt eine Entscheidung
 über `tuer.MerkeRechtFuerTest` in den Zwischenspeicher.
 
@@ -1411,7 +1411,7 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     B->>A: POST /login (E-Mail, Passwort)
-    Note over A: AuthRateLimitMiddleware — Schlüssel »email|ip«
+    Note over A: anmeldeBremse — Schlüssel »email|ip«
     A->>DB: Konto zu dieser E-Mail?
     alt Konto existiert und ist aktiv
         A->>I: IMAP-Login, implizites TLS :993, min. TLS 1.2
@@ -1434,7 +1434,7 @@ sequenceDiagram
 `local/development/test`; ein fehlender Wert warnt und wählt die **sichere** Richtung, ein
 unlesbarer Wert bricht den Start ab.
 
-**Bei jeder folgenden Anfrage** prüft `RequirePermission`:
+**Bei jeder folgenden Anfrage** prüft `verlangeRecht`:
 
 1. Cookie lesen → JWT verifizieren (HMAC-only, `alg=none` ausgeschlossen),
 2. Sperrliste (`revoked_tokens`),
@@ -1708,7 +1708,7 @@ Bestellung abschicken
 
 Der Händler druckt über denselben Link seine Etiketten und bestätigt die Bestellung selbst.
 Das ist der einzige schreibende Pfad ohne Anmeldung — und er steht als solcher in der
-Allowlist von `routes_authz_coverage_test.go`. Wie Token, Hash, Adresse und Frist des Links
+Allowlist von `geschuetzte_routen_test.go`. Wie Token, Hash, Adresse und Frist des Links
 entstehen, steht in `pkg/bestelllink`; die eingestellte Frist liest
 `service.LadeBestelllinkTage`, beim Bestellen wie bei „Neuen Link erzeugen". Ob eine öffentliche
 Adresse hinterlegt ist, fragt jede Stelle über `SystemEinstellungen.AdresseFuerLinks`
@@ -1804,11 +1804,11 @@ Stand: 08.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 | Ort                                | Frist                                        | Warum genau dort                                                                          |
 | ---------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `http.Server.ReadHeaderTimeout`    | 5 s                                          | Slowloris auf der Header-Phase                                                            |
-| `http.Server.ReadTimeout`          | `api.StandardLesefrist`                      | Begrenzt das **Senden des Rumpfes** — eine Kontext-Deadline bricht kein blockierendes Read auf |
-| `ErweitereLesefristFuerLangeUploads` | angehoben für Import-Routen                | Steht **vor** dem Body-Limit, also vor jedem Lesen — danach gesetzt käme sie zu spät       |
+| `http.Server.ReadTimeout`          | `api.LesefristVorgabe`                      | Begrenzt das **Senden des Rumpfes** — eine Kontext-Deadline bricht kein blockierendes Read auf |
+| `erweitereLesefristFuerLangeUploads` | angehoben für Import-Routen                | Steht **vor** dem Body-Limit, also vor jedem Lesen — danach gesetzt käme sie zu spät       |
 | `http.Server.IdleTimeout`          | 120 s                                        | Getrennt gesetzt, damit nicht `ReadTimeout` beide Fristen aneinanderkettet                 |
 | `http.Server.WriteTimeout`         | **bewusst nicht gesetzt**                    | `/events` ist definitionsgemäß eine Antwort, die nie endet; ein globaler Wert würde jede Live-Verbindung kappen |
-| `TimeoutMiddleware`                | `StandardBearbeitungsfrist` (je Route)       | Begrenzt die Bearbeitungsdauer im Handler                                                  |
+| `fristMiddleware`                | `bearbeitungsfristVorgabe` (je Route)       | Begrenzt die Bearbeitungsdauer im Handler                                                  |
 | Caddy                              | 300 s Header, 600 s Read/Write               | Muss ≥ der längsten Anwendungsfrist sein — läuft die kürzeste Frist vorne weg, bricht der Vorgang dort ab, wo niemand die Meldung sieht |
 
 ---
@@ -2050,7 +2050,7 @@ fest; das [Glossar](#12-glossar) nennt, wo der Code noch anders heißt.
 | **Brute-Force**           | Schlüssel `lower(email)|ip`, 5 Fehlversuche / 15 min. Nur-IP wäre an einer Schul-NAT eine Aussperrung der ganzen Schule                              |
 | **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, Cookie `HttpOnly` + `SameSite=Strict` (+ `Secure` nach Betriebslage); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
 | **Fail-closed**           | Ist die Sperrlisten- oder Kontostatus-Abfrage nicht erreichbar, wird die Anfrage mit **503** abgelehnt — nicht durchgelassen und **nicht** mit 401 beantwortet (eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist) |
-| **Autorisierung**         | `RequirePermission` je Route: Recht aus `role_permissions` (Cache 60 s mit Epochenzähler) **plus** Live-Kontostatus **plus** UUID-Form der Pfadparameter |
+| **Autorisierung**         | `verlangeRecht` je Route: Recht aus `role_permissions` (Cache 60 s mit Epochenzähler) **plus** Live-Kontostatus **plus** UUID-Form der Pfadparameter |
 | **Eskalationsschutz**     | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`api/benutzer/admin_schutz.go`) — weil wer `benutzer.email` schreiben darf, ein Konto übernimmt |
 | **Secret-Guard**          | Außerhalb von `local/development/test` verweigert der Server den Start bei bekannten Beispiel-Geheimnissen. Die Liste steht **einmal** (`bereitschaft.IstBeispielGeheimnis`) und wird von der Selbstprüfung mitbenutzt — zwei Listen würden „alles gut" melden, während der Server aus demselben Grund nicht startet |
 
@@ -2068,14 +2068,14 @@ fest; das [Glossar](#12-glossar) nennt, wo der Code noch anders heißt.
 | **SMTP-Header-Injection**     | `mailservice.HeaderWert` weist CR/LF in Kopfzeilenwerten ab — direkt an der Schreibstelle, nicht nur bei der Empfängerprüfung                                                    |
 | **Dekompressionsbombe**       | Bild-Uploads werden gegen aufgeblähte Pixelmaße geprüft, bevor dekodiert wird                                                                                                   |
 | **Token im Pfad**             | Der Bestätigungslink des Händlers trägt sein Geheimnis im Pfad; `maskiereToken` hält es aus der Logzeile (sonst wäre die Hash-Speicherung in der Datenbank entwertet)             |
-| **Panics**                    | `PanicRecoveryMiddleware` für HTTP-Handler, `pkg/safego` für unbeaufsichtigte Goroutinen — ein ungefangenes Panic in einer Goroutine reißt in Go den **ganzen** Prozess mit      |
+| **Panics**                    | `panikMiddleware` für HTTP-Handler, `pkg/safego` für unbeaufsichtigte Goroutinen — ein ungefangenes Panic in einer Goroutine reißt in Go den **ganzen** Prozess mit      |
 
 #### Endpunkte ohne Anmeldung (bewusst)
 
 `/katalog` und `/monitor` (Titeldaten), `GET /api/images/cover` und `/uploads/` (Cover),
 `POST /login`, `GET /api/csrf-token`, `GET /health`, der Bestätigungspfad
 `/bestellung/<token>`. Jeder davon steht in der Allowlist von
-`api/routes_authz_coverage_test.go`: Eine neue ungeschützte Route ohne Eintrag macht das
+`api/geschuetzte_routen_test.go`: Eine neue ungeschützte Route ohne Eintrag macht das
 Gate rot.
 
 ---
@@ -2089,7 +2089,7 @@ Gate rot.
 
 - `api/pii_matrix_test.go` — eine Route ohne Zeile wird rot, eine Zeile ohne Route ebenso,
   und das dokumentierte Recht wird gegen die Registrierung geprüft.
-- `api/pii_antwort_gate_pg_test.go` — ruft jede GET-Route (und die lesenden POST-Routen:
+- `api/pii_antwort_pg_test.go` — ruft jede GET-Route (und die lesenden POST-Routen:
   Theken-Scan und LUSD-Vorschau) über den **echten** Router mit genau dem Recht ihrer Zeile
   auf und prüft die Antwort — inklusive entpackter PDF-Ströme — gegen Kanarienwerte je
   Stufe. Schlüsselrouten tragen Positiv-Kontrollen gegen leere Antworten.
@@ -2258,7 +2258,7 @@ höchstens Serverzeit).
 | **Ein Fehler wird an seinem Namen erkannt**                     | `errors.Is`, ein eigener Fehlertyp mit `errors.As` oder bei Datenbankfehlern der SQLSTATE mit dem Namen der Bedingung (`pgconn.PgError`). Ein Vergleich am Text bricht still, sobald jemand die Meldung umformuliert (`fehler_am_wortlaut_test.go`) |
 | **Fehlerantworten einheitlich**                                 | `apierrors.SendHTTPError`; Fehlermeldungen sind deutsch und nennen die nächste Handlung                                                          |
 | **Ein 500 trägt nie den Text des Fehlers**                     | Bei jedem 500 ersetzt `apierrors` die Meldung durch einen neutralen Satz (`sanitizeInternalError`); nur unterhalb von 500 geht der Fehlertext hinaus. Eine Diagnose, die jemand lesen soll, braucht deshalb 400 (Eingabe), 409 (Fachfall) oder 502 (ein fremder Dienst versagt, etwa der Mailserver: `mailFehlerStatus`). Soll die Ursache nur ins Log, trennt `SendHTTPErrorMitMeldung` Meldung und Ursache |
-| **Ein Panic beendet nicht den Prozess**                         | `PanicRecoveryMiddleware` für Handler, `pkg/safego` für Goroutinen. Ein Test schickt eine Panik über den ganzen Router: Die Antwort ist ein neutrales 500, und mit eingerichtetem Sentry kommt die Meldung dort an (`api/panik_ueber_den_router_pg_test.go`) |
+| **Ein Panic beendet nicht den Prozess**                         | `panikMiddleware` für Handler, `pkg/safego` für Goroutinen. Ein Test schickt eine Panik über den ganzen Router: Die Antwort ist ein neutrales 500, und mit eingerichtetem Sentry kommt die Meldung dort an (`api/panik_ueber_den_router_pg_test.go`) |
 
 Die Testklasse dazu heißt `phantom_erfolg_test.go` und `fehler_kollaps_test.go`: „Hat es
 geklappt?" muss beantwortbar sein, und mehrere verschiedene Fehler dürfen nicht zu einer
@@ -2471,7 +2471,7 @@ vierzig Terminen von selbst um.
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `slog` als JSON auf stdout   | Ein Handler für alles — auch für die noch vorhandenen `log.Printf`-Aufrufe (seit Go 1.21 hängt `log` mit daran). Das ist zugleich der Log-Injection-Schutz |
 | Anfrage-Logzeile             | Methode und Pfad (Token maskiert), geschrieben VOR der Verarbeitung — **keine** IP, kein Status, keine Dauer, keine Anfragekennung. Endet die Anfrage mit 5xx, folgt eine zweite Zeile mit dem Status |
-| 500er                        | Stack schreibt `PanicRecoveryMiddleware`; die Logging-Middleware hängt **keinen** eigenen Stack an (der zeigte nur auf sie selbst) |
+| 500er                        | Stack schreibt `panikMiddleware`; die Logging-Middleware hängt **keinen** eigenen Stack an (der zeigte nur auf sie selbst) |
 | Docker-Logs                  | json-file, 3 × 10 MB je Container                                                                                    |
 | Sentry (optional)            | `SENTRY_DSN`; `Repanic: true`, damit die eigene Recovery weiterhin greift                                            |
 | `GET /health`                | Prozess **und** DB-Ping                                                                                              |
@@ -2553,8 +2553,8 @@ wenn man ihn einmal gebraucht hat.
   Die Harness (`internal/pgtest`) lädt `schema.sql`, nicht die Migrationen, hält eine Sperre
   über alle Pakete und weigert sich bei einem Datenbanknamen ohne „test".
 - **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF, nicht am Handler allein: Was
-  die Registrierung davorhängt (Recht, `ValidateUUIDParamsMiddleware`), gehört zum Verhalten.
-  Muster: `baueKanarienWelt` in `api/pii_antwort_gate_pg_test.go`, `tuertest.SetzeGenauEinRecht`,
+  die Registrierung davorhängt (Recht, `uuidPfadMiddleware`), gehört zum Verhalten.
+  Muster: `baueKanarienWelt` in `api/pii_antwort_pg_test.go`, `tuertest.SetzeGenauEinRecht`,
   `tuertest.MitCSRF`, `registrierteRouten` in `api/pii_matrix_test.go`. Prüft der Test die
   Türen eines Themas mit eigenem Paket, steht er in dessen Ordner als eigenes Testpaket
   (`package lernmittel_test`): `api/` bindet das Thema ein, und im Paket des Themas wiese Go
@@ -2653,14 +2653,14 @@ wenn man ihn einmal gebraucht hat.
   die ganze Suite fahren, `go test ./...` mit `TEST_DATABASE_URL`. Erwartet wird je ein
   Eintrag: in `phantom_erfolg_test.go` für jeden `Exec`, dessen Ergebnis verworfen wird; in
   `docs/PII_MATRIX.de.md` eine Zeile je Route (`api/pii_matrix_test.go`); in `bauePIIAufrufe`
-  ein Aufruf je GET-Route (`api/pii_antwort_gate_pg_test.go`); am Ende von `schema.sql` die
+  ein Aufruf je GET-Route (`api/pii_antwort_pg_test.go`); am Ende von `schema.sql` die
   neue Migration in der Liste der angewendeten (`db/migrations_drift_test.go`); in
   `repository/schema_gegenrichtung_pg_test.go` jede neue Lösch-Folge und jede neue Bedingung
   mit der Antwort, wer die Folge behandelt; in
   `repository/schema_gegenrichtung_sperren_pg_test.go` jeder neue Fremdschlüssel, an dem ein
   Löschen scheitert oder der ein Umbenennen weiterträgt, und jede neue Eindeutigkeit; in
   `listenGrenze` je Liste in der Antwort einer GET-Route, was sie begrenzt
-  (`api/listen_grenze_gate_pg_test.go`). Dazu Tests, die JSON wörtlich vergleichen (ein
+  (`api/listen_grenze_pg_test.go`). Dazu Tests, die JSON wörtlich vergleichen (ein
   neues Feld erscheint dort als `null`), Swagger (`docs/swagger_drift_test.go`),
   [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag
   ist eine Antwort, keine hochgesetzte Zahl.
@@ -3021,7 +3021,7 @@ geroutet über `http.ServeMux` mit Methoden-Mustern; Middleware-Kette von Hand.
 einer Transaktion über `leser`, `ausleihen` und `buecher_exemplare`.
 
 **Folge.** Kein Framework-Update kann das Routing verändern; die Kettenreihenfolge ist
-aber Handarbeit und braucht Gates (`routes_authz_coverage_test.go`). Ein Schnitt in
+aber Handarbeit und braucht Gates (`geschuetzte_routen_test.go`). Ein Schnitt in
 Dienste würde die Transaktionsklammer zerreißen, die heute Q1 trägt.
 
 **Fundstelle.** `api/router.go`, `api/middleware.go`.
@@ -3062,7 +3062,7 @@ bereits das Gegenteil.
 
 ### A3 — Autorisierung pro Route; `RBACBlockMiddleware` entfernt
 
-**Entscheidung.** Jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede
+**Entscheidung.** Jede nicht-öffentliche Route trägt `verlangeRecht(...)` oder, wo jede
 Sitzung genügt, `VerlangeAnmeldung()`. Es gibt **keine** globale Autorisierungs-Middleware
 und keinen Wächter, der nach der Rolle fragt (`RequireRoles` ist seit dem 04.08.2026 entfernt).
 
@@ -3074,14 +3074,14 @@ konnte im PermissionManager gewährte Rechte nicht nutzen.
 Vollständigkeitspflicht — deshalb das Coverage-Gate mit Allowlist für die bewusst
 öffentlichen Routen.
 
-**Fundstelle.** `api/tuer/rechte.go`, `api/tuer/sitzung.go`, `api/middleware.go` (`RequirePermission`),
-`api/routes_authz_coverage_test.go`.
+**Fundstelle.** `api/tuer/rechte.go`, `api/tuer/sitzung.go`, `api/middleware.go` (`verlangeRecht`),
+`api/geschuetzte_routen_test.go`.
 
 ---
 
 ### A4 — UUID-Prüfung hinter das Routing verlegt
 
-**Entscheidung.** `ValidateUUIDParamsMiddleware` sitzt **in** `RequirePermission`, nicht als globale
+**Entscheidung.** `uuidPfadMiddleware` sitzt **in** `verlangeRecht`, nicht als globale
 Middleware um den Mux.
 
 **Anlass.** Audit-Befund vom 01.08.2026: Von außen um den Mux gelegt las die Middleware
@@ -3092,7 +3092,7 @@ Prüfung lief also nie.
 prüft genau die Schreibweise, die Postgres annimmt — **nicht** `uuid.Parse`, das auch
 `urn:uuid:…` akzeptiert, was Postgres abweist).
 
-**Fundstelle.** `api/middleware.go` (Kommentar an `ValidateUUIDParamsMiddleware`),
+**Fundstelle.** `api/middleware.go` (Kommentar an `uuidPfadMiddleware`),
 `pkg/kennung`.
 
 ---
@@ -3242,7 +3242,7 @@ Portal ebenfalls.
 **Historie, die man kennen muss:** Am 10.08.2026 sah ein Kollegiums-Konto auf dem
 Schulserver **zehn von fünfzehn** Menüpunkten, darunter Schülerdatei, Mahnwesen,
 System-Logs und Einstellungen — und es war keine reine Anzeigefrage: Dieselbe Tabelle
-entscheidet in `RequirePermission`. Migration 070 hat alles außer `create_reservations`
+entscheidet in `verlangeRecht`. Migration 070 hat alles außer `create_reservations`
 entzogen.
 
 **Fundstelle.** `db/seed.go`, `auth/selbstanmeldung.go`; Migrationen 042 (`helfer` kommt in
@@ -3443,7 +3443,7 @@ keine Personendaten. Ein Unterordner kommt nicht ins Netz, auch kein von Hand an
 auf einem Server mit älterem Volume kann `uploads/fotos` noch liegen (OFFEN.md 7.8).
 
 **Fundstelle.** `inventur/api_routen.go` (`neuteredFileSystem`), `Dockerfile`,
-`api/router.go` (`registerInventurSubmoduleRoutes`), `cmd/migrate-fotos`, `internal/crypto`.
+`api/router.go` (`registriereInventurRouten`), `cmd/migrate-fotos`, `internal/crypto`.
 Gates: `inventur/api_routen_test.go`, `api/uploads_auslieferung_pg_test.go`.
 
 ---
@@ -3499,7 +3499,7 @@ gleicht Go-Routen gegen Frontend-Aufrufer in **beide** Richtungen ab.
 `docs/swagger_drift_test.go` wird rot, sobald `docs.go` von den `@Router`-Annotationen
 abweicht.
 
-**Fundstelle.** `api/router.go` (`registerSwaggerRoutes`), `docs/swagger_drift_test.go`.
+**Fundstelle.** `api/router.go` (`registriereSwaggerRouten`), `docs/swagger_drift_test.go`.
 
 ---
 
@@ -3578,8 +3578,8 @@ vermerkt.
 
 | ID  | Auslöser / Situation                                                                                   | Erwartete Reaktion                                                                                     | Nachweis                                                                       |
 | --- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| S6  | Jemand ruft ohne Anmeldung `/katalog`, `/monitor`, `/uploads/…` auf                                     | Titeldaten, Cover, Verfügbarkeit — **nie** Ausleiher, Namen, Klassen                                    | `api/pii_matrix_test.go` + `api/pii_antwort_gate_pg_test.go` (Kanarienwerte je Stufe) |
-| S7  | Eine Rolle ohne Fachrecht ruft eine Schreibroute direkt per HTTP auf (Menü umgangen)                     | **403** mit der Begründung des Rechte-Wächters                                                          | `api/rechte_schreibwege_pg_test.go` (jede Schreibroute mit Fachrecht), `api/routes_authz_coverage_test.go` |
+| S6  | Jemand ruft ohne Anmeldung `/katalog`, `/monitor`, `/uploads/…` auf                                     | Titeldaten, Cover, Verfügbarkeit — **nie** Ausleiher, Namen, Klassen                                    | `api/pii_matrix_test.go` + `api/pii_antwort_pg_test.go` (Kanarienwerte je Stufe) |
+| S7  | Eine Rolle ohne Fachrecht ruft eine Schreibroute direkt per HTTP auf (Menü umgangen)                     | **403** mit der Begründung des Rechte-Wächters                                                          | `api/rechte_schreibwege_pg_test.go` (jede Schreibroute mit Fachrecht), `api/geschuetzte_routen_test.go` |
 | S8  | Ein Abgänger hat keine offenen Vorgänge mehr                                                             | Sperre + Karenz (Vorgabe 90 Tage) → Anonymisierung → Hard-Delete ab 30. Januar des Folgejahres, **in dieser Folge** | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `repository/nachtlauf_ratsche_test.go` |
 | S9  | Der Server startet mit einem Beispiel-Geheimnis aus dem Repository                                       | **Start verweigert** (außerhalb local/development/test); nur ein ausdrückliches `ENFORCE_PROD_SECRETS=false` lässt ihn los, mit Warnung | `internal/bereitschaft/geheimnisse.go` + Selbstprüfung (**eine** gemeinsame Liste), `scripts/pruefe_secrets.sh` |
 | S19 | Ein Mailserver bietet kein STARTTLS an (oder ein Angreifer streicht es aus der EHLO-Antwort)              | **Versand abgebrochen** — Mahntexte mit Schülernamen gehen nicht im Klartext über das Netz               | `mailservice/versand_test.go`, `internal/smtptest`                             |
@@ -3812,7 +3812,7 @@ meldet `inventur/` an.
 | **Auswirkung** | hoch (Datenschutz) |
 | **Sichtbarkeit** | mittel |
 
-`role_permissions` entscheidet in `RequirePermission`. Eine Fehlkonfiguration ist damit
+`role_permissions` entscheidet in `verlangeRecht`. Eine Fehlkonfiguration ist damit
 keine Anzeigefrage, sondern eine echte Rechteerweiterung — genau das war am 10.08.2026 der
 Fall, als ein Kollegiums-Konto zehn von fünfzehn Menüpunkten sah. Gegenmittel: Die Vorgabe
 steht in `db/seed.go`, `leitung` wird abgeleitet (A12), Migrationen laufen nur einmal (eine
@@ -4122,7 +4122,7 @@ Fenstern bekannt ist:
 - Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, gekappt
   erst bei 50.000 Titeln), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
   Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
-  4,87 MB, gepackt über die Leitung 0,43 MB (`api/middleware_kompression.go`); auch über den
+  4,87 MB, gepackt über die Leitung 0,43 MB (`api/kompression.go`); auch über den
   Proxy des Testservers kommen die Antworten gepackt an. Größe und Dauer am Server über das
   Schulnetz sind nicht gemessen (im Browser: F12, Netzwerk, Zeile `books`). Anlass zum Bauen:
   Der Katalog öffnet am Server spürbar verzögert. Dann beantwortet der Server einen
@@ -4406,13 +4406,13 @@ Fenstern bekannt ist:
   umstellen, mit den PDF-Gates.
 - Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
   Konsument.
-- Die Prüfung der UUID-Pfadparameter (`ValidateUUIDParamsMiddleware`) sitzt in
-  `RequirePermission`. Eine Route mit `{id}`, `{schueler_id}` oder `{ausleihe_id}` unter
+- Die Prüfung der UUID-Pfadparameter (`uuidPfadMiddleware`) sitzt in
+  `verlangeRecht`. Eine Route mit `{id}`, `{schueler_id}` oder `{ausleihe_id}` unter
   `VerlangeAnmeldung` liefe an ihr vorbei, und die Kennung ginge ungeprüft an die Datenbank.
   Heute gibt es keine: Am 04.10.2026 antworteten alle 65 Routen mit UUID-Platzhalter am echten
   Router auf eine Kennung, die keine UUID ist, mit 400. Kein Gate hält das;
   `api/uuid_pfadparameter_test.go` prüft die Namen der Platzhalter, nicht die Hülle der Route.
-  Anlass zum Bauen: die erste Route mit UUID-Platzhalter ohne `RequirePermission`.
+  Anlass zum Bauen: die erste Route mit UUID-Platzhalter ohne `verlangeRecht`.
 - `auth.Claims.BarcodeID` liest niemand mehr; die Ausweisnummer kommt seit Migration 125
   als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
 - Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.

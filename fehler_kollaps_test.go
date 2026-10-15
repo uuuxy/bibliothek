@@ -39,7 +39,7 @@ var kollapsBestand = map[string]string{
 	// waren echte DB-Kollapse und sind behoben (MeHandler, Foto, zwei Druck-Handler,
 	// dazu GetBookByID und ReservierungsAbfragen.LegeAn). Die folgenden acht sind
 	// semantisch vertretbar — der Fehler IST dort die negative Antwort:
-	"api/csrf.go:CSRFMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
+	"api/csrf.go:csrfMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
 	// Die drei Token-Stellen lesen über VerifyToken die DB (Sperrliste, Kontostatus). Bis
 	// 11.09.2026 stand hier „kein DB-Zugriff" — falsch seit Juni/August; ein DB-Ausfall
 	// wurde zur 401. Seitdem ordnet die Zeile davor ErrPruefungGestoert als 503 ein; die

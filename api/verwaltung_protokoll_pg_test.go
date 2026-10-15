@@ -111,7 +111,7 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 		erwarte(t, rufe(t, http.MethodPut, "/api/mail-templates/"+id,
 			`{"betreff":"Neuer Betreff","text_body":"Alter Text"}`), http.StatusOK, "Betreff ändern")
 		d := letzter(t, "MAILVORLAGE_GEAENDERT")
-		if d["vorlage"] != "protokoll_probe" || fmtFelder(d["felder"]) != "betreff" {
+		if d["vorlage"] != "protokoll_probe" || felderAlsZeile(d["felder"]) != "betreff" {
 			t.Errorf("Eintrag nach dem Ändern des Betreffs: %v", d)
 		}
 
@@ -123,7 +123,7 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 
 		erwarte(t, rufe(t, http.MethodPut, "/api/mail-templates/"+id,
 			`{"betreff":"Dritter Betreff","text_body":"Neuer Text"}`), http.StatusOK, "beides ändern")
-		if d := letzter(t, "MAILVORLAGE_GEAENDERT"); fmtFelder(d["felder"]) != "betreff,text" {
+		if d := letzter(t, "MAILVORLAGE_GEAENDERT"); felderAlsZeile(d["felder"]) != "betreff,text" {
 			t.Errorf("Eintrag nach dem Ändern von Betreff und Text: %v", d)
 		}
 
@@ -153,7 +153,7 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 			`{"name":"Buchhandlung Protokoll","email":"neu-`+adresseHaendler+`","customerNumber":"K-1"}`),
 			http.StatusOK, "Adresse ändern")
 		d := letzter(t, "LIEFERANT_GEAENDERT")
-		if d["lieferant_id"] != angelegt.ID || d["name"] != "Buchhandlung Protokoll" || fmtFelder(d["felder"]) != "email" {
+		if d["lieferant_id"] != angelegt.ID || d["name"] != "Buchhandlung Protokoll" || felderAlsZeile(d["felder"]) != "email" {
 			t.Errorf("Eintrag nach dem Ändern der Adresse: %v", d)
 		}
 
@@ -167,7 +167,7 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/"+angelegt.ID,
 			`{"name":"Buchhandlung Protokoll 2","email":"neu-`+adresseHaendler+`","customerNumber":"K-2","ist_hauptlieferant":true}`),
 			http.StatusOK, "Name, Nummer und Hauptlieferant ändern")
-		if d := letzter(t, "LIEFERANT_GEAENDERT"); fmtFelder(d["felder"]) != "name,kundennummer,hauptlieferant" || d["name"] != "Buchhandlung Protokoll 2" {
+		if d := letzter(t, "LIEFERANT_GEAENDERT"); felderAlsZeile(d["felder"]) != "name,kundennummer,hauptlieferant" || d["name"] != "Buchhandlung Protokoll 2" {
 			t.Errorf("Eintrag nach dem Ändern von Name, Nummer und Hauptlieferant: %v", d)
 		}
 
@@ -185,7 +185,7 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 		// Abgewählt wird ausdrücklich: Ein Rumpf ohne das Merkmal lässt es stehen.
 		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/"+angelegt.ID, `{"ist_hauptlieferant":false}`),
 			http.StatusOK, "Hauptlieferant abwählen")
-		if d := letzter(t, "LIEFERANT_GEAENDERT"); fmtFelder(d["felder"]) != "hauptlieferant" {
+		if d := letzter(t, "LIEFERANT_GEAENDERT"); felderAlsZeile(d["felder"]) != "hauptlieferant" {
 			t.Errorf("Eintrag nach dem Abwählen: %v", d)
 		}
 		erwarte(t, rufe(t, http.MethodDelete, "/api/lieferanten/"+angelegt.ID, ""), http.StatusNoContent, "löschen")
@@ -226,8 +226,8 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 	}
 }
 
-// fmtFelder macht aus der Liste der geänderten Felder eines Eintrags eine Zeile.
-func fmtFelder(wert any) string {
+// felderAlsZeile macht aus der Liste der geänderten Felder eines Eintrags eine Zeile.
+func felderAlsZeile(wert any) string {
 	liste, istListe := wert.([]any)
 	if !istListe {
 		return ""

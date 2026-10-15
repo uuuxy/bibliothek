@@ -12,7 +12,7 @@ const RESTORE_VERSUCHE = 3;
 const RESTORE_WARTEZEIT_MS = 2000;
 
 // Eine Abmeldung, die den Server nicht erreicht hat (14.09.2026). Das Löschcookie setzt nur die
-// Antwort des Servers (api/logout_handler.go, bei 200 und bei 503). Ohne Netz, oder bei 502/504
+// Antwort des Servers (api/abmeldung.go, bei 200 und bei 503). Ohne Netz, oder bei 502/504
 // vom Proxy, kommt keine an: Das HttpOnly-Cookie bleibt im Browser, und JavaScript kann es nicht
 // löschen. Ohne diesen Merker meldete das nächste Neuladen mit Netz die vorige Person wieder an —
 // am geteilten Theken-Rechner arbeitete der Nächste unter fremdem Konto. Der Merker trägt keine
@@ -70,7 +70,7 @@ class AuthStore {
 	isLoggingIn = $state(false);
 	/**
 	 * Steht nach einer Abmeldung, deren Widerruf der Server nicht bestätigt hat (503,
-	 * api/logout_handler.go): Das Löschcookie kam an, dieser Browser ist abgemeldet — die
+	 * api/abmeldung.go): Das Löschcookie kam an, dieser Browser ist abgemeldet — die
 	 * Sitzung selbst gilt bis zu ihrem Ablauf weiter. Entschieden am 13.09.2026 (OFFEN.md
 	 * 3.4): abmelden wie bisher, dazu dieser Hinweis auf der Anmeldemaske.
 	 */

@@ -12,9 +12,9 @@ import (
 	"bibliothek/pkg/httpresp"
 )
 
-// logoutHandler blacklists the current JWT and clears the session cookie.
+// abmelden blacklists the current JWT and clears the session cookie.
 // This was previously referenced in CSRF/RBAC exemptions but never actually registered.
-func (s *Server) logoutHandler() http.HandlerFunc {
+func (s *Server) abmelden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session_token")
 		if err != nil {
@@ -62,7 +62,7 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 			Expires:  time.Unix(0, 0),
 			MaxAge:   -1,
 			HttpOnly: true,
-			Secure:   s.CookieSecure,
+			Secure:   s.nurHTTPS,
 			SameSite: http.SameSiteStrictMode,
 		})
 

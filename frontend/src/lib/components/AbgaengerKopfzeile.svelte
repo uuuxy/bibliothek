@@ -41,7 +41,7 @@
 	} = $props();
 
 	// Die Seite selbst hängt an view_graduates, der Versand an create_orders
-	// (api/routes_students.go). Wer die Liste sehen darf, darf also nicht zwangsläufig
+	// (api/routen_leser.go). Wer die Liste sehen darf, darf also nicht zwangsläufig
 	// mailen — ohne diese Frage stand der Knopf für jeden da und quittierte nach dem
 	// ganzen Versanddialog mit 403. Der Druck daneben bleibt: Er hängt am selben Recht
 	// wie die Seite, und Papier ist hier der Notweg.

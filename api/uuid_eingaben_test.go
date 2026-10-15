@@ -21,18 +21,18 @@ import (
 // tuertest.AntwortOhneDB den Absturz und meldet ihn als „erreichte die Datenbank" — genau das war
 // vor der Prüfung der Fall.
 
-type vormerkungRepoZaehler struct {
+type vormerkungsAttrappe struct {
 	repository.VormerkungsAbfragen
 	gerufen bool
 }
 
-func (v *vormerkungRepoZaehler) LadeListe(context.Context, string, string) ([]repository.Vormerkung, error) {
-	v.gerufen = true
+func (a *vormerkungsAttrappe) LadeListe(context.Context, string, string) ([]repository.Vormerkung, error) {
+	a.gerufen = true
 	return nil, nil
 }
 
-func (v *vormerkungRepoZaehler) LegeAn(context.Context, string, string, string) (string, error) {
-	v.gerufen = true
+func (a *vormerkungsAttrappe) LegeAn(context.Context, string, string, string) (string, error) {
+	a.gerufen = true
 	return "neu", nil
 }
 
@@ -73,7 +73,7 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 	}
 }
 
-func TestVormerkungen_UngueltigeKennungErreichtRepositoryNicht(t *testing.T) {
+func TestVormerkungen_UngueltigeKennungErreichtDieAbfragenNicht(t *testing.T) {
 	s := &Server{}
 	faelle := []struct {
 		name, methode, pfad, rumpf string
@@ -85,7 +85,7 @@ func TestVormerkungen_UngueltigeKennungErreichtRepositoryNicht(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			repo := &vormerkungRepoZaehler{}
+			repo := &vormerkungsAttrappe{}
 			h := s.theke().VormerkungAnlegen(repo)
 			if f.liste {
 				h = s.theke().Vormerkungen(repo)
@@ -122,7 +122,7 @@ func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 	}
 
 	s := &Server{}
-	repo := &vormerkungRepoZaehler{}
+	repo := &vormerkungsAttrappe{}
 	status := tuertest.AntwortOhneDB(t, s.theke().VormerkungAnlegen(repo), http.MethodPost, "/api/vormerkungen",
 		`{"titel_id":"`+gut+`","schueler_id":""}`)
 	if status != http.StatusCreated || !repo.gerufen {

@@ -265,7 +265,7 @@ ruft `/health` ab.
 `/bestellung/<token>` mit den Dateien der Oberfläche, `/api/public/bestellung/…` (Abruf,
 Etiketten, Bestätigung) und für das Uptime-Signal `/health`, das nur `healthy` oder `unhealthy`
 meldet. Mehr nicht: Das CSRF-Cookie für die Bestätigung setzt schon der erste Abruf
-(`refreshCSRFCookie` in `api/csrf.go`), der Aufruf von `/api/auth/me` beim Laden
+(`erneuereCSRFCookie` in `api/csrf.go`), der Aufruf von `/api/auth/me` beim Laden
 (`restoreSession`) darf scheitern, und die Seite zeigt keine Personendaten — Titel, ISBN, Menge,
 Schule, Lieferant, Topf, Kundennummer (`api/bestellung/bestellbestaetigung_oeffentlich.go`).
 
@@ -322,7 +322,7 @@ Vermerk.
   Nächster Schritt: je Eintrag den Schreiber suchen, der dagegen laufen kann, und nachstellen,
   was er bekommt; ohne eigene Behandlung ist es der neutrale Satz von `apierrors`. Zuerst die
   elf übrigen Löschsperren (Leser, Exemplar, Gerät, Klasse). Kategorie B.
-- **87 Listen ohne Antwort.** Seit dem 08.10.2026 ruft `api/listen_grenze_gate_pg_test.go` jede
+- **87 Listen ohne Antwort.** Seit dem 08.10.2026 ruft `api/listen_grenze_pg_test.go` jede
   GET-Route auf und verlangt zu jeder Liste in der Antwort, was sie begrenzt; eine neue Liste
   ohne Antwort macht den Test rot. Gefunden sind 92 Listen in 70 Routen. Fünf tragen ihre
   Antwort (beide Protokolle und der Papierkorb mit je 1000 Zeilen, der Katalog mit der

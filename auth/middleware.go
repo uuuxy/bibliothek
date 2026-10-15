@@ -18,7 +18,7 @@ const ClaimsContextKey contextKey = "auth_claims"
 // Entfernung wurde die Kette unerreichbar (bestätigt von golang.org/x/tools/deadcode,
 // das Erreichbarkeit über den echten Aufrufgraphen ab main() rechnet).
 //
-// Ersatzlos: Autorisierung läuft einheitlich über api.RequirePermission. Zwei parallele
+// Ersatzlos: Autorisierung läuft einheitlich über api.verlangeRecht. Zwei parallele
 // Mechaniken waren schon einmal ein Problem — die frühere RBACBlockMiddleware überstimmte
 // role_permissions und nahm einem LEHRER Rechte, die ein Admin ihm ausdrücklich erteilt hatte.
 

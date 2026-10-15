@@ -7,15 +7,15 @@ import (
 	"testing"
 )
 
-func TestHTTPSRedirectMiddleware(t *testing.T) {
-	s := &Server{CookieSecure: true}
+func TestHTTPSMiddleware(t *testing.T) {
+	s := &Server{nurHTTPS: true}
 
 	t.Run("no ALLOWED_ORIGIN fallback to valid r.Host", func(t *testing.T) {
 		_ = os.Setenv("ALLOWED_ORIGIN", "") //nolint:errcheck
 		req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", nil)
 		rr := httptest.NewRecorder()
 
-		handler := s.HTTPSRedirectMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := s.httpsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 		handler.ServeHTTP(rr, req)
@@ -33,7 +33,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 	// Die Sonde des Containers spricht Klartext-HTTP gegen 127.0.0.1 und trägt weder TLS
 	// noch X-Forwarded-Proto. Wird sie umgeleitet, folgt busybox-wget der 301 auf https://
 	// und scheitert am TLS-Handshake gegen den Klartext-Port ("wrong version number") —
-	// in Produktion also immer, lokal (CookieSecure=false) nie. Der Container galt damit
+	// in Produktion also immer, lokal (nurHTTPS=false) nie. Der Container galt damit
 	// dauerhaft als unhealthy, und jede Entscheidung, die daran hing, war blind.
 	t.Run("health probe is never redirected", func(t *testing.T) {
 		_ = os.Setenv("ALLOWED_ORIGIN", "https://bibliothek.schule.de") //nolint:errcheck
@@ -41,7 +41,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		durchgelassen := false
-		handler := s.HTTPSRedirectMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := s.httpsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			durchgelassen = true
 			w.WriteHeader(http.StatusOK)
 		}))
@@ -59,7 +59,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 		req.Host = "example.com\r\n"
 		rr := httptest.NewRecorder()
 
-		handler := s.HTTPSRedirectMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := s.httpsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 		handler.ServeHTTP(rr, req)
@@ -74,7 +74,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "http://attacker.com/foo", nil)
 		rr := httptest.NewRecorder()
 
-		handler := s.HTTPSRedirectMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := s.httpsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 		handler.ServeHTTP(rr, req)
@@ -94,7 +94,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "https://bibliothek.schule.de/foo", nil)
 		rr := httptest.NewRecorder()
 
-		handler := s.HTTPSRedirectMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := s.httpsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 		handler.ServeHTTP(rr, req)

@@ -22,7 +22,7 @@ import (
 // die aus dem Plan fallen, kehren zum Stichtag zurück; Verwerfen ebenso. Nicht angefasst:
 // Nicht-Lernmittel, von Hand gesperrte Schüler, mehrjährige Ausleihen, andere Klassen,
 // Ausgabe-Pläne. Die Sperre der Ehemaligen hält den Plan nicht an
-// (TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LmfPlan).
+// (TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LMFPlan).
 func TestLMFPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

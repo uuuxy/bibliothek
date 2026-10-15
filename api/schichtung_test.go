@@ -109,7 +109,7 @@ func bindetHTTPEin(t *testing.T, name string, quelle any) bool {
 	return false
 }
 
-func TestNeueDateiInApiTraegtEineTuer(t *testing.T) {
+func TestNeueDateiInAPITraegtEineTuer(t *testing.T) {
 	var gefunden []string
 	for _, name := range apiDateien(t) {
 		if !bindetHTTPEin(t, name, nil) {

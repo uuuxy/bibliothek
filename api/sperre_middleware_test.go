@@ -18,7 +18,7 @@ import (
 
 const sperreSitzungID = "5b0f6a2e-8a0c-4a51-9d1c-3f2f6b7c9e10"
 
-func reqMitSitzung(t *testing.T, s *Server, role auth.Role) *http.Request {
+func anfrageMitSitzung(t *testing.T, s *Server, role auth.Role) *http.Request {
 	t.Helper()
 	token, err := s.Auth.GenerateToken("u1", "BC1", role, sperreSitzungID)
 	if err != nil {
@@ -35,10 +35,10 @@ func erwarteSperrzustand(mock pgxmock.PgxPoolIface, gesperrt bool) {
 		WillReturnRows(pgxmock.NewRows([]string{"gesperrt"}).AddRow(gesperrt))
 }
 
-func TestGesperrteSitzung_Antwortet423UndErreichtKeinenHandler(t *testing.T) {
+func TestGesperrteSitzung_Antwortet423UndErreichtKeineTuer(t *testing.T) {
 	tueren := map[string]func(*Server, *http.Request) (*httptest.ResponseRecorder, bool){
-		"RequirePermission": func(s *Server, req *http.Request) (*httptest.ResponseRecorder, bool) {
-			return serve(s, "buch.loeschen", req)
+		"verlangeRecht": func(s *Server, req *http.Request) (*httptest.ResponseRecorder, bool) {
+			return laufeDurch(s, "buch.loeschen", req)
 		},
 		"VerlangeAnmeldung": func(s *Server, req *http.Request) (*httptest.ResponseRecorder, bool) {
 			reached := false
@@ -50,14 +50,14 @@ func TestGesperrteSitzung_Antwortet423UndErreichtKeinenHandler(t *testing.T) {
 	}
 	for name, tuer := range tueren {
 		t.Run(name, func(t *testing.T) {
-			s, mock := setupRBAC(t)
+			s, mock := baueRechteServer(t)
 			defer mock.Close()
 
 			// Auch ein Admin kommt nicht durch: Die Sperre steht vor jedem Recht.
-			expectBlacklistPass(mock, auth.RoleAdmin)
+			erwarteSperrlisteFrei(mock, auth.RoleAdmin)
 			erwarteSperrzustand(mock, true)
 
-			rr, reached := tuer(s, reqMitSitzung(t, s, auth.RoleAdmin))
+			rr, reached := tuer(s, anfrageMitSitzung(t, s, auth.RoleAdmin))
 
 			if rr.Code != http.StatusLocked {
 				t.Errorf("Status %d, erwartet 423 — 401 meldete den Arbeitsplatz ab, 200 lieferte Daten hinter der Sperre", rr.Code)
@@ -80,13 +80,13 @@ func TestGesperrteSitzung_Antwortet423UndErreichtKeinenHandler(t *testing.T) {
 }
 
 func TestNichtGesperrteSitzung_WirdDurchgelassen(t *testing.T) {
-	s, mock := setupRBAC(t)
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleAdmin)
+	erwarteSperrlisteFrei(mock, auth.RoleAdmin)
 	erwarteSperrzustand(mock, false)
 
-	rr, reached := serve(s, "buch.loeschen", reqMitSitzung(t, s, auth.RoleAdmin))
+	rr, reached := laufeDurch(s, "buch.loeschen", anfrageMitSitzung(t, s, auth.RoleAdmin))
 	if rr.Code != http.StatusOK || !reached {
 		t.Errorf("nicht gesperrt: code %d, reached %v — erwartet 200 und erreicht", rr.Code, reached)
 	}
@@ -95,15 +95,15 @@ func TestNichtGesperrteSitzung_WirdDurchgelassen(t *testing.T) {
 // Lässt sich der Sperrzustand nicht lesen, wird abgelehnt — als 503, nicht als abgelaufene
 // Sitzung (401 meldete den Arbeitsplatz ab).
 func TestSperrzustandNichtLesbar_Lehnt503Ab(t *testing.T) {
-	s, mock := setupRBAC(t)
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleAdmin)
+	erwarteSperrlisteFrei(mock, auth.RoleAdmin)
 	mock.ExpectQuery("SELECT gesperrt_seit IS NOT NULL FROM sitzungen").
 		WithArgs(sperreSitzungID).
 		WillReturnError(errors.New("connection reset by peer"))
 
-	rr, reached := serve(s, "buch.loeschen", reqMitSitzung(t, s, auth.RoleAdmin))
+	rr, reached := laufeDurch(s, "buch.loeschen", anfrageMitSitzung(t, s, auth.RoleAdmin))
 	if rr.Code != http.StatusServiceUnavailable {
 		t.Errorf("Status %d, erwartet 503", rr.Code)
 	}
@@ -113,11 +113,11 @@ func TestSperrzustandNichtLesbar_Lehnt503Ab(t *testing.T) {
 }
 
 // Abmelden geht aus der Sperre heraus und nimmt die Zeile der Anmeldung mit.
-func TestLogout_AusDerSperre_LoeschtDieZeile(t *testing.T) {
-	s, mock := logoutServer(t)
+func TestAbmeldung_AusDerSperre_LoeschtDieZeile(t *testing.T) {
+	s, mock := abmeldeServer(t)
 
 	// Keine Abfrage des Sperrzustands: Der Abmelde-Weg prüft ohne sie.
-	expectBlacklistPass(mock, auth.RoleMitarbeiter)
+	erwarteSperrlisteFrei(mock, auth.RoleMitarbeiter)
 	mock.ExpectExec("INSERT INTO revoked_tokens").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -132,7 +132,7 @@ func TestLogout_AusDerSperre_LoeschtDieZeile(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
 	req.AddCookie(&http.Cookie{Name: "session_token", Value: token})
 	rec := httptest.NewRecorder()
-	s.logoutHandler()(rec, req)
+	s.abmelden()(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())

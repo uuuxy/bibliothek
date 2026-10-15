@@ -22,7 +22,7 @@ import (
 // sind, hängen an view_students; die Geräteliste blendet den Ausleihernamen aus.
 
 // TestPersonendatenRoutenHinterViewStudents liest die Routen-Registrierung als
-// Quelle (dieselbe Technik wie routes_authz_coverage_test.go): Diese Antworten
+// Quelle (dieselbe Technik wie geschuetzte_routen_test.go): Diese Antworten
 // verknüpfen Schülernamen mit Titeln und dürfen nie hinter ein Recht rutschen,
 // das die Helfer-Rolle ab Werk besitzt (view_books, perform_actions).
 //
@@ -32,9 +32,9 @@ import (
 // 18.08.2026: für Helfer optional per Rechte-Matrix zuschaltbar, Standard AUS —
 // db/seed.go RechteVorgabe + RechteOptional).
 func TestPersonendatenRoutenHinterViewStudents(t *testing.T) {
-	quelle, err := os.ReadFile("routes_books.go")
+	quelle, err := os.ReadFile("routen_katalog.go")
 	if err != nil {
-		t.Fatalf("routes_books.go lesen: %v", err)
+		t.Fatalf("routen_katalog.go lesen: %v", err)
 	}
 	for route, recht := range map[string]string{
 		"GET /api/vormerkungen":                 "manage_vormerkungen",
@@ -51,10 +51,10 @@ func TestPersonendatenRoutenHinterViewStudents(t *testing.T) {
 			}
 		}
 		if zeile == "" {
-			t.Errorf("Route %q nicht in routes_books.go gefunden — bei Umzug diesen Test mitnehmen", route)
+			t.Errorf("Route %q nicht in routen_katalog.go gefunden — bei Umzug diesen Test mitnehmen", route)
 			continue
 		}
-		if !strings.Contains(zeile, `RequirePermission("`+recht+`")`) {
+		if !strings.Contains(zeile, `verlangeRecht("`+recht+`")`) {
 			t.Errorf("Route %q gibt Schülernamen heraus und muss hinter %s liegen, gefunden: %s", route, recht, strings.TrimSpace(zeile))
 		}
 	}
@@ -83,19 +83,19 @@ func TestVormerkungsRechtIstFuerHelferOptional(t *testing.T) {
 	}
 }
 
-// overrideSpyOmnibox merkt sich, mit welchem OverrideBlock der Ausleih-Kern
+// sperreUebergehenAttrappe merkt sich, mit welchem OverrideBlock der Ausleih-Kern
 // aufgerufen wurde — genau der Wert, der über eine Sperre entscheidet.
-type overrideSpyOmnibox struct {
-	gesehenerOverride bool
+type sperreUebergehenAttrappe struct {
+	gesehenesUebergehen bool
 }
 
-func (o *overrideSpyOmnibox) VerarbeiteEingabe(_ context.Context, q service.OmniboxEingabe) (*service.OmniboxErgebnis, error) {
-	o.gesehenerOverride = q.SperreUebergehen
+func (a *sperreUebergehenAttrappe) VerarbeiteEingabe(_ context.Context, q service.OmniboxEingabe) (*service.OmniboxErgebnis, error) {
+	a.gesehenesUebergehen = q.SperreUebergehen
 	return &service.OmniboxErgebnis{Art: "info", Meldung: "ok"}, nil
 }
 
-func actionSiehtOverride(rolle string) bool {
-	spy := &overrideSpyOmnibox{}
+func eingabeSiehtUebergehen(rolle string) bool {
+	spy := &sperreUebergehenAttrappe{}
 	s := &Server{}
 	// Echte UUID: Eine Schüler-ID, die keine ist, weist EingabeVerarbeiten seit dem 13.09.2026
 	// vor der Rechteprüfung mit 400 ab (uuid_eingaben_test.go).
@@ -104,45 +104,45 @@ func actionSiehtOverride(rolle string) bool {
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle), UserID: "u1"}))
 	w := httptest.NewRecorder()
 	s.theke().EingabeVerarbeiten(spy)(w, req)
-	return spy.gesehenerOverride
+	return spy.gesehenesUebergehen
 }
 
-// TestOverrideBlockNurMitEditStudents: Eine Sperre aufheben ist ein Verwaltungs-
+// TestSperreUebergehenNurMitEditStudents: Eine Sperre aufheben ist ein Verwaltungs-
 // akt. override_block darf nur wirken, wenn der Aufrufer edit_students besitzt —
 // dasselbe Recht, das auch das Sperren/Entsperren erlaubt. Am 18.08.2026 live mit
 // Helfer-Konto belegt: perform_actions allein reichte, die Sperre fiel per
 // Request-Feld, obwohl die UI den Schalter nie anbot (Schutz nur als Konvention).
-func TestOverrideBlockNurMitEditStudents(t *testing.T) {
+func TestSperreUebergehenNurMitEditStudents(t *testing.T) {
 	tuer.LeereRechteCache()
 	t.Cleanup(tuer.LeereRechteCache)
 	tuer.MerkeRechtFuerTest("helfer", "edit_students", false)
 	tuer.MerkeRechtFuerTest("mitarbeiter", "edit_students", true)
 
-	if actionSiehtOverride("helfer") {
+	if eingabeSiehtUebergehen("helfer") {
 		t.Error("Helfer (ohne edit_students) konnte override_block durchsetzen — die Sperre ist aushebelbar")
 	}
-	if !actionSiehtOverride("mitarbeiter") {
+	if !eingabeSiehtUebergehen("mitarbeiter") {
 		t.Error("Mitarbeiter mit edit_students muss override_block nutzen können — sonst ist keine berechtigte Sperr-Aufhebung mehr möglich")
 	}
-	if !actionSiehtOverride("admin") {
+	if !eingabeSiehtUebergehen("admin") {
 		t.Error("Admin muss override_block nutzen können")
 	}
 }
 
-type geraeteListenStub struct {
+type geraeteListenAttrappe struct {
 	repository.GeraeteAbfragen
 	zeilen []repository.GeraetMitStatus
 }
 
-func (g *geraeteListenStub) LadeAlle(_ context.Context) ([]repository.GeraetMitStatus, error) {
-	kopie := make([]repository.GeraetMitStatus, len(g.zeilen))
-	copy(kopie, g.zeilen)
+func (a *geraeteListenAttrappe) LadeAlle(_ context.Context) ([]repository.GeraetMitStatus, error) {
+	kopie := make([]repository.GeraetMitStatus, len(a.zeilen))
+	copy(kopie, a.zeilen)
 	return kopie, nil
 }
 
-func geraeteRequest(rolle string) *httptest.ResponseRecorder {
+func geraeteAnfrage(rolle string) *httptest.ResponseRecorder {
 	name := "Nio Test (6c)"
-	stub := &geraeteListenStub{zeilen: []repository.GeraetMitStatus{{
+	stub := &geraeteListenAttrappe{zeilen: []repository.GeraetMitStatus{{
 		Geraet:        repository.Geraet{ID: "g1", Modellname: "iPad", BarcodeID: "G-1"},
 		AusgeliehenAn: &name,
 	}}}
@@ -163,7 +163,7 @@ func TestGeraetelisteBlendetAusleiherOhneViewStudentsAus(t *testing.T) {
 	t.Cleanup(tuer.LeereRechteCache)
 	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
 
-	helferAntwort := geraeteRequest("helfer").Body.String()
+	helferAntwort := geraeteAnfrage("helfer").Body.String()
 	if strings.Contains(helferAntwort, "Nio Test") {
 		t.Errorf("Helfer sieht den Ausleihernamen: %s", helferAntwort)
 	}
@@ -177,7 +177,7 @@ func TestGeraetelisteBlendetAusleiherOhneViewStudentsAus(t *testing.T) {
 		t.Errorf("verliehen-Status muss als leerer Name sichtbar bleiben, got %v", helferDaten.Data[0]["ausgeliehen_an"])
 	}
 
-	adminAntwort := geraeteRequest("admin").Body.String()
+	adminAntwort := geraeteAnfrage("admin").Body.String()
 	if !strings.Contains(adminAntwort, "Nio Test") {
 		t.Errorf("Admin muss den Ausleihernamen weiterhin sehen: %s", adminAntwort)
 	}

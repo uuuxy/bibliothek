@@ -22,13 +22,13 @@ var kompressionInhaltstypen = []string{
 	"text/csv",
 }
 
-// KompressionMiddleware packt Antworten mit gzip, wenn der Client es anbietet. Der Proxy
+// kompressionMiddleware packt Antworten mit gzip, wenn der Client es anbietet. Der Proxy
 // vor der Anwendung packt nicht; ohne dieses Glied geht die Titelliste des Katalogs mit
 // mehreren Megabyte durchs Schulnetz.
 //
 // Der Live-Strom läuft daran vorbei: Die Hülle hält die ersten Bytes einer Antwort zurück,
 // bis ihre Größe feststeht, und ein Strom soll sofort beim Client ankommen.
-func KompressionMiddleware(next http.Handler) http.Handler {
+func kompressionMiddleware(next http.Handler) http.Handler {
 	// Nur gzip: An Titelliste und Oberfläche gemessen liegen gzip und zstd dicht
 	// beieinander, und jede weitere Kodierung ist ein weiterer Weg, den Proxy und
 	// Werkzeuge verstehen müssen.

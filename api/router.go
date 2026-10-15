@@ -17,7 +17,7 @@
 package api
 
 // router.go: der Server, sein Router und die Zugänge zu den Themen. Die Middleware steht in
-// middleware.go, jede Route mit ihrem Recht in routes_*.go. Die Türen stehen je Thema in einem
+// middleware.go, jede Route mit ihrem Recht in routen_*.go. Die Türen stehen je Thema in einem
 // Paket unter api/ (docs/ARCHITEKTUR.md 5.2.2).
 
 import (
@@ -61,19 +61,19 @@ import (
 // Server wraps the core application dependencies: database, auth, and real-time streaming.
 type Server struct {
 	tuer.Basis
-	CookieSecure bool
+	nurHTTPS bool
 }
 
 // NewServer constructs and returns a new Server instance.
-func NewServer(database *db.Database, authenticator *auth.Authenticator, broker *sse.Broker, cookieSecure bool) *Server {
+func NewServer(datenbank *db.Database, authenticator *auth.Authenticator, broker *sse.Broker, nurHTTPS bool) *Server {
 	// Ab hier liest jeder Mailversand die in der Oberfläche gespeicherte
 	// SMTP-Konfiguration statt der Umgebungsvariablen des Containers. Vorher benutzte
 	// der Test-Knopf die eine und jeder echte Versand die andere Quelle.
-	mailservice.BindeSMTPKonfigAnDatenbank(database.Pool)
+	mailservice.BindeSMTPKonfigAnDatenbank(datenbank.Pool)
 
 	return &Server{
-		Basis:        tuer.Basis{DB: database, Auth: authenticator, Broker: broker},
-		CookieSecure: cookieSecure,
+		Basis:    tuer.Basis{DB: datenbank, Auth: authenticator, Broker: broker},
+		nurHTTPS: nurHTTPS,
 	}
 }
 
@@ -151,38 +151,38 @@ func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 
 	// Instantiate repositories for database queries
-	studentRepo := repository.NewLeserAbfragen(s.DB.Pool)
-	bookRepo := repository.NewKatalogAbfragen(s.DB.Pool)
-	loanRepo := repository.NewAusleihAbfragen(s.DB.Pool)
-	auditRepo := repository.NewProtokollAbfragen(s.DB.Pool)
-	mahnRepo := repository.NewMahnwesenAbfragen(s.DB.Pool)
-	userRepo := repository.NewKontoAbfragen(s.DB.Pool)
+	leserAbfragen := repository.NewLeserAbfragen(s.DB.Pool)
+	katalogAbfragen := repository.NewKatalogAbfragen(s.DB.Pool)
+	ausleihAbfragen := repository.NewAusleihAbfragen(s.DB.Pool)
+	protokollAbfragen := repository.NewProtokollAbfragen(s.DB.Pool)
+	mahnAbfragen := repository.NewMahnwesenAbfragen(s.DB.Pool)
+	kontoAbfragen := repository.NewKontoAbfragen(s.DB.Pool)
 
-	loanSvc := service.NewAusleihDienst(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	deviceSvc := service.NewGeraeteDienst(s.DB.Pool, studentRepo, loanRepo, auditRepo)
-	omniboxSvc := service.NewOmniboxDienst(s.DB.Pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
-	nachbuchSvc := service.NewNachbuchDienst(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	orderSvc := service.NewBestellDienst(s.DB, bookRepo)
+	ausleihDienst := service.NewAusleihDienst(s.DB.Pool, leserAbfragen, katalogAbfragen, ausleihAbfragen, protokollAbfragen)
+	geraeteDienst := service.NewGeraeteDienst(s.DB.Pool, leserAbfragen, ausleihAbfragen, protokollAbfragen)
+	omniboxDienst := service.NewOmniboxDienst(s.DB.Pool, leserAbfragen, katalogAbfragen, ausleihAbfragen, ausleihDienst, geraeteDienst)
+	nachbuchDienst := service.NewNachbuchDienst(s.DB.Pool, leserAbfragen, katalogAbfragen, ausleihAbfragen, protokollAbfragen)
+	bestellDienst := service.NewBestellDienst(s.DB, katalogAbfragen)
 
-	s.registerInventurSubmoduleRoutes(mux)
-	s.registerAuthRoutes(mux)
+	s.registriereInventurRouten(mux)
+	s.registriereAnmeldeRouten(mux)
 
 	// Delegate to domain-specific routers
-	s.registerPublicRoutes(mux)
-	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, omniboxSvc, nachbuchSvc)
-	s.registerStudentRoutes(mux, studentRepo, mahnRepo, auditRepo)
-	s.registerBookRoutes(mux, bookRepo, auditRepo)
-	s.registerSystemRoutes(mux, auditRepo, userRepo, s.DB.Pool)
-	s.registerOrderRoutes(mux, orderSvc)
+	s.registriereOeffentlicheRouten(mux)
+	s.registriereThekenUndInventurRouten(mux, leserAbfragen, katalogAbfragen, omniboxDienst, nachbuchDienst)
+	s.registriereLeserRouten(mux, leserAbfragen, mahnAbfragen, protokollAbfragen)
+	s.registriereKatalogRouten(mux, katalogAbfragen, protokollAbfragen)
+	s.registriereSystemRouten(mux, protokollAbfragen, kontoAbfragen, s.DB.Pool)
+	s.registriereBestellRouten(mux, bestellDienst)
 
-	s.registerImportRoutes(mux)
-	s.registerSwaggerRoutes(mux)
-	s.registerFrontendRoutes(mux)
+	s.registriereImportRouten(mux)
+	s.registriereSwaggerRouten(mux)
+	s.registriereOberflaechenRouten(mux)
 
-	return s.wrapMiddleware(mux)
+	return s.baueKette(mux)
 }
 
-func (s *Server) registerInventurSubmoduleRoutes(mux *http.ServeMux) {
+func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 	// Initialize Inventur sub-module handlers
 	if err := os.MkdirAll("uploads", 0750); err != nil {
 		log.Printf("router: Upload-Verzeichnis konnte nicht angelegt werden: %v", err)
@@ -190,64 +190,64 @@ func (s *Server) registerInventurSubmoduleRoutes(mux *http.ServeMux) {
 	// Ein Unterordner uploads/fotos entsteht hier nicht: Schülerfotos liegen verschlüsselt
 	// in der Datenbank, und /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird nur,
 	// was direkt in uploads/ liegt (inventur/api_routen.go).
-	invRepo := inventur.NewBookRepository(s.DB.Pool)
-	invMeta := inventur.NeuerMetadatenClient()
+	inventurAbfragen := inventur.NewBookRepository(s.DB.Pool)
+	metadaten := inventur.NeuerMetadatenClient()
 
-	invHandler := inventur.NewAPIHandler(inventur.APIHandlerConfig{
-		Repo:                 invRepo,
-		Metadaten:            invMeta,
-		RequireViewBooks:     s.RequirePermission("view_books"),
-		RequireEditBooks:     s.RequirePermission("edit_books"),
-		RequireDeleteBooks:   s.RequirePermission("delete_books"),
+	inventurTueren := inventur.NewAPIHandler(inventur.APIHandlerConfig{
+		Repo:                 inventurAbfragen,
+		Metadaten:            metadaten,
+		RequireViewBooks:     s.verlangeRecht("view_books"),
+		RequireEditBooks:     s.verlangeRecht("edit_books"),
+		RequireDeleteBooks:   s.verlangeRecht("delete_books"),
 		RequireAuthenticated: s.VerlangeAnmeldung(),
 	})
 
 	// Mount Inventur routes
-	mux.Handle("/api/books", invHandler)
-	mux.Handle("/api/books/", invHandler)
-	mux.Handle("/api/class-books", invHandler)
-	mux.Handle("/api/portal/", invHandler)
-	mux.Handle("/api/lookup/", invHandler)
-	mux.Handle("/api/admin", invHandler)
-	mux.Handle("/api/admin/", invHandler)
-	mux.Handle("/uploads/", invHandler)
+	mux.Handle("/api/books", inventurTueren)
+	mux.Handle("/api/books/", inventurTueren)
+	mux.Handle("/api/class-books", inventurTueren)
+	mux.Handle("/api/portal/", inventurTueren)
+	mux.Handle("/api/lookup/", inventurTueren)
+	mux.Handle("/api/admin", inventurTueren)
+	mux.Handle("/api/admin/", inventurTueren)
+	mux.Handle("/uploads/", inventurTueren)
 }
 
-func (s *Server) registerAuthRoutes(mux *http.ServeMux) {
+func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 	// Public Endpoints
-	mux.Handle("POST /login", AuthRateLimitMiddleware(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))))
+	mux.Handle("POST /login", anmeldeBremse(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.nurHTTPS))))
 
 	// Image Caching (Public)
 	mux.HandleFunc("GET /api/images/cover", s.katalog().Cover())
 
 	// CSRF token bootstrap (public): lets API clients obtain a token + cookie before any mutation
-	mux.HandleFunc("GET /api/csrf-token", s.CSRFTokenHandler())
+	mux.HandleFunc("GET /api/csrf-token", s.csrfToken())
 
 	// Token refresh (sliding window) — exempt from CSRF via middleware config
-	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.CookieSecure))
+	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.nurHTTPS))
 
 	// Session-Restore für den SPA-Boot: prüft Cookie + DB-Zustand, liefert Login-Shape
 	mux.HandleFunc("GET /api/auth/me", auth.MeHandler(s.DB.Pool, s.Auth))
 
 	// Logout — blacklists the current token and clears the session cookie
-	mux.HandleFunc("POST /api/auth/logout", s.logoutHandler())
+	mux.HandleFunc("POST /api/auth/logout", s.abmelden())
 
 	// Sperre nach Inaktivität: gilt am Server für die Anmeldung, mit der die Anfrage kommt.
 	// Entsperren prüft ein Passwort und hängt deshalb an derselben Bremse wie /login.
 	mux.HandleFunc("POST /api/auth/sperren", auth.SperrenHandler(s.Auth))
-	mux.Handle("POST /api/auth/entsperren", AuthRateLimitMiddleware(auth.EntsperrenHandler(s.DB.Pool, s.Auth)))
+	mux.Handle("POST /api/auth/entsperren", anmeldeBremse(auth.EntsperrenHandler(s.DB.Pool, s.Auth)))
 
-	mux.HandleFunc("GET /health", s.healthHandler())
+	mux.HandleFunc("GET /health", s.lebenszeichen())
 }
 
-func (s *Server) registerImportRoutes(mux *http.ServeMux) {
+func (s *Server) registriereImportRouten(mux *http.ServeMux) {
 	// LITTERA CSV Import (Accessible by Admin)
-	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.system().LitteraImport()))
-	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.system().BestandImport)))
-	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(s.katalog().CoverAbgleichen()))
+	mux.Handle("POST /api/import/littera", s.verlangeRecht("manage_inventory")(s.system().LitteraImport()))
+	mux.Handle("POST /api/admin/import-bestand", s.verlangeRecht("manage_inventory")(http.HandlerFunc(s.system().BestandImport)))
+	mux.Handle("POST /api/admin/sync-covers", s.verlangeRecht("manage_inventory")(s.katalog().CoverAbgleichen()))
 }
 
-func (s *Server) registerSwaggerRoutes(mux *http.ServeMux) {
+func (s *Server) registriereSwaggerRouten(mux *http.ServeMux) {
 	// Swagger interactive documentation (Only accessible in local/development mode)
 	if os.Getenv("APP_ENV") == "local" || os.Getenv("APP_ENV") == "development" {
 		mux.Handle("GET /swagger/", httpSwagger.Handler(
@@ -259,7 +259,7 @@ func (s *Server) registerSwaggerRoutes(mux *http.ServeMux) {
 	}
 }
 
-func (s *Server) registerFrontendRoutes(mux *http.ServeMux) {
+func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) {
 	// Intercept missing favicon.ico to prevent fallback to index.html and 404 errors
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
@@ -269,18 +269,18 @@ func (s *Server) registerFrontendRoutes(mux *http.ServeMux) {
 	// os.OpenRoot bindet alle Datei-Zugriffe OS-seitig an dist/ — der frühere
 	// os.Stat auf den konkatenierten Pfad war als Existenz-Orakel außerhalb
 	// des Verzeichnisses nutzbar (gosec G304, Projekt-Learning in .jules/sentinel.md).
-	frontendRoot, frontendRootErr := os.OpenRoot("./frontend/dist")
-	if frontendRootErr != nil {
-		log.Printf("router: frontend/dist nicht verfügbar (%v) — SPA-Auslieferung deaktiviert", frontendRootErr)
+	oberflaeche, oberflaecheFehler := os.OpenRoot("./frontend/dist")
+	if oberflaecheFehler != nil {
+		log.Printf("router: frontend/dist nicht verfügbar (%v) — SPA-Auslieferung deaktiviert", oberflaecheFehler)
 	}
-	mux.HandleFunc("/", spaHandler(frontendRoot))
+	mux.HandleFunc("/", liefereOberflaeche(oberflaeche))
 }
 
-func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
+func (s *Server) baueKette(mux http.Handler) http.Handler {
 	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
 	// 100 MB — bewusst großzügig und bewusst global.
 	//
-	// Die Zahl klingt nach Speicherrisiko, ist aber keins: MaxBodySizeMiddleware setzt
+	// Die Zahl klingt nach Speicherrisiko, ist aber keins: rumpfGrenzeMiddleware setzt
 	// http.MaxBytesReader, und der BEGRENZT nur, wie viel ein Handler lesen darf. Er
 	// puffert nichts. Wer 100 MB schickt, ohne dass ein Handler sie liest, belegt keinen
 	// Speicher; wer mehr schickt, bekommt einen Lesefehler.
@@ -291,28 +291,28 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	// "Datei zu groß" klingt. Eine getrennte, kleinere Grenze für alles außer den
 	// Import-Routen wäre der saubere Weg — dafür muss aber jede Upload-Route einzeln
 	// belegt sein, sonst bricht genau die eine, die man übersehen hat.
-	bodyLimiter := MaxBodySizeMiddleware(100 * 1024 * 1024)
-	rateLimiter := RateLimitMiddleware(rateLimitAusUmgebung())
-	timeoutLimiter := TimeoutMiddleware(StandardBearbeitungsfrist)
+	rumpfGrenze := rumpfGrenzeMiddleware(100 * 1024 * 1024)
+	bremse := anfrageBremse(anfragenJeSekundeAusUmgebung())
+	frist := fristMiddleware(bearbeitungsfristVorgabe)
 
 	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> Lesefrist -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> Kompression -> Mux
 	//
 	// Kompression sitzt innen am Mux: Gepackt wird, was ein Handler liefert. Hinter CORS,
 	// weil CORS den Vary-Kopf setzt statt ergänzt und Accept-Encoding sonst daraus fiele.
 	//
-	// ErweitereLesefristFuerLangeUploads steht VOR dem BodyLimiter und damit vor jedem
+	// erweitereLesefristFuerLangeUploads steht VOR dem BodyLimiter und damit vor jedem
 	// Lesen des Rumpfes — danach gesetzt käme die Frist zu spät. Sie hebt die strenge
 	// serverweite ReadTimeout (main.go) für die Import-Endpunkte an.
 	// Hinweis: Die frühere RBACBlockMiddleware (hartkodierte Pfad-Allowlist für LEHRER/HELFER)
 	// wurde entfernt. Sie überstimmte das konfigurierbare role_permissions-System und sorgte dafür,
 	// dass z. B. ein LEHRER seine im PermissionManager gewährten Rechte (view_students etc.) nicht
-	// nutzen konnte. Autorisierung erfolgt nun einheitlich über RequirePermission/RequireRoles.
-	sentryMiddleware := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
-	// ValidateUUIDParamsMiddleware steht hier NICHT mehr: Von außen um den Mux gelegt
+	// nutzen konnte. Autorisierung erfolgt nun einheitlich über verlangeRecht/RequireRoles.
+	sentry := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
+	// uuidPfadMiddleware steht hier NICHT mehr: Von außen um den Mux gelegt
 	// las sie r.PathValue("id"), bevor die Route aufgelöst war — der Wert ist dort immer
 	// leer, die Prüfung lief also nie (Audit-Befund 01.08.2026). Sie sitzt jetzt in
-	// RequirePermission, also hinter dem Routing, wo PathValue gefüllt ist.
-	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.Sicherheitskopfzeilen(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(ErweitereLesefristFuerLangeUploads(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(KompressionMiddleware(mux))))))))))))
+	// verlangeRecht, also hinter dem Routing, wo PathValue gefüllt ist.
+	kette := panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(kompressionMiddleware(mux))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
@@ -323,12 +323,12 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 		// wird. Das hätte die Hash-Speicherung in der Datenbank wieder entwertet.
 		// #nosec G706
 		log.Printf("Incoming Request: %s %s", r.Method, maskiereToken(r.URL.Path))
-		globalHandler.ServeHTTP(w, r)
+		kette.ServeHTTP(w, r)
 	})
 }
 
-// healthHandler antwortet mit dem DB-Verbindungsstatus (Liveness-/Readiness-Probe).
-func (s *Server) healthHandler() http.HandlerFunc {
+// lebenszeichen antwortet mit dem DB-Verbindungsstatus (Liveness-/Readiness-Probe).
+func (s *Server) lebenszeichen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 		if err := s.DB.Pool.Ping(r.Context()); err != nil {
@@ -340,23 +340,23 @@ func (s *Server) healthHandler() http.HandlerFunc {
 	}
 }
 
-// spaHandler liefert die statischen Frontend-Assets aus frontendRoot und fällt für
+// liefereOberflaeche liefert die statischen Frontend-Assets aus frontendRoot und fällt für
 // unbekannte Pfade auf die App-Shell (index.html) zurück. os.OpenRoot bindet alle
 // Datei-Zugriffe OS-seitig an dist/ (Schutz gegen Path-Traversal, gosec G304).
-func spaHandler(frontendRoot *os.Root) http.HandlerFunc {
+func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 			return
 		}
-		if frontendRoot == nil {
+		if oberflaeche == nil {
 			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, errors.New("frontend assets unavailable"))
 			return
 		}
-		rel := strings.TrimPrefix(r.URL.Path, "/")
-		if rel != "" {
-			if info, err := frontendRoot.Stat(rel); err == nil && !info.IsDir() {
-				http.ServeFileFS(w, r, frontendRoot.FS(), rel)
+		relativ := strings.TrimPrefix(r.URL.Path, "/")
+		if relativ != "" {
+			if angabe, err := oberflaeche.Stat(relativ); err == nil && !angabe.IsDir() {
+				http.ServeFileFS(w, r, oberflaeche.FS(), relativ)
 				return
 			}
 		}
@@ -377,6 +377,6 @@ func spaHandler(frontendRoot *os.Root) http.HandlerFunc {
 		}
 
 		// SPA-Fallback: alle unbekannten Pfade auf die App-Shell
-		http.ServeFileFS(w, r, frontendRoot.FS(), "index.html")
+		http.ServeFileFS(w, r, oberflaeche.FS(), "index.html")
 	}
 }

@@ -5,7 +5,7 @@ Jede HTTP-Route des Systems ist hier nach Schülerdaten eingestuft. Das Gate
 `api/pii_matrix_test.go` hält die Tabelle mit dem Code deckungsgleich — eine neue
 Route ohne Zeile hier wird rot, eine Zeile ohne Route ebenso, und das dokumentierte
 Recht wird gegen die Registrierung geprüft. **Die Stufe der GET-Routen ist seit dem
-01.09.2026 gemessen, nicht nur behauptet:** `api/pii_antwort_gate_pg_test.go` ruft
+01.09.2026 gemessen, nicht nur behauptet:** `api/pii_antwort_pg_test.go` ruft
 jede GET-Route über den echten Router mit genau dem Recht ihrer Zeile auf und prüft
 die Antwort (inkl. entpackter PDF-Ströme) gegen Kanarienwerte je Stufe — nichts
 oberhalb der dokumentierten Stufe darf erscheinen, Schlüsselrouten tragen
@@ -51,7 +51,7 @@ zusätzliches `view_students` freischaltet, steht als Anmerkung):
 | 3     | sensibel: Wohnadresse, Eltern-E-Mail, Foto, Gebühren-/Schadensdaten mit Namen                                                                                                                                      | DSGVO-Auskunft, Rechnungen    |
 
 **Rechte-Spalte:** ein Rechtename aus `db/seed.go` (geprüft gegen
-`RequirePermission`), `öffentlich` (kein Wrapper, MUSS Stufe 0 sein — eigener Test),
+`verlangeRecht`), `öffentlich` (kein Wrapper, MUSS Stufe 0 sein — eigener Test),
 `Token` (Link-Token ist der Ausweis), `selbst-prüfend` (Handler validiert das
 Session-Cookie selbst), `Sitzung` (`VerlangeAnmeldung`, im inventur-Paket `RequireAuthenticated`), `inventur-Mux`
 (Delegation, Schutz im inneren Mux) oder `inventur:view_books` /
@@ -66,7 +66,7 @@ Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und hängt überall an
 Nachbuchens). Stufe 3 gehört
 ausschließlich hinter `view_students`/`manage_students_admin`.
 
-## routes_students.go
+## routen_leser.go
 
 | Route                                                  | Recht                 | Stufe | Inhalt                                                                                                                                                 |
 | ------------------------------------------------------ | --------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -113,7 +113,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/bescheide/{id}/pdf`                          | view_students         | 3     | Der Brief: Anschrift, Titel, Beträge                                                                                                                   |
 | `POST /api/bescheide/{id}/uebergeben`                  | edit_students         | 0     | Status                                                                                                                                                 |
 
-## routes_books.go
+## routen_katalog.go
 
 | Route                                                | Recht               | Stufe | Inhalt                                                                                                                                                                                       |
 | ---------------------------------------------------- | ------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -178,7 +178,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/anliegen/anzahl`                           | view_orders         | 0     | nur Zähler                                                                                                                                                                                   |
 | `PUT /api/anliegen/{id}/erledigen`                   | create_orders       | 0     | Mail an Lehrkraft, 204                                                                                                                                                                       |
 
-## routes_misc.go
+## routen_oeffentlich.go und routen_theke.go
 
 | Route                                                     | Recht            | Stufe | Inhalt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | --------------------------------------------------------- | ---------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -204,7 +204,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/buecher/exemplare/{id}/gefunden`               | manage_inventory | 0     | nur Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `POST /api/buecher/exemplare/verlust-endgueltig-loeschen` | manage_inventory | 0     | nur Zähler                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
-## routes_orders.go
+## routen_bestellung.go
 
 | Route                                           | Recht         | Stufe | Inhalt                                    |
 | ----------------------------------------------- | ------------- | ----- | ----------------------------------------- |
@@ -229,7 +229,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `DELETE /api/bestellungen/{id}/mail`            | create_orders | 0     | Meldung zum entfernten Hinweis            |
 | `PUT /api/bestellungen/{id}/mittel`             | create_orders | 0     | Topf (Land/Schulträger), Grund            |
 
-## routes_system.go
+## routen_system.go
 
 | Route                                        | Recht           | Stufe | Inhalt                                                                                                                                                                                                                                        |
 | -------------------------------------------- | --------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

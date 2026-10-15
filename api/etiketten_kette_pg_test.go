@@ -51,13 +51,13 @@ func jsonHolen(t *testing.T, handler http.HandlerFunc, pfad string, ziel any) {
 	}
 }
 
-// offeneEtikettenUeberHandler liefert Liste und Zähler — die beiden Wege zur selben Frage.
+// offeneEtikettenUeberTuer liefert Liste und Zähler — die beiden Wege zur selben Frage.
 //
 // Bewusst über die HTTP-Handler und nicht über eigenes SQL: Der Helfer in
 // internal/service/haendler_beklebt_pg_test.go schreibt die Bedingung noch einmal selbst hin
 // ("bewusst dieselbe wie EtikettOffenBedingung") und kann eine Abweichung im Produktivcode
 // deshalb gar nicht sehen — er würde mitwandern, nur eben nur im Test.
-func offeneEtikettenUeberHandler(t *testing.T, srv *Server) (liste []druck.ExemplarOhneEtikett, anzahl int) {
+func offeneEtikettenUeberTuer(t *testing.T, srv *Server) (liste []druck.ExemplarOhneEtikett, anzahl int) {
 	t.Helper()
 	jsonHolen(t, srv.druck().EtikettenOffen(), "/api/exemplare/etiketten-offen", &liste)
 
@@ -129,7 +129,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	}
 
 	// Nachdruck-Liste UND Zähler müssen dasselbe sagen.
-	liste, anzahl := offeneEtikettenUeberHandler(t, srv)
+	liste, anzahl := offeneEtikettenUeberTuer(t, srv)
 	if anzahl != len(liste) {
 		t.Errorf("Zähler nennt %d, die Liste hat %d Zeilen — zwei Abfragen, zwei Wahrheiten", anzahl, len(liste))
 	}
@@ -140,13 +140,13 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	}
 
 	// Druck gegenbuchen — der Weg, über den die Liste überhaupt leer werden kann.
-	gedruckt := postJSON(t, srv.druck().EtikettenGedrucktVermerken(), "/api/exemplare/etiketten-gedruckt",
+	gedruckt := sendeJSON(t, srv.druck().EtikettenGedrucktVermerken(), "/api/exemplare/etiketten-gedruckt",
 		map[string]any{"barcode_ids": barcodes})
 	if gedruckt["markiert"] != float64(len(barcodes)) {
 		t.Errorf("vermerkt wurden %v Etiketten, erwartet %d", gedruckt["markiert"], len(barcodes))
 	}
 
-	liste, anzahl = offeneEtikettenUeberHandler(t, srv)
+	liste, anzahl = offeneEtikettenUeberTuer(t, srv)
 	if anzahl != len(liste) {
 		t.Errorf("nach dem Druck: Zähler %d, Liste %d Zeilen", anzahl, len(liste))
 	}
@@ -157,9 +157,9 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	}
 
 	// Und der Weg zurück (Papierstau): Zurücksetzen bringt sie wieder.
-	postJSON(t, srv.druck().EtikettenZuruecksetzen(), "/api/exemplare/etiketten-zuruecksetzen",
+	sendeJSON(t, srv.druck().EtikettenZuruecksetzen(), "/api/exemplare/etiketten-zuruecksetzen",
 		map[string]any{"barcode_ids": barcodes})
-	liste, _ = offeneEtikettenUeberHandler(t, srv)
+	liste, _ = offeneEtikettenUeberTuer(t, srv)
 	for _, barcode := range barcodes {
 		if !enthaeltBarcode(liste, barcode) {
 			t.Errorf("%s kam nach dem Zurücksetzen nicht auf die Liste zurück — der Papierstau-Fall "+
@@ -189,7 +189,7 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	smtptest.WarteAufMail(t, sitzungen)
 
 	barcodes := testdaten.LadeBarcodesDerBestellung(t, pool)
-	liste, anzahl := offeneEtikettenUeberHandler(t, srv)
+	liste, anzahl := offeneEtikettenUeberTuer(t, srv)
 	if anzahl != 0 || len(liste) != 0 {
 		t.Fatalf("vor dem Wareneingang stehen %d Zeilen (Zähler %d) auf der Nachdruck-Liste — "+
 			"der Händler klebt selbst", len(liste), anzahl)
@@ -203,15 +203,15 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 		}
 	}
 
-	liste, anzahl = offeneEtikettenUeberHandler(t, srv)
+	liste, anzahl = offeneEtikettenUeberTuer(t, srv)
 	if anzahl != 0 || len(liste) != 0 {
 		t.Errorf("nach dem Wareneingang stehen %d Zeilen (Zähler %d) auf der Liste: %v",
 			len(liste), anzahl, barcodes)
 	}
 }
 
-// postJSON ruft einen schreibenden Handler mit JSON-Body und liefert die Antwort.
-func postJSON(t *testing.T, handler http.HandlerFunc, pfad string, body map[string]any) map[string]any {
+// sendeJSON ruft einen schreibenden Handler mit JSON-Body und liefert die Antwort.
+func sendeJSON(t *testing.T, handler http.HandlerFunc, pfad string, body map[string]any) map[string]any {
 	t.Helper()
 	roh, err := json.Marshal(body)
 	if err != nil {

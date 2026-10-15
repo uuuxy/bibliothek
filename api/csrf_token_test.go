@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCSRFTokenHandlerOhneCookieErzeugtNeuesToken(t *testing.T) {
-	s := &Server{CookieSecure: true}
-	handler := s.CSRFTokenHandler()
+func TestCSRFTokenOhneCookieErzeugtNeuesToken(t *testing.T) {
+	s := &Server{nurHTTPS: true}
+	handler := s.csrfToken()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
 	rec := httptest.NewRecorder()
@@ -41,9 +42,9 @@ func TestCSRFTokenHandlerOhneCookieErzeugtNeuesToken(t *testing.T) {
 	assert.Equal(t, false, cookie.HttpOnly, "Cookie sollte für das Frontend lesbar sein (HttpOnly=false)")
 }
 
-func TestCSRFTokenHandlerMitCookieLiefertExistierendesToken(t *testing.T) {
-	s := &Server{CookieSecure: true}
-	handler := s.CSRFTokenHandler()
+func TestCSRFTokenMitCookieLiefertDasVorhandene(t *testing.T) {
+	s := &Server{nurHTTPS: true}
+	handler := s.csrfToken()
 
 	existingToken := "mein-existierendes-token-123"
 
@@ -67,9 +68,9 @@ func TestCSRFTokenHandlerMitCookieLiefertExistierendesToken(t *testing.T) {
 	assert.Empty(t, rec.Header().Get("Set-Cookie"), "Sollte kein neues Cookie setzen, wenn bereits eines existiert")
 }
 
-func TestCSRFTokenHandlerMitLeerenCookieErzeugtNeuesToken(t *testing.T) {
-	s := &Server{CookieSecure: true}
-	handler := s.CSRFTokenHandler()
+func TestCSRFTokenMitLeeremCookieErzeugtNeuesToken(t *testing.T) {
+	s := &Server{nurHTTPS: true}
+	handler := s.csrfToken()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
 	// Leeres Cookie setzen
@@ -93,4 +94,65 @@ func TestCSRFTokenHandlerMitLeerenCookieErzeugtNeuesToken(t *testing.T) {
 	cookies := rec.Result().Cookies()
 	require.Len(t, cookies, 1)
 	assert.Equal(t, token, cookies[0].Value)
+}
+
+func TestCSRFToken_NeuesToken(t *testing.T) {
+	s := &Server{nurHTTPS: true}
+	handler := s.csrfToken()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("erwartet 200 OK, erhalten %d", rec.Code)
+	}
+
+	setCookie := rec.Header().Get("Set-Cookie")
+	if !strings.Contains(setCookie, csrfCookieName+"=") {
+		t.Errorf("Set-Cookie Header fehlt oder hat falschen Namen: %q", setCookie)
+	}
+
+	var response map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("JSON konnte nicht geparst werden: %v", err)
+	}
+
+	if response["csrf_token"] == "" {
+		t.Error("csrf_token in JSON Antwort ist leer")
+	}
+
+	if !strings.Contains(setCookie, response["csrf_token"]) {
+		t.Errorf("Cookie-Wert stimmt nicht mit JSON-Antwort überein. Cookie: %q, JSON: %q", setCookie, response["csrf_token"])
+	}
+}
+
+func TestCSRFToken_BestehendesToken(t *testing.T) {
+	s := &Server{nurHTTPS: true}
+	handler := s.csrfToken()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
+	req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "existing-tok-123"})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("erwartet 200 OK, erhalten %d", rec.Code)
+	}
+
+	setCookie := rec.Header().Get("Set-Cookie")
+	if setCookie != "" {
+		t.Errorf("Set-Cookie Header sollte nicht gesetzt werden, wenn Token existiert: %q", setCookie)
+	}
+
+	var response map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("JSON konnte nicht geparst werden: %v", err)
+	}
+
+	if response["csrf_token"] != "existing-tok-123" {
+		t.Errorf("erwartet 'existing-tok-123', erhalten %q", response["csrf_token"])
+	}
 }

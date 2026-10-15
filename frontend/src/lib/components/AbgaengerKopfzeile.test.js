@@ -4,7 +4,7 @@ import AbgaengerKopfzeile from './AbgaengerKopfzeile.svelte';
 import { authStore } from '../stores/authStore.svelte.js';
 
 // Der Knopf „An Klassenleitungen mailen" schickt an POST /api/abgaenger/mail, und diese
-// Route verlangt create_orders (api/routes_students.go). Die Seite selbst hängt an
+// Route verlangt create_orders (api/routen_leser.go). Die Seite selbst hängt an
 // view_graduates — wer sie sehen darf, darf also nicht zwangsläufig mailen.
 //
 // Bis zum 12.09.2026 stand der Knopf trotzdem für jeden da (Bestands-Durchgang

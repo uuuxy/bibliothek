@@ -65,7 +65,7 @@ func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
 
 	// (a) Zukunft -> Reset.
 	zukunft := time.Now().AddDate(0, 0, 30).Format("2006-01-02")
-	if rec := globalExtend(t, srv, "9z", zukunft); rec.Code != http.StatusOK {
+	if rec := verlaengereLernmittelDerKlasse(t, srv, "9z", zukunft); rec.Code != http.StatusOK {
 		t.Fatalf("Extend Zukunft: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
 	if m := mahnstufeVon(t, pool, loanReset); m != 0 {
@@ -74,7 +74,7 @@ func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
 
 	// (b) Vergangenheit -> Mahnstufe bleibt erhalten.
 	vergangen := time.Now().AddDate(0, 0, -5).Format("2006-01-02")
-	if rec := globalExtend(t, srv, "9y", vergangen); rec.Code != http.StatusOK {
+	if rec := verlaengereLernmittelDerKlasse(t, srv, "9y", vergangen); rec.Code != http.StatusOK {
 		t.Fatalf("Extend Vergangenheit: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
 	if m := mahnstufeVon(t, pool, loanKeep); m != 2 {
@@ -82,7 +82,7 @@ func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
 	}
 }
 
-func globalExtend(t *testing.T, srv *Server, klasse, datum string) *httptest.ResponseRecorder {
+func verlaengereLernmittelDerKlasse(t *testing.T, srv *Server, klasse, datum string) *httptest.ResponseRecorder {
 	t.Helper()
 	body := fmt.Sprintf(`{"klasse":%q,"neues_rueckgabe_datum":%q}`, klasse, datum)
 	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/lmf/global-extend", strings.NewReader(body))
@@ -135,10 +135,10 @@ func reservierung(t *testing.T, srv *Server, userID, titelID string, anzahl int)
 	return rec
 }
 
-// TestShelfWarmers_NeuzugangKeinLadenhueter sichert Audit-Bug #4 ab: Ein frisch gekaufter,
+// TestLadenhueter_NeuzugangIstKeiner sichert Audit-Bug #4 ab: Ein frisch gekaufter,
 // noch nie ausgeliehener Titel darf NICHT sofort als Ladenhüter/Aussonderungskandidat gelten.
 // Nur ein alter (>2 Jahre im Bestand), nie ausgeliehener Titel ist ein echter Ladenhüter.
-func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
+func TestLadenhueter_NeuzugangIstKeiner(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -171,10 +171,10 @@ func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
 	}
 }
 
-// TestMahnwesen_KeineZombieMahnungFuerGeloeschte sichert Audit-Bug #5 ab: Für einen weich
+// TestMahnwesen_KeineMahnungFuerGeloeschte sichert Audit-Bug #5 ab: Für einen weich
 // (Papierkorb) gelöschten Schüler dürfen keine Mahn-Daten mehr verarbeitet werden — sonst
 // gingen "Zombie-Mahnungen" an den ehemaligen Klassenlehrer (DSGVO-Verstoß).
-func TestMahnwesen_KeineZombieMahnungFuerGeloeschte(t *testing.T) {
+func TestMahnwesen_KeineMahnungFuerGeloeschte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()

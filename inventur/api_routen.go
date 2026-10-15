@@ -113,8 +113,8 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	handler.mux.Handle("DELETE /api/books", config.RequireDeleteBooks(http.HandlerFunc(handler.handleAdminBooks)))
 
 	// Die Buch-Kennung als Platzhalter statt Sammelroute POST/PUT /api/books/ mit selbst
-	// zerlegtem Pfad: Nur einen Platzhalter sieht ValidateUUIDParamsMiddleware (sie steckt
-	// in RequirePermission, die api/router.go hier einsetzt), und das API-Inventar gleicht
+	// zerlegtem Pfad: Nur einen Platzhalter sieht uuidPfadMiddleware (sie steckt
+	// in verlangeRecht, die api/router.go hier einsetzt), und das API-Inventar gleicht
 	// die Routen einzeln ab. Bis zum 13.09.2026 kam PUT /api/books/x als 500 zurück.
 	handler.mux.Handle("PUT /api/books/{id}", config.RequireEditBooks(http.HandlerFunc(handler.BearbeiteBuchAktualisieren)))
 	handler.mux.Handle("POST /api/books/{id}/refresh-cover", config.RequireEditBooks(http.HandlerFunc(handler.handleRefreshCover)))

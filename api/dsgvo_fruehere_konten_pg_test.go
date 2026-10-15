@@ -30,8 +30,8 @@ import (
 // Geprüft über die echten Handler und Repository-Wege; dazu, dass das endgültige Löschen des
 // Lesers Name und Adresse aus dem Löscheintrag tilgt.
 
-// fkAuskunft ruft die Auskunft eines Lesers über ihren Handler ab.
-func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.Antwort {
+// fruehereKontenAuskunft ruft die Auskunft eines Lesers über ihren Handler ab.
+func fruehereKontenAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.Antwort {
 	t.Helper()
 	rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().DSGVOAuskunft(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
 		map[string]string{"id": leserID})
@@ -45,7 +45,7 @@ func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.Antwo
 	return a
 }
 
-func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
+func TestDSGVOAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -66,7 +66,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	}
 	auskunftZu := func(leserID string) auskunft.Antwort {
 		t.Helper()
-		return fkAuskunft(t, srv, admin, leserID)
+		return fruehereKontenAuskunft(t, srv, admin, leserID)
 	}
 
 	// Tür 1: Benutzer & Rechte. Anlegen und Ändern schreiben USER_CREATE und USER_UPDATE mit
@@ -182,7 +182,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 // gelöscht ist. Beide Einträge trugen die Kennung des Kontos nicht in den Details: die
 // Selbstanmeldung nur als Handelnden (admin_id, mit dem Konto geleert), der Nachtrag nur die
 // Kennung des Lesers. Geprüft über die Anmeldung, die Leserakte und Benutzer & Rechte.
-func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
+func TestDSGVOAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "konto-eintraege.invalid")
@@ -254,13 +254,13 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 			t.Fatalf("Konto freischalten: Status %d — %s", rec.Code, rec.Body.String())
 		}
 
-		a := fkAuskunft(t, srv, admin, leserID)
+		a := fruehereKontenAuskunft(t, srv, admin, leserID)
 		if a.Zugangskonto == nil || !aktionen(a.Zugangskonto.Ereignisse)["SELBSTANMELDUNG"] {
 			t.Fatalf("die eigene Anmeldung fehlt beim bestehenden Konto: %+v", a.Zugangskonto)
 		}
 		loescheKonto(t, kontoID)
 
-		a = fkAuskunft(t, srv, admin, leserID)
+		a = fruehereKontenAuskunft(t, srv, admin, leserID)
 		if len(a.FruehereZugangskonten) != 1 {
 			t.Fatalf("frühere Zugangskonten: %d, erwartet 1", len(a.FruehereZugangskonten))
 		}
@@ -288,13 +288,13 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 			t.Fatalf("das Konto hängt an Leser %s, erwartet %s", kontoLeser, leserID)
 		}
 
-		a := fkAuskunft(t, srv, admin, leserID)
+		a := fruehereKontenAuskunft(t, srv, admin, leserID)
 		if a.Zugangskonto == nil || !aktionen(a.Zugangskonto.Ereignisse)["KOLLEGIUMSKONTO_NACHGETRAGEN"] {
 			t.Errorf("der Nachtrag fehlt beim bestehenden Konto: %+v", a.Zugangskonto)
 		}
 		loescheKonto(t, kontoID)
 
-		a = fkAuskunft(t, srv, admin, leserID)
+		a = fruehereKontenAuskunft(t, srv, admin, leserID)
 		if len(a.FruehereZugangskonten) != 1 {
 			t.Fatalf("frühere Zugangskonten: %d, erwartet 1", len(a.FruehereZugangskonten))
 		}

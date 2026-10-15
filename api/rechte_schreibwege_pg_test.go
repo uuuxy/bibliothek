@@ -21,8 +21,8 @@ import (
 //
 // Die Lücke, die dieses Gate schließt (Bestands-Durchgang 06.09.2026): Das
 // Matrix-Gate (pii_matrix_test.go) vergleicht Text mit Text — es prüft, dass die
-// Registrierung ein `RequirePermission(...)` mit dem dokumentierten Namen trägt. Das
-// Antwort-Gate (pii_antwort_gate_pg_test.go) fährt den echten Router, aber nur über
+// Registrierung ein `verlangeRecht(...)` mit dem dokumentierten Namen trägt. Das
+// Antwort-Gate (pii_antwort_pg_test.go) fährt den echten Router, aber nur über
 // GET-Routen und zwei lesende POSTs; es sagt das selbst: „Die übrigen Nicht-GET-Zeilen
 // bleiben außerhalb." Damit war die HÄLFTE, die die Welt verändert — 91 von 186 Routen,
 // darunter jedes Löschen — nur lexikalisch geprüft.
@@ -49,7 +49,7 @@ var schreibwegeOhneFachrecht = map[string]string{
 }
 
 // füllwert ersetzt die Platzhalter einer Route. UUIDs sind Pflicht: Die
-// UUID-Prüfung sitzt VOR der Rechte-Prüfung (ValidateUUIDParamsMiddleware), ein
+// UUID-Prüfung sitzt VOR der Rechte-Prüfung (uuidPfadMiddleware), ein
 // „x" im Pfad ergäbe 400 statt 403 und das Gate liefe ins Leere.
 func fuellwert(platzhalter string) string {
 	switch platzhalter {

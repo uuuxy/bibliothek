@@ -17,9 +17,9 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-const testJWTSecret = "0123456789abcdef0123456789abcdef" // 32 Byte
+const testJWTGeheimnis = "0123456789abcdef0123456789abcdef" // 32 Byte
 
-func setupRBAC(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
+func baueRechteServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 	t.Helper()
 	tuer.LeereRechteCache() // globaler Cache darf nicht zwischen Tests lecken
 
@@ -27,18 +27,18 @@ func setupRBAC(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 	if err != nil {
 		t.Fatalf("pgxmock init: %v", err)
 	}
-	a, err := auth.NewAuthenticator(testJWTSecret, mock, time.Hour)
+	a, err := auth.NewAuthenticator(testJWTGeheimnis, mock, time.Hour)
 	if err != nil {
 		t.Fatalf("authenticator init: %v", err)
 	}
 	return &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}}, mock
 }
 
-// expectBlacklistPass erwartet die beiden Prüfungen in VerifyToken bei gültigem Token:
+// erwarteSperrlisteFrei erwartet die beiden Prüfungen in VerifyToken bei gültigem Token:
 // die Blacklist ("nicht widerrufen") und direkt danach Kontostatus samt AKTUELLER Rolle.
 // Die Rolle muss mitgeliefert werden, weil VerifyToken sie über die im Token signierte
 // schreibt — die Autorisierung folgt der Datenbank, nicht dem Token.
-func expectBlacklistPass(mock pgxmock.PgxPoolIface, rolle auth.Role) {
+func erwarteSperrlisteFrei(mock pgxmock.PgxPoolIface, rolle auth.Role) {
 	mock.ExpectQuery("revoked_tokens").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
@@ -47,7 +47,7 @@ func expectBlacklistPass(mock pgxmock.PgxPoolIface, rolle auth.Role) {
 		WillReturnRows(pgxmock.NewRows([]string{"aktiv", "rolle"}).AddRow(true, string(rolle)))
 }
 
-func reqWithToken(t *testing.T, s *Server, role auth.Role) *http.Request {
+func anfrageMitToken(t *testing.T, s *Server, role auth.Role) *http.Request {
 	t.Helper()
 	token, err := s.Auth.GenerateToken("u1", "BC1", role, "")
 	if err != nil {
@@ -58,24 +58,24 @@ func reqWithToken(t *testing.T, s *Server, role auth.Role) *http.Request {
 	return req
 }
 
-// serve führt die Middleware aus und meldet zurück, ob der geschützte Handler erreicht wurde.
-func serve(s *Server, permission string, req *http.Request) (*httptest.ResponseRecorder, bool) {
+// laufeDurch führt die Middleware aus und meldet zurück, ob der geschützte Handler erreicht wurde.
+func laufeDurch(s *Server, permission string, req *http.Request) (*httptest.ResponseRecorder, bool) {
 	reached := false
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reached = true
 		w.WriteHeader(http.StatusOK)
 	})
 	rr := httptest.NewRecorder()
-	s.RequirePermission(permission)(next).ServeHTTP(rr, req)
+	s.verlangeRecht(permission)(next).ServeHTTP(rr, req)
 	return rr, reached
 }
 
-func TestRequirePermission_NoCookieUnauthorized(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_OhneCookieIst401(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil) // ohne Cookie
-	rr, reached := serve(s, "buch.loeschen", req)
+	rr, reached := laufeDurch(s, "buch.loeschen", req)
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Errorf("ohne Cookie erwartet 401, bekam %d", rr.Code)
@@ -85,15 +85,15 @@ func TestRequirePermission_NoCookieUnauthorized(t *testing.T) {
 	}
 }
 
-func TestRequirePermission_AdminBypassesCheck(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_AdminUmgehtDiePruefung(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleAdmin)
+	erwarteSperrlisteFrei(mock, auth.RoleAdmin)
 	// KEINE role_permissions-Abfrage erwartet — Admin hat implizit alle Rechte.
 
-	req := reqWithToken(t, s, auth.RoleAdmin)
-	rr, reached := serve(s, "buch.loeschen", req)
+	req := anfrageMitToken(t, s, auth.RoleAdmin)
+	rr, reached := laufeDurch(s, "buch.loeschen", req)
 
 	if rr.Code != http.StatusOK || !reached {
 		t.Errorf("Admin soll durchgelassen werden: code %d, reached %v", rr.Code, reached)
@@ -103,17 +103,17 @@ func TestRequirePermission_AdminBypassesCheck(t *testing.T) {
 	}
 }
 
-func TestRequirePermission_GrantedAllowsAccess(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_GewaehrtLaesstDurch(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleKollegium)
+	erwarteSperrlisteFrei(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(true))
 
-	req := reqWithToken(t, s, auth.RoleKollegium)
-	rr, reached := serve(s, "buch.ausleihen", req)
+	req := anfrageMitToken(t, s, auth.RoleKollegium)
+	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
 	if rr.Code != http.StatusOK || !reached {
 		t.Errorf("gewährte Berechtigung soll durchlassen: code %d, reached %v", rr.Code, reached)
@@ -123,8 +123,8 @@ func TestRequirePermission_GrantedAllowsAccess(t *testing.T) {
 	}
 }
 
-func TestRequirePermission_DeactivatedUserUnauthorized(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_DeaktiviertesKontoIst401(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
 	// Blacklist ok, aber das Konto wurde nach Token-Ausstellung deaktiviert → VerifyToken
@@ -136,8 +136,8 @@ func TestRequirePermission_DeactivatedUserUnauthorized(t *testing.T) {
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"aktiv", "rolle"}).AddRow(false, string(auth.RoleKollegium)))
 
-	req := reqWithToken(t, s, auth.RoleKollegium)
-	rr, reached := serve(s, "buch.ausleihen", req)
+	req := anfrageMitToken(t, s, auth.RoleKollegium)
+	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Errorf("deaktiviertes Konto erwartet 401, bekam %d", rr.Code)
@@ -147,17 +147,17 @@ func TestRequirePermission_DeactivatedUserUnauthorized(t *testing.T) {
 	}
 }
 
-func TestRequirePermission_ExplicitlyDeniedForbidden(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_AusdruecklichVerweigertIst403(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleKollegium)
+	erwarteSperrlisteFrei(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(false))
 
-	req := reqWithToken(t, s, auth.RoleKollegium)
-	rr, reached := serve(s, "buch.loeschen", req)
+	req := anfrageMitToken(t, s, auth.RoleKollegium)
+	rr, reached := laufeDurch(s, "buch.loeschen", req)
 
 	if rr.Code != http.StatusForbidden {
 		t.Errorf("explizit verweigert erwartet 403, bekam %d", rr.Code)
@@ -167,17 +167,17 @@ func TestRequirePermission_ExplicitlyDeniedForbidden(t *testing.T) {
 	}
 }
 
-func TestRequirePermission_NoRowForbidden(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_OhneZeileIst403(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleKollegium)
+	erwarteSperrlisteFrei(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)
 
-	req := reqWithToken(t, s, auth.RoleKollegium)
-	rr, reached := serve(s, "unbekanntes.recht", req)
+	req := anfrageMitToken(t, s, auth.RoleKollegium)
+	rr, reached := laufeDurch(s, "unbekanntes.recht", req)
 
 	if rr.Code != http.StatusForbidden {
 		t.Errorf("fehlender Eintrag (kein Recht) erwartet 403, bekam %d", rr.Code)
@@ -187,17 +187,17 @@ func TestRequirePermission_NoRowForbidden(t *testing.T) {
 	}
 }
 
-func TestRequirePermission_TransientDBErrorIsServerError(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_VoruebergehenderDatenbankfehlerIst500(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleKollegium)
+	erwarteSperrlisteFrei(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(errors.New("connection reset"))
 
-	req := reqWithToken(t, s, auth.RoleKollegium)
-	rr, reached := serve(s, "buch.ausleihen", req)
+	req := anfrageMitToken(t, s, auth.RoleKollegium)
+	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
 	// Transiente DB-Fehler sind 500, nicht 403 — und dürfen NICHT als Negativ-Entscheidung gecacht werden.
 	if rr.Code != http.StatusInternalServerError {
@@ -208,22 +208,22 @@ func TestRequirePermission_TransientDBErrorIsServerError(t *testing.T) {
 	}
 }
 
-func TestRequirePermission_DenyDecisionIsCached(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_AblehnungWirdZwischengespeichert(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
 	// Erster Request: Blacklist + role_permissions (false) → 403, Entscheidung wird gecacht.
-	expectBlacklistPass(mock, auth.RoleKollegium)
+	erwarteSperrlisteFrei(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(false))
 
 	// Zweiter Request: NUR Blacklist erwartet — role_permissions kommt aus dem Cache.
-	expectBlacklistPass(mock, auth.RoleKollegium)
+	erwarteSperrlisteFrei(mock, auth.RoleKollegium)
 
 	for i := 0; i < 2; i++ {
-		req := reqWithToken(t, s, auth.RoleKollegium)
-		rr, reached := serve(s, "buch.loeschen", req)
+		req := anfrageMitToken(t, s, auth.RoleKollegium)
+		rr, reached := laufeDurch(s, "buch.loeschen", req)
 		if rr.Code != http.StatusForbidden || reached {
 			t.Errorf("Request %d: erwartet 403 ohne Handler-Zugriff, bekam %d reached=%v", i+1, rr.Code, reached)
 		}
@@ -235,8 +235,8 @@ func TestRequirePermission_DenyDecisionIsCached(t *testing.T) {
 	}
 }
 
-func TestRequirePermission_BlacklistDBDownFailsClosed(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_SperrlisteOhneDatenbankIst503(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
 	// Blacklist-Prüfung schlägt fehl → IsBlacklisted gibt fail-closed true → Token gilt als widerrufen.
@@ -244,22 +244,22 @@ func TestRequirePermission_BlacklistDBDownFailsClosed(t *testing.T) {
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnError(errors.New("connection reset by peer"))
 
-	req := reqWithToken(t, s, auth.RoleKollegium)
-	rr, reached := serve(s, "buch.ausleihen", req)
+	req := anfrageMitToken(t, s, auth.RoleKollegium)
+	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
 	// 503, nicht 401: Eine 401 meldet den Arbeitsplatz im Client ab (apiFetch →
 	// sitzungAbgelaufen). Ein Datenbank-Aussetzer ist keine abgelaufene Sitzung.
 	if rr.Code != http.StatusServiceUnavailable {
 		t.Errorf("fail-closed Blacklist erwartet 503, bekam %d", rr.Code)
 	}
-	pruefeSitzungsfehlerBody(t, rr, "connection reset by peer")
+	pruefeSitzungsfehlerRumpf(t, rr, "connection reset by peer")
 	if reached {
 		t.Error("bei nicht verifizierbarem Token darf Handler nicht erreicht werden")
 	}
 }
 
-func TestRequirePermission_KontostatusDBDownIst503(t *testing.T) {
-	s, mock := setupRBAC(t)
+func TestVerlangeRecht_KontostatusOhneDatenbankIst503(t *testing.T) {
+	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
 	mock.ExpectQuery("revoked_tokens").
@@ -269,26 +269,26 @@ func TestRequirePermission_KontostatusDBDownIst503(t *testing.T) {
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnError(errors.New("context deadline exceeded"))
 
-	req := reqWithToken(t, s, auth.RoleKollegium)
-	rr, reached := serve(s, "buch.ausleihen", req)
+	req := anfrageMitToken(t, s, auth.RoleKollegium)
+	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
 	if rr.Code != http.StatusServiceUnavailable {
 		t.Errorf("Kontostatus nicht prüfbar: erwartet 503, bekam %d", rr.Code)
 	}
-	pruefeSitzungsfehlerBody(t, rr, "context deadline exceeded")
+	pruefeSitzungsfehlerRumpf(t, rr, "context deadline exceeded")
 	if reached {
 		t.Error("bei nicht prüfbarem Kontostatus darf der Handler nicht erreicht werden")
 	}
 }
 
-// pruefeSitzungsfehlerBody: Die 503-Antwort der Middleware trägt genau den Sentinel-Satz
+// pruefeSitzungsfehlerRumpf: Die 503-Antwort der Middleware trägt genau den Sentinel-Satz
 // und keine Spur der gewrappten Ursache.
 //
 // Dieselbe Prüfung wie auth.pruefeSentinelOhneUrsache, aber an der anderen Tür: Me und
 // Refresh senden selbst, die RBAC-Middleware über sendeSitzungsfehler. Beide Türen führen
 // denselben Fehler nach draußen, und bis zum 12.09.2026 stand hinter dem Satz für das
 // Personal „: sperrliste: connection reset by peer".
-func pruefeSitzungsfehlerBody(t *testing.T, rr *httptest.ResponseRecorder, ursache string) {
+func pruefeSitzungsfehlerRumpf(t *testing.T, rr *httptest.ResponseRecorder, ursache string) {
 	t.Helper()
 	var body map[string]string
 	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {

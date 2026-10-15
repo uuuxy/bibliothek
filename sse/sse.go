@@ -134,7 +134,7 @@ func (b *Broker) Handler() http.HandlerFunc {
 		w.Header().Set("Cache-Control", "no-cache")
 		// Note: "Connection: keep-alive" is forbidden in HTTP/2 (RFC 9113 §8.2.2) and causes
 		// ERR_HTTP2_PROTOCOL_ERROR. SSE streams work natively over both HTTP/1.1 and HTTP/2
-		// without this header. CORS is handled by the global CORSMiddleware.
+		// without this header. CORS is handled by the global corsMiddleware.
 
 		streamEvents(w, r, rc, clientChan)
 	}

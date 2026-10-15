@@ -9,10 +9,10 @@ import (
 )
 
 // TestAlleRoutenSindGeschuetzt ist ein Sicherheits-Gate gegen versehentlich
-// ungeschützte Endpunkte. Jede in router.go / routes_*.go registrierte HTTP-Route
+// ungeschützte Endpunkte. Jede in router.go / routen_*.go registrierte HTTP-Route
 // MUSS eine der drei Bedingungen erfüllen:
 //
-//  1. einen Autorisierungs-Wrapper tragen (RequirePermission oder VerlangeAnmeldung),
+//  1. einen Autorisierungs-Wrapper tragen (verlangeRecht oder VerlangeAnmeldung),
 //  2. an den inventur-invHandler delegieren (dessen Routen prüft TestPIIMatrixRechtStimmtMitCodeUeberein), ODER
 //  3. bewusst auf der öffentlichen Allowlist unten stehen.
 //
@@ -23,7 +23,7 @@ import (
 func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 	// Bewusst öffentliche bzw. selbst-authentifizierende Routen (Pfad ohne HTTP-Methode).
 	// JEDE Ergänzung hier ist eine bewusste Sicherheitsentscheidung — Reviewer aufgepasst.
-	publicAllowlist := map[string]string{
+	oeffentlicheRouten := map[string]string{
 		"/api/public/opac/suche": "öffentlicher Katalog (nur Titel/Autor/Verfügbarkeit, keine PII)",
 		"/api/monitor/slides":    "öffentlicher Bibliotheks-Monitor (nur Buchdaten)",
 		"/api/images/cover":      "öffentlicher Cover-Proxy (SSRF-Host-Allowlist in api/katalog/cover.go)",
@@ -56,9 +56,9 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 	registrierung := regexp.MustCompile(`mux\.Handle(?:Func)?\("([^"]+)"`)
 	methodenPraefix := regexp.MustCompile(`^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) `)
 
-	dateien, err := filepath.Glob("routes_*.go")
+	dateien, err := filepath.Glob("routen_*.go")
 	if err != nil {
-		t.Fatalf("glob routes_*.go: %v", err)
+		t.Fatalf("glob routen_*.go: %v", err)
 	}
 	dateien = append(dateien, "router.go")
 
@@ -77,22 +77,22 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 			muster := m[1]
 			pfad := methodenPraefix.ReplaceAllString(muster, "")
 
-			geschuetzt := strings.Contains(ausdruck, "RequirePermission(") ||
+			geschuetzt := strings.Contains(ausdruck, "verlangeRecht(") ||
 				// VerlangeAnmeldung verlangt eine gültige Sitzung, aber kein Fachrecht —
 				// die richtige Schwelle für Endpunkte, die JEDER angemeldete Client öffnet
 				// (heute nur der SSE-Stream /events). Bewusst hier und nicht auf der
 				// Public-Allowlist: Ohne Sitzung kommt niemand durch.
 				strings.Contains(ausdruck, "VerlangeAnmeldung(") ||
-				strings.Contains(ausdruck, "invHandler")
+				strings.Contains(ausdruck, "inventurTueren")
 			if geschuetzt {
 				continue
 			}
-			if _, ok := publicAllowlist[pfad]; ok {
+			if _, ok := oeffentlicheRouten[pfad]; ok {
 				continue
 			}
 			t.Errorf("Route %q (in %s) hat KEINEN Autorisierungs-Wrapper und steht nicht auf der Public-Allowlist.\n"+
-				"→ Entweder mit RequirePermission(...) schützen (VerlangeAnmeldung(...), wenn jede Sitzung genügt), oder — falls bewusst öffentlich — "+
-				"mit Begründung in publicAllowlist (routes_authz_coverage_test.go) aufnehmen.", muster, datei)
+				"→ Entweder mit verlangeRecht(...) schützen (VerlangeAnmeldung(...), wenn jede Sitzung genügt), oder — falls bewusst öffentlich — "+
+				"mit Begründung in oeffentlicheRouten (geschuetzte_routen_test.go) aufnehmen.", muster, datei)
 		}
 	}
 
@@ -138,12 +138,12 @@ func TestInventurDelegationIstWirklichGeschuetzt(t *testing.T) {
 			continue
 		}
 		pfad := methodenPraefix.ReplaceAllString(m[1], "")
-		if _, ok := publicAllowlistInventur[pfad]; ok {
+		if _, ok := oeffentlicheRoutenInventur[pfad]; ok {
 			continue
 		}
 		t.Errorf("Inventur-Route %q trägt keinen Autorisierungs-Wrapper und steht nicht auf der "+
 			"Public-Allowlist.\n→ Das Gate in TestAlleRoutenSindGeschuetzt hält jede Delegation an "+
-			"invHandler pauschal für geschützt; diese Route wäre dort unbemerkt durchgerutscht.", m[1])
+			"inventurTueren pauschal für geschützt; diese Route wäre dort unbemerkt durchgerutscht.", m[1])
 	}
 
 	if geprueft < 5 {
@@ -152,9 +152,9 @@ func TestInventurDelegationIstWirklichGeschuetzt(t *testing.T) {
 	}
 }
 
-// publicAllowlistInventur nennt die Routen des Inventur-Mux, die bewusst ohne
+// oeffentlicheRoutenInventur nennt die Routen des Inventur-Mux, die bewusst ohne
 // Autorisierung ausgeliefert werden. JEDE Ergänzung ist eine Sicherheitsentscheidung.
-var publicAllowlistInventur = map[string]string{
+var oeffentlicheRoutenInventur = map[string]string{
 	"/uploads/": "hochgeladene Cover-Bilder, öffentlich lesbar für Katalog/Monitor. " +
 		"Kein Verzeichnislisting und kein Unterordner (neuteredFileSystem); Schülerfotos " +
 		"liegen nicht hier, sondern AES-verschlüsselt in der Datenbank.",
@@ -225,7 +225,7 @@ func klammerEnde(text string, auf int) int {
 // im selben Ausdruck.
 func TestRegistrierungsAusdruecke_LesenUeberZeilengrenzen(t *testing.T) {
 	quelle := "\tmux.Handle(\"GET /api/x\",\n" +
-		"\t\ts.RequirePermission(\"view_x\")(h))\n" +
+		"\t\ts.verlangeRecht(\"view_x\")(h))\n" +
 		"\tmux.HandleFunc(\"GET /y (frei)\", frei) // \")\" in der Adresse zählt nicht\n"
 	aus := registrierungsAusdruecke(quelle, "mux.")
 	if len(aus) != 2 {
@@ -235,7 +235,7 @@ func TestRegistrierungsAusdruecke_LesenUeberZeilengrenzen(t *testing.T) {
 	for _, a := range aus {
 		gefunden[a] = true
 	}
-	umgebrochen := "mux.Handle(\"GET /api/x\",\n\t\ts.RequirePermission(\"view_x\")(h))"
+	umgebrochen := "mux.Handle(\"GET /api/x\",\n\t\ts.verlangeRecht(\"view_x\")(h))"
 	if !gefunden[umgebrochen] {
 		t.Errorf("der umgebrochene Ausdruck fehlt oder endet an der Zeile: %q", aus)
 	}

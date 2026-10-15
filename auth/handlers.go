@@ -372,7 +372,7 @@ func loginUserAus(k repository.AnmeldeKonto) loginUser {
 // loadPermissionsForRole lädt die effektiven Rechte aus der konfigurierbaren
 // role_permissions-Tabelle, damit das Frontend exakt das anzeigt, was der Admin im
 // PermissionManager freigeschaltet hat. Admin hat implizit alle Rechte ("*"),
-// analog zum Bypass in der RequirePermission-Middleware.
+// analog zum Bypass in der verlangeRecht-Middleware.
 func loadPermissionsForRole(ctx context.Context, dbPool db.PgxPoolIface, roleStr string) ([]string, error) {
 	if strings.EqualFold(roleStr, string(RoleAdmin)) {
 		return []string{"*"}, nil

@@ -128,12 +128,12 @@ Ursprung auf (der zweite Hop wäre sichtbar, nicht still falsch). Gates:
 
 ## 🔒 Autorisierung (RBAC)
 
-### RequirePermission-Middleware
+### verlangeRecht-Middleware
 
-- Alle schützenswerten Endpunkte sind über `RequirePermission` abgesichert (im Inventur-Modul über die hereingereichten Wächter `RequireViewBooks`, `RequireEditBooks`, `RequireDeleteBooks` und `RequireAuthenticated`); `RequireRoles` ist am 04.08.2026 entfallen.
+- Alle schützenswerten Endpunkte sind über `verlangeRecht` abgesichert (im Inventur-Modul über die hereingereichten Wächter `RequireViewBooks`, `RequireEditBooks`, `RequireDeleteBooks` und `RequireAuthenticated`); `RequireRoles` ist am 04.08.2026 entfallen.
 - **Keine transiente 403-Cacheung:** Ist die Datenbank bei der Berechtigungsprüfung nicht erreichbar (Netzwerkfehler, Timeout), wird HTTP 500 zurückgegeben und **nicht** in den Permission-Cache geschrieben. Ein vorübergehender DB-Ausfall führt also nicht dazu, dass legitime Benutzer für 60 Sekunden ausgesperrt bleiben.
 - **Stabile Verweigerung:** Nur `pgx.ErrNoRows` (Berechtigung definitiv nicht vorhanden) wird gecacht und als 403 gewertet.
-- **PII-Matrix (seit 18.08.2026):** [`docs/PII_MATRIX.de.md`](PII_MATRIX.de.md) stuft jede Route nach Schülerdaten ein (Stufe 0–3) und nennt das Recht davor; `api/pii_matrix_test.go` hält Tabelle und Registrierung deckungsgleich — eine neue Route ohne Einstufung wird rot. Der Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und wird ohne `view_students` überall ausgeblendet (`ohneSperrgrund`). Seit dem 01.09.2026 ist die Stufe **gemessen, nicht nur behauptet**: `api/pii_antwort_gate_pg_test.go` ruft jede GET-Route und die lesenden POSTs (Theken-Scan samt Batch, LUSD-Vorschau) über den echten Router mit genau dem Recht ihrer Zeile auf und prüft die Antwort gegen Kanarienwerte je Stufe.
+- **PII-Matrix (seit 18.08.2026):** [`docs/PII_MATRIX.de.md`](PII_MATRIX.de.md) stuft jede Route nach Schülerdaten ein (Stufe 0–3) und nennt das Recht davor; `api/pii_matrix_test.go` hält Tabelle und Registrierung deckungsgleich — eine neue Route ohne Einstufung wird rot. Der Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und wird ohne `view_students` überall ausgeblendet (`ohneSperrgrund`). Seit dem 01.09.2026 ist die Stufe **gemessen, nicht nur behauptet**: `api/pii_antwort_pg_test.go` ruft jede GET-Route und die lesenden POSTs (Theken-Scan samt Batch, LUSD-Vorschau) über den echten Router mit genau dem Recht ihrer Zeile auf und prüft die Antwort gegen Kanarienwerte je Stufe.
 
 ### `manage_users` ist nicht Administrator (seit 06.08.2026)
 
@@ -180,12 +180,12 @@ jeder Lehrkraft (siehe unten).
 > `role_permissions` mit `ON CONFLICT DO NOTHING` an — eine geänderte Vorgabe im Code
 > erreicht damit **nur frische** Datenbanken. Genau so kam der Befund oben zustande. Wer
 > eine Rechtevorgabe ändert, braucht deshalb zusätzlich eine Migration; und die Tabelle
-> steuert nicht nur das Menü, sondern über `RequirePermission` auch die API.
+> steuert nicht nur das Menü, sondern über `verlangeRecht` auch die API.
 
 ### Endpunkte ohne Anmeldung
 
-`TestAlleRoutenSindGeschuetzt` (`api/routes_authz_coverage_test.go`) lässt jede registrierte
-Route fehlschlagen, die weder `RequirePermission` noch `VerlangeAnmeldung` trägt noch an
+`TestAlleRoutenSindGeschuetzt` (`api/geschuetzte_routen_test.go`) lässt jede registrierte
+Route fehlschlagen, die weder `verlangeRecht` noch `VerlangeAnmeldung` trägt noch an
 das Inventur-Modul übergibt und nicht mit Begründung auf der Allowlist im Test steht. Die
 Routen des Inventur-Moduls prüfen die Tests in `api/pii_matrix_test.go`: Jede Route muss in
 der [PII-Matrix](PII_MATRIX.de.md) stehen, und das dort genannte Recht muss an ihrer
@@ -725,19 +725,19 @@ Eine Anfrage, die formal korrekt ist und trotzdem nie endet, hält Verbindung, G
 und im Zweifel eine Datenbankverbindung fest. Bis zum 06.08.2026 stand am `http.Server`
 nur `ReadHeaderTimeout` — die **Kopfzeilen** waren begrenzt, der **Rumpf** nicht. Wer
 `Content-Length: 10000000` ankündigte und danach ein Byte pro Minute nachreichte, blieb
-beliebig lange verbunden. Die `TimeoutMiddleware` half dagegen nicht: Ein
+beliebig lange verbunden. Die `fristMiddleware` half dagegen nicht: Ein
 Kontext-Deadline bricht kein blockierendes `Read` auf der Verbindung ab.
 
 | Frist                                   | Wert                        | Gilt für                                                                                              |
 | --------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `ReadHeaderTimeout`                     | 5 s                         | Kopfzeilen                                                                                            |
-| `ReadTimeout` (`api.StandardLesefrist`) | 30 s                        | Kopf **und** Rumpf, alle gewöhnlichen Endpunkte                                                       |
-| Lesefrist der Import-Pfade              | 5 min (`LangLaufendeFrist`) | `ErweitereLesefristFuerLangeUploads`, dieselbe Pfadliste wie die Bearbeitungsfrist                    |
+| `ReadTimeout` (`api.LesefristVorgabe`) | 30 s                        | Kopf **und** Rumpf, alle gewöhnlichen Endpunkte                                                       |
+| Lesefrist der Import-Pfade              | 5 min (`langLaufendeFrist`) | `erweitereLesefristFuerLangeUploads`, dieselbe Pfadliste wie die Bearbeitungsfrist                    |
 | `IdleTimeout`                           | 120 s                       | Zwischen zwei Anfragen einer Keep-Alive-Verbindung                                                    |
 | `WriteTimeout`                          | **bewusst nicht gesetzt**   | Es gälte für die ganze Antwort — und `/events` (SSE) ist definitionsgemäß eine Antwort, die nie endet |
 
 Die Schreibrichtung begrenzt stattdessen Caddy (`write_timeout 600s`) und für die
-Bearbeitungsdauer die `TimeoutMiddleware`. Beide Richtungen der Lesefrist sind belegt
+Bearbeitungsdauer die `fristMiddleware`. Beide Richtungen der Lesefrist sind belegt
 (`api/middleware_lesefrist_test.go`): Ein langsamer Rumpf auf einem gewöhnlichen
 Endpunkt wird abgeschnitten, derselbe Rumpf auf `/api/import/…` geht durch. Der Test
 läuft gegen einen echten Server, nicht gegen einen `ResponseRecorder` — der kennt die
@@ -781,7 +781,7 @@ gilt auch für Zwischenspeicher im Netz (RFC 9111, 5.2.2.5).
   Worker legt nur sie ab, keine Antwort der Schnittstelle (`frontend/vite.config.js`). Die
   Warteschlange der Theke ohne Netz ist ein eigener Speicher mit Ausweis- und Buchnummern bis
   zum Nachbuchen ([VVT-Entwurf](datenschutz/vvt_entwurf.md), Zusatz zu Tätigkeit 1 und 2).
-- **Gate:** `api/pii_antwort_gate_pg_test.go` verlangt `no-store` an jeder lesenden Route ab
+- **Gate:** `api/pii_antwort_pg_test.go` verlangt `no-store` an jeder lesenden Route ab
   Stufe 1 und an den Routen, deren Adresse eine Personenkennung trägt
   (`adresseTraegtPersonendaten`); `internal/middleware/sicherheitskopfzeilen_test.go` prüft die Vorgabe
   selbst.
@@ -818,7 +818,7 @@ Umbau eine Stelle gefunden, die eine Textsuche übersehen hatte
 
 ### Antworten gehen mit gzip gepackt hinaus (seit 04.10.2026)
 
-`api/middleware_kompression.go` packt JSON-Antworten, den CSV-Export des Bestands und die
+`api/kompression.go` packt JSON-Antworten, den CSV-Export des Bestands und die
 Textdateien der Oberfläche (HTML, CSS, JavaScript, SVG), wenn der Browser es anbietet.
 Kompression über TLS ist die Voraussetzung des BREACH-Angriffs: Ein Angreifer lässt den
 Browser des Opfers viele angemeldete Anfragen mit eigenem Text schicken und liest an der
@@ -832,7 +832,7 @@ Länge der gepackten Antwort ab, ob sein Text mit einem Geheimnis im selben Rump
   wird der Rumpf, nicht der Kopf. Das CSRF-Token steht in einem Rumpf allein bei
   `GET /api/csrf-token`; diese Antwort liegt unter der Mindestgröße von 1024 Byte und geht
   unverpackt hinaus.
-- **Gate:** `api/middleware_kompression_pg_test.go` prüft am Router des Betriebs, was gepackt
+- **Gate:** `api/kompression_pg_test.go` prüft am Router des Betriebs, was gepackt
   wird und was nicht, darunter die Antwort von `/api/csrf-token`.
 
 ---

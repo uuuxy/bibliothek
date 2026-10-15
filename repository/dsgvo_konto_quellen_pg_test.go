@@ -25,7 +25,7 @@ import (
 //
 // Blindheit: Verweise ohne Fremdschlüssel sieht der Scan nicht — die Klassenleitung
 // (klassen_lehrer_mapping, über die Adresse) und die Kontoereignisse (audit_logs.details
-// mit ziel_id). Beide prüft TestDsgvoAuskunft_Kollege.
+// mit ziel_id). Beide prüft TestDSGVOAuskunft_Kollege.
 var dsgvoKontoQuellen = []string{
 	"audit_log.bearbeiter_id",
 	"audit_logs.admin_id",

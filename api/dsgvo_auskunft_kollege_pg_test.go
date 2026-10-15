@@ -26,7 +26,7 @@ import (
 // Verwaltungsprotokolls über das Konto. Daneben stehen zwei Gegenproben, die NICHT in die
 // Auskunft gehören: die Daten eines zweiten Kollegen und die Anlage eines früheren Kontos
 // mit derselben Adresse (vor der Anlage dieses Kontos).
-func TestDsgvoAuskunft_Kollege(t *testing.T) {
+func TestDSGVOAuskunft_Kollege(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()

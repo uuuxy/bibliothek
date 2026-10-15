@@ -17,7 +17,7 @@ import (
 //     der Abgänger-Kontoauszüge (api/mahnwesen/abgaenger_mail.go).
 //   - Namen am Anliegen und an der Reservierung sieht das Bibliothekspersonal
 //     (repository/anliegen.go, reservierung.go); die Kontenliste verlangt
-//     manage_users, das Protokoll audit_logs (api/routes_system.go).
+//     manage_users, das Protokoll audit_logs (api/routen_system.go).
 //   - Trennen der Ausleihen: praedikatLesehistorieAusleihen fragt nicht nach der Art.
 //   - Erledigte Klassensatz-Reservierungen fallen nach derselben Frist wie erledigte Wünsche
 //     und Meldungen (RunKlassensatzBefristung). Ein gelöschter Kollege fällt nach 180 Tagen im

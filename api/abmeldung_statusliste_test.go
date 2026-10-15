@@ -20,7 +20,7 @@ import (
 // Gate: Die Statusliste des Clients ist genau die Menge der Abmelde-Antworten MIT Löschcookie.
 //
 // Zwei Dateien teilen sich seit dem 14.09.2026 eine Verabredung. Der Handler
-// (logout_handler.go) setzt das Löschcookie und antwortet 200 oder 503; der Client
+// (abmeldung.go) setzt das Löschcookie und antwortet 200 oder 503; der Client
 // (frontend/src/lib/stores/authStore.svelte.js, abmeldungZugestellt) hält genau diese beiden
 // Codes für „das Löschcookie kam an" und räumt daraufhin den Merker „Abmeldung ausstehend".
 // Beide Seiten waren getestet, aber nichts hielt die Listen aneinander — jede konnte sich
@@ -38,7 +38,7 @@ import (
 // ebenso (Bugklasse „lügende Ratsche durch Kommentar").
 func TestAbmeldung_StatuslisteDesClientsIstDieMengeMitLoeschcookie(t *testing.T) {
 	server := abmeldeAntwortenMitLoeschcookie(t)
-	client := statuslisteDesClients(t)
+	client := statuslisteDerOberflaeche(t)
 
 	for _, code := range sortierteCodes(server) {
 		if !client[code] {
@@ -69,37 +69,37 @@ func abmeldeAntwortenMitLoeschcookie(t *testing.T) map[int]bool {
 		lauf func(t *testing.T) *httptest.ResponseRecorder
 	}{
 		{"Widerruf gelingt", func(t *testing.T) *httptest.ResponseRecorder {
-			s, mock := logoutServer(t)
-			expectBlacklistPass(mock, auth.RoleMitarbeiter)
+			s, mock := abmeldeServer(t)
+			erwarteSperrlisteFrei(mock, auth.RoleMitarbeiter)
 			mock.ExpectExec("INSERT INTO revoked_tokens").
 				WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 				WillReturnResult(pgxmock.NewResult("INSERT", 1))
-			return logoutMitToken(t, s)
+			return abmeldenMitToken(t, s)
 		}},
 		{"Widerruf scheitert", func(t *testing.T) *httptest.ResponseRecorder {
-			s, mock := logoutServer(t)
-			expectBlacklistPass(mock, auth.RoleMitarbeiter)
+			s, mock := abmeldeServer(t)
+			erwarteSperrlisteFrei(mock, auth.RoleMitarbeiter)
 			mock.ExpectExec("INSERT INTO revoked_tokens").
 				WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 				WillReturnError(errors.New("connection reset by peer"))
-			return logoutMitToken(t, s)
+			return abmeldenMitToken(t, s)
 		}},
 		{"Prüfung gestört", func(t *testing.T) *httptest.ResponseRecorder {
-			s, mock := logoutServer(t)
+			s, mock := abmeldeServer(t)
 			mock.ExpectQuery("revoked_tokens").
 				WithArgs(pgxmock.AnyArg()).
 				WillReturnError(errors.New("context deadline exceeded"))
-			return logoutMitToken(t, s)
+			return abmeldenMitToken(t, s)
 		}},
 		{"Token unbrauchbar", func(t *testing.T) *httptest.ResponseRecorder {
-			s, mock := logoutServer(t)
+			s, mock := abmeldeServer(t)
 			mock.ExpectQuery("revoked_tokens").
 				WithArgs(pgxmock.AnyArg()).
 				WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
 			req := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
 			req.AddCookie(&http.Cookie{Name: "session_token", Value: "kein.gueltiges.token"})
 			rec := httptest.NewRecorder()
-			s.logoutHandler()(rec, req)
+			s.abmelden()(rec, req)
 			return rec
 		}},
 	}
@@ -130,10 +130,10 @@ var (
 	jsStatusVergleich = regexp.MustCompile(`status\s*===\s*(\d{3})`)
 )
 
-// statuslisteDesClients liest die Codes aus dem Rumpf von abmeldungZugestellt. Fehlt die
+// statuslisteDerOberflaeche liest die Codes aus dem Rumpf von abmeldungZugestellt. Fehlt die
 // Funktion oder steht kein `status === NNN` mehr darin, ist das ein Fehler des Gates, kein
 // grüner Lauf: Die Form ist die einzige, die es liest.
-func statuslisteDesClients(t *testing.T) map[int]bool {
+func statuslisteDerOberflaeche(t *testing.T) map[int]bool {
 	t.Helper()
 	pfad := filepath.Join("..", "frontend", "src", "lib", "stores", "authStore.svelte.js")
 	roh, err := os.ReadFile(pfad)

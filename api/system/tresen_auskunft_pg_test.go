@@ -77,7 +77,7 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 }
 
 // rufeTresenAuskunft führt die Tür mit Sitzung im Kontext aus (so, wie die
-// Middleware sie nach RequirePermission hinterlegt) und liest die Antwort.
+// Middleware sie nach verlangeRecht hinterlegt) und liest die Antwort.
 func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) tresenAuskunft {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/audit/tresen-auskunft?barcode="+barcode, nil)

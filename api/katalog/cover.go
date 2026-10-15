@@ -39,7 +39,7 @@ const maxCoverBytes = 10 << 20
 // Cache, der einen fremden Download samt vollständiger Bilddekodierung auslöst. Treffer im Cache
 // bleiben ungebremst; sie lesen nur eine Datei, und ein Katalogaufruf lädt Dutzende davon
 // gleichzeitig (deshalb steht der Pfad in der Ausnahmeliste der globalen Bremse,
-// api/rate_limit.go).
+// api/anfrage_bremse.go).
 //
 // Der Endpunkt ist ohne Anmeldung erreichbar und löst eine ausgehende Verbindung und ein
 // image.Decode aus; ungebremst hieße das je Aufruf einen Download und eine Dekodierung, beliebig

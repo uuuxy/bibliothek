@@ -142,7 +142,7 @@ func passtStand(kopf, stand string) bool {
 }
 
 // schreibeGezaehlt schreibt die Antwort als JSON und liefert ihre Größe vor dem Packen.
-// Gepackt wird sie wie jede Antwort in der Kette (KompressionMiddleware).
+// Gepackt wird sie wie jede Antwort in der Kette (kompressionMiddleware).
 func schreibeGezaehlt(w http.ResponseWriter, daten any) (int, error) {
 	w.Header().Set("Content-Type", "application/json")
 	z := &zaehlendeSchreiber{w: w}

@@ -18,15 +18,15 @@ import (
 	"bibliothek/pkg/kennung"
 )
 
-// LangLaufendeFrist gilt für Vorgänge, die naturgemäß Minuten dauern: Katalog- und
+// langLaufendeFrist gilt für Vorgänge, die naturgemäß Minuten dauern: Katalog- und
 // Schülerimporte berühren zehntausende Zeilen in einer Transaktion.
 //
 // 5 Minuten, abgestimmt auf das Upload-Limit des Frontends (apiFetch.js) und auf Caddys
 // response_header_timeout. Alle drei müssen dieselbe Frist meinen — läuft die kürzeste
 // vorne weg, bricht der Vorgang dort ab, wo niemand die Meldung sieht.
-const LangLaufendeFrist = 5 * time.Minute
+const langLaufendeFrist = 5 * time.Minute
 
-// langLaufendePfade sind die Endpunkte, für die LangLaufendeFrist gilt.
+// langLaufendePfade sind die Endpunkte, für die langLaufendeFrist gilt.
 //
 // Sie standen zuvor unter demselben 15-Sekunden-Limit wie ein Barcode-Scan. Der
 // Littera-Import (11.076 Titel, 61.580 Exemplare im echten Altbestand) kann darunter
@@ -42,34 +42,34 @@ var langLaufendePfade = []string{
 	"/api/admin/mahnungen/", // Sammeldruck über alle Klassen
 }
 
-// StandardLesefrist ist die Frist, in der eine gewöhnliche Anfrage vollständig
+// LesefristVorgabe ist die Frist, in der eine gewöhnliche Anfrage vollständig
 // eingelesen sein muss (Kopf UND Rumpf). Sie steht am http.Server als ReadTimeout.
 //
 // 30 Sekunden sind für jede normale Anfrage dieser Anwendung reichlich — der größte
 // gewöhnliche Rumpf ist ein Foto-Upload. Die Import-Endpunkte brauchen mehr und holen
-// es sich in ErweitereLesefristFuerLangeUploads.
-const StandardLesefrist = 30 * time.Second
+// es sich in erweitereLesefristFuerLangeUploads.
+const LesefristVorgabe = 30 * time.Second
 
-// StandardBearbeitungsfrist ist die Frist der TimeoutMiddleware für einen gewöhnlichen Aufruf
-// (Barcode-Scan, Suche, Formular); lang laufende Pfade bekommen LangLaufendeFrist. Benannt seit
+// bearbeitungsfristVorgabe ist die Frist der fristMiddleware für einen gewöhnlichen Aufruf
+// (Barcode-Scan, Suche, Formular); lang laufende Pfade bekommen langLaufendeFrist. Benannt seit
 // dem 15.09.2026, weil die Idempotenz der Theke an ihr hängt: Eine Reservierung des Schlüssels
 // gilt nach repository.IdempotenzReservierungsfrist als verwaist, und das stimmt nur, wenn jede
 // Arbeit vorher abgebrochen und ihre Antwort gespeichert ist (idempotenz_fristen_test.go).
-const StandardBearbeitungsfrist = 15 * time.Second
+const bearbeitungsfristVorgabe = 15 * time.Second
 
-// RequestFrist bestimmt die Frist für einen Pfad. Ausgelagert, damit die Zuordnung
+// anfrageFrist bestimmt die Frist für einen Pfad. Ausgelagert, damit die Zuordnung
 // ohne HTTP-Aufbau prüfbar ist — eine Ausnahmeliste, die man nur im Betrieb testen
 // kann, ist genau die Sorte Schutz, die man irrtümlich für wirksam hält.
-func RequestFrist(pfad string, standard time.Duration) time.Duration {
+func anfrageFrist(pfad string, vorgabe time.Duration) time.Duration {
 	for _, praefix := range langLaufendePfade {
 		if strings.HasPrefix(pfad, praefix) {
-			return LangLaufendeFrist
+			return langLaufendeFrist
 		}
 	}
-	return standard
+	return vorgabe
 }
 
-// ErweitereLesefristFuerLangeUploads hebt die Lesefrist der Verbindung für genau die
+// erweitereLesefristFuerLangeUploads hebt die Lesefrist der Verbindung für genau die
 // Endpunkte an, die große Dateien entgegennehmen.
 //
 // Sie ist die Gegenseite von ReadTimeout am Server: Ohne diese Middleware müsste die
@@ -83,10 +83,10 @@ func RequestFrist(pfad string, standard time.Duration) time.Duration {
 // manchen Testaufbauten), läuft die Anfrage weiter — die serverweite Frist gilt dann
 // unverändert. Ein Upload, der daran scheitert, ist ein sichtbarer Fehler; ein
 // abgewiesener Request wegen eines fehlenden Optionalinterfaces wäre ein Rätsel.
-func ErweitereLesefristFuerLangeUploads(next http.Handler) http.Handler {
+func erweitereLesefristFuerLangeUploads(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if RequestFrist(r.URL.Path, StandardLesefrist) != StandardLesefrist {
-			if err := http.NewResponseController(w).SetReadDeadline(time.Now().Add(LangLaufendeFrist)); err != nil {
+		if anfrageFrist(r.URL.Path, LesefristVorgabe) != LesefristVorgabe {
+			if err := http.NewResponseController(w).SetReadDeadline(time.Now().Add(langLaufendeFrist)); err != nil {
 				log.Printf("Lesefrist für %s nicht verlängerbar, es gilt die Vorgabe: %v", r.URL.Path, err)
 			}
 		}
@@ -101,33 +101,33 @@ func istLiveStrom(pfad string) bool {
 	return pfad == "/events"
 }
 
-// TimeoutMiddleware wraps the request with a context timeout.
+// fristMiddleware wraps the request with a context timeout.
 //
 // Der SSE-Stream bleibt ohne Frist — er ist definitionsgemäß offen. Alles andere bekommt
 // eine, auch die langen Vorgänge: Ein Request ganz ohne Frist hängt im Zweifel für immer
 // und hält eine Datenbankverbindung fest.
-func TimeoutMiddleware(timeout time.Duration) func(http.Handler) http.Handler {
+func fristMiddleware(frist time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if istLiveStrom(r.URL.Path) {
 				next.ServeHTTP(w, r)
 				return
 			}
-			ctx, cancel := context.WithTimeout(r.Context(), RequestFrist(r.URL.Path, timeout))
+			ctx, cancel := context.WithTimeout(r.Context(), anfrageFrist(r.URL.Path, frist))
 			defer cancel()
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-// PanicRecoveryMiddleware catches panics during HTTP request handling, logs them, and returns a 500 error.
-func PanicRecoveryMiddleware(next http.Handler) http.Handler {
+// panikMiddleware catches panics during HTTP request handling, logs them, and returns a 500 error.
+func panikMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				// maskiereToken auch hier: Der Bestätigungs-Token steht im Pfad, und ein
 				// Panic auf der Lieferantenseite schreibt genau diesen Pfad ins Log. Die
-				// 500er-Zeile in LoggingMiddleware maskierte bereits, diese nicht — ein
+				// 500er-Zeile in logMiddleware maskierte bereits, diese nicht — ein
 				// weitergereichtes Logfile hätte damit weiter funktionierende Links
 				// enthalten und die Hash-Speicherung in der Datenbank entwertet.
 				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, maskiereToken(r.URL.Path), err)
@@ -138,11 +138,11 @@ func PanicRecoveryMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// HTTPSRedirectMiddleware automatically redirects unencrypted HTTP requests to HTTPS.
-func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
+// httpsMiddleware automatically redirects unencrypted HTTP requests to HTTPS.
+func (s *Server) httpsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Bypass HTTPS redirection in local/development mode when CookieSecure is disabled
-		if !s.CookieSecure {
+		// Bypass HTTPS redirection in local/development mode when nurHTTPS is disabled
+		if !s.nurHTTPS {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -166,38 +166,38 @@ func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
-		if isHTTPS {
+		istHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
+		if istHTTPS {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
-		var targetHost string
+		erlaubterUrsprung := os.Getenv("ALLOWED_ORIGIN")
+		var zielHost string
 
-		if allowedOrigin != "" {
+		if erlaubterUrsprung != "" {
 			// Use trusted configuration to prevent Open Redirect / Host Header Injection
-			targetHost = strings.TrimPrefix(allowedOrigin, "https://")
-			targetHost = strings.TrimPrefix(targetHost, "http://")
+			zielHost = strings.TrimPrefix(erlaubterUrsprung, "https://")
+			zielHost = strings.TrimPrefix(zielHost, "http://")
 		} else {
 			// Fallback to r.Host for multi-domain support if not strictly configured
-			targetHost = r.Host
-			if strings.ContainsAny(targetHost, "\r\n\t") {
+			zielHost = r.Host
+			if strings.ContainsAny(zielHost, "\r\n\t") {
 				http.Error(w, "Bad Request", http.StatusBadRequest)
 				return
 			}
 		}
 
-		target := "https://" + targetHost + r.URL.RequestURI()
-		http.Redirect(w, r, target, http.StatusMovedPermanently) // #nosec G710
+		ziel := "https://" + zielHost + r.URL.RequestURI()
+		http.Redirect(w, r, ziel, http.StatusMovedPermanently) // #nosec G710
 	})
 }
 
-// MaxBodySizeMiddleware limits the request body size to prevent DoS.
-func MaxBodySizeMiddleware(limit int64) func(http.Handler) http.Handler {
+// rumpfGrenzeMiddleware limits the request body size to prevent DoS.
+func rumpfGrenzeMiddleware(grenze int64) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r.Body = http.MaxBytesReader(w, r.Body, limit)
+			r.Body = http.MaxBytesReader(w, r.Body, grenze)
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -206,23 +206,23 @@ func MaxBodySizeMiddleware(limit int64) func(http.Handler) http.Handler {
 // Hinweis: Die frühere RBACBlockMiddleware wurde entfernt. Sie erzwang eine hartkodierte
 // Pfad-Allowlist für LEHRER/HELFER, die das konfigurierbare role_permissions-System überstimmte
 // (ein LEHRER konnte seine im PermissionManager gewährten Rechte nicht nutzen). Autorisierung
-// erfolgt jetzt einheitlich pro Route über RequirePermission bzw. RequireRoles.
+// erfolgt jetzt einheitlich pro Route über verlangeRecht bzw. RequireRoles.
 
-// CORSMiddleware restricts cross-origin requests to the configured school domain.
+// corsMiddleware restricts cross-origin requests to the configured school domain.
 // Set ALLOWED_ORIGIN env var to the school's frontend URL (e.g. https://bibliothek.schule.de).
 // Falls back to same-origin only if not configured.
-func CORSMiddleware(next http.Handler) http.Handler {
-	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
+func corsMiddleware(next http.Handler) http.Handler {
+	erlaubterUrsprung := os.Getenv("ALLOWED_ORIGIN")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-		if origin == "" {
+		ursprung := r.Header.Get("Origin")
+		if ursprung == "" {
 			// Same-origin request (no Origin header) – always allowed
 			next.ServeHTTP(w, r)
 			return
 		}
 		// Only allow explicitly configured origin; reject everything else
-		if allowedOrigin != "" && origin == allowedOrigin {
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		if erlaubterUrsprung != "" && ursprung == erlaubterUrsprung {
+			w.Header().Set("Access-Control-Allow-Origin", erlaubterUrsprung)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			// X-CSRF-Token gehört zwingend dazu: Ohne den Header in dieser Liste
 			// scheitert bei gesetztem ALLOWED_ORIGIN jede mutierende Cross-Origin-Anfrage
@@ -241,7 +241,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// ValidateUUIDParamsMiddleware intercepts requests and validates {id} path parameters
+// uuidPfadMiddleware intercepts requests and validates {id} path parameters
 // against a standard UUID format before they hit the database.
 // uuidPfadParameter nennt die Pfad-Parameter, deren Wert IMMER eine UUID ist —
 // namentlich und abschließend, nicht nach einem Namensmuster.
@@ -257,10 +257,10 @@ func CORSMiddleware(next http.Handler) http.Handler {
 // UUID. {klasse} ist ein Klassenname und gehört bewusst NICHT dazu.
 var uuidPfadParameter = []string{"id", "schueler_id", "ausleihe_id"}
 
-// ValidateUUIDParamsMiddleware weist Anfragen ab, deren UUID-Pfadparameter keine UUID
+// uuidPfadMiddleware weist Anfragen ab, deren UUID-Pfadparameter keine UUID
 // sind — bevor sie die Datenbank erreichen. Geprüft wird nur, was in
 // uuidPfadParameter steht; die Begründung für diese Liste steht dort.
-func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
+func uuidPfadMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, name := range uuidPfadParameter {
 			wert := r.PathValue(name)
@@ -273,9 +273,9 @@ func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// RequirePermission returns a middleware that validates if the authenticated user
+// verlangeRecht returns a middleware that validates if the authenticated user
 // has the required permission dynamically defined in the database.
-func (s *Server) RequirePermission(permission string) func(http.Handler) http.Handler {
+func (s *Server) verlangeRecht(recht string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		// Die UUID-Prüfung sitzt hier und NICHT mehr global um den Mux herum.
 		//
@@ -283,37 +283,37 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 		// aufgelöst hatte — der Wert war dort immer leer, die Prüfung lief also nie
 		// (Audit-Befund vom 01.08.2026, belegt in middleware_frist_test.go). An dieser
 		// Stelle ist die Route bereits getroffen und PathValue gefüllt.
-		return ValidateUUIDParamsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			s.PruefeRecht(w, r, next, permission)
+		return uuidPfadMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			s.PruefeRecht(w, r, next, recht)
 		}))
 	}
 }
 
-// statusRecorder is a custom ResponseWriter that tracks the HTTP status code
-type statusRecorder struct {
+// statusMerker is a custom ResponseWriter that tracks the HTTP status code
+type statusMerker struct {
 	http.ResponseWriter
 	status int
 }
 
-func (r *statusRecorder) WriteHeader(status int) {
-	r.status = status
-	r.ResponseWriter.WriteHeader(status)
+func (m *statusMerker) WriteHeader(status int) {
+	m.status = status
+	m.ResponseWriter.WriteHeader(status)
 }
 
 // Unwrap returns the underlying ResponseWriter so that http.NewResponseController
 // can traverse the middleware chain (e.g. to call SetWriteDeadline for SSE).
-func (r *statusRecorder) Unwrap() http.ResponseWriter {
-	return r.ResponseWriter
+func (m *statusMerker) Unwrap() http.ResponseWriter {
+	return m.ResponseWriter
 }
 
 // Flush implements http.Flusher to support Server-Sent Events (SSE)
-func (r *statusRecorder) Flush() {
-	if f, ok := r.ResponseWriter.(http.Flusher); ok {
+func (m *statusMerker) Flush() {
+	if f, ok := m.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
 }
 
-// LoggingMiddleware records the HTTP status and prints the exact stack trace for 500 errors.
+// logMiddleware records the HTTP status and prints the exact stack trace for 500 errors.
 // tokenPfade sind die einzigen Pfade, die ein Geheimnis TRAGEN: Im Bestätigungs-Link an
 // den Lieferanten steht der Token in der Adresse — sowohl beim Aufruf der Seite selbst
 // als auch bei ihren API-Aufrufen. Die längere Variante steht zuerst, damit sie greift.
@@ -338,29 +338,29 @@ func maskiereToken(pfad string) string {
 	return pfad
 }
 
-// LoggingMiddleware schreibt eine Zeile, wenn eine Anfrage mit 5xx endet: Status, Methode,
+// logMiddleware schreibt eine Zeile, wenn eine Anfrage mit 5xx endet: Status, Methode,
 // Pfad. Mehr nicht — keine Dauer, keine Anfragekennung, und bei 2xx bis 4xx gar nichts.
 // Die Zeile je Anfrage („Incoming Request", Methode und Pfad, VOR der Verarbeitung) schreibt
-// wrapMiddleware in router.go. Bis zum 21.09.2026 stand hier „jede Anfrage mit Status und Dauer";
+// baueKette in router.go. Bis zum 21.09.2026 stand hier „jede Anfrage mit Status und Dauer";
 // das hat diese Funktion nie getan.
 //
 // Der Pfad läuft an beiden Stellen durch die Maskierung darüber: Ein Geheimnis im Pfad
 // (Bestätigungs-Token) darf nicht im Klartext im Log landen.
-func LoggingMiddleware(next http.Handler) http.Handler {
+func logMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		recorder := &statusRecorder{
+		merker := &statusMerker{
 			ResponseWriter: w,
 			status:         http.StatusOK,
 		}
 
-		next.ServeHTTP(recorder, r)
+		next.ServeHTTP(merker, r)
 
 		// Bis zum 07.09.2026 hing hier debug.Stack() an — der Stack DIESER Middleware nach
 		// next.ServeHTTP, nie der der Fehlerstelle: 40 Zeilen ohne Information bei jedem
-		// 5xx. Den echten Stack eines Panics schreibt PanicRecoveryMiddleware; die Ursache
+		// 5xx. Den echten Stack eines Panics schreibt panikMiddleware; die Ursache
 		// eines 5xx steht in der Zeile, die apierrors beim Senden loggt.
-		if recorder.status >= 500 {
-			log.Printf("HTTP %d on %s %s", recorder.status, r.Method, maskiereToken(r.URL.Path))
+		if merker.status >= 500 {
+			log.Printf("HTTP %d on %s %s", merker.status, r.Method, maskiereToken(r.URL.Path))
 		}
 	})
 }

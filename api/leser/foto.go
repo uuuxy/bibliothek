@@ -19,7 +19,7 @@ func (t *Tueren) Foto() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// {barcode_id}, nicht {id}: siehe Routen-Registrierung in api/routes_students.go —
+		// {barcode_id}, nicht {id}: siehe Routen-Registrierung in api/routen_leser.go —
 		// unter dem Namen "id" hätte die UUID-Prüfung jeden Barcode abgewiesen.
 		barcodeID := strings.TrimSpace(r.PathValue("barcode_id"))
 		if barcodeID == "" {

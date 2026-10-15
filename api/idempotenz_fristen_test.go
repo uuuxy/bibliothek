@@ -11,8 +11,8 @@ import (
 //
 // repository.ReserviereIdempotenzSchluessel übernimmt eine Reservierung, die älter als
 // IdempotenzReservierungsfrist ist, mit der Begründung „der Server ist gestorben". Das ist nur
-// dann die einzige Erklärung, wenn kein Besitzer so lange leben KANN: Die TimeoutMiddleware
-// bricht seine Arbeit nach RequestFrist ab, und legeAntwortAb darf danach noch
+// dann die einzige Erklärung, wenn kein Besitzer so lange leben KANN: Die fristMiddleware
+// bricht seine Arbeit nach anfrageFrist ab, und legeAntwortAb darf danach noch
 // theke.IdempotenzSpeicherfrist lang schreiben — mit WithoutCancel, also über die
 // Bearbeitungsfrist
 // hinaus. Erst wenn beides zusammen unter der Übernahmefrist liegt, ist die Reservierung beim
@@ -30,7 +30,7 @@ import (
 // dieselbe.
 func TestIdempotenz_UebernahmeFristLaengerAlsBearbeitungUndSpeichern(t *testing.T) {
 	for _, pfad := range []string{"/api/action", "/api/action/nachbuchen"} {
-		arbeit := RequestFrist(pfad, StandardBearbeitungsfrist)
+		arbeit := anfrageFrist(pfad, bearbeitungsfristVorgabe)
 		spaetestensFertig := arbeit + theke.IdempotenzSpeicherfrist
 		if spaetestensFertig >= repository.IdempotenzReservierungsfrist {
 			t.Errorf("%s: Arbeit (%s) + Speichern (%s) = %s erreicht die Übernahmefrist (%s) — eine "+

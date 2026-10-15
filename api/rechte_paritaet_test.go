@@ -16,7 +16,7 @@ import (
 //
 //   - `frontend/src/lib/permissionMetadata.js` — die Schalter, die ein Admin umlegt,
 //     samt Beschriftung; `menu.js` blendet Menüpunkte danach ein.
-//   - die `RequirePermission("…")` an den Routen — was der Server tatsächlich prüft.
+//   - die `verlangeRecht("…")` an den Routen — was der Server tatsächlich prüft.
 //
 // Läuft ein Name nur in einer der beiden Listen, ist der Schaden still und geht in
 // beide Richtungen:
@@ -96,17 +96,17 @@ func rechteAusOberflaeche(t *testing.T) map[string]bool {
 	return menge
 }
 
-// rechteAnRouten liest die RequirePermission-Aufrufe aus den Registrierungsdateien —
-// lexikalisch, wie das Routen-Schutz-Gate nebenan (routes_authz_coverage_test.go).
+// rechteAnRouten liest die verlangeRecht-Aufrufe aus den Registrierungsdateien —
+// lexikalisch, wie das Routen-Schutz-Gate nebenan (geschuetzte_routen_test.go).
 func rechteAnRouten(t *testing.T) map[string]bool {
 	t.Helper()
-	dateien, err := filepath.Glob("routes_*.go")
+	dateien, err := filepath.Glob("routen_*.go")
 	if err != nil {
-		t.Fatalf("glob routes_*.go: %v", err)
+		t.Fatalf("glob routen_*.go: %v", err)
 	}
 	dateien = append(dateien, "router.go")
 
-	muster := regexp.MustCompile(`RequirePermission\("([a-z_]+)"\)`)
+	muster := regexp.MustCompile(`verlangeRecht\("([a-z_]+)"\)`)
 	menge := map[string]bool{}
 	for _, d := range dateien {
 		// Eine Routenliste, die fehlt, ist ein Fehler: Übergangen, fehlten ihre Rechte still.
@@ -119,7 +119,7 @@ func rechteAnRouten(t *testing.T) map[string]bool {
 		}
 	}
 	if len(menge) == 0 {
-		t.Fatal("keine RequirePermission-Aufrufe gefunden — der Detektor greift ins Leere")
+		t.Fatal("keine verlangeRecht-Aufrufe gefunden — der Detektor greift ins Leere")
 	}
 	return menge
 }

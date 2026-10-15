@@ -28,7 +28,7 @@ var keineUUIDPfadParameter = map[string]string{
 var pfadPlatzhalter = regexp.MustCompile(`\{([a-z_]+)\}`)
 
 func TestUUIDPfadParameter_JederPlatzhalterIstEingeordnet(t *testing.T) {
-	dateien, err := filepath.Glob("routes_*.go")
+	dateien, err := filepath.Glob("routen_*.go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestUUIDPfadParameter_JederEintragWirdStrengGeprueft(t *testing.T) {
 	const gueltig = "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
 	for _, name := range uuidPfadParameter {
 		mux := http.NewServeMux()
-		mux.Handle("GET /probe/{"+name+"}", ValidateUUIDParamsMiddleware(ziel))
+		mux.Handle("GET /probe/{"+name+"}", uuidPfadMiddleware(ziel))
 		for wert, erwartet := range map[string]int{
 			gueltig:               http.StatusOK,
 			"kein-uuid":           http.StatusBadRequest,

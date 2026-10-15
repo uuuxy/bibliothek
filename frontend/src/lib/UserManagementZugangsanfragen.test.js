@@ -268,7 +268,7 @@ describe('Zugangsanfrage zuordnen', () => {
 		});
 	});
 
-	// Der Knopf hängt am Recht des Servers (merge_students, api/routes_students.go). Ohne
+	// Der Knopf hängt am Recht des Servers (merge_students, api/routen_leser.go). Ohne
 	// das Recht bliebe er stehen und lieferte 403 — die WARNUNG muss trotzdem bleiben,
 	// sonst verschwindet die Dublette aus dem Blick, statt aufgelöst zu werden.
 	it('zeigt ohne das Recht keinen Knopf, aber den Hinweis', async () => {

@@ -180,7 +180,7 @@ func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_Klasse(t *testing.T) {
 	}
 }
 
-func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LmfPlan(t *testing.T) {
+func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LMFPlan(t *testing.T) {
 	l := sperrFristLageAnlegen(t)
 	von := repository.SchuljahrBeginn(time.Date(2027, time.June, 28, 0, 0, 0, 0, schulzeit.Zone()))
 	bis := von.AddDate(1, 0, 0)

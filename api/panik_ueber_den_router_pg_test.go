@@ -21,7 +21,7 @@ import (
 
 // Gerät die Bearbeitung einer Anfrage in Panik, antwortet der Server mit einem neutralen 500
 // und läuft weiter; ist Sentry eingerichtet, kommt die Meldung dort an. Beides hängt an den
-// zwei äußeren Schichten des Routers (PanicRecoveryMiddleware, darunter die Schicht von Sentry
+// zwei äußeren Schichten des Routers (panikMiddleware, darunter die Schicht von Sentry
 // mit Repanic) und an der Sentry-Bibliothek, die bei jeder Anfrage mitläuft, auch ohne
 // SENTRY_DSN.
 //
@@ -55,7 +55,7 @@ func anfrageInPanik(t *testing.T, konto string) *httptest.ResponseRecorder {
 	t.Cleanup(func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = $1`, konto) })
 	rufe := func() (rec *httptest.ResponseRecorder) {
 		t.Helper()
-		// Ohne PanicRecoveryMiddleware erreichte die Panik den Aufrufer; der Test soll das
+		// Ohne panikMiddleware erreichte die Panik den Aufrufer; der Test soll das
 		// melden und nicht mit ihr enden.
 		defer func() {
 			if r := recover(); r != nil {

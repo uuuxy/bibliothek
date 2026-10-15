@@ -62,7 +62,7 @@ func langsamerRumpf(t *testing.T, adresse, pfad string, pause time.Duration) (in
 func baueLesefristServer(t *testing.T, readTimeout time.Duration) *httptest.Server {
 	t.Helper()
 
-	handler := ErweitereLesefristFuerLangeUploads(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := erweitereLesefristFuerLangeUploads(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, err := io.ReadAll(r.Body); err != nil {
 			w.WriteHeader(http.StatusRequestTimeout)
 			return
@@ -164,11 +164,11 @@ func TestLesefrist_LangeAntwortWirdNichtAbgeschnitten(t *testing.T) {
 // Vorgang ist.
 func TestLesefrist_NutztDieselbePfadliste(t *testing.T) {
 	for _, pfad := range langLaufendePfade {
-		if RequestFrist(pfad, StandardLesefrist) != LangLaufendeFrist {
+		if anfrageFrist(pfad, LesefristVorgabe) != langLaufendeFrist {
 			t.Errorf("%s gilt nicht als langlaufend", pfad)
 		}
 	}
-	if RequestFrist("/api/schueler", StandardLesefrist) != StandardLesefrist {
+	if anfrageFrist("/api/schueler", LesefristVorgabe) != LesefristVorgabe {
 		t.Error("ein gewöhnlicher Pfad bekam die lange Frist")
 	}
 }

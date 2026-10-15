@@ -29,8 +29,8 @@ import (
 
 const csrfCookieName = "csrf_token"
 
-// generateGlobalCSRFToken creates a 32-byte cryptographically random token.
-func generateGlobalCSRFToken() (string, error) {
+// erzeugeCSRFToken creates a 32-byte cryptographically random token.
+func erzeugeCSRFToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
@@ -40,38 +40,38 @@ func generateGlobalCSRFToken() (string, error) {
 
 // newCSRFCookie baut das (nicht-HttpOnly) Double-Submit-Cookie. Das Secure-Flag wird
 // übergeben, damit es konfigurierbar ist.
-func newCSRFCookie(token string, cookieSecure bool) *http.Cookie {
+func newCSRFCookie(token string, nurHTTPS bool) *http.Cookie {
 	// #nosec G124 - Secure flag is dynamically configured
 	return &http.Cookie{
 		Name:     csrfCookieName,
 		Value:    token,
 		Path:     "/",
 		HttpOnly: false, // Must be readable by frontend JS
-		Secure:   cookieSecure,
+		Secure:   nurHTTPS,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   86400, // 24 hours
 	}
 }
 
-// CSRFTokenHandler is an idempotent bootstrap endpoint (GET /api/csrf-token) that
+// csrfToken is an idempotent bootstrap endpoint (GET /api/csrf-token) that
 // guarantees a csrf_token cookie is set and returns the token in the body. It lets
 // non-browser API clients obtain a token deterministically — without first triggering
 // a 403 on a mutating request that has no prior cookie. Browsers get the cookie via the
-// CSRFMiddleware on any GET, but a direct POST without a preceding GET would otherwise fail.
-func (s *Server) CSRFTokenHandler() http.HandlerFunc {
+// csrfMiddleware on any GET, but a direct POST without a preceding GET would otherwise fail.
+func (s *Server) csrfToken() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := ""
 		if cookie, err := r.Cookie(csrfCookieName); err == nil {
 			token = strings.TrimSpace(cookie.Value)
 		}
 		if token == "" {
-			generated, err := generateGlobalCSRFToken()
+			erzeugt, err := erzeugeCSRFToken()
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("CSRF-Token konnte nicht erzeugt werden"))
 				return
 			}
-			token = generated
-			http.SetCookie(w, newCSRFCookie(token, s.CookieSecure))
+			token = erzeugt
+			http.SetCookie(w, newCSRFCookie(token, s.nurHTTPS))
 		}
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"csrf_token": token})
 	}
@@ -107,8 +107,8 @@ func (s *Server) CSRFTokenHandler() http.HandlerFunc {
 // eine von „drei Ausnahmen", obwohl istPruefungsAusnahme nur zwei kennt. Der Pfad kam
 // durch, weil er durch dieses Raster fiel — nicht, weil ihn jemand freigegeben hätte.
 // Eine Lücke, die wie eine Entscheidung aussieht, ist die gefährlichste Sorte.
-func istAPIPfad(path string) bool {
-	return strings.HasPrefix(path, "/api/") || path == "/login" || strings.HasPrefix(path, "/login/")
+func istAPIPfad(pfad string) bool {
+	return strings.HasPrefix(pfad, "/api/") || pfad == "/login" || strings.HasPrefix(pfad, "/login/")
 }
 
 // istPruefungsAusnahme nennt die mutierenden Pfade, die ohne Token durchmüssen —
@@ -126,78 +126,78 @@ func istAPIPfad(path string) bool {
 // Passwort — die Felder barcode_id/pin in LoginRequest wertet niemand aus. Eine
 // Ausnahme für einen Pfad, den es nicht gibt, schützt nichts und würde scharf, sobald
 // jemand die Route anlegt. Entfernt.
-func istPruefungsAusnahme(path string) bool {
-	return path == "/api/auth/logout" ||
-		path == "/api/auth/refresh"
+func istPruefungsAusnahme(pfad string) bool {
+	return pfad == "/api/auth/logout" ||
+		pfad == "/api/auth/refresh"
 }
 
-// refreshCSRFCookie setzt das csrf_token-Cookie, falls noch keines (bzw. ein leeres)
+// erneuereCSRFCookie setzt das csrf_token-Cookie, falls noch keines (bzw. ein leeres)
 // existiert, damit das Frontend es auslesen kann. Der Bootstrap-Endpunkt verwaltet
 // sein Cookie selbst und wird hier übersprungen, um doppelte Set-Cookie-Header zu
 // vermeiden.
-func refreshCSRFCookie(w http.ResponseWriter, r *http.Request, isAPIPath bool, path string, cookieSecure bool) {
-	if !isAPIPath || path == "/api/csrf-token" {
+func erneuereCSRFCookie(w http.ResponseWriter, r *http.Request, istAPI bool, pfad string, nurHTTPS bool) {
+	if !istAPI || pfad == "/api/csrf-token" {
 		return
 	}
 
-	existingToken := ""
+	vorhanden := ""
 	if cookie, err := r.Cookie(csrfCookieName); err == nil {
-		existingToken = cookie.Value
+		vorhanden = cookie.Value
 	}
 	// Generate a new token only if one doesn't exist yet
-	if existingToken != "" {
+	if vorhanden != "" {
 		return
 	}
-	token, err := generateGlobalCSRFToken()
+	token, err := erzeugeCSRFToken()
 	if err == nil {
-		http.SetCookie(w, newCSRFCookie(token, cookieSecure))
+		http.SetCookie(w, newCSRFCookie(token, nurHTTPS))
 	}
 }
 
-// validateCSRFDoubleSubmit vergleicht das csrf_token-Cookie mit dem X-CSRF-Token-
+// pruefeCSRFToken vergleicht das csrf_token-Cookie mit dem X-CSRF-Token-
 // Header in konstanter Laufzeit und liefert bei Fehlschlag einen sprechenden Fehler.
-func validateCSRFDoubleSubmit(r *http.Request) error {
-	csrfCookie, err := r.Cookie(csrfCookieName)
+func pruefeCSRFToken(r *http.Request) error {
+	cookie, err := r.Cookie(csrfCookieName)
 	if err != nil {
 		return errors.New("CSRF-Validierung fehlgeschlagen: Cookie fehlt")
 	}
-	cookieVal := strings.TrimSpace(csrfCookie.Value)
-	headerVal := strings.TrimSpace(r.Header.Get("X-CSRF-Token"))
+	ausCookie := strings.TrimSpace(cookie.Value)
+	ausKopf := strings.TrimSpace(r.Header.Get("X-CSRF-Token"))
 
-	if cookieVal == "" || headerVal == "" {
+	if ausCookie == "" || ausKopf == "" {
 		return errors.New("CSRF-Validierung fehlgeschlagen: Token fehlt")
 	}
-	if subtle.ConstantTimeCompare([]byte(cookieVal), []byte(headerVal)) != 1 {
+	if subtle.ConstantTimeCompare([]byte(ausCookie), []byte(ausKopf)) != 1 {
 		return errors.New("CSRF-Validierung fehlgeschlagen: Token stimmt nicht überein")
 	}
 	return nil
 }
 
-// CSRFMiddleware returns an HTTP middleware that enforces the Double-Submit
+// csrfMiddleware returns an HTTP middleware that enforces the Double-Submit
 // Cookie CSRF pattern on all mutating API requests.
 //
 // Ausgenommen bleiben ausschließlich die in istPruefungsAusnahme genannten Pfade und
 // alles, was keine API ist (statische Auslieferung) — die Begründung steht dort
 // jeweils an der Zeile.
-func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
+func (s *Server) csrfMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
+		pfad := r.URL.Path
 
-		isAPIPath := istAPIPfad(path)
+		istAPI := istAPIPfad(pfad)
 
 		// Always set/refresh the CSRF cookie so the frontend can read it.
-		refreshCSRFCookie(w, r, isAPIPath, path, s.CookieSecure)
+		erneuereCSRFCookie(w, r, istAPI, pfad, s.nurHTTPS)
 
 		// Only validate on mutating methods for API paths
-		isMutation := r.Method == http.MethodPost ||
+		aendert := r.Method == http.MethodPost ||
 			r.Method == http.MethodPut ||
 			r.Method == http.MethodPatch ||
 			r.Method == http.MethodDelete
 
-		isExempt := !isAPIPath || istPruefungsAusnahme(path)
+		ausgenommen := !istAPI || istPruefungsAusnahme(pfad)
 
-		if isMutation && !isExempt {
-			if err := validateCSRFDoubleSubmit(r); err != nil {
+		if aendert && !ausgenommen {
+			if err := pruefeCSRFToken(r); err != nil {
 				apierrors.SendHTTPError(w, http.StatusForbidden, err)
 				return
 			}

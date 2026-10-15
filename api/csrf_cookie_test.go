@@ -47,7 +47,7 @@ func TestCSRFCookieAttribute(t *testing.T) {
 // TestCSRFCookieLandetInDerAntwort schließt die Lücke zwischen „das Struct stimmt" und
 // „der Browser bekommt es": geprüft wird die tatsächlich gesetzte Set-Cookie-Kopfzeile.
 func TestCSRFCookieLandetInDerAntwort(t *testing.T) {
-	rec := &kopfzeilenRecorder{header: http.Header{}}
+	rec := &kopfzeilenMerker{header: http.Header{}}
 	http.SetCookie(rec, newCSRFCookie("tok123", true))
 
 	gesetzt := rec.header.Get("Set-Cookie")
@@ -58,9 +58,9 @@ func TestCSRFCookieLandetInDerAntwort(t *testing.T) {
 	}
 }
 
-// kopfzeilenRecorder ist ein minimaler ResponseWriter, der nur die Kopfzeilen sammelt.
-type kopfzeilenRecorder struct{ header http.Header }
+// kopfzeilenMerker ist ein minimaler ResponseWriter, der nur die Kopfzeilen sammelt.
+type kopfzeilenMerker struct{ header http.Header }
 
-func (r *kopfzeilenRecorder) Header() http.Header         { return r.header }
-func (r *kopfzeilenRecorder) Write(b []byte) (int, error) { return len(b), nil }
-func (r *kopfzeilenRecorder) WriteHeader(int)             {}
+func (m *kopfzeilenMerker) Header() http.Header         { return m.header }
+func (m *kopfzeilenMerker) Write(b []byte) (int, error) { return len(b), nil }
+func (m *kopfzeilenMerker) WriteHeader(int)             {}

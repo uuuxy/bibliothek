@@ -198,7 +198,7 @@ wenigsten personenbezogene Feld). Es wird mit dem Datensatz anonymisiert und ste
 Art.-15-Auskunft. Die Karenzzeit **verkürzt** die Aufbewahrung gegenüber vorher (Abgänger
 wurden bisher nach 360 Tagen anonymisiert, jetzt nach 90) und verlängert nichts: Wer
 offene Vorgänge hat, blieb schon immer stehen. Die Kandidatensuche und die Vorschau liegen
-auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_gate_pg_test.go`).
+auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_pg_test.go`).
 
 ## 8. Für die Entwicklung: wo steht was
 

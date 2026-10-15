@@ -11,16 +11,16 @@ import (
 
 // Das Foto-GET wurde nie ausgeliefert: Drei Stellen im Code bauen die Bild-URL als
 // /api/schueler/<barcode>/photo (foto.go, leser_liste.go,
-// leseFotoURL), aber die Route hieß {id} — und ValidateUUIDParamsMiddleware prüft
+// leseFotoURL), aber die Route hieß {id} — und uuidPfadMiddleware prüft
 // genau diesen Namen gegen das UUID-Format. Jeder echte Barcode ("S-abg1-ms3p73…")
 // lief damit in 400, bevor der Handler überhaupt lief.
 //
 // Der Test hält beide Hälften fest: dass der Platzhalter der Produktionsroute NICHT
 // wieder "id" heißt, und warum das den Unterschied macht.
-func TestFotoGetRouteNutztBarcodePlatzhalter(t *testing.T) {
-	inhalt, err := os.ReadFile("routes_students.go")
+func TestFotoRoute_GETNutztBarcodePlatzhalter(t *testing.T) {
+	inhalt, err := os.ReadFile("routen_leser.go")
 	if err != nil {
-		t.Fatalf("routes_students.go lesen: %v", err)
+		t.Fatalf("routen_leser.go lesen: %v", err)
 	}
 
 	route := regexp.MustCompile(`mux\.Handle\("GET /api/schueler/\{([a-z_]+)\}/photo"`)
@@ -29,7 +29,7 @@ func TestFotoGetRouteNutztBarcodePlatzhalter(t *testing.T) {
 		t.Fatal("GET-Foto-Route nicht gefunden — Registrierungs-Syntax geändert? Dann diesen Test mitziehen.")
 	}
 	if m[1] == "id" {
-		t.Errorf(`Foto-GET nutzt wieder den Platzhalter {id}. ValidateUUIDParamsMiddleware prüft `+
+		t.Errorf(`Foto-GET nutzt wieder den Platzhalter {id}. uuidPfadMiddleware prüft `+
 			`ausschließlich "id" gegen das UUID-Format und weist damit jeden Barcode mit 400 ab — `+
 			`genau die URL, die leseFotoURL erzeugt. Gefunden: {%s}`, m[1])
 	}
@@ -43,7 +43,7 @@ func TestUUIDPruefungGreiftNurBeimParameterID(t *testing.T) {
 
 	baue := func(muster string) *http.ServeMux {
 		mux := http.NewServeMux()
-		mux.Handle(muster, ValidateUUIDParamsMiddleware(http.HandlerFunc(
+		mux.Handle(muster, uuidPfadMiddleware(http.HandlerFunc(
 			func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })))
 		return mux
 	}
@@ -84,7 +84,7 @@ func TestUUIDPruefungDecktNurEchteUUIDParameterAb(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			mux := http.NewServeMux()
-			mux.Handle(f.muster, ValidateUUIDParamsMiddleware(http.HandlerFunc(
+			mux.Handle(f.muster, uuidPfadMiddleware(http.HandlerFunc(
 				func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })))
 
 			methode := strings.Fields(f.muster)[0]

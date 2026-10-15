@@ -59,7 +59,7 @@ export const KATEGORIEN = [
 	{
 		// Bis 25.08.2026 ein Reiter im Bestellungs-Workspace (entschieden: das
 		// ist Konfiguration, keine Tagesarbeit). Rechte wie die Lieferanten-Routen in
-		// routes_orders.go: Schreiben verlangt create_orders.
+		// routen_bestellung.go: Schreiben verlangt create_orders.
 		id: 'lieferanten',
 		titel: 'Lieferanten',
 		kurz: 'Händler, Kundennummern, Hauptlieferant',
@@ -68,7 +68,7 @@ export const KATEGORIEN = [
 	},
 	{
 		// Pflege der Schlagworte am Titel (docs/OFFEN.md 4.20, Migration 143). Recht wie die
-		// Türen /api/schlagworte/* in routes_system.go: edit_books, wie die Systematik.
+		// Türen /api/schlagworte/* in routen_system.go: edit_books, wie die Systematik.
 		id: 'schlagworte',
 		titel: 'Schlagworte',
 		kurz: 'Umbenennen, zusammenführen, Verweise, Filter',

@@ -13,11 +13,11 @@ import (
 	"bibliothek/pkg/ratelimit"
 )
 
-// RateLimitMiddleware begrenzt Anfragen je Client-IP auf limit pro Zeitfenster.
+// anfrageBremse begrenzt Anfragen je Client-IP auf limit pro Zeitfenster.
 // Ausgenommen sind Pfade, bei denen ein einzelner Seitenaufruf dutzende Anfragen
 // erzeugt — die Begründung dafür steht unten an der Ausnahmeliste.
-func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
-	limiter := ratelimit.New(limit)
+func anfrageBremse(jeSekunde int) func(http.Handler) http.Handler {
+	bremse := ratelimit.New(jeSekunde)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Bilder und Uploads vom Rate-Limiter ausschließen, da ein Seitenaufruf oft dutzende Bilder gleichzeitig lädt.
@@ -34,8 +34,8 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 				return
 			}
 
-			ip := clientip.AusAnfrage(r)
-			if !limiter.LaesstDurch(ip) {
+			adresse := clientip.AusAnfrage(r)
+			if !bremse.LaesstDurch(adresse) {
 				apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
 				return
 			}
@@ -44,7 +44,7 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 	}
 }
 
-// rateLimitAusUmgebung liefert das Anfragen-pro-Sekunde-Budget je IP.
+// anfragenJeSekundeAusUmgebung liefert das Anfragen-pro-Sekunde-Budget je IP.
 //
 // Vorgabe 50 — der Produktionswert, unveraendert. Ueberschreibbar per RATE_LIMIT nur,
 // weil die E2E-Suite ein Sonderfall ist, den es in der Praxis nicht gibt: EIN Browser
@@ -61,7 +61,7 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 // Bewusst NICHT an APP_ENV gekoppelt: Eine Grenze, die sich je nach Umgebung selbst
 // verstellt, ist in dem Moment weg, in dem jemand APP_ENV falsch setzt. So steht der
 // abweichende Wert sichtbar in docker-compose.local.yml und nirgends sonst.
-func rateLimitAusUmgebung() int {
+func anfragenJeSekundeAusUmgebung() int {
 	roh := os.Getenv("RATE_LIMIT")
 	if roh == "" {
 		return 50

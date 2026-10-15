@@ -22,7 +22,7 @@ func durchlaufCSRF(t *testing.T, method, path string, mitToken bool) (erreicht b
 	t.Helper()
 
 	s := &Server{}
-	mw := s.CSRFMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	mw := s.csrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		erreicht = true
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -40,7 +40,7 @@ func durchlaufCSRF(t *testing.T, method, path string, mitToken bool) (erreicht b
 
 // Die Routen in dieser Liste waren durch die /api/admin-Ausnahme ungeschützt. Sie
 // stehen hier ausgeschrieben, damit ein wiederkehrender Präfix-Freibrief auffällt.
-var mutierendeAdminRouten = map[string][2]string{
+var schreibendeVerwaltungsRouten = map[string][2]string{
 	"Rechte aller Rollen ändern":  {http.MethodPut, "/api/admin/permissions"},
 	"SMTP-Server umkonfigurieren": {http.MethodPut, "/api/admin/settings/mail"},
 	"Testmail verschicken":        {http.MethodPost, "/api/admin/settings/mail/test"},
@@ -54,7 +54,7 @@ var mutierendeAdminRouten = map[string][2]string{
 }
 
 func TestCSRFMiddlewareSchuetztMutationenOhneToken(t *testing.T) {
-	for name, route := range mutierendeAdminRouten {
+	for name, route := range schreibendeVerwaltungsRouten {
 		t.Run(name, func(t *testing.T) {
 			erreicht, code := durchlaufCSRF(t, route[0], route[1], false)
 			if erreicht {
@@ -68,7 +68,7 @@ func TestCSRFMiddlewareSchuetztMutationenOhneToken(t *testing.T) {
 }
 
 func TestCSRFMiddlewareLaesstMutationenMitTokenDurch(t *testing.T) {
-	for name, route := range mutierendeAdminRouten {
+	for name, route := range schreibendeVerwaltungsRouten {
 		t.Run(name, func(t *testing.T) {
 			erreicht, code := durchlaufCSRF(t, route[0], route[1], true)
 			if !erreicht {
@@ -83,7 +83,7 @@ func TestCSRFMiddlewareLaesstMutationenMitTokenDurch(t *testing.T) {
 func TestCSRFMiddlewareWeistFremdesTokenAb(t *testing.T) {
 	s := &Server{}
 	erreicht := false
-	mw := s.CSRFMiddleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { erreicht = true }))
+	mw := s.csrfMiddleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { erreicht = true }))
 
 	req := httptest.NewRequest(http.MethodPut, "/api/admin/permissions", strings.NewReader("{}"))
 	req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "tok-42"})
@@ -143,7 +143,7 @@ func TestCSRFMiddlewarePrueftAuchLoginUnterpfade(t *testing.T) {
 // Cookie, mit dem das Frontend die nächste Mutation unterschreibt.
 func TestCSRFMiddlewareLaesstLesendeDurchUndSetztDasCookie(t *testing.T) {
 	s := &Server{}
-	mw := s.CSRFMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	mw := s.csrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -161,7 +161,7 @@ func TestCSRFMiddlewareLaesstLesendeDurchUndSetztDasCookie(t *testing.T) {
 
 func TestCSRFMiddlewareUeberspringtCSRFTokenEndpunkt(t *testing.T) {
 	s := &Server{}
-	mw := s.CSRFMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	mw := s.csrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -179,7 +179,7 @@ func TestCSRFMiddlewareUeberspringtCSRFTokenEndpunkt(t *testing.T) {
 
 func TestCSRFMiddlewareLeeresToken(t *testing.T) {
 	s := &Server{}
-	mw := s.CSRFMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	mw := s.csrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 

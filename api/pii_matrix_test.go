@@ -17,12 +17,12 @@ import (
 //     ohne Einstufung wird rot. Genau das war der Kern von Frage 2: "Adresse
 //     vergessen zu entfernen" darf nicht lautlos möglich sein.
 //  2. Jede Matrix-Zeile braucht ihre Route — das Dokument kann nicht veralten.
-//  3. Das dokumentierte Recht muss dem RequirePermission(...) der Registrierung
+//  3. Das dokumentierte Recht muss dem verlangeRecht(...) der Registrierung
 //     entsprechen — die Matrix kann nicht mehr Schutz behaupten, als da ist.
 //  4. Öffentliche Routen (ohne Sitzung erreichbar) müssen Stufe 0 sein.
 //
 // Die STUFE selbst (was die Antwort wirklich enthält) prüft für GET-Routen seit
-// dem 01.09.2026 das Antwort-Gate (pii_antwort_gate_pg_test.go, Kanarienwerte am
+// dem 01.09.2026 das Antwort-Gate (pii_antwort_pg_test.go, Kanarienwerte am
 // echten Router). Für Nicht-GET-Routen bleibt sie beim Anlegen der Zeile von Hand
 // am Handler zu verifizieren — dieses Gate erzwingt, DASS die Einordnung
 // stattfindet, das Antwort-Gate misst ihr Ergebnis auf dem Lesepfad.
@@ -73,7 +73,7 @@ func registrierteRouten(t *testing.T) map[string]string {
 	muster := regexp.MustCompile(`(?:mux|handler\.mux)\.Handle(?:Func)?\("([^"]+)"`)
 	routen := map[string]string{}
 
-	dateien, err := filepath.Glob("routes_*.go")
+	dateien, err := filepath.Glob("routen_*.go")
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 		case "öffentlich", "Token", "selbst-prüfend":
 			// Kein Authz-Wrapper: Token-Routen weisen sich über den Link-Token aus,
 			// selbst-prüfende (auth/*) validieren das Session-Cookie im Handler.
-			if strings.Contains(zeile, "RequirePermission(") || strings.Contains(zeile, "RequireRoles(") ||
+			if strings.Contains(zeile, "verlangeRecht(") ||
 				strings.Contains(zeile, "VerlangeAnmeldung(") || strings.Contains(zeile, "RequireAuthenticated(") {
 				t.Errorf("%s: Matrix sagt %q, Code hat einen Wrapper: %s", route, z.Recht, strings.TrimSpace(zeile))
 			}
@@ -147,7 +147,7 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 			}
 			continue
 		case "inventur-Mux":
-			erwartet = "invHandler" // Schutz liegt im inneren Mux, dessen Routen stehen einzeln in der Matrix
+			erwartet = "inventurTueren" // Schutz liegt im inneren Mux, dessen Routen stehen einzeln in der Matrix
 		case "inventur:view_books":
 			erwartet = "RequireViewBooks("
 		case "inventur:delete_books":
@@ -163,7 +163,7 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 			}
 			continue
 		default:
-			erwartet = fmt.Sprintf("RequirePermission(%q)", z.Recht)
+			erwartet = fmt.Sprintf("verlangeRecht(%q)", z.Recht)
 		}
 		if !strings.Contains(zeile, erwartet) {
 			t.Errorf("%s: Matrix dokumentiert Recht %q, die Registrierung sagt etwas anderes: %s", route, z.Recht, strings.TrimSpace(zeile))

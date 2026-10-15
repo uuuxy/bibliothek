@@ -20,7 +20,7 @@ import (
 // ohne Secure ueberschreibt ueber HTTP ein Secure-Cookie NICHT zuverlaessig — die
 // Abmeldung waere dann eine, die der Browser still ignoriert. Genau deshalb muss auch
 // hier der konfigurierte Wert ankommen statt eines hart verdrahteten.
-func TestLogoutCookieFolgtDerKonfiguration(t *testing.T) {
+func TestAbmeldungCookieFolgtDerKonfiguration(t *testing.T) {
 	for _, secure := range []bool{true, false} {
 		t.Run(map[bool]string{true: "secure=true", false: "secure=false"}[secure], func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
@@ -28,24 +28,24 @@ func TestLogoutCookieFolgtDerKonfiguration(t *testing.T) {
 				t.Fatalf("pgxmock init: %v", err)
 			}
 			t.Cleanup(mock.Close)
-			a, err := auth.NewAuthenticator(testJWTSecret, mock, time.Hour)
+			a, err := auth.NewAuthenticator(testJWTGeheimnis, mock, time.Hour)
 			if err != nil {
 				t.Fatalf("authenticator init: %v", err)
 			}
 			t.Cleanup(a.Blacklist.Stop)
-			s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}, CookieSecure: secure}
+			s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}, nurHTTPS: secure}
 
 			// Unbrauchbares Token: Die Sperrliste antwortet, VerifyToken scheitert
 			// danach an der Signatur — es gibt nichts zu widerrufen, der Handler
 			// loescht das Cookie und meldet 200. (Antwortet die Datenbank NICHT, ist
-			// die Abmeldung unvollstaendig: logout_widerruf_test.go.)
+			// die Abmeldung unvollstaendig: abmeldung_widerruf_test.go.)
 			mock.ExpectQuery("revoked_tokens").
 				WithArgs(pgxmock.AnyArg()).
 				WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
 			req := httptest.NewRequest(http.MethodPost, "/api/logout", nil)
 			req.AddCookie(&http.Cookie{Name: "session_token", Value: "kein.gueltiges.token"})
 			rec := httptest.NewRecorder()
-			s.logoutHandler()(rec, req)
+			s.abmelden()(rec, req)
 
 			if rec.Code != http.StatusOK {
 				t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())

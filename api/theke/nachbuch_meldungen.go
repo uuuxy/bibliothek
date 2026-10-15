@@ -65,7 +65,7 @@ func (t *Tueren) NachbuchMeldungQuittieren() http.HandlerFunc {
 		if !ok {
 			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
 		}
-		// {id} ist durch ValidateUUIDParamsMiddleware schon als UUID geprüft.
+		// {id} ist durch uuidPfadMiddleware schon als UUID geprüft.
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))

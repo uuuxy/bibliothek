@@ -16,7 +16,7 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
 
 /**
  * „Alle anmahnen" schickt an POST /api/mail/send-bulk-overdue, und diese Route verlangt
- * create_orders (api/routes_students.go). Die Seite selbst hängt an view_students — wer
+ * create_orders (api/routen_leser.go). Die Seite selbst hängt an view_students — wer
  * sie sehen darf, darf also nicht zwangsläufig mahnen.
  *
  * Bis zum 18.09.2026 stand der Knopf trotzdem für jeden da: Er erschien allein, sobald
@@ -30,7 +30,7 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
  * dieselbe Regel: Sichtbarkeit einer Aktion = hatRecht(user, '<Recht der Route>').
  *
  * „Mahnbriefe drucken" hängt am selben Recht: Der Druck zählt die Mahnung
- * (POST /api/admin/mahnungen/bulk-print, api/routes_system.go).
+ * (POST /api/admin/mahnungen/bulk-print, api/routen_system.go).
  */
 const PROPS = { onMahnlauf: () => {}, onBescheid: () => {} };
 

@@ -58,7 +58,7 @@ func Sicherheitskopfzeilen(next http.Handler) http.Handler {
 		// Nur /api/: Die Programmdateien der Oberfläche tragen keine Personendaten. Die Vorgabe
 		// steht vor der Tür, und ein eigener Kopf überschreibt sie, so bei den Covern und den
 		// Buchnummern der Theke, beide ohne Personendaten. Dass keine Antwort mit Personendaten
-		// sie aufweicht, prüft api/pii_antwort_gate_pg_test.go an jeder Route ab Stufe 1.
+		// sie aufweicht, prüft api/pii_antwort_pg_test.go an jeder Route ab Stufe 1.
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			w.Header().Set("Cache-Control", "no-store")
 		}

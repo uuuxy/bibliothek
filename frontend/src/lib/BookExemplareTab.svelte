@@ -20,7 +20,7 @@
 	const selectedExemplare = new SvelteSet();
 	// Auswahl/Löschen/Barcode/Status hängen an edit_books — nicht an der Rolle.
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
-	// Löschen hängt am Server an delete_books (routes_books.go) — die Leiste zeigt den Knopf
+	// Löschen hängt am Server an delete_books (routen_katalog.go) — die Leiste zeigt den Knopf
 	// nur, wer ihn auch benutzen darf (UI entscheidet nach Recht).
 	const darfLoeschen = $derived(hatRecht(authStore.currentUser, 'delete_books'));
 	// Eigentum markierter Exemplare (4.24, Stufe 3): Dialog wie „Topf der Bestellung ändern".

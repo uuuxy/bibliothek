@@ -5,7 +5,7 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
 // Rechte-Ratsche: Die Oberfläche entscheidet nach RECHTEN, nicht nach Rollen.
 //
 // Der Server kennt keine Rollen-Routen — jede Route hängt an einem Recht aus
-// role_permissions (api/routes_authz_coverage_test.go). Bis zum 24.08.2026 stand die
+// role_permissions (api/geschuetzte_routen_test.go). Bis zum 24.08.2026 stand die
 // Oberfläche daneben: An rund zwanzig Stellen fragte sie `rolle === 'admin'`, ob ein Knopf
 // erscheint. Damit war der Schalter auf der Berechtigungsseite an genau diesen Stellen
 // wirkungslos — erteilte ein Admin einem Helfer edit_students, erlaubte es der Server,

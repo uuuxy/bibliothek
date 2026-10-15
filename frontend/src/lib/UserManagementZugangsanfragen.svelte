@@ -46,7 +46,7 @@
 
 	const LITTERA_PLATZHALTER = '@littera.invalid';
 
-	// Zusammenführen hängt am Recht merge_students (api/routes_students.go). Ohne das
+	// Zusammenführen hängt am Recht merge_students (api/routen_leser.go). Ohne das
 	// Recht bleibt der Hinweis stehen, aber ohne Knopf — der Server lehnte ihn mit 403 ab.
 	const darfZuordnen = $derived(hatRecht(authStore.currentUser, 'merge_students'));
 

@@ -403,7 +403,7 @@ func (t *Tueren) protokolliereKlassenVersand(r *http.Request, aktion string, det
 		return
 	}
 	// Vom Kontext der Anfrage abgekoppelt: Der Eintrag am Ende kommt nach dem Versand, und ein
-	// Lauf über viele Klassen überlebt die 15-s-TimeoutMiddleware; mit r.Context() schlüge der
+	// Lauf über viele Klassen überlebt die 15-s-fristMiddleware; mit r.Context() schlüge der
 	// INSERT still fehl, und genau der Eintrag mit den Zahlen fehlte. Die Claims bleiben erhalten
 	// (WithoutCancel behält die Werte).
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
