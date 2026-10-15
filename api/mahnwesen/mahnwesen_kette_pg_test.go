@@ -135,8 +135,8 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 
 	// 4. Der Lauf selbst: nur Annas Klasse auswählen (in der Schreibweise, die die
 	// Kanonisierung gespeichert hat — die UI bietet exakt diese Liste an).
-	sitzungen := tuertest.FangeMailAb(t)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	post, sitzungen := tuertest.FangeMailAb(t)
+	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue",
 		strings.NewReader(fmt.Sprintf(`{"klassen":[%q]}`, annaKlasse)))

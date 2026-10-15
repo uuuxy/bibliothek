@@ -29,51 +29,41 @@ type Nachricht struct {
 	Anhaenge []Anhang
 }
 
-// Sende verschickt eine Mail. Sie ist eine Variable und keine Funktion, damit Tests den Versand
-// ersetzen können, etwa um zu prüfen, dass ein Fehler beim Versand die Transaktion einer
-// Bestellung zurückrollt und keine Bestellung ohne Mail stehen bleibt.
-var Sende = sendeNachricht
-
-// smtpKonfigLader liefert die Konfiguration für den nächsten Versand.
-//
-// Eine Variable, damit NewServer sie an die Datenbank binden kann: Sende(Nachricht) hat weder
-// Kontext noch Pool zur Hand. Die Vorgabe ist die Umgebung, damit Tests und Werkzeuge ohne
-// Datenbank versenden können.
-var smtpKonfigLader = func() (SMTPKonfig, error) {
-	return KonfigAusUmgebung(), nil
+// Postausgang verschickt Mails über SMTP. Die Konfiguration liest er vor jedem Versand neu, damit
+// eine Änderung in der Oberfläche ohne Neustart gilt. Der Server legt einen an und gibt ihn den
+// Türen; ein Test legt einen gegen seinen Testserver an.
+type Postausgang struct {
+	konfig func() (SMTPKonfig, error)
 }
 
-// BindeSMTPKonfigAnDatenbank lässt jeden Versand die in der Oberfläche gespeicherte
-// Konfiguration benutzen. Der Start ruft sie einmal (NewServer), bevor die erste Anfrage läuft.
-func BindeSMTPKonfigAnDatenbank(pool db.Pool) {
-	smtpKonfigLader = func() (SMTPKonfig, error) {
-		// Eigener Kontext mit kurzer Frist: Der Aufrufer hat keinen, und ein hängendes Lesen
-		// der Konfiguration darf den Versand vieler Mails nicht aufhalten.
+// NewPostausgang verschickt mit der Konfiguration, die konfig vor jedem Versand liefert: im
+// Betrieb KonfigAusDatenbank, in einem Werkzeug ohne Datenbank die Umgebung.
+func NewPostausgang(konfig func() (SMTPKonfig, error)) *Postausgang {
+	return &Postausgang{konfig: konfig}
+}
+
+// KonfigAusDatenbank liefert die in der Oberfläche gespeicherte Konfiguration (LadeSMTPKonfig),
+// damit der Test-Knopf und jeder echte Versand dieselbe Quelle nutzen.
+func KonfigAusDatenbank(pool db.Pool) func() (SMTPKonfig, error) {
+	return func() (SMTPKonfig, error) {
+		// Eigener Kontext mit kurzer Frist: Sende hat keinen, und ein hängendes Lesen der
+		// Konfiguration darf den Versand vieler Mails nicht aufhalten.
 		ctx, abbruch := context.WithTimeout(context.Background(), 5*time.Second)
 		defer abbruch()
 		return LadeSMTPKonfig(ctx, pool)
 	}
 }
 
-// VersandKonfig liefert die Konfiguration, mit der der nächste Versand ginge.
-func VersandKonfig() (SMTPKonfig, error) {
-	return smtpKonfigLader()
+// Konfig liefert die Konfiguration, mit der der nächste Versand ginge.
+func (p *Postausgang) Konfig() (SMTPKonfig, error) {
+	return p.konfig()
 }
 
-// TauscheKonfigLaderFuerTest lässt jeden Versand die Konfiguration aus lader nehmen: Ein Test
-// stellt so einen Mailserver ein, einen fehlenden oder eine unlesbare Konfiguration. Der
-// Rückgabewert setzt den vorigen Lader wieder ein.
-func TauscheKonfigLaderFuerTest(lader func() (SMTPKonfig, error)) (zurueck func()) {
-	alt := smtpKonfigLader
-	smtpKonfigLader = lader
-	return func() { smtpKonfigLader = alt }
-}
-
-// IstSMTPKonfiguriert meldet, ob ein Versand versucht werden kann. Die Türen fragen damit die
+// IstKonfiguriert meldet, ob ein Versand versucht werden kann. Die Türen fragen damit die
 // Konfiguration ab, die wirklich benutzt wird, statt os.Getenv("SMTP_HOST"); sonst meldeten sie
 // „SMTP nicht konfiguriert", während in der Oberfläche ein Server steht, und umgekehrt.
-func IstSMTPKonfiguriert() bool {
-	konfig, err := smtpKonfigLader()
+func (p *Postausgang) IstKonfiguriert() bool {
+	konfig, err := p.konfig()
 	if err != nil {
 		// Der Fehler steht im Log: LadeSMTPKonfig erzeugt ihn, damit er auffällt („Ein
 		// unlesbares Passwort heißt, dass der APP_ENCRYPTION_KEY nicht mehr derselbe ist").
@@ -87,10 +77,10 @@ func IstSMTPKonfiguriert() bool {
 	return konfig.IstKonfiguriert()
 }
 
-// sendeNachricht verschickt eine Mail mit Text und Anhängen über SMTP. Die Zugangsdaten kommen
-// aus der gespeicherten Konfiguration (smtpKonfigLader).
-func sendeNachricht(nachricht Nachricht) error {
-	konfig, err := smtpKonfigLader()
+// Sende verschickt eine Mail mit Text und Anhängen über SMTP, mit der Konfiguration des
+// Postausgangs.
+func (p *Postausgang) Sende(nachricht Nachricht) error {
+	konfig, err := p.konfig()
 	if err != nil {
 		return err
 	}

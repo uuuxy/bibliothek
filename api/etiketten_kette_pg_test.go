@@ -102,9 +102,9 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Cornelsen-Kette", false)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Etikettenkette", 0)
 
@@ -176,9 +176,9 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Etikettenkette", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Beklebt", 0)
 

@@ -120,7 +120,9 @@ func TestVersandFunktionen_Selbstprobe(t *testing.T) {
 			"func (s *Server) Lesen() { thema.Zaehle() }\n" +
 			"func (s *Server) Melden() { s.benachrichtige() }\n" +
 			"func (s *Server) benachrichtige() { Sende(nil) }\n" +
-			"func (s *Server) Erinnern() { mailservice.Sende(nil) }\n",
+			"func (s *Server) Erinnern() { mailservice.Sende(nil) }\n" +
+			"func (s *Server) Benachrichtigen() { s.Post().Sende(nil) }\n" +
+			"func (s *Server) Sammeln() { versende(s.Post().Sende) }\n",
 		"thema/versand.go": "package thema\nfunc Verschicke() { _ = mailservice.VersendeUeberSMTP }\n" +
 			"func Zaehle() int { return 1 }\n",
 		// Drei Funktionen namens Starte: Nur die mittlere erreicht den Versand.
@@ -128,7 +130,8 @@ func TestVersandFunktionen_Selbstprobe(t *testing.T) {
 		"anders/starte.go": "package anders\nfunc Starte() {}\nfunc Pruefe() { mailservice.SendeTestmail() }\n",
 		"weiter/starte.go": "package weiter\nfunc Starte() {}\n",
 	})
-	for _, name := range []string{"Mahnen", "Melden", "benachrichtige", "Erinnern", "Verschicke", "Starte", "Pruefe"} {
+	for _, name := range []string{"Mahnen", "Melden", "benachrichtige", "Erinnern", "Benachrichtigen", "Sammeln",
+		"Verschicke", "Starte", "Pruefe"} {
 		if !sendet[name] {
 			t.Errorf("%s erreicht den Versand, der Sammler nennt die Funktion nicht", name)
 		}
@@ -138,8 +141,9 @@ func TestVersandFunktionen_Selbstprobe(t *testing.T) {
 			t.Errorf("%s verschickt nichts, der Sammler nennt die Funktion trotzdem", name)
 		}
 	}
-	if unmittelbar != 4 {
-		t.Errorf("%d Funktionen mit unmittelbarem Versand gezählt, erwartet 4 (benachrichtige, Erinnern, Verschicke, Pruefe)", unmittelbar)
+	if unmittelbar != 6 {
+		t.Errorf("%d Funktionen mit unmittelbarem Versand gezählt, erwartet 6 (benachrichtige, Erinnern, "+
+			"Benachrichtigen, Sammeln, Verschicke, Pruefe)", unmittelbar)
 	}
 }
 

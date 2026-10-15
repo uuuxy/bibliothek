@@ -73,14 +73,14 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 
 		// 1. Auswahl aus dem Rumpf lesen. Fehlt der Rumpf ganz, bleibt es beim alten
 		//    Vertrag „alle überfälligen Klassen an ihre Klassenleitungen".
-		req, err := leseKlassenVersandAnfrage(r)
+		req, err := leseKlassenVersandAnfrage(r, t.Post().Konfig)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		// 2. Ohne konfigurierten Mailserver kein Massenversand.
-		if !mailservice.IstSMTPKonfiguriert() {
+		if !t.Post().IstKonfiguriert() {
 			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
 			return
 		}
@@ -114,7 +114,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		// 6. Je Klasse eine eigene Mahnliste versenden. erzeugeMahnliste und Sende kommen
 		//    als Parameter, damit sich das Überspringen und die Adressierung ohne echten
 		//    PDF- und Mailversand prüfen lassen.
-		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, mailservice.Sende)
+		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, t.Post().Sende)
 
 		// 7. Ergebnis protokollieren.
 		t.protokolliereKlassenVersand(r, "BULK_OVERDUE_MAIL", klassenVersandProtokoll{
@@ -142,7 +142,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 // leseKlassenVersandAnfrage liest die freiwillige Auswahl aus dem Rumpf und weist alles
 // zurück, was einen Massenversand an den falschen Empfänger schicken würde. Ein fehlender Rumpf
 // ist gültig (alle Klassen), ein kaputter nicht.
-func leseKlassenVersandAnfrage(r *http.Request) (klassenVersandAnfrage, error) {
+func leseKlassenVersandAnfrage(r *http.Request, konfig func() (mailservice.SMTPKonfig, error)) (klassenVersandAnfrage, error) {
 	var req klassenVersandAnfrage
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
 		return req, fmt.Errorf("ungültiger Request-Body: %w", err)
@@ -151,7 +151,7 @@ func leseKlassenVersandAnfrage(r *http.Request) (klassenVersandAnfrage, error) {
 	// Die Adresse kommt von Hand aus einem Eingabefeld. Ein Tippfehler darf hier
 	// nicht in einen „erfolgreichen" Lauf ins Leere münden, deshalb dieselbe
 	// Prüfung, die auch der Versand selbst anlegt (mailservice/mail_sender.go).
-	req.Umleitung = ergaenzeSchulDomain(strings.TrimSpace(req.Umleitung))
+	req.Umleitung = ergaenzeSchulDomain(strings.TrimSpace(req.Umleitung), konfig)
 	if req.Umleitung != "" {
 		if _, err := mail.ParseAddress(req.Umleitung); err != nil {
 			return req, fmt.Errorf("ungültige Empfänger-Adresse %q", req.Umleitung)
@@ -191,18 +191,18 @@ func leseKlassenVersandAnfrage(r *http.Request) (klassenVersandAnfrage, error) {
 //
 // Eine vollständige Adresse (mit „@") bleibt unangetastet: Der Versand an eine
 // externe Stelle — Schulamt, Vertretung, private Adresse — muss möglich bleiben.
-func ergaenzeSchulDomain(eingabe string) string {
+func ergaenzeSchulDomain(eingabe string, konfig func() (mailservice.SMTPKonfig, error)) string {
 	if eingabe == "" || strings.Contains(eingabe, "@") {
 		return eingabe
 	}
 
-	konfig, err := mailservice.VersandKonfig()
+	k, err := konfig()
 	if err != nil {
 		return eingabe
 	}
-	absender := konfig.Absender
+	absender := k.Absender
 	if absender == "" {
-		absender = konfig.Benutzer
+		absender = k.Benutzer
 	}
 	at := strings.LastIndex(absender, "@")
 	if at < 0 {

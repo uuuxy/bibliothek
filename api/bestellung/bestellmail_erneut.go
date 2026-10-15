@@ -10,7 +10,6 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/buchetikett"
-	"bibliothek/mailservice"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -62,7 +61,7 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if !mailservice.IstSMTPKonfiguriert() {
+	if !t.Post().IstKonfiguriert() {
 		t.merkeBestellmailGescheitert(ctx, id)
 		// 400 statt 500: Eine 500-Meldung ersetzt der Sanitizer, und der Hinweis, was zu
 		// tun ist, erreichte den Bildschirm nicht.

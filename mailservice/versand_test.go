@@ -252,10 +252,8 @@ func TestVersendeUeberSMTP_SchweigenderServerHaengtNicht(t *testing.T) {
 		}
 	}()
 
-	// Die Fristen für den Test verkürzen (im Betrieb 10 s und 60 s).
-	alteVerbindung, alteSitzung := smtpVerbindungsTimeout, smtpSitzungsFrist
-	smtpVerbindungsTimeout, smtpSitzungsFrist = 2*time.Second, 2*time.Second
-	t.Cleanup(func() { smtpVerbindungsTimeout, smtpSitzungsFrist = alteVerbindung, alteSitzung })
+	// Kürzere Fristen als im Betrieb (10 s und 60 s), damit der Test nicht eine Minute wartet.
+	fristen := smtpFristen{verbindung: 2 * time.Second, sitzung: 2 * time.Second}
 
 	host, port, err := net.SplitHostPort(listener.Addr().String())
 	if err != nil {
@@ -265,7 +263,7 @@ func TestVersendeUeberSMTP_SchweigenderServerHaengtNicht(t *testing.T) {
 
 	fertig := make(chan error, 1)
 	go func() {
-		fertig <- VersendeUeberSMTP(konfig, "test@schule.invalid", []string{"ziel@schule.invalid"}, []byte("Subject: t\r\n\r\nx"))
+		fertig <- versendeUeberSMTP(fristen, konfig, "test@schule.invalid", []string{"ziel@schule.invalid"}, []byte("Subject: t\r\n\r\nx"))
 	}()
 
 	select {

@@ -44,9 +44,9 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Link", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Link", 0)
 
@@ -88,9 +88,9 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneAdresse", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneAdresse", 0)
 
@@ -121,9 +121,9 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Zahlen", false)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Zahlen", 0)
 
@@ -147,9 +147,9 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Topf", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Topf", 0)
 
@@ -181,9 +181,9 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneBarcode", false)
 	mitBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-MitBarcode", 0)
 	ohneBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneBarcode", 0)
@@ -230,9 +230,9 @@ func TestBestellungIdempotenz(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "IdemLieferant", false)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Idem", 0)
 	key := "33333333-3333-3333-3333-333333333333"

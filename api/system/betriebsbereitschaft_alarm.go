@@ -59,7 +59,7 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 	textkoerper += "\nDiese Mail ging an " + beschreibung + "\n"
 
 	for _, an := range empfaenger {
-		if err := mailservice.Sende(mailservice.Nachricht{An: an, Betreff: betreff, Text: textkoerper}); err != nil {
+		if err := t.Post().Sende(mailservice.Nachricht{An: an, Betreff: betreff, Text: textkoerper}); err != nil {
 			// Kaputter Mailversand ist selbst ein Befund der Seite — hier bleibt nur
 			// das Log; eine Mail über den kaputten Mailversand gibt es nicht.
 			log.Printf("Bereitschafts-Alarm an %s fehlgeschlagen: %v", an, err)

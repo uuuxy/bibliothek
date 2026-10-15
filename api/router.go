@@ -64,16 +64,15 @@ type Server struct {
 	nurHTTPS bool
 }
 
-// NewServer baut den Server und bindet den Mailversand an die SMTP-Einstellungen in der
-// Datenbank.
+// NewServer baut den Server. Sein Mailversand liest die in der Oberfläche gespeicherte
+// SMTP-Konfiguration, nicht die Umgebungsvariablen des Containers; so nutzen der Test-Knopf und
+// jeder echte Versand dieselbe Quelle.
 func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *sse.Broker, nurHTTPS bool) *Server {
-	// Ab hier liest jeder Mailversand die in der Oberfläche gespeicherte SMTP-Konfiguration,
-	// nicht die Umgebungsvariablen des Containers; so nutzen der Test-Knopf und jeder echte
-	// Versand dieselbe Quelle.
-	mailservice.BindeSMTPKonfigAnDatenbank(datenbank.Pool)
-
 	return &Server{
-		Basis:    tuer.Basis{DB: datenbank, Auth: authenticator, Broker: broker},
+		Basis: tuer.Basis{
+			DB: datenbank, Auth: authenticator, Broker: broker,
+			Mail: mailservice.NewPostausgang(mailservice.KonfigAusDatenbank(datenbank.Pool)),
+		},
 		nurHTTPS: nurHTTPS,
 	}
 }

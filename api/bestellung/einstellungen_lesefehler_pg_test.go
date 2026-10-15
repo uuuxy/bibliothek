@@ -66,9 +66,9 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 	}
 
 	t.Run("gestört", func(t *testing.T) {
-		sitzungen := tuertest.FangeMailAb(t)
+		post, sitzungen := tuertest.FangeMailAb(t)
 		gestoert := testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen}
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: gestoert}}}
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: gestoert}, Mail: post}}
 
 		_, err := srv.sendeBestellmail(context.Background(), daten)
 		if err == nil {
@@ -83,8 +83,8 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 
 	// Gegenprobe: Am ungestörten Pool geht die Mail hinaus und trägt den Link.
 	t.Run("ungestört", func(t *testing.T) {
-		sitzungen := tuertest.FangeMailAb(t)
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+		post, sitzungen := tuertest.FangeMailAb(t)
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Mail: post}}
 
 		mitLink, err := srv.sendeBestellmail(context.Background(), daten)
 		if err != nil {

@@ -167,12 +167,6 @@ internal/routertest/routertest.go: unreachable func: MitSitzung
 internal/routertest/routertest.go: unreachable func: MitSitzungUeber
 internal/routertest/routertest.go: unreachable func: MitAufruf
 
-# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Womit verschickt wird,
-# steht in einem Wert des Pakets, den der Start an die Datenbank bindet. Die Tests der Türen,
-# die Mail verschicken, stellen darüber einen Mailserver ein, einen fehlenden oder eine
-# unlesbare Konfiguration; vorher setzten sie den Wert selbst, als er noch in api/ stand.
-mailservice/mail_sender.go: unreachable func: TauscheKonfigLaderFuerTest
-
 # Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Methode): Ein Test ohne Tabelle der
 # Rechte legt die Entscheidung, was eine Rolle darf, in den Cache seines eigenen Servers.
 api/tuer/rechte.go: unreachable func: RechteCache.MerkeFuerTest

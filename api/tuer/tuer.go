@@ -1,20 +1,24 @@
 // Package tuer trägt, was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Sitzung
 // und die Rechte einer Anfrage prüfen, einen Vorgang der Verwaltung ins Protokoll schreiben,
-// die Uhr der Schule und den Kopf ihrer Briefe. Es steht unter den Türen, damit ein Paket mit
-// den Türen eines Themas es einbinden kann; api/ selbst ließe sich von dort nicht einbinden.
+// die Uhr der Schule, den Kopf ihrer Briefe und den Versand von Mail. Es steht unter den Türen,
+// damit ein Paket mit den Türen eines Themas es einbinden kann; api/ selbst ließe sich von dort
+// nicht einbinden.
 package tuer
 
 import (
+	"fmt"
 	"time"
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/mailservice"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/sse"
 )
 
-// Basis hält, worauf jede Tür steht: Datenbank, Anmeldung, Live-Leitung und Uhr. Der Server
-// bettet sie ein, damit die Türen ihre Felder und Methoden unter demselben Namen erreichen.
+// Basis hält, worauf jede Tür steht: Datenbank, Anmeldung, Live-Leitung, Uhr, Rechte und
+// Mailversand. Der Server bettet sie ein, damit die Türen ihre Felder und Methoden unter
+// demselben Namen erreichen.
 type Basis struct {
 	DB     *db.Verbindung
 	Auth   *auth.Anmeldung
@@ -25,7 +29,36 @@ type Basis struct {
 	Uhr func() time.Time
 	// Rechte hält die Entscheidungen der Rechteprüfung; der Nullwert ist ein leerer Cache.
 	Rechte RechteCache
+	// Mail verschickt Mails; nil heißt, es ist kein Versand eingerichtet (siehe Post).
+	Mail Mailversand
 }
+
+// Mailversand verschickt Mails für die Türen: im Betrieb ein *mailservice.Postausgang, in einem
+// Test einer gegen seinen Testserver oder eine Attrappe.
+type Mailversand interface {
+	Sende(mailservice.Nachricht) error
+	IstKonfiguriert() bool
+	Konfig() (mailservice.SMTPKonfig, error)
+}
+
+// Post liefert, worüber die Tür Mails verschickt. Ohne eingerichteten Versand lehnt er jede Mail
+// mit mailservice.ErrMailNichtKonfiguriert ab, wie ein Server ohne SMTP-Konfiguration.
+func (b *Basis) Post() Mailversand {
+	if b.Mail != nil {
+		return b.Mail
+	}
+	return ohneMailversand{}
+}
+
+type ohneMailversand struct{}
+
+func (ohneMailversand) Sende(mailservice.Nachricht) error {
+	return fmt.Errorf("%w: kein Versand eingerichtet", mailservice.ErrMailNichtKonfiguriert)
+}
+
+func (ohneMailversand) IstKonfiguriert() bool { return false }
+
+func (ohneMailversand) Konfig() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }
 
 // Jetzt ist die Uhr des Servers: in Tests setzbar (Basis.Uhr), sonst die Schulzeit.
 func (b *Basis) Jetzt() time.Time {

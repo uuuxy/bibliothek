@@ -46,14 +46,14 @@ func toterPort(t *testing.T) string {
 	return port
 }
 
-// mailserverNichtErreichbar biegt den Versand auf einen Port um, an dem niemand zuhört.
+// mailserverNichtErreichbar liefert einen Postausgang an einen Port, an dem niemand zuhört.
 // beimVersand läuft, sobald der Versand selbst die Zugangsdaten liest (nil = nichts).
-func mailserverNichtErreichbar(t *testing.T, beimVersand func()) {
+func mailserverNichtErreichbar(t *testing.T, beimVersand func()) *mailservice.Postausgang {
 	t.Helper()
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	port := toterPort(t)
 	aufrufe := 0
-	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) {
+	return mailservice.NewPostausgang(func() (mailservice.SMTPKonfig, error) {
 		// Der erste Aufruf fragt nur, ob ein Mailserver eingerichtet ist; ab dem zweiten
 		// läuft der Versand.
 		aufrufe++
@@ -61,12 +61,14 @@ func mailserverNichtErreichbar(t *testing.T, beimVersand func()) {
 			beimVersand()
 		}
 		return mailservice.SMTPKonfig{Host: "127.0.0.1", Port: port, Absender: "bibliothek@schule.invalid"}, nil
-	}))
+	})
 }
 
-// bestellmailLage: der Server über seine Routen, mit einer angemeldeten Person, die bestellen darf.
+// bestellmailLage: der Server über seine Routen, mit einer angemeldeten Person, die bestellen
+// darf. Seinen Mailversand (srv.Mail) setzt der Test.
 type bestellmailLage struct {
 	pool    *pgxpool.Pool
+	srv     *api.Server
 	router  http.Handler
 	sitzung string
 	adminID string
@@ -90,7 +92,8 @@ func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 	if l.sitzung, err = authenticator.ErzeugeToken(l.adminID, "BMAIL-"+kennung, auth.RolleAdmin, ""); err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	l.router = api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	l.srv = api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	l.router = l.srv.Routes()
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTELLMAIL_ERNEUT_GESENDET'`)
 	})
@@ -171,7 +174,7 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Erneut", 0)
 
 	// 1. Der Mailserver ist nicht erreichbar: Die Bestellung ist gespeichert und trägt den Vermerk.
-	mailserverNichtErreichbar(t, nil)
+	l.srv.Mail = mailserverNichtErreichbar(t, nil)
 	bestellung, rec := l.bestelle(t, lieferant, titel)
 	if antwort := rec.Body.String(); !strings.Contains(antwort, `"warning"`) {
 		t.Errorf("Die Antwort warnt nicht, obwohl die Mail nicht rausging: %s", antwort)
@@ -201,7 +204,8 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 		`UPDATE lieferanten SET email = 'berichtigt@example.invalid' WHERE id = $1`, lieferant); err != nil {
 		t.Fatalf("Adresse berichtigen: %v", err)
 	}
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
+	l.srv.Mail = post
 	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusOK {
 		t.Fatalf("Erneut senden: Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -273,7 +277,7 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 // erneute Senden nennt den Grund, statt zu scheitern wie ein Serverfehler.
 func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "ohne")
-	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }))
+	l.srv.Mail = mailservice.NewPostausgang(func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil })
 
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Ohne", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Ohne", 0))
@@ -292,7 +296,8 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 // Eine Bestellung, deren Mail rausging, und eine unbekannte lassen sich nicht erneut senden.
 func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "nur")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
+	l.srv.Mail = post
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Nur", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Nur", 0))
 	smtptest.WarteAufMail(t, sitzungen)
@@ -322,7 +327,7 @@ func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-Bestaetigt", true)
 	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Bestaetigt", 0)
 
-	mailserverNichtErreichbar(t, nil)
+	l.srv.Mail = mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
 	if !l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt keinen Vermerk, obwohl die Mail nicht rausging")
@@ -340,7 +345,8 @@ func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 		t.Error("Die Liste nennt für die bestätigte Bestellung einen gescheiterten Versand")
 	}
 
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
+	l.srv.Mail = post
 	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusConflict {
 		t.Errorf("Erneut senden nach der Bestätigung: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
@@ -364,7 +370,7 @@ func TestBestellmail_VermerkAuchWennDieAnfrageAbgebrochenIst(t *testing.T) {
 		t.Helper()
 		ctx, abbrechen := context.WithCancel(t.Context())
 		defer abbrechen()
-		mailserverNichtErreichbar(t, abbrechen)
+		l.srv.Mail = mailserverNichtErreichbar(t, abbrechen)
 		req := httptest.NewRequest(http.MethodPost, pfad, strings.NewReader(rumpf)).WithContext(ctx)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: l.sitzung})

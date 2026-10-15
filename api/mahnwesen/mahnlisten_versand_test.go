@@ -20,25 +20,15 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// smtpKonfigAusUmgebung pinnt den Lader der Mail-Konfiguration (mailservice) für die
-// Testdauer auf die Umgebung und stellt ihn danach zurück.
-//
-// Nötig, weil jeder Test, der NewServer aufruft, den Lader per BindeSMTPKonfigAnDatenbank an
-// seinen Pool bindet und die Bindung ihn überlebt. Die Tests mit Umgebung wären sonst nur grün,
-// solange in der Sortierung der Dateien kein Test mit NewServer vor ihnen läuft: Der Lader läse
-// die Domäne aus der Test-Datenbank statt SMTP_FROM, und die Fälle mit pgxmock bekämen eine
-// unerwartete Abfrage der Konfiguration.
-func smtpKonfigAusUmgebung(t *testing.T) {
-	t.Helper()
-	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }))
+// absenderKonfig liefert eine Konfiguration mit diesem Absender, wie ergaenzeSchulDomain sie
+// liest.
+func absenderKonfig(absender string) func() (mailservice.SMTPKonfig, error) {
+	return func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{Absender: absender}, nil }
 }
 
-// Ohne konfigurierten Mailserver (SMTP_HOST leer) → 503, kein Versand. Der Check
+// Ohne eingerichteten Mailversand → 503, kein Versand. Der Check
 // greift vor jeder Klassen-Query — pgxmock erwartet keine einzige.
 func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
-	smtpKonfigAusUmgebung(t)
-	t.Setenv("SMTP_HOST", "")
-
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -222,7 +212,7 @@ func TestLeseKlassenVersandAnfrage(t *testing.T) {
 			}
 			req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", body)
 
-			got, err := leseKlassenVersandAnfrage(req)
+			got, err := leseKlassenVersandAnfrage(req, absenderKonfig(""))
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("Fehler erwartet, bekam keinen (%+v)", got)
@@ -332,7 +322,6 @@ func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 // Eine leere Auswahl darf nicht erst in der DB auffallen: Die Tür weist sie ab,
 // bevor er auch nur eine Query absetzt.
 func TestMahnlistenVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
-	smtpKonfigAusUmgebung(t)
 	for _, body := range []string{`{"klassen":[]}`, `{"klassen":["5a"],"override_email":"kein-mail"}`} {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
@@ -400,8 +389,7 @@ func TestProtokolliereKlassenVersand_SchreibtGueltigesJSONMitEmpfaenger(t *testi
 // mitzutippen ist Fehlerquelle — „mueller" muss reichen. Vollständige Adressen
 // bleiben unangetastet, damit der Versand an externe Stellen möglich bleibt.
 func TestErgaenzeSchulDomain(t *testing.T) {
-	smtpKonfigAusUmgebung(t)
-	t.Setenv("SMTP_FROM", "bibliothek@philipp-reis-schule.de")
+	konfig := absenderKonfig("bibliothek@philipp-reis-schule.de")
 
 	tests := []struct{ eingabe, want string }{
 		{"mueller", "mueller@philipp-reis-schule.de"},
@@ -410,7 +398,7 @@ func TestErgaenzeSchulDomain(t *testing.T) {
 		{"", ""},
 	}
 	for _, tt := range tests {
-		if got := ergaenzeSchulDomain(tt.eingabe); got != tt.want {
+		if got := ergaenzeSchulDomain(tt.eingabe, konfig); got != tt.want {
 			t.Errorf("ergaenzeSchulDomain(%q) = %q, want %q", tt.eingabe, got, tt.want)
 		}
 	}
@@ -419,24 +407,17 @@ func TestErgaenzeSchulDomain(t *testing.T) {
 // Ohne konfigurierten Absender wird nicht geraten: Die Eingabe läuft unverändert in
 // die Adressprüfung und scheitert dort mit einer klaren Meldung.
 func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
-	smtpKonfigAusUmgebung(t)
-	t.Setenv("SMTP_FROM", "")
-	t.Setenv("SMTP_USER", "")
-
-	if got := ergaenzeSchulDomain("mueller"); got != "mueller" {
+	if got := ergaenzeSchulDomain("mueller", absenderKonfig("")); got != "mueller" {
 		t.Fatalf("ergaenzeSchulDomain = %q, want unverändert %q", got, "mueller")
 	}
 }
 
 // Der Weg über den echten Rumpf: „mueller" kommt als vollständige Adresse heraus.
 func TestLeseKlassenVersandAnfrage_ErgaenztDomaene(t *testing.T) {
-	smtpKonfigAusUmgebung(t)
-	t.Setenv("SMTP_FROM", "bibliothek@philipp-reis-schule.de")
-
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail",
 		strings.NewReader(`{"klassen":["9h"],"override_email":" mueller "}`))
 
-	got, err := leseKlassenVersandAnfrage(req)
+	got, err := leseKlassenVersandAnfrage(req, absenderKonfig("bibliothek@philipp-reis-schule.de"))
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}

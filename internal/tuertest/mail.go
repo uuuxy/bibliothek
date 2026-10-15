@@ -7,18 +7,17 @@ import (
 	"bibliothek/mailservice"
 )
 
-// FangeMailAb biegt den Versand auf einen Testserver um und liefert die abgefangene
-// Nachricht. Der Kanal nimmt genau eine Sitzung an.
-func FangeMailAb(t *testing.T) <-chan smtptest.Sitzung {
+// FangeMailAb startet einen Testserver und liefert einen Postausgang, der dorthin verschickt,
+// mit den abgefangenen Sitzungen. Der Test gibt den Postausgang der Basis seiner Tür (Mail); der
+// Kanal nimmt genau eine Sitzung an.
+func FangeMailAb(t *testing.T) (*mailservice.Postausgang, <-chan smtptest.Sitzung) {
 	t.Helper()
 	// Der Testserver kündigt kein STARTTLS an; sichereVerbindung bräche den Versand
 	// sonst ab. Dass die Erzwingung wirkt, prüft mailservice.
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
-
-	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) {
+	post := mailservice.NewPostausgang(func() (mailservice.SMTPKonfig, error) {
 		return mailservice.SMTPKonfig{Host: host, Port: port, Absender: "bibliothek@schule.invalid"}, nil
-	}))
-
-	return sitzungen
+	})
+	return post, sitzungen
 }

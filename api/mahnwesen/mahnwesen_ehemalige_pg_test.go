@@ -46,7 +46,8 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	router := srv.Routes()
 	rufe := func(req *http.Request) *httptest.ResponseRecorder {
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 		rec := httptest.NewRecorder()
@@ -145,7 +146,8 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	})
 
 	t.Run("die Mail an die Klassenleitung nennt den Ehemaligen nicht", func(t *testing.T) {
-		sitzungen := tuertest.FangeMailAb(t)
+		post, sitzungen := tuertest.FangeMailAb(t)
+		srv.Mail = post
 		rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue", ""))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
@@ -178,7 +180,8 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	})
 
 	t.Run("auch ausdrücklich gewählt geht die Gruppe der Ehemaligen an niemanden", func(t *testing.T) {
-		sitzungen := tuertest.FangeMailAb(t)
+		post, sitzungen := tuertest.FangeMailAb(t)
+		srv.Mail = post
 		rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue",
 			`{"klassen":["Ehemalige"],"override_email":"vertretung@schule.invalid"}`))
 		if rec.Code != http.StatusOK {

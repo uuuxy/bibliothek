@@ -25,12 +25,20 @@ import (
 // An der echten Datenbank, weil beide Türen das Erledigen und den Empfänger der Mail in einer
 // Abfrage lesen; pgxmock sähe nicht, wenn das Schema davon abwiche.
 
-// ersetzeMailversand ersetzt den Versand für einen Test und stellt ihn danach wieder her.
-func ersetzeMailversand(t *testing.T, fehler error) {
-	t.Helper()
-	alt := mailservice.Sende
-	mailservice.Sende = func(mailservice.Nachricht) error { return fehler }
-	t.Cleanup(func() { mailservice.Sende = alt })
+// mailAttrappe nimmt jede Mail an, statt sie zu verschicken; sende entscheidet die Antwort.
+type mailAttrappe struct {
+	sende func(mailservice.Nachricht) error
+}
+
+func (a mailAttrappe) Sende(m mailservice.Nachricht) error { return a.sende(m) }
+
+func (mailAttrappe) IstKonfiguriert() bool { return true }
+
+func (mailAttrappe) Konfig() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }
+
+// versandAntwortet lässt jeden Versand mit fehler antworten (nil heißt: verschickt).
+func versandAntwortet(fehler error) mailAttrappe {
+	return mailAttrappe{sende: func(mailservice.Nachricht) error { return fehler }}
 }
 
 // mailStatusAusAntwort erwartet 200 und liest das "mail"-Feld.
@@ -83,21 +91,21 @@ func TestAnliegenErledigen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	}
 
 	t.Run("Versand kaputt → fehlgeschlagen", func(t *testing.T) {
-		ersetzeMailversand(t, errors.New("smtp down"))
+		srv.Mail = versandAntwortet(errors.New("smtp down"))
 		if got := mailStatusAusAntwort(t, erledige(t, neuesAnliegen(t))); got != "fehlgeschlagen" {
 			t.Fatalf("mail=%q, erwartet fehlgeschlagen", got)
 		}
 	})
 
 	t.Run("Versand ok → versendet", func(t *testing.T) {
-		ersetzeMailversand(t, nil)
+		srv.Mail = versandAntwortet(nil)
 		if got := mailStatusAusAntwort(t, erledige(t, neuesAnliegen(t))); got != "versendet" {
 			t.Fatalf("mail=%q, erwartet versendet", got)
 		}
 	})
 
 	t.Run("ohne Konto → keine_adresse, Versand wird nicht versucht", func(t *testing.T) {
-		ersetzeMailversand(t, errors.New("darf nicht aufgerufen werden"))
+		srv.Mail = versandAntwortet(errors.New("darf nicht aufgerufen werden"))
 		var id string
 		if err := pool.QueryRow(ctx, `
 			INSERT INTO lehrer_anliegen (art, titel_text)
@@ -111,9 +119,7 @@ func TestAnliegenErledigen_MailAusfallStehtInDerAntwort(t *testing.T) {
 
 	t.Run("die Mail nennt Art, Klasse und Notiz, ein zweites Abhaken schickt keine", func(t *testing.T) {
 		var mails []mailservice.Nachricht
-		alt := mailservice.Sende
-		mailservice.Sende = func(m mailservice.Nachricht) error { mails = append(mails, m); return nil }
-		t.Cleanup(func() { mailservice.Sende = alt })
+		srv.Mail = mailAttrappe{sende: func(m mailservice.Nachricht) error { mails = append(mails, m); return nil }}
 
 		var meldung string
 		if err := pool.QueryRow(ctx, `
@@ -197,14 +203,14 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 	}
 
 	t.Run("Versand kaputt → fehlgeschlagen", func(t *testing.T) {
-		ersetzeMailversand(t, errors.New("smtp down"))
+		srv.Mail = versandAntwortet(errors.New("smtp down"))
 		if got := mailStatusAusAntwort(t, erledige(t)); got != "fehlgeschlagen" {
 			t.Fatalf("mail=%q, erwartet fehlgeschlagen", got)
 		}
 	})
 
 	t.Run("Versand ok → versendet", func(t *testing.T) {
-		ersetzeMailversand(t, nil)
+		srv.Mail = versandAntwortet(nil)
 		if got := mailStatusAusAntwort(t, erledige(t)); got != "versendet" {
 			t.Fatalf("mail=%q, erwartet versendet", got)
 		}
@@ -215,9 +221,7 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 	// Notiz der Bibliothek, aber sie geht.
 	t.Run("Notiz der Bibliothek steht in Mail und Zeile", func(t *testing.T) {
 		var gesendet mailservice.Nachricht
-		alt := mailservice.Sende
-		mailservice.Sende = func(m mailservice.Nachricht) error { gesendet = m; return nil }
-		t.Cleanup(func() { mailservice.Sende = alt })
+		srv.Mail = mailAttrappe{sende: func(m mailservice.Nachricht) error { gesendet = m; return nil }}
 
 		body := `{"notiz":"24 von 30, der Rest ist bei der 8a"}`
 		rec, resID := erledigeMit(t, &body)

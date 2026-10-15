@@ -120,12 +120,9 @@ func TestSende_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 
 	_, mock := mailTestTueren(t)
 	erwarteMailKonfig(mock, host, port, "gespeichert@schule.de")
-	mailservice.BindeSMTPKonfigAnDatenbank(mock)
-	t.Cleanup(func() {
-		mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil })
-	})
+	post := mailservice.NewPostausgang(mailservice.KonfigAusDatenbank(mock))
 
-	err := mailservice.Sende(mailservice.Nachricht{An: "lehrerin@schule.de", Betreff: "Mahnliste 5b", Text: "Anbei die Liste."})
+	err := post.Sende(mailservice.Nachricht{An: "lehrerin@schule.de", Betreff: "Mahnliste 5b", Text: "Anbei die Liste."})
 	if err != nil {
 		t.Fatalf("Versand fehlgeschlagen: %v", err)
 	}
@@ -150,7 +147,8 @@ func TestSende_OhneKonfigurationMeldetOffeneEinstellung(t *testing.T) {
 	t.Setenv("SMTP_FROM", "")
 	t.Setenv("SMTP_USER", "")
 
-	err := mailservice.Sende(mailservice.Nachricht{An: "lehrerin@schule.de", Betreff: "x", Text: "y"})
+	ausUmgebung := func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }
+	err := mailservice.NewPostausgang(ausUmgebung).Sende(mailservice.Nachricht{An: "lehrerin@schule.de", Betreff: "x", Text: "y"})
 	if !errors.Is(err, mailservice.ErrMailNichtKonfiguriert) {
 		t.Fatalf("Fehler = %v, want ErrMailNichtKonfiguriert", err)
 	}

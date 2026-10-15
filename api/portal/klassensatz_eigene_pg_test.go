@@ -39,7 +39,7 @@ func TestEigeneKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T)
 
 	// Abschluss über die echte Tür, mit Notiz der Bibliothek und scheiterndem Mailversand:
 	// der Fall, in dem nur die Zeile die Notiz trägt.
-	ersetzeMailversand(t, errors.New("smtp down"))
+	srv.Mail = versandAntwortet(errors.New("smtp down"))
 	body := `{"notiz":"24 von 30, Rest bei der 8a"}`
 	req := httptest.NewRequest(http.MethodPut,
 		"/api/reservierungen/klassensatz/"+fertigA+"/erledigen", strings.NewReader(body))

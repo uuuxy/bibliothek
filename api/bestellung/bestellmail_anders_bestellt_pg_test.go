@@ -53,7 +53,7 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Anders", false)
 	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Anders", 0)
 
-	mailserverNichtErreichbar(t, nil)
+	l.srv.Mail = mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
 	if !l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt keinen Vermerk, obwohl die Mail nicht rausging")
@@ -63,7 +63,8 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 	}
 
 	// Ab hier ist ein Mailserver erreichbar: Ginge eine Mail raus, käme sie hier an.
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
+	l.srv.Mail = post
 	rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/"+bestellung+"/mail", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vermerk entfernen: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
@@ -116,7 +117,7 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 // ihn nicht nehmen. Die neue Tür nimmt ihn.
 func TestBestellmailAndersBestellt_OhneMailserver(t *testing.T) {
 	l := andersBestelltLage(t, "ohneserver")
-	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }))
+	l.srv.Mail = mailservice.NewPostausgang(func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil })
 
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-OhneServer", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-OhneServer", 0))
@@ -142,7 +143,7 @@ func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-MitLink", true)
 	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-MitLink", 0)
 
-	mailserverNichtErreichbar(t, nil)
+	l.srv.Mail = mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
 	if !l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt keinen Vermerk, obwohl die Mail nicht rausging")
@@ -172,7 +173,8 @@ func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 // Wo kein Vermerk steht, gibt es nichts zu entfernen; eine unbekannte Bestellung ist 404.
 func TestBestellmailAndersBestellt_Abweisungen(t *testing.T) {
 	l := andersBestelltLage(t, "abweisung")
-	sitzungen := tuertest.FangeMailAb(t)
+	post, sitzungen := tuertest.FangeMailAb(t)
+	l.srv.Mail = post
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Abweisung", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Abweisung", 0))
 	smtptest.WarteAufMail(t, sitzungen)

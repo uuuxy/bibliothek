@@ -20,19 +20,29 @@ import (
 // Frist des Kontexts aus fristMiddleware bricht kein blockierendes Lesen auf einem Socket ab. Am
 // schwersten träfe das den Wächter für kritische Alarme: Hinge Sende dort, stünde seine Schleife
 // für immer, und der Mechanismus, der stille Ausfälle melden soll, fiele selbst still aus.
-// Variablen und keine Konstanten, damit Tests sie verkürzen können.
-var (
+const (
 	smtpVerbindungsTimeout = 10 * time.Second
 	// Frist für die ganze Sitzung (Begrüßung bis Zustellung). Auf der Verbindung gesetzt, wirkt
 	// sie auf jedes Lesen und Schreiben, auch hinter STARTTLS, dessen TLS-Schicht sie erbt.
 	smtpSitzungsFrist = 60 * time.Second
 )
 
+// smtpFristen sind die Fristen eines Versands: im Betrieb die Konstanten oben, in einem Test
+// kürzere, damit er nicht eine Minute auf einen schweigenden Server wartet.
+type smtpFristen struct {
+	verbindung, sitzung time.Duration
+}
+
 // VersendeUeberSMTP überträgt eine fertige Nachricht an den konfigurierten Server.
 // Fehler tragen den Marker ErrSMTPVersand und die Übersetzung aus
 // BeschreibeSMTPFehler; der Aufrufer antwortet damit mit 502 und lesbarer Ursache statt mit einem
 // neutralen 500.
 func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, nachricht []byte) error {
+	return versendeUeberSMTP(smtpFristen{verbindung: smtpVerbindungsTimeout, sitzung: smtpSitzungsFrist},
+		konfig, absender, empfaenger, nachricht)
+}
+
+func versendeUeberSMTP(fristen smtpFristen, konfig SMTPKonfig, absender string, empfaenger []string, nachricht []byte) error {
 	// Die Adressen des Umschlags dürfen keinen Zeilenumbruch enthalten, sonst schmuggelt man
 	// Befehle in die Sitzung. net/smtp.SendMail prüft das mit; auf diesem Weg steht die Prüfung
 	// ausdrücklich.
@@ -46,11 +56,11 @@ func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, 
 	}
 
 	adresse := konfig.Adresse()
-	conn, err := net.DialTimeout("tcp", adresse, smtpVerbindungsTimeout)
+	conn, err := net.DialTimeout("tcp", adresse, fristen.verbindung)
 	if err != nil {
 		return BeschreibeSMTPFehler(adresse, err)
 	}
-	if err := conn.SetDeadline(time.Now().Add(smtpSitzungsFrist)); err != nil {
+	if err := conn.SetDeadline(time.Now().Add(fristen.sitzung)); err != nil {
 		_ = conn.Close() //nolint:errcheck
 		return BeschreibeSMTPFehler(adresse, err)
 	}

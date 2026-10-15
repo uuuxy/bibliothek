@@ -44,13 +44,13 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		req, err := leseKlassenVersandAnfrage(r)
+		req, err := leseKlassenVersandAnfrage(r, t.Post().Konfig)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
-		if !mailservice.IstSMTPKonfiguriert() {
+		if !t.Post().IstKonfiguriert() {
 			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Versand nicht möglich"))
 			return
 		}
@@ -92,7 +92,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		audit.Phase = "start"
 		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		erg := versendeAbgaengerKontoauszuege(gewaehlt, erzeugeKontoauszugPDF, mailservice.Sende)
+		erg := versendeAbgaengerKontoauszuege(gewaehlt, erzeugeKontoauszugPDF, t.Post().Sende)
 
 		audit.Phase = "ende"
 		audit.Versendet, audit.Uebersprungen, audit.Fehlgeschlagen, audit.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen

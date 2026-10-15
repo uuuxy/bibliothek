@@ -81,7 +81,7 @@ func (t *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 		Mittel:          d.Mittel,
 	})
 
-	err = verschickeBestellmail(bestellMail{
+	err = t.verschickeBestellmail(bestellMail{
 		Empfaenger:           d.Empfaenger,
 		Betreff:              betreff,
 		Text:                 text,
