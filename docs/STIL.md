@@ -14,8 +14,8 @@ etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das 
 
 Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, in
 Tests an Namen und Dateinamen, `fehlertext_ratsche_test.go` jeden Fehlertext gegen Abschnitt 11,
-`paketzustand_ratsche_test.go` jeden Zustand der Paketebene gegen Abschnitt 12. Neuer Code
-folgt den Regeln von Anfang an.
+`paketzustand_ratsche_test.go` jeden Zustand der Paketebene gegen Abschnitt 12. Für die
+Oberfläche gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
 
@@ -249,3 +249,27 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
 - `paketzustand_ratsche_test.go` hält es: Ein Wert, dessen Anfangswert nicht erkennbar fest ist,
   steht mit Grund in `paketwerteOhneZustand`, und keine Funktion außer `init` weist einer
   Variable der Paketebene etwas zu. In Tests gilt Abschnitt 10.
+
+## 13. Oberfläche
+
+- Für die Svelte- und JS-Dateien unter `frontend/src` gilt dasselbe Wörterbuch wie im Go-Code
+  (Abschnitte 1 und 2): Was die Bibliothek benennt, heißt deutsch, ohne Umlaute, mit denselben
+  Lehnwörtern. Die Komponente der Leserakte heißt `Leserakte`, nicht `StudentProfile`.
+- Eine Komponente heißt wie die Sache, die sie zeigt, groß und ohne Trenner
+  (`BestellDetail.svelte`); im Code trägt sie denselben Namen. Ein Modul mit Funktionen beginnt
+  klein (`fokusFalle.js`), ein Modul mit Runen endet auf `.svelte.js`, sein Test heißt wie die
+  Datei mit `.test.js`.
+- Die Bauteile von M3 heißen deutsch, wo das Deutsche ein Wort hat: Karte (Card), Liste (List),
+  Menue (Menu), Reiter (Tabs), Tabelle (Table), Feld (Text field), Kaestchen (Checkbox),
+  Ladekreis (Progress indicator), Suchfeld (Search). Die übrigen behalten ihren Namen: Button,
+  Chip, Dialog, Snackbar, Switch, Select, Radio, Badge, Tooltip. So stehen sie schon in
+  `components/ui/`.
+- Englisch bleibt, was Svelte, das Web oder eine Bibliothek vorgibt: Runen (`$state`),
+  Ereignisse (`onclick`), die Ordner `stores`, `actions`, `utils`, `layout`, `ui`, Wörter wie
+  `route` und `fetch`, und die Vorsilbe `use` eines Moduls mit Zustand (`useLeserakte`).
+- Ein Ordner mit Fachbezug heißt deutsch wie sein Thema unter `api/` (`leser`, `etiketten`,
+  `einstellungen`, `statistik`).
+- `frontend/src/lib/frontend-hygiene-sprache.test.js` hält es für Datei- und Ordnernamen: Ihr
+  Bestand nennt je Pfad, was noch umzubenennen ist, und darf nur sinken. Für Namen innerhalb
+  der Dateien gilt dieselbe Regel; geprüft wird sie dort noch nicht.
+
