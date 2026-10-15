@@ -60,8 +60,11 @@ func TestEingabeVerarbeiten_AblehnungenVorDerBuchung(t *testing.T) {
 		}
 	})
 	w := rufe(`{"query":"B-123","idempotency_key":"`+schluessel+`"}`, true)
-	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "in_arbeit") {
-		t.Errorf("Schlüssel in Arbeit: Status %d, erwartet 409 mit „in_arbeit“: %s", w.Code, w.Body.String())
+	const inArbeit = "Dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen"
+	if w.Code != http.StatusConflict {
+		t.Errorf("Schlüssel in Arbeit: Status %d, erwartet 409: %s", w.Code, w.Body.String())
+	} else if got := tuertest.Fehlermeldung(t, w); got != inArbeit {
+		t.Errorf("Schlüssel in Arbeit: Meldung %q, erwartet %q", got, inArbeit)
 	}
 	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM idempotency_keys WHERE idempotency_key = $1 AND status_code = 0`, schluessel); n != 1 {
 		t.Errorf("%d Reservierungen unter dem Schlüssel, erwartet 1 — die abgewiesene Anfrage darf sie weder übernehmen noch freigeben", n)

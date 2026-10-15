@@ -529,7 +529,7 @@ func (t *Tueren) schreibeLeserAenderung(ctx context.Context, w http.ResponseWrit
 		// Name und Geburtsdatum eines anderen Lesers: dieselbe Auskunft wie beim Anlegen.
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "unique_schueler_name_gebdatum" {
-			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungSchuelerDuplikat, err)
 			return false
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

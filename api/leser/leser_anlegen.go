@@ -22,7 +22,7 @@ import (
 // meldungSchuelerDuplikat nennt die Regel, an der die Anlage scheitert — auch die
 // Schreibweise, denn genau die ist der Fall, den man vor sich hat, wenn man den Namen
 // in der Liste nicht findet.
-const meldungSchuelerDuplikat = "achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System"
+const meldungSchuelerDuplikat = "Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System"
 
 // leserAnlegenAnfrage ist ein neuer Leser, gleich welcher Art. „Neuen Leser anlegen" fragt
 // zuerst nach der Art; Klasse und Geburtsdatum sind deshalb nicht am Feld als Pflicht
@@ -57,7 +57,7 @@ type leserAnlegenAnfrage struct {
 // selbst angemeldet und steht deshalb schon in der Leserdatei. Ein zweiter Eintrag teilt
 // seine Ausleihen auf zwei Akten, ohne dass es jemand merkt — und anders als bei einem
 // Schüler gibt es kein Geburtsdatum, an dem die Doppelprüfung greifen könnte.
-const meldungLeserNamensdublette = "achtung: Unter diesem Namen steht bereits ein Leser in der Leserdatei. Hat sich die Person über Mein Portal schon selbst angemeldet? Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten."
+const meldungLeserNamensdublette = "Achtung: Unter diesem Namen steht bereits ein Leser in der Leserdatei. Hat sich die Person über Mein Portal schon selbst angemeldet? Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten."
 
 // pruefeKollegiumEmail prüft die Schuladresse eines Kollegen mit Zugang (leserart.HatKonto).
 //
@@ -322,7 +322,7 @@ func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWri
 			return false
 		}
 		if istDublette {
-			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungSchuelerDuplikat, nil)
 			return false
 		}
 		return true
@@ -345,7 +345,7 @@ func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWri
 func antworteAufAnlegeFehler(w http.ResponseWriter, err error, barcodeID string) {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "unique_schueler_name_gebdatum" {
-		apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungSchuelerDuplikat, err)
 		return
 	}
 	if repository.IstAusweisKollision(err) {

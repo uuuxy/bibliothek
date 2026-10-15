@@ -211,8 +211,8 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 		return
 	}
 	if lage.inArbeit {
-		apierrors.AntworteFehler(w, http.StatusConflict,
-			errors.New("in_arbeit: dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
+			"Dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen", nil)
 		return
 	}
 

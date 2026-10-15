@@ -209,6 +209,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, zwei Skripte für
   k6, SQL-Testdaten über `internal/testdaten`, zwei Spalten ohne Schreiber; eine Frage zu
   `cmd/migrate-fotos`.
+- [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** 216 Meldungen der Türen beginnen
+  klein, geschätzt 57 davon englisch.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -551,6 +553,21 @@ halten; sie zu löschen hieße, Regeln zu lockern. Offen:
   Datenbank, 680 Zeilen mit Tests) auf dem Schulserver gelaufen? Dann kann es weg.
 
 ---
+
+### 5.68 Meldungen in Satzschreibung und auf Deutsch
+
+Gemessen am 15.10.2026 über die Aufrufe von `apierrors` mit festem Text und einem Status unter
+500 (die Oberfläche zeigt den Text unverändert und schreibt nichts groß): 216 Meldungen
+beginnen klein („eigenes Konto kann nicht deaktiviert werden"), geschätzt 57 davon englisch
+(„rate limit exceeded", „supplier not found"), 91 beginnen groß. M3 verlangt „Use sentence case
+for all product text" (Content design, Grammar and punctuation). Googles Regel für Fehlertexte
+steht dem nicht entgegen: Eine Meldung ist kein Fehlertext und geht als Meldung hinaus
+([STIL.md](STIL.md), Abschnitt 11), mit `AntworteFehlerMitMeldung` statt `errors.New`.
+
+Gezählt über den Syntaxbaum: der Text in den Aufrufen von `AntworteFehler`,
+`AntworteFehlerMitMeldung`, `BadRequest`, `Conflict`, `NotFound` und `Unauthorized`; englisch heißt
+ein Text mit Wörtern wie „not", „missing", „invalid". Nächster Schritt: je Tür die Meldungen in
+Satzschreibung und auf Deutsch, je Satz ein Test an der Antwort; die englischen zuerst.
 
 ## 7. Betrieb (liegt bei der Schulseite)
 

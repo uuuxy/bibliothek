@@ -111,12 +111,12 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	t.Run("Anlegen: Schüler doppelt", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7a","geburtsdatum":"2012-05-06"}`)
 		erwarte(t, anlegen(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7b","geburtsdatum":"2012-05-06"}`), http.StatusConflict,
-			"achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System")
+			"Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System")
 	})
 	t.Run("Anlegen: Kollege mit demselben Namen", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Nora","nachname":"Namensgleich","art":"praktikum"}`)
 		erwarte(t, anlegen(t, `{"vorname":"Nora","nachname":"Namensgleich","art":"praktikum"}`), http.StatusConflict,
-			"achtung: Unter diesem Namen steht bereits ein Leser in der Leserdatei. Hat sich die Person über Mein Portal schon selbst angemeldet? Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten.")
+			"Achtung: Unter diesem Namen steht bereits ein Leser in der Leserdatei. Hat sich die Person über Mein Portal schon selbst angemeldet? Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten.")
 	})
 	t.Run("Anlegen: Ausweisnummer vergeben", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Ali","nachname":"Ausweiserst","klasse":"7a","geburtsdatum":"2012-07-08","barcode_id":"S-MELDUNG-1"}`)
