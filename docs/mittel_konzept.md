@@ -122,7 +122,6 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Forderung anlegen                    | `repository/schaden.go` (`SchadensAbfragen.Melde` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `DamageReportModal.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. Der Betrag ist ein gerechneter VORSCHLAG mit Herleitung (seit 17.09.2026; vorher Freitext mit der Vorgabe 15,00 € ohne Bezug zum Preis) — überschreibbar, denn er liegt im Ermessen der Schule.               |
 | Forderung erledigen                  | `api/schaden/forderung_erledigen.go`, `repository/forderung_erledigen.go` (Bezahlt / Storno mit Grund, Audit, 409 bei Doppelbuchung)                                              | ✅ „Bezahlt" bedeutet heute **Barzahlung am Tresen**.                                                                                                              |
-| Brief 1: Elternbrief je Schadensfall | `pdf/schadensfall.go`, `api/schaden/elternbrief.go` (`elternbrief_generiert`)                                                                                                 | 14-Tage-Frist, „Schulbibliotheksordnung", Unterschrift „Bibliotheksleitung". Der Zahlungsweg stimmt seit 17.09.2026 (Konto des Landes bzw. offener Weg des Trägers); die übrigen Punkte bleiben für ein Lernmittel falsch. |
 | Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/schaden/rechnung.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), Zahlungsweg je Topf seit 17.09.2026 — aber weiterhin ohne Nummer und ohne Frist im Landesformat.                  |
 | Brief 3: Eltern-Mahnbrief            | `pdf/mahnbrief.go`, Vorlage `MAHNUNG_ELTERN`                                                                                                                  | DIN-5008-Fensterkuvert, Falzmarken, Tabelle der überfälligen Bücher — **die Bauform, die der Bescheid braucht.**                                                   |
 | Mahnwesen                            | `api/mahnwesen*.go`, `repository/mahnwesen_*.go`, `Mahnwesen.svelte` + `components/mahnwesen/`                                                                | Überfällige nach Klasse, Auswahl → „Mahnbriefe drucken" (Mahnstufe steigt nur beim Druck), Klassenleitungs-Mail, Sperre ab `max_overdue_days` (nur Schülerbücherei). |
@@ -226,9 +225,9 @@ Anschriftfeld, „(keine Adresse hinterlegt)"-Regel).
 - **Schulträger**: Rechnung mit Rechnungsnummer, Frist, Tabelle, Hinweis auf
   Ersatzbeschaffung als Alternative, Zahlungsweg aus den Einstellungen — ohne Nummer im
   Landesformat, ohne den Schlussabsatz des Landesbescheids.
-- Beide ersetzen `pdf/schadensfall.go` und `pdf/rechnung.go`; `api/schaden/elternbrief.go`, `api/schaden/rechnung.go`
-und `elternbrief_generiert*` werden abgeräumt (Deadcode-Gate, Bestandsliste
-  der Bauteile). Der Eltern-**Mahnbrief** (überfällig, ohne Geld) bleibt, wie er ist.
+- Beide ersetzen `pdf/rechnung.go` und `api/schaden/rechnung.go`; der Elternbrief je
+  Schadensfall ist schon entfernt, die Spalten `elternbrief_generiert*` stehen noch im Schema.
+  Der Eltern-**Mahnbrief** (überfällig, ohne Geld) bleibt, wie er ist.
 
 ### 4.5 Oberfläche
 

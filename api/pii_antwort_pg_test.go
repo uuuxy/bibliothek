@@ -184,7 +184,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		t.Fatalf("Abgänger-Ausleihe anlegen: %v", err)
 	}
 
-	// Schadensfall (Gebührenliste, Elternbrief, Rechnung) — mit ausleihe_id:
+	// Schadensfall (Gebührenliste, Rechnung) — mit ausleihe_id:
 	// die Rechnung joint über den Ausleihvorgang.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schadensfaelle (exemplar_id, schueler_id, ausleihe_id, beschreibung, betrag)
@@ -281,22 +281,19 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// Positiv-Kontrolle mit einem Kanarienwert möglich, es gibt in dieser Antwort keinen
 		// Text. Der Test prüft hier also nur, dass nichts Personenbezogenes durchfällt; dass die
 		// Zahlen stimmen, steht in api/leser/schueler_jahrgang_filter_pg_test.go.
-		"GET /api/jahrgaenge":              {URL: "/api/jahrgaenge"},
-		"GET /api/lmf-termine":             {URL: "/api/lmf-termine"},
-		"GET /api/lmf-termine/pdf":         {URL: "/api/lmf-termine/pdf"},
-		"GET /api/lmf-termine/entwurf/pdf": {URL: "/api/lmf-termine/entwurf/pdf"},
-		"GET /api/lmf-plan/{art}":          {URL: "/api/lmf-plan/rueckgabe"},
-		"GET /api/klassen-mapping":         {URL: "/api/klassen-mapping"},
-		"GET /api/abgaenger":               {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
-		"GET /api/abgaenger/pdf":           {URL: "/api/abgaenger/pdf"},
-		// Auch der dritte Brief fürs Fensterkuvert trägt die Anschrift; Kanariweg als
-		// Positiv-Kontrolle wie bei print/rechnung.
-		"GET /api/schadensfaelle/{id}/pdf":      {URL: "/api/schadensfaelle/" + w.schadensfallID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		"GET /api/jahrgaenge":                   {URL: "/api/jahrgaenge"},
+		"GET /api/lmf-termine":                  {URL: "/api/lmf-termine"},
+		"GET /api/lmf-termine/pdf":              {URL: "/api/lmf-termine/pdf"},
+		"GET /api/lmf-termine/entwurf/pdf":      {URL: "/api/lmf-termine/entwurf/pdf"},
+		"GET /api/lmf-plan/{art}":               {URL: "/api/lmf-plan/rueckgabe"},
+		"GET /api/klassen-mapping":              {URL: "/api/klassen-mapping"},
+		"GET /api/abgaenger":                    {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
+		"GET /api/abgaenger/pdf":                {URL: "/api/abgaenger/pdf"},
 		"GET /api/schueler/{id}/schadensfaelle": {URL: "/api/schueler/" + w.schuelerID + "/schadensfaelle", Positiv: []string{"Kanarischaden"}},
 		// Schadensersatz-Bescheide. Der Vorschlag und die Akten-Liste
 		// nennen das Kind, die Arbeitsliste ebenso; das PDF trägt zusätzlich die
 		// Anschrift — deshalb stehen dort dieselben Positiv-Kontrollen wie beim
-		// Schwester-Brief schadensfaelle/{id}/pdf. Ohne einen erstellten Bescheid im
+		// Brief print/rechnung. Ohne einen erstellten Bescheid im
 		// Wächter-Bestand liefern die drei Listen leer, und das ist hier richtig: Der
 		// Test prüft, dass nichts Unerwartetes durchfällt, nicht dass etwas da ist.
 		"GET /api/schueler/{id}/bescheid-vorschlag": {URL: "/api/schueler/" + w.schuelerID + "/bescheid-vorschlag", Positiv: []string{"Vogelbeere"}},

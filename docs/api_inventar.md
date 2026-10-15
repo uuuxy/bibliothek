@@ -1,12 +1,11 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-10-08. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-10-15. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `GET /api/schadensfaelle/{id}/pdf`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -15,7 +14,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (229)
+## Alle registrierten Routen (228)
 
 - `/`
 - `/api/admin`
@@ -128,7 +127,6 @@
 - `GET /api/reservierungen/klassensatz/katalog`
 - `GET /api/reservierungen/klassensatz/katalog/filter`
 - `GET /api/reservierungen/klassensatz/offen`
-- `GET /api/schadensfaelle/{id}/pdf`
 - `GET /api/schlagworte`
 - `GET /api/schlagworte/dnb-vorschlag`
 - `GET /api/schlagworte/pflege`

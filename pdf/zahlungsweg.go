@@ -7,8 +7,7 @@ import (
 	"bibliothek/pkg/betrag"
 )
 
-// Wohin gezahlt wird — EIN Wortlaut für die beiden Altbriefe (Elternbrief `schadensfall.go`,
-// Rechnung `rechnung.go`).
+// Wohin gezahlt wird, in einem Wortlaut für die Rechnung (`rechnung.go`).
 //
 // Anlass: die Arbeitshilfe zum Erlass vom 17.12.2014 (Az. 674.100.002-00178). Sie sagt für
 // die Lernmittel des Landes: „Es darf kein Schulgirokonto, kein anderes Bankkonto und keine

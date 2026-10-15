@@ -205,6 +205,9 @@ der Nummer nichts mehr dazu offen ist.
   (Tür und Abfrage), die Größen in 11.1 unter R4.
 - [ ] **Auflagen-Zeile im Schulbuch-Export (5.63):** kürzt auf eine geschätzte Zahl von
   Zeichen über drei Zeilen; messen, ob ein breiter Text eine vierte Zeile beginnt.
+- [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, zwei Skripte für
+  k6, SQL-Testdaten über `internal/testdaten`, zwei Spalten ohne Schreiber; eine Frage zu
+  `cmd/migrate-fotos`.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -554,6 +557,30 @@ Ordner des Pakets und für die Form `paket.Name`.
   Art, Titel, ISBN und Betrag. Das Feld steht als leerer Text `schueler_name` in der Antwort.
   Nächster Schritt: nachsehen, ob die Oberfläche das Feld liest, und es dann füllen oder
   streichen.
+
+### 5.67 Umfang senken: was sich löschen lässt
+
+Gemessen am 15.10.2026 an den eingecheckten Dateien (rund 362.000 Zeilen, davon 130.400 Go-Tests
+und 79.700 Go-Programm): Toten Code gibt es kaum. In Go hält ihn `scripts/deadcode_gate.sh` bei
+null, auf der Oberfläche ist jede Datei von `main.js` aus erreichbar. Die eine Route ohne Aufrufer,
+der Elternbrief je Schadensfall, ist entfernt. Der Zuwachs steckt in Tests, die je eine Zusage
+halten; sie zu löschen hieße, Regeln zu lockern. Offen:
+
+- **Vorgeschichte in den Dokumenten:** die 30 datierten Prüfläufe in [sweeps.md](sweeps.md) ins
+  Register falten, Stand- und Anlass-Absätze und Einschübe wie „bis dahin …" streichen; geschätzt
+  800 bis 1.000 Zeilen. Dazu eine Ratsche, die Zeilen mit Datum in `docs/*.md` nur sinken lässt,
+  sonst wächst es nach (Dokumente +7.400 Zeilen in 30 Tagen).
+- **Zwei Skripte für k6:** `loadtest.js` und `loadtest_advanced.js` (274 Zeilen) nennt nur eine
+  Tabelle in [ARCHITEKTUR.md](ARCHITEKTUR.md); den Lasttest deckt `cmd/stresstest`.
+- **SQL-Testdaten:** 730 Anweisungen mit 3.443 Zeilen legen Titel, Exemplare, Schüler, Leser,
+  Konten und Ausleihen selbst an, obwohl `internal/testdaten` dafür Helfer hat. Wo einer passt,
+  wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket
+  zusammen mit dem Umbau nach [STIL.md](STIL.md).
+- **Zwei Spalten ohne Schreiber:** `schadensfaelle.elternbrief_generiert` und
+  `elternbrief_generiert_am` setzt seit dem Entfernen des Elternbriefs niemand mehr; eine
+  Migration nimmt sie heraus.
+- **Frage an dich:** Ist `cmd/migrate-fotos` (Umzug der Schülerfotos aus Dateien in die
+  Datenbank, 680 Zeilen mit Tests) auf dem Schulserver gelaufen? Dann kann es weg.
 
 ---
 

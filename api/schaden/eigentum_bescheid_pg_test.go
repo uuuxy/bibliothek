@@ -90,17 +90,11 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 			land[sidLand], land[sidTraeger])
 	}
 
-	// 3. Rechnung und Elternbrief nennen das Konto nach dem Eigentum.
+	// 3. Die Rechnung nennt das Konto nach dem Eigentum.
 	for sid, want := range map[string]bool{sidLand: true, sidTraeger: false} {
 		items, err := ladeRechnungPosten(ctx, pool, uuid.MustParse(sid))
 		if err != nil || len(items) != 1 || items[0].Land != want {
 			t.Errorf("Rechnung %s: %+v (%v) — erwartet Land=%v", sid, items, err, want)
-		}
-	}
-	for fid, want := range map[string]bool{fLand: true, fTraeger: false} {
-		info, _, err := srv.ladeSchadensfallBrief(ctx, fid)
-		if err != nil || info.Land != want {
-			t.Errorf("Elternbrief %s: Land=%v (%v), erwartet %v", fid, info.Land, err, want)
 		}
 	}
 

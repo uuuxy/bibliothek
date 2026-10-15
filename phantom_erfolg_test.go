@@ -48,7 +48,6 @@ var phantomBestand = map[string]int{
 	"repository/lusd_import.go:LoescheWartendeVormerkungen": 1,
 	"repository/lusd_import.go:LegeLUSDSchuelerAn":          1,
 	"repository/lusd_import.go:SperreAbgaenger":             1,
-	"repository/schadensbrief.go:MerkeElternbriefErzeugt":   1,
 	// Schuljahreswechsel: die Sperre des Laufs (kein Schreibvorgang) und das Umhängen einer
 	// Klassenleitung, deren Zeile die Transaktion unmittelbar davor gelesen hat.
 	"repository/schuljahreswechsel.go:SperreSchuljahreswechsel": 1,

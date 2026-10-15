@@ -81,7 +81,6 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen reposi
 	// Schäden
 	schadensAbfragen := repository.NewSchadensAbfragen(s.DB.Pool)
 	mux.Handle("POST /api/damage/report", s.verlangeRecht("edit_students")(s.schaden().SchadenMelden(schadensAbfragen)))
-	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.verlangeRecht("view_students")(s.schaden().ElternbriefPDF()))
 	// Gebühren-Erledigung: Lesen wie die Akte (view_students), Erledigen wie das
 	// Anlegen (edit_students); die Begründung steht im Kopf von api/schaden/forderung_erledigen.go.
 	protokollDerBescheide := repository.NewProtokollAbfragen(s.DB.Pool)

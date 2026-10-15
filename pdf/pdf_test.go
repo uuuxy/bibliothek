@@ -5,13 +5,10 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"bibliothek/internal/pdftest"
-	"bibliothek/pkg/schulzeit"
 )
 
 // Das pdf-Paket erzeugt jedes Schriftstück, das die Schule aus der Hand gibt:
-// Ersatzforderung, Elternbrief zum Schadensfall, Mahnliste, Kontoauszug. Bis hierher
+// Ersatzforderung, Mahnliste, Kontoauszug. Bis hierher
 // hatte es keinen einzigen Test — ein Panic oder ein leeres Dokument wäre erst dem
 // Sekretariat aufgefallen, im Zweifel gegenüber Eltern.
 //
@@ -109,38 +106,6 @@ func TestGenerateRechnungOhnePosten(t *testing.T) {
 		t.Fatalf("GenerateRechnung ohne Posten: %v", err)
 	}
 	istPDF(t, got, "Rechnung ohne Posten")
-}
-
-func TestGenerateSchadensfallPDF(t *testing.T) {
-	data := SchadensfallInfo{
-		Beschreibung:     "Wasserschaden über mehrere Seiten, Einband gewellt — Öffnen nur noch teilweise möglich.",
-		Betrag:           24.90,
-		ErstelltAm:       time.Now(),
-		SchuelerVorname:  "Jörg",
-		SchuelerNachname: "Weiß",
-		SchuelerKlasse:   "7a",
-		BuchTitel:        umlautText,
-		ExemplarBarcode:  "B-04711",
-	}
-
-	got, err := GenerateSchadensfallPDF(data, testSchule(), testZahlung())
-	if err != nil {
-		t.Fatalf("GenerateSchadensfallPDF: %v", err)
-	}
-	istPDF(t, got, "Schadensfall")
-}
-
-// Der Ort der Schule steht in der Datumszeile, wie er heißt: Ein Ort mit Umlaut, der nicht durch
-// die Zeichenersetzung geht, stünde verstümmelt auf dem Brief.
-func TestSchadensfall_OrtMitUmlautStehtLesbarInDerDatumszeile(t *testing.T) {
-	schule := testSchule()
-	schule.Ort = "Köln"
-	got, err := GenerateSchadensfallPDF(SchadensfallInfo{ErstelltAm: time.Now(), SchuelerVorname: "Mia", SchuelerNachname: "Muster"}, schule, testZahlung())
-	if err != nil {
-		t.Fatalf("GenerateSchadensfallPDF: %v", err)
-	}
-	pruefeBlatt(t, strings.Join(pdftest.Texte(t, got), "\n"),
-		[]string{"Köln, den " + schulzeit.Jetzt().Format(dateFormatDE)}, []string{"Ã"})
 }
 
 func TestGenerateKontoauszug(t *testing.T) {

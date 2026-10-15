@@ -252,7 +252,7 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   ein Bau des Images unter einem Probe-Namen (`docker build -t <Name> .`).
 - **gosec meldet eine Stelle, an der sich nur der Weg der Daten geändert hat (09.10.2026).**
   Nach dem Umzug einer Abfrage aus einer Tür nach `repository/` meldete der Job „Go – gosec
-  static analysis" an `api/schaden/elternbrief.go` die Regel G705 (XSS über Taint-Analyse), am Schreiben des
+  static analysis" an der Tür eines Briefs in `api/schaden/` die Regel G705 (XSS über Taint-Analyse), am Schreiben des
   PDFs in die Antwort. Vorher las die Tür die Zeile selbst (`QueryRow(…).Scan(…)`); seit dem
   Umzug kommt sie als Rückgabe einer Funktion, die die Kennung aus der Anfrage als Argument
   bekommt, und die Analyse wertet die Rückgabe als von der Anfrage abhängig. Am Verhalten

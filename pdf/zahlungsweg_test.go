@@ -92,37 +92,3 @@ func TestRechnungMitBeidenToepfenZeigtBeideWegeMitTeilsummen(t *testing.T) {
 		}
 	}
 }
-
-func TestElternbriefFolgtDemselbenZahlungsweg(t *testing.T) {
-	basis := SchadensfallInfo{
-		Beschreibung: "Einband gerissen", Betrag: 24.90, ErstelltAm: time.Now(),
-		SchuelerVorname: "Jörg", SchuelerNachname: "Weiß", SchuelerKlasse: "7a",
-		BuchTitel: "Mathe 8", ExemplarBarcode: "B-3",
-	}
-
-	lernmittel := basis
-	lernmittel.Land = true
-	got, err := GenerateSchadensfallPDF(lernmittel, testSchule(), testZahlung())
-	if err != nil {
-		t.Fatalf("Elternbrief (Lernmittel): %v", err)
-	}
-	blatt := blattText(t, got)
-	if !strings.Contains(blatt, "HCC-Schulbereich") {
-		t.Errorf("der Elternbrief für ein Lernmittel nennt das Konto des Landes nicht:\n%s", blatt)
-	}
-	if strings.Contains(blatt, barsatz) {
-		t.Errorf("der Elternbrief verlangt weiterhin Barzahlung:\n%s", blatt)
-	}
-
-	got, err = GenerateSchadensfallPDF(basis, testSchule(), testZahlung())
-	if err != nil {
-		t.Fatalf("Elternbrief (Bücherei): %v", err)
-	}
-	blatt = blattText(t, got)
-	if !strings.Contains(blatt, "nicht hinterlegt") {
-		t.Errorf("der Elternbrief für ein Büchereibuch sagt den fehlenden Weg nicht:\n%s", blatt)
-	}
-	if strings.Contains(blatt, "HCC-Schulbereich") {
-		t.Errorf("Büchereibuch zeigt auf das Konto des Landes:\n%s", blatt)
-	}
-}
