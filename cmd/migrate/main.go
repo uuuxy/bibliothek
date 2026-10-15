@@ -1,22 +1,22 @@
 // Command migrate überträgt einmalig einen Bestand aus MySQL nach PostgreSQL.
 //
-// Usage:
+// Aufruf:
 //
 //	MYSQL_DSN="user:pass@tcp(host:3306)/olddb?parseTime=true" \
 //	PG_DSN="postgres://user:pass@host:5432/newdb" \
 //	go run ./cmd/migrate [--dry-run] [--batch 500]
 //
-// Required environment variables:
+// Pflichtangaben in der Umgebung:
 //
-//	MYSQL_DSN   – MySQL DSN in go-sql-driver/mysql format
-//	PG_DSN      – PostgreSQL connection string (URL or DSN)
+//	MYSQL_DSN   – DSN von MySQL im Format von go-sql-driver/mysql
+//	PG_DSN      – Verbindung zu PostgreSQL (URL oder DSN)
 //
-// Optional flags:
+// Schalter:
 //
-//	--dry-run   – Validate and log only; make no writes to PostgreSQL
-//	--batch N   – Number of titles to insert per transaction (default: 200)
+//	--dry-run   – nur prüfen und protokollieren, nichts nach PostgreSQL schreiben
+//	--batch N   – Titel je Transaktion (Vorgabe: 200)
 //
-// Rückgabewerte — sie sind die Kurzfassung des Abschlussberichts:
+// Rückgabewerte, die Kurzfassung des Abschlussberichts:
 //
 //	0 – vollständig übernommen. Warnungen können im Protokoll stehen, aber jeder
 //	    Quelldatensatz ist in PostgreSQL angekommen.
@@ -42,85 +42,86 @@ import (
 )
 
 var (
-	dryRun    = flag.Bool("dry-run", false, "validate only, do not write to PostgreSQL")
-	batchSize = flag.Int("batch", 200, "titles per INSERT transaction")
+	trocken      = flag.Bool("dry-run", false, "validate only, do not write to PostgreSQL")
+	batchGroesse = flag.Int("batch", 200, "titles per INSERT transaction")
 )
 
 const (
-	exitOK             = 0
-	exitAbgebrochen    = 1
-	exitUnvollstaendig = 2
+	rueckgabeOK             = 0
+	rueckgabeAbgebrochen    = 1
+	rueckgabeUnvollstaendig = 2
 )
 
-// main hält nichts als den Rückgabewert. Alle Arbeit steckt in run, damit die defer-Kette
-// wirklich läuft: das Fehlerprotokoll wird über einen 64-KB-Puffer geschrieben, und ein
-// os.Exit mitten im Ablauf ließ diesen Puffer ungeleert. Der Aufruf stand ausgerechnet in
-// printSummary und griff nur dann, wenn es Fehler gab — das Protokoll brach also genau in
-// dem Lauf ab, für den man es braucht.
+// main hält nichts als den Rückgabewert. Alle Arbeit steckt in fuehreAus, damit die Kette der
+// defer wirklich läuft: Das Fehlerprotokoll wird über einen Puffer von 64 KB geschrieben, und ein
+// os.Exit mitten im Ablauf ließe den Puffer ungeleert, genau in dem Lauf, für den man das
+// Protokoll braucht.
 func main() {
-	os.Exit(run())
+	os.Exit(fuehreAus())
 }
 
-func run() int {
+// fuehreAus ist der ganze Ablauf: Umgebung lesen, Quelle laden, prüfen oder übernehmen,
+// berichten.
+func fuehreAus() int {
 	flag.Parse()
 
-	mysqlDSN, pgDSN, err := parseEnv()
+	mysqlDSN, pgDSN, err := leseUmgebung()
 	if err != nil {
 		// #nosec G706
 		log.Printf("FEHLER: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
-	el, err := newErrLogger()
+	fehlerprotokoll, err := newFehlerprotokoll()
 	if err != nil {
 		// #nosec G706
 		log.Printf("FEHLER: Fehlerprotokoll konnte nicht geöffnet werden: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
-	defer el.Schliesse()
+	defer fehlerprotokoll.Schliesse()
 
-	mysqlDB, err := connectMySQL(ctx, mysqlDSN)
+	mysqlDB, err := verbindeMySQL(ctx, mysqlDSN)
 	if err != nil {
 		// #nosec G706
 		log.Printf("FEHLER: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
 	defer func() { _ = mysqlDB.Close() }() //nolint:errcheck
 
 	log.Println("Lese Quelldaten aus MySQL …")
-	titles, err := readMySQLTitles(mysqlDB)
+	medien, err := ladeMySQLTitel(mysqlDB)
 	if err != nil {
 		// #nosec G706
 		log.Printf("FEHLER: mysql read: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
 	// #nosec G706
-	log.Printf("Gelesen: %d Titel aus MySQL", len(titles))
+	log.Printf("Gelesen: %d Titel aus MySQL", len(medien))
 
-	if *dryRun {
-		doDryRun(titles, el)
-		return exitOK
+	if *trocken {
+		fuehreTrockenlaufAus(medien, fehlerprotokoll)
+		return rueckgabeOK
 	}
 
-	pgPool, err := connectPostgres(ctx, pgDSN)
+	pool, err := verbindePostgres(ctx, pgDSN)
 	if err != nil {
 		// #nosec G706
 		log.Printf("FEHLER: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
-	defer pgPool.Close()
+	defer pool.Close()
 
-	bericht := fuehreUebernahmeDurch(ctx, pgPool, titles, el)
-	bericht.Warnungen, bericht.Fehler = el.Warnungen(), el.FehlerAnzahl()
-	printSummary(bericht)
-	return bericht.exitCode()
+	bericht := fuehreUebernahmeDurch(ctx, pool, medien, fehlerprotokoll)
+	bericht.Warnungen, bericht.Fehler = fehlerprotokoll.Warnungen(), fehlerprotokoll.FehlerAnzahl()
+	druckeZusammenfassung(bericht)
+	return bericht.rueckgabewert()
 }
 
-// abschlussbericht ist die vollständige Bilanz eines Laufs — einschließlich dessen, was
-// NICHT geklappt hat. Behauptung (was der Code gezählt hat) und Befund (was in der
+// abschlussbericht ist die vollständige Bilanz eines Laufs, einschließlich dessen, was nicht
+// geklappt hat. Behauptung (was der Code gezählt hat) und Befund (was in der
 // Datenbank steht) werden getrennt geführt und am Ende gegeneinander geprüft.
 type abschlussbericht struct {
 	QuellTitel     int
@@ -138,18 +139,20 @@ type abschlussbericht struct {
 	Abbruch error // gesetzt, wenn die Übernahme vorzeitig endete
 }
 
-func (b abschlussbericht) exitCode() int {
+// rueckgabewert fasst den Bericht in einem Rückgabewert zusammen.
+func (b abschlussbericht) rueckgabewert() int {
 	switch {
 	case b.Abbruch != nil:
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	case b.Uebersprungen > 0 || b.Fehler > 0 || !b.AbgleichOK:
-		return exitUnvollstaendig
+		return rueckgabeUnvollstaendig
 	default:
-		return exitOK
+		return rueckgabeOK
 	}
 }
 
-func parseEnv() (mysqlDSN, pgDSN string, err error) {
+// leseUmgebung liest die beiden Verbindungen aus der Umgebung.
+func leseUmgebung() (mysqlDSN, pgDSN string, err error) {
 	mysqlDSN = os.Getenv("MYSQL_DSN")
 	if mysqlDSN == "" {
 		return "", "", fmt.Errorf("MYSQL_DSN environment variable is required")
@@ -161,23 +164,25 @@ func parseEnv() (mysqlDSN, pgDSN string, err error) {
 	return mysqlDSN, pgDSN, nil
 }
 
-func connectMySQL(ctx context.Context, dsn string) (*sql.DB, error) {
+// verbindeMySQL öffnet die Quelle und prüft die Verbindung.
+func verbindeMySQL(ctx context.Context, dsn string) (*sql.DB, error) {
 	log.Println("Verbinde mit MySQL …")
-	db, err := sql.Open("mysql", dsn)
+	verbindung, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("mysql open: %w", err)
 	}
-	db.SetMaxOpenConns(4)
-	db.SetConnMaxLifetime(5 * time.Minute)
-	if err := db.PingContext(ctx); err != nil {
-		_ = db.Close() //nolint:errcheck
+	verbindung.SetMaxOpenConns(4)
+	verbindung.SetConnMaxLifetime(5 * time.Minute)
+	if err := verbindung.PingContext(ctx); err != nil {
+		_ = verbindung.Close() //nolint:errcheck
 		return nil, fmt.Errorf("mysql ping: %w", err)
 	}
 	log.Println("MySQL Verbindung OK")
-	return db, nil
+	return verbindung, nil
 }
 
-func connectPostgres(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
+// verbindePostgres öffnet das Ziel und prüft die Verbindung.
+func verbindePostgres(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	log.Println("Verbinde mit PostgreSQL …")
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -191,41 +196,40 @@ func connectPostgres(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// doDryRun prüft die Quelldaten, ohne zu schreiben — inklusive der Freitextlängen, denn
-// überlange Felder sind neben doppelten ISBNs der zweite Grund, aus dem eine Übernahme
-// Datensätze abwertet. Wer den Trockenlauf macht, will beides vorher wissen.
-func doDryRun(titles []mysqlMedium, el *uebernahme.Protokoll) {
+// fuehreTrockenlaufAus prüft die Quelldaten, ohne zu schreiben, einschließlich der Länge der
+// Freitexte, denn überlange Felder sind neben doppelten ISBNs der zweite Grund, aus dem eine
+// Übernahme Datensätze abwertet. Wer den Trockenlauf macht, will beides vorher wissen.
+func fuehreTrockenlaufAus(medien []mysqlMedium, fehlerprotokoll *uebernahme.Protokoll) {
 	log.Println("DRY-RUN: Validiere Datensätze ohne Schreibzugriff auf PostgreSQL …")
-	seenISBNs := make(map[string]string)
-	for _, m := range titles {
-		uebernahme.KlaereISBN(el, quellID(m), isbnRoh(m), seenISBNs)
-		kuerzeFelder(el, m)
+	bekannteISBNs := make(map[string]string)
+	for _, m := range medien {
+		uebernahme.KlaereISBN(fehlerprotokoll, quellID(m), isbnRoh(m), bekannteISBNs)
+		kuerzeFelder(fehlerprotokoll, m)
 	}
 	// #nosec G706
-	log.Printf("DRY-RUN abgeschlossen: %d Anmerkungen → %s", el.Warnungen(), errorLogPath)
+	log.Printf("DRY-RUN abgeschlossen: %d Anmerkungen → %s", fehlerprotokoll.Warnungen(), fehlerprotokollPfad)
 }
 
 // fuehreUebernahmeDurch klammert den eigentlichen Import zwischen zwei Zählungen des
-// tatsächlichen Bestands. Der Abgleich am Ende ist die Notbremse gegen genau die
-// Fehlerklasse, die diese Datei nötig gemacht hat: eine Zahl im Abschlussbericht, die
-// niemand je gegen die Datenbank gehalten hat.
+// tatsächlichen Bestands. Der Abgleich am Ende ist die Notbremse gegen eine Zahl im
+// Abschlussbericht, die niemand gegen die Datenbank gehalten hat.
 func fuehreUebernahmeDurch(
-	ctx context.Context, pgPool *pgxpool.Pool, titles []mysqlMedium, el *uebernahme.Protokoll,
+	ctx context.Context, pool *pgxpool.Pool, medien []mysqlMedium, fehlerprotokoll *uebernahme.Protokoll,
 ) abschlussbericht {
-	bericht := abschlussbericht{QuellTitel: len(titles)}
+	bericht := abschlussbericht{QuellTitel: len(medien)}
 
-	vorherTitel, vorherExemplare, err := zaehleBestand(ctx, pgPool)
+	vorherTitel, vorherExemplare, err := zaehleBestand(ctx, pool)
 	if err != nil {
 		bericht.Abbruch = fmt.Errorf("konnte den Bestand vor der Übernahme nicht zählen: %w", err)
 		return bericht
 	}
 
-	doImport(ctx, pgPool, titles, el, &bericht)
+	importiere(ctx, pool, medien, fehlerprotokoll, &bericht)
 
-	nachherTitel, nachherExemplare, err := zaehleBestand(ctx, pgPool)
+	nachherTitel, nachherExemplare, err := zaehleBestand(ctx, pool)
 	if err != nil {
-		// Der Import selbst ist gelaufen; nur der Nachweis fehlt. Das ist kein Abbruch,
-		// aber auch kein „alles gut" — deshalb bleibt AbgleichOK false.
+		// Der Import selbst ist gelaufen; nur der Nachweis fehlt. Das ist kein Abbruch, aber auch
+		// kein „alles gut"; deshalb bleibt AbgleichOK false.
 		// #nosec G706
 		log.Printf("WARNUNG: Bestand nach der Übernahme nicht zählbar, Abgleich entfällt: %v", err)
 		return bericht
@@ -236,9 +240,9 @@ func fuehreUebernahmeDurch(
 	return bericht
 }
 
-// zaehleBestand liest den tatsächlichen Zeilenstand.
+// zaehleBestand liest den tatsächlichen Stand der Zeilen.
 //
-// Voraussetzung des Abgleichs: während der Übernahme schreibt niemand sonst in die
+// Voraussetzung des Abgleichs: Während der Übernahme
 // Datenbank. Für ein Werkzeug, das einmal pro Schuljahr von Hand gestartet wird, ist das
 // die richtige Annahme.
 func zaehleBestand(ctx context.Context, pool *pgxpool.Pool) (titel, exemplare int, err error) {
@@ -249,49 +253,50 @@ func zaehleBestand(ctx context.Context, pool *pgxpool.Pool) (titel, exemplare in
 	return titel, exemplare, err
 }
 
-// doImport schreibt die Titel batchweise. Meldet ein Batch einen Fehler, ist die
-// Übernahme zu Ende: der Fehler betrifft dann nicht mehr einen einzelnen Datensatz,
-// sondern die Verbindung oder die Transaktion selbst. Weiterzulaufen hieße, Tausende
-// Zeilen „übersprungen" zu protokollieren, die in Wahrheit nie versucht wurden.
-func doImport(
-	ctx context.Context, pgPool *pgxpool.Pool, titles []mysqlMedium, el *uebernahme.Protokoll, bericht *abschlussbericht,
+// importiere schreibt die Titel in Batches. Meldet ein Batch einen Fehler, ist die Übernahme
+// zu Ende: Der Fehler betrifft dann nicht mehr einen einzelnen Datensatz, sondern die
+// Verbindung oder die Transaktion selbst. Weiterzulaufen hieße, Tausende Zeilen als
+// „übersprungen" zu protokollieren, die in Wahrheit nie versucht wurden.
+func importiere(
+	ctx context.Context, pool *pgxpool.Pool, medien []mysqlMedium, fehlerprotokoll *uebernahme.Protokoll, bericht *abschlussbericht,
 ) {
-	barcodeSeq, err := highestBarcodeSeq(ctx, pgPool)
+	barcodeNummer, err := hoechsteBarcodeNummer(ctx, pool)
 	if err != nil {
 		bericht.Abbruch = fmt.Errorf("barcode seq lookup: %w", err)
 		return
 	}
-	bericht.LetzterBarcode = barcodeSeq
+	bericht.LetzterBarcode = barcodeNummer
 	// #nosec G706
-	log.Printf("Höchster vorhandener Barcode: B-%05d → Nächster: B-%05d", barcodeSeq, barcodeSeq+1)
+	log.Printf("Höchster vorhandener Barcode: B-%05d → Nächster: B-%05d", barcodeNummer, barcodeNummer+1)
 
-	seenISBNs := make(map[string]string)
-	totalBatches := int(math.Ceil(float64(len(titles)) / float64(*batchSize)))
+	bekannteISBNs := make(map[string]string)
+	batchAnzahl := int(math.Ceil(float64(len(medien)) / float64(*batchGroesse)))
 
-	for i := 0; i < len(titles); i += *batchSize {
-		end := min(i+*batchSize, len(titles))
-		batch := titles[i:end]
-		batchNum := (i / *batchSize) + 1
+	for i := 0; i < len(medien); i += *batchGroesse {
+		ende := min(i+*batchGroesse, len(medien))
+		teil := medien[i:ende]
+		batchNummer := (i / *batchGroesse) + 1
 
 		// #nosec G706
-		log.Printf("Batch %d/%d: importiere %d Titel …", batchNum, totalBatches, len(batch))
-		res, err := insertBatch(ctx, pgPool, batch, seenISBNs, el, &barcodeSeq)
-		bericht.LetzterBarcode = barcodeSeq
+		log.Printf("Batch %d/%d: importiere %d Titel …", batchNummer, batchAnzahl, len(teil))
+		ergebnis, err := legeBatchAn(ctx, pool, teil, bekannteISBNs, fehlerprotokoll, &barcodeNummer)
+		bericht.LetzterBarcode = barcodeNummer
 		if err != nil {
 			bericht.Abbruch = fmt.Errorf("abgebrochen in Batch %d/%d (Quellzeilen ab mysql_id=%d): %w",
-				batchNum, totalBatches, batch[0].ID, err)
+				batchNummer, batchAnzahl, teil[0].ID, err)
 			return
 		}
-		bericht.Titel += res.Titel
-		bericht.Exemplare += res.Exemplare
-		bericht.Uebersprungen += res.Uebersprungen
+		bericht.Titel += ergebnis.Titel
+		bericht.Exemplare += ergebnis.Exemplare
+		bericht.Uebersprungen += ergebnis.Uebersprungen
 		// #nosec G706
 		log.Printf("  → %d Titel, %d Exemplare eingetragen, %d übersprungen",
-			res.Titel, res.Exemplare, res.Uebersprungen)
+			ergebnis.Titel, ergebnis.Exemplare, ergebnis.Uebersprungen)
 	}
 }
 
-func printSummary(b abschlussbericht) {
+// druckeZusammenfassung gibt den Abschlussbericht ins Log.
+func druckeZusammenfassung(b abschlussbericht) {
 	// #nosec G706
 	log.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	if b.Abbruch != nil {
@@ -310,15 +315,15 @@ func printSummary(b abschlussbericht) {
 	// #nosec G706
 	log.Printf("  Übersprungene Titel:      %d", b.Uebersprungen)
 	// #nosec G706
-	log.Printf("  Warnungen (übernommen):   %d → %s", b.Warnungen, errorLogPath)
+	log.Printf("  Warnungen (übernommen):   %d → %s", b.Warnungen, fehlerprotokollPfad)
 	// #nosec G706
-	log.Printf("  Fehler (NICHT übernommen):%d → %s", b.Fehler, errorLogPath)
+	log.Printf("  Fehler (NICHT übernommen):%d → %s", b.Fehler, fehlerprotokollPfad)
 	// #nosec G706
 	log.Printf("  Letzter Barcode:          B-%05d", b.LetzterBarcode)
 	// #nosec G706
 	log.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-	printAbgleich(b)
+	druckeAbgleich(b)
 
 	if b.Abbruch != nil {
 		// #nosec G706
@@ -330,19 +335,18 @@ func printSummary(b abschlussbericht) {
 	if b.Uebersprungen > 0 {
 		// #nosec G706
 		log.Printf("⚠  %d Titel wurden übersprungen und fehlen in der neuen Datenbank. "+
-			"Details je Datensatz: grep FEHLER %s", b.Uebersprungen, errorLogPath)
+			"Details je Datensatz: grep FEHLER %s", b.Uebersprungen, fehlerprotokollPfad)
 	}
 	if b.Warnungen > 0 {
 		// #nosec G706
 		log.Printf("ℹ  %d Datensätze wurden abgewertet übernommen (ISBN verworfen oder Feld gekürzt): "+
-			"grep WARNUNG %s", b.Warnungen, errorLogPath)
+			"grep WARNUNG %s", b.Warnungen, fehlerprotokollPfad)
 	}
 }
 
-// printAbgleich meldet das Ergebnis der Gegenprobe. Eine Abweichung heißt: der Bericht
-// oben ist falsch — und zwar zugunsten des Werkzeugs. Das muss lauter stehen als die
-// Zahlen selbst.
-func printAbgleich(b abschlussbericht) {
+// druckeAbgleich meldet das Ergebnis der Gegenprobe. Eine Abweichung heißt: Der Bericht oben
+// ist falsch, und zwar zugunsten des Werkzeugs. Das muss lauter stehen als die Zahlen selbst.
+func druckeAbgleich(b abschlussbericht) {
 	if b.Abbruch != nil {
 		return
 	}

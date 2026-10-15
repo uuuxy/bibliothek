@@ -3,21 +3,21 @@
 //
 // Gebraucht wird es, weil ein neuer Schlüssel allein nichts repariert, sondern zerstört:
 // Schülerfotos (schueler_fotos.foto_encrypted) und das gespeicherte SMTP-Passwort
-// (mail_settings_config.smtp_password_encrypted) liegen AES-GCM-verschlüsselt in der
+// (mail_settings_config.smtp_password_encrypted) liegen mit AES-GCM verschlüsselt in der
 // Datenbank. Wer nur die Umgebungsvariable austauscht, hat sie danach unwiederbringlich
-// verloren — die Anwendung meldet dann lediglich "entschlüsselung fehlgeschlagen".
+// verloren; das Programm meldet dann nur "entschlüsselung fehlgeschlagen".
 //
-// Das Kommando entschlüsselt jeden Datensatz mit dem ALTEN und verschlüsselt ihn mit dem
-// NEUEN Schlüssel, alles in EINER Transaktion: Entweder ist am Ende alles umgeschlüsselt
-// oder nichts. Ein Abbruch mitten im Lauf hinterlässt keinen halb lesbaren Bestand.
+// Das Kommando entschlüsselt jeden Datensatz mit dem alten und verschlüsselt ihn mit dem neuen
+// Schlüssel, alles in einer Transaktion: Entweder ist am Ende alles umgeschlüsselt oder nichts.
+// Ein Abbruch mitten im Lauf hinterlässt keinen halb lesbaren Bestand.
 //
 // Aufruf:
 //
 //	APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -neu <neu>
 //	APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -neu <neu> -pruefen
 //
-// -pruefen macht einen vollständigen Probelauf ohne zu schreiben. Immer zuerst damit
-// laufen lassen, und vorher ein Backup ziehen.
+// -pruefen macht einen vollständigen Probelauf ohne zu schreiben. Immer zuerst damit laufen
+// lassen, und vorher eine Sicherung ziehen.
 //
 // Danach den neuen Wert in die .env eintragen und den Stack neu starten.
 package main

@@ -13,7 +13,7 @@ import (
 )
 
 func TestRueckgabewert(t *testing.T) {
-	tests := []struct {
+	faelle := []struct {
 		name    string
 		bericht littera.Bericht
 		want    int
@@ -28,14 +28,14 @@ func TestRueckgabewert(t *testing.T) {
 				Fehler:      0,
 				Abbruch:     nil,
 			},
-			want: exitOK,
+			want: rueckgabeOK,
 		},
 		{
 			name: "Mit Abbruch",
 			bericht: littera.Bericht{
 				Abbruch: errors.New("ein fehler"),
 			},
-			want: exitAbgebrochen,
+			want: rueckgabeAbgebrochen,
 		},
 		{
 			name: "Mit Fehler (unvollständig)",
@@ -45,7 +45,7 @@ func TestRueckgabewert(t *testing.T) {
 				Ausleihen: littera.AusleihBericht{AbgleichOK: true},
 				Fehler:    1,
 			},
-			want: exitUnvollstaendig,
+			want: rueckgabeUnvollstaendig,
 		},
 		{
 			name: "Abgleich fehlgeschlagen (unvollständig)",
@@ -55,11 +55,11 @@ func TestRueckgabewert(t *testing.T) {
 				Ausleihen: littera.AusleihBericht{AbgleichOK: true},
 				Fehler:    0,
 			},
-			want: exitUnvollstaendig,
+			want: rueckgabeUnvollstaendig,
 		},
 		{
-			// Seit dem 30.09.2026 (docs/OFFEN.md 4.20): Fehlen Schlagworte in der Datenbank, ist
-			// der Lauf nicht vollständig, auch wenn Bestand und Personen stimmen.
+			// Fehlen Schlagworte in der Datenbank, ist der Lauf nicht vollständig, auch wenn Bestand
+			// und Personen stimmen.
 			name: "Abgleich der Schlagworte fehlgeschlagen (unvollständig)",
 			bericht: littera.Bericht{
 				Bestand:     littera.BestandBericht{AbgleichOK: true},
@@ -67,14 +67,14 @@ func TestRueckgabewert(t *testing.T) {
 				Personen:    littera.PersonenBericht{AbgleichOK: true},
 				Ausleihen:   littera.AusleihBericht{AbgleichOK: true},
 			},
-			want: exitUnvollstaendig,
+			want: rueckgabeUnvollstaendig,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := rueckgabewert(tt.bericht); got != tt.want {
-				t.Errorf("rueckgabewert() = %v, want %v", got, tt.want)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			if got := rueckgabewert(f.bericht); got != f.want {
+				t.Errorf("rueckgabewert() = %v, want %v", got, f.want)
 			}
 		})
 	}
@@ -82,10 +82,10 @@ func TestRueckgabewert(t *testing.T) {
 
 func TestOptionen(t *testing.T) {
 	s := schalter{
-		batch:         100,
-		barcodes:      "neu",
-		lehrerInaktiv: true,
-		schuljahrEnde: 2025,
+		batchGroesse:       100,
+		barcodes:           "neu",
+		lehrkraefteInaktiv: true,
+		schuljahrEnde:      2025,
 	}
 
 	opt := optionen(s)
@@ -104,27 +104,27 @@ func TestOptionen(t *testing.T) {
 	}
 }
 
-func TestAbgleich(t *testing.T) {
-	var buf bytes.Buffer
+func TestMeldeAbgleich(t *testing.T) {
+	var puffer bytes.Buffer
 	defer log.SetOutput(log.Writer())
-	log.SetOutput(&buf)
+	log.SetOutput(&puffer)
 
-	abgleich(true, "100 neu")
-	if !strings.Contains(buf.String(), "✓ Abgleich: 100 neu") {
-		t.Errorf("Erwartete Erfolgsmeldung nicht gefunden, log: %s", buf.String())
+	meldeAbgleich(true, "100 neu")
+	if !strings.Contains(puffer.String(), "✓ Abgleich: 100 neu") {
+		t.Errorf("Erwartete Erfolgsmeldung nicht gefunden, log: %s", puffer.String())
 	}
 
-	buf.Reset()
-	abgleich(false, "50 neu")
-	if !strings.Contains(buf.String(), "⚠ ABGLEICH FEHLGESCHLAGEN: 50 neu") {
-		t.Errorf("Erwartete Fehlermeldung nicht gefunden, log: %s", buf.String())
+	puffer.Reset()
+	meldeAbgleich(false, "50 neu")
+	if !strings.Contains(puffer.String(), "⚠ ABGLEICH FEHLGESCHLAGEN: 50 neu") {
+		t.Errorf("Erwartete Fehlermeldung nicht gefunden, log: %s", puffer.String())
 	}
 }
 
 func TestTrockenlauf(t *testing.T) {
-	var buf bytes.Buffer
+	var puffer bytes.Buffer
 	defer log.SetOutput(log.Writer())
-	log.SetOutput(&buf)
+	log.SetOutput(&puffer)
 
 	ab := &littera.Altbestand{
 		Titel:      []littera.Titel{{}, {}},
@@ -139,13 +139,13 @@ func TestTrockenlauf(t *testing.T) {
 
 	trockenlauf(ab)
 
-	out := buf.String()
-	if !strings.Contains(out, "TROCKENLAUF: es wird nichts geschrieben") {
+	ausgabe := puffer.String()
+	if !strings.Contains(ausgabe, "TROCKENLAUF: es wird nichts geschrieben") {
 		t.Errorf("Trockenlauf Meldung fehlt")
 	}
-	if !strings.Contains(out, "Leser: 1 Schüler, 0 abgegangen; Kollegium: 1 Lehrkräfte, 0 LiV, 0 Praktikum, "+
+	if !strings.Contains(ausgabe, "Leser: 1 Schüler, 0 abgegangen; Kollegium: 1 Lehrkräfte, 0 LiV, 0 Praktikum, "+
 		"0 Sekretariat, 0 U-plus, 1 Fachbereich; ohne Zuordnung: 0") {
-		t.Errorf("Leser Statistik fehlt oder falsch, log: %s", out)
+		t.Errorf("Leser Statistik fehlt oder falsch, log: %s", ausgabe)
 	}
 }
 
@@ -162,27 +162,27 @@ func ohneZuordnung() *littera.Altbestand {
 	}
 }
 
-// TestLeserOhneZuordnungHaeltVorDemErstenSchreibenAn: Entscheidung vom 28.09.2026 — eine Gruppe
-// ohne Zuordnung hält den Lauf an, bevor irgendetwas geschrieben ist. Belegt am Weg selbst: Der
+// Eine Gruppe ohne Zuordnung hält den Lauf an, bevor irgendetwas geschrieben ist. Belegt am
+// Weg selbst: Der
 // Lauf endet mit 1, legt kein Protokoll an und versucht keine Verbindung (die Adresse wäre nicht
 // auflösbar, die Meldung „Datenbank" stünde im Log). Ausgegeben werden Gruppe und Zahlen, kein Name.
 func TestLeserOhneZuordnungHaeltVorDemErstenSchreibenAn(t *testing.T) {
 	t.Chdir(t.TempDir())
-	var buf bytes.Buffer
+	var puffer bytes.Buffer
 	defer log.SetOutput(log.Writer())
-	log.SetOutput(&buf)
+	log.SetOutput(&puffer)
 
-	s := schalter{personen: true, ausleihen: true, bestand: true, dbURL: "postgres://nicht-erreichbar.invalid/x"}
-	if code := uebertrage(s, ohneZuordnung()); code != exitAbgebrochen {
-		t.Errorf("Rückgabe %d, erwartet %d (abgebrochen)", code, exitAbgebrochen)
+	s := schalter{personen: true, ausleihen: true, bestand: true, datenbankURL: "postgres://nicht-erreichbar.invalid/x"}
+	if code := uebertrage(s, ohneZuordnung()); code != rueckgabeAbgebrochen {
+		t.Errorf("Rückgabe %d, erwartet %d (abgebrochen)", code, rueckgabeAbgebrochen)
 	}
-	out := buf.String()
-	if !strings.Contains(out, "Lesergruppe 1 „Undefinierte Untergruppe“ (UNDEF): 1 Person, 1 Ausleihe") {
-		t.Errorf("die Gruppe muss mit Zahlen genannt werden, log: %s", out)
+	ausgabe := puffer.String()
+	if !strings.Contains(ausgabe, "Lesergruppe 1 „Undefinierte Untergruppe“ (UNDEF): 1 Person, 1 Ausleihe") {
+		t.Errorf("die Gruppe muss mit Zahlen genannt werden, log: %s", ausgabe)
 	}
 	for _, verboten := range []string{"Geheim", "Datenbank"} {
-		if strings.Contains(out, verboten) {
-			t.Errorf("%q hat im Log nichts zu suchen — Name oder Verbindungsversuch, log: %s", verboten, out)
+		if strings.Contains(ausgabe, verboten) {
+			t.Errorf("%q hat im Log nichts zu suchen — Name oder Verbindungsversuch, log: %s", verboten, ausgabe)
 		}
 	}
 	if _, err := os.Stat(protokollPfad); !os.IsNotExist(err) {
@@ -197,20 +197,20 @@ func TestTrockenlaufMeldetFehlendeZuordnung(t *testing.T) {
 	defer log.SetOutput(log.Writer())
 	log.SetOutput(&bytes.Buffer{})
 
-	if code := zuordnungGeprueft(ohneZuordnung(), true); code != exitAbgebrochen {
-		t.Errorf("mit -personen: Rückgabe %d, erwartet %d", code, exitAbgebrochen)
+	if code := zuordnungGeprueft(ohneZuordnung(), true); code != rueckgabeAbgebrochen {
+		t.Errorf("mit -personen: Rückgabe %d, erwartet %d", code, rueckgabeAbgebrochen)
 	}
-	if code := zuordnungGeprueft(ohneZuordnung(), false); code != exitOK {
-		t.Errorf("ohne -personen: Rückgabe %d, erwartet %d", code, exitOK)
+	if code := zuordnungGeprueft(ohneZuordnung(), false); code != rueckgabeOK {
+		t.Errorf("ohne -personen: Rückgabe %d, erwartet %d", code, rueckgabeOK)
 	}
 }
 
 // TestTrockenlaufListetStandorte: Der Trockenlauf nennt jeden Wert, der als Standort ankäme,
 // mit seiner Zahl — nur an dieser Liste fällt ein Verfasser ohne Komma auf.
 func TestTrockenlaufListetStandorte(t *testing.T) {
-	var buf bytes.Buffer
+	var puffer bytes.Buffer
 	defer log.SetOutput(log.Writer())
-	log.SetOutput(&buf)
+	log.SetOutput(&puffer)
 
 	trockenlauf(&littera.Altbestand{
 		Signaturen:       map[string]string{},
@@ -221,7 +221,7 @@ func TestTrockenlaufListetStandorte(t *testing.T) {
 		},
 	})
 
-	out := buf.String()
+	ausgabe := puffer.String()
 	for _, zeile := range []string{
 		"1 Exemplare mit eigenem Sonderstandort, 2 über den Vermerk am Titel; 1 Titel sind nur nach dem Vermerk Lernmittel",
 		"Vermerke am Titel (2 Werte",
@@ -229,8 +229,8 @@ func TestTrockenlaufListetStandorte(t *testing.T) {
 		"Sonderstandorte der Exemplare (1 Werte",
 		"    1  Lehrerschrank",
 	} {
-		if !strings.Contains(out, zeile) {
-			t.Errorf("im Trockenlauf fehlt %q, log: %s", zeile, out)
+		if !strings.Contains(ausgabe, zeile) {
+			t.Errorf("im Trockenlauf fehlt %q, log: %s", zeile, ausgabe)
 		}
 	}
 }

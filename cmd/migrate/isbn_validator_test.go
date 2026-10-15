@@ -2,11 +2,11 @@ package main
 
 import "testing"
 
-// TestValidateBarcode: insertExemplare prüft jeden erzeugten Barcode gegen die Form
-// B-<Ziffern>, bevor er in die Datenbank geht. highestBarcodeSeq zählt beim nächsten Lauf
-// nur Barcodes dieser Form (bis neun Ziffern); einen anders geschriebenen sähe der Zähler
-// nicht, und die Übernahme erzeugte ihn noch einmal.
-func TestValidateBarcode(t *testing.T) {
+// legeExemplareAn prüft jeden erzeugten Barcode gegen die Form B-<Ziffern>, bevor er in die
+// Datenbank geht. hoechsteBarcodeNummer zählt beim nächsten Lauf nur Barcodes dieser Form (bis
+// neun Ziffern); einen anders geschriebenen sähe der Zähler nicht, und die Übernahme erzeugte ihn
+// noch einmal.
+func TestIstBarcodeGueltig(t *testing.T) {
 	faelle := []struct {
 		name     string
 		barcode  string
@@ -28,7 +28,7 @@ func TestValidateBarcode(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if got := validateBarcode(f.barcode); got != f.erwartet {
+			if got := istBarcodeGueltig(f.barcode); got != f.erwartet {
 				t.Errorf("validateBarcode(%q) = %v, erwartet %v", f.barcode, got, f.erwartet)
 			}
 		})

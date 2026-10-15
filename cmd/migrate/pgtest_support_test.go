@@ -12,23 +12,21 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Tests in diesem Paket laufen gegen ECHTES PostgreSQL, und das ist keine Kür:
-// Der Fehler, den sie absichern, existiert ausschließlich dort. Postgres versetzt eine
-// Transaktion beim ersten Fehler in den Abbruchzustand (SQLSTATE 25P02) — ein Mock kennt
-// diesen Zustand nicht und lässt jedes `continue` in der Schleife plausibel aussehen.
-// Genau deshalb ist der Datenverlust in cmd/migrate jahrelang unbemerkt geblieben.
+// Die Tests in diesem Paket laufen gegen echtes PostgreSQL, und das ist keine Kür: Der Fehler,
+// den sie absichern, besteht nur dort. Postgres versetzt eine Transaktion beim ersten Fehler in
+// den Zustand des Abbruchs (SQLSTATE 25P02); eine Attrappe kennt diesen Zustand nicht und lässt
+// jedes `continue` in der Schleife plausibel aussehen.
 //
-// Pool-Aufbau, Advisory-Lock und Notbremse liegen seit dem 31.08.2026 in
-// internal/pgtest (vorher fünffach kopiert); hier stehen nur noch die Helfer
-// dieses Pakets.
+// Aufbau des Pools, Sperre der Datenbank und Notbremse liegen in internal/pgtest; hier stehen nur
+// die Helfer dieses Pakets.
 func pgTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	return pgtest.Pool(t)
 }
 
-// leereBestand setzt Titel und Exemplare zurück. Anders als in db/ ist kein Rollback um
-// den Testfall möglich: insertBatch öffnet seine eigene Transaktion, und genau deren
-// COMMIT ist hier der Prüfgegenstand.
+// leereBestand setzt Titel und Exemplare zurück. Anders als in db/ ist kein Zurückrollen um den
+// Testfall möglich: legeBatchAn öffnet seine eigene Transaktion, und genau deren COMMIT wird hier
+// geprüft.
 func leereBestand(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(),
@@ -37,19 +35,19 @@ func leereBestand(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-// testLogger legt das Fehlerprotokoll in einem temporären Verzeichnis an und liefert eine
-// Funktion, die es geleert zurückliest — das Protokoll ist gepuffert, ungeflusht steht
+// testFehlerprotokoll legt das Fehlerprotokoll in einem vorübergehenden Verzeichnis an und
+// liefert eine Funktion, die es geleert zurückliest; das Protokoll ist gepuffert, ungeleert steht
 // dort nichts.
-func testLogger(t *testing.T) (*uebernahme.Protokoll, func() string) {
+func testFehlerprotokoll(t *testing.T) (*uebernahme.Protokoll, func() string) {
 	t.Helper()
 	pfad := filepath.Join(t.TempDir(), "migration_errors.log")
-	el, err := newErrLoggerAt(pfad)
+	fehlerprotokoll, err := newFehlerprotokollIn(pfad)
 	if err != nil {
 		t.Fatalf("Fehlerprotokoll konnte nicht angelegt werden: %v", err)
 	}
-	t.Cleanup(el.Schliesse)
-	return el, func() string {
-		if err := el.Leere(); err != nil {
+	t.Cleanup(fehlerprotokoll.Schliesse)
+	return fehlerprotokoll, func() string {
+		if err := fehlerprotokoll.Leere(); err != nil {
 			t.Fatalf("Fehlerprotokoll konnte nicht geschrieben werden: %v", err)
 		}
 		b, err := os.ReadFile(pfad) // #nosec G304 - Pfad aus t.TempDir()

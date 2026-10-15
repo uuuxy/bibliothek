@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// mysqlMedium represents one row from the old MySQL `medien` table.
+// mysqlMedium ist eine Zeile der Tabelle `medien` der alten Datenbank in MySQL.
 type mysqlMedium struct {
 	ID               int
 	Titel            string
@@ -15,16 +15,17 @@ type mysqlMedium struct {
 	Verlag           sql.NullString
 	Erscheinungsjahr sql.NullInt64
 	Medientyp        sql.NullString
-	Standort         sql.NullString // free-text shelf location → JSONB
-	Regal            sql.NullString // rack/row label           → JSONB
-	Notizen          sql.NullString // free-text notes          → JSONB
-	Anzahl           int            // physical copy count
+	Standort         sql.NullString // Standort als Freitext → JSONB
+	Regal            sql.NullString // Regal oder Reihe         → JSONB
+	Notizen          sql.NullString // Notizen als Freitext     → JSONB
+	Anzahl           int            // Zahl der Stücke
 	ErstelltAm       sql.NullTime
 }
 
-func readMySQLTitles(db *sql.DB) ([]mysqlMedium, error) {
-	// Adjust the column list / table name here if your old schema differs.
-	const q = `
+// ladeMySQLTitel liest alle Zeilen der Tabelle medien aus der Quelle. Weicht das alte Schema
+// ab, sind Spaltenliste und Tabellenname hier anzupassen.
+func ladeMySQLTitel(quelle *sql.DB) ([]mysqlMedium, error) {
+	const abfrage = `
 		SELECT
 			id,
 			titel,
@@ -42,26 +43,26 @@ func readMySQLTitles(db *sql.DB) ([]mysqlMedium, error) {
 		FROM medien
 		ORDER BY id
 	`
-	rows, err := db.Query(q)
+	zeilen, err := quelle.Query(abfrage)
 	if err != nil {
 		return nil, fmt.Errorf("mysql query: %w", err)
 	}
-	defer func() { _ = rows.Close() }() //nolint:errcheck
+	defer func() { _ = zeilen.Close() }() //nolint:errcheck
 
-	var results []mysqlMedium
-	for rows.Next() {
-		m, err := scanMySQLMedium(rows)
+	var medien []mysqlMedium
+	for zeilen.Next() {
+		m, err := leseMySQLMedium(zeilen)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, m)
+		medien = append(medien, m)
 	}
-	return results, rows.Err()
+	return medien, zeilen.Err()
 }
 
-// scanMySQLMedium liest eine Zeile in ein mysqlMedium und wandelt leere Freitextfelder
-// in typisierte NULL-Werte (sql.Null*) um. Ein Anzahl ≤ 0 wird auf 1 normalisiert.
-func scanMySQLMedium(rows *sql.Rows) (mysqlMedium, error) {
+// leseMySQLMedium liest eine Zeile in ein mysqlMedium und macht aus leeren Freitextfeldern
+// typisierte NULL-Werte (sql.Null*). Eine Anzahl ≤ 0 wird zu 1.
+func leseMySQLMedium(zeilen *sql.Rows) (mysqlMedium, error) {
 	var m mysqlMedium
 	var (
 		untertitel       string
@@ -74,7 +75,7 @@ func scanMySQLMedium(rows *sql.Rows) (mysqlMedium, error) {
 		regal            string
 		notizen          string
 	)
-	if err := rows.Scan(
+	if err := zeilen.Scan(
 		&m.ID, &m.Titel,
 		&untertitel, &autor, &isbn, &verlag,
 		&erscheinungsjahr, &medientyp,

@@ -1,20 +1,20 @@
-// littera-altbestand überträgt einen Littera-Export nach PostgreSQL.
+// Command littera-altbestand überträgt einen Export aus Littera nach PostgreSQL.
 //
 // Die Quelle sind die CSV-Dateien, die `mdb-export` aus littera_sav.mdb erzeugt (die Namen
-// stehen in internal/littera/altbestand.go) — nicht die Access-Datei selbst: Deren ODBC-Treiber gibt es
-// nur unter Windows, weder auf dem Arbeitsrechner noch im Container.
+// stehen in internal/littera/altbestand.go), nicht die Access-Datei selbst: Deren ODBC-Treiber
+// gibt es nur unter Windows, weder auf dem Arbeitsrechner noch im Container.
 //
 // Aufruf:
 //
 //	go run ./cmd/littera-altbestand -csv ./littera-export -db postgres://…
 //	go run ./cmd/littera-altbestand -csv ./littera-export -trocken
 //
-// Was übernommen wird, steuern die drei Schalter -bestand, -personen und -ausleihen.
-// Die Vorgabe ist NUR der Bestand, und das ist eine bewusste Entscheidung: Der geprüfte
-// Export ist ein Stand von 2010 (Schüler-Geburtsjahre 1989–2001, letzte Ausleihe 2010,
-// Fristen bis 2011). Wer Personen und Ausleihen daraus übernimmt, legt Schüler an, die
-// heute Mitte dreißig sind, und meldet ein Viertel des Bestands als verliehen. Für einen
-// aktuellen Export ist beides richtig — deshalb die Schalter statt einer Sperre.
+// Was übernommen wird, steuern die drei Schalter -bestand, -personen und -ausleihen. Die Vorgabe
+// ist nur der Bestand, und das ist Absicht: Der geprüfte Export ist ein Stand von 2010
+// (Geburtsjahre der Schüler 1989 bis 2001, letzte Ausleihe 2010, Fristen bis 2011). Wer
+// Personen und Ausleihen daraus übernimmt, legt Schüler an, die heute Mitte dreißig sind, und
+// meldet ein Viertel des Bestands als verliehen. Für einen aktuellen Export ist beides richtig,
+// deshalb die Schalter statt einer Sperre.
 //
 // Rückgabewerte:
 //
@@ -43,25 +43,25 @@ import (
 )
 
 const (
-	exitOK             = 0
-	exitAbgebrochen    = 1
-	exitUnvollstaendig = 2
+	rueckgabeOK             = 0
+	rueckgabeAbgebrochen    = 1
+	rueckgabeUnvollstaendig = 2
 )
 
 const protokollPfad = "littera_import.log"
 
 type schalter struct {
-	csvVerzeichnis string
-	dbURL          string
-	trocken        bool
-	bestand        bool
-	personen       bool
-	ausleihen      bool
-	barcodes       string
-	batch          int
-	schuljahrEnde  int
-	lehrerInaktiv  bool
-	erzwingen      bool
+	csvVerzeichnis     string
+	datenbankURL       string
+	trocken            bool
+	bestand            bool
+	personen           bool
+	ausleihen          bool
+	barcodes           string
+	batchGroesse       int
+	schuljahrEnde      int
+	lehrkraefteInaktiv bool
+	erzwingen          bool
 	// keinStandort: Werte, die der Trockenlauf als Standort listet und die keiner sind.
 	keinStandort werteliste
 }
@@ -85,24 +85,24 @@ func (s schalter) standortregel() littera.Standortregel {
 	return regel
 }
 
-func main() { os.Exit(run()) }
+func main() { os.Exit(fuehreAus()) }
 
-// run hält die gesamte Arbeit, damit die defer-Kette wirklich läuft: Das Protokoll wird
-// über einen 64-KB-Puffer geschrieben, ein os.Exit mitten im Ablauf ließe ihn ungeleert —
-// und zwar genau in dem Lauf, für den man es braucht.
-func run() int {
-	s := lies()
+// fuehreAus hält die ganze Arbeit, damit die Kette der defer wirklich läuft: Das Protokoll wird
+// über einen Puffer von 64 KB geschrieben, und ein os.Exit mitten im Ablauf ließe ihn ungeleert,
+// genau in dem Lauf, für den man es braucht.
+func fuehreAus() int {
+	s := leseSchalter()
 
 	if s.csvVerzeichnis == "" {
 		log.Print("FEHLER: -csv fehlt (Verzeichnis mit den mdb-export-CSVs)")
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
 
 	log.Printf("Lese Littera-Export aus %s …", s.csvVerzeichnis)
 	ab, err := littera.LeseAltbestandMit(s.csvVerzeichnis, s.standortregel())
 	if err != nil {
 		log.Printf("FEHLER: Export nicht lesbar: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
 	log.Printf("Gelesen: %d Titel, %d Exemplare, %d Leser, %d Ausleihen",
 		len(ab.Titel), len(ab.Exemplare), len(ab.Leser), len(ab.Ausleihen))
@@ -114,31 +114,31 @@ func run() int {
 	return uebertrage(s, ab)
 }
 
-// zuordnungGeprueft nennt jede Lesergruppe ohne Art und hält einen Lauf mit -personen an —
+// zuordnungGeprueft nennt jede Gruppe von Lesern ohne Art und hält einen Lauf mit -personen an,
 // im echten Lauf vor dem Protokoll, der Verbindung und dem Bestand, also bevor irgendetwas
-// geschrieben ist (Entscheidung vom 28.09.2026). Zugeordnet wird in Littera selbst oder in
-// littera.artAusUntergruppe; danach der Lauf von vorn. Ohne -personen betrifft es nichts.
+// geschrieben ist. Zugeordnet wird in Littera selbst oder in littera.artAusUntergruppe; danach
+// der Lauf von vorn. Ohne -personen betrifft es nichts.
 func zuordnungGeprueft(ab *littera.Altbestand, personen bool) int {
 	offen := littera.OhneZuordnung(ab)
 	if len(offen) == 0 {
-		return exitOK
+		return rueckgabeOK
 	}
 	if !personen {
 		log.Printf("  Lesergruppen ohne Zuordnung: %d (ohne -personen ohne Belang)", len(offen))
-		return exitOK
+		return rueckgabeOK
 	}
 	log.Print("FEHLER: Leser ohne Zuordnung zu Schüler oder Kollegium — es wird nichts geschrieben:")
 	for _, b := range offen {
 		log.Printf("  %v", b)
 	}
 	log.Print("       Erst in Littera einer Gruppe zuordnen (oder in littera.artAusUntergruppe), dann erneut starten.")
-	return exitAbgebrochen
+	return rueckgabeAbgebrochen
 }
 
-func lies() schalter {
+func leseSchalter() schalter {
 	var s schalter
 	flag.StringVar(&s.csvVerzeichnis, "csv", "", "Verzeichnis mit den mdb-export-CSVs")
-	flag.StringVar(&s.dbURL, "db", os.Getenv("DATABASE_URL"), "PostgreSQL-Verbindung")
+	flag.StringVar(&s.datenbankURL, "db", os.Getenv("DATABASE_URL"), "PostgreSQL-Verbindung")
 	flag.BoolVar(&s.trocken, "trocken", false, "nur lesen und berichten, nicht schreiben")
 	flag.BoolVar(&s.bestand, "bestand", true, "Titel und Exemplare übernehmen")
 	flag.BoolVar(&s.personen, "personen", false,
@@ -146,10 +146,10 @@ func lies() schalter {
 	flag.BoolVar(&s.ausleihen, "ausleihen", false, "Ausleihen übernehmen (setzt -personen voraus)")
 	flag.StringVar(&s.barcodes, "barcodes", string(littera.BarcodeLittera),
 		"littera = EAN-13 vom vorhandenen Etikett (was der Scanner liest), neu = frische B-XXXXX aus barcode_seq")
-	flag.IntVar(&s.batch, "batch", 200, "Datensätze je Transaktion")
+	flag.IntVar(&s.batchGroesse, "batch", 200, "Datensätze je Transaktion")
 	flag.IntVar(&s.schuljahrEnde, "schuljahr-ende", 0,
 		"Jahr, in dem das laufende Schuljahr endet (0 = aus dem heutigen Datum)")
-	flag.BoolVar(&s.lehrerInaktiv, "lehrer-inaktiv", false,
+	flag.BoolVar(&s.lehrkraefteInaktiv, "lehrer-inaktiv", false,
 		"Lehrkräfte auf aktiv=false setzen; sie sind dann am Scanner NICHT auffindbar "+
 			"(den Login sperrt ohnehin die Platzhalter-Adresse)")
 	flag.BoolVar(&s.erzwingen, "erzwingen", false,
@@ -214,46 +214,46 @@ func berichteStandorte(b littera.StandortBilanz) {
 }
 
 func uebertrage(s schalter, ab *littera.Altbestand) int {
-	if code := zuordnungGeprueft(ab, s.personen); code != exitOK {
+	if code := zuordnungGeprueft(ab, s.personen); code != rueckgabeOK {
 		return code
 	}
-	if s.dbURL == "" {
+	if s.datenbankURL == "" {
 		log.Print("FEHLER: -db fehlt und DATABASE_URL ist nicht gesetzt")
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 	defer cancel()
 
-	prot, err := uebernahme.NewProtokoll(protokollPfad, "littera_id")
+	protokoll, err := uebernahme.NewProtokoll(protokollPfad, "littera_id")
 	if err != nil {
 		log.Printf("FEHLER: Protokoll konnte nicht geöffnet werden: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
-	defer prot.Schliesse()
+	defer protokoll.Schliesse()
 
-	pool, err := pgxpool.New(ctx, s.dbURL)
+	pool, err := pgxpool.New(ctx, s.datenbankURL)
 	if err != nil {
 		log.Printf("FEHLER: Datenbankverbindung: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
 	defer pool.Close()
 	if err := pool.Ping(ctx); err != nil {
 		log.Printf("FEHLER: Datenbank nicht erreichbar: %v", err)
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	}
 
-	schreiber := littera.NewSchreiber(pool, prot, optionen(s))
+	schreiber := littera.NewSchreiber(pool, protokoll, optionen(s))
 	if !s.erzwingen {
 		if err := schreiber.PruefeZielbestand(ctx); err != nil {
 			log.Printf("FEHLER: %v", err)
 			log.Print("       (-erzwingen läuft trotzdem, legt die Daten aber doppelt an)")
-			return exitAbgebrochen
+			return rueckgabeAbgebrochen
 		}
 	}
 
-	bericht := fuehreAus(ctx, schreiber, s, ab)
-	bericht.Warnungen, bericht.Fehler = prot.Warnungen(), prot.FehlerAnzahl()
+	bericht := schreibeTeile(ctx, schreiber, s, ab)
+	bericht.Warnungen, bericht.Fehler = protokoll.Warnungen(), protokoll.FehlerAnzahl()
 	drucke(bericht, s)
 	return rueckgabewert(bericht)
 }
@@ -261,17 +261,17 @@ func uebertrage(s schalter, ab *littera.Altbestand) int {
 func optionen(s schalter) littera.Optionen {
 	opt := littera.OptionenVorgabe(time.Now())
 	opt.Barcodes = littera.Barcodequelle(s.barcodes)
-	opt.BatchGroesse = s.batch
-	opt.LehrkraefteInaktiv = s.lehrerInaktiv
+	opt.BatchGroesse = s.batchGroesse
+	opt.LehrkraefteInaktiv = s.lehrkraefteInaktiv
 	if s.schuljahrEnde > 0 {
 		opt.SchuljahrEnde = s.schuljahrEnde
 	}
 	return opt
 }
 
-// fuehreAus arbeitet die eingeschalteten Teile der Reihe nach ab. Die Reihenfolge ist
-// zwingend: Ausleihen brauchen die UUIDs aus Bestand UND Personen.
-func fuehreAus(
+// schreibeTeile arbeitet die eingeschalteten Teile der Reihe nach ab. Die Reihenfolge ist
+// zwingend: Ausleihen brauchen die UUIDs aus Bestand und Personen.
+func schreibeTeile(
 	ctx context.Context, schreiber *littera.Schreiber, s schalter, ab *littera.Altbestand,
 ) littera.Bericht {
 	var b littera.Bericht
@@ -288,7 +288,7 @@ func fuehreAus(
 		log.Printf("  → %d Titel, %d Exemplare, %d übersprungen",
 			b.Bestand.Titel, b.Bestand.Exemplare, b.Bestand.Uebersprungen)
 
-		// Die Schlagworte gehören zum Bestand (docs/OFFEN.md 4.20): Sie brauchen die Titel.
+		// Die Schlagworte gehören zum Bestand: Sie brauchen die Titel.
 		log.Printf("Übernehme Schlagworte (%d Titel) und Interessenkreise (%d Titel) …",
 			len(ab.Schlagworte.JeTitel), len(ab.Interessenkreise.JeTitel))
 		if b.Schlagworte, err = schreiber.SchreibeSchlagworte(ctx, ab, b.Bestand); err != nil {
@@ -322,11 +322,11 @@ func fuehreAus(
 func rueckgabewert(b littera.Bericht) int {
 	switch {
 	case b.Abbruch != nil:
-		return exitAbgebrochen
+		return rueckgabeAbgebrochen
 	case b.IstVollstaendig():
-		return exitOK
+		return rueckgabeOK
 	default:
-		return exitUnvollstaendig
+		return rueckgabeUnvollstaendig
 	}
 }
 
@@ -336,7 +336,7 @@ func drucke(b littera.Bericht, s schalter) {
 		log.Printf("Bestand    Quelle %6d Titel / %6d Exemplare", b.Bestand.QuellTitel, b.Bestand.QuellExemplare)
 		log.Printf("           geschrieben %6d / %6d, übersprungen %d",
 			b.Bestand.Titel, b.Bestand.Exemplare, b.Bestand.Uebersprungen)
-		abgleich(b.Bestand.AbgleichOK, fmt.Sprintf("%d Titel / %d Exemplare tatsächlich neu",
+		meldeAbgleich(b.Bestand.AbgleichOK, fmt.Sprintf("%d Titel / %d Exemplare tatsächlich neu",
 			b.Bestand.IstTitel, b.Bestand.IstExemplare))
 		log.Printf("           Standort: %d Exemplare aus dem eigenen Sonderstandort, %d aus dem Vermerk am Titel",
 			b.Bestand.StandortEigen, b.Bestand.StandortVomTitel)
@@ -352,7 +352,7 @@ func drucke(b littera.Bericht, s schalter) {
 		log.Printf("Personen   Quelle %6d Leser", b.Personen.QuellLeser)
 		log.Printf("           geschrieben %6d Schüler / %4d Kollegium, nicht übernommen %d",
 			b.Personen.Schueler, b.Personen.Kollegium, b.Personen.Uebersprungen)
-		abgleich(b.Personen.AbgleichOK, fmt.Sprintf("%d Schüler / %d Kollegium tatsächlich neu",
+		meldeAbgleich(b.Personen.AbgleichOK, fmt.Sprintf("%d Schüler / %d Kollegium tatsächlich neu",
 			b.Personen.IstSchueler, b.Personen.IstKollegium))
 	}
 	if s.ausleihen {
@@ -364,7 +364,7 @@ func drucke(b littera.Bericht, s schalter) {
 		if a.FristVorAusgabe > 0 {
 			log.Printf("           %d Ausleihen tragen eine Frist VOR dem Verleihdatum", a.FristVorAusgabe)
 		}
-		abgleich(a.AbgleichOK, fmt.Sprintf("%d Ausleihen tatsächlich neu", a.IstAusleihen))
+		meldeAbgleich(a.AbgleichOK, fmt.Sprintf("%d Ausleihen tatsächlich neu", a.IstAusleihen))
 	}
 	log.Print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("  Warnungen (abgewertet übernommen): %d → %s", b.Warnungen, protokollPfad)
@@ -391,16 +391,16 @@ func druckeSchlagworte(sw littera.SchlagwortBericht) {
 	log.Printf("           geschrieben %6d an %d Titeln; ohne Wort %d, Titel fehlt %d, weggelassen %d, "+
 		"gekürzt %d, Fehler %d", sw.Zuordnungen, sw.Titel, sw.OhneWort, sw.OhneTitel, sw.Weggelassen,
 		sw.Gekuerzt, sw.Uebersprungen)
-	abgleich(sw.AbgleichOK, fmt.Sprintf("%d Zuordnungen / %d Wörter tatsächlich neu", sw.IstZuordnungen, sw.IstWoerter))
+	meldeAbgleich(sw.AbgleichOK, fmt.Sprintf("%d Zuordnungen / %d Wörter tatsächlich neu", sw.IstZuordnungen, sw.IstWoerter))
 	if sw.VerweisWoerter+sw.VerweisZuordnungen > 0 {
 		log.Printf("           ⚠ Verweise nicht übernommen: %d Wörter, %d Zuordnungen (docs/OFFEN.md 4.20)",
 			sw.VerweisWoerter, sw.VerweisZuordnungen)
 	}
 }
 
-// abgleich meldet die Gegenprobe an der Datenbank. Eine Abweichung heißt: die Zahlen
-// darüber sind falsch — und zwar zugunsten des Werkzeugs. Das muss lauter stehen als sie.
-func abgleich(ok bool, ist string) {
+// meldeAbgleich meldet die Gegenprobe an der Datenbank. Eine Abweichung heißt: Die Zahlen
+// darüber sind falsch, und zwar zugunsten des Werkzeugs. Das muss lauter stehen als sie.
+func meldeAbgleich(ok bool, ist string) {
 	if ok {
 		log.Printf("           ✓ Abgleich: %s", ist)
 		return

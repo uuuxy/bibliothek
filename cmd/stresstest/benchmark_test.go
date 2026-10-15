@@ -7,14 +7,14 @@ import (
 	"testing"
 )
 
-func BenchmarkStresstestRunner(b *testing.B) {
+func BenchmarkLastlauf(b *testing.B) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer ts.Close()
 
-	reqBody := ActionRequest{Query: "test"}
-	jsonData, err := json.Marshal(reqBody)
+	anfrageDaten := aktionsAnfrage{Suchtext: "test"}
+	rumpf, err := json.Marshal(anfrageDaten)
 	if err != nil {
 		b.Fatalf("Request-Körper: %v", err)
 	}
@@ -22,9 +22,9 @@ func BenchmarkStresstestRunner(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		runner := newStresstestRunner(ts.URL, token, jsonData, 50)
-		runner.starteAlle()
-		runner.gibStartsignal()
-		runner.wg.Wait()
+		lauf := newLastlauf(ts.URL, token, rumpf, 50)
+		lauf.starteAlle()
+		lauf.gibStartsignal()
+		lauf.alle.Wait()
 	}
 }

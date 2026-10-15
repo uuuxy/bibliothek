@@ -71,7 +71,7 @@ var phantomBestand = map[string]int{
 	"repository/sitzungen.go:SetzeSitzungsPruefwert":      1,
 	"repository/sitzungen.go:LoescheAbgelaufeneSitzungen": 1,
 	"cmd/migrate-fotos/main.go:migriereFoto":              1,
-	"cmd/migrate/pg_writer.go:insertExemplare":            1,
+	"cmd/migrate/pg_writer.go:legeExemplareAn":            1,
 	"db/migrationen.go:spieleMigrationEin":                2,
 	"db/migrationen.go:spieleSchemaEin":                   1,
 	"db/migrationen.go:legeMigrationstabelleAn":           1,

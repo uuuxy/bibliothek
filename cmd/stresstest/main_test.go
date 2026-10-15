@@ -14,13 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenerateAdminToken(t *testing.T) {
-	secret := "test-secret"
-	tokenStr := generateAdminToken(secret)
-	assert.NotEmpty(t, tokenStr)
+func TestErzeugeAdminToken(t *testing.T) {
+	geheimnis := "test-secret"
+	tokenText := erzeugeAdminToken(geheimnis)
+	assert.NotEmpty(t, tokenText)
 
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
+	token, err := jwt.Parse(tokenText, func(token *jwt.Token) (interface{}, error) {
+		return []byte(geheimnis), nil
 	})
 	require.NoError(t, err)
 	assert.True(t, token.Valid)
@@ -31,23 +31,23 @@ func TestGenerateAdminToken(t *testing.T) {
 	assert.Equal(t, "admin", claims["barcode_id"])
 }
 
-func TestBaueRequest(t *testing.T) {
-	baseURL := "http://example.com/api"
+func TestBaueAnfrage(t *testing.T) {
+	zielURL := "http://example.com/api"
 	token := "dummy-token"
-	jsonData := []byte(`{"test": "data"}`)
+	rumpf := []byte(`{"test": "data"}`)
 
-	runner := newStresstestRunner(baseURL, token, jsonData, 1)
-	req, err := runner.baueRequest()
+	lauf := newLastlauf(zielURL, token, rumpf, 1)
+	req, err := lauf.baueAnfrage()
 	require.NoError(t, err)
 
 	assert.Equal(t, http.MethodPost, req.Method)
-	assert.Equal(t, baseURL, req.URL.String())
+	assert.Equal(t, zielURL, req.URL.String())
 	assert.Equal(t, "application/json", req.Header.Get("Content-Type"))
 	assert.Equal(t, "dummy-csrf-token-12345", req.Header.Get("X-CSRF-Token"))
 
 	body, err := io.ReadAll(req.Body)
 	require.NoError(t, err)
-	assert.Equal(t, jsonData, body)
+	assert.Equal(t, rumpf, body)
 
 	err = req.Body.Close()
 	require.NoError(t, err)
@@ -60,85 +60,84 @@ func TestBaueRequest(t *testing.T) {
 	assert.Equal(t, "dummy-csrf-token-12345", cookies[1].Value)
 }
 
-func TestStresstestRunner_EndToEnd(t *testing.T) {
-	var mu sync.Mutex
-	requestCount := 0
+func TestLastlauf_VonAnfangBisEnde(t *testing.T) {
+	var sperre sync.Mutex
+	anfragen := 0
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mu.Lock()
-		requestCount++
-		mu.Unlock()
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sperre.Lock()
+		anfragen++
+		sperre.Unlock()
 
-		// Simulate some processing time
+		// Etwas Bearbeitungszeit vortäuschen.
 		time.Sleep(5 * time.Millisecond)
 
-		// Return 200 OK
+		// 200 OK zurückgeben.
 		w.WriteHeader(http.StatusOK)
 	}))
-	defer server.Close()
+	defer testServer.Close()
 
-	numRequests := 10
-	runner := newStresstestRunner(server.URL, "token", []byte(`{}`), numRequests)
+	anzahl := 10
+	lauf := newLastlauf(testServer.URL, "token", []byte(`{}`), anzahl)
 
-	runner.starteAlle()
-	runner.gibStartsignal()
-	runner.wg.Wait()
+	lauf.starteAlle()
+	lauf.gibStartsignal()
+	lauf.alle.Wait()
 
-	assert.Equal(t, numRequests, requestCount)
+	assert.Equal(t, anzahl, anfragen)
 
-	runner.resultsMu.Lock()
-	defer runner.resultsMu.Unlock()
-	assert.Equal(t, numRequests, runner.statusCounts[http.StatusOK])
-	assert.Len(t, runner.statusCounts, 1)
+	lauf.ergebnisSperre.Lock()
+	defer lauf.ergebnisSperre.Unlock()
+	assert.Equal(t, anzahl, lauf.jeStatus[http.StatusOK])
+	assert.Len(t, lauf.jeStatus, 1)
 }
 
-func TestStresstestRunner_NetworkError(t *testing.T) {
-	// Use an invalid URL that will definitely fail to connect immediately
-	runner := newStresstestRunner("http://127.0.0.1:0/invalid", "token", []byte(`{}`), 5)
+func TestLastlauf_Netzfehler(t *testing.T) {
+	// Eine Adresse, an der die Verbindung sofort scheitert.
+	lauf := newLastlauf("http://127.0.0.1:0/invalid", "token", []byte(`{}`), 5)
 
-	runner.starteAlle()
-	runner.gibStartsignal()
-	runner.wg.Wait()
+	lauf.starteAlle()
+	lauf.gibStartsignal()
+	lauf.alle.Wait()
 
-	runner.resultsMu.Lock()
-	defer runner.resultsMu.Unlock()
+	lauf.ergebnisSperre.Lock()
+	defer lauf.ergebnisSperre.Unlock()
 
-	// Network errors should be logged under status code 0
-	assert.Equal(t, 5, runner.statusCounts[0])
+	// Fehler des Netzes zählen unter dem Status 0.
+	assert.Equal(t, 5, lauf.jeStatus[0])
 }
 
-func TestLoadConfig_Success(t *testing.T) {
-	// Hermetisch in einem leeren Temp-Verzeichnis: loadConfig liest ZUERST ../../.env
-	// (die echte Projekt-Root-.env mit PORT=8081) und nur ersatzweise die .env im cwd.
-	// Der frühere Test schrieb die cwd-.env und manipulierte die echte Datei, seine
-	// Erwartung (9090) griff aber nur, wenn ../../.env fehlt — lokal war sie da, in CI
-	// nicht (gitignored) → grün aus Umgebungsgunst. Ein t.TempDir als cwd hat weder eine
-	// ../../.env noch eine störende echte .env; die hier geschriebene wird garantiert
-	// gelesen, und die echte Datei bleibt unangetastet.
+func TestLeseKonfig_Erfolg(t *testing.T) {
+	// Abgeschlossen in einem leeren Verzeichnis: leseKonfig liest zuerst ../../.env (die echte
+	// .env im Wurzelverzeichnis mit PORT=8081) und nur ersatzweise die .env im Arbeitsverzeichnis.
+	// Ein Test, der die .env im Arbeitsverzeichnis schreibt, wäre nur grün, wenn ../../.env fehlt,
+	// also in der CI (dort ist sie in .gitignore) und nicht lokal. Ein t.TempDir als
+	// Arbeitsverzeichnis hat weder ../../.env noch eine störende echte .env; die hier geschriebene
+	// wird sicher gelesen, und die echte Datei bleibt unangetastet.
 	t.Chdir(t.TempDir())
 	require.NoError(t, os.WriteFile(".env", []byte("PORT=9090\nJWT_SECRET=supersecret\n"), 0o644))
 
-	cfg := loadConfig()
-	assert.Equal(t, "9090", cfg.Port)
-	assert.Equal(t, "supersecret", cfg.JWTSecret)
+	konfigWerte := leseKonfig()
+	assert.Equal(t, "9090", konfigWerte.port)
+	assert.Equal(t, "supersecret", konfigWerte.jwtGeheimnis)
 }
 
 func TestDruckeErgebnisse(t *testing.T) {
-	runner := &stresstestRunner{
-		statusCounts: map[int]int{
+	lauf := &lastlauf{
+		jeStatus: map[int]int{
 			200: 42,
 			0:   3,
 			500: 5,
 		},
 	}
 
-	old := os.Stdout
+	altStdout := os.Stdout
 	r, w, err := os.Pipe()
 	require.NoError(t, err)
 	os.Stdout = w
-	defer func() { os.Stdout = old }()
+	defer func() { os.Stdout = altStdout }()
 
-	runner.druckeErgebnisse()
+	lauf.druckeErgebnisse()
 
 	err = w.Close()
 	require.NoError(t, err)
@@ -149,8 +148,8 @@ func TestDruckeErgebnisse(t *testing.T) {
 	err = r.Close()
 	require.NoError(t, err)
 
-	output := string(out)
-	assert.Contains(t, output, "42x 200 OK")
-	assert.Contains(t, output, "3x Network Error")
-	assert.Contains(t, output, "5x 500 Internal Server Error")
+	gelesen := string(out)
+	assert.Contains(t, gelesen, "42x 200 OK")
+	assert.Contains(t, gelesen, "3x Network Error")
+	assert.Contains(t, gelesen, "5x 500 Internal Server Error")
 }

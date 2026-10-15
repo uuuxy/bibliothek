@@ -10,21 +10,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Gate für den .env-Teil von scripts/backup.sh (docs/OFFEN.md 6.2, 23.09.2026).
+// Prüft, wie scripts/backup.sh die .env liest.
 //
-// Bis dahin lud das Skript die Datei mit `export $(grep -v '^#' .env | xargs)`: Jedes
-// Geheimnis der Datei stand danach in der Umgebung des Skripts und aller Kindprozesse
-// (docker, gzip, find), obwohl es nur POSTGRES_USER und POSTGRES_DB braucht — den
-// Backup-Schlüssel liest der Container (backup_krypto.sh), nicht das Skript. Dazu zerlegte
-// xargs Werte mit Leerzeichen, und ein `*` im Wert wurde als Dateimuster aufgelöst.
+// Lüde das Skript die Datei mit `export $(grep -v '^#' .env | xargs)`, stünde jedes Geheimnis
+// der Datei in der Umgebung des Skripts und aller Kindprozesse (docker, gzip, find), obwohl es
+// nur POSTGRES_USER und POSTGRES_DB braucht; den Schlüssel der Sicherung liest der Container
+// (backup_krypto.sh), nicht das Skript. Dazu zerlegte xargs Werte mit Leerzeichen, und ein `*`
+// im Wert würde als Dateimuster aufgelöst.
 //
-// Geprüft wird am ausgeführten Skript: Eine `docker`-Attrappe schreibt ihre Argumente und
-// ihre Umgebung mit. Sie meldet keinen laufenden Backend-Container, also läuft der
-// Notnagel-Zweig (Klartext-Dump); für die Frage ist der Zweig gleich, beide rufen pg_dump
+// Geprüft wird am ausgeführten Skript: Eine Attrappe von `docker` schreibt ihre Argumente und
+// ihre Umgebung mit. Sie meldet keinen laufenden Container des Backends, also läuft der Zweig
+// für den Notfall (Dump im Klartext); für die Frage ist der Zweig gleich, beide rufen pg_dump
 // über docker.
 func TestBackupSkript_LiestAusDerEnvNurDieZweiWerte(t *testing.T) {
-	dir := t.TempDir()
-	skripte := filepath.Join(dir, "scripts")
+	verzeichnis := t.TempDir()
+	skripte := filepath.Join(verzeichnis, "scripts")
 	require.NoError(t, os.MkdirAll(skripte, 0o755))
 	for _, name := range []string{"backup.sh", "backup_krypto.sh"} {
 		inhalt, err := os.ReadFile(filepath.Join("..", "..", "scripts", name))
@@ -36,12 +36,12 @@ func TestBackupSkript_LiestAusDerEnvNurDieZweiWerte(t *testing.T) {
 		"POSTGRES_DB=\"gatedb\"\n" +
 		"JWT_SECRET=jwt-geheimnis-darf-nicht-mitlaufen\n" +
 		"SMTP_PASSWORD=mit leerzeichen und * stern\n"
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env"), []byte(env), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(verzeichnis, ".env"), []byte(env), 0o600))
 
-	binDir := filepath.Join(dir, "bin")
-	require.NoError(t, os.MkdirAll(binDir, 0o755))
-	protokoll := filepath.Join(dir, "docker-aufrufe")
-	umgebung := filepath.Join(dir, "docker-umgebung")
+	binVerzeichnis := filepath.Join(verzeichnis, "bin")
+	require.NoError(t, os.MkdirAll(binVerzeichnis, 0o755))
+	protokoll := filepath.Join(verzeichnis, "docker-aufrufe")
+	umgebung := filepath.Join(verzeichnis, "docker-umgebung")
 	attrappe := `#!/bin/bash
 echo "$*" >> "` + protokoll + `"
 env >> "` + umgebung + `"
@@ -51,12 +51,12 @@ case "$1" in
 esac
 exit 0
 `
-	require.NoError(t, os.WriteFile(filepath.Join(binDir, "docker"), []byte(attrappe), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(binVerzeichnis, "docker"), []byte(attrappe), 0o755))
 
-	cmd := exec.Command("bash", filepath.Join(skripte, "backup.sh"))
-	cmd.Dir = dir
-	cmd.Env = []string{"PATH=" + binDir + string(os.PathListSeparator) + os.Getenv("PATH"), "HOME=" + dir}
-	aus, err := cmd.CombinedOutput()
+	befehl := exec.Command("bash", filepath.Join(skripte, "backup.sh"))
+	befehl.Dir = verzeichnis
+	befehl.Env = []string{"PATH=" + binVerzeichnis + string(os.PathListSeparator) + os.Getenv("PATH"), "HOME=" + verzeichnis}
+	aus, err := befehl.CombinedOutput()
 	require.NoError(t, err, "backup.sh: %s", aus)
 
 	aufrufe, err := os.ReadFile(protokoll)

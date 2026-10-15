@@ -1,17 +1,15 @@
-// Command restore-backup entschlüsselt und dekomprimiert ein vom täglichen
-// Backup-Job erzeugtes .sql.gz.enc-Backup zurück zu reinem SQL.
+// Command restore-backup entschlüsselt und entpackt eine Sicherung des täglichen Laufs
+// (.sql.gz.enc) zurück zu reinem SQL.
 //
-// Das automatische Backup (jobs.BackupLauf) erzeugt AES-256-GCM-
-// verschlüsselte, gzip-komprimierte pg_dump-Dateien. Plain-Tools wie
-// `zcat | psql` funktionieren darauf NICHT — dieses Tool ist der unterstützte
-// Entschlüsselungsschritt der Disaster-Recovery.
+// Die automatische Sicherung (jobs.BackupLauf) erzeugt mit AES-256-GCM verschlüsselte, mit
+// gzip gepackte Dateien von pg_dump. Einfache Werkzeuge wie `zcat | psql` helfen dort nicht;
+// dieses Werkzeug ist der vorgesehene Schritt der Entschlüsselung bei der Wiederherstellung.
 //
-// Verwendung:
+// Aufruf:
 //
 //	BACKUP_ENCRYPTION_KEY=<passphrase> restore-backup <backup.sql.gz.enc> [ausgabe.sql]
 //
-// Ohne Ausgabedatei wird das SQL nach stdout geschrieben, sodass direkt
-// weitergeleitet werden kann:
+// Ohne Ausgabedatei geht das SQL nach stdout und lässt sich direkt weiterleiten:
 //
 //	BACKUP_ENCRYPTION_KEY=… restore-backup backup_….sql.gz.enc | psql -U postgres -d bibliothek
 package main
@@ -27,72 +25,72 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
+	if err := fuehreAus(); err != nil {
 		fmt.Fprintf(os.Stderr, "restore-backup: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
-	args := os.Args[1:]
-	if len(args) < 1 || len(args) > 2 {
+// fuehreAus ist der ganze Ablauf: Datei lesen, entschlüsseln, entpacken, ausgeben.
+func fuehreAus() error {
+	argumente := os.Args[1:]
+	if len(argumente) < 1 || len(argumente) > 2 {
 		return fmt.Errorf("usage: BACKUP_ENCRYPTION_KEY=<passphrase> restore-backup <backup.sql.gz.enc> [ausgabe.sql]")
 	}
 
-	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
-	if encKey == "" {
+	schluessel := os.Getenv("BACKUP_ENCRYPTION_KEY")
+	if schluessel == "" {
 		return fmt.Errorf("BACKUP_ENCRYPTION_KEY nicht gesetzt — ohne den Original-Schlüssel ist das Backup nicht entschlüsselbar")
 	}
 
-	inputPath := args[0]
-	ciphertext, err := os.ReadFile(inputPath) // #nosec G304 - Pfad ist ein bewusst übergebenes Operator-Argument
+	eingabe := argumente[0]
+	verschluesselt, err := os.ReadFile(eingabe) // #nosec G304 - Pfad ist ein bewusst übergebenes Argument des Betreibers
 	if err != nil {
-		return fmt.Errorf("backup-datei %q konnte nicht gelesen werden: %w", inputPath, err)
+		return fmt.Errorf("backup-datei %q konnte nicht gelesen werden: %w", eingabe, err)
 	}
 
-	// 1. AES-256-GCM entschlüsseln (identische Schlüsselableitung wie beim Backup).
-	compressed, err := backupkrypto.Entschluessele(encKey, ciphertext)
+	// 1. Mit AES-256-GCM entschlüsseln (derselbe Schlüssel wie beim Verschlüsseln).
+	gepackt, err := backupkrypto.Entschluessele(schluessel, verschluesselt)
 	if err != nil {
 		return fmt.Errorf("entschlüsselung fehlgeschlagen (falscher Schlüssel oder beschädigte/manipulierte Datei?): %w", err)
 	}
 
-	// 2. gzip dekomprimieren → reines pg_dump-SQL.
-	gz, err := gzip.NewReader(bytes.NewReader(compressed))
+	// 2. gzip entpacken: reines SQL von pg_dump.
+	entpacker, err := gzip.NewReader(bytes.NewReader(gepackt))
 	if err != nil {
 		return fmt.Errorf("gzip-header ungültig (kein gültiges Backup?): %w", err)
 	}
-	defer func() { _ = gz.Close() }() //nolint:errcheck
+	defer func() { _ = entpacker.Close() }() //nolint:errcheck
 
 	// 3. Ziel bestimmen: Datei oder stdout (für `| psql`).
-	var out io.Writer = os.Stdout
-	if len(args) == 2 {
-		f, err := os.OpenFile(args[1], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 - Operator-Argument
+	var ziel io.Writer = os.Stdout
+	if len(argumente) == 2 {
+		datei, err := os.OpenFile(argumente[1], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 - Argument des Betreibers
 		if err != nil {
-			return fmt.Errorf("ausgabedatei %q konnte nicht erstellt werden: %w", args[1], err)
+			return fmt.Errorf("ausgabedatei %q konnte nicht erstellt werden: %w", argumente[1], err)
 		}
-		defer func() { _ = f.Close() }() //nolint:errcheck
-		out = f
+		defer func() { _ = datei.Close() }() //nolint:errcheck
+		ziel = datei
 	}
 
-	// Limit decompression output to 100GB to mitigate decompression bomb vulnerability (G110)
-	// We use 100<<30 bytes (100GB).
-	limit := int64(100 << 30)
-	limitReader := io.LimitReader(gz, limit)
+	// Höchstens 100 GB entpacken, gegen eine Entpack-Bombe (G110).
+	grenze := int64(100 << 30)
+	begrenzt := io.LimitReader(entpacker, grenze)
 
-	n, err := io.Copy(out, limitReader)
+	n, err := io.Copy(ziel, begrenzt)
 	if err != nil {
 		return fmt.Errorf("dekomprimierung fehlgeschlagen: %w", err)
 	}
-	if n == limit {
-		// Check if there is more data to trigger an error instead of silently truncating
-		buf := make([]byte, 1)
-		if _, err := gz.Read(buf); err != io.EOF {
+	if n == grenze {
+		// Liegt dahinter noch etwas, ist das ein Fehler und kein stilles Abschneiden.
+		rest := make([]byte, 1)
+		if _, err := entpacker.Read(rest); err != io.EOF {
 			return fmt.Errorf("dekomprimierung fehlgeschlagen: maximale größe (100GB) überschritten")
 		}
 	}
 
-	if len(args) == 2 {
-		fmt.Fprintf(os.Stderr, "restore-backup: SQL nach %q geschrieben. Einspielen mit: psql -U <user> -d <db> -f %s\n", args[1], args[1])
+	if len(argumente) == 2 {
+		fmt.Fprintf(os.Stderr, "restore-backup: SQL nach %q geschrieben. Einspielen mit: psql -U <user> -d <db> -f %s\n", argumente[1], argumente[1])
 	}
 	return nil
 }

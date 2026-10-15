@@ -12,38 +12,37 @@ import (
 	"bibliothek/pkg/isbnutil"
 )
 
-// Die Hülle des Katalogisat-Imports: Sie läuft einmal gegen den echten Bestand und
-// hatte bis zum 21.09.2026 keinen Test (OFFEN.md 5.10). Der Import selbst ist im Service
-// geprüft (internal/service, internal/littera); hier geht es um das, was die Hülle tut:
-// Argumente prüfen, die Datei öffnen, den Service mit echter Datenbank aufrufen und das
-// Ergebnis melden.
+// Die Hülle des Imports eines Katalogisats; sie läuft einmal gegen den echten Bestand. Der
+// Import selbst ist im Dienst geprüft (internal/service, internal/littera); hier geht es um das,
+// was die Hülle tut: Argumente prüfen, die Datei öffnen, den Dienst mit echter Datenbank aufrufen
+// und das Ergebnis melden.
 
 func keineUmgebung(string) string { return "" }
 
-func TestRun_OhneDateiIstEinFehlerVorJederVerbindung(t *testing.T) {
+func TestFuehreAus_OhneDateiIstEinFehlerVorJederVerbindung(t *testing.T) {
 	var out bytes.Buffer
-	err := run(nil, keineUmgebung, &out)
+	err := fuehreAus(nil, keineUmgebung, &out)
 	if err == nil || !strings.Contains(err.Error(), "-file") {
 		t.Fatalf("erwartet den Hinweis auf -file, bekam %v", err)
 	}
 }
 
-func TestRun_OhneDatenbankIstEinFehler(t *testing.T) {
+func TestFuehreAus_OhneDatenbankIstEinFehler(t *testing.T) {
 	var out bytes.Buffer
-	err := run([]string{"-file", "egal.xml"}, keineUmgebung, &out)
+	err := fuehreAus([]string{"-file", "egal.xml"}, keineUmgebung, &out)
 	if err == nil || !strings.Contains(err.Error(), "DATABASE_URL") {
 		t.Fatalf("erwartet den Hinweis auf DATABASE_URL, bekam %v", err)
 	}
 }
 
-// Ein Tippfehler im Pfad scheitert an der Datei — nicht erst an der Datenbank. Die
-// Adresse hier ist bewusst UNLESBAR: pgxpool verbindet erst beim ersten Zugriff, eine
-// nur falsche Adresse fiele also gar nicht auf, und der Test wäre auch bei vertauschter
-// Reihenfolge grün gewesen (so gesehen am 21.09.2026). Eine unlesbare scheitert schon
-// beim Parsen — steht die Datenbank vor der Datei, kommt dieser Fehler statt des Dateifehlers.
-func TestRun_FehlendeDateiScheitertVorDerDatenbank(t *testing.T) {
+// Ein Tippfehler im Pfad scheitert an der Datei, nicht erst an der Datenbank. Die Adresse hier
+// ist absichtlich unlesbar: pgxpool verbindet erst beim ersten Zugriff, eine nur falsche Adresse
+// fiele also gar nicht auf, und der Test wäre auch bei vertauschter Reihenfolge grün. Eine
+// unlesbare scheitert schon beim Lesen; steht die Datenbank vor der Datei, kommt dieser Fehler
+// statt des Fehlers der Datei.
+func TestFuehreAus_FehlendeDateiScheitertVorDerDatenbank(t *testing.T) {
 	var out bytes.Buffer
-	err := run([]string{"-file", filepath.Join(t.TempDir(), "nirgends.xml"), "-db", "::unlesbar::"}, keineUmgebung, &out)
+	err := fuehreAus([]string{"-file", filepath.Join(t.TempDir(), "nirgends.xml"), "-db", "::unlesbar::"}, keineUmgebung, &out)
 	if err == nil || !strings.Contains(err.Error(), "XML-Datei konnte nicht geöffnet werden") {
 		t.Fatalf("erwartet den Dateifehler, bekam %v", err)
 	}
@@ -51,7 +50,7 @@ func TestRun_FehlendeDateiScheitertVorDerDatenbank(t *testing.T) {
 
 // Der ganze Weg am echten Postgres: ein Katalogisat mit einem Titel, danach steht er im
 // Bestand und die Ausgabe nennt die Zahl.
-func TestRun_ImportiertEinKatalogisat(t *testing.T) {
+func TestFuehreAus_ImportiertEinKatalogisat(t *testing.T) {
 	pool := pgtest.Pool(t) // lädt das Schema und überspringt ohne TEST_DATABASE_URL
 	ctx := context.Background()
 	const isbn = "978-3-16-148410-0"
@@ -79,7 +78,7 @@ func TestRun_ImportiertEinKatalogisat(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	if err := run([]string{"-file", pfad, "-db", os.Getenv(pgtest.Variable)}, keineUmgebung, &out); err != nil {
+	if err := fuehreAus([]string{"-file", pfad, "-db", os.Getenv(pgtest.Variable)}, keineUmgebung, &out); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if !strings.Contains(out.String(), `"verarbeitete_titel":1`) {

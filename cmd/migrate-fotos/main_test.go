@@ -12,13 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// erwarteGegenprobe spielt das Zurücklesen nach: Das Werkzeug löscht die Quelldatei
-// erst, wenn das gespeicherte Foto wieder entschlüsselt und mit dem Original verglichen
-// werden konnte. Der Mock liefert deshalb echten Chiffretext desselben Inhalts.
-// Die Erwartung haengt am SCHUELER, nicht an der Aufrufreihenfolge: `dir.ReadDir`
-// liefert die Dateien so, wie das Dateisystem sie hergibt (os.ReadDir sortiert, diese
-// Methode nicht). Ein Test, der die Reihenfolge voraussetzt, ist lokal gruen und in CI
-// rot — genau so passiert am 23.08.2026.
+// erwarteGegenprobe spielt das Zurücklesen nach: Das Werkzeug löscht die Quelldatei erst, wenn
+// das gespeicherte Foto wieder entschlüsselt und mit dem Original verglichen werden konnte. Die
+// Attrappe liefert deshalb echten verschlüsselten Text desselben Inhalts. Die Erwartung hängt am
+// Schüler, nicht an der Reihenfolge der Aufrufe: ReadDir liefert die Dateien so, wie das
+// Dateisystem sie hergibt (os.ReadDir sortiert, diese Methode nicht). Ein Test, der die
+// Reihenfolge voraussetzt, ist lokal grün und in der CI rot.
 func erwarteGegenprobe(t *testing.T, mock pgxmock.PgxPoolIface, schuelerID, inhalt string) {
 	t.Helper()
 	chiffre, err := crypto.Verschluessele([]byte(inhalt))
@@ -28,19 +27,19 @@ func erwarteGegenprobe(t *testing.T, mock pgxmock.PgxPoolIface, schuelerID, inha
 		WillReturnRows(pgxmock.NewRows([]string{"foto_encrypted"}).AddRow(chiffre))
 }
 
-func TestMigriereAlleFotos_Empty(t *testing.T) {
+func TestMigriereAlleFotos_LeeresVerzeichnis(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
-	root, err := os.OpenRoot(tempDir)
+	testVerzeichnis := t.TempDir()
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	processed, migrated, _ := migriereAlleFotos(mock, root, []os.DirEntry{}, true)
-	assert.Equal(t, 0, processed)
-	assert.Equal(t, 0, migrated)
+	gefunden, uebernommen, _ := migriereAlleFotos(mock, wurzel, []os.DirEntry{}, true)
+	assert.Equal(t, 0, gefunden)
+	assert.Equal(t, 0, uebernommen)
 }
 
 func TestMigriereAlleFotos_MitDateien(t *testing.T) {
@@ -50,43 +49,42 @@ func TestMigriereAlleFotos_MitDateien(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
+	testVerzeichnis := t.TempDir()
 
-	// Create test files
-	file1, err := os.Create(tempDir + "/12345.jpg")
+	// Testdateien anlegen.
+	datei1, err := os.Create(testVerzeichnis + "/12345.jpg")
 	require.NoError(t, err)
-	_, err = file1.WriteString("fake image data")
+	_, err = datei1.WriteString("fake image data")
 	require.NoError(t, err)
-	require.NoError(t, file1.Close())
+	require.NoError(t, datei1.Close())
 
-	file2, err := os.Create(tempDir + "/67890.jpg")
+	datei2, err := os.Create(testVerzeichnis + "/67890.jpg")
 	require.NoError(t, err)
-	_, err = file2.WriteString("fake image data 2")
+	_, err = datei2.WriteString("fake image data 2")
 	require.NoError(t, err)
-	require.NoError(t, file2.Close())
+	require.NoError(t, datei2.Close())
 
-	// not a jpg
-	file3, err := os.Create(tempDir + "/notajpg.txt")
+	// kein JPEG
+	datei3, err := os.Create(testVerzeichnis + "/notajpg.txt")
 	require.NoError(t, err)
-	_, err = file3.WriteString("text")
+	_, err = datei3.WriteString("text")
 	require.NoError(t, err)
-	require.NoError(t, file3.Close())
+	require.NoError(t, datei3.Close())
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	dir, err := root.Open(".")
+	ordner, err := wurzel.Open(".")
 	require.NoError(t, err)
-	entries, err := dir.ReadDir(-1)
+	eintraege, err := ordner.ReadDir(-1)
 	require.NoError(t, err)
-	require.NoError(t, dir.Close())
+	require.NoError(t, ordner.Close())
 
-	// Mock student IDs loading
-	// Ungeordnet prüfen: Die Erwartungen unterscheiden sich am Schüler, nicht an ihrer
-	// Position. Sonst ist dieser Test nur deshalb grün, weil das Werkzeug gerade
-	// alphabetisch sortiert — und ein Test, der von einer Eigenschaft des Prüflings
-	// abhängt, misst sie nicht mehr.
+	// Die Kennungen der Schüler laden. Ungeordnet prüfen: Die Erwartungen unterscheiden sich am
+	// Schüler, nicht an ihrer Position. Sonst wäre der Test nur deshalb grün, weil das Werkzeug
+	// gerade alphabetisch sortiert, und ein Test, der von einer Eigenschaft des Prüflings abhängt,
+	// misst sie nicht mehr.
 	mock.MatchExpectationsInOrder(false)
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
@@ -105,9 +103,9 @@ func TestMigriereAlleFotos_MitDateien(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	erwarteGegenprobe(t, mock, "uuid-67890", "fake image data 2")
 
-	processed, migrated, _ := migriereAlleFotos(mock, root, entries, true)
-	assert.Equal(t, 2, processed)
-	assert.Equal(t, 2, migrated)
+	gefunden, uebernommen, _ := migriereAlleFotos(mock, wurzel, eintraege, true)
+	assert.Equal(t, 2, gefunden)
+	assert.Equal(t, 2, uebernommen)
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -119,66 +117,66 @@ func TestMigriereAlleFotos_KeinSchueler(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
+	testVerzeichnis := t.TempDir()
 
-	file1, err := os.Create(tempDir + "/99999.jpg")
+	datei1, err := os.Create(testVerzeichnis + "/99999.jpg")
 	require.NoError(t, err)
-	_, err = file1.WriteString("fake image data")
+	_, err = datei1.WriteString("fake image data")
 	require.NoError(t, err)
-	require.NoError(t, file1.Close())
+	require.NoError(t, datei1.Close())
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	dir, err := root.Open(".")
+	ordner, err := wurzel.Open(".")
 	require.NoError(t, err)
-	entries, err := dir.ReadDir(-1)
+	eintraege, err := ordner.ReadDir(-1)
 	require.NoError(t, err)
-	require.NoError(t, dir.Close())
+	require.NoError(t, ordner.Close())
 
-	// Mock student IDs loading returning NO ROWS
+	// Die Kennungen der Schüler laden, ohne Zeile.
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "id"}))
 
-	processed, migrated, _ := migriereAlleFotos(mock, root, entries, true)
-	assert.Equal(t, 1, processed)
-	assert.Equal(t, 0, migrated)
+	gefunden, uebernommen, _ := migriereAlleFotos(mock, wurzel, eintraege, true)
+	assert.Equal(t, 1, gefunden)
+	assert.Equal(t, 0, uebernommen)
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestMigriereAlleFotos_DBFehlerLaden(t *testing.T) {
+func TestMigriereAlleFotos_DatenbankfehlerBeimLaden(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
+	testVerzeichnis := t.TempDir()
 
-	file1, err := os.Create(tempDir + "/12345.jpg")
+	datei1, err := os.Create(testVerzeichnis + "/12345.jpg")
 	require.NoError(t, err)
-	_, err = file1.WriteString("fake")
+	_, err = datei1.WriteString("fake")
 	require.NoError(t, err)
-	require.NoError(t, file1.Close())
+	require.NoError(t, datei1.Close())
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	dir, err := root.Open(".")
+	ordner, err := wurzel.Open(".")
 	require.NoError(t, err)
-	entries, err := dir.ReadDir(-1)
+	eintraege, err := ordner.ReadDir(-1)
 	require.NoError(t, err)
-	require.NoError(t, dir.Close())
+	require.NoError(t, ordner.Close())
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnError(os.ErrPermission)
 
-	processed, migrated, _ := migriereAlleFotos(mock, root, entries, true)
-	assert.Equal(t, 0, processed)
-	assert.Equal(t, 0, migrated)
+	gefunden, uebernommen, _ := migriereAlleFotos(mock, wurzel, eintraege, true)
+	assert.Equal(t, 0, gefunden)
+	assert.Equal(t, 0, uebernommen)
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -188,13 +186,13 @@ func TestMigriereFoto_KeinLesen(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
+	testVerzeichnis := t.TempDir()
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	ok := migriereFoto(mock, root, "nicht-da.jpg", "123", "uuid")
+	ok := migriereFoto(mock, wurzel, "nicht-da.jpg", "123", "uuid")
 	assert.False(t, ok)
 }
 
@@ -203,50 +201,50 @@ func TestMigriereFoto_VerschluesselungFehlgeschlagen(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
-	file1, err := os.Create(tempDir + "/123.jpg")
+	testVerzeichnis := t.TempDir()
+	datei1, err := os.Create(testVerzeichnis + "/123.jpg")
 	require.NoError(t, err)
-	_, err = file1.WriteString("fake data")
+	_, err = datei1.WriteString("fake data")
 	require.NoError(t, err)
-	require.NoError(t, file1.Close())
+	require.NoError(t, datei1.Close())
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	// Schlüssel AKTIV leeren — sonst hinge der Test an der Umgebung: Mit gesetztem
-	// APP_ENCRYPTION_KEY verschlüsselte er erfolgreich, der Mock lehnte das unerwartete
-	// Exec ab, und das false war nur ein Mock-Artefakt (Prüfung 22.08.2026). Würde die
-	// Verschlüsselung trotzdem gelingen, liefe der INSERT durch und der Test würde rot.
+	// Den Schlüssel ausdrücklich leeren, sonst hinge der Test an der Umgebung: Mit gesetztem
+	// APP_ENCRYPTION_KEY verschlüsselte er erfolgreich, die Attrappe lehnte das unerwartete Exec ab,
+	// und das false käme nur von der Attrappe. Gelänge die Verschlüsselung trotzdem, liefe der
+	// INSERT durch und der Test würde rot.
 	t.Setenv("APP_ENCRYPTION_KEY", "")
 	mock.ExpectExec("INSERT INTO schueler_fotos").WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	ok := migriereFoto(mock, root, "123.jpg", "123", "uuid")
+	ok := migriereFoto(mock, wurzel, "123.jpg", "123", "uuid")
 	assert.False(t, ok, "ohne Schlüssel darf keine Verschlüsselung gelingen")
 }
 
-func TestMigriereFoto_DBFehler(t *testing.T) {
+func TestMigriereFoto_Datenbankfehler(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
 
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
-	file1, err := os.Create(tempDir + "/123.jpg")
+	testVerzeichnis := t.TempDir()
+	datei1, err := os.Create(testVerzeichnis + "/123.jpg")
 	require.NoError(t, err)
-	_, err = file1.WriteString("fake data")
+	_, err = datei1.WriteString("fake data")
 	require.NoError(t, err)
-	require.NoError(t, file1.Close())
+	require.NoError(t, datei1.Close())
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
 	mock.ExpectExec("INSERT INTO schueler_fotos").
 		WithArgs("uuid", pgxmock.AnyArg()).
 		WillReturnError(os.ErrPermission)
 
-	ok := migriereFoto(mock, root, "123.jpg", "123", "uuid")
+	ok := migriereFoto(mock, wurzel, "123.jpg", "123", "uuid")
 	assert.False(t, ok)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -260,19 +258,19 @@ func TestMigriereAlleFotos_LoeschtQuelldateienNachGegenprobe(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
-	pfad := tempDir + "/12345.jpg"
+	testVerzeichnis := t.TempDir()
+	pfad := testVerzeichnis + "/12345.jpg"
 	require.NoError(t, os.WriteFile(pfad, []byte("fake image data"), 0o600))
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	dir, err := root.Open(".")
+	ordner, err := wurzel.Open(".")
 	require.NoError(t, err)
-	entries, err := dir.ReadDir(-1)
+	eintraege, err := ordner.ReadDir(-1)
 	require.NoError(t, err)
-	require.NoError(t, dir.Close())
+	require.NoError(t, ordner.Close())
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs(pgxmock.AnyArg()).
@@ -282,7 +280,7 @@ func TestMigriereAlleFotos_LoeschtQuelldateienNachGegenprobe(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	erwarteGegenprobe(t, mock, "uuid-12345", "fake image data")
 
-	_, migriert, geloescht := migriereAlleFotos(mock, root, entries, false)
+	_, migriert, geloescht := migriereAlleFotos(mock, wurzel, eintraege, false)
 
 	assert.Equal(t, 1, migriert)
 	assert.Equal(t, 1, geloescht)
@@ -290,9 +288,8 @@ func TestMigriereAlleFotos_LoeschtQuelldateienNachGegenprobe(t *testing.T) {
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-// TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei: Bis zur bestandenen
-// Gegenprobe ist die Datei die EINZIGE Kopie des Bildes. Ein "INSERT ohne Fehler" heißt
-// noch nicht, dass sich das Foto je wieder anzeigen lässt — ein falsch abgeleiteter
+// Bis zur bestandenen Gegenprobe ist die Datei die einzige Kopie des Bildes. Ein "INSERT ohne
+// Fehler" heißt noch nicht, dass sich das Foto je wieder anzeigen lässt; ein falsch abgeleiteter
 // Schlüssel fällt erst beim Entschlüsseln auf, und dann wäre die Quelle weg.
 func TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
@@ -301,19 +298,19 @@ func TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
-	pfad := tempDir + "/12345.jpg"
+	testVerzeichnis := t.TempDir()
+	pfad := testVerzeichnis + "/12345.jpg"
 	require.NoError(t, os.WriteFile(pfad, []byte("fake image data"), 0o600))
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	dir, err := root.Open(".")
+	ordner, err := wurzel.Open(".")
 	require.NoError(t, err)
-	entries, err := dir.ReadDir(-1)
+	eintraege, err := ordner.ReadDir(-1)
 	require.NoError(t, err)
-	require.NoError(t, dir.Close())
+	require.NoError(t, ordner.Close())
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs(pgxmock.AnyArg()).
@@ -321,10 +318,10 @@ func TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei(t *testing.T) {
 	mock.ExpectExec("INSERT INTO schueler_fotos").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	// Zurückgelesen wird ein ANDERES Bild — die Gegenprobe muss scheitern.
+	// Zurückgelesen wird ein anderes Bild; die Gegenprobe muss scheitern.
 	erwarteGegenprobe(t, mock, "uuid-12345", "ein anderes bild")
 
-	_, migriert, geloescht := migriereAlleFotos(mock, root, entries, false)
+	_, migriert, geloescht := migriereAlleFotos(mock, wurzel, eintraege, false)
 
 	assert.Equal(t, 0, migriert, "eine misslungene Gegenprobe darf nicht als Erfolg zählen")
 	assert.Equal(t, 0, geloescht)
@@ -339,29 +336,29 @@ func TestMigriereAlleFotos_FragtNachDenBarcodesDerFotos(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
+	testVerzeichnis := t.TempDir()
 	for _, name := range []string{"B-2.JPG", "a-1.jpg", "notiz.txt"} {
-		require.NoError(t, os.WriteFile(tempDir+"/"+name, []byte("fake"), 0o600))
+		require.NoError(t, os.WriteFile(testVerzeichnis+"/"+name, []byte("fake"), 0o600))
 	}
-	require.NoError(t, os.Mkdir(tempDir+"/ordner.jpg", 0o700))
+	require.NoError(t, os.Mkdir(testVerzeichnis+"/ordner.jpg", 0o700))
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	dir, err := root.Open(".")
+	ordner, err := wurzel.Open(".")
 	require.NoError(t, err)
-	entries, err := dir.ReadDir(-1)
+	eintraege, err := ordner.ReadDir(-1)
 	require.NoError(t, err)
-	require.NoError(t, dir.Close())
+	require.NoError(t, ordner.Close())
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs([]string{"B-2", "a-1"}).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "id"}))
 
-	processed, migrated, geloescht := migriereAlleFotos(mock, root, entries, false)
-	assert.Equal(t, 2, processed, "zwei Fotos liegen im Verzeichnis")
-	assert.Equal(t, 0, migrated)
+	gefunden, uebernommen, geloescht := migriereAlleFotos(mock, wurzel, eintraege, false)
+	assert.Equal(t, 2, gefunden, "zwei Fotos liegen im Verzeichnis")
+	assert.Equal(t, 0, uebernommen)
 	assert.Equal(t, 0, geloescht)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -375,19 +372,19 @@ func TestMigriereAlleFotos_AbgebrocheneSchuelerlisteMigriertNichts(t *testing.T)
 	require.NoError(t, err)
 	defer mock.Close()
 
-	tempDir := t.TempDir()
-	pfad := tempDir + "/12345.jpg"
+	testVerzeichnis := t.TempDir()
+	pfad := testVerzeichnis + "/12345.jpg"
 	require.NoError(t, os.WriteFile(pfad, []byte("fake image data"), 0o600))
 
-	root, err := os.OpenRoot(tempDir)
+	wurzel, err := os.OpenRoot(testVerzeichnis)
 	require.NoError(t, err)
-	defer root.Close() //nolint:errcheck
+	defer wurzel.Close() //nolint:errcheck
 
-	dir, err := root.Open(".")
+	ordner, err := wurzel.Open(".")
 	require.NoError(t, err)
-	entries, err := dir.ReadDir(-1)
+	eintraege, err := ordner.ReadDir(-1)
 	require.NoError(t, err)
-	require.NoError(t, dir.Close())
+	require.NoError(t, ordner.Close())
 
 	// Die erste Zeile kommt an, danach reißt die Antwort ab: Next liefert false, Err den Fehler.
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
@@ -396,9 +393,9 @@ func TestMigriereAlleFotos_AbgebrocheneSchuelerlisteMigriertNichts(t *testing.T)
 			AddRow("12345", "uuid-12345").
 			RowError(1, errors.New("verbindung abgerissen")))
 
-	processed, migrated, geloescht := migriereAlleFotos(mock, root, entries, false)
-	assert.Equal(t, 0, processed, "nach einer abgebrochenen Liste wird kein Foto angefasst")
-	assert.Equal(t, 0, migrated)
+	gefunden, uebernommen, geloescht := migriereAlleFotos(mock, wurzel, eintraege, false)
+	assert.Equal(t, 0, gefunden, "nach einer abgebrochenen Liste wird kein Foto angefasst")
+	assert.Equal(t, 0, uebernommen)
 	assert.Equal(t, 0, geloescht)
 	assert.FileExists(t, pfad)
 	require.NoError(t, mock.ExpectationsWereMet())

@@ -15,156 +15,156 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// createBackup erzeugt ein gültiges Backup im scrypt-Format über die echte
-// Verschlüsselungsfunktion — so testet der Restore genau das Format, das er im Betrieb
-// vorfindet, statt es im Test nachzubauen.
-func createBackup(t *testing.T, passphrase string, cleartext []byte) []byte {
+// erzeugeSicherung erzeugt eine gültige Sicherung im Format mit scrypt über die echte
+// Verschlüsselung; so prüft der Test genau das Format, das das Werkzeug im Betrieb vorfindet,
+// statt es nachzubauen.
+func erzeugeSicherung(t *testing.T, passphrase string, klartext []byte) []byte {
 	t.Helper()
-	enc, err := backupkrypto.Verschluessele(passphrase, cleartext)
+	verschluesselt, err := backupkrypto.Verschluessele(passphrase, klartext)
 	require.NoError(t, err)
-	return enc
+	return verschluesselt
 }
 
-func gzipData(t *testing.T, data []byte) []byte {
+func gzipDaten(t *testing.T, daten []byte) []byte {
 	t.Helper()
-	var buf bytes.Buffer
-	w := gzip.NewWriter(&buf)
-	_, err := w.Write(data)
+	var puffer bytes.Buffer
+	w := gzip.NewWriter(&puffer)
+	_, err := w.Write(daten)
 	require.NoError(t, err)
 	require.NoError(t, w.Close())
-	return buf.Bytes()
+	return puffer.Bytes()
 }
 
-func setupArgs(t *testing.T, args ...string) {
+func setzeArgumente(t *testing.T, argumente ...string) {
 	t.Helper()
-	oldArgs := os.Args
-	os.Args = append([]string{"restore-backup"}, args...)
+	altArgumente := os.Args
+	os.Args = append([]string{"restore-backup"}, argumente...)
 	t.Cleanup(func() {
-		os.Args = oldArgs
+		os.Args = altArgumente
 	})
 }
 
-func TestRun_InvalidArgs(t *testing.T) {
-	setupArgs(t) // 0 args
-	err := run()
+func TestFuehreAus_FalscheArgumente(t *testing.T) {
+	setzeArgumente(t) // kein Argument
+	err := fuehreAus()
 	assert.ErrorContains(t, err, "usage:")
 
-	setupArgs(t, "in.enc", "out.sql", "extra") // 3 args
-	err = run()
+	setzeArgumente(t, "in.enc", "out.sql", "extra") // drei Argumente
+	err = fuehreAus()
 	assert.ErrorContains(t, err, "usage:")
 }
 
-func TestRun_NoKey(t *testing.T) {
-	setupArgs(t, "in.enc")
+func TestFuehreAus_OhneSchluessel(t *testing.T) {
+	setzeArgumente(t, "in.enc")
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "")
-	err := run()
+	err := fuehreAus()
 	assert.ErrorContains(t, err, "BACKUP_ENCRYPTION_KEY nicht gesetzt")
 }
 
-func TestRun_FileNotFound(t *testing.T) {
-	setupArgs(t, "does_not_exist.enc")
+func TestFuehreAus_DateiFehlt(t *testing.T) {
+	setzeArgumente(t, "does_not_exist.enc")
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
-	err := run()
+	err := fuehreAus()
 	assert.ErrorContains(t, err, "konnte nicht gelesen werden")
 }
 
-func TestRun_DecryptFails(t *testing.T) {
-	dir := t.TempDir()
-	inFile := filepath.Join(dir, "bad.enc")
-	err := os.WriteFile(inFile, []byte("invalid data"), 0644)
+func TestFuehreAus_EntschluesselungScheitert(t *testing.T) {
+	verzeichnis := t.TempDir()
+	eingabe := filepath.Join(verzeichnis, "bad.enc")
+	err := os.WriteFile(eingabe, []byte("invalid data"), 0644)
 	require.NoError(t, err)
 
-	setupArgs(t, inFile)
+	setzeArgumente(t, eingabe)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
-	err = run()
+	err = fuehreAus()
 	assert.ErrorContains(t, err, "entschlüsselung fehlgeschlagen")
 }
 
-func TestRun_GzipFails(t *testing.T) {
-	dir := t.TempDir()
-	inFile := filepath.Join(dir, "bad_gzip.enc")
+func TestFuehreAus_GzipScheitert(t *testing.T) {
+	verzeichnis := t.TempDir()
+	eingabe := filepath.Join(verzeichnis, "bad_gzip.enc")
 
-	// Valid encryption, but invalid gzip content
-	encData := createBackup(t, "secret", []byte("not a gzip file"))
-	err := os.WriteFile(inFile, encData, 0644)
+	// Gültig verschlüsselt, aber kein gzip.
+	verschluesselt := erzeugeSicherung(t, "secret", []byte("not a gzip file"))
+	err := os.WriteFile(eingabe, verschluesselt, 0644)
 	require.NoError(t, err)
 
-	setupArgs(t, inFile)
+	setzeArgumente(t, eingabe)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
-	err = run()
+	err = fuehreAus()
 	assert.ErrorContains(t, err, "gzip-header ungültig")
 }
 
-func TestRun_SuccessStdout(t *testing.T) {
-	dir := t.TempDir()
-	inFile := filepath.Join(dir, "backup.enc")
+func TestFuehreAus_ErfolgAufStdout(t *testing.T) {
+	verzeichnis := t.TempDir()
+	eingabe := filepath.Join(verzeichnis, "backup.enc")
 
-	sqlData := []byte("SELECT * FROM books;")
-	gzipped := gzipData(t, sqlData)
-	encData := createBackup(t, "secret", gzipped)
+	sqlDaten := []byte("SELECT * FROM books;")
+	gepackt := gzipDaten(t, sqlDaten)
+	verschluesselt := erzeugeSicherung(t, "secret", gepackt)
 
-	err := os.WriteFile(inFile, encData, 0644)
+	err := os.WriteFile(eingabe, verschluesselt, 0644)
 	require.NoError(t, err)
 
-	setupArgs(t, inFile)
+	setzeArgumente(t, eingabe)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 
-	// Redirect stdout
-	oldStdout := os.Stdout
+	// stdout umleiten.
+	altStdout := os.Stdout
 	r, w, err := os.Pipe()
 	require.NoError(t, err)
 	os.Stdout = w
 	t.Cleanup(func() {
-		os.Stdout = oldStdout
+		os.Stdout = altStdout
 	})
 
-	err = run()
+	err = fuehreAus()
 	require.NoError(t, err)
 
 	require.NoError(t, w.Close())
 
-	outData, err := io.ReadAll(r)
+	ausgabeDaten, err := io.ReadAll(r)
 	require.NoError(t, err)
-	assert.Equal(t, sqlData, outData)
+	assert.Equal(t, sqlDaten, ausgabeDaten)
 }
 
-func TestRun_SuccessFile(t *testing.T) {
-	dir := t.TempDir()
-	inFile := filepath.Join(dir, "backup.enc")
-	outFile := filepath.Join(dir, "out.sql")
+func TestFuehreAus_ErfolgInDatei(t *testing.T) {
+	verzeichnis := t.TempDir()
+	eingabe := filepath.Join(verzeichnis, "backup.enc")
+	ausgabeDatei := filepath.Join(verzeichnis, "out.sql")
 
-	sqlData := []byte("SELECT * FROM books;")
-	gzipped := gzipData(t, sqlData)
-	encData := createBackup(t, "secret", gzipped)
+	sqlDaten := []byte("SELECT * FROM books;")
+	gepackt := gzipDaten(t, sqlDaten)
+	verschluesselt := erzeugeSicherung(t, "secret", gepackt)
 
-	err := os.WriteFile(inFile, encData, 0644)
+	err := os.WriteFile(eingabe, verschluesselt, 0644)
 	require.NoError(t, err)
 
-	setupArgs(t, inFile, outFile)
+	setzeArgumente(t, eingabe, ausgabeDatei)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 
-	err = run()
+	err = fuehreAus()
 	require.NoError(t, err)
 
-	outData, err := os.ReadFile(outFile)
+	ausgabeDaten, err := os.ReadFile(ausgabeDatei)
 	require.NoError(t, err)
-	assert.Equal(t, sqlData, outData)
+	assert.Equal(t, sqlDaten, ausgabeDaten)
 }
 
 // Nach einem Wechsel des BACKUP_ENCRYPTION_KEY öffnet jede Sicherung nur der Schlüssel, der bei
 // ihrem Entstehen galt (docs/SECURITY.md, „BACKUP_ENCRYPTION_KEY wechseln"). Mit dem anderen
 // nennt die Meldung den falschen Schlüssel, und es entsteht keine Ausgabedatei.
-func TestRun_NachSchluesselwechsel(t *testing.T) {
+func TestFuehreAus_NachSchluesselwechsel(t *testing.T) {
 	const (
 		alt = "alter-schluessel-mit-mehr-als-32-zeichen-0001"
 		neu = "neuer-schluessel-mit-mehr-als-32-zeichen-0002"
 	)
-	dir := t.TempDir()
+	verzeichnis := t.TempDir()
 	standVorher, standNachher := []byte("-- Stand vor dem Wechsel\n"), []byte("-- Stand nach dem Wechsel\n")
-	vorher := filepath.Join(dir, "vorher.sql.gz.enc")
-	nachher := filepath.Join(dir, "nachher.sql.gz.enc")
-	require.NoError(t, os.WriteFile(vorher, createBackup(t, alt, gzipData(t, standVorher)), 0o600))
-	require.NoError(t, os.WriteFile(nachher, createBackup(t, neu, gzipData(t, standNachher)), 0o600))
+	vorher := filepath.Join(verzeichnis, "vorher.sql.gz.enc")
+	nachher := filepath.Join(verzeichnis, "nachher.sql.gz.enc")
+	require.NoError(t, os.WriteFile(vorher, erzeugeSicherung(t, alt, gzipDaten(t, standVorher)), 0o600))
+	require.NoError(t, os.WriteFile(nachher, erzeugeSicherung(t, neu, gzipDaten(t, standNachher)), 0o600))
 
 	faelle := []struct {
 		name       string
@@ -180,10 +180,10 @@ func TestRun_NachSchluesselwechsel(t *testing.T) {
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
 			ausgabe := filepath.Join(t.TempDir(), "wiederherstellung.sql")
-			setupArgs(t, fall.datei, ausgabe)
+			setzeArgumente(t, fall.datei, ausgabe)
 			t.Setenv("BACKUP_ENCRYPTION_KEY", fall.schluessel)
 
-			err := run()
+			err := fuehreAus()
 			if fall.inhalt == nil {
 				assert.ErrorContains(t, err, "falscher Schlüssel")
 				assert.NoFileExists(t, ausgabe)
@@ -197,45 +197,45 @@ func TestRun_NachSchluesselwechsel(t *testing.T) {
 	}
 }
 
-func TestRun_FileCreateFails(t *testing.T) {
-	dir := t.TempDir()
-	inFile := filepath.Join(dir, "backup.enc")
+func TestFuehreAus_AusgabedateiScheitert(t *testing.T) {
+	verzeichnis := t.TempDir()
+	eingabe := filepath.Join(verzeichnis, "backup.enc")
 
-	// Use a directory as the output file to trigger an open error
-	outFile := filepath.Join(dir, "out_dir")
-	err := os.Mkdir(outFile, 0755)
+	// Ein Verzeichnis als Ausgabedatei, damit das Öffnen scheitert.
+	ausgabeDatei := filepath.Join(verzeichnis, "out_dir")
+	err := os.Mkdir(ausgabeDatei, 0755)
 	require.NoError(t, err)
 
-	sqlData := []byte("SELECT * FROM books;")
-	gzipped := gzipData(t, sqlData)
-	encData := createBackup(t, "secret", gzipped)
+	sqlDaten := []byte("SELECT * FROM books;")
+	gepackt := gzipDaten(t, sqlDaten)
+	verschluesselt := erzeugeSicherung(t, "secret", gepackt)
 
-	err = os.WriteFile(inFile, encData, 0644)
+	err = os.WriteFile(eingabe, verschluesselt, 0644)
 	require.NoError(t, err)
 
-	setupArgs(t, inFile, outFile)
+	setzeArgumente(t, eingabe, ausgabeDatei)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 
-	err = run()
+	err = fuehreAus()
 	assert.ErrorContains(t, err, "ausgabedatei")
 }
 
-func TestMain_Failure(t *testing.T) {
-	// Execute the test binary with a special environment variable
+func TestMain_FehlerEndetMitExitEins(t *testing.T) {
+	// Im zweiten Durchlauf, erkannt an der Umgebungsvariablen, läuft main selbst.
 	if os.Getenv("BE_CRASHER") == "1" {
-		setupArgs(t)
+		setzeArgumente(t)
 		main()
 		return
 	}
 
-	cmd := os.Args[0]
-	// run the test binary but with a specific test name and env var set
-	execCmd := exec.Command(cmd, "-test.run=TestMain_Failure")
-	execCmd.Env = append(os.Environ(), "BE_CRASHER=1")
-	err := execCmd.Run()
-	// main() should exit with 1, which means execCmd.Run() returns an error
-	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
-		return // Success
+	programm := os.Args[0]
+	// Das Testprogramm noch einmal starten, nur mit diesem Test und gesetzter Variable.
+	befehl := exec.Command(programm, "-test.run=TestMain_FehlerEndetMitExitEins")
+	befehl.Env = append(os.Environ(), "BE_CRASHER=1")
+	err := befehl.Run()
+	// main endet mit 1; dann liefert Run einen Fehler.
+	if exitFehler, ok := err.(*exec.ExitError); ok && !exitFehler.Success() {
+		return // erwartet
 	}
-	t.Fatalf("process ran with err %v, want exit status 1", err)
+	t.Fatalf("Prozess endete mit %v, erwartet Exit-Status 1", err)
 }

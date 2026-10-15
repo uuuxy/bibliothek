@@ -13,36 +13,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testKey = "test-passphrase-mind-32-zeichen-xxxxxxxx"
+const testSchluessel = "test-passphrase-mind-32-zeichen-xxxxxxxx"
 
 func umgebung(werte map[string]string) func(string) string {
 	return func(name string) string { return werte[name] }
 }
 
-func gzipData(t *testing.T, data []byte) []byte {
+func gzipDaten(t *testing.T, daten []byte) []byte {
 	t.Helper()
-	var buf bytes.Buffer
-	w := gzip.NewWriter(&buf)
-	_, err := w.Write(data)
+	var puffer bytes.Buffer
+	w := gzip.NewWriter(&puffer)
+	_, err := w.Write(daten)
 	require.NoError(t, err)
 	require.NoError(t, w.Close())
-	return buf.Bytes()
+	return puffer.Bytes()
 }
 
-// TestRun_RundwegUeberDenEchtenRestore ist das eigentliche Gate: Was dieses Werkzeug
-// ausgibt, muss der dokumentierte Wiederherstellungsweg (cmd/restore-backup:
-// entschlüsseln, dann gunzip) wieder in genau den Dump verwandeln, der hineinging.
-// Schlägt er fehl, sind die Backups aus update.sh und scripts/backup.sh nicht
-// wiederherstellbar — und der Klartext, den sie ersetzen, ist dann bereits gelöscht.
-func TestRun_RundwegUeberDenEchtenRestore(t *testing.T) {
+// Der eigentliche Test: Was das Werkzeug ausgibt, muss der beschriebene Weg der
+// Wiederherstellung (cmd/restore-backup: entschlüsseln, dann gunzip) wieder in genau den Dump
+// verwandeln, der hineinging. Gelingt das nicht, lassen sich die Sicherungen aus update.sh und
+// scripts/backup.sh nicht wiederherstellen, und der Klartext, den sie ersetzen, ist dann schon
+// gelöscht.
+func TestFuehreAus_RundwegUeberDenEchtenRestore(t *testing.T) {
 	sql := []byte("-- pg_dump\nCREATE TABLE schueler (id uuid PRIMARY KEY);\n")
 
 	var aus, fehler bytes.Buffer
-	err := run(nil, bytes.NewReader(gzipData(t, sql)), &aus, &fehler,
-		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testKey}))
+	err := fuehreAus(nil, bytes.NewReader(gzipDaten(t, sql)), &aus, &fehler,
+		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testSchluessel}))
 	require.NoError(t, err)
 
-	komprimiert, err := backupkrypto.Entschluessele(testKey, aus.Bytes())
+	komprimiert, err := backupkrypto.Entschluessele(testSchluessel, aus.Bytes())
 	require.NoError(t, err)
 	leser, err := gzip.NewReader(bytes.NewReader(komprimiert))
 	require.NoError(t, err)
@@ -51,79 +51,78 @@ func TestRun_RundwegUeberDenEchtenRestore(t *testing.T) {
 	assert.Equal(t, sql, wieder)
 }
 
-// TestRun_AusgabeTraegtKeinenKlartext hält den Zweck des ganzen Befundes fest (A5): In
-// der erzeugten Datei darf kein Schülername mehr lesbar stehen.
-func TestRun_AusgabeTraegtKeinenKlartext(t *testing.T) {
+// Der Zweck des Werkzeugs: In der erzeugten Datei darf kein Name eines Schülers mehr lesbar
+// stehen.
+func TestFuehreAus_AusgabeTraegtKeinenKlartext(t *testing.T) {
 	sql := []byte("INSERT INTO schueler VALUES ('Erika Mustermann', 'Musterweg 3');")
 
 	var aus, fehler bytes.Buffer
-	require.NoError(t, run(nil, bytes.NewReader(gzipData(t, sql)), &aus, &fehler,
-		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testKey})))
+	require.NoError(t, fuehreAus(nil, bytes.NewReader(gzipDaten(t, sql)), &aus, &fehler,
+		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testSchluessel})))
 
 	assert.True(t, backupkrypto.IstScryptFormat(aus.Bytes()), "Ausgabe trägt nicht die BKDF-Kennung")
 	assert.NotContains(t, aus.String(), "Mustermann")
 	assert.NotContains(t, aus.String(), "Musterweg")
 }
 
-func TestRun_OhneSchluessel(t *testing.T) {
+func TestFuehreAus_OhneSchluessel(t *testing.T) {
 	var aus, fehler bytes.Buffer
-	err := run(nil, bytes.NewReader(gzipData(t, []byte("x"))), &aus, &fehler, umgebung(nil))
+	err := fuehreAus(nil, bytes.NewReader(gzipDaten(t, []byte("x"))), &aus, &fehler, umgebung(nil))
 	assert.ErrorContains(t, err, "BACKUP_ENCRYPTION_KEY nicht gesetzt")
 	assert.Empty(t, aus.Bytes(), "ohne Schlüssel darf nichts ausgegeben werden")
 }
 
-// TestRun_KurzerSchluesselWarntUndArbeitet: Der Aufrufer ist ein Deploy-Skript. Ein
-// Abbruch nähme ihm die Sicherung ganz — deshalb warnen, nicht verweigern (wie
-// jobs/backup.go).
-func TestRun_KurzerSchluesselWarntUndArbeitet(t *testing.T) {
+// Der Aufrufer ist ein Skript des Deploys. Ein Abbruch nähme ihm die Sicherung ganz; deshalb
+// warnen, nicht verweigern (wie jobs/backup.go).
+func TestFuehreAus_KurzerSchluesselWarntUndArbeitet(t *testing.T) {
 	var aus, fehler bytes.Buffer
-	err := run(nil, bytes.NewReader(gzipData(t, []byte("x"))), &aus, &fehler,
+	err := fuehreAus(nil, bytes.NewReader(gzipDaten(t, []byte("x"))), &aus, &fehler,
 		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": "kurz"}))
 	require.NoError(t, err)
 	assert.NotEmpty(t, aus.Bytes())
 	assert.Contains(t, fehler.String(), "WARNUNG")
 }
 
-func TestRun_LeereEingabe(t *testing.T) {
+func TestFuehreAus_LeereEingabe(t *testing.T) {
 	var aus, fehler bytes.Buffer
-	err := run(nil, strings.NewReader(""), &aus, &fehler,
-		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testKey}))
+	err := fuehreAus(nil, strings.NewReader(""), &aus, &fehler,
+		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testSchluessel}))
 	assert.ErrorContains(t, err, "leere eingabe")
 	assert.Empty(t, aus.Bytes())
 }
 
-// TestRun_KeinGzip und TestRun_AbgeschnittenesGzip decken den stillen Ausfall ab, den
-// `pipefail` in den Skripten schon einmal abgestellt hat: ein abgebrochener pg_dump
-// darf nicht als Backup durchgehen.
-func TestRun_KeinGzip(t *testing.T) {
+// TestFuehreAus_KeinGzip und TestFuehreAus_AbgeschnittenesGzip decken den stummen Ausfall ab,
+// gegen den die Skripte `pipefail` setzen: Ein abgebrochener pg_dump darf nicht als Sicherung
+// durchgehen.
+func TestFuehreAus_KeinGzip(t *testing.T) {
 	var aus, fehler bytes.Buffer
-	err := run(nil, strings.NewReader("pg_dump: error: connection failed"), &aus, &fehler,
-		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testKey}))
+	err := fuehreAus(nil, strings.NewReader("pg_dump: error: connection failed"), &aus, &fehler,
+		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testSchluessel}))
 	assert.ErrorContains(t, err, "kein gültiger gzip-Strom")
 	assert.Empty(t, aus.Bytes())
 }
 
-func TestRun_AbgeschnittenesGzip(t *testing.T) {
-	voll := gzipData(t, bytes.Repeat([]byte("CREATE TABLE t;\n"), 100))
+func TestFuehreAus_AbgeschnittenesGzip(t *testing.T) {
+	voll := gzipDaten(t, bytes.Repeat([]byte("CREATE TABLE t;\n"), 100))
 
 	var aus, fehler bytes.Buffer
-	err := run(nil, bytes.NewReader(voll[:len(voll)-8]), &aus, &fehler,
-		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testKey}))
+	err := fuehreAus(nil, bytes.NewReader(voll[:len(voll)-8]), &aus, &fehler,
+		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testSchluessel}))
 	assert.ErrorContains(t, err, "beschädigter gzip-Strom")
 	assert.Empty(t, aus.Bytes())
 }
 
-func TestRun_LeererDumpInGueltigemGzip(t *testing.T) {
+func TestFuehreAus_LeererDumpInGueltigemGzip(t *testing.T) {
 	var aus, fehler bytes.Buffer
-	err := run(nil, bytes.NewReader(gzipData(t, nil)), &aus, &fehler,
-		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testKey}))
+	err := fuehreAus(nil, bytes.NewReader(gzipDaten(t, nil)), &aus, &fehler,
+		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testSchluessel}))
 	assert.ErrorContains(t, err, "leeren Dump")
 	assert.Empty(t, aus.Bytes())
 }
 
-func TestRun_ArgumenteWerdenAbgelehnt(t *testing.T) {
+func TestFuehreAus_ArgumenteWerdenAbgelehnt(t *testing.T) {
 	var aus, fehler bytes.Buffer
-	err := run([]string{"datei.sql.gz"}, bytes.NewReader(gzipData(t, []byte("x"))), &aus, &fehler,
-		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testKey}))
+	err := fuehreAus([]string{"datei.sql.gz"}, bytes.NewReader(gzipDaten(t, []byte("x"))), &aus, &fehler,
+		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testSchluessel}))
 	assert.ErrorContains(t, err, "keine Argumente")
 }

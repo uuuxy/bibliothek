@@ -18,42 +18,45 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Config represents values extracted from .env
-type Config struct {
-	Port      string
-	JWTSecret string
+// konfig hält die Werte aus der .env.
+type konfig struct {
+	port         string
+	jwtGeheimnis string
 }
 
-func loadConfig() Config {
-	data, err := os.ReadFile("../../.env")
+// leseKonfig liest PORT und JWT_SECRET aus der .env des Projekts oder, ersatzweise, des
+// Arbeitsverzeichnisses.
+func leseKonfig() konfig {
+	inhalt, err := os.ReadFile("../../.env")
 	if err != nil {
-		data, err = os.ReadFile(".env")
+		inhalt, err = os.ReadFile(".env")
 		if err != nil {
 			log.Fatalf("Could not read .env file: %v", err)
 		}
 	}
 
-	cfg := Config{Port: "8080", JWTSecret: ""}
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "PORT=") {
-			cfg.Port = strings.TrimPrefix(line, "PORT=")
-		} else if strings.HasPrefix(line, "JWT_SECRET=") {
-			cfg.JWTSecret = strings.TrimPrefix(line, "JWT_SECRET=")
+	konfigWerte := konfig{port: "8080", jwtGeheimnis: ""}
+	zeilen := strings.Split(string(inhalt), "\n")
+	for _, zeile := range zeilen {
+		zeile = strings.TrimSpace(zeile)
+		if strings.HasPrefix(zeile, "PORT=") {
+			konfigWerte.port = strings.TrimPrefix(zeile, "PORT=")
+		} else if strings.HasPrefix(zeile, "JWT_SECRET=") {
+			konfigWerte.jwtGeheimnis = strings.TrimPrefix(zeile, "JWT_SECRET=")
 		}
 	}
 
-	if cfg.JWTSecret == "" {
+	if konfigWerte.jwtGeheimnis == "" {
 		log.Fatalf("JWT_SECRET not found in .env")
 	}
 
-	return cfg
+	return konfigWerte
 }
 
-func generateAdminToken(secret string) string {
+// erzeugeAdminToken stellt ein Token für das Admin-Konto der Testdaten aus, eine Stunde gültig.
+func erzeugeAdminToken(geheimnis string) string {
 	claims := jwt.MapClaims{
-		// Hardcoded admin ID from seed.sql
+		// Die Kennung des Admin-Kontos aus seed.sql.
 		"user_id":    "00000000-0000-0000-0000-000000000001",
 		"barcode_id": "admin",
 		"rolle":      "ADMIN",
@@ -64,64 +67,66 @@ func generateAdminToken(secret string) string {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString([]byte(secret))
+	signiert, err := token.SignedString([]byte(geheimnis))
 	if err != nil {
 		log.Fatalf("Failed to sign token: %v", err)
 	}
 
-	return signedToken
+	return signiert
 }
 
-type ActionRequest struct {
-	Query         string  `json:"query"`
-	ActiveLeserID *string `json:"active_leser_id,omitempty"`
+// aktionsAnfrage ist der Rumpf eines Scans an der Theke (POST /api/action).
+type aktionsAnfrage struct {
+	Suchtext       string  `json:"query"`
+	AktiverLeserID *string `json:"active_leser_id,omitempty"`
 }
 
-// stresstestRunner bündelt die geteilte Concurrency-State: die Start-Barriere (damit
-// alle Worker exakt gleichzeitig feuern) und die gesammelten Status-Code-Zähler.
-type stresstestRunner struct {
-	baseURL     string
-	jsonData    []byte
-	token       string
-	numRequests int
+// lastlauf bündelt den geteilten Zustand der Goroutinen: die Barriere für den Start (damit alle
+// Anfragen genau gleichzeitig losgehen) und die gesammelten Zähler je Status.
+type lastlauf struct {
+	zielURL string
+	rumpf   []byte
+	token   string
+	anzahl  int
 
-	wg        sync.WaitGroup
-	startMu   sync.Mutex
-	startCond *sync.Cond
-	readyWg   sync.WaitGroup
-	start     bool
+	alle        sync.WaitGroup
+	startSperre sync.Mutex
+	startSignal *sync.Cond
+	bereit      sync.WaitGroup
+	start       bool
 
-	resultsMu    sync.Mutex
-	statusCounts map[int]int
+	ergebnisSperre sync.Mutex
+	jeStatus       map[int]int
 }
 
-func newStresstestRunner(baseURL, token string, jsonData []byte, numRequests int) *stresstestRunner {
-	r := &stresstestRunner{
-		baseURL:      baseURL,
-		token:        token,
-		jsonData:     jsonData,
-		numRequests:  numRequests,
-		statusCounts: make(map[int]int),
+// newLastlauf baut den Lauf und meldet die Anfragen bei der Startbarriere an.
+func newLastlauf(zielURL, token string, rumpf []byte, anzahl int) *lastlauf {
+	r := &lastlauf{
+		zielURL:  zielURL,
+		token:    token,
+		rumpf:    rumpf,
+		anzahl:   anzahl,
+		jeStatus: make(map[int]int),
 	}
-	r.startCond = sync.NewCond(&r.startMu)
-	r.readyWg.Add(numRequests)
+	r.startSignal = sync.NewCond(&r.startSperre)
+	r.bereit.Add(anzahl)
 	return r
 }
 
-// baueRequest erstellt den POST-Request inkl. Header sowie CSRF- und Session-Cookie.
-func (r *stresstestRunner) baueRequest() (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodPost, r.baseURL, bytes.NewReader(r.jsonData))
+// baueAnfrage baut die Anfrage POST mit Kopfzeilen und den Cookies für CSRF und Sitzung.
+func (r *lastlauf) baueAnfrage() (*http.Request, error) {
+	req, err := http.NewRequest(http.MethodPost, r.zielURL, bytes.NewReader(r.rumpf))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// Dummy CSRF Token protection bypass
+	// Derselbe Wert in Kopfzeile und Cookie besteht die Prüfung auf CSRF.
 	csrfToken := "dummy-csrf-token-12345"
 	req.Header.Set("X-CSRF-Token", csrfToken)
 
-	// Session cookie
+	// Das Cookie der Sitzung.
 	req.AddCookie(&http.Cookie{
 		Name:  "session_token",
 		Value: r.token,
@@ -133,88 +138,87 @@ func (r *stresstestRunner) baueRequest() (*http.Request, error) {
 	return req, nil
 }
 
-// wartAufStart meldet den Worker als bereit und blockiert, bis das Startsignal kommt.
-func (r *stresstestRunner) wartAufStart() {
-	r.readyWg.Done()
+// warteAufStart meldet die Goroutine als bereit und wartet, bis das Startsignal kommt.
+func (r *lastlauf) warteAufStart() {
+	r.bereit.Done()
 
-	r.startMu.Lock()
+	r.startSperre.Lock()
 	for !r.start {
-		r.startCond.Wait()
+		r.startSignal.Wait()
 	}
-	r.startMu.Unlock()
+	r.startSperre.Unlock()
 }
 
-// erfasseErgebnis feuert den Request und protokolliert den Status-Code bzw. Netzwerkfehler.
-func (r *stresstestRunner) erfasseErgebnis(client *http.Client, req *http.Request) {
-	resp, err := client.Do(req)
+// erfasseErgebnis schickt die Anfrage und zählt den Status oder den Fehler des Netzes.
+func (r *lastlauf) erfasseErgebnis(client *http.Client, req *http.Request) {
+	antwort, err := client.Do(req)
 	if err != nil {
-		// network error → statusCode bleibt 0
-
-		// Log the first error for debugging
-		r.resultsMu.Lock()
-		if len(r.statusCounts) == 0 {
+		// Fehler des Netzes: Der Status bleibt 0. Der erste Fehler wird ausgegeben.
+		r.ergebnisSperre.Lock()
+		if len(r.jeStatus) == 0 {
 			fmt.Printf("\n[DEBUG] Network error details: %v\n", err)
 		}
-		r.statusCounts[0]++
-		r.resultsMu.Unlock()
+		r.jeStatus[0]++
+		r.ergebnisSperre.Unlock()
 		return
 	}
-	statusCode := resp.StatusCode
-	_, _ = io.Copy(io.Discard, resp.Body) //nolint:errcheck
-	_ = resp.Body.Close()                 //nolint:errcheck
+	status := antwort.StatusCode
+	_, _ = io.Copy(io.Discard, antwort.Body) //nolint:errcheck
+	_ = antwort.Body.Close()                 //nolint:errcheck
 
-	r.resultsMu.Lock()
-	r.statusCounts[statusCode]++
-	r.resultsMu.Unlock()
+	r.ergebnisSperre.Lock()
+	r.jeStatus[status]++
+	r.ergebnisSperre.Unlock()
 }
 
-// fuehreWorkerAus ist der Rumpf einer Worker-Goroutine: Request bauen, auf das
-// gemeinsame Startsignal warten und dann feuern.
-func (r *stresstestRunner) fuehreWorkerAus() {
-	defer r.wg.Done()
+// sendeEineAnfrage ist der Rumpf einer Goroutine: Anfrage bauen, auf das gemeinsame Startsignal
+// warten und dann schicken.
+func (r *lastlauf) sendeEineAnfrage() {
+	defer r.alle.Done()
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
-		// Wir schalten HTTP/2 aus und zwingen das Programm neue Connections aufzubauen,
-		// um die Parallelität bei manchen OS/Go-Versionen sicherzustellen.
+		// Jede Goroutine hat ihren eigenen Client mit eigenem Transport, damit die Anfragen über
+		// eigene Verbindungen und wirklich gleichzeitig laufen.
 		Transport: &http.Transport{
 			MaxIdleConnsPerHost: 100,
 		},
 	}
 
-	req, err := r.baueRequest()
+	req, err := r.baueAnfrage()
 	if err != nil {
-		r.resultsMu.Lock()
-		r.statusCounts[-1]++ // -1 means request creation failed
-		r.resultsMu.Unlock()
+		r.ergebnisSperre.Lock()
+		r.jeStatus[-1]++ // -1: Die Anfrage ließ sich nicht bauen.
+		r.ergebnisSperre.Unlock()
 		return
 	}
 
-	r.wartAufStart()
+	r.warteAufStart()
 	r.erfasseErgebnis(client, req)
 }
 
-// starteAlle startet numRequests Worker-Goroutinen (die zunächst an der Barriere warten).
-func (r *stresstestRunner) starteAlle() {
-	r.wg.Add(r.numRequests)
-	for i := 0; i < r.numRequests; i++ {
-		go r.fuehreWorkerAus()
+// starteAlle startet anzahl Goroutinen, die zunächst an der Barriere warten.
+func (r *lastlauf) starteAlle() {
+	r.alle.Add(r.anzahl)
+	for i := 0; i < r.anzahl; i++ {
+		go r.sendeEineAnfrage()
 	}
 }
 
-// gibStartsignal wartet, bis alle Worker bereitstehen, und weckt sie gleichzeitig.
-func (r *stresstestRunner) gibStartsignal() {
-	r.readyWg.Wait()
+// gibStartsignal wartet, bis alle Goroutinen bereitstehen, und weckt sie gleichzeitig.
+func (r *lastlauf) gibStartsignal() {
+	r.bereit.Wait()
 
-	r.startMu.Lock()
+	r.startSperre.Lock()
 	r.start = true
-	r.startCond.Broadcast()
-	r.startMu.Unlock()
+	r.startSignal.Broadcast()
+	r.startSperre.Unlock()
 }
 
-func (r *stresstestRunner) druckeErgebnisse() {
+// druckeErgebnisse gibt die Zahl der Antworten je Status aus.
+func (r *lastlauf) druckeErgebnisse() {
 	fmt.Println("\n--- Stress Test Results ---")
-	for code, count := range r.statusCounts {
+	for code, count := range r.jeStatus {
 		if code == 0 {
 			fmt.Printf("%dx Network Error (Failed to execute request)\n", count)
 		} else {
@@ -225,38 +229,38 @@ func (r *stresstestRunner) druckeErgebnisse() {
 }
 
 func main() {
-	portFlag := flag.String("port", "", "Port to run the stress test against (overrides .env)")
+	portSchalter := flag.String("port", "", "Port to run the stress test against (overrides .env)")
 	flag.Parse()
 
-	cfg := loadConfig()
-	port := cfg.Port
-	if *portFlag != "" {
-		port = *portFlag
+	konfigWerte := leseKonfig()
+	port := konfigWerte.port
+	if *portSchalter != "" {
+		port = *portSchalter
 	}
 
-	token := generateAdminToken(cfg.JWTSecret)
-	baseURL := fmt.Sprintf("http://127.0.0.1:%s/api/action", port)
+	token := erzeugeAdminToken(konfigWerte.jwtGeheimnis)
+	zielURL := fmt.Sprintf("http://127.0.0.1:%s/api/action", port)
 
-	// Hardcoded test data from seed.sql
-	studentID := "00000000-0000-0000-0000-000000000003" // Max Mustermann
-	reqBody := ActionRequest{
-		Query:         "B-200",
-		ActiveLeserID: &studentID,
+	// Testdaten aus seed.sql.
+	leserID := "00000000-0000-0000-0000-000000000003" // Max Mustermann
+	anfrageDaten := aktionsAnfrage{
+		Suchtext:       "B-200",
+		AktiverLeserID: &leserID,
 	}
 
-	jsonData, err := json.Marshal(reqBody)
+	rumpf, err := json.Marshal(anfrageDaten)
 	if err != nil {
 		log.Fatalf("Failed to marshal JSON: %v", err)
 	}
 
-	const numRequests = 50
-	runner := newStresstestRunner(baseURL, token, jsonData, numRequests)
+	const anzahl = 50
+	lauf := newLastlauf(zielURL, token, rumpf, anzahl)
 
-	fmt.Printf("Starting stress test: 50 concurrent requests to %s\n", baseURL)
+	fmt.Printf("Starting stress test: 50 concurrent requests to %s\n", zielURL)
 
-	runner.starteAlle()
-	runner.gibStartsignal()
-	runner.wg.Wait()
+	lauf.starteAlle()
+	lauf.gibStartsignal()
+	lauf.alle.Wait()
 
-	runner.druckeErgebnisse()
+	lauf.druckeErgebnisse()
 }

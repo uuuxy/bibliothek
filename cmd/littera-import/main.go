@@ -1,8 +1,8 @@
-// littera-import importiert ein Littera-MAB2-Katalogisat (XML) über denselben
-// Service-Pfad wie der API-Endpunkt POST /api/import/littera: Titel werden über
-// ISBN oder Titel gegen den Bestand gematcht (keine Dubletten bei Re-Imports),
-// Signaturen landen in der echten Spalte buecher_titel.signatur, LMF-Bestand
-// wird per "LMF-"-Präfix geflaggt.
+// Command littera-import übernimmt ein Katalogisat aus Littera (MAB2 als XML) über denselben Weg
+// im Dienst wie die Tür POST /api/import/littera: Titel werden über ISBN oder Titel dem Bestand
+// zugeordnet (keine Dubletten bei wiederholtem Import), Signaturen landen in der Spalte
+// buecher_titel.signatur, und den Bestand der Lernmittelfreiheit erkennt der Import an der
+// Kennung LMF und setzt ist_lernmittel.
 //
 // Aufruf: go run ./cmd/littera-import -file katalogisat.xml [-db postgres://…]
 package main
@@ -24,60 +24,59 @@ import (
 )
 
 func main() {
-	if err := run(os.Args[1:], os.Getenv, os.Stdout); err != nil {
+	if err := fuehreAus(os.Args[1:], os.Getenv, os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "littera-import: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-// run ist der ganze Ablauf, mit Argumenten, Umgebung und Ausgabe als Parameter — so
-// prüft ihn der Test ohne echte Umgebungsvariablen (wie encrypt-backup). Bis zum
-// 21.09.2026 stand alles in main und hatte keinen Test (OFFEN.md 5.10); das Werkzeug
-// läuft einmal gegen den echten Bestand.
+// fuehreAus ist der ganze Ablauf, mit Argumenten, Umgebung und Ausgabe als Parameter; so prüft
+// ihn der Test ohne echte Umgebungsvariablen (wie encrypt-backup). Das Werkzeug läuft einmal
+// gegen den echten Bestand.
 //
-// Die Datei wird VOR der Datenbankverbindung geöffnet: Ein Tippfehler im Pfad soll
+// Die Datei wird vor der Verbindung zur Datenbank geöffnet: Ein Tippfehler im Pfad soll
 // scheitern, bevor irgendetwas eine Verbindung aufbaut.
-func run(args []string, getenv func(string) string, stdout io.Writer) error {
-	flags := flag.NewFlagSet("littera-import", flag.ContinueOnError)
-	flags.SetOutput(stdout)
-	xmlFile := flags.String("file", "", "Pfad zur Katalogisat-XML-Datei")
-	dbConn := flags.String("db", getenv("DATABASE_URL"), "Datenbank-URL")
-	if err := flags.Parse(args); err != nil {
+func fuehreAus(argumente []string, umgebung func(string) string, stdout io.Writer) error {
+	schalter := flag.NewFlagSet("littera-import", flag.ContinueOnError)
+	schalter.SetOutput(stdout)
+	xmlDatei := schalter.String("file", "", "Pfad zur Katalogisat-XML-Datei")
+	datenbank := schalter.String("db", umgebung("DATABASE_URL"), "Datenbank-URL")
+	if err := schalter.Parse(argumente); err != nil {
 		return err
 	}
-	if *xmlFile == "" {
+	if *xmlDatei == "" {
 		return errors.New("bitte XML-Datei mit -file angeben")
 	}
-	if *dbConn == "" {
+	if *datenbank == "" {
 		return errors.New("keine Datenbank: -db angeben oder DATABASE_URL setzen")
 	}
 
-	file, err := os.Open(*xmlFile) // #nosec G304 -- Pfad kommt vom Aufrufer auf der Kommandozeile
+	datei, err := os.Open(*xmlDatei) // #nosec G304 -- Pfad kommt vom Aufrufer auf der Kommandozeile
 	if err != nil {
 		return fmt.Errorf("XML-Datei konnte nicht geöffnet werden: %w", err)
 	}
-	defer func() { _ = file.Close() }() //nolint:errcheck
+	defer func() { _ = datei.Close() }() //nolint:errcheck
 
-	logger := slog.New(slog.NewJSONHandler(stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	slog.SetDefault(logger)
+	logAusgabe := slog.New(slog.NewJSONHandler(stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logAusgabe)
 
-	// Der Import läuft als EIN gepipelineter Batch in einer Transaktion —
-	// gegen eine nicht-lokale DB braucht das bei ~15.000 Titeln Minuten, nicht Sekunden.
+	// Der Import läuft als ein Batch in einer Transaktion; gegen eine entfernte Datenbank braucht
+	// das bei etwa 15.000 Titeln Minuten, nicht Sekunden.
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, *dbConn)
+	pool, err := pgxpool.New(ctx, *datenbank)
 	if err != nil {
 		return fmt.Errorf("datenbankverbindung fehlgeschlagen: %w", err)
 	}
 	defer pool.Close()
 
-	importSvc := service.NewImportDienst(repository.NewKatalogAbfragen(pool), pool)
-	count, err := importSvc.ImportiereLitteraXML(ctx, file)
+	importDienst := service.NewImportDienst(repository.NewKatalogAbfragen(pool), pool)
+	anzahl, err := importDienst.ImportiereLitteraXML(ctx, datei)
 	if err != nil {
 		return fmt.Errorf("import fehlgeschlagen: %w", err)
 	}
 
-	logger.Info("Import abgeschlossen", "verarbeitete_titel", count)
+	logAusgabe.Info("Import abgeschlossen", "verarbeitete_titel", anzahl)
 	return nil
 }

@@ -1,8 +1,7 @@
 package main
 
-// Das Seed-Werkzeug läuft gegen eine echte Datenbank und hatte keinen Test (OFFEN.md 5.10).
-// Geprüft wird derselbe Lauf, nur klein — mit einem Umfang, der kein Vielfaches der
-// Portionsgröße ist, und zweimal hintereinander.
+// Das Werkzeug läuft gegen eine echte Datenbank. Geprüft wird derselbe Lauf, nur klein, mit
+// einem Umfang, der kein Vielfaches der Portion ist, und zweimal hintereinander.
 
 import (
 	"bytes"
@@ -14,7 +13,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-func raeumeSeedAuf(t *testing.T, pool *pgxpool.Pool) {
+func raeumeTestdatenAuf(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 	for _, sql := range []string{
@@ -39,17 +38,17 @@ func zaehle(t *testing.T, pool *pgxpool.Pool, sql string) int {
 	return n
 }
 
-// 25 Exemplare in Portionen zu 10: Bis zum 22.09.2026 lief die Schleife drei volle
-// Portionen und legte 30 an — beim vollen Umfang (80.000 / 10.000) fiel das nie auf.
-func TestSeed_LegtGenauDenUmfangAn(t *testing.T) {
+// 25 Exemplare in Portionen zu 10: Liefe die Schleife drei volle Portionen, entstünden 30;
+// beim vollen Umfang (80.000 / 10.000) fiele das nie auf.
+func TestFuelle_LegtGenauDenUmfangAn(t *testing.T) {
 	pool := pgtest.Pool(t)
-	raeumeSeedAuf(t, pool)
-	t.Cleanup(func() { raeumeSeedAuf(t, pool) })
+	raeumeTestdatenAuf(t, pool)
+	t.Cleanup(func() { raeumeTestdatenAuf(t, pool) })
 
-	var out bytes.Buffer
-	adminID, err := seed(context.Background(), pool, Umfang{Schueler: 7, Titel: 4, Exemplare: 25, Chunk: 10}, &out)
+	var ausgabe bytes.Buffer
+	adminID, err := fuelle(context.Background(), pool, Umfang{Schueler: 7, Titel: 4, Exemplare: 25, Portion: 10}, &ausgabe)
 	if err != nil {
-		t.Fatalf("seed: %v\n%s", err, out.String())
+		t.Fatalf("seed: %v\n%s", err, ausgabe.String())
 	}
 
 	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id ~ '^S[0-9]{6}$' AND deleted_at IS NULL`); n != 7 {
@@ -61,7 +60,7 @@ func TestSeed_LegtGenauDenUmfangAn(t *testing.T) {
 	if n := zaehle(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE barcode_id ~ '^B[0-9]{7}$'`); n != 25 {
 		t.Errorf("%d Exemplare, erwartet 25", n)
 	}
-	// Jedes Exemplar hängt an einem der vier Seed-Titel.
+	// Jedes Exemplar hängt an einem der vier Titel des Laufs.
 	if n := zaehle(t, pool, `SELECT count(*) FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.barcode_id ~ '^B[0-9]{7}$' AND t.isbn NOT LIKE 'ISBN-%'`); n != 0 {
 		t.Errorf("%d Exemplare hängen an fremden Titeln", n)
@@ -78,23 +77,21 @@ func TestSeed_LegtGenauDenUmfangAn(t *testing.T) {
 	}
 }
 
-// Der zweite Lauf ist derselbe Lauf: nichts doppelt, und das JWT gehört zu dem Konto,
-// das es gibt. Bis zum 22.09.2026 bekam der zweite Lauf eine frische UUID, deren INSERT
-// am vorhandenen Konto abprallte (ON CONFLICT DO NOTHING) — die gedruckte Kennung
-// gehörte zu niemandem, und der Ausweis fand keine Leserzeile.
-func TestSeed_ZweiterLaufIstDerselbeAdmin(t *testing.T) {
+// Der zweite Lauf ist derselbe Lauf: nichts doppelt, und das JWT gehört zu dem Konto, das es
+// gibt.
+func TestFuelle_ZweiterLaufIstDerselbeAdmin(t *testing.T) {
 	pool := pgtest.Pool(t)
-	raeumeSeedAuf(t, pool)
-	t.Cleanup(func() { raeumeSeedAuf(t, pool) })
+	raeumeTestdatenAuf(t, pool)
+	t.Cleanup(func() { raeumeTestdatenAuf(t, pool) })
 	ctx := context.Background()
-	klein := Umfang{Schueler: 3, Titel: 2, Exemplare: 5, Chunk: 5}
+	klein := Umfang{Schueler: 3, Titel: 2, Exemplare: 5, Portion: 5}
 
-	var out bytes.Buffer
-	erster, err := seed(ctx, pool, klein, &out)
+	var ausgabe bytes.Buffer
+	erster, err := fuelle(ctx, pool, klein, &ausgabe)
 	if err != nil {
 		t.Fatalf("erster Lauf: %v", err)
 	}
-	zweiter, err := seed(ctx, pool, klein, &out)
+	zweiter, err := fuelle(ctx, pool, klein, &ausgabe)
 	if err != nil {
 		t.Fatalf("zweiter Lauf: %v", err)
 	}
