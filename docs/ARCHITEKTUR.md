@@ -1414,7 +1414,7 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     B->>A: POST /login (E-Mail, Passwort)
-    Note over A: anmeldeBremse — Schlüssel »email|ip«
+    Note over A: Anmeldung.bremse — Schlüssel »email|ip«
     A->>DB: Konto zu dieser E-Mail?
     alt Konto existiert und ist aktiv
         A->>I: IMAP-Login, implizites TLS :993, min. TLS 1.2

@@ -63,7 +63,7 @@ func Entsperren(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 			return
 		}
 
-		schluessel, ok := pruefeFehlversuche(w, antwort.Email, adresseDerAnfrage(r))
+		schluessel, ok := anmeldung.pruefeFehlversuche(w, antwort.Email, adresseDerAnfrage(r))
 		if !ok {
 			return
 		}
@@ -95,7 +95,7 @@ func pruefeEntsperrPasswort(ctx context.Context, w http.ResponseWriter, anmeldun
 		return true
 	}
 	if !errors.Is(imapFehler, errMailserverNichtErreichbar) {
-		anmeldeBremse.merkeFehlversuch(schluessel)
+		anmeldung.bremse.merkeFehlversuch(schluessel)
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 		return false
 	}
@@ -110,7 +110,7 @@ func pruefeEntsperrPasswort(ctx context.Context, w http.ResponseWriter, anmeldun
 		return false
 	}
 	if !passt {
-		anmeldeBremse.merkeFehlversuch(schluessel)
+		anmeldung.bremse.merkeFehlversuch(schluessel)
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 		return false
 	}

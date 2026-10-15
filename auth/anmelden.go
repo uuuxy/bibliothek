@@ -77,9 +77,6 @@ func (b *fehlversuchsBremse) merkeFehlversuch(schluessel string) {
 	}
 }
 
-// anmeldeBremse erlaubt fünf Fehlversuche in 15 Minuten.
-var anmeldeBremse = newFehlversuchsBremse(5, 15*time.Minute)
-
 // adresseDerAnfrage liefert die Adresse des Browsers über pkg/clientip, das den vertrauten
 // Proxy kennt. So hängt der Schlüssel der Bremse am Browser und nicht an der Adresse von Caddy.
 func adresseDerAnfrage(r *http.Request) string {
@@ -145,7 +142,7 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFun
 			return
 		}
 
-		schluessel, ok := pruefeFehlversuche(w, anfrage.Email, adresse)
+		schluessel, ok := anmeldung.pruefeFehlversuche(w, anfrage.Email, adresse)
 		if !ok {
 			return
 		}
@@ -238,9 +235,9 @@ func pruefeAnmeldedaten(w http.ResponseWriter, anfrage anmeldeAnfrage) (passwort
 // Gebremst wird je E-Mail und Adresse, nicht je Adresse allein: In einer Schule, deren Geräte
 // alle hinter einer Adresse (NAT) hängen, sperrte sonst ein einziger Mensch mit fünf
 // Fehlversuchen die ganze Schule für 15 Minuten aus.
-func pruefeFehlversuche(w http.ResponseWriter, email, adresse string) (schluessel string, ok bool) {
+func (a *Anmeldung) pruefeFehlversuche(w http.ResponseWriter, email, adresse string) (schluessel string, ok bool) {
 	schluessel = strings.ToLower(strings.TrimSpace(email)) + "|" + adresse
-	if anmeldeBremse.istGesperrt(schluessel) {
+	if a.bremse.istGesperrt(schluessel) {
 		apierrors.AntworteFehler(w, http.StatusTooManyRequests,
 			errors.New("zu viele fehlgeschlagene Login-Versuche – bitte 15 Minuten warten"))
 		return "", false
@@ -269,7 +266,7 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, errAnmeldedienstGestoert)
 			return anmeldeKonto{}, false
 		}
-		anmeldeBremse.merkeFehlversuch(schluessel)
+		a.bremse.merkeFehlversuch(schluessel)
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 		return anmeldeKonto{}, false
 	}

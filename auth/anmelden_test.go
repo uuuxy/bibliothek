@@ -152,15 +152,11 @@ func TestAnmelden_ErfolgSetztCookieUndAntwortet(t *testing.T) {
 	}
 }
 
-func TestAnmelden_BremseWeistDenSechstenVersuchAb(t *testing.T) {
-	// Die Bremse zählt je E-Mail und Adresse: fünf Fehlversuche, dann 429. Die E-Mail ist eindeutig,
-	// weil die Bremse für den ganzen Prozess gilt.
-	aktiviereIMAPAttrappe(t)
-	a, mock := newTestAnmeldung(t, 12*time.Hour)
-
-	email := fmt.Sprintf("brute-%d@schule.de", time.Now().UnixNano())
+// scheitereFuenfMal meldet fünfmal mit falschem Passwort an einem Konto an, das es nicht gibt;
+// jeder Versuch zählt als Fehlversuch.
+func scheitereFuenfMal(t *testing.T, a *Anmeldung, mock pgxmock.PgxPoolIface, email string) {
+	t.Helper()
 	rumpf := fmt.Sprintf(`{"email":%q,"password":"falsch"}`, email)
-
 	for i := 1; i <= 5; i++ {
 		mock.ExpectQuery(benutzerSelect).
 			WithArgs(email).
@@ -169,6 +165,16 @@ func TestAnmelden_BremseWeistDenSechstenVersuchAb(t *testing.T) {
 			t.Fatalf("Versuch %d: erwartet 401, bekam %d", i, rec.Code)
 		}
 	}
+}
+
+func TestAnmelden_BremseWeistDenSechstenVersuchAb(t *testing.T) {
+	// Die Bremse zählt je E-Mail und Adresse: fünf Fehlversuche, dann 429.
+	aktiviereIMAPAttrappe(t)
+	a, mock := newTestAnmeldung(t, 12*time.Hour)
+
+	const email = "brute@schule.de"
+	rumpf := fmt.Sprintf(`{"email":%q,"password":"falsch"}`, email)
+	scheitereFuenfMal(t, a, mock, email)
 
 	// Der sechste Versuch wird abgewiesen, ohne dass die Datenbank noch gefragt wird.
 	rec := rufeAnmelden(t, a, mock, rumpf)
@@ -177,6 +183,25 @@ func TestAnmelden_BremseWeistDenSechstenVersuchAb(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen (6. Versuch hätte die DB nicht erreichen dürfen): %v", err)
+	}
+}
+
+// Die Bremse gehört der Anmeldung, die der Start einmal anlegt, nicht dem Paket: Eine zweite
+// Anmeldung beginnt bei null. Teilten sich beide einen Zähler, hinge das Ergebnis eines Tests
+// davon ab, welcher Test vor ihm dieselbe E-Mail gesperrt hat.
+func TestAnmelden_BremseGehoertDerAnmeldung(t *testing.T) {
+	aktiviereIMAPAttrappe(t)
+	const email = "geteilt@schule.de"
+	erste, ersterMock := newTestAnmeldung(t, 12*time.Hour)
+	scheitereFuenfMal(t, erste, ersterMock, email)
+
+	zweite, zweiterMock := newTestAnmeldung(t, 12*time.Hour)
+	zweiterMock.ExpectQuery(benutzerSelect).
+		WithArgs(email).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
+	rec := rufeAnmelden(t, zweite, zweiterMock, fmt.Sprintf(`{"email":%q,"password":"falsch"}`, email))
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("Anmelden an der zweiten Anmeldung: Status %d, erwartet 401; die Fehlversuche der ersten zählen dort nicht", rec.Code)
 	}
 }
 

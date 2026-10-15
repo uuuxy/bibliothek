@@ -83,6 +83,9 @@ type Anmeldung struct {
 	// imapTLS ändert die Einstellungen für TLS zum Mailserver; im Betrieb nil. Ein Test lässt so
 	// seinen Mailserver mit selbst signiertem Zertifikat zu.
 	imapTLS func(*tls.Config)
+	// bremse zählt die Fehlversuche je E-Mail und Adresse für Anmelden und Entsperren: fünf in
+	// 15 Minuten.
+	bremse *fehlversuchsBremse
 }
 
 // NewAnmeldung baut die Anmeldung mit dem Geheimnis für die Signatur und der Laufzeit der
@@ -97,6 +100,7 @@ func NewAnmeldung(geheimnis string, pool Datenbank, laufzeit time.Duration) (*An
 		Sperrliste: newSperrliste(pool),
 		Sitzungen:  newSitzungen(pool, []byte(geheimnis)),
 		pool:       pool,
+		bremse:     newFehlversuchsBremse(5, 15*time.Minute),
 	}, nil
 }
 
