@@ -13,11 +13,10 @@ import (
 	"bibliothek/pkg/closeutil"
 )
 
-// Diese Tests laufen gegen einen ECHTEN httptest-Server, nicht gegen einen
-// ResponseRecorder — und zwar zwingend: http.ResponseController.SetReadDeadline
-// braucht die darunterliegende Verbindung. Ein Recorder kennt sie nicht und meldet
-// ErrNotSupported; die Middleware liefe grün durch, ohne je eine Frist gesetzt zu
-// haben. Genau die Sorte Gate, die man sonst für wirksam hält.
+// Diese Tests laufen gegen einen echten httptest-Server, nicht gegen einen ResponseRecorder, und
+// zwar zwingend: http.ResponseController.SetReadDeadline braucht die Verbindung darunter. Ein
+// Recorder kennt sie nicht und meldet ErrNotSupported; die Middleware liefe grün durch, ohne je
+// eine Frist gesetzt zu haben, und der Test hielte eine Prüfung für wirksam, die nie greift.
 
 // langsamerRumpf schickt Kopfzeilen mit angekündigter Länge, dann ein erstes Byte,
 // wartet und schickt den Rest. Das ist der Slowloris-Fall: formal korrekt, beliebig
@@ -78,9 +77,9 @@ func baueLesefristServer(t *testing.T, readTimeout time.Duration) *httptest.Serv
 	return srv
 }
 
-// Der Kern des Ganzen: Ein gewöhnlicher Endpunkt lässt sich nicht beliebig lange
-// hinhalten. Vor der Änderung stand am Server nur ReadHeaderTimeout — die Kopfzeilen
-// waren begrenzt, der Rumpf nicht, und diese Verbindung wäre offen geblieben.
+// Der Kern des Ganzen: Ein gewöhnlicher Endpunkt lässt sich nicht beliebig lange hinhalten.
+// Stünde am Server nur ReadHeaderTimeout, wären die Kopfzeilen begrenzt, der Rumpf nicht, und
+// diese Verbindung bliebe offen.
 func TestLesefrist_LangsamerRumpfWirdAbgeschnitten(t *testing.T) {
 	srv := baueLesefristServer(t, 300*time.Millisecond)
 
@@ -90,9 +89,9 @@ func TestLesefrist_LangsamerRumpfWirdAbgeschnitten(t *testing.T) {
 	}
 }
 
-// Die Gegenprobe, ohne die die erste Prüfung wertlos wäre: Für die Import-Endpunkte
-// MUSS derselbe langsame Rumpf durchgehen. Sonst hätte man die Slowloris-Bremse mit
-// einem Abbruch mitten im Littera-Import (100 MB über eine Schulleitung) bezahlt.
+// Die Gegenprobe, ohne die die erste Prüfung wertlos wäre: Für die Import-Endpunkte muss
+// derselbe langsame Rumpf durchgehen. Sonst hätte man die Bremse gegen Slowloris mit einem
+// Abbruch mitten im Littera-Import bezahlt (100 MB über die Leitung einer Schule).
 func TestLesefrist_ImportpfadDarfLangsamSein(t *testing.T) {
 	srv := baueLesefristServer(t, 300*time.Millisecond)
 
@@ -105,15 +104,14 @@ func TestLesefrist_ImportpfadDarfLangsamSein(t *testing.T) {
 	}
 }
 
-// Der Fall, der bei dieser Änderung am teuersten schiefgehen konnte: Eine Antwort, die
-// länger dauert als ReadTimeout, darf NICHT abgeschnitten werden.
+// Der teuerste Fehler an dieser Stelle: Eine Antwort, die länger dauert als ReadTimeout, darf
+// nicht abgeschnitten werden.
 //
-// Genau daran hängt der SSE-Stream (/events) — eine Antwort, die definitionsgemäß nie
-// endet. Wäre die Lesefrist auch eine Schreibfrist, verlöre die Oberfläche reihum ihre
-// Live-Aktualisierung, und zwar ohne Fehler: Der Browser baut die Verbindung neu auf,
-// es fällt nur als "manchmal aktualisiert es nicht" auf. Deshalb steht am Server
-// bewusst KEIN WriteTimeout (siehe main.go) — dieser Test hält fest, dass ReadTimeout
-// allein das nicht heimlich nachholt.
+// Genau daran hängt der SSE-Stream (/events), eine Antwort, die definitionsgemäß nie endet. Wäre
+// die Lesefrist auch eine Schreibfrist, verlöre die Oberfläche reihum ihre Aktualisierung, und
+// zwar ohne Fehler: Der Browser baut die Verbindung neu auf, es fällt nur als „manchmal
+// aktualisiert es nicht" auf. Deshalb steht am Server bewusst kein WriteTimeout (siehe main.go);
+// dieser Test hält fest, dass ReadTimeout allein das nicht heimlich nachholt.
 func TestLesefrist_LangeAntwortWirdNichtAbgeschnitten(t *testing.T) {
 	const readTimeout = 300 * time.Millisecond
 
@@ -159,7 +157,7 @@ func TestLesefrist_LangeAntwortWirdNichtAbgeschnitten(t *testing.T) {
 	}
 }
 
-// Hält die Zuordnung fest: Die Lesefrist benutzt DIESELBE Pfadliste wie die
+// Hält die Zuordnung fest: Die Lesefrist benutzt dieselbe Pfadliste wie die
 // Bearbeitungsfrist. Zwei Listen wären zwei Wahrheiten darüber, was ein langer
 // Vorgang ist.
 func TestLesefrist_NutztDieselbePfadliste(t *testing.T) {

@@ -7,22 +7,20 @@ import (
 	"bibliothek/repository"
 )
 
-// Gate: Die Waisenübernahme der Idempotenz kann keinen lebenden Besitzer treffen.
+// Die Übernahme verwaister Reservierungen der Idempotenz kann keinen lebenden Besitzer treffen.
 //
 // repository.ReserviereIdempotenzSchluessel übernimmt eine Reservierung, die älter als
 // IdempotenzReservierungsfrist ist, mit der Begründung „der Server ist gestorben". Das ist nur
-// dann die einzige Erklärung, wenn kein Besitzer so lange leben KANN: Die fristMiddleware
-// bricht seine Arbeit nach anfrageFrist ab, und legeAntwortAb darf danach noch
-// theke.IdempotenzSpeicherfrist lang schreiben — mit WithoutCancel, also über die
-// Bearbeitungsfrist
-// hinaus. Erst wenn beides zusammen unter der Übernahmefrist liegt, ist die Reservierung beim
-// Übernehmen wirklich verwaist.
+// dann die einzige Erklärung, wenn kein Besitzer so lange leben kann: Die fristMiddleware bricht
+// seine Arbeit nach anfrageFrist ab, und legeAntwortAb darf danach noch
+// theke.IdempotenzSpeicherfrist lang schreiben, mit WithoutCancel, also über die
+// Bearbeitungsfrist hinaus. Erst wenn beides zusammen unter der Übernahmefrist liegt, ist die
+// Reservierung beim Übernehmen wirklich verwaist.
 //
-// Bis zum 15.09.2026 standen die drei Werte als 60, 15 und 5 Sekunden in drei Dateien
-// (repository/idempotenz.go, api/router.go, api/theke/eingabe.go), und nichts hielt sie zusammen
-// (Rasterdurchgang 15.09.2026, OFFEN.md 5.14). Wer die Theke in die lang laufenden Pfade
-// aufnimmt (5 Minuten) oder die Übernahme kürzt, bekäme zwei Besitzer desselben Schlüssels:
-// Beide buchen, und der Verlierer meldet das nur im Log.
+// Die drei Werte stehen in drei Dateien (repository/idempotenz.go, api/middleware.go,
+// api/theke/eingabe.go), und nur dieser Test hält sie zusammen. Wer die Theke in die lang
+// laufenden Pfade aufnimmt (5 Minuten) oder die Übernahme kürzt, bekäme zwei Besitzer desselben
+// Schlüssels: Beide buchen, und der Verlierer meldet das nur im Log.
 //
 // Geprüft werden die Pfade, die den Schlüssel reservieren. Beim Nachbuchen reserviert jeder
 // Eintrag erst vor seiner eigenen Arbeit, also frühestens am Anfang und spätestens kurz vor

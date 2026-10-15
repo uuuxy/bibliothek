@@ -54,7 +54,8 @@ func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
 
 	t.Run("Leserdatei", func(t *testing.T) {
 		id := testdaten.LegeSchuelerAn(t, pool, "A-91001", "Protokoll", "07A")
-		// leserEintrag prüft, dass der jüngste Eintrag der Aktion diesen Leser und eine Adresse nennt.
+		// leserEintrag prüft, dass der jüngste Eintrag der Aktion diesen Leser und eine Adresse
+		// nennt.
 		leserEintrag := func(t *testing.T, aktion string) {
 			t.Helper()
 			details, ip := eintrag(t, aktion)

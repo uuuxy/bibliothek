@@ -13,13 +13,13 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Dritte Sitzungscookie-Stelle neben Login und Refresh (siehe
-// auth/session_cookie_secure_test.go): das Loeschcookie beim Abmelden.
+// Die dritte Stelle, die das Sitzungscookie setzt, neben Anmeldung und Erneuern (siehe
+// auth/session_cookie_secure_test.go): das Löschcookie beim Abmelden.
 //
-// Es traegt keinen Wert mehr, die Schutzattribute zaehlen trotzdem. Ein Loeschcookie
-// ohne Secure ueberschreibt ueber HTTP ein Secure-Cookie NICHT zuverlaessig — die
-// Abmeldung waere dann eine, die der Browser still ignoriert. Genau deshalb muss auch
-// hier der konfigurierte Wert ankommen statt eines hart verdrahteten.
+// Es trägt keinen Wert mehr, die Schutzattribute zählen trotzdem. Ein Löschcookie ohne Secure
+// überschreibt über HTTP ein Secure-Cookie nicht zuverlässig; die Abmeldung wäre dann eine, die
+// der Browser still ignoriert. Deshalb muss auch hier der eingestellte Wert ankommen statt
+// eines fest verdrahteten.
 func TestAbmeldungCookieFolgtDerKonfiguration(t *testing.T) {
 	for _, secure := range []bool{true, false} {
 		t.Run(map[bool]string{true: "secure=true", false: "secure=false"}[secure], func(t *testing.T) {
@@ -35,10 +35,10 @@ func TestAbmeldungCookieFolgtDerKonfiguration(t *testing.T) {
 			t.Cleanup(a.Blacklist.Stop)
 			s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}, nurHTTPS: secure}
 
-			// Unbrauchbares Token: Die Sperrliste antwortet, VerifyToken scheitert
-			// danach an der Signatur — es gibt nichts zu widerrufen, der Handler
-			// loescht das Cookie und meldet 200. (Antwortet die Datenbank NICHT, ist
-			// die Abmeldung unvollstaendig: abmeldung_widerruf_test.go.)
+			// Unbrauchbares Token: Die Sperrliste antwortet, die Prüfung des Tokens scheitert
+			// danach an der Signatur. Es gibt nichts zu widerrufen, die Tür löscht das Cookie
+			// und meldet 200. (Antwortet die Datenbank nicht, ist die Abmeldung unvollständig:
+			// abmeldung_widerruf_test.go.)
 			mock.ExpectQuery("revoked_tokens").
 				WithArgs(pgxmock.AnyArg()).
 				WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))

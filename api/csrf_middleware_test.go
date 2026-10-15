@@ -1,13 +1,12 @@
 package api
 
-// csrf_middleware_test.go — Belegt die CSRF-Prüfung am Verhalten der Middleware statt
-// an der Klassifizierungsfunktion: Was zählt, ist, ob eine mutierende Anfrage ohne
-// gültiges Token den dahinterliegenden Handler erreicht.
+// Diese Tests belegen die Prüfung gegen CSRF am Verhalten der Middleware statt an der
+// Funktion, die Pfade einordnet: Was zählt, ist, ob eine ändernde Anfrage ohne gültiges Token
+// die Tür dahinter erreicht.
 //
-// Anlass ist eine Ausnahmeliste, die /api/admin und vier weitere Präfixe von der
-// Prüfung ausnahm — begründet mit einem Inventur-CSRF-System, das es im Code nicht
-// gab. Ein Test über die Klassifizierung hätte diese Liste bloß abgeschrieben; diese
-// Tests nennen stattdessen die echten Routen, die geschützt sein müssen.
+// Ein Test über die Einordnung schriebe die Liste der Ausnahmen bloß ab, auch eine falsche,
+// etwa /api/admin samt vier weiteren Anfängen von Pfaden; diese Tests nennen stattdessen die
+// echten Routen, die geschützt sein müssen.
 
 import (
 	"net/http"
@@ -16,8 +15,8 @@ import (
 	"testing"
 )
 
-// durchlaufCSRF schickt eine Anfrage durch die Middleware und meldet, ob der
-// dahinterliegende Handler erreicht wurde.
+// durchlaufCSRF schickt eine Anfrage durch die Middleware und meldet, ob die Tür dahinter
+// erreicht wurde.
 func durchlaufCSRF(t *testing.T, method, path string, mitToken bool) (erreicht bool, code int) {
 	t.Helper()
 
@@ -38,8 +37,8 @@ func durchlaufCSRF(t *testing.T, method, path string, mitToken bool) (erreicht b
 	return erreicht, rec.Code
 }
 
-// Die Routen in dieser Liste waren durch die /api/admin-Ausnahme ungeschützt. Sie
-// stehen hier ausgeschrieben, damit ein wiederkehrender Präfix-Freibrief auffällt.
+// Die Routen in dieser Liste stünden mit einer Ausnahme für /api/admin ungeschützt da. Sie
+// stehen hier ausgeschrieben, damit ein Freibrief für einen ganzen Anfang von Pfaden auffällt.
 var schreibendeVerwaltungsRouten = map[string][2]string{
 	"Rechte aller Rollen ändern":  {http.MethodPut, "/api/admin/permissions"},
 	"SMTP-Server umkonfigurieren": {http.MethodPut, "/api/admin/settings/mail"},
@@ -79,7 +78,7 @@ func TestCSRFMiddlewareLaesstMutationenMitTokenDurch(t *testing.T) {
 }
 
 // Ein Token, das nicht zum Cookie passt, ist kein Token: Sonst genügte ein beliebiger
-// selbstgesetzter Header, und das Double-Submit-Verfahren wäre wertlos.
+// selbst gesetzter Kopf, und das Verfahren Double-Submit-Cookie wäre wertlos.
 func TestCSRFMiddlewareWeistFremdesTokenAb(t *testing.T) {
 	s := &Server{}
 	erreicht := false
@@ -100,11 +99,9 @@ func TestCSRFMiddlewareWeistFremdesTokenAb(t *testing.T) {
 // abgelaufenes Token darf sich beim Abmelden bzw. Erneuern nicht am fehlenden
 // CSRF-Cookie festhaken.
 //
-// Hier stand bis zum 08.08.2026 zusätzlich /login/barcode, und der Kommentar sprach von
-// „drei Ausnahmen". istPruefungsAusnahme kennt aber nur zwei — der Pfad kam durch, weil
-// er aus istAPIPfad herausfiel, nicht weil ihn jemand freigegeben hätte. Der Test hat
-// eine LÜCKE als Entscheidung dokumentiert und hätte grün weitergelaufen, wenn jemand
-// die Route tatsächlich angelegt hätte.
+// Die Liste nennt nur, was istPruefungsAusnahme freigibt. Ein Pfad, der nur durchkommt, weil
+// er aus istAPIPfad herausfällt, gehört nicht hinein: Der Test hielte eine Lücke für eine
+// Entscheidung und bliebe grün, wenn jemand die Route tatsächlich anlegt.
 func TestCSRFMiddlewareAusnahmenBleibenOffen(t *testing.T) {
 	for _, pfad := range []string{"/api/auth/logout", "/api/auth/refresh"} {
 		t.Run(pfad, func(t *testing.T) {
@@ -116,15 +113,15 @@ func TestCSRFMiddlewareAusnahmenBleibenOffen(t *testing.T) {
 	}
 }
 
-// Und die Gegenrichtung, die vorher niemand geprüft hat: Ein Unterpfad von /login ist
-// KEINE Ausnahme. Legt jemand /login/code für den Helfer-Zugang an, greift die
-// CSRF-Prüfung ab der ersten Zeile — ohne dass er daran denken muss.
+// Und die Gegenrichtung: Ein Unterpfad von /login ist keine Ausnahme. Legt jemand /login/code
+// für den Zugang der Helfer an, greift die Prüfung ab der ersten Zeile, ohne dass er daran
+// denken muss.
 //
-// Login-CSRF ist kein Randfall: Eine fremde Seite kann ein Formular mit
-// enctype="text/plain" abschicken, dessen Rumpf als JSON durchgeht, und das Opfer damit
-// in die Sitzung eines ANGREIFER-Kontos anmelden. Alles, was danach am Tresen gescannt
-// wird, landet dort. SameSite=Strict verhindert das nicht — es regelt das SENDEN von
-// Cookies, nicht das Setzen durch die Antwort.
+// CSRF an der Anmeldung ist kein Randfall: Eine fremde Seite kann ein Formular mit
+// enctype="text/plain" abschicken, dessen Rumpf als JSON durchgeht, und das Opfer damit in die
+// Sitzung eines Kontos des Angreifers anmelden. Alles, was danach am Tresen gescannt wird,
+// landet dort. SameSite=Strict verhindert das nicht: Es regelt das Senden von Cookies, nicht
+// das Setzen durch die Antwort.
 func TestCSRFMiddlewarePrueftAuchLoginUnterpfade(t *testing.T) {
 	for _, pfad := range []string{"/login", "/login/code", "/login/barcode"} {
 		t.Run(pfad, func(t *testing.T) {
@@ -140,7 +137,7 @@ func TestCSRFMiddlewarePrueftAuchLoginUnterpfade(t *testing.T) {
 }
 
 // Lesende Zugriffe dürfen nie an der Prüfung scheitern — und holen sich dabei das
-// Cookie, mit dem das Frontend die nächste Mutation unterschreibt.
+// Cookie, mit dem die Oberfläche die nächste ändernde Anfrage unterschreibt.
 func TestCSRFMiddlewareLaesstLesendeDurchUndSetztDasCookie(t *testing.T) {
 	s := &Server{}
 	mw := s.csrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

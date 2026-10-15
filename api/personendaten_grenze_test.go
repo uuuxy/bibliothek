@@ -15,22 +15,20 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Personendaten-Grenze der Katalog-Rechte (Nachgang zur unabhängigen
-// Prüfung, bewertung/sicherheitsbefund-*.md): view_books wurde der Helfer-Rolle
-// mit der Zusage "öffnet keine Personendaten" gegeben. Diese Tests halten die
-// Zusage an beiden Sorten von Türen fest — Routen, deren Zweck Personendaten
-// sind, hängen an view_students; die Geräteliste blendet den Ausleihernamen aus.
+// Die Grenze der Personendaten an den Rechten des Katalogs: view_books hat die Helfer-Rolle mit
+// der Zusage „öffnet keine Personendaten" (bewertung/sicherheitsbefund-*.md). Diese Tests halten
+// die Zusage an beiden Sorten von Türen fest: Routen, deren Zweck Personendaten sind, hängen an
+// view_students; die Geräteliste blendet den Namen des Ausleihers aus.
 
 // TestPersonendatenRoutenHinterViewStudents liest die Routen-Registrierung als
 // Quelle (dieselbe Technik wie geschuetzte_routen_test.go): Diese Antworten
 // verknüpfen Schülernamen mit Titeln und dürfen nie hinter ein Recht rutschen,
 // das die Helfer-Rolle ab Werk besitzt (view_books, perform_actions).
 //
-// Zwei Schutzstufen: Ausleiher/Historie zeigen das volle Ausleihgeschehen und
-// bleiben hinter view_students. Die Vormerkungen hängen am ENGEN Theken-Recht
-// manage_vormerkungen (Kiosk-Felder: Name+Klasse; Betreiber-Entscheidung
-// 18.08.2026: für Helfer optional per Rechte-Matrix zuschaltbar, Standard AUS —
-// db/seed.go RechteVorgabe + RechteOptional).
+// Zwei Schutzstufen: Ausleiher/Historie zeigen das volle Ausleihgeschehen und bleiben hinter
+// view_students. Die Vormerkungen hängen am engen Recht der Theke manage_vormerkungen (Felder des
+// Kiosks: Name und Klasse); für Helfer ist es in der Rechte-Matrix zuschaltbar und ab Werk aus
+// (db/seed.go RechteVorgabe und RechteOptional).
 func TestPersonendatenRoutenHinterViewStudents(t *testing.T) {
 	quelle, err := os.ReadFile("routen_katalog.go")
 	if err != nil {
@@ -60,11 +58,11 @@ func TestPersonendatenRoutenHinterViewStudents(t *testing.T) {
 	}
 }
 
-// TestVormerkungsRechtIstFuerHelferOptional hält die Entscheidung als Code fest:
-// Das Paar HELFER/manage_vormerkungen existiert in der Vorgabe, startet AUS und
-// ist als optional markiert — nur dann schweigt die Selbstprüfung, wenn ein
-// Admin es einschaltet. Fällt eine der drei Bedingungen, ist entweder das Recht
-// verschwunden, plötzlich Standard-AN oder jede nutzende Anlage dauerhaft gelb.
+// TestVormerkungsRechtIstFuerHelferOptional hält die Entscheidung als Code fest: Das Paar
+// Helfer/manage_vormerkungen steht in der Vorgabe, ist ab Werk aus und als optional markiert;
+// nur dann schweigt die Selbstprüfung, wenn ein Admin es einschaltet. Fällt eine der drei
+// Bedingungen, ist entweder das Recht verschwunden, plötzlich ab Werk an oder jede Anlage, die
+// es nutzt, dauerhaft gelb.
 func TestVormerkungsRechtIstFuerHelferOptional(t *testing.T) {
 	if !db.RechteOptional["HELFER/manage_vormerkungen"] {
 		t.Error("HELFER/manage_vormerkungen fehlt in db.RechteOptional — die Selbstprüfung würde jeden gesetzten Haken als Drift melden")
@@ -83,8 +81,8 @@ func TestVormerkungsRechtIstFuerHelferOptional(t *testing.T) {
 	}
 }
 
-// sperreUebergehenAttrappe merkt sich, mit welchem OverrideBlock der Ausleih-Kern
-// aufgerufen wurde — genau der Wert, der über eine Sperre entscheidet.
+// sperreUebergehenAttrappe merkt sich, mit welchem SperreUebergehen der Kern der Ausleihe
+// aufgerufen wurde: genau der Wert, der über eine Sperre entscheidet.
 type sperreUebergehenAttrappe struct {
 	gesehenesUebergehen bool
 }
@@ -97,8 +95,8 @@ func (a *sperreUebergehenAttrappe) VerarbeiteEingabe(_ context.Context, q servic
 func eingabeSiehtUebergehen(rolle string) bool {
 	spy := &sperreUebergehenAttrappe{}
 	s := &Server{}
-	// Echte UUID: Eine Schüler-ID, die keine ist, weist EingabeVerarbeiten seit dem 13.09.2026
-	// vor der Rechteprüfung mit 400 ab (uuid_eingaben_test.go).
+	// Echte UUID: Eine Schüler-ID, die keine ist, weist EingabeVerarbeiten vor der
+	// Rechteprüfung mit 400 ab (uuid_eingaben_test.go).
 	body := `{"query":"B-123","active_leser_id":"22222222-2222-2222-2222-222222222222","override_block":true}`
 	req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle), UserID: "u1"}))
@@ -107,11 +105,11 @@ func eingabeSiehtUebergehen(rolle string) bool {
 	return spy.gesehenesUebergehen
 }
 
-// TestSperreUebergehenNurMitEditStudents: Eine Sperre aufheben ist ein Verwaltungs-
-// akt. override_block darf nur wirken, wenn der Aufrufer edit_students besitzt —
-// dasselbe Recht, das auch das Sperren/Entsperren erlaubt. Am 18.08.2026 live mit
-// Helfer-Konto belegt: perform_actions allein reichte, die Sperre fiel per
-// Request-Feld, obwohl die UI den Schalter nie anbot (Schutz nur als Konvention).
+// TestSperreUebergehenNurMitEditStudents: Eine Sperre aufheben ist ein Verwaltungsakt.
+// override_block darf nur wirken, wenn der Aufrufer edit_students besitzt, dasselbe Recht, das
+// auch das Sperren und Entsperren erlaubt. Reichte perform_actions, fiele die Sperre für ein
+// Helferkonto über ein Feld der Anfrage, auch wenn die Oberfläche den Schalter nie anbietet:
+// Schutz nur als Konvention.
 func TestSperreUebergehenNurMitEditStudents(t *testing.T) {
 	tuer.LeereRechteCache()
 	t.Cleanup(tuer.LeereRechteCache)
@@ -154,8 +152,8 @@ func geraeteAnfrage(rolle string) *httptest.ResponseRecorder {
 	return w
 }
 
-// TestGeraetelisteBlendetAusleiherOhneViewStudentsAus: Der Helfer sieht, DASS
-// ein Gerät verliehen ist (ausgeliehen_an = ""), aber nicht an WEN. Ein Admin
+// TestGeraetelisteBlendetAusleiherOhneViewStudentsAus: Der Helfer sieht, dass
+// ein Gerät verliehen ist (ausgeliehen_an = ""), aber nicht, an wen. Ein Admin
 // sieht den Namen. Der Cache wird gezielt vorbefüllt, damit der Test ohne
 // Datenbank läuft und trotzdem den echten Rechte-Pfad nimmt.
 func TestGeraetelisteBlendetAusleiherOhneViewStudentsAus(t *testing.T) {

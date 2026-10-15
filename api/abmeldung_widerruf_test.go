@@ -15,14 +15,11 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Gate: Die Antwort des Abmeldens kommt aus der WIRKUNG, nicht aus der Eingabe.
-//
-// Anlass (Rasterdurchgang 12.09.2026, Register „Abmelden meldet Erfolg, auch wenn nichts
-// widerrufen wurde"): Blacklist.Add protokollierte einen Fehlschlag nur als Logzeile, der
-// Handler löschte das Cookie und antwortete in jedem Fall {"status":"ok"}. Bei einem
-// Datenbank-Aussetzer blieb das Token damit bis zum natürlichen Ablauf gültig — bis zu
-// zwölf Stunden —, während der Bediener eine gelungene Abmeldung gemeldet bekam. Genau
-// die Form, die docs/sweeps.md unter Frage 5 (Phantom-Erfolg) beschreibt.
+// Die Antwort des Abmeldens kommt aus der Wirkung, nicht aus der Eingabe. Meldete die Tür einen
+// Fehlschlag von Blacklist.Add nur als Logzeile und antwortete in jedem Fall {"status":"ok"},
+// bliebe das Token bei einem Aussetzer der Datenbank bis zu seinem Ablauf gültig, bis zu zwölf
+// Stunden, während der Bediener eine gelungene Abmeldung gemeldet bekommt. Nach genau dieser
+// Form fragt Frage 5 in docs/invarianten.md: Erfolg anhand der Wirkung oder der Eingabe.
 //
 // Das Löschcookie bleibt in jedem Fall: Es ist die Hälfte, die wirklich stattgefunden hat.
 func abmeldeServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
@@ -96,7 +93,7 @@ func TestAbmeldung_WiderrufScheitert_MeldetKeinenErfolg(t *testing.T) {
 
 // Der Widerruf kommt gar nicht erst zustande, weil schon die Prüfung an der Datenbank
 // scheitert. Auch das ist kein Erfolg — und nicht zu verwechseln mit einem ungültigen
-// Token, bei dem es nichts zu widerrufen GIBT.
+// Token, bei dem es nichts zu widerrufen gibt.
 func TestAbmeldung_PruefungGestoert_MeldetKeinenErfolg(t *testing.T) {
 	s, mock := abmeldeServer(t)
 	mock.ExpectQuery("revoked_tokens").
@@ -140,7 +137,7 @@ func TestAbmeldung_WiderrufGelingt_BleibtOk(t *testing.T) {
 
 // Gegenprobe 2: Ein unbrauchbares Token ist kein Aussetzer — es gibt nichts zu
 // widerrufen, die Abmeldung ist vollständig, und der Bediener bekommt sein 200.
-// (Das Attribut-Gate dieses Cookies steht in abmeldung_cookie_test.go.)
+// (Die Attribute dieses Cookies prüft abmeldung_cookie_test.go.)
 func TestAbmeldung_UngueltigesToken_BleibtOk(t *testing.T) {
 	s, mock := abmeldeServer(t)
 	// Die Sperrliste antwortet (die Datenbank steht), das Token scheitert danach an der

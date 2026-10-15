@@ -35,7 +35,7 @@ func baueRechteServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 }
 
 // erwarteSperrlisteFrei erwartet die beiden Prüfungen in VerifyToken bei gültigem Token:
-// die Blacklist ("nicht widerrufen") und direkt danach Kontostatus samt AKTUELLER Rolle.
+// die Blacklist ("nicht widerrufen") und direkt danach Kontostatus samt aktueller Rolle.
 // Die Rolle muss mitgeliefert werden, weil VerifyToken sie über die im Token signierte
 // schreibt — die Autorisierung folgt der Datenbank, nicht dem Token.
 func erwarteSperrlisteFrei(mock pgxmock.PgxPoolIface, rolle auth.Role) {
@@ -58,7 +58,7 @@ func anfrageMitToken(t *testing.T, s *Server, role auth.Role) *http.Request {
 	return req
 }
 
-// laufeDurch führt die Middleware aus und meldet zurück, ob der geschützte Handler erreicht wurde.
+// laufeDurch führt die Middleware aus und meldet zurück, ob die geschützte Tür erreicht wurde.
 func laufeDurch(s *Server, permission string, req *http.Request) (*httptest.ResponseRecorder, bool) {
 	reached := false
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +90,7 @@ func TestVerlangeRecht_AdminUmgehtDiePruefung(t *testing.T) {
 	defer mock.Close()
 
 	erwarteSperrlisteFrei(mock, auth.RoleAdmin)
-	// KEINE role_permissions-Abfrage erwartet — Admin hat implizit alle Rechte.
+	// Keine role_permissions-Abfrage erwartet — Admin hat implizit alle Rechte.
 
 	req := anfrageMitToken(t, s, auth.RoleAdmin)
 	rr, reached := laufeDurch(s, "buch.loeschen", req)
@@ -199,7 +199,8 @@ func TestVerlangeRecht_VoruebergehenderDatenbankfehlerIst500(t *testing.T) {
 	req := anfrageMitToken(t, s, auth.RoleKollegium)
 	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
-	// Transiente DB-Fehler sind 500, nicht 403 — und dürfen NICHT als Negativ-Entscheidung gecacht werden.
+	// Transiente DB-Fehler sind 500, nicht 403 — und dürfen nicht als Negativ-Entscheidung
+	// gecacht werden.
 	if rr.Code != http.StatusInternalServerError {
 		t.Errorf("transienter DB-Fehler erwartet 500, bekam %d", rr.Code)
 	}
@@ -212,13 +213,13 @@ func TestVerlangeRecht_AblehnungWirdZwischengespeichert(t *testing.T) {
 	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	// Erster Request: Blacklist + role_permissions (false) → 403, Entscheidung wird gecacht.
+	// Erste Anfrage: Blacklist + role_permissions (false) → 403, Entscheidung wird gecacht.
 	erwarteSperrlisteFrei(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(false))
 
-	// Zweiter Request: NUR Blacklist erwartet — role_permissions kommt aus dem Cache.
+	// Zweite Anfrage: nur Blacklist erwartet; role_permissions kommt aus dem Cache.
 	erwarteSperrlisteFrei(mock, auth.RoleKollegium)
 
 	for i := 0; i < 2; i++ {
@@ -229,7 +230,8 @@ func TestVerlangeRecht_AblehnungWirdZwischengespeichert(t *testing.T) {
 		}
 	}
 
-	// Schlägt fehl, falls der zweite Request doch eine role_permissions-Abfrage ausgelöst hätte.
+	// Schlägt fehl, falls die zweite Anfrage doch eine Abfrage von role_permissions ausgelöst
+	// hätte.
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Cache hat zweite DB-Abfrage nicht verhindert: %v", err)
 	}
@@ -239,7 +241,8 @@ func TestVerlangeRecht_SperrlisteOhneDatenbankIst503(t *testing.T) {
 	s, mock := baueRechteServer(t)
 	defer mock.Close()
 
-	// Blacklist-Prüfung schlägt fehl → IsBlacklisted gibt fail-closed true → Token gilt als widerrufen.
+	// Blacklist-Prüfung schlägt fehl → IsBlacklisted gibt fail-closed true → Token gilt als
+	// widerrufen.
 	mock.ExpectQuery("revoked_tokens").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnError(errors.New("connection reset by peer"))
@@ -247,7 +250,7 @@ func TestVerlangeRecht_SperrlisteOhneDatenbankIst503(t *testing.T) {
 	req := anfrageMitToken(t, s, auth.RoleKollegium)
 	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
-	// 503, nicht 401: Eine 401 meldet den Arbeitsplatz im Client ab (apiFetch →
+	// 503, nicht 401: Eine 401 meldet den Arbeitsplatz in der Oberfläche ab (apiFetch →
 	// sitzungAbgelaufen). Ein Datenbank-Aussetzer ist keine abgelaufene Sitzung.
 	if rr.Code != http.StatusServiceUnavailable {
 		t.Errorf("fail-closed Blacklist erwartet 503, bekam %d", rr.Code)
@@ -281,13 +284,13 @@ func TestVerlangeRecht_KontostatusOhneDatenbankIst503(t *testing.T) {
 	}
 }
 
-// pruefeSitzungsfehlerRumpf: Die 503-Antwort der Middleware trägt genau den Sentinel-Satz
-// und keine Spur der gewrappten Ursache.
+// pruefeSitzungsfehlerRumpf: Die Antwort 503 der Middleware trägt genau den Satz des Sentinels
+// und keine Spur der eingewickelten Ursache.
 //
-// Dieselbe Prüfung wie auth.pruefeSentinelOhneUrsache, aber an der anderen Tür: Me und
-// Refresh senden selbst, die RBAC-Middleware über sendeSitzungsfehler. Beide Türen führen
-// denselben Fehler nach draußen, und bis zum 12.09.2026 stand hinter dem Satz für das
-// Personal „: sperrliste: connection reset by peer".
+// Dieselbe Prüfung wie auth.pruefeSentinelOhneUrsache, aber an der anderen Tür: Me und Refresh
+// senden selbst, die Middleware der Rechte über sendeSitzungsfehler. Beide Türen führen
+// denselben Fehler nach draußen; stünde hinter dem Satz die Ursache, läse das Personal etwa
+// „: sperrliste: connection reset by peer".
 func pruefeSitzungsfehlerRumpf(t *testing.T, rr *httptest.ResponseRecorder, ursache string) {
 	t.Helper()
 	var body map[string]string

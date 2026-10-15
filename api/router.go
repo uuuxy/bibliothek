@@ -16,9 +16,8 @@
 // je Thema in einem Paket darunter (docs/ARCHITEKTUR.md 5.2.2).
 package api
 
-// router.go: der Server, sein Router und die Zugänge zu den Themen. Die Middleware steht in
-// middleware.go, jede Route mit ihrem Recht in routen_*.go. Die Türen stehen je Thema in einem
-// Paket unter api/ (docs/ARCHITEKTUR.md 5.2.2).
+// Hier stehen der Server, sein Router und die Zugänge zu den Themen; die Middleware steht in
+// middleware.go, jede Route mit ihrem Recht in routen_*.go.
 
 import (
 	"context"
@@ -58,17 +57,19 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-// Server wraps the core application dependencies: database, auth, and real-time streaming.
+// Server hält, was jede Tür braucht (Datenbank, Anmeldung, Live-Leitung in tuer.Basis), und ob
+// der Betrieb nur über HTTPS läuft.
 type Server struct {
 	tuer.Basis
 	nurHTTPS bool
 }
 
-// NewServer constructs and returns a new Server instance.
+// NewServer baut den Server und bindet den Mailversand an die SMTP-Einstellungen in der
+// Datenbank.
 func NewServer(datenbank *db.Database, authenticator *auth.Authenticator, broker *sse.Broker, nurHTTPS bool) *Server {
-	// Ab hier liest jeder Mailversand die in der Oberfläche gespeicherte
-	// SMTP-Konfiguration statt der Umgebungsvariablen des Containers. Vorher benutzte
-	// der Test-Knopf die eine und jeder echte Versand die andere Quelle.
+	// Ab hier liest jeder Mailversand die in der Oberfläche gespeicherte SMTP-Konfiguration,
+	// nicht die Umgebungsvariablen des Containers; so nutzen der Test-Knopf und jeder echte
+	// Versand dieselbe Quelle.
 	mailservice.BindeSMTPKonfigAnDatenbank(datenbank.Pool)
 
 	return &Server{
@@ -145,12 +146,12 @@ func (s *Server) theke() *theke.Tueren {
 	return &theke.Tueren{Basis: &s.Basis}
 }
 
-// Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.
-// Maps endpoints to their handlers and wraps protected endpoints in RBAC middleware.
+// Routes baut den Router: jede Adresse mit ihrer Tür und ihrem Recht (routen_*.go), darum die
+// Middleware-Kette (baueKette).
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 
-	// Instantiate repositories for database queries
+	// Die Abfragen und Dienste, die mehrere Routenlisten brauchen.
 	leserAbfragen := repository.NewLeserAbfragen(s.DB.Pool)
 	katalogAbfragen := repository.NewKatalogAbfragen(s.DB.Pool)
 	ausleihAbfragen := repository.NewAusleihAbfragen(s.DB.Pool)
@@ -167,7 +168,7 @@ func (s *Server) Routes() http.Handler {
 	s.registriereInventurRouten(mux)
 	s.registriereAnmeldeRouten(mux)
 
-	// Delegate to domain-specific routers
+	// Die Routenlisten je Sache.
 	s.registriereOeffentlicheRouten(mux)
 	s.registriereThekenUndInventurRouten(mux, leserAbfragen, katalogAbfragen, omniboxDienst, nachbuchDienst)
 	s.registriereLeserRouten(mux, leserAbfragen, mahnAbfragen, protokollAbfragen)
@@ -183,7 +184,7 @@ func (s *Server) Routes() http.Handler {
 }
 
 func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
-	// Initialize Inventur sub-module handlers
+	// Das Verzeichnis der Uploads für das Inventur-Modul.
 	if err := os.MkdirAll("uploads", 0750); err != nil {
 		log.Printf("router: Upload-Verzeichnis konnte nicht angelegt werden: %v", err)
 	}
@@ -202,7 +203,7 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 		RequireAuthenticated: s.VerlangeAnmeldung(),
 	})
 
-	// Mount Inventur routes
+	// Die Routen des Inventur-Moduls.
 	mux.Handle("/api/books", inventurTueren)
 	mux.Handle("/api/books/", inventurTueren)
 	mux.Handle("/api/class-books", inventurTueren)
@@ -214,22 +215,24 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 }
 
 func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
-	// Public Endpoints
+	// Ohne Anmeldung erreichbar.
 	mux.Handle("POST /login", anmeldeBremse(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.nurHTTPS))))
 
-	// Image Caching (Public)
+	// Cover aus dem Cache, ohne Anmeldung.
 	mux.HandleFunc("GET /api/images/cover", s.katalog().Cover())
 
-	// CSRF token bootstrap (public): lets API clients obtain a token + cookie before any mutation
+	// Das CSRF-Token, ohne Anmeldung: Aufrufer ohne Browser holen Token und Cookie vor der ersten
+	// Änderung.
 	mux.HandleFunc("GET /api/csrf-token", s.csrfToken())
 
-	// Token refresh (sliding window) — exempt from CSRF via middleware config
+	// Die Sitzung verlängern; von der CSRF-Prüfung ausgenommen (istPruefungsAusnahme).
 	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.nurHTTPS))
 
-	// Session-Restore für den SPA-Boot: prüft Cookie + DB-Zustand, liefert Login-Shape
+	// Die Sitzung beim Start der Oberfläche wiederherstellen: prüft Cookie und Zustand in der
+	// Datenbank und antwortet wie die Anmeldung.
 	mux.HandleFunc("GET /api/auth/me", auth.MeHandler(s.DB.Pool, s.Auth))
 
-	// Logout — blacklists the current token and clears the session cookie
+	// Abmelden: widerruft das Token und löscht das Sitzungscookie.
 	mux.HandleFunc("POST /api/auth/logout", s.abmelden())
 
 	// Sperre nach Inaktivität: gilt am Server für die Anmeldung, mit der die Anfrage kommt.
@@ -241,14 +244,14 @@ func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 }
 
 func (s *Server) registriereImportRouten(mux *http.ServeMux) {
-	// LITTERA CSV Import (Accessible by Admin)
+	// Der Import aus Littera, der Bestandsimport und der Abgleich der Cover (manage_inventory).
 	mux.Handle("POST /api/import/littera", s.verlangeRecht("manage_inventory")(s.system().LitteraImport()))
 	mux.Handle("POST /api/admin/import-bestand", s.verlangeRecht("manage_inventory")(http.HandlerFunc(s.system().BestandImport)))
 	mux.Handle("POST /api/admin/sync-covers", s.verlangeRecht("manage_inventory")(s.katalog().CoverAbgleichen()))
 }
 
 func (s *Server) registriereSwaggerRouten(mux *http.ServeMux) {
-	// Swagger interactive documentation (Only accessible in local/development mode)
+	// Die Swagger-Seite gibt es nur im lokalen Betrieb und in der Entwicklung.
 	if os.Getenv("APP_ENV") == "local" || os.Getenv("APP_ENV") == "development" {
 		mux.Handle("GET /swagger/", httpSwagger.Handler(
 			httpSwagger.URL("/swagger/doc.json"),
@@ -260,15 +263,14 @@ func (s *Server) registriereSwaggerRouten(mux *http.ServeMux) {
 }
 
 func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) {
-	// Intercept missing favicon.ico to prevent fallback to index.html and 404 errors
+	// Ein fehlendes favicon.ico antwortet 204, statt auf index.html zu fallen.
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	// Serve Svelte frontend static assets from build directory.
-	// os.OpenRoot bindet alle Datei-Zugriffe OS-seitig an dist/ — der frühere
-	// os.Stat auf den konkatenierten Pfad war als Existenz-Orakel außerhalb
-	// des Verzeichnisses nutzbar (gosec G304, Projekt-Learning in .jules/sentinel.md).
+	// Die gebaute Oberfläche aus dist/. os.OpenRoot bindet jeden Dateizugriff im Betriebssystem
+	// an dist/; ein os.Stat auf einen zusammengesetzten Pfad verriete, ob eine Datei außerhalb
+	// des Verzeichnisses existiert (gosec G304).
 	oberflaeche, oberflaecheFehler := os.OpenRoot("./frontend/dist")
 	if oberflaecheFehler != nil {
 		log.Printf("router: frontend/dist nicht verfügbar (%v) — SPA-Auslieferung deaktiviert", oberflaecheFehler)
@@ -277,49 +279,44 @@ func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) {
 }
 
 func (s *Server) baueKette(mux http.Handler) http.Handler {
-	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
 	// 100 MB — bewusst großzügig und bewusst global.
 	//
 	// Die Zahl klingt nach Speicherrisiko, ist aber keins: rumpfGrenzeMiddleware setzt
-	// http.MaxBytesReader, und der BEGRENZT nur, wie viel ein Handler lesen darf. Er
-	// puffert nichts. Wer 100 MB schickt, ohne dass ein Handler sie liest, belegt keinen
+	// http.MaxBytesReader, und der begrenzt nur, wie viel eine Tür lesen darf. Er
+	// puffert nichts. Wer 100 MB schickt, ohne dass eine Tür sie liest, belegt keinen
 	// Speicher; wer mehr schickt, bekommt einen Lesefehler.
 	//
 	// Kleiner setzen wäre riskanter als es aussieht: Über diesen einen Wert laufen auch
 	// der Littera-Import, der Bestands-Import und der Excel-Katalogimport. Ein zu enger
 	// Wert bricht sie mitten im Lauf, und zwar mit einer Meldung, die nicht nach
 	// "Datei zu groß" klingt. Eine getrennte, kleinere Grenze für alles außer den
-	// Import-Routen wäre der saubere Weg — dafür muss aber jede Upload-Route einzeln
+	// Import-Routen wäre der saubere Weg; dafür muss aber jede Upload-Route einzeln
 	// belegt sein, sonst bricht genau die eine, die man übersehen hat.
 	rumpfGrenze := rumpfGrenzeMiddleware(100 * 1024 * 1024)
 	bremse := anfrageBremse(anfragenJeSekundeAusUmgebung())
 	frist := fristMiddleware(bearbeitungsfristVorgabe)
 
-	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> Lesefrist -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> Kompression -> Mux
+	// Kette: panik → sentry → Sicherheitskopfzeilen → cors → log → https → Lesefrist →
+	// rumpfGrenze → frist → bremse → csrf → kompression → Mux.
 	//
-	// Kompression sitzt innen am Mux: Gepackt wird, was ein Handler liefert. Hinter CORS,
+	// Kompression sitzt innen am Mux: Gepackt wird, was eine Tür liefert. Hinter CORS,
 	// weil CORS den Vary-Kopf setzt statt ergänzt und Accept-Encoding sonst daraus fiele.
 	//
-	// erweitereLesefristFuerLangeUploads steht VOR dem BodyLimiter und damit vor jedem
-	// Lesen des Rumpfes — danach gesetzt käme die Frist zu spät. Sie hebt die strenge
+	// erweitereLesefristFuerLangeUploads steht vor rumpfGrenze und damit vor jedem Lesen des
+	// Rumpfes; danach gesetzt käme die Frist zu spät. Sie hebt die strenge
 	// serverweite ReadTimeout (main.go) für die Import-Endpunkte an.
-	// Hinweis: Die frühere RBACBlockMiddleware (hartkodierte Pfad-Allowlist für LEHRER/HELFER)
-	// wurde entfernt. Sie überstimmte das konfigurierbare role_permissions-System und sorgte dafür,
-	// dass z. B. ein LEHRER seine im PermissionManager gewährten Rechte (view_students etc.) nicht
-	// nutzen konnte. Autorisierung erfolgt nun einheitlich über verlangeRecht/RequireRoles.
 	sentry := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
-	// uuidPfadMiddleware steht hier NICHT mehr: Von außen um den Mux gelegt
-	// las sie r.PathValue("id"), bevor die Route aufgelöst war — der Wert ist dort immer
-	// leer, die Prüfung lief also nie (Audit-Befund 01.08.2026). Sie sitzt jetzt in
-	// verlangeRecht, also hinter dem Routing, wo PathValue gefüllt ist.
+	// uuidPfadMiddleware steht nicht in dieser Kette: Um den Mux gelegt läse sie
+	// r.PathValue("id"), bevor die Route aufgelöst ist, und der Wert wäre immer leer. Sie sitzt
+	// in verlangeRecht, hinter dem Routing, wo PathValue gefüllt ist.
 	kette := panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(kompressionMiddleware(mux))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
+		// Jede Anfrage ins Log, ohne die Adresse des Aufrufers (DSGVO).
 		//
-		// maskiereToken: Der Bestätigungs-Link an den Lieferanten trägt sein Geheimnis IM
+		// maskiereToken: Der Bestätigungs-Link an den Lieferanten trägt sein Geheimnis im
 		// Pfad. Ohne die Maskierung stünde jeder verschickte Link im Klartext in dieser
-		// Zeile — und damit in einem Logfile, das weitergereicht und in Tickets gehängt
+		// Zeile und damit in einem Logfile, das weitergereicht und in Tickets gehängt
 		// wird. Das hätte die Hash-Speicherung in der Datenbank wieder entwertet.
 		// #nosec G706
 		log.Printf("Incoming Request: %s %s", r.Method, maskiereToken(r.URL.Path))
@@ -327,7 +324,8 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	})
 }
 
-// lebenszeichen antwortet mit dem DB-Verbindungsstatus (Liveness-/Readiness-Probe).
+// lebenszeichen antwortet, ob die Datenbank erreichbar ist; Docker fragt es als Sonde ab
+// (HEALTHCHECK).
 func (s *Server) lebenszeichen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
@@ -340,9 +338,9 @@ func (s *Server) lebenszeichen() http.HandlerFunc {
 	}
 }
 
-// liefereOberflaeche liefert die statischen Frontend-Assets aus frontendRoot und fällt für
-// unbekannte Pfade auf die App-Shell (index.html) zurück. os.OpenRoot bindet alle
-// Datei-Zugriffe OS-seitig an dist/ (Schutz gegen Path-Traversal, gosec G304).
+// liefereOberflaeche liefert die Dateien der gebauten Oberfläche aus oberflaeche und fällt für
+// unbekannte Pfade auf die App-Shell (index.html) zurück. os.OpenRoot bindet jeden Dateizugriff
+// im Betriebssystem an dist/ (gegen Path-Traversal, gosec G304).
 func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
@@ -361,22 +359,19 @@ func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 			}
 		}
 
-		// Ein unbekannter /api/-Pfad ist ein Fehler, keine Seite.
+		// Ein unbekannter /api/-Pfad ist ein Fehler, keine Seite: Bekäme er die App-Shell,
+		// antwortete ein vertippter, umbenannter oder mit der falschen Methode gerufener
+		// Endpunkt mit "200 text/html", und der Aufrufer scheiterte erst beim Lesen des JSON,
+		// mit einer Meldung, die nichts mit der Ursache zu tun hat.
 		//
-		// Vorher bekam auch er die App-Shell: Ein vertippter, umbenannter oder mit der
-		// falschen Methode aufgerufener Endpunkt antwortete mit "200 text/html", und der
-		// Aufrufer scheiterte erst beim JSON-Parsen — mit einer Meldung, die nichts mit der
-		// Ursache zu tun hat. Beim Suchen nach dem Berichte-Fehler hat genau das die
-		// Diagnose fast in die falsche Richtung geschickt.
-		//
-		// Die App-Shell bleibt fuer alles andere richtig: /schuelerdatei, /bestellungen und
-		// jede andere Route der Oberflaeche existiert nur im Browser.
+		// Die App-Shell bleibt für alles andere richtig: /schuelerdatei, /bestellungen und jede
+		// andere Route der Oberfläche gibt es nur im Browser.
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("unbekannter Endpunkt: %s %s", r.Method, r.URL.Path))
 			return
 		}
 
-		// SPA-Fallback: alle unbekannten Pfade auf die App-Shell
+		// Alle übrigen Pfade bekommen die App-Shell.
 		http.ServeFileFS(w, r, oberflaeche.FS(), "index.html")
 	}
 }

@@ -13,7 +13,7 @@ import (
 )
 
 // Die Sperre nach Inaktivität an der Tür jeder geschützten Route: Eine gesperrte Anmeldung
-// erreicht keinen Handler. Der Weg durch Anmeldung, Sperren und Entsperren gegen echtes
+// erreicht keine Tür. Der Weg durch Anmeldung, Sperren und Entsperren gegen echtes
 // Postgres steht in auth/sperre_pg_test.go.
 
 const sperreSitzungID = "5b0f6a2e-8a0c-4a51-9d1c-3f2f6b7c9e10"

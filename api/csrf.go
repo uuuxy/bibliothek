@@ -1,19 +1,16 @@
 package api
 
-// csrf.go — Global CSRF protection middleware using the Double-Submit Cookie pattern.
+// Der Schutz gegen CSRF nach dem Muster Double-Submit-Cookie:
 //
-// How it works:
-//   1. Every response sets a non-HttpOnly cookie "csrf_token" containing a
-//      cryptographically random token. The frontend JS reads this cookie.
-//   2. On mutating requests (POST/PUT/PATCH/DELETE), the middleware compares
-//      the cookie value against the X-CSRF-Token header sent by the frontend.
-//   3. If they don't match or are missing, the request is rejected with 403.
+//  1. Jede Antwort setzt ein Cookie „csrf_token" ohne HttpOnly mit einem zufälligen Token;
+//     die Oberfläche liest es.
+//  2. Bei ändernden Anfragen (POST, PUT, PATCH, DELETE) vergleicht die Middleware das Cookie
+//     mit dem Kopf X-CSRF-Token, den die Oberfläche mitschickt.
+//  3. Fehlt eines oder weichen sie ab, ist die Antwort 403.
 //
-// This complements SameSite=Strict cookies as a defense-in-depth measure.
-// Ausgenommen sind nur die zwei Pfade in istPruefungsAusnahme (logout, refresh); jede
-// weitere Ausnahme nimmt genau diese zweite Schranke wieder heraus. (Bis 16.08.2026
-// stand hier „drei" — ein Rest aus der Zeit vor der Bereinigung der Ausnahmeliste;
-// die Funktion selbst und der Kommentar an istAPIPfad sagten längst zwei.)
+// Das ergänzt SameSite=Strict an den Cookies als zweite Schranke. Ausgenommen sind nur die
+// zwei Pfade in istPruefungsAusnahme; jede weitere Ausnahme nähme genau diese zweite Schranke
+// wieder heraus.
 
 import (
 	"crypto/rand"
@@ -29,7 +26,7 @@ import (
 
 const csrfCookieName = "csrf_token"
 
-// erzeugeCSRFToken creates a 32-byte cryptographically random token.
+// erzeugeCSRFToken erzeugt ein zufälliges Token aus 32 Byte (crypto/rand).
 func erzeugeCSRFToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -41,23 +38,22 @@ func erzeugeCSRFToken() (string, error) {
 // newCSRFCookie baut das (nicht-HttpOnly) Double-Submit-Cookie. Das Secure-Flag wird
 // übergeben, damit es konfigurierbar ist.
 func newCSRFCookie(token string, nurHTTPS bool) *http.Cookie {
-	// #nosec G124 - Secure flag is dynamically configured
+	// #nosec G124 - Secure folgt nurHTTPS
 	return &http.Cookie{
 		Name:     csrfCookieName,
 		Value:    token,
 		Path:     "/",
-		HttpOnly: false, // Must be readable by frontend JS
+		HttpOnly: false, // Die Oberfläche muss es lesen können.
 		Secure:   nurHTTPS,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   86400, // 24 hours
+		MaxAge:   86400, // 24 Stunden
 	}
 }
 
-// csrfToken is an idempotent bootstrap endpoint (GET /api/csrf-token) that
-// guarantees a csrf_token cookie is set and returns the token in the body. It lets
-// non-browser API clients obtain a token deterministically — without first triggering
-// a 403 on a mutating request that has no prior cookie. Browsers get the cookie via the
-// csrfMiddleware on any GET, but a direct POST without a preceding GET would otherwise fail.
+// csrfToken liefert das Token (GET /api/csrf-token) und setzt das Cookie, falls es fehlt; ein
+// zweiter Aufruf liefert dasselbe Token. Ein Aufrufer ohne Browser bekommt so verlässlich ein
+// Token, ohne vorher an einer ändernden Anfrage ohne Cookie mit 403 zu scheitern. Browser
+// bekommen das Cookie schon bei jedem GET über csrfMiddleware.
 func (s *Server) csrfToken() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := ""
@@ -77,64 +73,41 @@ func (s *Server) csrfToken() http.HandlerFunc {
 	}
 }
 
-// istAPIPfad entscheidet, ob ein Pfad der globalen CSRF-Prüfung unterliegt. Alles
-// andere ist statische Auslieferung (gebautes Frontend, Uploads, Swagger) und kennt
-// keine Mutation.
+// istAPIPfad entscheidet, ob ein Pfad der Prüfung unterliegt. Alles andere ist statische
+// Auslieferung (gebaute Oberfläche, Uploads, Swagger) und ändert nichts.
 //
-// Hier stand bis zum 30.07.2026 eine zweite Liste, die /api/admin, /api/books,
-// /api/class-books, /api/subjects, /api/lookup/ und /api/auth/status von der Prüfung
-// ausnahm — begründet damit, das Inventur-Modul bringe ein eigenes CSRF-System mit.
-// Dieses System existierte im Code nicht; der Kommentar war sein einziger Beleg. Die
-// echten Inventur-Routen liegen unter /api/inventur/* und liefen immer durch die
-// globale Prüfung. Tatsächlich ausgenommen waren sechs Admin-Mutationen, darunter
-// PUT /api/admin/permissions und PUT /api/admin/settings/mail — letzteres genügt, um
-// den SMTP-Host mitsamt gespeicherter Zugangsdaten auf einen fremden Server
-// umzubiegen. Getragen hat das allein SameSite=Strict am Sitzungscookie: Die zweite
-// Schranke, die diese Datei verspricht, fehlte für die größte Angriffsfläche.
-// /login gehört seit dem 04.08.2026 dazu. Es liegt als einziger mutierender Endpunkt
-// nicht unter /api/ und fiel deshalb still aus der Prüfung — klassisches Login-CSRF:
-// Eine fremde Seite kann ein Formular mit enctype="text/plain" abschicken, dessen Body
-// als JSON durchgeht (kein Preflight, keine CORS-Hürde), und das Opfer damit in die
-// Sitzung eines ANGREIFER-Kontos anmelden. Alles, was es danach am Tresen scannt,
-// landet in dessen Konto. SameSite=Strict verhindert das nicht: Es regelt das SENDEN
-// von Cookies, nicht das Setzen durch die Antwort.
-// /login/ als PRÄFIX, nicht nur der exakte Pfad: Bis zum 08.08.2026 stand hier
-// `path == "/login"`. Damit fiel jeder Unterpfad unterhalb von /login aus der Prüfung —
-// ein künftiges /login/code oder /login/barcode wäre ohne CSRF-Schutz online gegangen,
-// und zwar lautlos, weil an keiner Stelle eine Ausnahme dafür eingetragen werden musste.
+// Die Prüfung gilt für alle Pfade unter /api/, auch für die des Inventur-Moduls und der
+// Verwaltung: PUT /api/admin/settings/mail genügte, um den SMTP-Host samt Zugangsdaten auf
+// einen fremden Server umzubiegen.
 //
-// Dass das keine Theorie ist, belegte der eigene Test: Er führte /login/barcode als
-// eine von „drei Ausnahmen", obwohl istPruefungsAusnahme nur zwei kennt. Der Pfad kam
-// durch, weil er durch dieses Raster fiel — nicht, weil ihn jemand freigegeben hätte.
-// Eine Lücke, die wie eine Entscheidung aussieht, ist die gefährlichste Sorte.
+// /login gehört dazu, obwohl es nicht unter /api/ liegt: Ohne die Prüfung könnte eine fremde
+// Seite ein Formular mit enctype="text/plain" abschicken, dessen Rumpf als JSON durchgeht (kein
+// Preflight, keine CORS-Hürde), und das Opfer in die Sitzung eines Kontos des Angreifers
+// anmelden; alles, was es danach am Tresen scannt, landete in dessen Konto. SameSite=Strict
+// verhindert das nicht, es regelt das Senden von Cookies, nicht das Setzen durch die Antwort.
+// /login/ gilt als Anfang, nicht nur der genaue Pfad: Ein künftiges /login/code oder
+// /login/barcode fiele sonst lautlos aus der Prüfung, weil an keiner Stelle eine Ausnahme
+// dafür eingetragen werden müsste.
 func istAPIPfad(pfad string) bool {
 	return strings.HasPrefix(pfad, "/api/") || pfad == "/login" || strings.HasPrefix(pfad, "/login/")
 }
 
-// istPruefungsAusnahme nennt die mutierenden Pfade, die ohne Token durchmüssen —
-// jeder mit seinem Grund, damit die Liste nicht wieder unbemerkt wächst:
+// istPruefungsAusnahme nennt die ändernden Pfade, die ohne Token durchmüssen, jeder mit
+// seinem Grund, damit die Liste nicht unbemerkt wächst:
 //
-//   - /api/auth/logout: Der Aufruf löscht nur das eigene Cookie; ein erzwungenes
-//     Abmelden ist die Obergrenze des Schadens, und ein abgelaufenes Token darf sich
-//     nicht am fehlenden CSRF-Cookie festhaken.
-//   - /api/auth/refresh: Läuft im Frontend absichtlich ohne apiFetch (authStore), also
-//     ohne Header — und erneuert nur eine Sitzung, die der Browser schon hat.
-//
-// Hier stand außerdem /login/barcode mit der Begründung "vor dem Login gibt es keine
-// Sitzung". Diese Route existiert im gesamten Repository nicht: kein mux.Handle, kein
-// Aufruf im Frontend, und validateLoginCredentials verlangt zwingend E-Mail UND
-// Passwort — die Felder barcode_id/pin in LoginRequest wertet niemand aus. Eine
-// Ausnahme für einen Pfad, den es nicht gibt, schützt nichts und würde scharf, sobald
-// jemand die Route anlegt. Entfernt.
+//   - /api/auth/logout: Der Aufruf löscht nur das eigene Cookie; ein erzwungenes Abmelden ist
+//     die Obergrenze des Schadens, und ein abgelaufenes Token darf sich nicht am fehlenden
+//     CSRF-Cookie festhaken.
+//   - /api/auth/refresh: Läuft in der Oberfläche absichtlich ohne apiFetch (authStore), also
+//     ohne den Kopf, und erneuert nur eine Sitzung, die der Browser schon hat.
 func istPruefungsAusnahme(pfad string) bool {
 	return pfad == "/api/auth/logout" ||
 		pfad == "/api/auth/refresh"
 }
 
-// erneuereCSRFCookie setzt das csrf_token-Cookie, falls noch keines (bzw. ein leeres)
-// existiert, damit das Frontend es auslesen kann. Der Bootstrap-Endpunkt verwaltet
-// sein Cookie selbst und wird hier übersprungen, um doppelte Set-Cookie-Header zu
-// vermeiden.
+// erneuereCSRFCookie setzt das Cookie csrf_token, falls noch keines (oder ein leeres) da
+// ist, damit die Oberfläche es lesen kann. Die Tür csrfToken verwaltet ihr Cookie selbst und
+// wird hier übersprungen, um doppelte Köpfe Set-Cookie zu vermeiden.
 func erneuereCSRFCookie(w http.ResponseWriter, r *http.Request, istAPI bool, pfad string, nurHTTPS bool) {
 	if !istAPI || pfad == "/api/csrf-token" {
 		return
@@ -144,7 +117,7 @@ func erneuereCSRFCookie(w http.ResponseWriter, r *http.Request, istAPI bool, pfa
 	if cookie, err := r.Cookie(csrfCookieName); err == nil {
 		vorhanden = cookie.Value
 	}
-	// Generate a new token only if one doesn't exist yet
+	// Ein neues Token nur, wenn noch keines da ist.
 	if vorhanden != "" {
 		return
 	}
@@ -173,22 +146,21 @@ func pruefeCSRFToken(r *http.Request) error {
 	return nil
 }
 
-// csrfMiddleware returns an HTTP middleware that enforces the Double-Submit
-// Cookie CSRF pattern on all mutating API requests.
+// csrfMiddleware verlangt bei jeder ändernden Anfrage an die Schnittstelle das Token nach dem
+// Muster Double-Submit-Cookie.
 //
-// Ausgenommen bleiben ausschließlich die in istPruefungsAusnahme genannten Pfade und
-// alles, was keine API ist (statische Auslieferung) — die Begründung steht dort
-// jeweils an der Zeile.
+// Ausgenommen bleiben nur die Pfade in istPruefungsAusnahme und alles, was keine Schnittstelle
+// ist (statische Auslieferung); die Begründung steht dort an jeder Zeile.
 func (s *Server) csrfMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pfad := r.URL.Path
 
 		istAPI := istAPIPfad(pfad)
 
-		// Always set/refresh the CSRF cookie so the frontend can read it.
+		// Das Cookie immer setzen oder erneuern, damit die Oberfläche es lesen kann.
 		erneuereCSRFCookie(w, r, istAPI, pfad, s.nurHTTPS)
 
-		// Only validate on mutating methods for API paths
+		// Geprüft werden nur ändernde Anfragen an die Schnittstelle.
 		aendert := r.Method == http.MethodPost ||
 			r.Method == http.MethodPut ||
 			r.Method == http.MethodPatch ||

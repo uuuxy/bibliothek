@@ -16,12 +16,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Eine Ausweisnummer gehört genau einer Person — Schüler wie Kollegium. Bis Migration 118
-// prüfte jeder Schreibweg nur seine eigene Tabelle, die Theke suchte unter beiden und lud
-// still den Schüler. Seit Migration 125 stehen alle Leser in EINER Tabelle; die Zusage ist
-// dieselbe geblieben, sie hängt jetzt am partiellen Index statt am Trigger.
+// Eine Ausweisnummer gehört genau einer Person, Schüler wie Kollegium. Prüfte jeder
+// Schreibweg nur seine eigene Art von Leser, suchte die Theke unter beiden und lüde still den
+// Schüler. Alle Leser stehen in einer Tabelle (Migration 125), und die Zusage hängt am
+// partiellen Index.
 //
-// Hier über die echten Handler: Die Bibliothek bekommt eine Auskunft, keinen 500.
+// Geprüft über die echten Türen: Die Bibliothek bekommt eine Auskunft, keinen 500.
 func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -39,8 +39,8 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 		}
 	})
 
-	// Der Ausweis einer Lehrkraft steht an ihrer LESERZEILE (Migration 125) — zwei
-	// Anweisungen, weil eine schreibende CTE ihre eigene Zeile noch nicht sieht.
+	// Der Ausweis einer Lehrkraft steht an ihrer Leserzeile: zwei Anweisungen, weil eine
+	// schreibende CTE ihre eigene Zeile noch nicht sieht.
 	lehrkraft := func(t *testing.T, barcode, email string) string {
 		t.Helper()
 		var id, leserID string

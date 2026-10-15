@@ -8,10 +8,10 @@ import (
 )
 
 func (s *Server) registriereBestellRouten(mux *http.ServeMux, bestellDienst *service.BestellDienst) {
-	// Bestellungen & Lieferanten
+	// Bestellungen und Lieferanten
 	// Anzeige-Regeln des Bestellwesens (z. B. ob mit Preisen gearbeitet wird).
-	// view_orders statt manage_users: Wer bestellen darf, muss dafuer keine
-	// Benutzerverwaltungsrechte bekommen (siehe api/bestellung/bestellkonfiguration.go).
+	// view_orders statt manage_users: Wer bestellen darf, muss dafür keine Rechte der
+	// Benutzerverwaltung bekommen (api/bestellung/bestellkonfiguration.go).
 	mux.Handle("GET /api/bestellungen/konfiguration", s.verlangeRecht("view_orders")(s.bestellung().BestellKonfiguration(
 		repository.NewEinstellungsAbfragen(s.DB.Pool), repository.NewLieferantenAbfragen(s.DB.Pool))))
 	mux.Handle("GET /api/bestellungen", s.verlangeRecht("view_orders")(s.bestellung().Bestellbedarf()))
@@ -34,10 +34,10 @@ func (s *Server) registriereBestellRouten(mux *http.ServeMux, bestellDienst *ser
 	mux.Handle("POST /api/bestellungen/bulk-receive", s.verlangeRecht("create_orders")(s.bestellung().WareneingangBuchen()))
 	mux.Handle("PUT /api/bestellungen/{id}/bestaetigen", s.verlangeRecht("create_orders")(s.bestellung().BestellungBestaetigen()))
 	mux.Handle("PUT /api/bestellungen/{id}/bestaetigungs-link", s.verlangeRecht("create_orders")(s.bestellung().BestaetigungsLinkErneuern()))
-	// Erneuter Versand der Bestellmail nach einem gescheiterten Versuch (Migration 161).
+	// Erneuter Versand der Bestellmail nach einem gescheiterten Versuch.
 	mux.Handle("POST /api/bestellungen/{id}/mail", s.verlangeRecht("create_orders")(s.bestellung().BestellmailErneutSenden()))
 	// Derselbe Vermerk ohne Versand: Der Händler hat die Bestellung auf anderem Weg erhalten.
 	mux.Handle("DELETE /api/bestellungen/{id}/mail", s.verlangeRecht("create_orders")(s.bestellung().BestellmailVermerkNehmen()))
-	// Rückweg für den Topf (Migration 109): mit Pflicht-Grund, im Admin-Audit-Log.
+	// Der Rückweg für den Topf: mit Grund als Pflicht, im Protokoll der Verwaltung.
 	mux.Handle("PUT /api/bestellungen/{id}/mittel", s.verlangeRecht("create_orders")(s.bestellung().BestellungMittelKorrigieren()))
 }

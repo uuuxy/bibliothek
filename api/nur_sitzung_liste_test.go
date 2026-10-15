@@ -9,20 +9,17 @@ import (
 	"testing"
 )
 
-// Welche Routen kommen mit einer BLOSSEN SITZUNG aus — ohne Fachrecht?
+// Welche Routen kommen mit einer bloßen Sitzung aus, ohne Fachrecht?
 //
-// Das ist die kleine, aber empfindliche Fläche, die jede angemeldete Rolle öffnen kann:
-// auch KOLLEGIUM (Portal) und HELFER (Kiosk). Bis zum 06.09.2026 stand die Antwort nur
-// als Satz im Kommentar über VerlangeAnmeldung — und der Satz war zweimal falsch:
-// erst „heute genau einer" (es waren vier), dann „vier" (es sind sieben). Beim zweiten
-// Mal, im Rasterdurchgang desselben Tages, hat der Zähler die drei Portal-Routen des
-// inventur-Pakets übersehen, weil sie die Middleware INJIZIERT bekommen
-// (config.RequireAuthenticated) statt sie als Methode zu rufen. Genau die Bugklasse, die
-// das Projekt „statische Inventur lügt" nennt.
+// Das ist die kleine, aber empfindliche Fläche, die jede angemeldete Rolle öffnen kann, auch
+// Kollegium (Portal) und Helfer (Kiosk). Ein Satz im Kommentar über VerlangeAnmeldung, der die
+// Routen zählt, liegt leicht falsch: Die drei Routen des Portals im Paket inventur bekommen die
+// Middleware hereingereicht (config.RequireAuthenticated), statt sie als Methode zu rufen, und ein
+// Zähler, der nur nach der Methode sucht, übersieht sie.
 //
-// Deshalb zählt jetzt eine Ratsche statt eines Kommentars. Jede Zeile hier ist eine
-// bewusste Entscheidung: Der Inhalt muss PII-Stufe 0 sein (keine Schülerdaten), sonst
-// gehört die Route hinter ein Recht.
+// Deshalb zählt eine Ratsche statt eines Kommentars. Jede Zeile hier ist eine bewusste
+// Entscheidung: Der Inhalt muss PII-Stufe 0 sein (keine Schülerdaten), sonst gehört die Route
+// hinter ein Recht.
 func TestNurSitzungRoutenSindBenannt(t *testing.T) {
 	nurSitzung := map[string]string{
 		"GET /events":                       "SSE-Stream; der authStore baut ihn direkt nach dem Login auf. Ein Fachrecht davor erzeugt statt einer Absage eine Reconnect-Schleife plus Offline-Overlay.",

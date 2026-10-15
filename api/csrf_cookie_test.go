@@ -25,7 +25,7 @@ func TestCSRFCookieFolgtDerKonfiguration(t *testing.T) {
 }
 
 // TestCSRFCookieAttribute hält die übrigen Schutzattribute fest. HttpOnly ist hier
-// bewusst false — das Frontend muss den Wert lesen, um ihn als X-CSRF-Token
+// bewusst false: Die Oberfläche muss den Wert lesen, um ihn als X-CSRF-Token
 // zurückzuschicken. Genau deshalb trägt dieses Cookie auch keinen Sitzungszustand.
 func TestCSRFCookieAttribute(t *testing.T) {
 	c := newCSRFCookie("tok123", true)

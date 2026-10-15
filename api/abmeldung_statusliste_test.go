@@ -17,25 +17,25 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Gate: Die Statusliste des Clients ist genau die Menge der Abmelde-Antworten MIT Löschcookie.
+// Die Statusliste der Oberfläche ist genau die Menge der Antworten des Abmeldens mit
+// Löschcookie.
 //
-// Zwei Dateien teilen sich seit dem 14.09.2026 eine Verabredung. Der Handler
-// (abmeldung.go) setzt das Löschcookie und antwortet 200 oder 503; der Client
-// (frontend/src/lib/stores/authStore.svelte.js, abmeldungZugestellt) hält genau diese beiden
-// Codes für „das Löschcookie kam an" und räumt daraufhin den Merker „Abmeldung ausstehend".
-// Beide Seiten waren getestet, aber nichts hielt die Listen aneinander — jede konnte sich
-// ändern, ohne dass die andere rot wurde (Rasterdurchgang 15.09.2026, OFFEN.md 5.14).
+// Zwei Dateien teilen sich eine Verabredung. Die Tür (abmeldung.go) setzt das Löschcookie und
+// antwortet 200 oder 503; die Oberfläche (frontend/src/lib/stores/authStore.svelte.js,
+// abmeldungZugestellt) hält genau diese beiden Codes für „das Löschcookie kam an" und räumt
+// daraufhin den Merker „Abmeldung ausstehend". Ohne diesen Test könnte sich jede Seite ändern,
+// ohne dass die andere rot wird.
 //
 // Die gefährliche Richtung: Nimmt jemand dem 503-Zweig das Löschcookie („wenn wir nicht
-// widerrufen konnten, melden wir auch nicht ab"), hält der Client die Abmeldung weiter für
+// widerrufen konnten, melden wir auch nicht ab"), hält die Oberfläche die Abmeldung weiter für
 // zugestellt und löscht den Merker. Das HttpOnly-Cookie bleibt im Browser, und das nächste
 // Neuladen am geteilten Theken-Rechner meldet die vorige Person wieder an.
 //
-// Deshalb wird die Server-Seite hier GEMESSEN, nicht aufgezählt: Der Handler läuft durch
-// jeden Pfad, in dem ein Sitzungscookie vorliegt, und die Antworten sagen selbst, ob sie das
-// Löschcookie tragen. Auf der Client-Seite gilt nur der Rumpf der Funktion — der JSDoc
-// darüber nennt 429 und 502/504 als Gegenbeispiele, und ein Kommentar im Rumpf könnte es
-// ebenso (Bugklasse „lügende Ratsche durch Kommentar").
+// Deshalb wird die Seite des Servers hier gemessen, nicht aufgezählt: Die Tür läuft durch jeden
+// Pfad, in dem ein Sitzungscookie vorliegt, und die Antworten sagen selbst, ob sie das
+// Löschcookie tragen. Auf der Seite der Oberfläche gilt nur der Rumpf der Funktion: Der JSDoc
+// darüber nennt 429 und 502/504 als Gegenbeispiele, ein Kommentar im Rumpf könnte es ebenso,
+// und ein Test, der Kommentare mitliest, fände dort Codes, die nie gelten.
 func TestAbmeldung_StatuslisteDesClientsIstDieMengeMitLoeschcookie(t *testing.T) {
 	server := abmeldeAntwortenMitLoeschcookie(t)
 	client := statuslisteDerOberflaeche(t)
@@ -58,10 +58,10 @@ func TestAbmeldung_StatuslisteDesClientsIstDieMengeMitLoeschcookie(t *testing.T)
 	}
 }
 
-// abmeldeAntwortenMitLoeschcookie fährt den Handler durch jeden Pfad mit vorliegendem
-// Sitzungscookie und sammelt die Statuscodes, deren Antwort das Löschcookie trägt. Der
-// Pfad OHNE Sitzungscookie fehlt absichtlich: Dort gibt es nichts zu löschen, und der Client
-// hat auch nichts, was er fälschlich behalten könnte.
+// abmeldeAntwortenMitLoeschcookie fährt die Tür durch jeden Pfad mit vorliegendem
+// Sitzungscookie und sammelt die Statuscodes, deren Antwort das Löschcookie trägt. Der Pfad ohne
+// Sitzungscookie fehlt absichtlich: Dort gibt es nichts zu löschen, und die Oberfläche hat auch
+// nichts, was sie fälschlich behalten könnte.
 func abmeldeAntwortenMitLoeschcookie(t *testing.T) map[int]bool {
 	t.Helper()
 	pfade := []struct {
@@ -113,8 +113,8 @@ func abmeldeAntwortenMitLoeschcookie(t *testing.T) map[int]bool {
 			ohne[rec.Code] = true
 		}
 	}
-	// Ein Code, der mal mit und mal ohne Löschcookie kommt, wäre für den Client nicht zu
-	// deuten — er sieht nur den Status, nie das HttpOnly-Cookie.
+	// Ein Code, der mal mit und mal ohne Löschcookie kommt, wäre für die Oberfläche nicht
+	// zu deuten: Sie sieht nur den Status, nie das HttpOnly-Cookie.
 	for _, code := range sortierteCodes(mit) {
 		if ohne[code] {
 			t.Errorf("Status %d kommt vom Handler mal mit und mal ohne Löschcookie — der Client "+
@@ -131,8 +131,8 @@ var (
 )
 
 // statuslisteDerOberflaeche liest die Codes aus dem Rumpf von abmeldungZugestellt. Fehlt die
-// Funktion oder steht kein `status === NNN` mehr darin, ist das ein Fehler des Gates, kein
-// grüner Lauf: Die Form ist die einzige, die es liest.
+// Funktion oder steht kein `status === NNN` mehr darin, ist das ein Fehler dieses Tests, kein
+// grüner Lauf: Die Form ist die einzige, die er liest.
 func statuslisteDerOberflaeche(t *testing.T) map[int]bool {
 	t.Helper()
 	pfad := filepath.Join("..", "frontend", "src", "lib", "stores", "authStore.svelte.js")

@@ -9,23 +9,20 @@ import (
 	"testing"
 )
 
-// PII-Matrix-Gate (Abschluss von Befund F2, bewertung/datenbank-pruefbericht.md):
-// docs/PII_MATRIX.de.md stuft JEDE Route nach Schülerdaten ein (Stufe 0–3) und
-// nennt das Recht davor. Dieses Gate hält Dokument und Code deckungsgleich:
+// docs/PII_MATRIX.de.md stuft jede Route nach Schülerdaten ein (Stufe 0–3) und nennt das Recht
+// davor. Diese Tests halten Dokument und Code deckungsgleich:
 //
-//  1. Jede registrierte Route braucht eine Zeile in der Matrix — eine NEUE Route
-//     ohne Einstufung wird rot. Genau das war der Kern von Frage 2: "Adresse
-//     vergessen zu entfernen" darf nicht lautlos möglich sein.
-//  2. Jede Matrix-Zeile braucht ihre Route — das Dokument kann nicht veralten.
-//  3. Das dokumentierte Recht muss dem verlangeRecht(...) der Registrierung
-//     entsprechen — die Matrix kann nicht mehr Schutz behaupten, als da ist.
+//  1. Jede angemeldete Route braucht eine Zeile in der Matrix; eine neue Route ohne
+//     Einstufung wird rot. „Adresse vergessen zu entfernen" darf nicht lautlos möglich sein.
+//  2. Jede Matrix-Zeile braucht ihre Route; das Dokument kann nicht veralten.
+//  3. Das dokumentierte Recht muss dem verlangeRecht(...) der Anmeldung entsprechen; die
+//     Matrix kann nicht mehr Schutz behaupten, als da ist.
 //  4. Öffentliche Routen (ohne Sitzung erreichbar) müssen Stufe 0 sein.
 //
-// Die STUFE selbst (was die Antwort wirklich enthält) prüft für GET-Routen seit
-// dem 01.09.2026 das Antwort-Gate (pii_antwort_pg_test.go, Kanarienwerte am
-// echten Router). Für Nicht-GET-Routen bleibt sie beim Anlegen der Zeile von Hand
-// am Handler zu verifizieren — dieses Gate erzwingt, DASS die Einordnung
-// stattfindet, das Antwort-Gate misst ihr Ergebnis auf dem Lesepfad.
+// Die Stufe selbst (was die Antwort wirklich enthält) prüft für GET-Routen
+// pii_antwort_pg_test.go mit Kanarienwerten am echten Router. Für Routen ohne GET bleibt sie
+// beim Anlegen der Zeile von Hand an der Tür nachzuprüfen: Diese Tests erzwingen, dass die
+// Einordnung stattfindet, pii_antwort_pg_test.go misst ihr Ergebnis auf dem Lesepfad.
 
 type matrixZeile struct {
 	Route  string // "GET /api/vormerkungen"
@@ -66,8 +63,9 @@ func leseMatrix(t *testing.T) map[string]matrixZeile {
 	return zeilen
 }
 
-// registrierteRouten sammelt Route → Registrierungszeile aus den api-Routendateien
-// und dem Inventur-Mux. Dieselbe lexikalische Technik wie das Authz-Coverage-Gate.
+// registrierteRouten sammelt Route → Zeile der Anmeldung aus den Routendateien von api/ und
+// dem Mux der Inventur. Dieselbe Technik wie geschuetzte_routen_test.go, aber je Zeile; deshalb
+// steht jede Anmeldung in einer Zeile.
 func registrierteRouten(t *testing.T) map[string]string {
 	t.Helper()
 	muster := regexp.MustCompile(`(?:mux|handler\.mux)\.Handle(?:Func)?\("([^"]+)"`)
@@ -132,8 +130,8 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 		var erwartet string
 		switch z.Recht {
 		case "öffentlich", "Token", "selbst-prüfend":
-			// Kein Authz-Wrapper: Token-Routen weisen sich über den Link-Token aus,
-			// selbst-prüfende (auth/*) validieren das Session-Cookie im Handler.
+			// Keine Prüfung des Zugriffs davor: Token-Routen weisen sich über den Token im
+			// Link aus, selbst prüfende (auth/*) prüfen das Sitzungscookie in der Tür.
 			if strings.Contains(zeile, "verlangeRecht(") ||
 				strings.Contains(zeile, "VerlangeAnmeldung(") || strings.Contains(zeile, "RequireAuthenticated(") {
 				t.Errorf("%s: Matrix sagt %q, Code hat einen Wrapper: %s", route, z.Recht, strings.TrimSpace(zeile))
@@ -151,13 +149,13 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 		case "inventur:view_books":
 			erwartet = "RequireViewBooks("
 		case "inventur:delete_books":
-			// Bestand VERNICHTEN ist ein eigenes Recht, getrennt von edit_books
-			// (17.09.2026): Der Massenlöschweg hing bis dahin an edit_books, während
-			// das Löschen eines einzelnen Titels delete_books verlangte.
+			// Bestand vernichten ist ein eigenes Recht, getrennt von edit_books: Hinge der
+			// Massenlöschweg an edit_books, wäre er offener als das Löschen eines einzelnen
+			// Titels, das delete_books verlangt.
 			erwartet = "RequireDeleteBooks("
 		case "inventur:edit_books":
-			// Die Schreibrouten teilen sich einen vorgebauten Handler:
-			// adminH := config.RequireEditBooks(...) — die Variable IST der Wrapper.
+			// Die Schreibrouten teilen sich eine vorgebaute Tür:
+			// adminH := config.RequireEditBooks(...); die Variable ist die Prüfung des Zugriffs.
 			if !strings.Contains(zeile, "RequireEditBooks(") && !strings.Contains(zeile, "adminH") {
 				t.Errorf("%s: Matrix dokumentiert Recht %q, die Registrierung sagt etwas anderes: %s", route, z.Recht, strings.TrimSpace(zeile))
 			}

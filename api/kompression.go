@@ -22,7 +22,7 @@ var kompressionInhaltstypen = []string{
 	"text/csv",
 }
 
-// kompressionMiddleware packt Antworten mit gzip, wenn der Client es anbietet. Der Proxy
+// kompressionMiddleware packt Antworten mit gzip, wenn der Browser es anbietet. Der Proxy
 // vor der Anwendung packt nicht; ohne dieses Glied geht die Titelliste des Katalogs mit
 // mehreren Megabyte durchs Schulnetz.
 //

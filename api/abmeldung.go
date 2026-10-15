@@ -12,14 +12,13 @@ import (
 	"bibliothek/pkg/httpresp"
 )
 
-// abmelden blacklists the current JWT and clears the session cookie.
-// This was previously referenced in CSRF/RBAC exemptions but never actually registered.
+// abmelden widerruft das Token der Sitzung und löscht das Sitzungscookie.
 func (s *Server) abmelden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session_token")
 		if err != nil {
 			if errors.Is(err, http.ErrNoCookie) {
-				// Already logged out — idempotent
+				// Schon abgemeldet: Ein zweiter Aufruf antwortet wie der erste.
 				w.Header().Set("Content-Type", "application/json")
 				httpresp.Schreibe(w, []byte(`{"status":"ok"}`))
 				return
@@ -28,11 +27,10 @@ func (s *Server) abmelden() http.HandlerFunc {
 			return
 		}
 
-		// Parse the token to get expiration time
-		// Abmelden geht auch aus der Sperre nach Inaktivität heraus (Sperrbildschirm,
-		// „Abmelden und als andere Person anmelden").
+		// Die Ablaufzeit steht im Token. Abmelden geht auch aus der Sperre nach Inaktivität heraus
+		// (Sperrbildschirm, „Abmelden und als andere Person anmelden").
 		claims, err := s.Auth.VerifyTokenTrotzSperre(cookie.Value)
-		// widerrufFehler bleibt nil, solange es nichts zu widerrufen GIBT: Ein
+		// widerrufFehler bleibt nil, solange es nichts zu widerrufen gibt: Ein
 		// ungültiges, abgelaufenes oder längst widerrufenes Token ist kein Aussetzer,
 		// die Abmeldung ist dann vollständig. Gestört ist es nur, wenn die Datenbank
 		// nicht antwortet — dann bleibt das Token gültig.
@@ -43,7 +41,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 			// und ohne sie ist die Ablaufzeit nicht zu bekommen.
 			widerrufFehler = err
 		case err == nil && claims.ExpiresAt != nil:
-			// Blacklist the token so it can't be reused until it naturally expires
+			// Auf die Sperrliste: Bis zu seinem Ablauf gilt das Token nicht mehr.
 			widerrufFehler = s.Auth.Blacklist.Add(cookie.Value, claims.ExpiresAt.Time)
 		}
 		if err == nil {
@@ -54,7 +52,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 			}
 		}
 
-		// #nosec G124 - Secure flag is dynamically configured
+		// #nosec G124 - Secure folgt nurHTTPS
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    "",
@@ -66,7 +64,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 			SameSite: http.SameSiteStrictMode,
 		})
 
-		// Das Löschcookie steht oben und geht in BEIDEN Fällen hinaus — es ist die
+		// Das Löschcookie steht oben und geht in beiden Fällen hinaus: Es ist die
 		// Hälfte, die stattgefunden hat. Die Antwort darunter sagt, ob die andere
 		// Hälfte auch stattgefunden hat: Ein „ok" nach gescheitertem Widerruf käme aus
 		// der Eingabe und nicht aus der Wirkung.

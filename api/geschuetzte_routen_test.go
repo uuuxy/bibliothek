@@ -8,31 +8,30 @@ import (
 	"testing"
 )
 
-// TestAlleRoutenSindGeschuetzt ist ein Sicherheits-Gate gegen versehentlich
-// ungeschützte Endpunkte. Jede in router.go / routen_*.go registrierte HTTP-Route
-// MUSS eine der drei Bedingungen erfüllen:
+// TestAlleRoutenSindGeschuetzt hält versehentlich ungeschützte Endpunkte fern. Jede in
+// router.go oder routen_*.go angemeldete Route erfüllt eine der drei Bedingungen:
 //
-//  1. einen Autorisierungs-Wrapper tragen (verlangeRecht oder VerlangeAnmeldung),
-//  2. an den inventur-invHandler delegieren (dessen Routen prüft TestPIIMatrixRechtStimmtMitCodeUeberein), ODER
-//  3. bewusst auf der öffentlichen Allowlist unten stehen.
+//  1. Sie trägt eine Prüfung des Zugriffs (verlangeRecht oder VerlangeAnmeldung).
+//  2. Sie reicht an inventurTueren weiter (dessen Routen prüft
+//     TestPIIMatrixRechtStimmtMitCodeUeberein).
+//  3. Sie steht bewusst auf der Liste der öffentlichen Routen unten.
 //
-// Eine neu hinzugefügte Route ohne Schutz lässt diesen Test rot werden — damit kann
-// kein Endpunkt unbemerkt ohne Zugriffskontrolle live gehen. Der Test parst die
-// Registrierungs-Quelltexte lexikalisch; das ist bewusst simpel und deterministisch
-// (kein Laufzeit-Router-Aufbau nötig).
+// Eine neue Route ohne Schutz macht diesen Test rot; so geht kein Endpunkt unbemerkt ohne
+// Zugriffskontrolle in Betrieb. Der Test liest die Quelltexte der Anmeldungen als Text; das ist
+// bewusst einfach und braucht keinen Aufbau des Routers zur Laufzeit.
 func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 	// Bewusst öffentliche bzw. selbst-authentifizierende Routen (Pfad ohne HTTP-Methode).
-	// JEDE Ergänzung hier ist eine bewusste Sicherheitsentscheidung — Reviewer aufgepasst.
+	// Jede Ergänzung hier ist eine bewusste Entscheidung über die Sicherheit.
 	oeffentlicheRouten := map[string]string{
 		"/api/public/opac/suche": "öffentlicher Katalog (nur Titel/Autor/Verfügbarkeit, keine PII)",
 		"/api/monitor/slides":    "öffentlicher Bibliotheks-Monitor (nur Buchdaten)",
 		"/api/images/cover":      "öffentlicher Cover-Proxy (SSRF-Host-Allowlist in api/katalog/cover.go)",
 		"/api/csrf-token":        "CSRF-Bootstrap-Endpunkt",
-		// Bestätigungs-Link an den Lieferanten (Migration 063). Kein Login, aber auch kein
-		// offener Endpunkt: Der 256-Bit-Token aus der Bestellmail ist der Ausweis und
-		// öffnet ausschließlich SEINE Bestellung. Sichtbar sind Lieferant, Datum,
-		// Kundennummer und Titelzeilen — dieselben Angaben, die der Lieferant ohnehin als
-		// Mailanhang hat; keine PII, keine Preise, kein Zugriff auf den Bestand.
+		// Bestätigungs-Link an den Lieferanten. Keine Anmeldung, aber auch kein offener
+		// Endpunkt: Der 256-Bit-Token aus der Bestellmail ist der Ausweis und öffnet
+		// ausschließlich seine Bestellung. Sichtbar sind Lieferant, Datum, Kundennummer und
+		// Titelzeilen, dieselben Angaben, die der Lieferant ohnehin als Mailanhang hat; keine
+		// PII, keine Preise, kein Zugriff auf den Bestand.
 		"/api/public/bestellung/{token}":                     "Bestätigungs-Link: Bestellansicht des Lieferanten (Token = Ausweis, nur diese Bestellung)",
 		"/api/public/bestellung/{token}/etiketten/{groesse}": "Bestätigungs-Link: Etikettenbogen dieser Bestellung (identisch zum Mailanhang)",
 		"/api/public/bestellung/{token}/bestaetigen":         "Bestätigungs-Link: einmalige Bestätigung durch den Lieferanten (atomar, danach 409)",
@@ -78,10 +77,10 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 			pfad := methodenPraefix.ReplaceAllString(muster, "")
 
 			geschuetzt := strings.Contains(ausdruck, "verlangeRecht(") ||
-				// VerlangeAnmeldung verlangt eine gültige Sitzung, aber kein Fachrecht —
-				// die richtige Schwelle für Endpunkte, die JEDER angemeldete Client öffnet
-				// (heute nur der SSE-Stream /events). Bewusst hier und nicht auf der
-				// Public-Allowlist: Ohne Sitzung kommt niemand durch.
+				// VerlangeAnmeldung verlangt eine gültige Sitzung, aber kein Fachrecht: die
+				// richtige Schwelle für Endpunkte, die jede angemeldete Rolle öffnet
+				// (nur_sitzung_liste_test.go nennt sie). Bewusst hier und nicht auf der Liste der
+				// öffentlichen Routen: Ohne Sitzung kommt niemand durch.
 				strings.Contains(ausdruck, "VerlangeAnmeldung(") ||
 				strings.Contains(ausdruck, "inventurTueren")
 			if geschuetzt {
@@ -96,28 +95,27 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		}
 	}
 
-	// Sanity-Floor: Findet der Scanner (durch geänderte Registrierungs-Syntax o. Ä.)
-	// plötzlich fast nichts, ist der Gate faktisch abgeschaltet — dann lieber laut
-	// scheitern als still grün. Aktuell sind es ~110 Routen.
+	// Untergrenze: Findet der Scanner (etwa nach einer geänderten Form der Anmeldung)
+	// plötzlich fast nichts, ist der Test faktisch abgeschaltet; dann lieber laut scheitern als
+	// still grün.
 	if geprueft < 50 {
 		t.Fatalf("nur %d Routen erkannt — der Scanner greift vermutlich nicht mehr (erwartet >100). "+
 			"Registrierungs-Syntax/Regex prüfen.", geprueft)
 	}
 }
 
-// TestInventurDelegationIstWirklichGeschuetzt prüft die Annahme nach, auf der
-// Bedingung 2 des Gates oben beruht.
+// TestInventurDelegationIstWirklichGeschuetzt prüft die Annahme nach, auf der Bedingung 2 des
+// Tests oben beruht.
 //
-// Der Test oben wertet jede Zeile mit "invHandler" als geschützt — begründet damit,
-// der Inventur-Mux setze intern RequireViewBooks/RequireEditBooks. Für eine seiner
-// Routen stimmte das nicht: /uploads/ wird dort von einem nackten http.FileServer
-// bedient. Das Gate meldete also "geschützt" für einen Endpunkt, den es nie geprüft
-// hatte — ein grüner Test, dessen Grün nichts bedeutete.
+// Der Test oben wertet jede Anmeldung mit inventurTueren als geschützt, weil der Mux der
+// Inventur intern RequireViewBooks oder RequireEditBooks setze. Für /uploads/ stimmt das nicht:
+// Die Route bedient dort ein nackter http.FileServer. Der Test oben meldete also „geschützt" für
+// einen Endpunkt, den er nie geprüft hat.
 //
-// Statt der Zusicherung zu glauben, liest dieser Test die Registrierungen des
-// Inventur-Mux und verlangt für jede OHNE Autorisierungs-Wrapper einen bewussten
-// Eintrag auf der Public-Allowlist. Kommt dort eine ungeschützte Route hinzu, wird
-// dieser Test rot — nicht erst der Betrieb.
+// Statt der Zusicherung zu glauben, liest dieser Test die Anmeldungen im Mux der Inventur und
+// verlangt für jede ohne Prüfung des Zugriffs einen bewussten Eintrag in
+// oeffentlicheRoutenInventur. Kommt dort eine ungeschützte Route hinzu, wird dieser Test rot,
+// nicht erst der Betrieb.
 func TestInventurDelegationIstWirklichGeschuetzt(t *testing.T) {
 	inhalt, err := os.ReadFile(filepath.Join("..", "inventur", "api_routen.go"))
 	if err != nil {
@@ -153,22 +151,21 @@ func TestInventurDelegationIstWirklichGeschuetzt(t *testing.T) {
 }
 
 // oeffentlicheRoutenInventur nennt die Routen des Inventur-Mux, die bewusst ohne
-// Autorisierung ausgeliefert werden. JEDE Ergänzung ist eine Sicherheitsentscheidung.
+// Autorisierung ausgeliefert werden. Jede Ergänzung ist eine Entscheidung über die Sicherheit.
 var oeffentlicheRoutenInventur = map[string]string{
 	"/uploads/": "hochgeladene Cover-Bilder, öffentlich lesbar für Katalog/Monitor. " +
 		"Kein Verzeichnislisting und kein Unterordner (neuteredFileSystem); Schülerfotos " +
 		"liegen nicht hier, sondern AES-verschlüsselt in der Datenbank.",
 }
 
-// registrierungsAusdruecke liefert jeden Aufruf `<praefix>Handle(` bzw.
-// `<praefix>HandleFunc(` als EINEN Ausdruck — von der öffnenden bis zur zugehörigen
-// schließenden Klammer, über Zeilengrenzen hinweg; Klammern in Zeichenketten zählen nicht.
+// registrierungsAusdruecke liefert jeden Aufruf `<praefix>Handle(` oder `<praefix>HandleFunc(`
+// als einen Ausdruck, von der öffnenden bis zur zugehörigen schließenden Klammer, über
+// Zeilengrenzen hinweg; Klammern in Zeichenketten zählen nicht.
 //
-// Bis zum 21.09.2026 lasen beide Gates die ZEILE der Registrierung. Eine Registrierung,
-// die zwischen Adresse und Wrapper umbrach, galt damit als ungeschützt (17.09.2026 beim
-// Einhängen des Ersatzwert-Vorschlags; OFFEN.md 5.10). Ein Umbruch kann nie ein falsches
-// Grün erzeugen, nur ein falsches Rot — aber eines, das in die falsche Richtung schickt
-// („schütze die Route", sie ist geschützt).
+// Läsen die Tests nur die Zeile der Anmeldung, gälte eine Anmeldung, die zwischen Adresse und
+// Prüfung des Zugriffs umbricht, als ungeschützt. Ein Umbruch kann nie ein falsches Grün
+// erzeugen, nur ein falsches Rot, aber eines, das in die falsche Richtung schickt („schütze die
+// Route", sie ist geschützt).
 func registrierungsAusdruecke(inhalt, praefix string) []string {
 	var ausdruecke []string
 	for _, marker := range []string{praefix + "Handle(", praefix + "HandleFunc("} {
@@ -220,9 +217,9 @@ func klammerEnde(text string, auf int) int {
 	return -1
 }
 
-// TestRegistrierungsAusdruecke_LesenUeberZeilengrenzen ist der Rot-Beweis für die beiden
-// Gates oben: Bricht eine Registrierung nach der Adresse um, steht der Wrapper trotzdem
-// im selben Ausdruck.
+// TestRegistrierungsAusdruecke_LesenUeberZeilengrenzen ist die Probe für die beiden Tests
+// oben: Bricht eine Anmeldung nach der Adresse um, steht die Prüfung des Zugriffs trotzdem im
+// selben Ausdruck.
 func TestRegistrierungsAusdruecke_LesenUeberZeilengrenzen(t *testing.T) {
 	quelle := "\tmux.Handle(\"GET /api/x\",\n" +
 		"\t\ts.verlangeRecht(\"view_x\")(h))\n" +

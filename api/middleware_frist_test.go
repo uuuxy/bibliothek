@@ -27,12 +27,11 @@ func TestFristMiddleware_NurDerLiveStromBleibtOhneFrist(t *testing.T) {
 	}
 }
 
-// TestAnfrageFrist belegt die Fristen-Zuordnung ohne HTTP-Aufbau.
+// TestAnfrageFrist belegt die Zuordnung der Fristen ohne Aufbau über HTTP.
 //
-// Hintergrund (Audit 01.08.2026): Alle Pfade ausser /events liefen unter derselben
-// 15-Sekunden-Frist — auch der Littera-Import. Der echte Altbestand hat 11.076 Titel
-// und 61.580 Exemplare; darunter bricht der Server mitten in der Transaktion ab,
-// waehrend der Browser noch 5 Minuten wartet.
+// Liefen alle Pfade außer /events unter derselben Frist von 15 Sekunden, auch der
+// Littera-Import, bräche der Server beim echten Altbestand (11.076 Titel, 61.580 Exemplare)
+// mitten in der Transaktion ab, während der Browser noch 5 Minuten wartet.
 func TestAnfrageFrist(t *testing.T) {
 	const standard = 15 * time.Second
 
@@ -43,21 +42,21 @@ func TestAnfrageFrist(t *testing.T) {
 	}{
 		{"/api/import/littera", langLaufendeFrist, "Katalogimport dauert Minuten"},
 		{"/api/admin/import-bestand", langLaufendeFrist, "Bestandsimport dauert Minuten"},
-		// Bis 07.09.2026 stand der Listenimport unter der 15-s-Frist: Eine Liste mit 200
-		// unbekannten ISBNs braucht bei 10 parallelen Lookups eine Minute — der Server
-		// brach am Kontext ab, der Browser wartete noch vier weitere Minuten.
+		// Der Listenimport braucht die lange Frist: Eine Liste mit 200 unbekannten ISBNs
+		// braucht bei 10 parallelen Abfragen eine Minute; unter 15 Sekunden bräche der
+		// Server am Kontext ab.
 		{"/api/books/import", langLaufendeFrist, "Listenimport fragt je ISBN den Katalog"},
 		{"/api/admin/sync-covers", langLaufendeFrist, "Cover-Abgleich laeuft ueber den ganzen Bestand"},
 		{"/api/lusd/import", langLaufendeFrist, "LUSD-Import umfasst ganze Jahrgaenge"},
 		{"/api/lusd/preview", langLaufendeFrist, "Vorschau liest dieselbe Datei"},
 		{"/api/admin/mahnungen/bulk-print", langLaufendeFrist, "Sammeldruck ueber alle Klassen"},
 
-		// Alltagspfade behalten die kurze Frist — sonst haelt ein haengender Scan
-		// minutenlang eine Datenbankverbindung fest.
+		// Alltagspfade behalten die kurze Frist, sonst hält ein hängender Scan
+		// minutenlang eine Verbindung zur Datenbank fest.
 		{"/api/buecher", standard, "normale Abfrage"},
 		{"/api/inventur/scan", standard, "Scan muss schnell sein"},
 		{"/api/schueler", standard, "normale Abfrage"},
-		// Praefix-Grenze: /api/importe waere KEIN Import-Pfad.
+		// Grenze des Präfixes: /api/importeur ist kein Import-Pfad.
 		{"/api/importeur", standard, "aehnlicher Name, anderer Endpunkt"},
 	}
 
@@ -68,11 +67,9 @@ func TestAnfrageFrist(t *testing.T) {
 	}
 }
 
-// TestUUIDPruefungGreiftAmMux ist der Regressionstest zu Audit-Punkt 3.
-//
-// uuidPfadMiddleware las r.PathValue("id"), umschloss den Mux aber von AUSSEN.
-// PathValue fuellt erst der ServeMux beim Treffer — zur Laufzeit der Middleware war der
-// Wert daher immer leer und die Pruefung lief nie. Der Test faehrt beide Anordnungen und
+// TestUUIDPruefungGreiftAmMux: uuidPfadMiddleware liest r.PathValue("id"), und PathValue füllt
+// erst der ServeMux beim Treffer. Umschlösse die Middleware den Mux von außen, wäre der Wert zu
+// ihrer Laufzeit immer leer, und die Prüfung liefe nie. Der Test fährt beide Anordnungen und
 // zeigt den Unterschied am Verhalten, nicht am Code.
 func TestUUIDPruefungGreiftAmMux(t *testing.T) {
 	ziel := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -94,9 +91,8 @@ func TestUUIDPruefungGreiftAmMux(t *testing.T) {
 		t.Errorf("gueltige UUID: erwartet 200, war %d", rec.Code)
 	}
 
-	// Und der Beleg fuer den Befund: dieselbe Middleware VON AUSSEN um einen Mux gelegt,
-	// der sie NICHT selbst traegt, laesst den ungueltigen Wert durch — PathValue ist dort
-	// noch leer. Genau so war sie in router.go verdrahtet.
+	// Und die Gegenprobe: Dieselbe Middleware von außen um einen Mux gelegt, der sie nicht
+	// selbst trägt, lässt den ungültigen Wert durch, weil PathValue dort noch leer ist.
 	blankerMux := http.NewServeMux()
 	blankerMux.Handle("GET /api/dinge/{id}", ziel)
 	aussen := uuidPfadMiddleware(blankerMux)

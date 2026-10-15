@@ -15,7 +15,7 @@ import (
 	"bibliothek/internal/tuertest"
 )
 
-// Paar-Gate: Die Abgängerliste und die Versetzung müssen dieselbe Menge sehen. Die Liste
+// Die Abgängerliste und die Versetzung müssen dieselbe Menge sehen. Die Liste
 // zeigt im Juni, wen man einsammelt; die Versetzung markiert im Sommer, wer geht. Weichen
 // sie ab, bekommt eine Klasse Kontoauszüge und bleibt — oder geht ohne Kontoauszug.
 // Beide lesen repository.AbschlussklasseSQL; dieser Test hält fest, dass das so bleibt.

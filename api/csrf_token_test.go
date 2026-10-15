@@ -64,7 +64,7 @@ func TestCSRFTokenMitCookieLiefertDasVorhandene(t *testing.T) {
 	require.True(t, exists)
 	assert.Equal(t, existingToken, token, "Sollte das existierende Token zurückgeben")
 
-	// Prüfen, dass KEIN neues Cookie gesetzt wurde
+	// Prüfen, dass kein neues Cookie gesetzt wurde
 	assert.Empty(t, rec.Header().Get("Set-Cookie"), "Sollte kein neues Cookie setzen, wenn bereits eines existiert")
 }
 

@@ -8,8 +8,8 @@ import (
 	"bibliothek/pkg/clientip"
 )
 
-// scheitereNMal feuert n Requests durch die Middleware, deren innerer Handler immer 401
-// liefert (fehlgeschlagener Login), und gibt den letzten Statuscode zurück.
+// scheitereNMal schickt n Anfragen durch die Middleware, deren innere Tür immer 401 liefert
+// (gescheiterte Anmeldung), und gibt den letzten Statuscode zurück.
 func scheitereNMal(t *testing.T, remoteAddr, xff string, n int) int {
 	t.Helper()
 	handler := anmeldeBremse(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -35,7 +35,7 @@ func leereFehlversuche() {
 	fehlversucheMu.Unlock()
 }
 
-// schickeNAnfragen feuert n GET-Requests auf path durch den allgemeinen IP-Rate-Limiter
+// schickeNAnfragen schickt n GET-Anfragen auf path durch die allgemeine Bremse je Adresse
 // (Limit=5, damit der Burst klein bleibt) und zählt, wie viele 429 zurückkamen.
 func schickeNAnfragen(t *testing.T, path string, n int) (blocked int) {
 	t.Helper()
@@ -79,10 +79,9 @@ func TestAnfrageBremse_BarcodeSalveIstAusgenommen(t *testing.T) {
 	}
 }
 
-// Der eigentliche DoS-Regressionstest: Hinter einem vertrauenswürdigen Proxy
-// müssen zwei verschiedene echte Clients unabhängige Fehlversuchszähler haben.
-// Vor dem Fix wurde auf r.RemoteAddr (= Proxy) gekeyt, sodass fünf Fehlversuche
-// IRGENDEINES Nutzers alle aussperrten.
+// Hinter einem vertrauten Proxy haben zwei echte Aufrufer getrennte Zähler für Fehlversuche.
+// Zählte die Bremse an r.RemoteAddr, also an der Adresse des Proxys, sperrten die Fehlversuche
+// irgendeines Nutzers alle aus.
 func TestAnmeldeBremse_AufruferHinterProxyZaehlenGetrennt(t *testing.T) {
 	clientip.SetzeProxys([]string{"172.16.0.0/12"})
 	t.Cleanup(func() { clientip.SetzeProxys(nil) })
@@ -105,8 +104,8 @@ func TestAnmeldeBremse_AufruferHinterProxyZaehlenGetrennt(t *testing.T) {
 	}
 }
 
-// Ein direkt (nicht über einen vertrauten Proxy) verbundener Angreifer darf sich
-// nicht durch gefälschte X-Forwarded-For-Header eine frische Identität erschummeln.
+// Ein direkt (nicht über einen vertrauten Proxy) verbundener Angreifer darf sich nicht durch
+// einen gefälschten Kopf X-Forwarded-For eine frische Identität erschummeln.
 func TestAnmeldeBremse_FremderAufruferKannXFFNichtFaelschen(t *testing.T) {
 	clientip.SetzeProxys([]string{"172.16.0.0/12"})
 	t.Cleanup(func() { clientip.SetzeProxys(nil) })
@@ -123,13 +122,13 @@ func TestAnmeldeBremse_FremderAufruferKannXFFNichtFaelschen(t *testing.T) {
 	}
 }
 
-// Der Befund aus dem Audit: Die IP-Schicht sperrte nach 5 Fehlversuchen — und in
-// einer Schule hinter EINER NAT-Adresse ist das die IP aller. Fünf Vertipper eines
-// Kollegen legten damit den Login des gesamten Standorts für 15 Minuten lahm,
-// obwohl der Handler bewusst pro (E-Mail|IP) drosselt.
+// In einer Schule hinter einer einzigen NAT-Adresse ist die Adresse eines Kollegen die aller.
+// Sperrte die Bremse je Adresse schon nach wenigen Fehlversuchen, legten fünf Vertipper die
+// Anmeldung des ganzen Standorts für 15 Minuten lahm, obwohl die Anmeldung selbst bewusst je
+// E-Mail und Adresse drosselt.
 //
-// Der Test hält die Grenze fest, ab der Aussperrung eintritt: deutlich oberhalb
-// dessen, was ein Standort an ehrlichen Vertippern produziert.
+// Der Test hält die Grenze fest, ab der die Sperre eintritt: deutlich oberhalb dessen, was ein
+// Standort an ehrlichen Vertippern produziert.
 func TestAnmeldeBremse_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testing.T) {
 	clientip.SetzeProxys([]string{"172.16.0.0/12"})
 	t.Cleanup(func() { clientip.SetzeProxys(nil) })
@@ -188,13 +187,12 @@ func TestAnmeldeBremse_ErfolgSetztZaehlerZurueck(t *testing.T) {
 	}
 }
 
-// 403 ist kein Fehlversuch: Bei „Zugang beantragt" (Selbstanmeldung) und „Konto
-// deaktiviert" war das Passwort RICHTIG — der Handler zählt deshalb bewusst nicht
-// (auth/handlers.go). Die äußere IP-Schicht zählte 403 bis zum 31.08.2026 trotzdem:
-// Zum Schuljahresbeginn probieren zwanzig Kollegen die Selbstanmeldung mehrfach, alle
-// hinter EINER NAT-Adresse — nach 50 solcher 403 war der Login für die gesamte Schule
-// 15 Minuten dicht, einschließlich der Bibliothekskraft, die die Freischaltungen
-// vornehmen müsste. Zwei Schichten, die nur so lange einig waren, wie 403 nicht vorkam.
+// 403 ist kein Fehlversuch: Bei „Zugang beantragt" (Selbstanmeldung) und „Konto deaktiviert"
+// war das Passwort richtig, und die Anmeldung zählt deshalb bewusst nicht (auth/handlers.go).
+// Zählte die äußere Bremse je Adresse 403 trotzdem, wäre die Anmeldung zum Schuljahresbeginn
+// für die ganze Schule 15 Minuten dicht: Zwanzig Kollegen probieren die Selbstanmeldung
+// mehrfach, alle hinter einer einzigen NAT-Adresse, und nach 50 solcher 403 sperrte die Bremse
+// auch die Bibliothekskraft aus, die die Freischaltungen vornehmen müsste.
 func TestAnmeldeBremse_403ZaehltNichtAlsFehlversuch(t *testing.T) {
 	fehlversucheMu.Lock()
 	fehlversucheJeAdresse = make(map[string]*fehlversuche)

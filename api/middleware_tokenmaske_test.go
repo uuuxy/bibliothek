@@ -2,12 +2,10 @@ package api
 
 import "testing"
 
-// Der Bestätigungs-Token darf nie in ein Logfile geraten.
-//
-// Anlass ist ein Fund aus dem Smoke-Test gegen den laufenden Server: Die Maskierung saß
-// zuerst nur an der 500er-Zeile, während die Request-Zeile in router.go JEDEN Aufruf mit
-// vollem Pfad protokolliert — der verschickte Link stand fünfmal im Klartext im Log.
-// Beide Pfadformen tragen das Geheimnis: die Seite selbst und ihre API-Aufrufe.
+// Der Bestätigungs-Token darf nie in ein Logfile geraten. Säße die Maskierung nur an der Zeile
+// für 500, stünde der verschickte Link trotzdem im Klartext im Log: Die Zeile je Anfrage in
+// router.go protokolliert jeden Aufruf mit vollem Pfad. Beide Pfadformen tragen das Geheimnis:
+// die Seite selbst und ihre Aufrufe der Schnittstelle.
 func TestMaskiereToken(t *testing.T) {
 	faelle := map[string]string{
 		"/api/public/bestellung/GEHEIM123":                                   "/api/public/bestellung/***",

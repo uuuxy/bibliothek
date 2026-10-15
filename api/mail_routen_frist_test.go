@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-// Gate: Ruft die Oberfläche eine Route, hinter der der Server in der Anfrage Mail verschickt,
+// Ruft die Oberfläche eine Route, hinter der der Server in der Anfrage Mail verschickt,
 // trägt der Aufruf eine eigene Frist (timeoutMs).
 //
 // Die Oberfläche gibt einer ändernden Anfrage 10 s (apiFetch.js). Der Versand hat eigene
@@ -237,8 +237,8 @@ var (
 	platzhalter    = regexp.MustCompile(`\\\{[^}]+\\\}`)
 )
 
-// mailRouten liest die Anmeldungen der Routen (registrierungsAusdruecke, wie das Rechte-Gate)
-// und behält die, die eine sendende Funktion nennen.
+// mailRouten liest die Anmeldungen der Routen (registrierungsAusdruecke, wie die Prüfung der
+// Rechte in geschuetzte_routen_test.go) und behält die, die eine sendende Funktion nennen.
 func mailRouten(t *testing.T, sendet map[string]bool) []mailRoute {
 	t.Helper()
 	dateien, err := filepath.Glob("routen_*.go")

@@ -18,14 +18,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Auskunft für einen Kollegen (entschieden am 24.09.2026, OFFEN.md 5.19).
-//
-// Bis dahin las sie die Stammdaten aus der Sicht `schueler` und antwortete bei einem
-// Kollegen mit 404. Der Test stellt den Fall am echten Postgres nach: ein Konto mit
-// Leserzeile, eine Klassenleitung, ein Wunsch, eine Reservierung und Einträge des
-// Verwaltungsprotokolls über das Konto. Daneben stehen zwei Gegenproben, die NICHT in die
-// Auskunft gehören: die Daten eines zweiten Kollegen und die Anlage eines früheren Kontos
-// mit derselben Adresse (vor der Anlage dieses Kontos).
+// Die Auskunft für einen Kollegen. Läse sie die Stammdaten aus der Sicht `schueler`,
+// antwortete sie bei einem Kollegen mit 404. Der Test stellt den Fall am echten Postgres nach:
+// ein Konto mit Leserzeile, eine Klassenleitung, ein Wunsch, eine Reservierung und Einträge des
+// Verwaltungsprotokolls über das Konto. Daneben stehen zwei Gegenproben, die nicht in die
+// Auskunft gehören: die Daten eines zweiten Kollegen und die Anlage eines früheren Kontos mit
+// derselben Adresse (vor der Anlage dieses Kontos).
 func TestDSGVOAuskunft_Kollege(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -87,8 +85,8 @@ func TestDSGVOAuskunft_Kollege(t *testing.T) {
 	exec(`INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, 'SELBSTANMELDUNG', '{"rolle":"kollegium"}')`, konto)
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	// Abgerufen vom Administrator: Die Auskunft über einen Leser mit Konto verlangt seit dem
-	// 28.09.2026 manage_users (TestDSGVOAuskunft_KontoVerlangtKontenrecht).
+	// Abgerufen vom Administrator: Die Auskunft über einen Leser mit Konto verlangt
+	// manage_users (TestDSGVOAuskunft_KontoVerlangtKontenrecht).
 	adminKonto, _ := legeKontoAn("Ada", "ada@auskunft-kollege.invalid")
 	rufe := func(t *testing.T, h http.HandlerFunc, pfad string) *httptest.ResponseRecorder {
 		t.Helper()
@@ -162,7 +160,7 @@ func TestDSGVOAuskunft_Kollege(t *testing.T) {
 	}
 }
 
-// Die Anlage eines Kontos trägt seit dem 24.09.2026 die ziel_id — wie die Änderung. Daran
+// Die Anlage eines Kontos trägt die ziel_id wie die Änderung. Daran
 // findet die Auskunft den Eintrag, auch wenn die Adresse später geändert wird.
 func TestKontoAnlage_ProtokollTraegtZielID(t *testing.T) {
 	pool := pgtest.Pool(t)

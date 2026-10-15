@@ -25,20 +25,20 @@ import (
 
 // Die Etiketten-Kette: Wareneingang → Etikettenstatus → Nachdruck-Liste.
 //
-// Die Glieder sind einzeln geprüft, die ÜBERGÄNGE nicht — und dort sitzt hier eine ganze
-// Reihe stiller Ausfälle:
+// Die Glieder sind einzeln geprüft, die Übergänge nicht, und dort sitzt hier eine ganze Reihe
+// stiller Ausfälle:
 //
 //   - Der Wareneingang schreibt an denselben Zeilen (ist_ausleihbar, zustand_notiz). Nähme
 //     er etikett_gedruckt mit, verschwänden frisch gelieferte Bücher ohne Aufkleber
 //     lautlos aus der Nachdruck-Liste — niemand vermisst, was nie in der Liste stand.
-//   - Liste und Zähler haben zwei getrennte Abfragen. Dass sie dieselbe Bedingung
-//     benutzen, behauptet bisher nur ein Kommentar (repository.EtikettOffenBedingung); driften sie
-//     auseinander, nennt der Hinweis im Bestellwesen eine Zahl, die zu keiner Liste passt.
-//   - Der Hauptlieferant klebt selbst. Seine Exemplare dürfen nach dem Wareneingang NICHT
+//   - Liste und Zähler sind zwei Abfragen. Die Bedingung teilen sie sich
+//     (repository.EtikettOffenBedingung), den Rest nicht; driften sie auseinander, nennt der
+//     Hinweis im Bestellwesen eine Zahl, die zu keiner Liste passt.
+//   - Der Hauptlieferant klebt selbst. Seine Exemplare dürfen nach dem Wareneingang nicht
 //     auf der Nachdruck-Liste stehen, sonst klebt die Bibliothek ein zweites Etikett auf
 //     ein bereits beklebtes Buch.
 
-// jsonHolen ruft einen Handler und liest die Antwort in ziel.
+// jsonHolen ruft eine Tür und liest die Antwort in ziel.
 func jsonHolen(t *testing.T, handler http.HandlerFunc, pfad string, ziel any) {
 	t.Helper()
 	rec := httptest.NewRecorder()
@@ -53,10 +53,10 @@ func jsonHolen(t *testing.T, handler http.HandlerFunc, pfad string, ziel any) {
 
 // offeneEtikettenUeberTuer liefert Liste und Zähler — die beiden Wege zur selben Frage.
 //
-// Bewusst über die HTTP-Handler und nicht über eigenes SQL: Der Helfer in
+// Bewusst über die Türen und nicht über eigenes SQL: Der Helfer in
 // internal/service/haendler_beklebt_pg_test.go schreibt die Bedingung noch einmal selbst hin
-// ("bewusst dieselbe wie EtikettOffenBedingung") und kann eine Abweichung im Produktivcode
-// deshalb gar nicht sehen — er würde mitwandern, nur eben nur im Test.
+// („Bewusst dieselbe Bedingung wie repository.EtikettOffenBedingung") und kann eine Abweichung
+// im Programmcode deshalb gar nicht sehen.
 func offeneEtikettenUeberTuer(t *testing.T, srv *Server) (liste []druck.ExemplarOhneEtikett, anzahl int) {
 	t.Helper()
 	jsonHolen(t, srv.druck().EtikettenOffen(), "/api/exemplare/etiketten-offen", &liste)
@@ -128,7 +128,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 		}
 	}
 
-	// Nachdruck-Liste UND Zähler müssen dasselbe sagen.
+	// Nachdruck-Liste und Zähler müssen dasselbe sagen.
 	liste, anzahl := offeneEtikettenUeberTuer(t, srv)
 	if anzahl != len(liste) {
 		t.Errorf("Zähler nennt %d, die Liste hat %d Zeilen — zwei Abfragen, zwei Wahrheiten", anzahl, len(liste))
@@ -210,7 +210,7 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	}
 }
 
-// sendeJSON ruft einen schreibenden Handler mit JSON-Body und liefert die Antwort.
+// sendeJSON ruft eine schreibende Tür mit einem Rumpf in JSON und liefert die Antwort.
 func sendeJSON(t *testing.T, handler http.HandlerFunc, pfad string, body map[string]any) map[string]any {
 	t.Helper()
 	roh, err := json.Marshal(body)
@@ -233,12 +233,10 @@ func sendeJSON(t *testing.T, handler http.HandlerFunc, pfad string, body map[str
 
 // Der Zähler muss dieselben Filter verstehen wie die Liste.
 //
-// Anlass (04.09.2026): Die Liste ist bei 300 Zeilen gedeckelt, sagte das aber nicht — am
-// Reiter stand "30674", darunter lagen 300 Zeilen, und nichts verband die beiden Zahlen.
-// Seitdem nennt die Fusszeile beide ("300 von 30.674"), und dafuer muss der Zaehler
-// dieselbe Menge zaehlen, die die Liste zeigt. Verstuende er status/q nicht, stuende unter
-// einer gefilterten Liste die Zahl des ungefilterten Bestands — eine Angabe, die
-// schlimmer ist als gar keine, weil sie glaubwuerdig aussieht.
+// Die Liste ist bei 300 Zeilen gedeckelt, und die Fußzeile nennt beide Zahlen („300 von
+// 30.674"); dafür muss der Zähler dieselbe Menge zählen, die die Liste zeigt. Verstünde er
+// status/q nicht, stünde unter einer gefilterten Liste die Zahl des ungefilterten Bestands, eine
+// Angabe, die schlimmer ist als gar keine, weil sie glaubwürdig aussieht.
 func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -247,8 +245,8 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 	ctx := context.Background()
 
 	// Drei offene und zwei erledigte Exemplare unter einer eigenen Marke, dazu ein
-	// Fremdkoerper ohne die Marke: Ohne den waere ein Zaehler, der `q` schlicht ignoriert,
-	// zufaellig richtig.
+	// Fremdkörper ohne die Marke: Ohne ihn wäre ein Zähler, der `q` schlicht ignoriert,
+	// zufällig richtig.
 	if _, err := pool.Exec(ctx, `
 		WITH t AS (
 			INSERT INTO buecher_titel (titel, autor) VALUES ('ZAEHLERMARKE Titel', 'A') RETURNING id
@@ -299,9 +297,9 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 		})
 	}
 
-	// Der Stichtag bleibt, was er war: die Zahl fuer das Altbestand-Aufraeumen, also
-	// ausschliesslich OFFENE Etiketten. Ein `bis`, das ploetzlich auch Erledigte zaehlte,
-	// wuerde im Dialog eine zu grosse Zahl versprechen.
+	// Mit Stichtag zählt der Zähler weiter nur offene Etiketten: Das ist die Zahl für das
+	// Aufräumen des Altbestands. Ein `bis`, das auch Erledigte zählte, verspräche im Dialog eine
+	// zu große Zahl.
 	var mitStichtag struct {
 		Anzahl int `json:"anzahl"`
 	}

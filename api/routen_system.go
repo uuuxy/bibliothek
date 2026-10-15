@@ -7,17 +7,17 @@ import (
 )
 
 func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen repository.KontoAbfragen, pool db.PgxPoolIface) {
-	// ── BENUTZER (Users) ──
+	// ── Benutzer und Rechte ──
 	mux.Handle("GET /api/benutzer", s.verlangeRecht("manage_users")(s.benutzer().Konten(kontoAbfragen)))
 	mux.Handle("POST /api/benutzer", s.verlangeRecht("manage_users")(s.benutzer().KontoAnlegen(kontoAbfragen)))
 	mux.Handle("PUT /api/benutzer/{id}", s.verlangeRecht("manage_users")(s.benutzer().KontoAendern(kontoAbfragen)))
 	mux.Handle("DELETE /api/benutzer/{id}", s.verlangeRecht("manage_users")(s.benutzer().KontoLoeschen(protokollAbfragen, kontoAbfragen)))
 
-	// ── EINSTELLUNGEN (Settings) ──
+	// ── Einstellungen ──
 	einstellungsAbfragen := repository.NewEinstellungsAbfragen(pool)
 	mux.Handle("GET /api/einstellungen", s.verlangeRecht("manage_settings")(s.system().Einstellungen(einstellungsAbfragen)))
 	mux.Handle("PUT /api/einstellungen", s.verlangeRecht("manage_settings")(s.system().EinstellungenSchreiben(einstellungsAbfragen)))
-	// Sitzungs-Fristen (Theke leeren, Sperrbildschirm) braucht JEDER angemeldete Client —
+	// Die Fristen der Sitzung (Theke leeren, Sperrbildschirm) braucht jede angemeldete Oberfläche,
 	// auch Helfer und Kollegium, die /api/einstellungen nicht lesen dürfen. Nur die zwei
 	// Zahlen, keine Schul- oder Betriebsdaten.
 	mux.Handle("GET /api/einstellungen/sitzung", s.VerlangeAnmeldung()(s.system().SitzungsEinstellungen(einstellungsAbfragen)))
@@ -32,80 +32,75 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen r
 	mux.Handle("PUT /api/admin/settings/mail", s.verlangeRecht("manage_settings")(s.system().MailEinstellungenSchreiben(mailEinstellungsAbfragen)))
 	mux.Handle("POST /api/admin/settings/mail/test", s.verlangeRecht("manage_settings")(s.system().TestmailSenden()))
 
-	// Permissions
+	// Rechte
 	mux.Handle("GET /api/admin/permissions", s.verlangeRecht("manage_users")(s.benutzer().RechteMatrix()))
 	mux.Handle("GET /api/admin/system/backup-status", s.verlangeRecht("manage_settings")(s.system().BackupStand()))
-	// Die Verallgemeinerung des Backup-Waechters: Was ist eingerichtet, aber nicht in
+	// Die Verallgemeinerung des Wächters über das Backup: Was ist eingerichtet, aber nicht in
 	// Betrieb? Siehe internal/bereitschaft/bereitschaft.go.
 	//
-	// Bewusst EINE Zeile: geschuetzte_routen_test.go liest die Registrierungen zeilenweise
-	// und sah bei einem Umbruch keinen Schutz-Wrapper — es meldete die Route als ungeschuetzt,
-	// obwohl verlangeRecht dranhing. Lieber eine lange Zeile als ein Gate, das man
-	// entschaerfen muss.
+	// Bewusst eine Zeile: pii_matrix_test.go liest die Registrierungen zeilenweise und sähe bei
+	// einem Umbruch das Recht nicht. Lieber eine lange Zeile als eine Prüfung, die man entschärfen
+	// muss.
 	mux.Handle("GET /api/admin/system/betriebsbereitschaft", s.verlangeRecht("manage_settings")(s.system().Betriebsbereitschaft(einstellungsAbfragen, mailEinstellungsAbfragen, repository.NewBetriebszustandAbfragen(pool))))
 	mux.Handle("PUT /api/admin/permissions", s.verlangeRecht("manage_users")(s.benutzer().RollenRechtSetzen()))
 
-	// Audit & Transactions
+	// Protokoll
 	mux.Handle("GET /api/audit", s.verlangeRecht("audit_logs")(s.system().Protokoll()))
-	// Der EINE zweckgebundene Leseweg in audit_log.details (Tresen-Fall) — eigenes
-	// Recht, jeder Abruf protokolliert sich selbst. Siehe api/system/tresen_auskunft.go.
+	// Der eine zweckgebundene Weg, audit_log.details zu lesen (der Fall am Tresen): eigenes Recht,
+	// jeder Abruf schreibt sich selbst ins Protokoll (api/system/tresen_auskunft.go).
 	mux.Handle("GET /api/audit/tresen-auskunft", s.verlangeRecht("audit_details")(s.system().TresenAuskunft(protokollAbfragen)))
 
-	// Mail Templates
+	// Vorlagen der Mails
 	mux.Handle("GET /api/mail-templates", s.verlangeRecht("manage_settings")(s.system().MailVorlagen()))
 	mux.Handle("PUT /api/mail-templates/{id}", s.verlangeRecht("manage_settings")(s.system().MailVorlageAendern()))
 
-	// Print / Reports
+	// Druck und Berichte
 	mux.Handle("GET /api/print/rechnung/{schueler_id}", s.verlangeRecht("view_students")(s.schaden().RechnungPDF()))
 	// Der Druck zählt die Mahnung: dasselbe Recht wie der Mahnversand (create_orders), nicht
 	// das Leserecht der Seite.
 	mux.Handle("POST /api/admin/mahnungen/bulk-print", s.verlangeRecht("create_orders")(s.mahnwesen().MahnbriefeDrucken()))
 	mux.Handle("GET /api/print/kontoauszug/{schueler_id}", s.verlangeRecht("view_students")(s.leser().KontoauszugPDF()))
 
-	// Dashboard & Stats
+	// Übersicht und Statistik
 	mux.Handle("GET /api/dashboard/summary", s.verlangeRecht("view_students")(s.system().MahnUebersicht()))
 	// view_stats, nicht view_students: Der Schalter, den ein Admin in der Rechte-Oberfläche
-	// umlegt, heißt "Statistiken anzeigen" — und das Menü blendet den Punkt genau danach ein
-	// (frontend/src/lib/menu.js). Die Route verlangte bis zum 23.08.2026 view_students. Beide
-	// Werte stimmten in der Vorgabe zufällig überein; sobald ein Admin sie trennt, gewinnt
-	// still der Server: view_stats AUS ließ die Statistik weiter antworten (der Admin glaubt,
-	// er habe sie entzogen), view_stats AN ohne view_students zeigte einen Menüpunkt, der
-	// jedes Mal 403 lieferte. Die Antwort trägt keine Personendaten (PII-Matrix Stufe 0),
-	// view_students war also auch fachlich die falsche Schranke.
+	// umlegt, heißt „Statistiken anzeigen", und das Menü blendet den Punkt genau danach ein
+	// (frontend/src/lib/menu.js). Verlangte die Route view_students, gewänne still der Server,
+	// sobald ein Admin die beiden trennt: Die Statistik antwortete trotz entzogenem Recht weiter,
+	// oder der Menüpunkt lieferte jedes Mal 403. Die Antwort trägt keine Personendaten
+	// (PII-Stufe 0), view_students wäre also auch fachlich die falsche Schranke.
 	mux.Handle("GET /api/statistiken", s.verlangeRecht("view_stats")(s.system().Statistik()))
 
-	// Lookups
+	// Nachschlagelisten
 	mux.Handle("GET /api/systematics", s.verlangeRecht("view_books")(s.katalog().Systematik()))
-	// Das Vokabular, aus dem das Buchformular die Signatur vorschlägt. War bisher nur
-	// lesbar — es gab keinen Weg, es zu füllen, obwohl der Vorschlag davon abhängt.
+	// Das Vokabular, aus dem das Buchformular die Signatur vorschlägt; die Türen darunter füllen
+	// es.
 	mux.Handle("POST /api/systematics", s.verlangeRecht("edit_books")(s.katalog().SachgruppeAnlegen()))
 	mux.Handle("PUT /api/systematics/{id}", s.verlangeRecht("edit_books")(s.katalog().SachgruppeAendern()))
 	mux.Handle("DELETE /api/systematics/{id}", s.verlangeRecht("edit_books")(s.katalog().SachgruppeLoeschen()))
 	mux.Handle("GET /api/faecher", s.verlangeRecht("view_books")(s.katalog().Faecher()))
 
-	// Audit Logs
+	// Protokoll der Verwaltung
 	mux.Handle("GET /api/admin/auditlog", s.verlangeRecht("manage_users")(s.system().VerwaltungsProtokoll()))
 
 	// Barcodes & Etiketten
-	// edit_books statt view_books: Der Endpunkt zeigt keine Nummer mehr an, er VERGIBT
-	// eine aus barcode_seq — die gezogene Nummer ist danach verbraucht. Wer sie nicht
+	// edit_books statt view_books: Der Endpunkt zeigt keine Nummer an, er vergibt eine aus
+	// barcode_seq, und die gezogene Nummer ist danach verbraucht. Wer sie nicht
 	// speichern darf (das Barcode-PUT verlangt edit_books), soll sie auch nicht ziehen.
 	mux.Handle("GET /api/barcode/next", s.verlangeRecht("edit_books")(s.katalog().ExemplarBarcodeZiehen()))
 	mux.Handle("GET /api/barcode", s.verlangeRecht("view_books")(s.druck().BarcodeBild()))
 
-	// Signaturen — abgeleitet aus buecher_titel.signatur, nicht aus einer Stammtabelle.
-	// Die frühere Tabelle `signatures` (samt GET/POST /api/signatures) ist mit
-	// Migration 060 entfallen: Sie kannte Namen, die an keinem Buch hingen.
+	// Signaturen, abgeleitet aus buecher_titel.signatur, nicht aus einer eigenen Tabelle.
 	mux.Handle("GET /api/signaturen", s.verlangeRecht("view_books")(s.katalog().Signaturen()))
 	mux.Handle("GET /api/signaturen/buecher", s.verlangeRecht("view_books")(s.katalog().TitelUnterSignatur()))
-	// Schlagworte (Migration 138): die Vorschlagsliste der Eingabefelder, aus dem Bestand.
+	// Schlagworte: die Vorschlagsliste der Eingabefelder, aus dem Bestand.
 	mux.Handle("GET /api/schlagworte", s.verlangeRecht("view_books")(s.katalog().SchlagwortVorschlaege()))
-	// Der Vorschlag aus der DNB zu einer ISBN (entschieden am 30.09.2026): für das Buchformular
+	// Der Vorschlag aus der DNB zu einer ISBN: für das Buchformular
 	// und das Nachbestellen. Recht wie die Liste darüber und wie GET /api/lookup/{isbn}, das
-	// dieselbe DNB fragt — der Vorschlag liest nur, eingetragen wird über die Türen des Titels.
+	// dieselbe DNB fragt; der Vorschlag liest nur, eingetragen wird über die Türen des Titels.
 	mux.Handle("GET /api/schlagworte/dnb-vorschlag", s.verlangeRecht("view_books")(s.katalog().DNBSchlagwortVorschlag()))
-	// Pflege der Schlagworte (Migration 143, OFFEN.md 4.20 Stufe 1): wie die Systematik mit
-	// edit_books — die Pflege ändert den Katalog, nicht den Bestand an Exemplaren.
+	// Pflege der Schlagworte: wie die Systematik mit edit_books; die Pflege ändert den Katalog,
+	// nicht den Bestand an Exemplaren.
 	mux.Handle("GET /api/schlagworte/pflege", s.verlangeRecht("edit_books")(s.katalog().SchlagworteZurPflege()))
 	mux.Handle("PUT /api/schlagworte/{id}/wort", s.verlangeRecht("edit_books")(s.katalog().SchlagwortUmbenennen()))
 	mux.Handle("PUT /api/schlagworte/{id}/filter", s.verlangeRecht("edit_books")(s.katalog().SchlagwortFilterSetzen()))
@@ -113,13 +108,12 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen r
 	mux.Handle("POST /api/schlagworte/verweise", s.verlangeRecht("edit_books")(s.katalog().SchlagwortVerweisSetzen()))
 	mux.Handle("POST /api/schlagworte/loeschen", s.verlangeRecht("edit_books")(s.katalog().SchlagworteLoeschen()))
 
-	// Real-time Events. Nur Sitzung, kein Fachrecht: den SSE-Stream öffnet jeder
-	// eingeloggte Client (authStore + Kiosk-Omnibox), und an ihm hängt der Herzschlag für
-	// das Offline-Overlay. Er stand zuerst auf view_students, dann auf perform_actions —
-	// beide Male musste er umgehängt werden, sobald eine Rolle ohne dieses Recht dazukam
-	// (Helfer, dann Kollegium), sonst lief sie in eine 403-Reconnect-Schleife. Der Stream
-	// trägt nur operative Aktions-Events (Typ, IDs, Buchtitel, Zeitstempel) — keine
-	// Schüler-PII. Siehe VerlangeAnmeldung in api/tuer/sitzung.go.
+	// Der Live-Strom: nur Sitzung, kein Fachrecht. Jede angemeldete Oberfläche öffnet ihn
+	// (authStore und die Omnibox der Theke), und an ihm hängt der Herzschlag für die Anzeige
+	// „offline". Hinge er an einem Fachrecht, liefe jede Rolle ohne dieses Recht in eine Schleife
+	// aus 403 und neuem Verbindungsaufbau. Der Strom trägt nur Ereignisse der Abläufe (Typ,
+	// Kennungen, Buchtitel, Zeitstempel), keine personenbezogenen Daten von Schülern
+	// (VerlangeAnmeldung in api/tuer/sitzung.go).
 	liveLeitung := s.Broker.Handler()
 	mux.Handle("GET /events", s.VerlangeAnmeldung()(liveLeitung))
 }

@@ -1,8 +1,6 @@
 package api
 
-// middleware.go — HTTP middleware chain for the library server.
-// All middleware is side-effect free and does not depend on application state
-// beyond the Server struct. Middleware is registered in router.go.
+// Die Glieder der Middleware-Kette; baueKette in router.go legt sie um den Router.
 
 import (
 	"context"
@@ -21,29 +19,27 @@ import (
 // langLaufendeFrist gilt für Vorgänge, die naturgemäß Minuten dauern: Katalog- und
 // Schülerimporte berühren zehntausende Zeilen in einer Transaktion.
 //
-// 5 Minuten, abgestimmt auf das Upload-Limit des Frontends (apiFetch.js) und auf Caddys
+// 5 Minuten, abgestimmt auf die Grenze für Uploads in der Oberfläche (apiFetch.js) und auf Caddys
 // response_header_timeout. Alle drei müssen dieselbe Frist meinen — läuft die kürzeste
 // vorne weg, bricht der Vorgang dort ab, wo niemand die Meldung sieht.
 const langLaufendeFrist = 5 * time.Minute
 
 // langLaufendePfade sind die Endpunkte, für die langLaufendeFrist gilt.
 //
-// Sie standen zuvor unter demselben 15-Sekunden-Limit wie ein Barcode-Scan. Der
-// Littera-Import (11.076 Titel, 61.580 Exemplare im echten Altbestand) kann darunter
-// nicht durchlaufen: Der Server brach nach 15 s am DB-Kontext ab, während der Browser
-// noch 5 Minuten wartete. Der Abbruch traf also mitten in die Transaktion, ohne dass
-// vorne jemand etwas davon sah.
+// Mit der Frist eines Barcode-Scans (15 Sekunden) liefe der Littera-Import (11.076 Titel,
+// 61.580 Exemplare im echten Altbestand) nicht durch: Der Server bräche nach 15 s am Kontext
+// der Datenbank ab, mitten in der Transaktion, während der Browser noch 5 Minuten wartet.
 var langLaufendePfade = []string{
 	"/api/import/",          // Littera-Katalogimport
 	"/api/admin/import-",    // Bestandsimport
-	"/api/books/import",     // Listenimport: je unbekannter ISBN ein Katalog-Lookup, 10 parallel
+	"/api/books/import",     // Listenimport: je unbekannter ISBN eine Abfrage der Katalogdienste, 10 parallel
 	"/api/admin/sync-",      // Cover-Abgleich über den ganzen Bestand
 	"/api/lusd/",            // LUSD-Vorschau und -Import (ganze Jahrgänge)
 	"/api/admin/mahnungen/", // Sammeldruck über alle Klassen
 }
 
 // LesefristVorgabe ist die Frist, in der eine gewöhnliche Anfrage vollständig
-// eingelesen sein muss (Kopf UND Rumpf). Sie steht am http.Server als ReadTimeout.
+// eingelesen sein muss (Kopf und Rumpf). Sie steht am http.Server als ReadTimeout.
 //
 // 30 Sekunden sind für jede normale Anfrage dieser Anwendung reichlich — der größte
 // gewöhnliche Rumpf ist ein Foto-Upload. Die Import-Endpunkte brauchen mehr und holen
@@ -51,8 +47,8 @@ var langLaufendePfade = []string{
 const LesefristVorgabe = 30 * time.Second
 
 // bearbeitungsfristVorgabe ist die Frist der fristMiddleware für einen gewöhnlichen Aufruf
-// (Barcode-Scan, Suche, Formular); lang laufende Pfade bekommen langLaufendeFrist. Benannt seit
-// dem 15.09.2026, weil die Idempotenz der Theke an ihr hängt: Eine Reservierung des Schlüssels
+// (Barcode-Scan, Suche, Formular); lang laufende Pfade bekommen langLaufendeFrist. Sie trägt
+// einen Namen, weil die Idempotenz der Theke an ihr hängt: Eine Reservierung des Schlüssels
 // gilt nach repository.IdempotenzReservierungsfrist als verwaist, und das stimmt nur, wenn jede
 // Arbeit vorher abgebrochen und ihre Antwort gespeichert ist (idempotenz_fristen_test.go).
 const bearbeitungsfristVorgabe = 15 * time.Second
@@ -73,16 +69,16 @@ func anfrageFrist(pfad string, vorgabe time.Duration) time.Duration {
 // Endpunkte an, die große Dateien entgegennehmen.
 //
 // Sie ist die Gegenseite von ReadTimeout am Server: Ohne diese Middleware müsste die
-// serverweite Frist so großzügig sein wie der langsamste Import (100 MB Littera-Datei
-// über eine Schulleitung) — und damit wäre sie für die 200 anderen Endpunkte wirkungslos.
-// Umgekehrt bräche eine strenge serverweite Frist mitten in den Upload, den niemand
-// abbrechen will. Also: streng als Vorgabe, großzügig für die fünf bekannten Pfade,
-// dieselbe Liste wie bei der Bearbeitungsfrist (langLaufendePfade).
+// serverweite Frist so großzügig sein wie der langsamste Import (100 MB Littera-Datei über
+// die Leitung einer Schule), und damit wäre sie für alle anderen Endpunkte wirkungslos.
+// Umgekehrt bräche eine strenge serverweite Frist mitten in den Upload, den niemand abbrechen
+// will. Also: streng als Vorgabe, großzügig für die bekannten Pfade, dieselbe Liste wie bei
+// der Bearbeitungsfrist (langLaufendePfade).
 //
-// Schlägt das Setzen der Frist fehl (ResponseWriter ohne SetReadDeadline, z. B. in
-// manchen Testaufbauten), läuft die Anfrage weiter — die serverweite Frist gilt dann
-// unverändert. Ein Upload, der daran scheitert, ist ein sichtbarer Fehler; ein
-// abgewiesener Request wegen eines fehlenden Optionalinterfaces wäre ein Rätsel.
+// Schlägt das Setzen der Frist fehl (ResponseWriter ohne SetReadDeadline, etwa in manchen
+// Testaufbauten), läuft die Anfrage weiter, und die serverweite Frist gilt unverändert. Ein
+// Upload, der daran scheitert, ist ein sichtbarer Fehler; eine Anfrage, abgewiesen wegen einer
+// fehlenden freiwilligen Schnittstelle, wäre ein Rätsel.
 func erweitereLesefristFuerLangeUploads(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if anfrageFrist(r.URL.Path, LesefristVorgabe) != LesefristVorgabe {
@@ -101,11 +97,11 @@ func istLiveStrom(pfad string) bool {
 	return pfad == "/events"
 }
 
-// fristMiddleware wraps the request with a context timeout.
+// fristMiddleware gibt jeder Anfrage eine Frist im Kontext (anfrageFrist).
 //
-// Der SSE-Stream bleibt ohne Frist — er ist definitionsgemäß offen. Alles andere bekommt
-// eine, auch die langen Vorgänge: Ein Request ganz ohne Frist hängt im Zweifel für immer
-// und hält eine Datenbankverbindung fest.
+// Der Live-Strom bleibt ohne Frist, er ist immer offen. Alles andere bekommt eine, auch die
+// langen Vorgänge: Eine Anfrage ganz ohne Frist hinge im Zweifel für immer und hielte eine
+// Verbindung zur Datenbank fest.
 func fristMiddleware(frist time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -120,16 +116,15 @@ func fristMiddleware(frist time.Duration) func(http.Handler) http.Handler {
 	}
 }
 
-// panikMiddleware catches panics during HTTP request handling, logs them, and returns a 500 error.
+// panikMiddleware fängt einen Panic in einer Anfrage, schreibt ihn ins Log und antwortet mit 500.
 func panikMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				// maskiereToken auch hier: Der Bestätigungs-Token steht im Pfad, und ein
-				// Panic auf der Lieferantenseite schreibt genau diesen Pfad ins Log. Die
-				// 500er-Zeile in logMiddleware maskierte bereits, diese nicht — ein
-				// weitergereichtes Logfile hätte damit weiter funktionierende Links
-				// enthalten und die Hash-Speicherung in der Datenbank entwertet.
+				// maskiereToken auch hier: Der Bestätigungs-Token steht im Pfad, und ein Panic
+				// auf der Seite für Lieferanten schreibt genau diesen Pfad ins Log. Ohne die
+				// Maskierung enthielte ein weitergereichtes Logfile funktionierende Links, und
+				// die Speicherung als Hash in der Datenbank wäre entwertet.
 				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, maskiereToken(r.URL.Path), err)
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("interner server fehler: %v", err))
 			}
@@ -138,29 +133,26 @@ func panikMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// httpsMiddleware automatically redirects unencrypted HTTP requests to HTTPS.
+// httpsMiddleware leitet unverschlüsselte Anfragen auf HTTPS um.
 func (s *Server) httpsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Bypass HTTPS redirection in local/development mode when nurHTTPS is disabled
+		// Ohne nurHTTPS (lokaler Betrieb, Entwicklung) keine Umleitung.
 		if !s.nurHTTPS {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// /health wird NIE umgeleitet.
+		// /health wird nie umgeleitet.
 		//
-		// Die Sonde kommt aus dem Container selbst (Docker HEALTHCHECK, wget gegen
-		// 127.0.0.1) und damit ohne TLS und ohne X-Forwarded-Proto. Mit Umleitung bekam
-		// sie eine 301 auf https://127.0.0.1:PORT, versuchte dort einen TLS-Handshake
-		// gegen den Klartext-Port und scheiterte mit "wrong version number" — in
-		// Produktion (COOKIE_SECURE=true) also IMMER, während lokal (false) alles grün
-		// aussah. Der Container galt seitdem dauerhaft als unhealthy: Alles, was daran
-		// hängt (Neustart-Regeln, depends_on: service_healthy, das Deploy-Skript), traf
-		// seine Entscheidungen auf einer Anzeige, die nie stimmte.
+		// Die Sonde kommt aus dem Container selbst (Docker HEALTHCHECK, wget gegen 127.0.0.1) und
+		// damit ohne TLS und ohne X-Forwarded-Proto. Mit Umleitung bekäme sie eine 301 auf
+		// https://127.0.0.1:PORT, versuchte dort einen TLS-Handshake gegen den Klartext-Port und
+		// scheiterte mit "wrong version number", im Betrieb (COOKIE_SECURE=true) also immer. Der
+		// Container gälte dauerhaft als unhealthy, und alles, was daran hängt (Neustart-Regeln,
+		// depends_on: service_healthy, das Deploy-Skript), entschiede nach einer falschen Anzeige.
 		//
-		// Unbedenklich: Die Antwort ist {"status":"healthy"} — kein Geheimnis, keine
-		// Sitzung, kein Cookie. Es gibt hier nichts, was eine Klartext-Verbindung
-		// preisgeben könnte.
+		// Unbedenklich: Die Antwort ist {"status":"healthy"}, kein Geheimnis, keine Sitzung, kein
+		// Cookie. Eine Verbindung im Klartext gibt hier nichts preis.
 		if r.URL.Path == "/health" {
 			next.ServeHTTP(w, r)
 			return
@@ -176,11 +168,12 @@ func (s *Server) httpsMiddleware(next http.Handler) http.Handler {
 		var zielHost string
 
 		if erlaubterUrsprung != "" {
-			// Use trusted configuration to prevent Open Redirect / Host Header Injection
+			// Der eingestellte Ursprung verhindert Open Redirect und eine Einschleusung über
+			// den Kopf Host.
 			zielHost = strings.TrimPrefix(erlaubterUrsprung, "https://")
 			zielHost = strings.TrimPrefix(zielHost, "http://")
 		} else {
-			// Fallback to r.Host for multi-domain support if not strictly configured
+			// Ohne Einstellung gilt r.Host, für den Betrieb unter mehreren Domains.
 			zielHost = r.Host
 			if strings.ContainsAny(zielHost, "\r\n\t") {
 				http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -193,7 +186,7 @@ func (s *Server) httpsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// rumpfGrenzeMiddleware limits the request body size to prevent DoS.
+// rumpfGrenzeMiddleware begrenzt, wie viel vom Rumpf einer Anfrage gelesen werden darf.
 func rumpfGrenzeMiddleware(grenze int64) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -203,30 +196,25 @@ func rumpfGrenzeMiddleware(grenze int64) func(http.Handler) http.Handler {
 	}
 }
 
-// Hinweis: Die frühere RBACBlockMiddleware wurde entfernt. Sie erzwang eine hartkodierte
-// Pfad-Allowlist für LEHRER/HELFER, die das konfigurierbare role_permissions-System überstimmte
-// (ein LEHRER konnte seine im PermissionManager gewährten Rechte nicht nutzen). Autorisierung
-// erfolgt jetzt einheitlich pro Route über verlangeRecht bzw. RequireRoles.
-
-// corsMiddleware restricts cross-origin requests to the configured school domain.
-// Set ALLOWED_ORIGIN env var to the school's frontend URL (e.g. https://bibliothek.schule.de).
-// Falls back to same-origin only if not configured.
+// corsMiddleware lässt Anfragen anderer Ursprünge nur von der eingestellten Domain der Schule zu
+// (ALLOWED_ORIGIN, etwa https://bibliothek.schule.de). Ohne Einstellung gilt nur der eigene
+// Ursprung.
 func corsMiddleware(next http.Handler) http.Handler {
 	erlaubterUrsprung := os.Getenv("ALLOWED_ORIGIN")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ursprung := r.Header.Get("Origin")
 		if ursprung == "" {
-			// Same-origin request (no Origin header) – always allowed
+			// Anfrage vom eigenen Ursprung (ohne Kopf Origin): immer erlaubt.
 			next.ServeHTTP(w, r)
 			return
 		}
-		// Only allow explicitly configured origin; reject everything else
+		// Nur der eingestellte Ursprung, sonst nichts.
 		if erlaubterUrsprung != "" && ursprung == erlaubterUrsprung {
 			w.Header().Set("Access-Control-Allow-Origin", erlaubterUrsprung)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			// X-CSRF-Token gehört zwingend dazu: Ohne den Header in dieser Liste
-			// scheitert bei gesetztem ALLOWED_ORIGIN jede mutierende Cross-Origin-Anfrage
-			// schon am Preflight — die CSRF-Härtung hätte das Frontend ausgesperrt statt
+			// scheitert bei gesetztem ALLOWED_ORIGIN jede ändernde Anfrage eines anderen Ursprungs
+			// schon am Preflight: Der Schutz gegen CSRF sperrte die Oberfläche aus statt
 			// Angreifer. Im Same-Origin-Betrieb hinter Caddy fällt das nicht auf, weil
 			// es dort gar keinen Preflight gibt.
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
@@ -241,24 +229,21 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// uuidPfadMiddleware intercepts requests and validates {id} path parameters
-// against a standard UUID format before they hit the database.
-// uuidPfadParameter nennt die Pfad-Parameter, deren Wert IMMER eine UUID ist —
-// namentlich und abschließend, nicht nach einem Namensmuster.
+// uuidPfadParameter nennt die Pfad-Parameter, deren Wert immer eine UUID ist, namentlich und
+// abschließend, nicht nach einem Namensmuster.
 //
-// Ein Muster wie "alles was auf _id endet" wäre hier gefährlich: {barcode_id} endet
-// genauso auf _id, trägt aber einen Barcode (VARCHAR(100), z. B. "S-abg1-ms3p73…").
-// Genau diese Verwechslung hat das Foto-GET lahmgelegt — es hieß {id}, und die
-// Prüfung wies damit jeden Barcode mit 400 ab, bevor der Handler lief. Kein einziges
-// Schülerfoto wurde je ausgeliefert. Deshalb steht hier eine Liste, die man nur
-// erweitert, wenn die dahinterliegende Spalte nachweislich UUID ist.
+// Ein Muster wie „alles, was auf _id endet" wäre hier gefährlich: {barcode_id} endet genauso
+// auf _id, trägt aber einen Barcode (VARCHAR(100), etwa "S-abg1-ms3p73…"). Hieße die Route des
+// Fotos {id}, wiese die Prüfung jeden Barcode mit 400 ab, bevor die Tür läuft, und kein Foto
+// käme je an. Deshalb steht hier eine Liste, die man nur erweitert, wenn die Spalte dahinter
+// nachweislich eine UUID ist.
 //
-// Belegt in schema.sql: schueler.id (Zeile 151) und ausleihen.id (Zeile 458) sind
-// UUID. {klasse} ist ein Klassenname und gehört bewusst NICHT dazu.
+// In schema.sql sind leser.id und ausleihen.id UUID. {klasse} ist ein Klassenname und gehört
+// nicht dazu.
 var uuidPfadParameter = []string{"id", "schueler_id", "ausleihe_id"}
 
 // uuidPfadMiddleware weist Anfragen ab, deren UUID-Pfadparameter keine UUID
-// sind — bevor sie die Datenbank erreichen. Geprüft wird nur, was in
+// sind, bevor sie die Datenbank erreichen. Geprüft wird nur, was in
 // uuidPfadParameter steht; die Begründung für diese Liste steht dort.
 func uuidPfadMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -273,23 +258,21 @@ func uuidPfadMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// verlangeRecht returns a middleware that validates if the authenticated user
-// has the required permission dynamically defined in the database.
+// verlangeRecht lässt eine Anfrage nur durch, wenn das angemeldete Konto das Recht hat
+// (tuer.Basis.PruefeRecht, nach der Tabelle der Rechte je Rolle).
 func (s *Server) verlangeRecht(recht string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		// Die UUID-Prüfung sitzt hier und NICHT mehr global um den Mux herum.
-		//
-		// Global gelegt las sie r.PathValue("id"), bevor der ServeMux die Route
-		// aufgelöst hatte — der Wert war dort immer leer, die Prüfung lief also nie
-		// (Audit-Befund vom 01.08.2026, belegt in middleware_frist_test.go). An dieser
-		// Stelle ist die Route bereits getroffen und PathValue gefüllt.
+		// Die Prüfung der UUID sitzt hier und nicht um den ganzen Mux: Dort läse sie
+		// r.PathValue("id"), bevor der ServeMux die Route aufgelöst hat, der Wert wäre immer leer,
+		// und die Prüfung liefe nie (TestUUIDPruefungGreiftAmMux). Hier ist die Route getroffen und
+		// PathValue gefüllt.
 		return uuidPfadMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			s.PruefeRecht(w, r, next, recht)
 		}))
 	}
 }
 
-// statusMerker is a custom ResponseWriter that tracks the HTTP status code
+// statusMerker reicht die Antwort durch und merkt sich ihren Status.
 type statusMerker struct {
 	http.ResponseWriter
 	status int
@@ -300,22 +283,21 @@ func (m *statusMerker) WriteHeader(status int) {
 	m.ResponseWriter.WriteHeader(status)
 }
 
-// Unwrap returns the underlying ResponseWriter so that http.NewResponseController
-// can traverse the middleware chain (e.g. to call SetWriteDeadline for SSE).
+// Unwrap liefert den ResponseWriter darunter, damit http.NewResponseController durch die Kette
+// greifen kann (etwa SetWriteDeadline für den Live-Strom).
 func (m *statusMerker) Unwrap() http.ResponseWriter {
 	return m.ResponseWriter
 }
 
-// Flush implements http.Flusher to support Server-Sent Events (SSE)
+// Flush erfüllt http.Flusher, damit der Live-Strom (SSE) jedes Ereignis sofort schickt.
 func (m *statusMerker) Flush() {
 	if f, ok := m.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
 }
 
-// logMiddleware records the HTTP status and prints the exact stack trace for 500 errors.
-// tokenPfade sind die einzigen Pfade, die ein Geheimnis TRAGEN: Im Bestätigungs-Link an
-// den Lieferanten steht der Token in der Adresse — sowohl beim Aufruf der Seite selbst
+// tokenPfade sind die einzigen Pfade, die ein Geheimnis tragen: Im Bestätigungs-Link an
+// den Lieferanten steht der Token in der Adresse, sowohl beim Aufruf der Seite selbst
 // als auch bei ihren API-Aufrufen. Die längere Variante steht zuerst, damit sie greift.
 var tokenPfade = []string{"/api/public/bestellung/", "/bestellung/"}
 
@@ -338,11 +320,10 @@ func maskiereToken(pfad string) string {
 	return pfad
 }
 
-// logMiddleware schreibt eine Zeile, wenn eine Anfrage mit 5xx endet: Status, Methode,
-// Pfad. Mehr nicht — keine Dauer, keine Anfragekennung, und bei 2xx bis 4xx gar nichts.
-// Die Zeile je Anfrage („Incoming Request", Methode und Pfad, VOR der Verarbeitung) schreibt
-// baueKette in router.go. Bis zum 21.09.2026 stand hier „jede Anfrage mit Status und Dauer";
-// das hat diese Funktion nie getan.
+// logMiddleware schreibt eine Zeile, wenn eine Anfrage mit 5xx endet: Status, Methode, Pfad.
+// Mehr nicht, keine Dauer, keine Anfragekennung, und bei 2xx bis 4xx gar nichts. Die Zeile je
+// Anfrage („Incoming Request", Methode und Pfad, vor der Verarbeitung) schreibt baueKette in
+// router.go.
 //
 // Der Pfad läuft an beiden Stellen durch die Maskierung darüber: Ein Geheimnis im Pfad
 // (Bestätigungs-Token) darf nicht im Klartext im Log landen.
@@ -355,10 +336,9 @@ func logMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(merker, r)
 
-		// Bis zum 07.09.2026 hing hier debug.Stack() an — der Stack DIESER Middleware nach
-		// next.ServeHTTP, nie der der Fehlerstelle: 40 Zeilen ohne Information bei jedem
-		// 5xx. Den echten Stack eines Panics schreibt panikMiddleware; die Ursache
-		// eines 5xx steht in der Zeile, die apierrors beim Senden loggt.
+		// Kein debug.Stack() hier: Er zeigte den Stack dieser Middleware nach next.ServeHTTP,
+		// nie den der Fehlerstelle. Den Stack eines Panics schreibt panikMiddleware; die
+		// Ursache eines 5xx steht in der Zeile, die apierrors beim Senden ins Log schreibt.
 		if merker.status >= 500 {
 			log.Printf("HTTP %d on %s %s", merker.status, r.Method, maskiereToken(r.URL.Path))
 		}

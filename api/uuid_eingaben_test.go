@@ -12,14 +12,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Verhalten zu uuid_eingaben_test.go (Root-Paket): Eine Kennung, die keine UUID ist, wird
-// mit 400 abgewiesen, BEVOR Datenbank oder Repository sie sehen. Die Fälle sind die, die
-// der ZAP-Lauf vom 13.09.2026 als 500 zeigte und die am Stack nachgestellt wurden.
+// Das Verhalten zu uuid_eingaben_test.go im Wurzelpaket: Eine Kennung, die keine UUID ist, wird
+// mit 400 abgewiesen, bevor Datenbank oder Abfragen sie sehen. Die Fälle stammen aus einem Lauf
+// von ZAP, der sie als 500 zeigte, und sind an einer lokalen Anlage nachgestellt.
 //
-// Der Server hat hier keine Datenbank (s.DB == nil) und die Repositories sind Attrappen,
-// die sich merken, ob sie gerufen wurden. Erreicht ein Handler die Datenbank doch, fängt
-// tuertest.AntwortOhneDB den Absturz und meldet ihn als „erreichte die Datenbank" — genau das war
-// vor der Prüfung der Fall.
+// Der Server hat hier keine Datenbank (s.DB == nil), und die Abfragen sind Attrappen, die sich
+// merken, ob sie gerufen wurden. Erreicht eine Tür die Datenbank doch, fängt
+// tuertest.AntwortOhneDB den Absturz und meldet ihn als „erreichte die Datenbank".
 
 type vormerkungsAttrappe struct {
 	repository.VormerkungsAbfragen
@@ -36,9 +35,9 @@ func (a *vormerkungsAttrappe) LegeAn(context.Context, string, string, string) (s
 	return "neu", nil
 }
 
-// urnForm besteht uuid.Validate und uuid.Parse (google/uuid kennt das Präfix), Postgres
-// weist sie ab: `invalid input syntax for type uuid`. Am Stack am 13.09.2026 nachgestellt —
-// POST /api/schueler/{id}/zusammenfuehren mit dieser quelle_id kam als 500 zurück.
+// urnForm besteht uuid.Validate und uuid.Parse (google/uuid kennt das Präfix), Postgres weist
+// sie ab: `invalid input syntax for type uuid`. POST /api/schueler/{id}/zusammenfuehren mit
+// dieser quelle_id antwortete ohne die Prüfung mit 500.
 const urnForm = "urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7"
 
 func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
@@ -53,8 +52,8 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 		{"Inventur abschließen", s.inventurlauf().InventurAbschliessen(), http.MethodPost, "/api/inventur/finish", `{"session_id":"x"}`},
 		{"Inventur abbrechen", s.inventurlauf().InventurVerwerfen(), http.MethodPost, "/api/inventur/abort", `{"session_id":"x"}`},
 		{"Verluste endgültig löschen", s.inventurlauf().VerlusteEndgueltigLoeschen(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":["x"]}`},
-		// Eine leere Kennung IN einer Liste: uuid_oder_leer lässt "" durch, `required` hinter
-		// `dive` nicht. Bis zum 08.10.2026 erreichten diese vier Türen damit die Datenbank
+		// Eine leere Kennung in einer Liste: uuid_oder_leer lässt "" durch, `required` hinter
+		// `dive` nicht. Ohne `required` erreichten diese vier Türen damit die Datenbank
 		// (am Wareneingang nachgestellt: 500 statt 400).
 		{"Verluste endgültig löschen, leeres Element", s.inventurlauf().VerlusteEndgueltigLoeschen(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":[""]}`},
 		{"Wareneingang einbuchen, leeres Element", s.bestellung().WareneingangBuchen(), http.MethodPost, "/api/bestellungen/bulk-receive", `{"exemplar_ids":[""]}`},
@@ -100,9 +99,9 @@ func TestVormerkungen_UngueltigeKennungErreichtDieAbfragenNicht(t *testing.T) {
 	}
 }
 
-// Gegenprobe: Leer bleibt erlaubt — die Handler melden „… fehlt" selbst, und optionale
-// Felder kommen vom Frontend auch als "". Das eingebaute `omitempty,uuid` wiese einen
-// *string, der auf "" zeigt, mit 400 ab (am 13.09.2026 ausprobiert); uuid_oder_leer nicht.
+// Gegenprobe: Leer bleibt erlaubt; die Türen melden „… fehlt" selbst, und optionale Felder
+// kommen von der Oberfläche auch als "". Das eingebaute `omitempty,uuid` wiese einen *string,
+// der auf "" zeigt, mit 400 ab; uuid_oder_leer nicht.
 func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 	leer := ""
 	gut := "11111111-1111-1111-1111-111111111111"

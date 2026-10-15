@@ -20,17 +20,17 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Auskunft findet ein gelöschtes Zugangskonto (29.09.2026, docs/OFFEN.md 5.19).
+// Die Auskunft findet ein gelöschtes Zugangskonto.
 //
-// Nach dem Löschen eines Kontos führt kein Fremdschlüssel mehr vom Leser zum Konto: benutzer
-// ist weg, und jeder Verweis auf benutzer steht auf SET NULL. Die Auskunft der Person, deren
-// Leserzeile stehen blieb, nannte das Konto und die Einträge darüber deshalb nicht mehr. Ein
-// Konto fällt über zwei Türen — Benutzer & Rechte und die Leserzeile eines Kollegen im
-// Papierkorb —, und beide schreiben seither denselben Löscheintrag mit der Leserkennung.
-// Geprüft über die echten Handler und Repository-Wege; dazu, dass das endgültige Löschen des
-// Lesers Name und Adresse aus dem Löscheintrag tilgt.
+// Nach dem Löschen eines Kontos führt kein Fremdschlüssel mehr vom Leser zum Konto: benutzer ist
+// weg, und jeder Verweis auf benutzer steht auf SET NULL. Ohne den Löscheintrag nennte die
+// Auskunft der Person, deren Leserzeile stehen blieb, das Konto und die Einträge darüber nicht
+// mehr. Ein Konto fällt über zwei Türen, Benutzer & Rechte und die Leserzeile eines Kollegen im
+// Papierkorb, und beide schreiben denselben Löscheintrag mit der Leserkennung. Geprüft über die
+// echten Türen und Abfragen; dazu, dass das endgültige Löschen des Lesers Name und Adresse aus
+// dem Löscheintrag tilgt.
 
-// fruehereKontenAuskunft ruft die Auskunft eines Lesers über ihren Handler ab.
+// fruehereKontenAuskunft ruft die Auskunft eines Lesers über ihre Tür ab.
 func fruehereKontenAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.Antwort {
 	t.Helper()
 	rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().DSGVOAuskunft(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
@@ -247,7 +247,8 @@ func TestDSGVOAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 			t.Fatalf("erste Anmeldung: Status %d, erwartet 403 (Zugang beantragt) — %s", rec.Code, rec.Body.String())
 		}
 		kontoID, leserID := konto(t, email)
-		// Freischalten gibt dem Konto eine Ausweisnummer; sie hält die Leserzeile, wenn das Konto fällt.
+		// Freischalten gibt dem Konto eine Ausweisnummer; sie hält die Leserzeile, wenn das
+		// Konto fällt.
 		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().KontoAendern(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
 			`{"barcode_id":"","vorname":"Selma","nachname":"Selbst","email":"`+email+`","rolle":"kollegium","aktiv":true}`,
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {

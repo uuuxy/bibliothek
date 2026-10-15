@@ -22,12 +22,12 @@ import (
 )
 
 // Die Sperre, die das Programm den Ehemaligen setzt, hält beim Schulbuch auch die Verlängerung
-// nicht an — entschieden am 28.09.2026: „Der Satz der Schule gilt auch für die Ehemaligen, und
-// auch bei der Verlängerung." Geprüft an den vier Stellen, die die Frist einer offenen Ausleihe
+// nicht an; entschieden ist: „Der Satz der Schule gilt auch für die Ehemaligen, und auch bei
+// der Verlängerung." Geprüft an den vier Stellen, die die Frist einer offenen Ausleihe
 // umschreiben (die einzigen UPDATE auf rueckgabe_frist): Einzelverlängerung, Frist von Hand,
 // Klassenverlängerung, LMF-Plan. Weiter angehalten werden die Sperre von Hand, der
 // anonymisierte Datensatz, der Papierkorb und beim Buch der Bücherei auch die Sperre der
-// Ehemaligen — wie an der Theke (TestTheke_EhemaligeSperreNichtAmSchulbuch).
+// Ehemaligen, wie an der Theke (TestTheke_EhemaligeSperreNichtAmSchulbuch).
 
 // sperrFristLage: vier gesperrte Kinder der 10R1, jedes mit einem offenen Schulbuch, der
 // Ehemalige zusätzlich mit einem Buch der Bücherei. Das anonymisierte Kind behält hier seine

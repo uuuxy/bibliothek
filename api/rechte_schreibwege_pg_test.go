@@ -16,28 +16,27 @@ import (
 	"bibliothek/sse"
 )
 
-// Die Schreibwege am echten Router: Wer das Recht seiner Matrix-Zeile NICHT hat,
-// bekommt 403 — und zwar wegen des Rechts, nicht wegen etwas anderem.
+// Die Schreibwege am echten Router: Wer das Recht seiner Matrix-Zeile nicht hat, bekommt 403,
+// und zwar wegen des Rechts, nicht wegen etwas anderem.
 //
-// Die Lücke, die dieses Gate schließt (Bestands-Durchgang 06.09.2026): Das
-// Matrix-Gate (pii_matrix_test.go) vergleicht Text mit Text — es prüft, dass die
-// Registrierung ein `verlangeRecht(...)` mit dem dokumentierten Namen trägt. Das
-// Antwort-Gate (pii_antwort_pg_test.go) fährt den echten Router, aber nur über
-// GET-Routen und zwei lesende POSTs; es sagt das selbst: „Die übrigen Nicht-GET-Zeilen
-// bleiben außerhalb." Damit war die HÄLFTE, die die Welt verändert — 91 von 186 Routen,
-// darunter jedes Löschen — nur lexikalisch geprüft.
+// pii_matrix_test.go vergleicht Text mit Text: Er prüft, dass die Anmeldung ein
+// `verlangeRecht(...)` mit dem dokumentierten Namen trägt. pii_antwort_pg_test.go fährt den
+// echten Router, aber nur über GET-Routen und zwei lesende POSTs; die übrigen Zeilen ohne GET
+// bleiben dort außerhalb. Ohne diesen Test wäre die Hälfte, die die Welt verändert, darunter
+// jedes Löschen, nur als Text geprüft.
 //
-// Was lexikalisch unsichtbar bleibt: ein Recht, das im Seed JEDER Rolle gehört. Der
-// Wrapper steht da, das Dokument stimmt, und trotzdem darf jeder Angemeldete schreiben
-// (Bugklasse „Seed erreicht bestehende DB nie"). Genau das misst dieses Gate.
+// Was im Text unsichtbar bleibt: ein Recht, das in der Vorgabe jeder Rolle gehört. Die Prüfung
+// des Zugriffs steht da, das Dokument stimmt, und trotzdem darf jeder Angemeldete schreiben
+// (Bugklasse „Vorgabe im Seed erreicht die laufende Anlage nicht", docs/sweeps.md). Genau das
+// misst dieser Test.
 //
-// Bewusst nur die NEGATIVE Richtung: Der Request wird abgewiesen, bevor er den Handler
-// erreicht — es wird also nichts geschrieben, gemailt oder importiert. Eine
-// Positiv-Probe „mit Recht geht es durch" wäre hier gefährlich (POST /api/mahnwesen/…
-// verschickt Post), und sie ist auch nicht nötig: Dass die Rechte-Prüfung überhaupt
-// greift und nicht etwa CSRF oder die Sitzung das 403 auslöst, belegt der GRUND in der
-// Antwort — „keine Berechtigung für diese Aktion" gegen „CSRF-Validierung
-// fehlgeschlagen". Ohne diese Unterscheidung wäre das Gate grün aus dem falschen Grund.
+// Bewusst nur die negative Richtung: Die Anfrage wird abgewiesen, bevor sie die Tür erreicht; es
+// wird also nichts geschrieben, gemailt oder importiert. Eine Positiv-Probe „mit Recht geht es
+// durch" wäre hier gefährlich (POST /api/mahnwesen/… verschickt Post), und sie ist auch nicht
+// nötig: Dass die Rechteprüfung überhaupt greift und nicht etwa CSRF oder die Sitzung das 403
+// auslöst, belegt der Grund in der Antwort, „keine Berechtigung für diese Aktion" gegen
+// „CSRF-Validierung fehlgeschlagen". Ohne diese Unterscheidung wäre der Test grün aus dem
+// falschen Grund.
 
 // Routen, die kein Fachrecht tragen (können) — mit Begründung, wie es sich für eine
 // Ausnahmeliste gehört.
@@ -48,9 +47,9 @@ var schreibwegeOhneFachrecht = map[string]string{
 	"POST /login":                                     "Login — es existiert noch keine Sitzung",
 }
 
-// füllwert ersetzt die Platzhalter einer Route. UUIDs sind Pflicht: Die
-// UUID-Prüfung sitzt VOR der Rechte-Prüfung (uuidPfadMiddleware), ein
-// „x" im Pfad ergäbe 400 statt 403 und das Gate liefe ins Leere.
+// fuellwert ersetzt die Platzhalter einer Route. UUIDs sind Pflicht: Die Prüfung der UUID sitzt
+// vor der Rechteprüfung (uuidPfadMiddleware), ein „x" im Pfad ergäbe 400 statt 403, und der Test
+// liefe ins Leere.
 func fuellwert(platzhalter string) string {
 	switch platzhalter {
 	case "{art}":
@@ -101,9 +100,9 @@ func TestSchreibwegeWeisenOhneDasRechtAb(t *testing.T) {
 	router := srv.Routes()
 	welt := baueKanarienWelt(t, pool, authenticator)
 
-	// Ein Füllrecht, das die Rolle STATT des geforderten hält. Zwei genügen: Für Zeilen,
-	// die selbst view_books verlangen, muss ein anderes her — sonst prüfte das Gate eine
-	// Rolle, die das geforderte Recht doch hat.
+	// Ein Füllrecht, das die Rolle statt des geforderten hält. Zwei genügen: Für Zeilen, die
+	// selbst view_books verlangen, muss ein anderes her; sonst prüfte der Test eine Rolle, die
+	// das geforderte Recht doch hat.
 	const fuell, fuellAlternativ = "view_books", "view_orders"
 
 	var geprueft, uebersprungen int

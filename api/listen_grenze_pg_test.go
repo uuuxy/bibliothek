@@ -1,23 +1,23 @@
 package api
 
-// Listen-Gate: Jede Liste in der Antwort einer GET-Route nennt, was sie begrenzt.
+// Jede Liste in der Antwort einer GET-Route nennt, was sie begrenzt.
 //
-// Die Bugklasse heißt „Unbegrenzte Listen" (docs/sweeps.md): Eine Route, die eine ganze
-// Tabelle ausliefert, fällt auf kleinen Datenmengen nicht auf und kippt im Betrieb. GET
-// /api/audit lieferte nach einem Lasttest 72 MB in einer Antwort; der Server brauchte dafür
-// 0,6 Sekunden, der Browser scheiterte am Aufbau der Seite. Ein Test je Route fängt das nur
-// dort, wo jemand daran gedacht hat.
+// Die Bugklasse heißt „Unbegrenzte Listen" (docs/sweeps.md): Eine Route, die eine ganze Tabelle
+// ausliefert, fällt auf kleinen Datenmengen nicht auf und kippt im Betrieb. Ohne Grenze liefert
+// GET /api/audit nach einem Lasttest 72 MB in einer Antwort; der Server braucht dafür 0,6
+// Sekunden, der Browser scheitert am Aufbau der Seite. Ein Test je Route fängt das nur dort, wo
+// jemand daran gedacht hat.
 //
-// Dieses Gate hängt am Merkmal. Es ruft jede GET-Route über den echten Router auf, mit dem
-// Apparat des PII-Antwort-Gates und dessen Vollständigkeit über die Matrix, und sucht in
-// jeder JSON-Antwort die Listen. Jede gefundene Liste braucht einen Eintrag in listenGrenze
-// mit der Antwort auf die Frage: Was begrenzt sie — eine Obergrenze in der Abfrage, ein
-// Elternteil, eine feste Menge? Der Bestand vom Tag des Baus steht ohne Antwort in
+// Dieser Test hängt am Merkmal. Er ruft jede GET-Route über den echten Router auf, mit dem
+// Apparat der Prüfung der PII-Antworten (pii_antwort_pg_test.go) und deren Vollständigkeit über
+// die Matrix, und sucht in jeder JSON-Antwort die Listen. Jede gefundene Liste braucht einen
+// Eintrag in listenGrenze mit der Antwort auf die Frage: Was begrenzt sie, eine Obergrenze in der
+// Abfrage, ein Elternteil, eine feste Menge? Der Bestand vom Tag des Baus steht ohne Antwort in
 // listenUnbefragt und wird nur kürzer.
 //
-// Kein Urteil: Ob die genannte Grenze greift, prüft je Liste ihr eigener Test, gegen mehr
-// Zeilen als die Grenze. Sieht nicht: Listen in PDF-, CSV- und Bildantworten; Routen, die das
-// PII-Gate mit Begründung auslässt oder die in der gesäten Welt mit einem Fehlerstatus
+// Kein Urteil: Ob die genannte Grenze greift, prüft je Liste ihr eigener Test, gegen mehr Zeilen
+// als die Grenze. Sieht nicht: Listen in PDF-, CSV- und Bildantworten; Routen, die die Prüfung
+// der PII-Antworten mit Begründung auslässt oder die in der gesäten Welt mit einem Fehlerstatus
 // antworten; eine Liste, die leer als null oder gar nicht in der Antwort steht; Listen in den
 // Zeilen einer Liste und tiefer als zwei Ebenen unter der Wurzel; POST-Routen.
 

@@ -1,47 +1,41 @@
 package api
 
-// PII-Antwort-Gate (Betreiber-Entscheidung 01.09.2026, Befund-Register): Die
-// PII-Matrix war bis hierhin eine Zusage, die nur ein Dokument behauptet — das
-// bestehende Gate (pii_matrix_test.go) prüft Route, Recht und Zeilen-Existenz,
-// aber nicht, ob die ANTWORT sich an ihre Stufe hält. Genau diese Bauform
-// („Schutz, den nur ein Kommentar behauptet") ist dem Projekt mehrfach auf die
-// Füße gefallen. Dieses Gate schließt die Lücke für die GET-Routen:
+// Die Antworten halten sich an die Stufen der PII-Matrix. Die Prüfung der Matrix
+// (pii_matrix_test.go) vergleicht Route, Recht und Zeile, aber nicht, ob die Antwort sich an ihre
+// Stufe hält; ohne diesen Test bliebe die Stufe eine Zusage, die nur ein Dokument behauptet.
+// Dieser Test schließt die Lücke für die GET-Routen:
 //
-//  1. Es sät eine Welt mit KANARIENWERTEN je PII-Stufe — Namen (Stufe 1),
-//     Sperrgrund/LUSD/Geburtsdatum/Schadenstext (Stufe 2), Adresse/Eltern-Mail
-//     (Stufe 3) — samt überfälliger Ausleihe, Schadensfall, Vormerkung und
-//     Audit-Spur, damit die Antworten die Daten auch wirklich führen KÖNNEN.
-//  2. Es ruft jede GET-Route der Matrix über den ECHTEN Router auf (Routes()
-//     samt Middleware), und zwar mit GENAU dem Recht ihrer Matrix-Zeile — nicht
-//     als Admin: Die Stufe ist „bemessen an dem, was das Recht der Zeile ALLEIN
-//     öffnet" (Matrix-Kopf), und Zusatzinhalte hinter view_students (Sperrgrund,
-//     Geräte-Ausleihername) dürfen hier gerade NICHT auftauchen.
-//  3. Es prüft: Kein Kanarienwert einer Stufe oberhalb der dokumentierten darf
-//     in der Antwort stehen (PDF-Ströme werden dafür entpackt, pdftest.Suchtext).
-//  4. Gegen das Leere-Antwort-Loch („nichts drin → trivial grün") tragen
-//     Schlüsselrouten eine POSITIV-Kontrolle: Dort MUSS der erlaubte Kanarienwert
-//     erscheinen, sonst misst das Gate nichts.
+//  1. Er sät eine Welt mit Kanarienwerten je PII-Stufe, Namen (Stufe 1),
+//     Sperrgrund/LUSD/Geburtsdatum/Schadenstext (Stufe 2), Adresse/Eltern-Mail (Stufe 3),
+//     samt überfälliger Ausleihe, Schadensfall, Vormerkung und Eintrag im Protokoll, damit die
+//     Antworten die Daten auch wirklich führen können.
+//  2. Er ruft jede GET-Route der Matrix über den echten Router auf (Routes() samt Middleware),
+//     und zwar mit genau dem Recht ihrer Matrix-Zeile, nicht als Admin: Die Stufe bemisst sich
+//     an dem, was das Recht der Zeile allein öffnet (Kopf der Matrix), und Zusatzinhalte hinter
+//     view_students (Sperrgrund, Name des Ausleihers eines Geräts) dürfen hier gerade nicht
+//     auftauchen.
+//  3. Er prüft: Kein Kanarienwert einer Stufe oberhalb der dokumentierten darf in der Antwort
+//     stehen (PDF-Ströme werden dafür entpackt, pdftest.Suchtext).
+//  4. Gegen das Loch der leeren Antwort („nichts drin, also trivial grün") tragen
+//     Schlüsselrouten eine Positiv-Kontrolle: Dort muss der erlaubte Kanarienwert erscheinen,
+//     sonst misst der Test nichts.
 //
-// Vollständigkeit ist erzwungen: Jede GET-Zeile der Matrix braucht einen Aufruf
-// ODER einen begründeten Ausschluss — eine neue GET-Route ohne Einordnung wird
-// rot.
+// Vollständigkeit ist erzwungen: Jede GET-Zeile der Matrix braucht einen Aufruf oder einen
+// begründeten Ausschluss; eine neue GET-Route ohne Einordnung wird rot.
 //
-// Seit dem 01.09.2026 (Register-Posten „PII-Antwort-Gate deckt nur GET") misst
-// das Gate zusätzlich die LESENDEN POST-Routen — die, deren Antwort Schülerdaten
-// trägt, obwohl der Aufruf nebenwirkungsarm ist: der Theken-Scan (POST
-// /api/action, Stufe 1) samt Batch-Form und die LUSD-Vorschau (POST
-// /api/lusd/preview, Stufe 2 — apply=false schreibt nichts). Sie laufen durch
-// denselben Apparat (Kanarienwelt, genau EIN Recht, echter Router samt CSRF).
-// Die übrigen Nicht-GET-Zeilen bleiben hier außerhalb: Das sind Schreibpfade, deren
-// Aufruf die Welt verändert — ihre STUFE sichert weiterhin die Handarbeit der
-// Matrix. Ihr RECHT misst seit dem 06.09.2026 rechte_schreibwege_pg_test.go: alle 87
-// Schreibrouten am echten Router, mit einer Rolle OHNE das geforderte Recht, Erwartung
-// 403 mit der Begründung des Rechte-Wächters. Diese Richtung ist ungefährlich — der
-// Request stirbt vor dem Handler, es wird nichts geschrieben oder verschickt.
+// Dazu misst der Test die lesenden POST-Routen, deren Antwort Schülerdaten trägt, obwohl der
+// Aufruf nebenwirkungsarm ist: den Theken-Scan (POST /api/action, Stufe 1) samt Batch-Form und
+// die LUSD-Vorschau (POST /api/lusd/preview, Stufe 2; apply=false schreibt nichts). Sie laufen
+// durch denselben Apparat (Kanarienwelt, genau ein Recht, echter Router samt CSRF). Die übrigen
+// Zeilen ohne GET bleiben hier außerhalb: Das sind Schreibpfade, deren Aufruf die Welt
+// verändert; ihre Stufe sichert weiterhin die Handarbeit an der Matrix. Ihr Recht misst
+// rechte_schreibwege_pg_test.go: alle Schreibrouten am echten Router, mit einer Rolle ohne das
+// geforderte Recht, Erwartung 403 mit der Begründung des Rechte-Wächters. Diese Richtung ist
+// ungefährlich: Die Anfrage stirbt vor der Tür, es wird nichts geschrieben oder verschickt.
 //
-// Seit dem 30.09.2026 (OFFEN.md 5.29) prüft das Gate auch den Kopf der Antwort: Ab Stufe 1
-// muss sie Cache-Control: no-store tragen, sonst legt der Browser sie ab (pruefeKeinAblegen;
-// dazu adresseTraegtPersonendaten für Stufe-0-Routen mit einer Personenkennung in der Adresse).
+// Der Test prüft auch den Kopf der Antwort: Ab Stufe 1 muss sie Cache-Control: no-store tragen,
+// sonst legt der Browser sie ab (pruefeKeinAblegen; dazu adresseTraegtPersonendaten für Routen
+// der Stufe 0 mit einer Personenkennung in der Adresse).
 
 import (
 	"context"
@@ -72,7 +66,7 @@ import (
 
 // ── Kanarienwerte ────────────────────────────────────────────────────────────
 // Frei erfundene, kollisionssichere Werte. Buchdaten (Titel, Buch-Barcodes,
-// Klassennamen) sind BEWUSST keine Kanarien: Sie sind Stufe-0-Inhalt und dürfen
+// Klassennamen) sind bewusst keine Kanarien: Sie sind Stufe-0-Inhalt und dürfen
 // überall stehen.
 var kanarienJeStufe = map[int][]string{
 	1: {"Pruefkanari", "Zugvogel", "Vogelbeere", "SBK-KANARI-1", "SBK-KANARI-2"},
@@ -80,7 +74,7 @@ var kanarienJeStufe = map[int][]string{
 	3: {"Kanariweg", "Kanaristadt", "kanari-eltern@example.org"},
 }
 
-// verboteneKanarien liefert alle Werte OBERHALB der dokumentierten Stufe.
+// verboteneKanarien liefert alle Werte oberhalb der dokumentierten Stufe.
 func verboteneKanarien(stufe int) []string {
 	var out []string
 	for s := stufe + 1; s <= 3; s++ {
@@ -105,8 +99,8 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	ctx := context.Background()
 	w := kanarienWelt{buchBarcode: "BUCHBC-GATE-1"}
 
-	// Personal-Konto (Mitarbeiter-Rolle: bekommt je Route genau EIN Recht).
-	// Name bewusst OHNE Kanarienbezug — Personalnamen sind keine Schülerdaten.
+	// Personal-Konto (Mitarbeiter-Rolle: bekommt je Route genau ein Recht).
+	// Name bewusst ohne Kanarienbezug — Personalnamen sind keine Schülerdaten.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
 		VALUES ('Greta', 'Gatewart', 'gate-ma@example.org', 'mitarbeiter', true)
@@ -119,7 +113,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	}
 	w.sessionToken = token
 
-	// Aktiver Schüler mit ALLEN Stufen: Name/Barcode (1), Geburtsdatum, LUSD-ID
+	// Aktiver Schüler mit allen Stufen: Name/Barcode (1), Geburtsdatum, LUSD-ID
 	// und Sperrgrund (2), Adresse und Eltern-Mail (3).
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr,
@@ -131,10 +125,9 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		RETURNING id`).Scan(&w.schuelerID); err != nil {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
-	// Schüler einer Abschlussklasse mit offener Ausleihe — sonst bleibt die Abgängerliste
-	// (Abschlussklassen, noch an der Schule; seit 05.09.2026 wieder in dieser Bedeutung)
-	// leer und ihre Stufe-2-Zeile wäre trivial grün. Der Router läuft dafür mit der Uhr
-	// in der Saison (Mai–Juli), siehe unten.
+	// Schüler einer Abschlussklasse mit offener Ausleihe; sonst bleibt die Abgängerliste
+	// (Abschlussklassen, noch an der Schule) leer, und ihre Zeile der Stufe 2 wäre trivial
+	// grün. Der Router läuft dafür mit der Uhr in der Saison (Mai–Juli), siehe unten.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('SBK-KANARI-2', 'Zugvogel', 'Vogelbeere', '09H1', 2026)
@@ -175,7 +168,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		RETURNING id`, w.exemplarID, w.schuelerID, w.mitarbeiterID).Scan(&ausleiheID); err != nil {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}
-	// Zweites Exemplar als OFFENES Buch des Abgängers — die Abgängerliste joint
+	// Zweites Exemplar als offenes Buch des Abgängers — die Abgängerliste joint
 	// auf rueckgabe_am IS NULL; ohne offenes Buch bliebe sie leer und ihre
 	// Stufe-2-Zeile trivial grün.
 	var abgaengerExemplarID string
@@ -191,7 +184,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		t.Fatalf("Abgänger-Ausleihe anlegen: %v", err)
 	}
 
-	// Schadensfall (Gebührenliste, Elternbrief, Rechnung) — MIT ausleihe_id:
+	// Schadensfall (Gebührenliste, Elternbrief, Rechnung) — mit ausleihe_id:
 	// die Rechnung joint über den Ausleihvorgang.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schadensfaelle (exemplar_id, schueler_id, ausleihe_id, beschreibung, betrag)
@@ -200,10 +193,10 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		t.Fatalf("Schadensfall anlegen: %v", err)
 	}
 
-	// Schadensersatz-Bescheid (Migration 110): Der Brief trägt Anrede, Name und
-	// Anschrift als Snapshot — er ist Stufe 3 wie die beiden anderen Fensterkuvert-Briefe.
-	// Die Positionen des Briefs sind Forderungen; hier genügt der Kopf mit Snapshot,
-	// weil das Gate die ANTWORT prüft und nicht den Erstellungsweg.
+	// Schadensersatz-Bescheid: Der Brief trägt Anrede, Name und Anschrift als Snapshot;
+	// er ist Stufe 3 wie die beiden anderen Briefe fürs Fensterkuvert. Die Positionen des
+	// Briefs sind Forderungen; hier genügt der Kopf mit Snapshot, weil der Test die Antwort
+	// prüft und nicht den Weg der Erstellung.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schadensersatz_bescheide
 			(schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis,
@@ -224,8 +217,8 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		t.Fatalf("Vormerkung anlegen: %v", err)
 	}
 
-	// Audit-Spur über den ECHTEN Schreiber: /api/audit darf sie nicht ausbreiten,
-	// die Tresen-Auskunft muss sie (Stufe 2) zeigen.
+	// Eintrag im Protokoll über den echten Schreiber: /api/audit darf ihn nicht ausbreiten,
+	// die Tresen-Auskunft muss ihn (Stufe 2) zeigen.
 	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
 		return repository.NewProtokollAbfragen(pool).
 			ProtokolliereAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.mitarbeiterID)
@@ -241,9 +234,9 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_exemplare WHERE titel_id = $1`, w.titelID)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM schueler WHERE id IN ($1, $2)`, w.schuelerID, w.abgaengerID)
-		// Die MITARBEITER-Rechte auf die Seed-Vorgabe zurückstellen — das Gate
-		// hat sie je Route auf genau ein Recht verengt, spätere Tests im selben
-		// Binary sollen wieder den Normalzustand sehen.
+		// Die Rechte der Rolle MITARBEITER auf die Vorgabe zurückstellen: Dieser Test hat
+		// sie je Route auf genau ein Recht verengt, und spätere Tests im selben Binary sollen
+		// wieder den Normalzustand sehen.
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
 		for _, e := range db.RechteVorgabe {
 			if e.Role == "MITARBEITER" {
@@ -259,36 +252,35 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 
 // ── Aufruf-Verzeichnis ───────────────────────────────────────────────────────
 
-// piiAufruf beschreibt, WIE eine Matrix-Zeile aufgerufen wird. Positiv nennt
-// Kanarienwerte, die in der Antwort STEHEN MÜSSEN — die Gegenprobe gegen leere
-// Antworten, ohne die dieses Gate nichts misst.
+// piiAufruf beschreibt, wie eine Matrix-Zeile aufgerufen wird. Positiv nennt Kanarienwerte,
+// die in der Antwort stehen müssen: die Gegenprobe gegen leere Antworten, ohne die dieser Test
+// nichts misst.
 type piiAufruf struct {
 	URL     string
 	Positiv []string
 }
 
 // bauePIIAufrufe füllt Pfad-Parameter mit den gesäten Objekten. Schlüssel ist
-// die Route EXAKT wie in der Matrix.
+// die Route exakt wie in der Matrix.
 func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 	return map[string]piiAufruf{
 		// routen_leser.go
 		"GET /api/schueler":                     {URL: "/api/schueler", Positiv: []string{"Vogelbeere"}},
 		"GET /api/schueler/{id}":                {URL: "/api/schueler/" + w.schuelerID, Positiv: []string{"Kanariweg", "kanari-eltern@example.org"}},
 		"GET /api/schueler/{id}/dsgvo-auskunft": {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft", Positiv: []string{"Kanariweg"}},
-		// Kandidatensuche fürs Zusammenführen: sucht über ALLE Schüler außer {id} selbst.
+		// Kandidatensuche fürs Zusammenführen: sucht über alle Schüler außer {id} selbst.
 		// Aufruf vom Abgänger Zugvogel aus, damit der Kanarienvogel mit Adresse/Grund/
 		// Geburtsdatum (Pruefkanari) im Treffer liegt — von seiner eigenen Akte aus wäre er
-		// ausgeschlossen, und Stufe 2/3 könnte nie rot werden (Rasterdurchgang 02.09.2026).
+		// ausgeschlossen, und Stufe 2/3 könnte nie rot werden.
 		"GET /api/schueler/{id}/zusammenfuehren-kandidaten": {URL: "/api/schueler/" + w.abgaengerID + "/zusammenfuehren-kandidaten?q=Vogelbeere", Positiv: []string{"Pruefkanari"}},
 		"GET /api/schueler/{id}/dsgvo-auskunft/pdf":         {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft/pdf"},
 		"GET /api/schueler/deleted":                         {URL: "/api/schueler/deleted"},
 		"GET /api/schueler/{barcode_id}/photo":              {URL: "/api/schueler/SBK-KANARI-1/photo"},
 		"GET /api/klassen":                                  {URL: "/api/klassen"},
-		// Die besetzten Jahrgänge (17.09.2026, OFFEN.md 9.5): Stufe 0, die Antwort ist eine
-		// Liste von Zahlen. Keine Positiv-Kontrolle mit einem Kanarienwert möglich — es gibt
-		// in dieser Antwort keinen Text. Das Gate prüft hier also nur, dass nichts
-		// Personenbezogenes durchfällt; DASS die Zahlen stimmen, steht in
-		// api/leser/schueler_jahrgang_filter_pg_test.go.
+		// Die besetzten Jahrgänge: Stufe 0, die Antwort ist eine Liste von Zahlen. Keine
+		// Positiv-Kontrolle mit einem Kanarienwert möglich, es gibt in dieser Antwort keinen
+		// Text. Der Test prüft hier also nur, dass nichts Personenbezogenes durchfällt; dass die
+		// Zahlen stimmen, steht in api/leser/schueler_jahrgang_filter_pg_test.go.
 		"GET /api/jahrgaenge":              {URL: "/api/jahrgaenge"},
 		"GET /api/lmf-termine":             {URL: "/api/lmf-termine"},
 		"GET /api/lmf-termine/pdf":         {URL: "/api/lmf-termine/pdf"},
@@ -297,39 +289,38 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/klassen-mapping":         {URL: "/api/klassen-mapping"},
 		"GET /api/abgaenger":               {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
 		"GET /api/abgaenger/pdf":           {URL: "/api/abgaenger/pdf"},
-		// Auch der dritte Fensterkuvert-Brief trägt seit dem 01.09.2026 die Anschrift
-		// (vorher Unterstrich-Zeilen) — Kanariweg als Positiv-Kontrolle wie bei
-		// print/rechnung.
+		// Auch der dritte Brief fürs Fensterkuvert trägt die Anschrift; Kanariweg als
+		// Positiv-Kontrolle wie bei print/rechnung.
 		"GET /api/schadensfaelle/{id}/pdf":      {URL: "/api/schadensfaelle/" + w.schadensfallID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
 		"GET /api/schueler/{id}/schadensfaelle": {URL: "/api/schueler/" + w.schuelerID + "/schadensfaelle", Positiv: []string{"Kanarischaden"}},
-		// Schadensersatz-Bescheide (Migration 110). Der Vorschlag und die Akten-Liste
+		// Schadensersatz-Bescheide. Der Vorschlag und die Akten-Liste
 		// nennen das Kind, die Arbeitsliste ebenso; das PDF trägt zusätzlich die
 		// Anschrift — deshalb stehen dort dieselben Positiv-Kontrollen wie beim
 		// Schwester-Brief schadensfaelle/{id}/pdf. Ohne einen erstellten Bescheid im
-		// Wächter-Bestand liefern die drei Listen leer, und das ist hier richtig: Das
-		// Gate prüft, dass NICHTS Unerwartetes durchfällt, nicht dass etwas da ist.
+		// Wächter-Bestand liefern die drei Listen leer, und das ist hier richtig: Der
+		// Test prüft, dass nichts Unerwartetes durchfällt, nicht dass etwas da ist.
 		"GET /api/schueler/{id}/bescheid-vorschlag": {URL: "/api/schueler/" + w.schuelerID + "/bescheid-vorschlag", Positiv: []string{"Vogelbeere"}},
 		"GET /api/schueler/{id}/bescheide":          {URL: "/api/schueler/" + w.schuelerID + "/bescheide"},
-		// Betragsvorschlag des Melde-Dialogs (17.09.2026, OFFEN.md 9.3 a): Stufe 0 — die
-		// Antwort kennt nur Betrag, Herleitung und ist_lernmittel, also Zahlen zu EINEM
-		// Exemplar. Kein Name, keine Klasse, nicht einmal der Titel. Genau das prüft der
-		// Eintrag: dass an dieser Tür nichts Personenbezogenes herausfällt.
+		// Betragsvorschlag des Melde-Dialogs: Stufe 0, die Antwort kennt nur Betrag, Herleitung
+		// und ist_lernmittel, also Zahlen zu einem Exemplar. Kein Name, keine Klasse, nicht
+		// einmal der Titel. Genau das prüft der Eintrag: dass an dieser Tür nichts
+		// Personenbezogenes herausfällt.
 		//
-		// Positiv-Kontrolle auf den Leerfall-Satz: Das Exemplar der Kanarienwelt ist ohne
-		// Einkaufspreis angelegt, und sein Titel ist kein Lernmittel — der Vorschlag ist
-		// deshalb 0 mit „kein Preis hinterlegt". Das beweist, dass die Route wirklich
-		// geantwortet hat (ohne Positiv-Kontrolle misst dieses Gate nichts). Dass die
-		// RECHNUNG stimmt, steht woanders: repository/ersatzwert_groessen_pg_test.go und
+		// Positiv-Kontrolle auf den Satz für den leeren Fall: Das Exemplar der Kanarienwelt ist
+		// ohne Einkaufspreis angelegt, und sein Titel ist kein Lernmittel; der Vorschlag ist
+		// deshalb 0 mit „kein Preis hinterlegt". Das beweist, dass die Route wirklich geantwortet
+		// hat (ohne Positiv-Kontrolle misst dieser Test nichts). Dass die Rechnung stimmt, steht
+		// woanders: repository/ersatzwert_groessen_pg_test.go und
 		// internal/service/ersatzwert_vorschlag_test.go.
 		"GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag": {URL: "/api/buecher/exemplare/" + w.exemplarID + "/ersatzwert-vorschlag", Positiv: []string{"kein Preis hinterlegt"}},
 		"GET /api/bescheide": {URL: "/api/bescheide"},
-		// Nachbuch-Meldungen (Migration 117): Stufe 1 hinter view_students — die Liste
+		// Nachbuch-Meldungen: Stufe 1 hinter view_students; die Liste
 		// nennt Ausleiher und Vorbesitzer mit Namen; der Zähler fürs Band ist Stufe 0.
 		"GET /api/action/nachbuch-meldungen": {URL: "/api/action/nachbuch-meldungen"},
-		// Nur Buchnummern, keine Personendaten (Stufe 2, Commit 12) — Stufe 0.
+		// Nur Buchnummern, keine Personendaten: Stufe 0.
 		"GET /api/action/buchbarcodes":              {URL: "/api/action/buchbarcodes", Positiv: []string{w.buchBarcode}},
 		"GET /api/action/nachbuch-meldungen/anzahl": {URL: "/api/action/nachbuch-meldungen/anzahl"},
-		// Forderungen ohne Brief je Kind (15.09.2026): Der Kanarienvogel hat einen
+		// Forderungen ohne Brief je Kind: Der Kanarienvogel hat einen
 		// offenen Schadensfall ohne bescheid_id und steht deshalb mit Namen darin.
 		"GET /api/bescheide/ausstehend": {URL: "/api/bescheide/ausstehend", Positiv: []string{"Vogelbeere"}},
 		"GET /api/bescheide/{id}/pdf":   {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
@@ -341,15 +332,15 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/buecher/titel/{id}/ausleiher": {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
 		"GET /api/buecher/titel/{id}/historie":  {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
 		"GET /api/buecher/titel/{id}/etiketten": {URL: "/api/buecher/titel/" + w.titelID + "/etiketten"},
-		// Schlagworte (Migration 138): Stufe 0, Wörter über den Titel — keine Person.
+		// Schlagworte: Stufe 0, Wörter über den Titel, keine Person.
 		"GET /api/buecher/titel/{id}/schlagworte": {URL: "/api/buecher/titel/" + w.titelID + "/schlagworte"},
-		// Auflagen eines Schulbuchs (Migration 148): Stufe 0 — Titel und Bestandszahlen. Der
+		// Auflagen eines Schulbuchs: Stufe 0, Titel und Bestandszahlen. Der
 		// Titel der Kanarienwelt ist verliehen; wer ihn hat, darf hier nicht auftauchen.
 		"GET /api/buecher/titel/{id}/auflagen": {URL: "/api/buecher/titel/" + w.titelID + "/auflagen"},
-		// Das Abgangsbuch (17.09.2026, OFFEN.md 9.3 d): Stufe 0. Es nennt Exemplare, keine
-		// Leser — auch nicht beim Grund „Verlust", obwohl dort ein Schüler dahintersteht.
-		// Genau das prüft das Gate hier mit: Der Kanarienvogel darf auf diesem Blatt nicht
-		// auftauchen. Zeitraum weit genug, dass die Aussonderung der Kanarienwelt hineinfällt.
+		// Das Abgangsbuch: Stufe 0. Es nennt Exemplare, keine Leser, auch nicht beim Grund
+		// „Verlust", obwohl dort ein Schüler dahintersteht. Genau das prüft der Test hier mit: Der
+		// Kanarienvogel darf auf diesem Blatt nicht auftauchen. Zeitraum weit genug, dass die
+		// Aussonderung der Kanarienwelt hineinfällt.
 		"GET /api/bestand/abgangsbuch":                       {URL: "/api/bestand/abgangsbuch?von=2000-01-01&bis=2099-12-31"},
 		"GET /api/bestand/abgangsbuch/pdf":                   {URL: "/api/bestand/abgangsbuch/pdf?von=2000-01-01&bis=2099-12-31"},
 		"GET /api/bestand/zugangsbuch":                       {URL: "/api/bestand/zugangsbuch?von=2000-01-01&bis=2099-12-31"},
@@ -439,7 +430,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 	}
 }
 
-// erwarteterFehlstatus: Aufrufe, deren ehrliches Ergebnis KEIN 200 ist — mit dem
+// erwarteterFehlstatus: Aufrufe, deren ehrliches Ergebnis kein 200 ist — mit dem
 // exakt erwarteten Status. Alle anderen Aufrufe müssen < 400 antworten: Sonst
 // liefe ein Tippfehler im Verzeichnis still ins SPA-Fallback (404) und die Route
 // wäre für immer trivial grün.
@@ -449,11 +440,11 @@ var erwarteterFehlstatus = map[string]int{
 	"GET /api/public/bestellung/{token}":                     404, // Dummy-Token — ein echter entstünde nur über den Bestell-Schreibpfad
 	"GET /api/public/bestellung/{token}/etiketten/{groesse}": 404, // dito
 	"GET /api/admin/":                                        404, // Mount-Sammelpfad des Inventur-Mux — der nackte Pfad trifft keine innere Route; die inneren stehen einzeln in der Matrix
-	"GET /uploads/":                                          404, // FileServer auf leerem Cover-Verzeichnis, kein Index — im Gate-Lauf liegen dort keine Dateien
+	"GET /uploads/":                                          404, // FileServer auf leerem Cover-Verzeichnis, kein Index; im Lauf dieses Tests liegen dort keine Dateien
 	"GET /api/inventur/fehlbestand":                          400, // verlangt session_id einer echten Inventur; ohne Inventur-Welt ist der Parameter-Fehlerpfad die ehrliche Antwort
 }
 
-// bewusstAusgelassen: GET-Zeilen der Matrix, die dieses Gate mit Begründung
+// bewusstAusgelassen: GET-Zeilen der Matrix, die dieser Test mit Begründung
 // nicht aufruft. Jede Begründung muss den Verzicht tragen — „zu aufwendig"
 // stünde hier zu Recht schlecht.
 var bewusstAusgelassen = map[string]string{
@@ -488,7 +479,7 @@ func rechtFuerZeile(recht string) (permission string, mitSitzung bool) {
 }
 
 // antwortText liest den Rumpf; PDF-Ströme werden entpackt (pdftest.Suchtext, dieselbe
-// Technik wie die Etiketten-Gates), damit „im PDF steht die Adresse" nicht
+// Technik wie die Tests der Etiketten), damit „im PDF steht die Adresse" nicht
 // hinter FlateDecode unsichtbar bleibt.
 func antwortText(t *testing.T, resp *httptest.ResponseRecorder) string {
 	t.Helper()
@@ -504,18 +495,18 @@ func antwortText(t *testing.T, resp *httptest.ResponseRecorder) string {
 
 // ── Ablage im Browser ────────────────────────────────────────────────────────
 
-// adresseTraegtPersonendaten: Zeilen der Stufe 0, deren ANTWORT nichts über eine Person
-// verrät, deren ADRESSE aber eine Kennung tragen kann. Der Browser legt mit der Antwort
+// adresseTraegtPersonendaten: Zeilen der Stufe 0, deren Antwort nichts über eine Person
+// verrät, deren Adresse aber eine Kennung tragen kann. Der Browser legt mit der Antwort
 // auch ihre Adresse ab — für sie gilt deshalb dieselbe Regel wie ab Stufe 1.
 var adresseTraegtPersonendaten = map[string]string{
 	"GET /api/barcode": "content= trägt beim Ausweis die Ausweisnummer (frontend/src/lib/designer/CardFace.svelte); " +
 		"bis zum 30.09.2026 legte der Browser das Bild samt Adresse ein Jahr lang ab.",
 }
 
-// pruefeKeinAblegen: Eine Antwort mit Personendaten trägt Cache-Control: no-store — seit
-// dem 30.09.2026 (OFFEN.md 5.29; OWASP ASVS 5.0, 14.3.2). Die Vorgabe setzt
-// internal/middleware/sicherheitskopfzeilen.go für jede Antwort unter /api/; rot wird es, wenn ein
-// Handler sie mit einem eigenen Kopf aufweicht oder die Middleware aus der Kette fällt.
+// pruefeKeinAblegen: Eine Antwort mit Personendaten trägt Cache-Control: no-store (OWASP ASVS
+// 5.0, 14.3.2). Die Vorgabe setzt internal/middleware/sicherheitskopfzeilen.go für jede Antwort
+// unter /api/; rot wird es, wenn eine Tür sie mit einem eigenen Kopf aufweicht oder die
+// Middleware aus der Kette fällt.
 func pruefeKeinAblegen(t *testing.T, route, fall string, stufe int, rec *httptest.ResponseRecorder) {
 	t.Helper()
 	if stufe == 0 && adresseTraegtPersonendaten[route] == "" {
@@ -548,12 +539,12 @@ func traegtNoStore(werte []string) bool {
 func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 
-	// Rate-Limit hochdrehen: ~80 Requests fallen hier in dieselbe Sekunde, das
-	// Produktionsbudget (50/s je IP) wäre ein falsches Rot.
+	// Die Bremse hochdrehen: Viele Anfragen fallen hier in dieselbe Sekunde, und die Vorgabe
+	// des Betriebs (50 je Sekunde und Adresse) wäre ein falsches Rot.
 	t.Setenv("RATE_LIMIT", "100000")
 
 	// role_permissions entsteht im echten Betrieb durch InitPermissions (db/seed.go),
-	// nicht durch schema.sql — derselbe Weg hier, damit das Gate den Live-Aufbau fährt.
+	// nicht durch schema.sql; derselbe Weg hier, damit der Test den Aufbau des Betriebs fährt.
 	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
 		t.Fatalf("InitPermissions: %v", err)
 	}
@@ -565,7 +556,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 	}
 	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
-	// das Gate misste dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
+	// der Test mäße dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
 	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 
@@ -637,7 +628,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 		router.ServeHTTP(rec, req)
 		text := antwortText(t, rec)
 
-		// Kern des Gates: nichts oberhalb der dokumentierten Stufe.
+		// Kern des Tests: nichts oberhalb der dokumentierten Stufe.
 		for _, kanarie := range verboteneKanarien(stufe) {
 			if strings.Contains(text, kanarie) {
 				t.Errorf("%s (Stufe %d, Recht %s): Antwort enthält %q — Daten OBERHALB der dokumentierten Stufe.\n"+
@@ -648,8 +639,8 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 
 		pruefeKeinAblegen(t, route, "", stufe, rec)
 
-		// Positiv-Kontrolle: Diese Routen MÜSSEN ihre erlaubten Daten zeigen —
-		// sonst prüfte das Gate leere Antworten und meldete ewig grün.
+		// Positiv-Kontrolle: Diese Routen müssen ihre erlaubten Daten zeigen,
+		// sonst prüfte der Test leere Antworten und meldete ewig grün.
 		for _, kanarie := range aufruf.Positiv {
 			if !strings.Contains(text, kanarie) {
 				t.Errorf("%s: Positiv-Kontrolle %q fehlt in der Antwort (Status %d) — die Kanarienwelt erreicht diese Route nicht (mehr); Seed oder Aufruf reparieren, sonst misst das Gate hier nichts.\nAntwort-Anfang: %.200s",
@@ -657,7 +648,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 			}
 		}
 		// Status-Härtung gegen still ins Leere laufende Aufrufe (SPA-404, 403
-		// wegen falsch übersetztem Recht, 500 wegen kaputtem Seed).
+		// wegen falsch übersetztem Recht, 500 wegen kaputter Vorgabe der Rechte).
 		if erwartet, ok := erwarteterFehlstatus[route]; ok {
 			if rec.Code != erwartet {
 				t.Errorf("%s: erwartet Status %d (siehe erwarteterFehlstatus), war %d", route, erwartet, rec.Code)
@@ -670,16 +661,16 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 
 // ── Lesende POST-Routen ──────────────────────────────────────────────────────
 
-// piiPostFall ist EIN nebenwirkungsarmer POST-Aufruf einer Matrix-Zeile. Positiv
-// wie bei den GETs: Werte, die in der Antwort STEHEN MÜSSEN — mindestens ein
-// Fall je Route trägt welche, sonst prüfte das Gate leere Antworten.
+// piiPostFall ist ein nebenwirkungsarmer POST-Aufruf einer Matrix-Zeile. Positiv wie bei den
+// GETs: Werte, die in der Antwort stehen müssen; mindestens ein Fall je Route trägt welche,
+// sonst prüfte der Test leere Antworten.
 type piiPostFall struct {
 	Name    string
 	Anfrage func(t *testing.T) *http.Request
 	Positiv []string
 }
 
-// bauePIIPostAufrufe: Schlüssel ist die Route EXAKT wie in der Matrix. Nur
+// bauePIIPostAufrufe: Schlüssel ist die Route exakt wie in der Matrix. Nur
 // nebenwirkungsarme, lesende Aufrufe — die Begründung je Route steht am Fall.
 func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
 	lusdVorschau := func(t *testing.T) *http.Request {
@@ -713,7 +704,7 @@ func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
 	return map[string][]piiPostFall{
 		// Theken-Scan: liest den Schüler zum Ausweis-Barcode, bucht nichts.
 		// Der gesperrte Kanari-Schüler ist der Kernfall: Sein Sperrgrund-Freitext
-		// (Stufe 2) darf mit perform_actions ALLEIN nirgends in der Antwort stehen.
+		// (Stufe 2) darf mit perform_actions allein nirgends in der Antwort stehen.
 		"POST /api/action": {
 			{Name: "Scan freier Schüler", Anfrage: func(t *testing.T) *http.Request {
 				return tuertest.JSONPost("/api/action", `{"query":"SBK-KANARI-2"}`)
@@ -728,8 +719,8 @@ func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
 	}
 }
 
-// TestPIIAntwortenHaltenIhreStufe_LesendePosts ist derselbe Apparat wie das
-// GET-Gate für die nebenwirkungsarmen POST-Routen (Begründung im Dateikopf).
+// TestPIIAntwortenHaltenIhreStufe_LesendePosts ist derselbe Apparat wie der Test der
+// GET-Routen, für die nebenwirkungsarmen POST-Routen (Begründung im Kopf der Datei).
 func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Setenv("RATE_LIMIT", "100000")
@@ -744,7 +735,7 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 	}
 	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
-	// das Gate misste dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
+	// der Test mäße dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
 	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 
@@ -799,10 +790,10 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 	}
 }
 
-// TestPIIAntwortPruefungErkenntVerstoss ist die Gegenprobe am Detektor: Ein Gate,
-// dessen Kanarien nie anschlagen können, meldet ewig „alles gut". Wir stellen
-// die Verletzung nach, die das Gate fangen soll — eine Stufe-0-Route, deren
-// Antwort einen Stufe-3-Wert trüge, MUSS den Vergleich reißen.
+// TestPIIAntwortPruefungErkenntVerstoss ist die Gegenprobe am Detektor: Ein Test, dessen
+// Kanarien nie anschlagen können, meldet ewig „alles gut". Er stellt die Verletzung nach, die
+// er fangen soll: Eine Route der Stufe 0, deren Antwort einen Wert der Stufe 3 trüge, muss den
+// Vergleich reißen.
 func TestPIIAntwortPruefungErkenntVerstoss(t *testing.T) {
 	for _, verboten := range verboteneKanarien(0) {
 		if !strings.Contains((`{"schueler":[{"strasse":"Kanariweg","ort":"Kanaristadt","eltern":"kanari-eltern@example.org","grund":"Kanarigrund","lusd":"LUSD-KANARI-7","geb":"2013-07-19","gebDe":"19.07.2013","schaden":"Kanarischaden","name":"Pruefkanari Zugvogel Vogelbeere","bc":"SBK-KANARI-1 SBK-KANARI-2"}]}`), verboten) {

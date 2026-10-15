@@ -9,14 +9,14 @@ import (
 	"testing"
 )
 
-// Das Foto-GET wurde nie ausgeliefert: Drei Stellen im Code bauen die Bild-URL als
-// /api/schueler/<barcode>/photo (foto.go, leser_liste.go,
-// leseFotoURL), aber die Route hieß {id} — und uuidPfadMiddleware prüft
-// genau diesen Namen gegen das UUID-Format. Jeder echte Barcode ("S-abg1-ms3p73…")
-// lief damit in 400, bevor der Handler überhaupt lief.
+// Drei Stellen im Code bauen die Adresse des Fotos als /api/schueler/<barcode>/photo
+// (internal/service/foto.go, repository/leser_liste.go, leseFotoURL in api/leser/leserakte.go).
+// Hieße der Platzhalter der Route {id}, prüfte uuidPfadMiddleware genau diesen Namen gegen die
+// Form einer UUID, und jeder echte Barcode („S-abg1-ms3p73…") liefe in 400, bevor die Tür
+// überhaupt läuft; das Foto käme nie an.
 //
-// Der Test hält beide Hälften fest: dass der Platzhalter der Produktionsroute NICHT
-// wieder "id" heißt, und warum das den Unterschied macht.
+// Der Test hält beide Hälften fest: dass der Platzhalter der echten Route nicht wieder „id"
+// heißt, und warum das den Unterschied macht.
 func TestFotoRoute_GETNutztBarcodePlatzhalter(t *testing.T) {
 	inhalt, err := os.ReadFile("routen_leser.go")
 	if err != nil {
@@ -63,10 +63,10 @@ func TestUUIDPruefungGreiftNurBeimParameterID(t *testing.T) {
 	}
 }
 
-// Die Prüfung deckt jetzt auch {schueler_id} und {ausleihe_id} ab (beide Spalten sind
-// laut schema.sql UUID). Entscheidend ist die Gegenprobe: Parameter, die KEINE UUID
-// tragen, dürfen nicht mitgeprüft werden — sonst wiederholt sich der Foto-Fehler an
-// anderer Stelle. {klasse} ist ein Klassenname, {barcode_id} ein Barcode.
+// Die Prüfung deckt auch {schueler_id} und {ausleihe_id} ab (beide Spalten sind laut
+// schema.sql UUID). Entscheidend ist die Gegenprobe: Parameter, die keine UUID tragen, dürfen
+// nicht mitgeprüft werden; sonst wiederholt sich der Fehler des Fotos an anderer Stelle.
+// {klasse} ist ein Klassenname, {barcode_id} ein Barcode.
 func TestUUIDPruefungDecktNurEchteUUIDParameterAb(t *testing.T) {
 	faelle := []struct {
 		name      string

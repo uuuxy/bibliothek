@@ -92,9 +92,9 @@ func verlaengereLernmittelDerKlasse(t *testing.T, srv *Server, klasse, datum str
 	return rec
 }
 
-// TestKlassensatzReservierung_Bestandsdeckelung sichert Audit-Bug #3 ab: Es dürfen nicht mehr
-// Exemplare reserviert werden, als die Bibliothek physisch besitzt — sonst bleibt die
-// Reservierung als unlösbare Aufgabe im Dashboard hängen.
+// TestKlassensatzReservierung_Bestandsdeckelung: Es dürfen nicht mehr Exemplare reserviert
+// werden, als die Bibliothek besitzt; sonst bleibt die Reservierung als unlösbare Aufgabe
+// stehen.
 func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -135,9 +135,9 @@ func reservierung(t *testing.T, srv *Server, userID, titelID string, anzahl int)
 	return rec
 }
 
-// TestLadenhueter_NeuzugangIstKeiner sichert Audit-Bug #4 ab: Ein frisch gekaufter,
-// noch nie ausgeliehener Titel darf NICHT sofort als Ladenhüter/Aussonderungskandidat gelten.
-// Nur ein alter (>2 Jahre im Bestand), nie ausgeliehener Titel ist ein echter Ladenhüter.
+// TestLadenhueter_NeuzugangIstKeiner: Ein frisch gekaufter, noch nie ausgeliehener Titel darf
+// nicht sofort als Ladenhüter und Kandidat zum Aussondern gelten. Nur ein alter (über 2 Jahre im
+// Bestand), nie ausgeliehener Titel ist ein echter Ladenhüter.
 func TestLadenhueter_NeuzugangIstKeiner(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -171,9 +171,9 @@ func TestLadenhueter_NeuzugangIstKeiner(t *testing.T) {
 	}
 }
 
-// TestMahnwesen_KeineMahnungFuerGeloeschte sichert Audit-Bug #5 ab: Für einen weich
-// (Papierkorb) gelöschten Schüler dürfen keine Mahn-Daten mehr verarbeitet werden — sonst
-// gingen "Zombie-Mahnungen" an den ehemaligen Klassenlehrer (DSGVO-Verstoß).
+// TestMahnwesen_KeineMahnungFuerGeloeschte: Für einen in den Papierkorb gelöschten Schüler
+// dürfen keine Mahndaten mehr verarbeitet werden; sonst gingen Mahnungen über ihn an die frühere
+// Klassenleitung, ein Verstoß gegen die DSGVO.
 func TestMahnwesen_KeineMahnungFuerGeloeschte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

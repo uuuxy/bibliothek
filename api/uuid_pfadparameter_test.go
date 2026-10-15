@@ -9,13 +9,12 @@ import (
 	"testing"
 )
 
-// uuidPfadParameter ist eine Liste von Hand — und hatte keinen Test (OFFEN.md 5.12).
-// Zwei Dinge können dort still falsch werden: Ein neuer Pfad-Parameter, dessen Spalte
-// UUID ist, fehlt in der Liste (dann geht sein Wert ungeprüft an Postgres, 22P02 → 500).
-// Oder ein Name steht drin, den kein Pfad mehr trägt (dann behauptet die Liste einen
-// Schutz, den es nicht gibt). Deshalb: Jeder Platzhalter aus den Registrierungen ist
-// entweder in uuidPfadParameter oder hier mit dem Grund eingeordnet, warum er KEINE UUID
-// ist — und jeder Eintrag der Liste kommt in den Pfaden vor.
+// uuidPfadParameter ist eine Liste von Hand. Zwei Dinge können dort still falsch werden: Ein
+// neuer Pfad-Parameter, dessen Spalte UUID ist, fehlt in der Liste (dann geht sein Wert
+// ungeprüft an Postgres, 22P02 → 500). Oder ein Name steht drin, den kein Pfad mehr trägt (dann
+// behauptet die Liste einen Schutz, den es nicht gibt). Deshalb ist jeder Platzhalter aus den
+// Anmeldungen entweder in uuidPfadParameter oder hier mit dem Grund eingeordnet, warum er keine
+// UUID ist, und jeder Eintrag der Liste kommt in den Pfaden vor.
 var keineUUIDPfadParameter = map[string]string{
 	"token":      "256-Bit-Bestätigungs-Token der Lieferantenmail (nur als Hash in der DB)",
 	"art":        "Art des LMF-Plans (ausgabe/rueckgabe), CHECK-Constraint",
@@ -75,8 +74,8 @@ func TestUUIDPfadParameter_JederPlatzhalterIstEingeordnet(t *testing.T) {
 	}
 }
 
-// Jeder Eintrag der Liste wird auch wirklich geprüft — und zwar so streng wie Postgres:
-// `urn:uuid:…` nimmt uuid.Parse an, die Datenbank nicht (13.09.2026 am Stack nachgestellt,
+// Jeder Eintrag der Liste wird auch wirklich geprüft, und zwar so streng wie Postgres:
+// `urn:uuid:…` nimmt uuid.Parse an, die Datenbank nicht (an einer lokalen Anlage nachgestellt,
 // 500). Die Klammerform nimmt Postgres an, hier ist sie trotzdem keine Kennung des Hauses.
 func TestUUIDPfadParameter_JederEintragWirdStrengGeprueft(t *testing.T) {
 	ziel := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })

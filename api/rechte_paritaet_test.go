@@ -9,8 +9,7 @@ import (
 	"testing"
 )
 
-// Rechte-Paritäts-Gate: Die Rechte-Oberfläche und die Routen müssen DIESELBE Menge
-// kennen.
+// Die Oberfläche der Rechte und die Routen müssen dieselbe Menge kennen.
 //
 // Es gibt zwei Listen von Berechtigungen, und beide steuern etwas Echtes:
 //
@@ -21,16 +20,16 @@ import (
 // Läuft ein Name nur in einer der beiden Listen, ist der Schaden still und geht in
 // beide Richtungen:
 //
-//   - Nur in der Oberfläche: Der Admin legt einen Schalter um, der nichts bewirkt. Genau
-//     das war `view_stats` bis zum 23.08.2026 — die Statistik-Route verlangte
-//     `view_students`. Wer die Statistik entzog, entzog nichts; wer sie erteilte, bekam
-//     einen Menüpunkt, der 403 lieferte. Aufgefallen ist es nur, weil in der
-//     ausgelieferten Vorgabe beide Werte je Rolle zufällig übereinstimmten.
+//   - Nur in der Oberfläche: Der Admin legt einen Schalter um, der nichts bewirkt. Verlangt die
+//     Statistik-Route etwa `view_students` statt `view_stats`, entzieht nichts, wer die
+//     Statistik entzieht, und wer sie erteilt, bekommt einen Menüpunkt, der 403 liefert.
+//     Unbemerkt bleibt das, solange in der ausgelieferten Vorgabe beide Werte je Rolle
+//     übereinstimmen.
 //   - Nur im Server: Ein Recht, das kein Mensch je erteilen kann — die Funktion dahinter
 //     ist für jede Rolle unerreichbar, die es nicht aus der Vorgabe mitbekommt.
 //
-// Das Gate prüft die Namen, nicht die Zuordnung. Ob `view_stats` an der RICHTIGEN Route
-// hängt, bleibt eine Urteilsfrage; dass es überhaupt an einer hängt, ist mechanisch.
+// Der Test prüft die Namen, nicht die Zuordnung. Ob `view_stats` an der richtigen Route hängt,
+// bleibt eine Urteilsfrage; dass es überhaupt an einer hängt, ist mechanisch.
 func TestRechteInOberflaecheUndRoutenSindDeckungsgleich(t *testing.T) {
 	inOberflaeche := rechteAusOberflaeche(t)
 	anRouten := rechteAnRouten(t)
@@ -51,7 +50,7 @@ func TestRechteInOberflaecheUndRoutenSindDeckungsgleich(t *testing.T) {
 }
 
 // TestMenuepunkteVerlangenBekannteRechte schließt die dritte Tür: Ein Menüpunkt, dessen
-// `permission` es nirgends gibt, wird für JEDE Rolle ausgeblendet — die Seite ist gebaut
+// `permission` es nirgends gibt, wird für jede Rolle ausgeblendet — die Seite ist gebaut
 // und unerreichbar (dieselbe Klasse wie eine tote Route, nur von vorn).
 func TestMenuepunkteVerlangenBekannteRechte(t *testing.T) {
 	inOberflaeche := rechteAusOberflaeche(t)
@@ -62,7 +61,7 @@ func TestMenuepunkteVerlangenBekannteRechte(t *testing.T) {
 	}
 	muster := regexp.MustCompile(`permission:\s*'([a-z_]+)'`)
 	treffer := muster.FindAllStringSubmatch(string(roh), -1)
-	// Sammelpunkte tragen `permissions: [ 'a', 'b', … ]` (seit 24.08.2026, „Einstellungen").
+	// Sammelpunkte tragen `permissions: [ 'a', 'b', … ]` (etwa „Einstellungen").
 	sammel := regexp.MustCompile(`(?s)permissions:\s*\[(.*?)\]`)
 	einzel := regexp.MustCompile(`'([a-z_]+)'`)
 	for _, block := range sammel.FindAllStringSubmatch(string(roh), -1) {
@@ -96,8 +95,8 @@ func rechteAusOberflaeche(t *testing.T) map[string]bool {
 	return menge
 }
 
-// rechteAnRouten liest die verlangeRecht-Aufrufe aus den Registrierungsdateien —
-// lexikalisch, wie das Routen-Schutz-Gate nebenan (geschuetzte_routen_test.go).
+// rechteAnRouten liest die Aufrufe von verlangeRecht aus den Routendateien als Text, wie
+// geschuetzte_routen_test.go nebenan.
 func rechteAnRouten(t *testing.T) map[string]bool {
 	t.Helper()
 	dateien, err := filepath.Glob("routen_*.go")
@@ -136,19 +135,17 @@ func sortiert(m map[string]bool) []string {
 // TestRollenVokabularIstUeberallDasselbe hält die dritte Liste zusammen, die niemand
 // hält: die Rollen.
 //
-// Denselben Begriff gibt es in drei Schreibweisen — DB-Enum klein (`'admin'`),
-// Go-Konstanten groß (`RoleAdmin Role = "ADMIN"`), und das Frontend vergleicht exakt
-// klein (`rolle === 'admin'`, rund zwei Dutzend Stellen). Zusammengehalten wird das nur
-// von `EqualFold` und `UPPER()` im Go-Code — im Frontend von gar nichts.
+// Denselben Begriff gibt es in drei Schreibweisen: das Enum der Datenbank klein (`'admin'`),
+// die Konstanten in Go groß (`RoleAdmin Role = "ADMIN"`), und die Oberfläche vergleicht genau
+// klein (`rolle === 'admin'`). Zusammengehalten wird das nur von `EqualFold` und `UPPER()` im
+// Go-Code, in der Oberfläche von gar nichts.
 //
-// Was passiert, wenn eine Liste allein wandert, ist belegt: Migration 069 benannte
-// LEHRER in KOLLEGIUM um, und der Vergleich in loan_return.go stand wochenlang auf dem
-// wörtlichen "LEHRER". Der Zweig war tot; eine Lehrkraft bekam beim Scan eines freien
-// Buchs "nicht ausgeliehen" statt ihrer Handapparat-Ausleihe. Gefunden hat das erst eine
-// Vermessung, kein Test.
+// Wandert eine Liste allein, stirbt ein Zweig still: Benennt eine Migration eine Rolle um, etwa
+// LEHRER in KOLLEGIUM, und ein Vergleich steht weiter auf dem alten Namen, ist sein Zweig tot.
+// Eine Lehrkraft bekäme beim Scan eines freien Buchs „nicht ausgeliehen" statt ihrer Ausleihe in
+// den Handapparat, und kein Test merkte es.
 //
-// Geprüft wird gegen schema.sql — dort steht das Enum, und die Datenbank ist die
-// Instanz, die am Ende entscheidet.
+// Geprüft wird gegen schema.sql: Dort steht das Enum, und die Datenbank entscheidet am Ende.
 func TestRollenVokabularIstUeberallDasselbe(t *testing.T) {
 	ausSchema := rollenAusSchema(t)
 
@@ -168,7 +165,7 @@ func TestRollenVokabularIstUeberallDasselbe(t *testing.T) {
 		}
 	}
 
-	// 2. Frontend-Vergleiche — hier gilt Groß-/Kleinschreibung, `===` ist unbarmherzig.
+	// 2. Vergleiche in der Oberfläche: Hier gilt Groß- und Kleinschreibung, `===` ist unbarmherzig.
 	vergleich := regexp.MustCompile(`(?:rolle|role)\s*(?:\?\.\w+\(\))?\s*===\s*'([a-z_]+)'`)
 	gefunden := 0
 	for _, pfad := range svelteUndJs(t) {
