@@ -141,7 +141,7 @@ func einWort(roh string) (string, error) {
 		return "", err
 	}
 	if len(woerter) == 0 {
-		return "", fmt.Errorf("%w: das Wort ist leer", ErrSchlagwortUngueltig)
+		return "", mitGrund(ErrSchlagwortUngueltig, "das Wort ist leer")
 	}
 	return woerter[0], nil
 }
@@ -154,7 +154,7 @@ func regelFehler(err error, was string) error {
 	if errors.As(err, &pgErr) && strings.HasPrefix(pgErr.Message, "schlagwort_verweis_") {
 		// Der Code vor dem Doppelpunkt ist für die Erkennung da, der Satz dahinter für Menschen.
 		_, satz, _ := strings.Cut(pgErr.Message, ": ")
-		return fmt.Errorf("%w: %s", ErrSchlagwortRegel, satz)
+		return mitGrund(ErrSchlagwortRegel, "%s", satz)
 	}
 	return fmt.Errorf("%s: %w", was, err)
 }
@@ -196,8 +196,7 @@ func BenenneSchlagwortUm(ctx context.Context, q Datenbank, id, neu string, alteA
 		return "", false, err
 	}
 	if alteAlsVerweis && alt.verweisAuf != nil {
-		return "", false, fmt.Errorf("%w: „%s“ ist ein Verweis — eine weitere Schreibweise legt „Verweis anlegen“ am Ziel an",
-			ErrSchlagwortRegel, alt.wort)
+		return "", false, mitGrund(ErrSchlagwortRegel, "„%s“ ist ein Verweis, eine weitere Schreibweise legt „Verweis anlegen“ am Ziel an", alt.wort)
 	}
 	if err := macheSchreibweiseFrei(ctx, tx, id, wort); err != nil {
 		return "", false, err
@@ -250,11 +249,11 @@ func macheSchreibweiseFrei(ctx context.Context, tx pgx.Tx, id, wort string) erro
 			return fmt.Errorf("umbenennen: eigenen verweis auflösen: %w", err)
 		}
 		if tag.RowsAffected() != 1 {
-			return fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
+			return mitGrund(ErrSchlagwortGibtEs, "„%s“", anderes)
 		}
 		return nil
 	default:
-		return fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
+		return mitGrund(ErrSchlagwortGibtEs, "„%s“", anderes)
 	}
 }
 
@@ -294,7 +293,7 @@ func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAl
 		return SchlagwortZusammenfuehrung{}, err
 	}
 	if von.id == ziel.id {
-		return SchlagwortZusammenfuehrung{}, fmt.Errorf("%w: ein Wort lässt sich nicht mit sich selbst zusammenführen", ErrSchlagwortRegel)
+		return SchlagwortZusammenfuehrung{}, mitGrund(ErrSchlagwortRegel, "ein Wort lässt sich nicht mit sich selbst zusammenführen")
 	}
 
 	ergebnis := SchlagwortZusammenfuehrung{Von: von.wort, In: ziel.wort}
@@ -383,10 +382,10 @@ type SchlagwortLoeschung struct {
 func LoescheSchlagworte(ctx context.Context, q Datenbank, ids []string) (SchlagwortLoeschung, error) {
 	var ergebnis SchlagwortLoeschung
 	if len(ids) == 0 {
-		return ergebnis, fmt.Errorf("%w: kein Schlagwort gewählt", ErrSchlagwortUngueltig)
+		return ergebnis, mitGrund(ErrSchlagwortUngueltig, "kein Schlagwort gewählt")
 	}
 	if len(ids) > schlagworteLoeschenMax {
-		return ergebnis, fmt.Errorf("%w: höchstens %d Schlagworte auf einmal", ErrSchlagwortUngueltig, schlagworteLoeschenMax)
+		return ergebnis, mitGrund(ErrSchlagwortUngueltig, "höchstens %d Schlagworte auf einmal", schlagworteLoeschenMax)
 	}
 	tx, err := q.Begin(ctx)
 	if err != nil {
@@ -508,7 +507,7 @@ func SetzeSchlagwortFilter(ctx context.Context, q Datenbank, id string, an bool)
 		return err
 	}
 	if an && w.verweisAuf != nil {
-		return fmt.Errorf("%w: „%s“ ist ein Verweis — als Filter markiert wird sein Ziel", ErrSchlagwortRegel, w.wort)
+		return mitGrund(ErrSchlagwortRegel, "„%s“ ist ein Verweis, als Filter markiert wird sein Ziel", w.wort)
 	}
 	tag, err := tx.Exec(ctx, `UPDATE schlagworte SET ist_filter = $2 WHERE id = $1`, id, an)
 	if err != nil {

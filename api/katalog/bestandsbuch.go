@@ -1,11 +1,11 @@
 package katalog
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 )
@@ -76,7 +76,10 @@ func bestandsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
 		}
 		tag, fehler := schulzeit.Kalendertag(roh)
 		if fehler != nil {
-			return fmt.Errorf("%s muss ein Datum sein (JJJJ-MM-TT)", schluessel)
+			if schluessel == "von" {
+				return apierrors.BadRequest(tuer.MeldungAnfangKeinDatum, fehler)
+			}
+			return apierrors.BadRequest(tuer.MeldungEndeKeinDatum, fehler)
 		}
 		*ziel = tag
 		return nil
@@ -88,7 +91,7 @@ func bestandsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
 		return von, bis, err
 	}
 	if bis.Before(von) {
-		return von, bis, errors.New("das Ende des Zeitraums liegt vor seinem Anfang")
+		return von, bis, apierrors.BadRequest("Das Ende des Zeitraums liegt vor seinem Anfang", nil)
 	}
 	return von, bis, nil
 }

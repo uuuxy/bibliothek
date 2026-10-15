@@ -39,7 +39,7 @@ func (t *Tueren) Bestellhistorie() http.HandlerFunc {
 		// 200 Bestellungen übrig bleibt.
 		mittel := r.URL.Query().Get("mittel")
 		if !repository.IstMittelFilterGueltig(mittel) {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, repository.MittelFilterFehler(mittel))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungMittelFilter(mittel), nil)
 			return
 		}
 

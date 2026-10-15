@@ -184,7 +184,7 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, antwort *sch
 func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schuljahreswechselAnfrage, bool) {
 	var anfrage schuljahreswechselAnfrage
 	if err := json.NewDecoder(r.Body).Decode(&anfrage); err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, tuer.MeldungAnfrageUnlesbar, err)
 		return anfrage, false
 	}
 	if !anfrage.Probelauf && !anfrage.Bestaetigt {

@@ -73,7 +73,7 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 	})
 
 	t.Run("Position ohne Titel: 400", func(t *testing.T) {
-		abgelehnt(t, http.StatusBadRequest, "TitelID", lieferant, position("", 1))
+		abgelehnt(t, http.StatusBadRequest, "„items[0].titel_id“", lieferant, position("", 1))
 	})
 
 	for _, menge := range []int{0, -1, 201} {

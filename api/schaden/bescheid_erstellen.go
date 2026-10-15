@@ -127,7 +127,7 @@ func (t *Tueren) erstelleBescheid(w http.ResponseWriter, r *http.Request, besche
 // geschrieben wird, und liefert die Frist als Kalendertag der Schule.
 func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 	if !mitteltopf.IstGueltig(req.Mittel) {
-		return time.Time{}, apierrors.BadRequest(mitteltopf.ErrUngueltig.Error(), mitteltopf.ErrUngueltig)
+		return time.Time{}, apierrors.BadRequest(mitteltopf.MeldungUngueltig, mitteltopf.ErrUngueltig)
 	}
 	// Der Brief kennt nur einen Wortlaut und ein Konto: die des Landes. Für die Bücher der
 	// Schülerbücherei (Mittel des Schulträgers) gibt es noch keinen Brief; „schultraeger" gäbe

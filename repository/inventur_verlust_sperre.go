@@ -47,7 +47,7 @@ func (a *InventurAbfragen) pruefeVerlusteLoeschbar(ctx context.Context, ids []st
 			return err
 		}
 		if len(betroffen) > 0 {
-			return fmt.Errorf("%w: %s (%s)", ErrVerlustNochGebunden,
+			return mitGrund(ErrVerlustNochGebunden, "%s (%s)",
 				strings.Join(betroffen, ", "), sperre.grund)
 		}
 	}

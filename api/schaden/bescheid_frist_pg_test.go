@@ -86,7 +86,7 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 		meldung            string
 	}{
 		{"unbekannter Topf", sid, `{"mittel":"quatsch","frist_bis":"bald","positionen":[]}`,
-			http.StatusBadRequest, mitteltopf.ErrUngueltig.Error()},
+			http.StatusBadRequest, mitteltopf.MeldungUngueltig},
 		{"Topf des Schulträgers", sid, `{"mittel":"schultraeger","frist_bis":"bald","positionen":[]}`,
 			http.StatusConflict, "nur für Lernmittel des Landes"},
 		{"keine Auswahl", sid, `{"mittel":"land","frist_bis":"bald","positionen":[],"ausleihen":[]}`,

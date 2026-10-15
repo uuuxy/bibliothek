@@ -2,6 +2,7 @@ package katalog
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -287,17 +288,19 @@ func schlagwortIDAusPfad(r *http.Request) (string, error) {
 }
 
 // schlagwortPflegeFehler übersetzt die fachlichen Fehler der Pflege: verletzte Grenze 400,
-// unbekanntes Wort 404, vorhandene Schreibweise und verletzte Regel 409 mit ihrem Text.
+// unbekanntes Wort 404, vorhandene Schreibweise und verletzte Regel 409 mit ihrem Grund. Der
+// Grund einer vorhandenen Schreibweise ist das Wort, das es schon gibt.
 func schlagwortPflegeFehler(err error) error {
 	switch {
 	case errors.Is(err, repository.ErrSchlagwortUngueltig):
-		return apierrors.BadRequest(err.Error(), err)
+		return apierrors.BadRequest(tuer.MitGrund(meldungSchlagwortNichtGeaendert, err), err)
 	case errors.Is(err, repository.ErrSchlagwortNichtGefunden):
 		return apierrors.NotFound("Schlagwort nicht gefunden", err)
 	case errors.Is(err, repository.ErrSchlagwortGibtEs):
-		return apierrors.Conflict(err.Error()+" — zum Zusammenlegen „Zusammenführen“ wählen", err)
+		return apierrors.Conflict(fmt.Sprintf("Das Schlagwort %s gibt es schon. Zum Zusammenlegen „Zusammenführen“ wählen.",
+			tuer.GrundAus(err)), err)
 	case errors.Is(err, repository.ErrSchlagwortRegel):
-		return apierrors.Conflict(err.Error(), err)
+		return apierrors.Conflict(tuer.MitGrund(meldungSchlagwortRegel, err), err)
 	default:
 		return apierrors.Internal("Schlagwort konnte nicht geändert werden", err)
 	}

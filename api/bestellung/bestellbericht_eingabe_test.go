@@ -38,7 +38,7 @@ func TestBerichtTitelAbleiten(t *testing.T) {
 }
 
 // Beide Tage des Zeitraums sind Pflicht und stehen als JJJJ-MM-TT da; gelesen werden sie als
-// Kalendertage der Schule. Die Meldung nennt den Parameter, an dem es liegt.
+// Kalendertage der Schule. Die Meldung nennt den Tag, an dem es liegt.
 func TestLeseBerichtZeitraum(t *testing.T) {
 	von, bis, err := leseBerichtZeitraum("2026-09-01", "2026-09-30")
 	if err != nil {
@@ -48,10 +48,10 @@ func TestLeseBerichtZeitraum(t *testing.T) {
 		t.Errorf("Zeitraum %s bis %s, erwartet Mitternacht der Schule am 01.09.2026 und am 30.09.2026", von, bis)
 	}
 	for _, f := range []struct{ von, bis, nennt string }{
-		{"", "2026-09-30", "'von' und 'bis'"},
-		{"2026-09-01", "", "'von' und 'bis'"},
-		{"01.09.2026", "2026-09-30", "'von'"},
-		{"2026-09-01", "2026-09-31", "'bis'"},
+		{"", "2026-09-30", "Anfang und Ende des Zeitraums"},
+		{"2026-09-01", "", "Anfang und Ende des Zeitraums"},
+		{"01.09.2026", "2026-09-30", "Der Anfang des Zeitraums"},
+		{"2026-09-01", "2026-09-31", "Das Ende des Zeitraums"},
 	} {
 		_, _, err := leseBerichtZeitraum(f.von, f.bis)
 		if err == nil {

@@ -15,19 +15,12 @@ import (
 // Historie und Bericht nehmen dieselbe Übersetzung: Mit zwei Auslegungen desselben Parameters
 // zeigte die Liste eine Bestellung, die im Bericht daneben fehlt.
 
-// mittelOhneFilter ist der Filterwert für „ohne Zuordnung" (Spalte IS NULL).
-const mittelOhneFilter = "ohne"
+// MittelOhneFilter ist der Filterwert für „ohne Zuordnung" (Spalte IS NULL).
+const MittelOhneFilter = "ohne"
 
 // IstMittelFilterGueltig prüft den Parameter, bevor er in eine Abfrage geht. Leer heißt alle.
 func IstMittelFilterGueltig(filter string) bool {
-	return filter == "" || filter == mittelOhneFilter || mitteltopf.IstGueltig(filter)
-}
-
-// MittelFilterFehler ist die Meldung an der Tür. Sie nennt die erlaubten Werte, damit niemand
-// raten muss.
-func MittelFilterFehler(filter string) error {
-	return fmt.Errorf("unbekannter Topf %q — erlaubt sind %q, %q und %q",
-		filter, mitteltopf.Land, mitteltopf.Schultraeger, mittelOhneFilter)
+	return filter == "" || filter == MittelOhneFilter || mitteltopf.IstGueltig(filter)
 }
 
 // mittelBedingung liefert die SQL-Bedingung zum Filter und den Wert des Parameters dazu. Die
@@ -37,7 +30,7 @@ func mittelBedingung(filter, spalte string, index int) (bedingung string, arg an
 	switch filter {
 	case "":
 		return "", nil
-	case mittelOhneFilter:
+	case MittelOhneFilter:
 		return fmt.Sprintf(" AND %s IS NULL", spalte), nil
 	default:
 		return fmt.Sprintf(" AND %s = $%d", spalte, index), filter
@@ -47,7 +40,7 @@ func mittelBedingung(filter, spalte string, index int) (bedingung string, arg an
 // MittelDatenwert übersetzt den Filterwert in den Wert, der in der Spalte steht:
 // „ohne" ist dort NULL und wird als leerer String gelesen (coalesce).
 func MittelDatenwert(filter string) string {
-	if filter == mittelOhneFilter {
+	if filter == MittelOhneFilter {
 		return ""
 	}
 	return filter

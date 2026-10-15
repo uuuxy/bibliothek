@@ -36,15 +36,15 @@ func (a *sachgruppeAnfrage) normalisiere() {
 // pruefe verlangt beide Felder und schließt Leerzeichen im Kürzel aus.
 func (a sachgruppeAnfrage) pruefe() error {
 	if a.Kuerzel == "" {
-		return errors.New("kürzel ist erforderlich")
+		return apierrors.BadRequest("Bitte ein Kürzel angeben", nil)
 	}
 	if a.Bezeichnung == "" {
-		return errors.New("bezeichnung ist erforderlich")
+		return apierrors.BadRequest("Bitte eine Bezeichnung angeben", nil)
 	}
 	// Die Signatur wird als "BIB <kuerzel>" gebildet und am Leerzeichen in
 	// Regalbereiche geschnitten. Ein Kürzel mit Leerzeichen zerlegte diese Grenze.
 	if strings.ContainsAny(a.Kuerzel, " \t") {
-		return errors.New("kürzel darf keine Leerzeichen enthalten")
+		return apierrors.BadRequest("Das Kürzel darf keine Leerzeichen enthalten", nil)
 	}
 	return nil
 }
@@ -56,15 +56,21 @@ func istDoppelteSachgruppe(err error) bool {
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
 
+// Sätze zur doppelten Sachgruppe (meldungDoppelteSachgruppe).
+const (
+	meldungBezeichnungVergeben = "Eine Sachgruppe mit dieser Bezeichnung gibt es schon"
+	meldungKuerzelVergeben     = "Eine Sachgruppe mit diesem Kürzel gibt es schon"
+)
+
 // meldungDoppelteSachgruppe benennt das Feld, das kollidiert: „Kürzel existiert bereits" bei
 // einer doppelten Bezeichnung schickte den Benutzer auf die falsche Fährte.
 func meldungDoppelteSachgruppe(err error) string {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) &&
 		(pgErr.ConstraintName == "uniq_systematik_bezeichnung" || pgErr.ConstraintName == "uniq_systematik_bezeichnung_ci") {
-		return "eine Sachgruppe mit dieser Bezeichnung existiert bereits"
+		return meldungBezeichnungVergeben
 	}
-	return "eine Sachgruppe mit diesem Kürzel existiert bereits"
+	return meldungKuerzelVergeben
 }
 
 // SachgruppeAnlegen legt eine Sachgruppe an. Die Systematik ist das Vokabular, aus dem das
@@ -87,7 +93,7 @@ func (t *Tueren) SachgruppeAnlegen() http.HandlerFunc {
 		}
 		req.normalisiere()
 		if err := req.pruefe(); err != nil {
-			return apierrors.BadRequest(err.Error(), err)
+			return err
 		}
 
 		id, err := repository.LegeSachgruppeAn(r.Context(), t.DB.Pool, req.Kuerzel, req.Bezeichnung)
@@ -137,7 +143,7 @@ func (t *Tueren) aendereSachgruppe(w http.ResponseWriter, r *http.Request) error
 	}
 	req.normalisiere()
 	if err := req.pruefe(); err != nil {
-		return apierrors.BadRequest(err.Error(), err)
+		return err
 	}
 
 	ctx := r.Context()

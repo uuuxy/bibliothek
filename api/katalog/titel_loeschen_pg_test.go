@@ -43,7 +43,7 @@ func TestTitelLoeschen_VerliehenesExemplarNenntDenBarcode(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("TitelLoeschen: Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
-	const erwartet = "Löschen fehlgeschlagen: folgende Exemplare sind noch verliehen: [B-TITELLOESCH-1]"
+	const erwartet = "Der Titel lässt sich nicht löschen. Diese Exemplare sind noch verliehen: B-TITELLOESCH-1."
 	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
 		t.Errorf("TitelLoeschen: Meldung %q, erwartet %q", got, erwartet)
 	}

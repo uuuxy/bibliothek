@@ -5,12 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
+	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/kennung"
 
 	"github.com/go-playground/validator/v10"
 )
+
+// MeldungAnfrageUnlesbar ist die Meldung zu einem Rumpf, der sich nicht in die erwartete Form
+// lesen lässt. Die Oberfläche schickt so etwas nur mit einem Fehler im Programm; die Einzelheit
+// steht im Log.
+const MeldungAnfrageUnlesbar = "Die Anfrage ließ sich nicht lesen"
 
 // Pruefer prüft die Felder einer Anfrage nach ihren validate-Tags. Es gibt nur diesen einen:
 // validator.New() legt bei jedem Aufruf einen eigenen Cache der Regeln an.
@@ -30,6 +37,14 @@ const regelUUIDOderLeer = "uuid_oder_leer"
 
 func newPruefer() *validator.Validate {
 	v := validator.New()
+	// Die Meldung nennt ein Feld so, wie die Anfrage es schickt.
+	v.RegisterTagNameFunc(func(feld reflect.StructField) string {
+		name, _, _ := strings.Cut(feld.Tag.Get("json"), ",")
+		if name == "" || name == "-" {
+			return feld.Name
+		}
+		return name
+	})
 	if err := v.RegisterValidation(regelUUIDOderLeer, func(fl validator.FieldLevel) bool {
 		wert := fl.Field().String()
 		return wert == "" || kennung.IstUUID(wert)
@@ -39,27 +54,56 @@ func newPruefer() *validator.Validate {
 	return v
 }
 
-// Pruefmeldung macht aus dem Fehler einer ungültigen Kennung einen Satz für die Oberfläche;
-// jeden anderen Prüffehler gibt sie unverändert zurück.
-func Pruefmeldung(err error) error {
+// Pruefmeldung macht aus dem Fehler der Prüfung einen Satz für die Oberfläche. Sie nennt das
+// erste abgelehnte Feld mit seinem Pfad in der Anfrage, in einer Liste mit der Stelle
+// (items[1].titel_id), und sagt, was dort stehen muss (M3, Text fields: „error text should
+// describe how to avoid the error").
+func Pruefmeldung(err error) string {
 	var fehler validator.ValidationErrors
-	if errors.As(err, &fehler) {
-		for _, f := range fehler {
-			if f.Tag() == regelUUIDOderLeer {
-				return fmt.Errorf("ungültige Kennung im Feld %s", f.Field())
-			}
-		}
+	if !errors.As(err, &fehler) || len(fehler) == 0 {
+		return MeldungAnfrageUnlesbar
 	}
-	return err
+	f := fehler[0]
+	// Der Pfad beginnt mit dem Namen des Typs im Go-Code; die Anfrage kennt ihn nicht.
+	_, pfad, _ := strings.Cut(f.Namespace(), ".")
+	feld := "„" + pfad + "“"
+	switch f.Tag() {
+	case "required":
+		return "Bitte das Feld " + feld + " ausfüllen"
+	case regelUUIDOderLeer, "uuid":
+		return "Ungültige Kennung im Feld " + feld
+	case "email":
+		return fmt.Sprintf("„%v“ ist keine E-Mail-Adresse", f.Value())
+	case "oneof":
+		return "Im Feld " + feld + " ist nur einer dieser Werte möglich: " + strings.ReplaceAll(f.Param(), " ", ", ")
+	case "min", "max":
+		return grenzmeldung(f, feld)
+	}
+	return "Das Feld " + feld + " ist ungültig"
+}
+
+// grenzmeldung nennt die Grenze aus min oder max: bei einer Liste die Zahl der Einträge, sonst
+// den Wert.
+func grenzmeldung(f validator.FieldError, feld string) string {
+	liste := f.Kind() == reflect.Slice || f.Kind() == reflect.Array || f.Kind() == reflect.Map
+	switch {
+	case liste && f.Tag() == "min":
+		return "Das Feld " + feld + " braucht mindestens " + f.Param() + " Einträge"
+	case liste:
+		return "Das Feld " + feld + " hat höchstens " + f.Param() + " Einträge"
+	case f.Tag() == "min":
+		return "Das Feld " + feld + " muss mindestens " + f.Param() + " sein"
+	}
+	return "Das Feld " + feld + " darf höchstens " + f.Param() + " sein"
 }
 
 // LeseUUIDParameter liest einen Parameter der Adresse, der eine UUID sein muss. Leer bleibt
-// leer; ein anderer Wert, der keine UUID ist, wird ein Fehler, den die Tür als Bedienfehler
-// meldet, statt eines 500 aus Postgres.
+// leer; ein anderer Wert, der keine UUID ist, wird ein Bedienfehler mit Meldung statt eines 500
+// aus Postgres.
 func LeseUUIDParameter(r *http.Request, name string) (string, error) {
 	wert := r.URL.Query().Get(name)
 	if wert != "" && !kennung.IstUUID(wert) {
-		return "", fmt.Errorf("%s ist keine gültige Kennung", name)
+		return "", apierrors.BadRequest(fmt.Sprintf("In der Adresse ist „%s“ keine gültige Kennung", name), nil)
 	}
 	return wert, nil
 }
@@ -77,11 +121,11 @@ func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) b
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(ziel); err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, MeldungAnfrageUnlesbar, err)
 		return false
 	}
 	if err := Pruefer.Struct(ziel); err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, Pruefmeldung(err))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, Pruefmeldung(err), err)
 		return false
 	}
 	return true
@@ -92,11 +136,11 @@ func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) b
 // nicht kennt, verwirft sie still; wo das nicht genügt, gilt LeseAnfrageStreng.
 func LeseAnfrage[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
 	if err := json.NewDecoder(r.Body).Decode(ziel); err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, MeldungAnfrageUnlesbar, err)
 		return false
 	}
 	if err := Pruefer.Struct(ziel); err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, Pruefmeldung(err))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, Pruefmeldung(err), err)
 		return false
 	}
 	return true

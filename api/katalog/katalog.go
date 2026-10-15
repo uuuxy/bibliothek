@@ -16,3 +16,19 @@ type Tueren struct {
 	// cover holt Cover von fremden Quellen; der Nullwert ist der Betrieb.
 	cover coverAbruf
 }
+
+// Sätze der Türen zum Exemplar, die mehrere Türen dieses Pakets ausgeben.
+const (
+	meldungExemplarVerliehen     = "Das Exemplar ist noch verliehen. Bitte zuerst die Rückgabe buchen."
+	meldungExemplarNichtGefunden = "Exemplar nicht gefunden oder schon ausgebucht"
+)
+
+// Sätze, hinter die die Tür den Grund einer Ablehnung aus repository setzt (tuer.MitGrund).
+const (
+	meldungEigentumNichtGeaendert      = "Eigentum nicht geändert"
+	meldungStandortNichtGeaendert      = "Standort nicht geändert"
+	meldungSchlagworteNichtGespeichert = "Schlagworte nicht gespeichert"
+	meldungSchlagwortNichtGeaendert    = "Schlagwort nicht geändert"
+	meldungSchlagwortRegel             = "Nicht möglich"
+	meldungAuflagenNichtGeaendert      = "Auflagen nicht geändert"
+)

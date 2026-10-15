@@ -575,10 +575,13 @@ Status unter 500 und festem Text, Konstanten eingeschlossen, ihr Bestand ist lee
 ([STIL.md](STIL.md), Abschnitt 11). Ein 500 antwortet auch ohne Ursache mit der deutschen
 neutralen Meldung. Offen, gezählt am 16.10.2026:
 
-- **Text eines Fehlers:** 59 Aufrufe von `AntworteFehler` geben eine Fehlervariable weiter, 24
-  nehmen `err.Error()` als Meldung (`apierrors.BadRequest(err.Error(), err)`). Fehlertexte
-  beginnen klein (Abschnitt 11) und kommen so klein an der Oberfläche an. Nächster Schritt: je
-  Tür einen Satz, Einzelheiten als Felder des Fehlers.
+- **Text eines Fehlers:** Türen, die einen Fehler mit seinem Text als Meldung weitergeben
+  (`AntworteFehler` mit einer Fehlervariablen, `apierrors.BadRequest(err.Error(), err)`).
+  Fehlertexte beginnen klein (Abschnitt 11), Texte fremder Bibliotheken sind englisch, und so
+  kommen sie an der Oberfläche an. Erledigt sind die Lesestelle jeder Anfrage
+  (`tuer.LeseAnfrage`), die Bestellung, der Katalog und der Topf. Offen sind die übrigen Themen
+  unter `api/`, `auth/` und `inventur/`. Nächster Schritt: je Tür einen Satz, Einzelheiten als
+  Felder des Fehlers (`repository.RegelFehler`).
 - Antworten, die `{"error": …}` selbst schreiben, sieht die Ratsche ebenfalls nicht.
 
 ## 7. Betrieb (liegt bei der Schulseite)

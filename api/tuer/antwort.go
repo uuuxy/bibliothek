@@ -1,9 +1,11 @@
 package tuer
 
 import (
+	"errors"
 	"net/http"
 
 	"bibliothek/pkg/httpresp"
+	"bibliothek/repository"
 )
 
 // AntworteJSON schreibt die Antwort mit dem Status als JSON.
@@ -37,4 +39,25 @@ const (
 const (
 	MeldungIDLeer                = "Die Kennung fehlt"
 	MeldungEinstellungenUnlesbar = "Einstellungen konnten nicht gelesen werden"
+	MeldungTitelNichtGefunden    = "Titel nicht gefunden"
+	MeldungAnfangKeinDatum       = "Der Anfang des Zeitraums muss ein Datum der Form JJJJ-MM-TT sein"
+	MeldungEndeKeinDatum         = "Das Ende des Zeitraums muss ein Datum der Form JJJJ-MM-TT sein"
 )
+
+// GrundAus liefert den Grund einer Ablehnung aus repository (repository.RegelFehler), sonst "".
+func GrundAus(err error) string {
+	var regel *repository.RegelFehler
+	if errors.As(err, &regel) {
+		return regel.Grund
+	}
+	return ""
+}
+
+// MitGrund setzt den Grund einer Ablehnung aus repository hinter den Satz der Tür; ohne Grund
+// bleibt der Satz allein.
+func MitGrund(satz string, err error) string {
+	if grund := GrundAus(err); grund != "" {
+		return satz + ": " + grund
+	}
+	return satz
+}

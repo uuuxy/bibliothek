@@ -123,13 +123,13 @@ func titelIDAusPfad(r *http.Request) (string, error) {
 }
 
 // auflagenFehler übersetzt die fachlichen Fehler aus repository/auflagen.go: Eine verletzte
-// Regel ist 400 mit ihrem Text, ein unbekannter Titel 404, alles andere 500.
+// Regel ist 400 mit ihrem Grund, ein unbekannter Titel 404, alles andere 500.
 func auflagenFehler(err error, handlung string) error {
 	switch {
 	case errors.Is(err, repository.ErrAuflageUngueltig):
-		return apierrors.BadRequest(err.Error(), err)
+		return apierrors.BadRequest(tuer.MitGrund(meldungAuflagenNichtGeaendert, err), err)
 	case errors.Is(err, repository.ErrTitelNichtGefunden):
-		return apierrors.NotFound("Titel nicht gefunden", err)
+		return apierrors.NotFound(tuer.MeldungTitelNichtGefunden, err)
 	default:
 		return apierrors.Internal("Auflagen konnten nicht "+handlung+" werden", err)
 	}

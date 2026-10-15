@@ -72,7 +72,7 @@ func (t *Tueren) Abgangsbuch() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		von, bis, err := bestandsbuchZeitraum(r)
 		if err != nil {
-			return apierrors.BadRequest(err.Error(), err)
+			return err
 		}
 		buch, err := repository.LadeAbgangsbuch(r.Context(), t.DB.Pool, von, bis)
 		if err != nil {
@@ -89,7 +89,7 @@ func (t *Tueren) AbgangsbuchPDF() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		von, bis, err := bestandsbuchZeitraum(r)
 		if err != nil {
-			return apierrors.BadRequest(err.Error(), err)
+			return err
 		}
 		ctx := r.Context()
 		buch, err := repository.LadeAbgangsbuch(ctx, t.DB.Pool, von, bis)

@@ -3,6 +3,7 @@ package katalog
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/inventur"
 	"bibliothek/repository"
 
@@ -158,15 +160,21 @@ func TestExemplarStandort_AnzeigenUndAendern(t *testing.T) {
 		ids      []string
 		standort string
 		status   int
+		meldung  string
 	}{
-		{"zu lang", []string{schrank}, strings.Repeat("ä", repository.ExemplarStandortMaxZeichen+1), http.StatusBadRequest},
-		{"keine Kennung", []string{"ST-SCHRANK"}, "Keller", http.StatusBadRequest},
-		{"leere Auswahl", nil, "Keller", http.StatusBadRequest},
-		{"eine gibt es nicht", []string{schrank, unbekannt}, "Keller", http.StatusNotFound},
+		{"zu lang", []string{schrank}, strings.Repeat("ä", repository.ExemplarStandortMaxZeichen+1), http.StatusBadRequest,
+			fmt.Sprintf("Standort nicht geändert: höchstens %d Zeichen", repository.ExemplarStandortMaxZeichen)},
+		{"keine Kennung", []string{"ST-SCHRANK"}, "Keller", http.StatusBadRequest, "Ungültige Kennung im Feld „exemplar_ids[0]“"},
+		{"leere Auswahl", nil, "Keller", http.StatusBadRequest, "Bitte das Feld „exemplar_ids“ ausfüllen"},
+		{"eine gibt es nicht", []string{schrank, unbekannt}, "Keller", http.StatusNotFound,
+			"Ein gewähltes Exemplar gibt es nicht mehr, geändert wurde nichts. Bitte die Seite neu laden."},
 	}
 	for _, f := range faelle {
-		if rec := standortSetzen(t, srv, pool, f.ids, f.standort); rec.Code != f.status {
+		rec := standortSetzen(t, srv, pool, f.ids, f.standort)
+		if rec.Code != f.status {
 			t.Errorf("%s: Status %d, erwartet %d: %s", f.name, rec.Code, f.status, rec.Body.String())
+		} else if got := tuertest.Fehlermeldung(t, rec); got != f.meldung {
+			t.Errorf("%s: Meldung %q, erwartet %q", f.name, got, f.meldung)
 		}
 	}
 	// Ein Körper ohne das Feld ist kein Auftrag zum Entfernen.

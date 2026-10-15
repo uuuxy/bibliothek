@@ -39,6 +39,10 @@ func IstGueltig(mittel string) bool {
 // Eingabe damit ab.
 var ErrUngueltig = errors.New("mittel muss 'land' (Lernmittelfreiheit) oder 'schultraeger' (Schülerbücherei) sein")
 
+// MeldungUngueltig ist der Satz der Türen zu ErrUngueltig. Er nennt jeden Wert mit seinem Wort,
+// damit, wer ihn liest, sieht, was erlaubt ist.
+const MeldungUngueltig = "Unbekannter Topf. Erlaubt sind „land“ (Lernmittelfreiheit) und „schultraeger“ (Schülerbücherei)."
+
 // Texte sind die Wörter eines Topfs. Anschreiben, Mail und Berichte nehmen sie von hier: Mit
 // zwei Formulierungen desselben Vermerks hielte der Händler zwei Dokumente in der Hand, die
 // sich widersprechen.

@@ -79,7 +79,7 @@ func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, ka
 
 	if err := katalogAbfragen.SetzeExemplarBarcode(ctx, id, req.Barcode); err != nil {
 		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungExemplarNichtGefunden, err)
 			return
 		}
 		// Eine Nummer ist entweder Buch oder Ausweis: Die Theke löst einen Scan zuerst als Buch

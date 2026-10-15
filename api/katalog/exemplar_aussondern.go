@@ -47,11 +47,11 @@ func (t *Tueren) ExemplarAussondern(protokollAbfragen repository.ProtokollAbfrag
 			// Am Fehlerwert erkannt, nicht am Text der Meldung: Eine umformulierte Meldung machte
 			// aus der Auskunft sonst einen Serverfehler.
 			if errors.Is(err, repository.ErrExemplarNochVerliehen) {
-				apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungExemplarVerliehen, err)
 				return
 			}
 			if errors.Is(err, repository.ErrExemplarNichtGefunden) {
-				apierrors.AntworteFehler(w, http.StatusNotFound, err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungExemplarNichtGefunden, err)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

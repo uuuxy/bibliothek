@@ -116,7 +116,7 @@ func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 	}
 	if err := tuer.Pruefer.Struct(theke.EingabeAnfrage{Text: "B-1", AktiverLeserID: &[]string{"x"}[0]}); err == nil {
 		t.Fatal("„x“ als active_leser_id durchgelassen")
-	} else if msg := tuer.Pruefmeldung(err).Error(); !strings.Contains(msg, "ungültige Kennung") {
+	} else if msg := tuer.Pruefmeldung(err); !strings.Contains(msg, "Ungültige Kennung im Feld „active_leser_id“") {
 		t.Fatalf("Meldung %q nennt die Kennung nicht", msg)
 	}
 

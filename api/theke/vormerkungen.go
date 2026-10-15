@@ -25,11 +25,11 @@ func (t *Tueren) Vormerkungen(vormerkungsAbfragen repository.VormerkungsAbfragen
 
 		titelID, err := tuer.LeseUUIDParameter(r, "titel_id")
 		if err != nil {
-			return apierrors.BadRequest(err.Error(), nil)
+			return err
 		}
 		schuelerID, err := tuer.LeseUUIDParameter(r, "schueler_id")
 		if err != nil {
-			return apierrors.BadRequest(err.Error(), nil)
+			return err
 		}
 
 		liste, err := vormerkungsAbfragen.LadeListe(ctx, titelID, schuelerID)

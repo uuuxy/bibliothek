@@ -65,8 +65,7 @@ func NormalisiereSchlagworte(roh []string) ([]string, error) {
 			continue
 		}
 		if utf8.RuneCountInString(wort) > SchlagwortMaxZeichen {
-			return nil, fmt.Errorf("%w: „%s …“ ist länger als %d Zeichen",
-				ErrSchlagwortUngueltig, kuerzeRunen(wort, 30), SchlagwortMaxZeichen)
+			return nil, mitGrund(ErrSchlagwortUngueltig, "„%s …“ ist länger als %d Zeichen", kuerzeRunen(wort, 30), SchlagwortMaxZeichen)
 		}
 		schluessel := strings.ToLower(wort)
 		if gesehen[schluessel] {
@@ -76,8 +75,7 @@ func NormalisiereSchlagworte(roh []string) ([]string, error) {
 		woerter = append(woerter, wort)
 	}
 	if len(woerter) > SchlagworteJeTitelMax {
-		return nil, fmt.Errorf("%w: höchstens %d Schlagworte je Titel, genannt waren %d",
-			ErrSchlagwortUngueltig, SchlagworteJeTitelMax, len(woerter))
+		return nil, mitGrund(ErrSchlagwortUngueltig, "höchstens %d Schlagworte je Titel, genannt waren %d", SchlagworteJeTitelMax, len(woerter))
 	}
 	return woerter, nil
 }

@@ -113,17 +113,19 @@ func TestHatGrossesLernmittelEtikett(t *testing.T) {
 	}
 }
 
-// Die Ablehnung nennt jeden Wert des Vokabulars mit seinem Wort: Wer die Meldung liest, sieht,
-// was erlaubt ist.
+// Die Ablehnung nennt jeden Wert des Vokabulars mit seinem Wort, im Fehlertext wie in der
+// Meldung der Türen: Wer sie liest, sieht, was erlaubt ist.
 func TestErrUngueltig_NenntJedenWertMitSeinemWort(t *testing.T) {
-	meldung := ErrUngueltig.Error()
 	for _, mittel := range []string{Land, Schultraeger} {
 		texte, err := TexteFuer(mittel)
 		if err != nil {
 			t.Fatalf("%s: %v", mittel, err)
 		}
-		if will := "'" + mittel + "' (" + texte.Kurz + ")"; !strings.Contains(meldung, will) {
-			t.Errorf("die Meldung %q nennt %s nicht", meldung, will)
+		if will := "'" + mittel + "' (" + texte.Kurz + ")"; !strings.Contains(ErrUngueltig.Error(), will) {
+			t.Errorf("der Fehlertext %q nennt %s nicht", ErrUngueltig.Error(), will)
+		}
+		if will := "„" + mittel + "“ (" + texte.Kurz + ")"; !strings.Contains(MeldungUngueltig, will) {
+			t.Errorf("die Meldung %q nennt %s nicht", MeldungUngueltig, will)
 		}
 	}
 }

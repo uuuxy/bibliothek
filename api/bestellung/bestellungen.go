@@ -79,7 +79,7 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 		return
 	}
 	if !mitteltopf.IstGueltig(req.Mittel) {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, mitteltopf.MeldungUngueltig, nil)
 		return
 	}
 
@@ -87,7 +87,7 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 
 	res, err := bestellDienst.LegeAn(ctx, bestellAuftrag(req))
 	if err != nil {
-		apierrors.AntworteFehler(w, statusDesBestellfehlers(err), err)
+		antworteAufBestellfehler(w, err)
 		return
 	}
 
@@ -134,17 +134,37 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 	})
 }
 
-// statusDesBestellfehlers ordnet die benannten Ablehnungen von BestellDienst.LegeAn ihrem Status zu.
-// Alles andere ist ein Serverfehler, dessen Text die Tür nicht ausgibt.
-func statusDesBestellfehlers(err error) int {
+// Sätze zu den Ablehnungen eines Warenkorbs (antworteAufBestellfehler).
+const (
+	meldungLieferantUnbekannt = "Den Lieferanten gibt es nicht mehr. Bitte einen anderen wählen."
+	meldungTitelUnbekannt     = "Der Titel steht nicht mehr im Katalog. Bitte aus dem Warenkorb nehmen."
+	meldungMengeUngueltig     = "Die Menge muss zwischen 1 und 200 liegen"
+)
+
+// antworteAufBestellfehler ordnet den benannten Ablehnungen von BestellDienst.LegeAn Status und
+// Satz zu, mit der Position des Warenkorbs vorn, wenn der Dienst sie nennt. Alles andere ist ein
+// Serverfehler, dessen Text die Tür nicht ausgibt.
+func antworteAufBestellfehler(w http.ResponseWriter, err error) {
+	var status int
+	var satz string
 	switch {
-	case errors.Is(err, service.ErrLieferantUnbekannt), errors.Is(err, service.ErrTitelUnbekannt):
-		return http.StatusNotFound
-	case errors.Is(err, mitteltopf.ErrUngueltig), errors.Is(err, service.ErrMengeUngueltig):
-		return http.StatusBadRequest
+	case errors.Is(err, service.ErrLieferantUnbekannt):
+		status, satz = http.StatusNotFound, meldungLieferantUnbekannt
+	case errors.Is(err, service.ErrTitelUnbekannt):
+		status, satz = http.StatusNotFound, meldungTitelUnbekannt
+	case errors.Is(err, mitteltopf.ErrUngueltig):
+		status, satz = http.StatusBadRequest, mitteltopf.MeldungUngueltig
+	case errors.Is(err, service.ErrMengeUngueltig):
+		status, satz = http.StatusBadRequest, meldungMengeUngueltig
 	default:
-		return http.StatusInternalServerError
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return
 	}
+	var position *service.BestellpositionFehler
+	if errors.As(err, &position) {
+		satz = fmt.Sprintf("Position %d: %s", position.Position, satz)
+	}
+	apierrors.AntworteFehlerMitMeldung(w, status, satz, err)
 }
 
 // Zulauf liefert die bestellten, noch nicht eingetroffenen Exemplare, je Bestellung
@@ -240,7 +260,8 @@ func (t *Tueren) WareneingangBuchen() http.HandlerFunc {
 		})
 		if err != nil {
 			if errors.Is(err, service.ErrNichtsEinzubuchen) {
-				apierrors.AntworteFehler(w, http.StatusNotFound, err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound,
+					"Keine Exemplare zum Einbuchen gefunden. Sind sie schon freigegeben?", err)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

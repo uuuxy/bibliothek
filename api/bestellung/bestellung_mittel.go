@@ -67,7 +67,7 @@ func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if !mitteltopf.IstGueltig(req.Mittel) {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, mitteltopf.MeldungUngueltig, nil)
 		return
 	}
 	grund := strings.TrimSpace(req.Grund)

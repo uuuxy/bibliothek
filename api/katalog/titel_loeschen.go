@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -45,13 +46,14 @@ func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 		err := protokollAbfragen.LoescheTitel(ctx, id, claims.KontoID)
 		if err != nil {
 			if errors.Is(err, repository.ErrTitelNichtGefunden) {
-				apierrors.AntworteFehler(w, http.StatusNotFound, err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, tuer.MeldungTitelNichtGefunden, err)
 				return
 			}
 			var mitAusleihen *repository.TitelHatAusleihenFehler
 			if errors.As(err, &mitAusleihen) {
 				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf(
-					"Löschen fehlgeschlagen: folgende Exemplare sind noch verliehen: %v", mitAusleihen.Barcodes), err)
+					"Der Titel lässt sich nicht löschen. Diese Exemplare sind noch verliehen: %s.",
+					strings.Join(mitAusleihen.Barcodes, ", ")), err)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

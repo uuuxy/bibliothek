@@ -119,13 +119,13 @@ func (t *Tueren) TitelSchlagworteSetzen() http.HandlerFunc {
 }
 
 // schlagwortFehler übersetzt die fachlichen Fehler aus repository: Eine verletzte Grenze ist
-// 400 mit ihrem Text, ein unbekannter Titel 404, alles andere 500.
+// 400 mit ihrem Grund, ein unbekannter Titel 404, alles andere 500.
 func schlagwortFehler(err error) error {
 	switch {
 	case errors.Is(err, repository.ErrSchlagwortUngueltig):
-		return apierrors.BadRequest(err.Error(), err)
+		return apierrors.BadRequest(tuer.MitGrund(meldungSchlagworteNichtGespeichert, err), err)
 	case errors.Is(err, repository.ErrTitelNichtGefunden):
-		return apierrors.NotFound("Titel nicht gefunden", err)
+		return apierrors.NotFound(tuer.MeldungTitelNichtGefunden, err)
 	default:
 		return apierrors.Internal("Schlagworte konnten nicht gespeichert werden", err)
 	}

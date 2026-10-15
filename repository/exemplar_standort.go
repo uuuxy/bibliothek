@@ -196,13 +196,13 @@ func schreibeStandort(ctx context.Context, tx pgx.Tx, s standortStand, a Standor
 func pruefeStandortAenderung(a StandortAenderung) error {
 	switch {
 	case len(a.ExemplarIDs) == 0:
-		return fmt.Errorf("%w: kein Exemplar gewählt", ErrStandortUngueltig)
+		return mitGrund(ErrStandortUngueltig, "kein Exemplar gewählt")
 	case len(a.ExemplarIDs) > exemplarStandortListeMax:
-		return fmt.Errorf("%w: höchstens %d Exemplare auf einmal", ErrStandortUngueltig, exemplarStandortListeMax)
+		return mitGrund(ErrStandortUngueltig, "höchstens %d Exemplare auf einmal", exemplarStandortListeMax)
 	case utf8.RuneCountInString(a.Standort) > ExemplarStandortMaxZeichen:
-		return fmt.Errorf("%w: höchstens %d Zeichen", ErrStandortUngueltig, ExemplarStandortMaxZeichen)
+		return mitGrund(ErrStandortUngueltig, "höchstens %d Zeichen", ExemplarStandortMaxZeichen)
 	case a.BearbeiterID == "":
-		return fmt.Errorf("%w: ohne Bearbeiter", ErrStandortUngueltig)
+		return mitGrund(ErrStandortUngueltig, "ohne Bearbeiter")
 	}
 	return nil
 }

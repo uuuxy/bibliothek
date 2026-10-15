@@ -109,14 +109,28 @@ type BestellErgebnis struct {
 	Mittel string
 }
 
-// Ablehnungen eines Warenkorbs. Die Tür erkennt sie am Wert, nicht am Wortlaut; der Text geht
-// als Meldung an die Person im Bestellwesen. Der Warenkorb steht nur im Browser, ein anderer
-// Platz kann Lieferant oder Titel inzwischen gelöscht haben.
+// Ablehnungen eines Warenkorbs. Die Tür erkennt sie am Wert, nicht am Wortlaut, und setzt den
+// Satz für die Person im Bestellwesen. Der Warenkorb steht nur im Browser, ein anderer Platz kann
+// Lieferant oder Titel inzwischen gelöscht haben.
 var (
 	ErrLieferantUnbekannt = errors.New("der Lieferant ist nicht mehr angelegt, bitte einen anderen wählen")
 	ErrTitelUnbekannt     = errors.New("der Titel steht nicht mehr im Katalog, bitte aus dem Warenkorb nehmen")
 	ErrMengeUngueltig     = errors.New("die Menge muss zwischen 1 und 200 liegen")
 )
+
+// BestellpositionFehler nennt die Position des Warenkorbs, an der das Anlegen scheiterte. Die
+// Nummer zählt wie die Liste im Warenkorb, ab 1; ohne sie ließe sich der Warenkorb nicht
+// berichtigen.
+type BestellpositionFehler struct {
+	Position int
+	Grund    error
+}
+
+func (e *BestellpositionFehler) Error() string {
+	return fmt.Sprintf("%v (Position %d)", e.Grund, e.Position)
+}
+
+func (e *BestellpositionFehler) Unwrap() error { return e.Grund }
 
 // positionsErgebnis bündelt die aus einer einzelnen Bestellposition erzeugten Daten.
 type positionsErgebnis struct {
@@ -221,9 +235,8 @@ func (d *BestellDienst) verarbeitePositionen(ctx context.Context, tx pgx.Tx, auf
 	for i, position := range auftrag.Positionen {
 		erg, err := d.verarbeitePosition(ctx, tx, position, lieferant)
 		if err != nil {
-			// Die Nummer zählt wie die Liste im Warenkorb, der die Positionen in dieser
-			// Reihenfolge schickt.
-			return bestellPosten{}, fmt.Errorf("%w (Position %d)", err, i+1)
+			// Der Warenkorb schickt die Positionen in der Reihenfolge seiner Liste.
+			return bestellPosten{}, &BestellpositionFehler{Position: i + 1, Grund: err}
 		}
 		posten.bestellteTitel = append(posten.bestellteTitel, erg.bestellterTitel)
 		posten.positionen = append(posten.positionen, erg.position)

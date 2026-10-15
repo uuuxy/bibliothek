@@ -34,7 +34,8 @@ import (
 // meldungBestand nennt je Datei, wie viele Verstöße noch stehen; die Zahl kann nur sinken.
 //
 // Von fmt.Sprintf liest sie den Formattext; er ist der feste Satz, die Werte setzt erst die Laufzeit
-// ein.
+// ein. Eine Textkonstante, deren Name mit meldung oder Meldung beginnt, prüft sie an ihrer
+// Deklaration, gleich, auf welchem Weg sie in die Antwort kommt.
 //
 // Sieht nicht: Texte, die erst zur Laufzeit entstehen (err.Error(), Variablen), einen Status aus
 // einer Variablen, eigene Helfer außer inventur.schreibeFehler und Antworten, die {"error": …}
@@ -256,6 +257,7 @@ func sammleMeldungen(t *testing.T, wurzel string) []meldungAufruf {
 	for ordner, paket := range dateien {
 		konstanten := meldungKonstanten{eigene: eigene[ordner], fremde: fremde}
 		for _, datei := range paket {
+			aufrufe = append(aufrufe, meldungsKonstanten(fset, datei)...)
 			ast.Inspect(datei, func(n ast.Node) bool {
 				aufruf, ok := n.(*ast.CallExpr)
 				if !ok {
@@ -272,6 +274,51 @@ func sammleMeldungen(t *testing.T, wurzel string) []meldungAufruf {
 	return aufrufe
 }
 
+// meldungsKonstanten liest die Textkonstanten einer Datei, deren Name mit meldung oder Meldung
+// beginnt.
+func meldungsKonstanten(fset *token.FileSet, datei *ast.File) []meldungAufruf {
+	var gefunden []meldungAufruf
+	ast.Inspect(datei, func(n ast.Node) bool {
+		decl, ok := n.(*ast.GenDecl)
+		if !ok || decl.Tok != token.CONST {
+			return true
+		}
+		for _, spec := range decl.Specs {
+			werte, ok := spec.(*ast.ValueSpec)
+			if !ok {
+				continue
+			}
+			for i, name := range werte.Names {
+				if !istMeldungsName(name.Name) || i >= len(werte.Values) {
+					continue
+				}
+				if text, _, ok := festerText(werte.Values[i], meldungKonstanten{}); ok {
+					gefunden = append(gefunden, meldungAufruf{pos: fset.Position(name.Pos()), text: text, gelesenFest: true})
+				}
+			}
+		}
+		return true
+	})
+	return gefunden
+}
+
+// istMeldungsName sagt, ob eine Konstante nach ihrem Namen eine Meldung trägt.
+func istMeldungsName(name string) bool {
+	return strings.HasPrefix(name, "meldung") || strings.HasPrefix(name, "Meldung")
+}
+
+// istMeldungsKonstante erkennt den Namen einer Meldungskonstante im Aufruf; sie ist an ihrer
+// Deklaration schon gezählt.
+func istMeldungsKonstante(e ast.Expr) bool {
+	switch v := e.(type) {
+	case *ast.Ident:
+		return istMeldungsName(v.Name)
+	case *ast.SelectorExpr:
+		return istMeldungsName(v.Sel.Name)
+	}
+	return false
+}
+
 // meldungKonstanten löst Namen von Textkonstanten auf: eigene des Pakets, fremde als paket.Name.
 type meldungKonstanten struct {
 	eigene map[string]string
@@ -285,7 +332,7 @@ func meldungAusAufruf(aufruf *ast.CallExpr, status map[string]int, konstanten me
 	if name, ok := aufruf.Fun.(*ast.Ident); ok && name.Name == "schreibeFehler" && len(aufruf.Args) == 3 {
 		code := statusAus(aufruf.Args[1], status)
 		text, alsFehler, ok := festerText(aufruf.Args[2], konstanten)
-		if code <= 0 || code >= 500 || !ok || alsFehler {
+		if code <= 0 || code >= 500 || !ok || alsFehler || istMeldungsKonstante(aufruf.Args[2]) {
 			return meldungAufruf{}, false
 		}
 		return meldungAufruf{status: code, text: text, gelesenFest: true}, true
@@ -320,7 +367,7 @@ func meldungAusAufruf(aufruf *ast.CallExpr, status map[string]int, konstanten me
 			code, textArg = statusAus(aufruf.Args[0], status), aufruf.Args[1]
 		}
 	}
-	if code <= 0 || code >= 500 || textArg == nil {
+	if code <= 0 || code >= 500 || textArg == nil || istMeldungsKonstante(textArg) {
 		return meldungAufruf{}, false
 	}
 	text, alsFehler, ok := festerText(textArg, konstanten)

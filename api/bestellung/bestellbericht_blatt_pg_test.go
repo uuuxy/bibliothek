@@ -230,8 +230,8 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 			t.Errorf("Content-Disposition %q, erwartet %q", ist, will)
 		}
 		for query, nennt := range map[string]string{
-			"von=2019-09-01":                             "'von' und 'bis'",
-			"von=2019-09-01&bis=30.09.2019":              "'bis'",
+			"von=2019-09-01":                             "Anfang und Ende des Zeitraums",
+			"von=2019-09-01&bis=30.09.2019":              "Das Ende des Zeitraums",
 			"von=2019-09-01&bis=2019-09-30&mittel=kreis": "kreis",
 		} {
 			rec := rufe(t, query)

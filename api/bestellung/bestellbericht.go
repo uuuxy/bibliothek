@@ -18,17 +18,24 @@ import (
 // Monats zum Monat davor.
 func leseBerichtZeitraum(vonText, bisText string) (time.Time, time.Time, error) {
 	if vonText == "" || bisText == "" {
-		return time.Time{}, time.Time{}, fmt.Errorf("parameter 'von' und 'bis' erforderlich (YYYY-MM-DD)")
+		return time.Time{}, time.Time{}, apierrors.BadRequest("Bitte Anfang und Ende des Zeitraums angeben", nil)
 	}
 	von, err := schulzeit.Kalendertag(vonText)
 	if err != nil {
-		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'von': %w", err)
+		return time.Time{}, time.Time{}, apierrors.BadRequest("Der Anfang des Zeitraums muss ein Datum der Form JJJJ-MM-TT sein", err)
 	}
 	bis, err := schulzeit.Kalendertag(bisText)
 	if err != nil {
-		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'bis': %w", err)
+		return time.Time{}, time.Time{}, apierrors.BadRequest("Das Ende des Zeitraums muss ein Datum der Form JJJJ-MM-TT sein", err)
 	}
 	return von, bis, nil
+}
+
+// meldungMittelFilter nennt zu einem unbekannten Filter nach Topf die erlaubten Werte, damit
+// niemand raten muss. Historie und Bericht nehmen denselben Satz.
+func meldungMittelFilter(filter string) string {
+	return fmt.Sprintf("Der Topf „%s“ ist unbekannt. Erlaubt sind „%s“, „%s“ und „%s“.",
+		filter, mitteltopf.Land, mitteltopf.Schultraeger, repository.MittelOhneFilter)
 }
 
 // berichtTitelAbleiten liefert die Überschrift des Berichts: Ein mitgegebener Titel geht vor,
@@ -84,7 +91,7 @@ func leseBerichtAnfrage(r *http.Request) (berichtAnfrage, error) {
 	// Ein unbekannter Wert ist ein Fehler und kein stiller Gesamtbericht: Sonst prüfte das
 	// Sekretariat die Landes-Rechnung gegen eine Liste, in der auch die Schülerbücherei steht.
 	if !repository.IstMittelFilterGueltig(a.mittel) {
-		return berichtAnfrage{}, repository.MittelFilterFehler(a.mittel)
+		return berichtAnfrage{}, apierrors.BadRequest(meldungMittelFilter(a.mittel), nil)
 	}
 	a.titel = berichtTitelAbleiten(q.Get("titel"), a.lieferantID, a.jahresansicht, a.mittel)
 	return a, nil

@@ -132,7 +132,7 @@ func (t *Tueren) Fehlbestand() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		laufID, err := tuer.LeseUUIDParameter(r, "session_id")
 		if err != nil {
-			return apierrors.BadRequest(err.Error(), nil)
+			return err
 		}
 		if laufID == "" {
 			return apierrors.BadRequest("Die Kennung des Inventurlaufs fehlt", nil)

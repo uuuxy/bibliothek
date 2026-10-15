@@ -14,6 +14,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -152,16 +153,23 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 		eigentum string
 		grund    string
 		status   int
+		meldung  string
 	}{
-		{"ohne Grund", []string{foerderverein}, mitteltopf.Land, "  ", http.StatusBadRequest},
-		{"unbekanntes Eigentum", []string{foerderverein}, "stadt", "Grund", http.StatusBadRequest},
-		{"keine Kennung", []string{"EE-FOERDERVEREIN"}, mitteltopf.Land, "Grund", http.StatusBadRequest},
-		{"leere Auswahl", nil, mitteltopf.Land, "Grund", http.StatusBadRequest},
-		{"eine gibt es nicht", []string{foerderverein, unbekannt}, mitteltopf.Land, "Grund", http.StatusNotFound},
+		{"ohne Grund", []string{foerderverein}, mitteltopf.Land, "  ", http.StatusBadRequest, "Eigentum nicht geändert: der Grund fehlt"},
+		{"unbekanntes Eigentum", []string{foerderverein}, "stadt", "Grund", http.StatusBadRequest,
+			"Eigentum nicht geändert: unbekanntes Eigentum „stadt“"},
+		{"keine Kennung", []string{"EE-FOERDERVEREIN"}, mitteltopf.Land, "Grund", http.StatusBadRequest,
+			"Ungültige Kennung im Feld „exemplar_ids[0]“"},
+		{"leere Auswahl", nil, mitteltopf.Land, "Grund", http.StatusBadRequest, "Bitte das Feld „exemplar_ids“ ausfüllen"},
+		{"eine gibt es nicht", []string{foerderverein, unbekannt}, mitteltopf.Land, "Grund", http.StatusNotFound,
+			"Ein gewähltes Exemplar gibt es nicht mehr, geändert wurde nichts. Bitte die Seite neu laden."},
 	}
 	for _, f := range faelle {
-		if rec := eigentumSetzen(t, srv, pool, f.ids, f.eigentum, f.grund); rec.Code != f.status {
+		rec := eigentumSetzen(t, srv, pool, f.ids, f.eigentum, f.grund)
+		if rec.Code != f.status {
 			t.Errorf("%s: Status %d, erwartet %d: %s", f.name, rec.Code, f.status, rec.Body.String())
+		} else if got := tuertest.Fehlermeldung(t, rec); got != f.meldung {
+			t.Errorf("%s: Meldung %q, erwartet %q", f.name, got, f.meldung)
 		}
 	}
 	pruefeKarte(t, exemplarKarten(t, srv, pool, lektuere), "EE-FOERDERVEREIN", mitteltopf.Schultraeger, "vorgabe", "Förderverein")
