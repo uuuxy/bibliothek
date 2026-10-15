@@ -260,7 +260,7 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 		// Ein Ausfall des Mailservers ist kein falsches Passwort: 503 ohne Fehlversuch, sonst
 		// sperrte sich aus, wer sein richtiges Passwort erneut probiert.
 		if errors.Is(err, errMailserverNichtErreichbar) {
-			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, errMailserverNichtErreichbar)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungMailserverNichtErreichbar, err)
 			return anmeldeKonto{}, false
 		}
 		// Ebenso ein Aussetzer der Datenbank. Der Grund steht im Log.
@@ -282,15 +282,13 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 	// Kein Fehlversuch: Das Passwort war richtig. Sonst sperrte sich jemand mit fünf Versuchen
 	// selbst aus, während seine Freischaltung noch aussteht.
 	if konto.neuAngelegt || (!konto.aktiv && konto.beantragt) {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
-		apierrors.AntworteFehler(w, http.StatusForbidden,
-			errors.New("Zugang beantragt — die Bibliothek muss ihn noch freischalten"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden,
+			"Zugang beantragt — die Bibliothek muss ihn noch freischalten", nil)
 		return anmeldeKonto{}, false
 	}
 	if !konto.aktiv {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
-		apierrors.AntworteFehler(w, http.StatusForbidden,
-			errors.New("Konto deaktiviert — bitte an die Bibliothek wenden"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden,
+			"Konto deaktiviert — bitte an die Bibliothek wenden", nil)
 		return anmeldeKonto{}, false
 	}
 	return konto, true

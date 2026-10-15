@@ -253,8 +253,13 @@ func TestSperre_TokenOhneZeileWirdNichtGesperrtUndNichtErneuert(t *testing.T) {
 
 	// Ohne Prüfwert bleibt bei totem Mailserver die Auskunft des Mailservers.
 	mailserverTot(t)
-	if rec := sperreEntsperren(pool, a, cookie, "egal"); rec.Code != http.StatusServiceUnavailable {
+	rec = sperreEntsperren(pool, a, cookie, "egal")
+	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("Entsperren ohne Zeile bei totem Mailserver: Status %d, erwartet 503: %s", rec.Code, rec.Body.String())
+	}
+	const erwartet = "Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen"
+	if got := fehlermeldungAus(t, rec); got != erwartet {
+		t.Errorf("Entsperren: Meldung %q, erwartet %q", got, erwartet)
 	}
 }
 

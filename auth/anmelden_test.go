@@ -82,6 +82,22 @@ func TestAnmelden_DeaktiviertesKontoIst403(t *testing.T) {
 	if rec.Code != http.StatusForbidden {
 		t.Errorf("erwartet 403, bekam %d: %s", rec.Code, rec.Body.String())
 	}
+	const erwartet = "Konto deaktiviert — bitte an die Bibliothek wenden"
+	if got := fehlermeldungAus(t, rec); got != erwartet {
+		t.Errorf("Anmelden: Meldung %q, erwartet %q", got, erwartet)
+	}
+}
+
+// fehlermeldungAus liest den Text einer Fehlerantwort.
+func fehlermeldungAus(t *testing.T, rec *httptest.ResponseRecorder) string {
+	t.Helper()
+	var antwort struct {
+		Fehler string `json:"error"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort ist kein JSON-Fehler (%s): %v", rec.Body.String(), err)
+	}
+	return antwort.Fehler
 }
 
 func TestAnmelden_ErfolgSetztCookieUndAntwortet(t *testing.T) {
@@ -255,8 +271,9 @@ func TestAnmelden_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 		if rec.Code != http.StatusServiceUnavailable {
 			t.Fatalf("Versuch %d: erwartet 503 bei totem Mailserver, bekam %d: %s", i, rec.Code, rec.Body.String())
 		}
-		if !strings.Contains(rec.Body.String(), "Mailserver") {
-			t.Fatalf("Versuch %d: Meldung muss den Mailserver nennen, nicht das Passwort: %s", i, rec.Body.String())
+		const erwartet = "Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen"
+		if got := fehlermeldungAus(t, rec); got != erwartet {
+			t.Fatalf("Versuch %d: Meldung %q, erwartet %q", i, got, erwartet)
 		}
 	}
 

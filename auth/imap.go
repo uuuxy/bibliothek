@@ -136,9 +136,11 @@ func istLokaleUmgebung() bool {
 // einem Ausfall sein richtiges Passwort erneut probiert, sperrte sich sonst nach fünf Versuchen
 // für 15 Minuten aus, und ein Ausfall des Servers sperrte das ganze Kollegium aus. Die Tür der
 // Anmeldung antwortet darauf mit 503 und zählt keinen Fehlversuch.
-//
-//nolint:staticcheck // ST1005: Meldung für die Person an der Anmeldung, daher großgeschrieben
-var errMailserverNichtErreichbar = errors.New("Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen")
+var errMailserverNichtErreichbar = errors.New("mailserver nicht erreichbar")
+
+// meldungMailserverNichtErreichbar ist der Satz, mit dem Anmeldung und Entsperren auf einen
+// Ausfall des Mailservers antworten.
+const meldungMailserverNichtErreichbar = "Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen"
 
 // PruefeIMAPKonfiguration prüft IMAP_HOST beim Start des Servers, damit eine unbrauchbare oder
 // gefährliche Konfiguration der Anmeldung sofort auffällt und nicht erst bei der ersten

@@ -106,7 +106,7 @@ func pruefeEntsperrPasswort(ctx context.Context, w http.ResponseWriter, anmeldun
 		return false
 	}
 	if !vorhanden {
-		apierrors.AntworteFehler(w, http.StatusServiceUnavailable, errMailserverNichtErreichbar)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungMailserverNichtErreichbar, imapFehler)
 		return false
 	}
 	if !passt {

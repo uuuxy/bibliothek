@@ -110,8 +110,8 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if code != http.StatusForbidden {
 		t.Fatalf("erster Versuch: Status %d, erwartet 403 — ein neues Konto darf NICHT hineinkommen", code)
 	}
-	if !strings.Contains(meldung, "beantragt") {
-		t.Errorf("die Meldung muss sagen, dass der Zugang beantragt ist, war: %q", meldung)
+	if erwartet := "Zugang beantragt — die Bibliothek muss ihn noch freischalten"; meldung != erwartet {
+		t.Errorf("erster Versuch: Meldung %q, erwartet %q", meldung, erwartet)
 	}
 
 	// 2. Der Eintrag besteht: inaktiv, Rolle kollegium, Name aus der Adresse geraten.
