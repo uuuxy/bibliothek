@@ -35,6 +35,7 @@
 		onclick={onDeselect}
 		class="icon-btn absolute top-4 right-4 p-2 text-on-surface-variant"
 		title="Akte schließen (ESC)"
+		aria-label="Akte schließen"
 	>
 		<X class="w-5 h-5" aria-hidden="true" />
 	</button>
