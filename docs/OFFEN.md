@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 15.10.2026
+Stand: 16.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -187,7 +187,9 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
   ([STIL.md](STIL.md), Abschnitt 11).
 - [x] Zustand der Paketebene: Was sich ändert, legt der Rufer an ([STIL.md](STIL.md),
   Abschnitt 12).
-- [ ] Die Oberfläche: Dateinamen und Namen in einer Sprache.
+- [x] Die Oberfläche, Stufe 1: Datei- und Ordnernamen deutsch ([STIL.md](STIL.md), Abschnitt 13;
+  `frontend-hygiene-sprache.test.js`), bis auf zwei geteilte Bauteile (5.66).
+- [ ] Die Oberfläche, Stufe 2: Namen innerhalb der Dateien (5.66).
 - [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
 ### Später: kleine Fehler und Aufräumarbeit
@@ -508,8 +510,20 @@ Ordner des Pakets und für die Form `paket.Name`.
   Paket `api/theke`) und „Tresen" (124 Go-Namen, 16 Nennungen in der Oberfläche, darunter die
   Beschriftung „Tresen-Auskunft"; gezählt am 13.10.2026). Ein Wort festlegen und in
   [STIL.md](STIL.md), Abschnitt 2, eintragen.
-- Die Oberfläche: 459 Dateien ohne Tests, `Student` in 30 Dateinamen gegen 15 mit `schueler`
-  oder `leser`.
+- Die Oberfläche, Stufe 2: Gezählt am 16.10.2026 über die Erklärungen mit `let`, `const`,
+  `function` und `class` in den 459 Dateien ohne Tests: 326 verschiedene Namen (402 Erklärungen)
+  tragen ein englisches Wort, am häufigsten `handle` (46), `error` (39), `selected` (28),
+  `loading` (26), `delete`, `load`, `search`, `edit`, `book`, `user`, `student`. Dazu kommen
+  Props, Schlüssel von Objekten und die Methoden der Stores (`addToast`, `loadClassGroups`), die
+  Kennungen der Bildschirme in `routenTabelle.js` (`students_dir`, `settings`, `inventory`,
+  `orders`, `graduates`, `stats`) und die Beschriftung „Admin-Audit-Log" im Reiter der
+  System-Logs. Nächster Schritt: eine Ratsche über die erklärten Namen wie die für die
+  Dateinamen, dann Bereich für Bereich; der Bau bleibt dabei bis auf Klassennamen mit
+  Geltungsbereich gleich.
+- Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
+  der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
+  Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und
+  `TabelleSortierKopf`.
 
 ### 5.67 Umfang senken: was sich löschen lässt
 
