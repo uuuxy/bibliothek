@@ -10,9 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // sortiertWieErwartet gibt die Titel rückwärts hinein und vergibt die laufende Nummer aus dem
@@ -28,7 +27,9 @@ func sortiertWieErwartet(t *testing.T, erwartet []string) {
 	for i, b := range buecher {
 		ist[i] = b.Titel
 	}
-	assert.Equal(t, erwartet, ist)
+	if diff := cmp.Diff(erwartet, ist); diff != "" {
+		t.Errorf("sortiereBuecherNachTitel: Reihenfolge weicht ab (-erwartet +ist):\n%s", diff)
+	}
 }
 
 // Die Titelliste steht nach dem Titel, wie ein deutsches Register: Umlaute bei ihrem
@@ -39,28 +40,42 @@ func sortiertWieErwartet(t *testing.T, erwartet []string) {
 func TestSortiereBuecherNachTitel_WieImBrowser(t *testing.T) {
 	const faelleDatei = "../frontend/src/lib/utils/titelReihenfolge.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.ReadFile: %v", err)
+	}
 	var pruefung struct {
 		Faelle []struct {
 			Fall     string   `json:"fall"`
 			Erwartet []string `json:"erwartet"`
 		} `json:"faelle"`
 	}
-	require.NoError(t, json.Unmarshal(roh, &pruefung))
-	require.GreaterOrEqual(t, len(pruefung.Faelle), 10, "liest der Test noch titelReihenfolge.faelle.json?")
+	if err := json.Unmarshal(roh, &pruefung); err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
+	if len(pruefung.Faelle) < 10 {
+		t.Fatalf("len(pruefung.Faelle) = %v, erwartet mindestens %v: liest der Test noch titelReihenfolge.faelle.json?", len(pruefung.Faelle), 10)
+	}
 
 	for _, f := range pruefung.Faelle {
 		t.Run(f.Fall, func(t *testing.T) {
-			require.GreaterOrEqual(t, len(f.Erwartet), 3)
+			if len(f.Erwartet) < 3 {
+				t.Fatalf("len(f.Erwartet) = %v, erwartet mindestens %v", len(f.Erwartet), 3)
+			}
 			sortiertWieErwartet(t, f.Erwartet)
 		})
 	}
 
 	// Liest die JavaScript-Seite dieselbe Datei? Sonst prüfte jede Seite nur sich selbst.
 	vitest, err := os.ReadFile("../frontend/src/lib/utils/titelReihenfolge.test.js")
-	require.NoError(t, err)
-	assert.Contains(t, string(vitest), "./titelReihenfolge.faelle.json")
-	assert.Contains(t, string(vitest), "new Intl.Collator('de', { numeric: true })")
+	if err != nil {
+		t.Fatalf("os.ReadFile: %v", err)
+	}
+	if !strings.Contains(string(vitest), "./titelReihenfolge.faelle.json") {
+		t.Errorf("string(vitest) = %q, erwartet darin %q", string(vitest), "./titelReihenfolge.faelle.json")
+	}
+	if !strings.Contains(string(vitest), "new Intl.Collator('de', { numeric: true })") {
+		t.Errorf("string(vitest) = %q, erwartet darin %q", string(vitest), "new Intl.Collator('de', { numeric: true })")
+	}
 }
 
 // Leerzeichen am Rand eines Titels zählen nicht.
@@ -78,7 +93,9 @@ func TestSortiereBuecherNachTitel_GleicheTitelBleibenInAbfrageReihenfolge(t *tes
 	for i, b := range buecher {
 		ist[i] = b.ID
 	}
-	assert.Equal(t, []string{"c", "a", "b", "x"}, ist)
+	if diff := cmp.Diff([]string{"c", "a", "b", "x"}, ist); diff != "" {
+		t.Errorf("sortiereBuecherNachTitel: Reihenfolge weicht ab (-erwartet +ist):\n%s", diff)
+	}
 }
 
 func TestTitelListe(t *testing.T) {
@@ -189,7 +206,9 @@ func TestTitelListe(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
-			require.NoError(t, err)
+			if err != nil {
+				t.Fatalf("pgxmock.NewPool: %v", err)
+			}
 			defer mock.Close()
 
 			abfragen := NewTitelAbfragen(mock)
@@ -205,15 +224,38 @@ func TestTitelListe(t *testing.T) {
 			tueren.TitelListe(w, anfrage)
 
 			ergebnis := w.Result()
-			defer func() { require.NoError(t, ergebnis.Body.Close()) }()
-			assert.Equal(t, f.expectedStatus, ergebnis.StatusCode)
+			defer func() {
+				if err := ergebnis.Body.Close(); err != nil {
+					t.Fatalf("ergebnis.Body.Close: %v", err)
+				}
+			}()
+			if ergebnis.StatusCode != f.expectedStatus {
+				t.Errorf("Status = %v, erwartet %v", ergebnis.StatusCode, f.expectedStatus)
+			}
 
 			if f.expectedBody != "" {
 				rumpf, err := io.ReadAll(ergebnis.Body)
-				require.NoError(t, err)
-				assert.JSONEq(t, f.expectedBody, string(rumpf))
+				if err != nil {
+					t.Fatalf("io.ReadAll: %v", err)
+				}
+				if diff := cmp.Diff(jsonWert(t, f.expectedBody), jsonWert(t, string(rumpf))); diff != "" {
+					t.Errorf("Antwort weicht ab (-erwartet +ist):\n%s", diff)
+				}
 			}
-			require.NoError(t, mock.ExpectationsWereMet())
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("offene Erwartungen: %v", err)
+			}
 		})
 	}
+}
+
+// jsonWert liest einen JSON-Text in Go-Werte, damit der Vergleich weder auf die Folge der
+// Schlüssel noch auf Leerraum achtet.
+func jsonWert(t *testing.T, text string) any {
+	t.Helper()
+	var wert any
+	if err := json.Unmarshal([]byte(text), &wert); err != nil {
+		t.Fatalf("json.Unmarshal(%q): %v", text, err)
+	}
+	return wert
 }

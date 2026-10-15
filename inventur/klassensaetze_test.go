@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestKlassensaetze(t *testing.T) {
@@ -129,8 +129,12 @@ func TestKlassensaetze(t *testing.T) {
 			w := httptest.NewRecorder()
 			tueren.Klassensaetze(w, anfrage)
 
-			assert.Equal(t, f.expectedStatus, w.Code)
-			assert.JSONEq(t, f.expectedBody, w.Body.String())
+			if w.Code != f.expectedStatus {
+				t.Errorf("Status = %v, erwartet %v", w.Code, f.expectedStatus)
+			}
+			if diff := cmp.Diff(jsonWert(t, f.expectedBody), jsonWert(t, w.Body.String())); diff != "" {
+				t.Errorf("Antwort weicht ab (-erwartet +ist):\n%s", diff)
+			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)

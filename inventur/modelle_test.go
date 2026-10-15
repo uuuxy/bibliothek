@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestTitel_JSON(t *testing.T) {
@@ -34,13 +33,19 @@ func TestTitel_JSON(t *testing.T) {
 	}
 
 	jsonDaten, err := json.Marshal(original)
-	require.NoError(t, err, "Should marshal Book to JSON without error")
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
 
 	var gelesen Titel
 	err = json.Unmarshal(jsonDaten, &gelesen)
-	require.NoError(t, err, "Should unmarshal JSON to Book without error")
+	if err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
 
-	assert.Equal(t, original, gelesen, "Unmarshaled Book should match the original")
+	if diff := cmp.Diff(original, gelesen); diff != "" {
+		t.Errorf("Titel nach json.Marshal und json.Unmarshal weicht ab (-erwartet +ist):\n%s", diff)
+	}
 }
 
 // ClassBookAssignment ist entfernt: Das Struct hatte keinen

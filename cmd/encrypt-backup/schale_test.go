@@ -6,9 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // Prüft scripts/backup_krypto.sh, den Helfer, der dieses Werkzeug im Betrieb ruft.
@@ -35,7 +32,9 @@ func baueWerkzeuge(t *testing.T, verzeichnis string) (verschluesseln, wiederhers
 		befehl := exec.Command("go", "build", "-o", ziel, pfad)
 		befehl.Env = append(os.Environ(), "GOWORK=off")
 		aus, err := befehl.CombinedOutput()
-		require.NoError(t, err, "Bau von %s: %s", pfad, aus)
+		if err != nil {
+			t.Fatalf("Bau von %s: %s: %v", pfad, aus, err)
+		}
 	}
 	return filepath.Join(verzeichnis, "encrypt-backup"), filepath.Join(verzeichnis, "restore-backup")
 }
@@ -49,7 +48,9 @@ func dockerAttrappe(t *testing.T, verzeichnis, modus string) string {
 	verschluesselWerkzeug, wiederherstellWerkzeug := baueWerkzeuge(t, verzeichnis)
 
 	binVerzeichnis := filepath.Join(verzeichnis, "bin")
-	require.NoError(t, os.MkdirAll(binVerzeichnis, 0o755))
+	if err := os.MkdirAll(binVerzeichnis, 0o755); err != nil {
+		t.Fatalf("os.MkdirAll: %v", err)
+	}
 
 	var verschluesseln string
 	switch modus {
@@ -96,7 +97,9 @@ case "$1" in
 esac
 `
 	pfad := filepath.Join(binVerzeichnis, "docker")
-	require.NoError(t, os.WriteFile(pfad, []byte(skript), 0o755))
+	if err := os.WriteFile(pfad, []byte(skript), 0o755); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 	return binVerzeichnis
 }
 
@@ -104,7 +107,9 @@ esac
 func ruftHelfer(t *testing.T, binVerzeichnis, quelle string) error {
 	t.Helper()
 	helfer, err := filepath.Abs(filepath.Join("..", "..", "scripts", "backup_krypto.sh"))
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("filepath.Abs: %v", err)
+	}
 
 	befehl := exec.Command("bash", "-c", `source "$1"; verschluessele_datei "$2"`, "bash", helfer, quelle)
 	befehl.Env = append(os.Environ(), "PATH="+binVerzeichnis+string(os.PathListSeparator)+os.Getenv("PATH"))
@@ -119,7 +124,9 @@ func klartextDatei(t *testing.T, verzeichnis string) string {
 	t.Helper()
 	pfad := filepath.Join(verzeichnis, "backup_20260823_120000.sql.gz")
 	// Der Inhalt muss ein gültiger gzip-Strom sein; das Werkzeug lehnt alles andere ab.
-	require.NoError(t, os.WriteFile(pfad, gzipDaten(t, []byte("-- pg_dump\nCREATE TABLE schueler (id uuid);\n")), 0o600))
+	if err := os.WriteFile(pfad, gzipDaten(t, []byte("-- pg_dump\nCREATE TABLE schueler (id uuid);\n")), 0o600); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 	return pfad
 }
 
@@ -128,13 +135,23 @@ func TestSchale_ErfolgLoeschtKlartext(t *testing.T) {
 	binVerzeichnis := dockerAttrappe(t, verzeichnis, "echt")
 	quelle := klartextDatei(t, verzeichnis)
 
-	require.NoError(t, ruftHelfer(t, binVerzeichnis, quelle))
+	if err := ruftHelfer(t, binVerzeichnis, quelle); err != nil {
+		t.Fatalf("ruftHelfer: %v", err)
+	}
 
-	assert.NoFileExists(t, quelle, "der Klartext-Dump muss nach der Verschlüsselung weg sein")
+	if _, err := os.Stat(quelle); err == nil {
+		t.Errorf("Datei %s besteht noch: der Klartext-Dump muss nach der Verschlüsselung weg sein", quelle)
+	}
 	inhalt, err := os.ReadFile(quelle + ".enc")
-	require.NoError(t, err)
-	assert.True(t, strings.HasPrefix(string(inhalt), "BKDF"), "Ergebnis trägt die Format-Kennung nicht")
-	assert.NotContains(t, string(inhalt), "schueler")
+	if err != nil {
+		t.Fatalf("os.ReadFile: %v", err)
+	}
+	if !strings.HasPrefix(string(inhalt), "BKDF") {
+		t.Error("Ergebnis trägt die Format-Kennung nicht")
+	}
+	if strings.Contains(string(inhalt), "schueler") {
+		t.Errorf("string(inhalt) = %q, erwartet ohne %q", string(inhalt), "schueler")
+	}
 }
 
 // Scheitert die Verschlüsselung, ist der Klartext das Einzige, was noch da ist. Er darf unter
@@ -144,9 +161,15 @@ func TestSchale_FehlerBehaeltKlartext(t *testing.T) {
 	binVerzeichnis := dockerAttrappe(t, verzeichnis, "fehler")
 	quelle := klartextDatei(t, verzeichnis)
 
-	assert.Error(t, ruftHelfer(t, binVerzeichnis, quelle), "ein gescheiterter Lauf muss als Fehler zurückkommen")
-	assert.FileExists(t, quelle, "bei Fehler muss der Klartext liegen bleiben")
-	assert.NoFileExists(t, quelle+".enc", "eine angefangene .enc-Datei darf nicht liegen bleiben")
+	if ruftHelfer(t, binVerzeichnis, quelle) == nil {
+		t.Error("ruftHelfer: kein Fehler, erwartet einen: ein gescheiterter Lauf muss als Fehler zurückkommen")
+	}
+	if _, err := os.Stat(quelle); err != nil {
+		t.Errorf("Datei %s fehlt: %v: bei Fehler muss der Klartext liegen bleiben", quelle, err)
+	}
+	if _, err := os.Stat(quelle + ".enc"); err == nil {
+		t.Errorf("Datei %s besteht noch: eine angefangene .enc-Datei darf nicht liegen bleiben", quelle+".enc")
+	}
 }
 
 // Die Gegenprobe am fertigen Ergebnis: Der Aufruf meldet Erfolg, aber die Datei ist keine
@@ -157,9 +180,15 @@ func TestSchale_MuellAusgabeBehaeltKlartext(t *testing.T) {
 	binVerzeichnis := dockerAttrappe(t, verzeichnis, "muell")
 	quelle := klartextDatei(t, verzeichnis)
 
-	assert.Error(t, ruftHelfer(t, binVerzeichnis, quelle))
-	assert.FileExists(t, quelle, "ohne gültige .enc-Datei muss der Klartext bleiben")
-	assert.NoFileExists(t, quelle+".enc")
+	if ruftHelfer(t, binVerzeichnis, quelle) == nil {
+		t.Error("ruftHelfer: kein Fehler, erwartet einen")
+	}
+	if _, err := os.Stat(quelle); err != nil {
+		t.Errorf("Datei %s fehlt: %v: ohne gültige .enc-Datei muss der Klartext bleiben", quelle, err)
+	}
+	if _, err := os.Stat(quelle + ".enc"); err == nil {
+		t.Errorf("Datei %s besteht noch", quelle+".enc")
+	}
 }
 
 // Der Fall, den die Prüfung der Form nicht sieht: Die Platte läuft beim Schreiben voll, die
@@ -171,7 +200,13 @@ func TestSchale_AbgeschnitteneDateiBehaeltKlartext(t *testing.T) {
 	binVerzeichnis := dockerAttrappe(t, verzeichnis, "abgeschnitten")
 	quelle := klartextDatei(t, verzeichnis)
 
-	assert.Error(t, ruftHelfer(t, binVerzeichnis, quelle))
-	assert.FileExists(t, quelle, "eine nicht entschlüsselbare .enc-Datei ist kein Grund, den Klartext zu löschen")
-	assert.NoFileExists(t, quelle+".enc")
+	if ruftHelfer(t, binVerzeichnis, quelle) == nil {
+		t.Error("ruftHelfer: kein Fehler, erwartet einen")
+	}
+	if _, err := os.Stat(quelle); err != nil {
+		t.Errorf("Datei %s fehlt: %v: eine nicht entschlüsselbare .enc-Datei ist kein Grund, den Klartext zu löschen", quelle, err)
+	}
+	if _, err := os.Stat(quelle + ".enc"); err == nil {
+		t.Errorf("Datei %s besteht noch", quelle+".enc")
+	}
 }

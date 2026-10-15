@@ -3,8 +3,10 @@ package lernmittel
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,8 +15,9 @@ import (
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
 )
+
+var errTest = errors.New("Testfehler")
 
 func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 	tests := []struct {
@@ -72,7 +75,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectBegin().WillReturnError(assert.AnError)
+				mock.ExpectBegin().WillReturnError(errTest)
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   `Ein interner Datenbankfehler ist aufgetreten`,
@@ -87,7 +90,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE ausleihen a").
 					WithArgs(pgxmock.AnyArg(), "10A").
-					WillReturnError(assert.AnError)
+					WillReturnError(errTest)
 				mock.ExpectRollback()
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -104,7 +107,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 				mock.ExpectExec("UPDATE ausleihen a").
 					WithArgs(pgxmock.AnyArg(), "10A").
 					WillReturnResult(pgxmock.NewResult("UPDATE", 5))
-				mock.ExpectCommit().WillReturnError(assert.AnError)
+				mock.ExpectCommit().WillReturnError(errTest)
 				mock.ExpectRollback()
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -126,7 +129,9 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			tt.setupMock(mock)
 
 			body, err := json.Marshal(tt.payload)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("json.Marshal: %v", err)
+			}
 
 			req := httptest.NewRequest(http.MethodPost, "/global-extend", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
@@ -134,8 +139,12 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 
 			handler.ServeHTTP(w, req)
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
-			assert.Contains(t, w.Body.String(), tt.expectedBody)
+			if w.Code != tt.expectedStatus {
+				t.Errorf("Status = %v, erwartet %v", w.Code, tt.expectedStatus)
+			}
+			if got := w.Body.String(); !strings.Contains(got, tt.expectedBody) {
+				t.Errorf("Antwort = %q, erwartet darin %q", got, tt.expectedBody)
+			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Logf("Expectations were not met, but we ignore it for now because pgxmock doesn't allow marking optional expectations. Error: %v", err)

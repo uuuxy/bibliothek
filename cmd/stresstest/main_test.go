@@ -1,34 +1,46 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestErzeugeAdminToken(t *testing.T) {
 	geheimnis := "test-secret"
 	tokenText := erzeugeAdminToken(geheimnis)
-	assert.NotEmpty(t, tokenText)
+	if tokenText == "" {
+		t.Error("erzeugeAdminToken(geheimnis) ist leer")
+	}
 
 	token, err := jwt.Parse(tokenText, func(token *jwt.Token) (interface{}, error) {
 		return []byte(geheimnis), nil
 	})
-	require.NoError(t, err)
-	assert.True(t, token.Valid)
+	if err != nil {
+		t.Fatalf("jwt.Parse: %v", err)
+	}
+	if !token.Valid {
+		t.Error("token.Valid = false, erwartet true")
+	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
-	require.True(t, ok)
-	assert.Equal(t, "ADMIN", claims["rolle"])
-	assert.Equal(t, "admin", claims["barcode_id"])
+	if !ok {
+		t.Fatalf("token.Claims = %T, erwartet jwt.MapClaims", token.Claims)
+	}
+	if claims["rolle"] != "ADMIN" {
+		t.Errorf("claims[\"rolle\"] = %v, erwartet %v", claims["rolle"], "ADMIN")
+	}
+	if claims["barcode_id"] != "admin" {
+		t.Errorf("claims[\"barcode_id\"] = %v, erwartet %v", claims["barcode_id"], "admin")
+	}
 }
 
 func TestBaueAnfrage(t *testing.T) {
@@ -38,26 +50,52 @@ func TestBaueAnfrage(t *testing.T) {
 
 	lauf := newLastlauf(zielURL, token, rumpf, 1)
 	req, err := lauf.baueAnfrage()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("lauf.baueAnfrage: %v", err)
+	}
 
-	assert.Equal(t, http.MethodPost, req.Method)
-	assert.Equal(t, zielURL, req.URL.String())
-	assert.Equal(t, "application/json", req.Header.Get("Content-Type"))
-	assert.Equal(t, "dummy-csrf-token-12345", req.Header.Get("X-CSRF-Token"))
+	if req.Method != http.MethodPost {
+		t.Errorf("req.Method = %q, erwartet %q", req.Method, http.MethodPost)
+	}
+	if got := req.URL.String(); got != zielURL {
+		t.Errorf("req.URL.String() = %q, erwartet %q", got, zielURL)
+	}
+	if got := req.Header.Get("Content-Type"); got != "application/json" {
+		t.Errorf("Content-Type = %q, erwartet %q", got, "application/json")
+	}
+	if got := req.Header.Get("X-CSRF-Token"); got != "dummy-csrf-token-12345" {
+		t.Errorf("X-CSRF-Token = %q, erwartet %q", got, "dummy-csrf-token-12345")
+	}
 
 	body, err := io.ReadAll(req.Body)
-	require.NoError(t, err)
-	assert.Equal(t, rumpf, body)
+	if err != nil {
+		t.Fatalf("io.ReadAll: %v", err)
+	}
+	if !bytes.Equal(body, rumpf) {
+		t.Errorf("body = %q, erwartet %q", body, rumpf)
+	}
 
 	err = req.Body.Close()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("req.Body.Close: %v", err)
+	}
 
 	cookies := req.Cookies()
-	require.Len(t, cookies, 2)
-	assert.Equal(t, "session_token", cookies[0].Name)
-	assert.Equal(t, token, cookies[0].Value)
-	assert.Equal(t, "csrf_token", cookies[1].Name)
-	assert.Equal(t, "dummy-csrf-token-12345", cookies[1].Value)
+	if len(cookies) != 2 {
+		t.Fatalf("len(req.Cookies()) = %d, erwartet %d", len(cookies), 2)
+	}
+	if cookies[0].Name != "session_token" {
+		t.Errorf("cookies[0].Name = %q, erwartet %q", cookies[0].Name, "session_token")
+	}
+	if cookies[0].Value != token {
+		t.Errorf("cookies[0].Value = %q, erwartet %q", cookies[0].Value, token)
+	}
+	if cookies[1].Name != "csrf_token" {
+		t.Errorf("cookies[1].Name = %q, erwartet %q", cookies[1].Name, "csrf_token")
+	}
+	if cookies[1].Value != "dummy-csrf-token-12345" {
+		t.Errorf("cookies[1].Value = %q, erwartet %q", cookies[1].Value, "dummy-csrf-token-12345")
+	}
 }
 
 func TestLastlauf_VonAnfangBisEnde(t *testing.T) {
@@ -84,12 +122,18 @@ func TestLastlauf_VonAnfangBisEnde(t *testing.T) {
 	lauf.gibStartsignal()
 	lauf.alle.Wait()
 
-	assert.Equal(t, anzahl, anfragen)
+	if anfragen != anzahl {
+		t.Errorf("anfragen = %v, erwartet %v", anfragen, anzahl)
+	}
 
 	lauf.ergebnisSperre.Lock()
 	defer lauf.ergebnisSperre.Unlock()
-	assert.Equal(t, anzahl, lauf.jeStatus[http.StatusOK])
-	assert.Len(t, lauf.jeStatus, 1)
+	if lauf.jeStatus[http.StatusOK] != anzahl {
+		t.Errorf("lauf.jeStatus[http.StatusOK] = %v, erwartet %v", lauf.jeStatus[http.StatusOK], anzahl)
+	}
+	if len(lauf.jeStatus) != 1 {
+		t.Errorf("len(lauf.jeStatus) = %d, erwartet %d", len(lauf.jeStatus), 1)
+	}
 }
 
 func TestLastlauf_Netzfehler(t *testing.T) {
@@ -104,7 +148,9 @@ func TestLastlauf_Netzfehler(t *testing.T) {
 	defer lauf.ergebnisSperre.Unlock()
 
 	// Fehler des Netzes zählen unter dem Status 0.
-	assert.Equal(t, 5, lauf.jeStatus[0])
+	if lauf.jeStatus[0] != 5 {
+		t.Errorf("lauf.jeStatus[0] = %v, erwartet %v", lauf.jeStatus[0], 5)
+	}
 }
 
 func TestLeseKonfig_Erfolg(t *testing.T) {
@@ -115,11 +161,17 @@ func TestLeseKonfig_Erfolg(t *testing.T) {
 	// Arbeitsverzeichnis hat weder ../../.env noch eine störende echte .env; die hier geschriebene
 	// wird sicher gelesen, und die echte Datei bleibt unangetastet.
 	t.Chdir(t.TempDir())
-	require.NoError(t, os.WriteFile(".env", []byte("PORT=9090\nJWT_SECRET=supersecret\n"), 0o644))
+	if err := os.WriteFile(".env", []byte("PORT=9090\nJWT_SECRET=supersecret\n"), 0o644); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	konfigWerte := leseKonfig()
-	assert.Equal(t, "9090", konfigWerte.port)
-	assert.Equal(t, "supersecret", konfigWerte.jwtGeheimnis)
+	if konfigWerte.port != "9090" {
+		t.Errorf("konfigWerte.port = %q, erwartet %q", konfigWerte.port, "9090")
+	}
+	if konfigWerte.jwtGeheimnis != "supersecret" {
+		t.Errorf("konfigWerte.jwtGeheimnis = %q, erwartet %q", konfigWerte.jwtGeheimnis, "supersecret")
+	}
 }
 
 func TestDruckeErgebnisse(t *testing.T) {
@@ -133,23 +185,37 @@ func TestDruckeErgebnisse(t *testing.T) {
 
 	altStdout := os.Stdout
 	r, w, err := os.Pipe()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Pipe: %v", err)
+	}
 	os.Stdout = w
 	defer func() { os.Stdout = altStdout }()
 
 	lauf.druckeErgebnisse()
 
 	err = w.Close()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("w.Close: %v", err)
+	}
 
 	out, err := io.ReadAll(r)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("io.ReadAll: %v", err)
+	}
 
 	err = r.Close()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("r.Close: %v", err)
+	}
 
 	gelesen := string(out)
-	assert.Contains(t, gelesen, "42x 200 OK")
-	assert.Contains(t, gelesen, "3x Network Error")
-	assert.Contains(t, gelesen, "5x 500 Internal Server Error")
+	if !strings.Contains(gelesen, "42x 200 OK") {
+		t.Errorf("string(out) = %q, erwartet darin %q", gelesen, "42x 200 OK")
+	}
+	if !strings.Contains(gelesen, "3x Network Error") {
+		t.Errorf("string(out) = %q, erwartet darin %q", gelesen, "3x Network Error")
+	}
+	if !strings.Contains(gelesen, "5x 500 Internal Server Error") {
+		t.Errorf("string(out) = %q, erwartet darin %q", gelesen, "5x 500 Internal Server Error")
+	}
 }

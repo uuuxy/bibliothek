@@ -186,3 +186,18 @@ Deutsch und Englisch (`idempotency_key` neben `idempotenz_schluessel`). Sie sind
 mit der Oberfläche und mit den gespeicherten Daten und werden mit dem Code nicht umbenannt: Ein
 Theken-Fenster mit altem Stand schickt seine gesammelten Buchungen unter den alten Namen. An
 dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen des Vertrags.
+
+## 10. Tests
+
+- Geprüft wird mit dem Paket `testing`. Bibliotheken für Zusicherungen wie testify gibt es nicht:
+  „assertion libraries and third-party testing frameworks are not allowed" (Decisions, „Use
+  package `testing`"). Der Linter sperrt testify (depguard in `.golangci.yml`).
+- Einfache Werte vergleicht `==`, zusammengesetzte `cmp.Diff` oder `cmp.Equal` aus
+  `github.com/google/go-cmp` (Decisions, „Equality comparison and diffs"). `reflect.DeepEqual`
+  nicht: Es „is sensitive to changes in unexported fields and other implementation details".
+- Die Meldung nennt die Funktion, dann was sie lieferte, dann was erwartet war:
+  `SichereCoverURL(%q) = %q, erwartet %q` (Decisions, „Identify the function", „Got before
+  want"). Ein Unterschied aus `cmp.Diff` nennt seine Richtung: `(-erwartet +ist)`.
+- Eine Abweichung meldet `t.Error`, damit ein Lauf alle zeigt; `t.Fatal` steht dort, wo die
+  folgenden Prüfungen sinnlos würden, etwa nach einem unerwarteten Fehler (Decisions, „Keep
+  going").

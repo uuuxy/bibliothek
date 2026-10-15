@@ -2,23 +2,18 @@ package service
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewAusleihDienst(t *testing.T) {
 	// NewAusleihDienst legt die Abfragen nur in Felder ab; nil genügt, um das zu prüfen.
+	dienst := NewAusleihDienst(nil, nil, nil, nil, nil)
 
-	svc := NewAusleihDienst(nil, nil, nil, nil, nil)
-
-	assert.NotNil(t, svc)
-
-	defaultSvc, ok := svc.(*ausleihDienst)
-	assert.True(t, ok)
-
-	assert.Nil(t, defaultSvc.pool)
-	assert.Nil(t, defaultSvc.leserAbfragen)
-	assert.Nil(t, defaultSvc.katalogAbfragen)
-	assert.Nil(t, defaultSvc.ausleihAbfragen)
-	assert.Nil(t, defaultSvc.protokollAbfragen)
+	d, ok := dienst.(*ausleihDienst)
+	if !ok {
+		t.Fatalf("NewAusleihDienst() = %T, erwartet *ausleihDienst", dienst)
+	}
+	if d.pool != nil || d.leserAbfragen != nil || d.katalogAbfragen != nil || d.ausleihAbfragen != nil ||
+		d.protokollAbfragen != nil {
+		t.Errorf("NewAusleihDienst(nil, …) = %+v, erwartet nur leere Felder", d)
+	}
 }

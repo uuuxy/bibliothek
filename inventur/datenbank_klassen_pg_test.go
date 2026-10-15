@@ -6,9 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
@@ -21,11 +20,15 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 	defer cancel()
 
 	pool, err := pgxpool.New(ctx, dbURL)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxpool.New: %v", err)
+	}
 	defer pool.Close()
 
 	tx, err := pool.Begin(ctx)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pool.Begin: %v", err)
+	}
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
 	_, err = tx.Exec(ctx, `
@@ -34,7 +37,9 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 			book_id UUID NOT NULL
 		);
 	`)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("tx.Exec: %v", err)
+	}
 
 	titelID := "123e4567-e89b-12d3-a456-426614174000"
 	bookID2 := "123e4567-e89b-12d3-a456-426614174001"
@@ -49,7 +54,9 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 		('8', $2),
 		('10A', $1)
 	`, titelID, bookID2)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("tx.Exec: %v", err)
+	}
 
 	// Genau die Abfragen der Normalisierung aller Klassen.
 
@@ -63,7 +70,9 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 			AND cb2.book_id = cb1.book_id
 		)
 	`)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("tx.Exec: %v", err)
+	}
 
 	// 2. Remove spaces
 	_, err = tx.Exec(ctx, `
@@ -71,7 +80,9 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 		SET class_name = REPLACE(class_name, ' ', '')
 		WHERE class_name LIKE '% %'
 	`)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("tx.Exec: %v", err)
+	}
 
 	// 3. Delete dup leading zero
 	_, err = tx.Exec(ctx, `
@@ -83,7 +94,9 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 			AND cb2.book_id = cb1.book_id
 		)
 	`)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("tx.Exec: %v", err)
+	}
 
 	// 4. Update leading zero
 	_, err = tx.Exec(ctx, `
@@ -91,11 +104,15 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 		SET class_name = '0' || class_name
 		WHERE class_name ~ '^[1-9][^0-9]' OR class_name ~ '^[1-9]$'
 	`)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("tx.Exec: %v", err)
+	}
 
 	// Prüfen.
 	zeilen, err := tx.Query(ctx, "SELECT class_name, book_id FROM class_books ORDER BY class_name, book_id")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("tx.Query: %v", err)
+	}
 	defer zeilen.Close()
 
 	type ergebnis struct {
@@ -106,10 +123,14 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 	for zeilen.Next() {
 		var r ergebnis
 		err := zeilen.Scan(&r.ClassName, &r.BookID)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("zeilen.Scan: %v", err)
+		}
 		ergebnisse = append(ergebnisse, r)
 	}
-	require.NoError(t, zeilen.Err())
+	if err := zeilen.Err(); err != nil {
+		t.Fatalf("zeilen.Err: %v", err)
+	}
 
 	expected := []ergebnis{
 		{"05A", titelID},
@@ -119,5 +140,7 @@ func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 		{"10A", titelID},
 	}
 
-	assert.Equal(t, expected, ergebnisse)
+	if diff := cmp.Diff(expected, ergebnisse); diff != "" {
+		t.Errorf("ergebnisse weicht ab (-erwartet +ist):\n%s", diff)
+	}
 }

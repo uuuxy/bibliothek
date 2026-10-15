@@ -5,8 +5,6 @@ import (
 	"errors"
 	"log"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMeldeProtokollFehler(t *testing.T) {
@@ -45,7 +43,9 @@ func TestMeldeProtokollFehler(t *testing.T) {
 
 			meldeProtokollFehler(tt.action, tt.err)
 
-			assert.Equal(t, tt.expected, buf.String())
+			if got := buf.String(); got != tt.expected {
+				t.Errorf("buf.String() = %q, erwartet %q", got, tt.expected)
+			}
 		})
 	}
 }

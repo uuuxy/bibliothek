@@ -6,8 +6,6 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSende_UngueltigerEmpfaenger(t *testing.T) {
@@ -50,18 +48,27 @@ func TestSende_UngueltigerEmpfaenger(t *testing.T) {
 			}
 			err := Sende(req)
 			if tt.wantErr {
-				assert.Error(t, err)
+				if err == nil {
+					t.Error("kein Fehler, erwartet einen")
+				}
 				if tt.name != "Valid Email" {
-					assert.Contains(t, err.Error(), "invalid recipient email address")
-					assert.False(t, errors.Is(err, ErrSMTPVersand),
-						"eine unbrauchbare Adresse ist kein Fehler des Zielservers — sonst antwortet der Handler mit 502 statt 400")
+					if got := err.Error(); !strings.Contains(got, "invalid recipient email address") {
+						t.Errorf("err.Error() = %q, erwartet darin %q", got, "invalid recipient email address")
+					}
+					if errors.Is(err, ErrSMTPVersand) {
+						t.Error("eine unbrauchbare Adresse ist kein Fehler des Zielservers — sonst antwortet der Handler mit 502 statt 400")
+					}
 				} else {
 					// Marker statt Meldungstext: Daran entscheidet die Tür zwischen
 					// 502 (Zielserver versagt, Meldung wird durchgereicht) und 500.
-					assert.ErrorIs(t, err, ErrSMTPVersand)
+					if !errors.Is(err, ErrSMTPVersand) {
+						t.Errorf("Fehler %v, erwartet %v", err, ErrSMTPVersand)
+					}
 				}
 			} else {
-				assert.NoError(t, err)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 		})
 	}

@@ -2,21 +2,23 @@ package inventur
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAendereTitel(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	abfragen := NewTitelAbfragen(mock)
@@ -63,8 +65,12 @@ func TestAendereTitel(t *testing.T) {
 		mock.ExpectCommit()
 
 		err := abfragen.AendereTitel(ctx, "book-123", eintrag, felder, &Bestandsangabe{Soll: eintrag.Bestand})
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.AendereTitel: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -76,8 +82,12 @@ func TestAendereTitel(t *testing.T) {
 		mock.ExpectRollback()
 
 		err := abfragen.AendereTitel(ctx, "book-123", eintrag, felder, &Bestandsangabe{Soll: eintrag.Bestand})
-		assert.ErrorIs(t, err, ErrTitelNichtGefunden)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if !errors.Is(err, ErrTitelNichtGefunden) {
+			t.Errorf("abfragen.AendereTitel: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("db error", func(t *testing.T) {
@@ -92,8 +102,12 @@ func TestAendereTitel(t *testing.T) {
 		mock.ExpectRollback()
 
 		err := abfragen.AendereTitel(ctx, "book-123", eintrag, felder, &Bestandsangabe{Soll: eintrag.Bestand})
-		assert.ErrorContains(t, err, "buch konnte nicht aktualisiert werden")
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "buch konnte nicht aktualisiert werden") {
+			t.Errorf("abfragen.AendereTitel: Fehler %v, erwartet einen mit %q", err, "buch konnte nicht aktualisiert werden")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	// Ein Fehlschlag beim Abgleich des Bestands geht zurück (stünde er nur im Log, gälte ein Titel mit
@@ -113,14 +127,20 @@ func TestAendereTitel(t *testing.T) {
 		mock.ExpectRollback()
 
 		err := abfragen.AendereTitel(ctx, "book-123", eintrag, felder, &Bestandsangabe{Soll: eintrag.Bestand})
-		assert.ErrorContains(t, err, "exemplare konnten nicht synchronisiert werden")
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "exemplare konnten nicht synchronisiert werden") {
+			t.Errorf("abfragen.AendereTitel: Fehler %v, erwartet einen mit %q", err, "exemplare konnten nicht synchronisiert werden")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }
 
 func TestGleicheBestandAb(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	abfragen := NewTitelAbfragen(mock)
@@ -137,8 +157,12 @@ func TestGleicheBestandAb(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("INSERT", 3))
 
 		err := abfragen.gleicheBestandAb(ctx, mock, "book-123", 5, "")
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.gleicheBestandAb: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("decrease stock - only unused", func(t *testing.T) {
@@ -153,8 +177,12 @@ func TestGleicheBestandAb(t *testing.T) {
 		erwarteAussonderungsSpur(mock, "ex-1", "ex-2")
 
 		err := abfragen.gleicheBestandAb(ctx, mock, "book-123", 3, "bearbeiter-1")
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.gleicheBestandAb: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("decrease stock - fallback to used", func(t *testing.T) {
@@ -174,8 +202,12 @@ func TestGleicheBestandAb(t *testing.T) {
 		erwarteAussonderungsSpur(mock, "ex-1", "ex-2")
 
 		err := abfragen.gleicheBestandAb(ctx, mock, "book-123", 3, "bearbeiter-1")
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.gleicheBestandAb: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("decrease stock - ohne Bearbeiter abgelehnt", func(t *testing.T) {
@@ -184,8 +216,12 @@ func TestGleicheBestandAb(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
 		err := abfragen.gleicheBestandAb(ctx, mock, "book-123", 3, "")
-		assert.ErrorIs(t, err, repository.ErrAussonderungOhneBearbeiter)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if !errors.Is(err, repository.ErrAussonderungOhneBearbeiter) {
+			t.Errorf("abfragen.gleicheBestandAb: Fehler %v, erwartet %v", err, repository.ErrAussonderungOhneBearbeiter)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("no change in stock", func(t *testing.T) {
@@ -194,8 +230,12 @@ func TestGleicheBestandAb(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
 		err := abfragen.gleicheBestandAb(ctx, mock, "book-123", 5, "")
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.gleicheBestandAb: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }
 

@@ -4,10 +4,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // Prüft, wie scripts/backup.sh die .env liest.
@@ -25,21 +23,31 @@ import (
 func TestBackupSkript_LiestAusDerEnvNurDieZweiWerte(t *testing.T) {
 	verzeichnis := t.TempDir()
 	skripte := filepath.Join(verzeichnis, "scripts")
-	require.NoError(t, os.MkdirAll(skripte, 0o755))
+	if err := os.MkdirAll(skripte, 0o755); err != nil {
+		t.Fatalf("os.MkdirAll: %v", err)
+	}
 	for _, name := range []string{"backup.sh", "backup_krypto.sh"} {
 		inhalt, err := os.ReadFile(filepath.Join("..", "..", "scripts", name))
-		require.NoError(t, err)
-		require.NoError(t, os.WriteFile(filepath.Join(skripte, name), inhalt, 0o755))
+		if err != nil {
+			t.Fatalf("os.ReadFile: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(skripte, name), inhalt, 0o755); err != nil {
+			t.Fatalf("os.WriteFile: %v", err)
+		}
 	}
 	env := "# Kommentar\n" +
 		"POSTGRES_USER=gateuser\n" +
 		"POSTGRES_DB=\"gatedb\"\n" +
 		"JWT_SECRET=jwt-geheimnis-darf-nicht-mitlaufen\n" +
 		"SMTP_PASSWORD=mit leerzeichen und * stern\n"
-	require.NoError(t, os.WriteFile(filepath.Join(verzeichnis, ".env"), []byte(env), 0o600))
+	if err := os.WriteFile(filepath.Join(verzeichnis, ".env"), []byte(env), 0o600); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	binVerzeichnis := filepath.Join(verzeichnis, "bin")
-	require.NoError(t, os.MkdirAll(binVerzeichnis, 0o755))
+	if err := os.MkdirAll(binVerzeichnis, 0o755); err != nil {
+		t.Fatalf("os.MkdirAll: %v", err)
+	}
 	protokoll := filepath.Join(verzeichnis, "docker-aufrufe")
 	umgebung := filepath.Join(verzeichnis, "docker-umgebung")
 	attrappe := `#!/bin/bash
@@ -51,22 +59,34 @@ case "$1" in
 esac
 exit 0
 `
-	require.NoError(t, os.WriteFile(filepath.Join(binVerzeichnis, "docker"), []byte(attrappe), 0o755))
+	if err := os.WriteFile(filepath.Join(binVerzeichnis, "docker"), []byte(attrappe), 0o755); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	befehl := exec.Command("bash", filepath.Join(skripte, "backup.sh"))
 	befehl.Dir = verzeichnis
 	befehl.Env = []string{"PATH=" + binVerzeichnis + string(os.PathListSeparator) + os.Getenv("PATH"), "HOME=" + verzeichnis}
 	aus, err := befehl.CombinedOutput()
-	require.NoError(t, err, "backup.sh: %s", aus)
+	if err != nil {
+		t.Fatalf("backup.sh: %s: %v", aus, err)
+	}
 
 	aufrufe, err := os.ReadFile(protokoll)
-	require.NoError(t, err)
-	assert.Contains(t, string(aufrufe), "pg_dump -U gateuser -d gatedb",
-		"Benutzer und Datenbank kommen aus der .env, umschließende Anführungszeichen fallen weg")
+	if err != nil {
+		t.Fatalf("os.ReadFile: %v", err)
+	}
+	if !strings.Contains(string(aufrufe), "pg_dump -U gateuser -d gatedb") {
+		t.Errorf("string(aufrufe) = %q, erwartet darin %q: Benutzer und Datenbank kommen aus der .env, umschließende Anführungszeichen fallen weg", string(aufrufe), "pg_dump -U gateuser -d gatedb")
+	}
 
 	umgebungDocker, err := os.ReadFile(umgebung)
-	require.NoError(t, err)
-	assert.NotContains(t, string(umgebungDocker), "JWT_SECRET",
-		"ein Geheimnis aus der .env steht in der Umgebung der Kindprozesse")
-	assert.NotContains(t, string(umgebungDocker), "SMTP_PASSWORD")
+	if err != nil {
+		t.Fatalf("os.ReadFile: %v", err)
+	}
+	if strings.Contains(string(umgebungDocker), "JWT_SECRET") {
+		t.Errorf("string(umgebungDocker) = %q, erwartet ohne %q: ein Geheimnis aus der .env steht in der Umgebung der Kindprozesse", string(umgebungDocker), "JWT_SECRET")
+	}
+	if strings.Contains(string(umgebungDocker), "SMTP_PASSWORD") {
+		t.Errorf("string(umgebungDocker) = %q, erwartet ohne %q", string(umgebungDocker), "SMTP_PASSWORD")
+	}
 }

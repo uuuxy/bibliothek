@@ -3,11 +3,10 @@ package inventur
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // Die beiden Lernmittel-Abfragen reichen jeden Fehler weiter: den der Abfrage, den beim Lesen
@@ -28,9 +27,13 @@ var (
 func lernmittelAttrappe(t *testing.T) (pgxmock.PgxPoolIface, *TitelAbfragen) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	t.Cleanup(func() {
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 		mock.Close()
 	})
 	return mock, NewTitelAbfragen(mock)
@@ -45,8 +48,12 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "").WillReturnError(dbFehler)
 
 		faecher, err := abfragen.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
-		assert.ErrorIs(t, err, dbFehler)
-		assert.Nil(t, faecher)
+		if !errors.Is(err, dbFehler) {
+			t.Errorf("abfragen.LadeLernmittelFaecher: Fehler %v, erwartet %v", err, dbFehler)
+		}
+		if faecher != nil {
+			t.Errorf("faecher = %v, erwartet nil", faecher)
+		}
 	})
 
 	t.Run("eine Zeile lässt sich nicht lesen", func(t *testing.T) {
@@ -55,8 +62,12 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows(lernmittelFachSpalten).AddRow("Mathematik", "zwei", 3, 1, 2))
 
 		faecher, err := abfragen.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
-		assert.Error(t, err)
-		assert.Nil(t, faecher)
+		if err == nil {
+			t.Error("abfragen.LadeLernmittelFaecher: kein Fehler, erwartet einen")
+		}
+		if faecher != nil {
+			t.Errorf("faecher = %v, erwartet nil", faecher)
+		}
 	})
 
 	// Der Fehler steht an der zweiten Zeile: Die erste wird gelesen, erst rows.Err() nennt ihn.
@@ -67,7 +78,9 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 				AddRow("Mathematik", 2, 3, 1, 2).RowError(1, dbFehler))
 
 		_, err := abfragen.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
-		assert.ErrorIs(t, err, dbFehler)
+		if !errors.Is(err, dbFehler) {
+			t.Errorf("abfragen.LadeLernmittelFaecher: Fehler %v, erwartet %v", err, dbFehler)
+		}
 	})
 }
 
@@ -86,8 +99,12 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").WillReturnError(dbFehler)
 
 		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
-		assert.ErrorIs(t, err, dbFehler)
-		assert.Nil(t, titel)
+		if !errors.Is(err, dbFehler) {
+			t.Errorf("abfragen.LadeLernmittelTitel: Fehler %v, erwartet %v", err, dbFehler)
+		}
+		if titel != nil {
+			t.Errorf("titel = %v, erwartet nil", titel)
+		}
 	})
 
 	t.Run("eine Zeile lässt sich nicht lesen", func(t *testing.T) {
@@ -95,8 +112,12 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").WillReturnRows(zeile("fünf", nil))
 
 		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
-		assert.Error(t, err)
-		assert.Nil(t, titel)
+		if err == nil {
+			t.Error("abfragen.LadeLernmittelTitel: kein Fehler, erwartet einen")
+		}
+		if titel != nil {
+			t.Errorf("titel = %v, erwartet nil", titel)
+		}
 	})
 
 	t.Run("die Auflagen sind kein JSON", func(t *testing.T) {
@@ -105,8 +126,12 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 			WillReturnRows(zeile(5, []byte(`kein json`)))
 
 		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
-		assert.ErrorContains(t, err, "auflagen von titel-1")
-		assert.Nil(t, titel)
+		if err == nil || !strings.Contains(err.Error(), "auflagen von titel-1") {
+			t.Errorf("abfragen.LadeLernmittelTitel: Fehler %v, erwartet einen mit %q", err, "auflagen von titel-1")
+		}
+		if titel != nil {
+			t.Errorf("titel = %v, erwartet nil", titel)
+		}
 	})
 
 	t.Run("die Datenbank bricht nach einer Zeile ab", func(t *testing.T) {
@@ -115,6 +140,8 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 			WillReturnRows(zeile(5, nil).RowError(1, dbFehler))
 
 		_, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
-		assert.ErrorIs(t, err, dbFehler)
+		if !errors.Is(err, dbFehler) {
+			t.Errorf("abfragen.LadeLernmittelTitel: Fehler %v, erwartet %v", err, dbFehler)
+		}
 	})
 }

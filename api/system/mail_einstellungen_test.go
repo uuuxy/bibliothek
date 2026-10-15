@@ -25,7 +25,6 @@ import (
 	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
 )
 
 func mailTestTueren(t *testing.T) (*Tueren, pgxmock.PgxPoolIface) {
@@ -240,9 +239,11 @@ func TestTestmailSenden_UnbrauchbareAdresseIstEinEingabefehler(t *testing.T) {
 // aufgetreten" und reicht sie erst unterhalb von 500 durch.
 func TestMailFehlerStatus(t *testing.T) {
 	smtpFehler := mailservice.BeschreibeSMTPFehler("smtp.schule.de:587", errors.New("535 5.7.8 Zugangsdaten abgelehnt"))
-	assert.Equal(t, http.StatusBadGateway, mailFehlerStatus(smtpFehler),
-		"Zielserver versagt → 502, damit die Meldung beim Admin ankommt")
+	if got := mailFehlerStatus(smtpFehler); got != http.StatusBadGateway {
+		t.Errorf("mailFehlerStatus(smtpFehler) = %v, erwartet %v: Zielserver versagt → 502, damit die Meldung beim Admin ankommt", got, http.StatusBadGateway)
+	}
 
-	assert.Equal(t, http.StatusInternalServerError, mailFehlerStatus(errors.New("vorlage nicht gefunden")),
-		"eigene Störung bleibt 500 und wird bewusst neutralisiert")
+	if got := mailFehlerStatus(errors.New("vorlage nicht gefunden")); got != http.StatusInternalServerError {
+		t.Errorf("mailFehlerStatus(errors.New(\"vorlage nicht gefunden\")) = %v, erwartet %v: eigene Störung bleibt 500 und wird bewusst neutralisiert", got, http.StatusInternalServerError)
+	}
 }

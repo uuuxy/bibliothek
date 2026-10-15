@@ -6,9 +6,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCSRFTokenOhneCookieErzeugtNeuesToken(t *testing.T) {
@@ -20,26 +17,42 @@ func TestCSRFTokenOhneCookieErzeugtNeuesToken(t *testing.T) {
 
 	handler(rec, req)
 
-	require.Equal(t, http.StatusOK, rec.Code)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status = %v, erwartet %v", rec.Code, http.StatusOK)
+	}
 
-	// Prüfen, ob JSON-Antwort existiert
 	var resp map[string]string
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
 
 	token, exists := resp["csrf_token"]
-	require.True(t, exists, "JSON-Antwort sollte csrf_token enthalten")
-	require.NotEmpty(t, token)
+	if !exists {
+		t.Fatalf("Antwort = %s, erwartet das Feld csrf_token", rec.Body)
+	}
+	if token == "" {
+		t.Fatal("token ist leer")
+	}
 
-	// Prüfen, ob Set-Cookie Kopfzeile gesetzt wurde
 	cookies := rec.Result().Cookies()
-	require.Len(t, cookies, 1, "Sollte genau ein Cookie setzen")
+	if len(cookies) != 1 {
+		t.Fatalf("len(rec.Result().Cookies()) = %d, erwartet 1", len(cookies))
+	}
 
 	cookie := cookies[0]
-	assert.Equal(t, csrfCookieName, cookie.Name)
-	assert.Equal(t, token, cookie.Value, "Cookie-Wert sollte dem JSON-Wert entsprechen")
-	assert.Equal(t, true, cookie.Secure, "Cookie sollte Secure-Flag gemäß Server-Konfiguration haben")
-	assert.Equal(t, false, cookie.HttpOnly, "Cookie sollte für das Frontend lesbar sein (HttpOnly=false)")
+	if cookie.Name != csrfCookieName {
+		t.Errorf("cookie.Name = %q, erwartet %q", cookie.Name, csrfCookieName)
+	}
+	if cookie.Value != token {
+		t.Errorf("cookie.Value = %q, erwartet das Token der Antwort %q", cookie.Value, token)
+	}
+	if !cookie.Secure {
+		t.Error("cookie.Secure = false, erwartet true: der Server läuft nur über HTTPS")
+	}
+	if cookie.HttpOnly {
+		t.Error("cookie.HttpOnly = true, erwartet false: die Oberfläche liest das Cookie")
+	}
 }
 
 func TestCSRFTokenMitCookieLiefertDasVorhandene(t *testing.T) {
@@ -54,18 +67,27 @@ func TestCSRFTokenMitCookieLiefertDasVorhandene(t *testing.T) {
 
 	handler(rec, req)
 
-	require.Equal(t, http.StatusOK, rec.Code)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status = %v, erwartet %v", rec.Code, http.StatusOK)
+	}
 
 	var resp map[string]string
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
 
 	token, exists := resp["csrf_token"]
-	require.True(t, exists)
-	assert.Equal(t, existingToken, token, "Sollte das existierende Token zurückgeben")
+	if !exists {
+		t.Fatalf("Antwort = %s, erwartet das Feld csrf_token", rec.Body)
+	}
+	if token != existingToken {
+		t.Errorf("token = %q, erwartet das vorhandene %q", token, existingToken)
+	}
 
-	// Prüfen, dass kein neues Cookie gesetzt wurde
-	assert.Empty(t, rec.Header().Get("Set-Cookie"), "Sollte kein neues Cookie setzen, wenn bereits eines existiert")
+	if got := rec.Header().Get("Set-Cookie"); got != "" {
+		t.Errorf("Set-Cookie = %q, erwartet leer: das Cookie besteht schon", got)
+	}
 }
 
 func TestCSRFTokenMitLeeremCookieErzeugtNeuesToken(t *testing.T) {
@@ -73,27 +95,40 @@ func TestCSRFTokenMitLeeremCookieErzeugtNeuesToken(t *testing.T) {
 	handler := s.csrfToken()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
-	// Leeres Cookie setzen
+	// Ein Cookie aus Leerzeichen gilt als fehlend.
 	req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "   "})
 	rec := httptest.NewRecorder()
 
 	handler(rec, req)
 
-	require.Equal(t, http.StatusOK, rec.Code)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status = %v, erwartet %v", rec.Code, http.StatusOK)
+	}
 
 	var resp map[string]string
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
 
 	token, exists := resp["csrf_token"]
-	require.True(t, exists)
-	require.NotEmpty(t, token)
-	assert.NotEqual(t, "   ", token, "Sollte ein neues Token generieren, wenn das alte nur aus Leerzeichen bestand")
+	if !exists {
+		t.Fatalf("Antwort = %s, erwartet das Feld csrf_token", rec.Body)
+	}
+	if token == "" {
+		t.Fatal("token ist leer")
+	}
+	if token == "   " {
+		t.Errorf("token = %q, erwartet ein neues", token)
+	}
 
-	// Prüfen, dass ein neues Cookie gesetzt wurde
 	cookies := rec.Result().Cookies()
-	require.Len(t, cookies, 1)
-	assert.Equal(t, token, cookies[0].Value)
+	if len(cookies) != 1 {
+		t.Fatalf("len(rec.Result().Cookies()) = %d, erwartet %d", len(cookies), 1)
+	}
+	if cookies[0].Value != token {
+		t.Errorf("cookies[0].Value = %q, erwartet %q", cookies[0].Value, token)
+	}
 }
 
 func TestCSRFToken_NeuesToken(t *testing.T) {

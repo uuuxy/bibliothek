@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
 )
 
 // TestTitelEingabe_LiestAlleFelder sichert die Regression ab, bei der
@@ -153,7 +153,9 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 				t.Errorf("bereinigeUndValidiereBuchEingabe() expected error message %q, got %q", f.errMsg, err.Error())
 			}
 			if !f.wantErr && f.wantEingabe != nil {
-				assert.Equal(t, *f.wantEingabe, f.eingabe)
+				if diff := cmp.Diff(*f.wantEingabe, f.eingabe); diff != "" {
+					t.Errorf("f.eingabe weicht ab (-erwartet +ist):\n%s", diff)
+				}
 			}
 		})
 	}

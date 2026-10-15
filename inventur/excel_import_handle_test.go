@@ -11,8 +11,6 @@ import (
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // offlineMetadatenClient baut einen MetadatenClient, dessen Transport jede
@@ -39,14 +37,18 @@ func TestExcelImport(t *testing.T) {
 		tueren := &Tueren{}
 		tueren.ExcelImport(w, anfrage)
 
-		assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
+		if w.Code != http.StatusMethodNotAllowed {
+			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusMethodNotAllowed)
+		}
 	})
 
 	t.Run("Missing File", func(t *testing.T) {
 		rumpf := new(bytes.Buffer)
 		schreiber := multipart.NewWriter(rumpf)
 		err := schreiber.Close()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.Close: %v", err)
+		}
 
 		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
 		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
@@ -56,23 +58,35 @@ func TestExcelImport(t *testing.T) {
 		tueren := &Tueren{}
 		tueren.ExcelImport(w, anfrage)
 
-		assert.Equal(t, http.StatusBadRequest, w.Code)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusBadRequest)
+		}
 
 		var antwort map[string]interface{}
 		err = json.NewDecoder(w.Body).Decode(&antwort)
-		require.NoError(t, err)
-		assert.Equal(t, "keine datei gefunden", antwort["error"])
+		if err != nil {
+			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
+		}
+		if antwort["error"] != "keine datei gefunden" {
+			t.Errorf("antwort[\"error\"] = %v, erwartet %v", antwort["error"], "keine datei gefunden")
+		}
 	})
 
 	t.Run("Missing ISBN column", func(t *testing.T) {
 		rumpf := new(bytes.Buffer)
 		schreiber := multipart.NewWriter(rumpf)
 		teil, err := schreiber.CreateFormFile("file", "test.csv")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.CreateFormFile: %v", err)
+		}
 		_, err = teil.Write([]byte("titel,autor\nBuch1,Autor1"))
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("teil.Write: %v", err)
+		}
 		err = schreiber.Close()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.Close: %v", err)
+		}
 
 		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
 		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
@@ -82,16 +96,24 @@ func TestExcelImport(t *testing.T) {
 		tueren := &Tueren{}
 		tueren.ExcelImport(w, anfrage)
 
-		assert.Equal(t, http.StatusBadRequest, w.Code)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusBadRequest)
+		}
 		var antwort map[string]interface{}
 		err = json.NewDecoder(w.Body).Decode(&antwort)
-		require.NoError(t, err)
-		assert.Contains(t, antwort["error"], "spalte 'isbn' fehlt")
+		if err != nil {
+			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
+		}
+		if got, ok := antwort["error"].(string); !ok || !strings.Contains(got, "spalte 'isbn' fehlt") {
+			t.Errorf("antwort[\"error\"] = %v, erwartet darin %q", antwort["error"], "spalte 'isbn' fehlt")
+		}
 	})
 
 	t.Run("Successful Import", func(t *testing.T) {
 		mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -99,11 +121,17 @@ func TestExcelImport(t *testing.T) {
 		rumpf := new(bytes.Buffer)
 		schreiber := multipart.NewWriter(rumpf)
 		teil, err := schreiber.CreateFormFile("file", "test.csv")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.CreateFormFile: %v", err)
+		}
 		_, err = teil.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("teil.Write: %v", err)
+		}
 		err = schreiber.Close()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.Close: %v", err)
+		}
 
 		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
 		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
@@ -127,18 +155,30 @@ func TestExcelImport(t *testing.T) {
 
 		tueren.ExcelImport(w, anfrage)
 
-		assert.Equal(t, http.StatusOK, w.Code)
+		if w.Code != http.StatusOK {
+			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusOK)
+		}
 		var antwort map[string]interface{}
 		err = json.NewDecoder(w.Body).Decode(&antwort)
-		require.NoError(t, err)
-		assert.Equal(t, "1 bücher importiert", antwort["message"])
-		assert.Equal(t, float64(1), antwort["imported"])
-		assert.Equal(t, float64(0), antwort["failed"])
+		if err != nil {
+			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
+		}
+		if antwort["message"] != "1 bücher importiert" {
+			t.Errorf("antwort[\"message\"] = %v, erwartet %v", antwort["message"], "1 bücher importiert")
+		}
+		if antwort["imported"] != float64(1) {
+			t.Errorf("antwort[\"imported\"] = %v, erwartet %v", antwort["imported"], float64(1))
+		}
+		if antwort["failed"] != float64(0) {
+			t.Errorf("antwort[\"failed\"] = %v, erwartet %v", antwort["failed"], float64(0))
+		}
 	})
 
 	t.Run("Import failed completely", func(t *testing.T) {
 		mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -146,11 +186,17 @@ func TestExcelImport(t *testing.T) {
 		rumpf := new(bytes.Buffer)
 		schreiber := multipart.NewWriter(rumpf)
 		teil, err := schreiber.CreateFormFile("file", "test.csv")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.CreateFormFile: %v", err)
+		}
 		_, err = teil.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("teil.Write: %v", err)
+		}
 		err = schreiber.Close()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.Close: %v", err)
+		}
 
 		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
 		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
@@ -163,26 +209,34 @@ func TestExcelImport(t *testing.T) {
 		}
 
 		mock.ExpectBegin()
-		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
+		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTest)
 		mock.ExpectRollback()
 		// Rückfall je Zeile: SchreibeTitel schlägt kein Fach nach (das Fach ist leer statt „Unbekannt")
 		// und öffnet direkt seine eigene Transaktion.
 		mock.ExpectBegin()
-		mock.ExpectQuery(".*").WillReturnError(assert.AnError)
+		mock.ExpectQuery(".*").WillReturnError(errTest)
 		mock.ExpectRollback()
 
 		tueren.ExcelImport(w, anfrage)
 
-		assert.Equal(t, http.StatusBadRequest, w.Code)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusBadRequest)
+		}
 		var antwort map[string]interface{}
 		err = json.NewDecoder(w.Body).Decode(&antwort)
-		require.NoError(t, err)
-		assert.Contains(t, antwort["error"], "keine bücher konnten importiert werden")
+		if err != nil {
+			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
+		}
+		if got, ok := antwort["error"].(string); !ok || !strings.Contains(got, "keine bücher konnten importiert werden") {
+			t.Errorf("antwort[\"error\"] = %v, erwartet darin %q", antwort["error"], "keine bücher konnten importiert werden")
+		}
 	})
 
 	t.Run("Partial Failure", func(t *testing.T) {
 		mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherRegexp))
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -190,11 +244,17 @@ func TestExcelImport(t *testing.T) {
 		rumpf := new(bytes.Buffer)
 		schreiber := multipart.NewWriter(rumpf)
 		teil, err := schreiber.CreateFormFile("file", "test.csv")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.CreateFormFile: %v", err)
+		}
 		_, err = teil.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5\n9780987654321,Buch2,Autor2,5"))
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("teil.Write: %v", err)
+		}
 		err = schreiber.Close()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("schreiber.Close: %v", err)
+		}
 
 		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
 		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
@@ -207,12 +267,12 @@ func TestExcelImport(t *testing.T) {
 		}
 
 		mock.ExpectBegin()
-		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
+		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTest)
 		mock.ExpectRollback()
 		// Fallback Einzel-Upsert je Zeile (ohne Fach-Nachschlag, das Fach ist leer): erste
 		// Zeile scheitert im Upsert (Begin→Rollback), zweite gelingt (Begin→…→Commit).
 		mock.ExpectBegin()
-		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
+		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTest)
 		mock.ExpectRollback()
 		mock.ExpectBegin()
 		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("test-id"))
@@ -222,12 +282,22 @@ func TestExcelImport(t *testing.T) {
 
 		tueren.ExcelImport(w, anfrage)
 
-		assert.Equal(t, http.StatusOK, w.Code)
+		if w.Code != http.StatusOK {
+			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusOK)
+		}
 		var antwort map[string]interface{}
 		err = json.NewDecoder(w.Body).Decode(&antwort)
-		require.NoError(t, err)
-		assert.Equal(t, "1 bücher importiert, 1 fehlgeschlagen", antwort["message"])
-		assert.Equal(t, float64(1), antwort["imported"])
-		assert.Equal(t, float64(1), antwort["failed"])
+		if err != nil {
+			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
+		}
+		if antwort["message"] != "1 bücher importiert, 1 fehlgeschlagen" {
+			t.Errorf("antwort[\"message\"] = %v, erwartet %v", antwort["message"], "1 bücher importiert, 1 fehlgeschlagen")
+		}
+		if antwort["imported"] != float64(1) {
+			t.Errorf("antwort[\"imported\"] = %v, erwartet %v", antwort["imported"], float64(1))
+		}
+		if antwort["failed"] != float64(1) {
+			t.Errorf("antwort[\"failed\"] = %v, erwartet %v", antwort["failed"], float64(1))
+		}
 	})
 }

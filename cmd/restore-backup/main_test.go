@@ -7,12 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"bibliothek/internal/backupkrypto"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // erzeugeSicherung erzeugt eine gültige Sicherung im Format mit scrypt über die echte
@@ -21,7 +19,9 @@ import (
 func erzeugeSicherung(t *testing.T, passphrase string, klartext []byte) []byte {
 	t.Helper()
 	verschluesselt, err := backupkrypto.Verschluessele(passphrase, klartext)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("backupkrypto.Verschluessele: %v", err)
+	}
 	return verschluesselt
 }
 
@@ -30,8 +30,12 @@ func gzipDaten(t *testing.T, daten []byte) []byte {
 	var puffer bytes.Buffer
 	w := gzip.NewWriter(&puffer)
 	_, err := w.Write(daten)
-	require.NoError(t, err)
-	require.NoError(t, w.Close())
+	if err != nil {
+		t.Fatalf("w.Write: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("w.Close: %v", err)
+	}
 	return puffer.Bytes()
 }
 
@@ -47,37 +51,49 @@ func setzeArgumente(t *testing.T, argumente ...string) {
 func TestFuehreAus_FalscheArgumente(t *testing.T) {
 	setzeArgumente(t) // kein Argument
 	err := fuehreAus()
-	assert.ErrorContains(t, err, "usage:")
+	if err == nil || !strings.Contains(err.Error(), "usage:") {
+		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "usage:")
+	}
 
 	setzeArgumente(t, "in.enc", "out.sql", "extra") // drei Argumente
 	err = fuehreAus()
-	assert.ErrorContains(t, err, "usage:")
+	if err == nil || !strings.Contains(err.Error(), "usage:") {
+		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "usage:")
+	}
 }
 
 func TestFuehreAus_OhneSchluessel(t *testing.T) {
 	setzeArgumente(t, "in.enc")
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "")
 	err := fuehreAus()
-	assert.ErrorContains(t, err, "BACKUP_ENCRYPTION_KEY nicht gesetzt")
+	if err == nil || !strings.Contains(err.Error(), "BACKUP_ENCRYPTION_KEY nicht gesetzt") {
+		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "BACKUP_ENCRYPTION_KEY nicht gesetzt")
+	}
 }
 
 func TestFuehreAus_DateiFehlt(t *testing.T) {
 	setzeArgumente(t, "does_not_exist.enc")
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 	err := fuehreAus()
-	assert.ErrorContains(t, err, "konnte nicht gelesen werden")
+	if err == nil || !strings.Contains(err.Error(), "konnte nicht gelesen werden") {
+		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "konnte nicht gelesen werden")
+	}
 }
 
 func TestFuehreAus_EntschluesselungScheitert(t *testing.T) {
 	verzeichnis := t.TempDir()
 	eingabe := filepath.Join(verzeichnis, "bad.enc")
 	err := os.WriteFile(eingabe, []byte("invalid data"), 0644)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	setzeArgumente(t, eingabe)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 	err = fuehreAus()
-	assert.ErrorContains(t, err, "entschlüsselung fehlgeschlagen")
+	if err == nil || !strings.Contains(err.Error(), "entschlüsselung fehlgeschlagen") {
+		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "entschlüsselung fehlgeschlagen")
+	}
 }
 
 func TestFuehreAus_GzipScheitert(t *testing.T) {
@@ -87,12 +103,16 @@ func TestFuehreAus_GzipScheitert(t *testing.T) {
 	// Gültig verschlüsselt, aber kein gzip.
 	verschluesselt := erzeugeSicherung(t, "secret", []byte("not a gzip file"))
 	err := os.WriteFile(eingabe, verschluesselt, 0644)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	setzeArgumente(t, eingabe)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 	err = fuehreAus()
-	assert.ErrorContains(t, err, "gzip-header ungültig")
+	if err == nil || !strings.Contains(err.Error(), "gzip-header ungültig") {
+		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "gzip-header ungültig")
+	}
 }
 
 func TestFuehreAus_ErfolgAufStdout(t *testing.T) {
@@ -104,7 +124,9 @@ func TestFuehreAus_ErfolgAufStdout(t *testing.T) {
 	verschluesselt := erzeugeSicherung(t, "secret", gepackt)
 
 	err := os.WriteFile(eingabe, verschluesselt, 0644)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	setzeArgumente(t, eingabe)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
@@ -112,20 +134,30 @@ func TestFuehreAus_ErfolgAufStdout(t *testing.T) {
 	// stdout umleiten.
 	altStdout := os.Stdout
 	r, w, err := os.Pipe()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Pipe: %v", err)
+	}
 	os.Stdout = w
 	t.Cleanup(func() {
 		os.Stdout = altStdout
 	})
 
 	err = fuehreAus()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("fuehreAus: %v", err)
+	}
 
-	require.NoError(t, w.Close())
+	if err := w.Close(); err != nil {
+		t.Fatalf("w.Close: %v", err)
+	}
 
 	ausgabeDaten, err := io.ReadAll(r)
-	require.NoError(t, err)
-	assert.Equal(t, sqlDaten, ausgabeDaten)
+	if err != nil {
+		t.Fatalf("io.ReadAll: %v", err)
+	}
+	if !bytes.Equal(ausgabeDaten, sqlDaten) {
+		t.Errorf("ausgabeDaten = %q, erwartet %q", ausgabeDaten, sqlDaten)
+	}
 }
 
 func TestFuehreAus_ErfolgInDatei(t *testing.T) {
@@ -138,17 +170,25 @@ func TestFuehreAus_ErfolgInDatei(t *testing.T) {
 	verschluesselt := erzeugeSicherung(t, "secret", gepackt)
 
 	err := os.WriteFile(eingabe, verschluesselt, 0644)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	setzeArgumente(t, eingabe, ausgabeDatei)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 
 	err = fuehreAus()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("fuehreAus: %v", err)
+	}
 
 	ausgabeDaten, err := os.ReadFile(ausgabeDatei)
-	require.NoError(t, err)
-	assert.Equal(t, sqlDaten, ausgabeDaten)
+	if err != nil {
+		t.Fatalf("os.ReadFile: %v", err)
+	}
+	if !bytes.Equal(ausgabeDaten, sqlDaten) {
+		t.Errorf("ausgabeDaten = %q, erwartet %q", ausgabeDaten, sqlDaten)
+	}
 }
 
 // Nach einem Wechsel des BACKUP_ENCRYPTION_KEY öffnet jede Sicherung nur der Schlüssel, der bei
@@ -163,8 +203,12 @@ func TestFuehreAus_NachSchluesselwechsel(t *testing.T) {
 	standVorher, standNachher := []byte("-- Stand vor dem Wechsel\n"), []byte("-- Stand nach dem Wechsel\n")
 	vorher := filepath.Join(verzeichnis, "vorher.sql.gz.enc")
 	nachher := filepath.Join(verzeichnis, "nachher.sql.gz.enc")
-	require.NoError(t, os.WriteFile(vorher, erzeugeSicherung(t, alt, gzipDaten(t, standVorher)), 0o600))
-	require.NoError(t, os.WriteFile(nachher, erzeugeSicherung(t, neu, gzipDaten(t, standNachher)), 0o600))
+	if err := os.WriteFile(vorher, erzeugeSicherung(t, alt, gzipDaten(t, standVorher)), 0o600); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
+	if err := os.WriteFile(nachher, erzeugeSicherung(t, neu, gzipDaten(t, standNachher)), 0o600); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	faelle := []struct {
 		name       string
@@ -185,14 +229,24 @@ func TestFuehreAus_NachSchluesselwechsel(t *testing.T) {
 
 			err := fuehreAus()
 			if fall.inhalt == nil {
-				assert.ErrorContains(t, err, "falscher Schlüssel")
-				assert.NoFileExists(t, ausgabe)
+				if err == nil || !strings.Contains(err.Error(), "falscher Schlüssel") {
+					t.Errorf("Fehler %v, erwartet einen mit %q", err, "falscher Schlüssel")
+				}
+				if _, err := os.Stat(ausgabe); err == nil {
+					t.Errorf("Datei %s besteht noch", ausgabe)
+				}
 				return
 			}
-			require.NoError(t, err)
+			if err != nil {
+				t.Fatal(err)
+			}
 			inhalt, err := os.ReadFile(ausgabe)
-			require.NoError(t, err)
-			assert.Equal(t, fall.inhalt, inhalt)
+			if err != nil {
+				t.Fatalf("os.ReadFile: %v", err)
+			}
+			if !bytes.Equal(inhalt, fall.inhalt) {
+				t.Errorf("inhalt = %q, erwartet %q", inhalt, fall.inhalt)
+			}
 		})
 	}
 }
@@ -204,20 +258,26 @@ func TestFuehreAus_AusgabedateiScheitert(t *testing.T) {
 	// Ein Verzeichnis als Ausgabedatei, damit das Öffnen scheitert.
 	ausgabeDatei := filepath.Join(verzeichnis, "out_dir")
 	err := os.Mkdir(ausgabeDatei, 0755)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Mkdir: %v", err)
+	}
 
 	sqlDaten := []byte("SELECT * FROM books;")
 	gepackt := gzipDaten(t, sqlDaten)
 	verschluesselt := erzeugeSicherung(t, "secret", gepackt)
 
 	err = os.WriteFile(eingabe, verschluesselt, 0644)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	setzeArgumente(t, eingabe, ausgabeDatei)
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 
 	err = fuehreAus()
-	assert.ErrorContains(t, err, "ausgabedatei")
+	if err == nil || !strings.Contains(err.Error(), "ausgabedatei") {
+		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "ausgabedatei")
+	}
 }
 
 func TestMain_FehlerEndetMitExitEins(t *testing.T) {

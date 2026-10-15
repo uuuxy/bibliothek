@@ -10,6 +10,7 @@ require (
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/johnfercher/maroto/v2 v2.4.3
@@ -19,7 +20,6 @@ require (
 	github.com/pashagolub/pgxmock/v5 v5.2.0
 	github.com/phpdave11/gofpdf v1.4.3
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/stretchr/testify v1.12.1
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	github.com/uudashr/gocognit v1.3.0

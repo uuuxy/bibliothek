@@ -11,12 +11,13 @@ import (
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMailVorlageAendern_Erfolg(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	server := &Tueren{
@@ -43,19 +44,29 @@ func TestMailVorlageAendern_Erfolg(t *testing.T) {
 
 	server.MailVorlageAendern().ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	if w.Code != http.StatusOK {
+		t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusOK)
+	}
 
 	var res map[string]string
 	err = json.Unmarshal(w.Body.Bytes(), &res)
-	assert.NoError(t, err)
-	assert.Equal(t, "Erfolgreich gespeichert", res["message"])
+	if err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
+	if res["message"] != "Erfolgreich gespeichert" {
+		t.Errorf("res[\"message\"] = %q, erwartet %q", res["message"], "Erfolgreich gespeichert")
+	}
 
-	assert.NoError(t, mock.ExpectationsWereMet())
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }
 
 func TestMailVorlageAendern_OhneKennung(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	server := &Tueren{
@@ -79,12 +90,16 @@ func TestMailVorlageAendern_OhneKennung(t *testing.T) {
 
 	server.MailVorlageAendern().ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusBadRequest)
+	}
 }
 
 func TestMailVorlageAendern_UngueltigesJSON(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	server := &Tueren{
@@ -99,12 +114,16 @@ func TestMailVorlageAendern_UngueltigesJSON(t *testing.T) {
 
 	server.MailVorlageAendern().ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusBadRequest)
+	}
 }
 
 func TestMailVorlageAendern_Datenbankfehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	server := &Tueren{
@@ -131,7 +150,11 @@ func TestMailVorlageAendern_Datenbankfehler(t *testing.T) {
 
 	server.MailVorlageAendern().ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusInternalServerError)
+	}
 
-	assert.NoError(t, mock.ExpectationsWereMet())
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }

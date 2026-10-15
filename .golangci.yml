@@ -12,7 +12,16 @@ linters:
     - staticcheck   # Der Standard-Linter (inkl. der ehemaligen gosimple-Checks, z.B. SA4010)
     - revive
     - unused        # Findet ungenutzte Variablen, Konstanten und Funktionen
+    - depguard      # Sperrt Prüfbibliotheken neben dem Paket testing (docs/STIL.md, Abschnitt 10)
   settings:
+    depguard:
+      rules:
+        # Ohne eigene Regel ließe depguard nur die Standardbibliothek zu; diese sperrt nur, was
+        # sie nennt.
+        pruefbibliotheken:
+          deny:
+            - pkg: github.com/stretchr/testify
+              desc: "Tests prüfen mit dem Paket testing, Vergleiche mit == oder cmp (docs/STIL.md, Abschnitt 10)"
     errcheck:
       check-type-assertions: true
       check-blank: true

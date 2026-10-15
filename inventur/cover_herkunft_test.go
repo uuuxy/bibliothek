@@ -2,8 +2,6 @@ package inventur
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSichereCoverURL(t *testing.T) {
@@ -48,8 +46,12 @@ func TestSichereCoverURL(t *testing.T) {
 	for _, tc := range faelle {
 		t.Run(tc.name, func(t *testing.T) {
 			ergebnisURL, ok := SichereCoverURL(tc.rohURL)
-			assert.Equal(t, tc.expectedOk, ok)
-			assert.Equal(t, tc.expectedURL, ergebnisURL)
+			if ok != tc.expectedOk {
+				t.Errorf("SichereCoverURL(%q) meldet %v, erwartet %v", tc.rohURL, ok, tc.expectedOk)
+			}
+			if ergebnisURL != tc.expectedURL {
+				t.Errorf("SichereCoverURL(%q) = %q, erwartet %q", tc.rohURL, ergebnisURL, tc.expectedURL)
+			}
 		})
 	}
 }

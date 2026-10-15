@@ -2,12 +2,12 @@ package inventur
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // Hier wird die Reihenfolge geprüft; pgxmock verlangt sie genau so, wie sie erwartet wird: Begin
@@ -53,13 +53,19 @@ func TestLoescheTitel(t *testing.T) {
 
 	t.Run("empty ids", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
 		err = abfragen.LoescheTitel(ctx, []string{})
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.LoescheTitel: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	// Scheitert das Löschen der Ausleihen, bleibt nichts stehen: kein Titel-DELETE,
@@ -67,7 +73,9 @@ func TestLoescheTitel(t *testing.T) {
 	t.Run("Ausleihen nicht löschbar", func(t *testing.T) {
 		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -81,14 +89,20 @@ func TestLoescheTitel(t *testing.T) {
 		mock.ExpectRollback()
 
 		err = abfragen.LoescheTitel(ctx, ids)
-		assert.ErrorContains(t, err, "ausleihen konnten nicht gelöscht werden")
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "ausleihen konnten nicht gelöscht werden") {
+			t.Errorf("abfragen.LoescheTitel: Fehler %v, erwartet einen mit %q", err, "ausleihen konnten nicht gelöscht werden")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("success", func(t *testing.T) {
 		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -111,14 +125,20 @@ func TestLoescheTitel(t *testing.T) {
 		mock.ExpectCommit()
 
 		err = abfragen.LoescheTitel(ctx, ids)
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.LoescheTitel: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("book not found", func(t *testing.T) {
 		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -135,8 +155,12 @@ func TestLoescheTitel(t *testing.T) {
 		mock.ExpectRollback()
 
 		err = abfragen.LoescheTitel(ctx, ids)
-		assert.ErrorIs(t, err, ErrTitelNichtGefunden)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if !errors.Is(err, ErrTitelNichtGefunden) {
+			t.Errorf("abfragen.LoescheTitel: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }
 

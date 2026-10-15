@@ -8,8 +8,6 @@ import (
 	"bibliothek/internal/crypto"
 
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // erwarteGegenprobe spielt das Zurücklesen nach: Das Werkzeug löscht die Quelldatei erst, wenn
@@ -21,7 +19,9 @@ import (
 func erwarteGegenprobe(t *testing.T, mock pgxmock.PgxPoolIface, schuelerID, inhalt string) {
 	t.Helper()
 	chiffre, err := crypto.Verschluessele([]byte(inhalt))
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("crypto.Verschluessele: %v", err)
+	}
 	mock.ExpectQuery("SELECT foto_encrypted FROM schueler_fotos").
 		WithArgs(schuelerID).
 		WillReturnRows(pgxmock.NewRows([]string{"foto_encrypted"}).AddRow(chiffre))
@@ -29,57 +29,93 @@ func erwarteGegenprobe(t *testing.T, mock pgxmock.PgxPoolIface, schuelerID, inha
 
 func TestMigriereAlleFotos_LeeresVerzeichnis(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	gefunden, uebernommen, _ := migriereAlleFotos(mock, wurzel, []os.DirEntry{}, true)
-	assert.Equal(t, 0, gefunden)
-	assert.Equal(t, 0, uebernommen)
+	if gefunden != 0 {
+		t.Errorf("gefunden = %v, erwartet %v", gefunden, 0)
+	}
+	if uebernommen != 0 {
+		t.Errorf("uebernommen = %v, erwartet %v", uebernommen, 0)
+	}
 }
 
 func TestMigriereAlleFotos_MitDateien(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
 
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 
 	// Testdateien anlegen.
 	datei1, err := os.Create(testVerzeichnis + "/12345.jpg")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Create: %v", err)
+	}
 	_, err = datei1.WriteString("fake image data")
-	require.NoError(t, err)
-	require.NoError(t, datei1.Close())
+	if err != nil {
+		t.Fatalf("datei1.WriteString: %v", err)
+	}
+	if err := datei1.Close(); err != nil {
+		t.Fatalf("datei1.Close: %v", err)
+	}
 
 	datei2, err := os.Create(testVerzeichnis + "/67890.jpg")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Create: %v", err)
+	}
 	_, err = datei2.WriteString("fake image data 2")
-	require.NoError(t, err)
-	require.NoError(t, datei2.Close())
+	if err != nil {
+		t.Fatalf("datei2.WriteString: %v", err)
+	}
+	if err := datei2.Close(); err != nil {
+		t.Fatalf("datei2.Close: %v", err)
+	}
 
 	// kein JPEG
 	datei3, err := os.Create(testVerzeichnis + "/notajpg.txt")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Create: %v", err)
+	}
 	_, err = datei3.WriteString("text")
-	require.NoError(t, err)
-	require.NoError(t, datei3.Close())
+	if err != nil {
+		t.Fatalf("datei3.WriteString: %v", err)
+	}
+	if err := datei3.Close(); err != nil {
+		t.Fatalf("datei3.Close: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	ordner, err := wurzel.Open(".")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("wurzel.Open: %v", err)
+	}
 	eintraege, err := ordner.ReadDir(-1)
-	require.NoError(t, err)
-	require.NoError(t, ordner.Close())
+	if err != nil {
+		t.Fatalf("ordner.ReadDir: %v", err)
+	}
+	if err := ordner.Close(); err != nil {
+		t.Fatalf("ordner.Close: %v", err)
+	}
 
 	// Die Kennungen der Schüler laden. Ungeordnet prüfen: Die Erwartungen unterscheiden sich am
 	// Schüler, nicht an ihrer Position. Sonst wäre der Test nur deshalb grün, weil das Werkzeug
@@ -104,36 +140,58 @@ func TestMigriereAlleFotos_MitDateien(t *testing.T) {
 	erwarteGegenprobe(t, mock, "uuid-67890", "fake image data 2")
 
 	gefunden, uebernommen, _ := migriereAlleFotos(mock, wurzel, eintraege, true)
-	assert.Equal(t, 2, gefunden)
-	assert.Equal(t, 2, uebernommen)
+	if gefunden != 2 {
+		t.Errorf("gefunden = %v, erwartet %v", gefunden, 2)
+	}
+	if uebernommen != 2 {
+		t.Errorf("uebernommen = %v, erwartet %v", uebernommen, 2)
+	}
 
-	require.NoError(t, mock.ExpectationsWereMet())
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }
 
 func TestMigriereAlleFotos_KeinSchueler(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
 
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 
 	datei1, err := os.Create(testVerzeichnis + "/99999.jpg")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Create: %v", err)
+	}
 	_, err = datei1.WriteString("fake image data")
-	require.NoError(t, err)
-	require.NoError(t, datei1.Close())
+	if err != nil {
+		t.Fatalf("datei1.WriteString: %v", err)
+	}
+	if err := datei1.Close(); err != nil {
+		t.Fatalf("datei1.Close: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	ordner, err := wurzel.Open(".")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("wurzel.Open: %v", err)
+	}
 	eintraege, err := ordner.ReadDir(-1)
-	require.NoError(t, err)
-	require.NoError(t, ordner.Close())
+	if err != nil {
+		t.Fatalf("ordner.ReadDir: %v", err)
+	}
+	if err := ordner.Close(); err != nil {
+		t.Fatalf("ordner.Close: %v", err)
+	}
 
 	// Die Kennungen der Schüler laden, ohne Zeile.
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
@@ -141,75 +199,119 @@ func TestMigriereAlleFotos_KeinSchueler(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "id"}))
 
 	gefunden, uebernommen, _ := migriereAlleFotos(mock, wurzel, eintraege, true)
-	assert.Equal(t, 1, gefunden)
-	assert.Equal(t, 0, uebernommen)
+	if gefunden != 1 {
+		t.Errorf("gefunden = %v, erwartet %v", gefunden, 1)
+	}
+	if uebernommen != 0 {
+		t.Errorf("uebernommen = %v, erwartet %v", uebernommen, 0)
+	}
 
-	require.NoError(t, mock.ExpectationsWereMet())
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }
 
 func TestMigriereAlleFotos_DatenbankfehlerBeimLaden(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 
 	datei1, err := os.Create(testVerzeichnis + "/12345.jpg")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Create: %v", err)
+	}
 	_, err = datei1.WriteString("fake")
-	require.NoError(t, err)
-	require.NoError(t, datei1.Close())
+	if err != nil {
+		t.Fatalf("datei1.WriteString: %v", err)
+	}
+	if err := datei1.Close(); err != nil {
+		t.Fatalf("datei1.Close: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	ordner, err := wurzel.Open(".")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("wurzel.Open: %v", err)
+	}
 	eintraege, err := ordner.ReadDir(-1)
-	require.NoError(t, err)
-	require.NoError(t, ordner.Close())
+	if err != nil {
+		t.Fatalf("ordner.ReadDir: %v", err)
+	}
+	if err := ordner.Close(); err != nil {
+		t.Fatalf("ordner.Close: %v", err)
+	}
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnError(os.ErrPermission)
 
 	gefunden, uebernommen, _ := migriereAlleFotos(mock, wurzel, eintraege, true)
-	assert.Equal(t, 0, gefunden)
-	assert.Equal(t, 0, uebernommen)
+	if gefunden != 0 {
+		t.Errorf("gefunden = %v, erwartet %v", gefunden, 0)
+	}
+	if uebernommen != 0 {
+		t.Errorf("uebernommen = %v, erwartet %v", uebernommen, 0)
+	}
 
-	require.NoError(t, mock.ExpectationsWereMet())
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }
 
 func TestMigriereFoto_KeinLesen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	ok := migriereFoto(mock, wurzel, "nicht-da.jpg", "123", "uuid")
-	assert.False(t, ok)
+	if ok {
+		t.Error("migriereFoto(mock, wurzel, \"nicht-da.jpg\", \"123\", \"uuid\") = true, erwartet false")
+	}
 }
 
 func TestMigriereFoto_VerschluesselungFehlgeschlagen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 	datei1, err := os.Create(testVerzeichnis + "/123.jpg")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Create: %v", err)
+	}
 	_, err = datei1.WriteString("fake data")
-	require.NoError(t, err)
-	require.NoError(t, datei1.Close())
+	if err != nil {
+		t.Fatalf("datei1.WriteString: %v", err)
+	}
+	if err := datei1.Close(); err != nil {
+		t.Fatalf("datei1.Close: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	// Den Schlüssel ausdrücklich leeren, sonst hinge der Test an der Umgebung: Mit gesetztem
@@ -219,25 +321,37 @@ func TestMigriereFoto_VerschluesselungFehlgeschlagen(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "")
 	mock.ExpectExec("INSERT INTO schueler_fotos").WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	ok := migriereFoto(mock, wurzel, "123.jpg", "123", "uuid")
-	assert.False(t, ok, "ohne Schlüssel darf keine Verschlüsselung gelingen")
+	if ok {
+		t.Error("ohne Schlüssel darf keine Verschlüsselung gelingen")
+	}
 }
 
 func TestMigriereFoto_Datenbankfehler(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
 
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 	datei1, err := os.Create(testVerzeichnis + "/123.jpg")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.Create: %v", err)
+	}
 	_, err = datei1.WriteString("fake data")
-	require.NoError(t, err)
-	require.NoError(t, datei1.Close())
+	if err != nil {
+		t.Fatalf("datei1.WriteString: %v", err)
+	}
+	if err := datei1.Close(); err != nil {
+		t.Fatalf("datei1.Close: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	mock.ExpectExec("INSERT INTO schueler_fotos").
@@ -245,8 +359,12 @@ func TestMigriereFoto_Datenbankfehler(t *testing.T) {
 		WillReturnError(os.ErrPermission)
 
 	ok := migriereFoto(mock, wurzel, "123.jpg", "123", "uuid")
-	assert.False(t, ok)
-	require.NoError(t, mock.ExpectationsWereMet())
+	if ok {
+		t.Error("migriereFoto(mock, wurzel, \"123.jpg\", \"123\", \"uuid\") = true, erwartet false")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }
 
 // Die Quelldateien sind unverschlüsselte Schülerfotos: Das Werkzeug löscht sie selbst,
@@ -255,22 +373,34 @@ func TestMigriereAlleFotos_LoeschtQuelldateienNachGegenprobe(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
 
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 	pfad := testVerzeichnis + "/12345.jpg"
-	require.NoError(t, os.WriteFile(pfad, []byte("fake image data"), 0o600))
+	if err := os.WriteFile(pfad, []byte("fake image data"), 0o600); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	ordner, err := wurzel.Open(".")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("wurzel.Open: %v", err)
+	}
 	eintraege, err := ordner.ReadDir(-1)
-	require.NoError(t, err)
-	require.NoError(t, ordner.Close())
+	if err != nil {
+		t.Fatalf("ordner.ReadDir: %v", err)
+	}
+	if err := ordner.Close(); err != nil {
+		t.Fatalf("ordner.Close: %v", err)
+	}
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs(pgxmock.AnyArg()).
@@ -282,10 +412,18 @@ func TestMigriereAlleFotos_LoeschtQuelldateienNachGegenprobe(t *testing.T) {
 
 	_, migriert, geloescht := migriereAlleFotos(mock, wurzel, eintraege, false)
 
-	assert.Equal(t, 1, migriert)
-	assert.Equal(t, 1, geloescht)
-	assert.NoFileExists(t, pfad, "das unverschlüsselte Foto liegt noch da")
-	require.NoError(t, mock.ExpectationsWereMet())
+	if migriert != 1 {
+		t.Errorf("migriert = %v, erwartet %v", migriert, 1)
+	}
+	if geloescht != 1 {
+		t.Errorf("geloescht = %v, erwartet %v", geloescht, 1)
+	}
+	if _, err := os.Stat(pfad); err == nil {
+		t.Errorf("Datei %s besteht noch: das unverschlüsselte Foto liegt noch da", pfad)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }
 
 // Bis zur bestandenen Gegenprobe ist die Datei die einzige Kopie des Bildes. Ein "INSERT ohne
@@ -295,22 +433,34 @@ func TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
 
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 	pfad := testVerzeichnis + "/12345.jpg"
-	require.NoError(t, os.WriteFile(pfad, []byte("fake image data"), 0o600))
+	if err := os.WriteFile(pfad, []byte("fake image data"), 0o600); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	ordner, err := wurzel.Open(".")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("wurzel.Open: %v", err)
+	}
 	eintraege, err := ordner.ReadDir(-1)
-	require.NoError(t, err)
-	require.NoError(t, ordner.Close())
+	if err != nil {
+		t.Fatalf("ordner.ReadDir: %v", err)
+	}
+	if err := ordner.Close(); err != nil {
+		t.Fatalf("ordner.Close: %v", err)
+	}
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs(pgxmock.AnyArg()).
@@ -323,9 +473,15 @@ func TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei(t *testing.T) {
 
 	_, migriert, geloescht := migriereAlleFotos(mock, wurzel, eintraege, false)
 
-	assert.Equal(t, 0, migriert, "eine misslungene Gegenprobe darf nicht als Erfolg zählen")
-	assert.Equal(t, 0, geloescht)
-	assert.FileExists(t, pfad, "die einzige Kopie des Bildes wurde gelöscht")
+	if migriert != 0 {
+		t.Errorf("migriert = %v, erwartet %v: eine misslungene Gegenprobe darf nicht als Erfolg zählen", migriert, 0)
+	}
+	if geloescht != 0 {
+		t.Errorf("geloescht = %v, erwartet %v", geloescht, 0)
+	}
+	if _, err := os.Stat(pfad); err != nil {
+		t.Errorf("Datei %s fehlt: %v: die einzige Kopie des Bildes wurde gelöscht", pfad, err)
+	}
 }
 
 // Die Abfrage nennt genau die Barcodes der Fotos, in der Reihenfolge der Dateinamen: Die
@@ -333,34 +489,56 @@ func TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei(t *testing.T) {
 // Stimmt die Liste nicht, findet die Datenbank keinen Schüler, und jedes Foto bliebe liegen.
 func TestMigriereAlleFotos_FragtNachDenBarcodesDerFotos(t *testing.T) {
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 	for _, name := range []string{"B-2.JPG", "a-1.jpg", "notiz.txt"} {
-		require.NoError(t, os.WriteFile(testVerzeichnis+"/"+name, []byte("fake"), 0o600))
+		if err := os.WriteFile(testVerzeichnis+"/"+name, []byte("fake"), 0o600); err != nil {
+			t.Fatalf("os.WriteFile: %v", err)
+		}
 	}
-	require.NoError(t, os.Mkdir(testVerzeichnis+"/ordner.jpg", 0o700))
+	if err := os.Mkdir(testVerzeichnis+"/ordner.jpg", 0o700); err != nil {
+		t.Fatalf("os.Mkdir: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	ordner, err := wurzel.Open(".")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("wurzel.Open: %v", err)
+	}
 	eintraege, err := ordner.ReadDir(-1)
-	require.NoError(t, err)
-	require.NoError(t, ordner.Close())
+	if err != nil {
+		t.Fatalf("ordner.ReadDir: %v", err)
+	}
+	if err := ordner.Close(); err != nil {
+		t.Fatalf("ordner.Close: %v", err)
+	}
 
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs([]string{"B-2", "a-1"}).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "id"}))
 
 	gefunden, uebernommen, geloescht := migriereAlleFotos(mock, wurzel, eintraege, false)
-	assert.Equal(t, 2, gefunden, "zwei Fotos liegen im Verzeichnis")
-	assert.Equal(t, 0, uebernommen)
-	assert.Equal(t, 0, geloescht)
-	require.NoError(t, mock.ExpectationsWereMet())
+	if gefunden != 2 {
+		t.Errorf("gefunden = %v, erwartet %v: zwei Fotos liegen im Verzeichnis", gefunden, 2)
+	}
+	if uebernommen != 0 {
+		t.Errorf("uebernommen = %v, erwartet %v", uebernommen, 0)
+	}
+	if geloescht != 0 {
+		t.Errorf("geloescht = %v, erwartet %v", geloescht, 0)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }
 
 // Bricht die Liste der Schüler beim Lesen ab, ist sie unvollständig: Das Werkzeug migriert
@@ -369,22 +547,34 @@ func TestMigriereAlleFotos_AbgebrocheneSchuelerlisteMigriertNichts(t *testing.T)
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
 
 	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
 	defer mock.Close()
 
 	testVerzeichnis := t.TempDir()
 	pfad := testVerzeichnis + "/12345.jpg"
-	require.NoError(t, os.WriteFile(pfad, []byte("fake image data"), 0o600))
+	if err := os.WriteFile(pfad, []byte("fake image data"), 0o600); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
 
 	wurzel, err := os.OpenRoot(testVerzeichnis)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("os.OpenRoot: %v", err)
+	}
 	defer wurzel.Close() //nolint:errcheck
 
 	ordner, err := wurzel.Open(".")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("wurzel.Open: %v", err)
+	}
 	eintraege, err := ordner.ReadDir(-1)
-	require.NoError(t, err)
-	require.NoError(t, ordner.Close())
+	if err != nil {
+		t.Fatalf("ordner.ReadDir: %v", err)
+	}
+	if err := ordner.Close(); err != nil {
+		t.Fatalf("ordner.Close: %v", err)
+	}
 
 	// Die erste Zeile kommt an, danach reißt die Antwort ab: Next liefert false, Err den Fehler.
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
@@ -394,9 +584,19 @@ func TestMigriereAlleFotos_AbgebrocheneSchuelerlisteMigriertNichts(t *testing.T)
 			RowError(1, errors.New("verbindung abgerissen")))
 
 	gefunden, uebernommen, geloescht := migriereAlleFotos(mock, wurzel, eintraege, false)
-	assert.Equal(t, 0, gefunden, "nach einer abgebrochenen Liste wird kein Foto angefasst")
-	assert.Equal(t, 0, uebernommen)
-	assert.Equal(t, 0, geloescht)
-	assert.FileExists(t, pfad)
-	require.NoError(t, mock.ExpectationsWereMet())
+	if gefunden != 0 {
+		t.Errorf("gefunden = %v, erwartet %v: nach einer abgebrochenen Liste wird kein Foto angefasst", gefunden, 0)
+	}
+	if uebernommen != 0 {
+		t.Errorf("uebernommen = %v, erwartet %v", uebernommen, 0)
+	}
+	if geloescht != 0 {
+		t.Errorf("geloescht = %v, erwartet %v", geloescht, 0)
+	}
+	if _, err := os.Stat(pfad); err != nil {
+		t.Errorf("Datei %s fehlt: %v", pfad, err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
 }

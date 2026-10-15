@@ -3,13 +3,13 @@ package inventur
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"bibliothek/repository"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
@@ -18,7 +18,9 @@ func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -43,23 +45,41 @@ func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
 				AddRow("book-1", "Lehrerschrank", 2))
 
 		eintraege, err := abfragen.LadeTitelListe(ctx, "Math", "algebra", false)
-		assert.NoError(t, err)
-		assert.Len(t, eintraege, 1)
-		if len(eintraege) > 0 {
-			assert.Equal(t, "book-1", eintraege[0].ID)
-			assert.Equal(t, 3, eintraege[0].Bestand)
-			// Die Standorte der Exemplare kommen mit der Liste.
-			assert.Equal(t, []repository.StandortZahl{{Standort: "Lehrerschrank", Anzahl: 2}}, eintraege[0].Standorte)
-			// Buch und Rang der Auflage stehen am Ende der Zeile.
-			assert.Equal(t, "werk-1", eintraege[0].WerkID)
-			assert.Equal(t, 2, eintraege[0].WerkRang)
+		if err != nil {
+			t.Fatalf("abfragen.LadeTitelListe: %v", err)
 		}
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if len(eintraege) != 1 {
+			t.Errorf("len(eintraege) = %d, erwartet %d", len(eintraege), 1)
+		}
+		if len(eintraege) > 0 {
+			if eintraege[0].ID != "book-1" {
+				t.Errorf("eintraege[0].ID = %q, erwartet %q", eintraege[0].ID, "book-1")
+			}
+			if eintraege[0].Bestand != 3 {
+				t.Errorf("eintraege[0].Bestand = %v, erwartet %v", eintraege[0].Bestand, 3)
+			}
+			// Die Standorte der Exemplare kommen mit der Liste.
+			if diff := cmp.Diff([]repository.StandortZahl{{Standort: "Lehrerschrank", Anzahl: 2}}, eintraege[0].Standorte); diff != "" {
+				t.Errorf("eintraege[0].Standorte weicht ab (-erwartet +ist):\n%s", diff)
+			}
+			// Buch und Rang der Auflage stehen am Ende der Zeile.
+			if eintraege[0].WerkID != "werk-1" {
+				t.Errorf("eintraege[0].WerkID = %q, erwartet %q", eintraege[0].WerkID, "werk-1")
+			}
+			if eintraege[0].WerkRang != 2 {
+				t.Errorf("eintraege[0].WerkRang = %v, erwartet %v", eintraege[0].WerkRang, 2)
+			}
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("db error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -68,9 +88,15 @@ func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
 			WillReturnError(fmt.Errorf("db connection failed"))
 
 		eintraege, err := abfragen.LadeTitelListe(ctx, "", "", false)
-		assert.ErrorContains(t, err, "bücher konnten nicht geladen werden")
-		assert.Nil(t, eintraege)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "bücher konnten nicht geladen werden") {
+			t.Errorf("abfragen.LadeTitelListe: Fehler %v, erwartet einen mit %q", err, "bücher konnten nicht geladen werden")
+		}
+		if eintraege != nil {
+			t.Errorf("eintraege = %v, erwartet nil", eintraege)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }
 
@@ -79,7 +105,9 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -89,17 +117,27 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg"))
 
 		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
-		assert.NoError(t, err)
-		assert.Len(t, eintraege, 1)
-		if len(eintraege) > 0 {
-			assert.Equal(t, "book-1", eintraege[0].ID)
+		if err != nil {
+			t.Fatalf("abfragen.LadeTitelMitFremdemCover: %v", err)
 		}
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if len(eintraege) != 1 {
+			t.Errorf("len(eintraege) = %d, erwartet %d", len(eintraege), 1)
+		}
+		if len(eintraege) > 0 {
+			if eintraege[0].ID != "book-1" {
+				t.Errorf("eintraege[0].ID = %q, erwartet %q", eintraege[0].ID, "book-1")
+			}
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("success with default limit", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -109,17 +147,27 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg"))
 
 		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 0)
-		assert.NoError(t, err)
-		assert.Len(t, eintraege, 1)
-		if len(eintraege) > 0 {
-			assert.Equal(t, "book-1", eintraege[0].ID)
+		if err != nil {
+			t.Fatalf("abfragen.LadeTitelMitFremdemCover: %v", err)
 		}
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if len(eintraege) != 1 {
+			t.Errorf("len(eintraege) = %d, erwartet %d", len(eintraege), 1)
+		}
+		if len(eintraege) > 0 {
+			if eintraege[0].ID != "book-1" {
+				t.Errorf("eintraege[0].ID = %q, erwartet %q", eintraege[0].ID, "book-1")
+			}
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("db error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -128,14 +176,22 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 			WillReturnError(fmt.Errorf("db failure"))
 
 		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, -1)
-		assert.ErrorContains(t, err, "bücher mit externen covern konnten nicht geladen werden")
-		assert.Nil(t, eintraege)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "bücher mit externen covern konnten nicht geladen werden") {
+			t.Errorf("abfragen.LadeTitelMitFremdemCover: Fehler %v, erwartet einen mit %q", err, "bücher mit externen covern konnten nicht geladen werden")
+		}
+		if eintraege != nil {
+			t.Errorf("eintraege = %v, erwartet nil", eintraege)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("scan error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -145,14 +201,22 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 												AddRow("book-1", "123", "Title 1"))
 
 		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
-		assert.ErrorContains(t, err, "bücher mit externen covern konnten nicht gelesen werden")
-		assert.Nil(t, eintraege)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "bücher mit externen covern konnten nicht gelesen werden") {
+			t.Errorf("abfragen.LadeTitelMitFremdemCover: Fehler %v, erwartet einen mit %q", err, "bücher mit externen covern konnten nicht gelesen werden")
+		}
+		if eintraege != nil {
+			t.Errorf("eintraege = %v, erwartet nil", eintraege)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("iteration error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -163,9 +227,15 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 				RowError(1, fmt.Errorf("row error")))
 
 		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
-		assert.ErrorContains(t, err, "fehler beim iterieren externer cover-bücher")
-		assert.Nil(t, eintraege)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "fehler beim iterieren externer cover-bücher") {
+			t.Errorf("abfragen.LadeTitelMitFremdemCover: Fehler %v, erwartet einen mit %q", err, "fehler beim iterieren externer cover-bücher")
+		}
+		if eintraege != nil {
+			t.Errorf("eintraege = %v, erwartet nil", eintraege)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }
 
@@ -175,20 +245,30 @@ func TestTitelAbfragen_LadeTitelNachIDs(t *testing.T) {
 
 	t.Run("empty ids", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
 		eintraege, err := abfragen.LadeTitelNachIDs(ctx, []string{})
-		assert.NoError(t, err)
-		assert.Empty(t, eintraege)
+		if err != nil {
+			t.Fatalf("abfragen.LadeTitelNachIDs: %v", err)
+		}
+		if len(eintraege) != 0 {
+			t.Errorf("eintraege = %v, erwartet leer", eintraege)
+		}
 		// No query expected
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -207,17 +287,27 @@ func TestTitelAbfragen_LadeTitelNachIDs(t *testing.T) {
 			))
 
 		eintraege, err := abfragen.LadeTitelNachIDs(ctx, ids)
-		assert.NoError(t, err)
-		assert.Len(t, eintraege, 1)
-		if len(eintraege) > 0 {
-			assert.Equal(t, "book-1", eintraege[0].ID)
+		if err != nil {
+			t.Fatalf("abfragen.LadeTitelNachIDs: %v", err)
 		}
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if len(eintraege) != 1 {
+			t.Errorf("len(eintraege) = %d, erwartet %d", len(eintraege), 1)
+		}
+		if len(eintraege) > 0 {
+			if eintraege[0].ID != "book-1" {
+				t.Errorf("eintraege[0].ID = %q, erwartet %q", eintraege[0].ID, "book-1")
+			}
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("db error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
@@ -227,8 +317,14 @@ func TestTitelAbfragen_LadeTitelNachIDs(t *testing.T) {
 			WillReturnError(fmt.Errorf("db connection failed"))
 
 		eintraege, err := abfragen.LadeTitelNachIDs(ctx, ids)
-		assert.ErrorContains(t, err, "bücher nach ids konnten nicht geladen werden")
-		assert.Nil(t, eintraege)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "bücher nach ids konnten nicht geladen werden") {
+			t.Errorf("abfragen.LadeTitelNachIDs: Fehler %v, erwartet einen mit %q", err, "bücher nach ids konnten nicht geladen werden")
+		}
+		if eintraege != nil {
+			t.Errorf("eintraege = %v, erwartet nil", eintraege)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }

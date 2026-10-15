@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestLegeTitelAn(t *testing.T) {
@@ -35,7 +34,9 @@ func TestLegeTitelAn(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -61,14 +62,22 @@ func TestLegeTitelAn(t *testing.T) {
 		mock.ExpectCommit()
 
 		id, err := abfragen.LegeTitelAn(ctx, eintrag)
-		assert.NoError(t, err)
-		assert.Equal(t, "book-123", id)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.LegeTitelAn: %v", err)
+		}
+		if id != "book-123" {
+			t.Errorf("id = %q, erwartet %q", id, "book-123")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("db error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -85,13 +94,19 @@ func TestLegeTitelAn(t *testing.T) {
 		mock.ExpectRollback()
 
 		_, err = abfragen.LegeTitelAn(ctx, eintrag)
-		assert.ErrorContains(t, err, "buch konnte nicht erstellt werden")
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "buch konnte nicht erstellt werden") {
+			t.Errorf("abfragen.LegeTitelAn: Fehler %v, erwartet einen mit %q", err, "buch konnte nicht erstellt werden")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("sync error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -112,8 +127,12 @@ func TestLegeTitelAn(t *testing.T) {
 		mock.ExpectRollback()
 
 		_, err = abfragen.LegeTitelAn(ctx, eintrag)
-		assert.ErrorContains(t, err, "exemplare konnten nicht angelegt werden")
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "exemplare konnten nicht angelegt werden") {
+			t.Errorf("abfragen.LegeTitelAn: Fehler %v, erwartet einen mit %q", err, "exemplare konnten nicht angelegt werden")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }
 
@@ -141,7 +160,9 @@ func TestSchreibeTitel(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -164,14 +185,22 @@ func TestSchreibeTitel(t *testing.T) {
 		mock.ExpectCommit()
 
 		id, err := abfragen.SchreibeTitel(ctx, eintrag)
-		assert.NoError(t, err)
-		assert.Equal(t, "book-123", id)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.SchreibeTitel: %v", err)
+		}
+		if id != "book-123" {
+			t.Errorf("id = %q, erwartet %q", id, "book-123")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("db error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -187,8 +216,12 @@ func TestSchreibeTitel(t *testing.T) {
 		mock.ExpectRollback()
 
 		_, err = abfragen.SchreibeTitel(ctx, eintrag)
-		assert.ErrorContains(t, err, "buch konnte nicht importiert werden")
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "buch konnte nicht importiert werden") {
+			t.Errorf("abfragen.SchreibeTitel: Fehler %v, erwartet einen mit %q", err, "buch konnte nicht importiert werden")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }
 
@@ -218,7 +251,9 @@ func TestSchreibeTitelStapel(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -228,7 +263,9 @@ func TestSchreibeTitelStapel(t *testing.T) {
 		mock.ExpectBegin()
 
 		eigenschaftenJSON, err := json.Marshal(eintraege[0].ErweiterteEigenschaften)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("json.Marshal: %v", err)
+		}
 		mock.ExpectExec(batchQuery).
 			WithArgs(
 				[]string{eintraege[0].ISBN},
@@ -261,27 +298,41 @@ func TestSchreibeTitelStapel(t *testing.T) {
 		mock.ExpectCommit()
 
 		betroffen, err := abfragen.SchreibeTitelStapel(ctx, eintraege)
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), betroffen)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err != nil {
+			t.Fatalf("abfragen.SchreibeTitelStapel: %v", err)
+		}
+		if betroffen != int64(1) {
+			t.Errorf("betroffen = %v, erwartet %v", betroffen, int64(1))
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 
 	t.Run("empty books", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
 		betroffen, err := abfragen.SchreibeTitelStapel(ctx, []Titel{})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), betroffen)
+		if err != nil {
+			t.Fatalf("abfragen.SchreibeTitelStapel: %v", err)
+		}
+		if betroffen != int64(0) {
+			t.Errorf("betroffen = %v, erwartet %v", betroffen, int64(0))
+		}
 	})
 
 	t.Run("db error on batch upsert", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("pgxmock.NewPool: %v", err)
+		}
 		defer mock.Close()
 
 		abfragen := NewTitelAbfragen(mock)
@@ -291,7 +342,9 @@ func TestSchreibeTitelStapel(t *testing.T) {
 		mock.ExpectBegin()
 
 		eigenschaftenJSON, err := json.Marshal(eintraege[0].ErweiterteEigenschaften)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("json.Marshal: %v", err)
+		}
 		mock.ExpectExec(batchQuery).
 			WithArgs(
 				[]string{eintraege[0].ISBN},
@@ -317,7 +370,11 @@ func TestSchreibeTitelStapel(t *testing.T) {
 		mock.ExpectRollback()
 
 		_, err = abfragen.SchreibeTitelStapel(ctx, eintraege)
-		assert.ErrorContains(t, err, "bücher konnten nicht im batch importiert werden")
-		assert.NoError(t, mock.ExpectationsWereMet())
+		if err == nil || !strings.Contains(err.Error(), "bücher konnten nicht im batch importiert werden") {
+			t.Errorf("abfragen.SchreibeTitelStapel: Fehler %v, erwartet einen mit %q", err, "bücher konnten nicht im batch importiert werden")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("offene Erwartungen: %v", err)
+		}
 	})
 }
