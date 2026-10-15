@@ -32,26 +32,53 @@ type Ermittler struct {
 
 // NewErmittler liest die vertrauten Netze aus CIDR-Angaben oder einzelnen Adressen. Leere
 // und unlesbare Einträge übergeht er, damit ein Tippfehler in der Umgebung den Start nicht
-// verhindert.
+// verhindert; welche unlesbar waren, nennt UnlesbareEintraege.
 func NewErmittler(netze []string) *Ermittler {
 	e := &Ermittler{}
 	for _, roh := range netze {
-		netz := strings.TrimSpace(roh)
-		if netz == "" {
-			continue
-		}
-		if !strings.Contains(netz, "/") {
-			if strings.Contains(netz, ":") {
-				netz += "/128"
-			} else {
-				netz += "/32"
-			}
-		}
-		if _, gelesen, err := net.ParseCIDR(netz); err == nil {
-			e.vertraut = append(e.vertraut, gelesen)
+		if netz, ok := leseNetz(roh); ok {
+			e.vertraut = append(e.vertraut, netz)
 		}
 	}
 	return e
+}
+
+// UnlesbareEintraege liefert die Einträge, die NewErmittler übergeht, weil sie weder Netz noch
+// Adresse sind; leere zählen nicht. Fehlt so das Netz des Proxys, sieht der Server jeden Browser
+// unter der Adresse des Proxys, deshalb nennen der Start und die Selbstprüfung sie.
+func UnlesbareEintraege(netze []string) []string {
+	var unlesbar []string
+	for _, roh := range netze {
+		eintrag := strings.TrimSpace(roh)
+		if eintrag == "" {
+			continue
+		}
+		if _, ok := leseNetz(eintrag); !ok {
+			unlesbar = append(unlesbar, eintrag)
+		}
+	}
+	return unlesbar
+}
+
+// leseNetz liest einen Eintrag als Netz; eine einzelne Adresse ist ein Netz aus ihr allein.
+// false heißt: leer oder weder Netz noch Adresse.
+func leseNetz(roh string) (*net.IPNet, bool) {
+	netz := strings.TrimSpace(roh)
+	if netz == "" {
+		return nil, false
+	}
+	if !strings.Contains(netz, "/") {
+		if strings.Contains(netz, ":") {
+			netz += "/128"
+		} else {
+			netz += "/32"
+		}
+	}
+	_, gelesen, err := net.ParseCIDR(netz)
+	if err != nil {
+		return nil, false
+	}
+	return gelesen, true
 }
 
 // Middleware legt die Adresse des Clients in den Kontext der Anfrage, bevor next sie bekommt.

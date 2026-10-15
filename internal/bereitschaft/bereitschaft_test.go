@@ -34,6 +34,7 @@ func lageEingerichtet() Lage {
 		Schluessel:            "eigener-schluessel-32-zeichen-ab",
 		IMAPHost:              "srv1.philipp-reis-schule.de",
 		SelbstanmeldeDomain:   "philipp-reis-schule.de",
+		VertrauteProxys:       []string{"172.16.0.0/12", "10.0.0.0/8", "192.168.0.0/16"},
 		OeffentlicheAdresse:   "https://flasch3.herzog-dupont.de",
 		SMTPHost:              "srv1.philipp-reis-schule.de",
 		DemoSchueler:          0,
@@ -244,6 +245,13 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Selbstanmeldung Kollegium",
 			stufe:    StufeWarnung,
 			enthaelt: "SELBSTANMELDUNG_DOMAIN",
+		},
+		{
+			name:     "unlesbarer Eintrag in TRUSTED_PROXIES",
+			aendere:  func(l *Lage) { l.VertrauteProxys = []string{"172.16.0.0/12", " caddy "} },
+			bereich:  "Vertraute Proxys",
+			stufe:    StufeWarnung,
+			enthaelt: "caddy",
 		},
 		{
 			name:     "keine oeffentliche Adresse",

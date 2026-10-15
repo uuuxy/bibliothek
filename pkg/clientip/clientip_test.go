@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func anfrage(gegenstelle string, koepfe map[string]string) *http.Request {
@@ -191,6 +193,32 @@ func TestNewErmittler_EintraegeAusDerUmgebung(t *testing.T) {
 			"X-Forwarded-For": "198.51.100.7",
 		})); adresse != f.erwartet {
 			t.Errorf("Gegenstelle %s: ausAnfrage = %q, erwartet %q", f.gegenstelle, adresse, f.erwartet)
+		}
+	}
+}
+
+// Der Start und die Selbstprüfung nennen, was NewErmittler übergeht: die Einträge, die weder
+// Netz noch Adresse sind, ohne Leerzeichen und ohne die leeren.
+func TestUnlesbareEintraege(t *testing.T) {
+	eintraege := strings.Split(" 172.16.0.0/12 , 10.1.2.3,, kaputt ,172.16.0.0/33,caddy,fd00::/8,::1", ",")
+	want := []string{"kaputt", "172.16.0.0/33", "caddy"}
+	if diff := cmp.Diff(want, UnlesbareEintraege(eintraege)); diff != "" {
+		t.Errorf("UnlesbareEintraege(%q) (-erwartet +ist):\n%s", eintraege, diff)
+	}
+	if got := UnlesbareEintraege(strings.Split("", ",")); got != nil {
+		t.Errorf("UnlesbareEintraege(leer) = %q, erwartet nil", got)
+	}
+}
+
+// Ein Eintrag ist entweder vertraut oder als unlesbar genannt: Ermittler und Nennung fragen
+// dieselbe Regel, sonst nennte der Start einen Eintrag, der wirkt, oder verschwiege einen, der
+// fehlt.
+func TestUnlesbareEintraege_GenauDieUebergangenen(t *testing.T) {
+	for _, eintrag := range []string{"172.16.0.0/12", "10.1.2.3", "::1", "fd00::/8", "kaputt", "172.16.0.0/33", "caddy", "10.0.0.0/8/1", "10.0.0.256"} {
+		vertraut := len(NewErmittler([]string{eintrag}).vertraut) == 1
+		genannt := len(UnlesbareEintraege([]string{eintrag})) == 1
+		if vertraut == genannt {
+			t.Errorf("%q: vertraut = %v, als unlesbar genannt = %v, erwartet genau eins von beiden", eintrag, vertraut, genannt)
 		}
 	}
 }

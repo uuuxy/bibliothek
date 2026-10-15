@@ -35,6 +35,7 @@ import (
 	"bibliothek/internal/crypto"
 	"bibliothek/internal/service"
 	"bibliothek/jobs"
+	"bibliothek/pkg/clientip"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -290,12 +291,22 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 
 	server.NurHTTPS = ermittleCookieSecure()
 
-	// Die vertrauten Proxys für die Adresse des Browsers (Bremsen, Anmeldung, Protokoll). Ohne
-	// TRUSTED_PROXIES wird nur Loopback vertraut; hinter Caddy im Docker-Netz muss das Netz dort
-	// gesetzt werden, sonst fallen alle Browser auf die Adresse des Proxys zusammen.
-	server.VertrauteProxys = strings.Split(os.Getenv("TRUSTED_PROXIES"), ",")
+	server.VertrauteProxys = vertrauteProxysAusUmgebung()
 
 	return
+}
+
+// vertrauteProxysAusUmgebung liefert die vertrauten Proxys für die Adresse des Browsers
+// (Bremsen, Anmeldung, Protokoll) aus TRUSTED_PROXIES. Ohne den Wert wird nur Loopback vertraut;
+// hinter Caddy im Docker-Netz muss das Netz dort stehen, sonst fallen alle Browser auf die
+// Adresse des Proxys zusammen. Ein unlesbarer Eintrag verhindert den Start nicht; er steht als
+// Warnung im Log und auf der Seite „Betriebsbereitschaft", weil er sonst niemandem auffällt.
+func vertrauteProxysAusUmgebung() []string {
+	eintraege := strings.Split(os.Getenv("TRUSTED_PROXIES"), ",")
+	if unlesbar := clientip.UnlesbareEintraege(eintraege); len(unlesbar) > 0 {
+		slog.Warn("TRUSTED_PROXIES: Einträge übergangen, die weder Netz noch Adresse sind", "eintraege", unlesbar)
+	}
+	return eintraege
 }
 
 func main() {

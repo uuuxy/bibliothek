@@ -128,7 +128,7 @@ func (s *Server) portal() *portal.Tueren {
 
 // system ist der Zugang zu den Türen der Systempflege.
 func (s *Server) system() *system.Tueren {
-	return &system.Tueren{Basis: &s.Basis}
+	return &system.Tueren{Basis: &s.Basis, VertrauteProxys: s.vertrauteProxys}
 }
 
 // BereitschaftsAlarm prüft die Betriebsbereitschaft und mailt kritische Befunde an die Admins.

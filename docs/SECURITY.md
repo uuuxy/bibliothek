@@ -118,6 +118,11 @@ die Adresse danach aus dem Kontext der Anfrage. Wer an der Kette vorbei fragt, b
 Loopback als vertrauten Proxy. Gate: `TestServer_BremseSiehtDenBrowserHinterDemProxy` (rot
 gesehen ohne das Glied und ohne die Netze aus der Konfiguration).
 
+Einen Eintrag, der weder Netz noch Adresse ist, übergeht der Ermittler, damit ein Tippfehler den
+Start nicht verhindert. Der Start nennt ihn als Warnung im Log, die Selbstprüfung als Befund
+„Vertraute Proxys"; beide fragen `clientip.UnlesbareEintraege`, also dieselbe Regel wie der
+Ermittler.
+
 Bis zum 05.09.2026 lief das Paket **rekursiv**: Er übersprang jeden Eintrag, der in
 einem vertrauten Netz lag. Der Compose-Default vertraut allen RFC-1918-Netzen (das
 Docker-Subnetz ist je Host anders), und die Schul-Clients liegen selbst in 192.168.x/10.x.

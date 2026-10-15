@@ -70,6 +70,9 @@ type Lage struct {
 	// SelbstanmeldeDomain ist SELBSTANMELDUNG_DOMAIN. Leer heißt, das Kollegium muss von Hand
 	// angelegt werden (auth/selbstanmeldung.go).
 	SelbstanmeldeDomain string
+	// VertrauteProxys sind die Einträge aus TRUSTED_PROXIES, wie der Server sie bekommen hat;
+	// einen unlesbaren übergeht er (clientip.NewErmittler).
+	VertrauteProxys []string
 
 	// Aus den Einstellungen in der Datenbank, nicht aus der .env (api/system/mail_einstellungen.go)
 	OeffentlicheAdresse string
@@ -169,6 +172,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeSchluesselPasstZumBestand(l),
 		pruefeAnmeldung(l, echt),
 		pruefeSelbstanmeldung(l),
+		pruefeVertrauteProxys(l),
 		pruefeBestelllink(l),
 		pruefeMailversand(l),
 		pruefeDemodaten(l),

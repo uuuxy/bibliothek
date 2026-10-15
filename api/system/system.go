@@ -10,4 +10,7 @@ import "bibliothek/api/tuer"
 // Zeiger: Datenbank, Anmeldung, Live-Leitung und Uhr gibt es so einmal, für jedes Thema dieselben.
 type Tueren struct {
 	*tuer.Basis
+	// VertrauteProxys sind die Einträge aus TRUSTED_PROXIES, mit denen der Server die Adresse des
+	// Browsers ermittelt; die Selbstprüfung nennt die unlesbaren.
+	VertrauteProxys []string
 }

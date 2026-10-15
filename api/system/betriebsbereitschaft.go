@@ -51,6 +51,7 @@ func (t *Tueren) sammleLage(
 		SMTPUnsicheresTLSErlaubt: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true",
 		SMTPKlartextErlaubt:      os.Getenv("SMTP_ALLOW_PLAINTEXT") == "true",
 		SelbstanmeldeDomain:      auth.SelbstanmeldeDomain(),
+		VertrauteProxys:          t.VertrauteProxys,
 	}
 
 	// Öffentliche Adresse und SMTP-Host kommen aus der Datenbank, nicht aus der .env:

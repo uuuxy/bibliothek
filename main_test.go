@@ -83,6 +83,27 @@ func pruefeAbbruch(t *testing.T, testName string, richteEin func()) {
 	t.Fatalf("der Prozess endete mit %v, erwartet ist ein Exit-Status ungleich 0", err)
 }
 
+// Ein unlesbarer Eintrag in TRUSTED_PROXIES verhindert den Start nicht, steht aber im Log. Der
+// Test läuft als eigener Prozess, damit er den Logger des Pakets slog nicht umstellen muss.
+func TestLeseKonfig_UnlesbarerProxyStehtImLog(t *testing.T) {
+	if os.Getenv("BE_CRASHER") == "1" {
+		setzeGueltigeUmgebung()
+		setzeVariable("TRUSTED_PROXIES", "172.16.0.0/12,caddy")
+		leseKonfig()
+		return
+	}
+
+	befehl := exec.Command(os.Args[0], "-test.run=TestLeseKonfig_UnlesbarerProxyStehtImLog")
+	befehl.Env = append(os.Environ(), "BE_CRASHER=1")
+	ausgabe, err := befehl.CombinedOutput()
+	if err != nil {
+		t.Fatalf("der Prozess endete mit %v, erwartet ist ein Start ohne Abbruch:\n%s", err, ausgabe)
+	}
+	if !strings.Contains(string(ausgabe), "weder Netz noch Adresse") || !strings.Contains(string(ausgabe), "caddy") {
+		t.Errorf("Log = %q, erwartet eine Warnung, die den Eintrag caddy nennt", ausgabe)
+	}
+}
+
 func TestLeseKonfig_OhneDatabaseURL(t *testing.T) {
 	pruefeAbbruch(t, "TestLeseKonfig_OhneDatabaseURL", func() {
 		setzeGueltigeUmgebung()
