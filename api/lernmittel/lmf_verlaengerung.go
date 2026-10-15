@@ -29,13 +29,13 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 		}
 
 		if req.Klasse == "" || req.NeuesRueckgabeDatum == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("klasse und neues_rueckgabe_datum sind erforderlich"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("klasse und neues_rueckgabe_datum sind erforderlich"))
 			return
 		}
 
 		frist, err := time.Parse("2006-01-02", req.NeuesRueckgabeDatum)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet YYYY-MM-DD)"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet YYYY-MM-DD)"))
 			return
 		}
 		// Tagesende in der Schulzeitzone (Berlin) — dieselbe Definition wie jede andere
@@ -46,7 +46,7 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 		tx, err := t.DB.Pool.Begin(ctx)
 		if err != nil {
 			log.Printf("Fehler beim Starten der Transaktion: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}
 		defer db.SafeRollback(ctx, tx)
@@ -54,13 +54,13 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 		angepasst, err := repository.VerlaengereLernmittelDerKlasse(ctx, tx, req.Klasse, frist)
 		if err != nil {
 			log.Printf("Fehler beim globalen Verlängern: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Ausführen des Updates"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Ausführen des Updates"))
 			return
 		}
 
 		if err := tx.Commit(ctx); err != nil {
 			log.Printf("Fehler beim Commit der Transaktion: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}
 

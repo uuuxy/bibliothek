@@ -23,7 +23,7 @@ func (t *Tueren) MonitorFolien() http.HandlerFunc {
 			// Echter Grund ins Log, nach außen nur die Gattung: Der Endpunkt ist ohne
 			// Anmeldung erreichbar, ein Postgres-Fehlertext gehört nicht auf den Flur.
 			log.Printf("DB Error in Monitor: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("internal server error"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("internal server error"))
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, folien)

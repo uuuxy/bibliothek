@@ -36,7 +36,7 @@ type exemplarEigentumAnfrage struct {
 // @Failure      404   {object}  map[string]string
 // @Router       /exemplare/eigentum [put]
 func (t *Tueren) ExemplarEigentumSetzen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req exemplarEigentumAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil

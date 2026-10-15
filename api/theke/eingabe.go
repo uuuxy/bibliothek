@@ -164,7 +164,7 @@ func (t *Tueren) antworteAusAblage(w http.ResponseWriter, antwort *repository.Id
 		if merkmal := fehlerDaten[sperrAblageFeld]; merkmal == sperrUebergehbar || merkmal == sperrAmLeser {
 			w.Header().Set(sperrKopf, merkmal)
 		}
-		apierrors.SendHTTPError(w, status, errors.New(fehlerDaten["error"]))
+		apierrors.AntworteFehler(w, status, errors.New(fehlerDaten["error"]))
 		return true
 	}
 
@@ -189,7 +189,7 @@ func (t *Tueren) EingabeVerarbeiten(omnibox service.OmniboxDienst) http.HandlerF
 func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnibox service.OmniboxDienst) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
 		return
 	}
 
@@ -200,7 +200,7 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 
 	req.Text = strings.TrimSpace(req.Text)
 	if req.Text == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("such- oder Barcode-Abfrage ist leer"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("such- oder Barcode-Abfrage ist leer"))
 		return
 	}
 
@@ -211,7 +211,7 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 		return
 	}
 	if lage.inArbeit {
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			errors.New("in_arbeit: dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen"))
 		return
 	}
@@ -242,7 +242,7 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 			ablageDaten[sperrAblageFeld] = merkmal
 		}
 		t.legeAntwortAb(ctx, req.IdempotenzSchluessel, ablageDaten, status)
-		apierrors.SendHTTPError(w, status, err)
+		apierrors.AntworteFehler(w, status, err)
 		return
 	}
 

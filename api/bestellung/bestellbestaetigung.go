@@ -50,7 +50,7 @@ func (t *Tueren) BestellungBestaetigen() http.HandlerFunc {
 func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing bestellung id"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing bestellung id"))
 		return
 	}
 
@@ -59,11 +59,11 @@ func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
 		return
 	}
 	if !pdf.IstBekanntesEtikettFormat(req.EtikettenFormat) {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
 		return
 	}
 
@@ -72,15 +72,15 @@ func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 	imBestaetigungsweg, err := t.bestellungImBestaetigungsweg(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if !imBestaetigungsweg {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("diese bestellung hat keinen bestaetigungsschritt"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("diese bestellung hat keinen bestaetigungsschritt"))
 		return
 	}
 
@@ -89,11 +89,11 @@ func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 	// Statuszeile, aber eine andere Aussage.
 	bereits, err := t.bestaetigeBestellung(ctx, id, req.EtikettenGroesse, req.EtikettenFormat, "bibliothek")
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	if bereits {
-		apierrors.SendHTTPError(w, http.StatusConflict, errors.New("bestellung ist bereits bestaetigt"))
+		apierrors.AntworteFehler(w, http.StatusConflict, errors.New("bestellung ist bereits bestaetigt"))
 		return
 	}
 

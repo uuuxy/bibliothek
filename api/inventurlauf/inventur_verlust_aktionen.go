@@ -18,7 +18,7 @@ import (
 // bringt es zurück in den Umlauf.
 // @Router /buecher/exemplare/{id}/gefunden [post]
 func (t *Tueren) FundMelden() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest("exemplar-id fehlt", nil)
@@ -83,7 +83,7 @@ type verlusteLoeschenAnfrage struct {
 // Exemplare an, die schon als Verlust gelten.
 // @Router /buecher/exemplare/verlust-endgueltig-loeschen [post]
 func (t *Tueren) VerlusteEndgueltigLoeschen() http.HandlerFunc {
-	return apierrors.Wrap(t.loescheVerlusteEndgueltig)
+	return apierrors.MitFehlerantwort(t.loescheVerlusteEndgueltig)
 }
 
 // loescheVerlusteEndgueltig löscht die genannten Verlust-Exemplare in einer Transaktion.
@@ -110,10 +110,9 @@ func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Reques
 	abfragen := repository.NewInventurAbfragen(tx)
 	geloeschteIDs, err := abfragen.LoescheVerlusteEndgueltig(ctx, req.ExemplarIDs, claims.UserID)
 	if err != nil {
-		// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Als
-		// Internal ersetzte der Sanitizer den Text durch „interner Datenbankfehler"
-		// (apierrors.SendHTTPError), und die Bedienung erführe nie, welches Exemplar warum
-		// im Weg steht. Wrap gibt die Meldung eines APIError unverändert aus.
+		// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Die Meldung
+		// sagt der Bedienung, welches Exemplar warum im Weg steht; MitFehlerantwort gibt sie
+		// unverändert aus.
 		if errors.Is(err, repository.ErrVerlustNochGebunden) {
 			return apierrors.Conflict(err.Error(), err)
 		}

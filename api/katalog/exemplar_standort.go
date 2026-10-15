@@ -35,7 +35,7 @@ type exemplarStandortAnfrage struct {
 // @Failure      404   {object}  map[string]string
 // @Router       /exemplare/standort [put]
 func (t *Tueren) ExemplarStandortSetzen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req exemplarStandortAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
@@ -73,7 +73,7 @@ func (t *Tueren) ExemplarStandortSetzen() http.HandlerFunc {
 // @Failure      500  {object}  map[string]string
 // @Router       /exemplare/standorte [get]
 func (t *Tueren) ExemplarStandorte() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := repository.LadeExemplarStandorte(r.Context(), t.DB.Pool)
 		if err != nil {
 			return apierrors.Internal("Die Standorte konnten nicht geladen werden", err)

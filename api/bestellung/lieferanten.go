@@ -108,7 +108,7 @@ func (t *Tueren) Lieferanten() http.HandlerFunc {
 		// ersten, und die Vorauswahl bliebe wirkungslos.
 		zeilen, err := repository.LadeLieferanten(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -130,7 +130,7 @@ func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 		}
 
 		if req.Name == "" || req.Email == "" || req.Kundennummer == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber are required"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("name, email and customerNumber are required"))
 			return
 		}
 
@@ -138,7 +138,7 @@ func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 
 		neueID, erstelltAm, err := repository.LegeLieferantAn(ctx, t.DB.Pool, req.Name, req.Email, req.Kundennummer, kundennummerSchultraeger(req))
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		// An diese Adresse gehen Bestellungen. Der Eintrag nennt den Händler, nicht die Adresse.
@@ -151,7 +151,7 @@ func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 		// dabei räumt setzeHauptlieferant den bisherigen weg.
 		if req.IstHauptlieferant {
 			if err := setzeHauptlieferant(ctx, t.DB.Pool, neueID); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 				return
 			}
 		}
@@ -176,7 +176,7 @@ func (t *Tueren) LieferantAendern() http.HandlerFunc {
 func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing supplier ID"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing supplier ID"))
 		return
 	}
 
@@ -187,7 +187,7 @@ func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, wert := range []*string{req.Name, req.Email, req.Kundennummer} {
 		if wert != nil && *wert == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber must not be empty"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("name, email and customerNumber must not be empty"))
 			return
 		}
 	}
@@ -199,11 +199,11 @@ func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	alt, neu, err := t.schreibeLieferant(ctx, id, req)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("supplier not found"))
 		return
 	}
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -268,7 +268,7 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing supplier ID"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing supplier ID"))
 			return
 		}
 
@@ -292,15 +292,15 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 		istHaupt, name, err := repository.LadeLieferantHauptUndName(ctx, t.DB.Pool, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
+				apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("supplier not found"))
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if istHaupt {
 			//nolint:staticcheck // ST1005: ganze Sätze mit Satzzeichen — diese Meldung steht so vor der Bibliothekskraft.
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
 				"Dieser Händler ist der Hauptlieferant — über ihn läuft die Bestellung. "+
 					"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen."))
 			return
@@ -308,12 +308,12 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 
 		geloescht, err := repository.LoescheLieferant(ctx, t.DB.Pool, id)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		if geloescht == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("supplier not found"))
 			return
 		}
 		t.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantGeloescht,

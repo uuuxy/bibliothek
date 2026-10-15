@@ -104,7 +104,7 @@ func jahrgaengeMitSchuelern(ctx context.Context, lmfAbfragen *repository.LMFAbfr
 // @Success      200 {array} int
 // @Router       /jahrgaenge [get]
 func (t *Tueren) Jahrgaenge(lmfAbfragen *repository.LMFAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		jahrgaenge, err := jahrgaengeMitSchuelern(r.Context(), lmfAbfragen)
 		if err != nil {
 			return apierrors.Internal("Jahrgänge konnten nicht gelesen werden", err)

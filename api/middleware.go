@@ -126,7 +126,7 @@ func panikMiddleware(next http.Handler) http.Handler {
 				// Maskierung enthielte ein weitergereichtes Logfile funktionierende Links, und
 				// die Speicherung als Hash in der Datenbank wäre entwertet.
 				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, maskiereToken(r.URL.Path), err)
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("interner server fehler: %v", err))
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("interner server fehler: %v", err))
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -250,7 +250,7 @@ func uuidPfadMiddleware(next http.Handler) http.Handler {
 		for _, name := range uuidPfadParameter {
 			wert := r.PathValue(name)
 			if wert != "" && !kennung.IstUUID(wert) {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges UUID Format im Pfadparameter"))
+				apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiges UUID Format im Pfadparameter"))
 				return
 			}
 		}

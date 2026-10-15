@@ -74,7 +74,7 @@ type bescheidVorschlagAntwort struct {
 // @Success      200 {object} bescheidVorschlagAntwort
 // @Router       /schueler/{id}/bescheid-vorschlag [get]
 func (t *Tueren) BescheidVorschlag(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.schlageBescheidVor(w, r, bescheidAbfragen)
 	})
 }

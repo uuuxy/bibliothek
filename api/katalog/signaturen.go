@@ -41,7 +41,7 @@ type signaturGruppe struct {
 // @Failure      500  {object}  map[string]string
 // @Router       /signaturen [get]
 func (t *Tueren) Signaturen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zeilen, err := repository.LadeSignaturGruppen(r.Context(), t.DB.Pool)
 		if err != nil {
 			if errors.Is(err, repository.ErrZeileUnlesbar) {
@@ -96,7 +96,7 @@ type titelUnterSignaturAntwort struct {
 // @Failure      500       {object}  map[string]string
 // @Router       /signaturen/buecher [get]
 func (t *Tueren) TitelUnterSignatur() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		signatur := strings.TrimSpace(r.URL.Query().Get("signatur"))
 		if signatur == "" {
 			return apierrors.BadRequest("signatur ist erforderlich", errors.New("leere signatur"))

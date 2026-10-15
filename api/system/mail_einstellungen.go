@@ -80,7 +80,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 		if absender := strings.TrimSpace(req.AbsenderEmail); absender != "" {
 			adresse, err := mail.ParseAddress(absender)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err))
+				apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err))
 				return
 			}
 			req.AbsenderEmail = adresse.Address
@@ -89,7 +89,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 		ctx := r.Context()
 		err := mailAbfragen.Schreibe(ctx, req.SMTPHost, req.SMTPPort, req.SMTPBenutzer, req.SMTPPasswort, req.AbsenderEmail)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -125,7 +125,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 
 		an := strings.TrimSpace(req.To)
 		if an == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("empfänger-E-Mail-Adresse fehlt"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("empfänger-E-Mail-Adresse fehlt"))
 			return
 		}
 
@@ -135,7 +135,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 		// SendTestMail bleibt trotzdem stehen, sie schützt die anderen Aufrufer.
 		adresse, err := mail.ParseAddress(an)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err))
 			return
 		}
 
@@ -145,7 +145,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 			// mailFehlerStatus: 502, wenn der Zielserver versagt hat — nur so erreicht
 			// die Diagnose (falscher Port, abgelehnte Zugangsdaten, Zertifikatsname)
 			// das Formular, für das sie geschrieben wurde.
-			apierrors.SendHTTPError(w, mailFehlerStatus(err), err)
+			apierrors.AntworteFehler(w, mailFehlerStatus(err), err)
 			return
 		}
 

@@ -44,7 +44,7 @@ type titelSchlagworteAntwort struct {
 // @Failure      500  {object}  map[string]string
 // @Router       /schlagworte [get]
 func (t *Tueren) SchlagwortVorschlaege() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		vorschlaege, err := repository.FindeSchlagwortVorschlaege(r.Context(), t.DB.Pool, r.URL.Query().Get("suche"))
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
@@ -67,7 +67,7 @@ func (t *Tueren) SchlagwortVorschlaege() http.HandlerFunc {
 // @Failure      404  {object}  map[string]string
 // @Router       /buecher/titel/{id}/schlagworte [get]
 func (t *Tueren) TitelSchlagworte() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if !kennung.IstUUID(id) {
 			return apierrors.BadRequest("ungültige Titel-ID", errors.New("keine UUID"))
@@ -96,7 +96,7 @@ func (t *Tueren) TitelSchlagworte() http.HandlerFunc {
 // @Failure      404   {object}  map[string]string
 // @Router       /buecher/titel/{id}/schlagworte [put]
 func (t *Tueren) TitelSchlagworteSetzen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if !kennung.IstUUID(id) {
 			return apierrors.BadRequest("ungültige Titel-ID", errors.New("keine UUID"))

@@ -75,13 +75,13 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		//    Vertrag „alle überfälligen Klassen an ihre Klassenleitungen".
 		req, err := leseKlassenVersandAnfrage(r)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		// 2. Ohne konfigurierten Mailserver kein Massenversand.
 		if !mailservice.SMTPKonfiguriert() {
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
+			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
 			return
 		}
 
@@ -89,7 +89,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		//    Auswahl des Aufrufers darauf anwenden.
 		alle, err := mahnAbfragen.LadeUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		gewaehlt, unbekannt := waehleKlassen(nurKlassen(alle), req.Klassen)

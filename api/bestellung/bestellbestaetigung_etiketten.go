@@ -32,7 +32,7 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 
 	groesse := r.PathValue("groesse")
 	if groesse != "klein" && groesse != "gross" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("groesse muss 'klein' oder 'gross' sein"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("groesse muss 'klein' oder 'gross' sein"))
 		return
 	}
 
@@ -48,7 +48,7 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 		format = pdf.StandardLabelFormat
 	}
 	if _, bekannt := pdf.GetLabelFormat(format); !bekannt {
-		apierrors.SendHTTPError(w, http.StatusBadRequest,
+		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			fmt.Errorf("unbekanntes Etikettenformat %q", format))
 		return
 	}
@@ -65,11 +65,11 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 	if groesse == "gross" {
 		mittel, err := repository.LadeMittelDerBestellung(ctx, t.DB.Pool, bestellungID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if !mitteltopf.HatGrossesLernmittelEtikett(mittel) {
-			apierrors.SendHTTPError(w, http.StatusNotFound,
+			apierrors.AntworteFehler(w, http.StatusNotFound,
 				errors.New("zu dieser Bestellung gibt es kein großes Lernmittel-Etikett"))
 			return
 		}
@@ -77,17 +77,17 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 
 	etiketten, err := buchetikett.LadeDerBestellung(ctx, t.DB.Pool, bestellungID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	if len(etiketten) == 0 {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("zu dieser Bestellung gibt es keine Etiketten"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("zu dieser Bestellung gibt es keine Etiketten"))
 		return
 	}
 
 	daten, err := t.baueEtikettenPDF(ctx, groesse, format, etiketten)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

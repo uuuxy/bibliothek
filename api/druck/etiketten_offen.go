@@ -54,7 +54,7 @@ func etikettenSuchtext(r *http.Request) string {
 // @Success      200  {array}  ExemplarOhneEtikett
 // @Router       /exemplare/etiketten-offen [get]
 func (t *Tueren) EtikettenOffen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zeilen, err := repository.LadeEtikettenExemplare(r.Context(), t.DB.Pool,
 			r.URL.Query().Get("status"), etikettenSuchtext(r), etikettenOffenLimit)
 		if err != nil {
@@ -92,7 +92,7 @@ func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-offen/anzahl [get]
 func (t *Tueren) EtikettenOffenAnzahl() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		// Mit Stichtag nennt dieselbe Tür, wie viele Exemplare das Aufräumen des Altbestands
 		// träfe: die Zahl, die der Betreiber vor dem Bestätigen sieht.
 		bisText := strings.TrimSpace(r.URL.Query().Get("bis"))
@@ -135,7 +135,7 @@ type etikettenAltbestandAnfrage struct {
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-altbestand [post]
 func (t *Tueren) EtikettenAltbestandVermerken() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req etikettenAltbestandAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
@@ -170,7 +170,7 @@ type etikettenVermerkAnfrage struct {
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-gedruckt [post]
 func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req etikettenVermerkAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
@@ -203,7 +203,7 @@ func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-zuruecksetzen [post]
 func (t *Tueren) EtikettenZuruecksetzen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req etikettenVermerkAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil

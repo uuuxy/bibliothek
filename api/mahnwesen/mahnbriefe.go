@@ -82,13 +82,13 @@ func (t *Tueren) erzeugeMahnbriefe(ctx context.Context, w http.ResponseWriter, a
 	// Vorlage und Absender vor der Transaktion: Sie hält eine Verbindung und Zeilensperren.
 	vorlage, err := t.ladeMahnbriefVorlage(ctx)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
 
 	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
 	defer db.SafeRollback(ctx, tx)
@@ -99,7 +99,7 @@ func (t *Tueren) erzeugeMahnbriefe(ctx context.Context, w http.ResponseWriter, a
 	mahnAbfragen := repository.NewMahnwesenAbfragen(t.DB.Pool)
 	gezaehlt, err := mahnAbfragen.ErhoeheMahnstufe(ctx, tx, ausleihIDs)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim update der mahnstufen: %w", err))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim update der mahnstufen: %w", err))
 		return nil, false
 	}
 
@@ -107,28 +107,28 @@ func (t *Tueren) erzeugeMahnbriefe(ctx context.Context, w http.ResponseWriter, a
 	// wird es nach einem Papierstau auch ein zweites Mal.
 	briefe, err := mahnAbfragen.LadeMahnbriefe(ctx, tx, ausleihIDs)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim abrufen der daten für pdf: %w", err))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim abrufen der daten für pdf: %w", err))
 		return nil, false
 	}
 	if len(briefe) == 0 && gezaehlt > 0 {
 		// Zählen und Lesen folgen derselben Bedingung, das ist nicht zu erwarten. Keine
 		// Mahnung ohne Brief festschreiben.
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("dateninkonsistenz: keine PDF-Daten trotz aktualisierter Mahnstufen"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("dateninkonsistenz: keine PDF-Daten trotz aktualisierter Mahnstufen"))
 		return nil, false
 	}
 	if len(briefe) == 0 {
-		apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine Ausleihe mit abgelaufener Frist in der Auswahl"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("keine Ausleihe mit abgelaufener Frist in der Auswahl"))
 		return nil, false
 	}
 
 	pdfDaten, err := pdf.GenerateMahnbriefePDF(mahnbriefEmpfaenger(briefe), vorlage)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim generieren des pdfs: %w", err))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim generieren des pdfs: %w", err))
 		return nil, false
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim commit der transaktion: %w", err))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim commit der transaktion: %w", err))
 		return nil, false
 	}
 	return pdfDaten, true
@@ -152,7 +152,7 @@ func (t *Tueren) MahnbriefeDrucken() http.HandlerFunc {
 		}
 
 		if len(req.AusleihIDs) == 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ausleih_ids array darf nicht leer sein"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("ausleih_ids array darf nicht leer sein"))
 			return
 		}
 

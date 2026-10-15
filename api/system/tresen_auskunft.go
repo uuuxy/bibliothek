@@ -91,14 +91,14 @@ func (t *Tueren) TresenAuskunft(protokollAbfragen repository.ProtokollAbfragen) 
 func (t *Tueren) gibTresenAuskunft(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	barcode := strings.TrimSpace(r.URL.Query().Get("barcode"))
 	if barcode == "" || len(barcode) > 64 {
-		apierrors.SendHTTPError(w, http.StatusBadRequest,
+		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			errors.New("barcode fehlt oder ist unplausibel lang"))
 		return
 	}
 
 	exemplarZeilen, err := repository.FindeTresenExemplare(r.Context(), t.DB.Pool, barcode)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	exemplare := []tresenExemplar{}
@@ -112,7 +112,7 @@ func (t *Tueren) gibTresenAuskunft(w http.ResponseWriter, r *http.Request, proto
 	if len(ids) > 0 {
 		zeilen, err := repository.FindeTresenEreignisse(r.Context(), t.DB.Pool, ids, tresenMaxEreignisse)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		for _, z := range zeilen {
@@ -125,7 +125,7 @@ func (t *Tueren) gibTresenAuskunft(w http.ResponseWriter, r *http.Request, proto
 	// dieser Endpunkt so eng gebaut ist. Scheitert sie, gibt es keine Auskunft.
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError,
+		apierrors.AntworteFehler(w, http.StatusInternalServerError,
 			errors.New("keine sitzung im kontext"))
 		return
 	}
@@ -135,7 +135,7 @@ func (t *Tueren) gibTresenAuskunft(w http.ResponseWriter, r *http.Request, proto
 			"treffer_exemplare":  len(exemplare),
 			"treffer_ereignisse": len(ereignisse),
 		}); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

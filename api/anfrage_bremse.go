@@ -37,7 +37,7 @@ func anfrageBremse(jeSekunde int) func(http.Handler) http.Handler {
 
 			adresse := clientip.AusAnfrage(r)
 			if !bremse.LaesstDurch(adresse) {
-				apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
+				apierrors.AntworteFehler(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
 				return
 			}
 			next.ServeHTTP(w, r)

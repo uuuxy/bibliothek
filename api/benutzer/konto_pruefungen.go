@@ -42,11 +42,11 @@ func normalisiereRolle(rolle string) string {
 func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, email, ausgenommeneID string) bool {
 	vergeben, err := kontoAbfragen.IstEmailVergeben(ctx, email, ausgenommeneID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 	if vergeben {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
 		return false
 	}
 	return true
@@ -63,11 +63,11 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfra
 func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, vorname, nachname string) bool {
 	vorhanden, err := kontoAbfragen.HatLeserzeileOhneKonto(ctx, vorname, nachname)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 	if vorhanden {
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			fmt.Errorf("für %s %s steht schon eine Leserzeile ohne Konto in der Leserdatei — das Konto entsteht über die Schul-E-Mail in der Akte, sonst gäbe es dieselbe Person zweimal", vorname, nachname))
 		return false
 	}
@@ -91,11 +91,11 @@ func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, ko
 	}
 	vergeben, err := kontoAbfragen.IstAusweisnummerVergeben(ctx, pruefung.nummer, pruefung.ausgenommeneID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
 	if vergeben {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(pruefung.konfliktmeldung))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New(pruefung.konfliktmeldung))
 		return nil, false
 	}
 	return &pruefung.nummer, true
@@ -110,11 +110,11 @@ func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, ko
 func meldeAusweisKollision(w http.ResponseWriter, err error) bool {
 	switch {
 	case repository.IstNummerBuchOderAusweisKollision(err):
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			errors.New("diese Nummer ist der Barcode eines Buchs und kann kein Ausweis sein"))
 		return true
 	case repository.IstAusweisKollision(err):
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			errors.New("diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)"))
 		return true
 	}

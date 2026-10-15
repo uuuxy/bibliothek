@@ -25,7 +25,7 @@ func (t *Tueren) Klassenleitungen() http.HandlerFunc {
 
 		zeilen, err := repository.LadeKlassenleitungen(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -55,7 +55,7 @@ func (t *Tueren) KlassenleitungSetzen() http.HandlerFunc {
 		req.LehrerEmail = strings.TrimSpace(req.LehrerEmail)
 
 		if req.Klasse == "" || req.LehrerEmail == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("klasse und lehrer_email sind erforderlich"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("klasse und lehrer_email sind erforderlich"))
 			return
 		}
 
@@ -65,7 +65,7 @@ func (t *Tueren) KlassenleitungSetzen() http.HandlerFunc {
 		// oder dieselbe Adresse noch einmal gespeichert.
 		neu, unveraendert, err := repository.SetzeKlassenleitung(ctx, t.DB.Pool, req.Klasse, req.LehrerEmail)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		// An diese Adresse gehen die Mahnlisten der Klasse mit Namen und Titeln. Der Eintrag
@@ -89,7 +89,7 @@ func (t *Tueren) KlassenleitungLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		klasse := r.PathValue("klasse")
 		if klasse == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("klasse erforderlich"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("klasse erforderlich"))
 			return
 		}
 
@@ -97,12 +97,12 @@ func (t *Tueren) KlassenleitungLoeschen() http.HandlerFunc {
 
 		getroffen, err := repository.LoescheKlassenleitung(ctx, t.DB.Pool, klasse)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		// 204 für etwas, das nie existierte, wäre ein Erfolg, den es nicht gab.
 		if getroffen == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
 			return
 		}
 		t.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungEntfernt, map[string]any{"klasse": klasse})

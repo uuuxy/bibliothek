@@ -63,7 +63,7 @@ type buchbarcodesAntwort struct {
 // @Success      304 "unverändert"
 // @Router       /action/buchbarcodes [get]
 func (t *Tueren) Buchbarcodes() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 		begonnen := time.Now()
 

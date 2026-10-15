@@ -122,7 +122,7 @@ func anmeldeBremse(next http.Handler) http.Handler {
 		jetzt := time.Now()
 		versuche, gesperrt := reserviereAnmeldeVersuch(adresse, jetzt)
 		if gesperrt {
-			apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("zu viele fehlerhafte Login-Versuche. Bitte warten Sie 15 Minuten"))
+			apierrors.AntworteFehler(w, http.StatusTooManyRequests, errors.New("zu viele fehlerhafte Login-Versuche. Bitte warten Sie 15 Minuten"))
 			return
 		}
 

@@ -30,7 +30,7 @@ func (t *Tueren) Suche(leserAbfragen repository.LeserAbfragen, katalogAbfragen r
 	return func(w http.ResponseWriter, r *http.Request) {
 		suchtext := strings.TrimSpace(r.URL.Query().Get("q"))
 		if suchtext == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("search query 'q' cannot be empty"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("search query 'q' cannot be empty"))
 			return
 		}
 
@@ -42,18 +42,18 @@ func (t *Tueren) Suche(leserAbfragen repository.LeserAbfragen, katalogAbfragen r
 		// des Servers schnell genug und einfacher als Nebenläufigkeit.
 		leser, leserGesamt, err := leserAbfragen.FindeUnscharf(ctx, suchtext, grenze)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		titel, titelGesamt, err := katalogAbfragen.FindeTitelUnscharf(ctx, suchtext, grenze)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		treffer, err := service.ErkenneScan(ctx, katalogAbfragen, leserAbfragen, suchtext)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

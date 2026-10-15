@@ -251,7 +251,7 @@ func (t *Tueren) protokolliereDSGVOAuskunft(ctx context.Context, id string) {
 // @Failure      404  {object}  map[string]string
 // @Router       /schueler/{id}/dsgvo-auskunft [get]
 func (t *Tueren) DSGVOAuskunft() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest("missing student ID parameter", nil)

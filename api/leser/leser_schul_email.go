@@ -49,10 +49,10 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 	art, amKonto, err := repository.LadeLeserArtUndKontoEmail(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
 			return "", false
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return "", false
 	}
 	if neueArt != nil {
@@ -64,7 +64,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 			return "", true
 		}
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.SendHTTPError(w, http.StatusBadRequest,
+		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			errors.New("Ein Schüler bekommt kein Konto und keine E-Mail-Adresse."))
 		return "", false
 	}
@@ -75,12 +75,12 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 		}
 		if neu == "" {
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-			apierrors.SendHTTPError(w, http.StatusBadRequest,
+			apierrors.AntworteFehler(w, http.StatusBadRequest,
 				errors.New("Die Schul-E-Mail lässt sich hier nicht entfernen — ohne sie kommt die Person nicht mehr ins Portal. Das Konto abschalten geht in der Benutzerverwaltung."))
 			return "", false
 		}
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.SendHTTPError(w, http.StatusBadRequest,
+		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			fmt.Errorf("Unter %s besteht bereits ein Zugang. Die Adresse ist der Schlüssel der Anmeldung — ändern lässt sie sich in der Benutzerverwaltung, hier ist sie nur nachtragbar, solange keine da ist.", amKonto))
 		return "", false
 	}
@@ -91,7 +91,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 	// Dieselbe Prüfung wie beim Anlegen: Zugang nur, wo er zur Art gehört, dann Form der
 	// Adresse und die freigegebene Domain.
 	if err := pruefeEmailZurArt(art, neu); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return "", false
 	}
 	return neu, true
@@ -104,17 +104,17 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 // einen zweiten bauen.
 func antworteAufKontoFehler(w http.ResponseWriter, err error, email string) {
 	if repository.IstAdressenKollision(err) {
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 			fmt.Errorf("Unter %s steht bereits ein Zugang. Die Person ist schon in der Leserdatei — bitte dort suchen, statt einen zweiten Eintrag anzulegen.", email))
 		return
 	}
 	if errors.Is(err, repository.ErrKontoNichtEntstanden) {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError,
+		apierrors.AntworteFehler(w, http.StatusInternalServerError,
 			fmt.Errorf("das Konto zu %s ist nicht entstanden", email))
 		return
 	}
-	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 }
 
 // trageKontoNach legt das Konto zu einer bestehenden Leserzeile an. Namen kommen aus der
@@ -124,10 +124,10 @@ func (t *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 	vorname, nachname, err := repository.LadeLeserName(ctx, t.DB.Pool, leserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
 			return "", false
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return "", false
 	}
 	params := repository.KollegiumskontoNeu{
@@ -165,15 +165,15 @@ func (t *Tueren) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter
 	art, err := repository.LadeLeserArt(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
 			return false
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 	if leserart.IstSchueler(art) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.SendHTTPError(w, http.StatusBadRequest,
+		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			errors.New("Ausweisnummer darf nicht leer sein. Ohne sie ist der Schüler an der Theke nicht zu finden."))
 		return false
 	}

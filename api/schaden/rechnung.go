@@ -48,7 +48,7 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.PgxPoo
 	idText := r.PathValue("schueler_id")
 	schuelerID, err := uuid.Parse(idText)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -58,17 +58,17 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.PgxPoo
 	anschrift, err := repository.LadeBriefAnschrift(ctx, datenbank, schuelerID)
 	schueler := pdf.Schueler(anschrift)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 		return
 	}
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	zeilen, err := ladeRechnungPosten(ctx, datenbank, schuelerID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -77,15 +77,15 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.PgxPoo
 		// Sonst hieße es „keine offenen Schadensfälle", während die Akte offene Beträge zeigt.
 		aufBescheid, err := repository.HatOffeneForderungAufBescheid(ctx, datenbank, schuelerID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if aufBescheid {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New(
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New(
 				"die offenen Forderungen stehen auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, keine Ersatzforderung"))
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("no open damage records found for student"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("no open damage records found for student"))
 		return
 	}
 
@@ -93,7 +93,7 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.PgxPoo
 	// Bankverbindung der Vorgabe statt der eingetragenen.
 	einstellungen, err := repository.NewEinstellungsAbfragen(datenbank).Lade(ctx)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 		return
 	}
 	schule := pdf.SchuleInfo{
@@ -110,7 +110,7 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.PgxPoo
 
 	pdfDaten, err := pdf.GenerateRechnung(schueler, zeilen, schule, zahlung)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

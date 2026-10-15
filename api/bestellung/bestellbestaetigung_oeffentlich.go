@@ -85,10 +85,10 @@ func (t *Tueren) bestellungPerToken(ctx context.Context, token string) (string, 
 // und nie existiert sehen von außen gleich aus.
 func sendeTokenFehler(w http.ResponseWriter, err error) {
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("dieser Link ist nicht (mehr) gültig"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("dieser Link ist nicht (mehr) gültig"))
 		return
 	}
-	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 }
 
 // OeffentlicheBestellung liefert die Bestellung hinter dem Link (GET, ohne Login).
@@ -104,7 +104,7 @@ func (t *Tueren) OeffentlicheBestellung() http.HandlerFunc {
 
 		ansicht, err := t.ladeOeffentlicheBestellung(ctx, bestellungID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, ansicht)
@@ -177,21 +177,21 @@ func (t *Tueren) OeffentlichBestaetigen() http.HandlerFunc {
 			return
 		}
 		if req.EtikettenGroesse != "" && req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
 			return
 		}
 		if !pdf.IstBekanntesEtikettFormat(req.EtikettenFormat) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
 			return
 		}
 
 		bereits, err := t.bestaetigeBestellung(ctx, bestellungID, req.EtikettenGroesse, req.EtikettenFormat, "lieferant")
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if bereits {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("diese Bestellung ist bereits bestätigt"))
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New("diese Bestellung ist bereits bestätigt"))
 			return
 		}
 

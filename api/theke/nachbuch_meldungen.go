@@ -23,7 +23,7 @@ import (
 // @Success      200 {array} repository.NachbuchMeldung
 // @Router       /action/nachbuch-meldungen [get]
 func (t *Tueren) NachbuchMeldungen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		nurOffen := r.URL.Query().Get("alle") != "1"
 		liste, err := repository.LadeNachbuchMeldungen(r.Context(), t.DB.Pool, nurOffen)
 		if err != nil {
@@ -41,7 +41,7 @@ func (t *Tueren) NachbuchMeldungen() http.HandlerFunc {
 // @Success      200 {object} map[string]int
 // @Router       /action/nachbuch-meldungen/anzahl [get]
 func (t *Tueren) NachbuchMeldungenAnzahl() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		n, err := repository.ZaehleOffeneNachbuchMeldungen(r.Context(), t.DB.Pool)
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldungen konnten nicht gezählt werden", err)
@@ -60,7 +60,7 @@ func (t *Tueren) NachbuchMeldungenAnzahl() http.HandlerFunc {
 // @Success      200 {object} map[string]string
 // @Router       /action/nachbuch-meldungen/{id}/quittieren [post]
 func (t *Tueren) NachbuchMeldungQuittieren() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))

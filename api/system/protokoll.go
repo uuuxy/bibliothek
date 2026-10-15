@@ -47,7 +47,7 @@ func (t *Tueren) Protokoll() http.HandlerFunc {
 
 		zeilen, err := repository.LadeProtokoll(ctx, t.DB.Pool, protokollMaxZeilen)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

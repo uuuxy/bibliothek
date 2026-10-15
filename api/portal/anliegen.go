@@ -50,7 +50,7 @@ func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
+			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
 			return
 		}
 		var req anliegenAnfrage
@@ -59,12 +59,12 @@ func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 		}
 		req.Art = strings.ToLower(strings.TrimSpace(req.Art))
 		if req.Art != "meldung" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("art muss 'meldung' sein — ein Buch für eine Klasse wird im Portal reserviert"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("art muss 'meldung' sein — ein Buch für eine Klasse wird im Portal reserviert"))
 			return
 		}
 		req.TitelText = strings.TrimSpace(req.TitelText)
 		if req.TitelText == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("worum geht es? titel_text ist leer"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("worum geht es? titel_text ist leer"))
 			return
 		}
 		// Längen kappen statt ablehnen — eine zu lange Meldung soll nicht verloren
@@ -75,7 +75,7 @@ func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 		// Ohne Beschreibung nennt die Meldung nur ein Buch, und die Bibliothek muss
 		// nachfragen. Das Formular verlangt den Satz; die Tür hält dieselbe Regel.
 		if req.Kommentar == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("was stimmt nicht? kommentar ist leer"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("was stimmt nicht? kommentar ist leer"))
 			return
 		}
 
@@ -88,7 +88,7 @@ func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 			AngefordertVon: claims.UserID,
 		})
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusCreated, map[string]string{"id": id})
@@ -110,12 +110,12 @@ func (t *Tueren) EigeneAnliegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
+			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
 			return
 		}
 		anliegen, err := repository.NewAnliegenAbfragen(t.DB.Pool).LadeEigene(r.Context(), claims.UserID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, anliegen)
@@ -127,7 +127,7 @@ func (t *Tueren) OffeneAnliegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		anliegen, err := repository.NewAnliegenAbfragen(t.DB.Pool).LadeOffene(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, anliegen)
@@ -141,7 +141,7 @@ func (t *Tueren) OffeneAnliegenAnzahl() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		n, err := repository.NewAnliegenAbfragen(t.DB.Pool).ZaehleOffene(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, map[string]int{"anzahl": n})
@@ -166,13 +166,13 @@ func (t *Tueren) erledigeAnliegen(w http.ResponseWriter, r *http.Request) {
 
 	erledigt, err := repository.NewAnliegenAbfragen(t.DB.Pool).Erledige(r.Context(), id, kuerze(strings.TrimSpace(body.Notiz), 500))
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	if erledigt == nil {
 		// Schon abgehakt (Doppelklick an zwei Arbeitsplätzen) oder unbekannt —
 		// beides kein Serverfehler, und vor allem: keine zweite Mail.
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("anliegen ist bereits erledigt oder unbekannt"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("anliegen ist bereits erledigt oder unbekannt"))
 		return
 	}
 

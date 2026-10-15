@@ -33,7 +33,7 @@ func (t *Tueren) KollegiumKatalogSuche() http.HandlerFunc {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		schlagwortID, err := tuer.LeseUUIDParameter(r, "schlagwort_id")
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 		if q == "" && schlagwortID == "" {
@@ -48,7 +48,7 @@ func (t *Tueren) KollegiumKatalogSuche() http.HandlerFunc {
 			Grenze:       opacGrenze,
 		})
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -68,7 +68,7 @@ func (t *Tueren) KollegiumKatalogFilter() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filter, err := repository.LadeSchlagwortFilterImKatalog(r.Context(), t.DB.Pool, repository.SQLKollegiumSichtbar("bt"))
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, filter)

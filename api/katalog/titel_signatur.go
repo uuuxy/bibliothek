@@ -37,7 +37,7 @@ type titelSignaturAnfrage struct {
 // @Failure      404   {object}  map[string]string
 // @Router       /buecher/titel/{id}/signatur [put]
 func (t *Tueren) TitelSignaturSetzen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))

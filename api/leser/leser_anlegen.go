@@ -177,7 +177,7 @@ func (t *Tueren) LeserAnlegen() http.HandlerFunc {
 		}
 
 		if err := pruefeLeserAngaben(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -192,7 +192,7 @@ func (t *Tueren) LeserAnlegen() http.HandlerFunc {
 		// Ein Kollege kommt nie aus der LUSD. Von ihm ein Geburtsdatum zu verlangen, wäre
 		// eine Angabe ohne Zweck — und damit eine, die nicht erhoben gehört.
 		if leserart.IstSchueler(req.Art) && (req.Geburtsdatum == nil || strings.TrimSpace(*req.Geburtsdatum) == "") {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errGeburtsdatumPflicht)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errGeburtsdatumPflicht)
 			return
 		}
 		geburtsdatum, ok := leseAnlageGeburtsdatum(w, req.Geburtsdatum)
@@ -227,7 +227,7 @@ func (t *Tueren) LeserAnlegen() http.HandlerFunc {
 func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req leserAnlegenAnfrage, geburtsdatum *time.Time, darfFreischalten bool) (leserID, barcodeID string, ok bool) {
 	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return "", "", false
 	}
 	defer db.SafeRollback(ctx, tx)
@@ -297,7 +297,7 @@ func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req les
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return "", "", false
 	}
 	// Dieselbe Spur wie über Benutzer & Rechte: Auch ein Konto, das über die Leserdatei
@@ -316,23 +316,23 @@ func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWri
 	if leserart.IstSchueler(req.Art) {
 		istDublette, err := repository.IstSchuelerDubletteVorhanden(ctx, tx, req.Vorname, req.Nachname, geburtsdatum)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return false
 		}
 		if istDublette {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
 			return false
 		}
 		return true
 	}
 	belegt, err := repository.IstLeserNamensdubletteVorhanden(ctx, tx, req.Vorname, req.Nachname)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 	if belegt {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-		apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungLeserNamensdublette))
+		apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldungLeserNamensdublette))
 		return false
 	}
 	return true
@@ -344,20 +344,20 @@ func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWri
 func antworteAufAnlegeFehler(w http.ResponseWriter, err error, barcodeID string) {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "unique_schueler_name_gebdatum" {
-		apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+		apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
 		return
 	}
 	if repository.IstAusweisKollision(err) {
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			fmt.Errorf("die Ausweisnummer '%s' wird bereits von einer anderen Person verwendet", barcodeID))
 		return
 	}
 	if repository.IstNummerBuchOderAusweisKollision(err) {
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			fmt.Errorf("die Nummer '%s' ist der Barcode eines Buchs und kann kein Ausweis sein", barcodeID))
 		return
 	}
-	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 }
 
 // leseAnlageGeburtsdatum liest das Geburtsdatum (JJJJ-MM-TT) aus der Anfrage. Der nil- und
@@ -369,7 +369,7 @@ func leseAnlageGeburtsdatum(w http.ResponseWriter, roh *string) (*time.Time, boo
 	}
 	t, err := time.Parse(tuer.DatumsformatISO, *roh)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
 		return nil, false
 	}
 	return &t, true
@@ -390,7 +390,7 @@ func bestimmeNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter
 		startNummer, err := nummernAbfragen.ZieheNaechste(ctx)
 		if err != nil {
 			db.SafeRollback(ctx, tx)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return "", false
 		}
 		return repository.AusweisNummer(startNummer), true
@@ -406,11 +406,11 @@ func bestimmeNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter
 	// Datenbank vergeben würde.
 	vorhanden, err := repository.IstAusweisnummerVergeben(ctx, tx, gewuenscht)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return "", false
 	}
 	if vorhanden {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("Barcode-ID '%s' wird bereits verwendet", gewuenscht))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("Barcode-ID '%s' wird bereits verwendet", gewuenscht))
 		return "", false
 	}
 	return gewuenscht, true

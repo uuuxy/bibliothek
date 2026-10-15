@@ -58,7 +58,7 @@ func (t *Tueren) BestellungMittelKorrigieren() http.HandlerFunc {
 func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing bestellung id"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing bestellung id"))
 		return
 	}
 
@@ -67,23 +67,23 @@ func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if !mitteltopf.IstGueltig(req.Mittel) {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
 		return
 	}
 	grund := strings.TrimSpace(req.Grund)
 	if grund == "" {
 		//nolint:staticcheck // ST1005: ganze Sätze — diese Meldung steht so vor der Bibliothekskraft.
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Bitte einen Grund für die Korrektur angeben."))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("Bitte einen Grund für die Korrektur angeben."))
 		return
 	}
 
 	vorher, err := repository.KorrigiereBestellungMittel(r.Context(), t.DB.Pool, id, req.Mittel)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
 		return
 	}
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

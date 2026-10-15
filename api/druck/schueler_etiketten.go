@@ -45,19 +45,19 @@ func (t *Tueren) SchuelerEtiketten(leserAbfragen repository.LeserAbfragen) http.
 		}
 
 		if fehler := pruefeBogenParameter(&req); fehler != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fehler)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, fehler)
 			return
 		}
 
 		etiketten, status, fehler := t.etikettenDesBogens(r, leserAbfragen, req)
 		if fehler != nil {
-			apierrors.SendHTTPError(w, status, fehler)
+			apierrors.AntworteFehler(w, status, fehler)
 			return
 		}
 
 		bogen, err := pdf.GenerateSchuelerEtikettenPDF(req.FormatID, req.Startposition, etiketten)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("etikettenbogen konnte nicht erzeugt werden: %w", err))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("etikettenbogen konnte nicht erzeugt werden: %w", err))
 			return
 		}
 

@@ -43,9 +43,10 @@ var stilVerben = wortmenge("get list create update delete save insert upsert add
 	// Der Erzeuger eines Typs heißt New oder new, in jedem Paket dasselbe Wort.
 	"neuer neue neues")
 
-// stilFremdeNamen gibt eine Schnittstelle von Go oder einer Bibliothek vor; sie bleiben.
+// stilFremdeNamen gibt eine Schnittstelle von Go oder einer Bibliothek vor oder das Protokoll
+// HTTP mit dem Namen eines Status (apierrors.BadRequest wie http.StatusBadRequest); sie bleiben.
 var stilFremdeNamen = wortmenge("ServeHTTP RoundTrip MarshalJSON UnmarshalJSON WriteHeader " +
-	"CopyFrom QueryRow SendBatch GetStringWidth GetCellMargin")
+	"CopyFrom QueryRow SendBatch GetStringWidth GetCellMargin BadRequest")
 
 var (
 	stilKuerzel = regexp.MustCompile(`(Lmf|Dsgvo|Lusd|Dnb|Opac|Isbn|Pdf|Csv|Xlsx|Json|Sql|Http|` +

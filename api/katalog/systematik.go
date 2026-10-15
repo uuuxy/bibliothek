@@ -80,7 +80,7 @@ func meldungDoppelteSachgruppe(err error) string {
 // @Failure      409   {object}  map[string]string
 // @Router       /systematics [post]
 func (t *Tueren) SachgruppeAnlegen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req sachgruppeAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
@@ -126,7 +126,7 @@ func (t *Tueren) SachgruppeAnlegen() http.HandlerFunc {
 // @Failure      409   {object}  map[string]string
 // @Router       /systematics/{id} [put]
 func (t *Tueren) SachgruppeAendern() http.HandlerFunc {
-	return apierrors.Wrap(t.aendereSachgruppe)
+	return apierrors.MitFehlerantwort(t.aendereSachgruppe)
 }
 
 func (t *Tueren) aendereSachgruppe(w http.ResponseWriter, r *http.Request) error {
@@ -225,7 +225,7 @@ func ladeSachgruppenBezeichnung(ctx context.Context, tx pgx.Tx, id string) (stri
 // @Failure      409  {object}  map[string]string
 // @Router       /systematics/{id} [delete]
 func (t *Tueren) SachgruppeLoeschen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 
 		bezeichnung, err := repository.LadeSachgruppenBezeichnung(r.Context(), t.DB.Pool, id)

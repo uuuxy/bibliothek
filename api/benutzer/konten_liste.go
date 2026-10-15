@@ -48,7 +48,7 @@ func (t *Tueren) Konten(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc
 
 		konten, err := kontoAbfragen.LadeAlle(ctx)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -56,7 +56,7 @@ func (t *Tueren) Konten(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc
 		// Einträgen eine Lawine von Abfragen an dieselben vier Rollen.
 		rechteJeRolle, err := t.rechteAllerRollen(ctx)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

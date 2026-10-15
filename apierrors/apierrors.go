@@ -12,232 +12,210 @@ import (
 	"strings"
 )
 
-// APIError is a structured error for the HTTP API that implements the error interface.
-type APIError struct {
-	StatusCode int    `json:"-"`
-	Message    string `json:"error"`
-	Err        error  `json:"-"` // Internal error for logging
+// Fehler ist die Antwort einer Tür, die scheitert: Status und Meldung gehen an die Oberfläche,
+// die Ursache bleibt im Server.
+type Fehler struct {
+	Status  int    `json:"-"`
+	Meldung string `json:"error"`
+	Ursache error  `json:"-"`
 }
 
-// Error implements the error interface.
-func (e *APIError) Error() string {
-	if e.Err != nil {
-		return e.Message + ": " + e.Err.Error()
+// Error nennt Meldung und Ursache, wie sie das Log des Servers schreibt.
+func (e *Fehler) Error() string {
+	if e.Ursache != nil {
+		return e.Meldung + ": " + e.Ursache.Error()
 	}
-	return e.Message
+	return e.Meldung
 }
 
-// Unwrap allows unwrapping the internal error.
-func (e *APIError) Unwrap() error {
-	return e.Err
+// Unwrap gibt die Ursache frei, damit errors.Is und errors.As sie finden.
+func (e *Fehler) Unwrap() error {
+	return e.Ursache
 }
 
-// New creates a new APIError.
-func New(statusCode int, message string, err error) *APIError {
-	return &APIError{
-		StatusCode: statusCode,
-		Message:    message,
-		Err:        err,
+// New baut einen Fehler aus Status, Meldung und Ursache.
+func New(status int, meldung string, ursache error) *Fehler {
+	return &Fehler{
+		Status:  status,
+		Meldung: meldung,
+		Ursache: ursache,
 	}
 }
 
-// NotFound baut einen 404 mit deutscher Vorgabemeldung, wenn der Aufrufer keine eigene
-// mitgibt. Der ursprüngliche Fehler bleibt zum Protokollieren erhalten, geht aber nicht
-// an den Client.
-func NotFound(message string, err error) *APIError {
-	if message == "" {
-		message = "Ressource nicht gefunden"
+// NotFound baut einen 404; ohne eigene Meldung gilt die Vorgabe. Die Ursache bleibt am Fehler
+// und geht nicht an die Oberfläche.
+func NotFound(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Ressource nicht gefunden"
 	}
-	return New(http.StatusNotFound, message, err)
+	return New(http.StatusNotFound, meldung, ursache)
 }
 
-// BadRequest baut einen 400 mit deutscher Vorgabemeldung — für Bedienfehler, die der
-// Aufrufer selbst beheben kann.
-func BadRequest(message string, err error) *APIError {
-	if message == "" {
-		message = "Ungültige Anfrage"
+// BadRequest baut einen 400 für einen Bedienfehler, den die Person selbst beheben kann.
+func BadRequest(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Ungültige Anfrage"
 	}
-	return New(http.StatusBadRequest, message, err)
+	return New(http.StatusBadRequest, meldung, ursache)
 }
 
-// Internal baut einen 500. Achtung beim Debuggen: Die Meldung wird beim Senden durch
-// eine neutrale ersetzt — eine Diagnose, die den Nutzer erreichen soll, gehört in einen
-// 400er oder 502er, nicht hierhin.
-func Internal(message string, err error) *APIError {
-	if message == "" {
-		message = "Ein interner Serverfehler ist aufgetreten"
+// Internal baut einen 500. Über MitFehlerantwort geht die Meldung so hinaus, wie sie hier steht,
+// die Ursache nur ins Log; anders als AntworteFehler ersetzt dieser Weg die Meldung eines 500
+// nicht durch eine neutrale. Die Meldung nennt deshalb nichts aus dem Server.
+func Internal(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Ein interner Serverfehler ist aufgetreten"
 	}
-	return New(http.StatusInternalServerError, message, err)
+	return New(http.StatusInternalServerError, meldung, ursache)
 }
 
-// Unauthorized baut einen 401 — fehlende oder abgelaufene Anmeldung. Für „angemeldet,
-// aber nicht berechtigt" gehört ein 403 hin, den die RBAC-Middleware selbst setzt.
-func Unauthorized(message string, err error) *APIError {
-	if message == "" {
-		message = "Nicht autorisiert"
+// Unauthorized baut einen 401 für eine fehlende oder abgelaufene Anmeldung. „Angemeldet, aber
+// ohne Recht" ist ein 403, den die Prüfung der Rechte selbst schreibt.
+func Unauthorized(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Nicht autorisiert"
 	}
-	return New(http.StatusUnauthorized, message, err)
+	return New(http.StatusUnauthorized, meldung, ursache)
 }
 
-// Conflict signalisiert einen Zustandskonflikt (409): Die Anfrage war gültig, kollidiert
-// aber mit dem inzwischen geänderten Serverzustand (z. B. ein zwischenzeitlich neu
-// ausgeliehenes Exemplar). Der Client soll neu laden, nicht wiederholen.
-func Conflict(message string, err error) *APIError {
-	if message == "" {
-		message = "Konflikt mit dem aktuellen Stand"
+// Conflict baut einen 409: Die Anfrage war gültig, aber der Stand hat sich inzwischen geändert,
+// etwa weil das Exemplar gerade ausgeliehen wurde. Die Oberfläche lädt neu, statt zu
+// wiederholen.
+func Conflict(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Konflikt mit dem aktuellen Stand"
 	}
-	return New(http.StatusConflict, message, err)
+	return New(http.StatusConflict, meldung, ursache)
 }
 
-// APIHandler is a signature for HTTP handlers that return an error.
-type APIHandler func(w http.ResponseWriter, r *http.Request) error
+// TuerMitFehler ist eine Tür, die ihren Fehler zurückgibt, statt die Antwort selbst zu
+// schreiben.
+type TuerMitFehler func(w http.ResponseWriter, r *http.Request) error
 
-// StatusClientClosedRequest (499, nginx-Konvention): Der Browser hat die Verbindung
-// aufgegeben, bevor die Antwort fertig war — Seitenwechsel, Tab zu, Timeout im Client.
-// Bis zum 07.09.2026 wurde daraus ein 500 samt Stacktrace im Log (Register B): pgx meldet
-// „context canceled“, der Sanitizer machte „Interner Serverfehler“ daraus, und der
-// Stacktrace der Middleware zeigte nie die Fehlerstelle. Ein Client-Abbruch ist kein
-// Serverfehler; er wird nicht auf Fehlerstufe geloggt und zählt in keinem Alarm.
-const StatusClientClosedRequest = 499
+// statusAbgebrochen ist der Status 499 aus nginx: Der Browser hat die Verbindung aufgegeben,
+// bevor die Antwort fertig war. Das ist kein Fehler des Servers; er steht nicht auf der
+// Fehlerstufe im Log und zählt in keinem Alarm.
+const statusAbgebrochen = 499
 
-// istClientAbbruch: Der Fehler stammt aus einem abgebrochenen Request-Kontext. errors.Is
-// reicht — pgx und net/http reichen context.Canceled gewrappt durch.
-func istClientAbbruch(err error) bool {
+// istAbbruch erkennt einen Fehler aus einem abgebrochenen Kontext der Anfrage; pgx und
+// net/http reichen context.Canceled eingewickelt weiter, errors.Is findet es.
+func istAbbruch(err error) bool {
 	return err != nil && errors.Is(err, context.Canceled)
 }
 
-func writeClientAbbruch(w http.ResponseWriter) {
-	writeJSONError(w, StatusClientClosedRequest, "Anfrage vom Client abgebrochen")
+func antworteAbbruch(w http.ResponseWriter) {
+	schreibeFehlerJSON(w, statusAbgebrochen, "Anfrage vom Client abgebrochen")
 }
 
-// Wrap converts an APIHandler into a standard http.HandlerFunc.
-// If the handler returns an error, it is properly formatted and sent to the client.
-func Wrap(h APIHandler) http.HandlerFunc {
+// MitFehlerantwort macht aus einer TuerMitFehler eine gewöhnliche Tür. Ein Fehler vom Typ
+// Fehler geht mit seinem Status und seiner Meldung hinaus, jeder andere als neutraler 500.
+func MitFehlerantwort(tuer TuerMitFehler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := h(w, r)
+		err := tuer(w, r)
 		if err != nil {
-			// Der Request-Kontext selbst ist die sicherste Quelle: Auch ein Fehler, der
-			// context.Canceled nicht wrappt, ist nach einem Abbruch kein Serverfehler.
-			if istClientAbbruch(err) || errors.Is(r.Context().Err(), context.Canceled) {
-				writeClientAbbruch(w)
+			// Der Kontext der Anfrage ist die sicherste Quelle: Auch ein Fehler, der
+			// context.Canceled nicht einwickelt, ist nach einem Abbruch kein Serverfehler.
+			if istAbbruch(err) || errors.Is(r.Context().Err(), context.Canceled) {
+				antworteAbbruch(w)
 				return
 			}
-			var apiErr *APIError
-			if errors.As(err, &apiErr) {
-				if apiErr.StatusCode >= 500 {
-					log.Printf("API Error [HTTP %d]: %v", apiErr.StatusCode, apiErr.Err)
+			var fehler *Fehler
+			if errors.As(err, &fehler) {
+				if fehler.Status >= 500 {
+					log.Printf("API Error [HTTP %d]: %v", fehler.Status, fehler.Ursache)
 				}
-				// apiErr serialisiert exakt zu {"error": Message} (StatusCode/Err sind json:"-").
-				// writeJSONError zentralisiert diese Form, damit sie nicht von SendHTTPError abweicht.
-				writeJSONError(w, apiErr.StatusCode, apiErr.Message)
+				schreibeFehlerJSON(w, fehler.Status, fehler.Meldung)
 			} else {
-				// Fallback to the existing SendHTTPError logic for generic errors
-				SendHTTPError(w, http.StatusInternalServerError, err)
+				AntworteFehler(w, http.StatusInternalServerError, err)
 			}
 		}
 	}
 }
 
-// SendHTTPError logs the detailed internal error to the server console and returns a sanitized JSON error to the client.
-//
-// Achtung: Bei jedem Status außer 500 IST der Fehlertext die Meldung an den Client —
-// gefiltert wird nur, was istDatenbankFehler erkennt. Wer einen Fehler mit einer Ursache
-// wrappt, die dem Client nicht gehört, nimmt SendHTTPErrorMitMeldung.
-func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
-	SendHTTPErrorMitMeldung(w, status, "", internalErr)
+// AntworteFehler schreibt den Fehler ins Log und antwortet mit einer Meldung, die keine
+// Einzelheit des Servers verrät. Unter 500 ist der Text des Fehlers die Meldung; heraus
+// gefiltert wird nur, was istDatenbankFehler erkennt. Gehört die Ursache eines Fehlers nicht
+// an die Oberfläche, nimmt der Rufer AntworteFehlerMitMeldung.
+func AntworteFehler(w http.ResponseWriter, status int, ursache error) {
+	AntworteFehlerMitMeldung(w, status, "", ursache)
 }
 
-// SendHTTPErrorMitMeldung trennt, was der Client liest, von dem, was ins Log geht:
-// `meldung` geht an den Client, `internalErr` vollständig ins Log.
+// AntworteFehlerMitMeldung trennt, was die Oberfläche liest, von dem, was ins Log geht: Die
+// Meldung geht hinaus, die Ursache ganz ins Log. Der Rufer nennt den Satz, weil eine Ursache wie
+// ein Verbindungsabriss weder SQL noch eine Bedingung nennt und am Filter vorbeiginge.
 //
-// Anlass (Rasterdurchgang 12.09.2026): Ein gewrappter Sentinel trug seine Ursache mit
-// nach draußen. `fmt.Errorf("%w: sperrliste: %v", ErrPruefungGestoert, err)` ist innen
-// richtig — die Ursache gehört in die Kette und ins Log —, aber bei einem 503 las das
-// Personal an der Theke „sitzung konnte nicht geprüft werden, bitte erneut versuchen:
-// sperrliste: connection reset by peer". Der Filter griff nicht: Ein Verbindungsabriss
-// nennt weder SQL noch Constraint. Statt die Wortliste des Filters um jede denkbare
-// Transportmeldung zu verlängern (sie wäre immer unvollständig), sagt der Aufrufer hier,
-// welcher Satz dem Client gilt — die öffentliche Hälfte des Sentinels.
-//
-// Ein leeres `meldung` bedeutet „wie bisher": der Fehlertext selbst. Ein 500 bleibt in
-// jedem Fall neutral, auch mit Meldung — dafür gibt es 400er/409er/502er.
-func SendHTTPErrorMitMeldung(w http.ResponseWriter, status int, meldung string, internalErr error) {
-	if istClientAbbruch(internalErr) {
-		writeClientAbbruch(w)
+// Eine leere Meldung nimmt den Text des Fehlers. Ein 500 bleibt auch mit Meldung neutral; eine
+// Diagnose braucht 400, 409 oder 502.
+func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string, ursache error) {
+	if istAbbruch(ursache) {
+		antworteAbbruch(w)
 		return
 	}
-	if internalErr != nil {
-		log.Printf("API Error [HTTP %d]: %v (path: %s)", status, internalErr, "unknown")
+	if ursache != nil {
+		log.Printf("API Error [HTTP %d]: %v (path: %s)", status, ursache, "unknown")
 	}
 
-	// Default to status text
-	msg := http.StatusText(status)
-	if msg == "" {
-		msg = "Unknown Error"
+	text := http.StatusText(status)
+	if text == "" {
+		text = "Unknown Error"
 	}
 
-	// For user-facing errors (non-500), default to the internalErr string unless it contains SQL/DB details
 	if status != http.StatusInternalServerError {
 		switch {
 		case meldung != "":
-			msg = meldung
-		case internalErr != nil:
-			msg = internalErr.Error()
+			text = meldung
+		case ursache != nil:
+			text = ursache.Error()
 		}
 	}
 
-	// Check if the outgoing message is database-related (SQL structure, constraint
-	// violation, DB driver logs). Geprüft wird der Text, der HINAUSGEHT, nicht der
-	// interne Fehler: Für den Fall ohne Meldung sind beide identisch, mit Meldung ist es
-	// der, auf den es ankommt.
-	isDBError := istDatenbankFehler(strings.ToLower(msg))
+	// Geprüft wird der Text, der hinausgeht, nicht die Ursache: Ohne Meldung sind beide
+	// gleich, mit Meldung kommt es auf sie an.
+	ausDerDatenbank := istDatenbankFehler(strings.ToLower(text))
 
-	// Strictly sanitize all internal server errors and database errors
-	if status == http.StatusInternalServerError || isDBError {
-		msg = sanitizeInternalError(internalErr)
+	if status == http.StatusInternalServerError || ausDerDatenbank {
+		text = neutraleMeldung(ursache)
 	}
 
-	writeJSONError(w, status, msg)
+	schreibeFehlerJSON(w, status, text)
 }
 
-// writeJSONError schreibt die EINE kanonische Fehlerdarstellung des API: Body {"error": msg}
-// mit passendem Status und Content-Type. Einzige Stelle, die das Wire-Format bestimmt —
-// SendHTTPError und Wrap nutzen sie beide, damit die Form nicht auseinanderläuft (der Client
-// darf sich auf genau das eine Schema verlassen). Die jeweilige Sanitisierungs-/
-// Nachrichtenpolitik bleibt bei den Aufrufern; hier wird nur serialisiert.
-func writeJSONError(w http.ResponseWriter, status int, msg string) {
+// schreibeFehlerJSON legt fest, wie jede Fehlerantwort aussieht: {"error": meldung} mit Status
+// und Content-Type. AntworteFehler und MitFehlerantwort schreiben beide hierüber, damit sich die
+// Oberfläche auf eine Form verlassen kann.
+func schreibeFehlerJSON(w http.ResponseWriter, status int, meldung string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg}) //nolint:errcheck
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": meldung}) //nolint:errcheck
 }
 
-// istDatenbankFehler erkennt DB-nahe Fehlermeldungen (SQL, Constraints, Treiber-Logs),
-// die niemals ungefiltert an den Client gelangen dürfen. errMsg muss lowercase sein.
-func istDatenbankFehler(errMsg string) bool {
-	return strings.Contains(errMsg, "pgx") ||
-		strings.Contains(errMsg, "pgconn") ||
-		strings.Contains(errMsg, "sql:") ||
-		strings.Contains(errMsg, "unique constraint") ||
-		strings.Contains(errMsg, "foreign key") ||
-		strings.Contains(errMsg, "duplicate key") ||
-		strings.Contains(errMsg, "violates") ||
-		strings.Contains(errMsg, "insert into") ||
-		strings.Contains(errMsg, "select ") ||
-		strings.Contains(errMsg, "update ") ||
-		strings.Contains(errMsg, "delete ")
+// istDatenbankFehler erkennt einen Text aus der Datenbank (SQL, Bedingungen, Meldungen des
+// Treibers), der nie ungefiltert an die Oberfläche geht. Der Text ist klein geschrieben.
+func istDatenbankFehler(text string) bool {
+	return strings.Contains(text, "pgx") ||
+		strings.Contains(text, "pgconn") ||
+		strings.Contains(text, "sql:") ||
+		strings.Contains(text, "unique constraint") ||
+		strings.Contains(text, "foreign key") ||
+		strings.Contains(text, "duplicate key") ||
+		strings.Contains(text, "violates") ||
+		strings.Contains(text, "insert into") ||
+		strings.Contains(text, "select ") ||
+		strings.Contains(text, "update ") ||
+		strings.Contains(text, "delete ")
 }
 
-// sanitizeInternalError liefert die neutrale, client-sichere Meldung für interne bzw.
-// DB-Fehler (bekannte Constraint-Verletzungen werden fachlich übersetzt).
-func sanitizeInternalError(internalErr error) string {
-	if internalErr == nil {
+// neutraleMeldung liefert die Meldung für einen Fehler im Server; zwei bekannte Verletzungen
+// einer Bedingung nennt sie in Worten der Bibliothek.
+func neutraleMeldung(ursache error) string {
+	if ursache == nil {
 		return "Internal Server Error"
 	}
-	errStr := internalErr.Error()
+	text := ursache.Error()
 	switch {
-	case strings.Contains(errStr, "23505") || strings.Contains(errStr, "unique_violation") || strings.Contains(errStr, "duplicate key"):
+	case strings.Contains(text, "23505") || strings.Contains(text, "unique_violation") || strings.Contains(text, "duplicate key"):
 		return "Ein Eintrag mit diesen eindeutigen Eigenschaften existiert bereits."
-	case strings.Contains(errStr, "23503") || strings.Contains(errStr, "foreign_key_violation"):
+	case strings.Contains(text, "23503") || strings.Contains(text, "foreign_key_violation"):
 		return "Diese Aktion kann nicht durchgeführt werden, da verknüpfte Daten existieren."
 	default:
 		return "Ein interner Datenbankfehler ist aufgetreten."

@@ -30,12 +30,12 @@ func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
 			return
 		}
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
 			return
 		}
 
@@ -44,11 +44,11 @@ func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 		err := protokollAbfragen.LoescheTitel(ctx, id, claims.UserID)
 		if err != nil {
 			if errors.Is(err, repository.ErrTitelHatAktiveAusleihen) {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+				apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			} else if errors.Is(err, repository.ErrTitelNichtGefunden) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				apierrors.AntworteFehler(w, http.StatusNotFound, err)
 			} else {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			}
 			return
 		}

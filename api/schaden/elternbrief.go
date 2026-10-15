@@ -20,7 +20,7 @@ func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing damage case ID parameter"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing damage case ID parameter"))
 			return
 		}
 
@@ -29,10 +29,10 @@ func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 		info, aufBescheid, err := t.ladeSchadensfallBrief(ctx, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				apierrors.AntworteFehler(w, http.StatusNotFound, err)
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		// Steht die Forderung auf einem Schadensersatz-Bescheid, gilt der Bescheid: Ein
@@ -40,7 +40,7 @@ func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 		// Zahlungsweg. Dieselbe Regel wie bei der Ersatzforderung
 		// (repository.LadeOffeneForderungenOhneBescheid).
 		if aufBescheid {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
 				"die Forderung steht auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, kein Elternbrief"))
 			return
 		}
@@ -49,7 +49,7 @@ func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 		// die Bankverbindung der Vorgabe statt der eingetragenen.
 		einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 			return
 		}
 		schule := pdf.SchuleInfo{
@@ -67,7 +67,7 @@ func (t *Tueren) ElternbriefPDF() http.HandlerFunc {
 		pdfDaten, err := pdf.GenerateSchadensfallPDF(info, schule, zahlung)
 		if err != nil {
 			log.Printf("PDF Generator: Generation error for case %s: %v", id, err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("failed to generate PDF"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("failed to generate PDF"))
 			return
 		}
 

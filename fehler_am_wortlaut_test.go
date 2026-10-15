@@ -149,7 +149,7 @@ func wortlautFunde(fn *ast.FuncDecl) []token.Pos {
 
 // fehlerAmWortlautBestand: „datei:funktion" → warum es dort richtig ist.
 var fehlerAmWortlautBestand = map[string]string{
-	"apierrors/apierrors.go:sanitizeInternalError": "wählt den neutralen Satz einer Antwort, deren Status feststeht; " +
+	"apierrors/apierrors.go:neutraleMeldung": "wählt den neutralen Satz einer Antwort, deren Status feststeht; " +
 		"der Fehler kann hier jede Herkunft haben, auch ohne pgconn.PgError in der Kette",
 }
 

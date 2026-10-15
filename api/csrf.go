@@ -63,7 +63,7 @@ func (s *Server) csrfToken() http.HandlerFunc {
 		if token == "" {
 			erzeugt, err := erzeugeCSRFToken()
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("CSRF-Token konnte nicht erzeugt werden"))
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("CSRF-Token konnte nicht erzeugt werden"))
 				return
 			}
 			token = erzeugt
@@ -170,7 +170,7 @@ func (s *Server) csrfMiddleware(next http.Handler) http.Handler {
 
 		if aendert && !ausgenommen {
 			if err := pruefeCSRFToken(r); err != nil {
-				apierrors.SendHTTPError(w, http.StatusForbidden, err)
+				apierrors.AntworteFehler(w, http.StatusForbidden, err)
 				return
 			}
 		}

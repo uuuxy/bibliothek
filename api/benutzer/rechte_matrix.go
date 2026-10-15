@@ -34,7 +34,7 @@ func (t *Tueren) RechteMatrix() http.HandlerFunc {
 
 		rechte, err := repository.LadeRollenRechte(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -79,7 +79,7 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 		// Recht in einem Schritt zu vollem Zugriff ausbauen. Die Rechte-Matrix ist
 		// Konfiguration des Systems, nicht Tagesgeschäft der Kontoverwaltung.
 		if !istAufruferAdmin(r) {
-			apierrors.SendHTTPError(w, http.StatusForbidden,
+			apierrors.AntworteFehler(w, http.StatusForbidden,
 				errors.New("die Rechte-Matrix kann nur ein Administrator ändern"))
 			return
 		}
@@ -88,7 +88,7 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 
 		getroffen, err := repository.SetzeRollenRecht(ctx, t.DB.Pool, strings.ToUpper(req.Rolle), req.Recht, req.Erlaubt)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -96,7 +96,7 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 		// Erfolg, sähe ein Tippfehler im Namen des Rechts in der Oberfläche aus wie ein
 		// gesetzter Haken, der in der Datenbank nichts bewirkt.
 		if getroffen == 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest,
+			apierrors.AntworteFehler(w, http.StatusBadRequest,
 				fmt.Errorf("unbekannte Kombination aus Rolle %q und Recht %q — nichts geändert", req.Rolle, req.Recht))
 			return
 		}

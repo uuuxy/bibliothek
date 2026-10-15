@@ -21,13 +21,13 @@ func (t *Tueren) BestellbedarfPDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		bedarf, err := t.bestellbedarfMitEinstellungen(r.Context(), r)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

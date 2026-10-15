@@ -50,7 +50,7 @@ func (t *Tueren) AbgeschlosseneInventuren() http.HandlerFunc {
 
 		laeufe, err := abfragen.LadeAbgeschlosseneLaeufe(r.Context(), 10)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -90,7 +90,7 @@ func (t *Tueren) LaufendeInventuren() http.HandlerFunc {
 
 		laeufe, err := abfragen.LadeOffeneLaeufe(ctx)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -98,7 +98,7 @@ func (t *Tueren) LaufendeInventuren() http.HandlerFunc {
 		for i := range laeufe {
 			erwartet, err := abfragen.ZaehleBereich(ctx, laeufe[i].Bereich())
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 				return
 			}
 			liste = append(liste, offenerLauf{
@@ -138,7 +138,7 @@ func (t *Tueren) InventurVerwerfen() http.HandlerFunc {
 			return
 		}
 		if req.LaufID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("session_id fehlt"))
 			return
 		}
 
@@ -146,10 +146,10 @@ func (t *Tueren) InventurVerwerfen() http.HandlerFunc {
 		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
 		if err := abfragen.VerwerfeLauf(ctx, req.LaufID); err != nil {
 			if errors.Is(err, repository.ErrInventurlaufNichtGefunden) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				apierrors.AntworteFehler(w, http.StatusNotFound, err)
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteErfolg(w)

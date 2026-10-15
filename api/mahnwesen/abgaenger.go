@@ -79,7 +79,7 @@ func (t *Tueren) Abgaenger() http.HandlerFunc {
 		if antwort.Fenster.Offen {
 			zeilen, err := t.ladeAbgaengerZeilen(r.Context())
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 				return
 			}
 			antwort.Abgaenger = zeilen
@@ -149,7 +149,7 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 		// Außerhalb der Saison gibt es keinen Ausdruck — dieselbe Regel wie die Liste,
 		// sonst druckte ein direkter Aufruf im Oktober, was der Bildschirm nicht zeigt.
 		if fenster := abgaengerFensterFuer(t.Jetzt()); !fenster.Offen {
-			apierrors.SendHTTPError(w, http.StatusNotFound, abgaengerAusserhalbDerSaison(fenster))
+			apierrors.AntworteFehler(w, http.StatusNotFound, abgaengerAusserhalbDerSaison(fenster))
 			return
 		}
 
@@ -159,25 +159,25 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 		// Optional: nur die Schüler, die die Oberfläche gerade zeigt (aktive Suche).
 		nurIDs, err := leseAbgaengerAuswahl(r.URL.Query())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		eintraege, err := t.ladeAbgaengerKontoauszuege(ctx, klasse, nurIDs)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		if len(eintraege) == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("no graduates found"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("no graduates found"))
 			return
 		}
 
 		// Der Kontoauszug der Abgänger trägt die Unterschriftszeile (eine Seite je Abgänger).
 		pdfDaten, err := pdf.GenerateKontoauszugBatch(eintraege, true)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

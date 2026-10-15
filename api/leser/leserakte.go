@@ -87,7 +87,7 @@ type offeneForderungen struct {
 func (t *Tueren) Leserakte(
 	leserAbfragen repository.LeserAbfragen,
 ) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.gibLeserakte(w, r, leserAbfragen)
 	})
 }
@@ -184,7 +184,7 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 // @Failure      500  {object}  map[string]string
 // @Router       /klassen [get]
 func (t *Tueren) Klassen(leserAbfragen repository.LeserAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		klassen, err := leserAbfragen.LadeKlassen(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Klassen", err)

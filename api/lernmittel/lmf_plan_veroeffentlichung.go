@@ -76,7 +76,7 @@ func (t *Tueren) lmfPlanNurRueckgabe(ctx context.Context, abfragen *repository.L
 // @Success      200  {object}  lmfPlanSpeicherAntwort
 // @Router       /lmf-plan/{art}/veroeffentlichen [post]
 func (t *Tueren) LMFPlanVeroeffentlichen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		antwort, gestempelt, err := t.veroeffentlicheLMFPlan(r)
 		if err != nil {
 			return err

@@ -24,7 +24,7 @@ func SperrenHandler(authenticator *Authenticator) http.HandlerFunc {
 		}
 		gesperrt, err := authenticator.Sitzungen.Sperre(r.Context(), claims.SitzungID)
 		if err != nil {
-			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 			return
 		}
 		w.Header().Set(headerContentType, contentTypeJSON)
@@ -50,11 +50,11 @@ func EntsperrenHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) htt
 		r.Body = http.MaxBytesReader(w, r.Body, loginRumpfMaxBytes)
 		var req entsperrenRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 		if req.Password == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("password is required"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("password is required"))
 			return
 		}
 
@@ -76,7 +76,7 @@ func EntsperrenHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) htt
 		}
 
 		if err := authenticator.Sitzungen.Entsperre(ctx, claims.SitzungID); err != nil {
-			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 			return
 		}
 
@@ -96,22 +96,22 @@ func pruefeEntsperrPasswort(ctx context.Context, w http.ResponseWriter, authenti
 	}
 	if !errors.Is(imapErr, ErrMailserverNichtErreichbar) {
 		globalLoginLimiter.recordFailure(bruteForceKey)
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 		return false
 	}
 
 	passt, vorhanden, err := authenticator.Sitzungen.PasswortPasst(ctx, sitzungID, passwort)
 	if err != nil {
-		apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 		return false
 	}
 	if !vorhanden {
-		apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrMailserverNichtErreichbar)
+		apierrors.AntworteFehler(w, http.StatusServiceUnavailable, ErrMailserverNichtErreichbar)
 		return false
 	}
 	if !passt {
 		globalLoginLimiter.recordFailure(bruteForceKey)
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 		return false
 	}
 	slog.Warn("Sperre ohne Mailserver aufgeschlossen: Passwort gegen den Prüfwert der Anmeldung geprüft")

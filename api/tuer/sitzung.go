@@ -44,13 +44,13 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 // sendeSitzungsfehler schickt den Fehler aus PruefeSitzung an den Client. Beim 503 (Aussetzer
 // der Datenbank) sieht er nur den Satz von auth.ErrPruefungGestoert: Die Ursache, die
 // VerifyToken mitliefert, gehört ins Log und nicht in die Meldung an der Theke
-// (apierrors.SendHTTPErrorMitMeldung).
+// (apierrors.AntworteFehlerMitMeldung).
 func sendeSitzungsfehler(w http.ResponseWriter, status int, err error) {
 	if errors.Is(err, auth.ErrPruefungGestoert) {
-		apierrors.SendHTTPErrorMitMeldung(w, status, auth.ErrPruefungGestoert.Error(), err)
+		apierrors.AntworteFehlerMitMeldung(w, status, auth.ErrPruefungGestoert.Error(), err)
 		return
 	}
-	apierrors.SendHTTPError(w, status, err)
+	apierrors.AntworteFehler(w, status, err)
 }
 
 // erlaubeZugriff legt die Angaben der Sitzung in den Kontext der Anfrage und ruft next.

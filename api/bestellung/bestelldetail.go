@@ -24,7 +24,7 @@ func (t *Tueren) Bestelldetail(bestelldetailAbfragen repository.BestelldetailAbf
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("bestell-id fehlt"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("bestell-id fehlt"))
 			return
 		}
 
@@ -34,10 +34,10 @@ func (t *Tueren) Bestelldetail(bestelldetailAbfragen repository.BestelldetailAbf
 			// Verweis — und der Sanitizer macht aus jeder 500 ohnehin "interner
 			// Datenbankfehler", womit die Ursache im Formular nie ankäme.
 			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung nicht gefunden"))
+				apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung nicht gefunden"))
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

@@ -72,15 +72,15 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 	}
 
 	if req.LieferantID == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("supplier_id is required"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("supplier_id is required"))
 		return
 	}
 	if len(req.Positionen) == 0 {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
 		return
 	}
 	if !mitteltopf.IstGueltig(req.Mittel) {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 
 	res, err := bestellDienst.LegeAn(ctx, bestellAuftrag(req))
 	if err != nil {
-		apierrors.SendHTTPError(w, statusDesBestellfehlers(err), err)
+		apierrors.AntworteFehler(w, statusDesBestellfehlers(err), err)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (t *Tueren) Zulauf() http.HandlerFunc {
 		ctx := r.Context()
 		gruppen, err := service.LadeZulauf(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, gruppen)
@@ -197,7 +197,7 @@ func (t *Tueren) sucheBestellung(metadaten *inventur.MetadatenClient) http.Handl
 		ctx := r.Context()
 		treffer, dnbAusfall, err := service.FindeZumBestellen(ctx, t.DB.Pool, metadaten, suchtext)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if dnbAusfall {
@@ -222,7 +222,7 @@ func (t *Tueren) WareneingangBuchen() http.HandlerFunc {
 		}
 
 		if len(req.ExemplarIDs) == 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("no exemplar_ids provided"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("no exemplar_ids provided"))
 			return
 		}
 
@@ -241,10 +241,10 @@ func (t *Tueren) WareneingangBuchen() http.HandlerFunc {
 		})
 		if err != nil {
 			if errors.Is(err, service.ErrNichtsEinzubuchen) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				apierrors.AntworteFehler(w, http.StatusNotFound, err)
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

@@ -141,7 +141,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 
 		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -170,12 +170,12 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		sitzungID, err := authenticator.Sitzungen.Beginne(ctx, user.id, password, time.Now().Add(authenticator.tokenDuration))
 		if err != nil {
 			slog.Error("Login: Sitzung konnte nicht angelegt werden", "fehler", err)
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrAnmeldedienstGestoert)
+			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, ErrAnmeldedienstGestoert)
 			return
 		}
 		token, err := authenticator.GenerateToken(user.id, user.barcodeID, role, sitzungID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -191,7 +191,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 
 		permissions, err := loadPermissionsForRole(ctx, dbPool, user.roleStr)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
 			return
 		}
 
@@ -232,11 +232,11 @@ type loginUser struct {
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
 func validateLoginCredentials(w http.ResponseWriter, req LoginRequest) (password string, ok bool) {
 	if req.Email == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("email is required"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("email is required"))
 		return "", false
 	}
 	if req.Password == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("password is required"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("password is required"))
 		return "", false
 	}
 	return req.Password, true
@@ -252,7 +252,7 @@ func validateLoginCredentials(w http.ResponseWriter, req LoginRequest) (password
 func checkBruteForceLimit(w http.ResponseWriter, email, clientIP string) (bruteForceKey string, ok bool) {
 	bruteForceKey = strings.ToLower(strings.TrimSpace(email)) + "|" + clientIP
 	if globalLoginLimiter.isBlocked(bruteForceKey) {
-		apierrors.SendHTTPError(w, http.StatusTooManyRequests,
+		apierrors.AntworteFehler(w, http.StatusTooManyRequests,
 			errors.New("zu viele fehlgeschlagene Login-Versuche – bitte 15 Minuten warten"))
 		return "", false
 	}
@@ -273,7 +273,7 @@ func authenticateUser(ctx context.Context, w http.ResponseWriter, dbPool db.PgxP
 		// gezählten Fehlversuch — wer sein richtiges Passwort dann erneut probierte,
 		// sperrte sich selbst für 15 Minuten. Jetzt 503 ohne recordFailure.
 		if errors.Is(verifyErr, ErrMailserverNichtErreichbar) {
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrMailserverNichtErreichbar)
+			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, ErrMailserverNichtErreichbar)
 			return loginUser{}, false
 		}
 		// Dasselbe für die Datenbank (31.08.2026): Ein DB-Aussetzer ist kein
@@ -281,11 +281,11 @@ func authenticateUser(ctx context.Context, w http.ResponseWriter, dbPool db.PgxP
 		// korrektem Passwort. Der echte Grund steht im Log.
 		if errors.Is(verifyErr, ErrAnmeldedienstGestoert) {
 			slog.Error("Login: Anmeldedienst gestört", "fehler", verifyErr)
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrAnmeldedienstGestoert)
+			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, ErrAnmeldedienstGestoert)
 			return loginUser{}, false
 		}
 		globalLoginLimiter.recordFailure(bruteForceKey)
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 		return loginUser{}, false
 	}
 
@@ -300,13 +300,13 @@ func authenticateUser(ctx context.Context, w http.ResponseWriter, dbPool db.PgxP
 	// fünf Versuchen selbst aus, während seine Freischaltung noch aussteht.
 	if user.neuAngelegt || (!user.aktiv && user.beantragt) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
-		apierrors.SendHTTPError(w, http.StatusForbidden,
+		apierrors.AntworteFehler(w, http.StatusForbidden,
 			errors.New("Zugang beantragt — die Bibliothek muss ihn noch freischalten"))
 		return loginUser{}, false
 	}
 	if !user.aktiv {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
-		apierrors.SendHTTPError(w, http.StatusForbidden,
+		apierrors.AntworteFehler(w, http.StatusForbidden,
 			errors.New("Konto deaktiviert — bitte an die Bibliothek wenden"))
 		return loginUser{}, false
 	}
@@ -386,11 +386,11 @@ func loadPermissionsForRole(ctx context.Context, dbPool db.PgxPoolIface, roleStr
 func leseSitzung(w http.ResponseWriter, r *http.Request, authenticator *Authenticator) (*Claims, bool) {
 	cookie, err := r.Cookie("session_token")
 	if errors.Is(err, http.ErrNoCookie) {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
 		return nil, false
 	}
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return nil, false
 	}
 
@@ -399,11 +399,11 @@ func leseSitzung(w http.ResponseWriter, r *http.Request, authenticator *Authenti
 		// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
 		// meldet der Client ab. Der Client liest nur den Sentinel-Satz; die
 		// gewrappte Ursache („sperrliste: connection reset by peer") bleibt im Log.
-		apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 		return nil, false
 	}
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
 		return nil, false
 	}
 	return claims, true
@@ -421,16 +421,16 @@ func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolI
 	keineSitzung := errors.Is(err, pgx.ErrNoRows) || (err == nil && !konto.Aktiv)
 	switch {
 	case keineSitzung:
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
 		return LoginResponse{}, false
 	case err != nil:
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return LoginResponse{}, false
 	}
 
 	permissions, err := loadPermissionsForRole(ctx, dbPool, konto.Rolle)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
 		return LoginResponse{}, false
 	}
 
@@ -459,7 +459,7 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 
 		gesperrt, err := authenticator.Sitzungen.IstGesperrt(claims.SitzungID)
 		if err != nil {
-			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 			return
 		}
 
@@ -494,10 +494,10 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 		cookie, err := r.Cookie("session_token")
 		if err != nil {
 			if errors.Is(err, http.ErrNoCookie) {
-				apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+				apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -508,11 +508,11 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 			// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
 			// meldet der Client ab. Der Client liest nur den Sentinel-Satz; die
 			// gewrappte Ursache („sperrliste: connection reset by peer") bleibt im Log.
-			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 			return
 		}
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
+			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
 			return
 		}
 		erneuereSitzung(w, r, authenticator, claims, cookieSecure)
@@ -540,7 +540,7 @@ func erneuereSitzung(w http.ResponseWriter, r *http.Request, authenticator *Auth
 	// Refresh die alte Rolle fort, bliebe ein entzogenes Recht unbegrenzt erhalten.
 	verlaengert, err := authenticator.Sitzungen.Verlaengere(r.Context(), claims.SitzungID, time.Now().Add(authenticator.tokenDuration))
 	if err != nil {
-		apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 		return
 	}
 	if !verlaengert {
@@ -551,7 +551,7 @@ func erneuereSitzung(w http.ResponseWriter, r *http.Request, authenticator *Auth
 
 	newToken, err := authenticator.GenerateToken(claims.UserID, claims.BarcodeID, claims.Rolle, claims.SitzungID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

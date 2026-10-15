@@ -53,9 +53,9 @@ var kollapsBestand = map[string]string{
 }
 
 // kollapsAntworten: die harmlosen Antworten als Status-Konstante UND als Helfer der
-// Hausform (apierrors.NotFound/Unauthorized/Forbidden hinter apierrors.Wrap). Bis zum
+// Hausform (apierrors.NotFound/Unauthorized/Forbidden hinter apierrors.MitFehlerantwort). Bis zum
 // 10.09.2026 standen nur die Konstanten hier — die Ratsche war mit dem Umzug der Handler
-// auf Wrap für die häufigste Form blind geworden (Bestands-Durchgang, „Lügende Ratsche").
+// auf MitFehlerantwort für die häufigste Form blind geworden (Bestands-Durchgang, „Lügende Ratsche").
 var kollapsAntworten = map[string]bool{
 	"StatusNotFound": true, "StatusUnauthorized": true, "StatusForbidden": true,
 	"NotFound": true, "Unauthorized": true, "Forbidden": true,
@@ -222,8 +222,8 @@ func sauber5() error { _, err := f(); if errors.Is(err, pgx.ErrNoRows) { return 
 		t.Fatal(err)
 	}
 	// kollaps3/kollaps4/sauber5 (Bestands-Durchgang 10.09.2026): die Hausform der Handler
-	// hinter apierrors.Wrap. Der Detektor kannte nur http.StatusNotFound & Co. — 49 Handler
-	// laufen über Wrap, und ein neuer `return apierrors.NotFound("…", err)` im err-Zweig
+	// hinter apierrors.MitFehlerantwort. Der Detektor kannte nur http.StatusNotFound & Co. — 49 Handler
+	// laufen über MitFehlerantwort, und ein neuer `return apierrors.NotFound("…", err)` im err-Zweig
 	// wäre grün geblieben.
 	erwartet := map[string]bool{"kollaps": true, "kollaps2": true, "kollaps3": true, "kollaps4": true,
 		"sauber": false, "sauber2": false, "sauber3": false, "sauber4": false, "sauber5": false}

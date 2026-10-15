@@ -69,7 +69,7 @@ type schlagwortPflegeAntwort struct {
 // @Failure      500  {object}  map[string]string
 // @Router       /schlagworte/pflege [get]
 func (t *Tueren) SchlagworteZurPflege() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := repository.LadeSchlagworteZurPflege(r.Context(), t.DB.Pool, r.URL.Query().Get("suche"))
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
@@ -93,7 +93,7 @@ func (t *Tueren) SchlagworteZurPflege() http.HandlerFunc {
 // @Failure      409  {object}  map[string]string
 // @Router       /schlagworte/{id}/wort [put]
 func (t *Tueren) SchlagwortUmbenennen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := schlagwortIDAusPfad(r)
 		if err != nil {
 			return err
@@ -132,7 +132,7 @@ func (t *Tueren) SchlagwortUmbenennen() http.HandlerFunc {
 // @Failure      409  {object}  map[string]string
 // @Router       /schlagworte/{id}/filter [put]
 func (t *Tueren) SchlagwortFilterSetzen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := schlagwortIDAusPfad(r)
 		if err != nil {
 			return err
@@ -167,7 +167,7 @@ func (t *Tueren) SchlagwortFilterSetzen() http.HandlerFunc {
 // @Failure      409  {object}  map[string]string
 // @Router       /schlagworte/{id}/zusammenfuehren [post]
 func (t *Tueren) SchlagworteZusammenfuehren() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := schlagwortIDAusPfad(r)
 		if err != nil {
 			return err
@@ -204,7 +204,7 @@ func (t *Tueren) SchlagworteZusammenfuehren() http.HandlerFunc {
 // @Failure      409  {object}  map[string]string
 // @Router       /schlagworte/verweise [post]
 func (t *Tueren) SchlagwortVerweisSetzen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req schlagwortVerweisAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
@@ -237,7 +237,7 @@ func (t *Tueren) SchlagwortVerweisSetzen() http.HandlerFunc {
 // @Failure      404  {object}  map[string]string
 // @Router       /schlagworte/loeschen [post]
 func (t *Tueren) SchlagworteLoeschen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req schlagworteLoeschenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil

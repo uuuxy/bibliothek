@@ -38,7 +38,7 @@ type auflageZuordnenAnfrage struct {
 // @Failure      404  {object}  map[string]string
 // @Router       /buecher/titel/{id}/auflagen [get]
 func (t *Tueren) TitelAuflagen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := titelIDAusPfad(r)
 		if err != nil {
 			return err
@@ -69,7 +69,7 @@ func (t *Tueren) TitelAuflagen() http.HandlerFunc {
 // @Router       /buecher/titel/{id}/auflagen [post]
 // @Router       /buecher/titel/{id}/neue-auflage [post]
 func (t *Tueren) AuflagenZusammenfassen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := titelIDAusPfad(r)
 		if err != nil {
 			return err
@@ -99,7 +99,7 @@ func (t *Tueren) AuflagenZusammenfassen() http.HandlerFunc {
 // @Failure      404  {object}  map[string]string
 // @Router       /buecher/titel/{id}/auflagen [delete]
 func (t *Tueren) AuflageLoesen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := titelIDAusPfad(r)
 		if err != nil {
 			return err

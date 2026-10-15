@@ -33,7 +33,7 @@ func (t *Tueren) TitelExemplare(bescheidAbfragen repository.BescheidAbfragen) ht
 func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, bescheidAbfragen repository.BescheidAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
 		return
 	}
 
@@ -41,7 +41,7 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 
 	zeilen, err := repository.LadeExemplareDesTitels(ctx, t.DB.Pool, id)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

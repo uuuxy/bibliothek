@@ -46,19 +46,19 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 
 		req, err := leseKlassenVersandAnfrage(r)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		if !mailservice.SMTPKonfiguriert() {
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Versand nicht möglich"))
+			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Versand nicht möglich"))
 			return
 		}
 
 		// Dieselbe Saison wie Liste und Druck: Außerhalb gäbe es nichts zu versenden —
 		// und ein Lauf im Oktober schickte den Klassenleitungen die laufende Ausleihe.
 		if fenster := abgaengerFensterFuer(t.Jetzt()); !fenster.Offen {
-			apierrors.SendHTTPError(w, http.StatusConflict, abgaengerAusserhalbDerSaison(fenster))
+			apierrors.AntworteFehler(w, http.StatusConflict, abgaengerAusserhalbDerSaison(fenster))
 			return
 		}
 
@@ -66,13 +66,13 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		// Papier und Mail zeigen damit garantiert denselben Stand.
 		eintraege, err := t.ladeAbgaengerKontoauszuege(ctx, "", nil)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		adressen, err := t.ladeKlassenleitungsAdressen(ctx)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

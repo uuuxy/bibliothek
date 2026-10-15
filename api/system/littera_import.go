@@ -39,20 +39,20 @@ type LitteraImportAntwort struct {
 func (t *Tueren) leseUploadInhalt(w http.ResponseWriter, r *http.Request, maxBytes int64) (inhalt []byte, dateiname string, ok bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 	if err := r.ParseMultipartForm(maxBytes); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return nil, "", false
 	}
 
 	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return nil, "", false
 	}
 	defer closeutil.Schliesse(datei, litteraImportQuelle)
 
 	inhalt, err = io.ReadAll(datei)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return nil, "", false
 	}
 	return inhalt, dateiKopf.Filename, true
@@ -129,7 +129,7 @@ func (t *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, in
 		if errors.Is(err, service.ErrKeinKatalogisat) {
 			status = http.StatusBadRequest
 		}
-		apierrors.SendHTTPError(w, status, err)
+		apierrors.AntworteFehler(w, status, err)
 		return
 	}
 
@@ -162,20 +162,20 @@ func (t *Tueren) LitteraImport() http.HandlerFunc {
 
 		zeilen, istXLSX, err := leseTabellarischeDaten(dateiname, inhalt, inhaltText)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		kopf, err := importKopfMitPflichtspalten(zeilen)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		importDienst := service.NewImportDienst(repository.NewKatalogAbfragen(t.DB.Pool), t.DB.Pool)
 		neueTitel, importierteExemplare, err := importDienst.ImportiereZeilen(r.Context(), zeilen, kopf)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -203,25 +203,25 @@ func (t *Tueren) LitteraImport() http.HandlerFunc {
 func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 20<<20)
 	if err := r.ParseMultipartForm(20 << 20); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return
 	}
 
 	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine Datei hochgeladen"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("keine Datei hochgeladen"))
 		return
 	}
 	defer closeutil.Schliesse(datei, litteraImportQuelle)
 
 	if !strings.HasSuffix(strings.ToLower(dateiKopf.Filename), ".csv") {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("es werden nur CSV-Dateien akzeptiert"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("es werden nur CSV-Dateien akzeptiert"))
 		return
 	}
 
 	inhalt, err := io.ReadAll(datei)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	inhaltText := string(inhalt)
@@ -231,21 +231,21 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 	csvLeser.LazyQuotes = true
 	zeilen, err := csvLeser.ReadAll()
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err))
 		return
 	}
 	if len(zeilen) < 2 {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("die CSV enthält keine Datenzeilen"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("die CSV enthält keine Datenzeilen"))
 		return
 	}
 
 	kopf := service.ImportKopfzeile(zeilen[0])
 	if _, ok := kopf["titel"]; !ok {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Titel"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Titel"))
 		return
 	}
 	if _, ok := kopf["barcode"]; !ok {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Barcode/Exemplarnummer"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Barcode/Exemplarnummer"))
 		return
 	}
 
@@ -254,7 +254,7 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 
 	neueTitel, importierteExemplare, err := importDienst.ImportiereZeilen(r.Context(), zeilen, kopf)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

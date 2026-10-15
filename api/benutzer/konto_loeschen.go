@@ -38,18 +38,18 @@ func (t *Tueren) KontoLoeschen(protokollAbfragen repository.ProtokollAbfragen, k
 func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen repository.KontoAbfragen) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
 		return
 	}
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
 		return
 	}
 
 	// Das eigene Konto löscht niemand.
 	if id == claims.UserID {
-		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
+		apierrors.AntworteFehler(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
 		return
 	}
 
@@ -67,14 +67,14 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 		// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
 		// Der Admin muss die Bücher erst zurückbuchen.
 		if errors.Is(err, repository.ErrKontoHatAusleihen) {
-			apierrors.SendHTTPError(w, http.StatusConflict, err)
+			apierrors.AntworteFehler(w, http.StatusConflict, err)
 			return
 		}
 		if errors.Is(err, repository.ErrKontoNichtGefunden) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			apierrors.AntworteFehler(w, http.StatusNotFound, err)
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

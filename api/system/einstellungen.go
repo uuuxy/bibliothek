@@ -23,7 +23,7 @@ import (
 // @Failure      500  {object}  map[string]string
 // @Router       /einstellungen [post]
 func (t *Tueren) Einstellungen(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 		einstellungen, err := einstellungsAbfragen.Lade(ctx)
 		if err != nil {
@@ -46,7 +46,7 @@ func (t *Tueren) Einstellungen(einstellungsAbfragen repository.EinstellungsAbfra
 // @Failure      500       {object}  map[string]string
 // @Router       /einstellungen/speichern [post]
 func (t *Tueren) EinstellungenSchreiben(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.schreibeEinstellungen(w, r, einstellungsAbfragen)
 	})
 }
@@ -152,7 +152,7 @@ type sitzungsEinstellungen struct {
 
 // SitzungsEinstellungen liefert die Fristen der Sitzung an jede angemeldete Oberfläche.
 func (t *Tueren) SitzungsEinstellungen(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		einstellungen, err := einstellungsAbfragen.Lade(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)

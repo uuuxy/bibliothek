@@ -52,7 +52,7 @@ func (t *Tueren) DNBSchlagwortVorschlag() http.HandlerFunc {
 // dnbSchlagwortVorschlagTuer ist die Tür mit den Katalogdiensten als Parameter: Ein Test stellt
 // die Antwort der DNB nach (MetadatenClient.SetzeHTTPClientFuerTest), wie bei isbnZuTitelTuer.
 func (t *Tueren) dnbSchlagwortVorschlagTuer(metadaten *inventur.MetadatenClient) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		antwort := dnbSchlagwortVorschlagAntwort{SchlagwortVorschlaege: []string{}, SchlagwortVorschlaegeNeu: []string{}}
 		meta, err := metadaten.SucheDNBNachISBN(r.Context(), r.URL.Query().Get("isbn"))
 		switch {

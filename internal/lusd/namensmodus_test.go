@@ -83,7 +83,7 @@ func TestLeseDatei_NurNameLegtGleicheNamenNichtZusammen(t *testing.T) {
 func TestLeseDatei_NamensmodusLeeresGeburtsdatumBrichtHartAb(t *testing.T) {
 	// Eine Zeile ohne lesbares Datum hat im Namensmodus keinen Schlüssel. Still übersprungen,
 	// würde der Schüler jedes Jahr neu angelegt oder nie gefunden; deshalb bricht der Lauf mit der
-	// Zeilennummer ab. Den Namen nennt die Meldung nicht, weil sie über SendHTTPError auch im
+	// Zeilennummer ab. Den Namen nennt die Meldung nicht, weil sie über AntworteFehler auch im
 	// Server-Log landet.
 	for _, wert := range []string{"", "Unsinn", "31.02.2012"} {
 		csv := "vorname,nachname,klasse,geburtsdatum\nMax,Mustermann,5a,01.02.2012\nErika,Musterfrau,6b," + wert + "\n"

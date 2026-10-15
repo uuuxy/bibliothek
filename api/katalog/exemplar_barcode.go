@@ -21,7 +21,7 @@ func (t *Tueren) ExemplarBarcodeZiehen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		barcode, err := repository.ZieheFreienExemplarBarcode(r.Context(), t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -61,7 +61,7 @@ func (t *Tueren) ExemplarBarcodeSetzen(katalogAbfragen repository.KatalogAbfrage
 func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, katalogAbfragen repository.KatalogAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
 		return
 	}
 
@@ -71,7 +71,7 @@ func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, ka
 	}
 
 	if req.Barcode == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("barcode cannot be empty"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("barcode cannot be empty"))
 		return
 	}
 
@@ -79,20 +79,20 @@ func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, ka
 
 	if err := katalogAbfragen.SetzeExemplarBarcode(ctx, id, req.Barcode); err != nil {
 		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			apierrors.AntworteFehler(w, http.StatusNotFound, err)
 			return
 		}
 		// Eine Nummer ist entweder Buch oder Ausweis: Die Theke löst einen Scan zuerst als Buch
 		// auf; trüge ein Buch die Nummer eines Ausweises, lüde dieser Ausweis das Buch.
 		if repository.IstNummerBuchOderAusweisKollision(err) {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("diese Nummer ist der Ausweis eines Lesers und kann kein Buch-Barcode sein"))
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New("diese Nummer ist der Ausweis eines Lesers und kann kein Buch-Barcode sein"))
 			return
 		}
 		if repository.IstExemplarBarcodeVergeben(err) {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

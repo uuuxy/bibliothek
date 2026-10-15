@@ -18,7 +18,7 @@ func (t *Tueren) MailVorlagen() http.HandlerFunc {
 		ctx := r.Context()
 		vorlagen, err := repository.LadeMailVorlagen(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
 			return
 		}
 
@@ -47,7 +47,7 @@ func (t *Tueren) MailVorlageAendern() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ID fehlt"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ID fehlt"))
 			return
 		}
 
@@ -65,11 +65,11 @@ func (t *Tueren) MailVorlageAendern() http.HandlerFunc {
 		typ, betreffNeu, textNeu, err := repository.AendereMailVorlage(ctx, t.DB.Pool, id, req.Betreff, req.TextBody)
 		// Eine unbekannte Vorlage ist ein Fehler, kein „Erfolgreich gespeichert".
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("mail-Vorlage nicht gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("mail-Vorlage nicht gefunden"))
 			return
 		}
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
 			return
 		}
 		t.ProtokolliereGeaenderteFelder(ctx, tuer.AktionMailvorlageGeaendert, map[string]any{"vorlage": typ},

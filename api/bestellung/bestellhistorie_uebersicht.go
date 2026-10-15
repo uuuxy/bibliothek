@@ -43,7 +43,7 @@ func (t *Tueren) BestellhistorieUebersicht() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k, err := repository.LadeBestellKennzahlen(r.Context(), t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		u := bestellhistorieUebersicht{
@@ -53,7 +53,7 @@ func (t *Tueren) BestellhistorieUebersicht() http.HandlerFunc {
 
 		u.NachMittel, err = t.kennzahlenJeTopf(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, u)

@@ -17,7 +17,7 @@ func (t *Tueren) BarcodeBild() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		inhalt := r.URL.Query().Get("content")
 		if inhalt == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing content parameter"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing content parameter"))
 			return
 		}
 
@@ -26,7 +26,7 @@ func (t *Tueren) BarcodeBild() http.HandlerFunc {
 
 		bild, err := strichcode.PNG(inhalt, alsQR, breite, hoehe)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

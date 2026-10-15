@@ -47,7 +47,7 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 	}
 
 	if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
 		return
 	}
 
@@ -83,7 +83,7 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 		if meldeAusweisKollision(w, err) {
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -129,7 +129,7 @@ func (t *Tueren) KontoAendern(kontoAbfragen repository.KontoAbfragen) http.Handl
 func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
 		return
 	}
 
@@ -198,7 +198,7 @@ func (a kontoAendernAnfrage) nenntNichts() bool {
 func pruefeGenanntePflichtfelder(w http.ResponseWriter, req kontoAendernAnfrage) bool {
 	for _, wert := range []*string{req.Vorname, req.Nachname, req.Email, req.Rolle} {
 		if wert != nil && strings.TrimSpace(*wert) == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest,
+			apierrors.AntworteFehler(w, http.StatusBadRequest,
 				errors.New("vorname, Nachname, E-Mail und Rolle dürfen nicht leer sein"))
 			return false
 		}
@@ -211,11 +211,11 @@ func pruefeGenanntePflichtfelder(w http.ResponseWriter, req kontoAendernAnfrage)
 func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, id string) {
 	rolle, err := kontoAbfragen.LadeRolle(ctx, id)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	if rolle == "" {
-		apierrors.SendHTTPError(w, http.StatusNotFound, repository.ErrKontoNichtGefunden)
+		apierrors.AntworteFehler(w, http.StatusNotFound, repository.ErrKontoNichtGefunden)
 		return
 	}
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
@@ -253,11 +253,11 @@ func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, kontoAbfragen
 // Kennung 404, belegter Ausweis 409, alles andere 500.
 func antworteAufKontoAenderungsfehler(w http.ResponseWriter, err error) {
 	if errors.Is(err, repository.ErrKontoNichtGefunden) {
-		apierrors.SendHTTPError(w, http.StatusNotFound, err)
+		apierrors.AntworteFehler(w, http.StatusNotFound, err)
 		return
 	}
 	if meldeAusweisKollision(w, err) {
 		return
 	}
-	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 }

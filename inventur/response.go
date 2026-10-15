@@ -19,5 +19,5 @@ func writeJSON(writer http.ResponseWriter, status int, payload any) {
 }
 
 func writeError(writer http.ResponseWriter, status int, message string) {
-	apierrors.SendHTTPError(writer, status, errors.New(message))
+	apierrors.AntworteFehler(writer, status, errors.New(message))
 }

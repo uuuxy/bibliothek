@@ -49,7 +49,7 @@ func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle
 	if !istAdminRolle(gewuenschteRolle) || istAufruferAdmin(r) {
 		return true
 	}
-	apierrors.SendHTTPError(w, http.StatusForbidden,
+	apierrors.AntworteFehler(w, http.StatusForbidden,
 		errors.New("die Rolle Administrator kann nur von einem Administrator vergeben werden"))
 	return false
 }
@@ -63,11 +63,11 @@ func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request
 	}
 	rolle, err := kontoAbfragen.LadeRolle(ctx, id)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 	if istAdminRolle(rolle) {
-		apierrors.SendHTTPError(w, http.StatusForbidden,
+		apierrors.AntworteFehler(w, http.StatusForbidden,
 			errors.New("das Konto eines Administrators kann nur von einem Administrator bearbeitet werden"))
 		return false
 	}
@@ -87,12 +87,12 @@ func pruefeSelbstschutz(w http.ResponseWriter, r *http.Request, id string, neueR
 		return true
 	}
 	if neueRolle != nil && !strings.EqualFold(strings.TrimSpace(*neueRolle), strings.TrimSpace(string(claims.Rolle))) {
-		apierrors.SendHTTPError(w, http.StatusForbidden,
+		apierrors.AntworteFehler(w, http.StatusForbidden,
 			errors.New("die eigene Rolle kann nicht geändert werden — das muss eine andere Person mit Administratorrechten tun"))
 		return false
 	}
 	if aktiv != nil && !*aktiv {
-		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht deaktiviert werden"))
+		apierrors.AntworteFehler(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht deaktiviert werden"))
 		return false
 	}
 	return true

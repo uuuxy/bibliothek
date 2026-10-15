@@ -29,7 +29,7 @@ type leserZusammenfuehrenAnfrage struct {
 // LeserZusammenfuehren bedient POST /api/schueler/{id}/zusammenfuehren — {id}
 // bleibt, quelle_id geht darin auf.
 func (t *Tueren) LeserZusammenfuehren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zielID := r.PathValue("id")
 		var rumpf leserZusammenfuehrenAnfrage
 		if err := json.NewDecoder(r.Body).Decode(&rumpf); err != nil || strings.TrimSpace(rumpf.QuelleID) == "" {
@@ -87,7 +87,7 @@ func (t *Tueren) LeserZusammenfuehren(protokollAbfragen repository.ProtokollAbfr
 // — Suche über alle nicht gelöschten Schüler (auch Abgänger und Gesperrte), ohne {id}
 // selbst. Die Aktivliste der Schülerdatei blendet Abgänger aus; hier sind sie das Ziel.
 func (t *Tueren) Zusammenfuehrungskandidaten() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		treffer, err := repository.FindeZusammenfuehrenKandidaten(r.Context(), t.DB.Pool, r.PathValue("id"), r.URL.Query().Get("q"), 20)
 		if err != nil {
 			return apierrors.Internal("Kandidatensuche fehlgeschlagen", err)

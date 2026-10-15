@@ -23,7 +23,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 				httpresp.Schreibe(w, []byte(`{"status":"ok"}`))
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -69,7 +69,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 		// Hälfte auch stattgefunden hat: Ein „ok" nach gescheitertem Widerruf käme aus
 		// der Eingabe und nicht aus der Wirkung.
 		if widerrufFehler != nil {
-			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable,
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable,
 				auth.ErrWiderrufGestoert.Error(), fmt.Errorf("token-widerruf: %w", widerrufFehler))
 			return
 		}

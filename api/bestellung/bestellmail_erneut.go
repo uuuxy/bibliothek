@@ -50,15 +50,15 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 	auftrag, err := repository.BeanspruchBestellmail(ctx, t.DB.Pool, id)
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
 		return
 	case errors.Is(err, repository.ErrBestellmailNichtOffen):
 		//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-		apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+		apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
 			"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder die Bestellung ist bestätigt. Sie wird nicht noch einmal gesendet."))
 		return
 	case err != nil:
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 		// 400 statt 500: Eine 500-Meldung ersetzt der Sanitizer, und der Hinweis, was zu
 		// tun ist, erreichte den Bildschirm nicht.
 		//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New(
 			"Es ist kein Mailserver eingerichtet (Einstellungen → Mail). Die Bestellmail wurde nicht gesendet."))
 		return
 	}
@@ -75,7 +75,7 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 	daten, err := t.baueBestellmailErneut(ctx, id, auftrag)
 	if err != nil {
 		t.merkeBestellmailGescheitert(ctx, id)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	mitLink, err := t.sendeBestellmail(ctx, daten)
@@ -83,7 +83,7 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 		t.merkeBestellmailGescheitert(ctx, id)
 		// 502: Gescheitert ist der Mailserver, nicht dieser Server. Die Meldung bleibt lesbar.
 		//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-		apierrors.SendHTTPError(w, http.StatusBadGateway, fmt.Errorf(
+		apierrors.AntworteFehler(w, http.StatusBadGateway, fmt.Errorf(
 			"Der Versand an %s ist erneut gescheitert. Die Bestellung bleibt als nicht versendet vermerkt.", auftrag.Empfaenger))
 		return
 	}
@@ -119,20 +119,20 @@ func (t *Tueren) BestellmailVermerkNehmen() http.HandlerFunc {
 		err := repository.NimmBestellmailVermerk(ctx, t.DB.Pool, id)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
 			return
 		case errors.Is(err, repository.ErrBestellmailMitBestaetigung):
 			//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
 				"Diese Bestellung ging mit einem Bestätigungs-Link raus. Hat der Händler sie auf anderem Weg erhalten, lässt sich seine Zusage in der Bestellung nachtragen."))
 			return
 		case errors.Is(err, repository.ErrBestellmailNichtOffen):
 			//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
 				"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt."))
 			return
 		case err != nil:
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

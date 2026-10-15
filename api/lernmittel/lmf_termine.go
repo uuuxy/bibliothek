@@ -49,7 +49,7 @@ func (t *Tueren) lmfPlanAb(r *http.Request) time.Time {
 // @Success      200  {object}  lmfTermineAntwort
 // @Router       /lmf-termine [get]
 func (t *Tueren) LMFTermine() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		abfragen := repository.NewLMFAbfragen(t.DB.Pool)
 		ab := t.lmfPlanAb(r)
 		eingang, err := t.lmfEingangsjahrgaenge(r.Context())
@@ -148,27 +148,27 @@ func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 		abfragen := repository.NewLMFAbfragen(t.DB.Pool)
 		eingang, err := t.lmfEingangsjahrgaenge(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		termine, err := abfragen.LadeTermine(r.Context(), t.lmfPlanAb(r),
 			repository.LMFListenFilter{MitEntwuerfen: mitEntwuerfen})
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if len(termine) == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("der LMF-Plan ist leer"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("der LMF-Plan ist leer"))
 			return
 		}
 		abschnitte, err := lmfPlanAbschnitte(termine, eingang)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		pdfDaten, err := pdf.GenerateLmfPlan(abschnitte, t.Jetzt())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		dateiname := "LMF-Plan.pdf"

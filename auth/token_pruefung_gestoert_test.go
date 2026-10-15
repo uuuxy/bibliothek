@@ -66,7 +66,7 @@ func TestTokenPruefungGestoert_Ist503(t *testing.T) {
 // gewrappte Ursache.
 //
 // Anlass (Rasterdurchgang 12.09.2026, Register „Der 503 trägt den rohen Datenbank-Text
-// nach draußen"): SendHTTPError schickt bei allem außer 500 den Fehlertext an den
+// nach draußen"): AntworteFehler schickt bei allem außer 500 den Fehlertext an den
 // Client und filtert nur, was istDatenbankFehler erkennt — SQL-Wortlaute und
 // Constraint-Namen. „connection reset by peer" und „context deadline exceeded" sind
 // keins davon, also las das Personal an der Theke „sitzung konnte nicht geprüft werden,

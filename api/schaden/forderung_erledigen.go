@@ -22,7 +22,7 @@ import (
 // SchadensfaelleDesSchuelers liefert alle Schadensfälle eines Schülers für
 // die Gebühren-Sektion der Schülerakte (GET /api/schueler/{id}/schadensfaelle).
 func (t *Tueren) SchadensfaelleDesSchuelers(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest("Schüler-ID fehlt", nil)
@@ -52,7 +52,7 @@ func erledigungsFehler(err error, aktion string) error {
 // ZahlungVerbuchen verbucht die Zahlung (POST /api/schadensfaelle/{id}/bezahlt).
 // Ohne Rumpf: Der Betrag kommt immer aus der Datenbank, nie von der Oberfläche.
 func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("missing session information", nil)
@@ -68,7 +68,7 @@ func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen
 // ForderungStornieren storniert eine Forderung mit Pflicht-Begründung
 // (POST /api/schadensfaelle/{id}/storno).
 func (t *Tueren) ForderungStornieren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("missing session information", nil)

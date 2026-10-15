@@ -108,7 +108,7 @@ func leseLMFPlanArt(r *http.Request) (string, error) {
 // @Success      200  {object}  lmfPlanStandAntwort
 // @Router       /lmf-plan/{art} [get]
 func (t *Tueren) LMFPlan() http.HandlerFunc {
-	return apierrors.Wrap(t.ladeLMFPlanStand)
+	return apierrors.MitFehlerantwort(t.ladeLMFPlanStand)
 }
 
 // ladeLMFPlanStand stellt den Stand für den Planer zusammen: Plan, Klassen, Sommerferien und,
@@ -332,7 +332,7 @@ func pruefeLMFAnker(p *repository.LMFPlan, req lmfPlanAnfrage) error {
 // @Success      200  {object}  lmfPlanSpeicherAntwort
 // @Router       /lmf-plan/{art} [put]
 func (t *Tueren) LMFPlanSchreiben() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		antwort, ok, err := t.rechneOderSchreibeLMFPlan(w, r)
 		if err != nil || !ok {
 			return err
@@ -438,7 +438,7 @@ func lmfPlanVorschauAntwort(e service.LMFPlanEntwurf, plaetze []lmfplan.Platz, a
 // @Success      200  {object}  map[string]int64
 // @Router       /lmf-plan/{art} [delete]
 func (t *Tueren) LMFPlanVerwerfen() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		angepasst, err := t.verwerfeLMFPlan(r)
 		if err != nil {
 			return err

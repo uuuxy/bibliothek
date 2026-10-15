@@ -63,18 +63,18 @@ func pruefeStartAnfrage(w http.ResponseWriter, req startAnfrage) bool {
 		// Eine leere Signatur abweisen: Sie wäre der Anfang jeder Signatur und machte aus der
 		// Inventur eines Regals unbemerkt eine über den ganzen Bestand.
 		if req.signaturNormalisiert() == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("signatur ist erforderlich, wenn type 'signature' ist"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("signatur ist erforderlich, wenn type 'signature' ist"))
 			return false
 		}
 		return true
 	case "filter":
 		if req.Fach == nil && req.Jahrgang == nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("filter scope requires at least 'subject' or 'grade'"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("filter scope requires at least 'subject' or 'grade'"))
 			return false
 		}
 		return true
 	default:
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("invalid type, must be 'global', 'signature' or 'filter'"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("invalid type, must be 'global', 'signature' or 'filter'"))
 		return false
 	}
 }
@@ -148,16 +148,16 @@ func (t *Tueren) InventurStarten() http.HandlerFunc {
 			// Derselbe Bereich läuft schon, oder der gewünschte überschneidet sich mit einem
 			// offenen Lauf: beides 409, kein Fehler des Servers.
 			if errors.Is(err, repository.ErrInventurLaeuftBereits) || errors.Is(err, repository.ErrInventurUeberlappt) {
-				apierrors.SendHTTPError(w, http.StatusConflict, err)
+				apierrors.AntworteFehler(w, http.StatusConflict, err)
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		erwartet, err := abfragen.LadeLaufMitErwartung(ctx, lauf.ID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

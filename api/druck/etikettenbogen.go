@@ -37,7 +37,7 @@ func (t *Tueren) TitelEtiketten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("id is required"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("id is required"))
 			return
 		}
 
@@ -46,17 +46,17 @@ func (t *Tueren) TitelEtiketten() http.HandlerFunc {
 
 		etiketten, err := buchetikett.LadeDesTitels(ctx, t.DB.Pool, id)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if len(etiketten) == 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine exemplare für diesen titel vorhanden"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("keine exemplare für diesen titel vorhanden"))
 			return
 		}
 
 		bogen, err := pdf.GenerateLabelsPDF(formatID, start, alsQR, buchetikett.PDFEtiketten(etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
 		}
 
@@ -89,7 +89,7 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 		}
 
 		if len(req.Etiketten) == 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine exemplare angegeben"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("keine exemplare angegeben"))
 			return
 		}
 
@@ -98,7 +98,7 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 
 		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.Startposition, req.AlsQR, buchetikett.PDFEtiketten(req.Etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
 		}
 

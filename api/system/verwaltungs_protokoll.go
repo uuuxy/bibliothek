@@ -29,7 +29,7 @@ func (t *Tueren) VerwaltungsProtokoll() http.HandlerFunc {
 
 		zeilen, err := repository.LadeAdminProtokoll(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

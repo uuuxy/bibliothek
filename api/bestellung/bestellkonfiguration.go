@@ -39,7 +39,7 @@ type bestellKonfiguration struct {
 // @Success      200  {object}  bestellKonfiguration
 // @Router       /bestellungen/konfiguration [get]
 func (t *Tueren) BestellKonfiguration(einstellungsAbfragen repository.EinstellungsAbfragen, lieferantenAbfragen repository.LieferantenAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		einstellungen, err := einstellungsAbfragen.Lade(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Bestell-Konfiguration", err)

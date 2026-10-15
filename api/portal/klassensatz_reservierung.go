@@ -47,7 +47,7 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("fehlende Sitzungsinformationen"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("fehlende Sitzungsinformationen"))
 		return
 	}
 
@@ -58,11 +58,11 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 	// als 404, und die Lehrkraft läse „Buchtitel nicht gefunden" für einen Titel, der da ist.
 	vorhanden, err := abfragen.IstTitelVorhanden(ctx, req.TitelID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	if !vorhanden {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
 		return
 	}
 
@@ -70,18 +70,18 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 	// lässt; die Menge wird deshalb gegen den Bestand ohne ausgesonderte Exemplare geprüft.
 	bestand, err := abfragen.ZaehleTitelBestand(ctx, req.TitelID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	if req.Anzahl > bestand {
-		apierrors.SendHTTPError(w, http.StatusBadRequest,
+		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			fmt.Errorf("nur %d Exemplare im Bestand — %d können nicht reserviert werden", bestand, req.Anzahl))
 		return
 	}
 
 	id, neu, err := abfragen.LegeAn(ctx, req.TitelID, req.Klasse, req.Anzahl, leerAlsNil(req.Notiz), claims.UserID, leerAlsNil(req.IdempotenzSchluessel))
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -102,7 +102,7 @@ func (t *Tueren) KlassensatzReservierungen() http.HandlerFunc {
 		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
 		liste, err := abfragen.LadeAlle(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -123,7 +123,7 @@ func (t *Tueren) KlassensatzReservierungenAnzahl() http.HandlerFunc {
 		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
 		anzahl, err := abfragen.ZaehleOffene(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -142,7 +142,7 @@ func (t *Tueren) OffeneKlassensatzReservierungen() http.HandlerFunc {
 		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
 		offene, err := abfragen.LadeOffene(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, offene)
@@ -156,13 +156,13 @@ func (t *Tueren) EigeneKlassensatzReservierungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine sitzung"))
+			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("keine sitzung"))
 			return
 		}
 		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
 		eigene, err := abfragen.LadeEigene(r.Context(), claims.UserID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, eigene)
@@ -178,7 +178,7 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("id fehlt"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("id fehlt"))
 			return
 		}
 		notiz, ok := leseErledigtNotiz(w, r)
@@ -190,11 +190,11 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 		erledigt, err := abfragen.Erledige(r.Context(), id, notiz)
 
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if erledigt == nil {
-			apierrors.SendHTTPError(w, http.StatusNotFound, pgx.ErrNoRows)
+			apierrors.AntworteFehler(w, http.StatusNotFound, pgx.ErrNoRows)
 			return
 		}
 
@@ -257,14 +257,14 @@ func pruefeKlassensatzAnfrage(w http.ResponseWriter, req *klassensatzReservierun
 	// Tür.
 	req.Klasse = kuerze(strings.TrimSpace(req.Klasse), 50)
 	if req.TitelID == "" || req.Klasse == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id und klasse sind erforderlich"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("titel_id und klasse sind erforderlich"))
 		return false
 	}
 	if req.Anzahl <= 0 {
 		req.Anzahl = 1
 	}
 	if req.Anzahl > 200 {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("anzahl darf 200 nicht überschreiten"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("anzahl darf 200 nicht überschreiten"))
 		return false
 	}
 	return true

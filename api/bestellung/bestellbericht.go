@@ -107,18 +107,18 @@ func (t *Tueren) BestellberichtPDF() http.HandlerFunc {
 		ctx := r.Context()
 		a, err := leseBerichtAnfrage(r)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		bestellungen, bestellIndex, err := repository.LadeBerichtBestellungen(ctx, t.DB.Pool, a.von, a.bis.AddDate(0, 0, 1), a.lieferantID, a.mittel)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		if err := repository.LadeBerichtPositionen(ctx, t.DB.Pool, bestellungen, bestellIndex); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -126,7 +126,7 @@ func (t *Tueren) BestellberichtPDF() http.HandlerFunc {
 		// Schule da, und die Vorgabe entschiede, ob es Beträge nennt.
 		einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 			return
 		}
 		schule := pdf.SchuleInfo{
@@ -138,7 +138,7 @@ func (t *Tueren) BestellberichtPDF() http.HandlerFunc {
 
 		toepfe, err := bestellberichtToepfe(bestellungen)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		pdfDaten, err := pdf.GenerateBestellberichtPDF(pdf.Bestellbericht{
@@ -150,7 +150,7 @@ func (t *Tueren) BestellberichtPDF() http.HandlerFunc {
 			Toepfe:        toepfe,
 		}, schule)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

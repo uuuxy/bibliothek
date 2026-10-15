@@ -39,7 +39,7 @@ func (t *Tueren) AusleiheVerlaengern(einstellungsAbfragen repository.Einstellung
 func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, einstellungsAbfragen repository.EinstellungsAbfragen) {
 	ausleiheID := r.PathValue("ausleihe_id")
 	if ausleiheID == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende ausleihe_id"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende ausleihe_id"))
 		return
 	}
 
@@ -60,7 +60,7 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		if grund != "" && t.HatRecht(r, "view_students") {
 			meldung += " (" + grund + ")"
 		}
-		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New(meldung))
+		apierrors.AntworteFehler(w, http.StatusForbidden, errors.New(meldung))
 		return
 	}
 
@@ -75,19 +75,19 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
 		log.Printf("Fehler beim Starten der Transaktion (Einzel-Verlaengerung): %v", err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
 	defer db.SafeRollback(ctx, tx)
 
 	alteFrist, err := repository.SperreOffeneAusleiheMitFrist(ctx, tx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 		return
 	}
 	if err != nil {
 		log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
 	basis := t.Jetzt()
@@ -99,12 +99,12 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 	_, gesetzteFrist, err := repository.VerlaengereAusleihe(ctx, tx, ausleiheID, neueFrist)
 	if err != nil {
 		log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
 	if err := tx.Commit(ctx); err != nil {
 		log.Printf("Fehler beim Abschluss der Einzel-Verlaengerung: %v", err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
 
@@ -126,13 +126,13 @@ func (t *Tueren) AusleihFristSetzen(protokollAbfragen repository.ProtokollAbfrag
 func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
 		return
 	}
 
 	ausleiheID := r.PathValue("id")
 	if ausleiheID == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Ausleihe-ID"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende Ausleihe-ID"))
 		return
 	}
 
@@ -143,7 +143,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 
 	neuesDatum, err := leseFaelligAm(req.FaelligAm)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -159,7 +159,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 			return
 		}
 		if gesperrt {
-			apierrors.SendHTTPError(w, http.StatusForbidden,
+			apierrors.AntworteFehler(w, http.StatusForbidden,
 				errors.New("gesperrte Ausleihe: die Frist kann nicht in die Zukunft verschoben werden — die Sperre soll zur Rückgabe zwingen"))
 			return
 		}
@@ -168,11 +168,11 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 	id, gesetzteFrist, err := repository.SetzeAusleihFrist(ctx, t.DB.Pool, ausleiheID, neuesDatum)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 			return
 		}
 		log.Printf("Fehler bei manueller Frist-Überschreibung: %v", err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
 
@@ -227,12 +227,12 @@ func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen repository.Ei
 func (t *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, ausleiheID, vorgang string) (gesperrt bool, grund string, geprueft bool) {
 	gesperrt, grund, err := t.pruefeAusleihSperre(ctx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 		return false, "", false
 	}
 	if err != nil {
 		log.Printf("Fehler bei Sperr-Prüfung (%s): %v", vorgang, err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return false, "", false
 	}
 	return gesperrt, grund, true

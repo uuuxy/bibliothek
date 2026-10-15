@@ -23,7 +23,7 @@ func (t *Tueren) Bestellbedarf() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		bedarf, err := t.bestellbedarfMitEinstellungen(r.Context(), r)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, bedarf)

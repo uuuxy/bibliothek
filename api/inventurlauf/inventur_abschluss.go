@@ -52,14 +52,14 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.LaufID == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("session_id fehlt"))
 		return
 	}
 
 	// Wer abschließt, steht an jedem Exemplar, das der Abschluss als Verlust bucht.
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
 		return
 	}
 
@@ -67,7 +67,7 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 
 	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 	defer db.SafeRollback(ctx, tx)
@@ -81,16 +81,16 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 	lauf, err := abfragen.SperreLaufFuerAbschluss(ctx, req.LaufID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	verloren, err := abfragen.SchliesseLaufAb(ctx, lauf.ID, lauf.Bereich(), claims.UserID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -99,12 +99,12 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 	// nicht mehr zurückrollen — die Aussonderung wäre dann schon geschrieben.
 	fehlbestand, err := abfragen.LadeVerluste(ctx, lauf.ID)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -129,7 +129,7 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {array}  repository.InventurVerlust
 // @Router       /inventur/fehlbestand [get]
 func (t *Tueren) Fehlbestand() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		laufID, err := tuer.LeseUUIDParameter(r, "session_id")
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), nil)

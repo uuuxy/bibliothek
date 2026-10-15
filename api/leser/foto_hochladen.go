@@ -21,7 +21,7 @@ func (t *Tueren) FotoHochladen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing student ID parameter"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing student ID parameter"))
 			return
 		}
 
@@ -31,7 +31,7 @@ func (t *Tueren) FotoHochladen() http.HandlerFunc {
 		}
 
 		if !strings.HasPrefix(req.FotoDaten, "data:image/jpeg;base64,") {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("payload must be a base64 encoded JPEG data URL"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("payload must be a base64 encoded JPEG data URL"))
 			return
 		}
 
@@ -40,15 +40,15 @@ func (t *Tueren) FotoHochladen() http.HandlerFunc {
 		fotoURL, err := service.SchreibeLeserFoto(ctx, t.DB.Pool, id, req.FotoDaten)
 		if err != nil {
 			if errors.Is(err, service.ErrFotoLeserUnbekannt) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				apierrors.AntworteFehler(w, http.StatusNotFound, err)
 				return
 			}
 			if errors.Is(err, service.ErrFotoUnlesbar) {
-				apierrors.SendHTTPErrorMitMeldung(w, http.StatusBadRequest,
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
 					"Das Bild ließ sich nicht lesen. Bitte die Aufnahme wiederholen.", err)
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

@@ -25,7 +25,7 @@ import (
 // @Success      200  {file}    binary
 // @Router       /schueler/{id}/dsgvo-auskunft/pdf [get]
 func (t *Tueren) DSGVOAuskunftPDF() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest("missing student ID parameter", nil)

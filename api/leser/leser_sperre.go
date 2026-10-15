@@ -37,7 +37,7 @@ const meldungSperreFehler = "Fehler beim Aktualisieren der Sperre"
 // Jede Änderung steht im Protokoll (LESER_GESPERRT, LESER_ENTSPERRT), wie das Übergehen an
 // der Theke (OVERRIDE_BLOCK).
 func (t *Tueren) LeserSperren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.sperreLeser(w, r, protokollAbfragen)
 	})
 }

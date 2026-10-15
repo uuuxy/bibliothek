@@ -66,7 +66,7 @@ func (t *Tueren) Schuljahreswechsel() http.HandlerFunc {
 
 		claims, ok := auth.GetClaims(ctx)
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
 			return
 		}
 
@@ -92,7 +92,7 @@ func (t *Tueren) Schuljahreswechsel() http.HandlerFunc {
 func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.ResponseWriter, r *http.Request, anfrage schuljahreswechselAnfrage, kontoID string) (antwort schuljahreswechselAntwort, ok bool) {
 	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return antwort, false
 	}
 	defer db.SafeRollback(ctx, tx)
@@ -105,7 +105,7 @@ func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 		// Rollback automatisch frei) zwingt den zweiten Lauf zu warten, bis der erste
 		// fertig ist; danach sieht dessen COUNT den Protokolleintrag und antwortet 409.
 		if err := repository.SperreSchuljahreswechsel(ctx, tx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return antwort, false
 		}
 		if !pruefeDoppellaufSchutz(ctx, tx, w) {
@@ -114,7 +114,7 @@ func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 	}
 
 	if antwort.Versetzt, antwort.Archiviert, err = repository.VersetzeSchueler(ctx, tx, schulzeit.Zone().String()); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return antwort, false
 	}
 
@@ -124,7 +124,7 @@ func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 	// gilt für jede künftige 8a), nicht an den Menschen; zwei Bedeutungen von
 	// "Klasse", die der Jahreswechsel nicht verwechseln darf.
 	if err := versetzeKlassenlehrerZuordnung(ctx, tx, &antwort); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return antwort, false
 	}
 
@@ -185,11 +185,11 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, antwort *sch
 func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schuljahreswechselAnfrage, bool) {
 	var anfrage schuljahreswechselAnfrage
 	if err := json.NewDecoder(r.Body).Decode(&anfrage); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiger oder fehlender Request-Body"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiger oder fehlender Request-Body"))
 		return anfrage, false
 	}
 	if !anfrage.Probelauf && !anfrage.Bestaetigt {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(`bestätigung erforderlich: { "confirm": true } im Body senden`))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New(`bestätigung erforderlich: { "confirm": true } im Body senden`))
 		return anfrage, false
 	}
 	return anfrage, true
@@ -209,11 +209,11 @@ func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schu
 func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWriter) bool {
 	juengsteLaeufe, err := repository.ZaehleJuengsteSchuljahreswechsel(ctx, tx)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 	if juengsteLaeufe > 0 {
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			errors.New("schuljahreswechsel wurde vor wenigen Minuten bereits durchgeführt — ein erneuter Lauf würde alle Schüler doppelt versetzen"))
 		return false
 	}
@@ -226,12 +226,12 @@ func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWrite
 func (t *Tueren) finalisiereSchuljahreswechsel(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, r *http.Request, kontoID string, versetzt, archiviert int) bool {
 	if err := repository.SchreibeAdminProtokoll(ctx, tx, kontoID, repository.AktionSchuljahreswechsel, clientip.AusAnfrage(r),
 		fmt.Sprintf(`{"versetzt": %d, "abgaenger": %d}`, versetzt, archiviert)); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 	log.Printf("Schuljahreswechsel durchgeführt (Benutzer %s): %d Schüler versetzt, %d neue Abgänger", kontoID, versetzt, archiviert)

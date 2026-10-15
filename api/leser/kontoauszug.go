@@ -41,35 +41,35 @@ func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 		idText := r.PathValue("schueler_id")
 		schuelerID, err := uuid.Parse(idText)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		kopf, err := repository.LadeKontoauszugKopf(ctx, t.DB.Pool, schuelerID)
 		schueler := pdf.KontoauszugSchueler(kopf)
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return
 		}
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		buecher, err := ladeKontoauszugBuecher(ctx, t.DB.Pool, schuelerID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		if len(buecher) == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine aktiven Ausleihen gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("keine aktiven Ausleihen gefunden"))
 			return
 		}
 
 		pdfDaten, err := pdf.GenerateKontoauszug(schueler, buecher)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

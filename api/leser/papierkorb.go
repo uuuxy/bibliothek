@@ -25,7 +25,7 @@ func (t *Tueren) Papierkorb() http.HandlerFunc {
 		const papierkorbGrenze = 1000
 		zeilen, err := repository.LadePapierkorb(ctx, t.DB.Pool, papierkorbGrenze)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -56,7 +56,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
 			return
 		}
 
@@ -66,7 +66,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 		// sondern ein Pseudonym ohne Namen — „wiederherstellen" ergäbe einen gesperrten
 		// „Anonym"-Datensatz in der aktiven Liste. 409 statt Wiederherstellen.
 		if anonymisiert, err := repository.IstPapierkorbLeserAnonymisiert(ctx, t.DB.Pool, id); err == nil && anonymisiert {
-			apierrors.SendHTTPError(w, http.StatusConflict,
+			apierrors.AntworteFehler(w, http.StatusConflict,
 				errors.New("dieser Datensatz ist bereits anonymisiert (DSGVO) und kann nicht wiederhergestellt werden"))
 			return
 		}
@@ -84,15 +84,15 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 			// kann ihn besetzen. Dann ist das Wiederherstellen keine Störung, sondern
 			// eine Lage, die jemand auflösen muss: 409 mit dem Grund und dem Weg heraus.
 			if meldung, ok := wiederherstellungsKollision(err); ok {
-				apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldung))
+				apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldung))
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		if wiederhergestellt == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht im Papierkorb gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("schüler nicht im Papierkorb gefunden"))
 			return
 		}
 
@@ -142,13 +142,13 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
 			return
 		}
 
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("fehlende Session-Information"))
+			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("fehlende Session-Information"))
 			return
 		}
 
@@ -163,14 +163,14 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 			// Geschmacksfrage: Der Fehler-Kollaps-Detektor liest die if-Bedingung und die erste
 			// Anweisung des Rumpfs; einen switch darunter sieht er nicht.
 			if errors.Is(err, repository.ErrLoeschenBlockiert) {
-				apierrors.SendHTTPError(w, http.StatusConflict, err)
+				apierrors.AntworteFehler(w, http.StatusConflict, err)
 				return
 			}
 			if errors.Is(err, repository.ErrLeserNichtGefunden) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				apierrors.AntworteFehler(w, http.StatusNotFound, err)
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

@@ -39,13 +39,13 @@ func (t *Tueren) Bestellhistorie() http.HandlerFunc {
 		// 200 Bestellungen übrig bleibt.
 		mittel := r.URL.Query().Get("mittel")
 		if !repository.IstMittelFilterGueltig(mittel) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, repository.MittelFilterFehler(mittel))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, repository.MittelFilterFehler(mittel))
 			return
 		}
 
 		bestellungen, bestellIndex, err := repository.LadeBestellVerlauf(ctx, t.DB.Pool, grenze, mittel)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -55,7 +55,7 @@ func (t *Tueren) Bestellhistorie() http.HandlerFunc {
 		}
 
 		if err := repository.LadeBestellVerlaufPositionen(ctx, t.DB.Pool, bestellungen, bestellIndex); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

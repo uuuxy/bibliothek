@@ -45,7 +45,7 @@ type bescheidErstellenAnfrage struct {
 // @Success      201 {object} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [post]
 func (t *Tueren) BescheidErstellen(bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.erstelleBescheid(w, r, bescheidAbfragen, protokollAbfragen)
 	})
 }

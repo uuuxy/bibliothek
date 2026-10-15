@@ -32,7 +32,7 @@ import (
 // Die Türen dieses Pakets bekommen ihre Abfragen von außen, und ein Griff nach t.DB.Pool
 // sprengte jeden Test, der die Türen ohne Datenbank baut (TestLeserlisteLeereListeIstArray).
 func (t *Tueren) Leserliste(leserAbfragen repository.LeserAbfragen, lmfAbfragen *repository.LMFAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		// Klasse oder Jahrgang — die Klasse gewinnt, wenn beides kommt (sie ist die
 		// genauere Angabe). Die Übersetzung steht in schueler_jahrgang_filter.go.
 		klassen, ohneTreffer, filterFehler := klassenFilter(r.Context(), lmfAbfragen,
@@ -89,7 +89,7 @@ func (t *Tueren) Leserliste(leserAbfragen repository.LeserAbfragen, lmfAbfragen 
 // nach irgendetwas zurück, die Oberfläche zeigte ihren Pfeil an der geklickten Spalte, und
 // niemand würde je erfahren, dass beides nicht zusammenpasst. Die Meldung nennt die
 // erlaubten Werte.
-func leserSortierung(r *http.Request) (repository.LeserSortierung, *apierrors.APIError) {
+func leserSortierung(r *http.Request) (repository.LeserSortierung, *apierrors.Fehler) {
 	spalte := repository.LeserSortierspalte(strings.TrimSpace(r.URL.Query().Get("sortierung")))
 	richtung := strings.TrimSpace(r.URL.Query().Get("richtung"))
 

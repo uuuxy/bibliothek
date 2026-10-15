@@ -71,13 +71,13 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
 			return
 		}
 
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
 			return
 		}
 
@@ -89,24 +89,24 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 		// (benutzer.Tueren.KontoLoeschen, „eigenes Konto kann nicht gelöscht werden").
 		eigene, err := repository.LadeLeserIDVonKonto(ctx, t.DB.Pool, claims.UserID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if eigene != "" && eigene == id {
-			apierrors.SendHTTPError(w, http.StatusForbidden,
+			apierrors.AntworteFehler(w, http.StatusForbidden,
 				//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung in der Akte
 				errors.New("Der eigene Eintrag lässt sich nicht löschen — mit ihm fiele der eigene Zugang."))
 			return
 		}
 
 		if status, err := t.pruefeLeserLoeschbar(ctx, id); err != nil {
-			apierrors.SendHTTPError(w, status, err)
+			apierrors.AntworteFehler(w, status, err)
 			return
 		}
 
 		// In den Papierkorb, in einer Transaktion mit dem Eintrag im Protokoll.
 		if err := protokollAbfragen.LegeLeserInPapierkorb(ctx, id, claims.UserID, "Manuelle Löschung"); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -147,13 +147,13 @@ func (t *Tueren) LeserAendern(protokollAbfragen repository.ProtokollAbfragen) ht
 func (t *Tueren) aendereLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
 		return
 	}
 
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
 		return
 	}
 
@@ -223,7 +223,7 @@ func (t *Tueren) pruefeLeserAenderung(ctx context.Context, w http.ResponseWriter
 	// nachzutragende Adresse ist Arbeit, auch wenn an der Leserzeile nichts steht; sonst
 	// wäre „nur die Schul-E-Mail nachtragen" ein 400.
 	if b.IstLeer() && kontoAdresse == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
 		return keine, false
 	}
 	return leserAenderung{update: b, lusdNachgetragen: lusdNachgetragen, kontoAdresse: kontoAdresse}, true
@@ -281,10 +281,10 @@ func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter
 	aktuell, err := repository.LadeLUSDIDDesLesers(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return "", false
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return "", false
 	}
 
@@ -293,7 +293,7 @@ func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter
 	}
 	if aktuell != "" {
 		// Bestehende Verknüpfung: weder überschreiben noch leeren.
-		apierrors.SendHTTPError(w, http.StatusForbidden,
+		apierrors.AntworteFehler(w, http.StatusForbidden,
 			errors.New("die LUSD-ID dieses Schülers ist bereits gesetzt und kann über das Formular nicht geändert oder geleert werden"))
 		return "", false
 	}
@@ -305,11 +305,11 @@ func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter
 	// Unique-Index (uniq_schueler_lusd_id_active) eine klare 409 zurückkommt.
 	belegt, err := repository.HatAndererSchuelerLUSDID(ctx, t.DB.Pool, neu, id)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return "", false
 	}
 	if belegt {
-		apierrors.SendHTTPError(w, http.StatusConflict,
+		apierrors.AntworteFehler(w, http.StatusConflict,
 			errors.New("diese LUSD-ID ist bereits einem anderen aktiven Schüler zugeordnet"))
 		return "", false
 	}
@@ -350,7 +350,7 @@ func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	// Personenkreis, und soll als Auskunft zurückkommen, nicht als CHECK-500.
 	if !leserart.IstBekannt(neu) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.SendHTTPError(w, http.StatusBadRequest,
+		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", neu, leserart.Moegliche()))
 		return false
 	}
@@ -360,10 +360,10 @@ func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	aktuell, err := repository.LadeLeserArt(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
 			return false
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 
@@ -372,7 +372,7 @@ func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	}
 	if leserart.IstSchueler(aktuell) || leserart.IstSchueler(neu) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.SendHTTPError(w, http.StatusBadRequest,
+		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			errors.New("Aus einem Schüler wird kein Kollege und umgekehrt. "+
 				"Lege die Person neu an und lösche den falschen Eintrag."))
 		return false
@@ -435,7 +435,7 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 	// siehe pruefeKlassenname und Migration 072.
 	if req.Klasse != nil {
 		if err := pruefeKlassenname(*req.Klasse); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return nil, false
 		}
 	}
@@ -470,7 +470,7 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 	} {
 		if feld.wert != nil && strings.TrimSpace(*feld.wert) == "" {
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-			apierrors.SendHTTPError(w, http.StatusBadRequest,
+			apierrors.AntworteFehler(w, http.StatusBadRequest,
 				errors.New(feld.bezeichnung+" darf nicht leer sein."))
 			return nil, false
 		}
@@ -498,13 +498,13 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 		// es nicht mit "" still auf NULL setzen; zweite Tür, gleiche Regel. Leer = 400.
 		if strings.TrimSpace(*req.Geburtsdatum) == "" {
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-			apierrors.SendHTTPError(w, http.StatusBadRequest,
+			apierrors.AntworteFehler(w, http.StatusBadRequest,
 				errors.New("Geburtsdatum kann nicht geleert werden — es ist der Schlüssel für den LUSD-Abgleich"))
 			return nil, false
 		}
 		datum, err := leseGeburtsdatum(*req.Geburtsdatum)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return nil, false
 		}
 		b.Geburtsdatum = datum
@@ -524,26 +524,26 @@ func (t *Tueren) schreibeLeserAenderung(ctx context.Context, w http.ResponseWrit
 		// Eine vergebene Ausweisnummer (unter den Schülern oder im Kollegium, Migration 118) ist
 		// eine Auskunft, kein Serverfehler.
 		if repository.IstAusweisKollision(err) {
-			apierrors.SendHTTPError(w, http.StatusConflict,
+			apierrors.AntworteFehler(w, http.StatusConflict,
 				errors.New("diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)"))
 			return false
 		}
 		if repository.IstNummerBuchOderAusweisKollision(err) {
-			apierrors.SendHTTPError(w, http.StatusConflict,
+			apierrors.AntworteFehler(w, http.StatusConflict,
 				errors.New("diese Nummer ist der Barcode eines Buchs und kann kein Ausweis sein"))
 			return false
 		}
 		// Name und Geburtsdatum eines anderen Lesers: dieselbe Auskunft wie beim Anlegen.
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "unique_schueler_name_gebdatum" {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
 			return false
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
 	if !gefunden {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
 		return false
 	}
 	return true

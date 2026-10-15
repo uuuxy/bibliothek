@@ -15,7 +15,7 @@ func (t *Tueren) Systematik() http.HandlerFunc {
 		ctx := r.Context()
 		kategorien, err := repository.LadeSystematikKategorien(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("database error"))
 			return
 		}
 
@@ -40,7 +40,7 @@ func (t *Tueren) Faecher() http.HandlerFunc {
 		ctx := r.Context()
 		faecher, err := repository.LadeFaecher(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("database error"))
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, faecher)

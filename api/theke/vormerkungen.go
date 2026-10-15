@@ -20,7 +20,7 @@ type vormerkungAnfrage struct {
 // Vormerkungen liefert die Vormerkungen eines Titels oder eines Schülers
 // (GET /api/vormerkungen?titel_id=…&schueler_id=…).
 func (t *Tueren) Vormerkungen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
 		titelID, err := tuer.LeseUUIDParameter(r, "titel_id")
@@ -52,7 +52,7 @@ func (t *Tueren) Vormerkungen(vormerkungsAbfragen repository.VormerkungsAbfragen
 
 // VormerkungAnlegen legt eine Vormerkung an (POST /api/vormerkungen).
 func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req vormerkungAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
@@ -83,7 +83,7 @@ func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen repository.VormerkungsAbf
 
 // VormerkungLoeschen löscht eine Vormerkung (DELETE /api/vormerkungen/{id}).
 func (t *Tueren) VormerkungLoeschen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest("ID fehlt", nil)

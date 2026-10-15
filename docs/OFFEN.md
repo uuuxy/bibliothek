@@ -518,7 +518,7 @@ Ordner des Pakets und für die Form `paket.Name`.
 - Fehlertexte: 59 Stellen tragen `//nolint:staticcheck` (ST1005), weil der Text des Fehlers
   die Meldung an der Oberfläche ist. Das Regelwerk schreibt Fehlertexte klein und ohne
   Satzzeichen (Decisions, „Error strings"). Den Satz vom Fehler trennt schon
-  `apierrors.SendHTTPErrorMitMeldung`; die Meldungen an der Oberfläche bleiben dabei Wort für
+  `apierrors.AntworteFehlerMitMeldung`; die Meldungen an der Oberfläche bleiben dabei Wort für
   Wort, was ein Test je Stelle belegt.
 - Zustand auf der Ebene eines Pakets hinter drei Nähten für Tests: der Mailversand
   (`mailservice.SendEmail` als Variable, der Lader der Konfiguration), der Zwischenspeicher

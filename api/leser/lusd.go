@@ -54,18 +54,18 @@ func (t *Tueren) lusdTuer(uebernehmen bool) http.HandlerFunc {
 func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, uebernehmen bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return
 	}
 	datei, err := leseLUSDDatei(r)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return
 	}
 	lauf := lusd.Lauf{Anwenden: uebernehmen, MassenabgangBestaetigt: uebernehmen && r.FormValue("confirm_graduates") == "true"}
 	if uebernehmen {
 		if lauf.Umbenennungen, err = leseUmbenennungsWahl(r.FormValue("umbenennungen")); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 	}
@@ -74,7 +74,7 @@ func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, ueb
 	lauf.KarenzTage = t.abgaengerKarenzTage(r.Context())
 	res, err := lusd.FuehreAus(r.Context(), t.DB.Pool, datei, lauf)
 	if err != nil {
-		apierrors.SendHTTPError(w, lusdFehlerStatus(err), err)
+		apierrors.AntworteFehler(w, lusdFehlerStatus(err), err)
 		return
 	}
 	if uebernehmen {

@@ -23,10 +23,10 @@ func ladeExemplarFuerScan(ctx context.Context, abfragen *repository.InventurAbfr
 		if errors.Is(err, pgx.ErrNoRows) {
 			// Der Satz steht am Scanner unter „Unbekanntes Buch“; der Fehler der Datenbank geht
 			// ins Log.
-			apierrors.SendHTTPErrorMitMeldung(w, http.StatusNotFound, meldungUnbekannterBarcode, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungUnbekannterBarcode, err)
 			return nil, false
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
 	return exemplar, true
@@ -84,7 +84,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.LaufID == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("session_id fehlt"))
 		return
 	}
 
@@ -95,10 +95,10 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 	lauf, err := abfragen.LadeLauf(ctx, req.LaufID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
+			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -107,13 +107,13 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if exemplar.IstAusgesondert {
-		apierrors.SendHTTPError(w, http.StatusConflict, fmt.Errorf("exemplar %s ist bereits ausgesondert", req.BarcodeID))
+		apierrors.AntworteFehler(w, http.StatusConflict, fmt.Errorf("exemplar %s ist bereits ausgesondert", req.BarcodeID))
 		return
 	}
 
 	imBereich, err := abfragen.IstExemplarImBereich(ctx, exemplar.ExemplarID, lauf.Bereich())
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -138,11 +138,11 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		// Der Lauf wurde inzwischen an einem anderen Scanner abgeschlossen: Der Scan ist
 		// gegenstandslos, aber kein Fehler des Servers (409).
 		if errors.Is(err, repository.ErrInventurAbgeschlossen) {
-			apierrors.SendHTTPError(w, http.StatusConflict,
+			apierrors.AntworteFehler(w, http.StatusConflict,
 				errors.New("die Inventur wurde soeben abgeschlossen — dieser Scan wurde nicht mehr erfasst"))
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

@@ -30,7 +30,7 @@ func (t *Tueren) AusweisLayout() http.HandlerFunc {
 		case errors.Is(err, pgx.ErrNoRows):
 			wert = "{}"
 		case err != nil:
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("ausweis-design laden: %w", err))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("ausweis-design laden: %w", err))
 			return
 		case strings.TrimSpace(wert) == "":
 			wert = "{}"
@@ -46,20 +46,20 @@ func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAusweisLayoutBytes+1))
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("konnte die Anfrage nicht lesen"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("konnte die Anfrage nicht lesen"))
 			return
 		}
 		if len(body) > MaxAusweisLayoutBytes {
-			apierrors.SendHTTPError(w, http.StatusRequestEntityTooLarge, errors.New("Ausweis-Design ist zu groß"))
+			apierrors.AntworteFehler(w, http.StatusRequestEntityTooLarge, errors.New("Ausweis-Design ist zu groß"))
 			return
 		}
 		if !json.Valid(body) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges JSON"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiges JSON"))
 			return
 		}
 
 		if err := repository.SchreibeAusweisLayout(r.Context(), t.DB.Pool, string(body)); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Ausweis-Design konnte nicht gespeichert werden"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("Ausweis-Design konnte nicht gespeichert werden"))
 			return
 		}
 

@@ -54,7 +54,7 @@ func (t *Tueren) ExemplarStatusAendern(katalogAbfragen repository.KatalogAbfrage
 func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, katalogAbfragen repository.KatalogAbfragen, bescheidAbfragen repository.BescheidAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
 		return
 	}
 
@@ -66,7 +66,7 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 	// Wer speichert, steht beim Aussondern im Protokoll.
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
+		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
 		return
 	}
 
@@ -86,14 +86,14 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 	if err := katalogAbfragen.AendereExemplarStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
 		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.UserID); err != nil {
 		if errors.Is(err, repository.ErrExemplarNochVerliehen) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			apierrors.AntworteFehler(w, http.StatusNotFound, err)
 			return
 		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

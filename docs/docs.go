@@ -1034,7 +1034,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/apierrors.APIError"
+                            "$ref": "#/definitions/apierrors.Fehler"
                         }
                     }
                 }
@@ -3732,7 +3732,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "apierrors.APIError": {
+        "apierrors.Fehler": {
             "type": "object",
             "properties": {
                 "error": {

@@ -28,7 +28,7 @@ import (
 // @Success      200 {file} file
 // @Router       /bescheide/{id}/pdf [get]
 func (t *Tueren) BescheidPDF(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))

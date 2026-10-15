@@ -45,7 +45,7 @@ type geraetAendernAnfrage struct {
 // Geraete liefert die Geräteliste samt aktuellem Ausleiher.
 // GET /api/geraete
 func (t *Tueren) Geraete(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		geraete, err := geraeteAbfragen.LadeAlle(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Geräte", err)
@@ -69,7 +69,7 @@ func (t *Tueren) Geraete(geraeteAbfragen repository.GeraeteAbfragen) http.Handle
 
 // GeraetAnlegen legt ein Gerät an. POST /api/geraete
 func (t *Tueren) GeraetAnlegen(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req geraetAnlegenAnfrage
 		// Streng: Ein Feld, das die Tür nicht liest, ist ein Fehler und kein stiller Verlust.
 		if !tuer.LeseAnfrageStreng(w, r, &req) {
@@ -105,7 +105,7 @@ func (t *Tueren) GeraetAnlegen(geraeteAbfragen repository.GeraeteAbfragen) http.
 // GeraetAendern pflegt Stammdaten und den Defekt-Status.
 // PUT /api/geraete/{id}
 func (t *Tueren) GeraetAendern(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req geraetAendernAnfrage
 		// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
 		if !tuer.LeseAnfrageStreng(w, r, &req) {

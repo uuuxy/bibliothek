@@ -69,7 +69,7 @@ func abgangsbuchBlatt(antwort abgangsbuchAntwort) pdf.Abgangsbuch {
 // Abgangsbuch liefert die Abgänge eines Zeitraums für den Bildschirm.
 // GET /api/bestand/abgangsbuch?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (t *Tueren) Abgangsbuch() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		von, bis, err := bestandsbuchZeitraum(r)
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), err)
@@ -86,7 +86,7 @@ func (t *Tueren) Abgangsbuch() http.HandlerFunc {
 // AbgangsbuchPDF druckt dasselbe als Blatt zum Abheften.
 // GET /api/bestand/abgangsbuch/pdf?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (t *Tueren) AbgangsbuchPDF() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		von, bis, err := bestandsbuchZeitraum(r)
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), err)

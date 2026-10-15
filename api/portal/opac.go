@@ -67,7 +67,7 @@ func (t *Tueren) OPACSuche() http.HandlerFunc {
 			Grenze:   opacGrenze,
 		})
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

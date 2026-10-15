@@ -57,7 +57,7 @@ func zugangsbuchBlatt(antwort zugangsbuchAntwort) pdf.Zugangsbuch {
 // Zugangsbuch liefert die Zugänge eines Zeitraums für den Bildschirm.
 // GET /api/bestand/zugangsbuch?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (t *Tueren) Zugangsbuch() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		von, bis, err := bestandsbuchZeitraum(r)
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), err)
@@ -74,7 +74,7 @@ func (t *Tueren) Zugangsbuch() http.HandlerFunc {
 // ZugangsbuchPDF druckt dasselbe als Blatt zum Abheften.
 // GET /api/bestand/zugangsbuch/pdf?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (t *Tueren) ZugangsbuchPDF() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		von, bis, err := bestandsbuchZeitraum(r)
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), err)

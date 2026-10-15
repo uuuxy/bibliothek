@@ -172,7 +172,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 		// Bindestriche und Leerzeichen entfernen.
 		req.ISBN = strings.TrimSpace(strings.NewReplacer("-", "", " ", "").Replace(req.ISBN))
 		if req.ISBN == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("isbn fehlt"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("isbn fehlt"))
 			return
 		}
 
@@ -181,7 +181,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 		// 1. Steht der Titel schon im Katalog?
 		lokal, err := t.findeLokalenTitel(ctx, req.ISBN)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if lokal != nil {
@@ -195,17 +195,17 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 			if errors.Is(err, inventur.ErrKatalogdiensteNichtErreichbar) {
 				// Netzausfall ist kein Nicht-Treffer: Bei 404 legt die Theke während
 				// einer WLAN-Störung Titel von Hand an, die längst in der DNB stehen.
-				apierrors.SendHTTPError(w, http.StatusBadGateway, errors.New("katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen"))
+				apierrors.AntworteFehler(w, http.StatusBadGateway, errors.New("katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen"))
 				return
 			}
-			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine Metadaten für ISBN %s gefunden", req.ISBN))
+			apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("keine Metadaten für ISBN %s gefunden", req.ISBN))
 			return
 		}
 
 		// 3. Den Titel anlegen; ON CONFLICT fängt zwei gleichzeitige Anfragen auf.
 		antwort, err := t.legeTitelAusTrefferAn(ctx, req.ISBN, meta)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

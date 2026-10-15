@@ -13,7 +13,7 @@ import (
 // SchadenMelden meldet einen Verlust oder Schaden (POST /api/damage/report): Das Exemplar wird
 // ausgesondert, die Forderung angelegt und die Ausleihe beendet.
 func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("missing session information", nil)

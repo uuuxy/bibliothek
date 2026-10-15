@@ -1,6 +1,6 @@
 # Stil — wie der Code geschrieben ist
 
-Stand: 14.10.2026
+Stand: 15.10.2026
 
 Eine Seite mit den Regeln für Namen, Sichtbarkeit und Kommentare im Go-Code, über `gofmt` und
 den Linter hinaus. Maßstab ist Googles Regelwerk für Go
@@ -28,8 +28,9 @@ fest, was erreicht ist. Neuer Code folgt den Regeln von Anfang an.
   Geschlecht des Typs wechselten), `Err…` für einen Fehlerwert, `Test…`, `Must…`, `main`,
   `init` und die Methoden fremder Schnittstellen (`Error`, `String`, `ServeHTTP`, `Scan`,
   `Close`).
-- Ein Name, der ein Kopffeld von HTTP oder dessen Wert nennt, folgt dem Protokoll
-  (`HeaderContentType`, `ContentTypePDF`): Wer ihn liest, sucht das Feld unter seinem Namen.
+- Ein Name, der ein Kopffeld von HTTP, dessen Wert oder einen Status nennt, folgt dem Protokoll
+  (`HeaderContentType`, `ContentTypePDF`, `apierrors.BadRequest`): Wer ihn liest, sucht das Feld
+  oder den Status unter seinem Namen.
 - Pakete der Technik tragen die im Go-Umfeld üblichen Kurznamen (`api`, `db`, `auth`, `jobs`,
   `repository`, `service`, `pkg`, `internal`); ein Paket mit Fachbezug heißt deutsch (`leser`,
   `mahnwesen`).

@@ -71,7 +71,7 @@ func protokolliereBescheid(ctx context.Context, t *Tueren, protokollAbfragen rep
 // @Success      200 {array} repository.Bescheid
 // @Router       /bescheide [get]
 func (t *Tueren) Bescheide(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := bescheidAbfragen.LadeListe(r.Context(), r.URL.Query().Get("status") == "offen")
 		if err != nil {
 			return apierrors.Internal("Bescheide konnten nicht gelesen werden", err)
@@ -90,7 +90,7 @@ func (t *Tueren) Bescheide(bescheidAbfragen repository.BescheidAbfragen) http.Ha
 // @Success      200 {array} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [get]
 func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
@@ -116,7 +116,7 @@ func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen repository.BescheidAbfra
 // @Success      200 {object} map[string]any
 // @Router       /bescheide/{id}/uebergeben [post]
 func (t *Tueren) BescheidUebergeben(bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))

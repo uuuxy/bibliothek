@@ -182,7 +182,7 @@ import { toastStore } from './stores/toastStore.svelte.js';
 /**
  * Zieht die menschenlesbare Fehlermeldung aus einer fehlgeschlagenen Response.
  * Das Backend antwortet einheitlich mit JSON `{"error": "..."}` (siehe
- * apierrors.writeJSONError) — diese eine Stelle kapselt das Auspacken, damit nirgends mehr
+ * apierrors.schreibeFehlerJSON) — diese eine Stelle kapselt das Auspacken, damit nirgends mehr
  * roher `{"error":...}`-JSON in einem Toast oder Banner landet. Fällt sauber auf Rohtext
  * bzw. den HTTP-Status zurück, falls der Body kein solches JSON ist.
  * @param {Response} res

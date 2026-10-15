@@ -105,7 +105,7 @@ const nachbuchBereitsGebucht = "bereits_gebucht"
 // @Success      200 {object} nachbuchAntwort
 // @Router       /action/nachbuchen [post]
 func (t *Tueren) WarteschlangeNachbuchen(nachbuchDienst service.NachbuchDienst) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.bucheWarteschlangeNach(w, r, nachbuchDienst)
 	})
 }

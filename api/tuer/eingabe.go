@@ -77,11 +77,11 @@ func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) b
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(ziel); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return false
 	}
 	if err := Pruefer.Struct(ziel); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, Pruefmeldung(err))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, Pruefmeldung(err))
 		return false
 	}
 	return true
@@ -92,11 +92,11 @@ func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) b
 // nicht kennt, verwirft sie still; wo das nicht genügt, gilt LeseAnfrageStreng.
 func LeseAnfrage[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
 	if err := json.NewDecoder(r.Body).Decode(ziel); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return false
 	}
 	if err := Pruefer.Struct(ziel); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, Pruefmeldung(err))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, Pruefmeldung(err))
 		return false
 	}
 	return true

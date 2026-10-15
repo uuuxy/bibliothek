@@ -17,7 +17,7 @@ func (t *Tueren) UeberfaelligeAusleihen(mahnAbfragen *repository.MahnwesenAbfrag
 
 		klassen, err := mahnAbfragen.LadeUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

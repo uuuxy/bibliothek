@@ -33,7 +33,7 @@ func (t *Tueren) TitelAusleiher() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
 			return
 		}
 
@@ -41,7 +41,7 @@ func (t *Tueren) TitelAusleiher() http.HandlerFunc {
 
 		zeilen, err := repository.LadeAusleiherDesTitels(ctx, t.DB.Pool, id)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -91,7 +91,7 @@ func (t *Tueren) TitelHistorie() http.HandlerFunc {
 func (t *Tueren) gibTitelHistorie(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
 		return
 	}
 
@@ -99,7 +99,7 @@ func (t *Tueren) gibTitelHistorie(w http.ResponseWriter, r *http.Request) {
 
 	zeilen, err := repository.LadeAusleihhistorieDesTitels(ctx, t.DB.Pool, id)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 

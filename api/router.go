@@ -344,11 +344,11 @@ func (s *Server) lebenszeichen() http.HandlerFunc {
 func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
+			apierrors.AntworteFehler(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 			return
 		}
 		if oberflaeche == nil {
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, errors.New("frontend assets unavailable"))
+			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, errors.New("frontend assets unavailable"))
 			return
 		}
 		relativ := strings.TrimPrefix(r.URL.Path, "/")
@@ -367,7 +367,7 @@ func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 		// Die App-Shell bleibt für alles andere richtig: /schuelerdatei, /bestellungen und jede
 		// andere Route der Oberfläche gibt es nur im Browser.
 		if strings.HasPrefix(r.URL.Path, "/api/") {
-			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("unbekannter Endpunkt: %s %s", r.Method, r.URL.Path))
+			apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("unbekannter Endpunkt: %s %s", r.Method, r.URL.Path))
 			return
 		}
 

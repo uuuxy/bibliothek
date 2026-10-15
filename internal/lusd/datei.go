@@ -262,7 +262,7 @@ func LeseDatei(inhalt []byte) (Datei, error) {
 func pruefeGeburtsdatumJeZeile(zeilen []Zeile) error {
 	for _, z := range zeilen {
 		if z.Geburtsdatum == nil {
-			// Nur die Zeilennummer, kein Name: Die Meldung geht über SendHTTPError auch ins
+			// Nur die Zeilennummer, kein Name: Die Meldung geht über AntworteFehler auch ins
 			// Server-Log. Die Zeile findet das Sekretariat in der Datei.
 			return fmt.Errorf("zeile %d: Geburtsdatum fehlt oder ist unlesbar — ohne LUSD-ID ist Name + Geburtsdatum der Zuordnungsschlüssel, er muss in jeder Zeile stehen", z.Nr)
 		}

@@ -27,12 +27,12 @@ func (t *Tueren) TitelSuche(katalogAbfragen repository.KatalogAbfragen) http.Han
 	return func(w http.ResponseWriter, r *http.Request) {
 		suchtext := strings.TrimSpace(r.URL.Query().Get("q"))
 		if suchtext == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("search query 'q' cannot be empty"))
+			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("search query 'q' cannot be empty"))
 			return
 		}
 		titel, gesamt, err := katalogAbfragen.FindeTitelUnscharf(r.Context(), suchtext, 10)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 		if titel == nil {

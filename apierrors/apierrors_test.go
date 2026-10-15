@@ -11,29 +11,28 @@ import (
 	"testing"
 )
 
-// decodeErrorBody parst genau das eine kanonische Fehlerschema {"error": "..."} und schlägt
-// fehl, wenn der Body abweicht (fremder Key, kein JSON).
-func decodeErrorBody(t *testing.T, body string) string {
+// leseFehlermeldung liest die eine Form der Fehlerantwort {"error": "..."} und bricht ab, wenn
+// der Rumpf abweicht (anderer Schlüssel, kein JSON).
+func leseFehlermeldung(t *testing.T, rumpf string) string {
 	t.Helper()
-	var parsed map[string]string
-	if err := json.Unmarshal([]byte(body), &parsed); err != nil {
-		t.Fatalf("Fehler-Body ist kein JSON: %q (%v)", body, err)
+	var gelesen map[string]string
+	if err := json.Unmarshal([]byte(rumpf), &gelesen); err != nil {
+		t.Fatalf("Fehler-Body ist kein JSON: %q (%v)", rumpf, err)
 	}
-	if len(parsed) != 1 {
-		t.Fatalf("Fehler-Body muss genau {\"error\":...} sein, war: %q", body)
+	if len(gelesen) != 1 {
+		t.Fatalf("Fehler-Body muss genau {\"error\":...} sein, war: %q", rumpf)
 	}
-	msg, ok := parsed["error"]
+	meldung, ok := gelesen["error"]
 	if !ok {
-		t.Fatalf("Fehler-Body ohne \"error\"-Feld: %q", body)
+		t.Fatalf("Fehler-Body ohne \"error\"-Feld: %q", rumpf)
 	}
-	return msg
+	return meldung
 }
 
-// TestSendHTTPError_UserFacingStatusKeepsMessage: Bei nutzer-sichtbaren Status (kein 500,
-// kein DB-Fehler) bleibt die fachliche Meldung erhalten.
-func TestSendHTTPError_UserFacingStatusKeepsMessage(t *testing.T) {
+// Unter 500 und ohne Text aus der Datenbank bleibt die Meldung, wie sie ist.
+func TestAntworteFehler_BedienfehlerBehaeltSeineMeldung(t *testing.T) {
 	rec := httptest.NewRecorder()
-	SendHTTPError(rec, http.StatusConflict, errors.New("Benutzer hat noch aktive Ausleihen"))
+	AntworteFehler(rec, http.StatusConflict, errors.New("Benutzer hat noch aktive Ausleihen"))
 
 	if rec.Code != http.StatusConflict {
 		t.Errorf("Status: erwartet 409, war %d", rec.Code)
@@ -41,168 +40,158 @@ func TestSendHTTPError_UserFacingStatusKeepsMessage(t *testing.T) {
 	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
 		t.Errorf("Content-Type: erwartet application/json, war %q", ct)
 	}
-	if msg := decodeErrorBody(t, rec.Body.String()); msg != "Benutzer hat noch aktive Ausleihen" {
-		t.Errorf("Meldung verfälscht: %q", msg)
+	if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "Benutzer hat noch aktive Ausleihen" {
+		t.Errorf("Meldung verfälscht: %q", meldung)
 	}
 }
 
-// TestSendHTTPError_InternalErrorIsSanitized: Ein 500 darf niemals interne Details leaken.
-func TestSendHTTPError_InternalErrorIsSanitized(t *testing.T) {
+// Ein 500 gibt keine Einzelheit des Servers heraus.
+func TestAntworteFehler_500IstNeutral(t *testing.T) {
 	rec := httptest.NewRecorder()
-	SendHTTPError(rec, http.StatusInternalServerError,
+	AntworteFehler(rec, http.StatusInternalServerError,
 		errors.New("pgx: SELECT * FROM geheim WHERE token = 'abc123'"))
 
-	body := rec.Body.String()
-	msg := decodeErrorBody(t, body)
-	for _, leak := range []string{"pgx", "SELECT", "geheim", "abc123"} {
-		if strings.Contains(msg, leak) {
-			t.Errorf("interner Detail-Leak im 500-Body (%q): %q", leak, body)
+	rumpf := rec.Body.String()
+	meldung := leseFehlermeldung(t, rumpf)
+	for _, leck := range []string{"pgx", "SELECT", "geheim", "abc123"} {
+		if strings.Contains(meldung, leck) {
+			t.Errorf("interner Detail-Leak im 500-Body (%q): %q", leck, rumpf)
 		}
 	}
 }
 
-// TestSendHTTPError_DBErrorSanitizedEvenOn4xx: Auch bei 4xx wird eine DB-nahe Meldung
-// (SQL/Constraint) zensiert — sonst gelangte SQL-Struktur an den Client.
-func TestSendHTTPError_DBErrorSanitizedEvenOn4xx(t *testing.T) {
+// Auch unter 500 geht ein Text aus der Datenbank (SQL, Bedingung) nicht hinaus, sonst läse die
+// Oberfläche den Aufbau der Tabellen.
+func TestAntworteFehler_DatenbanktextAuchUnter500Gefiltert(t *testing.T) {
 	rec := httptest.NewRecorder()
-	SendHTTPError(rec, http.StatusBadRequest,
+	AntworteFehler(rec, http.StatusBadRequest,
 		errors.New("ERROR: duplicate key value violates unique constraint \"foo_key\""))
 
-	msg := decodeErrorBody(t, rec.Body.String())
-	if strings.Contains(msg, "unique constraint") || strings.Contains(msg, "foo_key") {
-		t.Errorf("DB-Detail im 4xx-Body geleakt: %q", msg)
+	meldung := leseFehlermeldung(t, rec.Body.String())
+	if strings.Contains(meldung, "unique constraint") || strings.Contains(meldung, "foo_key") {
+		t.Errorf("DB-Detail im 4xx-Body geleakt: %q", meldung)
 	}
 }
 
-// TestWrapAndSendHTTPError_SameShape: Beide Fehler-Ausgabepfade müssen exakt dasselbe
-// Wire-Format liefern ({"error": ...}), damit der Client sich auf ein Schema verlassen kann.
-func TestWrapAndSendHTTPError_SameShape(t *testing.T) {
-	// Pfad A: Wrap mit einem *APIError.
-	handler := Wrap(func(_ http.ResponseWriter, _ *http.Request) error {
+// Beide Wege einer Fehlerantwort schreiben dieselbe Form ({"error": ...}), damit sich die
+// Oberfläche auf eine verlassen kann.
+func TestMitFehlerantwortUndAntworteFehler_GleicheForm(t *testing.T) {
+	tuer := MitFehlerantwort(func(_ http.ResponseWriter, _ *http.Request) error {
 		return Conflict("Konflikt X", errors.New("intern: darf nicht sichtbar sein"))
 	})
 	recA := httptest.NewRecorder()
-	handler(recA, httptest.NewRequest(http.MethodGet, "/x", nil))
+	tuer(recA, httptest.NewRequest(http.MethodGet, "/x", nil))
 
-	// Pfad B: SendHTTPError direkt.
 	recB := httptest.NewRecorder()
-	SendHTTPError(recB, http.StatusConflict, errors.New("Konflikt X"))
+	AntworteFehler(recB, http.StatusConflict, errors.New("Konflikt X"))
 
 	if recA.Code != recB.Code {
-		t.Errorf("Status weicht ab: Wrap=%d, SendHTTPError=%d", recA.Code, recB.Code)
+		t.Errorf("Status weicht ab: MitFehlerantwort=%d, AntworteFehler=%d", recA.Code, recB.Code)
 	}
-	msgA := decodeErrorBody(t, recA.Body.String())
-	msgB := decodeErrorBody(t, recB.Body.String())
-	if msgA != "Konflikt X" || msgB != "Konflikt X" {
-		t.Errorf("Meldungen: Wrap=%q, SendHTTPError=%q", msgA, msgB)
+	meldungA := leseFehlermeldung(t, recA.Body.String())
+	meldungB := leseFehlermeldung(t, recB.Body.String())
+	if meldungA != "Konflikt X" || meldungB != "Konflikt X" {
+		t.Errorf("Meldungen: MitFehlerantwort=%q, AntworteFehler=%q", meldungA, meldungB)
 	}
-	// Der interne Fehler von Pfad A darf nie im Body erscheinen.
+	// Die Ursache aus dem ersten Weg steht nie im Rumpf.
 	if strings.Contains(recA.Body.String(), "darf nicht sichtbar sein") {
-		t.Errorf("Wrap leakt internen Fehler: %q", recA.Body.String())
+		t.Errorf("MitFehlerantwort leakt internen Fehler: %q", recA.Body.String())
 	}
 }
 
-// Ein abgebrochener Browser-Request ist kein Serverfehler (Register B, 07.09.2026):
-// Seitenwechsel während GET /api/exemplare/etiketten-offen/anzahl → pgx „context
-// canceled“ → bis dahin 500 mit nutzlosem Stacktrace. Jetzt 499, egal ob der Fehler
-// context.Canceled wrappt (SendHTTPError) oder nur der Request-Kontext abgebrochen ist
-// (Wrap).
-func TestSendHTTPError_ClientAbbruchIstKein500(t *testing.T) {
+// Hat der Browser die Anfrage abgebrochen, etwa durch einen Seitenwechsel, ist das kein Fehler
+// des Servers: Die Antwort ist 499, ob der Fehler context.Canceled einwickelt oder nur der
+// Kontext der Anfrage abgebrochen ist (nächster Test).
+func TestAntworteFehler_AbbruchIstKein500(t *testing.T) {
 	rec := httptest.NewRecorder()
-	SendHTTPError(rec, http.StatusInternalServerError, fmt.Errorf("query: %w", context.Canceled))
-	if rec.Code != StatusClientClosedRequest {
+	AntworteFehler(rec, http.StatusInternalServerError, fmt.Errorf("query: %w", context.Canceled))
+	if rec.Code != statusAbgebrochen {
 		t.Fatalf("Status = %d, want 499", rec.Code)
 	}
-	if msg := decodeErrorBody(t, rec.Body.String()); !strings.Contains(msg, "abgebrochen") {
-		t.Errorf("Meldung = %q, want Hinweis auf Abbruch", msg)
+	if meldung := leseFehlermeldung(t, rec.Body.String()); !strings.Contains(meldung, "abgebrochen") {
+		t.Errorf("Meldung = %q, want Hinweis auf Abbruch", meldung)
 	}
 }
 
-func TestWrap_AbgebrochenerKontextIstKein500(t *testing.T) {
+func TestMitFehlerantwort_AbgebrochenerKontextIstKein500(t *testing.T) {
 	ctx, abbrechen := context.WithCancel(context.Background())
 	abbrechen()
 	req := httptest.NewRequest(http.MethodGet, "/api/x", nil).WithContext(ctx)
 	rec := httptest.NewRecorder()
-	// Der Handler meldet einen Fehler, der context.Canceled NICHT wrappt — der Kontext
-	// allein muss reichen.
-	Wrap(func(http.ResponseWriter, *http.Request) error { return errors.New("scan: broken pipe") })(rec, req)
-	if rec.Code != StatusClientClosedRequest {
+	// Der Fehler der Tür wickelt context.Canceled nicht ein; der Kontext allein reicht.
+	MitFehlerantwort(func(http.ResponseWriter, *http.Request) error { return errors.New("scan: broken pipe") })(rec, req)
+	if rec.Code != statusAbgebrochen {
 		t.Fatalf("Status = %d, want 499", rec.Code)
 	}
 }
 
-// Gegenprobe: ein echter 500 bleibt ein 500.
-func TestWrap_EchterFehlerBleibt500(t *testing.T) {
+// Gegenprobe: Ein echter Fehler bleibt ein 500.
+func TestMitFehlerantwort_EchterFehlerBleibt500(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/x", nil)
 	rec := httptest.NewRecorder()
-	Wrap(func(http.ResponseWriter, *http.Request) error { return errors.New("kaputt") })(rec, req)
+	MitFehlerantwort(func(http.ResponseWriter, *http.Request) error { return errors.New("kaputt") })(rec, req)
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("Status = %d, want 500", rec.Code)
 	}
 }
 
-// TestSendHTTPErrorMitMeldung_UrsacheBleibtImLog: Der Client liest den mitgegebenen Satz,
-// die gewrappte Ursache bleibt draußen.
-//
-// Anlass (Register 12.09.2026): Der 503 der Sitzungsprüfung trug „: sperrliste:
-// connection reset by peer" mit hinaus — der Filter kennt SQL und Constraints, aber keine
-// Transportmeldung.
-func TestSendHTTPErrorMitMeldung_UrsacheBleibtImLog(t *testing.T) {
+// Die Oberfläche liest den mitgegebenen Satz, die eingewickelte Ursache bleibt im Log: Der
+// Filter kennt SQL und Bedingungen, aber keine Meldung der Verbindung wie „connection reset by
+// peer".
+func TestAntworteFehlerMitMeldung_UrsacheBleibtImLog(t *testing.T) {
 	rec := httptest.NewRecorder()
-	sentinel := errors.New("sitzung konnte nicht geprüft werden, bitte erneut versuchen")
-	SendHTTPErrorMitMeldung(rec, http.StatusServiceUnavailable, sentinel.Error(),
-		fmt.Errorf("%w: sperrliste: %v", sentinel, errors.New("connection reset by peer")))
+	gestoert := errors.New("sitzung konnte nicht geprüft werden, bitte erneut versuchen")
+	AntworteFehlerMitMeldung(rec, http.StatusServiceUnavailable, gestoert.Error(),
+		fmt.Errorf("%w: sperrliste: %v", gestoert, errors.New("connection reset by peer")))
 
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Errorf("Status: erwartet 503, war %d", rec.Code)
 	}
-	msg := decodeErrorBody(t, rec.Body.String())
-	if msg != sentinel.Error() {
-		t.Errorf("Meldung %q, erwartet genau %q", msg, sentinel.Error())
+	meldung := leseFehlermeldung(t, rec.Body.String())
+	if meldung != gestoert.Error() {
+		t.Errorf("Meldung %q, erwartet genau %q", meldung, gestoert.Error())
 	}
 	for _, leck := range []string{"sperrliste", "connection reset by peer"} {
-		if strings.Contains(msg, leck) {
-			t.Errorf("Ursache im Client-Body: %q steht in %q", leck, msg)
+		if strings.Contains(meldung, leck) {
+			t.Errorf("Ursache im Client-Body: %q steht in %q", leck, meldung)
 		}
 	}
 }
 
-// TestSendHTTPErrorMitMeldung_LeereMeldungWieBisher: Ohne Meldung verhält sich die
-// Funktion wie SendHTTPError — sonst wären die beiden Wege zwei Politiken.
-func TestSendHTTPErrorMitMeldung_LeereMeldungWieBisher(t *testing.T) {
+// Ohne Meldung antwortet die Funktion wie AntworteFehler; sonst hätten die beiden Wege zwei
+// Regeln.
+func TestAntworteFehlerMitMeldung_OhneMeldungWieAntworteFehler(t *testing.T) {
 	rec := httptest.NewRecorder()
-	SendHTTPErrorMitMeldung(rec, http.StatusConflict, "", errors.New("Benutzer hat noch aktive Ausleihen"))
+	AntworteFehlerMitMeldung(rec, http.StatusConflict, "", errors.New("Benutzer hat noch aktive Ausleihen"))
 
-	if msg := decodeErrorBody(t, rec.Body.String()); msg != "Benutzer hat noch aktive Ausleihen" {
-		t.Errorf("Meldung verfälscht: %q", msg)
+	if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "Benutzer hat noch aktive Ausleihen" {
+		t.Errorf("Meldung verfälscht: %q", meldung)
 	}
 }
 
-// TestSendHTTPErrorMitMeldung_500BleibtNeutral: Ein 500 bleibt neutral, auch wenn der
-// Aufrufer eine Meldung mitgibt — sonst wäre die Regel aus Internal() umgehbar.
-func TestSendHTTPErrorMitMeldung_500BleibtNeutral(t *testing.T) {
+// Ein 500 bleibt neutral, auch wenn der Rufer eine Meldung mitgibt.
+func TestAntworteFehlerMitMeldung_500BleibtNeutral(t *testing.T) {
 	rec := httptest.NewRecorder()
-	SendHTTPErrorMitMeldung(rec, http.StatusInternalServerError, "Tabelle benutzer fehlt",
+	AntworteFehlerMitMeldung(rec, http.StatusInternalServerError, "Tabelle benutzer fehlt",
 		errors.New("pgx: relation \"benutzer\" does not exist"))
 
-	msg := decodeErrorBody(t, rec.Body.String())
+	meldung := leseFehlermeldung(t, rec.Body.String())
 	for _, leck := range []string{"Tabelle", "benutzer", "pgx"} {
-		if strings.Contains(msg, leck) {
-			t.Errorf("500 gibt Detail heraus (%q): %q", leck, msg)
+		if strings.Contains(meldung, leck) {
+			t.Errorf("500 gibt Detail heraus (%q): %q", leck, meldung)
 		}
 	}
 }
 
-// TestSendHTTPErrorMitMeldung_DBWortlautWirdTrotzdemGefiltert: Der Filter liest den Text,
-// der HINAUSGEHT. Eine Meldung ist eine Erlaubnis für einen Satz, kein Freibrief für
-// SQL-Wortlaute — wer aus Versehen den Query-Text durchreicht, kommt damit nicht durch.
-func TestSendHTTPErrorMitMeldung_DBWortlautWirdTrotzdemGefiltert(t *testing.T) {
+// Der Filter liest den Text, der hinausgeht: Eine Meldung erlaubt einen Satz, aber keinen Text
+// einer Abfrage, den jemand aus Versehen durchreicht.
+func TestAntworteFehlerMitMeldung_DatenbanktextWirdTrotzdemGefiltert(t *testing.T) {
 	rec := httptest.NewRecorder()
-	SendHTTPErrorMitMeldung(rec, http.StatusConflict,
+	AntworteFehlerMitMeldung(rec, http.StatusConflict,
 		"select * from benutzer schlug fehl", errors.New("konflikt beim speichern"))
 
-	msg := decodeErrorBody(t, rec.Body.String())
-	if strings.Contains(strings.ToLower(msg), "select") {
-		t.Errorf("SQL-Wortlaut in der Meldung durchgereicht: %q", msg)
+	meldung := leseFehlermeldung(t, rec.Body.String())
+	if strings.Contains(strings.ToLower(meldung), "select") {
+		t.Errorf("SQL-Wortlaut in der Meldung durchgereicht: %q", meldung)
 	}
 }

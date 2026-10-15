@@ -38,7 +38,7 @@ func (t *Tueren) MahnUebersicht() http.HandlerFunc {
 
 		k, err := repository.LadeMahnKennzahlen(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Mahnkennzahlen"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Mahnkennzahlen"))
 			return
 		}
 
