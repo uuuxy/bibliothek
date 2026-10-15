@@ -3,7 +3,6 @@ package schaden_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -113,8 +112,9 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status %d, erwartet 409 — %s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(rec.Body.String(), "inzwischen zurückgegeben") {
-		t.Errorf("die Antwort nennt den Grund nicht: %s", rec.Body.String())
+	const erwartet = "Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen."
+	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
+		t.Errorf("SchadenMelden: Meldung %q, erwartet %q", got, erwartet)
 	}
 
 	var ausgesondert bool

@@ -94,11 +94,8 @@ func (a *pgSchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([
 }
 
 // ErrExemplarNeuVerliehen meldet, dass das Exemplar an jemand anderen ausgeliehen wurde,
-// während das Formular der Schadensmeldung offen stand. Der Text steht so vor dem Menschen
-// (409).
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrExemplarNeuVerliehen = errors.New("Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden")
+// während das Formular der Schadensmeldung offen stand. Die Tür antwortet mit 409.
+var ErrExemplarNeuVerliehen = errors.New("exemplar inzwischen neu ausgeliehen")
 
 // Melde bucht einen Verlust oder Schaden in eigener Transaktion, für „Verlust/Schaden melden"
 // in der Akte. Den Rumpf (meldeSchaden) ruft auch der Bescheid, in seiner Transaktion.

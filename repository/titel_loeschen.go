@@ -10,13 +10,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ErrTitelHatAktiveAusleihen meldet, dass ein Titel nicht gelöscht werden kann, weil noch
-// Exemplare verliehen sind: ein Bedienfehler (400), keine Störung. Ein Fehlerwert und kein
-// Vergleich am Text der Meldung: Der traf nie, jeder abgelehnte Versuch wurde zum Serverfehler,
-// und die Liste der verliehenen Barcodes ging verloren.
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, nutzer-sichtbare Meldung
-var ErrTitelHatAktiveAusleihen = errors.New("Löschen fehlgeschlagen: folgende Exemplare sind noch verliehen")
+// TitelHatAusleihenFehler meldet, dass ein Titel nicht gelöscht werden kann, weil noch
+// Exemplare verliehen sind: ein Bedienfehler (400), keine Störung. Barcodes nennt die
+// verliehenen Exemplare; die Tür nennt sie in ihrer Meldung.
+type TitelHatAusleihenFehler struct{ Barcodes []string }
+
+func (e *TitelHatAusleihenFehler) Error() string {
+	return fmt.Sprintf("titel hat verliehene exemplare: %v", e.Barcodes)
+}
 
 // ErrTitelNichtGefunden meldet eine unbekannte ID beim Löschen eines Titels.
 var ErrTitelNichtGefunden = errors.New("titel nicht gefunden")
@@ -146,7 +147,7 @@ func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titelID string)
 		return fmt.Errorf("failed to read active loans for title: %w", err)
 	}
 	if len(verliehen) > 0 {
-		return fmt.Errorf("%w: %v", ErrTitelHatAktiveAusleihen, verliehen)
+		return &TitelHatAusleihenFehler{Barcodes: verliehen}
 	}
 	return nil
 }

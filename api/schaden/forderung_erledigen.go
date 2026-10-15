@@ -41,10 +41,10 @@ func (t *Tueren) SchadensfaelleDesSchuelers(schadensAbfragen repository.Schadens
 // machte aus einem 500 „interner Datenbankfehler" und versteckte die Ursache.
 func erledigungsFehler(err error, aktion string) error {
 	if errors.Is(err, repository.ErrSchadensfallNichtGefunden) {
-		return apierrors.NotFound(err.Error(), err)
+		return apierrors.NotFound("Schadensfall nicht gefunden", err)
 	}
 	if errors.Is(err, repository.ErrSchadensfallErledigt) {
-		return apierrors.Conflict(err.Error(), err)
+		return apierrors.Conflict("Schadensfall wurde bereits bezahlt oder storniert", err)
 	}
 	return apierrors.Internal("Fehler beim "+aktion+" der Gebühr", err)
 }

@@ -14,8 +14,8 @@ import (
 // Die Fehler beim Erledigen einer Forderung. Die Tür macht daraus „nicht gefunden" oder einen
 // Konflikt; ein Fehler ohne Namen käme als „interner Fehler" beim Formular an.
 var (
-	ErrSchadensfallNichtGefunden = errors.New("Schadensfall nicht gefunden")
-	ErrSchadensfallErledigt      = errors.New("Schadensfall wurde bereits bezahlt oder storniert")
+	ErrSchadensfallNichtGefunden = errors.New("schadensfall nicht gefunden")
+	ErrSchadensfallErledigt      = errors.New("schadensfall schon bezahlt oder storniert")
 )
 
 // ladeBetragFuerErledigung liest den Betrag einer offenen Forderung und sperrt die Zeile bis zum

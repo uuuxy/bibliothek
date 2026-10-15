@@ -14,6 +14,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -225,11 +226,19 @@ func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 	fremdEx := testdaten.LegeExemplarAn(t, pool, titelID, "ALT-EX-3", true, "")
 	fremd := bescheidAusleihe(t, pool, fremdEx, anderes, 30)
 
-	for name, ausleihe := range map[string]string{"zurückgegeben": zurueck, "schon gemeldet": gemeldet, "fremdes Kind": fremd} {
+	for _, f := range []struct{ name, ausleihe, meldung string }{
+		{"zurückgegeben", zurueck, "Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen."},
+		{"schon gemeldet", gemeldet, "Für ein gewähltes Buch ist schon eine Forderung erfasst — bitte den Dialog neu öffnen."},
+		{"fremdes Kind", fremd, "Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen."},
+	} {
 		rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
-			bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{ausleihe: 10}))
+			bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{f.ausleihe: 10}))
 		if rec.Code != http.StatusConflict {
-			t.Errorf("%s: Status %d, want 409: %s", name, rec.Code, rec.Body.String())
+			t.Errorf("%s: Status %d, want 409: %s", f.name, rec.Code, rec.Body.String())
+			continue
+		}
+		if got := tuertest.Fehlermeldung(t, rec); got != f.meldung {
+			t.Errorf("%s: Meldung %q, erwartet %q", f.name, got, f.meldung)
 		}
 	}
 	var briefe int
@@ -268,6 +277,11 @@ func TestBescheidErstellen_BuechereiBuchNichtAlsVerlust(t *testing.T) {
 		bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{a: 9.90}))
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status %d, want 409: %s", rec.Code, rec.Body.String())
+	}
+	const erwartet = "1 von 1 Forderungen konnten nicht zugeordnet werden — " +
+		"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?"
+	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
+		t.Errorf("BescheidErstellen: Meldung %q, erwartet %q", got, erwartet)
 	}
 	var laeuft, imUmlauf bool
 	if err := pool.QueryRow(ctx, `

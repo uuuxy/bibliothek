@@ -10,12 +10,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ErrKontoHatAusleihen meldet, dass ein Konto nicht gelöscht werden kann, weil auf seiner
-// Leserzeile noch Ausleihen offen sind. Der Text steht so vor dem Menschen (409) und nennt
-// deshalb kein Wort aus dem Code (konto_loeschen_meldung_test.go).
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrKontoHatAusleihen = errors.New("Das Konto hat noch ausgeliehene Bücher — bitte zuerst zurückbuchen")
+// KontoHatAusleihenFehler meldet, dass ein Konto nicht gelöscht werden kann, weil auf seiner
+// Leserzeile noch Ausleihen offen sind. Offen ist ihre Zahl, die die Tür in ihrer Meldung nennt.
+type KontoHatAusleihenFehler struct{ Offen int }
+
+func (e *KontoHatAusleihenFehler) Error() string {
+	return fmt.Sprintf("konto hat %d offene ausleihen", e.Offen)
+}
 
 // LoescheKonto löscht ein Konto und schreibt den Eintrag dazu. Offene Ausleihen auf seiner
 // Leserzeile verhindern es; eine unberührte Leserzeile geht mit.
@@ -51,7 +52,7 @@ func (a *pgProtokollAbfragen) LoescheKonto(ctx context.Context, kontoID string, 
 		return fmt.Errorf("failed to check active loans for user: %w", err)
 	}
 	if aktiveAusleihen > 0 {
-		return fmt.Errorf("%w (%d offen)", ErrKontoHatAusleihen, aktiveAusleihen)
+		return &KontoHatAusleihenFehler{Offen: aktiveAusleihen}
 	}
 
 	// Keine getroffene Zeile heißt unbekannte ID: Die Aufnahme oben lässt ein fehlendes Konto

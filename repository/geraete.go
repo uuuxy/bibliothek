@@ -38,16 +38,12 @@ type Geraet struct {
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
 }
 
-// ErrGeraetBarcodeVergeben meldet, dass der Barcode schon auf einem anderen Gerät klebt. Der
-// Text ist die Meldung an der Oberfläche (409) und deshalb als Satz geschrieben.
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrGeraetBarcodeVergeben = errors.New("Barcode ist bereits an ein anderes Gerät vergeben")
+// ErrGeraetBarcodeVergeben meldet, dass der Barcode schon auf einem anderen Gerät klebt. Die Tür
+// antwortet mit 409.
+var ErrGeraetBarcodeVergeben = errors.New("barcode an anderem gerät vergeben")
 
 // ErrGeraetSeriennummerVergeben meldet, dass die Seriennummer schon an einem anderen Gerät steht.
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrGeraetSeriennummerVergeben = errors.New("Seriennummer ist bereits an einem anderen Gerät eingetragen")
+var ErrGeraetSeriennummerVergeben = errors.New("seriennummer an anderem gerät eingetragen")
 
 // geraetEindeutigkeit übersetzt eine verletzte Eindeutigkeit in den Fehler, der das Feld
 // nennt. Die Tabelle hat zwei: Barcode und Seriennummer.

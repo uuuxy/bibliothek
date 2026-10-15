@@ -161,15 +161,19 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 		router.ServeHTTP(rec, tuertest.MitCSRF(req))
 		return rec
 	}
-	// abgelehnt prüft den Konflikt und welches Feld die Meldung nennt.
-	abgelehnt := func(was string, rec *httptest.ResponseRecorder, nennt, nenntNicht string) {
+	const (
+		meldungSeriennummer = "Seriennummer ist bereits an einem anderen Gerät eingetragen"
+		meldungBarcode      = "Barcode ist bereits an ein anderes Gerät vergeben"
+	)
+	// abgelehnt prüft den Konflikt und den Satz, der das Feld nennt.
+	abgelehnt := func(was string, rec *httptest.ResponseRecorder, meldung string) {
 		t.Helper()
 		if rec.Code != http.StatusConflict {
 			t.Errorf("%s: Status %d, erwartet 409 — %s", was, rec.Code, rec.Body.String())
 			return
 		}
-		if !strings.Contains(rec.Body.String(), nennt) || strings.Contains(rec.Body.String(), nenntNicht) {
-			t.Errorf("%s: die Meldung soll %q nennen und nicht %q — %s", was, nennt, nenntNicht, rec.Body.String())
+		if got := tuertest.Fehlermeldung(t, rec); got != meldung {
+			t.Errorf("%s: Meldung %q, erwartet %q", was, got, meldung)
 		}
 	}
 
@@ -178,9 +182,9 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 		t.Fatalf("erstes Gerät anlegen: Status %d — %s", rec.Code, rec.Body.String())
 	}
 	abgelehnt("zweites Gerät mit derselben Seriennummer", rufe(http.MethodPost, "/api/geraete",
-		`{"modellname":"Tablet B","barcode_id":"G-SNR-B","seriennummer":"SN-DOPPELT"}`), "Seriennummer", "Barcode")
+		`{"modellname":"Tablet B","barcode_id":"G-SNR-B","seriennummer":"SN-DOPPELT"}`), meldungSeriennummer)
 	abgelehnt("zweites Gerät mit demselben Barcode", rufe(http.MethodPost, "/api/geraete",
-		`{"modellname":"Tablet C","barcode_id":"G-SNR-A","seriennummer":"SN-ANDERE"}`), "Barcode", "Seriennummer")
+		`{"modellname":"Tablet C","barcode_id":"G-SNR-A","seriennummer":"SN-ANDERE"}`), meldungBarcode)
 
 	if rec := rufe(http.MethodPost, "/api/geraete",
 		`{"modellname":"Tablet D","barcode_id":"G-SNR-D","seriennummer":"SN-FREI"}`); rec.Code != http.StatusCreated {
@@ -192,7 +196,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 	}
 	abgelehnt("Seriennummer eines anderen Geräts beim Bearbeiten", rufe(http.MethodPut, "/api/geraete/"+idD,
 		`{"modellname":"Tablet D","barcode_id":"G-SNR-D","seriennummer":"SN-DOPPELT","zubehoer":"","zustand_notiz":""}`),
-		"Seriennummer", "Barcode")
+		meldungSeriennummer)
 	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-SNR-D' AND seriennummer = 'SN-FREI'`); n != 1 {
 		t.Error("das abgelehnte Bearbeiten hat die Seriennummer trotzdem geändert")
 	}

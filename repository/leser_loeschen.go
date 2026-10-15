@@ -119,14 +119,14 @@ func pruefeKeineOffenenVorgaenge(ctx context.Context, tx pgx.Tx, leserID string)
 		return fmt.Errorf("checking open loans: %w", err)
 	}
 	if offeneAusleihen > 0 {
-		return fmt.Errorf("%w: %d offene Ausleihe(n)", ErrLoeschenBlockiert, offeneAusleihen)
+		return &LoeschenBlockiertFehler{OffeneAusleihen: offeneAusleihen}
 	}
 	var offeneSchaeden int
 	if err := tx.QueryRow(ctx, `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`, leserID).Scan(&offeneSchaeden); err != nil {
 		return fmt.Errorf("checking unpaid damages: %w", err)
 	}
 	if offeneSchaeden > 0 {
-		return fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle", ErrLoeschenBlockiert, offeneSchaeden)
+		return &LoeschenBlockiertFehler{UnbezahlteSchadensfaelle: offeneSchaeden}
 	}
 	return nil
 }
@@ -172,13 +172,26 @@ func (a *pgProtokollAbfragen) tilgeSpurenUndLoescheLeser(ctx context.Context, tx
 	return nil
 }
 
-// ErrLoeschenBlockiert meldet, dass das endgültige Löschen nicht möglich ist, weil noch etwas
+// LoeschenBlockiertFehler meldet, dass das endgültige Löschen nicht möglich ist, weil noch etwas
 // offen ist (eine Ausleihe, ein unbezahlter Schaden) oder die Zeile nicht im Papierkorb liegt.
-// Die Tür braucht den Unterschied zu jedem anderen Fehler: Ein Abbruch der Verbindung, der sich
-// als Konflikt ausgibt, schickt die Bibliothek los, ein Problem zu suchen, das es nicht gibt.
-//
-//nolint:staticcheck // ST1005: die Meldung steht so vor dem Menschen.
-var ErrLoeschenBlockiert = errors.New("Endgültiges Löschen blockiert")
+// Genau einer der Gründe ist gesetzt. Die Tür braucht den Unterschied zu jedem anderen Fehler:
+// Ein Abbruch der Verbindung, der sich als Konflikt ausgibt, schickt die Bibliothek los, ein
+// Problem zu suchen, das es nicht gibt.
+type LoeschenBlockiertFehler struct {
+	NichtImPapierkorb        bool
+	OffeneAusleihen          int
+	UnbezahlteSchadensfaelle int
+}
+
+func (e *LoeschenBlockiertFehler) Error() string {
+	switch {
+	case e.NichtImPapierkorb:
+		return "endgültiges löschen blockiert: nicht im papierkorb"
+	case e.OffeneAusleihen > 0:
+		return fmt.Sprintf("endgültiges löschen blockiert: %d offene ausleihen", e.OffeneAusleihen)
+	}
+	return fmt.Sprintf("endgültiges löschen blockiert: %d unbezahlte schadensfälle", e.UnbezahlteSchadensfaelle)
+}
 
 // LoescheLeserEndgueltig entfernt einen Leser, der im Papierkorb liegt, endgültig. Offene
 // Ausleihen und unbezahlte Forderungen verhindern es.
@@ -199,7 +212,7 @@ func (a *pgProtokollAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserI
 		return fmt.Errorf("checking trash state: %w", err)
 	}
 	if !imPapierkorb {
-		return fmt.Errorf("%w: der Datensatz liegt nicht im Papierkorb — erst löschen, dann endgültig entfernen", ErrLoeschenBlockiert)
+		return &LoeschenBlockiertFehler{NichtImPapierkorb: true}
 	}
 
 	if err = pruefeKeineOffenenVorgaenge(ctx, tx, leserID); err != nil {

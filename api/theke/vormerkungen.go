@@ -37,7 +37,7 @@ func (t *Tueren) Vormerkungen(vormerkungsAbfragen repository.VormerkungsAbfragen
 			// Ohne Titel- oder Schüler-Filter gibt es bewusst keinen Voll-Abzug aller
 			// Namen — das ist ein Bedienfehler (400), kein Serverfehler.
 			if errors.Is(err, repository.ErrVormerkungFilterFehlt) {
-				return apierrors.BadRequest(err.Error(), err)
+				return apierrors.BadRequest("Vormerkungen brauchen einen Titel- oder Schüler-Filter", err)
 			}
 			return apierrors.Internal("Fehler beim Abrufen der Vormerkungen", err)
 		}
@@ -68,10 +68,8 @@ func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen repository.VormerkungsAbf
 			// keinem Schüler, und die Warteschlange würde sie nie bedienen. Jedes Mal soll
 			// die Theke den Satz lesen, der die Lage beschreibt, statt einer
 			// Störungsmeldung, nach der unklar bleibt, ob die erste Vormerkung noch gilt.
-			if errors.Is(err, repository.ErrTitelBereitsAusgeliehen) ||
-				errors.Is(err, repository.ErrVormerkungBereitsVorhanden) ||
-				errors.Is(err, repository.ErrVormerkungNurFuerSchueler) {
-				return apierrors.Conflict(err.Error(), err)
+			if meldung, ok := vormerkungsKonflikt(err); ok {
+				return apierrors.Conflict(meldung, err)
 			}
 			return apierrors.Internal("Fehler beim Erstellen der Vormerkung", err)
 		}
@@ -102,4 +100,18 @@ func (t *Tueren) VormerkungLoeschen(vormerkungsAbfragen repository.VormerkungsAb
 		httpresp.Schreibe(w, []byte(`{"status":"gelöscht"}`))
 		return nil
 	})
+}
+
+// vormerkungsKonflikt nennt zu einem fachlichen Konflikt beim Vormerken den Satz, den die Theke
+// liest; ok ist false für jeden anderen Fehler.
+func vormerkungsKonflikt(err error) (meldung string, ok bool) {
+	switch {
+	case errors.Is(err, repository.ErrTitelBereitsAusgeliehen):
+		return "Buch wird aktuell bereits von diesem Schüler ausgeliehen", true
+	case errors.Is(err, repository.ErrVormerkungBereitsVorhanden):
+		return "Dieser Schüler hat den Titel bereits vorgemerkt", true
+	case errors.Is(err, repository.ErrVormerkungNurFuerSchueler):
+		return "Vormerken lässt sich nur für Schüler", true
+	}
+	return "", false
 }

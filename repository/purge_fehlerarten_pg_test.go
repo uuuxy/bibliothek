@@ -18,8 +18,8 @@ import (
 // „Fehler-Kollaps" (docs/sweeps.md), nur in der anderen Richtung: nicht 500 für alles,
 // sondern 409 für alles.
 //
-// Geprüft wird an der Quelle der Unterscheidung — den Sentinels. Was der Handler daraus
-// macht (409 / 404 / 500), steht in einem einzigen switch daneben.
+// Geprüft wird an der Quelle der Unterscheidung — den Fehlern der Abfrage. Was die Tür daraus
+// macht (409 / 404 / 500), steht in api/leser/papierkorb.go.
 func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -39,7 +39,8 @@ func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 
 	// (1) Nicht im Papierkorb → Blockade, also Konflikt.
 	err := repo.LoescheLeserEndgueltig(ctx, schueler, "")
-	if !errors.Is(err, repository.ErrLoeschenBlockiert) {
+	var blockiert *repository.LoeschenBlockiertFehler
+	if !errors.As(err, &blockiert) || !blockiert.NichtImPapierkorb {
 		t.Errorf("ein Datensatz außerhalb des Papierkorbs muss als Blockade kenntlich sein, bekam: %v", err)
 	}
 
@@ -49,7 +50,7 @@ func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 	if !errors.Is(err, repository.ErrLeserNichtGefunden) {
 		t.Errorf("eine unbekannte Kennung muss als „nicht gefunden\" kenntlich sein, bekam: %v", err)
 	}
-	if errors.Is(err, repository.ErrLoeschenBlockiert) {
+	if errors.As(err, &blockiert) {
 		t.Error("eine unbekannte Kennung wird als Blockade gemeldet — dann sucht jemand einen offenen Vorgang, den es nicht gibt")
 	}
 
@@ -87,7 +88,7 @@ func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 	})
 
 	err = repo.LoescheLeserEndgueltig(ctx, schueler, "")
-	if !errors.Is(err, repository.ErrLoeschenBlockiert) {
+	if !errors.As(err, &blockiert) || blockiert.OffeneAusleihen != 1 {
 		t.Errorf("eine offene Ausleihe muss als Blockade gemeldet werden, bekam: %v", err)
 	}
 }

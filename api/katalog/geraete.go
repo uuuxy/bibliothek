@@ -92,8 +92,8 @@ func (t *Tueren) GeraetAnlegen(geraeteAbfragen repository.GeraeteAbfragen) http.
 		id, err := geraeteAbfragen.LegeAn(r.Context(), req.Modellname,
 			seriennummer, req.BarcodeID, strings.TrimSpace(req.Zubehoer), strings.TrimSpace(req.ZustandNotiz))
 		if err != nil {
-			if istGeraetKonflikt(err) {
-				return apierrors.Conflict(err.Error(), err)
+			if meldung, ok := geraetKonflikt(err); ok {
+				return apierrors.Conflict(meldung, err)
 			}
 			return apierrors.Internal("Fehler beim Anlegen des Geräts", err)
 		}
@@ -128,8 +128,8 @@ func (t *Tueren) GeraetAendern(geraeteAbfragen repository.GeraeteAbfragen) http.
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Gerät nicht gefunden", err)
 			}
-			if istGeraetKonflikt(err) {
-				return apierrors.Conflict(err.Error(), err)
+			if meldung, ok := geraetKonflikt(err); ok {
+				return apierrors.Conflict(meldung, err)
 			}
 			return apierrors.Internal("Fehler beim Speichern des Geräts", err)
 		}
@@ -138,11 +138,16 @@ func (t *Tueren) GeraetAendern(geraeteAbfragen repository.GeraeteAbfragen) http.
 	})
 }
 
-// istGeraetKonflikt erkennt die Eingabe, die an einem anderen Gerät schon steht: Barcode
-// oder Seriennummer. Der Satz des Fehlers nennt das Feld.
-func istGeraetKonflikt(err error) bool {
-	return errors.Is(err, repository.ErrGeraetBarcodeVergeben) ||
-		errors.Is(err, repository.ErrGeraetSeriennummerVergeben)
+// geraetKonflikt erkennt die Eingabe, die an einem anderen Gerät schon steht, und nennt im Satz
+// das Feld: Barcode oder Seriennummer. ok ist false für jeden anderen Fehler.
+func geraetKonflikt(err error) (meldung string, ok bool) {
+	switch {
+	case errors.Is(err, repository.ErrGeraetBarcodeVergeben):
+		return "Barcode ist bereits an ein anderes Gerät vergeben", true
+	case errors.Is(err, repository.ErrGeraetSeriennummerVergeben):
+		return "Seriennummer ist bereits an einem anderen Gerät eingetragen", true
+	}
+	return "", false
 }
 
 // getrimmterZeiger reicht einen optionalen Textwert getrimmt weiter: nil bleibt nil

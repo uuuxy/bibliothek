@@ -18,6 +18,7 @@ import (
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -175,8 +176,10 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 		t.Errorf("zweiter Bescheid auf dieselbe Forderung: %d, want 409: %s", rec.Code, rec.Body.String())
 	}
 	// Die Antwort trägt den Satz, an dem das Sekretariat abliest, was zu prüfen ist.
-	if !strings.Contains(rec.Body.String(), "1 von 1 Forderungen konnten nicht zugeordnet werden") {
-		t.Errorf("die Antwort nennt die nicht zugeordnete Forderung nicht: %s", rec.Body.String())
+	const erwartet = "1 von 1 Forderungen konnten nicht zugeordnet werden — " +
+		"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?"
+	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
+		t.Errorf("BescheidErstellen: Meldung %q, erwartet %q", got, erwartet)
 	}
 
 	// Und die Nummer des abgewiesenen Briefs ist nicht verbraucht: Die Transaktion ist

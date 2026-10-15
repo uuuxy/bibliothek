@@ -37,7 +37,6 @@ func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) htt
 		}
 		art := repository.SchadensArt(req.Art)
 		if !art.IstGueltig() {
-			//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 			return apierrors.BadRequest("Bitte angeben, ob das Buch nicht zurückgegeben oder beschädigt zurückgegeben wurde.",
 				errors.New("art fehlt oder ist ungültig"))
 		}
@@ -46,9 +45,8 @@ func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) htt
 		if err != nil {
 			// Inzwischen neu verliehen oder zurückgegeben: ein Konflikt (409), kein
 			// Serverfehler. Die Akte zeigt einen Stand, den es nicht mehr gibt.
-			if errors.Is(err, repository.ErrExemplarNeuVerliehen) ||
-				errors.Is(err, repository.ErrAusleiheInzwischenZurueck) {
-				return apierrors.Conflict(err.Error(), err)
+			if meldung, ok := lageGeaendert(err); ok {
+				return apierrors.Conflict(meldung, err)
 			}
 			return apierrors.Internal("Fehler beim Melden des Schadens", err)
 		}

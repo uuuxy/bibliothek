@@ -2,7 +2,6 @@ package theke
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/api/tuer"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -31,13 +31,19 @@ func (v vormerkungsAttrappe) LegeAn(context.Context, string, string, string) (st
 // einem kaputten Server, und keine Auskunft darüber, ob die erste Vormerkung noch steht.
 func TestVormerkungAnlegen_ZweiteIstKonflikt(t *testing.T) {
 	faelle := []struct {
-		name   string
-		err    error
-		status int
+		name    string
+		err     error
+		status  int
+		meldung string
 	}{
-		{"bereits vorgemerkt", repository.ErrVormerkungBereitsVorhanden, http.StatusConflict},
-		{"Titel selbst ausgeliehen", repository.ErrTitelBereitsAusgeliehen, http.StatusConflict},
-		{"echte Störung", errors.New("connection reset by peer"), http.StatusInternalServerError},
+		{"bereits vorgemerkt", repository.ErrVormerkungBereitsVorhanden, http.StatusConflict,
+			"Dieser Schüler hat den Titel bereits vorgemerkt"},
+		{"Titel selbst ausgeliehen", repository.ErrTitelBereitsAusgeliehen, http.StatusConflict,
+			"Buch wird aktuell bereits von diesem Schüler ausgeliehen"},
+		{"kein Schüler", repository.ErrVormerkungNurFuerSchueler, http.StatusConflict,
+			"Vormerken lässt sich nur für Schüler"},
+		{"echte Störung", errors.New("connection reset by peer"), http.StatusInternalServerError,
+			"Fehler beim Erstellen der Vormerkung"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -52,16 +58,27 @@ func TestVormerkungAnlegen_ZweiteIstKonflikt(t *testing.T) {
 			if rec.Code != f.status {
 				t.Fatalf("Status %d, erwartet %d: %s", rec.Code, f.status, rec.Body.String())
 			}
-			if f.status != http.StatusConflict {
-				return
-			}
-			var body map[string]string
-			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
-				t.Fatalf("Body ist kein JSON: %q", rec.Body.String())
-			}
-			if body["error"] != f.err.Error() {
-				t.Errorf("Meldung %q, erwartet den fachlichen Satz %q", body["error"], f.err.Error())
+			if got := tuertest.Fehlermeldung(t, rec); got != f.meldung {
+				t.Errorf("VormerkungAnlegen: Meldung %q, erwartet %q", got, f.meldung)
 			}
 		})
+	}
+}
+
+// Ohne Titel und ohne Schüler gibt es keine Liste aller Vormerkungen: ein Bedienfehler (400) mit
+// dem Satz, der sagt, was fehlt. Die echten Abfragen antworten so, bevor sie die Datenbank
+// fragen.
+func TestVormerkungen_OhneFilterIstBedienfehler(t *testing.T) {
+	s := &Tueren{Basis: &tuer.Basis{}}
+	h := s.Vormerkungen(repository.NewVormerkungsAbfragen(nil))
+	rec := httptest.NewRecorder()
+	h(rec, httptest.NewRequest(http.MethodGet, "/api/vormerkungen", nil))
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+	}
+	const erwartet = "Vormerkungen brauchen einen Titel- oder Schüler-Filter"
+	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
+		t.Errorf("Vormerkungen: Meldung %q, erwartet %q", got, erwartet)
 	}
 }

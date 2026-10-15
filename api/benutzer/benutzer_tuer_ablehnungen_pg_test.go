@@ -13,6 +13,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -72,7 +73,8 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 		{"ohne Sitzung", ohneBuch, nil, http.StatusUnauthorized, "session"},
 		{"das eigene Konto", admin, alsAdmin, http.StatusForbidden, "eigenes Konto"},
 		{"ein Administrator, gelöscht ohne Adminrechte", zweiterAdmin, alsMitarbeiter, http.StatusForbidden, "Administrator"},
-		{"ein Konto mit offener Ausleihe", mitBuch, alsAdmin, http.StatusConflict, "1 offen"},
+		{"ein Konto mit offener Ausleihe", mitBuch, alsAdmin, http.StatusConflict,
+			"Das Konto hat noch ausgeliehene Bücher — bitte zuerst zurückbuchen (1 offen)"},
 		{"eine unbekannte Kennung", "00000000-0000-0000-0000-00000000dead", alsAdmin, http.StatusNotFound, "error"},
 	} {
 		rec := loesche(f.ziel, f.claims)
@@ -81,6 +83,12 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 		}
 		if !strings.Contains(rec.Body.String(), f.stueck) {
 			t.Errorf("%s: die Antwort nennt %q nicht: %s", f.name, f.stueck, rec.Body.String())
+		}
+		// Den Satz des Konflikts liest die Verwaltung der Konten; er steht ganz da.
+		if f.status == http.StatusConflict {
+			if got := tuertest.Fehlermeldung(t, rec); got != f.stueck {
+				t.Errorf("%s: Meldung %q, erwartet %q", f.name, got, f.stueck)
+			}
 		}
 	}
 	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM benutzer WHERE email LIKE '%@loeschtuer.invalid'`); n != 5 {

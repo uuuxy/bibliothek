@@ -2,7 +2,6 @@ package schaden
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,6 +9,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/auth"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -60,12 +60,15 @@ func TestForderungStornieren(t *testing.T) {
 		repoErr    error
 		wantStatus int
 		wantGrund  string
+		meldung    string // leer: nicht geprüft
 	}{
-		{"ohne Session -> 401", `{"grund":"x"}`, false, nil, http.StatusUnauthorized, ""},
-		{"leerer Grund -> 400", `{"grund":"   "}`, true, nil, http.StatusBadRequest, ""},
-		{"bereits erledigt -> 409", `{"grund":"Kulanz"}`, true, repository.ErrSchadensfallErledigt, http.StatusConflict, "Kulanz"},
-		{"unbekannt -> 404", `{"grund":"Kulanz"}`, true, repository.ErrSchadensfallNichtGefunden, http.StatusNotFound, "Kulanz"},
-		{"Erfolg, Grund getrimmt", `{"grund":"  Buch wiedergefunden  "}`, true, nil, http.StatusOK, "Buch wiedergefunden"},
+		{"ohne Session -> 401", `{"grund":"x"}`, false, nil, http.StatusUnauthorized, "", ""},
+		{"leerer Grund -> 400", `{"grund":"   "}`, true, nil, http.StatusBadRequest, "", ""},
+		{"bereits erledigt -> 409", `{"grund":"Kulanz"}`, true, repository.ErrSchadensfallErledigt, http.StatusConflict, "Kulanz",
+			"Schadensfall wurde bereits bezahlt oder storniert"},
+		{"unbekannt -> 404", `{"grund":"Kulanz"}`, true, repository.ErrSchadensfallNichtGefunden, http.StatusNotFound, "Kulanz",
+			"Schadensfall nicht gefunden"},
+		{"Erfolg, Grund getrimmt", `{"grund":"  Buch wiedergefunden  "}`, true, nil, http.StatusOK, "Buch wiedergefunden", ""},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -77,6 +80,12 @@ func TestForderungStornieren(t *testing.T) {
 			}
 			if repo.grund != f.wantGrund {
 				t.Errorf("übergebener Grund = %q, erwartet %q", repo.grund, f.wantGrund)
+			}
+			if f.meldung == "" {
+				return
+			}
+			if got := tuertest.Fehlermeldung(t, rec); got != f.meldung {
+				t.Errorf("ForderungStornieren: Meldung %q, erwartet %q", got, f.meldung)
 			}
 		})
 	}
@@ -92,13 +101,10 @@ func TestZahlungVerbuchen(t *testing.T) {
 		if rec.Code != http.StatusConflict {
 			t.Fatalf("Status = %d, erwartet 409", rec.Code)
 		}
-		var antwort map[string]string
-		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
-			t.Fatalf("Antwort parsen: %v", err)
-		}
 		// Die Meldung muss den Konflikt benennen, nicht der bereinigte Text einer 500.
-		if !strings.Contains(antwort["error"], "bereits bezahlt oder storniert") {
-			t.Errorf("Fehlermeldung = %q, erwartet den Konflikt-Text", antwort["error"])
+		const erwartet = "Schadensfall wurde bereits bezahlt oder storniert"
+		if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
+			t.Errorf("ZahlungVerbuchen: Meldung %q, erwartet %q", got, erwartet)
 		}
 	})
 

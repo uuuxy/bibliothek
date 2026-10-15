@@ -43,14 +43,11 @@ type BescheidVerlustEingabe struct {
 }
 
 // Die Abweisungen sind Bedienfälle (409), keine Serverfehler: Der Dialog stand offen, während
-// sich die Lage änderte, und neu öffnen genügt. Die Sätze stehen so vor dem Menschen.
+// sich die Lage änderte, und neu öffnen genügt.
 var (
-	//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
-	ErrAusleiheInzwischenZurueck = errors.New("Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen.")
-	//nolint:staticcheck // ST1005: ganzer Satz.
-	ErrAusleiheSchonGemeldet = errors.New("Für ein gewähltes Buch ist schon eine Forderung erfasst — bitte den Dialog neu öffnen.")
-	//nolint:staticcheck // ST1005: ganzer Satz.
-	ErrAusleiheFremd = errors.New("Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen.")
+	ErrAusleiheInzwischenZurueck = errors.New("ausleihe inzwischen zurückgegeben")
+	ErrAusleiheSchonGemeldet     = errors.New("ausleihe hat schon eine forderung")
+	ErrAusleiheFremd             = errors.New("ausleihe gehört nicht zu diesem schüler")
 )
 
 // LadeUeberfaelligeAusleihen liest die überfälligen Bücher eines Kindes ohne offene Forderung.
@@ -164,7 +161,7 @@ func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznu
 			betrag:       v.Betrag,
 		})
 		if errors.Is(err, ErrExemplarNeuVerliehen) {
-			return nil, err // Bedienfall, unverpackt: der Satz steht so vor der Bibliothekskraft
+			return nil, err // Bedienfall: Die Tür antwortet mit 409, ein Zusatz brächte nichts
 		}
 		if err != nil {
 			return nil, fmt.Errorf("verlust für ausleihe %s buchen: %w", v.AusleiheID, err)

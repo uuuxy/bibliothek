@@ -2,6 +2,7 @@ package benutzer
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -64,14 +65,16 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 
 	err := protokollAbfragen.LoescheKonto(ctx, id, claims.KontoID)
 	if err != nil {
-		// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
-		// Der Admin muss die Bücher erst zurückbuchen.
-		if errors.Is(err, repository.ErrKontoHatAusleihen) {
-			apierrors.AntworteFehler(w, http.StatusConflict, err)
-			return
-		}
 		if errors.Is(err, repository.ErrKontoNichtGefunden) {
 			apierrors.AntworteFehler(w, http.StatusNotFound, err)
+			return
+		}
+		// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
+		// Der Admin muss die Bücher erst zurückbuchen.
+		var mitAusleihen *repository.KontoHatAusleihenFehler
+		if errors.As(err, &mitAusleihen) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf(
+				"Das Konto hat noch ausgeliehene Bücher — bitte zuerst zurückbuchen (%d offen)", mitAusleihen.Offen), err)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

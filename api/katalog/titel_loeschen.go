@@ -2,6 +2,7 @@ package katalog
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -43,13 +44,17 @@ func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 
 		err := protokollAbfragen.LoescheTitel(ctx, id, claims.KontoID)
 		if err != nil {
-			if errors.Is(err, repository.ErrTitelHatAktiveAusleihen) {
-				apierrors.AntworteFehler(w, http.StatusBadRequest, err)
-			} else if errors.Is(err, repository.ErrTitelNichtGefunden) {
+			if errors.Is(err, repository.ErrTitelNichtGefunden) {
 				apierrors.AntworteFehler(w, http.StatusNotFound, err)
-			} else {
-				apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+				return
 			}
+			var mitAusleihen *repository.TitelHatAusleihenFehler
+			if errors.As(err, &mitAusleihen) {
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf(
+					"Löschen fehlgeschlagen: folgende Exemplare sind noch verliehen: %v", mitAusleihen.Barcodes), err)
+				return
+			}
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 

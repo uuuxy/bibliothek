@@ -13,27 +13,21 @@ import (
 
 // ErrTitelBereitsAusgeliehen meldet, dass ein Schüler einen Titel vormerken will, den er selbst
 // ausgeliehen hat: Er könnte das Buch sonst bei der Rückgabe sofort wieder für sich bekommen
-// und die Warteschlange auf Dauer besetzen. Der Text steht so vor dem Menschen (409).
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrTitelBereitsAusgeliehen = errors.New("Buch wird aktuell bereits von diesem Schüler ausgeliehen")
+// und die Warteschlange auf Dauer besetzen. Die Tür antwortet mit 409.
+var ErrTitelBereitsAusgeliehen = errors.New("schüler hat den titel selbst ausgeliehen")
 
 // ErrVormerkungBereitsVorhanden meldet die zweite Vormerkung desselben Schülers auf denselben
 // Titel. UNIQUE(titel_id, schueler_id) fängt sie in der Datenbank ab; ohne den eigenen
-// Fehlerwert käme für „steht schon auf der Liste" eine Störungsmeldung (500). Der Text steht so
-// vor dem Menschen (409).
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrVormerkungBereitsVorhanden = errors.New("Dieser Schüler hat den Titel bereits vorgemerkt")
+// Fehlerwert käme für „steht schon auf der Liste" eine Störungsmeldung (500). Die Tür antwortet
+// mit 409.
+var ErrVormerkungBereitsVorhanden = errors.New("schüler hat den titel schon vorgemerkt")
 
 // ErrVormerkungNurFuerSchueler meldet eine Vormerkung für einen Leser, der kein Schüler ist
 // oder den es nicht gibt. Die Warteschlange liest die Sicht schueler: Eine Vormerkung für einen
 // Kollegen würde nie bedient und stünde ohne Namen in der Liste. Die Regel steht deshalb an
-// LegeAn und nicht nur in der Oberfläche, die zum Vormerken ohnehin nur Schüler anbietet. Der
-// Text steht so vor dem Menschen (409).
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrVormerkungNurFuerSchueler = errors.New("Vormerken lässt sich nur für Schüler")
+// LegeAn und nicht nur in der Oberfläche, die zum Vormerken ohnehin nur Schüler anbietet. Die
+// Tür antwortet mit 409.
+var ErrVormerkungNurFuerSchueler = errors.New("vormerkung nur für schüler")
 
 // Vormerkung ist die Vormerkung eines Schülers auf einen Titel.
 type Vormerkung struct {
@@ -141,9 +135,7 @@ func NewVormerkungsAbfragen(db db.Pool) VormerkungsAbfragen {
 // lieferte sonst alle Vormerkungen mit Namen und Klassen: einen Abzug, den die Oberfläche nie
 // anfordert und der Personendaten preisgäbe, sobald das Recht manage_vormerkungen an eine
 // Helfer-Rolle vergeben ist. Der Filter ist deshalb Pflicht.
-//
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrVormerkungFilterFehlt = errors.New("Vormerkungen brauchen einen Titel- oder Schüler-Filter")
+var ErrVormerkungFilterFehlt = errors.New("vormerkungen ohne titel und ohne schüler")
 
 // LadeListe liefert die Vormerkungen eines Titels oder eines Schülers, die ältesten zuerst.
 // Ohne einen der beiden Filter liefert es ErrVormerkungFilterFehlt.

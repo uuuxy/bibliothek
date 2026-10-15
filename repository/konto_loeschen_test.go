@@ -19,7 +19,7 @@ func snapshotBenutzerRows() *pgxmock.Rows {
 }
 
 // Hat das Konto noch nicht zurückgegebene Ausleihen, bricht LoescheKonto mit
-// ErrKontoHatAusleihen ab und setzt das DELETE nicht ab: Sonst verlöre die Leserzeile ihr Konto
+// KontoHatAusleihenFehler ab und setzt das DELETE nicht ab: Sonst verlöre die Leserzeile ihr Konto
 // (benutzer.leser_id, ON DELETE SET NULL), und die Bücher blieben ohne zuordenbaren Entleiher
 // stehen.
 func TestLoescheKonto_LehntAbBeiOffenenAusleihen(t *testing.T) {
@@ -43,8 +43,12 @@ func TestLoescheKonto_LehntAbBeiOffenenAusleihen(t *testing.T) {
 	mock.ExpectRollback()
 
 	err = repo.LoescheKonto(context.Background(), userID, "admin-1")
-	if !errors.Is(err, ErrKontoHatAusleihen) {
-		t.Fatalf("erwartet ErrKontoHatAusleihen, bekam: %v", err)
+	var mitAusleihen *KontoHatAusleihenFehler
+	if !errors.As(err, &mitAusleihen) {
+		t.Fatalf("LoescheKonto = %v, erwartet KontoHatAusleihenFehler", err)
+	}
+	if mitAusleihen.Offen != 2 {
+		t.Errorf("LoescheKonto: Offen = %d, erwartet 2", mitAusleihen.Offen)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene/unerwartete Mock-Erwartungen: %v", err)

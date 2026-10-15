@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
 )
 
@@ -44,14 +44,13 @@ func TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 
 	err = repo.LoescheTitel(context.Background(), titelID, "admin-1")
 
-	if !errors.Is(err, ErrTitelHatAktiveAusleihen) {
-		t.Fatalf("erwartet ErrTitelHatAktiveAusleihen (der Handler antwortet darauf mit HTTP 400), bekam: %v", err)
+	var mitAusleihen *TitelHatAusleihenFehler
+	if !errors.As(err, &mitAusleihen) {
+		t.Fatalf("LoescheTitel = %v, erwartet TitelHatAusleihenFehler (die Tür antwortet darauf mit 400)", err)
 	}
 	// Die Barcodes sind der Grund, warum diese Meldung überhaupt zum Nutzer soll.
-	for _, barcode := range []string{"B-00042", "B-00043"} {
-		if !strings.Contains(err.Error(), barcode) {
-			t.Errorf("Meldung nennt den noch verliehenen Barcode %s nicht: %v", barcode, err)
-		}
+	if diff := cmp.Diff([]string{"B-00042", "B-00043"}, mitAusleihen.Barcodes); diff != "" {
+		t.Errorf("LoescheTitel: Barcodes (-erwartet +ist):\n%s", diff)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene/unerwartete Mock-Erwartungen: %v", err)

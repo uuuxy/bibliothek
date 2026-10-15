@@ -2,6 +2,7 @@ package leser
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -159,15 +160,16 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 			// Verbindungsabbruch, suchte die Bibliothek einen offenen Vorgang, den es nicht gibt,
 			// und der echte Fehler bliebe verdeckt.
 			//
-			// Die Form (verschachtelte ifs statt eines switch) ist die im Haus übliche und keine
-			// Geschmacksfrage: Der Fehler-Kollaps-Detektor liest die if-Bedingung und die erste
-			// Anweisung des Rumpfs; einen switch darunter sieht er nicht.
-			if errors.Is(err, repository.ErrLoeschenBlockiert) {
-				apierrors.AntworteFehler(w, http.StatusConflict, err)
-				return
-			}
+			// Die Form (verschachtelte ifs statt eines switch, „nicht gefunden" zuerst) ist die
+			// im Haus übliche und keine Geschmacksfrage: Der Fehler-Kollaps-Detektor liest die
+			// if-Bedingung und die erste Anweisung des Rumpfs; einen switch darunter sieht er nicht.
 			if errors.Is(err, repository.ErrLeserNichtGefunden) {
 				apierrors.AntworteFehler(w, http.StatusNotFound, err)
+				return
+			}
+			var blockiert *repository.LoeschenBlockiertFehler
+			if errors.As(err, &blockiert) {
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, loeschenBlockiertMeldung(blockiert), err)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -181,4 +183,16 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 			"message": "Schüler endgültig und DSGVO-konform gelöscht",
 		})
 	}
+}
+
+// loeschenBlockiertMeldung nennt, was dem endgültigen Löschen im Weg steht, bei Ausleihen und
+// Forderungen mit ihrer Zahl.
+func loeschenBlockiertMeldung(e *repository.LoeschenBlockiertFehler) string {
+	switch {
+	case e.NichtImPapierkorb:
+		return "Endgültiges Löschen blockiert: der Datensatz liegt nicht im Papierkorb — erst löschen, dann endgültig entfernen"
+	case e.OffeneAusleihen > 0:
+		return fmt.Sprintf("Endgültiges Löschen blockiert: %d offene Ausleihe(n)", e.OffeneAusleihen)
+	}
+	return fmt.Sprintf("Endgültiges Löschen blockiert: %d unbezahlte(r) Schadensfall/-fälle", e.UnbezahlteSchadensfaelle)
 }

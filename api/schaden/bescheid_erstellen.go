@@ -104,8 +104,8 @@ func (t *Tueren) erstelleBescheid(w http.ResponseWriter, r *http.Request, besche
 		// Die Zuordnungs-Prüfung ist ein Bedienfehler (Forderung bezahlt, storniert
 		// oder schon auf einem Brief), kein Serverfehler — ebenso ein Buch, das
 		// inzwischen zurück ist, schon gemeldet wurde oder einem anderen Kind gehört.
-		if istBescheidBedienfehler(err) {
-			return apierrors.Conflict(err.Error(), err)
+		if meldung, ok := lageGeaendert(err); ok {
+			return apierrors.Conflict(meldung, err)
 		}
 		return apierrors.Internal("Bescheid konnte nicht erstellt werden", err)
 	}
@@ -133,17 +133,14 @@ func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 	// Schülerbücherei (Mittel des Schulträgers) gibt es noch keinen Brief; „schultraeger" gäbe
 	// sonst einen Landes-Bescheid mit Landeskonto für ein Buch des Trägers.
 	if req.Mittel != mitteltopf.Land {
-		//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 		return time.Time{}, apierrors.Conflict("Ein Bescheid entsteht nur für Lernmittel des Landes. Die Rechnung für Bücher der Schülerbücherei ist noch nicht gebaut.",
 			errors.New("bescheid nur für mittel=land"))
 	}
 	if len(req.Positionen) == 0 && len(req.Ausleihen) == 0 {
-		//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 		return time.Time{}, apierrors.BadRequest("Bitte mindestens ein Buch auswählen.", errors.New("keine positionen"))
 	}
 	frist, err := schulzeit.Kalendertag(req.FristBis)
 	if err != nil {
-		//nolint:staticcheck // ST1005: ganzer Satz.
 		return time.Time{}, apierrors.BadRequest("Die Frist muss ein Datum sein (JJJJ-MM-TT).", err)
 	}
 	// Frühestens morgen: Eine Frist von heute oder gestern machte den Bescheid sofort
@@ -153,12 +150,10 @@ func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 	jetzt := schulzeit.Jetzt()
 	heute := time.Date(jetzt.Year(), jetzt.Month(), jetzt.Day(), 0, 0, 0, 0, schulzeit.Zone())
 	if !frist.After(heute) {
-		//nolint:staticcheck // ST1005: ganzer Satz.
 		return time.Time{}, apierrors.BadRequest("Die Frist muss nach dem heutigen Tag liegen — üblich sind vier Wochen ab Briefdatum.",
 			errors.New("frist nicht nach heute"))
 	}
 	if frist.After(heute.AddDate(1, 0, 0)) {
-		//nolint:staticcheck // ST1005: ganzer Satz.
 		return time.Time{}, apierrors.BadRequest("Die Frist liegt mehr als ein Jahr in der Zukunft. Bitte das Datum prüfen — ihr Jahr geht als Kassenjahr in die Referenznummer.",
 			errors.New("frist mehr als ein jahr voraus"))
 	}
@@ -181,12 +176,24 @@ func bescheidPostenAus(req bescheidErstellenAnfrage) ([]repository.BescheidPosit
 	return positionen, verluste
 }
 
-// istBescheidBedienfehler: Die Lage hat sich geändert, seit der Dialog offen steht.
-func istBescheidBedienfehler(err error) bool {
+// lageGeaendert nennt zu einem Bedienfehler, bei dem sich die Lage geändert hat, seit Akte oder
+// Dialog offen stehen, den Satz für die Bibliothekskraft; ok ist false für jeden anderen Fehler.
+// Schadensmeldung und Bescheid antworten darauf mit 409.
+func lageGeaendert(err error) (meldung string, ok bool) {
 	var nichtZugeordnet *repository.ForderungenNichtZugeordnet
-	return errors.As(err, &nichtZugeordnet) ||
-		errors.Is(err, repository.ErrAusleiheInzwischenZurueck) ||
-		errors.Is(err, repository.ErrAusleiheSchonGemeldet) ||
-		errors.Is(err, repository.ErrAusleiheFremd) ||
-		errors.Is(err, repository.ErrExemplarNeuVerliehen)
+	switch {
+	case errors.As(err, &nichtZugeordnet):
+		return fmt.Sprintf("%d von %d Forderungen konnten nicht zugeordnet werden — "+
+			"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?",
+			nichtZugeordnet.Fehlend, nichtZugeordnet.Verlangt), true
+	case errors.Is(err, repository.ErrAusleiheInzwischenZurueck):
+		return "Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen.", true
+	case errors.Is(err, repository.ErrAusleiheSchonGemeldet):
+		return "Für ein gewähltes Buch ist schon eine Forderung erfasst — bitte den Dialog neu öffnen.", true
+	case errors.Is(err, repository.ErrAusleiheFremd):
+		return "Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen.", true
+	case errors.Is(err, repository.ErrExemplarNeuVerliehen):
+		return "Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden", true
+	}
+	return "", false
 }
