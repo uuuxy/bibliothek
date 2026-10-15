@@ -4,6 +4,7 @@ import (
 	"bibliothek/pkg/xlsxgrenze"
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -34,6 +35,18 @@ type tabellenZeile struct {
 	zellen []string
 }
 
+// ErrAltesExcel meldet eine Datei im alten Binärformat von Excel (.xls), das der Import nicht
+// liest. Die Tür sagt, wie daraus eine lesbare Datei wird.
+var ErrAltesExcel = errors.New("altes Excel-Binärformat (.xls)")
+
+// PflichtspalteFehler meldet eine Datei, deren Kopfzeile eine Pflichtspalte nicht nennt; meist ist
+// es nicht der Export aus LUSD. Spalte ist der Name der fehlenden Spalte.
+type PflichtspalteFehler struct{ Spalte string }
+
+func (e *PflichtspalteFehler) Error() string {
+	return fmt.Sprintf("pflichtspalte %q fehlt in der kopfzeile", e.Spalte)
+}
+
 // leseTabelle liest die Datei als Zeilenraster — Excel (.xlsx, am Zip-Kopf erkannt,
 // nicht am Dateinamen) oder CSV. Altes Binär-Excel (.xls) wird mit Anleitung abgewiesen.
 func leseTabelle(inhalt []byte) ([]tabellenZeile, error) {
@@ -41,7 +54,7 @@ func leseTabelle(inhalt []byte) ([]tabellenZeile, error) {
 	case bytes.HasPrefix(inhalt, xlsxSignatur):
 		return leseXLSXZeilen(inhalt)
 	case bytes.HasPrefix(inhalt, xlsSignatur):
-		return nil, fmt.Errorf("Die Datei ist ein altes Excel-Binärformat (.xls). Bitte in Excel „Speichern unter“ → .xlsx oder CSV wählen und erneut hochladen.") //nolint:staticcheck // ST1005: nutzer-sichtbarer Text
+		return nil, ErrAltesExcel
 	default:
 		return leseCSVZeilen(inhalt)
 	}
@@ -203,7 +216,7 @@ func findeKopfzeile(tabelle []tabellenZeile) (int, map[string]int, error) {
 	}
 	_, err := ordneSpaltenZu(tabelle[0].zellen)
 	if err == nil {
-		err = fmt.Errorf("Pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", spalteVorname) //nolint:staticcheck // ST1005: nutzer-sichtbarer Text
+		err = &PflichtspalteFehler{Spalte: spalteVorname}
 	}
 	return -1, nil, err
 }

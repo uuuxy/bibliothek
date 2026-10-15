@@ -15,6 +15,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 )
 
 // Was der LUSD-Upload ablehnt, kommt über die Route mit dem Status an, an dem die Oberfläche
@@ -47,16 +48,17 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 		}
 	}
 
-	sende := func(t *testing.T, pfad string, mitDatei bool, felder map[string]string) *httptest.ResponseRecorder {
+	// sendeDatei schickt das Formular mit dieser Datei; ohne Inhalt ohne Datei.
+	sendeDatei := func(t *testing.T, pfad string, inhalt []byte, felder map[string]string) *httptest.ResponseRecorder {
 		t.Helper()
 		var koerper bytes.Buffer
 		mw := multipart.NewWriter(&koerper)
-		if mitDatei {
+		if inhalt != nil {
 			teil, err := mw.CreateFormFile("csvFile", "lusd_export.csv")
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err := teil.Write([]byte(export)); err != nil {
+			if _, err := teil.Write(inhalt); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -72,6 +74,13 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 		req.Header.Set("Content-Type", mw.FormDataContentType())
 		return ladeLUSDDateiHoch(srv, req, admin)
 	}
+	sende := func(t *testing.T, pfad string, mitDatei bool, felder map[string]string) *httptest.ResponseRecorder {
+		t.Helper()
+		if !mitDatei {
+			return sendeDatei(t, pfad, nil, felder)
+		}
+		return sendeDatei(t, pfad, []byte(export), felder)
+	}
 	erwarte := func(t *testing.T, rec *httptest.ResponseRecorder, status int, stueck string) {
 		t.Helper()
 		if rec.Code != status {
@@ -79,6 +88,15 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 		}
 		if !strings.Contains(rec.Body.String(), stueck) {
 			t.Errorf("Antwort nennt %q nicht: %s", stueck, rec.Body.String())
+		}
+	}
+	erwarteMeldung := func(t *testing.T, rec *httptest.ResponseRecorder, status int, meldung string) {
+		t.Helper()
+		if rec.Code != status {
+			t.Fatalf("Status %d, erwartet %d: %s", rec.Code, status, rec.Body.String())
+		}
+		if got := tuertest.Fehlermeldung(t, rec); got != meldung {
+			t.Errorf("Meldung %q, erwartet %q", got, meldung)
 		}
 	}
 
@@ -95,17 +113,28 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 		erwarte(t, sende(t, "/api/lusd/preview", true, map[string]string{"umbenennungen": "{kaputt"}),
 			http.StatusOK, `"graduates"`)
 	})
+	t.Run("Pflichtspalte fehlt", func(t *testing.T) {
+		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", []byte("vorname,nachname,geburtsdatum\nKind,Nummer01,2012-01-01\n"), nil),
+			http.StatusBadRequest, "Pflichtspalte 'klasse' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?")
+	})
+	t.Run("altes Excel", func(t *testing.T) {
+		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}, nil),
+			http.StatusBadRequest, "Die Datei ist ein altes Excel-Binärformat (.xls). "+
+				"Bitte in Excel „Speichern unter“ → .xlsx oder CSV wählen und erneut hochladen.")
+	})
 	t.Run("Auswahl unlesbar", func(t *testing.T) {
-		erwarte(t, sende(t, "/api/lusd/import", true, map[string]string{"umbenennungen": "{kaputt"}),
-			http.StatusBadRequest, "Umbenennungs-Auswahl unlesbar")
+		erwarteMeldung(t, sende(t, "/api/lusd/import", true, map[string]string{"umbenennungen": "{kaputt"}),
+			http.StatusBadRequest, "Umbenennungs-Auswahl unlesbar: invalid character 'k' looking for beginning of object key string")
 	})
 	t.Run("Zuordnung nicht vorgeschlagen", func(t *testing.T) {
 		wahl := `[{"zeile":2,"schueler_id":"00000000-0000-0000-0000-000000000000"}]`
-		erwarte(t, sende(t, "/api/lusd/import", true, map[string]string{"umbenennungen": wahl}),
-			http.StatusBadRequest, "Zeile 2 ist nicht mehr g")
+		erwarteMeldung(t, sende(t, "/api/lusd/import", true, map[string]string{"umbenennungen": wahl}),
+			http.StatusBadRequest, "Zuordnung für Zeile 2 ist nicht mehr gültig — Vorschau neu laden.")
 	})
 	t.Run("Massenabgang ohne Bestätigung", func(t *testing.T) {
-		erwarte(t, sende(t, "/api/lusd/import", true, nil), http.StatusConflict, "4 von 10 aktiven")
+		erwarteMeldung(t, sende(t, "/api/lusd/import", true, nil), http.StatusConflict,
+			"4 von 10 aktiven Schülern würden zu Abgängern (Schwelle: 30%). Datei prüfen — falls der Massenabgang "+
+				"beabsichtigt ist (Schuljahreswechsel), Import mit Bestätigung wiederholen.")
 	})
 
 	if n := zaehle(t, pool, "ist_abgaenger"); n != 0 {

@@ -80,14 +80,14 @@ const massenabgangMindestbestand = 10
 // MassenabgangFehler meldet, dass der Lauf die Schwelle überschritte und die Bestätigung
 // fehlt. Er trägt die Zahlen für die Antwort der Tür.
 type MassenabgangFehler struct {
-	Abgaenger int
-	Aktive    int
+	Abgaenger       int
+	Aktive          int
+	SchwelleProzent int
 }
 
 func (e *MassenabgangFehler) Error() string {
-	return fmt.Sprintf(
-		"%d von %d aktiven Schülern würden zu Abgängern (Schwelle: %d%%). Datei prüfen — falls der Massenabgang beabsichtigt ist (Schuljahreswechsel), Import mit Bestätigung wiederholen.",
-		e.Abgaenger, e.Aktive, massenabgangSchwelleProzent)
+	return fmt.Sprintf("massenabgang ohne bestätigung: %d von %d aktiven schülern würden abgänger (schwelle %d %%)",
+		e.Abgaenger, e.Aktive, e.SchwelleProzent)
 }
 
 // Lauf sind die Vorgaben eines Laufs: Vorschau oder Anwenden, ob der Massenabgang bestätigt
@@ -166,7 +166,8 @@ func FuehreAus(ctx context.Context, pool db.Pool, datei Datei, lauf Lauf) (*Vors
 	if !lauf.MassenabgangBestaetigt &&
 		vorschau.AktiveImBestand >= massenabgangMindestbestand &&
 		len(vorschau.Abgaenger)*100 >= vorschau.AktiveImBestand*massenabgangSchwelleProzent {
-		return nil, &MassenabgangFehler{Abgaenger: len(vorschau.Abgaenger), Aktive: vorschau.AktiveImBestand}
+		return nil, &MassenabgangFehler{Abgaenger: len(vorschau.Abgaenger), Aktive: vorschau.AktiveImBestand,
+			SchwelleProzent: massenabgangSchwelleProzent}
 	}
 
 	// Adoptionen zuerst: Sie heften die LUSD-ID an den vorhandenen Schüler ohne ID. Danach

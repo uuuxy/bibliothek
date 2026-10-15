@@ -59,13 +59,17 @@ func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, ueb
 	}
 	datei, err := leseLUSDDatei(r)
 	if err != nil {
+		if meldung, ok := lusdDateiMeldung(err); ok {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, err)
+			return
+		}
 		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return
 	}
 	lauf := lusd.Lauf{Anwenden: uebernehmen, MassenabgangBestaetigt: uebernehmen && r.FormValue("confirm_graduates") == "true"}
 	if uebernehmen {
 		if lauf.Umbenennungen, err = leseUmbenennungsWahl(r.FormValue("umbenennungen")); err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Umbenennungs-Auswahl unlesbar: "+err.Error(), err)
 			return
 		}
 	}
@@ -74,7 +78,8 @@ func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, ueb
 	lauf.KarenzTage = t.abgaengerKarenzTage(r.Context())
 	res, err := lusd.FuehreAus(r.Context(), t.DB.Pool, datei, lauf)
 	if err != nil {
-		apierrors.AntworteFehler(w, lusdFehlerStatus(err), err)
+		status, meldung := lusdLaufFehler(err)
+		apierrors.AntworteFehlerMitMeldung(w, status, meldung, err)
 		return
 	}
 	if uebernehmen {
@@ -85,18 +90,36 @@ func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, ueb
 	tuer.AntworteJSON(w, http.StatusOK, res)
 }
 
-// lusdFehlerStatus ordnet den Fehler eines Laufs ein: Der Massenabgang wartet auf eine
-// Bestätigung (409), eine überholte Umbenennungs-Auswahl ist eine Fehleingabe (400).
-func lusdFehlerStatus(err error) int {
-	var massenFehler *lusd.MassenabgangFehler
-	var wahlFehler *lusd.UmbenennungUngueltigFehler
+// lusdDateiMeldung nennt zu einer Datei, die sich nicht lesen lässt, einen Satz mit Anleitung:
+// altes Excel-Format oder fehlende Pflichtspalte. ok ist false für die übrigen Fehler beim Lesen;
+// deren Text nennt Zeile und Spalte selbst.
+func lusdDateiMeldung(err error) (meldung string, ok bool) {
+	var spalte *lusd.PflichtspalteFehler
 	switch {
-	case errors.As(err, &massenFehler):
-		return http.StatusConflict
-	case errors.As(err, &wahlFehler):
-		return http.StatusBadRequest
+	case errors.As(err, &spalte):
+		return fmt.Sprintf("Pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", spalte.Spalte), true
+	case errors.Is(err, lusd.ErrAltesExcel):
+		return "Die Datei ist ein altes Excel-Binärformat (.xls). " +
+			"Bitte in Excel „Speichern unter“ → .xlsx oder CSV wählen und erneut hochladen.", true
 	}
-	return http.StatusInternalServerError
+	return "", false
+}
+
+// lusdLaufFehler ordnet den Fehler eines Laufs ein und nennt den Satz dazu: Der Massenabgang
+// wartet auf eine Bestätigung (409), eine überholte Umbenennungs-Auswahl ist eine Fehleingabe
+// (400), alles andere ein Serverfehler ohne eigenen Satz.
+func lusdLaufFehler(err error) (status int, meldung string) {
+	var massenabgang *lusd.MassenabgangFehler
+	var wahl *lusd.UmbenennungUngueltigFehler
+	switch {
+	case errors.As(err, &massenabgang):
+		return http.StatusConflict, fmt.Sprintf("%d von %d aktiven Schülern würden zu Abgängern (Schwelle: %d%%). "+
+			"Datei prüfen — falls der Massenabgang beabsichtigt ist (Schuljahreswechsel), Import mit Bestätigung wiederholen.",
+			massenabgang.Abgaenger, massenabgang.Aktive, massenabgang.SchwelleProzent)
+	case errors.As(err, &wahl):
+		return http.StatusBadRequest, fmt.Sprintf("Zuordnung für Zeile %d ist nicht mehr gültig — Vorschau neu laden.", wahl.Zeile)
+	}
+	return http.StatusInternalServerError, ""
 }
 
 // leseUmbenennungsWahl liest das Formularfeld `umbenennungen` (JSON-Liste aus Zeile +
@@ -107,7 +130,7 @@ func leseUmbenennungsWahl(roh string) ([]lusd.UmbenennungWahl, error) {
 	}
 	var wahl []lusd.UmbenennungWahl
 	if err := json.Unmarshal([]byte(roh), &wahl); err != nil {
-		return nil, fmt.Errorf("Umbenennungs-Auswahl unlesbar: %w", err) //nolint:staticcheck // ST1005: nutzer-sichtbarer Text
+		return nil, err
 	}
 	return wahl, nil
 }

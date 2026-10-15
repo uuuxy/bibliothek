@@ -294,7 +294,7 @@ func uebernimmUmbenennungen(datei Datei, wahl []UmbenennungWahl, paare []Vorscha
 type UmbenennungUngueltigFehler struct{ Zeile int }
 
 func (e *UmbenennungUngueltigFehler) Error() string {
-	return "Zuordnung für Zeile " + strconv.Itoa(e.Zeile) + " ist nicht mehr gültig — Vorschau neu laden."
+	return "zuordnung für zeile " + strconv.Itoa(e.Zeile) + " nicht mehr gültig"
 }
 
 func entferneID(ids []string, id string) []string {

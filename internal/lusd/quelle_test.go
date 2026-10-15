@@ -2,7 +2,7 @@ package lusd
 
 import (
 	"bytes"
-	"strings"
+	"errors"
 	"testing"
 	"time"
 
@@ -60,16 +60,19 @@ func TestLeseDatei_XLSXNimmtDasBlattMitKopfzeile(t *testing.T) {
 func TestLeseDatei_XLSXOhneKopfzeileMeldetPflichtspalte(t *testing.T) {
 	xlsx := xlsxtest.Baue(t, map[string][][]any{"Tabelle1": {{"foo", "bar"}, {"1", "2"}}})
 	_, err := LeseDatei(xlsx)
-	if err == nil || !strings.Contains(err.Error(), "Pflichtspalte") {
-		t.Fatalf("erwartet Pflichtspalten-Meldung, war: %v", err)
+	var spalte *PflichtspalteFehler
+	if !errors.As(err, &spalte) || spalte.Spalte != spalteVorname {
+		t.Fatalf("LeseDatei = %v, erwartet PflichtspalteFehler für %q", err, spalteVorname)
 	}
 }
 
-func TestLeseDatei_AltesXlsWirdMitAnleitungAbgewiesen(t *testing.T) {
+// Die Anleitung, wie aus der Datei eine lesbare wird, formuliert die Tür
+// (api/leser/lusd_datei_ablehnung_pg_test.go).
+func TestLeseDatei_AltesXlsWirdAbgewiesen(t *testing.T) {
 	xls := append([]byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}, bytes.Repeat([]byte{0}, 64)...)
 	_, err := LeseDatei(xls)
-	if err == nil || !strings.Contains(err.Error(), ".xlsx") {
-		t.Fatalf("erwartet Hinweis auf .xlsx/CSV, war: %v", err)
+	if !errors.Is(err, ErrAltesExcel) {
+		t.Fatalf("LeseDatei = %v, erwartet ErrAltesExcel", err)
 	}
 }
 

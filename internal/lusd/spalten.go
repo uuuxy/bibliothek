@@ -1,7 +1,6 @@
 package lusd
 
 import (
-	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -85,7 +84,7 @@ func ordneSpaltenZu(kopf []string) (map[string]int, error) {
 
 	for _, spalte := range pflichtspalten {
 		if _, da := spalten[spalte]; !da {
-			return nil, fmt.Errorf("Pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", spalte) //nolint:staticcheck // ST1005: nutzer-sichtbarer Text, siehe oben
+			return nil, &PflichtspalteFehler{Spalte: spalte}
 		}
 	}
 
