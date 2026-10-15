@@ -10,24 +10,16 @@ import (
 	"bibliothek/pkg/ersatzwert"
 )
 
-// Gate gegen eine Staffel, die im Konzept anders steht als im Code.
+// Gate gegen eine Staffel, die im Konzept anders steht als im Code. Die Prozentzahlen stehen
+// am Ende in einem Bescheid an Erziehungsberechtigte, und wer das Konzept liest, um eine
+// Änderung zu bauen, baut nach dem Dokument; ein Test am Code allein sieht den Widerspruch
+// nicht. Die Staffel steht in mittel_konzept.md an zwei Stellen in derselben
+// maschinenlesbaren Form (`Verleihjahr→Prozent`), und das Gate hält jedes Paar gegen
+// ersatzwert.Berechne.
 //
-// Anlass (17.09.2026): mittel_konzept.md nannte die Staffel an ZWEI Stellen und
-// widersprach sich dabei selbst. Abschnitt 4.6 schrieb „6+→10 %" (richtig), Abschnitt 1.1
-// schrieb in Prosa „ab dem 5. Jahr 10 %" (falsch). Die Arbeitshilfe zum Erlass vom
-// 17.12.2014 sagt: „Nach 5 Jahren und für jedes weitere Jahr werden insgesamt 10 % des
-// Neupreises berechnet" — also ab dem SECHSTEN Verleihjahr. pkg/ersatzwert rechnet seit
-// jeher richtig; nur das erklärende Dokument war falsch.
-//
-// Warum das gefährlich ist: Diese Prozentzahlen stehen am Ende in einem Bescheid an
-// Erziehungsberechtigte. Wer das Konzept liest, um eine Änderung zu bauen — etwa den
-// Staffel-Vorschlag im Schaden-Dialog (OFFEN.md 5.4) — baut nach der Prosa und nicht nach
-// pkg/ersatzwert. Ein Test am Code allein ist dagegen blind: ersatzwert_test.go war die
-// ganze Zeit grün, während das Dokument daneben etwas anderes behauptete.
-//
-// Seitdem steht die Staffel an beiden Stellen in DERSELBEN maschinenlesbaren Form
-// (`Verleihjahr→Prozent`), und dieses Gate hält jedes Paar gegen ersatzwert.Berechne.
-// Eine Zahl im Dokument zu ändern, ohne den Code zu ändern, macht es rot.
+// Maßstab ist die Arbeitshilfe zum Erlass vom 17.12.2014: „Nach 5 Jahren und für jedes
+// weitere Jahr werden insgesamt 10 % des Neupreises berechnet", also ab dem sechsten
+// Verleihjahr.
 //
 // Reparatur bei Rot: Zuerst die Arbeitshilfe lesen, nicht die jeweils andere Stelle
 // abschreiben. Stimmt der Code, gehört das Dokument nachgezogen; stimmt das Dokument,

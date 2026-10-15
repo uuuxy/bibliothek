@@ -15,10 +15,10 @@ import (
 // Tippfehler beim Eintragen.
 //
 // Die Prüfung auf „datei.go:" ist kein Schönheitsfehler: actions/setup-go registriert in
-// der CI einen Problem-Matcher für Go. Der hält JEDE Logzeile der Form „datei.go: Text"
-// für eine Compiler-Meldung und hängt eine rote Fehler-Markierung an einen grünen Job.
-// Genau das ist am 17.09.2026 passiert, und ein roter Haken an einem grünen Lauf ist
-// schlimmer als keiner: Beim nächsten Mal sieht niemand mehr hin.
+// der CI einen Problem-Matcher für Go. Der hält jede Logzeile der Form „datei.go: Text" für
+// eine Compiler-Meldung und hängt eine rote Fehler-Markierung an einen grünen Job, und ein
+// roter Haken an einem grünen Lauf ist schlimmer als keiner: Beim nächsten Mal sieht niemand
+// mehr hin.
 type vulnAusnahme struct {
 	ID            string   `json:"id"`
 	Grund         string   `json:"grund"`

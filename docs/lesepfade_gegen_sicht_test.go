@@ -9,31 +9,30 @@ import (
 	"testing"
 )
 
-// Die zweite Hälfte von Raster-Frage 13 — die LESEpfade gegen die Sicht `schueler`.
+// Die zweite Hälfte von Raster-Frage 13: die Lesepfade gegen die Sicht `schueler`.
 //
 // `schueler` ist seit Migration 124 eine Sicht auf `leser` mit `WHERE art = 'schueler'`.
-// schreibpfade_gegen_sicht_test.go führt die Schreibpfade. Gelesen wird gegen die Sicht an
-// rund 50 Stellen in 32 Dateien, und die zählte bis zum 21.09.2026 niemand. Ein Lesepfad, der
-// die Sicht nimmt, wo er `leser` meint, scheitert nicht — er findet beim Kollegium nur
-// nichts. An der Datenbank nachgestellt (OFFEN.md 5.19): Steht eine Vormerkung für einen
-// Kollegen, findet die Abfrage, die bei der Rückgabe den Nächsten bedient, null Kandidaten.
+// schreibpfade_gegen_sicht_test.go führt die Schreibpfade. Ein Lesepfad, der die Sicht nimmt,
+// wo er `leser` meint, scheitert nicht, er findet beim Kollegium nur nichts: Steht eine
+// Vormerkung für einen Kollegen, fände die Abfrage, die bei der Rückgabe den Nächsten bedient,
+// keinen Kandidaten.
 //
 // Zwei Listen, und der Unterschied ist die Aussage dieser Datei:
 //
-//   - lesepfadeGeprueft: Für diese Dateien ist BELEGT, dass die Filterung auf Schüler das
+//   - lesepfadeGeprueft: Für diese Dateien ist belegt, dass die Filterung auf Schüler das
 //     Gewollte ist. Die Begründung steht daneben.
 //   - lesepfadeUngeprueft: Diese Dateien hat noch niemand daraufhin gelesen. Die Liste sagt
-//     nicht „in Ordnung", sie sagt „offen" — und sie darf nur schrumpfen. Wer eine Datei
+//     nicht „in Ordnung", sie sagt „offen", und sie darf nur schrumpfen. Wer eine Datei
 //     prüft, trägt sie mit Begründung nach oben um oder stellt den Pfad auf `leser` um.
 //
-// Eine Datei, die in KEINER Liste steht und gegen die Sicht liest, ist rot: Ein neuer
+// Eine Datei, die in keiner Liste steht und gegen die Sicht liest, ist rot: Ein neuer
 // Lesepfad ist eine Frage, und sie wird beim Schreiben beantwortet, nicht später.
 //
-// BLINDHEIT: Gesucht wird das Textmuster `FROM|JOIN schueler` je Datei mit Zählstand. Nicht
+// Blindheit: Gesucht wird das Textmuster `FROM|JOIN schueler` je Datei mit Zählstand. Nicht
 // gesehen werden SQL, das aus Variablen zusammengesetzt wird, ein Komma-Join
-// (`FROM a, schueler`), der Name in Anführungszeichen und Lesepfade über ANDERE Sichten.
+// (`FROM a, schueler`), der Name in Anführungszeichen und Lesepfade über andere Sichten.
 // Und die Ratsche zählt nur: Ob eine Begründung in lesepfadeGeprueft stimmt, liest ein
-// Mensch — am besten an einem PG-Test, der den Pfad mit einer Lehrkraft nachstellt.
+// Mensch, am besten an einem PG-Test, der den Pfad mit einer Lehrkraft nachstellt.
 var lesepfadeGeprueft = map[string]struct {
 	anzahl int
 	grund  string
@@ -41,7 +40,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/lusd_import.go":        {2, "LUSD-Abgleich sucht über lusd_id — die LUSD kennt nur Schüler"},
 	"repository/schuljahreswechsel.go": {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
 	"repository/nachtlauf.go":          {3, "Nachtläufe: Fotos und Kennungen der anonymisierten Schüler, löschreife Abgänger; das Kollegium hat keine Abgangslogik und wird nicht anonymisiert"},
-	// Durchsicht der Theken-Pfade, 21.09.2026 (OFFEN.md 5.19).
+	// Theke, Mahnwesen und Bescheide.
 	"repository/ausleihe_schranken.go":      {1, "Abholfach-Prüfung vor einer Ausleihe liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn, TestVormerkungLegeAn_NurFuerSchueler)"},
 	"repository/vormerkung_theke.go":        {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
 	"repository/vormerkung.go":              {3, "LegeAn prüft gegen die Sicht, DASS es ein Schüler ist; die zwei Listen zeigen deshalb nur Schüler oder Vormerkungen ohne Person"},
@@ -52,11 +51,11 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/bescheid.go":                {3, "Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
 	"repository/bescheid_vorschlag.go":      {1, "Empfänger eines Bescheids — Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
 	"repository/bescheid_ausstehend.go":     {1, "Offene Forderungen ohne Bescheid — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
-	// Durchsicht der Akte und des Drucks, 21.09.2026.
+	// Leserakte und Druck.
 	"repository/leser_liste.go":   {1, "Liste der Klassen — Klassen haben nur Schüler"},
 	"repository/leser_anlegen.go": {1, "Dublette über Name UND Geburtsdatum gibt es nur bei Schülern; für alle Leser prüft direkt danach IstLeserNamensdubletteVorhanden gegen die Tabelle"},
 	"repository/schadensbrief.go": {1, "Anschrift der Ersatzforderung — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
-	// Rest der Durchsicht, 22.09.2026 — die Liste der Ungeprüften ist damit leer.
+	// Die übrigen Stellen.
 	"repository/leser_pruefungen.go":        {1, "Vorprüfung der LUSD-ID: chk_leser_nur_schueler_werden_abgaenger erzwingt lusd_id IS NULL für jeden Nicht-Schüler — Sicht und Tabelle liefern hier dasselbe"},
 	"cmd/migrate-fotos/main.go":             {1, "Einmal-Werkzeug für Littera-Schülerfotos; eine Nummer ohne Schüler steht als Warnung im Lauf, nicht still"},
 	"internal/littera/schreiber.go":         {1, "Zielbestand-Probe zählt die littera:-Herkunft, die nur schreibeSchueler setzt; Kollegen aus Littera werden Konten (benutzer)"},
@@ -68,14 +67,14 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
 	"repository/abgaenger_liste.go":         {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
 	"repository/kontoauszug.go":             {1, "Kontoauszug — für Kollegen bewusst nicht (OFFEN.md 5.16 A)"},
-	// Auflagen eines Buchs, 25.09.2026 (OFFEN.md 4.18, Stufe 5).
+	// Auflagen eines Buchs.
 	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie inventur/datenbank_klassen.go, und der Aufruf steht nur hinter istSchueler()"},
 	// Prüfhilfe der Tests, kein Lesepfad des Programms.
 	"internal/testdaten/leser.go": {1, "LadeSchuelerStatus lädt den Stand eines Schülers für die Tests zu LUSD-Abgleich und Versetzung — beide kennen nur Schüler"},
 }
 
-// lesepfadeUngeprueft: seit dem 22.09.2026 leer (28 Dateien am 21./22.09. durchgesehen). NUR SCHRUMPFEN —
-// eine neue Datei gehört nach oben, mit Begründung, nicht hierher.
+// lesepfadeUngeprueft ist leer und darf nur schrumpfen: Eine neue Datei gehört nach oben, mit
+// Begründung, nicht hierher.
 var lesepfadeUngeprueft = map[string]int{}
 
 var musterLesepfad = regexp.MustCompile(`(?i)\b(FROM|JOIN)\s+schueler\b`)

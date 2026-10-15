@@ -13,11 +13,10 @@ import (
 // Der Anker zu Raster-Frage 14: „Datenlage — was steht in den Zeilen, auf die der Pfad
 // trifft, gemessen am echten Bestand und nicht an der Seed-Datenbank?"
 //
-// Migration 135 („Klasse N wird Spanne N bis N", 22.09.2026) war an der lokalen Datenbank
-// entworfen, in der ein einziger Testtitel eine Klasse trug. Auf dem Testserver trugen 153
-// Titel eine, darunter mehrjährige Bände mit nur einem Jahr. Die Migration lief dort, wurde
-// zurückgenommen und brauchte ein Reparaturskript aus der Vorab-Sicherung (7981e347,
-// bf91c54d). Keine der dreizehn Fragen davor sah in die Zeilen; alle lesen Code und Schema.
+// Eine Migration, die an der lokalen Datenbank entworfen ist, trifft auf dem Server andere
+// Zeilen: Wo lokal ein einziger Testtitel eine Klasse trägt, tragen dort viele eine, darunter
+// Fälle, die es lokal nicht gibt. Die übrigen Fragen des Rasters lesen Code und Schema, nicht
+// die Zeilen.
 //
 // Die Regel: Eine neue Migration, die vorhandene Zeilen ändert, umdeutet oder Daten
 // wegnimmt, nennt im Kopf ihre Messung am echten Bestand — ein Satz mit „gemessen" und dem
@@ -25,7 +24,7 @@ import (
 // „Ohne Messung: <Grund>". Die Zeile beweist nicht, dass gemessen wurde; sie stellt die
 // Frage dort, wo die Migration entsteht.
 //
-// BLINDHEIT: Nur migrations/*.sql ab Nummer 145; die älteren sind Bestand, ein Teil nennt
+// Blindheit: Nur migrations/*.sql ab Nummer 145; die älteren sind Bestand, ein Teil nennt
 // seine Messung, ein Teil nicht. Nur Anweisungen in Textform: dynamisches SQL (EXECUTE
 // format(…) in einem DO-Block) nicht. Eine Anweisung in einem DO-Block zählt, eine in einem
 // Funktionskörper bewusst nicht — sie läuft erst später, nicht bei der Migration. Das
@@ -33,7 +32,7 @@ import (
 // migrations/ (scripts/*.sql, cmd/) und Importe aus Go sieht sie nicht. Ob die genannte
 // Messung die richtige ist, liest ein Mensch.
 
-// ersteGepruefteMigration: Ab hier gilt die Regel (Rasterdurchgang 23.09.2026).
+// ersteGepruefteMigration: Ab hier gilt die Regel; die älteren Migrationen sind Bestand.
 const ersteGepruefteMigration = 145
 
 // datenaenderungen: die Formen, mit denen eine Migration vorhandene Zeilen ändert, umdeutet

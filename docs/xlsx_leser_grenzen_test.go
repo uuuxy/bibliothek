@@ -9,19 +9,15 @@ import (
 	"testing"
 )
 
-// Jede XLSX-Lesestelle geht durch xlsxgrenze.LeseMappe — excelize.OpenReader steht nur
-// noch dort.
+// Jede XLSX-Lesestelle geht durch xlsxgrenze.LeseMappe; excelize.OpenReader steht nur dort.
 //
-// Das war bis zum 17.09.2026 eine Frage des Speichers (eine Entpack-Bombe aus einer
-// winzigen Datei, Sicherheits-Audit 07.09.2026). Seit GO-2026-6452 ist es zusätzlich eine
-// Frage der Sicherheit, und zwar eine überraschende: excelize schützt den gewöhnlichen
-// Weg gegen negative Zeichenketten-Indizes, den AUSLAGERUNGS-Weg aber nicht. Erreichbar
-// wird der nur, wenn die XML-Grenze KLEINER ist als die Gesamtgrenze — und genau das
-// verhindert Optionen(), indem es beide gleich setzt
-// (pkg/xlsxgrenze/negativer_sharedstring_test.go misst es). Seit dem 08.10.2026 trägt
-// LeseMappe zusätzlich die Schranke gegen Abstürze der Bibliothek und die Abweisung von
-// OLE-Containern (OFFEN.md 5.10); ein direkter OpenReader-Aufruf ginge an beidem vorbei.
-// Deshalb: **Eine vierte Lesestelle ist eine Frage.**
+// LeseMappe begrenzt den Speicher gegen eine Entpack-Bombe aus einer winzigen Datei, fängt
+// Abstürze der Bibliothek ab und weist OLE-Container ab. Dazu kommt GO-2026-6452: excelize
+// schützt den gewöhnlichen Weg gegen negative Zeichenketten-Indizes, den Weg über die
+// Auslagerung aber nicht. Erreichbar wird der nur, wenn die XML-Grenze kleiner ist als die
+// Gesamtgrenze, und genau das verhindert Optionen(), indem es beide gleich setzt
+// (pkg/xlsxgrenze/negativer_sharedstring_test.go misst es). Ein direkter Aufruf von
+// OpenReader ginge an allem vorbei; eine weitere Lesestelle ist deshalb eine Frage.
 var xlsxLeserBestand = map[string]string{
 	"api/system/littera_import.go": "Littera-Katalogübernahme (POST /api/import/littera, manage_inventory)",
 	"internal/lusd/quelle.go":      "LUSD-Schülerabgleich (POST /api/lusd/preview und /import, import_students)",

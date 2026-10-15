@@ -11,22 +11,20 @@ import (
 
 // Der Anker zu Raster-Frage 12: Was ein körperliches DELETE tut, das kein Lesepfad ahnt.
 //
-// Ein Exemplar verlässt den Bestand normalerweise als AUSSONDERUNG: Die Zeile bleibt,
+// Ein Exemplar verlässt den Bestand normalerweise als Aussonderung: Die Zeile bleibt,
 // `ist_ausgesondert` wird wahr, der Trigger aus Migration 128 stempelt das Abgangsdatum,
-// und das Abgangsbuch führt sie. Drei Türen tun etwas anderes — sie löschen die Zeile.
-// Danach steht das Exemplar in KEINER Abfrage über `buecher_exemplare` mehr, auch nicht
-// im Nachweis, den die Schule zum Stichtag ausdruckt und abheftet.
+// und das Abgangsbuch führt sie. Drei Türen tun etwas anderes, sie löschen die Zeile.
+// Danach steht das Exemplar in keiner Abfrage über `buecher_exemplare` mehr, auch nicht
+// im Nachweis, den die Schule zum Stichtag ausdruckt und abheftet: Ein ausgesondertes
+// Exemplar verschwindet mit dem Löschen seines Titels aus dem Abgangsbuch, rückwirkend in
+// einem Halbjahr, das vielleicht schon unterschrieben ist.
 //
-// Gefunden am 17.09.2026 und an der Datenbank nachgestellt: Ein ausgesondertes Exemplar
-// mit Abgangsdatum steht vor dem Löschen seines Titels im Abgangsbuch und danach nicht
-// mehr — rückwirkend, in einem Halbjahr, das vielleicht schon unterschrieben ist.
-//
-// Die Antwort darauf ist KEIN Verbot: Dass „Titel löschen" wirklich alles löscht, ist eine
-// Entscheidung des Betreibers vom 23.08.2026. Die Antwort ist die Zahl unter der Liste
+// Die Antwort darauf ist kein Verbot: Dass „Titel löschen" wirklich alles löscht, hat der
+// Betreiber entschieden. Die Antwort ist die Zahl unter der Liste
 // (repository/abgangsbuch.go), und die kann nur zählen, was eine Protokollspur hinterlässt.
-// Deshalb diese Ratsche: **Eine fünfte Anweisung ist eine Frage.** Wer eine hinzufügt,
-// schreibt daneben, welche Spur sie legt — oder merkt beim Schreiben, dass sie keine legt
-// und der Nachweis ab dann lügt.
+// Deshalb ist eine weitere Anweisung hier eine Frage: Wer eine hinzufügt, schreibt daneben,
+// welche Spur sie legt, oder merkt beim Schreiben, dass sie keine legt und der Nachweis ab
+// dann lügt.
 var koerperlicheLoeschungBestand = map[string]struct {
 	anzahl int
 	grund  string

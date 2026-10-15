@@ -9,25 +9,18 @@ import (
 	"testing"
 )
 
-// Rasterfrage 10 (Rückweg) an den beiden Anleitungen, die man im Ernstfall abtippt.
+// Rasterfrage 10 (Rückweg) an den beiden Anleitungen, die man im Ernstfall abtippt. Sie sind
+// Text, und Text prüft sonst niemand.
 //
-// Bestands-Durchgang 10.09.2026, zwei Funde derselben Art — Anleitungen, die niemand
-// prüfte, weil sie Text sind:
-//
-//  1. Die Restore-Anleitung wählte `ls -t backups/backup_*.sql.gz.enc` auf dem Host. Das
-//     nächtliche Backup liegt aber im benannten Volume (/app/backups im Container,
-//     jobs/backup.go), und in ./backups auf dem Host liegt nur die Vorab-Sicherung von
-//     update.sh — unter DEMSELBEN Muster backup_<Zeit>.sql.gz.enc. Ein Restore nach
-//     Anleitung spielte die letzte Deploy-Sicherung ein; alles seit dem letzten Deploy
-//     war still weg. Auch die „manuelle Restore-Probe vor Go-Live" prüfte diese Datei.
-//  2. Die Rollback-Anleitung von update.sh riet `git stash` (nach einem sauberen Pull
-//     wirkungslos — der neue Code bleibt), spielte den Dump ohne dropdb und ohne
-//     ON_ERROR_STOP in die schon migrierte Datenbank (psql endet trotz Fehlerflut mit 0)
-//     und baute danach wieder den neuen Code.
-//
-// Neue Bugklasse „Zwei Ablagen, ein Dateiname": Zwei Erzeuger legen gleich benannte
-// Artefakte an verschiedenen Orten ab; wer nach dem Muster statt nach der Herkunft
-// wählt, greift die falsche Datei.
+// Das nächtliche Backup liegt im benannten Volume (/app/backups im Container,
+// jobs/backup.go); in ./backups auf dem Host liegt nur die Vorab-Sicherung von update.sh.
+// Wählt die Restore-Anleitung nach einem Muster auf dem Host, spielt sie die letzte
+// Deploy-Sicherung ein, und alles seit dem letzten Deploy ist still weg. Die Bugklasse heißt
+// „Zwei Ablagen, ein Dateiname": Zwei Erzeuger legen gleich benannte Artefakte an
+// verschiedenen Orten ab; wer nach dem Muster statt nach der Herkunft wählt, greift die
+// falsche Datei. Ein Rollback holt den alten Code zurück und spielt den Dump vollständig ein:
+// `git stash` ist nach einem sauberen Pull wirkungslos, und ohne dropdb und ON_ERROR_STOP
+// landet der Dump halb in der schon migrierten Datenbank.
 func TestRueckweg_RestoreNimmtDasNachtbackup(t *testing.T) {
 	anleitung := lies(t, "resilience_and_recovery.md")
 	if strings.Contains(anleitung, "ls -t backups/backup_") {
@@ -76,9 +69,8 @@ func TestRueckweg_RollbackFuehrtZurueck(t *testing.T) {
 }
 
 // Jede Zeile der Wiederherstellungs-Anleitung, die einen Dump einspielt, bricht beim ersten
-// Fehler ab. Ohne ON_ERROR_STOP endet psql trotz Fehlerflut mit 0 — so lief der Rückweg von
-// update.sh bis zum 10.09.2026 und die Anleitung für den Ernstfall bis zum 28.09.2026, an vier
-// Stellen (2a, 2b, 2c, 2e; gefunden in der Generalprobe).
+// Fehler ab. Ohne ON_ERROR_STOP endet psql trotz Fehlerflut mit 0, und der Rückweg sieht aus
+// wie gelungen.
 //
 // Blindheit: Erkannt wird `psql … -f …` und `| psql` auf einer Zeile, auch hinter
 // `docker compose exec`, nur in dieser Datei. Ein Einspielen mit `<` oder über mehrere Zeilen
@@ -103,8 +95,8 @@ func TestRueckweg_EinspielenBrichtBeimErstenFehlerAb(t *testing.T) {
 
 // Beim Totalverlust (2f) kommt das Werkzeug aus dem Image des Backends, und seine Ausgabe geht
 // in die Datenbank. Baut erst dieser Aufruf das Image, läuft die Ausgabe des Baus mit hinein,
-// und das Einspielen bricht an ihrer ersten Zeile ab (so geschehen beim Durchspielen am
-// 08.10.2026). Deshalb steht der Bau als eigener Schritt davor.
+// und das Einspielen bricht an ihrer ersten Zeile ab. Deshalb steht der Bau als eigener
+// Schritt davor.
 func TestRueckweg_TotalverlustBautVorDemEinspielen(t *testing.T) {
 	anleitung := lies(t, "resilience_and_recovery.md")
 	einspielen := strings.Index(anleitung, "docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend")
@@ -119,11 +111,10 @@ func TestRueckweg_TotalverlustBautVorDemEinspielen(t *testing.T) {
 }
 
 // Was ein Skript als Befehl druckt, wird abgetippt. Ein Platzhalter in spitzen Klammern darin
-// lässt sich wörtlich einfügen (so am 06.08.2026 mit einer Anleitung geschehen), und der Hinweis
-// zum Entschlüsseln nannte bis zum 08.10.2026 einen Aufruf, der die Datei im Container suchte:
-// Die Sicherungen von update.sh und scripts/backup.sh liegen auf dem Host. Die Datei geht
-// deshalb über die Standardeingabe in das Werkzeug, in einem Wegwerf-Container: Beim
-// Wiederherstellen ist das Backend angehalten, docker exec liefe dann nicht.
+// lässt sich wörtlich einfügen. Die Sicherungen von update.sh und scripts/backup.sh liegen auf
+// dem Host; ein Aufruf zum Entschlüsseln, der die Datei im Container sucht, findet sie nicht.
+// Die Datei geht deshalb über die Standardeingabe in das Werkzeug, in einem Wegwerf-Container:
+// Beim Wiederherstellen ist das Backend angehalten, docker exec liefe dann nicht.
 //
 // Blindheit: nur Zeilen mit echo, printf oder log_ in update.sh und scripts/*.sh; ein Befehl,
 // der über eine Variable oder ein Here-Dokument gedruckt wird, bleibt unsichtbar.
@@ -191,14 +182,10 @@ func umgebungOhneGit() []string {
 	return sauber
 }
 
-// Der Rückweg zeigt auf den Stand, der VOR dem Update lief — auch wenn `git pull` vorher
-// von Hand lief, wie DEPLOYMENT.md §2.4 es verlangt.
-//
-// Nachgestellt am 25.09.2026 (Durchsicht des Pflegekonzepts): update.sh las den Rückweg als
-// `git rev-parse HEAD` unmittelbar vor seinem eigenen Pull. Nach dem vorgezogenen Pull ist
-// das schon der NEUE Stand: Die Anleitung druckte `git reset --hard <neu>` und baute in
-// ihrem Schritt 4 wieder den neuen Code. ORIG_HEAD taugt ebenso wenig — der zweite Pull,
-// der nichts mehr findet, setzt es auf den neuen Stand.
+// Der Rückweg zeigt auf den Stand, der vor dem Update lief, auch wenn `git pull` vorher von
+// Hand lief, wie DEPLOYMENT.md §2.4 es verlangt. `git rev-parse HEAD` vor dem eigenen Pull des
+// Skripts ist nach einem vorgezogenen Pull schon der neue Stand, und ORIG_HEAD setzt der
+// zweite Pull, der nichts mehr findet, ebenso auf den neuen Stand.
 //
 // Der Test fährt das echte Skript: eine Kopie in einem Wegwerf-Repo, der Pull von Hand
 // vorab, `docker` als Stellvertreter im PATH. Er meldet für das laufende Image den alten

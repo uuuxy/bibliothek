@@ -10,14 +10,10 @@ import (
 // Ein Ordner, zwei Skripte. In ./backups auf dem Host legen update.sh (vordeploy_…, 30 Tage)
 // und scripts/backup.sh (bibliothek_backup_…, 7 Tage) ab; beide räumen denselben Ordner auf.
 //
-// Nachgesehen am 28.09.2026, zwei Funde:
-//
-//  1. scripts/backup.sh löschte mit -name "*.sql.gz.enc" -mtime +7 auch die Vorab-Sicherungen
-//     von update.sh. Mit der Beispiel-Crontab aus resilience_and_recovery.md hielten sie
-//     damit 7 statt der dokumentierten 30 Tage.
-//  2. Die Klartext-Warnung von update.sh zählte nur backup_*.sql.gz. Seit der Umbenennung
-//     der Vorab-Sicherung in vordeploy_ (10.09.2026) meldete sie einen unverschlüsselten
-//     Rest nach einem misslungenen Update nicht mehr.
+// Löschte scripts/backup.sh jede "*.sql.gz.enc", hielten die Vorab-Sicherungen von update.sh
+// mit der Beispiel-Crontab aus resilience_and_recovery.md 7 statt der dokumentierten 30 Tage.
+// Zählt eine Klartext-Warnung nur einen Namen, bleibt der unverschlüsselte Rest unter dem
+// anderen ungemeldet.
 //
 // Die Regel: Eine verschlüsselte Sicherung löscht nur das Skript, das sie angelegt hat —
 // die Fristen sind verschieden. Klartext hat im ganzen Ordner eine Frist, gleich von wem,
@@ -34,7 +30,7 @@ var backupSkripte = map[string]struct {
 }{
 	"../update.sh": {
 		erzeugt: `vordeploy_${TIMESTAMP}.sql.gz`,
-		// backup_…: Vorab-Sicherungen vor dem 10.09.2026, update.sh räumt sie weiter auf.
+		// backup_…: Vorab-Sicherungen unter dem alten Namen; update.sh räumt auch sie auf.
 		eigene: []string{"vordeploy_20260910_000000.sql.gz", "backup_20260901_000000.sql.gz"},
 	},
 	"../scripts/backup.sh": {
@@ -134,9 +130,9 @@ func TestBackupAblage_KlartextHatEineFristUndWirdGemeldet(t *testing.T) {
 	}
 }
 
-// Gelöscht wird nur, wenn eines der Skripte läuft. Bis zum 28.09.2026 sagten beide dem
-// Bedienenden „wird in 2 Tagen automatisch gelöscht" — wer sich darauf verließ, ließ die
-// ganze Datenbank im Klartext liegen, bis zum nächsten Lauf, der Wochen später kommen kann.
+// Gelöscht wird nur, wenn eines der Skripte läuft. Wer einer Zusage wie „wird in 2 Tagen
+// automatisch gelöscht" glaubt, lässt die ganze Datenbank im Klartext liegen, bis zum nächsten
+// Lauf, der Wochen später kommen kann.
 func TestBackupAblage_KeineLoeschUhrVersprochen(t *testing.T) {
 	versprechen := regexp.MustCompile(`(?i)automatisch gelöscht|verschwindet nach|wird (in|nach) \$\{[A-Z_]+\} Tagen`)
 	for pfad := range backupSkripte {

@@ -12,28 +12,27 @@ import (
 // Ratsche gegen die Bugklasse „Tag in der falschen Zeitzone".
 //
 // Die Datenbank-Sitzung und der Container laufen in UTC, die Schule in Berlin. Zwischen
-// Mitternacht in Berlin und Mitternacht UTC liefern `CURRENT_DATE` und `time.Now()`
-// deshalb den VORTAG. Was das kostet, hat dieses Projekt inzwischen siebenmal gesehen:
+// Mitternacht in Berlin und Mitternacht UTC liefern `CURRENT_DATE` und `time.Now()` deshalb
+// den Vortag, etwa so:
 //
-//   - die Frist eines Bescheids galt zu spät als abgelaufen (16.09.2026),
-//   - am 18. Geburtstag ging der Bescheid an die Eltern eines Erwachsenen,
-//   - ein Mahnlauf kurz nach Mitternacht wurde als „heute schon gemahnt" übersprungen,
-//   - Rückgaben zwischen 0 und 2 Uhr fehlten auf dem Dashboard,
-//   - der Stornierungsgrund „Rückgabe am …" trug das Datum von gestern,
-//   - Mahnliste und Kontoauszüge trugen im Betreff das Datum von gestern,
-//   - die Bestellmail an den Händler nannte ein Bestelldatum von gestern.
+//   - die Frist eines Bescheids gilt zu spät als abgelaufen,
+//   - am 18. Geburtstag geht der Bescheid an die Eltern eines Erwachsenen,
+//   - ein Mahnlauf kurz nach Mitternacht wird als „heute schon gemahnt" übersprungen,
+//   - Rückgaben zwischen 0 und 2 Uhr fehlen auf dem Dashboard,
+//   - Stornierungsgrund, Betreff von Mahnliste und Kontoauszug und die Bestellmail an den
+//     Händler nennen das Datum von gestern.
 //
-// Jedes Mal war es dieselbe Zeile in einer anderen Datei. Ein Kommentar hält das nicht
-// auf; eine Liste, die nur wachsen darf, wenn jemand einen Grund dazuschreibt, schon.
+// Es ist jedes Mal dieselbe Zeile in einer anderen Datei. Ein Kommentar hält das nicht auf;
+// eine Liste, die nur wachsen darf, wenn jemand einen Grund dazuschreibt, schon.
 //
-// Eine dritte Form derselben Klasse (13.10.2026): Ein Datum aus einer Eingabe wird mit
-// time.Parse als Tag in UTC gelesen und als Zeitpunkt gegen eine Spalte mit Zeitpunkten
-// verglichen. Der Bestellbericht führte so eine Bestellung aus der ersten Stunde eines Monats
-// im Monat davor. schulzeit.Kalendertag liest denselben Text als Tag der Schule.
+// Dieselbe Klasse in anderer Form: Ein Datum aus einer Eingabe, mit time.Parse als Tag in UTC
+// gelesen und als Zeitpunkt gegen eine Spalte mit Zeitpunkten verglichen, legt eine Bestellung
+// aus der ersten Stunde eines Monats in den Monat davor. schulzeit.Kalendertag liest denselben
+// Text als Tag der Schule.
 //
-// Was die Ratsche NICHT verbietet: Zeitpunkt-Vergleiche. „Überfällig" ist
-// `rueckgabe_frist < CURRENT_TIMESTAMP` und bleibt es — ein Instant ist in jeder Zone
-// derselbe. Verboten ist nur der KALENDERTAG aus einer fremden Zone.
+// Was die Ratsche nicht verbietet: Zeitpunkt-Vergleiche. „Überfällig" ist
+// `rueckgabe_frist < CURRENT_TIMESTAMP` und bleibt es, denn ein Zeitpunkt ist in jeder Zone
+// derselbe. Verboten ist nur der Kalendertag aus einer fremden Zone.
 
 // bestandKalendertag: Stellen, die heute noch mit der Zeitzone der Sitzung bzw. des
 // Containers rechnen dürfen — je Datei die Anzahl und der Grund.
@@ -45,8 +44,7 @@ var bestandKalendertag = map[string]struct {
 }{
 	// Einmal-Werkzeug der Alt-Übernahme: Anschaffungsdatum eines importierten Exemplars.
 	// Ein um zwei Stunden verschobenes Kaufdatum ändert keine Entscheidung über einen
-	// Menschen, und es läuft ohnehin von Hand und tagsüber. Der Listen-Import stand hier
-	// bis zum 23.09.2026; seitdem nimmt er die Vorgabe der Spalte (Migration 139).
+	// Menschen, und es läuft ohnehin von Hand und tagsüber.
 	"cmd/migrate/pg_writer.go":               {1, "erworben_am beim Alt-Import"},
 	"repository/statistik.go":                {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
 	"cmd/seed/main.go":                       {1, "erfundene Abgangsjahre für Testdaten"},

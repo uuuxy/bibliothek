@@ -10,15 +10,11 @@ import (
 	"testing"
 )
 
-// Gate gegen eine Kopfzeile, die einen Stand behauptet, den die Datei nicht mehr hat.
+// Gate gegen eine Kopfzeile, die einen Stand behauptet, den die Datei nicht mehr hat. Wer die
+// Kopfzeile liest, um zu entscheiden, ob er dem Dokument traut, würde sonst von der einzigen
+// Zeile in die Irre geführt, die genau dafür da ist.
 //
-// Anlass (23.08.2026): Vier Dokumente trugen „Zuletzt aktualisiert: 2026-08-06" bzw.
-// „Stand 2026-08-05" im Kopf und beschrieben darunter Vorgänge vom 11., 21. und 23.
-// August. Wer die Kopfzeile liest, um zu entscheiden, ob er dem Dokument traut, wurde
-// also gezielt in die Irre geführt — und zwar von der einzigen Zeile, die genau dafür
-// da ist.
-//
-// Geprüft wird ohne git, nur aus dem Text: Kein Datum IM Dokument darf jünger sein als
+// Geprüft wird ohne git, nur aus dem Text: Kein Datum im Dokument darf jünger sein als
 // das Datum, das der Kopf behauptet. Das trifft genau den Fehlerfall (jemand ergänzt
 // einen datierten Abschnitt und vergisst den Kopf) und erzeugt keine Fehlalarme durch
 // Formatierungs-Commits, die den git-Zeitstempel verschieben, ohne etwas zu sagen.
@@ -26,7 +22,7 @@ import (
 // Ein Datum ohne Jahr ("erledigt 23.08.") sieht das Gate nicht: Für einen Vergleich
 // fehlt ihm das Jahr. Wer ein Datum in ein Dokument schreibt, schreibt das Jahr dazu.
 //
-// Dokumente OHNE Kopfzeile prüft das Gate nicht — nicht jedes braucht eine (FACHKONZEPT
+// Dokumente ohne Kopfzeile prüft das Gate nicht, nicht jedes braucht eine (FACHKONZEPT
 // und resilience_and_recovery führen bewusst keine). Wer keine Zusicherung gibt, kann
 // auch keine brechen.
 //
@@ -39,10 +35,8 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 	// Beide Schreibweisen, die im Projekt vorkommen: 2026-08-23 und 23.08.2026.
 	datumMuster := regexp.MustCompile(`(\d{4})-(\d{2})-(\d{2})|(\d{2})\.(\d{2})\.(\d{4})`)
 
-	// 24 statt 12 (02.09.2026): PII_MATRIX.de.md trägt ihren Stand in Zeile 18 — das
-	// Gate sah ihn nicht und blieb grün, während die Matrix Routen „seit 02.09." unter
-	// einem Stand vom 01.09. führte (lügende Ratsche). Die Abschnitts-Stände in
-	// invarianten.md (bis 13.09.2026 auch im Befund-Register) liegen weit außerhalb dieses Fensters.
+	// PII_MATRIX.de.md trägt ihren Stand in Zeile 18; ein kürzeres Fenster sähe ihn nicht und
+	// bliebe grün. Die Stände der Abschnitte in invarianten.md liegen weit außerhalb.
 	const kopfZeilen = 24
 
 	// Rekursiv statt fester Globs: Ein Dokument in einem tieferen Ordner fiele sonst mit
@@ -73,11 +67,10 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 		}
 		inhalt := string(rohdaten)
 
-		// NUR im Kopf suchen, nicht im ganzen Text: Im Befund-Register stand "Stand: 2026-08-06"
-		// als Abschluss eines Abschnitts (Zeile 663), in invarianten.md mitten in einem Satz.
-		// Beides sind Aussagen über einen Abschnitt, keine Zusicherung über das Dokument —
-		// ohne diese Grenze meldete das Gate zwei Dateien falsch-rot. Ein Detektor, der
-		// Richtiges anzeigt, wird abgeschaltet.
+		// Nur im Kopf suchen, nicht im ganzen Text: Ein „Stand:" am Ende eines Abschnitts oder
+		// mitten in einem Satz sagt etwas über den Abschnitt, nicht über das Dokument. Ohne
+		// diese Grenze meldete das Gate Richtiges als rot, und ein solcher Detektor wird
+		// abgeschaltet.
 		zeilen := strings.SplitN(inhalt, "\n", kopfZeilen+1)
 		kopfbereich := strings.Join(zeilen[:min(len(zeilen), kopfZeilen)], "\n")
 

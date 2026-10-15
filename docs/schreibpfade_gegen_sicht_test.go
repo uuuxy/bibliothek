@@ -11,21 +11,15 @@ import (
 
 // Der Anker zu Raster-Frage 13: „Bedeutungswechsel unter gleichem Namen."
 //
-// `schueler` war bis Migration 124 eine Tabelle und ist seither eine SICHT auf `leser`
-// mit `WHERE art = 'schueler'`. Der Name blieb, die Bedeutung nicht — und ein UPDATE
-// gegen eine gefilterte Sicht trifft beim Kollegium null Zeilen. Wer das nicht weiß,
-// schreibt eine stille 404 (OFFEN.md 5.17/5.18).
+// `schueler` war bis Migration 124 eine Tabelle und ist seither eine Sicht auf `leser` mit
+// `WHERE art = 'schueler'`. Der Name blieb, die Bedeutung nicht, und ein UPDATE gegen eine
+// gefilterte Sicht trifft beim Kollegium keine Zeile: eine stille 404. Eine Frage im Raster
+// ohne diesen Anker verrottet zum Spruch.
 //
-// Beim Durchgang vom 16.09.2026 gab es 15 Schreibpfade gegen diese Sicht, heute sind es
-// neun; die sechs, die gewandert sind, waren Zeile für Zeile die Funde jenes Durchgangs.
-// Genau deshalb steht die Frage im Raster — und genau deshalb braucht sie diesen Anker:
-// Eine Frage ohne Mechanik verrottet zum Spruch.
-//
-// Die Regel ist NICHT „gegen eine Sicht schreibt man nicht". Alle neun sind richtig: Sie
-// führen die Schülerarbeit, und dort ist die Filterung der Sicht das Gewollte. Die Regel
-// ist: **Eine zehnte Zeile ist eine Frage.** Wer eine hinzufügt, schreibt daneben, warum
-// die Filterung für seinen Pfad richtig ist — oder merkt beim Schreiben, dass sie es
-// nicht ist.
+// Die Regel ist nicht „gegen eine Sicht schreibt man nicht". Die Pfade in der Liste sind
+// richtig: Sie führen die Schülerarbeit, und dort ist die Filterung der Sicht das Gewollte.
+// Eine weitere Zeile ist eine Frage: Wer eine hinzufügt, schreibt daneben, warum die
+// Filterung für seinen Pfad richtig ist, oder merkt beim Schreiben, dass sie es nicht ist.
 
 // schreibpfadeGegenSicht: je Datei die Anzahl der Schreibzugriffe auf die Sicht
 // `schueler` und der Grund, warum die Sicht dort das Richtige ist.

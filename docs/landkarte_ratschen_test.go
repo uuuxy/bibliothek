@@ -7,10 +7,9 @@ import (
 	"testing"
 )
 
-// Regel 7 aus sweeps.md: Jede neue Ratsche trägt ihre Blindheit im Kopfkommentar und
-// eine Zeile in der Landkarte. Bis zum 21.09.2026 hatte die Regel selbst keine Ratsche
-// (OFFEN.md 5.10) — und zwölf Gates standen ohne Zeile da: Wer bei „alles grün" nach der
-// Blindheit suchte, fand für sie keine.
+// Regel 7 aus sweeps.md: Jede neue Ratsche trägt ihre Blindheit im Kopfkommentar und eine
+// Zeile in der Landkarte. Ohne die Zeile findet, wer bei „alles grün" nach der Blindheit
+// eines Gates sucht, keine.
 //
 // Geprüft wird die Anwesenheit des Dateinamens in sweeps.md, nicht der Inhalt der Zeile:
 // Ob die genannte Blindheit stimmt, liest ein Mensch. Umfang: die Ratschen im

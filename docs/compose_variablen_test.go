@@ -9,17 +9,13 @@ import (
 	"testing"
 )
 
-// Gate: Jede Umgebungsvariable, die Compose dem Backend gibt, wird auch gelesen.
+// Gate: Jede Umgebungsvariable, die Compose dem Backend gibt, wird auch gelesen. Eine Zeile,
+// nach der kein Go-Code fragt, sieht aus wie eine Einstellung: Wer etwa DB_HOST ändert und neu
+// startet, wundert sich, denn die Verbindung kommt aus DATABASE_URL.
 //
-// Anlass (Register, Bestands-Durchgang 10.09.2026): `DB_HOST=postgres-db` und
-// `SMTP_SENDER=${SMTP_FROM}` standen in beiden Compose-Dateien, und kein Go-Code fragte
-// je danach. Solche Zeilen sind nicht bloß Ballast — sie sehen aus wie eine Einstellung.
-// Wer den Datenbank-Host ändern will, ändert DB_HOST, startet neu und wundert sich; die
-// Verbindung kommt aus DATABASE_URL.
-//
-// Die Gegenrichtung (Go liest etwas, das Compose NICHT durchreicht) ist der teurere Fall
-// — er hat den nächtlichen Backup-Job zweimal still ausfallen lassen. Sie steht seit dem
-// 21.09.2026 weiter unten: TestGelesenesReichtComposeDurch.
+// Die Gegenrichtung (Go liest etwas, das Compose nicht durchreicht) ist der teurere Fall: Dann
+// fällt etwa der nächtliche Backup-Job still aus. Sie prüft TestGelesenesReichtComposeDurch
+// weiter unten.
 var composeVariable = regexp.MustCompile(`^\s+-\s+([A-Z0-9_]+)=`)
 
 // backendBlock liefert den Abschnitt des backend-Dienstes einer Compose-Datei.
@@ -95,11 +91,10 @@ func TestComposeVariablenWerdenGelesen(t *testing.T) {
 	}
 }
 
-// Fünf Variablen, die der Server liest und die docker-compose.yml bis zum 21.09.2026 nicht
-// durchreichte (OFFEN.md 4.7): Im Container galt immer die eingebaute Vorgabe, egal was in
-// der .env stand. Dieses Gate hält für genau diese fünf die FORM fest (${NAME:-}, leer =
-// Vorgabe des Servers); dass überhaupt durchgereicht wird, prüft die allgemeine Ratsche
-// TestGelesenesReichtComposeDurch darunter.
+// Für fünf Variablen, die der Server liest, hält dieses Gate die Form fest, in der
+// docker-compose.yml sie durchreicht (${NAME:-}, leer heißt Vorgabe des Servers); dass
+// überhaupt durchgereicht wird, prüft die allgemeine Ratsche TestGelesenesReichtComposeDurch
+// darunter.
 func TestComposeReichtDieFuenfVariablenDurch(t *testing.T) {
 	block := backendBlock(t, lies(t, "../docker-compose.yml"))
 	for _, name := range []string{
@@ -116,19 +111,18 @@ func TestComposeReichtDieFuenfVariablenDurch(t *testing.T) {
 
 // Die Gegenrichtung: Was der Go-Code aus der Umgebung liest, muss docker-compose.yml dem
 // Backend auch geben — sonst gilt im Container immer die eingebaute Vorgabe, egal was in
-// der .env steht. So fiel der nächtliche Backup-Job zweimal still aus, und so blieben fünf
-// Variablen bis zum 21.09.2026 wirkungslos (OFFEN.md 4.7).
+// der .env steht. Fehlt die Zeile, fällt etwa der nächtliche Backup-Job still aus.
 //
-// composeAusnahmen sind die Namen, die der Backend-Container NICHT bekommen soll, je mit
+// composeAusnahmen sind die Namen, die der Backend-Container nicht bekommen soll, je mit
 // Begründung. Die Liste ist eine Ratsche in beide Richtungen: Ein neuer gelesener Name ohne
 // Compose-Zeile ist rot, und ein Eintrag hier, den niemand mehr liest oder den Compose
 // inzwischen durchreicht, ebenfalls — eine Liste, die Erledigtes weiterführt, verliert ihre
 // Aussage.
 //
-// BLINDHEIT: Gesehen werden os.Getenv und os.LookupEnv mit einem Text oder einer
+// Blindheit: Gesehen werden os.Getenv und os.LookupEnv mit einem Text oder einer
 // auflösbaren Konstante. Ein Name, der zusammengesetzt wird oder über eine Hilfsfunktion
-// mit Parameter gelesen wird, bleibt unsichtbar (heute gibt es keine solche Stelle —
-// gemessen am 21.09.2026). Geprüft wird nur docker-compose.yml, nicht die lokale Datei.
+// mit Parameter gelesen wird, bleibt unsichtbar. Geprüft wird nur docker-compose.yml, nicht
+// die lokale Datei.
 var composeAusnahmen = map[string]string{
 	"FOTOS_BEHALTEN":    "Werkzeug cmd/migrate-fotos, von Hand gestartet — kein Teil des Servers",
 	"MYSQL_DSN":         "Werkzeug cmd/migrate (Littera-Übernahme), von Hand gestartet",

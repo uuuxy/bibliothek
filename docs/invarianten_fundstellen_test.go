@@ -7,19 +7,10 @@ import (
 	"testing"
 )
 
-// Gate gegen verrottete Fundstellen im Invarianten-Katalog.
-//
-// Anlass (06.08.2026): invarianten.md nannte seine Fundstellen als Zeilennummern
-// (`schema.sql:370`). schema.sql wuchs auf 999 Zeilen, und danach zeigte KEINER der
-// 21 Verweise mehr auf das Gemeinte — `check_return_date` stand als `:370` im Katalog
-// und tatsächlich auf `:499`, der Unique-Index für aktive Ausleihen war als `:380`
-// notiert und lag auf `:509`. Die Invarianten selbst stimmten alle; nur der Weg dorthin
-// war falsch. Das ist die unangenehme Sorte Fehler: Ein Katalog, dessen Fundstellen
-// nicht stimmen, verliert genau die Eigenschaft, für die man ihn führt — und beim Lesen
-// merkt man es nicht, weil an der genannten Zeile ja *irgendetwas* steht.
-//
-// Seitdem nennt der Katalog Namen statt Zeilen. Namen wandern nicht mit; wird ein
-// Constraint umbenannt oder entfernt, wird dieser Test rot.
+// Gate gegen verrottete Fundstellen im Invarianten-Katalog. Eine Zeilennummer
+// (`schema.sql:370`) wandert nicht mit, wenn schema.sql wächst, und weil an der genannten
+// Zeile dann irgendetwas steht, merkt es beim Lesen niemand. Der Katalog nennt deshalb Namen;
+// wird ein Constraint umbenannt oder entfernt, wird dieser Test rot.
 //
 // Reparatur bei Rot: Entweder heißt das Objekt in schema.sql anders (dann den Namen in
 // invarianten.md nachziehen) oder es gibt es nicht mehr (dann gehört die Invariante

@@ -8,15 +8,11 @@ import (
 	"testing"
 )
 
-// Gate gegen eine veraltete Swagger-Datei.
+// Gate gegen eine veraltete Swagger-Datei. Eine generierte Datei sieht aus, als pflege sie
+// sich selbst; dass ihr annotierte Endpunkte fehlen oder sie einen Endpunkt beschreibt, den
+// es nicht mehr gibt, fällt niemandem auf.
 //
-// Anlass (05.08.2026): docs.go war generiert worden, als es 23 annotierte Endpunkte gab,
-// und danach nie wieder. Im Code standen inzwischen 49 `@Router`-Annotationen, und
-// umgekehrt beschrieb die Datei mit `/transactions/recent` einen Endpunkt, den es nicht
-// mehr gab. Beides fiel niemandem auf, weil eine generierte Datei aussieht, als pflege
-// sie sich selbst.
-//
-// Das Gate prüft beide Richtungen. Es prüft NICHT, ob jeder Endpunkt annotiert ist — das
+// Das Gate prüft beide Richtungen. Es prüft nicht, ob jeder Endpunkt annotiert ist; das
 // wäre eine andere Entscheidung (das vollständige Verzeichnis aller Routen steht in
 // api_inventar.md). Es hält nur fest: Was annotiert ist, muss auch in der ausgelieferten
 // Datei stehen, und was dort steht, muss es noch geben.

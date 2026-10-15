@@ -9,14 +9,12 @@ import (
 
 // Gate gegen auseinanderlaufende Postgres-Major-Versionen.
 //
-// Anlass (31.08.2026): Produktion lief auf Postgres 15, der lokale Stack und E2E aber
-// monatelang auf 16 — Constraints, Fehlerbilder und pg_dump-Kompatibilität wurden damit
-// gegen eine Version bewiesen, die nirgends in Betrieb war (behoben in 02ac3912, am
-// selben Tag Sprung aller Umgebungen auf 18 in 5602e871). Die Klasse dahinter: Die
-// Versionsnummer steht an sechs Stellen in fünf Dateien, und nichts zwang sie zur
-// Einigkeit — ein Paar (bzw. Sextett), das nur zufällig einig war.
+// Laufen Produktion, lokaler Stack und E2E auf verschiedenen Versionen, sind Constraints,
+// Fehlerbilder und die Kompatibilität von pg_dump gegen eine Version bewiesen, die nirgends
+// in Betrieb ist. Die Versionsnummer steht an mehreren Stellen in mehreren Dateien, und
+// nichts sonst zwingt sie zur Einigkeit.
 //
-// Dieser Test liest alle Fundstellen und verlangt EINE Major-Version. Bewusst keine
+// Dieser Test liest alle Fundstellen und verlangt eine Major-Version. Bewusst keine
 // festgeschriebene Zahl: Ein künftiger Sprung auf 19 bleibt ein normaler Commit, der
 // alle Dateien gemeinsam zieht — nur ein halber Sprung wird rot.
 //
@@ -116,25 +114,19 @@ func TestGoToolchainDockerfileFolgtGoMod(t *testing.T) {
 			"bei einem Go-Bump beide zusammen ziehen (Dependabot hebt nur das Dockerfile!).",
 			ausGoMod, ausDockerfile)
 	}
-	// Die dritte Stelle ist bewusst KEIN Literal: die CI liest go.mod. Verschwindet
+	// Die dritte Stelle ist bewusst kein Literal: Die CI liest go.mod. Verschwindet
 	// diese Kopplung (jemand pinnt in ci.yml wieder eine Zahl), reißt das Gate.
 	leseEinePin(t, "../.github/workflows/ci.yml", regexp.MustCompile(`go-version-file:\s*'?(go\.mod)'?`))
 
-	// Dritter Ort, gefunden am 07.09.2026 beim Nachziehen von Dependabot-PR #589:
-	// go.work trägt dieselbe Zahl noch einmal, und er stand hier nicht. Beim letzten
-	// Sprung (b6f29aaa) wurde er von Hand mitgezogen; verlassen konnte man sich darauf
-	// nicht.
-	//
-	// Die beiden Richtungen sind NICHT gleich gefährlich, und nur eine braucht dieses
-	// Gate:
-	//   - go.work HINTER go.mod: Das fängt Go selbst ab, sofort und unübersehbar
+	// go.work trägt dieselbe Zahl noch einmal. Die beiden Richtungen sind nicht gleich
+	// gefährlich, und nur eine braucht dieses Gate:
+	//   - go.work hinter go.mod: Das fängt Go selbst ab, sofort und unübersehbar
 	//     („module . listed in go.work file requires go >= 1.27.1, but go.work lists go
-	//     1.27.0"). Es beendet jedes `go build` und `go test` — auch dieses hier, das
-	//     dann gar nicht erst läuft. Dafür braucht es keine Ratsche.
-	//   - go.work VOR go.mod: Das lässt Go stillschweigend zu. Gebaut und getestet wird
-	//     dann mit einer neueren Toolchain, als go.mod erklärt — genau der Zustand, den
-	//     dieses Gate für den Dockerfile schon einmal gefunden hat. Diese Richtung ist
-	//     der Grund für die Prüfung.
+	//     1.27.0"). Es beendet jedes `go build` und `go test`, auch dieses hier, das dann
+	//     gar nicht erst läuft. Dafür braucht es keine Ratsche.
+	//   - go.work vor go.mod: Das lässt Go stillschweigend zu. Gebaut und getestet wird
+	//     dann mit einer neueren Toolchain, als go.mod erklärt. Diese Richtung ist der Grund
+	//     für die Prüfung.
 	ausGoWork := leseEinePin(t, "../go.work", regexp.MustCompile(`(?m)^go (\d+\.\d+\.\d+)$`))
 	if ausGoWork != ausGoMod {
 		t.Errorf("go.work läuft auseinander: go.mod sagt %s, go.work %s — gebaut und "+
@@ -170,30 +162,19 @@ func TestNodeMajorUeberallGleich(t *testing.T) {
 	}
 }
 
-// Vierter Zwilling (07.09.2026): Die Jobs der Workflows und die Pflichtliste des Tag-Gates
-// sind dasselbe Versprechen an zwei Orten — „bevor ein Tag ein Release und ein Image
-// erzeugt, muss geprüft sein, was diese Anwendung prüft".
+// Die Jobs der Workflows und die Pflichtliste des Tag-Gates sind dasselbe Versprechen an zwei
+// Orten: „Bevor ein Tag ein Release und ein Image erzeugt, muss geprüft sein, was diese
+// Anwendung prüft." Ein Name in der Liste, den kein Workflow führt, zeigt ins Leere, und
+// `[…] | all(.conclusion=="success")` ist für die leere Menge wahr; ein Job, der in der Liste
+// fehlt, darf rot sein, während ein Tag Release und Image erzeugt. Verglichen wird deshalb
+// als Menge, nicht als Teilmenge.
 //
-// Sie liefen auseinander, und zwar in beide Richtungen gleichzeitig: release.yml
-// verlangte `build-and-test` und `docker-scan`. Der erste Name stimmte, der zweite zeigte
-// ins Leere — einen Prüflauf dieses Namens gab es nie. In der alten jq-Zeile fiel das
-// nicht auf: `[…] | all(.conclusion=="success")` ist für die leere Menge WAHR. Zugleich
-// fehlten `frontend-test` und vor allem `e2e`. Am 06.09.2026 war main vier Stunden rot,
-// genau in e2e; ein Tag in diesem Fenster hätte ein Release samt Image erzeugt, und das
-// Gate hätte grün dazu genickt.
-//
-// Deshalb Gleichheit als MENGE, nicht Teilmenge: Ein neuer Job, den die Liste nicht kennt,
-// ist genauso ein Loch wie ein Name in der Liste, den kein Workflow mehr baut.
-//
-// Seit dem 21.09.2026 steht die Liste EINMAL in scripts/tag-gate.sh —
-// vorher wörtlich in release.yml und docker-publish.yml —, und die Quelle sind ZWEI
-// Workflows: Zu den Jobs der CI kommen die vier Security-Jobs. Anlass war ein Fall, den es
-// wirklich gab: Am Commit bbad2f39 (07.09.2026) waren alle vier CI-Jobs grün und der
-// Trivy-Scan rot; ein Tag darauf hätte ein Release erzeugt.
+// Die Liste steht einmal in scripts/tag-gate.sh, und die Quelle sind zwei Workflows: Zu den
+// Jobs der CI kommen die vier Security-Jobs.
 //
 // Verglichen wird der Name, unter dem GitHub den Prüflauf führt: das Feld `name:` des Jobs,
-// und wo es fehlt, der Job-Schlüssel. Die Security-Jobs tragen ein `name:` — mit dem
-// Schlüssel (`docker-scan`) in der Liste zeigte der Name wieder ins Leere.
+// und wo es fehlt, der Job-Schlüssel. Die Security-Jobs tragen ein `name:`; mit dem
+// Schlüssel (`docker-scan`) in der Liste zeigte der Name ins Leere.
 func TestTagGateVerlangtAllePrueflaeufe(t *testing.T) {
 	ausWorkflows := map[string]bool{}
 	for _, workflow := range []string{"../.github/workflows/ci.yml", "../.github/workflows/security-scan.yml"} {
@@ -230,15 +211,11 @@ func TestTagGateVerlangtAllePrueflaeufe(t *testing.T) {
 
 // Die Liste nützt nur, wenn beide Tag-Workflows sie auch befragen.
 //
-// Bis zum 17.09.2026 prüfte docker-publish.yml beim v-Tag nur Muster und main. Ein Tag auf
-// rotem Stand erzeugte damit zwar kein Release, aber sehr wohl ein Image mit einer
-// Versionsnummer — und eine Versionsnummer sagt „geprüft". Folgenlos war das nur, solange
-// die Produktion selbst baut; wer aus dem Image deployt, zöge einen Stand, den kein Gate
-// gesehen hat.
-//
-// Eine eigene Liste im Workflow ist seit dem 21.09.2026 ebenfalls ein Fehler: Sie wäre die
-// zweite Abschrift, die dieses Skript gerade abgeschafft hat — und sie kennte die
-// Security-Jobs nicht.
+// Prüft docker-publish.yml beim v-Tag nur Muster und Zweig, erzeugt ein Tag auf rotem Stand
+// zwar kein Release, aber ein Image mit einer Versionsnummer, und eine Versionsnummer sagt
+// „geprüft": Wer aus dem Image deployt, zöge einen Stand, den kein Gate gesehen hat. Eine
+// eigene Liste im Workflow wäre eine zweite Abschrift neben scripts/tag-gate.sh und kennte
+// die Security-Jobs nicht.
 func TestTagWorkflowsRufenDasTagGate(t *testing.T) {
 	for _, workflow := range []string{"../.github/workflows/release.yml", "../.github/workflows/docker-publish.yml"} {
 		inhalt, err := os.ReadFile(workflow)
