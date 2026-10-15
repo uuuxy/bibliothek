@@ -10,10 +10,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Frist der Ausleihhistorie folgt dem Eigentum des Exemplars, nicht dem Merkmal am Titel
-// (docs/OFFEN.md 4.26, entschieden am 29.09.2026) — dieselbe Regel wie Etikett, Bestandsbücher
-// und Bescheid (repository.ExemplarTopfSQL). Jede Ausleihe ist vor 100 Tagen zurückgekommen:
-// Die Frist der Schülerbücherei ist damit abgelaufen, die des Landes (730 Tage) nicht.
+// Die Frist der Ausleihhistorie folgt dem Eigentum des Exemplars, nicht dem Merkmal am Titel,
+// dieselbe Regel wie Etikett, Bestandsbücher und Bescheid (repository.ExemplarTopfSQL). Jede
+// Ausleihe ist vor 100 Tagen zurückgekommen: Die Frist der Schülerbücherei ist damit abgelaufen,
+// die des Landes (730 Tage) nicht.
 //
 //	LAND-EX     Roman, Eigentum am Exemplar Land              → bleibt
 //	LAND-BEST   Roman, Bestellung aus dem Topf des Landes     → bleibt
@@ -21,14 +21,14 @@ import (
 //	ROMAN       Roman ohne Eigentum und Bestellung            → getrennt
 //	SCHULBUCH   Schulbuch ohne Eigentum und Bestellung        → bleibt
 //
-// Das Ausleih-Protokoll (audit_log) verliert den Schüler genau dort, wo die Ausleihe ihn
-// verliert: Bis zum 29.09.2026 las die Frist ist_lernmittel am Titel, während der Bescheid
-// schon dem Eigentum folgte — die Lektüre des Landes ging an die Schulaufsicht und verlor
-// ihren Ausleiher nach 90 Tagen.
+// Das Protokoll der Ausleihe (audit_log) verliert den Schüler genau dort, wo die Ausleihe ihn
+// verliert. Läse die Frist ist_lernmittel am Titel, während der Bescheid dem Eigentum folgt,
+// verlöre die Lektüre des Landes ihren Ausleiher nach der kurzen Frist, obwohl der Nachweis noch
+// gebraucht wird.
 func TestLesehistorieBefristung_KlasseFolgtDemEigentum(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "lesehisteig")
 	befuelleQuelle(t, dsn)
@@ -40,9 +40,9 @@ func TestLesehistorieBefristung_KlasseFolgtDemEigentum(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 
-	zeile := func(ziel any, sql string, args ...any) {
+	zeile := func(ziel any, sql string, argumente ...any) {
 		t.Helper()
-		if err := pool.QueryRow(ctx, sql, args...).Scan(ziel); err != nil {
+		if err := pool.QueryRow(ctx, sql, argumente...).Scan(ziel); err != nil {
 			t.Fatalf("%s: %v", sql, err)
 		}
 	}
@@ -85,7 +85,7 @@ func TestLesehistorieBefristung_KlasseFolgtDemEigentum(t *testing.T) {
 		}
 	}
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunLesehistorieBefristung()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreLesehistorieBefristungAus()
 
 	erwartung := map[string]bool{ // true = der Schüler bleibt zugeordnet
 		"LAND-EX": true, "LAND-BEST": true, "TRAEGER-EX": false, "ROMAN": false, "SCHULBUCH": true,

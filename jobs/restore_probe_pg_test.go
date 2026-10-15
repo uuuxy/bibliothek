@@ -1,12 +1,12 @@
 package jobs
 
-// Gate für die wöchentliche Restore-Probe (restore_probe.go): einmal der gute Weg
-// (echtes Backup → Probe meldet Erfolg), einmal der schlechte (korrumpierte Datei →
-// Probe meldet Fehlschlag). Der zweite Fall ist der wichtigere: Eine Probe, die
-// auch kaputte Backups als Erfolg meldet, wäre gefährlicher als gar keine.
+// Die wöchentliche Restore-Probe (restore_probe.go): einmal der gute Weg (echte Sicherung, die
+// Probe meldet Erfolg), einmal der schlechte (verdorbene Datei, die Probe meldet einen
+// Fehlschlag). Der zweite Fall ist der wichtigere: Eine Probe, die auch kaputte Sicherungen als
+// Erfolg meldet, wäre gefährlicher als gar keine.
 //
-// Nutzt die Wegwerf-Datenbanken und Voraussetzungs-Prüfung der CI-Drill
-// (backup_drill_pg_test.go) — gleiche Sicherheitsbremse, gleiche Werkzeuge.
+// Nutzt die Wegwerf-Datenbanken und die Prüfung der Voraussetzungen der Übung in der CI
+// (backup_drill_pg_test.go), mit derselben Notbremse und denselben Werkzeugen.
 
 import (
 	"context"
@@ -19,36 +19,36 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func TestRunRestoreProbe_EchterRoundtripUndKorrupteDatei(t *testing.T) {
+func TestRestoreProbe_EchterDurchlaufUndKorrupteDatei(t *testing.T) {
 	adminDSN := pruefeVoraussetzungen(t)
 	ctx := context.Background()
 
 	_, quellDSN := legeProbeDatenbankAn(t, adminDSN, "probe_src")
 	befuelleQuelle(t, quellDSN)
 
-	backupDir := t.TempDir()
+	verzeichnis := t.TempDir()
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "probe-passphrase-mit-mehr-als-32-zeichen")
 	t.Setenv("DATABASE_URL", quellDSN)
-	t.Setenv("BACKUP_DIR", backupDir)
+	t.Setenv("BACKUP_DIR", verzeichnis)
 	t.Setenv("S3_ENDPOINT", "")
 
-	(&BackupJob{}).RunDatabaseBackup()
-	sicherung := einzigeSicherung(t, backupDir)
+	(&BackupLauf{}).FuehreAus()
+	sicherung := einzigeSicherung(t, verzeichnis)
 
 	pool, err := pgxpool.New(ctx, quellDSN)
 	if err != nil {
 		t.Fatalf("Pool auf der Quelle: %v", err)
 	}
 	t.Cleanup(pool.Close)
-	s := &Scheduler{db: pool}
+	z := &Zeitplan{pool: pool}
 
 	t.Run("echtes Backup wird wiederhergestellt", func(t *testing.T) {
-		s.RunRestoreProbe()
+		z.FuehreRestoreProbeAus()
 		e := leseProbeErgebnis(t, pool)
 		if !e.Erfolg {
 			t.Fatalf("Probe meldet Fehlschlag: %s", e.Fehler)
 		}
-		if e.Tabellen < restoreProbeMinTabellen {
+		if e.Tabellen < probeMindestTabellen {
 			t.Errorf("nur %d Tabellen — das ist kein vollständiges Schema", e.Tabellen)
 		}
 		if e.BackupDatei != filepath.Base(sicherung) {
@@ -60,11 +60,11 @@ func TestRunRestoreProbe_EchterRoundtripUndKorrupteDatei(t *testing.T) {
 		var existiert bool
 		if err := pool.QueryRow(ctx,
 			`SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)`,
-			restoreProbeDBName).Scan(&existiert); err != nil {
+			probeDatenbank).Scan(&existiert); err != nil {
 			t.Fatalf("pg_database nicht lesbar: %v", err)
 		}
 		if existiert {
-			t.Errorf("die Wegwerf-Datenbank %s blieb stehen", restoreProbeDBName)
+			t.Errorf("die Wegwerf-Datenbank %s blieb stehen", probeDatenbank)
 		}
 	})
 
@@ -73,13 +73,13 @@ func TestRunRestoreProbe_EchterRoundtripUndKorrupteDatei(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Backup-Datei nicht lesbar: %v", err)
 		}
-		// Ein Byte mitten im Ciphertext kippen — GCM muss die Manipulation erkennen.
+		// Ein Byte mitten im verschlüsselten Text kippen; GCM muss die Veränderung erkennen.
 		roh[len(roh)/2] ^= 0xFF
 		if err := os.WriteFile(sicherung, roh, 0o600); err != nil {
 			t.Fatalf("Korrumpieren fehlgeschlagen: %v", err)
 		}
 
-		s.RunRestoreProbe()
+		z.FuehreRestoreProbeAus()
 		e := leseProbeErgebnis(t, pool)
 		if e.Erfolg {
 			t.Fatal("Probe meldet ERFOLG für eine korrumpierte Backup-Datei — damit wäre sie gefährlicher als keine Probe")

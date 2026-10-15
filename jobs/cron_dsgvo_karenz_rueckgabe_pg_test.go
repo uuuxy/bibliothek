@@ -10,22 +10,21 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Karenz-Uhr läuft ab dem letzten abgeschlossenen Vorgang, nicht nur ab dem Abgang
-// (Befund-Register, Entscheidung 2 vom 05.09.2026).
+// Die Karenz-Uhr läuft ab dem letzten abgeschlossenen Vorgang, nicht nur ab dem Abgang.
 //
-// Das Prädikat schloss Schüler mit offener Ausleihe schon immer aus — und genau deshalb
-// kippte der Schutz mit der Rückgabe: abgaenger_seit lief weiter, während das Buch
-// draußen war. Wer am Tag 10 zurückgab, hatte 80 Tage Reparaturfenster; wer am Tag 120
-// zurückgab, wurde in der Folgenacht anonymisiert. Die Karenz ist der Raum, in dem eine
-// falsche Zuordnung an der Theke auffällt — und die Rückgabe IST der Thekenkontakt.
+// Die Bedingung schließt Schüler mit offener Ausleihe aus. Liefe abgaenger_seit weiter, während
+// das Buch draußen ist, kippte der Schutz mit der Rückgabe: Wer am Tag 10 zurückgab, hätte 80
+// Tage Fenster für eine Reparatur, wer am Tag 120 zurückgab, würde in der folgenden Nacht
+// anonymisiert. Die Karenz ist der Raum, in dem eine falsche Zuordnung an der Theke auffällt,
+// und die Rückgabe ist der Kontakt an der Theke.
 //
-// Die Fälle hier sind so gebaut, dass das alte Prädikat (Uhr = nur abgaenger_seit) bei
-// RUECK und SCHADEN anonymisiert und der Test rot wird; ALT und VOR sichern, dass die
-// neue Uhr nicht „irgendeine Ausleihe je" ist, sondern der Zeitpunkt des Abschlusses.
-func TestGDPRAnonymize_KarenzUhrLaeuftAbLetztemVorgang(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+// Die Fälle sind so gebaut, dass eine Uhr nur aus abgaenger_seit bei RUECK und SCHADEN
+// anonymisiert und der Test rot wird; ALT und VOR sichern, dass die Uhr nicht „irgendeine
+// Ausleihe je" ist, sondern der Zeitpunkt des Abschlusses.
+func TestSchuelerAnonymisierung_KarenzUhrLaeuftAbLetztemVorgang(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "karenzrueckgabe")
 	befuelleQuelle(t, dsn)
@@ -41,8 +40,8 @@ func TestGDPRAnonymize_KarenzUhrLaeuftAbLetztemVorgang(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Jeder Abgänger ist seit 100 Tagen Abgänger und seit 400 Tagen unberührt — ohne
-	// Vorgang fällt er bei Karenz 90 sicher. Was ihn hält, ist allein der Vorgang.
+	// Jeder Abgänger ist seit 100 Tagen Abgänger und seit 400 Tagen unberührt; ohne Vorgang fällt
+	// er bei Karenz 90 sicher. Was ihn hält, ist allein der Vorgang.
 	legeAbgaenger := func(barcode string) string {
 		t.Helper()
 		var id string
@@ -96,23 +95,23 @@ func TestGDPRAnonymize_KarenzUhrLaeuftAbLetztemVorgang(t *testing.T) {
 		return ja
 	}
 
-	// RUECK: Buch vor 5 Tagen zurück — die Uhr startete neu, 85 Tage Fenster bleiben.
+	// RUECK: Buch vor 5 Tagen zurück; die Uhr startet neu, 85 Tage Fenster bleiben.
 	rueck := legeAbgaenger("KR-RUECK")
 	legeAusleihe(rueck, legeExemplar("KR-RUECK-EX"), "150 days", "5 days")
-	// ALT: Buch vor 95 Tagen zurück — auch die neue Uhr ist abgelaufen.
+	// ALT: Buch vor 95 Tagen zurück; auch die neue Uhr ist abgelaufen.
 	alt := legeAbgaenger("KR-ALT")
 	legeAusleihe(alt, legeExemplar("KR-ALT-EX"), "200 days", "95 days")
-	// VOR: Rückgabe VOR dem Abgang (120 Tage) — der Abgang ist die spätere Uhr, fällt.
+	// VOR: Rückgabe vor dem Abgang (120 Tage); der Abgang ist die spätere Uhr, die Zeile fällt.
 	vor := legeAbgaenger("KR-VOR")
 	legeAusleihe(vor, legeExemplar("KR-VOR-EX"), "150 days", "120 days")
-	// SCHADEN: Schadensfall vor 3 Tagen bezahlt — der Abschluss hält die Zeile.
+	// SCHADEN: Schadensfall vor 3 Tagen bezahlt; der Abschluss hält die Zeile.
 	schaden := legeAbgaenger("KR-SCHADEN")
 	legeSchaden(schaden, legeExemplar("KR-SCHADEN-EX"), true, "3 days")
-	// OFFEN: Buch noch draußen — bleibt wie bisher stehen (Regression).
+	// OFFEN: Buch noch draußen; die Zeile bleibt stehen.
 	offen := legeAbgaenger("KR-OFFEN")
 	legeAusleihe(offen, legeExemplar("KR-OFFEN-EX"), "150 days", "")
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunGDPRAnonymizeOldData()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreSchuelerAnonymisierungAus()
 
 	if anonymisiert(rueck) {
 		t.Error("RUECK: Rückgabe vor 5 Tagen muss die Karenz-Uhr neu starten — anonymisiert trotzdem (Uhr = nur abgaenger_seit?)")

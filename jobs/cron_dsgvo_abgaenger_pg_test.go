@@ -10,18 +10,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres schließt die Gate-Lücke, die
-// den GDPR-Anonymisierungs-Bug so lange verborgen hielt (Cron-Matrix-Sweep 20.08.2026):
-// Die harte DSGVO-Löschung fälliger Abgänger (RunGDPRDeleteAbgaenger → LoescheAbgaengerEndgueltig →
-// tilgeSpurenUndLoescheLeser) war NUR mit pgxmock getestet — ein Schema-/Constraint-/
-// FK-Fehler (etwa ein ON DELETE RESTRICT auf einer Nebentabelle) würde still scheitern und
-// nur geloggt, die Löschung fände nie statt. Dieser Test fährt die volle Kette gegen echtes
-// Postgres mit allen verknüpften Zeilen und prüft, dass der Schüler wirklich weg ist und
-// die Nebentabellen korrekt behandelt wurden.
-func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+// Die endgültige Löschung fälliger Abgänger (FuehreAbgaengerLoeschungAus →
+// LoescheAbgaengerEndgueltig → tilgeSpurenUndLoescheLeser) an Postgres, nicht nur mit pgxmock:
+// Ein Fehler an Schema, Constraint oder Fremdschlüssel (etwa ON DELETE RESTRICT an einer
+// anderen Tabelle) scheiterte sonst stumm und stünde nur im Log, die Löschung fände nie statt.
+// Der Test fährt die ganze Kette mit allen verknüpften Zeilen und prüft, dass der Schüler wirklich
+// weg ist und die übrigen Tabellen richtig behandelt wurden.
+func TestAbgaengerLoeschung_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "gdprdel")
@@ -34,7 +32,7 @@ func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 
-	// Bearbeiter (FK-Ziel für Ausleihe/Audit) + Titel + Exemplar.
+	// Bearbeiter (Ziel der Fremdschlüssel von Ausleihe und Protokoll), Titel und Exemplar.
 	var bearbeiterID, titelID, exemplarID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
@@ -50,10 +48,10 @@ func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 		t.Fatalf("Exemplar: %v", err)
 	}
 
-	// Fälliger Abgänger: ist_abgaenger, altes Abgangsjahr, NICHT im Papierkorb — und schon
-	// anonymisiert: Seit 05.09.2026 löscht der Job nur, was die Karenz durchlaufen hat
-	// (cron_dsgvo_loeschung_karenz_pg_test.go). Hier geht es um die Mechanik der harten
-	// Löschung selbst (Ausleihhistorie anonymisiert, Zeile weg), nicht um die Fälligkeit.
+	// Fälliger Abgänger: ist_abgaenger, altes Abgangsjahr, nicht im Papierkorb und schon
+	// anonymisiert, denn der Lauf löscht nur, was die Karenz durchlaufen hat
+	// (cron_dsgvo_loeschung_karenz_pg_test.go). Hier geht es um die Mechanik der endgültigen
+	// Löschung selbst (Ausleihen anonymisiert, Zeile weg), nicht um die Fälligkeit.
 	var sid string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, anonymized_at)
@@ -61,10 +59,10 @@ func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 		t.Fatalf("Schüler: %v", err)
 	}
 
-	// Verknüpfte Zeilen, die die Löschkette anfassen MUSS: eine ZURÜCKGEGEBENE Ausleihe
-	// (schueler_id → NULL), ein BEZAHLTER Schadensfall (gelöscht — unbezahlte würden die
-	// Löschung sperren), ein Audit-Eintrag (anonymisiert), eine Vormerkung + ein Foto
-	// (beide per ON DELETE CASCADE). Nur so schlägt ein RESTRICT-FK hier wirklich an.
+	// Verknüpfte Zeilen, die die Kette der Löschung anfassen muss: eine zurückgegebene Ausleihe
+	// (schueler_id → NULL), ein bezahlter Schadensfall (gelöscht; unbezahlte sperrten die Löschung),
+	// ein Eintrag im Protokoll (anonymisiert), eine Vormerkung und ein Foto (beide über ON DELETE
+	// CASCADE). Nur so schlägt ein Fremdschlüssel mit RESTRICT hier wirklich an.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 		VALUES ($1, $2, $3, now() - interval '40 days', now() - interval '30 days', now() - interval '20 days')`,
@@ -91,14 +89,14 @@ func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 		t.Fatalf("Foto: %v", err)
 	}
 
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunGDPRDeleteAbgaenger()
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreAbgaengerLoeschungAus()
 
-	zaehle := func(query string, args ...any) int {
+	zaehle := func(abfrage string, argumente ...any) int {
 		t.Helper()
 		var n int
-		if err := pool.QueryRow(ctx, query, args...).Scan(&n); err != nil {
-			t.Fatalf("Zählen (%s): %v", query, err)
+		if err := pool.QueryRow(ctx, abfrage, argumente...).Scan(&n); err != nil {
+			t.Fatalf("Zählen (%s): %v", abfrage, err)
 		}
 		return n
 	}
@@ -119,20 +117,19 @@ func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 	if n := zaehle(`SELECT count(*) FROM ausleihen WHERE exemplar_id = $1 AND schueler_id IS NULL`, exemplarID); n != 1 {
 		t.Errorf("Ausleihe-Historie muss erhalten, aber schueler_id genullt sein (gefunden: %d)", n)
 	}
-	// Der ursprüngliche Audit-Eintrag darf keinen Klarnamen mehr führen.
+	// Der Eintrag im Protokoll darf keinen Klarnamen mehr führen.
 	if n := zaehle(`SELECT count(*) FROM audit_log WHERE datensatz_id = $1 AND details->>'nachname' IS NOT NULL`, sid); n != 0 {
 		t.Errorf("Klarname überlebt im Audit-Log nach der Löschung: %d", n)
 	}
 }
 
-// TestGDPRAnonymizeLoans_GegenEchtesPostgres deckt den letzten nur mit pgxmock getesteten
-// DSGVO-Mutator ab: RunGDPRAnonymizeLoans nullt die Bearbeiter-IDs abgeschlossener
-// Ausleihen, die älter als 14 Tage sind (Datensparsamkeit der Operator-Identität). Ein
-// Schema-/Constraint-Fehler wäre auch hier still geblieben.
-func TestGDPRAnonymizeLoans_GegenEchtesPostgres(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+// FuehreBearbeiterAnonymisierungAus an Postgres: Sie leert die Kennungen der Bearbeiter an
+// abgeschlossenen Ausleihen, die älter als 14 Tage sind (Datensparsamkeit für die Person an der
+// Theke). Ein Fehler an Schema oder Constraint bliebe mit einer Attrappe auch hier unbemerkt.
+func TestBearbeiterAnonymisierung_GegenEchtesPostgres(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "gdprloans")
 	befuelleQuelle(t, dsn)
@@ -161,11 +158,11 @@ func TestGDPRAnonymizeLoans_GegenEchtesPostgres(t *testing.T) {
 		t.Fatalf("Schüler: %v", err)
 	}
 	// Abgeschlossene Ausleihe, vor 20 Tagen zurückgegeben, mit gesetzten Bearbeitern.
-	var loanID string
+	var ausleiheID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, rueckgabe_bearbeiter_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 		VALUES ($1, $2, $3, $3, now() - interval '40 days', now() - interval '30 days', now() - interval '20 days') RETURNING id`,
-		exemplarID, sid, bearbeiterID).Scan(&loanID); err != nil {
+		exemplarID, sid, bearbeiterID).Scan(&ausleiheID); err != nil {
 		t.Fatalf("Ausleihe: %v", err)
 	}
 
@@ -194,8 +191,8 @@ func TestGDPRAnonymizeLoans_GegenEchtesPostgres(t *testing.T) {
 	laufend := leihe("läuft noch", "ANL-EX5", "$3", "NULL::uuid",
 		`now() - interval '60 days', now() + interval '10 days', NULL`)
 
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunGDPRAnonymizeLoans()
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreBearbeiterAnonymisierungAus()
 
 	ohneBearbeiter := func(id string) bool {
 		t.Helper()
@@ -206,7 +203,7 @@ func TestGDPRAnonymizeLoans_GegenEchtesPostgres(t *testing.T) {
 		}
 		return beide
 	}
-	if !ohneBearbeiter(loanID) {
+	if !ohneBearbeiter(ausleiheID) {
 		t.Error("Operator-IDs der alten Ausleihe wurden NICHT anonymisiert")
 	}
 	if !ohneBearbeiter(nurAusgabe) {

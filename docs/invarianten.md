@@ -105,7 +105,7 @@ Tabelle.
 setzte `abgaenger_jahr` nicht (blieb auf Anlege-Default Jahr+5), also erfasste der
 Cronjob den Abgänger nie; und der Job rief `LegeLeserInPapierkorb` (Soft-Delete), sodass die PII
 selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
-`TestAbgaengerRetentionKette`, `TestRunGDPRDeleteAbgaenger_Deleted`).
+`TestAbgaengerRetentionKette`, `TestAbgaengerLoeschung_Loescht`).
 
 **Hinweis (Löschen von Feldern):** Bis zum 23.08.2026 kam eine geleerte Anschrift gar
 nicht erst an — das Formular schickte JSON-null, was im `*string` als nil ankommt und

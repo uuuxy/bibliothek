@@ -10,24 +10,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Befristung erledigter Klassensatz-Reservierungen am echten Postgres (entschieden am
-// 28.09.2026, docs/OFFEN.md 5.19): dieselbe Frist wie die erledigten Anliegen.
+// Die Befristung erledigter Reservierungen von Klassensätzen an Postgres: dieselbe Frist wie die
+// erledigten Anliegen.
 //
 // Erwartung nach dem Lauf mit der Vorgabe (365 Tage):
 //
 //	ALT-ERLEDIGT       vor 400 Tagen erledigt              → gelöscht
 //	JUNG-ERLEDIGT      vor 10 Tagen erledigt               → bleibt
 //	ALT-OFFEN          vor 800 Tagen angelegt, offen       → bleibt (laufende Sache, keine Frist)
-//	OHNE-ZEITPUNKT     erledigt vor Migration 089, ohne
+//	OHNE-ZEITPUNKT     erledigt, aber ohne
 //	                   erledigt_am                         → bleibt (kein Zeitpunkt, keiner erfunden)
 //	WIEDER-OFFEN       offen, trägt aber einen alten
-//	                   erledigt_am                         → bleibt (heute schreibt das kein Weg;
+//	                   erledigt_am                         → bleibt (kein Weg schreibt das;
 //	                                                         wird eine Reservierung je wieder
 //	                                                         geöffnet, zählt „erledigt")
 func TestKlassensatzBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "klassensatz")
 	befuelleQuelle(t, dsn)
@@ -66,7 +66,7 @@ func TestKlassensatzBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
 		"WIEDER-OFFEN":   lege("WIEDER-OFFEN", false, tage(400)),
 	}
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunKlassensatzBefristung()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreKlassensatzBefristungAus()
 
 	for name, bleibt := range map[string]bool{
 		"ALT-ERLEDIGT": false, "JUNG-ERLEDIGT": true, "ALT-OFFEN": true, "OHNE-ZEITPUNKT": true,
@@ -93,12 +93,11 @@ func TestKlassensatzBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
 	}
 }
 
-// TestKlassensatzBefristung_NullSchaltetAb: 0 in anliegen_tage heißt „aus", auch für die
-// Reservierungen.
+// 0 in anliegen_tage heißt „aus", auch für die Reservierungen.
 func TestKlassensatzBefristung_NullSchaltetAb(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "klassensatzaus")
 	befuelleQuelle(t, dsn)
@@ -124,7 +123,7 @@ func TestKlassensatzBefristung_NullSchaltetAb(t *testing.T) {
 		t.Fatalf("Einstellung: %v", err)
 	}
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunKlassensatzBefristung()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreKlassensatzBefristungAus()
 
 	var n int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM klassensatz_reservierungen WHERE id = $1`, id).Scan(&n); err != nil {

@@ -1,7 +1,7 @@
 // Command restore-backup entschlüsselt und dekomprimiert ein vom täglichen
 // Backup-Job erzeugtes .sql.gz.enc-Backup zurück zu reinem SQL.
 //
-// Das automatische Backup (jobs.RunDatabaseBackup) erzeugt AES-256-GCM-
+// Das automatische Backup (jobs.BackupLauf) erzeugt AES-256-GCM-
 // verschlüsselte, gzip-komprimierte pg_dump-Dateien. Plain-Tools wie
 // `zcat | psql` funktionieren darauf NICHT — dieses Tool ist der unterstützte
 // Entschlüsselungsschritt der Disaster-Recovery.

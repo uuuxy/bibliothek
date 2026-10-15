@@ -8,36 +8,34 @@ import (
 	"bibliothek/repository"
 )
 
-// ── GDPR: Lesehistorie befristen ─────────────────────────────────────────────
+// ── DSGVO: Lesehistorie befristen ──────────────────────────────────────────────
 //
-// Bis zum 22.08.2026 behielt jede zurückgegebene Ausleihe ihre schueler_id bis zur
-// Löschung des Schülers — die Titel-Historie zeigte bis zu 200 Entleiher mit Namen,
-// das Profil die komplette Lesebiografie. Das HBDI-Muster-VVT „Schulbibliothek" verlangt
-// Löschung, „sobald nicht mehr notwendig"; die Lesehistorie eines Kindes über Jahre zu
-// führen ist kein Zweck der Ausleihe.
+// Ohne Befristung behielte jede zurückgegebene Ausleihe ihren Leser bis zu seiner Löschung: Die
+// Historie eines Titels zeigte bis zu 200 Entleiher mit Namen, das Profil die ganze
+// Lesebiografie. Das Muster-VVT „Schulbibliothek" des HBDI verlangt die Löschung, „sobald nicht
+// mehr notwendig"; die Lesehistorie eines Kindes über Jahre zu führen, ist kein Zweck der
+// Ausleihe.
 //
-// Dieser Job trennt die Ausleihe vom Schüler (schueler_id = NULL), der Vorgang selbst
-// bleibt für Statistik und Bestandskartei erhalten. Zwei Fristen, weil zwei
-// Verarbeitungstätigkeiten: Schülerbücherei kurz, Lernmittel lang (Nachweis von
-// Ausleihe UND Rücklauf, Schadensersatz über die Schulaufsicht). Lernmittel heißt hier
-// wie im Leitfaden: aus Landesmitteln beschafft, also jedes Buch im Eigentum des Landes
-// (repository.ExemplarTopfSQL, seit dem 29.09.2026; vorher ist_lernmittel am Titel). Beide
-// Fristen stehen in den Einstellungen; 0 schaltet die jeweilige Befristung ab.
+// Der Lauf trennt die Ausleihe vom Leser (schueler_id = NULL), der Vorgang selbst bleibt für
+// Statistik und Bestandskartei. Zwei Fristen, weil zwei Verarbeitungstätigkeiten:
+// Schülerbücherei kurz, Lernmittel lang (Nachweis von Ausleihe und Rücklauf, Schadensersatz über
+// die Schulaufsicht). Lernmittel heißt hier wie im Leitfaden: aus Landesmitteln beschafft, also
+// jedes Buch im Eigentum des Landes (repository.ExemplarTopfSQL). Beide Fristen stehen in den
+// Einstellungen; 0 schaltet die jeweilige Befristung ab.
 //
-// Nicht getrennt werden Ausleihen, an denen ein OFFENER Schadensfall hängt — dort ist
-// der Zweck (Forderung) noch nicht erreicht.
+// Nicht getrennt werden Ausleihen, an denen ein offener Schadensfall hängt: Dort ist der Zweck,
+// die Forderung, noch nicht erreicht.
 //
-// Seit dem 16.09.2026 gilt die Befristung JEDEM LESER, auch dem Kollegium: Was ein
-// Erwachsener gelesen hat, muss die Bücherei nach der Rückgabe so wenig wissen wie bei
-// einem Kind. Eine laufende Dauerleihe ist davon nicht betroffen — die Frist beginnt mit
-// der Rückgabe.
+// Die Befristung gilt jedem Leser, auch dem Kollegium: Was ein Erwachsener gelesen hat, muss die
+// Bücherei nach der Rückgabe so wenig wissen wie bei einem Kind. Eine laufende Dauerleihe ist
+// nicht betroffen; die Frist beginnt mit der Rückgabe.
 
-// RunLesehistorieBefristung trennt abgeschlossene Ausleihen nach Frist vom Schüler.
-func (s *Scheduler) RunLesehistorieBefristung() {
+// FuehreLesehistorieBefristungAus trennt abgeschlossene Ausleihen nach der Frist vom Leser.
+func (z *Zeitplan) FuehreLesehistorieBefristungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	einst, err := repository.NewEinstellungsAbfragen(s.db).Lade(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
 		return
@@ -45,11 +43,11 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 	freihandTage := repository.TageOderVorgabe(einst.LesehistorieTage, repository.LesehistorieTageVorgabe)
 	lernmittelTage := repository.TageOderVorgabe(einst.LesehistorieLernmittelTage, repository.LesehistorieLernmittelTageVorgabe)
 
-	getrenntFreihand := s.trenneAusleihen(ctx, freihandTage, false)
-	getrenntLernmittel := s.trenneAusleihen(ctx, lernmittelTage, true)
-	protokollFreihand := s.tilgeAusleihProtokoll(ctx, freihandTage, false)
-	protokollLernmittel := s.tilgeAusleihProtokoll(ctx, lernmittelTage, true)
-	protokollVormerkung := s.tilgeVormerkSpur(ctx, freihandTage)
+	getrenntFreihand := z.trenneAusleihen(ctx, freihandTage, false)
+	getrenntLernmittel := z.trenneAusleihen(ctx, lernmittelTage, true)
+	protokollFreihand := z.tilgeAusleihProtokoll(ctx, freihandTage, false)
+	protokollLernmittel := z.tilgeAusleihProtokoll(ctx, lernmittelTage, true)
+	protokollVormerkung := z.tilgeVormerkSpur(ctx, freihandTage)
 
 	protokoll := protokollFreihand + protokollLernmittel + protokollVormerkung
 	gesamt := getrenntFreihand + getrenntLernmittel + protokoll
@@ -58,7 +56,7 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 	if gesamt == 0 {
 		return
 	}
-	if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "ausleihen", "ANONYMIZE",
+	if err := z.protokollAbfragen.ProtokolliereSystemAktion(ctx, "ausleihen", "ANONYMIZE",
 		"DSGVO Lesehistorie befristet: abgeschlossene Ausleihen vom Schüler getrennt",
 		map[string]any{
 			"schuelerbuecherei_getrennt": getrenntFreihand,
@@ -74,9 +72,9 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 }
 
 // trenneAusleihen nimmt abgeschlossenen Ausleihen nach der Frist den Leser. Scheitert eine
-// Klasse, läuft die andere trotzdem: Der Fehler steht im Protokoll, die Zahl ist dann 0.
-func (s *Scheduler) trenneAusleihen(ctx context.Context, tage int, lernmittel bool) int64 {
-	getrennt, err := repository.TrenneAusleihenVomLeser(ctx, s.db, lernmittel, tage)
+// Klasse, läuft die andere trotzdem: Der Fehler steht im Log, die Zahl ist dann 0.
+func (z *Zeitplan) trenneAusleihen(ctx context.Context, tage int, lernmittel bool) int64 {
+	getrennt, err := repository.TrenneAusleihenVomLeser(ctx, z.pool, lernmittel, tage)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Trennung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0
@@ -87,8 +85,8 @@ func (s *Scheduler) trenneAusleihen(ctx context.Context, tage int, lernmittel bo
 // tilgeAusleihProtokoll nimmt dem Protokoll von Ausleihe und Rückgabe nach derselben Frist
 // den Leser. Ohne das trüge das Protokoll die Lesehistorie bis zum Ende seiner Aufbewahrung
 // weiter, und die Trennung der Ausleihe bliebe ohne Wirkung.
-func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmittel bool) int64 {
-	bereinigt, err := repository.TilgeLeserImAusleihProtokoll(ctx, s.db, lernmittel, tage)
+func (z *Zeitplan) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmittel bool) int64 {
+	bereinigt, err := repository.TilgeLeserImAusleihProtokoll(ctx, z.pool, lernmittel, tage)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Protokoll-Bereinigung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0
@@ -98,8 +96,8 @@ func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmit
 
 // tilgeVormerkSpur nimmt der Spur einer Vormerkung, die mit ihrem Titel gelöscht wurde, den
 // Leser. Es gilt die Frist der Schülerbücherei.
-func (s *Scheduler) tilgeVormerkSpur(ctx context.Context, tage int) int64 {
-	bereinigt, err := repository.TilgeLeserInVormerkSpuren(ctx, s.db, tage)
+func (z *Zeitplan) tilgeVormerkSpur(ctx context.Context, tage int) int64 {
+	bereinigt, err := repository.TilgeLeserInVormerkSpuren(ctx, z.pool, tage)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Bereinigung der Vormerk-Spuren fehlgeschlagen: %v", err)
 		return 0

@@ -40,7 +40,7 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, aud
 }
 
 // Die Sicherungen nennt die Auskunft jeder Leserart gleich. Die Aufbewahrung der
-// Nachtsicherung liest sie aus dem Job (jobs.BehalteNaechte, jobs.BehalteWochen); die zwei
+// Nachtsicherung liest sie aus dem Job (jobs.AufbewahrteNaechte, jobs.AufbewahrteWochen); die zwei
 // anderen Fristen gelten in Shell-Skripten (update.sh, scripts/backup.sh), und
 // pflichtangaben_sicherungen_test.go hält die Zahlen hier gegen sie.
 const (
@@ -52,7 +52,7 @@ var dsgvoSicherungen = fmt.Sprintf("Verschlüsselte Sicherungen: die der letzten
 	"dazu von den älteren je Kalenderwoche eine, für %d Wochen (zusammen etwa drei Monate); "+
 	"eine Sicherung vor einem Update wird beim ersten Update nach %d Tagen gelöscht, "+
 	"eine von Hand angelegte beim ersten weiteren Lauf nach %d Tagen.",
-	jobs.BehalteNaechte, jobs.BehalteWochen, sicherungVorUpdateTage, sicherungVonHandTage)
+	jobs.AufbewahrteNaechte, jobs.AufbewahrteWochen, sicherungVorUpdateTage, sicherungVonHandTage)
 
 // dsgvoBetroffenenrechte gilt für jede Leserart gleich.
 const dsgvoBetroffenenrechte = "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)"

@@ -202,7 +202,7 @@ func (a *BetriebszustandAbfragen) zaehleRueckstandVorgaengeUndProtokoll(ctx cont
 }
 
 // ProtokollAufbewahrungMonateOderVorgabe liest die Aufbewahrungsfrist aus den Einstellungen und
-// setzt die Untergrenze durch: die eine Quelle für den Job (jobs.RunAuditAufbewahrung) und den
+// setzt die Untergrenze durch: die eine Quelle für den Job (jobs.FuehreProtokollAufbewahrungAus) und den
 // Wächter. Eine zweite Stelle, die die Zeile an den Einstellungen vorbei läse, wäre eine zweite
 // Wahrheit für denselben Wert.
 func ProtokollAufbewahrungMonateOderVorgabe(v *int) int {

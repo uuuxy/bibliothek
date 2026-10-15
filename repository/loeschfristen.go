@@ -51,7 +51,7 @@ func sqlKarenzUhr(alias string) string {
 
 // ── Schüler-Anonymisierung ──────────────────────────────────────────────────
 
-// PraedikatAnonymisierung liefert die Bedingung von RunGDPRAnonymizeOldData. Ein Schüler mit
+// PraedikatAnonymisierung liefert die Bedingung von FuehreSchuelerAnonymisierungAus. Ein Schüler mit
 // offener Ausleihe oder unbezahltem Schaden bleibt stehen: Dort ist der Zweck der Speicherung
 // noch nicht erreicht. Die Frist im Papierkorb ist eine Konstante; die Frist der Abgänger ist
 // die einstellbare Karenzzeit (abgaengerKarenzTage).
@@ -95,7 +95,7 @@ func PraedikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 
 // ── Gelöschte Kollegen endgültig löschen ($1 Tage, $2 Kulanz) ─────────────────
 
-// praedikatKollegenPapierkorb liefert die Bedingung, mit der RunPapierkorbKollegenLoeschung
+// praedikatKollegenPapierkorb liefert die Bedingung, mit der FuehrePapierkorbLoeschungAus
 // Kollegen auswählt, die seit AnonymisierungPapierkorbTage im Papierkorb liegen.
 // Dieselbe Frist wie beim Schüler, der dort
 // anonymisiert wird; einen Kollegen verbietet chk_leser_nur_schueler_werden_abgaenger zu
@@ -113,7 +113,7 @@ func praedikatKollegenPapierkorb(kulanz int) Loeschbedingung {
 
 // ── Abgänger endgültig löschen ($1 Stichjahr) ─────────────────────────────────
 
-// praedikatAbgaengerLoeschung liefert die WHERE-Bedingung, mit der RunGDPRDeleteAbgaenger die
+// praedikatAbgaengerLoeschung liefert die WHERE-Bedingung, mit der FuehreAbgaengerLoeschungAus die
 // endgültig löschbaren Abgänger auswählt. Die Frist steckt hier nicht in einem Intervall,
 // sondern im Stichjahr (AbgaengerStichjahr).
 //

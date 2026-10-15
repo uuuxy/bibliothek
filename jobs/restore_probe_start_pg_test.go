@@ -19,28 +19,28 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	_, quellDSN := legeProbeDatenbankAn(t, adminDSN, "probe_start")
 	befuelleQuelle(t, quellDSN)
 
-	backupDir := t.TempDir()
+	verzeichnis := t.TempDir()
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "probe-passphrase-mit-mehr-als-32-zeichen")
 	t.Setenv("DATABASE_URL", quellDSN)
-	t.Setenv("BACKUP_DIR", backupDir)
+	t.Setenv("BACKUP_DIR", verzeichnis)
 	t.Setenv("S3_ENDPOINT", "")
 
-	(&BackupJob{}).RunDatabaseBackup()
-	sicherung := einzigeSicherung(t, backupDir)
+	(&BackupLauf{}).FuehreAus()
+	sicherung := einzigeSicherung(t, verzeichnis)
 
 	pool, err := pgxpool.New(ctx, quellDSN)
 	if err != nil {
 		t.Fatalf("Pool auf der Quelle: %v", err)
 	}
 	t.Cleanup(pool.Close)
-	s := &Scheduler{db: pool}
+	z := &Zeitplan{pool: pool}
 
 	// Ein Name, den kein echter Lauf vergibt: Steht er nach dem Start noch da, lief keine Probe.
 	const marke = "frueherer-lauf.sql.gz.enc"
 	frueher := time.Date(2026, time.January, 4, 3, 30, 0, 0, time.UTC)
 
 	t.Run("noch nie geprobt: der Start probt nicht", func(t *testing.T) {
-		s.probeBeimStartNachFehlschlag()
+		z.probeBeimStartNachFehlschlag()
 		var n int
 		if err := pool.QueryRow(ctx, `SELECT count(*) FROM system_einstellungen WHERE schluessel = $1`,
 			RestoreProbeSchluessel).Scan(&n); err != nil {
@@ -52,8 +52,8 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	})
 
 	t.Run("letzter Lauf gelungen: der Start probt nicht", func(t *testing.T) {
-		s.speichereRestoreProbe(RestoreProbeErgebnis{Zeitpunkt: frueher, Erfolg: true, BackupDatei: marke, Tabellen: 40})
-		s.probeBeimStartNachFehlschlag()
+		z.speichereProbeErgebnis(RestoreProbeErgebnis{Zeitpunkt: frueher, Erfolg: true, BackupDatei: marke, Tabellen: 40})
+		z.probeBeimStartNachFehlschlag()
 		e := leseProbeErgebnis(t, pool)
 		if e.BackupDatei != marke || !e.Zeitpunkt.Equal(frueher) {
 			t.Errorf("nach gelungenem Lauf steht ein neues Ergebnis da (%s, %s) — der Start hat geprobt",
@@ -62,8 +62,8 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	})
 
 	t.Run("letzter Lauf fehlgeschlagen: der Start probt erneut", func(t *testing.T) {
-		s.speichereRestoreProbe(RestoreProbeErgebnis{Zeitpunkt: frueher, BackupDatei: marke, Fehler: "entschlüsselung fehlgeschlagen"})
-		s.probeBeimStartNachFehlschlag()
+		z.speichereProbeErgebnis(RestoreProbeErgebnis{Zeitpunkt: frueher, BackupDatei: marke, Fehler: "entschlüsselung fehlgeschlagen"})
+		z.probeBeimStartNachFehlschlag()
 		e := leseProbeErgebnis(t, pool)
 		if !e.Erfolg {
 			t.Fatalf("nach dem Start steht weiter ein Fehlschlag da: %s", e.Fehler)

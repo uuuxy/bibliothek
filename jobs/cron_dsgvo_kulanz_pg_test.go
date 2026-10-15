@@ -12,12 +12,12 @@ import (
 
 // Die Kulanz gehört dem Wächter, nicht dem Lauf. Ein Datensatz, dessen Frist seit zwölf
 // Stunden abgelaufen ist, zählt für den Wächter noch nicht als Rückstand, und der Lauf dieser
-// Nacht nimmt ihn trotzdem. Rechnete eine Routine mit der Kulanz des Wächters, bliebe jeder
+// Nacht nimmt ihn trotzdem. Rechnete ein Lauf mit der Kulanz des Wächters, bliebe jeder
 // Datensatz einen Tag länger stehen, und kein Rückstand zeigte es.
 func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "laufkulanz")
 	befuelleQuelle(t, dsn)
@@ -29,24 +29,24 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 
-	must := func(was, sql string, args ...any) {
+	muss := func(was, sql string, argumente ...any) {
 		t.Helper()
-		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+		if _, err := pool.Exec(ctx, sql, argumente...); err != nil {
 			t.Fatalf("%s: %v", was, err)
 		}
 	}
-	eins := func(was, sql string, args ...any) string {
+	eins := func(was, sql string, argumente ...any) string {
 		t.Helper()
 		var id string
-		if err := pool.QueryRow(ctx, sql, args...).Scan(&id); err != nil {
+		if err := pool.QueryRow(ctx, sql, argumente...).Scan(&id); err != nil {
 			t.Fatalf("%s: %v", was, err)
 		}
 		return id
 	}
-	anzahl := func(sql string, args ...any) int {
+	anzahl := func(sql string, argumente ...any) int {
 		t.Helper()
 		var n int
-		if err := pool.QueryRow(ctx, sql, args...).Scan(&n); err != nil {
+		if err := pool.QueryRow(ctx, sql, argumente...).Scan(&n); err != nil {
 			t.Fatalf("%s: %v", sql, err)
 		}
 		return n
@@ -62,7 +62,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		// mäße die Lesehistorie nicht.
 		auditMonate = 36
 	)
-	must("Aufbewahrung der Protokolle", `INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)`,
+	muss("Aufbewahrung der Protokolle", `INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)`,
 		repository.ProtokollAufbewahrungSchluessel, "36")
 	// Ohne gespeicherte Einstellungen folgt die Frist der Nachbuch-Meldungen der Vorgabe der
 	// Lesehistorie.
@@ -72,7 +72,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 	freihand := eins("Freihand-Titel", `INSERT INTO buecher_titel (titel, signatur) VALUES ('Der Roman', 'Ro Mus') RETURNING id`)
 	lmf := eins("LMF-Titel", `INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7', true) RETURNING id`)
 
-	must("Schüler im Papierkorb", `
+	muss("Schüler im Papierkorb", `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at)
 		VALUES ('S-KULANZ', 'Paula', 'Papierkorb', '9c', 2030, NOW() - make_interval(days => $1, hours => 12))`, papierkorbTage)
 	kollege := eins("Kollege im Papierkorb", `
@@ -88,7 +88,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 			INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 			VALUES ($1, $2, NOW() - make_interval(days => $3 + 30), NOW() - make_interval(days => $3 + 9),
 			        NOW() - make_interval(days => $3, hours => 12)) RETURNING id`, exemplar, schuelerID, tage)
-		must(was+" im Protokoll", `
+		muss(was+" im Protokoll", `
 			INSERT INTO audit_log (tabelle, aktion, datensatz_id, timestamp, details)
 			VALUES ('ausleihen', 'RETURN', $1, NOW() - make_interval(days => $2, hours => 12),
 			        jsonb_build_object('schueler_id', $3::text))`, exemplar, tage, schuelerID)
@@ -113,15 +113,15 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		        jsonb_build_object('schueler_id', $2::text, 'betrifft', 'Probe Schüler', 'titel', 'Der Roman'))
 		RETURNING id`, freihandTage, schuelerID)
 
-	must("Anliegen", `
+	muss("Anliegen", `
 		INSERT INTO lehrer_anliegen (art, titel_text, kommentar, erstellt_am, erledigt_am)
 		VALUES ('wunsch', 'GERADE-FAELLIG', 'x', NOW() - make_interval(days => $1 + 30),
 		        NOW() - make_interval(days => $1, hours => 12))`, anliegenTage)
-	must("Klassensatz-Reservierung", `
+	muss("Klassensatz-Reservierung", `
 		INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, erledigt, erstellt_am, erledigt_am)
 		VALUES ($1, '7a', 30, true, NOW() - make_interval(days => $2 + 30),
 		        NOW() - make_interval(days => $2, hours => 12))`, freihand, anliegenTage)
-	must("Nachbuch-Meldung", `
+	muss("Nachbuch-Meldung", `
 		INSERT INTO nachbuch_meldungen (idempotency_key, barcode, ergebnis, gescannt_am, erstellt_am, quittiert_am)
 		VALUES (gen_random_uuid(), 'B-KULANZ-NB', 'umgebucht', NOW() - make_interval(days => $1 + 5),
 		        NOW() - make_interval(days => $1 + 5), NOW() - make_interval(days => $1, hours => 12))`, nachbuchTage)
@@ -133,20 +133,20 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		VALUES ('EINSTELLUNG_GEAENDERT', '{}'::jsonb, NOW() - make_interval(months => $1, hours => 12)) RETURNING id`, auditMonate)
 
 	// Vor dem Lauf: Der Wächter mahnt nichts davon an.
-	for routine, zeilen := range rueckstandAlsMap(ctx, t, repository.NewBetriebszustandAbfragen(pool)) {
+	for lauf, zeilen := range rueckstandAlsMap(ctx, t, repository.NewBetriebszustandAbfragen(pool)) {
 		if zeilen != 0 {
-			t.Errorf("Wächter vor dem Lauf: %q meldet %d Zeilen, obwohl die Frist erst seit zwölf Stunden abgelaufen ist", routine, zeilen)
+			t.Errorf("Wächter vor dem Lauf: %q meldet %d Zeilen, obwohl die Frist erst seit zwölf Stunden abgelaufen ist", lauf, zeilen)
 		}
 	}
 
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunNaechtlicheDSGVO()
-	s.RunAuditAufbewahrung()
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreNaechtlicheDSGVOAus()
+	z.FuehreProtokollAufbewahrungAus()
 
-	// Nach dem Lauf: Jede Routine hat ihren Datensatz genommen.
+	// Nach dem Lauf: Jeder Lauf hat seinen Datensatz genommen.
 	faelle := []struct {
-		routine string
-		rest    int
+		lauf string
+		rest int
 	}{
 		{"Schüler-Anonymisierung", anzahl(`SELECT count(*) FROM schueler WHERE barcode_id = 'S-KULANZ' AND anonymized_at IS NULL`)},
 		{"Gelöschte Kollegen endgültig löschen", anzahl(`SELECT count(*) FROM leser WHERE id = $1`, kollege)},
@@ -164,7 +164,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 	}
 	for _, f := range faelle {
 		if f.rest != 0 {
-			t.Errorf("%s: Der Lauf hat den Datensatz stehen lassen, dessen Frist seit zwölf Stunden abgelaufen ist", f.routine)
+			t.Errorf("%s: Der Lauf hat den Datensatz stehen lassen, dessen Frist seit zwölf Stunden abgelaufen ist", f.lauf)
 		}
 	}
 	// Die Spur der Vormerkung verliert nur den Leser, die Zeile bleibt.

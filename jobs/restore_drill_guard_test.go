@@ -6,26 +6,25 @@ import (
 	"testing"
 )
 
-// TestRestoreProbeLaeuftInCI schließt dieselbe Lücke wie db/pgtest_guard_test.go, nur für
-// die zweite Voraussetzung dieser Probe.
+// TestRestoreProbeLaeuftInCI schließt dieselbe Lücke wie db/pgtest_guard_test.go, nur für die
+// zweite Voraussetzung dieser Probe.
 //
-// Der Guard drüben prüft, ob TEST_DATABASE_URL gesetzt ist. Die Restore-Probe braucht aber
-// zusätzlich pg_dump und psql im PATH — fehlen sie, überspringt sie sich selbst, und zwar
-// bei gesetzter Variable und mit grünem Haken daneben. Von allen Tests dieses Projekts ist
-// ausgerechnet der Notfallplan derjenige, dessen stiller Ausfall am teuersten ist: Man
-// erfährt davon am schlechtesten denkbaren Tag.
+// Der Wächter dort prüft, ob TEST_DATABASE_URL gesetzt ist. Die Restore-Probe braucht zusätzlich
+// pg_dump und psql im PATH; fehlen sie, überspringt sie sich selbst, bei gesetzter Variable und
+// mit grünem Haken daneben. Von allen Tests des Projekts ist ausgerechnet der Notfallplan der,
+// dessen stummer Ausfall am teuersten ist: Man erfährt davon am schlechtesten denkbaren Tag.
 //
-// Lokal ist der Skip in Ordnung — nicht jeder Arbeitsplatz hat den postgresql-client. In
-// CI ist er ein Fehler: Dort installiert der Workflow ihn ausdrücklich (Schritt "Install
-// PostgreSQL client"), und wenn dieser Schritt eines Tages ausfällt oder wegfällt, soll
-// das auffallen, statt still eine Prüfung weniger zu bedeuten.
+// Lokal ist das Überspringen in Ordnung, nicht jeder Arbeitsplatz hat den postgresql-client. In
+// der CI ist es ein Fehler: Dort installiert der Workflow ihn ausdrücklich (Schritt "Install
+// PostgreSQL client"), und fällt dieser Schritt einmal aus oder weg, soll das auffallen, statt
+// unbemerkt eine Prüfung weniger zu bedeuten.
 func TestRestoreProbeLaeuftInCI(t *testing.T) {
 	if os.Getenv("CI") == "" {
 		t.Skip("nur in CI relevant")
 	}
-	if os.Getenv(drillEnvVar) == "" {
+	if os.Getenv(datenbankVariable) == "" {
 		t.Fatalf("%s ist in CI nicht gesetzt — die Restore-Probe würde sich überspringen "+
-			"(siehe Service-Container in .github/workflows/ci.yml)", drillEnvVar)
+			"(siehe Service-Container in .github/workflows/ci.yml)", datenbankVariable)
 	}
 	for _, werkzeug := range []string{"pg_dump", "psql"} {
 		if _, err := exec.LookPath(werkzeug); err != nil {

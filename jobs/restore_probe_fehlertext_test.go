@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-// Der psql-Fehlertext landet in der DB, auf der Betriebsbereitschafts-Seite und in der
-// Alarm-Mail — Datenkontext (CONTEXT: COPY schueler, line 12, column vorname: "…") hat
-// dort nichts verloren (Prüfung 22.08.2026).
+// Der Fehlertext von psql landet in der Datenbank, auf der Seite der Betriebsbereitschaft und in
+// der Alarm-Mail; Zeilen mit Daten (CONTEXT: COPY schueler, line 12, column vorname: "…") haben
+// dort nichts verloren.
 func TestKuerzeFehlertext_EntferntDatenkontext(t *testing.T) {
 	roh := "ERROR:  invalid input syntax for type date: \"31.02.2012\"\n" +
 		"CONTEXT:  COPY schueler, line 12, column geburtsdatum: \"31.02.2012\"\n" +

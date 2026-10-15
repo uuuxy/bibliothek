@@ -116,7 +116,7 @@ var phantomBestand = map[string]int{
 	"repository/systematik_sicherung.go:registriereFach":                 2,
 	// Räumt die Fotos aller anonymisierten Schüler; null Zeilen ist der Normalfall.
 	"repository/nachtlauf.go:LoescheFotosAnonymisierterSchueler": 1,
-	"jobs/restore_probe.go:fuehreRestoreProbeAus":                3,
+	"jobs/restore_probe.go:probeJuengsteSicherung":               3,
 	// Legt das Ergebnis der Restore-Probe an oder ersetzt es: Die Anweisung trifft immer
 	// genau eine Zeile.
 	"repository/betriebszustand.go:SchreibeEinstellungswert": 1,

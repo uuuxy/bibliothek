@@ -10,13 +10,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die stündliche Bereinigung am echten Postgres: Ein Schlüssel jenseits der 24 Stunden
-// fliegt raus, einer knapp darunter bleibt. Der Job meldet einen Fehler nur im Protokoll;
-// passt sein SQL nicht mehr zur Tabelle, wüchse sie, ohne dass es jemand sieht.
-func TestIdempotencyCleanup_LoeschtNurAbgelaufeneSchluessel(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+// Die stündliche Bereinigung an Postgres: Ein Schlüssel jenseits der 24 Stunden fällt weg,
+// einer knapp darunter bleibt. Der Lauf meldet einen Fehler nur im Log; passte sein SQL nicht
+// mehr zur Tabelle, wüchse sie, ohne dass es jemand sieht.
+func TestIdempotenzBereinigung_LoeschtNurAbgelaufeneSchluessel(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "idempotenz")
@@ -33,7 +33,7 @@ func TestIdempotencyCleanup_LoeschtNurAbgelaufeneSchluessel(t *testing.T) {
 		abgelaufen = "00000000-0000-4000-8000-000000000025"
 		frisch     = "00000000-0000-4000-8000-000000000023"
 	)
-	seed := func(schluessel string, alterStunden int) {
+	legeAn := func(schluessel string, alterStunden int) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO idempotency_keys (idempotency_key, response_data, status_code, created_at)
@@ -42,25 +42,25 @@ func TestIdempotencyCleanup_LoeschtNurAbgelaufeneSchluessel(t *testing.T) {
 			t.Fatalf("Seed (%d Stunden): %v", alterStunden, err)
 		}
 	}
-	seed(abgelaufen, 25)
-	seed(frisch, 23)
+	legeAn(abgelaufen, 25)
+	legeAn(frisch, 23)
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunIdempotencyCleanup()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreIdempotenzBereinigungAus()
 
-	rows, err := pool.Query(ctx, `SELECT idempotency_key::text FROM idempotency_keys ORDER BY 1`)
+	zeilen, err := pool.Query(ctx, `SELECT idempotency_key::text FROM idempotency_keys ORDER BY 1`)
 	if err != nil {
 		t.Fatalf("Schlüssel lesen: %v", err)
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 	var uebrig []string
-	for rows.Next() {
+	for zeilen.Next() {
 		var schluessel string
-		if err := rows.Scan(&schluessel); err != nil {
+		if err := zeilen.Scan(&schluessel); err != nil {
 			t.Fatalf("Schlüssel lesen: %v", err)
 		}
 		uebrig = append(uebrig, schluessel)
 	}
-	if err := rows.Err(); err != nil {
+	if err := zeilen.Err(); err != nil {
 		t.Fatalf("Schlüssel lesen: %v", err)
 	}
 	if len(uebrig) != 1 || uebrig[0] != frisch {

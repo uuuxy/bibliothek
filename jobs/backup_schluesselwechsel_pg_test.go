@@ -6,7 +6,7 @@ package jobs
 // Probe am Sonntag nimmt die jüngste Sicherung und läuft erst wieder durch, wenn eine mit dem
 // neuen Schlüssel entstanden ist.
 //
-// Nutzt die Wegwerf-Datenbanken und Helfer der CI-Drill (backup_drill_pg_test.go).
+// Nutzt die Wegwerf-Datenbanken und Helfer der Übung in der CI (backup_drill_pg_test.go).
 
 import (
 	"context"
@@ -31,18 +31,18 @@ func TestSchluesselwechsel_AeltereSicherungBrauchtDenAltenSchluessel(t *testing.
 	befuelleQuelle(t, quellDSN)
 	erwartet := zaehleAlleTabellen(t, quellDSN)
 
-	backupDir := t.TempDir()
+	verzeichnis := t.TempDir()
 	t.Setenv("DATABASE_URL", quellDSN)
-	t.Setenv("BACKUP_DIR", backupDir)
+	t.Setenv("BACKUP_DIR", verzeichnis)
 	t.Setenv("S3_ENDPOINT", "")
 
 	// Die Nachtsicherung von gestern, mit dem Schlüssel von gestern. Name und Änderungszeit
 	// einen Tag zurück: Der Name trägt die Sekunde, und die Probe wählt nach der Änderungszeit.
 	t.Setenv("BACKUP_ENCRYPTION_KEY", alt)
-	(&BackupJob{}).RunDatabaseBackup()
+	(&BackupLauf{}).FuehreAus()
 	gestern := time.Now().UTC().Add(-24 * time.Hour)
-	vorher := filepath.Join(backupDir, backupPraefix+gestern.Format(sicherungsStempel)+backupEndung)
-	if err := os.Rename(einzigeSicherung(t, backupDir), vorher); err != nil {
+	vorher := filepath.Join(verzeichnis, backupPraefix+gestern.Format(sicherungsStempel)+backupEndung)
+	if err := os.Rename(einzigeSicherung(t, verzeichnis), vorher); err != nil {
 		t.Fatalf("Sicherung umbenennen: %v", err)
 	}
 	if err := os.Chtimes(vorher, gestern, gestern); err != nil {
@@ -61,10 +61,10 @@ func TestSchluesselwechsel_AeltereSicherungBrauchtDenAltenSchluessel(t *testing.
 		t.Fatalf("Pool auf der Quelle: %v", err)
 	}
 	t.Cleanup(pool.Close)
-	s := &Scheduler{db: pool}
+	z := &Zeitplan{pool: pool}
 
 	t.Run("vor der ersten neuen Sicherung scheitert die Probe am Schlüssel", func(t *testing.T) {
-		s.RunRestoreProbe()
+		z.FuehreRestoreProbeAus()
 		e := leseProbeErgebnis(t, pool)
 		if e.Erfolg {
 			t.Fatal("die Probe meldet Erfolg für eine Sicherung, die der laufende Schlüssel nicht öffnet")
@@ -75,8 +75,8 @@ func TestSchluesselwechsel_AeltereSicherungBrauchtDenAltenSchluessel(t *testing.
 	})
 
 	t.Run("mit der ersten neuen Sicherung besteht die Probe wieder", func(t *testing.T) {
-		(&BackupJob{}).RunDatabaseBackup()
-		s.RunRestoreProbe()
+		(&BackupLauf{}).FuehreAus()
+		z.FuehreRestoreProbeAus()
 		e := leseProbeErgebnis(t, pool)
 		if !e.Erfolg {
 			t.Fatalf("die Probe meldet Fehlschlag: %s", e.Fehler)
@@ -99,9 +99,9 @@ func TestSchluesselwechsel_AeltereSicherungBrauchtDenAltenSchluessel(t *testing.
 }
 
 // einzigeSicherung liefert die eine Nachtsicherung im Verzeichnis.
-func einzigeSicherung(t *testing.T, dir string) string {
+func einzigeSicherung(t *testing.T, verzeichnis string) string {
 	t.Helper()
-	treffer, err := filepath.Glob(filepath.Join(dir, backupPraefix+"*"+backupEndung))
+	treffer, err := filepath.Glob(filepath.Join(verzeichnis, backupPraefix+"*"+backupEndung))
 	if err != nil || len(treffer) != 1 {
 		t.Fatalf("genau eine Sicherung erwartet, gefunden: %v (err=%v)", treffer, err)
 	}

@@ -143,7 +143,7 @@ func sicherungUndFerienInDieLage(ctx context.Context, zustandAbfragen *repositor
 	// Zustand der Backups aus derselben Quelle wie BackupStand (backup_stand.go).
 	schluessel := os.Getenv("BACKUP_ENCRYPTION_KEY")
 	lage.BackupSchluesselGesetzt = schluessel != ""
-	lage.BackupSchluesselSchwach = jobs.SchluesselIstSchwach(schluessel)
+	lage.BackupSchluesselSchwach = jobs.IstSchluesselSchwach(schluessel)
 	backupVerzeichnis := os.Getenv("BACKUP_DIR")
 	if backupVerzeichnis == "" {
 		backupVerzeichnis = "./backups" // dieselbe Vorgabe wie jobs/backup.go

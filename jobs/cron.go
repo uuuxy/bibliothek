@@ -1,6 +1,6 @@
 // Package jobs fährt die zeitgesteuerten Läufe des Servers: die Löschläufe nach den
-// eingestellten Fristen, die Sicherung der Datenbank mit ihrer Wiederherstellungs-Probe, den
-// Verfall von Vormerkungen und den Abgleich der Cover. Der Zeitplan rechnet in UTC.
+// eingestellten Fristen, die Sicherung der Datenbank mit ihrer Restore-Probe, den Verfall von
+// Vormerkungen und den Abgleich der Cover. Der Zeitplan rechnet in UTC.
 package jobs
 
 import (
@@ -16,133 +16,132 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-// Scheduler verwaltet Hintergrund-Automatisierungsaufgaben.
-type Scheduler struct {
-	db        db.Pool
-	auditRepo repository.ProtokollAbfragen
-	cron      *cron.Cron
+// Zeitplan meldet die Läufe beim Cron an und führt sie aus.
+type Zeitplan struct {
+	pool              db.Pool
+	protokollAbfragen repository.ProtokollAbfragen
+	cron              *cron.Cron
 }
 
-// NewScheduler erstellt und gibt eine neue Scheduler-Instanz zurück.
+// NewZeitplan baut den Zeitplan.
 //
-// Der Zeitplan ist fest auf UTC genagelt (WithLocation), NICHT auf time.Local. Sonst
-// hinge er an der Container-Zeitzone: Setzt jemand später TZ=Europe/Berlin (die
-// .env.example empfiehlt es für lesbare Logs), liefe der Backup-Job "30 2 * * *" in der
-// Nacht der Sommerzeit-Umstellung ins Leere — 02:30 Ortszeit existiert dann nicht, und
-// die Sicherung fiele still aus (der gefährlichste Zustand, den dieses System kennt).
-// Mit UTC bleiben alle Cron-Zeiten DST-immun; die Kommentare unten rechnen bewusst in UTC.
-func NewScheduler(db db.Pool, auditRepo repository.ProtokollAbfragen) *Scheduler {
-	return &Scheduler{
-		db:        db,
-		auditRepo: auditRepo,
-		cron:      cron.New(cron.WithLocation(time.UTC)),
+// Er rechnet fest in UTC (WithLocation), nicht in time.Local. Sonst hinge er an der Zeitzone
+// des Containers: Setzt jemand TZ=Europe/Berlin (die .env.example empfiehlt es für lesbare
+// Logs), liefe die Sicherung "30 2 * * *" in der Nacht der Umstellung auf Sommerzeit ins Leere,
+// denn 02:30 Ortszeit gibt es dann nicht, und die Sicherung fiele unbemerkt aus. In UTC gibt es
+// keine Umstellung; die Kommentare unten rechnen deshalb in UTC.
+func NewZeitplan(pool db.Pool, protokollAbfragen repository.ProtokollAbfragen) *Zeitplan {
+	return &Zeitplan{
+		pool:              pool,
+		protokollAbfragen: protokollAbfragen,
+		cron:              cron.New(cron.WithLocation(time.UTC)),
 	}
 }
 
-// Die drei Zeiten der Nacht hängen aneinander: erst die Sicherung, dann die
-// Audit-Aufbewahrung, dann am Sonntag die Restore-Probe. Die Reihenfolge prüft zeitplan_test.go.
+// Die drei Zeiten der Nacht hängen aneinander: erst die Sicherung, dann die Aufbewahrung des
+// Protokolls, dann am Sonntag die Restore-Probe. Die Reihenfolge prüft zeitplan_test.go.
 const (
-	zeitSicherung         = "30 2 * * *"
-	zeitAuditAufbewahrung = "0 3 * * *"
-	zeitRestoreProbe      = "30 3 * * 0"
+	zeitSicherung             = "30 2 * * *"
+	zeitProtokollAufbewahrung = "0 3 * * *"
+	zeitRestoreProbe          = "30 3 * * 0"
 )
 
-// Start registriert alle Cronjobs für DSGVO, Backup und Vorhaltefristen.
-func (s *Scheduler) Start() {
-	// Tägliche DSGVO-Anonymisierung und Abgänger-Löschung um Mitternacht
-	if _, err := s.cron.AddFunc("0 0 * * *", s.RunNaechtlicheDSGVO); err != nil {
+// Starte meldet alle Läufe beim Cron an und startet ihn.
+func (z *Zeitplan) Starte() {
+	// Täglich um Mitternacht: Anonymisierung und Löschung nach DSGVO.
+	if _, err := z.cron.AddFunc("0 0 * * *", z.FuehreNaechtlicheDSGVOAus); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
 		return
 	}
 
-	// Nächtliche Audit-Aufbewahrung um 03:00 UTC — nach dem Backup (02:30), damit die
-	// Sicherung des Tages die Einträge noch VOR ihrer Löschung enthält.
-	if _, err := s.cron.AddFunc(zeitAuditAufbewahrung, s.RunAuditAufbewahrung); err != nil {
+	// Täglich um 03:00 UTC die Aufbewahrung des Protokolls, nach der Sicherung (02:30), damit
+	// die Sicherung des Tages die Einträge noch vor ihrer Löschung enthält.
+	if _, err := z.cron.AddFunc(zeitProtokollAufbewahrung, z.FuehreProtokollAufbewahrungAus); err != nil {
 		log.Printf("Scheduler: Failed to register audit retention job: %v", err)
 	}
 
-	// Tägliches verschlüsseltes Datenbank-Backup um 02:30 UTC (Zeitraum mit wenig Traffic)
-	backup := &BackupJob{}
+	// Täglich um 02:30 UTC die verschlüsselte Sicherung der Datenbank, in einer ruhigen Zeit.
+	backup := &BackupLauf{}
 
-	// Beim Start sagen, nicht erst um 02:30 in einem Logeintrag, den niemand liest.
+	// Beim Start sagen, nicht erst um 02:30 in einer Logzeile, die niemand liest.
 	//
-	// Ohne BACKUP_ENCRYPTION_KEY überspringt sich der Job (jobs/backup.go) — still. Das
-	// ist der gefährlichste Zustand, den dieses System kennt: Es läuft alles normal, und
-	// erst wenn jemand ein Backup BRAUCHT, stellt sich heraus, dass es nie eines gab.
-	// Der Admin-Wächter (api/system/backup_stand.go) meldet den Fall zwar als "critical",
-	// dafür muss aber jemand ins Dashboard sehen. Diese Zeile steht im Startprotokoll.
+	// Ohne BACKUP_ENCRYPTION_KEY überspringt sich die Sicherung (jobs/backup.go) ohne Meldung.
+	// Das ist der gefährlichste Zustand des Programms: Alles läuft normal, und erst wenn jemand
+	// eine Sicherung braucht, stellt sich heraus, dass es nie eine gab. Der Wächter der
+	// Verwaltung (api/system/backup_stand.go) meldet den Fall als "critical", dafür muss aber
+	// jemand hinsehen. Diese Zeile steht im Log des Starts.
 	if os.Getenv("BACKUP_ENCRYPTION_KEY") == "" {
 		log.Printf("ACHTUNG: BACKUP_ENCRYPTION_KEY ist nicht gesetzt — es werden KEINE " +
 			"Datenbank-Backups erstellt. Der nächtliche Job überspringt sich. Variable in " +
 			"der .env setzen und den Stack neu starten.")
-	} else if SchluesselIstSchwach(os.Getenv("BACKUP_ENCRYPTION_KEY")) {
+	} else if IstSchluesselSchwach(os.Getenv("BACKUP_ENCRYPTION_KEY")) {
 		log.Printf("ACHTUNG: BACKUP_ENCRYPTION_KEY ist kürzer als %d Zeichen. Auch scrypt "+
 			"rettet eine kurze Passphrase nicht — sie ist an einer entwendeten "+
 			"Backup-Datei offline durchprobierbar.", MinBackupSchluesselLaenge)
 	}
 
-	if _, err := s.cron.AddFunc(zeitSicherung, func() {
+	if _, err := z.cron.AddFunc(zeitSicherung, func() {
 		log.Println("Scheduler Backup: starting scheduled daily database backup...")
-		backup.RunDatabaseBackup()
+		backup.FuehreAus()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register backup job: %v", err)
 	}
 
-	// Stündliche Bereinigung abgelaufener Idempotenz-Schlüssel, damit die Tabelle nicht
-	// unbegrenzt wächst. 24h Retention reicht weit über die Lebensdauer eines Scan-Retrys hinaus.
-	if _, err := s.cron.AddFunc("17 * * * *", func() {
-		s.RunIdempotencyCleanup()
+	// Stündlich die abgelaufenen Idempotenz-Schlüssel löschen, damit die Tabelle nicht ohne
+	// Grenze wächst. 24 Stunden reichen weit über die Wiederholung eines Scans hinaus.
+	if _, err := z.cron.AddFunc("17 * * * *", func() {
+		z.FuehreIdempotenzBereinigungAus()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register idempotency cleanup job: %v", err)
 	}
 
-	// Alle 6 Stunden fehlende/fehlgeschlagene Buchcover nachladen (neu importierte Titel
-	// und transiente FAILED-Fälle). Der Re-Entrancy-Guard verhindert Überlappung mit dem
-	// Start-Lauf. Lokales WebP wird dabei erzeugt.
-	if _, err := s.cron.AddFunc("0 */6 * * *", func() {
-		service.NewCoverDienst(s.db).GleicheFehlendeCoverAb()
+	// Alle sechs Stunden fehlende und gescheiterte Cover nachladen (neu importierte Titel und
+	// vorübergehende Fehler, Status FAILED); dabei entsteht das WebP im Haus. Die Sperre gegen
+	// gleichzeitige Läufe verhindert die Überschneidung mit dem Lauf beim Start.
+	if _, err := z.cron.AddFunc("0 */6 * * *", func() {
+		service.NewCoverDienst(z.pool).GleicheFehlendeCoverAb()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register cover resync job: %v", err)
 	}
 
-	// Stündlich abgelaufene „abholbereit"-Reservierungen abräumen (No-Show verliert den
-	// Platz) und das Exemplar dem nächsten Wartenden zuteilen. Ohne diesen Lauf blieb eine
-	// nicht abgeholte Reservierung für immer 'abholbereit' — der Schüler fiel still aus der
-	// Warteschlange (Betreiber-Entscheidung 19.08.2026).
-	if _, err := s.cron.AddFunc("23 * * * *", s.RunVormerkungVerfall); err != nil {
+	// Stündlich abgelaufene Vormerkungen im Zustand „abholbereit" verfallen lassen (wer nicht
+	// abholt, verliert den Platz) und das Exemplar dem nächsten Wartenden zuteilen. Ohne den
+	// Lauf bliebe eine nicht abgeholte Vormerkung für immer 'abholbereit', und die Wartenden
+	// dahinter kämen nie an die Reihe.
+	if _, err := z.cron.AddFunc("23 * * * *", z.FuehreVormerkungsVerfallAus); err != nil {
 		log.Printf("Scheduler: Failed to register vormerkung expiry job: %v", err)
 	}
 
-	// Wöchentliche Restore-Probe, Sonntag 03:30 UTC — nach dem Backup (02:30) und der
-	// Audit-Aufbewahrung (03:00), damit sie die jüngste Datei prüft und keinem Job in
-	// die Quere kommt. Beweist, dass die ECHTEN Dateien auf der Platte wiederherstellbar
-	// sind — die CI-Drill beweist nur den Mechanismus (jobs/restore_probe.go).
-	if _, err := s.cron.AddFunc(zeitRestoreProbe, s.RunRestoreProbe); err != nil {
+	// Wöchentlich die Restore-Probe, Sonntag 03:30 UTC, nach der Sicherung (02:30) und der
+	// Aufbewahrung des Protokolls (03:00), damit sie die jüngste Datei prüft und keinem Lauf in
+	// die Quere kommt. Sie belegt, dass die echten Dateien auf der Platte sich wiederherstellen
+	// lassen; die Übung in der CI belegt nur das Verfahren (jobs/restore_probe.go).
+	if _, err := z.cron.AddFunc(zeitRestoreProbe, z.FuehreRestoreProbeAus); err != nil {
 		log.Printf("Scheduler: Failed to register restore probe job: %v", err)
 	}
-	// Nach einem FEHLGESCHLAGENEN Lauf probt der Start erneut — sonst stünde die
-	// Betriebsbereitschaft nach der Behebung bis zu sieben Tage auf „kritisch" und die
-	// Alarm-Mail käme jeden Tag (Prüfung 22.08.2026). Nur nach Fehlschlag: Ein gesunder
-	// Stack soll beim Neustart nicht jedes Mal eine Datenbank anlegen und einspielen.
-	go s.probeBeimStartNachFehlschlag()
+	// Nach einem gescheiterten Lauf probt der Start erneut, sonst stünde die
+	// Betriebsbereitschaft nach der Behebung bis zu sieben Tage auf „kritisch", und die
+	// Alarm-Mail käme jeden Tag. Nur nach einem Fehlschlag: Ein gesunder Stack soll nicht bei
+	// jedem Neustart eine Datenbank anlegen und einspielen.
+	go z.probeBeimStartNachFehlschlag()
 
-	s.cron.Start()
+	z.cron.Start()
 	log.Println("Scheduler: GDPR, backup, retention, and idempotency cleanup jobs successfully started.")
 }
 
-// Stop hält den Cron-Runner des Schedulers an.
-func (s *Scheduler) Stop() {
-	s.cron.Stop()
+// Stoppe hält den Cron an.
+func (z *Zeitplan) Stoppe() {
+	z.cron.Stop()
 }
 
-// RunIdempotencyCleanup entfernt abgelaufene Idempotenz-Schlüssel (> 24h), damit die Tabelle
-// nicht unbegrenzt wächst. Die Lebensdauer eines Scanner-Retrys liegt im Sekunden-/Minutenbereich,
-// daher ist 24h Retention großzügig.
-func (s *Scheduler) RunIdempotencyCleanup() {
+// FuehreIdempotenzBereinigungAus löscht die Idempotenz-Schlüssel, die älter als 24 Stunden
+// sind, damit die Tabelle nicht ohne Grenze wächst. Ein Scanner wiederholt eine Anfrage nach
+// Sekunden oder Minuten; 24 Stunden sind großzügig.
+func (z *Zeitplan) FuehreIdempotenzBereinigungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	n, err := repository.LoescheAlteIdempotenzSchluessel(ctx, s.db)
+	n, err := repository.LoescheAlteIdempotenzSchluessel(ctx, z.pool)
 	if err != nil {
 		log.Printf("Scheduler Idempotency Cleanup: Fehler beim Löschen abgelaufener Schlüssel: %v", err)
 		return
@@ -152,13 +151,13 @@ func (s *Scheduler) RunIdempotencyCleanup() {
 	}
 }
 
-// RunVormerkungVerfall räumt abgelaufene „abholbereit"-Reservierungen ab und teilt das
-// Exemplar dem nächsten Wartenden zu (siehe LasseAbgelaufeneVerfallen).
-func (s *Scheduler) RunVormerkungVerfall() {
+// FuehreVormerkungsVerfallAus lässt abgelaufene Vormerkungen im Zustand „abholbereit"
+// verfallen und teilt das Exemplar dem nächsten Wartenden zu (LasseAbgelaufeneVerfallen).
+func (z *Zeitplan) FuehreVormerkungsVerfallAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	verfallen, neuBereit, err := repository.NewVormerkungsAbfragen(s.db).LasseAbgelaufeneVerfallen(ctx)
+	verfallen, neuBereit, err := repository.NewVormerkungsAbfragen(z.pool).LasseAbgelaufeneVerfallen(ctx)
 	if err != nil {
 		log.Printf("Scheduler Vormerkung-Verfall: Fehler: %v", err)
 		return
@@ -168,30 +167,30 @@ func (s *Scheduler) RunVormerkungVerfall() {
 	}
 }
 
-// RunNaechtlicheDSGVO ist die nächtliche Folge der DSGVO-Routinen — als Methode, damit ein
-// Test dieselbe Folge in derselben Reihenfolge fahren kann wie der Cron.
-func (s *Scheduler) RunNaechtlicheDSGVO() {
-	s.RunGDPRAnonymizeLoans()
+// FuehreNaechtlicheDSGVOAus führt die Läufe der Nacht nach DSGVO nacheinander aus. Sie ist
+// eine Methode, damit ein Test dieselbe Folge in derselben Reihenfolge fahren kann wie der
+// Cron.
+func (z *Zeitplan) FuehreNaechtlicheDSGVOAus() {
+	z.FuehreBearbeiterAnonymisierungAus()
 	// Erst anonymisieren, dann löschen: Die Löschung trifft nur anonymisierte Zeilen
-	// (repository.praedikatAbgaengerLoeschung). In dieser Reihenfolge fallen beide in
-	// dieselbe Nacht, und der Wächter der Betriebsbereitschaft sieht nie eine
-	// anonymisierte Hülle einen Tag lang als Rückstand. Bis 05.09.2026 lief die Löschung
-	// zuerst — und schnitt die Karenz am Stichtag ab.
-	s.RunGDPRAnonymizeOldData()
-	s.RunGDPRDeleteAbgaenger()
+	// (repository.praedikatAbgaengerLoeschung). In dieser Reihenfolge fallen beide in dieselbe
+	// Nacht, die Karenz wird am Stichtag nicht abgeschnitten, und der Wächter der
+	// Betriebsbereitschaft sieht nie eine anonymisierte Hülle einen Tag lang als Rückstand.
+	z.FuehreSchuelerAnonymisierungAus()
+	z.FuehreAbgaengerLoeschungAus()
 	// Gelöschte Kollegen nach 180 Tagen im Papierkorb endgültig löschen
-	// (cron_dsgvo_papierkorb.go, entschieden am 28.09.2026).
-	s.RunPapierkorbKollegenLoeschung()
-	// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene
-	// Ausleihen nach Frist vom Schüler. Fristen stehen in den Einstellungen.
-	s.RunLesehistorieBefristung()
-	// Erledigte Anliegen befristen (cron_dsgvo_anliegen.go): Wünsche und Meldungen
-	// aus dem Kollegiums-Portal tragen Freitext, Klasse und den Namen der Lehrkraft.
-	s.RunAnliegenBefristung()
-	// Erledigte Klassensatz-Reservierungen befristen (cron_dsgvo_anliegen.go): dieselbe
-	// Frist wie die Anliegen (entschieden am 28.09.2026).
-	s.RunKlassensatzBefristung()
-	// Quittierte Nachbuch-Meldungen befristen (cron_dsgvo_nachbuch.go): Lesehistorie-
-	// Frist, höchstens 30 Tage — sie nennen Ausleiher und Vorbesitzer mit Namen.
-	s.RunNachbuchMeldungenBefristung()
+	// (cron_dsgvo_papierkorb.go).
+	z.FuehrePapierkorbLoeschungAus()
+	// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene Ausleihen nach
+	// der Frist vom Leser. Die Fristen stehen in den Einstellungen.
+	z.FuehreLesehistorieBefristungAus()
+	// Erledigte Anliegen befristen (cron_dsgvo_anliegen.go): Wünsche und Meldungen aus dem
+	// Portal des Kollegiums tragen Freitext, Klasse und den Namen der Lehrkraft.
+	z.FuehreAnliegenBefristungAus()
+	// Erledigte Reservierungen von Klassensätzen befristen (cron_dsgvo_anliegen.go), mit
+	// derselben Frist wie die Anliegen.
+	z.FuehreKlassensatzBefristungAus()
+	// Quittierte Nachbuch-Meldungen befristen (cron_dsgvo_nachbuch.go): Frist der
+	// Lesehistorie, höchstens 30 Tage, denn sie nennen Ausleiher und Vorbesitzer mit Namen.
+	z.FuehreNachbuchMeldungenBefristungAus()
 }

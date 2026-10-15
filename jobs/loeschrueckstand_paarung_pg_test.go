@@ -12,27 +12,26 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die PAARUNG aus Löschroutine und Wächter, am echten Postgres.
+// Die Paarung aus Löschlauf und Wächter, an Postgres.
 //
-// Das Projekt war am 23.08.2026 86 Tage alt — keine der fünf Löschroutinen hatte je
-// eine Zeile gelöscht, die kürzeste Frist lag bei 90 Tagen. Sie waren durch Tests
-// belegt, die das Datum fälschen; in der Wirklichkeit war noch nie etwas passiert. Ein
-// stiller Fehlschlag der ersten echten Löschung wäre erst aufgefallen, wenn jemand
-// fragt, warum Daten von vor zwei Jahren noch da sind.
+// Eine Löschung mit langer Frist läuft im Betrieb erst nach Monaten zum ersten Mal wirklich;
+// Tests, die das Datum fälschen, belegen sie nur am Modell. Ein stummer Fehlschlag der ersten
+// echten Löschung fiele erst auf, wenn jemand fragt, warum Daten von vor zwei Jahren noch da
+// sind.
 //
-// Dieser Test prüft nicht, ob der Job löscht (das tun die Tests daneben je Routine),
-// sondern ob WÄCHTER UND JOB DIESELBE FRAGE STELLEN:
+// Der Test prüft nicht, ob der Lauf löscht (das tun die Tests daneben je Lauf), sondern ob
+// Wächter und Lauf dieselbe Frage stellen:
 //
-//	vorher:   jede Routine meldet ihren überfälligen Datensatz     → sonst ist der Wächter blind
-//	Lauf:     die echten Jobs, ohne gefälschtes Datum
-//	nachher:  keine Routine meldet mehr etwas                      → sonst fragt er etwas anderes als der Job
+//	vorher:   jeder Lauf meldet seinen überfälligen Datensatz       → sonst ist der Wächter blind
+//	Lauf:     die echten Läufe, ohne gefälschtes Datum
+//	nachher:  kein Lauf meldet mehr etwas                          → sonst fragt er etwas anderes als der Lauf
 //
-// Beide Richtungen zählen. Ein Wächter, der nach dem Lauf noch meldet, hätte jede Nacht
-// falschen Alarm geschlagen — und ein falscher Alarm wird abgeschaltet, nicht gelesen.
-func TestLoeschRueckstand_WaechterUndJobStellenDieselbeFrage(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+// Beide Richtungen zählen. Ein Wächter, der nach dem Lauf noch meldet, schlüge jede Nacht
+// falschen Alarm, und ein falscher Alarm wird abgeschaltet, nicht gelesen.
+func TestLoeschRueckstand_WaechterUndLaufStellenDieselbeFrage(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "rueckstand")
 	befuelleQuelle(t, dsn)
@@ -51,40 +50,40 @@ func TestLoeschRueckstand_WaechterUndJobStellenDieselbeFrage(t *testing.T) {
 
 	// Richtung 1: Sieht der Wächter überhaupt etwas? Ein Wächter, der nie ausschlägt,
 	// ist von einem funktionierenden System nicht zu unterscheiden.
-	for routine, zeilen := range vorher {
+	for lauf, zeilen := range vorher {
 		if zeilen == 0 {
-			t.Errorf("Wächter blind: %q meldet 0, obwohl ein überfälliger Datensatz existiert", routine)
+			t.Errorf("Wächter blind: %q meldet 0, obwohl ein überfälliger Datensatz existiert", lauf)
 		}
 	}
 	if len(vorher) == 0 {
 		t.Fatal("Wächter lieferte keine einzige Routine")
 	}
 
-	// Der Lauf. Kein gefälschtes Datum, keine gesetzte Frist — die Vorgaben. Gefahren wird,
-	// was der Cron plant (Start in cron.go): die nächtliche Folge und die Audit-Aufbewahrung um
-	// 03:00. Bis zum 29.09.2026 rief der Test jede Routine einzeln auf; eine Routine, die im
-	// Nachtlauf fehlt, wäre dann grün geblieben und erst im Betrieb als Rückstand aufgefallen.
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunNaechtlicheDSGVO()
-	s.RunAuditAufbewahrung()
+	// Der Lauf, ohne gefälschtes Datum und ohne gesetzte Frist: die Vorgaben. Gefahren wird, was
+	// der Cron plant (Starte in cron.go): die Folge der Nacht und die Aufbewahrung des Protokolls um
+	// 03:00. Riefe der Test jeden Lauf einzeln auf, bliebe ein Lauf, der in der Folge der Nacht
+	// fehlt, grün und fiele erst im Betrieb als Rückstand auf.
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreNaechtlicheDSGVOAus()
+	z.FuehreProtokollAufbewahrungAus()
 
-	// Richtung 2: Ist danach Ruhe? Jede verbleibende Zeile heißt, dass der Wächter eine
-	// ANDERE Frage stellt als der Job — die Bugklasse, gegen die diese Datei antritt.
-	for routine, zeilen := range rueckstandAlsMap(ctx, t, zustand) {
+	// Richtung 2: Ist danach Ruhe? Jede verbleibende Zeile heißt, dass der Wächter eine andere
+	// Frage stellt als der Lauf, und genau gegen diese Klasse von Fehlern steht die Datei.
+	for lauf, zeilen := range rueckstandAlsMap(ctx, t, zustand) {
 		if zeilen > 0 {
-			t.Errorf("nach dem Lauf meldet %q noch %d Zeilen — Wächter und Job fragen Verschiedenes", routine, zeilen)
+			t.Errorf("nach dem Lauf meldet %q noch %d Zeilen — Wächter und Job fragen Verschiedenes", lauf, zeilen)
 		}
 	}
 }
 
-// TestLoeschRueckstand_KulanzDecktDieLetzteNacht: Ein Datensatz, der HEUTE fällig wird,
-// darf den Wächter nicht auslösen — der nächtliche Job hatte ihn noch nicht in der Hand.
-// Ohne diese Kulanz stünde die Selbstprüfung jeden Tag zwischen Fälligkeit und Mitternacht
-// auf Kritisch, und die tägliche Alarm-Mail ginge mit ihr los.
+// Ein Datensatz, der heute fällig wird, darf den Wächter nicht auslösen: Der Lauf der Nacht
+// hatte ihn noch nicht in der Hand. Ohne diese Kulanz stünde die Selbstprüfung jeden Tag
+// zwischen Fälligkeit und Mitternacht auf kritisch, und die tägliche Alarm-Mail ginge mit ihr
+// los.
 func TestLoeschRueckstand_KulanzDecktDieLetzteNacht(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "kulanz")
 	befuelleQuelle(t, dsn)
@@ -128,36 +127,35 @@ func rueckstandAlsMap(ctx context.Context, t *testing.T, r *repository.Betriebsz
 	return m
 }
 
-// legeUeberfaelligeDatenAn baut für JEDE Löschroutine genau einen klar überfälligen
+// legeUeberfaelligeDatenAn baut für jeden Löschlauf genau einen klar überfälligen
 // Datensatz. „Klar" heißt: deutlich jenseits von Frist plus Kulanz, damit der Test nicht
 // an der Tagesgrenze wackelt.
 func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
-	must := func(was, sql string, args ...any) {
+	muss := func(was, sql string, argumente ...any) {
 		t.Helper()
-		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+		if _, err := pool.Exec(ctx, sql, argumente...); err != nil {
 			t.Fatalf("%s: %v", was, err)
 		}
 	}
-	eins := func(was, sql string, args ...any) string {
+	eins := func(was, sql string, argumente ...any) string {
 		t.Helper()
 		var id string
-		if err := pool.QueryRow(ctx, sql, args...).Scan(&id); err != nil {
+		if err := pool.QueryRow(ctx, sql, argumente...).Scan(&id); err != nil {
 			t.Fatalf("%s: %v", was, err)
 		}
 		return id
 	}
 
 	// 1. Anonymisierung: seit 200 Tagen im Papierkorb (Frist 180).
-	must("Papierkorb-Schüler", `
+	muss("Papierkorb-Schüler", `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at)
 		VALUES ('S-PAPIERKORB', 'Paula', 'Papierkorb', '9c', 2030, NOW() - interval '200 days')`)
 
-	// 2. Abgänger endgültig löschen: Abgangsjahr vor dem Stichjahr UND schon anonymisiert
-	//    (seit 05.09.2026 löscht der Job nur, was die Karenz durchlaufen hat). Damit
-	//    betrifft ihn NUR die Löschung und nicht auch die Anonymisierung — der Test soll
-	//    je Routine eine Aussage machen.
-	must("Abgänger", `
+	// 2. Abgänger endgültig löschen: Abgangsjahr vor dem Stichjahr und schon anonymisiert (der
+	//	Lauf löscht nur, was die Karenz durchlaufen hat). Damit betrifft ihn nur die Löschung und
+	//	nicht auch die Anonymisierung; der Test soll je Lauf eine Aussage machen.
+	muss("Abgänger", `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, ist_abgaenger, abgaenger_jahr, aktualisiert_am, anonymized_at)
 		VALUES ('S-ABGANG', 'Aaron', 'Abgang', '10b', true, $1, NOW(), NOW() - interval '1 day')`,
 		repository.AbgaengerStichjahr(time.Now())-1)
@@ -165,9 +163,9 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 	schuelerID := eins("Probeschüler", `SELECT id FROM schueler WHERE barcode_id = 'S-DRILL-1'`)
 
 	// 2a. Gelöschter Kollege seit 200 Tagen im Papierkorb (Frist 180). Dazu einer, den eine
-	//     offene Ausleihe hält: Weder Wächter noch Job dürfen ihn anfassen — zählte der Wächter
+	//	offene Ausleihe hält: Weder Wächter noch Lauf dürfen ihn anfassen; zählte der Wächter
 	//     ihn, meldete er nach dem Lauf jede Nacht einen Rückstand, den niemand abbauen kann.
-	must("Kollege im Papierkorb", `
+	muss("Kollege im Papierkorb", `
 		INSERT INTO leser (art, vorname, nachname, deleted_at)
 		VALUES ('lehrkraft', 'Konrad', 'Papierkorb', NOW() - interval '200 days')`)
 	gehalten := eins("gehaltener Kollege", `
@@ -179,17 +177,17 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 	freihand := eins("Freihand-Titel", `INSERT INTO buecher_titel (titel, signatur) VALUES ('Der Roman', 'Ro Mus') RETURNING id`)
 	lmf := eins("LMF-Titel", `INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7', true) RETURNING id`)
 
-	// 3./4. Lesehistorie, beide Klassen — je die Ausleihe UND die Protokollzeile, die
-	//       dieselbe Zuordnung trägt.
+	// 3./4. Lesehistorie, beide Klassen: je die Ausleihe und die Zeile im Protokoll, die
+	//	dieselbe Zuordnung trägt.
 	leihe := func(was, titelID, barcode string, tageZurueck int) {
 		t.Helper()
 		exemplarID := eins("Exemplar "+barcode,
 			`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`, titelID, barcode)
-		must(was, `
+		muss(was, `
 			INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 			VALUES ($1, $2, NOW() - make_interval(days => $3 + 30), NOW() - make_interval(days => $3 + 9),
 			        NOW() - make_interval(days => $3))`, exemplarID, schuelerID, tageZurueck)
-		must(was+"-Protokoll", `
+		muss(was+"-Protokoll", `
 			INSERT INTO audit_log (tabelle, aktion, datensatz_id, timestamp, details)
 			VALUES ('ausleihen', 'RETURN', $1, NOW() - make_interval(days => $2),
 			        jsonb_build_object('schueler_id', $3::text))`, exemplarID, tageZurueck, schuelerID)
@@ -197,10 +195,10 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 	leihe("Freihand-Ausleihe", freihand, "B-RUECK-F", repository.LesehistorieTageVorgabe+40)
 	offenesExemplar := eins("Exemplar des gehaltenen Kollegen",
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-KOLL-OFFEN') RETURNING id`, freihand)
-	must("offene Ausleihe des gehaltenen Kollegen", `
+	muss("offene Ausleihe des gehaltenen Kollegen", `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
 		VALUES ($1, $2, NOW() - interval '210 days', NOW() + interval '30 days')`, offenesExemplar, gehalten)
-	must("unbezahlte Forderung des Kollegen", `
+	muss("unbezahlte Forderung des Kollegen", `
 		INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 		VALUES ($1, $2, 'Wasserschaden', 12.50)`,
 		eins("Exemplar der Forderung", `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-KOLL-SCHADEN') RETURNING id`, freihand),
@@ -212,58 +210,57 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 	bearbeiter := eins("Bearbeiter", `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
 		VALUES ('Theo', 'Theke', 'theke-paarung@example.org', 'kollegium', true) RETURNING id`)
-	must("Ausleihe mit Bearbeiter", `
+	muss("Ausleihe mit Bearbeiter", `
 		INSERT INTO ausleihen (exemplar_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id)
 		VALUES ($1, NOW() - interval '50 days', NOW() - interval '29 days', NOW() - interval '20 days', $2, $2)`,
 		eins("Exemplar der Ausleihe mit Bearbeiter", `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-BEARBEITER') RETURNING id`, freihand),
 		bearbeiter)
 
 	// 5. Erledigte Anliegen: vor 400 Tagen erledigt (Frist 365).
-	must("Anliegen", `
+	muss("Anliegen", `
 		INSERT INTO lehrer_anliegen (art, titel_text, kommentar, erstellt_am, erledigt_am)
 		VALUES ('wunsch', 'ALT-ERLEDIGT', 'Bitte anschaffen',
 		        NOW() - interval '430 days', NOW() - interval '400 days')`)
 
-	// 5a. Erledigte Klassensatz-Reservierung: vor 400 Tagen erledigt (dieselbe Frist, 365).
-	must("Klassensatz-Reservierung", `
+	// 5a. Erledigte Reservierung eines Klassensatzes: vor 400 Tagen erledigt (dieselbe Frist, 365).
+	muss("Klassensatz-Reservierung", `
 		INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, erledigt, erstellt_am, erledigt_am)
 		VALUES ($1, '7a', 30, true, NOW() - interval '430 days', NOW() - interval '400 days')`, freihand)
-	// Dazu eine offene mit altem erledigt_am: Weder Wächter noch Job dürfen sie zählen. Fragte
+	// Dazu eine offene mit altem erledigt_am: Weder Wächter noch Lauf dürfen sie zählen. Fragte
 	// der Wächter nur nach erledigt_am, meldete er sie nach dem Lauf weiter.
-	must("wieder geöffnete Reservierung", `
+	muss("wieder geöffnete Reservierung", `
 		INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, erledigt, erstellt_am, erledigt_am)
 		VALUES ($1, '7a', 30, false, NOW() - interval '430 days', NOW() - interval '400 days')`, freihand)
 
-	// 6. Audit-Aufbewahrung: beide Protokolltabellen, jenseits der 24 Monate.
-	must("altes audit_log", `
+	// 6. Aufbewahrung des Protokolls: beide Tabellen, jenseits der 24 Monate.
+	muss("altes audit_log", `
 		INSERT INTO audit_log (tabelle, aktion, datensatz_id, timestamp)
 		VALUES ('buecher_titel', 'UPDATE', $1, NOW() - interval '800 days')`, freihand)
-	must("altes audit_logs", `
+	muss("altes audit_logs", `
 		INSERT INTO audit_logs (aktion, details, zeitstempel)
 		VALUES ('EINSTELLUNG_GEAENDERT', '{}'::jsonb, NOW() - interval '800 days')`)
 
-	// 7. Quittierte Nachbuch-Meldungen (Migration 117): vor 40 Tagen quittiert (Frist höchstens 30).
-	must("Nachbuch-Meldung", `
+	// 7. Quittierte Nachbuch-Meldungen: vor 40 Tagen quittiert (Frist höchstens 30).
+	muss("Nachbuch-Meldung", `
 		INSERT INTO nachbuch_meldungen (idempotency_key, barcode, ergebnis, gescannt_am, erstellt_am, quittiert_am)
 		VALUES (gen_random_uuid(), 'B-ALT-NB', 'umgebucht', NOW() - interval '45 days',
 		        NOW() - interval '45 days', NOW() - interval '40 days')`)
 }
 
-// TestLesehistorie_ErreichtDieSpurGeloeschterTitel: Wird ein Titel gelöscht, während ein
-// Exemplar verliehen ist, hinterlässt der Lauf eine Protokollzeile mit dem Namen des
-// Entleihers (inventur/db_books_delete_spur.go). Diese Zeile ist eine PII-Kopie wie jede
-// andere Ausleihspur — und muss derselben Frist unterliegen.
+// Wird ein Titel gelöscht, während ein Exemplar verliehen ist, hinterlässt das eine Zeile im
+// Protokoll mit dem Namen des Entleihers (inventur/db_books_delete_spur.go). Die Zeile ist eine
+// Kopie von Personendaten wie jede andere Spur einer Ausleihe und muss derselben Frist
+// unterliegen.
 //
-// Der erste Anlauf tat das NICHT: Die Zeile trug den Klarnamen, aber keine schueler_id,
-// und das Prädikat der Befristung verlangt genau `details ? 'schueler_id'`. Der Name
-// hätte 24 Monate gestanden (bis zur Audit-Aufbewahrung) statt 90 Tage. Der Wächter der
-// Selbstprüfung ist dafür blind, weil er per Konstruktion dieselbe Frage stellt wie der
-// Job — eine geteilte Wahrheitsquelle schützt vor Auseinanderlaufen, nicht vor einer
-// Lücke, die BEIDE haben.
+// Trägt die Zeile den Klarnamen, aber keine schueler_id, greift die Befristung nicht, denn ihre
+// Bedingung verlangt genau `details ? 'schueler_id'`; der Name stünde dann 24 Monate (bis zum
+// Ende der Aufbewahrung des Protokolls) statt der Frist der Lesehistorie. Der Wächter der
+// Selbstprüfung ist dafür blind, weil er dieselbe Frage stellt wie der Lauf: Eine geteilte
+// Quelle schützt vor Auseinanderlaufen, nicht vor einer Lücke, die beide haben.
 func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "spurfrist")
 	befuelleQuelle(t, dsn)
@@ -280,9 +277,9 @@ func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
 		t.Fatalf("Probeschüler: %v", err)
 	}
 
-	// spur legt die Protokollzeile an, wie db_books_delete_spur.go sie schreibt. Exemplar
-	// und Titel sind zu diesem Zeitpunkt bereits gelöscht, deshalb eine freie UUID als
-	// datensatz_id — genau die Lage, in der die Frist greifen muss.
+	// spur legt die Zeile im Protokoll an, wie db_books_delete_spur.go sie schreibt. Exemplar und
+	// Titel sind zu diesem Zeitpunkt schon gelöscht, deshalb eine freie UUID als datensatz_id: genau
+	// die Lage, in der die Frist greifen muss.
 	spur := func(barcode string, mitSchuelerID bool) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, `
@@ -305,12 +302,11 @@ func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
 	}
 
 	spur("B-MIT-ID", true)
-	// Die Gegenprobe am Detektor: DIESELBE Zeile ohne schueler_id — so sah meine erste
-	// Fassung aus. Sie muss den Namen behalten, sonst bewiese der Test nichts über den
-	// Schlüssel, an dem die Frist hängt.
+	// Die Gegenprobe am Detektor: dieselbe Zeile ohne schueler_id. Sie muss den Namen behalten,
+	// sonst bewiese der Test nichts über den Schlüssel, an dem die Frist hängt.
 	spur("B-OHNE-ID", false)
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunLesehistorieBefristung()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreLesehistorieBefristungAus()
 
 	lies := func(barcode string) string {
 		t.Helper()
@@ -328,8 +324,8 @@ func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
 			t.Errorf("Personenbezug %q überlebte die Frist: %s", darfNicht, mitID)
 		}
 	}
-	// Der sachliche Teil muss bleiben, sonst wäre die Spur wertlos — sie existiert, damit
-	// ein zurückgebrachtes Buch zuzuordnen ist.
+	// Der sachliche Teil muss bleiben, sonst wäre die Spur wertlos: Sie besteht, damit sich ein
+	// zurückgebrachtes Buch zuordnen lässt.
 	for _, muss := range []string{"B-MIT-ID", "Zauberberg"} {
 		if !strings.Contains(mitID, muss) {
 			t.Errorf("die Befristung hat auch den Sachbezug %q getilgt: %s", muss, mitID)

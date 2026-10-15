@@ -26,7 +26,7 @@ type backupStandAntwort struct {
 // wenn (noch) keine existiert. Ein fehlendes Verzeichnis ist kein Fehler,
 // sondern schlicht "kein Backup vorhanden".
 func juengstesBackup(verzeichnis string) *time.Time {
-	dateien, err := jobs.BackupDateien(verzeichnis)
+	dateien, err := jobs.LeseBackupDateien(verzeichnis)
 	if err != nil || len(dateien) == 0 {
 		return nil
 	}
@@ -49,7 +49,7 @@ func (t *Tueren) BackupStand() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		schluessel := os.Getenv("BACKUP_ENCRYPTION_KEY")
 		gesetzt := schluessel != ""
-		schwach := jobs.SchluesselIstSchwach(schluessel)
+		schwach := jobs.IstSchluesselSchwach(schluessel)
 
 		verzeichnis := os.Getenv("BACKUP_DIR")
 		if verzeichnis == "" {

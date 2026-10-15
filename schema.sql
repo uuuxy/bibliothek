@@ -214,7 +214,7 @@ CREATE TABLE leser (
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     -- Zeitpunkt der DSGVO-Anonymisierung (Migration 022). Fehlte bis 19.08.2026 in
     -- dieser Baseline, obwohl der Seed 022 als angewendet markiert — der Anonymisierungs-
-    -- Cron (RunGDPRAnonymizeOldData) lief deshalb auf frischen DBs ins Leere.
+    -- Cron (FuehreSchuelerAnonymisierungAus) lief deshalb auf frischen DBs ins Leere.
     anonymized_at TIMESTAMP DEFAULT NULL,
     -- Ein gesperrter Schüler ohne Grund ist ein toter Zustand ("Zombie-Sperre"): das
     -- Personal sieht nur das rote Flag und muss die Historie durchwühlen. JEDE Sperrquelle
@@ -1295,7 +1295,7 @@ FOR EACH ROW EXECUTE FUNCTION leser_stempel_schaden();
 --   audit_logs (mit s)  = ADMIN-Eingriffe mit IP-Adresse (admin_id/aktion/details,
 --                         Schreiber: LogAdminAktion, z. B. UPDATE_SETTINGS, USER_CREATE).
 -- Entschieden 18.08.2026: KEINE Umbenennung — beide Namen stehen in zu vielen
--- Abfragen, Tests und der Aufbewahrungs-Routine (jobs/cron_audit_retention.go
+-- Abfragen, Tests und der Aufbewahrungs-Routine (jobs/cron_protokoll_aufbewahrung.go
 -- löscht BEIDE). Wer hier eine dritte Protokoll-Tabelle anlegt, wählt bitte
 -- einen unverwechselbaren Namen.
 CREATE TABLE audit_log (

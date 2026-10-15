@@ -12,17 +12,17 @@ import (
 	"time"
 )
 
-// Die Aufbewahrung (entschieden am 28.09.2026): die 14 jüngsten Nachtsicherungen, dazu von den
-// älteren je Kalenderwoche die jüngste für 12 Wochen. Eine Nachtsicherung je Tag um 02:30 UTC
-// (jobs/cron.go) vom 01.05. bis 29.09.2026, 152 Stück. Die erwartete Liste ist unabhängig vom
-// Programm ausgezählt: 16.09.–29.09. jede Nacht, davor Dienstag 15.09. (die jüngste ältere,
-// Woche 38) und die Sonntage 13.09. zurück bis 05.07. (Wochen 37 bis 27).
+// Die Aufbewahrung: die 14 jüngsten Nachtsicherungen, dazu von den älteren je Kalenderwoche die
+// jüngste für 12 Wochen. Eine Nachtsicherung je Tag um 02:30 UTC (jobs/cron.go) vom 01.05. bis
+// 29.09.2026, 152 Stück. Die erwartete Liste ist unabhängig vom Programm ausgezählt: 16.09. bis
+// 29.09. jede Nacht, davor Dienstag 15.09. (die jüngste ältere, Woche 38) und die Sonntage
+// 13.09. zurück bis 05.07. (Wochen 37 bis 27).
 func TestZuLoeschen_NaechteUndWochen(t *testing.T) {
 	var dateien []BackupDatei
 	for tag := time.Date(2026, time.May, 1, 2, 30, 0, 0, time.UTC); !tag.After(time.Date(2026, time.September, 29, 3, 0, 0, 0, time.UTC)); tag = tag.AddDate(0, 0, 1) {
 		dateien = append(dateien, BackupDatei{Name: backupPraefix + tag.Format(sicherungsStempel) + backupEndung})
 	}
-	weg := zuLoeschen(dateien, BehalteNaechte, BehalteWochen)
+	weg := zuLoeschen(dateien, AufbewahrteNaechte, AufbewahrteWochen)
 	var bleibt []string
 	for _, d := range dateien {
 		if !slices.ContainsFunc(weg, func(w BackupDatei) bool { return w.Name == d.Name }) {
@@ -55,10 +55,11 @@ func TestZuLoeschen_OhneStempelZaehltDieAenderungszeit(t *testing.T) {
 	}
 }
 
-// Die Auskunft nennt BehalteNaechte und BehalteWochen (internal/auskunft, dsgvoSicherungen). Rotierte die
-// Nachtsicherung mit anderen Zahlen, stimmte sie nicht mehr; deshalb steht der Aufruf hier fest.
-// Gelesen am Syntaxbaum von backup.go, nicht am Text — ein Kommentar zählt nicht.
-func TestRunDatabaseBackup_RotiertMitDenKonstanten(t *testing.T) {
+// Die Auskunft nennt AufbewahrteNaechte und AufbewahrteWochen (internal/auskunft,
+// dsgvoSicherungen). Rotierte die Nachtsicherung mit anderen Zahlen, stimmte sie nicht mehr;
+// deshalb steht der Aufruf hier fest. Gelesen am Syntaxbaum von backup.go, nicht am Text: Ein
+// Kommentar zählt nicht.
+func TestBackupLauf_RotiertMitDenKonstanten(t *testing.T) {
 	datei, err := parser.ParseFile(token.NewFileSet(), "backup.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -69,7 +70,7 @@ func TestRunDatabaseBackup_RotiertMitDenKonstanten(t *testing.T) {
 		if !ok {
 			return true
 		}
-		if name, ok := aufruf.Fun.(*ast.Ident); ok && name.Name == "rotateBackups" {
+		if name, ok := aufruf.Fun.(*ast.Ident); ok && name.Name == "rotiereBackups" {
 			var argumente []string
 			for _, a := range aufruf.Args {
 				if bezeichner, ok := a.(*ast.Ident); ok {
@@ -82,8 +83,8 @@ func TestRunDatabaseBackup_RotiertMitDenKonstanten(t *testing.T) {
 		}
 		return true
 	})
-	if len(aufrufe) != 1 || aufrufe[0] != "backupDir, BehalteNaechte, BehalteWochen" {
-		t.Errorf("rotateBackups in backup.go: %q, erwartet genau einmal (backupDir, BehalteNaechte, BehalteWochen)", aufrufe)
+	if len(aufrufe) != 1 || aufrufe[0] != "verzeichnis, AufbewahrteNaechte, AufbewahrteWochen" {
+		t.Errorf("rotiereBackups in backup.go: %q, erwartet genau einmal (verzeichnis, AufbewahrteNaechte, AufbewahrteWochen)", aufrufe)
 	}
 }
 
@@ -104,7 +105,7 @@ func TestAufbewahrung_AnleitungNenntDasHoechstalter(t *testing.T) {
 		name := backupPraefix + start.AddDate(0, 0, tag).Format(sicherungsStempel) + backupEndung
 		dateien = append(dateien, BackupDatei{Name: name})
 		entstanden[name] = tag
-		weg := zuLoeschen(dateien, BehalteNaechte, BehalteWochen)
+		weg := zuLoeschen(dateien, AufbewahrteNaechte, AufbewahrteWochen)
 		for _, d := range weg {
 			hoechst = max(hoechst, tag-entstanden[d.Name])
 		}
@@ -112,7 +113,7 @@ func TestAufbewahrung_AnleitungNenntDasHoechstalter(t *testing.T) {
 			return slices.ContainsFunc(weg, func(w BackupDatei) bool { return w.Name == d.Name })
 		})
 	}
-	if hoechst < BehalteNaechte {
+	if hoechst < AufbewahrteNaechte {
 		t.Fatalf("höchstes Alter %d Tage — die Rechnung sieht die Aufbewahrung nicht", hoechst)
 	}
 
@@ -128,6 +129,6 @@ func TestAufbewahrung_AnleitungNenntDasHoechstalter(t *testing.T) {
 	if soll := fmt.Sprintf("nach %d Tagen", hoechst); !strings.Contains(abschnitt, soll) {
 		t.Errorf("nach der Aufbewahrung (%d Nächte, %d Wochen) liegt eine Nachtsicherung bis zu %d Tage; "+
 			"die Anleitung zum Schlüsselwechsel in docs/SECURITY.md nennt nicht %q",
-			BehalteNaechte, BehalteWochen, hoechst, soll)
+			AufbewahrteNaechte, AufbewahrteWochen, hoechst, soll)
 	}
 }

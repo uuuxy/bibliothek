@@ -10,26 +10,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Der Lesehistorie-Lauf darf die Karenz-Uhr nicht verstellen (OFFEN.md 4.12,
-// freigegeben am 22.09.2026).
+// Der Lauf der Lesehistorie darf die Karenz-Uhr nicht verstellen.
 //
-// Zwei Fristen, die sich nichts angehen sollten: Die KARENZ ist das Fenster, in dem eine
-// falsche Zuordnung an der Theke noch auffällt — sie läuft ab dem letzten abgeschlossenen
-// Vorgang. Die LESEHISTORIE ist die Frist, nach der eine zurückgegebene Ausleihe ihre
-// Person verliert (`schueler_id = NULL`). Bis Migration 137 rechnete die Karenz-Uhr den
-// letzten Vorgang über genau diese Spalte aus. Ist die Karenz länger eingestellt als die
-// Lesehistorie — hier 90 gegen 1 Tag, beide sind einstellbar —, nahm der Lesehistorie-Lauf
-// der Karenz ihre Grundlage: Die Uhr fiel auf den Abgang zurück, und die Zeile wurde in
-// derselben Nacht anonymisiert, obwohl 85 Tage Fenster eingestellt waren.
+// Zwei Fristen, die sich nichts angehen sollen: Die Karenz ist das Fenster, in dem eine falsche
+// Zuordnung an der Theke noch auffällt; sie läuft ab dem letzten abgeschlossenen Vorgang. Die
+// Lesehistorie ist die Frist, nach der eine zurückgegebene Ausleihe ihre Person verliert
+// (`schueler_id = NULL`). Rechnete die Karenz-Uhr den letzten Vorgang über genau diese Spalte
+// aus, nähme der Lauf der Lesehistorie der Karenz ihre Grundlage, sobald die Karenz länger
+// eingestellt ist als die Lesehistorie (hier 90 gegen 1 Tag, beide sind einstellbar): Die Uhr
+// fiele auf den Abgang zurück, und die Zeile würde in derselben Nacht anonymisiert, obwohl 85
+// Tage Fenster eingestellt sind.
 //
-// Der Lauf ist derselbe wie im Betrieb (RunLesehistorieBefristung, dann
-// RunGDPRAnonymizeOldData) und in derselben Reihenfolge wie im Cron.
-//
-// Am Stand vor Migration 137 ist dieser Test ROT: RUECK wird anonymisiert.
-func TestGDPRAnonymize_LesehistorieVerstelltKarenzUhrNicht(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+// Der Lauf ist derselbe wie im Betrieb (FuehreLesehistorieBefristungAus, dann
+// FuehreSchuelerAnonymisierungAus) und in derselben Reihenfolge wie im Cron. Rechnet die Uhr
+// über schueler_id, wird der Test rot: RUECK wird anonymisiert.
+func TestSchuelerAnonymisierung_LesehistorieVerstelltKarenzUhrNicht(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "karenzlesehist")
 	befuelleQuelle(t, dsn)
@@ -97,16 +95,16 @@ func TestGDPRAnonymize_LesehistorieVerstelltKarenzUhrNicht(t *testing.T) {
 		return ja
 	}
 
-	// RUECK: Rückgabe vor 5 Tagen — 85 Tage Karenz stehen noch aus.
+	// RUECK: Rückgabe vor 5 Tagen, 85 Tage Karenz stehen noch aus.
 	rueck := legeAbgaenger("KL-RUECK")
 	legeAusleihe(rueck, legeExemplar("KL-RUECK-EX"), "150 days", "5 days")
-	// ALT: Rückgabe vor 95 Tagen — die Karenz ist auch mit der neuen Uhr abgelaufen.
-	// Sichert, dass der Stempel nicht einfach jeden vor der Anonymisierung bewahrt.
+	// ALT: Rückgabe vor 95 Tagen; die Karenz ist auch mit der neuen Uhr abgelaufen. Sichert, dass
+	// der Stempel nicht einfach jeden vor der Anonymisierung bewahrt.
 	alt := legeAbgaenger("KL-ALT")
 	legeAusleihe(alt, legeExemplar("KL-ALT-EX"), "200 days", "95 days")
 
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunLesehistorieBefristung()
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreLesehistorieBefristungAus()
 
 	// Die Vorbedingung des Tests: Der Lauf hat die Zuordnung wirklich genommen. Ohne
 	// diese Probe könnte der Test grün sein, weil gar nichts getrennt wurde.
@@ -118,7 +116,7 @@ func TestGDPRAnonymize_LesehistorieVerstelltKarenzUhrNicht(t *testing.T) {
 		t.Fatalf("Vorbedingung: Der Lesehistorie-Lauf hat die Ausleihe nicht getrennt (%d noch zugeordnet) — der Test prüft dann nichts", nochZugeordnet)
 	}
 
-	s.RunGDPRAnonymizeOldData()
+	z.FuehreSchuelerAnonymisierungAus()
 
 	if anonymisiert(rueck) {
 		t.Error("RUECK: Rückgabe vor 5 Tagen, Karenz 90 — die Zeile muss noch 85 Tage stehen bleiben. " +

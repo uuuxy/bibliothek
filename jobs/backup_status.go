@@ -14,17 +14,17 @@ const (
 // Abzeichen der Verwaltung und die Selbstprüfung fragen hier, damit beide dieselben Schwellen
 // anlegen. Ein schwacher Schlüssel stuft auf "warning", überschreibt aber kein "critical":
 // Eine fehlende Sicherung wiegt schwerer als eine schwach verschlüsselte.
-func BackupStatus(keySet, keyWeak bool, last *time.Time, now time.Time) string {
-	if !keySet || last == nil {
+func BackupStatus(schluesselGesetzt, schluesselSchwach bool, letzte *time.Time, jetzt time.Time) string {
+	if !schluesselGesetzt || letzte == nil {
 		return "critical"
 	}
-	age := now.Sub(*last)
+	alter := jetzt.Sub(*letzte)
 	switch {
-	case age > BackupKritischAlter:
+	case alter > BackupKritischAlter:
 		return "critical"
-	case age > BackupWarnAlter:
+	case alter > BackupWarnAlter:
 		return "warning"
-	case keyWeak:
+	case schluesselSchwach:
 		return "warning"
 	default:
 		return "ok"

@@ -11,18 +11,16 @@ import (
 	"bibliothek/pkg/closeutil"
 )
 
-// Die Sicherungen im Backup-Verzeichnis: EINE Liste, zwei Verbraucher — die Rotation
-// (rotateBackups) und der Status-Wächter (api/system/backup_stand.go, newestBackupTime).
+// Die Sicherungen im Backup-Verzeichnis: eine Liste, zwei Verbraucher, die Aufbewahrung
+// (rotiereBackups) und der Wächter des Stands (api/system/backup_stand.go).
 //
-// Gelesen wird über os.OpenRoot, wie überall im Projekt bei Verzeichnissen mit Dateinamen
-// von außen (inventur/uploads_pfad.go): Die Wurzel bindet jeden Zugriff OS-seitig an das
+// Gelesen wird über os.OpenRoot, wie überall im Projekt bei Verzeichnissen mit Dateinamen von
+// außen (inventur/uploads_pfad.go): Die Wurzel bindet jeden Zugriff im Betriebssystem an das
 // Verzeichnis; ein Symlink darin wird als Link gesehen und als Link gelöscht, nie sein Ziel.
 //
-// Einordnung (gemeldet in PR #601, 09.09.2026, als „HIGH: Path Traversal"): Einen
-// Eingang für Angreifer gibt es hier nicht — das Verzeichnis kommt aus BACKUP_DIR (Betreiber),
-// die Namen schreibt der Job selbst, kein Endpunkt nimmt einen Dateinamen entgegen. Die
-// Umstellung ist Hausform und Einhegung, kein Sicherheitsfix; neu sind vor allem die Tests,
-// die beide Funktionen bis dahin nicht hatten.
+// Einen Eingang für Angreifer gibt es hier nicht: Das Verzeichnis kommt aus BACKUP_DIR, also vom
+// Betreiber, die Namen schreibt der Lauf selbst, und keine Tür nimmt einen Dateinamen entgegen.
+// os.OpenRoot ist hier Hausform und Einhegung.
 const (
 	backupPraefix = "backup_"
 	backupEndung  = ".sql.gz.enc"
@@ -34,26 +32,26 @@ type BackupDatei struct {
 	GeaendertAm time.Time
 }
 
-// BackupDateien listet die backup_*.sql.gz.enc des Verzeichnisses, nach Namen sortiert —
-// die Namen tragen den Zeitstempel, die Reihenfolge ist also die zeitliche. Fehlt das
-// Verzeichnis, ist die Liste leer: „noch kein Backup" ist kein Fehler.
-func BackupDateien(dir string) ([]BackupDatei, error) {
-	root, err := os.OpenRoot(dir)
+// LeseBackupDateien liest die backup_*.sql.gz.enc des Verzeichnisses, nach Namen sortiert; die
+// Namen tragen den Zeitstempel, die Reihenfolge ist also die zeitliche. Fehlt das Verzeichnis,
+// ist die Liste leer: „noch keine Sicherung" ist kein Fehler.
+func LeseBackupDateien(verzeichnis string) ([]BackupDatei, error) {
+	wurzel, err := os.OpenRoot(verzeichnis)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	defer closeutil.Schliesse(root, "backup dir")
-	return listeBackups(root)
+	defer closeutil.Schliesse(wurzel, "backup dir")
+	return leseBackups(wurzel)
 }
 
-// listeBackups liest die Sicherungen einer bereits geöffneten Wurzel. Unterverzeichnisse
-// und Fremddateien bleiben draußen; die Änderungszeit kommt per Lstat (e.Info), ein
-// Symlink wird also nicht verfolgt.
-func listeBackups(root *os.Root) ([]BackupDatei, error) {
-	verzeichnis, err := root.Open(".")
+// leseBackups liest die Sicherungen einer schon geöffneten Wurzel. Unterverzeichnisse und fremde
+// Dateien bleiben draußen; die Änderungszeit kommt über Lstat (e.Info), ein Symlink wird also
+// nicht verfolgt.
+func leseBackups(wurzel *os.Root) ([]BackupDatei, error) {
+	verzeichnis, err := wurzel.Open(".")
 	if err != nil {
 		return nil, err
 	}
@@ -68,14 +66,14 @@ func listeBackups(root *os.Root) ([]BackupDatei, error) {
 		if e.IsDir() || !strings.HasPrefix(name, backupPraefix) || !strings.HasSuffix(name, backupEndung) {
 			continue
 		}
-		info, infoErr := e.Info()
-		if infoErr != nil {
+		info, infoFehler := e.Info()
+		if infoFehler != nil {
 			continue
 		}
 		dateien = append(dateien, BackupDatei{Name: name, GeaendertAm: info.ModTime()})
 	}
-	// ReadDir liefert in Verzeichnisreihenfolge — anders als das frühere filepath.Glob, das
-	// sortiert zurückgab. Ohne die Sortierung löschte die Rotation Beliebiges.
+	// ReadDir liefert in der Reihenfolge des Verzeichnisses, nicht sortiert. Ohne die Sortierung
+	// löschte die Aufbewahrung Beliebiges.
 	slices.SortFunc(dateien, func(a, b BackupDatei) int { return strings.Compare(a.Name, b.Name) })
 	return dateien, nil
 }

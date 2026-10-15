@@ -118,11 +118,11 @@ func startBereitschaftsWaechter(ctx context.Context, server *api.Server) {
 	}()
 }
 
-func startGDPRWorker(ctx context.Context, scheduler *jobs.Scheduler) {
+func startGDPRWorker(ctx context.Context, scheduler *jobs.Zeitplan) {
 	go func() {
 		slog.Info("Background Worker: Running initial GDPR cleanup on startup...")
-		scheduler.RunGDPRAnonymizeLoans()
-		scheduler.RunGDPRDeleteAbgaenger()
+		scheduler.FuehreBearbeiterAnonymisierungAus()
+		scheduler.FuehreAbgaengerLoeschungAus()
 
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
@@ -131,8 +131,8 @@ func startGDPRWorker(ctx context.Context, scheduler *jobs.Scheduler) {
 			select {
 			case <-ticker.C:
 				slog.Info("Background Worker: Running scheduled 24h GDPR cleanup...")
-				scheduler.RunGDPRAnonymizeLoans()
-				scheduler.RunGDPRDeleteAbgaenger()
+				scheduler.FuehreBearbeiterAnonymisierungAus()
+				scheduler.FuehreAbgaengerLoeschungAus()
 			case <-ctx.Done():
 				slog.Info("Background Worker: GDPR worker gracefully stopped.")
 				return
@@ -366,9 +366,9 @@ func main() {
 
 	// 5. Background Jobs & Scheduler
 	auditRepo := repository.NewProtokollAbfragen(database.Pool)
-	scheduler := jobs.NewScheduler(database.Pool, auditRepo)
-	scheduler.Start()
-	defer scheduler.Stop()
+	scheduler := jobs.NewZeitplan(database.Pool, auditRepo)
+	scheduler.Starte()
+	defer scheduler.Stoppe()
 
 	// Native async background worker for GDPR cleanup (runs on startup + every 24h)
 	startGDPRWorker(ctx, scheduler)

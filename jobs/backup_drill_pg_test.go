@@ -19,25 +19,23 @@ import (
 	"bibliothek/internal/backupkrypto"
 )
 
-// Die echte Restore-Probe: pg_dump → gzip → AES-256-GCM → entschlüsseln → psql →
-// Datenabgleich, gegen zwei echte Datenbanken.
+// Die echte Restore-Probe: pg_dump → gzip → AES-256-GCM → entschlüsseln → psql → Abgleich der
+// Daten, gegen zwei echte Datenbanken.
 //
-// Warum das nötig war: internal/backupkrypto/krypto_test.go prüft die Verschlüsselung gegen einen
-// ERFUNDENEN SQL-String ("-- pg_dump\nCREATE TABLE schueler …"). Damit ist bewiesen, dass
-// AES-GCM funktioniert — nicht, dass sich aus einem echten Backup jemals wieder eine
-// Datenbank herstellen lässt. Zwischen beidem liegt alles, was im Ernstfall schiefgeht:
-// der pg_dump-Aufruf samt .pgpass, die Gzip-Pipeline mit ihren zwei Goroutinen, und die
-// Frage, ob psql den Dump überhaupt fehlerfrei einspielt.
+// internal/backupkrypto/krypto_test.go prüft die Verschlüsselung an einem erfundenen SQL-Text
+// ("-- pg_dump\nCREATE TABLE schueler …"). Das belegt, dass AES-GCM wirkt, nicht, dass sich aus
+// einer echten Sicherung je wieder eine Datenbank herstellen lässt. Dazwischen liegt alles, was
+// im Ernstfall schiefgeht: der Aufruf von pg_dump mit .pgpass, die Leitung mit gzip und ihren
+// zwei Goroutinen und die Frage, ob psql den Dump fehlerfrei einspielt. Der Ernstfall ist der
+// schlechteste Zeitpunkt, das zum ersten Mal zu erfahren.
 //
-// Der Ernstfall ist der schlechteste Zeitpunkt, das zum ersten Mal zu erfahren.
-//
-// Voraussetzungen: TEST_DATABASE_URL sowie pg_dump und psql im PATH. Fehlt eines,
-// wird übersprungen — mit Angabe, was fehlt, damit ein stiller Skip nicht als
-// bestandene Probe durchgeht.
+// Voraussetzungen: TEST_DATABASE_URL sowie pg_dump und psql im PATH. Fehlt eines, wird der Test
+// übersprungen, mit Angabe, was fehlt, damit ein stummes Überspringen nicht als bestandene Probe
+// durchgeht.
 
-const drillEnvVar = "TEST_DATABASE_URL"
+const datenbankVariable = "TEST_DATABASE_URL"
 
-// TestBackupRestoreDrill stellt den kompletten Wiederherstellungsweg nach.
+// TestBackupRestoreDrill stellt den ganzen Weg der Wiederherstellung nach.
 func TestBackupRestoreDrill(t *testing.T) {
 	adminDSN := pruefeVoraussetzungen(t)
 
@@ -51,16 +49,16 @@ func TestBackupRestoreDrill(t *testing.T) {
 		t.Fatalf("Quelle sieht nicht nach dem echten Schema aus (nur %d Tabellen)", len(erwartet))
 	}
 
-	// ── Schritt 1: das echte Backup erzeugen ──────────────────────────────────
-	backupDir := t.TempDir()
+	// ── Schritt 1: die echte Sicherung erzeugen ───────────────────────────────────
+	verzeichnis := t.TempDir()
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "probe-passphrase-mit-mehr-als-32-zeichen")
 	t.Setenv("DATABASE_URL", quellDSN)
-	t.Setenv("BACKUP_DIR", backupDir)
+	t.Setenv("BACKUP_DIR", verzeichnis)
 	t.Setenv("S3_ENDPOINT", "") // kein Offsite-Upload in der Probe
 
-	(&BackupJob{}).RunDatabaseBackup()
+	(&BackupLauf{}).FuehreAus()
 
-	rohBackup, err := os.ReadFile(einzigeSicherung(t, backupDir)) // #nosec G304 - Pfad aus t.TempDir()
+	rohBackup, err := os.ReadFile(einzigeSicherung(t, verzeichnis)) // #nosec G304 - Pfad aus t.TempDir()
 	if err != nil {
 		t.Fatalf("Backup-Datei nicht lesbar: %v", err)
 	}
@@ -82,8 +80,8 @@ func TestBackupRestoreDrill(t *testing.T) {
 	vergleicheBestand(t, erwartet, tatsaechlich)
 
 	var titel, barcode string
-	conn := verbinde(t, zielDSN)
-	if err := conn.QueryRow(context.Background(),
+	verbindung := verbinde(t, zielDSN)
+	if err := verbindung.QueryRow(context.Background(),
 		`SELECT t.titel, e.barcode_id FROM buecher_titel t
 		   JOIN buecher_exemplare e ON e.titel_id = t.id
 		  WHERE t.titel = 'Probe-Titel für die Restore-Probe'`).Scan(&titel, &barcode); err != nil {
@@ -95,9 +93,9 @@ func TestBackupRestoreDrill(t *testing.T) {
 	t.Logf("Wiederherstellung bestätigt: %d Tabellen, Beispielsatz %q/%s", len(tatsaechlich), titel, barcode)
 }
 
-// spieleInZielEin schiebt den Dump per psql in die leere Zieldatenbank. ON_ERROR_STOP=1 ist
-// Pflicht: Ohne den Schalter arbeitet psql nach einem fehlgeschlagenen Statement weiter und
-// endet mit 0 — eine Wiederherstellung, die zur Hälfte misslingt, sähe erfolgreich aus.
+// spieleInZielEin spielt den Dump mit psql in die leere Zieldatenbank ein. ON_ERROR_STOP=1 ist
+// Pflicht: Ohne den Schalter arbeitet psql nach einer gescheiterten Anweisung weiter und endet
+// mit 0; eine Wiederherstellung, die zur Hälfte misslingt, sähe gelungen aus.
 func spieleInZielEin(t *testing.T, zielDSN, sqlText string) {
 	t.Helper()
 
@@ -105,22 +103,22 @@ func spieleInZielEin(t *testing.T, zielDSN, sqlText string) {
 	if err := os.WriteFile(sqlPfad, []byte(sqlText), 0o600); err != nil {
 		t.Fatalf("SQL konnte nicht abgelegt werden: %v", err)
 	}
-	cmd := exec.Command("psql", "--dbname="+zielDSN, "--file="+sqlPfad,
+	befehl := exec.Command("psql", "--dbname="+zielDSN, "--file="+sqlPfad,
 		"--quiet", "--no-psqlrc", "-v", "ON_ERROR_STOP=1")
 	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
+	befehl.Stderr = &stderr
+	if err := befehl.Run(); err != nil {
 		t.Fatalf("psql-Wiederherstellung fehlgeschlagen: %v\n%s", err, stderr.String())
 	}
 }
 
-// pruefeVoraussetzungen überspringt den Test mit klarer Begründung statt still.
+// pruefeVoraussetzungen überspringt den Test mit klarer Begründung statt stumm.
 func pruefeVoraussetzungen(t *testing.T) string {
 	t.Helper()
 
-	dsn := os.Getenv(drillEnvVar)
+	dsn := os.Getenv(datenbankVariable)
 	if dsn == "" {
-		t.Skipf("%s nicht gesetzt — Restore-Probe übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Restore-Probe übersprungen", datenbankVariable)
 	}
 	for _, werkzeug := range []string{"pg_dump", "psql"} {
 		if _, err := exec.LookPath(werkzeug); err != nil {
@@ -134,32 +132,32 @@ func pruefeVoraussetzungen(t *testing.T) string {
 func legeProbeDatenbankAn(t *testing.T, adminDSN, rolle string) (name, dsn string) {
 	t.Helper()
 
-	conn := verbinde(t, adminDSN)
+	verbindung := verbinde(t, adminDSN)
 	ctx := context.Background()
 
 	var aktuell string
-	if err := conn.QueryRow(ctx, `SELECT current_database()`).Scan(&aktuell); err != nil {
+	if err := verbindung.QueryRow(ctx, `SELECT current_database()`).Scan(&aktuell); err != nil {
 		t.Fatalf("Datenbanknamen nicht lesbar: %v", err)
 	}
-	// Dieselbe Notbremse wie in den übrigen PG-Tests: Diese Probe legt Datenbanken an
+	// Dieselbe Notbremse wie in den übrigen Tests an Postgres: Diese Probe legt Datenbanken an
 	// und verwirft sie wieder. Zeigt TEST_DATABASE_URL auf etwas Echtes, ist Schluss.
 	if !strings.Contains(strings.ToLower(aktuell), "test") {
 		t.Fatalf("Sicherheitsabbruch: %q enthält nicht \"test\" — %s darf nur auf eine "+
-			"Wegwerf-Datenbank zeigen", aktuell, drillEnvVar)
+			"Wegwerf-Datenbank zeigen", aktuell, datenbankVariable)
 	}
 
 	name = fmt.Sprintf("drill_%s_%d_test", rolle, os.Getpid())
-	// Bezeichner sind hier zwingend Literale (CREATE DATABASE kennt keine Parameter);
-	// der Name stammt ausschließlich aus Prozess-ID und Konstante.
-	if _, err := conn.Exec(ctx, `DROP DATABASE IF EXISTS `+pgIdent(name)); err != nil {
+	// Die Bezeichner stehen hier als Text (CREATE DATABASE kennt keine Parameter); der Name
+	// stammt nur aus der Kennung des Prozesses und einer Konstante.
+	if _, err := verbindung.Exec(ctx, `DROP DATABASE IF EXISTS `+pgBezeichner(name)); err != nil {
 		t.Fatalf("Aufräumen von %s fehlgeschlagen: %v", name, err)
 	}
-	if _, err := conn.Exec(ctx, `CREATE DATABASE `+pgIdent(name)); err != nil {
+	if _, err := verbindung.Exec(ctx, `CREATE DATABASE `+pgBezeichner(name)); err != nil {
 		t.Fatalf("Anlegen von %s fehlgeschlagen: %v", name, err)
 	}
 	t.Cleanup(func() {
 		c := verbinde(t, adminDSN)
-		if _, err := c.Exec(context.Background(), `DROP DATABASE IF EXISTS `+pgIdent(name)+` WITH (FORCE)`); err != nil {
+		if _, err := c.Exec(context.Background(), `DROP DATABASE IF EXISTS `+pgBezeichner(name)+` WITH (FORCE)`); err != nil {
 			t.Logf("Probe-Datenbank %s blieb liegen: %v", name, err)
 		}
 	})
@@ -167,38 +165,38 @@ func legeProbeDatenbankAn(t *testing.T, adminDSN, rolle string) (name, dsn strin
 	return name, tauscheDatenbank(adminDSN, name)
 }
 
-// pgIdent quotet einen Bezeichner für Stellen, an denen Postgres keine Parameter erlaubt.
-func pgIdent(s string) string { return `"` + strings.ReplaceAll(s, `"`, `""`) + `"` }
+// pgBezeichner setzt einen Bezeichner in Anführungszeichen, wo Postgres keine Parameter erlaubt.
+func pgBezeichner(s string) string { return `"` + strings.ReplaceAll(s, `"`, `""`) + `"` }
 
 // tauscheDatenbank ersetzt den Datenbanknamen im DSN.
 func tauscheDatenbank(dsn, neu string) string {
-	cfg, err := pgx.ParseConfig(dsn)
+	konfig, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return dsn
 	}
 	sslmode := "disable"
-	if v := cfg.RuntimeParams["sslmode"]; v != "" {
+	if v := konfig.RuntimeParams["sslmode"]; v != "" {
 		sslmode = v
 	}
-	auth := cfg.User
-	if cfg.Password != "" {
-		auth += ":" + cfg.Password
+	zugang := konfig.User
+	if konfig.Password != "" {
+		zugang += ":" + konfig.Password
 	}
-	return fmt.Sprintf("postgres://%s@%s:%d/%s?sslmode=%s", auth, cfg.Host, cfg.Port, neu, sslmode)
+	return fmt.Sprintf("postgres://%s@%s:%d/%s?sslmode=%s", zugang, konfig.Host, konfig.Port, neu, sslmode)
 }
 
 func verbinde(t *testing.T, dsn string) *pgx.Conn {
 	t.Helper()
-	conn, err := pgx.Connect(context.Background(), dsn)
+	verbindung, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
 		t.Fatalf("Verbindung zu %s fehlgeschlagen: %v", dsn, err)
 	}
-	t.Cleanup(func() { _ = conn.Close(context.Background()) }) //nolint:errcheck
-	return conn
+	t.Cleanup(func() { _ = verbindung.Close(context.Background()) }) //nolint:errcheck
+	return verbindung
 }
 
-// befuelleQuelle spielt das echte schema.sql ein und legt einen wiedererkennbaren
-// Datensatz an. Ein Backup gegen ein Spielzeugschema bewiese nichts.
+// befuelleQuelle spielt das echte schema.sql ein und legt einen wiedererkennbaren Datensatz an.
+// Eine Sicherung eines Spielzeugschemas bewiese nichts.
 func befuelleQuelle(t *testing.T, dsn string) {
 	t.Helper()
 
@@ -208,40 +206,40 @@ func befuelleQuelle(t *testing.T, dsn string) {
 		t.Fatalf("schema.sql nicht lesbar: %v", err)
 	}
 
-	conn := verbinde(t, dsn)
+	verbindung := verbinde(t, dsn)
 	ctx := context.Background()
-	if _, err := conn.Exec(ctx, string(schema)); err != nil {
+	if _, err := verbindung.Exec(ctx, string(schema)); err != nil {
 		t.Fatalf("schema.sql konnte nicht eingespielt werden: %v", err)
 	}
 
 	var titelID string
-	if err := conn.QueryRow(ctx,
+	if err := verbindung.QueryRow(ctx,
 		`INSERT INTO buecher_titel (titel, isbn) VALUES ($1,$2) RETURNING id`,
 		"Probe-Titel für die Restore-Probe", "9783161484100").Scan(&titelID); err != nil {
 		t.Fatalf("Probedaten (Titel): %v", err)
 	}
-	if _, err := conn.Exec(ctx,
+	if _, err := verbindung.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1,$2)`,
 		titelID, "B-DRILL-1"); err != nil {
 		t.Fatalf("Probedaten (Exemplar): %v", err)
 	}
-	if _, err := conn.Exec(ctx,
+	if _, err := verbindung.Exec(ctx,
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		 VALUES ('S-DRILL-1','Probe','Schüler','7a',2030)`); err != nil {
 		t.Fatalf("Probedaten (Schüler): %v", err)
 	}
 }
 
-// zaehleAlleTabellen liefert für JEDE Tabelle des Schemas die Zeilenzahl. Der Vergleich
-// über alle Tabellen ist die aussagekräftige Gegenprobe: Er bemerkt auch eine Tabelle,
-// an die beim Schreiben des Tests niemand gedacht hat.
+// zaehleAlleTabellen liefert für jede Tabelle des Schemas die Zahl der Zeilen. Der Vergleich
+// über alle Tabellen ist die aussagekräftige Gegenprobe: Er bemerkt auch eine Tabelle, an die
+// beim Schreiben des Tests niemand gedacht hat.
 func zaehleAlleTabellen(t *testing.T, dsn string) map[string]int {
 	t.Helper()
 
-	conn := verbinde(t, dsn)
+	verbindung := verbinde(t, dsn)
 	ctx := context.Background()
 
-	rows, err := conn.Query(ctx, `
+	zeilen, err := verbindung.Query(ctx, `
 		SELECT table_name FROM information_schema.tables
 		WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
 		ORDER BY table_name`)
@@ -249,23 +247,23 @@ func zaehleAlleTabellen(t *testing.T, dsn string) map[string]int {
 		t.Fatalf("Tabellenliste: %v", err)
 	}
 	var namen []string
-	for rows.Next() {
+	for zeilen.Next() {
 		var n string
-		if err := rows.Scan(&n); err != nil {
-			rows.Close()
+		if err := zeilen.Scan(&n); err != nil {
+			zeilen.Close()
 			t.Fatalf("Tabellenname: %v", err)
 		}
 		namen = append(namen, n)
 	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
+	zeilen.Close()
+	if err := zeilen.Err(); err != nil {
 		t.Fatalf("Tabellenliste: %v", err)
 	}
 
 	bestand := make(map[string]int, len(namen))
 	for _, n := range namen {
 		var anzahl int
-		if err := conn.QueryRow(ctx, `SELECT count(*) FROM `+pgIdent(n)).Scan(&anzahl); err != nil {
+		if err := verbindung.QueryRow(ctx, `SELECT count(*) FROM `+pgBezeichner(n)).Scan(&anzahl); err != nil {
 			t.Fatalf("Zählung %s: %v", n, err)
 		}
 		bestand[n] = anzahl
@@ -300,22 +298,22 @@ func vergleicheBestand(t *testing.T, erwartet, tatsaechlich map[string]int) {
 	}
 }
 
-// entschluesseleUndPacke bildet exakt den Weg von cmd/restore-backup nach:
+// entschluesseleUndPacke bildet genau den Weg von cmd/restore-backup nach:
 // backupkrypto.Entschluessele, dann gunzip.
-func entschluesseleUndPacke(t *testing.T, key string, roh []byte) string {
+func entschluesseleUndPacke(t *testing.T, schluessel string, roh []byte) string {
 	t.Helper()
 
-	komprimiert, err := backupkrypto.Entschluessele(key, roh)
+	komprimiert, err := backupkrypto.Entschluessele(schluessel, roh)
 	if err != nil {
 		t.Fatalf("Entschlüsselung fehlgeschlagen: %v", err)
 	}
-	gz, err := gzip.NewReader(bytes.NewReader(komprimiert))
+	entpacker, err := gzip.NewReader(bytes.NewReader(komprimiert))
 	if err != nil {
 		t.Fatalf("gzip-Header ungültig: %v", err)
 	}
-	defer func() { _ = gz.Close() }() //nolint:errcheck
+	defer func() { _ = entpacker.Close() }() //nolint:errcheck
 
-	sqlText, err := io.ReadAll(gz)
+	sqlText, err := io.ReadAll(entpacker)
 	if err != nil {
 		t.Fatalf("Dekomprimierung fehlgeschlagen: %v", err)
 	}

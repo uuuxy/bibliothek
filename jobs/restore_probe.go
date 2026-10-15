@@ -1,19 +1,18 @@
 package jobs
 
-// restore_probe.go — Wöchentliche Wiederherstellungs-Probe der ECHTEN Backup-Dateien.
+// Wöchentliche Restore-Probe der echten Dateien der Sicherung.
 //
-// Die CI-Drill (backup_drill_pg_test.go) beweist bei jedem Push, dass der MECHANISMUS
-// funktioniert — mit einem in CI frisch erzeugten Backup. Was sie nicht beweisen kann:
-// dass die Dateien, die der nächtliche Job auf der Betriebs-Platte hinterlässt, sich
-// wirklich wiederherstellen lassen. Genau dort lauern die Ernstfall-Überraschungen:
-// gewechselter Schlüssel, gekappte Datei, Eigenheiten des echten Datenbestands.
-// „Wir haben Backups" ist ohne diese Probe eine Konvention — der schlechteste Moment,
-// das zu erfahren, ist der Ernstfall (Schema-Erweiterung 21.08.2026).
+// Die Übung in der CI (backup_drill_pg_test.go) belegt bei jedem Push, dass das Verfahren wirkt,
+// mit einer in der CI frisch erzeugten Sicherung. Was sie nicht belegen kann: dass sich die
+// Dateien, die der nächtliche Lauf auf der Platte des Betriebs hinterlässt, wirklich
+// wiederherstellen lassen. Genau dort liegen die Überraschungen des Ernstfalls: gewechselter
+// Schlüssel, abgeschnittene Datei, Eigenheiten des echten Bestands. „Wir haben Sicherungen" ist
+// ohne die Probe eine Behauptung, und der schlechteste Moment, das zu erfahren, ist der Ernstfall.
 //
-// Ablauf: jüngste backup_*.sql.gz.enc → entschlüsseln → entpacken → psql in eine
-// Wegwerf-Datenbank → Tabellen zählen → Ergebnis nach system_einstellungen. Die
-// Betriebsbereitschafts-Seite liest das Ergebnis als eigenen Befund; eine
-// fehlgeschlagene oder stehengebliebene Probe erreicht so die tägliche Alarm-Mail.
+// Ablauf: jüngste backup_*.sql.gz.enc → entschlüsseln → entpacken → mit psql in eine
+// Wegwerf-Datenbank → Tabellen zählen → Ergebnis nach system_einstellungen. Die Seite der
+// Betriebsbereitschaft liest das Ergebnis als eigenen Befund; eine gescheiterte oder
+// stehengebliebene Probe erreicht so die tägliche Alarm-Mail.
 
 import (
 	"context"
@@ -28,7 +27,7 @@ import (
 	"bibliothek/repository"
 )
 
-// RestoreProbeErgebnis ist das gespeicherte Resultat des letzten Probelaufs.
+// RestoreProbeErgebnis ist das gespeicherte Ergebnis des letzten Laufs der Probe.
 type RestoreProbeErgebnis struct {
 	Zeitpunkt   time.Time `json:"zeitpunkt"`
 	Erfolg      bool      `json:"erfolg"`
@@ -39,27 +38,27 @@ type RestoreProbeErgebnis struct {
 }
 
 const (
-	// RestoreProbeSchluessel ist der system_einstellungen-Schlüssel des Ergebnisses.
+	// RestoreProbeSchluessel ist der Schlüssel des Ergebnisses in system_einstellungen.
 	RestoreProbeSchluessel = "restore_probe_ergebnis"
-	restoreProbeDBName     = "bibliothek_restore_probe_wegwerf"
-	// restoreProbeMinTabellen: Ein eingespielter Dump mit weniger Tabellen ist kein
-	// Bibliotheks-Schema — „psql lief durch" allein wäre auch bei einer leeren Datei wahr.
-	restoreProbeMinTabellen = 20
+	probeDatenbank         = "bibliothek_restore_probe_wegwerf"
+	// probeMindestTabellen: Ein eingespielter Dump mit weniger Tabellen ist kein Schema der
+	// Bibliothek; „psql lief durch" wäre auch bei einer leeren Datei wahr.
+	probeMindestTabellen = 20
 )
 
-// RunRestoreProbe führt die Probe aus und speichert das Ergebnis. Fehlt der
-// Backup-Schlüssel oder die DATABASE_URL, unterbleibt sie still — diesen Zustand
-// meldet die Betriebsbereitschaft bereits über den Backup-Befund als kritisch.
-func (s *Scheduler) RunRestoreProbe() {
-	encKey, dsn, backupDir, ok := resolveBackupEnv()
+// FuehreRestoreProbeAus führt die Probe aus und speichert das Ergebnis. Fehlt der Schlüssel der
+// Sicherung oder die DATABASE_URL, unterbleibt sie ohne Meldung; diesen Zustand meldet die
+// Betriebsbereitschaft schon über den Befund der Sicherung als kritisch.
+func (z *Zeitplan) FuehreRestoreProbeAus() {
+	schluessel, dsn, verzeichnis, ok := leseBackupUmgebung()
 	if !ok {
 		return
 	}
 	start := time.Now()
-	ergebnis := s.fuehreRestoreProbeAus(encKey, dsn, backupDir)
+	ergebnis := z.probeJuengsteSicherung(schluessel, dsn, verzeichnis)
 	ergebnis.Zeitpunkt = time.Now().UTC()
 	ergebnis.DauerMS = time.Since(start).Milliseconds()
-	s.speichereRestoreProbe(ergebnis)
+	z.speichereProbeErgebnis(ergebnis)
 	if ergebnis.Erfolg {
 		log.Printf("Restore-Probe: ERFOLG — %s in %d ms wiederhergestellt (%d Tabellen)",
 			ergebnis.BackupDatei, ergebnis.DauerMS, ergebnis.Tabellen)
@@ -68,8 +67,10 @@ func (s *Scheduler) RunRestoreProbe() {
 	}
 }
 
-func (s *Scheduler) fuehreRestoreProbeAus(encKey, dsn, backupDir string) RestoreProbeErgebnis {
-	datei, err := juengsteBackupDatei(backupDir)
+// probeJuengsteSicherung spielt die jüngste Sicherung in eine Wegwerf-Datenbank ein und zählt
+// ihre Tabellen.
+func (z *Zeitplan) probeJuengsteSicherung(schluessel, dsn, verzeichnis string) RestoreProbeErgebnis {
+	datei, err := juengsteBackupDatei(verzeichnis)
 	if err != nil {
 		return RestoreProbeErgebnis{Fehler: err.Error()}
 	}
@@ -80,7 +81,7 @@ func (s *Scheduler) fuehreRestoreProbeAus(encKey, dsn, backupDir string) Restore
 		e.Fehler = fmt.Sprintf("Backup-Datei nicht lesbar: %v", err)
 		return e
 	}
-	sqlText, err := entschluesseleBackup(encKey, roh)
+	sqlText, err := entschluesseleBackup(schluessel, roh)
 	if err != nil {
 		e.Fehler = fmt.Sprintf("%s: %v", e.BackupDatei, err)
 		return e
@@ -89,21 +90,21 @@ func (s *Scheduler) fuehreRestoreProbeAus(encKey, dsn, backupDir string) Restore
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
 
-	// Wegwerf-Datenbank auf demselben Server; WITH (FORCE) räumt Reste eines
-	// abgebrochenen Vorlaufs ab. Der App-Pool darf das: CREATE DATABASE läuft
-	// ausserhalb von Transaktionen, und der Betriebs-Nutzer ist der DB-Eigentümer.
-	if _, err := s.db.Exec(ctx, `DROP DATABASE IF EXISTS `+restoreProbeDBName+` WITH (FORCE)`); err != nil {
+	// Wegwerf-Datenbank auf demselben Server; WITH (FORCE) räumt Reste eines abgebrochenen
+	// Laufs ab. Der Pool des Programms darf das: CREATE DATABASE läuft außerhalb von
+	// Transaktionen, und der Benutzer des Betriebs ist Eigentümer der Datenbank.
+	if _, err := z.pool.Exec(ctx, `DROP DATABASE IF EXISTS `+probeDatenbank+` WITH (FORCE)`); err != nil {
 		e.Fehler = fmt.Sprintf("Wegwerf-Datenbank aufräumen: %v", err)
 		return e
 	}
-	if _, err := s.db.Exec(ctx, `CREATE DATABASE `+restoreProbeDBName); err != nil {
+	if _, err := z.pool.Exec(ctx, `CREATE DATABASE `+probeDatenbank); err != nil {
 		e.Fehler = fmt.Sprintf("Wegwerf-Datenbank anlegen: %v", err)
 		return e
 	}
 	defer func() {
 		hintergrund, abbruch := context.WithTimeout(context.Background(), time.Minute)
 		defer abbruch()
-		if _, err := s.db.Exec(hintergrund, `DROP DATABASE IF EXISTS `+restoreProbeDBName+` WITH (FORCE)`); err != nil {
+		if _, err := z.pool.Exec(hintergrund, `DROP DATABASE IF EXISTS `+probeDatenbank+` WITH (FORCE)`); err != nil {
 			log.Printf("Restore-Probe: Wegwerf-Datenbank blieb stehen (%v) — der nächste Lauf räumt sie ab", err)
 		}
 	}()
@@ -119,17 +120,17 @@ func (s *Scheduler) fuehreRestoreProbeAus(encKey, dsn, backupDir string) Restore
 		return e
 	}
 	e.Tabellen = tabellen
-	if tabellen < restoreProbeMinTabellen {
-		e.Fehler = fmt.Sprintf("nur %d Tabellen wiederhergestellt (erwartet ≥ %d) — der Dump ist unvollständig", tabellen, restoreProbeMinTabellen)
+	if tabellen < probeMindestTabellen {
+		e.Fehler = fmt.Sprintf("nur %d Tabellen wiederhergestellt (erwartet ≥ %d) — der Dump ist unvollständig", tabellen, probeMindestTabellen)
 		return e
 	}
 	e.Erfolg = true
 	return e
 }
 
-// speichereRestoreProbe legt das Ergebnis als JSON in system_einstellungen ab —
-// dieselbe Quelle, aus der die Betriebsbereitschafts-Seite alle Zustände liest.
-func (s *Scheduler) speichereRestoreProbe(e RestoreProbeErgebnis) {
+// speichereProbeErgebnis legt das Ergebnis als JSON in system_einstellungen ab, in derselben
+// Quelle, aus der die Seite der Betriebsbereitschaft alle Zustände liest.
+func (z *Zeitplan) speichereProbeErgebnis(e RestoreProbeErgebnis) {
 	wert, err := json.Marshal(e)
 	if err != nil {
 		log.Printf("Restore-Probe: Ergebnis nicht serialisierbar: %v", err)
@@ -137,36 +138,35 @@ func (s *Scheduler) speichereRestoreProbe(e RestoreProbeErgebnis) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	zustand := repository.NewBetriebszustandAbfragen(s.db)
+	zustand := repository.NewBetriebszustandAbfragen(z.pool)
 	if err := zustand.SchreibeEinstellungswert(ctx, RestoreProbeSchluessel, string(wert)); err != nil {
 		log.Printf("Restore-Probe: Ergebnis konnte nicht gespeichert werden: %v", err)
 	}
 }
 
-// probeBeimStartNachFehlschlag wiederholt die Restore-Probe beim Start, wenn der
-// letzte gespeicherte Lauf fehlgeschlagen ist (siehe cron.go).
-func (s *Scheduler) probeBeimStartNachFehlschlag() {
+// probeBeimStartNachFehlschlag wiederholt die Restore-Probe beim Start, wenn der letzte
+// gespeicherte Lauf gescheitert ist (cron.go).
+func (z *Zeitplan) probeBeimStartNachFehlschlag() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	wert, err := repository.NewBetriebszustandAbfragen(s.db).LadeEinstellungswert(ctx, RestoreProbeSchluessel)
+	wert, err := repository.NewBetriebszustandAbfragen(z.pool).LadeEinstellungswert(ctx, RestoreProbeSchluessel)
 	if err != nil || wert == "" {
-		return // noch nie geprobt oder nicht lesbar — der Sonntagslauf übernimmt
+		return // noch nie geprobt oder nicht lesbar: Der Lauf am Sonntag übernimmt
 	}
 	var letzte RestoreProbeErgebnis
 	if err := json.Unmarshal([]byte(wert), &letzte); err != nil || letzte.Erfolg {
 		return
 	}
 	log.Printf("Restore-Probe: letzter Lauf war fehlgeschlagen (%s) — probe beim Start erneut", letzte.Fehler)
-	s.RunRestoreProbe()
+	z.FuehreRestoreProbeAus()
 }
 
-// kuerzeFehlertext macht psql-Stderr ergebnis-tauglich: Zeilen mit Datenkontext
-// (CONTEXT: COPY schueler, line 12, column vorname: "…", DETAIL:, HINT:) fliegen raus —
-// dieser Text landet in der Datenbank, auf der Betriebsbereitschafts-Seite und in der
-// Alarm-Mail an frei konfigurierbare Empfänger (Prüfung 22.08.2026). Danach auf 500
-// Zeichen begrenzt.
+// kuerzeFehlertext macht die Ausgabe von psql auf Stderr tauglich für das Ergebnis: Zeilen mit
+// Daten (CONTEXT: COPY schueler, line 12, column vorname: "…", DETAIL:, HINT:) fallen weg, denn
+// der Text landet in der Datenbank, auf der Seite der Betriebsbereitschaft und in der Alarm-Mail
+// an frei eingestellte Empfänger. Danach ist er auf 500 Zeichen begrenzt.
 func kuerzeFehlertext(s string) string {
-	const max = 500
+	const grenze = 500
 	var behalten []string
 	for _, zeile := range strings.Split(s, "\n") {
 		z := strings.TrimSpace(zeile)
@@ -179,9 +179,9 @@ func kuerzeFehlertext(s string) string {
 		}
 		behalten = append(behalten, z)
 	}
-	out := strings.Join(behalten, " | ")
-	if len(out) > max {
-		return out[:max] + "…"
+	text := strings.Join(behalten, " | ")
+	if len(text) > grenze {
+		return text[:grenze] + "…"
 	}
-	return out
+	return text
 }

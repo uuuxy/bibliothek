@@ -10,10 +10,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Anliegen-Befristung am echten Postgres. Geprüft wird die PAARUNG aus Frist und
-// Erledigungs-Zustand — das, was ein Mock nur nachspielen würde: die
-// Intervall-Rechnung auf `erledigt_am` (nicht auf `erstellt_am`) und der Wächter, der
-// offene Anliegen unangetastet lässt.
+// Die Befristung der Anliegen an Postgres. Geprüft wird die Paarung aus Frist und Zustand der
+// Erledigung, also das, was eine Attrappe nur nachspielen würde: die Rechnung mit Intervallen auf
+// `erledigt_am` (nicht auf `erstellt_am`) und der Wächter, der offene Anliegen unangetastet
+// lässt.
 //
 // Erwartung nach dem Lauf mit der Vorgabe (365 Tage):
 //
@@ -22,9 +22,9 @@ import (
 //	ALT-OFFEN      vor 400 Tagen angelegt,
 //	               nie erledigt             → bleibt (laufende Sache, keine Frist)
 func TestAnliegenBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "anliegen")
 	befuelleQuelle(t, dsn)
@@ -56,8 +56,8 @@ func TestAnliegenBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
 		"ALT-OFFEN":     anlege("ALT-OFFEN", 400, true),
 	}
 
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunAnliegenBefristung()
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreAnliegenBefristungAus()
 
 	existiert := func(id string) bool {
 		t.Helper()
@@ -74,8 +74,8 @@ func TestAnliegenBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
 		}
 	}
 
-	// Der Lauf muss sich im Audit-Protokoll zeigen — eine Löschung ohne Spur ist genau
-	// das, was bei den DSGVO-Jobs zweimal monatelang unbemerkt ins Leere lief.
+	// Der Lauf muss sich im Protokoll zeigen: Eine Löschung ohne Spur ließe sich von einem Lauf,
+	// der ins Leere geht, nicht unterscheiden.
 	var eintraege int
 	if err := pool.QueryRow(ctx,
 		`SELECT count(*) FROM audit_log WHERE tabelle = 'lehrer_anliegen' AND aktion = 'DELETE'`).Scan(&eintraege); err != nil {
@@ -86,13 +86,12 @@ func TestAnliegenBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
 	}
 }
 
-// TestAnliegenBefristung_NullSchaltetAb: Die 0 ist in diesen Einstellungen ein echter
-// Wert und heißt "aus". Fiele sie durch, löschte der Job mit der Vorgabe weiter — und
-// die Schule hätte eine Abschaltung, die nichts abschaltet.
+// Die 0 ist in diesen Einstellungen ein echter Wert und heißt „aus". Fiele sie durch, löschte
+// der Lauf mit der Vorgabe weiter, und die Schule hätte eine Abschaltung, die nichts abschaltet.
 func TestAnliegenBefristung_NullSchaltetAb(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "anliegenaus")
 	befuelleQuelle(t, dsn)
@@ -117,7 +116,7 @@ func TestAnliegenBefristung_NullSchaltetAb(t *testing.T) {
 		t.Fatalf("Einstellung: %v", err)
 	}
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunAnliegenBefristung()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreAnliegenBefristungAus()
 
 	var n int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM lehrer_anliegen WHERE id = $1`, id).Scan(&n); err != nil {

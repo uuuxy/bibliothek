@@ -62,7 +62,7 @@ type APIHandlerConfig struct {
 // Hier stand bis zum 30.07.2026 ein Feld backup *BackupManager, das NewAPIHandler nie
 // gesetzt hat: ein vollständiges zweites Backup-System (Dump, Datei-Rotation,
 // Benachrichtigungs-Mail), das nichts erreichen konnte. Gesichert wird über
-// jobs.BackupJob — verschlüsselt, täglich, mit Statusanzeige in der Oberfläche.
+// jobs.BackupLauf — verschlüsselt, täglich, mit Statusanzeige in der Oberfläche.
 // Die .env.example lud allerdings dazu ein, BACKUP_EMAIL_TO zu setzen und auf
 // Benachrichtigungen zu warten, die nie kommen konnten. Ersatzlos entfernt.
 type APIHandler struct {

@@ -11,17 +11,17 @@ import (
 )
 
 // Wird ein Titel gelöscht, an dem noch eine Vormerkung hängt, bleibt im Protokoll eine Zeile
-// mit Kennung und Name des Lesers und dem Titel des Buchs. Sie verliert den Leser nach der
-// Lesehistorie-Frist der Schülerbücherei, wie die Ausleihe: Länger als die Lesehistorie bindet
+// mit Kennung und Name des Lesers und dem Titel des Buchs. Sie verliert den Leser nach der Frist
+// der Lesehistorie für die Schülerbücherei, wie die Ausleihe: Länger als die Lesehistorie bindet
 // nichts einen Leser an ein Buch. Die Zeile einer gelöschten Forderung behält ihn, sie belegt,
 // wessen Forderung mit dem Titel gelöscht wurde.
 //
 // Die Zeilen entstehen über die Tür der Buchakte (LoescheTitel); der Wächter stellt dieselbe
 // Frage wie der Lauf: vorher meldet er die fällige Zeile, danach nichts.
 func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "vormerkspur")
 	befuelleQuelle(t, dsn)
@@ -33,15 +33,15 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 
-	zeile := func(ziel any, sql string, args ...any) {
+	zeile := func(ziel any, sql string, argumente ...any) {
 		t.Helper()
-		if err := pool.QueryRow(ctx, sql, args...).Scan(ziel); err != nil {
+		if err := pool.QueryRow(ctx, sql, argumente...).Scan(ziel); err != nil {
 			t.Fatalf("%s: %v", sql, err)
 		}
 	}
-	must := func(sql string, args ...any) {
+	muss := func(sql string, argumente ...any) {
 		t.Helper()
-		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+		if _, err := pool.Exec(ctx, sql, argumente...); err != nil {
 			t.Fatalf("%s: %v", sql, err)
 		}
 	}
@@ -57,8 +57,8 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 		t.Helper()
 		zeile(&titelID, `INSERT INTO buecher_titel (titel, signatur) VALUES ($1, 'JF') RETURNING id`, name)
 		zeile(&exemplarID, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`, titelID, barcode)
-		must(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, schuelerID)
-		must(`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
+		muss(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, schuelerID)
+		muss(`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 			VALUES ($1, $2, 'Einband gerissen', 9.50)`, exemplarID, schuelerID)
 		if err := audit.LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
 			t.Fatalf("Titel %q löschen: %v", name, err)
@@ -69,7 +69,7 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 	frisch, _ := titelMitVormerkungUndForderung("Vorgemerkt und frisch", "B-VSPUR-NEU")
 	// Die Zeilen des ersten Titels sind älter als Frist und Kulanz des Wächters. Die Zeile der
 	// Vormerkung steht unter der Kennung des Titels, die der Forderung unter der des Exemplars.
-	must(`UPDATE audit_log SET timestamp = NOW() - make_interval(days => $3 + 5)
+	muss(`UPDATE audit_log SET timestamp = NOW() - make_interval(days => $3 + 5)
 		WHERE (tabelle = 'vormerkungen' AND datensatz_id = $1)
 		   OR (tabelle = 'schadensfaelle' AND datensatz_id = $2)`,
 		alt, altExemplar, repository.LesehistorieTageVorgabe)
@@ -92,13 +92,13 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 		}
 	}
 
-	const routine = "Lesehistorie Schülerbücherei"
+	const lauf = "Lesehistorie Schülerbücherei"
 	zustand := repository.NewBetriebszustandAbfragen(pool)
-	if n := rueckstandAlsMap(ctx, t, zustand)[routine]; n != 1 {
+	if n := rueckstandAlsMap(ctx, t, zustand)[lauf]; n != 1 {
 		t.Errorf("Wächter vor dem Lauf: %d fällige Zeilen, erwartet 1 (die Zeile der alten Vormerkung)", n)
 	}
 
-	NewScheduler(pool, audit).RunLesehistorieBefristung()
+	NewZeitplan(pool, audit).FuehreLesehistorieBefristungAus()
 
 	for _, schluessel := range []string{"schueler_id", "betrifft"} {
 		if traegt(alt, "vormerkungen", schluessel) {
@@ -116,7 +116,7 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 			t.Errorf("Die Zeile der gelöschten Forderung hat %q verloren; sie bleibt bis zur Tilgung des Lesers", schluessel)
 		}
 	}
-	if n := rueckstandAlsMap(ctx, t, zustand)[routine]; n != 0 {
+	if n := rueckstandAlsMap(ctx, t, zustand)[lauf]; n != 0 {
 		t.Errorf("Wächter nach dem Lauf: %d fällige Zeilen, erwartet 0", n)
 	}
 }

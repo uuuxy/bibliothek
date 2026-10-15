@@ -10,8 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Gelöschte Kollegen fallen nach 180 Tagen im Papierkorb endgültig (entschieden am 28.09.2026,
-// docs/OFFEN.md 5.19) — über denselben Weg wie „Endgültig löschen" von Hand (LoescheLeserEndgueltig).
+// Gelöschte Kollegen fallen nach 180 Tagen im Papierkorb endgültig, über denselben Weg wie
+// „Endgültig löschen" von Hand (LoescheLeserEndgueltig).
 //
 // Erwartung nach dem Lauf:
 //
@@ -24,10 +24,10 @@ import (
 //	K-AKTIV      Kollege, nicht im Papierkorb                       → bleibt
 //	S-ALT        Schüler, 200 Tage im Papierkorb                    → bleibt (ihn anonymisiert
 //	                                                                   ein anderer Lauf)
-func TestPapierkorbKollegen_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+func TestPapierkorbLoeschung_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "papierkorb")
 	befuelleQuelle(t, dsn)
@@ -39,10 +39,10 @@ func TestPapierkorbKollegen_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.T
 	}
 	t.Cleanup(pool.Close)
 
-	eins := func(was, sql string, args ...any) string {
+	eins := func(was, sql string, argumente ...any) string {
 		t.Helper()
 		var id string
-		if err := pool.QueryRow(ctx, sql, args...).Scan(&id); err != nil {
+		if err := pool.QueryRow(ctx, sql, argumente...).Scan(&id); err != nil {
 			t.Fatalf("%s: %v", was, err)
 		}
 		return id
@@ -86,7 +86,7 @@ func TestPapierkorbKollegen_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.T
 		INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 		VALUES ($1, $2, 'Wasserschaden', 12.50) RETURNING id`, exemplar("PK-SCHADEN"), ids["K-FORDERUNG"])
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunPapierkorbKollegenLoeschung()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehrePapierkorbLoeschungAus()
 
 	for name, bleibt := range map[string]bool{
 		"K-ALT": false, "K-JUNG": true, "K-AUSLEIHE": true, "K-FORDERUNG": true, "K-AKTIV": true, "S-ALT": true,
@@ -100,7 +100,8 @@ func TestPapierkorbKollegen_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.T
 		}
 	}
 
-	// Der Vorgang bleibt für Statistik und Bestandskartei, nur ohne Person — wie beim Purge von Hand.
+	// Der Vorgang bleibt für Statistik und Bestandskartei, nur ohne Person, wie beim endgültigen
+	// Löschen von Hand.
 	var ohnePerson bool
 	if err := pool.QueryRow(ctx,
 		`SELECT schueler_id IS NULL FROM ausleihen WHERE exemplar_id = $1`, zurueck).Scan(&ohnePerson); err != nil {
@@ -110,16 +111,16 @@ func TestPapierkorbKollegen_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.T
 		t.Error("die zurückgegebene Ausleihe von K-ALT hängt nach dem Löschen noch an einer Person")
 	}
 
-	// Im Protokoll: die Löschung selbst (Akteur SYSTEM, wie beim Purge ohne Bearbeiter) und die
-	// Zeile des Laufs mit der Zahl.
-	var purge, lauf string
+	// Im Protokoll: die Löschung selbst (Akteur SYSTEM, wie beim endgültigen Löschen ohne
+	// Bearbeiter) und die Zeile des Laufs mit der Zahl.
+	var loescheEndgueltig, lauf string
 	if err := pool.QueryRow(ctx, `
 		SELECT coalesce(akteur, '') FROM audit_log
-		WHERE tabelle = 'schueler' AND aktion = 'DELETE' AND datensatz_id = $1`, ids["K-ALT"]).Scan(&purge); err != nil {
+		WHERE tabelle = 'schueler' AND aktion = 'DELETE' AND datensatz_id = $1`, ids["K-ALT"]).Scan(&loescheEndgueltig); err != nil {
 		t.Fatalf("Protokoll der Löschung: %v", err)
 	}
-	if purge != "SYSTEM" {
-		t.Errorf("Akteur der Löschung: %q, erwartet SYSTEM", purge)
+	if loescheEndgueltig != "SYSTEM" {
+		t.Errorf("Akteur der Löschung: %q, erwartet SYSTEM", loescheEndgueltig)
 	}
 	if err := pool.QueryRow(ctx, `
 		SELECT coalesce(details->>'geloescht', '') FROM audit_log

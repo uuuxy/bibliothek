@@ -10,5 +10,4 @@ var stilBestand = map[string]stilZahl{
 	"cmd/seed":               {Fach: 2, Verb: 4, Kuerzel: 0, Datei: 0, Datum: 1},
 	"cmd/stresstest":         {Fach: 4, Verb: 2, Kuerzel: 0, Datei: 0, Datum: 0},
 	"inventur":               {Fach: 59, Verb: 48, Kuerzel: 1, Datei: 9, Datum: 45},
-	"jobs":                   {Fach: 4, Verb: 16, Kuerzel: 0, Datei: 1, Datum: 25},
 }

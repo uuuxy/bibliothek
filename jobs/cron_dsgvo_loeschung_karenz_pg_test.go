@@ -11,23 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die endgültige Löschung wartet die Karenz ab: Gelöscht wird nur, was schon anonymisiert
-// ist (Befund-Register, Entscheidung vom 05.09.2026). Bis dahin löschte
-// RunGDPRDeleteAbgaenger ab dem 30. Januar des Folgejahres jeden Abgänger ohne offene
-// Vorgänge in der nächsten Nacht — und lief im Cron VOR der Anonymisierung. Die Karenz
-// (ab dem letzten Vorgang) galt nur für die Anonymisierung; wer nach dem Stichtag
-// zurückgab, hatte kein Reparaturfenster, wer im November zurückgab, ein verkürztes.
+// Die endgültige Löschung wartet die Karenz ab: Gelöscht wird nur, was schon anonymisiert ist.
+// Löschte der Lauf ab dem 30. Januar des Folgejahres jeden Abgänger ohne offene Vorgänge in der
+// nächsten Nacht und vor der Anonymisierung, gälte die Karenz (ab dem letzten Vorgang) nur für
+// die Anonymisierung: Wer nach dem Stichtag zurückgab, hätte kein Fenster für eine Reparatur,
+// wer im November zurückgab, ein verkürztes.
 //
-// Gefahren wird die ganze nächtliche Folge (RunNaechtlicheDSGVO), nicht ein einzelner
-// Job: Die Regel „nach der Karenz anonymisiert UND in derselben Nacht gelöscht" hängt an
-// der Reihenfolge. Die Fälle sind so gebaut, dass das alte Prädikat bei SPAET rot wird
-// (gelöscht trotz Rückgabe vor fünf Tagen) und die alte Reihenfolge bei REIF
-// (anonymisiert, aber erst in der nächsten Nacht gelöscht). ANON, OFFEN und SCHADEN
-// sichern, was unverändert bleibt.
+// Gefahren wird die ganze Folge der Nacht (FuehreNaechtlicheDSGVOAus), nicht ein einzelner
+// Lauf: Die Regel „nach der Karenz anonymisiert und in derselben Nacht gelöscht" hängt an der
+// Reihenfolge. Die Fälle sind so gebaut, dass eine Löschung ohne Karenz bei SPAET rot wird
+// (gelöscht trotz Rückgabe vor fünf Tagen) und die umgekehrte Reihenfolge bei REIF (anonymisiert,
+// aber erst in der nächsten Nacht gelöscht). ANON, OFFEN und SCHADEN sichern, was gleich
+// bleibt.
 func TestNaechtlicheDSGVO_LoeschungWartetDieKarenzAb(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "loeschkarenz")
 	befuelleQuelle(t, dsn)
@@ -42,8 +41,8 @@ func TestNaechtlicheDSGVO_LoeschungWartetDieKarenzAb(t *testing.T) {
 		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, repository.AbgaengerKarenzSchluessel); err != nil {
 		t.Fatal(err)
 	}
-	// Alle sind Abgänger eines Jahrgangs VOR dem Stichjahr — die Löschung ist nach dem
-	// Jahr also fällig; was sie hält, ist allein die Karenz oder ein offener Vorgang.
+	// Alle sind Abgänger eines Jahrgangs vor dem Stichjahr, die Löschung ist nach dem Jahr also
+	// fällig; was sie hält, ist allein die Karenz oder ein offener Vorgang.
 	altesJahr := repository.AbgaengerStichjahr(time.Now()) - 1
 
 	// anonymisiertVor "" = noch nicht anonymisiert.
@@ -100,22 +99,22 @@ func TestNaechtlicheDSGVO_LoeschungWartetDieKarenzAb(t *testing.T) {
 		return true, anonymisiert
 	}
 
-	// SPAET: Buch vor 5 Tagen zurück — die Karenz hat gerade erst begonnen.
+	// SPAET: Buch vor 5 Tagen zurück; die Karenz hat gerade erst begonnen.
 	spaet := legeAbgaenger("LK-SPAET", "")
 	legeAusleihe(spaet, legeExemplar("LK-SPAET-EX"), "200 days", "5 days")
-	// REIF: Buch vor 100 Tagen zurück — Karenz abgelaufen, noch nicht anonymisiert.
+	// REIF: Buch vor 100 Tagen zurück; Karenz abgelaufen, noch nicht anonymisiert.
 	reif := legeAbgaenger("LK-REIF", "")
 	legeAusleihe(reif, legeExemplar("LK-REIF-EX"), "300 days", "100 days")
-	// ANON: längst anonymisiert — fällig wie bisher.
+	// ANON: längst anonymisiert, also fällig.
 	anon := legeAbgaenger("LK-ANON", "10 days")
-	// OFFEN: Buch noch draußen — bleibt mit Namen stehen (Mahnwesen).
+	// OFFEN: Buch noch draußen; bleibt mit Namen stehen (Mahnwesen).
 	offen := legeAbgaenger("LK-OFFEN", "")
 	legeAusleihe(offen, legeExemplar("LK-OFFEN-EX"), "200 days", "")
-	// SCHADEN: Buch als verloren gebucht, Rechnung offen — bleibt mit Namen stehen.
+	// SCHADEN: Buch als verloren gebucht, Rechnung offen; bleibt mit Namen stehen.
 	schaden := legeAbgaenger("LK-SCHADEN", "")
 	legeSchaden(schaden, legeExemplar("LK-SCHADEN-EX"), false)
 
-	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunNaechtlicheDSGVO()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreNaechtlicheDSGVOAus()
 
 	if da, anonym := zustand(spaet); !da || anonym {
 		t.Errorf("SPAET: Rückgabe vor 5 Tagen muss die volle Karenz bekommen — existiert=%v, anonymisiert=%v (Löschung kennt die Karenz nicht?)", da, anonym)

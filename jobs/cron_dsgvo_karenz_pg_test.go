@@ -10,15 +10,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Karenz-Uhr am nächtlichen Job (Rasterdurchgang 02.09.2026, Frage 7): Kein Test
-// fuhr RunGDPRAnonymizeOldData über eine Zeile mit altem abgaenger_seit und frischem
-// aktualisiert_am — das alte Prädikat (nur aktualisiert_am) und ein fest verdrahtetes
-// 360 wären unter allen Tests grün geblieben. Hier: die Uhr ist abgaenger_seit, nicht
-// aktualisiert_am, und die Frist kommt aus der Einstellung abgaenger_karenz_tage.
-func TestGDPRAnonymize_KarenzUhrUndEinstellung(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+// Die Karenz-Uhr am Lauf der Nacht: Die Uhr ist abgaenger_seit, nicht aktualisiert_am, und die
+// Frist kommt aus der Einstellung abgaenger_karenz_tage. Ohne eine Zeile mit altem
+// abgaenger_seit und frischem aktualisiert_am blieben eine Uhr aus aktualisiert_am und eine fest
+// verdrahtete Frist von 360 Tagen unter allen Tests grün.
+func TestSchuelerAnonymisierung_KarenzUhrUndEinstellung(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "karenz")
 	befuelleQuelle(t, dsn)
@@ -61,8 +60,8 @@ func TestGDPRAnonymize_KarenzUhrUndEinstellung(t *testing.T) {
 	setzeKarenz("90")
 	a := lege("KZ-A", "100 days", "1 day")
 	b := lege("KZ-B", "0 days", "400 days")
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunGDPRAnonymizeOldData()
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreSchuelerAnonymisierungAus()
 	if !anonymisiert(a) {
 		t.Error("A (abgaenger_seit vor 100 Tagen) muss bei Karenz 90 anonymisiert sein — rechnet der Job mit aktualisiert_am?")
 	}
@@ -73,25 +72,25 @@ func TestGDPRAnonymize_KarenzUhrUndEinstellung(t *testing.T) {
 	// Einstellung: dieselbe Zeile wie A überlebt eine Karenz von 200 Tagen.
 	setzeKarenz("200")
 	c := lege("KZ-C", "100 days", "1 day")
-	s.RunGDPRAnonymizeOldData()
+	z.FuehreSchuelerAnonymisierungAus()
 	if anonymisiert(c) {
 		t.Error("C darf bei Karenz 200 nicht anonymisiert sein — liest der Job die Einstellung?")
 	}
 }
 
-// Unlesbare Einstellungen dürfen NICHT anonymisieren (Rasterdurchgang 06.09.2026).
+// Unlesbare Einstellungen dürfen nicht anonymisieren.
 //
-// Die Vorgabe-Karenz von 90 Tagen sieht nach einem sicheren Rückfall aus und ist der
-// gefährlichste Wert: Eine KLEINERE Karenz wählt MEHR Zeilen. Bei eingestellten 200 Tagen
-// hätte ein einziger Lesefehler alle Abgänger zwischen Tag 91 und 200 anonymisiert —
-// unwiederbringlich, und der Löschjob räumt die Hülle in derselben Nacht.
+// Die Vorgabe von 90 Tagen Karenz sieht nach einem sicheren Rückfall aus und ist der
+// gefährlichste Wert: Eine kleinere Karenz wählt mehr Zeilen. Bei eingestellten 200 Tagen
+// anonymisierte ein einziger Lesefehler alle Abgänger zwischen Tag 91 und 200, unwiederbringlich,
+// und die Löschung räumt die Hülle in derselben Nacht.
 //
-// Der Lesefehler wird hier echt hergestellt (die Tabelle ist kurz weg), nicht gemockt:
-// Nur so läuft der Job über denselben Weg wie im Betrieb.
-func TestGDPRAnonymize_OhneEinstellungenWirdNichtsAnonymisiert(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+// Der Lesefehler wird hier echt hergestellt (die Tabelle ist kurz weg), ohne Attrappe: Nur so
+// läuft der Lauf über denselben Weg wie im Betrieb.
+func TestSchuelerAnonymisierung_OhneEinstellungenWirdNichtsAnonymisiert(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "karenzfehler")
 	befuelleQuelle(t, dsn)
@@ -114,13 +113,13 @@ func TestGDPRAnonymize_OhneEinstellungenWirdNichtsAnonymisiert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Einstellungen unlesbar machen — die Zeile liegt zwischen Vorgabe (90) und
-	// eingestellter Karenz (200), fällt also genau dann, wenn der Job die Vorgabe nimmt.
+	// Einstellungen unlesbar machen: Die Zeile liegt zwischen der Vorgabe (90) und der
+	// eingestellten Karenz (200), fällt also genau dann, wenn der Lauf die Vorgabe nimmt.
 	if _, err := pool.Exec(ctx, `ALTER TABLE system_einstellungen RENAME TO system_einstellungen_weg`); err != nil {
 		t.Fatalf("Tabelle umbenennen: %v", err)
 	}
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunGDPRAnonymizeOldData()
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreSchuelerAnonymisierungAus()
 	if _, err := pool.Exec(ctx, `ALTER TABLE system_einstellungen_weg RENAME TO system_einstellungen`); err != nil {
 		t.Fatalf("Tabelle zurückbenennen: %v", err)
 	}
@@ -138,7 +137,7 @@ func TestGDPRAnonymize_OhneEinstellungenWirdNichtsAnonymisiert(t *testing.T) {
 		repository.AbgaengerKarenzSchluessel); err != nil {
 		t.Fatal(err)
 	}
-	s.RunGDPRAnonymizeOldData()
+	z.FuehreSchuelerAnonymisierungAus()
 	if err := pool.QueryRow(ctx, `SELECT anonymized_at IS NOT NULL FROM schueler WHERE id = $1`, id).Scan(&anonym); err != nil {
 		t.Fatal(err)
 	}

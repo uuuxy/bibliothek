@@ -138,7 +138,7 @@ Ausleihe vom Leser trennt, und die Karenz würde kürzer als eingestellt. Import
 (`jobs/cron_dsgvo.go`) und Selbstprüfung lesen **denselben** Schlüssel und rechnen mit
 **demselben** Prädikat (`repository.PraedikatAnonymisierung`).
 
-Warum 90 und nicht länger: Die endgültige Löschung (`RunGDPRDeleteAbgaenger`, 30. Januar
+Warum 90 und nicht länger: Die endgültige Löschung (`FuehreAbgaengerLoeschungAus`, 30. Januar
 des Folgejahres) bleibt unberührt und deckelt die Frist ohnehin. Warum nicht 0: In der
 Karenz lässt sich eine falsche Zuordnung noch reparieren (§3 beim nächsten Lauf, §5 von
 Hand). Ein anonymisierter Datensatz ist dafür verloren.

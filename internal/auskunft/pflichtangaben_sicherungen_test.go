@@ -10,7 +10,7 @@ import (
 // Die Auskunft nennt die Fristen der Sicherungen vor einem Update und von Hand als feste
 // Zahlen; gelten tun sie in zwei Shell-Skripten. Ändert sich eine davon, wird dieser Test rot,
 // und die Auskunft an die betroffene Person zieht mit. Die Nachtsicherung liest die Auskunft
-// aus dem Job selbst (jobs.BehalteNaechte, jobs.BehalteWochen).
+// aus dem Job selbst (jobs.AufbewahrteNaechte, jobs.AufbewahrteWochen).
 //
 // Blindheit: nur die zwei Zahlen an je genau einer Fundstelle. Eine weitere Art von Sicherung
 // oder eine Zahl, die ihre Bedeutung wechselt, sieht er nicht.

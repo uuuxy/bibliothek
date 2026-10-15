@@ -10,27 +10,26 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Lesehistorie-Befristung am echten Postgres. Geprüft wird die PAARUNG aus Frist
-// und Medienklasse — genau das, was ein Mock nur nachspielen würde: LMF-Erkennung per
-// Regex auf der Signatur, make_interval, der Schadensfall-Wächter, die Geräte ohne
-// Exemplar, die Lehrer-Ausleihe und der Aus-Schalter (0 Tage).
+// Die Befristung der Lesehistorie an Postgres. Geprüft wird die Paarung aus Frist und Klasse
+// des Mediums, genau das, was eine Attrappe nur nachspielen würde: die Klasse aus dem Eigentum
+// (repository.ExemplarTopfSQL), make_interval, der Wächter für Schadensfälle, die Geräte ohne
+// Exemplar, die Ausleihe einer Lehrkraft und der Schalter zum Abschalten (0 Tage).
 //
-// Erwartung je Ausleihe nach dem Lauf mit den Vorgaben (1 / 730 Tage; die Schülerbücherei bis
-// zum 29.09.2026 90 Tage):
+// Erwartung je Ausleihe nach dem Lauf mit den Vorgaben (1 / 730 Tage):
 //
 //	F-ALT   Freihand, vor 100 Tagen zurück            → getrennt
-//	F-GESTERN Freihand, vor 2 Tagen zurück            → getrennt (seit 29.09.2026)
+//	F-GESTERN Freihand, vor 2 Tagen zurück            → getrennt
 //	F-JUNG  Freihand, heute zurück                    → bleibt
 //	F-SCHAD Freihand, vor 100 Tagen, offener Schaden  → bleibt
 //	F-OFFEN Freihand, noch ausgeliehen                → bleibt
-//	F-LEHR  Freihand, Kollege, vor 800 Tagen zurück   → getrennt (seit 16.09.2026)
+//	F-LEHR  Freihand, Kollege, vor 800 Tagen zurück   → getrennt
 //	G-ALT   Gerät, vor 100 Tagen zurück               → getrennt (kurze Frist)
 //	L-MITTEL Lernmittel, vor 100 Tagen zurück         → bleibt (lange Frist)
 //	L-ALT   Lernmittel, vor 800 Tagen zurück          → getrennt
 func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "lesehist")
 	befuelleQuelle(t, dsn)
@@ -42,9 +41,9 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 
-	must := func(sql string, args ...any) {
+	muss := func(sql string, argumente ...any) {
 		t.Helper()
-		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+		if _, err := pool.Exec(ctx, sql, argumente...); err != nil {
 			t.Fatalf("%s: %v", sql, err)
 		}
 	}
@@ -59,7 +58,8 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, signatur) VALUES ('Der Roman', 'Ro Mus') RETURNING id`).Scan(&freihandTitel); err != nil {
 		t.Fatalf("Freihand-Titel: %v", err)
 	}
-	// Lernmittel-Kennung in der SIGNATUR (so schreibt die Admin-UI), nicht im Titel.
+	// Lernmittel über ist_lernmittel am Titel: Ohne Eigentum am Exemplar und ohne Bestellung gilt
+	// diese Faustregel (repository.ExemplarTopfSQL).
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7', true) RETURNING id`).Scan(&lmfTitel); err != nil {
 		t.Fatalf("LMF-Titel: %v", err)
 	}
@@ -96,13 +96,12 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	ids["F-OFFEN"] = leihe("F-OFFEN", exemplar(freihandTitel, "B-F4"), -1)
 	ids["L-MITTEL"] = leihe("L-MITTEL", exemplar(lmfTitel, "B-L1"), 100)
 	ids["L-ALT"] = leihe("L-ALT", exemplar(lmfTitel, "B-L2"), 800)
-	must(`INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
+	muss(`INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
 	      SELECT exemplar_id, id, schueler_id, 'Einband gerissen', 12.50, false FROM ausleihen WHERE id = $1`, ids["F-SCHAD"])
-	// Die Ausleihe einer Lehrkraft hängt seit Migration 125 an ihrer LESERZEILE und steht in
-	// derselben Spalte wie die eines Schülers. Sie ist als Dauerleihe gekennzeichnet — die
-	// Befristung trifft sie trotzdem, sobald sie ZURÜCKGEGEBEN ist (entschieden am
-	// 16.09.2026: eine Regel für jeden Leser). Solange sie läuft, ist sie unberührt, weil
-	// die Frist mit der Rückgabe beginnt; das prüft F-OFFEN.
+	// Die Ausleihe einer Lehrkraft hängt an ihrer Leserzeile und steht in derselben Spalte wie die
+	// eines Schülers. Sie ist als Dauerleihe gekennzeichnet; die Befristung trifft sie trotzdem,
+	// sobald sie zurückgegeben ist, denn es gilt eine Regel für jeden Leser. Solange sie läuft, ist
+	// sie unberührt, weil die Frist mit der Rückgabe beginnt; das prüft F-OFFEN.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, ist_handapparat)
 		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), NOW() - interval '830 days', NOW() - interval '809 days', NOW() - interval '800 days', true) RETURNING id`,
@@ -121,9 +120,9 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	}
 	ids["G-ALT"] = geraetAusleihe
 
-	// Prüfung 22.08.2026, A5: Das Ausleih-Protokoll (audit_log CHECKOUT/RETURN, Details
-	// mit schueler_id) trug die Lesehistorie weiter, nachdem die Ausleihe längst getrennt
-	// war — bis zur Audit-Aufbewahrung (24 Monate). Dieselbe Frist gilt jetzt auch dort.
+	// Das Protokoll der Ausleihe (audit_log CHECKOUT/RETURN, Details mit schueler_id) trüge die
+	// Lesehistorie sonst weiter, nachdem die Ausleihe längst getrennt ist, bis zum Ende der
+	// Aufbewahrung des Protokolls (24 Monate). Dieselbe Frist gilt deshalb auch dort.
 	exemplarVon := func(ausleiheID string) string {
 		t.Helper()
 		var e string
@@ -133,14 +132,14 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		return e
 	}
 	for name, tage := range map[string]int{"F-ALT": 100, "F-GESTERN": 2, "F-JUNG": 0, "L-MITTEL": 100, "L-ALT": 800} {
-		must(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
+		muss(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
 		      VALUES ('ausleihen', 'RETURN', $1::uuid, 'USER',
 		              jsonb_build_object('exemplar_id', $1::text, 'schueler_id', $2::text),
 		              NOW() - make_interval(days => $3))`, exemplarVon(ids[name]), schuelerID, tage)
 	}
 
-	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
-	s.RunLesehistorieBefristung()
+	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
+	z.FuehreLesehistorieBefristungAus()
 
 	auditTraegtSchueler := func(name string) bool {
 		t.Helper()
@@ -173,8 +172,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 			t.Errorf("%s: Schüler zugeordnet = %v, erwartet %v", name, got, bleibt)
 		}
 	}
-	// Die zurückgegebene Ausleihe des Kollegen wird getrennt wie die eines Schülers: Vor
-	// dem 16.09.2026 blieb sie ihm auf Dauer zugeordnet, weil das Prädikat nur Schüler sah.
+	// Die zurückgegebene Ausleihe des Kollegen wird getrennt wie die eines Schülers.
 	// Gezählt wird über die Leserzeile, nicht über das Konto — beim Trennen fällt der
 	// Bezug, und ein JOIN darauf fände die Zeile danach nicht mehr.
 	var kollegeGetrennt bool
@@ -187,7 +185,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		t.Error("die zurückgegebene Ausleihe des Kollegen blieb ihm zugeordnet")
 	}
 
-	// Der Lauf protokolliert sich als Systemaktion — mit den Zahlen beider Klassen.
+	// Der Lauf protokolliert sich als Aktion des Systems, mit den Zahlen beider Klassen.
 	var auditZeilen int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND aktion = 'ANONYMIZE'
 		AND details->>'schuelerbuecherei_getrennt' = '4' AND details->>'lernmittel_getrennt' = '1'`).Scan(&auditZeilen); err != nil {
@@ -197,15 +195,15 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		t.Errorf("erwartet genau 1 Audit-Eintrag mit 4/1 Trennungen, gefunden %d", auditZeilen)
 	}
 
-	// Aus-Schalter: 0 Tage Schülerbücherei → nichts mehr trennen, Lernmittel läuft weiter.
-	must(`INSERT INTO system_einstellungen (schluessel, wert) VALUES ('lesehistorie_tage', '0')
+	// Abgeschaltet: 0 Tage für die Schülerbücherei trennt nichts mehr, die Lernmittel laufen weiter.
+	muss(`INSERT INTO system_einstellungen (schluessel, wert) VALUES ('lesehistorie_tage', '0')
 	      ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`)
 	fAus := leihe("F-AUS", exemplar(freihandTitel, "B-F6"), 100)
 	lAus := leihe("L-AUS", exemplar(lmfTitel, "B-L3"), 800)
 	ids["F-AUS"] = fAus
 	// Abgeschaltet ist die Befristung ganz: Auch die Protokollzeile der Ausleihe und die Spur
 	// einer gelöschten Vormerkung behalten den Leser.
-	must(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
+	muss(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
 	      VALUES ('ausleihen', 'RETURN', $1::uuid, 'USER',
 	              jsonb_build_object('exemplar_id', $1::text, 'schueler_id', $2::text),
 	              NOW() - interval '100 days')`, exemplarVon(fAus), schuelerID)
@@ -216,7 +214,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	              NOW() - interval '100 days') RETURNING id`, schuelerID).Scan(&spurAus); err != nil {
 		t.Fatalf("Spur einer Vormerkung: %v", err)
 	}
-	s.RunLesehistorieBefristung()
+	z.FuehreLesehistorieBefristungAus()
 	if !hatSchueler(fAus) {
 		t.Errorf("F-AUS: bei lesehistorie_tage=0 darf die Schülerbücherei NICHT getrennt werden")
 	}

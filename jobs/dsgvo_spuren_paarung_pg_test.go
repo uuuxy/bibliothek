@@ -8,22 +8,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die PAARUNG aus Purge-Tilgung und Cron-Tilgung, am echten Postgres.
+// Die Paarung aus der Tilgung beim endgültigen Löschen und der Tilgung in der Nacht, an
+// Postgres.
 //
-// Fund (31.08.2026, Auswertung des Komplett-Durchgangs): repository.TilgeSchuelerSpuren
-// (Purge/LUSD-Abgang) und bereinigeAnonymisierteSchuelerSpuren (nächtlicher Cron über
-// anonymized_at) beantworteten dieselbe Frage — „welche Spuren eines Schülers stehen in
-// den Neben-Tabellen?" — mit zwei getrennt gepflegten Statement-Listen. Der Cron hatte
-// drei der vier Statements; es fehlte genau die Lesehistorie (audit_log mit
-// tabelle='ausleihen'). Folge: Nach der Cron-Anonymisierung stand der KLARNAME des
-// Schülers (details->>'entleiher') weiter in jeder CHECKOUT-Zeile — „anonymisiert" laut
-// schueler-Zeile, re-identifizierbar über das Protokoll, bis irgendwann die (abschaltbare!)
-// Lesehistorie-Befristung ihn zufällig einholte. Klassiker Doppelte Wahrheitsquelle;
-// seit diesem Fund teilen beide Pfade die Statement-Liste (repository.SpurTilgungen).
+// repository.TilgeSchuelerSpuren (endgültige Löschung, Abgang aus der LUSD) und
+// bereinigeAnonymisierteSchuelerSpuren (Lauf der Nacht über anonymized_at) beantworten dieselbe
+// Frage: Welche Spuren eines Schülers stehen in den übrigen Tabellen? Pflegte jeder Weg seine
+// eigene Liste von Anweisungen, fehlte einer leicht eine, etwa die Lesehistorie (audit_log mit
+// tabelle='ausleihen'): Dann stünde nach der Anonymisierung der Klarname des Schülers
+// (details->>'entleiher') weiter in jeder Zeile CHECKOUT, „anonymisiert" laut Zeile in leser und
+// über das Protokoll wieder erkennbar, bis irgendwann die abschaltbare Befristung der
+// Lesehistorie ihn zufällig einholte. Deshalb teilen beide Wege die Liste
+// (repository.SpurTilgungen).
 func TestSpurenTilgung_CronDecktDieselbenSpurenWieDerPurge(t *testing.T) {
-	adminDSN := os.Getenv(drillEnvVar)
+	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
-		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
 	}
 	_, dsn := legeProbeDatenbankAn(t, adminDSN, "spuren")
 	befuelleQuelle(t, dsn)
@@ -35,8 +35,8 @@ func TestSpurenTilgung_CronDecktDieselbenSpurenWieDerPurge(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 
-	// Ein anonymisierter Schüler (den der Cron aufgreifen muss) und ein aktiver
-	// (dessen Spuren stehen bleiben müssen — Über-Tilgungs-Gegenprobe).
+	// Ein anonymisierter Schüler, den der Lauf aufgreifen muss, und ein aktiver, dessen Spuren
+	// stehen bleiben müssen (Gegenprobe gegen zu viel Tilgung).
 	var anonID, aktivID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, anonymized_at)
@@ -51,10 +51,10 @@ func TestSpurenTilgung_CronDecktDieselbenSpurenWieDerPurge(t *testing.T) {
 		t.Fatalf("aktiven Schüler anlegen: %v", err)
 	}
 
-	// Je eine Lesehistorie-Zeile, wie sie die Ausleihe schreibt (repository/protokoll.go:
-	// tabelle='ausleihen', Schüler nur in details), plus je eine Vormerkung und je eine
-	// schueler-Historienzeile — die Spuren, die der Purge-Pfad nachweislich tilgt.
-	for _, s := range []struct{ id, name string }{
+	// Je eine Zeile der Lesehistorie, wie sie die Ausleihe schreibt (repository/protokoll.go:
+	// tabelle='ausleihen', der Schüler nur in details), dazu je eine Vormerkung und je eine Zeile
+	// der Historie in schueler: die Spuren, die das endgültige Löschen nachweislich tilgt.
+	for _, z := range []struct{ id, name string }{
 		{anonID, "Klarname Getilgt"},
 		{aktivID, "Klarname Bleibt"},
 	} {
@@ -62,16 +62,16 @@ func TestSpurenTilgung_CronDecktDieselbenSpurenWieDerPurge(t *testing.T) {
 			INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
 			VALUES ('ausleihen', 'CHECKOUT', gen_random_uuid(), 'USER',
 			        jsonb_build_object('schueler_id', $1::text, 'entleiher', $2::text))`,
-			s.id, s.name); err != nil {
+			z.id, z.name); err != nil {
 			t.Fatalf("Lesehistorie-Zeile: %v", err)
 		}
 	}
 
-	s := NewScheduler(pool, nil)
-	s.bereinigeAnonymisierteSchuelerSpuren(ctx)
+	z := NewZeitplan(pool, nil)
+	z.bereinigeAnonymisierteSchuelerSpuren(ctx)
 
-	// Die Frage der Art.-15-Auskunft und der Purge-Tilgung, wortgleich: Für den
-	// anonymisierten Schüler darf sie nichts mehr finden.
+	// Die Frage der Auskunft nach Art. 15 und der Tilgung beim endgültigen Löschen, wortgleich: Für
+	// den anonymisierten Schüler darf sie nichts mehr finden.
 	var verbleibend int
 	if err := pool.QueryRow(ctx, `
 		SELECT count(*) FROM audit_log
@@ -83,8 +83,8 @@ func TestSpurenTilgung_CronDecktDieselbenSpurenWieDerPurge(t *testing.T) {
 			"andere Spuren als der Purge (Doppelte Wahrheitsquelle)", verbleibend)
 	}
 
-	// Der Klarname darf NIRGENDS in den Protokoll-Details überleben — wertbasiert
-	// gesucht, damit auch ein künftiger neuer Schlüssel auffällt.
+	// Der Klarname darf nirgends in den Details des Protokolls überleben, gesucht am Wert, damit
+	// auch ein neuer Schlüssel auffällt.
 	var klarname int
 	if err := pool.QueryRow(ctx,
 		`SELECT count(*) FROM audit_log WHERE details::text LIKE '%Klarname Getilgt%'`).Scan(&klarname); err != nil {

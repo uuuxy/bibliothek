@@ -181,7 +181,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] `api/tuer`.
 - [x] Die zwölf Themen unter `api/`.
 - [x] `api/`.
-- [ ] `inventur/`, `jobs/`, `cmd/` und das Wurzelpaket.
+- [ ] `inventur/`, `cmd/` und das Wurzelpaket.
 - [ ] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
 - [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, Zustand auf der Ebene eines
   Pakets, der Kopf der Schule an acht Türen.
@@ -448,12 +448,12 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 65 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+**Fertig sind 66 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
 gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
 Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
 `middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), `repository` und
 von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera`, `lusd`,
-`service`, `testdaten`, `tuertest` und `routertest`, dazu `api/tuer` und die zwölf Themen darüber (`api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung`, `api/leser` und `api/katalog`), `api/` selbst, `apierrors`, `sse`, `db`, `pdf`, `mailservice` und `auth`.
+`service`, `testdaten`, `tuertest` und `routertest`, dazu `api/tuer` und die zwölf Themen darüber (`api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung`, `api/leser` und `api/katalog`), `api/` selbst, `apierrors`, `sse`, `db`, `pdf`, `mailservice`, `auth` und `jobs`.
 
 **Ein Paket ist fertig, wenn:**
 
@@ -672,11 +672,11 @@ Sicherung von 2010 sind es 5 Sperren und 4 Salden ungleich 0. An der Sicherung v
 
 `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` und `S3_BUCKET` sind leer (13.09.2026); alles
 liegt auf einer Platte. Nur ein Speicher in der EU. Der Code ist fertig bis auf das Löschen
-(nachgesehen am 28.09.2026): `uploadBackupToS3` in `jobs/backup.go` lädt jede Nachtsicherung
+(nachgesehen am 28.09.2026): `schreibeBackupNachS3` in `jobs/backup.go` lädt jede Nachtsicherung
 hoch, die Rotation gilt nur dem lokalen Verzeichnis. Ohne Löschregel am Speicher bliebe dort jede
 Sicherung mit allen Personen ihres Stands unbegrenzt liegen. Beim Einrichten eine Löschregel am
 Speicher setzen, die der Aufbewahrung der Nachtsicherung folgt (die jüngsten 14, dazu je
-Kalenderwoche eine für 12 Wochen; `jobs.BehalteNaechte`, `jobs.BehalteWochen`), oder die Rotation
+Kalenderwoche eine für 12 Wochen; `jobs.AufbewahrteNaechte`, `jobs.AufbewahrteWochen`), oder die Rotation
 im Code auf den Speicher ausdehnen. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
 Ein zweiter Rechner per Kopierbefehl oder eine getauschte Platte leisten dasselbe ohne
 Vertragsfrage, außerhalb des Programms; das ist eine Betriebsentscheidung.

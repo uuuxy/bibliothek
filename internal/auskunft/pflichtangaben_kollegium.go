@@ -20,8 +20,8 @@ import (
 //     manage_users, das Protokoll audit_logs (api/routen_system.go).
 //   - Trennen der Ausleihen: praedikatLesehistorieAusleihen fragt nicht nach der Art.
 //   - Erledigte Klassensatz-Reservierungen fallen nach derselben Frist wie erledigte Wünsche
-//     und Meldungen (RunKlassensatzBefristung). Ein gelöschter Kollege fällt nach 180 Tagen im
-//     Papierkorb endgültig (RunPapierkorbKollegenLoeschung, über LoescheLeserEndgueltig); offene
+//     und Meldungen (FuehreKlassensatzBefristungAus). Ein gelöschter Kollege fällt nach 180 Tagen im
+//     Papierkorb endgültig (FuehrePapierkorbLoeschungAus, über LoescheLeserEndgueltig); offene
 //     Ausleihen und unbezahlte Forderungen halten ihn. Sein Zugangskonto geht schon beim
 //     Löschen (LegeLeserInPapierkorb).
 //

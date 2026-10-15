@@ -258,7 +258,7 @@ func SperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID, grund string) e
 //
 // Der Sperrgrund wird ein fester Text, weil ein alter Grund Personenbezug tragen kann.
 // anonymized_at und die anonyme Ausweisnummer setzt auch der nächtliche Lauf
-// (RunGDPRAnonymizeOldData); an anonymized_at hängen dessen Nachlauf über die Nebentabellen und
+// (FuehreSchuelerAnonymisierungAus); an anonymized_at hängen dessen Nachlauf über die Nebentabellen und
 // die Sperre des Papierkorbs. abgaenger_jahr wird wie in SperreAbgaenger das Jahr des Abgangs,
 // damit der Löschjob die Zeile später entfernt. Die Spuren in den Nebentabellen tilgt
 // TilgeSchuelerSpuren in derselben Transaktion.

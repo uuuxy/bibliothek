@@ -645,7 +645,7 @@ HTTP-Anfrage
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/leser/dsgvo_auskunft.go` und `api/leser/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
 | `inventur/`             | 6.547 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.740 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Verlängern der Sitzung |
-| `jobs/`                 | 1.607 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
+| `jobs/`                 | 1.593 Zeilen, 14 Dateien   | Zeitplan für den Cron (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 651 Zeilen, 5 Dateien      | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                  |
 | `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 3.628 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben, Bestellbericht |
@@ -1295,19 +1295,19 @@ Pfadparameter davor, und deren Liste gehört zu den Routen. Ein Test legt eine E
 
 #### 5.4.5 `jobs/` — der Zeitplan
 
-| Job                       | Zeitplan (UTC)                  | Inhalt                                                                                                     |
-| ------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `RunNaechtlicheDSGVO`     | `0 0 * * *`                     | Anonymisierung Ausleihen → Anonymisierung fälliger Schüler-PII → Hard-Delete Abgänger → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen, **in dieser Reihenfolge** |
-| `RunAuditAufbewahrung`    | `0 3 * * *`                     | Audit-Einträge jenseits der Frist löschen (Vorgabe 24 Monate)                                              |
-| `RunDatabaseBackup`       | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload                              |
-| Idempotenz-TTL            | `17 * * * *`                    | Schlüssel älter als 24 h entfernen (**stündlicher Takt**, 24 h ist die Aufbewahrung)                        |
-| Vormerkungs-Verfall       | `23 * * * *`                    | Abgelaufene „abholbereit"-Reservierungen abräumen                                                           |
-| Cover-Sync                | `0 */6 * * *` + on demand       | Worker-Pool (8), Re-Entrancy-Guard, Retry für FAILED                                                        |
-| `RunRestoreProbe`         | `30 3 * * 0`                    | Jüngstes Backup in eine Wegwerf-Datenbank einspielen; Ergebnis wird Befund der Selbstprüfung                |
+| Job                              | Zeitplan (UTC)                  | Inhalt                                                                                                     |
+| -------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `FuehreNaechtlicheDSGVOAus`      | `0 0 * * *`                     | Anonymisierung Ausleihen → Anonymisierung fälliger Schüler-PII → Hard-Delete Abgänger → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen, **in dieser Reihenfolge** |
+| `FuehreProtokollAufbewahrungAus` | `0 3 * * *`                     | Audit-Einträge jenseits der Frist löschen (Vorgabe 24 Monate)                                              |
+| `BackupLauf.FuehreAus`           | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload                              |
+| Idempotenz-TTL                   | `17 * * * *`                    | Schlüssel älter als 24 h entfernen (**stündlicher Takt**, 24 h ist die Aufbewahrung)                        |
+| Vormerkungs-Verfall              | `23 * * * *`                    | Abgelaufene „abholbereit"-Reservierungen abräumen                                                           |
+| Cover-Sync                       | `0 */6 * * *` + on demand       | Worker-Pool (8), Re-Entrancy-Guard, Retry für FAILED                                                        |
+| `FuehreRestoreProbeAus`          | `30 3 * * 0`                    | Jüngstes Backup in eine Wegwerf-Datenbank einspielen; Ergebnis wird Befund der Selbstprüfung                |
 
 Daneben laufen **zwei** Starter im Prozess selbst: `startGDPRWorker` (beim Start und alle
-24 h, nur `RunGDPRAnonymizeLoans` + `RunGDPRDeleteAbgaenger` — **nicht**
-`RunGDPRAnonymizeOldData`) und `startBereitschaftsWaechter` (3 Minuten nach dem Start,
+24 h, nur `FuehreBearbeiterAnonymisierungAus` + `FuehreAbgaengerLoeschungAus` — **nicht**
+`FuehreSchuelerAnonymisierungAus`) und `startBereitschaftsWaechter` (3 Minuten nach dem Start,
 danach alle 24 h). Der erste Lauf nach 3 Minuten ist Absicht: Ein Deploy mit kaputter
 Umgebung meldet sich noch am selben Vormittag, nicht erst am nächsten Tag.
 
@@ -1662,11 +1662,11 @@ die Klassenleitung, **nie** an Schüler.
 ### 6.8 Der Nachtlauf: DSGVO, Backup, Restore-Probe
 
 ```
-00:00 UTC  RunNaechtlicheDSGVO
-             1. RunGDPRAnonymizeLoans      bearbeiter_id nach 14 Tagen entfernen
-             2. RunGDPRAnonymizeOldData    fällige Schüler-PII inkl. Audit-Spuren tilgen
-             3. RunGDPRDeleteAbgaenger     Hard-Delete ab 30. Januar des Folgejahres,
-                                           NUR anonymisierte Zeilen
+00:00 UTC  FuehreNaechtlicheDSGVOAus
+             1. FuehreBearbeiterAnonymisierungAus  bearbeiter_id nach 14 Tagen entfernen
+             2. FuehreSchuelerAnonymisierungAus    fällige Schüler-PII inkl. Audit-Spuren tilgen
+             3. FuehreAbgaengerLoeschungAus        Hard-Delete ab 30. Januar des Folgejahres,
+                                                NUR anonymisierte Zeilen
              4. Papierkorb: gelöschte Kollegen nach 180 Tagen endgültig löschen
              5. Lesehistorie   6. Anliegen   7. Klassensatz-Reservierungen
              8. quittierte Nachbuch-Meldungen
@@ -3865,8 +3865,8 @@ Der Job sagt es („S3 credentials not fully configured – skipping offsite upl
 Betriebsbereitschaft führt es unter „Auslagerung der Backups" als kritisch
 (`pruefeAuslagerung`); im echten Betrieb geht ein kritischer Befund täglich per Mail an die
 Admins. Ein Host-Verlust ohne Offsite ist trotzdem ein Datenverlust. Ist ein Speicher
-eingerichtet, löscht das Programm dort nichts: Die Aufbewahrung (`jobs.BehalteNaechte`,
-`jobs.BehalteWochen`) gilt nur dem lokalen Verzeichnis. Das Einrichten und die Frage des
+eingerichtet, löscht das Programm dort nichts: Die Aufbewahrung (`jobs.AufbewahrteNaechte`,
+`jobs.AufbewahrteWochen`) gilt nur dem lokalen Verzeichnis. Das Einrichten und die Frage des
 Löschens stehen in [OFFEN.md](OFFEN.md) 7.3.
 
 #### R9 — Kein externes Uptime-Signal
