@@ -39,7 +39,7 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{}).Routes()
 
 	ausleiher := testdaten.LegeSchuelerAn(t, pool, "S-SCHULD-A", "Anna", "07A")
 	unbeteiligt := testdaten.LegeSchuelerAn(t, pool, "S-SCHULD-B", "Ben", "07B")
@@ -94,7 +94,7 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{}).Routes()
 
 	kind := testdaten.LegeSchuelerAn(t, pool, "S-ZURUECK-A", "Zoe", "07A")
 	ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Zurücktitel", 1), "EX-ZURUECK-1", true, "")

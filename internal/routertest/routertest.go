@@ -34,7 +34,7 @@ func MitSitzung(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname strin
 func MitSitzungUeber(t *testing.T, pool *pgxpool.Pool, serverPool db.Pool, email, vorname, nachname string) (adminID, sitzung string, router http.Handler) {
 	t.Helper()
 	adminID, sitzung, anmeldung := tuertest.AdminSitzung(t, pool, email, vorname, nachname)
-	return adminID, sitzung, api.NewServer(&db.Verbindung{Pool: serverPool}, anmeldung, sse.NewBroker(), false).Routes()
+	return adminID, sitzung, api.NewServer(&db.Verbindung{Pool: serverPool}, anmeldung, sse.NewBroker(), api.ServerKonfig{}).Routes()
 }
 
 // MitAufruf legt ein Admin-Konto mit Sitzung an und liefert seine Kennung und einen Aufruf über

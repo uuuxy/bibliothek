@@ -11,7 +11,7 @@ import (
 // Betrieb jede Mail als „nicht konfiguriert" ab, und kein Test einer Tür fiele darüber: Die
 // Tests geben ihren Türen einen eigenen Versand.
 func TestNewServer_RichtetDenMailversandEin(t *testing.T) {
-	srv := NewServer(&db.Verbindung{}, nil, nil, false)
+	srv := NewServer(&db.Verbindung{}, nil, nil, ServerKonfig{})
 	if _, ok := srv.Mail.(*mailservice.Postausgang); !ok {
 		t.Errorf("NewServer(…).Mail = %T, erwartet *mailservice.Postausgang", srv.Mail)
 	}

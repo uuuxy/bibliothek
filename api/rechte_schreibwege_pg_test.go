@@ -96,7 +96,7 @@ func TestSchreibwegeWeisenOhneDasRechtAb(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), ServerKonfig{})
 	router := srv.Routes()
 	welt := baueKanarienWelt(t, pool, authenticator)
 

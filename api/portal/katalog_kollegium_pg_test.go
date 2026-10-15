@@ -44,7 +44,7 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string, *tuer.Rechte
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{})
 	router := srv.Routes()
 
 	var kontoID string

@@ -11,31 +11,30 @@
 // jedes Gerät der Schule für den Proxy und lässt einen Client mit einem vorangestellten Eintrag
 // seine Adresse wählen. Steht ein zweiter Proxy vor Caddy, liefert das Paket deshalb dessen
 // Adresse und nicht die des Clients.
+//
+// Der Server legt einen Ermittler mit den vertrauten Netzen an und setzt seine Middleware an
+// den Anfang der Kette; jede Tür liest die Adresse danach mit AusAnfrage.
 package clientip
 
 import (
+	"context"
 	"net"
 	"net/http"
-	"os"
 	"strings"
-	"sync/atomic"
 )
 
-// loopbackNetze sind immer vertraut, damit die Entwicklung am eigenen Rechner und die
-// Bereitschaftsprüfung ohne Einstellung laufen.
-var loopbackNetze = []string{"127.0.0.0/8", "::1/128"}
-
-// ermittler ordnet einer Anfrage die Adresse des Clients zu und glaubt dabei nur Proxys aus
-// seinen vertrauten Netzen. Er wird nach dem Anlegen nicht mehr geändert.
-type ermittler struct {
+// Ermittler ordnet einer Anfrage die Adresse des Clients zu und glaubt dabei nur Proxys aus
+// seinen vertrauten Netzen und auf Loopback. Der Nullwert vertraut nur Loopback, damit die
+// Entwicklung am eigenen Rechner und die Bereitschaftsprüfung ohne Einstellung laufen.
+type Ermittler struct {
 	vertraut []*net.IPNet
 }
 
-// newErmittler liest die vertrauten Netze aus CIDR-Angaben oder einzelnen Adressen. Leere
+// NewErmittler liest die vertrauten Netze aus CIDR-Angaben oder einzelnen Adressen. Leere
 // und unlesbare Einträge übergeht er, damit ein Tippfehler in der Umgebung den Start nicht
 // verhindert.
-func newErmittler(netze []string) *ermittler {
-	e := &ermittler{}
+func NewErmittler(netze []string) *Ermittler {
+	e := &Ermittler{}
 	for _, roh := range netze {
 		netz := strings.TrimSpace(roh)
 		if netz == "" {
@@ -55,8 +54,30 @@ func newErmittler(netze []string) *ermittler {
 	return e
 }
 
+// Middleware legt die Adresse des Clients in den Kontext der Anfrage, bevor next sie bekommt.
+func (e *Ermittler) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), adresseSchluessel{}, e.ausAnfrage(r))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// adresseSchluessel ist der Schlüssel der ermittelten Adresse im Kontext einer Anfrage.
+type adresseSchluessel struct{}
+
+// AusAnfrage liefert die Adresse des Clients zu einer Anfrage, ohne Port: die, die die
+// Middleware eines Ermittlers abgelegt hat. Kam die Anfrage an keiner vorbei, glaubt sie nur
+// einem Proxy auf Loopback.
+func AusAnfrage(r *http.Request) string {
+	if adresse, ok := r.Context().Value(adresseSchluessel{}).(string); ok {
+		return adresse
+	}
+	var nurLoopback Ermittler
+	return nurLoopback.ausAnfrage(r)
+}
+
 // ausAnfrage liefert die Adresse des Clients ohne Port.
-func (e *ermittler) ausAnfrage(r *http.Request) string {
+func (e *Ermittler) ausAnfrage(r *http.Request) string {
 	gegenstelle := ohnePort(r.RemoteAddr)
 	if !e.istVertraut(gegenstelle) {
 		return gegenstelle
@@ -83,11 +104,14 @@ func rechtesterEintrag(liste string) string {
 	return ""
 }
 
-// istVertraut meldet, ob die Adresse in einem der vertrauten Netze liegt.
-func (e *ermittler) istVertraut(adresse string) bool {
+// istVertraut meldet, ob die Adresse auf Loopback oder in einem der vertrauten Netze liegt.
+func (e *Ermittler) istVertraut(adresse string) bool {
 	ip := net.ParseIP(adresse)
 	if ip == nil {
 		return false
+	}
+	if ip.IsLoopback() {
+		return true
 	}
 	for _, netz := range e.vertraut {
 		if netz.Contains(ip) {
@@ -104,37 +128,4 @@ func ohnePort(adresse string) string {
 		return host
 	}
 	return adresse
-}
-
-// prozessweit ist der Ermittler, den AusAnfrage nimmt. Er vertraut zunächst nur Loopback;
-// der Start ersetzt ihn über SetzeProxysAusUmgebung.
-var prozessweit atomic.Pointer[ermittler]
-
-func init() {
-	prozessweit.Store(newErmittler(loopbackNetze))
-}
-
-// SetzeProxys legt fest, aus welchen Netzen ein Proxy als vertraut gilt. Loopback gilt
-// zusätzlich immer.
-func SetzeProxys(netze []string) {
-	alle := make([]string, 0, len(netze)+len(loopbackNetze))
-	alle = append(alle, netze...)
-	alle = append(alle, loopbackNetze...)
-	prozessweit.Store(newErmittler(alle))
-}
-
-// SetzeProxysAusUmgebung liest die vertrauten Netze aus TRUSTED_PROXIES, getrennt durch
-// Kommas. Ist die Variable leer, bleibt nur Loopback vertraut.
-func SetzeProxysAusUmgebung() {
-	roh := strings.TrimSpace(os.Getenv("TRUSTED_PROXIES"))
-	if roh == "" {
-		SetzeProxys(nil)
-		return
-	}
-	SetzeProxys(strings.Split(roh, ","))
-}
-
-// AusAnfrage liefert die Adresse des Clients zu einer Anfrage, ohne Port.
-func AusAnfrage(r *http.Request) string {
-	return prozessweit.Load().ausAnfrage(r)
 }

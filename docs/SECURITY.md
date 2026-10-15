@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-09 (Löschroutinen: Die Selbstprüfung zählt auch den Rückstand
+> Zuletzt aktualisiert: 2026-10-15 (Adresse des Browsers: Der Server legt den Ermittler mit den
+> vertrauten Proxys an und setzt ihn an den Anfang seiner Kette).
+> Davor 2026-10-09 (Löschroutinen: Die Selbstprüfung zählt auch den Rückstand
 > der Bearbeiter an zurückgegebenen Ausleihen; gosec läuft im Hook vor dem Push mit, Fassung,
 > Aufruf und Ausschlussliste stehen in `scripts/gosec-gate.sh`).
 > Davor 2026-10-08 (XLSX-Importe: alle Lesestellen durch
@@ -109,6 +111,12 @@ Alle IP-gebundenen Schutzmechanismen (beide Login-Limiter, der globale Rate-Limi
 Cover-Bremse, das Audit-Log) fragen `clientip.AusAnfrage`. Die Regel: `X-Forwarded-For`
 wird nur geglaubt, wenn die Verbindung von einem Netz aus `TRUSTED_PROXIES` kommt, und
 dann zählt der **rechteste** Eintrag — der, den Caddy selbst angehängt hat.
+
+Den Ermittler mit diesen Netzen legt der Server an (`api.ServerKonfig`) und setzt seine
+Middleware an den Anfang der Kette (`baueKette` in `api/router.go`); `clientip.AusAnfrage` liest
+die Adresse danach aus dem Kontext der Anfrage. Wer an der Kette vorbei fragt, bekommt nur
+Loopback als vertrauten Proxy. Gate: `TestServer_BremseSiehtDenBrowserHinterDemProxy` (rot
+gesehen ohne das Glied und ohne die Netze aus der Konfiguration).
 
 Bis zum 05.09.2026 lief das Paket **rekursiv**: Er übersprang jeden Eintrag, der in
 einem vertrauten Netz lag. Der Compose-Default vertraut allen RFC-1918-Netzen (das

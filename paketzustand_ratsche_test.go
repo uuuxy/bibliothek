@@ -23,9 +23,9 @@ import (
 //
 // Blindheit: Gesehen werden Zuweisungen, auch zusammengesetzte (+=) und ++/--, an einen Namen,
 // den eine Programmdatei desselben Ordners auf Paketebene erklärt, und an paket.Name eines
-// eingebundenen Pakets. Nicht gesehen werden Funktionen, die einen Wert des Pakets setzen
-// (clientip.SetzeProxys), Schreiben über einen Zeiger oder eine Map der Paketebene, die ein Test
-// befüllt, und Variablen, die eine Testdatei selbst erklärt.
+// eingebundenen Pakets. Nicht gesehen werden Funktionen und Methoden, die einen Wert des Pakets
+// setzen (Store an einem atomic.Bool), Schreiben über einen Zeiger oder eine Map der Paketebene,
+// die ein Test befüllt, und Variablen, die eine Testdatei selbst erklärt.
 func TestPaketzustand_TestsSetzenKeineVariableDesPakets(t *testing.T) {
 	funde, gelesen := paketzustandFunde(t, ".")
 	if gelesen < 500 {

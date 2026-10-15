@@ -151,7 +151,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{}).Routes()
 	rufe := func(methode, pfad, rumpf string) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))

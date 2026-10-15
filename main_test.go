@@ -45,7 +45,8 @@ func TestLeseKonfig_Gueltig(t *testing.T) {
 	defer stelleUmgebungHer(vorher)
 
 	setzeGueltigeUmgebung()
-	dsn, jwtGeheimnis, port, nurHTTPS := leseKonfig()
+	setzeVariable("TRUSTED_PROXIES", "172.16.0.0/12,10.0.0.0/8")
+	dsn, jwtGeheimnis, port, server := leseKonfig()
 
 	if dsn != "postgres://user:pass@localhost:5432/db" {
 		t.Errorf("dsn = %s, erwartet ist der gesetzte Wert", dsn)
@@ -56,8 +57,11 @@ func TestLeseKonfig_Gueltig(t *testing.T) {
 	if port != "8080" {
 		t.Errorf("port = %s, erwartet ist der gesetzte Wert", port)
 	}
-	if !nurHTTPS {
-		t.Errorf("nurHTTPS = %v, erwartet ist true", nurHTTPS)
+	if !server.NurHTTPS {
+		t.Errorf("NurHTTPS = %v, erwartet ist true", server.NurHTTPS)
+	}
+	if got := strings.Join(server.VertrauteProxys, " "); got != "172.16.0.0/12 10.0.0.0/8" {
+		t.Errorf("VertrauteProxys = %q, erwartet die Netze aus TRUSTED_PROXIES", got)
 	}
 }
 

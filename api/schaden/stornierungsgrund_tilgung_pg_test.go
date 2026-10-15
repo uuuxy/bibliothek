@@ -45,7 +45,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{}).Routes()
 
 	// storniere legt dem Leser eine offene Forderung an und storniert sie über die Tür.
 	storniere := func(t *testing.T, leserID, kennung, grund string) (forderungID, titelID string) {

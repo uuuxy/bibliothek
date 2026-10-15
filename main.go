@@ -35,7 +35,6 @@ import (
 	"bibliothek/internal/crypto"
 	"bibliothek/internal/service"
 	"bibliothek/jobs"
-	"bibliothek/pkg/clientip"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -221,7 +220,7 @@ func ermittleCookieSecure() bool {
 
 // leseKonfig liest die Konfiguration aus der Umgebung und bricht beim Start ab, wenn sie
 // unbrauchbar oder gefährlich ist.
-func leseKonfig() (dsn, jwtGeheimnis, port string, nurHTTPS bool) {
+func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 	dsn = os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		log.Fatalf("FATAL: DATABASE_URL environment variable is required and cannot be empty")
@@ -289,12 +288,12 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, nurHTTPS bool) {
 		log.Fatalf("FATAL: PORT environment variable is required and cannot be empty")
 	}
 
-	nurHTTPS = ermittleCookieSecure()
+	server.NurHTTPS = ermittleCookieSecure()
 
 	// Die vertrauten Proxys für die Adresse des Browsers (Bremsen, Anmeldung, Protokoll). Ohne
 	// TRUSTED_PROXIES wird nur Loopback vertraut; hinter Caddy im Docker-Netz muss das Netz dort
 	// gesetzt werden, sonst fallen alle Browser auf die Adresse des Proxys zusammen.
-	clientip.SetzeProxysAusUmgebung()
+	server.VertrauteProxys = strings.Split(os.Getenv("TRUSTED_PROXIES"), ",")
 
 	return
 }
@@ -334,7 +333,7 @@ func main() {
 	}
 
 	// 1. Konfiguration aus der Umgebung.
-	dsn, jwtGeheimnis, port, nurHTTPS := leseKonfig()
+	dsn, jwtGeheimnis, port, serverKonfig := leseKonfig()
 
 	// Auf Interrupt und SIGTERM geordnet herunterfahren.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -366,7 +365,7 @@ func main() {
 	starteDSGVOLauf(ctx, zeitplan)
 
 	// 6. Server und Routen.
-	server := api.NewServer(verbindung, anmeldung, broker, nurHTTPS)
+	server := api.NewServer(verbindung, anmeldung, broker, serverKonfig)
 	starteBereitschaftsWaechter(ctx, server)
 	httpServer := starteServer(port, server)
 

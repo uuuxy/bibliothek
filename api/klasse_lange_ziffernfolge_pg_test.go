@@ -39,7 +39,7 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), ServerKonfig{})
 	// Die Abgängerliste liest ihre Abfrage nur in der Saison.
 	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()

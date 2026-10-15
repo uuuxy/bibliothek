@@ -41,7 +41,7 @@ func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{}).Routes()
 
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO role_permissions (role, permission, allowed) VALUES ('HELFER', 'view_students', false)

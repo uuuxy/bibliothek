@@ -49,6 +49,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
 	"bibliothek/mailservice"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 	"bibliothek/sse"
@@ -57,25 +58,39 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-// Server hält, was jede Tür braucht (Datenbank, Anmeldung, Live-Leitung in tuer.Basis), und ob
-// der Betrieb nur über HTTPS läuft.
+// Server hält, was jede Tür braucht (Datenbank, Anmeldung, Live-Leitung in tuer.Basis), ob der
+// Betrieb nur über HTTPS läuft und welchen Proxys er die Adresse des Browsers glaubt.
 type Server struct {
 	tuer.Basis
 	nurHTTPS bool
+	// vertrauteProxys sind die Netze der Proxys, deren X-Forwarded-For gilt; Loopback gilt immer.
+	vertrauteProxys []string
 	// bremse zählt die gescheiterten Anmeldungen je Adresse; der Nullwert ist leer.
 	bremse anmeldeBremse
+}
+
+// ServerKonfig sind die Angaben, die der Start für den Server aus der Umgebung liest. Der
+// Nullwert gilt für Tests: ohne HTTPS, als Proxy nur Loopback.
+type ServerKonfig struct {
+	// NurHTTPS setzt die Cookies nur für HTTPS und leitet Anfragen über HTTP dorthin um
+	// (COOKIE_SECURE).
+	NurHTTPS bool
+	// VertrauteProxys sind CIDR-Angaben oder Adressen der Proxys, deren X-Forwarded-For gilt
+	// (TRUSTED_PROXIES).
+	VertrauteProxys []string
 }
 
 // NewServer baut den Server. Sein Mailversand liest die in der Oberfläche gespeicherte
 // SMTP-Konfiguration, nicht die Umgebungsvariablen des Containers; so nutzen der Test-Knopf und
 // jeder echte Versand dieselbe Quelle.
-func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *sse.Broker, nurHTTPS bool) *Server {
+func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *sse.Broker, konfig ServerKonfig) *Server {
 	return &Server{
 		Basis: tuer.Basis{
 			DB: datenbank, Auth: authenticator, Broker: broker,
 			Mail: mailservice.NewPostausgang(mailservice.KonfigAusDatenbank(datenbank.Pool)),
 		},
-		nurHTTPS: nurHTTPS,
+		nurHTTPS:        konfig.NurHTTPS,
+		vertrauteProxys: konfig.VertrauteProxys,
 	}
 }
 
@@ -296,9 +311,13 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	rumpfGrenze := rumpfGrenzeMiddleware(100 * 1024 * 1024)
 	bremse := anfrageBremse(anfragenJeSekundeAusUmgebung())
 	frist := fristMiddleware(bearbeitungsfristVorgabe)
+	adressen := clientip.NewErmittler(s.vertrauteProxys)
 
-	// Kette: panik → sentry → Sicherheitskopfzeilen → cors → log → https → Lesefrist →
+	// Kette: Adresse → panik → sentry → Sicherheitskopfzeilen → cors → log → https → Lesefrist →
 	// rumpfGrenze → frist → bremse → csrf → kompression → Mux.
+	//
+	// Die Adresse des Browsers ermittelt das erste Glied, damit jede Bremse und jede Tür
+	// dahinter sie mit clientip.AusAnfrage liest.
 	//
 	// Kompression sitzt innen am Mux: Gepackt wird, was eine Tür liefert. Hinter CORS,
 	// weil CORS den Vary-Kopf setzt statt ergänzt und Accept-Encoding sonst daraus fiele.
@@ -310,7 +329,7 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	// uuidPfadMiddleware steht nicht in dieser Kette: Um den Mux gelegt läse sie
 	// r.PathValue("id"), bevor die Route aufgelöst ist, und der Wert wäre immer leer. Sie sitzt
 	// in verlangeRecht, hinter dem Routing, wo PathValue gefüllt ist.
-	kette := panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(kompressionMiddleware(mux))))))))))))
+	kette := adressen.Middleware(panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(kompressionMiddleware(mux)))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Jede Anfrage ins Log, ohne die Adresse des Aufrufers (DSGVO).

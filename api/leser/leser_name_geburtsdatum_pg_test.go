@@ -42,7 +42,7 @@ func TestLeserAendern_NameUndGeburtsdatumSchonVergeben(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{}).Routes()
 
 	var bea string
 	if err := pool.QueryRow(ctx, `

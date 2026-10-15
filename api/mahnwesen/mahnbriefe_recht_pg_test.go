@@ -39,7 +39,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{})
 	router := srv.Routes()
 
 	var kontoID string

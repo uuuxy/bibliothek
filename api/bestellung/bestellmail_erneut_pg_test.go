@@ -92,7 +92,7 @@ func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 	if l.sitzung, err = authenticator.ErzeugeToken(l.adminID, "BMAIL-"+kennung, auth.RolleAdmin, ""); err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	l.srv = api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	l.srv = api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{})
 	l.router = l.srv.Routes()
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTELLMAIL_ERNEUT_GESENDET'`)

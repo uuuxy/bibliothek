@@ -549,7 +549,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), ServerKonfig{})
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
 	// der Test mäße dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
 	srv.Uhr = testdaten.SaisonUhr
@@ -728,7 +728,7 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), ServerKonfig{})
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
 	// der Test mäße dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
 	srv.Uhr = testdaten.SaisonUhr
