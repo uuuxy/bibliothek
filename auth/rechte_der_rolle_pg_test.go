@@ -6,10 +6,10 @@ import (
 	"testing"
 )
 
-// Die Rechte, die Anmeldung und /me an den Browser schicken, an der echten Tabelle: nur die
-// erteilten, nur die der eigenen Rolle, ohne Rücksicht auf die Schreibweise der Rolle. Ohne
-// erteiltes Recht ist die Liste leer und nicht nil, sonst stünde im JSON null.
-func TestLoadPermissionsForRole_NurErteilteRechteDerRolle(t *testing.T) {
+// Die Rechte, die Anmeldung und AngemeldetesKonto an den Browser schicken, an der echten
+// Tabelle: nur die erteilten, nur die der eigenen Rolle, ohne Rücksicht auf die Schreibweise der
+// Rolle. Ohne erteiltes Recht ist die Liste leer und nicht nil, sonst stünde im JSON null.
+func TestLadeRechteDerRolle_NurErteilteRechte(t *testing.T) {
 	pool := pgPoolFuerSelbstanmeldung(t)
 	ctx := context.Background()
 	t.Cleanup(func() {
@@ -27,7 +27,7 @@ func TestLoadPermissionsForRole_NurErteilteRechteDerRolle(t *testing.T) {
 	}
 
 	// Das Konto trägt die Rolle klein geschrieben, die Tabelle groß.
-	rechte, err := loadPermissionsForRole(ctx, pool, "proberolle")
+	rechte, err := ladeRechteDerRolle(ctx, pool, "proberolle")
 	if err != nil {
 		t.Fatalf("loadPermissionsForRole: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestLoadPermissionsForRole_NurErteilteRechteDerRolle(t *testing.T) {
 		t.Errorf("Rechte = %v, erwartet nur das erteilte Recht der Rolle", rechte)
 	}
 
-	keine, err := loadPermissionsForRole(ctx, pool, "rolle_ohne_zeile")
+	keine, err := ladeRechteDerRolle(ctx, pool, "rolle_ohne_zeile")
 	if err != nil {
 		t.Fatalf("loadPermissionsForRole ohne Zeile: %v", err)
 	}

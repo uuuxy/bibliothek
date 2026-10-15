@@ -56,7 +56,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 	rumpf := `{"role":"mitarbeiter","permission":"audit_logs","allowed":true}`
 
 	t.Run("Mitarbeiter mit manage_users wird abgewiesen", func(t *testing.T) {
-		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
+		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions", rumpf, "mitarbeiter-1", auth.RolleMitarbeiter)
 		w := httptest.NewRecorder()
 		srv.RollenRechtSetzen().ServeHTTP(w, req)
 
@@ -69,7 +69,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 	})
 
 	t.Run("Admin darf", func(t *testing.T) {
-		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions", rumpf, "admin-1", auth.RoleAdmin)
+		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions", rumpf, "admin-1", auth.RolleAdmin)
 		w := httptest.NewRecorder()
 		srv.RollenRechtSetzen().ServeHTTP(w, req)
 
@@ -86,7 +86,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 	// Neuladen wieder weg ist.
 	t.Run("unbekanntes Recht meldet Fehler statt Erfolg", func(t *testing.T) {
 		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions",
-			`{"role":"mitarbeiter","permission":"audit_logz","allowed":true}`, "admin-1", auth.RoleAdmin)
+			`{"role":"mitarbeiter","permission":"audit_logz","allowed":true}`, "admin-1", auth.RolleAdmin)
 		w := httptest.NewRecorder()
 		srv.RollenRechtSetzen().ServeHTTP(w, req)
 
@@ -97,7 +97,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 
 	t.Run("unbekannte Rolle meldet Fehler statt Erfolg", func(t *testing.T) {
 		req := anfrageAls(t, http.MethodPut, "/api/admin/permissions",
-			`{"role":"hausmeister","permission":"audit_logs","allowed":true}`, "admin-1", auth.RoleAdmin)
+			`{"role":"hausmeister","permission":"audit_logs","allowed":true}`, "admin-1", auth.RolleAdmin)
 		w := httptest.NewRecorder()
 		srv.RollenRechtSetzen().ServeHTTP(w, req)
 

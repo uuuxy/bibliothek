@@ -38,8 +38,8 @@ func versetzungAusfuehren(t *testing.T, pool *pgxpool.Pool, dryRun bool) schulja
 		body = `{"dry_run": true}`
 	}
 	req := httptest.NewRequest("POST", "/api/students/promote", strings.NewReader(body))
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 	w := httptest.NewRecorder()
 	srv.Schuljahreswechsel()(w, req)
 	if w.Code != 200 {
@@ -182,8 +182,8 @@ func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
 	lauf := func() int {
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 		req := httptest.NewRequest("POST", "/api/students/promote", strings.NewReader(`{"confirm": true}`))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 		w := httptest.NewRecorder()
 		srv.Schuljahreswechsel()(w, req)
 		return w.Code

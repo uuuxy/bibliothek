@@ -81,8 +81,8 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) tresenAuskunft {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/audit/tresen-auskunft?barcode="+barcode, nil)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.TresenAuskunft(repository.NewProtokollAbfragen(srv.DB.Pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {

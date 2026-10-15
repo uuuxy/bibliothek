@@ -115,7 +115,7 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 	}
 
 	// Ein Admin darf alles.
-	if strings.EqualFold(string(claims.Rolle), string(auth.RoleAdmin)) {
+	if strings.EqualFold(string(claims.Rolle), string(auth.RolleAdmin)) {
 		erlaubeZugriff(w, r, next, claims)
 		return
 	}
@@ -153,11 +153,11 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 // view_students (bewertung/sicherheitsbefund-kiosk-suche.md). Ein Fehler zählt als nein: Im
 // Zweifel zeigt die Tür weniger, nie mehr.
 func (b *Basis) HatRecht(r *http.Request, recht string) bool {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return false
 	}
-	if strings.EqualFold(string(claims.Rolle), string(auth.RoleAdmin)) {
+	if strings.EqualFold(string(claims.Rolle), string(auth.RolleAdmin)) {
 		return true
 	}
 	schluessel := string(claims.Rolle) + ":" + recht

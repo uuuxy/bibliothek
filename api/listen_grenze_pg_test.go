@@ -204,10 +204,10 @@ func TestListenNennenIhreGrenze(t *testing.T) {
 	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
 		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"listen-gate-testgeheimnis-mind-32-bytes-lang!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
 	srv.Uhr = testdaten.SaisonUhr

@@ -33,7 +33,7 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a128", Rolle: auth.RoleAdmin}
+	claims := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a128", Rolle: auth.RolleAdmin}
 
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE nachname IN ('Anlegetest', 'Anlegetest2')`); err != nil {
@@ -45,7 +45,7 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPost, "/api/schueler", strings.NewReader(koerper))
 		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 		rec := httptest.NewRecorder()
 		srv.LeserAnlegen().ServeHTTP(rec, req)
 		return rec

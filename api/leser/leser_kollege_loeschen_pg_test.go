@@ -36,8 +36,8 @@ func TestKollegeLoeschen(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+id, nil)
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: alsKonto, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: alsKonto, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.LeserLoeschen(auditRepo)(rec, req)
 		return rec
@@ -129,8 +129,8 @@ func TestKollegeLoeschen(t *testing.T) {
 		}
 
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/deleted", nil)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.Papierkorb()(rec, req)
 		if rec.Code != http.StatusOK {
@@ -151,8 +151,8 @@ func TestKollegeLoeschen(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+leserID+"/restore", nil)
 		req.SetPathValue("id", leserID)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.LeserWiederherstellen()(rec, req)
 		if rec.Code != http.StatusOK {

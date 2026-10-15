@@ -39,8 +39,8 @@ func standortRumpf(t *testing.T, srv *Tueren, pool *pgxpool.Pool, rumpf string) 
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPut, "/api/exemplare/standort", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.ExemplarStandortSetzen()(rec, req)
 	return rec

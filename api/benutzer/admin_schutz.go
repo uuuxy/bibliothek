@@ -23,7 +23,7 @@ import (
 //     Konto. pruefeAdminVergabe verlangt dafür einen Administrator.
 //  3. Übernahme eines Admin-Kontos ohne Änderung der Rolle: Die Anmeldung prüft die
 //     Zugangsdaten per IMAP und sucht das Konto danach über seine E-Mail-Adresse
-//     (auth/handlers.go, verifyIMAPCredentials). Wer die E-Mail eines Admin-Kontos auf die
+//     (auth/anmelden.go, pruefeIMAPZugang). Wer die E-Mail eines Admin-Kontos auf die
 //     eigene Schuladresse setzt, meldet sich mit den eigenen Zugangsdaten an und bekommt die
 //     Admin-Sitzung. Deshalb schützt pruefeAdminZiel das ganze Konto, nicht nur die Rolle.
 //
@@ -32,14 +32,14 @@ import (
 
 // istAdminRolle erkennt die Administratorrolle unabhängig von Groß-/Kleinschreibung.
 func istAdminRolle(rolle string) bool {
-	return strings.EqualFold(strings.TrimSpace(rolle), string(auth.RoleAdmin))
+	return strings.EqualFold(strings.TrimSpace(rolle), string(auth.RolleAdmin))
 }
 
 // istAufruferAdmin liest die Rolle des Aufrufers aus den Claims. Die stammt aus der
-// Datenbank, nicht aus dem signierten Token — auth.VerifyToken überschreibt sie bei
+// Datenbank, nicht aus dem signierten Token — auth.PruefeToken überschreibt sie bei
 // jeder Anfrage, eine Herabstufung wirkt also sofort.
 func istAufruferAdmin(r *http.Request) bool {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	return ok && istAdminRolle(string(claims.Rolle))
 }
 
@@ -82,8 +82,8 @@ func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request
 // neueRolle und aktiv sind nil, wenn die Änderung das Feld nicht nennt: Dann bleibt es, wie
 // es ist, und es gibt nichts zu schützen.
 func pruefeSelbstschutz(w http.ResponseWriter, r *http.Request, id string, neueRolle *string, aktiv *bool) bool {
-	claims, ok := auth.GetClaims(r.Context())
-	if !ok || claims.UserID != id {
+	claims, ok := auth.ClaimsAusKontext(r.Context())
+	if !ok || claims.KontoID != id {
 		return true
 	}
 	if neueRolle != nil && !strings.EqualFold(strings.TrimSpace(*neueRolle), strings.TrimSpace(string(claims.Rolle))) {

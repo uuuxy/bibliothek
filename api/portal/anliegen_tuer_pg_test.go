@@ -53,8 +53,8 @@ func TestAnliegenAnlegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 	rumpf := `{"art":"meldung","titel_text":"Markl Biologie 2","klasse":"8G3",` +
 		`"kommentar":"falsche Auflage bekommen","isbn":"978-3-12-150010-9","titel_id":"` + titelID + `"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/anliegen", strings.NewReader(rumpf))
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: lehrkraftID}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: lehrkraftID}))
 	rec := httptest.NewRecorder()
 	srv.AnliegenAnlegen()(rec, req)
 

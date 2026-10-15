@@ -29,7 +29,7 @@ $$;
 -- -------------------------------------------------------------
 -- 1. ENUMS AND CUSTOM TYPES
 -- -------------------------------------------------------------
--- 'helfer': Kiosk-Ausleihen/Rückgaben (siehe auth/jwt.go RoleHelfer, Router.svelte).
+-- 'helfer': Kiosk-Ausleihen/Rückgaben (siehe auth/token.go RolleHelfer, Router.svelte).
 -- 'leitung': Bibliotheksleitung — alles ausser manage_users und manage_settings
 -- (Migration 121/122, Rechte in db/rechte_vorgabe.go).
 -- 'kollegium' hiess bis Migration 069 'lehrer'. Umbenannt, weil das Wort doppelt
@@ -134,7 +134,7 @@ CREATE TABLE benutzer (
     -- leser.art; das Konto sagt nur, was er darf.
 );
 
--- Migration 113: eindeutig in der Normalform der Anmeldung (LOWER, auth/handlers.go).
+-- Migration 113: eindeutig in der Normalform der Anmeldung (LOWER, auth/anmelden.go).
 CREATE UNIQUE INDEX uniq_benutzer_email_lower ON benutzer (lower(email));
 
 CREATE TRIGGER trg_benutzer_aktualisiert_am

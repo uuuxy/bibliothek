@@ -51,7 +51,7 @@ func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a130", Rolle: auth.RoleAdmin}
+	admin := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a130", Rolle: auth.RolleAdmin}
 
 	// ── Bestand vor dem Import ───────────────────────────────────────────────────
 	// Zwei Schüler: einer steht im Export (mit neuer Klasse), einer nicht (Abgänger).
@@ -117,7 +117,7 @@ func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		}
 		req := httptest.NewRequest(http.MethodPost, pfad, &koerper)
 		req.Header.Set("Content-Type", mw.FormDataContentType())
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, admin))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, admin))
 		rec := httptest.NewRecorder()
 		if pfad == "/api/lusd/import" {
 			srv.LUSDImport().ServeHTTP(rec, req)

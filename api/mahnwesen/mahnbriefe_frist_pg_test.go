@@ -32,10 +32,10 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"mahnbrief-frist-testgeheimnis-32-bytes-lang!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	var kontoID string
 	if err := pool.QueryRow(ctx, `
@@ -44,7 +44,7 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 		RETURNING id`).Scan(&kontoID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	sitzung, err := authenticator.GenerateToken(kontoID, "MBF-1", auth.RoleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, "MBF-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

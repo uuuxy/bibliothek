@@ -57,7 +57,7 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Wer abschließt, steht an jedem Exemplar, das der Abschluss als Verlust bucht.
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
 		return
@@ -88,7 +88,7 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	verloren, err := abfragen.SchliesseLaufAb(ctx, lauf.ID, lauf.Bereich(), claims.UserID)
+	verloren, err := abfragen.SchliesseLaufAb(ctx, lauf.ID, lauf.Bereich(), claims.KontoID)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return

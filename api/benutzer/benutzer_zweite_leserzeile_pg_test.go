@@ -27,7 +27,7 @@ func TestKontoAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
-	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a517", Rolle: auth.RoleAdmin}
+	admin := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a517", Rolle: auth.RolleAdmin}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id IN
 			(SELECT leser_id FROM benutzer WHERE email LIKE '%@zweitezeile.invalid')`); err != nil {
@@ -43,7 +43,7 @@ func TestKontoAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 	anlegen := func(body string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/api/benutzer", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, admin))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, admin))
 		rec := httptest.NewRecorder()
 		srv.KontoAnlegen(userRepo).ServeHTTP(rec, req)
 		return rec

@@ -6,7 +6,7 @@ import { thekeLeeren } from './thekeLeeren.js';
 import { toastStore } from './toastStore.svelte.js';
 
 // Boot-Restore gegen einen Datenbank-Aussetzer: dreimal fragen, 2 s auseinander. Die
-// Frist des Servers bei der Token-Prüfung ist 2 s (auth/jwt.go), ein kurzer Aussetzer ist
+// Frist des Servers bei der Token-Prüfung ist 2 s (auth/token.go), ein kurzer Aussetzer ist
 // damit überbrückt; länger darf der Ladekreis vor dem Login nicht stehen.
 const RESTORE_VERSUCHE = 3;
 const RESTORE_WARTEZEIT_MS = 2000;
@@ -213,7 +213,7 @@ class AuthStore {
 	 * Ein 5xx beantwortet die Frage „gilt diese Sitzung?" nicht — er sagt, dass der Server
 	 * sie gerade nicht prüfen kann. Seit dem 11.09.2026 antwortet er bei einem
 	 * Datenbank-Aussetzer mit 503 statt 401, damit ein Arbeitsplatz nicht abgemeldet wird
-	 * (auth/handlers.go). Hier hieß „nicht ok" trotzdem Login-Bildschirm: Wer während des
+	 * (auth/anmelden.go). Hier hieß „nicht ok" trotzdem Login-Bildschirm: Wer während des
 	 * Aussetzers neu lud — F5, Kiosk-Neustart, Bildschirm morgens an — musste sich neu
 	 * anmelden, obwohl sein Cookie noch galt. Deshalb kurz warten und erneut fragen; der
 	 * Boot zeigt so lange den Ladekreis (App.svelte). Ein 401 wartet NICHT: Er ist die
@@ -266,7 +266,7 @@ class AuthStore {
 			// auch beim allerersten Seitenaufruf ohne vorheriges Cookie.
 			//
 			// timeoutMs bewusst über dem Standard von 10 s für Mutationen: Die Anmeldung
-			// wartet auf den IMAP-Server der Schule, und AuthenticateIMAP räumt dem
+			// wartet auf den IMAP-Server der Schule, und pruefeIMAPAnmeldung räumt dem
 			// selbst 15 s ein. Mit dem Standardwert hätte apiFetch eine langsame, aber
 			// erfolgreiche Anmeldung als "Netzwerk-Timeout" abgebrochen.
 			const res = await apiFetch('/login', {

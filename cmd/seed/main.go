@@ -58,9 +58,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
-	authenticator, err := auth.NewAuthenticator(jwtSecret, pool, 8760*time.Hour) // 1 Jahr gültig
+	authenticator, err := auth.NewAnmeldung(jwtSecret, pool, 8760*time.Hour) // 1 Jahr gültig
 	if err == nil {
-		token, _ := authenticator.GenerateToken(adminID, adminBarcode, auth.RoleAdmin, "") //nolint:errcheck
+		token, _ := authenticator.ErzeugeToken(adminID, adminBarcode, auth.RolleAdmin, "") //nolint:errcheck
 		fmt.Printf("\n========================================================\n")
 		fmt.Printf("🛡️ DAST/SAST Scanner JWT (1 Jahr gültig):\n%s\n", token)
 		fmt.Printf("========================================================\n\n")

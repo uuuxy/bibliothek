@@ -23,7 +23,7 @@ func (t *Tueren) FundMelden() http.HandlerFunc {
 		if id == "" {
 			return apierrors.BadRequest("exemplar-id fehlt", nil)
 		}
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
 		}
@@ -36,7 +36,7 @@ func (t *Tueren) FundMelden() http.HandlerFunc {
 		defer db.Verwerfe(ctx, tx)
 
 		abfragen := repository.NewInventurAbfragen(tx)
-		gefunden, befund, err := abfragen.MarkiereVerlustAlsGefunden(ctx, id, claims.UserID)
+		gefunden, befund, err := abfragen.MarkiereVerlustAlsGefunden(ctx, id, claims.KontoID)
 		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
 			// Zwischen Lesen und Zurückholen verschwunden — kein Serverfehler, nichts gebucht.
 			return apierrors.NotFound("kein offener Verlust mit dieser ID", err)
@@ -95,7 +95,7 @@ func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Reques
 	if len(req.ExemplarIDs) == 0 {
 		return apierrors.BadRequest("exemplar_ids fehlt oder ist leer", nil)
 	}
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
 	}
@@ -108,7 +108,7 @@ func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Reques
 	defer db.Verwerfe(ctx, tx)
 
 	abfragen := repository.NewInventurAbfragen(tx)
-	geloeschteIDs, err := abfragen.LoescheVerlusteEndgueltig(ctx, req.ExemplarIDs, claims.UserID)
+	geloeschteIDs, err := abfragen.LoescheVerlusteEndgueltig(ctx, req.ExemplarIDs, claims.KontoID)
 	if err != nil {
 		// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Die Meldung
 		// sagt der Bedienung, welches Exemplar warum im Weg steht; MitFehlerantwort gibt sie

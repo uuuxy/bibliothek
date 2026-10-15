@@ -2,12 +2,11 @@ package auth
 
 import "testing"
 
-// TestHashToken: revoked_tokens hält widerrufene Tokens als SHA-256 in Hex, und
-// IsBlacklisted vergleicht mit demselben Wert. Änderte ein Update die Form, fände
-// IsBlacklisted die vorher widerrufenen Tokens nicht mehr — sie wären bis zu ihrem Ablauf
-// (höchstens zwölf Stunden) wieder gültig, ohne dass ein anderer Test rot wird. Die Werte
-// sind die bekannten SHA-256-Prüfsummen der Eingaben.
-func TestHashToken(t *testing.T) {
+// revoked_tokens hält widerrufene Tokens als SHA-256 in Hex, und istWiderrufen vergleicht mit
+// demselben Wert. Änderte sich die Form, fände istWiderrufen die vorher widerrufenen Tokens nicht
+// mehr; sie wären bis zu ihrem Ablauf (höchstens zwölf Stunden) wieder gültig, ohne dass ein
+// anderer Test rot wird. Die Werte sind die bekannten SHA-256-Prüfsummen der Eingaben.
+func TestHashDesTokens(t *testing.T) {
 	faelle := []struct {
 		name, token, erwartet string
 	}{
@@ -23,7 +22,7 @@ func TestHashToken(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if got := hashToken(f.token); got != f.erwartet {
+			if got := hashDesTokens(f.token); got != f.erwartet {
 				t.Errorf("hashToken(%q) = %s, erwartet %s", f.token, got, f.erwartet)
 			}
 		})

@@ -50,13 +50,13 @@ func (a *eskalationsAttrappe) Aendere(_ context.Context, _ repository.KontoAende
 }
 
 // anfrageAls baut eine Anfrage mit Sitzungs-Claims. rolle ist die Rolle des Aufrufers,
-// so wie auth.VerifyToken sie bei jeder Anfrage frisch aus der Datenbank setzt.
-func anfrageAls(t *testing.T, methode, pfad, rumpf string, userID string, rolle auth.Role) *http.Request {
+// so wie auth.PruefeToken sie bei jeder Anfrage frisch aus der Datenbank setzt.
+func anfrageAls(t *testing.T, methode, pfad, rumpf string, userID string, rolle auth.Rolle) *http.Request {
 	t.Helper()
 	req := httptest.NewRequest(methode, pfad, bytes.NewBufferString(rumpf))
 	req.Header.Set("Content-Type", "application/json")
-	claims := &auth.Claims{UserID: userID, Rolle: rolle}
-	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+	claims := &auth.Claims{KontoID: userID, Rolle: rolle}
+	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 }
 
 const rumpfAdmin = `{"vorname":"Eva","nachname":"Neu","email":"eva@schule.de","rolle":"admin","aktiv":true}`
@@ -67,7 +67,7 @@ func TestSelbstbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/mitarbeiter-1", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/mitarbeiter-1", rumpfAdmin, "mitarbeiter-1", auth.RolleMitarbeiter)
 	req.SetPathValue("id", "mitarbeiter-1")
 	w := httptest.NewRecorder()
 
@@ -89,7 +89,7 @@ func TestEigenerDatensatzMitGleicherRolleBleibtSpeicherbar(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Max","nachname":"Neuername","email":"max@schule.de","rolle":"mitarbeiter","aktiv":true}`
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/mitarbeiter-1", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/mitarbeiter-1", rumpf, "mitarbeiter-1", auth.RolleMitarbeiter)
 	req.SetPathValue("id", "mitarbeiter-1")
 	w := httptest.NewRecorder()
 
@@ -108,7 +108,7 @@ func TestFremdbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"kollege-1": "HELFER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/kollege-1", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/kollege-1", rumpfAdmin, "mitarbeiter-1", auth.RolleMitarbeiter)
 	req.SetPathValue("id", "kollege-1")
 	w := httptest.NewRecorder()
 
@@ -127,7 +127,7 @@ func TestAdminNeuanlageOhneAdminrechteWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
-	req := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
+	req := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "mitarbeiter-1", auth.RolleMitarbeiter)
 	w := httptest.NewRecorder()
 
 	srv.KontoAnlegen(repo).ServeHTTP(w, req)
@@ -143,7 +143,7 @@ func TestAdminNeuanlageOhneAdminrechteWirdAbgelehnt(t *testing.T) {
 // Weg 3: Übernahme eines Admin-Kontos ohne jede Änderung der Rolle.
 //
 // Die Anmeldung prüft per IMAP und sucht das Konto danach über seine E-Mail
-// (auth/handlers.go). Wer die E-Mail des Admin-Datensatzes auf die eigene Schuladresse
+// (auth/anmelden.go). Wer die E-Mail des Admin-Datensatzes auf die eigene Schuladresse
 // umschreibt, meldet sich anschließend mit den eigenen Zugangsdaten an und erhält die
 // Admin-Sitzung. Die Rolle im Rumpf bleibt dabei unverdächtig "admin".
 func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
@@ -151,7 +151,7 @@ func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"angreifer@schule.de","rolle":"admin","aktiv":true}`
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "mitarbeiter-1", auth.RolleMitarbeiter)
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 
@@ -177,7 +177,7 @@ func TestAdminHerabstufenDurchNichtAdminWirdAbgelehnt(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"angreifer@schule.de","rolle":"mitarbeiter","aktiv":true}`
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "mitarbeiter-1", auth.RolleMitarbeiter)
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 
@@ -196,14 +196,14 @@ func TestAdminDarfWeiterhinAdminsAnlegenUndBearbeiten(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"admin-2": "ADMIN"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
-	neu := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "admin-1", auth.RoleAdmin)
+	neu := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "admin-1", auth.RolleAdmin)
 	wNeu := httptest.NewRecorder()
 	srv.KontoAnlegen(repo).ServeHTTP(wNeu, neu)
 	if wNeu.Code != http.StatusOK {
 		t.Errorf("Admin legt Admin an: Status %d, erwartet 200 (%s)", wNeu.Code, wNeu.Body.String())
 	}
 
-	aend := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-2", rumpfAdmin, "admin-1", auth.RoleAdmin)
+	aend := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-2", rumpfAdmin, "admin-1", auth.RolleAdmin)
 	aend.SetPathValue("id", "admin-2")
 	wAend := httptest.NewRecorder()
 	srv.KontoAendern(repo).ServeHTTP(wAend, aend)
@@ -219,7 +219,7 @@ func TestManageUsersDarfNichtAdminKontenWeiterhinBearbeiten(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Hilde","nachname":"Helfer","email":"hilde@schule.de","rolle":"helfer","aktiv":true}`
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/helfer-1", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/helfer-1", rumpf, "mitarbeiter-1", auth.RolleMitarbeiter)
 	req.SetPathValue("id", "helfer-1")
 	w := httptest.NewRecorder()
 
@@ -244,7 +244,7 @@ func TestAdminKannSichNichtSelbstHerabstufen(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"chef@schule.de","rolle":"mitarbeiter","aktiv":true}`
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "admin-1", auth.RoleAdmin)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "admin-1", auth.RolleAdmin)
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 
@@ -264,7 +264,7 @@ func TestEigeneDeaktivierungWirdAbgelehnt(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"chef@schule.de","rolle":"admin","aktiv":false}`
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "admin-1", auth.RoleAdmin)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "admin-1", auth.RolleAdmin)
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 
@@ -283,28 +283,28 @@ func TestSchutzregelnBeiEinzelnenFeldern(t *testing.T) {
 		rollen        map[string]string
 		ziel, rumpf   string
 		aufrufer      string
-		aufruferRolle auth.Role
+		aufruferRolle auth.Rolle
 		status        int
 		geschrieben   bool
 	}{
 		{"das eigene Konto abschalten", map[string]string{"mitarbeiter-1": "MITARBEITER"},
-			"mitarbeiter-1", `{"aktiv":false}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+			"mitarbeiter-1", `{"aktiv":false}`, "mitarbeiter-1", auth.RolleMitarbeiter, http.StatusForbidden, false},
 		{"sich selbst zum Administrator machen", map[string]string{"mitarbeiter-1": "MITARBEITER"},
-			"mitarbeiter-1", `{"rolle":"admin"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+			"mitarbeiter-1", `{"rolle":"admin"}`, "mitarbeiter-1", auth.RolleMitarbeiter, http.StatusForbidden, false},
 		{"den eigenen Namen ändern", map[string]string{"mitarbeiter-1": "MITARBEITER"},
-			"mitarbeiter-1", `{"vorname":"Max"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusOK, true},
+			"mitarbeiter-1", `{"vorname":"Max"}`, "mitarbeiter-1", auth.RolleMitarbeiter, http.StatusOK, true},
 		{"den Namen eines Administrators ändern, ohne einer zu sein", map[string]string{"chef-1": "ADMIN"},
-			"chef-1", `{"vorname":"Max"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+			"chef-1", `{"vorname":"Max"}`, "mitarbeiter-1", auth.RolleMitarbeiter, http.StatusForbidden, false},
 		{"die Adresse eines Administrators ändern, ohne einer zu sein", map[string]string{"chef-1": "ADMIN"},
-			"chef-1", `{"email":"ich@schule.de"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+			"chef-1", `{"email":"ich@schule.de"}`, "mitarbeiter-1", auth.RolleMitarbeiter, http.StatusForbidden, false},
 		{"einen anderen zum Administrator machen, ohne einer zu sein", map[string]string{"kollege-1": "HELFER"},
-			"kollege-1", `{"rolle":"admin"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+			"kollege-1", `{"rolle":"admin"}`, "mitarbeiter-1", auth.RolleMitarbeiter, http.StatusForbidden, false},
 		{"als Administrator eine Rolle vergeben", map[string]string{"kollege-1": "HELFER"},
-			"kollege-1", `{"rolle":"admin"}`, "chef-1", auth.RoleAdmin, http.StatusOK, true},
+			"kollege-1", `{"rolle":"admin"}`, "chef-1", auth.RolleAdmin, http.StatusOK, true},
 		{"ein Rumpf ohne Feld schreibt nichts", map[string]string{"kollege-1": "HELFER"},
-			"kollege-1", `{}`, "chef-1", auth.RoleAdmin, http.StatusOK, false},
+			"kollege-1", `{}`, "chef-1", auth.RolleAdmin, http.StatusOK, false},
 		{"ein Rumpf ohne Feld an ein unbekanntes Konto", map[string]string{},
-			"niemand-1", `{}`, "chef-1", auth.RoleAdmin, http.StatusNotFound, false},
+			"niemand-1", `{}`, "chef-1", auth.RolleAdmin, http.StatusNotFound, false},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

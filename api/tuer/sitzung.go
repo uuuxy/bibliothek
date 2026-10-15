@@ -19,10 +19,10 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 		}
 		return nil, http.StatusBadRequest, err
 	}
-	// VerifyToken prüft neben Signatur und Sperrliste auch, ob das Konto noch aktiv und die
+	// PruefeToken prüft neben Signatur und Sperrliste auch, ob das Konto noch aktiv und die
 	// Sitzung nach Inaktivität nicht gesperrt ist, beides in der Datenbank; eine zweite Prüfung
 	// braucht es hier nicht.
-	claims, err := b.Auth.VerifyToken(cookie.Value)
+	claims, err := b.Auth.PruefeToken(cookie.Value)
 	if errors.Is(err, auth.ErrPruefungGestoert) {
 		// Datenbank-Aussetzer: abgelehnt, aber nicht als abgelaufene Sitzung. Eine 401
 		// meldet den Arbeitsplatz im Client ab (apiFetch → sitzungAbgelaufen).
@@ -43,7 +43,7 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 
 // sendeSitzungsfehler schickt den Fehler aus PruefeSitzung an den Client. Beim 503 (Aussetzer
 // der Datenbank) sieht er nur den Satz von auth.ErrPruefungGestoert: Die Ursache, die
-// VerifyToken mitliefert, gehört ins Log und nicht in die Meldung an der Theke
+// PruefeToken mitliefert, gehört ins Log und nicht in die Meldung an der Theke
 // (apierrors.AntworteFehlerMitMeldung).
 func sendeSitzungsfehler(w http.ResponseWriter, status int, err error) {
 	if errors.Is(err, auth.ErrPruefungGestoert) {
@@ -55,7 +55,7 @@ func sendeSitzungsfehler(w http.ResponseWriter, status int, err error) {
 
 // erlaubeZugriff legt die Angaben der Sitzung in den Kontext der Anfrage und ruft next.
 func erlaubeZugriff(w http.ResponseWriter, r *http.Request, next http.Handler, claims *auth.Claims) {
-	ctx := context.WithValue(r.Context(), auth.ClaimsContextKey, claims)
+	ctx := context.WithValue(r.Context(), auth.ClaimsSchluessel, claims)
 	next.ServeHTTP(w, r.WithContext(ctx))
 }
 

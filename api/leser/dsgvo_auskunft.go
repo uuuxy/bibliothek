@@ -228,9 +228,9 @@ func (t *Tueren) sammleDSGVODaten(ctx context.Context, id string, darfKonto bool
 func (t *Tueren) protokolliereDSGVOAuskunft(ctx context.Context, id string) {
 	akteur := "SYSTEM"
 	var bearbeiterID *string
-	if claims, ok := auth.GetClaims(ctx); ok {
+	if claims, ok := auth.ClaimsAusKontext(ctx); ok {
 		akteur = "USER"
-		bearbeiterID = &claims.UserID
+		bearbeiterID = &claims.KontoID
 	}
 	if err := repository.ProtokolliereDSGVOAuskunft(ctx, t.DB.Pool, id, bearbeiterID, akteur); err != nil {
 		log.Printf("dsgvo-auskunft: Audit-Protokollierung fehlgeschlagen: %v", err)

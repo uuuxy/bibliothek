@@ -44,8 +44,8 @@ func TestLeserArtAendern(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(body))
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: id, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec

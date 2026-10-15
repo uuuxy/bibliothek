@@ -13,54 +13,55 @@ import (
 	"bibliothek/repository"
 )
 
-// Selbstanmeldung: Wer sich mit einem Schul-Mailkonto anmeldet und im System noch nicht
-// existiert, bekommt einen INAKTIVEN Eintrag. Anmelden kann er sich damit nicht — der
-// Login lehnt inaktive Konten ab. Die Bibliothek sieht die Anfrage und schaltet frei.
+// Selbstanmeldung: Wer sich mit einem Postfach der Schule anmeldet und noch kein Konto hat,
+// bekommt einen inaktiven Eintrag. Anmelden kann er sich damit nicht, denn die Anmeldung lehnt
+// inaktive Konten ab. Die Bibliothek sieht die Anfrage und schaltet frei.
 //
-// Warum überhaupt: Das Kollegium umfasst rund 160 Personen. Alle vorab von Hand
-// anzulegen ist Arbeit, die niemand macht — und ohne Konto kommt keine Lehrkraft an die
-// Klassensatz-Reservierung. Die Selbstanmeldung dreht das um: Ein Eintrag entsteht nur
-// für die, die das Programm auch benutzen wollen.
+// Der Grund: Das Kollegium umfasst rund 160 Personen. Alle vorab von Hand anzulegen ist Arbeit,
+// die niemand macht, und ohne Konto kommt keine Lehrkraft an die Reservierung von
+// Klassensätzen. Die Selbstanmeldung dreht das um: Ein Eintrag entsteht nur für die, die das
+// Programm auch benutzen wollen.
 //
-// Warum trotzdem eine Freischaltung: IMAP beantwortet „wer bist du", nicht „darfst du
-// rein". Der Mailserver war nie als Rechtequelle gedacht. Die Entscheidung bleibt bei
-// der Schule; sie kostet nur einen Klick statt eines Formulars.
+// Freigeschaltet wird trotzdem: IMAP beantwortet „wer bist du", nicht „darfst du hinein". Der
+// Mailserver ist keine Quelle für Rechte. Die Entscheidung bleibt bei der Schule; sie kostet nur
+// einen Klick statt eines Formulars.
 
-// selbstanmeldeDomainEnv nennt die Domain, deren Mailkonten sich selbst anmelden dürfen
-// (z. B. "philipp-reis-schule.de"). NICHT gesetzt = Selbstanmeldung abgeschaltet.
+// selbstanmeldeDomainVariable nennt die Umgebungsvariable mit der Domain, deren Postfächer sich
+// selbst anmelden dürfen (etwa "schule.example"). Ist sie nicht gesetzt, ist die
+// Selbstanmeldung abgeschaltet.
 //
-// Bewusst eine ausdrückliche Domain und kein Schalter: Ohne Einschränkung entschiede der
-// Mailserver darüber, wer ins Bibliothekssystem darf. Solange dort nur Kollegium liegt,
-// wäre das vertretbar — aber das ist eine Annahme über eine fremde Anlage, und Annahmen
-// dieser Art veralten still. Die Domain macht die Bedingung sichtbar und prüfbar.
-const selbstanmeldeDomainEnv = "SELBSTANMELDUNG_DOMAIN"
+// Eine ausdrückliche Domain und kein Schalter: Ohne Einschränkung entschiede der Mailserver
+// darüber, wer ins Programm darf. Solange dort nur das Kollegium liegt, wäre das vertretbar,
+// aber das ist eine Annahme über eine fremde Anlage, und solche Annahmen veralten unbemerkt. Die
+// Domain macht die Bedingung sichtbar und prüfbar.
+const selbstanmeldeDomainVariable = "SELBSTANMELDUNG_DOMAIN"
 
-// SelbstanmeldeDomain liefert die freigegebene Domain in Kleinschreibung, oder "" wenn
-// die Selbstanmeldung abgeschaltet ist.
+// SelbstanmeldeDomain liefert die freigegebene Domain in Kleinschreibung, oder "", wenn die
+// Selbstanmeldung abgeschaltet ist.
 func SelbstanmeldeDomain() string {
 	return strings.ToLower(strings.TrimSpace(strings.TrimPrefix(
-		os.Getenv(selbstanmeldeDomainEnv), "@")))
+		os.Getenv(selbstanmeldeDomainVariable), "@")))
 }
 
-// SelbstanmeldungStatus beschreibt den Zustand für das Startprotokoll.
+// SelbstanmeldungStatus beschreibt den Zustand für das Log beim Start.
 //
-// Es gibt diese Funktion, damit die Abschaltung nicht STILL passiert: Eine Einstellung,
-// die man vergessen hat, sieht sonst genauso aus wie eine, die funktioniert — und die
-// Lehrkraft bekommt in beiden Fällen nur „Anmeldung fehlgeschlagen".
+// Es gibt die Funktion, damit die Abschaltung nicht unbemerkt bleibt: Eine vergessene
+// Einstellung sieht sonst genauso aus wie eine, die wirkt, und die Lehrkraft bekommt in beiden
+// Fällen nur „Anmeldung fehlgeschlagen".
 func SelbstanmeldungStatus() string {
 	if d := SelbstanmeldeDomain(); d != "" {
 		return fmt.Sprintf("Selbstanmeldung aktiv für @%s — neue Konten entstehen inaktiv "+
 			"und müssen freigeschaltet werden", d)
 	}
 	return fmt.Sprintf("Selbstanmeldung abgeschaltet (%s nicht gesetzt) — Konten legt "+
-		"ausschließlich die Benutzerverwaltung an", selbstanmeldeDomainEnv)
+		"ausschließlich die Benutzerverwaltung an", selbstanmeldeDomainVariable)
 }
 
 // darfSichSelbstAnmelden prüft die Domain der Adresse gegen die Freigabe.
 //
-// Der Vergleich läuft über das LETZTE "@" und die vollständige Domain — nicht über
-// strings.Contains oder HasSuffix. Ein Suffix-Vergleich ließe "boesephilipp-reis-schule.de"
-// durch, ein Contains sogar "kein@angreifer.de/philipp-reis-schule.de".
+// Der Vergleich läuft über das letzte "@" und die vollständige Domain, nicht über
+// strings.Contains oder HasSuffix. Ein Vergleich des Endes ließe "boeseschule.example" durch,
+// ein Contains sogar "kein@angreifer.example/schule.example".
 func darfSichSelbstAnmelden(email string) bool {
 	freigegeben := SelbstanmeldeDomain()
 	if freigegeben == "" {
@@ -75,11 +76,11 @@ func darfSichSelbstAnmelden(email string) bool {
 
 // namenAusAdresse rät Vor- und Nachnamen aus dem Adressteil vor dem "@".
 //
-// vorname/nachname sind NOT NULL, IMAP liefert sie aber nicht mit. Geraten wird nur aus
-// "vorname.nachname" — dem Muster der Schuladressen. Passt es nicht, bleibt der
-// Nachname der ganze Adressteil und der Vorname leer; die Bibliothek sieht beim
-// Freischalten, was daraus geworden ist, und kann es richtigstellen. Bewusst kein
-// Kunstname wie "Unbekannt": Der stünde später in Mahnungen.
+// vorname und nachname sind NOT NULL, IMAP liefert sie aber nicht mit. Geraten wird nur aus
+// "vorname.nachname", dem Muster der Adressen der Schule. Passt es nicht, ist der Nachname der
+// ganze Adressteil und der Vorname leer; die Bibliothek sieht beim Freischalten, was daraus
+// geworden ist, und kann es richtigstellen. Kein Kunstname wie "Unbekannt": Der stünde später
+// in Mahnungen.
 func namenAusAdresse(email string) (vorname, nachname string) {
 	lokal := email
 	if at := strings.LastIndex(email, "@"); at > 0 {
@@ -94,8 +95,8 @@ func namenAusAdresse(email string) (vorname, nachname string) {
 	return "", grossErsterBuchstabe(lokal)
 }
 
-// grossErsterBuchstabe schreibt den ersten Buchstaben groß und lässt den Rest, wie er
-// ist — "berger" wird zu "Berger", "McDonald" bleibt "McDonald".
+// grossErsterBuchstabe schreibt den ersten Buchstaben groß und lässt den Rest, wie er ist:
+// "berger" wird zu "Berger", "McDonald" bleibt "McDonald".
 func grossErsterBuchstabe(s string) string {
 	r := []rune(strings.TrimSpace(s))
 	if len(r) == 0 {
@@ -104,58 +105,58 @@ func grossErsterBuchstabe(s string) string {
 	return strings.ToUpper(string(r[0])) + string(r[1:])
 }
 
-// legeZugangsanfrageAn legt einen INAKTIVEN Benutzer an und gibt ihn zurück.
+// legeZugangsanfrageAn legt ein inaktives Konto an und gibt es zurück.
 //
-// ON CONFLICT (email) DO NOTHING plus anschließendes Lesen: Zwei gleichzeitige
-// Anmeldeversuche derselben Person (zwei Geräte, Doppelklick) dürfen nicht an der
-// eindeutigen E-Mail-Spalte scheitern. Wer verliert, liest die Zeile des Gewinners.
-func legeZugangsanfrageAn(ctx context.Context, dbPool db.Pool, email string) (loginUser, error) {
+// ON CONFLICT (email) DO NOTHING und danach Lesen: Zwei gleichzeitige Anmeldeversuche derselben
+// Person (zwei Geräte, Doppelklick) dürfen nicht an der eindeutigen Spalte email scheitern. Wer
+// verliert, liest die Zeile des Gewinners.
+func legeZugangsanfrageAn(ctx context.Context, pool db.Pool, email string) (anmeldeKonto, error) {
 	if !darfSichSelbstAnmelden(email) {
-		return loginUser{}, errSelbstanmeldungNichtErlaubt
+		return anmeldeKonto{}, errSelbstanmeldungNichtErlaubt
 	}
 
 	vorname, nachname := namenAusAdresse(email)
 
-	// aktiv = false ist der Kern dieser Funktion: Der Login lehnt inaktive Konten ab.
-	// Die Zeile entsteht, der Zugang nicht.
-	// neuAngelegt nur, wenn dabei wirklich eine Zeile entstand: Trifft die Anlage ein
-	// vorhandenes Konto, bekäme sonst eine längst freigeschaltete Lehrkraft „Zugang
-	// beantragt", und das Protokoll nennte eine Selbstanmeldung, die nie stattfand.
-	neuAngelegt, err := repository.LegeZugangsanfrageAn(ctx, dbPool, vorname, nachname, email)
+	// aktiv = false ist der Kern der Funktion: Die Anmeldung lehnt inaktive Konten ab. Die Zeile
+	// entsteht, der Zugang nicht. neuAngelegt gilt nur, wenn dabei wirklich eine Zeile entstand:
+	// Trifft die Anlage ein vorhandenes Konto, bekäme sonst eine längst freigeschaltete Lehrkraft
+	// „Zugang beantragt", und das Protokoll nennte eine Selbstanmeldung, die nie stattfand.
+	neuAngelegt, err := repository.LegeZugangsanfrageAn(ctx, pool, vorname, nachname, email)
 	if err != nil {
-		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht angelegt werden: %v", ErrAnmeldedienstGestoert, err)
+		return anmeldeKonto{}, fmt.Errorf("%w: zugangsanfrage konnte nicht angelegt werden: %v", errAnmeldedienstGestoert, err)
 	}
 
 	// Dasselbe Lesen wie in der Anmeldung: Trifft die Anlage ein vorhandenes Konto, geht die
 	// Anmeldung mit ihm weiter.
-	konto, err := repository.LadeAnmeldeKonto(ctx, dbPool, email)
+	gelesen, err := repository.LadeAnmeldeKonto(ctx, pool, email)
 	if err != nil {
-		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %v", ErrAnmeldedienstGestoert, err)
+		return anmeldeKonto{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %v", errAnmeldedienstGestoert, err)
 	}
-	u := loginUserAus(konto)
-	u.neuAngelegt = neuAngelegt
+	konto := anmeldeKontoAus(gelesen)
+	konto.neuAngelegt = neuAngelegt
 	if !neuAngelegt {
-		// Bestehendes Konto (aktiv oder wartend) — kein neuer Vorgang, kein Audit-Eintrag.
-		return u, nil
+		// Ein vorhandenes Konto, aktiv oder wartend: kein neuer Vorgang, kein Eintrag im
+		// Protokoll.
+		return konto, nil
 	}
 
-	// Audit: Ein Konto, das ohne Administrator entstanden ist, braucht erst recht eine
-	// Spur — sonst steht später eine Zeile in benutzer, von der niemand sagen kann, wer
-	// sie wann angelegt hat (der Vorfall mit den vier Admin-Konten). admin_id ist das
-	// neue Konto selbst: Es hat sich angemeldet. Best effort wie tuer.Basis.ProtokolliereVerwaltung.
+	// Ein Konto, das ohne Administrator entstanden ist, braucht erst recht einen Eintrag im
+	// Protokoll, sonst steht eine Zeile in benutzer, von der niemand sagen kann, wer sie wann
+	// angelegt hat. admin_id ist das neue Konto selbst: Es hat sich angemeldet. Ein Fehler beim
+	// Schreiben hält die Anmeldung nicht auf, wie in tuer.Basis.ProtokolliereVerwaltung.
 	// ziel_id trägt die Kennung des Kontos wie bei USER_CREATE: admin_id leert sich, wenn das
 	// Konto gelöscht wird, und die Auskunft fände den Eintrag dann nicht mehr.
-	details, err := json.Marshal(map[string]any{"ziel_id": u.id, "email": strings.ToLower(email), "rolle": "kollegium", "aktiv": false})
+	details, err := json.Marshal(map[string]any{"ziel_id": konto.id, "email": strings.ToLower(email), "rolle": "kollegium", "aktiv": false})
 	if err != nil {
 		details = []byte("{}")
 	}
-	if err := repository.SchreibeAdminProtokoll(ctx, dbPool, u.id, "SELBSTANMELDUNG", "", string(details)); err != nil {
+	if err := repository.SchreibeAdminProtokoll(ctx, pool, konto.id, "SELBSTANMELDUNG", "", string(details)); err != nil {
 		slog.Warn("Selbstanmeldung: Audit-Zeile konnte nicht geschrieben werden", "fehler", err)
 	}
-	return u, nil
+	return konto, nil
 }
 
-// errSelbstanmeldungNichtErlaubt: Adresse gehört nicht zur freigegebenen Domain, oder die
-// Selbstanmeldung ist ganz abgeschaltet. Führt zur normalen 401-Antwort — nach außen ist
-// nicht zu unterscheiden, ob es das Konto nicht gibt oder es nur nicht darf.
+// errSelbstanmeldungNichtErlaubt heißt: Die Adresse gehört nicht zur freigegebenen Domain, oder
+// die Selbstanmeldung ist ganz abgeschaltet. Die Antwort ist die gewöhnliche 401; von außen ist
+// nicht zu unterscheiden, ob es das Konto nicht gibt oder ob es sich nur nicht anmelden darf.
 var errSelbstanmeldungNichtErlaubt = errors.New("selbstanmeldung für diese Adresse nicht freigegeben")

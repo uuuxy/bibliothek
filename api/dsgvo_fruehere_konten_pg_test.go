@@ -235,14 +235,14 @@ func TestDSGVOAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 
 	t.Run("eigene Anmeldung", func(t *testing.T) {
 		const email = "selma.selbst@konto-eintraege.invalid"
-		authenticator, err := auth.NewAuthenticator("konto-eintraege-testgeheimnis-32-bytes!!", pool, time.Hour)
+		authenticator, err := auth.NewAnmeldung("konto-eintraege-testgeheimnis-32-bytes!!", pool, time.Hour)
 		if err != nil {
-			t.Fatalf("Authenticator: %v", err)
+			t.Fatalf("NewAnmeldung: %v", err)
 		}
 		req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(`{"email":"`+email+`","password":"beliebig"}`))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
-		auth.LoginHandler(pool, authenticator, false)(rec, req)
+		auth.Anmelden(pool, authenticator, false)(rec, req)
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("erste Anmeldung: Status %d, erwartet 403 (Zugang beantragt) — %s", rec.Code, rec.Body.String())
 		}

@@ -117,7 +117,7 @@ func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, 
 	// im Schulnetz Millisekunden — weniger, als ein Buch braucht, um von einer Theke zur
 	// anderen zu kommen.
 	empfangen := time.Now()
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
 	}
@@ -132,7 +132,7 @@ func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, 
 	versatz := empfangen.Sub(req.GesendetAm)
 	if versatz >= uhrVersatzWarnenAb || versatz <= -uhrVersatzWarnenAb {
 		log.Printf("nachbuchen: WARNUNG die Uhr des Theken-Rechners weicht um %s ab (Konto %s) — Scan-Zeitpunkte werden umgerechnet, die Uhr sollte gestellt werden",
-			(-versatz).Round(time.Second), claims.UserID)
+			(-versatz).Round(time.Second), claims.KontoID)
 	}
 
 	ctx := r.Context()
@@ -145,7 +145,7 @@ func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, 
 	// Dienst, und eine zweite Liste hier wäre die zweite Wahrheitsquelle — sie stimmte
 	// genau bis zur nächsten Meldung, die jemand hinzufügt.
 	offenVorher, zaehlbar := t.zaehleMeldungen(ctx)
-	absender := nachbuchAbsender{bearbeiterID: claims.UserID, uhrVersatz: versatz, darfSperrgrundSehen: t.HatRecht(r, "view_students")}
+	absender := nachbuchAbsender{bearbeiterID: claims.KontoID, uhrVersatz: versatz, darfSperrgrundSehen: t.HatRecht(r, "view_students")}
 	for _, e := range req.Eintraege {
 		antwort.Ergebnisse = append(antwort.Ergebnisse, t.bucheEintragNach(ctx, nachbuchDienst, e, absender))
 	}

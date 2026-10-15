@@ -133,7 +133,7 @@ func zaehleBestaetigte(paare []lusd.VorschauUmbenennung) int {
 // protokolliereLUSDImport schreibt den übernehmenden Lauf ins Protokoll der Verwaltung:
 // Modus, Zähler je Kategorie und ob der Massenabgang bestätigt wurde. Ohne Namen.
 func (t *Tueren) protokolliereLUSDImport(r *http.Request, res *lusd.Vorschau, massenabgangBestaetigt bool) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok || t.DB == nil || t.DB.Pool == nil || res == nil {
 		return
 	}
@@ -154,7 +154,7 @@ func (t *Tueren) protokolliereLUSDImport(r *http.Request, res *lusd.Vorschau, ma
 		"massenabgang_bestaetigt":  massenabgangBestaetigt,
 	}
 	if err := repository.NewProtokollAbfragen(t.DB.Pool).
-		ProtokolliereAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", clientip.AusAnfrage(r), details); err != nil {
+		ProtokolliereAdminAktion(r.Context(), claims.KontoID, "LUSD_IMPORT", clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("LUSD-Import: Audit-Eintrag fehlgeschlagen: %v", err)
 	}
 }

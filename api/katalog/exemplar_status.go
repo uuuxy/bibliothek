@@ -64,7 +64,7 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 	}
 
 	// Wer speichert, steht beim Aussondern im Protokoll.
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
 		return
@@ -84,7 +84,7 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 	}
 
 	if err := katalogAbfragen.AendereExemplarStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
-		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.UserID); err != nil {
+		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.KontoID); err != nil {
 		if errors.Is(err, repository.ErrExemplarNochVerliehen) {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return

@@ -49,8 +49,8 @@ func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 		req := httptest.NewRequest(http.MethodPatch, "/x", strings.NewReader(body))
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.LeserAendern(auditRepo)(rec, req)
 		return rec

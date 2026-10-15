@@ -26,7 +26,7 @@ func TestProtokolliereKontoAnlage_JedeAngabeUnterIhremNamen(t *testing.T) {
 	adminID := testdaten.LegeAdminKontoAn(t, pool, "konto-anlage-protokoll@example.org", "Paula", "Protokoll")
 
 	s := &Basis{DB: &db.Verbindung{Pool: pool}}
-	ctx := context.WithValue(t.Context(), auth.ClaimsContextKey, &auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin})
+	ctx := context.WithValue(t.Context(), auth.ClaimsSchluessel, &auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin})
 	s.ProtokolliereKontoAnlage(ctx, zielID, "neu@konto-anlage.example", "kollegium", "Vera", "Nachbar")
 
 	var bearbeiter string

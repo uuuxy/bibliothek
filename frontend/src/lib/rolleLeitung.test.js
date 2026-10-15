@@ -89,7 +89,7 @@ describe('Login-Weiche', () => {
 		authStore.handleLogout();
 	});
 
-	// Die Rechte kommen im Login mit (auth/handlers.go lädt sie aus role_permissions) —
+	// Die Rechte kommen im Login mit (auth/anmelden.go lädt sie aus role_permissions) —
 	// ohne sie prüfte der Test eine Weiche, die es so nie sieht.
 	async function meldeAn(rolle, permissions) {
 		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response

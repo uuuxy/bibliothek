@@ -105,11 +105,11 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	rufe := func(h http.HandlerFunc, leserID, kontoID string, rolle auth.Role) *httptest.ResponseRecorder {
+	rufe := func(h http.HandlerFunc, leserID, kontoID string, rolle auth.Rolle) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", nil)
 		req.SetPathValue("id", leserID)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: kontoID, Rolle: rolle}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: kontoID, Rolle: rolle}))
 		rec := httptest.NewRecorder()
 		h(rec, req)
 		return rec
@@ -128,7 +128,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 	for name, h := range map[string]http.HandlerFunc{
 		"JSON": srv.DSGVOAuskunft(), "PDF": srv.DSGVOAuskunftPDF(),
 	} {
-		rec := rufe(h, ritaLeser, lea, auth.RoleLeitung)
+		rec := rufe(h, ritaLeser, lea, auth.RolleLeitung)
 		if rec.Code != http.StatusForbidden {
 			t.Errorf("%s: die Leitung ohne manage_users bekommt die Auskunft eines Kollegen mit Konto "+
 				"(Status %d, erwartet 403)", name, rec.Code)
@@ -143,7 +143,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 		t.Errorf("eine verweigerte Auskunft steht %d-mal als erteilt im Protokoll", n)
 	}
 
-	if rec := rufe(srv.DSGVOAuskunft(), ottoLeser, lea, auth.RoleLeitung); rec.Code != http.StatusOK {
+	if rec := rufe(srv.DSGVOAuskunft(), ottoLeser, lea, auth.RolleLeitung); rec.Code != http.StatusOK {
 		t.Errorf("Gegenprobe: die Leitung bekommt die Auskunft eines Kollegen ohne Konto nicht (Status %d) — %s",
 			rec.Code, rec.Body.String())
 	}
@@ -161,7 +161,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 	for name, h := range map[string]http.HandlerFunc{
 		"JSON": srv.DSGVOAuskunft(), "PDF": srv.DSGVOAuskunftPDF(),
 	} {
-		rec := rufe(h, fritzLeser, lea, auth.RoleLeitung)
+		rec := rufe(h, fritzLeser, lea, auth.RolleLeitung)
 		if rec.Code != http.StatusForbidden {
 			t.Errorf("%s: die Leitung ohne manage_users bekommt die Auskunft eines Kollegen mit gelöschtem Konto "+
 				"(Status %d, erwartet 403)", name, rec.Code)
@@ -171,7 +171,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 		}
 	}
 
-	rec := rufe(srv.DSGVOAuskunft(), ritaLeser, ada, auth.RoleAdmin)
+	rec := rufe(srv.DSGVOAuskunft(), ritaLeser, ada, auth.RolleAdmin)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Gegenprobe: der Administrator bekommt die Auskunft nicht (Status %d) — %s", rec.Code, rec.Body.String())
 	}
@@ -185,7 +185,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 	}
 
 	setzeKontenrecht(true)
-	if rec := rufe(srv.DSGVOAuskunft(), ritaLeser, lea, auth.RoleLeitung); rec.Code != http.StatusOK {
+	if rec := rufe(srv.DSGVOAuskunft(), ritaLeser, lea, auth.RolleLeitung); rec.Code != http.StatusOK {
 		t.Errorf("Gegenprobe: die Leitung mit manage_users bekommt die Auskunft nicht (Status %d)", rec.Code)
 	}
 	if n := protokolliert(); n != 1 {

@@ -14,26 +14,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Der Live-Pfad der Selbstanmeldung, gegen echtes Postgres und durch den ECHTEN
-// LoginHandler — nicht gegen die Hilfsfunktionen daneben.
+// Die Selbstanmeldung am ganzen Weg, gegen Postgres und durch die echte Tür der Anmeldung,
+// nicht gegen die Hilfsfunktionen daneben.
 //
-// Der Kern ist eine Sicherheitszusage: Ein selbst angelegtes Konto darf sich NICHT
-// anmelden, bevor es jemand freigeschaltet hat. Diese Zusage lässt sich nur am ganzen
-// Weg prüfen. Eine isoliert getestete Funktion, die aktiv=false schreibt, beweist nichts
-// darüber, was der Handler daraus macht — genau diese Lücke hat uns hier schon einmal
-// eine Runde gekostet (Ghost-Block, Runde 8).
+// Der Kern ist eine Zusage der Sicherheit: Ein selbst angelegtes Konto darf sich nicht anmelden,
+// bevor es jemand freigeschaltet hat. Das lässt sich nur am ganzen Weg prüfen; eine einzeln
+// getestete Funktion, die aktiv=false schreibt, sagt nichts darüber, was die Tür daraus macht.
 
-// Seit 01.09.2026 über internal/pgtest statt eines eigenen Harness: Der frühere
-// Aufbau hier hielt den Advisory-Lock 0x42DB0001 SELBST und machte je Test einen
-// eigenen DROP SCHEMA. Sobald ein zweiter Test im selben Binary den Lock über
-// pgtest genommen hätte — der ihn bewusst bis Prozessende hält —, hätte dieser
-// Harness für immer auf sein eigenes Binary gewartet; genau dieser Selbst-Deadlock
-// hat am 01.09. über order_search die ganze Suite in 10-Minuten-Timeouts gezogen
-// (de42b820). pgtest spielt schema.sql als die EINE Quelle ein — die Lektion vom
-// 30.08. (abgeschriebene benutzer-DDL ohne Migration 086 = eine Woche CI-Münzwurf,
-// b8daed0a) bleibt damit gewahrt. Das Schema wird je Binary EINMAL gebaut und mit
-// allen Tests geteilt: Jeder Test räumt sein Konto über raeumeKontoAb selbst ab
-// und prüft nur an seiner eigenen E-Mail-Adresse.
+// pgPoolFuerSelbstanmeldung liefert die Datenbank aus internal/pgtest, eingespielt aus
+// schema.sql als der einen Quelle des Schemas. Das Schema wird je Testprogramm einmal gebaut und
+// mit allen Tests geteilt: Jeder Test räumt sein Konto über raeumeKontoAb selbst ab und prüft
+// nur an seiner eigenen E-Mail-Adresse. Eine eigene Sperre der Datenbank nimmt der Test nicht:
+// pgtest hält seine bis zum Ende des Prozesses, und ein zweiter Halter wartete ewig.
 func pgPoolFuerSelbstanmeldung(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	pool := pgtest.Pool(t)
@@ -51,10 +43,10 @@ func pgPoolFuerSelbstanmeldung(t *testing.T) *pgxpool.Pool {
 	return pool
 }
 
-// raeumeKontoAb entfernt am Testende das Konto zu dieser Adresse samt seiner
-// Audit-Zeilen — pgtest teilt das Schema mit allen Tests des Binaries. Erst die
-// Audit-Zeilen: audit_logs.admin_id steht auf ON DELETE SET NULL, ein nacktes
-// DELETE auf benutzer ließe sie also verwaist zurück.
+// raeumeKontoAb entfernt am Ende des Tests das Konto zu dieser Adresse samt seinen Zeilen im
+// Protokoll; pgtest teilt das Schema mit allen Tests des Testprogramms. Die Zeilen im Protokoll
+// zuerst: audit_logs.admin_id steht auf ON DELETE SET NULL, ein bloßes DELETE auf benutzer ließe
+// sie verwaist zurück.
 func raeumeKontoAb(t *testing.T, pool *pgxpool.Pool, email string) {
 	t.Helper()
 	t.Cleanup(func() {
@@ -70,30 +62,30 @@ func raeumeKontoAb(t *testing.T, pool *pgxpool.Pool, email string) {
 	})
 }
 
-// anmelden schickt eine echte Login-Anfrage durch den Handler.
+// anmelden schickt eine echte Anmeldung durch die Tür.
 func anmelden(t *testing.T, pool *pgxpool.Pool, email string) (int, string) {
 	t.Helper()
-	auth, err := NewAuthenticator("test-secret-mit-mindestens-32-zeichen!!", pool, time.Hour)
+	auth, err := NewAnmeldung("test-secret-mit-mindestens-32-zeichen!!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"email":"` + email + `","password":"beliebig"}`)
-	req := httptest.NewRequest(http.MethodPost, "/login", body)
-	req.Header.Set("Content-Type", "application/json")
+	rumpf := strings.NewReader(`{"email":"` + email + `","password":"beliebig"}`)
+	anfrage := httptest.NewRequest(http.MethodPost, "/login", rumpf)
+	anfrage.Header.Set("Content-Type", "application/json")
 
-	LoginHandler(pool, auth, false)(rec, req)
+	Anmelden(pool, auth, false)(rec, anfrage)
 
-	// Erfolgsantworten tragen kein error-Feld — ein Unmarshal-Fehler ist deshalb kein
-	// Testfehler, der Statuscode bleibt aussagekräftig. Nur schweigend verwerfen wollen
-	// wir ihn nicht.
+	// Eine gelungene Antwort trägt kein Feld error; ein Fehler beim Lesen ist deshalb kein Fehler
+	// des Tests, der Statuscode bleibt aussagekräftig. Stillschweigend verworfen wird er trotzdem
+	// nicht.
 	var antwort map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Logf("Antwort war kein JSON (Status %d): %s", rec.Code, rec.Body.String())
 	}
-	// errcheck läuft hier mit check-blank und check-type-assertions: Auch das verworfene
-	// „ok" der Typzusicherung zählt als ignorierter Fehler. Erfolgsantworten tragen kein
-	// error-Feld — dann bleibt der Text leer, und das ist kein Fehler.
+	// errcheck läuft hier mit check-blank und check-type-assertions: Auch das verworfene „ok" der
+	// Typzusicherung zählt als übergangener Fehler. Eine gelungene Antwort trägt kein Feld error;
+	// dann bleibt der Text leer, und das ist kein Fehler.
 	text, vorhanden := antwort["error"].(string)
 	if !vorhanden {
 		text = ""
@@ -102,18 +94,18 @@ func anmelden(t *testing.T, pool *pgxpool.Pool, email string) (int, string) {
 }
 
 func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
-	// IMAP-Mock: jedes Passwort gilt. Damit prüft der Test genau das, was NACH der
-	// erfolgreichen Authentifizierung passiert — und nichts anderes.
+	// Attrappe des Mailservers: Jedes Passwort gilt. So prüft der Test genau das, was nach der
+	// gelungenen Prüfung des Passworts geschieht, und nichts anderes.
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")
-	t.Setenv(selbstanmeldeDomainEnv, "selbsttest.invalid")
+	t.Setenv(selbstanmeldeDomainVariable, "selbsttest.invalid")
 
 	pool := pgPoolFuerSelbstanmeldung(t)
 	ctx := context.Background()
 	const email = "erika.musterfrau@selbsttest.invalid"
 	raeumeKontoAb(t, pool, email)
 
-	// 1. Erster Anmeldeversuch: Es gibt noch kein Konto.
+	// 1. Erster Versuch: Es gibt noch kein Konto.
 	code, meldung := anmelden(t, pool, email)
 	if code != http.StatusForbidden {
 		t.Fatalf("erster Versuch: Status %d, erwartet 403 — ein neues Konto darf NICHT hineinkommen", code)
@@ -122,11 +114,11 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 		t.Errorf("die Meldung muss sagen, dass der Zugang beantragt ist, war: %q", meldung)
 	}
 
-	// 2. Der Eintrag existiert — inaktiv, Rolle kollegium, Name aus der Adresse geraten.
+	// 2. Der Eintrag besteht: inaktiv, Rolle kollegium, Name aus der Adresse geraten.
 	var aktiv bool
 	var rolle, vorname, nachname, art string
-	// Die Art steht seit Migration 125 an der LESERZEILE des Kontos — dass es überhaupt
-	// eine gibt, ist Teil der Zusage: Ohne sie fände die Theke die neue Lehrkraft nicht.
+	// Die Art steht an der Leserzeile des Kontos. Dass es überhaupt eine gibt, ist Teil der
+	// Zusage: Ohne sie fände die Theke die neue Lehrkraft nicht.
 	if err := pool.QueryRow(ctx, `
 		SELECT b.aktiv, b.rolle::text, b.vorname, b.nachname, coalesce(l.art, '')
 		FROM benutzer b LEFT JOIN leser l ON l.id = b.leser_id
@@ -140,17 +132,17 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if rolle != "kollegium" {
 		t.Errorf("Rolle = %q, erwartet kollegium", rolle)
 	}
-	// Wer sich über das Schulpostfach selbst anmeldet, ist Lehrkraft; eine LiV trägt die
-	// Leserdatei von Hand um. 'schueler' wäre hier gefährlich: Diese Zeile käme in jede
-	// Klassenliste und würde vom nächsten LUSD-Abgleich als Abgänger markiert.
+	// Wer sich über das Postfach der Schule selbst anmeldet, ist Lehrkraft; eine LiV trägt die
+	// Leserdatei von Hand um. 'schueler' wäre hier gefährlich: Die Zeile käme in jede Klassenliste
+	// und würde vom nächsten Abgleich mit der LUSD als Abgänger markiert.
 	if art != "lehrkraft" {
 		t.Errorf("Art der Leserzeile = %q, erwartet lehrkraft", art)
 	}
 	if vorname != "Erika" || nachname != "Musterfrau" {
 		t.Errorf("Name aus der Adresse = %q %q, erwartet Erika Musterfrau", vorname, nachname)
 	}
-	// Der Antrag ist als solcher markiert (Migration 086) — sonst wäre er in der
-	// Benutzerverwaltung von einem bewusst deaktivierten Konto nicht zu unterscheiden.
+	// Der Antrag ist als solcher markiert, sonst wäre er in der Benutzerverwaltung von einem
+	// absichtlich deaktivierten Konto nicht zu unterscheiden.
 	var beantragt bool
 	if err := pool.QueryRow(ctx, `
 		SELECT zugang_beantragt_am IS NOT NULL FROM benutzer WHERE LOWER(email) = $1
@@ -160,8 +152,8 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if !beantragt {
 		t.Error("zugang_beantragt_am ist NULL — die Selbstanmeldung muss den Antrag markieren")
 	}
-	// Und eine Audit-Spur: Wer hat dieses Konto wann angelegt? Niemand — es hat sich
-	// selbst angemeldet, und genau das muss nachlesbar sein.
+	// Und ein Eintrag im Protokoll: Wer hat das Konto wann angelegt? Niemand, es hat sich selbst
+	// angemeldet, und genau das muss nachzulesen sein.
 	var auditZeilen int
 	if err := pool.QueryRow(ctx, `
 		SELECT count(*) FROM audit_logs a JOIN benutzer b ON b.id = a.admin_id
@@ -190,10 +182,8 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 			zielIstKonto, mailImEintrag, rolleImEintrag, aktivImEintrag, ohneIP)
 	}
 
-	// 3. Zweiter Versuch, immer noch nicht freigeschaltet: weiterhin kein Zugang, dieselbe
-	//    Meldung wie beim ersten Mal, und es entsteht KEIN zweiter Eintrag. Bis 11.09.2026
-	//    kam hier „user account is deactivated" — wer nachsah, ob die Freischaltung schon
-	//    da ist, las „deaktiviert" statt „beantragt".
+	// 3. Zweiter Versuch, noch nicht freigeschaltet: weiter kein Zugang, dieselbe Meldung wie beim
+	//    ersten Mal („beantragt", nicht „deaktiviert"), und es entsteht kein zweiter Eintrag.
 	if code, meldung := anmelden(t, pool, email); code != http.StatusForbidden || !strings.Contains(meldung, "beantragt") {
 		t.Errorf("zweiter Versuch vor der Freischaltung: Status %d (%q), erwartet 403 mit „beantragt“", code, meldung)
 	}
@@ -206,8 +196,8 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 		t.Errorf("nach zwei Versuchen stehen %d Einträge in der Tabelle, erwartet genau 1", anzahl)
 	}
 
-	// 4. Freischalten — über DENSELBEN Repository-Pfad wie die Benutzerverwaltung,
-	//    nicht über ein rohes UPDATE: Der Pfad muss den Antrag auch erledigen.
+	// 4. Freischalten über denselben Weg in repository wie die Benutzerverwaltung, nicht über ein
+	//    rohes UPDATE: Der Weg muss auch den Antrag erledigen.
 	var id string
 	if err := pool.QueryRow(ctx, `SELECT id FROM benutzer WHERE LOWER(email) = $1`, email).Scan(&id); err != nil {
 		t.Fatal(err)
@@ -230,7 +220,7 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 		t.Error("nach der Freischaltung steht zugang_beantragt_am noch — ein späteres Deaktivieren sähe wieder wie ein Antrag aus")
 	}
 
-	// 5. Bewusst deaktivieren: Das ist kein Antrag mehr — die Meldung sagt „deaktiviert",
+	// 5. Absichtlich deaktivieren: Das ist kein Antrag mehr, die Meldung sagt „deaktiviert",
 	//    nicht „beantragt". Sonst wartete die Person auf eine Freischaltung, die nicht kommt.
 	if _, err := repository.NewKontoAbfragen(pool).Aendere(ctx, repository.KontoAenderung{
 		ID: id, Aktiv: &falsch,
@@ -243,12 +233,12 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	}
 }
 
-// Ohne freigegebene Domain darf gar nichts entstehen — auch dann nicht, wenn der
-// Mailserver die Zugangsdaten bestätigt. Sonst legte jedes fremde Postfach eine Zeile an.
+// Ohne freigegebene Domain entsteht gar nichts, auch wenn der Mailserver die Zugangsdaten
+// bestätigt. Sonst legte jedes fremde Postfach eine Zeile an.
 func TestSelbstanmeldung_FremdeDomainLegtNichtsAn(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")
-	t.Setenv(selbstanmeldeDomainEnv, "selbsttest.invalid")
+	t.Setenv(selbstanmeldeDomainVariable, "selbsttest.invalid")
 
 	pool := pgPoolFuerSelbstanmeldung(t)
 	ctx := context.Background()
@@ -270,12 +260,12 @@ func TestSelbstanmeldung_FremdeDomainLegtNichtsAn(t *testing.T) {
 	}
 }
 
-// Abgeschaltet heißt abgeschaltet: Ohne SELBSTANMELDUNG_DOMAIN bleibt es beim alten
-// Verhalten, auch für die Adresse, die sonst durchkäme.
+// Abgeschaltet heißt abgeschaltet: Ohne SELBSTANMELDUNG_DOMAIN entsteht kein Konto, auch nicht
+// für die Adresse, die sonst durchkäme.
 func TestSelbstanmeldung_AbgeschaltetLegtNichtsAn(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")
-	t.Setenv(selbstanmeldeDomainEnv, "")
+	t.Setenv(selbstanmeldeDomainVariable, "")
 
 	pool := pgPoolFuerSelbstanmeldung(t)
 	ctx := context.Background()
@@ -298,27 +288,26 @@ func TestSelbstanmeldung_AbgeschaltetLegtNichtsAn(t *testing.T) {
 
 // Ein zweiter Anmeldeversuch hinterlässt keine zweite Leserzeile.
 //
-// Warum das überhaupt eine Zusage ist: Der Wächter trg_benutzer_hat_leserzeile ist ein
-// BEFORE INSERT. Er läuft, BEVOR Postgres einen Konflikt bemerkt, und legt dabei eine
-// frische Leserzeile an. Ein `INSERT ... ON CONFLICT DO NOTHING` auf `benutzer` würde die
-// Kontozeile verwerfen — die Leserzeile des Wächters bliebe stehen, ohne Konto und ohne
-// Ausweisnummer. Am 16.09.2026 nachgestellt und bestätigt.
+// Warum das eine Zusage ist: Der Wächter trg_benutzer_hat_leserzeile läuft BEFORE INSERT, also
+// bevor Postgres einen Konflikt bemerkt, und legt dabei eine frische Leserzeile an. Ein
+// `INSERT ... ON CONFLICT DO NOTHING` auf `benutzer` verwürfe die Zeile des Kontos, die
+// Leserzeile des Wächters bliebe stehen, ohne Konto und ohne Ausweisnummer.
 //
-// Auf dem Anmeldeweg passiert das NICHT, und zwar nicht durch Zufall: legeZugangsanfrageAn
-// wird nur im `pgx.ErrNoRows`-Zweig aufgerufen, also ausschliesslich, wenn gar kein Konto
-// existiert. Beim zweiten Versuch findet die Abfrage das Konto, und der INSERT wird nie
+// Auf dem Weg der Anmeldung geschieht das nicht, und zwar nicht durch Zufall:
+// legeZugangsanfrageAn wird nur im Zweig `pgx.ErrNoRows` aufgerufen, also nur, wenn es gar kein
+// Konto gibt. Beim zweiten Versuch findet die Abfrage das Konto, und der INSERT wird nie
 // versucht.
 //
-// Dieser Test hält deshalb das ERGEBNIS fest, nicht eine einzelne Zeile: Der Schutz liegt
-// im Zuschnitt des Aufrufers, und ein Umbau, der die Anlage aus diesem Zweig herauszieht,
-// hätte still Waisen zur Folge. Ehrlich benannt: Mit einer kleinen Änderung lässt sich
-// dieser Test nicht rot bekommen — er sichert eine Struktur, keinen Schalter.
+// Der Test hält deshalb das Ergebnis fest, nicht eine einzelne Zeile: Der Schutz liegt im
+// Zuschnitt des Aufrufers, und ein Umbau, der die Anlage aus diesem Zweig herauszieht, hinterließe
+// unbemerkt verwaiste Leserzeilen. Mit einer kleinen Änderung lässt sich der Test nicht rot
+// bekommen; er sichert eine Struktur, keinen Schalter.
 func TestSelbstanmeldung_ZweiterVersuchLaesstKeineLeserzeileZurueck(t *testing.T) {
-	// IMAP-Mock wie im Nachbartest: Ohne ihn scheitert die Anmeldung schon an der
-	// Authentifizierung und käme nie bis zur Anlage.
+	// Attrappe des Mailservers wie im Test daneben: Ohne sie scheitert die Anmeldung schon am
+	// Passwort und käme nie bis zur Anlage.
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")
-	t.Setenv(selbstanmeldeDomainEnv, "schule-test.invalid")
+	t.Setenv(selbstanmeldeDomainVariable, "schule-test.invalid")
 	pool := pgPoolFuerSelbstanmeldung(t)
 	const mail = "zweimal.klick@schule-test.invalid"
 	raeumeKontoAb(t, pool, mail)
@@ -367,7 +356,7 @@ func TestSelbstanmeldung_ZweiterVersuchLaesstKeineLeserzeileZurueck(t *testing.T
 // dann die vorhandene Zeile, und die Anmeldung geht mit ihr weiter. Sie muss dasselbe Konto
 // liefern wie das erste Lesen, mit der Adresse: Aus ihr entsteht die Antwort an den Browser.
 func TestSelbstanmeldung_VorhandenesKontoKommtVollstaendigZurueck(t *testing.T) {
-	t.Setenv(selbstanmeldeDomainEnv, "schule-test.invalid")
+	t.Setenv(selbstanmeldeDomainVariable, "schule-test.invalid")
 	pool := pgPoolFuerSelbstanmeldung(t)
 	const mail = "wettlauf.konto@schule-test.invalid"
 	raeumeKontoAb(t, pool, mail)

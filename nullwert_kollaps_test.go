@@ -168,7 +168,7 @@ func TestKeinLesefehlerAlsNichtGespeichert(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Der Bestand kennt die gebundene Hausform an mehreren Stellen (repository/leser_konto.go,
-	// repository/auflagen_klasse.go, auth/handlers.go). Findet der Durchlauf keine davon,
+	// repository/auflagen_klasse.go, auth/anmelden.go). Findet der Durchlauf keine davon,
 	// liest er nicht, was er lesen soll.
 	if geprueft < 3 {
 		t.Fatalf("nur %d Oder mit „keine Zeile“ gelesen, erwartet mindestens 3 — der Detektor läuft leer", geprueft)

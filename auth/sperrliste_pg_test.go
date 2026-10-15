@@ -13,11 +13,11 @@ import (
 // widerrufen, ein zweiter Widerruf desselben Tokens ist kein Fehler, und das Aufräumen nimmt
 // nur, was abgelaufen ist. Ein nachgespielter Pool belegt davon nichts: Die Zusagen hängen am
 // Schlüssel der Tabelle und am Vergleich mit der Uhr der Datenbank.
-func TestTokenBlacklist_WiderrufUndAufraeumenAnDerTabelle(t *testing.T) {
+func TestSperrliste_WiderrufUndAufraeumenAnDerTabelle(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	b := NewTokenBlacklist(pool)
-	t.Cleanup(b.Stop)
+	s := newSperrliste(pool)
+	t.Cleanup(s.Stoppe)
 
 	lauf := time.Now().UnixNano()
 	gueltig := fmt.Sprintf("token-gueltig-%d", lauf)
@@ -25,16 +25,16 @@ func TestTokenBlacklist_WiderrufUndAufraeumenAnDerTabelle(t *testing.T) {
 	fremd := fmt.Sprintf("token-nie-widerrufen-%d", lauf)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM revoked_tokens WHERE token_signature = ANY($1)`,
-			[]string{hashToken(gueltig), hashToken(abgelaufen)}); err != nil {
+			[]string{hashDesTokens(gueltig), hashDesTokens(abgelaufen)}); err != nil {
 			t.Logf("Aufräumen der Probe: %v", err)
 		}
 	})
 
 	istWiderrufen := func(token string) bool {
 		t.Helper()
-		widerrufen, err := b.IsBlacklisted(token)
+		widerrufen, err := s.istWiderrufen(token)
 		if err != nil {
-			t.Fatalf("IsBlacklisted: %v", err)
+			t.Fatalf("istWiderrufen: %v", err)
 		}
 		return widerrufen
 	}
@@ -42,7 +42,7 @@ func TestTokenBlacklist_WiderrufUndAufraeumenAnDerTabelle(t *testing.T) {
 		t.Helper()
 		var n int
 		if err := pool.QueryRow(ctx, `SELECT count(*) FROM revoked_tokens WHERE token_signature = $1`,
-			hashToken(token)).Scan(&n); err != nil {
+			hashDesTokens(token)).Scan(&n); err != nil {
 			t.Fatalf("Zeilen zählen: %v", err)
 		}
 		return n
@@ -51,7 +51,7 @@ func TestTokenBlacklist_WiderrufUndAufraeumenAnDerTabelle(t *testing.T) {
 	if istWiderrufen(gueltig) {
 		t.Fatal("ein nie widerrufenes Token gilt als widerrufen")
 	}
-	if err := b.Add(gueltig, time.Now().Add(time.Hour)); err != nil {
+	if err := s.Widerrufe(gueltig, time.Now().Add(time.Hour)); err != nil {
 		t.Fatalf("Widerruf: %v", err)
 	}
 	if !istWiderrufen(gueltig) {
@@ -70,7 +70,7 @@ func TestTokenBlacklist_WiderrufUndAufraeumenAnDerTabelle(t *testing.T) {
 	}
 
 	// Ein zweiter Widerruf desselben Tokens, mit anderer Ablaufzeit: kein Fehler, eine Zeile.
-	if err := b.Add(gueltig, time.Now().Add(2*time.Hour)); err != nil {
+	if err := s.Widerrufe(gueltig, time.Now().Add(2*time.Hour)); err != nil {
 		t.Errorf("zweiter Widerruf desselben Tokens: %v", err)
 	}
 	if n := zeilen(gueltig); n != 1 {
@@ -78,13 +78,13 @@ func TestTokenBlacklist_WiderrufUndAufraeumenAnDerTabelle(t *testing.T) {
 	}
 
 	// Das Aufräumen nimmt das abgelaufene und lässt das gültige.
-	if err := b.Add(abgelaufen, time.Now().Add(-time.Minute)); err != nil {
+	if err := s.Widerrufe(abgelaufen, time.Now().Add(-time.Minute)); err != nil {
 		t.Fatalf("Widerruf des abgelaufenen Tokens: %v", err)
 	}
 	if n := zeilen(abgelaufen); n != 1 {
 		t.Fatalf("%d Zeilen für das abgelaufene Token vor dem Aufräumen, erwartet 1", n)
 	}
-	b.cleanup()
+	s.raeumeAb()
 	if n := zeilen(abgelaufen); n != 0 {
 		t.Errorf("das abgelaufene Token steht nach dem Aufräumen noch in der Tabelle")
 	}

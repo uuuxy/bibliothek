@@ -17,7 +17,7 @@ import (
 // bettet sie ein, damit die Türen ihre Felder und Methoden unter demselben Namen erreichen.
 type Basis struct {
 	DB     *db.Verbindung
-	Auth   *auth.Authenticator
+	Auth   *auth.Anmeldung
 	Broker *sse.Broker
 	// Uhr liefert „jetzt" aus Sicht der Schule; nil = pkg/schulzeit. Nur Tests setzen
 	// sie — für das, was am Kalender hängt (Saison der Abgängerliste): Sonst bewiese

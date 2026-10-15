@@ -40,8 +40,8 @@ func (t *Tueren) LeserZusammenfuehren(protokollAbfragen repository.ProtokollAbfr
 		}
 
 		var bearbeiterID string
-		if claims, ok := auth.GetClaims(r.Context()); ok {
-			bearbeiterID = claims.UserID
+		if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
+			bearbeiterID = claims.KontoID
 		}
 		erg, err := repository.FuehreLeserZusammen(r.Context(), t.DB.Pool, repository.ZusammenfuehrenAuftrag{
 			ZielID: zielID, QuelleID: rumpf.QuelleID, BearbeiterID: bearbeiterID,
@@ -65,8 +65,8 @@ func (t *Tueren) LeserZusammenfuehren(protokollAbfragen repository.ProtokollAbfr
 		// Barcodes. Der Rückweg (Stammdaten der Quelle, gewanderte Zeilen) steht in audit_log am
 		// Ziel, geschrieben in der Transaktion (repository.schreibeRueckwegEintrag).
 		// Schlüssel `schueler_id` für den verbliebenen (Vokabular der Auskunft/Tilgung).
-		if claims, ok := auth.GetClaims(r.Context()); ok {
-			if err := protokollAbfragen.ProtokolliereAdminAktion(r.Context(), claims.UserID, "SCHUELER_ZUSAMMENGEFUEHRT", clientip.AusAnfrage(r), map[string]any{
+		if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
+			if err := protokollAbfragen.ProtokolliereAdminAktion(r.Context(), claims.KontoID, "SCHUELER_ZUSAMMENGEFUEHRT", clientip.AusAnfrage(r), map[string]any{
 				"schueler_id":        erg.ZielID,
 				"barcode":            erg.BarcodeID,
 				"aufgeloest_id":      rumpf.QuelleID,

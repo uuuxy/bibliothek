@@ -20,7 +20,7 @@ type fehlversuche struct {
 // maxAnmeldeFehlversucheJeAdresse ist die Obergrenze dieser Middleware für die Menge, bewusst
 // hoch und nicht als Schutz eines Kontos gedacht.
 //
-// Der Handler (auth/handlers.go) zählt je E-Mail und Adresse, diese Schicht nur je Adresse.
+// Die Tür (auth/anmelden.go) zählt je E-Mail und Adresse, diese Schicht nur je Adresse.
 // Läge die Grenze hier so niedrig wie dort (fünf), genügten in einer Schule, deren Geräte über
 // eine NAT-Adresse herauskommen, fünf Vertipper irgendeines Nutzers, um die Anmeldung für alle
 // anderen 15 Minuten lang zu sperren.
@@ -83,7 +83,7 @@ func reserviereAnmeldeVersuch(adresse string, jetzt time.Time) (versuche *fehlve
 // als Fehlversuch, 200 setzt den Zähler zurück.
 //
 // 403 zählt nicht: Bei „Zugang beantragt" (Selbstanmeldung) und „Konto deaktiviert" war das
-// Passwort richtig. Der Handler zählt deshalb nicht (auth/handlers.go), und diese Schicht darf
+// Passwort richtig. Die Tür zählt deshalb nicht (auth/anmelden.go), und diese Schicht darf
 // die Entscheidung nicht wieder einsammeln. Zum Schuljahresbeginn sperrten sonst zwanzig 403
 // der Selbstanmeldung hinter der einen NAT-Adresse der Schule die Anmeldung für alle, auch für
 // die Bibliothekskraft, die die Freischaltungen vornimmt. Für Credential-Stuffing, den Zweck

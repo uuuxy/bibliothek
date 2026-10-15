@@ -1,4 +1,4 @@
-// Die drei Wege der Sperre nach Inaktivität zum Server (auth/handlers_sperre.go).
+// Die drei Wege der Sperre nach Inaktivität zum Server (auth/sperre.go).
 // Alle laufen unter /api/auth/: Ein 401 dort meldet den Arbeitsplatz nicht ab (apiFetch).
 
 import { apiFetch } from '../apiFetch.js';

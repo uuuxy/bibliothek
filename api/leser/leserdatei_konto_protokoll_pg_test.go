@@ -45,8 +45,8 @@ func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
 		for k, v := range pfadwerte {
 			req.SetPathValue(k, v)
 		}
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		h(rec, req)
 		return rec

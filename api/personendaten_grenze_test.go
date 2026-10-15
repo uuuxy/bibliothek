@@ -99,7 +99,7 @@ func eingabeSiehtUebergehen(rolle string) bool {
 	// Rechteprüfung mit 400 ab (uuid_eingaben_test.go).
 	body := `{"query":"B-123","active_leser_id":"22222222-2222-2222-2222-222222222222","override_block":true}`
 	req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle), UserID: "u1"}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: auth.Rolle(rolle), KontoID: "u1"}))
 	w := httptest.NewRecorder()
 	s.theke().EingabeVerarbeiten(spy)(w, req)
 	return spy.gesehenesUebergehen
@@ -146,7 +146,7 @@ func geraeteAnfrage(rolle string) *httptest.ResponseRecorder {
 	}}}
 	s := &Server{}
 	req := httptest.NewRequest("GET", "/api/geraete", nil)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle)}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: auth.Rolle(rolle)}))
 	w := httptest.NewRecorder()
 	s.katalog().Geraete(stub)(w, req)
 	return w

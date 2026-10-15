@@ -14,53 +14,53 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Bewusst nur der Tabellenteil: pgxmock vergleicht per REGEX, und die Spaltenliste
-// enthält seit dem Barcode-aus-der-DB ein coalesce(...) — die Klammern wären dort
-// Regex-Gruppen und träfen den echten SQL-Text nicht mehr.
+// Nur der Name der Tabelle: pgxmock vergleicht mit einem regulären Ausdruck, und die Liste der
+// Spalten enthält ein coalesce(...), dessen Klammern dort Gruppen wären und den echten SQL-Text
+// nicht mehr träfen.
 const benutzerSelect = `FROM benutzer`
 
-// aktiviereMockIMAP schaltet den IMAP-Mock für einen Test frei. APP_ENV gehört
-// zwingend dazu: Der Mock akzeptiert jedes Passwort und ist deshalb seit dem
-// Audit-Fix nur noch in local/development/test erlaubt — ohne APP_ENV würde
-// AuthenticateIMAP hier ablehnen und jeder Login-Test liefe ins Leere.
-func aktiviereMockIMAP(t *testing.T) {
+// aktiviereIMAPAttrappe schaltet die Attrappe des Mailservers für einen Test frei. APP_ENV gehört
+// dazu: Die Attrappe nimmt jedes Passwort an und gilt deshalb nur in local, development und
+// test. Ohne APP_ENV lehnte pruefeIMAPAnmeldung ab, und jeder Test der Anmeldung liefe ins
+// Leere.
+func aktiviereIMAPAttrappe(t *testing.T) {
 	t.Helper()
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")
 }
 
-func doLogin(t *testing.T, a *Authenticator, mock pgxmock.PgxPoolIface, body string) *httptest.ResponseRecorder {
+func rufeAnmelden(t *testing.T, a *Anmeldung, mock pgxmock.PgxPoolIface, rumpf string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	anfrage := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(rumpf))
+	anfrage.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	LoginHandler(mock, a, false)(rec, req)
+	Anmelden(mock, a, false)(rec, anfrage)
 	return rec
 }
 
-func TestLoginHandler_MissingCredentialsReturn400(t *testing.T) {
-	aktiviereMockIMAP(t)
-	a, mock := newTestAuthenticator(t, 12*time.Hour)
+func TestAnmelden_FehlendeZugangsdatenSind400(t *testing.T) {
+	aktiviereIMAPAttrappe(t)
+	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
-	if rec := doLogin(t, a, mock, `{"password":"x"}`); rec.Code != http.StatusBadRequest {
+	if rec := rufeAnmelden(t, a, mock, `{"password":"x"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("ohne email: erwartet 400, bekam %d", rec.Code)
 	}
-	if rec := doLogin(t, a, mock, `{"email":"a@b.de"}`); rec.Code != http.StatusBadRequest {
+	if rec := rufeAnmelden(t, a, mock, `{"email":"a@b.de"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("ohne password: erwartet 400, bekam %d", rec.Code)
 	}
 }
 
-func TestLoginHandler_UnknownUserReturns401(t *testing.T) {
-	// Mock-IMAP akzeptiert jedes Passwort — die Ablehnung muss aus der DB kommen
-	// (IMAP-Konto existiert, aber kein registrierter Bibliotheks-Benutzer).
-	aktiviereMockIMAP(t)
-	a, mock := newTestAuthenticator(t, 12*time.Hour)
+func TestAnmelden_UnbekanntesKontoIst401(t *testing.T) {
+	// Die Attrappe nimmt jedes Passwort an; die Ablehnung muss aus der Datenbank kommen (Postfach
+	// vorhanden, aber kein Konto in der Bibliothek).
+	aktiviereIMAPAttrappe(t)
+	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("unbekannt@schule.de").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
 
-	rec := doLogin(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
+	rec := rufeAnmelden(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("erwartet 401, bekam %d: %s", rec.Code, rec.Body.String())
 	}
@@ -69,24 +69,24 @@ func TestLoginHandler_UnknownUserReturns401(t *testing.T) {
 	}
 }
 
-func TestLoginHandler_DeactivatedUserReturns403(t *testing.T) {
-	aktiviereMockIMAP(t)
-	a, mock := newTestAuthenticator(t, 12*time.Hour)
+func TestAnmelden_DeaktiviertesKontoIst403(t *testing.T) {
+	aktiviereIMAPAttrappe(t)
+	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("inaktiv@schule.de").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
 			AddRow("u-1", "BC-TEST", "mitarbeiter", "Ex", "Kollege", false, "ex@example.org", false))
 
-	rec := doLogin(t, a, mock, `{"email":"inaktiv@schule.de","password":"egal"}`)
+	rec := rufeAnmelden(t, a, mock, `{"email":"inaktiv@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusForbidden {
 		t.Errorf("erwartet 403, bekam %d: %s", rec.Code, rec.Body.String())
 	}
 }
 
-func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
-	aktiviereMockIMAP(t)
-	a, mock := newTestAuthenticator(t, 12*time.Hour)
+func TestAnmelden_ErfolgSetztCookieUndAntwortet(t *testing.T) {
+	aktiviereIMAPAttrappe(t)
+	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("nberger@schule.de").
@@ -94,7 +94,7 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 			AddRow("u-admin", "BC-TEST", "admin", "Nina", "Berger", true, "nina@example.org", false))
 	erwarteSitzungAngelegt(mock, "u-admin")
 
-	rec := doLogin(t, a, mock, `{"email":"nberger@schule.de","password":"egal"}`)
+	rec := rufeAnmelden(t, a, mock, `{"email":"nberger@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
 	}
@@ -107,28 +107,28 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 		t.Errorf("Session-Cookie muss HttpOnly sein")
 	}
 
-	var resp LoginResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("Antwort kein LoginResponse-JSON: %v", err)
+	var antwort anmeldeAntwort
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort ist kein JSON der Anmeldung: %v", err)
 	}
-	// Email gehört seit 22.08.2026 in die Antwort: Der Sperrbildschirm meldet damit nach
-	// einem Session-Restore wieder an — ohne sie bliebe er für immer zu.
-	if resp.UserID != "u-admin" || resp.Rolle != RoleAdmin || resp.Vorname != "Nina" || resp.Email != "nina@example.org" {
-		t.Errorf("LoginResponse falsch: %+v", resp)
+	// Email gehört in die Antwort: Der Sperrbildschirm meldet damit nach dem Wiederherstellen der
+	// Sitzung wieder an; ohne sie bliebe er für immer zu.
+	if antwort.KontoID != "u-admin" || antwort.Rolle != RolleAdmin || antwort.Vorname != "Nina" || antwort.Email != "nina@example.org" {
+		t.Errorf("Antwort der Anmeldung falsch: %+v", antwort)
 	}
-	if len(resp.Permissions) != 1 || resp.Permissions[0] != "*" {
-		t.Errorf("Admin muss implizit '*' bekommen: %+v", resp.Permissions)
+	if len(antwort.Rechte) != 1 || antwort.Rechte[0] != "*" {
+		t.Errorf("Admin muss implizit '*' bekommen: %+v", antwort.Rechte)
 	}
 
-	// Das ausgestellte Token muss verifizierbar sein und die Identität tragen.
-	expectNotBlacklisted(mock)
-	expectKontoAktiv(mock, true)
+	// Das ausgestellte Token muss sich prüfen lassen und das Konto tragen.
+	erwarteNichtWiderrufen(mock)
+	erwarteKontoAktiv(mock, true)
 	erwarteSperrzustand(mock, false)
-	claims, err := a.VerifyToken(cookies[0].Value)
+	claims, err := a.PruefeToken(cookies[0].Value)
 	if err != nil {
 		t.Fatalf("ausgestelltes Token ungültig: %v", err)
 	}
-	if claims.UserID != "u-admin" || claims.Rolle != RoleAdmin {
+	if claims.KontoID != "u-admin" || claims.Rolle != RolleAdmin {
 		t.Errorf("Claims falsch: %+v", claims)
 	}
 	if claims.SitzungID != testSitzungID {
@@ -136,26 +136,26 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 	}
 }
 
-func TestLoginHandler_BruteForceLimiterBlocksSixthAttempt(t *testing.T) {
-	// Der Limiter drosselt pro (E-Mail|IP) — 5 Fehlversuche, dann 429.
-	// Eindeutige E-Mail, da der Limiter prozessweit global ist.
-	aktiviereMockIMAP(t)
-	a, mock := newTestAuthenticator(t, 12*time.Hour)
+func TestAnmelden_BremseWeistDenSechstenVersuchAb(t *testing.T) {
+	// Die Bremse zählt je E-Mail und Adresse: fünf Fehlversuche, dann 429. Die E-Mail ist eindeutig,
+	// weil die Bremse für den ganzen Prozess gilt.
+	aktiviereIMAPAttrappe(t)
+	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	email := fmt.Sprintf("brute-%d@schule.de", time.Now().UnixNano())
-	body := fmt.Sprintf(`{"email":%q,"password":"falsch"}`, email)
+	rumpf := fmt.Sprintf(`{"email":%q,"password":"falsch"}`, email)
 
 	for i := 1; i <= 5; i++ {
 		mock.ExpectQuery(benutzerSelect).
 			WithArgs(email).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
-		if rec := doLogin(t, a, mock, body); rec.Code != http.StatusUnauthorized {
+		if rec := rufeAnmelden(t, a, mock, rumpf); rec.Code != http.StatusUnauthorized {
 			t.Fatalf("Versuch %d: erwartet 401, bekam %d", i, rec.Code)
 		}
 	}
 
-	// 6. Versuch: geblockt, OHNE dass die DB noch gefragt wird
-	rec := doLogin(t, a, mock, body)
+	// Der sechste Versuch wird abgewiesen, ohne dass die Datenbank noch gefragt wird.
+	rec := rufeAnmelden(t, a, mock, rumpf)
 	if rec.Code != http.StatusTooManyRequests {
 		t.Errorf("erwartet 429 nach 5 Fehlversuchen, bekam %d", rec.Code)
 	}
@@ -164,18 +164,16 @@ func TestLoginHandler_BruteForceLimiterBlocksSixthAttempt(t *testing.T) {
 	}
 }
 
-// Der Barcode im Session-Token kommt aus der DATENBANK, nicht aus der Anmeldung.
+// Die Ausweisnummer im Token der Sitzung kommt aus der Datenbank, nicht aus der Anmeldung.
 //
-// Vorher trug LoginRequest ein Feld barcode_id, und dessen Wert wanderte ungeprüft in die
-// Claims: Wer sich anmeldete, bestimmte selbst, welche Ausweisnummer sein signiertes
-// Token behauptet. Ausgewertet hat den Wert niemand — ein Loch war es also nicht. Aber
-// eine signierte Kennung, die nie jemand geprüft hat, ist genau die Art Zusicherung, auf
-// die sich der nächste Aufrufer verlässt, ohne nachzusehen.
+// Eine Kennung, die der Browser mitschickt, darf nicht in die Claims wandern: Sonst bestimmte,
+// wer sich anmeldet, selbst, welche Ausweisnummer sein signiertes Token behauptet, und der
+// nächste Aufrufer verließe sich darauf, ohne nachzusehen.
 //
 // Der Test schickt die Kennung eines anderen mit und liest die Claims aus dem Cookie.
-func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
-	aktiviereMockIMAP(t)
-	a, mock := newTestAuthenticator(t, 12*time.Hour)
+func TestAnmelden_AusweisnummerImTokenKommtAusDerDatenbank(t *testing.T) {
+	aktiviereIMAPAttrappe(t)
+	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("nberger@schule.de").
@@ -183,7 +181,7 @@ func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
 			AddRow("u-admin", "BC-ECHT", "admin", "Nina", "Berger", true, "nina@example.org", false))
 	erwarteSitzungAngelegt(mock, "u-admin")
 
-	rec := doLogin(t, a, mock,
+	rec := rufeAnmelden(t, a, mock,
 		`{"email":"nberger@schule.de","password":"egal","barcode_id":"BC-FREMD","pin":"0000"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
@@ -193,9 +191,9 @@ func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
 	if len(cookies) == 0 {
 		t.Fatal("kein Session-Cookie gesetzt")
 	}
-	// Nutzlast direkt lesen statt über VerifyToken: Das prüft zusätzlich Sperrliste und
-	// Kontostatus gegen die DB und bräuchte hier Mock-Erwartungen, die mit der Frage
-	// nichts zu tun haben. Interessiert, WAS im signierten Token steht.
+	// Die Nutzlast direkt lesen statt über PruefeToken: Das prüft zusätzlich Sperrliste und Stand
+	// des Kontos in der Datenbank und bräuchte hier Erwartungen an die Attrappe, die mit der Frage
+	// nichts zu tun haben. Es zählt, was im signierten Token steht.
 	teile := strings.Split(cookies[0].Value, ".")
 	if len(teile) != 3 {
 		t.Fatalf("kein JWT im Cookie: %q", cookies[0].Value)
@@ -219,8 +217,8 @@ func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
 	}
 }
 
-// totePortAdresse reserviert einen freien TCP-Port und gibt ihn sofort wieder frei —
-// Verbindungen dorthin scheitern mit „connection refused", ohne echtes Netz.
+// totePortAdresse reserviert einen freien TCP-Port und gibt ihn sofort wieder frei. Verbindungen
+// dorthin scheitern mit „connection refused", ohne echtes Netz.
 func totePortAdresse(t *testing.T) (host, port string) {
 	t.Helper()
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -237,25 +235,23 @@ func totePortAdresse(t *testing.T) (host, port string) {
 	return host, port
 }
 
-// TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort schließt die
-// Massen-Selbstsperre aus der Ausfallmatrix (20.08.2026): Ein toter Mailserver
-// wurde vorher als „invalid email or password" (401) gemeldet UND als Fehlversuch
-// gezählt — wer sein richtiges Passwort daraufhin erneut probierte, sperrte sich
-// nach fünf Versuchen für 15 Minuten selbst aus. Jetzt: 503 mit ehrlicher Meldung,
-// KEIN Fehlversuch — nach Rückkehr des Servers klappt der Login sofort.
-func TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
+// Ein toter Mailserver ist kein falsches Passwort: 503 mit ehrlicher Meldung und kein
+// Fehlversuch. Sonst sperrte sich, wer sein richtiges Passwort erneut probiert, nach fünf
+// Versuchen für 15 Minuten aus. Kommt der Server zurück, gelingt die Anmeldung sofort.
+func TestAnmelden_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	host, port := totePortAdresse(t)
 	t.Setenv("IMAP_HOST", host)
 	t.Setenv("IMAP_PORT", port)
 
-	a, mock := newTestAuthenticator(t, 12*time.Hour)
+	a, mock := newTestAnmeldung(t, 12*time.Hour)
 	email := fmt.Sprintf("ausfall-%d@schule.de", time.Now().UnixNano())
-	body := fmt.Sprintf(`{"email":%q,"password":"richtig"}`, email)
+	rumpf := fmt.Sprintf(`{"email":%q,"password":"richtig"}`, email)
 
-	// 6 Versuche gegen den toten Server: jedes Mal 503, nie 429 — die DB wird nie gefragt.
+	// Sechs Versuche gegen den toten Server: jedes Mal 503, nie 429, und die Datenbank wird nie
+	// gefragt.
 	for i := 1; i <= 6; i++ {
-		rec := doLogin(t, a, mock, body)
+		rec := rufeAnmelden(t, a, mock, rumpf)
 		if rec.Code != http.StatusServiceUnavailable {
 			t.Fatalf("Versuch %d: erwartet 503 bei totem Mailserver, bekam %d: %s", i, rec.Code, rec.Body.String())
 		}
@@ -264,39 +260,39 @@ func TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 		}
 	}
 
-	// Server „kommt zurück" (Mock): Der Login muss SOFORT gelingen — kein 429,
-	// weil die Ausfall-Versuche keinen Fehlversuch gezählt haben dürfen.
-	aktiviereMockIMAP(t)
+	// Der Server kommt zurück (Attrappe): Die Anmeldung muss sofort gelingen, ohne 429, weil die
+	// Versuche während des Ausfalls keinen Fehlversuch zählen durften.
+	aktiviereIMAPAttrappe(t)
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs(email).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
 			AddRow("u-1", "BC-TEST", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org", false))
 	erwarteSitzungAngelegt(mock, "u-1")
 
-	rec := doLogin(t, a, mock, body)
+	rec := rufeAnmelden(t, a, mock, rumpf)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("nach Server-Rückkehr: erwartet 200, bekam %d — die Ausfall-Versuche haben den Nutzer gesperrt: %s", rec.Code, rec.Body.String())
 	}
 }
 
-// Der Anmelde-Rumpf ist begrenzt (loginRumpfMaxBytes): Ohne eigene Grenze galt hier die
-// serverweite 100-MB-Grenze der Importe, und ein Unangemeldeter konnte je Aufruf einen
-// 100-MB-String in den Decoder schieben. Mit dem alten Code liefert dieser Test 401
-// (der Rumpf wird gelesen und als falsches Passwort behandelt) statt 400.
-func TestLoginHandler_UebergrosserRumpfWirdAbgewiesen(t *testing.T) {
-	aktiviereMockIMAP(t)
+// Der Rumpf der Anmeldung ist begrenzt (anmeldeRumpfMaxBytes): Ohne eigene Grenze gälte die
+// Grenze des Servers von 100 MB für die Importe, und wer nicht angemeldet ist, könnte je Aufruf
+// einen Text von 100 MB in den Decoder schieben. Ohne die Grenze liefert der Test 401 (der Rumpf
+// wird gelesen und als falsches Passwort behandelt) statt 400.
+func TestAnmelden_UebergrosserRumpfWirdAbgewiesen(t *testing.T) {
+	aktiviereIMAPAttrappe(t)
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer mock.Close()
-	a, err := NewAuthenticator("a-very-long-secret-key-of-at-least-32-bytes", mock, time.Hour)
+	a, err := NewAnmeldung("a-very-long-secret-key-of-at-least-32-bytes", mock, time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	body := `{"email":"x@example.test","password":"` + strings.Repeat("a", loginRumpfMaxBytes) + `"}`
-	rec := doLogin(t, a, mock, body)
+	rumpf := `{"email":"x@example.test","password":"` + strings.Repeat("a", anmeldeRumpfMaxBytes) + `"}`
+	rec := rufeAnmelden(t, a, mock, rumpf)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("Status = %d; want 400 — der Rumpf darf nicht bis zur Anmeldung kommen", rec.Code)
 	}

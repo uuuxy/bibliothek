@@ -7,22 +7,21 @@ import (
 	"testing"
 )
 
-// Eine aus Littera übernommene Lehrkraft trägt eine Platzhalter-Adresse
+// Eine aus Littera übernommene Lehrkraft trägt eine Adresse als Platzhalter
 // (littera-<id>@littera.invalid, internal/littera/schreiber_personen.go), ihr Ausweis und ihre
-// Ausleihen hängen an diesem Eintrag. Meldet sie sich mit ihrem Schulpostfach selbst an, findet
-// die Anmeldung sie über die E-Mail nicht — es entsteht eine zweite, inaktive Zugangsanfrage
-// (nachgestellt am 16.09.2026, OFFEN.md 5.16, Stufe 1).
+// Ausleihen hängen an diesem Eintrag. Meldet sie sich mit ihrem Postfach der Schule selbst an,
+// findet die Anmeldung sie über die E-Mail nicht; es entsteht eine zweite, inaktive
+// Zugangsanfrage.
 //
-// Das ist gewollt, soweit es die Sicherheit betrifft: Die Anmeldung verbindet NIE über den
-// Namen. Der Name einer Selbstanmeldung ist aus der Adresse geraten, zwei Lehrkräfte können
-// gleich heißen, und wer den Eintrag übernähme, bekäme fremde Ausleihen und einen fremden
-// Ausweis. Die Verbindung stellt die Bibliothek beim Freischalten her; die Anfragen-Zeile der
-// Benutzerverwaltung zeigt dafür den gleichnamigen Littera-Eintrag
-// (UserManagementZugangsanfragen.svelte).
+// Das ist für die Sicherheit gewollt: Die Anmeldung verbindet nie über den Namen. Der Name einer
+// Selbstanmeldung ist aus der Adresse geraten, zwei Lehrkräfte können gleich heißen, und wer den
+// Eintrag übernähme, bekäme fremde Ausleihen und einen fremden Ausweis. Die Verbindung stellt die
+// Bibliothek beim Freischalten her; die Zeile der Anfrage in der Benutzerverwaltung zeigt dafür
+// den gleichnamigen Eintrag aus Littera (UserManagementZugangsanfragen.svelte).
 func TestSelbstanmeldung_UebernimmtKeinenLitteraEintragUeberDenNamen(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")
-	t.Setenv(selbstanmeldeDomainEnv, "selbsttest.invalid")
+	t.Setenv(selbstanmeldeDomainVariable, "selbsttest.invalid")
 
 	pool := pgPoolFuerSelbstanmeldung(t)
 	ctx := context.Background()
@@ -41,7 +40,7 @@ func TestSelbstanmeldung_UebernimmtKeinenLitteraEintragUeberDenNamen(t *testing.
 		RETURNING id, leser_id::text`, platzhalter).Scan(&litteraID, &litteraLeserID); err != nil {
 		t.Fatalf("Littera-Eintrag anlegen: %v", err)
 	}
-	// Der Ausweis gehört zur Leserzeile (Migration 125).
+	// Der Ausweis gehört zur Leserzeile.
 	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = $1 WHERE id = $2`,
 		litteraAusweis, litteraLeserID); err != nil {
 		t.Fatalf("Ausweis eintragen: %v", err)

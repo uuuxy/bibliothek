@@ -25,10 +25,10 @@ func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"rechte-protokoll-testgeheimnis-32-bytes!!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	var adminID string
 	if err := pool.QueryRow(ctx, `
@@ -37,7 +37,7 @@ func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 		RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	sitzung, err := authenticator.GenerateToken(adminID, "RECHTE-1", auth.RoleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(adminID, "RECHTE-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

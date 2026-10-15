@@ -26,7 +26,7 @@ func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
-	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RoleAdmin}
+	admin := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RolleAdmin}
 
 	var titelID string
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, autor, medientyp)
@@ -73,7 +73,7 @@ func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 		if id != "" {
 			req.SetPathValue("id", id)
 		}
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, admin))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, admin))
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
 		return rec

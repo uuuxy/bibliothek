@@ -18,40 +18,40 @@ import (
 	"github.com/emersion/go-imap/commands"
 )
 
-// imapFrist ist die EINE Frist für Verbinden + Anmelden am Mailserver. Der Login-Handler
-// muss ihr Luft lassen (loginHandlerFrist > imapFrist) — bis zum 22.08.2026 stand der
-// Handler auf 10 s, AuthenticateIMAP auf 15 s mit eigenem Background-Kontext: Ein
-// korrektes Login, das 11 s dauerte, scheiterte danach am DB-Lookup (Handler-ctx tot)
-// und zählte als Fehlversuch (Prüfung 22.08., A7).
+// imapFrist ist die eine Frist für Verbinden und Anmelden am Mailserver. Die Tür der Anmeldung
+// lässt ihr Luft (anmeldeFrist > imapFrist): Sonst endete ihr Kontext zwischen der gelungenen
+// Anmeldung am Mailserver und dem Lesen des Kontos, und eine richtige Anmeldung zählte als
+// Fehlversuch.
 const imapFrist = 15 * time.Second
 
-// imapBefehlsfrist gilt je IMAP-Kommando (Login, Logout) — go-imap kennt sonst keine
-// Frist (Timeout=0), ein Server, der nach „OK LOGIN" schweigt, hing den Handler ewig.
+// imapBefehlsfrist gilt je Befehl an den Mailserver (LOGIN, LOGOUT). go-imap kennt sonst keine
+// Frist (Timeout=0): Ein Server, der nach „OK LOGIN" schweigt, hielte die Tür ohne Ende fest.
 const imapBefehlsfrist = 5 * time.Second
 
-// imapTLSAnpassung erlaubt Tests, die TLS-Konfiguration zu verändern (selbstsignierter
-// Mini-Server). In Produktion nil.
+// imapTLSAnpassung lässt Tests die Einstellungen für TLS ändern (Mailserver mit selbst
+// signiertem Zertifikat). Im Betrieb ist sie nil.
 var imapTLSAnpassung func(*tls.Config)
 
-// errAnmeldungAbgelehnt: Der Server hat geantwortet und die Zugangsdaten abgelehnt (NO/BAD).
-// Nur DAS ist ein falsches Passwort; alles andere (Timeout, Verbindungsabbruch, kein
-// Greeting) ist ein Ausfall. Vorher entschied die ZEIT: Fehler ohne abgelaufene Frist =
-// Passwort — ein Server, der die Verbindung beim LOGIN schloss, zählte als Fehlversuch.
+// errAnmeldungAbgelehnt heißt: Der Server hat geantwortet und die Zugangsdaten abgelehnt (NO
+// oder BAD). Nur das ist ein falsches Passwort. Alles andere (Frist abgelaufen, Verbindung
+// abgebrochen, keine Begrüßung) ist ein Ausfall, auch wenn die Frist noch läuft: Ein Server, der
+// die Verbindung beim LOGIN schließt, hat kein Passwort abgelehnt.
 var errAnmeldungAbgelehnt = errors.New("anmeldung fehlgeschlagen")
 
-func connectIMAP(ctx context.Context, addr string, tlsConfig *tls.Config) (*client.Client, net.Conn, error) {
-	// Enforce 10s timeout
+// verbindeIMAP öffnet die Verbindung zum Mailserver über TLS und liest seine Begrüßung.
+// Verbinden und Begrüßung haben zusammen höchstens zehn Sekunden.
+func verbindeIMAP(ctx context.Context, adresse string, tlsKonfig *tls.Config) (*client.Client, net.Conn, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// Use tls.Dialer to support Context
-	dialer := &net.Dialer{}
-	tlsDialer := &tls.Dialer{
-		NetDialer: dialer,
-		Config:    tlsConfig,
+	// tls.Dialer beachtet den Kontext schon beim Verbinden.
+	netz := &net.Dialer{}
+	verbinder := &tls.Dialer{
+		NetDialer: netz,
+		Config:    tlsKonfig,
 	}
 
-	conn, err := tlsDialer.DialContext(ctx, "tcp", addr)
+	verbindung, err := verbinder.DialContext(ctx, "tcp", adresse)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			return nil, nil, fmt.Errorf("zeitüberschreitung bei verbindung")
@@ -62,21 +62,22 @@ func connectIMAP(ctx context.Context, addr string, tlsConfig *tls.Config) (*clie
 		return nil, nil, err
 	}
 
-	// Watch for context cancellation during client.New which can block on I/O
-	done := make(chan struct{})
-	defer close(done)
+	// client.New liest die Begrüßung und kann dabei hängen. Endet der Kontext vorher, schließt
+	// die Goroutine die Verbindung und löst es.
+	fertig := make(chan struct{})
+	defer close(fertig)
 
 	go func() {
 		select {
 		case <-ctx.Done():
-			closeutil.Schliesse(conn, imapConnSource)
-		case <-done:
+			closeutil.Schliesse(verbindung, imapVerbindung)
+		case <-fertig:
 		}
 	}()
 
-	c, err := client.New(conn)
+	c, err := client.New(verbindung)
 	if err != nil {
-		closeutil.Schliesse(conn, imapConnSource)
+		closeutil.Schliesse(verbindung, imapVerbindung)
 		if ctx.Err() == context.DeadlineExceeded {
 			return nil, nil, fmt.Errorf("zeitüberschreitung bei verbindung")
 		}
@@ -86,46 +87,46 @@ func connectIMAP(ctx context.Context, addr string, tlsConfig *tls.Config) (*clie
 		return nil, nil, err
 	}
 
-	return c, conn, nil
+	return c, verbindung, nil
 }
 
-// loginIMAP sendet LOGIN und liefert errAnmeldungAbgelehnt, wenn der Server mit NO/BAD
-// antwortet, sonst den Transportfehler (Timeout, EOF, Verbindung zu). Bewusst über
-// c.Execute statt c.Login: Login() faltet die Status-Antwort in errors.New(info) — aus dem
-// Fehler ließe sich „Server hat NEIN gesagt" nicht mehr von „Server ist weg" unterscheiden,
-// und genau diese Unterscheidung trennt Fehlversuch von Ausfall (Prüfung 22.08.2026, A7).
-func loginIMAP(ctx context.Context, c *client.Client, conn net.Conn, email, password string) error {
-	loginDone := make(chan error, 1)
+// meldeBeiIMAPAn sendet LOGIN und liefert errAnmeldungAbgelehnt, wenn der Server mit NO oder
+// BAD antwortet, sonst den Fehler der Verbindung (Frist, EOF, Verbindung geschlossen). Sie nimmt
+// c.Execute statt c.Login: Login faltet die Antwort des Servers in errors.New(info), und am
+// Fehler ließe sich „Server hat abgelehnt" nicht mehr von „Server ist weg" unterscheiden. Genau
+// das trennt den Fehlversuch vom Ausfall.
+func meldeBeiIMAPAn(ctx context.Context, c *client.Client, verbindung net.Conn, email, passwort string) error {
+	ergebnis := make(chan error, 1)
 	go func() {
-		status, err := c.Execute(&commands.Login{Username: email, Password: password}, nil)
+		status, err := c.Execute(&commands.Login{Username: email, Password: passwort}, nil)
 		switch {
 		case err != nil:
-			loginDone <- err
+			ergebnis <- err
 		case status == nil:
-			loginDone <- errors.New("imap: keine Status-Antwort auf LOGIN")
+			ergebnis <- errors.New("imap: keine Status-Antwort auf LOGIN")
 		case status.Type == imap.StatusRespOk:
 			c.SetState(imap.AuthenticatedState, nil)
-			loginDone <- nil
+			ergebnis <- nil
 		default:
-			loginDone <- fmt.Errorf("%w: %s", errAnmeldungAbgelehnt, status.Info)
+			ergebnis <- fmt.Errorf("%w: %s", errAnmeldungAbgelehnt, status.Info)
 		}
 	}()
 
 	select {
-	case err := <-loginDone:
+	case err := <-ergebnis:
 		return err
 	case <-ctx.Done():
-		// Force-close the connection to unblock the goroutine stuck in c.Login()
-		// This prevents a goroutine leak on every timeout.
-		closeutil.Schliesse(conn, imapConnSource)
-		// Drain the result so the goroutine can exit
-		<-loginDone
+		// Die Verbindung schließen, damit die Goroutine aus c.Execute zurückkehrt, und ihr
+		// Ergebnis abholen, damit sie enden kann. Sonst bliebe bei jeder abgelaufenen Frist eine
+		// Goroutine hängen.
+		closeutil.Schliesse(verbindung, imapVerbindung)
+		<-ergebnis
 		return fmt.Errorf("zeitüberschreitung beim login")
 	}
 }
 
-// istLokaleUmgebung meldet, ob APP_ENV eine Entwicklungs- oder Testumgebung
-// bezeichnet. Nur dort darf der IMAP-Mock greifen.
+// istLokaleUmgebung meldet, ob APP_ENV eine Entwicklungs- oder Testumgebung bezeichnet. Nur dort
+// darf die Attrappe des Mailservers (IMAP_HOST=mock) greifen.
 func istLokaleUmgebung() bool {
 	switch strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV"))) {
 	case "local", "development", "test":
@@ -135,29 +136,25 @@ func istLokaleUmgebung() bool {
 	}
 }
 
-// ErrMailserverNichtErreichbar trennt den Transport-Ausfall vom falschen Passwort
-// (Ausfallmatrix 20.08.2026): Vorher wurde JEDER IMAP-Fehler — Server down, Timeout,
-// Firewall — dem Nutzer als „invalid email or password" gemeldet UND als Fehlversuch
-// gezählt. Bei einem Mailserver-Ausfall probierte das Kollegium sein (richtiges)
-// Passwort erneut und sperrte sich nach fünf Versuchen für 15 Minuten selbst aus —
-// ein Serverausfall wurde zur Massen-Selbstsperre. Der Login-Handler antwortet auf
-// diesen Fehler mit 503 und zählt KEINEN Fehlversuch.
+// errMailserverNichtErreichbar trennt den Ausfall des Mailservers vom falschen Passwort. Wer bei
+// einem Ausfall sein richtiges Passwort erneut probiert, sperrte sich sonst nach fünf Versuchen
+// für 15 Minuten aus, und ein Ausfall des Servers sperrte das ganze Kollegium aus. Die Tür der
+// Anmeldung antwortet darauf mit 503 und zählt keinen Fehlversuch.
 //
-//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung (503)
-var ErrMailserverNichtErreichbar = errors.New("Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen")
+//nolint:staticcheck // ST1005: Meldung für die Person an der Anmeldung, daher großgeschrieben
+var errMailserverNichtErreichbar = errors.New("Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen")
 
-// PruefeIMAPKonfiguration validiert IMAP_HOST beim Serverstart, damit eine
-// unbrauchbare oder gefährliche Anmeldekonfiguration sofort auffällt und nicht
-// erst beim ersten Login-Versuch eines Nutzers.
+// PruefeIMAPKonfiguration prüft IMAP_HOST beim Start des Servers, damit eine unbrauchbare oder
+// gefährliche Konfiguration der Anmeldung sofort auffällt und nicht erst bei der ersten
+// Anmeldung.
 //
-// Zwei Fälle werden abgelehnt:
+// Abgelehnt werden zwei Fälle:
 //
-//   - leer: Vorher fiel der Code still auf imap.philipp-reis-schule.de zurück.
-//     Ein "go run" ohne Umgebung sprach damit unbeabsichtigt den Produktiv-IMAP
-//     der Schule an — echte Verbindungen, echte Login-Versuche.
-//   - "mock" außerhalb von APP_ENV=local/development/test: Der Mock akzeptiert
-//     JEDES Passwort für jede in benutzer eingetragene E-Mail. In einer Umgebung,
-//     die sich production nennt, ist das keine Konfiguration, sondern eine offene Tür.
+//   - leer: Ohne Mailserver ist keine Anmeldung möglich. Geraten wird keiner, sonst spräche ein
+//     „go run" ohne Umgebung den echten Mailserver der Schule an, mit echten Anmeldeversuchen.
+//   - "mock" außerhalb von APP_ENV=local/development/test: Die Attrappe nimmt jedes Passwort für
+//     jede in benutzer eingetragene E-Mail-Adresse an. In einer Umgebung, die sich production
+//     nennt, ist das keine Konfiguration, sondern eine offene Tür.
 func PruefeIMAPKonfiguration() error {
 	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
 	if host == "" {
@@ -170,9 +167,9 @@ func PruefeIMAPKonfiguration() error {
 }
 
 // imapOhneServer entscheidet die Fälle, in denen kein Mailserver gefragt wird. Ohne Host wird
-// abgelehnt statt geraten (siehe PruefeIMAPKonfiguration). Der Mock-Modus nimmt jedes Passwort
-// an und gilt nur in der lokalen Entwicklung; die Prüfung hier ist die zweite Schranke hinter
-// der beim Start, falls die Variable zur Laufzeit gesetzt wird.
+// abgelehnt statt geraten (siehe PruefeIMAPKonfiguration). Die Attrappe (mock) nimmt jedes
+// Passwort an und gilt nur in der lokalen Entwicklung; die Prüfung hier ist die zweite Schranke
+// hinter der beim Start, falls die Variable zur Laufzeit gesetzt wird.
 func imapOhneServer(host string) (entschieden bool, err error) {
 	if host == "" {
 		slog.Error("IMAP_HOST ist nicht gesetzt — Anmeldung wird abgelehnt")
@@ -190,22 +187,21 @@ func imapOhneServer(host string) (entschieden bool, err error) {
 	return true, nil
 }
 
-// imapVerbindungsdaten baut Adresse und TLS-Einstellungen für den Mailserver. Ein Port am
+// imapVerbindungsdaten baut Adresse und Einstellungen für TLS zum Mailserver. Ein Port am
 // Hostnamen (alte Konfiguration, etwa :143) wird verworfen; es gilt IMAP_PORT, sonst 993.
 func imapVerbindungsdaten(host string) (string, *tls.Config) {
-	// Remove port from host if it was provided via env/old config (e.g. :143)
 	if strings.Contains(host, ":") {
-		parts := strings.Split(host, ":")
-		host = parts[0]
+		teile := strings.Split(host, ":")
+		host = teile[0]
 	}
 
 	port := os.Getenv("IMAP_PORT")
 	if port == "" {
 		port = "993"
 	}
-	addr := fmt.Sprintf("%s:%s", host, port)
+	adresse := fmt.Sprintf("%s:%s", host, port)
 
-	tlsConfig := &tls.Config{
+	tlsKonfig := &tls.Config{
 		ServerName: host,
 		MinVersion: tls.VersionTLS12,
 		CurvePreferences: []tls.CurveID{
@@ -223,35 +219,35 @@ func imapVerbindungsdaten(host string) (string, *tls.Config) {
 	}
 
 	if imapTLSAnpassung != nil {
-		imapTLSAnpassung(tlsConfig)
+		imapTLSAnpassung(tlsKonfig)
 	}
-	return addr, tlsConfig
+	return adresse, tlsKonfig
 }
 
-// AuthenticateIMAP connects to the IMAP server and verifies credentials.
-// It uses implicit TLS on port 993 as successfully implemented in schul-orga.
-// ctx kommt vom Aufrufer (Login-Handler); die eigene Frist imapFrist liegt darunter.
-func AuthenticateIMAP(ctx context.Context, email, password string) error {
+// pruefeIMAPAnmeldung prüft E-Mail-Adresse und Passwort am Mailserver der Schule, über TLS ab
+// der ersten Zeile (Port 993, sofern IMAP_PORT nichts anderes sagt). ctx kommt von der Tür der
+// Anmeldung; die eigene Frist imapFrist liegt darunter.
+func pruefeIMAPAnmeldung(ctx context.Context, email, passwort string) error {
 	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
 	if entschieden, err := imapOhneServer(host); entschieden {
 		return err
 	}
 
-	// Format email correctly if only username was provided (wie in schul-orga)
+	// Ein Name ohne @ ist der Benutzername an der Schule und bekommt ihre Domain.
 	if !strings.Contains(email, "@") {
 		email = fmt.Sprintf("%s@philipp-reis-schule.de", email)
 	}
-	addr, tlsConfig := imapVerbindungsdaten(host)
+	adresse, tlsKonfig := imapVerbindungsdaten(host)
 
 	ctx, cancel := context.WithTimeout(ctx, imapFrist)
 	defer cancel()
 
-	c, conn, err := connectIMAP(ctx, addr, tlsConfig)
+	c, verbindung, err := verbindeIMAP(ctx, adresse, tlsKonfig)
 	if err != nil {
-		// Transport-Ausfall, kein Zugangsdaten-Problem: als solcher markiert, damit der
-		// Login-Handler 503 antwortet statt 401 + Fehlversuch (siehe Sentinel oben).
-		slog.Error("IMAP Connection failed", "addr", addr, "error", err)
-		return ErrMailserverNichtErreichbar
+		// Ein Ausfall der Verbindung ist kein falsches Passwort: Die Tür antwortet 503 statt 401
+		// mit Fehlversuch (ErrMailserverNichtErreichbar).
+		slog.Error("IMAP Connection failed", "addr", adresse, "error", err)
+		return errMailserverNichtErreichbar
 	}
 	c.Timeout = imapBefehlsfrist
 	defer func() {
@@ -262,15 +258,16 @@ func AuthenticateIMAP(ctx context.Context, email, password string) error {
 		}
 	}()
 
-	if err := loginIMAP(ctx, c, conn, email, password); err != nil {
+	if err := meldeBeiIMAPAn(ctx, c, verbindung, email, passwort); err != nil {
 		slog.Warn("IMAP Login failed", "error", err)
-		closeutil.Schliesse(conn, imapConnSource)
-		// Inhalt statt Uhr: Nur eine Status-Antwort des Servers (NO/BAD) ist ein
-		// Zugangsdaten-Fehler. Timeout, EOF, TLS-Abbruch, fehlendes Greeting = Ausfall.
+		closeutil.Schliesse(verbindung, imapVerbindung)
+		// Es entscheidet der Inhalt, nicht die Uhr: Nur eine Antwort des Servers (NO oder BAD)
+		// heißt falsche Zugangsdaten. Frist, EOF, Abbruch von TLS oder fehlende Begrüßung sind
+		// ein Ausfall.
 		if errors.Is(err, errAnmeldungAbgelehnt) {
 			return errAnmeldungAbgelehnt
 		}
-		return ErrMailserverNichtErreichbar
+		return errMailserverNichtErreichbar
 	}
 
 	return nil

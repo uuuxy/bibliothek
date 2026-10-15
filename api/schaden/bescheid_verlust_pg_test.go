@@ -52,8 +52,8 @@ func bescheidVorschlagUeberTuer(t *testing.T, srv *Tueren, pool *pgxpool.Pool, s
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+schuelerID+"/bescheid-vorschlag", nil)
 	req.SetPathValue("id", schuelerID)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.BescheidVorschlag(repository.NewBescheidAbfragen(pool))(rec, req)
 	if rec.Code != http.StatusOK {

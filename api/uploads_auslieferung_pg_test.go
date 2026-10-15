@@ -35,10 +35,10 @@ func TestUploadsOhneAnmeldungNurDateienDirektImVerzeichnis(t *testing.T) {
 	lege("uploads/fotos/S-10041.jpg", "foto-inhalt")
 	lege("uploads/fotos/index.html", "index-inhalt")
 
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"uploads-auslieferung-testgeheimnis-32-bytes!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	router := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 

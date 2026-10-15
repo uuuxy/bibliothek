@@ -40,18 +40,18 @@ func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	anlegen := func(t *testing.T, rumpf string, rolle auth.Role) *httptest.ResponseRecorder {
+	anlegen := func(t *testing.T, rumpf string, rolle auth.Rolle) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPost, "/api/schueler", strings.NewReader(rumpf))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: rolle}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: "00000000-0000-0000-0000-0000000000aa", Rolle: rolle}))
 		rec := httptest.NewRecorder()
 		srv.LeserAnlegen()(rec, req)
 		return rec
 	}
 
 	t.Run("Lehrkraft ohne E-Mail wird abgewiesen", func(t *testing.T) {
-		rec := anlegen(t, `{"vorname":"Ohne","nachname":"Mail","art":"lehrkraft"}`, auth.RoleAdmin)
+		rec := anlegen(t, `{"vorname":"Ohne","nachname":"Mail","art":"lehrkraft"}`, auth.RolleAdmin)
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Antwort %d (erwartet 400): %s", rec.Code, rec.Body.String())
 		}
@@ -62,7 +62,7 @@ func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 
 	t.Run("Schüler bekommt kein Konto und keine Adresse", func(t *testing.T) {
 		rec := anlegen(t, `{"vorname":"Mit","nachname":"Mail","art":"schueler","klasse":"07A",
-			"geburtsdatum":"2012-05-04","email":"kind@schule.invalid"}`, auth.RoleAdmin)
+			"geburtsdatum":"2012-05-04","email":"kind@schule.invalid"}`, auth.RolleAdmin)
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Antwort %d (erwartet 400): %s", rec.Code, rec.Body.String())
 		}
@@ -70,7 +70,7 @@ func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 
 	t.Run("Admin legt eine Lehrkraft mit Konto an — aktiv", func(t *testing.T) {
 		rec := anlegen(t, `{"vorname":"Katrin","nachname":"Wendlandt","art":"lehrkraft",
-			"email":"katrin.wendlandt@schule.invalid"}`, auth.RoleAdmin)
+			"email":"katrin.wendlandt@schule.invalid"}`, auth.RolleAdmin)
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("Antwort %d: %s", rec.Code, rec.Body.String())
 		}
@@ -105,7 +105,7 @@ func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 
 	t.Run("belegte Adresse ist eine Auskunft, kein Fehler", func(t *testing.T) {
 		rec := anlegen(t, `{"vorname":"Katrin","nachname":"Zweitname","art":"lehrkraft",
-			"email":"katrin.wendlandt@schule.invalid"}`, auth.RoleAdmin)
+			"email":"katrin.wendlandt@schule.invalid"}`, auth.RolleAdmin)
 		if rec.Code != http.StatusConflict {
 			t.Fatalf("Antwort %d (erwartet 409): %s", rec.Code, rec.Body.String())
 		}

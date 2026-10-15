@@ -53,14 +53,14 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, "/api/benutzer/"+ziel, nil)
 		req.SetPathValue("id", ziel)
 		if claims != nil {
-			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 		}
 		rec := httptest.NewRecorder()
 		srv.KontoLoeschen(auditRepo, userRepo)(rec, req)
 		return rec
 	}
-	alsAdmin := &auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}
-	alsMitarbeiter := &auth.Claims{UserID: mitarbeiter, Rolle: auth.RoleMitarbeiter}
+	alsAdmin := &auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}
+	alsMitarbeiter := &auth.Claims{KontoID: mitarbeiter, Rolle: auth.RolleMitarbeiter}
 
 	for _, f := range []struct {
 		name   string
@@ -114,8 +114,8 @@ func TestKontoAendern_UnbekannteKennungOhneProtokoll(t *testing.T) {
 		strings.NewReader(`{"vorname":"Nie","nachname":"Da","email":"nie.da@aendertuer.invalid","rolle":"helfer","aktiv":true}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.SetPathValue("id", unbekannt)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.KontoAendern(repository.NewKontoAbfragen(pool))(rec, req)
 

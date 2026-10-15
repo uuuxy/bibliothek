@@ -29,7 +29,7 @@ const (
 // protokolliereLMFPlan protokolliert einen Eingriff am Plan samt der Zahl der Ausleihen,
 // deren Frist er bewegt hat.
 func (t *Tueren) protokolliereLMFPlan(r *http.Request, aktion, art string, planID string, fristen int64) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return
 	}
@@ -39,7 +39,7 @@ func (t *Tueren) protokolliereLMFPlan(r *http.Request, aktion, art string, planI
 	}
 	details := map[string]any{"art": art, "plan_id": planID, "fristen_angepasst": fristen}
 	if err := repository.NewProtokollAbfragen(t.DB.Pool).
-		ProtokolliereAdminAktion(r.Context(), claims.UserID, aktion, clientip.AusAnfrage(r), details); err != nil {
+		ProtokolliereAdminAktion(r.Context(), claims.KontoID, aktion, clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("LMF-Plan-Audit (%s) fehlgeschlagen: %v", aktion, err)
 	}
 }

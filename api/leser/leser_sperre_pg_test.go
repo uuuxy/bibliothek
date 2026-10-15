@@ -25,8 +25,8 @@ func sperrTuerAufruf(t *testing.T, pool *pgxpool.Pool, akteur, id, body string) 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPatch, "/api/admin/students/"+id+"/lock", strings.NewReader(body))
 	req.SetPathValue("id", id)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: akteur, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: akteur, Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.LeserSperren(repository.NewProtokollAbfragen(pool)).ServeHTTP(rec, req)
 	return rec

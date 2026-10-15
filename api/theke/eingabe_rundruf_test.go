@@ -80,8 +80,8 @@ func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 	rundrufeNach := func(ergebnis *service.OmniboxErgebnis) []string {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPost, "/api/action", strings.NewReader(`{"query":"B-1"}`))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{Rolle: auth.RoleAdmin, UserID: "u1"}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{Rolle: auth.RolleAdmin, KontoID: "u1"}))
 		w := httptest.NewRecorder()
 		(&Tueren{Basis: &tuer.Basis{Broker: broker}}).EingabeVerarbeiten(&festeOmnibox{ergebnis})(w, req)
 		if w.Code != http.StatusOK {

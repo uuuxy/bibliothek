@@ -28,7 +28,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	ctx := context.Background()
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
-	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a118", Rolle: auth.RoleAdmin}
+	admin := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a118", Rolle: auth.RolleAdmin}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id IN
 			(SELECT leser_id FROM benutzer WHERE email LIKE '%@ausweis118.invalid')`); err != nil {
@@ -69,7 +69,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 		if id != "" {
 			req.SetPathValue("id", id)
 		}
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, admin))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, admin))
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
 		return rec

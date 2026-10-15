@@ -39,7 +39,7 @@ func TestLeitungDarfKeinenAdminVergeben(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"leitung-1": "LEITUNG"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
-	req := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "leitung-1", auth.RoleLeitung)
+	req := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "leitung-1", auth.RolleLeitung)
 	w := httptest.NewRecorder()
 
 	srv.KontoAnlegen(repo).ServeHTTP(w, req)
@@ -55,7 +55,7 @@ func TestLeitungDarfKeinenAdminVergeben(t *testing.T) {
 // Dieselbe Grenze in der anderen Richtung: Das Konto eines Admins ist für eine Leitung
 // tabu, gleich welches Feld sie ändern will. Der Grund ist nicht das Rollenfeld, sondern
 // die E-Mail: Wer sie auf die eigene Adresse setzt, bekommt beim nächsten Login die
-// Admin-Sitzung (auth/handlers.go sucht den Benutzer über seine E-Mail).
+// Admin-Sitzung (auth/anmelden.go sucht den Benutzer über seine E-Mail).
 func TestLeitungDarfAdminKontoNichtBearbeiten(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{
 		"leitung-1": "LEITUNG",
@@ -64,7 +64,7 @@ func TestLeitungDarfAdminKontoNichtBearbeiten(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	const rumpf = `{"vorname":"Eva","nachname":"Neu","email":"eva@schule.de","rolle":"admin","aktiv":true}`
-	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "leitung-1", auth.RoleLeitung)
+	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "leitung-1", auth.RolleLeitung)
 	req.SetPathValue("id", "admin-1")
 	w := httptest.NewRecorder()
 

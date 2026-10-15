@@ -27,7 +27,7 @@ func schuljahreswechselTueren(t *testing.T) (*Tueren, pgxmock.PgxPoolIface) {
 func rufeSchuljahreswechsel(t *testing.T, s *Tueren, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/api/students/promote", strings.NewReader(body))
-	ctx := context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{UserID: "admin-1", Rolle: auth.RoleAdmin})
+	ctx := context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{KontoID: "admin-1", Rolle: auth.RolleAdmin})
 	rec := httptest.NewRecorder()
 	s.Schuljahreswechsel()(rec, req.WithContext(ctx))
 	return rec

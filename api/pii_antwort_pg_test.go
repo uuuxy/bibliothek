@@ -94,7 +94,7 @@ type kanarienWelt struct {
 	bescheidID                  string
 }
 
-func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) kanarienWelt {
+func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanarienWelt {
 	t.Helper()
 	ctx := context.Background()
 	w := kanarienWelt{buchBarcode: "BUCHBC-GATE-1"}
@@ -107,7 +107,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		RETURNING id`).Scan(&w.mitarbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
-	token, err := a.GenerateToken(w.mitarbeiterID, "GATE-MA-1", auth.RoleMitarbeiter, "")
+	token, err := a.ErzeugeToken(w.mitarbeiterID, "GATE-MA-1", auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Session-Token: %v", err)
 	}
@@ -546,10 +546,10 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"pii-antwort-gate-testgeheimnis-mind-32-bytes!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
@@ -725,10 +725,10 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
 		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"pii-antwort-gate-testgeheimnis-mind-32-bytes!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und

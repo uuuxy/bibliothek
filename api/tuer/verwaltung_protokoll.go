@@ -30,7 +30,7 @@ const (
 // ProtokolliereVerwaltung schreibt einen Eintrag mit der angemeldeten Person als Bearbeiter.
 // Die Änderung gilt auch, wenn das Protokoll klemmt; der Fehlversuch steht im Server-Log.
 func (b *Basis) ProtokolliereVerwaltung(ctx context.Context, aktion string, details map[string]any) {
-	claims, ok := auth.GetClaims(ctx)
+	claims, ok := auth.ClaimsAusKontext(ctx)
 	if !ok {
 		return
 	}
@@ -39,7 +39,7 @@ func (b *Basis) ProtokolliereVerwaltung(ctx context.Context, aktion string, deta
 		return
 	}
 	if err := repository.NewProtokollAbfragen(b.DB.Pool).
-		ProtokolliereAdminAktion(ctx, claims.UserID, aktion, "", details); err != nil {
+		ProtokolliereAdminAktion(ctx, claims.KontoID, aktion, "", details); err != nil {
 		log.Printf("Protokoll (%s) fehlgeschlagen: %v", aktion, err)
 	}
 }

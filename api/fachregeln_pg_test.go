@@ -128,8 +128,8 @@ func reservierung(t *testing.T, srv *Server, userID, titelID string, anzahl int)
 	body := fmt.Sprintf(`{"titel_id":%q,"klasse":"5a","anzahl":%d}`, titelID, anzahl)
 	req := httptest.NewRequest(http.MethodPost, "/api/reservierungen/klassensatz", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: userID, Rolle: auth.RoleMitarbeiter}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: userID, Rolle: auth.RolleMitarbeiter}))
 	rec := httptest.NewRecorder()
 	srv.portal().KlassensatzReservierungAnlegen()(rec, req)
 	return rec

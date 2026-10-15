@@ -26,7 +26,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	studentRepo := repository.NewLeserAbfragen(pool)
-	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a126", Rolle: auth.RoleAdmin}
+	claims := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a126", Rolle: auth.RolleAdmin}
 
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE nachname = 'Leserdateitest'`); err != nil {
@@ -49,7 +49,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 	liste := func(t *testing.T, adresse string) []repository.LeserListenZeile {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, adresse, nil)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 		rec := httptest.NewRecorder()
 		srv.Leserliste(studentRepo, repository.NewLMFAbfragen(pool)).ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {
@@ -113,7 +113,7 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	studentRepo := repository.NewLeserAbfragen(pool)
-	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a127", Rolle: auth.RoleAdmin}
+	claims := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a127", Rolle: auth.RolleAdmin}
 
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE nachname = 'Aktetest'`); err != nil {
@@ -130,7 +130,7 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+lehrkraftID, nil)
 	req.SetPathValue("id", lehrkraftID)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 	rec := httptest.NewRecorder()
 	srv.Leserakte(studentRepo).ServeHTTP(rec, req)
 
@@ -163,7 +163,7 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	}
 	req2 := httptest.NewRequest(http.MethodGet, "/api/schueler/"+schuelerID, nil)
 	req2.SetPathValue("id", schuelerID)
-	req2 = req2.WithContext(context.WithValue(req2.Context(), auth.ClaimsContextKey, claims))
+	req2 = req2.WithContext(context.WithValue(req2.Context(), auth.ClaimsSchluessel, claims))
 	rec2 := httptest.NewRecorder()
 	srv.Leserakte(studentRepo).ServeHTTP(rec2, req2)
 	if rec2.Code != http.StatusOK {
@@ -194,7 +194,7 @@ func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a129", Rolle: auth.RoleAdmin}
+	claims := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a129", Rolle: auth.RolleAdmin}
 
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE nachname = 'Sperrtest'`); err != nil {
@@ -214,7 +214,7 @@ func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPatch, "/api/admin/students/"+id+"/lock", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 		rec := httptest.NewRecorder()
 		srv.LeserSperren(repository.NewProtokollAbfragen(pool)).ServeHTTP(rec, req)
 		return rec
@@ -266,7 +266,7 @@ func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 	}
 	fotoReq := httptest.NewRequest(http.MethodGet, "/api/schueler/SPERR-1/photo", nil)
 	fotoReq.SetPathValue("barcode_id", "SPERR-1")
-	fotoReq = fotoReq.WithContext(context.WithValue(fotoReq.Context(), auth.ClaimsContextKey, claims))
+	fotoReq = fotoReq.WithContext(context.WithValue(fotoReq.Context(), auth.ClaimsSchluessel, claims))
 	fotoRec := httptest.NewRecorder()
 	srv.Foto().ServeHTTP(fotoRec, fotoReq)
 	if fotoRec.Code == http.StatusNotFound {

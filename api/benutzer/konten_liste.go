@@ -101,6 +101,6 @@ func (t *Tueren) rechteAllerRollen(ctx context.Context) (map[string][]string, er
 	if err != nil {
 		return nil, err
 	}
-	rechte[strings.ToLower(string(auth.RoleAdmin))] = []string{"*"}
+	rechte[strings.ToLower(string(auth.RolleAdmin))] = []string{"*"}
 	return rechte, nil
 }

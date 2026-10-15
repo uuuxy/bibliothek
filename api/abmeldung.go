@@ -29,7 +29,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 
 		// Die Ablaufzeit steht im Token. Abmelden geht auch aus der Sperre nach Inaktivität heraus
 		// (Sperrbildschirm, „Abmelden und als andere Person anmelden").
-		claims, err := s.Auth.VerifyTokenTrotzSperre(cookie.Value)
+		claims, err := s.Auth.PruefeTokenTrotzSperre(cookie.Value)
 		// widerrufFehler bleibt nil, solange es nichts zu widerrufen gibt: Ein
 		// ungültiges, abgelaufenes oder längst widerrufenes Token ist kein Aussetzer,
 		// die Abmeldung ist dann vollständig. Gestört ist es nur, wenn die Datenbank
@@ -42,7 +42,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 			widerrufFehler = err
 		case err == nil && claims.ExpiresAt != nil:
 			// Auf die Sperrliste: Bis zu seinem Ablauf gilt das Token nicht mehr.
-			widerrufFehler = s.Auth.Blacklist.Add(cookie.Value, claims.ExpiresAt.Time)
+			widerrufFehler = s.Auth.Sperrliste.Widerrufe(cookie.Value, claims.ExpiresAt.Time)
 		}
 		if err == nil {
 			// Mit der Zeile geht der Prüfwert des Passworts. Scheitert das Löschen, räumt

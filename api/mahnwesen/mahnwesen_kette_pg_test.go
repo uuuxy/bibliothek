@@ -142,8 +142,8 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 		strings.NewReader(fmt.Sprintf(`{"klassen":[%q]}`, annaKlasse)))
 	req.Header.Set("Content-Type", "application/json")
 	// Ohne Claims schreibt die Tür keinen Eintrag ins Protokoll, und dieser Lauf braucht einen.
-	req = req.WithContext(context.WithValue(ctx, auth.ClaimsContextKey,
-		&auth.Claims{UserID: bearbeiter, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(ctx, auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: bearbeiter, Rolle: auth.RolleAdmin}))
 
 	rec := httptest.NewRecorder()
 	srv.MahnlistenVersenden(mahnRepo)(rec, req)

@@ -28,12 +28,12 @@ func TestSonderkonten_AnlegenUndAkte(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: auth.RoleAdmin}
+	claims := &auth.Claims{KontoID: "00000000-0000-0000-0000-0000000000aa", Rolle: auth.RolleAdmin}
 
 	anlegen := func(t *testing.T, rumpf string) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPost, "/api/schueler", strings.NewReader(rumpf))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 		rec := httptest.NewRecorder()
 		srv.LeserAnlegen()(rec, req)
 		return rec
@@ -42,7 +42,7 @@ func TestSonderkonten_AnlegenUndAkte(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(rumpf))
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 		rec := httptest.NewRecorder()
 		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec

@@ -76,9 +76,9 @@ func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	authenticator, err := auth.NewAuthenticator("bestellmail-erneut-testgeheimnis-32-by!!", pool, time.Hour)
+	authenticator, err := auth.NewAnmeldung("bestellmail-erneut-testgeheimnis-32-by!!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	l := &bestellmailLage{pool: pool}
 	if err := pool.QueryRow(t.Context(), `
@@ -87,7 +87,7 @@ func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 		"bestellmail-"+kennung+"@example.org").Scan(&l.adminID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	if l.sitzung, err = authenticator.GenerateToken(l.adminID, "BMAIL-"+kennung, auth.RoleAdmin, ""); err != nil {
+	if l.sitzung, err = authenticator.ErzeugeToken(l.adminID, "BMAIL-"+kennung, auth.RolleAdmin, ""); err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
 	l.router = api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()

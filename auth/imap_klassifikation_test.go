@@ -17,32 +17,31 @@ import (
 	"time"
 )
 
-// Prüfung 22.08.2026, A7: Ob ein IMAP-Fehler „falsches Passwort" oder „Ausfall" heißt,
-// entschied bis dahin die UHR (Frist abgelaufen = Ausfall, sonst Passwort). Ein Server,
-// der die Verbindung beim LOGIN schließt, zählte damit als Fehlversuch; ein Tarpit über
-// 15 s machte jedes falsche Passwort zum 503. Jetzt entscheidet der INHALT: Nur eine
-// Status-Antwort (NO/BAD) ist ein Zugangsdaten-Fehler. Diese Tests sprechen mit einem
-// Mini-IMAP-Server über TLS — keine Mocks der eigenen Logik.
+// Ob ein Fehler am Mailserver „falsches Passwort" oder „Ausfall" heißt, entscheidet der Inhalt,
+// nicht die Uhr: Nur eine Antwort des Servers (NO oder BAD) heißt falsche Zugangsdaten. Ein
+// Server, der die Verbindung beim LOGIN schließt, ist ein Ausfall, auch vor Ablauf der Frist. Die
+// Tests sprechen über TLS mit einem kleinen Mailserver, nicht mit einer Attrappe der eigenen
+// Logik.
 
-// miniIMAP startet einen TLS-Listener, der das Greeting schickt und auf LOGIN mit
+// miniIMAP startet einen Mailserver über TLS, der seine Begrüßung schickt und auf LOGIN mit
 // `antwort` reagiert; "CLOSE" schließt stattdessen die Verbindung ohne Antwort.
 func miniIMAP(t *testing.T, antwort string) (host, port string) {
 	t.Helper()
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	schluessel, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	tmpl := &x509.Certificate{
+	vorlage := &x509.Certificate{
 		SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "127.0.0.1"},
 		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
 		IPAddresses: []net.IP{net.ParseIP("127.0.0.1")},
 	}
-	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	der, err := x509.CreateCertificate(rand.Reader, vorlage, vorlage, &schluessel.PublicKey, schluessel)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cert := tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key}
-	l, err := tls.Listen("tcp", "127.0.0.1:0", &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12})
+	zertifikat := tls.Certificate{Certificate: [][]byte{der}, PrivateKey: schluessel}
+	l, err := tls.Listen("tcp", "127.0.0.1:0", &tls.Config{Certificates: []tls.Certificate{zertifikat}, MinVersion: tls.VersionTLS12})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +52,7 @@ func miniIMAP(t *testing.T, antwort string) (host, port string) {
 	})
 	go func() {
 		for {
-			conn, err := l.Accept()
+			verbindung, err := l.Accept()
 			if err != nil {
 				return
 			}
@@ -68,20 +67,20 @@ func miniIMAP(t *testing.T, antwort string) (host, port string) {
 				}
 				r := bufio.NewReader(c)
 				for {
-					line, err := r.ReadString('\n')
+					eingang, err := r.ReadString('\n')
 					if err != nil {
 						return
 					}
-					tag := strings.Fields(line)[0]
+					tag := strings.Fields(eingang)[0]
 					switch {
-					case strings.Contains(strings.ToUpper(line), "LOGIN"):
+					case strings.Contains(strings.ToUpper(eingang), "LOGIN"):
 						if antwort == "CLOSE" {
 							return
 						}
 						if !schreibe(tag + " " + antwort + "\r\n") {
 							return
 						}
-					case strings.Contains(strings.ToUpper(line), "LOGOUT"):
+					case strings.Contains(strings.ToUpper(eingang), "LOGOUT"):
 						schreibe("* BYE\r\n" + tag + " OK\r\n")
 						return
 					default:
@@ -90,7 +89,7 @@ func miniIMAP(t *testing.T, antwort string) (host, port string) {
 						}
 					}
 				}
-			}(conn)
+			}(verbindung)
 		}
 	}()
 	host, port, err = net.SplitHostPort(l.Addr().String())
@@ -111,13 +110,13 @@ func mitMiniIMAP(t *testing.T, antwort string) {
 	t.Cleanup(func() { imapTLSAnpassung = alt })
 }
 
-func TestAuthenticateIMAP_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
+func TestPruefeIMAPAnmeldung_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
 	mitMiniIMAP(t, "NO [AUTHENTICATIONFAILED] Authentication failed.")
-	err := AuthenticateIMAP(context.Background(), "wer@schule.de", "falsch")
+	err := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "falsch")
 	if err == nil {
 		t.Fatal("erwartet Fehler bei NO")
 	}
-	if errors.Is(err, ErrMailserverNichtErreichbar) {
+	if errors.Is(err, errMailserverNichtErreichbar) {
 		t.Fatalf("NO vom Server ist ein falsches Passwort, kein Ausfall: %v", err)
 	}
 	if !errors.Is(err, errAnmeldungAbgelehnt) {
@@ -125,25 +124,25 @@ func TestAuthenticateIMAP_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
 	}
 }
 
-func TestAuthenticateIMAP_VerbindungsabbruchBeimLoginIstAusfall(t *testing.T) {
+func TestPruefeIMAPAnmeldung_VerbindungsabbruchBeimLoginIstAusfall(t *testing.T) {
 	mitMiniIMAP(t, "CLOSE")
-	err := AuthenticateIMAP(context.Background(), "wer@schule.de", "egal")
-	if !errors.Is(err, ErrMailserverNichtErreichbar) {
+	err := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
+	if !errors.Is(err, errMailserverNichtErreichbar) {
 		t.Fatalf("Server schließt beim LOGIN ohne Antwort — das ist ein Ausfall, kein Passwortfehler: %v", err)
 	}
 }
 
-func TestAuthenticateIMAP_OKMeldetErfolg(t *testing.T) {
+func TestPruefeIMAPAnmeldung_OKMeldetErfolg(t *testing.T) {
 	mitMiniIMAP(t, "OK LOGIN completed")
-	if err := AuthenticateIMAP(context.Background(), "wer@schule.de", "richtig"); err != nil {
+	if err := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "richtig"); err != nil {
 		t.Fatalf("OK vom Server muss Erfolg sein: %v", err)
 	}
 }
 
-// Der Handler muss dem IMAP-Schritt Luft lassen — sonst stirbt der Kontext zwischen
-// „Passwort richtig" und dem Benutzer-Lookup (so bis 22.08.2026: 10 s gegen 15 s).
-func TestLoginHandlerFrist_LaesstIMAPLuft(t *testing.T) {
-	if loginHandlerFrist <= imapFrist+2*time.Second {
-		t.Fatalf("loginHandlerFrist (%v) muss deutlich über imapFrist (%v) liegen", loginHandlerFrist, imapFrist)
+// Die Tür der Anmeldung muss dem Mailserver Luft lassen, sonst endet ihr Kontext zwischen
+// „Passwort richtig" und dem Lesen des Kontos.
+func TestAnmeldeFrist_LaesstIMAPLuft(t *testing.T) {
+	if anmeldeFrist <= imapFrist+2*time.Second {
+		t.Fatalf("anmeldeFrist (%v) muss deutlich über imapFrist (%v) liegen", anmeldeFrist, imapFrist)
 	}
 }

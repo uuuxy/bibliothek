@@ -25,7 +25,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RoleAdmin}
+	admin := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RolleAdmin}
 
 	var titelID string
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Nummernprobe 131') RETURNING id`).Scan(&titelID); err != nil {
@@ -54,7 +54,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 		if id != "" {
 			req.SetPathValue("id", id)
 		}
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, admin))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, admin))
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
 		return rec

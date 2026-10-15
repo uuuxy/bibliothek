@@ -45,7 +45,7 @@ func (t *Tueren) LeserSperren(protokollAbfragen repository.ProtokollAbfragen) ht
 // sperreLeser schaltet die Sperre in einer Transaktion um und schreibt den Eintrag ins
 // Protokoll.
 func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) error {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return apierrors.Unauthorized("missing session information", nil)
 	}
@@ -117,7 +117,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 		return apierrors.Internal(meldungSperreFehler, err)
 	}
 
-	protokolliereSperre(r, protokollAbfragen, claims.UserID, id, req.IsLocked, grund, alt)
+	protokolliereSperre(r, protokollAbfragen, claims.KontoID, id, req.IsLocked, grund, alt)
 
 	w.Header().Set("Content-Type", "application/json")
 	httpresp.SchreibeJSON(w, leser)

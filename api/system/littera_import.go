@@ -111,11 +111,11 @@ func importKopfMitPflichtspalten(zeilen [][]string) (map[string]int, error) {
 
 // protokolliereImport schreibt einen Eintrag ins Protokoll, wenn jemand angemeldet ist.
 func (t *Tueren) protokolliereImport(r *http.Request, aktion, details string) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return
 	}
-	t.SchreibeAdminProtokoll(r.Context(), claims.UserID, aktion, clientip.AusAnfrage(r), details)
+	t.SchreibeAdminProtokoll(r.Context(), claims.KontoID, aktion, clientip.AusAnfrage(r), details)
 }
 
 // verarbeiteLitteraXML importiert ein MAB2-XML-Katalogisat und antwortet.
@@ -258,9 +258,9 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if claims, ok := auth.GetClaims(r.Context()); ok {
+	if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
 		details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, neueTitel, importierteExemplare)
-		t.SchreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.AusAnfrage(r), details)
+		t.SchreibeAdminProtokoll(r.Context(), claims.KontoID, "BESTAND_IMPORT", clientip.AusAnfrage(r), details)
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{

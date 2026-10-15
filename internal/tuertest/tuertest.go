@@ -40,8 +40,8 @@ func AlsKonto(req *http.Request, kontoID string) *http.Request {
 	if kontoID == "" {
 		return req
 	}
-	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: kontoID, Rolle: auth.RoleAdmin}))
+	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: kontoID, Rolle: auth.RolleAdmin}))
 }
 
 // RufeAlsAdmin ruft eine Tür mit der Sitzung des Admin-Kontos, ohne den Router davor.
@@ -52,8 +52,8 @@ func RufeAlsAdmin(t *testing.T, adminID string, tuer http.HandlerFunc, methode, 
 	for k, v := range pfadwerte {
 		req.SetPathValue(k, v)
 	}
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	tuer(rec, req)
 	return rec

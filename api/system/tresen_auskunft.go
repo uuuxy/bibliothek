@@ -123,13 +123,13 @@ func (t *Tueren) gibTresenAuskunft(w http.ResponseWriter, r *http.Request, proto
 	// Die Protokollierung ist Teil der Zusage, nicht Kür: Ein Blick in die
 	// Ausleihhistorie ohne eigene Spur wäre genau die stille Tür, gegen die
 	// dieser Endpunkt so eng gebaut ist. Scheitert sie, gibt es keine Auskunft.
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError,
 			errors.New("keine sitzung im kontext"))
 		return
 	}
-	if err := protokollAbfragen.ProtokolliereAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
+	if err := protokollAbfragen.ProtokolliereAdminAktion(r.Context(), claims.KontoID, "TRESEN_AUSKUNFT",
 		clientip.AusAnfrage(r), map[string]any{
 			"barcode":            barcode,
 			"treffer_exemplare":  len(exemplare),

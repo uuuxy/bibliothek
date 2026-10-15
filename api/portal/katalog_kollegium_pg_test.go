@@ -38,9 +38,9 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(ctx); err != nil {
 		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
-	authenticator, err := auth.NewAuthenticator("kollegium-katalog-testgeheimnis-32-bytes-lang!", pool, time.Hour)
+	authenticator, err := auth.NewAnmeldung("kollegium-katalog-testgeheimnis-32-bytes-lang!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
@@ -51,7 +51,7 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 		RETURNING id`).Scan(&kontoID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	token, err := authenticator.GenerateToken(kontoID, "KATALOG-MA-1", auth.RoleMitarbeiter, "")
+	token, err := authenticator.ErzeugeToken(kontoID, "KATALOG-MA-1", auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

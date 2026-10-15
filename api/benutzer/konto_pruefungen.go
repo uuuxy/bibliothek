@@ -37,7 +37,7 @@ func normalisiereRolle(rolle string) string {
 // Datenbank ist die Antwort schon geschrieben, und es liefert false.
 //
 // Die Eindeutigkeit ist hier mehr als Datenhygiene: Die Anmeldung findet das Konto
-// über seine E-Mail (auth/handlers.go). Zwei Datensätze mit derselben Adresse hießen,
+// über seine E-Mail (auth/anmelden.go). Zwei Datensätze mit derselben Adresse hießen,
 // dass nicht mehr feststeht, wessen Konto ein Login öffnet.
 func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, email, ausgenommeneID string) bool {
 	vergeben, err := kontoAbfragen.IstEmailVergeben(ctx, email, ausgenommeneID)

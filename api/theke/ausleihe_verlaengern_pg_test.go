@@ -233,23 +233,23 @@ func TestAusleiheVerlaengern_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
 		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},
 	}))
-	verlaengere := func(ausleiheID string, rolle auth.Role) *httptest.ResponseRecorder {
+	verlaengere := func(ausleiheID string, rolle auth.Rolle) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/"+ausleiheID+"/verlaengern", nil)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: rolle}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: rolle}))
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
 		return rec
 	}
 
-	helfer := verlaengere(ausleiheGesperrt, auth.Role("helfer"))
+	helfer := verlaengere(ausleiheGesperrt, auth.Rolle("helfer"))
 	if helfer.Code != http.StatusForbidden || !strings.Contains(helfer.Body.String(), "Ausleihe gesperrt") {
 		t.Errorf("Helfer: Status %d, erwartet 403 mit dem Hinweis auf die Sperre: %s", helfer.Code, helfer.Body.String())
 	}
 	if strings.Contains(helfer.Body.String(), grund) {
 		t.Errorf("der Grund der Sperre erreicht einen Aufrufer ohne view_students: %s", helfer.Body.String())
 	}
-	admin := verlaengere(ausleiheGesperrt, auth.RoleAdmin)
+	admin := verlaengere(ausleiheGesperrt, auth.RolleAdmin)
 	if admin.Code != http.StatusForbidden || !strings.Contains(admin.Body.String(), grund) {
 		t.Errorf("Admin: Status %d, erwartet 403 mit dem Grund der Sperre: %s", admin.Code, admin.Body.String())
 	}
@@ -257,7 +257,7 @@ func TestAusleiheVerlaengern_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing
 		t.Errorf("die abgelehnte Verlängerung hat die Frist geschrieben: %s", frist.Format(time.RFC3339))
 	}
 
-	if rec := verlaengere(ausleiheFrei, auth.Role("helfer")); rec.Code != http.StatusOK {
+	if rec := verlaengere(ausleiheFrei, auth.Rolle("helfer")); rec.Code != http.StatusOK {
 		t.Fatalf("Verlängerung: Status %d: %s", rec.Code, rec.Body.String())
 	}
 	var mahnstufe int

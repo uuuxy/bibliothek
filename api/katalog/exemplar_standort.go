@@ -40,13 +40,13 @@ func (t *Tueren) ExemplarStandortSetzen() http.HandlerFunc {
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("nicht angemeldet", errors.New("keine Sitzung"))
 		}
 
 		geaendert, err := repository.SetzeExemplarStandort(r.Context(), t.DB.Pool, repository.StandortAenderung{
-			ExemplarIDs: req.ExemplarIDs, Standort: *req.Standort, BearbeiterID: claims.UserID,
+			ExemplarIDs: req.ExemplarIDs, Standort: *req.Standort, BearbeiterID: claims.KontoID,
 		})
 		switch {
 		case errors.Is(err, repository.ErrStandortUngueltig):

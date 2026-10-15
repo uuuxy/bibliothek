@@ -66,7 +66,7 @@ type Server struct {
 
 // NewServer baut den Server und bindet den Mailversand an die SMTP-Einstellungen in der
 // Datenbank.
-func NewServer(datenbank *db.Verbindung, authenticator *auth.Authenticator, broker *sse.Broker, nurHTTPS bool) *Server {
+func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *sse.Broker, nurHTTPS bool) *Server {
 	// Ab hier liest jeder Mailversand die in der Oberfläche gespeicherte SMTP-Konfiguration,
 	// nicht die Umgebungsvariablen des Containers; so nutzen der Test-Knopf und jeder echte
 	// Versand dieselbe Quelle.
@@ -216,7 +216,7 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 
 func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 	// Ohne Anmeldung erreichbar.
-	mux.Handle("POST /login", anmeldeBremse(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.nurHTTPS))))
+	mux.Handle("POST /login", anmeldeBremse(http.HandlerFunc(auth.Anmelden(s.DB.Pool, s.Auth, s.nurHTTPS))))
 
 	// Cover aus dem Cache, ohne Anmeldung.
 	mux.HandleFunc("GET /api/images/cover", s.katalog().Cover())
@@ -226,19 +226,19 @@ func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/csrf-token", s.csrfToken())
 
 	// Die Sitzung verlängern; von der CSRF-Prüfung ausgenommen (istPruefungsAusnahme).
-	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.nurHTTPS))
+	mux.HandleFunc("POST /api/auth/refresh", auth.SitzungVerlaengern(s.Auth, s.nurHTTPS))
 
 	// Die Sitzung beim Start der Oberfläche wiederherstellen: prüft Cookie und Zustand in der
 	// Datenbank und antwortet wie die Anmeldung.
-	mux.HandleFunc("GET /api/auth/me", auth.MeHandler(s.DB.Pool, s.Auth))
+	mux.HandleFunc("GET /api/auth/me", auth.AngemeldetesKonto(s.DB.Pool, s.Auth))
 
 	// Abmelden: widerruft das Token und löscht das Sitzungscookie.
 	mux.HandleFunc("POST /api/auth/logout", s.abmelden())
 
 	// Sperre nach Inaktivität: gilt am Server für die Anmeldung, mit der die Anfrage kommt.
 	// Entsperren prüft ein Passwort und hängt deshalb an derselben Bremse wie /login.
-	mux.HandleFunc("POST /api/auth/sperren", auth.SperrenHandler(s.Auth))
-	mux.Handle("POST /api/auth/entsperren", anmeldeBremse(auth.EntsperrenHandler(s.DB.Pool, s.Auth)))
+	mux.HandleFunc("POST /api/auth/sperren", auth.Sperren(s.Auth))
+	mux.Handle("POST /api/auth/entsperren", anmeldeBremse(auth.Entsperren(s.DB.Pool, s.Auth)))
 
 	mux.HandleFunc("GET /health", s.lebenszeichen())
 }

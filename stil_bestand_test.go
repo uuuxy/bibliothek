@@ -4,7 +4,6 @@ package main
 // fertig; die Zahlen sinken mit jedem umgestellten Paket und steigen nie.
 var stilBestand = map[string]stilZahl{
 	".":                      {Fach: 1, Verb: 4, Kuerzel: 0, Datei: 0, Datum: 4},
-	"auth":                   {Fach: 30, Verb: 10, Kuerzel: 0, Datei: 3, Datum: 13},
 	"cmd/littera-altbestand": {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},
 	"cmd/littera-import":     {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},
 	"cmd/migrate":            {Fach: 1, Verb: 10, Kuerzel: 0, Datei: 0, Datum: 0},

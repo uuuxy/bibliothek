@@ -91,10 +91,10 @@ func TestSchreibwegeWeisenOhneDasRechtAb(t *testing.T) {
 	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
 		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"rechte-schreibwege-gate-testgeheimnis-32-bytes!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
 	router := srv.Routes()

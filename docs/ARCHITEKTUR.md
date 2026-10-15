@@ -274,7 +274,7 @@ Diese Werkzeuge sind keine Beigabe: Ohne sie wären mehrere Entscheidungen in
 | Werkzeug                                | Rolle in der Architektur                                                                                            |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `golangci-lint` (`.golangci.yml`)       | Steht in CI **vor** allem anderen. Ein ungenutzter Typ hat am 12.09.2026 Tests, Deadcode-Gate und Restore-Probe mit übersprungen — seither kennt auch der pre-push-Hook den Linter. |
-| `scripts/deadcode_gate.sh` + Baseline   | Unerreichbarer Code ist eine Fehlerquelle: `Blacklist.Stop()` war geschrieben, getestet und von niemandem aufgerufen. |
+| `scripts/deadcode_gate.sh` + Baseline   | Unerreichbarer Code ist eine Fehlerquelle: `Sperrliste.Stoppe()` war geschrieben, getestet und von niemandem aufgerufen. |
 | `govulncheck` + `scripts/govulncheck-gate.sh`, `security/vuln-ausnahmen.json` | Schwachstellen-Gate mit **benannten, begründeten** Ausnahmen statt globalem Abschalten.               |
 | `gosec`, CodeQL, Trivy, `npm audit`      | Vier unabhängige Blickwinkel; Befunde, die begründet keine sind, werden dokumentiert (`.jules/sentinel.md`).          |
 | Playwright gegen den **gebauten Container** | e2e misst, was ausgeliefert wird — nicht einen Dev-Server.                                                       |
@@ -644,7 +644,7 @@ HTTP-Anfrage
 | `internal/bereitschaft/` | 973 Zeilen, 11 Dateien    | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert (`bereitschaft.go`, die Prüfungen in Dateien nach ihrer Sache), die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/leser/dsgvo_auskunft.go` und `api/leser/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
 | `inventur/`             | 6.547 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
-| `auth/`                 | 1.793 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
+| `auth/`                 | 1.740 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Verlängern der Sitzung |
 | `jobs/`                 | 1.607 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 651 Zeilen, 5 Dateien      | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                  |
 | `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
@@ -906,7 +906,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   Sitzung, Selbstanmeldung), den Prüfwert des Passworts, die Fristen der Abfragen und die
   Antworten; die Lesefunktionen reichen `pgx.ErrNoRows` deshalb durch. Anmeldung und
   Selbstanmeldung lesen das Konto mit derselben Funktion (`LadeAnmeldeKonto`) und füllen den
-  Stand der Anmeldung an einer Stelle (`loginUserAus`, `auth/handlers.go`). Bis zum
+  Stand der Anmeldung an einer Stelle (`anmeldeKontoAus`, `auth/anmelden.go`). Bis zum
   09.10.2026 las die Selbstanmeldung mit einer eigenen Abfrage ohne die Adresse: Traf sie auf
   ein Konto, das zwischen dem ersten Lesen und der Anlage entstanden war, ging die Anmeldung
   mit leerer Adresse weiter.
@@ -1115,7 +1115,7 @@ jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht ab
 | Modul                                                          | eingesetzt in                                                    | Rolle                                                                                   |
 | -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `jackc/pgx/v5`                                                 | überall, wo SQL läuft (`repository`, `db`, `api`, `auth`, `jobs`, `inventur`, `internal/*`, `cmd/*`) | Postgres-Treiber und Pool, keine ORM-Schicht (T3)                            |
-| `golang-jwt/jwt/v5`                                            | `auth`, `cmd/stresstest`                                         | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/jwt.go`)                   |
+| `golang-jwt/jwt/v5`                                            | `auth`, `cmd/stresstest`                                         | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/token.go`)                   |
 | `emersion/go-imap`                                             | `auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
 | `go-playground/validator/v10`                                  | `api`                                                            | Strukturprüfung von Request-Körpern                                                     |
 | `getsentry/sentry-go`                                          | `main.go`, `api`                                                 | Fehlerweitergabe, nur mit `SENTRY_DSN`                                                  |
@@ -3051,8 +3051,8 @@ Daraus folgen A12 und der Eskalationsschutz. Es gibt keinen „Passwort vergesse
 Nebenwirkung: Der Brute-Force-Schutz schützt auch den **Mailserver** vor
 Credential-Stuffing über diesen Weg. Ein Helfer braucht ein Schulpostfach.
 
-**Fundstelle.** `auth/handlers.go` (`verifyIMAPCredentials`), Migration 012;
-`auth/pruefwert.go`, `auth/handlers_sperre.go`, Migration 155.
+**Fundstelle.** `auth/anmelden.go` (`pruefeIMAPZugang`), Migration 012;
+`auth/pruefwert.go`, `auth/sperre.go`, Migration 155.
 
 **Frühere Doku-Lage.** Bis zum 11.08.2026 stand in [FACHKONZEPT.md](FACHKONZEPT.md)
 „E-Mail und Passwort (Bcrypt-gehasht)" — das war nie so, und zwei Absätze weiter stand
@@ -4254,8 +4254,8 @@ Fenstern bekannt ist:
   die Anfrage läuft), lädt sie den Leser doch (`verarbeiteLeser`; am Store nachgestellt am
   07.10.2026). Nach der nächsten Anmeldung stünde sein Konto offen.
 - Ausfallmatrix A3 und B4; A3 erst nach S3 ([OFFEN.md](OFFEN.md) 7.3).
-- Anmeldungen stehen nicht im Protokoll (am Code nachgesehen am 28.09.2026): `LoginHandler` in
-  `auth/handlers.go` schreibt keinen Eintrag, nur die Selbstanmeldung
+- Anmeldungen stehen nicht im Protokoll (am Code nachgesehen am 28.09.2026): `Anmelden` in
+  `auth/anmelden.go` schreibt keinen Eintrag, nur die Selbstanmeldung
   (`auth/selbstanmeldung.go`). Nach einem Missbrauch lässt sich nicht nachsehen, wann und von wo
   ein Konto angemeldet war; der Datenschutz-Nachweis (Abschnitte 8 und 9) sagt das so. Ein
   Protokoll der Anmeldungen wären neue Personendaten des Personals (Zeitpunkt, Netzadresse) mit

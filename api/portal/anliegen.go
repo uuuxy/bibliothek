@@ -48,7 +48,7 @@ type anliegenAnfrage struct {
 // AnliegenAnlegen nimmt eine Meldung entgegen. POST /api/anliegen
 func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
 			return
@@ -85,7 +85,7 @@ func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 			TitelText:      req.TitelText,
 			Klasse:         req.Klasse,
 			Kommentar:      req.Kommentar,
-			AngefordertVon: claims.UserID,
+			AngefordertVon: claims.KontoID,
 		})
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -108,12 +108,12 @@ func kuerze(s string, n int) string {
 // GET /api/anliegen/eigene
 func (t *Tueren) EigeneAnliegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
 			return
 		}
-		anliegen, err := repository.NewAnliegenAbfragen(t.DB.Pool).LadeEigene(r.Context(), claims.UserID)
+		anliegen, err := repository.NewAnliegenAbfragen(t.DB.Pool).LadeEigene(r.Context(), claims.KontoID)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return

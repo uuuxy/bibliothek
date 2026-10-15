@@ -124,7 +124,7 @@ func (t *Tueren) AusleihFristSetzen(protokollAbfragen repository.ProtokollAbfrag
 
 // setzeAusleihFrist setzt die Frist einer laufenden Ausleihe von Hand.
 func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
 		return
@@ -179,7 +179,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 	// Eine von Hand gesetzte Frist ist ein Eingriff in eine Sanktion (Mahnfristen, Sperre durch
 	// das Programm); sie gehört ins Protokoll wie das Übergehen beim Ausleihen (OVERRIDE_BLOCK).
 	// Der Eingriff gilt auch, wenn das Protokoll klemmt; der Fehlversuch steht dann im Log.
-	if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
+	if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.KontoID, "FRIST_OVERRIDE", "", map[string]any{
 		"ausleihe_id": id,
 		"neue_frist":  gesetzteFrist.Format(time.RFC3339),
 	}); protokollFehler != nil {

@@ -14,7 +14,7 @@ import (
 )
 
 // Die dritte Stelle, die das Sitzungscookie setzt, neben Anmeldung und Erneuern (siehe
-// auth/session_cookie_secure_test.go): das Löschcookie beim Abmelden.
+// auth/sitzungscookie_test.go): das Löschcookie beim Abmelden.
 //
 // Es trägt keinen Wert mehr, die Schutzattribute zählen trotzdem. Ein Löschcookie ohne Secure
 // überschreibt über HTTP ein Secure-Cookie nicht zuverlässig; die Abmeldung wäre dann eine, die
@@ -28,11 +28,11 @@ func TestAbmeldungCookieFolgtDerKonfiguration(t *testing.T) {
 				t.Fatalf("pgxmock init: %v", err)
 			}
 			t.Cleanup(mock.Close)
-			a, err := auth.NewAuthenticator(testJWTGeheimnis, mock, time.Hour)
+			a, err := auth.NewAnmeldung(testJWTGeheimnis, mock, time.Hour)
 			if err != nil {
 				t.Fatalf("authenticator init: %v", err)
 			}
-			t.Cleanup(a.Blacklist.Stop)
+			t.Cleanup(a.Sperrliste.Stoppe)
 			s := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: mock}, Auth: a}, nurHTTPS: secure}
 
 			// Unbrauchbares Token: Die Sperrliste antwortet, die Prüfung des Tokens scheitert

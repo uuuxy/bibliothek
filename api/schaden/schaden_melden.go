@@ -14,7 +14,7 @@ import (
 // ausgesondert, die Forderung angelegt und die Ausleihe beendet.
 func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("missing session information", nil)
 		}
@@ -42,7 +42,7 @@ func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) htt
 				errors.New("art fehlt oder ist ungültig"))
 		}
 
-		schadensID, err := schadensAbfragen.Melde(r.Context(), req.ExemplarID, req.AusleiheID, claims.UserID, req.Beschreibung, art, req.Betrag)
+		schadensID, err := schadensAbfragen.Melde(r.Context(), req.ExemplarID, req.AusleiheID, claims.KontoID, req.Beschreibung, art, req.Betrag)
 		if err != nil {
 			// Inzwischen neu verliehen oder zurückgegeben: ein Konflikt (409), kein
 			// Serverfehler. Die Akte zeigt einen Stand, den es nicht mehr gibt.

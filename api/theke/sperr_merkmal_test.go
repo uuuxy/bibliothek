@@ -47,8 +47,8 @@ func helferOhneRechte(t *testing.T) {
 func scanAnfrage(schluessel string) *http.Request {
 	body := `{"query":"B-123","active_leser_id":"22222222-2222-2222-2222-222222222222","idempotency_key":"` + schluessel + `"}`
 	req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
-	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{Rolle: auth.Role("helfer"), UserID: "u1"}))
+	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{Rolle: auth.Rolle("helfer"), KontoID: "u1"}))
 }
 
 func TestSperrMerkmalImHeader(t *testing.T) {

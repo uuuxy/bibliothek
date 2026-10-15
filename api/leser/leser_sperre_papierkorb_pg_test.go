@@ -47,8 +47,8 @@ func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndWiederherstellen(t *testin
 	loeschen := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+id, nil)
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: bearbeiter}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: bearbeiter}))
 		rec := httptest.NewRecorder()
 		srv.LeserLoeschen(auditRepo)(rec, req)
 		return rec
@@ -128,8 +128,8 @@ func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
 	loeschen := func() *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+schueler, nil)
 		req.SetPathValue("id", schueler)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: bearbeiter}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: bearbeiter}))
 		rec := httptest.NewRecorder()
 		srv.LeserLoeschen(auditRepo)(rec, req)
 		return rec

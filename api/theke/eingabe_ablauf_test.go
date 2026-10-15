@@ -187,9 +187,9 @@ func TestRueckgabeAnDerTheke(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	claims := &auth.Claims{UserID: staffID, Rolle: auth.RoleMitarbeiter}
+	claims := &auth.Claims{KontoID: staffID, Rolle: auth.RolleMitarbeiter}
 
-	res, err := omniboxSvc.VerarbeiteEingabe(context.Background(), service.OmniboxEingabe{Text: barcode, BearbeiterID: claims.UserID})
+	res, err := omniboxSvc.VerarbeiteEingabe(context.Background(), service.OmniboxEingabe{Text: barcode, BearbeiterID: claims.KontoID})
 	var resp eingabeAntwort
 	if res != nil {
 		resp = *zurEingabeAntwort(res)

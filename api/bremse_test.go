@@ -188,7 +188,7 @@ func TestAnmeldeBremse_ErfolgSetztZaehlerZurueck(t *testing.T) {
 }
 
 // 403 ist kein Fehlversuch: Bei „Zugang beantragt" (Selbstanmeldung) und „Konto deaktiviert"
-// war das Passwort richtig, und die Anmeldung zählt deshalb bewusst nicht (auth/handlers.go).
+// war das Passwort richtig, und die Anmeldung zählt deshalb bewusst nicht (auth/anmelden.go).
 // Zählte die äußere Bremse je Adresse 403 trotzdem, wäre die Anmeldung zum Schuljahresbeginn
 // für die ganze Schule 15 Minuten dicht: Zwanzig Kollegen probieren die Selbstanmeldung
 // mehrfach, alle hinter einer einzigen NAT-Adresse, und nach 50 solcher 403 sperrte die Bremse

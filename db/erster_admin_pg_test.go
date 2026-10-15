@@ -44,7 +44,7 @@ func zaehleKonten(t *testing.T, tx pgx.Tx, bedingung string, args ...any) int {
 }
 
 // findetDieAnmeldung nimmt die Bedingung, mit der die Anmeldung ein Konto sucht
-// (auth/handlers.go).
+// (auth/anmelden.go).
 func findetDieAnmeldung(t *testing.T, tx pgx.Tx, getippt string) bool {
 	t.Helper()
 	return zaehleKonten(t, tx, `LOWER(email) = LOWER($1) AND rolle = 'admin' AND aktiv`, getippt) == 1

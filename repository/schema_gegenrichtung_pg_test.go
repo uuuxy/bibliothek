@@ -176,7 +176,7 @@ var fkAktionenBestand = []string{
 	// Die Lesepfade nehmen die Spalte als *string (kein NULL-Scan).
 	"SET NULL  schadensersatz_bescheide.erstellt_von -> benutzer",
 	// Fällt das Konto, fallen seine laufenden Anmeldungen samt dem Prüfwert des Passworts —
-	// er gehört der Person. Behandeln muss die Folge niemand: VerifyToken lehnt jedes Token
+	// er gehört der Person. Behandeln muss die Folge niemand: PruefeToken lehnt jedes Token
 	// eines gelöschten Kontos ab, und die Zeile endet ohnehin mit Abmelden und Ablauf.
 	"CASCADE  sitzungen.benutzer_id -> benutzer",
 	// Befragt: Die Forderung überlebt ihren Brief. Im

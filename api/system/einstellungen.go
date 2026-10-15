@@ -129,7 +129,7 @@ func normalisiereLernmittelAngaben(req *repository.EinstellungenPatch) error {
 // protokolliereEinstellungen schreibt den gespeicherten Patch ins Protokoll; die IP-Adresse
 // wird nicht gespeichert.
 func (t *Tueren) protokolliereEinstellungen(r *http.Request, req repository.EinstellungenPatch) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return
 	}
@@ -138,7 +138,7 @@ func (t *Tueren) protokolliereEinstellungen(r *http.Request, req repository.Eins
 		log.Printf("audit: Settings-Details konnten nicht serialisiert werden: %v", merr)
 		return
 	}
-	t.SchreibeAdminProtokoll(r.Context(), claims.UserID, "UPDATE_SETTINGS", "", string(details))
+	t.SchreibeAdminProtokoll(r.Context(), claims.KontoID, "UPDATE_SETTINGS", "", string(details))
 }
 
 // sitzungsEinstellungen sind die zwei Fristen, nach denen die Oberfläche ohne Eingabe handelt:

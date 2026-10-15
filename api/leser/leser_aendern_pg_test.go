@@ -21,8 +21,8 @@ func aendereLeserUeberTuer(t *testing.T, srv *Tueren, id, rumpf string) *httptes
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(rumpf))
 	req.SetPathValue("id", id)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: id, Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.LeserAendern(repository.NewProtokollAbfragen(srv.DB.Pool))(rec, req)
 	return rec

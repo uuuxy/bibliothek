@@ -143,8 +143,8 @@ func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_FristVonHand(t *testing.T
 	for _, f := range l.faelle() {
 		req := httptest.NewRequest(http.MethodPatch, "/api/admin/ausleihen/"+f.id+"/faelligkeit",
 			strings.NewReader(`{"faellig_am":"`+zukunft+`"}`))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
 		soll := http.StatusForbidden

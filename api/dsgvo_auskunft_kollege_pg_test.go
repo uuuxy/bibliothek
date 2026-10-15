@@ -92,8 +92,8 @@ func TestDSGVOAuskunft_Kollege(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, pfad, nil)
 		req.SetPathValue("id", leser)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: adminKonto, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: adminKonto, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		h(rec, req)
 		if rec.Code != http.StatusOK {
@@ -187,8 +187,8 @@ func TestKontoAnlage_ProtokollTraegtZielID(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/benutzer", strings.NewReader(
 		`{"vorname":"Neu","nachname":"Konto","email":"neu@zielid.invalid","rolle":"kollegium"}`))
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.benutzer().KontoAnlegen(repository.NewKontoAbfragen(pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {

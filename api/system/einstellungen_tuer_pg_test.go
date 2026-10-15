@@ -59,8 +59,8 @@ func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPost, "/api/einstellungen/speichern", strings.NewReader(rumpf))
 		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.EinstellungenSchreiben(repository.NewEinstellungsAbfragen(pool)).ServeHTTP(rec, req)
 		return rec

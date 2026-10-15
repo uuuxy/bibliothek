@@ -28,7 +28,7 @@ import (
 // @Router       /buecher/exemplare/{id} [delete]
 func (t *Tueren) ExemplarAussondern(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
 			return
@@ -42,7 +42,7 @@ func (t *Tueren) ExemplarAussondern(protokollAbfragen repository.ProtokollAbfrag
 
 		ctx := r.Context()
 
-		err := protokollAbfragen.SondereExemplarAus(ctx, id, claims.UserID)
+		err := protokollAbfragen.SondereExemplarAus(ctx, id, claims.KontoID)
 		if err != nil {
 			// Am Fehlerwert erkannt, nicht am Text der Meldung: Eine umformulierte Meldung machte
 			// aus der Auskunft sonst einen Serverfehler.

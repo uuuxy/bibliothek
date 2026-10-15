@@ -29,17 +29,17 @@ func abmeldeServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 		t.Fatalf("pgxmock init: %v", err)
 	}
 	t.Cleanup(mock.Close)
-	a, err := auth.NewAuthenticator(testJWTGeheimnis, mock, time.Hour)
+	a, err := auth.NewAnmeldung(testJWTGeheimnis, mock, time.Hour)
 	if err != nil {
 		t.Fatalf("authenticator init: %v", err)
 	}
-	t.Cleanup(a.Blacklist.Stop)
+	t.Cleanup(a.Sperrliste.Stoppe)
 	return &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: mock}, Auth: a}, nurHTTPS: true}, mock
 }
 
 func abmeldenMitToken(t *testing.T, s *Server) *httptest.ResponseRecorder {
 	t.Helper()
-	token, err := s.Auth.GenerateToken("u1", "BC1", auth.RoleMitarbeiter, "")
+	token, err := s.Auth.ErzeugeToken("u1", "BC1", auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("token generation: %v", err)
 	}
@@ -63,7 +63,7 @@ func loeschcookieGesetzt(rec *httptest.ResponseRecorder) bool {
 // Erfolg melden.
 func TestAbmeldung_WiderrufScheitert_MeldetKeinenErfolg(t *testing.T) {
 	s, mock := abmeldeServer(t)
-	erwarteSperrlisteFrei(mock, auth.RoleMitarbeiter)
+	erwarteSperrlisteFrei(mock, auth.RolleMitarbeiter)
 	mock.ExpectExec("INSERT INTO revoked_tokens").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(errors.New("connection reset by peer"))
@@ -113,7 +113,7 @@ func TestAbmeldung_PruefungGestoert_MeldetKeinenErfolg(t *testing.T) {
 // Gegenprobe 1: Gelingt der Widerruf, bleibt alles beim Alten — 200 und {"status":"ok"}.
 func TestAbmeldung_WiderrufGelingt_BleibtOk(t *testing.T) {
 	s, mock := abmeldeServer(t)
-	erwarteSperrlisteFrei(mock, auth.RoleMitarbeiter)
+	erwarteSperrlisteFrei(mock, auth.RolleMitarbeiter)
 	mock.ExpectExec("INSERT INTO revoked_tokens").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))

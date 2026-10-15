@@ -132,10 +132,10 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"geraet-seriennummer-testgeheimnis-32-b!!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	var kontoID string
 	if err := pool.QueryRow(ctx, `
@@ -147,7 +147,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = 'geraet-seriennummer@example.org'`)
 	})
-	sitzung, err := authenticator.GenerateToken(kontoID, "GERAET-1", auth.RoleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, "GERAET-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

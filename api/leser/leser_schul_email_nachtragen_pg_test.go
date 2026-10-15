@@ -33,12 +33,12 @@ func TestSchulEmailNachtragen(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	patch := func(t *testing.T, id, body string, rolle auth.Role) *httptest.ResponseRecorder {
+	patch := func(t *testing.T, id, body string, rolle auth.Rolle) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(body))
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: rolle}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: "00000000-0000-0000-0000-0000000000aa", Rolle: rolle}))
 		rec := httptest.NewRecorder()
 		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
@@ -72,7 +72,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 	t.Run("Mitarbeiter trägt nach: Konto entsteht, freigeschaltet wird es nicht", func(t *testing.T) {
 		id := altbestand(t, "Agnes", "Altbestand", "lehrkraft")
 		rec := patch(t, id, `{"vorname":"Agnes","nachname":"Altbestand","email":"agnes.altbestand@schule.invalid"}`,
-			auth.RoleMitarbeiter)
+			auth.RolleMitarbeiter)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Antwort %d: %s", rec.Code, rec.Body.String())
 		}
@@ -102,11 +102,11 @@ func TestSchulEmailNachtragen(t *testing.T) {
 
 	t.Run("dieselbe Adresse noch einmal ist kein Fehler", func(t *testing.T) {
 		id := altbestand(t, "Wieder", "Holung", "liv")
-		if rec := patch(t, id, `{"nachname":"Holung","email":"wieder.holung@schule.invalid"}`, auth.RoleAdmin); rec.Code != http.StatusOK {
+		if rec := patch(t, id, `{"nachname":"Holung","email":"wieder.holung@schule.invalid"}`, auth.RolleAdmin); rec.Code != http.StatusOK {
 			t.Fatalf("erster Nachtrag: %d %s", rec.Code, rec.Body.String())
 		}
 		// Das Formular schickt die angezeigte Adresse bei jedem Speichern mit.
-		if rec := patch(t, id, `{"nachname":"Holung","email":"wieder.holung@schule.invalid"}`, auth.RoleAdmin); rec.Code != http.StatusOK {
+		if rec := patch(t, id, `{"nachname":"Holung","email":"wieder.holung@schule.invalid"}`, auth.RolleAdmin); rec.Code != http.StatusOK {
 			t.Fatalf("zweites Speichern: %d %s", rec.Code, rec.Body.String())
 		}
 		var n int
@@ -120,10 +120,10 @@ func TestSchulEmailNachtragen(t *testing.T) {
 
 	t.Run("eine vorhandene Adresse wird hier nicht überschrieben", func(t *testing.T) {
 		id := altbestand(t, "Fest", "Stehend", "lehrkraft")
-		if rec := patch(t, id, `{"nachname":"Stehend","email":"fest.stehend@schule.invalid"}`, auth.RoleAdmin); rec.Code != http.StatusOK {
+		if rec := patch(t, id, `{"nachname":"Stehend","email":"fest.stehend@schule.invalid"}`, auth.RolleAdmin); rec.Code != http.StatusOK {
 			t.Fatalf("Nachtrag: %d %s", rec.Code, rec.Body.String())
 		}
-		rec := patch(t, id, `{"nachname":"Stehend","email":"ganz.anders@schule.invalid"}`, auth.RoleAdmin)
+		rec := patch(t, id, `{"nachname":"Stehend","email":"ganz.anders@schule.invalid"}`, auth.RolleAdmin)
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Antwort %d (erwartet 400): %s", rec.Code, rec.Body.String())
 		}
@@ -137,10 +137,10 @@ func TestSchulEmailNachtragen(t *testing.T) {
 
 	t.Run("die Adresse lässt sich nicht entfernen", func(t *testing.T) {
 		id := altbestand(t, "Nicht", "Weg", "lehrkraft")
-		if rec := patch(t, id, `{"nachname":"Weg","email":"nicht.weg@schule.invalid"}`, auth.RoleAdmin); rec.Code != http.StatusOK {
+		if rec := patch(t, id, `{"nachname":"Weg","email":"nicht.weg@schule.invalid"}`, auth.RolleAdmin); rec.Code != http.StatusOK {
 			t.Fatalf("Nachtrag: %d %s", rec.Code, rec.Body.String())
 		}
-		rec := patch(t, id, `{"nachname":"Weg","email":""}`, auth.RoleAdmin)
+		rec := patch(t, id, `{"nachname":"Weg","email":""}`, auth.RolleAdmin)
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Antwort %d (erwartet 400): %s", rec.Code, rec.Body.String())
 		}
@@ -157,7 +157,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 			RETURNING id::text`).Scan(&id); err != nil {
 			t.Fatalf("Schüler anlegen: %v", err)
 		}
-		rec := patch(t, id, `{"nachname":"Kontolos","email":"kind@schule.invalid"}`, auth.RoleAdmin)
+		rec := patch(t, id, `{"nachname":"Kontolos","email":"kind@schule.invalid"}`, auth.RolleAdmin)
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Antwort %d (erwartet 400): %s", rec.Code, rec.Body.String())
 		}
@@ -168,11 +168,11 @@ func TestSchulEmailNachtragen(t *testing.T) {
 
 	t.Run("eine belegte Adresse ist eine Auskunft", func(t *testing.T) {
 		erster := altbestand(t, "Erster", "Belegt", "lehrkraft")
-		if rec := patch(t, erster, `{"nachname":"Belegt","email":"belegt@schule.invalid"}`, auth.RoleAdmin); rec.Code != http.StatusOK {
+		if rec := patch(t, erster, `{"nachname":"Belegt","email":"belegt@schule.invalid"}`, auth.RolleAdmin); rec.Code != http.StatusOK {
 			t.Fatalf("Nachtrag: %d %s", rec.Code, rec.Body.String())
 		}
 		zweiter := altbestand(t, "Zweiter", "Belegt2", "lehrkraft")
-		rec := patch(t, zweiter, `{"nachname":"Belegt2","email":"belegt@schule.invalid"}`, auth.RoleAdmin)
+		rec := patch(t, zweiter, `{"nachname":"Belegt2","email":"belegt@schule.invalid"}`, auth.RolleAdmin)
 		if rec.Code != http.StatusConflict {
 			t.Fatalf("Antwort %d (erwartet 409): %s", rec.Code, rec.Body.String())
 		}
@@ -183,7 +183,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 
 	t.Run("die Akte zeigt die Adresse", func(t *testing.T) {
 		id := altbestand(t, "Sicht", "Bar", "lehrkraft")
-		if rec := patch(t, id, `{"nachname":"Bar","email":"sicht.bar@schule.invalid"}`, auth.RoleAdmin); rec.Code != http.StatusOK {
+		if rec := patch(t, id, `{"nachname":"Bar","email":"sicht.bar@schule.invalid"}`, auth.RolleAdmin); rec.Code != http.StatusOK {
 			t.Fatalf("Nachtrag: %d %s", rec.Code, rec.Body.String())
 		}
 
@@ -191,8 +191,8 @@ func TestSchulEmailNachtragen(t *testing.T) {
 		// nicht anzeigt, schickt es beim Speichern auch nicht mit.
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+id, nil)
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: id, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.Leserakte(repository.NewLeserAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {
@@ -224,8 +224,8 @@ func TestAusweisnummerLeeren(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(body))
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: "00000000-0000-0000-0000-0000000000aa", Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
@@ -337,8 +337,8 @@ func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(body))
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {

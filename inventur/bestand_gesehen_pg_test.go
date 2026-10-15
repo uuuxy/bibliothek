@@ -31,7 +31,7 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 	t.Cleanup(loesche)
 
 	handler := &APIHandler{repo: &BookRepository{db: pool}, metadaten: offlineMetadatenClient()}
-	sitzung := &auth.Claims{UserID: bearbeiterFuerAussonderung(t, pool)}
+	sitzung := &auth.Claims{KontoID: bearbeiterFuerAussonderung(t, pool)}
 	sende := func(methode, id string, extra map[string]any) *httptest.ResponseRecorder {
 		t.Helper()
 		koerper := map[string]any{"isbn": isbn, "title": "Bestandsprobe", "author": "Test", "coverUrl": "/uploads/x.webp", "listenpreis": 9.99}
@@ -43,7 +43,7 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 			t.Fatal(err)
 		}
 		req := httptest.NewRequest(methode, "/api/books/"+id, bytes.NewReader(daten))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, sitzung))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, sitzung))
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		if methode == http.MethodPost {

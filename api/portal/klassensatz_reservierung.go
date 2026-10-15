@@ -45,7 +45,7 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("fehlende Sitzungsinformationen"))
 		return
@@ -79,7 +79,7 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	id, neu, err := abfragen.LegeAn(ctx, req.TitelID, req.Klasse, req.Anzahl, leerAlsNil(req.Notiz), claims.UserID, leerAlsNil(req.IdempotenzSchluessel))
+	id, neu, err := abfragen.LegeAn(ctx, req.TitelID, req.Klasse, req.Anzahl, leerAlsNil(req.Notiz), claims.KontoID, leerAlsNil(req.IdempotenzSchluessel))
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
@@ -154,13 +154,13 @@ func (t *Tueren) OffeneKlassensatzReservierungen() http.HandlerFunc {
 // GET /api/reservierungen/klassensatz/eigene, Muster und Recht wie GET /api/anliegen/eigene.
 func (t *Tueren) EigeneKlassensatzReservierungen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("keine sitzung"))
 			return
 		}
 		abfragen := repository.NewReservierungsAbfragen(t.DB.Pool)
-		eigene, err := abfragen.LadeEigene(r.Context(), claims.UserID)
+		eigene, err := abfragen.LadeEigene(r.Context(), claims.KontoID)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return

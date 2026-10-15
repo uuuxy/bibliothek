@@ -70,7 +70,7 @@ func abmeldeAntwortenMitLoeschcookie(t *testing.T) map[int]bool {
 	}{
 		{"Widerruf gelingt", func(t *testing.T) *httptest.ResponseRecorder {
 			s, mock := abmeldeServer(t)
-			erwarteSperrlisteFrei(mock, auth.RoleMitarbeiter)
+			erwarteSperrlisteFrei(mock, auth.RolleMitarbeiter)
 			mock.ExpectExec("INSERT INTO revoked_tokens").
 				WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 				WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -78,7 +78,7 @@ func abmeldeAntwortenMitLoeschcookie(t *testing.T) map[int]bool {
 		}},
 		{"Widerruf scheitert", func(t *testing.T) *httptest.ResponseRecorder {
 			s, mock := abmeldeServer(t)
-			erwarteSperrlisteFrei(mock, auth.RoleMitarbeiter)
+			erwarteSperrlisteFrei(mock, auth.RolleMitarbeiter)
 			mock.ExpectExec("INSERT INTO revoked_tokens").
 				WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 				WillReturnError(errors.New("connection reset by peer"))

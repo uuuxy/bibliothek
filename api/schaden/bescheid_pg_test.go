@@ -36,8 +36,8 @@ func bescheidErstellenUeberTuer(t *testing.T, srv *Tueren, pool *pgxpool.Pool, s
 	req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+schuelerID+"/bescheide", strings.NewReader(rumpf))
 	req.SetPathValue("id", schuelerID)
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.BescheidErstellen(repository.NewBescheidAbfragen(pool), repository.NewProtokollAbfragen(pool))(rec, req)
 	return rec
@@ -335,8 +335,8 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 	uebergeben := func() *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/api/bescheide/"+b.ID+"/uebergeben", nil)
 		req.SetPathValue("id", b.ID)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.BescheidUebergeben(repo, repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec

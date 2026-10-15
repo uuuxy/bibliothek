@@ -98,8 +98,8 @@ func TestEigeneKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T)
 func eigeneReservierungen(t *testing.T, srv *Tueren, benutzerID string) []map[string]any {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/reservierungen/klassensatz/eigene", nil)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: benutzerID}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: benutzerID}))
 	rec := httptest.NewRecorder()
 	srv.EigeneKlassensatzReservierungen()(rec, req)
 	if rec.Code != http.StatusOK {

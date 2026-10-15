@@ -372,7 +372,7 @@ func TestProtokolliereKlassenVersand_SchreibtGueltigesJSONMitEmpfaenger(t *testi
 
 	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{UserID: "admin-1"}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{KontoID: "admin-1"}))
 
 	server.protokolliereKlassenVersand(req, "BULK_OVERDUE_MAIL", klassenVersandProtokoll{
 		Phase:         "ende",

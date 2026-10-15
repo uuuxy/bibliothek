@@ -57,8 +57,8 @@ func TestAusleihFristSetzen_SperrKonsistenzUndAudit(t *testing.T) {
 		mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.AusleihFristSetzen(auditRepo))
 		req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleiheID+"/faelligkeit",
 			strings.NewReader(`{"faellig_am":"`+datum+`"}`))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, req)
 		return w
@@ -152,8 +152,8 @@ func TestAusleihFristSetzen_TagesendeInSchulzeitzone(t *testing.T) {
 	// Sommerdatum (CEST, +02:00): Berliner Tagesende 23:59:59 = 21:59:59 UTC.
 	req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleihe+"/faelligkeit",
 		strings.NewReader(`{"faellig_am":"2027-07-15"}`))
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
@@ -204,8 +204,8 @@ func TestAusleihFristSetzen_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleiheID+"/faelligkeit", strings.NewReader(rumpf))
 		if angemeldet {
-			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-				&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+				&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 		}
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, req)

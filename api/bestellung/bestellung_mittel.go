@@ -108,7 +108,7 @@ func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 // LMF-Plan (api/lernmittel/lmf_plan_protokoll.go): Ohne Anmeldung oder ohne Datenbank gibt es
 // nichts zu schreiben.
 func (t *Tueren) protokolliereMittelKorrektur(r *http.Request, bestellungID, von, nach, grund string) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return
 	}
@@ -117,7 +117,7 @@ func (t *Tueren) protokolliereMittelKorrektur(r *http.Request, bestellungID, von
 	}
 	details := map[string]any{"bestellung_id": bestellungID, "von": von, "nach": nach, "grund": grund}
 	if err := repository.NewProtokollAbfragen(t.DB.Pool).
-		ProtokolliereAdminAktion(r.Context(), claims.UserID, aktionBestellungMittelKorrigiert, clientip.AusAnfrage(r), details); err != nil {
+		ProtokolliereAdminAktion(r.Context(), claims.KontoID, aktionBestellungMittelKorrigiert, clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("Audit %s fehlgeschlagen: %v", aktionBestellungMittelKorrigiert, err)
 	}
 }

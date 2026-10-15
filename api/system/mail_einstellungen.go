@@ -94,7 +94,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 		}
 
 		// Protokoll der Verwaltung
-		if claims, ok := auth.GetClaims(r.Context()); ok {
+		if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
 			details, merr := json.Marshal(map[string]interface{}{
 				"smtp_host":        req.SMTPHost,
 				"smtp_port":        req.SMTPPort,
@@ -105,7 +105,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 			if merr != nil {
 				log.Printf("audit: Mail-Settings-Details konnten nicht serialisiert werden: %v", merr)
 			} else {
-				t.SchreibeAdminProtokoll(ctx, claims.UserID, "UPDATE_MAIL_SETTINGS", "", string(details))
+				t.SchreibeAdminProtokoll(ctx, claims.KontoID, "UPDATE_MAIL_SETTINGS", "", string(details))
 			}
 		}
 

@@ -97,8 +97,8 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 	anfrage := func() *http.Request {
 		body := fmt.Sprintf(`{"query":%q,"active_leser_id":%q,"idempotency_key":%q}`, barcode, schuelerID, schluessel)
 		req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
-		return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{Rolle: auth.Role("mitarbeiter"), UserID: mitarbeiterID}))
+		return req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{Rolle: auth.Rolle("mitarbeiter"), KontoID: mitarbeiterID}))
 	}
 
 	zweite := httptest.NewRecorder()

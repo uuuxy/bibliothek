@@ -228,8 +228,8 @@ func (t *Tueren) WareneingangBuchen() http.HandlerFunc {
 
 		ctx := r.Context()
 		var bearbeiterID string
-		if claims, ok := auth.GetClaims(ctx); ok {
-			bearbeiterID = claims.UserID
+		if claims, ok := auth.ClaimsAusKontext(ctx); ok {
+			bearbeiterID = claims.KontoID
 		}
 
 		protokollAbfragen := repository.NewProtokollAbfragen(t.DB.Pool)

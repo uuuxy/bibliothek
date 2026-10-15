@@ -44,8 +44,8 @@ func (t *Tueren) bescheidAngaben(ctx context.Context) (repository.BescheidAngabe
 
 // bescheidAkteur liefert die ID des angemeldeten Bearbeiters (leer ohne Anmeldung).
 func bescheidAkteur(ctx context.Context) string {
-	if claims, ok := auth.GetClaims(ctx); ok {
-		return claims.UserID
+	if claims, ok := auth.ClaimsAusKontext(ctx); ok {
+		return claims.KontoID
 	}
 	return ""
 }
@@ -53,11 +53,11 @@ func bescheidAkteur(ctx context.Context) string {
 // protokolliereBescheid protokolliert einen Eingriff. Dasselbe Muster wie der LMF-Plan: ohne
 // Anmeldung oder ohne Datenbank gibt es nichts zu schreiben.
 func protokolliereBescheid(ctx context.Context, t *Tueren, protokollAbfragen repository.ProtokollAbfragen, aktion string, details map[string]any, ip string) {
-	claims, ok := auth.GetClaims(ctx)
+	claims, ok := auth.ClaimsAusKontext(ctx)
 	if !ok || t.DB == nil || t.DB.Pool == nil || protokollAbfragen == nil {
 		return
 	}
-	if err := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.UserID, aktion, ip, details); err != nil {
+	if err := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.KontoID, aktion, ip, details); err != nil {
 		log.Printf("Audit %s fehlgeschlagen: %v", aktion, err)
 	}
 }

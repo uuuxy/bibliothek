@@ -36,7 +36,7 @@ func (t *Tueren) KontoLoeschen(protokollAbfragen repository.ProtokollAbfragen, k
 // loescheKonto prüft, ob das Konto gelöscht werden darf, und ordnet die Ablehnungen des
 // Löschens ein.
 func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen repository.KontoAbfragen) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
 		return
@@ -48,7 +48,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 	}
 
 	// Das eigene Konto löscht niemand.
-	if id == claims.UserID {
+	if id == claims.KontoID {
 		apierrors.AntworteFehler(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
 		return
 	}
@@ -62,7 +62,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 		return
 	}
 
-	err := protokollAbfragen.LoescheKonto(ctx, id, claims.UserID)
+	err := protokollAbfragen.LoescheKonto(ctx, id, claims.KontoID)
 	if err != nil {
 		// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
 		// Der Admin muss die Bücher erst zurückbuchen.

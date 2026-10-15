@@ -137,8 +137,8 @@ func (t *Tueren) InventurStarten() http.HandlerFunc {
 
 		ctx := r.Context()
 		var benutzerID string
-		if claims, ok := auth.GetClaims(ctx); ok {
-			benutzerID = claims.UserID
+		if claims, ok := auth.ClaimsAusKontext(ctx); ok {
+			benutzerID = claims.KontoID
 		}
 
 		abfragen := repository.NewInventurAbfragen(t.DB.Pool)

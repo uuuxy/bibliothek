@@ -41,8 +41,8 @@ func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
 			`","beschreibung":"Verloren","betrag":15` + rumpfZusatz + `}`
 		req := httptest.NewRequest(http.MethodPost, "/api/damage/report", strings.NewReader(rumpf))
 		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.SchadenMelden(repository.NewSchadensAbfragen(pool))(rec, req)
 		return rec, loan

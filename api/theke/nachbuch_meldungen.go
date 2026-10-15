@@ -61,7 +61,7 @@ func (t *Tueren) NachbuchMeldungenAnzahl() http.HandlerFunc {
 // @Router       /action/nachbuch-meldungen/{id}/quittieren [post]
 func (t *Tueren) NachbuchMeldungQuittieren() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
 		}
@@ -70,7 +70,7 @@ func (t *Tueren) NachbuchMeldungQuittieren() http.HandlerFunc {
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
-		err := repository.QuittiereNachbuchMeldung(r.Context(), t.DB.Pool, id, claims.UserID)
+		err := repository.QuittiereNachbuchMeldung(r.Context(), t.DB.Pool, id, claims.KontoID)
 		if errors.Is(err, repository.ErrNachbuchMeldungNichtOffen) {
 			return apierrors.NotFound("keine offene Nachbuch-Meldung mit dieser ID", err)
 		}

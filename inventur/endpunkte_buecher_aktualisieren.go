@@ -157,8 +157,8 @@ func bestandsangabe(anfrage *http.Request, eingabe BuchEingabe) *Bestandsangabe 
 		return nil
 	}
 	angabe := &Bestandsangabe{Soll: *eingabe.Bestand, Gesehen: eingabe.BestandGesehen}
-	if claims, ok := auth.GetClaims(anfrage.Context()); ok {
-		angabe.BearbeiterID = claims.UserID
+	if claims, ok := auth.ClaimsAusKontext(anfrage.Context()); ok {
+		angabe.BearbeiterID = claims.KontoID
 	}
 	return angabe
 }

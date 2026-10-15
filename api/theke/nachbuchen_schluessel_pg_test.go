@@ -79,8 +79,8 @@ func baueNachbuchWelt(t *testing.T) *nachbuchWelt {
 }
 
 func (w *nachbuchWelt) sitzung(req *http.Request) *http.Request {
-	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{Rolle: auth.Role("mitarbeiter"), UserID: w.bearbeiter}))
+	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{Rolle: auth.Rolle("mitarbeiter"), KontoID: w.bearbeiter}))
 }
 
 // onlineScan scannt das Buch an der Online-Theke; schueler "" heißt: niemand geladen.

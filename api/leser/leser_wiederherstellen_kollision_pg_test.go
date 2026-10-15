@@ -52,8 +52,8 @@ func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing
 	wiederherstellen := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+id+"/restore", nil)
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: bearbeiter}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: bearbeiter}))
 		rec := httptest.NewRecorder()
 		srv.LeserWiederherstellen()(rec, req)
 		return rec

@@ -44,8 +44,8 @@ func gebuehrAnfrage(t *testing.T, methode, ziel, body string, mitClaims bool) *h
 	req.SetPathValue("id", "sf-1")
 	req.Header.Set("Content-Type", "application/json")
 	if mitClaims {
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: "u-1", Rolle: auth.RoleMitarbeiter}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: "u-1", Rolle: auth.RolleMitarbeiter}))
 	}
 	return req
 }

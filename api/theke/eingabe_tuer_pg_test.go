@@ -30,8 +30,8 @@ func TestEingabeVerarbeiten_AblehnungenVorDerBuchung(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPost, "/api/action", strings.NewReader(rumpf))
 		if angemeldet {
-			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-				&auth.Claims{Rolle: auth.RoleAdmin, UserID: "u1"}))
+			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+				&auth.Claims{Rolle: auth.RolleAdmin, KontoID: "u1"}))
 		}
 		w := httptest.NewRecorder()
 		srv.EingabeVerarbeiten(dienst)(w, req)

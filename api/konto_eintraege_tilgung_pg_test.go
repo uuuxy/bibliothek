@@ -121,8 +121,8 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 		kontoID, leserID, adresse := kontoMitEintraegen(t, "karl", "Korbkonto", "KE-AUSWEIS-2")
 		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+leserID, nil)
 		req.SetPathValue("id", leserID)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.leser().LeserLoeschen(auditRepo)(rec, req)
 		if rec.Code != http.StatusOK {

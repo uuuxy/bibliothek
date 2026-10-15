@@ -67,8 +67,8 @@ func TestLMFPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 		req := httptest.NewRequest(methode, "/api/lmf-plan/"+art, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		req.SetPathValue("art", art)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		switch methode {
 		case http.MethodPut:

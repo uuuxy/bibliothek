@@ -16,36 +16,36 @@ import (
 // nach Inaktivität: Sie gilt am Server und für jedes Token der Anmeldung, auch für ein
 // erneuertes. Ein Token ohne Kennung oder ohne Zeile lässt sich nicht sperren.
 type Sitzungen struct {
-	pool       DatabasePool
+	pool       Datenbank
 	schluessel []byte
 	ctx        context.Context
 	cancel     context.CancelFunc
 }
 
-// NewSitzungen legt den Speicher an und startet das Abräumen abgelaufener Zeilen.
-func NewSitzungen(pool DatabasePool, geheimnis []byte) *Sitzungen {
+// newSitzungen legt den Speicher an und startet das Abräumen abgelaufener Zeilen.
+func newSitzungen(pool Datenbank, geheimnis []byte) *Sitzungen {
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &Sitzungen{pool: pool, schluessel: pruefwertSchluessel(geheimnis), ctx: ctx, cancel: cancel}
 	go s.raeumSchleife()
 	return s
 }
 
-// Beginne legt die Zeile einer neuen Anmeldung an und liefert ihre Kennung für das Token.
-func (s *Sitzungen) Beginne(ctx context.Context, benutzerID, passwort string, laeuftAb time.Time) (string, error) {
+// beginne legt die Zeile einer neuen Anmeldung an und liefert ihre Kennung für das Token.
+func (s *Sitzungen) beginne(ctx context.Context, kontoID, passwort string, laeuftAb time.Time) (string, error) {
 	pruefwert, err := bildePruefwert(s.schluessel, passwort)
 	if err != nil {
 		return "", err
 	}
-	id, err := repository.LegeSitzungAn(ctx, s.pool, benutzerID, pruefwert, laeuftAb)
+	id, err := repository.LegeSitzungAn(ctx, s.pool, kontoID, pruefwert, laeuftAb)
 	if err != nil {
 		return "", fmt.Errorf("sitzung anlegen: %w", err)
 	}
 	return id, nil
 }
 
-// IstGesperrt meldet, ob die Anmeldung gesperrt ist. Ohne Kennung und ohne Zeile ist sie es
+// istGesperrt meldet, ob die Anmeldung gesperrt ist. Ohne Kennung und ohne Zeile ist sie es
 // nicht: Sperren lässt sich nur, was sich auch wieder aufschließen lässt.
-func (s *Sitzungen) IstGesperrt(sitzungID string) (bool, error) {
+func (s *Sitzungen) istGesperrt(sitzungID string) (bool, error) {
 	if sitzungID == "" {
 		return false, nil
 	}
@@ -62,9 +62,9 @@ func (s *Sitzungen) IstGesperrt(sitzungID string) (bool, error) {
 	return gesperrt, nil
 }
 
-// Sperre sperrt die Anmeldung und meldet, ob es eine Zeile dafür gab. Eine schon gesperrte
+// sperre sperrt die Anmeldung und meldet, ob es eine Zeile dafür gab. Eine schon gesperrte
 // Anmeldung behält ihren Zeitpunkt.
-func (s *Sitzungen) Sperre(ctx context.Context, sitzungID string) (bool, error) {
+func (s *Sitzungen) sperre(ctx context.Context, sitzungID string) (bool, error) {
 	if sitzungID == "" {
 		return false, nil
 	}
@@ -75,17 +75,17 @@ func (s *Sitzungen) Sperre(ctx context.Context, sitzungID string) (bool, error) 
 	return zeilen == 1, nil
 }
 
-// Entsperre hebt die Sperre auf. Keine Zeile ist kein Fehler: Dann war nichts gesperrt.
-func (s *Sitzungen) Entsperre(ctx context.Context, sitzungID string) error {
+// entsperre hebt die Sperre auf. Keine Zeile ist kein Fehler: Dann war nichts gesperrt.
+func (s *Sitzungen) entsperre(ctx context.Context, sitzungID string) error {
 	if sitzungID == "" {
 		return nil
 	}
 	return repository.EntsperreSitzung(ctx, s.pool, sitzungID)
 }
 
-// PasswortPasst prüft ein Passwort gegen den Prüfwert der Anmeldung. vorhanden=false heißt:
+// passwortPasst prüft ein Passwort gegen den Prüfwert der Anmeldung. vorhanden=false heißt:
 // Es gibt keinen Prüfwert, gegen den sich prüfen ließe.
-func (s *Sitzungen) PasswortPasst(ctx context.Context, sitzungID, passwort string) (passt, vorhanden bool, err error) {
+func (s *Sitzungen) passwortPasst(ctx context.Context, sitzungID, passwort string) (passt, vorhanden bool, err error) {
 	if sitzungID == "" {
 		return false, false, nil
 	}
@@ -103,9 +103,9 @@ func (s *Sitzungen) PasswortPasst(ctx context.Context, sitzungID, passwort strin
 	return passt, true, nil
 }
 
-// MerkePasswort schreibt den Prüfwert neu. Der Mailserver hat ein Passwort angenommen, das
+// merkePasswort schreibt den Prüfwert neu. Der Mailserver hat ein Passwort angenommen, das
 // nicht zum Prüfwert passt: Es wurde seit der Anmeldung geändert.
-func (s *Sitzungen) MerkePasswort(ctx context.Context, sitzungID, passwort string) error {
+func (s *Sitzungen) merkePasswort(ctx context.Context, sitzungID, passwort string) error {
 	pruefwert, err := bildePruefwert(s.schluessel, passwort)
 	if err != nil {
 		return err
@@ -113,9 +113,9 @@ func (s *Sitzungen) MerkePasswort(ctx context.Context, sitzungID, passwort strin
 	return repository.SetzeSitzungsPruefwert(ctx, s.pool, sitzungID, pruefwert)
 }
 
-// Verlaengere schiebt das Ende der Zeile mit dem erneuerten Token hinaus und meldet, ob es
-// eine Zeile gab. Ohne Zeile wird das Token nicht erneuert (RefreshTokenHandler).
-func (s *Sitzungen) Verlaengere(ctx context.Context, sitzungID string, laeuftAb time.Time) (bool, error) {
+// verlaengere schiebt das Ende der Zeile mit dem erneuerten Token hinaus und meldet, ob es
+// eine Zeile gab. Ohne Zeile wird das Token nicht erneuert (SitzungVerlaengern).
+func (s *Sitzungen) verlaengere(ctx context.Context, sitzungID string, laeuftAb time.Time) (bool, error) {
 	if sitzungID == "" {
 		return false, nil
 	}
@@ -134,19 +134,20 @@ func (s *Sitzungen) Beende(ctx context.Context, sitzungID string) error {
 	return repository.LoescheSitzung(ctx, s.pool, sitzungID)
 }
 
-// Stop beendet das Abräumen.
-func (s *Sitzungen) Stop() {
+// Stoppe beendet das Abräumen im Hintergrund.
+func (s *Sitzungen) Stoppe() {
 	s.cancel()
 }
 
+// raeumSchleife räumt alle 15 Minuten die abgelaufenen Zeilen ab.
 func (s *Sitzungen) raeumSchleife() {
-	ticker := time.NewTicker(15 * time.Minute)
-	defer ticker.Stop()
+	takt := time.NewTicker(15 * time.Minute)
+	defer takt.Stop()
 	for {
 		select {
 		case <-s.ctx.Done():
 			return
-		case <-ticker.C:
+		case <-takt.C:
 			s.raeumeAb()
 		}
 	}

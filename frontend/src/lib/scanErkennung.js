@@ -1,7 +1,7 @@
 // Ein Handscanner ist eine Tastatur, die schneller tippt als ein Mensch und mit Enter endet.
 // Steht der Fokus in einem Passwortfeld, ginge sein Scan als Passwort zum Server und zählte
 // dort als Fehlversuch; nach fünf Scans wäre das Konto an diesem Rechner 15 Minuten gesperrt
-// (auth/handlers.go, globalLoginLimiter). Erkannt wird der Scan an den Abständen der Tasten.
+// (auth/anmelden.go, anmeldeBremse). Erkannt wird der Scan an den Abständen der Tasten.
 
 /** Ab so vielen Zeichen in Folge gilt eine schnelle Eingabe als Scan. */
 export const SCAN_MINDESTZEICHEN = 6;

@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-// Der IMAP-Mock beantwortet jede Anmeldung mit "Passwort stimmt". Kombiniert mit
-// dem Compose-Default IMAP_HOST=mock hieß das: Wer die E-Mail eines eingetragenen
-// Benutzers kannte, war angemeldet. Diese Tests halten fest, in welchen Umgebungen
-// der Mock überhaupt noch erreichbar ist.
+// Die Attrappe des Mailservers beantwortet jede Anmeldung mit „Passwort stimmt". Zusammen mit
+// IMAP_HOST=mock als Vorgabe in Compose hieße das: Wer die E-Mail-Adresse eines eingetragenen
+// Kontos kennt, ist angemeldet. Die Tests halten fest, in welchen Umgebungen die Attrappe
+// überhaupt erreichbar ist.
 func TestPruefeIMAPKonfiguration(t *testing.T) {
 	faelle := []struct {
 		name       string
@@ -29,8 +29,8 @@ func TestPruefeIMAPKonfiguration(t *testing.T) {
 			willFehler: true, fehlerEnth: "jedes Passwort",
 		},
 		{
-			// APP_ENV ungesetzt ist der gefährlichste Fall: Er sieht harmlos aus und
-			// war vorher exakt der Compose-Default-Zustand.
+			// APP_ENV ungesetzt ist der gefährlichste Fall: Er sieht harmlos aus und ist der Zustand,
+			// den Compose ohne weitere Angaben herstellt.
 			name: "Mock ohne APP_ENV verboten", appEnv: "", imapHost: "mock",
 			willFehler: true, fehlerEnth: "jedes Passwort",
 		},
@@ -79,14 +79,14 @@ func TestPruefeIMAPKonfiguration_MeldungLaesstAppEnvStehen(t *testing.T) {
 	}
 }
 
-// Zweite Schranke: Selbst wenn die Variable erst zur Laufzeit auf "mock" gesetzt
-// wird (also am Startup-Check vorbei), darf AuthenticateIMAP außerhalb der
-// lokalen Entwicklung nicht mehr blind "Passwort korrekt" melden.
-func TestAuthenticateIMAP_MockNurLokal(t *testing.T) {
+// Zweite Schranke: Auch wenn die Variable erst zur Laufzeit auf "mock" gesetzt wird, an der
+// Prüfung beim Start vorbei, darf pruefeIMAPAnmeldung außerhalb der lokalen Entwicklung nicht
+// blind „Passwort stimmt" melden.
+func TestPruefeIMAPAnmeldung_AttrappeNurLokal(t *testing.T) {
 	t.Run("lokal akzeptiert", func(t *testing.T) {
 		t.Setenv("APP_ENV", "local")
 		t.Setenv("IMAP_HOST", "mock")
-		if err := AuthenticateIMAP(context.Background(), "wer@example.test", "beliebig"); err != nil {
+		if err := pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err != nil {
 			t.Fatalf("lokaler Mock: unerwarteter Fehler %v", err)
 		}
 	})
@@ -94,27 +94,26 @@ func TestAuthenticateIMAP_MockNurLokal(t *testing.T) {
 	t.Run("Produktion lehnt ab", func(t *testing.T) {
 		t.Setenv("APP_ENV", "production")
 		t.Setenv("IMAP_HOST", "mock")
-		if err := AuthenticateIMAP(context.Background(), "wer@example.test", "beliebig"); err == nil {
+		if err := pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err == nil {
 			t.Fatal("Mock in Produktion hat die Anmeldung akzeptiert; want Ablehnung")
 		}
 	})
 
-	// Ohne IMAP_HOST wurde vorher imap.philipp-reis-schule.de kontaktiert. Der Test
-	// darf deshalb keine Netzverbindung auslösen — er belegt, dass sofort abgelehnt
-	// wird, statt eine echte Verbindung zur Schule aufzubauen.
+	// Ohne IMAP_HOST wird abgelehnt, ohne eine Verbindung aufzubauen; der Test darf keine
+	// Netzverbindung auslösen, schon gar nicht zum echten Mailserver der Schule.
 	t.Run("ohne Host keine Verbindung zur Schule", func(t *testing.T) {
 		t.Setenv("APP_ENV", "production")
 		t.Setenv("IMAP_HOST", "")
-		if err := AuthenticateIMAP(context.Background(), "wer@example.test", "beliebig"); err == nil {
+		if err := pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err == nil {
 			t.Fatal("leerer IMAP_HOST wurde akzeptiert; want Ablehnung ohne Netzzugriff")
 		}
 	})
 }
 
-// Ein nicht erreichbarer Server muss den Sentinel ErrMailserverNichtErreichbar
-// liefern — daran erkennt der Login-Handler den Transport-Ausfall (503) und
-// unterscheidet ihn vom falschen Passwort (401 + Fehlversuch).
-func TestAuthenticateIMAP_ToterServerLiefertSentinel(t *testing.T) {
+// Ein nicht erreichbarer Server liefert errMailserverNichtErreichbar. Daran erkennt die Tür der
+// Anmeldung den Ausfall (503) und unterscheidet ihn vom falschen Passwort (401 mit
+// Fehlversuch).
+func TestPruefeIMAPAnmeldung_ToterServerIstAusfall(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -130,27 +129,27 @@ func TestAuthenticateIMAP_ToterServerLiefertSentinel(t *testing.T) {
 	t.Setenv("IMAP_HOST", host)
 	t.Setenv("IMAP_PORT", port)
 
-	authErr := AuthenticateIMAP(context.Background(), "wer@schule.de", "egal")
-	if !errors.Is(authErr, ErrMailserverNichtErreichbar) {
-		t.Fatalf("erwartet ErrMailserverNichtErreichbar, bekam: %v", authErr)
+	pruefFehler := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
+	if !errors.Is(pruefFehler, errMailserverNichtErreichbar) {
+		t.Fatalf("erwartet ErrMailserverNichtErreichbar, bekam: %v", pruefFehler)
 	}
 }
 
 // Die Adresse des Mailservers: Ein Port am Hostnamen wird verworfen, es gilt IMAP_PORT und
 // ohne ihn 993. Der Name, gegen den das Zertifikat geprüft wird, ist der Host ohne Port.
-func TestImapVerbindungsdaten(t *testing.T) {
+func TestIMAPVerbindungsdaten(t *testing.T) {
 	for _, f := range []struct{ host, port, adresse string }{
 		{"mail.example.test", "", "mail.example.test:993"},
 		{"mail.example.test:143", "", "mail.example.test:993"},
 		{"mail.example.test", "1993", "mail.example.test:1993"},
 	} {
 		t.Setenv("IMAP_PORT", f.port)
-		adresse, tlsConfig := imapVerbindungsdaten(f.host)
+		adresse, tlsKonfig := imapVerbindungsdaten(f.host)
 		if adresse != f.adresse {
 			t.Errorf("Host %q, IMAP_PORT %q: Adresse %q, erwartet %q", f.host, f.port, adresse, f.adresse)
 		}
-		if tlsConfig.ServerName != "mail.example.test" {
-			t.Errorf("Host %q: Zertifikatsname %q, erwartet mail.example.test", f.host, tlsConfig.ServerName)
+		if tlsKonfig.ServerName != "mail.example.test" {
+			t.Errorf("Host %q: Zertifikatsname %q, erwartet mail.example.test", f.host, tlsKonfig.ServerName)
 		}
 	}
 }

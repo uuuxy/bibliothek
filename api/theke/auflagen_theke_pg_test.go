@@ -75,8 +75,8 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest("POST", "/api/action",
 			strings.NewReader(fmt.Sprintf(`{"query":%q,"active_leser_id":%q}`, barcode, leser)))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{Rolle: auth.Role("mitarbeiter"), UserID: mitarbeiter}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{Rolle: auth.Rolle("mitarbeiter"), KontoID: mitarbeiter}))
 		rec := httptest.NewRecorder()
 		srv.EingabeVerarbeiten(omnibox)(rec, req)
 		var antwort eingabeAntwort

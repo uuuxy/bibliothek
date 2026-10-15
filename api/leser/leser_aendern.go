@@ -69,7 +69,7 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 // @Router       /schueler/{id} [delete]
 func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
 			return
@@ -87,7 +87,7 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 		// eigene Konto (LegeLeserInPapierkorb) — der Löschende spielte sich mitten im Vorgang
 		// selbst aus der Anmeldung. Die Benutzerverwaltung hält dieselbe Regel für Konten
 		// (benutzer.Tueren.KontoLoeschen, „eigenes Konto kann nicht gelöscht werden").
-		eigene, err := repository.LadeLeserIDVonKonto(ctx, t.DB.Pool, claims.UserID)
+		eigene, err := repository.LadeLeserIDVonKonto(ctx, t.DB.Pool, claims.KontoID)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
@@ -105,7 +105,7 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 		}
 
 		// In den Papierkorb, in einer Transaktion mit dem Eintrag im Protokoll.
-		if err := protokollAbfragen.LegeLeserInPapierkorb(ctx, id, claims.UserID, "Manuelle Löschung"); err != nil {
+		if err := protokollAbfragen.LegeLeserInPapierkorb(ctx, id, claims.KontoID, "Manuelle Löschung"); err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -114,7 +114,7 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 		// Schlüssel `schueler_id` wie überall: Auskunft und Tilgung fragen genau diesen
 		// Schlüssel ab (Migration 091 hat die alte `student_id`-Form umgeschlüsselt).
 		details := fmt.Sprintf(`{"schueler_id":"%s"}`, id)
-		t.SchreibeAdminProtokoll(ctx, claims.UserID, "DELETE_STUDENT", clientip.AusAnfrage(r), details)
+		t.SchreibeAdminProtokoll(ctx, claims.KontoID, "DELETE_STUDENT", clientip.AusAnfrage(r), details)
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status": "success",
@@ -145,7 +145,7 @@ func (t *Tueren) LeserAendern(protokollAbfragen repository.ProtokollAbfragen) ht
 // aendereLeser prüft die Änderung, schreibt sie und trägt nach, was erst nach dem
 // Schreiben entstehen darf.
 func (t *Tueren) aendereLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
 		return
@@ -244,7 +244,7 @@ func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 		}
 		// ziel_id ist die Kennung des Kontos: Daran findet die Auskunft den Eintrag beim Konto,
 		// auch nachdem es gelöscht ist. Mit dem Leser fällt sie wieder (Tilgung).
-		if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
+		if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.KontoID, "KOLLEGIUMSKONTO_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
 			"schueler_id": id,
 			"ziel_id":     kontoID,
 		}); protokollFehler != nil {
@@ -253,7 +253,7 @@ func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 	}
 
 	if a.lusdNachgetragen != "" {
-		if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.UserID, "LUSD_ID_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
+		if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.KontoID, "LUSD_ID_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
 			"schueler_id": id,
 			"lusd_id":     a.lusdNachgetragen,
 		}); protokollFehler != nil {

@@ -28,7 +28,7 @@ import (
 // @Router       /buecher/titel/{id} [delete]
 func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
 			return
@@ -41,7 +41,7 @@ func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 
 		ctx := r.Context()
 
-		err := protokollAbfragen.LoescheTitel(ctx, id, claims.UserID)
+		err := protokollAbfragen.LoescheTitel(ctx, id, claims.KontoID)
 		if err != nil {
 			if errors.Is(err, repository.ErrTitelHatAktiveAusleihen) {
 				apierrors.AntworteFehler(w, http.StatusBadRequest, err)

@@ -43,8 +43,8 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	fahre := func(body string, h http.HandlerFunc) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPatch, "/x", strings.NewReader(body))
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: id, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		h(rec, req)
 		return rec

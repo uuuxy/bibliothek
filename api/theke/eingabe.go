@@ -187,7 +187,7 @@ func (t *Tueren) EingabeVerarbeiten(omnibox service.OmniboxDienst) http.HandlerF
 // verarbeiteEingabe nimmt einen Scan oder eine Suche der Theke entgegen und reicht sie an die
 // Omnibox.
 func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnibox service.OmniboxDienst) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
 		return
@@ -225,7 +225,7 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 		Text:                 req.Text,
 		AktiverLeserID:       req.AktiverLeserID,
 		ChecklisteBestaetigt: req.ChecklisteBestaetigt,
-		BearbeiterID:         claims.UserID,
+		BearbeiterID:         claims.KontoID,
 		SperreUebergehen:     req.SperreUebergehen && t.HatRecht(r, "edit_students"),
 	})
 

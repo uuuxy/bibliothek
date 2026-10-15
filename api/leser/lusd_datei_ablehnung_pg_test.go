@@ -32,7 +32,7 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 		VALUES ('Ada', 'Admin', 'ada@upload.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	admin := &auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}
+	admin := &auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}
 
 	// Zehn bestätigte Schüler, der Export nennt sechs: Vier Abgänger sind 40 % und liegen über
 	// der Schwelle für die Rückfrage.
@@ -132,7 +132,7 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 
 // ladeLUSDDateiHoch schickt die Anfrage je nach Pfad an die Vorschau oder den Import.
 func ladeLUSDDateiHoch(srv *Tueren, req *http.Request, claims *auth.Claims) *httptest.ResponseRecorder {
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 	rec := httptest.NewRecorder()
 	if req.URL.Path == "/api/lusd/import" {
 		srv.LUSDImport().ServeHTTP(rec, req)

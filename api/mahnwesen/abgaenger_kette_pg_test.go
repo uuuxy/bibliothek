@@ -119,8 +119,8 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	// 2. Versand nur für die 9H.
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":["09H"]}`))
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(context.WithValue(ctx, auth.ClaimsContextKey,
-		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
+	req = req.WithContext(context.WithValue(ctx, auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.AbgaengerKontoauszuegeVersenden()(rec, req)
 

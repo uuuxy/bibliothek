@@ -136,7 +136,7 @@ func sortiert(m map[string]bool) []string {
 // hält: die Rollen.
 //
 // Denselben Begriff gibt es in drei Schreibweisen: das Enum der Datenbank klein (`'admin'`),
-// die Konstanten in Go groß (`RoleAdmin Role = "ADMIN"`), und die Oberfläche vergleicht genau
+// die Konstanten in Go groß (`RolleAdmin Rolle = "ADMIN"`), und die Oberfläche vergleicht genau
 // klein (`rolle === 'admin'`). Zusammengehalten wird das nur von `EqualFold` und `UPPER()` im
 // Go-Code, in der Oberfläche von gar nichts.
 //
@@ -149,19 +149,19 @@ func sortiert(m map[string]bool) []string {
 func TestRollenVokabularIstUeberallDasselbe(t *testing.T) {
 	ausSchema := rollenAusSchema(t)
 
-	// 1. Go-Konstanten (auth/jwt.go) — Großschreibung ist erlaubt, ein anderer Name nicht.
-	roh, err := os.ReadFile(filepath.Join("..", "auth", "jwt.go"))
+	// 1. Go-Konstanten (auth/token.go) — Großschreibung ist erlaubt, ein anderer Name nicht.
+	roh, err := os.ReadFile(filepath.Join("..", "auth", "token.go"))
 	if err != nil {
-		t.Fatalf("auth/jwt.go lesen: %v", err)
+		t.Fatalf("auth/token.go lesen: %v", err)
 	}
-	konstante := regexp.MustCompile(`Role[A-Za-z]+\s+Role\s*=\s*"([A-Za-z]+)"`)
+	konstante := regexp.MustCompile(`Rolle[A-Za-z]+\s+Rolle\s*=\s*"([A-Za-z]+)"`)
 	treffer := konstante.FindAllStringSubmatch(string(roh), -1)
 	if len(treffer) == 0 {
-		t.Fatal("keine Rollen-Konstanten in auth/jwt.go gefunden — der Detektor greift ins Leere")
+		t.Fatal("keine Rollen-Konstanten in auth/token.go gefunden — der Detektor greift ins Leere")
 	}
 	for _, m := range treffer {
 		if !ausSchema[strings.ToLower(m[1])] {
-			t.Errorf("auth/jwt.go kennt die Rolle %q, das Enum benutzer_rolle in schema.sql nicht", m[1])
+			t.Errorf("auth/token.go kennt die Rolle %q, das Enum benutzer_rolle in schema.sql nicht", m[1])
 		}
 	}
 

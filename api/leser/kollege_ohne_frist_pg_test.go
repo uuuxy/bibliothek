@@ -92,8 +92,8 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+id, nil)
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: id, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
 		srv.Leserakte(repository.NewLeserAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {

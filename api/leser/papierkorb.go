@@ -97,8 +97,8 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 		}
 
 		// Das Wiederherstellen ins Protokoll, wenn jemand angemeldet ist.
-		if claims, ok := auth.GetClaims(ctx); ok {
-			t.SchreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
+		if claims, ok := auth.ClaimsAusKontext(ctx); ok {
+			t.SchreibeAdminProtokoll(ctx, claims.KontoID, "RESTORE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
 		}
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
@@ -146,14 +146,14 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 			return
 		}
 
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("fehlende Session-Information"))
 			return
 		}
 
 		ctx := r.Context()
-		if err := protokollAbfragen.LoescheLeserEndgueltig(ctx, id, claims.UserID); err != nil {
+		if err := protokollAbfragen.LoescheLeserEndgueltig(ctx, id, claims.KontoID); err != nil {
 			// Blockade (offene Ausleihen / unbezahlte Schäden / nicht im Papierkorb) ist ein
 			// Konflikt, alles andere nicht: Bekäme jeder Fehler die 409, auch ein
 			// Verbindungsabbruch, suchte die Bibliothek einen offenen Vorgang, den es nicht gibt,
@@ -174,7 +174,7 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 			return
 		}
 
-		t.SchreibeAdminProtokoll(ctx, claims.UserID, "PURGE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
+		t.SchreibeAdminProtokoll(ctx, claims.KontoID, "PURGE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",

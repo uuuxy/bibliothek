@@ -11,15 +11,14 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Ein DB-Ausfall ist kein falsches Passwort.
+// Ein Ausfall der Datenbank ist kein falsches Passwort.
 //
-// Bis zum 31.08.2026 behandelte der Login JEDEN Fehler der benutzer-Abfrage wie „Zeile
-// nicht vorhanden" und lief in den Selbstanmelde-Pfad; dessen Ablehnung endete als 401
-// „invalid email or password" MIT gezähltem Fehlversuch. Bei einem DB-Aussetzer sperrte
-// sich eine Lehrkraft mit korrektem Passwort nach fünf Versuchen selbst für 15 Minuten —
-// dieselbe Massen-Selbstsperre wie beim Mailserver-Ausfall (Ausfallmatrix 20.08.2026),
-// nur mit der Datenbank als Auslöser. Erwartet: 503 ohne recordFailure, wie beim IMAP-Fall.
-func TestLogin_DBFehlerIstKeinFalschesPasswort(t *testing.T) {
+// Ein Fehler der Abfrage auf benutzer ist nicht „Zeile nicht vorhanden": Sonst liefe die
+// Anmeldung in die Selbstanmeldung, deren Ablehnung als 401 „invalid email or password" mit
+// gezähltem Fehlversuch endet, und bei einem Aussetzer der Datenbank sperrte sich eine Lehrkraft
+// mit richtigem Passwort nach fünf Versuchen für 15 Minuten aus. Erwartet: 503 ohne
+// Fehlversuch, wie beim Ausfall des Mailservers.
+func TestAnmelden_DatenbankfehlerIstKeinFalschesPasswort(t *testing.T) {
 	t.Setenv("IMAP_HOST", "mock")
 	t.Setenv("APP_ENV", "test")
 
@@ -28,9 +27,9 @@ func TestLogin_DBFehlerIstKeinFalschesPasswort(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	authn, err := NewAuthenticator("test-secret-mit-mindestens-32-zeichen!!", mock, time.Hour)
+	anmeldung, err := NewAnmeldung("test-secret-mit-mindestens-32-zeichen!!", mock, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 
 	for versuch := 1; versuch <= 6; versuch++ {
@@ -39,11 +38,11 @@ func TestLogin_DBFehlerIstKeinFalschesPasswort(t *testing.T) {
 			WillReturnError(errors.New("dial tcp: connection refused"))
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/login",
+		anfrage := httptest.NewRequest(http.MethodPost, "/login",
 			strings.NewReader(`{"email":"dbfehler@test.invalid","password":"richtig"}`))
-		req.Header.Set("Content-Type", "application/json")
-		req.RemoteAddr = "203.0.113.7:4711"
-		LoginHandler(mock, authn, false)(rec, req)
+		anfrage.Header.Set("Content-Type", "application/json")
+		anfrage.RemoteAddr = "203.0.113.7:4711"
+		Anmelden(mock, anmeldung, false)(rec, anfrage)
 
 		if rec.Code == http.StatusTooManyRequests {
 			t.Fatalf("Versuch %d: 429 — der DB-Ausfall wurde als Fehlversuch gezählt und hat das Konto gesperrt", versuch)
@@ -55,14 +54,13 @@ func TestLogin_DBFehlerIstKeinFalschesPasswort(t *testing.T) {
 	}
 }
 
-// Ein BESTEHENDES Konto wird nicht zur „Zugangsanfrage".
+// Ein bestehendes Konto wird nicht zur Zugangsanfrage.
 //
-// legeZugangsanfrageAn setzte neuAngelegt bedingungslos — auch wenn der INSERT per
-// ON CONFLICT gar nichts geschrieben hatte. Landete ein bestehendes Konto durch einen
-// transienten Fehler der ersten Abfrage in diesem Pfad, bekam eine längst
-// freigeschaltete Lehrkraft „Zugang beantragt — die Bibliothek muss ihn noch
-// freischalten", und der Audit-Trail erhielt eine SELBSTANMELDUNG-Zeile für ein Konto,
-// das sich nie selbst angemeldet hat.
+// neuAngelegt gilt nur, wenn der INSERT wirklich eine Zeile geschrieben hat, nicht schon, wenn
+// ON CONFLICT nichts tat. Sonst bekäme eine längst freigeschaltete Lehrkraft, deren Konto nach
+// einem vorübergehenden Fehler der ersten Abfrage hier landet, „Zugang beantragt — die
+// Bibliothek muss ihn noch freischalten", und das Protokoll erhielte eine Zeile SELBSTANMELDUNG
+// für ein Konto, das sich nie selbst angemeldet hat.
 func TestSelbstanmeldung_BestehendesKontoWirdKeineAnfrage(t *testing.T) {
 	pool := pgPoolFuerSelbstanmeldung(t)
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "test.invalid")
@@ -76,14 +74,14 @@ func TestSelbstanmeldung_BestehendesKontoWirdKeineAnfrage(t *testing.T) {
 		t.Fatalf("Bestandskonto anlegen: %v", err)
 	}
 
-	u, err := legeZugangsanfrageAn(ctx, pool, mail)
+	konto, err := legeZugangsanfrageAn(ctx, pool, mail)
 	if err != nil {
 		t.Fatalf("legeZugangsanfrageAn: %v", err)
 	}
-	if u.neuAngelegt {
+	if konto.neuAngelegt {
 		t.Error("bestehendes, aktives Konto wurde als „neu angelegt“ markiert — die Lehrkraft bekäme „Zugang beantragt“")
 	}
-	if !u.aktiv {
+	if !konto.aktiv {
 		t.Error("aktives Konto kam als inaktiv zurück")
 	}
 	var auditZeilen int

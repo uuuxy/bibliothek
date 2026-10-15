@@ -41,8 +41,8 @@ func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 	loesche := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/buecher/exemplare/"+id, nil)
 		req.SetPathValue("id", id)
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-			&auth.Claims{UserID: bearbeiter}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: bearbeiter}))
 		rec := httptest.NewRecorder()
 		srv.ExemplarAussondern(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec

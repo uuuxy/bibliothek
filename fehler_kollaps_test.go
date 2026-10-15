@@ -36,17 +36,17 @@ import (
 // Rest als 500 (oder gewrappt) weiterreichen — wie repository_metadata.go seit 29.08.
 var kollapsBestand = map[string]string{
 	// „datei:funktion": Einordnung. Der Sweep vom 29.08.2026 fand 12 Stellen; 4 davon
-	// waren echte DB-Kollapse und sind behoben (MeHandler, Foto, zwei Druck-Handler,
+	// waren echte DB-Kollapse und sind behoben (AngemeldetesKonto, Foto, zwei Druck-Handler,
 	// dazu GetBookByID und ReservierungsAbfragen.LegeAn). Die folgenden acht sind
 	// semantisch vertretbar — der Fehler IST dort die negative Antwort:
 	"api/csrf.go:csrfMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
-	// Die drei Token-Stellen lesen über VerifyToken die DB (Sperrliste, Kontostatus). Bis
+	// Die drei Token-Stellen lesen über PruefeToken die DB (Sperrliste, Kontostatus). Bis
 	// 11.09.2026 stand hier „kein DB-Zugriff" — falsch seit Juni/August; ein DB-Ausfall
 	// wurde zur 401. Seitdem ordnet die Zeile davor ErrPruefungGestoert als 503 ein; die
 	// verbleibende 401 ist Parse-/Signatur-/Widerrufsfehler bzw. deaktiviertes Konto.
-	"api/tuer/sitzung.go:PruefeSitzung":    "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
-	"auth/handlers.go:leseSitzung":         "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
-	"auth/handlers.go:RefreshTokenHandler": "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
+	"api/tuer/sitzung.go:PruefeSitzung":   "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
+	"auth/anmelden.go:leseSitzung":        "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
+	"auth/anmelden.go:SitzungVerlaengern": "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
 	// Die drei externen Lookups (DNB, Google, OpenLibrary) sind seit dem 31.08.2026
 	// eingeordnet: Netzausfall = 502 (inventur.ErrKatalogdiensteNichtErreichbar),
 	// erreichbar ohne Treffer = 404 (Produktentscheidung; Sweep docs/sweeps.md).

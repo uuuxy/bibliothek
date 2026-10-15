@@ -121,7 +121,7 @@ services:
       # Nur überschreiben, wenn die Anwendung ausschließlich über HTTP im LAN läuft.
       - COOKIE_SECURE=${COOKIE_SECURE:-true}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY muss gesetzt sein (exakt 32 Byte - siehe .env.example)}
-      # KEIN Default: "mock" ließ AuthenticateIMAP jedes Passwort für jede in
+      # KEIN Default: "mock" ließ pruefeIMAPAnmeldung jedes Passwort für jede in
       # benutzer vorhandene E-Mail durchwinken (auth/imap.go). Als Compose-Default
       # stand damit in diesem Prod-Stack die Anmeldung faktisch offen, sofern
       # niemand die Variable bewusst überschrieb. Fehlt sie jetzt, startet der

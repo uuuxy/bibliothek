@@ -24,10 +24,10 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"schaden-schuldner-testgeheimnis-32-bytes!!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	var kontoID string
 	if err := pool.QueryRow(ctx, `
@@ -36,7 +36,7 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 		RETURNING id`).Scan(&kontoID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	sitzung, err := authenticator.GenerateToken(kontoID, "SCHULD-1", auth.RoleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, "SCHULD-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
@@ -79,10 +79,10 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"schaden-zurueck-testgeheimnis-32-bytes!!!!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	var kontoID string
 	if err := pool.QueryRow(ctx, `
@@ -91,7 +91,7 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 		RETURNING id`).Scan(&kontoID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	sitzung, err := authenticator.GenerateToken(kontoID, "ZURUECK-1", auth.RoleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, "ZURUECK-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

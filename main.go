@@ -352,8 +352,8 @@ func main() {
 	database := setupDatabase(ctx, dsn)
 	defer database.Close()
 
-	// 3. Authenticator initialization (12 hours token expiration duration)
-	authenticator, err := auth.NewAuthenticator(jwtSecret, database.Pool, 12*time.Hour)
+	// 3. Anmeldung (12 hours token expiration duration)
+	authenticator, err := auth.NewAnmeldung(jwtSecret, database.Pool, 12*time.Hour)
 	if err != nil {
 		slog.Error("Failed to initialize authenticator", "error", err)
 		os.Exit(1)
@@ -401,8 +401,8 @@ func main() {
 	// das folgenlos geblieben, die Goroutine stirbt ohnehin mit. Trotzdem gehoert es hier
 	// hin: Ein geordnetes Herunterfahren, das die Haelfte stehen laesst, ist keins, und die
 	// naechste Hintergrundaufgabe wuerde sich an dieser Stelle orientieren.
-	authenticator.Blacklist.Stop()
-	authenticator.Sitzungen.Stop()
+	authenticator.Sperrliste.Stoppe()
+	authenticator.Sitzungen.Stoppe()
 
 	slog.Info("Server stopped successfully.")
 }

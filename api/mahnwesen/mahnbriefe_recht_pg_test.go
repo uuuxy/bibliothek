@@ -35,10 +35,10 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(ctx); err != nil {
 		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"mahnbrief-recht-testgeheimnis-mind-32-bytes!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
@@ -49,7 +49,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		RETURNING id`).Scan(&kontoID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	token, err := authenticator.GenerateToken(kontoID, "MAHNRECHT-1", auth.RoleMitarbeiter, "")
+	token, err := authenticator.ErzeugeToken(kontoID, "MAHNRECHT-1", auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

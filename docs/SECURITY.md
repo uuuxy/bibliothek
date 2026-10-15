@@ -54,7 +54,7 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 
 ### Woran die Zugangsdaten geprüft werden
 
-Gegen den **Schul-Mailserver per IMAP** (`auth/handlers.go`, `verifyIMAPCredentials`) —
+Gegen den **Schul-Mailserver per IMAP** (`auth/anmelden.go`, `pruefeIMAPZugang`) —
 nicht gegen die eigene Datenbank. Es gibt seit Migration 012 keine Passwortspalte: Die
 Anwendung speichert **kein** Benutzerpasswort und keinen dauerhaften Passwort-Hash. Ein
 Konto ist damit die Verbindung aus einer E-Mail-Adresse, die auf dem Schulserver
@@ -87,7 +87,7 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
   - **Ohne Verbindung zum Server** wird nicht gesperrt, nur die Theke geleert (FACHKONZEPT.md 18.4). Kommt die Verbindung zurück, überträgt der Rechner erst die Warteschlange und sperrt dann.
   - **Eine Anmeldung ohne Zeile in `sitzungen`** (ausgestellt vor Migration 155) sperrt der Server nicht und erneuert sie nicht: Ohne Prüfwert ließe sie sich bei einem Ausfall des Mailservers nicht aufschließen. Für sie bleibt die Sperre bis zum Ablauf des Tokens ein Sichtschutz im Fenster.
   - Gates: `auth/sperre_pg_test.go` (Server, auch mit totem Mailserver), `api/sperre_middleware_test.go` (423 an jeder geschützten Route), `frontend/src/lib/stores/idleLock*.test.js` (gestellte Uhr, mehrere Fenster), Live-Pfad: `frontend/e2e/sperrbildschirm.spec.js` (423 hinter der Sperre, Neuladen, neuer Tab). Jedes am Rückbau rot gesehen.
-- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Hier stand bis zum 08.08.2026 `Lax` — der Code setzt seit jeher `http.SameSiteStrictMode` (`auth/handlers.go`). Die Doku war also laxer als die Anwendung; wer sie als Grundlage für eine Risikoabwägung nimmt, rechnet mit einem Cross-Site-Fenster, das es nicht gibt.
+- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Hier stand bis zum 08.08.2026 `Lax` — der Code setzt seit jeher `http.SameSiteStrictMode` (`auth/anmelden.go`). Die Doku war also laxer als die Anwendung; wer sie als Grundlage für eine Risikoabwägung nimmt, rechnet mit einem Cross-Site-Fenster, das es nicht gibt.
 
 ### Brute-Force-Schutz (Login)
 
@@ -98,7 +98,7 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
   Seitenaufruf lädt dutzende Bilder gleichzeitig, und SSE ist eine Dauerverbindung. Die
   Ausnahme gilt der **Auslieferung**; der teure Zweig des Cover-Proxys (fremder Download)
   hat eine eigene Bremse, siehe „Cover-Proxy" weiter unten.
-- **Anmelde-Rumpf begrenzt** (seit 05.09.2026, `loginRumpfMaxBytes` = 16 KB): `/login` ist der
+- **Anmelde-Rumpf begrenzt** (seit 05.09.2026, `anmeldeRumpfMaxBytes` = 16 KB): `/login` ist der
   eine unangemeldete Endpunkt, der JSON liest, und die serverweite 100-MB-Grenze gilt den
   Importen. `json.Decoder` puffert einen Zeichenkettenwert vollständig — fünfzig parallele
   100-MB-Rümpfe wären fünf Gigabyte Speicher ohne ein gültiges Passwort.
@@ -145,7 +145,7 @@ Administrator; drei Wege führten dahin, alle jetzt geschlossen (`api/benutzer/a
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | Selbstbeförderung    | `PUT /api/benutzer/{eigene-id}` mit `rolle:"admin"` ging durch — der Selbstschutz unterstellte, wer sich selbst bearbeitet, sei bereits Admin, und ließ ausgerechnet diesen Fall zu                                                                                                       | Die **eigene Rolle** ist für niemanden änderbar, gleich welcher Rolle                          |
 | Fremdbeförderung     | `POST /api/benutzer`/`PUT /api/benutzer/{id}` mit `rolle:"admin"` für ein beliebiges Konto                                                                                                                                                                                                | Die Rolle `admin` vergibt nur ein Administrator                                                |
-| Übernahme per E-Mail | Die Anmeldung prüft per IMAP und sucht den Benutzer danach über seine **E-Mail** (`auth/handlers.go`). Wer die E-Mail eines Admin-Datensatzes auf die eigene Schuladresse setzte, bekam beim nächsten Login mit den **eigenen** Zugangsdaten die Admin-Sitzung — ganz ohne Rollenänderung | Ein Konto, das **heute** Administrator ist, kann nur ein Administrator bearbeiten oder löschen |
+| Übernahme per E-Mail | Die Anmeldung prüft per IMAP und sucht den Benutzer danach über seine **E-Mail** (`auth/anmelden.go`). Wer die E-Mail eines Admin-Datensatzes auf die eigene Schuladresse setzte, bekam beim nächsten Login mit den **eigenen** Zugangsdaten die Admin-Sitzung — ganz ohne Rollenänderung | Ein Konto, das **heute** Administrator ist, kann nur ein Administrator bearbeiten oder löschen |
 
 Zusätzlich ändert die **Rechte-Matrix** (`PUT /api/admin/permissions`) nur noch ein
 Administrator. Vorher genügte `manage_users`, und damit schloss sich der Kreis: Der

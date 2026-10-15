@@ -53,11 +53,11 @@ func erledigungsFehler(err error, aktion string) error {
 // Ohne Rumpf: Der Betrag kommt immer aus der Datenbank, nie von der Oberfläche.
 func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("missing session information", nil)
 		}
-		if err := protokollAbfragen.VerbucheZahlung(r.Context(), r.PathValue("id"), claims.UserID); err != nil {
+		if err := protokollAbfragen.VerbucheZahlung(r.Context(), r.PathValue("id"), claims.KontoID); err != nil {
 			return erledigungsFehler(err, "Verbuchen")
 		}
 		tuer.AntworteErfolg(w)
@@ -69,7 +69,7 @@ func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen
 // (POST /api/schadensfaelle/{id}/storno).
 func (t *Tueren) ForderungStornieren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		claims, ok := auth.GetClaims(r.Context())
+		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("missing session information", nil)
 		}
@@ -83,7 +83,7 @@ func (t *Tueren) ForderungStornieren(protokollAbfragen repository.ProtokollAbfra
 		if grund == "" {
 			return apierrors.BadRequest("Ein Stornierungsgrund ist erforderlich", nil)
 		}
-		if err := protokollAbfragen.StorniereForderung(r.Context(), r.PathValue("id"), claims.UserID, grund); err != nil {
+		if err := protokollAbfragen.StorniereForderung(r.Context(), r.PathValue("id"), claims.KontoID, grund); err != nil {
 			return erledigungsFehler(err, "Stornieren")
 		}
 		tuer.AntworteErfolg(w)

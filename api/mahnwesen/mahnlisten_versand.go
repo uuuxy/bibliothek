@@ -393,7 +393,7 @@ type klassenVersandProtokoll struct {
 // der frei eingetippten Umleitung machte ein handgebautes JSON-Literal kaputt, der INSERT in die
 // jsonb-Spalte scheiterte, und der Lauf verlöre still seinen Eintrag.
 func (t *Tueren) protokolliereKlassenVersand(r *http.Request, aktion string, details klassenVersandProtokoll) {
-	claims, ok := auth.GetClaims(r.Context())
+	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return
 	}
@@ -408,5 +408,5 @@ func (t *Tueren) protokolliereKlassenVersand(r *http.Request, aktion string, det
 	// (WithoutCancel behält die Werte).
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
 	defer abbruch()
-	t.SchreibeAdminProtokoll(ctx, claims.UserID, aktion, clientip.AusAnfrage(r), string(inhalt))
+	t.SchreibeAdminProtokoll(ctx, claims.KontoID, aktion, clientip.AusAnfrage(r), string(inhalt))
 }

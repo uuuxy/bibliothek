@@ -62,10 +62,10 @@ func TestKompression_AmRouterDesBetriebs(t *testing.T) {
 		testdaten.LegeExemplarAn(t, pool, titelID, fmt.Sprintf("B-KOMP-%04d", i), true, "")
 	}
 
-	authenticator, err := auth.NewAuthenticator(
+	authenticator, err := auth.NewAnmeldung(
 		"kompression-testgeheimnis-mindestens-32-bytes!", pool, time.Hour)
 	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
+		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	var kontoID string
 	if err := pool.QueryRow(t.Context(), `
@@ -74,7 +74,7 @@ func TestKompression_AmRouterDesBetriebs(t *testing.T) {
 		RETURNING id`).Scan(&kontoID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	sitzung, err := authenticator.GenerateToken(kontoID, "KOMP-1", auth.RoleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, "KOMP-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

@@ -31,7 +31,7 @@ func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 		t.Fatalf("Sperre von Hand setzen: %v", err)
 	}
 
-	nachbuchenAls := func(rolle auth.Role, schluessel string) nachbuchErgebnis {
+	nachbuchenAls := func(rolle auth.Rolle, schluessel string) nachbuchErgebnis {
 		t.Helper()
 		body, err := json.Marshal(map[string]any{"gesendet_am": time.Now(), "eintraege": []map[string]any{
 			w.eintrag(schluessel, "ausleihe", &w.carla, time.Now().Add(-time.Minute)),
@@ -40,7 +40,7 @@ func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 			t.Fatalf("Rumpf: %v", err)
 		}
 		req := httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(string(body)))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: rolle, UserID: w.bearbeiter}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: rolle, KontoID: w.bearbeiter}))
 		rec := httptest.NewRecorder()
 		w.srv.WarteschlangeNachbuchen(w.nachbuch)(rec, req)
 		if rec.Code != http.StatusOK {
@@ -54,7 +54,7 @@ func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 	}
 
 	schluesselHelfer := uuid.NewString()
-	helfer := nachbuchenAls(auth.Role("helfer"), schluesselHelfer)
+	helfer := nachbuchenAls(auth.Rolle("helfer"), schluesselHelfer)
 	if helfer.Ergebnis != repository.NachbuchNichtGebucht || !strings.Contains(helfer.Grund, "gesperrt") {
 		t.Fatalf("Helfer: %+v — erwartet nicht_gebucht mit dem Hinweis auf die Sperre", helfer)
 	}
@@ -62,11 +62,11 @@ func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 		t.Errorf("der Grund der Sperre erreicht einen Aufrufer ohne view_students: %q", helfer.Grund)
 	}
 	// Eine wiederholte Portion bekommt die abgelegte Antwort — auch sie ohne den Freitext.
-	if nochmal := nachbuchenAls(auth.Role("helfer"), schluesselHelfer); strings.Contains(nochmal.Grund, grund) || nochmal.Grund != helfer.Grund {
+	if nochmal := nachbuchenAls(auth.Rolle("helfer"), schluesselHelfer); strings.Contains(nochmal.Grund, grund) || nochmal.Grund != helfer.Grund {
 		t.Errorf("wiederholte Portion: Grund %q, erwartet dieselbe gekürzte Antwort %q", nochmal.Grund, helfer.Grund)
 	}
 
-	admin := nachbuchenAls(auth.RoleAdmin, uuid.NewString())
+	admin := nachbuchenAls(auth.RolleAdmin, uuid.NewString())
 	if admin.Ergebnis != repository.NachbuchNichtGebucht || !strings.Contains(admin.Grund, grund) {
 		t.Errorf("Admin: %+v — wer view_students hat, liest den Grund", admin)
 	}
@@ -97,7 +97,7 @@ func TestNachbuchen_WiederholtePortionTraegtKeinenSperrgrund(t *testing.T) {
 		t.Fatalf("Sperre von Hand setzen: %v", err)
 	}
 
-	nachbuchenAls := func(rolle auth.Role, schluessel string) nachbuchErgebnis {
+	nachbuchenAls := func(rolle auth.Rolle, schluessel string) nachbuchErgebnis {
 		t.Helper()
 		body, err := json.Marshal(map[string]any{"gesendet_am": time.Now(), "eintraege": []map[string]any{
 			w.eintrag(schluessel, "ausleihe", &w.carla, time.Now().Add(-time.Minute)),
@@ -106,7 +106,7 @@ func TestNachbuchen_WiederholtePortionTraegtKeinenSperrgrund(t *testing.T) {
 			t.Fatalf("Rumpf: %v", err)
 		}
 		req := httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(string(body)))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: rolle, UserID: w.bearbeiter}))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: rolle, KontoID: w.bearbeiter}))
 		rec := httptest.NewRecorder()
 		w.srv.WarteschlangeNachbuchen(w.nachbuch)(rec, req)
 		if rec.Code != http.StatusOK {
@@ -120,19 +120,19 @@ func TestNachbuchen_WiederholtePortionTraegtKeinenSperrgrund(t *testing.T) {
 	}
 
 	// Gegenprobe: Ein Helfer mit eigenem Schlüssel bekommt den Hinweis ohne den Freitext.
-	if eigen := nachbuchenAls(auth.Role("helfer"), uuid.NewString()); strings.Contains(eigen.Grund, grund) {
+	if eigen := nachbuchenAls(auth.Rolle("helfer"), uuid.NewString()); strings.Contains(eigen.Grund, grund) {
 		t.Fatalf("Gegenprobe: ein Helfer mit eigenem Schlüssel liest den Freitext: %q", eigen.Grund)
 	}
 
 	// Wer view_students hat, bucht zuerst nach; seine Antwort trägt den Grund zu Recht.
 	schluessel := uuid.NewString()
-	admin := nachbuchenAls(auth.RoleAdmin, schluessel)
+	admin := nachbuchenAls(auth.RolleAdmin, schluessel)
 	if admin.Ergebnis != repository.NachbuchNichtGebucht || !strings.Contains(admin.Grund, grund) {
 		t.Fatalf("Admin: %+v — erwartet nicht_gebucht mit dem Grund der Sperre", admin)
 	}
 
 	// Dieselbe Portion noch einmal, jetzt unter der Anmeldung eines Helfers.
-	helfer := nachbuchenAls(auth.Role("helfer"), schluessel)
+	helfer := nachbuchenAls(auth.Rolle("helfer"), schluessel)
 	if helfer.Ergebnis != repository.NachbuchNichtGebucht || !strings.Contains(helfer.Grund, "gesperrt") {
 		t.Fatalf("Helfer, wiederholte Portion: %+v — erwartet nicht_gebucht mit dem Hinweis auf die Sperre", helfer)
 	}
