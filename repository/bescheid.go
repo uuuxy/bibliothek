@@ -67,13 +67,13 @@ type BescheidAbfragen interface {
 	LadeGroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error)
 }
 
-// BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck.
+// BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck. Den Namen
+// des Schülers trägt der Druck aus dem Schnappschuss des Empfängers ein (LadePositionen).
 type BescheidBriefPosition struct {
-	Art          string  `json:"art"`
-	SchuelerName string  `json:"schueler_name"`
-	Titel        string  `json:"titel"`
-	ISBN         string  `json:"isbn"`
-	Betrag       float64 `json:"betrag"`
+	Art    string  `json:"art"`
+	Titel  string  `json:"titel"`
+	ISBN   string  `json:"isbn"`
+	Betrag float64 `json:"betrag"`
 }
 
 type pgBescheidAbfragen struct{ db db.Pool }

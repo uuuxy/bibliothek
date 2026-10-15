@@ -207,9 +207,8 @@ der Nummer nichts mehr dazu offen ist.
   (Tür und Abfrage), die Größen in 11.1 unter R4.
 - [ ] **Auflagen-Zeile im Schulbuch-Export (5.63):** kürzt auf eine geschätzte Zahl von
   Zeichen über drei Zeilen; messen, ob ein breiter Text eine vierte Zeile beginnt.
-- [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, zwei Skripte für
-  k6, SQL-Testdaten über `internal/testdaten`, zwei Spalten ohne Schreiber; eine Frage zu
-  `cmd/migrate-fotos`.
+- [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, SQL-Testdaten über
+  `internal/testdaten`; mit deinem Ja: `cmd/migrate-fotos`, der Lasttest, Migration 164.
 - [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** 214 feste Meldungen der Türen
   beginnen klein, 59 sind englisch; 133 Aufrufe geben den Text eines Fehlers weiter.
 - [x] **Tippfehler in TRUSTED_PROXIES (5.69):** erledigt am 15.10.2026. Ein Eintrag, der weder
@@ -511,10 +510,6 @@ Ordner des Pakets und für die Form `paket.Name`.
   [STIL.md](STIL.md), Abschnitt 2, eintragen.
 - Die Oberfläche: 459 Dateien ohne Tests, `Student` in 30 Dateinamen gegen 15 mit `schueler`
   oder `leser`.
-- `repository.BescheidBriefPosition.SchuelerName` füllt keine Abfrage: `LadePositionen` liest
-  Art, Titel, ISBN und Betrag. Das Feld steht als leerer Text `schueler_name` in der Antwort.
-  Nächster Schritt: nachsehen, ob die Oberfläche das Feld liest, und es dann füllen oder
-  streichen.
 
 ### 5.67 Umfang senken: was sich löschen lässt
 
@@ -528,17 +523,37 @@ halten; sie zu löschen hieße, Regeln zu lockern. Offen:
   Register falten, Stand- und Anlass-Absätze und Einschübe wie „bis dahin …" streichen; geschätzt
   800 bis 1.000 Zeilen. Dazu eine Ratsche, die Zeilen mit Datum in `docs/*.md` nur sinken lässt,
   sonst wächst es nach (Dokumente +7.400 Zeilen in 30 Tagen).
-- **Zwei Skripte für k6:** `loadtest.js` und `loadtest_advanced.js` (274 Zeilen) nennt nur eine
-  Tabelle in [ARCHITEKTUR.md](ARCHITEKTUR.md); den Lasttest deckt `cmd/stresstest`.
 - **SQL-Testdaten:** 730 Anweisungen mit 3.443 Zeilen legen Titel, Exemplare, Schüler, Leser,
   Konten und Ausleihen selbst an, obwohl `internal/testdaten` dafür Helfer hat. Wo einer passt,
   wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket
   zusammen mit dem Umbau nach [STIL.md](STIL.md).
-- **Zwei Spalten ohne Schreiber:** `schadensfaelle.elternbrief_generiert` und
-  `elternbrief_generiert_am` setzt seit dem Entfernen des Elternbriefs niemand mehr; eine
-  Migration nimmt sie heraus.
-- **Frage an dich:** Ist `cmd/migrate-fotos` (Umzug der Schülerfotos aus Dateien in die
-  Datenbank, 680 Zeilen mit Tests) auf dem Schulserver gelaufen? Dann kann es weg.
+
+**Entfernen, mit deinem Ja.** Die drei Schritte sind vorbereitet und warten auf ein
+ausdrückliches Ja.
+
+- **`cmd/migrate-fotos`** (Antwort vom 15.10.2026: nicht gelaufen, nichts läuft produktiv). Das
+  Werkzeug zieht nur Dateien um, die diese Anwendung bis zum 13.06.2026 beim Hochladen eines
+  Fotos nach `uploads/fotos` schrieb (40204696); seitdem geht jedes Foto verschlüsselt in die
+  Datenbank, und die Übernahme aus Littera liest keine Fotos. Ohne Anlage im Betrieb gibt es
+  diese Dateien nirgends, auch nicht zum Echtstart. Mit dem Ordner fallen zwei Stellen im
+  Dockerfile, ein Eintrag in `.gitignore`, je ein Eintrag in `phantom_erfolg_test.go`,
+  `docs/lesepfade_gegen_sicht_test.go` und `docs/compose_variablen_test.go` (`FOTOS_BEHALTEN`),
+  Abschnitt 2 in [SCRIPTS.md](SCRIPTS.md) (die Verweise auf die Abschnitte danach rücken auf)
+  und fünf Stellen in [ARCHITEKTUR.md](ARCHITEKTUR.md). Was auf dem Testserver noch liegen
+  kann, steht in 7.8.
+- **Lasttest:** `loadtest.js` und `loadtest_advanced.js` (k6, 274 Zeilen), `scripts/seed_loadtest.sql`,
+  das nur sie füllt, und die Ausnahme `javascript:S2245` in `sonar-project.properties`.
+  `cmd/stresstest` misst gegen keinen heutigen Stand etwas: Sein Token nennt das Konto
+  `00000000-0000-0000-0000-000000000001` aus einer `seed.sql`, die es nicht gibt, und der Server
+  prüft das Konto (`auth.Anmeldung.ladeKontoStatus`); jede Anfrage endet mit 401. Was es prüfen
+  sollte, prüfen Tests an der Datenbank (`repository/ausleihe_zeilensperren_pg_test.go`,
+  `TestBucheNach_ZweiParalleleAufrufeEinExemplar`). `cmd/seed` ist laut seinem Kopf die
+  Vorstufe zum Lasttest mit k6. Fallen alle vier, entfallen in `scripts/gosec-gate.sh` die
+  Ausnahmen G404 und G101.
+- **Migration 164** für zwei Spalten ohne Schreiber seit dem Entfernen des Elternbriefs:
+  `ALTER TABLE schadensfaelle DROP COLUMN IF EXISTS elternbrief_generiert, DROP COLUMN IF EXISTS elternbrief_generiert_am;`
+  dazu die zwei Zeilen in `schema.sql`. Auf dem Testserver gehen dabei nur diese zwei Vermerke
+  verloren.
 
 ---
 
@@ -718,6 +733,9 @@ Littera-Übernahme, die dort läuft (7.2).
 
 ### 7.8 Am Server nachsehen (lesend, Einzeiler)
 
+- Liegen im Volume noch Fotos aus der Zeit vor dem 13.06.2026? Sie wären unverschlüsselt und
+  stünden schon in der Datenbank: `docker compose exec backend ls -la uploads/fotos`. Liegen dort
+  Dateien: `docker compose exec backend sh -c 'rm -f uploads/fotos/*.jpg'`.
 - Sind die Admin-Konten deaktiviert?
 - Erreicht der Server die DNB? Ohne sie bringt die ISBN-Abfrage der Buchmaske keine Angaben
   und der Cover-Abgleich kein Cover; gespeichert wird trotzdem. Am Abbild vom 01.10.2026 geprüft, Ausgabe „erreichbar":
