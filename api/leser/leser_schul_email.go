@@ -63,9 +63,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 		if neu == "" {
 			return "", true
 		}
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.AntworteFehler(w, http.StatusBadRequest,
-			errors.New("Ein Schüler bekommt kein Konto und keine E-Mail-Adresse."))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungSchuelerOhneZugang, nil)
 		return "", false
 	}
 
@@ -74,14 +72,12 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 			return "", true // ohne Wirkung: Das Formular schickt die angezeigte Adresse mit.
 		}
 		if neu == "" {
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-			apierrors.AntworteFehler(w, http.StatusBadRequest,
-				errors.New("Die Schul-E-Mail lässt sich hier nicht entfernen — ohne sie kommt die Person nicht mehr ins Portal. Das Konto abschalten geht in der Benutzerverwaltung."))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+				"Die Schul-E-Mail lässt sich hier nicht entfernen — ohne sie kommt die Person nicht mehr ins Portal. Das Konto abschalten geht in der Benutzerverwaltung.", nil)
 			return "", false
 		}
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.AntworteFehler(w, http.StatusBadRequest,
-			fmt.Errorf("Unter %s besteht bereits ein Zugang. Die Adresse ist der Schlüssel der Anmeldung — ändern lässt sie sich in der Benutzerverwaltung, hier ist sie nur nachtragbar, solange keine da ist.", amKonto))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+			fmt.Sprintf("Unter %s besteht bereits ein Zugang. Die Adresse ist der Schlüssel der Anmeldung — ändern lässt sie sich in der Benutzerverwaltung, hier ist sie nur nachtragbar, solange keine da ist.", amKonto), nil)
 		return "", false
 	}
 
@@ -104,9 +100,8 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 // einen zweiten bauen.
 func antworteAufKontoFehler(w http.ResponseWriter, err error, email string) {
 	if repository.IstAdressenKollision(err) {
-		apierrors.AntworteFehler(w, http.StatusConflict,
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-			fmt.Errorf("Unter %s steht bereits ein Zugang. Die Person ist schon in der Leserdatei — bitte dort suchen, statt einen zweiten Eintrag anzulegen.", email))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
+			fmt.Sprintf("Unter %s steht bereits ein Zugang. Die Person ist schon in der Leserdatei — bitte dort suchen, statt einen zweiten Eintrag anzulegen.", email), err)
 		return
 	}
 	if errors.Is(err, repository.ErrKontoNichtEntstanden) {
@@ -172,9 +167,8 @@ func (t *Tueren) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter
 		return false
 	}
 	if leserart.IstSchueler(art) {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.AntworteFehler(w, http.StatusBadRequest,
-			errors.New("Ausweisnummer darf nicht leer sein. Ohne sie ist der Schüler an der Theke nicht zu finden."))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+			"Ausweisnummer darf nicht leer sein. Ohne sie ist der Schüler an der Theke nicht zu finden.", nil)
 		return false
 	}
 	return true

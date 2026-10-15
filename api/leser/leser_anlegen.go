@@ -49,7 +49,7 @@ type leserAnlegenAnfrage struct {
 	BarcodeID string `json:"barcode_id"`
 	// Geburtsdatum (JJJJ-MM-TT) ist Pflicht für einen Schüler, geprüft in der Tür mit
 	// eigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe
-	// errGeburtsdatumPflicht.
+	// meldungGeburtsdatumPflicht.
 	Geburtsdatum *string `json:"geburtsdatum"`
 }
 
@@ -74,21 +74,18 @@ const meldungLeserNamensdublette = "achtung: Unter diesem Namen steht bereits ei
 func pruefeKollegiumEmail(roh string) error {
 	email := strings.TrimSpace(roh)
 	if email == "" {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-		return errors.New("Die Schul-E-Mail-Adresse ist Pflicht: An ihr erkennt die Anmeldung die Person, und sie verhindert einen zweiten Eintrag, wenn sie sich später selbst anmeldet.")
+		return apierrors.BadRequest("Die Schul-E-Mail-Adresse ist Pflicht: An ihr erkennt die Anmeldung die Person, und sie verhindert einen zweiten Eintrag, wenn sie sich später selbst anmeldet.", nil)
 	}
 	at := strings.LastIndex(email, "@")
 	if at <= 0 || at == len(email)-1 || strings.ContainsAny(email, " \t") {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-		return fmt.Errorf("%q ist keine E-Mail-Adresse.", email)
+		return apierrors.BadRequest(fmt.Sprintf("%q ist keine E-Mail-Adresse.", email), nil)
 	}
 	// Vergleich über das letzte „@" und die vollständige Domain — dieselbe Regel wie in
 	// auth.darfSichSelbstAnmelden. Ein Suffix-Vergleich ließe „boesephilipp-reis-schule.de"
 	// durch.
 	if freigegeben := auth.SelbstanmeldeDomain(); freigegeben != "" {
 		if !strings.EqualFold(strings.TrimSpace(email[at+1:]), freigegeben) {
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-			return fmt.Errorf("Die Adresse muss auf @%s enden — angemeldet wird über den Schulserver.", freigegeben)
+			return apierrors.BadRequest(fmt.Sprintf("Die Adresse muss auf @%s enden — angemeldet wird über den Schulserver.", freigegeben), nil)
 		}
 	}
 	return nil
@@ -103,22 +100,19 @@ func pruefeKollegiumEmail(roh string) error {
 // umgekehrt in den Klassenlisten und im LUSD-Abgleich.
 func pruefeLeserAngaben(req *leserAnlegenAnfrage) error {
 	if !leserart.IstBekannt(req.Art) {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-		return fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", req.Art, leserart.Moegliche())
+		return apierrors.BadRequest(meldungUnbekannteArt(req.Art), nil)
 	}
 	if err := pruefeEmailZurArt(req.Art, req.Email); err != nil {
 		return err
 	}
 	if leserart.IstSchueler(req.Art) {
 		if req.Klasse == "" {
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-			return errors.New("Klasse fehlt. Ein Schüler ohne Klasse fällt aus jeder Klassenliste und jeder Mahnung.")
+			return apierrors.BadRequest("Klasse fehlt. Ein Schüler ohne Klasse fällt aus jeder Klassenliste und jeder Mahnung.", nil)
 		}
 		return pruefeKlassenname(req.Klasse)
 	}
 	if req.Klasse != "" {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-		return errors.New("Nur ein Schüler hat eine Klasse. Mit einer Klasse stünde die Person in den Klassenlisten und im LUSD-Abgleich.")
+		return apierrors.BadRequest("Nur ein Schüler hat eine Klasse. Mit einer Klasse stünde die Person in den Klassenlisten und im LUSD-Abgleich.", nil)
 	}
 	return nil
 }
@@ -137,16 +131,24 @@ func pruefeEmailZurArt(art, email string) error {
 	case strings.TrimSpace(email) == "":
 		return nil
 	case leserart.IstSchueler(art):
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-		return errors.New("Ein Schüler bekommt kein Konto und keine E-Mail-Adresse.")
+		return apierrors.BadRequest(meldungSchuelerOhneZugang, nil)
 	}
-	//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-	return errors.New(meldungKeinZugang)
+	return apierrors.BadRequest(meldungKeinZugang, nil)
 }
 
-// errGeburtsdatumPflicht erklärt dem Sekretariat, warum das Datum nicht fehlen darf —
+// meldungSchuelerOhneZugang weist eine Schul-E-Mail bei einem Schüler ab, beim Anlegen wie in der
+// Akte.
+const meldungSchuelerOhneZugang = "Ein Schüler bekommt kein Konto und keine E-Mail-Adresse."
+
+// meldungUnbekannteArt nennt zu einer Art, die es nicht gibt, die möglichen, beim Anlegen wie in
+// der Akte.
+func meldungUnbekannteArt(art string) string {
+	return fmt.Sprintf("Unbekannte Art %q. Möglich sind: %s.", art, leserart.Moegliche())
+}
+
+// meldungGeburtsdatumPflicht erklärt dem Sekretariat, warum das Datum nicht fehlen darf —
 // eine nackte Validierungsmeldung würde als Schikane gelesen und umgangen.
-var errGeburtsdatumPflicht = errors.New("Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt — ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt.") //nolint:staticcheck // ST1005: nutzer-sichtbarer Text im Anlege-Dialog
+const meldungGeburtsdatumPflicht = "Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt — ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt."
 
 // LeserAnlegen legt einen Leser an, mit Konto, wo seine Art eines hat.
 // @Summary      Leser anlegen
@@ -192,7 +194,7 @@ func (t *Tueren) LeserAnlegen() http.HandlerFunc {
 		// Ein Kollege kommt nie aus der LUSD. Von ihm ein Geburtsdatum zu verlangen, wäre
 		// eine Angabe ohne Zweck — und damit eine, die nicht erhoben gehört.
 		if leserart.IstSchueler(req.Art) && (req.Geburtsdatum == nil || strings.TrimSpace(*req.Geburtsdatum) == "") {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errGeburtsdatumPflicht)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungGeburtsdatumPflicht, nil)
 			return
 		}
 		geburtsdatum, ok := leseAnlageGeburtsdatum(w, req.Geburtsdatum)
@@ -331,8 +333,7 @@ func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWri
 		return false
 	}
 	if belegt {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-		apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldungLeserNamensdublette))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungLeserNamensdublette, nil)
 		return false
 	}
 	return true
@@ -361,7 +362,7 @@ func antworteAufAnlegeFehler(w http.ResponseWriter, err error, barcodeID string)
 }
 
 // leseAnlageGeburtsdatum liest das Geburtsdatum (JJJJ-MM-TT) aus der Anfrage. Der nil- und
-// Leer-Zweig ist wegen der Pflicht (errGeburtsdatumPflicht) nur Absicherung.
+// Leer-Zweig ist wegen der Pflicht (meldungGeburtsdatumPflicht) nur Absicherung.
 // ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
 func leseAnlageGeburtsdatum(w http.ResponseWriter, roh *string) (*time.Time, bool) {
 	if roh == nil || *roh == "" {
@@ -410,7 +411,7 @@ func bestimmeNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter
 		return "", false
 	}
 	if vorhanden {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("Barcode-ID '%s' wird bereits verwendet", gewuenscht))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Barcode-ID '%s' wird bereits verwendet", gewuenscht), nil)
 		return "", false
 	}
 	return gewuenscht, true

@@ -1,14 +1,13 @@
 package leser
 
 import (
-	"errors"
 	"strings"
+
+	"bibliothek/apierrors"
 )
 
 // errKlasseLehrerVerboten lehnt den historischen Spezialwert ab, mit Wegweiser.
-//
-//nolint:staticcheck // ST1005: Endnutzer-Meldung, bewusst großgeschrieben
-var errKlasseLehrerVerboten = errors.New("Lehrkräfte werden nicht als Schüler angelegt. Bitte unter System → Benutzer & Rechte ein Konto mit der Rolle Kollegium anlegen; an der Theke findet man die Lehrkraft dann über ihren Ausweis")
+var errKlasseLehrerVerboten = apierrors.BadRequest("Lehrkräfte werden nicht als Schüler angelegt. Bitte unter System → Benutzer & Rechte ein Konto mit der Rolle Kollegium anlegen; an der Theke findet man die Lehrkraft dann über ihren Ausweis", nil)
 
 // pruefeKlassenname verteidigt die Trennung aus Migration 072: 'lehrer' als Klassenname
 // machte eine Schülerzeile heimlich zur Lehrkraft, mit eigener Mahnschiene, still

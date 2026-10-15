@@ -1,6 +1,8 @@
 package leser
 
 import (
+	"bibliothek/apierrors"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -10,11 +12,11 @@ import (
 // aus dem Code enthalten (etwa „Handapparat-Weg").
 func TestPruefeKlassenname_LehrerMeldungNenntDenEchtenWeg(t *testing.T) {
 	for _, klasse := range []string{"Lehrer", " lehrer ", "LEHRER"} {
-		err := pruefeKlassenname(klasse)
-		if err == nil {
-			t.Fatalf("Klasse %q: kein Fehler, erwartet die Sperre", klasse)
+		var fehler *apierrors.Fehler
+		if err := pruefeKlassenname(klasse); !errors.As(err, &fehler) {
+			t.Fatalf("pruefeKlassenname(%q) = %v, erwartet die Sperre mit Meldung", klasse, err)
 		}
-		meldung := err.Error()
+		meldung := fehler.Meldung
 		if !strings.Contains(meldung, "System → Benutzer & Rechte") {
 			t.Errorf("Klasse %q: die Meldung nennt den Menüpunkt nicht: %q", klasse, meldung)
 		}

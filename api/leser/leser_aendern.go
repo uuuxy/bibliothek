@@ -93,9 +93,8 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 			return
 		}
 		if eigene != "" && eigene == id {
-			apierrors.AntworteFehler(w, http.StatusForbidden,
-				//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung in der Akte
-				errors.New("Der eigene Eintrag lässt sich nicht löschen — mit ihm fiele der eigene Zugang."))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden,
+				"Der eigene Eintrag lässt sich nicht löschen — mit ihm fiele der eigene Zugang.", nil)
 			return
 		}
 
@@ -147,7 +146,7 @@ func (t *Tueren) LeserAendern(protokollAbfragen repository.ProtokollAbfragen) ht
 func (t *Tueren) aendereLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, "Sitzungs-Information fehlt oder ist abgelaufen", nil)
 		return
 	}
 
@@ -349,9 +348,7 @@ func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	// chk_leser_art in der Datenbank. Eine unbekannte Art ist ein Tippfehler, kein neuer
 	// Personenkreis, und soll als Auskunft zurückkommen, nicht als CHECK-500.
 	if !leserart.IstBekannt(neu) {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.AntworteFehler(w, http.StatusBadRequest,
-			fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", neu, leserart.Moegliche()))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungUnbekannteArt(neu), nil)
 		return false
 	}
 
@@ -371,10 +368,9 @@ func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 		return true // ohne Wirkung: Das Formular schickt den unveränderten Wert mit.
 	}
 	if leserart.IstSchueler(aktuell) || leserart.IstSchueler(neu) {
-		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-		apierrors.AntworteFehler(w, http.StatusBadRequest,
-			errors.New("Aus einem Schüler wird kein Kollege und umgekehrt. "+
-				"Lege die Person neu an und lösche den falschen Eintrag."))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+			"Aus einem Schüler wird kein Kollege und umgekehrt. "+
+				"Lege die Person neu an und lösche den falschen Eintrag.", nil)
 		return false
 	}
 
@@ -469,9 +465,7 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 		{"Klasse", req.Klasse},
 	} {
 		if feld.wert != nil && strings.TrimSpace(*feld.wert) == "" {
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-			apierrors.AntworteFehler(w, http.StatusBadRequest,
-				errors.New(feld.bezeichnung+" darf nicht leer sein."))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, feld.bezeichnung+" darf nicht leer sein.", nil)
 			return nil, false
 		}
 	}
@@ -497,9 +491,8 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 		// Pflichtfeld (Schlüssel des LUSD-Abgleichs): POST verlangt es, also darf der PATCH
 		// es nicht mit "" still auf NULL setzen; zweite Tür, gleiche Regel. Leer = 400.
 		if strings.TrimSpace(*req.Geburtsdatum) == "" {
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
-			apierrors.AntworteFehler(w, http.StatusBadRequest,
-				errors.New("Geburtsdatum kann nicht geleert werden — es ist der Schlüssel für den LUSD-Abgleich"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+				"Geburtsdatum kann nicht geleert werden — es ist der Schlüssel für den LUSD-Abgleich", nil)
 			return nil, false
 		}
 		datum, err := leseGeburtsdatum(*req.Geburtsdatum)

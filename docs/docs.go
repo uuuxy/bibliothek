@@ -4940,7 +4940,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "geburtsdatum": {
-                    "description": "Geburtsdatum (JJJJ-MM-TT) ist Pflicht für einen Schüler, geprüft in der Tür mit\neigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe\nerrGeburtsdatumPflicht.",
+                    "description": "Geburtsdatum (JJJJ-MM-TT) ist Pflicht für einen Schüler, geprüft in der Tür mit\neigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe\nmeldungGeburtsdatumPflicht.",
                     "type": "string"
                 },
                 "klasse": {
