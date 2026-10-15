@@ -107,7 +107,7 @@ func verlusteLoeschen(t *testing.T, srv *Tueren, benutzerID, rumpf string) *http
 	req := httptest.NewRequest(http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.VerlusteEndgueltigLoeschen()(rec, tuertest.AlsBenutzer(req, benutzerID))
+	srv.VerlusteEndgueltigLoeschen()(rec, tuertest.AlsKonto(req, benutzerID))
 	return rec
 }
 
@@ -117,7 +117,7 @@ func verlustGefunden(t *testing.T, srv *Tueren, benutzerID, exemplarID string) *
 	req := httptest.NewRequest(http.MethodPost, "/api/buecher/exemplare/"+exemplarID+"/gefunden", nil)
 	req.SetPathValue("id", exemplarID)
 	rec := httptest.NewRecorder()
-	srv.FundMelden()(rec, tuertest.AlsBenutzer(req, benutzerID))
+	srv.FundMelden()(rec, tuertest.AlsKonto(req, benutzerID))
 	return rec
 }
 

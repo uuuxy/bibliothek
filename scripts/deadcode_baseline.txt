@@ -145,10 +145,10 @@ internal/testdaten/lesefehler.go: unreachable func: PoolMitLesefehler.Query
 # stehen (docs/OFFEN.md 5.65). Wird ausschließlich von *_test.go importiert.
 internal/tuertest/tuertest.go: unreachable func: MitCSRF
 internal/tuertest/tuertest.go: unreachable func: JSONPost
-internal/tuertest/tuertest.go: unreachable func: AlsBenutzer
+internal/tuertest/tuertest.go: unreachable func: AlsKonto
 internal/tuertest/tuertest.go: unreachable func: RufeAlsAdmin
 internal/tuertest/tuertest.go: unreachable func: Fehlermeldung
-internal/tuertest/tuertest.go: unreachable func: AntwortOhneDB
+internal/tuertest/tuertest.go: unreachable func: StatusOhneDB
 internal/tuertest/tuertest.go: unreachable func: RouterAufruf
 internal/tuertest/tuertest.go: unreachable func: Bestelle
 internal/tuertest/felder.go: unreachable func: LeereFelder
@@ -156,7 +156,7 @@ internal/tuertest/dnb.go: unreachable func: DNBAttrappe.RoundTrip
 internal/tuertest/dnb.go: unreachable func: ZaehlendeDNB.RoundTrip
 internal/tuertest/einstellungen.go: unreachable func: EinstellungenAttrappe.Lade
 internal/tuertest/einstellungen.go: unreachable func: EinstellungenAttrappe.Schreibe
-internal/tuertest/mail.go: unreachable func: MailAbfangen
+internal/tuertest/mail.go: unreachable func: FangeMailAb
 internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht
 internal/tuertest/sitzung.go: unreachable func: AdminSitzung
 

@@ -87,7 +87,7 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	tuertest.MailAbfangen(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
+	tuertest.FangeMailAb(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
 
 	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-1", "Anna", "9H1")
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}

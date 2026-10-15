@@ -63,7 +63,7 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 	}
 
 	// Ab hier ist ein Mailserver erreichbar: Ginge eine Mail raus, käme sie hier an.
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 	rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/"+bestellung+"/mail", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vermerk entfernen: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
@@ -172,7 +172,7 @@ func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 // Wo kein Vermerk steht, gibt es nichts zu entfernen; eine unbekannte Bestellung ist 404.
 func TestBestellmailAndersBestellt_Abweisungen(t *testing.T) {
 	l := andersBestelltLage(t, "abweisung")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Abweisung", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Abweisung", 0))
 	smtptest.WarteAufMail(t, sitzungen)

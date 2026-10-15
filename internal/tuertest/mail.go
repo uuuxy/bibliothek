@@ -7,9 +7,9 @@ import (
 	"bibliothek/mailservice"
 )
 
-// MailAbfangen biegt den Versand auf einen Testserver um und liefert die abgefangene
+// FangeMailAb biegt den Versand auf einen Testserver um und liefert die abgefangene
 // Nachricht. Der Kanal nimmt genau eine Sitzung an.
-func MailAbfangen(t *testing.T) <-chan smtptest.Sitzung {
+func FangeMailAb(t *testing.T) <-chan smtptest.Sitzung {
 	t.Helper()
 	// Der Testserver kündigt kein STARTTLS an; sichereVerbindung bräche den Versand
 	// sonst ab. Dass die Erzwingung wirkt, prüft mailservice.

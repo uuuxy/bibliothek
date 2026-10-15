@@ -4,8 +4,8 @@
 //
 // Das Paket bindet api/ ein. Ein Test im Paket api oder im Paket eines Themas kann es deshalb
 // nicht nutzen, Go weist den Kreis ab; es ist für die Testpakete in api/ und in den Ordnern
-// der Themen (package api_test, package thema_test). Die deadcode-Baseline führt seine
-// Funktionen mit Begründung.
+// der Themen (package api_test, package thema_test). Die Ausnahmeliste der Prüfung auf toten
+// Code führt seine Funktionen mit Begründung.
 package routertest
 
 import (

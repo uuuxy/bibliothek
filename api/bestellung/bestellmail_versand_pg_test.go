@@ -44,7 +44,7 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Link", true)
@@ -88,7 +88,7 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneAdresse", true)
@@ -121,7 +121,7 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Zahlen", false)
@@ -147,7 +147,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Topf", true)
@@ -181,7 +181,7 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneBarcode", false)
@@ -230,7 +230,7 @@ func TestBestellungIdempotenz(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "IdemLieferant", false)

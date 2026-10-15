@@ -10,7 +10,7 @@ import (
 
 // Ein Inventurstart ohne brauchbaren Bereich wird abgewiesen, bevor eine Inventur
 // entsteht. Die Türen haben hier keine Datenbank; erreicht der Ablauf sie doch, meldet
-// tuertest.AntwortOhneDB das als Fehler.
+// tuertest.StatusOhneDB das als Fehler.
 //
 // Die leere Signatur ist der Fall, um den es geht: Sie ist der Anfang jeder Signatur, und
 // aus der Inventur eines Regals würde eine über den ganzen Bestand, deren Abschluss alles
@@ -28,7 +28,7 @@ func TestInventurStarten_UnbrauchbarerBereichIst400VorDerDatenbank(t *testing.T)
 	}
 	for name, rumpf := range faelle {
 		t.Run(name, func(t *testing.T) {
-			if status := tuertest.AntwortOhneDB(t, s.InventurStarten(), http.MethodPost, "/api/inventur/start", rumpf); status != http.StatusBadRequest {
+			if status := tuertest.StatusOhneDB(t, s.InventurStarten(), http.MethodPost, "/api/inventur/start", rumpf); status != http.StatusBadRequest {
 				t.Fatalf("Status %d, erwartet 400", status)
 			}
 		})

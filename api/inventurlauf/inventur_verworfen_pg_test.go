@@ -155,7 +155,7 @@ func inventurPost(t *testing.T, h http.Handler, pfad, laufID, benutzerID string)
 	req := httptest.NewRequest(http.MethodPost, pfad, strings.NewReader(fmt.Sprintf(`{"session_id":%q}`, laufID)))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, tuertest.AlsBenutzer(req, benutzerID))
+	h.ServeHTTP(rec, tuertest.AlsKonto(req, benutzerID))
 	return rec
 }
 

@@ -28,7 +28,7 @@ func inventurStarten(t *testing.T, srv *Tueren, benutzerID, rumpf string) *httpt
 	req := httptest.NewRequest(http.MethodPost, "/api/inventur/start", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.InventurStarten()(rec, tuertest.AlsBenutzer(req, benutzerID))
+	srv.InventurStarten()(rec, tuertest.AlsKonto(req, benutzerID))
 	return rec
 }
 

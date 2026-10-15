@@ -59,7 +59,7 @@ func TestExemplarStatus_AntwortNenntDenBestand(t *testing.T) {
 			req.SetPathValue("id", f.id)
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
-			handler.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
+			handler.ServeHTTP(rec, tuertest.AlsKonto(req, testdaten.LegeBearbeiterAn(t, pool)))
 			if rec.Code != http.StatusOK {
 				t.Fatalf("Status speichern: HTTP %d: %s", rec.Code, rec.Body.String())
 			}

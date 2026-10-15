@@ -65,7 +65,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 		req.SetPathValue("id", kennung)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, tuertest.AlsBenutzer(req, admin))
+		h.ServeHTTP(rec, tuertest.AlsKonto(req, admin))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("%s %s: Status %d: %s", methode, pfad, rec.Code, rec.Body.String())
 		}

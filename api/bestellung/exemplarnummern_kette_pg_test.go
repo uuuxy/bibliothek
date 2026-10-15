@@ -56,7 +56,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	ctx := context.Background()
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Kette", true)

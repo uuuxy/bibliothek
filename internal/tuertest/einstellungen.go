@@ -14,11 +14,11 @@ type EinstellungenAttrappe struct {
 }
 
 // Lade liefert die gesetzten Einstellungen oder den gesetzten Fehler.
-func (m *EinstellungenAttrappe) Lade(ctx context.Context) (*repository.SystemEinstellungen, error) {
-	return m.Einstellungen, m.Fehler
+func (e *EinstellungenAttrappe) Lade(ctx context.Context) (*repository.SystemEinstellungen, error) {
+	return e.Einstellungen, e.Fehler
 }
 
 // Schreibe nimmt eine Änderung an und verwirft sie.
-func (m *EinstellungenAttrappe) Schreibe(ctx context.Context, req *repository.EinstellungenPatch) error {
+func (e *EinstellungenAttrappe) Schreibe(ctx context.Context, aenderung *repository.EinstellungenPatch) error {
 	return nil
 }

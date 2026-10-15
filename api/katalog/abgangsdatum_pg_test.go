@@ -69,7 +69,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	// Türen mit Datenbank: Die Tür fragt nach dem Speichern die Preisquelle aus den
 	// Einstellungen; ohne Pool stürzte sie dort ab.
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	srv.ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
+	srv.ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsKonto(req, testdaten.LegeBearbeiterAn(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status-Tür: HTTP %d: %s", rec.Code, rec.Body.String())
 	}

@@ -2424,7 +2424,7 @@ vierzig Terminen von selbst um.
   wenn wirklich übernommen wurde.
 - **Aufbau und Versand stehen in `mailservice/`** (`mail_sender.go`, `versand.go`); eine Tür
   ruft `mailservice.SendEmail`. Ein Test fängt ab, was eine Tür verschickt
-  (`tuertest.MailAbfangen`, ein Mailserver am Arbeitsplatz), oder ersetzt den Versand:
+  (`tuertest.FangeMailAb`, ein Mailserver am Arbeitsplatz), oder ersetzt den Versand:
   `SendEmail` ist ein Wert des Pakets.
 - **STARTTLS erzwungen**, mit Zertifikatsprüfung. Bietet der Server es nicht an, bricht der
   Versand ab (`ErrSMTPKlartext`) — vorher galt „dann eben ohne", und ein Angreifer, der die

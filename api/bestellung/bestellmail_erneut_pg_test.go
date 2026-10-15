@@ -201,7 +201,7 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 		`UPDATE lieferanten SET email = 'berichtigt@example.invalid' WHERE id = $1`, lieferant); err != nil {
 		t.Fatalf("Adresse berichtigen: %v", err)
 	}
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusOK {
 		t.Fatalf("Erneut senden: Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -292,7 +292,7 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 // Eine Bestellung, deren Mail rausging, und eine unbekannte lassen sich nicht erneut senden.
 func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "nur")
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Nur", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Nur", 0))
 	smtptest.WarteAufMail(t, sitzungen)
@@ -340,7 +340,7 @@ func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 		t.Error("Die Liste nennt für die bestätigte Bestellung einen gescheiterten Versand")
 	}
 
-	sitzungen := tuertest.MailAbfangen(t)
+	sitzungen := tuertest.FangeMailAb(t)
 	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusConflict {
 		t.Errorf("Erneut senden nach der Bestätigung: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}

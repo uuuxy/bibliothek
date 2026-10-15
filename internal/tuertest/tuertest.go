@@ -4,7 +4,8 @@
 //
 // Wie internal/pgtest ist es ein gewöhnliches Paket, das nur Tests einbinden: Eine Testdatei
 // lässt sich nicht aus einem anderen Paket einbinden, und die Tests der Türen stehen in mehr
-// als einem. Die deadcode-Baseline führt seine Funktionen deshalb mit Begründung.
+// als einem. Die Ausnahmeliste der Prüfung auf toten Code führt seine Funktionen deshalb mit
+// Begründung.
 package tuertest
 
 import (
@@ -19,8 +20,8 @@ import (
 	"bibliothek/auth"
 )
 
-// MitCSRF rüstet den Double-Submit nach, den der Router bei ändernden Methoden verlangt: Cookie
-// und Kopfzeile mit demselben Wert.
+// MitCSRF trägt den Nachweis ein, den der Router bei ändernden Methoden verlangt: Cookie und
+// Kopfzeile mit demselben Wert.
 func MitCSRF(req *http.Request) *http.Request {
 	req.AddCookie(&http.Cookie{Name: "csrf_token", Value: "pii-gate-csrf"})
 	req.Header.Set("X-CSRF-Token", "pii-gate-csrf")
@@ -28,34 +29,33 @@ func MitCSRF(req *http.Request) *http.Request {
 }
 
 // JSONPost baut eine POST-Anfrage mit JSON-Rumpf und CSRF-Nachweis.
-func JSONPost(url, body string) *http.Request {
-	req := httptest.NewRequest(http.MethodPost, url, strings.NewReader(body))
+func JSONPost(url, rumpf string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, url, strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	return MitCSRF(req)
 }
 
-// AlsBenutzer hängt die Sitzung des Benutzers an die Anfrage; ohne Benutzer bleibt sie
-// unangemeldet.
-func AlsBenutzer(req *http.Request, benutzerID string) *http.Request {
-	if benutzerID == "" {
+// AlsKonto hängt die Sitzung des Kontos an die Anfrage; ohne Konto bleibt sie unangemeldet.
+func AlsKonto(req *http.Request, kontoID string) *http.Request {
+	if kontoID == "" {
 		return req
 	}
 	return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: benutzerID, Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: kontoID, Rolle: auth.RoleAdmin}))
 }
 
-// RufeAlsAdmin ruft einen Handler mit der Sitzung des Admin-Kontos, ohne den Router davor.
-func RufeAlsAdmin(t *testing.T, admin string, h http.HandlerFunc, methode, pfad, body string, pfadwerte map[string]string) *httptest.ResponseRecorder {
+// RufeAlsAdmin ruft eine Tür mit der Sitzung des Admin-Kontos, ohne den Router davor.
+func RufeAlsAdmin(t *testing.T, adminID string, tuer http.HandlerFunc, methode, pfad, rumpf string, pfadwerte map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(methode, pfad, strings.NewReader(body))
+	req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	for k, v := range pfadwerte {
 		req.SetPathValue(k, v)
 	}
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	h(rec, req)
+	tuer(rec, req)
 	return rec
 }
 
@@ -91,34 +91,28 @@ func Bestelle(t *testing.T, tuer http.HandlerFunc, lieferantID, titelID string) 
 // Fehlermeldung liest den Text aus einer Fehlerantwort der Türen.
 func Fehlermeldung(t *testing.T, rec *httptest.ResponseRecorder) string {
 	t.Helper()
-	var body struct {
-		Error string `json:"error"`
+	var antwort struct {
+		Fehler string `json:"error"`
 	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Antwort ist kein JSON-Fehler (%s): %v", rec.Body.String(), err)
 	}
-	return body.Error
+	return antwort.Fehler
 }
 
-// AntwortOhneDB ruft eine Tür, deren Server keine Datenbank hat, und liefert den Status der
+// StatusOhneDB ruft eine Tür, deren Server keine Datenbank hat, und liefert den Status der
 // Antwort. Greift die Tür doch nach der Datenbank, bricht sie ab; der Helfer fängt das und
 // meldet es als Fehler des Tests.
-func AntwortOhneDB(t *testing.T, h http.HandlerFunc, methode, pfad, rumpf string) (status int) {
+func StatusOhneDB(t *testing.T, tuer http.HandlerFunc, methode, pfad, rumpf string) (status int) {
 	t.Helper()
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("%s %s erreichte die Datenbank statt die Kennung zu prüfen (%v)", methode, pfad, r)
 		}
 	}()
-	var body *strings.Reader
-	if rumpf != "" {
-		body = strings.NewReader(rumpf)
-	} else {
-		body = strings.NewReader("")
-	}
-	req := httptest.NewRequest(methode, pfad, body)
+	req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	h(rec, req)
+	tuer(rec, req)
 	return rec.Code
 }

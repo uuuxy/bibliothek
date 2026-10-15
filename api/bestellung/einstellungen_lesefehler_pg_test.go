@@ -66,7 +66,7 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 	}
 
 	t.Run("gestört", func(t *testing.T) {
-		sitzungen := tuertest.MailAbfangen(t)
+		sitzungen := tuertest.FangeMailAb(t)
 		gestoert := testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen}
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: gestoert}}}
 
@@ -83,7 +83,7 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 
 	// Gegenprobe: Am ungestörten Pool geht die Mail hinaus und trägt den Link.
 	t.Run("ungestört", func(t *testing.T) {
-		sitzungen := tuertest.MailAbfangen(t)
+		sitzungen := tuertest.FangeMailAb(t)
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 		mitLink, err := srv.sendeBestellmail(context.Background(), daten)

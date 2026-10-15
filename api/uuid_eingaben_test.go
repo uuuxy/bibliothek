@@ -18,7 +18,7 @@ import (
 //
 // Der Server hat hier keine Datenbank (s.DB == nil), und die Abfragen sind Attrappen, die sich
 // merken, ob sie gerufen wurden. Erreicht eine Tür die Datenbank doch, fängt
-// tuertest.AntwortOhneDB den Absturz und meldet ihn als „erreichte die Datenbank".
+// tuertest.StatusOhneDB den Absturz und meldet ihn als „erreichte die Datenbank".
 
 type vormerkungsAttrappe struct {
 	repository.VormerkungsAbfragen
@@ -65,7 +65,7 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if status := tuertest.AntwortOhneDB(t, f.h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
+			if status := tuertest.StatusOhneDB(t, f.h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
 				t.Fatalf("Status %d, erwartet 400", status)
 			}
 		})
@@ -89,7 +89,7 @@ func TestVormerkungen_UngueltigeKennungErreichtDieAbfragenNicht(t *testing.T) {
 			if f.liste {
 				h = s.theke().Vormerkungen(repo)
 			}
-			if status := tuertest.AntwortOhneDB(t, h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
+			if status := tuertest.StatusOhneDB(t, h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
 				t.Fatalf("Status %d, erwartet 400", status)
 			}
 			if repo.gerufen {
@@ -122,7 +122,7 @@ func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 
 	s := &Server{}
 	repo := &vormerkungsAttrappe{}
-	status := tuertest.AntwortOhneDB(t, s.theke().VormerkungAnlegen(repo), http.MethodPost, "/api/vormerkungen",
+	status := tuertest.StatusOhneDB(t, s.theke().VormerkungAnlegen(repo), http.MethodPost, "/api/vormerkungen",
 		`{"titel_id":"`+gut+`","schueler_id":""}`)
 	if status != http.StatusCreated || !repo.gerufen {
 		t.Fatalf("gültige Vormerkung mit leerer schueler_id: Status %d, Repository gerufen=%v", status, repo.gerufen)

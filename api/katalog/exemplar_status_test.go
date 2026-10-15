@@ -47,7 +47,7 @@ func sendeExemplarStatus(t *testing.T, handler http.HandlerFunc, body string) *h
 	req.Header.Set("Content-Type", "application/json")
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, tuertest.AlsBenutzer(req, statusBearbeiter))
+	handler.ServeHTTP(rec, tuertest.AlsKonto(req, statusBearbeiter))
 	return rec
 }
 

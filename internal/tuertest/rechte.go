@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// SetzeGenauEinRecht stellt die MITARBEITER-Rolle auf exakt ein erlaubtes Recht.
-// So zeigt jede Antwort, was das Recht ihrer Matrix-Zeile ALLEIN öffnet.
+// SetzeGenauEinRecht lässt der Rolle MITARBEITER genau ein Recht und leert den Zwischenspeicher
+// der Rechteprüfung. So zeigt jede Antwort, was das Recht ihrer Zeile in der Matrix allein öffnet.
 func SetzeGenauEinRecht(t *testing.T, pool *pgxpool.Pool, recht string) {
 	t.Helper()
 	testdaten.SetzeGenauEinRecht(t, pool, recht)
