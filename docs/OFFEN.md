@@ -182,7 +182,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] Die zwölf Themen unter `api/`.
 - [x] `api/`.
 - [x] Das Wurzelpaket.
-- [ ] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
+- [x] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
 - [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, Zustand auf der Ebene eines
   Pakets, der Kopf der Schule an acht Türen.
 - [ ] Die Oberfläche: Dateinamen und Namen in einer Sprache.
@@ -439,8 +439,9 @@ Zeilen kürzen. Kategorie B.
 
 ### 5.66 Lesbarkeit nach Googles Regelwerk für Go
 
-**Fertig sind alle 79 Pakete.** `stil_bestand_test.go` ist leer; ein neuer Fund im Programmcode
-macht `stil_ratsche_test.go` rot.
+**Fertig sind alle 79 Pakete und ihre Tests.** `stil_bestand_test.go` ist leer; ein neuer Fund
+im Programmcode oder ein neuer Name in einem Test macht `stil_ratsche_test.go` rot, testify und
+`reflect.DeepEqual` sperrt der Linter ([STIL.md](STIL.md), Abschnitt 10).
 
 **Ein Paket ist fertig, wenn:**
 
@@ -489,13 +490,6 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- Testdateien: 105 Kommentarzeilen mit Datum in 41 von 904 Dateien (gezählt am 15.10.2026 an
-  Zeilen, die ganz Kommentar sind, ohne das Datum einer Quelle), 61 davon in den Prüfungen unter
-  `docs/`; außerhalb von `docs/` nennen sie Testdaten. 29 Dateien vergleichen mit testify, das Regelwerk lässt nur das Paket `testing` zu (Decisions,
-  „Use package testing"). In `repository/` sind die Tests umgestellt; dort bleiben acht Zeilen
-  mit Datum, fünf nennen Testdaten (ein Termin, ein Ferientag) und drei stehen im Kopf der
-  datierten Nachstellungen hinter dem Build-Tag `raster`. In `internal/service` bleiben 15,
-  alle Testdaten (feste Uhr, Ferien, Planwochen).
 - Fehlertexte: 59 Stellen tragen `//nolint:staticcheck` (ST1005), weil der Text des Fehlers
   die Meldung an der Oberfläche ist. Das Regelwerk schreibt Fehlertexte klein und ohne
   Satzzeichen (Decisions, „Error strings"). Den Satz vom Fehler trennt schon

@@ -12,9 +12,10 @@ wird sie durch „effective naming, helpful commentary, and efficient code organ
 etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das Glossar in
 [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 12.
 
-Der Programmcode folgt diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund. Was
-darüber hinaus noch abweicht (Testdateien, Fehlertexte, Zustand auf der Ebene eines Pakets),
-steht in [OFFEN.md](OFFEN.md) 5.66. Neuer Code folgt den Regeln von Anfang an.
+Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, in
+Tests an Namen und Dateinamen. Was darüber hinaus noch abweicht (Fehlertexte, Zustand auf der
+Ebene eines Pakets), steht in [OFFEN.md](OFFEN.md) 5.66. Neuer Code folgt den Regeln von Anfang
+an.
 
 ## 1. Sprache
 
@@ -195,6 +196,9 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
 - Einfache Werte vergleicht `==`, zusammengesetzte `cmp.Diff` oder `cmp.Equal` aus
   `github.com/google/go-cmp` (Decisions, „Equality comparison and diffs"). `reflect.DeepEqual`
   nicht: Es „is sensitive to changes in unexported fields and other implementation details".
+  Der Import heißt `github.com/google/go-cmp/cmp`; goimports setzt sonst auch ein anderes Paket
+  namens cmp ein. Für einen Typ des eigenen Pakets mit kleinen Feldern nennt der Vergleich
+  `cmp.AllowUnexported`.
 - Die Meldung nennt die Funktion, dann was sie lieferte, dann was erwartet war:
   `SichereCoverURL(%q) = %q, erwartet %q` (Decisions, „Identify the function", „Got before
   want"). Ein Unterschied aus `cmp.Diff` nennt seine Richtung: `(-erwartet +ist)`.

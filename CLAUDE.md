@@ -88,9 +88,9 @@ Tabelle · TabelleSortKopf · Zaehlerpille.
 - Commit-Nachrichten auf Deutsch, ohne Werkzeug-Hinweis.
 - Kommentare im Code: ein bis zwei Sätze, warum der Code so ist. Kein Datum, keine
   Vorgeschichte („bis zum … war …"), keine Wörter in Großbuchstaben zur Betonung — die
-  Geschichte steht in der Commit-Nachricht. Der Bestand wird Paket für Paket umgestellt
-  (`docs/OFFEN.md` 5.66).
+  Geschichte steht in der Commit-Nachricht.
 - Namen, Sichtbarkeit und Kommentare im Go-Code folgen `docs/STIL.md` (Googles Regelwerk für
   Go): Fachwörter deutsch und je Sache ein Wort, Verben aus der Liste dort, Kürzel durchgehend
-  groß, öffentlich nur, was ein anderes Paket braucht. `stil_ratsche_test.go` hält den Bestand
-  je Paket; er sinkt nur.
+  groß, öffentlich nur, was ein anderes Paket braucht. `stil_ratsche_test.go` meldet jeden neuen
+  Fund, in Tests an Namen und Dateinamen. Tests prüfen mit dem Paket `testing`, Vergleiche mit
+  `==` oder `cmp` (`docs/STIL.md` 10); testify und `reflect.DeepEqual` sperrt der Linter.
