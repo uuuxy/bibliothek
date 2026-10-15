@@ -58,7 +58,7 @@ func holeUebersicht(t *testing.T, srv *Tueren) bestellhistorieUebersicht {
 func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	vorher := holeUebersicht(t, srv)
 
@@ -103,7 +103,7 @@ func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
 func TestBestellhistorie_HoechstgrenzeIstNichtVerhandelbar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Masse", true)
 	// In einer Anweisung, damit der Test schnell bleibt: mehr Zeilen als die Obergrenze.
@@ -129,7 +129,7 @@ func TestBestellhistorie_PositionenNurFuerGeladeneBestellungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Positionen", true)
 	for i := 0; i < 3; i++ {

@@ -20,7 +20,7 @@ import (
 
 // ladeKontoauszugBuecher lädt die aktuell ausgeliehenen Bücher eines Schülers
 // (Frist aufsteigend).
-func ladeKontoauszugBuecher(ctx context.Context, pool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.KontoauszugBuch, error) {
+func ladeKontoauszugBuecher(ctx context.Context, pool db.Pool, schuelerID uuid.UUID) ([]pdf.KontoauszugBuch, error) {
 	zeilen, err := repository.LadeKontoauszugBuecher(ctx, pool, schuelerID)
 	if err != nil {
 		return nil, err

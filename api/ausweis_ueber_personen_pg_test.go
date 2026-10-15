@@ -26,7 +26,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a118", Rolle: auth.RoleAdmin}
 	t.Cleanup(func() {

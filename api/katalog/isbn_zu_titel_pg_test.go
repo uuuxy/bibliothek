@@ -19,7 +19,7 @@ func TestSchreibeTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *test
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	meta := &inventur.MetadatenErgebnis{
 		Titel:  "Die Tribute von Panem",
@@ -56,7 +56,7 @@ func TestSchreibeTitelAusMetadaten_OhneKategorieBleibtSignaturLeer(t *testing.T)
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	meta := &inventur.MetadatenErgebnis{Titel: "Ein Fachbuch ohne Genre-Treffer"}
 
@@ -76,7 +76,7 @@ func TestFindeLokalenTitel_LiefertVorhandeneSignaturUnveraendert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	testdaten.LegeTitelMitSignaturAn(t, pool, "Effi Briest", "Pg", 5)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = $1 WHERE titel = $2`, "9783150001", "Effi Briest"); err != nil {

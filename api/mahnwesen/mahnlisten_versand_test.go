@@ -45,7 +45,7 @@ func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
 	}
 	defer mock.Close()
 
-	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	mahnRepo := repository.NewMahnwesenAbfragen(mock)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
@@ -339,7 +339,7 @@ func TestMahnlistenVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
 			t.Fatalf("pgxmock: %v", err)
 		}
 
-		server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+		server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 		req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", strings.NewReader(body))
 		rec := httptest.NewRecorder()
 		server.MahnlistenVersenden(repository.NewMahnwesenAbfragen(mock))(rec, req)
@@ -370,7 +370,7 @@ func TestProtokolliereKlassenVersand_SchreibtGueltigesJSONMitEmpfaenger(t *testi
 		WithArgs("admin-1", "BULK_OVERDUE_MAIL", &argFaenger{ziel: &details}, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{UserID: "admin-1"}))
 

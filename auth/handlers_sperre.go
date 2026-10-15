@@ -40,7 +40,7 @@ type entsperrenRequest struct {
 // (POST /api/auth/entsperren) und antwortet wie die Anmeldung. Das Passwort prüft der
 // Mailserver der Schule mit denselben Zählern wie beim Anmelden; nur wenn er nicht erreichbar
 // ist, entscheidet der Prüfwert — sonst sperrte sein Ausfall die Theke zu.
-func EntsperrenHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.HandlerFunc {
+func EntsperrenHandler(dbPool db.Pool, authenticator *Authenticator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := leseSitzung(w, r, authenticator)
 		if !ok {

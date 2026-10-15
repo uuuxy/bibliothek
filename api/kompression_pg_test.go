@@ -78,7 +78,7 @@ func TestKompression_AmRouterDesBetriebs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	hole := func(pfad string, kopf map[string]string) *httptest.ResponseRecorder {
 		t.Helper()

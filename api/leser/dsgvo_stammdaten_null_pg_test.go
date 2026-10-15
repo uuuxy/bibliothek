@@ -31,7 +31,7 @@ func TestStammdaten_OhneAdresseKein500(t *testing.T) {
 		t.Fatalf("Schüler ohne Adresse anlegen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	st, err := srv.dsgvoStammdaten(ctx, id)
 	if err != nil {
 		t.Fatalf("dsgvoStammdaten darf bei fehlender Adresse nicht scheitern (500-Regression): %v", err)

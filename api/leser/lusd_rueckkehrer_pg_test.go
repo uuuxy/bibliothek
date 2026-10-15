@@ -45,7 +45,7 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 		ctx := context.Background()
 		id := legeGesperrtenAbgaengerAn(t, pool, "OLD-1", "L-RETURN")
 
-		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+		s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 		if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 			{LUSDID: "L-RETURN", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
 		}, true, true); err != nil {
@@ -95,7 +95,7 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Fatalf("offene Ausleihe anlegen: %v", err)
 		}
 
-		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+		s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 		if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 			{LUSDID: "L-DEBT", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
 		}, true, true); err != nil {
@@ -132,7 +132,7 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 			 VALUES ($1, $2, now() + interval '14 days')`, exID, id); err != nil {
 			t.Fatalf("offene Ausleihe anlegen: %v", err)
 		}
-		s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+		s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 		zeile := []lusd.Zeile{{LUSDID: "L-DEBT3", Vorname: "Max", Nachname: "Muster", Klasse: "E1"}}
 		if _, err := s.berechneLUSDAenderungen(ctx, zeile, true, true); err != nil {
 			t.Fatalf("erster Import: %v", err)

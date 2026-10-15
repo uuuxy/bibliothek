@@ -36,7 +36,7 @@ type ZulaufPosten struct {
 // Bestellung: Zwei Bestellungen am selben Tag beim selben Händler sind zwei Gruppen, und das
 // Datum der Gruppe ist der Kalendertag der Schule. Ein Exemplar aus dem Altbestand ohne
 // Bestellung steht unter dem Tag seiner Anlage und dem Lieferanten, den seine Notiz nennt.
-func LadeZulauf(ctx context.Context, pool db.PgxPoolIface) ([]*Zulaufgruppe, error) {
+func LadeZulauf(ctx context.Context, pool db.Pool) ([]*Zulaufgruppe, error) {
 	exemplare, err := repository.LadeExemplareImZulauf(ctx, pool)
 	if err != nil {
 		return nil, err

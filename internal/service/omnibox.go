@@ -90,7 +90,7 @@ type OmniboxDienst interface {
 
 // omniboxDienst erfüllt OmniboxDienst; Ausleihe und Gerät bucht es über deren Dienste.
 type omniboxDienst struct {
-	pool            db.PgxPoolIface
+	pool            db.Pool
 	leserAbfragen   repository.LeserAbfragen
 	katalogAbfragen repository.KatalogAbfragen
 	ausleihAbfragen repository.AusleihAbfragen
@@ -100,7 +100,7 @@ type omniboxDienst struct {
 
 // NewOmniboxDienst baut den Dienst der Omnibox.
 func NewOmniboxDienst(
-	pool db.PgxPoolIface,
+	pool db.Pool,
 	leserAbfragen repository.LeserAbfragen,
 	katalogAbfragen repository.KatalogAbfragen,
 	ausleihAbfragen repository.AusleihAbfragen,
@@ -382,7 +382,7 @@ func (d *omniboxDienst) holeExemplarZurueck(ctx context.Context, exemplarID, bea
 	if err != nil {
 		return repository.RueckkehrBefund{}, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	befund, err := repository.HoleExemplarZurueck(ctx, tx, exemplarID, bearbeiterID, nil)
 	if err != nil {

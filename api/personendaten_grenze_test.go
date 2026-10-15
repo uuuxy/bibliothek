@@ -28,7 +28,7 @@ import (
 // Zwei Schutzstufen: Ausleiher/Historie zeigen das volle Ausleihgeschehen und bleiben hinter
 // view_students. Die Vormerkungen hängen am engen Recht der Theke manage_vormerkungen (Felder des
 // Kiosks: Name und Klasse); für Helfer ist es in der Rechte-Matrix zuschaltbar und ab Werk aus
-// (db/seed.go RechteVorgabe und RechteOptional).
+// (db/rechte_vorgabe.go RechteVorgabe und RechteOptional).
 func TestPersonendatenRoutenHinterViewStudents(t *testing.T) {
 	quelle, err := os.ReadFile("routen_katalog.go")
 	if err != nil {
@@ -69,9 +69,9 @@ func TestVormerkungsRechtIstFuerHelferOptional(t *testing.T) {
 	}
 	gefunden := false
 	for _, v := range db.RechteVorgabe {
-		if v.Role == "HELFER" && v.Permission == "manage_vormerkungen" {
+		if v.Rolle == "HELFER" && v.Recht == "manage_vormerkungen" {
 			gefunden = true
-			if v.Allowed {
+			if v.Erlaubt {
 				t.Error("HELFER/manage_vormerkungen muss ab Werk AUS sein (optionales Recht, Betreiber-Entscheidung)")
 			}
 		}

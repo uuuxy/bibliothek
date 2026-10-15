@@ -78,7 +78,7 @@ func TestSignaturenEndpunkte(t *testing.T) {
 	testdaten.LegeExemplarMitSignaturAn(t, pool, basis+" 7", "SIGE-B-"+suffix)
 	testdaten.LegeExemplarMitSignaturAn(t, pool, basis+"X", "SIGE-C-"+suffix)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// 1) Liste: die drei angelegten Signaturen tauchen als eigene Gruppen auf.
 	rec := httptest.NewRecorder()
@@ -156,7 +156,7 @@ func TestSignaturenListe_FasstNachRegaladresseZusammen(t *testing.T) {
 		testdaten.LegeExemplarMitSignaturAn(t, pool, aufschrift, fmt.Sprintf("SIGR-%d-%s", i, suffix))
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	rec := httptest.NewRecorder()
 	srv.Signaturen().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/signaturen", nil))
 	if rec.Code != http.StatusOK {

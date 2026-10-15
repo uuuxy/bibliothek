@@ -32,15 +32,15 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	t.Setenv("RATE_LIMIT", "100000")
 	ctx := context.Background()
 
-	if err := (&db.Database{Pool: pool}).InitPermissions(ctx); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(ctx); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 	authenticator, err := auth.NewAuthenticator(
 		"mahnbrief-recht-testgeheimnis-mind-32-bytes!", pool, time.Hour)
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	var kontoID string
 	if err := pool.QueryRow(ctx, `
@@ -57,9 +57,9 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		// Die Rechte der Rolle stehen danach wieder auf der Vorgabe.
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
 		for _, e := range db.RechteVorgabe {
-			if e.Role == "MITARBEITER" {
+			if e.Rolle == "MITARBEITER" {
 				pgtest.RaeumeAuf(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
-					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Role, e.Permission, e.Allowed)
+					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Rolle, e.Recht, e.Erlaubt)
 			}
 		}
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, kontoID)

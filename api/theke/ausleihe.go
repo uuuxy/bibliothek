@@ -78,7 +78,7 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	alteFrist, err := repository.SperreOffeneAusleiheMitFrist(ctx, tx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {

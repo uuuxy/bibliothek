@@ -17,14 +17,14 @@ import (
 )
 
 // Eine Nummer ist entweder ein Buch oder ein Ausweis (Migration 131). Die Regel liegt in
-// der Datenbank (db/constraints_nummer_ueber_buch_und_ausweis_pg_test.go); hier geht es um
+// der Datenbank (db/bedingung_nummer_ueber_buch_und_ausweis_pg_test.go); hier geht es um
 // die Türen, an denen ein Mensch eine Nummer tippt: Die Bibliothek bekommt eine Auskunft
 // mit dem Grund (409), keinen 500 — und beim Wiederherstellen einen Satz mit dem Ausweg.
 func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RoleAdmin}
 
 	var titelID string

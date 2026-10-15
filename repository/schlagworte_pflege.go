@@ -190,7 +190,7 @@ func BenenneSchlagwortUm(ctx context.Context, q Datenbank, id, neu string, alteA
 	if err != nil {
 		return "", false, fmt.Errorf("umbenennen: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	alt, err := sperreSchlagwort(ctx, tx, id)
 	if err != nil {
 		return "", false, err
@@ -267,7 +267,7 @@ func FuehreSchlagworteZusammen(ctx context.Context, q Datenbank, vonID, inID str
 	if err != nil {
 		return SchlagwortZusammenfuehrung{}, fmt.Errorf("zusammenführen: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	ergebnis, err := fuehreZusammenIn(ctx, tx, vonID, inID, alteAlsVerweis)
 	if err != nil {
 		return SchlagwortZusammenfuehrung{}, err
@@ -392,7 +392,7 @@ func LoescheSchlagworte(ctx context.Context, q Datenbank, ids []string) (Schlagw
 	if err != nil {
 		return ergebnis, fmt.Errorf("löschen: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	// Wie viele verschiedene Wörter gewählt sind, zählt die Datenbank: Sie liest „7C9E…" und
 	// „7c9e…" als dieselbe Kennung, die Tür nimmt beide Schreibweisen an. Entdoppelte Go den
 	// Text, zählten zwei Schreibweisen als zwei Wörter, die Sperre fände eine Zeile, und die
@@ -451,7 +451,7 @@ func SetzeSchlagwortVerweis(ctx context.Context, q Datenbank, roh, zielID string
 	if err != nil {
 		return ergebnis, fmt.Errorf("verweis: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	var vorhandenID string
 	err = tx.QueryRow(ctx, `SELECT id::text FROM schlagworte WHERE lower(wort) = lower($1)`, wort).Scan(&vorhandenID)
@@ -502,7 +502,7 @@ func SetzeSchlagwortFilter(ctx context.Context, q Datenbank, id string, an bool)
 	if err != nil {
 		return fmt.Errorf("filter: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	w, err := sperreSchlagwort(ctx, tx, id)
 	if err != nil {
 		return err

@@ -29,13 +29,13 @@ func TestNachruecken_GesperrteLeserzeileUeberspringtDenAeltestenNicht(t *testing
 	}
 
 	theke := beginne(t, pool)
-	defer db.SafeRollback(ctx, theke)
+	defer db.Verwerfe(ctx, theke)
 	if err := SperreLeserzeile(ctx, theke, aelteste); err != nil {
 		t.Fatalf("Leserzeile sperren: %v", err)
 	}
 
 	nachruecken := beginne(t, pool)
-	defer db.SafeRollback(ctx, nachruecken)
+	defer db.Verwerfe(ctx, nachruecken)
 	bedient, err := bedieneNaechstenWartenden(ctx, nachruecken, exemplar, titel, time.Now())
 	if err != nil || !bedient {
 		t.Fatalf("Nachrücken: bedient=%v, Fehler %v", bedient, err)

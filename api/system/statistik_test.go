@@ -21,7 +21,7 @@ func TestStatistik_BestandsFilterErreichtJedeAbfrage(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	mock.ExpectQuery(`COUNT\(a\.id\) AS count[\s\S]*AND t\.ist_lernmittel`).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "cover_url", "subject", "signatur", "erscheinungsjahr", "count"}).

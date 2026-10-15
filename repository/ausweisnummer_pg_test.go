@@ -25,7 +25,7 @@ func naechsteAusweisnummer(t *testing.T, pool *pgxpool.Pool) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	n, err := repository.NewAusweisnummernAbfragen(tx).ZieheNaechste(ctx)
 	if err != nil {
 		t.Fatalf("Naechste: %v", err)
@@ -147,7 +147,7 @@ func TestAusweisnummer_AnfrageKeineFreischaltungEine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	if _, err := tx.Exec(ctx, `UPDATE benutzer SET aktiv = true, zugang_beantragt_am = NULL WHERE id = $1`, kontoID); err != nil {
 		t.Fatal(err)
 	}
@@ -302,7 +302,7 @@ func TestAusweisnummer_Migration145TraegtNach(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	for _, sql := range []string{
 		`SET LOCAL session_replication_role = replica`,
 		`INSERT INTO benutzer (email, vorname, nachname, rolle, aktiv, leser_id)
@@ -335,7 +335,7 @@ func pruefeMigrationslauf(t *testing.T, pool *pgxpool.Pool, datei string, soll m
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	for lauf := 1; lauf <= 2; lauf++ {
 		if _, err := tx.Exec(ctx, string(migration)); err != nil {
 			t.Fatalf("%s, Lauf %d: %v", datei, lauf, err)
@@ -372,7 +372,7 @@ func TestAusweisnummer_NullUeberNullZiehtErstBeimCommit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	if _, err := tx.Exec(ctx, `UPDATE benutzer SET aktiv = true, zugang_beantragt_am = NULL WHERE id = $1`, kontoID); err != nil {
 		t.Fatal(err)
 	}

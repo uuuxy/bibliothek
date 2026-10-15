@@ -84,25 +84,25 @@ func rechteAbweichungen(live map[string]map[string]bool) []string {
 	var abweichungen []string
 	vorgabe := map[string]map[string]bool{}
 	for _, v := range db.RechteVorgabe {
-		if vorgabe[v.Role] == nil {
-			vorgabe[v.Role] = map[string]bool{}
+		if vorgabe[v.Rolle] == nil {
+			vorgabe[v.Rolle] = map[string]bool{}
 		}
-		vorgabe[v.Role][v.Permission] = v.Allowed
-		zeile, bekannt := live[v.Role]
+		vorgabe[v.Rolle][v.Recht] = v.Erlaubt
+		zeile, bekannt := live[v.Rolle]
 		liveWert, vorhanden := false, false
 		if bekannt {
-			liveWert, vorhanden = zeile[v.Permission]
+			liveWert, vorhanden = zeile[v.Recht]
 		}
 		switch {
 		case !vorhanden:
 			abweichungen = append(abweichungen,
-				fmt.Sprintf("%s/%s fehlt live (Vorgabe: %s)", v.Role, v.Permission, anAus(v.Allowed)))
+				fmt.Sprintf("%s/%s fehlt live (Vorgabe: %s)", v.Rolle, v.Recht, anAus(v.Erlaubt)))
 		// Bei einem freigestellten Paar (db.RechteOptional) ist der Haken in der
 		// Rechte-Matrix der vorgesehene Gebrauch; nur ob die Zeile da ist, zählt.
-		case db.RechteOptional[v.Role+"/"+v.Permission]:
-		case liveWert != v.Allowed:
+		case db.RechteOptional[v.Rolle+"/"+v.Recht]:
+		case liveWert != v.Erlaubt:
 			abweichungen = append(abweichungen,
-				fmt.Sprintf("%s/%s live %s, Vorgabe %s", v.Role, v.Permission, anAus(liveWert), anAus(v.Allowed)))
+				fmt.Sprintf("%s/%s live %s, Vorgabe %s", v.Rolle, v.Recht, anAus(liveWert), anAus(v.Erlaubt)))
 		}
 	}
 	// Gegenrichtung: Zeilen, deren Rolle oder Recht die Vorgabe nicht kennt, etwa eine

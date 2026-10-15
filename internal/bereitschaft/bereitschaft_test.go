@@ -81,10 +81,10 @@ func zahl(n int) *int { return &n }
 func rechteWieVorgabe() map[string]map[string]bool {
 	live := map[string]map[string]bool{}
 	for _, v := range db.RechteVorgabe {
-		if live[v.Role] == nil {
-			live[v.Role] = map[string]bool{}
+		if live[v.Rolle] == nil {
+			live[v.Rolle] = map[string]bool{}
 		}
-		live[v.Role][v.Permission] = v.Allowed
+		live[v.Rolle][v.Recht] = v.Erlaubt
 	}
 	return live
 }

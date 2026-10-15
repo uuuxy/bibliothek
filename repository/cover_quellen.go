@@ -13,7 +13,7 @@ import (
 // Für den Cover-Proxy (api/katalog/cover_quelle_bindung.go): Er lädt nur Adressen, die der Katalog
 // für diese ISBN kennt oder die sich aus ihr herleiten lassen — sonst bestimmte der
 // erste unangemeldete Aufrufer, welches Bild unter einer Schulbuch-ISBN liegt.
-func LadeCoverQuellenFuerISBN(ctx context.Context, pool db.PgxPoolIface, isbnSauber string) (quellen []string, imKatalog bool, err error) {
+func LadeCoverQuellenFuerISBN(ctx context.Context, pool db.Pool, isbnSauber string) (quellen []string, imKatalog bool, err error) {
 	rows, err := pool.Query(ctx,
 		`SELECT COALESCE(cover_url, '') FROM buecher_titel WHERE regexp_replace(isbn, '[- ]', '', 'g') = $1`,
 		isbnSauber)

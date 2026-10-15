@@ -39,11 +39,11 @@ type AnliegenErledigt struct {
 
 // AnliegenAbfragen liest und schreibt die Wünsche und Meldungen der Lehrkräfte.
 type AnliegenAbfragen struct {
-	pool db.PgxPoolIface
+	pool db.Pool
 }
 
 // NewAnliegenAbfragen liefert die Abfragen der Anliegen am übergebenen Pool.
-func NewAnliegenAbfragen(pool db.PgxPoolIface) *AnliegenAbfragen {
+func NewAnliegenAbfragen(pool db.Pool) *AnliegenAbfragen {
 	return &AnliegenAbfragen{pool: pool}
 }
 

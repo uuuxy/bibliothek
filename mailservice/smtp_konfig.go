@@ -12,7 +12,7 @@ package mailservice
 //
 // Ab hier gilt: Die gespeicherte Konfiguration ist die Wahrheit. Die Umgebung ist nur
 // noch Rückfall, solange dort nichts steht — beim ersten Start übernimmt
-// db.InitMailKonfig sie in die Datenbank, damit im Formular steht, was gilt.
+// db.UebernimmMailKonfig sie in die Datenbank, damit im Formular steht, was gilt.
 
 import (
 	"context"
@@ -72,7 +72,7 @@ func (k SMTPKonfig) IstKonfiguriert() bool {
 
 // KonfigAusUmgebung liest die Konfiguration aus den Umgebungsvariablen. Sie ist der
 // Rückfall für eine Datenbank ohne gespeicherte Konfiguration — und die Quelle, aus
-// der db.InitMailKonfig beim ersten Start übernimmt.
+// der db.UebernimmMailKonfig beim ersten Start übernimmt.
 func KonfigAusUmgebung() SMTPKonfig {
 	k := SMTPKonfig{
 		Host:     strings.TrimSpace(os.Getenv("SMTP_HOST")),
@@ -98,7 +98,7 @@ func KonfigAusUmgebung() SMTPKonfig {
 // Jeder Versender im System benutzt diese Funktion — nur so kann der Test-Knopf
 // etwas über den Mahnlauf aussagen. Die gespeicherte Zeile liest sie über dieselbe Funktion
 // wie die Maske der Mail-Einstellungen (repository.MailEinstellungsAbfragen.Lade).
-func LadeSMTPKonfig(ctx context.Context, dbPool db.PgxPoolIface) (SMTPKonfig, error) {
+func LadeSMTPKonfig(ctx context.Context, dbPool db.Pool) (SMTPKonfig, error) {
 	gespeichert, err := repository.NewMailEinstellungsAbfragen(dbPool).Lade(ctx)
 	if err != nil {
 		// Keine Zeile (frische Datenbank, noch nicht gelaufene Migration): Die Umgebung

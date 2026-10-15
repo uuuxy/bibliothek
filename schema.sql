@@ -31,7 +31,7 @@ $$;
 -- -------------------------------------------------------------
 -- 'helfer': Kiosk-Ausleihen/Rückgaben (siehe auth/jwt.go RoleHelfer, Router.svelte).
 -- 'leitung': Bibliotheksleitung — alles ausser manage_users und manage_settings
--- (Migration 121/122, Rechte in db/seed.go).
+-- (Migration 121/122, Rechte in db/rechte_vorgabe.go).
 -- 'kollegium' hiess bis Migration 069 'lehrer'. Umbenannt, weil das Wort doppelt
 -- belegt war: schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER. Es ist
 -- der GRUNDZUSTAND jeder Lehrkraft (Selbstanmeldung), keine vergebene Rolle.
@@ -1811,7 +1811,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 
 -- WICHTIG: Diese Liste MUSS exakt allen Dateien in migrations/*.sql entsprechen.
 -- schema.sql baut bei einer Neuinstallation bereits das vollständige, aktuelle Schema auf.
--- Damit der Migrations-Runner (db/migrations.go) beim Start NICHT versucht, dieselben
+-- Damit der Migrations-Runner (db/migrationen.go) beim Start NICHT versucht, dieselben
 -- Migrationen erneut anzuwenden (→ "column already exists"-Fehler → os.Exit(1)), werden
 -- hier ALLE Migrationsversionen als bereits angewendet markiert. Fehlt hier eine Datei,
 -- läuft sie beim Start gegen das fertige Schema und bricht den Serverstart ab.

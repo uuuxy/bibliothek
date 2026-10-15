@@ -1,12 +1,10 @@
 package db
 
-// Gate für Migration 083: audit_log darf keinen Änderungen-blockierenden Trigger tragen.
-//
-// Der Trigger aus Migration 003 (prevent_audit_log_modification) blockiert jedes
-// UPDATE/DELETE — und damit die DSGVO-PII-Tilgung, die audit_log.details überschreiben
-// MUSS (Art. 17). Der Test führt beide Zustände real vor: Mit dem alten Trigger scheitert
-// die Tilgung, nach Migration 083 geht sie durch. Führt jemand den Append-Only-Trigger
-// je wieder ein, wird dieser Test rot, bevor die DSGVO-Löschung still bricht.
+// audit_log trägt keinen Trigger, der Änderungen sperrt: Die Tilgung personenbezogener Angaben
+// nach Art. 17 DSGVO überschreibt audit_log.details. Der Test führt beide Zustände vor: Mit dem
+// Trigger aus Migration 003 (prevent_audit_log_modification) scheitert die Tilgung, nach
+// Migration 083 geht sie durch. Käme ein solcher Trigger wieder, würde der Test rot, bevor die
+// Löschung still bricht.
 
 import (
 	"context"
@@ -19,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func TestMigration083_AuditLogTilgungGehtDurch(t *testing.T) {
+func TestProtokoll_TilgungGehtDurch(t *testing.T) {
 	dsn := os.Getenv(pgtest.Variable)
 	if dsn == "" {
 		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", pgtest.Variable)
@@ -34,7 +32,7 @@ func TestMigration083_AuditLogTilgungGehtDurch(t *testing.T) {
 	pool := paritaetsDB(t, ctx, admin, dsn, "bibliothek_test_083_append_only")
 	fuehreDateiAus(t, ctx, pool, "../schema.sql")
 
-	// Einen Audit-Eintrag anlegen, an dem die Tilgung ansetzt.
+	// Ein Eintrag im Protokoll, an dem die Tilgung ansetzt.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO audit_log (tabelle, aktion, datensatz_id, details, akteur)
 		VALUES ('schueler', 'UPDATE', gen_random_uuid(), jsonb_build_object('nachname','KLARNAME'), 'USER')`); err != nil {
@@ -43,7 +41,7 @@ func TestMigration083_AuditLogTilgungGehtDurch(t *testing.T) {
 
 	tilgung := `UPDATE audit_log SET details = jsonb_build_object('anonymisiert', true) WHERE tabelle = 'schueler'`
 
-	// Zustand 1: der alte Append-Only-Trigger (Migration 003) — die Tilgung MUSS scheitern.
+	// Zustand 1: der Trigger aus Migration 003, der nur Anhängen erlaubt; die Tilgung scheitert.
 	if _, err := pool.Exec(ctx, `
 		CREATE OR REPLACE FUNCTION prevent_audit_log_modification() RETURNS TRIGGER AS $$
 		BEGIN RAISE EXCEPTION 'Append-Only'; END; $$ LANGUAGE plpgsql;
@@ -58,7 +56,7 @@ func TestMigration083_AuditLogTilgungGehtDurch(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler (nicht der Trigger): %v", err)
 	}
 
-	// Zustand 2: Migration 083 anwenden — danach geht die Tilgung durch.
+	// Zustand 2: Migration 083 angewendet; danach geht die Tilgung durch.
 	fuehreDateiAus(t, ctx, pool, "../migrations/083_audit_log_append_only_aufloesen.sql")
 	if _, err := pool.Exec(ctx, tilgung); err != nil {
 		t.Fatalf("nach Migration 083 muss die DSGVO-Tilgung durchgehen: %v", err)

@@ -70,11 +70,11 @@ type KontoAbfragen interface {
 }
 
 type pgKontoAbfragen struct {
-	pool db.PgxPoolIface
+	pool db.Pool
 }
 
 // NewKontoAbfragen liefert die Abfragen der Konten an Postgres.
-func NewKontoAbfragen(pool db.PgxPoolIface) KontoAbfragen {
+func NewKontoAbfragen(pool db.Pool) KontoAbfragen {
 	return &pgKontoAbfragen{pool: pool}
 }
 
@@ -174,7 +174,7 @@ func (a *pgKontoAbfragen) LegeAn(ctx context.Context, ausweisnummer *string, vor
 	if err != nil {
 		return "", err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	var kontoID, leserID string
 	err = tx.QueryRow(ctx, `
@@ -240,7 +240,7 @@ func (a *pgKontoAbfragen) Aendere(ctx context.Context, p KontoAenderung) (KontoS
 	if err != nil {
 		return stand, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Ein nicht genanntes Feld kommt als NULL an und behält seinen Wert; leeren lässt sich
 	// über diese Tür keine der Spalten.

@@ -319,7 +319,7 @@ Die lokale Compose-Datei enthält bereits gültige Entwicklungs-Secrets (≥32 Z
 
 ## 5. Datenbank-Migrationen
 
-Migrationen laufen **automatisch beim Serverstart** (`database.RunMigrations`). Manuelles Eingreifen ist nur bei Problemen nötig.
+Migrationen laufen **automatisch beim Serverstart** (`db.Verbindung.FuehreMigrationenAus`). Manuelles Eingreifen ist nur bei Problemen nötig.
 
 ### Migrations-Verzeichnis: `migrations/`
 
@@ -332,7 +332,7 @@ Migrationen laufen **automatisch beim Serverstart** (`database.RunMigrations`). 
 ### Neue Migration hinzufügen
 
 1. Datei `migrations/NNN_beschreibung.sql` anlegen (NNN = nächste Nummer, kein Namenskonflikt)
-2. Dateinamen in `schema.sql` unter `schema_migrations` eintragen (geprüft von `TestMigrationSeedListMatchesFiles` in `db/migrations_drift_test.go`)
+2. Dateinamen in `schema.sql` unter `schema_migrations` eintragen (geprüft von `TestMigrationslisteImSchemaGleichDenDateien` in `db/migrationen_drift_test.go`)
 
 ### Major-Upgrade der Datenbank (z. B. 15 → 18, durchgeführt 31.08.2026)
 

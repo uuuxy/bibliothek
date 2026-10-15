@@ -14,14 +14,14 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestConnect_Success(t *testing.T) {
+func TestVerbinde_Erfolg(t *testing.T) {
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
 		t.Skip("TEST_DATABASE_URL nicht gesetzt")
 	}
 
 	ctx := context.Background()
-	db, err := Connect(ctx, dsn)
+	db, err := Verbinde(ctx, dsn)
 	if err != nil {
 		t.Fatalf("Erwartete erfolgreiche Verbindung, erhielt Fehler: %v", err)
 	}
@@ -32,10 +32,10 @@ func TestConnect_Success(t *testing.T) {
 	}
 }
 
-func TestConnect_ParseError(t *testing.T) {
+func TestVerbinde_UnlesbareAdresse(t *testing.T) {
 	ctx := context.Background()
 
-	_, err := Connect(ctx, "postgres://user@localhost:invalid_port/db")
+	_, err := Verbinde(ctx, "postgres://user@localhost:invalid_port/db")
 	if err == nil {
 		t.Fatal("Erwartete Fehler beim Parsen der DSN, erhielt keinen")
 	}
@@ -44,11 +44,11 @@ func TestConnect_ParseError(t *testing.T) {
 	}
 }
 
-func TestConnect_PingError(t *testing.T) {
+func TestVerbinde_PingScheitert(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	_, err := Connect(ctx, "postgres://user:pass@127.0.0.1:1/nonexistentdb?connect_timeout=1")
+	_, err := Verbinde(ctx, "postgres://user:pass@127.0.0.1:1/nonexistentdb?connect_timeout=1")
 	if err == nil {
 		t.Fatal("Erwartete Fehler beim Ping, erhielt keinen")
 	}
@@ -57,20 +57,20 @@ func TestConnect_PingError(t *testing.T) {
 	}
 }
 
-func TestDatabase_Close(t *testing.T) {
+func TestVerbindung_Close(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create mock: %v", err)
 	}
 
-	db := &Database{Pool: mock}
+	db := &Verbindung{Pool: mock}
 	db.Close()
 
-	dbNil := &Database{Pool: nil}
+	dbNil := &Verbindung{Pool: nil}
 	dbNil.Close()
 }
 
-func TestSafeRollback(t *testing.T) {
+func TestVerwerfe(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create mock: %v", err)
@@ -79,7 +79,7 @@ func TestSafeRollback(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 1. Rollback success
+	// 1. Das Zurückrollen gelingt.
 	mock.ExpectBegin()
 	mock.ExpectRollback()
 
@@ -87,9 +87,9 @@ func TestSafeRollback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to begin tx: %v", err)
 	}
-	SafeRollback(ctx, tx1)
+	Verwerfe(ctx, tx1)
 
-	// 2. Rollback error (ErrTxClosed) - should not log error
+	// 2. Die Transaktion ist schon abgeschlossen (ErrTxClosed): kein Eintrag im Log.
 	mock.ExpectBegin()
 	mock.ExpectRollback().WillReturnError(pgx.ErrTxClosed)
 
@@ -102,14 +102,14 @@ func TestSafeRollback(t *testing.T) {
 	log.SetOutput(&buf)
 	defer log.SetOutput(os.Stderr) // Reset logger
 
-	SafeRollback(ctx, tx2)
+	Verwerfe(ctx, tx2)
 
 	if buf.Len() > 0 {
 		t.Errorf("erwartete keine Log-Ausgabe für ErrTxClosed, erhielt: %s", buf.String())
 	}
 	buf.Reset()
 
-	// 3. Rollback error (other error) - should log error
+	// 3. Ein anderer Fehler beim Zurückrollen steht im Log.
 	mock.ExpectBegin()
 	testErr := errors.New("some unexpected error")
 	mock.ExpectRollback().WillReturnError(testErr)
@@ -119,7 +119,7 @@ func TestSafeRollback(t *testing.T) {
 		t.Fatalf("failed to begin tx: %v", err)
 	}
 
-	SafeRollback(ctx, tx3)
+	Verwerfe(ctx, tx3)
 
 	if !strings.Contains(buf.String(), "db: transaction rollback failed") {
 		t.Errorf("erwartete Log-Ausgabe für unerwarteten Fehler, erhielt: %s", buf.String())

@@ -70,7 +70,7 @@ func TestAnonymisierung_TilgtDenSperrgrundImProtokoll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	if err := repository.AnonymisiereAbgaenger(ctx, tx, id); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}

@@ -32,7 +32,7 @@ const panikText = "Probe-Panik aus dem Test"
 // poolMitPanik gerät in Panik, sobald die Tür das Design der Ausweise liest und scharf gesetzt
 // ist. Sitzung und Rechte laufen am echten Pool.
 type poolMitPanik struct {
-	db.PgxPoolIface
+	db.Pool
 	scharf *bool
 }
 
@@ -40,7 +40,7 @@ func (p poolMitPanik) QueryRow(ctx context.Context, sql string, args ...any) pgx
 	if *p.scharf && strings.Contains(sql, "FROM system_einstellungen") && len(args) > 0 && args[0] == repository.AusweisLayoutSchluessel {
 		panic(panikText)
 	}
-	return p.PgxPoolIface.QueryRow(ctx, sql, args...)
+	return p.Pool.QueryRow(ctx, sql, args...)
 }
 
 // anfrageInPanik schickt dieselbe Anfrage zweimal über den ganzen Router: erst ungestört,
@@ -50,7 +50,7 @@ func anfrageInPanik(t *testing.T, konto string) *httptest.ResponseRecorder {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	scharf := false
-	_, sitzung, router := routertest.MitSitzungUeber(t, pool, poolMitPanik{PgxPoolIface: pool, scharf: &scharf},
+	_, sitzung, router := routertest.MitSitzungUeber(t, pool, poolMitPanik{Pool: pool, scharf: &scharf},
 		konto, "Paula", "Panik")
 	t.Cleanup(func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = $1`, konto) })
 	rufe := func() (rec *httptest.ResponseRecorder) {

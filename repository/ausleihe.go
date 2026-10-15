@@ -74,11 +74,11 @@ type AusleihAbfragen interface {
 }
 
 type pgAusleihAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewAusleihAbfragen liefert die Abfragen der Ausleihe an Postgres.
-func NewAusleihAbfragen(db db.PgxPoolIface) AusleihAbfragen {
+func NewAusleihAbfragen(db db.Pool) AusleihAbfragen {
 	return &pgAusleihAbfragen{db: db}
 }
 

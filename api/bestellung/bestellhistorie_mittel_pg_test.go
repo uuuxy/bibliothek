@@ -30,7 +30,7 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	if _, err := pool.Exec(ctx, `DELETE FROM bestellungen_verlauf`); err != nil {

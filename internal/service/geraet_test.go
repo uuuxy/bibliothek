@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewGeraeteDienst(t *testing.T) {
-	var pool db.PgxPoolIface = nil
+	var pool db.Pool = nil
 	var studentRepo repository.LeserAbfragen = nil
 	var loanRepo repository.AusleihAbfragen = nil
 	var auditRepo repository.ProtokollAbfragen = nil

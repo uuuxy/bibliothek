@@ -210,7 +210,7 @@ export const menuGroups = [
 				// dahinter verlangen dasselbe (api/routen_katalog.go), und ein Menüpunkt, der
 				// enger ist als seine Route, schützt nichts: Die Adresse bleibt offen. Wer den
 				// Nachweis wirklich auf das Sekretariat begrenzen will, hängt BEIDE Seiten auf
-				// manage_inventory um (Helfer und Kollegium haben es ab Werk nicht, db/seed.go).
+				// manage_inventory um (Helfer und Kollegium haben es ab Werk nicht, db/rechte_vorgabe.go).
 				id: 'bestandsbuecher',
 				label: 'Bestandsbücher',
 				icon: 'book-marked',

@@ -53,7 +53,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	if _, err := pool.Exec(ctx, `TRUNCATE audit_logs`); err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	if _, err := pool.Exec(ctx, `TRUNCATE audit_logs`); err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestBestellungTopfKorrektur_OrdnetAltBestellungOhneZuordnungZu(t *testing.T
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	if _, err := pool.Exec(ctx, `TRUNCATE audit_logs`); err != nil {
 		t.Fatal(err)
 	}

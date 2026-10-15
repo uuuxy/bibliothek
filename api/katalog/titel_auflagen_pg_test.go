@@ -25,7 +25,7 @@ func TestTitelAuflagen_TuerDerTitelmaske(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	titel := func(name string, jahr int, lernmittel bool) string {
 		t.Helper()
 		var id string

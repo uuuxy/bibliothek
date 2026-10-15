@@ -142,7 +142,7 @@ type dsgvoDaten struct {
 // bearbeitet hat, bei Verwaltungseingriffen mit IP-Adresse. Konten und dieses Protokoll zeigt
 // die Anwendung sonst nur mit manage_users (GET /api/benutzer, GET /api/admin/auditlog). Das
 // Recht der Route, manage_students_admin, hat ab Werk auch die Leitung, und es ist zum
-// Delegieren ans Sekretariat gedacht (db/seed.go, RechteOptional). Gate:
+// Delegieren ans Sekretariat gedacht (db/rechte_vorgabe.go, RechteOptional). Gate:
 // TestDSGVOAuskunft_KontoVerlangtKontenrecht.
 const dsgvoKontoRecht = "manage_users"
 

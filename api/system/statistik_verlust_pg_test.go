@@ -21,7 +21,7 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Zulauf", "Sta 1", 0)
 	nie := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ST-ZULAUF")
 	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "ST-BESTAND", true, "")
@@ -63,7 +63,7 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 func TestStatistik_BestelltesZaehltNichtZumBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Bestand", "Sta 2", 0)
 	testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "SB-ZULAUF")
 	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "SB-BESTAND", true, "")

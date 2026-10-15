@@ -46,7 +46,7 @@ var errIdempotenzNichtReserviert = errors.New("idempotenz: schlüssel nicht rese
 // jemandem, und antwort sagt, ob dessen Antwort da ist (Status ab 200) oder noch kommt (Status
 // 0). Eine Reservierung, die älter ist als IdempotenzReservierungsfrist, gilt als verwaist und
 // wird übernommen; unter der Zeilensperre von ON CONFLICT nimmt sie genau einer.
-func ReserviereIdempotenzSchluessel(ctx context.Context, pool db.PgxPoolIface, schluessel string) (reserviert bool, antwort *IdempotenzAntwort, err error) {
+func ReserviereIdempotenzSchluessel(ctx context.Context, pool db.Pool, schluessel string) (reserviert bool, antwort *IdempotenzAntwort, err error) {
 	var k string
 	err = pool.QueryRow(ctx, `
 		INSERT INTO idempotency_keys (idempotency_key, response_data, status_code)
@@ -70,7 +70,7 @@ func ReserviereIdempotenzSchluessel(ctx context.Context, pool db.PgxPoolIface, s
 }
 
 // LadeIdempotenzAntwort liest, was unter dem Schlüssel steht; pgx.ErrNoRows, wenn nichts.
-func LadeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string) (*IdempotenzAntwort, error) {
+func LadeIdempotenzAntwort(ctx context.Context, pool db.Pool, schluessel string) (*IdempotenzAntwort, error) {
 	var a IdempotenzAntwort
 	if err := pool.QueryRow(ctx,
 		`SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1`,
@@ -82,7 +82,7 @@ func LadeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel
 
 // SchreibeIdempotenzAntwort schreibt die Antwort in die eigene Reservierung. Eine fremde oder
 // schon beantwortete Zeile (Status ungleich 0) bleibt unberührt.
-func SchreibeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string, daten []byte, status int) error {
+func SchreibeIdempotenzAntwort(ctx context.Context, pool db.Pool, schluessel string, daten []byte, status int) error {
 	tag, err := pool.Exec(ctx,
 		`UPDATE idempotency_keys SET response_data = $2, status_code = $3 WHERE idempotency_key = $1 AND status_code = 0`,
 		schluessel, daten, status)
@@ -101,7 +101,7 @@ func SchreibeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schlue
 // Nur wer genau die gelesene Antwort vorfindet, Status und Inhalt, übernimmt; ein zweiter
 // Aufruf mit derselben Portion findet danach die Reservierung und bucht nicht daneben.
 // created_at rückt vor, damit die Übernahme als verwaist ab jetzt zählt.
-func UebernimmIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string, alt IdempotenzAntwort) (bool, error) {
+func UebernimmIdempotenzAntwort(ctx context.Context, pool db.Pool, schluessel string, alt IdempotenzAntwort) (bool, error) {
 	tag, err := pool.Exec(ctx, `
 		UPDATE idempotency_keys
 		SET status_code = 0, response_data = '{"in_arbeit": true}', created_at = CURRENT_TIMESTAMP
@@ -116,7 +116,7 @@ func UebernimmIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schlu
 // StelleIdempotenzAntwortWiederHer legt eine übernommene Antwort zurück in die eigene
 // Reservierung, nach einem Serverfehler des Nachbuchens: Die nächste Runde findet die Antwort
 // des Scans wieder vor.
-func StelleIdempotenzAntwortWiederHer(ctx context.Context, pool db.PgxPoolIface, schluessel string, alt IdempotenzAntwort) error {
+func StelleIdempotenzAntwortWiederHer(ctx context.Context, pool db.Pool, schluessel string, alt IdempotenzAntwort) error {
 	tag, err := pool.Exec(ctx,
 		`UPDATE idempotency_keys SET response_data = $2, status_code = $3 WHERE idempotency_key = $1 AND status_code = 0`,
 		schluessel, alt.Daten, alt.Status)
@@ -132,7 +132,7 @@ func StelleIdempotenzAntwortWiederHer(ctx context.Context, pool db.PgxPoolIface,
 // GibIdempotenzSchluesselFrei löscht die eigene Reservierung nach einem Serverfehler, damit die
 // Wiederholung neu bucht und nicht den Fehler zurückbekommt. freigegeben = false ohne Fehler
 // heißt: Es gab keine Reservierung mehr zu löschen.
-func GibIdempotenzSchluesselFrei(ctx context.Context, pool db.PgxPoolIface, schluessel string) (freigegeben bool, err error) {
+func GibIdempotenzSchluesselFrei(ctx context.Context, pool db.Pool, schluessel string) (freigegeben bool, err error) {
 	tag, err := pool.Exec(ctx,
 		`DELETE FROM idempotency_keys WHERE idempotency_key = $1 AND status_code = 0`, schluessel)
 	if err != nil {
@@ -144,7 +144,7 @@ func GibIdempotenzSchluesselFrei(ctx context.Context, pool db.PgxPoolIface, schl
 // LoescheAlteIdempotenzSchluessel entfernt Schlüssel, die älter sind als 24 Stunden, und
 // liefert ihre Zahl. Die Wiederholung eines Scans kommt nach Sekunden oder Minuten; ohne das
 // Aufräumen wüchse die Tabelle mit jeder Buchung.
-func LoescheAlteIdempotenzSchluessel(ctx context.Context, pool db.PgxPoolIface) (int64, error) {
+func LoescheAlteIdempotenzSchluessel(ctx context.Context, pool db.Pool) (int64, error) {
 	tag, err := pool.Exec(ctx, "DELETE FROM idempotency_keys WHERE created_at < NOW() - INTERVAL '24 hours'")
 	if err != nil {
 		return 0, err

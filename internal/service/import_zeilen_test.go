@@ -201,7 +201,7 @@ func TestImportiereZeilen_LeereZeilen(t *testing.T) {
 	mock.ExpectQuery("SELECT id, COALESCE\\(isbn, ''\\), titel FROM buecher_titel").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "titel"}))
 	mock.ExpectCommit()
-	mock.ExpectRollback() // SafeRollback
+	mock.ExpectRollback() // db.Verwerfe
 
 	svc := NewImportDienst(nil, mock)
 

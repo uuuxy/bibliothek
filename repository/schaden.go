@@ -56,11 +56,11 @@ type Schadensfall struct {
 }
 
 type pgSchadensAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewSchadensAbfragen liefert die Abfragen der Schadensfälle an Postgres.
-func NewSchadensAbfragen(db db.PgxPoolIface) SchadensAbfragen {
+func NewSchadensAbfragen(db db.Pool) SchadensAbfragen {
 	return &pgSchadensAbfragen{db: db}
 }
 
@@ -107,7 +107,7 @@ func (a *pgSchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, 
 	if err != nil {
 		return "", err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	schadensID, err := meldeSchaden(ctx, tx, schadensMeldung{
 		exemplarID:   exemplarID,

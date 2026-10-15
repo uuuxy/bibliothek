@@ -155,7 +155,7 @@ func TestSperreOffeneGeraeteAusleihe_ZweiteTransaktionWartet(t *testing.T) {
 	}
 
 	erste := beginne(t, pool)
-	defer db.SafeRollback(ctx, erste)
+	defer db.Verwerfe(ctx, erste)
 	ausleihe, offen, err := SperreOffeneGeraeteAusleihe(ctx, erste, geraetID)
 	if err != nil || !offen {
 		t.Fatalf("erste Transaktion: offen=%v, Fehler %v", offen, err)
@@ -174,7 +174,7 @@ func TestSperreOffeneGeraeteAusleihe_ZweiteTransaktionWartet(t *testing.T) {
 			fertig <- err
 			return
 		}
-		defer db.SafeRollback(ctx, tx)
+		defer db.Verwerfe(ctx, tx)
 		_, offen, err := SperreOffeneGeraeteAusleihe(ctx, tx, geraetID)
 		zweite <- antwort{offen: offen, err: err}
 		fertig <- err

@@ -35,14 +35,14 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	if err := (&db.Database{Pool: pool}).InitPermissions(ctx); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(ctx); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 	authenticator, err := auth.NewAuthenticator("kollegium-katalog-testgeheimnis-32-bytes-lang!", pool, time.Hour)
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	var kontoID string
 	if err := pool.QueryRow(ctx, `

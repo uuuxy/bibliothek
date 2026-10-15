@@ -40,7 +40,7 @@ func TestUploadsOhneAnmeldungNurDateienDirektImVerzeichnis(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	hole := func(pfad string) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()

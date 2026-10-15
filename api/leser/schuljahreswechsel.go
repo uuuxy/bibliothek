@@ -86,7 +86,7 @@ func (t *Tueren) Schuljahreswechsel() http.HandlerFunc {
 
 // fuehreSchuljahreswechselAus wickelt den Lauf der Versetzung in einer einzigen strikten
 // Transaktion ab: Entweder wird jeder Schüler versetzt oder archiviert, oder bei jedem Fehler
-// keiner (db.SafeRollback greift auf jedem Fehler- und Panic-Pfad). Im Probelauf wird bewusst
+// keiner (db.Verwerfe greift auf jedem Fehler- und Panic-Pfad). Im Probelauf wird bewusst
 // nicht committet (dieselbe Berechnung, ohne Wirkung). ok=false: die Fehlerantwort wurde
 // bereits geschrieben.
 func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.ResponseWriter, r *http.Request, anfrage schuljahreswechselAnfrage, kontoID string) (antwort schuljahreswechselAntwort, ok bool) {
@@ -95,7 +95,7 @@ func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return antwort, false
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	if !anfrage.Probelauf {
 		// Harte Serialisierung gegen den Doppellauf. Der COUNT-Check unten allein ist

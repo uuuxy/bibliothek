@@ -56,7 +56,7 @@ func TestErzeugeBlatt(t *testing.T) {
 
 func dsgvoPDFAnfrage(t *testing.T, mock pgxmock.PgxPoolIface, pathID string) *httptest.ResponseRecorder {
 	t.Helper()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+pathID+"/dsgvo-auskunft/pdf", nil)
 	req.SetPathValue("id", pathID)
 	rec := httptest.NewRecorder()

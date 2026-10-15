@@ -36,7 +36,7 @@ type KontoSchreiber interface {
 var ErrLeserNichtGefunden = errors.New("leser nicht gefunden")
 
 // LadeLeserArt liefert die Art einer Leserzeile (chk_leser_art).
-func LadeLeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (string, error) {
+func LadeLeserArt(ctx context.Context, pool db.Pool, leserID string) (string, error) {
 	var art string
 	err := pool.QueryRow(ctx, `SELECT art FROM leser WHERE id = $1`, leserID).Scan(&art)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -51,7 +51,7 @@ func LadeLeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (st
 // Bei mehreren Konten an derselben Zeile gilt das älteste. Das ist der Normalfall-Fall
 // von einem Konto (trg_benutzer_hat_leserzeile), aber die Reihenfolge macht die Antwort
 // eindeutig, statt sich auf eine Zusage zu verlassen, die kein Index hält.
-func LadeLeserArtUndKontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID string) (art, email string, err error) {
+func LadeLeserArtUndKontoEmail(ctx context.Context, pool db.Pool, leserID string) (art, email string, err error) {
 	err = pool.QueryRow(ctx, `
 		SELECT l.art,
 		       COALESCE((SELECT b.email FROM benutzer b
@@ -66,7 +66,7 @@ func LadeLeserArtUndKontoEmail(ctx context.Context, pool db.PgxPoolIface, leserI
 }
 
 // LadeKontoEmail liefert die Schul-Adresse am Konto dieser Leserzeile ("" = kein Konto).
-func LadeKontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID string) (string, error) {
+func LadeKontoEmail(ctx context.Context, pool db.Pool, leserID string) (string, error) {
 	var email string
 	err := pool.QueryRow(ctx, `
 		SELECT COALESCE(email, '') FROM benutzer
@@ -79,7 +79,7 @@ func LadeKontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID string) (
 }
 
 // LadeLeserName liefert Vor- und Nachnamen einer Leserzeile.
-func LadeLeserName(ctx context.Context, pool db.PgxPoolIface, leserID string) (vorname, nachname string, err error) {
+func LadeLeserName(ctx context.Context, pool db.Pool, leserID string) (vorname, nachname string, err error) {
 	err = pool.QueryRow(ctx,
 		`SELECT COALESCE(vorname, ''), nachname FROM leser WHERE id = $1`, leserID).Scan(&vorname, &nachname)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -144,7 +144,7 @@ func IstAdressenKollision(err error) bool {
 //
 // Gebraucht für den Selbstschutz beim Löschen: Wer seine eigene Leserzeile löscht,
 // verliert beim Kollegium im selben Vorgang sein Konto.
-func LadeLeserIDVonKonto(ctx context.Context, pool db.PgxPoolIface, kontoID string) (string, error) {
+func LadeLeserIDVonKonto(ctx context.Context, pool db.Pool, kontoID string) (string, error) {
 	var leserID string
 	err := pool.QueryRow(ctx,
 		`SELECT COALESCE(leser_id::text, '') FROM benutzer WHERE id = $1`, kontoID).Scan(&leserID)

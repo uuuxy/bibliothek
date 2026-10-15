@@ -32,7 +32,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
@@ -118,7 +118,7 @@ func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Normalo", false)

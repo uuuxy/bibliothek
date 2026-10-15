@@ -6,14 +6,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TestLusdIdPartialUnique sichert die Invariante aus Migration 035 ab: lusd_id ist NUR
-// unter aktiven Schülern eindeutig (partieller Index uniq_schueler_lusd_id_active,
-// WHERE deleted_at IS NULL AND lusd_id IS NOT NULL). Ohne diese Beschränkung blockierte
-// eine soft-gelöschte lusd_id die Wiederanmeldung desselben Schülers beim nächsten
-// LUSD-Import — er blieb dauerhaft unsichtbar. Die Migration selbst wird nur einmal
-// angewandt; getestet wird der von schema.sql ausgelieferte Endzustand (den auch der
-// Migrationslauf herstellen muss).
-func TestLusdIdPartialUnique(t *testing.T) {
+// lusd_id ist nur unter aktiven Lesern eindeutig (partieller Index
+// uniq_schueler_lusd_id_active, WHERE deleted_at IS NULL AND lusd_id IS NOT NULL). Ohne die
+// Einschränkung blockierte eine gelöschte lusd_id die Wiederanmeldung desselben Schülers beim
+// nächsten LUSD-Abgleich, und er bliebe unsichtbar. Geprüft wird der Stand aus schema.sql, den
+// auch die Migrationen herstellen müssen.
+func TestLUSDIDEindeutigUnterAktiven(t *testing.T) {
 	pool := pgTestPool(t)
 
 	const insAktiv = `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id)
@@ -24,7 +22,7 @@ func TestLusdIdPartialUnique(t *testing.T) {
 	t.Run("zwei aktive mit gleicher lusd_id werden abgelehnt", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			erwarteErfolg(t, tx, "erster aktiver Schüler", insAktiv, "S-A", "Anna", "L-100")
-			erwarteConstraintVerletzung(t, tx, "uniq_schueler_lusd_id_active",
+			erwarteVerletzteBedingung(t, tx, "uniq_schueler_lusd_id_active",
 				insAktiv, "S-B", "Bela", "L-100")
 		})
 	})

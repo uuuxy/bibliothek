@@ -206,7 +206,7 @@ func (a monitorAntwort) alleTitel() map[string]bool {
 // leseMonitorAntwort fragt den öffentlichen Monitor über die echte Tür ab.
 func leseMonitorAntwort(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
 	t.Helper()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/monitor/slides", nil)
 	rec := httptest.NewRecorder()
 	srv.MonitorFolien()(rec, req)

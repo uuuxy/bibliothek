@@ -122,7 +122,7 @@ func FasseAuflagenZusammen(ctx context.Context, q Datenbank, titelID, andereID s
 	if err != nil {
 		return nil, fmt.Errorf("auflagen: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	koepfe, err := sperreAuflagen(ctx, tx, titelID, andereID)
 	if err != nil {
@@ -181,7 +181,7 @@ func LoeseAuflage(ctx context.Context, q Datenbank, titelID string) ([]Auflage, 
 	if err != nil {
 		return nil, fmt.Errorf("auflagen: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	koepfe, err := sperreAuflagen(ctx, tx, titelID)
 	if err != nil {

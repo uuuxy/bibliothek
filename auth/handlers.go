@@ -128,7 +128,7 @@ const loginRumpfMaxBytes = 16 << 10
 
 // LoginHandler returns an http.HandlerFunc that performs secure authentication.
 // Anmeldung ausschliesslich per E-Mail/Passwort gegen den Schul-Mailserver (IMAP).
-func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
+func LoginHandler(dbPool db.Pool, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		clientIP := realIP(r)
 
@@ -265,7 +265,7 @@ func checkBruteForceLimit(w http.ResponseWriter, email, clientIP string) (bruteF
 // Ein Fehlversuch wird NUR beim falschen Passwort gezählt. Ausfall von Mailserver oder
 // Datenbank und ein offener Antrag sind keine Fehlversuche — wer dort mit dem richtigen
 // Passwort weiterprobiert, darf sich nicht selbst aussperren.
-func authenticateUser(ctx context.Context, w http.ResponseWriter, dbPool db.PgxPoolIface, email, password, bruteForceKey string) (loginUser, bool) {
+func authenticateUser(ctx context.Context, w http.ResponseWriter, dbPool db.Pool, email, password, bruteForceKey string) (loginUser, bool) {
 	user, verifyErr := verifyIMAPCredentials(ctx, dbPool, email, password)
 	if verifyErr != nil {
 		// Mailserver-Ausfall ≠ falsches Passwort (Ausfallmatrix 20.08.2026): Vorher
@@ -317,7 +317,7 @@ func authenticateUser(ctx context.Context, w http.ResponseWriter, dbPool db.PgxP
 // Erfolg den lokal registrierten Benutzer. Ein Fehler bedeutet: kein gültiger Login.
 // ErrMailserverNichtErreichbar wird UNVERÄNDERT durchgereicht, damit der Handler den
 // Transport-Ausfall vom falschen Passwort unterscheiden kann (503 statt 401+Sperre).
-func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, password string) (loginUser, error) {
+func verifyIMAPCredentials(ctx context.Context, dbPool db.Pool, email, password string) (loginUser, error) {
 	// ONLY perform IMAP verification (Roundcube SSO)
 	if imapErr := AuthenticateIMAP(ctx, email, password); imapErr != nil {
 		return loginUser{}, imapErr
@@ -373,7 +373,7 @@ func loginUserAus(k repository.AnmeldeKonto) loginUser {
 // role_permissions-Tabelle, damit das Frontend exakt das anzeigt, was der Admin im
 // PermissionManager freigeschaltet hat. Admin hat implizit alle Rechte ("*"),
 // analog zum Bypass in der verlangeRecht-Middleware.
-func loadPermissionsForRole(ctx context.Context, dbPool db.PgxPoolIface, roleStr string) ([]string, error) {
+func loadPermissionsForRole(ctx context.Context, dbPool db.Pool, roleStr string) ([]string, error) {
 	if strings.EqualFold(roleStr, string(RoleAdmin)) {
 		return []string{"*"}, nil
 	}
@@ -412,7 +412,7 @@ func leseSitzung(w http.ResponseWriter, r *http.Request, authenticator *Authenti
 // ladeKontoAntwort liest Rolle, Stammdaten und Rechte des Kontos aus der DB — nicht aus den
 // Claims: Rolle oder Aktiv-Status können sich seit Token-Ausstellung geändert haben.
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
-func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolIface, userID string) (LoginResponse, bool) {
+func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.Pool, userID string) (LoginResponse, bool) {
 	ctx := r.Context()
 
 	konto, err := repository.LadeSitzungsKonto(ctx, dbPool, userID)
@@ -450,7 +450,7 @@ func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolI
 //
 // Eine gesperrte Anmeldung beantwortet er mit 423 und nur der E-Mail-Adresse: Der
 // Sperrbildschirm zeigt, wer angemeldet ist, mehr nicht.
-func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.HandlerFunc {
+func MeHandler(dbPool db.Pool, authenticator *Authenticator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := leseSitzung(w, r, authenticator)
 		if !ok {

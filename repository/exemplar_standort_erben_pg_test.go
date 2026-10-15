@@ -59,7 +59,7 @@ func erbWege() []erbWeg {
 			}
 		}},
 		{"Bestellung", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
-			svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+			svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 			if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
 				Mittel:      mitteltopf.Land,
 				LieferantID: testdaten.LegeLieferantAn(t, pool, "Händler "+titel.isbn, false),

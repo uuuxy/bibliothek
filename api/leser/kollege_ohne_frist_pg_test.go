@@ -32,7 +32,7 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// Das Exemplar wird angelegt und nicht im Bestand gesucht: testdaten.LeereBestandsdaten
 	// räumt ihn weg. Ein `LIMIT 1` auf eine leere Tabelle ließe den Test überspringen, und ein

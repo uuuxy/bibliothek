@@ -73,11 +73,11 @@ type MahnwesenKlasse struct {
 // MahnwesenAbfragen liest die überfälligen Ausleihen für Mahnliste und Mahnbriefe und erhöht
 // die Mahnstufe.
 type MahnwesenAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewMahnwesenAbfragen liefert die Abfragen des Mahnwesens an Postgres.
-func NewMahnwesenAbfragen(pool db.PgxPoolIface) *MahnwesenAbfragen {
+func NewMahnwesenAbfragen(pool db.Pool) *MahnwesenAbfragen {
 	return &MahnwesenAbfragen{db: pool}
 }
 

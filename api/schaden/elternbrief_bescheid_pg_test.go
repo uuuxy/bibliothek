@@ -23,7 +23,7 @@ func TestElternbrief_ForderungAufEinemBescheidBekommtKeinenBrief(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-EBRIEF", "Briefkind", "08G2")

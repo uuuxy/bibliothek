@@ -44,7 +44,7 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 	// Liste — und darf auch über seine Kennung keine Seite bekommen.
 	finn := testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-6", "Finn", "10G1")
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 
 	t.Run("ohne ids wie bisher: alle Abgänger", func(t *testing.T) {
 		rec, text := kontoauszugPDF(t, srv, "")
@@ -127,7 +127,7 @@ func TestAbgaengerDruck_AuswahlAendertDieSaisonNicht(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	anna := testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-1", "Anna", "9H1")
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: testdaten.WinterUhr}}
 	rec, _ := kontoauszugPDF(t, srv, "?ids="+anna)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("im Oktober mit Auswahl: Status = %d, want 404", rec.Code)

@@ -20,7 +20,7 @@ func TestMailVorlageAendern_Erfolg(t *testing.T) {
 	defer mock.Close()
 
 	server := &Tueren{
-		Basis: &tuer.Basis{DB: &db.Database{Pool: mock}},
+		Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}},
 	}
 
 	reqBody := map[string]string{
@@ -59,7 +59,7 @@ func TestMailVorlageAendern_OhneKennung(t *testing.T) {
 	defer mock.Close()
 
 	server := &Tueren{
-		Basis: &tuer.Basis{DB: &db.Database{Pool: mock}},
+		Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}},
 	}
 
 	reqBody := map[string]string{
@@ -88,7 +88,7 @@ func TestMailVorlageAendern_UngueltigesJSON(t *testing.T) {
 	defer mock.Close()
 
 	server := &Tueren{
-		Basis: &tuer.Basis{DB: &db.Database{Pool: mock}},
+		Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}},
 	}
 
 	req := httptest.NewRequest(http.MethodPut, "/api/mail-templates/mahnung_1", bytes.NewReader([]byte("{invalid-json}")))
@@ -108,7 +108,7 @@ func TestMailVorlageAendern_Datenbankfehler(t *testing.T) {
 	defer mock.Close()
 
 	server := &Tueren{
-		Basis: &tuer.Basis{DB: &db.Database{Pool: mock}},
+		Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}},
 	}
 
 	reqBody := map[string]string{

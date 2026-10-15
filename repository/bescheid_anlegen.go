@@ -73,7 +73,7 @@ func (a *pgBescheidAbfragen) LegeAn(ctx context.Context, e BescheidEingabe) (*Be
 	if err != nil {
 		return nil, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	laufendeNr, err := zieheLaufendeNummer(ctx, tx, e.Mittel, e.Kassenjahr)
 	if err != nil {

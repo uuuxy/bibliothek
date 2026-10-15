@@ -34,7 +34,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 		t.Fatalf("aussondern: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	hole := func(ifNoneMatch string) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, "/api/action/buchbarcodes", nil)

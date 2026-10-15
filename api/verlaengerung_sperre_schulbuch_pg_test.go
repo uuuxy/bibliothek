@@ -55,7 +55,7 @@ func sperrFristLageAnlegen(t *testing.T) *sperrFristLage {
 	ctx := context.Background()
 	l := &sperrFristLage{
 		pool:      pool,
-		srv:       &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}},
+		srv:       &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}},
 		alteFrist: testdaten.FristEnde(2027, time.July, 31),
 	}
 	l.srv.Uhr = func() time.Time { return time.Date(2026, time.September, 29, 10, 0, 0, 0, schulzeit.Zone()) }

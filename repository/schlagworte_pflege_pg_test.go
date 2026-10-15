@@ -315,7 +315,7 @@ func TestSchlagwortPflege_GleichzeitigKeinTitelAmVerweis(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, pflege)
+	defer db.Verwerfe(ctx, pflege)
 	if _, err := sperreSchlagwort(ctx, pflege, ids["Detektiv"]); err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +361,7 @@ func TestSchlagwortPflege_GleichzeitigKeineKette(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, b)
+	defer db.Verwerfe(ctx, b)
 	if _, err := b.Exec(ctx, `UPDATE schlagworte SET verweis_auf = $2 WHERE id = $1`,
 		ids["Fantasy"], ids["Abenteuer"]); err != nil {
 		t.Fatal(err)

@@ -60,7 +60,7 @@ func (a *InventurAbfragen) LegeLaufAn(ctx context.Context, bereichArt string, be
 	if err != nil {
 		return nil, fmt.Errorf("inventur-start-transaktion fehlgeschlagen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Alle Starts hintereinander, damit die Prüfung auf Überlappung nicht selbst von der
 	// Reihenfolge abhängt.

@@ -385,7 +385,7 @@ func (t *Tueren) rechneOderSchreibeLMFPlan(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return keine, false, apierrors.Internal("Transaktion", err)
 	}
-	defer db.SafeRollback(r.Context(), tx)
+	defer db.Verwerfe(r.Context(), tx)
 	stand, err := abfragen.SchreibePlan(r.Context(), tx, e.Plan, e.Zeilen, plaetze, e.Ausgelassen)
 	if err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan speichern", err)
@@ -469,7 +469,7 @@ func (t *Tueren) verwerfeLMFPlan(r *http.Request) (int64, error) {
 	if err != nil {
 		return 0, apierrors.Internal("Transaktion", err)
 	}
-	defer db.SafeRollback(r.Context(), tx)
+	defer db.Verwerfe(r.Context(), tx)
 	if _, err := abfragen.LoeschePlan(r.Context(), tx, stand.Plan.ID); err != nil {
 		return 0, apierrors.Internal("LMF-Plan löschen", err)
 	}

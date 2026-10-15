@@ -26,7 +26,7 @@ func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
 	ctx := context.Background()
 	admin := testdaten.LegeBearbeiterAn(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	t.Cleanup(func() {
 		for _, sql := range []string{
 			`DELETE FROM audit_logs WHERE details->>'email' = 'lena@leserdatei-anlage.invalid'`,

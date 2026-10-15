@@ -24,7 +24,7 @@ func TestBestellKonfiguration_WarntWennDerLinkNichtEntstehenKann(t *testing.T) {
 		t.Fatalf("bisherigen Hauptlieferanten räumen: %v", err)
 	}
 	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ohneAdresse := func() bool {
 		t.Helper()
 		rec := httptest.NewRecorder()

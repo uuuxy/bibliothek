@@ -39,7 +39,7 @@ func systematikAnlegen(t *testing.T, srv *Tueren, kuerzel, bezeichnung string) (
 func TestSachgruppeAnlegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// Bezeichnung mit Anhang: Sie ist eindeutig, auch ohne Rücksicht auf Groß- und
 	// Kleinschreibung (Migration 078), und andere Testpakete legen in derselben Datenbank schon
@@ -92,7 +92,7 @@ func TestSachgruppeAnlegen(t *testing.T) {
 func TestSachgruppeLoeschenGeschuetzt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	bezeichnung := "Erdkunde" + suffix
@@ -153,7 +153,7 @@ func TestSachgruppeLoeschenGeschuetzt(t *testing.T) {
 func TestSachgruppeAendern_ZiehtTitelMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	alt := "Biologie" + suffix
@@ -243,7 +243,7 @@ func TestSachgruppeAendern_ZiehtTitelMit(t *testing.T) {
 func TestSachgruppeAendern_UnbekanntUndDoppelt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	t.Cleanup(func() {

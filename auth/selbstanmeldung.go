@@ -109,7 +109,7 @@ func grossErsterBuchstabe(s string) string {
 // ON CONFLICT (email) DO NOTHING plus anschließendes Lesen: Zwei gleichzeitige
 // Anmeldeversuche derselben Person (zwei Geräte, Doppelklick) dürfen nicht an der
 // eindeutigen E-Mail-Spalte scheitern. Wer verliert, liest die Zeile des Gewinners.
-func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email string) (loginUser, error) {
+func legeZugangsanfrageAn(ctx context.Context, dbPool db.Pool, email string) (loginUser, error) {
 	if !darfSichSelbstAnmelden(email) {
 		return loginUser{}, errSelbstanmeldungNichtErlaubt
 	}

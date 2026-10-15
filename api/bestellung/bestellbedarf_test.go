@@ -27,7 +27,7 @@ func TestBestellbedarfAbfrage(t *testing.T) {
 	}
 	defer mock.Close()
 
-	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	// Echter Fehlbestand: gesamt 3 < Meldebestand 5 (ein Titel hat Exemplare verloren).
 	// Ein verliehener Klassensatz (gesamt 30 >= 5) taucht dagegen gar nicht auf — das
@@ -109,7 +109,7 @@ func TestBestellbedarfLeereListeIstArray(t *testing.T) {
 		WithArgs(3). // Vorgabe der Schwelle (leere Einstellungen ⇒ 3)
 		WillReturnRows(pgxmock.NewRows(bedarfSpalten()))
 
-	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	rec := httptest.NewRecorder()
 	server.Bestellbedarf().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen", nil))
 

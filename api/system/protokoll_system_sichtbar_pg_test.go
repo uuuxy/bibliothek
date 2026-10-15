@@ -24,7 +24,7 @@ import (
 func TestProtokollZeigtSystemEintraege(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	systemTabelle := "e2e_system_" + suffix

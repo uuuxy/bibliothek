@@ -21,7 +21,7 @@ func schuljahreswechselTueren(t *testing.T) (*Tueren, pgxmock.PgxPoolIface) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	t.Cleanup(mock.Close)
-	return &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}, mock
+	return &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}, mock
 }
 
 func rufeSchuljahreswechsel(t *testing.T, s *Tueren, body string) *httptest.ResponseRecorder {

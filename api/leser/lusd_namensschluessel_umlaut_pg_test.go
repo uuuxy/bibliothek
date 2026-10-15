@@ -25,7 +25,7 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	muellerID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Anna", nachname: "Müller", klasse: "5a", barcode: "UM-1"})
 	bauerID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Tom", nachname: "Bauer", klasse: "7b", barcode: "UM-2", bestaetigt: true})

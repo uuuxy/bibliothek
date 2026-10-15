@@ -5,17 +5,16 @@ import (
 	"testing"
 )
 
-// TestRechteVererbung_ManageUsersSplit: Eine gewachsene Anlage, die einer Rolle
-// manage_users erteilt hatte, behält nach der Aufteilung (24.08.2026) Einstellungen,
-// Versetzung, DSGVO-Auskunft und Purge — die beiden neuen Rechte erben den alten Wert.
-// Ohne die Vererbung legte der Seed sie mit der Vorgabe false an: still verloren, und
-// die Rolle sah stattdessen neu die Benutzerverwaltung im Menü.
-func TestRechteVererbung_ManageUsersSplit(t *testing.T) {
+// Eine gewachsene Anlage, die einer Rolle manage_users erteilt hat, behält Einstellungen,
+// Versetzung, Auskunft und Papierkorb: Die beiden Rechte, die daraus hervorgingen, erben den
+// Wert. Ohne das Erbe legte SchreibeRechteVorgabe sie mit der Vorgabe false an, und die Rolle
+// verlöre sie still.
+func TestRechteVererbung_AufteilungVonManageUsers(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	d := &Database{Pool: pool}
-	if err := d.InitPermissions(ctx); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	d := &Verbindung{Pool: pool}
+	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 
 	allowed := func(role, perm string) bool {
@@ -27,12 +26,12 @@ func TestRechteVererbung_ManageUsersSplit(t *testing.T) {
 		return v
 	}
 
-	// Frische Anlage: Vorgabe gilt, Mitarbeiter bekommt die neuen Rechte NICHT.
+	// Frische Anlage: Die Vorgabe gilt, MITARBEITER bekommt die beiden Rechte nicht.
 	if allowed("MITARBEITER", "manage_settings") || allowed("MITARBEITER", "manage_students_admin") {
 		t.Fatal("frische Anlage: MITARBEITER darf die neuen Rechte nicht ab Werk haben")
 	}
 
-	// Anlage vor dem Split nachstellen: manage_users erteilt, die neuen Zeilen gibt es noch nicht.
+	// Eine Anlage vor der Aufteilung: manage_users erteilt, die beiden Zeilen fehlen noch.
 	if _, err := pool.Exec(ctx, `UPDATE role_permissions SET allowed = true WHERE role = 'MITARBEITER' AND permission = 'manage_users'`); err != nil {
 		t.Fatal(err)
 	}
@@ -40,9 +39,9 @@ func TestRechteVererbung_ManageUsersSplit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Update = zweiter Start.
-	if err := d.InitPermissions(ctx); err != nil {
-		t.Fatalf("InitPermissions (Update): %v", err)
+	// Das Update ist der zweite Start.
+	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe (Update): %v", err)
 	}
 	if !allowed("MITARBEITER", "manage_settings") {
 		t.Error("MITARBEITER hatte manage_users und verliert nach dem Update still die Einstellungen (manage_settings=false)")
@@ -50,11 +49,11 @@ func TestRechteVererbung_ManageUsersSplit(t *testing.T) {
 	if !allowed("MITARBEITER", "manage_students_admin") {
 		t.Error("MITARBEITER hatte manage_users und verliert nach dem Update still Versetzung/DSGVO (manage_students_admin=false)")
 	}
-	// Ein erneuter Start ändert nichts mehr (idempotent) und fasst Bestehendes nicht an.
+	// Ein weiterer Start ändert nichts und fasst Bestehendes nicht an.
 	if _, err := pool.Exec(ctx, `UPDATE role_permissions SET allowed = false WHERE role = 'MITARBEITER' AND permission = 'manage_settings'`); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.InitPermissions(ctx); err != nil {
+	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
 		t.Fatal(err)
 	}
 	if allowed("MITARBEITER", "manage_settings") {
@@ -62,15 +61,15 @@ func TestRechteVererbung_ManageUsersSplit(t *testing.T) {
 	}
 }
 
-// TestRechteVererbung_MergeStudents: Zusammenführen war bis zum 03.09.2026 Teil von
-// manage_students_admin. Eine Anlage, die dieses Sonderrecht ans Sekretariat delegiert
-// hatte, behält den Knopf nach dem Update — merge_students erbt den alten Wert je Rolle.
-func TestRechteVererbung_MergeStudents(t *testing.T) {
+// Das Zusammenführen zweier Datensätze hat ein eigenes Recht (merge_students), das den Wert von
+// manage_students_admin erbt: Eine Anlage, die dieses Sonderrecht ans Sekretariat abgegeben hat,
+// behält den Knopf nach dem Update.
+func TestRechteVererbung_Zusammenfuehren(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	d := &Database{Pool: pool}
-	if err := d.InitPermissions(ctx); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	d := &Verbindung{Pool: pool}
+	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 	allowed := func(role, perm string) bool {
 		var v bool
@@ -83,15 +82,15 @@ func TestRechteVererbung_MergeStudents(t *testing.T) {
 	if !allowed("ADMIN", "merge_students") || allowed("MITARBEITER", "merge_students") || allowed("HELFER", "merge_students") {
 		t.Fatal("frische Anlage: merge_students ab Werk nur für ADMIN")
 	}
-	// Anlage vor der Herauslösung: Sonderrecht delegiert, die neue Zeile gibt es noch nicht.
+	// Eine Anlage, die das Sonderrecht abgegeben hat; die Zeile für merge_students fehlt noch.
 	if _, err := pool.Exec(ctx, `UPDATE role_permissions SET allowed = true WHERE role = 'MITARBEITER' AND permission = 'manage_students_admin'`); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := pool.Exec(ctx, `DELETE FROM role_permissions WHERE permission = 'merge_students'`); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.InitPermissions(ctx); err != nil {
-		t.Fatalf("InitPermissions (Update): %v", err)
+	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe (Update): %v", err)
 	}
 	if !allowed("MITARBEITER", "merge_students") {
 		t.Error("MITARBEITER hatte manage_students_admin und verliert nach dem Update still das Zusammenführen")

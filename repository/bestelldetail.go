@@ -95,11 +95,11 @@ type BestelldetailAbfragen interface {
 }
 
 type pgBestelldetailAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewBestelldetailAbfragen liefert die Abfragen der Detailansicht an Postgres.
-func NewBestelldetailAbfragen(pool db.PgxPoolIface) BestelldetailAbfragen {
+func NewBestelldetailAbfragen(pool db.Pool) BestelldetailAbfragen {
 	return &pgBestelldetailAbfragen{db: pool}
 }
 

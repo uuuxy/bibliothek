@@ -196,7 +196,7 @@ class AuthStore {
 		//
 		// perform_actions ist das Recht, an der Theke und im Bestand zu arbeiten
 		// (/api/action, /scan, /search). Wer es hat, gehört in die Verwaltung; das
-		// Kollegium hat es bewusst nicht (db/seed.go) und sieht sein Portal. Entschieden
+		// Kollegium hat es bewusst nicht (db/rechte_vorgabe.go) und sieht sein Portal. Entschieden
 		// wird damit nichts Neues: Welchen Bildschirm jemand öffnen darf, liest der
 		// Router ohnehin aus denselben Rechten (Router.svelte, erlaubteTabs).
 		const arbeitetInDerBibliothek = hatRecht(user, 'perform_actions');

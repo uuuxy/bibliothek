@@ -86,7 +86,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	if err := pruefeAenderung(ctx, tx, id, book, felder); err != nil {
 		return err

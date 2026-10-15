@@ -76,10 +76,10 @@ type BescheidBriefPosition struct {
 	Betrag       float64 `json:"betrag"`
 }
 
-type pgBescheidAbfragen struct{ db db.PgxPoolIface }
+type pgBescheidAbfragen struct{ db db.Pool }
 
 // NewBescheidAbfragen liefert die Abfragen der Bescheide an Postgres.
-func NewBescheidAbfragen(pool db.PgxPoolIface) BescheidAbfragen {
+func NewBescheidAbfragen(pool db.Pool) BescheidAbfragen {
 	return &pgBescheidAbfragen{db: pool}
 }
 

@@ -31,7 +31,7 @@ func baueRechteServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 	if err != nil {
 		t.Fatalf("authenticator init: %v", err)
 	}
-	return &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}}, mock
+	return &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: mock}, Auth: a}}, mock
 }
 
 // erwarteSperrlisteFrei erwartet die beiden Prüfungen in VerifyToken bei gültigem Token:

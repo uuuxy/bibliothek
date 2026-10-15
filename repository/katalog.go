@@ -59,10 +59,10 @@ type KatalogAbfragen interface {
 }
 
 type pgKatalogAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewKatalogAbfragen liefert die Abfragen des Katalogs an Postgres.
-func NewKatalogAbfragen(db db.PgxPoolIface) KatalogAbfragen {
+func NewKatalogAbfragen(db db.Pool) KatalogAbfragen {
 	return &pgKatalogAbfragen{db: db}
 }

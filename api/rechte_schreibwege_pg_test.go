@@ -88,15 +88,15 @@ func TestSchreibwegeWeisenOhneDasRechtAb(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Setenv("RATE_LIMIT", "100000")
 
-	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 	authenticator, err := auth.NewAuthenticator(
 		"rechte-schreibwege-gate-testgeheimnis-32-bytes!", pool, time.Hour)
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
 	router := srv.Routes()
 	welt := baueKanarienWelt(t, pool, authenticator)
 

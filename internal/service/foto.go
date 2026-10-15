@@ -27,7 +27,7 @@ var (
 // SchreibeLeserFoto wandelt das Foto eines Lesers (Base64) in WebP, verschlüsselt es und
 // speichert es. Zurück kommt die Adresse des Bildes, leer, solange der Leser keine
 // Ausweisnummer hat.
-func SchreibeLeserFoto(ctx context.Context, pool db.PgxPoolIface, leserID string, base64Text string) (string, error) {
+func SchreibeLeserFoto(ctx context.Context, pool db.Pool, leserID string, base64Text string) (string, error) {
 	// Die Ausweisnummer kommt aus der Tabelle leser, nicht aus der Sicht schueler: Die Akte
 	// bietet den Kamera-Knopf jedem Leser an, und die Auslieferung (api/leser/foto.go)
 	// liest das Bild über dieselbe Tabelle (TestSchreibeLeserFoto_AuchFuerKollegen). Ein

@@ -33,7 +33,7 @@ import (
 func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
 
 	// baueFall legt einen Schüler mit genau einem offenen Vorgang an.

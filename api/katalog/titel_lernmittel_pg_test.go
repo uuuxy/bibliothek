@@ -22,7 +22,7 @@ func TestNeuerDNBTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	resp, err := srv.schreibeTitelAusMetadaten(ctx, "9783060000001", &inventur.MetadatenErgebnis{Titel: "Mathematik 7 Hessen"})
 	if err != nil {
@@ -62,7 +62,7 @@ func TestNeuerDNBTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 
 func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	id := "00000000-0000-0000-0000-000000000000"
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+id+"/lernmittel", strings.NewReader(`{"ist_lernmittel":true}`))
 	req.SetPathValue("id", id)
@@ -82,7 +82,7 @@ func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 func TestLernmittelKennzeichenNimmtDenMehrjahresbandMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	const isbnBand, isbnNormal = "9780000134031", "9780000134048"
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnBand, isbnNormal); err != nil {

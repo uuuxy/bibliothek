@@ -23,7 +23,7 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Was der Eintrag nennt, wird vorher gelesen, aus der Tabelle leser und nicht aus der Sicht
 	// schueler: Die zeigt nur Schüler, und für einen Kollegen liefe der Weg ins Leere.
@@ -187,7 +187,7 @@ func (a *pgProtokollAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserI
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Endgültig gelöscht wird nur aus dem Papierkorb.
 	var imPapierkorb bool
@@ -220,7 +220,7 @@ func (a *pgProtokollAbfragen) LoescheAbgaengerEndgueltig(ctx context.Context, le
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	if err = pruefeKeineOffenenVorgaenge(ctx, tx, leserID); err != nil {
 		return err

@@ -181,13 +181,13 @@ func TestSperreNaechsteWartendeVormerkung_SperrtNurDieVormerkung(t *testing.T) {
 	titel, _, leser := warteschlange(t, pool, "sperre", "Aelteste", "Naechste")
 
 	ausleihe := beginne(t, pool)
-	defer db.SafeRollback(ctx, ausleihe)
+	defer db.Verwerfe(ctx, ausleihe)
 	if err := SperreLeserzeile(ctx, ausleihe, leser["Aelteste"]); err != nil {
 		t.Fatalf("Leserzeile sperren: %v", err)
 	}
 
 	rueckgabe := beginne(t, pool)
-	defer db.SafeRollback(ctx, rueckgabe)
+	defer db.Verwerfe(ctx, rueckgabe)
 	ist, da, err := SperreNaechsteWartendeVormerkung(ctx, rueckgabe, titel, nil)
 	if err != nil || !da || ist.Nachname != "Nachname Aelteste" {
 		t.Fatalf("erste Rückgabe: %+v, da=%v, Fehler %v; erwartet die Älteste trotz gesperrter Leserzeile", ist, da, err)
@@ -207,7 +207,7 @@ func TestSperreNaechsteWartendeVormerkung_SperrtNurDieVormerkung(t *testing.T) {
 			fertig <- err
 			return
 		}
-		defer db.SafeRollback(ctx, tx)
+		defer db.Verwerfe(ctx, tx)
 		w, da, err := SperreNaechsteWartendeVormerkung(ctx, tx, titel, nil)
 		zweite <- antwort{w, da, err}
 		fertig <- err

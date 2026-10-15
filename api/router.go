@@ -66,7 +66,7 @@ type Server struct {
 
 // NewServer baut den Server und bindet den Mailversand an die SMTP-Einstellungen in der
 // Datenbank.
-func NewServer(datenbank *db.Database, authenticator *auth.Authenticator, broker *sse.Broker, nurHTTPS bool) *Server {
+func NewServer(datenbank *db.Verbindung, authenticator *auth.Authenticator, broker *sse.Broker, nurHTTPS bool) *Server {
 	// Ab hier liest jeder Mailversand die in der Oberfläche gespeicherte SMTP-Konfiguration,
 	// nicht die Umgebungsvariablen des Containers; so nutzen der Test-Knopf und jeder echte
 	// Versand dieselbe Quelle.

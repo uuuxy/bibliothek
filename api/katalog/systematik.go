@@ -150,7 +150,7 @@ func (t *Tueren) aendereSachgruppe(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return apierrors.Internal(meldungSachgruppeNichtGeaendert, err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Die alte Bezeichnung vor dem Ändern lesen: Nur sie verbindet die Sachgruppe mit den offenen
 	// Inventurläufen und die Zählung mit den Büchern.

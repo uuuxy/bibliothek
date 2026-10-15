@@ -7,9 +7,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TestSearchVector_UmfasstTitelangabenUndISBN sichert den Volltext-Suchvektor nach Migration
-// 156 ab: Titel, Untertitel, Autor, Verlag und ISBN sind über ihn auffindbar.
-func TestSearchVector_UmfasstTitelangabenUndISBN(t *testing.T) {
+// Titel, Untertitel, Autor, Verlag und ISBN sind über den Vektor der Volltextsuche auffindbar.
+func TestSuchvektor_UmfasstTitelangabenUndISBN(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 

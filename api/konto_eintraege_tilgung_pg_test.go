@@ -29,7 +29,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 	admin := testdaten.LegeBearbeiterAn(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	t.Cleanup(func() {
@@ -167,7 +167,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer db.SafeRollback(ctx, tx)
+		defer db.Verwerfe(ctx, tx)
 		if err := repository.AnonymisiereAbgaenger(ctx, tx, leserID); err != nil {
 			t.Fatalf("anonymisieren: %v", err)
 		}

@@ -36,7 +36,7 @@ func TestRueckgabe_AbholfristMitFesterUhr(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer db.SafeRollback(ctx, tx)
+			defer db.Verwerfe(ctx, tx)
 			suffix := fmt.Sprintf("%d-%d", time.Now().UnixNano(), i)
 
 			var schuelerID, titelID, exemplarID string

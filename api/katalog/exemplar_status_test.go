@@ -17,7 +17,7 @@ import (
 // schreibt ist_ausgesondert als Parameter, als einziger neben sieben Wegen mit festem Grund.
 // Schriebe er aussonderung_grund nicht mit, lehnte chk_aussonderung_grund (Migration 043) jedes
 // Aussondern (der Grund bliebe NULL) und jedes Reaktivieren (der Grund bliebe stehen) mit einem
-// 500 ab. Die Bedingung selbst sichert db/constraints_aussonderung_pg_test.go an der Datenbank;
+// 500 ab. Die Bedingung selbst sichert db/bedingung_aussonderung_pg_test.go an der Datenbank;
 // hier wird festgehalten, dass der Code das Feld tatsächlich mitschreibt.
 //
 // Der reguläre Ausdruck prüft den CASE-Ausdruck: WHEN $2 (aussondern) muss den Grund

@@ -2,19 +2,14 @@ package db
 
 import "testing"
 
-// Die Rolle Leitung (15.09.2026): „Die Leitung startet mit allen Rechten außer
-// ‚Benutzer & Rechte' und ‚Einstellungen'."
+// Die Leitung beginnt mit allen Rechten außer „Benutzer & Rechte" und „Einstellungen".
 //
-// Dieser Test prüft die PAARUNG, nicht eine abgeschriebene Liste: Er leitet das Soll aus
-// den ADMIN-Zeilen derselben Vorgabe ab. Eine handgepflegte Liste würde beim nächsten
-// neuen Recht still auseinanderlaufen — die Leitung bekäme es nicht, und niemand merkte
-// es, weil der Test weiter grün wäre. Genau so verlor das Kollegium 2026 wochenlang
-// Menüpunkte (siehe Kommentar an RechteVorgabe).
+// Der Test prüft die Paarung, keine abgeschriebene Liste: Er leitet das Soll aus den Zeilen des
+// Admins in derselben Vorgabe ab. Eine von Hand gepflegte Liste liefe beim nächsten neuen Recht
+// still auseinander; die Leitung bekäme es nicht, und der Test bliebe grün.
 //
-// Bewusst OHNE Datenbank: Der Abgleich gegen die Live-Tabelle steckt in der
-// Selbstprüfung und in rolle_leitung_pg_test.go, und die hängen an TEST_DATABASE_URL.
-// Ein Gate, das sich ohne seine Umgebung still abschaltet, meldet grün und hat nichts
-// geprüft (siehe helfer_permissions_pg_test.go).
+// Er braucht keine Datenbank: Den Abgleich mit der Tabelle machen die Selbstprüfung und
+// rolle_leitung_pg_test.go, und die hängen an TEST_DATABASE_URL. Dieser Test läuft immer.
 func TestRechteVorgabeLeitung(t *testing.T) {
 	// Die zwei Türen, die der Leitung verschlossen bleiben. „Systempflege" ist kein
 	// eigenes Recht: Was nur der Admin braucht, heißt manage_users (Benutzer & Rechte)
@@ -27,11 +22,11 @@ func TestRechteVorgabeLeitung(t *testing.T) {
 	admin := map[string]bool{}
 	leitung := map[string]bool{}
 	for _, e := range RechteVorgabe {
-		switch e.Role {
+		switch e.Rolle {
 		case "ADMIN":
-			admin[e.Permission] = e.Allowed
+			admin[e.Recht] = e.Erlaubt
 		case "LEITUNG":
-			leitung[e.Permission] = e.Allowed
+			leitung[e.Recht] = e.Erlaubt
 		}
 	}
 
@@ -70,26 +65,24 @@ func TestRechteVorgabeLeitung(t *testing.T) {
 	}
 }
 
-// Die Rechte der Leitung sind ein STARTWERT, kein Soll. Absprache vom 15.09.2026: „Die Leitung
-// startet mit allen Rechten außer Benutzer & Rechte und Einstellungen; was nicht passt,
-// nimmt der Admin im Rechte-Editor weg."
+// Die Rechte der Leitung sind ein Startwert, kein Soll: Was nicht passt, nimmt der Admin in der
+// Matrix weg.
 //
-// Daraus folgt für die Selbstprüfung (internal/bereitschaft/rechte.go): Sie darf einen
-// abweichenden LIVE-Wert nicht als Drift melden, sonst steht jede Anlage, die die Rolle
-// einmal angepasst hat, dauerhaft mit einer Warnung da — und Dauerwarnungen erziehen zum
-// Wegsehen (derselbe Grund, aus dem MITARBEITER/manage_settings dort steht). Die EXISTENZ
-// der Zeile prüft sie weiter: Ein fehlendes Recht erreicht eine Bestandsanlage nie von
-// selbst, das bleibt ein Befund.
+// Die Selbstprüfung (internal/bereitschaft/rechte.go) meldet deshalb einen abweichenden Wert
+// nicht, sonst stünde jede Anlage, die die Rolle angepasst hat, dauerhaft mit einer Warnung da,
+// und an Dauerwarnungen gewöhnt man sich (aus demselben Grund steht dort
+// MITARBEITER/manage_settings). Ob die Zeile da ist, prüft sie weiter: Ein fehlendes Recht
+// erreicht eine bestehende Anlage nie von selbst.
 func TestRechteDerLeitungSindEinStartwert(t *testing.T) {
 	var leitung int
 	for _, e := range RechteVorgabe {
-		if e.Role != "LEITUNG" {
+		if e.Rolle != "LEITUNG" {
 			continue
 		}
 		leitung++
-		if !RechteOptional[e.Role+"/"+e.Permission] {
+		if !RechteOptional[e.Rolle+"/"+e.Recht] {
 			t.Errorf("LEITUNG/%s fehlt in RechteOptional — nimmt der Admin dieses Recht "+
-				"weg, meldet die Selbstprüfung dauerhaft eine Abweichung", e.Permission)
+				"weg, meldet die Selbstprüfung dauerhaft eine Abweichung", e.Recht)
 		}
 	}
 	if leitung == 0 {

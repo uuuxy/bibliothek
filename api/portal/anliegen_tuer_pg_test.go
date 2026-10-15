@@ -25,7 +25,7 @@ import (
 func TestAnliegenAnlegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &portal.Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &portal.Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	var lehrkraftID, titelID string
 	if err := pool.QueryRow(ctx, `

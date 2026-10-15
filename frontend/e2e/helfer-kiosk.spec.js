@@ -9,7 +9,7 @@ import { uiLogin, apiPost, seedBenutzer } from './helpers.js';
 // den Kiosk, und sie kommt an nichts anderes heran.
 //
 // Bewusst NICHT hier geprüft: ob ein Helfer im Kiosk scannen darf. Die geseedeten
-// Rechte stehen derzeit alle auf false (db/seed.go), womit jeder Scan 403 liefert.
+// Rechte stehen derzeit alle auf false (db/rechte_vorgabe.go), womit jeder Scan 403 liefert.
 // Ob eine Hilfskraft Schülerdaten sehen darf, ist eine fachliche und
 // datenschutzrechtliche Entscheidung des Betreibers — kein Test darf sie vorwegnehmen,
 // in keine der beiden Richtungen.

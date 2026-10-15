@@ -22,7 +22,7 @@ func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	var admin string
 	if err := pool.QueryRow(ctx, `

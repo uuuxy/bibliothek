@@ -17,8 +17,8 @@ func TestRechteVorgabe_DriftKetteAmEchtenPostgres(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
-	datenbank := &db.Database{Pool: pool}
-	if err := datenbank.InitPermissions(ctx); err != nil {
+	datenbank := &db.Verbindung{Pool: pool}
+	if err := datenbank.SchreibeRechteVorgabe(ctx); err != nil {
 		t.Fatalf("Seed: %v", err)
 	}
 

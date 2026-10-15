@@ -100,7 +100,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		t.Fatalf("Lieferant an zwei Bestellungen setzen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	rufe := func(t *testing.T, query string) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, "/api/bestellungen/bericht.pdf?"+query, nil)

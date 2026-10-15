@@ -47,7 +47,7 @@ func (a *pgProtokollAbfragen) StorniereForderung(ctx context.Context, schadensfa
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	betrag, err := ladeBetragFuerErledigung(ctx, tx, schadensfallID)
 	if err != nil {
@@ -99,7 +99,7 @@ func (a *pgProtokollAbfragen) VerbucheZahlung(ctx context.Context, schadensfallI
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	betrag, err := ladeBetragFuerErledigung(ctx, tx, schadensfallID)
 	if err != nil {

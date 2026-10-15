@@ -156,7 +156,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 - **Mandantenfähigkeit.** Eine Schule, eine Datenbank, ein Stack. Es gibt keine
   Schul-ID und keinen Mandanten-Schlüssel.
 - **Konfigurierbarkeit als Produktmerkmal.** Was das Kollegium darf, steht fest in
-  `db/seed.go` und ist kein Schalter je Schule (Entscheidung vom 16.09.2026).
+  `db/rechte_vorgabe.go` und ist kein Schalter je Schule (Entscheidung vom 16.09.2026).
 - **Skalierung über einen Host hinaus.** Der Entwurf zielt auf ~1.900 Leser und acht
   gleichzeitige Arbeitsplätze, nicht auf horizontale Skalierung. Der Prozess hält
   In-Memory-Zustand (SSE-Broker, Rechte-Cache, Rate-Limit-Zähler); mehrere Instanzen
@@ -252,7 +252,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | Konvention                                        | Regel                                                                                                                                                                                                              | Durchsetzung                                                        |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | **Namen, Sichtbarkeit, Kommentare**               | Eine Sache hat ein Wort, und das Fachwort ist deutsch; Verben, Kürzel, Türen, was öffentlich ist und was ein Kommentar sagt, regelt [STIL.md](STIL.md) nach Googles Regelwerk für Go. Der Bestand mischt noch Deutsch und Englisch (`Student` neben `Leser`) und wird Paket für Paket umgestellt. | `stil_ratsche_test.go` (Bestand je Paket, sinkt nur); `golangci-lint` (revive, Regel `exported`) |
-| **Migrationen**                                   | `NNN_beschreibung.sql`, idempotent (`IF NOT EXISTS` / `DO $$ … EXCEPTION`), dedupliziert über `schema_migrations`; die Seed-Liste in `schema.sql` muss exakt den Dateien entsprechen.                               | `db/migrations_drift_test.go`, `db/migrations_nummern_test.go`, `db/migrations_schema_paritaet_pg_test.go` |
+| **Migrationen**                                   | `NNN_beschreibung.sql`, idempotent (`IF NOT EXISTS` / `DO $$ … EXCEPTION`), dedupliziert über `schema_migrations`; die Seed-Liste in `schema.sql` muss exakt den Dateien entsprechen.                               | `db/migrationen_drift_test.go`, `db/migrationen_nummern_test.go`, `db/migrationen_schema_paritaet_pg_test.go` |
 | **Rows-Iteration**                                | Jede `rows.Next()`-Schleife endet mit `rows.Err()`. Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als Erfolg — die Liste wäre still unvollständig.                                                   | `golangci-lint`, Review                                              |
 | **Paketkommentar**                                | Jedes Go-Paket trägt genau einen Kommentar unmittelbar über der `package`-Zeile; er sagt in ein bis drei Sätzen, wofür das Paket da ist. So verlangt es Googles Regelwerk für Go, Abschnitt [Package comments](https://google.github.io/styleguide/go/decisions#package-comments). Ein Kommando beginnt mit `Command <Name>`. | `golangci-lint` (revive, Regel `package-comments`) |
 | **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen der Themen heißen noch `s`, wie am Server, von dem sie stammen; mit ihrem Paket bekommen sie `t` ([STIL.md](STIL.md), Abschnitt 4). | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
@@ -646,7 +646,7 @@ HTTP-Anfrage
 | `inventur/`             | 6.547 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.793 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
 | `jobs/`                 | 1.607 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
-| `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
+| `db/`                   | 651 Zeilen, 5 Dateien      | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                  |
 | `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 3.826 Zeilen, 23 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben, Bestellbericht |
 | `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
@@ -1326,7 +1326,7 @@ Vollständig: `schema.sql` (44 Tabellen) und [invarianten.md](invarianten.md).
 | `ausweisnummern_ausgeschieden` | Jede `A-`-Nummer, die eine Leserzeile verlassen hat — nur die Zahl, ohne Person; der Generator zählt über sie hinweg (Migration 146) |
 | `schueler` (**Sicht**)         | `WHERE art = 'schueler'` + `WITH CHECK OPTION` — trägt die alte Bedeutung „wirklich Schüler" weiter               |
 | `benutzer`                     | Anmeldekonten; `UNIQUE lower(email)`; **keine** Passwortspalte                                                    |
-| `role_permissions`             | Die konfigurierbare Rechtematrix; Vorgabe kommt aus `db/seed.go`                                                  |
+| `role_permissions`             | Die konfigurierbare Rechtematrix; Vorgabe kommt aus `db/rechte_vorgabe.go`                                                  |
 | `vormerkungen`                 | Einzel-Vormerkungen inkl. Abholfach und Abholfrist                                                                |
 | `klassensatz_reservierungen`   | Reservierungen des Kollegiums                                                                                     |
 | `lmf_plaene`, `lmf_termine`, `lmf_termin_klassen`, `lmf_plan_freie_tage`, `lmf_plan_ausgelassen` | Büchertausch und -ausgabe je Klasse                            |
@@ -2418,7 +2418,7 @@ vierzig Terminen von selbst um.
 
 - **Konfiguration aus der Datenbank, nicht aus der Umgebung.** `BindeSMTPKonfigAnDatenbank`
   wird beim Serverbau gesetzt; vorher benutzte der Test-Knopf die eine und jeder echte
-  Versand die andere Quelle. `InitMailKonfig` übernimmt beim Start die Werte aus der
+  Versand die andere Quelle. `UebernimmMailKonfig` übernimmt beim Start die Werte aus der
   Umgebung **nur**, solange in der Datenbank noch die Schema-Vorgabe steht — ohne diese
   Übernahme gingen die Mahnungen nach dem Umstieg an `localhost:1025`. Gemeldet wird nur,
   wenn wirklich übernommen wurde.
@@ -2495,7 +2495,7 @@ Warnung; unlesbarer Wert ⇒ Abbruch. Der Secret-Guard ist von selbst scharf. Fe
 `BACKUP_ENCRYPTION_KEY`, überspringt sich der Backup-Job — und die Selbstprüfung macht
 genau das sichtbar, statt dass es unbemerkt bleibt.
 
-Was das Kollegium darf, steht **fest** in `db/seed.go` und ist bewusst **kein** Schalter je
+Was das Kollegium darf, steht **fest** in `db/rechte_vorgabe.go` und ist bewusst **kein** Schalter je
 Schule. Die Rechte der Leitung werden aus den Admin-Rechten **abgeleitet** (Admin minus
 `manage_users` und `manage_settings`) — eine abgeschriebene Liste wäre eine zweite Wahrheit
 und liefe beim nächsten neuen Recht auseinander, ohne dass es jemand merkt.
@@ -2654,7 +2654,7 @@ wenn man ihn einmal gebraucht hat.
   Eintrag: in `phantom_erfolg_test.go` für jeden `Exec`, dessen Ergebnis verworfen wird; in
   `docs/PII_MATRIX.de.md` eine Zeile je Route (`api/pii_matrix_test.go`); in `bauePIIAufrufe`
   ein Aufruf je GET-Route (`api/pii_antwort_pg_test.go`); am Ende von `schema.sql` die
-  neue Migration in der Liste der angewendeten (`db/migrations_drift_test.go`); in
+  neue Migration in der Liste der angewendeten (`db/migrationen_drift_test.go`); in
   `repository/schema_gegenrichtung_pg_test.go` jede neue Lösch-Folge und jede neue Bedingung
   mit der Antwort, wer die Folge behandelt; in
   `repository/schema_gegenrichtung_sperren_pg_test.go` jeder neue Fremdschlüssel, an dem ein
@@ -3228,7 +3228,7 @@ ab (`api/leser/leser_anlegen.go`, `api/leser/leser_aendern.go`).
 
 **Entscheidung.** Der Admin vergibt **vier** Rollen (Admin, Leitung, Mitarbeiter, Helfer).
 `kollegium` ist technisch derselbe Enum-Wert, fachlich aber der Grundzustand jeder
-Lehrkraft. Was das Kollegium darf, steht **fest** in `db/seed.go`.
+Lehrkraft. Was das Kollegium darf, steht **fest** in `db/rechte_vorgabe.go`.
 
 **Anlass.** Bis zum 16.09.2026 stand Kollegium als fünfte Spalte in der Rechte-Matrix und
 sah dort wie eine Stufe in einer Rangfolge aus. Es ist keine: Jede Lehrkraft meldet sich
@@ -3245,7 +3245,7 @@ System-Logs und Einstellungen — und es war keine reine Anzeigefrage: Dieselbe 
 entscheidet in `verlangeRecht`. Migration 070 hat alles außer `create_reservations`
 entzogen.
 
-**Fundstelle.** `db/seed.go`, `auth/selbstanmeldung.go`; Migrationen 042 (`helfer` kommt in
+**Fundstelle.** `db/rechte_vorgabe.go`, `auth/selbstanmeldung.go`; Migrationen 042 (`helfer` kommt in
 das Enum), 069 (`lehrer` → `kollegium`, weil das Wort doppelt belegt war), 070 (Rechte des
 Kollegiums auf das Portal zurückgenommen), 121 (`leitung`).
 
@@ -3257,7 +3257,7 @@ Kollegiums auf das Portal zurückgenommen), 121 (`leitung`).
 `manage_settings`. Migration 122 **erzeugt** die Zeilen aus den Admin-Zeilen und setzt genau
 die zwei Ausnahmen auf `false`.
 
-**Anlass.** Eine abgeschriebene Rechteliste wäre eine zweite Wahrheit neben `db/seed.go`
+**Anlass.** Eine abgeschriebene Rechteliste wäre eine zweite Wahrheit neben `db/rechte_vorgabe.go`
 und liefe beim nächsten neuen Recht auseinander — die Leitung bekäme es nicht, und niemand
 merkte es.
 
@@ -3608,7 +3608,7 @@ vermerkt.
 | ID  | Auslöser / Situation                                                                              | Erwartete Reaktion                                                                                     | Nachweis                                                                    |
 | --- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | S16 | Eine bereits behobene Bugklasse kehrt in neuem Code zurück                                         | Die zuständige Ratsche wird rot — **und** ihre bekannte Blindheit steht in der Landkarte                | [sweeps.md](sweeps.md) samt „Landkarte der Ratschen"                     |
-| S17 | Zwei Orte behaupten dasselbe (Swagger vs. Annotation, Migrationsliste vs. `schema.sql`, Compose vs. Code, Dokumentzahl vs. Rechenfunktion) | Drift wird rot                                                          | `docs/swagger_drift_test.go`, `db/migrations_drift_test.go`, `docs/compose_variablen_test.go`, `docs/ersatzwert_staffel_test.go`, `docs/stand_angaben_test.go` |
+| S17 | Zwei Orte behaupten dasselbe (Swagger vs. Annotation, Migrationsliste vs. `schema.sql`, Compose vs. Code, Dokumentzahl vs. Rechenfunktion) | Drift wird rot                                                          | `docs/swagger_drift_test.go`, `db/migrationen_drift_test.go`, `docs/compose_variablen_test.go`, `docs/ersatzwert_staffel_test.go`, `docs/stand_angaben_test.go` |
 | S18 | Ein Deploy während laufender Kiosk-Verbindungen                                                    | Geordnetes Herunterfahren innerhalb von 10 s, **kein** `os.Exit(1)`; Migrationen laufen beim Start des neuen Containers | `sse/sse_test.go`, `main_test.go`                                           |
 | S23 | Toter Code bleibt liegen (eine geschriebene, getestete und nie gerufene Funktion)                   | Deadcode-Gate wird rot                                                                                 | `scripts/deadcode_gate.sh` + Baseline                                       |
 
@@ -3815,7 +3815,7 @@ meldet `inventur/` an.
 `role_permissions` entscheidet in `verlangeRecht`. Eine Fehlkonfiguration ist damit
 keine Anzeigefrage, sondern eine echte Rechteerweiterung — genau das war am 10.08.2026 der
 Fall, als ein Kollegiums-Konto zehn von fünfzehn Menüpunkten sah. Gegenmittel: Die Vorgabe
-steht in `db/seed.go`, `leitung` wird abgeleitet (A12), Migrationen laufen nur einmal (eine
+steht in `db/rechte_vorgabe.go`, `leitung` wird abgeleitet (A12), Migrationen laufen nur einmal (eine
 spätere Handvergabe wird **nicht** zurückgedreht). Die Betriebsbereitschaft vergleicht die
 Matrix mit der Vorgabe und nennt jede Abweichung (`pruefeRechteVorgabe`, Bereich
 „Rechte-Vorgabe") — als Warnung, weil eine Abweichung eine Entscheidung des Admins sein kann.
@@ -4502,7 +4502,7 @@ Einstieg.
 | **Karenzzeit**              | Frist ab dem späteren von Abgang und letztem abgeschlossenem Vorgang bis zur Anonymisierung (Vorgabe 90 Tage) — das Fenster, in dem eine falsche Zuordnung noch reparierbar ist | `abgaenger_karenz_tage`, `repository.sqlKarenzUhr`, `PraedikatAnonymisierung` |
 | **Katalog**                 | Die Titel (Metadaten), einer je **Auflage** — im Unterschied zum **Bestand**                                                                                            | `buecher_titel`                                            |
 | **Klassensatz**             | Mehrere Exemplare eines Titels für eine Klasse. Zwei Quellen: Handliste und live aus den Ausleihen abgeleitet                                                            | `class_books`, `klassensatz_reservierungen`                  |
-| **Kollegium**               | **Grundzustand** jeder Lehrkraft, keine vergebene Rolle. Ein Recht: `create_reservations`                                                                                | Enum `benutzer_rolle = 'kollegium'`, `db/seed.go`            |
+| **Kollegium**               | **Grundzustand** jeder Lehrkraft, keine vergebene Rolle. Ein Recht: `create_reservations`                                                                                | Enum `benutzer_rolle = 'kollegium'`, `db/rechte_vorgabe.go`            |
 | **Leser**                   | Jeder Entleiher — Schüler und Kollegium, jeweils mit seiner Art. Eine Tabelle, ein Ausweis-Nummernkreis                                                                 | `leser`                                                    |
 | **Leserdatei**              | Die Liste aller Leser in der Oberfläche                                                                                                                                 | `frontend/src/lib/StudentDirectory.svelte`                  |
 | **Leitung**                 | Rolle: Admin **minus** `manage_users` und `manage_settings` — abgeleitet, nicht abgeschrieben                                                                            | Migration 122, `db/rolle_leitung_test.go`                    |

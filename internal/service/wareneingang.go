@@ -34,7 +34,7 @@ type WareneingangAngaben struct {
 // BucheWareneingang bucht die genannten Exemplare aus dem Zulauf ein und schreibt einen Eintrag
 // ins Protokoll. Scheitert nur der Eintrag, bleibt die Buchung, und der Fehler steht im Log
 // (meldeProtokollFehler).
-func BucheWareneingang(ctx context.Context, pool db.PgxPoolIface, protokollAbfragen repository.ProtokollAbfragen, angaben WareneingangAngaben) ([]EingebuchtesExemplar, error) {
+func BucheWareneingang(ctx context.Context, pool db.Pool, protokollAbfragen repository.ProtokollAbfragen, angaben WareneingangAngaben) ([]EingebuchtesExemplar, error) {
 	eingebucht, err := repository.BucheZulaufEin(ctx, pool, angaben.ExemplarIDs)
 	if err != nil {
 		return nil, err

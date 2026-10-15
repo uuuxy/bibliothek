@@ -74,7 +74,7 @@ func verfuegbarkeitNach(t *testing.T, srv *Tueren, titelID, barcode string) bool
 func TestTitelExemplare_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 
 	titel := testdaten.LegeTitelAn(t, pool, "Verfuegbarkeit", 1)
@@ -134,7 +134,7 @@ func TestTitelExemplare_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 func TestTitelExemplare_TitelOhneExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	titel := testdaten.LegeTitelAn(t, pool, "Ohne Exemplare", 0)
 

@@ -7,19 +7,17 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TestFachFkSystematik sichert die Invarianten aus Migration 078: buecher_titel.subject
-// ist Fremdschlüssel auf systematik_kategorien(bezeichnung). Umbenennen zieht die Titel
-// per CASCADE mit, Löschen ist gesperrt, solange Titel dranhängen, und eine zweite
-// Sachgruppe, die sich nur in Groß-/Kleinschreibung unterscheidet, wird abgewiesen.
-// Getestet wird der von schema.sql ausgelieferte Endzustand (den auch der
-// Migrationslauf herstellen muss).
-func TestFachFkSystematik(t *testing.T) {
+// buecher_titel.subject verweist auf systematik_kategorien(bezeichnung): Umbenennen zieht die
+// Titel mit (CASCADE), Löschen ist gesperrt, solange Titel daran hängen, und eine zweite
+// Sachgruppe, die sich nur in Groß- und Kleinschreibung unterscheidet, wird abgewiesen. Geprüft
+// wird der Stand aus schema.sql, den auch die Migrationen herstellen müssen.
+func TestFachVerweistAufSystematik(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 
 	t.Run("unbekanntes fach wird abgewiesen", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteConstraintVerletzung(t, tx, "fk_titel_subject_systematik",
+			erwarteVerletzteBedingung(t, tx, "fk_titel_subject_systematik",
 				`INSERT INTO buecher_titel (titel, subject) VALUES ('FK-Test', 'NieRegistriert078')`)
 		})
 	})
@@ -57,7 +55,7 @@ func TestFachFkSystematik(t *testing.T) {
 				`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('Mat078', 'Mathematik078')`)
 			erwarteErfolg(t, tx, "Titel mit Fach",
 				`INSERT INTO buecher_titel (titel, subject) VALUES ('FK-Test-Restrict', 'Mathematik078')`)
-			erwarteConstraintVerletzung(t, tx, "fk_titel_subject_systematik",
+			erwarteVerletzteBedingung(t, tx, "fk_titel_subject_systematik",
 				`DELETE FROM systematik_kategorien WHERE bezeichnung = 'Mathematik078'`)
 		})
 	})
@@ -66,7 +64,7 @@ func TestFachFkSystematik(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			erwarteErfolg(t, tx, "erste Schreibweise",
 				`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('Bio078', 'Biologie078')`)
-			erwarteConstraintVerletzung(t, tx, "uniq_systematik_bezeichnung_ci",
+			erwarteVerletzteBedingung(t, tx, "uniq_systematik_bezeichnung_ci",
 				`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('bio078x', 'biologie078')`)
 		})
 	})

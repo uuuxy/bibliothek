@@ -131,11 +131,11 @@ type EinstellungsAbfragen interface {
 }
 
 type pgEinstellungsAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewEinstellungsAbfragen liefert die Abfragen der Einstellungen an Postgres.
-func NewEinstellungsAbfragen(pool db.PgxPoolIface) EinstellungsAbfragen {
+func NewEinstellungsAbfragen(pool db.Pool) EinstellungsAbfragen {
 	return &pgEinstellungsAbfragen{db: pool}
 }
 

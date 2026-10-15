@@ -88,7 +88,7 @@ func offeneInventuren(t *testing.T, pool *pgxpool.Pool) int {
 func TestInventurStarten_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	ctx := context.Background()
 
@@ -119,7 +119,7 @@ func TestInventurStarten_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 func TestInventurStarten_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-D1", "IS-D2")
@@ -141,7 +141,7 @@ func TestInventurStarten_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 func TestInventurStarten_FilterNachFachUndKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	inventurFach(t, pool, "Inventurfach Mathe")
@@ -169,7 +169,7 @@ func TestInventurStarten_FilterNachFachUndKlasse(t *testing.T) {
 func TestInventurStarten_BelegterBereichIst409(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-B1")
 

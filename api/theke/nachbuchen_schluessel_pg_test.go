@@ -74,7 +74,7 @@ func baueNachbuchWelt(t *testing.T) *nachbuchWelt {
 	deviceSvc := service.NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
 	w.online = service.NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 	w.nachbuch = service.NewNachbuchDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
-	w.srv = &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
+	w.srv = &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Broker: sse.NewBroker()}}
 	return w
 }
 

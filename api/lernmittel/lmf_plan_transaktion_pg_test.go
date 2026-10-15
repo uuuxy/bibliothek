@@ -31,7 +31,7 @@ import (
 // pgxmock: der echte Pool, eingewickelt, und seine Transaktion lässt genau das UPDATE der
 // Fristen scheitern. Alles andere, Plan lesen und Plan schreiben, läuft echt.
 type poolMitFehlerBei struct {
-	db.PgxPoolIface
+	db.Pool
 	muster string
 	// durchgelassen zählt die passenden Anweisungen, die vor dem Fehler noch gelingen; nil
 	// heißt: schon die erste scheitert.
@@ -56,11 +56,11 @@ func (p poolMitFehlerBei) Exec(ctx context.Context, sql string, args ...any) (pg
 	if scheitertAn(sql, p.muster, p.durchgelassen) {
 		return pgconn.CommandTag{}, errors.New("Testfehler mitten in der Frist-Kopplung: " + p.muster)
 	}
-	return p.PgxPoolIface.Exec(ctx, sql, args...)
+	return p.Pool.Exec(ctx, sql, args...)
 }
 
 func (p poolMitFehlerBei) Begin(ctx context.Context) (pgx.Tx, error) {
-	tx, err := p.PgxPoolIface.Begin(ctx)
+	tx, err := p.Pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func TestLMFPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-	echt := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	echt := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	repo := repository.NewLMFAbfragen(pool)
 
 	stichtag := time.Date(2027, time.July, 31, 23, 59, 0, 0, schulzeit.Zone())
@@ -114,7 +114,7 @@ func TestLMFPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 	}
 
 	// Jetzt dieselben Türen, nur dass ihre Transaktion beim Fristen-UPDATE scheitert.
-	kaputt := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: poolMitFehlerBei{PgxPoolIface: pool, muster: "UPDATE ausleihen"}}}}
+	kaputt := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: poolMitFehlerBei{Pool: pool, muster: "UPDATE ausleihen"}}}}
 	rec := lmfPlanAufruf(t, kaputt, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-28","letzte_stunde":4,"stunden_je_tag":6,"zeilen":[{"klassen":["8G1"]},{"klassen":["9H1"]}]}`)
 	if rec.Code != http.StatusInternalServerError {
@@ -162,7 +162,7 @@ func TestLMFPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-	echt := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	echt := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	stichtag := schulzeit.TagesEnde(time.Date(2027, time.July, 31, 0, 0, 0, 0, schulzeit.Zone()))
 	anna := testdaten.LegeSchuelerAn(t, pool, "TX-2", "Anna", "9H1")
@@ -186,7 +186,7 @@ func TestLMFPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 	// Stichtag zurück und setzt dann Emils Frist. Die erste Änderung gelingt, die zweite nicht.
 	const wechsel = `{"letzter_tag":"2027-06-28","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["8G1"]}]}`
 	durchgelassen := 1
-	kaputt := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: poolMitFehlerBei{PgxPoolIface: pool, muster: "UPDATE ausleihen", durchgelassen: &durchgelassen}}}}
+	kaputt := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: poolMitFehlerBei{Pool: pool, muster: "UPDATE ausleihen", durchgelassen: &durchgelassen}}}}
 	if rec := lmfPlanAufruf(t, kaputt, http.MethodPut, "rueckgabe", wechsel); rec.Code != http.StatusInternalServerError {
 		t.Fatalf("der eingebaute Fehler kam nicht an: Status %d %s", rec.Code, rec.Body.String())
 	}

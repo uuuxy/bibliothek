@@ -61,9 +61,9 @@ Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bi
 | den Text oder das Bild eines Blatts ändern    | `pdf/`, je Blatt eine Datei (`pdf/mahnbrief.go`, `pdf/etikett_buch.go`)                                                             |
 | eine Regel der Ausleihe ändern                | `internal/service/frist.go`, `internal/service/ausleih_sperren.go`                                                             |
 | eine Abfrage ändern                           | `repository/`, die Datei heißt wie die Sache (`repository/auflagen.go`)                                                             |
-| eine Tabelle oder Spalte ergänzen             | ein neuer Schritt in `migrations/` und derselbe Stand in `schema.sql`; `db/migrations_schema_paritaet_pg_test.go` hält beide gleich |
+| eine Tabelle oder Spalte ergänzen             | ein neuer Schritt in `migrations/` und derselbe Stand in `schema.sql`; `db/migrationen_schema_paritaet_pg_test.go` hält beide gleich |
 | eine neue Adresse anlegen                     | die Tür im Ordner ihres Themas, Adresse und Recht in der passenden Liste `api/routen_*.go`                                          |
-| festlegen, was eine Rolle ab Werk darf        | `db/seed.go`                                                                                                                        |
+| festlegen, was eine Rolle ab Werk darf        | `db/rechte_vorgabe.go`                                                                                                                        |
 | einen Menüpunkt ändern                        | `frontend/src/lib/menu.js`                                                                                                          |
 | eine Kategorie der Einstellungen ändern       | `frontend/src/lib/components/settings/kategorien.js`                                                                                |
 | ein gemeinsames Bauteil der Oberfläche ändern | `frontend/src/lib/components/ui/`                                                                                                   |

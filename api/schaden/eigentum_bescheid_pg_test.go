@@ -29,7 +29,7 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 	testdaten.LeereBescheide(t, pool)
 	testdaten.SetzeBescheidAngaben(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// Gleiche Preise, gleiches Alter: Der Unterschied im Betrag kommt allein aus der Regel.
 	vorbereiten := func(titelID, barcode string) string {

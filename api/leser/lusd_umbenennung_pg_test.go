@@ -28,7 +28,7 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	geb, eintritt := testdaten.Datum(2013, 5, 4), testdaten.Datum(2024, 8, 19)
 
 	annaID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-1", Geburtsdatum: geb, SchulEintrittAm: eintritt})
@@ -110,7 +110,7 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	geb := testdaten.Datum(2013, 5, 4)
 
 	annaID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-2", Geburtsdatum: geb})
@@ -152,7 +152,7 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	benID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Ben", Nachname: "Meier", Klasse: "06B", Barcode: "UMB-3", Geburtsdatum: testdaten.Datum(2012, 1, 1)})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Ben", "Meier", "07B", testdaten.Datum(2012, 1, 10), nil)}}
@@ -184,7 +184,7 @@ func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	geb, eintritt := testdaten.Datum(2011, 3, 3), testdaten.Datum(2022, 8, 22)
 
 	altID := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Cem", Nachname: "Yilmaz", Klasse: "08C", Barcode: "UMB-4", Geburtsdatum: geb, SchulEintrittAm: eintritt, IstAbgaenger: true})

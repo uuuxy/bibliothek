@@ -62,7 +62,7 @@ func TestDSGVOAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 		t.Fatalf("Kollegin anlegen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	speicherdauer := func(leserID string) string {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", nil)

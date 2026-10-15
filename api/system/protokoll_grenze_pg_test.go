@@ -50,7 +50,7 @@ func TestProtokollIstBegrenzt(t *testing.T) {
 		t.Fatalf("Logzeilen anlegen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	rec := httptest.NewRecorder()
 	srv.Protokoll()(rec, httptest.NewRequest(http.MethodGet, "/api/audit", nil))
 

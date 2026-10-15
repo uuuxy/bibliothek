@@ -103,14 +103,14 @@ type Lauf struct {
 // oder wendet die Änderungen an, samt der gewählten Umbenennungen. Die Karenzzeit liest der
 // Rufer vorher aus den Einstellungen, weil sie nicht zu dem Stand gehört, den die Transaktion
 // sieht.
-func FuehreAus(ctx context.Context, pool db.PgxPoolIface, datei Datei, lauf Lauf) (*Vorschau, error) {
+func FuehreAus(ctx context.Context, pool db.Pool, datei Datei, lauf Lauf) (*Vorschau, error) {
 	anwenden := lauf.Anwenden
 	// Eine Transaktion für den ganzen Lauf; bei einem frühen Rückweg wird zurückgerollt.
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Beim Anwenden reiht die Sperre gleichzeitige Läufe ein (repository.SperreLUSDImport).
 	// Die Vorschau liest nur und nimmt sie nicht.

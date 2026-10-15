@@ -21,13 +21,13 @@ import (
 
 // BestellDienst legt Bestellungen an.
 type BestellDienst struct {
-	datenbank           *db.Database
+	datenbank           *db.Verbindung
 	katalogAbfragen     repository.KatalogAbfragen
 	lieferantenAbfragen repository.LieferantenAbfragen
 }
 
 // NewBestellDienst baut den Dienst für Bestellungen.
-func NewBestellDienst(datenbank *db.Database, katalogAbfragen repository.KatalogAbfragen) *BestellDienst {
+func NewBestellDienst(datenbank *db.Verbindung, katalogAbfragen repository.KatalogAbfragen) *BestellDienst {
 	return &BestellDienst{
 		datenbank:           datenbank,
 		katalogAbfragen:     katalogAbfragen,
@@ -160,7 +160,7 @@ func (d *BestellDienst) LegeAn(ctx context.Context, auftrag BestellAuftrag) (*Be
 	if err != nil {
 		return nil, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	posten, err := d.verarbeitePositionen(ctx, tx, auftrag, lieferant)
 	if err != nil {

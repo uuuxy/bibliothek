@@ -87,12 +87,12 @@ type lieferantAendernAnfrage struct {
 // Ohne Transaktion bliebe zwischen den beiden Schritten ein Moment ganz ohne
 // Hauptlieferanten; an mehreren Arbeitsplätzen gleichzeitig ist das kein theoretischer
 // Fall (siehe docs zum Mehrplatzbetrieb).
-func setzeHauptlieferant(ctx context.Context, pool db.PgxPoolIface, id string) error {
+func setzeHauptlieferant(ctx context.Context, pool db.Pool, id string) error {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	if _, err := repository.SetzeHauptlieferant(ctx, tx, id); err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func (t *Tueren) schreibeLieferant(ctx context.Context, id string, req lieferant
 	if err != nil {
 		return alt, neu, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	merkmalGeaendert := false
 	if req.IstHauptlieferant != nil {

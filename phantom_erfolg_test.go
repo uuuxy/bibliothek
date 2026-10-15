@@ -73,12 +73,12 @@ var phantomBestand = map[string]int{
 	"repository/sitzungen.go:LoescheAbgelaufeneSitzungen": 1,
 	"cmd/migrate-fotos/main.go:migriereFoto":              1,
 	"cmd/migrate/pg_writer.go:insertExemplare":            1,
-	"db/migrations.go:applyMigration":                     2,
-	"db/migrations.go:ensureBaselineSchema":               1,
-	"db/migrations.go:ensureMigrationsTable":              1,
+	"db/migrationen.go:spieleMigrationEin":                2,
+	"db/migrationen.go:spieleSchemaEin":                   1,
+	"db/migrationen.go:legeMigrationstabelleAn":           1,
 	// 3 seit 03.09.2026: zweite Vererbung (manage_students_admin → merge_students), ebenfalls
 	// INSERT … ON CONFLICT DO NOTHING — 0 Zeilen beim zweiten Start sind der Normalfall.
-	"db/seed.go:seedRolePermissions":                           3,
+	"db/rechte_vorgabe.go:SchreibeRechteVorgabe":               3,
 	"internal/littera/schreiber_ausleihen.go:schreibeAusleihe": 1,
 	// Test-Harness (nur von *_test.go importiert): advisory_lock, DROP SCHEMA und
 	// schema.sql-Load sind DDL/Setup — 0 Zeilen ist dort kein meldbarer Erfolg.

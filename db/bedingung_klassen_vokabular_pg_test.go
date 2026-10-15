@@ -7,13 +7,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TestKlassenVokabular sichert die Invarianten aus Migration 079: Die Klasse ist ein
-// kontrolliertes Vokabular (Tabelle klassen), durchgesetzt an der Datenbank selbst.
-// BEFORE-Trigger registrieren unbekannte Klassen automatisch und kanonisieren jede
-// Schreibvariante ("05A", "5 A" → "05A"); FKs mit ON UPDATE CASCADE ziehen ein
-// Umbenennen durch alle vier Tabellen, ON DELETE RESTRICT schützt benutzte Namen.
-// Getestet wird der von schema.sql ausgelieferte Endzustand (den auch der
-// Migrationslauf herstellen muss).
+// Die Klasse ist ein festes Vokabular (Tabelle klassen), durchgesetzt an der Datenbank: Trigger
+// vor dem Schreiben nehmen eine unbekannte Klasse auf und bringen jede Schreibweise in eine Form
+// ("05A", "5 A" → "05A"); Fremdschlüssel mit ON UPDATE CASCADE ziehen ein Umbenennen durch alle
+// vier Tabellen, ON DELETE RESTRICT schützt benutzte Namen. Geprüft wird der Stand aus
+// schema.sql, den auch die Migrationen herstellen müssen.
 func TestKlassenVokabular(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -100,9 +98,9 @@ func TestKlassenVokabular(t *testing.T) {
 		})
 	})
 
-	// Migration 152 (festgelegt am 30.09.2026): Die Klasse einer Klassensatz-Reservierung ist
-	// Freitext. Das Programm zeigt sie nur an; ein Tippfehler im Portal darf keine Klasse
-	// anlegen, die es an der Schule nicht gibt, und ein Kurs bleibt ein Kurs.
+	// Die Klasse einer Reservierung eines Klassensatzes ist freier Text. Das Programm zeigt sie
+	// nur an; ein Tippfehler im Portal darf keine Klasse anlegen, die es an der Schule nicht
+	// gibt, und ein Kurs bleibt ein Kurs.
 	t.Run("reservierung legt keine klasse an", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			var titelID string
@@ -131,9 +129,8 @@ func TestKlassenVokabular(t *testing.T) {
 		})
 	})
 
-	// Anzeigeform (Migration 087): Bis dahin gewann die ERSTE Schreibweise — „9G4" neben
-	// „09G1", „10g1" neben „10G2". Jetzt wird beim Registrieren vereinheitlicht; Sonderwerte
-	// und Kursnamen bleiben unangetastet.
+	// Die Form zum Anzeigen wird beim Aufnehmen vereinheitlicht, sonst stünde „9G4" neben
+	// „09G1" und „10g1" neben „10G2". Sonderwerte und Kursnamen bleiben, wie sie sind.
 	t.Run("anzeigeform: jahrgang zweistellig, rest gross", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			for eingabe, erwartet := range map[string]string{
@@ -171,7 +168,7 @@ func TestKlassenVokabular(t *testing.T) {
 	t.Run("loeschen ist gesperrt solange der name benutzt wird", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			erwarteErfolg(t, tx, "Schüler", insSchueler, "KV-5", "08E")
-			erwarteConstraintVerletzung(t, tx, "fk_schueler_klasse_vokabular",
+			erwarteVerletzteBedingung(t, tx, "fk_schueler_klasse_vokabular",
 				`DELETE FROM klassen WHERE name = '08E'`)
 		})
 	})

@@ -10,16 +10,15 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Der Backfill aus Migration 109 ordnet Alt-Bestellungen ihren Topf NUR zu, wo er aus den
-// Positionen eindeutig ist. Geprüft wird die echte Migrationsdatei gegen die Test-DB —
-// deshalb ist sie idempotent geschrieben (ADD COLUMN IF NOT EXISTS): Die Spalten sind
-// aus schema.sql schon da, der UPDATE-Teil ist das, was hier zählt.
+// Der Nachtrag ordnet alten Bestellungen ihren Topf nur zu, wo er aus den Positionen eindeutig
+// ist. Geprüft wird die echte Datei der Migration an der Testdatenbank; deshalb ist sie so
+// geschrieben, dass sie mehrfach laufen kann (ADD COLUMN IF NOT EXISTS): Die Spalten sind aus
+// schema.sql schon da, hier zählt der UPDATE.
 //
-// Vier Fälle, die alle Antworten des CASE abdecken: nur Lernmittel → land, kein Lernmittel
-// → schultraeger, gemischt → NULL, gelöschter Titel → NULL (raten wäre schlimmer als
-// „ohne Zuordnung").
-
-func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
+// Vier Fälle decken alle Antworten des CASE ab: nur Lernmittel → land, kein Lernmittel →
+// schultraeger, gemischt → NULL, gelöschter Titel → NULL (Raten wäre schlimmer als „ohne
+// Zuordnung").
+func TestNachtragMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -69,8 +68,8 @@ func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 		}
 	}
 
-	// Ein zweiter Lauf ändert nichts — die Migration darf auf einer Anlage, die schon
-	// zugeordnet ist, nichts umschreiben (WHERE mittel IS NULL).
+	// Ein zweiter Lauf ändert nichts: Auf einer Anlage, die schon zugeordnet ist, schreibt die
+	// Migration nichts um (WHERE mittel IS NULL).
 	if _, err := pool.Exec(ctx, `UPDATE bestellungen_verlauf SET mittel = 'schultraeger' WHERE id = $1`, nurLernmittel); err != nil {
 		t.Fatal(err)
 	}

@@ -143,7 +143,7 @@ func SetzeSchlagworte(ctx context.Context, q Datenbank, titelID string, roh []st
 	if err != nil {
 		return nil, fmt.Errorf("schlagworte: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	var gesperrt int
 	err = tx.QueryRow(ctx, `SELECT 1 FROM buecher_titel WHERE id = $1 FOR UPDATE`, titelID).Scan(&gesperrt)

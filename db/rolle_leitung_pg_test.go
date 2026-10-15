@@ -10,10 +10,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TestRolleLeitungVergebbar prüft am ECHTEN Postgres, was ein Unit-Test nicht kann: dass
-// der ENUM-Wert existiert. Genau das fehlte der Rolle Helfer bis Migration 042 — sie war
-// im Code fertig gebaut, geseedet und im Router verzweigt, aber niemandem zuweisbar,
-// weil das ENUM sie nicht kannte. Ein Grün in Go beweist hier also nichts.
+// Am echten Postgres prüfbar, in einem Test ohne Datenbank nicht: Den Wert leitung gibt es im
+// ENUM. Fehlt ein Wert dort, ist eine Rolle im Code fertig, hat Rechte und Wege im Router, und
+// trotzdem kann niemand sie bekommen; ein grüner Test in Go bewiese nichts.
 func TestRolleLeitungVergebbar(t *testing.T) {
 	pool := pgTestPool(t)
 
@@ -24,24 +23,23 @@ func TestRolleLeitungVergebbar(t *testing.T) {
 	})
 }
 
-// TestRechteLeitungLiegenInDerDatenbank prüft den Weg, den die Rechte einer neuen Rolle
-// auf eine BESTEHENDE Anlage nehmen. Es gibt zwei, und beide müssen dasselbe Ergebnis
-// liefern:
+// Die Rechte einer neuen Rolle erreichen eine Anlage auf zwei Wegen, und beide müssen dasselbe
+// ergeben:
 //
-//	frische Anlage → db/seed.go (RechteVorgabe, ON CONFLICT DO NOTHING)
+//	frische Anlage → db/rechte_vorgabe.go (RechteVorgabe, ON CONFLICT DO NOTHING)
 //	gewachsene Anlage → migrations/122_rechte_leitung.sql
 //
-// Der Test fährt den Seed-Weg und vergleicht das Ergebnis gegen dieselbe Ableitung, die
-// auch die Migration verwendet: ADMIN minus manage_users und manage_settings. Läuft die
-// SQL-Datei aus 122 auseinander, meldet die Selbstprüfung im Betrieb eine Abweichung —
-// und dieser Test hält die Vorgabe fest, gegen die sie vergleicht.
+// Der Test geht den ersten Weg und vergleicht mit derselben Ableitung, die auch die Migration
+// nimmt: die Rechte des Admins ohne manage_users und manage_settings. Liefe die Migration
+// auseinander, meldete die Selbstprüfung im Betrieb eine Abweichung; der Test hält die Vorgabe
+// fest, mit der sie vergleicht.
 func TestRechteLeitungLiegenInDerDatenbank(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 
-	d := &Database{Pool: pool}
-	if err := d.InitPermissions(ctx); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	d := &Verbindung{Pool: pool}
+	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 
 	zeilen := func(rolle string) map[string]bool {
@@ -60,8 +58,8 @@ func TestRechteLeitungLiegenInDerDatenbank(t *testing.T) {
 			}
 			out[perm] = allowed
 		}
-		// Ohne diese Prüfung endet eine abgebrochene Abfrage als LEERE Map — und die
-		// Behauptung „die Rechte stimmen" stützte sich dann auf nichts.
+		// Ohne diese Prüfung endete eine abgebrochene Abfrage als leere Map, und die Aussage „die
+		// Rechte stimmen" stützte sich auf nichts.
 		if err := rows.Err(); err != nil {
 			t.Fatalf("Rechte von %s lesen (Abbruch mitten in der Ergebnismenge): %v", rolle, err)
 		}
@@ -91,19 +89,17 @@ func TestRechteLeitungLiegenInDerDatenbank(t *testing.T) {
 	}
 }
 
-// TestMigration122LeitetAbStattAbzuschreiben liest die Migration und verlangt, dass sie
-// ihre Rechteliste aus den ADMIN-Zeilen ABLEITET.
+// Migration 122 leitet die Rechte der Leitung aus den Zeilen des Admins ab, statt sie
+// abzuschreiben.
 //
-// Der Grund ist eine Bugklasse, nicht Geschmack: Eine in SQL abgeschriebene Liste ist
-// eine zweite Wahrheit neben db/seed.go. Beim nächsten neuen Recht trägt es jemand an
-// einer der beiden Stellen nach — die Leitung bekommt es auf frischen Anlagen und auf
-// gewachsenen nicht, oder umgekehrt. Auseinanderlaufen würde still passieren: Beide
-// Wege liefern gültige Zeilen, nur verschiedene.
+// Eine in SQL abgeschriebene Liste wäre eine zweite Wahrheit neben db/rechte_vorgabe.go: Beim
+// nächsten neuen Recht trüge es jemand an einer der beiden Stellen nach, und die Leitung bekäme es
+// auf frischen Anlagen und auf gewachsenen nicht, oder umgekehrt. Das liefe still auseinander,
+// weil beide Wege gültige Zeilen liefern, nur verschiedene.
 //
-// Geprüft wird auf den ANWEISUNGEN, nicht auf der Datei: Der Kopf der Migration erklärt
-// genau diese Ableitung und nennt dabei jedes Wort, auf das der Test sieht. Ohne das
-// Abschneiden der Kommentare wäre das Gate grün, sobald die Begründung dasteht — auch
-// wenn darunter eine abgeschriebene Liste folgt.
+// Geprüft werden die Anweisungen, nicht die Datei: Der Kopf der Migration erklärt die Ableitung
+// und nennt dabei jedes Wort, auf das der Test sieht. Ohne das Abschneiden der Kommentare wäre der
+// Test grün, sobald die Begründung dasteht, auch über einer abgeschriebenen Liste.
 func TestMigration122LeitetAbStattAbzuschreiben(t *testing.T) {
 	pfad := filepath.Join("..", "migrations", "122_rechte_leitung.sql")
 	inhalt, err := os.ReadFile(pfad)
@@ -136,10 +132,9 @@ func TestMigration122LeitetAbStattAbzuschreiben(t *testing.T) {
 	}
 }
 
-// ohneSQLKommentare schneidet Zeilenkommentare (--) weg. Absichtlich schlicht: Es gibt in
-// migrations/ keine Blockkommentare und keine Zeichenketten mit „--" darin. Sollte das
-// einmal nicht mehr stimmen, ist ein zu grob geschnittenes SQL für ein Gate der
-// harmlosere Fehler — es prüft dann zu wenig Text und wird rot, nicht falsch grün.
+// ohneSQLKommentare schneidet Zeilenkommentare (--) ab. Das reicht, weil migrations/ keine
+// Blockkommentare und keine Zeichenketten mit „--" enthält. Änderte sich das, prüfte der Test zu
+// wenig Text und würde rot, nicht fälschlich grün.
 func ohneSQLKommentare(sql string) string {
 	var b strings.Builder
 	for _, zeile := range strings.Split(sql, "\n") {

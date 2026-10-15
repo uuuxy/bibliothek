@@ -69,7 +69,7 @@ func bestelleExemplare(t *testing.T, pool *pgxpool.Pool, repo repository.Katalog
 		t.Fatalf("Tx starten: %v", err)
 	}
 	if err := repo.LegeExemplareAn(ctx, tx, kopien); err != nil {
-		db.SafeRollback(ctx, tx)
+		db.Verwerfe(ctx, tx)
 		t.Fatalf("Bestellung über %d Exemplare anlegen (Barcodes %v): %v", menge, barcodes, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -110,7 +110,7 @@ func barcodeBestand(t *testing.T, pool *pgxpool.Pool) map[string]bool {
 func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
 	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Vergabe", 0)
@@ -140,7 +140,7 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 func TestBarcodeVergabe_GeloeschteNummerWirdNichtRecycelt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Recycling", 0)
 

@@ -285,7 +285,7 @@ func (d *ImportDienst) ImportiereZeilen(ctx context.Context, zeilen [][]string, 
 	if err != nil {
 		return 0, 0, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	bestand, err := repository.LadeTitelBestand(ctx, tx)
 	if err != nil {

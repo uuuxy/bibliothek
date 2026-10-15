@@ -28,7 +28,7 @@ func TestTitelSchlagworte_TuerDesBestellkorbs(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	var id string
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Woodwalkers') RETURNING id`).Scan(&id); err != nil {
 		t.Fatal(err)
@@ -115,7 +115,7 @@ func TestSchlagwortVorschlaege_AusDemBestand(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	// Eine Liste, keine Map: Die zuerst angelegte Schreibweise gewinnt, die Reihenfolge
 	// muss also feststehen — über eine Map war sie zufällig und der Test mal rot.
 	for _, titel := range []struct {

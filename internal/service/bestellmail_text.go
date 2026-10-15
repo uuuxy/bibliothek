@@ -30,7 +30,7 @@ const (
 
 // LadeBestellMailVorlage lädt Betreff und Text der Bestellmail. Fehlt die gespeicherte Vorlage, ist ein
 // Feld leer oder lässt sie sich nicht lesen, gilt der Text oben.
-func LadeBestellMailVorlage(ctx context.Context, pool db.PgxPoolIface) (betreff, text string) {
+func LadeBestellMailVorlage(ctx context.Context, pool db.Pool) (betreff, text string) {
 	betreff, text, err := repository.LadeBestellVorlage(ctx, pool)
 	if err != nil || betreff == "" || text == "" {
 		return bestellMailVorgabeBetreff, bestellMailVorgabeText

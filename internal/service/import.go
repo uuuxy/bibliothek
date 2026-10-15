@@ -9,10 +9,10 @@ import (
 // XLSX) in den Katalog.
 type ImportDienst struct {
 	katalogAbfragen repository.KatalogAbfragen
-	pool            db.PgxPoolIface
+	pool            db.Pool
 }
 
 // NewImportDienst baut den Dienst für die Importe.
-func NewImportDienst(katalogAbfragen repository.KatalogAbfragen, pool db.PgxPoolIface) *ImportDienst {
+func NewImportDienst(katalogAbfragen repository.KatalogAbfragen, pool db.Pool) *ImportDienst {
 	return &ImportDienst{katalogAbfragen: katalogAbfragen, pool: pool}
 }

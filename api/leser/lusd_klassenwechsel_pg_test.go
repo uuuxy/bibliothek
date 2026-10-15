@@ -64,7 +64,7 @@ func TestLUSDImport_KlassenwechselMehrererSchueler(t *testing.T) {
 		})
 	}
 
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	if _, err := s.berechneLUSDAenderungen(ctx, records, true, true); err != nil {
 		t.Fatalf("Import mit Klassenwechseln scheiterte: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestLUSDImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-LEER", Vorname: "Greta", Nachname: "Gruen", Klasse: "", Nr: 1},
 	}, true, true); err != nil {
@@ -167,7 +167,7 @@ func TestLUSDImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	testdaten.LegeOffenenSchadenAn(t, pool, ids["schaden"], "ABGS")
 
 	// Der neue Export nennt keinen der drei mehr — alle sind Abgänger.
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", Nr: 1},
 	}, true, true); err != nil {

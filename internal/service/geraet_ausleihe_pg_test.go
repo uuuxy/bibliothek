@@ -253,7 +253,7 @@ func TestGeraetAusleihe_ZweiterPlatzBekommtDenKonflikt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, platzEins)
+	defer db.Verwerfe(ctx, platzEins)
 	if _, err := platzEins.Exec(ctx, `INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id)
 		SELECT id, $2, now() + interval '14 days', $3 FROM geraete WHERE barcode_id = $1`, nummer, erster, g.ausgabe); err != nil {
 		t.Fatalf("Ausleihe am ersten Platz: %v", err)
@@ -294,7 +294,7 @@ func TestGeraetRueckgabe_ZweiPlaetzeBuchenNurEinmal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(ctx, sperrer)
+	defer db.Verwerfe(ctx, sperrer)
 	if _, err := sperrer.Exec(ctx, `SELECT a.id FROM ausleihen a JOIN geraete ge ON ge.id = a.geraet_id
 		WHERE ge.barcode_id = $1 AND a.rueckgabe_am IS NULL FOR UPDATE OF a`, nummer); err != nil {
 		t.Fatalf("Ausleihe sperren: %v", err)

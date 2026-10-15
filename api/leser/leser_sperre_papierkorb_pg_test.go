@@ -32,7 +32,7 @@ func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndWiederherstellen(t *testin
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "papierkorb@test.invalid")
 
@@ -120,7 +120,7 @@ func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "papierkorb-uhr@test.invalid")
 	schueler := testdaten.LegeSchuelerAn(t, pool, "S-UHR-1", "Uri", "5a")

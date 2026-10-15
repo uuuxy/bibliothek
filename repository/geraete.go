@@ -97,11 +97,11 @@ func (a GeraetAenderung) IstLeer() bool {
 }
 
 type pgGeraeteAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewGeraeteAbfragen liefert die Abfragen der Geräte am übergebenen Pool.
-func NewGeraeteAbfragen(pool db.PgxPoolIface) GeraeteAbfragen {
+func NewGeraeteAbfragen(pool db.Pool) GeraeteAbfragen {
 	return &pgGeraeteAbfragen{db: pool}
 }
 

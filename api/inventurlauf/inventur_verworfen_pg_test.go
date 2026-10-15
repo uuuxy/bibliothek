@@ -56,7 +56,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 		t.Fatalf("Session anlegen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	for _, scan := range []struct{ session, barcode string }{
 		{geprueft.ID, barcodeGeprueft}, {verworfen.ID, barcodeGescannt},
 	} {

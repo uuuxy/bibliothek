@@ -109,7 +109,7 @@ func erwarteKatalog(mock pgxmock.PgxPoolIface, coverURLs ...string) {
 func TestCover_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
 	downloads := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	echt := "https://covers.openlibrary.org/b/isbn/" + testISBN + "-L.jpg"
 	erwarteKatalog(mock, echt)
@@ -129,7 +129,7 @@ func TestCover_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
 func TestCover_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
 	downloads := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	// Gespeichert ist die http-Form mit Trennstrich-ISBN — der Vergleich läuft über die
 	// geprüfte Form, nicht den rohen Text.
@@ -153,7 +153,7 @@ func TestCover_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
 func TestCover_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
 	coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	kandidaten := coverKandidatenFuerISBN(testISBN)
 	erwarteKatalog(mock, "") // ISBN im Katalog, aber ohne gespeichertes Cover
@@ -175,7 +175,7 @@ func TestCover_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
 func TestCover_UnbekannteISBNOhneAnmeldungWirdNichtGeladen(t *testing.T) {
 	downloads := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	mock.ExpectQuery("FROM buecher_titel WHERE regexp_replace").WithArgs("9780000000001").
 		WillReturnRows(pgxmock.NewRows([]string{"cover_url"}))
@@ -224,7 +224,7 @@ func TestCoverKandidaten_MusterGleichWieImFrontend(t *testing.T) {
 func TestCover_ErsatzbildWirdNichtAlsCoverAbgelegt(t *testing.T) {
 	downloads := coverQuelleAttrappe(t)
 	mock := mockPool(t)
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	// Der Stub antwortet auf jede Adresse mit demselben blauen Bild.
 	t.Cleanup(coverquelle.MerkeErsatzbildFuerTest(pngEinfarbig(t, color.RGBA{0, 0, 255, 255})))
 

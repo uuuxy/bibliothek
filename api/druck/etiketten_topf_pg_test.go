@@ -58,7 +58,7 @@ func etikettenUeberDruckCenter(t *testing.T, srv *Tueren, barcode, untergeschobe
 func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	faelle := []struct {
 		name string
@@ -132,7 +132,7 @@ func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.SetzeVermerkSchuelerbuecherei(t, pool, testdaten.VermerkStadt)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	text := etikettenUeberDruckCenter(t, srv, "B-GIBT-ES-NICHT", mitteltopf.Schultraeger)
 	pdftest.Aufdruck(t, "Druck-Center, unbekannter Barcode", text, testdaten.VermerkLand, testdaten.VermerkStadt)

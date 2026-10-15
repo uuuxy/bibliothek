@@ -34,7 +34,7 @@ func TestBereitschaftsAlarm_ServerReichtAnDieSystempflegeWeiter(t *testing.T) {
 	}
 	t.Cleanup(mock.Close)
 	pool := &abfrageZaehler{PgxPoolIface: mock}
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	srv.BereitschaftsAlarm(t.Context())
 

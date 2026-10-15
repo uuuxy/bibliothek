@@ -27,7 +27,7 @@ func TestLMFPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -203,7 +203,7 @@ func TestLMFPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -256,7 +256,7 @@ func TestLMFPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -413,7 +413,7 @@ func TestLMFPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	setzeStichtag := func(wert string) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, `

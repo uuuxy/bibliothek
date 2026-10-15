@@ -30,7 +30,7 @@ func TestLMFPlan_UeberDenRouter_StehtAufDerBasisDesServers(t *testing.T) {
 	t.Cleanup(raeumePlaene)
 
 	_, sitzung, anmeldung := tuertest.AdminSitzung(t, pool, "lmf-plan-tuer@example.org", "Lena", "Plan")
-	srv := api.NewServer(&db.Database{Pool: pool}, anmeldung, sse.NewBroker(), false)
+	srv := api.NewServer(&db.Verbindung{Pool: pool}, anmeldung, sse.NewBroker(), false)
 	router := srv.Routes()
 	// Die Uhr erst nach dem Bau des Routers: Mit einer Kopie der Basis rechneten die Türen des
 	// Themas weiter mit der Uhr des Rechners.

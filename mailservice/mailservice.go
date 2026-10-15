@@ -128,7 +128,7 @@ func BeschreibeSMTPFehler(addr string, err error) error {
 // validieren. Die Konfiguration kommt aus LadeSMTPKonfig — derselben Quelle, aus der
 // auch jeder echte Versand liest. Sonst wäre der Test-Knopf eine Aussage über eine
 // Konfiguration, die niemand benutzt.
-func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error {
+func SendTestMail(ctx context.Context, dbPool db.Pool, to string) error {
 	konfig, err := LadeSMTPKonfig(ctx, dbPool)
 	if err != nil {
 		return err

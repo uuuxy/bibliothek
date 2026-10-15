@@ -55,7 +55,7 @@ func SetzeExemplarEigentum(ctx context.Context, q Datenbank, a EigentumAenderung
 	if err != nil {
 		return 0, fmt.Errorf("eigentum: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Wie viele verschiedene Exemplare gewählt sind, zählt die Datenbank — sie liest
 	// Groß- und Kleinschreibung einer Kennung als dieselbe (wie LoescheSchlagworte).

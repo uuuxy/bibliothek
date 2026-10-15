@@ -20,7 +20,7 @@ import (
 // aussähe wie ein Serverausfall. Am echten Postgres, weil nur der die 22P02 wirft.
 func TestBestellbericht_LieferantIDWirdAnDerTuerGeprueft(t *testing.T) {
 	pool := pgtest.Pool(t)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	rufe := func(lieferantID string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/bestellungen/bericht.pdf?von=2026-09-01&bis=2026-09-30&lieferant_id="+lieferantID, nil)
 		rec := httptest.NewRecorder()

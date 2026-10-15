@@ -22,7 +22,7 @@ func TestOPACSuche_LikeJokerWerdenMaskiert(t *testing.T) {
 		WithArgs("%", `\%`).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "cover_url", "verfuegbar", "gesamt"}))
 
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	rec := httptest.NewRecorder()
 	s.OPACSuche()(rec, httptest.NewRequest("GET", "/api/public/opac/suche?q=%25", nil))
 	if rec.Code != 200 {

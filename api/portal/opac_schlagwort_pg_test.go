@@ -45,7 +45,7 @@ func TestOPACSuche_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	suche := func(q string) []string {
 		t.Helper()
 		rec := httptest.NewRecorder()

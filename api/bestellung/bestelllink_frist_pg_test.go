@@ -57,7 +57,7 @@ func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Frist", 0)
 	bestelle := func() *service.BestellErgebnis {
@@ -95,7 +95,7 @@ func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
 func TestBestelllinkFrist_NeuerLinkBekommtDieEingestellteFrist(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	// Der alte Link läuft in drei Tagen ab; der neue bekommt die eingestellte Frist ab heute.
 	bestellungID, _ := bestellungMitToken(t, pool, lieferant, 3)

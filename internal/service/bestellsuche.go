@@ -41,7 +41,7 @@ type BestellTreffer struct {
 // FindeZumBestellen sucht einen Titel zum Bestellen im eigenen Katalog und bei der DNB. dnbAusfall
 // sagt, dass die DNB nicht geantwortet hat: Die Liste trägt dann nur den eigenen Katalog, und
 // ein Buch, das die DNB kennt, sähe ohne das Merkmal aus wie eines, das sie nicht kennt.
-func FindeZumBestellen(ctx context.Context, pool db.PgxPoolIface, metadaten *inventur.MetadatenClient, text string) (treffer []BestellTreffer, dnbAusfall bool, err error) {
+func FindeZumBestellen(ctx context.Context, pool db.Pool, metadaten *inventur.MetadatenClient, text string) (treffer []BestellTreffer, dnbAusfall bool, err error) {
 	treffer = findeImKatalog(ctx, pool, text)
 	vonDNB, dnbAusfall := findeBeiDerDNB(ctx, pool, metadaten, text)
 	return append(treffer, vonDNB...), dnbAusfall, nil
@@ -49,7 +49,7 @@ func FindeZumBestellen(ctx context.Context, pool db.PgxPoolIface, metadaten *inv
 
 // findeImKatalog durchsucht den eigenen Katalog (repository.FindeTitelZumBestellen). Scheitert
 // die Abfrage, bleibt die Liste leer: Die Treffer der DNB kommen ohnehin getrennt dazu.
-func findeImKatalog(ctx context.Context, pool db.PgxPoolIface, text string) []BestellTreffer {
+func findeImKatalog(ctx context.Context, pool db.Pool, text string) []BestellTreffer {
 	treffer, err := repository.FindeTitelZumBestellen(ctx, pool, text)
 	if err != nil {
 		return nil
@@ -75,7 +75,7 @@ func findeImKatalog(ctx context.Context, pool db.PgxPoolIface, text string) []Be
 // findeBeiDerDNB fragt die DNB nach Titeln und markiert bereits lokal vorhandene ISBNs.
 // Jeder Fehler der Abfrage ist ein Ausfall: Eine Suche ohne Treffer beantwortet die DNB mit
 // einer leeren Liste, nicht mit einem Fehler.
-func findeBeiDerDNB(ctx context.Context, pool db.PgxPoolIface, metadaten *inventur.MetadatenClient, text string) (treffer []BestellTreffer, ausfall bool) {
+func findeBeiDerDNB(ctx context.Context, pool db.Pool, metadaten *inventur.MetadatenClient, text string) (treffer []BestellTreffer, ausfall bool) {
 	dnbTreffer, dnbErr := metadaten.SucheTextDNB(ctx, text)
 	if dnbErr != nil {
 		log.Printf("bestellsuche: die DNB hat nicht geantwortet: %v", dnbErr)
@@ -102,7 +102,7 @@ func findeBeiDerDNB(ctx context.Context, pool db.PgxPoolIface, metadaten *invent
 // ISBN mit Bindestrichen und bei älteren Sätzen zehnstellig, der Katalog führt sie
 // dreizehnstellig; der Treffer hieße sonst „Neu". Ein Fehler wird protokolliert und ergibt
 // eine leere Menge; die Suche in der DNB scheitert daran nicht.
-func ladeVorhandeneISBNs(ctx context.Context, pool db.PgxPoolIface, isbns []string) map[string]struct{} {
+func ladeVorhandeneISBNs(ctx context.Context, pool db.Pool, isbns []string) map[string]struct{} {
 	vorhanden, err := repository.FindeISBNsImKatalog(ctx, pool, isbns)
 	if err != nil {
 		log.Printf("order-service: Bulk ISBN-Existenzprüfung fehlgeschlagen: %v", err)

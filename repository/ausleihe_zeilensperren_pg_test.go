@@ -23,7 +23,7 @@ func wartetAufSperre(t *testing.T, pool *pgxpool.Pool, halter pgx.Tx, sperre fun
 			fertig <- err
 			return
 		}
-		defer db.SafeRollback(ctx, tx)
+		defer db.Verwerfe(ctx, tx)
 		fertig <- sperre(tx)
 	}()
 	ueberschneidung(t, pool, halter, fertig)
@@ -47,7 +47,7 @@ func TestSperreLeserzeile_ZweiteTransaktionWartet(t *testing.T) {
 	leser := seedSchueler(t, pool, "ZSP-1", "Sperrzeile", "7a")
 
 	erste := beginne(t, pool)
-	defer db.SafeRollback(ctx, erste)
+	defer db.Verwerfe(ctx, erste)
 	if err := SperreLeserzeile(ctx, erste, leser); err != nil {
 		t.Fatalf("erste Sperre: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestSperreExemplarzeile_StandUndSperre(t *testing.T) {
 	}
 
 	tx := beginne(t, pool)
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	faelle := []struct {
 		name, id                 string
 		ausleihbar, ausgesondert bool

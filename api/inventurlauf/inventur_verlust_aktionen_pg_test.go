@@ -126,7 +126,7 @@ func verlustGefunden(t *testing.T, srv *Tueren, benutzerID, exemplarID string) *
 func TestVerlusteEndgueltigLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	lage := verlustLage(t, pool, "VLH-1", "VLH-2")
@@ -172,7 +172,7 @@ func TestVerlusteEndgueltigLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) 
 func TestVerlusteEndgueltigLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal", 0), "VLH-REGAL-2", true, "")
 
@@ -196,7 +196,7 @@ func TestVerlusteEndgueltigLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
 func TestVerlusteEndgueltigLoeschen_OffeneForderungIst409MitBarcode(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	lage := verlustLage(t, pool, "VLH-FREI", "VLH-GEB")
@@ -226,7 +226,7 @@ func TestVerlusteEndgueltigLoeschen_OffeneForderungIst409MitBarcode(t *testing.T
 func TestVerlusteEndgueltigLoeschen_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	lage := verlustLage(t, pool, "VLH-BLEIBT")
 
@@ -258,7 +258,7 @@ func TestVerlusteEndgueltigLoeschen_Abweisungen(t *testing.T) {
 func TestFundMelden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	exemplarID := verlustLage(t, pool, "VGH-1")["VGH-1"]
@@ -307,7 +307,7 @@ func TestFundMelden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
 	testdaten.LeereBescheide(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	ctx := context.Background()
 
@@ -352,7 +352,7 @@ func TestFundMelden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
 func TestFundMelden_OhneOffenenVerlustIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	exemplarID := verlustLage(t, pool, "VGH-2")["VGH-2"]
@@ -384,7 +384,7 @@ func TestFundMelden_OhneOffenenVerlustIst404(t *testing.T) {
 func TestFundMelden_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	leereInventur(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	exemplarID := verlustLage(t, pool, "VGH-3")["VGH-3"]
 

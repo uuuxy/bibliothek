@@ -141,9 +141,9 @@ func startGDPRWorker(ctx context.Context, scheduler *jobs.Scheduler) {
 	}()
 }
 
-func setupDatabase(ctx context.Context, dsn string) *db.Database {
+func setupDatabase(ctx context.Context, dsn string) *db.Verbindung {
 	slog.Info("Establishing database connection pool...")
-	database, err := db.Connect(ctx, dsn)
+	database, err := db.Verbinde(ctx, dsn)
 	if err != nil {
 		slog.Error("Database connection pool failed", "error", err)
 		os.Exit(1)
@@ -151,19 +151,19 @@ func setupDatabase(ctx context.Context, dsn string) *db.Database {
 	slog.Info("Database connection pool successfully initialized.")
 
 	slog.Info("Running database migrations...")
-	if err := database.RunMigrations(ctx, "migrations"); err != nil {
+	if err := database.FuehreMigrationenAus(ctx, "migrations"); err != nil {
 		slog.Error("Database migration failed", "error", err)
 		os.Exit(1)
 	}
 
 	slog.Info("Initializing role permissions...")
-	if err := database.InitPermissions(ctx); err != nil {
+	if err := database.SchreibeRechteVorgabe(ctx); err != nil {
 		slog.Error("Database permission initialization failed", "error", err)
 		os.Exit(1)
 	}
 
 	slog.Info("Bootstrapping initial admin (if database is empty)...")
-	if err := database.InitAdmin(ctx); err != nil {
+	if err := database.LegeErstenAdminAn(ctx); err != nil {
 		slog.Error("Admin bootstrapping failed", "error", err)
 		os.Exit(1)
 	}
@@ -175,7 +175,7 @@ func setupDatabase(ctx context.Context, dsn string) *db.Database {
 	// Meldet sich nur, wenn wirklich übernommen wurde — sonst stünde bei jedem Start
 	// "übernehme", obwohl nichts passiert.
 	slog.Info("Prüfe gespeicherte SMTP-Konfiguration...")
-	if err := database.InitMailKonfig(ctx); err != nil {
+	if err := database.UebernimmMailKonfig(ctx); err != nil {
 		slog.Error("Übernahme der Mail-Konfiguration fehlgeschlagen", "error", err)
 		os.Exit(1)
 	}

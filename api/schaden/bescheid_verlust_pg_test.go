@@ -85,7 +85,7 @@ func TestBescheidVorschlag_NenntUeberfaelligeBuecherOhneForderung(t *testing.T) 
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-VORSCHLAG-1", "Vorschlagkind", "08G2")
 	titelID := testdaten.LegeLernmittelAn(t, pool, "Physik 8")
@@ -132,7 +132,7 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-VERLUST-1", "Verlustkind", "08G2")
 	titelID := testdaten.LegeLernmittelAn(t, pool, "Chemie 8")
@@ -204,7 +204,7 @@ func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-VERALTET-1", "Dialogkind", "08G2")
 	anderes := testdaten.LegeSchuelerAn(t, pool, "S-VERALTET-2", "Anderes", "08G2")
@@ -257,7 +257,7 @@ func TestBescheidErstellen_BuechereiBuchNichtAlsVerlust(t *testing.T) {
 	testdaten.LeereBescheide(t, pool)
 	ctx := context.Background()
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-BUECHEREI-1", "Leseratte", "08G2")
 	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Roman", "Autor", true, 0)

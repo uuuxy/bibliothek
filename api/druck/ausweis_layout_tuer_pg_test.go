@@ -29,7 +29,7 @@ import (
 // poolMitLesefehlerBei lässt die Abfrage scheitern, deren SQL das Muster und deren erstes
 // Argument den Schlüssel trägt. Alles andere (Sitzung, Rechte) läuft am echten Pool.
 type poolMitLesefehlerBei struct {
-	db.PgxPoolIface
+	db.Pool
 	muster, schluessel string
 }
 
@@ -41,7 +41,7 @@ func (p poolMitLesefehlerBei) QueryRow(ctx context.Context, sql string, args ...
 	if strings.Contains(sql, p.muster) && len(args) > 0 && args[0] == p.schluessel {
 		return zeileMitFehler{errors.New("Testfehler: Verbindung zur Datenbank abgerissen")}
 	}
-	return p.PgxPoolIface.QueryRow(ctx, sql, args...)
+	return p.Pool.QueryRow(ctx, sql, args...)
 }
 
 func TestAusweisLayout_UeberDieTuer(t *testing.T) {
@@ -165,7 +165,7 @@ func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
 	})
 
-	gestoert := poolMitLesefehlerBei{PgxPoolIface: pool, muster: "FROM system_einstellungen", schluessel: repository.AusweisLayoutSchluessel}
+	gestoert := poolMitLesefehlerBei{Pool: pool, muster: "FROM system_einstellungen", schluessel: repository.AusweisLayoutSchluessel}
 	_, sitzung, router := routertest.MitSitzungUeber(t, pool, gestoert,
 		"ausweis-layout-lesefehler@example.org", "Lea", "Lesefehler")
 	req := httptest.NewRequest(http.MethodGet, "/api/ausweis-layout", nil)

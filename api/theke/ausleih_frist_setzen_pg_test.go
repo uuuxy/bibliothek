@@ -51,7 +51,7 @@ func TestAusleihFristSetzen_SperrKonsistenzUndAudit(t *testing.T) {
 	vergangenheit := "2022-06-01"
 
 	call := func(ausleiheID, datum string) *httptest.ResponseRecorder {
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 		auditRepo := repository.NewProtokollAbfragen(pool)
 		mux := http.NewServeMux()
 		mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.AusleihFristSetzen(auditRepo))
@@ -144,7 +144,7 @@ func TestAusleihFristSetzen_TagesendeInSchulzeitzone(t *testing.T) {
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-TZ-1", "Zone", "5a")
 	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	mux := http.NewServeMux()
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.AusleihFristSetzen(auditRepo))
@@ -197,7 +197,7 @@ func TestAusleihFristSetzen_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 		t.Fatalf("Mahnstufe setzen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	mux := http.NewServeMux()
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.AusleihFristSetzen(repository.NewProtokollAbfragen(pool)))
 	rufe := func(ausleiheID, rumpf string, angemeldet bool) *httptest.ResponseRecorder {

@@ -123,11 +123,11 @@ type LeserAbfragen interface {
 }
 
 type pgLeserAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewLeserAbfragen liefert die Abfragen der Leser an Postgres.
-func NewLeserAbfragen(db db.PgxPoolIface) LeserAbfragen {
+func NewLeserAbfragen(db db.Pool) LeserAbfragen {
 	return &pgLeserAbfragen{db: db}
 }
 

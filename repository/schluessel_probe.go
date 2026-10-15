@@ -50,7 +50,7 @@ type SchluesselProbe struct {
 // Grenze: eine Stichprobe je Spalte, kein Durchlauf. Sie findet den falschen Schlüssel, nicht
 // einen Bestand mit zwei Schlüsseln; den verhindert der Schlüsselwechsel selbst (ein nicht
 // lesbarer Datensatz bricht ihn ab).
-func PruefeSchluesselGegenBestand(ctx context.Context, pool db.PgxPoolIface) (SchluesselProbe, error) {
+func PruefeSchluesselGegenBestand(ctx context.Context, pool db.Pool) (SchluesselProbe, error) {
 	var probe SchluesselProbe
 	for _, s := range VerschluesselteSpalten {
 		// #nosec G201 -- Namen aus der Konstante oben, nie aus einer Eingabe.

@@ -64,7 +64,7 @@ func TestLUSDAenderungen_MassenabgangHaeltVorJedemSchreiben(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	// 10 aktive Schüler in der DB, CSV enthält nur 2 davon → 8 Abgänger (80%).
 	erwarteEinstellungen(mock)
@@ -101,7 +101,7 @@ func TestLUSDAenderungen_VorschauSchreibtNie(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	erwarteEinstellungen(mock)
 	mock.ExpectBegin()

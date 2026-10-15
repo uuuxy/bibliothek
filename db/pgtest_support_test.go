@@ -12,27 +12,23 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Diese Tests prüfen die DB-Invarianten (🟢 im Invarianten-Katalog) gegen eine ECHTE
-// PostgreSQL-Instanz: Sie provozieren jede Verletzung und erwarten den passenden
-// Constraint-Fehler. Unit-Tests mit pgxmock können das prinzipiell nicht — dort gibt
-// es keine Constraints, nur nachgespielte Antworten.
+// Diese Tests prüfen die Zusagen der Datenbank (🟢 im Katalog der Invarianten) an einem echten
+// PostgreSQL: Sie verletzen jede und erwarten den passenden Fehler der Bedingung. Mit pgxmock geht
+// das nicht; dort gibt es keine Bedingungen, nur nachgespielte Antworten.
 //
-// Warum das nötig war: Der CHECK aus Migration 043 sah zunächst korrekt aus, liess
-// aber ist_ausgesondert=true mit grund=NULL durch ("TRUE AND (NULL IN (...))" = NULL,
-// und ein CHECK schlägt nur bei FALSE an). Gefunden hat das erst ein Lauf gegen echtes
-// Postgres — festgehalten in constraints_aussonderung_pg_test.go.
+// Ein Beispiel ist die Bedingung an der Aussonderung: Sie ließ ist_ausgesondert=true mit
+// grund=NULL durch ("TRUE AND (NULL IN (...))" ist NULL, und ein CHECK schlägt nur bei FALSE an),
+// obwohl sie im Text richtig aussah (bedingung_aussonderung_pg_test.go).
 //
-// Aufteilung: Pool-Aufbau, Advisory-Lock und Notbremse liegen seit dem 31.08.2026 in
-// internal/pgtest (vorher fünffach kopiert); dieses Modul enthält die Mechanik
-// (Transaktion, Erwartungen), die Fixtures liegen in pgtest_fixtures_test.go, die
-// Fälle in constraints_*_pg_test.go.
+// Pool, Advisory-Lock und Notbremse stehen in internal/pgtest; hier stehen Transaktion und
+// Erwartungen, die Testdaten in pgtest_fixtures_test.go, die Fälle in bedingung_*_pg_test.go.
 func pgTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	return pgtest.Pool(t)
 }
 
-// inTx führt fn in einer Transaktion aus, die anschliessend IMMER zurückgerollt wird.
-// So bleibt jeder Testfall unabhängig, ohne die DB zwischen den Fällen neu aufzubauen.
+// inTx führt fn in einer Transaktion aus, die danach immer zurückgerollt wird. So bleibt jeder
+// Fall unabhängig, ohne die Datenbank zwischen den Fällen neu aufzubauen.
 func inTx(t *testing.T, pool *pgxpool.Pool, fn func(tx pgx.Tx)) {
 	t.Helper()
 
@@ -41,20 +37,20 @@ func inTx(t *testing.T, pool *pgxpool.Pool, fn func(tx pgx.Tx)) {
 	if err != nil {
 		t.Fatalf("Transaktion konnte nicht gestartet werden: %v", err)
 	}
-	// Rollback ist hier der Normalfall, nicht der Fehlerfall.
-	defer SafeRollback(ctx, tx)
+	// Zurückrollen ist hier der gewöhnliche Fall, nicht der Fehler.
+	defer Verwerfe(ctx, tx)
 
 	fn(tx)
 }
 
-// erwarteConstraintVerletzung führt sql aus und verlangt, dass Postgres es mit genau
-// dem erwarteten Constraint ablehnt. Ein erfolgreiches Statement ist ein Testfehler:
-// dann fehlt der Schutz, den der Katalog behauptet.
+// erwarteVerletzteBedingung führt sql aus und verlangt, dass Postgres es mit genau der erwarteten
+// Bedingung ablehnt. Gelingt die Anweisung, ist das ein Fehler des Tests: Dann fehlt der Schutz,
+// den der Katalog behauptet.
 //
-// Das Statement läuft in einem Savepoint (tx.Begin auf einer laufenden Tx), denn ein
-// Fehler versetzt die Transaktion sonst in den Abbruchzustand (SQLSTATE 25P02) und
-// jede folgende Gegenprobe im selben Testfall würde nur noch daran scheitern.
-func erwarteConstraintVerletzung(t *testing.T, tx pgx.Tx, constraint, sql string, args ...any) {
+// Die Anweisung läuft in einem Savepoint (tx.Begin auf einer laufenden Transaktion); ein Fehler
+// versetzte die Transaktion sonst in den Abbruchzustand (SQLSTATE 25P02), und jede folgende
+// Gegenprobe im selben Fall scheiterte nur noch daran.
+func erwarteVerletzteBedingung(t *testing.T, tx pgx.Tx, constraint, sql string, args ...any) {
 	t.Helper()
 
 	ctx := context.Background()
@@ -62,7 +58,7 @@ func erwarteConstraintVerletzung(t *testing.T, tx pgx.Tx, constraint, sql string
 	if err != nil {
 		t.Fatalf("Savepoint konnte nicht gesetzt werden: %v", err)
 	}
-	defer SafeRollback(ctx, sp)
+	defer Verwerfe(ctx, sp)
 
 	_, err = sp.Exec(ctx, sql, args...)
 	if err == nil {
@@ -79,8 +75,8 @@ func erwarteConstraintVerletzung(t *testing.T, tx pgx.Tx, constraint, sql string
 	}
 }
 
-// erwarteErfolg stellt sicher, dass ein GÜLTIGER Wert durchgeht. Ohne diese Gegenprobe
-// könnte ein zu strenger Constraint unbemerkt den Normalbetrieb blockieren.
+// erwarteErfolg stellt sicher, dass ein gültiger Wert durchgeht. Ohne diese Gegenprobe könnte eine
+// zu strenge Bedingung unbemerkt den Betrieb aufhalten.
 func erwarteErfolg(t *testing.T, tx pgx.Tx, was, sql string, args ...any) {
 	t.Helper()
 

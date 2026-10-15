@@ -155,7 +155,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+			srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 			if !tt.jetzt.IsZero() {
 				srv.Uhr = func() time.Time { return tt.jetzt }
 			}
@@ -228,7 +228,7 @@ func TestAusleiheVerlaengern_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing
 		t.Fatalf("Mahnstufe setzen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	mux := http.NewServeMux()
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
 		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},
@@ -284,7 +284,7 @@ func TestAusleiheVerlaengern_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t
 
 	verlaengere := func(ausleiheID string, jetzt time.Time, einstellungen repository.EinstellungsAbfragen) {
 		t.Helper()
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: func() time.Time { return jetzt }}}
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: func() time.Time { return jetzt }}}
 		mux := http.NewServeMux()
 		mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(einstellungen))
 		rec := httptest.NewRecorder()

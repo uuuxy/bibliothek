@@ -46,7 +46,7 @@ func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	beklebtID := testdaten.LegeLieferantAn(t, pool, "Beklebt", true)
 	selbstID := testdaten.LegeLieferantAn(t, pool, "Selbst", false)
@@ -102,7 +102,7 @@ func TestLegeBestellungAn_EtikettenTragenSignatur(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "MitSignatur", false)
 	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
@@ -131,7 +131,7 @@ func TestLegeBestellungAn_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "BeklebtOhneBogen", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-OhneBogen", 0)

@@ -8,18 +8,16 @@ import (
 	"testing"
 )
 
-// seedEntryPattern erfasst die in schema.sql als angewendet markierten Versionen,
-// z. B. ('035_lusd_id_partial_unique.sql').
-var seedEntryPattern = regexp.MustCompile(`'(\d{3}_[a-z0-9_]+\.sql)'`)
+// migrationsEintrag trifft die Versionen, die schema.sql als angewendet einträgt, etwa
+// ('035_lusd_id_partial_unique.sql').
+var migrationsEintrag = regexp.MustCompile(`'(\d{3}_[a-z0-9_]+\.sql)'`)
 
-// TestMigrationSeedListMatchesFiles stellt sicher, dass die in schema.sql als
-// „bereits angewendet" markierten Migrationen EXAKT den Dateien in migrations/
-// entsprechen. Fehlt ein Seed-Eintrag, läuft die Migration bei einer Neuinstallation
-// gegen das fertige schema.sql und kann den Serverstart abbrechen; ein Seed-Eintrag
-// ohne Datei ist ein Tippfehler. Dieser Test fängt beide Fälle in CI ab.
-func TestMigrationSeedListMatchesFiles(t *testing.T) {
-	seed := seedVersionsFromSchema(t)
-	files := migrationFilenames(t)
+// Die Migrationen, die schema.sql als angewendet einträgt, sind genau die Dateien in
+// migrations/. Fehlt ein Eintrag, läuft die Migration bei einer neuen Installation gegen das
+// fertige schema.sql und kann den Start abbrechen; ein Eintrag ohne Datei ist ein Tippfehler.
+func TestMigrationslisteImSchemaGleichDenDateien(t *testing.T) {
+	seed := versionenAusDemSchema(t)
+	files := migrationsdateinamen(t)
 
 	if missing := nurIn(files, seed); len(missing) > 0 {
 		t.Errorf("Migrationsdateien fehlen in der schema.sql-Seed-Liste: %v", missing)
@@ -29,15 +27,15 @@ func TestMigrationSeedListMatchesFiles(t *testing.T) {
 	}
 }
 
-// seedVersionsFromSchema liest die geseedeten Migrationsversionen aus schema.sql.
-func seedVersionsFromSchema(t *testing.T) map[string]bool {
+// versionenAusDemSchema liest die Versionen, die schema.sql als angewendet einträgt.
+func versionenAusDemSchema(t *testing.T) map[string]bool {
 	t.Helper()
 	content, err := os.ReadFile(filepath.Join("..", "schema.sql"))
 	if err != nil {
 		t.Fatalf("schema.sql nicht lesbar: %v", err)
 	}
 	versions := make(map[string]bool)
-	for _, m := range seedEntryPattern.FindAllStringSubmatch(string(content), -1) {
+	for _, m := range migrationsEintrag.FindAllStringSubmatch(string(content), -1) {
 		versions[m[1]] = true
 	}
 	if len(versions) == 0 {
@@ -46,8 +44,8 @@ func seedVersionsFromSchema(t *testing.T) map[string]bool {
 	return versions
 }
 
-// migrationFilenames listet alle *.sql-Dateien in migrations/.
-func migrationFilenames(t *testing.T) map[string]bool {
+// migrationsdateinamen liefert die Namen aller SQL-Dateien in migrations/.
+func migrationsdateinamen(t *testing.T) map[string]bool {
 	t.Helper()
 	entries, err := os.ReadDir(filepath.Join("..", "migrations"))
 	if err != nil {

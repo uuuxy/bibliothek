@@ -120,7 +120,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			}
 			defer mock.Close()
 
-			srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+			srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 			handler := srv.LernmittelDerKlasseVerlaengern()
 
 			tt.setupMock(mock)

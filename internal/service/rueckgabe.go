@@ -64,7 +64,7 @@ func (d *ausleihDienst) NimmZurueck(
 	if err != nil {
 		return nil, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	offeneAusleihe, err := d.ausleihAbfragen.SperreOffene(ctx, tx, exemplar.ID)
 	if err != nil {

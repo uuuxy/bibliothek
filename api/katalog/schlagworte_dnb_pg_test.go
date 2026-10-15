@@ -74,7 +74,7 @@ func TestDNBSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			client := inventur.NeuerMetadatenClient()
 			client.SetzeHTTPClientFuerTest(&http.Client{Transport: f.dnb})
-			tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).dnbSchlagwortVorschlagTuer(client)
+			tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}).dnbSchlagwortVorschlagTuer(client)
 
 			rec := httptest.NewRecorder()
 			tuer(rec, httptest.NewRequest(http.MethodGet, "/api/schlagworte/dnb-vorschlag?isbn="+f.isbn, nil))
@@ -97,7 +97,7 @@ func TestDNBSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 	client := inventur.NeuerMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: satz}})
 	rec := httptest.NewRecorder()
-	(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).dnbSchlagwortVorschlagTuer(client)(rec,
+	(&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}).dnbSchlagwortVorschlagTuer(client)(rec,
 		httptest.NewRequest(http.MethodGet, "/api/schlagworte/dnb-vorschlag?isbn=9783751200530", nil))
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatal(err)
@@ -106,7 +106,7 @@ func TestDNBSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	angelegt, err := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).legeTitelAusTrefferAn(ctx, "9783751200530", meta)
+	angelegt, err := (&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}).legeTitelAusTrefferAn(ctx, "9783751200530", meta)
 	if err != nil {
 		t.Fatal(err)
 	}

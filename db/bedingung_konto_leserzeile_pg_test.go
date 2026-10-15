@@ -7,14 +7,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Migration 125: Jedes Konto hat eine Leserzeile — dort stehen sein Ausweis und seine
-// Ausleihen. Ein Konto ohne sie fände die Theke nicht, und genau das war der Fehler, den
-// der Umbau abschafft (ein Admin ohne Personenart war für die Theke keine Person).
+// Jedes Konto hat eine Leserzeile; dort stehen sein Ausweis und seine Ausleihen. Ein Konto ohne
+// sie fände die Theke nicht: Ein Admin ohne Art eines Lesers wäre für die Theke keine Person.
 //
 // Die Zusage hängt an einem Trigger und nicht an den Schreibwegen: Konten entstehen an fünf
-// Stellen (Benutzerverwaltung, Selbstanmeldung, Littera-Übernahme, Seed, Testaufbauten).
-// Jede davon einzeln zu erinnern hieße, dass die sechste es vergisst — deshalb prüft dieser
-// Test mit rohem SQL, also am selben Weg, den ein neuer Schreibpfad nähme.
+// Stellen (Benutzerverwaltung, Selbstanmeldung, Littera-Übernahme, der erste Admin beim Start,
+// Testaufbauten). Jede einzeln zu erinnern hieße, dass die sechste es vergisst; deshalb prüft der
+// Test mit rohem SQL, am selben Weg, den ein neuer Schreibpfad nähme.
 func TestKontoBekommtImmerEineLeserzeile(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -51,9 +50,9 @@ func TestKontoBekommtImmerEineLeserzeile(t *testing.T) {
 	})
 }
 
-// Gegenprobe: Wer seine Leserzeile SELBST mitbringt, behält sie. Ohne diese Ausnahme legte
-// der Trigger bei jedem Konto eine zweite Person an — etwa wenn die Leserdatei später eine
-// vorhandene Lehrkraft mit einem Konto verbindet.
+// Gegenprobe: Wer seine Leserzeile selbst mitbringt, behält sie. Ohne diese Ausnahme legte der
+// Trigger bei jedem Konto eine zweite Person an, etwa wenn die Leserdatei später eine vorhandene
+// Lehrkraft mit einem Konto verbindet.
 func TestKontoMitEigenerLeserzeileBehaeltSie(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()

@@ -97,7 +97,7 @@ func TestDSGVOBlatt_ProtokollzeilenInWorten(t *testing.T) {
 		t.Fatalf("LegeLeserInPapierkorb: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	daten, err := srv.sammleDSGVODaten(ctx, sid, true)
 	if err != nil {
 		t.Fatalf("sammleDSGVODaten: %v", err)

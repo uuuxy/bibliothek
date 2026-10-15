@@ -72,7 +72,7 @@ func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.SafeRollback(context.Background(), erster)
+	defer db.Verwerfe(context.Background(), erster)
 	if _, err := erster.Exec(ctx, `UPDATE buecher_titel SET aktualisiert_am = NOW() WHERE id = $1`, titelID); err != nil {
 		t.Fatalf("erster Vorgang, Titel: %v", err)
 	}

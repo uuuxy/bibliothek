@@ -29,11 +29,11 @@ var (
 
 // BetriebszustandAbfragen beantwortet Fragen über den Zustand der Anlage.
 type BetriebszustandAbfragen struct {
-	pool db.PgxPoolIface
+	pool db.Pool
 }
 
 // NewBetriebszustandAbfragen liefert die Abfragen zum Betriebszustand am übergebenen Pool.
-func NewBetriebszustandAbfragen(pool db.PgxPoolIface) *BetriebszustandAbfragen {
+func NewBetriebszustandAbfragen(pool db.Pool) *BetriebszustandAbfragen {
 	return &BetriebszustandAbfragen{pool: pool}
 }
 

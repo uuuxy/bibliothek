@@ -201,15 +201,15 @@ func TestListenNennenIhreGrenze(t *testing.T) {
 	// Ein definierter Anfang: Was ein früherer Test liegen ließ, änderte sonst, welche Felder
 	// einer Antwort gefüllt sind.
 	testdaten.LeereBestandsdaten(t, pool)
-	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 	authenticator, err := auth.NewAuthenticator(
 		"listen-gate-testgeheimnis-mind-32-bytes-lang!", pool, time.Hour)
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
 	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 

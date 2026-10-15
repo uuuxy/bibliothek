@@ -52,11 +52,11 @@ type LieferantenAbfragen interface {
 }
 
 type pgLieferantenAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewLieferantenAbfragen liefert die Abfragen der Lieferanten an Postgres.
-func NewLieferantenAbfragen(pool db.PgxPoolIface) LieferantenAbfragen {
+func NewLieferantenAbfragen(pool db.Pool) LieferantenAbfragen {
 	return &pgLieferantenAbfragen{db: pool}
 }
 

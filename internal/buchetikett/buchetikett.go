@@ -63,7 +63,7 @@ func (k Kopf) vermerkFuer(topf string) string {
 // LadeKopf lädt Schulname und Eigentumsvermerk aus den Einstellungen. Sind sie nicht lesbar,
 // bleibt der Schulname leer statt erfunden, weil ein Etikett mit der falschen Schule ein
 // gefundenes Buch in die Irre führt; der Eigentumsvermerk nimmt die Vorgabe.
-func LadeKopf(ctx context.Context, pool db.PgxPoolIface) Kopf {
+func LadeKopf(ctx context.Context, pool db.Pool) Kopf {
 	einstellungen, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
 		log.Printf("Etiketten: Einstellungen nicht lesbar, drucke ohne Schulnamen: %v", err)

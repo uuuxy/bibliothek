@@ -115,7 +115,7 @@ func (t *Tueren) veroeffentlicheLMFPlan(r *http.Request) (lmfPlanSpeicherAntwort
 	if err != nil {
 		return keine, false, apierrors.Internal("Transaktion", err)
 	}
-	defer db.SafeRollback(r.Context(), tx)
+	defer db.Verwerfe(r.Context(), tx)
 	if antwort.LMFPlanStand, err = abfragen.VeroeffentlichePlan(r.Context(), tx, stand.Plan.ID, t.Jetzt()); err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
 	}

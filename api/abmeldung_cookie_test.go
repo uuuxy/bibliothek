@@ -33,7 +33,7 @@ func TestAbmeldungCookieFolgtDerKonfiguration(t *testing.T) {
 				t.Fatalf("authenticator init: %v", err)
 			}
 			t.Cleanup(a.Blacklist.Stop)
-			s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}, nurHTTPS: secure}
+			s := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: mock}, Auth: a}, nurHTTPS: secure}
 
 			// Unbrauchbares Token: Die Sperrliste antwortet, die Prüfung des Tokens scheitert
 			// danach an der Signatur. Es gibt nichts zu widerrufen, die Tür löscht das Cookie

@@ -5,13 +5,13 @@ import { dirname, resolve } from 'node:path';
 import { canSeeItem, erlaubteTabs, menuGroups, tabIstGesperrt } from './menu.js';
 
 /**
- * Liest die geseedeten Rechte einer Rolle aus db/seed.go.
+ * Liest die geseedeten Rechte einer Rolle aus db/rechte_vorgabe.go.
  *
  * Warum aus der Datei statt als Literal hier: Der Kollegiums-Test unten stand bis zum
  * 10.08.2026 auf `permissions: []` — einem Konto, das es nicht gibt. Er war grün, während
  * ein echtes Kollegiums-Konto 10 von 15 Menüpunkten sah (Schülerdatei, Mahnwesen,
  * System-Logs, Einstellungen). Ein Rechte-Literal im Test misst nur sich selbst; die
- * Vorgabe steht in seed.go, also muss sie von dort kommen.
+ * Vorgabe steht in rechte_vorgabe.go, also muss sie von dort kommen.
  *
  * @param {string} rolle GROSS geschrieben, wie in role_permissions
  * @returns {string[]}
@@ -20,22 +20,22 @@ function geseedeteRechte(rolle) {
 	// Aufwärts suchen statt relativ zu import.meta.url: Vitest transformiert die Datei,
 	// import.meta.url trägt dort ein http-Schema und readFileSync lehnt es ab.
 	let verzeichnis = process.cwd();
-	while (!existsSync(resolve(verzeichnis, 'db/seed.go'))) {
+	while (!existsSync(resolve(verzeichnis, 'db/rechte_vorgabe.go'))) {
 		const eltern = dirname(verzeichnis);
-		if (eltern === verzeichnis) throw new Error('db/seed.go nicht gefunden');
+		if (eltern === verzeichnis) throw new Error('db/rechte_vorgabe.go nicht gefunden');
 		verzeichnis = eltern;
 	}
 
-	const seed = readFileSync(resolve(verzeichnis, 'db/seed.go'), 'utf8');
+	const seed = readFileSync(resolve(verzeichnis, 'db/rechte_vorgabe.go'), 'utf8');
 	const zeilen = [...seed.matchAll(/\{"([A-Z]+)",\s*"(\w+)",\s*(true|false)\}/g)];
 
 	// Ohne diesen Riegel prüft der Test nichts mehr, sobald sich die Schreibweise in
-	// seed.go ändert: Die leere Liste ergäbe „sieht nur sein Portal" — grün aus dem
+	// rechte_vorgabe.go ändert: Die leere Liste ergäbe „sieht nur sein Portal" — grün aus dem
 	// falschen Grund, genau der Fehler, den dieser Test ablösen soll.
 	const dieserRolle = zeilen.filter(([, r]) => r === rolle);
 	if (dieserRolle.length === 0) {
 		throw new Error(
-			`Keine Vorgaben für Rolle ${rolle} in db/seed.go gefunden — das Muster passt nicht mehr.`
+			`Keine Vorgaben für Rolle ${rolle} in db/rechte_vorgabe.go gefunden — das Muster passt nicht mehr.`
 		);
 	}
 

@@ -5,17 +5,16 @@ import (
 	"testing"
 )
 
-// Die Sicht `schueler` zeigt ALLE Spalten der Tabelle `leser`.
+// Die Sicht `schueler` zeigt alle Spalten der Tabelle `leser`.
 //
-// `CREATE VIEW schueler AS SELECT * FROM leser` friert die Spaltenliste im Moment des
-// Anlegens ein: Ein späteres `ALTER TABLE leser ADD COLUMN` taucht in der Sicht NICHT auf.
-// Das ist die unangenehme Sorte Abweichung — nichts bricht, es fehlt nur etwas: Die 51
-// Abfragen, die „Schüler" meinen, läsen die neue Spalte nie, ein INSERT durch die Sicht
-// setzte sie nie, und beim Lesen merkt man es nicht, weil die Abfrage ja durchläuft.
+// `CREATE VIEW schueler AS SELECT * FROM leser` friert die Liste der Spalten beim Anlegen ein:
+// Ein späteres `ALTER TABLE leser ADD COLUMN` taucht in der Sicht nicht auf. Dabei bricht nichts,
+// es fehlt nur etwas: Die Abfragen, die „Schüler" meinen, läsen die neue Spalte nie, ein INSERT
+// durch die Sicht setzte sie nie, und beim Lesen merkt man es nicht, weil die Abfrage durchläuft.
 //
-// Reparatur bei Rot: In derselben Migration, die die Spalte anlegt, die Sicht neu
-// erzeugen (DROP VIEW schueler; CREATE VIEW … WITH CHECK OPTION) — und schema.sql
-// nachziehen, damit der frische Weg gleich bleibt.
+// Wird der Test rot: In derselben Migration, die die Spalte anlegt, die Sicht neu erzeugen
+// (DROP VIEW schueler; CREATE VIEW … WITH CHECK OPTION) und schema.sql nachziehen, damit der
+// frische Weg gleich bleibt.
 func TestSichtSchuelerZeigtAlleSpaltenDerLesertabelle(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -60,8 +59,8 @@ func TestSichtSchuelerZeigtAlleSpaltenDerLesertabelle(t *testing.T) {
 				"Anlegen der Spalte nicht neu erzeugt", n)
 		}
 	}
-	// Die Gegenrichtung ist genauso ein Fehler: Eine Spalte, die es in der Tabelle nicht
-	// mehr gibt, kann die Sicht gar nicht behalten — sie wäre dann von Hand gebaut.
+	// Die Gegenrichtung ist ebenso ein Fehler: Eine Spalte, die es in der Tabelle nicht mehr
+	// gibt, kann die Sicht nicht behalten; sie wäre dann von Hand gebaut.
 	inTabelle := make(map[string]bool, len(tabelle))
 	for _, n := range tabelle {
 		inTabelle[n] = true

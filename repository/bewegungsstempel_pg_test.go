@@ -179,7 +179,7 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 	}
 
 	lang := beginne(t, pool)
-	defer db.SafeRollback(ctx, lang)
+	defer db.Verwerfe(ctx, lang)
 	if _, err := lang.Exec(ctx, `SELECT now()`); err != nil { // legt den Beginn der Transaktion fest
 		t.Fatalf("now: %v", err)
 	}

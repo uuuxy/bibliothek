@@ -230,7 +230,7 @@ func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req les
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return "", "", false
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// 1. Doppelprüfung, bevor irgendetwas geschrieben wird.
 	if !antworteAufLeserDublette(ctx, tx, w, req, geburtsdatum) {
@@ -389,7 +389,7 @@ func bestimmeNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter
 		// Generatoren: genau der Fehler aus Migration 068, nur eine Tabelle weiter.
 		startNummer, err := nummernAbfragen.ZieheNaechste(ctx)
 		if err != nil {
-			db.SafeRollback(ctx, tx)
+			db.Verwerfe(ctx, tx)
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return "", false
 		}

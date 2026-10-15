@@ -31,7 +31,7 @@ func TestExemplarStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 		t.Fatalf("Exemplar-ID lesen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	handler := srv.ExemplarStatusAendern(repository.NewKatalogAbfragen(pool), repository.NewBescheidAbfragen(pool))
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/exemplare/"+exID+"/status",
 		strings.NewReader(`{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":"aus Ranzen verloren"}`))

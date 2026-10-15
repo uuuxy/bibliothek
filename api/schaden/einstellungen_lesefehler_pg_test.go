@@ -33,8 +33,8 @@ func TestElternbrief_EinstellungenUnlesbar_KeinBriefKeinVermerk(t *testing.T) {
 			`SELECT count(*) FROM schadensfaelle WHERE id = $1 AND elternbrief_generiert`, fall)
 	}
 
-	rufe := func(datenbank db.PgxPoolIface) *httptest.ResponseRecorder {
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}
+	rufe := func(datenbank db.Pool) *httptest.ResponseRecorder {
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: datenbank}}}
 		req := httptest.NewRequest(http.MethodGet, "/api/schadensfaelle/"+fall+"/pdf", nil)
 		req.SetPathValue("id", fall)
 		rec := httptest.NewRecorder()
@@ -42,7 +42,7 @@ func TestElternbrief_EinstellungenUnlesbar_KeinBriefKeinVermerk(t *testing.T) {
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen})
+	rec := rufe(testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Der Brief entsteht mit den Vorgaben statt mit den Angaben der Schule", rec.Code)
 	}
@@ -69,15 +69,15 @@ func TestErsatzforderung_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-RECH-LESEFEHLER", "Rechnungskind", "08G2")
 	testdaten.LegeOffenenSchadenAn(t, pool, sid, "RECH-LF")
 
-	rufe := func(datenbank db.PgxPoolIface) *httptest.ResponseRecorder {
+	rufe := func(datenbank db.Pool) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)
 		req.SetPathValue("schueler_id", sid)
 		rec := httptest.NewRecorder()
-		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}).RechnungPDF()(rec, req)
+		(&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: datenbank}}}).RechnungPDF()(rec, req)
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen})
+	rec := rufe(testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Die Ersatzforderung entsteht mit den Vorgaben statt mit den Angaben der Schule", rec.Code)
 	}

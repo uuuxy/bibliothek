@@ -23,7 +23,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	// Andere Tests im selben Paketlauf lassen Lieferanten stehen, auch einen Hauptlieferanten.
 	pgtest.RaeumeAuf(t, pool, `UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant`)
 	t.Cleanup(func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'NGF-%'`) })

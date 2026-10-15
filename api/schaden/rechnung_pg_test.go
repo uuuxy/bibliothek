@@ -78,7 +78,7 @@ func TestLadeRechnungPosten_ForderungAufEinemBescheidBleibtDraussen(t *testing.T
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-RECH-BESCH", "Rechnungskind", "08G2")
@@ -115,7 +115,7 @@ func TestRechnungPDF_AlleForderungenAufBescheid(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-RECH-ALLE", "Bescheidkind", "08G2")
 	titelID := testdaten.LegeLernmittelAn(t, pool, "Englisch 8")

@@ -67,7 +67,7 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	litteraID := "littera:77"
 
 	handID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Mia", nachname: "Hand", klasse: "5a", barcode: "NM-1", geb: testdaten.Datum(2013, 5, 4)})
@@ -131,7 +131,7 @@ func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	abID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Alt", nachname: "Bestaetigt", klasse: "10a", barcode: "NM-3", geb: testdaten.Datum(2009, 2, 2), bestaetigt: true})
 	handID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Gast", nachname: "Schueler", klasse: "8a", barcode: "NM-4", geb: testdaten.Datum(2011, 3, 3)})
@@ -177,7 +177,7 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	id := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Rück", nachname: "Kehrer", klasse: "9a", barcode: "NM-6", geb: testdaten.Datum(2010, 6, 6), abgaenger: true, bestaetigt: true})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id=$1`, id); err != nil {
@@ -216,7 +216,7 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	marke := "littera:5"
 
 	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Anna", nachname: "Müller", klasse: "7a", barcode: "NM-7", geb: testdaten.Datum(2012, 7, 7)})
@@ -250,7 +250,7 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	lisa := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Lisa", nachname: "Lanis", klasse: "5a", barcode: "NM-L1", bestaetigt: true})
 	// Zwei „Paul Doppel" ohne Datum → mehrdeutig, keiner bekommt das Datum, keine Neuanlage.

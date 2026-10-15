@@ -239,9 +239,9 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		// wieder den Normalzustand sehen.
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
 		for _, e := range db.RechteVorgabe {
-			if e.Role == "MITARBEITER" {
+			if e.Rolle == "MITARBEITER" {
 				pgtest.RaeumeAuf(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
-					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Role, e.Permission, e.Allowed)
+					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Rolle, e.Recht, e.Erlaubt)
 			}
 		}
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
@@ -543,10 +543,10 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 	// des Betriebs (50 je Sekunde und Adresse) wäre ein falsches Rot.
 	t.Setenv("RATE_LIMIT", "100000")
 
-	// role_permissions entsteht im echten Betrieb durch InitPermissions (db/seed.go),
+	// role_permissions entsteht im echten Betrieb durch SchreibeRechteVorgabe (db/rechte_vorgabe.go),
 	// nicht durch schema.sql; derselbe Weg hier, damit der Test den Aufbau des Betriebs fährt.
-	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 
 	authenticator, err := auth.NewAuthenticator(
@@ -554,7 +554,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
 	// der Test mäße dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
 	srv.Uhr = testdaten.SaisonUhr
@@ -725,15 +725,15 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Setenv("RATE_LIMIT", "100000")
 
-	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 	authenticator, err := auth.NewAuthenticator(
 		"pii-antwort-gate-testgeheimnis-mind-32-bytes!", pool, time.Hour)
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
 	// der Test mäße dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
 	srv.Uhr = testdaten.SaisonUhr

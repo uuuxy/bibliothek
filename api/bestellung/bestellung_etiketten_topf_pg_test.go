@@ -27,7 +27,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.SetzeVermerkSchuelerbuecherei(t, pool, testdaten.VermerkStadt)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{

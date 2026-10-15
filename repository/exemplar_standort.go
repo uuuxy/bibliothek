@@ -108,7 +108,7 @@ func SetzeExemplarStandort(ctx context.Context, q Datenbank, a StandortAenderung
 	if err != nil {
 		return 0, fmt.Errorf("standort: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Wie viele verschiedene Exemplare gewählt sind, zählt die Datenbank — sie liest Groß-
 	// und Kleinschreibung einer Kennung als dieselbe (wie SetzeExemplarEigentum).

@@ -44,7 +44,7 @@ func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// Mathebuch im Lauf für Deutsch: 409, nicht erfasst.
 	rec := inventurScan(t, srv, session.ID, barcodeMathe)
@@ -115,7 +115,7 @@ func TestScanVerbuchen_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T
 		t.Fatalf("Inventur anlegen: %v", err)
 	}
 
-	rec := inventurScan(t, &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}, session.ID, "GIBT-ES-NICHT")
+	rec := inventurScan(t, &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}, session.ID, "GIBT-ES-NICHT")
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
 	}
@@ -170,7 +170,7 @@ func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	tests := []struct {
 		name       string

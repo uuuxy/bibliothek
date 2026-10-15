@@ -1,20 +1,15 @@
 package db
 
-// Schema-Parität: gewachsener Pfad ≡ frischer Pfad.
+// Zwei Wege führen zu einer Datenbank: Eine frische Installation bekommt das heutige schema.sql
+// als Ausgangsstand (spieleSchemaEin), eine gewachsene wie die des Betriebs bekommt nacheinander
+// die Migrationen. Beide müssen dieselbe Struktur ergeben; sonst prüft jeder Test an der
+// Datenbank ein Schema, das es im Betrieb so nicht gibt, etwa eine Spalte, die eine Migration
+// anlegt und schema.sql nicht kennt.
 //
-// Es gibt zwei Wege zu einer Datenbank: Eine FRISCHE Installation bekommt das heutige
-// schema.sql als Baseline (ensureBaselineSchema), eine GEWACHSENE (wie Prod) bekommt
-// nacheinander die Migrationen. Dass beide Wege dieselbe Struktur ergeben, war bisher
-// reine Konvention — „Migration schreiben UND schema.sql nachziehen" stand in keinem
-// Gate. Genau diese Klasse war der anonymized_at-Drift: Migration 022 legte die Spalte
-// an, schema.sql kannte sie nicht, und jeder PG-Test testete ein Schema, das es auf
-// Prod so nicht gibt.
-//
-// Der Test baut beide Wege real nach: die eingefrorene Baseline aus Commit e5740b95
-// (db/testdata/, 05.06.2026, Seed-Liste bis 006) plus den ECHTEN Migrations-Runner
-// gegen das heutige schema.sql — und vergleicht Spalten, Constraints, Indexe, Trigger,
-// Funktionen, Enums und Sequenzen. Jede Meldung heißt: einer der beiden Wege hat etwas,
-// das der andere nicht hat.
+// Der Test baut beide Wege nach: den eingefrorenen Ausgangsstand in db/testdata/ mit dem echten
+// Lauf der Migrationen gegen das heutige schema.sql. Er vergleicht Spalten, Bedingungen, Indexe,
+// Trigger, Funktionen, Enums und Sequenzen; jede Meldung heißt, dass einer der beiden Wege etwas
+// hat, das der andere nicht hat.
 
 import (
 	"context"
@@ -29,39 +24,37 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// paritaetsAspekte: je eine Abfrage pro Strukturaspekt, jede liefert genau eine
-// Textspalte. Verglichen werden MENGEN von Zeilen — die Spaltenreihenfolge in der
-// Tabelle darf abweichen (ALTER ADD COLUMN hängt hinten an, schema.sql sortiert
-// logisch), Namen von Constraints dagegen nicht: Beide Wege werden bewusst mit
-// denselben Namen geschrieben, und ein abweichender Name IST eine Abweichung.
+// paritaetsAspekte hat je Teil der Struktur eine Abfrage mit genau einer Spalte Text.
+// Verglichen werden Mengen von Zeilen: Die Reihenfolge der Spalten einer Tabelle darf abweichen
+// (ALTER ADD COLUMN hängt hinten an, schema.sql ordnet nach Sinn), die Namen der Bedingungen
+// nicht. Beide Wege schreiben dieselben Namen, und ein anderer Name ist eine Abweichung.
 var paritaetsAspekte = []struct{ name, query string }{
 	{"Spalte", `SELECT table_name || '.' || column_name || ' typ=' || data_type ||
 		coalesce('(' || character_maximum_length || ')', '') || ' null=' || is_nullable ||
 		' default=' || coalesce(column_default, '-')
 		FROM information_schema.columns WHERE table_schema = 'public'`},
-	// conname steht MIT im Vergleich — bis 22.08.2026 fehlte es, obwohl der Kommentar oben
-	// es behauptete; ein FK aus 063 hieß gewachsen anders als frisch (Migration 085 heilt).
+	// conname steht im Vergleich: Ein Fremdschlüssel kann auf beiden Wegen gleich wirken und
+	// verschieden heißen.
 	{"Constraint", `SELECT conrelid::regclass::text || ' ' || conname || ' ' || contype::text || ' ' || pg_get_constraintdef(oid)
 		FROM pg_constraint WHERE connamespace = 'public'::regnamespace AND contype <> 't'`},
 	{"Index", `SELECT tablename || ' ' || indexdef FROM pg_indexes WHERE schemaname = 'public'`},
 	{"Trigger", `SELECT DISTINCT event_object_table || ' ' || trigger_name || ' ' || action_timing
 		FROM information_schema.triggers WHERE trigger_schema = 'public'`},
-	// Mit dem Körper (md5 von prosrc), nicht nur dem Namen — seit 23.09.2026. Vorher sah das
-	// Gate nicht, ob eine Migration eine Trigger-Funktion anders ersetzt als schema.sql: Die
-	// Tests liefen gegen den frischen Körper, der Server bekäme den gewachsenen (Anlass:
-	// Migration 144, deren Schutz nur im Körper steht). Gemessen am selben Tag: alle Körper
-	// auf beiden Wegen byte-gleich; ein Kommentar im Körper zählt also mit.
+	// Mit dem Rumpf (md5 von prosrc), nicht nur dem Namen: Ersetzt eine Migration eine
+	// Funktion eines Triggers anders als schema.sql, liefen die Tests gegen den frischen Rumpf,
+	// und der Server bekäme den gewachsenen. Die Rümpfe sind auf beiden Wegen Byte für Byte
+	// gleich; ein Kommentar im Rumpf zählt also mit.
 	{"Funktion", `SELECT proname || ' md5=' || md5(prosrc) FROM pg_proc WHERE pronamespace = 'public'::regnamespace`},
 	{"Enum-Wert", `SELECT t.typname || '=' || e.enumlabel FROM pg_type t
 		JOIN pg_enum e ON e.enumtypid = t.oid WHERE t.typnamespace = 'public'::regnamespace`},
 	{"Sequenz", `SELECT sequencename FROM pg_sequences WHERE schemaname = 'public'`},
 }
 
-// bootRolePermissionsSQL ist das SQL, mit dem db/seed.go role_permissions bis zum
-// 07.09.2026 bei jedem Start anlegte — wörtlich eingefroren, weil der gewachsene Weg
-// diese Tabelle historisch genau so bekam (vor Migration 055). Migration 106 legt sie
-// heute identisch an; weicht eine der beiden Fassungen ab, meldet es der Diff unten.
-const bootRolePermissionsSQL = `
+// sqlRechtetabelleAusDemStart ist das SQL, mit dem früher der Start des Programms role_permissions
+// anlegte, wörtlich eingefroren: Auf dem gewachsenen Weg bekam die Tabelle genau so ihre Form,
+// bevor Migration 055 sie voraussetzte. Migration 106 legt sie heute gleich an; weicht eine der
+// beiden Fassungen ab, meldet es der Vergleich unten.
+const sqlRechtetabelleAusDemStart = `
 		CREATE TABLE IF NOT EXISTS role_permissions (
 			role VARCHAR(50) NOT NULL,
 			permission VARCHAR(100) NOT NULL,
@@ -86,24 +79,21 @@ func TestSchemaParitaet_GewachsenGleichFrisch(t *testing.T) {
 	gewachsen := paritaetsDB(t, ctx, admin, dsn, "bibliothek_test_paritaet_gewachsen")
 	frisch := paritaetsDB(t, ctx, admin, dsn, "bibliothek_test_paritaet_frisch")
 
-	// Gewachsener Pfad: eingefrorene Baseline, dann der ECHTE Runner über migrations/.
-	// (ensureBaselineSchema greift nicht: die Baseline bringt schema_migrations mit.)
+	// Gewachsener Weg: der eingefrorene Ausgangsstand, dann der echte Lauf über migrations/
+	// (spieleSchemaEin greift nicht, der Ausgangsstand bringt schema_migrations mit).
 	//
-	// role_permissions kam bis zum 07.09.2026 aus dem Go-Startup (db/seed.go), nicht aus
-	// einer Migration — auf einer gewachsenen Anlage existierte die Tabelle aus früheren
-	// Boots, BEVOR Migration 055 sie voraussetzte. Der Replay komprimiert die Zeit und
-	// muss diese Startup-Tabelle deshalb vor dem Migrationslauf anlegen. Seit Migration
-	// 106 steht sie im Schema und der Boot führt kein DDL mehr aus; das historische
-	// Boot-SQL ist dafür HIER eingefroren (bootRolePermissionsSQL) — 106 läuft nach 055
-	// und kann nicht rückwirkend vor sie treten.
+	// Auf einer gewachsenen Anlage gab es role_permissions aus dem Start des Programms, bevor
+	// Migration 055 die Tabelle voraussetzte. Das Nachspielen legt sie deshalb vor dem Lauf
+	// an (sqlRechtetabelleAusDemStart); Migration 106 läuft nach 055 und kann nicht vor sie
+	// treten.
 	fuehreDateiAus(t, ctx, gewachsen, "testdata/schema_baseline_e5740b95.sql")
-	if _, err := gewachsen.Exec(ctx, bootRolePermissionsSQL); err != nil {
+	if _, err := gewachsen.Exec(ctx, sqlRechtetabelleAusDemStart); err != nil {
 		t.Fatalf("role_permissions (Startup-Tabelle) anlegen: %v", err)
 	}
 	booteAnwendung(t, ctx, gewachsen)
 
-	// Frischer Pfad: das heutige schema.sql wie bei einer Neuinstallation, dann derselbe
-	// Boot (Migrationen sind per Seed-Liste als angewendet markiert — muss ein No-op sein).
+	// Frischer Weg: das heutige schema.sql wie bei einer neuen Installation, dann derselbe Start
+	// (die Migrationen stehen in schema.sql als angewendet, der Lauf tut also nichts).
 	fuehreDateiAus(t, ctx, frisch, "../schema.sql")
 	booteAnwendung(t, ctx, frisch)
 
@@ -115,21 +105,21 @@ func TestSchemaParitaet_GewachsenGleichFrisch(t *testing.T) {
 	}
 }
 
-// booteAnwendung führt den Server-Startpfad aus (main.go: RunMigrations, dann
-// InitPermissions). Beide Seiten booten IDENTISCH — so verrechnet der Vergleich nur
-// den Unterschied zwischen Migrationskette und schema.sql, nicht den Boot-Code.
+// booteAnwendung geht den Weg des Starts (main.go: FuehreMigrationenAus, dann
+// SchreibeRechteVorgabe). Beide Seiten starten gleich; so misst der Vergleich nur den Unterschied
+// zwischen der Kette der Migrationen und schema.sql, nicht den Code des Starts.
 func booteAnwendung(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	t.Helper()
-	d := &Database{Pool: pool}
-	if err := d.RunMigrations(ctx, "../migrations"); err != nil {
+	d := &Verbindung{Pool: pool}
+	if err := d.FuehreMigrationenAus(ctx, "../migrations"); err != nil {
 		t.Fatalf("Migrationslauf gescheitert — dieser Pfad ist nicht mehr abspielbar: %v", err)
 	}
-	if err := d.InitPermissions(ctx); err != nil {
-		t.Fatalf("InitPermissions: %v", err)
+	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
 	}
 }
 
-// paritaetsDB legt eine leere Wegwerf-Datenbank auf demselben Server an (DROP zuerst,
+// paritaetsDB legt eine leere Datenbank zum Wegwerfen auf demselben Server an (vorher DROP,
 // falls ein abgebrochener Lauf sie hinterließ) und liefert einen Pool darauf.
 func paritaetsDB(t *testing.T, ctx context.Context, admin *pgx.Conn, dsn, name string) *pgxpool.Pool {
 	t.Helper()
@@ -150,7 +140,7 @@ func paritaetsDB(t *testing.T, ctx context.Context, admin *pgx.Conn, dsn, name s
 	}
 	t.Cleanup(func() {
 		pool.Close()
-		// Aufräumen ist best effort — der nächste Lauf räumt per DROP IF EXISTS nach.
+		// Scheitert das Aufräumen, räumt der nächste Lauf mit DROP IF EXISTS nach.
 		_, _ = admin.Exec(ctx, fmt.Sprintf(`DROP DATABASE IF EXISTS %s WITH (FORCE)`, name)) //nolint:errcheck
 	})
 	return pool
@@ -188,7 +178,7 @@ func ladeZeilen(t *testing.T, ctx context.Context, pool *pgxpool.Pool, query str
 	return zeilen
 }
 
-// meldeFehlende meldet jede Zeile aus `menge`, die in `referenz` fehlt.
+// meldeFehlende meldet jede Zeile aus menge, die in referenz fehlt.
 func meldeFehlende(t *testing.T, aspekt, richtung string, menge, referenz map[string]bool) {
 	t.Helper()
 	var fehlend []string

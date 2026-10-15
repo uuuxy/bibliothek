@@ -59,7 +59,7 @@ var ddlAnweisung = regexp.MustCompile(`(?i)\b(CREATE|ALTER|DROP)\s+(SEQUENCE|TAB
 
 // ddlAusnahmen nennt die Dateien, die Struktur zur Laufzeit anlegen dürfen, mit dem Grund.
 var ddlAusnahmen = map[string]string{
-	"db/migrations.go":          "der Runner der Migrationen: Die Tabelle schema_migrations muss es vor der ersten Migration geben",
+	"db/migrationen.go":         "der Runner der Migrationen: Die Tabelle schema_migrations muss es vor der ersten Migration geben",
 	"internal/pgtest/pgtest.go": "die Harness der Datenbank-Tests leert das Schema der Testdatenbank, bevor sie schema.sql lädt",
 }
 

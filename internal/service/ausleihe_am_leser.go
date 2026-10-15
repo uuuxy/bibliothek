@@ -96,7 +96,7 @@ func (d *ausleihDienst) BucheAmLeser(
 	if err != nil {
 		return nil, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	anzahlOffene, err := d.zaehleAktiveSchuelerAusleihen(ctx, tx, vorgang)
 	if err != nil {

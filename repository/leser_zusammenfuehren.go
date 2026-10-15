@@ -182,7 +182,7 @@ func ersteZeit(a, b *time.Time) *time.Time {
 // Zeilen gesperrt. Reihenfolge ist Schutz: Erst wandern die Fremdschlüssel, dann fällt
 // die Quelle, erst dann bekommt das Ziel die Stammdaten — sonst kollidierten Name +
 // Geburtsdatum bzw. lusd_id am partiellen Unique-Index, solange die Quelle noch lebt.
-func FuehreLeserZusammen(ctx context.Context, pool db.PgxPoolIface, a ZusammenfuehrenAuftrag) (*ZusammenfuehrenErgebnis, error) {
+func FuehreLeserZusammen(ctx context.Context, pool db.Pool, a ZusammenfuehrenAuftrag) (*ZusammenfuehrenErgebnis, error) {
 	if a.ZielID == a.QuelleID {
 		return nil, ErrZusammenfuehrenGleich
 	}
@@ -190,7 +190,7 @@ func FuehreLeserZusammen(ctx context.Context, pool db.PgxPoolIface, a Zusammenfu
 	if err != nil {
 		return nil, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Beide Zeilen in fester Reihenfolge sperren (kleinere UUID zuerst), damit zwei
 	// gleichzeitige Zusammenführungen derselben Paare sich nicht gegenseitig verklemmen.
@@ -587,7 +587,7 @@ type ZusammenfuehrenKandidat struct {
 // FindeZusammenfuehrenKandidaten sucht mit denselben Bausteinen wie Theke und
 // Schülerdatei (suchnorm, Tokens) über alle nicht gelöschten, nicht anonymisierten
 // Schüler — außer dem Datensatz, von dem aus gesucht wird.
-func FindeZusammenfuehrenKandidaten(ctx context.Context, pool db.PgxPoolIface, ausserID, suche string, limit int) ([]ZusammenfuehrenKandidat, error) {
+func FindeZusammenfuehrenKandidaten(ctx context.Context, pool db.Pool, ausserID, suche string, limit int) ([]ZusammenfuehrenKandidat, error) {
 	tokens := suchTokens(suche)
 	if len(tokens) == 0 {
 		return []ZusammenfuehrenKandidat{}, nil

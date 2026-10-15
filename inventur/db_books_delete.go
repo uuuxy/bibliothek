@@ -40,7 +40,7 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	if err != nil {
 		return fmt.Errorf("löschen konnte nicht begonnen werden: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Bücher in mehreren Auflagen (docs/OFFEN.md 4.18): Ihre Werke müssen danach noch stimmen.
 	// Als erstes — die Sperre der Auflagen kommt vor jeder Zeilensperre (repository.LadeWerkeDerTitel).

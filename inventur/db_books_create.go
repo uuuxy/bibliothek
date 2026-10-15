@@ -52,7 +52,7 @@ func (repo *BookRepository) legeTitelAn(ctx context.Context, book Book, anderesM
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Die Dublettenkontrolle läuft vor dem Schreiben in derselben Transaktion.
 	if err := pruefeNeuenTitel(ctx, tx, book, anderesMedium); err != nil {
@@ -295,7 +295,7 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	if err != nil {
 		return 0, fmt.Errorf("import konnte nicht begonnen werden: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	betroffen, err := repo.executeUpsertBatchQuery(ctx, tx, data)
 	if err != nil {
@@ -384,7 +384,7 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	var id string
 	err = tx.QueryRow(

@@ -30,7 +30,7 @@ func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, 
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Gehört der Titel zu einem Buch in mehreren Auflagen, muss das Werk danach noch stimmen.
 	// Zuerst, weil die Sperre der Auflagen vor jeder Zeilensperre kommt.

@@ -35,7 +35,7 @@ func TestMahnbriefeDrucken_NurOffeneHochzaehlen(t *testing.T) {
 		t.Fatalf("Rückgabe setzen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	body, err := json.Marshal(MahnbriefeAnfrage{AusleihIDs: []string{loanOffen, loanZurueck}})
 	if err != nil {
 		t.Fatalf("Request serialisieren: %v", err)

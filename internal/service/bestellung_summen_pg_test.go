@@ -19,7 +19,7 @@ func TestLegeBestellungAn_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Summen", false)
 	erster := testdaten.LegeTitelAn(t, pool, "LMF-Summe Eins", 0)
@@ -65,7 +65,7 @@ func TestLegeBestellungAn_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Ohne Topf", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Ohne-Topf", 0)
 
@@ -96,7 +96,7 @@ func TestLegeBestellungAn_JedePositionStehtInIhrenSpalten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewBestellDienst(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Spalten", false)
 	erster := testdaten.LegeTitelAn(t, pool, "LMF-Spalte Eins", 0)
 	zweiter := testdaten.LegeTitelAn(t, pool, "LMF-Spalte Zwei", 0)

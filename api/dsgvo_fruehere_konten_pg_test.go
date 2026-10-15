@@ -50,7 +50,7 @@ func TestDSGVOAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	admin := testdaten.LegeBearbeiterAn(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	t.Cleanup(func() {
@@ -190,7 +190,7 @@ func TestDSGVOAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	admin := testdaten.LegeBearbeiterAn(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	t.Cleanup(func() {

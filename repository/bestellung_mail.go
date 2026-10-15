@@ -53,7 +53,7 @@ type BestellmailPosition struct {
 
 // MerkeBestellmailGescheitert vermerkt an der Bestellung, dass ihre Mail nicht rausging.
 // pgx.ErrNoRows, wenn es die Bestellung nicht gibt.
-func MerkeBestellmailGescheitert(ctx context.Context, pool db.PgxPoolIface, bestellungID string) error {
+func MerkeBestellmailGescheitert(ctx context.Context, pool db.Pool, bestellungID string) error {
 	tag, err := pool.Exec(ctx,
 		`UPDATE bestellungen_verlauf SET mail_gescheitert_am = now() WHERE id = $1`, bestellungID)
 	if err != nil {
@@ -71,7 +71,7 @@ func MerkeBestellmailGescheitert(ctx context.Context, pool db.PgxPoolIface, best
 // geht nicht doppelt an den Lieferanten. Scheitert der Versand danach, setzt
 // MerkeBestellmailGescheitert den Vermerk wieder. pgx.ErrNoRows, wenn es die Bestellung
 // nicht gibt.
-func BeanspruchBestellmail(ctx context.Context, pool db.PgxPoolIface, bestellungID string) (*BestellmailAuftrag, error) {
+func BeanspruchBestellmail(ctx context.Context, pool db.Pool, bestellungID string) (*BestellmailAuftrag, error) {
 	var a BestellmailAuftrag
 	err := pool.QueryRow(ctx, `
 		UPDATE bestellungen_verlauf ziel
@@ -99,7 +99,7 @@ func BeanspruchBestellmail(ctx context.Context, pool db.PgxPoolIface, bestellung
 
 // deuteBestellmailNichtOffen unterscheidet die zwei Gründe, aus denen kein Auftrag
 // zu haben war: Die Bestellung gibt es nicht, oder sie trägt keinen Vermerk.
-func deuteBestellmailNichtOffen(ctx context.Context, pool db.PgxPoolIface, bestellungID string) error {
+func deuteBestellmailNichtOffen(ctx context.Context, pool db.Pool, bestellungID string) error {
 	var vorhanden bool
 	if err := pool.QueryRow(ctx,
 		`SELECT EXISTS (SELECT 1 FROM bestellungen_verlauf WHERE id = $1)`, bestellungID).Scan(&vorhanden); err != nil {
@@ -113,7 +113,7 @@ func deuteBestellmailNichtOffen(ctx context.Context, pool db.PgxPoolIface, beste
 
 // ladeBestellmailPositionen liest die Zeilen der Bestellung für das Anschreiben. Titel und ISBN
 // stehen an der Position, Autor und Verlag am Titel; ist der Titel gelöscht, bleiben sie leer.
-func ladeBestellmailPositionen(ctx context.Context, pool db.PgxPoolIface, bestellungID string) ([]BestellmailPosition, error) {
+func ladeBestellmailPositionen(ctx context.Context, pool db.Pool, bestellungID string) ([]BestellmailPosition, error) {
 	rows, err := pool.Query(ctx, `
 		SELECT p.titel_name, COALESCE(t.autor, ''), COALESCE(p.isbn, ''), COALESCE(t.verlag, ''), p.menge
 		  FROM bestellungen_positionen p
@@ -139,7 +139,7 @@ func ladeBestellmailPositionen(ctx context.Context, pool db.PgxPoolIface, bestel
 // Die Bibliothek hat den Händler auf anderem Weg erreicht. Nur für Bestellungen ohne
 // Bestätigungs-Link, sonst nennte der Bestätigungsblock den Link danach als mit der Mail
 // verschickt. pgx.ErrNoRows, wenn es die Bestellung nicht gibt.
-func NimmBestellmailVermerk(ctx context.Context, pool db.PgxPoolIface, bestellungID string) error {
+func NimmBestellmailVermerk(ctx context.Context, pool db.Pool, bestellungID string) error {
 	tag, err := pool.Exec(ctx, `
 		UPDATE bestellungen_verlauf b
 		   SET mail_gescheitert_am = NULL
@@ -169,7 +169,7 @@ func NimmBestellmailVermerk(ctx context.Context, pool db.PgxPoolIface, bestellun
 // MerkeBestellmailVersendet hält an der Bestellung die Adresse fest, an die der erneute
 // Versand ging: Am Beleg steht, wohin die Bestellung gegangen ist. pgx.ErrNoRows, wenn es
 // die Bestellung nicht gibt.
-func MerkeBestellmailVersendet(ctx context.Context, pool db.PgxPoolIface, bestellungID, empfaenger string) error {
+func MerkeBestellmailVersendet(ctx context.Context, pool db.Pool, bestellungID, empfaenger string) error {
 	tag, err := pool.Exec(ctx, `
 		UPDATE bestellungen_verlauf SET lieferant_email = $2, mail_gescheitert_am = NULL WHERE id = $1`,
 		bestellungID, empfaenger)

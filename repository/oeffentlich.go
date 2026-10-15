@@ -77,11 +77,11 @@ const monitorMitCover = `bt.cover_url IS NOT NULL AND bt.cover_url <> ''`
 
 // MonitorAbfragen liest die drei Folien des Flur-Monitors.
 type MonitorAbfragen struct {
-	pool db.PgxPoolIface
+	pool db.Pool
 }
 
 // NewMonitorAbfragen liefert die Abfragen des Monitors am übergebenen Pool.
-func NewMonitorAbfragen(pool db.PgxPoolIface) *MonitorAbfragen {
+func NewMonitorAbfragen(pool db.Pool) *MonitorAbfragen {
 	return &MonitorAbfragen{pool: pool}
 }
 

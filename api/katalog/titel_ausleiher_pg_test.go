@@ -76,7 +76,7 @@ func TestTitelAusleiher_AusleiheEinerLehrkraftStehtDrin(t *testing.T) {
 		t.Fatalf("Fachbereich-Ausleihe: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/ausleiher", nil)
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()

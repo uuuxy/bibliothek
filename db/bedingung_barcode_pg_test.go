@@ -6,11 +6,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TestBarcodePartialUnique sichert die Invariante aus Migration 049 ab: barcode_id ist NUR
-// unter aktiven Schülern eindeutig. Ein soft-gelöschter Ausweis-Barcode darf bei
-// Wiederanmeldung/Recycling neu vergeben werden — sonst wäre der Barcode dauerhaft
-// "verbrannt" und ein Neuzugang mit recyceltem Ausweis crashte.
-func TestBarcodePartialUnique(t *testing.T) {
+// barcode_id ist nur unter aktiven Lesern eindeutig (uniq_schueler_barcode_active): Die Nummer
+// eines gelöschten Ausweises darf bei einer Wiederanmeldung oder mit einem wiederverwendeten
+// Ausweis neu vergeben werden, sonst wäre sie dauerhaft verbraucht und der Neuzugang scheiterte.
+func TestBarcodeEindeutigUnterAktiven(t *testing.T) {
 	pool := pgTestPool(t)
 
 	const insAktiv = `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
@@ -21,7 +20,7 @@ func TestBarcodePartialUnique(t *testing.T) {
 	t.Run("zwei aktive mit gleichem Barcode werden abgelehnt", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			erwarteErfolg(t, tx, "erster aktiver Schüler", insAktiv, "BC-100", "Anna")
-			erwarteConstraintVerletzung(t, tx, "uniq_schueler_barcode_active",
+			erwarteVerletzteBedingung(t, tx, "uniq_schueler_barcode_active",
 				insAktiv, "BC-100", "Bela")
 		})
 	})

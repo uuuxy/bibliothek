@@ -16,7 +16,7 @@ import (
 // Basis hält, worauf jede Tür steht: Datenbank, Anmeldung, Live-Leitung und Uhr. Der Server
 // bettet sie ein, damit die Türen ihre Felder und Methoden unter demselben Namen erreichen.
 type Basis struct {
-	DB     *db.Database
+	DB     *db.Verbindung
 	Auth   *auth.Authenticator
 	Broker *sse.Broker
 	// Uhr liefert „jetzt" aus Sicht der Schule; nil = pkg/schulzeit. Nur Tests setzen

@@ -7,19 +7,17 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Eine Nummer ist entweder ein Buch oder ein Ausweis — nie beides.
+// Eine Nummer ist entweder ein Buch oder ein Ausweis, nie beides.
 //
 // Die Theke löst einen Scan ohne Vorsilbe zuerst als Buch auf (verarbeiteOhneVorsilbe,
-// ErkenneScan): Trägt ein Leser die Nummer eines Exemplars, lädt sein Ausweis das Buch,
-// und niemand sieht warum. Bis Migration 131 prüfte das allein die Littera-Übernahme, für
-// ihren eigenen Lauf (schreiber_personen.go: „Ausweisnummer ist schon der Barcode eines
-// Buchs"). Wer von Hand eine Ausweisnummer eintrug oder ein Buch umetikettierte, wurde
-// nicht gebremst (OFFEN.md 5.15). Die Regel hängt jetzt an beiden Tabellen.
+// ErkenneScan): Trägt ein Leser die Nummer eines Exemplars, lädt sein Ausweis das Buch, und
+// niemand sieht warum. Die Littera-Übernahme prüft das für ihren Lauf auch selbst
+// (internal/littera/schreiber_personen.go); die Regel an beiden Tabellen bremst auch, wer von
+// Hand eine Ausweisnummer einträgt oder ein Buch umetikettiert.
 //
-// BLINDHEIT: ohne Advisory-Lock je Nummer (ein Lock je Zeile sprengt bei einem
-// Massen-Import die Sperrtabelle, siehe Migration 131). Zwei Arbeitsplätze, die im selben
-// Augenblick dieselbe neue Nummer vergeben — einer als Ausweis, einer als Buch —, kommen
-// beide durch; das prüft dieser Test nicht.
+// Blind ist der Test für das gleichzeitige Vergeben: Ohne Advisory-Lock je Nummer (ein Lock je
+// Zeile sprengte bei einem großen Import die Sperrtabelle) kommen zwei Arbeitsplätze, die im
+// selben Augenblick dieselbe neue Nummer vergeben, einer als Ausweis, einer als Buch, beide durch.
 const (
 	constraintNummer = "uniq_nummer_ueber_buch_und_ausweis"
 	insExemplar      = `INSERT INTO buecher_exemplare (titel_id, barcode_id)
@@ -36,8 +34,8 @@ func TestNummerIstBuchOderAusweis(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			titel(tx)
 			erwarteErfolg(t, tx, "Exemplar", insExemplar, "NB-1")
-			erwarteConstraintVerletzung(t, tx, constraintNummer, insLeserSchueler, "NB-1")
-			erwarteConstraintVerletzung(t, tx, constraintNummer, insLeserLehrkraft, "NB-1")
+			erwarteVerletzteBedingung(t, tx, constraintNummer, insLeserSchueler, "NB-1")
+			erwarteVerletzteBedingung(t, tx, constraintNummer, insLeserLehrkraft, "NB-1")
 		})
 	})
 
@@ -45,7 +43,7 @@ func TestNummerIstBuchOderAusweis(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			titel(tx)
 			erwarteErfolg(t, tx, "Schüler", insLeserSchueler, "NB-2")
-			erwarteConstraintVerletzung(t, tx, constraintNummer, insExemplar, "NB-2")
+			erwarteVerletzteBedingung(t, tx, constraintNummer, insExemplar, "NB-2")
 		})
 	})
 
@@ -54,26 +52,26 @@ func TestNummerIstBuchOderAusweis(t *testing.T) {
 			titel(tx)
 			erwarteErfolg(t, tx, "Exemplar", insExemplar, "NB-3B")
 			erwarteErfolg(t, tx, "Lehrkraft", insLeserLehrkraft, "NB-3A")
-			erwarteConstraintVerletzung(t, tx, constraintNummer,
+			erwarteVerletzteBedingung(t, tx, constraintNummer,
 				`UPDATE buecher_exemplare SET barcode_id = $1 WHERE barcode_id = 'NB-3B'`, "NB-3A")
-			erwarteConstraintVerletzung(t, tx, constraintNummer,
+			erwarteVerletzteBedingung(t, tx, constraintNummer,
 				`UPDATE leser SET barcode_id = $1 WHERE barcode_id = 'NB-3A'`, "NB-3B")
 		})
 	})
 
-	// Ein Leser im Papierkorb ist an der Theke unsichtbar; seine Nummer darf ein Buch
-	// tragen. Kommt er zurück, stößt er an — wie beim Zwilling unter den Lesern.
+	// Ein Leser im Papierkorb ist an der Theke unsichtbar; seine Nummer darf ein Buch tragen.
+	// Kommt er zurück, stößt er an, wie beim Zwilling unter den Lesern.
 	t.Run("gelöschter Leser gibt die Nummer frei, Wiederherstellen stößt an", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			titel(tx)
 			erwarteErfolg(t, tx, "gelöschter Schüler", insLeserGeloescht, "NB-4")
 			erwarteErfolg(t, tx, "Exemplar mit der freigegebenen Nummer", insExemplar, "NB-4")
-			erwarteConstraintVerletzung(t, tx, constraintNummer,
+			erwarteVerletzteBedingung(t, tx, constraintNummer,
 				`UPDATE leser SET deleted_at = NULL WHERE barcode_id = $1`, "NB-4")
 		})
 	})
 
-	// Ein ausgesondertes Exemplar trägt seinen Barcode weiter (die Tresen-Auskunft findet
+	// Ein ausgesondertes Exemplar trägt seinen Barcode weiter (die Auskunft an der Theke findet
 	// es darüber); erst das endgültige Löschen gibt die Nummer frei.
 	t.Run("ausgesondertes Exemplar hält seine Nummer, gelöschtes gibt sie frei", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
@@ -81,7 +79,7 @@ func TestNummerIstBuchOderAusweis(t *testing.T) {
 			erwarteErfolg(t, tx, "Exemplar", insExemplar, "NB-5")
 			erwarteErfolg(t, tx, "aussondern",
 				`UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST' WHERE barcode_id = $1`, "NB-5")
-			erwarteConstraintVerletzung(t, tx, constraintNummer, insLeserSchueler, "NB-5")
+			erwarteVerletzteBedingung(t, tx, constraintNummer, insLeserSchueler, "NB-5")
 			erwarteErfolg(t, tx, "endgültig löschen", `DELETE FROM buecher_exemplare WHERE barcode_id = $1`, "NB-5")
 			erwarteErfolg(t, tx, "Schüler mit der freigegebenen Nummer", insLeserSchueler, "NB-5")
 		})
@@ -102,7 +100,7 @@ func TestNummerIstBuchOderAusweis(t *testing.T) {
 	})
 }
 
-// Ein Leser ohne Ausweis (NULL) ist kein Buch — und die Prüfung darf nicht an NULL scheitern.
+// Ein Leser ohne Ausweis (NULL) ist kein Buch, und die Prüfung darf nicht an NULL scheitern.
 func TestNummerIstBuchOderAusweis_NullIstKeineNummer(t *testing.T) {
 	pool := pgTestPool(t)
 	inTx(t, pool, func(tx pgx.Tx) {

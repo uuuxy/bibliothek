@@ -24,7 +24,7 @@ func TestKontoAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := t.Context()
 	admin := testdaten.LegeBearbeiterAn(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),

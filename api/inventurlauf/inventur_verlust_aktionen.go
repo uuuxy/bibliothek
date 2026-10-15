@@ -33,7 +33,7 @@ func (t *Tueren) FundMelden() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Transaktion konnte nicht gestartet werden", err)
 		}
-		defer db.SafeRollback(ctx, tx)
+		defer db.Verwerfe(ctx, tx)
 
 		abfragen := repository.NewInventurAbfragen(tx)
 		gefunden, befund, err := abfragen.MarkiereVerlustAlsGefunden(ctx, id, claims.UserID)
@@ -105,7 +105,7 @@ func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return apierrors.Internal("Transaktion konnte nicht gestartet werden", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	abfragen := repository.NewInventurAbfragen(tx)
 	geloeschteIDs, err := abfragen.LoescheVerlusteEndgueltig(ctx, req.ExemplarIDs, claims.UserID)

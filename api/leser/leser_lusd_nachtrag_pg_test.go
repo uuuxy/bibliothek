@@ -46,7 +46,7 @@ func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	patch := func(id, body string) *httptest.ResponseRecorder {
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 		req := httptest.NewRequest(http.MethodPatch, "/x", strings.NewReader(body))
 		req.SetPathValue("id", id)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,

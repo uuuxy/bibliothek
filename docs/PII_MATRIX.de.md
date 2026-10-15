@@ -50,7 +50,7 @@ zusätzliches `view_students` freischaltet, steht als Anmerkung):
 | 2     | Verwaltung: + Geburtsdatum, Abgängerjahr, Sperrgrund, LUSD-ID, Ausleihhistorie (befristet: nächtlicher Job trennt abgeschlossene Ausleihen nach Einstellungs-Frist vom Schüler, `jobs/cron_dsgvo_lesehistorie.go`) | Leserdatei, Mahnwesen         |
 | 3     | sensibel: Wohnadresse, Eltern-E-Mail, Foto, Gebühren-/Schadensdaten mit Namen                                                                                                                                      | DSGVO-Auskunft, Rechnungen    |
 
-**Rechte-Spalte:** ein Rechtename aus `db/seed.go` (geprüft gegen
+**Rechte-Spalte:** ein Rechtename aus `db/rechte_vorgabe.go` (geprüft gegen
 `verlangeRecht`), `öffentlich` (kein Wrapper, MUSS Stufe 0 sein — eigener Test),
 `Token` (Link-Token ist der Ausweis), `selbst-prüfend` (Handler validiert das
 Session-Cookie selbst), `Sitzung` (`VerlangeAnmeldung`, im inventur-Paket `RequireAuthenticated`), `inventur-Mux`

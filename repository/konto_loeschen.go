@@ -24,7 +24,7 @@ func (a *pgProtokollAbfragen) LoescheKonto(ctx context.Context, kontoID string, 
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Was der Eintrag nennt, wird vor dem Löschen gelesen. Die leser_id auch: Nach dem DELETE
 	// ist sie nicht mehr zu finden.

@@ -46,14 +46,14 @@ type GeraeteDienst interface {
 
 // geraeteDienst erfüllt GeraeteDienst.
 type geraeteDienst struct {
-	pool              db.PgxPoolIface
+	pool              db.Pool
 	leserAbfragen     repository.LeserAbfragen
 	ausleihAbfragen   repository.AusleihAbfragen
 	protokollAbfragen repository.ProtokollAbfragen
 }
 
 // NewGeraeteDienst baut den Dienst für Geräte.
-func NewGeraeteDienst(pool db.PgxPoolIface, leserAbfragen repository.LeserAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) GeraeteDienst {
+func NewGeraeteDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) GeraeteDienst {
 	return &geraeteDienst{
 		pool:              pool,
 		leserAbfragen:     leserAbfragen,
@@ -258,7 +258,7 @@ func (d *geraeteDienst) VerarbeiteScan(
 	if err != nil {
 		return nil, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	offeneAusleihe, istVerliehen, err := repository.SperreOffeneGeraeteAusleihe(ctx, tx, g.ID)
 	if err != nil {

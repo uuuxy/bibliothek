@@ -75,7 +75,7 @@ func TestWegweiserNennenOrteDieEsGibt(t *testing.T) {
 // zählt nur an einem Text, den die Prüfung sonst beanstanden könnte.
 var wegKeinWeg = []struct{ datei, stueck, grund string }{
 	{"repository/schuljahreswechsel.go", "Abgänger werden gesperrt → chk_schueler_block_reason", "Kommentar in einer Abfrage"},
-	{"db/seed.go", "vererbung manage_", "Fehlertext über zwei Rechte"},
+	{"db/rechte_vorgabe.go", "vererbung manage_", "Fehlertext über zwei Rechte"},
 	{"jobs/backup.go", "S3 upload successful → s3://", "Protokollzeile mit dem Ziel der Auslagerung"},
 	{"frontend/src/lib/UserManagementZugangsanfragen.svelte", "„Bearbeiten“ → Aktiv", "Knopf und Wert im Dialog"},
 	{"frontend/src/lib/components/settings/kategorien.js", "Klasse → Lehrkraft", "Zuordnung, die die Kategorie pflegt"},

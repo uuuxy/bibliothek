@@ -20,7 +20,7 @@ import (
 func TestExemplarBarcodeSetzen_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Tuer", 0)
 	platzhalter := testdaten.LegeExemplarAn(t, pool, titel, "AUTO-TUER-1", true, "")

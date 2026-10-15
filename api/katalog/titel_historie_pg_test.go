@@ -57,7 +57,7 @@ func TestTitelHistorie_GetrennteAusleiheIstAnonymNichtLehrkraft(t *testing.T) {
 		}
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/historie", nil)
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()

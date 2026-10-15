@@ -34,7 +34,7 @@ func abmeldeServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 		t.Fatalf("authenticator init: %v", err)
 	}
 	t.Cleanup(a.Blacklist.Stop)
-	return &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}, nurHTTPS: true}, mock
+	return &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: mock}, Auth: a}, nurHTTPS: true}, mock
 }
 
 func abmeldenMitToken(t *testing.T, s *Server) *httptest.ResponseRecorder {

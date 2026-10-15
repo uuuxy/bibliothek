@@ -21,11 +21,11 @@ type MailEinstellungen struct {
 
 // MailEinstellungsAbfragen liest und schreibt die Mail-Einstellungen.
 type MailEinstellungsAbfragen struct {
-	pool db.PgxPoolIface
+	pool db.Pool
 }
 
 // NewMailEinstellungsAbfragen liefert die Abfragen der Mail-Einstellungen am übergebenen Pool.
-func NewMailEinstellungsAbfragen(pool db.PgxPoolIface) *MailEinstellungsAbfragen {
+func NewMailEinstellungsAbfragen(pool db.Pool) *MailEinstellungsAbfragen {
 	return &MailEinstellungsAbfragen{pool: pool}
 }
 

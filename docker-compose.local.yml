@@ -3,7 +3,7 @@ services:
     # IMMER dieselbe Major-Version wie die Produktion (docker-compose.yml) — sonst wäre
     # SQL, das erst in einer neueren Version existiert, hier und lokal grün und würde
     # beim Prod-Deploy die Migration abbrechen; der Server startet dann gar nicht
-    # (db/migrations.go kehrt beim ersten Fehler um). Gefunden im Komplett-Durchgang
+    # (db/migrationen.go kehrt beim ersten Fehler um). Gefunden im Komplett-Durchgang
     # 31.08.2026 (damals: lokal 16, Prod 15). Seit 31.08.2026 beide auf 18.
     image: postgres:18-alpine
     container_name: bibliothek-db-local

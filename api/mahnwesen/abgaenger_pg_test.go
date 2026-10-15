@@ -56,7 +56,7 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 	weg := testdaten.LegeAbgaengerAn(t, pool, "S-10", "Jo", "ABG")
 	testdaten.LegeAusleiheMitFristAn(t, pool, weg, "Buch Jo", time.Now().AddDate(0, 0, -3))
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	antwort := abgaengerAntwort(t, srv)
 	if !antwort.Fenster.Offen {
 		t.Fatalf("Mitte Juni muss die Saison offen sein: %+v", antwort.Fenster)
@@ -90,7 +90,7 @@ func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	tuertest.FangeMailAb(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
 
 	testdaten.LegeSchuelerMitAusleiheAn(t, pool, "S-1", "Anna", "9H1")
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: testdaten.WinterUhr}}
 
 	antwort := abgaengerAntwort(t, srv)
 	if antwort.Fenster.Offen || len(antwort.Abgaenger) != 0 {

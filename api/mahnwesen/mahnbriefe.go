@@ -91,7 +91,7 @@ func (t *Tueren) erzeugeMahnbriefe(ctx context.Context, w http.ResponseWriter, a
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Nur dieser Druck zählt die Mahnung, der Mail-Versand nicht (docs/invarianten.md §1).
 	// Die Auswahl kommt aus der Oberfläche und kann älter sein als eine Verlängerung oder

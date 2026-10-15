@@ -28,7 +28,7 @@ func TestOPACSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	suche := func(q string) []OPACTitel {
 		t.Helper()
 		rec := httptest.NewRecorder()

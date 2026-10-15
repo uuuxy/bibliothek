@@ -41,7 +41,7 @@ func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		// Türen mit Datenbank: Der Erfolgsfall fragt den Ersatzwert nach.
-		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsKonto(req, testdaten.LegeBearbeiterAn(t, pool)))
+		(&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}).ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsKonto(req, testdaten.LegeBearbeiterAn(t, pool)))
 		return rec
 	}
 	istAusgesondert := func(id string) bool {

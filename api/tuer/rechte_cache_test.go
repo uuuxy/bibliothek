@@ -37,7 +37,7 @@ func TestRechteCache_UeberholteEntscheidungBleibtDraussen(t *testing.T) {
 		t.Fatalf("pgxmock init: %v", err)
 	}
 	defer mock.Close()
-	s := &Basis{DB: &db.Database{Pool: mock}}
+	s := &Basis{DB: &db.Verbindung{Pool: mock}}
 
 	// Die DB liefert den alten Stand: Recht (noch) gewährt.
 	mock.ExpectQuery("role_permissions").

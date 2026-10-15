@@ -21,7 +21,7 @@ import (
 func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	if _, err := pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS role_permissions (

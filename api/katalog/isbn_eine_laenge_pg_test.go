@@ -48,7 +48,7 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 			<datafield tag="245" ind1="1" ind2="0"><subfield code="a">Aus der DNB</subfield></datafield>
 		  </record>
 		</recordData></record></records></searchRetrieveResponse>`}}})
-	tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitelTuer(client)
+	tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}).isbnZuTitelTuer(client)
 
 	frage := func(isbn string) isbnZuTitelAntwort {
 		t.Helper()

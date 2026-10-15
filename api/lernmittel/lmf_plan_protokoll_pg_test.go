@@ -30,7 +30,7 @@ func TestLMFPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// Echter Benutzer für den Audit-FK (audit_logs.admin_id).
 	var adminID string

@@ -49,7 +49,7 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}
-		defer db.SafeRollback(ctx, tx)
+		defer db.Verwerfe(ctx, tx)
 
 		angepasst, err := repository.VerlaengereLernmittelDerKlasse(ctx, tx, req.Klasse, frist)
 		if err != nil {

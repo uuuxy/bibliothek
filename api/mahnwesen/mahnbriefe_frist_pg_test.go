@@ -48,7 +48,7 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	// drucke schickt die Auswahl an die Tür, wie es „Mahnbriefe drucken" tut.
 	drucke := func(t *testing.T, ausleihIDs ...string) *httptest.ResponseRecorder {

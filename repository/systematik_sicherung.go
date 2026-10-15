@@ -12,7 +12,7 @@ import (
 )
 
 // fachSchreiber ist der kleinste Datenbankzugriff der Fach-Registrierung. Pool
-// (db.PgxPoolIface) und pgx.Tx erfüllen ihn beide: Die Importe registrieren innerhalb ihrer
+// (db.Pool) und pgx.Tx erfüllen ihn beide: Die Importe registrieren innerhalb ihrer
 // Transaktion. Die Funktion liegt hier und nicht im Paket inventur, damit auch der
 // Katalogisat-Import (SchreibeTitel) und der Access-Altbestand (internal/littera) sie ohne
 // Import-Zyklus erreichen.

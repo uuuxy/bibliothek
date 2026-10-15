@@ -7,11 +7,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Minimal-Fixtures für die DB-Integrationstests: nur so viele Pflichtfelder wie
-// nötig, damit der jeweils geprüfte Constraint der einzige Grund zum Scheitern ist.
+// Testdaten für die Tests an der Datenbank mit nur so vielen Pflichtfeldern wie nötig, damit
+// die geprüfte Bedingung der einzige Grund zum Scheitern ist.
 
-// neuerTitel legt einen Minimal-Titel an und liefert dessen ID.
-func neuerTitel(t *testing.T, tx pgx.Tx) string {
+// legeTitelAn legt einen Titel mit den Pflichtfeldern an und liefert seine Kennung.
+func legeTitelAn(t *testing.T, tx pgx.Tx) string {
 	t.Helper()
 
 	var id string
@@ -23,8 +23,8 @@ func neuerTitel(t *testing.T, tx pgx.Tx) string {
 	return id
 }
 
-// neuesExemplar legt ein Minimal-Exemplar zum Titel an und liefert dessen ID.
-func neuesExemplar(t *testing.T, tx pgx.Tx, titelID string) string {
+// legeExemplarAn legt ein Exemplar zum Titel an und liefert seine Kennung.
+func legeExemplarAn(t *testing.T, tx pgx.Tx, titelID string) string {
 	t.Helper()
 
 	var id string
@@ -37,8 +37,8 @@ func neuesExemplar(t *testing.T, tx pgx.Tx, titelID string) string {
 	return id
 }
 
-// neueBestellung legt einen Bestellkopf an und liefert dessen ID.
-func neueBestellung(t *testing.T, tx pgx.Tx) string {
+// legeBestellungAn legt den Kopf einer Bestellung an und liefert seine Kennung.
+func legeBestellungAn(t *testing.T, tx pgx.Tx) string {
 	t.Helper()
 
 	var id string

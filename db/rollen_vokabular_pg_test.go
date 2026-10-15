@@ -7,9 +7,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TestRollenVokabular sichert das Ergebnis von G5 ab: genau EINE Quelle für die Rolle
-// eines Benutzers. Ohne diesen Test könnte die Legacy-Tabelle unbemerkt zurückkehren
-// (z. B. durch ein wiederbelebtes CREATE TABLE IF NOT EXISTS im Seed).
+// Die Rolle eines Kontos hat eine Quelle, benutzer.rolle. Käme die Tabelle benutzer_rollen zurück,
+// etwa durch ein CREATE TABLE IF NOT EXISTS beim Start, stünde die Rolle wieder an zwei Orten.
 func TestRollenVokabular(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -28,8 +27,8 @@ func TestRollenVokabular(t *testing.T) {
 
 	t.Run("Rolle helfer ist im ENUM vergebbar", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			// Migration 042: ohne den ENUM-Wert war der fertig gebaute Kiosk-Modus
-			// unerreichbar, weil keine Lehrkraft die Rolle zugewiesen bekommen konnte.
+			// Ohne den Wert im ENUM bekäme niemand die Rolle, und die Theke für Helfer wäre
+			// unerreichbar.
 			erwarteErfolg(t, tx, "Benutzer mit Rolle helfer",
 				`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
 				 VALUES ('H', 'Helfer', 'h@example.org', 'helfer', true)`)

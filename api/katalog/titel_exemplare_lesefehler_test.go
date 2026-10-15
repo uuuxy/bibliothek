@@ -23,7 +23,7 @@ func TestTitelExemplare_UnlesbareZeileIstEinFehler(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	// NULL in einer Spalte, die in string gelesen wird (NULL-Scan-Bugklasse): Der Scan scheitert.
 	zeilen := pgxmock.NewRows([]string{"id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "ist_ausgesondert",

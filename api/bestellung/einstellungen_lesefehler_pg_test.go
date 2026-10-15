@@ -26,15 +26,15 @@ func TestBestellbericht_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	rufe := func(datenbank db.PgxPoolIface) *httptest.ResponseRecorder {
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}
+	rufe := func(datenbank db.Pool) *httptest.ResponseRecorder {
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: datenbank}}}
 		req := httptest.NewRequest(http.MethodGet, "/api/bestellungen/bericht.pdf?von=2019-09-01&bis=2019-09-30", nil)
 		rec := httptest.NewRecorder()
 		srv.BestellberichtPDF().ServeHTTP(rec, req)
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen})
+	rec := rufe(testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Der Bericht entsteht mit den Vorgaben statt mit den Angaben der Schule", rec.Code)
 	}
@@ -67,8 +67,8 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 
 	t.Run("gestört", func(t *testing.T) {
 		sitzungen := tuertest.FangeMailAb(t)
-		gestoert := testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen}
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: gestoert}}}
+		gestoert := testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen}
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: gestoert}}}
 
 		_, err := srv.sendeBestellmail(context.Background(), daten)
 		if err == nil {
@@ -84,7 +84,7 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 	// Gegenprobe: Am ungestörten Pool geht die Mail hinaus und trägt den Link.
 	t.Run("ungestört", func(t *testing.T) {
 		sitzungen := tuertest.FangeMailAb(t)
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 		mitLink, err := srv.sendeBestellmail(context.Background(), daten)
 		if err != nil {

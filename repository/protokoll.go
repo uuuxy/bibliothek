@@ -64,11 +64,11 @@ type ProtokollAbfragen interface {
 }
 
 type pgProtokollAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewProtokollAbfragen liefert die Abfragen des Protokolls an Postgres.
-func NewProtokollAbfragen(db db.PgxPoolIface) ProtokollAbfragen {
+func NewProtokollAbfragen(db db.Pool) ProtokollAbfragen {
 	return &pgProtokollAbfragen{db: db}
 }
 
@@ -118,7 +118,7 @@ func (a *pgProtokollAbfragen) ProtokolliereSystemAktion(ctx context.Context, tab
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Ein Vorgang des Programms hat keinen Datensatz; die Spalte bekommt die Null-UUID.
 	const nullUUID = "00000000-0000-0000-0000-000000000000"

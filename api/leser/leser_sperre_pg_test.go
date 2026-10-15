@@ -22,7 +22,7 @@ import (
 // und audit_logs.admin_id zeigt auf einen echten Benutzer.
 func sperrTuerAufruf(t *testing.T, pool *pgxpool.Pool, akteur, id, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPatch, "/api/admin/students/"+id+"/lock", strings.NewReader(body))
 	req.SetPathValue("id", id)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,

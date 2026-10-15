@@ -87,7 +87,7 @@ func TestExemplarStandort_AnzeigenUndAendern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	schulbuch := testdaten.LegeTitelMitSignaturAn(t, pool, "Natura 2", "LMF Bio 7", 0)
 	ohne := testdaten.LegeExemplarAn(t, pool, schulbuch, "ST-OHNE", true, "")
@@ -191,7 +191,7 @@ func TestExemplarStandort_ListeUndVorschlaegeZaehlenDenBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	schulbuch := testdaten.LegeTitelMitSignaturAn(t, pool, "Natura 2", "LMF Bio 7", 0)
 	roman := testdaten.LegeTitelMitSignaturAn(t, pool, "Tschick", "Ju Her", 0)

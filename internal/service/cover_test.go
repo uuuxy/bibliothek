@@ -28,8 +28,8 @@ func TestNewCoverDienst(t *testing.T) {
 }
 
 // panikDatenbank paniert bei Query — nur diese Methode wird vor dem Panik erreicht;
-// die übrigen PgxPoolIface-Methoden bleiben ungenutzt (eingebettetes nil-Interface).
-type panikDatenbank struct{ db.PgxPoolIface }
+// die übrigen Methoden von db.Pool bleiben ungenutzt (eingebettetes nil-Interface).
+type panikDatenbank struct{ db.Pool }
 
 func (panikDatenbank) Query(context.Context, string, ...any) (pgx.Rows, error) {
 	panic("boom aus dem cover-sync (simuliert)")

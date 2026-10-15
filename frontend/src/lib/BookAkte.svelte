@@ -21,7 +21,7 @@
 
 	const akte = useBookAkte();
 
-	// Enges Theken-Recht (db/seed.go): Ohne manage_vormerkungen antwortet die API
+	// Enges Theken-Recht (db/rechte_vorgabe.go): Ohne manage_vormerkungen antwortet die API
 	// mit 403 — dann den Reiter gar nicht erst anbieten statt leer scheitern lassen.
 	const darfVormerken = $derived(hatRecht(authStore.currentUser, 'manage_vormerkungen'));
 	// Die Aktionen der Akte hängen am Recht — vorher sah jeder „Titel bearbeiten" und

@@ -1,4 +1,4 @@
--- EINGEFRORENE BASELINE für den Schema-Paritätstest (migrations_schema_paritaet_pg_test.go).
+-- EINGEFRORENE BASELINE für den Schema-Paritätstest (migrationen_schema_paritaet_pg_test.go).
 -- Stand: schema.sql aus Commit e5740b95 (05.06.2026), die älteste Fassung mit Migrations-
 -- Seed-Liste (bis 006). Gewachsener Pfad = diese Baseline + alle späteren Migrationen;
 -- frischer Pfad = das heutige schema.sql. Beide müssen dieselbe Struktur ergeben.

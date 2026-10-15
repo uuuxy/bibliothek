@@ -20,7 +20,7 @@ func TestTitelSignaturSetzen_SpeichertNeueSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Tribute von Panem", "BIB Jugendbuch", 0)
 
@@ -50,7 +50,7 @@ func TestTitelSignaturSetzen_SpeichertNeueSignatur(t *testing.T) {
 func TestTitelSignaturSetzen_UnbekannteIDGibt404(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	unbekannteID := "00000000-0000-0000-0000-000000000000"
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+unbekannteID+"/signatur",

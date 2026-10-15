@@ -35,7 +35,7 @@ func TestLeserAendern_JedesFeldLandetInSeinerSpalte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	var id string
 	if err := pool.QueryRow(ctx, `
@@ -101,7 +101,7 @@ func TestLeserAendern_LeererWertWirdNull(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	var id string
 	if err := pool.QueryRow(ctx, `
@@ -142,7 +142,7 @@ func TestLeserAendern_LeererWertWirdNull(t *testing.T) {
 func TestLeserAendern_UnbekannteKennungIstNichtGefunden(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	rec := aendereLeserUeberTuer(t, srv, "00000000-0000-4000-8000-000000000000", `{"vorname":"Niemand"}`)
 	if rec.Code != http.StatusNotFound {

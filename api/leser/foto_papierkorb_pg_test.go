@@ -24,7 +24,7 @@ import (
 func TestFotoAuslieferung_NichtAusDemPapierkorb(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	anlegen := func(barcode string, geloescht bool) {
 		t.Helper()

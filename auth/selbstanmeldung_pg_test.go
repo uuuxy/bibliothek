@@ -39,20 +39,10 @@ func pgPoolFuerSelbstanmeldung(t *testing.T) *pgxpool.Pool {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
-	// role_permissions steht NICHT in schema.sql — die Tabelle legt db.InitPermissions
-	// beim Serverstart an. Ohne sie scheitert der Login nach der Freischaltung am Laden
-	// der Rechte, und zwar als 500: Der Fehlertext wird unterwegs durch „interner
-	// Datenbankfehler" ersetzt, die Ursache stünde also nirgends. Hier nachgebaut, damit
-	// der Test den echten Betriebszustand prüft und nicht einen halben.
-	if _, err := pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS role_permissions (
-			role VARCHAR(50) NOT NULL,
-			permission VARCHAR(100) NOT NULL,
-			allowed BOOLEAN NOT NULL DEFAULT false,
-			PRIMARY KEY (role, permission)
-		)`); err != nil {
-		t.Fatalf("role_permissions anlegen: %v", err)
-	}
+	// Die Zeilen von role_permissions schreibt im Betrieb db.SchreibeRechteVorgabe beim Start.
+	// Ohne sie scheitert die Anmeldung nach der Freischaltung am Laden der Rechte, und zwar als
+	// 500: Der Fehlertext wird unterwegs durch „interner Datenbankfehler" ersetzt, die Ursache
+	// stünde also nirgends. Der Test legt das eine Recht deshalb selbst an.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO role_permissions (role, permission, allowed) VALUES ('KOLLEGIUM', 'view_books', true)
 		ON CONFLICT DO NOTHING`); err != nil {

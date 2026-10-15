@@ -196,7 +196,7 @@ func TestAbgaengerKontoauszuegeVersenden_LeereAuswahlOhneDBZugriff(t *testing.T)
 	}
 	defer mock.Close()
 
-	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":[]}`))
 	rec := httptest.NewRecorder()
 	server.AbgaengerKontoauszuegeVersenden()(rec, req)

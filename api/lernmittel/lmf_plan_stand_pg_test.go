@@ -21,7 +21,7 @@ import (
 func TestLMFPlan_StandFuerDenPlaner(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	raeume := func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM lmf_plaene`); err != nil {
 			t.Errorf("Aufräumen: %v", err)

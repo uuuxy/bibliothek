@@ -46,7 +46,7 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 	rufe := func(req *http.Request) *httptest.ResponseRecorder {
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 		rec := httptest.NewRecorder()

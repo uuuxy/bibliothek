@@ -284,7 +284,7 @@ var checkBedingungenBestand = []string{
 	// Migration 127: Beide Werte gehen in einen Ersatzbetrag ein,
 	// der in einem Bescheid an Erziehungsberechtigte steht. Der Code prüft sie an der Tür
 	// (der Listenpreis kommt aus der Maske oder von der DNB, die Abwertung aus einem Feld
-	// mit min/max), die Datenbank hält die zweite (db/constraints_listenpreis_abwertung_pg_test.go).
+	// mit min/max), die Datenbank hält die zweite (db/bedingung_listenpreis_abwertung_pg_test.go).
 	//
 	// Die Gegenfrage von Frage 12 — verlässt sich der Code auf etwas, das die Regel nicht
 	// verbietet? Ja, an einer Stelle: chk_listenpreis_nonneg erlaubt 0, und 0 bedeutet
@@ -311,7 +311,7 @@ var checkBedingungenBestand = []string{
 	//
 	// chk_leser_art: die sieben Arten aus pkg/leserart (seit Migration 153 auch
 	// Praktikum, Sekretariat, U-plus, Fachbereich). Der Code schreibt nur diese (api/...,
-	// internal/littera, db/seed.go; gegen die Datenbank gehalten in
+	// internal/littera, db/rechte_vorgabe.go; gegen die Datenbank gehalten in
 	// pkg/leserart/leserart_pg_test.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
 	//
 	// chk_leser_schueler_pflichtfelder: Klasse, Abgaengerjahr und Ausweis waren fuer alle
@@ -410,7 +410,7 @@ var triggerBestand = []string{
 	"trg_exemplar_zugangsdatum_neu @ buecher_exemplare",
 	// Migration 131: Eine Nummer ist entweder Buch oder Ausweis. Die
 	// Theke löst einen Scan zuerst als Buch auf; bis dahin prüfte das allein die
-	// Littera-Übernahme (db/constraints_nummer_ueber_buch_und_ausweis_pg_test.go).
+	// Littera-Übernahme (db/bedingung_nummer_ueber_buch_und_ausweis_pg_test.go).
 	"trg_exemplar_nummer_ist_kein_ausweis @ buecher_exemplare",
 	"trg_leser_nummer_ist_kein_buch @ leser",
 	// Migration 132: Jeder Wechsel von ist_ausgesondert/ist_ausleihbar

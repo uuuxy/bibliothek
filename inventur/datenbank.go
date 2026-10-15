@@ -14,7 +14,7 @@ import (
 // Metadaten). Nicht zu verwechseln mit repository.KatalogAbfragen — jenes bedient den
 // Ausleihbetrieb.
 type BookRepository struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // Fachliche Fehler, die der Aufrufer unterscheiden können muss: Beide sind
@@ -32,7 +32,7 @@ var (
 )
 
 // NewBookRepository bindet das Inventur-Repository an einen Verbindungspool.
-func NewBookRepository(db db.PgxPoolIface) *BookRepository {
+func NewBookRepository(db db.Pool) *BookRepository {
 	return &BookRepository{db: db}
 }
 

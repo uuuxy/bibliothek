@@ -6,14 +6,11 @@ import (
 	"testing"
 )
 
-// Befund F7 der unabhängigen Prüfung (bewertung/datenbank-pruefbericht.md):
-// Vier Migrationsnummern existieren doppelt (003, 008, 021, 022 — je zwei
-// verschiedene Dateien). Kaputt geht dadurch nichts, weil der Läufer Skripte
-// am VOLLEN Dateinamen erfasst — aber die Nummerierung verspricht eine
-// Ordnung, die sie nicht hält. Entschieden (18.08.2026): Die vier Altfälle
-// bleiben eingefroren — ein nachträgliches Umnummerieren wäre gefährlich,
-// weil migrations-Einträge am Dateinamen hängen. NEUE Doppelnummern sperrt
-// dieses Gate.
+// Vier Nummern von Migrationen gibt es doppelt (003, 008, 021, 022, je zwei Dateien). Kaputt geht
+// dadurch nichts, weil der Lauf eine Datei am vollen Namen erkennt, aber die Nummern versprechen
+// eine Ordnung, die sie nicht halten. Die vier bleiben, wie sie sind: Umnummerieren wäre
+// gefährlich, weil die Einträge in schema_migrations am Dateinamen hängen. Eine neue doppelte
+// Nummer weist dieser Test ab (bewertung/datenbank-pruefbericht.md, Befund F7).
 func TestKeineNeuenDoppeltenMigrationsnummern(t *testing.T) {
 	eingefroren := map[string]bool{"003": true, "008": true, "021": true, "022": true}
 
@@ -39,8 +36,8 @@ func TestKeineNeuenDoppeltenMigrationsnummern(t *testing.T) {
 			t.Errorf("Migrationsnummer %s ist doppelt vergeben: %v — nächste freie Nummer nehmen", nummer, dateien)
 		}
 	}
-	// Gegenrichtung: Verschwinden die Altfälle (Aufräumaktion), muss die
-	// Ausnahmeliste mit schrumpfen, sonst deckt sie irgendwann neue Fehler.
+	// Gegenrichtung: Verschwindet eine der vier Dateien, schrumpft die Ausnahmeliste mit, sonst
+	// deckte sie irgendwann einen neuen Fehler.
 	for nummer := range eingefroren {
 		if len(gesehen[nummer]) < 2 {
 			t.Errorf("Ausnahme %s ist nicht mehr doppelt — aus der eingefroren-Liste entfernen", nummer)

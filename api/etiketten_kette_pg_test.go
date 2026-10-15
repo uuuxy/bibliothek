@@ -104,7 +104,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Cornelsen-Kette", false)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Etikettenkette", 0)
 
@@ -178,7 +178,7 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.FangeMailAb(t)
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Etikettenkette", true)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Beklebt", 0)
 
@@ -241,7 +241,7 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 
 	// Drei offene und zwei erledigte Exemplare unter einer eigenen Marke, dazu ein
@@ -319,7 +319,7 @@ func TestEtikettenkette_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T)
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 	geschuetzt := string(rune(0x00A0))
 

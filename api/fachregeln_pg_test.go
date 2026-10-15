@@ -61,7 +61,7 @@ func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
 	loanKeep := testdaten.LegeAusleiheMitFristAn(t, pool, sidY, "LMF-Deutsch 9", vergangenheit)
 	markiereGemahntUndUeberfaellig(t, pool, loanKeep, 2, vergangenheit)
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// (a) Zukunft -> Reset.
 	zukunft := time.Now().AddDate(0, 0, 30).Format("2006-01-02")
@@ -111,7 +111,7 @@ func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// 150 Exemplare bei 5 im Bestand -> 400 (Überbuchung abgewiesen).
 	if rec := reservierung(t, srv, uid, tid, 150); rec.Code != http.StatusBadRequest {
@@ -156,7 +156,7 @@ func TestLadenhueter_NeuzugangIstKeiner(t *testing.T) {
 		t.Fatalf("neues Exemplar: %v", err)
 	}
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	warmers := repository.LadeLadenhueter(ctx, srv.DB.Pool, "", 100)
 
 	titel := map[string]bool{}

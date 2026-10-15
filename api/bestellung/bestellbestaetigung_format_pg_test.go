@@ -86,7 +86,7 @@ func TestLieferantenEtiketten_FormatWirktBisInsPDF(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 25)
 
 	faelle := []struct {
@@ -128,7 +128,7 @@ func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 25)
 
 	ohne := etikettenBogenHolen(t, srv, token, "klein", "")
@@ -154,7 +154,7 @@ func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 3)
 
 	rec := etikettenBogenHolen(t, srv, token, "klein", "gibtesnicht")
@@ -173,7 +173,7 @@ func TestLieferantenEtiketten_GrossIgnoriertDasRaster(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 5)
 
 	a := etikettenBogenHolen(t, srv, token, "gross", "zweckform_l4760")
@@ -203,7 +203,7 @@ func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 3)
 
 	koerper, err := json.Marshal(oeffentlichBestaetigenAnfrage{
@@ -247,7 +247,7 @@ func TestOeffentlicheBestellung_LiefertDieFormatauswahl(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	token := bestellungMitEtiketten(t, srv, pool, 3)
 
 	bestellungID, err := srv.bestellungPerToken(ctx, token)

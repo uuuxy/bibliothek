@@ -21,7 +21,7 @@ const dsgvoTestID = "11111111-1111-1111-1111-111111111111"
 
 func dsgvoAnfrage(t *testing.T, mock pgxmock.PgxPoolIface) *httptest.ResponseRecorder {
 	t.Helper()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+dsgvoTestID+"/dsgvo-auskunft", nil)
 	req.SetPathValue("id", dsgvoTestID)
 	rec := httptest.NewRecorder()
@@ -191,7 +191,7 @@ func TestDSGVOFristen_OhneEinstellungenGeltenDieVorgaben(t *testing.T) {
 	defer mock.Close()
 	mock.ExpectQuery(`FROM system_einstellungen`).WillReturnError(errors.New("Datenbank nicht erreichbar"))
 
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	soll := auskunft.FristWerte{LesehistorieTage: 1, LernmittelTage: 730, KarenzTage: 90, ProtokollMonate: 24, AnliegenTage: 365}
 	if ist := s.dsgvoFristen(context.Background()); ist != soll {
 		t.Errorf("Fristen ohne Einstellungen = %+v, erwartet die Vorgaben %+v", ist, soll)

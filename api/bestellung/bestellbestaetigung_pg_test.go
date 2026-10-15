@@ -55,7 +55,7 @@ func TestBestellungBestaetigen_Erfolg(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
@@ -85,7 +85,7 @@ func TestBestellungBestaetigen_Erfolg(t *testing.T) {
 func TestBestellungBestaetigen_LieferantOhneFlag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Normalhaendler", false)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
@@ -101,7 +101,7 @@ func TestBestellungBestaetigen_LieferantOhneFlag(t *testing.T) {
 func TestBestellungBestaetigen_DoppeltBestaetigenGibt409(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher2", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
@@ -120,7 +120,7 @@ func TestBestellungBestaetigen_DoppeltBestaetigenGibt409(t *testing.T) {
 func TestBestellungBestaetigen_UngueltigeGroesse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher3", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)

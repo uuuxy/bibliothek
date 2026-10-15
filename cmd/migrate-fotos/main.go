@@ -108,7 +108,7 @@ func main() {
 // und nicht als pgx.Batch. Ein Batch liefert je Ergebnis nur ErrNoRows und kann nicht sagen,
 // welche Datei es traf und ob es ein Fehler war — diese Liste ist das Ergebnis einer
 // einmaligen Übernahme. Wer doch batcht, führt die Barcodes in Batch-Reihenfolge mit.
-func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntry, behalten bool) (processed, migrated, geloescht int) {
+func migriereAlleFotos(pool db.Pool, root *os.Root, entries []os.DirEntry, behalten bool) (processed, migrated, geloescht int) {
 	// dir.ReadDir liefert die Dateien in der Reihenfolge des Dateisystems, auf ext4 beliebig.
 	// Sortiert wird hier statt beim Aufrufer, damit Protokoll und Tests dieselbe Reihenfolge
 	// sehen.
@@ -175,7 +175,7 @@ func barcodesDerFotos(entries []os.DirEntry) []string {
 
 // ladeSchuelerIDs lädt die Schüler zu allen Barcodes in einer Abfrage. false heißt: Die
 // Abfrage ist gescheitert, der Fehler steht im Protokoll.
-func ladeSchuelerIDs(pool db.PgxPoolIface, barcodes []string) (map[string]string, bool) {
+func ladeSchuelerIDs(pool db.Pool, barcodes []string) (map[string]string, bool) {
 	studentMap := make(map[string]string)
 	query := "SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY($1)"
 	rows, err := pool.Query(context.Background(), query, barcodes)
@@ -203,7 +203,7 @@ func ladeSchuelerIDs(pool db.PgxPoolIface, barcodes []string) (map[string]string
 // migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =
 // "<barcode>.jpg") in schueler_fotos. Liefert true bei Erfolg; Fehler und fehlende
 // Schüler werden protokolliert und mit false quittiert.
-func migriereFoto(pool db.PgxPoolIface, root *os.Root, name string, barcodeID string, studentID string) bool {
+func migriereFoto(pool db.Pool, root *os.Root, name string, barcodeID string, studentID string) bool {
 	file, err := root.Open(name)
 	if err != nil {
 		slog.Error("Konnte Bild nicht öffnen", "file", name, "error", err)
@@ -257,7 +257,7 @@ func migriereFoto(pool db.PgxPoolIface, root *os.Root, name string, barcodeID st
 
 // zurueckgelesenUndGleich holt das eben geschriebene Foto zurück, entschlüsselt es und
 // vergleicht es mit dem Original.
-func zurueckgelesenUndGleich(pool db.PgxPoolIface, studentID string, original []byte) bool {
+func zurueckgelesenUndGleich(pool db.Pool, studentID string, original []byte) bool {
 	var gespeichert []byte
 	err := pool.QueryRow(context.Background(),
 		`SELECT foto_encrypted FROM schueler_fotos WHERE schueler_id = $1`, studentID).Scan(&gespeichert)

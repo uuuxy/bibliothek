@@ -29,7 +29,7 @@ func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	kein := testdaten.LegeSchuelerAn(t, pool, "AB-3", "Cleo", "8a")
 	testdaten.LegeAusleiheMitFristAn(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	students, err := srv.ladeAbgaengerKontoauszuege(ctx, "", nil)
 	if err != nil {
 		t.Fatalf("ladeAbgaengerKontoauszuege: %v", err)

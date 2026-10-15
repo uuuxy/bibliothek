@@ -45,7 +45,7 @@ func bestelleMitTopf(t *testing.T, srv *Tueren, lieferantID, titelID, mittel str
 func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "OhneTopf", false)
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-OhneTopf", 0)
 
@@ -72,7 +72,7 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Topf", 0)
 
 	// Händler mit zweiter Kundennummer für den Schulträger …

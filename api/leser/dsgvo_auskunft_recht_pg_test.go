@@ -26,7 +26,7 @@ import (
 // Die Auskunft gibt es für jeden Leser. Beim Kollegen mit Konto nennt sie
 // das Konto, die Kontoereignisse aus dem Verwaltungsprotokoll und jeden selbst bearbeiteten
 // Vorgang, Verwaltungseingriffe samt IP-Adresse. Die Route verlangt manage_students_admin: ab
-// Werk hat es die Leitung, und laut db/seed.go (RechteOptional) ist es zum Delegieren ans
+// Werk hat es die Leitung, und laut db/rechte_vorgabe.go (RechteOptional) ist es zum Delegieren ans
 // Sekretariat gedacht. Konten und Verwaltungsprotokoll zeigt die Anwendung sonst nur mit
 // manage_users (GET /api/benutzer, GET /api/admin/auditlog), und das hat die Leitung bewusst
 // nicht (Migration 122). Über die Auskunft bekam sie das Tätigkeitsprotokoll jedes Kollegen
@@ -104,7 +104,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 		t.Fatalf("Kollege ohne Konto anlegen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	rufe := func(h http.HandlerFunc, leserID, kontoID string, rolle auth.Role) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", nil)
 		req.SetPathValue("id", leserID)

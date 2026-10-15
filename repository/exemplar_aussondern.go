@@ -25,7 +25,7 @@ func (a *pgProtokollAbfragen) SondereExemplarAus(ctx context.Context, exemplarID
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Was der Eintrag nennt, wird vor dem Ändern gelesen. Ein unbekanntes Exemplar ist ein
 	// Fehler: Sonst entstünde ein Eintrag über ein Aussondern, das es nicht gab.

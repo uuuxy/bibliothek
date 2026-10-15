@@ -92,7 +92,7 @@ func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 // nachgebaute Abfrage, die einen Rückschritt in der Tür nie sähe.
 func opacGesamt(t *testing.T, pool *pgxpool.Pool, titel string) int {
 	t.Helper()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	req := httptest.NewRequest("GET", "/api/opac/suche?q="+url.QueryEscape(titel), nil)
 	w := httptest.NewRecorder()
 	srv.OPACSuche()(w, req)

@@ -83,7 +83,7 @@ func TestVerarbeiteAusweis(t *testing.T) {
 func TestNewOmniboxDienst(t *testing.T) {
 	// Nullwerte genügen: Geprüft wird nur, dass der Erzeuger jede Abhängigkeit in ihr Feld
 	// legt.
-	var pool db.PgxPoolIface
+	var pool db.Pool
 	var studentRepo repository.LeserAbfragen
 	var bookRepo repository.KatalogAbfragen
 	var loanRepo repository.AusleihAbfragen

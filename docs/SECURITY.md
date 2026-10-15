@@ -173,10 +173,10 @@ jeder Lehrkraft (siehe unten).
 - `helfer`: Kiosk-/Tresenbetrieb ohne die breiten Schülerrechte (Migration 042) — Scannen, Ausleihe, Rückgabe, Katalogzugriff, aber keine Schülerlisten und kein Mahnwesen.
 - `kollegium`: **Genau ein** Recht — `create_reservations` (Klassensatz im Kollegiums-Portal reservieren). Alles Weitere ist seit Migration 070 entzogen; die Suche im Portal (Katalog des Kollegiums: Titeldaten und Zählwerte, auch Lernmittel) hängt am selben Recht und fasst keine Personendaten an. Die Rolle hieß bis Migration 069 `lehrer`.
 
-  **Fachlich ist das keine Rolle, sondern der Grundzustand.** Wer sich über „Mein Portal" mit der Schuladresse selbst anmeldet, bekommt diesen Wert; eine Rolle bekommt nur, wen der Admin an seiner E-Mail-Adresse dazu erhebt. Der Rechte-Editor führt deshalb seit dem 16.09.2026 nur noch die vier Spalten oben — was das Kollegium darf, steht fest in `db/seed.go` und ist kein Schalter je Schule. Sicherheitsrelevant ist daran die Richtung: Die Zeile existiert weiter in `role_permissions`, sie wird nur nicht mehr je Schule verändert.
+  **Fachlich ist das keine Rolle, sondern der Grundzustand.** Wer sich über „Mein Portal" mit der Schuladresse selbst anmeldet, bekommt diesen Wert; eine Rolle bekommt nur, wen der Admin an seiner E-Mail-Adresse dazu erhebt. Der Rechte-Editor führt deshalb seit dem 16.09.2026 nur noch die vier Spalten oben — was das Kollegium darf, steht fest in `db/rechte_vorgabe.go` und ist kein Schalter je Schule. Sicherheitsrelevant ist daran die Richtung: Die Zeile existiert weiter in `role_permissions`, sie wird nur nicht mehr je Schule verändert.
 - Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `kollegium`, `mitarbeiter`, `helfer`, `leitung` — `schema.sql`, Typ `benutzer_rolle`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
 
-> **Rechtevorgaben driften auf einer bestehenden Datenbank.** `db.InitPermissions` legt
+> **Rechtevorgaben driften auf einer bestehenden Datenbank.** `db.SchreibeRechteVorgabe` legt
 > `role_permissions` mit `ON CONFLICT DO NOTHING` an — eine geänderte Vorgabe im Code
 > erreicht damit **nur frische** Datenbanken. Genau so kam der Befund oben zustande. Wer
 > eine Rechtevorgabe ändert, braucht deshalb zusätzlich eine Migration; und die Tabelle

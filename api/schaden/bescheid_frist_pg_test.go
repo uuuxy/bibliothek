@@ -23,7 +23,7 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-FRIST", "Fristprobe", "08G2")
 	titelID := testdaten.LegeLernmittelAn(t, pool, "Chemie 8")
@@ -71,7 +71,7 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	testdaten.LeereBescheide(t, pool)
 	testdaten.SetzeBescheidAngaben(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-ABL", "Ablehnung", "08G2")
 	titelID := testdaten.LegeLernmittelAn(t, pool, "Physik 8")

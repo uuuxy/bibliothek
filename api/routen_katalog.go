@@ -111,7 +111,7 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen re
 	// aber nur die Felder der Theke (Name, Klasse); dafür das volle view_students zu verlangen
 	// (Leserakte, Adressen, Mahnwesen), wäre zu grob, Helfer verlören die Warteliste ganz. Admin,
 	// Leitung und Mitarbeiter haben das Recht ab Werk, Helfer über die Rechte-Matrix (Vorgabe aus,
-	// db/seed.go). Der Einzelfall am Rückgabe-Scan („reserviert für X") bleibt: Den Namen braucht
+	// db/rechte_vorgabe.go). Der Einzelfall am Rückgabe-Scan („reserviert für X") bleibt: Den Namen braucht
 	// die Theke, um das Buch für die richtige Person beiseitezulegen.
 	mux.Handle("GET /api/vormerkungen", s.verlangeRecht("manage_vormerkungen")(s.theke().Vormerkungen(vormerkungsAbfragen)))
 	mux.Handle("POST /api/vormerkungen", s.verlangeRecht("manage_vormerkungen")(s.theke().VormerkungAnlegen(vormerkungsAbfragen)))

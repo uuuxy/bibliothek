@@ -10,7 +10,7 @@ import (
 )
 
 // dbSchreiber ist der minimale Datenbankzugriff der Schreibpfade dieses Pakets. Pool
-// (db.PgxPoolIface) und pgx.Tx erfüllen ihn beide — der Sammelimport arbeitet
+// (db.Pool) und pgx.Tx erfüllen ihn beide — der Sammelimport arbeitet
 // innerhalb seiner Transaktion.
 type dbSchreiber interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)

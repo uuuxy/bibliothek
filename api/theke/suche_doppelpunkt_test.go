@@ -21,7 +21,7 @@ import (
 // stattfindet.
 func TestSuche_AnfrageMitDoppelpunkt(t *testing.T) {
 	pool := pgtest.Pool(t)
-	database := &db.Database{Pool: pool}
+	database := &db.Verbindung{Pool: pool}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: database}}
 	handler := srv.Suche(repository.NewLeserAbfragen(pool), repository.NewKatalogAbfragen(pool))

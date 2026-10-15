@@ -1,9 +1,8 @@
 package db
 
-// Die Übernahme entscheidet, ob auf dem Schulserver nach dem Umstieg noch Mahnungen
-// ankommen: In der Datenbank steht dort die Schema-Vorgabe (localhost:1025), die
-// echten Zugangsdaten liegen in der .env. Genau einmal übernehmen — und eine vom
-// Admin gespeicherte Konfiguration niemals überschreiben.
+// Die Übernahme entscheidet, ob auf einer Anlage, deren Zugangsdaten in der .env liegen, noch
+// Mahnungen ankommen: In der Datenbank steht dort die Vorgabe des Schemas (localhost:1025).
+// Übernommen wird genau einmal, und eine vom Admin gespeicherte Konfiguration bleibt.
 
 import (
 	"context"
@@ -16,14 +15,14 @@ import (
 
 const testSchluessel = "0123456789abcdef0123456789abcdef"
 
-func bootstrapPool(t *testing.T) (*Database, pgxmock.PgxPoolIface) {
+func uebernahmePool(t *testing.T) (*Verbindung, pgxmock.PgxPoolIface) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	t.Cleanup(mock.Close)
-	return &Database{Pool: mock}, mock
+	return &Verbindung{Pool: mock}, mock
 }
 
 func gespeicherteZeile(host, port, benutzer string, passwort []byte) *pgxmock.Rows {
@@ -31,7 +30,7 @@ func gespeicherteZeile(host, port, benutzer string, passwort []byte) *pgxmock.Ro
 		AddRow(host, port, benutzer, passwort)
 }
 
-func TestInitMailKonfigUebernimmtUmgebungBeiUnangetasteterVorgabe(t *testing.T) {
+func TestUebernimmMailKonfig_UmgebungBeiUnangetasteterVorgabe(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", testSchluessel)
 	t.Setenv("SMTP_HOST", "smtp.schule.de")
 	t.Setenv("SMTP_PORT", "587")
@@ -39,24 +38,24 @@ func TestInitMailKonfigUebernimmtUmgebungBeiUnangetasteterVorgabe(t *testing.T) 
 	t.Setenv("SMTP_PASSWORD", "geheim123")
 	t.Setenv("SMTP_FROM", "bibliothek@schule.de")
 
-	database, mock := bootstrapPool(t)
+	database, mock := uebernahmePool(t)
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(gespeicherteZeile(schemaVorgabeHost, schemaVorgabePort, "", nil))
 	mock.ExpectExec(`UPDATE mail_settings_config`).
 		WithArgs("smtp.schule.de", "587", "bibliothek", pgxmock.AnyArg(), "bibliothek@schule.de").
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	if err := database.InitMailKonfig(context.Background()); err != nil {
-		t.Fatalf("InitMailKonfig: %v", err)
+	if err := database.UebernimmMailKonfig(context.Background()); err != nil {
+		t.Fatalf("UebernimmMailKonfig: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Übernahme ist nicht passiert: %v", err)
 	}
 }
 
-// Sobald in der Oberfläche gespeichert wurde, gewinnt diese Eingabe — sonst würde
-// jeder Deploy die Konfiguration der Schule wieder überschreiben.
-func TestInitMailKonfigLaesstGespeicherteKonfigurationInRuhe(t *testing.T) {
+// Ist in der Oberfläche gespeichert, gilt diese Eingabe; sonst überschriebe jedes Update die
+// Konfiguration der Schule.
+func TestUebernimmMailKonfig_LaesstGespeicherteKonfigurationInRuhe(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", testSchluessel)
 	t.Setenv("SMTP_HOST", "smtp.aus-der-umgebung.de")
 
@@ -72,13 +71,13 @@ func TestInitMailKonfigLaesstGespeicherteKonfigurationInRuhe(t *testing.T) {
 		"Passwort gesetzt": gespeicherteZeile(schemaVorgabeHost, schemaVorgabePort, "", verschluesselt),
 	} {
 		t.Run(name, func(t *testing.T) {
-			database, mock := bootstrapPool(t)
+			database, mock := uebernahmePool(t)
 			mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(zeile)
-			// Kein ExpectExec: Ein UPDATE wäre ein unerwarteter Aufruf und ließe den
-			// Test scheitern — genau die Zusicherung, um die es hier geht.
+			// Kein ExpectExec: Ein UPDATE wäre ein unerwarteter Aufruf und ließe den Test
+			// scheitern; um diese Zusage geht es.
 
-			if err := database.InitMailKonfig(context.Background()); err != nil {
-				t.Fatalf("InitMailKonfig: %v", err)
+			if err := database.UebernimmMailKonfig(context.Background()); err != nil {
+				t.Fatalf("UebernimmMailKonfig: %v", err)
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("Erwartungen nicht erfüllt: %v", err)
@@ -87,15 +86,15 @@ func TestInitMailKonfigLaesstGespeicherteKonfigurationInRuhe(t *testing.T) {
 	}
 }
 
-// Ohne SMTP_HOST in der Umgebung gibt es nichts zu übernehmen — und die Datenbank
-// wird nicht einmal gelesen.
-func TestInitMailKonfigOhneUmgebungTutNichts(t *testing.T) {
+// Ohne SMTP_HOST in der Umgebung gibt es nichts zu übernehmen, und die Datenbank wird nicht
+// einmal gelesen.
+func TestUebernimmMailKonfig_OhneUmgebungTutNichts(t *testing.T) {
 	t.Setenv("SMTP_HOST", "")
 
-	database, mock := bootstrapPool(t)
+	database, mock := uebernahmePool(t)
 
-	if err := database.InitMailKonfig(context.Background()); err != nil {
-		t.Fatalf("InitMailKonfig: %v", err)
+	if err := database.UebernimmMailKonfig(context.Background()); err != nil {
+		t.Fatalf("UebernimmMailKonfig: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Datenbank wurde unnötig berührt: %v", err)

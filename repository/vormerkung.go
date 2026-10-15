@@ -80,7 +80,7 @@ func (a *pgVormerkungsAbfragen) LasseAbgelaufeneVerfallen(ctx context.Context) (
 	if err != nil {
 		return 0, 0, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	rows, err := tx.Query(ctx, `
 		DELETE FROM vormerkungen
@@ -117,7 +117,7 @@ func (a *pgVormerkungsAbfragen) LasseAbgelaufeneVerfallen(ctx context.Context) (
 }
 
 type pgVormerkungsAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 	// jetzt ist die Uhr, ab der eine neue Abholfrist zählt (Nachrücken im Verfall-Lauf und
 	// beim Löschen); nil heißt time.Now. Tests setzen einen festen Tag vor einem Wochenende
 	// oder vor den Ferien.
@@ -133,7 +133,7 @@ func (a *pgVormerkungsAbfragen) uhr() time.Time {
 }
 
 // NewVormerkungsAbfragen liefert die Abfragen der Vormerkungen an Postgres.
-func NewVormerkungsAbfragen(db db.PgxPoolIface) VormerkungsAbfragen {
+func NewVormerkungsAbfragen(db db.Pool) VormerkungsAbfragen {
 	return &pgVormerkungsAbfragen{db: db}
 }
 
@@ -258,7 +258,7 @@ func (a *pgVormerkungsAbfragen) Loesche(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	var titelID string
 	var bereitgestellt *string
 	err = tx.QueryRow(ctx, `

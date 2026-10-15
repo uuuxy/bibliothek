@@ -34,7 +34,7 @@ type NachbuchDienst interface {
 
 // NewNachbuchDienst baut den Dienst auf ausleihDienst, damit das Nachbuchen dieselben Schranken
 // und Schreiber hat wie der Scan am Netz.
-func NewNachbuchDienst(pool db.PgxPoolIface, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) NachbuchDienst {
+func NewNachbuchDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) NachbuchDienst {
 	return &ausleihDienst{pool: pool, leserAbfragen: leserAbfragen, katalogAbfragen: katalogAbfragen, ausleihAbfragen: ausleihAbfragen, protokollAbfragen: protokollAbfragen}
 }
 
@@ -103,7 +103,7 @@ func (d *ausleihDienst) BucheNach(ctx context.Context, eintrag NachbuchEintrag) 
 	if err != nil {
 		return nil, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Sperren: Leser, dann die Ausleihe des Exemplars, dann das Exemplar.
 	if l.leser != nil {
@@ -126,7 +126,7 @@ func (d *ausleihDienst) BucheNach(ctx context.Context, eintrag NachbuchEintrag) 
 	// Der Wächter: Ein Scan, der älter ist als die letzte Bewegung, beschreibt eine
 	// Wirklichkeit, die es nicht mehr gibt.
 	if stand.LetzteBewegung != nil && l.gescannt.Before(*stand.LetzteBewegung) {
-		db.SafeRollback(ctx, tx)
+		db.Verwerfe(ctx, tx)
 		return d.meldeAbweisung(ctx, l, repository.NachbuchVeraltet,
 			fmt.Sprintf("Scan von %s liegt vor der letzten Bewegung des Exemplars (%s)",
 				l.gescannt.Format("02.01.2006 15:04"), stand.LetzteBewegung.In(schulzeit.Zone()).Format("02.01.2006 15:04")))

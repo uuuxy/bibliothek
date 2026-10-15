@@ -36,7 +36,7 @@ func dnbSatz(isbn, titel string) string {
 func TestBestellsuche_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	// Der Katalog führt die ISBN dreizehnstellig; die zehnstellige Form desselben Buchs endet
 	// auf ein anderes Prüfzeichen, ein Teilstring-Vergleich fände sie nicht.

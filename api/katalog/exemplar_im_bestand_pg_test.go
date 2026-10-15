@@ -21,7 +21,7 @@ import (
 func TestTitelExemplare_SagtWasZumBestandZaehlt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 
 	titel := testdaten.LegeTitelAn(t, pool, "Im Bestand", 1)

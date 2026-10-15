@@ -23,7 +23,7 @@ import (
 func TestKonten_LiefernEchteRechte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	email := "rechte-" + suffix + "@example.org"
@@ -37,20 +37,6 @@ func TestKonten_LiefernEchteRechte(t *testing.T) {
 		VALUES ('Rechte', 'Pruefer', $1, 'mitarbeiter', true)
 	`, email); err != nil {
 		t.Fatalf("Benutzer anlegen: %v", err)
-	}
-
-	// role_permissions legt nicht schema.sql an, sondern db/seed.go zur Laufzeit (CREATE TABLE
-	// IF NOT EXISTS beim Start des Servers). Die Test-Datenbank kennt sie deshalb nicht; dieselbe
-	// Definition steht hier, damit der Test für sich läuft.
-	if _, err := pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS role_permissions (
-			role VARCHAR(50) NOT NULL,
-			permission VARCHAR(100) NOT NULL,
-			allowed BOOLEAN NOT NULL DEFAULT false,
-			PRIMARY KEY (role, permission)
-		)
-	`); err != nil {
-		t.Fatalf("role_permissions anlegen: %v", err)
 	}
 
 	// Ein Recht, von dem wir wissen, dass es echt ist und der Rolle gehört.

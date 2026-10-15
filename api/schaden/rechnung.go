@@ -20,7 +20,7 @@ import (
 
 // ladeRechnungPosten lädt die offenen Forderungen eines Schülers ohne Bescheid als
 // Rechnungspositionen (repository.LadeOffeneForderungenOhneBescheid).
-func ladeRechnungPosten(ctx context.Context, datenbank db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
+func ladeRechnungPosten(ctx context.Context, datenbank db.Pool, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
 	posten, err := repository.LadeOffeneForderungenOhneBescheid(ctx, datenbank, schuelerID)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (t *Tueren) RechnungPDF() http.HandlerFunc {
 }
 
 // liefereRechnung lädt Anschrift und offene Forderungen ohne Bescheid und setzt den Brief.
-func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.PgxPoolIface) {
+func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.Pool) {
 	ctx := r.Context()
 
 	// Die Kennung des Schülers steht im Pfad: /api/print/rechnung/{schueler_id}

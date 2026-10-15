@@ -77,7 +77,7 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	lektuere := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les", 0)
 	einfach := testdaten.LegeExemplarAn(t, pool, lektuere, "EE-VORGABE", true, "")

@@ -49,7 +49,7 @@ func TestAusleiheLegeAn_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BeginneTx 2: %v", err)
 	}
-	defer db.SafeRollback(ctx, tx2)
+	defer db.Verwerfe(ctx, tx2)
 
 	zweite, err := repo.LegeAn(ctx, tx2, ex[0], zweiterSchueler, bearbeiter, frist, false)
 
@@ -84,11 +84,11 @@ func TestAusleiheLegeAn_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	}
 	erste, err := repo.LegeAn(ctx, tx1, ex[0], schueler, bearbeiter, frist, false)
 	if err != nil || erste == nil {
-		db.SafeRollback(ctx, tx1)
+		db.Verwerfe(ctx, tx1)
 		t.Fatalf("erste Ausleihe: %v", err)
 	}
 	if err := repo.BucheRueckgabe(ctx, tx1, erste.ID, bearbeiter, false); err != nil {
-		db.SafeRollback(ctx, tx1)
+		db.Verwerfe(ctx, tx1)
 		t.Fatalf("Rückgabe: %v", err)
 	}
 	if err := tx1.Commit(ctx); err != nil {
@@ -99,7 +99,7 @@ func TestAusleiheLegeAn_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BeginneTx 2: %v", err)
 	}
-	defer db.SafeRollback(ctx, tx2)
+	defer db.Verwerfe(ctx, tx2)
 
 	zweite, err := repo.LegeAn(ctx, tx2, ex[0], schueler, bearbeiter, frist, false)
 	if err != nil {

@@ -29,7 +29,7 @@ import (
 func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Ausbuch-Titel", "Jug Aus", false, 0)
 	verliehen := testdaten.LegeExemplarAn(t, pool, titelID, "DEL-VERLIEHEN", true, "")

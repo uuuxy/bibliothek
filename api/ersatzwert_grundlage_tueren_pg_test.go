@@ -56,7 +56,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = 'ersatzwert_immer_kaufpreis'`)
 	})
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	bescheidRepo := repository.NewBescheidAbfragen(pool)
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	rufe := func(t *testing.T, h http.Handler, methode, pfad, rumpf, kennung string, ziel any) {

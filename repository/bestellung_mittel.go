@@ -15,7 +15,7 @@ import (
 // dazwischenschreibt. Geändert wird nur der Topf: Kundennummer, Name und Adresse auf dem Beleg
 // sind die Abschrift dessen, was der Händler bekommen hat
 // (api/bestellung/bestellung_mittel.go).
-func KorrigiereBestellungMittel(ctx context.Context, pool db.PgxPoolIface, bestellungID, mittel string) (*string, error) {
+func KorrigiereBestellungMittel(ctx context.Context, pool db.Pool, bestellungID, mittel string) (*string, error) {
 	var vorher *string
 	err := pool.QueryRow(ctx, `
 		UPDATE bestellungen_verlauf b

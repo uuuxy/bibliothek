@@ -73,7 +73,7 @@
 							{@render roleToggle(item, 'LEITUNG', 'leitung')}
 							{@render roleToggle(item, 'MITARBEITER', 'mitarbeiter')}
 							<!-- Kollegium hat keine Spalte: Es ist keine Rolle, sondern der Ausgangszustand
-							     jeder Lehrkraft. Seine Rechte stehen fest in db/seed.go; was „Mein Portal“
+							     jeder Lehrkraft. Seine Rechte stehen fest in db/rechte_vorgabe.go; was „Mein Portal“
 							     kann, ist eine Produktentscheidung und kein Schalter je Schule. -->
 							{@render roleToggle(item, 'HELFER', 'helfer')}
 						</div>

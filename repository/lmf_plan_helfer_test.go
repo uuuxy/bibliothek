@@ -15,7 +15,7 @@ func speichereLmfPlanImTest(ctx context.Context, repo *LMFAbfragen, plan LMFPlan
 	if err != nil {
 		return LMFPlanStand{}, err
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 	st, err := repo.SchreibePlan(ctx, tx, plan, zeilen, plaetze, ausgelassen)
 	if err != nil {
 		return st, err

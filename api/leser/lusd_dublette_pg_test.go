@@ -26,7 +26,7 @@ func TestLUSDImport_DubletteInDerselbenDatei(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{
 		{LUSDID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5a", Nr: 1},
 		{LUSDID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5b", Nr: 2},

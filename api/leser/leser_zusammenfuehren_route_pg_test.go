@@ -52,7 +52,7 @@ func zrKonto(t *testing.T, pool *pgxpool.Pool, leserID string) {
 func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Alt", Nachname: "Route", Klasse: "07A", Barcode: "ZR-1", Geburtsdatum: testdaten.Datum(2012, 3, 3), IstAbgaenger: true})
@@ -96,7 +96,7 @@ func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 // nur „Zusammenführen fehlgeschlagen" nach außen, und wer davorsitzt, wüsste nicht weiter.
 func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 	pool := pgtest.Pool(t)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 
 	schueler := func(t *testing.T, nachname, barcode string) string {
@@ -172,7 +172,7 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 func TestZusammenfuehrenRoute_UnbrauchbareAnfrage(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Zr", Nachname: "Ziel", Klasse: "07A", Barcode: "ZR-U1", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
 

@@ -20,7 +20,7 @@ func TestKlassenZuordnungKenntDieOberstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	for i, klasse := range []string{"07G1", "10R2", "ET1", "12T1", "13T2"} {
 		testdaten.LegeSchuelerAn(t, pool, fmt.Sprintf("KL-%d", i), "Kind", klasse)

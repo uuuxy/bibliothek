@@ -111,7 +111,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 func TestSachgruppeAendern_ZiehtOffeneInventurMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1000000)
 	alt, neu := "Physik"+suffix, "Astrophysik"+suffix

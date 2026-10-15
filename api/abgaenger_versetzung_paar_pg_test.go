@@ -28,7 +28,7 @@ func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 		testdaten.LegeSchuelerMitAusleiheAn(t, pool, "P-"+string(rune('A'+i)), "Kind"+k, k)
 	}
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	rec := httptest.NewRecorder()
 	srv.mahnwesen().Abgaenger()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
 	if rec.Code != http.StatusOK {

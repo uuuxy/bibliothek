@@ -86,7 +86,7 @@ func TestFotoHochladen_SpeichertVerschluesseltUndNenntDieAdresse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	schuelerID := testdaten.LegeSchuelerAn(t, pool, "FOTO-1", "Fotokind", "07A")
 
 	rec := fotoHochladen(t, srv, schuelerID, fotoRumpf(t, fotoJPEG(t)))
@@ -128,7 +128,7 @@ func TestFotoHochladen_AntwortLesbarBeiSonderzeichenInDerAusweisnummer(t *testin
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	schuelerID := testdaten.LegeSchuelerAn(t, pool, `FO"TO\2`, "Sonderkind", "07A")
 
 	rec := fotoHochladen(t, srv, schuelerID, fotoRumpf(t, fotoJPEG(t)))
@@ -146,7 +146,7 @@ func TestFotoHochladen_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	schuelerID := testdaten.LegeSchuelerAn(t, pool, "FOTO-3", "Abweiskind", "07A")
 	keinBild := base64.StdEncoding.EncodeToString([]byte("das ist kein Bild"))
 

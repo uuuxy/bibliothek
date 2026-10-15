@@ -21,7 +21,7 @@ func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	geb := time.Date(2010, 5, 4, 0, 0, 0, 0, time.UTC)
 	gebStr := "2010-05-04"
@@ -88,7 +88,7 @@ func TestLUSDZuordnung_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	geb := time.Date(2011, 3, 3, 0, 0, 0, 0, time.UTC)
 	if _, err := pool.Exec(ctx, `
@@ -120,7 +120,7 @@ func TestLUSDZuordnung_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	geb := time.Date(2012, 6, 6, 0, 0, 0, 0, time.UTC)
 	if _, err := pool.Exec(ctx, `

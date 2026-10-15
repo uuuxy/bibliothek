@@ -23,7 +23,7 @@ func TestElternbriefPDF_Erfolg(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
@@ -79,7 +79,7 @@ func TestElternbriefPDF_UnbekannterFall(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	caseID := "00000000-0000-0000-0000-000000000000"
 
 	mock.ExpectQuery("SELECT sf.beschreibung").
@@ -121,7 +121,7 @@ func TestElternbriefPDF_Datenbankfehler(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	caseID := "11111111-1111-1111-1111-111111111111"
 
 	mock.ExpectQuery("SELECT sf.beschreibung").
@@ -150,7 +150,7 @@ func TestElternbriefPDF_Schreibfehler(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Attrappe: der Fall (ladeSchadensfallBrief).
@@ -196,7 +196,7 @@ func TestElternbriefPDF_VermerkScheitert(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Attrappe: der Fall (ladeSchadensfallBrief).
@@ -238,7 +238,7 @@ func TestElternbriefPDF_FallUnlesbar(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Ein falscher Typ, damit das Lesen der Zeile scheitert.

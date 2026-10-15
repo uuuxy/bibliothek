@@ -19,7 +19,7 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen reposi
 	mux.Handle("POST /api/print/schueler-etiketten", s.verlangeRecht("view_students")(s.druck().SchuelerEtiketten(leserAbfragen)))
 	// Ändern und Sperren hängen an edit_students, nicht an create_students: Stammdaten pflegen
 	// ist nicht dasselbe wie jemanden neu anlegen. Beide Rechte haben ab Werk dieselben Rollen
-	// (Admin, Leitung und Mitarbeiter ja, Kollegium und Helfer nein; db/seed.go).
+	// (Admin, Leitung und Mitarbeiter ja, Kollegium und Helfer nein; db/rechte_vorgabe.go).
 	mux.Handle("PATCH /api/schueler/{id}", s.verlangeRecht("edit_students")(s.leser().LeserAendern(protokollAbfragen)))
 	mux.Handle("PATCH /api/admin/students/{id}/lock", s.verlangeRecht("edit_students")(s.leser().LeserSperren(protokollAbfragen)))
 	mux.Handle("DELETE /api/schueler/{id}", s.verlangeRecht("delete_students")(s.leser().LeserLoeschen(protokollAbfragen)))
@@ -64,7 +64,7 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen reposi
 	// Import aus der LUSD: import_students statt manage_users, das Recht, das die Rechte-Oberfläche
 	// als „LUSD / CSV Import" zeigt. Ein Schalter, der nichts schaltet, wäre schlimmer als keiner:
 	// Er behauptete eine Einstellung, die es nicht gibt. Ab Werk haben es Admin, Leitung und
-	// Mitarbeiter (db/seed.go).
+	// Mitarbeiter (db/rechte_vorgabe.go).
 	mux.Handle("POST /api/lusd/preview", s.verlangeRecht("import_students")(s.leser().LUSDVorschau()))
 	mux.Handle("POST /api/lusd/import", s.verlangeRecht("import_students")(s.leser().LUSDImport()))
 

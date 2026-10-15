@@ -70,7 +70,7 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	abfragen := repository.NewInventurAbfragen(tx)
 

@@ -156,7 +156,7 @@ func TestInventurScanUndAbschlussAbgestimmt(t *testing.T) {
 				finishErr = err
 				return
 			}
-			defer db.SafeRollback(ctx, tx)
+			defer db.Verwerfe(ctx, tx)
 			txRepo := NewInventurAbfragen(tx)
 			s, err := txRepo.SperreLaufFuerAbschluss(ctx, sessionID)
 			if err != nil {

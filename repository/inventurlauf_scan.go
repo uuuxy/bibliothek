@@ -56,7 +56,7 @@ func (a *InventurAbfragen) VerbucheScan(ctx context.Context, laufID, exemplarID 
 	if err != nil {
 		return fmt.Errorf("scan-transaktion konnte nicht gestartet werden: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx) // nach dem Commit ohne Wirkung
+	defer db.Verwerfe(ctx, tx) // nach dem Commit ohne Wirkung
 
 	var id string
 	if err := tx.QueryRow(ctx,

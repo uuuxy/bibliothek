@@ -87,7 +87,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	ctx := context.Background()
 
 	sitzungen := tuertest.FangeMailAb(t)
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 
 	// Zwei Abgänger derselben Abschlussklasse und einer aus einer anderen — plus die
 	// Schreibweise, an der sich schon zweimal etwas aufgehängt hat: Schülerdaten "9H",

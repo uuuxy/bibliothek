@@ -22,8 +22,8 @@ func TestDSGVOAuskunftPDF_EinstellungenUnlesbar_KeinBlattKeinEintrag(t *testing.
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	leserID := testdaten.LegeSchuelerAn(t, pool, "S-DSGVO-LESEFEHLER", "Lea", "07G1")
 
-	rufe := func(datenbank db.PgxPoolIface) *httptest.ResponseRecorder {
-		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: datenbank}}}
+	rufe := func(datenbank db.Pool) *httptest.ResponseRecorder {
+		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: datenbank}}}
 		return tuertest.RufeAlsAdmin(t, admin, srv.DSGVOAuskunftPDF(), http.MethodGet,
 			"/api/schueler/"+leserID+"/dsgvo-auskunft/pdf", "", map[string]string{"id": leserID})
 	}
@@ -35,7 +35,7 @@ func TestDSGVOAuskunftPDF_EinstellungenUnlesbar_KeinBlattKeinEintrag(t *testing.
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE aktion = 'dsgvo_auskunft' AND datensatz_id = $1::uuid`, leserID)
 	})
 
-	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.SQLEinstellungen})
+	rec := rufe(testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Die Auskunft entsteht ohne die Angaben der Schule", rec.Code)
 	}

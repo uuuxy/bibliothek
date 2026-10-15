@@ -58,7 +58,7 @@ func (a *pgKatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string
 	if err != nil {
 		return fmt.Errorf("status: transaktion öffnen: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// Der Stand vor dem Wechsel, unter Sperre: Zwei Plätze, die dasselbe Exemplar zugleich
 	// aussondern, schrieben sonst beide einen Eintrag.

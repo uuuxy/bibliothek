@@ -45,7 +45,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	// storniere legt dem Leser eine offene Forderung an und storniert sie über die Tür.
 	storniere := func(t *testing.T, leserID, kennung, grund string) (forderungID, titelID string) {
@@ -88,7 +88,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer db.SafeRollback(ctx, tx)
+		defer db.Verwerfe(ctx, tx)
 		if err := repository.AnonymisiereAbgaenger(ctx, tx, leserID); err != nil {
 			t.Fatalf("anonymisieren: %v", err)
 		}

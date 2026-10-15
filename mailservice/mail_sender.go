@@ -47,7 +47,7 @@ var smtpKonfigLader = func() (SMTPKonfig, error) {
 // BindeSMTPKonfigAnDatenbank lässt jeden Versand die in der Oberfläche gespeicherte
 // Konfiguration benutzen. Wird beim Start einmal aufgerufen (NewServer), bevor der
 // erste Request läuft.
-func BindeSMTPKonfigAnDatenbank(pool db.PgxPoolIface) {
+func BindeSMTPKonfigAnDatenbank(pool db.Pool) {
 	smtpKonfigLader = func() (SMTPKonfig, error) {
 		// Eigener Kontext mit kurzer Frist: Der Aufrufer hat keinen, und ein hängender
 		// Konfigurationszugriff darf einen Massenversand nicht blockieren.

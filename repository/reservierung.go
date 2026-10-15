@@ -69,11 +69,11 @@ type ReservierungsAbfragen interface {
 }
 
 type pgReservierungsAbfragen struct {
-	db db.PgxPoolIface
+	db db.Pool
 }
 
 // NewReservierungsAbfragen liefert die Abfragen der Reservierungen an Postgres.
-func NewReservierungsAbfragen(pool db.PgxPoolIface) ReservierungsAbfragen {
+func NewReservierungsAbfragen(pool db.Pool) ReservierungsAbfragen {
 	return &pgReservierungsAbfragen{db: pool}
 }
 

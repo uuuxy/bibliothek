@@ -77,7 +77,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	if err != nil {
 		return apierrors.Internal(meldungSperreFehler, err)
 	}
-	defer db.SafeRollback(ctx, tx)
+	defer db.Verwerfe(ctx, tx)
 
 	// `leser`, nicht die Sicht `schueler`: Die Akte eines Kollegen ruft die Tür auch, und
 	// über die Sicht antwortete sie mit „schüler nicht gefunden".

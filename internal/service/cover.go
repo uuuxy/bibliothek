@@ -15,14 +15,14 @@ import (
 
 // CoverDienst holt die Cover der Titel im Hintergrund von den Katalogdiensten.
 type CoverDienst struct {
-	pool db.PgxPoolIface
+	pool db.Pool
 	// katalog baut den Client für die Katalogdienste. Ein Test stellt die Dienste darüber
 	// nach, statt DNB, Google Books und OpenLibrary im Netz zu fragen.
 	katalog func() *inventur.MetadatenClient
 }
 
 // NewCoverDienst baut den Dienst für den Abgleich der Cover.
-func NewCoverDienst(pool db.PgxPoolIface) *CoverDienst {
+func NewCoverDienst(pool db.Pool) *CoverDienst {
 	return &CoverDienst{
 		pool:    pool,
 		katalog: inventur.NeuerMetadatenClient,

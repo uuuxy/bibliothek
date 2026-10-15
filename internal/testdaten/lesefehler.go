@@ -21,7 +21,7 @@ var errLesefehler = errors.New("testfehler: verbindung zur datenbank abgerissen"
 // Verbindung abgerissen. Alles andere läuft am Pool darunter: Ein Test stellt so nach, was eine
 // Tür tut, wenn genau ein Lesen misslingt.
 type PoolMitLesefehler struct {
-	db.PgxPoolIface
+	db.Pool
 	Muster string
 }
 
@@ -30,5 +30,5 @@ func (p PoolMitLesefehler) Query(ctx context.Context, sql string, args ...any) (
 	if strings.Contains(sql, p.Muster) {
 		return nil, errLesefehler
 	}
-	return p.PgxPoolIface.Query(ctx, sql, args...) //nolint:rowserrcheck // reicht die Zeilen weiter, der Aufrufer prüft sie
+	return p.Pool.Query(ctx, sql, args...) //nolint:rowserrcheck // reicht die Zeilen weiter, der Aufrufer prüft sie
 }

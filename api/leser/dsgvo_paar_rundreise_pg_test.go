@@ -135,7 +135,7 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 	}
 
 	// ── 1. Die Auskunft zeigt vorher aus jeder Quelle etwas ──
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	daten, err := srv.sammleDSGVODaten(ctx, sid, true)
 	if err != nil {
 		t.Fatalf("sammleDSGVODaten vor der Löschung: %v", err)
