@@ -185,7 +185,8 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
 - [x] Fehlertexte: klein und ohne Satzzeichen; den Satz für die Oberfläche schreibt die Tür
   ([STIL.md](STIL.md), Abschnitt 11).
-- [ ] Drei Werte der Paketebene, die noch kein Rufer anlegt (5.66).
+- [x] Zustand der Paketebene: Was sich ändert, legt der Rufer an ([STIL.md](STIL.md),
+  Abschnitt 12).
 - [ ] Die Oberfläche: Dateinamen und Namen in einer Sprache.
 - [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
@@ -493,13 +494,6 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- Drei Werte der Paketebene legt noch kein Rufer an: die Bremse der Anmeldung je E-Mail und
-  Adresse (`auth.anmeldeBremse`), die Bremse der Cover-Downloads (`katalog.coverDownloadBremse`)
-  und die vertrauten Proxys (`clientip`, gesetzt mit `SetzeProxys`, das auch Tests rufen). Das
-  Regelwerk (Best Practices, „Global state") verlangt Werte, die der Rufer anlegt und
-  weiterreicht, wie Mailversand, Cache der Rechte und Bremse je Adresse an der Basis und am
-  Server. `paketzustand_ratsche_test.go` sieht nur Zuweisungen, keinen Aufruf von
-  `SetzeProxys`.
 - `repository.ProtokollAbfragen` trägt neben dem Schreiben der Einträge das Löschen von Titel,
   Konto und Leser, das Aussondern eines Exemplars und das Erledigen einer Forderung, weil jeder
   dieser Vorgänge mit seinem Eintrag in einer Transaktion steht. Wer „Titel löschen" sucht,

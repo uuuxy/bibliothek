@@ -13,9 +13,9 @@ etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das 
 [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 12.
 
 Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, in
-Tests an Namen und Dateinamen, `fehlertext_ratsche_test.go` jeden Fehlertext gegen Abschnitt 11.
-Was darüber hinaus noch abweicht (Zustand auf der Ebene eines Pakets), steht in
-[OFFEN.md](OFFEN.md) 5.66. Neuer Code folgt den Regeln von Anfang an.
+Tests an Namen und Dateinamen, `fehlertext_ratsche_test.go` jeden Fehlertext gegen Abschnitt 11,
+`paketzustand_ratsche_test.go` jeden Zustand der Paketebene gegen Abschnitt 12. Neuer Code
+folgt den Regeln von Anfang an.
 
 ## 1. Sprache
 
@@ -232,3 +232,20 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   (`lmfplan.SommerferienFehler.Grund`); die Tür setzt den Namen der Einstellung davor. Die
   Sätze der Theke entstehen im Dienst, weil mehrere Türen sie zeigen; der Fehler trägt den Satz
   als Feld neben seiner Art, `service.MeldungAus` liefert ihn, `Error()` beginnt mit der Art.
+
+## 12. Zustand der Paketebene
+
+- Eine Variable der Paketebene hält nur, was sich nach dem Bau nicht ändert: Fehlerwerte,
+  Tabellen und Texte, übersetzte reguläre Ausdrücke. Sicher ist solcher Zustand nur, wenn er
+  „logically constant" ist, und „Libraries should not force their clients to use APIs that rely
+  on global state" (Best Practices, „Global state").
+- Was sich ändert, gehört einem Typ, den der Rufer anlegt und weiterreicht: die Bremse der
+  Fehlversuche an `auth.Anmeldung`, die Sperre des Cover-Abgleichs an `service.CoverDienst`
+  (einer für Start, Zeitplan und Knopf, `main.go`), die vertrauten Proxys am Server
+  (`api.ServerKonfig`). Was nur eine Anfrage betrifft, reist in ihrem Kontext
+  (`clientip.AusAnfrage`); was eine Tür allein braucht, bekommt sie als Parameter.
+- Ein Programm (`package main`) darf Werte der Paketebene halten; Google lässt sie dort zu
+  („must only be used by binary build targets").
+- `paketzustand_ratsche_test.go` hält es: Ein Wert, dessen Anfangswert nicht erkennbar fest ist,
+  steht mit Grund in `paketwerteOhneZustand`, und keine Funktion außer `init` weist einer
+  Variable der Paketebene etwas zu. In Tests gilt Abschnitt 10.
