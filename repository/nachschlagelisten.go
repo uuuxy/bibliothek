@@ -18,9 +18,10 @@ func LadeSystematikKategorien(ctx context.Context, db Datenbank) ([]SystematikKa
 	var kategorien []SystematikKategorie
 	for rows.Next() {
 		var k SystematikKategorie
-		if err := rows.Scan(&k.ID, &k.Kuerzel, &k.Bezeichnung); err == nil {
-			kategorien = append(kategorien, k)
+		if err := rows.Scan(&k.ID, &k.Kuerzel, &k.Bezeichnung); err != nil {
+			return nil, zeileUnlesbar(err)
 		}
+		kategorien = append(kategorien, k)
 	}
 	return kategorien, rows.Err()
 }
@@ -42,9 +43,10 @@ func LadeFaecher(ctx context.Context, db Datenbank) ([]string, error) {
 	faecher := []string{}
 	for rows.Next() {
 		var f string
-		if err := rows.Scan(&f); err == nil {
-			faecher = append(faecher, f)
+		if err := rows.Scan(&f); err != nil {
+			return nil, zeileUnlesbar(err)
 		}
+		faecher = append(faecher, f)
 	}
 	return faecher, rows.Err()
 }

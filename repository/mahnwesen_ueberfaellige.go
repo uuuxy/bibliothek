@@ -123,7 +123,9 @@ func (a *MahnwesenAbfragen) LadeUeberfaelligeNachKlasse(ctx context.Context, kla
 	}
 	klassen := g.klassen
 
-	a.reichereLehrerEmailsAn(ctx, klassen)
+	if err := a.reichereLehrerEmailsAn(ctx, klassen); err != nil {
+		return nil, err
+	}
 	return klassen, nil
 }
 
@@ -136,30 +138,31 @@ func KlassenSchluessel(klasse string) string {
 }
 
 // reichereLehrerEmailsAn ordnet den Klassen die Adressen der Klassenleitungen zu. Fehlt eine
-// Zuordnung, bleibt LehrerEmail leer.
+// Zuordnung, bleibt LehrerEmail leer. Scheitert das Lesen, liefert sie den Fehler: Eine leere
+// Adresse hieße an der Oberfläche „keine E-Mail", und der Versand überspränge die Klasse still.
 //
 // Verglichen wird normalisiert: Bei einem genauen Vergleich träfe ein Kürzel, das als „5A" oder
-// mit angehängtem Leerzeichen erfasst ist, die Klasse „5a" nicht. Die Oberfläche meldete „keine
-// E-Mail", obwohl die Adresse hinterlegt ist, und der Versand überspränge die Klasse still.
-func (a *MahnwesenAbfragen) reichereLehrerEmailsAn(ctx context.Context, klassen []MahnwesenKlasse) {
+// mit angehängtem Leerzeichen erfasst ist, die Klasse „5a" nicht.
+func (a *MahnwesenAbfragen) reichereLehrerEmailsAn(ctx context.Context, klassen []MahnwesenKlasse) error {
 	if len(klassen) == 0 {
-		return
+		return nil
 	}
 	mRows, err := a.db.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`)
 	if err != nil {
-		return
+		return err
 	}
 	defer mRows.Close()
 
 	emailMap := map[string]string{}
 	for mRows.Next() {
 		var k, e string
-		if err := mRows.Scan(&k, &e); err == nil {
-			emailMap[KlassenSchluessel(k)] = e
+		if err := mRows.Scan(&k, &e); err != nil {
+			return zeileUnlesbar(err)
 		}
+		emailMap[KlassenSchluessel(k)] = e
 	}
 	if err := mRows.Err(); err != nil {
-		emailMap = map[string]string{} // Teil-Mapping verwerfen (best-effort-Anreicherung)
+		return err
 	}
 	for i := range klassen {
 		if klassen[i].Ehemalige {
@@ -167,4 +170,5 @@ func (a *MahnwesenAbfragen) reichereLehrerEmailsAn(ctx context.Context, klassen 
 		}
 		klassen[i].LehrerEmail = emailMap[KlassenSchluessel(klassen[i].Klasse)]
 	}
+	return nil
 }

@@ -82,9 +82,10 @@ func LadeTitelFuerCoverAbgleich(ctx context.Context, db Datenbank) ([]TitelMitIS
 	var titel []TitelMitISBN
 	for rows.Next() {
 		var t TitelMitISBN
-		if err := rows.Scan(&t.ID, &t.ISBN); err == nil {
-			titel = append(titel, t)
+		if err := rows.Scan(&t.ID, &t.ISBN); err != nil {
+			return nil, zeileUnlesbar(err)
 		}
+		titel = append(titel, t)
 	}
 	return titel, rows.Err()
 }

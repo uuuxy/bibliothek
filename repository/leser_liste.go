@@ -43,9 +43,10 @@ func (a *pgLeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
 	var klassen []string
 	for rows.Next() {
 		var k string
-		if err := rows.Scan(&k); err == nil {
-			klassen = append(klassen, k)
+		if err := rows.Scan(&k); err != nil {
+			return nil, zeileUnlesbar(err)
 		}
+		klassen = append(klassen, k)
 	}
 	return klassen, rows.Err()
 }

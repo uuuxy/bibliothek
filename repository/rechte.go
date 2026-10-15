@@ -103,9 +103,10 @@ func LadeRollenRechte(ctx context.Context, db Datenbank) ([]RollenRecht, error) 
 	rechte := []RollenRecht{}
 	for rows.Next() {
 		var re RollenRecht
-		if err := rows.Scan(&re.Rolle, &re.Recht, &re.Erlaubt); err == nil {
-			rechte = append(rechte, re)
+		if err := rows.Scan(&re.Rolle, &re.Recht, &re.Erlaubt); err != nil {
+			return nil, zeileUnlesbar(err)
 		}
+		rechte = append(rechte, re)
 	}
 	return rechte, rows.Err()
 }

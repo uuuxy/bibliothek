@@ -169,7 +169,7 @@ func (a *pgReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung,
 			&r.Klasse, &r.Anzahl, &r.Notiz, &r.Erledigt, &t, &r.AngefordertVon, &r.Verfuegbar,
 			&r.ErledigtNotiz, &erledigtAm,
 		); err != nil {
-			continue
+			return nil, zeileUnlesbar(err)
 		}
 		r.ErstelltAm = t.Format(datumsformat)
 		if erledigtAm != nil {

@@ -137,9 +137,10 @@ func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titelID string)
 
 	for rows.Next() {
 		var barcode string
-		if err := rows.Scan(&barcode); err == nil {
-			verliehen = append(verliehen, barcode)
+		if err := rows.Scan(&barcode); err != nil {
+			return fmt.Errorf("failed to read active loans for title: %w", zeileUnlesbar(err))
 		}
+		verliehen = append(verliehen, barcode)
 	}
 	// Bricht die Iteration durch einen Verbindungsfehler vorzeitig ab, heißt das nicht
 	// „keine aktiven Ausleihen"; der Titel darf dann nicht gelöscht werden.

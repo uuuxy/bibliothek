@@ -511,15 +511,6 @@ Ordner des Pakets und für die Form `paket.Name`.
   [STIL.md](STIL.md), Abschnitt 2, eintragen.
 - Die Oberfläche: 459 Dateien ohne Tests, `Student` in 30 Dateinamen gegen 15 mit `schueler`
   oder `leser`.
-- Sechzehn Abfragen in `repository/` lassen eine Zeile aus, die sich nicht lesen lässt, statt
-  den Fehler zu melden (`repository/zeile_unlesbar.go` nennt die Regel): mit `continue` in
-  `klassenleitung.go`, `kontoauszug.go`, `protokoll_lesen.go` und dreimal in `statistik.go`;
-  mit „nur anhängen, wenn kein Fehler" in `etikett_daten.go` (zweimal), `leser_liste.go`,
-  `mahnwesen_ueberfaellige.go`, `mail_vorlagen.go`, `nachschlagelisten.go` (zweimal),
-  `rechte.go`, `titel_cover.go` und `titel_loeschen.go`. Die Liste kommt dann kürzer an, und
-  niemand erfährt es. Nächster Schritt: je Stelle den Fehler mit `zeileUnlesbar` zurückgeben
-  und die Prüfung aus `einstellungen_lesefehler_ratsche_test.go` auf das Paket ausdehnen; ein
-  Test je Stelle stellt die unlesbare Zeile nach.
 - `repository.BescheidBriefPosition.SchuelerName` füllt keine Abfrage: `LadePositionen` liest
   Art, Titel, ISBN und Betrag. Das Feld steht als leerer Text `schueler_name` in der Antwort.
   Nächster Schritt: nachsehen, ob die Oberfläche das Feld liest, und es dann füllen oder

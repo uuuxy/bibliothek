@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"bibliothek/pkg/schulzeit"
@@ -148,9 +147,8 @@ func schuljahresBeginn(t time.Time) time.Time {
 	return time.Date(jahr, time.August, 1, 0, 0, 0, 0, t.Location())
 }
 
-// LadeRenner liefert die meistausgeliehenen Titel (best-effort: bei einem
-// Query- oder Iterationsfehler wird eine leere Liste statt eines Fehlers geliefert).
-func LadeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typFilter string, limit int) []Renner {
+// LadeRenner liefert die meistausgeliehenen Titel.
+func LadeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typFilter string, limit int) ([]Renner, error) {
 	renner := []Renner{}
 	q := fmt.Sprintf(`
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''),
@@ -166,34 +164,28 @@ func LadeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typFilter st
 	`, ausleihenFilter, typFilter, limit)
 	rows, err := db.Query(ctx, q)
 	if err != nil {
-		return renner
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var p Renner
-		// Scan-Fehler nicht stillschweigend überspringen: Laufen Query und Struct
-		// auseinander (Spalte ergänzt/entfernt), wäre die Liste sonst einfach leer —
-		// nicht von "keine Treffer" zu unterscheiden.
 		if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Anzahl); err != nil {
-			log.Printf("stats: Renner-Zeile unlesbar: %v", err)
-			continue
+			return nil, zeileUnlesbar(err)
 		}
 		renner = append(renner, p)
 	}
-	// Bei einem Abbruch mitten in der Iteration keine irreführende Teil-Top-Liste
-	// zeigen (best-effort-Sektion, daher verwerfen statt 500).
 	if err := rows.Err(); err != nil {
-		return []Renner{}
+		return nil, err
 	}
-	return renner
+	return renner, nil
 }
 
 // LadeLadenhueter liefert die Ladenhüter: entweder seit >2 Jahren nicht mehr
 // ausgeliehen, oder noch nie ausgeliehen und bereits seit >2 Jahren im Bestand. Der
 // Bestandsalter-Filter (MIN(e.erstellt_am)) verhindert, dass frisch gekaufte Neuzugänge
 // — nie ausgeliehen, weil brandneu — sofort auf der Aussonderungsliste landen und
-// versehentlich entsorgt werden. Best-effort mit leerer Liste bei Fehlern.
-func LadeLadenhueter(ctx context.Context, db Datenbank, typFilter string, limit int) []Ladenhueter {
+// versehentlich entsorgt werden.
+func LadeLadenhueter(ctx context.Context, db Datenbank, typFilter string, limit int) ([]Ladenhueter, error) {
 	ladenhueter := []Ladenhueter{}
 	// t.id mitliefern: Es wird ohnehin danach gruppiert (eine Zeile je Titel), war aber
 	// nicht Teil der Projektion — dem Client fehlte damit der eindeutige Schlüssel.
@@ -213,16 +205,14 @@ func LadeLadenhueter(ctx context.Context, db Datenbank, typFilter string, limit 
 	`, typFilter, limit)
 	rows, err := db.Query(ctx, q)
 	if err != nil {
-		return ladenhueter
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var l Ladenhueter
 		var letzteAusleihe *time.Time
-		// Wie oben: ein verschluckter Scan-Fehler sähe aus wie "keine Ladenhüter".
 		if err := rows.Scan(&l.ID, &l.Titel, &l.Autor, &l.ISBN, &l.Fachbereich, &l.Systematik, &l.Erscheinungsjahr, &letzteAusleihe); err != nil {
-			log.Printf("stats: Ladenhüter-Zeile unlesbar: %v", err)
-			continue
+			return nil, zeileUnlesbar(err)
 		}
 		l.LetzteAusleihe = "Nie ausgeliehen"
 		if letzteAusleihe != nil {
@@ -230,11 +220,10 @@ func LadeLadenhueter(ctx context.Context, db Datenbank, typFilter string, limit 
 		}
 		ladenhueter = append(ladenhueter, l)
 	}
-	// Bei Iterationsabbruch keine irreführende Teil-Ladenhüterliste zeigen.
 	if err := rows.Err(); err != nil {
-		return []Ladenhueter{}
+		return nil, err
 	}
-	return ladenhueter
+	return ladenhueter, nil
 }
 
 // MonatsTrendPunkt ist ein Monat der Aktivitäts-Zeitreihe: wie viele Ausleihen
@@ -249,9 +238,9 @@ type MonatsTrendPunkt struct {
 // LadeMonatsTrend liefert die letzten 12 Monate Ausleih-/Rückgabe-Aktivität als
 // lückenlose (zero-gefüllte) Zeitreihe. Ausleihen zählen nach ausgeliehen_am, Rückgaben
 // nach rueckgabe_am — dieselbe Ausleihe kann also in unterschiedlichen Monaten in beide
-// Serien fallen. Best-effort mit leerer Liste bei Fehlern (wie die übrigen Sektionen);
-// der typeFilter (LMF/Freihand) bindet an t.titel. Bewusst anonym: keine Schülerdaten.
-func LadeMonatsTrend(ctx context.Context, db Datenbank, typFilter string) []MonatsTrendPunkt {
+// Serien fallen. Der typeFilter (LMF/Freihand) bindet an t.titel. Bewusst anonym: keine
+// Schülerdaten.
+func LadeMonatsTrend(ctx context.Context, db Datenbank, typFilter string) ([]MonatsTrendPunkt, error) {
 	trend := []MonatsTrendPunkt{}
 	q := fmt.Sprintf(`
 		WITH monate AS (
@@ -289,19 +278,18 @@ func LadeMonatsTrend(ctx context.Context, db Datenbank, typFilter string) []Mona
 	`, typFilter)
 	rows, err := db.Query(ctx, q)
 	if err != nil {
-		return trend
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var p MonatsTrendPunkt
 		if err := rows.Scan(&p.Monat, &p.Ausleihen, &p.Rueckgaben); err != nil {
-			log.Printf("stats: Monatstrend-Zeile unlesbar: %v", err)
-			continue
+			return nil, zeileUnlesbar(err)
 		}
 		trend = append(trend, p)
 	}
 	if err := rows.Err(); err != nil {
-		return []MonatsTrendPunkt{}
+		return nil, err
 	}
-	return trend
+	return trend, nil
 }

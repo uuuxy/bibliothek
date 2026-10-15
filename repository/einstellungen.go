@@ -278,8 +278,8 @@ func LadeEinstellungen(ctx context.Context, q interface {
 	for rows.Next() {
 		var schluessel string
 		var wert *string
-		if scanErr := rows.Scan(&schluessel, &wert); scanErr != nil {
-			continue
+		if err := rows.Scan(&schluessel, &wert); err != nil {
+			return e, zeileUnlesbar(err)
 		}
 		setzeEinstellung(e, schluessel, wert)
 	}

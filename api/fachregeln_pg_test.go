@@ -157,7 +157,10 @@ func TestLadenhueter_NeuzugangIstKeiner(t *testing.T) {
 	}
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	warmers := repository.LadeLadenhueter(ctx, srv.DB.Pool, "", 100)
+	warmers, err := repository.LadeLadenhueter(ctx, srv.DB.Pool, "", 100)
+	if err != nil {
+		t.Fatalf("LadeLadenhueter: %v", err)
+	}
 
 	titel := map[string]bool{}
 	for _, w := range warmers {

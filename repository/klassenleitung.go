@@ -12,8 +12,7 @@ type Klassenleitung struct {
 	ErstelltAm          time.Time
 }
 
-// LadeKlassenleitungen liefert alle Zuordnungen nach Klasse geordnet. Eine Zeile, die sich
-// nicht lesen lässt, wird ausgelassen.
+// LadeKlassenleitungen liefert alle Zuordnungen nach Klasse geordnet.
 func LadeKlassenleitungen(ctx context.Context, db Datenbank) ([]Klassenleitung, error) {
 	rows, err := db.Query(ctx,
 		`SELECT klasse, lehrer_email, erstellt_am FROM klassen_lehrer_mapping ORDER BY klasse`)
@@ -26,7 +25,7 @@ func LadeKlassenleitungen(ctx context.Context, db Datenbank) ([]Klassenleitung, 
 	for rows.Next() {
 		var k Klassenleitung
 		if err := rows.Scan(&k.Klasse, &k.LehrerEmail, &k.ErstelltAm); err != nil {
-			continue
+			return nil, zeileUnlesbar(err)
 		}
 		zeilen = append(zeilen, k)
 	}

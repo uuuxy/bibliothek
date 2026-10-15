@@ -36,7 +36,7 @@ func LadeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.U
 	for rows.Next() {
 		var b KontoauszugBuch
 		if err := rows.Scan(&b.Titel, &b.Barcode, &b.Ausleihdatum, &b.Rueckgabedatum); err != nil {
-			continue
+			return nil, zeileUnlesbar(err)
 		}
 		buecher = append(buecher, b)
 	}

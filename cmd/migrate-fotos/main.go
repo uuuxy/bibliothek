@@ -189,7 +189,7 @@ func ladeSchuelerIDs(pool db.Pool, barcodes []string) (map[string]string, bool) 
 		var barcode, schuelerID string
 		if err := zeilen.Scan(&barcode, &schuelerID); err != nil {
 			slog.Error("Fehler beim Scannen der Schueler-ID", "error", err)
-			continue
+			return nil, false
 		}
 		schuelerIDs[barcode] = schuelerID
 	}

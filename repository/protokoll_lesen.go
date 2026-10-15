@@ -89,7 +89,7 @@ func LadeAdminProtokoll(ctx context.Context, db Datenbank) ([]AdminProtokollZeil
 	for rows.Next() {
 		var l AdminProtokollZeile
 		if err := rows.Scan(&l.ID, &l.AdminID, &l.AdminName, &l.Aktion, &l.Details, &l.IPAdresse, &l.Zeitstempel); err != nil {
-			continue
+			return nil, zeileUnlesbar(err)
 		}
 		zeilen = append(zeilen, l)
 	}

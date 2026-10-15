@@ -83,9 +83,10 @@ func LadeEtikettDatenDesTitels(ctx context.Context, db Datenbank, titelID string
 	var items []EtikettDaten
 	for rows.Next() {
 		var item EtikettDaten
-		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr, &item.Signatur, &item.Topf); err == nil {
-			items = append(items, item)
+		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr, &item.Signatur, &item.Topf); err != nil {
+			return nil, zeileUnlesbar(err)
 		}
+		items = append(items, item)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("datenbankfehler: %w", err)
@@ -122,9 +123,10 @@ func LadeEtikettServerfelderZuBarcodes(ctx context.Context, db Datenbank, barcod
 	for rows.Next() {
 		var barcode string
 		var felder EtikettServerfelder
-		if err := rows.Scan(&barcode, &felder.Jahr, &felder.Signatur, &felder.Topf); err == nil {
-			bekannt[barcode] = felder
+		if err := rows.Scan(&barcode, &felder.Jahr, &felder.Signatur, &felder.Topf); err != nil {
+			return nil, zeileUnlesbar(err)
 		}
+		bekannt[barcode] = felder
 	}
 	if err := rows.Err(); err != nil {
 		return nil, zeileUnlesbar(err)

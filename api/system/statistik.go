@@ -37,11 +37,23 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		bestandsFilter, bestandsName := repository.BestandsFilterBedingung(r.URL.Query().Get("type"))
 		listenGrenze := leseListenGrenze(r.URL.Query().Get("limit"))
 
+		// Jeder Abschnitt steht für sich: Scheitert einer, bleibt er leer und steht im Log, die
+		// übrigen erscheinen trotzdem. Eine Teilliste zeigt keiner, weil sie wie ein Ergebnis
+		// aussähe.
+
 		// 1. Beliebteste Titel (die Renner), mit den Feldern der Detailseite
-		renner := repository.LadeRenner(ctx, t.DB.Pool, ausleihenFilter, bestandsFilter, listenGrenze)
+		renner, err := repository.LadeRenner(ctx, t.DB.Pool, ausleihenFilter, bestandsFilter, listenGrenze)
+		if err != nil {
+			log.Printf("stats: Renner konnten nicht ermittelt werden: %v", err)
+			renner = []repository.Renner{}
+		}
 
 		// 2. Ladenhüter (seit zwei Jahren oder nie ausgeliehen), mit den Feldern der Detailseite
-		ladenhueter := repository.LadeLadenhueter(ctx, t.DB.Pool, bestandsFilter, listenGrenze)
+		ladenhueter, err := repository.LadeLadenhueter(ctx, t.DB.Pool, bestandsFilter, listenGrenze)
+		if err != nil {
+			log.Printf("stats: Ladenhüter konnten nicht ermittelt werden: %v", err)
+			ladenhueter = []repository.Ladenhueter{}
+		}
 
 		// 3. Verlust-, Finanz- und Zirkulationskennzahlen (ein aggregierter Scan)
 		kennzahlen, err := repository.LadeBestandKennzahlen(ctx, t.DB.Pool, bestandsFilter)
@@ -53,7 +65,11 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		// 4. Aktivitäts-Zeitreihe (Ausleihen/Rückgaben je Monat, letzte 12 Monate).
 		//    Bewusst nicht vom ?zeitraum-Parameter abhängig: der Trend definiert sein
 		//    eigenes 12-Monats-Fenster; der Bestand-Filter (LMF/Freihand) gilt aber.
-		monatsTrend := repository.LadeMonatsTrend(ctx, t.DB.Pool, bestandsFilter)
+		monatsTrend, err := repository.LadeMonatsTrend(ctx, t.DB.Pool, bestandsFilter)
+		if err != nil {
+			log.Printf("stats: Monatstrend konnte nicht ermittelt werden: %v", err)
+			monatsTrend = []repository.MonatsTrendPunkt{}
+		}
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"filter_type":    bestandsName,

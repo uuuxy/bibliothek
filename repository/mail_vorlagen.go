@@ -22,9 +22,10 @@ func LadeMailVorlagen(ctx context.Context, db Datenbank) ([]MailVorlage, error) 
 	var vorlagen []MailVorlage
 	for rows.Next() {
 		var v MailVorlage
-		if err := rows.Scan(&v.ID, &v.Typ, &v.Betreff, &v.TextBody, &v.AktualisiertAm); err == nil {
-			vorlagen = append(vorlagen, v)
+		if err := rows.Scan(&v.ID, &v.Typ, &v.Betreff, &v.TextBody, &v.AktualisiertAm); err != nil {
+			return nil, zeileUnlesbar(err)
 		}
+		vorlagen = append(vorlagen, v)
 	}
 	return vorlagen, rows.Err()
 }
