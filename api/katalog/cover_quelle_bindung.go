@@ -40,17 +40,17 @@ func coverDateiname(isbn, sichereURL string) string {
 	return isbnutil.OhneTrenner(isbn) + "-" + hex.EncodeToString(sum[:6]) + ".webp"
 }
 
-// coverQuelleErlaubt entscheidet, ob sichereURL für diese ISBN heruntergeladen werden
+// istCoverQuelleErlaubt entscheidet, ob sichereURL für diese ISBN heruntergeladen werden
 // darf. Erlaubt ist eine im Katalog gespeicherte Adresse dieser ISBN, oder eine der beiden
 // herleitbaren Kandidaten-Adressen — letztere ohne Anmeldung nur für ISBNs, die es im
 // Katalog gibt (die ISBN-Suche beim Anlegen eines Titels läuft angemeldet). Fehler zählen
 // als „nein": im Zweifel kein Download.
-func (s *Tueren) coverQuelleErlaubt(r *http.Request, isbn, sichereURL string) bool {
-	if s.DB == nil || s.DB.Pool == nil {
+func (t *Tueren) istCoverQuelleErlaubt(r *http.Request, isbn, sichereURL string) bool {
+	if t.DB == nil || t.DB.Pool == nil {
 		return false
 	}
 	isbnSauber := isbnutil.OhneTrenner(isbn)
-	quellen, imKatalog, err := repository.LadeCoverQuellenFuerISBN(r.Context(), s.DB.Pool, isbnSauber)
+	quellen, imKatalog, err := repository.LadeCoverQuellenFuerISBN(r.Context(), t.DB.Pool, isbnSauber)
 	if err != nil {
 		return false
 	}
@@ -61,7 +61,7 @@ func (s *Tueren) coverQuelleErlaubt(r *http.Request, isbn, sichereURL string) bo
 	}
 	for _, k := range coverKandidatenFuerISBN(isbnSauber) {
 		if gepr, ok := coverquelle.SichereURL(k, coverquelle.BildHosts); ok && gepr == sichereURL {
-			return imKatalog || s.istAngemeldet(r)
+			return imKatalog || t.istAngemeldet(r)
 		}
 	}
 	return false
@@ -69,10 +69,10 @@ func (s *Tueren) coverQuelleErlaubt(r *http.Request, isbn, sichereURL string) bo
 
 // istAngemeldet prüft die Sitzung, ohne den Zugriff zu erzwingen — der Endpunkt bleibt
 // öffentlich, die Anmeldung erweitert nur, was heruntergeladen werden darf.
-func (s *Tueren) istAngemeldet(r *http.Request) bool {
-	if s.Auth == nil {
+func (t *Tueren) istAngemeldet(r *http.Request) bool {
+	if t.Auth == nil {
 		return false
 	}
-	_, _, err := s.PruefeSitzung(r)
+	_, _, err := t.PruefeSitzung(r)
 	return err == nil
 }

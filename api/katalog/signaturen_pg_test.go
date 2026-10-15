@@ -19,7 +19,7 @@ import (
 	"bibliothek/repository"
 )
 
-// TestSignaturScope_PraefixMitGrenze ist der Kern-Regressionstest der Signatur-Umstellung.
+// TestSignaturBereich_PraefixMitGrenze ist der Kern-Regressionstest der Signatur-Umstellung.
 //
 // Vorher filterte der Inventur-Scope auf buecher_titel.signature_id — eine Spalte, die
 // ausser Migration 021 nie jemand geschrieben hat. Eine Signatur-Inventur traf damit NULL
@@ -29,7 +29,7 @@ import (
 //
 // Die Signatur wirkt als Praefix mit Grenze am Leerzeichen: "BIB Deu" meint das Regal
 // samt Unterfaechern, "BIB De" ist eine andere Adresse und darf nicht hineinreichen.
-func TestSignaturScope_PraefixMitGrenze(t *testing.T) {
+func TestSignaturBereich_PraefixMitGrenze(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	testdaten.LeereBestandsdaten(t, pool)
@@ -87,11 +87,11 @@ func TestSignaturenEndpunkte(t *testing.T) {
 
 	// 1) Liste: die drei angelegten Signaturen tauchen als eigene Gruppen auf.
 	rec := httptest.NewRecorder()
-	srv.GetSignaturenHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/signaturen", nil))
+	srv.Signaturen().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/signaturen", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Signaturliste: Status %d", rec.Code)
 	}
-	var gruppen []SignaturGruppe
+	var gruppen []signaturGruppe
 	if err := json.Unmarshal(rec.Body.Bytes(), &gruppen); err != nil {
 		t.Fatalf("Signaturliste unlesbar: %v", err)
 	}
@@ -108,30 +108,30 @@ func TestSignaturenEndpunkte(t *testing.T) {
 	// 2) Regalansicht: Praefix trifft Basis + Unterfach, aber nicht den Nachbarn ohne Grenze.
 	rec = httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/signaturen/buecher?signatur="+url.QueryEscape(basis), nil)
-	srv.GetSignaturBuecherHandler().ServeHTTP(rec, req)
+	srv.TitelUnterSignatur().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Regalansicht: Status %d", rec.Code)
 	}
-	var regal SignaturBuecherResponse
+	var regal titelUnterSignaturAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &regal); err != nil {
 		t.Fatalf("Regalansicht unlesbar: %v", err)
 	}
-	if len(regal.Buecher) != 2 {
-		t.Fatalf("Regal %q: erwartet 2 Titel (Basis + Unterfach), waren %d", basis, len(regal.Buecher))
+	if len(regal.Titel) != 2 {
+		t.Fatalf("Regal %q: erwartet 2 Titel (Basis + Unterfach), waren %d", basis, len(regal.Titel))
 	}
-	for _, b := range regal.Buecher {
+	for _, b := range regal.Titel {
 		if b.Signatur == basis+"X" {
 			t.Errorf("Nachbarsignatur %q darf nicht im Regal %q stehen", b.Signatur, basis)
 		}
 	}
 	// Regalreihenfolge: danach laeuft man das Regal ab.
-	if regal.Buecher[0].Signatur != basis {
-		t.Errorf("Regal nicht nach Signatur sortiert: erste Zeile %q", regal.Buecher[0].Signatur)
+	if regal.Titel[0].Signatur != basis {
+		t.Errorf("Regal nicht nach Signatur sortiert: erste Zeile %q", regal.Titel[0].Signatur)
 	}
 
 	// 3) Leere Signatur wird abgewiesen — sie waere Praefix von allem.
 	rec = httptest.NewRecorder()
-	srv.GetSignaturBuecherHandler().ServeHTTP(rec,
+	srv.TitelUnterSignatur().ServeHTTP(rec,
 		httptest.NewRequest(http.MethodGet, "/api/signaturen/buecher?signatur=%20", nil))
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("leere Signatur: erwartet 400, war %d", rec.Code)
@@ -163,15 +163,15 @@ func TestSignaturenListe_FasstNachRegaladresseZusammen(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	rec := httptest.NewRecorder()
-	srv.GetSignaturenHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/signaturen", nil))
+	srv.Signaturen().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/signaturen", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Signaturliste: Status %d", rec.Code)
 	}
-	var gruppen []SignaturGruppe
+	var gruppen []signaturGruppe
 	if err := json.Unmarshal(rec.Body.Bytes(), &gruppen); err != nil {
 		t.Fatalf("Signaturliste unlesbar: %v", err)
 	}
-	gefunden := map[string]SignaturGruppe{}
+	gefunden := map[string]signaturGruppe{}
 	for _, g := range gruppen {
 		if strings.Contains(g.Signatur, repository.SignaturTrenner) {
 			t.Errorf("Die Liste nennt eine ganze Aufschrift: %q", g.Signatur)
@@ -187,17 +187,17 @@ func TestSignaturenListe_FasstNachRegaladresseZusammen(t *testing.T) {
 
 	// Die Regalansicht zu einer Zeile der Liste zeigt deren Titel mit der ganzen Aufschrift.
 	rec = httptest.NewRecorder()
-	srv.GetSignaturBuecherHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet,
+	srv.TitelUnterSignatur().ServeHTTP(rec, httptest.NewRequest(http.MethodGet,
 		"/api/signaturen/buecher?signatur="+url.QueryEscape(regal), nil))
-	var ansicht SignaturBuecherResponse
+	var ansicht titelUnterSignaturAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &ansicht); err != nil {
 		t.Fatalf("Regalansicht unlesbar: %v", err)
 	}
-	if len(ansicht.Buecher) != 4 {
-		t.Fatalf("Regal %q: %d Titel in der Ansicht, erwartet 4", regal, len(ansicht.Buecher))
+	if len(ansicht.Titel) != 4 {
+		t.Fatalf("Regal %q: %d Titel in der Ansicht, erwartet 4", regal, len(ansicht.Titel))
 	}
 	ganze := map[string]bool{}
-	for _, b := range ansicht.Buecher {
+	for _, b := range ansicht.Titel {
 		ganze[b.Signatur] = true
 	}
 	for _, aufschrift := range aufschriften[:4] {

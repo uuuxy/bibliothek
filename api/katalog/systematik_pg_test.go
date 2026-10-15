@@ -23,7 +23,7 @@ func systematikAnlegen(t *testing.T, srv *Tueren, kuerzel, bezeichnung string) (
 		t.Fatalf("Anfrage kodieren: %v", err)
 	}
 	rec := httptest.NewRecorder()
-	srv.CreateSystematikHandler().ServeHTTP(rec,
+	srv.SachgruppeAnlegen().ServeHTTP(rec,
 		httptest.NewRequest(http.MethodPost, "/api/systematics", bytes.NewReader(koerper)))
 
 	// Fehlerantworten tragen kein id-Feld — das ist erwartbar und kein Testfehler.
@@ -34,10 +34,10 @@ func systematikAnlegen(t *testing.T, srv *Tueren, kuerzel, bezeichnung string) (
 	return rec, antwort["id"]
 }
 
-// TestSystematikAnlegen belegt die Luecke, die diese Aenderung schliesst: Das Vokabular,
+// TestSachgruppeAnlegen belegt die Luecke, die diese Aenderung schliesst: Das Vokabular,
 // aus dem das Buchformular die Signatur vorschlaegt, war bisher nur lesbar — es gab
 // keinen Weg, es zu fuellen, obwohl der Vorschlag davon abhaengt.
-func TestSystematikAnlegen(t *testing.T) {
+func TestSachgruppeAnlegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -84,12 +84,12 @@ func TestSystematikAnlegen(t *testing.T) {
 	}
 }
 
-// TestSystematikLoeschenGeschuetzt sichert den Waechter des Handlers ab: 409 mit
+// TestSachgruppeLoeschenGeschuetzt sichert den Waechter des Handlers ab: 409 mit
 // verstaendlicher Meldung, solange Titel auf dem Fach stehen. Seit Migration 078
 // haelt zusaetzlich die Datenbank dagegen (fk_titel_subject_systematik, ON DELETE
 // RESTRICT) — der Handler bleibt fuer die fachliche Meldung zustaendig, der FK ist
 // die Rueckfallebene fuer jeden Weg am Handler vorbei.
-func TestSystematikLoeschenGeschuetzt(t *testing.T) {
+func TestSachgruppeLoeschenGeschuetzt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -109,7 +109,7 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodDelete, "/api/systematics/"+id, nil)
 		req.SetPathValue("id", id)
-		srv.DeleteSystematikHandler().ServeHTTP(rec, req)
+		srv.SachgruppeLoeschen().ServeHTTP(rec, req)
 		return rec.Code
 	}
 
@@ -146,11 +146,11 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 	}
 }
 
-// TestSystematikRenameZiehtTitelMit belegt den F3-Fix: Wird eine Sachgruppe
+// TestSachgruppeAendern_ZiehtTitelMit belegt den F3-Fix: Wird eine Sachgruppe
 // umbenannt, wandert die neue Bezeichnung auf die Titel (buecher_titel.subject) —
 // sonst blieben sie lautlos auf dem alten Fachnamen und fielen aus der Fach-Auswahl.
 // Die Signatur (Kürzel am Buchrücken) bleibt bewusst unberührt.
-func TestSystematikRenameZiehtTitelMit(t *testing.T) {
+func TestSachgruppeAendern_ZiehtTitelMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -193,7 +193,7 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPut, "/api/systematics/"+id, bytes.NewReader(koerper))
 	req.SetPathValue("id", id)
-	srv.UpdateSystematikHandler().ServeHTTP(rec, req)
+	srv.SachgruppeAendern().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Umbenennen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
@@ -239,7 +239,7 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 
 // Eine unbekannte Sachgruppe zu ändern ist ein 404; eine Bezeichnung, die eine andere schon
 // trägt, ein 409, und die Sachgruppe behält ihre.
-func TestSystematikAendern_UnbekanntUndDoppelt(t *testing.T) {
+func TestSachgruppeAendern_UnbekanntUndDoppelt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -264,7 +264,7 @@ func TestSystematikAendern_UnbekanntUndDoppelt(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/api/systematics/"+id, bytes.NewReader(koerper))
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		srv.UpdateSystematikHandler().ServeHTTP(rec, req)
+		srv.SachgruppeAendern().ServeHTTP(rec, req)
 		return rec
 	}
 

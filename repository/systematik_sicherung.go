@@ -74,7 +74,7 @@ func sichereEinFach(ctx context.Context, db fachSchreiber, fach string) (string,
 
 // registriereFach legt das Fach als Sachgruppe an. Kürzel-Kandidat ist die Bezeichnung
 // ohne Leerzeichen (Kürzel bilden Signatur-Vorschläge und dürfen keine tragen, siehe
-// systematikRequest.pruefe im api-Paket); kollidiert er mit einem bestehenden Kürzel,
+// sachgruppeAnfrage.pruefe in api/katalog); kollidiert er mit einem bestehenden Kürzel,
 // entscheidet ein Hash-Suffix. Der Konflikt auf lower(bezeichnung) ist dagegen das
 // benigne Rennen zweier Importe — DO NOTHING, der Aufrufer liest danach den Gewinner.
 func registriereFach(ctx context.Context, db fachSchreiber, fach string) error {

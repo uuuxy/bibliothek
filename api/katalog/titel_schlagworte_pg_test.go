@@ -34,18 +34,18 @@ func TestTitelSchlagworte_TuerDesBestellkorbs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	aufruf := func(methode, titelID, koerper string) (int, TitelSchlagworte, string) {
+	aufruf := func(methode, titelID, koerper string) (int, titelSchlagworteAntwort, string) {
 		t.Helper()
 		req := httptest.NewRequest(methode, "/api/buecher/titel/"+titelID+"/schlagworte", strings.NewReader(koerper))
 		req.SetPathValue("id", titelID)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		if methode == http.MethodGet {
-			srv.GetTitelSchlagworteHandler()(rec, req)
+			srv.TitelSchlagworte()(rec, req)
 		} else {
-			srv.PutTitelSchlagworteHandler()(rec, req)
+			srv.TitelSchlagworteSetzen()(rec, req)
 		}
-		var antwort TitelSchlagworte
+		var antwort titelSchlagworteAntwort
 		if rec.Code == http.StatusOK {
 			if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 				t.Fatalf("Antwort unlesbar: %v — %s", err, rec.Body.String())
@@ -135,7 +135,7 @@ func TestSchlagwortVorschlaege_AusDemBestand(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	srv.GetSchlagwortVorschlaegeHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/schlagworte", nil))
+	srv.SchlagwortVorschlaege()(rec, httptest.NewRequest(http.MethodGet, "/api/schlagworte", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -151,7 +151,7 @@ func TestSchlagwortVorschlaege_AusDemBestand(t *testing.T) {
 	// Beim Tippen fragt das Feld mit ?suche= (Rasterdurchgang vom 30.09.2026): Die Tür reicht
 	// den Text an die Abfrage weiter, die über alle Wörter sucht (repository-Test dazu).
 	rec = httptest.NewRecorder()
-	srv.GetSchlagwortVorschlaegeHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/schlagworte?suche=TI", nil))
+	srv.SchlagwortVorschlaege()(rec, httptest.NewRequest(http.MethodGet, "/api/schlagworte?suche=TI", nil))
 	vorschlaege = nil
 	if err := json.Unmarshal(rec.Body.Bytes(), &vorschlaege); rec.Code != http.StatusOK || err != nil {
 		t.Fatalf("?suche=TI: Status %d, %v: %s", rec.Code, err, rec.Body.String())

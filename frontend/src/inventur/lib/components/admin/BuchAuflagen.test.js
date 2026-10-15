@@ -14,7 +14,7 @@ import BuchAuflagen from './BuchAuflagen.svelte';
 // „Andere Auflagen" in der Gruppe „An der Schule" der Titelmaske (docs/OFFEN.md 4.18,
 // Stufe 2): Beschriftung, Liste, Knopf und Hinweis wie ein Feld, keine eigene Überschrift. GET
 // /api/buecher/titel/{id}/auflagen antwortet mit { id, auflagen } — die Auflagen des Buchs,
-// die neueste zuerst, ohne Gruppe nur der Titel selbst (api/katalog/auflagen_handler.go).
+// die neueste zuerst, ohne Gruppe nur der Titel selbst (api/katalog/titel_auflagen.go).
 
 const auflage = (id, auflage, jahr, gesamt = 30, verfuegbar = 28) => ({
 	id,

@@ -131,7 +131,7 @@ var fkAktionenBestand = []string{
 	"SET NULL  bestellungen_positionen.titel_id -> buecher_titel",
 	// Befragt: Ein Werk löscht nur repository/auflagen.go, und
 	// erst, nachdem es den letzten Titel daran gelöst hat (raeumeWerkAuf, vereineWerke) —
-	// api/katalog/auflagen_pg_test.go zählt danach die Werke. Der SET NULL fängt einen Titel auf, der
+	// api/katalog/titel_auflagen_pg_test.go zählt danach die Werke. Der SET NULL fängt einen Titel auf, der
 	// dabei übersehen würde: Er steht danach allein, wie vor dem Zusammenfassen, und nichts
 	// anderes hängt an werk_id. Im Protokoll steht das Zusammenfassen nicht, so wenig wie
 	// jede andere Änderung an Titeldaten.

@@ -104,11 +104,11 @@ func TestFachAutoRegistrierung(t *testing.T) {
 	}
 }
 
-// TestSystematikRenameZiehtOffeneInventurMit sichert den Anschluss der Inventur an die
+// TestSachgruppeAendern_ZiehtOffeneInventurMit sichert den Anschluss der Inventur an die
 // Umbenennung: scope_subject offener Sessions ist Text, kein FK — bliebe er auf dem
 // alten Namen, zählte die Session null Exemplare und jeder Scan liefe auf 409.
 // Abgeschlossene Sessions sind Historie und behalten den alten Namen.
-func TestSystematikRenameZiehtOffeneInventurMit(t *testing.T) {
+func TestSachgruppeAendern_ZiehtOffeneInventurMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -143,7 +143,7 @@ func TestSystematikRenameZiehtOffeneInventurMit(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPut, "/api/systematics/"+id, bytes.NewReader(koerper))
 	req.SetPathValue("id", id)
-	srv.UpdateSystematikHandler().ServeHTTP(rec, req)
+	srv.SachgruppeAendern().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Umbenennen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}

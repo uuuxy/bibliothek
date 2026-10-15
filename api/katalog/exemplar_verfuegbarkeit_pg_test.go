@@ -42,7 +42,7 @@ func exemplarZeilen(t *testing.T, srv *Tueren, titelID string) []struct {
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()
 
-	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(srv.DB.Pool))(rec, req)
+	srv.TitelExemplare(repository.NewBescheidAbfragen(srv.DB.Pool))(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Exemplarliste: Status %d, Body %s", rec.Code, rec.Body.String())
@@ -72,7 +72,7 @@ func verfuegbarkeitNach(t *testing.T, srv *Tueren, titelID, barcode string) bool
 	return false
 }
 
-func TestExemplarliste_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
+func TestTitelExemplare_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -132,7 +132,7 @@ func TestExemplarliste_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 
 // Ein Titel ohne Exemplare liefert eine leere Liste und keinen Fehler — die
 // Exemplarkarte im Katalog ruft dieselbe Route auch für frisch angelegte Titel auf.
-func TestExemplarliste_TitelOhneExemplare(t *testing.T) {
+func TestTitelExemplare_TitelOhneExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

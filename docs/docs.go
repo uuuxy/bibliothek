@@ -944,7 +944,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.UpdateBarcodeRequest"
+                            "$ref": "#/definitions/katalog.exemplarBarcodeAnfrage"
                         }
                     }
                 ],
@@ -1054,7 +1054,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.UpdateStatusRequest"
+                            "$ref": "#/definitions/katalog.exemplarStatusAnfrage"
                         }
                     }
                 ],
@@ -1173,7 +1173,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.TitelAuflagen"
+                            "$ref": "#/definitions/katalog.titelAuflagenAntwort"
                         }
                     },
                     "400": {
@@ -1221,7 +1221,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.AuflageZuordnenRequest"
+                            "$ref": "#/definitions/katalog.auflageZuordnenAnfrage"
                         }
                     }
                 ],
@@ -1229,7 +1229,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.TitelAuflagen"
+                            "$ref": "#/definitions/katalog.titelAuflagenAntwort"
                         }
                     },
                     "400": {
@@ -1273,7 +1273,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.TitelAuflagen"
+                            "$ref": "#/definitions/katalog.titelAuflagenAntwort"
                         }
                     },
                     "400": {
@@ -1386,7 +1386,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.UpdateTitelLernmittelRequest"
+                            "$ref": "#/definitions/katalog.titelLernmittelAnfrage"
                         }
                     }
                 ],
@@ -1445,7 +1445,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.AuflageZuordnenRequest"
+                            "$ref": "#/definitions/katalog.auflageZuordnenAnfrage"
                         }
                     }
                 ],
@@ -1453,7 +1453,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.TitelAuflagen"
+                            "$ref": "#/definitions/katalog.titelAuflagenAntwort"
                         }
                     },
                     "400": {
@@ -1499,7 +1499,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.TitelSchlagworte"
+                            "$ref": "#/definitions/katalog.titelSchlagworteAntwort"
                         }
                     },
                     "400": {
@@ -1547,7 +1547,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.TitelSchlagworteRequest"
+                            "$ref": "#/definitions/katalog.titelSchlagworteAnfrage"
                         }
                     }
                 ],
@@ -1555,7 +1555,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.TitelSchlagworte"
+                            "$ref": "#/definitions/katalog.titelSchlagworteAntwort"
                         }
                     },
                     "400": {
@@ -1605,7 +1605,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.UpdateTitelSignaturRequest"
+                            "$ref": "#/definitions/katalog.titelSignaturAnfrage"
                         }
                     }
                 ],
@@ -1746,7 +1746,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.ExemplarEigentumRequest"
+                            "$ref": "#/definitions/katalog.exemplarEigentumAnfrage"
                         }
                     }
                 ],
@@ -1944,7 +1944,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.ExemplarStandortRequest"
+                            "$ref": "#/definitions/katalog.exemplarStandortAnfrage"
                         }
                     }
                 ],
@@ -2580,7 +2580,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.DnbSchlagwortVorschlag"
+                            "$ref": "#/definitions/katalog.dnbSchlagwortVorschlagAntwort"
                         }
                     },
                     "400": {
@@ -2623,7 +2623,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.SchlagworteLoeschenRequest"
+                            "$ref": "#/definitions/katalog.schlagworteLoeschenAnfrage"
                         }
                     }
                 ],
@@ -2631,7 +2631,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.SchlagwortAenderung"
+                            "$ref": "#/definitions/katalog.schlagwortPflegeAntwort"
                         }
                     },
                     "400": {
@@ -2710,7 +2710,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.SchlagwortVerweisRequest"
+                            "$ref": "#/definitions/katalog.schlagwortVerweisAnfrage"
                         }
                     }
                 ],
@@ -2774,7 +2774,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.SchlagwortFilterRequest"
+                            "$ref": "#/definitions/katalog.schlagwortFilterAnfrage"
                         }
                     }
                 ],
@@ -2838,7 +2838,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.SchlagwortWortRequest"
+                            "$ref": "#/definitions/katalog.schlagwortWortAnfrage"
                         }
                     }
                 ],
@@ -2846,7 +2846,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.SchlagwortAenderung"
+                            "$ref": "#/definitions/katalog.schlagwortPflegeAntwort"
                         }
                     },
                     "400": {
@@ -2905,7 +2905,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.SchlagwortZielRequest"
+                            "$ref": "#/definitions/katalog.schlagwortZielAnfrage"
                         }
                     }
                 ],
@@ -2913,7 +2913,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.SchlagwortAenderung"
+                            "$ref": "#/definitions/katalog.schlagwortPflegeAntwort"
                         }
                     },
                     "400": {
@@ -3391,7 +3391,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/katalog.SignaturGruppe"
+                                "$ref": "#/definitions/katalog.signaturGruppe"
                             }
                         }
                     },
@@ -3430,7 +3430,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/katalog.SignaturBuecherResponse"
+                            "$ref": "#/definitions/katalog.titelUnterSignaturAntwort"
                         }
                     },
                     "400": {
@@ -3543,7 +3543,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.systematikRequest"
+                            "$ref": "#/definitions/katalog.sachgruppeAnfrage"
                         }
                     }
                 ],
@@ -3604,7 +3604,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/katalog.systematikRequest"
+                            "$ref": "#/definitions/katalog.sachgruppeAnfrage"
                         }
                     }
                 ],
@@ -4370,7 +4370,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.AuflageZuordnenRequest": {
+        "katalog.auflageZuordnenAnfrage": {
             "type": "object",
             "required": [
                 "titel_id"
@@ -4381,7 +4381,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.DnbSchlagwortVorschlag": {
+        "katalog.dnbSchlagwortVorschlagAntwort": {
             "type": "object",
             "properties": {
                 "dnb_satz": {
@@ -4404,7 +4404,15 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.ExemplarEigentumRequest": {
+        "katalog.exemplarBarcodeAnfrage": {
+            "type": "object",
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.exemplarEigentumAnfrage": {
             "type": "object",
             "required": [
                 "exemplar_ids"
@@ -4426,7 +4434,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.ExemplarStandortRequest": {
+        "katalog.exemplarStandortAnfrage": {
             "type": "object",
             "required": [
                 "exemplar_ids",
@@ -4446,7 +4454,46 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.SchlagwortAenderung": {
+        "katalog.exemplarStatusAnfrage": {
+            "type": "object",
+            "properties": {
+                "ist_ausgesondert": {
+                    "type": "boolean"
+                },
+                "ist_ausleihbar": {
+                    "type": "boolean"
+                },
+                "zustand_abwertung_prozent": {
+                    "description": "ZustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127,\nAnforderungsliste Nr. 2). Ein ZEIGER, weil das Feld drei Zustände hat: ein Wert\nsetzt, 0 setzt auf null zurück, und FEHLT heißt „unangetastet\". Ohne diese\nUnterscheidung löschte jeder andere Aufruf dieser Tür einen erfassten Wasserschaden.\n\n0–100, weil die Spalte es auch tut (chk_zustand_abwertung_bereich): Ohne Prüfung\nhier käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.",
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "zustand_notiz": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.sachgruppeAnfrage": {
+            "type": "object",
+            "properties": {
+                "bezeichnung": {
+                    "type": "string"
+                },
+                "kuerzel": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.schlagwortFilterAnfrage": {
+            "type": "object",
+            "properties": {
+                "ist_filter": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "katalog.schlagwortPflegeAntwort": {
             "type": "object",
             "properties": {
                 "titel": {
@@ -4463,15 +4510,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.SchlagwortFilterRequest": {
-            "type": "object",
-            "properties": {
-                "ist_filter": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "katalog.SchlagwortVerweisRequest": {
+        "katalog.schlagwortVerweisAnfrage": {
             "type": "object",
             "required": [
                 "ziel_id"
@@ -4485,7 +4524,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.SchlagwortWortRequest": {
+        "katalog.schlagwortWortAnfrage": {
             "type": "object",
             "properties": {
                 "alte_als_verweis": {
@@ -4496,7 +4535,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.SchlagwortZielRequest": {
+        "katalog.schlagwortZielAnfrage": {
             "type": "object",
             "required": [
                 "ziel_id"
@@ -4510,7 +4549,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.SchlagworteLoeschenRequest": {
+        "katalog.schlagworteLoeschenAnfrage": {
             "type": "object",
             "required": [
                 "ids"
@@ -4524,7 +4563,21 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.SignaturBuch": {
+        "katalog.signaturGruppe": {
+            "type": "object",
+            "properties": {
+                "exemplare": {
+                    "type": "integer"
+                },
+                "signatur": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "integer"
+                }
+            }
+        },
+        "katalog.signaturTitel": {
             "type": "object",
             "properties": {
                 "autor": {
@@ -4550,41 +4603,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.SignaturBuecherResponse": {
-            "type": "object",
-            "properties": {
-                "buecher": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/katalog.SignaturBuch"
-                    }
-                },
-                "gekappt": {
-                    "type": "boolean"
-                },
-                "gesamt": {
-                    "type": "integer"
-                },
-                "signatur": {
-                    "type": "string"
-                }
-            }
-        },
-        "katalog.SignaturGruppe": {
-            "type": "object",
-            "properties": {
-                "exemplare": {
-                    "type": "integer"
-                },
-                "signatur": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "integer"
-                }
-            }
-        },
-        "katalog.TitelAuflagen": {
+        "katalog.titelAuflagenAntwort": {
             "type": "object",
             "properties": {
                 "auflagen": {
@@ -4598,7 +4617,27 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.TitelSchlagworte": {
+        "katalog.titelLernmittelAnfrage": {
+            "type": "object",
+            "properties": {
+                "ist_lernmittel": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "katalog.titelSchlagworteAnfrage": {
+            "type": "object",
+            "properties": {
+                "schlagworte": {
+                    "description": "Zeiger: Ein Körper ohne das Feld ist ein Fehler, keine leere Liste. Diese Tür hat\nkeinen anderen Zweck, als die Schlagworte zu setzen — ein vergessenes Feld darf\nnicht still alle entfernen.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "katalog.titelSchlagworteAntwort": {
             "type": "object",
             "properties": {
                 "id": {
@@ -4612,55 +4651,7 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.TitelSchlagworteRequest": {
-            "type": "object",
-            "properties": {
-                "schlagworte": {
-                    "description": "Zeiger: Ein Körper ohne das Feld ist ein Fehler, keine leere Liste. Diese Tür hat\nkeinen anderen Zweck, als die Schlagworte zu setzen — ein vergessenes Feld darf\nnicht still alle entfernen.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "katalog.UpdateBarcodeRequest": {
-            "type": "object",
-            "properties": {
-                "barcode": {
-                    "type": "string"
-                }
-            }
-        },
-        "katalog.UpdateStatusRequest": {
-            "type": "object",
-            "properties": {
-                "ist_ausgesondert": {
-                    "type": "boolean"
-                },
-                "ist_ausleihbar": {
-                    "type": "boolean"
-                },
-                "zustand_abwertung_prozent": {
-                    "description": "ZustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127,\nAnforderungsliste Nr. 2). Ein ZEIGER, weil das Feld drei Zustände hat: ein Wert\nsetzt, 0 setzt auf null zurück, und FEHLT heißt „unangetastet\". Ohne diese\nUnterscheidung löschte jeder andere Aufruf dieser Tür einen erfassten Wasserschaden.\n\n0–100, weil die Spalte es auch tut (chk_zustand_abwertung_bereich): Ohne Prüfung\nhier käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.",
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 0
-                },
-                "zustand_notiz": {
-                    "type": "string"
-                }
-            }
-        },
-        "katalog.UpdateTitelLernmittelRequest": {
-            "type": "object",
-            "properties": {
-                "ist_lernmittel": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "katalog.UpdateTitelSignaturRequest": {
+        "katalog.titelSignaturAnfrage": {
             "type": "object",
             "properties": {
                 "signatur": {
@@ -4668,13 +4659,22 @@ const docTemplate = `{
                 }
             }
         },
-        "katalog.systematikRequest": {
+        "katalog.titelUnterSignaturAntwort": {
             "type": "object",
             "properties": {
-                "bezeichnung": {
-                    "type": "string"
+                "buecher": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/katalog.signaturTitel"
+                    }
                 },
-                "kuerzel": {
+                "gekappt": {
+                    "type": "boolean"
+                },
+                "gesamt": {
+                    "type": "integer"
+                },
+                "signatur": {
                     "type": "string"
                 }
             }

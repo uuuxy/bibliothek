@@ -25,7 +25,7 @@ import (
 
 // Der Fund vom 05.09.2026, am Handler nachgestellt: Ohne Bindung bestimmte der erste
 // Aufrufer (ohne Anmeldung) das Bild, das unter einer ISBN ausgeliefert wird, und jeder
-// ISBN-artige Schlüssel legte eine Datei an. Mit dem alten image_caching.go lieferte
+// ISBN-artige Schlüssel legte eine Datei an. Mit dem alten cover.go lieferte
 // derselbe Aufbau das Angreiferbild byte-identisch beim zweiten Aufruf und sechs Dateien
 // für sechs Schlüssel (rot gesehen, Probe vor dem Umbau).
 
@@ -46,9 +46,9 @@ func pngEinfarbig(t *testing.T, c color.RGBA) []byte {
 	return b.Bytes()
 }
 
-// coverStub biegt den Cover-Client auf einen lokalen TLS-Server um, der je Pfad ein
+// coverQuelleAttrappe biegt den Cover-Client auf einen lokalen TLS-Server um, der je Pfad ein
 // anderes Bild liefert, und zählt die Downloads.
-func coverStub(t *testing.T) *int {
+func coverQuelleAttrappe(t *testing.T) *int {
 	t.Helper()
 	downloads := 0
 	rot := pngEinfarbig(t, color.RGBA{255, 0, 0, 255})
@@ -81,7 +81,7 @@ func coverStub(t *testing.T) *int {
 	return &downloads
 }
 
-func neuerMockPool(t *testing.T) pgxmock.PgxPoolIface {
+func mockPool(t *testing.T) pgxmock.PgxPoolIface {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -95,7 +95,7 @@ func holeCover(s *Tueren, isbn, adresse string) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/images/cover?isbn="+isbn+"&url="+url.QueryEscape(adresse), nil)
 	req.RemoteAddr = "203.0.113.5:1234"
-	s.serveCoverImage(rr, req)
+	s.liefereCover(rr, req)
 	return rr
 }
 
@@ -107,16 +107,16 @@ func erwarteKatalog(mock pgxmock.PgxPoolIface, coverURLs ...string) {
 	mock.ExpectQuery("FROM buecher_titel WHERE regexp_replace").WithArgs(testISBN).WillReturnRows(rows)
 }
 
-func TestCoverProxy_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
-	downloads := coverStub(t)
-	mock := neuerMockPool(t)
+func TestCover_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
+	downloads := coverQuelleAttrappe(t)
+	mock := mockPool(t)
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	echt := "https://covers.openlibrary.org/b/isbn/" + testISBN + "-L.jpg"
 	erwarteKatalog(mock, echt)
 	rr := holeCover(s, testISBN, "https://covers.openlibrary.org/b/id/FREMD-L.jpg")
 
-	if !bytes.Equal(rr.Body.Bytes(), coverFallbackGIF) {
+	if !bytes.Equal(rr.Body.Bytes(), transparentesGIF) {
 		t.Fatalf("fremde Adresse wurde ausgeliefert (%d Bytes) — want Fallback-GIF", rr.Body.Len())
 	}
 	if *downloads != 0 {
@@ -127,9 +127,9 @@ func TestCoverProxy_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
 	}
 }
 
-func TestCoverProxy_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
-	downloads := coverStub(t)
-	mock := neuerMockPool(t)
+func TestCover_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
+	downloads := coverQuelleAttrappe(t)
+	mock := mockPool(t)
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	// Gespeichert ist die http-Form mit Trennstrich-ISBN — der Vergleich läuft über die
@@ -151,9 +151,9 @@ func TestCoverProxy_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
 
 // Zwei erlaubte Adressen derselben ISBN teilen sich keine Datei: Wer die eine zuerst
 // holt, bestimmt nicht, was unter der anderen liegt.
-func TestCoverProxy_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
-	coverStub(t)
-	mock := neuerMockPool(t)
+func TestCover_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
+	coverQuelleAttrappe(t)
+	mock := mockPool(t)
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	kandidaten := coverKandidatenFuerISBN(testISBN)
@@ -173,26 +173,26 @@ func TestCoverProxy_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
 
 // Ohne Anmeldung nur Katalog-ISBNs: Sonst wäre der Endpunkt ein Plattenfüller — jede
 // erfundene Nummer eine Datei.
-func TestCoverProxy_UnbekannteISBNOhneAnmeldungWirdNichtGeladen(t *testing.T) {
-	downloads := coverStub(t)
-	mock := neuerMockPool(t)
+func TestCover_UnbekannteISBNOhneAnmeldungWirdNichtGeladen(t *testing.T) {
+	downloads := coverQuelleAttrappe(t)
+	mock := mockPool(t)
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	mock.ExpectQuery("FROM buecher_titel WHERE regexp_replace").WithArgs("9780000000001").
 		WillReturnRows(pgxmock.NewRows([]string{"cover_url"}))
 	rr := holeCover(s, "9780000000001", coverKandidatenFuerISBN("9780000000001")[1])
 
-	if !bytes.Equal(rr.Body.Bytes(), coverFallbackGIF) || *downloads != 0 {
+	if !bytes.Equal(rr.Body.Bytes(), transparentesGIF) || *downloads != 0 {
 		t.Fatalf("unbekannte ISBN wurde geladen (Downloads %d, %d Bytes)", *downloads, rr.Body.Len())
 	}
 }
 
 // Ohne erreichbare Datenbank wird nichts geholt — im Zweifel kein Download.
-func TestCoverProxy_OhneDatenbankKeinDownload(t *testing.T) {
-	downloads := coverStub(t)
+func TestCover_OhneDatenbankKeinDownload(t *testing.T) {
+	downloads := coverQuelleAttrappe(t)
 	s := &Tueren{Basis: &tuer.Basis{}}
 	rr := holeCover(s, testISBN, coverKandidatenFuerISBN(testISBN)[1])
-	if !bytes.Equal(rr.Body.Bytes(), coverFallbackGIF) || *downloads != 0 {
+	if !bytes.Equal(rr.Body.Bytes(), transparentesGIF) || *downloads != 0 {
 		t.Fatalf("Download ohne Datenbank (Downloads %d)", *downloads)
 	}
 }
@@ -222,9 +222,9 @@ func TestCoverKandidaten_MusterGleichWieImFrontend(t *testing.T) {
 // Hat eine Quelle kein Cover, antwortet sie mitunter trotzdem mit einem Bild: Google Books
 // mit „image not available" in voller Größe und Status 200. Das Ersatzbild wird nicht als
 // Cover abgelegt; der Aufrufer bekommt das 1×1-GIF und geht zur nächsten Quelle.
-func TestCoverProxy_ErsatzbildWirdNichtAlsCoverAbgelegt(t *testing.T) {
-	downloads := coverStub(t)
-	mock := neuerMockPool(t)
+func TestCover_ErsatzbildWirdNichtAlsCoverAbgelegt(t *testing.T) {
+	downloads := coverQuelleAttrappe(t)
+	mock := mockPool(t)
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	// Der Stub antwortet auf jede Adresse mit demselben blauen Bild.
 	t.Cleanup(coverquelle.MerkeErsatzbildFuerTest(pngEinfarbig(t, color.RGBA{0, 0, 255, 255})))
@@ -232,7 +232,7 @@ func TestCoverProxy_ErsatzbildWirdNichtAlsCoverAbgelegt(t *testing.T) {
 	erwarteKatalog(mock, "") // ISBN im Katalog, ohne gespeichertes Cover
 	rr := holeCover(s, testISBN, coverKandidatenFuerISBN(testISBN)[0])
 
-	if !bytes.Equal(rr.Body.Bytes(), coverFallbackGIF) {
+	if !bytes.Equal(rr.Body.Bytes(), transparentesGIF) {
 		t.Errorf("das Ersatzbild wurde als Cover ausgeliefert (%d Bytes, %s)", rr.Body.Len(), rr.Header().Get("Content-Type"))
 	}
 	if *downloads != 1 {

@@ -17,7 +17,7 @@ import (
 // Den Barcode eines Exemplars ändern, über die Tür: Ein leerer oder schon vergebener Barcode
 // und ein unbekanntes Exemplar werden abgelehnt und ändern nichts; danach ersetzt die Nummer
 // vom Etikett den Platzhalter.
-func TestExemplarBarcodeAendern_UeberDieTuer(t *testing.T) {
+func TestExemplarBarcodeSetzen_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -40,7 +40,7 @@ func TestExemplarBarcodeAendern_UeberDieTuer(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		srv.UpdateCopyBarcodeHandler(repository.NewKatalogAbfragen(pool))(rec, req)
+		srv.ExemplarBarcodeSetzen(repository.NewKatalogAbfragen(pool))(rec, req)
 		return rec
 	}
 

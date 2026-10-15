@@ -23,7 +23,7 @@ import (
 // (docs/OFFEN.md 4.20): die Wörter der eigenen Liste, die der Satz nennt. Ein Vorschlag, kein
 // Eintrag — am neuen Titel darf danach KEIN Schlagwort stehen, bis im Bestellkorb jemand
 // eines übernimmt.
-func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T) {
+func TestLegeTitelAusTrefferAn_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -36,7 +36,7 @@ func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	resp, err := srv.titelAusNachschlagen(ctx, "9783751200530", &inventur.MetadatenErgebnis{
+	resp, err := srv.legeTitelAusTrefferAn(ctx, "9783751200530", &inventur.MetadatenErgebnis{
 		Titel: "Dunkelnacht", Autor: "Boie, Kirsten",
 		Stichwoerter: []string{"Jugendbuch", "Krieg", "Erste Liebe", "TikTok"},
 	})
@@ -46,7 +46,7 @@ func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T
 	if want := []string{"Erste Liebe", "Krieg"}; !slices.Equal(resp.SchlagwortVorschlaege, want) {
 		t.Errorf("Vorschlag %q, erwartet %q", resp.SchlagwortVorschlaege, want)
 	}
-	if resp.Exists || resp.TitelID == "" {
+	if resp.Vorhanden || resp.TitelID == "" {
 		t.Errorf("neuer Titel erwartet: %+v", resp)
 	}
 	var amTitel int
@@ -90,7 +90,7 @@ func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 			<datafield tag="653" ind1=" " ind2=" "><subfield code="a">TikTok</subfield></datafield>
 		  </record>
 		</recordData></record></records></searchRetrieveResponse>`}})
-	tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitel(client)
+	tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitelTuer(client)
 
 	frage := func() map[string]any {
 		t.Helper()
@@ -142,7 +142,7 @@ func TestISBNZuTitel_NormdatenVorhandenUndNeu(t *testing.T) {
 			<datafield tag="650" ind1=" " ind2="7"><subfield code="a">Schulstress</subfield><subfield code="2">gnd</subfield></datafield>
 		  </record>
 		</recordData></record></records></searchRetrieveResponse>`}})
-	tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitel(client)
+	tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitelTuer(client)
 
 	rec := httptest.NewRecorder()
 	tuer(rec, httptest.NewRequest(http.MethodPost, "/api/buecher/aus-isbn", strings.NewReader(`{"isbn":"978-3-499-50091-6"}`)))

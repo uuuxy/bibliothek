@@ -32,7 +32,7 @@ import (
 func naechsteInterneNummer(t *testing.T, srv *Tueren) string {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	srv.NextBarcodeHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/barcode/next", nil))
+	srv.ExemplarBarcodeZiehen()(rec, httptest.NewRequest(http.MethodGet, "/api/barcode/next", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("/api/barcode/next: Status %d, Body %s", rec.Code, rec.Body.String())
 	}

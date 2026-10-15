@@ -27,7 +27,7 @@ import (
 // standortSetzen ruft PUT /api/exemplare/standort als Admin.
 func standortSetzen(t *testing.T, srv *Tueren, pool *pgxpool.Pool, ids []string, standort string) *httptest.ResponseRecorder {
 	t.Helper()
-	rumpf, err := json.Marshal(ExemplarStandortRequest{ExemplarIDs: ids, Standort: &standort})
+	rumpf, err := json.Marshal(exemplarStandortAnfrage{ExemplarIDs: ids, Standort: &standort})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func standortRumpf(t *testing.T, srv *Tueren, pool *pgxpool.Pool, rumpf string) 
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.ExemplarStandortHandler()(rec, req)
+	srv.ExemplarStandortSetzen()(rec, req)
 	return rec
 }
 
@@ -50,7 +50,7 @@ func standortRumpf(t *testing.T, srv *Tueren, pool *pgxpool.Pool, rumpf string) 
 func standortVorschlaege(t *testing.T, srv *Tueren) []repository.StandortZahl {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	srv.ExemplarStandorteHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/exemplare/standorte", nil))
+	srv.ExemplarStandorte()(rec, httptest.NewRequest(http.MethodGet, "/api/exemplare/standorte", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vorschläge: Status %d: %s", rec.Code, rec.Body.String())
 	}

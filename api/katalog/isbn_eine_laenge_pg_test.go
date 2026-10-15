@@ -48,9 +48,9 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 			<datafield tag="245" ind1="1" ind2="0"><subfield code="a">Aus der DNB</subfield></datafield>
 		  </record>
 		</recordData></record></records></searchRetrieveResponse>`}}})
-	tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitel(client)
+	tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitelTuer(client)
 
-	frage := func(isbn string) ISBNLookupResponse {
+	frage := func(isbn string) isbnZuTitelAntwort {
 		t.Helper()
 		rec := httptest.NewRecorder()
 		tuer(rec, httptest.NewRequest(http.MethodPost, "/api/buecher/aus-isbn", strings.NewReader(`{"isbn":"`+isbn+`"}`)))
@@ -60,7 +60,7 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 		if strings.Contains(rec.Body.String(), "andere_form") {
 			t.Errorf("aus-isbn %s: die Antwort schlägt einen Titel unter der anderen Form vor: %s", isbn, rec.Body.String())
 		}
-		var antwort ISBNLookupResponse
+		var antwort isbnZuTitelAntwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatal(err)
 		}
@@ -78,7 +78,7 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 	// der Katalog sie trägt.
 	for _, isbn := range []string{"978-3-16-148410-0", "9783161484100", "3-16-148410-x", "316148410X"} {
 		a := frage(isbn)
-		if !a.Exists || a.TitelID != chemie || a.ISBN != "9783161484100" {
+		if !a.Vorhanden || a.TitelID != chemie || a.ISBN != "9783161484100" {
 			t.Errorf("%s: %+v — erwartet den Titel %s unter 9783161484100", isbn, a, chemie)
 		}
 	}
@@ -89,10 +89,10 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 	// Nicht im Katalog, zehnstellig eingegeben: Der Titel aus der DNB entsteht dreizehnstellig,
 	// und die dreizehnstellige findet ihn danach.
 	neu := frage("0-306-40615-2")
-	if neu.Exists || neu.TitelID == "" || neu.Titel != "Aus der DNB" || neu.ISBN != "9780306406157" {
+	if neu.Vorhanden || neu.TitelID == "" || neu.Titel != "Aus der DNB" || neu.ISBN != "9780306406157" {
 		t.Fatalf("neuer Titel: %+v — erwartet „Aus der DNB“ unter 9780306406157", neu)
 	}
-	if wieder := frage("9780306406157"); !wieder.Exists || wieder.TitelID != neu.TitelID {
+	if wieder := frage("9780306406157"); !wieder.Vorhanden || wieder.TitelID != neu.TitelID {
 		t.Errorf("die dreizehnstellige danach: %+v — erwartet den Titel %s", wieder, neu.TitelID)
 	}
 	if titel, dnb := stand(); titel != 3 || dnb != 1 {
@@ -102,10 +102,10 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 	// Falsches Prüfzeichen: gerechnet führte 3499500252 auf 9783499500251. Die Tür nimmt den
 	// Roman nicht dafür, sie legt die Nummer als eigenen Titel an.
 	falsch := frage("3499500252")
-	if falsch.Exists || falsch.TitelID == "" || falsch.TitelID == roman || falsch.ISBN != "3499500252" {
+	if falsch.Vorhanden || falsch.TitelID == "" || falsch.TitelID == roman || falsch.ISBN != "3499500252" {
 		t.Errorf("falsches Prüfzeichen: %+v — erwartet einen neuen Titel unter 3499500252, nicht %s", falsch, roman)
 	}
-	if a := frage("9783499500251"); !a.Exists || a.TitelID != roman {
+	if a := frage("9783499500251"); !a.Vorhanden || a.TitelID != roman {
 		t.Errorf("die dreizehnstellige daneben: %+v — erwartet den Titel %s", a, roman)
 	}
 }

@@ -27,7 +27,7 @@ type abschnittAmDraht struct {
 
 func zugangsbuchAmDraht(t *testing.T, zeilen []repository.ZugangsZeile) []abschnittAmDraht {
 	t.Helper()
-	roh, err := json.Marshal(zugangsbuchAntwort(repository.Zugangsbuch{Zeilen: zeilen}))
+	roh, err := json.Marshal(zugangsbuchAntwortAus(repository.Zugangsbuch{Zeilen: zeilen}))
 	if err != nil {
 		t.Fatalf("Antwort schreiben: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 		OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
 	}
 
-	blatt := abgangsbuchBlatt(abgangsbuchAntwort(buch))
+	blatt := abgangsbuchBlatt(abgangsbuchAntwortAus(buch))
 	want := pdf.Abgangsbuch{
 		Von: von, Bis: bis,
 		Abschnitte: []pdf.AbgangsAbschnitt{
@@ -135,7 +135,7 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 		},
 	}
 
-	blatt := zugangsbuchBlatt(zugangsbuchAntwort(buch))
+	blatt := zugangsbuchBlatt(zugangsbuchAntwortAus(buch))
 	want := pdf.Zugangsbuch{
 		Von: von, Bis: bis,
 		Abschnitte: []pdf.ZugangsAbschnitt{
@@ -158,15 +158,15 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 
 // Den Abschnitt ohne Zuordnung erklärt das Blatt nur, wenn er Zeilen trägt.
 func TestZugangsbuchBlatt_OhneZuordnungNurMitSolchenZeilen(t *testing.T) {
-	nurLand := zugangsbuchBlatt(zugangsbuchAntwort(repository.Zugangsbuch{
+	nurLand := zugangsbuchBlatt(zugangsbuchAntwortAus(repository.Zugangsbuch{
 		Zeilen: []repository.ZugangsZeile{{Barcode: "LAND-1", Topf: mitteltopf.Land}}}))
 	if nurLand.OhneZuordnung {
 		t.Error("ohne Zeilen ohne Topf verlangt die Eingabe trotzdem die Erklärung zu „ohne Zuordnung“")
 	}
-	if leer := zugangsbuchBlatt(zugangsbuchAntwort(repository.Zugangsbuch{})); leer.OhneZuordnung || leer.Gesamt != 0 {
+	if leer := zugangsbuchBlatt(zugangsbuchAntwortAus(repository.Zugangsbuch{})); leer.OhneZuordnung || leer.Gesamt != 0 {
 		t.Errorf("leeres Buch: %+v, erwartet keine Erklärung und die Zahl 0", leer)
 	}
-	mit := zugangsbuchBlatt(zugangsbuchAntwort(repository.Zugangsbuch{
+	mit := zugangsbuchBlatt(zugangsbuchAntwortAus(repository.Zugangsbuch{
 		Zeilen: []repository.ZugangsZeile{{Barcode: "OHNE-1"}}}))
 	if !mit.OhneZuordnung {
 		t.Error("mit einer Zeile ohne Topf fehlt die Erklärung zu „ohne Zuordnung“")

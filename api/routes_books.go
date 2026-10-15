@@ -7,27 +7,27 @@ import (
 
 func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.KatalogAbfragen, auditRepo repository.ProtokollAbfragen) {
 	// ── BUECHER (Titles & Copies) ──
-	mux.Handle("DELETE /api/buecher/titel/{id}", s.RequirePermission("delete_books")(s.katalog().DeleteTitleHandler(auditRepo)))
+	mux.Handle("DELETE /api/buecher/titel/{id}", s.RequirePermission("delete_books")(s.katalog().TitelLoeschen(auditRepo)))
 	// Bestellkorb-Korrektur der Signatur (create_orders, nicht edit_books — dieselbe
-	// Berechtigung wie das Anlegen des Titels über /aus-isbn, siehe api/katalog/isbn_handler.go).
-	mux.Handle("PUT /api/buecher/titel/{id}/signatur", s.RequirePermission("create_orders")(s.katalog().UpdateTitelSignaturHandler()))
+	// Berechtigung wie das Anlegen des Titels über /aus-isbn, siehe api/katalog/isbn_zu_titel.go).
+	mux.Handle("PUT /api/buecher/titel/{id}/signatur", s.RequirePermission("create_orders")(s.katalog().TitelSignaturSetzen()))
 	// Dieselbe Tür für das Lernmittel-Kennzeichen eines eben angelegten DNB-Titels — es
 	// entscheidet über den Topf der Bestellung (Migration 109).
-	mux.Handle("PUT /api/buecher/titel/{id}/lernmittel", s.RequirePermission("create_orders")(s.katalog().UpdateTitelLernmittelHandler()))
+	mux.Handle("PUT /api/buecher/titel/{id}/lernmittel", s.RequirePermission("create_orders")(s.katalog().TitelLernmittelSetzen()))
 	// Schlagworte (Migration 138): Der Bestellkorb liest die vorhandenen, bevor er die
 	// Menge ersetzt. Schreiben mit create_orders wie Signatur und Lernmittel daneben; das
 	// Buchformular schreibt über PUT /api/books/{id} (edit_books) — beide über
 	// repository.SetzeSchlagworte.
-	mux.Handle("GET /api/buecher/titel/{id}/schlagworte", s.RequirePermission("view_books")(s.katalog().GetTitelSchlagworteHandler()))
-	mux.Handle("PUT /api/buecher/titel/{id}/schlagworte", s.RequirePermission("create_orders")(s.katalog().PutTitelSchlagworteHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/schlagworte", s.RequirePermission("view_books")(s.katalog().TitelSchlagworte()))
+	mux.Handle("PUT /api/buecher/titel/{id}/schlagworte", s.RequirePermission("create_orders")(s.katalog().TitelSchlagworteSetzen()))
 	// Auflagen eines Schulbuchs (Migration 148, docs/OFFEN.md 4.18): Zusammenfassen und
 	// Lösen aus der Titelmaske mit edit_books; „Neue Auflage bestellen" im Bestellbedarf mit
 	// create_orders (Stufe 4). Alle rufen repository/auflagen.go — derselbe Handler wie die
 	// Titelmaske, andere Route, anderes Recht, wie bei den Schlagworten.
-	mux.Handle("GET /api/buecher/titel/{id}/auflagen", s.RequirePermission("view_books")(s.katalog().GetTitelAuflagenHandler()))
-	mux.Handle("POST /api/buecher/titel/{id}/auflagen", s.RequirePermission("edit_books")(s.katalog().PostTitelAuflagenHandler()))
-	mux.Handle("DELETE /api/buecher/titel/{id}/auflagen", s.RequirePermission("edit_books")(s.katalog().DeleteTitelAuflagenHandler()))
-	mux.Handle("POST /api/buecher/titel/{id}/neue-auflage", s.RequirePermission("create_orders")(s.katalog().PostTitelAuflagenHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/auflagen", s.RequirePermission("view_books")(s.katalog().TitelAuflagen()))
+	mux.Handle("POST /api/buecher/titel/{id}/auflagen", s.RequirePermission("edit_books")(s.katalog().AuflagenZusammenfassen()))
+	mux.Handle("DELETE /api/buecher/titel/{id}/auflagen", s.RequirePermission("edit_books")(s.katalog().AuflageLoesen()))
+	mux.Handle("POST /api/buecher/titel/{id}/neue-auflage", s.RequirePermission("create_orders")(s.katalog().AuflagenZusammenfassen()))
 
 	// Exemplare (Copies)
 	// Titel-Tür für Bildschirme außerhalb der Theke (Etiketten-Titelsuche im Druck-Center):
@@ -38,14 +38,14 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 	// (OFFEN.md 9.8, Stufe 2b). Recht bleibt view_books: Was ein Ersatz kostet, ist eine
 	// Angabe über das BUCH — kein Schülerdatum. Gerechnet wird mit derselben Funktion wie
 	// im Melde-Dialog, gelesen über das Bescheid-Repository, dem die Staffel-Größen gehören.
-	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.katalog().GetTitleCopiesHandler(repository.NewBescheidAbfragen(s.DB.Pool))))
+	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.katalog().TitelExemplare(repository.NewBescheidAbfragen(s.DB.Pool))))
 	// Ausleiher und Historie hinter view_students, nicht view_books: Beide
 	// verknüpfen Schülernamen mit Titeln (die Historie über Jahre) — dieselbe
 	// Befundklasse wie die Vormerkungen (bewertung/sicherheitsbefund-*.md),
 	// dort aber von der Prüfung übersehen. Die Buchakte fängt den 403 als
 	// leere Liste ab (jsonOrEmpty); Exemplare/Verfügbarkeit bleiben view_books.
-	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_students")(s.katalog().GetTitleBorrowersHandler()))
-	mux.Handle("GET /api/buecher/titel/{id}/historie", s.RequirePermission("view_students")(s.katalog().GetTitleHistoryHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_students")(s.katalog().TitelAusleiher()))
+	mux.Handle("GET /api/buecher/titel/{id}/historie", s.RequirePermission("view_students")(s.katalog().TitelHistorie()))
 	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.druck().TitelEtiketten()))
 	mux.Handle("POST /api/print/labels", s.RequirePermission("view_books")(s.druck().Etikettenbogen()))
 
@@ -59,25 +59,25 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.RequirePermission("edit_books")(s.druck().EtikettenAltbestandVermerken()))
 	// Eigentum markierter Exemplare (4.24, Stufe 3): edit_books wie Barcode und Status, Grund
 	// Pflicht, jede Änderung im Protokoll.
-	mux.Handle("PUT /api/exemplare/eigentum", s.RequirePermission("edit_books")(s.katalog().ExemplarEigentumHandler()))
+	mux.Handle("PUT /api/exemplare/eigentum", s.RequirePermission("edit_books")(s.katalog().ExemplarEigentumSetzen()))
 	// Standort markierter Exemplare (5.53): edit_books wie das Eigentum daneben, jede Änderung
 	// im Protokoll. Die Vorschläge liest nur der Dialog, der ändert.
-	mux.Handle("PUT /api/exemplare/standort", s.RequirePermission("edit_books")(s.katalog().ExemplarStandortHandler()))
-	mux.Handle("GET /api/exemplare/standorte", s.RequirePermission("edit_books")(s.katalog().ExemplarStandorteHandler()))
+	mux.Handle("PUT /api/exemplare/standort", s.RequirePermission("edit_books")(s.katalog().ExemplarStandortSetzen()))
+	mux.Handle("GET /api/exemplare/standorte", s.RequirePermission("edit_books")(s.katalog().ExemplarStandorte()))
 
 	// Das Abgangsbuch: welche Exemplare in einem Zeitraum aus dem Bestand gingen
 	// (Protokoll des Medienzentrums vom 16.09.2026, Punkt 1). view_books wie der übrige
 	// Blick auf den Bestand — es ist ein Nachweis, der nichts ändert.
-	mux.Handle("GET /api/bestand/abgangsbuch", s.RequirePermission("view_books")(s.katalog().AbgangsbuchHandler()))
-	mux.Handle("GET /api/bestand/abgangsbuch/pdf", s.RequirePermission("view_books")(s.katalog().AbgangsbuchPDFHandler()))
-	mux.Handle("GET /api/bestand/zugangsbuch", s.RequirePermission("view_books")(s.katalog().ZugangsbuchHandler()))
-	mux.Handle("GET /api/bestand/zugangsbuch/pdf", s.RequirePermission("view_books")(s.katalog().ZugangsbuchPDFHandler()))
+	mux.Handle("GET /api/bestand/abgangsbuch", s.RequirePermission("view_books")(s.katalog().Abgangsbuch()))
+	mux.Handle("GET /api/bestand/abgangsbuch/pdf", s.RequirePermission("view_books")(s.katalog().AbgangsbuchPDF()))
+	mux.Handle("GET /api/bestand/zugangsbuch", s.RequirePermission("view_books")(s.katalog().Zugangsbuch()))
+	mux.Handle("GET /api/bestand/zugangsbuch/pdf", s.RequirePermission("view_books")(s.katalog().ZugangsbuchPDF()))
 
-	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.katalog().DeleteCopyHandler(auditRepo)))
+	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.katalog().ExemplarAussondern(auditRepo)))
 
 	// Update specific copy fields
-	mux.Handle("PUT /api/buecher/exemplare/{id}/barcode", s.RequirePermission("edit_books")(s.katalog().UpdateCopyBarcodeHandler(bookRepo)))
-	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.katalog().UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(s.DB.Pool))))
+	mux.Handle("PUT /api/buecher/exemplare/{id}/barcode", s.RequirePermission("edit_books")(s.katalog().ExemplarBarcodeSetzen(bookRepo)))
+	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.katalog().ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(s.DB.Pool))))
 
 	// ── AUSLEIHEN (Loans) ──
 	settingsRepo := repository.NewEinstellungsAbfragen(s.DB.Pool)
@@ -104,7 +104,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.theke().AusleihFristSetzen(auditRepo)))
 
 	// Live ISBN Lookup
-	mux.Handle("POST /api/buecher/aus-isbn", s.RequirePermission("create_orders")(s.katalog().ISBNZuTitelHandler()))
+	mux.Handle("POST /api/buecher/aus-isbn", s.RequirePermission("create_orders")(s.katalog().ISBNZuTitel()))
 
 	// Vormerkungen
 	vormerkungRepo := repository.NewVormerkungsAbfragen(s.DB.Pool)
@@ -143,9 +143,9 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Kata
 
 	// Geräte-Verwaltung (Bereich im Medienkatalog): Geräte sind Bestand — Rechte wie Bücher.
 	geraeteRepo := repository.NewGeraeteAbfragen(s.DB.Pool)
-	mux.Handle("GET /api/geraete", s.RequirePermission("view_books")(s.katalog().ListGeraeteHandler(geraeteRepo)))
-	mux.Handle("POST /api/geraete", s.RequirePermission("edit_books")(s.katalog().CreateGeraetHandler(geraeteRepo)))
-	mux.Handle("PUT /api/geraete/{id}", s.RequirePermission("edit_books")(s.katalog().UpdateGeraetHandler(geraeteRepo)))
+	mux.Handle("GET /api/geraete", s.RequirePermission("view_books")(s.katalog().Geraete(geraeteRepo)))
+	mux.Handle("POST /api/geraete", s.RequirePermission("edit_books")(s.katalog().GeraetAnlegen(geraeteRepo)))
+	mux.Handle("PUT /api/geraete/{id}", s.RequirePermission("edit_books")(s.katalog().GeraetAendern(geraeteRepo)))
 	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.portal().KlassensatzReservierungErledigen()))
 
 	// Anliegen der Lehrkräfte (Wunsch/Meldung, Migration 075): Anlegen und die

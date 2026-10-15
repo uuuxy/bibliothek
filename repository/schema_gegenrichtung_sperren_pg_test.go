@@ -32,7 +32,7 @@ var fkSperrenBestand = []string{
 	"RESTRICT  ausleihen.schueler_id -> leser",
 	// Befragt: Das Löschen einer Sachgruppe zählt vorher die Titel am Fach und antwortet mit
 	// 409 und einem Satz; hängt sich zwischen Zählung und Löschen ein Titel an, fängt der
-	// Handler die Ablehnung (23503) mit demselben Satz (api/katalog/systematik_handler.go).
+	// Handler die Ablehnung (23503) mit demselben Satz (api/katalog/systematik.go).
 	"RESTRICT  buecher_titel.subject -> systematik_kategorien",
 	"RESTRICT  class_books.class_name -> klassen",
 	"RESTRICT  klassen_lehrer_mapping.klasse -> klassen",

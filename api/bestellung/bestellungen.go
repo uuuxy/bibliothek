@@ -180,7 +180,7 @@ func (t *Tueren) BestellSuche() http.HandlerFunc {
 }
 
 // sucheBestellung ist die Tür mit ihrem Client für die DNB als Parameter: Ein Test stellt
-// die Antwort der DNB nach, wie bei isbnZuTitel.
+// die Antwort der DNB nach, wie bei isbnZuTitelTuer in api/katalog.
 func (t *Tueren) sucheBestellung(metadaten *inventur.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req bestellSucheAnfrage

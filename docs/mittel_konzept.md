@@ -359,7 +359,7 @@ des Schulträgers (Schülerbücherei) beschafft wird.
 - **Ein Lieferant hatte EINE Kundennummer.** Händler führen für Lernmittel und Bibliothek
   oft getrennte Kundenkonten (anderer Nachlass, andere Rechnungsstelle).
 - **Der Bestellbedarf ist Lernmittel** (`bestellbedarfFilter`: Vorgabe `lmf`), die Titelsuche
-  liefert alles. Ein über die DNB-Suche NEU angelegter Titel (`upsertTitelAusMetadaten`)
+  liefert alles. Ein über die DNB-Suche NEU angelegter Titel (`schreibeTitelAusMetadaten`)
   bekam **kein** `ist_lernmittel` — ein neues Schulbuch entstand als Bücherei-Titel und
   blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
 - Der Wareneingang hängt an `buecher_exemplare.bestellung_id` (Migration 063) — das

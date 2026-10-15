@@ -18,7 +18,7 @@ import (
 // nach der das Feld „Aktueller Bestand" zählt (repository.SQLExemplarImBestand). Die Buchmaske
 // listet nur diese Exemplare; ausgesonderte und bestellte führte sie sonst als „Gesperrt" mit,
 // und über der Liste stand eine andere Zahl als im Feld.
-func TestExemplarliste_SagtWasZumBestandZaehlt(t *testing.T) {
+func TestTitelExemplare_SagtWasZumBestandZaehlt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
@@ -44,7 +44,7 @@ func TestExemplarliste_SagtWasZumBestandZaehlt(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titel+"/exemplare", nil)
 	req.SetPathValue("id", titel)
 	rec := httptest.NewRecorder()
-	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(pool))(rec, req)
+	srv.TitelExemplare(repository.NewBescheidAbfragen(pool))(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Exemplarliste: Status %d, Body %s", rec.Code, rec.Body.String())
 	}

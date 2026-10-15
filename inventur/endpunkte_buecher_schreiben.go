@@ -27,8 +27,8 @@ func validiereBuchErstellenEingabe(antwort http.ResponseWriter, eingabe BuchEing
 }
 
 // ListenpreisAusNachschlagen entscheidet, ob der Ladenpreis der DNB den Listenpreis füllt;
-// der Bestellweg (api.upsertTitelAusMetadaten) nimmt die Regel. Der Betrag landet in einem
-// Bescheid an Erziehungsberechtigte:
+// der Bestellweg (schreibeTitelAusMetadaten in api/katalog) nimmt die Regel. Der Betrag
+// landet in einem Bescheid an Erziehungsberechtigte:
 //
 //  1. Was ein Mensch eingetragen hat, gewinnt.
 //  2. Ein gefundener Preis von 0 füllt nichts. Die DNB-Regeln liefern 0, wenn der Satz nur

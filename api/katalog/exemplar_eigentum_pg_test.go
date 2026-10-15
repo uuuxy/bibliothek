@@ -27,7 +27,7 @@ import (
 // eigentumSetzen ruft PUT /api/exemplare/eigentum als Admin.
 func eigentumSetzen(t *testing.T, srv *Tueren, pool *pgxpool.Pool, ids []string, eigentum, grund string) *httptest.ResponseRecorder {
 	t.Helper()
-	rumpf, err := json.Marshal(ExemplarEigentumRequest{ExemplarIDs: ids, Eigentum: eigentum, Grund: grund})
+	rumpf, err := json.Marshal(exemplarEigentumAnfrage{ExemplarIDs: ids, Eigentum: eigentum, Grund: grund})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func eigentumSetzen(t *testing.T, srv *Tueren, pool *pgxpool.Pool, ids []string,
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.ExemplarEigentumHandler()(rec, req)
+	srv.ExemplarEigentumSetzen()(rec, req)
 	return rec
 }
 
@@ -46,7 +46,7 @@ func exemplarKarten(t *testing.T, srv *Tueren, pool *pgxpool.Pool, titelID strin
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/exemplare", nil)
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()
-	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(pool))(rec, req)
+	srv.TitelExemplare(repository.NewBescheidAbfragen(pool))(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Exemplarliste: Status %d: %s", rec.Code, rec.Body.String())
 	}

@@ -19,8 +19,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// GeraetRequest sind die Angaben eines neuen Geräts.
-type GeraetRequest struct {
+// geraetAnlegenAnfrage sind die Angaben eines neuen Geräts.
+type geraetAnlegenAnfrage struct {
 	Modellname   string  `json:"modellname"`
 	Seriennummer *string `json:"seriennummer,omitempty"`
 	BarcodeID    string  `json:"barcode_id,omitempty"`
@@ -28,12 +28,12 @@ type GeraetRequest struct {
 	ZustandNotiz string  `json:"zustand_notiz,omitempty"`
 }
 
-// GeraetAenderungRequest nennt, was an einem Gerät geändert wird. Ein fehlendes Feld bleibt,
+// geraetAendernAnfrage nennt, was an einem Gerät geändert wird. Ein fehlendes Feld bleibt,
 // wie es ist: Der Bearbeiten-Dialog schickt nur, was seit dem Öffnen geändert wurde, der
 // Defekt-Knopf nur das Kennzeichen. Ein unbekanntes Feld lehnt die Tür ab. barcode_id nimmt sie
 // an und liest es nicht: Barcodes kleben, sie wandern nicht, und ein Dialog aus einem älteren
 // Stand schickt das Feld noch mit.
-type GeraetAenderungRequest struct {
+type geraetAendernAnfrage struct {
 	Modellname    *string `json:"modellname"`
 	Seriennummer  *string `json:"seriennummer"`
 	BarcodeID     *string `json:"barcode_id"`
@@ -42,11 +42,11 @@ type GeraetAenderungRequest struct {
 	IstAusleihbar *bool   `json:"ist_ausleihbar"`
 }
 
-// ListGeraeteHandler liefert die Geräteliste samt aktuellem Ausleiher.
+// Geraete liefert die Geräteliste samt aktuellem Ausleiher.
 // GET /api/geraete
-func (s *Tueren) ListGeraeteHandler(repo repository.GeraeteAbfragen) http.HandlerFunc {
+func (t *Tueren) Geraete(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		geraete, err := repo.LadeAlle(r.Context())
+		geraete, err := geraeteAbfragen.LadeAlle(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Geräte", err)
 		}
@@ -54,7 +54,7 @@ func (s *Tueren) ListGeraeteHandler(repo repository.GeraeteAbfragen) http.Handle
 		// da?"). Der NAME des Ausleihers ist aber eine Personenangabe und
 		// bleibt Aufrufern ohne view_students verborgen — verliehen ja/nein
 		// sieht man weiterhin (ausgeliehen_an wird zu "", nicht nil).
-		if !s.HatRecht(r, "view_students") {
+		if !t.HatRecht(r, "view_students") {
 			leer := ""
 			for i := range geraete {
 				if geraete[i].AusgeliehenAn != nil {
@@ -67,10 +67,10 @@ func (s *Tueren) ListGeraeteHandler(repo repository.GeraeteAbfragen) http.Handle
 	})
 }
 
-// CreateGeraetHandler legt ein Gerät an. POST /api/geraete
-func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteAbfragen) http.HandlerFunc {
+// GeraetAnlegen legt ein Gerät an. POST /api/geraete
+func (t *Tueren) GeraetAnlegen(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var req GeraetRequest
+		var req geraetAnlegenAnfrage
 		// Streng: Ein Feld, das die Tür nicht liest, ist ein Fehler und kein stiller Verlust.
 		if !tuer.LeseAnfrageStreng(w, r, &req) {
 			return nil
@@ -89,7 +89,7 @@ func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteAbfragen) http.Handl
 		if getrimmt := getrimmterZeiger(req.Seriennummer); getrimmt != nil && *getrimmt != "" {
 			seriennummer = getrimmt
 		}
-		id, err := repo.LegeAn(r.Context(), req.Modellname,
+		id, err := geraeteAbfragen.LegeAn(r.Context(), req.Modellname,
 			seriennummer, req.BarcodeID, strings.TrimSpace(req.Zubehoer), strings.TrimSpace(req.ZustandNotiz))
 		if err != nil {
 			if istGeraetKonflikt(err) {
@@ -102,11 +102,11 @@ func (s *Tueren) CreateGeraetHandler(repo repository.GeraeteAbfragen) http.Handl
 	})
 }
 
-// UpdateGeraetHandler pflegt Stammdaten und den Defekt-Status.
+// GeraetAendern pflegt Stammdaten und den Defekt-Status.
 // PUT /api/geraete/{id}
-func (s *Tueren) UpdateGeraetHandler(repo repository.GeraeteAbfragen) http.HandlerFunc {
+func (t *Tueren) GeraetAendern(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var req GeraetAenderungRequest
+		var req geraetAendernAnfrage
 		// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
 		if !tuer.LeseAnfrageStreng(w, r, &req) {
 			return nil
@@ -123,7 +123,7 @@ func (s *Tueren) UpdateGeraetHandler(repo repository.GeraeteAbfragen) http.Handl
 		if aenderung.Modellname != nil && *aenderung.Modellname == "" {
 			return apierrors.BadRequest("Ein Modellname ist erforderlich", nil)
 		}
-		err := repo.Aendere(r.Context(), r.PathValue("id"), aenderung)
+		err := geraeteAbfragen.Aendere(r.Context(), r.PathValue("id"), aenderung)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Gerät nicht gefunden", err)

@@ -18,13 +18,13 @@ import (
 // und meldet das (ist_lernmittel=false in der Antwort) — das Staging-Fenster fragt nach
 // und schreibt die Antwort über PUT /api/buecher/titel/{id}/lernmittel. Vorher gab es
 // diese Rückfrage nicht: Jedes neue Schulbuch war für immer ein Bücherei-Titel.
-func TestNeuerDnbTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
+func TestNeuerDNBTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	resp, err := srv.upsertTitelAusMetadaten(ctx, "9783060000001", &inventur.MetadatenErgebnis{Titel: "Mathematik 7 Hessen"})
+	resp, err := srv.schreibeTitelAusMetadaten(ctx, "9783060000001", &inventur.MetadatenErgebnis{Titel: "Mathematik 7 Hessen"})
 	if err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestNeuerDnbTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 	req.SetPathValue("id", resp.TitelID)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.UpdateTitelLernmittelHandler()(rec, req)
+	srv.TitelLernmittelSetzen()(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -68,7 +68,7 @@ func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 	req.SetPathValue("id", id)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.UpdateTitelLernmittelHandler()(rec, req)
+	srv.TitelLernmittelSetzen()(rec, req)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("Status %d, want 404", rec.Code)
 	}
@@ -105,7 +105,7 @@ func TestLernmittelKennzeichenNimmtDenMehrjahresbandMit(t *testing.T) {
 		req.SetPathValue("id", id)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
-		srv.UpdateTitelLernmittelHandler()(rec, req)
+		srv.TitelLernmittelSetzen()(rec, req)
 		return rec
 	}
 	lies := func(id string) (lernmittel, schalter bool) {

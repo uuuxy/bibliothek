@@ -466,7 +466,7 @@ var bewusstAusgelassen = map[string]string{
 		"die Antwort sind fremde Titeldaten ohne jeden Schülerbezug (Stufe 0 per Konstruktion).",
 	"GET /api/schlagworte/dnb-vorschlag": "fragt die DNB — ein Aufruf mit echter ISBN ginge ins Internet; die Antwort " +
 		"sind Schlagworte der eigenen Liste und der Normdatei zu einem Satz der DNB, ohne Schülerbezug (Stufe 0). " +
-		"Verhalten mit nachgestellter DNB: api/katalog/schlagwort_dnb_pg_test.go.",
+		"Verhalten mit nachgestellter DNB: api/katalog/schlagworte_dnb_pg_test.go.",
 }
 
 // ── Der Aufruf-Apparat ───────────────────────────────────────────────────────

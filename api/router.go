@@ -218,7 +218,7 @@ func (s *Server) registerAuthRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /login", AuthRateLimitMiddleware(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))))
 
 	// Image Caching (Public)
-	mux.HandleFunc("GET /api/images/cover", s.katalog().ServeCoverImageHandler())
+	mux.HandleFunc("GET /api/images/cover", s.katalog().Cover())
 
 	// CSRF token bootstrap (public): lets API clients obtain a token + cookie before any mutation
 	mux.HandleFunc("GET /api/csrf-token", s.CSRFTokenHandler())
@@ -244,7 +244,7 @@ func (s *Server) registerImportRoutes(mux *http.ServeMux) {
 	// LITTERA CSV Import (Accessible by Admin)
 	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.system().LitteraImport()))
 	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.system().BestandImport)))
-	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(s.katalog().SyncCoversHandler()))
+	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(s.katalog().CoverAbgleichen()))
 }
 
 func (s *Server) registerSwaggerRoutes(mux *http.ServeMux) {

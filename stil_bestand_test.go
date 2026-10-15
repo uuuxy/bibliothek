@@ -5,7 +5,7 @@ package main
 var stilBestand = map[string]stilZahl{
 	".":                      {Fach: 1, Verb: 4, Kuerzel: 0, Datei: 0, Datum: 4},
 	"api":                    {Fach: 14, Verb: 15, Kuerzel: 0, Datei: 4, Datum: 25},
-	"api/katalog":            {Fach: 68, Verb: 43, Kuerzel: 2, Datei: 15, Datum: 17},
+	"api/katalog":            {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 17},
 	"apierrors":              {Fach: 3, Verb: 5, Kuerzel: 0, Datei: 0, Datum: 2},
 	"auth":                   {Fach: 30, Verb: 10, Kuerzel: 0, Datei: 3, Datum: 13},
 	"cmd/littera-altbestand": {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},

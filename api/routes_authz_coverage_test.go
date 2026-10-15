@@ -26,7 +26,7 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 	publicAllowlist := map[string]string{
 		"/api/public/opac/suche": "öffentlicher Katalog (nur Titel/Autor/Verfügbarkeit, keine PII)",
 		"/api/monitor/slides":    "öffentlicher Bibliotheks-Monitor (nur Buchdaten)",
-		"/api/images/cover":      "öffentlicher Cover-Proxy (SSRF-Host-Allowlist in api/katalog/image_caching.go)",
+		"/api/images/cover":      "öffentlicher Cover-Proxy (SSRF-Host-Allowlist in api/katalog/cover.go)",
 		"/api/csrf-token":        "CSRF-Bootstrap-Endpunkt",
 		// Bestätigungs-Link an den Lieferanten (Migration 063). Kein Login, aber auch kein
 		// offener Endpunkt: Der 256-Bit-Token aus der Bestellmail ist der Ausweis und

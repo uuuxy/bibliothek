@@ -72,7 +72,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	// Einstellungen — ohne Pool stürzt er dort ab (dieselbe Falle wie bei der Leserdatei
 	// am 17.09.2026).
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
+	srv.ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status-Tür: HTTP %d: %s", rec.Code, rec.Body.String())
 	}

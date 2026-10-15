@@ -800,7 +800,7 @@ OpenLibrary holten. Das war ohnehin die falsche Bauweise — es meldete den Brow
 Lehrkraft bei einem Dritten an und gab dabei preis, welche ISBNs die Schule gerade
 ansieht. Alle acht laufen jetzt über den eigenen Cover-Proxy
 (`frontend/src/lib/utils/coverSrc.js` → `/api/images/cover`, Host-Allowlist in
-`api/katalog/image_caching.go`). Die Bilder kommen unverändert an, nur eben vom eigenen Server.
+`api/katalog/cover.go`). Die Bilder kommen unverändert an, nur eben vom eigenen Server.
 
 `data:` und `blob:` bleiben erlaubt: erzeugte Barcodes/QR-Codes und Datei-Vorschauen
 vor dem Hochladen.

@@ -150,7 +150,7 @@ func geraeteRequest(rolle string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest("GET", "/api/geraete", nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle)}))
 	w := httptest.NewRecorder()
-	s.katalog().ListGeraeteHandler(stub)(w, req)
+	s.katalog().Geraete(stub)(w, req)
 	return w
 }
 
