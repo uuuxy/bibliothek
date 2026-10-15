@@ -154,7 +154,7 @@ func TestLoescheTitel_LeseFehlerBlocktLoeschung(t *testing.T) {
 
 	repo := NewProtokollAbfragen(mock)
 	const titelID = "33333333-3333-3333-3333-333333333333"
-	leseFehler := errors.New("Verbindung während der Iteration verloren")
+	leseFehler := errors.New("verbindung während der iteration verloren")
 
 	mock.ExpectBegin()
 	erwarteAuflagenSperre(mock, []string{titelID})

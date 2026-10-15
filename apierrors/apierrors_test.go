@@ -32,7 +32,7 @@ func leseFehlermeldung(t *testing.T, rumpf string) string {
 // Unter 500 und ohne Text aus der Datenbank bleibt die Meldung, wie sie ist.
 func TestAntworteFehler_BedienfehlerBehaeltSeineMeldung(t *testing.T) {
 	rec := httptest.NewRecorder()
-	AntworteFehler(rec, http.StatusConflict, errors.New("Benutzer hat noch aktive Ausleihen"))
+	AntworteFehler(rec, http.StatusConflict, errors.New("benutzer hat noch aktive ausleihen"))
 
 	if rec.Code != http.StatusConflict {
 		t.Errorf("Status: erwartet 409, war %d", rec.Code)
@@ -40,7 +40,7 @@ func TestAntworteFehler_BedienfehlerBehaeltSeineMeldung(t *testing.T) {
 	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
 		t.Errorf("Content-Type: erwartet application/json, war %q", ct)
 	}
-	if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "Benutzer hat noch aktive Ausleihen" {
+	if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "benutzer hat noch aktive ausleihen" {
 		t.Errorf("Meldung verfälscht: %q", meldung)
 	}
 }
@@ -73,17 +73,18 @@ func TestAntworteFehler_DatenbanktextAuchUnter500Gefiltert(t *testing.T) {
 	}
 }
 
-// Beide Wege einer Fehlerantwort schreiben dieselbe Form ({"error": ...}), damit sich die
-// Oberfläche auf eine verlassen kann.
+// Beide Wege einer Fehlerantwort schreiben für denselben Fehler dieselbe Form ({"error": ...})
+// mit derselben Meldung, damit sich die Oberfläche auf eine verlassen kann.
 func TestMitFehlerantwortUndAntworteFehler_GleicheForm(t *testing.T) {
+	konflikt := Conflict("Konflikt X", errors.New("intern: darf nicht sichtbar sein"))
 	tuer := MitFehlerantwort(func(_ http.ResponseWriter, _ *http.Request) error {
-		return Conflict("Konflikt X", errors.New("intern: darf nicht sichtbar sein"))
+		return konflikt
 	})
 	recA := httptest.NewRecorder()
 	tuer(recA, httptest.NewRequest(http.MethodGet, "/x", nil))
 
 	recB := httptest.NewRecorder()
-	AntworteFehler(recB, http.StatusConflict, errors.New("Konflikt X"))
+	AntworteFehler(recB, http.StatusConflict, konflikt)
 
 	if recA.Code != recB.Code {
 		t.Errorf("Status weicht ab: MitFehlerantwort=%d, AntworteFehler=%d", recA.Code, recB.Code)
@@ -93,9 +94,11 @@ func TestMitFehlerantwortUndAntworteFehler_GleicheForm(t *testing.T) {
 	if meldungA != "Konflikt X" || meldungB != "Konflikt X" {
 		t.Errorf("Meldungen: MitFehlerantwort=%q, AntworteFehler=%q", meldungA, meldungB)
 	}
-	// Die Ursache aus dem ersten Weg steht nie im Rumpf.
-	if strings.Contains(recA.Body.String(), "darf nicht sichtbar sein") {
-		t.Errorf("MitFehlerantwort leakt internen Fehler: %q", recA.Body.String())
+	// Die Ursache steht auf keinem der beiden Wege im Rumpf.
+	for weg, rumpf := range map[string]string{"MitFehlerantwort": recA.Body.String(), "AntworteFehler": recB.Body.String()} {
+		if strings.Contains(rumpf, "darf nicht sichtbar sein") {
+			t.Errorf("%s leakt internen Fehler: %q", weg, rumpf)
+		}
 	}
 }
 
@@ -162,9 +165,9 @@ func TestAntworteFehlerMitMeldung_UrsacheBleibtImLog(t *testing.T) {
 // Regeln.
 func TestAntworteFehlerMitMeldung_OhneMeldungWieAntworteFehler(t *testing.T) {
 	rec := httptest.NewRecorder()
-	AntworteFehlerMitMeldung(rec, http.StatusConflict, "", errors.New("Benutzer hat noch aktive Ausleihen"))
+	AntworteFehlerMitMeldung(rec, http.StatusConflict, "", errors.New("benutzer hat noch aktive ausleihen"))
 
-	if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "Benutzer hat noch aktive Ausleihen" {
+	if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "benutzer hat noch aktive ausleihen" {
 		t.Errorf("Meldung verfälscht: %q", meldung)
 	}
 }

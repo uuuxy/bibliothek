@@ -28,7 +28,7 @@ func TestIstZeilenfehler(t *testing.T) {
 		{"Wert zu lang für die Spalte (22001)", pgFehler("22001"), true},
 		{"Zahl außerhalb des Bereichs (22003)", pgFehler("22003"), true},
 		{"Datensatzfehler ohne Postgres", fmt.Errorf("%w: kaputtes JSONB", ErrZeile), true},
-		{"umschlossener Datensatzfehler", fmt.Errorf("Exemplar B-1: %w", pgFehler("23505")), true},
+		{"umschlossener Datensatzfehler", fmt.Errorf("exemplar B-1: %w", pgFehler("23505")), true},
 
 		{"vergiftete Transaktion (25P02)", pgFehler("25P02"), false},
 		{"Verbindung verloren (08006)", pgFehler("08006"), false},
@@ -64,7 +64,7 @@ func TestBeschreibeFehlerBehaeltUrsacheUndKontext(t *testing.T) {
 		ColumnName:     "barcode_id",
 		Detail:         "Key (barcode_id)=(B-00042) already exists.",
 	}
-	text := BeschreibeFehler(fmt.Errorf("Exemplar mit Barcode B-00042: %w", pgErr))
+	text := BeschreibeFehler(fmt.Errorf("exemplar mit barcode B-00042: %w", pgErr))
 
 	for _, erwartet := range []string{"B-00042", "23505", "buecher_exemplare_barcode_id_key", "barcode_id", "already exists"} {
 		if !strings.Contains(text, erwartet) {
@@ -99,7 +99,7 @@ func TestBeschreibeFehlerTraegtKeineDatenwerte(t *testing.T) {
 		Detail:         "Key (email)=(" + adresse + ") already exists.",
 	}
 
-	text := BeschreibeFehler(fmt.Errorf("Leser 4711: %w", pgErr))
+	text := BeschreibeFehler(fmt.Errorf("leser 4711: %w", pgErr))
 
 	if strings.Contains(text, adresse) {
 		t.Errorf("die echte Adresse steht in der Protokollzeile: %s", text)
@@ -108,7 +108,7 @@ func TestBeschreibeFehlerTraegtKeineDatenwerte(t *testing.T) {
 		t.Errorf("ein Bestandteil der Adresse steht in der Protokollzeile: %s", text)
 	}
 	// Diagnosewert muss erhalten bleiben, sonst ist die Schwärzung ein Rückschritt.
-	for _, erwartet := range []string{"23505", "benutzer_email_key", "email", "already exists", "Leser 4711"} {
+	for _, erwartet := range []string{"23505", "benutzer_email_key", "email", "already exists", "leser 4711"} {
 		if !strings.Contains(text, erwartet) {
 			t.Errorf("Fehlerbeschreibung nennt %q nicht mehr: %s", erwartet, text)
 		}

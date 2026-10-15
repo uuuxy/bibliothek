@@ -17,7 +17,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-var errTest = errors.New("Testfehler")
+var errTest = errors.New("testfehler")
 
 func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 	tests := []struct {

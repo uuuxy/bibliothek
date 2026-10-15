@@ -189,7 +189,7 @@ func TestDSGVOFristen_OhneEinstellungenGeltenDieVorgaben(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
-	mock.ExpectQuery(`FROM system_einstellungen`).WillReturnError(errors.New("Datenbank nicht erreichbar"))
+	mock.ExpectQuery(`FROM system_einstellungen`).WillReturnError(errors.New("datenbank nicht erreichbar"))
 
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	soll := auskunft.FristWerte{LesehistorieTage: 1, LernmittelTage: 730, KarenzTage: 90, ProtokollMonate: 24, AnliegenTage: 365}

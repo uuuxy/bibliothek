@@ -13,7 +13,7 @@ import (
 // ErrZeile markiert einen Fehler, der nur diesen einen Datensatz betrifft und nicht von
 // Postgres stammt, etwa ein Freitextfeld, das sich nicht schreiben lässt. Die Fehler von
 // Postgres ordnet istZeilenfehler über ihren SQLSTATE ein.
-var ErrZeile = errors.New("Datensatzfehler")
+var ErrZeile = errors.New("datensatzfehler")
 
 // istZeilenfehler sagt, ob ein Fehler nur diesen einen Datensatz betrifft. Dann wird auf den
 // Savepoint zurückgerollt und mit dem nächsten weitergemacht; betrifft er die ganze Übernahme,

@@ -18,7 +18,7 @@ func TestRueckgabewertSagtDieWahrheit(t *testing.T) {
 		{"nur Warnungen", abschlussbericht{Warnungen: 12, AbgleichOK: true}, rueckgabeOK},
 		{"übersprungene Titel", abschlussbericht{Uebersprungen: 1, Fehler: 1, AbgleichOK: true}, rueckgabeUnvollstaendig},
 		{"Abgleich widerspricht", abschlussbericht{AbgleichOK: false}, rueckgabeUnvollstaendig},
-		{"abgebrochen", abschlussbericht{Abbruch: errors.New("Verbindung weg"), AbgleichOK: true}, rueckgabeAbgebrochen},
+		{"abgebrochen", abschlussbericht{Abbruch: errors.New("verbindung weg"), AbgleichOK: true}, rueckgabeAbgebrochen},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

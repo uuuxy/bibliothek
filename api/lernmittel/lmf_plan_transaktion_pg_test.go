@@ -54,7 +54,7 @@ func scheitertAn(sql, muster string, durchgelassen *int) bool {
 // koppelt, an der richtigen Stelle und nicht schon daran, dass kein Fehler ankommt.
 func (p poolMitFehlerBei) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 	if scheitertAn(sql, p.muster, p.durchgelassen) {
-		return pgconn.CommandTag{}, errors.New("Testfehler mitten in der Frist-Kopplung: " + p.muster)
+		return pgconn.CommandTag{}, errors.New("testfehler mitten in der frist-kopplung: " + p.muster)
 	}
 	return p.Pool.Exec(ctx, sql, args...)
 }
@@ -75,7 +75,7 @@ type txMitFehlerBei struct {
 
 func (t txMitFehlerBei) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 	if scheitertAn(sql, t.muster, t.durchgelassen) {
-		return pgconn.CommandTag{}, errors.New("Testfehler mitten in der Frist-Kopplung: " + t.muster)
+		return pgconn.CommandTag{}, errors.New("testfehler mitten in der frist-kopplung: " + t.muster)
 	}
 	return t.Tx.Exec(ctx, sql, args...)
 }

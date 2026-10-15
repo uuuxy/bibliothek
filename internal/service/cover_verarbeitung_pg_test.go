@@ -56,7 +56,7 @@ func (k katalog) client() *inventur.MetadatenClient {
 
 func (k katalog) antworte(req *http.Request) (*http.Response, error) {
 	if k.ausfall {
-		return nil, errors.New("Testnetz: Dienst nicht erreichbar")
+		return nil, errors.New("testnetz: dienst nicht erreichbar")
 	}
 	antwort := func(status int, typ string, rumpf []byte) (*http.Response, error) {
 		kopf := make(http.Header)

@@ -97,7 +97,7 @@ func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (Perso
 		Zielleser:  make(map[string]Zielleser, len(ab.Leser)),
 	}
 	if offen := OhneZuordnung(ab); len(offen) > 0 {
-		return bericht, fmt.Errorf("Leser ohne Zuordnung, es wurde keine Person geschrieben: %v", offen)
+		return bericht, fmt.Errorf("leser ohne zuordnung, es wurde keine person geschrieben: %v", offen)
 	}
 
 	vorherS, vorherK, err := s.zaehlePersonen(ctx)
@@ -270,7 +270,7 @@ func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (
 	}
 	// SchreibePersonen lässt keinen Leser ohne Art herein (OhneZuordnung); kommt doch einer
 	// an, bricht der Lauf ab, statt ihn irgendwo einzusortieren.
-	return Zielleser{}, fmt.Errorf("Leser %s hat keine Art (%d)", l.ID, l.Art)
+	return Zielleser{}, fmt.Errorf("leser %s hat keine art (%d)", l.ID, l.Art)
 }
 
 func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser) (Zielleser, error) {

@@ -40,7 +40,7 @@ func (z zeileMitFehler) Scan(...any) error { return z.err }
 
 func (p poolMitLesefehlerBei) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	if strings.Contains(sql, p.muster) && len(args) > 0 && args[0] == p.schluessel {
-		return zeileMitFehler{errors.New("Testfehler: Verbindung zur Datenbank abgerissen")}
+		return zeileMitFehler{errors.New("testfehler: verbindung zur datenbank abgerissen")}
 	}
 	return p.Pool.QueryRow(ctx, sql, args...)
 }

@@ -27,7 +27,7 @@ func TestStatusDesFehlers(t *testing.T) {
 		// (selbst eine ErrGesperrt-Kette) mit dem Hinweis dahinter.
 		{"eingewickelt, gesperrt", fmt.Errorf("%w — bitte an die Bibliotheksleitung wenden",
 			fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)), http.StatusForbidden},
-		{"eingewickelt, nicht gefunden", fmt.Errorf("Leser: %w", service.ErrNichtGefunden), http.StatusNotFound},
+		{"eingewickelt, nicht gefunden", fmt.Errorf("leser: %w", service.ErrNichtGefunden), http.StatusNotFound},
 	}
 
 	for _, f := range faelle {
