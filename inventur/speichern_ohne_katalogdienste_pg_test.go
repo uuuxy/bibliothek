@@ -39,7 +39,7 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 		  <datafield tag="245" ind1="1" ind2="0"><subfield code="a">Harry Potter und der Stein der Weisen</subfield></datafield>
 		</record></recordData></record></records></searchRetrieveResponse>`
 	var gefragt []string
-	handler := &APIHandler{repo: &BookRepository{db: pool}, metadaten: &MetadatenClient{httpClient: &http.Client{
+	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: &MetadatenClient{httpClient: &http.Client{
 		Transport: &mockTransport{roundTripFunc: func(req *http.Request) (*http.Response, error) {
 			gefragt = append(gefragt, req.URL.Host)
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(satz)), Header: make(http.Header)}, nil
@@ -56,9 +56,9 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		if methode == http.MethodPost {
-			handler.BearbeiteBuchErstellen(rec, req)
+			handler.TitelAnlegen(rec, req)
 		} else {
-			handler.BearbeiteBuchAktualisieren(rec, req)
+			handler.TitelAendern(rec, req)
 		}
 		return rec
 	}
@@ -122,7 +122,7 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/lookup/"+isbn, nil)
 	req.SetPathValue("isbn", isbn)
 	abfrage := httptest.NewRecorder()
-	handler.handleLookup(abfrage, req)
+	handler.ISBNSuche(abfrage, req)
 	var antwort struct {
 		Data struct {
 			Preis float64 `json:"preis"`

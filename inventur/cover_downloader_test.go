@@ -214,7 +214,7 @@ func TestDownloadAndSaveCoverLocally(t *testing.T) {
 				},
 			},
 		}
-		res := downloadAndSaveCoverLocally(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
+		res := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
 		if res != "" {
 			t.Errorf("expected empty string, got %s", res)
 		}
@@ -240,7 +240,7 @@ func TestDownloadAndSaveCoverLocally(t *testing.T) {
 				},
 			},
 		}
-		res := downloadAndSaveCoverLocally(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
+		res := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
 		if res != "" {
 			t.Errorf("expected empty string for small image, got %s", res)
 		}
@@ -271,7 +271,7 @@ func TestDownloadAndSaveCoverLocally(t *testing.T) {
 				},
 			},
 		}
-		res := downloadAndSaveCoverLocally(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
+		res := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
 		if !strings.HasPrefix(res, "/uploads/cover_auto_123_") {
 			t.Errorf("expected path to start with /uploads/cover_auto_123_, got %s", res)
 		}

@@ -1084,8 +1084,8 @@ bis zum 09.10.2026, ohne dass der Zähler es sah; sie schreibt jetzt
 `/api/books`, `/api/class-books`, `/api/portal/`, `/api/lookup/`, `/api/admin`, `/uploads/`.
 
 Die Rechteprüfung kommt dabei **von außen hinein**: Der Hauptrouter übergibt die fertigen
-Middleware-Wrapper (`RequireViewBooks`, `RequireEditBooks`, `RequireDeleteBooks`,
-`RequireAuthenticated`) in der Konfiguration. Das Untermodul entscheidet also nicht selbst
+Middleware-Wrapper (`VerlangeLesen`, `VerlangeAendern`, `VerlangeLoeschen`,
+`VerlangeAnmeldung`) in der Konfiguration. Das Untermodul entscheidet also nicht selbst
 über Rechte — es bekommt sie.
 
 Das ist historisch gewachsen (der Katalog war ein eigenes Projekt) und bleibt so, weil die
@@ -4020,7 +4020,7 @@ Am 03.10.2026 auf eine Frage hin am Code gelesen. Ein Auftrag dazu liegt nicht v
 wird nur mit Anlass.
 
 - Für ET1 bis ET3 entsteht kein Klassensatz „aus Ausleihen": Die Übersicht zählt nur Klassen,
-  deren Name mit einer Ziffer beginnt (`GetClassGroups` in `inventur/datenbank_klassen.go`).
+  deren Name mit einer Ziffer beginnt (`LadeKlassensatzGruppen` in `inventur/datenbank_klassen.go`).
   Gezählt werden Ausleihen auf die Ausweise der Kinder; ein Stapel auf dem Ausweis der Lehrkraft
   erscheint nicht bei der Klasse.
 - Die Theke warnt, wenn ein Kind eine andere Auflage bekommt als seine Klasse, und wenn ein Buch
@@ -4230,7 +4230,7 @@ Fenstern bekannt ist:
 - Auch die Katalogdienste werden in einer Anfrage gefragt, die die Oberfläche nach 10 s
   aufgibt: `POST /api/buecher/aus-isbn` fragt DNB, Google Books und OpenLibrary
   (`SucheNachISBN`), „Cover erneut lokalisieren" läuft in der Anfrage über alle gewählten
-  Titel (`handleRetryExternalCovers`). Am Code gelesen am 07.10.2026, die Dauer nicht
+  Titel (`FremdeCoverNeuLaden`). Am Code gelesen am 07.10.2026, die Dauer nicht
   gemessen. Anlass zum Bauen: ein Abbruch, nach dem unklar ist, was gespeichert wurde.
 - Die Inventur meldet einen Scan nur auf dem Bildschirm; einen Ton wie an der Theke gibt es
   nicht. Ein unbekannter Barcode in einer schnellen Folge steht nur so lange da, bis der

@@ -15,16 +15,16 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 	}
 	defer mockPool.Close()
 
-	repo := NewBookRepository(mockPool)
+	repo := NewTitelAbfragen(mockPool)
 	metadatenClient := &MetadatenClient{httpClient: &http.Client{}}
 
-	handler := NewAPIHandler(APIHandlerConfig{
-		Repo:                 repo,
-		Metadaten:            metadatenClient,
-		RequireViewBooks:     func(h http.Handler) http.Handler { return h },
-		RequireEditBooks:     func(h http.Handler) http.Handler { return h },
-		RequireDeleteBooks:   func(h http.Handler) http.Handler { return h },
-		RequireAuthenticated: func(h http.Handler) http.Handler { return h },
+	handler := NewTueren(TuerenKonfig{
+		Abfragen:          repo,
+		Metadaten:         metadatenClient,
+		VerlangeLesen:     func(h http.Handler) http.Handler { return h },
+		VerlangeAendern:   func(h http.Handler) http.Handler { return h },
+		VerlangeLoeschen:  func(h http.Handler) http.Handler { return h },
+		VerlangeAnmeldung: func(h http.Handler) http.Handler { return h },
 	})
 
 	// Keiner der Fälle erreicht die Datenbank: Das Mock hat keine Erwartung.
@@ -87,7 +87,7 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 			req := httptest.NewRequest(tc.method, tc.path, nil)
 			rec := httptest.NewRecorder()
 
-			handler.handleAdminBooks(rec, req)
+			handler.TitelVerwaltung(rec, req)
 
 			if rec.Code != tc.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rec.Code)

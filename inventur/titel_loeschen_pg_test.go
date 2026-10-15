@@ -21,7 +21,7 @@ import (
 func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	eins := func(was, sql string, args ...any) string {
 		t.Helper()
@@ -104,7 +104,7 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		t.Fatalf("Gebühr: %v", err)
 	}
 
-	if err := repo.DeleteBooks(ctx, []string{titelID}); err != nil {
+	if err := repo.LoescheTitel(ctx, []string{titelID}); err != nil {
 		t.Fatalf("Titel mit verliehenem Exemplar muss löschbar sein: %v", err)
 	}
 

@@ -33,10 +33,10 @@ func TestBuchVorhanden_FalschesPruefzeichenWirdNichtGepaart(t *testing.T) {
 	}
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	handler := NewAPIHandler(APIHandlerConfig{
-		Repo: NewBookRepository(pool), Metadaten: offlineMetadatenClient(),
-		RequireViewBooks: durchlass, RequireEditBooks: durchlass,
-		RequireDeleteBooks: durchlass, RequireAuthenticated: durchlass,
+	handler := NewTueren(TuerenKonfig{
+		Abfragen: NewTitelAbfragen(pool), Metadaten: offlineMetadatenClient(),
+		VerlangeLesen: durchlass, VerlangeAendern: durchlass,
+		VerlangeLoeschen: durchlass, VerlangeAnmeldung: durchlass,
 	})
 	// vorab liefert die Felder der Auskunft, wie sie in der Antwort stehen.
 	vorab := func(isbn string) map[string]any {

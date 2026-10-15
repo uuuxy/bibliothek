@@ -17,7 +17,7 @@ import (
 func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 	marke := "Sicht-" + t.Name()
 
 	titel := func(name string) string {
@@ -53,7 +53,7 @@ func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 		}
 	}
 
-	ids := func(liste []Book) map[string]bool {
+	ids := func(liste []Titel) map[string]bool {
 		m := map[string]bool{}
 		for _, b := range liste {
 			m[b.ID] = true
@@ -74,7 +74,7 @@ func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 		}
 	}
 
-	katalog, err := repo.ListBooks(ctx, "", marke, false)
+	katalog, err := repo.LadeTitelListe(ctx, "", marke, false)
 	if err != nil {
 		t.Fatalf("Katalog: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 		map[string]string{"Mit Exemplar": mit, "Nur im Zulauf": zulauf},
 		map[string]string{"Ohne Exemplar": ohne, "Nur ausgesondert": ausgesondert})
 
-	aufraeumen, err := repo.ListBooks(ctx, "", marke, true)
+	aufraeumen, err := repo.LadeTitelListe(ctx, "", marke, true)
 	if err != nil {
 		t.Fatalf("Aufräumsicht: %v", err)
 	}

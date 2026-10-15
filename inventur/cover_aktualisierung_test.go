@@ -35,8 +35,8 @@ func TestHandleRefreshCover_UngueltigeKennung(t *testing.T) {
 		req.SetPathValue("id", id)
 		w := httptest.NewRecorder()
 
-		handler := &APIHandler{}
-		handler.handleRefreshCover(w, req)
+		handler := &Tueren{}
+		handler.CoverAktualisieren(w, req)
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Kennung %q: expected status %d, got %d", id, http.StatusBadRequest, w.Code)
@@ -51,7 +51,7 @@ func TestHandleRefreshCover_BookNotFound(t *testing.T) {
 	}
 	defer mock.Close()
 
-	handler := &APIHandler{repo: NewBookRepository(mock)}
+	handler := &Tueren{abfragen: NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs("00000000-0000-0000-0000-000000000000").
@@ -61,7 +61,7 @@ func TestHandleRefreshCover_BookNotFound(t *testing.T) {
 	req.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
 	w := httptest.NewRecorder()
 
-	handler.handleRefreshCover(w, req)
+	handler.CoverAktualisieren(w, req)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
@@ -73,7 +73,7 @@ func TestHandleRefreshCover_BookNotFound(t *testing.T) {
 }
 
 // Gegenprobe: Ein DB-Fehler ist kein „nicht gefunden" — bis 29.08.2026 wurde jeder
-// Fehler aus GetBookByID als 404 verkleidet (Schema-Drift wäre unsichtbar geblieben).
+// Fehler aus LadeTitel als 404 verkleidet (Schema-Drift wäre unsichtbar geblieben).
 func TestHandleRefreshCover_DBFehlerIst500(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -81,7 +81,7 @@ func TestHandleRefreshCover_DBFehlerIst500(t *testing.T) {
 	}
 	defer mock.Close()
 
-	handler := &APIHandler{repo: NewBookRepository(mock)}
+	handler := &Tueren{abfragen: NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs("00000000-0000-0000-0000-000000000000").
@@ -91,7 +91,7 @@ func TestHandleRefreshCover_DBFehlerIst500(t *testing.T) {
 	req.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
 	w := httptest.NewRecorder()
 
-	handler.handleRefreshCover(w, req)
+	handler.CoverAktualisieren(w, req)
 
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
@@ -119,15 +119,15 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 	}
 	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
 
-	handler := &APIHandler{
-		repo:      NewBookRepository(mock),
+	handler := &Tueren{
+		abfragen:  NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 
 	bookID := "11111111-1111-1111-1111-111111111111"
 	lastCounted := "2023-01-01"
 
-	// mock GetBookByID
+	// mock LadeTitel
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(bookID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
@@ -138,7 +138,7 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 	req = req.WithContext(context.Background())
 	w := httptest.NewRecorder()
 
-	handler.handleRefreshCover(w, req)
+	handler.CoverAktualisieren(w, req)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
@@ -195,15 +195,15 @@ func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	}
 	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
 
-	handler := &APIHandler{
-		repo:      NewBookRepository(mock),
+	handler := &Tueren{
+		abfragen:  NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 
 	bookID := "22222222-2222-2222-2222-222222222222"
 	lastCounted := "2023-01-01"
 
-	// mock GetBookByID
+	// mock LadeTitel
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(bookID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
@@ -214,7 +214,7 @@ func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	req = req.WithContext(context.Background())
 	w := httptest.NewRecorder()
 
-	handler.handleRefreshCover(w, req)
+	handler.CoverAktualisieren(w, req)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected 404, got %d: %s", w.Code, w.Body.String())
@@ -229,7 +229,7 @@ func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 }
 
 // Erfolg: Google liefert Metadaten, DNB das Bild. Geschrieben wird NUR das Cover — Titel
-// und Autor gehen mit leeren Werten an UpdateBookMetadata, das einen leeren Wert übergeht
+// und Autor gehen mit leeren Werten an AendereTitelMetadaten, das einen leeren Wert übergeht
 // (NULLIF auf den leeren Text, dann COALESCE mit dem alten Wert); die Antwort trägt den alten
 // Titel und den neuen lokalen Cover-Pfad.
 func TestHandleRefreshCover_Success(t *testing.T) {
@@ -286,21 +286,21 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 	}
 	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
 
-	handler := &APIHandler{
-		repo:      NewBookRepository(mock),
+	handler := &Tueren{
+		abfragen:  NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 
 	bookID := "33333333-3333-3333-3333-333333333333"
 	lastCounted := "2023-01-01"
 
-	// mock GetBookByID
+	// mock LadeTitel
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(bookID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
 			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
-	// mock UpdateBookMetadata: Titel und Autor LEER, nur das Cover.
+	// mock AendereTitelMetadaten: Titel und Autor LEER, nur das Cover.
 	mock.ExpectExec(`UPDATE buecher_titel`).
 		WithArgs("", "", pgxmock.AnyArg(), bookID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -310,7 +310,7 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 	req = req.WithContext(context.Background())
 	w := httptest.NewRecorder()
 
-	handler.handleRefreshCover(w, req)
+	handler.CoverAktualisieren(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)

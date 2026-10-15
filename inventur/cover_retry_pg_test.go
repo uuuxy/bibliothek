@@ -79,7 +79,7 @@ func TestRetryExternalCovers_ErsetztNurAdressenImNetz(t *testing.T) {
 		}
 		return antwort(http.StatusNotFound, nil, ""), nil
 	}}
-	handler := &APIHandler{repo: NewBookRepository(pool), metadaten: &MetadatenClient{httpClient: &http.Client{Transport: katalog}}}
+	handler := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: &MetadatenClient{httpClient: &http.Client{Transport: katalog}}}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/books/retry-covers",
 		strings.NewReader(`{"ids":["`+extern+`","`+hand+`"]}`))
@@ -98,7 +98,7 @@ func TestRetryExternalCovers_ErsetztNurAdressenImNetz(t *testing.T) {
 			}
 		}
 	})
-	handler.handleRetryExternalCovers(w, req)
+	handler.FremdeCoverNeuLaden(w, req)
 	neu := cover(extern)
 
 	if w.Code != http.StatusOK {

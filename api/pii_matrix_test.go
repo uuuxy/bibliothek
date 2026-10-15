@@ -133,30 +133,30 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 			// Keine Prüfung des Zugriffs davor: Token-Routen weisen sich über den Token im
 			// Link aus, selbst prüfende (auth/*) prüfen das Sitzungscookie in der Tür.
 			if strings.Contains(zeile, "verlangeRecht(") ||
-				strings.Contains(zeile, "VerlangeAnmeldung(") || strings.Contains(zeile, "RequireAuthenticated(") {
+				strings.Contains(zeile, "VerlangeAnmeldung(") {
 				t.Errorf("%s: Matrix sagt %q, Code hat einen Wrapper: %s", route, z.Recht, strings.TrimSpace(zeile))
 			}
 			continue
 		case "Sitzung":
-			// api/ ruft VerlangeAnmeldung, das inventur-Paket das hereingereichte Feld
-			// RequireAuthenticated seiner Konfiguration.
-			if !strings.Contains(zeile, "VerlangeAnmeldung(") && !strings.Contains(zeile, "RequireAuthenticated(") {
+			// api/ ruft die Methode VerlangeAnmeldung, das Paket inventur das hereingereichte Feld
+			// VerlangeAnmeldung seiner Konfiguration.
+			if !strings.Contains(zeile, "VerlangeAnmeldung(") {
 				t.Errorf("%s: Matrix dokumentiert Recht %q, die Registrierung sagt etwas anderes: %s", route, z.Recht, strings.TrimSpace(zeile))
 			}
 			continue
 		case "inventur-Mux":
 			erwartet = "inventurTueren" // Schutz liegt im inneren Mux, dessen Routen stehen einzeln in der Matrix
 		case "inventur:view_books":
-			erwartet = "RequireViewBooks("
+			erwartet = "VerlangeLesen("
 		case "inventur:delete_books":
 			// Bestand vernichten ist ein eigenes Recht, getrennt von edit_books: Hinge der
 			// Massenlöschweg an edit_books, wäre er offener als das Löschen eines einzelnen
 			// Titels, das delete_books verlangt.
-			erwartet = "RequireDeleteBooks("
+			erwartet = "VerlangeLoeschen("
 		case "inventur:edit_books":
 			// Die Schreibrouten teilen sich eine vorgebaute Tür:
-			// adminH := config.RequireEditBooks(...); die Variable ist die Prüfung des Zugriffs.
-			if !strings.Contains(zeile, "RequireEditBooks(") && !strings.Contains(zeile, "adminH") {
+			// verwaltung := konfig.VerlangeAendern(...); die Variable ist die Prüfung des Zugriffs.
+			if !strings.Contains(zeile, "VerlangeAendern(") && !strings.Contains(zeile, "verwaltung") {
 				t.Errorf("%s: Matrix dokumentiert Recht %q, die Registrierung sagt etwas anderes: %s", route, z.Recht, strings.TrimSpace(zeile))
 			}
 			continue

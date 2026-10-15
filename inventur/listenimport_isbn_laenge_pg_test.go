@@ -14,7 +14,7 @@ import (
 func TestListenimport_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	handler := &APIHandler{repo: NewBookRepository(pool)}
+	handler := &Tueren{abfragen: NewTitelAbfragen(pool)}
 
 	// stand zählt Titel und Exemplare zu einer ISBN, in welcher Länge sie auch gespeichert ist.
 	stand := func(isbn string) (titel, exemplare int) {
@@ -48,8 +48,8 @@ func TestListenimport_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 			t.Fatalf("Titel anlegen: %v", err)
 		}
 
-		importiert, gescheitert, err := handler.persistImportedBooks(ctx,
-			[]Book{{ISBN: "3-551-55167-7", Title: "Harry Potter 1", Stock: 2}}, 0, nil)
+		importiert, gescheitert, err := handler.speichereImportierteTitel(ctx,
+			[]Titel{{ISBN: "3-551-55167-7", Titel: "Harry Potter 1", Bestand: 2}}, 0, nil)
 		if err != nil || importiert != 1 || gescheitert != 0 {
 			t.Fatalf("Listenimport: %d importiert, %d gescheitert, %v", importiert, gescheitert, err)
 		}
@@ -65,9 +65,9 @@ func TestListenimport_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 		loesche(zehn, dreizehn)
 		t.Cleanup(func() { loesche(zehn, dreizehn) })
 
-		importiert, gescheitert, err := handler.persistImportedBooks(ctx, []Book{
-			{ISBN: dreizehn, Title: "Advanced Organic Chemistry", Stock: 2},
-			{ISBN: zehn, Title: "Advanced Organic Chemistry", Stock: 3},
+		importiert, gescheitert, err := handler.speichereImportierteTitel(ctx, []Titel{
+			{ISBN: dreizehn, Titel: "Advanced Organic Chemistry", Bestand: 2},
+			{ISBN: zehn, Titel: "Advanced Organic Chemistry", Bestand: 3},
 		}, 0, nil)
 		if err != nil || importiert != 2 || gescheitert != 0 {
 			t.Fatalf("Listenimport: %d importiert, %d gescheitert, %v", importiert, gescheitert, err)
@@ -85,9 +85,9 @@ func TestListenimport_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 		loesche(falsch, dreizehn)
 		t.Cleanup(func() { loesche(falsch, dreizehn) })
 
-		importiert, gescheitert, err := handler.persistImportedBooks(ctx, []Book{
-			{ISBN: dreizehn, Title: "Das eine Buch", Stock: 1},
-			{ISBN: falsch, Title: "Das andere Buch", Stock: 1},
+		importiert, gescheitert, err := handler.speichereImportierteTitel(ctx, []Titel{
+			{ISBN: dreizehn, Titel: "Das eine Buch", Bestand: 1},
+			{ISBN: falsch, Titel: "Das andere Buch", Bestand: 1},
 		}, 0, nil)
 		if err != nil || importiert != 2 || gescheitert != 0 {
 			t.Fatalf("Listenimport: %d importiert, %d gescheitert, %v", importiert, gescheitert, err)

@@ -16,17 +16,17 @@ import (
 // exportSchlagwortTrenner trennt die Schlagworte eines Titels in ihrer einen Zelle.
 const exportSchlagwortTrenner = " | "
 
-// handleExportCSV handles the GET /api/admin/books/export route.
+// CSVExport handles the GET /api/admin/books/export route.
 //
 // Streamt zeilenweise direkt in die HTTP-Antwort: Der Bestand (eine Zeile JE EXEMPLAR,
 // die größte Zeilenmenge im System) wird NICHT mehr vollständig als [][]string im
 // Speicher materialisiert und dann noch einmal kopiert-sanitisiert. Bei einem großen
 // Katalog war das ein Speicher-Risiko; jetzt liegt immer nur eine Zeile im Speicher.
-func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	writer := csv.NewWriter(w)
-	writer.Comma = ';' // German Excel standard
+	csvSchreiber := csv.NewWriter(w)
+	csvSchreiber.Comma = ';' // German Excel standard
 
 	// HTTP-Header und CSV-Kopf erst, NACHDEM die Query erfolgreich gestartet ist
 	// (kopf-Callback): Scheitert die Datenbank, ist noch nichts gesendet und der
@@ -39,18 +39,18 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 		// Write UTF-8 BOM so Excel opens it correctly with UTF-8
 		_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
 		kopfGesendet = true
-		return writer.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand", "Signatur", "Schlagworte", "Eigentum", "Standort"})
+		return csvSchreiber.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand", "Signatur", "Schlagworte", "Eigentum", "Standort"})
 	}
 
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
 	// Nutzereingaben und dürfen beim Öffnen in Excel keine Formel auslösen (je Zeile).
-	err := handler.repo.StreamBooksForCSVExport(ctx, kopf, func(row []string) error {
-		return writer.Write(csvutil.EntschaerfeZeile(row))
+	err := t.abfragen.LadeTitelFuerCSVExport(ctx, kopf, func(zeile []string) error {
+		return csvSchreiber.Write(csvutil.EntschaerfeZeile(zeile))
 	})
-	writer.Flush()
+	csvSchreiber.Flush()
 	if err != nil {
 		if !kopfGesendet {
-			writeError(w, http.StatusInternalServerError, "fehler beim datenbank-export")
+			schreibeFehler(w, http.StatusInternalServerError, "fehler beim datenbank-export")
 			return
 		}
 		// Header ist längst raus; ein sauberer HTTP-Fehler geht nicht mehr. Die
@@ -59,7 +59,7 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// StreamBooksForCSVExport liest alle Titel×Exemplare und ruft schreibe je Zeile auf —
+// LadeTitelFuerCSVExport liest alle Titel×Exemplare und ruft schreibe je Zeile auf —
 // ohne die Gesamtmenge im Speicher zu halten. kopf wird genau einmal NACH erfolgreichem
 // Query-Start aufgerufen (der Aufrufer sendet dort seine Header). Bricht schreibe ab
 // (z. B. Verbindung weg), endet der Stream mit diesem Fehler.
@@ -69,8 +69,8 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 // Eigentum ist das des Exemplars nach repository.ExemplarTopfSQL, dieselbe Regel wie am
 // Etikett. Der Standort steht am Exemplar. Eine Zeile ohne Exemplar hat weder Eigentum noch
 // Standort.
-func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf func() error, schreibe func(row []string) error) error {
-	query := `
+func (a *TitelAbfragen) LadeTitelFuerCSVExport(ctx context.Context, kopf func() error, schreibe func(zeile []string) error) error {
+	abfrage := `
 		SELECT
 			t.titel,
 			coalesce(t.autor, ''),
@@ -96,21 +96,21 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf fu
 		ORDER BY t.titel, e.barcode_id;
 	`
 
-	pgRows, err := repo.db.Query(ctx, query, exportSchlagwortTrenner)
+	pgZeilen, err := a.pool.Query(ctx, abfrage, exportSchlagwortTrenner)
 	if err != nil {
 		return err
 	}
-	defer pgRows.Close()
+	defer pgZeilen.Close()
 
 	if err := kopf(); err != nil {
 		return err
 	}
 
-	for pgRows.Next() {
-		var titel, autor, verlag, isbn, subject, barcode, zustand, signatur, schlagworte, topf, standort string
+	for pgZeilen.Next() {
+		var titel, autor, verlag, isbn, fach, barcode, zustand, signatur, schlagworte, topf, standort string
 		var jahr int
 
-		if err := pgRows.Scan(&titel, &autor, &verlag, &isbn, &jahr, &subject, &barcode, &zustand, &signatur, &schlagworte, &topf, &standort); err != nil {
+		if err := pgZeilen.Scan(&titel, &autor, &verlag, &isbn, &jahr, &fach, &barcode, &zustand, &signatur, &schlagworte, &topf, &standort); err != nil {
 			return err
 		}
 
@@ -124,11 +124,11 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf fu
 			isbn = "'" + isbn
 		}
 
-		zeile := []string{titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand, signatur, schlagworte, mitteltopf.Traeger(topf), standort}
+		zeile := []string{titel, autor, verlag, isbn, jahrStr, fach, barcode, zustand, signatur, schlagworte, mitteltopf.Traeger(topf), standort}
 		if err := schreibe(zeile); err != nil {
 			return err
 		}
 	}
 
-	return pgRows.Err()
+	return pgZeilen.Err()
 }

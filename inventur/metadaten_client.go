@@ -55,7 +55,7 @@ type MetadatenErgebnis struct {
 	Normdaten []repository.Normdatenbegriff `json:"-"`
 }
 
-// NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,
+// NewMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,
 // um ewig ladende APIs zu unterbrechen.
 //
 // Der Client kommt aus pkg/safehttp und nicht mehr blank aus http.Client: Er spricht
@@ -63,7 +63,7 @@ type MetadatenErgebnis struct {
 // auch Cover herunter. Die Hostnamen-Allowlist in ladeCoverBytes prüft nur die URL,
 // die WIR bilden — wohin ein erlaubter Host per Redirect weiterschickt, sah sie nicht.
 // safehttp lehnt nicht-öffentliche Ziele auf Dialer-Ebene ab und damit bei jedem Hop.
-func NeuerMetadatenClient() *MetadatenClient {
+func NewMetadatenClient() *MetadatenClient {
 	return &MetadatenClient{
 		httpClient: safehttp.NewClient(8 * time.Second),
 	}
@@ -75,8 +75,8 @@ func NeuerMetadatenClient() *MetadatenClient {
 // aber ein Test der Bestellsuche in internal/service kommt sonst nur über unsafe/reflect an
 // das Feld — genau die Fragilität, die bei einer Feldumbenennung still bricht. Diese
 // eine exportierte Naht macht den Weg sicher und benennt ihn ehrlich.
-func (c *MetadatenClient) SetzeHTTPClientFuerTest(hc *http.Client) {
-	c.httpClient = hc
+func (c *MetadatenClient) SetzeHTTPClientFuerTest(httpClient *http.Client) {
+	c.httpClient = httpClient
 }
 
 // ErrKatalogdiensteNichtErreichbar heißt: KEINE der Quellen (DNB, Google, OpenLibrary)
@@ -143,7 +143,7 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	// erreichbar" ist ein Ausfall (Sentinel → 502 beim Aufrufer), kein Nicht-Treffer.
 	quellen := []func(context.Context, string) (*MetadatenErgebnis, error){
 		c.sucheDNB,
-		c.sucheGoogleBooks,
+		c.sucheBeiGoogle,
 		c.sucheOpenLibrary,
 	}
 	erreichbar := false
@@ -203,7 +203,7 @@ func (c *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *Metad
 	kandidaten = append(kandidaten, fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(nummer)))
 
 	// 3. Google Books — separat abfragen, falls die Metadaten von DNB kamen (DNB liefert keine Cover-URL im Datensatz).
-	if gb, err := c.sucheGoogleBooks(kontext, isbn); err == nil && gb != nil && gb.CoverURL != "" {
+	if gb, err := c.sucheBeiGoogle(kontext, isbn); err == nil && gb != nil && gb.CoverURL != "" {
 		kandidaten = append(kandidaten, gb.CoverURL)
 	}
 
@@ -211,7 +211,7 @@ func (c *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *Metad
 	kandidaten = append(kandidaten, fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg?default=false", nummer))
 
 	for _, kandidat := range kandidaten {
-		if lokal := downloadAndSaveCoverLocally(kontext, c.httpClient, kandidat, isbn); lokal != "" {
+		if lokal := speichereCoverLokal(kontext, c.httpClient, kandidat, isbn); lokal != "" {
 			return lokal
 		}
 	}
@@ -219,15 +219,15 @@ func (c *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *Metad
 }
 
 // holeInhalt ist eine HTTP-GET Wrapper-Funktion, die die Antwort einer API als Bytearray zurückliefert.
-func (c *MetadatenClient) holeInhalt(kontext context.Context, apiURL string) ([]byte, error) {
+func (c *MetadatenClient) holeInhalt(kontext context.Context, adresse string) ([]byte, error) {
 	// Angefragt wird die NEU GEBAUTE URL, nicht apiURL: Geprüft hätte url.Parse,
 	// losgeschickt worden wäre der rohe String. Wo sich die beiden Parser über ein
 	// Zeichen uneinig sind, geht die Anfrage an einen anderen Host als den geprüften
 	// (Parsing Differential, gosec G704). Die Liste liegt in pkg/coverquelle und ist
 	// bewusst enger als die Cover-Liste.
-	sichereURL, ok := coverquelle.SichereURL(apiURL, coverquelle.MetadatenHosts)
+	sichereURL, ok := coverquelle.SichereURL(adresse, coverquelle.MetadatenHosts)
 	if !ok {
-		return nil, fmt.Errorf("SSRF Schutz: Hostname ist nicht in der Whitelist: %s", apiURL)
+		return nil, fmt.Errorf("SSRF Schutz: Hostname ist nicht in der Whitelist: %s", adresse)
 	}
 
 	// #nosec G107 - URL aus geprüften Teilen neu gebaut (Host aus der Allowlist-Konstante)

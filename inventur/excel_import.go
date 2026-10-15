@@ -19,239 +19,241 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func extractImportRows(w http.ResponseWriter, request *http.Request) ([][]string, error) {
-	request.Body = http.MaxBytesReader(w, request.Body, 100<<20)
-	if err := request.ParseMultipartForm(100 << 20); err != nil { // 100 MB
+func leseImportZeilen(w http.ResponseWriter, r *http.Request) ([][]string, error) {
+	r.Body = http.MaxBytesReader(w, r.Body, 100<<20)
+	if err := r.ParseMultipartForm(100 << 20); err != nil { // 100 MB
 		return nil, errors.New("datei zu groß oder ungültig")
 	}
 
-	file, fileHeader, err := request.FormFile("file")
+	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
 		return nil, errors.New("keine datei gefunden")
 	}
-	defer func() { _ = file.Close() }() //nolint:errcheck
+	defer func() { _ = datei.Close() }() //nolint:errcheck
 
-	if strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
-		return parseCSVRows(file)
+	if strings.HasSuffix(strings.ToLower(dateiKopf.Filename), ".csv") {
+		return leseCSVZeilen(datei)
 	}
-	return parseExcelRows(file)
+	return leseExcelZeilen(datei)
 }
 
-// parseCSVRows liest eine CSV-Datei mit heuristischer Trennzeichenerkennung (, oder ;).
-func parseCSVRows(file io.Reader) ([][]string, error) {
-	content, err := io.ReadAll(file)
+// leseCSVZeilen liest eine CSV-Datei mit heuristischer Trennzeichenerkennung (, oder ;).
+func leseCSVZeilen(datei io.Reader) ([][]string, error) {
+	inhalt, err := io.ReadAll(datei)
 	if err != nil {
 		return nil, errors.New("fehler beim lesen der csv-datei")
 	}
-	contentStr := string(content)
-	delimiter := ','
-	if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
-		delimiter = ';'
+	inhaltText := string(inhalt)
+	trenner := ','
+	if strings.Count(inhaltText, ";") > strings.Count(inhaltText, ",") {
+		trenner = ';'
 	}
-	reader := csv.NewReader(strings.NewReader(contentStr))
-	reader.Comma = delimiter
-	reader.LazyQuotes = true
-	rows, err := reader.ReadAll()
+	leser := csv.NewReader(strings.NewReader(inhaltText))
+	leser.Comma = trenner
+	leser.LazyQuotes = true
+	zeilen, err := leser.ReadAll()
 	if err != nil {
 		return nil, errors.New("ungültige csv-datei")
 	}
-	if len(rows) == 0 {
+	if len(zeilen) == 0 {
 		return nil, errors.New("datei ist leer")
 	}
-	return rows, nil
+	return zeilen, nil
 }
 
-// parseExcelRows liest die erste Tabelle einer Excel-Datei, hinter der Schranke aus
+// leseExcelZeilen liest die erste Tabelle einer Excel-Datei, hinter der Schranke aus
 // xlsxgrenze: Eine kaputte oder verschlüsselte Datei wird eine „ungültige excel-datei",
 // kein Absturz.
-func parseExcelRows(file io.Reader) ([][]string, error) {
-	rows, err := xlsxgrenze.LeseMappe(file, func(f *excelize.File) ([][]string, error) {
-		sheets := f.GetSheetList()
-		if len(sheets) == 0 {
+func leseExcelZeilen(datei io.Reader) ([][]string, error) {
+	zeilen, err := xlsxgrenze.LeseMappe(datei, func(f *excelize.File) ([][]string, error) {
+		blaetter := f.GetSheetList()
+		if len(blaetter) == 0 {
 			return nil, errors.New("excel-datei ist leer")
 		}
-		rows, err := f.GetRows(sheets[0])
-		if err != nil || len(rows) < 1 {
+		zeilen, err := f.GetRows(blaetter[0])
+		if err != nil || len(zeilen) < 1 {
 			return nil, errors.New("keine daten gefunden")
 		}
-		return rows, nil
+		return zeilen, nil
 	})
 	if xlsxgrenze.IstUnlesbar(err) {
 		return nil, errors.New("ungültige excel-datei")
 	}
-	return rows, err
+	return zeilen, err
 }
 
-func determineColumnIndices(header []string) (map[string]int, bool) {
-	colIdx := map[string]int{"isbn": -1, "titel": -1, "autor": -1, "fach": -1, "klasse": -1, "bestand": -1}
-	hasHeader := true
+func bestimmeSpalten(kopf []string) (map[string]int, bool) {
+	spalten := map[string]int{"isbn": -1, "titel": -1, "autor": -1, "fach": -1, "klasse": -1, "bestand": -1}
+	mitKopfzeile := true
 
 	// Versuche Header zu erkennen
-	for i, col := range header {
-		if field := mapHeaderToField(col); field != "" {
-			colIdx[field] = i
+	for i, spalte := range kopf {
+		if feld := feldZurKopfzeile(spalte); feld != "" {
+			spalten[feld] = i
 		}
 	}
 
 	// Fallback: Wenn kein Header erkannt wurde (keine ISBN Spalte), versuche Inhalt zu erraten
-	if colIdx["isbn"] == -1 {
-		hasHeader = false
-		errateSpaltenAusInhalt(header, colIdx)
+	if spalten["isbn"] == -1 {
+		mitKopfzeile = false
+		errateSpaltenAusInhalt(kopf, spalten)
 	}
-	return colIdx, hasHeader
+	return spalten, mitKopfzeile
 }
 
 // errateSpaltenAusInhalt rät die Spaltenzuordnung anhand des Zeileninhalts, wenn keine
 // Kopfzeile erkannt wurde: ISBN am 978/979-Präfix, reine Zahlen als Bestand, längere
 // Texte als Titel. Mutiert colIdx.
-func errateSpaltenAusInhalt(header []string, colIdx map[string]int) {
-	for i, col := range header {
-		val := strings.TrimSpace(col)
-		cleanVal := isbnutil.OhneTrenner(val)
-		if (strings.HasPrefix(val, "978") || strings.HasPrefix(val, "979")) && len(cleanVal) >= 10 {
-			colIdx["isbn"] = i
+func errateSpaltenAusInhalt(kopf []string, spalten map[string]int) {
+	for i, spalte := range kopf {
+		wert := strings.TrimSpace(spalte)
+		bereinigt := isbnutil.OhneTrenner(wert)
+		if (strings.HasPrefix(wert, "978") || strings.HasPrefix(wert, "979")) && len(bereinigt) >= 10 {
+			spalten["isbn"] = i
 			continue
 		}
-		if _, err := strconv.Atoi(val); err == nil {
-			if colIdx["bestand"] == -1 {
-				colIdx["bestand"] = i
+		if _, err := strconv.Atoi(wert); err == nil {
+			if spalten["bestand"] == -1 {
+				spalten["bestand"] = i
 			}
 			continue
 		}
-		if colIdx["titel"] == -1 && len(val) > 2 {
-			colIdx["titel"] = i
+		if spalten["titel"] == -1 && len(wert) > 2 {
+			spalten["titel"] = i
 		}
 	}
 }
 
-func (handler *APIHandler) processImportRows(ctx context.Context, dataRows [][]string, colIdx map[string]int) ([]Book, int32, error) {
-	var failed int32 = 0
-	var firstError error
-	var errMutex sync.Mutex
+func (t *Tueren) verarbeiteImportZeilen(ctx context.Context, datenZeilen [][]string, spalten map[string]int) ([]Titel, int32, error) {
+	var gescheitert int32 = 0
+	var ersterFehler error
+	var fehlerSperre sync.Mutex
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, 10)
+	begrenzung := make(chan struct{}, 10)
 
-	var booksToUpsert []Book
-	var booksMutex sync.Mutex
+	var zuSchreiben []Titel
+	var titelSperre sync.Mutex
 
-	for _, row := range dataRows {
+	for _, zeile := range datenZeilen {
 		wg.Add(1)
 		// Semaphore VOR dem Start der Goroutine belegen, damit die Schleife blockiert und
 		// nicht für jede Zeile sofort eine Goroutine erzeugt. Bei großen Importen (z. B. 20k
 		// Zeilen) entstünden sonst zehntausende gleichzeitig lebende Goroutinen, die alle nur
 		// auf einen Semaphor-Slot warten — unnötiger Speicher- und Scheduler-Druck.
-		sem <- struct{}{}
-		go func(row []string) {
+		begrenzung <- struct{}{}
+		go func(zeile []string) {
 			defer wg.Done()
-			defer func() { <-sem }()
+			defer func() { <-begrenzung }()
 			defer safego.FangePanic("excel-import-zeile")
 
-			book, err := verarbeiteImportZeile(ImportConfig{
-				Ctx:       ctx,
-				Row:       row,
-				ColIdx:    colIdx,
-				Repo:      handler.repo,
-				Metadaten: handler.metadaten,
+			eintrag, err := verarbeiteImportZeile(importZeile{
+				Kontext:   ctx,
+				Zeile:     zeile,
+				Spalten:   spalten,
+				Abfragen:  t.abfragen,
+				Metadaten: t.metadaten,
 			})
 			if err != nil {
-				atomic.AddInt32(&failed, 1)
-				errMutex.Lock()
-				if firstError == nil {
-					firstError = err
+				atomic.AddInt32(&gescheitert, 1)
+				fehlerSperre.Lock()
+				if ersterFehler == nil {
+					ersterFehler = err
 				}
-				errMutex.Unlock()
-			} else if book != nil {
-				booksMutex.Lock()
-				booksToUpsert = append(booksToUpsert, *book)
-				booksMutex.Unlock()
+				fehlerSperre.Unlock()
+			} else if eintrag != nil {
+				titelSperre.Lock()
+				zuSchreiben = append(zuSchreiben, *eintrag)
+				titelSperre.Unlock()
 			}
-		}(row)
+		}(zeile)
 	}
 	wg.Wait()
 
-	return booksToUpsert, failed, firstError
+	return zuSchreiben, gescheitert, ersterFehler
 }
 
-// prepareImportRows validiert Methode und Datei, ermittelt die Spaltenzuordnung und
+// bereiteImportZeilenVor validiert Methode und Datei, ermittelt die Spaltenzuordnung und
 // liefert die Datenzeilen (ohne Kopfzeile). ok=false bedeutet: die Fehlerantwort wurde
 // bereits geschrieben.
-func (handler *APIHandler) prepareImportRows(writer http.ResponseWriter, request *http.Request) (dataRows [][]string, colIdx map[string]int, ok bool) {
-	if request.Method != http.MethodPost {
-		writeError(writer, http.StatusMethodNotAllowed, "nur post-anfragen erlaubt")
+func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) (datenZeilen [][]string, spalten map[string]int, ok bool) {
+	if r.Method != http.MethodPost {
+		schreibeFehler(w, http.StatusMethodNotAllowed, "nur post-anfragen erlaubt")
 		return nil, nil, false
 	}
 
-	rows, err := extractImportRows(writer, request)
+	zeilen, err := leseImportZeilen(w, r)
 	if err != nil {
-		writeError(writer, http.StatusBadRequest, err.Error())
+		schreibeFehler(w, http.StatusBadRequest, err.Error())
 		return nil, nil, false
 	}
 
-	colIdx, hasHeader := determineColumnIndices(rows[0])
-	if colIdx["isbn"] == -1 {
-		writeError(writer, http.StatusBadRequest, "spalte 'isbn' fehlt in der datei. bitte stellen sie sicher, dass eine isbn-spalte vorhanden ist.")
+	spalten, mitKopfzeile := bestimmeSpalten(zeilen[0])
+	if spalten["isbn"] == -1 {
+		schreibeFehler(w, http.StatusBadRequest, "spalte 'isbn' fehlt in der datei. bitte stellen sie sicher, dass eine isbn-spalte vorhanden ist.")
 		return nil, nil, false
 	}
 
-	dataRows = rows
-	if hasHeader {
-		dataRows = rows[1:]
+	datenZeilen = zeilen
+	if mitKopfzeile {
+		datenZeilen = zeilen[1:]
 	}
 
-	const maxImportRows = 100000
-	if len(dataRows) > maxImportRows {
-		writeError(writer, http.StatusBadRequest, fmt.Sprintf("zu viele zeilen (%d), maximal %d erlaubt", len(dataRows), maxImportRows))
+	const maxImportZeilen = 100000
+	if len(datenZeilen) > maxImportZeilen {
+		schreibeFehler(w, http.StatusBadRequest, fmt.Sprintf("zu viele zeilen (%d), maximal %d erlaubt", len(datenZeilen), maxImportZeilen))
 		return nil, nil, false
 	}
 
-	return dataRows, colIdx, true
+	return datenZeilen, spalten, true
 }
 
-// persistImportedBooks schreibt die eingelesenen Bücher per Batch-Upsert; schlägt der
+// speichereImportierteTitel schreibt die eingelesenen Bücher per Batch-Upsert; schlägt der
 // Batch fehl, wird zeilenweise als Fallback eingefügt. Liefert die aktualisierten
 // Zähler zurück.
-func (handler *APIHandler) persistImportedBooks(ctx context.Context, booksToUpsert []Book, failed int32, firstError error) (imported, outFailed int32, outErr error) {
-	if len(booksToUpsert) == 0 {
-		return 0, failed, firstError
+func (t *Tueren) speichereImportierteTitel(ctx context.Context, zuSchreiben []Titel, gescheitert int32, ersterFehler error) (importiert, gescheitertAus int32, fehlerAus error) {
+	if len(zuSchreiben) == 0 {
+		return 0, gescheitert, ersterFehler
 	}
 
-	count, err := handler.repo.UpsertBooksBatch(ctx, booksToUpsert)
+	anzahl, err := t.abfragen.SchreibeTitelStapel(ctx, zuSchreiben)
 	if err != nil {
-		return handler.persistBooksFallback(ctx, booksToUpsert, failed, firstError)
+		return t.speichereTitelEinzeln(ctx, zuSchreiben, gescheitert, ersterFehler)
 	}
 
 	// #nosec G115 - count is bounded by maxImportRows (5000)
-	imported += int32(count)
-	if imported == 0 {
+	importiert += int32(anzahl)
+	if importiert == 0 {
 		// Falls count 0 ist wegen z.B. nur Updates in manchen DB Versionen
 		// #nosec G115 - len is bounded by maxImportRows (5000)
-		imported = int32(len(booksToUpsert))
+		importiert = int32(len(zuSchreiben))
 	}
-	return imported, failed, firstError
+	return importiert, gescheitert, ersterFehler
 }
 
-// persistBooksFallback führt einzelne Inserts als Fallback aus, wenn der Batch-Insert fehlschlägt.
-func (handler *APIHandler) persistBooksFallback(ctx context.Context, books []Book, failed int32, firstError error) (imported, outFailed int32, outErr error) {
-	for _, book := range books {
-		_, singleErr := handler.repo.UpsertBook(ctx, book)
-		if singleErr != nil {
-			failed++
-			if firstError == nil {
-				firstError = singleErr
+// speichereTitelEinzeln führt einzelne Inserts als Fallback aus, wenn der Batch-Insert fehlschlägt.
+func (t *Tueren) speichereTitelEinzeln(ctx context.Context, eintraege []Titel, gescheitert int32, ersterFehler error) (importiert, gescheitertAus int32, fehlerAus error) {
+	for _, eintrag := range eintraege {
+		_, einzelFehler := t.abfragen.SchreibeTitel(ctx, eintrag)
+		if einzelFehler != nil {
+			gescheitert++
+			if ersterFehler == nil {
+				ersterFehler = einzelFehler
 			}
 		} else {
-			imported++
+			importiert++
 		}
 	}
-	return imported, failed, firstError
+	return importiert, gescheitert, ersterFehler
 }
 
-func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request *http.Request) {
-	schluessel, ok := importSchluessel(writer, request)
+// ExcelImport ist die Tür POST /api/books/import: Sie übernimmt eine Liste von Titeln aus
+// Excel oder CSV.
+func (t *Tueren) ExcelImport(w http.ResponseWriter, r *http.Request) {
+	schluessel, ok := importSchluessel(w, r)
 	if !ok {
 		return
 	}
-	dataRows, colIdx, ok := handler.prepareImportRows(writer, request)
+	datenZeilen, spalten, ok := t.bereiteImportZeilenVor(w, r)
 	if !ok {
 		return
 	}
@@ -259,45 +261,45 @@ func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request
 	// braucht kein Gedächtnis; ein reservierter Schlüssel dagegen sperrt den zweiten
 	// Aufruf, solange dieser läuft.
 	if schluessel != "" {
-		frisch, alt, err := handler.reserviereImportLauf(request.Context(), schluessel)
+		frisch, alt, err := t.reserviereImportLauf(r.Context(), schluessel)
 		if err != nil {
-			writeError(writer, http.StatusInternalServerError, "import-schlüssel konnte nicht geprüft werden")
+			schreibeFehler(w, http.StatusInternalServerError, "import-schlüssel konnte nicht geprüft werden")
 			return
 		}
 		if !frisch {
-			writeJSON(writer, alt.Status, alt.Daten)
+			schreibeJSON(w, alt.Status, alt.Daten)
 			return
 		}
 	}
 
-	booksToUpsert, failed, firstError := handler.processImportRows(request.Context(), dataRows, colIdx)
-	imported, failed, firstError := handler.persistImportedBooks(request.Context(), booksToUpsert, failed, firstError)
+	zuSchreiben, gescheitert, ersterFehler := t.verarbeiteImportZeilen(r.Context(), datenZeilen, spalten)
+	importiert, gescheitert, ersterFehler := t.speichereImportierteTitel(r.Context(), zuSchreiben, gescheitert, ersterFehler)
 
-	status, antwort := importAntwort(imported, failed, firstError)
+	status, antwort := importAntwort(importiert, gescheitert, ersterFehler)
 	if schluessel != "" {
-		handler.schliesseImportLauf(request.Context(), schluessel, imported > 0, status, antwort)
+		t.schliesseImportLauf(r.Context(), schluessel, importiert > 0, status, antwort)
 	}
-	writeJSON(writer, status, antwort)
+	schreibeJSON(w, status, antwort)
 }
 
 // importAntwort formt das Ergebnis eines Laufs — EINE Stelle, weil dieselbe Antwort
 // beim Wiederholungsaufruf aus dem Idempotenz-Gedächtnis kommt.
-func importAntwort(imported, failed int32, firstError error) (int, map[string]any) {
-	if imported == 0 && failed > 0 {
-		msg := "keine bücher konnten importiert werden."
-		if firstError != nil {
-			msg += " fehler: " + firstError.Error()
+func importAntwort(importiert, gescheitert int32, ersterFehler error) (int, map[string]any) {
+	if importiert == 0 && gescheitert > 0 {
+		meldung := "keine bücher konnten importiert werden."
+		if ersterFehler != nil {
+			meldung += " fehler: " + ersterFehler.Error()
 		}
-		return http.StatusBadRequest, map[string]any{"error": msg}
+		return http.StatusBadRequest, map[string]any{"error": meldung}
 	}
 
-	message := fmt.Sprintf("%d bücher importiert", imported)
-	if failed > 0 {
-		message += fmt.Sprintf(", %d fehlgeschlagen", failed)
+	zusammenfassung := fmt.Sprintf("%d bücher importiert", importiert)
+	if gescheitert > 0 {
+		zusammenfassung += fmt.Sprintf(", %d fehlgeschlagen", gescheitert)
 	}
 	return http.StatusOK, map[string]any{
-		"message":  message,
-		"imported": imported,
-		"failed":   failed,
+		"message":  zusammenfassung,
+		"imported": importiert,
+		"failed":   gescheitert,
 	}
 }

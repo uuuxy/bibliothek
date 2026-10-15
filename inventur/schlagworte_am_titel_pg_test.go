@@ -37,7 +37,7 @@ func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) 
 	loesche()
 	t.Cleanup(loesche)
 
-	handler := &APIHandler{repo: &BookRepository{db: pool}, metadaten: offlineMetadatenClient()}
+	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 
 	sende := func(methode string, id string, koerper map[string]any) *httptest.ResponseRecorder {
 		t.Helper()
@@ -53,9 +53,9 @@ func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) 
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		if methode == http.MethodPost {
-			handler.BearbeiteBuchErstellen(rec, req)
+			handler.TitelAnlegen(rec, req)
 		} else {
-			handler.BearbeiteBuchAktualisieren(rec, req)
+			handler.TitelAendern(rec, req)
 		}
 		return rec
 	}
@@ -65,7 +65,7 @@ func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) 
 		req := httptest.NewRequest(http.MethodGet, "/api/books/"+id, nil)
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuchLesen(rec, req)
+		handler.Titel(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Einzel-Read: %d %s", rec.Code, rec.Body.String())
 		}

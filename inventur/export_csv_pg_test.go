@@ -21,7 +21,7 @@ import (
 func TestBestandslisteNenntSignaturSchlagworteEigentumUndStandort(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 	marke := fmt.Sprintf("EXPORT%d", time.Now().UnixNano())
 
 	titel := func(name, signatur string, lernmittel bool) string {
@@ -90,7 +90,7 @@ func TestBestandslisteNenntSignaturSchlagworteEigentumUndStandort(t *testing.T) 
 
 	var zeilen [][]string
 	kopf := func() error { return nil }
-	err := repo.StreamBooksForCSVExport(ctx, kopf, func(zeile []string) error {
+	err := repo.LadeTitelFuerCSVExport(ctx, kopf, func(zeile []string) error {
 		if strings.HasPrefix(zeile[0], marke) {
 			zeilen = append(zeilen, slices.Clone(zeile))
 		}

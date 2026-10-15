@@ -15,7 +15,7 @@ import (
 func TestKatalog_TraegtBuchUndRangDerAuflage(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	var werk, bestellt, neu, alt, einzeln string
 	if err := pool.QueryRow(ctx, `INSERT INTO werke DEFAULT VALUES RETURNING id`).Scan(&werk); err != nil {
@@ -54,11 +54,11 @@ func TestKatalog_TraegtBuchUndRangDerAuflage(t *testing.T) {
 		}
 	}
 
-	liste, err := repo.ListBooks(ctx, "", "", false)
+	liste, err := repo.LadeTitelListe(ctx, "", "", false)
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}
-	je := map[string]Book{}
+	je := map[string]Titel{}
 	for _, b := range liste {
 		je[b.ID] = b
 	}
@@ -86,7 +86,7 @@ func TestKatalog_TraegtBuchUndRangDerAuflage(t *testing.T) {
 
 	// Der Einzel-Read (Akte, Bearbeiten) liest dieselben Spalten: auch für die Auflage, die
 	// die Liste nicht zeigt.
-	einzel, err := repo.ListBooksByIDs(ctx, []string{bestellt})
+	einzel, err := repo.LadeTitelNachIDs(ctx, []string{bestellt})
 	if err != nil {
 		t.Fatalf("ListBooksByIDs: %v", err)
 	}

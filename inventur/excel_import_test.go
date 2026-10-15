@@ -50,7 +50,7 @@ func TestParseCSVRows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := strings.NewReader(tt.csvData)
-			result, err := parseCSVRows(r)
+			result, err := leseCSVZeilen(r)
 			if tt.expectErr {
 				if err == nil {
 					t.Errorf("expected error, got nil")
@@ -117,7 +117,7 @@ func TestDetermineColumnIndices(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			idx, hasHead := determineColumnIndices(tt.header)
+			idx, hasHead := bestimmeSpalten(tt.header)
 			if hasHead != tt.expectedHasHead {
 				t.Errorf("expected hasHeader=%v, got %v", tt.expectedHasHead, hasHead)
 			}

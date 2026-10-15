@@ -92,7 +92,7 @@ func TestAuflagen_EinSchreibpfad(t *testing.T) {
 
 	// Nicht-leer-Garantie je Quelle, von Hand gezählt am 25.09.2026: In der Tür stehen
 	// INSERT INTO werke, drei SET werk_id und DELETE FROM werke; Titel löschen LoescheTitel und
-	// DeleteBooks. Findet der Detektor weniger, misst er nichts mehr.
+	// inventur.LoescheTitel. Findet der Detektor weniger, misst er nichts mehr.
 	if schreiberInTuer < 5 {
 		t.Errorf("nur %d Schreiber in %s gefunden — erwartet mindestens 5: misst der Detektor noch?", schreiberInTuer, tuer)
 	}

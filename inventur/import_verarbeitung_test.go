@@ -25,7 +25,7 @@ func TestInferSubjectFromTitle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := inferSubjectFromTitle(tt.title)
+			result := errateFachAusTitel(tt.title)
 			if result != tt.expected {
 				t.Errorf("inferSubjectFromTitle(%q) = %q; want %q", tt.title, result, tt.expected)
 			}

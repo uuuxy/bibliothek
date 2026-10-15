@@ -36,8 +36,8 @@ func TestHandleImportExcel(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/admin/import", nil)
 		w := httptest.NewRecorder()
 
-		handler := &APIHandler{}
-		handler.handleImportExcel(w, req)
+		handler := &Tueren{}
+		handler.ExcelImport(w, req)
 
 		assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
 	})
@@ -53,8 +53,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		handler := &APIHandler{}
-		handler.handleImportExcel(w, req)
+		handler := &Tueren{}
+		handler.ExcelImport(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -79,8 +79,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		handler := &APIHandler{}
-		handler.handleImportExcel(w, req)
+		handler := &Tueren{}
+		handler.ExcelImport(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		var resp map[string]interface{}
@@ -94,7 +94,7 @@ func TestHandleImportExcel(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
@@ -110,8 +110,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		handler := &APIHandler{
-			repo:      repo,
+		handler := &Tueren{
+			abfragen:  repo,
 			metadaten: offlineMetadatenClient(),
 		}
 
@@ -125,7 +125,7 @@ func TestHandleImportExcel(t *testing.T) {
 		mock.ExpectExec("INSERT INTO buecher_exemplare").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 0))
 		mock.ExpectCommit()
 
-		handler.handleImportExcel(w, req)
+		handler.ExcelImport(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp map[string]interface{}
@@ -141,7 +141,7 @@ func TestHandleImportExcel(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
@@ -157,8 +157,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		handler := &APIHandler{
-			repo:      repo,
+		handler := &Tueren{
+			abfragen:  repo,
 			metadaten: offlineMetadatenClient(),
 		}
 
@@ -174,7 +174,7 @@ func TestHandleImportExcel(t *testing.T) {
 		mock.ExpectQuery(".*").WillReturnError(assert.AnError)
 		mock.ExpectRollback()
 
-		handler.handleImportExcel(w, req)
+		handler.ExcelImport(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		var resp map[string]interface{}
@@ -188,7 +188,7 @@ func TestHandleImportExcel(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
@@ -204,8 +204,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		handler := &APIHandler{
-			repo:      repo,
+		handler := &Tueren{
+			abfragen:  repo,
 			metadaten: offlineMetadatenClient(),
 		}
 
@@ -223,7 +223,7 @@ func TestHandleImportExcel(t *testing.T) {
 		mock.ExpectExec("INSERT INTO buecher_exemplare").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 5))
 		mock.ExpectCommit()
 
-		handler.handleImportExcel(w, req)
+		handler.ExcelImport(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp map[string]interface{}

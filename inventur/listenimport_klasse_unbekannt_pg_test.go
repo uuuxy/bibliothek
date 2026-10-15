@@ -13,19 +13,19 @@ import (
 func TestListenimport_OhneKlasseUnbekanntUndSpaeterNachgetragen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
-	wege := map[string]func(Book) error{
-		"UpsertBooksBatch": func(b Book) error {
-			_, err := repo.UpsertBooksBatch(ctx, []Book{b})
+	wege := map[string]func(Titel) error{
+		"SchreibeTitelStapel": func(b Titel) error {
+			_, err := repo.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		},
-		"UpsertBook (Einzel-Rückfall)": func(b Book) error {
-			_, err := repo.UpsertBook(ctx, b)
+		"UpsertBook (Einzel-Rückfall)": func(b Titel) error {
+			_, err := repo.SchreibeTitel(ctx, b)
 			return err
 		},
 	}
-	isbns := map[string]string{"UpsertBooksBatch": "978-9-99-300001-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-300001-2"}
+	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300001-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-300001-2"}
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]
@@ -50,12 +50,12 @@ func TestListenimport_OhneKlasseUnbekanntUndSpaeterNachgetragen(t *testing.T) {
 			}
 			return s
 		}
-		zeile := func(spalten map[string]int, werte ...string) Book {
+		zeile := func(spalten map[string]int, werte ...string) Titel {
 			t.Helper()
-			buch, err := verarbeiteImportZeile(ImportConfig{
-				Ctx:       ctx,
-				Row:       append([]string{isbn, "Die 13½ Leben des Käpt'n Blaubär", "Moers"}, werte...),
-				ColIdx:    spalten,
+			buch, err := verarbeiteImportZeile(importZeile{
+				Kontext:   ctx,
+				Zeile:     append([]string{isbn, "Die 13½ Leben des Käpt'n Blaubär", "Moers"}, werte...),
+				Spalten:   spalten,
 				Metadaten: offlineMetadatenClient(),
 			})
 			if err != nil || buch == nil {

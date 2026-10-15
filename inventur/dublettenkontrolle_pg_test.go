@@ -24,7 +24,7 @@ import (
 func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	aufraeumen := func(t *testing.T, titel string) {
 		t.Helper()
@@ -41,11 +41,11 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := repo.CreateBook(ctx, Book{ISBN: "978-3-12-345678-9", Title: titel}); err != nil {
+		if _, err := repo.LegeTitelAn(ctx, Titel{ISBN: "978-3-12-345678-9", Titel: titel}); err != nil {
 			t.Fatalf("erster Titel: %v", err)
 		}
-		_, err := repo.CreateBook(ctx, Book{ISBN: "9783123456789", Title: titel + " (zweite Schreibweise)"})
-		if !errors.Is(err, ErrDuplicateISBN) {
+		_, err := repo.LegeTitelAn(ctx, Titel{ISBN: "9783123456789", Titel: titel + " (zweite Schreibweise)"})
+		if !errors.Is(err, ErrISBNDoppelt) {
 			t.Errorf("zweite Schreibweise: Fehler %v, erwartet ErrDuplicateISBN — es ist dieselbe Nummer", err)
 		}
 	})
@@ -56,16 +56,16 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer"}); err != nil {
+		if _, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer"}); err != nil {
 			t.Fatalf("erster Titel: %v", err)
 		}
-		_, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer"})
+		_, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer"})
 		if !errors.Is(err, ErrDubletteTitel) {
 			t.Errorf("zweiter gleicher Titel: Fehler %v, erwartet ErrDubletteTitel", err)
 		}
 
 		// Eine andere Auflage ist ein anderes Buch und darf angelegt werden.
-		if _, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer", Auflage: "2. Aufl."}); err != nil {
+		if _, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "2. Aufl."}); err != nil {
 			t.Errorf("zweite Auflage: %v — mit eigener Auflage ist es ein anderes Buch", err)
 		}
 	})
@@ -80,16 +80,16 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer", Auflage: "3.  Aufl."}); err != nil {
+		if _, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "3.  Aufl."}); err != nil {
 			t.Fatalf("erster Titel: %v", err)
 		}
 		for _, auflage := range []string{"", "3. aufl. ", "3.   Aufl."} {
-			_, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer", Auflage: auflage})
+			_, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: auflage})
 			if !errors.Is(err, ErrDubletteTitel) {
 				t.Errorf("Auflage %q: Fehler %v, erwartet ErrDubletteTitel", auflage, err)
 			}
 		}
-		if _, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer", Auflage: "4. Aufl."}); err != nil {
+		if _, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "4. Aufl."}); err != nil {
 			t.Errorf("andere Auflage: %v — mit eigener Auflage ist es ein anderes Buch", err)
 		}
 	})
@@ -104,7 +104,7 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
 			t.Fatal(err)
 		}
-		id, err := repo.CreateBook(ctx, Book{Title: "Dubletten-Probe La  Peste", Author: "Camus,  Albert"})
+		id, err := repo.LegeTitelAn(ctx, Titel{Titel: "Dubletten-Probe La  Peste", Autor: "Camus,  Albert"})
 		if err != nil {
 			t.Fatalf("erster Titel: %v", err)
 		}
@@ -117,14 +117,14 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 			t.Fatalf("gespeichert %q von %q, erwartet %q von %q", gespeichert, autor, titel, "Camus, Albert")
 		}
 
-		for _, eingabe := range []Book{
-			{Title: "Dubletten-Probe La  Peste", Author: "Camus,  Albert"},
-			{Title: " Dubletten-Probe La" + geschuetzt + "Peste ", Author: "Camus," + geschuetzt + "Albert"},
-			{Title: "Dubletten-Probe La Peste", Author: "Camus, Albert"},
+		for _, eingabe := range []Titel{
+			{Titel: "Dubletten-Probe La  Peste", Autor: "Camus,  Albert"},
+			{Titel: " Dubletten-Probe La" + geschuetzt + "Peste ", Autor: "Camus," + geschuetzt + "Albert"},
+			{Titel: "Dubletten-Probe La Peste", Autor: "Camus, Albert"},
 		} {
-			_, err := repo.CreateBook(ctx, eingabe)
+			_, err := repo.LegeTitelAn(ctx, eingabe)
 			if !errors.Is(err, ErrDubletteTitel) {
-				t.Errorf("%+q von %+q: Fehler %v, erwartet ErrDubletteTitel", eingabe.Title, eingabe.Author, err)
+				t.Errorf("%+q von %+q: Fehler %v, erwartet ErrDubletteTitel", eingabe.Titel, eingabe.Autor, err)
 			}
 		}
 	})

@@ -59,8 +59,8 @@ type sruAntwort struct {
 // eines Titels. Sie sind nicht zu sehen, und ein Titel mit ihnen gleicht dem getippten nicht.
 func dekodiereMARC(koerper []byte) (sruAntwort, error) {
 	var nutzlast sruAntwort
-	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
-	if err := decoder.Decode(&nutzlast); err != nil {
+	dekodierer := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
+	if err := dekodierer.Decode(&nutzlast); err != nil {
 		return sruAntwort{}, err
 	}
 	for i := range nutzlast.Records.Record {
@@ -170,18 +170,18 @@ func (b *marcBibDaten) verarbeiteISBN(subfelder []marcSubfield) {
 // oder 13 Stellen hat, ist keine ISBN — eine halb erkannte Nummer wäre schlimmer als gar
 // keine, weil sie im Katalog auf ein fremdes Buch zeigen könnte.
 func bereinigeISBN(wert string) string {
-	parts := strings.Fields(wert)
-	if len(parts) == 0 {
+	teile := strings.Fields(wert)
+	if len(teile) == 0 {
 		return ""
 	}
-	var clean strings.Builder
-	for _, char := range parts[0] {
-		if (char >= '0' && char <= '9') || char == 'X' || char == 'x' {
-			clean.WriteRune(char)
+	var bereinigt strings.Builder
+	for _, zeichen := range teile[0] {
+		if (zeichen >= '0' && zeichen <= '9') || zeichen == 'X' || zeichen == 'x' {
+			bereinigt.WriteRune(zeichen)
 		}
 	}
-	if l := clean.Len(); l == 10 || l == 13 {
-		return clean.String()
+	if l := bereinigt.Len(); l == 10 || l == 13 {
+		return bereinigt.String()
 	}
 	return ""
 }
@@ -202,12 +202,12 @@ func (b *marcBibDaten) verarbeiteTitel(subfelder []marcSubfield) {
 			continue
 		}
 		wert := strings.TrimSpace(unterFeld.Value)
-		if idx := strings.Index(wert, " / "); idx != -1 {
-			autorInfo := strings.TrimSpace(wert[idx+3:])
+		if stelle := strings.Index(wert, " / "); stelle != -1 {
+			autorInfo := strings.TrimSpace(wert[stelle+3:])
 			if autorInfo != "" {
 				b.extrahierteAutoren = append(b.extrahierteAutoren, autorInfo)
 			}
-			wert = strings.TrimSpace(wert[:idx])
+			wert = strings.TrimSpace(wert[:stelle])
 		}
 		if wert != "" {
 			b.titelTeile = append(b.titelTeile, wert)
@@ -355,8 +355,8 @@ func (b *marcBibDaten) autor() string {
 
 // sucheDNB fragt die Deutsche Nationalbibliothek (DNB) über die MARC21-XML-Schnittstelle ab.
 func (c *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
-	url := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=NUM=%s&recordSchema=MARC21-xml", isbn)
-	koerper, fehler := c.holeInhalt(kontext, url)
+	adresse := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=NUM=%s&recordSchema=MARC21-xml", isbn)
+	koerper, fehler := c.holeInhalt(kontext, adresse)
 	if fehler != nil {
 		return nil, fehler
 	}
@@ -405,22 +405,22 @@ func cqlAlleWoerter(text string) string {
 
 // SucheTextDNB fragt die DNB per Freitext ab — für die Bestellsuche, wenn keine ISBN
 // vorliegt. Liefert mehrere Treffer; die Auswahl trifft die Oberfläche.
-func (c *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([]MetadatenErgebnis, error) {
-	trimmed := strings.TrimSpace(query)
-	if trimmed == "" {
+func (c *MetadatenClient) SucheTextDNB(kontext context.Context, abfrage string) ([]MetadatenErgebnis, error) {
+	bereinigt := strings.TrimSpace(abfrage)
+	if bereinigt == "" {
 		return nil, nil
 	}
 
-	cleanQuery := isbnutil.OhneTrenner(trimmed)
-	var sruQuery string
-	if validiereISBN(cleanQuery) {
-		sruQuery = "NUM=" + cleanQuery
+	bereinigteSuche := isbnutil.OhneTrenner(bereinigt)
+	var sruAbfrage string
+	if validiereISBN(bereinigteSuche) {
+		sruAbfrage = "NUM=" + bereinigteSuche
 	} else {
-		sruQuery = url.QueryEscape(cqlAlleWoerter(trimmed))
+		sruAbfrage = url.QueryEscape(cqlAlleWoerter(bereinigt))
 	}
 
-	apiURL := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=%s&recordSchema=MARC21-xml&maximumRecords=10", sruQuery)
-	koerper, fehler := c.holeInhalt(kontext, apiURL)
+	adresse := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=%s&recordSchema=MARC21-xml&maximumRecords=10", sruAbfrage)
+	koerper, fehler := c.holeInhalt(kontext, adresse)
 	if fehler != nil {
 		return nil, fehler
 	}
@@ -431,9 +431,9 @@ func (c *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([
 	}
 
 	var ergebnisse []MetadatenErgebnis
-	for _, rec := range antwort.Records.Record {
+	for _, eintrag := range antwort.Records.Record {
 		var akk marcBibDaten
-		for _, datenFeld := range rec.RecordData.Record.Datafield {
+		for _, datenFeld := range eintrag.RecordData.Record.Datafield {
 			akk.verarbeiteFeld(datenFeld)
 		}
 

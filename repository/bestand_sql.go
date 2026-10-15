@@ -17,7 +17,7 @@ package repository
 const (
 	// SQLExemplarImBestand ist die Grenze von „gesamt" selbst, für Abfragen über die
 	// Exemplare als `e`. Die Buchmaske zeigt diese Zahl im Feld „Aktueller Bestand", und die
-	// Bestandskorrektur dahinter (inventur.syncBookStock) zählt und sondert mit derselben
+	// Bestandskorrektur dahinter (inventur.gleicheBestandAb) zählt und sondert mit derselben
 	// Grenze aus: Zählte sie die bestellten Exemplare mit, hielte sie die Zahl der Maske für
 	// eine Verringerung.
 	SQLExemplarImBestand = `e.ist_ausgesondert = false AND e.bestellstatus IS NULL`
@@ -51,7 +51,7 @@ const SQLFilterImZulauf = `COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false 
 //
 // Der Titel bleibt in der Tabelle: Er verschwindet aus der Sicht, nicht aus dem Bestand, sonst
 // legt ihn jemand ein zweites Mal an. Die Verwaltung erreicht ihn über die Sicht „Ohne
-// Exemplare" derselben Liste (inventur.ListBooks) und die Bestellliste.
+// Exemplare" derselben Liste (inventur.LadeTitelListe) und die Bestellliste.
 //
 // titelAlias ist der Alias der Titeltabelle in der umgebenden Abfrage (`b`, `bt`).
 func SQLTitelHatExemplar(titelAlias string) string {

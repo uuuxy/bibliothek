@@ -21,7 +21,7 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// coverFetchUserAgent identifiziert uns gegenüber DNB/Google/OpenLibrary als ehrliches
+// coverAbruferKennung identifiziert uns gegenüber DNB/Google/OpenLibrary als ehrliches
 // Programm. WICHTIG (verifiziert 2026-06-24): Die DNB-MVB-Cover-Schnittstelle
 // (portal.dnb.de/opac/mvb/cover) liegt hinter der Bot-Schranke "Anubis". Diese triggert
 // gerade auf BROWSER-ähnliche User-Agents ("Mozilla/5.0 … Chrome …"): solche Requests
@@ -29,7 +29,7 @@ import (
 // schlägt dann beim Dekodieren fehl. Ein schlichter, nicht-browserartiger Programm-UA wird
 // von Anubis als legitimer API-Client durchgelassen und liefert das echte Bild (bzw. ein
 // sauberes 404, wenn kein Cover existiert). Daher NICHT auf einen Chrome-UA „aufrüsten".
-const coverFetchUserAgent = "Inventur/1.0"
+const coverAbruferKennung = "Inventur/1.0"
 
 // openLibraryLeeresCover ist die URL, die OpenLibrary fuer eine ISBN OHNE Cover
 // liefert — ein 1x1-Platzhalter, kein Bild. Stand bis zum 04.08.2026 in
@@ -54,7 +54,7 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 	}
 
 	// #nosec G107 - URL aus geprüften Teilen neu gebaut (Host aus der Allowlist-Konstante)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, sichereURL, nil)
+	anfrage, err := http.NewRequestWithContext(ctx, http.MethodGet, sichereURL, nil)
 	if err != nil {
 		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", sichereURL, err)
 		return nil
@@ -62,64 +62,64 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 
 	// Identische Programm-Identifikation wie beim DNB-HEAD-Check, sonst blockt die
 	// DNB-Bot-Protection den Download (obwohl der Verfügbarkeits-Check bestand).
-	req.Header.Set("User-Agent", coverFetchUserAgent)
-	req.Header.Set("Accept", "image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8")
+	anfrage.Header.Set("User-Agent", coverAbruferKennung)
+	anfrage.Header.Set("Accept", "image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8")
 
-	resp, err := client.Do(req)
+	httpAntwort, err := client.Do(anfrage)
 	if err != nil {
 		log.Printf("Cover-Download fehlgeschlagen für %s: %v", coverURL, err)
 		return nil
 	}
-	defer closeutil.Schliesse(resp.Body, "cover download")
+	defer closeutil.Schliesse(httpAntwort.Body, "cover download")
 
-	if resp.StatusCode != http.StatusOK {
+	if httpAntwort.StatusCode != http.StatusOK {
 		return nil
 	}
 
 	// Nicht-Bild-Antworten sofort verwerfen. Bot-Schranken (z. B. DNB/Anubis) liefern bei
 	// einem falschen User-Agent HTTP 200 mit einer HTML-Challenge — das ist kein Cover.
 	// So fällt der Aufrufer sauber auf die nächste Quelle zurück, statt HTML zu dekodieren.
-	if ct := resp.Header.Get("Content-Type"); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
-		log.Printf("Cover-Download: Nicht-Bild-Antwort (%s) für %s — übersprungen", ct, coverURL)
+	if contentType := httpAntwort.Header.Get("Content-Type"); strings.Contains(contentType, "html") || strings.Contains(contentType, "text/") || strings.Contains(contentType, "json") {
+		log.Printf("Cover-Download: Nicht-Bild-Antwort (%s) für %s — übersprungen", contentType, coverURL)
 		return nil
 	}
 
-	fileBytes, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20)) // max. 10 MB
-	if err != nil || len(fileBytes) == 0 {
+	inhalt, err := io.ReadAll(io.LimitReader(httpAntwort.Body, 10<<20)) // max. 10 MB
+	if err != nil || len(inhalt) == 0 {
 		return nil
 	}
 	// Ein Ersatzbild der Quelle ist kein Cover; die nächste Quelle ist dran.
-	if coverquelle.IstErsatzbild(fileBytes) {
+	if coverquelle.IstErsatzbild(inhalt) {
 		return nil
 	}
-	return fileBytes
+	return inhalt
 }
 
 // speichereCoverDatei schreibt das aufbereitete Cover in uploads/ und liefert den
 // öffentlichen Pfad; "" bei Fehler. Der Name trägt die ISBN und eine Prüfsumme des Inhalts:
 // Dieselbe Abfrage legt dieselbe Datei ab statt bei jedem Mal eine weitere, und ein anderes
 // Bild bekommt einen anderen Namen, sodass kein Browser das alte weiter zeigt.
-func speichereCoverDatei(finalBytes []byte, isbn, saveExt string) string {
-	summe := sha256.Sum256(finalBytes)
-	filename := fmt.Sprintf("cover_auto_%s_%x%s", filepath.Base(isbn), summe[:6], saveExt)
+func speichereCoverDatei(fertig []byte, isbn, endung string) string {
+	summe := sha256.Sum256(fertig)
+	dateiname := fmt.Sprintf("cover_auto_%s_%x%s", filepath.Base(isbn), summe[:6], endung)
 
-	if uploadDateiVorhanden(filename) {
-		return "/uploads/" + filename
+	if uploadDateiVorhanden(dateiname) {
+		return "/uploads/" + dateiname
 	}
-	if err := schreibeUploadDatei(filename, finalBytes); err != nil {
+	if err := schreibeUploadDatei(dateiname, fertig); err != nil {
 		log.Printf("Cover-Download: %v", err)
 		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
 	}
-	return "/uploads/" + filename
+	return "/uploads/" + dateiname
 }
 
-// downloadAndSaveCoverLocally lädt ein Bild von einer externen URL herunter,
+// speichereCoverLokal lädt ein Bild von einer externen URL herunter,
 // verkleinert es falls nötig, speichert es auf dem Server im Verzeichnis "uploads/"
 // und gibt den lokalen Pfad zurück. Im Fehlerfall oder wenn es sich um Platzhalter handelt,
 // wird die Original-URL (oder leer) zurückgegeben.
-func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, coverURL string, isbn string) string {
-	fileBytes := ladeCoverBytes(ctx, client, coverURL)
-	if fileBytes == nil {
+func speichereCoverLokal(ctx context.Context, client *http.Client, coverURL string, isbn string) string {
+	inhalt := ladeCoverBytes(ctx, client, coverURL)
+	if inhalt == nil {
 		return ""
 	}
 
@@ -127,28 +127,28 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	// begrenzt die Leitung, nicht den Speicher — ein stark komprimiertes Riesenbild ist
 	// klein auf der Leitung und groß im RAM (30000×30000 ≈ 3,6 GB). PruefeBildgroesse
 	// liest nur den Header und allokiert keine Pixeldaten.
-	if err := imageutil.PruefeBildgroesse(fileBytes); err != nil {
+	if err := imageutil.PruefeBildgroesse(inhalt); err != nil {
 		log.Printf("Cover-Download: Bild abgelehnt (%s): %v", coverURL, err)
 		return ""
 	}
 
-	img, _, err := image.Decode(bytes.NewReader(fileBytes))
+	bild, _, err := image.Decode(bytes.NewReader(inhalt))
 	if err != nil {
 		return ""
 	}
 
-	bounds := img.Bounds()
-	width, height := bounds.Dx(), bounds.Dy()
+	rahmen := bild.Bounds()
+	breite, hoehe := rahmen.Dx(), rahmen.Dy()
 
 	// Sehr kleine Bilder (OpenLibrary Fallback-Platzhalter) ignorieren wir
-	if width < 10 || height < 10 {
+	if breite < 10 || hoehe < 10 {
 		return ""
 	}
 
-	finalBytes, saveExt, err := prepareImageForStorage(img, 600, 900, 80)
+	fertig, endung, err := bereiteBildVor(bild, 600, 900, 80)
 	if err != nil {
 		return ""
 	}
 
-	return speichereCoverDatei(finalBytes, isbn, saveExt)
+	return speichereCoverDatei(fertig, isbn, endung)
 }

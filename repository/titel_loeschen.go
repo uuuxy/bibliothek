@@ -47,7 +47,7 @@ func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, 
 		return err
 	}
 	// Das lokal gespeicherte Cover fällt mit dem Titel, wie in der Massenaktion der
-	// Bestandstabelle (inventur.DeleteBooks).
+	// Bestandstabelle (inventur.LoescheTitel).
 	cover, err := LadeLokaleCoverNurDieserTitel(ctx, tx, []string{titelID})
 	if err != nil {
 		return err

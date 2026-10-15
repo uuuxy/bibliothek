@@ -57,9 +57,9 @@ func TestDeleteBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
-		err = repo.DeleteBooks(ctx, []string{})
+		err = repo.LoescheTitel(ctx, []string{})
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -71,7 +71,7 @@ func TestDeleteBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		erwarteLeser(mock, "")
 		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
@@ -82,7 +82,7 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnError(fmt.Errorf("db error"))
 		mock.ExpectRollback()
 
-		err = repo.DeleteBooks(ctx, ids)
+		err = repo.LoescheTitel(ctx, ids)
 		assert.ErrorContains(t, err, "ausleihen konnten nicht gelöscht werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -92,7 +92,7 @@ func TestDeleteBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		erwarteLeser(mock, "/uploads/cover1.jpg")
 		// Offene Forderungen und laufende Ausleihen kommen als Spur aus dem Löschbefehl
@@ -112,7 +112,7 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		mock.ExpectCommit()
 
-		err = repo.DeleteBooks(ctx, ids)
+		err = repo.LoescheTitel(ctx, ids)
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -122,7 +122,7 @@ func TestDeleteBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		erwarteLeser(mock, "/uploads/cover1.jpg")
 		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
@@ -136,8 +136,8 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
 		mock.ExpectRollback()
 
-		err = repo.DeleteBooks(ctx, ids)
-		assert.ErrorIs(t, err, ErrBookNotFound)
+		err = repo.LoescheTitel(ctx, ids)
+		assert.ErrorIs(t, err, ErrTitelNichtGefunden)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }

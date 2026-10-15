@@ -19,11 +19,11 @@ func lookupAnfrage(isbn string) *http.Request {
 }
 
 func TestHandleLookupRejectsInvalidISBN(t *testing.T) {
-	handler := &APIHandler{}
+	handler := &Tueren{}
 	req := lookupAnfrage("123&foo=bar")
 	rr := httptest.NewRecorder()
 
-	handler.handleLookup(rr, req)
+	handler.ISBNSuche(rr, req)
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
@@ -47,10 +47,10 @@ func TestHandleLookupSucheFehlschlag(t *testing.T) {
 		},
 	}
 
-	metadaten := NeuerMetadatenClient()
+	metadaten := NewMetadatenClient()
 	metadaten.SetzeHTTPClientFuerTest(mockClient)
 
-	handler := &APIHandler{
+	handler := &Tueren{
 		metadaten: metadaten,
 	}
 
@@ -58,7 +58,7 @@ func TestHandleLookupSucheFehlschlag(t *testing.T) {
 	req := lookupAnfrage("9783161484100")
 	rr := httptest.NewRecorder()
 
-	handler.handleLookup(rr, req)
+	handler.ISBNSuche(rr, req)
 
 	// Seit dem 31.08.2026 ist ein Netzausfall KEIN Nicht-Treffer mehr: keine Quelle
 	// erreichbar → 502 (siehe lookup_ausfall_test.go), nur „erreichbar ohne Treffer" → 404.
@@ -94,12 +94,12 @@ func lookupMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
 			}, nil
 		},
 	}
-	metadaten := NeuerMetadatenClient()
+	metadaten := NewMetadatenClient()
 	metadaten.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTr})
-	handler := &APIHandler{metadaten: metadaten}
+	handler := &Tueren{metadaten: metadaten}
 
 	rr := httptest.NewRecorder()
-	handler.handleLookup(rr, lookupAnfrage("9783161484100"))
+	handler.ISBNSuche(rr, lookupAnfrage("9783161484100"))
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, rr.Code, rr.Body.String())
@@ -146,12 +146,12 @@ func TestHandleLookup_SpanneAusDemTitel(t *testing.T) {
 }
 
 func TestHandleLookupRejectsMissingISBN(t *testing.T) {
-	handler := &APIHandler{}
+	handler := &Tueren{}
 	// Nur Leerzeichen im Platzhalter: nach dem Trimmen ist die ISBN leer
 	req := lookupAnfrage("   ")
 	rr := httptest.NewRecorder()
 
-	handler.handleLookup(rr, req)
+	handler.ISBNSuche(rr, req)
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)

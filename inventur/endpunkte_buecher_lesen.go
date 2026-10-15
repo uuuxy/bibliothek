@@ -13,17 +13,17 @@ import (
 	"golang.org/x/text/language"
 )
 
-// BearbeiteBuecherListe verarbeitet GET-Anfragen für die Bücherübersicht.
+// TitelListe verarbeitet GET-Anfragen für die Bücherübersicht.
 // Die Funktion liest Suchparameter (Fach, Klasse, Suchbegriff) aus,
 // nutzt ein Wörterbuch für Synonyme (z.B. powi -> politik) und fragt die Datenbank ab.
 // Danach stehen die Bücher nach dem Titel (sortiereBuecherNachTitel) und gehen als JSON hinaus.
-func (handler *APIHandler) BearbeiteBuecherListe(antwort http.ResponseWriter, anfrage *http.Request) {
+func (t *Tueren) TitelListe(antwort http.ResponseWriter, anfrage *http.Request) {
 	anfrageParameter := anfrage.URL.Query()
 	fach := strings.TrimSpace(anfrageParameter.Get("subject"))
 
 	suchbegriff := strings.TrimSpace(strings.ToLower(anfrageParameter.Get("q")))
 	if len(suchbegriff) > 200 {
-		writeError(antwort, http.StatusBadRequest, "suchbegriff zu lang (max. 200 zeichen)")
+		schreibeFehler(antwort, http.StatusBadRequest, "suchbegriff zu lang (max. 200 zeichen)")
 		return
 	}
 
@@ -35,19 +35,19 @@ func (handler *APIHandler) BearbeiteBuecherListe(antwort http.ResponseWriter, an
 	// nicht ausgesondertes Exemplar. Ohne den Parameter ist es der Katalog.
 	sicht := strings.TrimSpace(anfrageParameter.Get("bestand"))
 	if sicht != "" && sicht != "ohne" {
-		writeError(antwort, http.StatusBadRequest, "ungültiger query-parameter bestand (erlaubt: ohne)")
+		schreibeFehler(antwort, http.StatusBadRequest, "ungültiger query-parameter bestand (erlaubt: ohne)")
 		return
 	}
-	buecher, fehler := handler.repo.ListBooks(anfrage.Context(), fach, suchbegriff, sicht == "ohne")
+	buecher, fehler := t.abfragen.LadeTitelListe(anfrage.Context(), fach, suchbegriff, sicht == "ohne")
 	if fehler != nil {
 		log.Printf("Fehler beim Laden der Bücherliste: %v", fehler)
-		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher")
+		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher")
 		return
 	}
 
 	sortiereBuecherNachTitel(buecher)
 
-	writeJSON(antwort, http.StatusOK, map[string]any{"data": buecher})
+	schreibeJSON(antwort, http.StatusOK, map[string]any{"data": buecher})
 }
 
 // Wörterbuch für Synonyme bei der Suche
@@ -77,7 +77,7 @@ var suchSynonyme = map[string]string{
 //
 // Der Collator entsteht je Aufruf: Er hält Zustand und darf nicht zwei Anfragen zugleich
 // dienen.
-func sortiereBuecherNachTitel(buecher []Book) {
+func sortiereBuecherNachTitel(buecher []Titel) {
 	if len(buecher) <= 1 {
 		return
 	}
@@ -87,7 +87,7 @@ func sortiereBuecherNachTitel(buecher []Book) {
 	schluessel := make([][]byte, len(buecher))
 	reihenfolge := make([]int, len(buecher))
 	for i := range buecher {
-		titel := zahlenNachGroesse(strings.TrimSpace(buecher[i].Title))
+		titel := zahlenNachGroesse(strings.TrimSpace(buecher[i].Titel))
 		schluessel[i] = ordnung.KeyFromString(&puffer, titel)
 		reihenfolge[i] = i
 	}
@@ -95,7 +95,7 @@ func sortiereBuecherNachTitel(buecher []Book) {
 		return bytes.Compare(schluessel[reihenfolge[a]], schluessel[reihenfolge[b]]) < 0
 	})
 
-	sortiert := make([]Book, len(buecher))
+	sortiert := make([]Titel, len(buecher))
 	for ziel, quelle := range reihenfolge {
 		sortiert[ziel] = buecher[quelle]
 	}
@@ -136,11 +136,11 @@ func zahlenNachGroesse(text string) string {
 
 func istZiffer(zeichen byte) bool { return zeichen >= '0' && zeichen <= '9' }
 
-// BearbeiteBuchLesen verarbeitet GET-Anfragen für ein einzelnes Buch.
-func (handler *APIHandler) BearbeiteBuchLesen(antwort http.ResponseWriter, anfrage *http.Request) {
+// Titel verarbeitet GET-Anfragen für ein einzelnes Buch.
+func (t *Tueren) Titel(antwort http.ResponseWriter, anfrage *http.Request) {
 	id := anfrage.PathValue("id")
 	if id == "" {
-		writeError(antwort, http.StatusBadRequest, "ID fehlt")
+		schreibeFehler(antwort, http.StatusBadRequest, "ID fehlt")
 		return
 	}
 
@@ -148,34 +148,34 @@ func (handler *APIHandler) BearbeiteBuchLesen(antwort http.ResponseWriter, anfra
 	// Scheitert das Nachladen der Schlagworte, antwortet der Einzel-Read mit einem Fehler
 	// statt ohne sie: Die Maske öffnet dann gar nicht, statt mit einem leeren Feld, das beim
 	// Speichern als Aussage „keine Schlagworte" zurückkäme.
-	buch, fehler := handler.ladeTitelVoll(anfrage.Context(), id)
-	if errors.Is(fehler, ErrBookNotFound) {
-		writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
+	buch, fehler := t.ladeTitelVoll(anfrage.Context(), id)
+	if errors.Is(fehler, ErrTitelNichtGefunden) {
+		schreibeFehler(antwort, http.StatusNotFound, "Buch nicht gefunden")
 		return
 	}
 	if fehler != nil {
 		log.Printf("Fehler beim Laden des Buches: %v", fehler)
-		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
+		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler")
 		return
 	}
 
-	writeJSON(antwort, http.StatusOK, buch)
+	schreibeJSON(antwort, http.StatusOK, buch)
 }
 
 // ladeTitelVoll liest einen Titel, wie die Maske ihn bekommt: mit den Bestandszahlen und den
 // Schlagworten. Der Einzel-Read und die Antwort auf das Speichern haben damit dieselbe Form.
-func (handler *APIHandler) ladeTitelVoll(ctx context.Context, id string) (Book, error) {
-	buecher, err := handler.repo.ListBooksByIDs(ctx, []string{id})
+func (t *Tueren) ladeTitelVoll(ctx context.Context, id string) (Titel, error) {
+	buecher, err := t.abfragen.LadeTitelNachIDs(ctx, []string{id})
 	if err != nil {
-		return Book{}, err
+		return Titel{}, err
 	}
 	if len(buecher) == 0 {
-		return Book{}, ErrBookNotFound
+		return Titel{}, ErrTitelNichtGefunden
 	}
 	buch := buecher[0]
-	buch.Schlagworte, err = handler.repo.SchlagworteDesTitels(ctx, id)
+	buch.Schlagworte, err = t.abfragen.LadeSchlagworteDesTitels(ctx, id)
 	if err != nil {
-		return Book{}, err
+		return Titel{}, err
 	}
 	return buch, nil
 }
@@ -185,8 +185,8 @@ func (handler *APIHandler) ladeTitelVoll(ctx context.Context, id string) (Book, 
 // allein stünde dort der Bestand 0. Scheitert das Nachlesen, bleibt es bei den gesendeten
 // Angaben, denn gespeichert ist der Titel; nach einem Ändern sind das nur die Felder, die
 // der Rumpf genannt hat.
-func (handler *APIHandler) gespeichert(ctx context.Context, gesendet Book) Book {
-	buch, err := handler.ladeTitelVoll(ctx, gesendet.ID)
+func (t *Tueren) gespeichert(ctx context.Context, gesendet Titel) Titel {
+	buch, err := t.ladeTitelVoll(ctx, gesendet.ID)
 	if err != nil {
 		log.Printf("Titel %s nach dem Speichern nicht lesbar: %v", gesendet.ID, err)
 		return gesendet
@@ -194,31 +194,31 @@ func (handler *APIHandler) gespeichert(ctx context.Context, gesendet Book) Book 
 	return buch
 }
 
-// BearbeiteBuchVorhanden sagt vor dem Speichern, was die Dublettenkontrolle zu einer ISBN
+// TitelVorhanden sagt vor dem Speichern, was die Dublettenkontrolle zu einer ISBN
 // sagen wird: den Titel, der sie schon trägt, samt der Meldung der Ablehnung — oder keinen.
 // Die Maske „Neues Buch" fragt damit schon bei der Eingabe der ISBN, wie Littera; das Format
 // der Nummer prüft erst das Speichern. Die zehn- und die dreizehnstellige Form einer ISBN sind
 // dabei dieselbe Nummer (isbn_normalform).
-func (handler *APIHandler) BearbeiteBuchVorhanden(antwort http.ResponseWriter, anfrage *http.Request) {
+func (t *Tueren) TitelVorhanden(antwort http.ResponseWriter, anfrage *http.Request) {
 	isbn := strings.TrimSpace(anfrage.URL.Query().Get("isbn"))
 	if isbn == "" {
-		writeError(antwort, http.StatusBadRequest, "isbn fehlt")
+		schreibeFehler(antwort, http.StatusBadRequest, "isbn fehlt")
 		return
 	}
 
-	vorhanden, fehler := handler.repo.TitelMitISBN(anfrage.Context(), isbn)
+	vorhanden, fehler := t.abfragen.TitelMitISBN(anfrage.Context(), isbn)
 	if fehler != nil {
 		log.Printf("Dublettenkontrolle vorab: %v", fehler)
-		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
+		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler")
 		return
 	}
 	if vorhanden != nil {
-		writeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{
+		schreibeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{
 			"vorhanden": vorhanden.alsAntwort(),
 			"meldung":   vorhanden.Meldung(),
 		}})
 		return
 	}
 
-	writeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{"vorhanden": nil}})
+	schreibeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{"vorhanden": nil}})
 }

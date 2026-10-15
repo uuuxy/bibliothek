@@ -14,10 +14,10 @@ func TestNewBookRepository(t *testing.T) {
 	assert.NoError(t, err)
 	defer mockPool.Close()
 
-	repo := NewBookRepository(mockPool)
+	repo := NewTitelAbfragen(mockPool)
 
 	assert.NotNil(t, repo)
-	assert.Equal(t, mockPool, repo.db)
+	assert.Equal(t, mockPool, repo.pool)
 }
 
 func TestHandleDbError(t *testing.T) {
@@ -42,7 +42,7 @@ func TestHandleDbError(t *testing.T) {
 				Code:           "23505",
 				ConstraintName: "buecher_titel_isbn_key",
 			},
-			expected: ErrDuplicateISBN,
+			expected: ErrISBNDoppelt,
 		},
 		{
 			name: "other pg error code",
@@ -70,7 +70,7 @@ func TestHandleDbError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := handleDbError(tt.inputErr)
+			result := uebersetzeDatenbankfehler(tt.inputErr)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

@@ -2,29 +2,29 @@ package inventur
 
 import "bibliothek/repository"
 
-// Book bildet die Tabelle buecher_titel im Code ab.
-type Book struct {
-	ID     string `json:"id" db:"id"`
-	ISBN   string `json:"isbn" db:"isbn"`
-	Title  string `json:"title" db:"title"`
-	Author string `json:"author" db:"author"`
+// Titel bildet die Tabelle buecher_titel im Code ab.
+type Titel struct {
+	ID    string `json:"id" db:"id"`
+	ISBN  string `json:"isbn" db:"isbn"`
+	Titel string `json:"title" db:"title"`
+	Autor string `json:"author" db:"author"`
 	// Signatur steht physisch auf dem Buchrücken-Etikett (Littera-Systematik,
 	// z. B. "Bio 5" oder "Row") — Importe dürfen befüllte Werte NIE leeren.
 	Signatur string `json:"signatur" db:"signatur"`
 	CoverURL string `json:"coverUrl" db:"cover_url"`
-	Subject  string `json:"subject" db:"subject"`
-	Track    string `json:"track" db:"track"`
+	Fach     string `json:"subject" db:"subject"`
+	Zweig    string `json:"track" db:"track"`
 	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Vorher stand das
 	// im Text („LMF" vor Titel oder Signatur); heute schaltet die Maske es, Importe
 	// lesen es aus Litteras Kennung.
-	IstLernmittel bool    `json:"istLernmittel" db:"ist_lernmittel"`
-	Stock         int     `json:"stock" db:"stock"`
-	Verfuegbar    int     `json:"verfuegbar"`
-	Gesamt        int     `json:"gesamt"`
-	ImZulauf      int     `json:"imZulauf"` // bestellt, noch nicht eingetroffen (repository.SQLBestandImZulauf)
-	LastCounted   *string `json:"lastCounted" db:"last_counted"`
-	SortOrder     int     `json:"sortOrder" db:"sort_order"`
-	Medientyp     string  `json:"medientyp" db:"medientyp"`
+	IstLernmittel   bool    `json:"istLernmittel" db:"ist_lernmittel"`
+	Bestand         int     `json:"stock" db:"stock"`
+	Verfuegbar      int     `json:"verfuegbar"`
+	Gesamt          int     `json:"gesamt"`
+	ImZulauf        int     `json:"imZulauf"` // bestellt, noch nicht eingetroffen (repository.SQLBestandImZulauf)
+	ZuletztGezaehlt *string `json:"lastCounted" db:"last_counted"`
+	Reihenfolge     int     `json:"sortOrder" db:"sort_order"`
+	Medientyp       string  `json:"medientyp" db:"medientyp"`
 	// JahrgangVon, JahrgangBis: „im Unterricht von Jahrgang … bis". 0 und 0 heißt „unbekannt"
 	// und ist eine eigene Angabe; in der Datenbank steht dann NULL (Migration 162).
 	JahrgangVon int `json:"jahrgangVon" db:"jahrgang_von"`
@@ -74,16 +74,16 @@ type Book struct {
 	Standorte []repository.StandortZahl `json:"standorte,omitempty"`
 }
 
-// BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
+// TitelEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
 // Beim Aktualisieren zählen nur die Felder, die der Rumpf nennt (leseAenderung): Ein Feld, das
 // fehlt, bleibt am Titel, wie es ist.
-type BuchEingabe struct {
+type TitelEingabe struct {
 	ISBN          string `json:"isbn"`
 	Fach          string `json:"subject"`
 	Schulzweig    string `json:"track"`
 	IstLernmittel bool   `json:"istLernmittel"`
 	// Zeiger, nicht int: "nicht mitgeschickt" muss sich von "null" unterscheiden lassen.
-	// Beim Aktualisieren gleicht syncBookStock die physischen Exemplare an diese Zahl an
+	// Beim Aktualisieren gleicht gleicheBestandAb die physischen Exemplare an diese Zahl an
 	// — eine fehlende 0 sonderte bis zum 23.08.2026 den GESAMTEN Bestand aus, im
 	// Rückfallzweig auch ausgeliehene Exemplare. `Number(undefined)` im Formular wird zu
 	// NaN und in JSON zu null; genau das ist der Weg dorthin.

@@ -4,49 +4,49 @@ import (
 	"net/http"
 )
 
-// handleAdminBooks ist der zentrale Router für admin-geschützte Buch-Operationen.
+// TitelVerwaltung ist der zentrale Router für admin-geschützte Buch-Operationen.
 // Routen mit Buch-Kennung im Pfad stehen nicht hier, sondern mit Platzhalter in
 // api_routen.go.
-func (handler *APIHandler) handleAdminBooks(w http.ResponseWriter, request *http.Request) {
-	path := request.URL.Path
+func (t *Tueren) TitelVerwaltung(w http.ResponseWriter, r *http.Request) {
+	pfad := r.URL.Path
 
-	switch request.Method {
+	switch r.Method {
 	case http.MethodGet:
-		switch path {
-		case routeClassBooks:
-			handler.handleClassBooks(w, request)
+		switch pfad {
+		case routeKlassensaetze:
+			t.Klassensaetze(w, r)
 		case "/api/admin/books/external-covers":
-			handler.handleListExternalCovers(w, request)
+			t.FremdeCoverListe(w, r)
 		case "/api/admin/books/export":
-			handler.handleExportCSV(w, request)
+			t.CSVExport(w, r)
 		default:
-			writeError(w, http.StatusNotFound, routeNotFoundMsg)
+			schreibeFehler(w, http.StatusNotFound, meldungUnbekannteRoute)
 		}
 	case http.MethodPost:
-		switch path {
-		case routeClassBooks:
-			handler.handleUpdateClassBooks(w, request)
+		switch pfad {
+		case routeKlassensaetze:
+			t.KlassensaetzeAendern(w, r)
 		case "/api/admin/class-books/add":
-			handler.handleAddClassBooks(w, request)
+			t.KlassensaetzeZuordnen(w, r)
 		case "/api/books/import":
-			handler.handleImportExcel(w, request)
+			t.ExcelImport(w, r)
 		case "/api/admin/books/retry-covers":
-			handler.handleRetryExternalCovers(w, request)
+			t.FremdeCoverNeuLaden(w, r)
 		case "/api/books":
-			handler.BearbeiteBuchErstellen(w, request)
+			t.TitelAnlegen(w, r)
 		default:
-			writeError(w, http.StatusNotFound, routeNotFoundMsg)
+			schreibeFehler(w, http.StatusNotFound, meldungUnbekannteRoute)
 		}
 	case http.MethodDelete:
-		switch path {
-		case routeClassBooks:
-			handler.handleDeleteClassGroup(w, request)
+		switch pfad {
+		case routeKlassensaetze:
+			t.KlassensatzGruppeLoeschen(w, r)
 		case "/api/books":
-			handler.BearbeiteBuecherLoeschen(w, request)
+			t.TitelLoeschen(w, r)
 		default:
-			writeError(w, http.StatusNotFound, routeNotFoundMsg)
+			schreibeFehler(w, http.StatusNotFound, meldungUnbekannteRoute)
 		}
 	default:
-		writeError(w, http.StatusNotFound, routeNotFoundMsg)
+		schreibeFehler(w, http.StatusNotFound, meldungUnbekannteRoute)
 	}
 }

@@ -28,19 +28,19 @@ func mitUploadsRoot(fn func(*os.Root) error) error {
 	if err := os.MkdirAll(uploadsVerzeichnis, 0750); err != nil {
 		return fmt.Errorf("uploads-Verzeichnis konnte nicht angelegt werden: %w", err)
 	}
-	root, err := os.OpenRoot(uploadsVerzeichnis)
+	wurzel, err := os.OpenRoot(uploadsVerzeichnis)
 	if err != nil {
 		return fmt.Errorf("uploads-Verzeichnis konnte nicht geöffnet werden: %w", err)
 	}
-	defer closeutil.Schliesse(root, "uploads dir")
-	return fn(root)
+	defer closeutil.Schliesse(wurzel, "uploads dir")
+	return fn(wurzel)
 }
 
 // schreibeUploadDatei legt inhalt unter uploads/<name> ab. name darf kein Verzeichnis
 // enthalten; jeder Versuch, das Verzeichnis zu verlassen, scheitert am Betriebssystem.
 func schreibeUploadDatei(name string, inhalt []byte) error {
-	return mitUploadsRoot(func(root *os.Root) error {
-		datei, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	return mitUploadsRoot(func(wurzel *os.Root) error {
+		datei, err := wurzel.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
 			return fmt.Errorf("datei %q konnte nicht angelegt werden: %w", name, err)
 		}
@@ -56,8 +56,8 @@ func schreibeUploadDatei(name string, inhalt []byte) error {
 // uploadDateiVorhanden sagt, ob uploads/<name> schon als Datei da ist.
 func uploadDateiVorhanden(name string) bool {
 	vorhanden := false
-	_ = mitUploadsRoot(func(root *os.Root) error { //nolint:errcheck // ohne Verzeichnis gibt es die Datei nicht
-		info, err := root.Stat(name)
+	_ = mitUploadsRoot(func(wurzel *os.Root) error { //nolint:errcheck // ohne Verzeichnis gibt es die Datei nicht
+		info, err := wurzel.Stat(name)
 		vorhanden = err == nil && info.Mode().IsRegular()
 		return nil
 	})
@@ -67,8 +67,8 @@ func uploadDateiVorhanden(name string) bool {
 // loescheUploadDatei entfernt uploads/<name>. Eine nicht vorhandene Datei ist kein
 // Fehler — der Aufrufer räumt nur auf.
 func loescheUploadDatei(name string) error {
-	return mitUploadsRoot(func(root *os.Root) error {
-		if err := root.Remove(name); err != nil && !os.IsNotExist(err) {
+	return mitUploadsRoot(func(wurzel *os.Root) error {
+		if err := wurzel.Remove(name); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("datei %q konnte nicht gelöscht werden: %w", name, err)
 		}
 		return nil

@@ -38,14 +38,14 @@ func (leereQuellen) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func lookupMit(t *testing.T, transport http.RoundTripper) *httptest.ResponseRecorder {
 	t.Helper()
-	client := NeuerMetadatenClient()
+	client := NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: transport})
-	handler := &APIHandler{metadaten: client}
+	handler := &Tueren{metadaten: client}
 
 	req := httptest.NewRequest(http.MethodGet, "/api/lookup/9783551551672", nil)
 	req.SetPathValue("isbn", "9783551551672")
 	rec := httptest.NewRecorder()
-	handler.handleLookup(rec, req)
+	handler.ISBNSuche(rec, req)
 	return rec
 }
 
@@ -68,7 +68,7 @@ func TestLookup_ErreichbarOhneTrefferBleibt404(t *testing.T) {
 // Die Unterscheidung lebt im Client: Transportfehler tragen das Sentinel, ein leeres
 // Ergebnis erreichbarer Quellen nicht.
 func TestSucheNachISBN_KlassifiziertAusfallUndTreffer(t *testing.T) {
-	client := NeuerMetadatenClient()
+	client := NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: kaputtesNetz{}})
 	_, err := client.SucheNachISBN(t.Context(), "9783551551672")
 	if !errors.Is(err, ErrKatalogdiensteNichtErreichbar) {

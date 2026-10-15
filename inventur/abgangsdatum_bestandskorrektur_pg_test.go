@@ -35,12 +35,12 @@ func TestAbgangsdatum_BestandskorrekturStempelt(t *testing.T) {
 		}
 	})
 
-	repo := NewBookRepository(pool)
-	if err := repo.syncBookStock(ctx, pool, titelID, 3, ""); err != nil {
+	repo := NewTitelAbfragen(pool)
+	if err := repo.gleicheBestandAb(ctx, pool, titelID, 3, ""); err != nil {
 		t.Fatalf("Bestand aufbauen: %v", err)
 	}
 	// Runter auf 1 — zwei Exemplare gehen ab.
-	if err := repo.syncBookStock(ctx, pool, titelID, 1, bearbeiterFuerAussonderung(t, pool)); err != nil {
+	if err := repo.gleicheBestandAb(ctx, pool, titelID, 1, bearbeiterFuerAussonderung(t, pool)); err != nil {
 		t.Fatalf("Bestand korrigieren: %v", err)
 	}
 

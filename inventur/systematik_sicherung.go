@@ -21,6 +21,6 @@ type dbSchreiber interface {
 // Schreibpfad sie in buecher_titel.subject einträgt (FK seit Migration 078). Die
 // Funktion lebt seit dem 02.09.2026 im repository-Paket, damit auch die Importe
 // dort sie erreichen; hier bleibt der Name für die Schreibpfade dieses Pakets.
-func StelleFaecherSicher(ctx context.Context, db dbSchreiber, faecher []string) (map[string]string, error) {
-	return repository.StelleFaecherSicher(ctx, db, faecher)
+func StelleFaecherSicher(ctx context.Context, datenbank dbSchreiber, faecher []string) (map[string]string, error) {
+	return repository.StelleFaecherSicher(ctx, datenbank, faecher)
 }

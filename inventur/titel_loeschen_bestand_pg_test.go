@@ -41,7 +41,7 @@ func TestDeleteBooks_VermerktObDasExemplarImBestandWar(t *testing.T) {
 		t.Fatalf("Exemplar im Zulauf: %v", err)
 	}
 
-	if err := NewBookRepository(pool).DeleteBooks(ctx, []string{titelID}); err != nil {
+	if err := NewTitelAbfragen(pool).LoescheTitel(ctx, []string{titelID}); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 

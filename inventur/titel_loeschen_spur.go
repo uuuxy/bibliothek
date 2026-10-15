@@ -1,6 +1,6 @@
 package inventur
 
-// db_books_delete_spur.go — die Spur, die ein gelöschtes verliehenes Buch hinterlässt.
+// titel_loeschen_spur.go — die Spur, die ein gelöschtes verliehenes Buch hinterlässt.
 //
 // Seit dem 23.08.2026 löscht „Titel löschen" auch aktuell verliehene Exemplare. Das ist
 // so gewollt, aber es erzeugt eine Lage, die es vorher nicht gab: Ein Buch liegt bei
@@ -55,7 +55,7 @@ type offeneAusleihe struct {
 func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]offeneAusleihe, error) {
 	// Die schreibende CTE sieht sich selbst nicht; die äußere Abfrage liest nur Tabellen,
 	// die dieser Befehl nicht anfasst (Exemplare fallen erst mit dem Titel).
-	rows, err := tx.Query(ctx, `
+	zeilen, err := tx.Query(ctx, `
 		WITH weg AS (
 			DELETE FROM ausleihen a
 			WHERE a.exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))
@@ -74,17 +74,17 @@ func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]of
 	if err != nil {
 		return nil, fmt.Errorf("ausleihen konnten nicht gelöscht werden: %w", err)
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 
 	var offene []offeneAusleihe
-	for rows.Next() {
+	for zeilen.Next() {
 		var o offeneAusleihe
-		if err := rows.Scan(&o.AusleiheID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Entleiher, &o.SchuelerID, &o.Seit); err != nil {
+		if err := zeilen.Scan(&o.AusleiheID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Entleiher, &o.SchuelerID, &o.Seit); err != nil {
 			return nil, fmt.Errorf("spur der laufenden ausleihen konnte nicht gelesen werden: %w", err)
 		}
 		offene = append(offene, o)
 	}
-	if err := rows.Err(); err != nil {
+	if err := zeilen.Err(); err != nil {
 		return nil, fmt.Errorf("spur der laufenden ausleihen konnte nicht gelesen werden: %w", err)
 	}
 	return offene, nil
@@ -150,7 +150,7 @@ type exemplarSnapshot struct {
 // (Befund-Register): Ein per Titel-Löschung verschwundenes Buch war beim Scannen
 // „nie gesehen" statt „gelöscht am …".
 func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exemplarSnapshot, error) {
-	rows, err := tx.Query(ctx, `
+	zeilen, err := tx.Query(ctx, `
 		SELECT e.id, e.barcode_id, t.titel, `+repository.SQLWarImBestand+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
@@ -159,27 +159,27 @@ func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exem
 	if err != nil {
 		return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 
-	var snaps []exemplarSnapshot
-	for rows.Next() {
+	var schnappschuesse []exemplarSnapshot
+	for zeilen.Next() {
 		var s exemplarSnapshot
-		if err := rows.Scan(&s.ID, &s.Barcode, &s.Titel, &s.WarImBestand); err != nil {
+		if err := zeilen.Scan(&s.ID, &s.Barcode, &s.Titel, &s.WarImBestand); err != nil {
 			return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
 		}
-		snaps = append(snaps, s)
+		schnappschuesse = append(schnappschuesse, s)
 	}
-	if err := rows.Err(); err != nil {
+	if err := zeilen.Err(); err != nil {
 		return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
 	}
-	return snaps, nil
+	return schnappschuesse, nil
 }
 
 // protokolliereGeloeschteExemplare schreibt je Exemplar die Barcode-Spur — dasselbe
 // Format wie SondereExemplarAus und das Verlust-Löschen (repository), damit die Auskunft
 // alle drei Wege gleich findet. Läuft in der Transaktion der Löschung.
-func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, snaps []exemplarSnapshot) error {
-	for _, s := range snaps {
+func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, schnappschuesse []exemplarSnapshot) error {
+	for _, s := range schnappschuesse {
 		details, err := json.Marshal(map[string]any{
 			"barcode_id": s.Barcode,
 			"titel":      s.Titel,
@@ -229,7 +229,7 @@ type offenerSchaden struct {
 // sehen. Für die offenen AUSLEIHEN gibt es diese Spur seit dem 23.08.2026; fürs Geld
 // fehlte sie.
 func loescheSchaedenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]offenerSchaden, error) {
-	rows, err := tx.Query(ctx, `
+	zeilen, err := tx.Query(ctx, `
 		WITH weg AS (
 			DELETE FROM schadensfaelle sf
 			WHERE sf.exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))
@@ -250,17 +250,17 @@ func loescheSchaedenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]off
 	if err != nil {
 		return nil, fmt.Errorf("schadensfälle konnten nicht gelöscht werden: %w", err)
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 	var alle []offenerSchaden
-	for rows.Next() {
+	for zeilen.Next() {
 		var o offenerSchaden
-		if err := rows.Scan(&o.ID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Schuldner,
+		if err := zeilen.Scan(&o.ID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Schuldner,
 			&o.SchuelerID, &o.Betrag, &o.Grund, &o.Seit); err != nil {
 			return nil, fmt.Errorf("spur der offenen schadensfälle konnte nicht gelesen werden: %w", err)
 		}
 		alle = append(alle, o)
 	}
-	if err := rows.Err(); err != nil {
+	if err := zeilen.Err(); err != nil {
 		return nil, fmt.Errorf("spur der offenen schadensfälle konnte nicht gelesen werden: %w", err)
 	}
 	return alle, nil

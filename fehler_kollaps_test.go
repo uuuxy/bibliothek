@@ -14,7 +14,7 @@ import (
 
 // Gate gegen Fehler-Kollaps.
 //
-// Anlass (29.08.2026): GetBookByID nannte JEDEN Fehler „buch nicht gefunden" — ein
+// Anlass (29.08.2026): LadeTitel nannte JEDEN Fehler „buch nicht gefunden" — ein
 // Scan-Fehler (NULL in string, Schema-Drift) wäre als 404 verkleidet gewesen, und ein
 // Ein zugelieferter PR (#529) wollte genau das per Test festschreiben. Dieselbe Form stand in
 // ReservierungsAbfragen.LegeAn: `if err != nil || !exists { 404 }`. Die Klasse:
@@ -33,11 +33,11 @@ import (
 // { 404 }; 500 }` — ordnet im ERSTEN verschachtelten if ein; die gilt als sauber.
 //
 // Reparatur bei Rot: `errors.Is(err, pgx.ErrNoRows)` bzw. den Sentinel prüfen und den
-// Rest als 500 (oder gewrappt) weiterreichen — wie repository_metadata.go seit 29.08.
+// Rest als 500 (oder gewrappt) weiterreichen — wie titel_metadaten.go seit 29.08.
 var kollapsBestand = map[string]string{
 	// „datei:funktion": Einordnung. Der Sweep vom 29.08.2026 fand 12 Stellen; 4 davon
 	// waren echte DB-Kollapse und sind behoben (AngemeldetesKonto, Foto, zwei Druck-Handler,
-	// dazu GetBookByID und ReservierungsAbfragen.LegeAn). Die folgenden acht sind
+	// dazu LadeTitel und ReservierungsAbfragen.LegeAn). Die folgenden acht sind
 	// semantisch vertretbar — der Fehler IST dort die negative Antwort:
 	"api/csrf.go:csrfMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
 	// Die drei Token-Stellen lesen über PruefeToken die DB (Sperrliste, Kontostatus). Bis
@@ -209,7 +209,7 @@ import "net/http"
 func kollaps(w http.ResponseWriter) { exists, err := f(); if err != nil || !exists { w.WriteHeader(http.StatusNotFound) } }
 func sauber(w http.ResponseWriter) { _, err := f(); if errors.Is(err, pgx.ErrNoRows) { w.WriteHeader(http.StatusNotFound) } }
 func sauber2(w http.ResponseWriter) { _, err := f(); if err != nil { w.WriteHeader(http.StatusInternalServerError) } }
-func sauber3(w http.ResponseWriter) { _, err := f(); if err == ErrBookNotFound { w.WriteHeader(http.StatusNotFound) } }
+func sauber3(w http.ResponseWriter) { _, err := f(); if err == ErrTitelNichtGefunden { w.WriteHeader(http.StatusNotFound) } }
 func sauber4(w http.ResponseWriter) { _, err := f(); if err != nil { if errors.Is(err, pgx.ErrNoRows) { w.WriteHeader(http.StatusNotFound); return }; w.WriteHeader(500) } }
 func kollaps2(w http.ResponseWriter) { _, err := f(); if err != nil { log.Print(err); w.WriteHeader(http.StatusNotFound) } }
 func kollaps3() error { _, err := f(); if err != nil { return apierrors.NotFound("x", err) }; return nil }

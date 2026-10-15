@@ -8,9 +8,9 @@ func TestConstantsValues(t *testing.T) {
 		actual   string
 		expected string
 	}{
-		{"routeNotFoundMsg", routeNotFoundMsg, "route nicht gefunden"},
-		{"routeClassBooks", routeClassBooks, "/api/admin/class-books"},
-		{"langFrench", langFrench, "Französisch"},
+		{"routeNotFoundMsg", meldungUnbekannteRoute, "route nicht gefunden"},
+		{"routeClassBooks", routeKlassensaetze, "/api/admin/class-books"},
+		{"langFrench", spracheFranzoesisch, "Französisch"},
 	}
 
 	for _, tt := range tests {

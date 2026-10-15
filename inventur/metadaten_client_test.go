@@ -205,7 +205,7 @@ func testSucheISBNNotFound(t *testing.T) {
 }
 
 func TestNeuerMetadatenClient(t *testing.T) {
-	client := NeuerMetadatenClient()
+	client := NewMetadatenClient()
 	if client == nil {
 		t.Fatal("Erwartete einen initialisierten MetadatenClient, aber bekam nil")
 	}
@@ -215,7 +215,7 @@ func TestNeuerMetadatenClient(t *testing.T) {
 }
 
 func TestSetzeHTTPClientFuerTest(t *testing.T) {
-	client := NeuerMetadatenClient()
+	client := NewMetadatenClient()
 	customHTTPClient := &http.Client{}
 
 	client.SetzeHTTPClientFuerTest(customHTTPClient)

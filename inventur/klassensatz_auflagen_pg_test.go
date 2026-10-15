@@ -77,22 +77,22 @@ func TestGetClassGroups_ZaehltAmBuch(t *testing.T) {
 	leihe(neu, "KB-D1", "KB-D2", "KB-D3", "KB-D4", "KB-D5", "KB-D6")
 	leihe(neu, "KB-E1", "KB-E2", "KB-E3", "KB-E4", "KB-E5", "KB-E6")
 
-	groups, err := NewBookRepository(pool).GetClassGroups(ctx, "", "")
+	groups, err := NewTitelAbfragen(pool).LadeKlassensatzGruppen(ctx, "", "")
 	if err != nil {
-		t.Fatalf("GetClassGroups: %v", err)
+		t.Fatalf("LadeKlassensatzGruppen: %v", err)
 	}
-	je := map[string][]ClassBook{}
+	je := map[string][]klassensatzTitel{}
 	for _, g := range groups {
-		je[g.ClassName] = g.Books
+		je[g.Klasse] = g.Titel
 	}
-	einzige := func(klasse string) ClassBook {
+	einzige := func(klasse string) klassensatzTitel {
 		t.Helper()
 		if len(je[klasse]) != 1 {
 			t.Fatalf("%s: %d Kacheln %+v — erwartet genau eine für das Buch", klasse, len(je[klasse]), je[klasse])
 		}
 		return je[klasse][0]
 	}
-	auflagen := func(klasse string, b ClassBook, soll ...repository.AuflageInKlasse) {
+	auflagen := func(klasse string, b klassensatzTitel, soll ...repository.AuflageInKlasse) {
 		t.Helper()
 		if len(b.Auflagen) != len(soll) {
 			t.Errorf("%s: Aufschlüsselung %+v — erwartet %+v", klasse, b.Auflagen, soll)

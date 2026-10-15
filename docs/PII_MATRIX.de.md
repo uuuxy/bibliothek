@@ -53,7 +53,7 @@ zusätzliches `view_students` freischaltet, steht als Anmerkung):
 **Rechte-Spalte:** ein Rechtename aus `db/rechte_vorgabe.go` (geprüft gegen
 `verlangeRecht`), `öffentlich` (kein Wrapper, MUSS Stufe 0 sein — eigener Test),
 `Token` (Link-Token ist der Ausweis), `selbst-prüfend` (Handler validiert das
-Session-Cookie selbst), `Sitzung` (`VerlangeAnmeldung`, im inventur-Paket `RequireAuthenticated`), `inventur-Mux`
+Session-Cookie selbst), `Sitzung` (`VerlangeAnmeldung`, im inventur-Paket `VerlangeAnmeldung`), `inventur-Mux`
 (Delegation, Schutz im inneren Mux) oder `inventur:view_books` /
 `inventur:edit_books` (die inneren Inventur-Routen selbst).
 

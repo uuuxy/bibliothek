@@ -22,7 +22,7 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	handler := &APIHandler{repo: NewBookRepository(mock)}
+	handler := &Tueren{abfragen: NewTitelAbfragen(mock)}
 
 	faelle := []struct {
 		name    string
@@ -30,12 +30,12 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 		methode string
 		rumpf   string
 	}{
-		{"Bücher löschen", handler.BearbeiteBuecherLoeschen, http.MethodDelete, `{"ids":["x"]}`},
-		{"Klassenbücher hinzufügen", handler.handleAddClassBooks, http.MethodPost, `{"classNames":["05G1"],"bookIds":["x"]}`},
-		{"Klassenbücher ändern", handler.handleUpdateClassBooks, http.MethodPut, `{"className":"05G1","bookIds":["x"]}`},
-		{"Cover neu laden", handler.handleRetryExternalCovers, http.MethodPost, `{"ids":["x"]}`},
+		{"Bücher löschen", handler.TitelLoeschen, http.MethodDelete, `{"ids":["x"]}`},
+		{"Klassenbücher hinzufügen", handler.KlassensaetzeZuordnen, http.MethodPost, `{"classNames":["05G1"],"bookIds":["x"]}`},
+		{"Klassenbücher ändern", handler.KlassensaetzeAendern, http.MethodPut, `{"className":"05G1","bookIds":["x"]}`},
+		{"Cover neu laden", handler.FremdeCoverNeuLaden, http.MethodPost, `{"ids":["x"]}`},
 		// Besteht uuid.Validate, Postgres weist sie ab (api/uuid_eingaben_test.go, urnForm).
-		{"Bücher löschen, urn-Form", handler.BearbeiteBuecherLoeschen, http.MethodDelete, `{"ids":["urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7"]}`},
+		{"Bücher löschen, urn-Form", handler.TitelLoeschen, http.MethodDelete, `{"ids":["urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7"]}`},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -75,13 +75,13 @@ func TestBuchKennungImPfadIst400AmMux(t *testing.T) {
 	}
 	defer mock.Close()
 	durch := func(next http.Handler) http.Handler { return next }
-	mux := NewAPIHandler(APIHandlerConfig{
-		Repo:                 NewBookRepository(mock),
-		Metadaten:            stummerMetadatenClient(),
-		RequireViewBooks:     durch,
-		RequireEditBooks:     durch,
-		RequireDeleteBooks:   durch,
-		RequireAuthenticated: durch,
+	mux := NewTueren(TuerenKonfig{
+		Abfragen:          NewTitelAbfragen(mock),
+		Metadaten:         stummerMetadatenClient(),
+		VerlangeLesen:     durch,
+		VerlangeAendern:   durch,
+		VerlangeLoeschen:  durch,
+		VerlangeAnmeldung: durch,
 	})
 
 	buch := `{"isbn":"9783161484100","title":"Titel","author":"Autor"}`
@@ -122,7 +122,7 @@ func TestBuchIDAusPfad(t *testing.T) {
 			req.SetPathValue("id", f.id)
 			rec := httptest.NewRecorder()
 
-			id, ok := buchIDAusPfad(rec, req)
+			id, ok := titelIDAusPfad(rec, req)
 
 			if ok != f.ok {
 				t.Fatalf("ok = %v, erwartet %v", ok, f.ok)

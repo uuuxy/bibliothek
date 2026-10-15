@@ -19,21 +19,21 @@ import (
 func TestValidiereBuchErstellenEingabe(t *testing.T) {
 	tests := []struct {
 		name       string
-		eingabe    BuchEingabe
+		eingabe    TitelEingabe
 		wantResult bool
 		wantError  string
 	}{
-		{name: "Titel und ISBN", eingabe: BuchEingabe{Titel: "T", ISBN: "978-3-16-148410-0"}, wantResult: true},
-		{name: "ohne ISBN", eingabe: BuchEingabe{Titel: "T"}, wantResult: true},
-		{name: "ohne Titel", eingabe: BuchEingabe{ISBN: "978-3-16-148410-0"}, wantError: "titel darf nicht leer sein"},
-		{name: "Titel nur aus Leerzeichen", eingabe: BuchEingabe{Titel: "  "}, wantError: "titel darf nicht leer sein"},
-		{name: "Nummer ohne ISBN-Form", eingabe: BuchEingabe{Titel: "T", ISBN: "123"}, wantError: "ungültiges ISBN-Format"},
+		{name: "Titel und ISBN", eingabe: TitelEingabe{Titel: "T", ISBN: "978-3-16-148410-0"}, wantResult: true},
+		{name: "ohne ISBN", eingabe: TitelEingabe{Titel: "T"}, wantResult: true},
+		{name: "ohne Titel", eingabe: TitelEingabe{ISBN: "978-3-16-148410-0"}, wantError: "titel darf nicht leer sein"},
+		{name: "Titel nur aus Leerzeichen", eingabe: TitelEingabe{Titel: "  "}, wantError: "titel darf nicht leer sein"},
+		{name: "Nummer ohne ISBN-Form", eingabe: TitelEingabe{Titel: "T", ISBN: "123"}, wantError: "ungültiges ISBN-Format"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			result := validiereBuchErstellenEingabe(recorder, tt.eingabe)
+			result := pruefeTitelEingabe(recorder, tt.eingabe)
 			if result != tt.wantResult {
 				t.Errorf("got result %v, want %v", result, tt.wantResult)
 			}
@@ -54,13 +54,13 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 	}
 	defer mock.Close()
 
-	repo := NewBookRepository(mock)
-	handler := &APIHandler{repo: repo}
+	repo := NewTitelAbfragen(mock)
+	handler := &Tueren{abfragen: repo}
 
 	t.Run("Invalid JSON", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader("invalid json"))
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuecherLoeschen(rec, req)
+		handler.TitelLoeschen(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -70,7 +70,7 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 	t.Run("Empty IDs", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(`{"ids": []}`))
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuecherLoeschen(rec, req)
+		handler.TitelLoeschen(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -82,7 +82,7 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 
 		// Die Erwartungen in der Reihenfolge von DeleteBooks (seit 21.09.2026: Begin
 		// ZUERST, jeder Leser in der Transaktion, die Löschbefehle liefern ihre Spur
-		// per RETURNING). Die Reihenfolge selbst prüft db_books_delete_test.go; hier
+		// per RETURNING). Die Reihenfolge selbst prüft titel_loeschen_test.go; hier
 		// zählt, dass der Endpunkt mit 200 antwortet.
 		mock.ExpectBegin()
 		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
@@ -128,7 +128,7 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 		body := `{"ids": ["11111111-1111-1111-1111-111111111111"]}`
 		req := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(body))
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuecherLoeschen(rec, req)
+		handler.TitelLoeschen(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusOK)
@@ -143,7 +143,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 	}
 	defer mock.Close()
 
-	repo := NewBookRepository(mock)
+	repo := NewTitelAbfragen(mock)
 
 	// Mock HTTP Client for MetadatenClient
 	mockHTTP := &http.Client{
@@ -158,15 +158,15 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 	}
 	metaClient := &MetadatenClient{httpClient: mockHTTP}
 
-	handler := &APIHandler{
-		repo:      repo,
+	handler := &Tueren{
+		abfragen:  repo,
 		metadaten: metaClient,
 	}
 
 	t.Run("Invalid JSON", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader("invalid json"))
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuchErstellen(rec, req)
+		handler.TitelAnlegen(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -177,7 +177,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 		body := `{"isbn": "978-3-16-148410-0", "subject": "Math"}`
 		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuchErstellen(rec, req)
+		handler.TitelAnlegen(rec, req)
 
 		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "titel darf nicht leer sein") {
 			t.Errorf("got %d %s, want 400 mit „titel darf nicht leer sein“", rec.Code, rec.Body.String())
@@ -190,7 +190,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 		body := `{"isbn": "978-3-16-148410-0", "title": "T", "author": "A", "listenpreis": -5}`
 		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuchErstellen(rec, req)
+		handler.TitelAnlegen(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -220,7 +220,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 
 		erwarteFachBekannt(mock, "Math") // auf dem Pool, vor der Tx
 		// CreateBook ist atomar (Tx): Begin, INSERT, Commit — kein Stock im Body, also
-		// wird syncBookStock nicht aufgerufen.
+		// wird gleicheBestandAb nicht aufgerufen.
 		mock.ExpectBegin()
 		erwarteKeineDublette(mock)
 		mock.ExpectQuery(`INSERT INTO buecher_titel`).
@@ -253,7 +253,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
 		// Add context value if necessary (like auth), but it doesn't seem strictly required for these endpoints based on their code.
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuchErstellen(rec, req)
+		handler.TitelAnlegen(rec, req)
 
 		if rec.Code != http.StatusCreated {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusCreated)

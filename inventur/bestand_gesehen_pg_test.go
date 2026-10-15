@@ -30,7 +30,7 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	handler := &APIHandler{repo: &BookRepository{db: pool}, metadaten: offlineMetadatenClient()}
+	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 	sitzung := &auth.Claims{KontoID: bearbeiterFuerAussonderung(t, pool)}
 	sende := func(methode, id string, extra map[string]any) *httptest.ResponseRecorder {
 		t.Helper()
@@ -47,9 +47,9 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		if methode == http.MethodPost {
-			handler.BearbeiteBuchErstellen(rec, req)
+			handler.TitelAnlegen(rec, req)
 		} else {
-			handler.BearbeiteBuchAktualisieren(rec, req)
+			handler.TitelAendern(rec, req)
 		}
 		return rec
 	}

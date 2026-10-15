@@ -141,8 +141,8 @@ func sqlVonUpdateBook(t *testing.T) string {
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectCommit()
 
-	repo := NewBookRepository(mock)
-	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{Author: "Autor"}, []string{"author"}, &Bestandsangabe{Soll: 0}); err != nil {
+	repo := NewTitelAbfragen(mock)
+	if err := repo.AendereTitel(context.Background(), "irgendeine-id", Titel{Autor: "Autor"}, []string{"author"}, &Bestandsangabe{Soll: 0}); err != nil {
 		t.Fatalf("UpdateBook: %v", err)
 	}
 	if erfasst == "" {

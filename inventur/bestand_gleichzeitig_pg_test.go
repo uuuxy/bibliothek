@@ -19,7 +19,7 @@ import (
 func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 	marke := fmt.Sprintf("GLEICH%d", time.Now().UnixNano())
 
 	var titelID string
@@ -60,8 +60,8 @@ func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 		return z
 	}
 
-	buecher, err := repo.ListBooksByIDs(ctx, []string{titelID})
-	if err != nil || len(buecher) != 1 || buecher[0].Stock != 3 {
+	buecher, err := repo.LadeTitelNachIDs(ctx, []string{titelID})
+	if err != nil || len(buecher) != 1 || buecher[0].Bestand != 3 {
 		t.Fatalf("Einzel-Read: %v, %d Titel — erwartet einen mit Bestand 3", err, len(buecher))
 	}
 	buch := buecher[0]
@@ -82,7 +82,7 @@ func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 	ergebnis := make(chan error, 1)
 	go func() {
 		gesehen := 3
-		ergebnis <- repo.UpdateBook(ctx, titelID, buch, alleTitelFelder(), &Bestandsangabe{Soll: 1, Gesehen: &gesehen})
+		ergebnis <- repo.AendereTitel(ctx, titelID, buch, alleTitelFelder(), &Bestandsangabe{Soll: 1, Gesehen: &gesehen})
 	}()
 
 	select {

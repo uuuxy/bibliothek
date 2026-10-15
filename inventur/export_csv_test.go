@@ -24,7 +24,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
 		rows := pgxmock.NewRows(exportSpalten).
@@ -47,7 +47,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 			return nil
 		}
 
-		err = repo.StreamBooksForCSVExport(ctx, kopf, schreibe)
+		err = repo.LadeTitelFuerCSVExport(ctx, kopf, schreibe)
 		require.NoError(t, err)
 		assert.True(t, kopfCalled)
 		require.Len(t, resultRows, 2)
@@ -62,7 +62,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
@@ -76,7 +76,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		}
 		schreibe := func(row []string) error { return nil }
 
-		err = repo.StreamBooksForCSVExport(ctx, kopf, schreibe)
+		err = repo.LadeTitelFuerCSVExport(ctx, kopf, schreibe)
 		require.Error(t, err)
 		assert.Equal(t, "db error", err.Error())
 		assert.False(t, kopfCalled)
@@ -89,7 +89,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
 		rows := pgxmock.NewRows(exportSpalten)
@@ -102,7 +102,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		}
 		schreibe := func(row []string) error { return nil }
 
-		err = repo.StreamBooksForCSVExport(ctx, kopf, schreibe)
+		err = repo.LadeTitelFuerCSVExport(ctx, kopf, schreibe)
 		require.Error(t, err)
 		assert.Equal(t, "kopf error", err.Error())
 
@@ -114,7 +114,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
 		rows := pgxmock.NewRows(exportSpalten).
@@ -129,7 +129,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 			return errors.New("schreibe error")
 		}
 
-		err = repo.StreamBooksForCSVExport(ctx, kopf, schreibe)
+		err = repo.LadeTitelFuerCSVExport(ctx, kopf, schreibe)
 		require.Error(t, err)
 		assert.Equal(t, "schreibe error", err.Error())
 
@@ -143,8 +143,8 @@ func TestHandleExportCSV(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
-		handler := &APIHandler{repo: repo}
+		repo := NewTitelAbfragen(mock)
+		handler := &Tueren{abfragen: repo}
 
 		rows := pgxmock.NewRows(exportSpalten).
 			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "schultraeger", "Bibliothek, Regal 3B").
@@ -157,7 +157,7 @@ func TestHandleExportCSV(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)
 		w := httptest.NewRecorder()
 
-		handler.handleExportCSV(w, req)
+		handler.CSVExport(w, req)
 
 		res := w.Result()
 		defer res.Body.Close() //nolint:errcheck
@@ -188,8 +188,8 @@ func TestHandleExportCSV(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
-		handler := &APIHandler{repo: repo}
+		repo := NewTitelAbfragen(mock)
+		handler := &Tueren{abfragen: repo}
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
 			WithArgs(exportSchlagwortTrenner).
@@ -198,7 +198,7 @@ func TestHandleExportCSV(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)
 		w := httptest.NewRecorder()
 
-		handler.handleExportCSV(w, req)
+		handler.CSVExport(w, req)
 
 		res := w.Result()
 		defer res.Body.Close() //nolint:errcheck
@@ -217,8 +217,8 @@ func TestHandleExportCSV(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
-		handler := &APIHandler{repo: repo}
+		repo := NewTitelAbfragen(mock)
+		handler := &Tueren{abfragen: repo}
 
 		rows := pgxmock.NewRows(exportSpalten).
 			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "land", "").
@@ -231,7 +231,7 @@ func TestHandleExportCSV(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)
 		w := httptest.NewRecorder()
 
-		handler.handleExportCSV(w, req)
+		handler.CSVExport(w, req)
 
 		res := w.Result()
 		defer res.Body.Close() //nolint:errcheck

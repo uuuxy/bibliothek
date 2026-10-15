@@ -25,7 +25,7 @@ import (
 func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	var id string
 	if err := pool.QueryRow(ctx, `
@@ -47,11 +47,11 @@ func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
 	}
 
 	// Listenansicht: Titel da, aber das schwere Feld leer.
-	liste, err := repo.ListBooks(ctx, "", "", false)
+	liste, err := repo.LadeTitelListe(ctx, "", "", false)
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}
-	var gefunden *Book
+	var gefunden *Titel
 	for i := range liste {
 		if liste[i].ID == id {
 			gefunden = &liste[i]
@@ -64,12 +64,12 @@ func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
 		t.Errorf("Listenansicht schleppt erweiterte_eigenschaften mit: %v", gefunden.ErweiterteEigenschaften)
 	}
 	// Stammdaten müssen aber vollständig da sein (Suche/Karte hängen daran).
-	if gefunden.Title != "Schlank-Test" || gefunden.Author != "Autor" {
+	if gefunden.Titel != "Schlank-Test" || gefunden.Autor != "Autor" {
 		t.Errorf("Stammdaten der Listenansicht unvollständig: %+v", gefunden)
 	}
 
 	// Detail-Read: das schwere Feld vollständig.
-	detail, err := repo.ListBooksByIDs(ctx, []string{id})
+	detail, err := repo.LadeTitelNachIDs(ctx, []string{id})
 	if err != nil {
 		t.Fatalf("ListBooksByIDs: %v", err)
 	}

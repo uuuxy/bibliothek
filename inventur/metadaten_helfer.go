@@ -104,7 +104,7 @@ func spanne(erste, zweite string) (von, bis int) {
 }
 
 // schulstufe lässt die Jahrgänge der Schule gelten, 5 bis 13 wie der Listenimport
-// (parseKlassenStufe); 0 heißt, die Zahl ist keiner.
+// (leseKlassenstufe); 0 heißt, die Zahl ist keiner.
 func schulstufe(zahl string) int {
 	n, err := strconv.Atoi(zahl)
 	if err != nil || n < 5 || n > 13 {

@@ -19,14 +19,14 @@ import (
 // Anlegen (sort_order) dabei aufsteigend: Die alte Reihenfolge wäre die umgekehrte.
 func sortiertWieErwartet(t *testing.T, erwartet []string) {
 	t.Helper()
-	buecher := make([]Book, 0, len(erwartet))
+	buecher := make([]Titel, 0, len(erwartet))
 	for i := len(erwartet) - 1; i >= 0; i-- {
-		buecher = append(buecher, Book{Title: erwartet[i], SortOrder: len(buecher) + 1})
+		buecher = append(buecher, Titel{Titel: erwartet[i], Reihenfolge: len(buecher) + 1})
 	}
 	sortiereBuecherNachTitel(buecher)
 	ist := make([]string, len(buecher))
 	for i, b := range buecher {
-		ist[i] = b.Title
+		ist[i] = b.Titel
 	}
 	assert.Equal(t, erwartet, ist)
 }
@@ -70,8 +70,8 @@ func TestSortiereBuecherNachTitel_OhneLeerzeichenAmRand(t *testing.T) {
 
 // Gleiche Titel behalten die Reihenfolge, in der die Abfrage sie liefert.
 func TestSortiereBuecherNachTitel_GleicheTitelBleibenInAbfrageReihenfolge(t *testing.T) {
-	buecher := []Book{
-		{ID: "c", Title: "Mathe 7"}, {ID: "x", Title: "Zebra"}, {ID: "a", Title: "Mathe 7"}, {ID: "b", Title: "Mathe 7"},
+	buecher := []Titel{
+		{ID: "c", Titel: "Mathe 7"}, {ID: "x", Titel: "Zebra"}, {ID: "a", Titel: "Mathe 7"}, {ID: "b", Titel: "Mathe 7"},
 	}
 	sortiereBuecherNachTitel(buecher)
 	ist := make([]string, len(buecher))
@@ -192,8 +192,8 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 			require.NoError(t, err)
 			defer mock.Close()
 
-			repo := NewBookRepository(mock)
-			handler := &APIHandler{repo: repo}
+			repo := NewTitelAbfragen(mock)
+			handler := &Tueren{abfragen: repo}
 
 			if tt.setupMock != nil {
 				tt.setupMock(mock)
@@ -202,7 +202,7 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.url, nil)
 			w := httptest.NewRecorder()
 
-			handler.BearbeiteBuecherListe(w, req)
+			handler.TitelListe(w, req)
 
 			res := w.Result()
 			defer func() { require.NoError(t, res.Body.Close()) }()

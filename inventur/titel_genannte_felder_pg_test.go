@@ -25,7 +25,7 @@ const genanntVorsatz = "Genannte-Felder-Probe "
 type genanntProbe struct {
 	t       *testing.T
 	pool    *pgxpool.Pool
-	handler *APIHandler
+	handler *Tueren
 	nr      int
 }
 
@@ -49,13 +49,13 @@ func neueGenanntProbe(t *testing.T) *genanntProbe {
 	t.Cleanup(loesche)
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	return &genanntProbe{t: t, pool: pool, handler: NewAPIHandler(APIHandlerConfig{
-		Repo:                 NewBookRepository(pool),
-		Metadaten:            offlineMetadatenClient(),
-		RequireViewBooks:     durchlass,
-		RequireEditBooks:     durchlass,
-		RequireDeleteBooks:   durchlass,
-		RequireAuthenticated: durchlass,
+	return &genanntProbe{t: t, pool: pool, handler: NewTueren(TuerenKonfig{
+		Abfragen:          NewTitelAbfragen(pool),
+		Metadaten:         offlineMetadatenClient(),
+		VerlangeLesen:     durchlass,
+		VerlangeAendern:   durchlass,
+		VerlangeLoeschen:  durchlass,
+		VerlangeAnmeldung: durchlass,
 	})}
 }
 

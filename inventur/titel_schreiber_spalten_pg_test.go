@@ -13,20 +13,20 @@ import (
 func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 	p := neueGenanntProbe(t)
 	ctx := context.Background()
-	repo := NewBookRepository(p.pool)
+	repo := NewTitelAbfragen(p.pool)
 
 	fach := genanntVorsatz + "Fach Schreiber"
 	preis := 19.9
 	gezaehlt := "2026-09-30"
-	buch := func(nr int) Book {
-		return Book{
+	buch := func(nr int) Titel {
+		return Titel{
 			ISBN:                    fmt.Sprintf("97899966%05d", nr),
-			Title:                   fmt.Sprintf("%sSchreiber %d", genanntVorsatz, nr),
-			Author:                  "Eine Autorin",
+			Titel:                   fmt.Sprintf("%sSchreiber %d", genanntVorsatz, nr),
+			Autor:                   "Eine Autorin",
 			CoverURL:                "/covers/schreiber.webp",
-			Subject:                 fach,
-			Track:                   "R",
-			LastCounted:             &gezaehlt,
+			Fach:                    fach,
+			Zweig:                   "R",
+			ZuletztGezaehlt:         &gezaehlt,
 			Medientyp:               "DVD",
 			JahrgangVon:             7,
 			JahrgangBis:             9,
@@ -64,18 +64,18 @@ func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 		name string
 		// Nur das Anlegen an der Maske schreibt das Mehrjahresband; die Importe kennen es nicht.
 		mehrjahresband string
-		schreibe       func(Book) error
+		schreibe       func(Titel) error
 	}{
-		{"CreateBook", "true", func(b Book) error {
-			_, err := repo.CreateBook(ctx, b)
+		{"CreateBook", "true", func(b Titel) error {
+			_, err := repo.LegeTitelAn(ctx, b)
 			return err
 		}},
-		{"UpsertBook (Einzel-Rückfall)", "false", func(b Book) error {
-			_, err := repo.UpsertBook(ctx, b)
+		{"UpsertBook (Einzel-Rückfall)", "false", func(b Titel) error {
+			_, err := repo.SchreibeTitel(ctx, b)
 			return err
 		}},
-		{"UpsertBooksBatch", "false", func(b Book) error {
-			_, err := repo.UpsertBooksBatch(ctx, []Book{b})
+		{"SchreibeTitelStapel", "false", func(b Titel) error {
+			_, err := repo.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		}},
 	}
@@ -85,7 +85,7 @@ func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 			t.Fatalf("%s: %v", weg.name, err)
 		}
 		var id string
-		if err := p.pool.QueryRow(ctx, `SELECT id::text FROM buecher_titel WHERE titel = $1`, b.Title).Scan(&id); err != nil {
+		if err := p.pool.QueryRow(ctx, `SELECT id::text FROM buecher_titel WHERE titel = $1`, b.Titel).Scan(&id); err != nil {
 			t.Fatalf("%s: Titel nicht gefunden: %v", weg.name, err)
 		}
 		zeile := p.zeile(id)

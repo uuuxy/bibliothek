@@ -26,7 +26,7 @@ import (
 func TestFachAutoRegistrierung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := inventur.NewBookRepository(pool)
+	repo := inventur.NewTitelAbfragen(pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1000000)
 	fach := "Astronomie" + suffix
@@ -36,7 +36,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 	})
 
 	// 1) Unbekanntes Fach: CreateBook registriert es und der Titel trägt es.
-	id, err := repo.CreateBook(ctx, inventur.Book{Title: "Sternbuch-" + suffix, ISBN: "ISBN-A-" + suffix, Subject: fach})
+	id, err := repo.LegeTitelAn(ctx, inventur.Titel{Titel: "Sternbuch-" + suffix, ISBN: "ISBN-A-" + suffix, Fach: fach})
 	if err != nil {
 		t.Fatalf("CreateBook mit unbekanntem Fach: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 	}
 
 	// 2) Schreibvariante: läuft auf die kanonische Form, keine zweite Sachgruppe.
-	id2, err := repo.CreateBook(ctx, inventur.Book{Title: "Sternbuch2-" + suffix, ISBN: "ISBN-B-" + suffix, Subject: strings.ToLower(fach)})
+	id2, err := repo.LegeTitelAn(ctx, inventur.Titel{Titel: "Sternbuch2-" + suffix, ISBN: "ISBN-B-" + suffix, Fach: strings.ToLower(fach)})
 	if err != nil {
 		t.Fatalf("CreateBook mit Schreibvariante: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 	}
 
 	// 3) Leeres Fach bleibt NULL (der FK gilt nur für Nicht-NULL-Werte).
-	if err := repo.UpdateBook(ctx, id, inventur.Book{Subject: ""}, []string{"subject"}, nil); err != nil {
+	if err := repo.AendereTitel(ctx, id, inventur.Titel{Fach: ""}, []string{"subject"}, nil); err != nil {
 		t.Fatalf("UpdateBook mit leerem Fach: %v", err)
 	}
 	var istNull bool
@@ -91,7 +91,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 		besetzt, "Anderes Fach "+suffix); err != nil {
 		t.Fatalf("Kürzel besetzen: %v", err)
 	}
-	if _, err := repo.CreateBook(ctx, inventur.Book{Title: "Chemiebuch-" + suffix, ISBN: "ISBN-C-" + suffix, Subject: besetzt}); err != nil {
+	if _, err := repo.LegeTitelAn(ctx, inventur.Titel{Titel: "Chemiebuch-" + suffix, ISBN: "ISBN-C-" + suffix, Fach: besetzt}); err != nil {
 		t.Fatalf("CreateBook trotz Kürzel-Kollision: %v", err)
 	}
 	var hashKuerzel string

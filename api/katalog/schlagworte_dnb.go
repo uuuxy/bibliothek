@@ -46,7 +46,7 @@ type dnbSchlagwortVorschlagAntwort struct {
 // @Failure      502   {object}  map[string]string
 // @Router       /schlagworte/dnb-vorschlag [get]
 func (t *Tueren) DNBSchlagwortVorschlag() http.HandlerFunc {
-	return t.dnbSchlagwortVorschlagTuer(inventur.NeuerMetadatenClient())
+	return t.dnbSchlagwortVorschlagTuer(inventur.NewMetadatenClient())
 }
 
 // dnbSchlagwortVorschlagTuer ist die Tür mit den Katalogdiensten als Parameter: Ein Test stellt

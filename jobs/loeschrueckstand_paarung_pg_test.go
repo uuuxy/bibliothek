@@ -248,7 +248,7 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 }
 
 // Wird ein Titel gelöscht, während ein Exemplar verliehen ist, hinterlässt das eine Zeile im
-// Protokoll mit dem Namen des Entleihers (inventur/db_books_delete_spur.go). Die Zeile ist eine
+// Protokoll mit dem Namen des Entleihers (inventur/titel_loeschen_spur.go). Die Zeile ist eine
 // Kopie von Personendaten wie jede andere Spur einer Ausleihe und muss derselben Frist
 // unterliegen.
 //
@@ -277,7 +277,7 @@ func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
 		t.Fatalf("Probeschüler: %v", err)
 	}
 
-	// spur legt die Zeile im Protokoll an, wie db_books_delete_spur.go sie schreibt. Exemplar und
+	// spur legt die Zeile im Protokoll an, wie titel_loeschen_spur.go sie schreibt. Exemplar und
 	// Titel sind zu diesem Zeitpunkt schon gelöscht, deshalb eine freie UUID als datensatz_id: genau
 	// die Lage, in der die Frist greifen muss.
 	spur := func(barcode string, mitSchuelerID bool) {

@@ -160,7 +160,7 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 
 	// Die abhängigen Zeilen zuerst: ausleihen.exemplar_id und schadensfaelle.exemplar_id stehen
 	// auf ON DELETE RESTRICT. Reihenfolge wie beim Löschen eines Titels
-	// (inventur/db_books_delete.go): Schadensfälle, Ausleihen, dann das Exemplar. Was hier
+	// (inventur/titel_loeschen.go): Schadensfälle, Ausleihen, dann das Exemplar. Was hier
 	// fällt, ist erledigt; offene Vorgänge hat pruefeVerlusteLoeschbar abgewiesen. Der
 	// Fehlbestandsbericht behält seine Abschrift, und der Barcode wird wieder frei:
 	// buecher_exemplare.barcode_id ist ohne Teilindex eindeutig, eine stehengebliebene Zeile

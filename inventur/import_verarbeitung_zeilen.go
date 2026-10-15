@@ -9,33 +9,33 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
-// ImportConfig bündelt die Parameter für die Verarbeitung einer Importzeile.
-type ImportConfig struct {
-	Ctx       context.Context
-	Row       []string
-	ColIdx    map[string]int
-	Repo      *BookRepository
+// importZeile bündelt die Parameter für die Verarbeitung einer Importzeile.
+type importZeile struct {
+	Kontext   context.Context
+	Zeile     []string
+	Spalten   map[string]int
+	Abfragen  *TitelAbfragen
 	Metadaten *MetadatenClient
 }
 
 // verarbeiteImportZeile verarbeitet eine einzelne Excel-Zeile und erstellt das
 // entsprechende Book-Objekt für den Batch-Import.
-func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
-	getCol := func(name string) string {
-		idx := cfg.ColIdx[name]
-		if idx >= 0 && idx < len(cfg.Row) {
-			return strings.TrimSpace(cfg.Row[idx])
+func verarbeiteImportZeile(konfig importZeile) (*Titel, error) {
+	spalteLesen := func(name string) string {
+		stelle := konfig.Spalten[name]
+		if stelle >= 0 && stelle < len(konfig.Zeile) {
+			return strings.TrimSpace(konfig.Zeile[stelle])
 		}
 		return ""
 	}
 
-	isbn := getCol("isbn")
+	isbn := spalteLesen("isbn")
 	if isbn == "" {
 		return nil, nil // Leere Zeile überspringen
 	}
 
-	title := getCol("titel")
-	author := getCol("autor")
+	titelText := spalteLesen("titel")
+	autor := spalteLesen("autor")
 	// Die Fach-Spalte ist Freitext, buecher_titel.subject aber ein Fremdschlüssel auf die
 	// Systematik (Migration 078): Was hier durchgeht, wird eine Kategorie und steht danach
 	// in der Fach-Auswahl der Maske und als Fach im Portal. Deshalb dieselbe Prüfung wie
@@ -45,35 +45,35 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 	// Der frühere Rückfall auf das wörtliche Fach „Unbekannt" ist damit entfallen — er
 	// legte eine Systematik-Kategorie dieses Namens an, die kein Fach ist. Leer heißt
 	// überall sonst „ohne Fach", und genau das ist hier gemeint.
-	subject := lmf.FachExakt(getCol("fach"))
+	fach := lmf.FachExakt(spalteLesen("fach"))
 
 	// Die Spalte „klasse" nennt einen Jahrgang. Er steht als Spanne N bis N am Titel: Mit ihr
 	// rechnen Inventur und Portal, und die Titelliste zeigt sie. 0 heißt unbekannt.
-	klasse := parseKlassenStufe(getCol("klasse"))
+	klasse := leseKlassenstufe(spalteLesen("klasse"))
 
-	book := Book{
-		ISBN:        isbn,
-		Title:       title,
-		Author:      author,
-		Subject:     subject,
-		JahrgangVon: int(klasse),
-		JahrgangBis: int(klasse),
-		Stock:       parseBestand(getCol("bestand")),
-		LastCounted: nil,
+	eintrag := Titel{
+		ISBN:            isbn,
+		Titel:           titelText,
+		Autor:           autor,
+		Fach:            fach,
+		JahrgangVon:     int(klasse),
+		JahrgangBis:     int(klasse),
+		Bestand:         leseBestand(spalteLesen("bestand")),
+		ZuletztGezaehlt: nil,
 	}
 
-	ergaenzeMetadaten(cfg.Ctx, cfg.Metadaten, &book)
+	ergaenzeMetadaten(konfig.Kontext, konfig.Metadaten, &eintrag)
 
-	if book.Subject == "" || strings.EqualFold(book.Subject, "unbekannt") {
-		if inferredSubject := inferSubjectFromTitle(book.Title); inferredSubject != "" {
-			book.Subject = inferredSubject
+	if eintrag.Fach == "" || strings.EqualFold(eintrag.Fach, "unbekannt") {
+		if erratenesFach := errateFachAusTitel(eintrag.Titel); erratenesFach != "" {
+			eintrag.Fach = erratenesFach
 		}
 	}
 
-	return &book, nil
+	return &eintrag, nil
 }
 
-// parseKlassenStufe liest den Jahrgang aus der Spalte „klasse". Gültig ist 5–13 (kooperative
+// leseKlassenstufe liest den Jahrgang aus der Spalte „klasse". Gültig ist 5–13 (kooperative
 // Gesamtschule inkl. Oberstufe). Fehlt die Spalte, ist sie leer oder liegt der Wert daneben,
 // ist der Jahrgang unbekannt (0), und beide Upserts schreiben NULL in die Spanne. Geraten
 // wird nicht: Ein geratener Jahrgang ist in der Datenbank von einem gepflegten nicht zu
@@ -83,22 +83,22 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 // einem Pfad liegen, den der Bounds-Check exklusiv kontrolliert — nach einem Merge
 // mit dem Default-Zweig gilt der Check statisch nicht mehr als Guard
 // (go/incorrect-integer-conversion).
-func parseKlassenStufe(gradeStr string) int16 {
-	gradeLevel := 0
-	if g, err := strconv.Atoi(gradeStr); err == nil {
-		gradeLevel = g
+func leseKlassenstufe(stufeText string) int16 {
+	stufe := 0
+	if g, err := strconv.Atoi(stufeText); err == nil {
+		stufe = g
 	}
-	if gradeLevel < 5 || gradeLevel > 13 {
+	if stufe < 5 || stufe > 13 {
 		return 0
 	}
-	return int16(gradeLevel)
+	return int16(stufe)
 }
 
-// parseBestand liest den Bestand aus der Import-Spalte. Nur Werte aus [0, MaxInt32]
+// leseBestand liest den Bestand aus der Import-Spalte. Nur Werte aus [0, MaxInt32]
 // werden übernommen: negative Bestände sind Datenfehler, und die DB-Spalte ist int4 —
 // der Bulk-Upsert konvertiert nach int32. Ungültiges wird wie ein Parse-Fehler
 // behandelt (Bestand 0).
-func parseBestand(s string) int {
+func leseBestand(s string) int {
 	n, err := strconv.Atoi(s)
 	if err != nil || n < 0 || n > math.MaxInt32 {
 		return 0
@@ -107,30 +107,30 @@ func parseBestand(s string) int {
 }
 
 // ergaenzeMetadaten ergänzt fehlende Buch-Metadaten über externe APIs.
-func ergaenzeMetadaten(ctx context.Context, metadaten *MetadatenClient, book *Book) {
-	if book.Title != "" && book.Author != "" && book.CoverURL != "" {
+func ergaenzeMetadaten(ctx context.Context, metadaten *MetadatenClient, eintrag *Titel) {
+	if eintrag.Titel != "" && eintrag.Autor != "" && eintrag.CoverURL != "" {
 		return
 	}
 
-	lookup, _ := metadaten.SucheNachISBN(ctx, book.ISBN) //nolint:errcheck
-	if lookup == nil {
+	nachschlagen, _ := metadaten.SucheNachISBN(ctx, eintrag.ISBN) //nolint:errcheck
+	if nachschlagen == nil {
 		return
 	}
 
-	if book.Title == "" || book.Title == "Unbekannter Titel" {
-		book.Title = lookup.Titel
+	if eintrag.Titel == "" || eintrag.Titel == "Unbekannter Titel" {
+		eintrag.Titel = nachschlagen.Titel
 	}
-	if book.Author == "" || book.Author == "Unbekannter Autor" {
-		book.Author = lookup.Autor
+	if eintrag.Autor == "" || eintrag.Autor == "Unbekannter Autor" {
+		eintrag.Autor = nachschlagen.Autor
 	}
-	if book.CoverURL == "" {
-		book.CoverURL = lookup.CoverURL
+	if eintrag.CoverURL == "" {
+		eintrag.CoverURL = nachschlagen.CoverURL
 	}
 
-	if book.Title == "" {
-		book.Title = "Unbekannter Titel"
+	if eintrag.Titel == "" {
+		eintrag.Titel = "Unbekannter Titel"
 	}
-	if book.Author == "" {
-		book.Author = "Unbekannter Autor"
+	if eintrag.Autor == "" {
+		eintrag.Autor = "Unbekannter Autor"
 	}
 }

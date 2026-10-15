@@ -23,7 +23,7 @@ import (
 func TestNeuerTitel_OhneJahrgang_BleibtUnbekannt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 	const ohne, mit = "978-9-99-200000-1", "978-9-99-200000-2"
 	// Die Spalte trägt die ISBN ohne Bindestriche (isbn_normalform); aufgeräumt wird über die
 	// Kennung der angelegten Titel.
@@ -37,12 +37,12 @@ func TestNeuerTitel_OhneJahrgang_BleibtUnbekannt(t *testing.T) {
 		}
 	})
 
-	idOhne, err := repo.CreateBook(ctx, Book{ISBN: ohne, Title: "Scanner-Neuanlage"})
+	idOhne, err := repo.LegeTitelAn(ctx, Titel{ISBN: ohne, Titel: "Scanner-Neuanlage"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	angelegt = append(angelegt, idOhne)
-	idMit, err := repo.CreateBook(ctx, Book{ISBN: mit, Title: "Lesebuch 5 bis 10", JahrgangVon: 5, JahrgangBis: 10})
+	idMit, err := repo.LegeTitelAn(ctx, Titel{ISBN: mit, Titel: "Lesebuch 5 bis 10", JahrgangVon: 5, JahrgangBis: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,16 +68,16 @@ func TestNeuerTitel_OhneJahrgang_BleibtUnbekannt(t *testing.T) {
 	// Die zwei Lesepfade der Titel-Verwaltung, der Einzel-Read der Maske und die Titelliste
 	// (hier die Sicht „Ohne Exemplare": Die zwei Titel tragen keins): unbekannt ist 0 und 0,
 	// die eingetragene Spanne bleibt.
-	einzeln, err := repo.ListBooksByIDs(ctx, []string{idOhne, idMit})
+	einzeln, err := repo.LadeTitelNachIDs(ctx, []string{idOhne, idMit})
 	if err != nil {
 		t.Fatalf("Titel lesen: %v", err)
 	}
-	liste, err := repo.ListBooks(ctx, "", "978-9-99-200000", true)
+	liste, err := repo.LadeTitelListe(ctx, "", "978-9-99-200000", true)
 	if err != nil {
 		t.Fatalf("Titelliste lesen: %v", err)
 	}
 	soll := map[string][2]int{idOhne: {0, 0}, idMit: {5, 10}}
-	for weg, buecher := range map[string][]Book{"Einzel-Read": einzeln, "Titelliste": liste} {
+	for weg, buecher := range map[string][]Titel{"Einzel-Read": einzeln, "Titelliste": liste} {
 		gelesen := 0
 		for _, b := range buecher {
 			spanne, ok := soll[b.ID]
@@ -86,19 +86,19 @@ func TestNeuerTitel_OhneJahrgang_BleibtUnbekannt(t *testing.T) {
 			}
 			gelesen++
 			if b.JahrgangVon != spanne[0] || b.JahrgangBis != spanne[1] {
-				t.Errorf("%s, %s: gelesen %d bis %d, erwartet %d bis %d", weg, b.Title, b.JahrgangVon, b.JahrgangBis, spanne[0], spanne[1])
+				t.Errorf("%s, %s: gelesen %d bis %d, erwartet %d bis %d", weg, b.Titel, b.JahrgangVon, b.JahrgangBis, spanne[0], spanne[1])
 			}
 		}
 		if gelesen != len(soll) {
 			t.Errorf("%s: %d von %d Titeln gelesen", weg, gelesen, len(soll))
 		}
 	}
-	// Cover-Upload und Cover-Abgleich lesen den Titel über GetBookByID: An der leeren Spalte
+	// Cover-Upload und Cover-Abgleich lesen den Titel über LadeTitel: An der leeren Spalte
 	// darf das Lesen nicht scheitern.
-	if buch, err := repo.GetBookByID(ctx, idOhne); err != nil {
-		t.Errorf("GetBookByID an einem Titel ohne Jahrgang: %v", err)
+	if buch, err := repo.LadeTitel(ctx, idOhne); err != nil {
+		t.Errorf("LadeTitel an einem Titel ohne Jahrgang: %v", err)
 	} else if buch.JahrgangVon != 0 || buch.JahrgangBis != 0 {
-		t.Errorf("GetBookByID: gelesen %d bis %d, erwartet 0 bis 0", buch.JahrgangVon, buch.JahrgangBis)
+		t.Errorf("LadeTitel: gelesen %d bis %d, erwartet 0 bis 0", buch.JahrgangVon, buch.JahrgangBis)
 	}
 
 	// Die Datenbank hält die Regel auch für Schreiber, die nicht durch pruefeJahrgangsSpanne
@@ -124,12 +124,12 @@ func TestNeuerTitel_OhneJahrgang_BleibtUnbekannt(t *testing.T) {
 func TestTitelAendern_SpanneGanzOderGarNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 	const isbn = "978-9-99-200000-3"
 	if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn = isbn_normalform($1)`, isbn); err != nil {
 		t.Fatal(err)
 	}
-	id, err := repo.CreateBook(ctx, Book{ISBN: isbn, Title: "Bio 7 bis 9", Author: "Verlag", JahrgangVon: 7, JahrgangBis: 9})
+	id, err := repo.LegeTitelAn(ctx, Titel{ISBN: isbn, Titel: "Bio 7 bis 9", Autor: "Verlag", JahrgangVon: 7, JahrgangBis: 9})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,11 +147,11 @@ func TestTitelAendern_SpanneGanzOderGarNicht(t *testing.T) {
 	}
 
 	// Nur „von" geleert: 0 bis 9 ist keine Spanne.
-	if err := repo.UpdateBook(ctx, id, Book{JahrgangVon: 0}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
+	if err := repo.AendereTitel(ctx, id, Titel{JahrgangVon: 0}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
 		t.Errorf("nur „von“ geleert: erwartet errJahrgangsSpanne, bekam %v", err)
 	}
 	// „von" über das gespeicherte „bis" gehoben.
-	if err := repo.UpdateBook(ctx, id, Book{JahrgangVon: 11}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
+	if err := repo.AendereTitel(ctx, id, Titel{JahrgangVon: 11}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
 		t.Errorf("„von“ über „bis“: erwartet errJahrgangsSpanne, bekam %v", err)
 	}
 	if von, bis := spanne(); von == nil || bis == nil || *von != 7 || *bis != 9 {
@@ -159,7 +159,7 @@ func TestTitelAendern_SpanneGanzOderGarNicht(t *testing.T) {
 	}
 
 	// Beide geleert: unbekannt.
-	if err := repo.UpdateBook(ctx, id, Book{}, []string{"jahrgangVon", "jahrgangBis"}, nil); err != nil {
+	if err := repo.AendereTitel(ctx, id, Titel{}, []string{"jahrgangVon", "jahrgangBis"}, nil); err != nil {
 		t.Fatalf("beide Felder leeren: %v", err)
 	}
 	if von, bis := spanne(); von != nil || bis != nil {
@@ -167,11 +167,11 @@ func TestTitelAendern_SpanneGanzOderGarNicht(t *testing.T) {
 	}
 
 	// An einem Titel ohne Spanne nur „von" gesetzt.
-	if err := repo.UpdateBook(ctx, id, Book{JahrgangVon: 7}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
+	if err := repo.AendereTitel(ctx, id, Titel{JahrgangVon: 7}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
 		t.Errorf("nur „von“ gesetzt: erwartet errJahrgangsSpanne, bekam %v", err)
 	}
 	// Ein anderes Feld lässt sich weiter ändern, und die Spanne bleibt unbekannt.
-	if err := repo.UpdateBook(ctx, id, Book{Untertitel: "Neu"}, []string{"untertitel"}, nil); err != nil {
+	if err := repo.AendereTitel(ctx, id, Titel{Untertitel: "Neu"}, []string{"untertitel"}, nil); err != nil {
 		t.Fatalf("anderes Feld ändern: %v", err)
 	}
 	if von, bis := spanne(); von != nil || bis != nil {
@@ -231,19 +231,19 @@ func TestTitelTueren_JahrgangsSpanne(t *testing.T) {
 func TestListenimport_JahrgangBleibtUnbekanntUndWirdNachgetragen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
-	wege := map[string]func(Book) error{
-		"UpsertBooksBatch": func(b Book) error {
-			_, err := repo.UpsertBooksBatch(ctx, []Book{b})
+	wege := map[string]func(Titel) error{
+		"SchreibeTitelStapel": func(b Titel) error {
+			_, err := repo.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		},
-		"UpsertBook (Einzel-Rückfall)": func(b Book) error {
-			_, err := repo.UpsertBook(ctx, b)
+		"UpsertBook (Einzel-Rückfall)": func(b Titel) error {
+			_, err := repo.SchreibeTitel(ctx, b)
 			return err
 		},
 	}
-	isbns := map[string]string{"UpsertBooksBatch": "978-9-99-200000-4", "UpsertBook (Einzel-Rückfall)": "978-9-99-200000-5"}
+	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-200000-4", "UpsertBook (Einzel-Rückfall)": "978-9-99-200000-5"}
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]
@@ -270,10 +270,10 @@ func TestListenimport_JahrgangBleibtUnbekanntUndWirdNachgetragen(t *testing.T) {
 			return s
 		}
 
-		zeile, err := verarbeiteImportZeile(ImportConfig{
-			Ctx:       ctx,
-			Row:       []string{isbn, "Die Welle", "Rhue"},
-			ColIdx:    map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": -1, "bestand": -1},
+		zeile, err := verarbeiteImportZeile(importZeile{
+			Kontext:   ctx,
+			Zeile:     []string{isbn, "Die Welle", "Rhue"},
+			Spalten:   map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": -1, "bestand": -1},
 			Metadaten: offlineMetadatenClient(),
 		})
 		if err != nil || zeile == nil {
@@ -306,15 +306,15 @@ func TestListenimport_JahrgangBleibtUnbekanntUndWirdNachgetragen(t *testing.T) {
 func TestListenimport_SpalteKlasseWirdSpanne(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
-	wege := map[string]func(Book) error{
-		"UpsertBooksBatch": func(b Book) error {
-			_, err := repo.UpsertBooksBatch(ctx, []Book{b})
+	wege := map[string]func(Titel) error{
+		"SchreibeTitelStapel": func(b Titel) error {
+			_, err := repo.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		},
-		"UpsertBook (Einzel-Rückfall)": func(b Book) error {
-			_, err := repo.UpsertBook(ctx, b)
+		"UpsertBook (Einzel-Rückfall)": func(b Titel) error {
+			_, err := repo.SchreibeTitel(ctx, b)
 			return err
 		},
 	}
@@ -322,8 +322,8 @@ func TestListenimport_SpalteKlasseWirdSpanne(t *testing.T) {
 		klasse, soll string
 		isbns        map[string]string
 	}{
-		{"7", "7 bis 7", map[string]string{"UpsertBooksBatch": "978-9-99-200001-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-200001-2"}},
-		{"3", "leer bis leer", map[string]string{"UpsertBooksBatch": "978-9-99-200001-3", "UpsertBook (Einzel-Rückfall)": "978-9-99-200001-4"}},
+		{"7", "7 bis 7", map[string]string{"SchreibeTitelStapel": "978-9-99-200001-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-200001-2"}},
+		{"3", "leer bis leer", map[string]string{"SchreibeTitelStapel": "978-9-99-200001-3", "UpsertBook (Einzel-Rückfall)": "978-9-99-200001-4"}},
 	}
 
 	for _, fall := range faelle {
@@ -342,10 +342,10 @@ func TestListenimport_SpalteKlasseWirdSpanne(t *testing.T) {
 			loesche()
 			t.Cleanup(loesche)
 
-			zeile, err := verarbeiteImportZeile(ImportConfig{
-				Ctx:       ctx,
-				Row:       []string{isbn, "Die Welle", "Rhue", fall.klasse},
-				ColIdx:    map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": 3, "bestand": -1},
+			zeile, err := verarbeiteImportZeile(importZeile{
+				Kontext:   ctx,
+				Zeile:     []string{isbn, "Die Welle", "Rhue", fall.klasse},
+				Spalten:   map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": 3, "bestand": -1},
 				Metadaten: offlineMetadatenClient(),
 			})
 			if err != nil || zeile == nil {

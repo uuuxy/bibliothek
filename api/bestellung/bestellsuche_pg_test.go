@@ -63,7 +63,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 	var ausfall string
 	suche := func(t *testing.T, dnb http.RoundTripper, rumpf string) (int, []service.BestellTreffer, string) {
 		t.Helper()
-		client := inventur.NeuerMetadatenClient()
+		client := inventur.NewMetadatenClient()
 		client.SetzeHTTPClientFuerTest(&http.Client{Transport: dnb})
 		rec := httptest.NewRecorder()
 		srv.sucheBestellung(client)(rec, httptest.NewRequest(http.MethodPost, "/api/bestellungen/suche", strings.NewReader(rumpf)))

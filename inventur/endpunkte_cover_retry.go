@@ -8,53 +8,57 @@ import (
 	"strings"
 )
 
-func (handler *APIHandler) handleListExternalCovers(writer http.ResponseWriter, request *http.Request) {
-	books, err := handler.repo.ListExternalCoverBooks(request.Context(), 300)
+// FremdeCoverListe ist die Tür GET /api/admin/books/external-covers: die Titel, deren Cover
+// noch von außen geladen wird.
+func (t *Tueren) FremdeCoverListe(w http.ResponseWriter, r *http.Request) {
+	eintraege, err := t.abfragen.LadeTitelMitFremdemCover(r.Context(), 300)
 	if err != nil {
 		log.Printf("Fehler beim Laden externer Cover-Bücher: %v", err)
-		writeError(writer, http.StatusInternalServerError, "externe cover konnten nicht geladen werden")
+		schreibeFehler(w, http.StatusInternalServerError, "externe cover konnten nicht geladen werden")
 		return
 	}
 
-	writeJSON(writer, http.StatusOK, map[string]any{"data": books})
+	schreibeJSON(w, http.StatusOK, map[string]any{"data": eintraege})
 }
 
-func (handler *APIHandler) handleRetryExternalCovers(writer http.ResponseWriter, request *http.Request) {
+// FremdeCoverNeuLaden ist die Tür POST /api/admin/books/retry-covers: Sie versucht die Cover
+// von außen noch einmal zu laden.
+func (t *Tueren) FremdeCoverNeuLaden(w http.ResponseWriter, r *http.Request) {
 	var eingabe struct {
 		IDs   []string `json:"ids"`
 		Limit int      `json:"limit"`
 	}
-	if err := json.NewDecoder(request.Body).Decode(&eingabe); err != nil {
-		writeError(writer, http.StatusBadRequest, "ungültiges JSON")
+	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
+		schreibeFehler(w, http.StatusBadRequest, "ungültiges JSON")
 		return
 	}
 	if !alleUUIDs(eingabe.IDs) {
-		writeError(writer, http.StatusBadRequest, "ids enthält eine ungültige Kennung")
+		schreibeFehler(w, http.StatusBadRequest, "ids enthält eine ungültige Kennung")
 		return
 	}
 
 	var (
-		books []Book
-		err   error
+		eintraege []Titel
+		err       error
 	)
 	if len(eingabe.IDs) > 0 {
-		books, err = handler.repo.ListBooksByIDs(request.Context(), eingabe.IDs)
+		eintraege, err = t.abfragen.LadeTitelNachIDs(r.Context(), eingabe.IDs)
 	} else {
-		books, err = handler.repo.ListExternalCoverBooks(request.Context(), eingabe.Limit)
+		eintraege, err = t.abfragen.LadeTitelMitFremdemCover(r.Context(), eingabe.Limit)
 	}
 	if err != nil {
 		log.Printf("Fehler beim Laden externer Cover für Retry: %v", err)
-		writeError(writer, http.StatusInternalServerError, "cover-retry konnte nicht gestartet werden")
+		schreibeFehler(w, http.StatusInternalServerError, "cover-retry konnte nicht gestartet werden")
 		return
 	}
 
 	zahlen := map[string]int{"retried": 0, coverAktualisiert: 0, coverUebersprungen: 0, coverGescheitert: 0}
-	for _, book := range books {
+	for _, eintrag := range eintraege {
 		zahlen["retried"]++
-		zahlen[handler.ladeCoverErneut(request.Context(), book)]++
+		zahlen[t.ladeCoverErneut(r.Context(), eintrag)]++
 	}
 
-	writeJSON(writer, http.StatusOK, map[string]any{
+	schreibeJSON(w, http.StatusOK, map[string]any{
 		"message": "cover-retry abgeschlossen",
 		"data":    zahlen,
 	})
@@ -73,17 +77,17 @@ const (
 // Nachgeladen wird nur, was noch eine Adresse im Netz trägt: Ein Cover, das lokal liegt, ist
 // schon da oder von Hand hochgeladen, und das ersetzt dieser Lauf nicht. Die Suche liefert
 // immer den lokalen Pfad (MetadatenClient.aufloeseCover), nie eine Adresse im Netz.
-func (handler *APIHandler) ladeCoverErneut(ctx context.Context, book Book) string {
-	if !validiereISBN(book.ISBN) || !strings.HasPrefix(book.CoverURL, "http") {
+func (t *Tueren) ladeCoverErneut(ctx context.Context, eintrag Titel) string {
+	if !validiereISBN(eintrag.ISBN) || !strings.HasPrefix(eintrag.CoverURL, "http") {
 		return coverUebersprungen
 	}
 
-	lookup, lookupErr := handler.metadaten.SucheNachISBN(ctx, book.ISBN)
-	if lookupErr != nil || lookup == nil || lookup.CoverURL == "" {
+	nachschlagen, nachschlageFehler := t.metadaten.SucheNachISBN(ctx, eintrag.ISBN)
+	if nachschlageFehler != nil || nachschlagen == nil || nachschlagen.CoverURL == "" {
 		return coverGescheitert
 	}
 
-	if updateErr := handler.repo.UpdateBookMetadata(ctx, book.ID, "", "", lookup.CoverURL); updateErr != nil {
+	if aenderFehler := t.abfragen.AendereTitelMetadaten(ctx, eintrag.ID, "", "", nachschlagen.CoverURL); aenderFehler != nil {
 		return coverGescheitert
 	}
 	return coverAktualisiert

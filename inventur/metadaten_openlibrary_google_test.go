@@ -189,7 +189,7 @@ func TestSucheGoogleBooks(t *testing.T) {
 			httpClient: &http.Client{Transport: mockTr},
 		}
 
-		res, err := client.sucheGoogleBooks(context.Background(), "9783161484100")
+		res, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -228,7 +228,7 @@ func TestSucheGoogleBooks(t *testing.T) {
 			},
 		}
 		client := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
-		res, err := client.sucheGoogleBooks(context.Background(), "9783161484100")
+		res, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -252,7 +252,7 @@ func TestSucheGoogleBooks(t *testing.T) {
 			httpClient: &http.Client{Transport: mockTr},
 		}
 
-		_, err := client.sucheGoogleBooks(context.Background(), "9783161484100")
+		_, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err == nil || !strings.Contains(err.Error(), "nicht gefunden") {
 			t.Errorf("Expected 'nicht gefunden' error, got: %v", err)
 		}
@@ -273,7 +273,7 @@ func TestSucheGoogleBooks(t *testing.T) {
 			httpClient: &http.Client{Transport: mockTr},
 		}
 
-		_, err := client.sucheGoogleBooks(context.Background(), "9783161484100")
+		_, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err == nil || !strings.Contains(err.Error(), "status 404") {
 			t.Errorf("Expected HTTP error, got: %v", err)
 		}
@@ -294,7 +294,7 @@ func TestSucheGoogleBooks(t *testing.T) {
 			httpClient: &http.Client{Transport: mockTr},
 		}
 
-		_, err := client.sucheGoogleBooks(context.Background(), "9783161484100")
+		_, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err == nil {
 			t.Errorf("Expected json decode error, got nil")
 		}

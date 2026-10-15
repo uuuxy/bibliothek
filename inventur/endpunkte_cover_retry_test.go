@@ -26,7 +26,7 @@ func testListExternalCoversSuccess(t *testing.T) {
 	}
 	defer mock.Close()
 
-	handler := &APIHandler{repo: NewBookRepository(mock)}
+	handler := &Tueren{abfragen: NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(coverQueryRegex).
 		WithArgs(300).
@@ -37,13 +37,13 @@ func testListExternalCoversSuccess(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/covers/external", nil)
 	w := httptest.NewRecorder()
 
-	handler.handleListExternalCovers(w, req)
+	handler.FremdeCoverListe(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var response map[string][]Book
+	var response map[string][]Titel
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
@@ -72,7 +72,7 @@ func testListExternalCoversDatabaseError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	handler := &APIHandler{repo: NewBookRepository(mock)}
+	handler := &Tueren{abfragen: NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(coverQueryRegex).
 		WithArgs(300).
@@ -81,7 +81,7 @@ func testListExternalCoversDatabaseError(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/covers/external", nil)
 	w := httptest.NewRecorder()
 
-	handler.handleListExternalCovers(w, req)
+	handler.FremdeCoverListe(w, req)
 
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("Expected status code %d, got %d", http.StatusInternalServerError, w.Code)

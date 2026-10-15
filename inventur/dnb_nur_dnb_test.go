@@ -42,7 +42,7 @@ func TestSucheDNBNachISBN_FragtNurDieDNB(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			var gefragt []string
-			client := NeuerMetadatenClient()
+			client := NewMetadatenClient()
 			client.SetzeHTTPClientFuerTest(&http.Client{Transport: &mockTransport{
 				roundTripFunc: func(req *http.Request) (*http.Response, error) {
 					gefragt = append(gefragt, req.URL.Host)

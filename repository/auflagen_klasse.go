@@ -14,12 +14,12 @@ import (
 //
 // Die Frage ist nur lesend und hängt an einer Ausleihe, die schon gebucht ist: Welche anderen
 // Auflagen desselben Buchs haben Kinder aus derselben Klasse gerade? „Dieselbe Klasse" wie in
-// der Klassensatz-Übersicht (GetClassGroups): klassen_normkey über die Sicht schueler, nur
+// der Klassensatz-Übersicht (LadeKlassensatzGruppen): klassen_normkey über die Sicht schueler, nur
 // aktive Kinder.
 
 // AuflageInKlasse ist eine Auflage desselben Buchs und wie viele Kinder der Klasse sie
 // gerade haben — an der Theke (die anderen Auflagen) und in der Klassensatz-Übersicht (alle,
-// die die Klasse hat; inventur.GetClassGroups).
+// die die Klasse hat; inventur.LadeKlassensatzGruppen).
 type AuflageInKlasse struct {
 	ID               string `json:"id"`
 	Auflage          string `json:"auflage"`

@@ -60,13 +60,13 @@ type gecachteAntwort struct {
 // importSchluessel liest den Kopf. Leer ist erlaubt; ein Wert, der keine UUID ist, wird
 // mit 400 abgewiesen, bevor irgendetwas passiert — die Spalte ist vom Typ UUID, und ein
 // Fehler dort käme sonst erst nach dem Import.
-func importSchluessel(writer http.ResponseWriter, request *http.Request) (string, bool) {
-	wert := request.Header.Get(importSchluesselKopf)
+func importSchluessel(w http.ResponseWriter, r *http.Request) (string, bool) {
+	wert := r.Header.Get(importSchluesselKopf)
 	if wert == "" {
 		return "", true
 	}
 	if !kennung.IstUUID(wert) {
-		writeError(writer, http.StatusBadRequest, importSchluesselKopf+" muss eine UUID sein")
+		schreibeFehler(w, http.StatusBadRequest, importSchluesselKopf+" muss eine UUID sein")
 		return "", false
 	}
 	return wert, true
@@ -75,8 +75,8 @@ func importSchluessel(writer http.ResponseWriter, request *http.Request) (string
 // reserviereImportLauf trägt den Schlüssel mit dem Marker „läuft" ein. frisch=true heißt:
 // dieser Aufruf darf importieren. Sonst kommt zurück, was gespeichert ist — der Marker
 // oder das Ergebnis des ersten Laufs.
-func (handler *APIHandler) reserviereImportLauf(ctx context.Context, schluessel string) (frisch bool, alt *gecachteAntwort, err error) {
-	tag, err := handler.repo.db.Exec(ctx, `
+func (t *Tueren) reserviereImportLauf(ctx context.Context, schluessel string) (frisch bool, alt *gecachteAntwort, err error) {
+	tag, err := t.abfragen.pool.Exec(ctx, `
 		INSERT INTO idempotency_keys (idempotency_key, response_data, status_code)
 		VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, schluessel, importLaeuftMarker, http.StatusConflict)
 	if err != nil {
@@ -86,7 +86,7 @@ func (handler *APIHandler) reserviereImportLauf(ctx context.Context, schluessel 
 		return true, nil, nil
 	}
 	var a gecachteAntwort
-	if err := handler.repo.db.QueryRow(ctx, `
+	if err := t.abfragen.pool.QueryRow(ctx, `
 		SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1`,
 		schluessel).Scan(&a.Daten, &a.Status); err != nil {
 		return false, nil, err
@@ -97,10 +97,10 @@ func (handler *APIHandler) reserviereImportLauf(ctx context.Context, schluessel 
 // schliesseImportLauf ersetzt den Marker durch das Ergebnis — oder gibt den Schlüssel
 // frei, wenn nichts geschrieben wurde. Läuft ohne die Abbruchsignale des Requests: Genau
 // der Fall „Browser weg, Server fertig" ist der, für den das Gedächtnis da ist.
-func (handler *APIHandler) schliesseImportLauf(ctx context.Context, schluessel string, geschrieben bool, status int, antwort map[string]any) {
+func (t *Tueren) schliesseImportLauf(ctx context.Context, schluessel string, geschrieben bool, status int, antwort map[string]any) {
 	ctx = context.WithoutCancel(ctx)
 	if !geschrieben {
-		tag, err := handler.repo.db.Exec(ctx,
+		tag, err := t.abfragen.pool.Exec(ctx,
 			`DELETE FROM idempotency_keys WHERE idempotency_key = $1`, schluessel)
 		if err != nil || tag.RowsAffected() == 0 {
 			log.Printf("listenimport idempotenz: schlüssel %s nicht freigegeben: %v", schluessel, err)
@@ -114,7 +114,7 @@ func (handler *APIHandler) schliesseImportLauf(ctx context.Context, schluessel s
 	}
 	// 0 Zeilen hieße: Der Marker ist weg (Aufräumjob nach 24 h mitten im Lauf) — dann
 	// gäbe es beim nächsten Klick keinen Schutz. Das gehört ins Log, nicht ins Stille.
-	tag, err := handler.repo.db.Exec(ctx, `
+	tag, err := t.abfragen.pool.Exec(ctx, `
 		UPDATE idempotency_keys SET response_data = $2, status_code = $3
 		 WHERE idempotency_key = $1`, schluessel, daten, status)
 	if err != nil || tag.RowsAffected() == 0 {

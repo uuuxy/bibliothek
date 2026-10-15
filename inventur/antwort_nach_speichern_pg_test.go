@@ -25,7 +25,7 @@ func TestSpeichern_AntwortTraegtDenBestand(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	handler := &APIHandler{repo: &BookRepository{db: pool}, metadaten: offlineMetadatenClient()}
+	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 	type antwort struct {
 		Data struct {
 			ID          string    `json:"id"`
@@ -50,9 +50,9 @@ func TestSpeichern_AntwortTraegtDenBestand(t *testing.T) {
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		if methode == http.MethodPost {
-			handler.BearbeiteBuchErstellen(rec, req)
+			handler.TitelAnlegen(rec, req)
 		} else {
-			handler.BearbeiteBuchAktualisieren(rec, req)
+			handler.TitelAendern(rec, req)
 		}
 		if rec.Code != http.StatusOK && rec.Code != http.StatusCreated {
 			t.Fatalf("%s: %d %s", methode, rec.Code, rec.Body.String())

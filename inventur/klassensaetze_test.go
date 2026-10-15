@@ -109,8 +109,8 @@ func TestHandleClassBooks(t *testing.T) {
 			}
 			defer mock.Close()
 
-			repo := NewBookRepository(mock)
-			handler := &APIHandler{repo: repo}
+			repo := NewTitelAbfragen(mock)
+			handler := &Tueren{abfragen: repo}
 
 			tt.setupMock(mock)
 
@@ -127,7 +127,7 @@ func TestHandleClassBooks(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			handler.handleClassBooks(w, req)
+			handler.Klassensaetze(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			assert.JSONEq(t, tt.expectedBody, w.Body.String())
@@ -219,7 +219,7 @@ func TestFormatClassName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatClassName(tt.input)
+			result := normalisiereKlassenname(tt.input)
 			if result != tt.expected {
 				t.Errorf("formatClassName(%q) = %q, want %q", tt.input, result, tt.expected)
 			}
@@ -234,13 +234,13 @@ func TestHandleDeleteClassGroup(t *testing.T) {
 	}
 	defer mock.Close()
 
-	repo := NewBookRepository(mock)
-	handler := &APIHandler{repo: repo}
+	repo := NewTitelAbfragen(mock)
+	handler := &Tueren{abfragen: repo}
 
 	t.Run("No class name provided", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, "/api/class-books", nil)
 		rec := httptest.NewRecorder()
-		handler.handleDeleteClassGroup(rec, req)
+		handler.KlassensatzGruppeLoeschen(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -254,7 +254,7 @@ func TestHandleDeleteClassGroup(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
 		rec := httptest.NewRecorder()
-		handler.handleDeleteClassGroup(rec, req)
+		handler.KlassensatzGruppeLoeschen(rec, req)
 
 		if rec.Code != http.StatusInternalServerError {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusInternalServerError)
@@ -268,7 +268,7 @@ func TestHandleDeleteClassGroup(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
 		rec := httptest.NewRecorder()
-		handler.handleDeleteClassGroup(rec, req)
+		handler.KlassensatzGruppeLoeschen(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusOK)
@@ -284,12 +284,12 @@ func TestHandleAddClassBooks(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		handler := &APIHandler{repo: NewBookRepository(mockPool)}
+		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBufferString("invalid json"))
 		rr := httptest.NewRecorder()
 
-		handler.handleAddClassBooks(rr, req)
+		handler.KlassensaetzeZuordnen(rr, req)
 
 		if status := rr.Code; status != http.StatusBadRequest {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
@@ -303,7 +303,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		handler := &APIHandler{repo: NewBookRepository(mockPool)}
+		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
 		payload := map[string]interface{}{
 			"classNames": []string{"   ", ""},
@@ -316,7 +316,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
 		rr := httptest.NewRecorder()
 
-		handler.handleAddClassBooks(rr, req)
+		handler.KlassensaetzeZuordnen(rr, req)
 
 		if status := rr.Code; status != http.StatusBadRequest {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
@@ -330,7 +330,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		handler := &APIHandler{repo: NewBookRepository(mockPool)}
+		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
 		payload := map[string]interface{}{
 			"classNames": []string{"ThisClassNameIsWayTooLongToBeValidAndShouldBeRejected"},
@@ -343,7 +343,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
 		rr := httptest.NewRecorder()
 
-		handler.handleAddClassBooks(rr, req)
+		handler.KlassensaetzeZuordnen(rr, req)
 
 		if status := rr.Code; status != http.StatusBadRequest {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
@@ -357,7 +357,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		handler := &APIHandler{repo: NewBookRepository(mockPool)}
+		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 		mockPool.ExpectExec("INSERT INTO class_books").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errors.New("db error"))
 
 		payload := map[string]interface{}{
@@ -371,7 +371,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
 		rr := httptest.NewRecorder()
 
-		handler.handleAddClassBooks(rr, req)
+		handler.KlassensaetzeZuordnen(rr, req)
 
 		if status := rr.Code; status != http.StatusInternalServerError {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
@@ -387,7 +387,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 
 		mockPool.ExpectExec("INSERT INTO class_books").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 2))
 
-		handler := &APIHandler{repo: NewBookRepository(mockPool)}
+		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
 		payload := map[string]interface{}{
 			"classNames": []string{"10A", "10B"},
@@ -400,7 +400,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
 		rr := httptest.NewRecorder()
 
-		handler.handleAddClassBooks(rr, req)
+		handler.KlassensaetzeZuordnen(rr, req)
 
 		if status := rr.Code; status != http.StatusOK {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
@@ -500,8 +500,8 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 			}
 			defer mock.Close()
 
-			repo := NewBookRepository(mock)
-			handler := &APIHandler{repo: repo}
+			repo := NewTitelAbfragen(mock)
+			handler := &Tueren{abfragen: repo}
 
 			tt.mockSetup(mock)
 
@@ -509,7 +509,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
-			handler.handleUpdateClassBooks(w, req)
+			handler.KlassensaetzeAendern(w, req)
 
 			if w.Code != tt.expectedStatus {
 				t.Errorf("expected status %v, got %v", tt.expectedStatus, w.Code)

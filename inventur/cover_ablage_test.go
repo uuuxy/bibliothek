@@ -19,7 +19,7 @@ func decodeStored(t *testing.T, b []byte) image.Image {
 func TestPrepareImageForStorageAlwaysWebP(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 300, 400))
 
-	stored, ext, err := prepareImageForStorage(img, 600, 900, 80)
+	stored, ext, err := bereiteBildVor(img, 600, 900, 80)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestPrepareImageForStorageAlwaysWebP(t *testing.T) {
 func TestPrepareImageForStorageResizesOversized(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 1200, 1800))
 
-	stored, ext, err := prepareImageForStorage(img, 600, 900, 80)
+	stored, ext, err := bereiteBildVor(img, 600, 900, 80)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestPrepareImageForStorageResizesOversized(t *testing.T) {
 func TestPrepareImageForStorageResizesTallImage(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 1000, 5000))
 
-	stored, _, err := prepareImageForStorage(img, 600, 900, 80)
+	stored, _, err := bereiteBildVor(img, 600, 900, 80)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -67,18 +67,18 @@ func TestGetClassGroups_HandUndAusAusleihen(t *testing.T) {
 		}
 	})
 
-	groups, err := NewBookRepository(pool).GetClassGroups(ctx, "", "")
+	groups, err := NewTitelAbfragen(pool).LadeKlassensatzGruppen(ctx, "", "")
 	if err != nil {
-		t.Fatalf("GetClassGroups: %v", err)
+		t.Fatalf("LadeKlassensatzGruppen: %v", err)
 	}
-	je := map[string]map[string]ClassBook{}
+	je := map[string]map[string]klassensatzTitel{}
 	for _, g := range groups {
-		je[g.ClassName] = map[string]ClassBook{}
-		for _, b := range g.Books {
-			if _, doppelt := je[g.ClassName][b.Title]; doppelt {
-				t.Errorf("%s: %q steht zweimal in der Gruppe", g.ClassName, b.Title)
+		je[g.Klasse] = map[string]klassensatzTitel{}
+		for _, b := range g.Titel {
+			if _, doppelt := je[g.Klasse][b.Titel]; doppelt {
+				t.Errorf("%s: %q steht zweimal in der Gruppe", g.Klasse, b.Titel)
 			}
-			je[g.ClassName][b.Title] = b
+			je[g.Klasse][b.Titel] = b
 		}
 	}
 
@@ -103,10 +103,10 @@ func TestGetClassGroups_HandUndAusAusleihen(t *testing.T) {
 	}
 }
 
-func gruppenNamen(groups []ClassGroup) []string {
+func gruppenNamen(groups []klassensatzGruppe) []string {
 	namen := make([]string, 0, len(groups))
 	for _, g := range groups {
-		namen = append(namen, g.ClassName)
+		namen = append(namen, g.Klasse)
 	}
 	return namen
 }

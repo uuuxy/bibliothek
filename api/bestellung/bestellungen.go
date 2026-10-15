@@ -176,7 +176,7 @@ const dnbAusfallKopf = "X-DNB-Ausfall"
 // zusätzlich bei der DNB. Der Metadaten-Client wird einmal beim Registrieren der Route
 // gebaut, nicht je Anfrage — er hält seinen eigenen HTTP-Client mit Zeitgrenze.
 func (t *Tueren) BestellSuche() http.HandlerFunc {
-	return t.sucheBestellung(inventur.NeuerMetadatenClient())
+	return t.sucheBestellung(inventur.NewMetadatenClient())
 }
 
 // sucheBestellung ist die Tür mit ihrem Client für die DNB als Parameter: Ein Test stellt

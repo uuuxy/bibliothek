@@ -23,9 +23,9 @@ func TestParseKlassenStufe(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := parseKlassenStufe(tt.gradeStr)
+			result := leseKlassenstufe(tt.gradeStr)
 			if result != tt.expected {
-				t.Errorf("parseKlassenStufe(%q) = %d; want %d", tt.gradeStr, result, tt.expected)
+				t.Errorf("leseKlassenstufe(%q) = %d; want %d", tt.gradeStr, result, tt.expected)
 			}
 		})
 	}
@@ -49,7 +49,7 @@ func TestParseBestand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := parseBestand(tt.input)
+			result := leseBestand(tt.input)
 			if result != tt.expected {
 				t.Errorf("parseBestand(%q) = %d; want %d", tt.input, result, tt.expected)
 			}
@@ -76,16 +76,16 @@ func TestVerarbeiteImportZeile_FachNurWennFach(t *testing.T) {
 		{"", ""},
 	}
 	for _, f := range faelle {
-		cfg := ImportConfig{
-			Row:    []string{"9783161484100", "Ein Titel", "Ein Autor", f.spalte},
-			ColIdx: map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": 3},
+		cfg := importZeile{
+			Zeile:   []string{"9783161484100", "Ein Titel", "Ein Autor", f.spalte},
+			Spalten: map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": 3},
 		}
 		buch, err := verarbeiteImportZeile(cfg)
 		if err != nil || buch == nil {
 			t.Fatalf("Spalte %q: %v", f.spalte, err)
 		}
-		if buch.Subject != f.want {
-			t.Errorf("Fach-Spalte %q → Subject %q, erwartet %q", f.spalte, buch.Subject, f.want)
+		if buch.Fach != f.want {
+			t.Errorf("Fach-Spalte %q → Subject %q, erwartet %q", f.spalte, buch.Fach, f.want)
 		}
 	}
 }

@@ -49,7 +49,7 @@ type katalog struct {
 }
 
 func (k katalog) client() *inventur.MetadatenClient {
-	c := inventur.NeuerMetadatenClient()
+	c := inventur.NewMetadatenClient()
 	c.SetzeHTTPClientFuerTest(&http.Client{Transport: &dnbTransportAttrappe{antwort: k.antworte}})
 	return c
 }

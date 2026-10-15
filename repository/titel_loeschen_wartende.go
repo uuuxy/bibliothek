@@ -21,7 +21,7 @@ package repository
 // im Protokoll.
 //
 // Warum hier und nicht im Paket inventur: Es gibt zwei Türen zum Löschen eines Titels, die
-// Massenaktion der Bestandstabelle (DELETE /api/books, inventur/db_books_delete.go) und den
+// Massenaktion der Bestandstabelle (DELETE /api/books, inventur/titel_loeschen.go) und den
 // Knopf der Buch-Akte (DELETE /api/buecher/titel/{id}, repository/titel_loeschen.go). Beide
 // fahren über denselben CASCADE, und zwei Fassungen derselben Regel liefen auseinander;
 // `inventur` importiert `repository`, also steht sie hier.

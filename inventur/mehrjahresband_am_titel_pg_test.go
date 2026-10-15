@@ -21,13 +21,13 @@ import (
 func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	const isbn = "978-9-99-318001-1"
 	if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn = $1`, isbn); err != nil {
 		t.Fatal(err)
 	}
-	id, err := repo.CreateBook(ctx, Book{ISBN: isbn, Title: "Mathe 7-9", Author: "Verlag", IstLernmittel: true,
+	id, err := repo.LegeTitelAn(ctx, Titel{ISBN: isbn, Titel: "Mathe 7-9", Autor: "Verlag", IstLernmittel: true,
 		JahrgangVon: 7, JahrgangBis: 9, Mehrjahresband: true})
 	if err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
@@ -47,7 +47,7 @@ func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 		if err != nil || ex == nil {
 			t.Fatalf("%s: Exemplar laden: %v", schritt, err)
 		}
-		buecher, err := repo.ListBooksByIDs(ctx, []string{id})
+		buecher, err := repo.LadeTitelNachIDs(ctx, []string{id})
 		if err != nil || len(buecher) != 1 {
 			t.Fatalf("%s: Einzel-Read: %v (%d Titel)", schritt, err, len(buecher))
 		}
@@ -58,13 +58,13 @@ func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 		t.Errorf("nach dem Anlegen: Fristregel sieht an=%v bis=%d, Maske an=%v — erwartet an, 9, an", an, bis, maske)
 	}
 
-	buecher, err := repo.ListBooksByIDs(ctx, []string{id})
+	buecher, err := repo.LadeTitelNachIDs(ctx, []string{id})
 	if err != nil || len(buecher) != 1 {
 		t.Fatalf("vor dem Ändern lesen: %v (%d Titel)", err, len(buecher))
 	}
 	geaendert := buecher[0]
 	geaendert.JahrgangBis = 10
-	if err := repo.UpdateBook(ctx, id, geaendert, []string{"jahrgangBis"}, nil); err != nil {
+	if err := repo.AendereTitel(ctx, id, geaendert, []string{"jahrgangBis"}, nil); err != nil {
 		t.Fatalf("Spanne ändern: %v", err)
 	}
 	if an, bis, _ := lies("nach dem Ändern der Spanne"); !an || bis != 10 {
@@ -72,7 +72,7 @@ func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 	}
 
 	geaendert.Mehrjahresband = false
-	if err := repo.UpdateBook(ctx, id, geaendert, []string{"mehrjahresband"}, nil); err != nil {
+	if err := repo.AendereTitel(ctx, id, geaendert, []string{"mehrjahresband"}, nil); err != nil {
 		t.Fatalf("Schalter aus: %v", err)
 	}
 	if an, _, maske := lies("Schalter aus"); an || maske {

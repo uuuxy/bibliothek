@@ -16,7 +16,7 @@ import (
 func TestBestandskorrektur_RechnetOhneDenZulauf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 	marke := fmt.Sprintf("ZULKORR%d", time.Now().UnixNano())
 
 	var titelID string
@@ -62,11 +62,11 @@ func TestBestandskorrektur_RechnetOhneDenZulauf(t *testing.T) {
 		t.Fatalf("Ausgangslage %v, erwartet [1 2 0] — der Test misst nicht, was er soll", start)
 	}
 
-	buecher, err := repo.ListBooksByIDs(ctx, []string{titelID})
+	buecher, err := repo.LadeTitelNachIDs(ctx, []string{titelID})
 	if err != nil || len(buecher) != 1 {
 		t.Fatalf("Einzel-Read: %v, %d Titel", err, len(buecher))
 	}
-	gezeigt := buecher[0].Stock
+	gezeigt := buecher[0].Bestand
 	if gezeigt != 1 {
 		t.Fatalf("die Maske zeigt Bestand %d, erwartet 1", gezeigt)
 	}
@@ -83,7 +83,7 @@ func TestBestandskorrektur_RechnetOhneDenZulauf(t *testing.T) {
 	}
 	bearbeiter := bearbeiterFuerAussonderung(t, pool)
 	for _, s := range schritte {
-		if err := repo.syncBookStock(ctx, pool, titelID, s.soll, bearbeiter); err != nil {
+		if err := repo.gleicheBestandAb(ctx, pool, titelID, s.soll, bearbeiter); err != nil {
 			t.Fatalf("%s: %v", s.name, err)
 		}
 		if ist := zaehle(); ist != s.erwarte {

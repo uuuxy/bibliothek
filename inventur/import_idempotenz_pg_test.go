@@ -31,7 +31,7 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 		}
 	})
 
-	handler := &APIHandler{repo: &BookRepository{db: pool}, metadaten: offlineMetadatenClient()}
+	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 	schluessel := uuid.NewString()
 	sende := func(key string) *httptest.ResponseRecorder {
 		body := new(bytes.Buffer)
@@ -52,7 +52,7 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 			req.Header.Set(importSchluesselKopf, key)
 		}
 		rec := httptest.NewRecorder()
-		handler.handleImportExcel(rec, req)
+		handler.ExcelImport(rec, req)
 		return rec
 	}
 	zaehleExemplare := func() int {

@@ -511,7 +511,7 @@ CREATE TABLE buecher_titel (
     auflage VARCHAR(50),
     -- Migration 148: das Buch, zu dem diese Auflage gehört (docs/OFFEN.md 4.18). NULL heißt:
     -- keine andere Auflage zugeordnet. Geschrieben nur über repository/auflagen.go, nicht
-    -- über UpdateBook; ein Werk löscht nur diese Datei, nachdem sie den letzten Titel gelöst
+    -- über AendereTitel; ein Werk löscht nur diese Datei, nachdem sie den letzten Titel gelöst
     -- hat — SET NULL fängt einen übersehenen auf.
     werk_id UUID CONSTRAINT fk_titel_werk REFERENCES werke (id) ON DELETE SET NULL,
     -- Migration 127: Was ein Ersatz HEUTE kostet — der „Neupreis zum Zeitpunkt des

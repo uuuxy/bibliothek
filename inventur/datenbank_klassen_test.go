@@ -169,10 +169,10 @@ func TestUpdateClassBooks(t *testing.T) {
 			}
 			defer mock.Close()
 
-			repo := NewBookRepository(mock)
+			repo := NewTitelAbfragen(mock)
 			tt.mockSetup(mock)
 
-			err = repo.UpdateClassBooks(context.Background(), tt.oldClassName, tt.newClassNames, tt.bookIDs)
+			err = repo.AendereKlassensaetze(context.Background(), tt.oldClassName, tt.newClassNames, tt.bookIDs)
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("expected error, got nil")
@@ -199,7 +199,7 @@ func TestDeleteClassGroup(t *testing.T) {
 	}
 	defer mock.Close()
 
-	repo := NewBookRepository(mock)
+	repo := NewTitelAbfragen(mock)
 
 	tests := []struct {
 		name       string
@@ -251,7 +251,7 @@ func TestDeleteClassGroup(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockSetup()
 
-			err := repo.DeleteClassGroup(context.Background(), tt.classNames)
+			err := repo.LoescheKlassensatzGruppe(context.Background(), tt.classNames)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DeleteClassGroup() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -270,7 +270,7 @@ func TestGetClassGroups(t *testing.T) {
 	}
 	defer mock.Close()
 
-	repo := NewBookRepository(mock)
+	repo := NewTitelAbfragen(mock)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -390,12 +390,12 @@ func TestGetClassGroups(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockSetup()
 
-			groups, err := repo.GetClassGroups(ctx, tt.branch, tt.sortOrder)
+			groups, err := repo.LadeKlassensatzGruppen(ctx, tt.branch, tt.sortOrder)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetClassGroups() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("LadeKlassensatzGruppen() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if len(groups) != tt.wantGroups {
-				t.Errorf("GetClassGroups() got %d groups, want %d", len(groups), tt.wantGroups)
+				t.Errorf("LadeKlassensatzGruppen() got %d groups, want %d", len(groups), tt.wantGroups)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -483,10 +483,10 @@ func TestAddBooksToClasses(t *testing.T) {
 			}
 			defer mock.Close()
 
-			repo := NewBookRepository(mock)
+			repo := NewTitelAbfragen(mock)
 			tt.mockSetup(mock)
 
-			err = repo.AddBooksToClasses(context.Background(), tt.classNames, tt.bookIDs)
+			err = repo.OrdneTitelKlassenZu(context.Background(), tt.classNames, tt.bookIDs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AddBooksToClasses() error = %v, wantErr %v", err, tt.wantErr)
 			}

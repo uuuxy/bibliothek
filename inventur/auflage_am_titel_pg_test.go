@@ -22,16 +22,16 @@ import (
 func TestAuflage_StehtAlsFeldAmTitel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	const isbn = "978-9-99-318000-4"
 	if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn = $1`, isbn); err != nil {
 		t.Fatal(err)
 	}
 
-	id, err := repo.CreateBook(ctx, Book{
+	id, err := repo.LegeTitelAn(ctx, Titel{
 		ISBN:    isbn,
-		Title:   "Lambacher Schweizer 7",
+		Titel:   "Lambacher Schweizer 7",
 		Verlag:  "Klett",
 		Auflage: "4. Aufl. 2023",
 	})
@@ -44,9 +44,9 @@ func TestAuflage_StehtAlsFeldAmTitel(t *testing.T) {
 		}
 	})
 
-	lies := func(schritt string) Book {
+	lies := func(schritt string) Titel {
 		t.Helper()
-		buecher, err := repo.ListBooksByIDs(ctx, []string{id})
+		buecher, err := repo.LadeTitelNachIDs(ctx, []string{id})
 		if err != nil {
 			t.Fatalf("%s: lesen: %v", schritt, err)
 		}
@@ -62,14 +62,14 @@ func TestAuflage_StehtAlsFeldAmTitel(t *testing.T) {
 
 	geaendert := lies("vor dem Ändern")
 	geaendert.Auflage = "5. Aufl. 2026"
-	if err := repo.UpdateBook(ctx, id, geaendert, []string{"auflage"}, nil); err != nil {
+	if err := repo.AendereTitel(ctx, id, geaendert, []string{"auflage"}, nil); err != nil {
 		t.Fatalf("Titel ändern: %v", err)
 	}
 	if got := lies("nach dem Ändern").Auflage; got != "5. Aufl. 2026" {
 		t.Errorf("nach dem Ändern: Auflage %q, erwartet %q", got, "5. Aufl. 2026")
 	}
 
-	if _, err := repo.UpsertBooksBatch(ctx, []Book{{ISBN: isbn, Stock: 2}}); err != nil {
+	if _, err := repo.SchreibeTitelStapel(ctx, []Titel{{ISBN: isbn, Bestand: 2}}); err != nil {
 		t.Fatalf("Listenimport: %v", err)
 	}
 	if got := lies("nach dem Listenimport").Auflage; got != "5. Aufl. 2026" {

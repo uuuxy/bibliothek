@@ -63,7 +63,7 @@ func TestAnonymisierung_TilgtNameUndFreitextDerTitelLoeschspur(t *testing.T) {
 	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, einzeln, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("einzelnen Titel löschen: %v", err)
 	}
-	if err := inventur.NewBookRepository(pool).DeleteBooks(ctx, []string{gesammelt}); err != nil {
+	if err := inventur.NewTitelAbfragen(pool).LoescheTitel(ctx, []string{gesammelt}); err != nil {
 		t.Fatalf("Sammellöschung: %v", err)
 	}
 

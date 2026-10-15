@@ -79,63 +79,63 @@ const buchListenGroupBySchlank = `
 	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
 `
 
-// listBooksSicherheitsLimit kappt die Katalogliste als reine Runaway-/Speicher-Bremse.
+// titelListeGrenze kappt die Katalogliste als reine Runaway-/Speicher-Bremse.
 // Bewusst weit über jedem realistischen Katalog (~14k Titel), damit die clientseitige
 // Sofort-Suche (lädt den ganzen gefilterten Satz) im Normalbetrieb NIE etwas verliert.
 // Wird die Grenze je erreicht, ist das das Signal, auf echte serverseitige Pagination
 // umzustellen — und es wird geloggt, statt still Titel zu verschlucken.
-const listBooksSicherheitsLimit = 50000
+const titelListeGrenze = 50000
 
-// scanBuchZeilen liest alle Zeilen eines buchListenSelect-Ergebnisses ein.
-func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
-	books := make([]Book, 0)
-	for rows.Next() {
-		var book Book
-		err := rows.Scan(
-			&book.ID,
-			&book.ISBN,
-			&book.Title,
-			&book.Author,
-			&book.Signatur,
-			&book.CoverURL,
-			&book.Subject,
-			&book.Track,
-			&book.IstLernmittel,
-			&book.Verfuegbar,
-			&book.Gesamt,
-			&book.ImZulauf,
-			&book.LastCounted,
-			&book.SortOrder,
-			&book.Medientyp,
-			&book.JahrgangVon,
-			&book.JahrgangBis,
-			&book.Untertitel,
-			&book.Verlag,
-			&book.Erscheinungsjahr,
-			&book.ErweiterteEigenschaften,
-			&book.Auflage,
-			&book.Listenpreis,
-			&book.Mehrjahresband,
-			&book.WerkID,
-			&book.WerkRang,
+// leseTitelZeilen liest alle Zeilen eines buchListenSelect-Ergebnisses ein.
+func leseTitelZeilen(zeilen pgx.Rows) ([]Titel, error) {
+	eintraege := make([]Titel, 0)
+	for zeilen.Next() {
+		var eintrag Titel
+		err := zeilen.Scan(
+			&eintrag.ID,
+			&eintrag.ISBN,
+			&eintrag.Titel,
+			&eintrag.Autor,
+			&eintrag.Signatur,
+			&eintrag.CoverURL,
+			&eintrag.Fach,
+			&eintrag.Zweig,
+			&eintrag.IstLernmittel,
+			&eintrag.Verfuegbar,
+			&eintrag.Gesamt,
+			&eintrag.ImZulauf,
+			&eintrag.ZuletztGezaehlt,
+			&eintrag.Reihenfolge,
+			&eintrag.Medientyp,
+			&eintrag.JahrgangVon,
+			&eintrag.JahrgangBis,
+			&eintrag.Untertitel,
+			&eintrag.Verlag,
+			&eintrag.Erscheinungsjahr,
+			&eintrag.ErweiterteEigenschaften,
+			&eintrag.Auflage,
+			&eintrag.Listenpreis,
+			&eintrag.Mehrjahresband,
+			&eintrag.WerkID,
+			&eintrag.WerkRang,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
 		}
-		book.Stock = book.Gesamt
-		books = append(books, book)
+		eintrag.Bestand = eintrag.Gesamt
+		eintraege = append(eintraege, eintrag)
 	}
-	if err := rows.Err(); err != nil {
+	if err := zeilen.Err(); err != nil {
 		return nil, fmt.Errorf("fehler beim iterieren: %w", err)
 	}
-	return books, nil
+	return eintraege, nil
 }
 
-// ListBooks liefert die Titel zu Fach und Suchtext.
+// LadeTitelListe liefert die Titel zu Fach und Suchtext.
 //
 // Nutzt die schlanke Listen-Variante (ohne erweiterte_eigenschaften) und
 // eine Sicherheits-Kappung gegen unbegrenztes Wachstum — siehe buchListenSelectSchlank
-// bzw. listBooksSicherheitsLimit.
+// bzw. titelListeGrenze.
 //
 // nurOhneExemplare wählt die Sicht: false ist der Katalog (nur Titel mit mindestens einem
 // nicht ausgesonderten Exemplar, repository.SQLTitelHatExemplar), true die Aufräumsicht
@@ -153,13 +153,13 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 //
 // Der Suchtext wird als Wortlaut verglichen und geht deshalb in die Form, in der Titeltexte
 // und Schlagworte gespeichert sind (repository.TiteltextNormalform).
-func (repo *BookRepository) ListBooks(ctx context.Context, subject string, searchQuery string, nurOhneExemplare bool) ([]Book, error) {
-	searchQuery = repository.TiteltextNormalform(searchQuery)
+func (a *TitelAbfragen) LadeTitelListe(ctx context.Context, fach string, suchanfrage string, nurOhneExemplare bool) ([]Titel, error) {
+	suchanfrage = repository.TiteltextNormalform(suchanfrage)
 	sicht := repository.SQLTitelHatExemplar("bt")
 	if nurOhneExemplare {
 		sicht = "NOT " + sicht
 	}
-	query := buchListenSelectSchlank + `
+	abfrage := buchListenSelectSchlank + `
 		WHERE ` + sicht + `
 		  AND ($1 = '' OR bt.subject = $1)
 		  AND ($2 = '' OR bt.titel ILIKE '%' || $2 || '%' OR bt.autor ILIKE '%' || $2 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $2 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $2 || '%'
@@ -169,102 +169,102 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, searc
 		ORDER BY bt.titel ASC, bt.id ASC
 		LIMIT $3`
 
-	rows, err := repo.db.Query(ctx, query, subject, searchQuery, listBooksSicherheitsLimit)
+	zeilen, err := a.pool.Query(ctx, abfrage, fach, suchanfrage, titelListeGrenze)
 	if err != nil {
 		return nil, fmt.Errorf("bücher konnten nicht geladen werden: %w", err)
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 
-	books, err := scanBuchZeilen(rows)
+	eintraege, err := leseTitelZeilen(zeilen)
 	if err != nil {
 		return nil, err
 	}
-	if len(books) >= listBooksSicherheitsLimit {
+	if len(eintraege) >= titelListeGrenze {
 		log.Printf("WARNUNG: /api/books hat die Sicherheits-Kappung von %d Titeln erreicht — "+
 			"die Katalogliste ist unvollständig. Jetzt auf serverseitige Pagination umstellen.",
-			listBooksSicherheitsLimit)
+			titelListeGrenze)
 	}
 
-	ids := make([]string, len(books))
-	for i := range books {
-		ids[i] = books[i].ID
+	ids := make([]string, len(eintraege))
+	for i := range eintraege {
+		ids[i] = eintraege[i].ID
 	}
-	suchwoerter, err := repository.LadeSuchwoerterDerTitel(ctx, repo.db, ids)
+	suchwoerter, err := repository.LadeSuchwoerterDerTitel(ctx, a.pool, ids)
 	if err != nil {
 		return nil, err
 	}
-	standorte, err := repository.LadeStandorteDerTitel(ctx, repo.db, ids)
+	standorte, err := repository.LadeStandorteDerTitel(ctx, a.pool, ids)
 	if err != nil {
 		return nil, err
 	}
-	for i := range books {
-		books[i].Suchwoerter = suchwoerter[books[i].ID]
-		books[i].Standorte = standorte[books[i].ID]
+	for i := range eintraege {
+		eintraege[i].Suchwoerter = suchwoerter[eintraege[i].ID]
+		eintraege[i].Standorte = standorte[eintraege[i].ID]
 	}
-	return books, nil
+	return eintraege, nil
 }
 
-// ListExternalCoverBooks lists books having external cover URLs.
-func (repo *BookRepository) ListExternalCoverBooks(ctx context.Context, limit int) ([]Book, error) {
-	if limit <= 0 {
-		limit = 100
+// LadeTitelMitFremdemCover lists books having external cover URLs.
+func (a *TitelAbfragen) LadeTitelMitFremdemCover(ctx context.Context, grenze int) ([]Titel, error) {
+	if grenze <= 0 {
+		grenze = 100
 	}
 
-	query := `
+	abfrage := `
 		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(cover_url, '') AS cover_url
 		FROM buecher_titel
 		WHERE cover_url LIKE 'http%'
 		ORDER BY id ASC
 		LIMIT $1`
 
-	rows, err := repo.db.Query(ctx, query, limit)
+	zeilen, err := a.pool.Query(ctx, abfrage, grenze)
 	if err != nil {
 		return nil, fmt.Errorf("bücher mit externen covern konnten nicht geladen werden: %w", err)
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 
-	books := make([]Book, 0)
-	for rows.Next() {
-		var book Book
-		if scanErr := rows.Scan(&book.ID, &book.ISBN, &book.Title, &book.CoverURL); scanErr != nil {
-			return nil, fmt.Errorf("bücher mit externen covern konnten nicht gelesen werden: %w", scanErr)
+	eintraege := make([]Titel, 0)
+	for zeilen.Next() {
+		var eintrag Titel
+		if leseFehler := zeilen.Scan(&eintrag.ID, &eintrag.ISBN, &eintrag.Titel, &eintrag.CoverURL); leseFehler != nil {
+			return nil, fmt.Errorf("bücher mit externen covern konnten nicht gelesen werden: %w", leseFehler)
 		}
-		books = append(books, book)
+		eintraege = append(eintraege, eintrag)
 	}
-	if rowsErr := rows.Err(); rowsErr != nil {
-		return nil, fmt.Errorf("fehler beim iterieren externer cover-bücher: %w", rowsErr)
+	if zeilenFehler := zeilen.Err(); zeilenFehler != nil {
+		return nil, fmt.Errorf("fehler beim iterieren externer cover-bücher: %w", zeilenFehler)
 	}
 
-	return books, nil
+	return eintraege, nil
 }
 
-// SchlagworteDesTitels lädt die Schlagworte eines Titels (Migration 138) für den
+// LadeSchlagworteDesTitels lädt die Schlagworte eines Titels (Migration 138) für den
 // Einzel-Read. Nicht in buchListenSelect: Die Katalogliste bleibt schlank, und ein Feld,
 // das dort als nil steht, sagt „nicht geladen" — Speichern lässt es dann unangetastet.
-func (repo *BookRepository) SchlagworteDesTitels(ctx context.Context, id string) ([]string, error) {
-	return repository.LadeSchlagworteDesTitels(ctx, repo.db, id)
+func (a *TitelAbfragen) LadeSchlagworteDesTitels(ctx context.Context, id string) ([]string, error) {
+	return repository.LadeSchlagworteDesTitels(ctx, a.pool, id)
 }
 
-// ListBooksByIDs retrieves list of books for provided IDs.
+// LadeTitelNachIDs retrieves list of books for provided IDs.
 // Liefert den VOLLEN Datensatz inkl. Signatur und Bestandszählung — der
 // Einzel-Read GET /api/books/{id} (Buch-Akte, „Titel bearbeiten") hängt daran.
 // Das frühere Minimal-SELECT (id, isbn, titel, cover_url) ließ Signatur und
 // Exemplar-Zahlen im Frontend leer erscheinen.
-func (repo *BookRepository) ListBooksByIDs(ctx context.Context, ids []string) ([]Book, error) {
+func (a *TitelAbfragen) LadeTitelNachIDs(ctx context.Context, ids []string) ([]Titel, error) {
 	if len(ids) == 0 {
-		return []Book{}, nil
+		return []Titel{}, nil
 	}
 
-	query := buchListenSelect + `
+	abfrage := buchListenSelect + `
 		WHERE bt.id = ANY($1::uuid[])
 	` + buchListenGroupBy + `
 		ORDER BY bt.id ASC`
 
-	rows, err := repo.db.Query(ctx, query, ids)
+	zeilen, err := a.pool.Query(ctx, abfrage, ids)
 	if err != nil {
 		return nil, fmt.Errorf("bücher nach ids konnten nicht geladen werden: %w", err)
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 
-	return scanBuchZeilen(rows)
+	return leseTitelZeilen(zeilen)
 }

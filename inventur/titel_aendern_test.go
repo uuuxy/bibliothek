@@ -19,18 +19,18 @@ func TestUpdateBook(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	repo := NewBookRepository(mock)
+	repo := NewTitelAbfragen(mock)
 	ctx := context.Background()
 
-	book := Book{
+	book := Titel{
 		ISBN:                    "123",
-		Title:                   "Title",
-		Author:                  "Author",
+		Titel:                   "Title",
+		Autor:                   "Author",
 		CoverURL:                "URL",
-		Subject:                 "Math",
-		Track:                   "A",
-		Stock:                   10,
-		LastCounted:             nil, // handle date logic if needed
+		Fach:                    "Math",
+		Zweig:                   "A",
+		Bestand:                 10,
+		ZuletztGezaehlt:         nil, // handle date logic if needed
 		Medientyp:               "Buch",
 		ErweiterteEigenschaften: map[string]any{"key": "value"},
 		JahrgangVon:             5,
@@ -44,54 +44,54 @@ func TestUpdateBook(t *testing.T) {
 	// Die Anweisung, wie UpdateBook sie absetzt; die Felder der Maske stehen als letzter Parameter.
 	updateQuery := regexp.QuoteMeta(sqlTitelAendern)
 	felder := alleTitelFelder()
-	// also note syncBookStock will be called
+	// also note gleicheBestandAb will be called
 
 	t.Run("success", func(t *testing.T) {
-		erwarteFachBekannt(mock, book.Subject) // läuft auf dem Pool, vor der Tx
+		erwarteFachBekannt(mock, book.Fach) // läuft auf dem Pool, vor der Tx
 		mock.ExpectBegin()
-		erwarteTitelstand(mock, book.ISBN, book.Author)
+		erwarteTitelstand(mock, book.ISBN, book.Autor)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
+				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		// syncBookStock query (in der Tx)
+		// gleicheBestandAb query (in der Tx)
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(10))
 		mock.ExpectCommit()
 
-		err := repo.UpdateBook(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Stock})
+		err := repo.AendereTitel(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Bestand})
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		erwarteFachBekannt(mock, book.Subject)
+		erwarteFachBekannt(mock, book.Fach)
 		mock.ExpectBegin()
 		mock.ExpectQuery(sqlTitelstandMuster).
 			WithArgs("book-123").
 			WillReturnError(pgx.ErrNoRows)
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Stock})
-		assert.ErrorIs(t, err, ErrBookNotFound)
+		err := repo.AendereTitel(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Bestand})
+		assert.ErrorIs(t, err, ErrTitelNichtGefunden)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		erwarteFachBekannt(mock, book.Subject)
+		erwarteFachBekannt(mock, book.Fach)
 		mock.ExpectBegin()
-		erwarteTitelstand(mock, book.ISBN, book.Author)
+		erwarteTitelstand(mock, book.ISBN, book.Autor)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
+				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Stock})
+		err := repo.AendereTitel(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Bestand})
 		assert.ErrorContains(t, err, "buch konnte nicht aktualisiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -100,12 +100,12 @@ func TestUpdateBook(t *testing.T) {
 	// jetzt ZURÜCKGEGEBEN (früher nur geloggt → Titel mit falschem Bestand, aber Erfolg
 	// gemeldet). Der Titel-Update rollt mit zurück.
 	t.Run("sync-fehler wird zurückgegeben und rollt zurück", func(t *testing.T) {
-		erwarteFachBekannt(mock, book.Subject)
+		erwarteFachBekannt(mock, book.Fach)
 		mock.ExpectBegin()
-		erwarteTitelstand(mock, book.ISBN, book.Author)
+		erwarteTitelstand(mock, book.ISBN, book.Autor)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
+				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare`).
@@ -113,7 +113,7 @@ func TestUpdateBook(t *testing.T) {
 			WillReturnError(fmt.Errorf("bestand nicht lesbar"))
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Stock})
+		err := repo.AendereTitel(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Bestand})
 		assert.ErrorContains(t, err, "exemplare konnten nicht synchronisiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -124,7 +124,7 @@ func TestSyncBookStock(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	repo := NewBookRepository(mock)
+	repo := NewTitelAbfragen(mock)
 	ctx := context.Background()
 
 	t.Run("increase stock", func(t *testing.T) {
@@ -137,7 +137,7 @@ func TestSyncBookStock(t *testing.T) {
 			WithArgs("book-123", codes).
 			WillReturnResult(pgxmock.NewResult("INSERT", 3))
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 5, "")
+		err := repo.gleicheBestandAb(ctx, mock, "book-123", 5, "")
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -153,7 +153,7 @@ func TestSyncBookStock(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("ex-1").AddRow("ex-2"))
 		erwarteAussonderungsSpur(mock, "ex-1", "ex-2")
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 3, "bearbeiter-1")
+		err := repo.gleicheBestandAb(ctx, mock, "book-123", 3, "bearbeiter-1")
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -174,7 +174,7 @@ func TestSyncBookStock(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("ex-2"))
 		erwarteAussonderungsSpur(mock, "ex-1", "ex-2")
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 3, "bearbeiter-1")
+		err := repo.gleicheBestandAb(ctx, mock, "book-123", 3, "bearbeiter-1")
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -184,7 +184,7 @@ func TestSyncBookStock(t *testing.T) {
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 3, "")
+		err := repo.gleicheBestandAb(ctx, mock, "book-123", 3, "")
 		assert.ErrorIs(t, err, repository.ErrAussonderungOhneBearbeiter)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -194,7 +194,7 @@ func TestSyncBookStock(t *testing.T) {
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 5, "")
+		err := repo.gleicheBestandAb(ctx, mock, "book-123", 5, "")
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

@@ -9,8 +9,8 @@ import (
 
 // sucheOpenLibrary durchsucht das Internet-Archive/OpenLibrary.
 func (c *MetadatenClient) sucheOpenLibrary(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
-	url := fmt.Sprintf("https://openlibrary.org/api/books?bibkeys=ISBN:%s&format=json&jscmd=data", isbn)
-	koerper, fehler := c.holeInhalt(kontext, url)
+	adresse := fmt.Sprintf("https://openlibrary.org/api/books?bibkeys=ISBN:%s&format=json&jscmd=data", isbn)
+	koerper, fehler := c.holeInhalt(kontext, adresse)
 	if fehler != nil {
 		return nil, fehler
 	}
@@ -53,10 +53,10 @@ func (c *MetadatenClient) sucheOpenLibrary(kontext context.Context, isbn string)
 	}, nil
 }
 
-// sucheGoogleBooks ist ein robuster Fallback auf Googles Buch-API.
-func (c *MetadatenClient) sucheGoogleBooks(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
-	url := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=isbn:%s", isbn)
-	koerper, fehler := c.holeInhalt(kontext, url)
+// sucheBeiGoogle ist ein robuster Fallback auf Googles Buch-API.
+func (c *MetadatenClient) sucheBeiGoogle(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
+	adresse := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=isbn:%s", isbn)
+	koerper, fehler := c.holeInhalt(kontext, adresse)
 	if fehler != nil {
 		return nil, fehler
 	}

@@ -24,11 +24,11 @@ type DubletteISBN struct {
 }
 
 func (d *DubletteISBN) Error() string {
-	return fmt.Sprintf("%v: %q (%s) trägt dieselbe Nummer", ErrDuplicateISBN, d.Titel, d.ID)
+	return fmt.Sprintf("%v: %q (%s) trägt dieselbe Nummer", ErrISBNDoppelt, d.Titel, d.ID)
 }
 
 // Unwrap hält errors.Is(err, ErrDuplicateISBN) für alle Aufrufer gültig.
-func (d *DubletteISBN) Unwrap() error { return ErrDuplicateISBN }
+func (d *DubletteISBN) Unwrap() error { return ErrISBNDoppelt }
 
 // Meldung ist der Satz für die Oberfläche: der Titel und, hat er kein Exemplar, die Sicht,
 // in der er steht. Die Ablehnung beim Speichern und die Auskunft vorab sagen dasselbe.
@@ -97,8 +97,8 @@ func titelMitISBN(ctx context.Context, q repository.Datenbank, isbn, eigeneID st
 }
 
 // TitelMitISBN sagt vor dem Speichern, was die Dublettenkontrolle zu dieser ISBN sagen wird.
-func (repo *BookRepository) TitelMitISBN(ctx context.Context, isbn string) (*DubletteISBN, error) {
-	return titelMitISBN(ctx, repo.db, isbn, "")
+func (a *TitelAbfragen) TitelMitISBN(ctx context.Context, isbn string) (*DubletteISBN, error) {
+	return titelMitISBN(ctx, a.pool, isbn, "")
 }
 
 // isbnVergeben lehnt eine ISBN ab, die schon ein anderer Titel trägt, und nennt ihn: Als zwei
@@ -127,7 +127,7 @@ func isbnVergeben(ctx context.Context, q repository.Datenbank, isbn, eigeneID st
 // Titel und Autor der Eingabe gehen in die Form, in der die Datenbank sie speichert
 // (titeltext_normalform): Mit zwei Leerzeichen getippt ist es derselbe Titel. Die Auflage
 // speichert die Datenbank, wie sie kommt; verglichen werden beide Seiten in dieser Form.
-func gleichnamigOhneISBN(ctx context.Context, q repository.Datenbank, b Book) error {
+func gleichnamigOhneISBN(ctx context.Context, q repository.Datenbank, b Titel) error {
 	vorhanden := DubletteTitel{}
 	hatExemplar := repository.SQLTitelHatExemplar("bt")
 	err := q.QueryRow(ctx, `
@@ -139,7 +139,7 @@ func gleichnamigOhneISBN(ctx context.Context, q repository.Datenbank, b Book) er
 		  AND (titeltext_normalform($3) = ''
 		       OR lower(titeltext_normalform(coalesce(bt.auflage, ''))) = lower(titeltext_normalform($3)))
 		ORDER BY `+hatExemplar+` DESC, bt.sort_order
-		LIMIT 1`, b.Title, b.Author, b.Auflage).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)
+		LIMIT 1`, b.Titel, b.Autor, b.Auflage).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)
 	switch {
 	case err == nil:
 		return &vorhanden
@@ -153,7 +153,7 @@ func gleichnamigOhneISBN(ctx context.Context, q repository.Datenbank, b Book) er
 // pruefeNeuenTitel ist die Dublettenkontrolle der Aufnahme: mit ISBN der Titel, der die
 // Nummer trägt, ohne ISBN der gleichnamige. anderesMedium ist die Antwort der Maske auf die
 // Frage nach dem gleichnamigen und übergeht nur diese.
-func pruefeNeuenTitel(ctx context.Context, q repository.Datenbank, b Book, anderesMedium bool) error {
+func pruefeNeuenTitel(ctx context.Context, q repository.Datenbank, b Titel, anderesMedium bool) error {
 	if b.ISBN != "" {
 		return isbnVergeben(ctx, q, b.ISBN, "")
 	}

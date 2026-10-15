@@ -29,7 +29,7 @@ func TestBuchAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	handler := &APIHandler{repo: &BookRepository{db: pool}, metadaten: offlineMetadatenClient()}
+	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 
 	lege := func(bestand int) *httptest.ResponseRecorder {
 		t.Helper()
@@ -38,14 +38,14 @@ func TestBuchAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 			t.Fatal(err)
 		}
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuchErstellen(rec, httptest.NewRequest(http.MethodPost, "/api/books", bytes.NewReader(daten)))
+		handler.TitelAnlegen(rec, httptest.NewRequest(http.MethodPost, "/api/books", bytes.NewReader(daten)))
 		return rec
 	}
 	// treffer zählt, wie oft die Liste die ISBN zeigt — so, wie die Titelliste sie abfragt.
 	treffer := func(sicht string) int {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuecherListe(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+isbn+sicht, nil))
+		handler.TitelListe(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+isbn+sicht, nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Liste: %d %s", rec.Code, rec.Body.String())
 		}

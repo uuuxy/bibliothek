@@ -87,13 +87,13 @@ func TestAutomatischeKategorisierung(t *testing.T) {
 }
 
 // Welche Zahl als Jahrgang der Schule gilt, steht an zwei Stellen: am Vorschlag der
-// ISBN-Abfrage (schulstufe) und an der Spalte „klasse" des Listenimports (parseKlassenStufe).
+// ISBN-Abfrage (schulstufe) und an der Spalte „klasse" des Listenimports (leseKlassenstufe).
 // Beide tragen den Wert in dieselbe Spanne ein und müssen dieselben Zahlen annehmen.
 func TestSchulstufe_WieDerListenimport(t *testing.T) {
 	for n := -1; n <= 20; n++ {
 		zahl := strconv.Itoa(n)
 		vorschlag := schulstufe(zahl) != 0
-		liste := parseKlassenStufe(zahl) != 0
+		liste := leseKlassenstufe(zahl) != 0
 		if vorschlag != liste {
 			t.Errorf("%d: ISBN-Abfrage nimmt an = %v, Listenimport nimmt an = %v", n, vorschlag, liste)
 		}

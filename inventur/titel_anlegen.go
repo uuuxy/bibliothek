@@ -9,94 +9,94 @@ import (
 	"bibliothek/db"
 )
 
-// CreateBook legt einen Titel an. Trägt ein anderer die ISBN, lehnt sie ab (DubletteISBN);
+// LegeTitelAn legt einen Titel an. Trägt ein anderer die ISBN, lehnt sie ab (DubletteISBN);
 // heißt ohne ISBN ein anderer gleich, nennt sie ihn (DubletteTitel).
-func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, error) {
-	return repo.legeTitelAn(ctx, book, false)
+func (a *TitelAbfragen) LegeTitelAn(ctx context.Context, eintrag Titel) (string, error) {
+	return a.legeTitelZeileAn(ctx, eintrag, false)
 }
 
-// CreateBookAlsAnderesMedium legt einen Titel ohne ISBN auch neben einem gleichnamigen an: Die
+// LegeTitelAlsAnderesMediumAn legt einen Titel ohne ISBN auch neben einem gleichnamigen an: Die
 // Maske hat gefragt, und es ist ein anderes Heft, ein anderer Band oder eine andere Ausgabe.
-func (repo *BookRepository) CreateBookAlsAnderesMedium(ctx context.Context, book Book) (string, error) {
-	return repo.legeTitelAn(ctx, book, true)
+func (a *TitelAbfragen) LegeTitelAlsAnderesMediumAn(ctx context.Context, eintrag Titel) (string, error) {
+	return a.legeTitelZeileAn(ctx, eintrag, true)
 }
 
-func (repo *BookRepository) legeTitelAn(ctx context.Context, book Book, anderesMedium bool) (string, error) {
+func (a *TitelAbfragen) legeTitelZeileAn(ctx context.Context, eintrag Titel, anderesMedium bool) (string, error) {
 	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
 	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
-	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
+	kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 	if err != nil {
 		return "", err
 	}
 
-	query := `
+	abfrage := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, signatur, ist_lernmittel, auflage, listenpreis, mehrjahresband)
 		VALUES (NULLIF($1, ''), $2, $3, $4, NULLIF($5, ''), $6, NULLIF($7::text, '')::date, $8, $9, NULLIF($10, 0), NULLIF($11, 0), $12, $13, $14, NULLIF($15, ''), $16, NULLIF($17, ''), $18, $19)
 		RETURNING id`
 
-	medientyp := book.Medientyp
+	medientyp := eintrag.Medientyp
 	if medientyp == "" {
 		medientyp = "Buch"
 	}
 
-	properties := book.ErweiterteEigenschaften
-	if properties == nil {
-		properties = make(map[string]any)
+	eigenschaften := eintrag.ErweiterteEigenschaften
+	if eigenschaften == nil {
+		eigenschaften = make(map[string]any)
 	}
 
 	// Titel-Insert und Bestands-Synchronisierung atomar: Schlägt das Anlegen der
 	// Exemplare fehl, darf kein Titel mit 0 Exemplaren zurückbleiben, den der Handler
 	// als "erstellt" meldet (Transaktionsgrenzen-Sweep A2). Der Sync-Fehler wird deshalb
 	// ZURÜCKGEGEBEN, nicht nur geloggt.
-	tx, err := repo.db.Begin(ctx)
+	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", err)
 	}
 	defer db.Verwerfe(ctx, tx)
 
 	// Die Dublettenkontrolle läuft vor dem Schreiben in derselben Transaktion.
-	if err := pruefeNeuenTitel(ctx, tx, book, anderesMedium); err != nil {
+	if err := pruefeNeuenTitel(ctx, tx, eintrag, anderesMedium); err != nil {
 		return "", err
 	}
 
 	var id string
 	err = tx.QueryRow(
 		ctx,
-		query,
-		book.ISBN,
-		book.Title,
-		book.Author,
-		book.CoverURL,
-		kanonisch[book.Subject],
-		book.Track,
-		book.LastCounted,
+		abfrage,
+		eintrag.ISBN,
+		eintrag.Titel,
+		eintrag.Autor,
+		eintrag.CoverURL,
+		kanonisch[eintrag.Fach],
+		eintrag.Zweig,
+		eintrag.ZuletztGezaehlt,
 		medientyp,
-		properties,
-		book.JahrgangVon,
-		book.JahrgangBis,
-		book.Untertitel,
-		book.Verlag,
-		book.Erscheinungsjahr,
-		book.Signatur,
-		book.IstLernmittel,
-		book.Auflage,
-		book.Listenpreis,
-		book.Mehrjahresband,
+		eigenschaften,
+		eintrag.JahrgangVon,
+		eintrag.JahrgangBis,
+		eintrag.Untertitel,
+		eintrag.Verlag,
+		eintrag.Erscheinungsjahr,
+		eintrag.Signatur,
+		eintrag.IstLernmittel,
+		eintrag.Auflage,
+		eintrag.Listenpreis,
+		eintrag.Mehrjahresband,
 	).Scan(&id)
 	if err != nil {
-		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
+		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", uebersetzeDatenbankfehler(err))
 	}
 
 	// Schlagworte in derselben Transaktion (Migration 138): Scheitern sie, entsteht auch
 	// der Titel nicht. nil (Scanner-Neuanlage, Aufrufer ohne das Feld) legt keine an.
-	if book.Schlagworte != nil {
-		if _, err := repository.SetzeSchlagworte(ctx, tx, id, book.Schlagworte); err != nil {
+	if eintrag.Schlagworte != nil {
+		if _, err := repository.SetzeSchlagworte(ctx, tx, id, eintrag.Schlagworte); err != nil {
 			return "", fmt.Errorf("schlagworte konnten nicht gespeichert werden: %w", err)
 		}
 	}
 
-	if book.Stock > 0 {
-		if err := repo.syncBookStock(ctx, tx, id, book.Stock, ""); err != nil {
+	if eintrag.Bestand > 0 {
+		if err := a.gleicheBestandAb(ctx, tx, id, eintrag.Bestand, ""); err != nil {
 			return "", fmt.Errorf("exemplare konnten nicht angelegt werden: %w", err)
 		}
 	}
@@ -146,15 +146,15 @@ const titelBeiKonflikt = `ON CONFLICT (isbn) DO UPDATE SET
 			listenpreis = COALESCE(buecher_titel.listenpreis, EXCLUDED.listenpreis),
 			ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel`
 
-type bookBatchData struct {
+type titelStapel struct {
 	isbns             []string
-	titles            []string
-	authors           []string
-	coverUrls         []string
-	subjects          []string
-	tracks            []string
-	stocks            []int32
-	lastCounteds      []*string
+	titel             []string
+	autoren           []string
+	coverURLs         []string
+	faecher           []string
+	zweige            []string
+	bestaende         []int32
+	zuletztGezaehlt   []*string
 	medientypen       []string
 	jahrgaengeVon     []int
 	jahrgaengeBis     []int
@@ -169,70 +169,70 @@ type bookBatchData struct {
 	erweiterteEigenschaften [][]byte
 }
 
-func prepareUpsertBatchData(books []Book) bookBatchData {
-	data := bookBatchData{
-		isbns:                   make([]string, len(books)),
-		titles:                  make([]string, len(books)),
-		authors:                 make([]string, len(books)),
-		coverUrls:               make([]string, len(books)),
-		subjects:                make([]string, len(books)),
-		tracks:                  make([]string, len(books)),
-		stocks:                  make([]int32, len(books)),
-		lastCounteds:            make([]*string, len(books)),
-		medientypen:             make([]string, len(books)),
-		jahrgaengeVon:           make([]int, len(books)),
-		jahrgaengeBis:           make([]int, len(books)),
-		untertitel:              make([]string, len(books)),
-		verlage:                 make([]string, len(books)),
-		erscheinungsjahre:       make([]int, len(books)),
-		signaturen:              make([]string, len(books)),
-		auflagen:                make([]string, len(books)),
-		listenpreise:            make([]*float64, len(books)),
-		lernmittel:              make([]bool, len(books)),
-		erweiterteEigenschaften: make([][]byte, len(books)),
+func baueTitelStapel(eintraege []Titel) titelStapel {
+	daten := titelStapel{
+		isbns:                   make([]string, len(eintraege)),
+		titel:                   make([]string, len(eintraege)),
+		autoren:                 make([]string, len(eintraege)),
+		coverURLs:               make([]string, len(eintraege)),
+		faecher:                 make([]string, len(eintraege)),
+		zweige:                  make([]string, len(eintraege)),
+		bestaende:               make([]int32, len(eintraege)),
+		zuletztGezaehlt:         make([]*string, len(eintraege)),
+		medientypen:             make([]string, len(eintraege)),
+		jahrgaengeVon:           make([]int, len(eintraege)),
+		jahrgaengeBis:           make([]int, len(eintraege)),
+		untertitel:              make([]string, len(eintraege)),
+		verlage:                 make([]string, len(eintraege)),
+		erscheinungsjahre:       make([]int, len(eintraege)),
+		signaturen:              make([]string, len(eintraege)),
+		auflagen:                make([]string, len(eintraege)),
+		listenpreise:            make([]*float64, len(eintraege)),
+		lernmittel:              make([]bool, len(eintraege)),
+		erweiterteEigenschaften: make([][]byte, len(eintraege)),
 	}
 
-	for i, b := range books {
-		data.isbns[i] = b.ISBN
-		data.titles[i] = b.Title
-		data.authors[i] = b.Author
-		data.coverUrls[i] = b.CoverURL
-		data.subjects[i] = b.Subject
-		data.tracks[i] = b.Track
+	for i, b := range eintraege {
+		daten.isbns[i] = b.ISBN
+		daten.titel[i] = b.Titel
+		daten.autoren[i] = b.Autor
+		daten.coverURLs[i] = b.CoverURL
+		daten.faecher[i] = b.Fach
+		daten.zweige[i] = b.Zweig
 		// #nosec G115 - parseBestand begrenzt Stock beim Import auf [0, MaxInt32]
-		data.stocks[i] = int32(b.Stock)
-		data.lastCounteds[i] = b.LastCounted
-		data.medientypen[i] = b.Medientyp
-		if data.medientypen[i] == "" {
-			data.medientypen[i] = "Buch"
+		daten.bestaende[i] = int32(b.Bestand)
+		daten.zuletztGezaehlt[i] = b.ZuletztGezaehlt
+		daten.medientypen[i] = b.Medientyp
+		if daten.medientypen[i] == "" {
+			daten.medientypen[i] = "Buch"
 		}
-		data.jahrgaengeVon[i] = b.JahrgangVon
-		data.jahrgaengeBis[i] = b.JahrgangBis
-		data.untertitel[i] = b.Untertitel
-		data.verlage[i] = b.Verlag
-		data.erscheinungsjahre[i] = b.Erscheinungsjahr
-		data.signaturen[i] = b.Signatur
-		data.auflagen[i] = b.Auflage
-		data.listenpreise[i] = b.Listenpreis
-		data.lernmittel[i] = b.IstLernmittel
+		daten.jahrgaengeVon[i] = b.JahrgangVon
+		daten.jahrgaengeBis[i] = b.JahrgangBis
+		daten.untertitel[i] = b.Untertitel
+		daten.verlage[i] = b.Verlag
+		daten.erscheinungsjahre[i] = b.Erscheinungsjahr
+		daten.signaturen[i] = b.Signatur
+		daten.auflagen[i] = b.Auflage
+		daten.listenpreise[i] = b.Listenpreis
+		daten.lernmittel[i] = b.IstLernmittel
 
-		props := b.ErweiterteEigenschaften
-		if props == nil {
-			props = make(map[string]any)
+		eigenschaften := b.ErweiterteEigenschaften
+		if eigenschaften == nil {
+			eigenschaften = make(map[string]any)
 		}
 		// In JSON umwandeln für pgx JSONB-Array Kompatibilität
-		jsonProps, _ := json.Marshal(props) //nolint:errcheck
-		data.erweiterteEigenschaften[i] = jsonProps
+		eigenschaftenJSON, _ := json.Marshal(eigenschaften) //nolint:errcheck
+		daten.erweiterteEigenschaften[i] = eigenschaftenJSON
 	}
-	return data
+	return daten
 }
 
-func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSchreiber, data bookBatchData) (int64, error) {
+func (a *TitelAbfragen) fuehreStapelAbfrageAus(ctx context.Context, q dbSchreiber, daten titelStapel) (int64, error) {
 	// signatur: NULLIF beim Insert + COALESCE beim Konflikt — Import-Läufe
 	// dürfen eine physisch verklebte Signatur nie mit Leerwerten überschreiben.
 	// ist_lernmittel wird per OR nur gesetzt, nie gelöscht: Eine Excel-Liste ohne
 	// diese Spalte darf ein markiertes Schulbuch nicht zum Bibliotheksbuch machen.
-	query := `
+	abfrage := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis)
 		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, NULLIF(t.jahrgang_von, 0), NULLIF(t.jahrgang_bis, 0), t.untertitel, t.verlag, t.erscheinungsjahr, t.erweiterte_eigenschaften, NULLIF(t.signatur, ''), t.ist_lernmittel, NULLIF(t.auflage, ''), t.listenpreis
 		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[], $9::int[], $10::int[], $11::text[], $12::text[], $13::int[], $14::jsonb[], $15::text[], $16::boolean[], $17::text[], $18::numeric[])
@@ -240,50 +240,50 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSch
 		` + titelBeiKonflikt + `
 	`
 
-	cmdTag, err := q.Exec(
+	ergebnis, err := q.Exec(
 		ctx,
-		query,
-		data.isbns,
-		data.titles,
-		data.authors,
-		data.coverUrls,
-		data.subjects,
-		data.tracks,
-		data.lastCounteds,
-		data.medientypen,
-		data.jahrgaengeVon,
-		data.jahrgaengeBis,
-		data.untertitel,
-		data.verlage,
-		data.erscheinungsjahre,
-		data.erweiterteEigenschaften,
-		data.signaturen,
-		data.lernmittel,
-		data.auflagen,
-		data.listenpreise,
+		abfrage,
+		daten.isbns,
+		daten.titel,
+		daten.autoren,
+		daten.coverURLs,
+		daten.faecher,
+		daten.zweige,
+		daten.zuletztGezaehlt,
+		daten.medientypen,
+		daten.jahrgaengeVon,
+		daten.jahrgaengeBis,
+		daten.untertitel,
+		daten.verlage,
+		daten.erscheinungsjahre,
+		daten.erweiterteEigenschaften,
+		daten.signaturen,
+		daten.lernmittel,
+		daten.auflagen,
+		daten.listenpreise,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("bücher konnten nicht im batch importiert werden: %w", err)
 	}
 
-	return cmdTag.RowsAffected(), nil
+	return ergebnis.RowsAffected(), nil
 }
 
-// UpsertBooksBatch handles batch upserting book records.
-func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) (int64, error) {
-	if len(books) == 0 {
+// SchreibeTitelStapel handles batch upserting book records.
+func (a *TitelAbfragen) SchreibeTitelStapel(ctx context.Context, eintraege []Titel) (int64, error) {
+	if len(eintraege) == 0 {
 		return 0, nil
 	}
 
-	data := prepareUpsertBatchData(books)
+	daten := baueTitelStapel(eintraege)
 	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer der
 	// Import-Zeilen registrieren und jede auf die kanonische Schreibweise ziehen.
-	kanonisch, err := StelleFaecherSicher(ctx, repo.db, data.subjects)
+	kanonisch, err := StelleFaecherSicher(ctx, a.pool, daten.faecher)
 	if err != nil {
 		return 0, err
 	}
-	for i, s := range data.subjects {
-		data.subjects[i] = kanonisch[s]
+	for i, s := range daten.faecher {
+		daten.faecher[i] = kanonisch[s]
 	}
 
 	// Titel-Upsert und Exemplar-Erzeugung atomar: legeImportExemplareAn ist ADDITIV und
@@ -291,13 +291,13 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	// ein Fehler danach Titel ohne Exemplare — und ein Wiederholungslauf des Imports legte
 	// die Exemplare der bereits erfolgreichen Titel ein ZWEITES Mal an (aufgeblähter
 	// Bestand). Mit Tx rollt ein Fehlschlag den ganzen Batch zurück (Sweep A4).
-	tx, err := repo.db.Begin(ctx)
+	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("import konnte nicht begonnen werden: %w", err)
 	}
 	defer db.Verwerfe(ctx, tx)
 
-	betroffen, err := repo.executeUpsertBatchQuery(ctx, tx, data)
+	betroffen, err := a.fuehreStapelAbfrageAus(ctx, tx, daten)
 	if err != nil {
 		return 0, err
 	}
@@ -305,7 +305,7 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	// summierte der Import nur die ungelesene stock-Spalte auf — die Zahl war
 	// danach nirgends mehr sichtbar, es entstanden Titel ohne Exemplare.
 	// Additiv wie das alte stock += : jede Import-Zeile legt ihre Stückzahl an.
-	if err := repo.legeImportExemplareAn(ctx, tx, data.isbns, data.stocks); err != nil {
+	if err := a.legeImportExemplareAn(ctx, tx, daten.isbns, daten.bestaende); err != nil {
 		return 0, fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -315,14 +315,14 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 }
 
 // legeImportExemplareAn erzeugt je Import-Zeile stück-viele Exemplare (gleiche Mechanik
-// wie syncBookStock, aber additiv je Zeile). Die Nummern kommen aus barcode_seq, der
+// wie gleicheBestandAb, aber additiv je Zeile). Die Nummern kommen aus barcode_seq, der
 // einen Quelle aller Exemplarnummern (Migration 068) — bis zum 07.09.2026 aus einer
 // eigenen SYS-Sequenz, die 068 übersehen hatte (Migration 105).
 //
 // Gezogen wird die Summe aller Stückzahlen, zugeordnet über die Zeilennummer. Eine ISBN,
 // die keinen Titel findet, lässt ihre Nummern ungenutzt: Eine Lücke im Nummernkreis ist
 // harmlos, eine doppelt vergebene Nummer nicht (repository/barcode_vergabe.go).
-func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q repository.Datenbank, isbns []string, stueck []int32) error {
+func (a *TitelAbfragen) legeImportExemplareAn(ctx context.Context, q repository.Datenbank, isbns []string, stueck []int32) error {
 	gesamt := 0
 	for _, n := range stueck {
 		if n > 0 {
@@ -354,33 +354,33 @@ func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q reposit
 	return err
 }
 
-// UpsertBook inserts or updates a book record.
-func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, error) {
+// SchreibeTitel inserts or updates a book record.
+func (a *TitelAbfragen) SchreibeTitel(ctx context.Context, eintrag Titel) (string, error) {
 	// subject ist FK auf die Systematik (Migration 078), siehe CreateBook.
-	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
+	kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 	if err != nil {
 		return "", err
 	}
 
-	query := `
+	abfrage := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis)
 		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, NULLIF($7::text, '')::date, $8, NULLIF($9, 0), NULLIF($10, 0), $11, $12, $13, $14, NULLIF($15, ''), $16, NULLIF($17, ''), $18)
 		` + titelBeiKonflikt + `
 		RETURNING id`
 
-	medientyp := book.Medientyp
+	medientyp := eintrag.Medientyp
 	if medientyp == "" {
 		medientyp = "Buch"
 	}
 
-	properties := book.ErweiterteEigenschaften
-	if properties == nil {
-		properties = make(map[string]any)
+	eigenschaften := eintrag.ErweiterteEigenschaften
+	if eigenschaften == nil {
+		eigenschaften = make(map[string]any)
 	}
 
 	// Titel-Upsert und (additive) Exemplar-Erzeugung atomar — wie der Batch-Weg, gegen
 	// Titel-ohne-Exemplare und Doppel-Bestand beim Import-Retry (Sweep A4).
-	tx, err := repo.db.Begin(ctx)
+	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
 	}
@@ -389,33 +389,33 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	var id string
 	err = tx.QueryRow(
 		ctx,
-		query,
-		book.ISBN,
-		book.Title,
-		book.Author,
-		book.CoverURL,
-		kanonisch[book.Subject],
-		book.Track,
-		book.LastCounted,
+		abfrage,
+		eintrag.ISBN,
+		eintrag.Titel,
+		eintrag.Autor,
+		eintrag.CoverURL,
+		kanonisch[eintrag.Fach],
+		eintrag.Zweig,
+		eintrag.ZuletztGezaehlt,
 		medientyp,
-		book.JahrgangVon,
-		book.JahrgangBis,
-		book.Untertitel,
-		book.Verlag,
-		book.Erscheinungsjahr,
-		properties,
-		book.Signatur,
-		book.IstLernmittel,
-		book.Auflage,
-		book.Listenpreis,
+		eintrag.JahrgangVon,
+		eintrag.JahrgangBis,
+		eintrag.Untertitel,
+		eintrag.Verlag,
+		eintrag.Erscheinungsjahr,
+		eigenschaften,
+		eintrag.Signatur,
+		eintrag.IstLernmittel,
+		eintrag.Auflage,
+		eintrag.Listenpreis,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
 	}
 
 	// Additiv wie der Batch-Weg: die Stückzahl der Import-Zeile wird zu Exemplaren.
-	if book.Stock > 0 {
-		if err := repo.legeImportExemplareAn(ctx, tx, []string{book.ISBN}, []int32{int32(book.Stock)}); err != nil { // #nosec G115 -- parseBestand begrenzt Stock
+	if eintrag.Bestand > 0 {
+		if err := a.legeImportExemplareAn(ctx, tx, []string{eintrag.ISBN}, []int32{int32(eintrag.Bestand)}); err != nil { // #nosec G115 -- parseBestand begrenzt Stock
 			return "", fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
 		}
 	}

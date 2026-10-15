@@ -19,7 +19,7 @@ import (
 func TestDeleteBooks_WartendeHinterlassenEineSpur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	eins := func(was, sql string, args ...any) string {
 		t.Helper()
@@ -71,7 +71,7 @@ func TestDeleteBooks_WartendeHinterlassenEineSpur(t *testing.T) {
 		t.Fatalf("Klassensatz-Zuordnung anlegen: %v", err)
 	}
 
-	if err := repo.DeleteBooks(ctx, []string{titelID}); err != nil {
+	if err := repo.LoescheTitel(ctx, []string{titelID}); err != nil {
 		t.Fatalf("DeleteBooks: %v", err)
 	}
 

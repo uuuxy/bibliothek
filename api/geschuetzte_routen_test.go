@@ -108,7 +108,7 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 // Tests oben beruht.
 //
 // Der Test oben wertet jede Anmeldung mit inventurTueren als geschützt, weil der Mux der
-// Inventur intern RequireViewBooks oder RequireEditBooks setze. Für /uploads/ stimmt das nicht:
+// Inventur intern VerlangeLesen oder VerlangeAendern setze. Für /uploads/ stimmt das nicht:
 // Die Route bedient dort ein nackter http.FileServer. Der Test oben meldete also „geschützt" für
 // einen Endpunkt, den er nie geprüft hat.
 //
@@ -122,17 +122,17 @@ func TestInventurDelegationIstWirklichGeschuetzt(t *testing.T) {
 		t.Fatalf("inventur/api_routen.go lesen: %v", err)
 	}
 
-	registrierung := regexp.MustCompile(`handler\.mux\.Handle(?:Func)?\("([^"]+)"`)
+	registrierung := regexp.MustCompile(`tueren\.mux\.Handle(?:Func)?\("([^"]+)"`)
 	methodenPraefix := regexp.MustCompile(`^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) `)
 
 	geprueft := 0
-	for _, ausdruck := range registrierungsAusdruecke(string(inhalt), "handler.mux.") {
+	for _, ausdruck := range registrierungsAusdruecke(string(inhalt), "tueren.mux.") {
 		m := registrierung.FindStringSubmatch(ausdruck)
 		if m == nil {
 			continue
 		}
 		geprueft++
-		if strings.Contains(ausdruck, "config.Require") || strings.Contains(ausdruck, "adminH") {
+		if strings.Contains(ausdruck, "konfig.Verlange") || strings.Contains(ausdruck, "verwaltung") {
 			continue
 		}
 		pfad := methodenPraefix.ReplaceAllString(m[1], "")

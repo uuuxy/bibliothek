@@ -70,41 +70,41 @@ func pruefeFeldnamen(felder []string) error {
 	return nil
 }
 
-// UpdateBook schreibt die genannten Felder eines Titels (felder, Namen wie in titelFelder)
+// AendereTitel schreibt die genannten Felder eines Titels (felder, Namen wie in titelFelder)
 // und gleicht auf Wunsch den Bestand an, beides in einer Transaktion: Scheitert der Abgleich,
 // bleibt auch der Titel, wie er war. Ein Feld, das felder nicht nennt, bleibt, wie es in der
 // Datenbank steht. bestand ist ein Zeiger: nil heißt, der Aufrufer hat zum Bestand nichts
 // gesagt, und lässt die Exemplare unangetastet — eine fehlende Angabe käme sonst als 0 an und
 // sonderte jedes Exemplar aus. aktualisiert_am wird bei jedem Speichern gesetzt.
-func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book, felder []string, bestand *Bestandsangabe) error {
-	werte, err := repo.titelWerte(ctx, id, book, felder)
+func (a *TitelAbfragen) AendereTitel(ctx context.Context, id string, eintrag Titel, felder []string, bestand *Bestandsangabe) error {
+	werte, err := a.titelWerte(ctx, id, eintrag, felder)
 	if err != nil {
 		return err
 	}
 
-	tx, err := repo.db.Begin(ctx)
+	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
 	}
 	defer db.Verwerfe(ctx, tx)
 
-	if err := pruefeAenderung(ctx, tx, id, book, felder); err != nil {
+	if err := pruefeAenderung(ctx, tx, id, eintrag, felder); err != nil {
 		return err
 	}
 
-	result, err := tx.Exec(ctx, sqlTitelAendern, werte...)
+	ergebnis, err := tx.Exec(ctx, sqlTitelAendern, werte...)
 	if err != nil {
-		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", handleDbError(err))
+		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", uebersetzeDatenbankfehler(err))
 	}
 
-	if result.RowsAffected() == 0 {
-		return ErrBookNotFound
+	if ergebnis.RowsAffected() == 0 {
+		return ErrTitelNichtGefunden
 	}
 
 	// Schlagworte in derselben Transaktion (Migration 138). nil heißt „nicht
 	// mitgeschickt" und lässt die vorhandenen stehen — wie beim Bestand oben.
-	if book.Schlagworte != nil {
-		if _, err := repository.SetzeSchlagworte(ctx, tx, id, book.Schlagworte); err != nil {
+	if eintrag.Schlagworte != nil {
+		if _, err := repository.SetzeSchlagworte(ctx, tx, id, eintrag.Schlagworte); err != nil {
 			return fmt.Errorf("schlagworte konnten nicht gespeichert werden: %w", err)
 		}
 	}
@@ -112,7 +112,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	// Nach dem UPDATE des Titels: Dessen Zeilensperre lässt einen zweiten Speichervorgang
 	// warten, bis dieser festgeschrieben ist, und erst dann zählen.
 	if bestand != nil {
-		if err := repo.setzeBestand(ctx, tx, id, *bestand); err != nil {
+		if err := a.setzeBestand(ctx, tx, id, *bestand); err != nil {
 			return err
 		}
 	}
@@ -126,34 +126,34 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 // titelWerte sind die Parameter von sqlTitelAendern, der letzte nennt die Felder. Ein
 // genanntes Fach wird vorher registriert, wenn die Systematik es nicht kennt (subject ist FK,
 // Migration 078), und in ihrer Schreibweise geschrieben; ein Leerwert wird NULL.
-func (repo *BookRepository) titelWerte(ctx context.Context, id string, book Book, felder []string) ([]any, error) {
+func (a *TitelAbfragen) titelWerte(ctx context.Context, id string, eintrag Titel, felder []string) ([]any, error) {
 	if err := pruefeFeldnamen(felder); err != nil {
 		return nil, err
 	}
-	subject := ""
+	fach := ""
 	if slices.Contains(felder, "subject") {
-		kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
+		kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 		if err != nil {
 			return nil, err
 		}
-		subject = kanonisch[book.Subject]
+		fach = kanonisch[eintrag.Fach]
 	}
-	medientyp := book.Medientyp
+	medientyp := eintrag.Medientyp
 	if medientyp == "" {
 		medientyp = "Buch"
 	}
-	properties := book.ErweiterteEigenschaften
-	if properties == nil {
-		properties = make(map[string]any)
+	eigenschaften := eintrag.ErweiterteEigenschaften
+	if eigenschaften == nil {
+		eigenschaften = make(map[string]any)
 	}
 	if felder == nil {
 		felder = []string{}
 	}
 	return []any{
-		book.ISBN, book.Title, book.Author, book.CoverURL, subject, book.Track,
-		book.LastCounted, medientyp, properties, book.JahrgangVon, book.JahrgangBis,
-		book.Untertitel, book.Verlag, book.Erscheinungsjahr, id, book.Signatur,
-		book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
+		eintrag.ISBN, eintrag.Titel, eintrag.Autor, eintrag.CoverURL, fach, eintrag.Zweig,
+		eintrag.ZuletztGezaehlt, medientyp, eigenschaften, eintrag.JahrgangVon, eintrag.JahrgangBis,
+		eintrag.Untertitel, eintrag.Verlag, eintrag.Erscheinungsjahr, id, eintrag.Signatur,
+		eintrag.IstLernmittel, eintrag.Auflage, eintrag.Listenpreis, eintrag.Mehrjahresband, felder,
 	}, nil
 }
 
@@ -162,7 +162,7 @@ func (repo *BookRepository) titelWerte(ctx context.Context, id string, book Book
 // Feld geleert. Die ISBN wird nur geprüft, wenn sie eine andere ist als die gespeicherte: Ein
 // Titel ohne ISBN oder mit einer Nummer, die keine ISBN ist, bleibt speicherbar, wenn ein
 // anderes Feld geändert wird. Die Sperre hält die Zeile bis zum UPDATE derselben Transaktion.
-func pruefeAenderung(ctx context.Context, tx repository.Datenbank, id string, book Book, felder []string) error {
+func pruefeAenderung(ctx context.Context, tx repository.Datenbank, id string, eintrag Titel, felder []string) error {
 	nennt := func(name string) bool { return slices.Contains(felder, name) }
 	var isbn, autor string
 	var lernmittel, mehrjahresband bool
@@ -172,22 +172,22 @@ func pruefeAenderung(ctx context.Context, tx repository.Datenbank, id string, bo
 		Scan(&isbn, &autor, &lernmittel, &mehrjahresband, &von, &bis)
 	switch {
 	case istKeineZeile(err):
-		return ErrBookNotFound
+		return ErrTitelNichtGefunden
 	case err != nil:
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
-	case nennt("author") && book.Author == "" && autor != "":
+	case nennt("author") && eintrag.Autor == "" && autor != "":
 		return ErrAutorGeleert
 	}
-	if err := pruefeSpanneNachAenderung(book, nennt, titelSpanne{lernmittel, mehrjahresband, von, bis}); err != nil {
+	if err := pruefeSpanneNachAenderung(eintrag, nennt, titelSpanne{lernmittel, mehrjahresband, von, bis}); err != nil {
 		return err
 	}
 	switch {
-	case !nennt("isbn") || book.ISBN == "" || isbnutil.Normalform(book.ISBN) == isbnutil.Normalform(isbn):
+	case !nennt("isbn") || eintrag.ISBN == "" || isbnutil.Normalform(eintrag.ISBN) == isbnutil.Normalform(isbn):
 		return nil
-	case !validiereISBN(book.ISBN):
+	case !validiereISBN(eintrag.ISBN):
 		return ErrISBNFormat
 	}
-	return isbnVergeben(ctx, tx, book.ISBN, id)
+	return isbnVergeben(ctx, tx, eintrag.ISBN, id)
 }
 
 // titelSpanne ist, woran das Mehrjahresband hängt: Lernmittel, der Schalter und die Jahrgänge.
@@ -200,21 +200,21 @@ type titelSpanne struct {
 // genannten Felder aus der Eingabe, die übrigen vom Titel (stand). Nennt die Änderung keins der
 // vier, prüft sie nichts: Was unverändert am Titel steht, hindert das Speichern eines anderen
 // Felds nicht.
-func pruefeSpanneNachAenderung(book Book, nennt func(string) bool, stand titelSpanne) error {
+func pruefeSpanneNachAenderung(eintrag Titel, nennt func(string) bool, stand titelSpanne) error {
 	if !nennt("istLernmittel") && !nennt("mehrjahresband") && !nennt("jahrgangVon") && !nennt("jahrgangBis") {
 		return nil
 	}
 	if nennt("istLernmittel") {
-		stand.lernmittel = book.IstLernmittel
+		stand.lernmittel = eintrag.IstLernmittel
 	}
 	if nennt("mehrjahresband") {
-		stand.mehrjahresband = book.Mehrjahresband
+		stand.mehrjahresband = eintrag.Mehrjahresband
 	}
 	if nennt("jahrgangVon") {
-		stand.von = book.JahrgangVon
+		stand.von = eintrag.JahrgangVon
 	}
 	if nennt("jahrgangBis") {
-		stand.bis = book.JahrgangBis
+		stand.bis = eintrag.JahrgangBis
 	}
 	if err := pruefeJahrgangsSpanne(stand.von, stand.bis); err != nil {
 		return err
@@ -265,7 +265,7 @@ func (e *BestandVeraltet) Meldung() string {
 //
 // Ein Aufrufer ohne gesehene Zahl darf den Stand bestätigen (Soll gleich Stand, nichts
 // geschieht), aber nicht ändern.
-func (repo *BookRepository) setzeBestand(ctx context.Context, q repository.Datenbank, titelID string, angabe Bestandsangabe) error {
+func (a *TitelAbfragen) setzeBestand(ctx context.Context, q repository.Datenbank, titelID string, angabe Bestandsangabe) error {
 	aktuell, err := zaehleBestand(ctx, q, titelID)
 	if err != nil {
 		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
@@ -276,7 +276,7 @@ func (repo *BookRepository) setzeBestand(ctx context.Context, q repository.Daten
 	if angabe.Gesehen == nil || *angabe.Gesehen != aktuell {
 		return &BestandVeraltet{Gesehen: angabe.Gesehen, Aktuell: aktuell}
 	}
-	if err := repo.gleicheExemplareAn(ctx, q, titelID, aktuell, angabe.Soll, angabe.BearbeiterID); err != nil {
+	if err := a.gleicheExemplareAn(ctx, q, titelID, aktuell, angabe.Soll, angabe.BearbeiterID); err != nil {
 		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
 	}
 	return nil
@@ -293,17 +293,17 @@ func zaehleBestand(ctx context.Context, q repository.Datenbank, titelID string) 
 	return bestand, nil
 }
 
-// syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
+// gleicheBestandAb synchronizes the physical buecher_exemplare records to match the expected stock.
 //
 // q ist repository.Datenbank statt dbSchreiber, weil die Nummernvergabe (barcode_seq gegen
 // Bestandsabgleich) Query braucht — pgx.Tx und der Pool erfüllen beides. bearbeiterID darf
 // leer sein, solange der Bestand nicht sinkt: Das Anlegen eines Titels sondert nichts aus.
-func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.Datenbank, titelID string, expectedStock int, bearbeiterID string) error {
-	currentStock, err := zaehleBestand(ctx, q, titelID)
+func (a *TitelAbfragen) gleicheBestandAb(ctx context.Context, q repository.Datenbank, titelID string, erwarteterBestand int, bearbeiterID string) error {
+	aktuellerBestand, err := zaehleBestand(ctx, q, titelID)
 	if err != nil {
 		return err
 	}
-	return repo.gleicheExemplareAn(ctx, q, titelID, currentStock, expectedStock, bearbeiterID)
+	return a.gleicheExemplareAn(ctx, q, titelID, aktuellerBestand, erwarteterBestand, bearbeiterID)
 }
 
 // gleicheExemplareAn legt fehlende Exemplare an oder sondert überzählige aus, bis der Bestand
@@ -311,11 +311,11 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.Date
 // sich über die Zahl nicht aussondern. Ein neues Exemplar erbt den Standort der vorhandenen
 // (repository.SQLGeerbterStandort). Jedes ausgesonderte Exemplar steht mit bearbeiterID im
 // Protokoll (repository.ProtokolliereAussonderung); ohne sie sondert der Abgleich nichts aus.
-func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository.Datenbank, titelID string, currentStock, expectedStock int, bearbeiterID string) error {
-	if expectedStock > currentStock {
+func (a *TitelAbfragen) gleicheExemplareAn(ctx context.Context, q repository.Datenbank, titelID string, aktuellerBestand, erwarteterBestand int, bearbeiterID string) error {
+	if erwarteterBestand > aktuellerBestand {
 		// Nummern aus barcode_seq — dieselbe Quelle wie Bestellwesen, Handvergabe und
 		// Littera-Import (Migration 068: eine Quelle für alle Wege).
-		barcodes, err := repository.ZieheFreieExemplarBarcodes(ctx, q, expectedStock-currentStock)
+		barcodes, err := repository.ZieheFreieExemplarBarcodes(ctx, q, erwarteterBestand-aktuellerBestand)
 		if err != nil {
 			return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
 		}
@@ -328,13 +328,13 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 		}
 		return nil
 	}
-	if expectedStock == currentStock {
+	if erwarteterBestand == aktuellerBestand {
 		return nil
 	}
 	if bearbeiterID == "" {
 		return repository.ErrAussonderungOhneBearbeiter
 	}
-	numToRetire := currentStock - expectedStock
+	auszusondern := aktuellerBestand - erwarteterBestand
 
 	// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
 	//
@@ -342,7 +342,7 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 	// (repository/exemplar_aussondern.go, schaden.go, exemplar_status.go): Ein ausgesondertes
 	// Exemplar, das sich weiterhin „ausleihbar" nennt, verleiht der erste Leser, der nur
 	// diese Spalte prüft.
-	query := `
+	abfrage := `
 			UPDATE buecher_exemplare
 			SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR', bestellstatus = NULL, letzte_bewegung_am = CURRENT_TIMESTAMP,
 			    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert'
@@ -355,14 +355,14 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 			)
 			RETURNING id::text
 		`
-	ausgesondert, err := sondereAus(ctx, q, query, titelID, numToRetire)
+	ausgesondert, err := sondereAus(ctx, q, abfrage, titelID, auszusondern)
 	if err != nil {
 		return fmt.Errorf("fehler beim aussondern von exemplaren: %w", err)
 	}
 
 	// 2. Fallback: Auch ausgeliehene Exemplare aussondern, falls nötig
-	if len(ausgesondert) < numToRetire {
-		fallbackQuery := `
+	if len(ausgesondert) < auszusondern {
+		ersatzAbfrage := `
 				UPDATE buecher_exemplare
 				SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR', bestellstatus = NULL, letzte_bewegung_am = CURRENT_TIMESTAMP,
 				    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
@@ -374,7 +374,7 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 				)
 				RETURNING id::text
 			`
-		rest, err := sondereAus(ctx, q, fallbackQuery, titelID, numToRetire-len(ausgesondert))
+		rest, err := sondereAus(ctx, q, ersatzAbfrage, titelID, auszusondern-len(ausgesondert))
 		if err != nil {
 			return fmt.Errorf("fehler beim aussondern (fallback): %w", err)
 		}
@@ -386,18 +386,18 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 // sondereAus führt eine der beiden Anweisungen von gleicheExemplareAn aus und nennt die
 // Exemplare, die sie ausgesondert hat.
 func sondereAus(ctx context.Context, q repository.Datenbank, anweisung, titelID string, anzahl int) ([]string, error) {
-	rows, err := q.Query(ctx, anweisung, titelID, anzahl)
+	zeilen, err := q.Query(ctx, anweisung, titelID, anzahl)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 	var ids []string
-	for rows.Next() {
+	for zeilen.Next() {
 		var id string
-		if err := rows.Scan(&id); err != nil {
+		if err := zeilen.Scan(&id); err != nil {
 			return nil, err
 		}
 		ids = append(ids, id)
 	}
-	return ids, rows.Err()
+	return ids, zeilen.Err()
 }

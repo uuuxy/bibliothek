@@ -33,20 +33,20 @@ func erbWege() []erbWeg {
 	ctx := context.Background()
 	return []erbWeg{
 		{"Bestand in der Titelmaske erhöht", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
-			repo := inventur.NewBookRepository(pool)
-			buecher, err := repo.ListBooksByIDs(ctx, []string{titel.id})
+			repo := inventur.NewTitelAbfragen(pool)
+			buecher, err := repo.LadeTitelNachIDs(ctx, []string{titel.id})
 			if err != nil || len(buecher) != 1 {
 				t.Fatalf("Titel lesen: %v, %d Titel", err, len(buecher))
 			}
-			gesehen := buecher[0].Stock
-			if err := repo.UpdateBook(ctx, titel.id, buecher[0], nil,
+			gesehen := buecher[0].Bestand
+			if err := repo.AendereTitel(ctx, titel.id, buecher[0], nil,
 				&inventur.Bestandsangabe{Soll: gesehen + 2, Gesehen: &gesehen}); err != nil {
 				t.Fatalf("Bestand erhöhen: %v", err)
 			}
 		}},
 		{"Listenimport mit Stückzahl", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
-			if _, err := inventur.NewBookRepository(pool).
-				UpsertBooksBatch(ctx, []inventur.Book{{ISBN: titel.isbn, Stock: 2}}); err != nil {
+			if _, err := inventur.NewTitelAbfragen(pool).
+				SchreibeTitelStapel(ctx, []inventur.Titel{{ISBN: titel.isbn, Bestand: 2}}); err != nil {
 				t.Fatalf("Listenimport: %v", err)
 			}
 		}},

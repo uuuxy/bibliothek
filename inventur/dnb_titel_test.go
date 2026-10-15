@@ -53,7 +53,7 @@ func TestSucheDNB_TitelOhneVerfasserangabeUndNichtsortierzeichen(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			client := NeuerMetadatenClient()
+			client := NewMetadatenClient()
 			client.SetzeHTTPClientFuerTest(&http.Client{Transport: &mockTransport{
 				roundTripFunc: func(*http.Request) (*http.Response, error) {
 					koerper := `<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>

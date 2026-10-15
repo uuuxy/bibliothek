@@ -54,7 +54,7 @@ func TestSchulbuecherAlsPDF_CoverBleibtBeiSeinerZeile(t *testing.T) {
 	titel := make([]LernmittelTitel, 0, 30)
 	for i := 1; i <= 30; i++ {
 		titel = append(titel, LernmittelTitel{
-			ID: strconv.Itoa(i), Title: fmt.Sprintf("Titel %02d", i), Autor: "Verlag",
+			ID: strconv.Itoa(i), Titel: fmt.Sprintf("Titel %02d", i), Autor: "Verlag",
 			CoverURL: "/uploads/cover.png", Gesamt: i, Verfuegbar: i,
 		})
 	}
@@ -87,13 +87,13 @@ func TestSchulbuecherAlsPDF_CoverBleibtBeiSeinerZeile(t *testing.T) {
 func TestSchulbuecherAlsPDF_Inhalt(t *testing.T) {
 	titel := []LernmittelTitel{
 		{
-			Title:       "Chemie Heute",
+			Titel:       "Chemie Heute",
 			Autor:       "Schroedel",
 			ISBN:        "978-3-507-86221-0",
-			Subject:     "Chemie",
+			Fach:        "Chemie",
 			JahrgangVon: 8,
 			JahrgangBis: 10,
-			Track:       "G-Zweig",
+			Zweig:       "G-Zweig",
 			Gezaehlt:    "01.01.2023",
 			Gesamt:      50,
 			Verliehen:   30,
@@ -146,8 +146,8 @@ func TestSchulbuecherAlsPDF_Kuerzen(t *testing.T) {
 		langerZweig = "Gymnasialzweig und Realschulzweig"
 	)
 	doc, err := SchulbuecherAlsPDF([]LernmittelTitel{
-		{ID: "1", Title: langerTitel, Autor: langerAutor, ISBN: "ISBN-PROBE-1", JahrgangVon: 7, JahrgangBis: 7, Track: langerZweig},
-		{ID: "2", Title: "Atlas", Autor: "Diercke", ISBN: "ISBN-PROBE-2", JahrgangVon: 7, JahrgangBis: 7, Track: "G"},
+		{ID: "1", Titel: langerTitel, Autor: langerAutor, ISBN: "ISBN-PROBE-1", JahrgangVon: 7, JahrgangBis: 7, Zweig: langerZweig},
+		{ID: "2", Titel: "Atlas", Autor: "Diercke", ISBN: "ISBN-PROBE-2", JahrgangVon: 7, JahrgangBis: 7, Zweig: "G"},
 	}, "", "")
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +204,7 @@ func TestSchulbuecherAlsPDF_LeereAuswahl(t *testing.T) {
 
 func TestSchulbuecherAlsPDF_GezaehltSpalte(t *testing.T) {
 	// 1. Ohne Gezaehlt
-	titelOhne := []LernmittelTitel{{Title: "Buch 1"}}
+	titelOhne := []LernmittelTitel{{Titel: "Buch 1"}}
 	docOhne, err := SchulbuecherAlsPDF(titelOhne, "", "")
 	if err != nil {
 		t.Fatal(err)
@@ -217,7 +217,7 @@ func TestSchulbuecherAlsPDF_GezaehltSpalte(t *testing.T) {
 	}
 
 	// 2. Mit Gezaehlt
-	titelMit := []LernmittelTitel{{Title: "Buch 1", Gezaehlt: "02.02.2022"}}
+	titelMit := []LernmittelTitel{{Titel: "Buch 1", Gezaehlt: "02.02.2022"}}
 	docMit, err := SchulbuecherAlsPDF(titelMit, "", "")
 	if err != nil {
 		t.Fatal(err)
@@ -361,14 +361,14 @@ func TestAuflagenBeschriftung_WieImBrowser(t *testing.T) {
 func TestSchulbuecherAlsPDF_AuflagenUnterDemTitel(t *testing.T) {
 	titel := []LernmittelTitel{
 		{
-			Title: "Mathe 7", ISBN: "978-B2", Subject: "Mathematik", JahrgangVon: 7, JahrgangBis: 7,
+			Titel: "Mathe 7", ISBN: "978-B2", Fach: "Mathematik", JahrgangVon: 7, JahrgangBis: 7,
 			Gesamt: 58, Verliehen: 12, Verfuegbar: 46,
 			AuflagenBestand: []AuflageImBestand{
 				{ID: "neu", Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 16},
 				{ID: "alt", Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 42},
 			},
 		},
-		{Title: "Mathe 8", ISBN: "978-B8", Subject: "Mathematik", JahrgangVon: 8, JahrgangBis: 8, Gesamt: 5, Verfuegbar: 5},
+		{Titel: "Mathe 8", ISBN: "978-B8", Fach: "Mathematik", JahrgangVon: 8, JahrgangBis: 8, Gesamt: 5, Verfuegbar: 5},
 	}
 	doc, err := SchulbuecherAlsPDF(titel, "Mathematik", "")
 	if err != nil {
@@ -422,7 +422,7 @@ func TestSchulbuecherAlsPDF_QuerformatBleibtInSeinerSpalte(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	doc, err := SchulbuecherAlsPDF([]LernmittelTitel{{ID: "1", Title: "Atlas", CoverURL: "/uploads/quer.png", Gesamt: 1}}, "Erdkunde", "")
+	doc, err := SchulbuecherAlsPDF([]LernmittelTitel{{ID: "1", Titel: "Atlas", CoverURL: "/uploads/quer.png", Gesamt: 1}}, "Erdkunde", "")
 	if err != nil {
 		t.Fatal(err)
 	}

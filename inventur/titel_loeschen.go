@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// DeleteBooks löscht Titel samt allem, was an ihnen hängt.
+// LoescheTitel löscht Titel samt allem, was an ihnen hängt.
 //
 // Die abhängigen DELETEs (Schadensfälle, Ausleihen, Titel — der Titel-Delete räumt die
 // Exemplare per ON DELETE CASCADE mit) laufen in EINER Transaktion. Ohne sie hinterließ
@@ -31,12 +31,12 @@ import (
 //
 // Der Barcode wird dabei frei; neu vergeben wird er nicht (barcode_seq zählt nur
 // vorwärts), das zurückkommende Buch kann also nicht mit einem anderen verwechselt werden.
-func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error {
+func (a *TitelAbfragen) LoescheTitel(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
 
-	tx, err := repo.db.Begin(ctx)
+	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("löschen konnte nicht begonnen werden: %w", err)
 	}
@@ -66,7 +66,7 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	if err != nil {
 		return err
 	}
-	localCovers, err := repository.LadeLokaleCoverNurDieserTitel(ctx, tx, ids)
+	lokaleCover, err := repository.LadeLokaleCoverNurDieserTitel(ctx, tx, ids)
 	if err != nil {
 		return err
 	}
@@ -86,12 +86,12 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return err
 	}
 
-	result, err := tx.Exec(ctx, `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`, ids)
+	ergebnis, err := tx.Exec(ctx, `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`, ids)
 	if err != nil {
 		return fmt.Errorf("bücher konnten nicht gelöscht werden: %w", err)
 	}
-	if result.RowsAffected() == 0 {
-		return ErrBookNotFound
+	if ergebnis.RowsAffected() == 0 {
+		return ErrTitelNichtGefunden
 	}
 	if err := repository.RaeumeWerkeAuf(ctx, tx, werke); err != nil {
 		return err
@@ -108,7 +108,7 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 
 	// Erst nach dem Commit: Die Cover-Dateien kommen nicht zurück, wenn das Löschen in der
 	// Datenbank doch scheitert.
-	repository.LoescheCoverDateien(localCovers)
+	repository.LoescheCoverDateien(lokaleCover)
 	return nil
 }
 

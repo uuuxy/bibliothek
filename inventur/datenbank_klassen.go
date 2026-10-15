@@ -10,25 +10,25 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// insertClassBookBindings schreibt das Kreuzprodukt aus Klassen × Büchern per
+// legeKlassensatzZuordnungenAn schreibt das Kreuzprodukt aus Klassen × Büchern per
 // unnest-INSERT in class_books. Leere Eingaben werden ignoriert (kein Insert).
-func insertClassBookBindings(ctx context.Context, tx pgx.Tx, newClassNames, bookIDs []string) error {
-	if len(bookIDs) == 0 || len(newClassNames) == 0 {
+func legeKlassensatzZuordnungenAn(ctx context.Context, tx pgx.Tx, neueKlassen, titelIDs []string) error {
+	if len(titelIDs) == 0 || len(neueKlassen) == 0 {
 		return nil
 	}
 
-	var insertClasses []string
-	var insertBooks []string
-	for _, className := range newClassNames {
-		for _, bookID := range bookIDs {
-			insertClasses = append(insertClasses, className)
-			insertBooks = append(insertBooks, bookID)
+	var klassenZeilen []string
+	var titelZeilen []string
+	for _, klasse := range neueKlassen {
+		for _, titelID := range titelIDs {
+			klassenZeilen = append(klassenZeilen, klasse)
+			titelZeilen = append(titelZeilen, titelID)
 		}
 	}
 
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO class_books (class_name, book_id)
-		SELECT class_name, book_id::uuid FROM unnest($1::text[], $2::text[]) AS t(class_name, book_id)`, insertClasses, insertBooks); err != nil {
+		SELECT class_name, book_id::uuid FROM unnest($1::text[], $2::text[]) AS t(class_name, book_id)`, klassenZeilen, titelZeilen); err != nil {
 		return fmt.Errorf("neue zuweisung konnte nicht gespeichert werden: %w", err)
 	}
 	return nil
@@ -40,7 +40,7 @@ func insertClassBookBindings(ctx context.Context, tx pgx.Tx, newClassNames, book
 // ein Satz.
 const KlassensatzMindestLeser = 5
 
-// GetClassGroups liefert je Klasse ihre Klassensatz-Titel aus ZWEI Quellen (Absprache vom
+// LadeKlassensatzGruppen liefert je Klasse ihre Klassensatz-Titel aus ZWEI Quellen (Absprache vom
 // 05.09.2026: „über die LUSD wissen wir genau, in welcher Klasse jeder Schüler ist — die
 // Liste kann sich selbstständig aktualisieren"): der von Hand gepflegten Zuordnung
 // (class_books, Quelle „hand" — bleibt unangetastet, nichts wird geschrieben oder
@@ -59,9 +59,9 @@ const KlassensatzMindestLeser = 5
 // Klasse haben, bei Gleichstand die neueste: Die Kachel zeigt, was die Klasse hat, nicht,
 // was zuletzt erschien. Eine Zuordnung von Hand deckt das ganze Buch ab. Haben Kinder der
 // Klasse eine andere Auflage als die der Kachel, trägt die Zeile die Aufschlüsselung.
-func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, sortOrder string) ([]ClassGroup, error) {
+func (a *TitelAbfragen) LadeKlassensatzGruppen(ctx context.Context, zweig string, reihenfolge string) ([]klassensatzGruppe, error) {
 	neueste := repository.SQLNeuesteAuflageZuerst("t")
-	query := `
+	abfrage := `
 		WITH klassen_groesse AS (
 			SELECT klassen_normkey(klasse) AS k, min(klasse) AS klasse, count(*) AS n
 			FROM schueler
@@ -129,48 +129,48 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 		WHERE ($1 = '' OR cb.class_name ILIKE '%' || $1 || '%')
 		GROUP BY cb.class_name, b.id, b.titel, b.subject, b.track, b.cover_url, b.isbn, cb.quelle, cb.leser
-		ORDER BY ` + klassenSortierung(branch, sortOrder)
+		ORDER BY ` + klassenSortierung(zweig, reihenfolge)
 
-	rows, err := repo.db.Query(ctx, query, branch, KlassensatzMindestLeser)
+	zeilen, err := a.pool.Query(ctx, abfrage, zweig, KlassensatzMindestLeser)
 	if err != nil {
 		return nil, fmt.Errorf("klassen-bücher konnten nicht geladen werden: %w", err)
 	}
-	defer rows.Close()
+	defer zeilen.Close()
 
-	groupsMap := make(map[string][]ClassBook)
-	var classNames []string
+	gruppenNachName := make(map[string][]klassensatzTitel)
+	var klassen []string
 
-	for rows.Next() {
-		className, book, err := leseKlassenBuch(rows)
+	for zeilen.Next() {
+		klasse, eintrag, err := leseKlassensatzTitel(zeilen)
 		if err != nil {
 			return nil, err
 		}
 
-		if _, exists := groupsMap[className]; !exists {
-			classNames = append(classNames, className)
+		if _, vorhanden := gruppenNachName[klasse]; !vorhanden {
+			klassen = append(klassen, klasse)
 		}
-		groupsMap[className] = append(groupsMap[className], book)
+		gruppenNachName[klasse] = append(gruppenNachName[klasse], eintrag)
 	}
-	if err := rows.Err(); err != nil {
+	if err := zeilen.Err(); err != nil {
 		return nil, fmt.Errorf("klassen-bücher konnten nicht vollständig gelesen werden: %w", err)
 	}
 
-	var result []ClassGroup
-	for _, name := range classNames {
-		result = append(result, ClassGroup{
-			ClassName: name,
-			Books:     groupsMap[name],
+	var ergebnis []klassensatzGruppe
+	for _, name := range klassen {
+		ergebnis = append(ergebnis, klassensatzGruppe{
+			Klasse: name,
+			Titel:  gruppenNachName[name],
 		})
 	}
 
-	return result, nil
+	return ergebnis, nil
 }
 
 // klassenSortierung ist das ORDER BY der Klassenübersicht: ohne Bildungsgang zuerst in der
 // Reihenfolge F, G, R, H, dann nach Jahrgang, Klasse und Titel.
-func klassenSortierung(branch, sortOrder string) string {
+func klassenSortierung(zweig, reihenfolge string) string {
 	sortierung := ""
-	if branch == "" {
+	if zweig == "" {
 		// Fallback: Workflow-Reihenfolge F, G, R, H
 		sortierung += `
 			CASE 
@@ -182,57 +182,57 @@ func klassenSortierung(branch, sortOrder string) string {
 			END, `
 	}
 
-	gradeCast := `CAST(SUBSTRING(cb.class_name FROM '^[0-9]+') AS INTEGER)`
-	if sortOrder == "desc" {
-		return sortierung + gradeCast + ` DESC, cb.class_name DESC, b.titel ASC`
+	stufeZahl := `CAST(SUBSTRING(cb.class_name FROM '^[0-9]+') AS INTEGER)`
+	if reihenfolge == "desc" {
+		return sortierung + stufeZahl + ` DESC, cb.class_name DESC, b.titel ASC`
 	}
-	return sortierung + gradeCast + ` ASC, cb.class_name ASC, b.titel ASC`
+	return sortierung + stufeZahl + ` ASC, cb.class_name ASC, b.titel ASC`
 }
 
-// leseKlassenBuch liest eine Zeile der Klassenübersicht: die Klasse und ihr Buch, mit der
+// leseKlassensatzTitel liest eine Zeile der Klassenübersicht: die Klasse und ihr Buch, mit der
 // Aufschlüsselung nach Auflagen, wenn die Zeile eine trägt.
-func leseKlassenBuch(rows pgx.Rows) (string, ClassBook, error) {
-	var className string
-	var book ClassBook
+func leseKlassensatzTitel(zeilen pgx.Rows) (string, klassensatzTitel, error) {
+	var klasse string
+	var eintrag klassensatzTitel
 	var auflagen []byte
-	err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt, &book.ImZulauf, &book.Quelle, &book.Leser, &auflagen)
+	err := zeilen.Scan(&klasse, &eintrag.ID, &eintrag.Titel, &eintrag.Fach, &eintrag.Zweig, &eintrag.CoverURL, &eintrag.ISBN, &eintrag.Verfuegbar, &eintrag.Gesamt, &eintrag.ImZulauf, &eintrag.Quelle, &eintrag.Leser, &auflagen)
 	if err != nil {
-		return "", book, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
+		return "", eintrag, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
 	}
 	if len(auflagen) > 0 {
-		if err := json.Unmarshal(auflagen, &book.Auflagen); err != nil {
-			return "", book, fmt.Errorf("auflagen von %s in %s: %w", book.ID, className, err)
+		if err := json.Unmarshal(auflagen, &eintrag.Auflagen); err != nil {
+			return "", eintrag, fmt.Errorf("auflagen von %s in %s: %w", eintrag.ID, klasse, err)
 		}
 	}
-	return className, book, nil
+	return klasse, eintrag, nil
 }
 
-// UpdateClassBooks schreibt die Buchzuordnung einer Klasse neu. oldClassName wird dabei
+// AendereKlassensaetze schreibt die Buchzuordnung einer Klasse neu. oldClassName wird dabei
 // durch newClassNames ersetzt — so lässt sich derselbe Satz in einem Zug auf mehrere
 // Klassen verteilen, ohne ihn mehrfach anzulegen.
-func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName string, newClassNames []string, bookIDs []string) error {
-	tx, err := repo.db.Begin(ctx)
+func (a *TitelAbfragen) AendereKlassensaetze(ctx context.Context, alteKlasse string, neueKlassen []string, titelIDs []string) error {
+	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("transaktion konnte nicht gestartet werden: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
 	// If there's an old class name, delete it.
-	if oldClassName != "" {
-		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = $1`, oldClassName); err != nil {
+	if alteKlasse != "" {
+		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = $1`, alteKlasse); err != nil {
 			return fmt.Errorf("alte zuweisungen konnten nicht gelöscht werden: %w", err)
 		}
 	}
 
 	// ⚡ Bolt: Batch DELETE existing bindings for all target classes (overwrite)
-	if len(newClassNames) > 0 {
-		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, newClassNames); err != nil {
+	if len(neueKlassen) > 0 {
+		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, neueKlassen); err != nil {
 			return fmt.Errorf("vorhandene zuweisungen des neuen namens konnten nicht gelöscht werden: %w", err)
 		}
 	}
 
 	// ⚡ Bolt: Batch INSERT new bindings using PostgreSQL unnest
-	if err := insertClassBookBindings(ctx, tx, newClassNames, bookIDs); err != nil {
+	if err := legeKlassensatzZuordnungenAn(ctx, tx, neueKlassen, titelIDs); err != nil {
 		return err
 	}
 
@@ -243,44 +243,44 @@ func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName s
 	return nil
 }
 
-// DeleteClassGroup löst die Klassensätze der genannten Klassen auf. Betroffen ist nur
+// LoescheKlassensatzGruppe löst die Klassensätze der genannten Klassen auf. Betroffen ist nur
 // die Zuordnung — die Titel selbst bleiben im Katalog.
-func (repo *BookRepository) DeleteClassGroup(ctx context.Context, classNames []string) error {
-	if len(classNames) == 0 {
+func (a *TitelAbfragen) LoescheKlassensatzGruppe(ctx context.Context, klassen []string) error {
+	if len(klassen) == 0 {
 		return nil
 	}
-	_, err := repo.db.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, classNames)
+	_, err := a.pool.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, klassen)
 	if err != nil {
 		return fmt.Errorf("klassen konnten nicht gelöscht werden: %w", err)
 	}
 	return nil
 }
 
-// AddBooksToClasses ergänzt Titel in mehreren Klassensätzen, ohne die bestehende
+// OrdneTitelKlassenZu ergänzt Titel in mehreren Klassensätzen, ohne die bestehende
 // Zuordnung zu ersetzen — anders als UpdateClassBooks, das sie neu schreibt.
-func (repo *BookRepository) AddBooksToClasses(ctx context.Context, classNames []string, bookIDs []string) error {
-	if len(classNames) == 0 || len(bookIDs) == 0 {
+func (a *TitelAbfragen) OrdneTitelKlassenZu(ctx context.Context, klassen []string, titelIDs []string) error {
+	if len(klassen) == 0 || len(titelIDs) == 0 {
 		return nil
 	}
 
-	var insertClasses []string
-	var insertBooks []string
+	var klassenZeilen []string
+	var titelZeilen []string
 
-	for _, className := range classNames {
-		for _, bookID := range bookIDs {
-			insertClasses = append(insertClasses, className)
-			insertBooks = append(insertBooks, bookID)
+	for _, klasse := range klassen {
+		for _, titelID := range titelIDs {
+			klassenZeilen = append(klassenZeilen, klasse)
+			titelZeilen = append(titelZeilen, titelID)
 		}
 	}
 
 	// Use ON CONFLICT DO NOTHING so existing assignments are ignored and not duplicated
-	query := `
+	abfrage := `
 		INSERT INTO class_books (class_name, book_id)
 		SELECT class_name, book_id::uuid FROM unnest($1::text[], $2::text[]) AS t(class_name, book_id)
 		ON CONFLICT (class_name, book_id) DO NOTHING
 	`
 
-	_, err := repo.db.Exec(ctx, query, insertClasses, insertBooks)
+	_, err := a.pool.Exec(ctx, abfrage, klassenZeilen, titelZeilen)
 	if err != nil {
 		return fmt.Errorf("fehler beim hinzufügen der bücher zu den klassen: %w", err)
 	}

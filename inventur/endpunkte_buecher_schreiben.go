@@ -11,16 +11,16 @@ import (
 	"bibliothek/pkg/kennung"
 )
 
-// validiereBuchErstellenEingabe prüft Titel und ISBN. Pflicht ist der Titel;
+// pruefeTitelEingabe prüft Titel und ISBN. Pflicht ist der Titel;
 // die ISBN darf fehlen (Zeitschrift, Spiel, altes Buch) und wird nur geprüft, wenn sie dasteht.
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
-func validiereBuchErstellenEingabe(antwort http.ResponseWriter, eingabe BuchEingabe) bool {
+func pruefeTitelEingabe(antwort http.ResponseWriter, eingabe TitelEingabe) bool {
 	if strings.TrimSpace(eingabe.Titel) == "" {
-		writeError(antwort, http.StatusBadRequest, "titel darf nicht leer sein")
+		schreibeFehler(antwort, http.StatusBadRequest, "titel darf nicht leer sein")
 		return false
 	}
 	if isbn := strings.TrimSpace(eingabe.ISBN); isbn != "" && !validiereISBN(isbn) {
-		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
+		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
 		return false
 	}
 	return true
@@ -41,17 +41,17 @@ func ListenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
 	return &gefunden
 }
 
-// speichereNeuesBuch legt das Buch an und setzt buch.ID. anderesMedium ist die Antwort der
+// speichereNeuenTitel legt das Buch an und setzt buch.ID. anderesMedium ist die Antwort der
 // Maske auf die Frage nach dem gleichnamigen Titel. ok=false: die Fehlerantwort (409 bei
 // vergebener ISBN oder gleichnamigem Titel, sonst 400) wurde bereits geschrieben.
-func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.ResponseWriter, buch *Book, anderesMedium bool) bool {
-	anlegen := handler.repo.CreateBook
+func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseWriter, buch *Titel, anderesMedium bool) bool {
+	anlegen := t.abfragen.LegeTitelAn
 	if anderesMedium {
-		anlegen = handler.repo.CreateBookAlsAnderesMedium
+		anlegen = t.abfragen.LegeTitelAlsAnderesMediumAn
 	}
 	erstellteID, fehler := anlegen(ctx, *buch)
 	if fehler != nil {
-		if errors.Is(fehler, ErrDuplicateISBN) {
+		if errors.Is(fehler, ErrISBNDoppelt) {
 			schreibeDubletteISBN(antwort, fehler)
 			return false
 		}
@@ -61,7 +61,7 @@ func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.
 			return false
 		}
 		log.Printf("Fehler beim Erstellen von Buch ISBN %s: %v", buch.ISBN, fehler)
-		writeError(antwort, http.StatusBadRequest, "buch konnte nicht erstellt werden")
+		schreibeFehler(antwort, http.StatusBadRequest, "buch konnte nicht erstellt werden")
 		return false
 	}
 	buch.ID = erstellteID
@@ -75,11 +75,11 @@ func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.
 func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 	var dublette *DubletteISBN
 	if !errors.As(fehler, &dublette) {
-		writeError(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
+		schreibeFehler(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
 		return
 	}
 	log.Printf("Dublette abgelehnt: %v", fehler)
-	writeJSON(antwort, http.StatusConflict, map[string]any{
+	schreibeJSON(antwort, http.StatusConflict, map[string]any{
 		"error":     dublette.Meldung(),
 		"vorhanden": dublette.alsAntwort(),
 	})
@@ -89,7 +89,7 @@ func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 // gleich heißt. „gleicherTitel" sagt der Maske, dass sie fragen und nach der Antwort „anderes
 // Medium" noch einmal schicken darf; eine vergebene ISBN lässt sich so nicht übergehen.
 func schreibeDubletteTitel(antwort http.ResponseWriter, gleichnamig *DubletteTitel) {
-	writeJSON(antwort, http.StatusConflict, map[string]any{
+	schreibeJSON(antwort, http.StatusConflict, map[string]any{
 		"error":         gleichnamig.Meldung(),
 		"vorhanden":     gleichnamig.alsAntwort(),
 		"gleicherTitel": true,
@@ -108,91 +108,91 @@ func alleUUIDs(ids []string) bool {
 	return true
 }
 
-// buchIDAusPfad liest die Buch-Kennung aus dem Platzhalter {id} der Route (api_routen.go).
+// titelIDAusPfad liest die Buch-Kennung aus dem Platzhalter {id} der Route (api_routen.go).
 // Ist sie keine UUID, antwortet sie mit 400, bevor irgendetwas die Datenbank fragt — sonst
 // käme `invalid input syntax for type uuid` als 500 zurück. ok=false: Die Antwort ist
 // geschrieben.
-func buchIDAusPfad(antwort http.ResponseWriter, anfrage *http.Request) (string, bool) {
+func titelIDAusPfad(antwort http.ResponseWriter, anfrage *http.Request) (string, bool) {
 	id := anfrage.PathValue("id")
 	if !kennung.IstUUID(id) {
-		writeError(antwort, http.StatusBadRequest, "ungültige Buch-ID")
+		schreibeFehler(antwort, http.StatusBadRequest, "ungültige Buch-ID")
 		return "", false
 	}
 	return id, true
 }
 
-// BearbeiteBuecherLoeschen verarbeitet DELETE-Anfragen zum Löschen mehrerer Bücher.
+// TitelLoeschen verarbeitet DELETE-Anfragen zum Löschen mehrerer Bücher.
 // Es erwartet ein JSON-Array mit IDs und löscht diese sicher über das Repository.
-func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter, anfrage *http.Request) {
+func (t *Tueren) TitelLoeschen(antwort http.ResponseWriter, anfrage *http.Request) {
 	var eingabe struct {
 		IDs []string `json:"ids"`
 	}
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-		writeError(antwort, http.StatusBadRequest, "ungültiges request body")
+		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges request body")
 		return
 	}
 
 	if len(eingabe.IDs) == 0 {
-		writeError(antwort, http.StatusBadRequest, "keine IDs übergeben")
+		schreibeFehler(antwort, http.StatusBadRequest, "keine IDs übergeben")
 		return
 	}
 	if !alleUUIDs(eingabe.IDs) {
-		writeError(antwort, http.StatusBadRequest, "ids enthält eine ungültige Kennung")
+		schreibeFehler(antwort, http.StatusBadRequest, "ids enthält eine ungültige Kennung")
 		return
 	}
 
-	if fehler := handler.repo.DeleteBooks(anfrage.Context(), eingabe.IDs); fehler != nil {
-		if errors.Is(fehler, ErrBookNotFound) {
-			writeError(antwort, http.StatusNotFound, "keines der ausgewählten bücher wurde gefunden")
+	if fehler := t.abfragen.LoescheTitel(anfrage.Context(), eingabe.IDs); fehler != nil {
+		if errors.Is(fehler, ErrTitelNichtGefunden) {
+			schreibeFehler(antwort, http.StatusNotFound, "keines der ausgewählten bücher wurde gefunden")
 			return
 		}
 		log.Printf("Fehler beim Löschen von Büchern: %v", fehler)
-		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher")
+		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher")
 		return
 	}
 
-	writeJSON(antwort, http.StatusOK, map[string]string{"message": "bücher gelöscht"})
+	schreibeJSON(antwort, http.StatusOK, map[string]string{"message": "bücher gelöscht"})
 }
 
-// BearbeiteBuchErstellen verarbeitet POST-Anfragen zum Erstellen eines neuen Buches und
+// TitelAnlegen verarbeitet POST-Anfragen zum Erstellen eines neuen Buches und
 // speichert, was die Anfrage nennt: Ein Titel ohne Autor bleibt ohne ihn, und die
 // Katalogdienste fragt das Anlegen nicht — was sie wissen, zeigt die Maske vor dem Speichern.
-func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, anfrage *http.Request) {
-	var eingabe BuchEingabe
+func (t *Tueren) TitelAnlegen(antwort http.ResponseWriter, anfrage *http.Request) {
+	var eingabe TitelEingabe
 
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-		writeError(antwort, http.StatusBadRequest, "ungültiges JSON")
+		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges JSON")
 		return
 	}
 
-	if !validiereBuchErstellenEingabe(antwort, eingabe) {
+	if !pruefeTitelEingabe(antwort, eingabe) {
 		return
 	}
 	if fehler := pruefeJahrgangsSpanne(eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
-		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
 	if fehler := pruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
-		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
 	if fehler := pruefeListenpreis(eingabe.Listenpreis); fehler != nil {
-		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
 	schlagworte, fehler := schlagworteAusEingabe(eingabe.Schlagworte)
 	if fehler != nil {
-		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
 
-	buch := Book{
+	buch := Titel{
 		ISBN:                    strings.TrimSpace(eingabe.ISBN),
-		Subject:                 strings.TrimSpace(eingabe.Fach),
-		Track:                   strings.TrimSpace(eingabe.Schulzweig),
+		Fach:                    strings.TrimSpace(eingabe.Fach),
+		Zweig:                   strings.TrimSpace(eingabe.Schulzweig),
 		IstLernmittel:           eingabe.IstLernmittel,
-		Stock:                   bestandOderNull(eingabe.Bestand),
-		LastCounted:             eingabe.ZaehlDatum,
+		Bestand:                 bestandOderNull(eingabe.Bestand),
+		ZuletztGezaehlt:         eingabe.ZaehlDatum,
 		Medientyp:               strings.TrimSpace(eingabe.Medientyp),
 		JahrgangVon:             eingabe.JahrgangVon,
 		JahrgangBis:             eingabe.JahrgangBis,
@@ -206,15 +206,15 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 		Schlagworte:             schlagworte,
 	}
-	buch.Title = strings.TrimSpace(eingabe.Titel)
-	buch.Author = strings.TrimSpace(eingabe.Autor)
+	buch.Titel = strings.TrimSpace(eingabe.Titel)
+	buch.Autor = strings.TrimSpace(eingabe.Autor)
 	buch.CoverURL = strings.TrimSpace(eingabe.CoverURL)
 
-	if !handler.speichereNeuesBuch(anfrage.Context(), antwort, &buch, eingabe.AnderesMedium) {
+	if !t.speichereNeuenTitel(anfrage.Context(), antwort, &buch, eingabe.AnderesMedium) {
 		return
 	}
 
-	writeJSON(antwort, http.StatusCreated, map[string]any{"message": "buch erstellt", "data": handler.gespeichert(anfrage.Context(), buch)})
+	schreibeJSON(antwort, http.StatusCreated, map[string]any{"message": "buch erstellt", "data": t.gespeichert(anfrage.Context(), buch)})
 }
 
 // bestandOderNull löst den Zeiger für den ANLEGEN-Weg auf: Wer beim Anlegen keinen

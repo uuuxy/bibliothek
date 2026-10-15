@@ -15,16 +15,16 @@ import (
 // Anmeldung, ohne view_books (wie /api/portal/klassensaetze): Sie liefern nur Buch- und
 // Zähldaten, keine Ausleih- oder Personendaten.
 
-// handlePortalLernmittel bedient GET /api/portal/lernmittel[?fach=…]: immer die
+// PortalLernmittel bedient GET /api/portal/lernmittel[?fach=…]: immer die
 // Fach-Zahlen und die Titel — ohne ?fach alle Schulbücher (Reiter-Startansicht seit
 // 03.09.2026 abends: Liste statt Kachelwand), mit ?fach= die des Fachs ("" = ohne Fach).
-func (handler *APIHandler) handlePortalLernmittel(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) PortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	filter := lernmittelFilterParam(r)
-	faecher, err := handler.repo.GetLernmittelFaecher(ctx, filter)
+	faecher, err := t.abfragen.LadeLernmittelFaecher(ctx, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Fächer: %v", err)
-		writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
+		schreibeFehler(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
 		return
 	}
 	fach, gewaehlt := r.URL.Query()["fach"]
@@ -32,30 +32,30 @@ func (handler *APIHandler) handlePortalLernmittel(w http.ResponseWriter, r *http
 	if gewaehlt {
 		fachName = strings.TrimSpace(fach[0])
 	}
-	titel, err := handler.repo.GetLernmittelTitel(ctx, fachName, !gewaehlt, filter)
+	titel, err := t.abfragen.LadeLernmittelTitel(ctx, fachName, !gewaehlt, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Titel: %v", err)
-		writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
+		schreibeFehler(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"faecher": faecher, "titel": titel})
+	schreibeJSON(w, http.StatusOK, map[string]any{"faecher": faecher, "titel": titel})
 }
 
-// handlePortalLernmittelExport bedient GET /api/portal/lernmittel/export[?fach=…] und
+// PortalLernmittelExport bedient GET /api/portal/lernmittel/export[?fach=…] und
 // liefert die Bestandsliste als PDF (eine Zeile je Titel, mit Coverbild). Ohne ?fach
 // alle Schulbücher. Die Filter der Ansicht (?jahrgang, ?zweig, ?q) gelten mit, damit
 // der Ausdruck dasselbe zeigt wie der Bildschirm.
-func (handler *APIHandler) handlePortalLernmittelExport(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) PortalLernmittelExport(w http.ResponseWriter, r *http.Request) {
 	fach, gewaehlt := r.URL.Query()["fach"]
 	fachName := ""
 	if gewaehlt {
 		fachName = strings.TrimSpace(fach[0])
 	}
 	filter := lernmittelFilterParam(r)
-	titel, err := handler.repo.GetLernmittelTitel(r.Context(), fachName, !gewaehlt, filter)
+	titel, err := t.abfragen.LadeLernmittelTitel(r.Context(), fachName, !gewaehlt, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel-Export: %v", err)
-		writeError(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
+		schreibeFehler(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
 		return
 	}
 	ueberschrift := ""
@@ -65,7 +65,7 @@ func (handler *APIHandler) handlePortalLernmittelExport(w http.ResponseWriter, r
 	datei, err := SchulbuecherAlsPDF(titel, ueberschrift, filterKlartext(filter))
 	if err != nil {
 		log.Printf("Portal Lernmittel-Export: PDF: %v", err)
-		writeError(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
+		schreibeFehler(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
 		return
 	}
 	name := "schulbuecher"

@@ -19,7 +19,7 @@ func TestGetBookByID(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		lastCounted := "2023-01-01"
 		mock.ExpectQuery(queryRegex).
@@ -36,11 +36,11 @@ func TestGetBookByID(t *testing.T) {
 				map[string]any{"key": "value"}, "4. Aufl. 2023",
 			))
 
-		book, err := repo.GetBookByID(ctx, "valid-id")
+		book, err := repo.LadeTitel(ctx, "valid-id")
 		require.NoError(t, err)
 		assert.NotNil(t, book)
 		assert.Equal(t, "valid-id", book.ID)
-		assert.Equal(t, "Test Title", book.Title)
+		assert.Equal(t, "Test Title", book.Titel)
 		assert.Equal(t, map[string]any{"key": "value"}, book.ErweiterteEigenschaften)
 	})
 
@@ -48,14 +48,14 @@ func TestGetBookByID(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(queryRegex).
 			WithArgs("invalid-id").
 			WillReturnError(pgx.ErrNoRows)
 
-		book, err := repo.GetBookByID(ctx, "invalid-id")
-		assert.ErrorIs(t, err, ErrBookNotFound)
+		book, err := repo.LadeTitel(ctx, "invalid-id")
+		assert.ErrorIs(t, err, ErrTitelNichtGefunden)
 		assert.Nil(t, book)
 	})
 
@@ -65,16 +65,16 @@ func TestGetBookByID(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		mockErr := errors.New("db error")
 		mock.ExpectQuery(queryRegex).
 			WithArgs("error-id").
 			WillReturnError(mockErr)
 
-		book, err := repo.GetBookByID(ctx, "error-id")
+		book, err := repo.LadeTitel(ctx, "error-id")
 		assert.ErrorIs(t, err, mockErr)
-		assert.NotErrorIs(t, err, ErrBookNotFound)
+		assert.NotErrorIs(t, err, ErrTitelNichtGefunden)
 		assert.Nil(t, book)
 	})
 }
@@ -87,13 +87,13 @@ func TestUpdateBookMetadata(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		mock.ExpectExec(queryRegex).
 			WithArgs("New Title", "New Author", "http://new-cover", "valid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		err = repo.UpdateBookMetadata(ctx, "valid-id", "New Title", "New Author", "http://new-cover")
+		err = repo.AendereTitelMetadaten(ctx, "valid-id", "New Title", "New Author", "http://new-cover")
 		assert.NoError(t, err)
 	})
 
@@ -101,28 +101,28 @@ func TestUpdateBookMetadata(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		mock.ExpectExec(queryRegex).
 			WithArgs("New Title", "New Author", "http://new-cover", "invalid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
-		err = repo.UpdateBookMetadata(ctx, "invalid-id", "New Title", "New Author", "http://new-cover")
-		assert.ErrorIs(t, err, ErrBookNotFound)
+		err = repo.AendereTitelMetadaten(ctx, "invalid-id", "New Title", "New Author", "http://new-cover")
+		assert.ErrorIs(t, err, ErrTitelNichtGefunden)
 	})
 
 	t.Run("error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 
 		mockErr := errors.New("db error")
 		mock.ExpectExec(queryRegex).
 			WithArgs("New Title", "New Author", "http://new-cover", "error-id").
 			WillReturnError(mockErr)
 
-		err = repo.UpdateBookMetadata(ctx, "error-id", "New Title", "New Author", "http://new-cover")
+		err = repo.AendereTitelMetadaten(ctx, "error-id", "New Title", "New Author", "http://new-cover")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "metadaten konnten nicht aktualisiert werden: db error")
 	})

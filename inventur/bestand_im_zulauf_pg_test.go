@@ -17,7 +17,7 @@ import (
 func TestBestandNenntDenZulauf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 	marke := fmt.Sprintf("ZULAUF%d", time.Now().UnixNano())
 	klasse := "Z" + marke[len(marke)-8:]
 
@@ -75,37 +75,37 @@ func TestBestandNenntDenZulauf(t *testing.T) {
 		}
 	}
 
-	liste, err := repo.ListBooks(ctx, "", marke, false)
+	liste, err := repo.LadeTitelListe(ctx, "", marke, false)
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}
-	einzeln, err := repo.ListBooksByIDs(ctx, []string{nurBestellt, teils})
+	einzeln, err := repo.LadeTitelNachIDs(ctx, []string{nurBestellt, teils})
 	if err != nil {
 		t.Fatalf("ListBooksByIDs: %v", err)
 	}
-	for tuer, buecher := range map[string][]Book{"ListBooks": liste, "ListBooksByIDs": einzeln} {
+	for tuer, buecher := range map[string][]Titel{"ListBooks": liste, "ListBooksByIDs": einzeln} {
 		if len(buecher) != 2 {
 			t.Fatalf("%s: %d Titel, erwartet 2", tuer, len(buecher))
 		}
 		for _, b := range buecher {
-			pruefe(tuer+"/"+b.Title, b.ID, b.Gesamt, b.Verfuegbar, b.ImZulauf)
+			pruefe(tuer+"/"+b.Titel, b.ID, b.Gesamt, b.Verfuegbar, b.ImZulauf)
 		}
 	}
 
-	gruppen, err := repo.GetClassGroups(ctx, klasse, "")
+	gruppen, err := repo.LadeKlassensatzGruppen(ctx, klasse, "")
 	if err != nil {
-		t.Fatalf("GetClassGroups: %v", err)
+		t.Fatalf("LadeKlassensatzGruppen: %v", err)
 	}
 	gesehen := 0
 	for _, g := range gruppen {
-		for _, b := range g.Books {
+		for _, b := range g.Titel {
 			if _, ok := erwartet[b.ID]; ok {
 				gesehen++
-				pruefe("GetClassGroups/"+b.Title, b.ID, b.Gesamt, b.Verfuegbar, b.ImZulauf)
+				pruefe("LadeKlassensatzGruppen/"+b.Titel, b.ID, b.Gesamt, b.Verfuegbar, b.ImZulauf)
 			}
 		}
 	}
 	if gesehen != 2 {
-		t.Errorf("GetClassGroups: %d Titel gesehen, erwartet 2", gesehen)
+		t.Errorf("LadeKlassensatzGruppen: %d Titel gesehen, erwartet 2", gesehen)
 	}
 }

@@ -31,10 +31,10 @@ func TestVerarbeiteImportZeile_JahrgangNurAusDerSpalte(t *testing.T) {
 				zeile = append(zeile, f.klasse)
 				spalten["klasse"] = 3
 			}
-			buch, err := verarbeiteImportZeile(ImportConfig{
-				Ctx:       context.Background(),
-				Row:       zeile,
-				ColIdx:    spalten,
+			buch, err := verarbeiteImportZeile(importZeile{
+				Kontext:   context.Background(),
+				Zeile:     zeile,
+				Spalten:   spalten,
 				Metadaten: offlineMetadatenClient(),
 			})
 			if err != nil || buch == nil {

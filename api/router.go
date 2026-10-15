@@ -191,16 +191,16 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 	// Ein Unterordner uploads/fotos entsteht hier nicht: Schülerfotos liegen verschlüsselt
 	// in der Datenbank, und /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird nur,
 	// was direkt in uploads/ liegt (inventur/api_routen.go).
-	inventurAbfragen := inventur.NewBookRepository(s.DB.Pool)
-	metadaten := inventur.NeuerMetadatenClient()
+	inventurAbfragen := inventur.NewTitelAbfragen(s.DB.Pool)
+	metadaten := inventur.NewMetadatenClient()
 
-	inventurTueren := inventur.NewAPIHandler(inventur.APIHandlerConfig{
-		Repo:                 inventurAbfragen,
-		Metadaten:            metadaten,
-		RequireViewBooks:     s.verlangeRecht("view_books"),
-		RequireEditBooks:     s.verlangeRecht("edit_books"),
-		RequireDeleteBooks:   s.verlangeRecht("delete_books"),
-		RequireAuthenticated: s.VerlangeAnmeldung(),
+	inventurTueren := inventur.NewTueren(inventur.TuerenKonfig{
+		Abfragen:          inventurAbfragen,
+		Metadaten:         metadaten,
+		VerlangeLesen:     s.verlangeRecht("view_books"),
+		VerlangeAendern:   s.verlangeRecht("edit_books"),
+		VerlangeLoeschen:  s.verlangeRecht("delete_books"),
+		VerlangeAnmeldung: s.VerlangeAnmeldung(),
 	})
 
 	// Die Routen des Inventur-Moduls.

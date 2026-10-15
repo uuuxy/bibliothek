@@ -12,15 +12,15 @@ import (
 )
 
 func TestCreateBook(t *testing.T) {
-	book := Book{
+	book := Titel{
 		ISBN:                    "123",
-		Title:                   "Title",
-		Author:                  "Author",
+		Titel:                   "Title",
+		Autor:                   "Author",
 		CoverURL:                "URL",
-		Subject:                 "Math",
-		Track:                   "A",
-		Stock:                   10,
-		LastCounted:             nil,
+		Fach:                    "Math",
+		Zweig:                   "A",
+		Bestand:                 10,
+		ZuletztGezaehlt:         nil,
 		Medientyp:               "Buch",
 		ErweiterteEigenschaften: map[string]any{"key": "value"},
 		JahrgangVon:             5,
@@ -38,15 +38,15 @@ func TestCreateBook(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Subject)
+		erwarteFachBekannt(mock, book.Fach)
 		mock.ExpectBegin()
 		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -60,7 +60,7 @@ func TestCreateBook(t *testing.T) {
 
 		mock.ExpectCommit()
 
-		id, err := repo.CreateBook(ctx, book)
+		id, err := repo.LegeTitelAn(ctx, book)
 		assert.NoError(t, err)
 		assert.Equal(t, "book-123", id)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -71,20 +71,20 @@ func TestCreateBook(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Subject)
+		erwarteFachBekannt(mock, book.Fach)
 		mock.ExpectBegin()
 		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
 
-		_, err = repo.CreateBook(ctx, book)
+		_, err = repo.LegeTitelAn(ctx, book)
 		assert.ErrorContains(t, err, "buch konnte nicht erstellt werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -94,15 +94,15 @@ func TestCreateBook(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Subject)
+		erwarteFachBekannt(mock, book.Fach)
 		mock.ExpectBegin()
 		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -111,22 +111,22 @@ func TestCreateBook(t *testing.T) {
 			WillReturnError(fmt.Errorf("bestand nicht lesbar"))
 		mock.ExpectRollback()
 
-		_, err = repo.CreateBook(ctx, book)
+		_, err = repo.LegeTitelAn(ctx, book)
 		assert.ErrorContains(t, err, "exemplare konnten nicht angelegt werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
 func TestUpsertBook(t *testing.T) {
-	book := Book{
+	book := Titel{
 		ISBN:                    "123",
-		Title:                   "Title",
-		Author:                  "Author",
+		Titel:                   "Title",
+		Autor:                   "Author",
 		CoverURL:                "URL",
-		Subject:                 "Math",
-		Track:                   "A",
-		Stock:                   2,
-		LastCounted:             nil,
+		Fach:                    "Math",
+		Zweig:                   "A",
+		Bestand:                 2,
+		ZuletztGezaehlt:         nil,
 		Medientyp:               "Buch",
 		ErweiterteEigenschaften: map[string]any{"key": "value"},
 		JahrgangVon:             5,
@@ -144,26 +144,26 @@ func TestUpsertBook(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Subject)
+		erwarteFachBekannt(mock, book.Fach)
 		mock.ExpectBegin()
 		mock.ExpectQuery(upsertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
+				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
 		// Upsert calls legeImportExemplareAn
-		codes := erwarteBarcodeVergabe(mock, book.Stock)
+		codes := erwarteBarcodeVergabe(mock, book.Bestand)
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
-			WithArgs([]string{book.ISBN}, []int32{int32(book.Stock)}, codes).
+			WithArgs([]string{book.ISBN}, []int32{int32(book.Bestand)}, codes).
 			WillReturnResult(pgxmock.NewResult("INSERT", 2))
 
 		mock.ExpectCommit()
 
-		id, err := repo.UpsertBook(ctx, book)
+		id, err := repo.SchreibeTitel(ctx, book)
 		assert.NoError(t, err)
 		assert.Equal(t, "book-123", id)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -174,35 +174,35 @@ func TestUpsertBook(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Subject)
+		erwarteFachBekannt(mock, book.Fach)
 		mock.ExpectBegin()
 		mock.ExpectQuery(upsertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
+				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
 
-		_, err = repo.UpsertBook(ctx, book)
+		_, err = repo.SchreibeTitel(ctx, book)
 		assert.ErrorContains(t, err, "buch konnte nicht importiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
 func TestUpsertBooksBatch(t *testing.T) {
-	books := []Book{
+	books := []Titel{
 		{
 			ISBN:                    "123",
-			Title:                   "Title",
-			Author:                  "Author",
+			Titel:                   "Title",
+			Autor:                   "Author",
 			CoverURL:                "URL",
-			Subject:                 "Math",
-			Track:                   "A",
-			Stock:                   2,
-			LastCounted:             nil,
+			Fach:                    "Math",
+			Zweig:                   "A",
+			Bestand:                 2,
+			ZuletztGezaehlt:         nil,
 			Medientyp:               "Buch",
 			ErweiterteEigenschaften: map[string]any{"key": "value"},
 			JahrgangVon:             5,
@@ -221,10 +221,10 @@ func TestUpsertBooksBatch(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, books[0].Subject)
+		erwarteFachBekannt(mock, books[0].Fach)
 		mock.ExpectBegin()
 
 		jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
@@ -232,12 +232,12 @@ func TestUpsertBooksBatch(t *testing.T) {
 		mock.ExpectExec(batchQuery).
 			WithArgs(
 				[]string{books[0].ISBN},
-				[]string{books[0].Title},
-				[]string{books[0].Author},
+				[]string{books[0].Titel},
+				[]string{books[0].Autor},
 				[]string{books[0].CoverURL},
-				[]string{books[0].Subject},
-				[]string{books[0].Track},
-				[]*string{books[0].LastCounted},
+				[]string{books[0].Fach},
+				[]string{books[0].Zweig},
+				[]*string{books[0].ZuletztGezaehlt},
 				[]string{books[0].Medientyp},
 				[]int{books[0].JahrgangVon},
 				[]int{books[0].JahrgangBis},
@@ -253,14 +253,14 @@ func TestUpsertBooksBatch(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		// Batch Upsert calls legeImportExemplareAn
-		codes := erwarteBarcodeVergabe(mock, books[0].Stock)
+		codes := erwarteBarcodeVergabe(mock, books[0].Bestand)
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
-			WithArgs([]string{books[0].ISBN}, []int32{int32(books[0].Stock)}, codes).
+			WithArgs([]string{books[0].ISBN}, []int32{int32(books[0].Bestand)}, codes).
 			WillReturnResult(pgxmock.NewResult("INSERT", 2))
 
 		mock.ExpectCommit()
 
-		rowsAffected, err := repo.UpsertBooksBatch(ctx, books)
+		rowsAffected, err := repo.SchreibeTitelStapel(ctx, books)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), rowsAffected)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -271,10 +271,10 @@ func TestUpsertBooksBatch(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		rowsAffected, err := repo.UpsertBooksBatch(ctx, []Book{})
+		rowsAffected, err := repo.SchreibeTitelStapel(ctx, []Titel{})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), rowsAffected)
 	})
@@ -284,10 +284,10 @@ func TestUpsertBooksBatch(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewBookRepository(mock)
+		repo := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, books[0].Subject)
+		erwarteFachBekannt(mock, books[0].Fach)
 		mock.ExpectBegin()
 
 		jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
@@ -295,12 +295,12 @@ func TestUpsertBooksBatch(t *testing.T) {
 		mock.ExpectExec(batchQuery).
 			WithArgs(
 				[]string{books[0].ISBN},
-				[]string{books[0].Title},
-				[]string{books[0].Author},
+				[]string{books[0].Titel},
+				[]string{books[0].Autor},
 				[]string{books[0].CoverURL},
-				[]string{books[0].Subject},
-				[]string{books[0].Track},
-				[]*string{books[0].LastCounted},
+				[]string{books[0].Fach},
+				[]string{books[0].Zweig},
+				[]*string{books[0].ZuletztGezaehlt},
 				[]string{books[0].Medientyp},
 				[]int{books[0].JahrgangVon},
 				[]int{books[0].JahrgangBis},
@@ -316,7 +316,7 @@ func TestUpsertBooksBatch(t *testing.T) {
 			WillReturnError(fmt.Errorf("db batch failed"))
 		mock.ExpectRollback()
 
-		_, err = repo.UpsertBooksBatch(ctx, books)
+		_, err = repo.SchreibeTitelStapel(ctx, books)
 		assert.ErrorContains(t, err, "bücher konnten nicht im batch importiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

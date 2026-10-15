@@ -13,7 +13,7 @@ import (
 // Der Cover-Abgleich darf ein lokal liegendes Cover nicht anfassen, egal, was cover_status
 // sagt: Sonst überschreibt der Treffer der Katalogdienste ein von Hand hochgeladenes
 // /uploads/-Cover. Die Wege von Hand setzen den Status selbst
-// (inventur/repository_metadata.go); die Auswahl schützt auch Titel, deren Status nicht dazu
+// (inventur/titel_metadaten.go); die Auswahl schützt auch Titel, deren Status nicht dazu
 // passt (Bugklasse „Maschine gegen Hand").
 func TestCoverAbgleichAuswahl_LaesstLokaleCoverInRuhe(t *testing.T) {
 	pool := pgtest.Pool(t)

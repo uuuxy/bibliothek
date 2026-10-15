@@ -20,7 +20,7 @@ import (
 func TestISBNDublette_WirdAlsDubletteErkannt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	const isbn = "9780000131313"
 	const andere = "9780000131320"
@@ -31,24 +31,24 @@ func TestISBNDublette_WirdAlsDubletteErkannt(t *testing.T) {
 		}
 	})
 
-	if _, err := repo.CreateBook(ctx, Book{ISBN: isbn, Title: "Erstes Exemplar der ISBN", Author: "Test"}); err != nil {
+	if _, err := repo.LegeTitelAn(ctx, Titel{ISBN: isbn, Titel: "Erstes Exemplar der ISBN", Autor: "Test"}); err != nil {
 		t.Fatalf("erstes Anlegen: %v", err)
 	}
 
 	t.Run("Anlegen", func(t *testing.T) {
-		_, err := repo.CreateBook(ctx, Book{ISBN: isbn, Title: "Dublette", Author: "Test"})
-		if !errors.Is(err, ErrDuplicateISBN) {
+		_, err := repo.LegeTitelAn(ctx, Titel{ISBN: isbn, Titel: "Dublette", Autor: "Test"})
+		if !errors.Is(err, ErrISBNDoppelt) {
 			t.Fatalf("erwartet ErrDuplicateISBN, bekam %v", err)
 		}
 	})
 
 	t.Run("Bearbeiten", func(t *testing.T) {
-		zweiter, err := repo.CreateBook(ctx, Book{ISBN: andere, Title: "Zweiter Titel", Author: "Test"})
+		zweiter, err := repo.LegeTitelAn(ctx, Titel{ISBN: andere, Titel: "Zweiter Titel", Autor: "Test"})
 		if err != nil {
 			t.Fatalf("zweiten Titel anlegen: %v", err)
 		}
-		err = repo.UpdateBook(ctx, zweiter, Book{ISBN: isbn, Title: "Zweiter Titel", Author: "Test"}, []string{"isbn", "title", "author"}, nil)
-		if !errors.Is(err, ErrDuplicateISBN) {
+		err = repo.AendereTitel(ctx, zweiter, Titel{ISBN: isbn, Titel: "Zweiter Titel", Autor: "Test"}, []string{"isbn", "title", "author"}, nil)
+		if !errors.Is(err, ErrISBNDoppelt) {
 			t.Fatalf("erwartet ErrDuplicateISBN, bekam %v", err)
 		}
 	})

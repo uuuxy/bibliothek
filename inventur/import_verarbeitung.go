@@ -6,22 +6,22 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
-// inferSubjectFromTitle rät das Fach aus dem Titel — über dieselbe Liste wie der
+// errateFachAusTitel rät das Fach aus dem Titel — über dieselbe Liste wie der
 // ISBN-Lookup (pkg/lmf), damit beide Wege dasselbe Fach registrieren.
-func inferSubjectFromTitle(title string) string {
-	return lmf.FachAusText(strings.TrimSpace(title))
+func errateFachAusTitel(titelText string) string {
+	return lmf.FachAusText(strings.TrimSpace(titelText))
 }
 
-func mapHeaderToField(header string) string {
-	raw := strings.ToLower(strings.TrimSpace(header))
+func feldZurKopfzeile(kopf string) string {
+	roh := strings.ToLower(strings.TrimSpace(kopf))
 
 	// ⚡ Bolt: Single pass string cleaning using strings.Builder
 	// Replaces multiple strings.ReplaceAll calls to prevent unnecessary allocations
 	// when cleaning headers from spaces, underscores, dashes, and slashes.
 	var b strings.Builder
-	b.Grow(len(raw))
-	for i := 0; i < len(raw); i++ {
-		c := raw[i]
+	b.Grow(len(roh))
+	for i := 0; i < len(roh); i++ {
+		c := roh[i]
 		if c != ' ' && c != '_' && c != '-' && c != '/' {
 			b.WriteByte(c)
 		}

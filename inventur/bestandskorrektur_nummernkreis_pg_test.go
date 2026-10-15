@@ -57,11 +57,11 @@ func TestBestandskorrekturUndImportZiehenAusBarcodeSeq(t *testing.T) {
 		t.Fatalf("Handnummer %s: %v", vorweg, err)
 	}
 
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	// Bestandskorrektur: 1 vorhanden, 4 gewünscht → 3 neue.
-	if err := repo.syncBookStock(ctx, pool, titelKorrektur, 4, ""); err != nil {
-		t.Fatalf("syncBookStock: %v", err)
+	if err := repo.gleicheBestandAb(ctx, pool, titelKorrektur, 4, ""); err != nil {
+		t.Fatalf("gleicheBestandAb: %v", err)
 	}
 	pruefeNummernkreis(t, pool, titelKorrektur, 4)
 

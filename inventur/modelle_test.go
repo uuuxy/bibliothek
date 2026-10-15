@@ -10,20 +10,20 @@ import (
 
 func TestBook_JSONMarshaling(t *testing.T) {
 	lastCounted := "2023-10-27T10:00:00Z"
-	originalBook := Book{
+	originalBook := Titel{
 		ID:                      "book-123",
 		ISBN:                    "978-3-16-148410-0",
-		Title:                   "Test Book Title",
-		Author:                  "John Doe",
+		Titel:                   "Test Book Title",
+		Autor:                   "John Doe",
 		Signatur:                "Test-Sig",
 		CoverURL:                "https://example.com/cover.jpg",
-		Subject:                 "Math",
-		Track:                   "A",
-		Stock:                   10,
+		Fach:                    "Math",
+		Zweig:                   "A",
+		Bestand:                 10,
 		Verfuegbar:              8,
 		Gesamt:                  10,
-		LastCounted:             &lastCounted,
-		SortOrder:               1,
+		ZuletztGezaehlt:         &lastCounted,
+		Reihenfolge:             1,
 		Medientyp:               "Book",
 		JahrgangVon:             5,
 		JahrgangBis:             6,
@@ -36,7 +36,7 @@ func TestBook_JSONMarshaling(t *testing.T) {
 	jsonData, err := json.Marshal(originalBook)
 	require.NoError(t, err, "Should marshal Book to JSON without error")
 
-	var unmarshaledBook Book
+	var unmarshaledBook Titel
 	err = json.Unmarshal(jsonData, &unmarshaledBook)
 	require.NoError(t, err, "Should unmarshal JSON to Book without error")
 
@@ -45,5 +45,5 @@ func TestBook_JSONMarshaling(t *testing.T) {
 
 // ClassBookAssignment ist entfernt (Sweep 01.09.2026): Das Struct hatte keinen
 // einzigen produktiven Verwender — die Klassen-Buchlisten laufen über ClassBook/
-// ClassGroup (class_books_handler.go). Sein Round-Trip-Test hier hielt es nur
+// ClassGroup (klassensaetze.go). Sein Round-Trip-Test hier hielt es nur
 // künstlich am Leben.

@@ -20,7 +20,7 @@ import (
 func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	handler := &APIHandler{repo: &BookRepository{db: pool}}
+	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}}
 
 	titel := func(name, barcode string) string {
 		t.Helper()
@@ -64,7 +64,7 @@ func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	liste := func(q string) []zeile {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		handler.BearbeiteBuecherListe(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+q, nil))
+		handler.TitelListe(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+q, nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("GET /api/books?q=%s: %d %s", q, rec.Code, rec.Body.String())
 		}

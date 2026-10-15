@@ -116,11 +116,11 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 	lege("uploads/covers/abc.webp", "zwischenspeicher-inhalt")
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	handler := NewAPIHandler(APIHandlerConfig{
-		RequireViewBooks:     durchlass,
-		RequireEditBooks:     durchlass,
-		RequireDeleteBooks:   durchlass,
-		RequireAuthenticated: durchlass,
+	handler := NewTueren(TuerenKonfig{
+		VerlangeLesen:     durchlass,
+		VerlangeAendern:   durchlass,
+		VerlangeLoeschen:  durchlass,
+		VerlangeAnmeldung: durchlass,
 	})
 
 	faelle := []struct {
@@ -174,7 +174,7 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	upload := httptest.NewRecorder()
-	(&APIHandler{repo: NewBookRepository(mock)}).handleUploadCover(upload, coverUploadAnfrage(t, reihenfolgeBuchID))
+	(&Tueren{abfragen: NewTitelAbfragen(mock)}).CoverHochladen(upload, coverUploadAnfrage(t, reihenfolgeBuchID))
 	if upload.Code != http.StatusOK {
 		t.Fatalf("Upload: Status %d, erwartet 200: %s", upload.Code, upload.Body.String())
 	}
@@ -197,15 +197,15 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 			}, nil
 		},
 	}}
-	abgerufen := downloadAndSaveCoverLocally(context.Background(), fremd,
+	abgerufen := speichereCoverLokal(context.Background(), fremd,
 		"https://covers.openlibrary.org/b/id/1-L.jpg", "9783161484100")
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	handler := NewAPIHandler(APIHandlerConfig{
-		RequireViewBooks:     durchlass,
-		RequireEditBooks:     durchlass,
-		RequireDeleteBooks:   durchlass,
-		RequireAuthenticated: durchlass,
+	handler := NewTueren(TuerenKonfig{
+		VerlangeLesen:     durchlass,
+		VerlangeAendern:   durchlass,
+		VerlangeLoeschen:  durchlass,
+		VerlangeAnmeldung: durchlass,
 	})
 	for _, f := range []struct{ schreiber, adresse string }{
 		{"Upload", antwort.Data.CoverURL},
@@ -229,30 +229,30 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 
 func TestNewAPIHandler_And_ServeHTTP(t *testing.T) {
 	// Dummy configurations
-	config := APIHandlerConfig{
-		Repo:      nil,
+	config := TuerenKonfig{
+		Abfragen:  nil,
 		Metadaten: nil,
-		RequireViewBooks: func(next http.Handler) http.Handler {
+		VerlangeLesen: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Middleware", "ViewBooks")
 				// We don't call next.ServeHTTP because repo is nil and the underlying handler would panic
 				w.WriteHeader(http.StatusOK)
 			})
 		},
-		RequireEditBooks: func(next http.Handler) http.Handler {
+		VerlangeAendern: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Middleware", "EditBooks")
 				// We don't call next.ServeHTTP because repo is nil and the underlying handler would panic
 				w.WriteHeader(http.StatusOK)
 			})
 		},
-		RequireDeleteBooks: func(next http.Handler) http.Handler {
+		VerlangeLoeschen: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Middleware", "DeleteBooks")
 				w.WriteHeader(http.StatusOK)
 			})
 		},
-		RequireAuthenticated: func(next http.Handler) http.Handler {
+		VerlangeAnmeldung: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Middleware", "Authenticated")
 				// We don't call next.ServeHTTP because repo is nil and the underlying handler would panic
@@ -261,9 +261,9 @@ func TestNewAPIHandler_And_ServeHTTP(t *testing.T) {
 		},
 	}
 
-	handler := NewAPIHandler(config)
+	handler := NewTueren(config)
 
-	if handler.repo != nil {
+	if handler.abfragen != nil {
 		t.Errorf("Expected repo to be nil")
 	}
 	if handler.metadaten != nil {

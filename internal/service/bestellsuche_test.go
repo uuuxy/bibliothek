@@ -73,7 +73,7 @@ func TestFindeZumBestellen_KatalogUndDNBZusammen(t *testing.T) {
 		},
 	}
 
-	metaClient := inventur.NeuerMetadatenClient()
+	metaClient := inventur.NewMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
 	mock.ExpectQuery(`SELECT isbn_normalform\(isbn\) FROM buecher_titel`).
@@ -136,7 +136,7 @@ func TestFindeZumBestellen_NurKatalogWennDNBScheitert(t *testing.T) {
 		},
 	}
 
-	metaClient := inventur.NeuerMetadatenClient()
+	metaClient := inventur.NewMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
 	results, dnbAusfall, err := FindeZumBestellen(ctx, mock, metaClient, "TestBook")
@@ -205,7 +205,7 @@ func TestFindeZumBestellen_NurDNBWennKatalogScheitert(t *testing.T) {
 		},
 	}
 
-	metaClient := inventur.NeuerMetadatenClient()
+	metaClient := inventur.NewMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
 	mock.ExpectQuery(`SELECT isbn_normalform\(isbn\) FROM buecher_titel`).

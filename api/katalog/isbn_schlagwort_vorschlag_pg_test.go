@@ -79,7 +79,7 @@ func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	client := inventur.NeuerMetadatenClient()
+	client := inventur.NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">
@@ -131,7 +131,7 @@ func TestISBNZuTitel_NormdatenVorhandenUndNeu(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	client := inventur.NeuerMetadatenClient()
+	client := inventur.NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">

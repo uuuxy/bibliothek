@@ -96,23 +96,23 @@ var phantomBestand = map[string]int{
 	// Bestands gelöscht. Der Import meldet nur angelegte Titel und Exemplare.
 	"repository/bestandsimport.go:SetzeImportSignaturen": 1,
 	// Legt das Passbild an oder ersetzt es: Die Anweisung trifft immer genau eine Zeile.
-	"repository/leser_foto.go:SchreibeFoto":                             1,
-	"inventur/datenbank_klassen.go:AddBooksToClasses":                   1,
-	"inventur/datenbank_klassen.go:DeleteClassGroup":                    1,
-	"inventur/datenbank_klassen.go:UpdateClassBooks":                    2,
-	"inventur/datenbank_klassen.go:insertClassBookBindings":             1,
-	"inventur/db_books_create.go:legeImportExemplareAn":                 1,
-	"inventur/db_books_delete_spur.go:protokolliereGeloeschteExemplare": 1,
-	"inventur/db_books_delete_spur.go:protokolliereOffeneAusleihen":     1,
+	"repository/leser_foto.go:SchreibeFoto":                            1,
+	"inventur/datenbank_klassen.go:OrdneTitelKlassenZu":                1,
+	"inventur/datenbank_klassen.go:LoescheKlassensatzGruppe":           1,
+	"inventur/datenbank_klassen.go:AendereKlassensaetze":               2,
+	"inventur/datenbank_klassen.go:legeKlassensatzZuordnungenAn":       1,
+	"inventur/titel_anlegen.go:legeImportExemplareAn":                  1,
+	"inventur/titel_loeschen_spur.go:protokolliereGeloeschteExemplare": 1,
+	"inventur/titel_loeschen_spur.go:protokolliereOffeneAusleihen":     1,
 	// Dieselbe Bauart wie die Zeile darüber (Rasterdurchgang 06.09.2026): ein INSERT ins
 	// Protokoll je gelesener Zeile. Ein CommandTag zu prüfen hieße, einen INSERT ohne
 	// ON CONFLICT auf 1 zu vergleichen — die Fehlerrückgabe deckt den Fall schon ab.
-	"inventur/db_books_delete_spur.go:protokolliereOffeneSchaeden":          1,
+	"inventur/titel_loeschen_spur.go:protokolliereOffeneSchaeden":           1,
 	"repository/titel_loeschen_forderung.go:protokolliereOffeneForderungen": 1,
 	// Dritte Zeile derselben Bauart (Frage 12 „Gegenrichtung Schema", 06.09.2026):
 	// ein INSERT ins Protokoll je Zeile, die der CASCADE gleich nimmt.
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
-	"inventur/db_books_update.go:gleicheExemplareAn":                     1,
+	"inventur/titel_aendern.go:gleicheExemplareAn":                       1,
 	"repository/systematik_sicherung.go:registriereFach":                 2,
 	// Räumt die Fotos aller anonymisierten Schüler; null Zeilen ist der Normalfall.
 	"repository/nachtlauf.go:LoescheFotosAnonymisierterSchueler": 1,

@@ -12,7 +12,7 @@ import (
 // wissen, wie viele Mathebücher die Schule hat. Grundlage ist ausschließlich der
 // Lernmittel-Schalter (buecher_titel.ist_lernmittel, Migration 093) und das Fach
 // (buecher_titel.subject, FK auf systematik_kategorien). Zählweise wie bei den
-// Klassensätzen (GetClassGroups): gesamt = nicht ausgesondert und nicht nur bestellt;
+// Klassensätzen (LadeKlassensatzGruppen): gesamt = nicht ausgesondert und nicht nur bestellt;
 // verliehen = offene Ausleihe; verfügbar = ausleihbar, nicht ausgesondert, nicht verliehen.
 
 // FachBestand ist eine Fach-Kachel: Titel und Exemplare eines Fachs. Fach "" = ohne Fach.
@@ -28,9 +28,9 @@ type FachBestand struct {
 // die Kachel des Klassensatzes (KlassenBuchKachel) sie unverändert zeigt.
 type LernmittelTitel struct {
 	ID         string `json:"id"`
-	Title      string `json:"title"`
+	Titel      string `json:"title"`
 	Autor      string `json:"autor"`
-	Subject    string `json:"subject"`
+	Fach       string `json:"subject"`
 	CoverURL   string `json:"coverUrl"`
 	ISBN       string `json:"isbn"`
 	Gesamt     int    `json:"gesamt"`
@@ -41,7 +41,7 @@ type LernmittelTitel struct {
 	JahrgangBis int `json:"jahrgangBis"`
 	// Schulzweig (buecher_titel.track): am Schulbuch gepflegt, seit 03.09.2026 wieder in
 	// der Maske. Leer heißt „gilt für alle Zweige", nicht „unbekannt".
-	Track string `json:"track"`
+	Zweig string `json:"track"`
 	// Gezaehlt ist das Datum der letzten Zählung (buecher_titel.last_counted) als
 	// „TT.MM.JJJJ"; leer heißt „noch nie gezählt". Absprache vom 03.09.2026: Eine Bestandszahl
 	// ohne Datum sagt nicht, wie alt sie ist — im Ausdruck steht sie sonst so da, als
@@ -143,11 +143,11 @@ func lernmittelJeBuchSQL() string {
 		JOIN vertreter v ON v.buch = b.buch`
 }
 
-// GetLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Zeile
+// LadeLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Zeile
 // (Fach ""), am Ende sortiert. Gezählt wird über dieselben Zeilen wie die Liste darunter
 // (lernmittelJeBuchSQL): „Titel" sind Bücher, ein Buch in drei Auflagen zählt einmal.
-func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, f LernmittelFilter) ([]FachBestand, error) {
-	rows, err := repo.db.Query(ctx, `
+func (a *TitelAbfragen) LadeLernmittelFaecher(ctx context.Context, f LernmittelFilter) ([]FachBestand, error) {
+	zeilen, err := a.pool.Query(ctx, `
 		SELECT subject, COUNT(*) AS titel, SUM(gesamt)::int, SUM(verliehen)::int, SUM(verfuegbar)::int
 		FROM (`+lernmittelJeBuchSQL()+`) zeilen
 		GROUP BY subject
@@ -155,34 +155,34 @@ func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, f Lernmitt
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel je fach: %w", err)
 	}
-	defer rows.Close()
-	out := []FachBestand{}
-	for rows.Next() {
+	defer zeilen.Close()
+	ausgabe := []FachBestand{}
+	for zeilen.Next() {
 		var f FachBestand
-		if err := rows.Scan(&f.Fach, &f.Titel, &f.Gesamt, &f.Verliehen, &f.Verfuegbar); err != nil {
+		if err := zeilen.Scan(&f.Fach, &f.Titel, &f.Gesamt, &f.Verliehen, &f.Verfuegbar); err != nil {
 			return nil, err
 		}
-		out = append(out, f)
+		ausgabe = append(ausgabe, f)
 	}
-	return out, rows.Err()
+	return ausgabe, zeilen.Err()
 }
 
-// GetLernmittelTitel liefert die Schulbücher eines Fachs (fach "" = ohne Fach); mit
+// LadeLernmittelTitel liefert die Schulbücher eines Fachs (fach "" = ohne Fach); mit
 // alleFaecher=true alle Lernmittel, nach Fach und Titel sortiert.
-func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f LernmittelFilter) ([]LernmittelTitel, error) {
-	rows, err := repo.db.Query(ctx, lernmittelJeBuchSQL()+`
+func (a *TitelAbfragen) LadeLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f LernmittelFilter) ([]LernmittelTitel, error) {
+	zeilen, err := a.pool.Query(ctx, lernmittelJeBuchSQL()+`
 		WHERE ($4 OR v.subject = $5)
 		ORDER BY (v.subject = ''), v.subject, NULLIF(v.jahrgang_von, 0) NULLS LAST, v.titel`,
 		f.Jahrgang, f.Zweig, f.Suche, alleFaecher, fach)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel eines fachs: %w", err)
 	}
-	defer rows.Close()
-	out := []LernmittelTitel{}
-	for rows.Next() {
+	defer zeilen.Close()
+	ausgabe := []LernmittelTitel{}
+	for zeilen.Next() {
 		var t LernmittelTitel
 		var auflagen []byte
-		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Track, &t.Gezaehlt, &t.Gesamt, &t.Verliehen, &t.Verfuegbar, &auflagen); err != nil {
+		if err := zeilen.Scan(&t.ID, &t.Titel, &t.Autor, &t.Fach, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Zweig, &t.Gezaehlt, &t.Gesamt, &t.Verliehen, &t.Verfuegbar, &auflagen); err != nil {
 			return nil, err
 		}
 		if len(auflagen) > 0 {
@@ -190,7 +190,7 @@ func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string,
 				return nil, fmt.Errorf("auflagen von %s: %w", t.ID, err)
 			}
 		}
-		out = append(out, t)
+		ausgabe = append(ausgabe, t)
 	}
-	return out, rows.Err()
+	return ausgabe, zeilen.Err()
 }

@@ -25,7 +25,7 @@ type CoverDienst struct {
 func NewCoverDienst(pool db.Pool) *CoverDienst {
 	return &CoverDienst{
 		pool:    pool,
-		katalog: inventur.NeuerMetadatenClient,
+		katalog: inventur.NewMetadatenClient,
 	}
 }
 

@@ -155,7 +155,7 @@ func (t *Tueren) legeTitelAusTrefferAn(ctx context.Context, isbn string, meta *i
 // kann. Die zehn- und die dreizehnstellige Form einer ISBN sind dabei dieselbe Nummer: Der
 // Katalog führt sie dreizehnstellig.
 func (t *Tueren) ISBNZuTitel() http.HandlerFunc {
-	return t.isbnZuTitelTuer(inventur.NeuerMetadatenClient())
+	return t.isbnZuTitelTuer(inventur.NewMetadatenClient())
 }
 
 // isbnZuTitelTuer ist die Tür mit den Katalogdiensten als Parameter: Ein Test stellt die

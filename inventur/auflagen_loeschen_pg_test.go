@@ -14,7 +14,7 @@ import (
 func TestDeleteBooks_HaeltDieRegelDerAuflagen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 	for _, sql := range []string{`DELETE FROM ausleihen`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`, `DELETE FROM werke`} {
 		if _, err := pool.Exec(ctx, sql); err != nil {
 			t.Fatal(err)
@@ -46,7 +46,7 @@ func TestDeleteBooks_HaeltDieRegelDerAuflagen(t *testing.T) {
 	werkBeide, beide := buch()
 	werkEiner, einer := buch()
 
-	if err := repo.DeleteBooks(ctx, append(beide, einer[0])); err != nil {
+	if err := repo.LoescheTitel(ctx, append(beide, einer[0])); err != nil {
 		t.Fatalf("DeleteBooks: %v", err)
 	}
 	var rest []string

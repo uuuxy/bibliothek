@@ -12,27 +12,27 @@ import (
 	"bibliothek/repository"
 )
 
-// BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch. Geschrieben
+// TitelAendern verarbeitet PUT-Anfragen für ein bestehendes Buch. Geschrieben
 // werden die Felder, die der Rumpf nennt; die Maske schickt die, die sie geändert hat.
-func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWriter, anfrage *http.Request) {
-	id, ok := buchIDAusPfad(antwort, anfrage)
+func (t *Tueren) TitelAendern(antwort http.ResponseWriter, anfrage *http.Request) {
+	id, ok := titelIDAusPfad(antwort, anfrage)
 	if !ok {
 		return
 	}
 
 	eingabe, felder, fehler := leseAenderung(anfrage)
 	if fehler != nil {
-		writeError(antwort, http.StatusBadRequest, "ungültiges JSON")
+		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges JSON")
 		return
 	}
 
-	if validierungsFehler := bereinigeUndValidiereBuchEingabe(&eingabe); validierungsFehler != nil {
-		writeError(antwort, http.StatusBadRequest, validierungsFehler.Error())
+	if validierungsFehler := bereinigeTitelEingabe(&eingabe); validierungsFehler != nil {
+		schreibeFehler(antwort, http.StatusBadRequest, validierungsFehler.Error())
 		return
 	}
 	schlagworte, fehler := schlagworteAusEingabe(eingabe.Schlagworte)
 	if fehler != nil {
-		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
 
@@ -41,20 +41,20 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 	// Die Katalogdienste füllen hier nichts nach — sonst wartete das Speichern auf sie, und
 	// in der Akte stünde, was niemand eingetragen und niemand gesehen hat.
 	if slices.Contains(felder, "title") && eingabe.Titel == "" {
-		writeError(antwort, http.StatusBadRequest,
+		schreibeFehler(antwort, http.StatusBadRequest,
 			"titel darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
 		return
 	}
 
-	buch := Book{
+	buch := Titel{
 		ISBN:                    eingabe.ISBN,
-		Title:                   eingabe.Titel,
-		Author:                  eingabe.Autor,
+		Titel:                   eingabe.Titel,
+		Autor:                   eingabe.Autor,
 		CoverURL:                eingabe.CoverURL,
-		Subject:                 eingabe.Fach,
-		Track:                   eingabe.Schulzweig,
+		Fach:                    eingabe.Fach,
+		Zweig:                   eingabe.Schulzweig,
 		IstLernmittel:           eingabe.IstLernmittel,
-		LastCounted:             eingabe.ZaehlDatum,
+		ZuletztGezaehlt:         eingabe.ZaehlDatum,
 		Medientyp:               eingabe.Medientyp,
 		JahrgangVon:             eingabe.JahrgangVon,
 		JahrgangBis:             eingabe.JahrgangBis,
@@ -69,20 +69,20 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Schlagworte:             schlagworte,
 	}
 
-	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, felder, bestandsangabe(anfrage, eingabe)); fehler != nil {
+	if fehler := t.abfragen.AendereTitel(anfrage.Context(), id, buch, felder, bestandsangabe(anfrage, eingabe)); fehler != nil {
 		antworteAufAenderungsfehler(antwort, id, fehler)
 		return
 	}
 
 	buch.ID = id
-	writeJSON(antwort, http.StatusOK, map[string]any{"message": "buch aktualisiert", "data": handler.gespeichert(anfrage.Context(), buch)})
+	schreibeJSON(antwort, http.StatusOK, map[string]any{"message": "buch aktualisiert", "data": t.gespeichert(anfrage.Context(), buch)})
 }
 
 // leseAenderung liest den Rumpf einer Änderung: die Werte und die Namen der Felder, die er
 // nennt. Ein Feld, das fehlt, bleibt am Titel, wie es ist. Groß- und Kleinschreibung der
-// Namen zählt nicht, wie beim Dekodieren in BuchEingabe.
-func leseAenderung(anfrage *http.Request) (BuchEingabe, []string, error) {
-	var eingabe BuchEingabe
+// Namen zählt nicht, wie beim Dekodieren in TitelEingabe.
+func leseAenderung(anfrage *http.Request) (TitelEingabe, []string, error) {
+	var eingabe TitelEingabe
 	var roh json.RawMessage
 	var genannt map[string]json.RawMessage
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&roh); fehler != nil {
@@ -110,49 +110,49 @@ func leseAenderung(anfrage *http.Request) (BuchEingabe, []string, error) {
 // ISBN, veralteter Bestand, unbekannter Titel, geleerter Autor, ISBN-Format, halbe Spanne,
 // Mehrjahresband ohne Spanne, kleinerer Bestand ohne Sitzung; alles andere 500.
 func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler error) {
-	if errors.Is(fehler, ErrDuplicateISBN) {
+	if errors.Is(fehler, ErrISBNDoppelt) {
 		schreibeDubletteISBN(antwort, fehler)
 		return
 	}
 	if errors.Is(fehler, errMehrjahresband) || errors.Is(fehler, errJahrgangsSpanne) {
-		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
 	var veraltet *BestandVeraltet
 	if errors.As(fehler, &veraltet) {
 		// Mit dem Stand in der Antwort stellt die Maske ihr Feld nach, ohne dass die
 		// übrigen Eingaben verloren gehen.
-		writeJSON(antwort, http.StatusConflict, map[string]any{
+		schreibeJSON(antwort, http.StatusConflict, map[string]any{
 			"error":   veraltet.Meldung(),
 			"bestand": veraltet.Aktuell,
 		})
 		return
 	}
-	if errors.Is(fehler, ErrBookNotFound) {
-		writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
+	if errors.Is(fehler, ErrTitelNichtGefunden) {
+		schreibeFehler(antwort, http.StatusNotFound, "Buch nicht gefunden")
 		return
 	}
 	if errors.Is(fehler, ErrAutorGeleert) {
-		writeError(antwort, http.StatusBadRequest,
+		schreibeFehler(antwort, http.StatusBadRequest,
 			"autor darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
 		return
 	}
 	if errors.Is(fehler, ErrISBNFormat) {
-		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
+		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
 		return
 	}
 	if errors.Is(fehler, repository.ErrAussonderungOhneBearbeiter) {
-		writeError(antwort, http.StatusUnauthorized, "nicht angemeldet")
+		schreibeFehler(antwort, http.StatusUnauthorized, "nicht angemeldet")
 		return
 	}
 	log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)
-	writeError(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
+	schreibeFehler(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
 }
 
 // bestandsangabe liest aus der Eingabe, was sie zum Bestand sagt. Ohne das Feld „stock" sagt
 // sie nichts (nil), und die Exemplare bleiben unangetastet. Wer speichert, nennt die Sitzung
 // der Anfrage; ohne sie lehnt der Schreibpfad einen kleineren Bestand ab.
-func bestandsangabe(anfrage *http.Request, eingabe BuchEingabe) *Bestandsangabe {
+func bestandsangabe(anfrage *http.Request, eingabe TitelEingabe) *Bestandsangabe {
 	if eingabe.Bestand == nil {
 		return nil
 	}
@@ -163,11 +163,11 @@ func bestandsangabe(anfrage *http.Request, eingabe BuchEingabe) *Bestandsangabe 
 	return angabe
 }
 
-// bereinigeUndValidiereBuchEingabe trimmt Leerzeichen der Eingabefelder und prüft auf Gültigkeit.
+// bereinigeTitelEingabe trimmt Leerzeichen der Eingabefelder und prüft auf Gültigkeit.
 // Es gibt einen Fehler zurück, der als HTTP-Fehlermeldung an den Client gesendet werden kann.
 // ISBN und Mehrjahresband prüft sie nicht: Was sich ändert und was am Titel steht, weiß erst
 // der Schreibpfad, der den gespeicherten Titel liest (pruefeAenderung).
-func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
+func bereinigeTitelEingabe(eingabe *TitelEingabe) error {
 	eingabe.ISBN = strings.TrimSpace(eingabe.ISBN)
 	eingabe.Titel = strings.TrimSpace(eingabe.Titel)
 	eingabe.Autor = strings.TrimSpace(eingabe.Autor)

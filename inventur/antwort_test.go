@@ -12,7 +12,7 @@ func TestWriteJSON(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		payload := map[string]string{"message": "success"}
 
-		writeJSON(recorder, http.StatusOK, payload)
+		schreibeJSON(recorder, http.StatusOK, payload)
 
 		if recorder.Code != http.StatusOK {
 			t.Errorf("expected status %d, got %d", http.StatusOK, recorder.Code)
@@ -37,7 +37,7 @@ func TestWriteJSON(t *testing.T) {
 	t.Run("NilPayload", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
-		writeJSON(recorder, http.StatusNoContent, nil)
+		schreibeJSON(recorder, http.StatusNoContent, nil)
 
 		if recorder.Code != http.StatusNoContent {
 			t.Errorf("expected status %d, got %d", http.StatusNoContent, recorder.Code)
@@ -55,7 +55,7 @@ func TestWriteJSON(t *testing.T) {
 		payload := make(chan int)
 
 		// This should not panic
-		writeJSON(recorder, http.StatusInternalServerError, payload)
+		schreibeJSON(recorder, http.StatusInternalServerError, payload)
 
 		if recorder.Code != http.StatusInternalServerError {
 			t.Errorf("expected status %d, got %d", http.StatusInternalServerError, recorder.Code)

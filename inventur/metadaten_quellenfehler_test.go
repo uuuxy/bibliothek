@@ -59,7 +59,7 @@ func TestHoleInhalt_KaputteQuelleIstNichtLeer(t *testing.T) {
 // wurden — sonst wäre auch ein Abbruch nach der ersten Quelle grün.)
 func TestAufloeseCover_AlleQuellenScheitern(t *testing.T) {
 	var gefragt []string
-	client := NeuerMetadatenClient()
+	client := NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: &mockTransport{
 		roundTripFunc: func(req *http.Request) (*http.Response, error) {
 			gefragt = append(gefragt, req.URL.Host)
@@ -93,7 +93,7 @@ func TestAufloeseCover_FragtMitDerNormalform(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			var adressen []string
-			client := NeuerMetadatenClient()
+			client := NewMetadatenClient()
 			client.SetzeHTTPClientFuerTest(&http.Client{Transport: &mockTransport{
 				roundTripFunc: func(req *http.Request) (*http.Response, error) {
 					adressen = append(adressen, req.URL.String())

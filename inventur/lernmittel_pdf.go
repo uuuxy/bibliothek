@@ -93,14 +93,14 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 	// findet man das eigene Fach so schneller. Die Abfrage liefert nach Fach sortiert.
 	letztesFach := "\x00"
 	for _, t := range titel {
-		if fachName == "" && t.Subject != letztesFach {
-			letztesFach = t.Subject
+		if fachName == "" && t.Fach != letztesFach {
+			letztesFach = t.Fach
 			// Der Trenner selbst darf nicht als letzte Zeile eines Blattes stehen: eine
 			// Fach-Überschrift ohne ein einziges Buch darunter ist keine Auskunft.
 			if pdf.GetY()+7+zeilenH > randUnten {
 				pdf.AddPage()
 			}
-			zeichneFachTrenner(pdf, tr, fachAnzeige(t.Subject))
+			zeichneFachTrenner(pdf, tr, fachAnzeige(t.Fach))
 		}
 		zeichneSchulbuchZeile(pdf, tr, t, breiteTitel, mitGezaehlt, &fehlendeCover)
 	}
@@ -117,11 +117,11 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 		pdf.Cell(0, 6, tr("Keine Schulbücher in dieser Auswahl."))
 	}
 
-	var out bytes.Buffer
-	if err := pdf.Output(&out); err != nil {
+	var ausgabe bytes.Buffer
+	if err := pdf.Output(&ausgabe); err != nil {
 		return nil, fmt.Errorf("schulbuecher-pdf: %w", err)
 	}
-	return out.Bytes(), nil
+	return ausgabe.Bytes(), nil
 }
 
 // hatZaehlung sagt, ob in der Auswahl mindestens ein Titel gezählt wurde.
@@ -193,7 +193,7 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 	pdf.CellFormat(spAutor, zeilenH, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Autor), spAutor)), "1", 0, "L", false, 0, "")
 	pdf.CellFormat(spISBN, zeilenH, tr(t.ISBN), "1", 0, "L", false, 0, "")
 	pdf.CellFormat(spJg, zeilenH, tr(jahrgangText(t)), "1", 0, "C", false, 0, "")
-	pdf.CellFormat(spZweig, zeilenH, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Track), spZweig)), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(spZweig, zeilenH, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Zweig), spZweig)), "1", 0, "L", false, 0, "")
 	if mitGezaehlt {
 		pdf.CellFormat(spGezaehlt, zeilenH, tr(t.Gezaehlt), "1", 0, "C", false, 0, "")
 	}
@@ -225,7 +225,7 @@ func fachAnzeige(fach string) string {
 // bestehen — dieselben Worte wie auf dem Bildschirm. Die Zelle behält ihre Höhe: Wüchse die
 // Zeile, stimmte der Umbruch vor dem Cover nicht mehr (zeichneSchulbuchZeile).
 func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breite float64) {
-	titel := pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Title), breite)
+	titel := pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Titel), breite)
 	if len(t.AuflagenBestand) < 2 {
 		pdf.CellFormat(breite, zeilenH, tr(titel), "1", 0, "L", false, 0, "")
 		return
@@ -271,12 +271,12 @@ func auflagenAufschluesselung(auflagen []AuflageImBestand) string {
 }
 
 // kuerze kürzt auf eine Zahl von Zeichen, für den mehrzeiligen Text unter dem Titel.
-func kuerze(s string, max int) string {
+func kuerze(s string, grenze int) string {
 	r := []rune(strings.TrimSpace(s))
-	if len(r) <= max {
+	if len(r) <= grenze {
 		return string(r)
 	}
-	return string(r[:max-1]) + "…"
+	return string(r[:grenze-1]) + "…"
 }
 
 // dateinamenTeil macht aus einem Fachnamen einen Dateinamen-Bestandteil.

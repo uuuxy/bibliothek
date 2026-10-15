@@ -63,13 +63,13 @@ func TestTitelliste_StehtNachTitel(t *testing.T) {
 	}
 
 	durch := func(h http.Handler) http.Handler { return h }
-	handler := NewAPIHandler(APIHandlerConfig{
-		Repo:                 NewBookRepository(pool),
-		Metadaten:            &MetadatenClient{httpClient: &http.Client{}},
-		RequireViewBooks:     durch,
-		RequireEditBooks:     durch,
-		RequireDeleteBooks:   durch,
-		RequireAuthenticated: durch,
+	handler := NewTueren(TuerenKonfig{
+		Abfragen:          NewTitelAbfragen(pool),
+		Metadaten:         &MetadatenClient{httpClient: &http.Client{}},
+		VerlangeLesen:     durch,
+		VerlangeAendern:   durch,
+		VerlangeLoeschen:  durch,
+		VerlangeAnmeldung: durch,
 	})
 
 	rec := httptest.NewRecorder()

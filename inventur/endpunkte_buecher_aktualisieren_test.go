@@ -29,7 +29,7 @@ func TestBuchEingabeDecodesAlleFelder(t *testing.T) {
 		"erscheinungsjahr": 2024
 	}`
 
-	var eingabe BuchEingabe
+	var eingabe TitelEingabe
 	if err := json.NewDecoder(strings.NewReader(body)).Decode(&eingabe); err != nil {
 		t.Fatalf("Decode fehlgeschlagen: %v", err)
 	}
@@ -54,14 +54,14 @@ func TestBuchEingabeDecodesAlleFelder(t *testing.T) {
 func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 	tests := []struct {
 		name        string
-		eingabe     BuchEingabe
+		eingabe     TitelEingabe
 		wantErr     bool
 		errMsg      string
-		wantEingabe *BuchEingabe
+		wantEingabe *TitelEingabe
 	}{
 		{
 			name: "Valid input",
-			eingabe: BuchEingabe{
+			eingabe: TitelEingabe{
 				ISBN:    "978-3-16-148410-0",
 				Bestand: zeigerAuf(10),
 				Titel:   " Test Titel ",
@@ -72,7 +72,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		// Titel ohne ISBN oder mit einer Nummer, die keine ISBN ist, bleibt speicherbar.
 		{
 			name: "Ohne ISBN",
-			eingabe: BuchEingabe{
+			eingabe: TitelEingabe{
 				ISBN:    "",
 				Bestand: zeigerAuf(10),
 			},
@@ -80,7 +80,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Nummer ohne ISBN-Form",
-			eingabe: BuchEingabe{
+			eingabe: TitelEingabe{
 				ISBN:    "123",
 				Bestand: zeigerAuf(10),
 			},
@@ -88,7 +88,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Negative stock",
-			eingabe: BuchEingabe{
+			eingabe: TitelEingabe{
 				ISBN:    "978-3-16-148410-0",
 				Bestand: zeigerAuf(-1),
 			},
@@ -99,7 +99,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		// kam eine 500 „buch konnte nicht aktualisiert werden", ohne zu sagen, was erlaubt ist.
 		{
 			name: "Negativer Listenpreis",
-			eingabe: BuchEingabe{
+			eingabe: TitelEingabe{
 				ISBN:        "978-3-16-148410-0",
 				Listenpreis: zeigerAufPreis(-0.01),
 			},
@@ -108,7 +108,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Listenpreis 0 ist erlaubt",
-			eingabe: BuchEingabe{
+			eingabe: TitelEingabe{
 				ISBN:        "978-3-16-148410-0",
 				Listenpreis: zeigerAufPreis(0),
 			},
@@ -116,7 +116,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Trims spaces from fields",
-			eingabe: BuchEingabe{
+			eingabe: TitelEingabe{
 				ISBN:       "  978-3-16-148410-0  ",
 				Titel:      "  Titel  ",
 				Autor:      "  Autor  ",
@@ -128,7 +128,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 				Verlag:     "  Verlag  ",
 			},
 			wantErr: false,
-			wantEingabe: &BuchEingabe{
+			wantEingabe: &TitelEingabe{
 				ISBN:       "978-3-16-148410-0",
 				Titel:      "Titel",
 				Autor:      "Autor",
@@ -144,7 +144,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := bereinigeUndValidiereBuchEingabe(&tt.eingabe)
+			err := bereinigeTitelEingabe(&tt.eingabe)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bereinigeUndValidiereBuchEingabe() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -159,7 +159,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 	}
 }
 
-// zeigerAuf macht aus einer geschriebenen Zahl den Zeiger, den BuchEingabe.Bestand
+// zeigerAuf macht aus einer geschriebenen Zahl den Zeiger, den TitelEingabe.Bestand
 // verlangt — "nicht mitgeschickt" ist dort ein eigener Fall (nil).
 func zeigerAuf(n int) *int { return &n }
 
@@ -176,7 +176,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		}
 		defer mock.Close()
 
-		// Kein einziger syncBookStock-Aufruf darf folgen: Das Feld "stock" fehlt im Rumpf.
+		// Kein einziger gleicheBestandAb-Aufruf darf folgen: Das Feld "stock" fehlt im Rumpf.
 		erwarteFachBekannt(mock, "Mathe")
 		mock.ExpectBegin()
 		beliebig := make([]any, 21) // eine Stelle je Spalte, die Kennung und die genannten Felder
@@ -188,7 +188,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectCommit()
 
-		handler := &APIHandler{repo: NewBookRepository(mock), metadaten: stummerMetadatenClient()}
+		handler := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"Titel","author":"Autor","subject":"Mathe"}`
 		w := ruf(t, handler, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
@@ -207,7 +207,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		}
 		defer mock.Close()
 
-		handler := &APIHandler{repo: NewBookRepository(mock), metadaten: stummerMetadatenClient()}
+		handler := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"","author":"Autor","subject":"Mathe"}`
 		w := ruf(t, handler, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
@@ -258,7 +258,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 				mock.ExpectCommit()
 			}
 
-			handler := &APIHandler{repo: NewBookRepository(mock), metadaten: stummerMetadatenClient()}
+			handler := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
 			w := ruf(t, handler, id, `{"isbn":"9783161484100","title":"Titel","author":"","subject":"Mathe"}`)
 
 			if w.Code != fall.status {
@@ -276,13 +276,13 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 
 // ruf schickt einen PUT an den Aktualisieren-Handler. Den Platzhalter {id} füllt im
 // Betrieb der Mux (api_routen.go).
-func ruf(t *testing.T, handler *APIHandler, id, rumpf string) *httptest.ResponseRecorder {
+func ruf(t *testing.T, handler *Tueren, id, rumpf string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPut, "/api/books/"+id, strings.NewReader(rumpf))
 	req.SetPathValue("id", id)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	handler.BearbeiteBuchAktualisieren(w, req)
+	handler.TitelAendern(w, req)
 	return w
 }
 

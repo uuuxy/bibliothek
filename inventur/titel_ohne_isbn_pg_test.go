@@ -32,7 +32,7 @@ const (
 
 type ohneISBNProbe struct {
 	t       *testing.T
-	handler *APIHandler
+	handler *Tueren
 	sql     func(abfrage string, werte ...any) string
 }
 
@@ -54,13 +54,13 @@ func neueOhneISBNProbe(t *testing.T) *ohneISBNProbe {
 	durchlass := func(next http.Handler) http.Handler { return next }
 	return &ohneISBNProbe{
 		t: t,
-		handler: NewAPIHandler(APIHandlerConfig{
-			Repo:                 NewBookRepository(pool),
-			Metadaten:            offlineMetadatenClient(),
-			RequireViewBooks:     durchlass,
-			RequireEditBooks:     durchlass,
-			RequireDeleteBooks:   durchlass,
-			RequireAuthenticated: durchlass,
+		handler: NewTueren(TuerenKonfig{
+			Abfragen:          NewTitelAbfragen(pool),
+			Metadaten:         offlineMetadatenClient(),
+			VerlangeLesen:     durchlass,
+			VerlangeAendern:   durchlass,
+			VerlangeLoeschen:  durchlass,
+			VerlangeAnmeldung: durchlass,
 		}),
 		sql: func(abfrage string, werte ...any) string {
 			t.Helper()

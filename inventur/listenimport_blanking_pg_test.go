@@ -20,19 +20,19 @@ import (
 func TestListenimport_UeberschreibtVorhandeneStammdatenNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewTitelAbfragen(pool)
 
 	wege := map[string]func(isbn string) error{
-		"UpsertBooksBatch": func(isbn string) error {
-			_, err := repo.UpsertBooksBatch(ctx, []Book{{ISBN: isbn, Stock: 2}})
+		"SchreibeTitelStapel": func(isbn string) error {
+			_, err := repo.SchreibeTitelStapel(ctx, []Titel{{ISBN: isbn, Bestand: 2}})
 			return err
 		},
 		"UpsertBook (Einzel-Rückfall)": func(isbn string) error {
-			_, err := repo.UpsertBook(ctx, Book{ISBN: isbn, Stock: 2})
+			_, err := repo.SchreibeTitel(ctx, Titel{ISBN: isbn, Bestand: 2})
 			return err
 		},
 	}
-	isbns := map[string]string{"UpsertBooksBatch": "978-9-99-300000-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-300000-2"}
+	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300000-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-300000-2"}
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]

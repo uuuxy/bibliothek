@@ -28,7 +28,7 @@ import (
 // mit `err == nil &&` binden.
 //
 // Sieht nicht: einen Nullwert, der erst in einer späteren Anweisung geprüft wird, und
-// „keine Zeile" hinter einem eigenen Sentinel (ErrBookNotFound).
+// „keine Zeile" hinter einem eigenen Sentinel (ErrTitelNichtGefunden).
 
 func ohneKlammern(e ast.Expr) ast.Expr {
 	for {

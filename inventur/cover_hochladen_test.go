@@ -60,7 +60,7 @@ func createMultipartRequest(t *testing.T, fieldName, fileName, format string, da
 func TestProcessUploadedImage(t *testing.T) {
 	t.Run("Valid JPEG", func(t *testing.T) {
 		imgData := createDummyImage("jpeg", 100, 150)
-		result, ext, err := processUploadedImage(imgData, "test-id")
+		result, ext, err := verarbeiteHochgeladenesBild(imgData, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -74,7 +74,7 @@ func TestProcessUploadedImage(t *testing.T) {
 
 	t.Run("Valid PNG", func(t *testing.T) {
 		imgData := createDummyImage("png", 100, 150)
-		result, ext, err := processUploadedImage(imgData, "test-id")
+		result, ext, err := verarbeiteHochgeladenesBild(imgData, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -88,7 +88,7 @@ func TestProcessUploadedImage(t *testing.T) {
 
 	t.Run("Invalid Format", func(t *testing.T) {
 		imgData := []byte("not an image")
-		_, _, err := processUploadedImage(imgData, "test-id")
+		_, _, err := verarbeiteHochgeladenesBild(imgData, "test-id")
 		if err == nil {
 			t.Fatal("expected error for invalid image data, got nil")
 		}
@@ -96,7 +96,7 @@ func TestProcessUploadedImage(t *testing.T) {
 
 	t.Run("Resize Large Image", func(t *testing.T) {
 		imgData := createDummyImage("jpeg", 1200, 1800)
-		result, ext, err := processUploadedImage(imgData, "test-id")
+		result, ext, err := verarbeiteHochgeladenesBild(imgData, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -125,7 +125,7 @@ func TestReadCoverUpload(t *testing.T) {
 		req := createMultipartRequest(t, "cover", "test.jpg", "jpeg", imgData)
 		w := httptest.NewRecorder()
 
-		data, ok := readCoverUpload(w, req, "123")
+		data, ok := leseCoverUpload(w, req, "123")
 		if !ok {
 			t.Fatal("readCoverUpload() failed unexpectedly")
 		}
@@ -138,7 +138,7 @@ func TestReadCoverUpload(t *testing.T) {
 		req := createMultipartRequest(t, "wrong_field", "test.jpg", "jpeg", imgData)
 		w := httptest.NewRecorder()
 
-		_, ok := readCoverUpload(w, req, "123")
+		_, ok := leseCoverUpload(w, req, "123")
 		if ok {
 			t.Error("expected readCoverUpload() to fail with wrong field name")
 		}
@@ -151,7 +151,7 @@ func TestReadCoverUpload(t *testing.T) {
 		req := createMultipartRequest(t, "cover", "test.txt", "txt", imgData)
 		w := httptest.NewRecorder()
 
-		_, ok := readCoverUpload(w, req, "123")
+		_, ok := leseCoverUpload(w, req, "123")
 		if ok {
 			t.Error("expected readCoverUpload() to fail with invalid extension")
 		}
@@ -164,7 +164,7 @@ func TestReadCoverUpload(t *testing.T) {
 		req := createMultipartRequest(t, "cover", "test.jpg", "jpeg", []byte{})
 		w := httptest.NewRecorder()
 
-		_, ok := readCoverUpload(w, req, "123")
+		_, ok := leseCoverUpload(w, req, "123")
 		if ok {
 			t.Error("expected readCoverUpload() to fail with empty file")
 		}
@@ -186,7 +186,7 @@ func TestSaveCoverFile(t *testing.T) {
 		imgData := createDummyImage("jpeg", 100, 100)
 		id := "test-id"
 
-		url, ok := saveCoverFile(w, id, imgData, ".jpg")
+		url, ok := speichereHochgeladenesCover(w, id, imgData, ".jpg")
 
 		if !ok {
 			t.Fatalf("saveCoverFile() failed unexpectedly. Status: %d, Body: %s", w.Code, w.Body.String())
@@ -218,7 +218,7 @@ func TestSaveCoverFile(t *testing.T) {
 		// This should be stripped to "evil" or similar by filepath.Base in the handler
 		id := "../../../etc/passwd"
 
-		url, ok := saveCoverFile(w, id, imgData, ".jpg")
+		url, ok := speichereHochgeladenesCover(w, id, imgData, ".jpg")
 
 		if !ok {
 			t.Fatalf("saveCoverFile() failed unexpectedly")
@@ -336,8 +336,8 @@ func TestHandleUploadCover(t *testing.T) {
 			}
 			defer mock.Close()
 
-			repo := NewBookRepository(mock)
-			handler := &APIHandler{repo: repo}
+			repo := NewTitelAbfragen(mock)
+			handler := &Tueren{abfragen: repo}
 
 			tt.setupMock(mock)
 
@@ -366,7 +366,7 @@ func TestHandleUploadCover(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			handler.handleUploadCover(w, req)
+			handler.CoverHochladen(w, req)
 
 			if w.Code != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d. Body: %s", tt.expectedStatus, w.Code, w.Body.String())

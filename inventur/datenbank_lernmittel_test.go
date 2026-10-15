@@ -25,7 +25,7 @@ var (
 
 // lernmittelAttrappe liefert eine Datenbank-Attrappe und prüft am Ende, dass jede erwartete
 // Abfrage kam.
-func lernmittelAttrappe(t *testing.T) (pgxmock.PgxPoolIface, *BookRepository) {
+func lernmittelAttrappe(t *testing.T) (pgxmock.PgxPoolIface, *TitelAbfragen) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
@@ -33,7 +33,7 @@ func lernmittelAttrappe(t *testing.T) (pgxmock.PgxPoolIface, *BookRepository) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 		mock.Close()
 	})
-	return mock, NewBookRepository(mock)
+	return mock, NewTitelAbfragen(mock)
 }
 
 func TestGetLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
@@ -44,7 +44,7 @@ func TestGetLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 		mock, repo := lernmittelAttrappe(t)
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "").WillReturnError(dbFehler)
 
-		faecher, err := repo.GetLernmittelFaecher(context.Background(), LernmittelFilter{})
+		faecher, err := repo.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
 		assert.ErrorIs(t, err, dbFehler)
 		assert.Nil(t, faecher)
 	})
@@ -54,7 +54,7 @@ func TestGetLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "").
 			WillReturnRows(pgxmock.NewRows(lernmittelFachSpalten).AddRow("Mathematik", "zwei", 3, 1, 2))
 
-		faecher, err := repo.GetLernmittelFaecher(context.Background(), LernmittelFilter{})
+		faecher, err := repo.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
 		assert.Error(t, err)
 		assert.Nil(t, faecher)
 	})
@@ -66,7 +66,7 @@ func TestGetLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows(lernmittelFachSpalten).
 				AddRow("Mathematik", 2, 3, 1, 2).RowError(1, dbFehler))
 
-		_, err := repo.GetLernmittelFaecher(context.Background(), LernmittelFilter{})
+		_, err := repo.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
 		assert.ErrorIs(t, err, dbFehler)
 	})
 }
@@ -85,7 +85,7 @@ func TestGetLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock, repo := lernmittelAttrappe(t)
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").WillReturnError(dbFehler)
 
-		titel, err := repo.GetLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
+		titel, err := repo.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
 		assert.ErrorIs(t, err, dbFehler)
 		assert.Nil(t, titel)
 	})
@@ -94,7 +94,7 @@ func TestGetLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock, repo := lernmittelAttrappe(t)
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").WillReturnRows(zeile("fünf", nil))
 
-		titel, err := repo.GetLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
+		titel, err := repo.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
 		assert.Error(t, err)
 		assert.Nil(t, titel)
 	})
@@ -104,7 +104,7 @@ func TestGetLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").
 			WillReturnRows(zeile(5, []byte(`kein json`)))
 
-		titel, err := repo.GetLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
+		titel, err := repo.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
 		assert.ErrorContains(t, err, "auflagen von titel-1")
 		assert.Nil(t, titel)
 	})
@@ -114,7 +114,7 @@ func TestGetLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").
 			WillReturnRows(zeile(5, nil).RowError(1, dbFehler))
 
-		_, err := repo.GetLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
+		_, err := repo.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
 		assert.ErrorIs(t, err, dbFehler)
 	})
 }
