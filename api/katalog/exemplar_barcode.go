@@ -61,7 +61,7 @@ func (t *Tueren) ExemplarBarcodeSetzen(katalogAbfragen repository.KatalogAbfrage
 func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, katalogAbfragen repository.KatalogAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Exemplars fehlt", nil)
 		return
 	}
 
@@ -71,7 +71,7 @@ func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, ka
 	}
 
 	if req.Barcode == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("barcode cannot be empty"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Barcode darf nicht leer sein", nil)
 		return
 	}
 
@@ -85,11 +85,11 @@ func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, ka
 		// Eine Nummer ist entweder Buch oder Ausweis: Die Theke löst einen Scan zuerst als Buch
 		// auf; trüge ein Buch die Nummer eines Ausweises, lüde dieser Ausweis das Buch.
 		if repository.IstNummerBuchOderAusweisKollision(err) {
-			apierrors.AntworteFehler(w, http.StatusConflict, errors.New("diese Nummer ist der Ausweis eines Lesers und kann kein Buch-Barcode sein"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Nummer ist der Ausweis eines Lesers und kann kein Barcode eines Buchs sein", nil)
 			return
 		}
 		if repository.IstExemplarBarcodeVergeben(err) {
-			apierrors.AntworteFehler(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diesen Barcode trägt bereits ein anderes Exemplar", nil)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

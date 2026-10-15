@@ -142,7 +142,7 @@ func (t *Tueren) SchlagwortFilterSetzen() http.HandlerFunc {
 			return nil
 		}
 		if req.IstFilter == nil {
-			return apierrors.BadRequest("ist_filter fehlt", errors.New("feld ist_filter fehlt"))
+			return apierrors.BadRequest("Die Angabe ist_filter fehlt", errors.New("feld ist_filter fehlt"))
 		}
 		if err := repository.SetzeSchlagwortFilter(r.Context(), t.DB.Pool, id, *req.IstFilter); err != nil {
 			return schlagwortPflegeFehler(err)
@@ -245,7 +245,7 @@ func (t *Tueren) SchlagworteLoeschen() http.HandlerFunc {
 		geloescht, err := repository.LoescheSchlagworte(r.Context(), t.DB.Pool, req.IDs)
 		if errors.Is(err, repository.ErrSchlagwortNichtGefunden) {
 			// Alle oder keins: Der Satz sagt, dass auch die übrigen noch da sind.
-			return apierrors.NotFound("Ein gewähltes Schlagwort gibt es nicht mehr — gelöscht wurde nichts", err)
+			return apierrors.NotFound("Ein gewähltes Schlagwort gibt es nicht mehr, gelöscht wurde nichts", err)
 		}
 		if err != nil {
 			return schlagwortPflegeFehler(err)
@@ -274,14 +274,14 @@ func geloeschteWoerter(namen []string) []string {
 
 // alteAlsVerweisFehlt ist die Antwort auf einen Körper ohne alte_als_verweis.
 func alteAlsVerweisFehlt() error {
-	return apierrors.BadRequest("alte_als_verweis fehlt", errors.New("feld alte_als_verweis fehlt"))
+	return apierrors.BadRequest("Die Angabe alte_als_verweis fehlt", errors.New("feld alte_als_verweis fehlt"))
 }
 
 // schlagwortIDAusPfad prüft die Kennung, bevor irgendetwas die Datenbank fragt.
 func schlagwortIDAusPfad(r *http.Request) (string, error) {
 	id := r.PathValue("id")
 	if !kennung.IstUUID(id) {
-		return "", apierrors.BadRequest("ungültige Schlagwort-ID", errors.New("keine UUID"))
+		return "", apierrors.BadRequest("Die Kennung des Schlagworts ist ungültig", errors.New("keine UUID"))
 	}
 	return id, nil
 }

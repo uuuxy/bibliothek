@@ -53,7 +53,7 @@ func (t *Tueren) ExemplarStandortSetzen() http.HandlerFunc {
 			return apierrors.BadRequest(err.Error(), err)
 		case errors.Is(err, repository.ErrExemplarNichtGefunden):
 			// Alle oder keins: Der Satz sagt, dass auch die übrigen unverändert sind.
-			return apierrors.NotFound("Ein gewähltes Exemplar gibt es nicht mehr — geändert wurde nichts. Bitte die Seite neu laden.", err)
+			return apierrors.NotFound("Ein gewähltes Exemplar gibt es nicht mehr, geändert wurde nichts. Bitte die Seite neu laden.", err)
 		case err != nil:
 			return apierrors.Internal("Der Standort konnte nicht gespeichert werden", err)
 		}

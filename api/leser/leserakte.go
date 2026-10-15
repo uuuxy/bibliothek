@@ -97,7 +97,7 @@ func (t *Tueren) Leserakte(
 func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfragen repository.LeserAbfragen) error {
 	id := r.PathValue("id")
 	if id == "" {
-		return apierrors.BadRequest("missing student ID parameter", nil)
+		return apierrors.BadRequest("Die Kennung des Lesers fehlt", nil)
 	}
 
 	ctx := r.Context()
@@ -112,7 +112,7 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 		return apierrors.Internal("Fehler beim Laden des Lesers", err)
 	}
 	if leser == nil {
-		return apierrors.NotFound("student record not found", nil)
+		return apierrors.NotFound("Leser nicht gefunden", nil)
 	}
 
 	// 2. Die Adresse des Fotos, falls ein verschlüsseltes Foto in der Datenbank liegt.

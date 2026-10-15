@@ -50,7 +50,7 @@ func (t *Tueren) BestellungBestaetigen() http.HandlerFunc {
 func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing bestellung id"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Bestellung fehlt", nil)
 		return
 	}
 
@@ -59,11 +59,11 @@ func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Größe der Etiketten muss klein oder groß sein", nil)
 		return
 	}
 	if !pdf.IstBekanntesEtikettFormat(req.EtikettenFormat) {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Unbekanntes Format der Etiketten", nil)
 		return
 	}
 
@@ -72,7 +72,7 @@ func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 	imBestaetigungsweg, err := t.bestellungImBestaetigungsweg(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Bestellung nicht gefunden", nil)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -80,7 +80,7 @@ func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !imBestaetigungsweg {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("diese bestellung hat keinen bestaetigungsschritt"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Diese Bestellung hat keinen Bestätigungsschritt", nil)
 		return
 	}
 
@@ -93,7 +93,7 @@ func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if bereits {
-		apierrors.AntworteFehler(w, http.StatusConflict, errors.New("bestellung ist bereits bestaetigt"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Die Bestellung ist bereits bestätigt", nil)
 		return
 	}
 

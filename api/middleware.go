@@ -4,7 +4,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -250,7 +249,7 @@ func uuidPfadMiddleware(next http.Handler) http.Handler {
 		for _, name := range uuidPfadParameter {
 			wert := r.PathValue(name)
 			if wert != "" && !kennung.IstUUID(wert) {
-				apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiges UUID Format im Pfadparameter"))
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung in der Adresse ist ungültig", nil)
 				return
 			}
 		}

@@ -459,7 +459,7 @@ func (t *Tueren) verwerfeLMFPlan(r *http.Request) (int64, error) {
 	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
 	stand, err := abfragen.LadeNeuestenPlan(r.Context(), art)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, apierrors.NotFound("kein Plan vorhanden", pgx.ErrNoRows)
+		return 0, apierrors.NotFound("Kein Plan vorhanden", pgx.ErrNoRows)
 	}
 	if err != nil {
 		return 0, apierrors.Internal("LMF-Plan laden", err)

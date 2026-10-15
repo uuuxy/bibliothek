@@ -8,7 +8,6 @@ package lernmittel
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -158,7 +157,7 @@ func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 			return
 		}
 		if len(termine) == 0 {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("der LMF-Plan ist leer"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Der LMF-Plan ist leer", nil)
 			return
 		}
 		abschnitte, err := lmfPlanAbschnitte(termine, eingang)

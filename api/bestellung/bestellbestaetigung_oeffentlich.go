@@ -85,7 +85,7 @@ func (t *Tueren) bestellungPerToken(ctx context.Context, token string) (string, 
 // und nie existiert sehen von außen gleich aus.
 func sendeTokenFehler(w http.ResponseWriter, err error) {
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("dieser Link ist nicht (mehr) gültig"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Dieser Link ist nicht mehr gültig", nil)
 		return
 	}
 	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -177,11 +177,11 @@ func (t *Tueren) OeffentlichBestaetigen() http.HandlerFunc {
 			return
 		}
 		if req.EtikettenGroesse != "" && req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Größe der Etiketten muss klein oder groß sein", nil)
 			return
 		}
 		if !pdf.IstBekanntesEtikettFormat(req.EtikettenFormat) {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Unbekanntes Format der Etiketten", nil)
 			return
 		}
 
@@ -191,7 +191,7 @@ func (t *Tueren) OeffentlichBestaetigen() http.HandlerFunc {
 			return
 		}
 		if bereits {
-			apierrors.AntworteFehler(w, http.StatusConflict, errors.New("diese Bestellung ist bereits bestätigt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Bestellung ist bereits bestätigt", nil)
 			return
 		}
 

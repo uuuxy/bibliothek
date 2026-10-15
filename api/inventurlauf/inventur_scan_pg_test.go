@@ -125,7 +125,7 @@ func TestScanVerbuchen_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
-	if antwort.Error != "Zu diesem Barcode gibt es kein Exemplar." {
+	if antwort.Error != "Zu diesem Barcode gibt es kein Exemplar" {
 		t.Errorf("Meldung am Scanner: %q", antwort.Error)
 	}
 }

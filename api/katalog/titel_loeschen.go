@@ -36,7 +36,7 @@ func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 		}
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Titels fehlt", nil)
 			return
 		}
 

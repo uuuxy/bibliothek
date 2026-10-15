@@ -117,7 +117,7 @@ func (t *Tueren) AuflageLoesen() http.HandlerFunc {
 func titelIDAusPfad(r *http.Request) (string, error) {
 	id := r.PathValue("id")
 	if !kennung.IstUUID(id) {
-		return "", apierrors.BadRequest("ungültige Titel-ID", errors.New("keine UUID"))
+		return "", apierrors.BadRequest("Die Kennung des Titels ist ungültig", errors.New("keine UUID"))
 	}
 	return id, nil
 }

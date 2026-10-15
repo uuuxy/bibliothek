@@ -112,7 +112,7 @@ func (t *Tueren) erzeugeMahnbriefe(ctx context.Context, w http.ResponseWriter, a
 		return nil, false
 	}
 	if len(briefe) == 0 {
-		apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("keine Ausleihe mit abgelaufener Frist in der Auswahl"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Keine Ausleihe mit abgelaufener Frist in der Auswahl", nil)
 		return nil, false
 	}
 
@@ -147,7 +147,7 @@ func (t *Tueren) MahnbriefeDrucken() http.HandlerFunc {
 		}
 
 		if len(req.AusleihIDs) == 0 {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("ausleih_ids array darf nicht leer sein"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte mindestens eine Ausleihe auswählen", nil)
 			return
 		}
 

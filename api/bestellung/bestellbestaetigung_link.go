@@ -29,7 +29,7 @@ func (t *Tueren) BestaetigungsLinkErneuern() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing bestellung id"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Bestellung fehlt", nil)
 			return
 		}
 
@@ -37,7 +37,7 @@ func (t *Tueren) BestaetigungsLinkErneuern() http.HandlerFunc {
 
 		bietet, err := t.bestellungImBestaetigungsweg(ctx, id)
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Bestellung nicht gefunden", nil)
 			return
 		}
 		if err != nil {
@@ -45,7 +45,7 @@ func (t *Tueren) BestaetigungsLinkErneuern() http.HandlerFunc {
 			return
 		}
 		if !bietet {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("diese Bestellung hat keinen Bestätigungsschritt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Diese Bestellung hat keinen Bestätigungsschritt", nil)
 			return
 		}
 
@@ -54,8 +54,7 @@ func (t *Tueren) BestaetigungsLinkErneuern() http.HandlerFunc {
 			// 400 statt 500: Der Sanitizer ersetzt jede 500-Meldung durch „interner
 			// Datenbankfehler" — die Anleitung, was zu tun ist, erreichte den Bildschirm
 			// dann nie. Das hier ist kein Fehler, sondern eine fehlende Einstellung.
-			apierrors.AntworteFehler(w, http.StatusBadRequest,
-				errors.New("in den Einstellungen ist keine öffentliche Adresse hinterlegt — ohne sie kann kein Link erzeugt werden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "In den Einstellungen ist keine öffentliche Adresse hinterlegt. Ohne sie lässt sich kein Link erzeugen.", nil)
 			return
 		}
 

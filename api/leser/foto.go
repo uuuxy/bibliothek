@@ -2,7 +2,6 @@ package leser
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -23,13 +22,13 @@ func (t *Tueren) Foto() http.HandlerFunc {
 		// unter dem Namen "id" hätte die UUID-Prüfung jeden Barcode abgewiesen.
 		barcodeID := strings.TrimSpace(r.PathValue("barcode_id"))
 		if barcodeID == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("fehlende schueler_id/barcode_id"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Lesers fehlt", nil)
 			return
 		}
 
 		verschluesselt, err := repository.LadeFotoZurAusweisnummer(ctx, t.DB.Pool, barcodeID)
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("kein foto gefunden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein Foto gefunden", nil)
 			return
 		}
 		if err != nil {

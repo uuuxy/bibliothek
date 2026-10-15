@@ -29,13 +29,13 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 		}
 
 		if req.Klasse == "" || req.NeuesRueckgabeDatum == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("klasse und neues_rueckgabe_datum sind erforderlich"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte Klasse und neues Rückgabedatum angeben", nil)
 			return
 		}
 
 		frist, err := time.Parse("2006-01-02", req.NeuesRueckgabeDatum)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet YYYY-MM-DD)"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das Datum muss die Form JJJJ-MM-TT haben", nil)
 			return
 		}
 		// Tagesende in der Schulzeitzone (Berlin) — dieselbe Definition wie jede andere

@@ -69,7 +69,7 @@ func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
 	for _, f := range []struct {
 		name, rumpf, stueck string
 	}{
-		{"leerer Patch", `{}`, "keine einzige Einstellung"},
+		{"leerer Patch", `{}`, "Es wurde keine Einstellung mitgeschickt"},
 		{"Sommerferien mit unmöglichem Datum",
 			`{"sommerferien":"[{\"jahr\":2031,\"von\":\"2031-07-07\",\"bis\":\"2031-08-51\"}]"}`, "Sommerferien 2031"},
 		{"Eingangsjahrgänge mit Schrägstrich", `{"lmf_eingangsjahrgaenge":"8/9"}`, "8/9"},

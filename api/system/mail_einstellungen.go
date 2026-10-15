@@ -3,7 +3,6 @@ package system
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"net/mail"
@@ -80,7 +79,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 		if absender := strings.TrimSpace(req.AbsenderEmail); absender != "" {
 			adresse, err := mail.ParseAddress(absender)
 			if err != nil {
-				apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err))
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse des Absenders ist ungültig", err)
 				return
 			}
 			req.AbsenderEmail = adresse.Address
@@ -125,7 +124,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 
 		an := strings.TrimSpace(req.To)
 		if an == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("empfänger-E-Mail-Adresse fehlt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse des Empfängers fehlt", nil)
 			return
 		}
 
@@ -135,7 +134,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 		// SendeTestmail bleibt trotzdem stehen, sie schützt die anderen Aufrufer.
 		adresse, err := mail.ParseAddress(an)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse des Empfängers ist ungültig", err)
 			return
 		}
 

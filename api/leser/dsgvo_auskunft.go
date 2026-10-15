@@ -156,7 +156,7 @@ func (t *Tueren) sammleDSGVODaten(ctx context.Context, id string, darfKonto bool
 		return nil, apierrors.Internal("Fehler beim Laden der Stammdaten", err)
 	}
 	if stammdaten == nil {
-		return nil, apierrors.NotFound("reader record not found", nil)
+		return nil, apierrors.NotFound("Leser nicht gefunden", nil)
 	}
 
 	foto, err := t.dsgvoFoto(ctx, id)
@@ -203,7 +203,7 @@ func (t *Tueren) sammleDSGVODaten(ctx context.Context, id string, darfKonto bool
 	// was die Antwort enthalten würde — auch ein gelöschtes Konto samt seinen Einträgen.
 	if (zugangskonto != nil || len(fruehereKonten) > 0) && !darfKonto {
 		return nil, apierrors.New(http.StatusForbidden,
-			"Die Auskunft über einen Leser mit Zugangskonto verlangt das Recht „Benutzer & Rechte verwalten“.", nil)
+			"Die Auskunft über einen Leser mit Zugangskonto verlangt das Recht „Benutzer & Rechte verwalten“", nil)
 	}
 	verarbeitung := auskunft.Pflichtangaben(stammdaten.Art, t.dsgvoFristen(ctx))
 
@@ -254,7 +254,7 @@ func (t *Tueren) DSGVOAuskunft() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest("missing student ID parameter", nil)
+			return apierrors.BadRequest("Die Kennung des Lesers fehlt", nil)
 		}
 		ctx := r.Context()
 

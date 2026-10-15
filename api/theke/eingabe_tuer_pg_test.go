@@ -44,8 +44,8 @@ func TestEingabeVerarbeiten_AblehnungenVorDerBuchung(t *testing.T) {
 	} else if got := tuertest.Fehlermeldung(t, w); got != "Nicht angemeldet. Bitte neu anmelden." {
 		t.Errorf("ohne Sitzung: Meldung %q, erwartet %q", got, "Nicht angemeldet. Bitte neu anmelden.")
 	}
-	if w := rufe(`{"query":"   "}`, true); w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "leer") {
-		t.Errorf("Suchtext aus Leerzeichen: Status %d, erwartet 400 mit dem Hinweis „leer“: %s", w.Code, w.Body.String())
+	if w := rufe(`{"query":"   "}`, true); w.Code != http.StatusBadRequest || tuertest.Fehlermeldung(t, w) != "Bitte einen Barcode scannen oder einen Suchbegriff eingeben" {
+		t.Errorf("Suchtext aus Leerzeichen: Status %d, erwartet 400 mit der Bitte um einen Barcode: %s", w.Code, w.Body.String())
 	}
 
 	// Eine andere Anfrage hält den Schlüssel und hat noch nicht geantwortet.
@@ -60,7 +60,7 @@ func TestEingabeVerarbeiten_AblehnungenVorDerBuchung(t *testing.T) {
 		}
 	})
 	w := rufe(`{"query":"B-123","idempotency_key":"`+schluessel+`"}`, true)
-	const inArbeit = "Dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen"
+	const inArbeit = "Dieser Scan wird gerade gebucht. Bitte einen Moment warten und erneut scannen."
 	if w.Code != http.StatusConflict {
 		t.Errorf("Schlüssel in Arbeit: Status %d, erwartet 409: %s", w.Code, w.Body.String())
 	} else if got := tuertest.Fehlermeldung(t, w); got != inArbeit {

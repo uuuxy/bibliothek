@@ -170,7 +170,7 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 		}
 
 		if len(eintraege) == 0 {
-			apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("no graduates found"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Keine Abgänger gefunden", nil)
 			return
 		}
 

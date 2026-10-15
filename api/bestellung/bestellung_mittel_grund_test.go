@@ -23,7 +23,7 @@ func TestBestellungMittelKorrigieren_OhneGrund(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("BestellungMittelKorrigieren: Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
-	const erwartet = "Bitte einen Grund für die Korrektur angeben."
+	const erwartet = "Bitte einen Grund für die Korrektur angeben"
 	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
 		t.Errorf("BestellungMittelKorrigieren: Meldung %q, erwartet %q", got, erwartet)
 	}

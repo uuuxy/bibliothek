@@ -91,8 +91,7 @@ func (t *Tueren) ThekenAuskunft(protokollAbfragen repository.ProtokollAbfragen) 
 func (t *Tueren) gibThekenAuskunft(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	barcode := strings.TrimSpace(r.URL.Query().Get("barcode"))
 	if barcode == "" || len(barcode) > 64 {
-		apierrors.AntworteFehler(w, http.StatusBadRequest,
-			errors.New("barcode fehlt oder ist unplausibel lang"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Barcode fehlt oder ist zu lang", nil)
 		return
 	}
 

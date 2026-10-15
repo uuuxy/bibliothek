@@ -49,8 +49,8 @@ func TestExemplarBarcodeSetzen_UeberDieTuer(t *testing.T) {
 		status          int
 		stueck          string
 	}{
-		{"leerer Barcode", platzhalter, `{"barcode":""}`, http.StatusBadRequest, "barcode cannot be empty"},
-		{"vergebener Barcode", platzhalter, `{"barcode":"TUER-BELEGT"}`, http.StatusConflict, "bereits von einem anderen Exemplar"},
+		{"leerer Barcode", platzhalter, `{"barcode":""}`, http.StatusBadRequest, "Der Barcode darf nicht leer sein"},
+		{"vergebener Barcode", platzhalter, `{"barcode":"TUER-BELEGT"}`, http.StatusConflict, "Diesen Barcode trägt bereits ein anderes Exemplar"},
 		{"unbekanntes Exemplar", "00000000-0000-0000-0000-00000000dead", `{"barcode":"TUER-NEU"}`, http.StatusNotFound, "error"},
 	} {
 		rec := setze(f.id, f.rumpf)

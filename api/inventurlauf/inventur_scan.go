@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-const meldungUnbekannterBarcode = "Zu diesem Barcode gibt es kein Exemplar."
+const meldungUnbekannterBarcode = "Zu diesem Barcode gibt es kein Exemplar"
 
 // ladeExemplarFuerScan lädt die Angaben zum Exemplar, die der Scan braucht. Bei false ist die
 // Fehlerantwort schon geschrieben: 404 bei unbekanntem Barcode, sonst 500.
@@ -84,7 +84,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.LaufID == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("session_id fehlt"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Inventurlaufs fehlt", nil)
 		return
 	}
 
@@ -95,7 +95,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 	lauf, err := abfragen.LadeLauf(ctx, req.LaufID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein laufender Inventurlauf mit dieser Kennung", nil)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -107,7 +107,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if exemplar.IstAusgesondert {
-		apierrors.AntworteFehler(w, http.StatusConflict, fmt.Errorf("exemplar %s ist bereits ausgesondert", req.BarcodeID))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf("Das Exemplar %s ist bereits ausgesondert", req.BarcodeID), nil)
 		return
 	}
 
@@ -138,8 +138,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		// Der Lauf wurde inzwischen an einem anderen Scanner abgeschlossen: Der Scan ist
 		// gegenstandslos, aber kein Fehler des Servers (409).
 		if errors.Is(err, repository.ErrInventurAbgeschlossen) {
-			apierrors.AntworteFehler(w, http.StatusConflict,
-				errors.New("die Inventur wurde soeben abgeschlossen — dieser Scan wurde nicht mehr erfasst"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Die Inventur wurde gerade abgeschlossen. Dieser Scan wurde nicht mehr erfasst.", nil)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

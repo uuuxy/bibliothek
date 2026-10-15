@@ -49,7 +49,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 	art, amKonto, err := repository.LadeLeserArtUndKontoEmail(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Leser nicht gefunden", nil)
 			return "", false
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -73,7 +73,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 		}
 		if neu == "" {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
-				"Die Schul-E-Mail lässt sich hier nicht entfernen — ohne sie kommt die Person nicht mehr ins Portal. Das Konto abschalten geht in der Benutzerverwaltung.", nil)
+				"Die Schul-E-Mail lässt sich hier nicht entfernen, ohne sie kommt die Person nicht mehr ins Portal. Das Konto abschalten geht in der Benutzerverwaltung.", nil)
 			return "", false
 		}
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
@@ -119,7 +119,7 @@ func (t *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 	vorname, nachname, err := repository.LadeLeserName(ctx, t.DB.Pool, leserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Leser nicht gefunden", nil)
 			return "", false
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -160,7 +160,7 @@ func (t *Tueren) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter
 	art, err := repository.LadeLeserArt(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Leser nicht gefunden", nil)
 			return false
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

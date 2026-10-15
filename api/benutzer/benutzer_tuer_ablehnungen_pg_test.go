@@ -71,7 +71,7 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 		stueck string
 	}{
 		{"ohne Sitzung", ohneBuch, nil, http.StatusUnauthorized, "Nicht angemeldet. Bitte neu anmelden."},
-		{"das eigene Konto", admin, alsAdmin, http.StatusForbidden, "eigenes Konto"},
+		{"das eigene Konto", admin, alsAdmin, http.StatusForbidden, "Das eigene Konto lässt sich nicht löschen"},
 		{"ein Administrator, gelöscht ohne Adminrechte", zweiterAdmin, alsMitarbeiter, http.StatusForbidden, "Administrator"},
 		{"ein Konto mit offener Ausleihe", mitBuch, alsAdmin, http.StatusConflict,
 			"Das Konto hat noch ausgeliehene Bücher — bitte zuerst zurückbuchen (1 offen)"},

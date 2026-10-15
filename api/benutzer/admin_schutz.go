@@ -2,7 +2,6 @@ package benutzer
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -49,8 +48,7 @@ func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle
 	if !istAdminRolle(gewuenschteRolle) || istAufruferAdmin(r) {
 		return true
 	}
-	apierrors.AntworteFehler(w, http.StatusForbidden,
-		errors.New("die Rolle Administrator kann nur von einem Administrator vergeben werden"))
+	apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die Rolle Administrator vergibt nur ein Administrator", nil)
 	return false
 }
 
@@ -67,8 +65,7 @@ func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request
 		return false
 	}
 	if istAdminRolle(rolle) {
-		apierrors.AntworteFehler(w, http.StatusForbidden,
-			errors.New("das Konto eines Administrators kann nur von einem Administrator bearbeitet werden"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das Konto eines Administrators bearbeitet nur ein Administrator", nil)
 		return false
 	}
 	return true
@@ -87,12 +84,11 @@ func pruefeSelbstschutz(w http.ResponseWriter, r *http.Request, id string, neueR
 		return true
 	}
 	if neueRolle != nil && !strings.EqualFold(strings.TrimSpace(*neueRolle), strings.TrimSpace(string(claims.Rolle))) {
-		apierrors.AntworteFehler(w, http.StatusForbidden,
-			errors.New("die eigene Rolle kann nicht geändert werden — das muss eine andere Person mit Administratorrechten tun"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die eigene Rolle lässt sich nicht ändern. Das muss eine andere Person mit Administratorrechten tun.", nil)
 		return false
 	}
 	if aktiv != nil && !*aktiv {
-		apierrors.AntworteFehler(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht deaktiviert werden"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das eigene Konto lässt sich nicht deaktivieren", nil)
 		return false
 	}
 	return true

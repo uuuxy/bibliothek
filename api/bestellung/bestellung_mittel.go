@@ -58,7 +58,7 @@ func (t *Tueren) BestellungMittelKorrigieren() http.HandlerFunc {
 func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing bestellung id"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Bestellung fehlt", nil)
 		return
 	}
 
@@ -72,13 +72,13 @@ func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	}
 	grund := strings.TrimSpace(req.Grund)
 	if grund == "" {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte einen Grund für die Korrektur angeben.", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte einen Grund für die Korrektur angeben", nil)
 		return
 	}
 
 	vorher, err := repository.KorrigiereBestellungMittel(r.Context(), t.DB.Pool, id, req.Mittel)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Bestellung nicht gefunden", nil)
 		return
 	}
 	if err != nil {

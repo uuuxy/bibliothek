@@ -36,7 +36,7 @@ func (t *Tueren) ExemplarAussondern(protokollAbfragen repository.ProtokollAbfrag
 
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Exemplars fehlt", nil)
 			return
 		}
 

@@ -101,7 +101,7 @@ func (t *Tueren) veroeffentlicheLMFPlan(r *http.Request) (lmfPlanSpeicherAntwort
 	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
 	stand, err := abfragen.LadeNeuestenPlan(r.Context(), art)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return keine, false, apierrors.NotFound("kein Plan vorhanden", pgx.ErrNoRows)
+		return keine, false, apierrors.NotFound("Kein Plan vorhanden", pgx.ErrNoRows)
 	}
 	if err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan laden", err)

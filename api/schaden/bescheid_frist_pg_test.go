@@ -92,7 +92,7 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 		{"keine Auswahl", sid, `{"mittel":"land","frist_bis":"bald","positionen":[],"ausleihen":[]}`,
 			http.StatusBadRequest, "mindestens ein Buch"},
 		{"Frist ist kein Datum", sid, `{"mittel":"land","frist_bis":"bald","positionen":` + position + `}`,
-			http.StatusBadRequest, "muss ein Datum sein"},
+			http.StatusBadRequest, "Die Frist muss ein Datum der Form JJJJ-MM-TT sein"},
 		{"Leser unbekannt", unbekannt, `{"mittel":"land","frist_bis":"` + testdaten.In28Tagen() + `","positionen":` + position + `}`,
 			http.StatusNotFound, "nicht gefunden"},
 	} {

@@ -57,7 +57,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Lesers fehlt", nil)
 			return
 		}
 
@@ -67,8 +67,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 		// sondern ein Pseudonym ohne Namen — „wiederherstellen" ergäbe einen gesperrten
 		// „Anonym"-Datensatz in der aktiven Liste. 409 statt Wiederherstellen.
 		if anonymisiert, err := repository.IstPapierkorbLeserAnonymisiert(ctx, t.DB.Pool, id); err == nil && anonymisiert {
-			apierrors.AntworteFehler(w, http.StatusConflict,
-				errors.New("dieser Datensatz ist bereits anonymisiert (DSGVO) und kann nicht wiederhergestellt werden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Dieser Datensatz ist bereits anonymisiert (DSGVO) und lässt sich nicht wiederherstellen", nil)
 			return
 		}
 
@@ -93,7 +92,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 		}
 
 		if wiederhergestellt == 0 {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("schüler nicht im Papierkorb gefunden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Schüler nicht im Papierkorb gefunden", nil)
 			return
 		}
 
@@ -143,7 +142,7 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Lesers fehlt", nil)
 			return
 		}
 

@@ -68,7 +68,7 @@ func TestDNBSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 		{"DNB nicht erreichbar", "9783751200530", tuertest.DNBAttrappe{Status: http.StatusServiceUnavailable}, http.StatusBadGateway,
 			`DNB nicht erreichbar`},
 		{"keine ISBN", "Dunkelnacht", tuertest.DNBAttrappe{Satz: satz}, http.StatusBadRequest,
-			`keine gültige ISBN`},
+			`Keine gültige ISBN`},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

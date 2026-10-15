@@ -1,7 +1,6 @@
 package druck
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 
@@ -27,7 +26,7 @@ func (t *Tueren) TitelSuche(katalogAbfragen repository.KatalogAbfragen) http.Han
 	return func(w http.ResponseWriter, r *http.Request) {
 		suchtext := strings.TrimSpace(r.URL.Query().Get("q"))
 		if suchtext == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("search query 'q' cannot be empty"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte einen Suchbegriff eingeben", nil)
 			return
 		}
 		titel, gesamt, err := katalogAbfragen.FindeTitelUnscharf(r.Context(), suchtext, 10)

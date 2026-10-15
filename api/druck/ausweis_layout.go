@@ -46,7 +46,7 @@ func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAusweisLayoutBytes+1))
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("konnte die Anfrage nicht lesen"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
 			return
 		}
 		if len(body) > MaxAusweisLayoutBytes {
@@ -54,7 +54,7 @@ func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 			return
 		}
 		if !json.Valid(body) {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiges JSON"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das Ausweis-Design ließ sich nicht lesen", nil)
 			return
 		}
 

@@ -70,7 +70,7 @@ func (t *Tueren) TitelSchlagworte() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if !kennung.IstUUID(id) {
-			return apierrors.BadRequest("ungültige Titel-ID", errors.New("keine UUID"))
+			return apierrors.BadRequest("Die Kennung des Titels ist ungültig", errors.New("keine UUID"))
 		}
 		woerter, err := repository.LadeSchlagworteDesTitels(r.Context(), t.DB.Pool, id)
 		if err != nil {
@@ -99,14 +99,14 @@ func (t *Tueren) TitelSchlagworteSetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if !kennung.IstUUID(id) {
-			return apierrors.BadRequest("ungültige Titel-ID", errors.New("keine UUID"))
+			return apierrors.BadRequest("Die Kennung des Titels ist ungültig", errors.New("keine UUID"))
 		}
 		var req titelSchlagworteAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil
 		}
 		if req.Schlagworte == nil {
-			return apierrors.BadRequest("schlagworte fehlt — zum Entfernen aller Schlagworte eine leere Liste schicken",
+			return apierrors.BadRequest("Die Schlagworte fehlen. Zum Entfernen aller Schlagworte eine leere Liste schicken.",
 				errors.New("feld schlagworte fehlt"))
 		}
 		woerter, err := repository.SetzeSchlagworte(r.Context(), t.DB.Pool, id, *req.Schlagworte)

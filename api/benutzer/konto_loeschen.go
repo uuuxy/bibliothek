@@ -44,13 +44,13 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 	}
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Kontos fehlt", nil)
 		return
 	}
 
 	// Das eigene Konto löscht niemand.
 	if id == claims.KontoID {
-		apierrors.AntworteFehler(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das eigene Konto lässt sich nicht löschen", nil)
 		return
 	}
 

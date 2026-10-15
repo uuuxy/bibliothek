@@ -1,7 +1,6 @@
 package katalog
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -33,7 +32,7 @@ func (t *Tueren) TitelAusleiher() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Titels fehlt", nil)
 			return
 		}
 
@@ -91,7 +90,7 @@ func (t *Tueren) TitelHistorie() http.HandlerFunc {
 func (t *Tueren) gibTitelHistorie(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Titels fehlt", nil)
 		return
 	}
 

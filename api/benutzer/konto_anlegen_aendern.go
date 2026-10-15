@@ -47,7 +47,7 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 	}
 
 	if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte alle Felder ausfüllen", nil)
 		return
 	}
 
@@ -129,7 +129,7 @@ func (t *Tueren) KontoAendern(kontoAbfragen repository.KontoAbfragen) http.Handl
 func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Kontos fehlt", nil)
 		return
 	}
 
@@ -198,8 +198,7 @@ func (a kontoAendernAnfrage) nenntNichts() bool {
 func pruefeGenanntePflichtfelder(w http.ResponseWriter, req kontoAendernAnfrage) bool {
 	for _, wert := range []*string{req.Vorname, req.Nachname, req.Email, req.Rolle} {
 		if wert != nil && strings.TrimSpace(*wert) == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest,
-				errors.New("vorname, Nachname, E-Mail und Rolle dürfen nicht leer sein"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Vorname, Nachname, E-Mail und Rolle dürfen nicht leer sein", nil)
 			return false
 		}
 	}

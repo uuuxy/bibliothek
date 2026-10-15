@@ -35,6 +35,6 @@ const (
 
 // Meldungen, die mehrere Türen wörtlich gleich ausgeben.
 const (
-	MeldungIDLeer                = "id darf nicht leer sein"
+	MeldungIDLeer                = "Die Kennung fehlt"
 	MeldungEinstellungenUnlesbar = "Einstellungen konnten nicht gelesen werden"
 )

@@ -22,7 +22,7 @@ import (
 // meldungSchuelerDuplikat nennt die Regel, an der die Anlage scheitert — auch die
 // Schreibweise, denn genau die ist der Fall, den man vor sich hat, wenn man den Namen
 // in der Liste nicht findet.
-const meldungSchuelerDuplikat = "Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System"
+const meldungSchuelerDuplikat = "Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System."
 
 // leserAnlegenAnfrage ist ein neuer Leser, gleich welcher Art. „Neuen Leser anlegen" fragt
 // zuerst nach der Art; Klasse und Geburtsdatum sind deshalb nicht am Feld als Pflicht
@@ -119,7 +119,7 @@ func pruefeLeserAngaben(req *leserAnlegenAnfrage) error {
 
 // meldungKeinZugang weist eine Schul-E-Mail bei Praktikum und Fachbereich ab. Aus der Adresse
 // entstünde ein Zugang zu „Mein Portal", und den bekommen sie nicht (leserart.HatKonto).
-const meldungKeinZugang = "Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“ und deshalb keine Schul-E-Mail."
+const meldungKeinZugang = "Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“ und deshalb keine Schul-E-Mail"
 
 // pruefeEmailZurArt paart die Schul-E-Mail an die Art: Pflicht, wo ein Zugang dazugehört;
 // sonst muss sie leer bleiben. Dieselbe Regel gilt beim Nachtragen in der Akte
@@ -138,7 +138,7 @@ func pruefeEmailZurArt(art, email string) error {
 
 // meldungSchuelerOhneZugang weist eine Schul-E-Mail bei einem Schüler ab, beim Anlegen wie in der
 // Akte.
-const meldungSchuelerOhneZugang = "Ein Schüler bekommt kein Konto und keine E-Mail-Adresse."
+const meldungSchuelerOhneZugang = "Ein Schüler bekommt kein Konto und keine E-Mail-Adresse"
 
 // meldungUnbekannteArt nennt zu einer Art, die es nicht gibt, die möglichen, beim Anlegen wie in
 // der Akte.
@@ -148,7 +148,7 @@ func meldungUnbekannteArt(art string) string {
 
 // meldungGeburtsdatumPflicht erklärt dem Sekretariat, warum das Datum nicht fehlen darf —
 // eine nackte Validierungsmeldung würde als Schikane gelesen und umgangen.
-const meldungGeburtsdatumPflicht = "Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt — ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt."
+const meldungGeburtsdatumPflicht = "Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt. Ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt."
 
 // LeserAnlegen legt einen Leser an, mit Konto, wo seine Art eines hat.
 // @Summary      Leser anlegen
@@ -349,13 +349,11 @@ func antworteAufAnlegeFehler(w http.ResponseWriter, err error, barcodeID string)
 		return
 	}
 	if repository.IstAusweisKollision(err) {
-		apierrors.AntworteFehler(w, http.StatusConflict,
-			fmt.Errorf("die Ausweisnummer '%s' wird bereits von einer anderen Person verwendet", barcodeID))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf("Die Ausweisnummer %s trägt bereits eine andere Person", barcodeID), nil)
 		return
 	}
 	if repository.IstNummerBuchOderAusweisKollision(err) {
-		apierrors.AntworteFehler(w, http.StatusConflict,
-			fmt.Errorf("die Nummer '%s' ist der Barcode eines Buchs und kann kein Ausweis sein", barcodeID))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf("Die Nummer %s ist der Barcode eines Buchs und kann kein Ausweis sein", barcodeID), nil)
 		return
 	}
 	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -370,7 +368,7 @@ func leseAnlageGeburtsdatum(w http.ResponseWriter, roh *string) (*time.Time, boo
 	}
 	t, err := time.Parse(tuer.DatumsformatISO, *roh)
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das Geburtsdatum muss die Form JJJJ-MM-TT haben", nil)
 		return nil, false
 	}
 	return &t, true

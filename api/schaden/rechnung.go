@@ -58,7 +58,7 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.Pool) 
 	anschrift, err := repository.LadeBriefAnschrift(ctx, datenbank, schuelerID)
 	schueler := pdf.Schueler(anschrift)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Schüler nicht gefunden", nil)
 		return
 	}
 	if err != nil {
@@ -81,11 +81,10 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.Pool) 
 			return
 		}
 		if aufBescheid {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New(
-				"die offenen Forderungen stehen auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, keine Ersatzforderung"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Die offenen Forderungen stehen auf einem Schadensersatz-Bescheid. Dafür gilt der Bescheid, keine Ersatzforderung.", nil)
 			return
 		}
-		apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("no open damage records found for student"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Keine offenen Forderungen für diesen Schüler", nil)
 		return
 	}
 

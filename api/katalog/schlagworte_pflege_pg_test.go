@@ -82,11 +82,11 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 
 	// alte_als_verweis ist Pflicht: Ohne das Feld wäre die Vorgabe je Tür eine andere.
 	if rec := ruf(srv.SchlagwortUmbenennen(), http.MethodPut, "", ids["Fantasy"], `{"wort":"Fantasie"}`); rec.Code != http.StatusBadRequest ||
-		!strings.Contains(rec.Body.String(), "alte_als_verweis fehlt") {
+		!strings.Contains(rec.Body.String(), "Die Angabe alte_als_verweis fehlt") {
 		t.Errorf("umbenennen ohne alte_als_verweis: %d %s, want 400", rec.Code, rec.Body.String())
 	}
 	if rec := ruf(srv.SchlagworteZusammenfuehren(), http.MethodPost, "", ids["Tierfantasy"], `{"ziel_id":"`+ids["Fantasy"]+`"}`); rec.Code != http.StatusBadRequest ||
-		!strings.Contains(rec.Body.String(), "alte_als_verweis fehlt") {
+		!strings.Contains(rec.Body.String(), "Die Angabe alte_als_verweis fehlt") {
 		t.Errorf("zusammenführen ohne alte_als_verweis: %d %s, want 400", rec.Code, rec.Body.String())
 	}
 

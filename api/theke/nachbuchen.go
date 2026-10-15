@@ -126,7 +126,7 @@ func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, 
 		return nil
 	}
 	if len(req.Eintraege) > nachbuchenHoechstens {
-		return apierrors.BadRequest("höchstens 50 Einträge je Aufruf", errors.New("zu viele einträge"))
+		return apierrors.BadRequest("Höchstens 50 Einträge je Aufruf", errors.New("zu viele einträge"))
 	}
 
 	versatz := empfangen.Sub(req.GesendetAm)

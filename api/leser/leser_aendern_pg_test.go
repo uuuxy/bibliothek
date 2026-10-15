@@ -148,7 +148,7 @@ func TestLeserAendern_UnbekannteKennungIstNichtGefunden(t *testing.T) {
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("PATCH auf eine unbekannte Kennung gab %d statt 404: %s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(rec.Body.String(), "leser nicht gefunden") {
+	if !strings.Contains(rec.Body.String(), "Leser nicht gefunden") {
 		t.Errorf("die Meldung nennt den Grund nicht: %s", rec.Body.String())
 	}
 }

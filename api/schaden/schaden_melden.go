@@ -37,7 +37,7 @@ func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) htt
 		}
 		art := repository.SchadensArt(req.Art)
 		if !art.IstGueltig() {
-			return apierrors.BadRequest("Bitte angeben, ob das Buch nicht zurückgegeben oder beschädigt zurückgegeben wurde.",
+			return apierrors.BadRequest("Bitte angeben, ob das Buch nicht zurückgegeben oder beschädigt zurückgegeben wurde",
 				errors.New("art fehlt oder ist ungültig"))
 		}
 

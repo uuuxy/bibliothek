@@ -1,7 +1,6 @@
 package benutzer
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -79,8 +78,7 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 		// Recht in einem Schritt zu vollem Zugriff ausbauen. Die Rechte-Matrix ist
 		// Konfiguration des Systems, nicht Tagesgeschäft der Kontoverwaltung.
 		if !istAufruferAdmin(r) {
-			apierrors.AntworteFehler(w, http.StatusForbidden,
-				errors.New("die Rechte-Matrix kann nur ein Administrator ändern"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die Rechte-Matrix ändert nur ein Administrator", nil)
 			return
 		}
 
@@ -96,8 +94,7 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 		// Erfolg, sähe ein Tippfehler im Namen des Rechts in der Oberfläche aus wie ein
 		// gesetzter Haken, der in der Datenbank nichts bewirkt.
 		if getroffen == 0 {
-			apierrors.AntworteFehler(w, http.StatusBadRequest,
-				fmt.Errorf("unbekannte Kombination aus Rolle %q und Recht %q — nichts geändert", req.Rolle, req.Recht))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Rolle %q und Recht %q passen nicht zusammen. Nichts geändert.", req.Rolle, req.Recht), nil)
 			return
 		}
 

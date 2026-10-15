@@ -176,7 +176,7 @@ func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
 			return nil
 		}
 		if len(req.BarcodeIDs) == 0 {
-			return apierrors.BadRequest("keine Exemplare angegeben", nil)
+			return apierrors.BadRequest("Keine Exemplare angegeben", nil)
 		}
 
 		markiert, err := repository.VermerkeEtikettenGedruckt(r.Context(), t.DB.Pool, req.BarcodeIDs)
@@ -209,7 +209,7 @@ func (t *Tueren) EtikettenZuruecksetzen() http.HandlerFunc {
 			return nil
 		}
 		if len(req.BarcodeIDs) == 0 {
-			return apierrors.BadRequest("keine Exemplare angegeben", nil)
+			return apierrors.BadRequest("Keine Exemplare angegeben", nil)
 		}
 
 		zurueckgesetzt, err := repository.NimmEtikettenVermerk(r.Context(), t.DB.Pool, req.BarcodeIDs)

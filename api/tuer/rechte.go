@@ -135,7 +135,7 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 	if erlaubt, gefunden := b.Rechte.recht(schluessel); gefunden {
 		if !erlaubt {
 			log.Printf("Permission denied for role '%s' permission '%s' (FROM CACHE).", claims.Rolle, recht)
-			apierrors.AntworteFehler(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Keine Berechtigung für diese Aktion", nil)
 			return
 		}
 		erlaubeZugriff(w, r, next, claims)
@@ -151,7 +151,7 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 
 	if !erlaubt {
 		log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v", claims.Rolle, recht, erlaubt)
-		apierrors.AntworteFehler(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Keine Berechtigung für diese Aktion", nil)
 		return
 	}
 

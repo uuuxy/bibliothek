@@ -27,7 +27,7 @@ func (t *Tueren) DSGVOAuskunftPDF() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest("missing student ID parameter", nil)
+			return apierrors.BadRequest("Die Kennung des Lesers fehlt", nil)
 		}
 		ctx := r.Context()
 

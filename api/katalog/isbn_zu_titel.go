@@ -172,7 +172,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 		// Bindestriche und Leerzeichen entfernen.
 		req.ISBN = strings.TrimSpace(strings.NewReplacer("-", "", " ", "").Replace(req.ISBN))
 		if req.ISBN == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("isbn fehlt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die ISBN fehlt", nil)
 			return
 		}
 
@@ -198,7 +198,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 				apierrors.AntworteFehler(w, http.StatusBadGateway, errors.New("katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen"))
 				return
 			}
-			apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("keine Metadaten für ISBN %s gefunden", req.ISBN))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, fmt.Sprintf("Keine Angaben zur ISBN %s gefunden", req.ISBN), nil)
 			return
 		}
 

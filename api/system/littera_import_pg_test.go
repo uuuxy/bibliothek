@@ -224,8 +224,8 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 		}
 		// Der Wortlaut dieser Abweisung, nicht irgendeiner mit „CSV" darin: Ohne die Prüfung
 		// der Endung läuft die Arbeitsmappe in den CSV-Leser und scheitert dort mit
-		// „CSV konnte nicht gelesen werden", auch ein 400, aber aus einem anderen Grund.
-		if !strings.Contains(rec.Body.String(), "nur CSV-Dateien") {
+		// „Die CSV-Datei ließ sich nicht lesen", auch ein 400, aber aus einem anderen Grund.
+		if !strings.Contains(rec.Body.String(), "Nur CSV-Dateien werden angenommen") {
 			t.Errorf("die Meldung ist nicht die der Endungs-Prüfung: %s", rec.Body.String())
 		}
 		if n := pgtest.ZaehleZeilen(t, pool,

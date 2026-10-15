@@ -48,7 +48,7 @@ func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 		kopf, err := repository.LadeKontoauszugKopf(ctx, t.DB.Pool, schuelerID)
 		schueler := pdf.KontoauszugSchueler(kopf)
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Schüler nicht gefunden", nil)
 			return
 		}
 		if err != nil {
@@ -63,7 +63,7 @@ func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 		}
 
 		if len(buecher) == 0 {
-			apierrors.AntworteFehler(w, http.StatusNotFound, fmt.Errorf("keine aktiven Ausleihen gefunden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Keine laufenden Ausleihen", nil)
 			return
 		}
 

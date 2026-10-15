@@ -63,18 +63,18 @@ func pruefeStartAnfrage(w http.ResponseWriter, req startAnfrage) bool {
 		// Eine leere Signatur abweisen: Sie wäre der Anfang jeder Signatur und machte aus der
 		// Inventur eines Regals unbemerkt eine über den ganzen Bestand.
 		if req.signaturNormalisiert() == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("signatur ist erforderlich, wenn type 'signature' ist"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte eine Signatur angeben", nil)
 			return false
 		}
 		return true
 	case "filter":
 		if req.Fach == nil && req.Jahrgang == nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("filter scope requires at least 'subject' or 'grade'"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte ein Fach oder einen Jahrgang wählen", nil)
 			return false
 		}
 		return true
 	default:
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("invalid type, must be 'global', 'signature' or 'filter'"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Unbekannter Bereich der Inventur", nil)
 		return false
 	}
 }

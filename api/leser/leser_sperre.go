@@ -51,7 +51,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	}
 	id := r.PathValue("id")
 	if id == "" {
-		return apierrors.BadRequest("fehlende Schüler-ID", nil)
+		return apierrors.BadRequest("Die Kennung des Lesers fehlt", nil)
 	}
 
 	var req struct {
@@ -69,7 +69,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	// irrelevant).
 	grund := strings.TrimSpace(req.Reason)
 	if req.IsLocked && grund == "" {
-		return apierrors.BadRequest("Für eine manuelle Sperre ist ein Grund erforderlich.", nil)
+		return apierrors.BadRequest("Für eine manuelle Sperre ist ein Grund erforderlich", nil)
 	}
 
 	ctx := r.Context()
@@ -83,7 +83,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	// über die Sicht antwortete sie mit „schüler nicht gefunden".
 	alt, err := repository.SperreLeserZeileMitStand(ctx, tx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return apierrors.NotFound("leser nicht gefunden", err)
+		return apierrors.NotFound("Leser nicht gefunden", err)
 	}
 	if err != nil {
 		return apierrors.Internal(meldungSperreFehler, err)
@@ -92,9 +92,9 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	case alt.Geloescht:
 		return apierrors.Conflict("Der Leser liegt im Papierkorb. Erst wiederherstellen.", nil)
 	case alt.Anonymisiert:
-		return apierrors.Conflict("Ein anonymisierter Datensatz bleibt gesperrt.", nil)
+		return apierrors.Conflict("Ein anonymisierter Datensatz bleibt gesperrt", nil)
 	case req.IsLocked && !leserart.IstSchueler(alt.Art):
-		return apierrors.BadRequest("Kollegen werden nicht gesperrt.", nil)
+		return apierrors.BadRequest("Kollegen werden nicht gesperrt", nil)
 	}
 
 	// Sperren setzt die Sperre von Hand samt Grund. Aufheben nimmt beide Sperren und den

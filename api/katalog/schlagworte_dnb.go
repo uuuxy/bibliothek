@@ -57,7 +57,7 @@ func (t *Tueren) dnbSchlagwortVorschlagTuer(metadaten *inventur.MetadatenClient)
 		meta, err := metadaten.SucheDNBNachISBN(r.Context(), r.URL.Query().Get("isbn"))
 		switch {
 		case errors.Is(err, inventur.ErrUngueltigeISBN):
-			return apierrors.BadRequest("keine gültige ISBN", err)
+			return apierrors.BadRequest("Keine gültige ISBN", err)
 		case errors.Is(err, inventur.ErrDNBNichtErreichbar):
 			return apierrors.New(http.StatusBadGateway, "DNB nicht erreichbar — bitte später erneut versuchen", err)
 		case errors.Is(err, inventur.ErrNichtInDerDNB):

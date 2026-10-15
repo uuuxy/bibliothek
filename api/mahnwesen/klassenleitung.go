@@ -1,7 +1,6 @@
 package mahnwesen
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 
@@ -55,7 +54,7 @@ func (t *Tueren) KlassenleitungSetzen() http.HandlerFunc {
 		req.LehrerEmail = strings.TrimSpace(req.LehrerEmail)
 
 		if req.Klasse == "" || req.LehrerEmail == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("klasse und lehrer_email sind erforderlich"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte Klasse und E-Mail-Adresse der Lehrkraft angeben", nil)
 			return
 		}
 
@@ -89,7 +88,7 @@ func (t *Tueren) KlassenleitungLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		klasse := r.PathValue("klasse")
 		if klasse == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("klasse erforderlich"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte eine Klasse angeben", nil)
 			return
 		}
 
@@ -102,7 +101,7 @@ func (t *Tueren) KlassenleitungLoeschen() http.HandlerFunc {
 		}
 		// 204 für etwas, das nie existierte, wäre ein Erfolg, den es nicht gab.
 		if getroffen == 0 {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein Eintrag für diese Klasse", nil)
 			return
 		}
 		t.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungEntfernt, map[string]any{"klasse": klasse})

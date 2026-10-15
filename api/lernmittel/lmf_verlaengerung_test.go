@@ -56,7 +56,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			},
 			setupMock:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `klasse und neues_rueckgabe_datum sind erforderlich`,
+			expectedBody:   `Bitte Klasse und neues Rückgabedatum angeben`,
 		},
 		{
 			name: "Invalid Date Format",
@@ -66,7 +66,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			},
 			setupMock:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `ungültiges Datumsformat (erwartet YYYY-MM-DD)`,
+			expectedBody:   `Das Datum muss die Form JJJJ-MM-TT haben`,
 		},
 		{
 			name: "Tx Begin Error",

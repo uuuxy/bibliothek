@@ -111,7 +111,7 @@ func (t *Tueren) etikettenDesBogens(r *http.Request, leserAbfragen repository.Le
 		return nil, http.StatusInternalServerError, fmt.Errorf("schülerdaten konnten nicht gelesen werden: %w", err)
 	}
 	if len(zeilen) == 0 {
-		return nil, http.StatusBadRequest, apierrors.BadRequest("Zu den markierten Schülern gibt es keine Daten mehr — inzwischen gelöscht?", nil)
+		return nil, http.StatusBadRequest, apierrors.BadRequest("Zu den markierten Schülern gibt es keine Daten mehr. Wurden sie inzwischen gelöscht?", nil)
 	}
 
 	etiketten := make([]pdf.SchuelerEtikett, 0, len(zeilen))

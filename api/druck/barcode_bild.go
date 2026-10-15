@@ -1,7 +1,6 @@
 package druck
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -17,7 +16,7 @@ func (t *Tueren) BarcodeBild() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		inhalt := r.URL.Query().Get("content")
 		if inhalt == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing content parameter"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Inhalt des Barcodes fehlt", nil)
 			return
 		}
 

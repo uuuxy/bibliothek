@@ -21,7 +21,7 @@ import (
 // und räumt ihn beim Entsperren wieder konsistent. Schriebe auch der allgemeine Schüler-PATCH
 // dieselben zwei Spalten, dann ohne jede Prüfung; gemessen, als es beide Türen gab:
 //
-//	Sperr-Endpunkt ohne Grund    -> 400  "Für eine manuelle Sperre ist ein Grund erforderlich."
+//	Sperr-Endpunkt ohne Grund    -> 400  "Für eine manuelle Sperre ist ein Grund erforderlich"
 //	Allgemeiner PATCH ohne Grund -> 500  "Ein interner Datenbankfehler ist aufgetreten."
 //
 // Der 500er kam von chk_schueler_block_reason, und der Sanitizer ersetzt jede

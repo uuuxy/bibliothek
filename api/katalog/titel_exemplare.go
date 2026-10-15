@@ -1,7 +1,6 @@
 package katalog
 
 import (
-	"errors"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -33,7 +32,7 @@ func (t *Tueren) TitelExemplare(bescheidAbfragen repository.BescheidAbfragen) ht
 func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, bescheidAbfragen repository.BescheidAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Titels fehlt", nil)
 		return
 	}
 

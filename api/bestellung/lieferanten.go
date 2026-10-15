@@ -130,7 +130,7 @@ func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 		}
 
 		if req.Name == "" || req.Email == "" || req.Kundennummer == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("name, email and customerNumber are required"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte Name, E-Mail-Adresse und Kundennummer angeben", nil)
 			return
 		}
 
@@ -176,7 +176,7 @@ func (t *Tueren) LieferantAendern() http.HandlerFunc {
 func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing supplier ID"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Lieferanten fehlt", nil)
 		return
 	}
 
@@ -187,7 +187,7 @@ func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, wert := range []*string{req.Name, req.Email, req.Kundennummer} {
 		if wert != nil && *wert == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("name, email and customerNumber must not be empty"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Name, E-Mail-Adresse und Kundennummer dürfen nicht leer sein", nil)
 			return
 		}
 	}
@@ -199,7 +199,7 @@ func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	alt, neu, err := t.schreibeLieferant(ctx, id, req)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("supplier not found"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Lieferant nicht gefunden", nil)
 		return
 	}
 	if err != nil {
@@ -268,7 +268,7 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing supplier ID"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Lieferanten fehlt", nil)
 			return
 		}
 
@@ -292,7 +292,7 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 		istHaupt, name, err := repository.LadeLieferantHauptUndName(ctx, t.DB.Pool, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("supplier not found"))
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Lieferant nicht gefunden", nil)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -300,7 +300,7 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 		}
 		if istHaupt {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
-				"Dieser Händler ist der Hauptlieferant — über ihn läuft die Bestellung. "+
+				"Dieser Händler ist der Hauptlieferant, über ihn läuft die Bestellung. "+
 					"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen.", nil)
 			return
 		}
@@ -312,7 +312,7 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 		}
 
 		if geloescht == 0 {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("supplier not found"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Lieferant nicht gefunden", nil)
 			return
 		}
 		t.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantGeloescht,

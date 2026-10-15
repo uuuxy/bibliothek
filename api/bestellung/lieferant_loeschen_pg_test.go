@@ -69,7 +69,7 @@ func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Errorf("Hauptlieferant gelöscht: Status %d, erwartet 409 — der Bestellweg hinge danach an nichts", rec.Code)
 	}
-	const erwartet = "Dieser Händler ist der Hauptlieferant — über ihn läuft die Bestellung. " +
+	const erwartet = "Dieser Händler ist der Hauptlieferant, über ihn läuft die Bestellung. " +
 		"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen."
 	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
 		t.Errorf("Hauptlieferant löschen: Meldung %q, erwartet %q", got, erwartet)

@@ -108,7 +108,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 	t.Run("markierte Schüler gibt es nicht mehr: 400", func(t *testing.T) {
 		rec := bogen(t, map[string]any{"schuelerIds": []string{"00000000-0000-4000-8000-0000000000e1"}})
 		erwarte400(t, rec, "keine Daten")
-		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Zu den markierten Schülern gibt es keine Daten mehr — inzwischen gelöscht?"; got != erwartet {
+		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Zu den markierten Schülern gibt es keine Daten mehr. Wurden sie inzwischen gelöscht?"; got != erwartet {
 			t.Errorf("SchuelerEtiketten: Meldung %q, erwartet %q", got, erwartet)
 		}
 	})

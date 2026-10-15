@@ -72,7 +72,7 @@ func (t *Tueren) NachbuchMeldungQuittieren() http.HandlerFunc {
 		}
 		err := repository.QuittiereNachbuchMeldung(r.Context(), t.DB.Pool, id, claims.KontoID)
 		if errors.Is(err, repository.ErrNachbuchMeldungNichtOffen) {
-			return apierrors.NotFound("keine offene Nachbuch-Meldung mit dieser ID", err)
+			return apierrors.NotFound("Keine offene Nachbuch-Meldung mit dieser Kennung", err)
 		}
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldung konnte nicht quittiert werden", err)

@@ -37,7 +37,7 @@ func (t *Tueren) TitelEtiketten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("id is required"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Titels fehlt", nil)
 			return
 		}
 
@@ -50,7 +50,7 @@ func (t *Tueren) TitelEtiketten() http.HandlerFunc {
 			return
 		}
 		if len(etiketten) == 0 {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("keine exemplare für diesen titel vorhanden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Zu diesem Titel gibt es keine Exemplare", nil)
 			return
 		}
 
@@ -89,7 +89,7 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 		}
 
 		if len(req.Etiketten) == 0 {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("keine exemplare angegeben"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Keine Exemplare angegeben", nil)
 			return
 		}
 

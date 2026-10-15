@@ -81,8 +81,8 @@ func (t *Tueren) GeraetAnlegen(geraeteAbfragen repository.GeraeteAbfragen) http.
 			return apierrors.BadRequest("Ein Modellname ist erforderlich", nil)
 		}
 		if !strings.HasPrefix(req.BarcodeID, "G-") || len(req.BarcodeID) < 4 {
-			return apierrors.BadRequest("Der Barcode muss mit G- beginnen (z. B. G-IPAD-01) — "+
-				"nur so findet der Kiosk-Scan das Gerät", nil)
+			return apierrors.BadRequest("Der Barcode muss mit G- beginnen, etwa G-IPAD-01. "+
+				"Nur so findet der Scan an der Theke das Gerät.", nil)
 		}
 
 		var seriennummer *string

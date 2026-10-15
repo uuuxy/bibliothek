@@ -84,7 +84,7 @@ describe('Sperr-Dialog an der Theke', () => {
 	});
 
 	it('bleibt zu bei einem 403, das keine Sperre ist', async () => {
-		post.mockResolvedValue(antwort403('keine Berechtigung für diese Aktion'));
+		post.mockResolvedValue(antwort403('Keine Berechtigung für diese Aktion'));
 		await scanne();
 		expect(omniboxStore.blockAlert).toBeNull();
 	});

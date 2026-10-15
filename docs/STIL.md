@@ -13,9 +13,10 @@ etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das 
 [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 12.
 
 Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, in
-Tests an Namen und Dateinamen, `fehlertext_ratsche_test.go` jeden Fehlertext gegen Abschnitt 11,
-`paketzustand_ratsche_test.go` jeden Zustand der Paketebene gegen Abschnitt 12. Für die
-Oberfläche gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
+Tests an Namen und Dateinamen, `fehlertext_ratsche_test.go` jeden Fehlertext und
+`meldung_ratsche_test.go` jede Meldung gegen Abschnitt 11, `paketzustand_ratsche_test.go` jeden
+Zustand der Paketebene gegen Abschnitt 12. Für die Oberfläche gilt dasselbe Wörterbuch
+(Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
 
@@ -225,6 +226,10 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   `apierrors.Conflict("Satz.", err)`, sonst mit `apierrors.AntworteFehlerMitMeldung(w, status,
   "Satz.", err)`. Eine Prüfung neben der Tür liefert `apierrors.BadRequest("Satz.", nil)`;
   `AntworteFehler` schickt dessen Meldung, die Ursache steht nur im Log.
+- Eine Meldung ist ein Satz nach M3 (Content design, Grammar and punctuation): groß begonnen,
+  deutsch, ein einzelner Satz ohne Punkt, mehrere Sätze mit Punkt, kein Gedankenstrich. Sätze, die
+  mehrere Türen teilen, stehen als Konstante beim Thema (`auth.MeldungNichtAngemeldet`).
+  `meldung_ratsche_test.go` hält es für jeden festen Text mit Status unter 500.
 - Braucht der Satz Einzelheiten aus einer tieferen Schicht, trägt der Fehler sie als Felder,
   und die Tür formuliert (`repository.KontoHatAusleihenFehler`, `lusd.MassenabgangFehler`): „If
   there is extra information in the error that the caller needs programmatically, it should

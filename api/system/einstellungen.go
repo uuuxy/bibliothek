@@ -69,7 +69,7 @@ func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, e
 	}
 
 	if req.IstLeer() {
-		return apierrors.BadRequest("Es wurde keine einzige Einstellung mitgeschickt.",
+		return apierrors.BadRequest("Es wurde keine Einstellung mitgeschickt",
 			errors.New("leerer Einstellungs-Patch"))
 	}
 	// Zahlen: innerhalb ihrer Spanne oder gar nicht gespeichert

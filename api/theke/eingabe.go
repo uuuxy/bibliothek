@@ -200,7 +200,7 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 
 	req.Text = strings.TrimSpace(req.Text)
 	if req.Text == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("such- oder Barcode-Abfrage ist leer"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte einen Barcode scannen oder einen Suchbegriff eingeben", nil)
 		return
 	}
 
@@ -212,7 +212,7 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 	}
 	if lage.inArbeit {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
-			"Dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen", nil)
+			"Dieser Scan wird gerade gebucht. Bitte einen Moment warten und erneut scannen.", nil)
 		return
 	}
 

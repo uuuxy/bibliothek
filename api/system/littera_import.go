@@ -209,13 +209,13 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 
 	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("keine Datei hochgeladen"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Keine Datei hochgeladen", nil)
 		return
 	}
 	defer closeutil.Schliesse(datei, litteraImportQuelle)
 
 	if !strings.HasSuffix(strings.ToLower(dateiKopf.Filename), ".csv") {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("es werden nur CSV-Dateien akzeptiert"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Nur CSV-Dateien werden angenommen", nil)
 		return
 	}
 
@@ -231,21 +231,21 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 	csvLeser.LazyQuotes = true
 	zeilen, err := csvLeser.ReadAll()
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, csvLesefehlerMeldung(err), err)
 		return
 	}
 	if len(zeilen) < 2 {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("die CSV enthält keine Datenzeilen"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die CSV-Datei enthält keine Datenzeilen", nil)
 		return
 	}
 
 	kopf := service.ImportKopfzeile(zeilen[0])
 	if _, ok := kopf["titel"]; !ok {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Titel"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Pflichtspalte Titel fehlt", nil)
 		return
 	}
 	if _, ok := kopf["barcode"]; !ok {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Barcode/Exemplarnummer"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Pflichtspalte Barcode/Exemplarnummer fehlt", nil)
 		return
 	}
 
@@ -268,4 +268,14 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 		"imported_copies_count": importierteExemplare,
 		"message":               "Bestands-CSV erfolgreich importiert",
 	})
+}
+
+// csvLesefehlerMeldung nennt die Zeile, an der das Lesen der CSV-Datei scheiterte; der Text von
+// encoding/csv geht nur ins Log.
+func csvLesefehlerMeldung(err error) string {
+	var lesefehler *csv.ParseError
+	if errors.As(err, &lesefehler) {
+		return fmt.Sprintf("Die CSV-Datei ließ sich nicht lesen, Zeile %d", lesefehler.Line)
+	}
+	return "Die CSV-Datei ließ sich nicht lesen"
 }

@@ -1,7 +1,6 @@
 package portal
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -59,12 +58,12 @@ func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 		}
 		req.Art = strings.ToLower(strings.TrimSpace(req.Art))
 		if req.Art != "meldung" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("art muss 'meldung' sein — ein Buch für eine Klasse wird im Portal reserviert"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Hier geht nur eine Meldung. Ein Buch für eine Klasse wird im Portal reserviert.", nil)
 			return
 		}
 		req.TitelText = strings.TrimSpace(req.TitelText)
 		if req.TitelText == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("worum geht es? titel_text ist leer"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte angeben, worum es geht", nil)
 			return
 		}
 		// Längen kappen statt ablehnen — eine zu lange Meldung soll nicht verloren
@@ -75,7 +74,7 @@ func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 		// Ohne Beschreibung nennt die Meldung nur ein Buch, und die Bibliothek muss
 		// nachfragen. Das Formular verlangt den Satz; die Tür hält dieselbe Regel.
 		if req.Kommentar == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("was stimmt nicht? kommentar ist leer"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte beschreiben, was nicht stimmt", nil)
 			return
 		}
 
@@ -172,7 +171,7 @@ func (t *Tueren) erledigeAnliegen(w http.ResponseWriter, r *http.Request) {
 	if erledigt == nil {
 		// Schon abgehakt (Doppelklick an zwei Arbeitsplätzen) oder unbekannt —
 		// beides kein Serverfehler, und vor allem: keine zweite Mail.
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("anliegen ist bereits erledigt oder unbekannt"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Das Anliegen ist bereits erledigt oder unbekannt", nil)
 		return
 	}
 

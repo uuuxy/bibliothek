@@ -1,7 +1,6 @@
 package portal
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -62,7 +61,7 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if !vorhanden {
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Titel nicht gefunden", nil)
 		return
 	}
 
@@ -74,8 +73,7 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if req.Anzahl > bestand {
-		apierrors.AntworteFehler(w, http.StatusBadRequest,
-			fmt.Errorf("nur %d Exemplare im Bestand — %d können nicht reserviert werden", bestand, req.Anzahl))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Nur %d Exemplare im Bestand, %d lassen sich nicht reservieren", bestand, req.Anzahl), nil)
 		return
 	}
 
@@ -178,7 +176,7 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("id fehlt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung fehlt", nil)
 			return
 		}
 		notiz, ok := leseErledigtNotiz(w, r)
@@ -257,14 +255,14 @@ func pruefeKlassensatzAnfrage(w http.ResponseWriter, req *klassensatzReservierun
 	// Tür.
 	req.Klasse = kuerze(strings.TrimSpace(req.Klasse), 50)
 	if req.TitelID == "" || req.Klasse == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("titel_id und klasse sind erforderlich"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte Titel und Klasse angeben", nil)
 		return false
 	}
 	if req.Anzahl <= 0 {
 		req.Anzahl = 1
 	}
 	if req.Anzahl > 200 {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("anzahl darf 200 nicht überschreiten"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Höchstens 200 Exemplare je Reservierung", nil)
 		return false
 	}
 	return true

@@ -46,7 +46,7 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfra
 		return false
 	}
 	if vergeben {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Ein Konto mit dieser E-Mail-Adresse gibt es bereits", nil)
 		return false
 	}
 	return true
@@ -67,8 +67,7 @@ func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, 
 		return false
 	}
 	if vorhanden {
-		apierrors.AntworteFehler(w, http.StatusConflict,
-			fmt.Errorf("für %s %s steht schon eine Leserzeile ohne Konto in der Leserdatei — das Konto entsteht über die Schul-E-Mail in der Akte, sonst gäbe es dieselbe Person zweimal", vorname, nachname))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf("Für %s %s steht schon ein Eintrag ohne Konto in der Leserdatei. Das Konto entsteht über die Schul-E-Mail in der Akte, sonst gäbe es dieselbe Person zweimal.", vorname, nachname), nil)
 		return false
 	}
 	return true
@@ -110,12 +109,10 @@ func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, ko
 func meldeAusweisKollision(w http.ResponseWriter, err error) bool {
 	switch {
 	case repository.IstNummerBuchOderAusweisKollision(err):
-		apierrors.AntworteFehler(w, http.StatusConflict,
-			errors.New("diese Nummer ist der Barcode eines Buchs und kann kein Ausweis sein"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Nummer ist der Barcode eines Buchs und kann kein Ausweis sein", nil)
 		return true
 	case repository.IstAusweisKollision(err):
-		apierrors.AntworteFehler(w, http.StatusConflict,
-			errors.New("diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)", nil)
 		return true
 	}
 	return false

@@ -21,7 +21,7 @@ func (t *Tueren) FotoHochladen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("missing student ID parameter"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Lesers fehlt", nil)
 			return
 		}
 
@@ -31,7 +31,7 @@ func (t *Tueren) FotoHochladen() http.HandlerFunc {
 		}
 
 		if !strings.HasPrefix(req.FotoDaten, "data:image/jpeg;base64,") {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("payload must be a base64 encoded JPEG data URL"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das Foto muss ein JPEG-Bild sein", nil)
 			return
 		}
 

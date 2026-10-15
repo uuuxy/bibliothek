@@ -73,8 +73,8 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	}
 
 	const (
-		meldungLehrerKlasse = "Lehrkräfte werden nicht als Schüler angelegt. Bitte unter System → Benutzer & Rechte ein Konto mit der Rolle Kollegium anlegen; an der Theke findet man die Lehrkraft dann über ihren Ausweis"
-		meldungSchuelerMail = "Ein Schüler bekommt kein Konto und keine E-Mail-Adresse."
+		meldungLehrerKlasse = "Lehrkräfte werden nicht als Schüler angelegt. Bitte unter System → Benutzer & Rechte ein Konto mit der Rolle Kollegium anlegen; an der Theke findet man die Lehrkraft dann über ihren Ausweis."
+		meldungSchuelerMail = "Ein Schüler bekommt kein Konto und keine E-Mail-Adresse"
 		moeglicheArten      = "Schüler, Lehrkraft, LiV, Praktikum, Sekretariat, U-plus, Fachbereich"
 	)
 
@@ -93,11 +93,11 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 		{"Schüler mit Schul-E-Mail", `{"vorname":"Karl","nachname":"Mitmail","klasse":"7a","geburtsdatum":"2012-03-04","email":"karl@lesertest.invalid"}`,
 			meldungSchuelerMail},
 		{"Praktikum mit Schul-E-Mail", `{"vorname":"Paul","nachname":"Praktikant","art":"praktikum","email":"paul@lesertest.invalid"}`,
-			"Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“ und deshalb keine Schul-E-Mail."},
+			"Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“ und deshalb keine Schul-E-Mail"},
 		{"Schüler mit Klasse Lehrer", `{"vorname":"Karl","nachname":"Lehrerklasse","klasse":"Lehrer","geburtsdatum":"2012-03-04"}`,
 			meldungLehrerKlasse},
 		{"Schüler ohne Geburtsdatum", `{"vorname":"Karl","nachname":"Ohnedatum","klasse":"7a"}`,
-			"Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt — ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt."},
+			"Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt. Ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt."},
 	} {
 		t.Run("Anlegen: "+f.name, func(t *testing.T) {
 			erwarte(t, anlegen(t, f.rumpf), http.StatusBadRequest, f.meldung)
@@ -111,7 +111,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	t.Run("Anlegen: Schüler doppelt", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7a","geburtsdatum":"2012-05-06"}`)
 		erwarte(t, anlegen(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7b","geburtsdatum":"2012-05-06"}`), http.StatusConflict,
-			"Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System")
+			"Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System.")
 	})
 	t.Run("Anlegen: Kollege mit demselben Namen", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Nora","nachname":"Namensgleich","art":"praktikum"}`)
@@ -140,13 +140,13 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 			"Aus einem Schüler wird kein Kollege und umgekehrt. Lege die Person neu an und lösche den falschen Eintrag."},
 		{"Vorname leer", schueler, `{"vorname":"  "}`, "Vorname darf nicht leer sein."},
 		{"Geburtsdatum leer", schueler, `{"geburtsdatum":""}`,
-			"Geburtsdatum kann nicht geleert werden — es ist der Schlüssel für den LUSD-Abgleich"},
+			"Das Geburtsdatum lässt sich nicht leeren. Es ist der Schlüssel für den LUSD-Abgleich."},
 		{"Klasse Lehrer", schueler, `{"klasse":"lehrer"}`, meldungLehrerKlasse},
 		{"Schul-E-Mail für einen Schüler", schueler, `{"email":"sina@lesertest.invalid"}`, meldungSchuelerMail},
 		{"Ausweisnummer leer", schueler, `{"barcode_id":""}`,
 			"Ausweisnummer darf nicht leer sein. Ohne sie ist der Schüler an der Theke nicht zu finden."},
 		{"Schul-E-Mail entfernen", lehrkraft, `{"email":""}`,
-			"Die Schul-E-Mail lässt sich hier nicht entfernen — ohne sie kommt die Person nicht mehr ins Portal. Das Konto abschalten geht in der Benutzerverwaltung."},
+			"Die Schul-E-Mail lässt sich hier nicht entfernen, ohne sie kommt die Person nicht mehr ins Portal. Das Konto abschalten geht in der Benutzerverwaltung."},
 		{"Schul-E-Mail ändern", lehrkraft, `{"email":"lea.neu@lesertest.invalid"}`,
 			"Unter lea.akte@lesertest.invalid besteht bereits ein Zugang. Die Adresse ist der Schlüssel der Anmeldung — ändern lässt sie sich in der Benutzerverwaltung, hier ist sie nur nachtragbar, solange keine da ist."},
 	} {
@@ -167,6 +167,6 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 		}
 		selbst := &auth.Claims{KontoID: kontoID, Rolle: auth.RolleAdmin}
 		rec := rufe(t, srv.LeserLoeschen(repository.NewProtokollAbfragen(pool)), http.MethodDelete, "/api/schueler/"+lehrkraft, lehrkraft, "", selbst)
-		erwarte(t, rec, http.StatusForbidden, "Der eigene Eintrag lässt sich nicht löschen — mit ihm fiele der eigene Zugang.")
+		erwarte(t, rec, http.StatusForbidden, "Der eigene Eintrag lässt sich nicht löschen. Mit ihm fiele der eigene Zugang.")
 	})
 }

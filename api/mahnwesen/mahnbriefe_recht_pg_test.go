@@ -81,7 +81,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("mit view_students allein: HTTP %d statt 403 — %q", rec.Code, pdftest.ErsteBytes(rec.Body.Bytes(), 120))
 	}
-	if rumpf := rec.Body.String(); !strings.Contains(rumpf, "keine Berechtigung") {
+	if rumpf := rec.Body.String(); !strings.Contains(rumpf, "Keine Berechtigung") {
 		t.Fatalf("das 403 kam nicht vom Rechte-Wächter: %s", rumpf)
 	}
 	if stufe, datum := testdaten.LadeMahnstufe(t, pool, ausleihe); stufe != 0 || datum != nil {

@@ -3,7 +3,6 @@ package bestellung
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -32,7 +31,7 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 
 	groesse := r.PathValue("groesse")
 	if groesse != "klein" && groesse != "gross" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("groesse muss 'klein' oder 'gross' sein"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Größe der Etiketten muss klein oder groß sein", nil)
 		return
 	}
 
@@ -48,8 +47,7 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 		format = pdf.EtikettFormatVorgabe
 	}
 	if _, bekannt := pdf.FindeEtikettFormat(format); !bekannt {
-		apierrors.AntworteFehler(w, http.StatusBadRequest,
-			fmt.Errorf("unbekanntes Etikettenformat %q", format))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Unbekanntes Format der Etiketten: %q", format), nil)
 		return
 	}
 
@@ -69,8 +67,7 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 			return
 		}
 		if !mitteltopf.HatGrossesLernmittelEtikett(mittel) {
-			apierrors.AntworteFehler(w, http.StatusNotFound,
-				errors.New("zu dieser Bestellung gibt es kein großes Lernmittel-Etikett"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Zu dieser Bestellung gibt es kein großes Lernmittel-Etikett", nil)
 			return
 		}
 	}
@@ -81,7 +78,7 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if len(etiketten) == 0 {
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("zu dieser Bestellung gibt es keine Etiketten"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Zu dieser Bestellung gibt es keine Etiketten", nil)
 		return
 	}
 

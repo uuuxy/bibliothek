@@ -98,7 +98,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [ ] Medienkatalog, Titel-Verwaltung: einen Titel mit der Tab-Taste ansteuern und mit der
   Eingabetaste öffnen
 - [ ] Buchakte, Reiter „Ausleiher": das Zeichen neben dem Datum einer überfälligen Ausleihe
-- [ ] Inventur: eine unbekannte Nummer scannen („Zu diesem Barcode gibt es kein Exemplar.")
+- [ ] Inventur: eine unbekannte Nummer scannen („Zu diesem Barcode gibt es kein Exemplar")
 - [ ] Statistiken: „Gesamtbestand" und „aktive Exemplare" zählen bestellte Exemplare nicht
   mehr mit
 - [ ] Leserakte einer Lehrkraft mit Dauerleihe über den Browser drucken (Strg+P; einen Knopf
@@ -211,8 +211,8 @@ der Nummer nichts mehr dazu offen ist.
   Zeichen über drei Zeilen; messen, ob ein breiter Text eine vierte Zeile beginnt.
 - [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, SQL-Testdaten über
   `internal/testdaten`; mit deinem Ja: `cmd/migrate-fotos`, der Lasttest, Migration 164.
-- [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** 214 feste Meldungen der Türen
-  beginnen klein, 59 sind englisch; 133 Aufrufe geben den Text eines Fehlers weiter.
+- [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** die festen Meldungen sind erledigt;
+  offen sind 83 Aufrufe, die den Text eines Fehlers weitergeben, und die Antworten in `inventur/`.
 - [x] **Tippfehler in TRUSTED_PROXIES (5.69):** erledigt am 15.10.2026. Ein Eintrag, der weder
   Netz noch Adresse ist, steht als Warnung im Log des Starts und auf der Seite
   „Betriebsbereitschaft" (Bereich „Vertraute Proxys").
@@ -569,34 +569,18 @@ ausdrückliches Ja.
 
 ### 5.68 Meldungen in Satzschreibung und auf Deutsch
 
-Gezählt am 15.10.2026 (Stand bd7f16af) über den Syntaxbaum des Programmcodes: 633 Aufrufe von
-`apierrors`, 411 davon mit einem Status unter 500. Die Oberfläche zeigt das Feld `error` an 55
-Stellen unverändert in Hinweisen und Dialogen; kein Code der Oberfläche vergleicht auf einen
-Meldungstext.
+Die festen Meldungen der Türen sind erledigt: `meldung_ratsche_test.go` prüft jeden Aufruf von
+`apierrors` mit Status unter 500 und festem Text, Konstanten eingeschlossen, ihr Bestand ist leer
+([STIL.md](STIL.md), Abschnitt 11). Offen, gezählt am 16.10.2026:
 
-- **Feste Texte:** 289 Aufrufe, 214 beginnen klein („eigenes Konto kann nicht deaktiviert
-  werden"), 59 sind englisch („rate limit exceeded", „supplier not found", an der Anmeldung
-  „invalid email or password"). Dieselbe Sache steht in sieben Fassungen da: „missing session
-  information", „nicht angemeldet", „keine sitzung", „Sitzungs-Information fehlt", „…fehlt
-  oder ist abgelaufen", „fehlende Session-Information", „fehlende Sitzungsinformationen".
-- **Text eines Fehlers:** 133 Aufrufe geben den Text eines Fehlers weiter
-  (`apierrors.BadRequest(err.Error(), err)`, `AntworteFehler(w, status, err)`). Fehlertexte
-  beginnen nach [STIL.md](STIL.md), Abschnitt 11, klein; so kommen sie klein an der Oberfläche
-  an. `tuer.sendeSitzungsfehler` schickt bei 401 den rohen Text der Prüfung
-  („failed to parse token: …", „user account no longer exists").
-- **Nicht gezählt:** `inventur/` antwortet über einen eigenen Helfer (`inventur/antwort.go`);
-  dazu kommen Antworten, die `{"error": …}` selbst schreiben.
-- **Zeichensetzung:** M3 (Content design, Grammar and punctuation): „Use sentence case for all
-  product text", „Omit punctuation on single-line sentences", „Use periods on: Multiple
-  sentences", „Em dashes are best avoided in UX writing". Die 75 groß beginnenden Meldungen
-  enden teils mit, teils ohne Punkt; rund 15 tragen einen Gedankenstrich.
-
-Nächster Schritt: eine Meldung je Sache (die Anmeldung zuerst, als Konstante in `api/tuer`),
-dann je Tür die festen Texte in Satzschreibung und auf Deutsch. Eine Ratsche über die festen
-Texte verlangt einen großen Anfang, kein englisches Wort, kein Wort, an dem der Filter für
-Datenbanktexte anschlägt (`apierrors.istDatenbankFehler`), und die Zeichensetzung nach M3. Die
-weitergegebenen Fehlertexte bekommen je Tür einen Satz, Einzelheiten als Felder des Fehlers
-(Abschnitt 11).
+- **Text eines Fehlers:** 59 Aufrufe von `AntworteFehler` geben eine Fehlervariable weiter, 24
+  nehmen `err.Error()` als Meldung (`apierrors.BadRequest(err.Error(), err)`). Fehlertexte
+  beginnen klein (Abschnitt 11) und kommen so klein an der Oberfläche an. Nächster Schritt: je
+  Tür einen Satz, Einzelheiten als Felder des Fehlers.
+- **`inventur/`** antwortet über `schreibeFehler(w, status, meldung)` (88 Aufrufe); die Ratsche
+  sieht diesen Helfer nicht. Nächster Schritt: den Helfer auf `AntworteFehlerMitMeldung`
+  stellen und die Ratsche auf ihn ausdehnen.
+- Antworten, die `{"error": …}` selbst schreiben, sieht die Ratsche ebenfalls nicht.
 
 ## 7. Betrieb (liegt bei der Schulseite)
 

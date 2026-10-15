@@ -47,7 +47,7 @@ func (t *Tueren) MailVorlageAendern() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ID fehlt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung fehlt", nil)
 			return
 		}
 
@@ -65,7 +65,7 @@ func (t *Tueren) MailVorlageAendern() http.HandlerFunc {
 		typ, betreffNeu, textNeu, err := repository.AendereMailVorlage(ctx, t.DB.Pool, id, req.Betreff, req.TextBody)
 		// Eine unbekannte Vorlage ist ein Fehler, kein „Erfolgreich gespeichert".
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("mail-Vorlage nicht gefunden"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Mail-Vorlage nicht gefunden", nil)
 			return
 		}
 		if err != nil {

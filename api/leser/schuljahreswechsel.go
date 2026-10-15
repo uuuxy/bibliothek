@@ -3,7 +3,6 @@ package leser
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -185,11 +184,11 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, antwort *sch
 func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schuljahreswechselAnfrage, bool) {
 	var anfrage schuljahreswechselAnfrage
 	if err := json.NewDecoder(r.Body).Decode(&anfrage); err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("ungültiger oder fehlender Request-Body"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
 		return anfrage, false
 	}
 	if !anfrage.Probelauf && !anfrage.Bestaetigt {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New(`bestätigung erforderlich: { "confirm": true } im Body senden`))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte den Schuljahreswechsel bestätigen", nil)
 		return anfrage, false
 	}
 	return anfrage, true
@@ -213,8 +212,7 @@ func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWrite
 		return false
 	}
 	if juengsteLaeufe > 0 {
-		apierrors.AntworteFehler(w, http.StatusConflict,
-			errors.New("schuljahreswechsel wurde vor wenigen Minuten bereits durchgeführt — ein erneuter Lauf würde alle Schüler doppelt versetzen"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Der Schuljahreswechsel lief vor wenigen Minuten. Ein zweiter Lauf würde alle Schüler doppelt versetzen.", nil)
 		return false
 	}
 	return true

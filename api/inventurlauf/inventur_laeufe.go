@@ -138,7 +138,7 @@ func (t *Tueren) InventurVerwerfen() http.HandlerFunc {
 			return
 		}
 		if req.LaufID == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("session_id fehlt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Inventurlaufs fehlt", nil)
 			return
 		}
 

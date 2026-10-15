@@ -49,7 +49,7 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 	auftrag, err := repository.BeanspruchBestellmail(ctx, t.DB.Pool, id)
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Bestellung nicht gefunden", nil)
 		return
 	case errors.Is(err, repository.ErrBestellmailNichtOffen):
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
@@ -115,7 +115,7 @@ func (t *Tueren) BestellmailVermerkNehmen() http.HandlerFunc {
 		err := repository.NimmBestellmailVermerk(ctx, t.DB.Pool, id)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Bestellung nicht gefunden", nil)
 			return
 		case errors.Is(err, repository.ErrBestellmailMitBestaetigung):
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,

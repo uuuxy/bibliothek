@@ -137,11 +137,11 @@ func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 			errors.New("bescheid nur für mittel=land"))
 	}
 	if len(req.Positionen) == 0 && len(req.Ausleihen) == 0 {
-		return time.Time{}, apierrors.BadRequest("Bitte mindestens ein Buch auswählen.", errors.New("keine positionen"))
+		return time.Time{}, apierrors.BadRequest("Bitte mindestens ein Buch auswählen", errors.New("keine positionen"))
 	}
 	frist, err := schulzeit.Kalendertag(req.FristBis)
 	if err != nil {
-		return time.Time{}, apierrors.BadRequest("Die Frist muss ein Datum sein (JJJJ-MM-TT).", err)
+		return time.Time{}, apierrors.BadRequest("Die Frist muss ein Datum der Form JJJJ-MM-TT sein", err)
 	}
 	// Frühestens morgen: Eine Frist von heute oder gestern machte den Bescheid sofort
 	// übergabefähig. Höchstens ein Jahr voraus: Ihr Jahr geht als Kassenjahr in die
@@ -150,11 +150,11 @@ func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 	jetzt := schulzeit.Jetzt()
 	heute := time.Date(jetzt.Year(), jetzt.Month(), jetzt.Day(), 0, 0, 0, 0, schulzeit.Zone())
 	if !frist.After(heute) {
-		return time.Time{}, apierrors.BadRequest("Die Frist muss nach dem heutigen Tag liegen — üblich sind vier Wochen ab Briefdatum.",
+		return time.Time{}, apierrors.BadRequest("Die Frist muss nach dem heutigen Tag liegen. Üblich sind vier Wochen ab Briefdatum.",
 			errors.New("frist nicht nach heute"))
 	}
 	if frist.After(heute.AddDate(1, 0, 0)) {
-		return time.Time{}, apierrors.BadRequest("Die Frist liegt mehr als ein Jahr in der Zukunft. Bitte das Datum prüfen — ihr Jahr geht als Kassenjahr in die Referenznummer.",
+		return time.Time{}, apierrors.BadRequest("Die Frist liegt mehr als ein Jahr in der Zukunft. Bitte das Datum prüfen, ihr Jahr geht als Kassenjahr in die Referenznummer.",
 			errors.New("frist mehr als ein jahr voraus"))
 	}
 	return frist, nil

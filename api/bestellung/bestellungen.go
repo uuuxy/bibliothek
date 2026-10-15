@@ -71,11 +71,11 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 	}
 
 	if req.LieferantID == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("supplier_id is required"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte einen Lieferanten wählen", nil)
 		return
 	}
 	if len(req.Positionen) == 0 {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Warenkorb ist leer", nil)
 		return
 	}
 	if !mitteltopf.IstGueltig(req.Mittel) {
@@ -221,7 +221,7 @@ func (t *Tueren) WareneingangBuchen() http.HandlerFunc {
 		}
 
 		if len(req.ExemplarIDs) == 0 {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("no exemplar_ids provided"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Keine Exemplare angegeben", nil)
 			return
 		}
 

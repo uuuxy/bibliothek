@@ -99,7 +99,7 @@ func (t *Tueren) TitelUnterSignatur() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		signatur := strings.TrimSpace(r.URL.Query().Get("signatur"))
 		if signatur == "" {
-			return apierrors.BadRequest("signatur ist erforderlich", errors.New("leere signatur"))
+			return apierrors.BadRequest("Bitte eine Signatur angeben", errors.New("leere signatur"))
 		}
 
 		zeilen, err := repository.LadeTitelUnterSignatur(r.Context(), t.DB.Pool, signatur, regalansichtGrenze+1)

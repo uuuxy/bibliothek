@@ -39,7 +39,7 @@ func (t *Tueren) AusleiheVerlaengern(einstellungsAbfragen repository.Einstellung
 func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, einstellungsAbfragen repository.EinstellungsAbfragen) {
 	ausleiheID := r.PathValue("ausleihe_id")
 	if ausleiheID == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende ausleihe_id"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Ausleihe fehlt", nil)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 
 	alteFrist, err := repository.SperreOffeneAusleiheMitFrist(ctx, tx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Ausleihe nicht gefunden oder schon zurückgegeben", nil)
 		return
 	}
 	if err != nil {
@@ -132,7 +132,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 
 	ausleiheID := r.PathValue("id")
 	if ausleiheID == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("fehlende Ausleihe-ID"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Ausleihe fehlt", nil)
 		return
 	}
 
@@ -159,8 +159,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 			return
 		}
 		if gesperrt {
-			apierrors.AntworteFehler(w, http.StatusForbidden,
-				errors.New("gesperrte Ausleihe: die Frist kann nicht in die Zukunft verschoben werden — die Sperre soll zur Rückgabe zwingen"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die Ausleihe ist gesperrt. Ihre Frist lässt sich nicht verlängern, die Sperre soll zur Rückgabe führen.", nil)
 			return
 		}
 	}
@@ -168,7 +167,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 	id, gesetzteFrist, err := repository.SetzeAusleihFrist(ctx, t.DB.Pool, ausleiheID, neuesDatum)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Ausleihe nicht gefunden oder schon zurückgegeben", nil)
 			return
 		}
 		log.Printf("Fehler bei manueller Frist-Überschreibung: %v", err)
@@ -227,7 +226,7 @@ func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen repository.Ei
 func (t *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, ausleiheID, vorgang string) (gesperrt bool, grund string, geprueft bool) {
 	gesperrt, grund, err := t.pruefeAusleihSperre(ctx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Ausleihe nicht gefunden oder schon zurückgegeben", nil)
 		return false, "", false
 	}
 	if err != nil {
