@@ -9,6 +9,8 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/mitteltopf"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Die Tür füllt den Auftrag an das Anlegen der Bestellung aus der Anfrage und die Angaben der
@@ -36,7 +38,7 @@ func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
 		},
 	}
 	ist := bestellAuftrag(anfrage)
-	if !reflect.DeepEqual(ist, will) {
+	if !cmp.Equal(ist, will) {
 		t.Errorf("Auftrag =\n%+v\nerwartet\n%+v", ist, will)
 	}
 	if leer := tuertest.LeereFelder(reflect.ValueOf(ist), "service.BestellAuftrag"); len(leer) > 0 {
@@ -89,7 +91,7 @@ func TestBestellmailDatenAus_FuelltJedesFeldAusDerBestellung(t *testing.T) {
 		},
 	}
 	ist := bestellmailDatenAus(ergebnis)
-	if !reflect.DeepEqual(ist, will) {
+	if !cmp.Equal(ist, will) {
 		t.Errorf("Angaben der Mail =\n%+v\nerwartet\n%+v", ist, will)
 	}
 	if leer := tuertest.LeereFelder(reflect.ValueOf(ist), "bestellmailDaten"); len(leer) > 0 {

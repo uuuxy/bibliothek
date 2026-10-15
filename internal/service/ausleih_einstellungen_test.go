@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Jedes Feld der Einstellungen der Ausleihe kommt aus dem gleichnamigen Feld der Einstellungen.
@@ -39,7 +41,7 @@ func TestAusleihEinstellungenAus_JedesFeldAusSeinerQuelle(t *testing.T) {
 	ist := reflect.ValueOf(ausleihEinstellungenAus(quelle)).Elem()
 	for i := range ziel.NumField() {
 		name := ziel.Field(i).Name
-		if !reflect.DeepEqual(ist.Field(i).Interface(), q.FieldByName(name).Interface()) {
+		if !cmp.Equal(ist.Field(i).Interface(), q.FieldByName(name).Interface()) {
 			t.Errorf("%s: %v, erwartet den Wert der Quelle %v", name, ist.Field(i).Interface(), q.FieldByName(name).Interface())
 		}
 	}

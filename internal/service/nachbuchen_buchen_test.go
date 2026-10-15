@@ -1,17 +1,18 @@
 package service
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // TestOmniboxErgebnisAus: Das Nachbuchen antwortet in der Form der Theke. Jedes Feld der
 // Buchung kommt in der Antwort an; ohne Buchung ist die Antwort leer und nicht nil.
 func TestOmniboxErgebnisAus(t *testing.T) {
-	if antwort := OmniboxErgebnisAus(nil); !reflect.DeepEqual(antwort, &OmniboxErgebnis{}) {
+	if antwort := OmniboxErgebnisAus(nil); !cmp.Equal(antwort, &OmniboxErgebnis{}) {
 		t.Errorf("ohne Buchung: %+v, erwartet eine leere Antwort", antwort)
 	}
 
@@ -50,7 +51,7 @@ func TestOmniboxErgebnisAus(t *testing.T) {
 		RegalfreigabeBarcode: "B-2",
 		AuflagenHinweis:      hinweis,
 	}
-	if !reflect.DeepEqual(antwort, soll) {
+	if !cmp.Equal(antwort, soll) {
 		t.Errorf("Antwort %+v, erwartet %+v", antwort, soll)
 	}
 }

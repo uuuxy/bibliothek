@@ -26,7 +26,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -38,6 +37,8 @@ import (
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
 	"bibliothek/sse"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // listenGrenze: je Liste (Route und Ort in der Antwort, „$" ist die Wurzel) die Antwort.
@@ -189,7 +190,7 @@ func TestListenPfade_ErkenntDieFormen(t *testing.T) {
 		{`kein json`, nil},
 	}
 	for _, f := range faelle {
-		if ist := listenPfade([]byte(f.rumpf)); !reflect.DeepEqual(ist, f.soll) {
+		if ist := listenPfade([]byte(f.rumpf)); !cmp.Equal(ist, f.soll) {
 			t.Errorf("listenPfade(%s) = %v, erwartet %v", f.rumpf, ist, f.soll)
 		}
 	}

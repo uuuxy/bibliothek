@@ -3,12 +3,13 @@ package service
 import (
 	"context"
 	"errors"
-	"reflect"
 	"strings"
 	"testing"
 
 	"bibliothek/db"
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // festerLeserAttrappe liefert einen festen Leser für die Ausweis-Stufe der Theke.
@@ -387,7 +388,7 @@ func TestVerarbeiteEingabe_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
 		if !strings.Contains(err.Error(), gescannt) {
 			t.Errorf("Meldung %q nennt nicht die gescannte Nummer %s", err.Error(), gescannt)
 		}
-		if soll := []string{gescannt, gekuerzt}; !reflect.DeepEqual(gefragt, soll) {
+		if soll := []string{gescannt, gekuerzt}; !cmp.Equal(gefragt, soll) {
 			t.Errorf("gefragt wurde nach %v, erwartet %v", gefragt, soll)
 		}
 	})

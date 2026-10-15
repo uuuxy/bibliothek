@@ -11,6 +11,8 @@ import (
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Der Bildschirm zeigt jeden gelieferten Abschnitt als Feld mit seiner Zahl
@@ -114,7 +116,7 @@ func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 		},
 		Gesamt: 2, OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
 	}
-	if !reflect.DeepEqual(blatt, want) {
+	if !cmp.Equal(blatt, want) {
 		t.Errorf("Eingabe des Blatts =\n%+v\nerwartet\n%+v", blatt, want)
 	}
 	if leer := tuertest.LeereFelder(reflect.ValueOf(blatt), "pdf.Abgangsbuch"); len(leer) > 0 {
@@ -148,7 +150,7 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 		},
 		Gesamt: 3, OhneZuordnung: true,
 	}
-	if !reflect.DeepEqual(blatt, want) {
+	if !cmp.Equal(blatt, want) {
 		t.Errorf("Eingabe des Blatts =\n%+v\nerwartet\n%+v", blatt, want)
 	}
 	if leer := tuertest.LeereFelder(reflect.ValueOf(blatt), "pdf.Zugangsbuch"); len(leer) > 0 {

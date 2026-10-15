@@ -3,9 +3,10 @@ package repository
 import (
 	"context"
 	"errors"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Mehrere Schlagworte auf einmal löschen (wie Littera „Datenbearbeitung"):
@@ -60,7 +61,7 @@ func TestSchlagwortPflege_MehrereLoeschen(t *testing.T) {
 		t.Fatalf("mehrere löschen: %v", err)
 	}
 	want := SchlagwortLoeschung{Woerter: 4, Titel: 2, Verweise: 1, Namen: []string{"Magie", "Mühle", "Zauberei", "Zeit"}}
-	if !reflect.DeepEqual(geloescht, want) {
+	if !cmp.Equal(geloescht, want) {
 		t.Errorf("mehrere löschen: %+v, want %+v", geloescht, want)
 	}
 	if got := anzahl(); got != vorher-5 {

@@ -3,13 +3,14 @@ package tuer
 import (
 	"context"
 	"encoding/json"
-	"reflect"
 	"testing"
 
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Der Eintrag zur Konto-Anlage trägt jede Angabe unter ihrem Namen, mit der angemeldeten Person
@@ -47,7 +48,7 @@ func TestProtokolliereKontoAnlage_JedeAngabeUnterIhremNamen(t *testing.T) {
 		"ziel_id": zielID, "email": "neu@konto-anlage.example", "rolle": "kollegium",
 		"vorname": "Vera", "nachname": "Nachbar",
 	}
-	if !reflect.DeepEqual(details, erwartet) {
+	if !cmp.Equal(details, erwartet) {
 		t.Errorf("Details %v, erwartet %v", details, erwartet)
 	}
 }

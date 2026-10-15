@@ -9,6 +9,8 @@ import (
 	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // anschreibenBlatt druckt das Anschreiben, wie die Anlagen der Bestellmail es tun.
@@ -46,7 +48,7 @@ func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
 				{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Menge: 2},
 			},
 		}
-		if !reflect.DeepEqual(eingabe, want) {
+		if !cmp.Equal(eingabe, want) {
 			t.Errorf("%s: Eingabe des Anschreibens =\n%+v\nerwartet\n%+v", mittel, eingabe, want)
 		}
 		if leer := tuertest.LeereFelder(reflect.ValueOf(eingabe), "pdf.Bestellanschreiben"); len(leer) > 0 {

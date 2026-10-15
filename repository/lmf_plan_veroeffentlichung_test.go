@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Die Einstellung der Eingangsjahrgänge wird von Hand getippt („5, 7"); der Leser muss
@@ -22,7 +23,7 @@ func TestEingangsjahrgaengeAus(t *testing.T) {
 		{"9", []int{9}},
 	}
 	for _, f := range faelle {
-		if ist := EingangsjahrgaengeAus(f.in); !reflect.DeepEqual(ist, f.soll) {
+		if ist := EingangsjahrgaengeAus(f.in); !cmp.Equal(ist, f.soll) {
 			t.Errorf("EingangsjahrgaengeAus(%q) = %v, erwartet %v", f.in, ist, f.soll)
 		}
 	}

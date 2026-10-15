@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -10,6 +9,8 @@ import (
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Welcher Plan beim Speichern als „vorher" zählt: der veröffentlichte Plan derselben Art im
@@ -70,7 +71,7 @@ func TestLadeLMFPlanZeilenVorher(t *testing.T) {
 		klassen = append(klassen, z.Klassen)
 	}
 	// Die Datenbank führt die Klasse in ihrer Anzeigeform („09H1").
-	if !reflect.DeepEqual(klassen, [][]string{{"09H1"}, {"10R1"}}) {
+	if !cmp.Equal(klassen, [][]string{{"09H1"}, {"10R1"}}) {
 		t.Errorf("veröffentlichter Plan im selben Schuljahr: Klassen %v, erwartet die zwei Zeilen des Plans", klassen)
 	}
 	// Der 31.07.2027 gehört noch zum Schuljahr 2026/27, der 01.08.2027 zum nächsten.

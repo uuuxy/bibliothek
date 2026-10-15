@@ -2,11 +2,12 @@ package leser
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Die Klassenleitung rückt mit der Versetzung eine Stufe hoch, außer von 6 nach 7 und von
@@ -67,7 +68,7 @@ func TestVersetzungKlassenleitungEntfaelltBeiNeubildung(t *testing.T) {
 		"10G1": "d@schule.example",
 		"13T1": "g@schule.example",
 	}
-	if !reflect.DeepEqual(got, erwartet) {
+	if !cmp.Equal(got, erwartet) {
 		t.Errorf("Zuordnungen nach der Versetzung:\n got      %v\n erwartet %v", got, erwartet)
 	}
 }

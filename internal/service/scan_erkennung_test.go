@@ -3,10 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // TestErkenneScan: Die globale Suche fragt „was ist das?" und springt hin. Sie löst einen Wert
@@ -72,7 +73,7 @@ func TestErkenneScan(t *testing.T) {
 			if !errors.Is(err, f.sollFehler) {
 				t.Fatalf("Fehler %v, erwartet %v", err, f.sollFehler)
 			}
-			if !reflect.DeepEqual(treffer, f.soll) {
+			if !cmp.Equal(treffer, f.soll) {
 				t.Errorf("Treffer %+v, erwartet %+v", treffer, f.soll)
 			}
 		})

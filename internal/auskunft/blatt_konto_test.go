@@ -1,11 +1,12 @@
 package auskunft
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Die selbst bearbeiteten Vorgänge stehen je Tag und Handlung in einer Zeile, jede Uhrzeit
@@ -35,7 +36,7 @@ func TestDSGVOVorgaengeJeTag(t *testing.T) {
 		{tag: "23.09.2026", handlung: "Verwaltungseingriff: OVERRIDE_BLOCK", zeiten: []string{"10:00 (IP 10.0.0.7)"}},
 		{tag: "ohne gespeicherten Zeitpunkt", handlung: "Rückgabe gebucht", zeiten: []string{"—"}},
 	}
-	if got := dsgvoVorgaengeJeTag(vorgaenge); !reflect.DeepEqual(got, want) {
-		t.Errorf("Zeilen:\n got %+v\nwant %+v", got, want)
+	if diff := cmp.Diff(want, dsgvoVorgaengeJeTag(vorgaenge), cmp.AllowUnexported(dsgvoVorgangsZeile{})); diff != "" {
+		t.Errorf("dsgvoVorgaengeJeTag: Zeilen weichen ab (-erwartet +ist):\n%s", diff)
 	}
 }

@@ -1,13 +1,14 @@
 package service
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Die eine Regel, welche Klasse nicht in den Plan einer Art gehört. Der Vorschlag und die Liste
@@ -97,12 +98,12 @@ func TestLMFPlanReihenfolgeVorgabe_VorjahrBringtKlassenUndVermerkOhnePlatz(t *te
 		},
 		Ausgelassen: []string{"08R1", "12T1"},
 	}
-	if !reflect.DeepEqual(ist, will) {
+	if !cmp.Equal(ist, will) {
 		t.Errorf("Reihenfolge aus dem Vorjahr =\n%+v\nerwartet\n%+v", ist, will)
 	}
 	// Ohne Vorjahr gilt die Regel, und was im Stand steht, zählt nicht.
 	regel := LMFPlanReihenfolgeVorgabe(repository.LMFTerminRueckgabe, []int{5, 7}, false, st, klassen)
-	if regel.Quelle != lmfPlanQuelleRegel || len(regel.Zeilen) != 5 || !reflect.DeepEqual(regel.Ausgelassen, []string{"12T1"}) {
+	if regel.Quelle != lmfPlanQuelleRegel || len(regel.Zeilen) != 5 || !cmp.Equal(regel.Ausgelassen, []string{"12T1"}) {
 		t.Errorf("Reihenfolge aus der Regel: %+v, erwartet drei Klassen, Nachzügler und Aufräumen und die Oberstufe draußen", regel)
 	}
 	// Leere Listen statt nil: Der Planer bekommt `[]`.

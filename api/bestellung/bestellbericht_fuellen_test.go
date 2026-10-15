@@ -10,6 +10,8 @@ import (
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Die Tür füllt die Blöcke des Bestellberichts aus den Zeilen der Abfrage. Jedes Feld kommt aus
@@ -55,7 +57,7 @@ func TestBestellberichtToepfe_FuelltJedesFeldAusDerZeile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Blöcke füllen: %v", err)
 	}
-	if !reflect.DeepEqual(ist, will) {
+	if !cmp.Equal(ist, will) {
 		t.Errorf("Blöcke =\n%+v\nerwartet\n%+v", ist, will)
 	}
 	if leer := tuertest.LeereFelder(reflect.ValueOf(ist), "Blöcke"); len(leer) > 0 {

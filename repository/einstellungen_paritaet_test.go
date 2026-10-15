@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Ein Feld der Einstellungen hat zwei Enden: paareAusPatch schreibt es, setzeEinstellung liest
@@ -36,7 +38,7 @@ func TestEinstellungen_SchreibpfadUndLesepfadSindDeckungsgleich(t *testing.T) {
 		nachher := einstellungenVorgabe()
 		wert := probewert(schluessel)
 		setzeEinstellung(nachher, schluessel, &wert)
-		if reflect.DeepEqual(vorher, nachher) {
+		if cmp.Equal(vorher, nachher) {
 			t.Errorf("Schlüssel %q wird geschrieben, aber beim Laden nie zurückgelesen: "+
 				"Das Feld speichert scheinbar und bleibt leer. "+
 				"Es fehlt der case-Zweig in setzeEinstellung.", schluessel)

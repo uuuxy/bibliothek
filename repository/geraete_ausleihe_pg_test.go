@@ -3,13 +3,13 @@ package repository
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 	"time"
 
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -69,7 +69,7 @@ func TestLadeGeraetZuNummer_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", nummer, err)
 		}
-		if !reflect.DeepEqual(ist, soll) {
+		if !cmp.Equal(ist, soll) {
 			t.Errorf("%s:\n  ist  %+v\n  soll %+v", nummer, ist, soll)
 		}
 	}
@@ -338,7 +338,7 @@ func TestLeserNameUndKlasse_NurNameUndKlasse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", soll.Nachname, err)
 		}
-		if !reflect.DeepEqual(ist, soll) {
+		if !cmp.Equal(ist, soll) {
 			t.Errorf("%s:\n  ist  %+v\n  soll %+v", soll.Nachname, ist, soll)
 		}
 	}

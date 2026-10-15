@@ -3,13 +3,13 @@ package repository
 import (
 	"context"
 	"errors"
-	"reflect"
 	"slices"
 	"testing"
 	"time"
 
 	"bibliothek/db"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -209,7 +209,7 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 	// Löschen: Titel verlieren das Wort, Verweise darauf fallen mit.
 	geloescht, err := LoescheSchlagworte(ctx, pool, []string{ids["Magie"]})
 	want := SchlagwortLoeschung{Woerter: 1, Titel: 1, Verweise: 1, Namen: []string{"Magie"}}
-	if err != nil || !reflect.DeepEqual(geloescht, want) {
+	if err != nil || !cmp.Equal(geloescht, want) {
 		t.Errorf("löschen: %+v err=%v, want 1 Wort, 1 Titel, 1 Verweis", geloescht, err)
 	}
 	if got := woerterAm(t, pool, "Krabat"); len(got) != 0 {

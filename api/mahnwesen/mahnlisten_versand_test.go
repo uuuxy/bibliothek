@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -17,6 +16,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/repository"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
 )
 
@@ -236,7 +236,7 @@ func TestLeseKlassenVersandAnfrage(t *testing.T) {
 				if got.Klassen != nil {
 					t.Fatalf("Klassen = %v, want nil (= alle Klassen)", *got.Klassen)
 				}
-			} else if !reflect.DeepEqual(*got.Klassen, tt.wantKlassen) {
+			} else if !cmp.Equal(*got.Klassen, tt.wantKlassen) {
 				t.Fatalf("Klassen = %v, want %v", *got.Klassen, tt.wantKlassen)
 			}
 			if got.Umleitung != tt.wantEmail {
@@ -280,7 +280,7 @@ func TestWaehleKlassen(t *testing.T) {
 		if len(gewaehlt) != 1 || gewaehlt[0].Klasse != "5a" {
 			t.Fatalf("gewaehlt = %+v, want genau [5a]", gewaehlt)
 		}
-		if !reflect.DeepEqual(unbekannt, []string{"05A"}) {
+		if !cmp.Equal(unbekannt, []string{"05A"}) {
 			t.Fatalf("unbekannt = %v, want [05A]", unbekannt)
 		}
 	})

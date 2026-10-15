@@ -1,9 +1,10 @@
 package inventur
 
 import (
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestLeseCSVZeilen(t *testing.T) {
@@ -59,7 +60,7 @@ func TestLeseCSVZeilen(t *testing.T) {
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
-				if !reflect.DeepEqual(ergebnis, f.expect) {
+				if !cmp.Equal(ergebnis, f.expect) {
 					t.Errorf("expected %v, got %v", f.expect, ergebnis)
 				}
 			}
@@ -121,7 +122,7 @@ func TestDetermineColumnIndices(t *testing.T) {
 			if mitKopf != f.expectedHasHead {
 				t.Errorf("expected hasHeader=%v, got %v", f.expectedHasHead, mitKopf)
 			}
-			if !reflect.DeepEqual(idx, f.expectedIdx) {
+			if !cmp.Equal(idx, f.expectedIdx) {
 				t.Errorf("expected %v, got %v", f.expectedIdx, idx)
 			}
 		})
@@ -180,7 +181,7 @@ func TestErrateSpaltenAusInhalt(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			errateSpaltenAusInhalt(f.header, f.initIdx)
-			if !reflect.DeepEqual(f.initIdx, f.expected) {
+			if !cmp.Equal(f.initIdx, f.expected) {
 				t.Errorf("expected %v, got %v", f.expected, f.initIdx)
 			}
 		})

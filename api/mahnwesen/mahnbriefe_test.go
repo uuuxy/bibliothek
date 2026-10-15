@@ -8,6 +8,8 @@ import (
 	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Der Mahnbrief entsteht aus den Zeilen der Abfrage. Jedes Feld seiner Eingabe kommt aus seiner
@@ -40,7 +42,7 @@ func TestMahnbriefEmpfaenger_FuelltJedesFeldDerEingabe(t *testing.T) {
 				{Titel: "Titel 3", Barcode: "B-3", AusgeliehenAm: ausgeliehen.AddDate(0, 0, 3), Frist: frist.AddDate(0, 0, 4), TageUeberfaellig: 5},
 			}},
 	}
-	if !reflect.DeepEqual(eingabe, want) {
+	if !cmp.Equal(eingabe, want) {
 		t.Errorf("Eingabe des Mahnbriefs =\n%+v\nerwartet\n%+v", eingabe, want)
 	}
 	if leer := tuertest.LeereFelder(reflect.ValueOf(eingabe), "[]pdf.MahnbriefEmpfaenger"); len(leer) > 0 {

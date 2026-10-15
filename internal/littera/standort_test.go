@@ -3,9 +3,10 @@ package littera
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Personen wie im echten Export: Verfasser in Katalogform und, dazwischen, was die
@@ -80,7 +81,7 @@ func TestStandortvermerkStehtNichtAlsVerfasserDa(t *testing.T) {
 		if z.Autoren[f.titel] != f.autor {
 			t.Errorf("Titel %s (%s): Verfasser %q, erwartet %q", f.titel, f.warum, z.Autoren[f.titel], f.autor)
 		}
-		if !reflect.DeepEqual(z.Standortvermerke[f.titel], f.vermerke) {
+		if !cmp.Equal(z.Standortvermerke[f.titel], f.vermerke) {
 			t.Errorf("Titel %s (%s): Vermerke %q, erwartet %q", f.titel, f.warum, z.Standortvermerke[f.titel], f.vermerke)
 		}
 	}
@@ -88,7 +89,7 @@ func TestStandortvermerkStehtNichtAlsVerfasserDa(t *testing.T) {
 		"Bibliothek Klassensatz Regal 11": true, "U plus": true,
 		"Louise Carleton-Gertsch": true, "LMF/Bibliothek": true,
 	}
-	if !reflect.DeepEqual(z.VermerkNamen, erkannt) {
+	if !cmp.Equal(z.VermerkNamen, erkannt) {
 		t.Errorf("VermerkNamen nennt, was an einem Titel als Vermerk erkannt ist: %v", z.VermerkNamen)
 	}
 }
@@ -103,7 +104,7 @@ func TestKeinStandortBleibtVerfasser(t *testing.T) {
 	if len(z.Standortvermerke["20"]) != 0 {
 		t.Errorf("ausgenommener Eintrag steht als Standort da: %q", z.Standortvermerke["20"])
 	}
-	if !reflect.DeepEqual(z.Standortvermerke["17"], []string{"Bibliothek Klassensatz Regal 11"}) {
+	if !cmp.Equal(z.Standortvermerke["17"], []string{"Bibliothek Klassensatz Regal 11"}) {
 		t.Errorf("die Ausnahme hat einen anderen Vermerk mitgenommen: %q", z.Standortvermerke["17"])
 	}
 }
@@ -200,10 +201,10 @@ func TestZaehleStandorte(t *testing.T) {
 		t.Errorf("eigen %d, vom Titel %d, Lernmittel nur nach Vermerk %d — erwartet 2, 3, 1",
 			b.ExemplareEigen, b.ExemplareVomTitel, b.LernmittelNurVermerk)
 	}
-	if !reflect.DeepEqual(b.Vermerke, []Standortzahl{{"LMF", 2}, {"Schulseelsorge", 1}}) {
+	if !cmp.Equal(b.Vermerke, []Standortzahl{{"LMF", 2}, {"Schulseelsorge", 1}}) {
 		t.Errorf("Vermerke: %v", b.Vermerke)
 	}
-	if !reflect.DeepEqual(b.Sonderstandorte, []Standortzahl{{"Lehrerschrank", 2}}) {
+	if !cmp.Equal(b.Sonderstandorte, []Standortzahl{{"Lehrerschrank", 2}}) {
 		t.Errorf("Sonderstandorte: %v", b.Sonderstandorte)
 	}
 }
@@ -281,7 +282,7 @@ func TestLeseAltbestandMitStandorten(t *testing.T) {
 	if autor["20"] != "Louise Carleton-Gertsch" {
 		t.Errorf("Titel 20: die ausgenommene Verfasserin fehlt: %q", autor["20"])
 	}
-	if !reflect.DeepEqual(ab.Standortvermerke["17"], []string{"Bibliothek Klassensatz Regal 11"}) {
+	if !cmp.Equal(ab.Standortvermerke["17"], []string{"Bibliothek Klassensatz Regal 11"}) {
 		t.Errorf("Titel 17: Vermerke %q", ab.Standortvermerke["17"])
 	}
 
@@ -290,7 +291,7 @@ func TestLeseAltbestandMitStandorten(t *testing.T) {
 		standort[e.ID], _ = standortVon(e, ab.Standortvermerke[e.TitelID])
 	}
 	erwartet := map[string]string{"1": "Bibliothek Klassensatz Regal 11", "2": "Lehrerschrank", "3": ""}
-	if !reflect.DeepEqual(standort, erwartet) {
+	if !cmp.Equal(standort, erwartet) {
 		t.Errorf("Standorte der Exemplare: %v, erwartet %v", standort, erwartet)
 	}
 }

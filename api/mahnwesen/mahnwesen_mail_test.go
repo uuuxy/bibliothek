@@ -12,6 +12,8 @@ import (
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Die Mahnliste entsteht aus den Gruppen der Abfrage. Jedes Feld ihrer Eingabe kommt aus
@@ -47,7 +49,7 @@ func TestMahnlisteSeiten_FuelltJedesFeldDerEingabe(t *testing.T) {
 			{Titel: "Titel 3", Autor: "Autor 3", Barcode: "B-3", CoverURL: "/uploads/c3.webp", FaelligAm: "03.06.2026", TageUeberfaellig: 7},
 		}},
 	}
-	if !reflect.DeepEqual(seiten, want) {
+	if !cmp.Equal(seiten, want) {
 		t.Errorf("Eingabe der Mahnliste =\n%+v\nerwartet\n%+v", seiten, want)
 	}
 	if leer := tuertest.LeereFelder(reflect.ValueOf(seiten), "[]pdf.MahnlisteSchueler"); len(leer) > 0 {

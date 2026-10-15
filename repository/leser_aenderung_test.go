@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // alleFelderDerAenderung füllt jedes Feld von LeserAenderung über Reflexion: Ein neues Feld
@@ -68,7 +70,7 @@ func TestLeserAenderung_AnweisungUndWerte(t *testing.T) {
 	sollWerte := []any{"wert-Vorname", "wert-Nachname", "wert-Ausweisnummer", "wert-Klasse", 2031,
 		a.Geburtsdatum, "wert-Strasse", "wert-Hausnummer", "wert-Plz", "wert-Ort",
 		"wert-ElternEmail", "wert-LUSDID", "wert-Art", "die-kennung"}
-	if !reflect.DeepEqual(args, sollWerte) {
+	if !cmp.Equal(args, sollWerte) {
 		t.Errorf("Werte:\n ist  %#v\n soll %#v", args, sollWerte)
 	}
 }
@@ -80,7 +82,7 @@ func TestLeserAenderung_WenigeFelder(t *testing.T) {
 		t.Error("eine Änderung ohne Feld gilt nicht als leer")
 	}
 	query, args := keine.anweisung("k")
-	if query != "UPDATE leser SET aktualisiert_am = CURRENT_TIMESTAMP WHERE id = $1" || !reflect.DeepEqual(args, []any{"k"}) {
+	if query != "UPDATE leser SET aktualisiert_am = CURRENT_TIMESTAMP WHERE id = $1" || !cmp.Equal(args, []any{"k"}) {
 		t.Errorf("leere Änderung: %s %#v", query, args)
 	}
 
@@ -91,7 +93,7 @@ func TestLeserAenderung_WenigeFelder(t *testing.T) {
 	}
 	query, args = eine.anweisung("k")
 	if query != "UPDATE leser SET aktualisiert_am = CURRENT_TIMESTAMP, ort = $1 WHERE id = $2" ||
-		!reflect.DeepEqual(args, []any{"Ortsname", "k"}) {
+		!cmp.Equal(args, []any{"Ortsname", "k"}) {
 		t.Errorf("Änderung mit einem Feld: %s %#v", query, args)
 	}
 }
@@ -105,7 +107,7 @@ func TestLeserAenderung_LeererWert(t *testing.T) {
 	}
 	_, args := a.anweisung("k")
 	soll := []any{"", nil, nil, nil, nil, nil, nil, "k"}
-	if !reflect.DeepEqual(args, soll) {
+	if !cmp.Equal(args, soll) {
 		t.Errorf("Werte:\n ist  %#v\n soll %#v", args, soll)
 	}
 }
