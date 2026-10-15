@@ -48,17 +48,6 @@ func evictExpiredLogins(now time.Time) {
 	}
 }
 
-// statusWriter intercepts the HTTP status code written by the wrapped handler.
-type statusWriter struct {
-	http.ResponseWriter
-	status int
-}
-
-func (w *statusWriter) WriteHeader(status int) {
-	w.status = status
-	w.ResponseWriter.WriteHeader(status)
-}
-
 // reserviereLoginVersuch prüft/aktualisiert den Fehlversuchszähler einer IP (unter Lock).
 // blocked=true bedeutet: die IP ist derzeit gesperrt (siehe maxLoginFehlversucheProIP,
 // gezählt im 15-Minuten-Fenster).
@@ -142,7 +131,7 @@ func AuthRateLimitMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Intercept the response status
-		sw := &statusWriter{
+		sw := &statusRecorder{
 			ResponseWriter: w,
 			status:         http.StatusOK, // Default to OK in case the handler doesn't call WriteHeader
 		}
