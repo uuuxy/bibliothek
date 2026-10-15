@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/service"
-	"bibliothek/pdf"
 	"bibliothek/pkg/bestelllink"
 	"bibliothek/repository"
 )
@@ -65,12 +65,7 @@ func (t *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 	if err != nil {
 		return false, fmt.Errorf("einstellungen lesen: %w", err)
 	}
-	schule := pdf.SchuleInfo{
-		Name:    einstellungen.SchuleName,
-		Strasse: einstellungen.SchuleStrasse,
-		PLZ:     einstellungen.SchulePLZ,
-		Ort:     einstellungen.SchuleOrt,
-	}
+	schule := tuer.SchuleAus(einstellungen)
 
 	betreffVorlage, textVorlage := service.LadeBestellMailVorlage(ctx, t.DB.Pool)
 	// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht dann

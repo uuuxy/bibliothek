@@ -37,12 +37,7 @@ func (t *Tueren) ladeMahnbriefVorlage(ctx context.Context) (pdf.MahnbriefVorlage
 	if err != nil {
 		return pdf.MahnbriefVorlage{}, fmt.Errorf("einstellungen lesen: %w", err)
 	}
-	schule := pdf.SchuleInfo{
-		Name:    einstellungen.SchuleName,
-		Strasse: einstellungen.SchuleStrasse,
-		PLZ:     einstellungen.SchulePLZ,
-		Ort:     einstellungen.SchuleOrt,
-	}
+	schule := tuer.SchuleAus(einstellungen)
 	return pdf.MahnbriefVorlage{Betreff: betreff, Text: text, Absender: schule.Absenderzeile()}, nil
 }
 

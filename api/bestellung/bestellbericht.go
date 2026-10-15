@@ -129,12 +129,7 @@ func (t *Tueren) BestellberichtPDF() http.HandlerFunc {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 			return
 		}
-		schule := pdf.SchuleInfo{
-			Name:    einstellungen.SchuleName,
-			Strasse: einstellungen.SchuleStrasse,
-			PLZ:     einstellungen.SchulePLZ,
-			Ort:     einstellungen.SchuleOrt,
-		}
+		schule := tuer.SchuleAus(einstellungen)
 
 		toepfe, err := bestellberichtToepfe(bestellungen)
 		if err != nil {

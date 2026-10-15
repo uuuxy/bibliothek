@@ -101,10 +101,7 @@ func (t *Tueren) AbgangsbuchPDF() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 		}
-		schule := pdf.SchuleInfo{
-			Name: einst.SchuleName, Strasse: einst.SchuleStrasse,
-			PLZ: einst.SchulePLZ, Ort: einst.SchuleOrt,
-		}
+		schule := tuer.SchuleAus(einst)
 
 		blatt, err := pdf.ErzeugeAbgangsbuch(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), schule)
 		if err != nil {

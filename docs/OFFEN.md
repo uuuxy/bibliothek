@@ -184,7 +184,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] Das Wurzelpaket.
 - [x] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
 - [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, Zustand auf der Ebene eines
-  Pakets, der Kopf der Schule an acht Türen.
+  Pakets.
 - [ ] Die Oberfläche: Dateinamen und Namen in einer Sprache.
 - [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
@@ -501,8 +501,6 @@ Ordner des Pakets und für die Form `paket.Name`.
   (`coverquelle.MerkeErsatzbildFuerTest`). Das Regelwerk (Best Practices, „Global state")
   verlangt Werte, die der Rufer anlegt und weiterreicht, wie es `tuer.Basis` für Datenbank,
   Anmeldung und Uhr tut.
-- Die Zuweisung des Kopfs der Schule aus den Einstellungen (`pdf.SchuleInfo{Name: …}`) steht
-  an acht Türen.
 - `repository.ProtokollAbfragen` trägt neben dem Schreiben der Einträge das Löschen von Titel,
   Konto und Leser, das Aussondern eines Exemplars und das Erledigen einer Forderung, weil jeder
   dieser Vorgänge mit seinem Eintrag in einer Transaktion steht. Wer „Titel löschen" sucht,

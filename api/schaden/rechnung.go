@@ -96,12 +96,7 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.Pool) 
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 		return
 	}
-	schule := pdf.SchuleInfo{
-		Name:    einstellungen.SchuleName,
-		Strasse: einstellungen.SchuleStrasse,
-		PLZ:     einstellungen.SchulePLZ,
-		Ort:     einstellungen.SchuleOrt,
-	}
+	schule := tuer.SchuleAus(einstellungen)
 
 	// Zahlstelle und Bankverbindung des Landes aus derselben Einstellung wie im
 	// Bescheid — eine zweite Kontoangabe im selben Haus wäre eine zweite Wahrheit.

@@ -8,7 +8,6 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/auskunft"
-	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -41,12 +40,7 @@ func (t *Tueren) DSGVOAuskunftPDF() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 		}
-		schule := pdf.SchuleInfo{
-			Name:    einstellungen.SchuleName,
-			Strasse: einstellungen.SchuleStrasse,
-			PLZ:     einstellungen.SchulePLZ,
-			Ort:     einstellungen.SchuleOrt,
-		}
+		schule := tuer.SchuleAus(einstellungen)
 
 		pdfDaten, err := auskunft.ErzeugeBlatt(dsgvoAntwort(daten, schulzeit.Jetzt()), schule)
 		if err != nil {

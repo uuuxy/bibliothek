@@ -89,10 +89,7 @@ func (t *Tueren) ZugangsbuchPDF() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 		}
-		schule := pdf.SchuleInfo{
-			Name: einst.SchuleName, Strasse: einst.SchuleStrasse,
-			PLZ: einst.SchulePLZ, Ort: einst.SchuleOrt,
-		}
+		schule := tuer.SchuleAus(einst)
 
 		blatt, err := pdf.ErzeugeZugangsbuch(zugangsbuchBlatt(zugangsbuchAntwortAus(buch)), schule)
 		if err != nil {

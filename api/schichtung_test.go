@@ -90,6 +90,7 @@ var dateienOhneTuer = []string{
 	"theke/eingabe_anfrage_antwort.go",
 	"theke/theke.go",
 	"theke/theken_leser.go",
+	"tuer/briefkopf.go",
 	"tuer/tuer.go",
 	"tuer/verwaltung_protokoll.go",
 }
