@@ -154,8 +154,8 @@ func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titelID string)
 }
 
 // leseTitelExemplare liest Kennung und Barcode jedes Exemplars vor dem Löschen. Die
-// Tresen-Auskunft findet gelöschte Exemplare nur über Protokollzeilen mit
-// tabelle='buecher_exemplare' und details->>'barcode_id' (FindeTresenExemplare); ohne sie
+// Theken-Auskunft findet gelöschte Exemplare nur über Protokollzeilen mit
+// tabelle='buecher_exemplare' und details->>'barcode_id' (FindeThekenExemplare); ohne sie
 // hieße ein später gescanntes Buch „nie gesehen" statt „gelöscht am …".
 func leseTitelExemplare(ctx context.Context, tx pgx.Tx, titelID string) ([]titelExemplar, error) {
 	var exemplare []titelExemplar

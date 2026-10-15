@@ -10,7 +10,7 @@
 
 	/**
 	 * Gebühren/Schäden eines Schülers mit den beiden Erledigungs-Wegen:
-	 * "Bezahlt" (Barzahlung am Tresen) und "Stornieren" (Erlass, mit Pflicht-Grund).
+	 * "Bezahlt" (Barzahlung an der Theke) und "Stornieren" (Erlass, mit Pflicht-Grund).
 	 * Buttons nur für Rollen, die Schülerdaten bearbeiten — das Backend erzwingt
 	 * edit_students unabhängig davon.
 	 *

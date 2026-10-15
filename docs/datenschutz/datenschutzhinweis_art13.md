@@ -36,7 +36,7 @@ Ausleihvorgang selbst und, einmalig bei der Umstellung, aus dem bisherigen
 Bibliotheksprogramm (Name, Klasse, Ausweisnummer, Geburtsdatum).
 
 **Wer die Daten sieht.** Das Bibliothekspersonal der Schule; Helferinnen und Helfer am
-Ausleihtresen sehen nur Name, Klasse und ob eine Ausleihsperre besteht. Die
+Ausleihtheke sehen nur Name, Klasse und ob eine Ausleihsperre besteht. Die
 Klassenleitung erhält eine Liste überfälliger Bücher ihrer Klasse. Eine Weitergabe an
 Dritte außerhalb der Schule findet nicht statt; im Fall eines Schadensersatzes entscheidet
 die Schulaufsicht auf Grundlage der schulischen Unterlagen. Die Daten werden auf einem

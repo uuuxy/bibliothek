@@ -84,7 +84,7 @@ func TestTitelLoeschen(t *testing.T) {
 		mock.ExpectBegin()
 		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
 
-		// Barcode-Snapshots vor den DELETEs (Tresen-Auskunft; hier: keine Exemplare).
+		// Barcode-Snapshots vor den DELETEs (Theken-Auskunft; hier: keine Exemplare).
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel", "war_im_bestand"}))

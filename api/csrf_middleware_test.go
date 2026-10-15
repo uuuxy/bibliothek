@@ -119,7 +119,7 @@ func TestCSRFMiddlewareAusnahmenBleibenOffen(t *testing.T) {
 //
 // CSRF an der Anmeldung ist kein Randfall: Eine fremde Seite kann ein Formular mit
 // enctype="text/plain" abschicken, dessen Rumpf als JSON durchgeht, und das Opfer damit in die
-// Sitzung eines Kontos des Angreifers anmelden. Alles, was danach am Tresen gescannt wird,
+// Sitzung eines Kontos des Angreifers anmelden. Alles, was danach an der Theke gescannt wird,
 // landet dort. SameSite=Strict verhindert das nicht: Es regelt das Senden von Cookies, nicht
 // das Setzen durch die Antwort.
 func TestCSRFMiddlewarePrueftAuchUnterpfadeDerAnmeldung(t *testing.T) {

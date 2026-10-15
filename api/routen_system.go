@@ -46,9 +46,9 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen r
 
 	// Protokoll
 	mux.Handle("GET /api/audit", s.verlangeRecht("audit_logs")(s.system().Protokoll()))
-	// Der eine zweckgebundene Weg, audit_log.details zu lesen (der Fall am Tresen): eigenes Recht,
-	// jeder Abruf schreibt sich selbst ins Protokoll (api/system/tresen_auskunft.go).
-	mux.Handle("GET /api/audit/tresen-auskunft", s.verlangeRecht("audit_details")(s.system().TresenAuskunft(protokollAbfragen)))
+	// Der eine zweckgebundene Weg, audit_log.details zu lesen (der Fall an der Theke): eigenes Recht,
+	// jeder Abruf schreibt sich selbst ins Protokoll (api/system/theken_auskunft.go).
+	mux.Handle("GET /api/audit/tresen-auskunft", s.verlangeRecht("audit_details")(s.system().ThekenAuskunft(protokollAbfragen)))
 
 	// Vorlagen der Mails
 	mux.Handle("GET /api/mail-templates", s.verlangeRecht("manage_settings")(s.system().MailVorlagen()))

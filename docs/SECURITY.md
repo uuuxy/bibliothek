@@ -182,8 +182,8 @@ jeder Lehrkraft (siehe unten).
 
 - `admin`: Vollzugriff (`["*"]`). Berechtigungen werden beim Login direkt aus `role_permissions` geladen.
 - `leitung`: die Rechte des Admins **minus** `manage_users` und `manage_settings` (Migration 122, seit 16.09.2026). Das Soll wird von der Admin-Zeile ABGELEITET und nicht abgeschrieben, sonst bekäme die Leitung jedes künftige Recht nicht und niemand merkte es. Warum ausgerechnet `manage_users` fehlt, obwohl die Leitung die Bibliothek führt: Mit dem Recht ändert man die E-Mail-Adresse eines Kontos, und die Anmeldung erkennt eine Person allein an ihrer E-Mail — die Rechtevergabe wäre der Weg in jedes Konto der Anlage.
-- `mitarbeiter`: Grundrechte für den Tresen-Betrieb.
-- `helfer`: Kiosk-/Tresenbetrieb ohne die breiten Schülerrechte (Migration 042) — Scannen, Ausleihe, Rückgabe, Katalogzugriff, aber keine Schülerlisten und kein Mahnwesen.
+- `mitarbeiter`: Grundrechte für die Theke-Betrieb.
+- `helfer`: Kiosk-/Thekenbetrieb ohne die breiten Schülerrechte (Migration 042) — Scannen, Ausleihe, Rückgabe, Katalogzugriff, aber keine Schülerlisten und kein Mahnwesen.
 - `kollegium`: **Genau ein** Recht — `create_reservations` (Klassensatz im Kollegiums-Portal reservieren). Alles Weitere ist seit Migration 070 entzogen; die Suche im Portal (Katalog des Kollegiums: Titeldaten und Zählwerte, auch Lernmittel) hängt am selben Recht und fasst keine Personendaten an. Die Rolle hieß bis Migration 069 `lehrer`.
 
   **Fachlich ist das keine Rolle, sondern der Grundzustand.** Wer sich über „Mein Portal" mit der Schuladresse selbst anmeldet, bekommt diesen Wert; eine Rolle bekommt nur, wen der Admin an seiner E-Mail-Adresse dazu erhebt. Der Rechte-Editor führt deshalb seit dem 16.09.2026 nur noch die vier Spalten oben — was das Kollegium darf, steht fest in `db/rechte_vorgabe.go` und ist kein Schalter je Schule. Sicherheitsrelevant ist daran die Richtung: Die Zeile existiert weiter in `role_permissions`, sie wird nur nicht mehr je Schule verändert.

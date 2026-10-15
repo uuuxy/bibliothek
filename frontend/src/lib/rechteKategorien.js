@@ -130,7 +130,7 @@ export const permissionsMetadata = [
 			},
 			{
 				key: 'audit_details',
-				label: 'Tresen-Auskunft (gelöschte Exemplare)',
+				label: 'Theken-Auskunft (gelöschte Exemplare)',
 				desc: 'Zu einem Buch-Barcode die protokollierte Ausleihhistorie nachschlagen — auch wenn das Exemplar längst gelöscht ist. Nennt Entleiher mit Namen; jeder Abruf wird selbst protokolliert. Der Reiter erscheint unter System-Logs.'
 			},
 			{

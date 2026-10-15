@@ -102,7 +102,7 @@ Stand: 08.10.2026 · am 10.10.2026 in 1.4 die Zahl der Routen berichtigt
 
 **Bibliothek** ist die Verwaltungssoftware der Schulbibliothek einer Gesamtschule. Sie
 löst eine Windows-Altanwendung (**Littera**) ab und deckt den vollständigen Betrieb ab:
-Ausleihe und Rückgabe am Scanner-Tresen, Medienkatalog, Lernmittelverwaltung (LMF),
+Ausleihe und Rückgabe an der Scanner-Theke, Medienkatalog, Lernmittelverwaltung (LMF),
 Mahnwesen, Vormerkungen, Inventur, Bestellwesen, Geräteausleihe, Leserdatei und die
 datenschutzrechtlich vorgeschriebenen Löschroutinen.
 
@@ -142,7 +142,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | Q1   | **Korrektheit unter Nebenläufigkeit**  | Acht Stationen scannen gleichzeitig. Kein Exemplar hat zwei aktive Ausleihen, kein Doppelscan erzeugt eine zweite Buchung, kein Fehler wird als Erfolg quittiert. | Partielle Unique-Indizes (DB-Ebene), Idempotenz-Keys, `*_pg_test.go` gegen echtes Postgres, `phantom_erfolg_test.go` |
 | Q2   | **Datenschutz-Konformität**            | Schülerdaten werden fristgerecht getilgt, Fotos verschlüsselt, öffentliche Seiten tragen keine Personendaten, jede Route ist nach PII-Stufe eingeordnet.          | `api/pii_matrix_test.go` hält [PII_MATRIX.de.md](PII_MATRIX.de.md) deckungsgleich mit dem Code; DSGVO-Cronjobs mit PG-Tests |
 | Q3   | **Betriebstransparenz**                | Eine eingerichtete, aber nicht in Betrieb befindliche Funktion muss sich melden — nicht schweigen.                                                                 | Selbstprüfung der Betriebsbereitschaft + Bereitschafts-Wächter (täglich per Mail), `/health`                 |
-| Q4   | **Bedienbarkeit am Tresen**            | Ein Scan, eine Reaktion, ohne Maus. Der Ausfall des Netzes darf den Betrieb nicht anhalten.                                                                        | Offline-Warteschlange (IndexedDB) + Nachbuch-Tür, Tastaturbedienung, WCAG 2.1 AA mit axe-Gate                |
+| Q4   | **Bedienbarkeit an der Theke**            | Ein Scan, eine Reaktion, ohne Maus. Der Ausfall des Netzes darf den Betrieb nicht anhalten.                                                                        | Offline-Warteschlange (IndexedDB) + Nachbuch-Tür, Tastaturbedienung, WCAG 2.1 AA mit axe-Gate                |
 | Q5   | **Änderbarkeit ohne Rückfall**         | Ein behobener Fehler bleibt behoben. Jede Bugklasse bekommt einen Detektor (eine „Ratsche"), nicht nur einen Fix.                                                  | [sweeps.md](sweeps.md), Drift-Gates (Swagger, Migrationen, Compose-Variablen), Deadcode-Gate              |
 
 > **Die Gate-Regel des Projekts:** Der Anspruch ist nicht „es gibt Tests", sondern *jedes
@@ -430,7 +430,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 | L3 | **Autorisierung pro Route, nicht global**                                                          | Q2                   | Eine globale Kette kennt die Route nicht, die sie schützt. `verlangeRecht` sitzt **hinter** dem Routing (nur dort ist `r.PathValue` gefüllt) und prüft Recht, Kontostatus und UUID-Form in einem Zug. Ein Coverage-Gate zählt jede ungeschützte Route auf. |
 | L4 | **Echtzeit über SSE, ohne Event-Loop**                                                             | Q1, Q4, Betrieb      | Alle Stationen sehen denselben Zustand nach dem Commit. Der Broker hält seinen Zustand hinter einem `RWMutex` statt hinter Kanälen — die frühere Kanal-Bauweise verhinderte das Herunterfahren und machte **jeden** Deploy zum `os.Exit(1)`. |
 | L5 | **Idempotenz als Vertrag der Schreibtüren**                                                        | Q1, Q4               | Ein Scan darf doppelt ankommen (Netz, Nachbuchen, nervöse Hand). Der Idempotenz-Key liefert die gespeicherte Antwort zurück; 5xx wird nie gecacht, damit ein Wiederholen möglich bleibt.                          |
-| L6 | **Der Tresen arbeitet auch ohne Netz weiter**                                                      | Q4                   | Scans landen in IndexedDB und gehen später durch die **Nachbuch-Tür**, die den Scan-Zeitpunkt buchen, einen Schlüssel genau einmal buchen und jede Abweichung als Meldung festhalten kann. Schweigen des Servers gilt nicht als Erfolg. |
+| L6 | **Die Theke arbeitet auch ohne Netz weiter**                                                      | Q4                   | Scans landen in IndexedDB und gehen später durch die **Nachbuch-Tür**, die den Scan-Zeitpunkt buchen, einen Schlüssel genau einmal buchen und jede Abweichung als Meldung festhalten kann. Schweigen des Servers gilt nicht als Erfolg. |
 | L7 | **Jede Bugklasse bekommt einen Detektor**                                                          | Q5                   | Ein Fix ohne Ratsche ist ein Rückfall auf Zeit. Das Register dieser Klassen und ihrer Detektoren ist [sweeps.md](sweeps.md); die Landkarte nennt zu jeder Ratsche auch, was sie systembedingt **nicht** sieht. |
 | L8 | **Das System muss sich selbst melden**                                                             | Q3                   | Die wiederkehrende Fehlerart ist nicht der Absturz, sondern die fertige Funktion, die still nichts tut, weil eine Einstellung fehlt. Dagegen stehen die Selbstprüfung, der tägliche Bereitschafts-Wächter per Mail und die wöchentliche Restore-Probe. |
 
@@ -487,7 +487,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 | Start-Verweigerung bei Default-Geheimnissen   | Läuft der Schulserver mit dem Schlüssel aus dem Repository?                    |
 | Skip-Bilanz im pre-push-Hook                  | Was hat dieser Lauf **nicht** geprüft?                                         |
 
-#### Q4 Bedienbarkeit am Tresen
+#### Q4 Bedienbarkeit an der Theke
 
 - **Ein Feld für alles.** Die Omnibox löst ohne Präfix in der Reihenfolge Buch → Ausweis →
   Volltextsuche auf; Präfixe (`B-`, `A-`, `G-`, historisch `S-`/`L-`) sind eine Abkürzung.
@@ -1148,7 +1148,7 @@ frontend/src
 ├─ lib/                  237 Einträge — Ansichten, Komponenten, Stores, Metadaten
 │   ├─ Router.svelte     Client-Routing; fragt canSeeItem() aus menue.js
 │   ├─ menue.js           EINZIGE Wahrheitsquelle: welche Rolle erreicht welche Seite
-│   ├─ Omnibox.svelte    Das Eingabefeld des Tresens
+│   ├─ Omnibox.svelte    Das Eingabefeld der Theke
 │   ├─ stores/*.svelte.js Geteilter Zustand (Runes-Singletons): authStore, uiStore,
 │   │                     omnibox, offlineSync, druckWarteschlange, snackbars, mahnwesen*, …
 │   └─ …                 Fachansichten (Leserakte, Buchakte, Mahnwesen, LmfPlan,
@@ -1392,7 +1392,7 @@ nichts.
 | #  | Szenario                                                     | Zeigt                                                       |
 | -- | ------------------------------------------------------------ | ----------------------------------------------------------- |
 | 1  | [Anmeldung](#61-anmeldung-imap--jwt--csrf)                   | Identität, Sitzung, Rechteprüfung                            |
-| 2  | [Scan am Tresen](#62-scan-am-tresen-der-kernablauf)          | Auflösung, Transaktion, Sperren, Konflikt, Echtzeit          |
+| 2  | [Scan an der Theke](#62-scan-an-der-theke-der-kernablauf)          | Auflösung, Transaktion, Sperren, Konflikt, Echtzeit          |
 | 3  | [Rückgabe mit Vormerkung](#63-rückgabe-mit-vormerkung)       | `SKIP LOCKED`, Nachrücken, Abholfach                         |
 | 4  | [Doppelscan von zwei Stationen](#64-doppelscan-von-zwei-stationen) | Q1 im Ernstfall: warum der Index trägt                 |
 | 5  | [Theke ohne Netz](#65-theke-ohne-netz--und-das-nachbuchen)    | Offline-Warteschlange, Uhrenversatz, neun Urteile            |
@@ -1454,7 +1454,7 @@ Arbeitsplatz abmelden, obwohl die Sitzung gültig ist. Aus demselben Grund ist �
 
 ---
 
-### 6.2 Scan am Tresen (der Kernablauf)
+### 6.2 Scan an der Theke (der Kernablauf)
 
 ```mermaid
 sequenceDiagram
@@ -4520,14 +4520,14 @@ Einstieg.
 | **Mehrjahresband**          | Lernmittel, das über seine Jahrgangsspanne beim selben Kind bleibt, statt am Rückgabetermin der Klasse zurückzukommen | `buecher_titel.mehrjahresband` (Migration 134) |
 | **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
 | **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/theke/nachbuchen.go`, `internal/service/nachbuchen.go`         |
-| **Omnibox**                 | Das **eine** Eingabefeld des Tresens für alle Scans und Suchen                                                                                                          | `internal/service/omnibox.go`, `frontend/src/lib/Omnibox.svelte` |
+| **Omnibox**                 | Das **eine** Eingabefeld der Theke für alle Scans und Suchen                                                                                                          | `internal/service/omnibox.go`, `frontend/src/lib/Omnibox.svelte` |
 | **OPAC**                    | Der öffentliche Katalog unter `/katalog` — ohne Anmeldung, ohne Personendaten                                                                                            | `api/portal/opac.go`                                               |
 | **Regaladresse**            | Der Teil einer Signatur vor „ / ". Vorschläge, die Seite „Signaturen" und die Auswahl der Inventur fassen nach ihr zusammen; am Titel bleibt die ganze Aufschrift | `sqlSignaturRegaladresse` (`repository/signatur_praefix.go`) |
 | **Schlagwort**              | Freies Wort am Titel (Thema, Gattung), mehrere je Titel, wie in Littera; ein Wort ist seine Kleinschreibung. Gepflegt unter Einstellungen → Schlagworte                 | `schlagworte`, `titel_schlagworte`, `repository.SetzeSchlagworte` |
 | **Schnellrückgabe**         | Modus der Theke für einen Stapel vom Rückgabetisch: Jeder Scan nimmt nur zurück und leiht nie aus; ein gescannter Ausweis beendet ihn | `stores/omnibox.svelte.js`, `OmniboxSchnellrueckgabe.svelte` |
 | **Signatur / Systematik**   | Ordnungsbegriff im Regal. Der Teil vor „ / " ist die **Regaladresse**; wo ein einzelnes Stück abweichend steht, sagt der **Standort** | `systematik_kategorien`, `repository/signatur_praefix.go` |
 | **Standort**                | Wo ein Exemplar steht, wenn nicht an seinem Platz nach der Signatur (etwa „Bibliothek, Regal 3B"). Kommt aus Littera mit; ein neues Exemplar erbt ihn, wenn alle übrigen des Titels denselben tragen | `buecher_exemplare.standort`, `repository/exemplar_standort.go` |
-| **Theke / Tresen**          | Der Arbeitsplatz mit Scanner; „Kiosk" meint dasselbe aus Sicht der Bauform                                                                                               | `frontend/src/lib/Omnibox.svelte`, `stores/thekeLeeren.js`    |
+| **Theke**                   | Der Arbeitsplatz mit Scanner; „Kiosk" meint dasselbe aus Sicht der Bauform                                                                                               | `frontend/src/lib/Omnibox.svelte`, `stores/thekeLeeren.js`    |
 | **Verweis**                 | Schreibweise, die auf ein Schlagwort umleitet („Tierfantasy“ → „Fantasy“): am Titel und in der Suche gilt das Ziel. Trägt selbst keine Titel                           | `schlagworte.verweis_auf` (Migration 143)                  |
 | **Vormerkung**              | Reservierung eines Exemplars durch einen Leser; rückt bei Rückgabe nach und wird „abholbereit"                                                                           | `vormerkungen`, `repository/vormerkung_nachruecken.go`        |
 | **Werk**                    | Das Buch über seinen **Auflagen**: Titel mit derselben `werk_id` sind Auflagen desselben Buchs; Exemplar, Etikett und Ausleihe bleiben an der Auflage. Ein Titel ohne Werk ist sein eigenes | `werke`, `buecher_titel.werk_id` (Migration 148), gelesen über `COALESCE(werk_id, id)` |

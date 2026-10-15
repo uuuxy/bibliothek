@@ -23,7 +23,7 @@ func TestLoescheTitel(t *testing.T) {
 	erwarteLeser := func(mock pgxmock.PgxPoolIface, cover string) {
 		mock.ExpectBegin()
 		erwarteAuflagenSperre(mock, ids)
-		// Schnappschüsse der Barcodes aller Exemplare vor den DELETEs: Die Auskunft am Tresen findet
+		// Schnappschüsse der Barcodes aller Exemplare vor den DELETEs: Die Auskunft an der Theke findet
 		// gelöschte Exemplare nur über diese Spur.
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(ids).

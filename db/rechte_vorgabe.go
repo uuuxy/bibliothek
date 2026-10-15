@@ -48,7 +48,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "view_graduates", true},
 	{"ADMIN", "view_stats", true},
 	{"ADMIN", "audit_logs", true},
-	// audit_details öffnet die Auskunft an der Theke (api/system/tresen_auskunft.go), den einen
+	// audit_details öffnet die Auskunft an der Theke (api/system/theken_auskunft.go), den einen
 	// Leseweg in audit_log.details. Es ist ein eigenes Recht neben audit_logs, weil das
 	// Protokoll keine Namen zeigt (Stufe 0) und die Auskunft schon (Stufe 2). Ein neues Recht
 	// erreicht eine bestehende Anlage über SchreibeRechteVorgabe: Die fehlende Zeile kommt dazu.

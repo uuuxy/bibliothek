@@ -195,9 +195,9 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		t.Errorf("%d Protokollzeilen für ein Exemplar, das gar nicht verliehen war", rauschen)
 	}
 
-	// 4. Beide Exemplare bleiben am Tresen auffindbar, nicht nur das verliehene. Die Auskunft am
-	//    Tresen findet gelöschte Exemplare nur über Zeilen in audit_log mit
-	//    tabelle='buecher_exemplare' und details->>'barcode_id' (repository.FindeTresenExemplare);
+	// 4. Beide Exemplare bleiben an der Theke auffindbar, nicht nur das verliehene. Die Auskunft an der
+	//    Theke findet gelöschte Exemplare nur über Zeilen in audit_log mit
+	//    tabelle='buecher_exemplare' und details->>'barcode_id' (repository.FindeThekenExemplare);
 	//    die Spur der Ausleihen aus Schritt 2 sieht sie nicht. Ohne den Schnappschuss wäre ein
 	//    durch das Löschen eines Titels verschwundenes Buch beim Scannen „nie gesehen" statt
 	//    „gelöscht am …". Geprüft über den echten Leseweg, nicht über count(*): Eine Zeile im
@@ -206,12 +206,12 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		{"ZB-REGAL", imRegal},
 		{"ZB-DRAUSSEN", verliehen},
 	} {
-		zeilen, err := repository.FindeTresenExemplare(ctx, pool, fall.barcode)
+		zeilen, err := repository.FindeThekenExemplare(ctx, pool, fall.barcode)
 		if err != nil {
-			t.Fatalf("Tresen-Auskunft für %s: %v", fall.barcode, err)
+			t.Fatalf("Theken-Auskunft für %s: %v", fall.barcode, err)
 		}
 		if len(zeilen) != 1 {
-			t.Fatalf("Barcode %s: %d Treffer in der Tresen-Auskunft, erwartet genau 1", fall.barcode, len(zeilen))
+			t.Fatalf("Barcode %s: %d Treffer in der Theken-Auskunft, erwartet genau 1", fall.barcode, len(zeilen))
 		}
 		if zeilen[0].Status != "geloescht" || zeilen[0].ExemplarID != fall.exemplarID {
 			t.Errorf("Barcode %s: Status %q / Exemplar %s, erwartet geloescht / %s",

@@ -458,7 +458,7 @@ Um Nachvollziehbarkeit bei sensiblen Schuldaten zu garantieren, gibt es ein Audi
 - Jede administrative Aktion (Benutzer gelöscht, Schadensfall storniert, Leser gesperrt oder entsperrt) wird in der Tabelle `audit_logs` mit `Akteur`, `Zeitstempel`, `IP` und Vorher-/Nachher-Details protokolliert. Sperren und Entsperren stehen dort erst seit dem 24.09.2026 (`LESER_GESPERRT`, `LESER_ENTSPERRT`); dieser Satz nannte sie schon vorher.
 - Das Audit-Log ist **append-only als Konvention**: Kein Bedien- oder Codepfad verändert oder löscht Einträge — mit einer bewussten Ausnahme, der DSGVO-Tilgung (siehe unten). Ein früherer Datenbank-Trigger, der jede Änderung hart sperrte (Migration 003), wurde mit Migration 083 aufgelöst: Er stand im direkten Widerspruch zur Löschpflicht (Art. 17), die das Audit-Log gerade ändern muss, um Personenbezug zu entfernen. Wer echte Manipulationssicherheit braucht, setzt sie über eine eng begrenzte Löschausnahme um, nicht über ein pauschales Änderungsverbot.
 - Die Daten dienen der Fehlerbehebung und DSGVO-Rechenschaftspflicht.
-- **Tresen-Auskunft** (seit 01.09.2026, `api/system/tresen_auskunft.go`): der EINE
+- **Theken-Auskunft** (seit 01.09.2026, `api/system/theken_auskunft.go`): der EINE
   zweckgebundene Leseweg in die Detail-Spalte des fachlichen Audit-Logs. Anlass: Ein
   zurückgebrachtes Buch, dessen Exemplar (oder ganzer Titel) gelöscht ist, war sonst
   niemandem mehr zuzuordnen, obwohl das Protokoll es weiß. Zuschnitt bewusst eng:
@@ -691,7 +691,7 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   Teilsumme da. Bis dahin verlangten beide Briefe „bar in der Bibliothek" — für Landeseigentum
   ist das die Ausnahme mit Quittung, nicht der Weg, den ein Brief vorsieht.
 - **Erledigt wird eine Gebühr in der Schülerakte** (seit 16.08.2026) auf genau zwei Wegen:
-  **„Bezahlt“** (Barzahlung am Tresen) oder **„Stornieren“** mit Pflicht-Begründung
+  **„Bezahlt“** (Barzahlung an der Theke) oder **„Stornieren“** mit Pflicht-Begründung
   (Erlass, Buch wiedergefunden, Kulanz). Beides verlangt das Recht `edit_students` —
   bewusst nicht die Kiosk-/Helfer-Rolle. Der Betrag im revisionssicheren Audit-Eintrag
   stammt immer aus der Datenbank, nie aus der Anfrage; eine bereits erledigte Gebühr
@@ -895,7 +895,7 @@ ausgeliefert wird es nur mit `view_students`.
 Nach `theke_leeren_minuten` ohne Eingabe (Vorgabe 5) schließt sich die offene Schülerakte,
 nach `sperre_minuten` (Vorgabe 15) erscheint der Sperrbildschirm — die Anwendung ist dann nicht
 mehr im DOM; entsperrt wird mit dem Passwort, nicht mit Maus oder Tastatur. Beides ist
-Datenschutz an einem Tresen, an dem Schüler mitlesen können (Kategorie Datenschutz & Sitzung).
+Datenschutz an einer Theke, an der Schüler mitlesen können (Kategorie Datenschutz & Sitzung).
 
 Der Server sperrt die Anmeldung mit: Neuladen oder ein neuer Tab zeigen wieder den
 Sperrbildschirm, und hinter ihm liefert der Server keine Daten. Alle Fenster eines Browsers

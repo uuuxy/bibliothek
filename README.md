@@ -1,6 +1,6 @@
 # Bibliothek — Schulbibliotheks-Software
 
-Verwaltung einer Schulbibliothek: Ausleihe am Scanner-Tresen, Medienkatalog, Mahnwesen,
+Verwaltung einer Schulbibliothek: Ausleihe an der Scanner-Theke, Medienkatalog, Mahnwesen,
 Inventur, Bestellwesen und Leserdatei. Entstanden als Ersatz für eine
 Windows-Altanwendung und im Betrieb an einer Gesamtschule — mit allem, was das mit sich
 bringt: gewachsener Altbestand, Barcodes, die nicht neu geklebt werden können, und

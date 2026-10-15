@@ -89,7 +89,7 @@ func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]of
 // protokolliereOffeneAusleihen schreibt je eine SYSTEM-Zeile ins Audit-Log. Läuft in der
 // Transaktion der Löschung: Entweder beides oder nichts.
 //
-// datensatz_id ist das Exemplar — so sucht man später, wenn das Buch auf dem Tresen liegt
+// datensatz_id ist das Exemplar — so sucht man später, wenn das Buch auf der Theke liegt
 // und der Scan ins Leere geht. akteur 'SYSTEM' ohne bearbeiter_id, weil die Tür das
 // Konto hier nicht durchreicht; wer gelöscht hat, steht in der Admin-Spur des
 // Endpunkts, was dabei verschwand, steht hier.
@@ -127,7 +127,7 @@ func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offen
 	return nil
 }
 
-// exemplarSnapshot ist das, was die Tresen-Auskunft nach dem Löschen noch braucht:
+// exemplarSnapshot ist das, was die Theken-Auskunft nach dem Löschen noch braucht:
 // die Exemplar-ID als datensatz_id, der Barcode als Suchschlüssel, der Titel als
 // Anzeige der Trefferzeile.
 type exemplarSnapshot struct {
@@ -138,8 +138,8 @@ type exemplarSnapshot struct {
 }
 
 // leseExemplarSnapshots sammelt alle Exemplare der zu löschenden Titel, in der Transaktion der
-// Löschung, bevor die Zeilen fallen. Nicht nur die verliehenen: Die Auskunft am Tresen
-// (repository.FindeTresenExemplare) findet gelöschte Exemplare nur über Zeilen in audit_log mit
+// Löschung, bevor die Zeilen fallen. Nicht nur die verliehenen: Die Auskunft an der Theke
+// (repository.FindeThekenExemplare) findet gelöschte Exemplare nur über Zeilen in audit_log mit
 // tabelle='buecher_exemplare' und details->>'barcode_id'; die Spur der Ausleihen oben sieht sie
 // nicht. Ohne den Schnappschuss wäre ein durch das Löschen eines Titels verschwundenes Buch beim
 // Scannen „nie gesehen" statt „gelöscht am …".

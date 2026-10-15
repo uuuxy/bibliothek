@@ -20,7 +20,7 @@ import (
 // repository/leser_zusammenfuehren.go; hier nur Recht, Rumpf, Fehlerbild und Protokoll.
 //
 // Ein eigenes Recht, merge_students: Es ist ein Eingriff in die Identität zweier Datensätze,
-// unumkehrbar, und festgelegt ist, dass ein Admin ihn vornimmt, nicht der Tresen.
+// unumkehrbar, und festgelegt ist, dass ein Admin ihn vornimmt, nicht die Theke.
 
 type leserZusammenfuehrenAnfrage struct {
 	QuelleID string `json:"quelle_id"`

@@ -77,7 +77,7 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"})) // keine offenen Ausleihen
-	// Die Barcodes der Exemplare vor dem Löschen: Die Tresen-Auskunft findet gelöschte
+	// Die Barcodes der Exemplare vor dem Löschen: Die Theken-Auskunft findet gelöschte
 	// Exemplare nur über diese Spur.
 	mock.ExpectQuery("FROM buecher_exemplare e WHERE e.titel_id").
 		WithArgs(titelID).

@@ -26,7 +26,7 @@ muss `Cache-Control: no-store` tragen, damit der Browser sie nicht ablegt
 (`pruefeKeinAblegen`), ebenso eine Route der Stufe 0, deren Adresse eine
 Personenkennung trägt (`adresseTraegtPersonendaten`, heute `GET /api/barcode`).
 Stand: 08.10.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
-stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
+stichprobenartig am laufenden System belegt; 01.09.: Theken-Auskunft ergänzt,
 Antwort-Gate eingezogen; 24.09.: die Sperr-Tür und das Protokoll der Sperren am Code
 nachgetragen; 25.09.: die Auflagen-Türen und der Auflagen-Hinweis der Theke am Code
 nachgetragen; 28.09.: das Zusatzrecht der Auskunft über einen Leser mit Zugangskonto

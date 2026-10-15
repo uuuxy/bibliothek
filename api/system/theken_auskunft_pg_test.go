@@ -1,6 +1,6 @@
 package system
 
-// PG-Integrationstests für die Tresen-Auskunft (tresen_auskunft.go).
+// PG-Integrationstests für die Theken-Auskunft (theken_auskunft.go).
 //
 // Echtes Postgres statt pgxmock, weil die geprüfte Logik in SQL lebt (JSONB-Suche
 // in audit_log.details, LEFT JOINs auf gelöschte Personen) — und weil die Ereignisse
@@ -28,17 +28,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// tresenTestWelt legt Bearbeiter, Schüler, Titel und Exemplar an und räumt alles
+// thekenTestWelt legt Bearbeiter, Schüler, Titel und Exemplar an und räumt alles
 // wieder ab — inklusive der Audit-Spuren, die die echten Schreiber hinterlassen.
-type tresenTestWelt struct {
+type thekenTestWelt struct {
 	adminID, schuelerID, titelID, exemplarID, barcode string
 }
 
-func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
+func baueThekenWelt(t *testing.T, pool *pgxpool.Pool) thekenTestWelt {
 	t.Helper()
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	w := tresenTestWelt{barcode: "TRS-" + suffix}
+	w := thekenTestWelt{barcode: "TRS-" + suffix}
 
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
@@ -54,7 +54,7 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 	}
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp)
-		VALUES ('Tresen-Testband', 'Prüfer', 'Buch') RETURNING id
+		VALUES ('Theken-Testband', 'Prüfer', 'Buch') RETURNING id
 	`).Scan(&w.titelID); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
@@ -76,19 +76,19 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 	return w
 }
 
-// rufeTresenAuskunft führt die Tür mit Sitzung im Kontext aus (so, wie die
+// rufeThekenAuskunft führt die Tür mit Sitzung im Kontext aus (so, wie die
 // Middleware sie nach verlangeRecht hinterlegt) und liest die Antwort.
-func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) tresenAuskunft {
+func rufeThekenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) thekenAuskunft {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/audit/tresen-auskunft?barcode="+barcode, nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
 		&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.TresenAuskunft(repository.NewProtokollAbfragen(srv.DB.Pool)).ServeHTTP(rec, req)
+	srv.ThekenAuskunft(repository.NewProtokollAbfragen(srv.DB.Pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, Körper: %s", rec.Code, rec.Body.String())
 	}
-	var auskunft tresenAuskunft
+	var auskunft thekenAuskunft
 	if err := json.Unmarshal(rec.Body.Bytes(), &auskunft); err != nil {
 		t.Fatalf("Antwort unlesbar: %v", err)
 	}
@@ -98,11 +98,11 @@ func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) tres
 // Der namensgebende Fall: Exemplar ausgeliehen, zurückgegeben, als Verlust gebucht
 // und endgültig gelöscht — die Zeile in buecher_exemplare existiert nicht mehr.
 // Die Auskunft muss den Weg über die Angaben im Protokoll finden und den Entleiher nennen.
-func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
+func TestThekenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	w := baueTresenWelt(t, pool)
+	w := baueThekenWelt(t, pool)
 
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
@@ -126,12 +126,12 @@ func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 		t.Fatalf("endgültig löschen: %v (gelöscht: %v)", err, geloescht)
 	}
 
-	auskunft := rufeTresenAuskunft(t, srv, w.adminID, w.barcode)
+	auskunft := rufeThekenAuskunft(t, srv, w.adminID, w.barcode)
 
 	if len(auskunft.Exemplare) != 1 {
 		t.Fatalf("erwartet 1 Exemplar-Treffer, waren %d: %+v", len(auskunft.Exemplare), auskunft.Exemplare)
 	}
-	if e := auskunft.Exemplare[0]; e.Status != "geloescht" || e.Titel != "Tresen-Testband" {
+	if e := auskunft.Exemplare[0]; e.Status != "geloescht" || e.Titel != "Theken-Testband" {
 		t.Errorf("Exemplar-Treffer falsch: %+v", e)
 	}
 	if len(auskunft.Ereignisse) != 2 {
@@ -164,11 +164,11 @@ func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 // Nach der DSGVO-Tilgung darf auch dieser Leseweg nichts mehr zuordnen — der
 // Vorgang bleibt sichtbar (das Exemplar war unterwegs), aber ausdrücklich als
 // „Personenbezug getilgt", nicht als leere Zelle.
-func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
+func TestThekenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	w := baueTresenWelt(t, pool)
+	w := baueThekenWelt(t, pool)
 
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
@@ -179,7 +179,7 @@ func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 		t.Fatalf("TilgeSchuelerSpuren: %v", err)
 	}
 
-	auskunft := rufeTresenAuskunft(t, srv, w.adminID, w.barcode)
+	auskunft := rufeThekenAuskunft(t, srv, w.adminID, w.barcode)
 
 	if len(auskunft.Exemplare) != 1 || auskunft.Exemplare[0].Status != "im_bestand" {
 		t.Fatalf("erwartet 1 Treffer im Bestand, war: %+v", auskunft.Exemplare)
@@ -194,13 +194,13 @@ func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 
 // Ein nie vergebener Barcode ist eine leere, aber gültige Antwort (200) — und auch
 // der ergebnislose Abruf hinterlässt seine Protokollspur.
-func TestTresenAuskunftOhneTreffer(t *testing.T) {
+func TestThekenAuskunftOhneTreffer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	w := baueTresenWelt(t, pool)
+	w := baueThekenWelt(t, pool)
 
-	auskunft := rufeTresenAuskunft(t, srv, w.adminID, "NIE-VERGEBEN-4711")
+	auskunft := rufeThekenAuskunft(t, srv, w.adminID, "NIE-VERGEBEN-4711")
 	if len(auskunft.Exemplare) != 0 || len(auskunft.Ereignisse) != 0 {
 		t.Errorf("erwartet leere Auskunft, war: %+v", auskunft)
 	}
@@ -222,11 +222,11 @@ func TestTresenAuskunftOhneTreffer(t *testing.T) {
 
 // Ohne Barcode gibt es keine Suche — 400, bevor irgendetwas die Datenbank berührt
 // (deshalb kommt dieser Fall ohne Pool aus).
-func TestTresenAuskunftOhneBarcode(t *testing.T) {
+func TestThekenAuskunftOhneBarcode(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{}}
 	req := httptest.NewRequest(http.MethodGet, "/api/audit/tresen-auskunft", nil)
 	rec := httptest.NewRecorder()
-	srv.TresenAuskunft(nil).ServeHTTP(rec, req)
+	srv.ThekenAuskunft(nil).ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("erwartet 400 ohne barcode, war %d", rec.Code)
 	}
@@ -236,11 +236,11 @@ func TestTresenAuskunftOhneBarcode(t *testing.T) {
 // Leser-Id als schuelerID, benutzerID bleibt leer (alle acht Aufrufer). Löste die Auskunft den
 // Namen über die Sicht `schueler` auf, fände sie für einen Kollegen nichts und meldete
 // „Personenbezug getilgt", obwohl Person und Bezug da sind.
-func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
+func TestThekenAuskunftNenntDenKollegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	w := baueTresenWelt(t, pool)
+	w := baueThekenWelt(t, pool)
 
 	var kollegeID string
 	if err := pool.QueryRow(ctx, `
@@ -259,7 +259,7 @@ func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
 		return auditRepo.ProtokolliereAusleihe(ctx, tx, w.exemplarID, kollegeID, "", w.adminID)
 	})
 
-	auskunft := rufeTresenAuskunft(t, srv, w.adminID, w.barcode)
+	auskunft := rufeThekenAuskunft(t, srv, w.adminID, w.barcode)
 	if len(auskunft.Ereignisse) != 1 {
 		t.Fatalf("erwartet 1 Ereignis, waren %d", len(auskunft.Ereignisse))
 	}

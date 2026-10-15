@@ -217,7 +217,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanar
 	}
 
 	// Eintrag im Protokoll über den echten Schreiber: /api/audit darf ihn nicht ausbreiten,
-	// die Tresen-Auskunft muss ihn (Stufe 2) zeigen.
+	// die Theken-Auskunft muss ihn (Stufe 2) zeigen.
 	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
 		return repository.NewProtokollAbfragen(pool).
 			ProtokolliereAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.mitarbeiterID)

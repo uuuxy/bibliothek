@@ -1,7 +1,7 @@
 # Benutzerhandbuch
 
 Stand: 2026-10-08. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
-Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
+Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
 **Zwei Grundsätze, die überall gelten:**
@@ -10,7 +10,7 @@ im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
   (E-Mail + Mail-Passwort). Wer kein Konto hat, kann sich damit selbst anmelden und wird von
   der Bibliothek freigeschaltet (→ Benutzer & Rechte).
 - **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur _Mein Portal_, Helfer nur die
-  Theke ohne Schülerakten, Mitarbeitende den Tresenbetrieb, Admins alles.
+  Theke ohne Schülerakten, Mitarbeitende den Thekenbetrieb, Admins alles.
 
 ---
 
@@ -707,8 +707,8 @@ entsprechend. Bis zum 17.09.2026 ein Reiter im Bestellwesen. (§7)
 ## System-Logs
 
 _Allgemeines Logbuch_ (jede Buchung) und _Admin-Audit-Log_ (wer hat wann was geändert).
-Aufbewahrung 24 Monate, einstellbar. Dritter Reiter **Tresen-Auskunft** (eigenes Recht
-`audit_details`, ab Werk nur Admin): Ein Buch liegt auf dem Tresen, sein Exemplar ist
+Aufbewahrung 24 Monate, einstellbar. Dritter Reiter **Theken-Auskunft** (eigenes Recht
+`audit_details`, ab Werk nur Admin): Ein Buch liegt auf der Theke, sein Exemplar ist
 längst gelöscht — die Barcode-Suche zeigt, was das Protokoll dazu noch weiß (Titel,
 letzte Ausleihen), auch wenn der Titel komplett gelöscht wurde. Jede Abfrage wird
 selbst protokolliert; nach DSGVO-Tilgung zeigt auch dieser Weg nichts mehr. (§10)

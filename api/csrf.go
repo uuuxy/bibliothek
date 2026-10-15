@@ -83,7 +83,7 @@ func (s *Server) csrfToken() http.HandlerFunc {
 // /login gehört dazu, obwohl es nicht unter /api/ liegt: Ohne die Prüfung könnte eine fremde
 // Seite ein Formular mit enctype="text/plain" abschicken, dessen Rumpf als JSON durchgeht (kein
 // Preflight, keine CORS-Hürde), und das Opfer in die Sitzung eines Kontos des Angreifers
-// anmelden; alles, was es danach am Tresen scannt, landete in dessen Konto. SameSite=Strict
+// anmelden; alles, was es danach an der Theke scannt, landete in dessen Konto. SameSite=Strict
 // verhindert das nicht, es regelt das Senden von Cookies, nicht das Setzen durch die Antwort.
 // /login/ gilt als Anfang, nicht nur der genaue Pfad: Ein künftiges /login/code oder
 // /login/barcode fiele sonst lautlos aus der Prüfung, weil an keiner Stelle eine Ausnahme

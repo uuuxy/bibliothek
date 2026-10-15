@@ -1,7 +1,7 @@
 <script>
-	// Tresen-Auskunft — der eine zweckgebundene Leseweg ins Prüfprotokoll
-	// (Betreiber-Entscheidung 01.09.2026, Befund-Register): Ein Buch liegt auf dem
-	// Tresen, sein Exemplar ist längst gelöscht — wem gehörte es? Der Server sucht
+	// Theken-Auskunft — der eine zweckgebundene Leseweg ins Prüfprotokoll
+	// (Betreiber-Entscheidung 01.09.2026, Befund-Register): Ein Buch liegt auf der
+	// Theke, sein Exemplar ist längst gelöscht — wem gehörte es? Der Server sucht
 	// den Barcode in Bestand UND Audit-Snapshots und protokolliert jeden Abruf
 	// selbst (deshalb steht der Hinweis dazu sichtbar über dem Feld, nicht im
 	// Kleingedruckten). Recht: audit_details, ab Werk nur ADMIN.

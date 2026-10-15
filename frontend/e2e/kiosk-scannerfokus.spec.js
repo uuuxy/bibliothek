@@ -4,7 +4,7 @@ import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix } from './helpers.js'
 /**
  * Das Scanfeld hat nach jeder Aktion den Fokus.
  *
- * Fehlt er, muss man am Tresen vor jedem Buch erst ins Feld klicken, sonst verpufft der
+ * Fehlt er, muss man an der Theke vor jedem Buch erst ins Feld klicken, sonst verpufft der
  * Scan lautlos: kein Fehler, keine Meldung, keine Ausleihe. Was während einer laufenden
  * Buchung gescannt wird, prüft theke-scan-reihe.spec.js.
  *

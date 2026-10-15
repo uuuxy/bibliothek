@@ -51,7 +51,7 @@ func (a *TitelAbfragen) LoescheTitel(ctx context.Context, ids []string) error {
 	// Alles, was eine Spur braucht, wird in der Transaktion gelesen: Was ein Lesen davor sähe, wäre
 	// nicht zwingend das, was fällt.
 	//
-	// Schnappschüsse der Barcodes aller Exemplare, bevor die Zeilen fallen: Die Auskunft am Tresen
+	// Schnappschüsse der Barcodes aller Exemplare, bevor die Zeilen fallen: Die Auskunft an der Theke
 	// findet gelöschte Exemplare nur darüber (Begründung an leseExemplarSnapshots).
 	exemplarSnaps, err := leseExemplarSnapshots(ctx, tx, ids)
 	if err != nil {

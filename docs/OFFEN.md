@@ -506,10 +506,6 @@ Ordner des Pakets und für die Form `paket.Name`.
   die Methoden ziehen an die Abfragen ihrer Sache (`KatalogAbfragen`, `LeserAbfragen`,
   `KontoAbfragen`, `SchadensAbfragen`). Die Rufer halten dann die Abfragen der Sache statt
   `ProtokollAbfragen`, ihre Attrappen ziehen mit.
-- Derselbe Ort hat zwei Wörter: „Theke" (669 Go-Namen, 549 Nennungen in der Oberfläche, das
-  Paket `api/theke`) und „Tresen" (124 Go-Namen, 16 Nennungen in der Oberfläche, darunter die
-  Beschriftung „Tresen-Auskunft"; gezählt am 13.10.2026). Ein Wort festlegen und in
-  [STIL.md](STIL.md), Abschnitt 2, eintragen.
 - Die Oberfläche, Stufe 2: Gezählt am 16.10.2026 über die Erklärungen mit `let`, `const`,
   `function` und `class` in den 459 Dateien ohne Tests: 326 verschiedene Namen (402 Erklärungen)
   tragen ein englisches Wort, am häufigsten `handle` (46), `error` (39), `selected` (28),
