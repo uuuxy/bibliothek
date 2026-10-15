@@ -40,7 +40,7 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen re
 	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.verlangeRecht("view_books")(s.katalog().TitelExemplare(repository.NewBescheidAbfragen(s.DB.Pool))))
 	// Ausleiher und Historie hinter view_students, nicht view_books: Beide verknüpfen Namen von
 	// Schülern mit Titeln, die Historie über Jahre, wie die Vormerkungen. Ohne das Recht zeigt die
-	// Buchakte die Liste leer und nennt sie als fehlend (useBookAkte.svelte.js); Exemplare und
+	// Buchakte die Liste leer und nennt sie als fehlend (useBuchakte.svelte.js); Exemplare und
 	// Verfügbarkeit bleiben view_books.
 	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.verlangeRecht("view_students")(s.katalog().TitelAusleiher()))
 	mux.Handle("GET /api/buecher/titel/{id}/historie", s.verlangeRecht("view_students")(s.katalog().TitelHistorie()))

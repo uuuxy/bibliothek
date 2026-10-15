@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { flushSync } from 'svelte';
-import { useBookAkte } from './useBookAkte.svelte.js';
+import { useBuchakte } from './useBuchakte.svelte.js';
 import { apiFetch } from './apiFetch.js';
 import { appState } from '../inventur/lib/store.svelte.js';
 
-// Die Buch-Akte ruft loadAll aus einem $effect (BookAkte.svelte). Vom 06.09.2026, 21:18,
+// Die Buch-Akte ruft loadAll aus einem $effect (Buchakte.svelte). Vom 06.09.2026, 21:18,
 // bis zum 07.09. lief dieser Effekt in einer Endlosschleife: loadAll schrieb `book = null`,
 // las `book` im selben synchronen Zug wieder (Cover-Kandidaten) und abonnierte es damit.
 // Beim nächsten Anlass — ein frisches Objekt in appState.selectedBook, wie es die
@@ -13,7 +13,7 @@ import { appState } from '../inventur/lib/store.svelte.js';
 // (effect_update_depth_exceeded). Der Effekt starb, isLoading blieb auf true, die Akte
 // zeigte für immer den Ladekringel; der Trace zählte 1.001 Anfragen an einen Endpunkt.
 //
-// Warum das kein anderer Test sah: useBookAkte.test.js ruft loadAll DIREKT — ohne Effekt
+// Warum das kein anderer Test sah: useBuchakte.test.js ruft loadAll DIREKT — ohne Effekt
 // gibt es kein Abonnement und keine Schleife. vitest 455/455 grün, svelte-check 0/0, und
 // nur der e2e-Lauf in CI wurde rot ([[svelte-effekt-liest-eigenen-state]]).
 //
@@ -24,7 +24,7 @@ vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
 /** @param {any} body */
 const ok = (body) => /** @type {any} */ ({ ok: true, json: async () => body });
 
-describe('useBookAkte.loadAll in einem $effect', () => {
+describe('useBuchakte.loadAll in einem $effect', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(apiFetch).mockImplementation(async () => ok([]));
@@ -33,7 +33,7 @@ describe('useBookAkte.loadAll in einem $effect', () => {
 
 	it('löst sich nicht selbst aus: ein neues selectedBook-Objekt heißt EIN weiterer Lauf, keine Schleife', async () => {
 		appState.selectedBook = { id: 'A', title: 'Titel A' };
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 		let laeufe = 0;
 		const stopp = $effect.root(() => {
 			$effect(() => {

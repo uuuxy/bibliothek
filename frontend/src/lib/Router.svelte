@@ -8,7 +8,7 @@
 
 	import Berechtigungen from './Berechtigungen.svelte';
 	import Omnibox from './Omnibox.svelte';
-	import BookAkte from './BookAkte.svelte';
+	import Buchakte from './Buchakte.svelte';
 	import BestellWorkspace from './BestellWorkspace.svelte';
 	import UnifiedInventory from './UnifiedInventory.svelte';
 	import MediaCatalog from './MediaCatalog.svelte';
@@ -39,7 +39,7 @@
 
 	function handleSelectBook(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
-		// öffnen (book_detail → BookAkte via bookId, inkl. Deep-Link /medienkatalog/buch/{id}) —
+		// öffnen (book_detail → Buchakte via bookId, inkl. Deep-Link /medienkatalog/buch/{id}) —
 		// NICHT den allgemeinen Medienkatalog.
 		if (!book?.id) return;
 		appState.activeBookId = book.id;
@@ -152,7 +152,7 @@
 		<div class="w-full animate-fade-in"><SystemSettings /></div>
 	{:else if uiStore.activeTab === 'book_detail'}
 		<div class="w-full animate-fade-in">
-			<BookAkte
+			<Buchakte
 				bookId={appState.activeBookId}
 				onBack={() => {
 					uiStore.activeTab = 'media_catalog';

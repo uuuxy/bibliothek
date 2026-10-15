@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor, within } from '@testing-library/svelte';
-import BookVormerkungenTab from './BookVormerkungenTab.svelte';
+import BuchakteVormerkungen from './BuchakteVormerkungen.svelte';
 import { apiFetch, apiClient } from './apiFetch.js';
 import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 import { authStore } from './stores/authStore.svelte.js';
@@ -39,7 +39,7 @@ beforeEach(() => {
 
 // Der Reiter hält zwei Abläufe: einen Schüler vormerken und eine Vormerkung löschen. Beide
 // stehen hier, damit eine Umstellung der Oberfläche keinen von ihnen still bricht.
-describe('BookVormerkungenTab', () => {
+describe('BuchakteVormerkungen', () => {
 	it('merkt einen gesuchten Schüler vor und lädt die Liste neu', async () => {
 		vi.mocked(apiFetch).mockImplementation(async (adresse) =>
 			String(adresse).startsWith('/api/schueler?q=')
@@ -49,7 +49,7 @@ describe('BookVormerkungenTab', () => {
 				: antwort([VORMERKUNG])
 		);
 		vi.mocked(apiClient.post).mockResolvedValue(antwort({}));
-		const screen = render(BookVormerkungenTab, { vormerkungen: [], book: { id: 't1' } });
+		const screen = render(BuchakteVormerkungen, { vormerkungen: [], book: { id: 't1' } });
 
 		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
 		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Barcode)'), {
@@ -74,14 +74,14 @@ describe('BookVormerkungenTab', () => {
 	// tab." Eine Überschrift darunter sagte dasselbe ein zweites Mal; die anderen Reiter der
 	// Akte tragen keine.
 	it('wiederholt den Namen des Reiters nicht als Überschrift', () => {
-		const screen = render(BookVormerkungenTab, { vormerkungen: [VORMERKUNG], book: { id: 't1' } });
+		const screen = render(BuchakteVormerkungen, { vormerkungen: [VORMERKUNG], book: { id: 't1' } });
 		expect(screen.queryAllByRole('heading')).toEqual([]);
 		expect(screen.getByRole('button', { name: '+ Schüler vormerken' })).toBeTruthy();
 	});
 
 	it('löscht eine Vormerkung nach der Rückfrage', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort({}));
-		const screen = render(BookVormerkungenTab, { vormerkungen: [VORMERKUNG], book: { id: 't1' } });
+		const screen = render(BuchakteVormerkungen, { vormerkungen: [VORMERKUNG], book: { id: 't1' } });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Vormerkung löschen' }));
 

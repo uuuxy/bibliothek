@@ -4,7 +4,7 @@
      Gebühren und Bescheide stehen im eigenen Reiter (LeserakteGebuehren); jeder Reiter
      nennt nur die Listen, die er selbst zeigt. -->
 <script>
-	import BorrowedBooksCard from './BorrowedBooksCard.svelte';
+	import LeserAusleihenKarte from './LeserAusleihenKarte.svelte';
 	import LeserVormerkungenKarte from './LeserVormerkungenKarte.svelte';
 	import ListenNichtGeladen from './components/leser/ListenNichtGeladen.svelte';
 
@@ -36,7 +36,7 @@
 >
 	<ListenNichtGeladen listen={fehlendeListen} onErneut={onChanged} />
 
-	<BorrowedBooksCard books={buecher} {onReturnClick} {onDamageClick} />
+	<LeserAusleihenKarte books={buecher} {onReturnClick} {onDamageClick} />
 
 	{#if vormerkungen.length > 0}
 		<LeserVormerkungenKarte bind:vormerkungen />

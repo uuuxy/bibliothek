@@ -13,7 +13,7 @@
 	/** @type {any | null} */
 	let neueAuflageFuer = $state(null);
 
-	// Nur die ersten Einträge ins DOM (Muster wie BookTable/Inventur-Startseite).
+	// Nur die ersten Einträge ins DOM (Muster wie Bestandstabelle/Inventur-Startseite).
 	// Der Bestellbedarf umfasst schnell den halben Katalog — jeder Titel unter seinem
 	// Meldebestand landet hier. Alle zu rendern hiess: tausende DOM-Knoten und ebenso
 	// viele Cover-Requests. Das Scrollfenster wächst mit dem Viewport, damit man die

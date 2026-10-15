@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
-import BorrowersListe from './BorrowersListe.svelte';
+import AusleiherListe from './AusleiherListe.svelte';
 
 // Überfällig trägt Farbe, Zeichen und für Vorleseprogramme das Wort, wie in der Leserakte
 // (UeberfaelligZeichen.svelte). Wer Farben schlecht unterscheidet, sieht an der Farbe allein
@@ -20,7 +20,7 @@ describe('Ausleiher-Liste: überfällig', () => {
 	});
 	const fmtDate = (/** @type {string} */ d) => new Date(d).toLocaleDateString('de-DE');
 	/** @param {any} z */
-	const zeige = (z) => render(BorrowersListe, { zeilen: [z], onBack: () => {}, fmtDate });
+	const zeige = (z) => render(AusleiherListe, { zeilen: [z], onBack: () => {}, fmtDate });
 
 	it('setzt an die überfällige Ausleihe ein Zeichen und das Wort', () => {
 		const { container, getByText } = zeige(zeile(-3));

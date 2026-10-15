@@ -12,7 +12,7 @@ export function useLeserakte() {
 	let gebuehren = $state([]);
 	/** @type {any[]} */
 	let bescheide = $state([]);
-	// Listen, deren Abruf gescheitert ist — wie fehlendeListen in der Buch-Akte (useBookAkte).
+	// Listen, deren Abruf gescheitert ist — wie fehlendeListen in der Buch-Akte (useBuchakte).
 	// Ihre Karte ist leer, weil nichts ankam, nicht weil nichts vorläge: Eltern mit dem Brief
 	// in der Bibliothek, GET …/bescheide in 503 — und die Auskunft „bei uns liegt kein
 	// Bescheid vor" (Review 14.09.2026, OFFEN.md 1.5).

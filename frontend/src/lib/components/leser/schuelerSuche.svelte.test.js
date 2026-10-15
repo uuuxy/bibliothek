@@ -34,7 +34,7 @@ describe('Leserdatei-Suche', () => {
 	it('zeigt nach einem gescheiterten Lauf keine Treffer von vorher', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(ok(treffer));
 		// Der Store hängt einen $effect auf (Klassen-Stapeldruck aus dem Druck-Center) —
-		// erzeugt wird er deshalb in einer Effekt-Wurzel, wie in useBookAkte.effekt.svelte.test.js.
+		// erzeugt wird er deshalb in einer Effekt-Wurzel, wie in useBuchakte.effekt.svelte.test.js.
 		/** @type {any} */
 		let suche;
 		const stopp = $effect.root(() => {

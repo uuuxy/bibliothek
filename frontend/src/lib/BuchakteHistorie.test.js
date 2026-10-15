@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
-import BookHistoryTab from './BookHistoryTab.svelte';
+import BuchakteHistorie from './BuchakteHistorie.svelte';
 
 // Der Reiter nennt je Ausleihe Leser, Klasse, Exemplar und ob das Buch zurück ist. Der Test
 // hält das fest, damit eine Umstellung der Oberfläche keinen Wert verliert.
-describe('BookHistoryTab', () => {
+describe('BuchakteHistorie', () => {
 	it('nennt Leser, Klasse, Exemplar und den Stand der Rückgabe', () => {
-		const screen = render(BookHistoryTab, {
+		const screen = render(BuchakteHistorie, {
 			history: [
 				{
 					schueler_name: 'Ida',
@@ -39,7 +39,7 @@ describe('BookHistoryTab', () => {
 	});
 
 	it('sagt, wenn es noch keine Ausleihe gab', () => {
-		const screen = render(BookHistoryTab, { history: [] });
+		const screen = render(BuchakteHistorie, { history: [] });
 		expect(screen.getByText('Noch keine Ausleihen in der Datenbank vorhanden.')).toBeTruthy();
 	});
 });

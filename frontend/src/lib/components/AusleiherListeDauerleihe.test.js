@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
-import BorrowersListe from './BorrowersListe.svelte';
+import AusleiherListe from './AusleiherListe.svelte';
 
 // Eine Dauerleihe zeigt keine Frist und wird nie überfällig — dieselbe Regel wie in der
-// Akte (BorrowedBooksListDauerleihe.test.js). Nach dem bloßen Datum gefärbt, stünde ein
+// Akte (LeserAusleihenListeDauerleihe.test.js). Nach dem bloßen Datum gefärbt, stünde ein
 // Kollege nach einem Jahr rot da, während die Theke ihn bedient.
 describe('Ausleiher-Liste: Dauerleihe', () => {
 	/** @param {boolean} dauerleihe */
@@ -21,7 +21,7 @@ describe('Ausleiher-Liste: Dauerleihe', () => {
 	const fmtDate = (/** @type {string} */ d) => new Date(d).toLocaleDateString('de-DE');
 
 	it('nennt statt des Datums „ohne Frist“ und färbt nicht', () => {
-		const screen = render(BorrowersListe, { zeilen: [zeile(true)], onBack: () => {}, fmtDate });
+		const screen = render(AusleiherListe, { zeilen: [zeile(true)], onBack: () => {}, fmtDate });
 		const text = screen.container.textContent ?? '';
 		expect(text).toContain('ohne Frist');
 		expect(text).not.toContain('1.2.2025');
@@ -31,7 +31,7 @@ describe('Ausleiher-Liste: Dauerleihe', () => {
 	// Die Gegenprobe: Ohne sie misst der Test nur, dass niemand rot wird — auch dann,
 	// wenn die Regel zu weit greift und Schüler mitnimmt.
 	it('lässt die befristete Ausleihe überfällig werden', () => {
-		const screen = render(BorrowersListe, { zeilen: [zeile(false)], onBack: () => {}, fmtDate });
+		const screen = render(AusleiherListe, { zeilen: [zeile(false)], onBack: () => {}, fmtDate });
 		expect(screen.container.textContent ?? '').toContain('1.2.2025');
 		expect(screen.container.querySelector('.text-error')).not.toBeNull();
 	});

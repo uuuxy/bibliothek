@@ -13,7 +13,7 @@ import {
 //
 // Anlass (04.09.2026): Es kam die Frage, warum der Bestellbedarf keine Cover zeigt. Beim
 // Nachsehen fanden sich FÜNF Größen im Haus (w-7, w-8, w-10, w-12, w-16) und VIER
-// Kopien derselben Ausweich-Logik — BuchKarte, KlassenBuchKachel, BookTableZeile und
+// Kopien derselben Ausweich-Logik — BuchKarte, KlassenBuchKachel, BestandstabelleZeile und
 // IsbnLookupDialog liefen jede für sich durch dieselbe Kandidatenliste, mit eigener
 // Fehlerbehandlung und eigenem Platzhalter. Genau die Ausgangslage der Suchfelder,
 // die in zehn Fassungen mit sieben Maßen endeten.
@@ -35,7 +35,7 @@ const BESTAND = [
 	'src/lib/components/portal/PortalTrefferkarte.svelte',
 	'src/inventur/lib/components/BuchKarte.svelte',
 	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte',
-	'src/lib/useBookAkte.svelte.js',
+	'src/lib/useBuchakte.svelte.js',
 	'src/lib/monitor/FolieBeliebt.svelte',
 	'src/lib/monitor/FolieBuchDesMonats.svelte',
 	'src/lib/monitor/FolieNeuEingetroffen.svelte'

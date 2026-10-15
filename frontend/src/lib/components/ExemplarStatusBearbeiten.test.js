@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
+import ExemplarStatusBearbeiten from './ExemplarStatusBearbeiten.svelte';
 import { apiClient } from '../apiFetch.js';
 
 vi.mock('../apiFetch.js', () => ({
@@ -18,7 +18,7 @@ const ERFOLG = /** @type {any} */ ({ ok: true, json: async () => ({}) });
 
 /** @param {any} ex */
 async function oeffneUndSpeichere(ex) {
-	const screen = render(BookExemplarStatusEditor, { props: { ex, onDone: () => {} } });
+	const screen = render(ExemplarStatusBearbeiten, { props: { ex, onDone: () => {} } });
 	// ui/Select ist ein Knopf mit der Rolle combobox; er zeigt die gewählte Zeile als Text.
 	const gewaehlt = (
 		screen.getByRole('combobox', { name: 'Status des Exemplars' }).textContent || ''

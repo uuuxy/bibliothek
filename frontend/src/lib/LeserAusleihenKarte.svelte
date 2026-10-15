@@ -1,5 +1,5 @@
 <script>
-	import BorrowedBooksList from './BorrowedBooksList.svelte';
+	import LeserAusleihenListe from './LeserAusleihenListe.svelte';
 	import { BookOpen } from '@lucide/svelte';
 
 	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void }} */
@@ -19,6 +19,6 @@
 			<span class="text-sm font-semibold">Aktuell keine Bücher entliehen.</span>
 		</div>
 	{:else}
-		<BorrowedBooksList {books} {onReturnClick} {onDamageClick} />
+		<LeserAusleihenListe {books} {onReturnClick} {onDamageClick} />
 	{/if}
 </div>

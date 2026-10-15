@@ -114,7 +114,7 @@
 				<!-- Ohne eigene Höhe: Die Liste zeigt alle Exemplare, gescrollt wird die Seite. -->
 				<div class="space-y-2">
 					{#each exemplare as ex, _i (_i)}
-						<!-- Dieselben Exemplare zeigt die Buchakte (BookExemplarCard): umrandete Fläche in
+						<!-- Dieselben Exemplare zeigt die Buchakte (ExemplarKarte): umrandete Fläche in
 					     outline-variant, Barcode als getönte Chip-Form, Zustand über StatusChip. Zwei
 					     Ansichten desselben Exemplars sollen nicht zwei Farbsprachen sprechen. -->
 						<div

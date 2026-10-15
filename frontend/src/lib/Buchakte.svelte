@@ -1,12 +1,12 @@
 <script>
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
-	import BookBorrowersTab from './BookBorrowersTab.svelte';
-	import BookExemplareTab from './BookExemplareTab.svelte';
-	import BookHistoryTab from './BookHistoryTab.svelte';
-	import BookVormerkungenTab from './BookVormerkungenTab.svelte';
-	import BookAkteMeta from './BookAkteMeta.svelte';
-	import { useBookAkte } from './useBookAkte.svelte.js';
+	import BuchakteAusleiher from './BuchakteAusleiher.svelte';
+	import BuchakteExemplare from './BuchakteExemplare.svelte';
+	import BuchakteHistorie from './BuchakteHistorie.svelte';
+	import BuchakteVormerkungen from './BuchakteVormerkungen.svelte';
+	import BuchakteKopf from './BuchakteKopf.svelte';
+	import { useBuchakte } from './useBuchakte.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
@@ -19,7 +19,7 @@
 	/** @type {{ bookId: string | null, onBack: () => void }} */
 	let { bookId, onBack } = $props();
 
-	const akte = useBookAkte();
+	const akte = useBuchakte();
 
 	// Enges Theken-Recht (db/rechte_vorgabe.go): Ohne manage_vormerkungen antwortet die API
 	// mit 403 — dann den Reiter gar nicht erst anbieten statt leer scheitern lassen.
@@ -48,7 +48,7 @@
 	// Der Effekt hängt an GENAU einer Sache: der Titel-ID. untrack sorgt dafür, dass
 	// nichts, was loadAll unterwegs liest (appState.selectedBook, sein eigener Zustand),
 	// je wieder zum Auslöser dieses Effekts wird — am 06.09.2026 tat es das, und die
-	// Akte lief in einer Endlosschleife, bis Svelte sie abbrach (siehe useBookAkte).
+	// Akte lief in einer Endlosschleife, bis Svelte sie abbrach (siehe useBuchakte).
 	$effect(() => {
 		const id = bookId;
 		if (id) untrack(() => akte.loadAll(id));
@@ -78,7 +78,7 @@
 			<Ladekreis size="lg" />
 		</div>
 	{:else if akte.book}
-		<BookAkteMeta
+		<BuchakteKopf
 			book={akte.book}
 			borrowers={akte.borrowers}
 			exemplare={akte.exemplare}
@@ -107,13 +107,17 @@
 		<!-- Tab Content -->
 		<div class="w-full">
 			{#if akte.activeTab === 'ausleiher'}
-				<BookBorrowersTab borrowers={akte.borrowers} book={akte.book} {onBack} />
+				<BuchakteAusleiher borrowers={akte.borrowers} book={akte.book} {onBack} />
 			{:else if akte.activeTab === 'exemplare'}
-				<BookExemplareTab bind:exemplare={akte.exemplare} book={akte.book} loadAll={akte.loadAll} />
+				<BuchakteExemplare
+					bind:exemplare={akte.exemplare}
+					book={akte.book}
+					loadAll={akte.loadAll}
+				/>
 			{:else if akte.activeTab === 'historie'}
-				<BookHistoryTab history={akte.history} />
+				<BuchakteHistorie history={akte.history} />
 			{:else if akte.activeTab === 'vormerkungen'}
-				<BookVormerkungenTab bind:vormerkungen={akte.vormerkungen} book={akte.book} />
+				<BuchakteVormerkungen bind:vormerkungen={akte.vormerkungen} book={akte.book} />
 			{/if}
 		</div>
 	{:else if akte.kopfFehler}

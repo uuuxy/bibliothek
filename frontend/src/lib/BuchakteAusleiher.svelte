@@ -2,7 +2,7 @@
 	import Button from './components/ui/Button.svelte';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import Select from './components/ui/Select.svelte';
-	import BorrowersListe from './components/BorrowersListe.svelte';
+	import AusleiherListe from './components/AusleiherListe.svelte';
 	import { baueAusleiherDruckHtml } from './utils/ausleiherDruck.js';
 	import { druckeDokument, FENSTER_BLOCKIERT } from './utils/listenDruck.js';
 	import { fmtDateDE as fmtDate } from './utils/dates.js';
@@ -70,5 +70,5 @@
 		</Button>
 	</div>
 
-	<BorrowersListe zeilen={filteredBorrowers} {onBack} {fmtDate} />
+	<AusleiherListe zeilen={filteredBorrowers} {onBack} {fmtDate} />
 {/if}

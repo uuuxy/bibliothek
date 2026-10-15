@@ -342,7 +342,7 @@ Vermerk.
   nennt 16 px Ecke auf einer Karte falsch, erkennt eine Karte aber nur an weißer Füllung
   (`bg-white`, `bg-surface-container-lowest`). Eine umrandete Karte ohne Füllung oder in
   `bg-surface` fällt durch. Drei Stellen tragen so `rounded-2xl`: in der Buchakte das Formular
-  „Schüler vormerken" (`BookVormerkungenTab.svelte`), im Mahnwesen der Kasten „Keine offenen
+  „Schüler vormerken" (`BuchakteVormerkungen.svelte`), im Mahnwesen der Kasten „Keine offenen
   Schadensersatz-Fälle" (`BescheideTabelle.svelte`), im Ausweis-Designer die Auswahl
   (`designer/ToolbarAuswahl.svelte`). Nächster Schritt: die Erkennung auf den ganzen Rahmen
   erweitern und die drei auf `rounded-xl` stellen; der Sperrbildschirm trägt als Dialog 28 px

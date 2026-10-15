@@ -41,7 +41,7 @@ async function holeKopf(id) {
 	}
 }
 
-export function useBookAkte() {
+export function useBuchakte() {
 	/** @type {any} */
 	let book = $state(null);
 	/** @type {any[]} */
@@ -102,7 +102,7 @@ export function useBookAkte() {
 		kopfFehler = '';
 
 		// Der Kopf läuft durch eine LOKALE Variable, nie durch `book` zurück: Dieser Lauf
-		// steht in einem $effect (BookAkte.svelte). Ein Effekt, der `book` schreibt und im
+		// steht in einem $effect (Buchakte.svelte). Ein Effekt, der `book` schreibt und im
 		// selben Atemzug wieder liest, abonniert es — und löst sich beim nächsten Anlass
 		// mit seinem eigenen `book = null` endlos selbst aus, bis Svelte nach 1.000
 		// Umläufen abbricht (effect_update_depth_exceeded) und isLoading hängen bleibt.

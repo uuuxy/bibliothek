@@ -8,14 +8,14 @@ vi.mock('../apiFetch.js', async (original) => ({
 }));
 
 import { apiClient } from '../apiFetch.js';
-import BookExemplarCard from './BookExemplarCard.svelte';
+import ExemplarKarte from './ExemplarKarte.svelte';
 
 // Was nicht zum Bestand zählt, heißt nicht „Gesperrt". Ein ausgesondertes Exemplar hat keinen
 // Papierkorb: Die Tür weist es als schon ausgebucht ab.
 describe('Exemplarkarte: Zustand', () => {
 	/** @param {Record<string, any>} ex */
 	const karte = (ex) =>
-		render(BookExemplarCard, {
+		render(ExemplarKarte, {
 			ex: { id: 'e1', barcode_id: 'B-0041873', ist_verfuegbar: true, ...ex },
 			selected: false,
 			darfBearbeiten: true,
@@ -53,7 +53,7 @@ describe('Exemplarkarte: abgelehnter Barcode', () => {
 	const grund = 'dieser Barcode wird bereits von einem anderen Exemplar verwendet';
 
 	const karte = () =>
-		render(BookExemplarCard, {
+		render(ExemplarKarte, {
 			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
 			selected: false,
 			darfBearbeiten: true,

@@ -1,4 +1,4 @@
-<!-- @component BookAkteMeta — der Kopf der Buchakte wie eine Play-Store-Detailseite: Titel
+<!-- @component BuchakteKopf — der Kopf der Buchakte wie eine Play-Store-Detailseite: Titel
      groß links, darunter in ruhigem Grau die Einordnung (Fach · Jahrgang · Zweig ·
      Medienart), dann ISBN, Signatur und Standorte als Textzeilen, eine Zahlenreihe
      (verfügbar, Ausleiher, bestellt) und die Aktionen als Knopfreihe. Das Cover steht

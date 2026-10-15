@@ -1151,7 +1151,7 @@ frontend/src
 │   ├─ Omnibox.svelte    Das Eingabefeld des Tresens
 │   ├─ stores/*.svelte.js Geteilter Zustand (Runes-Singletons): authStore, uiStore,
 │   │                     omnibox, offlineSync, printQueue, toastStore, mahnwesen*, …
-│   └─ …                 Fachansichten (Leserakte, BookAkte, Mahnwesen, LmfPlan,
+│   └─ …                 Fachansichten (Leserakte, Buchakte, Mahnwesen, LmfPlan,
 │                         DruckCenter, KollegiumPortal, Betriebsbereitschaft, Monitor, …)
 ├─ inventur/             Die Katalog-Oberfläche des Untermoduls (eigene lib/ + routes/)
 └─ styles/, assets/
@@ -4346,7 +4346,7 @@ Fenstern bekannt ist:
   außerhalb von G706 sind es 28 Stellen in 14 Dateien.
 - Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
   01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
-  Vormerk-Liste (`permissionMetadata.js`, `BookVormerkungenTab.svelte`), das Etikett der
+  Vormerk-Liste (`permissionMetadata.js`, `BuchakteVormerkungen.svelte`), das Etikett der
   Reiterleiste (`Schuelerdatei.svelte`), „Öffnet die Schülerdatei …" im Druck-Einstieg
   (`KlassenDruckEinstieg.svelte`), „Schülerakte" in drei Erklärtexten (`permissionMetadata.js`,
   `DatenschutzKategorie.svelte`, `BescheideTabelle.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
@@ -4354,7 +4354,7 @@ Fenstern bekannt ist:
   mitziehen.
 - Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht (gefunden am 01.10.2026 beim
   Durchgang über die Speichern-Wege der Oberfläche, am Code gelesen): die Nummer eines
-  Exemplars speichern (`saveBarcode` in `BookExemplarCard.svelte`), eine Sachgruppe „Sichern"
+  Exemplars speichern (`saveBarcode` in `ExemplarKarte.svelte`), eine Sachgruppe „Sichern"
   (`speichereBearbeitung` in `SystematikVerwaltung.svelte`) und „Anmelden" mit leerer Adresse
   oder leerem Passwort (`authStore.handleLogin`). Verloren geht nichts. Den Knopf in dem
   Zustand sperren oder das Feld nennen.
@@ -4427,7 +4427,7 @@ Fenstern bekannt ist:
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.
 - Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
 - Klone: Go 9 Gruppen (05.09.2026), Frontend 0,41 %.
-- Exemplarkarte der Buchakte (`BookExemplarCard.svelte`): Die vier Symbolknöpfe sind 14 px groß
+- Exemplarkarte der Buchakte (`ExemplarKarte.svelte`): Die vier Symbolknöpfe sind 14 px groß
   statt 32 px (`.icon-btn`), drei erklären sich per `title` statt `data-tip`; die Buchakte fehlt
   in `icon-trefferflaechen.spec.js` und `icon-tooltips.spec.js`. Ein 32-px-Knopf bricht die
   Kopfzeile bei 1280 px um (gemessen am 24.09.2026: Karte 70 → 100 px) — die Knöpfe brauchen

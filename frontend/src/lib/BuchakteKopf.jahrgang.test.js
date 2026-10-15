@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
-import BookAkteMeta from './BookAkteMeta.svelte';
+import BuchakteKopf from './BuchakteKopf.svelte';
 
 /** @param {Record<string, any>} zusatz */
 function einordnung(zusatz) {
 	const nichts = () => {};
-	const { container } = render(BookAkteMeta, {
+	const { container } = render(BuchakteKopf, {
 		book: { id: 't-1', title: 'Natura', author: 'Beyer', subject: 'Biologie', ...zusatz },
 		borrowers: [],
 		exemplare: [],

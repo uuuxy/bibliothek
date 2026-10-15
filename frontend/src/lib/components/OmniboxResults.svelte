@@ -1,6 +1,6 @@
 <script>
 	import LeserTreffer from './omnibox/LeserTreffer.svelte';
-	import BookResultItem from './omnibox/BookResultItem.svelte';
+	import TitelTreffer from './omnibox/TitelTreffer.svelte';
 
 	let { unifiedSearchResults, selectedDropdownIndex, onSelect } = $props();
 
@@ -50,7 +50,7 @@
 		</div>
 		{#each unifiedSearchResults.books as book, j (j)}
 			{@const index = j + unifiedSearchResults.students.length}
-			<BookResultItem {book} {index} selected={selectedDropdownIndex === index} {onSelect} />
+			<TitelTreffer {book} {index} selected={selectedDropdownIndex === index} {onSelect} />
 		{/each}
 	{/if}
 </div>

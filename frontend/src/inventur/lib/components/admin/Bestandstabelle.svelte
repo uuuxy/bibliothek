@@ -1,8 +1,8 @@
 <script>
-	import { erzeugeAuswahl } from './bookTableAuswahl.svelte.js';
+	import { erzeugeAuswahl } from './bestandstabelleAuswahl.svelte.js';
 	import Tabelle from '../../../../lib/components/ui/Tabelle.svelte';
-	import BookTableToolbar from '$lib/components/admin/BookTableToolbar.svelte';
-	import BookTableZeile from '$lib/components/admin/BookTableZeile.svelte';
+	import BestandstabelleLeiste from '$lib/components/admin/BestandstabelleLeiste.svelte';
+	import BestandstabelleZeile from '$lib/components/admin/BestandstabelleZeile.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
 
@@ -29,7 +29,7 @@
 		onRetryCovers
 	} = $props();
 
-	// Auswahl für die Massenaktionen: bookTableAuswahl.svelte.js. Der Effekt hält sie auf
+	// Auswahl für die Massenaktionen: bestandstabelleAuswahl.svelte.js. Der Effekt hält sie auf
 	// dem, was in der Liste steht — sonst trifft „Löschen" nach dem Filtern Unsichtbares.
 	const auswahl = erzeugeAuswahl();
 	$effect(() => auswahl.angleichen(books));
@@ -50,7 +50,7 @@
 </script>
 
 <div class="w-full">
-	<BookTableToolbar
+	<BestandstabelleLeiste
 		booksLength={books.length}
 		selectedCount={auswahl.anzahl}
 		onDelete={handleDelete}
@@ -86,7 +86,7 @@
 			<tbody>
 				<!-- Die Reihenfolge kommt vom Server: nach dem Titel (GET /api/books). -->
 				{#each books.slice(0, maxVisible) as book (book.id)}
-					<BookTableZeile
+					<BestandstabelleZeile
 						{book}
 						isSelected={auswahl.enthaelt(book.id)}
 						{onOpenDetail}

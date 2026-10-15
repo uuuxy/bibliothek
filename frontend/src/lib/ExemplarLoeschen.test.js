@@ -11,7 +11,7 @@ vi.mock('./apiFetch.js', async (original) => ({
 }));
 
 import { apiFetch } from './apiFetch.js';
-import BookExemplareTab from './BookExemplareTab.svelte';
+import BuchakteExemplare from './BuchakteExemplare.svelte';
 import { authStore } from './stores/authStore.svelte.js';
 
 // Der Kopf der Buchakte nennt „1 von 2 verfügbar". Nach „Exemplar löschen" führt der Reiter
@@ -33,7 +33,7 @@ describe('Buchakte: Exemplar löschen führt den Bestand im Kopf nach', () => {
 	/** @param {number} karte Stelle der Karte in der Liste */
 	async function loesche(karte) {
 		const book = { id: 't-1', title: 'Momo', gesamt: 2, verfuegbar: 1 };
-		const screen = render(BookExemplareTab, {
+		const screen = render(BuchakteExemplare, {
 			props: { exemplare: exemplare(), book, loadAll: () => {} }
 		});
 		await fireEvent.click(screen.getAllByRole('button', { name: 'Exemplar löschen' })[karte]);

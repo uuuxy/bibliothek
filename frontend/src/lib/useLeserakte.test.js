@@ -87,7 +87,7 @@ describe('useLeserakte.fetchProfile', () => {
 	// Ein gescheiterter Abruf ist kein „kein Bescheid" (Review 14.09.2026, OFFEN.md 1.5): Eltern
 	// stehen mit dem Brief in der Bibliothek, GET …/bescheide läuft in 503 — die Akte zeigte
 	// keine Karte, und die Auskunft lautete „bei uns liegt kein Bescheid vor". Seit dem
-	// 15.09.2026 steht der Ausfall in fehlendeListen, wie in der Buch-Akte (useBookAkte).
+	// 15.09.2026 steht der Ausfall in fehlendeListen, wie in der Buch-Akte (useBuchakte).
 	/** @param {Record<string, any>} je Antwort je Teil-URL; ohne Eintrag: ok und leer */
 	const antwortenJe = (je) =>
 		vi.mocked(apiFetch).mockImplementation(async (url) => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import BookTable from './BookTable.svelte';
+import Bestandstabelle from './Bestandstabelle.svelte';
 
 // Die Auswahl für Massenaktionen darf nur enthalten, was in der Liste steht
 // (Rasterdurchgang 06.09.2026).
@@ -21,7 +21,7 @@ const buch = (/** @type {string} */ id, /** @type {string} */ titel) => ({
 
 /** @param {any[]} books */
 function zeige(books, onDelete = vi.fn()) {
-	return render(BookTable, {
+	return render(Bestandstabelle, {
 		books,
 		loading: false,
 		onOpenDetail: vi.fn(),
@@ -33,7 +33,7 @@ function zeige(books, onDelete = vi.fn()) {
 	});
 }
 
-describe('BookTable: Auswahl und Massenaktion', () => {
+describe('Bestandstabelle: Auswahl und Massenaktion', () => {
 	it('nimmt beim Filtern die unsichtbaren Zeilen aus der Auswahl', async () => {
 		const geloescht = vi.fn();
 		const { rerender, getByLabelText, getByRole } = zeige(

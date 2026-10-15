@@ -1,4 +1,4 @@
-<!-- @component BorrowersListe — wer dieses Buch gerade hat, eine Zeile je Exemplar.
+<!-- @component AusleiherListe — wer dieses Buch gerade hat, eine Zeile je Exemplar.
      Ein Klick auf den Namen legt den Schüler-Barcode in den Scan-Kanal und springt
      zurück: derselbe Weg wie ein Scan am Pult.
 

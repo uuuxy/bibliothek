@@ -6,7 +6,7 @@
 	import { printQueue } from './stores/printQueue.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
-	import BookExemplarCard from './components/BookExemplarCard.svelte';
+	import ExemplarKarte from './components/ExemplarKarte.svelte';
 	import { exemplarZahlen } from './components/exemplarStatus.js';
 	import ExemplarEigentumDialog from './components/ExemplarEigentumDialog.svelte';
 	import ExemplarStandortDialog from './components/ExemplarStandortDialog.svelte';
@@ -128,7 +128,7 @@
 {:else}
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 		{#each exemplare as ex (ex.id)}
-			<BookExemplarCard
+			<ExemplarKarte
 				{darfBearbeiten}
 				{ex}
 				selected={selectedExemplare.has(ex.id)}

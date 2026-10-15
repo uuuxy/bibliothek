@@ -827,7 +827,7 @@ aus, weil sich der Hash eines interpolierten Werts bei jedem Rendern ändert.
 Gate: `frontend/src/lib/utils/coverHerkunft.test.js` durchsucht den gesamten
 Frontend-Quelltext nach direkt eingebundenen Fremdadressen. Genau dieses Gate hat beim
 Umbau eine Stelle gefunden, die eine Textsuche übersehen hatte
-(`lib/useBookAkte.svelte.js`).
+(`lib/useBuchakte.svelte.js`).
 
 ### Antworten gehen mit gzip gepackt hinaus (seit 04.10.2026)
 

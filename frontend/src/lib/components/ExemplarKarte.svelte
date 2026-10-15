@@ -1,7 +1,7 @@
 <script>
 	import { apiFetch, apiClient } from '../apiFetch.js';
-	import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
-	import BookExemplarZustand from './BookExemplarZustand.svelte';
+	import ExemplarStatusBearbeiten from './ExemplarStatusBearbeiten.svelte';
+	import ExemplarZustand from './ExemplarZustand.svelte';
 	import { exemplarStatus } from './exemplarStatus.js';
 	import StatusChip from './ui/StatusChip.svelte';
 	import Button from './ui/Button.svelte';
@@ -192,8 +192,8 @@
 		</div>
 	</div>
 	{#if editingStatus}
-		<BookExemplarStatusEditor {ex} onDone={() => (editingStatus = false)} />
+		<ExemplarStatusBearbeiten {ex} onDone={() => (editingStatus = false)} />
 	{:else}
-		<BookExemplarZustand {ex} />
+		<ExemplarZustand {ex} />
 	{/if}
 </div>

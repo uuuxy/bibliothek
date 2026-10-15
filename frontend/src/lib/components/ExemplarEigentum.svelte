@@ -1,6 +1,6 @@
-<!-- @component BookExemplarEigentum — die Zeile „Eigentum: …" auf der Exemplarkarte
+<!-- @component ExemplarEigentum — die Zeile „Eigentum: …" auf der Exemplarkarte
      (docs/OFFEN.md 4.24, Stufe 3). Dieselbe Form wie „Zustand:" und „Ersatzwert heute:"
-     darüber (BookExemplarZustand): body-small, Beschriftung fett.
+     darüber (ExemplarZustand): body-small, Beschriftung fett.
 
      Der Wert kommt fertig vom Server — dieselbe Regel wie am Etikett und beim Schadensersatz.
      Geändert wird er nicht hier, sondern über die Markierung („Eigentum ändern"). -->

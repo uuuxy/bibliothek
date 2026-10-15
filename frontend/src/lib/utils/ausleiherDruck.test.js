@@ -76,7 +76,7 @@ describe('baueAusleiherDruckHtml', () => {
 	});
 
 	// Dauerleihe (Kollegium): keine Frist, nie überfällig — dieselbe Regel wie in der Akte
-	// (BorrowedBooksList). Bis zum 22.09.2026 kannte der Druck das Merkmal nicht und
+	// (LeserAusleihenListe). Bis zum 22.09.2026 kannte der Druck das Merkmal nicht und
 	// markierte den Kollegen nach einem Jahr rot (OFFEN.md 5.18).
 	it('markiert eine Dauerleihe nicht und schreibt „ohne Frist“ statt des Datums', () => {
 		const jetzt = new Date('2026-03-01T12:00:00Z');

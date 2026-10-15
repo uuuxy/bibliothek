@@ -1,4 +1,4 @@
-// bookTableAuswahl.svelte.js — die Auswahl der Bestandstabelle für Massenaktionen.
+// bestandstabelleAuswahl.svelte.js — die Auswahl der Bestandstabelle für Massenaktionen.
 //
 // Eigene Datei seit dem Rasterdurchgang am 06.09.2026: Die Tabelle steht mit gut 240
 // Zeilen ohnehin über der 200-Zeilen-Regel, und der Fix des Durchgangs hätte sie weiter

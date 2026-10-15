@@ -4,7 +4,7 @@
 	 *
 	 * Es gab davon fünf Größen und vier Kopien der Ausweich-Logik: `w-7`, `w-8`, `w-10`,
 	 * `w-12` und `w-16` in Zeilen und Kacheln, und `BuchKarte`, `KlassenBuchKachel`,
-	 * `BookTableZeile` sowie `IsbnLookupDialog` bauten jede für sich denselben
+	 * `BestandstabelleZeile` sowie `IsbnLookupDialog` bauten jede für sich denselben
 	 * Kandidaten-Durchlauf nach. Genau die Ausgangslage der Suchfelder, die in zehn
 	 * Fassungen mit sieben Maßen endeten.
 	 *

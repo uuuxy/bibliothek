@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { srcRoot, ohneKommentare } from './hygiene-quellen.js';
-import { useBookAkte } from './useBookAkte.svelte.js';
+import { useBuchakte } from './useBuchakte.svelte.js';
 import { apiFetch } from './apiFetch.js';
 import { appState } from '../inventur/lib/store.svelte.js';
 
@@ -47,14 +47,14 @@ function antworten(id, kopfFehler = false) {
 	};
 }
 
-describe('useBookAkte.loadAll', () => {
+describe('useBuchakte.loadAll', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 	});
 
 	it('lässt den Kopf des vorigen Titels nicht stehen — sonst löscht der Knopf den falschen', async () => {
 		vi.mocked(apiFetch).mockImplementation(antworten('A'));
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 		await akte.loadAll('A');
 		expect(akte.book?.id).toBe('A');
 
@@ -83,7 +83,7 @@ describe('useBookAkte.loadAll', () => {
 			return /** @type {any} */ (ok([]));
 		});
 
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 		const langsam = akte.loadAll('A');
 		await akte.loadAll('B');
 		loesenA();
@@ -105,7 +105,7 @@ describe('useBookAkte.loadAll', () => {
 			if (u.includes('/historie')) return /** @type {any} */ ({ ok: false, status: 500 });
 			return /** @type {any} */ (ok([]));
 		});
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 		await akte.loadAll('A');
 
 		expect(akte.fehlendeListen).toEqual(['Ausleiher', 'Historie']);
@@ -127,7 +127,7 @@ describe('useBookAkte.loadAll', () => {
 				});
 			return /** @type {any} */ (ok([]));
 		});
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 		await akte.loadAll('A');
 		expect(akte.book).toBeNull();
 		expect(akte.kopfFehler).toBe('Datenbank nicht erreichbar');
@@ -150,7 +150,7 @@ describe('useBookAkte.loadAll', () => {
 			if (u.startsWith('/api/books/')) return /** @type {any} */ (ok({ id: 'A' }));
 			return /** @type {any} */ (ok([]));
 		});
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 		await akte.loadAll('A');
 		expect(akte.fehlendeListen).toEqual(['Ausleiher']);
 
@@ -162,13 +162,13 @@ describe('useBookAkte.loadAll', () => {
 	// Die zweite Hälfte der Kette: Die Liste nützt nur, solange der Reiter sie fragt.
 	// Am Quelltext OHNE Kommentare — sonst genügte der erklärende Satz daneben.
 	it('der Reiter zeigt ein Fragezeichen statt einer ungeprüften Null', () => {
-		const quelle = ohneKommentare(readFileSync(join(srcRoot, 'lib', 'BookAkte.svelte'), 'utf8'));
+		const quelle = ohneKommentare(readFileSync(join(srcRoot, 'lib', 'Buchakte.svelte'), 'utf8'));
 		expect(quelle).toMatch(/fehlendeListen\.includes\(name\)\s*\?\s*'\?'/);
 	});
 });
 
 // Woher der Kopf kommt, und was ein Lauf noch schreiben darf, den ein jüngerer überholt hat.
-describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
+describe('useBuchakte.loadAll: Kopf und überholte Läufe', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		appState.selectedBook = null;
@@ -181,7 +181,7 @@ describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
 	// spart die Akte den Abruf; für jeden anderen wäre der mitgereichte Kopf der falsche.
 	it('nimmt den mitgereichten Titel nur als Kopf, wenn es derselbe ist', async () => {
 		vi.mocked(apiFetch).mockImplementation(antworten('A'));
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 
 		appState.selectedBook = { id: 'X', titel: 'ein anderer Titel' };
 		await akte.loadAll('A');
@@ -202,7 +202,7 @@ describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
 			if (String(url).startsWith('/api/books/')) throw new Error('Failed to fetch');
 			return /** @type {any} */ (ok([]));
 		});
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 
 		await akte.loadAll('A');
 
@@ -222,7 +222,7 @@ describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
 			if (u.startsWith('/api/books/')) return /** @type {any} */ (ok({ id: 'B' }));
 			return /** @type {any} */ (ok([]));
 		});
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 
 		const langsam = akte.loadAll('A');
 		await akte.loadAll('B');
@@ -253,7 +253,7 @@ describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
 					return /** @type {any} */ (ok([{ id: u.includes('/A/') ? 'e-A' : 'e-B' }]));
 				return /** @type {any} */ (ok([]));
 			});
-			const akte = useBookAkte();
+			const akte = useBuchakte();
 
 			const alt = akte.loadAll('A');
 			await vi.waitFor(() => expect(koerperVonA).not.toBeNull());
@@ -281,7 +281,7 @@ describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
 			if (!u.startsWith('/api/books/')) return /** @type {any} */ (ok([]));
 			return /** @type {any} */ (new Promise((antworte) => (kommt[u] = antworte)));
 		});
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 
 		const alt = akte.loadAll('A');
 		const jung = akte.loadAll('B');
@@ -312,7 +312,7 @@ describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
 			// Die übrigen Listen von A scheitern, die von B kommen an.
 			return /** @type {any} */ (istA ? { ok: false, status: 500 } : ok([]));
 		});
-		const akte = useBookAkte();
+		const akte = useBuchakte();
 
 		const langsam = akte.loadAll('A');
 		await vi.waitFor(() => expect(abrufe()).toContain('/api/buecher/titel/A/exemplare'));

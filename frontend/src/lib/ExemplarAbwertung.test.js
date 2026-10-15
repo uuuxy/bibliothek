@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import BookExemplarStatusEditor from './components/BookExemplarStatusEditor.svelte';
+import ExemplarStatusBearbeiten from './components/ExemplarStatusBearbeiten.svelte';
 import { apiClient } from './apiFetch.js';
 
 vi.mock('./apiFetch.js', () => ({
@@ -38,7 +38,7 @@ describe('Beschädigungsgrad im Status-Editor', () => {
 			zustand_notiz: '',
 			zustand_abwertung_prozent: 0
 		};
-		const screen = render(BookExemplarStatusEditor, { props: { ex, onDone: () => {} } });
+		const screen = render(ExemplarStatusBearbeiten, { props: { ex, onDone: () => {} } });
 
 		await fireEvent.input(feldWert(screen), { target: { value: '20' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
@@ -53,7 +53,7 @@ describe('Beschädigungsgrad im Status-Editor', () => {
 		// Kein zustand_abwertung_prozent in der Antwort: ein alter Stand oder eine andere
 		// Lese-Tür. Dann darf der Editor den Wert am Server nicht anfassen.
 		const ex = { id: 'ex-2', ist_ausleihbar: false, zustand_notiz: 'gesperrt' };
-		const screen = render(BookExemplarStatusEditor, { props: { ex, onDone: () => {} } });
+		const screen = render(ExemplarStatusBearbeiten, { props: { ex, onDone: () => {} } });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
 
@@ -68,7 +68,7 @@ describe('Beschädigungsgrad im Status-Editor', () => {
 			zustand_notiz: '',
 			zustand_abwertung_prozent: 30
 		};
-		const screen = render(BookExemplarStatusEditor, { props: { ex, onDone: () => {} } });
+		const screen = render(ExemplarStatusBearbeiten, { props: { ex, onDone: () => {} } });
 
 		await fireEvent.input(feldWert(screen), { target: { value: '0' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
@@ -101,7 +101,7 @@ describe('Beschädigungsgrad im Status-Editor', () => {
 			ersatzwert: 24.9,
 			ersatzwert_herleitung: 'alt'
 		};
-		const screen = render(BookExemplarStatusEditor, { props: { ex, onDone: () => {} } });
+		const screen = render(ExemplarStatusBearbeiten, { props: { ex, onDone: () => {} } });
 
 		await fireEvent.input(feldWert(screen), { target: { value: '20' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
@@ -117,7 +117,7 @@ describe('Beschädigungsgrad im Status-Editor', () => {
 			zustand_notiz: '',
 			zustand_abwertung_prozent: 20
 		};
-		const screen = render(BookExemplarStatusEditor, { props: { ex, onDone: () => {} } });
+		const screen = render(ExemplarStatusBearbeiten, { props: { ex, onDone: () => {} } });
 
 		// Die Notiz ist bei „Verfügbar" ausgeblendet, der Wertverlust nicht.
 		expect(screen.queryByLabelText('Notiz zum Status')).toBeNull();

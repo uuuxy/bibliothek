@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import BookTableZeile from './BookTableZeile.svelte';
+import BestandstabelleZeile from './BestandstabelleZeile.svelte';
 
 /** @param {any} [zusatz] */
 const buch = (zusatz = {}) => ({
@@ -27,7 +27,7 @@ const buch = (zusatz = {}) => ({
 /** @param {any} book @param {boolean} [isSelected] */
 function zeile(book, isSelected = false) {
 	const nichts = () => {};
-	return render(BookTableZeile, {
+	return render(BestandstabelleZeile, {
 		book,
 		isSelected,
 		onOpenDetail: nichts,
@@ -108,7 +108,7 @@ describe('Titel-Verwaltung: Zeile', () => {
 	// Eingabe oder Leertaste öffnen die Akte. Der Klick auf die Zeile öffnet sie weiter.
 	it('öffnet die Akte über den Knopf am Titel und über die Zeile je einmal', async () => {
 		const geoeffnet = vi.fn();
-		const { getByRole, container } = render(BookTableZeile, {
+		const { getByRole, container } = render(BestandstabelleZeile, {
 			book: buch(),
 			isSelected: false,
 			onOpenDetail: geoeffnet,

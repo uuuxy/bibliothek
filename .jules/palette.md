@@ -1,5 +1,5 @@
-## 2026-06-23 - Added missing ARIA labels in BookBorrowersTab
-**Learning:** Found that custom filter dropdowns and text inputs in `BookBorrowersTab.svelte` were lacking `aria-label` attributes for screen readers, and decorative SVG icons needed `aria-hidden="true"`.
+## 2026-06-23 - Added missing ARIA labels in BuchakteAusleiher
+**Learning:** Found that custom filter dropdowns and text inputs in `BuchakteAusleiher.svelte` were lacking `aria-label` attributes for screen readers, and decorative SVG icons needed `aria-hidden="true"`.
 **Action:** Added `aria-label` to `<select>` and `<input>` elements, and `aria-hidden="true"` to the decorative search SVG icon to improve screen reader accessibility.
 ## 2024-05-24 - Screen Reader Compatibility with Emojis\n**Learning:** Screen readers announce emoji characters natively by default (e.g. "printer", "wastebasket"), which can create double-readings or confusion if combined with an `aria-label`. \n**Action:** When using emojis as visual icons in interactive components like buttons, always wrap them in `<span aria-hidden="true">` to suppress the native announcement, and rely on an explicit `aria-label` on the parent `<button>`.
 ## 2026-07-06 - Added loading state to login button

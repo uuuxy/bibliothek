@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
-import BookBorrowersTab from './BookBorrowersTab.svelte';
+import BuchakteAusleiher from './BuchakteAusleiher.svelte';
 
 // Der Knopf druckt alle, die den Titel gerade haben, auch die ohne Verzug. Die Mahnliste
 // mit nur den Überfälligen steht im Mahnwesen.
@@ -16,7 +16,7 @@ describe('Buchakte, Reiter „Ausleiher“: Druckknopf', () => {
 	};
 
 	it('heißt „Liste drucken“ und nennt keine Mahnliste', () => {
-		const screen = render(BookBorrowersTab, {
+		const screen = render(BuchakteAusleiher, {
 			borrowers: [ausleiher],
 			book: { title: 'Die Räuber' },
 			onBack: () => {}

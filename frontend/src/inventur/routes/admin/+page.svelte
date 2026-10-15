@@ -4,7 +4,7 @@
 	import { bestaetigen, loeschenBestaetigen } from '../../../lib/stores/bestaetigung.svelte.js';
 	import Ladekreis from '../../../lib/components/ui/Ladekreis.svelte';
 	import { appState, showToast } from '$lib/store.svelte.js';
-	import BookTable from '$lib/components/admin/BookTable.svelte';
+	import Bestandstabelle from '$lib/components/admin/Bestandstabelle.svelte';
 	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
 	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
 	import ClassAssignPicker from '$lib/components/admin/ClassAssignPicker.svelte';
@@ -146,7 +146,7 @@
 			<Ladekreis size="lg" />
 		</div>
 	{:else}
-		<BookTable
+		<Bestandstabelle
 			books={liste.buecher}
 			loading={liste.wirdGeladen}
 			onOpenDetail={oeffneDetails}

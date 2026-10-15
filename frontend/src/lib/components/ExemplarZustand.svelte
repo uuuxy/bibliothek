@@ -1,4 +1,4 @@
-<!-- @component BookExemplarZustand — was die Exemplar-Karte über den Zustand sagt:
+<!-- @component ExemplarZustand — was die Exemplar-Karte über den Zustand sagt:
      Menschentext (`zustand_notiz`), der erfasste Wertverlust in Prozent
      (`zustand_abwertung_prozent`, Migration 127) und der heutige Ersatzwert
      (OFFEN.md 9.8, Stufe 2b).
@@ -15,7 +15,7 @@
      Funktion wie der Vorschlag im Melde-Dialog — zwei Rechnungen an zwei Orten wären
      zwei Beträge für dasselbe Buch, und einer davon stünde in einem Bescheid.
 
-     Darunter das Eigentum (4.24, Stufe 3, BookExemplarEigentum): Es hängt am Ersatzwert —
+     Darunter das Eigentum (4.24, Stufe 3, ExemplarEigentum): Es hängt am Ersatzwert —
      wem das Buch gehört, entscheidet, nach welcher Regel er gerechnet wird.
 
      Zuoberst der Standort (5.53), wenn das Exemplar nicht nach der Signatur steht. Geändert
@@ -23,7 +23,7 @@
 <script>
 	import { formatEuro } from '../utils/format.js';
 	import { ersatzwertBekannt } from './exemplarErsatzwert.js';
-	import BookExemplarEigentum from './BookExemplarEigentum.svelte';
+	import ExemplarEigentum from './ExemplarEigentum.svelte';
 
 	/** @type {{ ex: { standort?: string, zustand_notiz?: string, zustand_abwertung_prozent?: number, ersatzwert?: number, ersatzwert_herleitung?: string, ersatzwert_bekannt?: boolean, eigentum?: string, eigentum_herkunft?: string, littera_eigentumsvermerk?: string } }} */
 	let { ex } = $props();
@@ -54,4 +54,4 @@
 		<span class="font-semibold text-on-surface">{formatEuro(ex.ersatzwert ?? 0)}</span>
 	</p>
 {/if}
-<BookExemplarEigentum {ex} />
+<ExemplarEigentum {ex} />

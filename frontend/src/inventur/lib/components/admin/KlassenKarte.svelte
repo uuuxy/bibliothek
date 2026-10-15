@@ -1,6 +1,6 @@
 <script>
 	import KlassenBuchKachel from '$lib/components/admin/KlassenBuchKachel.svelte';
-	import { sortBooksBySubjectAndTitle } from '$lib/book_sorting.js';
+	import { sortBooksBySubjectAndTitle } from '$lib/titelSortierung.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { ChevronDown, Pencil, Trash } from '@lucide/svelte';
 

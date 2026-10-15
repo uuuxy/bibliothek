@@ -36,7 +36,7 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | --------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------- |
 | Ausleihe (Theke)                        | `Omnibox.svelte`                                                                         | `api/theke/theke.go`               |
 | Medienkatalog, Klassensätze             | `MediaCatalog.svelte`, `Schulklassen.svelte`                                             | `inventur/api_routen.go`           |
-| Buchakte, Signaturen                    | `BookAkte.svelte`, `SignaturenView.svelte`                                               | `api/katalog/katalog.go`           |
+| Buchakte, Signaturen                    | `Buchakte.svelte`, `SignaturenView.svelte`                                               | `api/katalog/katalog.go`           |
 | Bestandsbücher                          | `components/bestand/Bestandsbuecher.svelte`                                              | `api/katalog/katalog.go`           |
 | Druck-Center                            | `DruckCenter.svelte`                                                                     | `api/druck/druck.go`               |
 | Leserdatei, Leserakte                   | `Schuelerdatei.svelte`, `Leserakte.svelte`                                       | `api/leser/leser.go`               |

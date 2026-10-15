@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortBooksBySubjectAndTitle } from './book_sorting.js';
+import { sortBooksBySubjectAndTitle } from './titelSortierung.js';
 
 describe('sortBooksBySubjectAndTitle', () => {
 	it('sorts by predefined subject order', () => {
