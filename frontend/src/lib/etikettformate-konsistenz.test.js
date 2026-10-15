@@ -27,27 +27,27 @@ const goQuelle = readFileSync(join(repoRoot, 'pdf', 'etikett_formate.go'), 'utf8
 
 // Die sechs Maße eines Bogens in Millimetern: Feld in Go, Feld in etikettformate.js.
 const MASSE = /** @type {const} */ ([
-	['LabelWidth', 'breite'],
-	['LabelHeight', 'hoehe'],
-	['MarginTop', 'randOben'],
-	['MarginLeft', 'randLinks'],
-	['GapX', 'abstandX'],
-	['GapY', 'abstandY']
+	['Breite', 'breite'],
+	['Hoehe', 'hoehe'],
+	['RandOben', 'randOben'],
+	['RandLinks', 'randLinks'],
+	['AbstandX', 'abstandX'],
+	['AbstandY', 'abstandY']
 ]);
 
 /**
- * Liest die Formate aus pdf/etikett_formate.go: ID, Cols, Rows und die Maße.
+ * Liest die Formate aus pdf/etikett_formate.go: ID, Spalten, Zeilen und die Maße.
  * @returns {{id: string, cols: number, rows: number, masse: Record<string, number>}[]}
  */
 function formateAusGo() {
 	const out = [];
-	// Jeder Eintrag beginnt mit  "id": {  und enthält FormatID/Cols/Rows.
+	// Jeder Eintrag beginnt mit  "id": {  und enthält ID, Spalten und Zeilen.
 	const block = /"([a-z0-9_]+)":\s*\{([\s\S]*?)\n\t\},/g;
 	let m;
 	while ((m = block.exec(goQuelle)) !== null) {
 		const [, id, rumpf] = m;
-		const cols = rumpf.match(/Cols:\s*(\d+)/);
-		const rows = rumpf.match(/Rows:\s*(\d+)/);
+		const cols = rumpf.match(/Spalten:\s*(\d+)/);
+		const rows = rumpf.match(/Zeilen:\s*(\d+)/);
 		/** @type {Record<string, number>} */
 		const masse = {};
 		for (const [goFeld] of MASSE) {
