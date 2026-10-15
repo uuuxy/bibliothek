@@ -143,7 +143,7 @@ func TestSchreibwegeWeisenOhneDasRechtAb(t *testing.T) {
 		if recht == fuell {
 			anderes = fuellAlternativ
 		}
-		tuertest.SetzeGenauEinRecht(t, pool, anderes)
+		tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, anderes)
 
 		req := tuertest.MitCSRF(httptest.NewRequest(methode, url, strings.NewReader("{}")))
 		req.Header.Set("Content-Type", "application/json")

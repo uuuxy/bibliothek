@@ -181,7 +181,7 @@ func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 		"ziel_id": id, "email": stand.Email, "rolle": stand.Rolle, "aktiv": stand.Aktiv,
 	})
 
-	tuer.LeereRechteCache()
+	t.Rechte.Leere()
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Schreibe(w, []byte(`{"status":"success"}`))

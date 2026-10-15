@@ -227,7 +227,7 @@ func TestListenNennenIhreGrenze(t *testing.T) {
 	gefunden := map[string]bool{}
 	for _, route := range routen {
 		permission, mitSitzung := rechtFuerZeile(matrix[route].Recht)
-		tuertest.SetzeGenauEinRecht(t, pool, permission)
+		tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, permission)
 		req := httptest.NewRequest(http.MethodGet, aufrufe[route].URL, nil)
 		if mitSitzung {
 			req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.anmeldeToken})

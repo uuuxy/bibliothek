@@ -14,53 +14,64 @@ import (
 	"bibliothek/repository"
 )
 
-var (
-	rechteCache   = make(map[string]cacheEintrag)
-	rechteCacheMu sync.RWMutex
-	// rechteCacheEpoche zählt, wie oft der Cache geleert wurde. Eine Entscheidung aus der
-	// Datenbank kommt nur in den Cache, wenn ihn seit dem Beginn ihres Lesens niemand geleert
-	// hat: Sonst schriebe eine Anfrage, die den Stand kurz vor einer Rechteänderung gelesen
-	// hat, ihn nach dem Leeren zurück, und er wirkte bis zu 60 s weiter.
-	rechteCacheEpoche uint64
-)
+// RechteCache hält die Entscheidung über ein Recht je Rolle 60 s lang, damit nicht jede Anfrage
+// die Tabelle der Rechte liest. Sein Nullwert ist leer und benutzbar; der Server trägt einen in
+// seiner Basis, und alle Themen teilen ihn über die Basis.
+type RechteCache struct {
+	mu        sync.RWMutex
+	eintraege map[string]cacheEintrag
+	// epoche zählt, wie oft der Cache geleert wurde. Eine Entscheidung aus der Datenbank kommt
+	// nur in den Cache, wenn ihn seit dem Beginn ihres Lesens niemand geleert hat: Sonst schriebe
+	// eine Anfrage, die den Stand kurz vor einer Rechteänderung gelesen hat, ihn nach dem Leeren
+	// zurück, und er wirkte bis zu 60 s weiter.
+	epoche uint64
+}
 
 type cacheEintrag struct {
 	erlaubt bool
 	giltBis time.Time
 }
 
-// LeereRechteCache leert den Cache der Rechte. Wer Rollen oder Rechte ändert, ruft es, damit
-// keine alte Entscheidung bis zu 60 s weiter gilt.
-func LeereRechteCache() {
-	rechteCacheMu.Lock()
-	rechteCache = make(map[string]cacheEintrag)
-	rechteCacheEpoche++
-	rechteCacheMu.Unlock()
+// Leere leert den Cache. Wer Rollen oder Rechte ändert, ruft es, damit keine alte Entscheidung
+// bis zu 60 s weiter gilt.
+func (c *RechteCache) Leere() {
+	c.mu.Lock()
+	c.eintraege = nil
+	c.epoche++
+	c.mu.Unlock()
 }
 
-// MerkeRechtFuerTest legt die Entscheidung für eine Rolle und ein Recht eine Minute lang in den
+// MerkeFuerTest legt die Entscheidung für eine Rolle und ein Recht eine Minute lang in den
 // Cache, als hätte die Datenbank sie geliefert: Ein Test ohne Tabelle der Rechte stellt so ein,
-// was eine Rolle darf. LeereRechteCache nimmt sie zurück.
-func MerkeRechtFuerTest(rolle, recht string, erlaubt bool) {
-	rechteCacheMu.Lock()
-	rechteCache[rolle+":"+recht] = cacheEintrag{erlaubt: erlaubt, giltBis: time.Now().Add(time.Minute)}
-	rechteCacheMu.Unlock()
+// was eine Rolle darf.
+func (c *RechteCache) MerkeFuerTest(rolle, recht string, erlaubt bool) {
+	c.mu.Lock()
+	c.schreibe(rolle+":"+recht, cacheEintrag{erlaubt: erlaubt, giltBis: time.Now().Add(time.Minute)})
+	c.mu.Unlock()
 }
 
-// cacheEpoche liefert, wie oft der Cache bisher geleert wurde. Wer aus der Datenbank liest,
+// schreibe legt einen Eintrag ab; der Aufrufer hält die Sperre.
+func (c *RechteCache) schreibe(schluessel string, eintrag cacheEintrag) {
+	if c.eintraege == nil {
+		c.eintraege = make(map[string]cacheEintrag)
+	}
+	c.eintraege[schluessel] = eintrag
+}
+
+// aktuelleEpoche liefert, wie oft der Cache bisher geleert wurde. Wer aus der Datenbank liest,
 // fragt sie vorher ab, damit er beim Schreiben in den Cache erkennt, ob seine Entscheidung
 // überholt ist.
-func cacheEpoche() uint64 {
-	rechteCacheMu.RLock()
-	defer rechteCacheMu.RUnlock()
-	return rechteCacheEpoche
+func (c *RechteCache) aktuelleEpoche() uint64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.epoche
 }
 
-// rechtImCache liefert die Entscheidung aus dem Cache, solange sie gilt.
-func rechtImCache(schluessel string) (erlaubt bool, gefunden bool) {
-	rechteCacheMu.RLock()
-	eintrag, ok := rechteCache[schluessel]
-	rechteCacheMu.RUnlock()
+// recht liefert die Entscheidung aus dem Cache, solange sie gilt.
+func (c *RechteCache) recht(schluessel string) (erlaubt bool, gefunden bool) {
+	c.mu.RLock()
+	eintrag, ok := c.eintraege[schluessel]
+	c.mu.RUnlock()
 	if ok && time.Now().Before(eintrag.giltBis) {
 		return eintrag.erlaubt, true
 	}
@@ -76,30 +87,30 @@ func (b *Basis) ladeUndMerkeRecht(ctx context.Context, rolle, recht, schluessel 
 	// Die Epoche vor dem Lesen festhalten: Wurde der Cache bis zum Schreiben geleert, hat
 	// dieses Lesen womöglich den Stand vor der Rechteänderung gesehen. Die Anfrage darf damit
 	// noch antworten, der Cache hält die Entscheidung aber nicht fest.
-	epocheBeimStart := cacheEpoche()
+	epocheBeimStart := b.Rechte.aktuelleEpoche()
 
 	erlaubt, err := repository.HatRolleRecht(ctx, b.DB.Pool, rolle, recht)
 	if err != nil {
 		return false, err
 	}
 
-	rechteCacheMu.Lock()
-	if rechteCacheEpoche == epocheBeimStart {
+	b.Rechte.mu.Lock()
+	if b.Rechte.epoche == epocheBeimStart {
 		// Abgelaufene Einträge fallen beim Schreiben weg, damit der Cache nicht unbegrenzt
 		// wächst. Es gibt nur wenige Paare aus Rolle und Recht; ein Durchgang über alle ist
 		// billig und braucht keine Goroutine im Hintergrund.
 		jetzt := time.Now()
-		for k, v := range rechteCache {
+		for k, v := range b.Rechte.eintraege {
 			if jetzt.After(v.giltBis) {
-				delete(rechteCache, k)
+				delete(b.Rechte.eintraege, k)
 			}
 		}
-		rechteCache[schluessel] = cacheEintrag{
+		b.Rechte.schreibe(schluessel, cacheEintrag{
 			erlaubt: erlaubt,
 			giltBis: jetzt.Add(60 * time.Second),
-		}
+		})
 	}
-	rechteCacheMu.Unlock()
+	b.Rechte.mu.Unlock()
 
 	return erlaubt, nil
 }
@@ -121,7 +132,7 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 	}
 
 	schluessel := string(claims.Rolle) + ":" + recht
-	if erlaubt, gefunden := rechtImCache(schluessel); gefunden {
+	if erlaubt, gefunden := b.Rechte.recht(schluessel); gefunden {
 		if !erlaubt {
 			log.Printf("Permission denied for role '%s' permission '%s' (FROM CACHE).", claims.Rolle, recht)
 			apierrors.AntworteFehler(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
@@ -161,7 +172,7 @@ func (b *Basis) HatRecht(r *http.Request, recht string) bool {
 		return true
 	}
 	schluessel := string(claims.Rolle) + ":" + recht
-	if erlaubt, gefunden := rechtImCache(schluessel); gefunden {
+	if erlaubt, gefunden := b.Rechte.recht(schluessel); gefunden {
 		return erlaubt
 	}
 	erlaubt, err := b.ladeUndMerkeRecht(r.Context(), string(claims.Rolle), recht, schluessel)

@@ -36,12 +36,12 @@ func (o *sperrOmnibox) VerarbeiteEingabe(context.Context, service.OmniboxEingabe
 	return nil, o.fehler
 }
 
-func helferOhneRechte(t *testing.T) {
-	t.Helper()
-	tuer.LeereRechteCache()
-	t.Cleanup(tuer.LeereRechteCache)
-	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
-	tuer.MerkeRechtFuerTest("helfer", "edit_students", false)
+// helferOhneRechte lässt b dem Helfer Schülerdaten verweigern, als hätte die Tabelle der Rechte
+// es geliefert, und liefert b.
+func helferOhneRechte(b *tuer.Basis) *tuer.Basis {
+	b.Rechte.MerkeFuerTest("helfer", "view_students", false)
+	b.Rechte.MerkeFuerTest("helfer", "edit_students", false)
+	return b
 }
 
 func scanAnfrage(schluessel string) *http.Request {
@@ -52,7 +52,6 @@ func scanAnfrage(schluessel string) *http.Request {
 }
 
 func TestSperrMerkmalImHeader(t *testing.T) {
-	helferOhneRechte(t)
 	grund := "Eltern zahlen nicht"
 
 	faelle := []struct {
@@ -75,7 +74,7 @@ func TestSperrMerkmalImHeader(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			(&Tueren{Basis: &tuer.Basis{}}).EingabeVerarbeiten(&sperrOmnibox{fehler: f.fehler})(w, scanAnfrage(""))
+			(&Tueren{Basis: helferOhneRechte(&tuer.Basis{})}).EingabeVerarbeiten(&sperrOmnibox{fehler: f.fehler})(w, scanAnfrage(""))
 			if w.Code != http.StatusForbidden {
 				t.Fatalf("Status %d, erwartet 403: %s", w.Code, w.Body.String())
 			}
@@ -104,7 +103,6 @@ func (m merkmalInDerAblage) Match(v any) bool {
 // Eine wiederholte Anfrage mit demselben Idempotenz-Schlüssel kommt aus dem Cache. Ohne
 // das Merkmal im Cache verlöre sie den Dialog.
 func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
-	helferOhneRechte(t)
 	const schluessel = "sperr-merkmal-1"
 
 	t.Run("erste Antwort legt das Merkmal ab", func(t *testing.T) {
@@ -123,7 +121,7 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		w := httptest.NewRecorder()
-		s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+		s := &Tueren{Basis: helferOhneRechte(&tuer.Basis{DB: &db.Verbindung{Pool: mock}})}
 		fehler := service.UebergehbareSperre(fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrGesperrt))
 		s.EingabeVerarbeiten(&sperrOmnibox{fehler: fehler})(w, scanAnfrage(schluessel))
 
@@ -149,7 +147,7 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 				AddRow([]byte(`{"error":"ausleihe gesperrt: 1 unbezahlte(r) Schadensfall/-fälle offen","sperre":"uebergehbar"}`), http.StatusForbidden))
 
 		w := httptest.NewRecorder()
-		s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+		s := &Tueren{Basis: helferOhneRechte(&tuer.Basis{DB: &db.Verbindung{Pool: mock}})}
 		s.EingabeVerarbeiten(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, scanAnfrage(schluessel))
 
 		if w.Code != http.StatusForbidden || w.Header().Get("X-Sperre") != "uebergehbar" {
@@ -172,7 +170,7 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		w := httptest.NewRecorder()
-		s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+		s := &Tueren{Basis: helferOhneRechte(&tuer.Basis{DB: &db.Verbindung{Pool: mock}})}
 		fehler := &service.SperrgrundFehler{Kern: service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)), Grund: "x"}
 		s.EingabeVerarbeiten(&sperrOmnibox{fehler: fehler})(w, scanAnfrage(schluesselLeser))
 		if got := w.Header().Get("X-Sperre"); got != "leser" {
@@ -194,7 +192,7 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"response_data", "status_code"}).
 				AddRow([]byte(`{"error":"die ausleihe ist gesperrt: Manuelle Sperre — bitte an die Bibliotheksleitung wenden","sperre":"leser"}`), http.StatusForbidden))
 		w = httptest.NewRecorder()
-		(&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: wieder}}}).EingabeVerarbeiten(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, scanAnfrage(schluesselLeser))
+		(&Tueren{Basis: helferOhneRechte(&tuer.Basis{DB: &db.Verbindung{Pool: wieder}})}).EingabeVerarbeiten(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, scanAnfrage(schluesselLeser))
 		if w.Code != http.StatusForbidden || w.Header().Get("X-Sperre") != "leser" {
 			t.Errorf("Wiederholung: Status %d, X-Sperre %q", w.Code, w.Header().Get("X-Sperre"))
 		}

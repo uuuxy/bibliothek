@@ -108,7 +108,7 @@ func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 		})
 
 		// Den Rechte-Cache leeren, damit die Änderung sofort gilt.
-		tuer.LeereRechteCache()
+		t.Rechte.Leere()
 
 		w.Header().Set("Content-Type", "application/json")
 		httpresp.Schreibe(w, []byte(`{"status":"success"}`))

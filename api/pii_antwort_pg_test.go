@@ -50,7 +50,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
@@ -245,7 +244,6 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanar
 			}
 		}
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
-		tuer.LeereRechteCache()
 	})
 	return w
 }
@@ -615,7 +613,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 
 		stufe := int(zeile.Stufe[0] - '0')
 		permission, mitSitzung := rechtFuerZeile(zeile.Recht)
-		tuertest.SetzeGenauEinRecht(t, pool, permission)
+		tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, permission)
 
 		req := httptest.NewRequest(http.MethodGet, aufruf.URL, nil)
 		if mitSitzung {
@@ -754,7 +752,7 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 		}
 		stufe := int(zeile.Stufe[0] - '0')
 		permission, mitSitzung := rechtFuerZeile(zeile.Recht)
-		tuertest.SetzeGenauEinRecht(t, pool, permission)
+		tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, permission)
 
 		for _, fall := range aufrufe[route] {
 			req := fall.Anfrage(t)

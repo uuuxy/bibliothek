@@ -535,7 +535,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört, nach der Theke `api/`, `api/druck`, `api/lernmittel` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/theke` ergänzt, in 5.2.2 die Ratsche genannt, die die Themen auseinanderhält, nach Stufe 5 in 5.2.2 ergänzt, wo ein Test steht und warum `repository/` ein Paket bleibt, abends in 5.2.2 neun Pakete neu gezählt (fünf Themen, `repository/`, `internal/service`, `internal/bereitschaft`, `pdf/`), ergänzt, was neben einer Tür steht und welche Dateien ohne Tür bleiben; am 14.10.2026 `internal/bereitschaft`, `internal/lusd` und die übrigen Pakete unter `internal/` neu gezählt, nach dem Umbau von `internal/service` seine Zeile, nach dem Umbau von `internal/testdaten` die übrigen Pakete unter `internal/`, nach dem Umbau von `api/tuer` seine Zeile, nach dem Umbau von `api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung` und `api/leser` ihre Zeilen, am 15.10.2026 nach dem Umbau von `api/katalog` und von `api/` ihre Zeilen, nach dem Umbau des Wurzelpakets die Zeile von `main.go`, in 5.2.5 testify durch go-cmp ersetzt, in 5.2.2 die Zeilen von `api/tuer` (Kopf der Briefe), `api/katalog`, `api/mahnwesen`, `api/leser`, `api/schaden` (ohne den entfernten Elternbrief) und `api/bestellung`
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört, nach der Theke `api/`, `api/druck`, `api/lernmittel` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/theke` ergänzt, in 5.2.2 die Ratsche genannt, die die Themen auseinanderhält, nach Stufe 5 in 5.2.2 ergänzt, wo ein Test steht und warum `repository/` ein Paket bleibt, abends in 5.2.2 neun Pakete neu gezählt (fünf Themen, `repository/`, `internal/service`, `internal/bereitschaft`, `pdf/`), ergänzt, was neben einer Tür steht und welche Dateien ohne Tür bleiben; am 14.10.2026 `internal/bereitschaft`, `internal/lusd` und die übrigen Pakete unter `internal/` neu gezählt, nach dem Umbau von `internal/service` seine Zeile, nach dem Umbau von `internal/testdaten` die übrigen Pakete unter `internal/`, nach dem Umbau von `api/tuer` seine Zeile, nach dem Umbau von `api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung` und `api/leser` ihre Zeilen, am 15.10.2026 nach dem Umbau von `api/katalog` und von `api/` ihre Zeilen, nach dem Umbau des Wurzelpakets die Zeile von `main.go`, in 5.2.5 testify durch go-cmp ersetzt, in 5.2.2 die Zeilen von `api/tuer` (Kopf der Briefe), `api/katalog`, `api/mahnwesen`, `api/leser`, `api/schaden` (ohne den entfernten Elternbrief) und `api/bestellung`, in 5.4.3 der Cache der Rechte als Feld der Basis
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -1258,9 +1258,9 @@ Sperrmeldung doppelt zu schreiben oder eine echte Störung zu verschleiern.
 Der Rechte-Cache (60 s) hat einen Zähler, nicht nur einen Inhalt:
 
 ```
-cacheEpoche()  ──►  DB lesen  ──►  nur cachen, wenn die Epoche unverändert ist
-                                    └─ sonst: Entscheidung ist überholt, nicht speichern
-LeereRechteCache()  ──►  Cache leeren UND Epoche erhöhen
+Rechte.aktuelleEpoche()  ──►  DB lesen  ──►  nur cachen, wenn die Epoche unverändert ist
+                                              └─ sonst: Entscheidung ist überholt, nicht speichern
+Rechte.Leere()  ──►  Cache leeren UND Epoche erhöhen
 ```
 
 Ohne die Epoche konnte ein Leser, der **vor** einer Rechteänderung startete, den alten
@@ -1271,8 +1271,10 @@ Die Datei trägt die Prüfung für eine Route (`PruefeRecht`) und die in einer T
 beide lesen denselben Zwischenspeicher. Eine Route, der jede Sitzung genügt, prüft
 `VerlangeAnmeldung` in `api/tuer/sitzung.go`.
 `verlangeRecht` steht beim Router (`api/middleware.go`): Es setzt die Prüfung der
-Pfadparameter davor, und deren Liste gehört zu den Routen. Ein Test legt eine Entscheidung
-über `tuer.MerkeRechtFuerTest` in den Zwischenspeicher.
+Pfadparameter davor, und deren Liste gehört zu den Routen. Der Cache ist ein Feld der Basis
+(`Basis.Rechte`, Typ `RechteCache`, der Nullwert ist leer); alle Themen teilen ihn über die eine
+Basis des Servers. Ein Test legt eine Entscheidung mit `Rechte.MerkeFuerTest` in den Cache
+seines eigenen Servers.
 
 #### 5.4.4 `sse/sse.go` — Broker ohne Event-Loop
 
@@ -1953,7 +1955,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand, in 8.14 das Paket für Tests über den Router aus einem Testpaket und was der Umzug der nächsten vier Themen am Handgriff ergänzt hat, danach die Vorarbeit bei Mahnwesen und Schaden und was beim Umzug einer Prüfung über den Quellbaum still bleibt, dazu die Prüfung der Zugänge, am 13.10.2026 der Umzug von Testdateien zu ihrem Paket (Stufe 5) und der eigene Bauzwischenspeicher einer Wegwerf-Arbeitskopie; am 13.10.2026 abends in 8.14 der Handgriff zum Umzug einer Regel aus einer Datei mit Tür; am 15.10.2026 in 8.14 der neue Name der Prüfung der Schreibtüren am Protokoll
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand, in 8.14 das Paket für Tests über den Router aus einem Testpaket und was der Umzug der nächsten vier Themen am Handgriff ergänzt hat, danach die Vorarbeit bei Mahnwesen und Schaden und was beim Umzug einer Prüfung über den Quellbaum still bleibt, dazu die Prüfung der Zugänge, am 13.10.2026 der Umzug von Testdateien zu ihrem Paket (Stufe 5) und der eigene Bauzwischenspeicher einer Wegwerf-Arbeitskopie; am 13.10.2026 abends in 8.14 der Handgriff zum Umzug einer Regel aus einer Datei mit Tür; am 15.10.2026 in 8.14 der neue Name der Prüfung der Schreibtüren am Protokoll und der Handgriff für einen Wert des Pakets, in den ein Test schrieb
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2783,10 +2785,10 @@ wenn man ihn einmal gebraucht hat.
   je Erklärung, Token für Token und unabhängig von Datei und Paket; die Rückführung (neuer
   Name, Paketname vor dem Punkt, Schachtelung eines Literals) läuft über beide Stände. Ob der
   Vergleich misst, zeigt ein absichtlich geändertes Token. Dreierlei fällt dabei an. Ein Test,
-  der in einen Wert des Pakets schrieb, kommt von außen nicht mehr heran: Er bekommt eine
-  Funktion, deren Name auf `FuerTest` endet, mit eigenem Test und einem Eintrag in
-  `scripts/deadcode_baseline.txt` (`tuer.MerkeRechtFuerTest`,
-  `mailservice.TauscheKonfigLaderFuerTest`). Eine Prüfung, die den Aufruf einer Funktion am
+  der in einen Wert des Pakets schrieb, kommt von außen nicht mehr heran: Der Wert gehört dann
+  einem Typ, den der Rufer anlegt und weiterreicht (Googles Best Practices, „Global state"), wie
+  der Cache der Rechte als Feld der Basis; eine Methode, die nur Tests rufen, endet auf
+  `FuerTest` und steht in `scripts/deadcode_baseline.txt` (`RechteCache.MerkeFuerTest`). Eine Prüfung, die den Aufruf einer Funktion am
   Namen ohne Paket erkennt (`*ast.Ident`), sieht den Aufruf mit Paketnamen nicht
   (`*ast.SelectorExpr`): jede Prüfung suchen, die einen umziehenden Namen als Text nennt, ihren
   Detektor um die neue Form ergänzen und belegen, dass er vor und nach dem Umzug dasselbe
@@ -2968,7 +2970,7 @@ wenn man ihn einmal gebraucht hat.
 
 ## 9. Architekturentscheidungen
 
-Stand: 07.10.2026 · am 10.10.2026 in A7 die Fundstellen nachgezogen, am 12.10.2026 in A3 und A9
+Stand: 07.10.2026 · am 10.10.2026 in A7 die Fundstellen nachgezogen, am 12.10.2026 in A3 und A9; am 15.10.2026 in A9 der Name der Methode, die den Cache leert
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -3191,7 +3193,7 @@ zweimal eingespielte Sicherung führt deshalb nichts doppelt aus.
 startete, schrieb den alten Stand **nach** der Invalidierung zurück — und er wirkte bis zu
 60 s weiter.
 
-**Folge.** `LeereRechteCache()` leert den Cache **und** erhöht die Epoche; der
+**Folge.** `RechteCache.Leere()` leert den Cache **und** erhöht die Epoche; der
 Schreiber vergleicht. 60 s Cache bleiben als Obergrenze für die Wirksamkeit einer
 Rechteänderung.
 

@@ -47,6 +47,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 		WHERE role = 'LEITUNG' AND permission = 'manage_users'`).Scan(&vorher); err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		t.Fatalf("Rechtezeile lesen: %v", err)
 	}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	setzeKontenrecht := func(erlaubt bool) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, `INSERT INTO role_permissions (role, permission, allowed)
@@ -54,7 +55,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 			ON CONFLICT (role, permission) DO UPDATE SET allowed = EXCLUDED.allowed`, erlaubt); err != nil {
 			t.Fatalf("Rechtezeile setzen: %v", err)
 		}
-		tuer.LeereRechteCache()
+		srv.Rechte.Leere()
 	}
 	setzeKontenrecht(false)
 	t.Cleanup(func() {
@@ -77,7 +78,6 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 				t.Errorf("aufräumen: %v", err)
 			}
 		}
-		tuer.LeereRechteCache()
 	})
 
 	// Konten: Der Trigger trg_benutzer_hat_leserzeile hängt jedem die Leserzeile an.
@@ -104,7 +104,6 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 		t.Fatalf("Kollege ohne Konto anlegen: %v", err)
 	}
 
-	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	rufe := func(h http.HandlerFunc, leserID, kontoID string, rolle auth.Rolle) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", nil)
 		req.SetPathValue("id", leserID)

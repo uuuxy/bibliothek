@@ -211,9 +211,6 @@ func TestAusleiheVerlaengern_SperrgrundNurMitRechtSchuelerdateiAnzeigenUndMahnst
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	tuer.LeereRechteCache()
-	t.Cleanup(tuer.LeereRechteCache)
-	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
 
 	const grund = "Schadensrechnung offen - Familie"
 	gesperrt := testdaten.LegeSchuelerAn(t, pool, "S-VG-1", "Gesperrt", "5a")
@@ -229,6 +226,7 @@ func TestAusleiheVerlaengern_SperrgrundNurMitRechtSchuelerdateiAnzeigenUndMahnst
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	srv.Rechte.MerkeFuerTest("helfer", "view_students", false)
 	mux := http.NewServeMux()
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
 		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},

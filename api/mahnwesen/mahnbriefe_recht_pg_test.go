@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"bibliothek/api"
-	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
@@ -40,7 +39,8 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	router := srv.Routes()
 
 	var kontoID string
 	if err := pool.QueryRow(ctx, `
@@ -63,7 +63,6 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 			}
 		}
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, kontoID)
-		tuer.LeereRechteCache()
 	})
 
 	leser := testdaten.LegeSchuelerAn(t, pool, "MR-1", "Mona", "7a")
@@ -77,7 +76,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		return rec
 	}
 
-	tuertest.SetzeGenauEinRecht(t, pool, "view_students")
+	tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, "view_students")
 	rec := drucke()
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("mit view_students allein: HTTP %d statt 403 — %q", rec.Code, pdftest.ErsteBytes(rec.Body.Bytes(), 120))
@@ -89,7 +88,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		t.Errorf("abgewiesener Druck hat gezählt: Mahnstufe %d, Mahndatum %v", stufe, datum)
 	}
 
-	tuertest.SetzeGenauEinRecht(t, pool, "create_orders")
+	tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, "create_orders")
 	rec = drucke()
 	if rec.Code != http.StatusOK {
 		t.Fatalf("mit create_orders: HTTP %d statt 200 — %s", rec.Code, rec.Body.String())

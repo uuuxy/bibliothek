@@ -10,6 +10,8 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Die Rechte-Matrix ist Systemkonfiguration, nicht Tagesgeschäft der Kontoverwaltung.
@@ -22,26 +24,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-
-	if _, err := pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS role_permissions (
-			role VARCHAR(50) NOT NULL,
-			permission VARCHAR(100) NOT NULL,
-			allowed BOOLEAN NOT NULL DEFAULT false,
-			PRIMARY KEY (role, permission)
-		)
-	`); err != nil {
-		t.Fatalf("role_permissions anlegen: %v", err)
-	}
-	if _, err := pool.Exec(ctx, `
-		INSERT INTO role_permissions (role, permission, allowed) VALUES ('MITARBEITER', 'audit_logs', false)
-		ON CONFLICT (role, permission) DO UPDATE SET allowed = false
-	`); err != nil {
-		t.Fatalf("Ausgangszustand setzen: %v", err)
-	}
-	t.Cleanup(func() {
-		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER' AND permission = 'audit_logs'`)
-	})
+	ohneProtokollRecht(t, pool)
 
 	istErlaubt := func() bool {
 		var erlaubt bool
@@ -105,4 +88,55 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 			t.Errorf("Status %d, erwartet 400", w.Code)
 		}
 	})
+}
+
+// ohneProtokollRecht legt fest, dass die Rolle MITARBEITER audit_logs nicht hat, und räumt die
+// Zeile nach dem Test weg.
+func ohneProtokollRecht(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS role_permissions (
+			role VARCHAR(50) NOT NULL,
+			permission VARCHAR(100) NOT NULL,
+			allowed BOOLEAN NOT NULL DEFAULT false,
+			PRIMARY KEY (role, permission)
+		)
+	`); err != nil {
+		t.Fatalf("role_permissions anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO role_permissions (role, permission, allowed) VALUES ('MITARBEITER', 'audit_logs', false)
+		ON CONFLICT (role, permission) DO UPDATE SET allowed = false
+	`); err != nil {
+		t.Fatalf("Ausgangszustand setzen: %v", err)
+	}
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER' AND permission = 'audit_logs'`)
+	})
+}
+
+// Eine Änderung der Matrix gilt mit der nächsten Anfrage: Die Tür leert den Cache der Rechte,
+// sonst wirkte die alte Entscheidung bis zu 60 s weiter.
+func TestRechteMatrix_AenderungGiltSofort(t *testing.T) {
+	pool := pgtest.Pool(t)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	ohneProtokollRecht(t, pool)
+
+	mitarbeiter := anfrageAls(t, http.MethodGet, "/api/admin/auditlog", "", "mitarbeiter-1", auth.RolleMitarbeiter)
+	if srv.HatRecht(mitarbeiter, "audit_logs") {
+		t.Fatal("HatRecht(mitarbeiter, audit_logs) = true vor der Änderung, erwartet false")
+	}
+
+	req := anfrageAls(t, http.MethodPut, "/api/admin/permissions",
+		`{"role":"mitarbeiter","permission":"audit_logs","allowed":true}`, "admin-1", auth.RolleAdmin)
+	w := httptest.NewRecorder()
+	srv.RollenRechtSetzen().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("RollenRechtSetzen: Status %d, erwartet 200 (%s)", w.Code, w.Body.String())
+	}
+
+	if !srv.HatRecht(mitarbeiter, "audit_logs") {
+		t.Error("HatRecht(mitarbeiter, audit_logs) = false nach der Änderung, erwartet true: die alte Entscheidung kam aus dem Cache")
+	}
 }

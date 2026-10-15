@@ -173,8 +173,6 @@ internal/routertest/routertest.go: unreachable func: MitAufruf
 # unlesbare Konfiguration; vorher setzten sie den Wert selbst, als er noch in api/ stand.
 mailservice/mail_sender.go: unreachable func: TauscheKonfigLaderFuerTest
 
-# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Die Entscheidung, was eine
-# Rolle darf, liegt eine Minute im Zwischenspeicher des Pakets. Tests ohne Tabelle der Rechte
-# legen sie dort ab; vorher schrieben sie selbst in den Zwischenspeicher, als er noch in api/
-# stand.
-api/tuer/rechte.go: unreachable func: MerkeRechtFuerTest
+# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Methode): Ein Test ohne Tabelle der
+# Rechte legt die Entscheidung, was eine Rolle darf, in den Cache seines eigenen Servers.
+api/tuer/rechte.go: unreachable func: RechteCache.MerkeFuerTest

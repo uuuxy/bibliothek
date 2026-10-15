@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/service"
@@ -92,9 +91,8 @@ func (a *sperreUebergehenAttrappe) VerarbeiteEingabe(_ context.Context, q servic
 	return &service.OmniboxErgebnis{Art: "info", Meldung: "ok"}, nil
 }
 
-func eingabeSiehtUebergehen(rolle string) bool {
+func eingabeSiehtUebergehen(s *Server, rolle string) bool {
 	spy := &sperreUebergehenAttrappe{}
-	s := &Server{}
 	// Echte UUID: Eine Schüler-ID, die keine ist, weist EingabeVerarbeiten vor der
 	// Rechteprüfung mit 400 ab (uuid_eingaben_test.go).
 	body := `{"query":"B-123","active_leser_id":"22222222-2222-2222-2222-222222222222","override_block":true}`
@@ -111,18 +109,17 @@ func eingabeSiehtUebergehen(rolle string) bool {
 // Helferkonto über ein Feld der Anfrage, auch wenn die Oberfläche den Schalter nie anbietet:
 // Schutz nur als Konvention.
 func TestSperreUebergehenNurMitRechtSchuelerdatenAendern(t *testing.T) {
-	tuer.LeereRechteCache()
-	t.Cleanup(tuer.LeereRechteCache)
-	tuer.MerkeRechtFuerTest("helfer", "edit_students", false)
-	tuer.MerkeRechtFuerTest("mitarbeiter", "edit_students", true)
+	s := &Server{}
+	s.Rechte.MerkeFuerTest("helfer", "edit_students", false)
+	s.Rechte.MerkeFuerTest("mitarbeiter", "edit_students", true)
 
-	if eingabeSiehtUebergehen("helfer") {
+	if eingabeSiehtUebergehen(s, "helfer") {
 		t.Error("Helfer (ohne edit_students) konnte override_block durchsetzen — die Sperre ist aushebelbar")
 	}
-	if !eingabeSiehtUebergehen("mitarbeiter") {
+	if !eingabeSiehtUebergehen(s, "mitarbeiter") {
 		t.Error("Mitarbeiter mit edit_students muss override_block nutzen können — sonst ist keine berechtigte Sperr-Aufhebung mehr möglich")
 	}
-	if !eingabeSiehtUebergehen("admin") {
+	if !eingabeSiehtUebergehen(s, "admin") {
 		t.Error("Admin muss override_block nutzen können")
 	}
 }
@@ -138,13 +135,12 @@ func (a *geraeteListenAttrappe) LadeAlle(_ context.Context) ([]repository.Geraet
 	return kopie, nil
 }
 
-func geraeteAnfrage(rolle string) *httptest.ResponseRecorder {
+func geraeteAnfrage(s *Server, rolle string) *httptest.ResponseRecorder {
 	name := "Nio Test (6c)"
 	stub := &geraeteListenAttrappe{zeilen: []repository.GeraetMitStatus{{
 		Geraet:        repository.Geraet{ID: "g1", Modellname: "iPad", BarcodeID: "G-1"},
 		AusgeliehenAn: &name,
 	}}}
-	s := &Server{}
 	req := httptest.NewRequest("GET", "/api/geraete", nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: auth.Rolle(rolle)}))
 	w := httptest.NewRecorder()
@@ -154,14 +150,13 @@ func geraeteAnfrage(rolle string) *httptest.ResponseRecorder {
 
 // TestGeraetelisteBlendetAusleiherOhneRechtSchuelerdateiAnzeigenAus: Der Helfer sieht, dass
 // ein Gerät verliehen ist (ausgeliehen_an = ""), aber nicht, an wen. Ein Admin
-// sieht den Namen. Der Cache wird gezielt vorbefüllt, damit der Test ohne
+// sieht den Namen. Der Cache des Servers wird gezielt vorbefüllt, damit der Test ohne
 // Datenbank läuft und trotzdem den echten Rechte-Pfad nimmt.
 func TestGeraetelisteBlendetAusleiherOhneRechtSchuelerdateiAnzeigenAus(t *testing.T) {
-	tuer.LeereRechteCache()
-	t.Cleanup(tuer.LeereRechteCache)
-	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
+	s := &Server{}
+	s.Rechte.MerkeFuerTest("helfer", "view_students", false)
 
-	helferAntwort := geraeteAnfrage("helfer").Body.String()
+	helferAntwort := geraeteAnfrage(s, "helfer").Body.String()
 	if strings.Contains(helferAntwort, "Nio Test") {
 		t.Errorf("Helfer sieht den Ausleihernamen: %s", helferAntwort)
 	}
@@ -175,7 +170,7 @@ func TestGeraetelisteBlendetAusleiherOhneRechtSchuelerdateiAnzeigenAus(t *testin
 		t.Errorf("verliehen-Status muss als leerer Name sichtbar bleiben, got %v", helferDaten.Data[0]["ausgeliehen_an"])
 	}
 
-	adminAntwort := geraeteAnfrage("admin").Body.String()
+	adminAntwort := geraeteAnfrage(s, "admin").Body.String()
 	if !strings.Contains(adminAntwort, "Nio Test") {
 		t.Errorf("Admin muss den Ausleihernamen weiterhin sehen: %s", adminAntwort)
 	}

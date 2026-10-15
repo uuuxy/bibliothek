@@ -23,6 +23,8 @@ type Basis struct {
 	// sie — für das, was am Kalender hängt (Saison der Abgängerliste): Sonst bewiese
 	// derselbe Test im Oktober das Gegenteil von dem im Juni.
 	Uhr func() time.Time
+	// Rechte hält die Entscheidungen der Rechteprüfung; der Nullwert ist ein leerer Cache.
+	Rechte RechteCache
 }
 
 // Jetzt ist die Uhr des Servers: in Tests setzbar (Basis.Uhr), sonst die Schulzeit.

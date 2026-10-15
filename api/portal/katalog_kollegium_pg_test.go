@@ -13,6 +13,7 @@ import (
 
 	"bibliothek/api"
 	"bibliothek/api/portal"
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -25,8 +26,9 @@ import (
 )
 
 // portalWelt baut den echten Router, ein Konto mit Sitzung und setzt der Rolle genau das
-// Recht, über das „Mein Portal" sucht, reserviert und meldet.
-func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
+// Recht, über das „Mein Portal" sucht, reserviert und meldet. Mit dem Cache der Rechte des
+// Servers stellt ein Test danach ein anderes Recht ein.
+func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string, *tuer.RechteCache) {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	t.Setenv("RATE_LIMIT", "100000")
@@ -42,7 +44,8 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), false)
+	router := srv.Routes()
 
 	var kontoID string
 	if err := pool.QueryRow(ctx, `
@@ -55,8 +58,8 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	tuertest.SetzeGenauEinRecht(t, pool, "create_reservations")
-	return pool, router, token
+	tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, "create_reservations")
+	return pool, router, token, &srv.Rechte
 }
 
 // katalogAnfrage ruft eine Tür über den echten Router; ohne token ohne Sitzung.
@@ -76,7 +79,7 @@ func katalogAnfrage(router http.Handler, token, pfad string) *httptest.ResponseR
 // meldete die Suche sonst als nicht gefunden. Titel ohne ein Exemplar, das nicht
 // ausgesondert ist, zeigt keiner der beiden Kataloge.
 func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
-	pool, router, token := portalWelt(t)
+	pool, router, token, rechte := portalWelt(t)
 	ctx := context.Background()
 
 	buecherei := testdaten.LegeTitelMitSignaturAn(t, pool, "Probe Mondflug", "", 0)
@@ -136,7 +139,7 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 	if rec := katalogAnfrage(router, "", "/api/reservierungen/klassensatz/katalog?q=Probe"); rec.Code != http.StatusUnauthorized {
 		t.Errorf("ohne Sitzung: HTTP %d statt 401", rec.Code)
 	}
-	tuertest.SetzeGenauEinRecht(t, pool, "view_books")
+	tuertest.SetzeGenauEinRecht(t, pool, rechte, "view_books")
 	for _, pfad := range []string{"/api/reservierungen/klassensatz/katalog?q=Probe", "/api/reservierungen/klassensatz/katalog/filter"} {
 		if rec := katalogAnfrage(router, token, pfad); rec.Code != http.StatusForbidden {
 			t.Errorf("%s ohne create_reservations: HTTP %d statt 403", pfad, rec.Code)
@@ -150,7 +153,7 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 // viele Titel es sind, wenn die Antwort bei 50 abschneidet: Beim Stöbern über ein Thema
 // sind mehr als 50 Titel der Normalfall. Der öffentliche Katalog kennt den Filter nicht.
 func TestKollegiumKatalog_FilterlisteUndGefilterteSuche(t *testing.T) {
-	pool, router, token := portalWelt(t)
+	pool, router, token, _ := portalWelt(t)
 	ctx := context.Background()
 
 	titel := func(name string, woerter ...string) string {

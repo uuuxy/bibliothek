@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/repository"
 
@@ -21,10 +20,9 @@ import (
 // Tür selbst steht hinter perform_actions, das auch ein Helfer hat; die Meldung mit dem vollen
 // Grund liegt hinter view_students. Der Helfer erfährt, dass gesperrt ist, nicht warum.
 func TestNachbuchen_SperrgrundNurMitRechtSchuelerdateiAnzeigen(t *testing.T) {
-	helferOhneRechte(t)
-	// Der Helfer darf an die Tür (perform_actions), aber keine Schülerdaten ansehen.
-	tuer.MerkeRechtFuerTest("helfer", "perform_actions", true)
 	w := baueNachbuchWelt(t)
+	// Der Helfer darf an die Tür (perform_actions), aber keine Schülerdaten ansehen.
+	helferOhneRechte(w.srv.Basis).Rechte.MerkeFuerTest("helfer", "perform_actions", true)
 	ctx := context.Background()
 	const grund = "Eltern zahlen Schadensrechnung nicht - Fall Jugendamt"
 	if _, err := w.pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt = false, is_manually_blocked = true, block_reason = $2 WHERE id = $1`, w.carla, grund); err != nil {
@@ -88,9 +86,8 @@ func TestNachbuchen_SperrgrundNurMitRechtSchuelerdateiAnzeigen(t *testing.T) {
 // jemand anderes angemeldet hat. Die Tür legt das Ergebnis mit dem Grund ab, wie ihn der erste
 // Absender lesen durfte, und gibt es der Wiederholung unverändert zurück.
 func TestNachbuchen_WiederholtePortionTraegtKeinenSperrgrund(t *testing.T) {
-	helferOhneRechte(t)
-	tuer.MerkeRechtFuerTest("helfer", "perform_actions", true)
 	w := baueNachbuchWelt(t)
+	helferOhneRechte(w.srv.Basis).Rechte.MerkeFuerTest("helfer", "perform_actions", true)
 	ctx := context.Background()
 	const grund = "Eltern zahlen Schadensrechnung nicht - Fall Jugendamt"
 	if _, err := w.pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt = false, is_manually_blocked = true, block_reason = $2 WHERE id = $1`, w.carla, grund); err != nil {
