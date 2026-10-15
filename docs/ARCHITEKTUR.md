@@ -687,9 +687,7 @@ Rate-Limit und die Abmeldung.
   Theke.
 - Die Routenlisten bleiben in `api/` (`routes_*.go`): Dort steht jede Tür mit Adresse und
   Recht. Sie erreichen ein Thema über den Zugang des Servers, eine Methode mit dem Namen des
-  Themas (`s.lernmittel().LMFPlanSchreiben()`, erklärt in `api/router.go`). Eine Tür, die
-  keine Methode ist, steht mit dem Paketnamen in der Liste
-  (`katalog.SyncCoversHandler`). Der Zugang
+  Themas (`s.lernmittel().LMFPlanSchreiben()`, erklärt in `api/router.go`). Der Zugang
   reicht dem Thema die Basis des Servers als Zeiger, keine Kopie: Was am Server gestellt
   wird, etwa die Uhr in einem Test, gilt für die Türen jedes Themas, auch nach dem Bau des
   Routers. `api/zugaenge_basis_test.go` vergleicht je Zugang den Zeiger mit der Basis des

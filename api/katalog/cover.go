@@ -4,14 +4,13 @@ import (
 	"net/http"
 
 	"bibliothek/api/tuer"
-	"bibliothek/db"
 	"bibliothek/internal/service"
 )
 
 // SyncCoversHandler is the HTTP handler that triggers the asynchronous cover download.
-func SyncCoversHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
+func (s *Tueren) SyncCoversHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		coverSvc := service.NewCoverDienst(dbPool)
+		coverSvc := service.NewCoverDienst(s.DB.Pool)
 		go coverSvc.GleicheFehlendeCoverAb()
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{

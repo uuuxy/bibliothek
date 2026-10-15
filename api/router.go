@@ -244,7 +244,7 @@ func (s *Server) registerImportRoutes(mux *http.ServeMux) {
 	// LITTERA CSV Import (Accessible by Admin)
 	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.system().LitteraImport()))
 	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.system().BestandImport)))
-	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(katalog.SyncCoversHandler(s.DB.Pool)))
+	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(s.katalog().SyncCoversHandler()))
 }
 
 func (s *Server) registerSwaggerRoutes(mux *http.ServeMux) {
