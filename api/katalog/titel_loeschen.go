@@ -10,16 +10,20 @@ import (
 	"bibliothek/repository"
 )
 
-// TitelLoeschen deletes a book title and all its physical copies from the database, creating an audit log.
-// @Summary      Delete book title
-// @Description  Deletes a specific book title and all associated physical copies, registering the deletion in the audit trail.
+// TitelLoeschen löscht einen Titel mit seinen Exemplaren und schreibt den Vorgang ins
+// Protokoll (ProtokollAbfragen.LoescheTitel). Ist ein Exemplar verliehen, lehnt die Tür mit
+// 400 ab.
+//
+// @Summary      Titel löschen
+// @Description  Löscht einen Titel mit allen Exemplaren und schreibt den Vorgang ins Protokoll. Ist ein Exemplar verliehen, ist das 400.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        id   path      string  true  "Book title ID (UUID)"
+// @Param        id   path      string  true  "Kennung des Titels (UUID)"
 // @Success      200  {object}  map[string]string
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/titel/{id} [delete]
 func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {

@@ -259,9 +259,9 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 				Grund: "AUSSORTIERT", GrundText: "Aussortiert", Topf: mitteltopf.Schultraeger},
 		},
 		OhneZeitpunkt: 7,
-		// Die zweite Lücke des Nachweises (Rasterdurchgang 17.09.2026): körperlich
-		// gelöschte Exemplare stehen in keiner Liste oben. Gemessen wird sie am fertigen
-		// Blatt, weil genau dieses Blatt unterschrieben und abgeheftet wird.
+		// Die zweite Lücke des Nachweises: Körperlich gelöschte Exemplare stehen in keiner Liste
+		// oben. Gemessen wird sie am fertigen Blatt, weil genau dieses Blatt unterschrieben und
+		// abgeheftet wird.
 		AusKatalogGeloescht: 3,
 	}
 
@@ -305,11 +305,10 @@ func TestAbgangsbuchPDF_LeererZeitraumSagtEs(t *testing.T) {
 	}
 }
 
-// Ein Exemplar, das GELÖSCHT statt ausgesondert wird, fällt aus jeder Abfrage über
-// `buecher_exemplare` — auch aus diesem Nachweis, rückwirkend und ohne ein Wort.
+// Ein Exemplar, das gelöscht statt ausgesondert wird, fällt aus jeder Abfrage über
+// `buecher_exemplare`, auch aus diesem Nachweis, rückwirkend und ohne ein Wort.
 //
-// Gefunden im Rasterdurchgang vom 17.09.2026 (Frage 12) und hier festgenagelt: Der Abgang
-// verschwindet aus der Liste, und genau deshalb MUSS die Zahl darunter ihn nennen. Ein
+// Der Abgang verschwindet aus der Liste, und deshalb muss die Zahl darunter ihn nennen: Ein
 // Halbjahr, das jemand unterschrieben hat, darf nicht stillschweigend eine Zeile verlieren.
 func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -350,7 +349,7 @@ func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 		t.Fatalf("vor dem Löschen erwartet: 0 gelöschte, bekommen: %d", vorher.AusKatalogGeloescht)
 	}
 
-	// Durch die ECHTE Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal
+	// Durch die echte Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal
 	// nimmt — samt der Protokollspur, aus der die Zahl entsteht.
 	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
@@ -368,7 +367,7 @@ func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 			nachher.AusKatalogGeloescht)
 	}
 
-	// Und die Zahl gehört zum ZEITRAUM: Ein Blatt über ein anderes Halbjahr darf sie nicht
+	// Und die Zahl gehört zum Zeitraum: Ein Blatt über ein anderes Halbjahr darf sie nicht
 	// mitschleppen, sonst stünde dieselbe Löschung auf jedem Ausdruck der Schule.
 	fremd, err := repository.LadeAbgangsbuch(ctx,
 		pool, time.Date(2020, time.March, 16, 0, 0, 0, 0, loc), time.Date(2020, time.September, 15, 0, 0, 0, 0, loc))

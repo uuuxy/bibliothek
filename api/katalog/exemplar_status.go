@@ -11,31 +11,36 @@ import (
 	"bibliothek/repository"
 )
 
-// exemplarStatusAnfrage holds the payload for updating a copy's status.
+// exemplarStatusAnfrage ist der neue Status eines Exemplars.
 type exemplarStatusAnfrage struct {
 	IstAusleihbar   bool   `json:"ist_ausleihbar"`
 	IstAusgesondert bool   `json:"ist_ausgesondert"`
 	ZustandNotiz    string `json:"zustand_notiz"`
-	// ZustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127,
-	// Anforderungsliste Nr. 2). Ein ZEIGER, weil das Feld drei Zustände hat: ein Wert
-	// setzt, 0 setzt auf null zurück, und FEHLT heißt „unangetastet". Ohne diese
-	// Unterscheidung löschte jeder andere Aufruf dieser Tür einen erfassten Wasserschaden.
+	// ZustandAbwertungProzent ist der Beschädigungsgrad des Exemplars, 0 bis 100. Ein Zeiger,
+	// weil das Feld drei Zustände hat: Ein Wert setzt, 0 setzt zurück, und ein fehlendes Feld
+	// lässt den Grad unangetastet. Ohne diese Unterscheidung löschte jeder andere Aufruf dieser
+	// Tür einen erfassten Wasserschaden.
 	//
-	// 0–100, weil die Spalte es auch tut (chk_zustand_abwertung_bereich): Ohne Prüfung
-	// hier käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.
+	// Die Grenzen hält auch die Spalte (chk_zustand_abwertung_bereich); ohne die Prüfung hier
+	// käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.
 	ZustandAbwertungProzent *int `json:"zustand_abwertung_prozent" validate:"omitempty,min=0,max=100"`
 }
 
-// ExemplarStatusAendern updates the status of a physical book copy.
-// @Summary      Update copy status
-// @Description  Updates the status (ist_ausleihbar, ist_ausgesondert) and the condition note of a physical book copy.
+// ExemplarStatusAendern ändert Ausleihbarkeit, Aussonderung, Zustandsnotiz und
+// Beschädigungsgrad eines Exemplars. Die Antwort nennt den neuen Ersatzwert und ob das Exemplar
+// zum Bestand zählt.
+//
+// @Summary      Status eines Exemplars ändern
+// @Description  Ändert ist_ausleihbar, ist_ausgesondert, die Zustandsnotiz und den Beschädigungsgrad eines Exemplars. Die Antwort nennt den neuen Ersatzwert und ob das Exemplar zum Bestand zählt. Ein verliehenes Exemplar lässt sich nicht aussondern (400).
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string                true  "Book copy ID (UUID)"
-// @Param        body  body      exemplarStatusAnfrage   true  "New status payload"
-// @Success      200   {object}  map[string]string
+// @Param        id    path      string                true  "Kennung des Exemplars (UUID)"
+// @Param        body  body      exemplarStatusAnfrage   true  "Der neue Status"
+// @Success      200   {object}  map[string]any
 // @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /buecher/exemplare/{id}/status [put]
 func (t *Tueren) ExemplarStatusAendern(katalogAbfragen repository.KatalogAbfragen, bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
@@ -67,12 +72,12 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 
 	ctx := r.Context()
 
-	// Wenn ein Buch manuell auf "Verfügbar" gesetzt wird, zwingend Notizen und Ausgesondert-Flag löschen
+	// Wer ein Exemplar von Hand auf „verfügbar" setzt, nimmt Notiz und Aussonderung zurück.
 	//
-	// Der Beschädigungsgrad wird dabei AUSDRÜCKLICH nicht geräumt: Er ist eine
-	// Eigenschaft des Buchs, kein Status. Ein Band mit Wasserrand darf ausleihbar sein
-	// und trägt seinen Abschlag weiter — sonst verlangte die Schule beim nächsten
-	// Verlust wieder den vollen Zeitwert für ein sichtbar beschädigtes Buch.
+	// Der Beschädigungsgrad bleibt dabei stehen: Er ist eine Eigenschaft des Buchs, kein
+	// Status. Ein Band mit Wasserrand darf ausleihbar sein und trägt seinen Abschlag weiter;
+	// sonst verlangte die Schule beim nächsten Verlust wieder den vollen Zeitwert für ein
+	// sichtbar beschädigtes Buch.
 	if req.IstAusleihbar {
 		req.ZustandNotiz = ""
 		req.IstAusgesondert = false
@@ -92,10 +97,10 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 		return
 	}
 
-	// Die Antwort trägt den NEUEN Ersatzwert zurück (OFFEN.md 9.8, Stufe 2b):
-	// Wer den Wertverlust gerade eingetragen hat, sieht sofort, was das Buch damit
-	// noch wert ist. Gerechnet wird dabei am Server, mit derselben Funktion wie im
-	// Melde-Dialog — die Oberfläche soll diese Zahl nie selbst ausrechnen.
+	// Die Antwort trägt den neuen Ersatzwert: Wer den Wertverlust gerade eingetragen hat,
+	// sieht sofort, was das Buch damit noch wert ist. Gerechnet wird am Server, mit derselben
+	// Funktion wie im Dialog zum Melden eines Schadens; die Oberfläche rechnet diese Zahl nie
+	// selbst.
 	//
 	// Scheitert die Nachfrage, bleibt es bei der Erfolgsmeldung: Gespeichert ist
 	// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.

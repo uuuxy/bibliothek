@@ -148,7 +148,7 @@ func TestSchlagwortVorschlaege_AusDemBestand(t *testing.T) {
 		t.Errorf("Vorschläge %+v, erwartet %+v", vorschlaege, want)
 	}
 
-	// Beim Tippen fragt das Feld mit ?suche= (Rasterdurchgang vom 30.09.2026): Die Tür reicht
+	// Beim Tippen fragt das Feld mit ?suche=: Die Tür reicht
 	// den Text an die Abfrage weiter, die über alle Wörter sucht (repository-Test dazu).
 	rec = httptest.NewRecorder()
 	srv.SchlagwortVorschlaege()(rec, httptest.NewRequest(http.MethodGet, "/api/schlagworte?suche=TI", nil))

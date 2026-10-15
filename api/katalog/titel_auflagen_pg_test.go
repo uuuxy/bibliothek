@@ -14,7 +14,7 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Die Türen der Titelmaske für Auflagen (Migration 148, docs/OFFEN.md 4.18). Die Regeln
+// Die Türen der Titelmaske für Auflagen. Die Regeln
 // selbst prüft repository/auflagen_pg_test.go; hier geht es um das, was nur an der Tür
 // entstehen kann — eine falsche Kennung im Pfad oder im Körper, ein fehlendes Feld, die
 // Übersetzung der fachlichen Fehler in 400 mit Text und 404.

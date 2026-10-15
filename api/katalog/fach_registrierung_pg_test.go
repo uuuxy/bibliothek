@@ -17,12 +17,12 @@ import (
 	"bibliothek/inventur"
 )
 
-// TestFachAutoRegistrierung belegt die Betriebsregel hinter Migration 078: subject ist
-// FK auf systematik_kategorien(bezeichnung), und die Schreibpfade registrieren
-// unbekannte Fächer SELBST (inventur.StelleFaecherSicher) — die Lehre aus Migration
-// 021→060, wo eine FK-Spalte starb, weil nur die Migration sie je befüllte. Ein Import
-// mit neuem Fach darf nicht scheitern, eine Schreibvariante ("deutsch") muss auf die
-// kanonische Registrierung ("Deutsch") laufen statt eine Dublette anzulegen.
+// TestFachAutoRegistrierung belegt die Regel hinter Migration 078: subject ist ein
+// Fremdschlüssel auf systematik_kategorien(bezeichnung), und die Schreibwege legen unbekannte
+// Fächer selbst an (inventur.StelleFaecherSicher). Ein Fremdschlüssel, den nur eine Migration
+// füllt, verödet. Ein Import mit neuem Fach darf nicht scheitern, eine Schreibvariante
+// („deutsch") muss auf die kanonische Sachgruppe („Deutsch") laufen, statt eine Dublette
+// anzulegen.
 func TestFachAutoRegistrierung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -49,7 +49,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 		t.Fatalf("Fach wurde nicht auto-registriert (count=%d)", registriert)
 	}
 
-	// 2) Schreibvariante: läuft auf die kanonische Form, KEINE zweite Sachgruppe.
+	// 2) Schreibvariante: läuft auf die kanonische Form, keine zweite Sachgruppe.
 	id2, err := repo.CreateBook(ctx, inventur.Book{Title: "Sternbuch2-" + suffix, ISBN: "ISBN-B-" + suffix, Subject: strings.ToLower(fach)})
 	if err != nil {
 		t.Fatalf("CreateBook mit Schreibvariante: %v", err)

@@ -19,10 +19,9 @@ import (
 	"bibliothek/repository"
 )
 
-// Bestellen per ISBN legt einen neuen Titel aus der DNB an und schlägt dabei Schlagworte vor
-// (docs/OFFEN.md 4.20): die Wörter der eigenen Liste, die der Satz nennt. Ein Vorschlag, kein
-// Eintrag — am neuen Titel darf danach KEIN Schlagwort stehen, bis im Bestellkorb jemand
-// eines übernimmt.
+// Bestellen per ISBN legt einen neuen Titel aus der DNB an und schlägt dabei Schlagworte vor:
+// die Wörter der eigenen Liste, die der Satz nennt. Ein Vorschlag, kein Eintrag; am neuen Titel
+// darf danach kein Schlagwort stehen, bis im Bestellkorb jemand eines übernimmt.
 func TestLegeTitelAusTrefferAn_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -116,7 +115,7 @@ func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 	}
 }
 
-// Über die Tür, mit Normdatei-Wörtern (docs/OFFEN.md 4.25, entschieden am 30.09.2026): Was die
+// Über die Tür, mit Normdatei-Wörtern: Was die
 // Liste kennt, steht mit den übrigen Vorschlägen in schlagwort_vorschlaege — die Person in der
 // Littera-Schreibweise „Kafka <Franz>". Was sie nicht kennt, steht getrennt in
 // schlagwort_vorschlaege_neu. Angelegt wird davon nichts, am Titel steht nichts.

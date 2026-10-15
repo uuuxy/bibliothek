@@ -14,10 +14,10 @@ import (
 	"bibliothek/inventur"
 )
 
-// Ein über die DNB-Bestellsuche neu angelegter Titel entsteht OHNE Lernmittel-Kennzeichen
-// und meldet das (ist_lernmittel=false in der Antwort) — das Staging-Fenster fragt nach
-// und schreibt die Antwort über PUT /api/buecher/titel/{id}/lernmittel. Vorher gab es
-// diese Rückfrage nicht: Jedes neue Schulbuch war für immer ein Bücherei-Titel.
+// Ein über die Bestellsuche neu aus der DNB angelegter Titel entsteht ohne das Kennzeichen
+// „Lernmittel" und meldet das (ist_lernmittel=false in der Antwort); das Fenster der
+// Bestellsuche fragt nach und schreibt die Antwort über PUT /api/buecher/titel/{id}/lernmittel.
+// Ohne die Rückfrage bliebe jedes neue Schulbuch ein Titel der Bücherei.
 func TestNeuerDNBTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -74,11 +74,11 @@ func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 	}
 }
 
-// Fällt das Lernmittel-Kennzeichen, fällt der Mehrjahresband mit (Migration 134,
-// Rasterdurchgang 23.09.2026, K2) — wie im Buchformular. Das Fenster der Bestellsuche
-// schreibt über diese Tür auch das Kennzeichen eines VORHANDENEN Titels. Setzte sie allein
-// ist_lernmittel, lehnte chk_mehrjahresband_spanne ab (am alten Code: Status 500, „violates
-// check constraint"), und das Fenster meldete nur „konnte nicht gespeichert werden".
+// Fällt das Kennzeichen „Lernmittel", fällt der Mehrjahresband mit (Migration 134), wie im
+// Buchformular. Das Fenster der Bestellsuche schreibt über diese Tür auch das Kennzeichen eines
+// vorhandenen Titels. Setzte sie allein ist_lernmittel, lehnte chk_mehrjahresband_spanne ab
+// (Status 500, „violates check constraint"), und das Fenster meldete nur „konnte nicht
+// gespeichert werden".
 func TestLernmittelKennzeichenNimmtDenMehrjahresbandMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

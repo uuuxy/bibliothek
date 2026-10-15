@@ -11,17 +11,16 @@ import (
 	"bibliothek/repository"
 )
 
-// Der Cover-Proxy nahm bis zum 05.09.2026 zwei voneinander unabhängige Angaben entgegen:
-// den Cache-Schlüssel (isbn) und den Inhalt (url). Wer zuerst kam, bestimmte dauerhaft,
-// welches Bild unter dieser ISBN ausgeliefert wird — ohne Anmeldung, denn der Endpunkt
-// ist öffentlich. Ein Aufruf mit der ISBN eines Schulbuchs und der Adresse eines
-// beliebigen anderen Covers bei Google Books vergiftete damit den Cache, und der
-// Flur-Monitor zeigte fortan dieses Bild. Zweitens legte jeder ISBN-artige Schlüssel eine
-// neue Datei an, ohne Räumung: ein Plattenfüller auf dem Host der Datenbank.
+// Die Tür Cover nimmt ohne Anmeldung zwei voneinander unabhängige Angaben entgegen: die ISBN
+// als Name im Cache und die Adresse des Bilds. Bestimmte die erste Anfrage, welches Bild unter
+// einer ISBN liegt, vergiftete ein Aufruf mit der ISBN eines Schulbuchs und der Adresse eines
+// beliebigen anderen Covers den Cache, und der Monitor im Flur zeigte dieses Bild; jede neue
+// Adresse legte zudem eine Datei an, die nichts wieder räumt.
 //
-// Beides schließt dieselbe Regel: Der Server liefert nur Bilder aus, deren Adresse er
-// für diese ISBN SELBST kennt oder selbst herleiten könnte. Dateiname ist ISBN plus Hash
-// der geprüften URL — zwei Adressen teilen sich nie eine Datei. Gate: cover_quelle_bindung_test.go.
+// Beides schließt dieselbe Regel: Der Server liefert nur Bilder aus, deren Adresse er für diese
+// ISBN selbst kennt oder herleiten kann, und der Dateiname ist ISBN plus Hash der geprüften
+// Adresse, sodass sich zwei Adressen nie eine Datei teilen. Die Prüfung dazu steht in
+// cover_quelle_bindung_test.go.
 
 // coverKandidatenFuerISBN sind die Adressen, die coverKandidaten (frontend/src/lib/utils/
 // coverSrc.js) für eine ISBN selbst baut. Muster hier und dort müssen gleich bleiben. Die
@@ -34,7 +33,7 @@ func coverKandidatenFuerISBN(isbnSauber string) []string {
 	}
 }
 
-// coverDateiname bindet die Datei an ISBN UND Adresse.
+// coverDateiname bindet die Datei an ISBN und Adresse.
 func coverDateiname(isbn, sichereURL string) string {
 	sum := sha256.Sum256([]byte(sichereURL))
 	return isbnutil.OhneTrenner(isbn) + "-" + hex.EncodeToString(sum[:6]) + ".webp"
@@ -42,7 +41,7 @@ func coverDateiname(isbn, sichereURL string) string {
 
 // istCoverQuelleErlaubt entscheidet, ob sichereURL für diese ISBN heruntergeladen werden
 // darf. Erlaubt ist eine im Katalog gespeicherte Adresse dieser ISBN, oder eine der beiden
-// herleitbaren Kandidaten-Adressen — letztere ohne Anmeldung nur für ISBNs, die es im
+// herleitbaren Kandidaten-Adressen, diese ohne Anmeldung nur für ISBNs, die es im
 // Katalog gibt (die ISBN-Suche beim Anlegen eines Titels läuft angemeldet). Fehler zählen
 // als „nein": im Zweifel kein Download.
 func (t *Tueren) istCoverQuelleErlaubt(r *http.Request, isbn, sichereURL string) bool {

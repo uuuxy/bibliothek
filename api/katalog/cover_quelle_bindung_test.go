@@ -23,11 +23,10 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Der Fund vom 05.09.2026, am Handler nachgestellt: Ohne Bindung bestimmte der erste
-// Aufrufer (ohne Anmeldung) das Bild, das unter einer ISBN ausgeliefert wird, und jeder
-// ISBN-artige Schlüssel legte eine Datei an. Mit dem alten cover.go lieferte
-// derselbe Aufbau das Angreiferbild byte-identisch beim zweiten Aufruf und sechs Dateien
-// für sechs Schlüssel (rot gesehen, Probe vor dem Umbau).
+// An der Tür nachgestellt: Ohne Bindung bestimmte der erste Aufrufer, ohne Anmeldung, das
+// Bild, das unter einer ISBN ausgeliefert wird, und jeder ISBN-artige Schlüssel legte eine
+// Datei an. Ohne die Regel aus cover_quelle_bindung.go lieferte derselbe Aufbau beim zweiten
+// Aufruf das Bild des Angreifers und sechs Dateien für sechs Schlüssel.
 
 const testISBN = "9783161484100"
 
@@ -46,7 +45,7 @@ func pngEinfarbig(t *testing.T, c color.RGBA) []byte {
 	return b.Bytes()
 }
 
-// coverQuelleAttrappe biegt den Cover-Client auf einen lokalen TLS-Server um, der je Pfad ein
+// coverQuelleAttrappe biegt coverHTTPClient auf einen lokalen TLS-Server um, der je Pfad ein
 // anderes Bild liefert, und zählt die Downloads.
 func coverQuelleAttrappe(t *testing.T) *int {
 	t.Helper()
@@ -197,7 +196,7 @@ func TestCover_OhneDatenbankKeinDownload(t *testing.T) {
 	}
 }
 
-// Die Kandidaten-Adressen baut der Server GENAUSO wie coverKandidaten im Frontend —
+// Die Kandidaten-Adressen baut der Server genauso wie coverKandidaten im Frontend —
 // sonst lehnt er still ab, was die Oberfläche anfragt, und jede Kachel ohne
 // gespeichertes Cover bleibt leer. Der Test liest die Frontend-Datei, weil die beiden
 // Muster nirgends sonst zusammenkommen.

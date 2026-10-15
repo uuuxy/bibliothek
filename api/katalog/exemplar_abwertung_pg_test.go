@@ -16,12 +16,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Der Beschädigungsgrad am ECHTEN Postgres — Schreiben, Lesen und das Nicht-Anfassen.
+// Der Beschädigungsgrad am echten Postgres — Schreiben, Lesen und das Nicht-Anfassen.
 //
 // Drei Dinge fängt nur dieser Test:
 //
 //  1. Die Spalte gibt es wirklich und sie nimmt den Wert (der Mock-Test glaubt jedes SQL).
-//  2. Die Lese-Tür liefert ihn in der RICHTIGEN Reihenfolge mit. Beim Einfügen einer
+//  2. Die Lese-Tür liefert ihn in der richtigen Reihenfolge mit. Beim Einfügen einer
 //     Spalte in die Mitte eines SELECTs verschiebt sich jeder Scan danach — das ergibt
 //     stille Verwechslungen, hier zwischen „beschädigt" und „verfügbar".
 //  3. Ein Statuswechsel ohne das Feld lässt den erfassten Schaden stehen.
@@ -75,9 +75,9 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 		t.Fatalf("nach dem Erfassen = %d, erwartet 20", p)
 	}
 
-	// Die Antwort trägt den neuen Ersatzwert zurück (Stufe 2b): Der Dialog zeigt sofort,
+	// Die Antwort trägt den neuen Ersatzwert zurück: Der Dialog zeigt sofort,
 	// was das Buch mit diesem Schaden noch wert ist, statt den alten Betrag stehen zu
-	// lassen. Der Titel hat hier keinen Preis, also ist die Zahl 0 — die FELDER müssen
+	// lassen. Der Titel hat hier keinen Preis, also ist die Zahl 0 — die Felder müssen
 	// trotzdem da sein, sonst hätte die Oberfläche nichts zu übernehmen.
 	var antwort map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
@@ -90,7 +90,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 		t.Errorf("Antwort ohne ersatzwert_herleitung: %s", rec.Body.String())
 	}
 
-	// 2. Ein Statuswechsel OHNE das Feld darf den Schaden nicht räumen.
+	// 2. Ein Statuswechsel ohne das Feld darf den Schaden nicht räumen.
 	setze(t, `{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"in Reparatur"}`)
 	if p := grad(t); p != 20 {
 		t.Errorf("nach dem Sperren = %d, erwartet 20 — ein Statuswechsel ohne das Feld "+
@@ -147,11 +147,11 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 	}
 }
 
-// Stufe 2b: Der heutige Ersatzwert steht an jedem Exemplar der Buchakte.
+// Der heutige Ersatzwert steht an jedem Exemplar der Buchakte.
 //
 // Die Zahl kommt aus derselben Funktion wie der Vorschlag im Melde-Dialog
 // (service.ErsatzwertVorschlagAus) — deshalb prüft dieser Test nicht die Staffel noch einmal,
-// sondern nur, dass die Buchakte sie überhaupt ANZEIGT und dabei die Größen dieses
+// sondern nur, dass die Buchakte sie überhaupt anzeigt und dabei die Größen dieses
 // Exemplars benutzt: den Listenpreis des Titels, das Verleihjahr und den erfassten
 // Beschädigungsgrad.
 func TestTitelExemplare_ZeigtDenHeutigenErsatzwert(t *testing.T) {
@@ -217,7 +217,7 @@ func TestTitelExemplare_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 	}
 }
 
-// Die wählbare Berechnungsgrundlage AM DRAHT (OFFEN.md 9.8, Stufe 4).
+// Die wählbare Berechnungsgrundlage am Draht.
 //
 // Eine Einstellung, deren Wirkung niemand am Live-Pfad geprüft hat, ist ein Schalter
 // ohne Leitung: Er speichert, die Oberfläche zeigt ihn an, und gerechnet wird weiter wie
@@ -304,7 +304,7 @@ func TestTitelExemplare_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 		t.Errorf("mit false: %.2f, erwartet 24.90 (Herleitung: %q)", betrag, satz)
 	}
 
-	// 3. Angehakt: 60 % vom Einkaufspreis — und die Begründung sagt WARUM. „kein
+	// 3. Angehakt: 60 % vom Einkaufspreis — und die Begründung sagt warum. „kein
 	//    Listenpreis hinterlegt" wäre hier eine falsche Auskunft über die Datenlage.
 	setzeGrundlage(t, "true")
 	betrag, satz = lies(t)

@@ -1,11 +1,11 @@
 package katalog
 
-// geraete.go — Verwaltungs-Endpunkte der Geräteausleihe (Bereich im Medienkatalog).
+// Die Pflege der Geräte, die die Bücherei verleiht (ein Bereich im Medienkatalog).
 //
-// Rechte wie beim Buchbestand: Lesen view_books, Pflegen edit_books — Geräte SIND
-// Bestand. Das G--Präfix ist Pflicht: Die Omnibox routet Scans darüber zum
-// Gerätedienst (internal/service/geraet.go); ein Gerät ohne G- wäre am Kiosk unauffindbar
-// (die Auflösung ohne Vorsilbe kennt nur Buch → Ausweis → Suche).
+// Rechte wie beim Buchbestand: Lesen view_books, Pflegen edit_books, denn Geräte sind Bestand.
+// Die Vorsilbe G- ist Pflicht: Die Omnibox leitet einen Scan darüber zum Gerätedienst
+// (internal/service/geraet.go); ein Gerät ohne G- fände die Theke nicht, weil die Auflösung
+// ohne Vorsilbe nur Buch, Ausweis und Suche kennt.
 
 import (
 	"errors"
@@ -50,10 +50,10 @@ func (t *Tueren) Geraete(geraeteAbfragen repository.GeraeteAbfragen) http.Handle
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Geräte", err)
 		}
-		// Die Route hängt an view_books (Katalog-Auskunft: "sind noch Geräte
-		// da?"). Der NAME des Ausleihers ist aber eine Personenangabe und
-		// bleibt Aufrufern ohne view_students verborgen — verliehen ja/nein
-		// sieht man weiterhin (ausgeliehen_an wird zu "", nicht nil).
+		// Die Route hängt an view_books (Auskunft des Katalogs: „sind noch Geräte da?"). Der
+		// Name des Ausleihers ist eine Personenangabe und bleibt Aufrufern ohne view_students
+		// verborgen; ob ein Gerät verliehen ist, sieht man weiterhin (ausgeliehen_an wird zu "",
+		// nicht nil).
 		if !t.HatRecht(r, "view_students") {
 			leer := ""
 			for i := range geraete {
@@ -146,7 +146,7 @@ func istGeraetKonflikt(err error) bool {
 }
 
 // getrimmterZeiger reicht einen optionalen Textwert getrimmt weiter: nil bleibt nil
-// ("nicht mitgeschickt"), ein leerer Wert wird zu einem Zeiger auf "" ("geloescht").
+// („nicht mitgeschickt"), ein leerer Wert wird zu einem Zeiger auf "" („gelöscht").
 func getrimmterZeiger(wert *string) *string {
 	if wert == nil {
 		return nil

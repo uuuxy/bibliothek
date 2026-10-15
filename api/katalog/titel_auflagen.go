@@ -10,13 +10,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Auflagen eines Schulbuchs (Migration 148, docs/OFFEN.md 4.18). Die Regeln stehen in
-// repository/auflagen.go; die Titelmaske erreicht sie über die Türen hier (edit_books), der
-// Bestellkorb bekommt in Stufe 4 eine eigene Route mit create_orders — beide über dieselben
-// Funktionen, wie bei den Schlagworten.
+// Die Auflagen eines Schulbuchs. Die Regeln stehen in repository/auflagen.go; die Titelmaske
+// erreicht sie über die Türen hier (edit_books), der Bestellbedarf über eine eigene Route mit
+// create_orders (…/neue-auflage). Beide gehen über dieselben Funktionen, wie bei den
+// Schlagworten.
 
-// titelAuflagenAntwort ist die Antwort aller drei Türen: die Auflagen des Buchs, zu dem der Titel
-// gehört, die neueste zuerst. Ein Titel ohne andere Auflage steht allein darin.
+// titelAuflagenAntwort ist die Antwort aller drei Türen: die Auflagen des Buchs, zu dem der
+// Titel gehört, die neueste zuerst. Ein Titel ohne andere Auflage steht allein darin.
 type titelAuflagenAntwort struct {
 	ID       string               `json:"id"`
 	Auflagen []repository.Auflage `json:"auflagen"`
@@ -27,13 +27,12 @@ type auflageZuordnenAnfrage struct {
 	TitelID string `json:"titel_id" validate:"required,uuid_oder_leer"`
 }
 
-// TitelAuflagen liefert die Auflagen des Buchs, zu dem ein Titel gehört, mit
-// ihrem Bestand.
+// TitelAuflagen liefert die Auflagen des Buchs, zu dem ein Titel gehört, mit ihrem Bestand.
 //
-// @Summary      List the editions of a title's book
+// @Summary      Auflagen des Buchs, zu dem ein Titel gehört
 // @Tags         books
 // @Produce      json
-// @Param        id   path      string  true  "Title ID"
+// @Param        id   path      string  true  "Kennung des Titels"
 // @Success      200  {object}  titelAuflagenAntwort
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -55,16 +54,15 @@ func (t *Tueren) TitelAuflagen() http.HandlerFunc {
 
 // AuflagenZusammenfassen fasst einen Titel mit einer anderen Auflage desselben Buchs
 // zusammen. Gehört einer der beiden schon zu einem Buch mit weiteren Auflagen, kommen alle
-// zusammen. Zwei Routen, ein Handler: die Titelmaske (…/auflagen, edit_books) und der
-// Bestellbedarf (…/neue-auflage, create_orders — „Der Besteller legt das Werk an",
-// docs/OFFEN.md 4.18, entschieden am 23.09.2026).
+// zusammen. Zwei Routen, eine Tür: die Titelmaske (…/auflagen, edit_books) und der
+// Bestellbedarf (…/neue-auflage, create_orders), denn wer bestellt, legt das Werk an.
 //
-// @Summary      Join another edition to a title's book
+// @Summary      Andere Auflage zum Buch eines Titels zuordnen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string                  true  "Title ID"
-// @Param        body  body      auflageZuordnenAnfrage  true  "The other edition"
+// @Param        id    path      string                  true  "Kennung des Titels"
+// @Param        body  body      auflageZuordnenAnfrage  true  "Die andere Auflage"
 // @Success      200   {object}  titelAuflagenAntwort
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
@@ -89,13 +87,13 @@ func (t *Tueren) AuflagenZusammenfassen() http.HandlerFunc {
 	})
 }
 
-// AuflageLoesen nimmt einen Titel aus seinem Buch; die anderen Auflagen
-// bleiben zusammen, solange es mindestens zwei sind.
+// AuflageLoesen nimmt einen Titel aus seinem Buch; die anderen Auflagen bleiben zusammen,
+// solange es mindestens zwei sind.
 //
-// @Summary      Detach a title from its book's editions
+// @Summary      Titel aus den Auflagen seines Buchs lösen
 // @Tags         books
 // @Produce      json
-// @Param        id   path      string  true  "Title ID"
+// @Param        id   path      string  true  "Kennung des Titels"
 // @Success      200  {object}  titelAuflagenAntwort
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -124,8 +122,8 @@ func titelIDAusPfad(r *http.Request) (string, error) {
 	return id, nil
 }
 
-// auflagenFehler übersetzt die fachlichen Fehler des Repositorys: eine verletzte Regel ist
-// 400 mit ihrem Text, ein unbekannter Titel 404, alles andere 500.
+// auflagenFehler übersetzt die fachlichen Fehler aus repository/auflagen.go: Eine verletzte
+// Regel ist 400 mit ihrem Text, ein unbekannter Titel 404, alles andere 500.
 func auflagenFehler(err error, handlung string) error {
 	switch {
 	case errors.Is(err, repository.ErrAuflageUngueltig):

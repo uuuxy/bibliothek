@@ -96,8 +96,8 @@ func TestIstCoverCacheSchluessel(t *testing.T) {
 	}
 }
 
-// Diese Fälle enden alle vor dem Dateisystem-Zugriff des Handlers — statt eines
-// Fehlers muss das transparente Fallback-GIF kommen (kein Browser-Konsolen-Spam).
+// Diese Fälle enden alle, bevor die Tür das Dateisystem anfasst: Statt eines Fehlers kommt
+// das transparente GIF (transparentesGIF).
 func TestCover_TransparentesGIFOhneDownload(t *testing.T) {
 	tests := []struct {
 		name  string

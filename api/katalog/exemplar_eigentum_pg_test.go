@@ -20,7 +20,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Das Eigentum in der Buchakte (docs/OFFEN.md 4.24, Stufe 3): Die Exemplarliste nennt es mit
+// Das Eigentum in der Buchakte: Die Exemplarliste nennt es mit
 // Herkunft, und PUT /api/exemplare/eigentum setzt es für markierte Exemplare — mit Grund und
 // Protokoll, alle oder keins.
 

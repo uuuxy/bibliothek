@@ -23,12 +23,12 @@ import (
 //
 // Der Bearbeiten-Dialog (GeraeteVerwaltung.svelte) hat fünf Felder — modellname,
 // barcode_id, seriennummer, zubehoer, zustand_notiz — und schickt genau diese. Das
-// Defekt-Kennzeichen liegt auf einem eigenen Knopf und ist im Formular NICHT enthalten.
+// Defekt-Kennzeichen liegt auf einem eigenen Knopf und ist im Formular nicht enthalten.
 //
-// Im Handler stand dazu `istAusleihbar := true`, wenn das Feld fehlt. Ein fehlendes
-// Feld war damit kein "unverändert", sondern ein Wert: Wer bei einem als defekt
-// markierten Gerät einen Tippfehler im Zubehör korrigierte, gab es damit still wieder
-// zur Ausleihe frei. Auf dem Bildschirm stand "Gerät gespeichert".
+// Ein fehlendes Kennzeichen ist deshalb „unverändert", kein Wert: Setzte die Tür ein
+// fehlendes Feld auf true, gäbe jemand, der bei einem als defekt markierten Gerät einen
+// Tippfehler im Zubehör korrigiert, es still wieder zur Ausleihe frei, und auf dem Bildschirm
+// stünde „Gerät gespeichert".
 func TestGeraetAendern_HebtDefektNichtAuf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -46,10 +46,9 @@ func TestGeraetAendern_HebtDefektNichtAuf(t *testing.T) {
 		t.Fatalf("Gerät anlegen: %v", err)
 	}
 
-	// GENAU der Rumpf des Bearbeiten-Dialogs: fünf Felder, kein ist_ausleihbar.
-	// Die Seriennummer wird MIT GEÄNDERT: Das Formular bietet das Feld an, der Handler
-	// liess es bis zum 23.08.2026 unter den Tisch fallen — die Korrektur einer falschen
-	// Seriennummer war folgenlos, mit "Gerät gespeichert" daneben.
+	// Genau der Rumpf des Bearbeiten-Dialogs: fünf Felder, kein ist_ausleihbar. Die Seriennummer
+	// wird mitgeändert: Das Formular bietet das Feld an, und ließe die Tür es fallen, wäre die
+	// Korrektur einer falschen Seriennummer folgenlos, mit „Gerät gespeichert" daneben.
 	body := `{"modellname":"Tablet 10","barcode_id":"G-DEFEKT","seriennummer":"SN-9999",
 	          "zubehoer":"Ladekabel und Hülle","zustand_notiz":""}`
 	req := httptest.NewRequest(http.MethodPut, "/api/geraete/"+id, strings.NewReader(body))

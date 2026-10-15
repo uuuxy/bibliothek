@@ -11,9 +11,8 @@ import (
 	"bibliothek/repository"
 )
 
-// Das Zugangsbuch — die Gegenrichtung zum Abgangsbuch, zweite Hälfte von Punkt 1 des
-// Protokolls vom 16.09.2026. Aufbau und Zeitraum sind dieselben; die Unterschiede stehen
-// in repository/zugangsbuch.go.
+// Das Zugangsbuch: die Gegenrichtung zum Abgangsbuch, mit demselben Aufbau und demselben
+// Zeitraum. Die Unterschiede stehen in repository/zugangsbuch.go.
 
 // zugangsbuchAntwort ist das Zugangsbuch, fertig in Abschnitte geteilt.
 type zugangsbuchAntwort struct {
@@ -104,7 +103,7 @@ func (t *Tueren) ZugangsbuchPDF() http.HandlerFunc {
 			buch.Von.Format(tuer.DatumsformatISO), buch.Bis.Format(tuer.DatumsformatISO)))
 		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(blatt)))
 		if _, err := w.Write(blatt); err != nil {
-			return nil // Verbindung weg — der Client hat abgebrochen.
+			return nil // Die Verbindung ist weg, der Browser hat abgebrochen.
 		}
 		return nil
 	})

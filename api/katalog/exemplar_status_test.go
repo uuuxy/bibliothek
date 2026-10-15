@@ -13,16 +13,14 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Diese Tests halten den achten Aussonderungs-Schreibpfad fest, der bei der Umstellung
-// auf chk_aussonderung_grund (Migration 043) übersehen wurde: Der Status-Editor
-// schreibt ist_ausgesondert PARAMETRISIERT — als einziger Pfad neben den sieben mit
-// festem Grund. Ohne Mitführung von aussonderung_grund lehnte der CHECK jedes
-// Aussondern (Grund bliebe NULL) und jedes Reaktivieren (Grund bliebe stehen) mit
-// einem 500 ab. Der Constraint selbst ist in db/constraints_aussonderung_pg_test.go
-// gegen echtes Postgres abgesichert; hier wird gepinnt, dass der Code-Pfad das
-// Grund-Feld tatsächlich mitschreibt.
+// Diese Tests halten einen der acht Wege fest, die ein Exemplar aussondern: Der Status-Editor
+// schreibt ist_ausgesondert als Parameter, als einziger neben sieben Wegen mit festem Grund.
+// Schriebe er aussonderung_grund nicht mit, lehnte chk_aussonderung_grund (Migration 043) jedes
+// Aussondern (der Grund bliebe NULL) und jedes Reaktivieren (der Grund bliebe stehen) mit einem
+// 500 ab. Die Bedingung selbst sichert db/constraints_aussonderung_pg_test.go an der Datenbank;
+// hier wird festgehalten, dass der Code das Feld tatsächlich mitschreibt.
 //
-// Das Regex prüft bewusst den CASE-Ausdruck: WHEN $2 (aussondern) muss den Default-Grund
+// Der reguläre Ausdruck prüft den CASE-Ausdruck: WHEN $2 (aussondern) muss den Grund
 // VERLUST setzen ("Verloren" zählt in der Verlustquote), ohne einen vorhandenen,
 // spezifischeren (z. B. BESCHAEDIGUNG aus der Schadensmeldung) zu überschreiben;
 // ELSE (reaktivieren) muss ihn löschen.
@@ -89,7 +87,7 @@ func TestExemplarStatusAendern_AussondernFuehrtGrundMit(t *testing.T) {
 func TestExemplarStatusAendern_ReaktivierenLoeschtGrund(t *testing.T) {
 	mock, handler := baueExemplarStatusTuer(t)
 
-	// Der Handler erzwingt bei ist_ausleihbar=true den Weg zurück in den Umlauf
+	// Die Tür erzwingt bei ist_ausleihbar=true den Weg zurück in den Umlauf
 	// (ist_ausgesondert=false, Notiz geleert) — der ELSE-Zweig muss den Grund räumen.
 	erwarteStatusSpeichern(mock, exemplarStatusMuster, true, false, "", "ex-1", (*int)(nil))
 	mock.ExpectCommit()
@@ -105,7 +103,7 @@ func TestExemplarStatusAendern_ReaktivierenLoeschtGrund(t *testing.T) {
 }
 
 // Der Beschädigungsgrad (Migration 127) fährt im Status-Editor mit — und das Feld hat
-// DREI Zustände, nicht zwei.
+// drei Zustände, nicht zwei.
 //
 // Das Muster prüft die COALESCE-Zeile selbst: Stünde dort ein nacktes $5, wäre jeder
 // Aufruf ohne das Feld eine stille 0 — ein erfasster Wasserschaden verschwände beim
@@ -131,7 +129,7 @@ func TestExemplarStatusAendern_BeschaedigungsgradWirdGeschrieben(t *testing.T) {
 	}
 }
 
-// Fehlt das Feld, muss nil ankommen — nicht 0. Das ist der Fall JEDES Aufrufers, der
+// Fehlt das Feld, muss nil ankommen — nicht 0. Das ist der Fall jedes Aufrufers, der
 // den Beschädigungsgrad gar nicht kennt.
 func TestExemplarStatusAendern_OhneFeldBleibtDerGradUnangetastet(t *testing.T) {
 	mock, handler := baueExemplarStatusTuer(t)
@@ -150,7 +148,7 @@ func TestExemplarStatusAendern_OhneFeldBleibtDerGradUnangetastet(t *testing.T) {
 	}
 }
 
-// „Verfügbar" räumt die Notiz (bestehende Regel), aber NICHT den Beschädigungsgrad: Ein
+// „Verfügbar" räumt die Notiz (bestehende Regel), aber nicht den Beschädigungsgrad: Ein
 // Band mit Wasserrand darf ausleihbar sein und trägt seinen Abschlag weiter.
 func TestExemplarStatusAendern_VerfuegbarBehaeltDenBeschaedigungsgrad(t *testing.T) {
 	mock, handler := baueExemplarStatusTuer(t)

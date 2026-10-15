@@ -22,13 +22,13 @@ import (
 // sind an der Theke nicht auseinanderzuhalten, und ein altes Etikett, dessen Nummer
 // erneut vergeben wurde, bucht auf das falsche Buch.
 //
-// Warum ein PG-Test: Die Vergabe steckt komplett in SQL (nextval auf barcode_seq gegen
-// einen Bestandsabgleich) und die Kollision zeigt sich erst am UNIQUE-Constraint der
-// Tabelle. pgxmock spielt beides nur nach.
+// Warum ein Test an der Datenbank: Die Vergabe steckt ganz in SQL (nextval auf barcode_seq
+// gegen einen Abgleich mit dem Bestand), und die Kollision zeigt sich erst am UNIQUE-Constraint
+// der Tabelle. pgxmock spielt beides nur nach.
 
-// naechsteInterneNummer ruft den Live-Pfad des Knopfes „Interne ID generieren" auf
-// (GET /api/barcode/next in der Exemplarkarte) statt den Generator direkt — genau
-// dieser Weg vergab die Nummern früher aus einer zweiten, eigenen Quelle.
+// naechsteInterneNummer ruft den Weg des Knopfes „Interne ID generieren" (GET /api/barcode/next
+// in der Exemplarkarte), nicht den Generator direkt: An diesem Weg darf keine zweite Quelle für
+// Nummern entstehen.
 func naechsteInterneNummer(t *testing.T, srv *Tueren) string {
 	t.Helper()
 	rec := httptest.NewRecorder()
@@ -101,13 +101,12 @@ func barcodeBestand(t *testing.T, pool *pgxpool.Pool) map[string]bool {
 	return belegt
 }
 
-// TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung deckt den Bruch zwischen
-// den beiden früheren Vergabestellen auf: Das Bestellwesen zog aus der Sequenz
-// barcode_seq, der Knopf „Interne ID generieren" rechnete stattdessen MAX(Nummer)+1
-// aus der Tabelle. Beide lieferten damit dieselbe nächste Nummer, aber nur die Sequenz
-// zählte weiter — die von Hand vergebene Nummer kam bei der nächsten Bestellung
-// erneut. Ergebnis: UNIQUE-Verletzung, und weil die Exemplare in EINER Transaktion per
-// CopyFrom entstehen, verlor nicht die Position, sondern die ganze Bestellung.
+// TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung: Das Bestellwesen und der Knopf
+// „Interne ID generieren" ziehen aus derselben Sequenz barcode_seq. Rechnete der Knopf die
+// höchste Nummer plus eins aus der Tabelle, lieferten beide dieselbe nächste Nummer, aber nur die
+// Sequenz zählte weiter: Die von Hand vergebene Nummer käme bei der nächsten Bestellung erneut,
+// die Bestellung scheiterte am UNIQUE, und weil die Exemplare in einer Transaktion per CopyFrom
+// entstehen, ginge die ganze Bestellung verloren, nicht nur die Position.
 func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

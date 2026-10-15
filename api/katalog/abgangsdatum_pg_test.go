@@ -18,10 +18,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Das Abgangsdatum (Migration 128) ist der fehlende Teil des Abgangsbuchs — Punkt 1 des
-// Protokolls vom 16.09.2026. Gemessen wird an den echten Türen, nicht am Trigger allein:
-// Ein Stempel, den ein Schreiber überschreibt oder umgeht, wäre ein Abgangsbuch mit
-// Lücken, und niemand sucht eine Zeile, von der er nicht weiß.
+// Das Abgangsdatum (Migration 128) trägt das Abgangsbuch. Gemessen wird an den echten Türen,
+// nicht am Trigger allein: Ein Stempel, den ein Schreiber überschreibt oder umgeht, wäre ein
+// Abgangsbuch mit Lücken, und niemand sucht eine Zeile, von der er nicht weiß.
 
 func abgangsdatum(t *testing.T, pool *pgxpool.Pool, id string) *time.Time {
 	t.Helper()
@@ -41,7 +40,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	damageRepo := repository.NewSchadensAbfragen(pool)
 
-	// Ein Bearbeiter für das Ausbuchen: Es schreibt einen Audit-Eintrag und verlangt
+	// Ein Bearbeiter für das Ausbuchen: Es schreibt einen Eintrag ins Protokoll und verlangt
 	// deshalb eine echte Benutzer-ID.
 	var bearbeiterID string
 	if err := pool.QueryRow(ctx, `
@@ -54,23 +53,21 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel", "Abg 1", 0)
 
-	// Tür 1: die Repository-Methode des Status-Editors, direkt (POST /aussondern ist am
-	// 22.09.2026 gestrichen, OFFEN.md 4.16)
+	// Tür 1: die Abfrage des Status-Editors, direkt (KatalogAbfragen.AendereExemplarStatus).
 	eins := testdaten.LegeExemplarAn(t, pool, titelID, "ABG-1", true, "")
 	if err := bookRepo.AendereExemplarStatus(ctx, eins, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 
-	// Tür 2: dieselbe Methode über den Handler, PUT /status mit ist_ausgesondert=true
+	// Tür 2: dieselbe Abfrage über die Tür, PUT /status mit ist_ausgesondert=true
 	zwei := testdaten.LegeExemplarAn(t, pool, titelID, "ABG-2", true, "")
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/exemplare/"+zwei+"/status",
 		strings.NewReader(`{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":"verloren"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.SetPathValue("id", zwei)
 	rec := httptest.NewRecorder()
-	// Türen mit Datenbank: Der Handler fragt nach dem Speichern die Preisquelle aus den
-	// Einstellungen — ohne Pool stürzt er dort ab (dieselbe Falle wie bei der Leserdatei
-	// am 17.09.2026).
+	// Türen mit Datenbank: Die Tür fragt nach dem Speichern die Preisquelle aus den
+	// Einstellungen; ohne Pool stürzte sie dort ab.
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	srv.ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
 	if rec.Code != http.StatusOK {
@@ -180,7 +177,7 @@ func TestAbgangsdatum_RueckholenLoeschtDenStempel(t *testing.T) {
 
 // Altbestand: Was vor der Migration ausgesondert wurde, hat kein bekanntes Datum. NULL ist
 // die Wahrheit über diese Zeilen — ein erfundenes Datum stünde als Tatsache in einem
-// Bestandsnachweis. Dasselbe gilt für eine Zeile, die AUSGESONDERT eingefügt wird: Ein
+// Bestandsnachweis. Dasselbe gilt für eine Zeile, die ausgesondert eingefügt wird: Ein
 // Import historischer Abgänge trüge sonst das Datum seines Imports.
 func TestAbgangsdatum_KeinErfundenesDatumBeimEinfuegen(t *testing.T) {
 	pool := pgtest.Pool(t)

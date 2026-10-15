@@ -29,47 +29,43 @@ import (
 	"github.com/chai2010/webp"
 )
 
-// maxCoverBytes begrenzt, wie viel von einer fremden Antwort überhaupt in den Speicher
-// gelesen wird. Ohne diese Grenze bestimmt der fremde Server, wie viel RAM ein einzelner
-// Aufruf dieses Endpunkts kostet — und der Endpunkt ist öffentlich. 10 MB sind für ein
-// Buchcover großzügig; dieselbe Grenze gilt im Cover-Downloader des Inventur-Moduls.
+// maxCoverBytes begrenzt, wie viel von einer fremden Antwort in den Speicher gelesen wird.
+// Ohne die Grenze bestimmte der fremde Server, wie viel Speicher ein einzelner Aufruf dieses
+// öffentlichen Endpunkts kostet. 10 MB sind für ein Buchcover großzügig; dieselbe Grenze gilt
+// im Cover-Downloader des Inventur-Moduls.
 const maxCoverBytes = 10 << 20
 
-// coverDownloadsProSekunde begrenzt NUR den teuren Zweig dieses Endpunkts: den
-// Cache-Fehltreffer, der einen fremden Download samt vollständiger Bilddekodierung
-// auslöst. Ausgelieferte Cache-Treffer bleiben ungebremst — sie sind ein Datei-Read,
-// und ein Katalogaufruf lädt dutzende davon gleichzeitig (genau deshalb steht der
-// Pfad in der Ausnahmeliste des globalen Limiters, siehe api/rate_limit.go).
+// coverDownloadsProSekunde begrenzt nur den teuren Zweig dieses Endpunkts: den Fehltreffer im
+// Cache, der einen fremden Download samt vollständiger Bilddekodierung auslöst. Treffer im Cache
+// bleiben ungebremst; sie lesen nur eine Datei, und ein Katalogaufruf lädt Dutzende davon
+// gleichzeitig (deshalb steht der Pfad in der Ausnahmeliste der globalen Bremse,
+// api/rate_limit.go).
 //
-// Ohne diese Bremse war der einzige unauthentifizierte Endpunkt der Anwendung, der
-// eine ausgehende Verbindung und ein image.Decode auslöst, vollständig unbegrenzt:
-// ein Aufruf = ein Download + eine Dekodierung, beliebig oft parallel.
-// 30/s pro IP trägt den Erstaufruf einer Katalogseite (24 Kacheln) in einem Zug.
+// Der Endpunkt ist ohne Anmeldung erreichbar und löst eine ausgehende Verbindung und ein
+// image.Decode aus; ungebremst hieße das je Aufruf einen Download und eine Dekodierung, beliebig
+// oft nebeneinander. 30 je Sekunde und Adresse sind so bemessen, dass eine Katalogseite beim
+// ersten Aufruf ihre Kacheln in einem Zug lädt.
 const coverDownloadsProSekunde = 30
 
-// coverDownloadBremse bremst die Fehltreffer pro Client-IP.
+// coverDownloadBremse bremst die Fehltreffer je Adresse des Aufrufers.
 var coverDownloadBremse = ratelimit.New(coverDownloadsProSekunde)
 
 // coverCacheVerzeichnis ist eine Variable, damit Tests den Cache in ein Wegwerf-
 // Verzeichnis legen können, ohne das Arbeitsverzeichnis zu wechseln.
 var coverCacheVerzeichnis = "uploads/covers"
 
-// istCoverCacheSchluessel prüft den vom Aufrufer gewählten Cache-Namen, bevor daraus
-// ein Dateiname wird.
+// istCoverCacheSchluessel prüft den vom Aufrufer gewählten Namen, bevor daraus ein Dateiname
+// wird. Zulässig sind Ziffern, Trennstriche und ein abschließendes X (Prüfziffer der ISBN-10),
+// genau die Zeichen, die eine ISBN oder EAN haben kann.
 //
-// Der Wert kommt aus buecher_titel.isbn und wurde ohne Prüfung zum Dateinamen im
-// Cache-Verzeichnis. Zulässig sind Ziffern, Trennstriche und ein abschließendes X
-// (ISBN-10-Prüfziffer) — genau die Zeichen, die eine ISBN oder EAN haben kann.
+// Nicht über isbnutil.OhneTrenner geprüft, obwohl das naheliegt: Es entfernt auch Leerzeichen,
+// weil es ISBNs vergleichbar machen soll; "9783161 84100" wäre danach gültig. Ob zwei
+// Zeichenketten dieselbe ISBN sind und ob eine ein Dateiname sein darf, sind zwei Fragen mit
+// verschiedenen Antworten.
 //
-// Bewusst NICHT über isbnutil.OhneTrenner geprüft, obwohl das naheliegt: Der Reiniger
-// entfernt auch Leerzeichen, weil er ISBNs VERGLEICHBAR machen soll. Hier geht es um
-// einen Dateinamen, und "9783161 84100" wäre danach gültig gewesen. Zwei verschiedene
-// Fragen an dieselbe Zeichenkette (ist das dieselbe ISBN? / darf das ein Dateiname
-// sein?) vertragen keine gemeinsame Antwort.
-//
-// Das ist Hygiene, keine Mengenbegrenzung: Gegen das Vollschreiben der Platte hilft
-// die Download-Bremse oben, nicht diese Prüfung. Sie hält nur alles fern, was
-// erkennbar keine Bestellnummer ist, und hält die Dateinamen vorhersagbar.
+// Das ist Hygiene, keine Mengenbegrenzung: Gegen das Vollschreiben der Platte hilft die
+// Download-Bremse oben. Die Prüfung hält fern, was erkennbar keine ISBN ist, und hält die
+// Dateinamen vorhersagbar.
 func istCoverCacheSchluessel(schluessel string) bool {
 	if schluessel == "" || len(schluessel) > 17 {
 		return false
@@ -90,8 +86,9 @@ func istCoverCacheSchluessel(schluessel string) bool {
 	return stellen >= 8 && stellen <= 14
 }
 
-// transparentesGIF ist ein transparentes 1x1-GIF, das bei Fehlern ausgeliefert
-// wird, um Browser-Konsolen-Spam zu vermeiden.
+// transparentesGIF ist ein durchsichtiges Bild aus einem Pixel. Die Tür liefert es bei jedem
+// Fehler aus: Am anderen Ende hängt ein <img>, und ein Fehlercode erzeugte dort nur einen roten
+// Eintrag in der Konsole des Browsers.
 var transparentesGIF = []byte{
 	0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00,
 	0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21,
@@ -113,29 +110,23 @@ func liefereCoverAusCache(w http.ResponseWriter, r *http.Request, root *os.Root,
 	http.ServeFileFS(w, r, root.FS(), dateiname)
 }
 
-// baueSichereCoverURL validiert die Cover-URL gegen die Host-Allowlist und baut sie
-// aus geprüften Teilen neu auf.
-//
-// Liste und Neuaufbau liegen seit dem 04.08.2026 in pkg/coverquelle: Dieselbe Prüfung
-// braucht auch das Inventur-Modul (Cover-Download und Metadaten-Abruf), und die Liste
-// stand dort in eigenen Kopien, die bereits auseinandergelaufen waren.
+// baueSichereCoverURL prüft die Adresse eines Covers gegen die Liste erlaubter Hosts und baut
+// sie aus geprüften Teilen neu auf. Liste und Neuaufbau liegen in pkg/coverquelle, weil das
+// Inventur-Modul dieselbe Prüfung braucht (Cover-Download und Abruf der Metadaten).
 func baueSichereCoverURL(adresse string) (string, bool) {
 	return coverquelle.SichereURL(adresse, coverquelle.BildHosts)
 }
 
-// coverHTTPClient lädt Cover mit Schutzmaßnahmen, die http.DefaultClient fehlen:
-// Verbindungen zu nicht-öffentlichen IPs werden auf Dialer-Ebene abgelehnt — nach
-// der DNS-Auflösung und damit auch für jeden Redirect-Hop (OpenLibrary leitet z. B.
-// real auf archive.org um) und bei DNS-Rebinding. Dazu ein hartes Gesamt-Timeout.
-//
-// Die Umsetzung liegt seit dem Audit in pkg/safehttp, weil das Inventur-Modul für
-// seine Cover- und Metadaten-Abrufe denselben Schutz braucht und ihn vorher nicht
-// hatte — dort standen blanke http.Client{Timeout: …}.
+// coverHTTPClient lädt Cover mit dem Schutz, der http.DefaultClient fehlt: Verbindungen zu
+// nicht öffentlichen Adressen lehnt er beim Verbindungsaufbau ab, nach der DNS-Auflösung und
+// damit auch für jede Weiterleitung (OpenLibrary leitet auf archive.org um) und bei
+// DNS-Rebinding. Für den ganzen Abruf gilt eine feste Zeitgrenze von 20 Sekunden. Die
+// Umsetzung liegt in pkg/safehttp, weil das Inventur-Modul für seine Abrufe denselben Schutz
+// braucht.
 var coverHTTPClient = safehttp.NewClient(20 * time.Second)
 
-// holeUndKonvertiereCover lädt das Cover herunter und speichert es als WebP im
-// Cache-Verzeichnis. Bei Encode-/Close-Fehler wird die evtl. angefangene Datei
-// wieder entfernt.
+// holeUndKonvertiereCover lädt das Cover herunter und legt es als WebP im Cache-Verzeichnis
+// ab; eine angefangene Datei entfernt schreibeCoverAlsWebP bei einem Fehler wieder.
 func holeUndKonvertiereCover(ctx context.Context, root *os.Root, adresse, dateiname string) error {
 	rohBytes, err := holeCoverBytes(ctx, adresse)
 	if err != nil {
@@ -162,22 +153,20 @@ func holeCoverBytes(ctx context.Context, adresse string) ([]byte, error) {
 		return nil, fmt.Errorf("cover download: unerwarteter Status %d", antwort.StatusCode)
 	}
 
-	// Nicht-Bild-Antworten sofort verwerfen: Bot-Schranken (DNB/Anubis) liefern bei
-	// unerwartetem User-Agent HTTP 200 mit einer HTML-Challenge. Gleiche Prüfung wie im
+	// Was kein Bild ist, sofort verwerfen: Schranken gegen Roboter (DNB/Anubis) liefern bei
+	// unerwartetem User-Agent HTTP 200 mit einer Prüfseite in HTML. Dieselbe Prüfung steht im
 	// Cover-Downloader des Inventur-Moduls.
 	if ct := antwort.Header.Get(tuer.HeaderContentType); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
 		return nil, fmt.Errorf("cover download: Nicht-Bild-Antwort (%s)", ct)
 	}
 
-	// Erst begrenzt einlesen, dann den Header prüfen, dann dekodieren — in dieser
-	// Reihenfolge, weil jeder Schritt den nächsten teurer macht:
-	//   image.Decode direkt auf resp.Body hätte die Größe der Pixelmatrix vollständig
-	//   dem fremden Server überlassen. Ein 30000×30000-PNG sind wenige hundert KB auf
-	//   der Leitung und rund 3,6 GB im Speicher dieses Prozesses. Der Endpunkt ist
-	//   öffentlich, und covers.openlibrary.org steht zwar auf der Allowlist, wird aber
-	//   von Freiwilligen befüllt — die Allowlist begrenzt das Ziel, nicht den Inhalt.
-	// PruefeBildgroesse liest dafür nur den Bild-Header (image.DecodeConfig
-	// allokiert keine Pixeldaten).
+	// Erst begrenzt einlesen, dann den Kopf des Bilds prüfen, dann dekodieren, weil jeder Schritt
+	// den nächsten teurer macht. image.Decode direkt auf antwort.Body überließe die Größe der
+	// Pixelmatrix dem fremden Server: Ein PNG mit 30000×30000 Pixeln sind wenige hundert KB auf
+	// der Leitung und rund 3,6 GB im Speicher dieses Prozesses. covers.openlibrary.org steht auf
+	// der Liste erlaubter Hosts, wird aber von Freiwilligen befüllt; die Liste begrenzt das Ziel,
+	// nicht den Inhalt. PruefeBildgroesse liest nur den Kopf des Bilds (image.DecodeConfig legt
+	// keine Pixeldaten an).
 	rohBytes, err := io.ReadAll(io.LimitReader(antwort.Body, maxCoverBytes+1))
 	if err != nil {
 		return nil, err
@@ -204,21 +193,21 @@ func schreibeCoverAlsWebP(root *os.Root, dateiname string, rohBytes []byte) erro
 		return err
 	}
 
-	// 0600 wie in uploads_pfad.go, nicht 0666: Im Container federt die umask das meist ab —
-	// „meist" ist bei Dateirechten aber keine Zusage, sondern eine Wette auf die
-	// Laufzeitumgebung. Der Prozess ist der einzige, der diese Dateien je anfassen muss;
-	// ausgeliefert werden sie über den FileServer, nicht über das Dateisystem.
+	// 0600 wie in inventur/uploads_pfad.go, nicht 0666: Im Container fängt die umask das meist
+	// ab, aber „meist" ist bei Dateirechten keine Zusage. Nur dieser Prozess muss die Dateien je
+	// anfassen; ausgeliefert werden sie über den Server, nicht über das Dateisystem.
 	datei, err := root.OpenFile(dateiname, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
 	err = webp.Encode(datei, bild, &webp.Options{Lossless: false, Quality: 80})
-	// A failed Close can leave a truncated cache file, so treat it like an encode error.
+	// Ein gescheitertes Close kann eine abgeschnittene Datei hinterlassen; es zählt wie ein
+	// Fehler beim Kodieren.
 	if cerr := datei.Close(); cerr != nil && err == nil {
 		err = cerr
 	}
 	if err != nil {
-		if rerr := root.Remove(dateiname); rerr != nil { // cleanup if encoding/close fails
+		if rerr := root.Remove(dateiname); rerr != nil { // die angefangene Datei entfernen
 			log.Printf("cover cache: cleanup of %s failed: %v", dateiname, rerr)
 		}
 		return err
@@ -226,15 +215,14 @@ func schreibeCoverAlsWebP(root *os.Root, dateiname string, rohBytes []byte) erro
 	return nil
 }
 
-// Cover serves a locally cached WebP image by ISBN, or downloads and converts it from URL if missing.
-// On errors (invalid host, download failure), it serves a transparent 1x1 GIF to prevent browser console spam.
+// Cover liefert das Cover eines Titels als WebP aus dem Cache; fehlt es, lädt die Tür es von
+// einer erlaubten Adresse und wandelt es um. Bei jedem Fehler kommt transparentesGIF.
 func (t *Tueren) Cover() http.HandlerFunc {
 	return t.liefereCover
 }
 
-// liefereCover liefert ein lokal gecachtes WebP-Cover zur ISBN aus oder lädt und
-// konvertiert es bei Bedarf. Bei jedem Fehler (ungültiger Host, Download-Fehler) wird
-// ein transparentes 1x1-GIF ausgeliefert, um Browser-Konsolen-Spam zu vermeiden.
+// liefereCover liefert das Cover zur ISBN aus dem Cache oder lädt es; bei jedem Fehler
+// transparentesGIF (siehe Cover).
 func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request) {
 	isbn := r.URL.Query().Get("isbn")
 	adresse := r.URL.Query().Get("url")
@@ -244,13 +232,13 @@ func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Der Cache-Name wird gleich zum Dateinamen — vor allem anderen prüfen.
+	// Der Name wird gleich Teil eines Dateinamens: vor allem anderen prüfen.
 	if !istCoverCacheSchluessel(isbn) {
 		liefereTransparentesGIF(w)
 		return
 	}
 
-	// SSRF-Schutz: URL aus validierten Teilen neu aufbauen
+	// Gegen SSRF: die Adresse aus geprüften Teilen neu aufbauen.
 	sichereURL, ok := baueSichereCoverURL(adresse)
 	if !ok {
 		liefereTransparentesGIF(w)
@@ -270,25 +258,25 @@ func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request) {
 	}
 	defer closeutil.Schliesse(root, "cover cache dir")
 
-	// Sanity check to avoid unnecessary download/processing steps for obvious path traversals
-	// even though root.OpenFile would safely block them later.
+	// Ein Pfad mit Verzeichnissen fällt hier auf, bevor etwas geladen wird; root.OpenFile
+	// hielte ihn später ohnehin auf.
 	if filepath.Base(isbn) != isbn {
 		liefereTransparentesGIF(w)
 		return
 	}
 
-	// ISBN + Hash der geprüften Adresse: Zwei Adressen teilen sich nie eine Datei, der
-	// Erstaufrufer bestimmt nicht mehr, was andere unter dieser ISBN sehen.
+	// ISBN und Hash der geprüften Adresse: Zwei Adressen teilen sich nie eine Datei, und wer
+	// zuerst ruft, bestimmt nicht, was andere unter dieser ISBN sehen.
 	dateiname := coverDateiname(isbn, sichereURL)
 
-	// Serve cached version if it exists
+	// Liegt das Cover im Cache, von dort ausliefern.
 	if _, err := root.Stat(dateiname); err == nil {
 		liefereCoverAusCache(w, r, root, dateiname)
 		return
 	}
 
 	// Ab hier wird es teuer: fremder Download plus vollständige Dekodierung. Nur dieser
-	// Zweig ist gebremst — und er antwortet im Grenzfall mit dem Fallback-GIF statt mit
+	// Zweig ist gebremst, und er antwortet im Grenzfall mit dem transparenten GIF statt mit
 	// 429, weil am anderen Ende ein <img> hängt: Ein Fehlercode erzeugt dort nur einen
 	// roten Konsoleneintrag, das Bild fehlt so oder so. Der nächste Aufruf holt es nach.
 	if !coverDownloadBremse.LaesstDurch(clientip.AusAnfrage(r)) {
@@ -297,20 +285,20 @@ func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Nur Adressen, die der Server für diese ISBN selbst kennt oder herleiten kann
-	// (cover_quelle_bindung.go) — sonst wäre der Endpunkt ein offener Proxy für alle
+	// (cover_quelle_bindung.go); sonst wäre der Endpunkt ein offener Proxy für alle
 	// Bilder der erlaubten Hosts und der Cache ein Plattenfüller.
 	if !t.istCoverQuelleErlaubt(r, isbn, sichereURL) {
 		liefereTransparentesGIF(w)
 		return
 	}
 
-	// Download & convert if missing
+	// Fehlt es, laden und umwandeln.
 	if err := holeUndKonvertiereCover(r.Context(), root, sichereURL, dateiname); err != nil {
 		liefereTransparentesGIF(w)
 		return
 	}
 
-	// Serve the newly converted file if it exists
+	// Die eben umgewandelte Datei ausliefern.
 	if _, err := root.Stat(dateiname); err == nil {
 		liefereCoverAusCache(w, r, root, dateiname)
 	} else {

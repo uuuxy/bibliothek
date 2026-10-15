@@ -11,25 +11,23 @@ import (
 	"bibliothek/repository"
 )
 
-// Das Abgangsbuch — Punkt 1 des Protokolls vom 16.09.2026.
-//
-// Zwei Türen auf dieselbe Abfrage: eine für den Bildschirm (JSON) und eine für das Blatt
-// (PDF). Der Zeitraum wird an EINER Stelle bestimmt (bestandsbuchZeitraum): Ließe die
-// Oberfläche ihn selbst vorbelegen, gäbe es zwei Auslegungen von „laufendes Halbjahr" —
-// und der Ausdruck deckte am Ende einen anderen Zeitraum ab als die Liste, aus der er
-// entstand.
+// Das Abgangsbuch: zwei Türen auf dieselbe Abfrage, eine für den Bildschirm (JSON) und eine
+// für das Blatt (PDF). Den Zeitraum bestimmt eine Stelle, bestandsbuchZeitraum: Belegte die
+// Oberfläche ihn selbst vor, gäbe es zwei Auslegungen von „laufendes Halbjahr", und der
+// Ausdruck deckte einen anderen Zeitraum ab als die Liste, aus der er entstand.
 
 // abgangsbuchAntwort ist das Abgangsbuch, wie Bildschirm und Blatt es lesen: fertig in
-// Abschnitte geteilt, mit den Überschriften des Servers. Die Oberfläche gruppiert NICHT
-// selbst — sonst stünden auf dem Blatt und auf dem Bildschirm zwei Wörter für denselben Topf.
+// Abschnitte geteilt, mit den Überschriften des Servers. Die Oberfläche gruppiert nicht selbst,
+// sonst stünden auf dem Blatt und auf dem Bildschirm zwei Wörter für denselben Topf.
 type abgangsbuchAntwort struct {
 	Von           time.Time                                `json:"von"`
 	Bis           time.Time                                `json:"bis"`
 	Abschnitte    []topfAbschnitt[repository.AbgangsZeile] `json:"abschnitte"`
 	Gesamt        int                                      `json:"gesamt"`
 	OhneZeitpunkt int                                      `json:"ohne_zeitpunkt"`
-	// AusKatalogGeloescht: die im Zeitraum körperlich gelöschten Exemplare. Sie stehen in
-	// keinem Abschnitt oben — mit der Zeile ist auch ihr Titel gegangen (abgangsbuch.go).
+	// AusKatalogGeloescht zählt die im Zeitraum körperlich gelöschten Exemplare. Sie stehen
+	// in keinem Abschnitt, denn mit der Zeile ist auch ihr Titel gegangen
+	// (repository/abgangsbuch.go).
 	AusKatalogGeloescht int `json:"aus_katalog_geloescht"`
 }
 
@@ -117,7 +115,7 @@ func (t *Tueren) AbgangsbuchPDF() http.HandlerFunc {
 			buch.Von.Format(tuer.DatumsformatISO), buch.Bis.Format(tuer.DatumsformatISO)))
 		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(blatt)))
 		if _, err := w.Write(blatt); err != nil {
-			return nil // Verbindung weg — der Client hat abgebrochen.
+			return nil // Die Verbindung ist weg, der Browser hat abgebrochen.
 		}
 		return nil
 	})

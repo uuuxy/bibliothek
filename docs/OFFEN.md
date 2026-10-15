@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 14.10.2026
+Stand: 15.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -180,7 +180,8 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
   Offen sind noch `tuertest` und `routertest`; sie folgen nach `api/`.
 - [x] `internal/service`.
 - [x] `api/tuer`.
-- [ ] Die zwölf Themen unter `api/`, dann `api/`.
+- [x] Die zwölf Themen unter `api/`.
+- [ ] `api/`.
 - [ ] `inventur/`, `auth/`, `jobs/`, `pdf/`, `mailservice/`, `db/`, `sse/`, `apierrors/`, `cmd/`
   und das Wurzelpaket.
 - [ ] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
@@ -446,12 +447,12 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 55 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+**Fertig sind 56 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
 gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
 Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
 `middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), `repository` und
 von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera`, `lusd`,
-`service` und `testdaten`, dazu `api/tuer` und von den zwölf Themen darüber `api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung` und `api/leser`.
+`service` und `testdaten`, dazu `api/tuer` und die zwölf Themen darüber (`api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung`, `api/leser` und `api/katalog`).
 
 **Ein Paket ist fertig, wenn:**
 

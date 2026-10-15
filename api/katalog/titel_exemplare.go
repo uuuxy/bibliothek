@@ -10,13 +10,15 @@ import (
 	"bibliothek/repository"
 )
 
-// TitelExemplare lists all physical copies belonging to a book title.
-// @Summary      List copies for a title
-// @Description  Retrieves all physical book copies associated with a given title ID, including availability status.
+// TitelExemplare liefert die Exemplare eines Titels mit Zustand, Eigentum, Standort und dem
+// heutigen Ersatzwert.
+//
+// @Summary      Exemplare eines Titels
+// @Description  Liefert alle Exemplare eines Titels mit Verfügbarkeit, Zustand, Eigentum, Standort und dem heutigen Ersatzwert.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        id   path      string  true  "Book title ID (UUID)"
+// @Param        id   path      string  true  "Kennung des Titels (UUID)"
 // @Success      200  {array}   object
 // @Failure      400  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
@@ -43,14 +45,14 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 		return
 	}
 
-	// exemplarZeile is the per-copy DTO returned by this handler.
+	// exemplarZeile ist ein Exemplar in der Antwort.
 	type exemplarZeile struct {
 		ID           string `json:"id"`
 		BarcodeID    string `json:"barcode_id"`
 		ZustandNotiz string `json:"zustand_notiz"`
-		// ZustandAbwertungProzent ist der erfasste Beschädigungsgrad (Migration 127).
-		// Er steht hier, weil die Buchakte ihn anzeigt UND ihr Status-Editor ihn
-		// zurückschickt — ohne den Lesewert wäre jedes Speichern eine Neueingabe.
+		// ZustandAbwertungProzent ist der erfasste Beschädigungsgrad. Er steht hier, weil die
+		// Buchakte ihn anzeigt und ihr Status-Editor ihn zurückschickt; ohne den gelesenen Wert
+		// wäre jedes Speichern eine Neueingabe.
 		ZustandAbwertungProzent int  `json:"zustand_abwertung_prozent"`
 		IstAusleihbar           bool `json:"ist_ausleihbar"`
 		IstAusgesondert         bool `json:"ist_ausgesondert"`
@@ -58,10 +60,9 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 		// weder ausgesondert noch bestellt. Die Buchmaske listet nur diese.
 		ImBestand     bool `json:"im_bestand"`
 		IstVerfuegbar bool `json:"ist_verfuegbar"`
-		// Ersatzwert und Herleitung: was ein Ersatz für DIESES Exemplar heute kostet
-		// (OFFEN.md 9.8, Stufe 2b). Gerechnet wird mit service.ErsatzwertVorschlagAus —
-		// derselben Funktion wie im Melde-Dialog, damit die Buchakte und die
-		// Forderung nie zwei Zahlen für dasselbe Buch zeigen.
+		// Ersatzwert und Herleitung: was ein Ersatz für dieses Exemplar heute kostet. Gerechnet
+		// wird mit service.ErsatzwertVorschlagAus, derselben Funktion wie im Dialog zum Melden
+		// eines Schadens, damit Buchakte und Forderung nie zwei Zahlen für dasselbe Buch zeigen.
 		Ersatzwert           float64 `json:"ersatzwert"`
 		ErsatzwertHerleitung string  `json:"ersatzwert_herleitung"`
 		// ErsatzwertBekannt: Liegt dem Betrag ein Preis zugrunde? Ohne dieses Feld
@@ -75,8 +76,8 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 		// LitteraEigentumsvermerk ist der Wortlaut aus Littera (feste Liste), auch wenn er
 		// kein Eigentum setzt — die Bücherei sieht, was dort stand.
 		LitteraEigentumsvermerk string `json:"littera_eigentumsvermerk"`
-		// Standort: wo das Exemplar steht, wenn nicht an seinem Platz nach der Signatur
-		// (Migration 158). Leer heißt: nach der Signatur.
+		// Standort: wo das Exemplar steht, wenn nicht an seinem Platz nach der Signatur. Leer
+		// heißt: nach der Signatur.
 		Standort string `json:"standort"`
 	}
 
@@ -98,7 +99,7 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 		})
 	}
 
-	// Der Ersatzwert je Exemplar: EINE Abfrage für den ganzen Titel, dann die
+	// Der Ersatzwert je Exemplar: eine Abfrage für den ganzen Titel, dann die
 	// Staffel im Speicher. Ein Aufruf je Karte wäre bei einem Klassensatz mit
 	// 30 Bänden 30 Abfragen für eine Seite.
 	//

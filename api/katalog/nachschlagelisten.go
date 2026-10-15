@@ -9,7 +9,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Systematik returns all entries from systematik_kategorien
+// Systematik liefert alle Sachgruppen der Systematik (Tabelle systematik_kategorien).
 func (t *Tueren) Systematik() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -33,8 +33,8 @@ func (t *Tueren) Systematik() http.HandlerFunc {
 	}
 }
 
-// Faecher liefert die distinkten Fächer (buecher_titel.subject) — für die
-// Fach-Auswahl beim gezielten Inventur-Scope ("nur Mathe, Klasse 5").
+// Faecher liefert die Fächer, die an Titeln vorkommen (buecher_titel.subject), für die Auswahl
+// des Fachs, wenn eine Inventur nur einen Bereich zählt („nur Mathe, Klasse 5").
 func (t *Tueren) Faecher() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

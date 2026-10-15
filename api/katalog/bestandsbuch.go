@@ -10,19 +10,15 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Die Abschnitte eines Bestandsnachweises — EIN Ort für Reihenfolge und Überschriften.
+// Die Abschnitte eines Bestandsnachweises: ein Ort für Reihenfolge und Überschriften.
 //
-// Zugangs- und Abgangsbuch zeigen ihre Zeilen getrennt nach Topf: Die Finanzen von Land und
-// Schulträger werden getrennt geführt (docs/mittel_konzept.md 1.1/1.2). Beide Bücher gibt es
-// zweimal — auf dem Bildschirm und als Blatt.
-//
-// Genau daran ist das Abgangsbuch beim ersten Wurf auseinandergelaufen: Das Blatt schrieb
-// „Lernmittelfreiheit (Land)" (mitteltopf.Beschriftung), die Oberfläche „Lernmittel (Land)" — zwei
-// Wörter für denselben Topf auf demselben Nachweis. Seit dem 17.09.2026 baut deshalb der
-// SERVER die Abschnitte samt Überschrift, und der Ausdruck und der Bildschirm zeigen dieselbe
-// Liste.
+// Zugangs- und Abgangsbuch zeigen ihre Zeilen getrennt nach Topf, weil die Finanzen von Land
+// und Schulträger getrennt geführt werden (docs/mittel_konzept.md 1.1/1.2). Beide Bücher gibt
+// es zweimal, auf dem Bildschirm und als Blatt. Der Server baut die Abschnitte samt Überschrift
+// (mitteltopf.Beschriftung), damit Ausdruck und Bildschirm für denselben Topf dasselbe Wort
+// tragen.
 
-// topfAbschnitt ist ein Topf-Block eines Bestandsnachweises.
+// topfAbschnitt ist der Teil eines Bestandsnachweises, der zu einem Topf gehört.
 type topfAbschnitt[T any] struct {
 	// Topf ist der gespeicherte Wert ('land', 'schultraeger', '' = ohne Zuordnung).
 	Topf string `json:"topf"`
@@ -31,8 +27,9 @@ type topfAbschnitt[T any] struct {
 	Zeilen []T    `json:"zeilen"`
 }
 
-// abschnitteAus gruppiert Zeilen nach Topf — in der Reihenfolge, die in diesem Programm
-// überall gilt (Lernmittel zuerst, dann Schülerbücherei, zuletzt ohne Zuordnung).
+// abschnitteAus gruppiert Zeilen nach Topf, in der Reihenfolge, die im ganzen Programm gilt
+// (mitteltopf.Reihenfolge: Lernmittel zuerst, dann die Schülerbücherei, zuletzt ohne
+// Zuordnung).
 //
 // Die beiden echten Töpfe stehen immer da, auch leer: Der Bildschirm zeigt jeden Abschnitt als
 // Feld mit seiner Zahl, und die Null sagt, dass nichts kam oder ging; ein fehlendes Feld sähe
@@ -42,7 +39,7 @@ type topfAbschnitt[T any] struct {
 // „Ohne Zuordnung" erscheint nur, wenn es solche Zeilen gibt. Beim Abgangsbuch kann es sie
 // nicht geben (repository.ExemplarTopfSQL endet in der Faustregel aus dem Titel und hat immer
 // eine Antwort), beim Zugangsbuch schon: Ein Exemplar ohne Eigentum am Exemplar und ohne
-// Bestellung trägt keinen Beleg darüber, aus welchem Geld es bezahlt wurde — und geraten wird
+// Bestellung trägt keinen Beleg darüber, aus welchem Geld es bezahlt wurde, und geraten wird
 // das nicht (repository.exemplarTopfBelegtSQL).
 func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []topfAbschnitt[T] {
 	nach := map[string][]T{}
@@ -64,12 +61,12 @@ func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []topfAbschnitt[T]
 	return aus
 }
 
-// bestandsbuchZeitraum liest von/bis aus der Anfrage; fehlt eines, gilt das laufende
-// Schulhalbjahr (Stichtage 15.3./15.9., siehe schulzeit.Halbjahr).
+// bestandsbuchZeitraum liest von und bis aus der Anfrage; fehlt eines, gilt das laufende
+// Schulhalbjahr (Stichtage 15.3. und 15.9., siehe schulzeit.Halbjahr).
 //
-// EINE Stelle für beide Bücher und für beide Türen jedes Buchs (Bildschirm und Blatt):
-// Zwei Auslegungen von „laufendes Halbjahr" ergäben einen Ausdruck, der einen anderen
-// Zeitraum abdeckt als die Liste, aus der er entstand.
+// Eine Stelle für beide Bücher und für beide Türen jedes Buchs (Bildschirm und Blatt): Zwei
+// Auslegungen von „laufendes Halbjahr" ergäben einen Ausdruck, der einen anderen Zeitraum
+// abdeckt als die Liste, aus der er entstand.
 func bestandsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
 	von, bis = schulzeit.Halbjahr(schulzeit.Jetzt())
 	lies := func(schluessel string, ziel *time.Time) error {

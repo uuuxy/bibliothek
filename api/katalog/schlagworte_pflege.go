@@ -10,14 +10,14 @@ import (
 	"bibliothek/repository"
 )
 
-// Pflege der Schlagworte (Migration 143, docs/OFFEN.md 4.20 Stufe 1). Die Regeln stehen in
-// repository/schlagworte_pflege.go; jede Tür hier ist eine Aktion der Pflegeseite, nicht ein
-// allgemeines PATCH — so trägt jede ihre Regel sichtbar mit.
+// Die Pflege der Schlagworte. Die Regeln stehen in repository/schlagworte_pflege.go; jede Tür
+// hier ist eine Aktion der Pflegeseite, kein allgemeines PATCH, so trägt jede ihre Regel
+// sichtbar mit.
 
 // schlagwortWortAnfrage ist die neue Schreibweise für PUT /api/schlagworte/{id}/wort.
 // AlteAlsVerweis: ob die alte Schreibweise als Verweis stehen bleibt
-// (repository.BenenneSchlagwortUm). Pflicht wie ist_filter — ohne das Feld wäre die Vorgabe
-// je Tür eine andere (Zusammenführen ließ den Verweis immer stehen, Umbenennen nie).
+// (repository.BenenneSchlagwortUm). Pflicht wie ist_filter: Ohne das Feld hätte jede Tür ihre
+// eigene Vorgabe (Zusammenführen ließe den Verweis immer stehen, Umbenennen nie).
 type schlagwortWortAnfrage struct {
 	Wort           string `json:"wort"`
 	AlteAlsVerweis *bool  `json:"alte_als_verweis"`
@@ -43,7 +43,7 @@ type schlagwortVerweisAnfrage struct {
 }
 
 // schlagworteLoeschenAnfrage nennt die Wörter, die fallen sollen. Jede Kennung ist Pflicht und
-// eine UUID — eine leere käme sonst als 500 aus der Datenbank zurück.
+// eine UUID; eine leere käme sonst als 500 aus der Datenbank zurück.
 type schlagworteLoeschenAnfrage struct {
 	IDs []string `json:"ids" validate:"required,dive,required,uuid_oder_leer"`
 }
@@ -58,10 +58,10 @@ type schlagwortPflegeAntwort struct {
 }
 
 // SchlagworteZurPflege liefert die Schlagworte, die zu ?suche= passen (leer = alle), mit
-// Titelzahl, Verweisziel, den Verweisen darauf und der Filter-Markierung — höchstens 200
+// Titelzahl, Verweisziel, den Verweisen darauf und der Filter-Markierung, höchstens 200
 // Zeilen, dazu die Zahlen der ganzen Tabelle (repository.LadeSchlagworteZurPflege).
 //
-// @Summary      List keywords for maintenance
+// @Summary      Schlagworte für die Pflege
 // @Tags         books
 // @Produce      json
 // @Param        suche  query  string  false  "Teil eines Worts oder eines Verweises darauf"
@@ -81,12 +81,12 @@ func (t *Tueren) SchlagworteZurPflege() http.HandlerFunc {
 
 // SchlagwortUmbenennen gibt einem Schlagwort eine neue Schreibweise.
 //
-// @Summary      Rename a keyword
+// @Summary      Schlagwort umbenennen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        id    path  string                 true  "Keyword ID"
-// @Param        body  body  schlagwortWortAnfrage  true  "New spelling"
+// @Param        id    path  string                 true  "Kennung des Schlagworts"
+// @Param        body  body  schlagwortWortAnfrage  true  "Die neue Schreibweise"
 // @Success      200  {object}  schlagwortPflegeAntwort
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -118,14 +118,14 @@ func (t *Tueren) SchlagwortUmbenennen() http.HandlerFunc {
 	})
 }
 
-// SchlagwortFilterSetzen setzt oder nimmt die Filter-Markierung (Portal, Stufe 2).
+// SchlagwortFilterSetzen setzt oder nimmt die Markierung als Filter im Portal.
 //
-// @Summary      Mark a keyword as portal filter
+// @Summary      Schlagwort als Filter im Portal markieren
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        id    path  string                   true  "Keyword ID"
-// @Param        body  body  schlagwortFilterAnfrage  true  "Filter flag"
+// @Param        id    path  string                   true  "Kennung des Schlagworts"
+// @Param        body  body  schlagwortFilterAnfrage  true  "Filter ja oder nein"
 // @Success      204
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -155,12 +155,12 @@ func (t *Tueren) SchlagwortFilterSetzen() http.HandlerFunc {
 // SchlagworteZusammenfuehren hängt die Titel des Wortes an das Ziel und macht
 // das Wort zum Verweis darauf oder löscht es (alte_als_verweis).
 //
-// @Summary      Merge a keyword into another
+// @Summary      Schlagwort mit einem anderen zusammenführen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        id    path  string                 true  "Keyword ID"
-// @Param        body  body  schlagwortZielAnfrage  true  "Target keyword"
+// @Param        id    path  string                 true  "Kennung des Schlagworts"
+// @Param        body  body  schlagwortZielAnfrage  true  "Das Ziel"
 // @Success      200  {object}  schlagwortPflegeAntwort
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -193,11 +193,11 @@ func (t *Tueren) SchlagworteZusammenfuehren() http.HandlerFunc {
 
 // SchlagwortVerweisSetzen leitet eine Schreibweise auf ein Schlagwort.
 //
-// @Summary      Create a keyword reference
+// @Summary      Verweis auf ein Schlagwort anlegen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        body  body  schlagwortVerweisAnfrage  true  "Spelling and target"
+// @Param        body  body  schlagwortVerweisAnfrage  true  "Schreibweise und Ziel"
 // @Success      204
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -227,11 +227,11 @@ func (t *Tueren) SchlagwortVerweisSetzen() http.HandlerFunc {
 // (repository.LoescheSchlagworte). Die Antwort nennt, wie viele Wörter, Titel und Verweise
 // es waren.
 //
-// @Summary      Delete keywords
+// @Summary      Schlagworte löschen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        body  body  schlagworteLoeschenAnfrage  true  "Keyword IDs"
+// @Param        body  body  schlagworteLoeschenAnfrage  true  "Kennungen der Schlagworte"
 // @Success      200  {object}  schlagwortPflegeAntwort
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string

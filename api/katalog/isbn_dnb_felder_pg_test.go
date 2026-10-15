@@ -11,12 +11,9 @@ import (
 	"bibliothek/inventur"
 )
 
-// Bestellen per ISBN legt den Titel aus der DNB an und verwarf dabei Untertitel und
-// Ladenpreis, obwohl es für beide eine Spalte gibt (docs/OFFEN.md 5.5; listenpreis seit
-// Migration 127). Beim Anlegen über das Buchformular füllt ergaenzeBuchMetadaten den
-// Listenpreis aus derselben Quelle — der Bestellweg nimmt jetzt dieselbe Regel
-// (inventur.ListenpreisAusNachschlagen): Ein Preis von 0 füllt nichts, und was schon
-// erfasst ist, gewinnt.
+// Bestellen per ISBN legt den Titel aus der DNB an, mit Untertitel und Ladenpreis. Den Preis
+// übernimmt der Bestellweg nach der Regel aus inventur.ListenpreisAusNachschlagen: Ein Preis
+// von 0 füllt nichts, und was schon erfasst ist, gewinnt.
 func TestSchreibeTitelAusMetadaten_UntertitelUndLadenpreis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

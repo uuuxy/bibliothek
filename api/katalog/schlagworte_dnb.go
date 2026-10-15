@@ -11,17 +11,14 @@ import (
 )
 
 // Der Schlagwort-Vorschlag aus der DNB für einen Titel, den es schon gibt oder der im
-// Buchformular entsteht (entschieden am 30.09.2026, docs/OFFEN.md 4.25). Beim Bestellen bekam
-// ihn bis dahin nur ein Titel, der dabei neu aus der DNB entstand (POST /api/buecher/aus-isbn);
-// ein Treffer aus dem eigenen Katalog fragte die DNB nicht, und das Buchformular holte zur ISBN
-// Titel und Autor, aber keine Schlagworte. Gemessen am 30.09.2026 an Stichproben des
-// Katalogisats vom Juni 2026: Von 50 Bücherei-Titeln ohne Schlagwort bekämen 26 einen
-// Vorschlag; von 60 Titeln mit Littera-Schlagworten hätte die DNB für 26 weitere Wörter, im
-// Median zwei bis drei je Titel.
+// Buchformular entsteht. Ohne diese Tür bekäme ihn nur ein Titel, der beim Bestellen neu aus der
+// DNB entsteht (POST /api/buecher/aus-isbn): Ein Treffer aus dem eigenen Katalog fragt die DNB
+// nicht, und das Buchformular holt zur ISBN Titel und Autor, aber keine Schlagworte. Wie viele
+// Titel des Bestands einen Vorschlag bekämen, steht in docs/FACHKONZEPT.md (Schlagworte).
 //
 // Dieselbe Regel wie beim Anlegen (repository.LadeSchlagwortVorschlagAusDNB), und wie dort ein
 // Vorschlag, kein Eintrag: Geschrieben wird nichts. Welche Wörter der Titel schon trägt, weiß
-// das Feld, das fragt — es bietet nur die übrigen an (ui/ChipFeld), so gilt auch ein Wort, das
+// das Feld, das fragt; es bietet nur die übrigen an (ui/ChipFeld), so gilt auch ein Wort, das
 // eben erst getippt und noch nicht gespeichert ist.
 
 // dnbSchlagwortVorschlagAntwort ist die Antwort von GET /api/schlagworte/dnb-vorschlag.
@@ -36,13 +33,14 @@ type dnbSchlagwortVorschlagAntwort struct {
 	SchlagwortVorschlaegeNeu []string `json:"schlagwort_vorschlaege_neu"`
 }
 
-// DNBSchlagwortVorschlag handles GET /api/schlagworte/dnb-vorschlag?isbn=.
+// DNBSchlagwortVorschlag liefert den Schlagwort-Vorschlag der DNB zu einer ISBN
+// (GET /api/schlagworte/dnb-vorschlag?isbn=).
 //
-// @Summary      Keyword suggestions from the DNB for an ISBN
-// @Description  Asks only the German National Library (no Google Books, no OpenLibrary, no cover download) and matches its genre terms, publisher keywords and GND subject headings against the own keyword list — the same rule as POST /buecher/aus-isbn. Nothing is written.
+// @Summary      Schlagwort-Vorschlag der DNB zu einer ISBN
+// @Description  Fragt nur die Deutsche Nationalbibliothek (kein Google Books, keine OpenLibrary, kein Cover) und gleicht ihre Gattungsbegriffe, Verlagswörter und Schlagwörter der Normdatei mit der eigenen Liste ab, nach derselben Regel wie POST /buecher/aus-isbn. Geschrieben wird nichts.
 // @Tags         books
 // @Produce      json
-// @Param        isbn  query     string  true  "ISBN-10 or ISBN-13"
+// @Param        isbn  query     string  true  "ISBN-10 oder ISBN-13"
 // @Success      200   {object}  dnbSchlagwortVorschlagAntwort
 // @Failure      400   {object}  map[string]string
 // @Failure      502   {object}  map[string]string
@@ -51,8 +49,8 @@ func (t *Tueren) DNBSchlagwortVorschlag() http.HandlerFunc {
 	return t.dnbSchlagwortVorschlagTuer(inventur.NeuerMetadatenClient())
 }
 
-// dnbSchlagwortVorschlagTuer ist die Tür mit ihrem DNB-Client als Parameter: Ein Test stellt die
-// Antwort der DNB nach (MetadatenClient.SetzeHTTPClientFuerTest), wie bei isbnZuTitelTuer.
+// dnbSchlagwortVorschlagTuer ist die Tür mit den Katalogdiensten als Parameter: Ein Test stellt
+// die Antwort der DNB nach (MetadatenClient.SetzeHTTPClientFuerTest), wie bei isbnZuTitelTuer.
 func (t *Tueren) dnbSchlagwortVorschlagTuer(metadaten *inventur.MetadatenClient) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		antwort := dnbSchlagwortVorschlagAntwort{SchlagwortVorschlaege: []string{}, SchlagwortVorschlaegeNeu: []string{}}

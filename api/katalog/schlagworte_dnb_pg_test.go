@@ -18,7 +18,7 @@ import (
 	"bibliothek/repository"
 )
 
-// GET /api/schlagworte/dnb-vorschlag (entschieden am 30.09.2026): der Vorschlag aus der DNB
+// GET /api/schlagworte/dnb-vorschlag: der Vorschlag aus der DNB
 // für das Buchformular und das Nachbestellen, nach derselben Regel wie beim Anlegen über
 // aus-isbn — Wörter der Liste auch über Gattung und Verlagswort, Werbewörter nur, wenn die Liste
 // sie kennt, Normdatei-Wörter außerhalb der Liste getrennt als neu. Geschrieben wird nichts.

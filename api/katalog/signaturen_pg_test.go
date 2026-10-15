@@ -19,16 +19,12 @@ import (
 	"bibliothek/repository"
 )
 
-// TestSignaturBereich_PraefixMitGrenze ist der Kern-Regressionstest der Signatur-Umstellung.
+// TestSignaturBereich_PraefixMitGrenze prüft am Verhalten, dass der Bereich einer Inventur nach
+// Signatur die richtigen Bücher trifft und die falschen nicht. Ein Bereich, der nichts trifft,
+// fällt sonst nicht auf: Die Inventur startet, meldet „0 erwartet" und schließt ohne Befund ab.
 //
-// Vorher filterte der Inventur-Scope auf buecher_titel.signature_id — eine Spalte, die
-// ausser Migration 021 nie jemand geschrieben hat. Eine Signatur-Inventur traf damit NULL
-// Exemplare, und zwar unauffaellig: Sie startete, meldete "0 erwartet" und schloss ohne
-// Befund ab. Der Test belegt jetzt am Verhalten, dass der Scope die richtigen Buecher
-// trifft — und, genauso wichtig, die falschen NICHT.
-//
-// Die Signatur wirkt als Praefix mit Grenze am Leerzeichen: "BIB Deu" meint das Regal
-// samt Unterfaechern, "BIB De" ist eine andere Adresse und darf nicht hineinreichen.
+// Die Signatur wirkt als Anfang mit Grenze am Leerzeichen: „BIB Deu" meint das Regal samt
+// Unterfächern, „BIB De" ist eine andere Adresse und darf nicht hineinreichen.
 func TestSignaturBereich_PraefixMitGrenze(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -40,9 +36,9 @@ func TestSignaturBereich_PraefixMitGrenze(t *testing.T) {
 	// Im Regal: die Signatur selbst und ein Unterfach darunter.
 	exGenau := testdaten.LegeExemplarMitSignaturAn(t, pool, basis, "SIG-GENAU-"+suffix)
 	exUnter := testdaten.LegeExemplarMitSignaturAn(t, pool, basis+" 5 KRUE", "SIG-UNTER-"+suffix)
-	// NICHT im Regal: gleiche Zeichenfolge, aber ohne Grenze am Leerzeichen.
+	// Nicht im Regal: gleiche Zeichenfolge, aber ohne Grenze am Leerzeichen.
 	exNachbar := testdaten.LegeExemplarMitSignaturAn(t, pool, basis+"X", "SIG-NACHBAR-"+suffix)
-	// NICHT im Regal: voellig andere Signatur.
+	// Nicht im Regal: eine völlig andere Signatur.
 	exFremd := testdaten.LegeExemplarMitSignaturAn(t, pool, "LMF Mat "+suffix, "SIG-FREMD-"+suffix)
 
 	invRepo := repository.NewInventurAbfragen(pool)
@@ -68,11 +64,10 @@ func TestSignaturBereich_PraefixMitGrenze(t *testing.T) {
 	}
 }
 
-// TestSignaturenEndpunkte belegt die beiden neuen Endpunkte am echten Bestand:
-// die Signaturliste kommt aus buecher_titel.signatur (nicht aus einer Stammtabelle,
-// die keine Buecher kannte), und die Regalansicht liest dieselbe Praefix-Grenze wie
-// der Inventur-Scope. Liefen die beiden auseinander, wuerde man etwas anderes
-// inventarisieren, als die Liste anzeigt.
+// TestSignaturenEndpunkte belegt die beiden Türen am echten Bestand: Die Liste der Signaturen
+// kommt aus buecher_titel.signatur, und die Regalansicht liest dieselbe Grenze am Anfang wie der
+// Bereich einer Inventur. Liefen die beiden auseinander, zählte die Inventur etwas anderes, als
+// die Liste anzeigt.
 func TestSignaturenEndpunkte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -105,7 +100,7 @@ func TestSignaturenEndpunkte(t *testing.T) {
 		}
 	}
 
-	// 2) Regalansicht: Praefix trifft Basis + Unterfach, aber nicht den Nachbarn ohne Grenze.
+	// 2) Regalansicht: Der Anfang trifft Basis und Unterfach, aber nicht den Nachbarn ohne Grenze.
 	rec = httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/signaturen/buecher?signatur="+url.QueryEscape(basis), nil)
 	srv.TitelUnterSignatur().ServeHTTP(rec, req)
@@ -124,12 +119,12 @@ func TestSignaturenEndpunkte(t *testing.T) {
 			t.Errorf("Nachbarsignatur %q darf nicht im Regal %q stehen", b.Signatur, basis)
 		}
 	}
-	// Regalreihenfolge: danach laeuft man das Regal ab.
+	// Reihenfolge des Regals: danach läuft man das Regal ab.
 	if regal.Titel[0].Signatur != basis {
 		t.Errorf("Regal nicht nach Signatur sortiert: erste Zeile %q", regal.Titel[0].Signatur)
 	}
 
-	// 3) Leere Signatur wird abgewiesen — sie waere Praefix von allem.
+	// 3) Eine leere Signatur wird abgewiesen; sie wäre der Anfang von allem.
 	rec = httptest.NewRecorder()
 	srv.TitelUnterSignatur().ServeHTTP(rec,
 		httptest.NewRequest(http.MethodGet, "/api/signaturen/buecher?signatur=%20", nil))

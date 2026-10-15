@@ -17,18 +17,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Das Ausbuchen eines Exemplars: zwei Funde des Raster-Durchgangs 31.08.2026.
+// Das Aussondern eines Exemplars über DELETE, mit zwei Fehlern, die dieser Test festhält:
 //
-//  1. Der Handler verglich den Fehlertext wörtlich („Exemplar ist aktuell noch
-//     verliehen!") mit einem Repo-Text in anderer Schreibung („exemplar ist aktuell noch
-//     verliehen") — der Vergleich traf NIE. Ein verliehenes Buch endete als 500, und der
-//     Sanitizer ersetzte die Auskunft durch „Ein interner Datenbankfehler ist
-//     aufgetreten". Die Nachbar-Funktion (LoescheTitel) hatte denselben Bug schon einmal —
-//     und wurde per Sentinel repariert; diese hier blieb beim fragilen Text.
-//  2. Phantom-Erfolg: Bei unbekannter oder bereits ausgesonderter ID traf der UPDATE
-//     null Zeilen, RowsAffected prüfte niemand — Antwort 200 samt Audit-Eintrag über
-//     eine Löschung, die nie stattfand. Ein Doppelklick beschrieb zudem zustand_notiz
-//     erneut mit „Systematisch gelöscht".
+//  1. Ein verliehenes Buch endet als 400 mit Auskunft. Erkennte die Tür den Fehler am Text
+//     der Meldung statt am Fehlerwert, träfe der Vergleich bei jeder anderen Schreibung nie,
+//     das Buch endete als 500, und die Bereinigung der Fehler ersetzte die Auskunft durch
+//     „Ein interner Datenbankfehler ist aufgetreten".
+//  2. Eine unbekannte oder schon ausgesonderte Kennung ist 404. Prüfte niemand die Zahl der
+//     getroffenen Zeilen, antwortete die Tür 200 samt Eintrag im Protokoll über eine
+//     Aussonderung, die nie stattfand, und ein Doppelklick beschriebe zustand_notiz erneut.
 func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -51,7 +48,7 @@ func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 		return rec
 	}
 
-	// 1. Verliehen: 400 mit sprechender Auskunft — nicht 500 mit Sanitizer-Text.
+	// 1. Verliehen: 400 mit sprechender Auskunft, nicht 500 mit dem Ersatztext aus apierrors.
 	rec := loesche(verliehen)
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("verliehenes Exemplar: HTTP %d, erwartet 400 — Text-Vergleich trifft nicht? (%s)",
@@ -60,7 +57,8 @@ func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 		t.Errorf("400 ohne Auskunft „verliehen\": %s", rec.Body.String())
 	}
 
-	// 2. Unbekannte ID: 404 und KEIN Audit-Eintrag über eine Löschung, die nie stattfand.
+	// 2. Unbekannte Kennung: 404 und kein Eintrag im Protokoll über eine Aussonderung, die
+	// nie stattfand.
 	phantom := "00000000-0000-0000-0000-00000000dead"
 	rec = loesche(phantom)
 	if rec.Code != http.StatusNotFound {
@@ -70,7 +68,7 @@ func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 		t.Errorf("Phantom-Löschung hat %d Audit-Einträge erzeugt — die Historie behauptet eine Löschung, die nie stattfand", n)
 	}
 
-	// 3. Erfolg: 200, ausgesondert, genau ein Audit-Eintrag …
+	// 3. Erfolg: 200, ausgesondert, genau ein Eintrag im Protokoll …
 	if rec = loesche(frei); rec.Code != http.StatusOK {
 		t.Fatalf("freies Exemplar: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
@@ -78,7 +76,7 @@ func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 		t.Errorf("nach dem Ausbuchen: %d Audit-Einträge, erwartet 1", n)
 	}
 
-	// … und der Doppelklick ist ein 404, kein zweiter „Erfolg" mit zweitem Audit-Eintrag.
+	// … und der Doppelklick ist ein 404, kein zweiter „Erfolg" mit zweitem Eintrag.
 	if rec = loesche(frei); rec.Code != http.StatusNotFound {
 		t.Errorf("Doppelklick: HTTP %d, erwartet 404: %s", rec.Code, rec.Body.String())
 	}

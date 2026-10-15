@@ -20,8 +20,8 @@ type exemplarEigentumAnfrage struct {
 	Grund    string `json:"grund"`
 }
 
-// ExemplarEigentumSetzen setzt das Eigentum markierter Exemplare (docs/OFFEN.md 4.24,
-// Stufe 3) — die Buchakte, Reiter „Exemplare": markieren, „Eigentum ändern".
+// ExemplarEigentumSetzen setzt das Eigentum markierter Exemplare. Die Buchakte ruft die Tür im
+// Reiter „Exemplare" über „Eigentum ändern".
 //
 // Recht edit_books wie Barcode und Status desselben Exemplars. Der Grund ist Pflicht; jede
 // Änderung steht mit altem und neuem Wert im Protokoll (repository.SetzeExemplarEigentum).

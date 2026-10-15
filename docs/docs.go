@@ -857,7 +857,7 @@ const docTemplate = `{
         },
         "/buecher/exemplare/{id}": {
             "delete": {
-                "description": "Deletes a specific physical book copy by its ID from the library catalog and registers the deletion in the audit trail.",
+                "description": "Sondert ein Exemplar aus (die Zeile bleibt, das Exemplar gilt als ausgesondert) und schreibt den Vorgang ins Protokoll. Ein verliehenes Exemplar ist 400.",
                 "consumes": [
                     "application/json"
                 ],
@@ -867,11 +867,11 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Delete physical book copy",
+                "summary": "Exemplar aussondern",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book copy ID (UUID)",
+                        "description": "Kennung des Exemplars (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -905,6 +905,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -919,7 +928,7 @@ const docTemplate = `{
         },
         "/buecher/exemplare/{id}/barcode": {
             "put": {
-                "description": "Updates the barcode of a physical book copy, replacing placeholders like AUTO-.",
+                "description": "Setzt den Barcode eines Exemplars, etwa statt eines Platzhalters wie AUTO-. Eine Nummer, die schon ein anderes Exemplar oder ein Ausweis trägt, ist ein Konflikt (409).",
                 "consumes": [
                     "application/json"
                 ],
@@ -929,17 +938,17 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Update copy barcode",
+                "summary": "Barcode eines Exemplars setzen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book copy ID (UUID)",
+                        "description": "Kennung des Exemplars (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "New barcode payload",
+                        "description": "Der neue Barcode",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -960,6 +969,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1029,7 +1047,7 @@ const docTemplate = `{
         },
         "/buecher/exemplare/{id}/status": {
             "put": {
-                "description": "Updates the status (ist_ausleihbar, ist_ausgesondert) and the condition note of a physical book copy.",
+                "description": "Ändert ist_ausleihbar, ist_ausgesondert, die Zustandsnotiz und den Beschädigungsgrad eines Exemplars. Die Antwort nennt den neuen Ersatzwert und ob das Exemplar zum Bestand zählt. Ein verliehenes Exemplar lässt sich nicht aussondern (400).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1039,17 +1057,17 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Update copy status",
+                "summary": "Status eines Exemplars ändern",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book copy ID (UUID)",
+                        "description": "Kennung des Exemplars (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "New status payload",
+                        "description": "Der neue Status",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1063,13 +1081,29 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
                             "additionalProperties": {
                                 "type": "string"
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1091,7 +1125,7 @@ const docTemplate = `{
         },
         "/buecher/titel/{id}": {
             "delete": {
-                "description": "Deletes a specific book title and all associated physical copies, registering the deletion in the audit trail.",
+                "description": "Löscht einen Titel mit allen Exemplaren und schreibt den Vorgang ins Protokoll. Ist ein Exemplar verliehen, ist das 400.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1101,11 +1135,11 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Delete book title",
+                "summary": "Titel löschen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book title ID (UUID)",
+                        "description": "Kennung des Titels (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1139,6 +1173,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1159,11 +1202,11 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "List the editions of a title's book",
+                "summary": "Auflagen des Buchs, zu dem ein Titel gehört",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Title ID",
+                        "description": "Kennung des Titels",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1206,17 +1249,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Join another edition to a title's book",
+                "summary": "Andere Auflage zum Buch eines Titels zuordnen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Title ID",
+                        "description": "Kennung des Titels",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "The other edition",
+                        "description": "Die andere Auflage",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1259,11 +1302,11 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Detach a title from its book's editions",
+                "summary": "Titel aus den Auflagen seines Buchs lösen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Title ID",
+                        "description": "Kennung des Titels",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1304,7 +1347,7 @@ const docTemplate = `{
         },
         "/buecher/titel/{id}/exemplare": {
             "get": {
-                "description": "Retrieves all physical book copies associated with a given title ID, including availability status.",
+                "description": "Liefert alle Exemplare eines Titels mit Verfügbarkeit, Zustand, Eigentum, Standort und dem heutigen Ersatzwert.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1314,11 +1357,11 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "List copies for a title",
+                "summary": "Exemplare eines Titels",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book title ID (UUID)",
+                        "description": "Kennung des Titels (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1371,17 +1414,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Update a title's Lernmittel flag",
+                "summary": "Kennzeichen „Lernmittel\" eines Titels setzen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Title ID",
+                        "description": "Kennung des Titels",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Lernmittel yes/no",
+                        "description": "Lernmittel ja oder nein",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1430,17 +1473,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Join another edition to a title's book",
+                "summary": "Andere Auflage zum Buch eines Titels zuordnen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Title ID",
+                        "description": "Kennung des Titels",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "The other edition",
+                        "description": "Die andere Auflage",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1485,11 +1528,11 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Get a title's keywords",
+                "summary": "Schlagworte eines Titels",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Title ID",
+                        "description": "Kennung des Titels",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1532,17 +1575,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Replace a title's keywords",
+                "summary": "Schlagworte eines Titels ersetzen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Title ID",
+                        "description": "Kennung des Titels",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Complete keyword list",
+                        "description": "Die ganze Liste der Schlagworte",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1590,17 +1633,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Update a title's signatur (shelf mark)",
+                "summary": "Signatur eines Titels setzen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Title ID",
+                        "description": "Kennung des Titels",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "New signatur",
+                        "description": "Die neue Signatur",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2519,14 +2562,14 @@ const docTemplate = `{
         },
         "/schlagworte": {
             "get": {
-                "description": "Keywords carried by at least one title. Without suche: most frequent first (max. 500). With suche: keywords containing the text, prefix matches first (max. 50).",
+                "description": "Schlagworte, die mindestens ein Titel trägt. Ohne suche die häufigsten zuerst (höchstens 500), mit suche die Wörter, die den Text enthalten, Treffer am Wortanfang zuerst (höchstens 50).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "books"
                 ],
-                "summary": "List keyword suggestions",
+                "summary": "Schlagworte als Vorschläge",
                 "parameters": [
                     {
                         "type": "string",
@@ -2559,18 +2602,18 @@ const docTemplate = `{
         },
         "/schlagworte/dnb-vorschlag": {
             "get": {
-                "description": "Asks only the German National Library (no Google Books, no OpenLibrary, no cover download) and matches its genre terms, publisher keywords and GND subject headings against the own keyword list — the same rule as POST /buecher/aus-isbn. Nothing is written.",
+                "description": "Fragt nur die Deutsche Nationalbibliothek (kein Google Books, keine OpenLibrary, kein Cover) und gleicht ihre Gattungsbegriffe, Verlagswörter und Schlagwörter der Normdatei mit der eigenen Liste ab, nach derselben Regel wie POST /buecher/aus-isbn. Geschrieben wird nichts.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "books"
                 ],
-                "summary": "Keyword suggestions from the DNB for an ISBN",
+                "summary": "Schlagwort-Vorschlag der DNB zu einer ISBN",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ISBN-10 or ISBN-13",
+                        "description": "ISBN-10 oder ISBN-13",
                         "name": "isbn",
                         "in": "query",
                         "required": true
@@ -2615,10 +2658,10 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Delete keywords",
+                "summary": "Schlagworte löschen",
                 "parameters": [
                     {
-                        "description": "Keyword IDs",
+                        "description": "Kennungen der Schlagworte",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2663,7 +2706,7 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "List keywords for maintenance",
+                "summary": "Schlagworte für die Pflege",
                 "parameters": [
                     {
                         "type": "string",
@@ -2702,10 +2745,10 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Create a keyword reference",
+                "summary": "Verweis auf ein Schlagwort anlegen",
                 "parameters": [
                     {
-                        "description": "Spelling and target",
+                        "description": "Schreibweise und Ziel",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2759,17 +2802,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Mark a keyword as portal filter",
+                "summary": "Schlagwort als Filter im Portal markieren",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Keyword ID",
+                        "description": "Kennung des Schlagworts",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Filter flag",
+                        "description": "Filter ja oder nein",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2823,17 +2866,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Rename a keyword",
+                "summary": "Schlagwort umbenennen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Keyword ID",
+                        "description": "Kennung des Schlagworts",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "New spelling",
+                        "description": "Die neue Schreibweise",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2890,17 +2933,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Merge a keyword into another",
+                "summary": "Schlagwort mit einem anderen zusammenführen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Keyword ID",
+                        "description": "Kennung des Schlagworts",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Target keyword",
+                        "description": "Das Ziel",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -3377,14 +3420,14 @@ const docTemplate = `{
         },
         "/signaturen": {
             "get": {
-                "description": "Returns the shelf addresses (the part of a signature before \" / \") that occur on titles, with title and copy counts.",
+                "description": "Liefert die Regaladressen (der Teil einer Signatur vor „ / \"), die an Titeln vorkommen, mit der Zahl der Titel und der Exemplare.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "books"
                 ],
-                "summary": "List shelf addresses in stock",
+                "summary": "Regaladressen im Bestand",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3409,18 +3452,18 @@ const docTemplate = `{
         },
         "/signaturen/buecher": {
             "get": {
-                "description": "Returns titles whose signature matches the given prefix, in shelf order.",
+                "description": "Liefert die Titel, deren Signatur mit dem angegebenen Anfang beginnt, in der Reihenfolge des Regals.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "books"
                 ],
-                "summary": "List books under a signature",
+                "summary": "Titel unter einer Signatur",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Signature prefix",
+                        "description": "Anfang der Signatur",
                         "name": "signatur",
                         "in": "query",
                         "required": true
@@ -3535,10 +3578,10 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Create a systematic category",
+                "summary": "Sachgruppe anlegen",
                 "parameters": [
                     {
-                        "description": "Category",
+                        "description": "Die Sachgruppe",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -3589,17 +3632,17 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Update a systematic category",
+                "summary": "Sachgruppe ändern",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Category ID",
+                        "description": "Kennung der Sachgruppe",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Category",
+                        "description": "Die Sachgruppe",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -3652,11 +3695,11 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Delete a systematic category",
+                "summary": "Sachgruppe löschen",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Category ID",
+                        "description": "Kennung der Sachgruppe",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -4464,7 +4507,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "zustand_abwertung_prozent": {
-                    "description": "ZustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127,\nAnforderungsliste Nr. 2). Ein ZEIGER, weil das Feld drei Zustände hat: ein Wert\nsetzt, 0 setzt auf null zurück, und FEHLT heißt „unangetastet\". Ohne diese\nUnterscheidung löschte jeder andere Aufruf dieser Tür einen erfassten Wasserschaden.\n\n0–100, weil die Spalte es auch tut (chk_zustand_abwertung_bereich): Ohne Prüfung\nhier käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.",
+                    "description": "ZustandAbwertungProzent ist der Beschädigungsgrad des Exemplars, 0 bis 100. Ein Zeiger,\nweil das Feld drei Zustände hat: Ein Wert setzt, 0 setzt zurück, und ein fehlendes Feld\nlässt den Grad unangetastet. Ohne diese Unterscheidung löschte jeder andere Aufruf dieser\nTür einen erfassten Wasserschaden.\n\nDie Grenzen hält auch die Spalte (chk_zustand_abwertung_bereich); ohne die Prüfung hier\nkäme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.",
                     "type": "integer",
                     "maximum": 100,
                     "minimum": 0
@@ -4629,7 +4672,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "schlagworte": {
-                    "description": "Zeiger: Ein Körper ohne das Feld ist ein Fehler, keine leere Liste. Diese Tür hat\nkeinen anderen Zweck, als die Schlagworte zu setzen — ein vergessenes Feld darf\nnicht still alle entfernen.",
+                    "description": "Zeiger: Ein Körper ohne das Feld ist ein Fehler, keine leere Liste. Diese Tür hat\nkeinen anderen Zweck, als die Schlagworte zu setzen; ein vergessenes Feld darf\nnicht still alle entfernen.",
                     "type": "array",
                     "items": {
                         "type": "string"

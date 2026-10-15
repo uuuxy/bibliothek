@@ -11,10 +11,10 @@ import (
 	"bibliothek/inventur"
 )
 
-// Ein neu über die DNB-Bestellsuche angelegter Titel bekommt das Fach aus der Heuristik —
-// und KEINE Signatur. Die Signaturen der Schülerbücherei sind die Littera-Codes am Regal
-// („Sk", „JF", „MANGA"); bis zum 22.09.2026 stand hier „BIB Jugendbuch", ein Wort, das in
-// keinem Regal vorkommt (gemessen am Testserver am 22.09.2026: 0 Titel mit „BIB").
+// Ein über die Bestellsuche neu aus der DNB angelegter Titel bekommt das Fach aus der
+// Faustregel, aber keine Signatur: Die Signaturen der Schülerbücherei sind die Littera-Codes am
+// Regal („Sk", „JF", „MANGA"), und eine Kategorie der DNB wie „BIB Jugendbuch" kommt in keinem
+// Regal vor.
 func TestSchreibeTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

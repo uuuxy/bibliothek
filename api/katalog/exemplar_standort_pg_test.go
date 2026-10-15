@@ -19,7 +19,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Der Standort in der Buchakte (docs/OFFEN.md 5.53): Die Exemplarliste nennt ihn,
+// Der Standort in der Buchakte: Die Exemplarliste nennt ihn,
 // PUT /api/exemplare/standort setzt ihn für markierte Exemplare — alle oder keins, mit altem
 // und neuem Wert im Protokoll —, und die Titel-Verwaltung zählt je Titel dieselben Exemplare
 // wie die Karten der Akte.

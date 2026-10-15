@@ -15,7 +15,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// systematikAnlegen ruft den Anlege-Endpunkt auf und liefert Recorder + neue ID.
+// systematikAnlegen ruft die Tür SachgruppeAnlegen und liefert den Recorder und die neue Kennung.
 func systematikAnlegen(t *testing.T, srv *Tueren, kuerzel, bezeichnung string) (*httptest.ResponseRecorder, string) {
 	t.Helper()
 	koerper, err := json.Marshal(map[string]string{"kuerzel": kuerzel, "bezeichnung": bezeichnung})
@@ -26,7 +26,7 @@ func systematikAnlegen(t *testing.T, srv *Tueren, kuerzel, bezeichnung string) (
 	srv.SachgruppeAnlegen().ServeHTTP(rec,
 		httptest.NewRequest(http.MethodPost, "/api/systematics", bytes.NewReader(koerper)))
 
-	// Fehlerantworten tragen kein id-Feld — das ist erwartbar und kein Testfehler.
+	// Fehlerantworten tragen kein id-Feld; das ist erwartbar und kein Testfehler.
 	var antwort map[string]string
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		return rec, ""
@@ -34,16 +34,16 @@ func systematikAnlegen(t *testing.T, srv *Tueren, kuerzel, bezeichnung string) (
 	return rec, antwort["id"]
 }
 
-// TestSachgruppeAnlegen belegt die Luecke, die diese Aenderung schliesst: Das Vokabular,
-// aus dem das Buchformular die Signatur vorschlaegt, war bisher nur lesbar — es gab
-// keinen Weg, es zu fuellen, obwohl der Vorschlag davon abhaengt.
+// TestSachgruppeAnlegen: Das Vokabular, aus dem das Buchformular die Signatur vorschlägt, lässt
+// sich über die Tür füllen; der Vorschlag hängt davon ab.
 func TestSachgruppeAnlegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	// Bezeichnung mit Suffix: Sie ist seit Migration 078 (case-insensitiv) eindeutig,
-	// und andere Testpakete registrieren im selben Test-Postgres bereits "Deutsch".
+	// Bezeichnung mit Anhang: Sie ist eindeutig, auch ohne Rücksicht auf Groß- und
+	// Kleinschreibung (Migration 078), und andere Testpakete legen in derselben Datenbank schon
+	// „Deutsch" an.
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	kuerzel := "Deu" + suffix
 	bezeichnung := "Deutsch" + suffix
@@ -59,8 +59,8 @@ func TestSachgruppeAnlegen(t *testing.T) {
 		t.Fatal("keine ID zurueckgegeben")
 	}
 
-	// Getrimmt gespeichert: Ein Kuerzel mit Rand-Leerzeichen landete sonst als
-	// Signatur-Praefix am Buchruecken und passte zu keinem Regalbereich mehr.
+	// Ohne Leerzeichen am Rand gespeichert: Ein Kürzel mit Leerzeichen am Rand landete sonst als
+	// Anfang der Signatur am Buchrücken und passte zu keinem Regalbereich mehr.
 	var gespeichert string
 	if err := pool.QueryRow(ctx,
 		`SELECT kuerzel FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&gespeichert); err != nil {
@@ -70,25 +70,25 @@ func TestSachgruppeAnlegen(t *testing.T) {
 		t.Errorf("Kuerzel nicht getrimmt gespeichert: %q", gespeichert)
 	}
 
-	// Doppeltes Kuerzel -> 409, nicht 500.
+	// Doppeltes Kürzel: 409, nicht 500.
 	rec, _ = systematikAnlegen(t, srv, kuerzel, "Deutsch nochmal")
 	if rec.Code != http.StatusConflict {
 		t.Errorf("doppeltes Kuerzel: erwartet 409, war %d", rec.Code)
 	}
 
-	// Kuerzel mit Leerzeichen -> 400. Die Signatur wird am Leerzeichen in Regalbereiche
-	// geschnitten; ein Kuerzel mit Leerzeichen zerlegte genau diese Grenze.
+	// Kürzel mit Leerzeichen: 400. Die Signatur wird am Leerzeichen in Regalbereiche
+	// geschnitten; ein Kürzel mit Leerzeichen zerlegte genau diese Grenze.
 	rec, _ = systematikAnlegen(t, srv, "Deu Neu", "Kaputt")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("Kuerzel mit Leerzeichen: erwartet 400, war %d", rec.Code)
 	}
 }
 
-// TestSachgruppeLoeschenGeschuetzt sichert den Waechter des Handlers ab: 409 mit
-// verstaendlicher Meldung, solange Titel auf dem Fach stehen. Seit Migration 078
-// haelt zusaetzlich die Datenbank dagegen (fk_titel_subject_systematik, ON DELETE
-// RESTRICT) — der Handler bleibt fuer die fachliche Meldung zustaendig, der FK ist
-// die Rueckfallebene fuer jeden Weg am Handler vorbei.
+// TestSachgruppeLoeschenGeschuetzt sichert die Prüfung der Tür ab: 409 mit verständlicher
+// Meldung, solange Titel auf dem Fach stehen. Die Datenbank hält zusätzlich dagegen
+// (fk_titel_subject_systematik, ON DELETE RESTRICT, Migration 078); die Tür bleibt für die
+// fachliche Meldung zuständig, der Fremdschlüssel ist die Rückfallebene für jeden Weg an der
+// Tür vorbei.
 func TestSachgruppeLoeschenGeschuetzt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -113,7 +113,7 @@ func TestSachgruppeLoeschenGeschuetzt(t *testing.T) {
 		return rec.Code
 	}
 
-	// Ohne Buecher: loeschbar? Erst mit Buch belegen, dann Schutz pruefen.
+	// Erst mit einem Buch belegen, dann den Schutz prüfen.
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_titel (titel, subject) VALUES ($1, $2)`,
 		"Erdkundebuch-"+suffix, bezeichnung); err != nil {
@@ -146,10 +146,10 @@ func TestSachgruppeLoeschenGeschuetzt(t *testing.T) {
 	}
 }
 
-// TestSachgruppeAendern_ZiehtTitelMit belegt den F3-Fix: Wird eine Sachgruppe
-// umbenannt, wandert die neue Bezeichnung auf die Titel (buecher_titel.subject) —
-// sonst blieben sie lautlos auf dem alten Fachnamen und fielen aus der Fach-Auswahl.
-// Die Signatur (Kürzel am Buchrücken) bleibt bewusst unberührt.
+// TestSachgruppeAendern_ZiehtTitelMit: Wird eine Sachgruppe umbenannt, wandert die neue
+// Bezeichnung auf die Titel (buecher_titel.subject); sonst blieben sie still auf dem alten
+// Fachnamen und fielen aus der Auswahl der Fächer. Die Signatur (Kürzel am Buchrücken) bleibt
+// unberührt.
 func TestSachgruppeAendern_ZiehtTitelMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -167,8 +167,9 @@ func TestSachgruppeAendern_ZiehtTitelMit(t *testing.T) {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE subject IN ($1,$2)`, alt, neu)
 	})
 
-	// Zwei Titel auf dem alten Fach, einer auf einem Fremdfach (darf NICHT mitgezogen
-	// werden). Das Fremdfach muss seit Migration 078 registriert sein (subject ist FK).
+	// Zwei Titel auf dem alten Fach, einer auf einem Fremdfach (darf nicht mitgezogen
+	// werden). Das Fremdfach muss angelegt sein, weil subject ein Fremdschlüssel ist
+	// (Migration 078).
 	fremd := "Fremdfach" + suffix
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ($1, $2)`,

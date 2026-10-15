@@ -17,22 +17,21 @@ type titelSignaturAnfrage struct {
 	Signatur string `json:"signatur"`
 }
 
-// TitelSignaturSetzen ändert nur die Signatur eines Titels — schlank wie
-// ExemplarBarcodeSetzen/ExemplarStatusAendern, statt das große Buchformular
-// (PUT /api/books/{id}) für eine einzelne Feldänderung im Bestellkorb zu bemühen.
+// TitelSignaturSetzen ändert nur die Signatur eines Titels. Der Bestellkorb braucht dafür
+// nicht das ganze Buchformular (PUT /api/books/{id}), wie bei ExemplarBarcodeSetzen und
+// ExemplarStatusAendern.
 //
-// Genutzt beim Anlegen/Bestellen eines Buchs: Ein DNB-Treffer liefert nur einen
-// Signatur-VORSCHLAG (siehe signaturVorschlagAusMetadaten), den das Sekretariat vor
-// dem Bestellen noch korrigieren können muss. Ein bereits vorhandener Titel behält
-// seine Signatur automatisch (dieser Endpunkt wird dafür nie automatisch aufgerufen,
-// nur wenn im Bestellkorb tatsächlich editiert wird).
+// Ein Titel, der beim Bestellen neu aus der DNB entsteht, hat keine Signatur; sie wird im
+// Bestellkorb eingetragen, mit der Vorschlagsliste aus dem Bestand (Signaturen). Ein
+// vorhandener Titel behält seine Signatur: Der Bestellkorb ruft die Tür nur, wenn dort jemand
+// die Signatur ändert.
 //
-// @Summary      Update a title's signatur (shelf mark)
+// @Summary      Signatur eines Titels setzen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string                      true  "Title ID"
-// @Param        body  body      titelSignaturAnfrage  true  "New signatur"
+// @Param        id    path      string                      true  "Kennung des Titels"
+// @Param        body  body      titelSignaturAnfrage  true  "Die neue Signatur"
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string

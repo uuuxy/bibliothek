@@ -16,27 +16,27 @@ type titelLernmittelAnfrage struct {
 	IstLernmittel bool `json:"ist_lernmittel"`
 }
 
-// TitelLernmittelSetzen setzt das Lernmittel-Kennzeichen eines Titels — die
-// Schwester von TitelSignaturSetzen, aus demselben Grund schlank.
+// TitelLernmittelSetzen setzt das Kennzeichen „Lernmittel" eines Titels; die Schwester von
+// TitelSignaturSetzen, aus demselben Grund schlank.
 //
-// Gebraucht im Staging-Fenster der Bestellsuche: Ein über die DNB neu angelegter Titel
-// (/aus-isbn) entsteht ohne Kennzeichen, und bis zum 10.09.2026 blieb er so — ein neues
-// Schulbuch war damit dauerhaft ein Bücherei-Titel: falsche Frist, falscher Katalog,
-// falsche Löschfrist, unsichtbar im Bestellbedarf, und seit Migration 109 der falsche
-// Topf auf der Bestellung. Das Fenster fragt jetzt nach; dieser Endpunkt schreibt die
-// Antwort — auch für einen vorhandenen Titel, sobald jemand im Fenster das Kästchen umlegt.
+// Gebraucht im Fenster der Bestellsuche, in dem ein Treffer geprüft wird, bevor er in den
+// Warenkorb kommt (OrderStaging.svelte): Ein über die DNB neu angelegter Titel (/aus-isbn)
+// entsteht ohne Kennzeichen. Ohne die Frage dort wäre ein neues Schulbuch ein Titel der
+// Bücherei, mit falscher Frist, falschem Katalog, falscher Löschfrist, unsichtbar im
+// Bestellbedarf und im falschen Topf der Bestellung. Die Tür schreibt die Antwort, auch für
+// einen vorhandenen Titel, sobald jemand im Fenster das Kästchen umlegt.
 //
-// Fällt das Kennzeichen, fällt der Mehrjahresband mit (Migration 134), wie im Buchformular:
-// Den Schalter gibt es nur an einem Lernmittel. Setzte die Tür allein ist_lernmittel, lehnte
+// Fällt das Kennzeichen, fällt der Mehrjahresband mit, wie im Buchformular: Den Schalter gibt
+// es nur an einem Lernmittel. Setzte die Tür allein ist_lernmittel, lehnte
 // chk_mehrjahresband_spanne ab, und das Fenster meldete nur „konnte nicht gespeichert
-// werden" (Rasterdurchgang 23.09.2026, K2).
+// werden".
 //
-// @Summary      Update a title's Lernmittel flag
+// @Summary      Kennzeichen „Lernmittel" eines Titels setzen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string                        true  "Title ID"
-// @Param        body  body      titelLernmittelAnfrage  true  "Lernmittel yes/no"
+// @Param        id    path      string                        true  "Kennung des Titels"
+// @Param        body  body      titelLernmittelAnfrage  true  "Lernmittel ja oder nein"
 // @Success      200   {object}  map[string]any
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string

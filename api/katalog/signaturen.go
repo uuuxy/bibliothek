@@ -10,9 +10,8 @@ import (
 	"bibliothek/repository"
 )
 
-// regalansichtGrenze kappt die Regalansicht. Ohne Grenze liefert eine kurze
-// Signatur ("BIB") den halben Bestand in einer Antwort — dieselbe Falle, in die
-// /api/audit schon einmal gelaufen ist. Die Kappung wird gemeldet, nicht verschwiegen.
+// regalansichtGrenze kappt die Regalansicht. Ohne Grenze lieferte eine kurze Signatur („BIB")
+// den halben Bestand in einer Antwort. Die Kappung wird gemeldet, nicht verschwiegen.
 const regalansichtGrenze = 500
 
 // signaturGruppe ist eine im Bestand vorkommende Regaladresse samt Umfang.
@@ -24,9 +23,9 @@ type signaturGruppe struct {
 
 // Signaturen liefert die im Bestand vorkommenden Regaladressen mit Umfang.
 //
-// Die Liste wird aus buecher_titel.signatur ABGELEITET, nicht aus einer Stammtabelle.
-// Die frühere Tabelle `signatures` war eine zweite, ungepflegte Wahrheit: Sie kannte
-// Namen, die an keinem Buch hingen, und kannte die Signaturen der Bücher nicht.
+// Die Liste wird aus buecher_titel.signatur abgeleitet, nicht aus einer eigenen Tabelle: Eine
+// zweite Liste kennte Namen, die an keinem Buch hängen, und kennte die Signaturen der Bücher
+// nicht.
 //
 // Zusammengefasst wird nach der Regaladresse (repository.sqlSignaturRegaladresse): „LMF Deu 7
 // / Bie" und „LMF Deu 7 / Gri" stehen im selben Regal. Das Kürzel dahinter ordnet in Littera
@@ -34,8 +33,8 @@ type signaturGruppe struct {
 // zu einem einzigen Titel; als Vorschlag für ein neues Buch und als Bereich einer Inventur
 // taugt nur das Regal.
 //
-// @Summary      List shelf addresses in stock
-// @Description  Returns the shelf addresses (the part of a signature before " / ") that occur on titles, with title and copy counts.
+// @Summary      Regaladressen im Bestand
+// @Description  Liefert die Regaladressen (der Teil einer Signatur vor „ / "), die an Titeln vorkommen, mit der Zahl der Titel und der Exemplare.
 // @Tags         books
 // @Produce      json
 // @Success      200  {array}   signaturGruppe
@@ -80,19 +79,18 @@ type titelUnterSignaturAntwort struct {
 	Gekappt  bool            `json:"gekappt"`
 }
 
-// TitelUnterSignatur liefert die Titel unter einer Signatur — in Regalreihenfolge.
+// TitelUnterSignatur liefert die Titel unter einer Signatur, in der Reihenfolge des Regals.
 //
-// Die Signatur wird als PRÄFIX verstanden. Das Prädikat kommt aus
-// repository.signaturPraefixBedingung — derselben Funktion, aus der sich auch der
-// Inventur-Scope speist. Zwei eigene Kopien wären hier auseinandergelaufen, und der
-// Unterschied fiele erst auf, wenn eine Inventur andere Bücher bucht, als die
-// Regalansicht zeigt.
+// Die Signatur gilt als Anfang. Die Bedingung kommt aus repository.signaturPraefixBedingung,
+// derselben Funktion, aus der der Bereich einer Inventur entsteht; zwei Kopien liefen
+// auseinander, und der Unterschied fiele erst auf, wenn eine Inventur andere Bücher bucht, als
+// die Regalansicht zeigt.
 //
-// @Summary      List books under a signature
-// @Description  Returns titles whose signature matches the given prefix, in shelf order.
+// @Summary      Titel unter einer Signatur
+// @Description  Liefert die Titel, deren Signatur mit dem angegebenen Anfang beginnt, in der Reihenfolge des Regals.
 // @Tags         books
 // @Produce      json
-// @Param        signatur  query     string  true  "Signature prefix"
+// @Param        signatur  query     string  true  "Anfang der Signatur"
 // @Success      200       {object}  titelUnterSignaturAntwort
 // @Failure      400       {object}  map[string]string
 // @Failure      500       {object}  map[string]string
@@ -117,8 +115,8 @@ func (t *Tueren) TitelUnterSignatur() http.HandlerFunc {
 			titel = append(titel, signaturTitel(z))
 		}
 
-		// Eine Zeile mehr als das Limit geholt: Nur so lässt sich "es gibt noch mehr"
-		// von "genau voll" unterscheiden, ohne eine zweite Zählquery zu fahren.
+		// Eine Zeile mehr als die Grenze geholt: Nur so lässt sich „es gibt noch mehr" von
+		// „genau voll" unterscheiden, ohne eine zweite Abfrage zum Zählen.
 		gekappt := len(titel) > regalansichtGrenze
 		if gekappt {
 			titel = titel[:regalansichtGrenze]

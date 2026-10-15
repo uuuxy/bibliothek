@@ -15,11 +15,10 @@ import (
 	"bibliothek/repository"
 )
 
-// TestExemplarStatusVerloren_ZaehltAlsVerlust belegt die Betreiber-Entscheidung vom
-// 19.08.2026 (Vokabular-Sweep P1): Wird ein Exemplar in der Schnell-Statusleiste auf
-// "Verloren" gesetzt, muss es in der Verlustquote zählen. Vorher schrieb der Editor
-// AUSSORTIERT, das repository/statistik.go ausdrücklich NICHT als Verlust wertet — "Verloren"
-// verschwand still aus der Statistik. Jetzt ist der Default VERLUST.
+// TestExemplarStatusVerloren_ZaehltAlsVerlust: Wird ein Exemplar in der Schnell-Statusleiste
+// auf „Verloren" gesetzt, zählt es in der Verlustquote. Der Grund ist deshalb VERLUST, nicht
+// AUSSORTIERT, das repository/statistik.go nicht als Verlust wertet; „Verloren" verschwände
+// sonst still aus der Statistik.
 func TestExemplarStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

@@ -7,7 +7,8 @@ import (
 	"bibliothek/internal/service"
 )
 
-// CoverAbgleichen is the HTTP handler that triggers the asynchronous cover download.
+// CoverAbgleichen startet im Hintergrund den Abgleich fehlender Cover
+// (CoverDienst.GleicheFehlendeCoverAb) und antwortet sofort.
 func (t *Tueren) CoverAbgleichen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dienst := service.NewCoverDienst(t.DB.Pool)

@@ -14,18 +14,17 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Verfügbarkeitsspalte der Exemplarliste hatte keinen Test — aufgefallen erst, als
-// am 11.08.2026 ein PR genau diese Zeile umschrieb (`(SELECT COUNT(*) …) = 0` →
-// `NOT EXISTS (…)`, PR #449). Der Tausch war nachweislich äquivalent, aber niemand hätte
-// es gemerkt, wenn er es nicht gewesen wäre: `ist_verfuegbar` ist ein bool unter fünf
-// anderen Feldern, und ein gekipptes bool sieht in der Antwort aus wie ein richtiges.
+// Die Spalte der Verfügbarkeit in der Exemplarliste: `ist_verfuegbar` ist ein bool unter fünf
+// anderen Feldern, und ein gekipptes bool sieht in der Antwort aus wie ein richtiges. Wer die
+// Bedingung umschreibt, etwa `(SELECT COUNT(*) …) = 0` zu `NOT EXISTS (…)`, merkt einen Fehler
+// nur an diesem Test.
 //
-// Warum ein PG-Test: Die ganze Aussage steckt in SQL. Ein Mock würde die nachgespielte
-// Antwort prüfen, nicht die Frage, ob Postgres bei einer zurückgegebenen Ausleihe
+// Warum ein Test an der Datenbank: Die ganze Aussage steckt in SQL. Ein Mock prüfte die
+// nachgespielte Antwort, nicht die Frage, ob Postgres bei einer zurückgegebenen Ausleihe
 // wirklich wieder „verfügbar" sagt.
 //
 // Der dritte Fall ist der eigentliche Grund für diese Datei: Ein Exemplar, das einmal
-// ausgeliehen WAR, muss nach der Rückgabe wieder verfügbar sein. Wer die Bedingung
+// ausgeliehen war, muss nach der Rückgabe wieder verfügbar sein. Wer die Bedingung
 // `a.rueckgabe_am IS NULL` beim nächsten Umbau verliert, baut eine Bibliothek, in der
 // jedes je ausgeliehene Buch für immer vergriffen ist — und die ersten beiden Fälle
 // blieben dabei grün.
@@ -85,14 +84,14 @@ func TestTitelExemplare_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 	verliehen := testdaten.LegeExemplarAn(t, pool, titel, "BC-VERLIEHEN", true, "")
 	zurueck := testdaten.LegeExemplarAn(t, pool, titel, "BC-ZURUECK", true, "")
 
-	// ALLE Zeitstempel entstehen in SQL, keiner in Go.
+	// Alle Zeitstempel entstehen in SQL, keiner in Go.
 	//
 	// Der erste Anlauf setzte `rueckgabe_am` auf ein Go-seitiges time.Now(), während
 	// `ausgeliehen_am` aus der DEFAULT-Klausel der Spalte kommt (CURRENT_TIMESTAMP, also
 	// die Uhr der Datenbank). Ob `check_return_date` (rueckgabe_am >= ausgeliehen_am) dann
 	// hält, entscheidet die Differenz zweier Uhren: Lokal lief der Test grün, in CI fiel er
 	// zuverlässig — dort laufen Go und Postgres auf derselben Uhr, und der in Go gebildete
-	// Wert ist um die Laufzeit der Anweisung ÄLTER als der beim Einfügen erzeugte.
+	// Wert ist um die Laufzeit der Anweisung älter als der beim Einfügen erzeugte.
 	//
 	// Ein Test, dessen Ergebnis an einer Uhrendifferenz hängt, prüft nicht die Sache,
 	// für die er geschrieben wurde.

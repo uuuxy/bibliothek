@@ -13,13 +13,12 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Die Titel-Historie ist der sichtbarste Konsument der Lesehistorie-Befristung
-// (jobs/cron_dsgvo_lesehistorie.go): Nach der Trennung steht dort KEIN Schüler mehr —
-// und vor allem kein falscher. Bis 22.08.2026 machte COALESCE(s.klasse, 'Lehrer') aus
-// jeder Ausleihe ohne Schüler eine Lehrer-Ausleihe; mit der Befristung wäre das die Regel
-// gewesen. Erwartung: getrennte Schüler-Ausleihe → "Anonym" ohne Klasse; echte
-// Lehrer-Ausleihe → das Wort ihrer Art, "Lehrkraft" (bis zum 30.09.2026 "Lehrer");
-// zugeordnete Schüler-Ausleihe → Name und Klasse.
+// Die Titel-Historie zeigt die befristete Lesehistorie am deutlichsten
+// (jobs/cron_dsgvo_lesehistorie.go): Nach der Trennung steht dort kein Schüler mehr, und vor
+// allem kein falscher. Eine Ausleihe ohne Schüler ist keine Ausleihe einer Lehrkraft; mit der
+// Befristung wäre sonst jede getrennte Ausleihe eine. Erwartung: getrennte Ausleihe eines
+// Schülers → „Anonym" ohne Klasse; Ausleihe einer Lehrkraft → das Wort ihrer Art, „Lehrkraft";
+// zugeordnete Ausleihe eines Schülers → Name und Klasse.
 func TestTitelHistorie_GetrennteAusleiheIstAnonymNichtLehrkraft(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

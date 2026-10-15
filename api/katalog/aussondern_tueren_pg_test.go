@@ -15,20 +15,14 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Status-Tür prüft die Ausleihe — wie das Ausbuchen.
+// Die Tür des Status-Editors prüft die Ausleihe wie das Aussondern über DELETE.
 //
-// „Ausgesondert" erreichte man auf drei Wegen: DELETE (Ausbuchen, MIT Ausleih-Prüfung
-// und Audit), POST …/aussondern und PUT …/status — die letzten beiden bis zum
-// 31.08.2026 als nackte UPDATEs: Ein Buch, das ein Schüler gerade in der Tasche hatte,
-// ließ sich aussondern. Es verschwand aus Katalog, Kiosk und Inventur, der Schüler
-// blieb in der Mahnstrecke, und bei der Rückgabe war das Exemplar gesperrt — ohne
-// dass irgendjemand nachvollziehen konnte, wer es ausgebucht hatte. Unbekannte IDs
-// waren auf beiden Türen ein stiller „Erfolg".
-//
-// POST …/aussondern ist am 22.09.2026 gestrichen (OFFEN.md 4.16): keine Oberfläche rief
-// sie, und ein dritter Weg zum selben Zustand muss jede künftige Regel kennen. Es
-// bleiben das Ausbuchen und der Status-Editor; dieser Test hält die Schranke am
-// Status-Editor.
+// „Ausgesondert" erreicht man auf zwei Wegen: über DELETE (ExemplarAussondern) und über
+// PUT …/status (ExemplarStatusAendern). Ließe einer davon ein verliehenes Buch aussondern,
+// verschwände es aus Katalog, Theke und Inventur, der Schüler bliebe in der Mahnstrecke, und bei
+// der Rückgabe wäre das Exemplar gesperrt, ohne dass jemand nachvollziehen könnte, wer es
+// ausgesondert hat. Dieser Test hält die Schranke am Status-Editor, dazu 404 für eine
+// unbekannte Kennung.
 func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -46,7 +40,7 @@ func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		// Türen mit Datenbank: Der Erfolgsfall fragt den Ersatzwert nach (9.8, Stufe 2b).
+		// Türen mit Datenbank: Der Erfolgsfall fragt den Ersatzwert nach.
 		(&Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}).ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsBenutzer(req, testdaten.LegeBearbeiterAn(t, pool)))
 		return rec
 	}

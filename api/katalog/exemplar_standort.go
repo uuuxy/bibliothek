@@ -19,8 +19,8 @@ type exemplarStandortAnfrage struct {
 	Standort *string `json:"standort" validate:"required"`
 }
 
-// ExemplarStandortSetzen setzt den Standort markierter Exemplare (docs/OFFEN.md 5.53) — die
-// Buchakte, Reiter „Exemplare": markieren, „Standort ändern".
+// ExemplarStandortSetzen setzt den Standort markierter Exemplare. Die Buchakte ruft die Tür im
+// Reiter „Exemplare" über „Standort ändern".
 //
 // Recht edit_books wie Barcode, Status und Eigentum desselben Exemplars. Jede Änderung steht
 // mit altem und neuem Wert im Protokoll (repository.SetzeExemplarStandort).
@@ -62,9 +62,9 @@ func (t *Tueren) ExemplarStandortSetzen() http.HandlerFunc {
 	})
 }
 
-// ExemplarStandorte liefert die Standorte, die an Exemplaren im Bestand vorkommen, mit
-// ihrer Zahl — die Vorschläge des Dialogs „Standort ändern". Wer aus ihnen wählt, schreibt
-// keinen zweiten Namen für dasselbe Regal.
+// ExemplarStandorte liefert die Standorte, die an Exemplaren im Bestand vorkommen, mit ihrer
+// Zahl: die Vorschläge des Dialogs „Standort ändern". Wer aus ihnen wählt, schreibt keinen
+// zweiten Namen für dasselbe Regal.
 //
 // @Summary      Standorte der Exemplare im Bestand
 // @Tags         books

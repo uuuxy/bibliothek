@@ -15,7 +15,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Türen der Schlagwort-Pflege (Migration 143, OFFEN.md 4.20 Stufe 1): Die Regeln misst
+// Die Türen der Schlagwort-Pflege: Die Regeln misst
 // repository/schlagworte_pflege_pg_test.go; hier geht es darum, was an der Tür ankommt —
 // Statuscode und Satz für jeden fachlichen Fehler, UUID-Prüfung vor der Datenbank.
 func TestSchlagwortPflege_Tueren(t *testing.T) {
@@ -61,7 +61,7 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 		!strings.Contains(rec.Body.String(), `"gesamt":2,"verweise":0`) {
 		t.Errorf("Liste: %d %s", rec.Code, rec.Body.String())
 	}
-	// Der Suchtext kommt über ?suche= an (30.09.2026): Die Tür reicht ihn an die Abfrage weiter.
+	// Der Suchtext kommt über ?suche= an: Die Tür reicht ihn an die Abfrage weiter.
 	if rec := ruf(srv.SchlagworteZurPflege(), http.MethodGet, "/api/schlagworte/pflege?suche=tier", "", ""); rec.Code != http.StatusOK ||
 		!strings.Contains(rec.Body.String(), `"treffer":1`) || strings.Contains(rec.Body.String(), `"wort":"Fantasy"`) {
 		t.Errorf("Suche an der Tür: %d %s, want nur Tierfantasy", rec.Code, rec.Body.String())

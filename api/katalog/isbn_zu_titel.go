@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// leseErscheinungsjahr parst ein plausibles Erscheinungsjahr (1001–2099) aus rohem Text.
+// leseErscheinungsjahr liest ein plausibles Erscheinungsjahr (1001 bis 2099) aus rohem Text.
 func leseErscheinungsjahr(roh string) *int {
 	if roh == "" {
 		return nil
@@ -28,11 +28,11 @@ func leseErscheinungsjahr(roh string) *int {
 }
 
 // findeLokalenTitel sucht den Titel, der die ISBN trägt, in jeder Schreibweise und in beiden
-// Längen. Rückgabe (nil, nil) bedeutet: nicht im Katalog vorhanden.
+// Längen. Die Rückgabe (nil, nil) heißt: nicht im Katalog.
 //
-// Liefert die vorhandene Signatur mit — die Bestellung übernimmt sie unverändert und
-// fragt dafür nie erneut DNB/eine Kategorisierung ab (siehe schreibeTitelAusMetadaten,
-// die dieser Funktion vorgeschaltet ist und nur bei NICHT gefundenem Titel läuft).
+// Die vorhandene Signatur kommt mit; die Bestellung übernimmt sie unverändert und fragt dafür
+// weder die DNB noch eine Kategorie ab. schreibeTitelAusMetadaten läuft erst danach und nur,
+// wenn kein Titel gefunden ist.
 func (t *Tueren) findeLokalenTitel(ctx context.Context, isbn string) (*isbnZuTitelAntwort, error) {
 	titel, err := repository.FindeTitelZuISBN(ctx, t.DB.Pool, isbn)
 	if err == nil {
@@ -49,18 +49,17 @@ func (t *Tueren) findeLokalenTitel(ctx context.Context, isbn string) (*isbnZuTit
 func (t *Tueren) schreibeTitelAusMetadaten(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (isbnZuTitelAntwort, error) {
 	jahr := leseErscheinungsjahr(meta.Jahr)
 
-	// subject ist FK auf die Systematik (Migration 078): das Fach aus der
-	// Titel-Heuristik erst registrieren, die kanonische Schreibweise schreiben.
+	// subject ist ein Fremdschlüssel auf die Systematik: das Fach, das die Katalogdienste
+	// nahelegen, erst anlegen, dann seine kanonische Schreibweise schreiben.
 	kanonisch, err := inventur.StelleFaecherSicher(ctx, t.DB.Pool, []string{meta.Fach})
 	if err != nil {
 		return isbnZuTitelAntwort{}, err
 	}
 
-	// Untertitel und Ladenpreis gehen seit dem 23.09.2026 mit (OFFEN.md 5.5). Der Preis nach
-	// derselben Regel wie beim Anlegen über das Buchformular: 0 heißt „nicht ermittelbar"
-	// und füllt nichts. Steht der Titel schon da (ON CONFLICT), gewinnt, was erfasst ist.
-	// Die Altersangabe (Zielgruppe) bleibt ungespeichert: Es gibt für sie keine Spalte und
-	// keinen Leser.
+	// Untertitel und Ladenpreis gehen mit, der Preis nach derselben Regel wie beim Anlegen über
+	// das Buchformular: 0 heißt „nicht ermittelbar" und füllt nichts. Steht der Titel schon da
+	// (ON CONFLICT), gewinnt, was erfasst ist. Die Altersangabe (Zielgruppe) bleibt ungespeichert:
+	// Es gibt für sie keine Spalte und keinen Leser.
 	listenpreis := inventur.ListenpreisAusNachschlagen(nil, meta.Preis)
 	titel, err := repository.LegeTitelAusMetadatenAn(ctx, t.DB.Pool, repository.TitelMetadaten{
 		Titel:            meta.Titel,
@@ -95,8 +94,9 @@ func isbnZuTitelAntwortAus(titel repository.TitelZuISBN) isbnZuTitelAntwort {
 	}
 }
 
-// isbnZuTitelAntwort is the result of a live ISBN metadata query.
-// exists=true means the title is already in the catalog and has a stable titel_id.
+// isbnZuTitelAntwort ist der Titel zu einer ISBN. exists=true heißt: Der Titel stand schon im
+// Katalog; sonst ist er eben aus den Katalogdiensten angelegt. In beiden Fällen trägt titel_id
+// die Kennung, die die Bestellung in den Warenkorb legt.
 type isbnZuTitelAntwort struct {
 	Vorhanden bool   `json:"exists"`
 	TitelID   string `json:"titel_id"`
@@ -107,36 +107,34 @@ type isbnZuTitelAntwort struct {
 	ISBN     string `json:"isbn"`
 	Verlag   string `json:"verlag,omitempty"`
 	CoverURL string `json:"cover_url,omitempty"`
-	// Signatur ist bei exists=true die BEREITS VORHANDENE Regalsignatur (unverändert
-	// übernommen) und bei exists=false leer: Die Signaturen der Schülerbücherei sind die
-	// Littera-Codes am Regal („Sk", „JF", „MANGA"), und die kennt nur der Bestand — bis zum
-	// 22.09.2026 schlug die DNB-Kategorie hier „BIB Jugendbuch" vor, ein Wort, das in keinem
-	// Regal steht. Eingetragen wird sie im Bestellkorb, mit der Vorschlagsliste aus dem
-	// Bestand (GET /api/signaturen); siehe PUT /api/buecher/titel/{id}/signatur.
+	// Signatur ist bei exists=true die vorhandene Regalsignatur, unverändert übernommen, und bei
+	// exists=false leer: Die Signaturen der Schülerbücherei sind die Littera-Codes am Regal („Sk",
+	// „JF", „MANGA"), und die kennt nur der Bestand; eine Kategorie der DNB wie „BIB Jugendbuch"
+	// steht in keinem Regal. Eingetragen wird sie im Bestellkorb, mit der Vorschlagsliste aus dem
+	// Bestand (GET /api/signaturen, PUT /api/buecher/titel/{id}/signatur).
 	Signatur string `json:"signatur,omitempty"`
-	// IstLernmittel: bei exists=true das Kennzeichen des vorhandenen Titels, bei
-	// exists=false immer false — ein über die DNB neu angelegter Titel ist bis zur
-	// Rückfrage im Staging-Fenster kein Lernmittel (PUT /api/buecher/titel/{id}/lernmittel).
-	// Bis zum 10.09.2026 gab es diese Rückfrage nicht: Jedes neue Schulbuch entstand als
-	// Bücherei-Titel und blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
+	// IstLernmittel: bei exists=true das Kennzeichen des vorhandenen Titels, bei exists=false
+	// immer false. Ein über die DNB neu angelegter Titel ist kein Lernmittel, bis das Fenster der
+	// Bestellsuche nachfragt (PUT /api/buecher/titel/{id}/lernmittel); Frist, Katalog, Löschfrist
+	// und Bestellbedarf lesen die Spalte.
 	IstLernmittel bool `json:"ist_lernmittel"`
-	// SchlagwortVorschlaege: nur bei exists=false — die Wörter der eigenen Liste, die der
-	// DNB-Satz als Gattung, Verlagswort oder Normdatei-Schlagwort nennt
-	// (repository.LadeSchlagwortVorschlagAusDNB, docs/OFFEN.md 4.20 und 4.25). Ein Vorschlag, kein
-	// Eintrag: Am Titel steht davon nichts, bis im Bestellkorb jemand einen übernimmt. Für einen
-	// Titel, den es schon gibt, fragt das Bestellfenster auf Knopfdruck
-	// GET /api/schlagworte/dnb-vorschlag — nach derselben Regel.
+	// SchlagwortVorschlaege: nur bei exists=false die Wörter der eigenen Liste, die der Satz der
+	// DNB als Gattung, Verlagswort oder Normdatei-Schlagwort nennt
+	// (repository.LadeSchlagwortVorschlagAusDNB). Ein Vorschlag, kein Eintrag: Am Titel steht
+	// davon nichts, bis im Bestellkorb jemand einen übernimmt. Für einen Titel, den es schon gibt,
+	// fragt das Bestellfenster auf Knopfdruck GET /api/schlagworte/dnb-vorschlag, nach derselben
+	// Regel.
 	SchlagwortVorschlaege []string `json:"schlagwort_vorschlaege,omitempty"`
 	// SchlagwortVorschlaegeNeu: Normdatei-Schlagwörter des Satzes, die die eigene Liste noch
-	// nicht kennt (entschieden am 30.09.2026: angeboten mit dem Zusatz „neu", nie vorbelegt).
-	// Wer eines anklickt, legt es mit dem Speichern in der Liste an.
+	// nicht kennt. Angeboten werden sie mit dem Zusatz „neu" und nie vorbelegt; wer eines
+	// anklickt, legt es mit dem Speichern in der Liste an.
 	SchlagwortVorschlaegeNeu []string `json:"schlagwort_vorschlaege_neu,omitempty"`
 }
 
 // legeTitelAusTrefferAn legt den Titel aus einem Treffer der Katalogdienste an und gibt den
-// Schlagwort-Vorschlag mit. Der Vorschlag wird VOR dem Anlegen gelesen: Scheitert die
-// Abfrage, entsteht kein Titel — sonst stünde ein angelegter Titel hinter einer
-// Fehlermeldung, und der zweite Versuch fände ihn als vorhanden, ohne Vorschlag.
+// Schlagwort-Vorschlag mit. Der Vorschlag wird vor dem Anlegen gelesen: Scheitert die Abfrage,
+// entsteht kein Titel; sonst stünde ein angelegter Titel hinter einer Fehlermeldung, und der
+// zweite Versuch fände ihn als vorhanden, ohne Vorschlag.
 func (t *Tueren) legeTitelAusTrefferAn(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (isbnZuTitelAntwort, error) {
 	liste, neu, err := repository.LadeSchlagwortVorschlagAusDNB(ctx, t.DB.Pool, meta.Stichwoerter, meta.Normdaten)
 	if err != nil {
@@ -151,19 +149,18 @@ func (t *Tueren) legeTitelAusTrefferAn(ctx context.Context, isbn string, meta *i
 	return antwort, nil
 }
 
-// ISBNZuTitel handles POST /api/buecher/aus-isbn.
-// It receives an ISBN, checks the local catalog, and—if the title is not
-// yet catalogued—fetches metadata from DNB / Google Books / OpenLibrary and
-// creates a new buecher_titel record. The response contains a titel_id that the order
-// workspace can add to the cart immediately. Die zehn- und die dreizehnstellige Form einer
-// ISBN sind dabei dieselbe Nummer: Der Katalog führt sie dreizehnstellig.
+// ISBNZuTitel nimmt eine ISBN und liefert den Titel dazu (POST /api/buecher/aus-isbn): aus dem
+// Katalog, wenn es ihn gibt, sonst neu angelegt aus den Metadaten von DNB, Google Books oder
+// OpenLibrary. Die Antwort trägt die titel_id, die die Bestellung sofort in den Warenkorb legen
+// kann. Die zehn- und die dreizehnstellige Form einer ISBN sind dabei dieselbe Nummer: Der
+// Katalog führt sie dreizehnstellig.
 func (t *Tueren) ISBNZuTitel() http.HandlerFunc {
 	return t.isbnZuTitelTuer(inventur.NeuerMetadatenClient())
 }
 
-// isbnZuTitelTuer ist die Tür mit ihrem Client für die Katalogdienste als Parameter: Ein Test
-// stellt die DNB-Antwort nach (MetadatenClient.SetzeHTTPClientFuerTest), statt sie im Netz
-// abzufragen — so ist auch geprüft, dass die Tür den Schlagwort-Vorschlag weitergibt.
+// isbnZuTitelTuer ist die Tür mit den Katalogdiensten als Parameter: Ein Test stellt die
+// Antwort der DNB nach (MetadatenClient.SetzeHTTPClientFuerTest), statt sie im Netz
+// abzufragen; so ist auch geprüft, dass die Tür den Schlagwort-Vorschlag weitergibt.
 func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
@@ -172,7 +169,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return
 		}
-		// Normalise: strip dashes and spaces
+		// Bindestriche und Leerzeichen entfernen.
 		req.ISBN = strings.TrimSpace(strings.NewReplacer("-", "", " ", "").Replace(req.ISBN))
 		if req.ISBN == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("isbn fehlt"))
@@ -181,7 +178,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 
 		ctx := r.Context()
 
-		// 1. Check whether the title is already in the local catalog.
+		// 1. Steht der Titel schon im Katalog?
 		lokal, err := t.findeLokalenTitel(ctx, req.ISBN)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -192,7 +189,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 			return
 		}
 
-		// 2. Not yet in catalog – fetch metadata from DNB / Google / OpenLibrary.
+		// 2. Noch nicht im Katalog: die Metadaten bei DNB, Google Books und OpenLibrary holen.
 		meta, err := metadaten.SucheNachISBN(ctx, req.ISBN)
 		if err != nil {
 			if errors.Is(err, inventur.ErrKatalogdiensteNichtErreichbar) {
@@ -205,7 +202,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 			return
 		}
 
-		// 3. Insert new title; use ON CONFLICT as safety net for concurrent inserts.
+		// 3. Den Titel anlegen; ON CONFLICT fängt zwei gleichzeitige Anfragen auf.
 		antwort, err := t.legeTitelAusTrefferAn(ctx, req.ISBN, meta)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

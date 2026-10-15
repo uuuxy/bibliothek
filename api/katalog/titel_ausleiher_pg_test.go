@@ -13,17 +13,14 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Der Ausleiher-Reiter der Buch-Akte beantwortet die Frage „wer hat den Titel gerade?".
+// Der Reiter „Ausleiher" der Buchakte beantwortet die Frage „wer hat den Titel gerade?".
+// Fragte er nur nach Schülern, verschwiege er genau die Exemplare, die im Handapparat einer
+// Lehrkraft liegen: Der Zähler „Ausleiher (n)" zeigte weniger, als ausgeliehen sind, und wer
+// ein Exemplar sucht, suchte es im Regal. Die Titel-Historie daneben prüft denselben Fall
+// (titel_historie_pg_test.go).
 //
-// Bis zum 12.09.2026 fragte er nur nach Schülern: `JOIN schueler s ON a.schueler_id = s.id`
-// ist ein INNER JOIN, und eine Ausleihe an eine Lehrkraft trägt keine schueler_id. Damit
-// verschwieg der Reiter genau die Exemplare, die im Handapparat einer Lehrkraft liegen —
-// der Zähler „Ausleiher (n)" zeigte weniger, als ausgeliehen sind, und wer ein Exemplar
-// suchte, suchte es im Regal. Die Titel-Historie daneben kennt den Fall seit dem 22.08.
-// (titel_historie_pg_test.go); der Reiter blieb zurück.
-//
-// Seit dem 30.09.2026 steht beim Kollegen das Wort seiner Art statt „Lehrer" — ein
-// Fachbereich ist keine Lehrkraft (Migration 153).
+// Beim Kollegen steht das Wort seiner Art statt „Lehrer"; ein Fachbereich ist keine
+// Lehrkraft (Migration 153).
 func TestTitelAusleiher_AusleiheEinerLehrkraftStehtDrin(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -111,7 +108,7 @@ func TestTitelAusleiher_AusleiheEinerLehrkraftStehtDrin(t *testing.T) {
 		t.Errorf("Lehrer-Ausleihe: Barcodes falsch: %+v", got[1])
 	}
 	// Die Dauerleihe trägt ihr Merkmal, die Schüler-Ausleihe nicht: Danach entscheiden
-	// Liste und Druck, ob eine abgelaufene Frist rot wird (OFFEN.md 5.18).
+	// Liste und Druck, ob eine abgelaufene Frist rot wird.
 	if !got[1].IstDauerleihe {
 		t.Errorf("Lehrer-Ausleihe ohne ist_dauerleihe — Liste und Druck färben sie nach einem Jahr rot: %+v", got[1])
 	}

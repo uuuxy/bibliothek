@@ -10,14 +10,14 @@ import (
 	"bibliothek/repository"
 )
 
-// Schlagworte am Titel (Migration 138, docs/OFFEN.md 4.20). Die Regeln stehen in
-// repository.SetzeSchlagworte; das Buchformular erreicht sie über PUT /api/books/{id},
-// der Bestellkorb über die Tür hier — beide über dieselbe Funktion.
+// Die Schlagworte am Titel. Die Regeln stehen in repository.SetzeSchlagworte; das Buchformular
+// erreicht sie über PUT /api/books/{id}, der Bestellkorb über die Tür hier, beide über dieselbe
+// Funktion.
 
 // titelSchlagworteAnfrage ist die Eingabe für TitelSchlagworteSetzen.
 type titelSchlagworteAnfrage struct {
 	// Zeiger: Ein Körper ohne das Feld ist ein Fehler, keine leere Liste. Diese Tür hat
-	// keinen anderen Zweck, als die Schlagworte zu setzen — ein vergessenes Feld darf
+	// keinen anderen Zweck, als die Schlagworte zu setzen; ein vergessenes Feld darf
 	// nicht still alle entfernen.
 	Schlagworte *[]string `json:"schlagworte"`
 }
@@ -29,14 +29,14 @@ type titelSchlagworteAntwort struct {
 	Schlagworte []string `json:"schlagworte"`
 }
 
-// SchlagwortVorschlaege liefert die Schlagworte, die im Bestand vorkommen — ohne
-// ?suche= die häufigsten zuerst (höchstens 500), mit ?suche= die Wörter, die den Text
-// enthalten, über alle Wörter (höchstens 50; repository.FindeSchlagwortVorschlaege). Die
-// Vorschlagsliste der Eingabefelder, wie GET /api/signaturen für die Signatur; das Feld
-// fragt beim Tippen nach (utils/schlagwortVorschlaege.svelte.js).
+// SchlagwortVorschlaege liefert die Schlagworte, die im Bestand vorkommen: ohne ?suche= die
+// häufigsten zuerst (höchstens 500), mit ?suche= die Wörter, die den Text enthalten, über alle
+// Wörter (höchstens 50; repository.FindeSchlagwortVorschlaege). Es ist die Vorschlagsliste der
+// Eingabefelder, wie GET /api/signaturen für die Signatur; das Feld fragt beim Tippen nach
+// (utils/schlagwortVorschlaege.svelte.js).
 //
-// @Summary      List keyword suggestions
-// @Description  Keywords carried by at least one title. Without suche: most frequent first (max. 500). With suche: keywords containing the text, prefix matches first (max. 50).
+// @Summary      Schlagworte als Vorschläge
+// @Description  Schlagworte, die mindestens ein Titel trägt. Ohne suche die häufigsten zuerst (höchstens 500), mit suche die Wörter, die den Text enthalten, Treffer am Wortanfang zuerst (höchstens 50).
 // @Tags         books
 // @Produce      json
 // @Param        suche  query  string  false  "Teil eines Worts"
@@ -58,10 +58,10 @@ func (t *Tueren) SchlagwortVorschlaege() http.HandlerFunc {
 // braucht sie, bevor er ändert: Er setzt die Menge als Ganzes, und wer die vorhandenen
 // nicht kennt, würde sie mit seinem ersten Wort überschreiben.
 //
-// @Summary      Get a title's keywords
+// @Summary      Schlagworte eines Titels
 // @Tags         books
 // @Produce      json
-// @Param        id   path      string  true  "Title ID"
+// @Param        id   path      string  true  "Kennung des Titels"
 // @Success      200  {object}  titelSchlagworteAntwort
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -81,16 +81,16 @@ func (t *Tueren) TitelSchlagworte() http.HandlerFunc {
 	})
 }
 
-// TitelSchlagworteSetzen ersetzt die Schlagworte eines Titels — die schlanke Tür
+// TitelSchlagworteSetzen ersetzt die Schlagworte eines Titels; die schlanke Tür
 // des Bestellkorbs, Schwester von TitelSignaturSetzen. Eine leere Liste entfernt
 // alle; ein Wort, das es in anderer Schreibweise schon gibt, wird nicht neu angelegt.
 //
-// @Summary      Replace a title's keywords
+// @Summary      Schlagworte eines Titels ersetzen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string                   true  "Title ID"
-// @Param        body  body      titelSchlagworteAnfrage  true  "Complete keyword list"
+// @Param        id    path      string                   true  "Kennung des Titels"
+// @Param        body  body      titelSchlagworteAnfrage  true  "Die ganze Liste der Schlagworte"
 // @Success      200   {object}  titelSchlagworteAntwort
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
@@ -118,8 +118,8 @@ func (t *Tueren) TitelSchlagworteSetzen() http.HandlerFunc {
 	})
 }
 
-// schlagwortFehler übersetzt die fachlichen Fehler des Repositorys: eine verletzte
-// Grenze ist 400 mit ihrem Text, ein unbekannter Titel 404, alles andere 500.
+// schlagwortFehler übersetzt die fachlichen Fehler aus repository: Eine verletzte Grenze ist
+// 400 mit ihrem Text, ein unbekannter Titel 404, alles andere 500.
 func schlagwortFehler(err error) error {
 	switch {
 	case errors.Is(err, repository.ErrSchlagwortUngueltig):

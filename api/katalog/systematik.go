@@ -15,9 +15,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// meldungSachgruppeNichtGeaendert ist die Meldung, die der Benutzer bei jedem Abbruch der
-// Umbenennung sieht — Begin, Update und Commit sprechen bewusst mit einer Stimme:
-// Für den Benutzer ist es derselbe Vorgang, der nicht stattgefunden hat (go:S1192).
+// meldungSachgruppeNichtGeaendert ist die Meldung bei jedem Abbruch der Änderung: Beginn,
+// Änderung und Commit sprechen mit einer Stimme, denn für den Benutzer ist es derselbe Vorgang,
+// der nicht stattgefunden hat.
 const meldungSachgruppeNichtGeaendert = "Sachgruppe konnte nicht geändert werden"
 
 // sachgruppeAnfrage ist die Eingabe für Anlegen und Ändern einer Sachgruppe.
@@ -49,14 +49,14 @@ func (a sachgruppeAnfrage) pruefe() error {
 	return nil
 }
 
-// istDoppelteSachgruppe erkennt die doppelte Sachgruppe (Kürzel oder — seit Migration
-// 078 — Bezeichnung, auch case-insensitiv).
+// istDoppelteSachgruppe erkennt die doppelte Sachgruppe: dasselbe Kürzel oder dieselbe
+// Bezeichnung, diese auch in anderer Groß- und Kleinschreibung.
 func istDoppelteSachgruppe(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
 
-// meldungDoppelteSachgruppe benennt, WELCHES Feld kollidiert ist — "Kürzel existiert bereits" bei
+// meldungDoppelteSachgruppe benennt das Feld, das kollidiert: „Kürzel existiert bereits" bei
 // einer doppelten Bezeichnung schickte den Benutzer auf die falsche Fährte.
 func meldungDoppelteSachgruppe(err error) string {
 	var pgErr *pgconn.PgError
@@ -67,17 +67,14 @@ func meldungDoppelteSachgruppe(err error) string {
 	return "eine Sachgruppe mit diesem Kürzel existiert bereits"
 }
 
-// SachgruppeAnlegen legt eine Sachgruppe an.
+// SachgruppeAnlegen legt eine Sachgruppe an. Die Systematik ist das Vokabular, aus dem das
+// Buchformular die Signatur vorschlägt („BIB Deu").
 //
-// Diese Liste ist das Vokabular, aus dem das Buchformular die Signatur vorschlägt
-// ("BIB Deu"). Sie war bisher nur lesbar — es gab keinen Weg, sie zu füllen, während
-// der Vorschlag im Formular von ihr abhängt.
-//
-// @Summary      Create a systematic category
+// @Summary      Sachgruppe anlegen
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        body  body      sachgruppeAnfrage  true  "Category"
+// @Param        body  body      sachgruppeAnfrage  true  "Die Sachgruppe"
 // @Success      201   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      409   {object}  map[string]string
@@ -112,17 +109,17 @@ func (t *Tueren) SachgruppeAnlegen() http.HandlerFunc {
 
 // SachgruppeAendern ändert Kürzel oder Bezeichnung einer Sachgruppe.
 //
-// Die BEZEICHNUNG wird auf die Titel mitgezogen (buecher_titel.subject), damit die
-// Fach-Auswahl nicht lautlos auseinanderdriftet (Prüfbericht F3). Die Signatur (mit dem
-// KÜRZEL) bleibt unangetastet: Sie klebt als physisches Etikett am Buch. Die Antwort
-// meldet, wie viele Titel mitgezogen wurden (titel_mitgezogen).
+// Die Bezeichnung ziehen die Titel mit (buecher_titel.subject, über den Fremdschlüssel), damit
+// die Auswahl der Fächer nicht still auseinanderläuft. Die Signatur mit dem Kürzel bleibt
+// unangetastet: Sie klebt als Etikett am Buch. Die Antwort meldet, wie viele Titel mitgezogen
+// wurden (titel_mitgezogen).
 //
-// @Summary      Update a systematic category
+// @Summary      Sachgruppe ändern
 // @Tags         books
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string             true  "Category ID"
-// @Param        body  body      sachgruppeAnfrage  true  "Category"
+// @Param        id    path      string             true  "Kennung der Sachgruppe"
+// @Param        body  body      sachgruppeAnfrage  true  "Die Sachgruppe"
 // @Success      200   {object}  map[string]any
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
@@ -144,20 +141,19 @@ func (t *Tueren) aendereSachgruppe(w http.ResponseWriter, r *http.Request) error
 	}
 
 	ctx := r.Context()
-	// Sachgruppe umbenennen — die Titel zieht seit Migration 078 der Fremdschlüssel
-	// mit (buecher_titel.subject → systematik_kategorien.bezeichnung, ON UPDATE
-	// CASCADE). Der Handler zählt die betroffenen Titel nur noch VOR dem Update, für
-	// die Antwort (titel_mitgezogen). Das KÜRZEL wird bewusst NICHT in die Signaturen
-	// zurückgeschrieben: Signaturen stehen als physische Etiketten auf den Büchern;
-	// sie folgen einem Umlabeln, nicht einem DB-Update.
+	// Die Titel zieht der Fremdschlüssel mit (buecher_titel.subject →
+	// systematik_kategorien.bezeichnung, ON UPDATE CASCADE). Die Tür zählt die betroffenen Titel
+	// vor dem Ändern, nur für die Antwort (titel_mitgezogen). Das Kürzel wird nicht in die
+	// Signaturen geschrieben: Sie stehen als Etiketten auf den Büchern und folgen einem neuen
+	// Etikett, nicht einer Änderung in der Datenbank.
 	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
 		return apierrors.Internal(meldungSachgruppeNichtGeaendert, err)
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Die alte Bezeichnung vor dem Update lesen: Nur sie verbindet die Sachgruppe
-	// mit den offenen Inventur-Sessions (und die Zählung mit den Büchern).
+	// Die alte Bezeichnung vor dem Ändern lesen: Nur sie verbindet die Sachgruppe mit den offenen
+	// Inventurläufen und die Zählung mit den Büchern.
 	alteBezeichnung, err := ladeSachgruppenBezeichnung(ctx, tx, id)
 	if err != nil {
 		return err
@@ -177,10 +173,10 @@ func (t *Tueren) aendereSachgruppe(w http.ResponseWriter, r *http.Request) error
 		return apierrors.Internal(meldungSachgruppeNichtGeaendert, err)
 	}
 
-	// Offene Inventur-Sessions mit Filter auf dieses Fach folgen der Umbenennung —
-	// ihr Scope (scope_subject) ist Text, kein FK: Bliebe er auf dem alten Namen,
-	// zählte die Session ab sofort null Exemplare und jeder Scan liefe auf 409
-	// "außer Scope". Abgeschlossene Sessions sind Historie und bleiben unangetastet.
+	// Offene Inventurläufe mit Filter auf dieses Fach folgen der Umbenennung: Ihr Bereich
+	// (scope_subject) ist Text, kein Fremdschlüssel. Bliebe er auf dem alten Namen, zählte der
+	// Lauf ab sofort null Exemplare, und jeder Scan liefe auf 409, weil das Exemplar außerhalb
+	// des Bereichs läge. Abgeschlossene Läufe bleiben, wie sie sind.
 	if alteBezeichnung != req.Bezeichnung {
 		if err := repository.BenenneFachOffenerInventurenUm(ctx, tx, alteBezeichnung, req.Bezeichnung); err != nil {
 			return apierrors.Internal("laufende Inventuren konnten nicht auf das neue Fach umgestellt werden", err)
@@ -213,17 +209,17 @@ func ladeSachgruppenBezeichnung(ctx context.Context, tx pgx.Tx, id string) (stri
 	return bezeichnung, nil
 }
 
-// SachgruppeLoeschen entfernt eine Sachgruppe — aber nicht unter den Büchern weg.
+// SachgruppeLoeschen entfernt eine Sachgruppe, an der kein Titel mehr hängt.
 //
-// buecher_titel.subject hält die Bezeichnung als Text, ohne Fremdschlüssel. Ein Löschen
-// bliebe deshalb von der Datenbank unbemerkt und würde die betroffenen Titel auf ein
-// Fach zeigen lassen, das es nicht mehr gibt: Sie verschwänden aus der Fach-Auswahl,
-// ohne dass irgendwo etwas fehlschlägt. Deshalb prüft der Handler das selbst.
+// Die Datenbank sperrt das Löschen selbst, solange ein Titel das Fach trägt
+// (fk_titel_subject_systematik, ON DELETE RESTRICT). Die Tür zählt vorher und antwortet mit 409
+// und einem Satz, der den Grund nennt; schlägt die Sperre trotzdem zu, weil sich zwischen
+// Zählung und Löschen ein Titel angehängt hat, ist das derselbe Konflikt.
 //
-// @Summary      Delete a systematic category
+// @Summary      Sachgruppe löschen
 // @Tags         books
 // @Produce      json
-// @Param        id  path  string  true  "Category ID"
+// @Param        id  path  string  true  "Kennung der Sachgruppe"
 // @Success      204
 // @Failure      404  {object}  map[string]string
 // @Failure      409  {object}  map[string]string
@@ -251,9 +247,9 @@ func (t *Tueren) SachgruppeLoeschen() http.HandlerFunc {
 		}
 
 		if err := repository.LoescheSachgruppe(r.Context(), t.DB.Pool, id); err != nil {
-			// Rückfallebene zur Zählung oben: Hängt sich ZWISCHEN Prüfung und Löschen
-			// ein Titel an das Fach, schlägt der FK (ON DELETE RESTRICT) zu — das ist
-			// derselbe fachliche Konflikt, kein interner Fehler.
+			// Rückfallebene zur Zählung oben: Hängt sich zwischen Prüfung und Löschen ein Titel an
+			// das Fach, schlägt der Fremdschlüssel zu (ON DELETE RESTRICT); das ist derselbe
+			// fachliche Konflikt, kein interner Fehler.
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
 				return apierrors.Conflict(

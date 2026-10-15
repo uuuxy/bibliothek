@@ -26,7 +26,7 @@ func TestZugangsbuch_ZeitraumToepfeUndBestellung(t *testing.T) {
 
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Zugangs-Titel", "Zug 1", 0)
 
-	// Zwei Bestellungen, je ein Topf — der Topf des ZUGANGS steht an der Bestellung, nicht
+	// Zwei Bestellungen, je ein Topf — der Topf des Zugangs steht an der Bestellung, nicht
 	// am Titel: Ein Titel darf im Warenkorb in den anderen Topf geschoben werden.
 	bestellung := func(name, mittel string) string {
 		t.Helper()
@@ -60,7 +60,7 @@ func TestZugangsbuch_ZeitraumToepfeUndBestellung(t *testing.T) {
 	zugang("ZUG-FRUEH", tag(2026, time.March, 15), &land)          // Tag davor
 	zugang("ZUG-SPAET", tag(2026, time.September, 16), &land)      // Tag danach
 
-	// Ein Zugang, der später ausgesondert wurde, BLEIBT im Zugangsbuch: Er ist trotzdem
+	// Ein Zugang, der später ausgesondert wurde, bleibt im Zugangsbuch: Er ist trotzdem
 	// zugegangen. Sonst änderte sich rückwirkend eine Zahl, die jemand unterschrieben hat.
 	spaeterWeg := zugang("ZUG-WEG", tag(2026, time.June, 1), &land)
 	if _, err := pool.Exec(ctx, `
@@ -96,7 +96,7 @@ func TestZugangsbuch_ZeitraumToepfeUndBestellung(t *testing.T) {
 	if z := gefunden["ZUG-TRAEGER"]; z.Topf != mitteltopf.Schultraeger {
 		t.Errorf("Topf des Schulträgers: %+v", z)
 	}
-	// Ohne Bestellung wird NICHT geraten — auch nicht aus ist_lernmittel des Titels.
+	// Ohne Bestellung wird nicht geraten — auch nicht aus ist_lernmittel des Titels.
 	if z := gefunden["ZUG-OHNE"]; z.Topf != "" || z.Lieferant != "" {
 		t.Errorf("Exemplar ohne Bestellung: %+v — erwartet leeren Topf und keinen Lieferanten", z)
 	}
@@ -163,10 +163,10 @@ func TestZugangsbuchPDF_LeererZeitraum(t *testing.T) {
 	}
 }
 
-// Der Zugang ist die Lieferung, nicht die Bestellung (Migration 129). Vorher las das Buch
-// `erworben_am` — den Tag, an dem die Zeile entstand, und die entsteht im Bestellweg beim
-// Bestellen. Ein im Dezember bestelltes, im Februar geliefertes Buch stand damit im
-// Dezember, und Bücher, die noch beim Händler lagen, standen mit im Nachweis.
+// Der Zugang ist die Lieferung, nicht die Bestellung (Migration 129, Spalte zugang_am). Läse
+// das Buch `erworben_am`, den Tag, an dem die Zeile entstand, und die entsteht im Bestellweg
+// beim Bestellen, stünde ein im Dezember bestelltes, im Februar geliefertes Buch im Dezember,
+// und Bücher, die noch beim Händler liegen, stünden mit im Nachweis.
 func TestZugangsbuch_ZulaufIstKeinZugang(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
