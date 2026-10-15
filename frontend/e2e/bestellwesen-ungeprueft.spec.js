@@ -4,7 +4,7 @@
 // Hauptlieferanten, aber keine oeffentliche Adresse — seine Bestellmails gehen ohne
 // Bestaetigungs-Link raus." Er haengt an /api/bestellungen/konfiguration.
 //
-// Bis zum 08.08.2026 fing orderStore.loadKonfiguration jeden Fehler still ab und liess
+// Bis zum 08.08.2026 fing bestellStore.loadKonfiguration jeden Fehler still ab und liess
 // das Feld auf seinem Anfangswert `false`. Antwortete der Server also NICHT — 429 unter
 // Last, 500, Netz weg —, verschwand der Waechter, und das Bestellwesen behauptete
 // „alles in Ordnung". Wer dann bestellte, verschickte Mails ohne Link, und die

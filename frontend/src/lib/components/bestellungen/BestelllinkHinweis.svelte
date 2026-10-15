@@ -11,7 +11,7 @@
      ein Satz zur Folge, ein Knopf, der genau dorthin führt, wo es zu beheben ist. -->
 <script>
 	import { TriangleAlert, ArrowRight } from '@lucide/svelte';
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menu.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -20,7 +20,7 @@
 	// Nicht wegklickbar, anders als der Backup-Wächter: Der steht auf JEDEM Bildschirm und
 	// wird zur Möblierung. Dieser hier steht nur im Bestellwesen — also genau dort, wo die
 	// fehlende Einstellung gleich Schaden anrichtet, und nur so lange, bis sie da ist.
-	const sichtbar = $derived(orderStore.bestelllinkOhneAdresse);
+	const sichtbar = $derived(bestellStore.bestelllinkOhneAdresse);
 	// Kann der Leser die Einstellungen selbst öffnen? Dasselbe Recht wie der Menüpunkt.
 	const istAdmin = $derived(hatRecht(authStore.currentUser, 'manage_settings'));
 
@@ -35,7 +35,7 @@
 	// (Ratenbegrenzung, korrektes Verhalten) — im Testlauf sah das aus wie ein
 	// sprunghafter Test. Der Toast aus apiFetch meldet die Stoerung zwar, aber er
 	// verschwindet; wer danach auf den Bildschirm sieht, braucht die Auskunft dort.
-	const ungeprueft = $derived(!orderStore.konfigurationGeladen);
+	const ungeprueft = $derived(!bestellStore.konfigurationGeladen);
 
 	function einstellungenOeffnen() {
 		uiStore.requestedSettingsTab = 'erreichbarkeit';

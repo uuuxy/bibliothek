@@ -5,7 +5,7 @@
  */
 
 /**
- * Der Titel für das Staging-Fenster (OrderStaging) aus der Antwort der Tür und dem Treffer, den
+ * Der Titel für das Staging-Fenster (TrefferPruefung) aus der Antwort der Tür und dem Treffer, den
  * die Titelsuche angeklickt hat.
  *
  * dnb_vorschlag_da: Nur ein eben aus der DNB angelegter Titel (exists=false) bringt den
@@ -27,7 +27,7 @@ export function fensterAusAntwort(antwort, treffer) {
 		signatur: antwort.signatur ?? '',
 		// Preisvorschlag vom DNB-Treffer — über /aus-isbn ginge er sonst verloren.
 		preis_vorschlag: treffer.preis_vorschlag,
-		// Ein eben angelegter Titel ist noch kein Lernmittel — OrderStaging fragt nach.
+		// Ein eben angelegter Titel ist noch kein Lernmittel — TrefferPruefung fragt nach.
 		ist_lernmittel: Boolean(antwort.ist_lernmittel),
 		// Schlagworte, die der DNB-Satz nennt — aus der Liste und neu; nur angeboten,
 		// eingetragen wird erst im Fenster (docs/OFFEN.md 4.20, 4.25).

@@ -21,8 +21,8 @@ vi.mock('../../apiFetch.js', () => ({
 	apiClient: { post: vi.fn() }
 }));
 vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
-vi.mock('../../stores/orderStore.svelte.js', () => ({
-	orderStore: {
+vi.mock('../../stores/bestellStore.svelte.js', () => ({
+	bestellStore: {
 		searchResults: [
 			{ source: 'dnb', isbn: '9783751200530', titel: 'Dunkelnacht', autor: 'Boie, Kirsten' }
 		],
@@ -39,15 +39,15 @@ vi.mock('../../stores/orderStore.svelte.js', () => ({
 }));
 
 import { apiPost } from '../../apiFetch.js';
-import OrderSearch from './OrderSearch.svelte';
+import BestellSuche from './BestellSuche.svelte';
 
 // Ein DNB-Treffer wird über POST /api/buecher/aus-isbn angelegt, und das Fenster öffnet sich
 // mit dem, was die Tür zurückgibt. Seit dem 23.09.2026 gehört der Schlagwort-Vorschlag dazu
 // (docs/OFFEN.md 4.20) — fällt er bei der Übergabe ans Fenster weg, ist der ganze Vorschlag
 // unsichtbar, ohne dass irgendetwas scheitert.
-describe('OrderSearch: ein DNB-Treffer bringt seinen Schlagwort-Vorschlag ins Fenster', () => {
+describe('BestellSuche: ein DNB-Treffer bringt seinen Schlagwort-Vorschlag ins Fenster', () => {
 	it('zeigt den Vorschlag der Tür im Fenster zum Übernehmen', async () => {
-		const screen = render(OrderSearch);
+		const screen = render(BestellSuche);
 		await fireEvent.click(screen.getByRole('button', { name: /Dunkelnacht/ }));
 
 		expect(apiPost).toHaveBeenCalledWith('/api/buecher/aus-isbn', { isbn: '9783751200530' });

@@ -7,28 +7,28 @@
      der Warenkorb seine Positionen in zwei Abschnitten mit eigener Summe, und
      „Bestellung auslösen" erzeugt je Abschnitt eine Bestellung an denselben Händler. -->
 <script>
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
-	import OrderCartPosition from './OrderCartPosition.svelte';
+	import WarenkorbPosition from './WarenkorbPosition.svelte';
 	import { formatEuro } from '../../utils/format.js';
 
-	const anzahlBestellungen = $derived(orderStore.gruppen.length);
+	const anzahlBestellungen = $derived(bestellStore.gruppen.length);
 </script>
 
 <div class="space-y-3">
 	<div class="flex items-center justify-between">
 		<span class="text-xs font-medium text-on-surface-variant">Warenkorb</span>
-		{#if orderStore.cart.length}
+		{#if bestellStore.cart.length}
 			<span
 				class="text-xs font-bold text-on-surface-variant bg-surface-container rounded-full px-2 py-0.5 tabular-nums"
-				>{orderStore.totalQty} Expl.</span
+				>{bestellStore.totalQty} Expl.</span
 			>
 		{/if}
 	</div>
 
-	{#if !orderStore.cart.length}
+	{#if !bestellStore.cart.length}
 		<div
 			class="py-10 px-4 border border-dashed border-outline-variant rounded-xl text-center text-sm text-on-surface-variant"
 		>
@@ -37,7 +37,7 @@
 			Tippe links bei einem Titel auf <span class="font-bold">+</span> oder suche oben.
 		</div>
 	{:else}
-		{#each orderStore.gruppen as gruppe (gruppe.mittel)}
+		{#each bestellStore.gruppen as gruppe (gruppe.mittel)}
 			<!-- Abschnittskopf: der Topf und seine Summe. Bei nur EINEM Abschnitt steht er
 			     trotzdem da — er ist der Vermerk, den der Händler auf der Bestellung liest. -->
 			<section aria-label="Bestellung {gruppe.label}" class="space-y-2">
@@ -47,12 +47,12 @@
 						<span class="font-normal text-on-surface-variant">({gruppe.traeger})</span>
 					</h3>
 					<span class="text-xs text-on-surface-variant tabular-nums">
-						{gruppe.menge} Expl.{#if orderStore.preiseErfassen}
+						{gruppe.menge} Expl.{#if bestellStore.preiseErfassen}
 							· {formatEuro(gruppe.summe)}{/if}
 					</span>
 				</div>
 				{#each gruppe.items as item (item.id)}
-					<OrderCartPosition {item} />
+					<WarenkorbPosition {item} />
 				{/each}
 			</section>
 		{/each}
@@ -62,30 +62,31 @@
 			<!-- Ohne Preiserfassung stuende hier dauerhaft 0,00 €: eine Summe, die wie ein
 			     Betrag aussieht und keiner ist. Dann lieber die Menge, die feststeht. -->
 			<div class="flex items-center justify-between">
-				{#if orderStore.preiseErfassen}
+				{#if bestellStore.preiseErfassen}
 					<span class="text-sm font-semibold text-on-surface-variant">Gesamt</span>
 					<span class="text-xl font-bold text-on-surface tabular-nums"
-						>{formatEuro(orderStore.total)}</span
+						>{formatEuro(bestellStore.total)}</span
 					>
 				{:else}
 					<span class="text-sm font-semibold text-on-surface-variant">Exemplare</span>
-					<span class="text-xl font-bold text-on-surface tabular-nums">{orderStore.totalQty}</span>
+					<span class="text-xl font-bold text-on-surface tabular-nums">{bestellStore.totalQty}</span
+					>
 				{/if}
 			</div>
-			<Kaestchen bind:checked={orderStore.attachBarcodes} label="Barcodes mitschicken" />
+			<Kaestchen bind:checked={bestellStore.attachBarcodes} label="Barcodes mitschicken" />
 			<Button
 				size="lg"
-				onclick={() => orderStore.submitOrder()}
-				disabled={orderStore.submitting || !orderStore.selectedSupplier}
+				onclick={() => bestellStore.submitOrder()}
+				disabled={bestellStore.submitting || !bestellStore.selectedSupplier}
 				class="w-full"
 			>
-				{#if orderStore.submitting}
+				{#if bestellStore.submitting}
 					<Ladekreis size="sm" farbe="aktuell" />
 					Wird gesendet …
 				{:else if anzahlBestellungen > 1}
-					{anzahlBestellungen} Bestellungen auslösen · {orderStore.totalQty} Expl.
+					{anzahlBestellungen} Bestellungen auslösen · {bestellStore.totalQty} Expl.
 				{:else}
-					Bestellung auslösen · {orderStore.totalQty} Expl.
+					Bestellung auslösen · {bestellStore.totalQty} Expl.
 				{/if}
 			</Button>
 			{#if anzahlBestellungen > 1}
@@ -96,7 +97,7 @@
 					Lernmittel und Bücherei gehen als getrennte Bestellungen an denselben Händler.
 				</p>
 			{/if}
-			{#if !orderStore.selectedSupplier}
+			{#if !bestellStore.selectedSupplier}
 				<p class="text-label-small text-center text-warning font-medium">
 					Bitte zuerst einen Lieferanten wählen.
 				</p>

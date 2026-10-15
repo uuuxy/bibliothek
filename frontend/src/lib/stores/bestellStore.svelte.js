@@ -1,6 +1,6 @@
-// stores/orderStore.svelte.js
+// stores/bestellStore.svelte.js
 // Zustand und Logik des Bestellwesens: Lieferanten, Warenkorb, Titel-Suche,
-// Zulauf und Bestellbedarf. Die Views (BestellWorkspace & Kinder) bleiben rein
+// Zulauf und Bestellbedarf. Die Views (Bestellwesen & Kinder) bleiben rein
 // darstellend.
 
 import {
@@ -118,7 +118,7 @@ class OrderStore {
 	 * Lädt die Arbeitsdaten des Bestellwesens.
 	 *
 	 * Der Store ist ein Singleton, seine Daten überleben also den Unmount der Ansicht.
-	 * Trotzdem lud jeder Mount alles neu — und BestellWorkspace wird bei jedem
+	 * Trotzdem lud jeder Mount alles neu — und Bestellwesen wird bei jedem
 	 * Tab-Wechsel neu aufgebaut (Router.svelte nutzt {#if}/{:else if}). Der
 	 * Bestellbedarf ist die mit Abstand grösste Liste der Anwendung; genau das war der
 	 * spürbare Hänger beim Zurückwechseln auf „Bestellungen".
@@ -544,4 +544,4 @@ class OrderStore {
 	}
 }
 
-export const orderStore = new OrderStore();
+export const bestellStore = new OrderStore();

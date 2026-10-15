@@ -74,7 +74,7 @@
 	// die im Browser die ganze Seite lahmlegt und von keinem Gate gefangen würde.
 	$effect(() => {
 		// `void` statt des nackten Ausdrucks: Den meldet ESLint als wirkungslos — dasselbe
-		// Muster wie in OrderRecommendations. Gelesen wird nur, um die Abhaengigkeit zu
+		// Muster wie in Bestellbedarf. Gelesen wird nur, um die Abhaengigkeit zu
 		// setzen; geschrieben wird der eigene Zustand.
 		void kandidaten;
 		index = 0;

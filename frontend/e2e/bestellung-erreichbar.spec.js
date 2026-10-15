@@ -58,7 +58,7 @@ for (const [breite, hoehe] of FENSTER) {
 		// wenn die Trefferliste noch nicht stand — der Test lief dann mit LEEREM Warenkorb
 		// grün und maß nichts. Hier wird auf jeden Schritt gewartet und am Ende belegt,
 		// dass wirklich Positionen im Korb liegen.
-		// Das Plus in der Bedarfsliste legt DIREKT in den Korb (OrderRecommendations →
+		// Das Plus in der Bedarfsliste legt DIREKT in den Korb (Bestellbedarf →
 		// addToCart). Der Zwischendialog „In den Warenkorb" gehört zur Titelsuche und
 		// erscheint hier nicht — die erste Fassung wartete darauf und lief in den Timeout.
 		const ZIEL_POSITIONEN = 6;

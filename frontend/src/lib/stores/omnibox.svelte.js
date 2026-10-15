@@ -257,7 +257,7 @@ export function createOmniboxStore() {
 		}
 		debounceTimer = setTimeout(async () => {
 			if (!queryVal.trim()) return;
-			// Sequenznummer wie im orderStore: Der Entprell-Timer verwirft nur NOCH NICHT
+			// Sequenznummer wie im bestellStore: Der Entprell-Timer verwirft nur NOCH NICHT
 			// gestartete Abrufe — zwei gleichzeitig laufende beantwortet der Server in
 			// beliebiger Reihenfolge. Ohne diese Prüfung tauschte eine verspätete Antwort
 			// die Trefferliste unter dem sichtbaren Suchtext aus, und der nächste Klick

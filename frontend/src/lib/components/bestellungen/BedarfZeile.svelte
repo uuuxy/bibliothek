@@ -1,4 +1,4 @@
-<!-- @component BedarfZeile — eine Zeile des Bestellbedarfs, aus OrderRecommendations.svelte
+<!-- @component BedarfZeile — eine Zeile des Bestellbedarfs, aus Bestellbedarf.svelte
      herausgezogen (Dateigrößen-Ratsche), als die Liste am 25.09.2026 am Buch zu zählen begann
      (docs/OFFEN.md 4.18, Stufe 3). Gehört der Titel zu einem Buch mit mehreren Auflagen, ist
      die Zeile das Buch: Titel und ISBN der neuesten Auflage — sie wird bestellt —, die Zahlen

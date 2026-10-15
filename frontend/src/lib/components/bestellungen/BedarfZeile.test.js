@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import BedarfZeile from './BedarfZeile.svelte';
-import OrderRecommendations from './OrderRecommendations.svelte';
+import Bestellbedarf from './Bestellbedarf.svelte';
 
 // Der Bestellbedarf zählt am Buch (docs/OFFEN.md 4.18, Stufe 3): Gehört ein Titel zu einem
 // Buch mit mehreren Auflagen, ist die Zeile das Buch — Titel und ISBN der neuesten Auflage,
@@ -65,9 +65,9 @@ describe('BedarfZeile', () => {
 	});
 });
 
-describe('OrderRecommendations: Filter', () => {
+describe('Bestellbedarf: Filter', () => {
 	it('findet das Buch auch über die ISBN der alten Auflage', async () => {
-		const screen = render(OrderRecommendations, {
+		const screen = render(Bestellbedarf, {
 			recommendations: [buch, einzeln],
 			onAddToCart: vi.fn()
 		});

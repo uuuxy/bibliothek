@@ -42,7 +42,7 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Leserdatei, Leserakte                   | `Schuelerdatei.svelte`, `Leserakte.svelte`                                       | `api/leser/leser.go`               |
 | Schaden, Forderung, Bescheid            | `DamageReportModal.svelte`, `LeserGebuehrenKarte.svelte`, `LeserBescheideKarte.svelte` | `api/schaden/schaden.go`           |
 | Mahnwesen, Abgänger                     | `Mahnwesen.svelte`, `Graduates.svelte`                                                   | `api/mahnwesen/mahnwesen.go`       |
-| Bestellungen, Bestellberichte           | `BestellWorkspace.svelte`, `components/bestellungen/BestellBerichte.svelte`              | `api/bestellung/bestellung.go`     |
+| Bestellungen, Bestellberichte           | `Bestellwesen.svelte`, `components/bestellungen/BestellBerichte.svelte`              | `api/bestellung/bestellung.go`     |
 | Inventur                                | `UnifiedInventory.svelte`                                                                | `api/inventurlauf/inventurlauf.go` |
 | Schuljahreswechsel (LMF-Plan)           | `LmfPlan.svelte`                                                                         | `api/lernmittel/lernmittel.go`     |
 | Benutzer & Rechte                       | `Berechtigungen.svelte`                                                                  | `api/benutzer/benutzer.go`         |

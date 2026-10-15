@@ -7,13 +7,13 @@ vi.mock('../../apiFetch.js', () => ({
 	apiClient: { post: vi.fn() }
 }));
 vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
-vi.mock('../../stores/orderStore.svelte.js', () => ({
-	orderStore: { addToCart: vi.fn(), preiseErfassen: true }
+vi.mock('../../stores/bestellStore.svelte.js', () => ({
+	bestellStore: { addToCart: vi.fn(), preiseErfassen: true }
 }));
 
 import { apiPut, apiFetch } from '../../apiFetch.js';
-import { orderStore } from '../../stores/orderStore.svelte.js';
-import OrderStaging from './OrderStaging.svelte';
+import { bestellStore } from '../../stores/bestellStore.svelte.js';
+import TrefferPruefung from './TrefferPruefung.svelte';
 
 // Das offene Gate aus #596: „DNB-Titel mit Haken entsteht als Lernmittel".
 //
@@ -31,10 +31,10 @@ const titel = { id: 't-1', titel: 'Mathematik 7', autor: 'Autor', isbn: '978', s
 
 /** @param {any} buch */
 function fenster(buch = titel) {
-	return render(OrderStaging, { book: buch, onDone: () => {} });
+	return render(TrefferPruefung, { book: buch, onDone: () => {} });
 }
 
-describe('OrderStaging: die Frage „Lernmittel?"', () => {
+describe('TrefferPruefung: die Frage „Lernmittel?"', () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it('schreibt den gesetzten Haken an den Titel und gibt ihn dem Warenkorb mit', async () => {
@@ -42,12 +42,12 @@ describe('OrderStaging: die Frage „Lernmittel?"', () => {
 
 		screen.getByLabelText(/Lernmittel/).click();
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/lernmittel', {
 			ist_lernmittel: true
 		});
-		const [uebergeben] = vi.mocked(orderStore.addToCart).mock.calls[0];
+		const [uebergeben] = vi.mocked(bestellStore.addToCart).mock.calls[0];
 		expect(
 			uebergeben.ist_lernmittel,
 			'der Warenkorb bekäme den Treffer statt des geprüften Standes — und schlüge den falschen Topf vor'
@@ -60,7 +60,7 @@ describe('OrderStaging: die Frage „Lernmittel?"', () => {
 		const screen = fenster();
 
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 
 		expect(apiPut).not.toHaveBeenCalledWith('/api/buecher/titel/t-1/lernmittel', expect.anything());
 	});
@@ -72,7 +72,7 @@ describe('OrderStaging: die Frage „Lernmittel?"', () => {
 
 		screen.getByLabelText(/Lernmittel/).click();
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/lernmittel', {
 			ist_lernmittel: false
@@ -84,7 +84,7 @@ describe('OrderStaging: die Frage „Lernmittel?"', () => {
 // Bis zum 22.09.2026 schlug das Fenster „BIB {Kategorie}" aus der DNB-Gattung vor — ein
 // Wort, das in keinem Regal der Schule vorkommt; damit entstand neben Litteras Vokabular
 // ein zweites. Jetzt bietet das Feld die Adressen AUS DEM BESTAND an und erfindet keine.
-describe('OrderStaging: die Signatur kommt aus dem Bestand', () => {
+describe('TrefferPruefung: die Signatur kommt aus dem Bestand', () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it('bietet die vorhandenen Regaladressen an und füllt nichts Erfundenes vor', async () => {
@@ -115,7 +115,7 @@ describe('OrderStaging: die Signatur kommt aus dem Bestand', () => {
 // Schlagworte (Migration 138). Das Fenster ersetzt die Menge als Ganzes — es muss also
 // zuerst wissen, welche der Titel schon trägt. Drei Fälle: unverändert schweigt es, ein
 // neues Wort schickt die GANZE Menge, und ohne geladene Schlagworte bleibt das Feld zu.
-describe('OrderStaging: Schlagworte', () => {
+describe('TrefferPruefung: Schlagworte', () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	/** @param {string[] | null} vorhanden — null: Laden scheitert */
@@ -151,7 +151,7 @@ describe('OrderStaging: Schlagworte', () => {
 		expect(screen.getByRole('button', { name: '„Tiere“ entfernen' })).toBeTruthy();
 
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 		expect(apiPut).not.toHaveBeenCalledWith(
 			'/api/buecher/titel/t-1/schlagworte',
 			expect.anything()
@@ -169,7 +169,7 @@ describe('OrderStaging: Schlagworte', () => {
 		await fireEvent.input(feld, { target: { value: 'fantasy' }, inputType: 'insertText' });
 		await fireEvent.keyDown(feld, { key: 'Enter' });
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
 			schlagworte: ['Tiere', 'Fantasy']
@@ -191,7 +191,7 @@ describe('OrderStaging: Schlagworte', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: '„Krieg“ übernehmen' }));
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
 			schlagworte: ['Krieg']
@@ -218,7 +218,7 @@ describe('OrderStaging: Schlagworte', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: '„Judo“ übernehmen' }));
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
 			schlagworte: ['Judo']
 		});
@@ -257,7 +257,7 @@ describe('OrderStaging: Schlagworte', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: '„Freundschaft“ übernehmen' }));
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
 			schlagworte: ['Krieg', 'Freundschaft']
 		});
@@ -305,7 +305,7 @@ describe('OrderStaging: Schlagworte', () => {
 		await feldBereit(screen);
 
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 		expect(apiPut).not.toHaveBeenCalledWith(
 			'/api/buecher/titel/t-1/schlagworte',
 			expect.anything()
@@ -322,7 +322,7 @@ describe('OrderStaging: Schlagworte', () => {
 		);
 
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
-		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
 		expect(apiPut).not.toHaveBeenCalledWith(
 			'/api/buecher/titel/t-1/schlagworte',
 			expect.anything()

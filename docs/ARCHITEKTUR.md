@@ -4161,7 +4161,7 @@ Fenstern bekannt ist:
 - Bei 390 px Breite ist die Bestellspalte (Bestellwesen, das Fenster vor dem Warenkorb) 68 px
   breit, auch das Eingabefeld der Schlagworte; die Chips ragen darüber hinaus (gemessen am
   30.09.2026 im echten Chrome, schon vor der zweiten Vorschlagszeile so). Unterhalb von `lg` legt
-  `BestellWorkspace.svelte` die Spalten untereinander (`grid-cols-1`); woher die Breite kommt, ist
+  `Bestellwesen.svelte` die Spalten untereinander (`grid-cols-1`); woher die Breite kommt, ist
   nicht nachgesehen. Anlass zum Bauen: Bestellen soll am Telefon gehen.
 - Die Leiste der markierten Exemplare in der Buchakte trägt mit „Standort ändern" vier Knöpfe
   und ist 692 px breit. Sie passt bis zu einem Fenster von 768 px. Bei 640 px ragt das × um

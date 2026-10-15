@@ -128,7 +128,7 @@ export function erzeugePlaner() {
 	}
 
 	// Die Plätze rechnet der Server (kein JavaScript-Zwilling der Verteilung). `laufNr`
-	// ist die Sequenznummer wie im orderStore.
+	// ist die Sequenznummer wie im bestellStore.
 	let laufNr = 0;
 	/** @param {string} art @param {PlanEntwurf} entwurf */
 	async function vorschau(art, entwurf) {

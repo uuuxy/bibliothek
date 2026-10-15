@@ -9,7 +9,7 @@
 	import Berechtigungen from './Berechtigungen.svelte';
 	import Omnibox from './Omnibox.svelte';
 	import Buchakte from './Buchakte.svelte';
-	import BestellWorkspace from './BestellWorkspace.svelte';
+	import Bestellwesen from './Bestellwesen.svelte';
 	import UnifiedInventory from './UnifiedInventory.svelte';
 	import MediaCatalog from './MediaCatalog.svelte';
 	import Bestandsbuecher from './components/bestand/Bestandsbuecher.svelte';
@@ -110,7 +110,7 @@
 		<!-- Der Zweig 'books' ist entfallen (nie gesetzt, unerreichbar; Audit 01.08.2026) —
 		     die Buchansicht läuft über 'book_detail' und appState.activeBookId. -->
 	{:else if uiStore.activeTab === 'orders'}
-		<div class="w-full animate-fade-in"><BestellWorkspace /></div>
+		<div class="w-full animate-fade-in"><Bestellwesen /></div>
 	{:else if uiStore.activeTab === 'stats'}
 		<!-- flex-1: die Statistik-Fläche reicht bis zum unteren Rand, auch wenn der Inhalt
 		     kürzer als der Viewport ist.

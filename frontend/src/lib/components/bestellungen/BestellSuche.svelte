@@ -4,9 +4,9 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiPost } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Select from '../ui/Select.svelte';
-	import OrderStaging from './OrderStaging.svelte';
+	import TrefferPruefung from './TrefferPruefung.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { fensterAusAntwort } from './ausIsbn.js';
 
@@ -14,8 +14,8 @@
 	let stagedBook = $state(null);
 	let resolvingDnb = $state(false);
 
-	let localResults = $derived(orderStore.searchResults.filter((r) => r.source === 'local'));
-	let dnbResults = $derived(orderStore.searchResults.filter((r) => r.source === 'dnb'));
+	let localResults = $derived(bestellStore.searchResults.filter((r) => r.source === 'local'));
+	let dnbResults = $derived(bestellStore.searchResults.filter((r) => r.source === 'dnb'));
 
 	/** @param {any} book */
 	async function openStaging(book) {
@@ -39,7 +39,7 @@
 	/** @param {any} book */
 	function stageBook(book) {
 		stagedBook = book;
-		orderStore.resetSearch();
+		bestellStore.resetSearch();
 	}
 </script>
 
@@ -49,8 +49,8 @@
 		>
 		<Select
 			id="supplier"
-			bind:value={orderStore.selectedSupplierId}
-			options={orderStore.suppliers.map((s) => ({
+			bind:value={bestellStore.selectedSupplierId}
+			options={bestellStore.suppliers.map((s) => ({
 				value: s.id,
 				label: `${s.name} (${s.customerNumber})`
 			}))}
@@ -63,15 +63,15 @@
 		>
 		<Suchfeld
 			kamera
-			onscan={(code) => scanUebernehmen(code, orderStore, openStaging)}
+			onscan={(code) => scanUebernehmen(code, bestellStore, openStaging)}
 			autofokus
 			id="book"
-			bind:wert={orderStore.searchQuery}
-			oninput={() => orderStore.handleSearchInput()}
+			bind:wert={bestellStore.searchQuery}
+			oninput={() => bestellStore.handleSearchInput()}
 			platzhalter="Titel, Autor oder ISBN …"
 			etikett="Titel suchen & hinzufügen"
 		/>
-		{#if orderStore.showDropdown && (orderStore.searchResults.length > 0 || orderStore.dnbAusfall)}
+		{#if bestellStore.showDropdown && (bestellStore.searchResults.length > 0 || bestellStore.dnbAusfall)}
 			<!-- M3 Lists: Titel in on-surface, Autor und ISBN sowie die Angabe rechts („trailing
 			     text") in on-surface-variant, keine Trennlinien zwischen den Zeilen. Das Cover
 			     kommt aus ui/BuchCover — mit dessen Platzhalter, wenn keine Quelle ein Bild hat.
@@ -79,7 +79,7 @@
 			<div
 				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl max-h-72 overflow-y-auto"
 			>
-				{#if orderStore.dnbAusfall}
+				{#if bestellStore.dnbAusfall}
 					<!-- Ohne die Zeile sähe ein Buch, das die DNB kennt, aus wie eines, das sie nicht
 					     kennt. Sie steht oben: Unter vielen Treffern aus dem Bestand läse sie niemand.
 					     Der Wortlaut ist der des Schlagwort-Vorschlags aus der DNB. -->
@@ -142,7 +142,7 @@
 				{/if}
 			</div>
 		{/if}
-		{#if orderStore.searchLoading}
+		{#if bestellStore.searchLoading}
 			<div
 				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
 			>
@@ -164,6 +164,6 @@
 	<!-- {#key}: Ein neuer Treffer bekommt ein frisches Fenster mit frischen Feldern,
 	     statt die Eingaben des vorigen zu erben. -->
 	{#key stagedBook.id}
-		<OrderStaging book={stagedBook} onDone={() => (stagedBook = null)} />
+		<TrefferPruefung book={stagedBook} onDone={() => (stagedBook = null)} />
 	{/key}
 {/if}

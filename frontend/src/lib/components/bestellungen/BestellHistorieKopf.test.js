@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 
-vi.mock('../../stores/orderStore.svelte.js', () => ({
-	orderStore: { preiseErfassen: true }
+vi.mock('../../stores/bestellStore.svelte.js', () => ({
+	bestellStore: { preiseErfassen: true }
 }));
 
 import BestellHistorieKopf from './BestellHistorieKopf.svelte';

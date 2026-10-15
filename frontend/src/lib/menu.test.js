@@ -221,12 +221,12 @@ describe('Menü-Sichtbarkeit', () => {
 		// Berichtsreiter darin hätte kein gemeinsames Thema mit Bestellen, Wareneingang
 		// und Historie.
 		let verzeichnis = process.cwd();
-		while (!existsSync(resolve(verzeichnis, 'src/lib/BestellWorkspace.svelte'))) {
+		while (!existsSync(resolve(verzeichnis, 'src/lib/Bestellwesen.svelte'))) {
 			const eltern = dirname(verzeichnis);
-			if (eltern === verzeichnis) throw new Error('BestellWorkspace.svelte nicht gefunden');
+			if (eltern === verzeichnis) throw new Error('Bestellwesen.svelte nicht gefunden');
 			verzeichnis = eltern;
 		}
-		const quelle = readFileSync(resolve(verzeichnis, 'src/lib/BestellWorkspace.svelte'), 'utf8');
+		const quelle = readFileSync(resolve(verzeichnis, 'src/lib/Bestellwesen.svelte'), 'utf8');
 
 		// Nicht-leer-Garantie: Ohne sie wäre der Test auch dann grün, wenn die Reiterliste
 		// ganz verschwindet und die Muster unten ins Leere greifen.

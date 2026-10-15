@@ -27,7 +27,7 @@ function treffer(name) {
 // beantwortet der Server in beliebiger Reihenfolge. Bis zum 31.08.2026 schrieb die
 // zuletzt EINTREFFENDE Antwort die Liste — der Bediener klickte auf die Zeile, die er
 // zu sehen glaubte, und selectDropdownItem buchte ohne Rückfrage auf den falschen
-// Schüler. Das Schwester-Muster im orderStore hatte den Schutz längst.
+// Schüler. Das Schwester-Muster im bestellStore hatte den Schutz längst.
 describe('Omnibox-Suchlauf', () => {
 	beforeEach(() => vi.useFakeTimers());
 	afterEach(() => vi.useRealTimers());

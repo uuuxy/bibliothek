@@ -6,7 +6,7 @@
      der Titel schon trägt. Wie Signatur und Lernmittel daneben schreibt er nur, wenn
      jemand etwas geändert hat.
 
-     Eigene Datei, weil OrderStaging mit dem Feld über der 200-Zeilen-Marke lag. -->
+     Eigene Datei, weil TrefferPruefung mit dem Feld über der 200-Zeilen-Marke lag. -->
 <script>
 	import { ladeTitelSchlagworte, setzeTitelSchlagworte } from '../../utils/schlagworte.js';
 	import { erzeugeSchlagwortVorschlaege } from '../../utils/schlagwortVorschlaege.svelte.js';

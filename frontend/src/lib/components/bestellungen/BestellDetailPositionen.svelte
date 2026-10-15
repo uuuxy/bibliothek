@@ -6,7 +6,7 @@
      vorn — es ist das Merkmal, das man ohne Lesen abgleicht. -->
 <script>
 	import BuchCover from '../ui/BuchCover.svelte';
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { BookOpen, Printer } from '@lucide/svelte';
 
 	/**
@@ -77,7 +77,7 @@
 
 				<div class="shrink-0 text-right">
 					<p class="font-semibold text-on-surface tabular-nums">{p.menge}×</p>
-					{#if orderStore.preiseErfassen}
+					{#if bestellStore.preiseErfassen}
 						<p class="text-xs text-on-surface-variant tabular-nums">{euro(p.einzelpreis)}</p>
 						<p class="mt-1 font-bold text-on-surface tabular-nums">{euro(p.gesamtpreis)}</p>
 					{/if}

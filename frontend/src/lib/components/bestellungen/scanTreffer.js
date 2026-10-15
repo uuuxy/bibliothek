@@ -2,7 +2,7 @@
  * Welcher Suchtreffer gehört zu einem gescannten Code — und ist er eindeutig genug, um ihn
  * ohne Rückfrage zu übernehmen?
  *
- * Getrennt von OrderSearch.svelte, weil hier nichts angezeigt wird: Es ist eine Entscheidung
+ * Getrennt von BestellSuche.svelte, weil hier nichts angezeigt wird: Es ist eine Entscheidung
  * über Zahlen, und sie ist der Unterschied zwischen „der Scan spart einen Handgriff" und
  * „der Scan legt das falsche Buch in die Bestellung".
  *
@@ -43,7 +43,7 @@ export function scanTreffer(code, treffer) {
  * übernehmen. Ohne eindeutigen Treffer bleibt die Trefferliste stehen — dann entscheidet
  * der Mensch, wie beim Tippen.
  *
- * Steht hier und nicht in OrderSearch.svelte, weil es eine Abfolge von Entscheidungen ist
+ * Steht hier und nicht in BestellSuche.svelte, weil es eine Abfolge von Entscheidungen ist
  * und weil die Datei dort an der 200-Zeilen-Grenze liegt.
  *
  * @param {string} code

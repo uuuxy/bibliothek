@@ -2,7 +2,7 @@
 	import { apiPost } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
-	import WareneingangTable from './WareneingangTable.svelte';
+	import WareneingangTabelle from './WareneingangTabelle.svelte';
 	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
 	import Button from '../ui/Button.svelte';
 
@@ -72,7 +72,7 @@
 	</div>
 
 	<!-- Content/Table Section -->
-	<WareneingangTable {incomingShipments} {totalItems} bind:selectedExemplarIds />
+	<WareneingangTabelle {incomingShipments} {totalItems} bind:selectedExemplarIds />
 
 	<!-- Einbuchen steht in der Leiste unter der Liste, wie bei den Exemplaren der Buchakte:
 	     Ein Knopf im Kopf wäre bei einer langen Lieferung aus dem Bild, sobald man markiert. -->

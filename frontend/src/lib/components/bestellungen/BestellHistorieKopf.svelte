@@ -5,7 +5,7 @@
      Mit ihr und dem Filter überschritt BestellHistorie.svelte die 200-Zeilen-Regel aus
      docs/ARCHITEKTUR.md (5.3). Reine Verschiebung — dieselben Zeilen, dieselbe Reihenfolge. -->
 <script>
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import { Clock } from '@lucide/svelte';
 
@@ -60,7 +60,7 @@
 	     nennen, die stimmt. -->
 	{#if zeigeKennzahlen}
 		<div class="text-right">
-			{#if orderStore.preiseErfassen}
+			{#if bestellStore.preiseErfassen}
 				<div class="text-xs text-on-surface-variant font-semibold">Gesamtausgaben</div>
 				<div class="text-2xl font-black text-on-surface">{euro(gesamtsumme)}</div>
 			{:else}
@@ -75,7 +75,7 @@
 						<div>
 							{topfLabel(t.mittel)}:
 							<span class="font-semibold">
-								{orderStore.preiseErfassen ? euro(t.gesamtbetrag) : t.gesamt_exemplare}
+								{bestellStore.preiseErfassen ? euro(t.gesamtbetrag) : t.gesamt_exemplare}
 							</span>
 						</div>
 					{/each}

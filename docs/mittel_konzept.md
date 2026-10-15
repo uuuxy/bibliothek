@@ -381,7 +381,7 @@ Formulare an Schüler). Gates: `api/bestellung/bestellung_mittel_pg_test.go`,
 `db/bestellung_mittel_nachtrag_pg_test.go`, `api/bestellung/bestellanschreiben_test.go`,
 `internal/service/bestellmail_mittel_test.go`, `api/katalog/titel_lernmittel_pg_test.go`,
 `api/bestellung/bestellung_mittel_korrektur_pg_test.go`, `api/bestellung/lieferant_zweitnummer_pg_test.go`,
-`pkg/mitteltopf/paritaet_test.go`, `frontend/src/lib/stores/orderStore.test.js`.
+`pkg/mitteltopf/paritaet_test.go`, `frontend/src/lib/stores/bestellStore.test.js`.
 
 1. **Datenmodell:** `bestellungen_verlauf.mittel TEXT CHECK (mittel IN ('land','schultraeger'))`,
    nullbar für Alt-Bestellungen; eine Backfill-Migration ordnet eindeutige Fälle zu (alle
@@ -413,7 +413,7 @@ Formulare an Schüler). Gates: `api/bestellung/bestellung_mittel_pg_test.go`,
    (PDF-Inhaltsstrom, Summen je Topf = Gesamt), `repository/bestellbericht_mittel_pg_test.go`,
    `api/bestellung/bestellhistorie_mittel_pg_test.go` (Aufteilung = Gesamtzahlen),
    `bestellberichte.test.js`, `BestellHistorieKopf.test.js`,
-   `OrderStaging.test.js` (der DNB-Titel mit Haken).
+   `TrefferPruefung.test.js` (der DNB-Titel mit Haken).
 5. **Neuer Titel aus der DNB-Suche:** Das Staging-Fenster fragt „Lernmittel?" und setzt
    `ist_lernmittel` über `PUT /api/buecher/titel/{id}/lernmittel` — schließt die Lücke
    aus 7.2.

@@ -131,7 +131,7 @@
 </script>
 
 <!-- Liste ODER Detail, nicht beides: dieselbe Bauart wie der Wareneingang im Reiter
-     nebenan (BestellWorkspace). Kein eigener Router-Eintrag — die Bestellung ist ein
+     nebenan (Bestellwesen). Kein eigener Router-Eintrag — die Bestellung ist ein
      Zustand DIESES Reiters, und der Zurück-Knopf führt an die Stelle zurück, an der
      man war. -->
 {#if geoeffneteId}

@@ -11,7 +11,7 @@ vi.mock('./toastStore.svelte.js', () => ({
 }));
 
 /**
- * Frische Store-Instanz je Test. Nötig, weil orderStore ein Singleton mit privatem
+ * Frische Store-Instanz je Test. Nötig, weil bestellStore ein Singleton mit privatem
  * Ladezeitpunkt ist — genau der Zustand, um den es hier geht, liesse sich von aussen
  * sonst nicht zurücksetzen.
  */
@@ -19,11 +19,11 @@ async function frischerStore() {
 	vi.resetModules();
 	const { apiGet } = await import('../apiFetch.js');
 	vi.mocked(apiGet).mockClear();
-	const { orderStore } = await import('./orderStore.svelte.js');
-	return { store: orderStore, apiGet: vi.mocked(apiGet) };
+	const { bestellStore } = await import('./bestellStore.svelte.js');
+	return { store: bestellStore, apiGet: vi.mocked(apiGet) };
 }
 
-describe('orderStore.init – Ladeverhalten', () => {
+describe('bestellStore.init – Ladeverhalten', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 	});
@@ -42,7 +42,7 @@ describe('orderStore.init – Ladeverhalten', () => {
 		expect(apiGet).toHaveBeenCalledWith('/api/bestellungen');
 	});
 
-	// Der Kern: BestellWorkspace wird bei JEDEM Tab-Wechsel neu gemountet
+	// Der Kern: Bestellwesen wird bei JEDEM Tab-Wechsel neu gemountet
 	// (Router nutzt {#if}/{:else if}). Vorher lud jeder dieser Wechsel den kompletten
 	// Bestellbedarf neu — die grösste Liste der Anwendung. Genau das war der Hänger.
 	it('lädt beim erneuten Mount nicht noch einmal, solange die Daten frisch sind', async () => {

@@ -5,7 +5,7 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 
 	/**
-	 * @component WareneingangTable
+	 * @component WareneingangTabelle
 	 * Rendert die Liste der erwarteten Lieferungen gruppiert nach Lieferant.
 	 *
 	 * @prop {any[]} incomingShipments - Array der erwarteten Lieferungen.

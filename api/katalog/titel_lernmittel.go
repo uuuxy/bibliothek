@@ -20,7 +20,7 @@ type titelLernmittelAnfrage struct {
 // TitelSignaturSetzen, aus demselben Grund schlank.
 //
 // Gebraucht im Fenster der Bestellsuche, in dem ein Treffer geprüft wird, bevor er in den
-// Warenkorb kommt (OrderStaging.svelte): Ein über die DNB neu angelegter Titel (/aus-isbn)
+// Warenkorb kommt (TrefferPruefung.svelte): Ein über die DNB neu angelegter Titel (/aus-isbn)
 // entsteht ohne Kennzeichen. Ohne die Frage dort wäre ein neues Schulbuch ein Titel der
 // Bücherei, mit falscher Frist, falschem Katalog, falscher Löschfrist, unsichtbar im
 // Bestellbedarf und im falschen Topf der Bestellung. Die Tür schreibt die Antwort, auch für

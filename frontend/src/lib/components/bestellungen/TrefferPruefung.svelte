@@ -8,13 +8,13 @@
      Migration 109 im falschen Topf der Bestellung. Das Fenster ist der Moment, in dem
      jemand den Titel ohnehin ansieht.
 
-     Eigene Datei, seit OrderSearch mit dem Fenster über der 200-Zeilen-Marke lag. -->
+     Eigene Datei, seit BestellSuche mit dem Fenster über der 200-Zeilen-Marke lag. -->
 <script>
 	import { apiPut } from '../../apiFetch.js';
 	import { ladeSignaturen } from '../../utils/signaturen.js';
-	import OrderStagingSchlagworte from './OrderStagingSchlagworte.svelte';
+	import TrefferPruefungSchlagworte from './TrefferPruefungSchlagworte.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -29,7 +29,7 @@
 	let { book, onDone } = $props();
 
 	// Bewusst der ANFANGSWERT des Treffers (untrack): Das Fenster ist ein Formular über
-	// einem Treffer, OrderSearch hängt es je Treffer neu ein ({#key}). Folgte es dem Prop
+	// einem Treffer, BestellSuche hängt es je Treffer neu ein ({#key}). Folgte es dem Prop
 	// weiter, überschriebe ein Nachladen die Eingabe.
 	let menge = $state(1);
 	let generateBarcodes = $state(true);
@@ -83,7 +83,7 @@
 		}
 		// Der Warenkorb bekommt den GEPRÜFTEN Stand, nicht den Treffer: Daraus wird der
 		// Vorschlag für den Topf der Bestellung.
-		orderStore.addToCart(
+		bestellStore.addToCart(
 			{ ...book, signatur: neueSignatur, ist_lernmittel: istLernmittel },
 			menge,
 			generateBarcodes
@@ -127,7 +127,7 @@
 		</datalist>
 	</div>
 
-	<OrderStagingSchlagworte
+	<TrefferPruefungSchlagworte
 		bind:this={schlagwortTeil}
 		titelId={book.id}
 		angebote={book.schlagwort_vorschlaege ?? []}

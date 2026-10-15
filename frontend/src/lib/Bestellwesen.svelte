@@ -2,14 +2,14 @@
 	import { onMount } from 'svelte';
 	import { ChevronLeft } from '@lucide/svelte';
 	import { printQueue } from './stores/printQueue.svelte.js';
-	import { orderStore } from './stores/orderStore.svelte.js';
+	import { bestellStore } from './stores/bestellStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 
-	import OrderCreationPanel from './components/bestellungen/OrderCreationPanel.svelte';
-	import WareneingangView from './components/bestellungen/WareneingangView.svelte';
-	import OrderRecommendations from './components/bestellungen/OrderRecommendations.svelte';
+	import BestellEntwurf from './components/bestellungen/BestellEntwurf.svelte';
+	import Wareneingang from './components/bestellungen/Wareneingang.svelte';
+	import Bestellbedarf from './components/bestellungen/Bestellbedarf.svelte';
 	import BestellHistorie from './components/bestellungen/BestellHistorie.svelte';
 	import BestelllinkHinweis from './components/bestellungen/BestelllinkHinweis.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
@@ -25,7 +25,7 @@
 	 * am Ziel, die Banner-Komponente wurde mit M2 gestrichen.
 	 */
 	const zulaufExemplare = $derived(
-		orderStore.incomingShipments.reduce(
+		bestellStore.incomingShipments.reduce(
 			(/** @type {number} */ summe, /** @type {any} */ lieferung) =>
 				summe +
 				lieferung.items.reduce((/** @type {number} */ s, /** @type {any} */ i) => s + i.menge, 0),
@@ -46,19 +46,19 @@
 	let railOffen = $state(true);
 
 	onMount(() => {
-		orderStore.init();
+		bestellStore.init();
 		// Zusätzlich zu init(): Das Laden dort ist 60 Sekunden lang gecacht. Wer die
 		// öffentliche Adresse gerade in den Einstellungen nachgetragen hat und zurückkommt,
 		// stünde sonst vor einem Hinweis, der bereits erledigt ist — und würde ihn beim
 		// nächsten Mal nicht mehr ernst nehmen.
-		orderStore.loadKonfiguration();
+		bestellStore.loadKonfiguration();
 	});
 
 	/** @param {any[]} receivedItems */
 	async function handleShipmentReceived(receivedItems) {
 		activeTab = 'bestellungen';
-		await orderStore.loadIncomingShipments();
-		orderStore.loadRecommendations();
+		await bestellStore.loadIncomingShipments();
+		bestellStore.loadRecommendations();
 		// Zaehlt das Badge am Druck-Center neu: Frisch eingebuchte Exemplare tragen noch
 		// kein Etikett, die Arbeit ist also gerade dorthin gewandert.
 		uiStore.fetchOffeneEtiketten();
@@ -148,9 +148,9 @@
 							? 'lg:col-span-7 xl:col-span-8'
 							: 'lg:col-span-11 xl:col-span-11'}"
 					>
-						<OrderRecommendations
-							recommendations={orderStore.recommendations}
-							onAddToCart={(book) => orderStore.addToCart(book)}
+						<Bestellbedarf
+							recommendations={bestellStore.recommendations}
+							onAddToCart={(book) => bestellStore.addToCart(book)}
 						/>
 					</div>
 
@@ -182,10 +182,10 @@
 									class="text-xs font-bold text-on-surface-variant tracking-wide"
 									style="writing-mode: vertical-rl">Deine Bestellung</span
 								>
-								{#if orderStore.totalQty > 0}
+								{#if bestellStore.totalQty > 0}
 									<span
 										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-primary text-on-primary text-label-small font-bold px-1.5 tabular-nums"
-										>{orderStore.totalQty}</span
+										>{bestellStore.totalQty}</span
 									>
 								{/if}
 							</button>
@@ -197,7 +197,7 @@
 						     ohne das wäre die Bestellung auf dem Tablet verschwunden, nachdem jemand
 						     am grossen Bildschirm eingeklappt hat. -->
 						<div id="bestellpanel" class={railOffen ? '' : 'hidden max-lg:block'}>
-							<OrderCreationPanel onCollapse={() => (railOffen = false)} />
+							<BestellEntwurf onCollapse={() => (railOffen = false)} />
 						</div>
 					</div>
 				</div>
@@ -211,8 +211,8 @@
 		     den Wareneingang nicht mehr. Als Reiter steht er gleichrangig neben den anderen
 		     Ansichten dieser Seite — und die Zahl im Badge sagt dasselbe wie der Streifen,
 		     ohne die halbe Breite zu belegen. -->
-		<WareneingangView
-			incomingShipments={orderStore.incomingShipments}
+		<Wareneingang
+			incomingShipments={bestellStore.incomingShipments}
 			onBack={() => (activeTab = 'bestellungen')}
 			onReceived={handleShipmentReceived}
 		/>

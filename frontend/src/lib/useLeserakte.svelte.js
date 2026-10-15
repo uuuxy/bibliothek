@@ -31,7 +31,7 @@ export function useLeserakte() {
 	let rechnungPdfLoading = $state(false);
 	let kontoauszugPdfLoading = $state(false);
 
-	// Sequenznummer wie im orderStore: Zwei Akten kurz hintereinander geöffnet, und die
+	// Sequenznummer wie im bestellStore: Zwei Akten kurz hintereinander geöffnet, und die
 	// langsamere Antwort gewinnt. `laufNr` verwirft, was überholt wurde.
 	let laufNr = 0;
 

@@ -12,7 +12,7 @@
      Eigene Datei, seit die Historie den Detail-Zweig traegt: Beides zusammen lag ueber
      der 200-Zeilen-Marke, die in diesem Projekt gilt. -->
 <script>
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { CircleCheck, Clock, ChevronRight, MailWarning } from '@lucide/svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
@@ -44,7 +44,7 @@
 				<th>Mittel</th>
 				<th>Stand</th>
 				<th class="text-right">Exemplare</th>
-				{#if orderStore.preiseErfassen}<th class="text-right">Betrag</th>{/if}
+				{#if bestellStore.preiseErfassen}<th class="text-right">Betrag</th>{/if}
 				<th class="w-8"><span class="sr-only">Bestellung öffnen</span></th>
 			</tr>
 		</thead>
@@ -115,7 +115,7 @@
 					<td class="text-right whitespace-nowrap tabular-nums">
 						{b.anzahl_exemplare}
 					</td>
-					{#if orderStore.preiseErfassen}
+					{#if bestellStore.preiseErfassen}
 						<td class="text-right font-bold whitespace-nowrap tabular-nums">
 							{euro(b.gesamtbetrag)}
 						</td>

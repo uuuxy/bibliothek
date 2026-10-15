@@ -18,7 +18,7 @@ import (
 // Test die Stelle nicht mehr, ist er rot und nicht still grün.
 //
 // Blind für einen Aufrufer, der dem Feld eigene Grenzen mitgibt: Er sähe nur die Vorgaben.
-// Heute gibt keiner welche mit (BuchEingabefelder.svelte, OrderStagingSchlagworte.svelte).
+// Heute gibt keiner welche mit (BuchEingabefelder.svelte, TrefferPruefungSchlagworte.svelte).
 func TestSchlagwortGrenzen_FeldUndServerGleich(t *testing.T) {
 	quelle, err := os.ReadFile("../frontend/src/lib/components/ui/ChipFeld.svelte")
 	if err != nil {

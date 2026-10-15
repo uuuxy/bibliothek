@@ -13,20 +13,20 @@ vi.mock('./toastStore.svelte.js', () => ({
 }));
 
 import { apiClient, apiGet, apiPost, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
-import { orderStore } from './orderStore.svelte.js';
+import { bestellStore } from './bestellStore.svelte.js';
 import { toastStore } from './toastStore.svelte.js';
 
 const apiPostMock = vi.mocked(apiPost);
 
 function resetStore() {
-	orderStore.cart = [];
-	orderStore.suppliers = [];
-	orderStore.selectedSupplierId = '';
-	orderStore.attachBarcodes = true;
-	orderStore.searchQuery = '';
-	orderStore.searchResults = [];
-	orderStore.showDropdown = false;
-	orderStore.dnbAusfall = false;
+	bestellStore.cart = [];
+	bestellStore.suppliers = [];
+	bestellStore.selectedSupplierId = '';
+	bestellStore.attachBarcodes = true;
+	bestellStore.searchQuery = '';
+	bestellStore.searchResults = [];
+	bestellStore.showDropdown = false;
+	bestellStore.dnbAusfall = false;
 }
 
 /**
@@ -71,46 +71,46 @@ function bestellAntwort(antwort, scheitert = false) {
 	});
 }
 
-describe('orderStore.addToCart', () => {
+describe('bestellStore.addToCart', () => {
 	beforeEach(() => {
 		resetStore();
 		vi.clearAllMocks();
 	});
 
 	it('legt neue Positionen mit titel_id als Schlüssel an', () => {
-		orderStore.addToCart({
+		bestellStore.addToCart({
 			titel_id: 't1',
 			id: 'buch-1',
 			titel: 'Faust',
 			autor: 'Goethe',
 			isbn: '978-1'
 		});
-		expect(orderStore.cart).toHaveLength(1);
-		expect(orderStore.cart[0].id).toBe('t1');
+		expect(bestellStore.cart).toHaveLength(1);
+		expect(bestellStore.cart[0].id).toBe('t1');
 	});
 
 	it('dedupliziert, wenn dasselbe Buch einmal mit titel_id und einmal ohne kommt', () => {
 		// Suchergebnis liefert titel_id, Empfehlung liefert nur id — früherer Duplikat-Bug
-		orderStore.addToCart({ titel_id: 't1', titel: 'Faust', autor: 'Goethe', isbn: '978-1' }, 2);
-		orderStore.addToCart({ id: 't1', titel: 'Faust', autor: 'Goethe', isbn: '978-1' }, 3);
-		expect(orderStore.cart).toHaveLength(1);
-		expect(orderStore.cart[0].menge).toBe(5);
+		bestellStore.addToCart({ titel_id: 't1', titel: 'Faust', autor: 'Goethe', isbn: '978-1' }, 2);
+		bestellStore.addToCart({ id: 't1', titel: 'Faust', autor: 'Goethe', isbn: '978-1' }, 3);
+		expect(bestellStore.cart).toHaveLength(1);
+		expect(bestellStore.cart[0].menge).toBe(5);
 	});
 
 	it('dedupliziert über die ISBN, auch bei abweichender Feld-Schreibung', () => {
-		orderStore.addToCart({ id: 'a', titel: 'Faust', autor: 'Goethe', isbn: '978-1' });
-		orderStore.addToCart({ id: 'b', titel: 'Faust', autor: 'Goethe', ISBN: '978-1' });
-		expect(orderStore.cart).toHaveLength(1);
-		expect(orderStore.cart[0].menge).toBe(2);
+		bestellStore.addToCart({ id: 'a', titel: 'Faust', autor: 'Goethe', isbn: '978-1' });
+		bestellStore.addToCart({ id: 'b', titel: 'Faust', autor: 'Goethe', ISBN: '978-1' });
+		expect(bestellStore.cart).toHaveLength(1);
+		expect(bestellStore.cart[0].menge).toBe(2);
 	});
 
 	it('eskaliert generate_barcodes beim Merge, nimmt es aber nie zurück', () => {
-		orderStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' }, 1, false);
-		expect(orderStore.cart[0].generate_barcodes).toBe(false);
-		orderStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' }, 1, true);
-		expect(orderStore.cart[0].generate_barcodes).toBe(true);
-		orderStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' }, 1, false);
-		expect(orderStore.cart[0].generate_barcodes).toBe(true);
+		bestellStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' }, 1, false);
+		expect(bestellStore.cart[0].generate_barcodes).toBe(false);
+		bestellStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' }, 1, true);
+		expect(bestellStore.cart[0].generate_barcodes).toBe(true);
+		bestellStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' }, 1, false);
+		expect(bestellStore.cart[0].generate_barcodes).toBe(true);
 	});
 
 	// Der Fehler, den dieser Test festhaelt: Eine Bestellung ging OHNE Barcodebogen
@@ -122,107 +122,107 @@ describe('orderStore.addToCart', () => {
 	// Barcodes im Warenkorb. Beim Absenden wirkt der Schalter nur als Sperre
 	// (`schalter ? wert : false`) — er konnte abschalten, aber niemals einschalten.
 	it('uebernimmt ohne dritten Parameter den Schalter aus dem Warenkorb', () => {
-		orderStore.attachBarcodes = true;
-		orderStore.addToCart({ id: 'bedarf-1', titel: 'Faust', autor: 'G', isbn: '978-1' });
-		expect(orderStore.cart[0].generate_barcodes).toBe(true);
+		bestellStore.attachBarcodes = true;
+		bestellStore.addToCart({ id: 'bedarf-1', titel: 'Faust', autor: 'G', isbn: '978-1' });
+		expect(bestellStore.cart[0].generate_barcodes).toBe(true);
 	});
 
 	it('folgt dem Schalter auch, wenn er aus ist', () => {
-		orderStore.attachBarcodes = false;
-		orderStore.addToCart({ id: 'bedarf-2', titel: 'Faust', autor: 'G', isbn: '978-2' });
-		expect(orderStore.cart[0].generate_barcodes).toBe(false);
-		orderStore.attachBarcodes = true;
+		bestellStore.attachBarcodes = false;
+		bestellStore.addToCart({ id: 'bedarf-2', titel: 'Faust', autor: 'G', isbn: '978-2' });
+		expect(bestellStore.cart[0].generate_barcodes).toBe(false);
+		bestellStore.attachBarcodes = true;
 	});
 
 	// Der DNB-Preisvorschlag (MARC21 020 $c). Er fuellt das Preisfeld vor, damit aus
 	// "jeden Preis tippen" ein "pruefen und korrigieren" wird — uebernimmt aber nie
 	// stillschweigend einen bereits erfassten Preis.
 	it('uebernimmt den DNB-Preisvorschlag in den Warenkorb', () => {
-		orderStore.addToCart({
+		bestellStore.addToCart({
 			id: 'p1',
 			titel: 'Atlas',
 			autor: 'K',
 			isbn: '978-9',
 			preis_vorschlag: 27
 		});
-		expect(orderStore.cart[0].preis).toBe(27);
-		expect(orderStore.cart[0].preis_vorschlag).toBe(27);
+		expect(bestellStore.cart[0].preis).toBe(27);
+		expect(bestellStore.cart[0].preis_vorschlag).toBe(27);
 	});
 
 	it('ohne Vorschlag bleibt der Preis bei 0', () => {
-		orderStore.addToCart({ id: 'p2', titel: 'Atlas', autor: 'K', isbn: '978-8' });
-		expect(orderStore.cart[0].preis).toBe(0);
+		bestellStore.addToCart({ id: 'p2', titel: 'Atlas', autor: 'K', isbn: '978-8' });
+		expect(bestellStore.cart[0].preis).toBe(0);
 	});
 
 	it('ueberschreibt einen bereits erfassten Preis nicht', () => {
-		orderStore.addToCart({ id: 'p3', titel: 'Atlas', autor: 'K', isbn: '978-7' });
-		orderStore.cart[0].preis = 19.5; // von Hand erfasster Schulpreis
-		orderStore.addToCart({
+		bestellStore.addToCart({ id: 'p3', titel: 'Atlas', autor: 'K', isbn: '978-7' });
+		bestellStore.cart[0].preis = 19.5; // von Hand erfasster Schulpreis
+		bestellStore.addToCart({
 			id: 'p3',
 			titel: 'Atlas',
 			autor: 'K',
 			isbn: '978-7',
 			preis_vorschlag: 27
 		});
-		expect(orderStore.cart[0].preis).toBe(19.5);
+		expect(bestellStore.cart[0].preis).toBe(19.5);
 	});
 
 	it('setzt den Such-Zustand nach dem Hinzufügen zurück', () => {
-		orderStore.searchQuery = 'faust';
-		orderStore.searchResults = [{ titel: 'x' }];
-		orderStore.showDropdown = true;
-		orderStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' });
-		expect(orderStore.searchQuery).toBe('');
-		expect(orderStore.searchResults).toEqual([]);
-		expect(orderStore.showDropdown).toBe(false);
+		bestellStore.searchQuery = 'faust';
+		bestellStore.searchResults = [{ titel: 'x' }];
+		bestellStore.showDropdown = true;
+		bestellStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' });
+		expect(bestellStore.searchQuery).toBe('');
+		expect(bestellStore.searchResults).toEqual([]);
+		expect(bestellStore.showDropdown).toBe(false);
 	});
 });
 
-describe('orderStore Summen', () => {
+describe('bestellStore Summen', () => {
 	beforeEach(resetStore);
 
 	it('berechnet total und totalQty über alle Positionen', () => {
-		orderStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
-		orderStore.addToCart({ id: 'b', titel: 'B', autor: '', isbn: '2' }, 3);
-		orderStore.cart[0].preis = 10.5;
-		orderStore.cart[1].preis = /** @type {any} */ ('4.50'); // Eingabefeld liefert Strings
-		expect(orderStore.totalQty).toBe(5);
-		expect(orderStore.total).toBeCloseTo(2 * 10.5 + 3 * 4.5);
+		bestellStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
+		bestellStore.addToCart({ id: 'b', titel: 'B', autor: '', isbn: '2' }, 3);
+		bestellStore.cart[0].preis = 10.5;
+		bestellStore.cart[1].preis = /** @type {any} */ ('4.50'); // Eingabefeld liefert Strings
+		expect(bestellStore.totalQty).toBe(5);
+		expect(bestellStore.total).toBeCloseTo(2 * 10.5 + 3 * 4.5);
 	});
 
 	it('wertet ungültige Preise als 0', () => {
-		orderStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
-		orderStore.cart[0].preis = /** @type {any} */ ('abc');
-		expect(orderStore.total).toBe(0);
+		bestellStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
+		bestellStore.cart[0].preis = /** @type {any} */ ('abc');
+		expect(bestellStore.total).toBe(0);
 	});
 });
 
-describe('orderStore.submitOrder', () => {
+describe('bestellStore.submitOrder', () => {
 	beforeEach(() => {
 		resetStore();
 		vi.clearAllMocks();
-		orderStore.suppliers = [{ id: 's1', name: 'Naacher', email: 'x@y.z', customerNumber: 'K1' }];
-		orderStore.selectedSupplierId = 's1';
+		bestellStore.suppliers = [{ id: 's1', name: 'Naacher', email: 'x@y.z', customerNumber: 'K1' }];
+		bestellStore.selectedSupplierId = 's1';
 	});
 
 	it('sendet nichts ohne Lieferant oder mit leerem Warenkorb', async () => {
-		orderStore.selectedSupplierId = '';
-		orderStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' });
-		await orderStore.submitOrder();
+		bestellStore.selectedSupplierId = '';
+		bestellStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' });
+		await bestellStore.submitOrder();
 		expect(hatBestellungGesendet(apiPost)).toBe(false);
 
-		orderStore.selectedSupplierId = 's1';
-		orderStore.cart = [];
-		await orderStore.submitOrder();
+		bestellStore.selectedSupplierId = 's1';
+		bestellStore.cart = [];
+		await bestellStore.submitOrder();
 		expect(hatBestellungGesendet(apiPost)).toBe(false);
 	});
 
 	it('baut das Payload korrekt und leert den Warenkorb', async () => {
 		bestellAntwort({ status: 'success', message: 'ok', ordered_qty: 2 });
-		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 2, true);
-		orderStore.cart[0].preis = /** @type {any} */ ('9.90');
+		bestellStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 2, true);
+		bestellStore.cart[0].preis = /** @type {any} */ ('9.90');
 
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 
 		expect(apiPost).toHaveBeenCalledWith(
 			'/api/bestellungen',
@@ -240,16 +240,16 @@ describe('orderStore.submitOrder', () => {
 		const payload = bestellPayload(apiPostMock);
 		expect(typeof payload.idempotency_key).toBe('string');
 		expect(payload.idempotency_key.length).toBeGreaterThan(0);
-		expect(orderStore.cart).toEqual([]);
+		expect(bestellStore.cart).toEqual([]);
 		expect(apiGet).toHaveBeenCalledWith('/api/bestellungen/zulauf');
 	});
 
 	it('unterdrückt generate_barcodes, wenn der globale Schalter aus ist', async () => {
 		bestellAntwort({ status: 'success' });
-		orderStore.attachBarcodes = false;
-		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 1, true);
+		bestellStore.attachBarcodes = false;
+		bestellStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 1, true);
 
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 
 		const payload = bestellPayload(apiPostMock);
 		expect(payload.items[0].generate_barcodes).toBe(false);
@@ -257,16 +257,16 @@ describe('orderStore.submitOrder', () => {
 
 	it('behält den Warenkorb bei einem API-Fehler', async () => {
 		bestellAntwort(new Error('boom'), true);
-		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' });
+		bestellStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' });
 
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 
-		expect(orderStore.cart).toHaveLength(1);
-		expect(orderStore.submitting).toBe(false);
+		expect(bestellStore.cart).toHaveLength(1);
+		expect(bestellStore.submitting).toBe(false);
 	});
 });
 
-describe('orderStore Suche', () => {
+describe('bestellStore Suche', () => {
 	beforeEach(() => {
 		resetStore();
 		vi.clearAllMocks();
@@ -278,13 +278,13 @@ describe('orderStore Suche', () => {
 
 	it('sucht erst ab 2 Zeichen und debounced 300ms', async () => {
 		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([]));
-		orderStore.searchQuery = 'f';
-		orderStore.handleSearchInput();
+		bestellStore.searchQuery = 'f';
+		bestellStore.handleSearchInput();
 		await vi.advanceTimersByTimeAsync(400);
 		expect(apiClient.post).not.toHaveBeenCalled();
 
-		orderStore.searchQuery = 'faust';
-		orderStore.handleSearchInput();
+		bestellStore.searchQuery = 'faust';
+		bestellStore.handleSearchInput();
 		await vi.advanceTimersByTimeAsync(299);
 		expect(apiClient.post).not.toHaveBeenCalled();
 		await vi.advanceTimersByTimeAsync(1);
@@ -303,23 +303,23 @@ describe('orderStore Suche', () => {
 			)
 			.mockImplementationOnce(async () => suchAntwort([{ titel: 'Neu', source: 'local' }]));
 
-		orderStore.searchQuery = 'alte suche';
-		orderStore.handleSearchInput();
+		bestellStore.searchQuery = 'alte suche';
+		bestellStore.handleSearchInput();
 		await vi.advanceTimersByTimeAsync(300); // erste Anfrage läuft, hängt
 
-		orderStore.searchQuery = 'neue suche';
-		orderStore.handleSearchInput();
+		bestellStore.searchQuery = 'neue suche';
+		bestellStore.handleSearchInput();
 		await vi.advanceTimersByTimeAsync(300); // zweite Anfrage kommt sofort zurück
 
-		expect(orderStore.searchResults).toEqual([{ titel: 'Neu', source: 'local' }]);
+		expect(bestellStore.searchResults).toEqual([{ titel: 'Neu', source: 'local' }]);
 
 		// Jetzt trudelt die ALTE Antwort ein — sie darf nichts überschreiben
 		resolveFirst(suchAntwort([{ titel: 'Alt', source: 'local' }], { dnbAusfall: true }));
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(orderStore.searchResults).toEqual([{ titel: 'Neu', source: 'local' }]);
-		expect(orderStore.showDropdown).toBe(true);
-		expect(orderStore.dnbAusfall).toBe(false);
+		expect(bestellStore.searchResults).toEqual([{ titel: 'Neu', source: 'local' }]);
+		expect(bestellStore.showDropdown).toBe(true);
+		expect(bestellStore.dnbAusfall).toBe(false);
 	});
 
 	// Ohne das Merkmal sähe ein Buch, das die DNB kennt, aus wie eines, das sie nicht kennt:
@@ -327,48 +327,48 @@ describe('orderStore Suche', () => {
 	it('öffnet die Trefferliste bei einem Ausfall der DNB auch ohne Treffer', async () => {
 		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([], { dnbAusfall: true }));
 
-		await orderStore.sucheSofort('9783060130764');
+		await bestellStore.sucheSofort('9783060130764');
 
-		expect(orderStore.searchResults).toEqual([]);
-		expect(orderStore.dnbAusfall).toBe(true);
-		expect(orderStore.showDropdown).toBe(true);
+		expect(bestellStore.searchResults).toEqual([]);
+		expect(bestellStore.dnbAusfall).toBe(true);
+		expect(bestellStore.showDropdown).toBe(true);
 	});
 
 	it('nennt keinen Ausfall, wenn die DNB ohne Treffer geantwortet hat', async () => {
 		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([]));
 
-		await orderStore.sucheSofort('gibt es nicht');
+		await bestellStore.sucheSofort('gibt es nicht');
 
-		expect(orderStore.dnbAusfall).toBe(false);
-		expect(orderStore.showDropdown).toBe(false);
+		expect(bestellStore.dnbAusfall).toBe(false);
+		expect(bestellStore.showDropdown).toBe(false);
 	});
 
 	it('vergisst den Ausfall mit der nächsten Suche und beim Leeren', async () => {
 		vi.mocked(apiClient.post).mockResolvedValueOnce(suchAntwort([], { dnbAusfall: true }));
-		await orderStore.sucheSofort('faust');
-		expect(orderStore.dnbAusfall).toBe(true);
+		await bestellStore.sucheSofort('faust');
+		expect(bestellStore.dnbAusfall).toBe(true);
 
 		vi.mocked(apiClient.post).mockResolvedValueOnce(
 			suchAntwort([{ titel: 'Faust', source: 'dnb' }])
 		);
-		await orderStore.sucheSofort('faust');
-		expect(orderStore.dnbAusfall).toBe(false);
+		await bestellStore.sucheSofort('faust');
+		expect(bestellStore.dnbAusfall).toBe(false);
 
 		vi.mocked(apiClient.post).mockResolvedValueOnce(suchAntwort([], { dnbAusfall: true }));
-		await orderStore.sucheSofort('faust');
-		orderStore.resetSearch();
-		expect(orderStore.dnbAusfall).toBe(false);
-		expect(orderStore.showDropdown).toBe(false);
+		await bestellStore.sucheSofort('faust');
+		bestellStore.resetSearch();
+		expect(bestellStore.dnbAusfall).toBe(false);
+		expect(bestellStore.showDropdown).toBe(false);
 	});
 
 	it('meldet eine abgewiesene Suche und zeigt keine Treffer', async () => {
 		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([], { status: 500 }));
 
-		await orderStore.sucheSofort('faust');
+		await bestellStore.sucheSofort('faust');
 
 		expect(toastStore.addToast).toHaveBeenCalledWith('Suche gescheitert', 'error');
-		expect(orderStore.searchResults).toEqual([]);
-		expect(orderStore.showDropdown).toBe(false);
+		expect(bestellStore.searchResults).toEqual([]);
+		expect(bestellStore.showDropdown).toBe(false);
 	});
 });
 
@@ -381,7 +381,7 @@ describe('orderStore Suche', () => {
 // Nach dem Markieren wurde die Liste neu geladen, die alte Auswahl war weiterhin gültig,
 // und der frische Standard blieb wirkungslos. Ein Haken, der nichts tut, ist schlimmer als
 // keiner, weil man sich auf ihn verlässt und die Bestellung an den falschen Händler geht.
-describe('orderStore.loadSuppliers — Standard-Lieferant', () => {
+describe('bestellStore.loadSuppliers — Standard-Lieferant', () => {
 	const LISTE = [
 		{ id: 's1', name: 'Cornelsen', customerNumber: 'C-1', ist_hauptlieferant: false },
 		{ id: 's2', name: 'Westermann', customerNumber: 'W-2', ist_hauptlieferant: true }
@@ -394,34 +394,34 @@ describe('orderStore.loadSuppliers — Standard-Lieferant', () => {
 	});
 
 	it('übernimmt den Standard, obwohl die bisherige Auswahl gültig ist', async () => {
-		orderStore.selectedSupplierId = 's1'; // gültig, aber nicht der Standard
-		await orderStore.loadSuppliers();
-		expect(orderStore.selectedSupplierId).toBe('s2');
+		bestellStore.selectedSupplierId = 's1'; // gültig, aber nicht der Standard
+		await bestellStore.loadSuppliers();
+		expect(bestellStore.selectedSupplierId).toBe('s2');
 	});
 
 	it('lässt eine angefangene Bestellung unangetastet', async () => {
-		orderStore.selectedSupplierId = 's1';
-		orderStore.cart = [/** @type {any} */ ({ id: 'b1', titel: 'Buch', menge: 1, preis: 0 })];
-		await orderStore.loadSuppliers();
+		bestellStore.selectedSupplierId = 's1';
+		bestellStore.cart = [/** @type {any} */ ({ id: 'b1', titel: 'Buch', menge: 1, preis: 0 })];
+		await bestellStore.loadSuppliers();
 		expect(
-			orderStore.selectedSupplierId,
+			bestellStore.selectedSupplierId,
 			'Mitten in einer Bestellung darf der Lieferant nicht unter der Hand wechseln'
 		).toBe('s1');
 	});
 
 	it('greift auch bei leerer Vorauswahl', async () => {
-		orderStore.selectedSupplierId = '';
-		await orderStore.loadSuppliers();
-		expect(orderStore.selectedSupplierId).toBe('s2');
+		bestellStore.selectedSupplierId = '';
+		await bestellStore.loadSuppliers();
+		expect(bestellStore.selectedSupplierId).toBe('s2');
 	});
 
 	it('nimmt den ersten, wenn kein Standard hinterlegt ist', async () => {
 		vi.mocked(apiGet).mockImplementation(async () =>
 			LISTE.map((s) => ({ ...s, ist_hauptlieferant: false }))
 		);
-		orderStore.selectedSupplierId = '';
-		await orderStore.loadSuppliers();
-		expect(orderStore.selectedSupplierId).toBe('s1');
+		bestellStore.selectedSupplierId = '';
+		await bestellStore.loadSuppliers();
+		expect(bestellStore.selectedSupplierId).toBe('s1');
 	});
 });
 
@@ -429,12 +429,12 @@ describe('orderStore.loadSuppliers — Standard-Lieferant', () => {
 // Bestellung darf ihn überstimmen, und ein gemischter Warenkorb wird beim Auslösen zu
 // ZWEI Bestellungen an denselben Händler — der Händler richtet Nachlass und Rechnungsweg
 // nach dem Topf und kann eine gemischte Bestellung weder rabattieren noch abrechnen.
-describe('orderStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
+describe('bestellStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 	beforeEach(() => {
 		resetStore();
 		vi.clearAllMocks();
-		orderStore.suppliers = [{ id: 's1', name: 'Naacher', email: 'x@y.z', customerNumber: 'K1' }];
-		orderStore.selectedSupplierId = 's1';
+		bestellStore.suppliers = [{ id: 's1', name: 'Naacher', email: 'x@y.z', customerNumber: 'K1' }];
+		bestellStore.selectedSupplierId = 's1';
 	});
 
 	/** Alle Bestell-Payloads in Aufrufreihenfolge. */
@@ -445,51 +445,51 @@ describe('orderStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 	}
 
 	it('schlägt den Topf aus dem Lernmittel-Kennzeichen vor', () => {
-		orderStore.addToCart({
+		bestellStore.addToCart({
 			id: 'lmf',
 			titel: 'Mathe 7',
 			autor: '',
 			isbn: '1',
 			ist_lernmittel: true
 		});
-		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
-		expect(orderStore.cart.map((i) => i.mittel)).toEqual(['land', 'schultraeger']);
-		expect(orderStore.gruppen.map((g) => g.mittel)).toEqual(['land', 'schultraeger']);
+		bestellStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
+		expect(bestellStore.cart.map((i) => i.mittel)).toEqual(['land', 'schultraeger']);
+		expect(bestellStore.gruppen.map((g) => g.mittel)).toEqual(['land', 'schultraeger']);
 	});
 
 	it('zeigt nur nicht-leere Gruppen, Lernmittel zuerst', () => {
-		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
-		expect(orderStore.gruppen).toHaveLength(1);
-		expect(orderStore.gruppen[0].mittel).toBe('schultraeger');
-		orderStore.addToCart(
+		bestellStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
+		expect(bestellStore.gruppen).toHaveLength(1);
+		expect(bestellStore.gruppen[0].mittel).toBe('schultraeger');
+		bestellStore.addToCart(
 			{ id: 'lmf', titel: 'Mathe 7', autor: '', isbn: '1', ist_lernmittel: true },
 			30
 		);
-		expect(orderStore.gruppen.map((g) => [g.mittel, g.menge])).toEqual([
+		expect(bestellStore.gruppen.map((g) => [g.mittel, g.menge])).toEqual([
 			['land', 30],
 			['schultraeger', 1]
 		]);
 	});
 
 	it('verschiebt eine Position in den anderen Topf und behält das beim zweiten „+"', () => {
-		orderStore.addToCart({ id: 'bib', titel: 'Falsch gekennzeichnet', autor: '', isbn: '2' });
-		orderStore.verschiebe(orderStore.cart[0]);
-		expect(orderStore.cart[0].mittel).toBe('land');
+		bestellStore.addToCart({ id: 'bib', titel: 'Falsch gekennzeichnet', autor: '', isbn: '2' });
+		bestellStore.verschiebe(bestellStore.cart[0]);
+		expect(bestellStore.cart[0].mittel).toBe('land');
 		// Ein zweites „+" auf denselben Titel schiebt ihn NICHT zurück.
-		orderStore.addToCart({ id: 'bib', titel: 'Falsch gekennzeichnet', autor: '', isbn: '2' });
-		expect(orderStore.cart[0].mittel).toBe('land');
-		expect(orderStore.cart[0].menge).toBe(2);
+		bestellStore.addToCart({ id: 'bib', titel: 'Falsch gekennzeichnet', autor: '', isbn: '2' });
+		expect(bestellStore.cart[0].mittel).toBe('land');
+		expect(bestellStore.cart[0].menge).toBe(2);
 	});
 
 	it('löst für einen gemischten Warenkorb zwei Bestellungen mit eigenem Schlüssel aus', async () => {
 		bestellAntwort({ status: 'success', message: 'ok', ordered_qty: 1 });
-		orderStore.addToCart(
+		bestellStore.addToCart(
 			{ id: 'lmf', titel: 'Mathe 7', autor: '', isbn: '1', ist_lernmittel: true },
 			30
 		);
-		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' }, 2);
+		bestellStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' }, 2);
 
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 
 		const payloads = bestellPayloads();
 		expect(payloads.map((p) => p.mittel)).toEqual(['land', 'schultraeger']);
@@ -504,7 +504,7 @@ describe('orderStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 		// Zwei Bestellungen, zwei Idempotenz-Schlüssel — sonst hielte der Server die
 		// zweite für den Doppelklick der ersten.
 		expect(payloads[0].idempotency_key).not.toBe(payloads[1].idempotency_key);
-		expect(orderStore.cart).toEqual([]);
+		expect(bestellStore.cart).toEqual([]);
 	});
 
 	it('behält bei einem Fehler nur die gescheiterte Gruppe im Warenkorb', async () => {
@@ -513,24 +513,24 @@ describe('orderStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 			if (body.mittel === 'schultraeger') throw new Error('boom');
 			return { status: 'success', message: 'ok' };
 		});
-		orderStore.addToCart({
+		bestellStore.addToCart({
 			id: 'lmf',
 			titel: 'Mathe 7',
 			autor: '',
 			isbn: '1',
 			ist_lernmittel: true
 		});
-		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
+		bestellStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
 
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 
 		// Die Lernmittel-Bestellung ist durch und weg; die Bücherei-Position wartet.
-		expect(orderStore.cart.map((i) => i.id)).toEqual(['bib']);
-		expect(orderStore.submitting).toBe(false);
+		expect(bestellStore.cart.map((i) => i.id)).toEqual(['bib']);
+		expect(bestellStore.submitting).toBe(false);
 		const ersterSchluessel = bestellPayloads()[1].idempotency_key;
 
 		// Der zweite Versuch schickt DENSELBEN Schlüssel für die gescheiterte Gruppe.
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 		const payloads = bestellPayloads();
 		expect(payloads).toHaveLength(3);
 		expect(payloads[2].mittel).toBe('schultraeger');
@@ -552,20 +552,20 @@ describe('orderStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 			if (!antworte) throw new Error('Antwort ging verloren');
 			return { status: 'success', message: 'ok' };
 		});
-		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
+		bestellStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
 
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 		const ersterSchluessel = bestellPayloads()[0].idempotency_key;
-		expect(orderStore.cart).toHaveLength(1); // gescheitert, bleibt liegen
+		expect(bestellStore.cart).toHaveLength(1); // gescheitert, bleibt liegen
 
 		// Gleicher Warenkorb, zweiter Versuch: derselbe Schlüssel (Wiederholung).
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 		expect(bestellPayloads()[1].idempotency_key).toBe(ersterSchluessel);
 
 		// Jetzt ändert jemand die Menge — das ist eine ANDERE Bestellung.
-		orderStore.cart[0].menge = 5;
+		bestellStore.cart[0].menge = 5;
 		antworte = true;
-		await orderStore.submitOrder();
+		await bestellStore.submitOrder();
 
 		const payloads = bestellPayloads();
 		expect(payloads).toHaveLength(3);

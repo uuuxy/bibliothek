@@ -59,7 +59,7 @@ const EMOJI_BESTAND = [
 	'src/lib/AusleihQuittung.svelte',
 	'src/lib/components/OmniboxBlockAlert.svelte',
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
-	'src/lib/components/bestellungen/OrderCart.svelte',
+	'src/lib/components/bestellungen/Warenkorb.svelte',
 	'src/lib/components/layout/RouteFallback.svelte',
 	'src/lib/designer/Toolbar.svelte'
 ];

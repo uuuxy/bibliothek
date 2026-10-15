@@ -12,7 +12,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiGet } from '../../apiFetch.js';
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 	import BestellStatusBlock from './BestellStatusBlock.svelte';
@@ -125,7 +125,7 @@
 				<p class="text-sm text-on-surface-variant">{bestellung.lieferant_email}</p>
 			</div>
 			<div class="text-right">
-				{#if orderStore.preiseErfassen}
+				{#if bestellStore.preiseErfassen}
 					<div class="text-xs font-semibold text-on-surface-variant">Bestellwert</div>
 					<div class="text-2xl font-black text-on-surface">
 						{formatEuro(bestellung.gesamtbetrag)}

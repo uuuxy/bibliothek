@@ -654,7 +654,7 @@ wurde („Schreibpfad" = Handler, „Tür" = Endpunkt). Dieselben Fragen, übers
 | 2 · Spezialwert        | leer/0/nil im Rumpf                         | ein geleertes Zahlenfeld wird beim Umrechnen zur 0 — „nicht anfassen" und „kein Stück" sind dann dieselbe Eingabe (01.10.2026, Bestand in der Buchmaske) |
 | 3 · zwei Türen         | zweiter Endpunkt schreibt denselben Zustand | zweiter Ort für denselben Zustand: Komponenten-State neben dem Store, localStorage neben dem Backend (Multi-PC!)                                  |
 | 5 · stille Fehler      | 200 ohne Wirkung                            | Ladefehler ohne Fehlerzustand — ein catch, das alten Inhalt stehen lässt und nichts anzeigt; Erfolgsmeldung aus der Eingabe statt aus der Antwort; ein Knopf, dessen Weg ohne Anfrage und ohne Meldung endet |
-| 6 · Zeit               | Zeitzone, Tx-Fenster                        | Antwort-Reihenfolge: überholt die langsame Antwort die schnelle? Sequenznummer wie im orderStore                                                  |
+| 6 · Zeit               | Zeitzone, Tx-Fenster                        | Antwort-Reihenfolge: überholt die langsame Antwort die schnelle? Sequenznummer wie im bestellStore                                                  |
 | 8 · Lebenszyklus       | Frist, Löschjob                             | Bediener- und Ansichtswechsel: welcher State muss beim Verlassen zurück auf Anfang — und welcher Code tut das wirklich?                           |
 | 11 · geteilter Zustand | Wächter/Lader je Pfad                       | wer lädt den Store auf DIESEM Einstieg — und unmountet das Ergebnis seinen eigenen Lader? Prüft ein Wächter gegen die geladene Liste statt gegen den Datensatz, entfällt er, sobald der Datensatz nicht in ihr steht |
 

@@ -5,7 +5,7 @@
 	import BedarfZeile from './BedarfZeile.svelte';
 	import NeueAuflageDialog from './NeueAuflageDialog.svelte';
 	import { filtereBedarf } from './bedarfFilter.js';
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { resthoehe } from '../../actions/resthoehe.js';
 	let { recommendations, onAddToCart } = $props();
 
@@ -56,7 +56,7 @@
 
 <!-- Kein Kartenrahmen: Der Bestellbedarf ist die Arbeitsflaeche der Seite, kein Objekt
      darauf. Die Kopfzeile trennt sich ueber ihre Linie vom Listenkoerper, die Spalte
-     daneben ueber die senkrechte Linie in BestellWorkspace. -->
+     daneben ueber die senkrechte Linie in Bestellwesen. -->
 <section class="flex min-w-0 flex-col">
 	<!-- Header -->
 	<header class="border-b border-outline-variant pb-4">
@@ -177,7 +177,7 @@
 		onbestellt={(titel) => {
 			neueAuflageFuer = null;
 			onAddToCart(titel);
-			orderStore.loadRecommendations();
+			bestellStore.loadRecommendations();
 		}}
 	/>
 </section>

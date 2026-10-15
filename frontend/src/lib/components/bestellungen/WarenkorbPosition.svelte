@@ -1,17 +1,17 @@
 <!-- @component Eine Position im Warenkorb — Cover, Titel, Menge, Preis, Topf-Wechsel.
 
-     Eigene Datei, weil der Warenkorb nach Topf gruppiert: OrderCart trägt die Gruppen und
+     Eigene Datei, weil der Warenkorb nach Topf gruppiert: Warenkorb trägt die Gruppen und
      den Absenden-Knopf, diese Datei die Zeile. Beides zusammen läge über der
      200-Zeilen-Marke. -->
 <script>
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Feld from '../ui/Feld.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { MITTEL, anderesMittel } from './mittel.js';
 	import { X, Tag } from '@lucide/svelte';
 
-	/** @type {{ item: import('../../stores/orderStore.svelte.js').CartItem }} */
+	/** @type {{ item: import('../../stores/bestellStore.svelte.js').CartItem }} */
 	let { item } = $props();
 
 	/** Wohin die Position wechseln würde — der Knopf nennt das ZIEL, nicht den Zustand. */
@@ -33,7 +33,7 @@
 			{/if}
 		</div>
 		<button
-			onclick={() => orderStore.removeFromCart(item)}
+			onclick={() => bestellStore.removeFromCart(item)}
 			aria-label="Entfernen"
 			class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-on-surface-variant transition-colors hover:text-error"
 		>
@@ -61,7 +61,7 @@
 				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant">+</button
 			>
 		</div>
-		{#if orderStore.preiseErfassen}
+		{#if bestellStore.preiseErfassen}
 			<div class="flex items-center gap-1.5">
 				<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unverändert ist: Er ist
 				     der DNB-Ladenpreis bei Erscheinen, nicht der Preis, den die Schule zahlt. Wer
@@ -90,7 +90,7 @@
 	     dass jemand erst den Titel bearbeiten muss. Der Knopf nennt das Ziel. -->
 	<div class="pl-10">
 		<button
-			onclick={() => orderStore.verschiebe(item)}
+			onclick={() => bestellStore.verschiebe(item)}
 			class="text-label-small font-medium text-primary hover:underline cursor-pointer"
 			aria-label="{item.titel} in die Bestellung „{ziel.label}“ verschieben"
 		>

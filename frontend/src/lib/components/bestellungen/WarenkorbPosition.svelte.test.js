@@ -10,15 +10,15 @@ vi.mock('../../apiFetch.js', async (original) => ({
 }));
 vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
 
-import { orderStore } from '../../stores/orderStore.svelte.js';
-import OrderCartPosition from './OrderCartPosition.svelte';
+import { bestellStore } from '../../stores/bestellStore.svelte.js';
+import WarenkorbPosition from './WarenkorbPosition.svelte';
 
 // Unter 1 geht die Menge einer Position nicht; entfernt wird sie über das Kreuz. Der Knopf
 // „Menge verringern" zeigt das: Er ist bei 1 gesperrt, statt ohne Wirkung zu bleiben.
 
 /** @param {number} menge */
 function position(menge) {
-	orderStore.cart = [
+	bestellStore.cart = [
 		{
 			id: 't-1',
 			titel: 'Mathematik 7',
@@ -35,16 +35,16 @@ function position(menge) {
 		}
 	];
 	// Die Position aus dem Speicher, nicht das Objekt von oben: Nur sie ist reaktiv.
-	const { getByRole } = render(OrderCartPosition, { item: orderStore.cart[0] });
+	const { getByRole } = render(WarenkorbPosition, { item: bestellStore.cart[0] });
 	return {
 		minus: /** @type {HTMLButtonElement} */ (getByRole('button', { name: 'Menge verringern' })),
 		plus: /** @type {HTMLButtonElement} */ (getByRole('button', { name: 'Menge erhöhen' }))
 	};
 }
 
-describe('OrderCartPosition: die Menge', () => {
+describe('WarenkorbPosition: die Menge', () => {
 	beforeEach(() => {
-		orderStore.cart = [];
+		bestellStore.cart = [];
 	});
 
 	it('sperrt „Menge verringern" bei 1', () => {
@@ -57,11 +57,11 @@ describe('OrderCartPosition: die Menge', () => {
 		const { minus, plus } = position(1);
 
 		await fireEvent.click(plus);
-		expect(orderStore.cart[0].menge).toBe(2);
+		expect(bestellStore.cart[0].menge).toBe(2);
 		expect(minus.disabled).toBe(false);
 
 		await fireEvent.click(minus);
-		expect(orderStore.cart[0].menge).toBe(1);
+		expect(bestellStore.cart[0].menge).toBe(1);
 		expect(minus.disabled).toBe(true);
 	});
 
@@ -69,6 +69,6 @@ describe('OrderCartPosition: die Menge', () => {
 		const { minus } = position(3);
 		expect(minus.disabled).toBe(false);
 		await fireEvent.click(minus);
-		expect(orderStore.cart[0].menge).toBe(2);
+		expect(bestellStore.cart[0].menge).toBe(2);
 	});
 });

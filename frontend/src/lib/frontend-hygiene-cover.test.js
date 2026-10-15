@@ -26,7 +26,7 @@ import {
 // darunter täglich benutzte Bildschirme, und ein Massen-Refactoring an einem Tag hat
 // in diesem Projekt schon zweimal eine Regression erzeugt. Sie stehen hier eingefroren
 // und werden bei ihrem nächsten fachlichen Anfassen nachgezogen — so wie es
-// OrderRecommendations am 04.09. als erster Verwender vorgemacht hat.
+// Bestellbedarf am 04.09. als erster Verwender vorgemacht hat.
 const EIGENES_COVER = /coverKandidaten|coverSrc\(/;
 
 const BESTAND = [

@@ -9,7 +9,7 @@ import { apiFetch, extractApiError } from '../../apiFetch.js';
  *
  *  1. Nur die JÜNGSTE Anfrage schreibt die Liste. Vorher überschrieb die langsame
  *     Antwort auf „Al“ die schnelle auf „Alt123“ — und aus dieser Liste wählt der Admin
- *     den Datensatz, der danach UNUMKEHRBAR gelöscht wird. Vorbild orderStore.svelte.js.
+ *     den Datensatz, der danach UNUMKEHRBAR gelöscht wird. Vorbild bestellStore.svelte.js.
  *  2. Ein Fehler heißt Fehler. 403/500 hießen vorher „Kein anderer Datensatz gefunden“,
  *     und ein Netzwerkfehler flog als unbehandelte Rejection aus dem Timer-Rückruf.
  *  3. Zurücksetzen stoppt auch den laufenden Timer und entwertet die laufende Antwort —

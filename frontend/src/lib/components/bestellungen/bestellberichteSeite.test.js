@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import BestellBerichte from './BestellBerichte.svelte';
 import { apiGet } from '../../apiFetch.js';
 
-// Der orderStore holt beides über apiGet (stores/orderStore.svelte.js). Ein Mock, der nur
+// Der bestellStore holt beides über apiGet (stores/bestellStore.svelte.js). Ein Mock, der nur
 // apiFetch ersetzt, macht apiGet zu `undefined` — der Aufruf fliegt dann in den
 // catch-Block des Stores, die Liste bleibt leer und der Test wäre rot, ohne dass an der
 // Ansicht etwas falsch ist. Also die Türen mocken, die der Store wirklich benutzt.

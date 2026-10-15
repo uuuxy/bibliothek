@@ -46,7 +46,7 @@ const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
 //     BEIDES: Ein Alarm, der einen Schüler an der Ausleihe stoppt, wird nicht leiser
 //     gemacht, um eine Gestaltungsregel zu erfüllen. Bewusste Ausnahme, keine Schuld.
 //   * `LabelPreview` bildet Papier nach; der Rahmen ist die Etikettenkante.
-//   * Die Cover-Bilder (`OrderSearch`, `CoverPeek`) sind Bilder, keine M3-Bauteile.
+//   * Die Cover-Bilder (`BestellSuche`, `CoverPeek`) sind Bilder, keine M3-Bauteile.
 //
 // Wer einen Eintrag abräumt, trägt ihn hier aus. Wer einen hinzufügen will, hat einen
 // Verstoß gebaut — die Regel ist nicht ausgelegt, sondern in Googles Token-Spezifikation

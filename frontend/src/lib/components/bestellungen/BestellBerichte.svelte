@@ -11,14 +11,14 @@
 
      Die Ansicht lädt ihre beiden Angaben selbst, weil sie nicht mehr im Bestellwesen
      hängt: die Lieferantenliste und den Schalter „Preise im Bestellwesen". Beides steht
-     im geteilten orderStore mit eigener Frist — dieselbe Stelle, aus der auch die
+     im geteilten bestellStore mit eigener Frist — dieselbe Stelle, aus der auch die
      Lieferanten-Kategorie der Einstellungen lädt, also kein zweiter Datenweg. -->
 <script>
 	import { onMount } from 'svelte';
 	import { localISO } from '../../utils/dates.js';
 	import { berichtOptionen as optionen, berichtURL } from './bestellberichte.js';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
-	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import PageShell from '../layout/PageShell.svelte';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -26,11 +26,11 @@
 	import { Printer } from '@lucide/svelte';
 
 	onMount(() => {
-		orderStore.loadSuppliers();
-		orderStore.loadKonfiguration();
+		bestellStore.loadSuppliers();
+		bestellStore.loadKonfiguration();
 	});
 
-	const suppliers = $derived(orderStore.suppliers);
+	const suppliers = $derived(bestellStore.suppliers);
 
 	/** @type {"monat" | "jahr" | "lieferant"} */
 	let typ = $state(/** @type {'monat' | 'jahr' | 'lieferant'} */ ('monat'));
@@ -62,7 +62,7 @@
 		}))
 	];
 
-	const berichtOptionen = $derived(optionen(orderStore.preiseErfassen));
+	const berichtOptionen = $derived(optionen(bestellStore.preiseErfassen));
 
 	let rangeInvalid = $derived(typ === 'lieferant' && vonDatum > bisDatum);
 	let canDownload = $derived(!rangeInvalid && (typ !== 'lieferant' || lieferantId !== ''));
@@ -76,7 +76,7 @@
 			bisDatum,
 			lieferantId,
 			suppliers,
-			mitPreisen: orderStore.preiseErfassen,
+			mitPreisen: bestellStore.preiseErfassen,
 			mittel
 		})
 	);

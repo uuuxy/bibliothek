@@ -1,7 +1,7 @@
 <!-- @component Eine Zeile der Lieferantentabelle — lesend oder im Bearbeiten-Zustand.
 
      Eigene Datei, seit die Maske eine zweite Kundennummer trägt (Schulträger, Migration
-     109): SupplierManager mit beiden Zeilenformen lag über der 200-Zeilen-Marke.
+     109): Lieferanten mit beiden Zeilenformen lag über der 200-Zeilen-Marke.
 
      Drei Spalten mit je zwei Zeilen (M3-Listenzeile: Headline + Supporting) statt fünf
      einzeiligen: Seit dem Umzug in die Einstellungen (25.08.2026) hat die Tabelle bei
@@ -30,7 +30,7 @@
 	// Beim Bearbeiten IMMER den aktuellen Stand vorbelegen. Ohne den Hauptlieferanten-
 	// Haken stünde beim Bearbeiten „aus" im Feld, und wer nur die E-Mail korrigiert,
 	// degradierte den Hauptlieferanten still zum normalen Händler; dasselbe gilt für die
-	// zweite Kundennummer. Bewusst der Anfangswert (untrack): SupplierManager hängt die
+	// zweite Kundennummer. Bewusst der Anfangswert (untrack): Lieferanten hängt die
 	// Zeile beim Wechsel in den Bearbeiten-Zustand neu ein ({#key}); ein Formular, das
 	// dem Prop weiter folgt, verlöre die Eingabe beim nächsten Nachladen der Liste.
 	//

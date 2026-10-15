@@ -1,7 +1,7 @@
 <script>
 	import { ChevronRight } from '@lucide/svelte';
-	import OrderSearch from './OrderSearch.svelte';
-	import OrderCart from './OrderCart.svelte';
+	import BestellSuche from './BestellSuche.svelte';
+	import Warenkorb from './Warenkorb.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 
 	/**
@@ -15,7 +15,7 @@
 
 <!-- Kein Kartenrahmen: Diese Spalte ist der unterstuetzende Bereich zum Bestellbedarf
      daneben, kein Objekt auf der Flaeche. Abgegrenzt wird sie durch die senkrechte
-     Linie, die BestellWorkspace setzt — die traegt die Trennung fuer die ganze Spalte
+     Linie, die Bestellwesen setzt — die traegt die Trennung fuer die ganze Spalte
      statt fuer diesen einen Block. -->
 <div>
 	<div class="pb-4 border-b border-outline-variant flex items-center justify-between gap-2">
@@ -39,7 +39,7 @@
 		</div>
 	</div>
 	<div class="pt-5 space-y-5">
-		<OrderSearch />
-		<OrderCart />
+		<BestellSuche />
+		<Warenkorb />
 	</div>
 </div>
