@@ -99,20 +99,20 @@ func miniIMAP(t *testing.T, antwort string) (host, port string) {
 	return host, port
 }
 
-func mitMiniIMAP(t *testing.T, antwort string) {
+// mitMiniIMAP stellt den Testserver ein und lässt a sein Wegwerf-Zertifikat zu.
+func mitMiniIMAP(t *testing.T, a *Anmeldung, antwort string) {
 	t.Helper()
 	host, port := miniIMAP(t, antwort)
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("IMAP_HOST", host)
 	t.Setenv("IMAP_PORT", port)
-	alt := imapTLSAnpassung
-	imapTLSAnpassung = func(c *tls.Config) { c.InsecureSkipVerify = true } //nolint:gosec // Testserver mit Wegwerf-Zertifikat
-	t.Cleanup(func() { imapTLSAnpassung = alt })
+	a.imapTLS = func(c *tls.Config) { c.InsecureSkipVerify = true } //nolint:gosec // Testserver mit Wegwerf-Zertifikat
 }
 
 func TestPruefeIMAPAnmeldung_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
-	mitMiniIMAP(t, "NO [AUTHENTICATIONFAILED] Authentication failed.")
-	err := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "falsch")
+	a := &Anmeldung{}
+	mitMiniIMAP(t, a, "NO [AUTHENTICATIONFAILED] Authentication failed.")
+	err := a.pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "falsch")
 	if err == nil {
 		t.Fatal("erwartet Fehler bei NO")
 	}
@@ -125,16 +125,18 @@ func TestPruefeIMAPAnmeldung_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
 }
 
 func TestPruefeIMAPAnmeldung_VerbindungsabbruchBeimAnmeldenIstAusfall(t *testing.T) {
-	mitMiniIMAP(t, "CLOSE")
-	err := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
+	a := &Anmeldung{}
+	mitMiniIMAP(t, a, "CLOSE")
+	err := a.pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
 	if !errors.Is(err, errMailserverNichtErreichbar) {
 		t.Fatalf("Server schließt beim LOGIN ohne Antwort — das ist ein Ausfall, kein Passwortfehler: %v", err)
 	}
 }
 
 func TestPruefeIMAPAnmeldung_OKMeldetErfolg(t *testing.T) {
-	mitMiniIMAP(t, "OK LOGIN completed")
-	if err := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "richtig"); err != nil {
+	a := &Anmeldung{}
+	mitMiniIMAP(t, a, "OK LOGIN completed")
+	if err := a.pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "richtig"); err != nil {
 		t.Fatalf("OK vom Server muss Erfolg sein: %v", err)
 	}
 }

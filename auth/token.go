@@ -6,6 +6,7 @@ package auth
 import (
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -79,6 +80,9 @@ type Anmeldung struct {
 	Sperrliste *Sperrliste
 	Sitzungen  *Sitzungen
 	pool       Datenbank
+	// imapTLS ändert die Einstellungen für TLS zum Mailserver; im Betrieb nil. Ein Test lässt so
+	// seinen Mailserver mit selbst signiertem Zertifikat zu.
+	imapTLS func(*tls.Config)
 }
 
 // NewAnmeldung baut die Anmeldung mit dem Geheimnis für die Signatur und der Laufzeit der

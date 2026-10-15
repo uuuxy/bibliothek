@@ -89,7 +89,7 @@ func Entsperren(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 // Fehlerantwort schon geschrieben. Ein Fehlversuch zählt nur beim falschen Passwort, nicht beim
 // Ausfall des Mailservers (wie in meldeAn).
 func pruefeEntsperrPasswort(ctx context.Context, w http.ResponseWriter, anmeldung *Anmeldung, sitzungID, email, passwort, schluessel string) bool {
-	imapFehler := pruefeIMAPAnmeldung(ctx, email, passwort)
+	imapFehler := anmeldung.pruefeIMAPAnmeldung(ctx, email, passwort)
 	if imapFehler == nil {
 		merkeGeaendertesPasswort(ctx, anmeldung, sitzungID, passwort)
 		return true

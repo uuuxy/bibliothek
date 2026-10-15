@@ -28,10 +28,6 @@ const imapFrist = 15 * time.Second
 // Frist (Timeout=0): Ein Server, der nach „OK LOGIN" schweigt, hielte die Tür ohne Ende fest.
 const imapBefehlsfrist = 5 * time.Second
 
-// imapTLSAnpassung lässt Tests die Einstellungen für TLS ändern (Mailserver mit selbst
-// signiertem Zertifikat). Im Betrieb ist sie nil.
-var imapTLSAnpassung func(*tls.Config)
-
 // errAnmeldungAbgelehnt heißt: Der Server hat geantwortet und die Zugangsdaten abgelehnt (NO
 // oder BAD). Nur das ist ein falsches Passwort. Alles andere (Frist abgelaufen, Verbindung
 // abgebrochen, keine Begrüßung) ist ein Ausfall, auch wenn die Frist noch läuft: Ein Server, der
@@ -189,7 +185,7 @@ func imapOhneServer(host string) (entschieden bool, err error) {
 
 // imapVerbindungsdaten baut Adresse und Einstellungen für TLS zum Mailserver. Ein Port am
 // Hostnamen (alte Konfiguration, etwa :143) wird verworfen; es gilt IMAP_PORT, sonst 993.
-func imapVerbindungsdaten(host string) (string, *tls.Config) {
+func (a *Anmeldung) imapVerbindungsdaten(host string) (string, *tls.Config) {
 	if strings.Contains(host, ":") {
 		teile := strings.Split(host, ":")
 		host = teile[0]
@@ -218,8 +214,8 @@ func imapVerbindungsdaten(host string) (string, *tls.Config) {
 		},
 	}
 
-	if imapTLSAnpassung != nil {
-		imapTLSAnpassung(tlsKonfig)
+	if a.imapTLS != nil {
+		a.imapTLS(tlsKonfig)
 	}
 	return adresse, tlsKonfig
 }
@@ -227,7 +223,7 @@ func imapVerbindungsdaten(host string) (string, *tls.Config) {
 // pruefeIMAPAnmeldung prüft E-Mail-Adresse und Passwort am Mailserver der Schule, über TLS ab
 // der ersten Zeile (Port 993, sofern IMAP_PORT nichts anderes sagt). ctx kommt von der Tür der
 // Anmeldung; die eigene Frist imapFrist liegt darunter.
-func pruefeIMAPAnmeldung(ctx context.Context, email, passwort string) error {
+func (a *Anmeldung) pruefeIMAPAnmeldung(ctx context.Context, email, passwort string) error {
 	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
 	if entschieden, err := imapOhneServer(host); entschieden {
 		return err
@@ -237,7 +233,7 @@ func pruefeIMAPAnmeldung(ctx context.Context, email, passwort string) error {
 	if !strings.Contains(email, "@") {
 		email = fmt.Sprintf("%s@philipp-reis-schule.de", email)
 	}
-	adresse, tlsKonfig := imapVerbindungsdaten(host)
+	adresse, tlsKonfig := a.imapVerbindungsdaten(host)
 
 	ctx, cancel := context.WithTimeout(ctx, imapFrist)
 	defer cancel()

@@ -102,7 +102,7 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 	kontoID, email := sperreKonto(t, pool)
 	a := sperreAnmeldung(t, pool, 12*time.Hour)
 
-	mitMiniIMAP(t, "OK LOGIN completed")
+	mitMiniIMAP(t, a, "OK LOGIN completed")
 	cookie := sperreAnmelden(t, pool, a, email, "geheim-eins")
 
 	// Die Anmeldung hat eine Zeile, und in ihr steht das Passwort nicht.
@@ -174,13 +174,13 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 
 	// Der Mailserver ist zurück und lehnt ab: Dann entscheidet er, nicht der Prüfwert.
 	sperreSperren(t, a, cookie)
-	mitMiniIMAP(t, "NO [AUTHENTICATIONFAILED] Authentication failed.")
+	mitMiniIMAP(t, a, "NO [AUTHENTICATIONFAILED] Authentication failed.")
 	if rec := sperreEntsperren(pool, a, cookie, "geheim-eins"); rec.Code != http.StatusUnauthorized {
 		t.Fatalf("Mailserver lehnt ab: Status %d, erwartet 401 — der Prüfwert gilt nur bei einem Ausfall: %s", rec.Code, rec.Body.String())
 	}
 
 	// Der Mailserver nimmt ein neues Passwort an: Der Prüfwert zieht nach.
-	mitMiniIMAP(t, "OK LOGIN completed")
+	mitMiniIMAP(t, a, "OK LOGIN completed")
 	if rec := sperreEntsperren(pool, a, cookie, "geheim-zwei"); rec.Code != http.StatusOK {
 		t.Fatalf("Mailserver nimmt das neue Passwort an: Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -204,7 +204,7 @@ func TestSperre_UeberdauertDieErneuerungDesTokens(t *testing.T) {
 	kurz := sperreAnmeldung(t, pool, time.Hour)
 	a := sperreAnmeldung(t, pool, 12*time.Hour)
 
-	mitMiniIMAP(t, "OK LOGIN completed")
+	mitMiniIMAP(t, kurz, "OK LOGIN completed")
 	cookie := sperreAnmelden(t, pool, kurz, email, "geheim")
 	if !sperreSperren(t, a, cookie) {
 		t.Fatal("Sperren meldet gesperrt=false")
@@ -265,7 +265,7 @@ func TestSperre_ZeileEndetMitDerAnmeldung(t *testing.T) {
 	ctx := context.Background()
 	kontoID, email := sperreKonto(t, pool)
 	a := sperreAnmeldung(t, pool, 12*time.Hour)
-	mitMiniIMAP(t, "OK LOGIN completed")
+	mitMiniIMAP(t, a, "OK LOGIN completed")
 
 	zeilen := func() int {
 		t.Helper()

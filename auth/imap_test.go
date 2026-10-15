@@ -86,7 +86,7 @@ func TestPruefeIMAPAnmeldung_AttrappeNurLokal(t *testing.T) {
 	t.Run("lokal akzeptiert", func(t *testing.T) {
 		t.Setenv("APP_ENV", "local")
 		t.Setenv("IMAP_HOST", "mock")
-		if err := pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err != nil {
+		if err := (&Anmeldung{}).pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err != nil {
 			t.Fatalf("lokaler Mock: unerwarteter Fehler %v", err)
 		}
 	})
@@ -94,7 +94,7 @@ func TestPruefeIMAPAnmeldung_AttrappeNurLokal(t *testing.T) {
 	t.Run("Produktion lehnt ab", func(t *testing.T) {
 		t.Setenv("APP_ENV", "production")
 		t.Setenv("IMAP_HOST", "mock")
-		if err := pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err == nil {
+		if err := (&Anmeldung{}).pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err == nil {
 			t.Fatal("Mock in Produktion hat die Anmeldung akzeptiert; want Ablehnung")
 		}
 	})
@@ -104,7 +104,7 @@ func TestPruefeIMAPAnmeldung_AttrappeNurLokal(t *testing.T) {
 	t.Run("ohne Host keine Verbindung zur Schule", func(t *testing.T) {
 		t.Setenv("APP_ENV", "production")
 		t.Setenv("IMAP_HOST", "")
-		if err := pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err == nil {
+		if err := (&Anmeldung{}).pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err == nil {
 			t.Fatal("leerer IMAP_HOST wurde akzeptiert; want Ablehnung ohne Netzzugriff")
 		}
 	})
@@ -129,7 +129,7 @@ func TestPruefeIMAPAnmeldung_ToterServerIstAusfall(t *testing.T) {
 	t.Setenv("IMAP_HOST", host)
 	t.Setenv("IMAP_PORT", port)
 
-	pruefFehler := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
+	pruefFehler := (&Anmeldung{}).pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
 	if !errors.Is(pruefFehler, errMailserverNichtErreichbar) {
 		t.Fatalf("erwartet ErrMailserverNichtErreichbar, bekam: %v", pruefFehler)
 	}
@@ -144,7 +144,7 @@ func TestIMAPVerbindungsdaten(t *testing.T) {
 		{"mail.example.test", "1993", "mail.example.test:1993"},
 	} {
 		t.Setenv("IMAP_PORT", f.port)
-		adresse, tlsKonfig := imapVerbindungsdaten(f.host)
+		adresse, tlsKonfig := (&Anmeldung{}).imapVerbindungsdaten(f.host)
 		if adresse != f.adresse {
 			t.Errorf("Host %q, IMAP_PORT %q: Adresse %q, erwartet %q", f.host, f.port, adresse, f.adresse)
 		}

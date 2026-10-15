@@ -150,7 +150,7 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFun
 			return
 		}
 
-		konto, ok := meldeAn(ctx, w, pool, anfrage.Email, passwort, schluessel)
+		konto, ok := anmeldung.meldeAn(ctx, w, pool, anfrage.Email, passwort, schluessel)
 		if !ok {
 			return
 		}
@@ -254,8 +254,8 @@ func pruefeFehlversuche(w http.ResponseWriter, email, adresse string) (schluesse
 // Ein Fehlversuch zählt nur beim falschen Passwort. Ein Ausfall von Mailserver oder Datenbank
 // und ein offener Antrag sind keine Fehlversuche: Wer dort mit dem richtigen Passwort
 // weiterprobiert, darf sich nicht selbst aussperren.
-func meldeAn(ctx context.Context, w http.ResponseWriter, pool db.Pool, email, passwort, schluessel string) (anmeldeKonto, bool) {
-	konto, err := pruefeIMAPZugang(ctx, pool, email, passwort)
+func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.Pool, email, passwort, schluessel string) (anmeldeKonto, bool) {
+	konto, err := a.pruefeIMAPZugang(ctx, pool, email, passwort)
 	if err != nil {
 		// Ein Ausfall des Mailservers ist kein falsches Passwort: 503 ohne Fehlversuch, sonst
 		// sperrte sich aus, wer sein richtiges Passwort erneut probiert.
@@ -299,8 +299,8 @@ func meldeAn(ctx context.Context, w http.ResponseWriter, pool db.Pool, email, pa
 // pruefeIMAPZugang prüft die Zugangsdaten am Mailserver und lädt danach das Konto. Ein Fehler
 // heißt, dass die Anmeldung nicht gilt. ErrMailserverNichtErreichbar geht unverändert weiter,
 // damit die Tür den Ausfall vom falschen Passwort unterscheidet (503 statt 401 mit Fehlversuch).
-func pruefeIMAPZugang(ctx context.Context, pool db.Pool, email, passwort string) (anmeldeKonto, error) {
-	if err := pruefeIMAPAnmeldung(ctx, email, passwort); err != nil {
+func (a *Anmeldung) pruefeIMAPZugang(ctx context.Context, pool db.Pool, email, passwort string) (anmeldeKonto, error) {
+	if err := a.pruefeIMAPAnmeldung(ctx, email, passwort); err != nil {
 		return anmeldeKonto{}, err
 	}
 
