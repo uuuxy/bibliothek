@@ -27,9 +27,9 @@ import (
 func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
-	go broker.Start(ctx)
+	go broker.FuehreAus(ctx)
 
-	stream := httptest.NewServer(broker.Handler())
+	stream := httptest.NewServer(broker.Tuer())
 	resp, err := http.Get(stream.URL)
 	if err != nil {
 		cancel()
@@ -39,8 +39,8 @@ func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 	// Abbau in dieser Reihenfolge und in einem Cleanup statt in defers: Ein
 	// `defer stream.Close()` liefe vor `cancel()` und vor dem Schließen des Antwort-Rumpfs.
 	// httptest.Server.Close wartet aber auf alle aktiven Verbindungen, und die Funktion
-	// des Stroms (sse.streamEvents) endet erst, wenn der Empfänger geht (r.Context) oder
-	// der Broker herunterfährt (clientChan). Beides stünde noch aus; der Test hinge bis
+	// des Stroms (sse.schreibeEreignisse) endet erst, wenn der Empfänger geht (r.Context) oder
+	// der Broker herunterfährt (sein Kanal). Beides stünde noch aus; der Test hinge bis
 	// zum 10-Minuten-Timeout des Pakets und risse den Pre-Push mit.
 	t.Cleanup(func() {
 		if cerr := resp.Body.Close(); cerr != nil {

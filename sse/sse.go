@@ -12,138 +12,134 @@ import (
 	"time"
 )
 
-// clientPuffer ist die Anzahl Nachrichten, die ein langsamer Arbeitsplatz zurückhängen
-// darf, bevor Broadcast ihn überspringt. Zehn Ereignisse entsprechen bei uns mehreren
-// Sekunden Bedienung am Tresen.
-const clientPuffer = 10
+// pufferJeFenster ist die Zahl der Nachrichten, die ein langsamer Arbeitsplatz zurückhängen
+// darf, bevor Verteile ihn überspringt. Zehn Ereignisse entsprechen mehreren Sekunden
+// Bedienung an der Theke.
+const pufferJeFenster = 10
 
-// Broker verteilt Ereignisse an alle offenen SSE-Ströme.
+// Broker verteilt Ereignisse an alle offenen Ströme.
 //
-// Der Zustand liegt hinter einem RWMutex, nicht hinter einer Ereignisschleife mit
-// register-/unregister-Kanälen. Die frühere Fassung hatte beides — und die Kanäle waren
-// nicht nur überflüssig, sondern der Grund, warum kein Herunterfahren mehr sauber
-// gelang: Sobald Start durch den abgebrochenen Kontext zurückkehrte, las niemand mehr
-// aus ihnen, und jeder SSE-Handler blieb in seinem `defer b.unregister <- …` für immer
-// stehen. httpServer.Shutdown wartet auf genau diese Handler, lief in seinen Timeout,
-// und main endete mit os.Exit(1). In einer Schule mit dauerhaft verbundenen
-// Arbeitsplätzen war das jeder Deploy.
+// Der Zustand liegt hinter einem RWMutex statt hinter einer Ereignisschleife mit Kanälen zum
+// An- und Abmelden: Kehrt eine solche Schleife beim Herunterfahren zurück, liest niemand mehr
+// aus den Kanälen, jede Tür bleibt beim Abmelden stehen, und httpServer.Shutdown wartet bis
+// zu seiner Frist.
 type Broker struct {
-	mu         sync.RWMutex
-	clients    map[chan string]struct{}
-	geschlosen bool
+	mu          sync.RWMutex
+	fenster     map[chan string]struct{}
+	geschlossen bool
 }
 
-// NewBroker initializes and returns a new Broker.
+// NewBroker baut einen Broker ohne angemeldete Fenster.
 func NewBroker() *Broker {
-	return &Broker{clients: make(map[chan string]struct{})}
+	return &Broker{fenster: make(map[chan string]struct{})}
 }
 
-// Start hält den Broker am Leben, bis ctx abgebrochen wird, und fährt ihn dann herunter.
-// Gedacht für `go broker.Start(ctx)`.
+// FuehreAus hält den Broker am Leben, bis ctx abgebrochen wird, und fährt ihn dann herunter;
+// gedacht für `go broker.FuehreAus(ctx)`.
 //
-// Das Herunterfahren schließt alle Client-Kanäle. Das ist der Abbruchsignal für die
-// laufenden Ströme: Ohne ihn wartete jeder Handler bis zu 15 Sekunden auf seinen nächsten
-// Heartbeat — länger als das Shutdown-Zeitfenster von 10 Sekunden in main.go.
-func (b *Broker) Start(ctx context.Context) {
+// Das Herunterfahren schließt die Kanäle aller Fenster, und das beendet die laufenden Ströme:
+// Ohne dieses Signal wartete jede Tür bis zu 15 Sekunden auf ihr nächstes Lebenszeichen,
+// länger als die zehn Sekunden, die main.go dem Herunterfahren gibt.
+func (b *Broker) FuehreAus(ctx context.Context) {
 	<-ctx.Done()
-	b.shutdown()
+	b.fahreHerunter()
 }
 
-// shutdown schließt alle offenen Ströme und weist spätere Anmeldungen ab.
-func (b *Broker) shutdown() {
+// fahreHerunter schließt alle offenen Ströme und weist spätere Anmeldungen ab.
+func (b *Broker) fahreHerunter() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if b.geschlosen {
+	if b.geschlossen {
 		return
 	}
-	b.geschlosen = true
-	for clientChan := range b.clients {
-		close(clientChan)
-		delete(b.clients, clientChan)
+	b.geschlossen = true
+	for kanal := range b.fenster {
+		close(kanal)
+		delete(b.fenster, kanal)
 	}
 	log.Println("SSE: Broker heruntergefahren, alle Ströme geschlossen")
 }
 
-// subscribe meldet einen neuen Strom an. Rückgabe nil bedeutet: Der Broker fährt gerade
-// herunter — der Handler muss die Anfrage abweisen, statt zu warten.
-func (b *Broker) subscribe() chan string {
+// meldeAn meldet einen neuen Strom an. nil heißt, dass der Broker gerade herunterfährt: Die
+// Tür weist die Anfrage dann ab, statt zu warten.
+func (b *Broker) meldeAn() chan string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if b.geschlosen {
+	if b.geschlossen {
 		return nil
 	}
-	clientChan := make(chan string, clientPuffer)
-	b.clients[clientChan] = struct{}{}
+	kanal := make(chan string, pufferJeFenster)
+	b.fenster[kanal] = struct{}{}
 	log.Println("SSE: New client registered")
-	return clientChan
+	return kanal
 }
 
-// unsubscribe meldet einen Strom ab und schließt seinen Kanal. Mehrfach aufrufbar: Nach
-// dem Herunterfahren ist der Kanal bereits geschlossen und aus der Liste entfernt, ein
-// zweites close() würde sonst das Programm abbrechen.
-func (b *Broker) unsubscribe(clientChan chan string) {
+// meldeAb meldet einen Strom ab und schließt seinen Kanal. Ein zweiter Aufruf tut nichts: Nach
+// dem Herunterfahren ist der Kanal schon geschlossen, und ein zweites close bräche das
+// Programm ab.
+func (b *Broker) meldeAb(kanal chan string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if _, offen := b.clients[clientChan]; !offen {
+	if _, offen := b.fenster[kanal]; !offen {
 		return
 	}
-	delete(b.clients, clientChan)
-	close(clientChan)
+	delete(b.fenster, kanal)
+	close(kanal)
 	log.Println("SSE: Client disconnected")
 }
 
-// Broadcast sends a message to all currently connected SSE clients.
+// Verteile schickt ein Ereignis an alle angemeldeten Fenster.
 //
-// Die RLock deckt zugleich das Senden ab: unsubscribe und shutdown schließen Kanäle unter
+// Die Lesesperre deckt auch das Senden ab: meldeAb und fahreHerunter schließen Kanäle unter
 // der Schreibsperre, und ein Senden auf einen geschlossenen Kanal bricht das Programm ab.
 // Beides darf sich deshalb nie überschneiden.
-func (b *Broker) Broadcast(event, data string) {
+func (b *Broker) Verteile(ereignis, daten string) {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
-	formattedMessage := fmt.Sprintf("event: %s\ndata: %s\n\n", event, data)
-	for clientChan := range b.clients {
+	nachricht := fmt.Sprintf("event: %s\ndata: %s\n\n", ereignis, daten)
+	for kanal := range b.fenster {
 		select {
-		case clientChan <- formattedMessage:
+		case kanal <- nachricht:
 		default:
-			// Non-blocking send; skip if client is lagging or channel is full
+			// Ein Fenster mit vollem Puffer verpasst das Ereignis, statt die anderen aufzuhalten.
 		}
 	}
 }
 
-// Handler returns an http.HandlerFunc that establishes an SSE connection.
-// Sets necessary streaming headers and handles the heartbeat (dead-man-switch).
-func (b *Broker) Handler() http.HandlerFunc {
+// Tuer liefert die Tür, an der ein Fenster seinen Strom öffnet: Kopfzeilen für den Strom, ein
+// Lebenszeichen alle 15 Sekunden, dann die Ereignisse.
+func (b *Broker) Tuer() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		clientChan := b.subscribe()
-		if clientChan == nil {
-			// Der Broker fährt herunter. 503 statt eines Handlers, der das
-			// Herunterfahren blockiert; der Browser verbindet sich später neu.
+		kanal := b.meldeAn()
+		if kanal == nil {
+			// Der Broker fährt herunter. 503, damit die Tür das Herunterfahren nicht aufhält;
+			// der Browser verbindet sich später neu.
 			http.Error(w, "Server fährt herunter", http.StatusServiceUnavailable)
 			return
 		}
-		defer b.unsubscribe(clientChan)
+		defer b.meldeAb(kanal)
 
 		rc := http.NewResponseController(w)
-		clearStreamDeadlines(rc)
+		hebeFristenAuf(rc)
 
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
-		// Note: "Connection: keep-alive" is forbidden in HTTP/2 (RFC 9113 §8.2.2) and causes
-		// ERR_HTTP2_PROTOCOL_ERROR. SSE streams work natively over both HTTP/1.1 and HTTP/2
-		// without this header. CORS is handled by the global corsMiddleware.
+		// Kein „Connection: keep-alive": HTTP/2 verbietet das Kopffeld (RFC 9113 §8.2.2), der
+		// Browser bricht mit ERR_HTTP2_PROTOCOL_ERROR ab. Der Strom läuft über HTTP/1.1 und
+		// HTTP/2 auch ohne; CORS regelt corsMiddleware für alle Wege.
 
-		streamEvents(w, r, rc, clientChan)
+		schreibeEreignisse(w, r, rc, kanal)
 	}
 }
 
-// clearStreamDeadlines hebt Read-/Write-Deadlines für den langlebigen SSE-Stream auf,
-// damit er nicht durch die Server-Timeouts beendet wird (best-effort: nicht alle
-// Transports unterstützen Deadlines).
-func clearStreamDeadlines(rc *http.ResponseController) {
+// hebeFristenAuf hebt die Fristen zum Lesen und Schreiben für den langen Strom auf, damit ihn
+// die Fristen des Servers nicht beenden. Nicht jede Verbindung kennt Fristen; ein Fehler steht
+// deshalb nur im Log.
+func hebeFristenAuf(rc *http.ResponseController) {
 	if err := rc.SetReadDeadline(time.Time{}); err != nil {
 		log.Printf("SSE: could not clear read deadline: %v", err)
 	}
@@ -152,42 +148,42 @@ func clearStreamDeadlines(rc *http.ResponseController) {
 	}
 }
 
-// streamEvents sendet den Handshake, 15s-Heartbeats (Dead-Man-Switch) und die
-// Broadcast-Nachrichten, bis der Client die Verbindung schließt, der Broker
-// herunterfährt oder ein Schreibfehler (Disconnect) auftritt.
-func streamEvents(w http.ResponseWriter, r *http.Request, rc *http.ResponseController, clientChan <-chan string) {
-	// writeAndFlush sends one SSE chunk and flushes it. A non-nil error means the
-	// client has disconnected, so the caller must terminate the handler.
-	writeAndFlush := func(chunk string) error {
-		if _, err := io.WriteString(w, chunk); err != nil {
+// schreibeEreignisse schreibt die Begrüßung, alle 15 Sekunden ein Lebenszeichen und die
+// verteilten Ereignisse, bis der Browser die Verbindung schließt, der Broker herunterfährt
+// oder das Schreiben scheitert.
+func schreibeEreignisse(w http.ResponseWriter, r *http.Request, rc *http.ResponseController, kanal <-chan string) {
+	// schreibe schickt ein Stück des Stroms sofort hinaus. Ein Fehler heißt, dass der Browser
+	// weg ist; die Tür endet dann.
+	schreibe := func(stueck string) error {
+		if _, err := io.WriteString(w, stueck); err != nil {
 			return err
 		}
 		return rc.Flush()
 	}
 
-	// Send handshake acknowledgment
-	if err := writeAndFlush("event: connected\ndata: {\"status\":\"ok\"}\n\n"); err != nil {
+	if err := schreibe("event: connected\ndata: {\"status\":\"ok\"}\n\n"); err != nil {
 		return
 	}
 
-	// Heartbeat ticker for dead-man-switch detection (15s is sufficient for library use)
-	ticker := time.NewTicker(15 * time.Second)
-	defer ticker.Stop()
+	// Am Lebenszeichen erkennt die Oberfläche, dass die Verbindung lebt; bleibt es aus, meldet
+	// sie die Störung. Der Server merkt am Schreiben, dass ein Fenster weg ist.
+	takt := time.NewTicker(15 * time.Second)
+	defer takt.Stop()
 
 	for {
 		select {
 		case <-r.Context().Done():
 			return
-		case <-ticker.C:
+		case <-takt.C:
 			ping := fmt.Sprintf("event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix())
-			if err := writeAndFlush(ping); err != nil {
+			if err := schreibe(ping); err != nil {
 				return
 			}
-		case msg, ok := <-clientChan:
+		case nachricht, ok := <-kanal:
 			if !ok {
-				return // Broker heruntergefahren oder Client abgemeldet
+				return // Broker heruntergefahren oder Fenster abgemeldet
 			}
-			if err := writeAndFlush(msg); err != nil {
+			if err := schreibe(nachricht); err != nil {
 				return
 			}
 		}

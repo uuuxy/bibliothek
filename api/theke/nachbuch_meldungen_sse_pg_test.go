@@ -32,10 +32,10 @@ func TestNachbuchMeldungen_SSESignalBeiAenderung(t *testing.T) {
 
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
-	go broker.Start(ctx)
+	go broker.FuehreAus(ctx)
 	w.srv.Broker = broker
 
-	stream := httptest.NewServer(broker.Handler())
+	stream := httptest.NewServer(broker.Tuer())
 	resp, err := http.Get(stream.URL)
 	if err != nil {
 		cancel()

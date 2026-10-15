@@ -15,6 +15,6 @@ package lernmittel
 // der noch scheitern kann, schickte alle Ansichten auf den alten Stand zurück.
 func (t *Tueren) meldeLMFPlanGeaendert() {
 	if t.Broker != nil {
-		t.Broker.Broadcast("lmf-plan", "{}")
+		t.Broker.Verteile("lmf-plan", "{}")
 	}
 }

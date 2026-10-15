@@ -114,6 +114,6 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen r
 	// aus 403 und neuem Verbindungsaufbau. Der Strom trägt nur Ereignisse der Abläufe (Typ,
 	// Kennungen, Buchtitel, Zeitstempel), keine personenbezogenen Daten von Schülern
 	// (VerlangeAnmeldung in api/tuer/sitzung.go).
-	liveLeitung := s.Broker.Handler()
+	liveLeitung := s.Broker.Tuer()
 	mux.Handle("GET /events", s.VerlangeAnmeldung()(liveLeitung))
 }

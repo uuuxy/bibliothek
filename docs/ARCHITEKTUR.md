@@ -650,7 +650,7 @@ HTTP-Anfrage
 | `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 3.826 Zeilen, 23 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben, Bestellbericht |
 | `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
-| `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
+| `sse/`                  | 191 Zeilen, 1 Datei        | Broker und Tür für Server-Sent Events                                                                                                                                     |
 | `apierrors/`            | 223 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`AntworteFehler`) und ihre Abbildung auf HTTP-Status                                                                                         |
 | `internal/*` (übrige)   | 6.912 Zeilen, 59 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `buchetikett` (Eingabe der Etiketten-Erzeuger für Bücher: Typ des Druckauftrags, Kopf der Schule, Wahl des Eigentumsvermerks nach dem Topf, die Daten eines Etiketts aus Titel, Bestellung und Druckauftrag), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
@@ -1287,7 +1287,7 @@ Pfadparameter davor, und deren Liste gehört zu den Routen. Ein Test legt eine E
 
 > **Wer hier einen „zentralen Event-Loop" wiederherstellt, baut einen Betriebsfehler
 > zurück ein.** Die frühere Bauweise mit register-/unregister-Kanälen verhinderte das
-> saubere Herunterfahren: Kehrte `Start` durch den abgebrochenen Kontext zurück, las
+> saubere Herunterfahren: Kehrte die Schleife durch den abgebrochenen Kontext zurück, las
 > niemand mehr aus den Kanälen, jeder SSE-Handler blieb in seinem `defer` stehen,
 > `Shutdown` wartete auf eben diese Handler bis zum Timeout — und `main` endete mit
 > `os.Exit(1)`. In einer Schule mit dauerhaft verbundenen Arbeitsplätzen war das **jeder**
@@ -3132,7 +3132,7 @@ in seinem `defer` stehen, `httpServer.Shutdown` wartete auf eben diese Handler b
 Timeout — und `main` endete mit `os.Exit(1)`. Bei dauerhaft verbundenen Arbeitsplätzen war
 das **jeder** Deploy.
 
-**Folge.** `Broadcast` sendet unter Lesesperre, `unsubscribe`/`shutdown` schließen Kanäle
+**Folge.** `Verteile` sendet unter Lesesperre, `meldeAb`/`fahreHerunter` schließen Kanäle
 unter Schreibsperre — beides kann sich nie überschneiden (ein Senden auf einen geschlossenen
 Kanal würde den Prozess abbrechen). Rückstau wird übersprungen (Puffer 10, `select`/
 `default`), Heartbeat alle 15 s.

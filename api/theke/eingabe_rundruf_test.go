@@ -29,8 +29,8 @@ func (o *festeOmnibox) VerarbeiteEingabe(context.Context, service.OmniboxEingabe
 func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
-	go broker.Start(ctx)
-	stream := httptest.NewServer(broker.Handler())
+	go broker.FuehreAus(ctx)
+	stream := httptest.NewServer(broker.Tuer())
 	resp, err := http.Get(stream.URL)
 	if err != nil {
 		cancel()
@@ -89,7 +89,7 @@ func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 		}
 		marken++
 		marke := fmt.Sprintf("marke-%d", marken)
-		broker.Broadcast(marke, "{}")
+		broker.Verteile(marke, "{}")
 		var rundrufe []string
 		for {
 			switch e := naechstes(); e.name {

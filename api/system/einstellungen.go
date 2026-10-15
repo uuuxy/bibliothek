@@ -91,7 +91,7 @@ func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, e
 	// holen sich die Oberflächen per GET /api/einstellungen/sitzung — dort sitzt die
 	// Vorgaben-Logik, hier wäre sie dupliziert.
 	if t.Broker != nil && (req.ThekeLeerenMinuten != nil || req.SperreMinuten != nil) {
-		t.Broker.Broadcast("sitzungsfristen", "{}")
+		t.Broker.Verteile("sitzungsfristen", "{}")
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})

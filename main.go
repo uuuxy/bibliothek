@@ -361,7 +361,7 @@ func main() {
 
 	// 4. Server-Sent Events broker initialization
 	broker := sse.NewBroker()
-	go broker.Start(ctx)
+	go broker.FuehreAus(ctx)
 	slog.Info("Server-Sent Events (SSE) broker started.")
 
 	// 5. Background Jobs & Scheduler

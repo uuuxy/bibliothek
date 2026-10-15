@@ -231,6 +231,6 @@ func (t *Tueren) zaehleMeldungen(ctx context.Context) (int, bool) {
 // sie sehen darf, holt sie sich hinter seinem Recht ab.
 func (t *Tueren) meldeMeldungsstand() {
 	if t.Broker != nil {
-		t.Broker.Broadcast("nachbuch-meldungen", "{}")
+		t.Broker.Verteile("nachbuch-meldungen", "{}")
 	}
 }

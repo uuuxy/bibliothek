@@ -97,6 +97,6 @@ func (t *Tueren) sendeThekenEreignis(antwort eingabeAntwort) {
 
 	daten, err := json.Marshal(ereignis)
 	if err == nil {
-		t.Broker.Broadcast("action", string(daten))
+		t.Broker.Verteile("action", string(daten))
 	}
 }
