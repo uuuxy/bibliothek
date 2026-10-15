@@ -13,6 +13,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 
 	"github.com/google/uuid"
@@ -97,8 +98,19 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 	})
 
 	t.Run("Startposition außerhalb des Bogens: 400", func(t *testing.T) {
-		erwarte400(t, bogen(t, map[string]any{"startPosition": 9999, "schuelerIds": []string{schueler}}),
-			"Startposition")
+		rec := bogen(t, map[string]any{"startPosition": 9999, "schuelerIds": []string{schueler}})
+		erwarte400(t, rec, "Startposition")
+		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Startposition 9999 liegt außerhalb des Bogens (1 bis 21)"; got != erwartet {
+			t.Errorf("SchuelerEtiketten: Meldung %q, erwartet %q", got, erwartet)
+		}
+	})
+
+	t.Run("markierte Schüler gibt es nicht mehr: 400", func(t *testing.T) {
+		rec := bogen(t, map[string]any{"schuelerIds": []string{"00000000-0000-4000-8000-0000000000e1"}})
+		erwarte400(t, rec, "keine Daten")
+		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Zu den markierten Schülern gibt es keine Daten mehr — inzwischen gelöscht?"; got != erwartet {
+			t.Errorf("SchuelerEtiketten: Meldung %q, erwartet %q", got, erwartet)
+		}
 	})
 
 	t.Run("nichts markiert: 400", func(t *testing.T) {

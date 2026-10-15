@@ -228,7 +228,7 @@ func TestAusleihFristSetzen_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 		status                  int
 		stueck                  string
 	}{
-		{"ohne Sitzung", ausleihe, `{"faellig_am":"` + zukunft + `"}`, false, http.StatusUnauthorized, "Sitzungs-Information"},
+		{"ohne Sitzung", ausleihe, `{"faellig_am":"` + zukunft + `"}`, false, http.StatusUnauthorized, "Sitzungs-Information fehlt oder ist abgelaufen"},
 		{"ohne Datum", ausleihe, `{}`, true, http.StatusBadRequest, ""},
 		{"Datum unlesbar", ausleihe, `{"faellig_am":"morgen"}`, true, http.StatusBadRequest, "ungültiges Datumsformat"},
 		{"unbekannte Ausleihe, Frist in der Zukunft", unbekannt, `{"faellig_am":"` + zukunft + `"}`, true, http.StatusNotFound, "nicht gefunden"},

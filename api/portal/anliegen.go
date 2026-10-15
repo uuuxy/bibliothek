@@ -50,7 +50,7 @@ func (t *Tueren) AnliegenAnlegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, "Sitzungs-Information fehlt", nil)
 			return
 		}
 		var req anliegenAnfrage
@@ -110,7 +110,7 @@ func (t *Tueren) EigeneAnliegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, "Sitzungs-Information fehlt", nil)
 			return
 		}
 		anliegen, err := repository.NewAnliegenAbfragen(t.DB.Pool).LadeEigene(r.Context(), claims.KontoID)

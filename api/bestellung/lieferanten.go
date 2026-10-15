@@ -299,10 +299,9 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 			return
 		}
 		if istHaupt {
-			//nolint:staticcheck // ST1005: ganze Sätze mit Satzzeichen — diese Meldung steht so vor der Bibliothekskraft.
-			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
 				"Dieser Händler ist der Hauptlieferant — über ihn läuft die Bestellung. "+
-					"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen."))
+					"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen.", nil)
 			return
 		}
 

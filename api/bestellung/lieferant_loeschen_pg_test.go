@@ -11,6 +11,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 )
 
 // Der Hauptlieferant lässt sich nicht nebenbei wegklicken.
@@ -68,8 +69,10 @@ func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Errorf("Hauptlieferant gelöscht: Status %d, erwartet 409 — der Bestellweg hinge danach an nichts", rec.Code)
 	}
-	if !strings.Contains(rec.Body.String(), "Hauptlieferant") {
-		t.Errorf("Meldung nennt den Grund nicht: %s", rec.Body.String())
+	const erwartet = "Dieser Händler ist der Hauptlieferant — über ihn läuft die Bestellung. " +
+		"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen."
+	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
+		t.Errorf("Hauptlieferant löschen: Meldung %q, erwartet %q", got, erwartet)
 	}
 	var nochDa bool
 	if err := pool.QueryRow(t.Context(),

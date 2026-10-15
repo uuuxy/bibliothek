@@ -192,8 +192,10 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 		t.Fatalf("Erneut senden ohne Mailserver: Status %d, erwartet 502: %s", rec.Code, rec.Body.String())
 	}
 	// Die Meldung erreicht den Bildschirm im Wortlaut; eine 500 ersetzte der Sanitizer.
-	if !strings.Contains(rec.Body.String(), "erneut gescheitert") {
-		t.Errorf("Die Antwort nennt den gescheiterten Versand nicht: %s", rec.Body.String())
+	const gescheitert = "Der Versand an Naacher-Erneut@example.invalid ist erneut gescheitert. " +
+		"Die Bestellung bleibt als nicht versendet vermerkt."
+	if got := tuertest.Fehlermeldung(t, rec); got != gescheitert {
+		t.Errorf("Erneut senden: Meldung %q, erwartet %q", got, gescheitert)
 	}
 	if !l.gescheitert(t, bestellung) {
 		t.Error("Der Vermerk ist nach einem zweiten gescheiterten Versuch verschwunden")
@@ -285,8 +287,12 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 		t.Fatal("Die Bestellung trägt keinen Vermerk, obwohl kein Mailserver eingerichtet ist")
 	}
 	rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", "")
-	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Mailserver") {
-		t.Errorf("Erneut senden ohne Mailserver: Status %d, erwartet 400 mit dem Grund: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("Erneut senden ohne Mailserver: Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+	}
+	const ohneMailserver = "Es ist kein Mailserver eingerichtet (Einstellungen → Mail). Die Bestellmail wurde nicht gesendet."
+	if got := tuertest.Fehlermeldung(t, rec); got != ohneMailserver {
+		t.Errorf("Erneut senden ohne Mailserver: Meldung %q, erwartet %q", got, ohneMailserver)
 	}
 	if !l.gescheitert(t, bestellung) {
 		t.Error("Der Vermerk ist verschwunden, obwohl nichts versendet wurde")
@@ -306,6 +312,8 @@ func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 	}
 	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusConflict {
 		t.Errorf("Erneut senden nach gelungenem Versand: Status %d, erwartet 409", rec.Code)
+	} else if got := tuertest.Fehlermeldung(t, rec); got != "Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder die Bestellung ist bestätigt. Sie wird nicht noch einmal gesendet." {
+		t.Errorf("Erneut senden nach gelungenem Versand: Meldung %q", got)
 	}
 	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/00000000-0000-4000-8000-000000000000/mail", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("Unbekannte Bestellung: Status %d, erwartet 404", rec.Code)

@@ -153,9 +153,13 @@ func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 	}
 
 	rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/"+bestellung+"/mail", "")
-	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "nachtragen") {
-		t.Errorf("Entfernen bei einer Bestellung mit Link: Status %d, erwartet 409 mit dem Weg über das Nachtragen: %s",
-			rec.Code, rec.Body.String())
+	if rec.Code != http.StatusConflict {
+		t.Errorf("Entfernen bei einer Bestellung mit Link: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
+	}
+	const mitLink = "Diese Bestellung ging mit einem Bestätigungs-Link raus. " +
+		"Hat der Händler sie auf anderem Weg erhalten, lässt sich seine Zusage in der Bestellung nachtragen."
+	if got := tuertest.Fehlermeldung(t, rec); got != mitLink {
+		t.Errorf("Entfernen bei einer Bestellung mit Link: Meldung %q, erwartet %q", got, mitLink)
 	}
 	if !l.gescheitert(t, bestellung) {
 		t.Error("Der Vermerk ist weg, obwohl die Tür abgewiesen hat")
@@ -181,6 +185,8 @@ func TestBestellmailAndersBestellt_Abweisungen(t *testing.T) {
 
 	if rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusConflict {
 		t.Errorf("Entfernen nach gelungenem Versand: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
+	} else if got := tuertest.Fehlermeldung(t, rec); got != "Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt." {
+		t.Errorf("Entfernen nach gelungenem Versand: Meldung %q", got)
 	}
 	if rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/00000000-0000-4000-8000-000000000000/mail", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("Unbekannte Bestellung: Status %d, erwartet 404", rec.Code)

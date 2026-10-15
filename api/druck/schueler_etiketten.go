@@ -85,8 +85,7 @@ func pruefeBogenParameter(req *schuelerEtikettenAnfrage) error {
 	}
 	proSeite := format.Spalten * format.Zeilen
 	if req.Startposition < 1 || req.Startposition > proSeite {
-		//nolint:staticcheck // ST1005: nutzer-sichtbarer Text im Druckdialog
-		return fmt.Errorf("Startposition %d liegt außerhalb des Bogens (1 bis %d)", req.Startposition, proSeite)
+		return apierrors.BadRequest(fmt.Sprintf("Startposition %d liegt außerhalb des Bogens (1 bis %d)", req.Startposition, proSeite), nil)
 	}
 	return nil
 }
@@ -112,8 +111,7 @@ func (t *Tueren) etikettenDesBogens(r *http.Request, leserAbfragen repository.Le
 		return nil, http.StatusInternalServerError, fmt.Errorf("schülerdaten konnten nicht gelesen werden: %w", err)
 	}
 	if len(zeilen) == 0 {
-		//nolint:staticcheck // ST1005: nutzer-sichtbarer Text im Druckdialog
-		return nil, http.StatusBadRequest, errors.New("Zu den markierten Schülern gibt es keine Daten mehr — inzwischen gelöscht?")
+		return nil, http.StatusBadRequest, apierrors.BadRequest("Zu den markierten Schülern gibt es keine Daten mehr — inzwischen gelöscht?", nil)
 	}
 
 	etiketten := make([]pdf.SchuelerEtikett, 0, len(zeilen))

@@ -126,7 +126,7 @@ func (t *Tueren) AusleihFristSetzen(protokollAbfragen repository.ProtokollAbfrag
 func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, "Sitzungs-Information fehlt oder ist abgelaufen", nil)
 		return
 	}
 

@@ -13,6 +13,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -68,7 +69,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		return rufe(t, http.MethodPut, pfad, rumpf)
 	}
 	// abgewiesen prüft den Status und dass das gespeicherte Design dasselbe geblieben ist.
-	abgewiesen := func(t *testing.T, rumpf string, status int) {
+	abgewiesen := func(t *testing.T, rumpf string, status int) *httptest.ResponseRecorder {
 		t.Helper()
 		vorher := lade(t)
 		rec := speichere(t, rumpf)
@@ -78,6 +79,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		if nachher := lade(t); nachher != vorher {
 			t.Errorf("die abgewiesene Anfrage hat das Design verändert: %.80s → %.80s", vorher, nachher)
 		}
+		return rec
 	}
 
 	t.Run("nichts gespeichert: leeres Objekt", func(t *testing.T) {
@@ -145,7 +147,10 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		}
 	})
 	t.Run("über der Grenze: 413, das Design bleibt", func(t *testing.T) {
-		abgewiesen(t, logo(druck.MaxAusweisLayoutBytes), http.StatusRequestEntityTooLarge)
+		rec := abgewiesen(t, logo(druck.MaxAusweisLayoutBytes), http.StatusRequestEntityTooLarge)
+		if got := tuertest.Fehlermeldung(t, rec); got != "Ausweis-Design ist zu groß" {
+			t.Errorf("AusweisLayoutSchreiben: Meldung %q, erwartet %q", got, "Ausweis-Design ist zu groß")
+		}
 	})
 }
 

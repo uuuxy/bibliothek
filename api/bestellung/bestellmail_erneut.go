@@ -52,9 +52,8 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 		apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
 		return
 	case errors.Is(err, repository.ErrBestellmailNichtOffen):
-		//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-		apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
-			"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder die Bestellung ist bestätigt. Sie wird nicht noch einmal gesendet."))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
+			"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder die Bestellung ist bestätigt. Sie wird nicht noch einmal gesendet.", err)
 		return
 	case err != nil:
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -65,9 +64,8 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 		t.merkeBestellmailGescheitert(ctx, id)
 		// 400 statt 500: Eine 500-Meldung ersetzt der Sanitizer, und der Hinweis, was zu
 		// tun ist, erreichte den Bildschirm nicht.
-		//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New(
-			"Es ist kein Mailserver eingerichtet (Einstellungen → Mail). Die Bestellmail wurde nicht gesendet."))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+			"Es ist kein Mailserver eingerichtet (Einstellungen → Mail). Die Bestellmail wurde nicht gesendet.", nil)
 		return
 	}
 
@@ -81,9 +79,8 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		t.merkeBestellmailGescheitert(ctx, id)
 		// 502: Gescheitert ist der Mailserver, nicht dieser Server. Die Meldung bleibt lesbar.
-		//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-		apierrors.AntworteFehler(w, http.StatusBadGateway, fmt.Errorf(
-			"Der Versand an %s ist erneut gescheitert. Die Bestellung bleibt als nicht versendet vermerkt.", auftrag.Empfaenger))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, fmt.Sprintf(
+			"Der Versand an %s ist erneut gescheitert. Die Bestellung bleibt als nicht versendet vermerkt.", auftrag.Empfaenger), err)
 		return
 	}
 
@@ -121,14 +118,12 @@ func (t *Tueren) BestellmailVermerkNehmen() http.HandlerFunc {
 			apierrors.AntworteFehler(w, http.StatusNotFound, errors.New("bestellung not found"))
 			return
 		case errors.Is(err, repository.ErrBestellmailMitBestaetigung):
-			//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
-				"Diese Bestellung ging mit einem Bestätigungs-Link raus. Hat der Händler sie auf anderem Weg erhalten, lässt sich seine Zusage in der Bestellung nachtragen."))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
+				"Diese Bestellung ging mit einem Bestätigungs-Link raus. Hat der Händler sie auf anderem Weg erhalten, lässt sich seine Zusage in der Bestellung nachtragen.", err)
 			return
 		case errors.Is(err, repository.ErrBestellmailNichtOffen):
-			//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
-			apierrors.AntworteFehler(w, http.StatusConflict, errors.New(
-				"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt."))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
+				"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt.", err)
 			return
 		case err != nil:
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

@@ -13,6 +13,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/google/uuid"
@@ -40,6 +41,8 @@ func TestEingabeVerarbeiten_AblehnungenVorDerBuchung(t *testing.T) {
 
 	if w := rufe(`{"query":"B-123"}`, false); w.Code != http.StatusUnauthorized {
 		t.Errorf("ohne Sitzung: Status %d, erwartet 401: %s", w.Code, w.Body.String())
+	} else if got := tuertest.Fehlermeldung(t, w); got != "Sitzungs-Information fehlt oder ist abgelaufen" {
+		t.Errorf("ohne Sitzung: Meldung %q, erwartet %q", got, "Sitzungs-Information fehlt oder ist abgelaufen")
 	}
 	if w := rufe(`{"query":"   "}`, true); w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "leer") {
 		t.Errorf("Suchtext aus Leerzeichen: Status %d, erwartet 400 mit dem Hinweis „leer“: %s", w.Code, w.Body.String())

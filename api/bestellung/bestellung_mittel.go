@@ -72,8 +72,7 @@ func (t *Tueren) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	}
 	grund := strings.TrimSpace(req.Grund)
 	if grund == "" {
-		//nolint:staticcheck // ST1005: ganze Sätze — diese Meldung steht so vor der Bibliothekskraft.
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("Bitte einen Grund für die Korrektur angeben."))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte einen Grund für die Korrektur angeben.", nil)
 		return
 	}
 

@@ -50,7 +50,7 @@ func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 			return
 		}
 		if len(body) > MaxAusweisLayoutBytes {
-			apierrors.AntworteFehler(w, http.StatusRequestEntityTooLarge, errors.New("Ausweis-Design ist zu groß"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusRequestEntityTooLarge, "Ausweis-Design ist zu groß", nil)
 			return
 		}
 		if !json.Valid(body) {
@@ -59,7 +59,7 @@ func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 		}
 
 		if err := repository.SchreibeAusweisLayout(r.Context(), t.DB.Pool, string(body)); err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("Ausweis-Design konnte nicht gespeichert werden"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("ausweis-design speichern: %w", err))
 			return
 		}
 
