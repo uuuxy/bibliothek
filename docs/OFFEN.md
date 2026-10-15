@@ -210,8 +210,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, zwei Skripte für
   k6, SQL-Testdaten über `internal/testdaten`, zwei Spalten ohne Schreiber; eine Frage zu
   `cmd/migrate-fotos`.
-- [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** 216 Meldungen der Türen beginnen
-  klein, geschätzt 57 davon englisch.
+- [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** 214 feste Meldungen der Türen
+  beginnen klein, 59 sind englisch; 133 Aufrufe geben den Text eines Fehlers weiter.
 - [x] **Tippfehler in TRUSTED_PROXIES (5.69):** erledigt am 15.10.2026. Ein Eintrag, der weder
   Netz noch Adresse ist, steht als Warnung im Log des Starts und auf der Seite
   „Betriebsbereitschaft" (Bereich „Vertraute Proxys").
@@ -553,18 +553,34 @@ halten; sie zu löschen hieße, Regeln zu lockern. Offen:
 
 ### 5.68 Meldungen in Satzschreibung und auf Deutsch
 
-Gemessen am 15.10.2026 über die Aufrufe von `apierrors` mit festem Text und einem Status unter
-500 (die Oberfläche zeigt den Text unverändert und schreibt nichts groß): 216 Meldungen
-beginnen klein („eigenes Konto kann nicht deaktiviert werden"), geschätzt 57 davon englisch
-(„rate limit exceeded", „supplier not found"), 91 beginnen groß. M3 verlangt „Use sentence case
-for all product text" (Content design, Grammar and punctuation). Googles Regel für Fehlertexte
-steht dem nicht entgegen: Eine Meldung ist kein Fehlertext und geht als Meldung hinaus
-([STIL.md](STIL.md), Abschnitt 11), mit `AntworteFehlerMitMeldung` statt `errors.New`.
+Gezählt am 15.10.2026 (Stand bd7f16af) über den Syntaxbaum des Programmcodes: 633 Aufrufe von
+`apierrors`, 411 davon mit einem Status unter 500. Die Oberfläche zeigt das Feld `error` an 55
+Stellen unverändert in Hinweisen und Dialogen; kein Code der Oberfläche vergleicht auf einen
+Meldungstext.
 
-Gezählt über den Syntaxbaum: der Text in den Aufrufen von `AntworteFehler`,
-`AntworteFehlerMitMeldung`, `BadRequest`, `Conflict`, `NotFound` und `Unauthorized`; englisch heißt
-ein Text mit Wörtern wie „not", „missing", „invalid". Nächster Schritt: je Tür die Meldungen in
-Satzschreibung und auf Deutsch, je Satz ein Test an der Antwort; die englischen zuerst.
+- **Feste Texte:** 289 Aufrufe, 214 beginnen klein („eigenes Konto kann nicht deaktiviert
+  werden"), 59 sind englisch („rate limit exceeded", „supplier not found", an der Anmeldung
+  „invalid email or password"). Dieselbe Sache steht in sieben Fassungen da: „missing session
+  information", „nicht angemeldet", „keine sitzung", „Sitzungs-Information fehlt", „…fehlt
+  oder ist abgelaufen", „fehlende Session-Information", „fehlende Sitzungsinformationen".
+- **Text eines Fehlers:** 133 Aufrufe geben den Text eines Fehlers weiter
+  (`apierrors.BadRequest(err.Error(), err)`, `AntworteFehler(w, status, err)`). Fehlertexte
+  beginnen nach [STIL.md](STIL.md), Abschnitt 11, klein; so kommen sie klein an der Oberfläche
+  an. `tuer.sendeSitzungsfehler` schickt bei 401 den rohen Text der Prüfung
+  („failed to parse token: …", „user account no longer exists").
+- **Nicht gezählt:** `inventur/` antwortet über einen eigenen Helfer (`inventur/antwort.go`);
+  dazu kommen Antworten, die `{"error": …}` selbst schreiben.
+- **Zeichensetzung:** M3 (Content design, Grammar and punctuation): „Use sentence case for all
+  product text", „Omit punctuation on single-line sentences", „Use periods on: Multiple
+  sentences", „Em dashes are best avoided in UX writing". Die 75 groß beginnenden Meldungen
+  enden teils mit, teils ohne Punkt; rund 15 tragen einen Gedankenstrich.
+
+Nächster Schritt: eine Meldung je Sache (die Anmeldung zuerst, als Konstante in `api/tuer`),
+dann je Tür die festen Texte in Satzschreibung und auf Deutsch. Eine Ratsche über die festen
+Texte verlangt einen großen Anfang, kein englisches Wort, kein Wort, an dem der Filter für
+Datenbanktexte anschlägt (`apierrors.istDatenbankFehler`), und die Zeichensetzung nach M3. Die
+weitergegebenen Fehlertexte bekommen je Tür einen Satz, Einzelheiten als Felder des Fehlers
+(Abschnitt 11).
 
 ## 7. Betrieb (liegt bei der Schulseite)
 
