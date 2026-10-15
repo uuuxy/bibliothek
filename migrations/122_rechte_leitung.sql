@@ -24,7 +24,7 @@
 -- (api/benutzer/admin_schutz.go).
 --
 -- ADMIN ist in der Rechte-Matrix nicht abwählbar („Administrator hat immer alle
--- Rechte", PermissionsEditor.svelte), seine Zeilen stehen deshalb verlässlich
+-- Rechte", RechteMatrix.svelte), seine Zeilen stehen deshalb verlässlich
 -- auf true. Die beiden Ausnahmen werden trotzdem ausdrücklich auf false
 -- gesetzt, statt sich auf den Quellwert zu verlassen.
 -- =============================================================================

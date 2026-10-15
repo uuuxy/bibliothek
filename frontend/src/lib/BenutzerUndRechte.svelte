@@ -2,13 +2,13 @@
 	import { authStore } from './stores/authStore.svelte.js';
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
-	import UserManagement from './UserManagement.svelte';
-	import PermissionsEditor from './PermissionsEditor.svelte';
+	import Konten from './Konten.svelte';
+	import RechteMatrix from './RechteMatrix.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { toastStore } from './stores/toastStore.svelte.js';
-	import { permissionsMetadata } from './permissionMetadata.js';
+	import { permissionsMetadata } from './rechteKategorien.js';
 	import { fehlertext } from './utils/fehlertext.js';
 
 	// State Runes (Svelte 5)
@@ -125,7 +125,7 @@
 				<!-- Ohne geladene Matrix stünden alle Schalter auf „aus", als wären die Rechte entzogen. -->
 				<LadeFehler titel="Rechte nicht geladen" text={error} onerneut={fetchPermissions} />
 			{:else}
-				<PermissionsEditor
+				<RechteMatrix
 					schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}
 					metadata={permissionsMetadata}
 					{permissionsState}
@@ -137,11 +137,11 @@
 	{/if}
 
 	{#if activeSubTab === 'users'}
-		<!-- `flex flex-col`: Ohne das kollabiert der `mt-4` der Suchzeile in UserManagement mit
+		<!-- `flex flex-col`: Ohne das kollabiert der `mt-4` der Suchzeile in Konten mit
 		     dem Außenabstand dieser Tafel, und die Pille sitzt 16 px zu hoch. In einem
 		     Flex-Container kollabieren Ränder nicht. -->
 		<div id="panel-users" role="tabpanel" aria-labelledby="tab-users" class="flex flex-col">
-			<UserManagement />
+			<Konten />
 		</div>
 	{/if}
 </div>

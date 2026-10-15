@@ -28,7 +28,7 @@ type kontoAntwort struct {
 	// LeserID ist die Leserzeile dieses Kontos. Die Zeile zum Freischalten braucht sie, um von
 	// einem offenen Antrag aus nach der gleichnamigen Leserzeile zu suchen, die noch kein Konto
 	// hat: der Altbestand, bei dem die Selbstanmeldung sonst einen zweiten Eintrag erzeugt
-	// (UserManagementZugangsanfragen.svelte).
+	// (Zugangsanfragen.svelte).
 	LeserID string   `json:"leser_id"`
 	Rechte  []string `json:"permissions"`
 }

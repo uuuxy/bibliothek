@@ -4167,7 +4167,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "leser_id": {
-                    "description": "LeserID ist die Leserzeile dieses Kontos. Die Zeile zum Freischalten braucht sie, um von\neinem offenen Antrag aus nach der gleichnamigen Leserzeile zu suchen, die noch kein Konto\nhat: der Altbestand, bei dem die Selbstanmeldung sonst einen zweiten Eintrag erzeugt\n(UserManagementZugangsanfragen.svelte).",
+                    "description": "LeserID ist die Leserzeile dieses Kontos. Die Zeile zum Freischalten braucht sie, um von\neinem offenen Antrag aus nach der gleichnamigen Leserzeile zu suchen, die noch kein Konto\nhat: der Altbestand, bei dem die Selbstanmeldung sonst einen zweiten Eintrag erzeugt\n(Zugangsanfragen.svelte).",
                     "type": "string"
                 },
                 "nachname": {

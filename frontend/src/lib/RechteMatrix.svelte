@@ -1,12 +1,12 @@
 <script>
 	import Switch from './components/ui/Switch.svelte';
 	/**
-	 * @component PermissionsEditor
+	 * @component RechteMatrix
 	 * Reine Darstellung des Rechte-Editors (flach, edge-to-edge). Logik/State liegen
-	 * im Eltern-PermissionManager; hier nur Anzeige + Toggle-Callback.
+	 * im Eltern-BenutzerUndRechte; hier nur Anzeige + Toggle-Callback.
 	 *
 	 * @typedef {Object} Props
-	 * @property {any[]} metadata - Kategorien/Items (permissionMetadata.js).
+	 * @property {any[]} metadata - Kategorien/Items (rechteKategorien.js).
 	 * @property {Record<string, Record<string, boolean>>} permissionsState
 	 * @property {Record<string, boolean>} updatingKeys
 	 * @property {(role: string, key: string, currentVal: boolean) => void} onToggle

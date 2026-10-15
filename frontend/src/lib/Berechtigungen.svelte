@@ -1,6 +1,6 @@
 <script>
 	import PageShell from './components/layout/PageShell.svelte';
-	import PermissionManager from './PermissionManager.svelte';
+	import BenutzerUndRechte from './BenutzerUndRechte.svelte';
 </script>
 
 <!-- KEINE Ueberschrift (a3e4184): die Seitenleiste sagt, wo man ist.
@@ -9,7 +9,7 @@
      ueber der Suchpille des Benutzer-Reiters, die dadurch als einzige im Haus nicht an der
      Startlinie begann. Er stimmte an dieser Stelle ohnehin nur halb: „steuert Menue und
      API" gilt fuer die Rechte-Tabelle, nicht fuer die Benutzerliste. Er steht jetzt in
-     ihrem eigenen Reiter, siehe PermissionManager. -->
+     ihrem eigenen Reiter, siehe BenutzerUndRechte. -->
 <PageShell>
-	<PermissionManager />
+	<BenutzerUndRechte />
 </PageShell>

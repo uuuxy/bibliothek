@@ -17,7 +17,7 @@ import (
 // Selbstanmeldung ist aus der Adresse geraten, zwei Lehrkräfte können gleich heißen, und wer den
 // Eintrag übernähme, bekäme fremde Ausleihen und einen fremden Ausweis. Die Verbindung stellt die
 // Bibliothek beim Freischalten her; die Zeile der Anfrage in der Benutzerverwaltung zeigt dafür
-// den gleichnamigen Eintrag aus Littera (UserManagementZugangsanfragen.svelte).
+// den gleichnamigen Eintrag aus Littera (Zugangsanfragen.svelte).
 func TestSelbstanmeldung_UebernimmtKeinenLitteraEintragUeberDenNamen(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")

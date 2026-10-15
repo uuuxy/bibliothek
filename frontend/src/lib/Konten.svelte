@@ -1,13 +1,13 @@
-<!-- @component UserManagement — die Benutzerkonten: Liste, Anlegen, Bearbeiten, Löschen.
+<!-- @component Konten — die Benutzerkonten: Liste, Anlegen, Bearbeiten, Löschen.
 
-     Was eine Rolle darf, steht im Reiter daneben (PermissionManager), nicht hier. -->
+     Was eine Rolle darf, steht im Reiter daneben (BenutzerUndRechte), nicht hier. -->
 <script>
 	import { TriangleAlert, Plus, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
-	import UserManagementTable from './UserManagementTable.svelte';
-	import UserManagementZugangsanfragen from './UserManagementZugangsanfragen.svelte';
-	import UserManagementEditModal from './UserManagementEditModal.svelte';
-	import UserManagementDeleteModal from './UserManagementDeleteModal.svelte';
+	import KontenTabelle from './KontenTabelle.svelte';
+	import Zugangsanfragen from './Zugangsanfragen.svelte';
+	import KontoBearbeitenDialog from './KontoBearbeitenDialog.svelte';
+	import KontoLoeschenDialog from './KontoLoeschenDialog.svelte';
 	import { apiFetch, extractApiError } from './apiFetch.js';
 	import {
 		leeresBenutzerFormular,
@@ -165,7 +165,7 @@
 	</div>
 {/if}
 
-<UserManagementZugangsanfragen {users} onZugeordnet={fetchUsers} />
+<Zugangsanfragen {users} onZugeordnet={fetchUsers} />
 
 <!-- `mt-4`: Abstand Reiterband→Pille ist im Haus 24 px + 16 px; er fehlte hier. -->
 <div class="mt-4 mb-4 flex flex-col gap-3">
@@ -183,9 +183,9 @@
 	</div>
 </div>
 
-<UserManagementTable {loadingUsers} {filteredUsers} {openEditUserModal} {openDeleteConfirm} />
+<KontenTabelle {loadingUsers} {filteredUsers} {openEditUserModal} {openDeleteConfirm} />
 
-<UserManagementEditModal
+<KontoBearbeitenDialog
 	open={showUserModal}
 	onclose={() => (showUserModal = false)}
 	{isEditingUser}
@@ -195,7 +195,7 @@
 	{handleSaveUser}
 />
 
-<UserManagementDeleteModal
+<KontoLoeschenDialog
 	open={showDeleteConfirm && !!userToDelete}
 	onclose={() => {
 		showDeleteConfirm = false;

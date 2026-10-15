@@ -150,7 +150,7 @@ Ursprung auf (der zweite Hop wäre sichtbar, nicht still falsch). Gates:
 
 ### `manage_users` ist nicht Administrator (seit 06.08.2026)
 
-`manage_users` ist ein **delegierbares** Recht (seit 24.08.2026 nur noch Konten, Rechte-Matrix und Admin-Audit-Log; Einstellungen und Schüler-Sonderrechte sind eigene Rechte) — der PermissionManager bietet es auch für
+`manage_users` ist ein **delegierbares** Recht (seit 24.08.2026 nur noch Konten, Rechte-Matrix und Admin-Audit-Log; Einstellungen und Schüler-Sonderrechte sind eigene Rechte) — der BenutzerUndRechte bietet es auch für
 MITARBEITER, KOLLEGIUM und HELFER an. Bis zum 06.08.2026 war es damit gleichbedeutend mit
 Administrator; drei Wege führten dahin, alle jetzt geschlossen (`api/benutzer/admin_schutz.go`):
 

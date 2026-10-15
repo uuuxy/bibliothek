@@ -1,11 +1,11 @@
 <script>
 	/**
-	 * @component UserManagementZugangsanfragen
+	 * @component Zugangsanfragen
 	 * Offene Zugangsanfragen aus der Selbstanmeldung (Migration 086), als Zeile ÜBER
 	 * der Benutzertabelle. Ohne sie lag ein Antrag als grauer Punkt „Inaktiv" zwischen
 	 * 160 Kollegiumszeilen — niemand schaltet frei, was niemand sieht.
 	 *
-	 * Eigene Datei, weil UserManagement.svelte an der Dateigrößen-Ratsche steht.
+	 * Eigene Datei, weil Konten.svelte an der Dateigrößen-Ratsche steht.
 	 *
 	 * Die Zeile warnt vor DEMSELBEN Fehler aus zwei Quellen — beide Male steht die Person
 	 * schon in der Leserdatei, und beide Male würde die Freischaltung einen zweiten

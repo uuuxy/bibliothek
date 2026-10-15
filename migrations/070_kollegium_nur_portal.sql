@@ -15,7 +15,7 @@
 -- Der Entzug ist bewusst ein Reset, kein Merge: Was hier auf false geht, war nie eine
 -- Betreiber-Entscheidung, sondern die Vorgabe aus db/seed.go plus das, was Migration 069
 -- von der Vorgängerrolle LEHRER übernommen hat. Wer einer Lehrkraft danach gezielt mehr
--- geben will, tut das im PermissionManager — Migrationen laufen nur einmal
+-- geben will, tut das im BenutzerUndRechte — Migrationen laufen nur einmal
 -- (schema_migrations), eine spätere Vergabe wird also nicht wieder zurückgedreht.
 --
 -- Der Existenz-Riegel ist PFLICHT, nicht Vorsicht: role_permissions steht NICHT in

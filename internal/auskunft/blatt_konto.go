@@ -163,7 +163,7 @@ func dsgvoHinweis(p *gofpdf.Fpdf, tr func(string) string, satz string) {
 }
 
 // dsgvoRolle schreibt die Rolle eines Kontos mit denselben Wörtern wie die
-// Benutzerverwaltung (UserManagementEditModal.svelte). Ein unbekannter Wert bleibt stehen.
+// Benutzerverwaltung (KontoBearbeitenDialog.svelte). Ein unbekannter Wert bleibt stehen.
 func dsgvoRolle(rolle string) string {
 	switch rolle {
 	case "kollegium":

@@ -1,4 +1,4 @@
-<!-- @component UserManagementDeleteModal — Rückfrage vor dem Löschen eines Kontos.
+<!-- @component KontoLoeschenDialog — Rückfrage vor dem Löschen eines Kontos.
 
      Aufbau wie die Rückfrage des Hauses (ui/BestaetigungsDialog): Überschrift, Text, Aktionen
      rechts, die Aktion am Rand. Ein eigener Dialog bleibt es, weil er offen bleibt, solange

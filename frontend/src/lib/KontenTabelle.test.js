@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, within } from '@testing-library/svelte';
-import UserManagementTable from './UserManagementTable.svelte';
+import KontenTabelle from './KontenTabelle.svelte';
 
 const konto = (/** @type {Record<string, any>} */ felder = {}) => ({
 	id: 'u1',
@@ -16,7 +16,7 @@ const konto = (/** @type {Record<string, any>} */ felder = {}) => ({
 
 /** @param {any[]} filteredUsers @param {Record<string, any>} [rest] */
 const tabelle = (filteredUsers, rest = {}) =>
-	render(UserManagementTable, {
+	render(KontenTabelle, {
 		loadingUsers: false,
 		filteredUsers,
 		openEditUserModal: vi.fn(),
@@ -30,7 +30,7 @@ const zellen = (/** @type {ReturnType<typeof tabelle>} */ screen, /** @type {str
 		.getAllByRole('cell')
 		.map((z) => z.textContent?.trim());
 
-describe('UserManagementTable', () => {
+describe('KontenTabelle', () => {
 	it('nennt je Konto Name, E-Mail, Ausweisnummer, Rolle und Zustand', () => {
 		const screen = tabelle([
 			konto(),

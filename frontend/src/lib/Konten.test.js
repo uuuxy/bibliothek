@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor, within } from '@testing-library/svelte';
-import UserManagement from './UserManagement.svelte';
+import Konten from './Konten.svelte';
 import { apiFetch } from './apiFetch.js';
 import { authStore } from './stores/authStore.svelte.js';
 import { toastStore } from './stores/toastStore.svelte.js';
 
 // importOriginal statt eines vollständigen Ersatzes: Am Modul hängt auch der Sitzungs-Haken
-// des authStore (siehe UserManagementZugangsanfragen.test.js).
+// des authStore (siehe Zugangsanfragen.test.js).
 vi.mock('./apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(),
@@ -35,7 +35,7 @@ function server(/** @type {any} */ sonst = antwort({})) {
 }
 
 async function benutzerliste() {
-	const screen = render(UserManagement);
+	const screen = render(Konten);
 	await screen.findByRole('table', { name: 'Benutzerkonten' });
 	return screen;
 }
@@ -142,7 +142,7 @@ describe('Benutzerliste: Meldungen', () => {
 
 	it('zeigt einen Ladefehler als Meldung, die sich über einen benannten Knopf schließen lässt', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort({}, false, 500));
-		const screen = render(UserManagement);
+		const screen = render(Konten);
 
 		const meldung = await screen.findByRole('alert');
 		expect(meldung.textContent).toContain('Der Server meldet einen Fehler.');

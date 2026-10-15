@@ -10,7 +10,7 @@ vi.mock('./apiFetch.js', async (original) => ({
 import { apiFetch, apiClient } from './apiFetch.js';
 import { authStore } from './stores/authStore.svelte.js';
 import { toastStore } from './stores/toastStore.svelte.js';
-import PermissionManager from './PermissionManager.svelte';
+import BenutzerUndRechte from './BenutzerUndRechte.svelte';
 
 // Die Rechte-Matrix zeigt nur, was der Server geliefert hat: Ohne geladene Matrix stünden
 // alle Schalter auf „aus", als wären die Rechte entzogen, und ein Klick schriebe gegen einen
@@ -33,7 +33,7 @@ function serverMit(rechte) {
 const matrixOk = () => ({ ok: true, status: 200, json: async () => MATRIX });
 
 async function oeffneRechte() {
-	const screen = render(PermissionManager);
+	const screen = render(BenutzerUndRechte);
 	await fireEvent.click(screen.getByRole('tab', { name: 'Rollen & Rechte' }));
 	return screen;
 }

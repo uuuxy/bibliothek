@@ -1,6 +1,6 @@
 /**
  * Formular der Benutzerverwaltung: leeres Formular, Übernahme eines Kontos, Nutzlast an den
- * Server. Eigene Datei, weil UserManagement.svelte an der Größen-Ratsche steht und die Abbildung
+ * Server. Eigene Datei, weil Konten.svelte an der Größen-Ratsche steht und die Abbildung
  * ohne Browser testbar sein soll.
  *
  * Kein Feld „Personenart" mehr (Migration 125): Wer jemand ist, steht an seiner Leserzeile;

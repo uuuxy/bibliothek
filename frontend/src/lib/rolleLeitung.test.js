@@ -24,7 +24,7 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	it('die Benutzerverwaltung bietet die Rolle zur Auswahl an', () => {
 		expect(ROLLEN_AUSWAHL).toContainEqual({ value: 'leitung', label: 'Leitung' });
 		// Die Liste nützt nur, wenn der Dialog sie auch einsetzt.
-		expect(quelle('lib/UserManagementEditModal.svelte')).toMatch(/options:\s*ROLLEN_AUSWAHL\b/);
+		expect(quelle('lib/KontoBearbeitenDialog.svelte')).toMatch(/options:\s*ROLLEN_AUSWAHL\b/);
 	});
 
 	it('Kollegium steht VOR den Rollen — es ist der Grundzustand, keine Rolle', () => {
@@ -42,12 +42,12 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	it('die Rechte-Matrix hat eine Spalte für die Leitung', () => {
 		// Ohne die Spalte wäre die Rolle nur über die Vorgabe im Seed steuerbar — genau
 		// der Audit-Befund vom 01.08.2026 zur Rolle Helfer.
-		const src = quelle('lib/PermissionsEditor.svelte');
+		const src = quelle('lib/RechteMatrix.svelte');
 		expect(src).toContain("'LEITUNG', 'leitung'");
 	});
 
 	it('die Matrix belegt die Spalte vor, damit sie auch ohne Server-Zeile erscheint', () => {
-		const src = quelle('lib/PermissionManager.svelte');
+		const src = quelle('lib/BenutzerUndRechte.svelte');
 		expect(src).toMatch(/const newState = \{[^;]*\bleitung:/);
 	});
 
@@ -61,12 +61,12 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	// und Mitarbeiter. Seine Rechte stehen fest in db/rechte_vorgabe.go und sind eine
 	// Produktentscheidung, kein Schalter je Schule.
 	//
-	// ohneKommentare ist hier Pflicht und keine Sorgfalt: In PermissionsEditor.svelte
+	// ohneKommentare ist hier Pflicht und keine Sorgfalt: In RechteMatrix.svelte
 	// steht ein Kommentar, der die entfernte Spalte beim Namen nennt und begründet. Ohne
 	// das Strippen prüfte dieser Test die Begründung statt des Bauteils und bliebe
 	// für immer rot — dieselbe Falle wie bei einer Ratsche, die einen Kommentar liest.
 	it('die Rechte-Matrix hat KEINE Spalte für das Kollegium', () => {
-		const src = ohneKommentare(quelle('lib/PermissionsEditor.svelte'));
+		const src = ohneKommentare(quelle('lib/RechteMatrix.svelte'));
 		expect(src).not.toContain('KOLLEGIUM');
 		expect(src).not.toContain("'kollegium'");
 	});

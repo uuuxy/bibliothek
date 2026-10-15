@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
-import UserManagementZugangsanfragen from './UserManagementZugangsanfragen.svelte';
+import Zugangsanfragen from './Zugangsanfragen.svelte';
 import { apiFetch } from './apiFetch.js';
 import { authStore } from './stores/authStore.svelte.js';
 
@@ -26,9 +26,9 @@ beforeEach(() => {
 
 // Ein Antrag aus der Selbstanmeldung (aktiv=false + zugang_beantragt_am) muss ÜBER der
 // Tabelle stehen — ein bewusst deaktiviertes Konto (ohne Antragszeit) nicht.
-describe('UserManagementZugangsanfragen', () => {
+describe('Zugangsanfragen', () => {
 	it('nennt offene Anträge mit Zahl und Namen, ignoriert deaktivierte Konten', () => {
-		const screen = render(UserManagementZugangsanfragen, {
+		const screen = render(Zugangsanfragen, {
 			users: [
 				{
 					vorname: 'Erika',
@@ -65,7 +65,7 @@ describe('UserManagementZugangsanfragen', () => {
 	// Anmeldung am zweiten. Verbunden wird bewusst nicht automatisch (gleicher Name heißt nicht
 	// gleiche Person); die Freischaltung muss den Treffer aber zeigen.
 	it('zeigt beim Antrag den gleichnamigen Eintrag aus der Littera-Übernahme', () => {
-		const screen = render(UserManagementZugangsanfragen, {
+		const screen = render(Zugangsanfragen, {
 			users: [
 				{
 					vorname: 'Erika',
@@ -91,7 +91,7 @@ describe('UserManagementZugangsanfragen', () => {
 	});
 
 	it('zeigt keinen Treffer für eine gleichnamige Person mit eigener Adresse', () => {
-		const screen = render(UserManagementZugangsanfragen, {
+		const screen = render(Zugangsanfragen, {
 			users: [
 				{
 					vorname: 'Erika',
@@ -126,7 +126,7 @@ describe('UserManagementZugangsanfragen', () => {
 				]
 			})
 		);
-		const screen = render(UserManagementZugangsanfragen, {
+		const screen = render(Zugangsanfragen, {
 			users: [
 				{
 					vorname: 'Erika',
@@ -156,7 +156,7 @@ describe('UserManagementZugangsanfragen', () => {
 				json: async () => [{ id: 'x', vorname: 'Erik', nachname: 'Musterfrau', barcode_id: 'A-9' }]
 			})
 		);
-		const screen = render(UserManagementZugangsanfragen, {
+		const screen = render(Zugangsanfragen, {
 			users: [
 				{
 					vorname: 'Erika',
@@ -176,7 +176,7 @@ describe('UserManagementZugangsanfragen', () => {
 	// unverändert bekommen — das Recht merge_students hat mit dem Freischalten nichts zu tun.
 	it('bleibt ohne das Recht zur Kandidatensuche brauchbar', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 403 }));
-		const screen = render(UserManagementZugangsanfragen, {
+		const screen = render(Zugangsanfragen, {
 			users: [
 				{
 					vorname: 'Erika',
@@ -195,7 +195,7 @@ describe('UserManagementZugangsanfragen', () => {
 	});
 
 	it('zeigt nichts, wenn kein Antrag offen ist', () => {
-		const screen = render(UserManagementZugangsanfragen, {
+		const screen = render(Zugangsanfragen, {
 			users: [
 				{ vorname: 'Alt', nachname: 'Konto', email: 'a@x', aktiv: false, zugang_beantragt_am: null }
 			]
@@ -241,7 +241,7 @@ describe('Zugangsanfrage zuordnen', () => {
 			{ id: 'leser-alt', vorname: 'Erika', nachname: 'Musterfrau', barcode_id: 'A-4711' }
 		]);
 		let neuGeladen = 0;
-		const screen = render(UserManagementZugangsanfragen, {
+		const screen = render(Zugangsanfragen, {
 			users: [anfrage],
 			onZugeordnet: () => {
 				neuGeladen += 1;
@@ -276,7 +276,7 @@ describe('Zugangsanfrage zuordnen', () => {
 		mitKandidaten([
 			{ id: 'leser-alt', vorname: 'Erika', nachname: 'Musterfrau', barcode_id: 'A-4711' }
 		]);
-		const screen = render(UserManagementZugangsanfragen, { users: [anfrage] });
+		const screen = render(Zugangsanfragen, { users: [anfrage] });
 
 		await waitFor(() =>
 			expect(screen.getByRole('status').textContent).toContain('bisher ohne Zugang')

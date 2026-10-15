@@ -1,5 +1,5 @@
-// Kategorien und ihre zugeordneten Berechtigungen für den PermissionManager.
-// Aus der Komponente ausgelagert (Daten statt Markup) — hält PermissionManager schlank.
+// Kategorien und ihre zugeordneten Berechtigungen für den BenutzerUndRechte.
+// Aus der Komponente ausgelagert (Daten statt Markup) — hält BenutzerUndRechte schlank.
 //
 // Jede Beschreibung nennt, was der Server unter diesem Recht tatsächlich freigibt —
 // abgelesen an den verlangeRecht-Aufrufen in api/routen_*.go, nicht aus der

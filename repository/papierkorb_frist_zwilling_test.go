@@ -28,7 +28,7 @@ func TestPapierkorbFrist_OberflaecheNenntDieZahlDerLoeschlaeufe(t *testing.T) {
 	}{
 		{"../frontend/src/lib/LeserLoeschenDialog.svelte", ""},
 		{"../frontend/src/lib/components/leser/Papierkorb.svelte", "Papierkorb"},
-		{"../frontend/src/lib/permissionMetadata.js", "Papierkorb"},
+		{"../frontend/src/lib/rechteKategorien.js", "Papierkorb"},
 	} {
 		quelle, err := os.ReadFile(stelle.datei)
 		if err != nil {

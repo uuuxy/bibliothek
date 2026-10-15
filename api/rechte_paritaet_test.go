@@ -13,7 +13,7 @@ import (
 //
 // Es gibt zwei Listen von Berechtigungen, und beide steuern etwas Echtes:
 //
-//   - `frontend/src/lib/permissionMetadata.js` — die Schalter, die ein Admin umlegt,
+//   - `frontend/src/lib/rechteKategorien.js` — die Schalter, die ein Admin umlegt,
 //     samt Beschriftung; `menu.js` blendet Menüpunkte danach ein.
 //   - die `verlangeRecht("…")` an den Routen — was der Server tatsächlich prüft.
 //
@@ -36,7 +36,7 @@ func TestRechteInOberflaecheUndRoutenSindDeckungsgleich(t *testing.T) {
 
 	for _, recht := range sortiert(inOberflaeche) {
 		if !anRouten[recht] {
-			t.Errorf("Recht %q steht in permissionMetadata.js, wird aber von KEINER Route verlangt — "+
+			t.Errorf("Recht %q steht in rechteKategorien.js, wird aber von KEINER Route verlangt — "+
 				"ein Schalter ohne Wirkung. Entweder an die zuständige Route hängen oder aus der "+
 				"Oberfläche nehmen.", recht)
 		}
@@ -44,7 +44,7 @@ func TestRechteInOberflaecheUndRoutenSindDeckungsgleich(t *testing.T) {
 	for _, recht := range sortiert(anRouten) {
 		if !inOberflaeche[recht] {
 			t.Errorf("Route verlangt %q, aber die Rechte-Oberfläche kennt es nicht — niemand kann es "+
-				"erteilen. Zeile in frontend/src/lib/permissionMetadata.js ergänzen.", recht)
+				"erteilen. Zeile in frontend/src/lib/rechteKategorien.js ergänzen.", recht)
 		}
 	}
 }
@@ -80,9 +80,9 @@ func TestMenuepunkteVerlangenBekannteRechte(t *testing.T) {
 
 func rechteAusOberflaeche(t *testing.T) map[string]bool {
 	t.Helper()
-	roh, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "permissionMetadata.js"))
+	roh, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "rechteKategorien.js"))
 	if err != nil {
-		t.Fatalf("permissionMetadata.js lesen: %v", err)
+		t.Fatalf("rechteKategorien.js lesen: %v", err)
 	}
 	muster := regexp.MustCompile(`key:\s*'([a-z_]+)'`)
 	menge := map[string]bool{}
@@ -90,7 +90,7 @@ func rechteAusOberflaeche(t *testing.T) map[string]bool {
 		menge[m[1]] = true
 	}
 	if len(menge) == 0 {
-		t.Fatal("keine Rechte in permissionMetadata.js gefunden — der Detektor greift ins Leere")
+		t.Fatal("keine Rechte in rechteKategorien.js gefunden — der Detektor greift ins Leere")
 	}
 	return menge
 }

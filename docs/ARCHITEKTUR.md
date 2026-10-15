@@ -1174,7 +1174,7 @@ frontend/src
   Zugriff: Jede Datenabfrage ist rechtegeschützt, eine erzwungene Ansicht endet in 403.
 - **≤ 200 Zeilen je neuer Komponente**, Altbestand darüber darf nicht wachsen (Ratsche).
 - **Geteilter Zustand nur in `stores/*.svelte.js`**, Komponentenzustand lokal mit Runes.
-- **Datenarrays in `.js`-Metadatendateien** (z. B. `permissionMetadata.js`) statt in
+- **Datenarrays in `.js`-Metadatendateien** (z. B. `rechteKategorien.js`) statt in
   Komponenten.
 - **Logikfreie Teilkomponenten mit `{#snippet}` / `{@render}`** statt kopierter
   Markup-Blöcke (gemessen 18.09.2026: 67 Dateien).
@@ -3074,7 +3074,7 @@ und keinen Wächter, der nach der Rolle fragt (`RequireRoles` ist seit dem 04.08
 
 **Anlass.** Die frühere `RBACBlockMiddleware` führte eine hartkodierte Pfad-Allowlist für
 einzelne Rollen. Sie **überstimmte** die konfigurierbare Rechtetabelle: Eine Lehrkraft
-konnte im PermissionManager gewährte Rechte nicht nutzen.
+konnte im BenutzerUndRechte gewährte Rechte nicht nutzen.
 
 **Folge.** Zwei Wahrheitsquellen wurden zu einer (`role_permissions`). Der Preis ist die
 Vollständigkeitspflicht — deshalb das Coverage-Gate mit Allowlist für die bewusst
@@ -4346,9 +4346,9 @@ Fenstern bekannt ist:
   außerhalb von G706 sind es 28 Stellen in 14 Dateien.
 - Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
   01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
-  Vormerk-Liste (`permissionMetadata.js`, `BuchakteVormerkungen.svelte`), das Etikett der
+  Vormerk-Liste (`rechteKategorien.js`, `BuchakteVormerkungen.svelte`), das Etikett der
   Reiterleiste (`Schuelerdatei.svelte`), „Öffnet die Schülerdatei …" im Druck-Einstieg
-  (`KlassenDruckEinstieg.svelte`), „Schülerakte" in drei Erklärtexten (`permissionMetadata.js`,
+  (`KlassenDruckEinstieg.svelte`), „Schülerakte" in drei Erklärtexten (`rechteKategorien.js`,
   `DatenschutzKategorie.svelte`, `BescheideTabelle.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
   auch das Kollegium steht (`Papierkorb.svelte`). Beim Umbenennen die E2E-Specs
   mitziehen.

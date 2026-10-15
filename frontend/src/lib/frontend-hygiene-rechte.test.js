@@ -36,7 +36,7 @@ const ROLLEN_VERGLEICH = new RegExp(
 
 // Am 16.09.2026 sind ZWEI Ausnahmen weggefallen, beide beim Bau der Rolle Leitung:
 //
-// UserManagementTable.svelte beschriftete das Rollen-Abzeichen über eine Kette von
+// KontenTabelle.svelte beschriftete das Rollen-Abzeichen über eine Kette von
 // Vergleichen; mit der fünften Rolle wäre sie fünf Ternäre tief geworden. Jetzt eine
 // Nachschlagetabelle Rolle → Farbe: keine Vergleiche, und eine weitere Rolle ist eine
 // Zeile.
@@ -58,7 +58,7 @@ const AUSNAHMEN = [
 			'für die Rolle kollegium. Alle anderen Dateien rufen hatRecht auf.'
 	},
 	{
-		datei: 'src/lib/PermissionManager.svelte',
+		datei: 'src/lib/BenutzerUndRechte.svelte',
 		grund:
 			'Die Zeile der Rolle admin ist unveränderlich (Admin darf immer alles). Hier wird über ' +
 			'Rollen ITERIERT, nicht eine Aktion nach Rolle versteckt.'
