@@ -13,7 +13,7 @@ vi.mock('$lib/store.svelte.js', () => ({ showToast: vi.fn() }));
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import BuchEingabefelder from './BuchEingabefelder.svelte';
 import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
-import { leeresBuchFormular } from './buch_form_optionen.js';
+import { leeresBuchFormular } from './buchFormularRegeln.js';
 import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
 // Die Felder stehen in der Reihenfolge der Arbeit: die ISBN, mit der die Aufnahme beginnt,

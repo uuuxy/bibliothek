@@ -5,7 +5,7 @@
 <script>
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import { ladeSignaturen } from '../../../../lib/utils/signaturen.js';
-	import { signaturFehlt, signaturPflicht } from './buch_form_optionen.js';
+	import { signaturFehlt, signaturPflicht } from './buchFormularRegeln.js';
 
 	/** @type {{ formular: any }} */
 	let { formular = $bindable() } = $props();

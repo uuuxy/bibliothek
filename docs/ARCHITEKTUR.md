@@ -4314,7 +4314,7 @@ Fenstern bekannt ist:
   der Theke.
 - Das Schließen-Symbol der Maske „Buch bearbeiten" und „Neues Buch" verwirft, was getippt und
   nicht gespeichert ist, ohne Rückfrage: `onClose` schaltet nur zurück zur Titelliste
-  (`inventur/routes/admin/+page.svelte`). Seit dem 02.10.2026 steht „Speichern" im Kopf neben
+  (`frontend/src/inventur/routes/admin/TitelVerwaltung.svelte`). Seit dem 02.10.2026 steht „Speichern" im Kopf neben
   dem Symbol. M3, Dialogs, Guidelines: „When someone dismisses a full-screen dialog, a basic
   dialog should appear to confirm that they want to discard the unsaved changes." Dafür müsste
   die Maske wissen, ob etwas geändert ist (wie `uiStore.verlassenSperre` beim LMF-Planer).

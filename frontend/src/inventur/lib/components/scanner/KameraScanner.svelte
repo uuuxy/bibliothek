@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { createBarcodeDetector } from '$lib/components/scanner/barcode_detector.js';
+	import { createBarcodeDetector } from '$lib/components/scanner/barcodeErkennung.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { ruhtWennTraege } from '../../../../lib/actions/ruhtWennTraege.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';

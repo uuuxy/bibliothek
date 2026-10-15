@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { slide } from 'svelte/transition';
-	import { useUnifiedInventory } from './useUnifiedInventory.svelte.js';
-	import InventoryStartModal from './components/InventoryStartModal.svelte';
+	import { useInventur } from './useInventur.svelte.js';
+	import InventurStartDialog from './components/InventurStartDialog.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import FehlbestandBericht from './components/inventur/FehlbestandBericht.svelte';
@@ -12,7 +12,7 @@
 	import { formatDatum } from './utils/format.js';
 	import { ClipboardCheck, Plus, ScanBarcode } from '@lucide/svelte';
 
-	const inventoryState = useUnifiedInventory();
+	const inventoryState = useInventur();
 
 	// $state, nicht `let`: Das Feld wird per bind:this gefüllt und unten in einem $effect
 	// gelesen. Es entsteht erst, wenn die Inventur läuft; ohne $state liefe der Effekt nur
@@ -181,7 +181,7 @@
 
 			<!-- Dieselbe 48-px-Suchpille wie die Ausleihe-Omnibox: Werkzeug der Seite, kein
 			     Datenfeld in einer Leiste. Das Feld bleibt während einer Anfrage bedienbar: Der
-			     nächste Scan wird eingereiht (useUnifiedInventory), gesperrt ginge er verloren. -->
+			     nächste Scan wird eingereiht (useInventur), gesperrt ginge er verloren. -->
 			<form
 				onsubmit={(e) => {
 					e.preventDefault();
@@ -226,7 +226,7 @@
 	{/if}
 </PageShell>
 
-<InventoryStartModal
+<InventurStartDialog
 	open={inventoryState.showStartModal}
 	state={inventoryState}
 	onClose={() => {

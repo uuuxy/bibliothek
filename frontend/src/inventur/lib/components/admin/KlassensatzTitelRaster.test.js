@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
-import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
+import KlassensatzTitelRaster from './KlassensatzTitelRaster.svelte';
 
 /** @param {Record<string, any>} zusatz */
 const buch = (zusatz) => ({
@@ -14,7 +14,7 @@ const buch = (zusatz) => ({
 
 /** Der Text der Karten, je Buch. @param {any[]} books */
 function karten(books) {
-	const { container } = render(ClassAssignmentBookGrid, { books });
+	const { container } = render(KlassensatzTitelRaster, { books });
 	return [...container.querySelectorAll('button')].map((k) => (k.textContent ?? '').trim());
 }
 

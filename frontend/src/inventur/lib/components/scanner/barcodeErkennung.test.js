@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { istNichtsGefunden, GELESENE_FORMATE, createBarcodeDetector } from './barcode_detector.js';
+import { istNichtsGefunden, GELESENE_FORMATE, createBarcodeDetector } from './barcodeErkennung.js';
 
 // Die Rückfall-Bibliothek, wie der Erkenner sie braucht: ein Objekt, das eine Bilddatei liest.
 const { scanFileV2 } = vi.hoisted(() => ({ scanFileV2: vi.fn() }));

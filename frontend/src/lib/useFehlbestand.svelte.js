@@ -9,7 +9,7 @@ import { formatEuro } from './utils/format.js';
 
 /**
  * Der Fehlbestandsbericht: Liste, frühere Läufe, und die zwei Handlungen darauf
- * (Gefunden / endgültig löschen). Aus useUnifiedInventory herausgelöst — die
+ * (Gefunden / endgültig löschen). Aus useInventur herausgelöst — die
  * Session-Scan-Mechanik und der Bericht über eine ABGESCHLOSSENE Inventur sind zwei
  * verschiedene Zuständigkeiten, die nur zufällig denselben Bildschirm teilen.
  */

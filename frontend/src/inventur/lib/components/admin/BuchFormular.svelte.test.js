@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
 // Ersetzt wird nur der Erkenner (er braucht eine Kamera) und der Server; der Weg vom
 // Kamera-Fenster über die Maske bis zur Frage läuft echt.
-vi.mock('$lib/components/scanner/barcode_detector.js', async (importOriginal) => ({
+vi.mock('$lib/components/scanner/barcodeErkennung.js', async (importOriginal) => ({
 	...(await importOriginal()),
 	createBarcodeDetector: async () => ({
 		name: 'test',
@@ -21,7 +21,7 @@ import { apiFetch } from '../../../../lib/apiFetch.js';
 import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 import { appState } from '$lib/store.svelte.js';
 import BuchFormular from './BuchFormular.svelte';
-import { leeresBuchFormular } from './buch_form_optionen.js';
+import { leeresBuchFormular } from './buchFormularRegeln.js';
 
 const GESCANNT = '9783060130764';
 const KATALOG = '/api/books/vorhanden';

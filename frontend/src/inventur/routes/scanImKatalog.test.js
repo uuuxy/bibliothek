@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import Katalogseite from './+page.svelte';
+import Katalogseite from './KatalogSuche.svelte';
 
 /**
  * Der ganze Weg eines Kamera-Scans im Medienkatalog, an einem Stück: KameraScanner →
@@ -17,7 +17,7 @@ import Katalogseite from './+page.svelte';
  */
 const GESCANNT = '9783060130764';
 
-vi.mock('$lib/components/scanner/barcode_detector.js', async (importOriginal) => ({
+vi.mock('$lib/components/scanner/barcodeErkennung.js', async (importOriginal) => ({
 	...(await importOriginal()),
 	createBarcodeDetector: async () => ({
 		name: 'test',

@@ -1,5 +1,5 @@
 <!--
-	+page.svelte (Medienkatalog → Suche & Filter)
+	KatalogSuche.svelte (Medienkatalog → Suche & Filter)
 
 	Suchfeld und Cover-Raster der Buch-Suche. Der Reiter „Jahrgänge" (Gruppierung nach der
 	gepflegten Jahrgangsspanne) ist am 02.09.2026 weg: 13.055 von 13.060 Titeln trugen den
@@ -99,7 +99,7 @@
 			onEditClick={darfBearbeiten
 				? (book) => {
 						// Die Titel-Verwaltung holt den Titel und öffnet die Maske
-						// (admin/+page: appState.bookToEdit) — unabhängig davon, ob sie in
+						// (TitelVerwaltung: appState.bookToEdit) — unabhängig davon, ob sie in
 						// dieser Sitzung schon einmal offen war.
 						appState.bookToEdit = book;
 						appState.requestAdminView = true;

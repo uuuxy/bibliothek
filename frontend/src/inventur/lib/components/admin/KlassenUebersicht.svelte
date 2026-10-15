@@ -14,7 +14,7 @@
 	import { onMount } from 'svelte';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { hatRecht } from '../../../../lib/menu.js';
-	import ClassAssignmentDialog from './ClassAssignmentDialog.svelte';
+	import KlassensatzDialog from './KlassensatzDialog.svelte';
 	import KlassenKarte from './KlassenKarte.svelte';
 	import KlassenSuchfeld from '../KlassenSuchfeld.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
@@ -199,7 +199,7 @@
 </div>
 
 {#if isManaging}
-	<ClassAssignmentDialog
+	<KlassensatzDialog
 		isOpen={isManaging}
 		initialGroup={managingGroup}
 		vorhandeneGruppen={classGroups}

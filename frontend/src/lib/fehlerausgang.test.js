@@ -17,7 +17,7 @@ import { findeVerschluckteFehlantworten } from './fehlerausgangScanner.js';
 // Die vierzehn Reste stehen hier mit Begründung. Das ist ein Bestand bewusster
 // Ausnahmen, KEINE Erlaubnis: Neues gehört behandelt, nicht eingetragen.
 //
-// Ausgetragen am 30.09.2026: die Klassen in klassenVorschlaege.svelte.js und in ClassAssignPicker.
+// Ausgetragen am 30.09.2026: die Klassen in klassenVorschlaege.svelte.js und in KlassensatzZuweisenDialog.
 // Seit dem Morgen dieses Tages wird die Klasse nur noch gewählt, nicht getippt — die
 // Begründung „ohne sie tippt man den Wert von Hand" galt nicht mehr, und ein gescheiterter
 // Abruf stand als „Keine Klassen" da. Beide melden ihn jetzt.
@@ -41,7 +41,7 @@ const BESTAND = {
 		1,
 		'Klassengruppen als Filter (die Titelsuche daneben ist behoben)'
 	],
-	'src/lib/useInventurSession.svelte.js': [2, 'Signaturen- und Fächerliste als Filter'],
+	'src/lib/useInventurlauf.svelte.js': [2, 'Signaturen- und Fächerliste als Filter'],
 
 	// — Zähler an Menüpunkten: Eine Pille, die fehlt, hält niemanden auf.
 	'src/lib/stores/uiStore.svelte.js': [3, 'Zählerpillen (Reservierungen, Anliegen, Etiketten)'],

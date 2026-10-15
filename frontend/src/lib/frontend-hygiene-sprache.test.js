@@ -122,43 +122,12 @@ const ENGLISCH = new Set([
 ]);
 
 const BESTAND = {
-	'src/inventur/lib/components/admin/ClassAssignPicker.svelte': ['class', 'assign', 'picker'],
-	'src/inventur/lib/components/admin/ClassAssignmentBookGrid.svelte': [
-		'class',
-		'assignment',
-		'book',
-		'grid'
-	],
-	'src/inventur/lib/components/admin/ClassAssignmentBookGrid.test.js': [
-		'class',
-		'assignment',
-		'book',
-		'grid'
-	],
-	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': ['class', 'assignment'],
-	'src/inventur/lib/components/admin/ClassAssignmentSelector.svelte': [
-		'class',
-		'assignment',
-		'selector'
-	],
-	'src/inventur/lib/components/admin/ClassAssignmentSummary.svelte': [
-		'class',
-		'assignment',
-		'summary'
-	],
-	'src/inventur/lib/components/admin/buch_form_optionen.js': ['form'],
-	'src/inventur/lib/components/admin/buch_form_optionen.test.js': ['form'],
-	'src/inventur/lib/components/scanner/barcode_detector.js': ['detector'],
-	'src/inventur/lib/components/scanner/barcode_detector.test.js': ['detector'],
-	'src/inventur/routes/+page.svelte': ['page'],
-	'src/inventur/routes/admin/+page.svelte': ['page'],
 	'src/lib/AdminAuditLog.svelte': ['audit'],
 	'src/lib/AuditLog.svelte': ['audit'],
 	'src/lib/CameraScanner.svelte': ['camera'],
 	'src/lib/DamageReportModal.svelte': ['damage', 'report', 'modal'],
 	'src/lib/GlobalLMFExtendWidget.svelte': ['extend', 'widget'],
 	'src/lib/Graduates.svelte': ['graduates'],
-	'src/lib/MediaCatalog.svelte': ['media', 'catalog'],
 	'src/lib/Modal.svelte': ['modal'],
 	'src/lib/OpacSearch.svelte': ['search'],
 	'src/lib/OpacSearch.test.js': ['search'],
@@ -166,11 +135,9 @@ const BESTAND = {
 	'src/lib/SignaturenView.svelte': ['view'],
 	'src/lib/TabelleSortKopf.test.js': ['sort'],
 	'src/lib/ToastContainer.svelte': ['toast'],
-	'src/lib/UnifiedInventory.svelte': ['unified', 'inventory'],
 	'src/lib/WebcamCapture.svelte': ['capture'],
 	'src/lib/actions/keyboardNav.js': ['keyboard'],
 	'src/lib/actions/keyboardNav.test.js': ['keyboard'],
-	'src/lib/components/InventoryStartModal.svelte': ['inventory', 'modal'],
 	'src/lib/components/OfflineIndicator.svelte': ['indicator'],
 	'src/lib/components/OfflineIndicator.test.js': ['indicator'],
 	'src/lib/components/OmniboxBlockAlert.svelte': ['alert'],
@@ -203,9 +170,6 @@ const BESTAND = {
 	'src/lib/stores/idleLock.test.js': ['idle', 'lock'],
 	'src/lib/stores/toastStore.svelte.js': ['toast'],
 	'src/lib/stores/toastStore.test.js': ['toast'],
-	'src/lib/useInventurSession.svelte.js': ['session'],
-	'src/lib/useUnifiedInventory.svelte.js': ['unified', 'inventory'],
-	'src/lib/useUnifiedInventory.test.js': ['unified', 'inventory'],
 	'src/lib/utils/dates.js': ['dates'],
 	'src/lib/utils/dates.test.js': ['dates']
 };

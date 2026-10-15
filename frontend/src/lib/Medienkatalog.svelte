@@ -1,6 +1,6 @@
 <script>
-	import InventurCatalog from '../inventur/routes/+page.svelte';
-	import InventurAdmin from '../inventur/routes/admin/+page.svelte';
+	import KatalogSuche from '../inventur/routes/KatalogSuche.svelte';
+	import TitelVerwaltung from '../inventur/routes/admin/TitelVerwaltung.svelte';
 	import { appState } from '../inventur/lib/store.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import GeraeteVerwaltung from './components/GeraeteVerwaltung.svelte';
@@ -33,9 +33,9 @@
 	<!-- Content -->
 	<div class="w-full">
 		{#if activeView === 'catalog'}
-			<InventurCatalog />
+			<KatalogSuche />
 		{:else if activeView === 'admin'}
-			<InventurAdmin />
+			<TitelVerwaltung />
 		{:else if activeView === 'geraete'}
 			<GeraeteVerwaltung />
 		{/if}

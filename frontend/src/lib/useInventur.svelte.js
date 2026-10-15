@@ -2,7 +2,7 @@ import { toastStore } from './stores/toastStore.svelte.js';
 import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import { scanne, schliesseAb, deuteScanErgebnis } from './inventurApi.js';
 import { useFehlbestand } from './useFehlbestand.svelte.js';
-import { useInventurSession } from './useInventurSession.svelte.js';
+import { useInventurlauf } from './useInventurlauf.svelte.js';
 
 /**
  * Was die Rückfrage vor dem Abschluss sagt: wie viele Bücher als verloren gebucht werden.
@@ -22,15 +22,15 @@ export function abschlussText(offen) {
  * session_id gebunden (Backend: inventur_sessions); mehrere Inventuren können parallel
  * laufen, ohne sich zu überschreiben.
  */
-export function useUnifiedInventory() {
+export function useInventur() {
 	let lastScan = $state(/** @type {any} */ (null));
 	let barcodeInput = $state('');
 	let isScanning = $state(false);
 
 	const fb = useFehlbestand();
-	// onActivate: Start/Fortsetzen einer Session gehört zu useInventurSession, aber
+	// onActivate: Start/Fortsetzen einer Session gehört zu useInventurlauf, aber
 	// lastScan bleibt hier — es ist Zustand des Scan-Bildschirms, nicht der Session.
-	const session = useInventurSession({ onActivate: () => (lastScan = null) });
+	const session = useInventurlauf({ onActivate: () => (lastScan = null) });
 
 	// Scans, die eintreffen, solange einer am Server ist. Ein Handscanner wartet nicht auf die
 	// Antwort; ein verworfener Scan fiele beim Abschluss als Verlust auf.

@@ -2,7 +2,7 @@
      (BuchExemplareListe): Die Zahl im Feld ist der Bestand, den die Liste darunter zeigt. -->
 <script>
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
-	import { bestandHinweis } from './buch_form_optionen.js';
+	import { bestandHinweis } from './buchFormularRegeln.js';
 
 	let { formular = $bindable() } = $props();
 </script>

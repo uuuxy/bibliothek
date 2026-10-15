@@ -12,7 +12,7 @@ vi.mock('$lib/store.svelte.js', () => ({ showToast: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import BuchEingabefelderKategorisierung from './BuchEingabefelderKategorisierung.svelte';
-import { leeresBuchFormular } from './buch_form_optionen.js';
+import { leeresBuchFormular } from './buchFormularRegeln.js';
 
 beforeEach(() => {
 	vi.clearAllMocks();

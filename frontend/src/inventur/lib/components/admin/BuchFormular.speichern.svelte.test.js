@@ -11,7 +11,7 @@ vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToa
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 import BuchFormular from './BuchFormular.svelte';
-import { leeresBuchFormular } from './buch_form_optionen.js';
+import { leeresBuchFormular } from './buchFormularRegeln.js';
 
 const ISBN = '9783060130764';
 

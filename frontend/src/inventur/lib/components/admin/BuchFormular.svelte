@@ -3,14 +3,14 @@
 	import BuchCoverUpload from './BuchCoverUpload.svelte';
 	import BuchEingabefelder from './BuchEingabefelder.svelte';
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
-	import { signaturFehlt } from './buch_form_optionen.js';
+	import { signaturFehlt } from './buchFormularRegeln.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
 	import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 	import { BookOpen, Printer, Trash, X } from '@lucide/svelte';
 
 	/**
-	 * onDelete kommt nur mit dem Recht delete_books (admin/+page) — ohne Recht gibt es den Knopf nicht.
+	 * onDelete kommt nur mit dem Recht delete_books (TitelVerwaltung) — ohne Recht gibt es den Knopf nicht.
 	 * wirdGescannt: Die Kamera der Maske; der Knopf „Scanner" der Titelliste öffnet sie eingeschaltet.
 	 */
 	let {

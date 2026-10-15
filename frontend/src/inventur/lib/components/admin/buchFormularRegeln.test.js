@@ -4,13 +4,13 @@ import {
 	bisNachVon,
 	leeresBuchFormular,
 	mehrjahresbandHinweis
-} from './buch_form_optionen.js';
+} from './buchFormularRegeln.js';
 
 // Mehrjahresband (docs/OFFEN.md 9.6): ein Kästchen am Werk, die Zahl kommt aus der Spanne
 // „bis". Ein neues Buch beginnt ohne Haken; fehlte der Wert in der Vorlage,
 // schickte der Anlegen-Weg das Feld nie mit (siehe den Kommentar an leeresBuchFormular).
 // Der Hinweis rechnet dieselbe Regel wie der Server (inventur/mehrjahresband.go).
-describe('buch_form_optionen: Mehrjahresband', () => {
+describe('buchFormularRegeln: Mehrjahresband', () => {
 	it('die Vorlage eines neuen Buchs beginnt ohne Haken', () => {
 		expect(leeresBuchFormular().mehrjahresband).toBe(false);
 	});
@@ -58,7 +58,7 @@ describe('buch_form_optionen: Mehrjahresband', () => {
 
 // Ein Titel ohne Exemplar steht in keinem Katalog (docs/OFFEN.md 9.4). Ein neues Buch beginnt
 // deshalb mit einem Exemplar, und wer 0 einträgt, liest vor dem Speichern, wo der Titel landet.
-describe('buch_form_optionen: Bestand eines neuen Buchs', () => {
+describe('buchFormularRegeln: Bestand eines neuen Buchs', () => {
 	it('die Vorlage beginnt mit einem Exemplar', () => {
 		expect(leeresBuchFormular().stock).toBe(1);
 	});
@@ -85,7 +85,7 @@ describe('buch_form_optionen: Bestand eines neuen Buchs', () => {
 // „bis" geht mit „von" mit: Die meisten Schulbücher gelten für ein Jahr, wer 7 tippt, hat 7
 // bis 7. Ein eigener Wert in „bis" bleibt stehen. Die Maske liefert ein leeres Zahlenfeld als
 // undefined, ein geöffneter Titel ohne Jahrgang trägt null.
-describe('buch_form_optionen: „bis" geht mit „von" mit', () => {
+describe('buchFormularRegeln: „bis" geht mit „von" mit', () => {
 	it.each([
 		['ein leeres „bis" bekommt die Zahl', undefined, 7, undefined, 7],
 		['auch nach dem Öffnen eines Titels ohne Jahrgang', null, 7, null, 7],

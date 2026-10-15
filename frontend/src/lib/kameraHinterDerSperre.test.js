@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 
-vi.mock('$lib/components/scanner/barcode_detector.js', () => ({
+vi.mock('$lib/components/scanner/barcodeErkennung.js', () => ({
 	createBarcodeDetector: vi.fn(async () => ({ detector: { detect: async () => [] } }))
 }));
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));

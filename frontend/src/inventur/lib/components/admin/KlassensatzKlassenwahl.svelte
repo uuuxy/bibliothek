@@ -2,7 +2,7 @@
 	// Die Zielklassen des Klassensatz-Dialogs als Chips. Auswählen statt tippen (docs/OFFEN.md
 	// 5.18, 30.09.2026): Bis dahin tippte man die Klassen frei ein, und ein Tippfehler legte
 	// eine Klasse an, die es an der Schule nicht gibt. Zur Wahl stehen die Klassen der Schüler
-	// und die Klassen, die schon eine Buchliste haben (wie in ClassAssignPicker).
+	// und die Klassen, die schon eine Buchliste haben (wie in KlassensatzZuweisenDialog).
 	import { onMount } from 'svelte';
 	import { X } from '@lucide/svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';

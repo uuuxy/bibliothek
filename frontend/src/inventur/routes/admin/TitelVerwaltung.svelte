@@ -7,8 +7,8 @@
 	import Bestandstabelle from '$lib/components/admin/Bestandstabelle.svelte';
 	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
 	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
-	import ClassAssignPicker from '$lib/components/admin/ClassAssignPicker.svelte';
-	import { leeresBuchFormular } from '$lib/components/admin/buch_form_optionen.js';
+	import KlassensatzZuweisenDialog from '$lib/components/admin/KlassensatzZuweisenDialog.svelte';
+	import { leeresBuchFormular } from '$lib/components/admin/buchFormularRegeln.js';
 	import { loescheBuecher, holeExterneCover, retryExterneCover } from '$lib/admin_api.js';
 	import { titelFuerMaske } from '$lib/buch_speichern.js';
 	import { erstelleTitelListe } from '$lib/titelListe.svelte.js';
@@ -166,7 +166,7 @@
 	/>
 
 	{#if klassenZuweisenIds && klassenZuweisenIds.length > 0}
-		<ClassAssignPicker
+		<KlassensatzZuweisenDialog
 			bookIds={klassenZuweisenIds}
 			onClose={() => (klassenZuweisenIds = null)}
 			onAssigned={() => (klassenZuweisenIds = null)}

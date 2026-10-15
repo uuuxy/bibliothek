@@ -7,7 +7,7 @@
   „Define custom color roles": „a static green color called Success is defined in addition to
   the scheme, and applied to UI to indicate a success state" — der Container als Fläche der
   Karte, die On-Farbe für ihren Inhalt. Bis zum 24.09.2026 stand die Karte in Palettenfarben
-  (emerald, red, amber) in UnifiedInventory.svelte, die Weiche viermal ausgeschrieben.
+  (emerald, red, amber) in Inventur.svelte, die Weiche viermal ausgeschrieben.
 
   Eigenes Bauteil, weil keins in ui/ diese Aufgabe hat: StatusChip ist ein Chip, LadeFehler
   ein Ladezustand mit „Erneut", Snackbar eine flüchtige Meldung. Diese Karte bleibt stehen,

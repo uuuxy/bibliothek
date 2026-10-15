@@ -39,7 +39,7 @@ describe('Kamera-Schalter der Suchbauteile', () => {
 // nichts." Deshalb prüft dieser Test nicht, DASS ein Ereignis kommt, sondern WAS es trägt.
 const GESCANNT = '9783060130764';
 
-vi.mock('$lib/components/scanner/barcode_detector.js', async (importOriginal) => ({
+vi.mock('$lib/components/scanner/barcodeErkennung.js', async (importOriginal) => ({
 	...(await importOriginal()),
 	createBarcodeDetector: async () => ({
 		name: 'test',

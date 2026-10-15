@@ -1,6 +1,6 @@
 <!-- @component StartseitenFilter — der Kopf der Buch-Suche: eine Suchpille, sonst nichts.
      Bis 02.09.2026 standen hier zwei Reiter („Buch-Suche" / „Jahrgänge") mit eigenen
-     Zweig-/Jahrgangs-Selects; der Jahrgangs-Reiter ist weg (siehe routes/+page.svelte). -->
+     Zweig-/Jahrgangs-Selects; der Jahrgangs-Reiter ist weg (siehe routes/KatalogSuche.svelte). -->
 <script>
 	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
 

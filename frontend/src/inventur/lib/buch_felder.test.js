@@ -4,7 +4,7 @@ vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('./store.svelte.js', () => ({ appState: {}, showToast: vi.fn() }));
 import { apiFetch } from '../../lib/apiFetch.js';
 import { alsRumpf, geaenderteFelder, merkeStand, uebernimmGespeichert } from './buch_felder.js';
-import { leeresBuchFormular } from './components/admin/buch_form_optionen.js';
+import { leeresBuchFormular } from './components/admin/buchFormularRegeln.js';
 import { speichereBuch, titelFuerMaske } from './buch_speichern.js';
 
 /** @param {number} status @param {any} koerper */

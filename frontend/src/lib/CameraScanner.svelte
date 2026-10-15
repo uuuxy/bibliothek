@@ -4,7 +4,7 @@
 	 *
 	 * Hier liegt der Rahmen, die Technik in `KameraScanner`: ein Erkenner für Theke und
 	 * Inventur. Er fragt zuerst den eingebauten Erkenner des Browsers und fällt sonst auf ZXing
-	 * zurück, über das ganze Bild und mit der Formatliste der Anwendung (barcode_detector.js),
+	 * zurück, über das ganze Bild und mit der Formatliste der Anwendung (barcodeErkennung.js),
 	 * darunter Code 39, das Format der älteren Ausweise.
 	 */
 	import KameraScanner from '../inventur/lib/components/scanner/KameraScanner.svelte';

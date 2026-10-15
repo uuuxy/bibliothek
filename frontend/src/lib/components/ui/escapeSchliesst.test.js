@@ -86,7 +86,7 @@ describe('escapeSchliesst', () => {
 
 // Ratsche: Wer ein Overlay baut, gibt ihm einen Tastaturweg hinaus. Am 05.09.2026 hatte
 // KEINES der elf selbstgebauten Overlays einen — nur `Modal.svelte` und, in eigener
-// Handarbeit, `ClassAssignPicker`. Beide benutzen jetzt dieselbe Aktion.
+// Handarbeit, `KlassensatzZuweisenDialog`. Beide benutzen jetzt dieselbe Aktion.
 const KEIN_DIALOG = [
 	// Ladeschleier über der ganzen Anwendung; er hat keinen Ausgang, er wartet.
 	'src/App.svelte',

@@ -4,13 +4,13 @@ import { ladeOffeneSessions, starteSession, brichAb } from './inventurApi.js';
 /**
  * Session-Start und -Verwaltung: Scope wählen (global/Signatur/Filter), Inventur
  * starten, mit einer bereits laufenden Session (409) fortsetzen oder sie verwerfen.
- * Aus useUnifiedInventory herausgelöst — das Scannen selbst braucht diese Auswahl-
+ * Aus useInventur herausgelöst — das Scannen selbst braucht diese Auswahl-
  * Mechanik nicht mehr, sobald eine Session aktiv ist.
  * @param {{ onActivate?: () => void }} [opts] onActivate wird aufgerufen, sobald eine
  *   Session aktiv wird (Start oder Fortsetzen) — der Aufrufer nutzt das, um scan-
  *   lokalen Zustand (lastScan) zu leeren, den dieses Modul nicht selbst besitzt.
  */
-export function useInventurSession(opts = {}) {
+export function useInventurlauf(opts = {}) {
 	const { onActivate } = opts;
 
 	let status = $state('idle'); // 'idle' | 'active'
@@ -113,7 +113,7 @@ export function useInventurSession(opts = {}) {
 		errorMessage = '';
 	}
 
-	/** Aufrufer ist der Abschluss der Session (finishInventory in useUnifiedInventory). */
+	/** Aufrufer ist der Abschluss der Session (finishInventory in useInventur). */
 	function resetToIdle() {
 		status = 'idle';
 		sessionId = '';

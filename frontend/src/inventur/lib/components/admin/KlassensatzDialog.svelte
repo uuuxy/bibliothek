@@ -4,9 +4,9 @@
 	import { vorauswahlAusGruppe } from './klassensatzVorauswahl.js';
 	import { erzeugeBuecherListe } from './klassensatzBuecher.svelte.js';
 	import { onMount } from 'svelte';
-	import ClassAssignmentSelector from './ClassAssignmentSelector.svelte';
-	import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
-	import ClassAssignmentSummary from './ClassAssignmentSummary.svelte';
+	import KlassensatzKlassenwahl from './KlassensatzKlassenwahl.svelte';
+	import KlassensatzTitelRaster from './KlassensatzTitelRaster.svelte';
+	import KlassensatzZusammenfassung from './KlassensatzZusammenfassung.svelte';
 	import { TriangleAlert, X } from '@lucide/svelte';
 	import Modal from '../../../../lib/Modal.svelte';
 
@@ -156,7 +156,7 @@
 				<div
 					class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full pr-4 pb-4"
 				>
-					<ClassAssignmentSelector bind:selectedClasses {vorhandeneGruppen} />
+					<KlassensatzKlassenwahl bind:selectedClasses {vorhandeneGruppen} />
 
 					{#if ueberschriebeneKlassen.length > 0}
 						<!-- Warnung statt Verbot: Meist ist es gewollt (ein Jahrgang bekommt denselben
@@ -169,7 +169,7 @@
 						</div>
 					{/if}
 
-					<ClassAssignmentBookGrid
+					<KlassensatzTitelRaster
 						books={buecher.liste}
 						buecherFehler={buecher.fehler}
 						bind:selectedBookIds
@@ -181,7 +181,7 @@
 			<aside
 				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-outline-variant pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
 			>
-				<ClassAssignmentSummary
+				<KlassensatzZusammenfassung
 					{selectedClasses}
 					{selectedBookIds}
 					{selectedBooksList}

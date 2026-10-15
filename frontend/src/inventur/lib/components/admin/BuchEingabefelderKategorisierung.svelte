@@ -2,7 +2,7 @@
      entscheidet. Die Wahl Bibliothek oder Lernmittel steht oben, weil die Pflicht zur
      Signatur, der Schulzweig, das Mehrjahresband und die anderen Auflagen von ihr abhängen. -->
 <script>
-	import { bisNachVon, mehrjahresbandHinweis } from '$lib/components/admin/buch_form_optionen.js';
+	import { bisNachVon, mehrjahresbandHinweis } from '$lib/components/admin/buchFormularRegeln.js';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import Segmente from '../../../../lib/components/ui/Segmente.svelte';

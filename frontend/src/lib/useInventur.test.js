@@ -11,7 +11,7 @@ vi.mock('./apiFetch.js', () => ({
 
 import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import { schliesseAb, ladeOffeneSessions, scanne, deuteScanErgebnis } from './inventurApi.js';
-import { useUnifiedInventory, abschlussText } from './useUnifiedInventory.svelte.js';
+import { useInventur, abschlussText } from './useInventur.svelte.js';
 
 const frage = vi.mocked(bestaetigen);
 const abschluss = vi.mocked(schliesseAb);
@@ -35,7 +35,7 @@ describe('Inventur abschließen', () => {
 	it('schließt bei „nein" nicht ab und gibt den Fokus zurück ins Scanfeld', async () => {
 		frage.mockResolvedValue(false);
 		const fokus = vi.fn();
-		await useUnifiedInventory().abschliessenNachRueckfrage(fokus);
+		await useInventur().abschliessenNachRueckfrage(fokus);
 
 		expect(frage).toHaveBeenCalledWith(
 			expect.objectContaining({ titel: 'Inventur abschließen?', gefaehrlich: true })
@@ -49,7 +49,7 @@ describe('Inventur abschließen', () => {
 		abschluss.mockResolvedValue(
 			/** @type {any} */ ({ ok: true, data: { verloren_gemeldet: 0, fehlbestand: [] } })
 		);
-		await useUnifiedInventory().abschliessenNachRueckfrage();
+		await useInventur().abschliessenNachRueckfrage();
 
 		expect(abschluss).toHaveBeenCalledTimes(1);
 	});
@@ -76,7 +76,7 @@ describe('Scan während der Anfrage', () => {
 		let ersterFertig = () => {};
 		scan.mockImplementationOnce(() => new Promise((fertig) => (ersterFertig = fertig)));
 		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode));
-		const inventur = useUnifiedInventory();
+		const inventur = useInventur();
 
 		const erster = inventur.handleScan('B-1');
 		const zweiter = inventur.handleScan('B-2');
@@ -95,7 +95,7 @@ describe('Scan während der Anfrage', () => {
 	it('bucht die folgenden Scans auch, wenn einer scheitert', async () => {
 		scan.mockRejectedValueOnce(new Error('Netz weg'));
 		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode));
-		const inventur = useUnifiedInventory();
+		const inventur = useInventur();
 
 		await Promise.all([inventur.handleScan('B-1'), inventur.handleScan('B-2')]);
 
@@ -109,7 +109,7 @@ describe('Scan während der Anfrage', () => {
 		let ersterFertig = () => {};
 		scan.mockImplementationOnce(() => new Promise((fertig) => (ersterFertig = fertig)));
 		frage.mockResolvedValue(false);
-		const inventur = useUnifiedInventory();
+		const inventur = useInventur();
 
 		const laufend = inventur.handleScan('B-1');
 		const abschlussFrage = inventur.abschliessenNachRueckfrage();

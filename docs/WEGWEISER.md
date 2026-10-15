@@ -35,7 +35,7 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Menüpunkt                               | Bildschirm in `frontend/src/lib/`                                                        | Türen                              |
 | --------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------- |
 | Ausleihe (Theke)                        | `Omnibox.svelte`                                                                         | `api/theke/theke.go`               |
-| Medienkatalog, Klassensätze             | `MediaCatalog.svelte`, `Schulklassen.svelte`                                             | `inventur/api_routen.go`           |
+| Medienkatalog, Klassensätze             | `Medienkatalog.svelte`, `Schulklassen.svelte`                                             | `inventur/api_routen.go`           |
 | Buchakte, Signaturen                    | `Buchakte.svelte`, `SignaturenView.svelte`                                               | `api/katalog/katalog.go`           |
 | Bestandsbücher                          | `components/bestand/Bestandsbuecher.svelte`                                              | `api/katalog/katalog.go`           |
 | Druck-Center                            | `DruckCenter.svelte`                                                                     | `api/druck/druck.go`               |
@@ -43,7 +43,7 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Schaden, Forderung, Bescheid            | `DamageReportModal.svelte`, `LeserGebuehrenKarte.svelte`, `LeserBescheideKarte.svelte` | `api/schaden/schaden.go`           |
 | Mahnwesen, Abgänger                     | `Mahnwesen.svelte`, `Graduates.svelte`                                                   | `api/mahnwesen/mahnwesen.go`       |
 | Bestellungen, Bestellberichte           | `Bestellwesen.svelte`, `components/bestellungen/BestellBerichte.svelte`              | `api/bestellung/bestellung.go`     |
-| Inventur                                | `UnifiedInventory.svelte`                                                                | `api/inventurlauf/inventurlauf.go` |
+| Inventur                                | `Inventur.svelte`                                                                | `api/inventurlauf/inventurlauf.go` |
 | Schuljahreswechsel (LMF-Plan)           | `LmfPlan.svelte`                                                                         | `api/lernmittel/lernmittel.go`     |
 | Benutzer & Rechte                       | `Berechtigungen.svelte`                                                                  | `api/benutzer/benutzer.go`         |
 | Einstellungen, Statistiken, System-Logs | `Einstellungen.svelte`, `Statistik.svelte`, `SystemLogs.svelte`                    | `api/system/system.go`             |

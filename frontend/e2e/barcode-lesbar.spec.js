@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin } from './helpers.js';
-import { GELESENE_FORMATE } from '../src/inventur/lib/components/scanner/barcode_detector.js';
+import { GELESENE_FORMATE } from '../src/inventur/lib/components/scanner/barcodeErkennung.js';
 
 /**
  * Was wir drucken, muss gelesen werden — und dasselbe heißen.

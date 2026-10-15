@@ -10,8 +10,8 @@
 	import Omnibox from './Omnibox.svelte';
 	import Buchakte from './Buchakte.svelte';
 	import Bestellwesen from './Bestellwesen.svelte';
-	import UnifiedInventory from './UnifiedInventory.svelte';
-	import MediaCatalog from './MediaCatalog.svelte';
+	import Inventur from './Inventur.svelte';
+	import Medienkatalog from './Medienkatalog.svelte';
 	import Bestandsbuecher from './components/bestand/Bestandsbuecher.svelte';
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import SignaturenView from './SignaturenView.svelte';
@@ -125,7 +125,7 @@
 	{:else if uiStore.activeTab === 'druck-center'}
 		<div class="w-full animate-fade-in h-full"><DruckCenter /></div>
 	{:else if uiStore.activeTab === 'media_catalog'}
-		<div class="w-full animate-fade-in"><MediaCatalog /></div>
+		<div class="w-full animate-fade-in"><Medienkatalog /></div>
 	{:else if uiStore.activeTab === 'bestellberichte'}
 		<BestellBerichte />
 	{:else if uiStore.activeTab === 'bestandsbuecher'}
@@ -133,7 +133,7 @@
 	{:else if uiStore.activeTab === 'signaturen'}
 		<div class="w-full animate-fade-in"><SignaturenView /></div>
 	{:else if uiStore.activeTab === 'inventory'}
-		<div class="w-full animate-fade-in"><UnifiedInventory /></div>
+		<div class="w-full animate-fade-in"><Inventur /></div>
 	{:else if uiStore.activeTab === 'students_dir'}
 		<div class="w-full animate-fade-in"><Schuelerdatei /></div>
 	{:else if uiStore.activeTab === 'schulklassen'}
