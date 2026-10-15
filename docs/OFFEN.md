@@ -183,8 +183,9 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] `api/`.
 - [x] Das Wurzelpaket.
 - [x] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
-- [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, drei Werte der Paketebene, die
-  noch kein Rufer anlegt.
+- [x] Fehlertexte: klein und ohne Satzzeichen; den Satz für die Oberfläche schreibt die Tür
+  ([STIL.md](STIL.md), Abschnitt 11).
+- [ ] Drei Werte der Paketebene, die noch kein Rufer anlegt (5.66).
 - [ ] Die Oberfläche: Dateinamen und Namen in einer Sprache.
 - [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
@@ -490,11 +491,6 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- Fehlertexte: 59 Stellen tragen `//nolint:staticcheck` (ST1005), weil der Text des Fehlers
-  die Meldung an der Oberfläche ist. Das Regelwerk schreibt Fehlertexte klein und ohne
-  Satzzeichen (Decisions, „Error strings"). Den Satz vom Fehler trennt schon
-  `apierrors.AntworteFehlerMitMeldung`; die Meldungen an der Oberfläche bleiben dabei Wort für
-  Wort, was ein Test je Stelle belegt.
 - Drei Werte der Paketebene legt noch kein Rufer an: die Bremse der Anmeldung je E-Mail und
   Adresse (`auth.anmeldeBremse`), die Bremse der Cover-Downloads (`katalog.coverDownloadBremse`)
   und die vertrauten Proxys (`clientip`, gesetzt mit `SetzeProxys`, das auch Tests rufen). Das

@@ -13,9 +13,9 @@ etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das 
 [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 12.
 
 Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, in
-Tests an Namen und Dateinamen. Was darüber hinaus noch abweicht (Fehlertexte, Zustand auf der
-Ebene eines Pakets), steht in [OFFEN.md](OFFEN.md) 5.66. Neuer Code folgt den Regeln von Anfang
-an.
+Tests an Namen und Dateinamen, `fehlertext_ratsche_test.go` jeden Fehlertext gegen Abschnitt 11.
+Was darüber hinaus noch abweicht (Zustand auf der Ebene eines Pakets), steht in
+[OFFEN.md](OFFEN.md) 5.66. Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
 
@@ -209,3 +209,26 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   austauschen will, gehört einem Typ, den der Rufer anlegt und weiterreicht, wie die Basis der
   Türen mit Mailversand und Cache der Rechte (Best Practices, „Global state").
   `paketzustand_ratsche_test.go` hält es.
+
+## 11. Fehler und Meldungen
+
+- Ein Fehlertext, also der Text von `errors.New`, `fmt.Errorf` und die Rückgabe einer Methode
+  `Error()`, beginnt klein und endet ohne Satzzeichen: „Error strings should not be capitalized
+  (unless beginning with an exported name, a proper noun or an acronym) and should not end with
+  punctuation" (Decisions, „Error strings"). Das gilt auch für ein Substantiv am Anfang
+  (`leser nicht gefunden`); ein Kürzel (`LUSD-Export …`), ein Go-Name oder ein Eigenname
+  (`Excel-Datei …`) darf vorn stehen. `fehlertext_ratsche_test.go` hält es, auch in Tests; ein
+  `nolint` dafür gibt es nicht.
+- Den Satz für die Oberfläche bestimmt die Tür ([ARCHITEKTUR.md](ARCHITEKTUR.md), „Tür und
+  Abfrage"). Er geht als Meldung hinaus, nicht als Fehlertext: hinter `MitFehlerantwort` mit
+  `apierrors.Conflict("Satz.", err)`, sonst mit `apierrors.AntworteFehlerMitMeldung(w, status,
+  "Satz.", err)`. Eine Prüfung neben der Tür liefert `apierrors.BadRequest("Satz.", nil)`;
+  `AntworteFehler` schickt dessen Meldung, die Ursache steht nur im Log.
+- Braucht der Satz Einzelheiten aus einer tieferen Schicht, trägt der Fehler sie als Felder,
+  und die Tür formuliert (`repository.KontoHatAusleihenFehler`, `lusd.MassenabgangFehler`): „If
+  there is extra information in the error that the caller needs programmatically, it should
+  ideally be presented structurally" (Best Practices, „Error structure").
+- Erklärt eine Prüfung ihre Regel selbst, steht der Grund als Feld neben der Regel
+  (`lmfplan.SommerferienFehler.Grund`); die Tür setzt den Namen der Einstellung davor. Die
+  Sätze der Theke entstehen im Dienst, weil mehrere Türen sie zeigen; der Fehler trägt den Satz
+  als Feld neben seiner Art, `service.MeldungAus` liefert ihn, `Error()` beginnt mit der Art.

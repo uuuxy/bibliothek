@@ -199,11 +199,11 @@ func TestAntworteFehlerMitMeldung_DatenbanktextWirdTrotzdemGefiltert(t *testing.
 	}
 }
 
-// Ein Satz für die Oberfläche geht ohne Umweg über einen Fehlerwert hinaus. Antwort und Eintrag
-// im Log sind dieselben wie mit errors.New(Satz) als Ursache; nur ein 500 nennt ohne Ursache
-// keine eigene Meldung und steht deshalb nicht in der Liste.
+// Eine Meldung geht ohne Umweg über einen Fehlerwert hinaus. Antwort und Eintrag im Log sind
+// dieselben wie mit errors.New(Meldung) als Ursache, für jeden Text; nur ein 500 nennt ohne
+// Ursache keine eigene Meldung und steht deshalb nicht in der Liste.
 func TestAntworteFehlerMitMeldung_OhneUrsacheWieMitFehlerwert(t *testing.T) {
-	const satz = "Bitte einen Grund für die Korrektur angeben."
+	const satz = "bitte einen grund für die korrektur angeben"
 	for _, status := range []int{
 		http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound,
 		http.StatusConflict, http.StatusRequestEntityTooLarge, http.StatusBadGateway, http.StatusServiceUnavailable,
