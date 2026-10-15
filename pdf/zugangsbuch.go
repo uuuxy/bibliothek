@@ -14,8 +14,8 @@ import (
 // Abschnitt je Topf, jeder mit eigener Stückzahl, leere werden übersprungen.
 //
 // Die Spalten sind die der Arbeitshilfe: Eingangsdatum, Inventarnummer, Titel, Lieferant
-// (docs/mittel_konzept.md 7.1). „Anzahl" ist die Stückzahl des Abschnitts — jede Zeile ist
-// EIN Exemplar mit seiner eigenen Nummer, denn genau die braucht die Bestandskartei.
+// (docs/mittel_konzept.md 7.1). „Anzahl" ist die Stückzahl des Abschnitts; jede Zeile ist ein
+// Exemplar mit seiner eigenen Nummer, denn genau die braucht die Bestandskartei.
 
 const (
 	zugangSpalteDatum     = 24.0
@@ -51,8 +51,8 @@ type Zugangsbuch struct {
 	OhneZuordnung bool
 }
 
-// GenerateZugangsbuchPDF setzt das Zugangsbuch eines Zeitraums als Blatt zum Abheften.
-func GenerateZugangsbuchPDF(buch Zugangsbuch, schule SchuleInfo) ([]byte, error) {
+// ErzeugeZugangsbuch setzt das Zugangsbuch eines Zeitraums als Blatt zum Abheften.
+func ErzeugeZugangsbuch(buch Zugangsbuch, schule SchuleInfo) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
@@ -103,7 +103,7 @@ func zugangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Zuga
 			zugangsbuchSpaltenkoepfe(p, tr)
 		}
 		p.SetFont("Arial", "", 9)
-		p.CellFormat(zugangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(dateFormatDE)), "LB", 0, "L", false, 0, "")
+		p.CellFormat(zugangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(datumsformat)), "LB", 0, "L", false, 0, "")
 		p.CellFormat(zugangSpalteNummer, abgangZeilenHoehe, tr(z.Barcode), "B", 0, "L", false, 0, "")
 		p.CellFormat(zugangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Titel, zugangSpalteTitel)), "B", 0, "L", false, 0, "")
 		p.CellFormat(zugangSpalteLieferant, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Lieferant, zugangSpalteLieferant)), "BR", 1, "L", false, 0, "")
@@ -125,12 +125,12 @@ func zugangsbuchSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string) {
 	p.CellFormat(zugangSpalteLieferant, abgangZeilenHoehe, tr("Lieferant"), "TBR", 1, "L", false, 0, "")
 }
 
-// zugangsbuchFuss nennt die Gesamtzahl — und erklärt den Abschnitt „ohne Zuordnung", wenn es
+// zugangsbuchFuss nennt die Gesamtzahl und erklärt den Abschnitt „ohne Zuordnung", wenn es
 // ihn gibt.
 //
 // Diese Erklärung gehört auf das Blatt, weil sie eine Einschränkung des Nachweises ist: Ein
 // Exemplar ohne hinterlegte Bestellung trägt als Zugangsdatum den Tag, an dem es im Programm
-// entstanden ist — bei einer Bestandskorrektur ist das nicht zwingend der Tag, an dem das
+// entstanden ist; bei einer Korrektur des Bestands ist das nicht zwingend der Tag, an dem das
 // Buch in die Schule kam.
 func zugangsbuchFuss(p *gofpdf.Fpdf, tr func(string) string, gesamt int, ohneBestellung bool) {
 	if p.GetY() > abgangUmbruchAbY {

@@ -10,10 +10,10 @@ import (
 	"bibliothek/internal/pdftest"
 )
 
-// Der Bescheid wird am ENTPACKTEN Inhaltsstrom geprüft, nicht an den Eingabedaten.
+// Der Bescheid wird am entpackten Inhaltsstrom geprüft, nicht an den Eingabedaten.
 //
 // Das Blatt ist ein Bescheid: Fehlt ein Satz, ist es ein anderer Brief. Am Bildschirm
-// sieht man das nicht — das PDF geht direkt in den Drucker und dann in ein Kuvert.
+// sieht man das nicht, das PDF geht direkt in den Drucker und dann in ein Kuvert.
 // Dieselbe Technik wie beim Lernmittel-Etikett und beim Bestellanschreiben.
 
 // pdfText liefert das PDF als durchsuchbaren Text: die rohen Bytes und dahinter die Texte
@@ -57,10 +57,10 @@ func testBescheid() BescheidBrief {
 	}
 }
 
-// Der Wortlaut der Vorlage, Satz für Satz. Geprüft werden ANKER — Wortgruppen, die im
+// Der Wortlaut der Vorlage, Satz für Satz. Geprüft werden Anker, Wortgruppen, die im
 // Strom am Stück stehen; ganze Absätze bricht gofpdf um.
 func TestBescheidTraegtDenWortlautDerVorlage(t *testing.T) {
-	roh, err := GenerateBescheidPDF(testBescheid())
+	roh, err := ErzeugeBescheid(testBescheid())
 	if err != nil {
 		t.Fatalf("Bescheid erzeugen: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestBescheidTraegtDenWortlautDerVorlage(t *testing.T) {
 		}
 	}
 
-	// Die Ausfüllhilfe der Vorlage gehört NICHT auf den fertigen Brief.
+	// Die Ausfüllhilfe der Vorlage gehört nicht auf den fertigen Brief.
 	for _, unerwuenscht := range []string{"4stellig", "E N T W U R F", "Summe Tabelle"} {
 		if strings.Contains(text, unerwuenscht) {
 			t.Errorf("%q ist ein Feld der Vorlage und darf im Brief nicht stehen", unerwuenscht)
@@ -133,8 +133,8 @@ func TestBescheidZeigtNurBelegteFallgruppen(t *testing.T) {
 	}
 }
 
-// Fehlt die Anschrift, sagt der Brief es an der Stelle, an der sie stehen müsste —
-// dieselbe Regel wie beim Eltern-Mahnbrief. Ein Bescheid ohne Empfänger darf nicht
+// Fehlt die Anschrift, sagt der Brief es an der Stelle, an der sie stehen müsste, nach
+// derselben Regel wie beim Eltern-Mahnbrief. Ein Bescheid ohne Empfänger darf nicht
 // aussehen wie ein vollständiger.
 func TestBescheidOhneAnschriftSagtEs(t *testing.T) {
 	b := testBescheid()
@@ -166,7 +166,7 @@ func TestBescheidLaesstLeereInfozeilenWeg(t *testing.T) {
 
 func mussErzeugen(t *testing.T, b BescheidBrief) []byte {
 	t.Helper()
-	roh, err := GenerateBescheidPDF(b)
+	roh, err := ErzeugeBescheid(b)
 	if err != nil {
 		t.Fatalf("Bescheid erzeugen: %v", err)
 	}
@@ -185,14 +185,11 @@ func TestBescheidMusterSchreiben(t *testing.T) {
 	t.Logf("Muster geschrieben: %s", ziel)
 }
 
-// Kein Seitenumbruch mitten in der Tabelle — geprüft SEITE FÜR SEITE.
+// Kein Seitenumbruch mitten in der Tabelle, geprüft Seite für Seite (pdftest.TexteJeSeite).
 //
-// Der Fund, der dieses Gate erzwungen hat (10.09.2026): Der erste Entwurf riss seine
-// Tabellenkopfzeile entzwei. „Name des/der" stand unten auf Seite 1,
-// „Schülers/Schülerin" oben auf Seite 2, dahinter die Spaltenüberschriften am Fuß der
-// Folgeseite, dazwischen eine halbleere Seite. Im GESAMTTEXT war alles vorhanden — das
-// alte Gate blieb grün, und nur das Ansehen des Papiers zeigte den Schaden. Seitdem
-// liest pdftest.TexteJeSeite die Seiten getrennt.
+// Im Text des ganzen Dokuments steht alles, auch wenn die Kopfzeile zerrissen ist: „Name des/der"
+// unten auf Seite 1, „Schülers/Schülerin" oben auf Seite 2. Nur Seite für Seite sieht der Test,
+// was man sonst erst auf dem Papier sähe.
 func TestBescheidZerreisstDieTabelleNicht(t *testing.T) {
 	b := testBescheid()
 	// So viele Positionen, dass die Tabelle sicher über den Seitenrand hinausgeht.
@@ -234,9 +231,8 @@ func TestBescheidZerreisstDieTabelleNicht(t *testing.T) {
 
 // Namen mit Zeichen außerhalb von cp1252 kommen richtig aufs Papier.
 //
-// Der Fund (10.09.2026, am fertigen PDF gesehen): „Ayşe" wurde zu „Ay.e". Dieselbe Falle
-// wie beim Schüler-Etikett — der Zeichensatz des PDFs kennt das ş nicht, und ein Bescheid
-// mit entstelltem Namen ist ein fehlerhafter Bescheid.
+// Ohne Ersetzung würde „Ayşe" zu „Ay.e": Der Zeichensatz des PDFs kennt das ş nicht, wie beim
+// Etikett für Schüler, und ein Bescheid mit entstelltem Namen ist ein fehlerhafter Bescheid.
 func TestBescheidErsetztZeichenAusserhalbDesZeichensatzes(t *testing.T) {
 	b := testBescheid()
 	b.Empfaenger.Name = "Ayşe Öztürk-Ćurić"

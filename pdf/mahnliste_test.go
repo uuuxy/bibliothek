@@ -68,7 +68,7 @@ func mahnlisteMit(coverURL string) []MahnlisteSchueler {
 
 func mahnliste(t *testing.T, schueler []MahnlisteSchueler) []byte {
 	t.Helper()
-	roh, err := GenerateMahnlistePDF(schueler)
+	roh, err := ErzeugeMahnliste(schueler)
 	if err != nil {
 		t.Fatalf("Mahnliste drucken: %v", err)
 	}

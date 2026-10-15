@@ -144,8 +144,8 @@ func (t *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	// mehreren Schulen im selben Postfach ist das keine Zierde, sondern die Zuordnung.
 	a.SchuleName = buchetikett.LadeKopf(ctx, t.DB.Pool).Schulname
 	a.SchuleAnschrift = t.schulAnschrift(ctx)
-	a.EtikettenFormate = pdf.LabelFormatAuswahl()
-	a.EtikettenFormatVorgabe = pdf.StandardLabelFormat
+	a.EtikettenFormate = pdf.EtikettFormate()
+	a.EtikettenFormatVorgabe = pdf.EtikettFormatVorgabe
 	return &a, nil
 }
 

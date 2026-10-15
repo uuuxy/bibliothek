@@ -7,17 +7,16 @@ import (
 	"time"
 )
 
-// Das pdf-Paket erzeugt jedes Schriftstück, das die Schule aus der Hand gibt:
-// Ersatzforderung, Mahnliste, Kontoauszug. Bis hierher
-// hatte es keinen einzigen Test — ein Panic oder ein leeres Dokument wäre erst dem
-// Sekretariat aufgefallen, im Zweifel gegenüber Eltern.
+// Das Paket pdf erzeugt jedes Schriftstück, das die Schule aus der Hand gibt: Ersatzforderung,
+// Mahnliste, Kontoauszug. Ein Panic oder ein leeres Dokument fiele sonst erst dem Sekretariat
+// auf, im Zweifel gegenüber Eltern.
 //
-// Die Tests prüfen bewusst nur, was ohne PDF-Parser belastbar ist: dass überhaupt ein
-// gültiges Dokument entsteht, dass Sonderfälle es nicht umbringen und dass Beträge
-// stimmen. Wie es aussieht, entscheidet das Auge — nicht ein Test.
+// Diese Tests prüfen nur, was ohne Parser für PDFs belastbar ist: dass ein gültiges Dokument
+// entsteht, dass Sonderfälle es nicht umbringen und dass Beträge stimmen. Wie es aussieht,
+// entscheidet das Auge, nicht ein Test.
 
 // istPDF prüft die Signatur und den Abschluss-Marker. Ein abgeschnittenes Dokument
-// beginnt zwar mit %PDF, hat aber kein %%EOF — genau so sähe ein Ausgabefehler aus.
+// beginnt zwar mit %PDF, hat aber kein %%EOF; so sähe ein Fehler bei der Ausgabe aus.
 func istPDF(t *testing.T, b []byte, was string) {
 	t.Helper()
 
@@ -53,42 +52,42 @@ func testZahlung() Zahlungsangaben {
 	}
 }
 
-func TestGenerateRechnung(t *testing.T) {
+func TestErzeugeRechnung(t *testing.T) {
 	schueler := Schueler{
 		Vorname: "Änne", Nachname: "Müller-Lüdenscheidt",
 		Strasse: "Übergasse", Hausnummer: "3a", PLZ: "61440", Ort: "Oberursel",
 	}
-	items := []RechnungItem{
+	positionen := []RechnungsPosition{
 		{Titel: umlautText, Barcode: "B-00001", Ausleihdatum: time.Now().AddDate(0, -3, 0), Ersatzpreis: 12.99},
 		{Titel: "Zweites Buch", Barcode: "B-00002", Ausleihdatum: time.Now().AddDate(0, -2, 0), Ersatzpreis: 7.50},
 	}
 
-	got, err := GenerateRechnung(schueler, items, testSchule(), testZahlung())
+	got, err := ErzeugeRechnung(schueler, positionen, testSchule(), testZahlung())
 	if err != nil {
-		t.Fatalf("GenerateRechnung: %v", err)
+		t.Fatalf("ErzeugeRechnung: %v", err)
 	}
 	istPDF(t, got, "Rechnung")
 }
 
-// TestRechnungSummeRundetAufCent sichert die bewusste Entscheidung ab, Geld als float64
-// zu führen (siehe Kommentar in buildItemsTableBlock). Drei Posten zu 0.10 ergeben in
+// TestRechnungSummeRundetAufCent sichert die Entscheidung ab, Geld als float64 zu führen
+// (Kommentar in bauePositionen). Drei Posten zu 0.10 ergeben in
 // Fließkomma 0.30000000000000004; ohne die Rundung stünde das auf der Forderung.
 func TestRechnungSummeRundetAufCent(t *testing.T) {
-	items := make([]RechnungItem, 3)
-	for i := range items {
-		items[i] = RechnungItem{Titel: "Posten", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 0.10}
+	positionen := make([]RechnungsPosition, 3)
+	for i := range positionen {
+		positionen[i] = RechnungsPosition{Titel: "Posten", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 0.10}
 	}
 
-	got, err := GenerateRechnung(Schueler{Vorname: "A", Nachname: "B"}, items, testSchule(), testZahlung())
+	got, err := ErzeugeRechnung(Schueler{Vorname: "A", Nachname: "B"}, positionen, testSchule(), testZahlung())
 	if err != nil {
-		t.Fatalf("GenerateRechnung: %v", err)
+		t.Fatalf("ErzeugeRechnung: %v", err)
 	}
 	istPDF(t, got, "Rechnung mit Rundung")
 
-	// Gegenprobe auf die reine Rechenlogik — im PDF-Strom ist der Text komprimiert.
+	// Gegenprobe an der Rechnung selbst; im Strom des PDFs ist der Text komprimiert.
 	var summe float64
-	for _, it := range items {
-		summe += it.Ersatzpreis
+	for _, position := range positionen {
+		summe += position.Ersatzpreis
 	}
 	if summe == 0.30 {
 		t.Skip("Fließkomma verhält sich hier exakt — die Rundung ist trotzdem richtig")
@@ -98,17 +97,17 @@ func TestRechnungSummeRundetAufCent(t *testing.T) {
 	}
 }
 
-func TestGenerateRechnungOhnePosten(t *testing.T) {
-	// Eine Forderung ohne Posten ist fachlich unsinnig, darf den Server aber nicht
-	// umbringen — Handler dürfen sich auf einen Fehler statt eines Panics verlassen.
-	got, err := GenerateRechnung(Schueler{Vorname: "Leer", Nachname: "Fall"}, nil, testSchule(), testZahlung())
+func TestErzeugeRechnung_OhnePosten(t *testing.T) {
+	// Eine Forderung ohne Posten ist fachlich unsinnig, darf den Server aber nicht umbringen;
+	// eine Tür darf sich auf einen Fehler statt eines Panics verlassen.
+	got, err := ErzeugeRechnung(Schueler{Vorname: "Leer", Nachname: "Fall"}, nil, testSchule(), testZahlung())
 	if err != nil {
-		t.Fatalf("GenerateRechnung ohne Posten: %v", err)
+		t.Fatalf("ErzeugeRechnung ohne Posten: %v", err)
 	}
 	istPDF(t, got, "Rechnung ohne Posten")
 }
 
-func TestGenerateKontoauszug(t *testing.T) {
+func TestErzeugeKontoauszug(t *testing.T) {
 	schueler := KontoauszugSchueler{Vorname: "Änne", Nachname: "Groß", Klasse: "8a"}
 	buecher := []KontoauszugBuch{
 		{Titel: umlautText, Barcode: "B-00020", Ausleihdatum: time.Now().AddDate(0, -1, 0)},
@@ -116,16 +115,16 @@ func TestGenerateKontoauszug(t *testing.T) {
 			Ausleihdatum: time.Now().AddDate(0, -2, 0), Rueckgabedatum: time.Now().AddDate(0, -1, 0)},
 	}
 
-	got, err := GenerateKontoauszug(schueler, buecher)
+	got, err := ErzeugeKontoauszug(schueler, buecher)
 	if err != nil {
-		t.Fatalf("GenerateKontoauszug: %v", err)
+		t.Fatalf("ErzeugeKontoauszug: %v", err)
 	}
 	istPDF(t, got, "Kontoauszug")
 }
 
-// TestKontoauszugBatchMitUnterschrift deckt den Abgänger-Laufzettel ab: derselbe Auszug,
+// TestErzeugeKontoauszuege_MitUnterschrift deckt den Laufzettel der Abgänger ab: derselbe Auszug,
 // aber mit Freigabezeile. Beide Varianten müssen ein Dokument liefern.
-func TestKontoauszugBatchMitUnterschrift(t *testing.T) {
+func TestErzeugeKontoauszuege_MitUnterschrift(t *testing.T) {
 	eintraege := []KontoauszugEintrag{
 		{Schueler: KontoauszugSchueler{Vorname: "Ali", Nachname: "Öztürk", Klasse: "10a"}},
 		{Schueler: KontoauszugSchueler{Vorname: "Bea", Nachname: "Schäfer", Klasse: "10b"},
@@ -133,9 +132,9 @@ func TestKontoauszugBatchMitUnterschrift(t *testing.T) {
 	}
 
 	for _, mitUnterschrift := range []bool{false, true} {
-		got, err := GenerateKontoauszugBatch(eintraege, mitUnterschrift)
+		got, err := ErzeugeKontoauszuege(eintraege, mitUnterschrift)
 		if err != nil {
-			t.Fatalf("GenerateKontoauszugBatch(mitUnterschrift=%v): %v", mitUnterschrift, err)
+			t.Fatalf("ErzeugeKontoauszuege(mitUnterschrift=%v): %v", mitUnterschrift, err)
 		}
 		istPDF(t, got, "Kontoauszug-Stapel")
 	}
@@ -147,9 +146,9 @@ func TestKontoauszugBatchMitUnterschrift(t *testing.T) {
 func TestUeberlangeEingabenBringenKeinDokumentUm(t *testing.T) {
 	lang := strings.Repeat("Ü", 5000)
 
-	got, err := GenerateRechnung(
+	got, err := ErzeugeRechnung(
 		Schueler{Vorname: lang, Nachname: lang, Strasse: lang, Ort: lang},
-		[]RechnungItem{{Titel: lang, Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 1}},
+		[]RechnungsPosition{{Titel: lang, Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 1}},
 		SchuleInfo{Name: lang, Strasse: lang, Ort: lang},
 		testZahlung(),
 	)

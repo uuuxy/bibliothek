@@ -20,14 +20,14 @@ import (
 
 // ladeRechnungPosten lädt die offenen Forderungen eines Schülers ohne Bescheid als
 // Rechnungspositionen (repository.LadeOffeneForderungenOhneBescheid).
-func ladeRechnungPosten(ctx context.Context, datenbank db.Pool, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
+func ladeRechnungPosten(ctx context.Context, datenbank db.Pool, schuelerID uuid.UUID) ([]pdf.RechnungsPosition, error) {
 	posten, err := repository.LadeOffeneForderungenOhneBescheid(ctx, datenbank, schuelerID)
 	if err != nil {
 		return nil, err
 	}
-	var zeilen []pdf.RechnungItem
+	var zeilen []pdf.RechnungsPosition
 	for _, p := range posten {
-		zeilen = append(zeilen, pdf.RechnungItem(p))
+		zeilen = append(zeilen, pdf.RechnungsPosition(p))
 	}
 	return zeilen, nil
 }
@@ -108,7 +108,7 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.Pool) 
 	angaben := repository.BescheidAngabenAus(einstellungen)
 	zahlung := pdf.Zahlungsangaben{Zahlstelle: angaben.Zahlstelle, Bankverbindung: angaben.Bankverbindung}
 
-	pdfDaten, err := pdf.GenerateRechnung(schueler, zeilen, schule, zahlung)
+	pdfDaten, err := pdf.ErzeugeRechnung(schueler, zeilen, schule, zahlung)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return

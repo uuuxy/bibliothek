@@ -1,7 +1,7 @@
 package pdf
 
-// SchuleInfo holds configurable school identity data used in PDF letter headers.
-// Values are loaded from system_einstellungen at request time.
+// SchuleInfo sind Name und Anschrift der Schule für den Kopf der Briefe; die Tür liest sie bei
+// jeder Anfrage aus den Einstellungen.
 type SchuleInfo struct {
 	Name    string
 	Strasse string
@@ -9,7 +9,7 @@ type SchuleInfo struct {
 	Ort     string
 }
 
-// Absenderzeile returns a compact one-line sender string suitable for letterhead.
+// Absenderzeile liefert den Absender in einer Zeile, wie er über dem Fensterfeld steht.
 func (s SchuleInfo) Absenderzeile() string {
 	if s.Name == "" {
 		return "Schulbibliothek"
@@ -20,8 +20,7 @@ func (s SchuleInfo) Absenderzeile() string {
 	return s.Name + " · " + s.Strasse + " · " + s.PLZ + " " + s.Ort
 }
 
-// OrtDatum returns "Ort, den TT.MM.JJJJ" for use in date lines.
-// Falls back to just the date when Ort is empty.
+// OrtDatum liefert "Ort, den TT.MM.JJJJ" für die Datumszeile; ohne Ort nur das Datum.
 func (s SchuleInfo) OrtDatum(datum string) string {
 	if s.Ort == "" {
 		return datum

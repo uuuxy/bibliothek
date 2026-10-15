@@ -28,7 +28,7 @@ func berichtBlatt(t *testing.T, titel string, orders []repository.BerichtBestell
 	if err != nil {
 		t.Fatalf("Blöcke füllen: %v", err)
 	}
-	roh, err := pdf.GenerateBestellberichtPDF(pdf.Bestellbericht{
+	roh, err := pdf.ErzeugeBestellbericht(pdf.Bestellbericht{
 		Titel:         titel,
 		Von:           time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
 		Bis:           time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),

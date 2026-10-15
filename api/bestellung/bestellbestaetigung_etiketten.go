@@ -45,9 +45,9 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 	// verschnittenen Bogen. Leer heißt Vorgabe.
 	format := r.URL.Query().Get("format")
 	if format == "" {
-		format = pdf.StandardLabelFormat
+		format = pdf.EtikettFormatVorgabe
 	}
-	if _, bekannt := pdf.GetLabelFormat(format); !bekannt {
+	if _, bekannt := pdf.FindeEtikettFormat(format); !bekannt {
 		apierrors.AntworteFehler(w, http.StatusBadRequest,
 			fmt.Errorf("unbekanntes Etikettenformat %q", format))
 		return
@@ -105,10 +105,10 @@ func (t *Tueren) baueEtikettenPDF(ctx context.Context, groesse, format string, e
 	eingabe := buchetikett.PDFEtiketten(etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool))
 
 	if groesse == "gross" {
-		return pdf.GenerateLernmittelEtikettenPDF(eingabe)
+		return pdf.ErzeugeLernmittelEtiketten(eingabe)
 	}
 
-	doc, err := pdf.GenerateLabelsPDF(format, 1, false, eingabe)
+	doc, err := pdf.ErzeugeBuchEtiketten(format, 1, false, eingabe)
 	if err != nil {
 		return nil, err
 	}

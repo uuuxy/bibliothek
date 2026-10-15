@@ -265,7 +265,7 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 		AusKatalogGeloescht: 3,
 	}
 
-	roh, err := pdf.GenerateAbgangsbuchPDF(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), pdf.SchuleInfo{Name: "Philipp-Reis-Schule", Strasse: "Schulstr. 1", PLZ: "61440", Ort: "Oberursel"})
+	roh, err := pdf.ErzeugeAbgangsbuch(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), pdf.SchuleInfo{Name: "Philipp-Reis-Schule", Strasse: "Schulstr. 1", PLZ: "61440", Ort: "Oberursel"})
 	if err != nil {
 		t.Fatalf("Abgangsbuch drucken: %v", err)
 	}
@@ -295,7 +295,7 @@ func TestAbgangsbuchPDF_LeererZeitraumSagtEs(t *testing.T) {
 		Bis:    time.Date(2026, time.September, 15, 0, 0, 0, 0, schulzeit.Zone()),
 		Zeilen: []repository.AbgangsZeile{},
 	}
-	roh, err := pdf.GenerateAbgangsbuchPDF(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), pdf.SchuleInfo{Name: "Philipp-Reis-Schule"})
+	roh, err := pdf.ErzeugeAbgangsbuch(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), pdf.SchuleInfo{Name: "Philipp-Reis-Schule"})
 	if err != nil {
 		t.Fatalf("Abgangsbuch drucken: %v", err)
 	}

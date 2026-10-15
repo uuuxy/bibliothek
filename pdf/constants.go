@@ -3,5 +3,5 @@
 // nicht; die Tür füllt sie (docs/ARCHITEKTUR.md 5.2.2).
 package pdf
 
-// Datumsformat (SonarQube go:S1192).
-const dateFormatDE = "02.01.2006" // TT.MM.JJJJ
+// datumsformat steht einmal hier statt an jedem Erzeuger (SonarQube go:S1192).
+const datumsformat = "02.01.2006" // TT.MM.JJJJ

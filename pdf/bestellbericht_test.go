@@ -63,7 +63,7 @@ func TestBestellbericht_ErzeugtGueltigesPDFInBeidenBetriebsarten(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			daten, err := GenerateBestellberichtPDF(Bestellbericht{
+			daten, err := ErzeugeBestellbericht(Bestellbericht{
 				Titel:         "Testbericht",
 				Von:           von,
 				Bis:           bis,
@@ -96,7 +96,7 @@ func TestBestellbericht_OhneBestellungen(t *testing.T) {
 		"ein leerer Block": {{Beschriftung: "Topf-Probe", Bestellungen: nil}},
 	} {
 		for _, mitPreisen := range []bool{true, false} {
-			daten, err := GenerateBestellberichtPDF(Bestellbericht{
+			daten, err := ErzeugeBestellbericht(Bestellbericht{
 				Titel:         "Leer",
 				Von:           von,
 				Bis:           bis,
@@ -157,7 +157,7 @@ func TestBestellbericht_JederBlockStehtMitBeschriftungUndSumme(t *testing.T) {
 			"Gesamt 01.09.2026 – 30.09.2026", "55",
 		}},
 	} {
-		roh, err := GenerateBestellberichtPDF(Bestellbericht{
+		roh, err := ErzeugeBestellbericht(Bestellbericht{
 			Titel:         "Bestellbericht",
 			Von:           time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
 			Bis:           time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),
@@ -212,9 +212,9 @@ func TestBestellbericht_LieferantenStehenNachNamenGeordnet(t *testing.T) {
 	// geordnet ausgibt, kommt einmal in 40.320 Läufen vor.
 	namen := []string{"Klett", "cornelsen", "Westermann", "Buchner", "Auer", "Schroedel", "Diesterweg", "Oldenbourg"}
 	want := []string{"Auer", "Buchner", "cornelsen", "Diesterweg", "Klett", "Oldenbourg", "Schroedel", "Westermann"}
-	orders := make([]BestellberichtBestellung, 0, len(namen))
+	bestellungen := make([]BestellberichtBestellung, 0, len(namen))
 	for i, name := range namen {
-		orders = append(orders, BestellberichtBestellung{
+		bestellungen = append(bestellungen, BestellberichtBestellung{
 			LieferantName: name, Bestelldatum: time.Date(2026, time.Month(i+1), 10, 0, 0, 0, 0, time.UTC),
 			Gesamtbetrag: float64(10 * (i + 1)), AnzahlExemplare: i + 1,
 		})
@@ -224,11 +224,11 @@ func TestBestellbericht_LieferantenStehenNachNamenGeordnet(t *testing.T) {
 		ueberschrift string
 		mitPreisen   bool
 	}{{"Ausgaben nach Lieferant", true}, {"Bestellungen nach Lieferant", false}} {
-		roh, err := GenerateBestellberichtPDF(Bestellbericht{
+		roh, err := ErzeugeBestellbericht(Bestellbericht{
 			Titel: "Jahresbericht",
 			Von:   time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
 			Jahresansicht: true, MitPreisen: f.mitPreisen,
-			Toepfe: []BestellberichtTopf{{Beschriftung: "ohne Zuordnung", Bestellungen: orders}},
+			Toepfe: []BestellberichtTopf{{Beschriftung: "ohne Zuordnung", Bestellungen: bestellungen}},
 		}, SchuleInfo{Name: "Testbibliothek"})
 		if err != nil {
 			t.Fatalf("%s: Bericht drucken: %v", f.ueberschrift, err)
@@ -261,7 +261,7 @@ func TestBestellbericht_UebersichtenZaehlenUeberAlleBloecke(t *testing.T) {
 			Gesamtbetrag: betrag, AnzahlExemplare: exemplare,
 		}
 	}
-	roh, err := GenerateBestellberichtPDF(Bestellbericht{
+	roh, err := ErzeugeBestellbericht(Bestellbericht{
 		Titel: "Jahresbericht",
 		Von:   time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
 		Jahresansicht: true, MitPreisen: true,
@@ -308,7 +308,7 @@ func TestBestellbericht_UebersichtenOhnePreiseNennenExemplare(t *testing.T) {
 			Gesamtbetrag: 999, AnzahlExemplare: exemplare,
 		}
 	}
-	roh, err := GenerateBestellberichtPDF(Bestellbericht{
+	roh, err := ErzeugeBestellbericht(Bestellbericht{
 		Titel: "Jahresbericht",
 		Von:   time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
 		Jahresansicht: true, MitPreisen: false,
@@ -339,7 +339,7 @@ func TestBestellbericht_UebersichtenOhnePreiseNennenExemplare(t *testing.T) {
 // Eine Position ohne ISBN trägt in ihrer Spalte einen Strich: Eine leere Zelle läse sich wie
 // eine vergessene Angabe.
 func TestBestellbericht_PositionOhneISBNTraegtEinenStrich(t *testing.T) {
-	roh, err := GenerateBestellberichtPDF(Bestellbericht{
+	roh, err := ErzeugeBestellbericht(Bestellbericht{
 		Titel: "Testbericht", Von: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
 		Jahresansicht: false, MitPreisen: false,
 		Toepfe: berichtTestdaten(),
@@ -372,7 +372,7 @@ func TestBestellbericht_TitelBleibtInSeinerSpalte(t *testing.T) {
 		},
 	}}
 	for _, mitPreisen := range []bool{true, false} {
-		roh, err := GenerateBestellberichtPDF(Bestellbericht{
+		roh, err := ErzeugeBestellbericht(Bestellbericht{
 			Titel: "Testbericht", Von: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
 			Jahresansicht: false, MitPreisen: mitPreisen,
 			Toepfe: []BestellberichtTopf{{Beschriftung: "ohne Zuordnung", Bestellungen: bestellungen}},
@@ -409,7 +409,7 @@ func TestBestellbericht_TitelBleibtInSeinerSpalte(t *testing.T) {
 // dessen Monat. Die Datenbank liefert den Zeitpunkt in UTC: 22:30 Uhr am 31.08. ist in der Schule
 // der 01.09., eine halbe Stunde nach Mitternacht.
 func TestBestellbericht_BestelldatumStehtAmKalendertagDerSchule(t *testing.T) {
-	roh, err := GenerateBestellberichtPDF(Bestellbericht{
+	roh, err := ErzeugeBestellbericht(Bestellbericht{
 		Titel: "Jahresbericht",
 		Von:   time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
 		Jahresansicht: true, MitPreisen: false,

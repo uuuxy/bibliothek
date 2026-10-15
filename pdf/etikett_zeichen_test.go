@@ -6,19 +6,17 @@ import (
 	"testing"
 )
 
-// Die Buchetiketten kannten die Zeichenersetzung bis zum 21.09.2026 nicht: Ein Titel
-// wie „Şafak und Łukasz" kam als „.afak und .ukasz" vom Drucker, während das Schüler-
-// Etikett daneben längst richtig druckte (OFFEN.md 5.5). Seit pdfzeichen läuft jeder
-// Renderer durch dieselbe Ersetzung; dieser Test hält das für die beiden Buchetiketten
-// fest — am fertigen PDF, nicht am Aufruf (drei Wege, ein Inhaltsstrom).
+// Die Etiketten der Bücher laufen durch die Zeichenersetzung (pdfzeichen) wie jeder andere
+// Erzeuger; ohne sie käme ein Titel wie „Şafak und Łukasz" als „.afak und .ukasz" vom Drucker.
+// Geprüft wird am fertigen PDF, nicht am Aufruf (drei Wege, ein Inhaltsstrom).
 func TestBuchEtikettenDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
-	items := []BuchEtikett{{
+	etiketten := []BuchEtikett{{
 		Schulname: "Philipp-Reis-Schule, Friedrichsdorf",
 		BarcodeID: "100000000001", Titel: "Şafak, Łukasz und Wiśniewski",
 		Signatur: "Lit 5", AnschaffungsJahr: "2026", Eigentumsvermerk: "Eigentum des Landes Hessen",
 	}}
 
-	klein, err := GenerateLabelsPDF("zweckform_l4760", 1, false, items)
+	klein, err := ErzeugeBuchEtiketten("zweckform_l4760", 1, false, etiketten)
 	if err != nil {
 		t.Fatalf("Buchetiketten: %v", err)
 	}
@@ -26,7 +24,7 @@ func TestBuchEtikettenDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
 	if err := klein.Output(&puffer); err != nil {
 		t.Fatalf("PDF-Ausgabe: %v", err)
 	}
-	gross, err := GenerateLernmittelEtikettenPDF(items)
+	gross, err := ErzeugeLernmittelEtiketten(etiketten)
 	if err != nil {
 		t.Fatalf("Lernmittel-Etiketten: %v", err)
 	}

@@ -94,7 +94,7 @@ func (t *Tueren) ZugangsbuchPDF() http.HandlerFunc {
 			PLZ: einst.SchulePLZ, Ort: einst.SchuleOrt,
 		}
 
-		blatt, err := pdf.GenerateZugangsbuchPDF(zugangsbuchBlatt(zugangsbuchAntwortAus(buch)), schule)
+		blatt, err := pdf.ErzeugeZugangsbuch(zugangsbuchBlatt(zugangsbuchAntwortAus(buch)), schule)
 		if err != nil {
 			return apierrors.Internal("Zugangsbuch konnte nicht gedruckt werden", err)
 		}

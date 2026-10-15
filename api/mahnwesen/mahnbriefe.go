@@ -121,7 +121,7 @@ func (t *Tueren) erzeugeMahnbriefe(ctx context.Context, w http.ResponseWriter, a
 		return nil, false
 	}
 
-	pdfDaten, err := pdf.GenerateMahnbriefePDF(mahnbriefEmpfaenger(briefe), vorlage)
+	pdfDaten, err := pdf.ErzeugeMahnbriefe(mahnbriefEmpfaenger(briefe), vorlage)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim generieren des pdfs: %w", err))
 		return nil, false

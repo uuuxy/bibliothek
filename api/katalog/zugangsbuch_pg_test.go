@@ -118,7 +118,7 @@ func TestZugangsbuchPDF_AbschnitteUndHinweis(t *testing.T) {
 		},
 	}
 
-	roh, err := pdf.GenerateZugangsbuchPDF(zugangsbuchBlatt(zugangsbuchAntwortAus(buch)), pdf.SchuleInfo{Name: "Philipp-Reis-Schule", Strasse: "Schulstr. 1", PLZ: "61440", Ort: "Oberursel"})
+	roh, err := pdf.ErzeugeZugangsbuch(zugangsbuchBlatt(zugangsbuchAntwortAus(buch)), pdf.SchuleInfo{Name: "Philipp-Reis-Schule", Strasse: "Schulstr. 1", PLZ: "61440", Ort: "Oberursel"})
 	if err != nil {
 		t.Fatalf("Zugangsbuch drucken: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestZugangsbuchPDF_LeererZeitraum(t *testing.T) {
 		Bis:    time.Date(2026, time.September, 15, 0, 0, 0, 0, loc),
 		Zeilen: []repository.ZugangsZeile{},
 	}
-	roh, err := pdf.GenerateZugangsbuchPDF(zugangsbuchBlatt(zugangsbuchAntwortAus(buch)), pdf.SchuleInfo{Name: "Philipp-Reis-Schule"})
+	roh, err := pdf.ErzeugeZugangsbuch(zugangsbuchBlatt(zugangsbuchAntwortAus(buch)), pdf.SchuleInfo{Name: "Philipp-Reis-Schule"})
 	if err != nil {
 		t.Fatalf("Zugangsbuch drucken: %v", err)
 	}

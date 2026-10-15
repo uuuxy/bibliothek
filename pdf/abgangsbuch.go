@@ -14,7 +14,7 @@ import (
 //
 // Zwei Abschnitte, einer je Topf, jeder mit eigener Stückzahl: Die Finanzen von Land und
 // Schulträger werden getrennt geführt (docs/mittel_konzept.md 1.1/1.2), und wer die Summen
-// aus einer gemischten Liste von Hand zieht, zieht sie jedes Halbjahr neu — und anders.
+// aus einer gemischten Liste von Hand zieht, zieht sie jedes Halbjahr neu und anders.
 // Dieselbe Regel und dieselben Überschriften wie im Bestellbericht.
 
 const (
@@ -56,8 +56,8 @@ type Abgangsbuch struct {
 	AusKatalogGeloescht int
 }
 
-// GenerateAbgangsbuchPDF setzt das Abgangsbuch eines Zeitraums als Blatt zum Abheften.
-func GenerateAbgangsbuchPDF(buch Abgangsbuch, schule SchuleInfo) ([]byte, error) {
+// ErzeugeAbgangsbuch setzt das Abgangsbuch eines Zeitraums als Blatt zum Abheften.
+func ErzeugeAbgangsbuch(buch Abgangsbuch, schule SchuleInfo) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
@@ -117,7 +117,7 @@ func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Abga
 		// Auslassungszeichen: Auf einem Nachweis, den jemand unterschreibt, muss ein gekürzter
 		// Titel als gekürzt erkennbar sein.
 		p.SetFont("Arial", "", 9)
-		p.CellFormat(abgangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(dateFormatDE)), "LB", 0, "L", false, 0, "")
+		p.CellFormat(abgangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(datumsformat)), "LB", 0, "L", false, 0, "")
 		p.CellFormat(abgangSpalteNummer, abgangZeilenHoehe, tr(z.Barcode), "B", 0, "L", false, 0, "")
 		p.CellFormat(abgangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Titel, abgangSpalteTitel)), "B", 0, "L", false, 0, "")
 		p.CellFormat(abgangSpalteSignatur, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Signatur, abgangSpalteSignatur)), "B", 0, "L", false, 0, "")
@@ -142,12 +142,12 @@ func abgangsbuchSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string) {
 	p.CellFormat(abgangSpalteGrund, abgangZeilenHoehe, tr("Grund"), "TBR", 1, "L", false, 0, "")
 }
 
-// abgangsbuchFuss nennt die Gesamtzahl — und darunter, was NICHT in der Liste steht.
+// abgangsbuchFuss nennt die Gesamtzahl und darunter, was nicht in der Liste steht.
 //
 // Die beiden Hinweise sind die wichtigeren Zeilen: Was vor Migration 128 ausgesondert wurde,
-// trägt kein Datum und steht in KEINER Halbjahresliste; was körperlich gelöscht wurde, steht
-// in gar keiner Abfrage mehr (Rasterdurchgang 17.09.2026). Ein Nachweis, der das verschweigt,
-// behauptet Vollständigkeit, die er nicht hat — und erfundene Zeilen wären schlimmer.
+// trägt kein Datum und steht in keiner Halbjahresliste; was körperlich gelöscht wurde, steht in
+// gar keiner Abfrage mehr. Ein Nachweis, der das verschweigt, behauptet eine Vollständigkeit, die
+// er nicht hat, und erfundene Zeilen wären schlimmer.
 func abgangsbuchFuss(p *gofpdf.Fpdf, tr func(string) string, buch Abgangsbuch) {
 	if p.GetY() > abgangUmbruchAbY {
 		p.AddPage()

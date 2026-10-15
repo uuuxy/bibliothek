@@ -184,7 +184,7 @@ func abgaengerKlassennamen(klassen []abgaengerKlasse) []string {
 // erzeugeKontoauszugPDF erzeugt den Kontoauszug eines Abgängers mit Unterschriftszeile, also
 // genau das Blatt, das auch aus dem Druck fällt.
 func erzeugeKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
-	return pdf.GenerateKontoauszugBatch([]pdf.KontoauszugEintrag{e}, true)
+	return pdf.ErzeugeKontoauszuege([]pdf.KontoauszugEintrag{e}, true)
 }
 
 // versendeAbgaengerKontoauszuege verschickt je Klasse eine Mail mit einem PDF je Abgänger.

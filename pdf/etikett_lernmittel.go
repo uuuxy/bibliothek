@@ -35,15 +35,15 @@ const (
 	lernmittelProSeite   = 4
 )
 
-// GenerateLernmittelEtikettenPDF erzeugt die großen Lernmittel-Etiketten für Lieferanten,
+// ErzeugeLernmittelEtiketten erzeugt die großen Lernmittel-Etiketten für Lieferanten,
 // die selbst etikettieren. Sie tragen die Kopfangaben des kleinen Etiketts
-// (zeichneBarcodeLabel) und dazu eine Tabelle für die Ausleihhistorie über mehrere Jahre,
+// (zeichneBarcodeEtikett) und dazu eine Tabelle für die Ausleihhistorie über mehrere Jahre,
 // für die das kleine Format keinen Platz hat.
 //
 // Vier Etiketten stehen auf einer A4-Seite (2×2). Mit einem Etikett je Seite käme auf einem
 // A4-Drucker ein Etikett je Blatt heraus, außer jemand stellte im Druckdialog „4 Seiten pro
 // Blatt" ein; die Anordnung gehört in die Datei.
-func GenerateLernmittelEtikettenPDF(items []BuchEtikett) ([]byte, error) {
+func ErzeugeLernmittelEtiketten(etiketten []BuchEtikett) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(lernmittelRand, lernmittelRand, lernmittelRand)
 	// Ohne das setzt gofpdf mitten in die Tabelle des unteren Feldes einen Seitenumbruch,
@@ -52,7 +52,7 @@ func GenerateLernmittelEtikettenPDF(items []BuchEtikett) ([]byte, error) {
 	pdf.SetAutoPageBreak(false, 0)
 	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
-	for i, item := range items {
+	for i, etikett := range etiketten {
 		if i%lernmittelProSeite == 0 {
 			pdf.AddPage()
 			zeichneSchnittlinien(pdf)
@@ -60,7 +60,7 @@ func GenerateLernmittelEtikettenPDF(items []BuchEtikett) ([]byte, error) {
 		feld := i % lernmittelProSeite
 		ox := float64(feld%2) * lernmittelFeldBreite
 		oy := float64(feld/2) * lernmittelFeldHoehe
-		zeichneLernmittelEtikett(pdf, tr, item, ox, oy)
+		zeichneLernmittelEtikett(pdf, tr, etikett, ox, oy)
 	}
 
 	var buf bytes.Buffer
@@ -85,21 +85,21 @@ func zeichneSchnittlinien(pdf *gofpdf.Fpdf) {
 // zeichneLernmittelEtikett setzt ein großes Etikett in das Feld mit der linken oberen Ecke
 // (ox, oy). Alle Maße im Rumpf zählen ab diesem Ursprung, weil vier Felder auf einer Seite
 // stehen.
-func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item BuchEtikett, ox, oy float64) {
+func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, etikett BuchEtikett, ox, oy float64) {
 	const breite = lernmittelInhalt
 	x := ox + lernmittelRand
 
 	y := oy + 12.0
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SetXY(x, y)
-	pdf.CellFormat(breite, 5, tr(kuerzeAufEtikett(pdf, tr, item.Schulname, 45, breite)), "", 0, "C", false, 0, "")
+	pdf.CellFormat(breite, 5, tr(kuerzeAufEtikett(pdf, tr, etikett.Schulname, 45, breite)), "", 0, "C", false, 0, "")
 
 	y += 7
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetXY(x, y)
-	pdf.CellFormat(breite, 6, tr(kuerzeAufEtikett(pdf, tr, item.Titel, 42, breite)), "", 0, "C", false, 0, "")
+	pdf.CellFormat(breite, 6, tr(kuerzeAufEtikett(pdf, tr, etikett.Titel, 42, breite)), "", 0, "C", false, 0, "")
 
-	zeile2 := zweiteZeile(item.AnschaffungsJahr, item.Signatur)
+	zeile2 := zweiteZeile(etikett.AnschaffungsJahr, etikett.Signatur)
 	if zeile2 != "" {
 		y += 7
 		pdf.SetFont("Arial", "", 9)
@@ -108,23 +108,23 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item Buc
 	}
 
 	y += 9
-	barcodeImg, err := strichcode.PNG(item.BarcodeID, false, 250, 70)
+	bild, err := strichcode.PNG(etikett.BarcodeID, false, 250, 70)
 	if err == nil {
-		imgReader := bytes.NewReader(barcodeImg)
-		imgName := fmt.Sprintf("lm_%s", item.BarcodeID)
-		opt := gofpdf.ImageOptions{ImageType: "PNG"}
-		pdf.RegisterImageOptionsReader(imgName, opt, imgReader)
-		bcWidth, bcHeight := 60.0, 16.0
-		pdf.ImageOptions(imgName, x+(breite-bcWidth)/2, y, bcWidth, bcHeight, false, opt, 0, "")
+		bildLeser := bytes.NewReader(bild)
+		bildName := fmt.Sprintf("lm_%s", etikett.BarcodeID)
+		optionen := gofpdf.ImageOptions{ImageType: "PNG"}
+		pdf.RegisterImageOptionsReader(bildName, optionen, bildLeser)
+		strichBreite, strichHoehe := 60.0, 16.0
+		pdf.ImageOptions(bildName, x+(breite-strichBreite)/2, y, strichBreite, strichHoehe, false, optionen, 0, "")
 	}
 	y += 18
 
 	pdf.SetFont("Courier", "B", 11)
 	pdf.SetXY(x, y)
-	pdf.CellFormat(breite, 5, tr("Exemplar-Nr.: "+item.BarcodeID), "", 0, "C", false, 0, "")
+	pdf.CellFormat(breite, 5, tr("Exemplar-Nr.: "+etikett.BarcodeID), "", 0, "C", false, 0, "")
 
 	y += 7
-	if vermerk := item.Eigentumsvermerk; vermerk != "" {
+	if vermerk := etikett.Eigentumsvermerk; vermerk != "" {
 		pdf.SetFont("Arial", "", 8)
 		pdf.SetXY(x, y)
 		pdf.CellFormat(breite, 4, tr(kuerzeAufEtikett(pdf, tr, vermerk, 48, breite)), "", 0, "C", false, 0, "")

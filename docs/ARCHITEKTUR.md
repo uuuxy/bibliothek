@@ -648,7 +648,7 @@ HTTP-Anfrage
 | `jobs/`                 | 1.607 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 651 Zeilen, 5 Dateien      | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                  |
 | `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.826 Zeilen, 23 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben, Bestellbericht |
+| `pdf/`                  | 3.628 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben, Bestellbericht |
 | `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
 | `sse/`                  | 191 Zeilen, 1 Datei        | Broker und Tür für Server-Sent Events                                                                                                                                     |
 | `apierrors/`            | 223 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`AntworteFehler`) und ihre Abbildung auf HTTP-Status                                                                                         |
@@ -2346,7 +2346,7 @@ Drucksektionen am gebauten Frontend.
 **Tabellen über mehrere Seiten.** Eine Zeile, die Bild oder Text an Stellen setzt, die sie aus
 ihrer Höhe rechnet, prüft vorher den Platz und beginnt sonst selbst die nächste Seite, mit
 Spaltenköpfen (`bescheidPlatzOderNeueSeite` in `pdf/bescheid.go`, die Schleifen in
-`zeichneMahnSeite`, `zeichneMahnbriefBuecher` und `GenerateBestellanschreibenPDF`). gofpdf bricht erst in der Zelle um, die nicht
+`zeichneMahnSeite`, `zeichneMahnbriefBuecher` und `ErzeugeBestellanschreiben`). gofpdf bricht erst in der Zelle um, die nicht
 mehr passt; die Teile der Zeile stünden dann auf verschiedenen Seiten ([sweeps.md](sweeps.md),
 „Zeile an festen Stellen über dem Seitenumbruch"). Die Köpfe stehen nicht allein am Fuß einer
 Seite. Mahnliste und Mahnbrief werden je Schüler ausgeteilt oder kuvertiert: Ihre Folgeseiten

@@ -47,7 +47,7 @@ type lmfSatz struct {
 // von voller Größe abwärts — der erste Versuch, der auf ein Blatt passt, gewinnt. Der
 // letzte Modus geht bis 0,15 hinunter (rund 700 Termine); scheitert auch der, setzen wir
 // ihn trotzdem: ein winziger Plan ist besser als ein zerrissener.
-func lmfSatzWaehlen(abschnitte []LmfPlanAbschnitt) lmfSatz {
+func lmfSatzWaehlen(abschnitte []LMFPlanAbschnitt) lmfSatz {
 	messer := lmfNeuerMesser()
 	var letzter lmfSatz
 	for _, mo := range lmfModi {
@@ -63,9 +63,9 @@ func lmfSatzWaehlen(abschnitte []LmfPlanAbschnitt) lmfSatz {
 }
 
 // lmfVersuch verteilt den Plan bei gegebener Satzart und Größe auf die Spalten. Gesucht
-// ist die KLEINSTE Spaltenhöhe, mit der alles untergebracht ist: so sind die Spalten
+// ist die kleinste Spaltenhöhe, mit der alles untergebracht ist: So sind die Spalten
 // gleich lang statt eine voll und eine halb leer.
-func lmfVersuch(abschnitte []LmfPlanAbschnitt, mo lmfModus, faktor float64, messer *lmfMesser) (lmfSatz, bool) {
+func lmfVersuch(abschnitte []LMFPlanAbschnitt, mo lmfModus, faktor float64, messer *lmfMesser) (lmfSatz, bool) {
 	bau := lmfSatzbau{masse: lmfMasseFuer(faktor), modus: mo, messer: messer, abschnitte: abschnitte}
 	satz := lmfSatz{masse: bau.masse, modus: mo}
 	bausteine := bau.bausteine()

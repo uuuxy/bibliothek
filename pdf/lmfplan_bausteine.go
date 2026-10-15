@@ -17,10 +17,10 @@ type lmfSatzbau struct {
 	masse      lmfMasse
 	modus      lmfModus
 	messer     *lmfMesser
-	abschnitte []LmfPlanAbschnitt
+	abschnitte []LMFPlanAbschnitt
 }
 
-// stil ist der Textstil, mit dem gesetzt UND gemessen wird — eine Quelle für beides.
+// stil ist der Textstil, mit dem gesetzt und gemessen wird, eine Quelle für beides.
 func (b lmfSatzbau) stil(groesse float64, s fontstyle.Type, a align.Type) props.Text {
 	return props.Text{Size: groesse, Style: s, Align: a, BreakLineStrategy: breakline.EmptySpaceStrategy}
 }
@@ -102,13 +102,13 @@ func (b lmfSatzbau) tabellenkopf(i int) lmfBaustein {
 
 // datenzeile ist ein Termin. Der Wochentag steht zweispaltig abgekürzt — „Donnerstag"
 // bräuchte dort mehr Platz als die halbe Tabelle.
-func (b lmfSatzbau) datenzeile(z LmfPlanZeile, i int) lmfBaustein {
+func (b lmfSatzbau) datenzeile(z LMFPlanZeile, i int) lmfBaustein {
 	tag := Wochentag(z.Datum)
 	if b.modus.kurzerTag {
 		tag = WochentagKurz(z.Datum)
 	}
 	return b.fuenfSpalter(
-		[5]string{tag, z.Datum.Format(dateFormatDE), stundeText(z.Stunde), z.Klassen, z.Vermerk},
+		[5]string{tag, z.Datum.Format(datumsformat), stundeText(z.Stunde), z.Klassen, z.Vermerk},
 		[5]bool{false, false, false, true, false}, lmfDaten, i)
 }
 
@@ -143,7 +143,7 @@ func (b lmfSatzbau) bausteine() []lmfBaustein {
 }
 
 // abschnittskopf ist alles, was über der Tabelle eines Abschnitts steht.
-func (b lmfSatzbau) abschnittskopf(i int, a LmfPlanAbschnitt) []lmfBaustein {
+func (b lmfSatzbau) abschnittskopf(i int, a LMFPlanAbschnitt) []lmfBaustein {
 	kopf := []lmfBaustein{b.breiterBaustein(a.Titel, b.masse.titel, fontstyle.Bold, lmfKopf, i)}
 	if a.Untertitel != "" {
 		kopf = append(kopf, b.breiterBaustein(a.Untertitel, b.masse.unter, fontstyle.Italic, lmfKopf, i))

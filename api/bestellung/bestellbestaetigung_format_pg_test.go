@@ -25,7 +25,7 @@ import (
 // Die Formatwahl des Lieferanten — am echten Endpunkt, nicht am Generator.
 //
 // Warum es diese Datei zusätzlich zu pdf/etikett_layout_test.go gibt: Der dortige Test ruft
-// GenerateLabelsPDF direkt auf und belegt, dass der Generator das Raster beachtet. Setzt man
+// ErzeugeBuchEtiketten direkt auf und belegt, dass der Generator das Raster beachtet. Setzt man
 // den Lieferanten-Weg beim Rückbau probeweise wieder auf das feste "zweckform_l4760", bleibt er
 // grün; er sieht die Durchreichung gar nicht. Genau diese Lücke ist die Bugklasse dieses
 // Projekts: ein Gate, das eine Stelle prüft, die niemand kaputtmacht.
@@ -132,7 +132,7 @@ func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 	token := bestellungMitEtiketten(t, srv, pool, 25)
 
 	ohne := etikettenBogenHolen(t, srv, token, "klein", "")
-	mitVorgabe := etikettenBogenHolen(t, srv, token, "klein", pdf.StandardLabelFormat)
+	mitVorgabe := etikettenBogenHolen(t, srv, token, "klein", pdf.EtikettFormatVorgabe)
 
 	if ohne.Code != http.StatusOK || mitVorgabe.Code != http.StatusOK {
 		t.Fatalf("Status ohne=%d mitVorgabe=%d", ohne.Code, mitVorgabe.Code)
@@ -147,7 +147,7 @@ func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 
 // Ein unbekanntes Raster wird abgewiesen und nicht still auf die Vorgabe gedreht.
 //
-// pdf.GetLabelFormat liefert bei Unbekanntem stillschweigend zweckform_l4760 zurück. Würde
+// pdf.FindeEtikettFormat liefert bei Unbekanntem stillschweigend zweckform_l4760 zurück. Würde
 // die Tür das übernehmen, druckte der Lieferant nach einem Tippfehler im falschen
 // Raster — und merkte es erst am verschnittenen Bogen.
 func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
@@ -259,11 +259,11 @@ func TestOeffentlicheBestellung_LiefertDieFormatauswahl(t *testing.T) {
 		t.Fatalf("Ansicht laden: %v", err)
 	}
 
-	if len(ansicht.EtikettenFormate) != len(pdf.LabelFormatAuswahl()) {
-		t.Fatalf("Seite bekommt %d Formate, es gibt %d", len(ansicht.EtikettenFormate), len(pdf.LabelFormatAuswahl()))
+	if len(ansicht.EtikettenFormate) != len(pdf.EtikettFormate()) {
+		t.Fatalf("Seite bekommt %d Formate, es gibt %d", len(ansicht.EtikettenFormate), len(pdf.EtikettFormate()))
 	}
-	if ansicht.EtikettenFormatVorgabe != pdf.StandardLabelFormat {
-		t.Errorf("Vorgabe = %q, want %q", ansicht.EtikettenFormatVorgabe, pdf.StandardLabelFormat)
+	if ansicht.EtikettenFormatVorgabe != pdf.EtikettFormatVorgabe {
+		t.Errorf("Vorgabe = %q, want %q", ansicht.EtikettenFormatVorgabe, pdf.EtikettFormatVorgabe)
 	}
 	// Jedes angebotene Format muss über den Endpunkt auch wirklich druckbar sein.
 	for _, f := range ansicht.EtikettenFormate {

@@ -6,16 +6,15 @@ import (
 	"testing"
 )
 
-// Geprüft wird am ENTPACKTEN PDF-Inhaltsstrom, nicht an den Eingabedaten.
+// Geprüft wird am entpackten Inhaltsstrom des PDFs, nicht an den Eingabedaten.
 //
-// Ein Test, der nur „die Funktion bekam Max Mustermann" behauptet, sagt nichts darüber,
-// ob der Name auf dem Papier landet — genau daran ist beim Lernmittel-Etikett schon
-// einmal ein Weg vorbeigelaufen, der nur drei von sechs Feldern mitgeschickt hat.
-// Dieselbe Technik wie in api/druck/etiketten_pdf_paritaet_pg_test.go.
+// Ein Test, der nur „die Funktion bekam Max Mustermann" behauptet, sagt nichts darüber, ob der
+// Name auf dem Papier landet; ein Weg, der nur drei von sechs Feldern mitschickt, fiele ihm nicht
+// auf. Dieselbe Technik wie in api/druck/etiketten_pdf_paritaet_pg_test.go.
 
 func erzeugeBogen(t *testing.T, format string, start int, etiketten []SchuelerEtikett) string {
 	t.Helper()
-	pdf, err := GenerateSchuelerEtikettenPDF(format, start, etiketten)
+	pdf, err := ErzeugeSchuelerEtiketten(format, start, etiketten)
 	if err != nil {
 		t.Fatalf("PDF-Erzeugung fehlgeschlagen: %v", err)
 	}
@@ -30,10 +29,9 @@ func erzeugeBogen(t *testing.T, format string, start int, etiketten []SchuelerEt
 }
 
 func TestSchuelerEtikettTraegtNameKlasseUndBarcode(t *testing.T) {
-	// Die drei Angaben, auf die der Betreiber das Etikett festgelegt hat (24.08.2026).
-	// Fällt eine davon beim Zeichnen weg, ist der Bogen wertlos — und am Bildschirm
-	// sieht man es nicht, weil das PDF erst im Druckdialog aufgeht.
-	for _, format := range labelFormatReihenfolge {
+	// Die drei Angaben, die das Etikett trägt. Fällt eine beim Zeichnen weg, ist der Bogen
+	// wertlos, und am Bildschirm sieht man es nicht, weil das PDF erst im Druckdialog aufgeht.
+	for _, format := range etikettFormatReihenfolge {
 		t.Run(format, func(t *testing.T) {
 			text := erzeugeBogen(t, format, 1, []SchuelerEtikett{
 				{BarcodeID: "S-000123", Vorname: "Max", Nachname: "Mustermann", Klasse: "8G2"},
@@ -49,8 +47,8 @@ func TestSchuelerEtikettTraegtNameKlasseUndBarcode(t *testing.T) {
 }
 
 func TestSchuelerEtikettDrucktNamenAusserhalbVonCp1252(t *testing.T) {
-	// Der PDF-Zeichensatz ist cp1252; „ş" wurde darin zu einem Punkt, „Ayşe" kam als
-	// „Ay.e" aus dem Drucker. An einer hessischen Schule ist das kein Randfall.
+	// Der Zeichensatz des PDFs ist cp1252; ohne Ersetzung würde „ş" darin zu einem Punkt, und
+	// „Ayşe" käme als „Ay.e" aus dem Drucker. An einer hessischen Schule ist das kein Randfall.
 	// Ein Häkchen weniger ist hinnehmbar, ein entstellter Name nicht.
 	text := erzeugeBogen(t, "zweckform_l4760", 1, []SchuelerEtikett{
 		{BarcodeID: "S-000200", Vorname: "Ayşe", Nachname: "Öztürk", Klasse: "5a"},
@@ -58,8 +56,8 @@ func TestSchuelerEtikettDrucktNamenAusserhalbVonCp1252(t *testing.T) {
 	})
 
 	// Verglichen wird nur mit ASCII-Ausschnitten: Im PDF-Strom stehen ä/ö/ü/Ö als
-	// EINZELNE cp1252-Bytes, ein UTF-8-Literal wie "Öztürk" würde dort nie passen und
-	// der Test wäre immer rot — aus dem falschen Grund. Die Aussage steckt ohnehin in
+	// einzelne Bytes in cp1252, ein UTF-8-Literal wie "Öztürk" passte dort nie, und der Test
+	// wäre immer rot, aus dem falschen Grund. Die Aussage steckt ohnehin in
 	// den Buchstaben, die ersetzt werden mussten.
 	for _, erwartet := range []string{", Ayse", "Wisniewski, Lukasz"} {
 		if !strings.Contains(text, erwartet) {
@@ -93,10 +91,10 @@ func TestSchuelerEtikettKuerztNachBreiteUndVerschontDieKlasse(t *testing.T) {
 	// Gekürzt wird nach gemessener Breite, nicht nach Zeichenzahl. Belegt an zwei
 	// Fällen, die eine Zeichengrenze beide falsch behandelt:
 	//
-	//  1. Ein kurzer Name muss VOLLSTÄNDIG dastehen — auch auf dem kleinen Format,
-	//     wo vorher stur bei 16 Zeichen abgeschnitten wurde.
-	//  2. Die Klasse überlebt die Kürzung. Sie stand auf dem kleinen Format als
-	//     "LIT-A…" da, obwohl rechts Platz frei war; eine halbe Klasse ist wertlos.
+	//  1. Ein kurzer Name steht vollständig da, auch auf dem kleinen Format, wo eine Grenze
+	//     von 16 Zeichen ihn abschnitte.
+	//  2. Die Klasse überlebt die Kürzung und steht nicht als "LIT-A…" da, während rechts
+	//     Platz frei ist; eine halbe Klasse ist wertlos.
 	for _, format := range []string{"zweckform_l4760", "standard_52"} {
 		t.Run(format, func(t *testing.T) {
 			text := erzeugeBogen(t, format, 1, []SchuelerEtikett{
@@ -111,8 +109,8 @@ func TestSchuelerEtikettKuerztNachBreiteUndVerschontDieKlasse(t *testing.T) {
 		})
 	}
 
-	// Gegenprobe: Ein Name, der NICHT passt, muss gekürzt werden — sonst liefe er
-	// über den Rand des Klebefelds, und die Breitenmessung waere wirkungslos.
+	// Gegenprobe: Ein Name, der nicht passt, wird gekürzt; sonst liefe er über den Rand des
+	// Klebefelds, und die Messung der Breite wäre wirkungslos.
 	lang := erzeugeBogen(t, "standard_52", 1, []SchuelerEtikett{
 		{BarcodeID: "S-000301", Vorname: "Maximiliane-Charlotte", Nachname: "Schneider-Weisshaupt", Klasse: "10R1"},
 	})
@@ -127,14 +125,14 @@ func TestSchuelerEtikettKuerztNachBreiteUndVerschontDieKlasse(t *testing.T) {
 func TestSchuelerEtikettenBogenBrichtNachEinerSeiteUm(t *testing.T) {
 	// zweckform_l4760 fasst 21 Etiketten. Mit Startposition 20 passen genau zwei auf
 	// die erste Seite, der Rest gehört auf die zweite. Die Rechnung dazu steht in
-	// zeichneRaster und wird von Buch- UND Schüler-Etiketten benutzt — ein Fehler
-	// darin verdruckt beide Bogensorten.
+	// zeichneRaster und gilt für die Etiketten von Büchern und von Schülern; ein Fehler darin
+	// verdruckt beide Sorten von Bögen.
 	etiketten := make([]SchuelerEtikett, 0, 5)
 	for _, name := range []string{"Anders", "Berger", "Conrad", "Dorn", "Engel"} {
 		etiketten = append(etiketten, SchuelerEtikett{BarcodeID: "S-" + name, Nachname: name, Vorname: "Test", Klasse: "5a"})
 	}
 
-	pdf, err := GenerateSchuelerEtikettenPDF("zweckform_l4760", 20, etiketten)
+	pdf, err := ErzeugeSchuelerEtiketten("zweckform_l4760", 20, etiketten)
 	if err != nil {
 		t.Fatalf("PDF-Erzeugung fehlgeschlagen: %v", err)
 	}
@@ -144,8 +142,8 @@ func TestSchuelerEtikettenBogenBrichtNachEinerSeiteUm(t *testing.T) {
 }
 
 func TestMusterEtikettIstDasselbeEtikettWieDasEchte(t *testing.T) {
-	// Der Testdruck des Designers darf kein zweiter Renderer sein. Genau daran sind im
-	// Ausweis-Designer schon einmal Leinwand und Druck auseinandergelaufen.
+	// Der Probedruck ist kein zweiter Weg zum Etikett; an einem zweiten Weg laufen Bild und
+	// Druck auseinander.
 	text := erzeugeBogen(t, "zweckform_l4760", 1, []SchuelerEtikett{MusterSchuelerEtikett})
 
 	for _, erwartet := range []string{"Mustermann, Max", "8G2", "DEMO-S-001"} {

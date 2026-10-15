@@ -55,7 +55,7 @@ func (t *Tueren) SchuelerEtiketten(leserAbfragen repository.LeserAbfragen) http.
 			return
 		}
 
-		bogen, err := pdf.GenerateSchuelerEtikettenPDF(req.FormatID, req.Startposition, etiketten)
+		bogen, err := pdf.ErzeugeSchuelerEtiketten(req.FormatID, req.Startposition, etiketten)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("etikettenbogen konnte nicht erzeugt werden: %w", err))
 			return
@@ -78,12 +78,12 @@ func pruefeBogenParameter(req *schuelerEtikettenAnfrage) error {
 	if !pdf.IstBekanntesEtikettFormat(req.FormatID) {
 		return fmt.Errorf("unbekanntes Etikettenformat %q", req.FormatID)
 	}
-	format, _ := pdf.GetLabelFormat(req.FormatID)
+	format, _ := pdf.FindeEtikettFormat(req.FormatID)
 
 	if req.Startposition == 0 {
 		req.Startposition = 1
 	}
-	proSeite := format.Cols * format.Rows
+	proSeite := format.Spalten * format.Zeilen
 	if req.Startposition < 1 || req.Startposition > proSeite {
 		//nolint:staticcheck // ST1005: nutzer-sichtbarer Text im Druckdialog
 		return fmt.Errorf("Startposition %d liegt außerhalb des Bogens (1 bis %d)", req.Startposition, proSeite)

@@ -10,20 +10,15 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// Schüler-Etiketten (Betreiber-Entscheidung 24.08.2026).
+// Etiketten für Schüler: ein Klebeetikett mit Name, Klasse und Barcode.
 //
-// Ersetzt den A4-Bogen des Ausweis-Designers. Acht Plastikkarten-Abbilder auf einem
-// A4-Blatt zum Ausschneiden waren als Notbehelf gedacht und im Alltag nutzlos; ein
-// Klebeetikett mit Name, Klasse und Barcode ist das, was tatsächlich gebraucht wird.
-//
-// Bewusst dieselben Bogenformate und dasselbe Raster wie die Buch-Etiketten
-// (zeichneRaster in etikett_buch.go): Es ist dieselbe Sorte Klebebogen aus demselben
-// Schrank, und eine eigene Rastermathematik hätte sich früher oder später um eine
-// halbe Zeile von der anderen entfernt.
+// Sie nehmen dieselben Bögen und dasselbe Raster wie die Etiketten der Bücher (zeichneRaster
+// in etikett_buch.go): Es ist dieselbe Sorte Klebebogen aus demselben Schrank, und eine
+// eigene Rechnung des Rasters liefe früher oder später um eine halbe Zeile auseinander.
 
-// SchuelerEtikett ist eine Zeile des Bogens. Die Felder kommen aus der Datenbank, nicht
-// aus dem Request — der Aufrufer schickt nur IDs. Sonst könnte jeder mit view_students
-// beliebige Namen auf einen Bogen mit echten Barcodes drucken.
+// SchuelerEtikett ist ein Etikett des Bogens. Die Felder kommen aus der Datenbank, nicht aus der
+// Anfrage, die nur Kennungen schickt; sonst könnte jeder mit view_students beliebige Namen auf
+// einen Bogen mit echten Barcodes drucken.
 type SchuelerEtikett struct {
 	BarcodeID string
 	Vorname   string
@@ -45,9 +40,9 @@ func (e SchuelerEtikett) name() string {
 	}
 }
 
-// MusterSchuelerEtikett ist der Inhalt des Testdrucks. Dieselbe Zeichenfunktion wie der
-// echte Bogen — ein eigener Muster-Renderer wäre genau die Sorte zweiter Wahrheit, an der
-// im Ausweis-Designer schon einmal Leinwand und Druck auseinandergelaufen sind.
+// MusterSchuelerEtikett ist der Inhalt des Probedrucks. Er geht durch dieselbe Zeichenfunktion
+// wie der echte Bogen; ein eigener Weg für das Muster wäre eine zweite Wahrheit, an der Bild und
+// Druck auseinanderlaufen.
 var MusterSchuelerEtikett = SchuelerEtikett{
 	BarcodeID: "DEMO-S-001",
 	Vorname:   "Max",
@@ -55,39 +50,37 @@ var MusterSchuelerEtikett = SchuelerEtikett{
 	Klasse:    "8G2",
 }
 
-// GenerateSchuelerEtikettenPDF erzeugt den Klebebogen.
-//
-// startPosition ist 1-basiert und überspringt bereits abgezogene Etiketten eines
-// angebrochenen Bogens — dieselbe Bedeutung wie bei den Buch-Etiketten.
-func GenerateSchuelerEtikettenPDF(formatID string, startPosition int, etiketten []SchuelerEtikett) (*gofpdf.Fpdf, error) {
-	format, _ := GetLabelFormat(formatID)
+// ErzeugeSchuelerEtiketten erzeugt den Klebebogen. startPosition zählt ab 1 und überspringt die
+// schon abgezogenen Etiketten eines angebrochenen Bogens, wie bei den Etiketten der Bücher.
+func ErzeugeSchuelerEtiketten(formatID string, startPosition int, etiketten []SchuelerEtikett) (*gofpdf.Fpdf, error) {
+	format, _ := FindeEtikettFormat(formatID)
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
-	pdf.SetMargins(format.MarginLeft, format.MarginTop, format.MarginLeft)
+	pdf.SetMargins(format.RandLinks, format.RandOben, format.RandLinks)
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
 	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
-	zeichneRaster(pdf, format, startPosition, len(etiketten), func(i int, pos labelPos) {
+	zeichneRaster(pdf, format, startPosition, len(etiketten), func(i int, pos etikettPosition) {
 		zeichneSchuelerEtikett(pdf, tr, format, etiketten[i], pos)
 	})
 
 	return pdf, nil
 }
 
-// zeichneSchuelerEtikett setzt EIN Etikett: Name, Klasse, Barcode, Nummer.
+// zeichneSchuelerEtikett setzt ein Etikett: Name, Klasse, Barcode, Nummer.
 //
-// Name und Klasse stehen links am Rand, der Barcode mittig darunter — so, wie der
-// Entwurf abgenommen wurde. Die Maße hängen an der Etikettenhöhe: Auf dem kleinen
-// Format (Standard 52, 21,2 mm) ist für eine eigene Klassenzeile kein Platz, dort
-// rückt die Klasse hinter den Namen.
-func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, e SchuelerEtikett, pos labelPos) {
-	gross := format.LabelHeight >= 30
+// Name und Klasse stehen links am Rand, der Barcode mittig darunter, wie der Entwurf
+// abgenommen wurde. Die Maße hängen an der Höhe des Etiketts: Auf dem kleinen Format
+// (Standard 52, 21,2 mm) ist für eine eigene Zeile der Klasse kein Platz, dort rückt sie hinter
+// den Namen.
+func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFormat, e SchuelerEtikett, pos etikettPosition) {
+	gross := format.Hoehe >= 30
 	linkerRand := pos.X + 3
-	textbreite := format.LabelWidth - 6
+	textbreite := format.Breite - 6
 
-	// tr trägt die Zeichenersetzung schon (pdfzeichen): „Ayşe" kam bis dahin als „Ay.e"
-	// aus dem Drucker.
+	// tr trägt die Zeichenersetzung schon (pdfzeichen); ohne sie käme „Ayşe" als „Ay.e" aus
+	// dem Drucker.
 	druck := tr
 	kuerze := func(text string, breite float64) string {
 		return pdfzeichen.KuerzeAufBreite(pdf, druck, text, breite)
@@ -102,8 +95,8 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Lab
 		pdf.CellFormat(textbreite, 4.5, druck(kuerze(e.name(), textbreite)), "", 0, "L", false, 0, "")
 		y += 5.0
 
-		// Leere Klasse lässt die Zeile weg, statt "Klasse " ins Nichts zu schreiben.
-		// Vorkommen: Handanlage ohne Klassenangabe, Abgänger.
+		// Ohne Klasse (von Hand angelegt, Abgänger) fällt die Zeile weg, statt „Klasse " ins
+		// Leere zu schreiben.
 		if klasse != "" {
 			pdf.SetFont("Arial", "", 8)
 			pdf.SetXY(linkerRand, y)
@@ -112,7 +105,7 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Lab
 		y += 4.5
 	} else {
 		// Kleines Format: keine eigene Klassenzeile, die Klasse rückt hinter den Namen.
-		// Gekürzt wird der NAME — die Klasse ist kurz, und eine halbe Klasse ist wertlos.
+		// Gekürzt wird der Name: Die Klasse ist kurz, und eine halbe Klasse ist wertlos.
 		pdf.SetFont("Arial", "B", 8)
 		zeile := e.name()
 		if klasse != "" {
@@ -128,26 +121,26 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Lab
 	if !gross {
 		bcBreite, bcHoehe = 33.0, 6.5
 	}
-	if bcBreite > format.LabelWidth-6 {
-		bcBreite = format.LabelWidth - 6
+	if bcBreite > format.Breite-6 {
+		bcBreite = format.Breite - 6
 	}
 
-	// Ein fehlgeschlagener Barcode darf den ganzen Bogen nicht kippen: Der Rest des
-	// Etiketts (Name, Klasse, ablesbare Nummer) ist auch ohne Bild brauchbar.
+	// Scheitert der Barcode, bleibt der Bogen: Der Rest des Etiketts (Name, Klasse, ablesbare
+	// Nummer) ist auch ohne Bild brauchbar.
 	if bild, err := strichcode.PNG(e.BarcodeID, false, 250, 70); err == nil {
-		opt := gofpdf.ImageOptions{ImageType: "PNG"}
+		optionen := gofpdf.ImageOptions{ImageType: "PNG"}
 		bildname := fmt.Sprintf("schueler_%s", e.BarcodeID)
-		pdf.RegisterImageOptionsReader(bildname, opt, bytes.NewReader(bild))
-		pdf.ImageOptions(bildname, pos.X+(format.LabelWidth-bcBreite)/2, y, bcBreite, bcHoehe, false, opt, 0, "")
+		pdf.RegisterImageOptionsReader(bildname, optionen, bytes.NewReader(bild))
+		pdf.ImageOptions(bildname, pos.X+(format.Breite-bcBreite)/2, y, bcBreite, bcHoehe, false, optionen, 0, "")
 	}
 	y += bcHoehe + 1.0
 
-	// Die Nummer unter dem Barcode ist DIESELBE, die der Barcode trägt — sie steht dort,
-	// damit sie ohne Scanner ablesbar ist. Courier, weil O und 0 sich unterscheiden müssen.
+	// Die Nummer unter dem Barcode ist dieselbe, die er trägt; sie steht dort, damit sie ohne
+	// Scanner ablesbar ist. Courier, weil sich O und 0 unterscheiden müssen.
 	pdf.SetFont("Courier", "B", 9)
 	if !gross {
 		pdf.SetFont("Courier", "B", 7)
 	}
 	pdf.SetXY(pos.X, y)
-	pdf.CellFormat(format.LabelWidth, 3.5, druck(e.BarcodeID), "", 0, "C", false, 0, "")
+	pdf.CellFormat(format.Breite, 3.5, druck(e.BarcodeID), "", 0, "C", false, 0, "")
 }

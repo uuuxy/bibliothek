@@ -14,9 +14,9 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Das Anschreiben versprach dem Lieferanten früher immer einen beigefügten Bogen mit
-// Aufklebern, auch wenn der Mail keiner beilag. Eine solche Anweisung kann er nur übergehen
-// oder nachfragen; beides kostet die Lieferung Zeit.
+// Das Anschreiben verspricht den Bogen mit Aufklebern nur, wenn er der Mail beiliegt. Eine
+// Anweisung zu einem Bogen, den es nicht gibt, kann der Lieferant nur übergehen oder nachfragen;
+// beides kostet die Lieferung Zeit.
 func TestBestellanschreibenNenntBarcodebogenNurWennErBeiliegt(t *testing.T) {
 	const vermerk = "Vermerk-Probe."
 	mit := bestellanschreibenText(BogenLiegtBei, vermerk)
@@ -53,7 +53,7 @@ func TestBestellanschreibenNenntBarcodebogenNurWennErBeiliegt(t *testing.T) {
 // Was der Brief setzt, in der Folge von oben nach unten: Kopf der Schule, Ort und Tag, Betreff,
 // Text mit Vermerk und dem Satz zu den Etiketten, die Tabelle mit ihren Spalten, der Gruß.
 func TestBestellanschreiben_SetztKopfBetreffTextUndTabelleInIhrerFolge(t *testing.T) {
-	roh, err := GenerateBestellanschreibenPDF(Bestellanschreiben{
+	roh, err := ErzeugeBestellanschreiben(Bestellanschreiben{
 		Betreff: "Betreff-Probe", Vermerk: "Vermerk-Probe.", Etiketten: OhneEtiketten,
 		Positionen: []BestellPosition{
 			{Titel: "Mathematik 7", Autor: "Lambacher", ISBN: "978-3-12-733771-9", Menge: 30},
@@ -68,7 +68,7 @@ func TestBestellanschreiben_SetztKopfBetreffTextUndTabelleInIhrerFolge(t *testin
 	gesetzt := strings.Join(pdftest.TexteInReihenfolge(t, roh), " | ")
 	folge := strings.Join([]string{
 		"Testschule", "Testschule · Schulweg 1 · 61381 Friedrichsdorf",
-		"Friedrichsdorf, den " + schulzeit.Jetzt().Format(dateFormatDE),
+		"Friedrichsdorf, den " + schulzeit.Jetzt().Format(datumsformat),
 		"An den Buchlieferanten",
 		"Betreff-Probe",
 		"Sehr geehrte Damen und Herren,",
@@ -99,7 +99,7 @@ func TestBestellanschreiben_DerSatzZuDenEtikettenStehtAufDemBlatt(t *testing.T) 
 		{BogenLiegtBei, "aus dem beigefügten Bogen", []string{"Link in dieser E-Mail"}},
 		{BogenHinterLink, "Link in dieser E-Mail", []string{"aus dem beigefügten Bogen"}},
 	} {
-		roh, err := GenerateBestellanschreibenPDF(Bestellanschreiben{Betreff: "B", Vermerk: "V.", Etiketten: f.weg}, SchuleInfo{})
+		roh, err := ErzeugeBestellanschreiben(Bestellanschreiben{Betreff: "B", Vermerk: "V.", Etiketten: f.weg}, SchuleInfo{})
 		if err != nil {
 			t.Fatalf("Weg %d: %v", f.weg, err)
 		}
@@ -119,13 +119,13 @@ func TestBestellanschreiben_DerSatzZuDenEtikettenStehtAufDemBlatt(t *testing.T) 
 // Der Ort der Schule steht in der Datumszeile, wie er heißt. gofpdf druckt in cp1252: Ein Ort mit
 // Umlaut, der nicht durch die Zeichenersetzung geht, stünde verstümmelt auf dem Brief.
 func TestBestellanschreiben_OrtMitUmlautStehtLesbarInDerDatumszeile(t *testing.T) {
-	roh, err := GenerateBestellanschreibenPDF(Bestellanschreiben{Betreff: "B", Vermerk: "V."},
+	roh, err := ErzeugeBestellanschreiben(Bestellanschreiben{Betreff: "B", Vermerk: "V."},
 		SchuleInfo{Name: "Schule", Strasse: "Weg 1", PLZ: "50667", Ort: "Köln"})
 	if err != nil {
 		t.Fatalf("Anschreiben drucken: %v", err)
 	}
 	pruefeBlatt(t, strings.Join(pdftest.Texte(t, roh), "\n"),
-		[]string{"Köln, den " + schulzeit.Jetzt().Format(dateFormatDE)}, []string{"Ã"})
+		[]string{"Köln, den " + schulzeit.Jetzt().Format(datumsformat)}, []string{"Ã"})
 }
 
 // Titel, Autor und ISBN stehen gekürzt mit Auslassungszeichen da, sobald sie gedruckt breiter
@@ -138,7 +138,7 @@ func TestBestellanschreiben_TitelAutorUndISBNBleibenInIhrerSpalte(t *testing.T) 
 			Autor: "Annegret Müller-Lüdenscheidt und Kollegen", ISBN: "9783141004267", Menge: 1003},
 		{Titel: "Kurz", Autor: "A. Utor", ISBN: "978", Menge: 1004},
 	}
-	roh, err := GenerateBestellanschreibenPDF(Bestellanschreiben{Betreff: "B", Vermerk: "V.", Positionen: positionen}, SchuleInfo{})
+	roh, err := ErzeugeBestellanschreiben(Bestellanschreiben{Betreff: "B", Vermerk: "V.", Positionen: positionen}, SchuleInfo{})
 	if err != nil {
 		t.Fatalf("Anschreiben drucken: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestBestellanschreiben_TitelAutorUndISBNBleibenInIhrerSpalte(t *testing.T) 
 // Der Name der Schule steht am selben linken Rand wie der übrige Brief: 20 mm von der Kante,
 // dazu der Innenabstand einer Zelle von 1 mm.
 func TestBestellanschreiben_KopfStehtAmRandDesBriefs(t *testing.T) {
-	roh, err := GenerateBestellanschreibenPDF(Bestellanschreiben{Betreff: "Betreff-Probe", Vermerk: "V."},
+	roh, err := ErzeugeBestellanschreiben(Bestellanschreiben{Betreff: "Betreff-Probe", Vermerk: "V."},
 		SchuleInfo{Name: "Testschule", Strasse: "Schulweg 1", PLZ: "61381", Ort: "Friedrichsdorf"})
 	if err != nil {
 		t.Fatalf("Anschreiben drucken: %v", err)
@@ -206,7 +206,7 @@ func TestBestellanschreiben_LangeBestellungWiederholtDieKoepfe(t *testing.T) {
 		for i := 1; i <= anzahl; i++ {
 			positionen = append(positionen, BestellPosition{Titel: fmt.Sprintf("Titel %03d", i), Autor: "Autor", ISBN: "978", Menge: i})
 		}
-		roh, err := GenerateBestellanschreibenPDF(Bestellanschreiben{Betreff: "B", Vermerk: "V.", Positionen: positionen}, SchuleInfo{Name: "Testschule"})
+		roh, err := ErzeugeBestellanschreiben(Bestellanschreiben{Betreff: "B", Vermerk: "V.", Positionen: positionen}, SchuleInfo{Name: "Testschule"})
 		if err != nil {
 			t.Fatalf("%d Positionen: %v", anzahl, err)
 		}
@@ -238,7 +238,7 @@ func TestBestellanschreiben_KoepfeStehenNichtAlleinAmSeitenfuss(t *testing.T) {
 	positionen := []BestellPosition{{Titel: "Titel 001", Autor: "Autor", ISBN: "978", Menge: 1}, {Titel: "Titel 002", Autor: "Autor", ISBN: "978", Menge: 2}}
 	verschoben := 0
 	for zeilen := 20; zeilen <= 45; zeilen++ {
-		roh, err := GenerateBestellanschreibenPDF(Bestellanschreiben{Betreff: "B", Vermerk: strings.Repeat("Zeile des Vermerks\n", zeilen), Positionen: positionen}, SchuleInfo{})
+		roh, err := ErzeugeBestellanschreiben(Bestellanschreiben{Betreff: "B", Vermerk: strings.Repeat("Zeile des Vermerks\n", zeilen), Positionen: positionen}, SchuleInfo{})
 		if err != nil {
 			t.Fatalf("%d Zeilen: %v", zeilen, err)
 		}

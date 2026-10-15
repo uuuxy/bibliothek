@@ -45,7 +45,7 @@ func pruefeBlatt(t *testing.T, blatt string, muss, darfNicht []string) {
 // Eingabe und zählt nicht selbst nach.
 func TestAbgangsbuch_DrucktAbschnitteZahlenUndHinweise(t *testing.T) {
 	tag := time.Date(2026, time.April, 12, 10, 0, 0, 0, time.UTC)
-	roh, err := GenerateAbgangsbuchPDF(Abgangsbuch{
+	roh, err := ErzeugeAbgangsbuch(Abgangsbuch{
 		Von: buchVon, Bis: buchBis,
 		Abschnitte: []AbgangsAbschnitt{
 			{Titel: "Topf Eins", Zeilen: []AbgangsZeile{
@@ -75,7 +75,7 @@ func TestAbgangsbuch_DrucktAbschnitteZahlenUndHinweise(t *testing.T) {
 
 // Ohne Abgänge sagt das Blatt es. Die Hinweise auf das, was in keiner Liste steht, bleiben.
 func TestAbgangsbuch_LeererZeitraumSagtEsUndBehaeltDieHinweise(t *testing.T) {
-	roh, err := GenerateAbgangsbuchPDF(Abgangsbuch{
+	roh, err := ErzeugeAbgangsbuch(Abgangsbuch{
 		Von: buchVon, Bis: buchBis,
 		Abschnitte:    []AbgangsAbschnitt{{Titel: "Topf Eins"}, {Titel: "Topf Zwei"}},
 		OhneZeitpunkt: 4,
@@ -90,7 +90,7 @@ func TestAbgangsbuch_LeererZeitraumSagtEsUndBehaeltDieHinweise(t *testing.T) {
 
 func TestZugangsbuch_DrucktAbschnitteUndZahlen(t *testing.T) {
 	tag := time.Date(2026, time.May, 3, 0, 0, 0, 0, time.UTC)
-	roh, err := GenerateZugangsbuchPDF(Zugangsbuch{
+	roh, err := ErzeugeZugangsbuch(Zugangsbuch{
 		Von: buchVon, Bis: buchBis,
 		Abschnitte: []ZugangsAbschnitt{
 			{Titel: "Topf Eins", Zeilen: []ZugangsZeile{
@@ -117,14 +117,14 @@ func TestZugangsbuch_ErklaertOhneZuordnungNurAufVerlangen(t *testing.T) {
 			{Datum: buchVon, Barcode: "B-00300", Titel: "Fundstück aus dem Schrank"}}}},
 		Gesamt: 1,
 	}
-	roh, err := GenerateZugangsbuchPDF(buch, SchuleInfo{})
+	roh, err := ErzeugeZugangsbuch(buch, SchuleInfo{})
 	pruefeBlatt(t, buchText(t, roh, err), []string{"Summe ohne Zuordnung: 1 Exemplare"}, []string{"keine Bestellung hinterlegt"})
 
 	buch.OhneZuordnung = true
-	roh, err = GenerateZugangsbuchPDF(buch, SchuleInfo{})
+	roh, err = ErzeugeZugangsbuch(buch, SchuleInfo{})
 	pruefeBlatt(t, buchText(t, roh, err), []string{"keine Bestellung hinterlegt", "Summe ohne Zuordnung: 1 Exemplare"}, nil)
 
-	leer, err := GenerateZugangsbuchPDF(Zugangsbuch{Von: buchVon, Bis: buchBis}, SchuleInfo{})
+	leer, err := ErzeugeZugangsbuch(Zugangsbuch{Von: buchVon, Bis: buchBis}, SchuleInfo{})
 	pruefeBlatt(t, buchText(t, leer, err), []string{"kein Exemplar in den Bestand gekommen", "Zugänge im Zeitraum: 0 Exemplare"}, nil)
 }
 
@@ -141,12 +141,12 @@ func TestBestandsbuch_JedeSeiteMitZeilenTraegtDieSpaltenkoepfe(t *testing.T) {
 		abgaenge = append(abgaenge, AbgangsZeile{Datum: buchVon, Barcode: nummer, Titel: "Mathebuch", Signatur: "Mat 7", GrundText: "Verlust"})
 		zugaenge = append(zugaenge, ZugangsZeile{Datum: buchVon, Barcode: nummer, Titel: "Mathebuch", Lieferant: "Buchhandlung"})
 	}
-	abgang, err := GenerateAbgangsbuchPDF(Abgangsbuch{Von: buchVon, Bis: buchBis, Gesamt: anzahl,
+	abgang, err := ErzeugeAbgangsbuch(Abgangsbuch{Von: buchVon, Bis: buchBis, Gesamt: anzahl,
 		Abschnitte: []AbgangsAbschnitt{{Titel: "Topf Eins", Zeilen: abgaenge}}}, SchuleInfo{})
 	if err != nil {
 		t.Fatalf("Abgangsbuch drucken: %v", err)
 	}
-	zugang, err := GenerateZugangsbuchPDF(Zugangsbuch{Von: buchVon, Bis: buchBis, Gesamt: anzahl,
+	zugang, err := ErzeugeZugangsbuch(Zugangsbuch{Von: buchVon, Bis: buchBis, Gesamt: anzahl,
 		Abschnitte: []ZugangsAbschnitt{{Titel: "Topf Eins", Zeilen: zugaenge}}}, SchuleInfo{})
 	if err != nil {
 		t.Fatalf("Zugangsbuch drucken: %v", err)
@@ -193,14 +193,14 @@ func TestBestandsbuecher_TitelSignaturUndLieferantBleibenInIhrerSpalte(t *testin
 		haendler = "BUCHHANDLUNG AM MARKT, INHABERIN ANNEGRET MÜLLER-LÜDENSCHEIDT E. K."
 	)
 	tag := time.Date(2026, time.April, 12, 10, 0, 0, 0, time.UTC)
-	abgang, err := GenerateAbgangsbuchPDF(Abgangsbuch{Von: buchVon, Bis: buchBis, Gesamt: 2,
+	abgang, err := ErzeugeAbgangsbuch(Abgangsbuch{Von: buchVon, Bis: buchBis, Gesamt: 2,
 		Abschnitte: []AbgangsAbschnitt{{Titel: "Topf Eins", Zeilen: []AbgangsZeile{
 			{Datum: tag, Barcode: "B-81", Titel: gross, Signatur: signatur, GrundText: "Verlust"},
 			{Datum: tag, Barcode: "B-82", Titel: "Atlas", Signatur: "Erd 1", GrundText: "Verlust"}}}}}, SchuleInfo{})
 	if err != nil {
 		t.Fatalf("Abgangsbuch drucken: %v", err)
 	}
-	zugang, err := GenerateZugangsbuchPDF(Zugangsbuch{Von: buchVon, Bis: buchBis, Gesamt: 2,
+	zugang, err := ErzeugeZugangsbuch(Zugangsbuch{Von: buchVon, Bis: buchBis, Gesamt: 2,
 		Abschnitte: []ZugangsAbschnitt{{Titel: "Topf Eins", Zeilen: []ZugangsZeile{
 			{Datum: tag, Barcode: "B-91", Titel: gross, Lieferant: haendler},
 			{Datum: tag, Barcode: "B-92", Titel: "Atlas", Lieferant: "Naacher"}}}}}, SchuleInfo{})

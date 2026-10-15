@@ -45,7 +45,7 @@ func mahnlisteSeiten(klassen []repository.MahnwesenKlasse) []pdf.MahnlisteSchuel
 
 // erzeugeMahnliste setzt die Mahnliste der Gruppen als PDF.
 func erzeugeMahnliste(klassen []repository.MahnwesenKlasse) ([]byte, error) {
-	return pdf.GenerateMahnlistePDF(mahnlisteSeiten(klassen))
+	return pdf.ErzeugeMahnliste(mahnlisteSeiten(klassen))
 }
 
 func mahnStatistik(klassen []repository.MahnwesenKlasse) (schuelerGesamt, medienGesamt int) {

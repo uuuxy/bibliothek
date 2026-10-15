@@ -17,7 +17,7 @@ func anschreibenBlatt(positionen []bestellterTitel, schule pdf.SchuleInfo, weg p
 	if err != nil {
 		return nil, err
 	}
-	return pdf.GenerateBestellanschreibenPDF(anschreiben, schule)
+	return pdf.ErzeugeBestellanschreiben(anschreiben, schule)
 }
 
 // Jedes Feld der Eingabe kommt aus seiner Quelle, die Werte sind je Feld verschieden; ein Feld,

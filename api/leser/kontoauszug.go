@@ -67,7 +67,7 @@ func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 			return
 		}
 
-		pdfDaten, err := pdf.GenerateKontoauszug(schueler, buecher)
+		pdfDaten, err := pdf.ErzeugeKontoauszug(schueler, buecher)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return

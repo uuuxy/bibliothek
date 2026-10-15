@@ -43,14 +43,14 @@ func aufZeichen(s string, max int) string {
 	return string(r[:max-1]) + "…"
 }
 
-func buchBogen(t *testing.T, format string, qr bool, items ...BuchEtikett) []byte {
+func buchBogen(t *testing.T, format string, qr bool, etiketten ...BuchEtikett) []byte {
 	t.Helper()
-	doc, err := GenerateLabelsPDF(format, 1, qr, items)
+	dokument, err := ErzeugeBuchEtiketten(format, 1, qr, etiketten)
 	if err != nil {
 		t.Fatalf("Bogen %s: %v", format, err)
 	}
 	var buf bytes.Buffer
-	if err := doc.Output(&buf); err != nil {
+	if err := dokument.Output(&buf); err != nil {
 		t.Fatalf("Bogen %s ausgeben: %v", format, err)
 	}
 	return buf.Bytes()
@@ -81,29 +81,29 @@ func pruefeEtikettZeilen(t *testing.T, roh []byte, zeilen []etikettZeile) {
 // Etikett; was übersteht, steht auf dem Nachbaretikett.
 func TestBuchEtikett_KeinTextIstBreiterAlsSeineZelle(t *testing.T) {
 	e := breitesEtikett
-	if len(labelFormatReihenfolge) == 0 {
-		t.Fatal("kein Bogenformat in labelFormatReihenfolge: der Test prüfte nichts")
+	if len(etikettFormatReihenfolge) == 0 {
+		t.Fatal("kein Bogenformat in etikettFormatReihenfolge: der Test prüfte nichts")
 	}
-	for _, id := range labelFormatReihenfolge {
-		f := labelFormats[id]
+	for _, id := range etikettFormatReihenfolge {
+		f := etikettFormate[id]
 		t.Run(id+"/Strichcode", func(t *testing.T) {
 			zeilen := []etikettZeile{
-				{name: "Schulname", quelle: e.Schulname, fett: true, groesse: 8, zelle: f.LabelWidth, zeichen: 42},
-				{name: "Titel", quelle: e.Titel, fett: true, groesse: 8, zelle: f.LabelWidth, zeichen: 40},
+				{name: "Schulname", quelle: e.Schulname, fett: true, groesse: 8, zelle: f.Breite, zeichen: 42},
+				{name: "Titel", quelle: e.Titel, fett: true, groesse: 8, zelle: f.Breite, zeichen: 40},
 			}
 			// Unter 30 mm Höhe druckt das Etikett weder Jahr und Signatur noch den Vermerk.
-			if f.LabelHeight >= 30 {
+			if f.Hoehe >= 30 {
 				zeilen = append(zeilen,
-					etikettZeile{name: "Jahr und Signatur", quelle: zweiteZeile(e.AnschaffungsJahr, e.Signatur), groesse: 7, zelle: f.LabelWidth, zeichen: 45},
-					etikettZeile{name: "Eigentumsvermerk", quelle: e.Eigentumsvermerk, groesse: 7, zelle: f.LabelWidth, zeichen: 45},
+					etikettZeile{name: "Jahr und Signatur", quelle: zweiteZeile(e.AnschaffungsJahr, e.Signatur), groesse: 7, zelle: f.Breite, zeichen: 45},
+					etikettZeile{name: "Eigentumsvermerk", quelle: e.Eigentumsvermerk, groesse: 7, zelle: f.Breite, zeichen: 45},
 				)
 			}
 			pruefeEtikettZeilen(t, buchBogen(t, id, false, e), zeilen)
 		})
 		t.Run(id+"/QR-Code", func(t *testing.T) {
 			pruefeEtikettZeilen(t, buchBogen(t, id, true, e), []etikettZeile{
-				{name: "Titel", quelle: e.Titel, fett: true, groesse: 8, zelle: f.LabelWidth - 4, zeichen: 40},
-				{name: "Autor", quelle: e.Autor, groesse: 7, zelle: f.LabelWidth - 4, zeichen: 30},
+				{name: "Titel", quelle: e.Titel, fett: true, groesse: 8, zelle: f.Breite - 4, zeichen: 40},
+				{name: "Autor", quelle: e.Autor, groesse: 7, zelle: f.Breite - 4, zeichen: 30},
 			})
 		})
 	}
@@ -112,7 +112,7 @@ func TestBuchEtikett_KeinTextIstBreiterAlsSeineZelle(t *testing.T) {
 // Dasselbe am großen Lernmittel-Etikett: Die Zelle ist das Feld ohne seinen Rand.
 func TestLernmittelEtikett_KeinTextIstBreiterAlsSeineZelle(t *testing.T) {
 	e := breitesEtikett
-	roh, err := GenerateLernmittelEtikettenPDF([]BuchEtikett{e})
+	roh, err := ErzeugeLernmittelEtiketten([]BuchEtikett{e})
 	if err != nil {
 		t.Fatalf("Lernmittel-Etikett: %v", err)
 	}

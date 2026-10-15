@@ -46,45 +46,45 @@ const (
 
 // zeichneMahnMedienZeile setzt die Zeile eines Buchs: Cover, Titel, Autor, Barcode, Frist und
 // die Tage über der Frist, ab 15 Tagen in Rot.
-func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med MahnlisteMedium, rowHeight float64) {
-	startY := pdf.GetY()
+func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med MahnlisteMedium, zeilenHoehe float64) {
+	obenY := pdf.GetY()
 
-	coverdatei.BindeEin(pdf, med.CoverURL, coverdatei.Flaeche{X: 18, Y: startY + 0.5, Breite: 7, Hoehe: rowHeight - 1})
+	coverdatei.BindeEin(pdf, med.CoverURL, coverdatei.Flaeche{X: 18, Y: obenY + 0.5, Breite: 7, Hoehe: zeilenHoehe - 1})
 
 	// Den Rahmen der Cover-Zelle gibt es auch ohne Bild.
-	pdf.SetXY(18, startY)
-	pdf.CellFormat(8, rowHeight, "", "1", 0, "", false, 0, "")
+	pdf.SetXY(18, obenY)
+	pdf.CellFormat(8, zeilenHoehe, "", "1", 0, "", false, 0, "")
 
-	titleCell := pdfzeichen.KuerzeAufZelle(pdf, tr, med.Titel, mahnlisteSpalteTitel)
-	pdf.CellFormat(mahnlisteSpalteTitel, rowHeight, tr(titleCell), "1", 0, "L", false, 0, "")
+	titelZelle := pdfzeichen.KuerzeAufZelle(pdf, tr, med.Titel, mahnlisteSpalteTitel)
+	pdf.CellFormat(mahnlisteSpalteTitel, zeilenHoehe, tr(titelZelle), "1", 0, "L", false, 0, "")
 
-	autorCell := pdfzeichen.KuerzeAufZelle(pdf, tr, med.Autor, mahnlisteSpalteAutor)
-	pdf.CellFormat(mahnlisteSpalteAutor, rowHeight, tr(autorCell), "1", 0, "L", false, 0, "")
+	autorZelle := pdfzeichen.KuerzeAufZelle(pdf, tr, med.Autor, mahnlisteSpalteAutor)
+	pdf.CellFormat(mahnlisteSpalteAutor, zeilenHoehe, tr(autorZelle), "1", 0, "L", false, 0, "")
 
-	bcX := pdf.GetX()
-	pdf.CellFormat(40, rowHeight, "", "1", 0, "", false, 0, "")
+	strichX := pdf.GetX()
+	pdf.CellFormat(40, zeilenHoehe, "", "1", 0, "", false, 0, "")
 	if med.Barcode != "" {
-		if pngBytes, err := strichcode.PNG(med.Barcode, false, 300, 80); err == nil {
-			imgName := "bc_" + med.Barcode
-			opt := gofpdf.ImageOptions{ImageType: "PNG"}
-			pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))
-			pdf.ImageOptions(imgName, bcX+3, startY+2.5, 34, 8, false, opt, 0, "")
+		if png, err := strichcode.PNG(med.Barcode, false, 300, 80); err == nil {
+			bildName := "bc_" + med.Barcode
+			optionen := gofpdf.ImageOptions{ImageType: "PNG"}
+			pdf.RegisterImageOptionsReader(bildName, optionen, bytes.NewReader(png))
+			pdf.ImageOptions(bildName, strichX+3, obenY+2.5, 34, 8, false, optionen, 0, "")
 		}
 		pdf.SetFont("Courier", "", 7)
-		pdf.SetXY(bcX, startY+11.5)
+		pdf.SetXY(strichX, obenY+11.5)
 		pdf.CellFormat(40, 4, tr(med.Barcode), "", 0, "C", false, 0, "")
 		pdf.SetFont("Arial", "", 8)
 	}
 
 	// Die Nummer unter dem Strichcode hat die Position verschoben.
-	pdf.SetXY(144, startY)
-	pdf.CellFormat(22, rowHeight, tr(med.FaelligAm), "1", 0, "C", false, 0, "")
+	pdf.SetXY(144, obenY)
+	pdf.CellFormat(22, zeilenHoehe, tr(med.FaelligAm), "1", 0, "C", false, 0, "")
 
 	if med.TageUeberfaellig > 14 {
 		pdf.SetTextColor(200, 30, 30)
 		pdf.SetFont("Arial", "B", 8)
 	}
-	pdf.CellFormat(26, rowHeight, fmt.Sprintf("%d Tage", med.TageUeberfaellig), "1", 1, "C", false, 0, "")
+	pdf.CellFormat(26, zeilenHoehe, fmt.Sprintf("%d Tage", med.TageUeberfaellig), "1", 1, "C", false, 0, "")
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetFont("Arial", "", 8)
 }
@@ -98,7 +98,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 
 	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(120, 120, 120)
-	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am %s", schulzeit.Jetzt().Format(dateFormatDE))))
+	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am %s", schulzeit.Jetzt().Format(datumsformat))))
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(10)
 
@@ -173,9 +173,9 @@ func zeichneMahnFortsetzung(pdf *gofpdf.Fpdf, tr func(string) string, sch Mahnli
 	zeichneMahnSpaltenkoepfe(pdf, tr)
 }
 
-// GenerateMahnlistePDF setzt die Mahnliste auf A4, je Schüler eine Seite und bei mehr als zehn
+// ErzeugeMahnliste setzt die Mahnliste auf A4, je Schüler eine Seite und bei mehr als zehn
 // Büchern Folgeseiten. Ohne Schüler trägt das Blatt einen Satz, der das sagt.
-func GenerateMahnlistePDF(schueler []MahnlisteSchueler) ([]byte, error) {
+func ErzeugeMahnliste(schueler []MahnlisteSchueler) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(18, 18, 18)
 	pdf.SetAutoPageBreak(true, mahnlisteRandUnten)

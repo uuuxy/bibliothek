@@ -87,37 +87,37 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 	}
 	zeichneMahnbriefKoepfe(pdf, tr)
 
-	const rowH = mahnbriefZeilenHoehe
+	const zeilenHoehe = mahnbriefZeilenHoehe
 	for _, b := range buecher {
 		// Eine Zeile setzt Strichcode und Nummer an feste Stellen; ein Umbruch mitten in ihr
 		// verteilte sie über drei Seiten. Passt sie nicht mehr auf die Seite, beginnt sie auf
 		// der nächsten, unter den Köpfen.
-		if pdf.GetY()+rowH > mahnbriefSeitenende {
+		if pdf.GetY()+zeilenHoehe > mahnbriefSeitenende {
 			pdf.AddPage()
 			zeichneMahnbriefKoepfe(pdf, tr)
 		}
-		startY := pdf.GetY()
+		obenY := pdf.GetY()
 		pdf.SetX(20)
-		pdf.CellFormat(mahnbriefSpalteTitel, rowH, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, b.Titel, mahnbriefSpalteTitel)), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(mahnbriefSpalteTitel, zeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, b.Titel, mahnbriefSpalteTitel)), "1", 0, "L", false, 0, "")
 
-		bcX := pdf.GetX()
-		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")
+		strichX := pdf.GetX()
+		pdf.CellFormat(35, zeilenHoehe, "", "1", 0, "", false, 0, "")
 		if b.Barcode != "" {
-			if pngBytes, err := strichcode.PNG(b.Barcode, false, 300, 80); err == nil {
-				imgName := "bc_eltern_" + b.Barcode
-				opt := gofpdf.ImageOptions{ImageType: "PNG"}
-				pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))
-				pdf.ImageOptions(imgName, bcX+2.5, startY+2, 30, 8, false, opt, 0, "")
+			if png, err := strichcode.PNG(b.Barcode, false, 300, 80); err == nil {
+				bildName := "bc_eltern_" + b.Barcode
+				optionen := gofpdf.ImageOptions{ImageType: "PNG"}
+				pdf.RegisterImageOptionsReader(bildName, optionen, bytes.NewReader(png))
+				pdf.ImageOptions(bildName, strichX+2.5, obenY+2, 30, 8, false, optionen, 0, "")
 			}
 			pdf.SetFont("Courier", "", 7)
-			pdf.SetXY(bcX, startY+10.5)
+			pdf.SetXY(strichX, obenY+10.5)
 			pdf.CellFormat(35, 4, tr(b.Barcode), "", 0, "C", false, 0, "")
 			pdf.SetFont("Arial", "", 10)
 		}
 
-		pdf.SetXY(bcX+35, startY)
-		pdf.CellFormat(30, rowH, b.AusgeliehenAm.In(schulzeit.Zone()).Format(dateFormatDE), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(30, rowH, fmt.Sprintf("%d", b.TageUeberfaellig), "1", 1, "R", false, 0, "")
+		pdf.SetXY(strichX+35, obenY)
+		pdf.CellFormat(30, zeilenHoehe, b.AusgeliehenAm.In(schulzeit.Zone()).Format(datumsformat), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(30, zeilenHoehe, fmt.Sprintf("%d", b.TageUeberfaellig), "1", 1, "R", false, 0, "")
 	}
 }
 
@@ -147,7 +147,7 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 	}
 
 	pdf.SetXY(150, 85)
-	pdf.Cell(40, 5, "Datum: "+schulzeit.Jetzt().Format(dateFormatDE))
+	pdf.Cell(40, 5, "Datum: "+schulzeit.Jetzt().Format(datumsformat))
 
 	// {{.Frist}} ist die älteste Rückgabefrist der gemahnten Bücher; je Buch steht die
 	// eigene Überschreitung in der Tabelle.
@@ -157,21 +157,21 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 			aeltesteFrist = b.Frist
 		}
 	}
-	replacer := strings.NewReplacer(
+	ersetzer := strings.NewReplacer(
 		"{{.Vorname}}", e.Vorname,
 		"{{.Nachname}}", e.Nachname,
-		"{{.Frist}}", aeltesteFrist.In(schulzeit.Zone()).Format(dateFormatDE),
+		"{{.Frist}}", aeltesteFrist.In(schulzeit.Zone()).Format(datumsformat),
 	)
 
 	// In der Betreffzeile hat die Tabelle keinen Platz; ein dort eingetragenes
 	// {{.BuchListe}} fällt weg, statt wörtlich im Brief zu stehen.
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetXY(20, 100)
-	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(replacer.Replace(v.Betreff), platzhalterBuchListe, ""))))
+	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(ersetzer.Replace(v.Betreff), platzhalterBuchListe, ""))))
 
 	// Die Tabelle ersetzt das erste {{.BuchListe}}; der Text danach wird gedruckt, weitere
 	// Vorkommen fallen weg.
-	teile := strings.SplitN(replacer.Replace(v.Text), platzhalterBuchListe, 2)
+	teile := strings.SplitN(ersetzer.Replace(v.Text), platzhalterBuchListe, 2)
 	pdf.SetFont("Arial", "", 11)
 	pdf.SetXY(20, 115)
 	pdf.MultiCell(170, 6, tr(teile[0]), "", "L", false)
@@ -187,34 +187,34 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 	}
 }
 
-// GenerateMahnbriefePDF setzt je Schüler einen Brief in ein PDF. Ein Brief, der nicht auf eine
+// ErzeugeMahnbriefe setzt je Schüler einen Brief in ein PDF. Ein Brief, der nicht auf eine
 // Seite passt, läuft auf Folgeseiten weiter.
-func GenerateMahnbriefePDF(briefe []MahnbriefEmpfaenger, v MahnbriefVorlage) ([]byte, error) {
-	doc := gofpdf.New("P", "mm", "A4", "")
-	doc.SetTopMargin(mahnbriefRand)
-	doc.SetAutoPageBreak(true, mahnbriefRand)
-	tr := pdfzeichen.Uebersetzer(doc.UnicodeTranslatorFromDescriptor(""))
+func ErzeugeMahnbriefe(briefe []MahnbriefEmpfaenger, v MahnbriefVorlage) ([]byte, error) {
+	dokument := gofpdf.New("P", "mm", "A4", "")
+	dokument.SetTopMargin(mahnbriefRand)
+	dokument.SetAutoPageBreak(true, mahnbriefRand)
+	tr := pdfzeichen.Uebersetzer(dokument.UnicodeTranslatorFromDescriptor(""))
 
 	// Ein Druck trägt viele Briefe hintereinander: Jede Folgeseite nennt über dem Rand, zu
 	// wessen Brief sie gehört, ob die Tabelle sie füllt oder der Text.
 	folgeseiteFuer := ""
-	doc.SetHeaderFunc(func() {
+	dokument.SetHeaderFunc(func() {
 		if folgeseiteFuer == "" {
 			return
 		}
-		doc.SetFont("Arial", "B", 9)
-		doc.SetXY(20, 12)
-		doc.Cell(0, 5, tr(folgeseiteFuer))
-		doc.SetY(mahnbriefRand)
+		dokument.SetFont("Arial", "B", 9)
+		dokument.SetXY(20, 12)
+		dokument.Cell(0, 5, tr(folgeseiteFuer))
+		dokument.SetY(mahnbriefRand)
 	})
 	for _, e := range briefe {
 		folgeseiteFuer = ""
-		doc.AddPage()
+		dokument.AddPage()
 		folgeseiteFuer = "Fortsetzung: " + strings.TrimSpace(e.Vorname+" "+e.Nachname)
-		zeichneMahnbrief(doc, tr, e, v)
+		zeichneMahnbrief(dokument, tr, e, v)
 	}
 	var buf bytes.Buffer
-	if err := doc.Output(&buf); err != nil {
+	if err := dokument.Output(&buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

@@ -18,14 +18,14 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// KontoauszugSchueler represents a student in the account statement.
+// KontoauszugSchueler ist der Schüler, dessen Konto der Auszug zeigt.
 type KontoauszugSchueler struct {
 	Vorname  string
 	Nachname string
 	Klasse   string
 }
 
-// KontoauszugBuch represents a book in the account statement.
+// KontoauszugBuch ist ein ausgeliehenes Buch auf dem Auszug.
 type KontoauszugBuch struct {
 	Titel          string
 	Barcode        string
@@ -33,31 +33,31 @@ type KontoauszugBuch struct {
 	Rueckgabedatum time.Time
 }
 
-// KontoauszugEintrag bündelt einen Schüler mit seinen Büchern (für den Stapeldruck,
-// z. B. der Abgänger-Laufzettel als Kontoauszug mit Unterschriftszeile).
+// KontoauszugEintrag bündelt einen Schüler mit seinen Büchern für den Druck vieler Auszüge,
+// etwa den Laufzettel der Abgänger mit Unterschriftszeile.
 type KontoauszugEintrag struct {
 	Schueler KontoauszugSchueler
 	Buecher  []KontoauszugBuch
 }
 
-// GenerateKontoauszug erzeugt einen einzelnen Kontoauszug OHNE Unterschriftszeile —
-// der reine Info-Auszug aus dem Schülerprofil.
-func GenerateKontoauszug(schueler KontoauszugSchueler, buecher []KontoauszugBuch) ([]byte, error) {
-	return GenerateKontoauszugBatch([]KontoauszugEintrag{{Schueler: schueler, Buecher: buecher}}, false)
+// ErzeugeKontoauszug erzeugt einen Kontoauszug ohne Unterschriftszeile, den Auszug zum Lesen
+// aus der Leserakte.
+func ErzeugeKontoauszug(schueler KontoauszugSchueler, buecher []KontoauszugBuch) ([]byte, error) {
+	return ErzeugeKontoauszuege([]KontoauszugEintrag{{Schueler: schueler, Buecher: buecher}}, false)
 }
 
-// GenerateKontoauszugBatch erzeugt je Schüler eine Seite. mitUnterschrift hängt eine
-// Freigabe-/Unterschriftszeile an — damit derselbe Kontoauszug beim Schulabgang zugleich
-// als Laufzettel dient. Schulen, die es locker halten, ignorieren die Zeile einfach.
-func GenerateKontoauszugBatch(eintraege []KontoauszugEintrag, mitUnterschrift bool) ([]byte, error) {
-	cfg := config.NewBuilder().
+// ErzeugeKontoauszuege erzeugt je Schüler eine Seite. mitUnterschrift hängt eine Zeile für
+// Freigabe und Unterschrift an; so dient derselbe Auszug beim Schulabgang als Laufzettel, und
+// wer die Unterschrift nicht braucht, lässt die Zeile leer.
+func ErzeugeKontoauszuege(eintraege []KontoauszugEintrag, mitUnterschrift bool) ([]byte, error) {
+	konfig := config.NewBuilder().
 		WithPageSize("A4").
 		WithLeftMargin(20).
 		WithTopMargin(20).
 		WithRightMargin(20).
 		Build()
 
-	m := maroto.New(cfg)
+	m := maroto.New(konfig)
 
 	for _, e := range eintraege {
 		p := page.New()
@@ -65,16 +65,16 @@ func GenerateKontoauszugBatch(eintraege []KontoauszugEintrag, mitUnterschrift bo
 		m.AddPages(p)
 	}
 
-	doc, err := m.Generate()
+	dokument, err := m.Generate()
 	if err != nil {
 		return nil, err
 	}
-	return doc.GetBytes(), nil
+	return dokument.GetBytes(), nil
 }
 
-// kontoauszugSeite baut die Zeilen einer einzelnen Kontoauszug-Seite.
+// kontoauszugSeite baut die Zeilen einer Seite des Auszugs.
 func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, mitUnterschrift bool) []core.Row {
-	rows := []core.Row{
+	zeilen := []core.Row{
 		row.New(15).Add(
 			col.New(12).Add(text.New(
 				fmt.Sprintf("Bibliotheks-Kontoauszug für %s %s (Klasse %s)", schueler.Vorname, schueler.Nachname, schueler.Klasse),
@@ -83,11 +83,11 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, m
 		),
 		row.New(10).Add(
 			col.New(12).Add(text.New(
-				fmt.Sprintf("Stand: %s", schulzeit.Jetzt().Format(dateFormatDE)),
+				fmt.Sprintf("Stand: %s", schulzeit.Jetzt().Format(datumsformat)),
 				props.Text{Size: 10, Align: align.Right},
 			)),
 		),
-		row.New(10).Add(col.New(12)), // Spacer
+		row.New(10).Add(col.New(12)), // Abstand
 		row.New(10).Add(
 			col.New(5).Add(text.New("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
 			col.New(3).Add(text.New("Barcode", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Center})),
@@ -97,29 +97,28 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, m
 	}
 
 	if len(buecher) == 0 {
-		rows = append(rows, row.New(10).Add(
+		zeilen = append(zeilen, row.New(10).Add(
 			col.New(12).Add(text.New("-- Keine offenen Ausleihen --", props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center})),
 		))
 	}
 
-	// Nur die lesbare Barcode-Nummer, kein Scan-Bild: Der Kontoauszug ist ein
-	// Info-Auszug zum Lesen, nicht zum Einscannen an der Ausleihe — das gedruckte
-	// Barcode-Bild je Zeile war totes Gewicht auf dem Blatt.
+	// Nur die lesbare Nummer, kein Strichcode: Der Auszug ist zum Lesen da, nicht zum Scannen
+	// an der Theke, und ein Bild je Zeile füllte das Blatt ohne Nutzen.
 	for _, buch := range buecher {
-		rows = append(rows,
+		zeilen = append(zeilen,
 			row.New(8).Add(
 				col.New(5).Add(text.New(buch.Titel, props.Text{Size: 10})),
 				col.New(3).Add(text.New(buch.Barcode, props.Text{Size: 10, Align: align.Center})),
-				col.New(2).Add(text.New(buch.Ausleihdatum.Format(dateFormatDE), props.Text{Size: 10})),
-				col.New(2).Add(text.New(buch.Rueckgabedatum.Format(dateFormatDE), props.Text{Size: 10})),
+				col.New(2).Add(text.New(buch.Ausleihdatum.Format(datumsformat), props.Text{Size: 10})),
+				col.New(2).Add(text.New(buch.Rueckgabedatum.Format(datumsformat), props.Text{Size: 10})),
 			),
 		)
 	}
 
-	rows = append(rows, row.New(15).Add(col.New(12))) // Spacer
+	zeilen = append(zeilen, row.New(15).Add(col.New(12))) // Abstand
 
 	if mitUnterschrift {
-		rows = append(rows,
+		zeilen = append(zeilen,
 			row.New(15).Add(col.New(12)),
 			row.New(8).Add(col.New(12).Add(
 				text.New("_________________________________________________________", props.Text{Size: 10}),
@@ -129,10 +128,10 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, m
 			)),
 		)
 	} else {
-		rows = append(rows, row.New(10).Add(col.New(12).Add(
+		zeilen = append(zeilen, row.New(10).Add(col.New(12).Add(
 			text.New("Bitte beachte die Rückgabefristen, um Mahnungen zu vermeiden.", props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center}),
 		)))
 	}
 
-	return rows
+	return zeilen
 }

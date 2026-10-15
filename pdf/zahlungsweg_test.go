@@ -8,13 +8,11 @@ import (
 	"bibliothek/internal/pdftest"
 )
 
-// Gemessen wird am FERTIGEN PDF, nicht am Struct: Beide Etiketten-Bugs von 2026 waren an
-// den Zwischenschichten grün — das Feld stand im Struct, gezeichnet wurde es nicht. Hier
-// geht es um Geld, das an die richtige Kasse muss.
+// Gemessen wird am fertigen PDF, nicht am Struct: Ein Feld kann im Struct stehen und trotzdem
+// nicht gezeichnet werden. Hier geht es um Geld, das an die richtige Kasse muss.
 //
-// Der Satz, der weg musste: „bar in der Bibliothek". Die Arbeitshilfe zum Erlass vom
-// 17.12.2014 sagt für die Lernmittel des Landes, es dürfe „keine Bargeldannahme vorgesehen
-// werden" — und beide Altbriefe sahen genau das vor.
+// Kein Brief verlangt „bar in der Bibliothek": Die Arbeitshilfe zum Erlass vom 17.12.2014 sagt
+// für die Lernmittel des Landes, es dürfe „keine Bargeldannahme vorgesehen werden".
 
 const barsatz = "bar in der Bibliothek"
 
@@ -24,12 +22,12 @@ func blattText(t *testing.T, roh []byte) string {
 }
 
 func TestRechnungLernmittelNenntDasKontoDesLandes(t *testing.T) {
-	items := []RechnungItem{
+	positionen := []RechnungsPosition{
 		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 19.90, Land: true},
 	}
-	got, err := GenerateRechnung(Schueler{Vorname: "Lena", Nachname: "Land"}, items, testSchule(), testZahlung())
+	got, err := ErzeugeRechnung(Schueler{Vorname: "Lena", Nachname: "Land"}, positionen, testSchule(), testZahlung())
 	if err != nil {
-		t.Fatalf("GenerateRechnung: %v", err)
+		t.Fatalf("ErzeugeRechnung: %v", err)
 	}
 	blatt := blattText(t, got)
 
@@ -49,16 +47,16 @@ func TestRechnungLernmittelNenntDasKontoDesLandes(t *testing.T) {
 }
 
 func TestRechnungBuechereiSagtDassDerWegFehlt(t *testing.T) {
-	items := []RechnungItem{
+	positionen := []RechnungsPosition{
 		{Titel: "Gregs Tagebuch", Barcode: "B-2", Ausleihdatum: time.Now(), Ersatzpreis: 9.95},
 	}
-	got, err := GenerateRechnung(Schueler{Vorname: "Bea", Nachname: "Buecherei"}, items, testSchule(), testZahlung())
+	got, err := ErzeugeRechnung(Schueler{Vorname: "Bea", Nachname: "Buecherei"}, positionen, testSchule(), testZahlung())
 	if err != nil {
-		t.Fatalf("GenerateRechnung: %v", err)
+		t.Fatalf("ErzeugeRechnung: %v", err)
 	}
 	blatt := blattText(t, got)
 
-	// Der Zahlungsweg des Trägers ist offen (E5) — der Brief darf sich keinen ausdenken.
+	// Der Zahlungsweg des Trägers ist offen; der Brief darf sich keinen ausdenken.
 	if !strings.Contains(blatt, "nicht hinterlegt") {
 		t.Errorf("der Brief sagt nicht, dass die Bankverbindung des Trägers fehlt:\n%s", blatt)
 	}
@@ -71,18 +69,18 @@ func TestRechnungBuechereiSagtDassDerWegFehlt(t *testing.T) {
 	}
 }
 
-// Eine Rechnung listet ALLE offenen Forderungen eines Schülers und kann sich ihre
-// Positionen nicht aussuchen. Stehen beide Töpfe darauf, müssen beide Wege dastehen —
-// mit ihrer jeweiligen Teilsumme. Eine gemeinsame Summe auf ein Konto wäre Geld des
+// Eine Rechnung listet alle offenen Forderungen eines Schülers und kann sich ihre Positionen
+// nicht aussuchen. Stehen beide Töpfe darauf, stehen beide Wege da, mit ihrer jeweiligen
+// Teilsumme. Eine gemeinsame Summe auf ein Konto wäre Geld des
 // Landes in der Kasse des Trägers.
 func TestRechnungMitBeidenToepfenZeigtBeideWegeMitTeilsummen(t *testing.T) {
-	items := []RechnungItem{
+	positionen := []RechnungsPosition{
 		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 19.90, Land: true},
 		{Titel: "Gregs Tagebuch", Barcode: "B-2", Ausleihdatum: time.Now(), Ersatzpreis: 9.95},
 	}
-	got, err := GenerateRechnung(Schueler{Vorname: "Mia", Nachname: "Gemischt"}, items, testSchule(), testZahlung())
+	got, err := ErzeugeRechnung(Schueler{Vorname: "Mia", Nachname: "Gemischt"}, positionen, testSchule(), testZahlung())
 	if err != nil {
-		t.Fatalf("GenerateRechnung: %v", err)
+		t.Fatalf("ErzeugeRechnung: %v", err)
 	}
 	blatt := blattText(t, got)
 

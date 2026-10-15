@@ -9,21 +9,16 @@ import (
 	"testing"
 )
 
-// Ratsche gegen die Rückkehr der Container-Zeit in gedruckte Dokumente.
+// Ratsche gegen die Zeit des Containers in gedruckten Dokumenten.
 //
-// Ein PDF aus diesem Paket ist ein Schreiben an einen Menschen: Schadensbescheid mit
-// Zahlungsfrist, Rechnung, Kontoauszug. Sein Datum ist ein KALENDERTAG, und der hängt
-// an der Zeitzone der Schule — nicht an der des Containers (im Image UTC). Zwischen 22
-// und 24 Uhr UTC ist in Berlin bereits der Folgetag; ein `time.Now()` hier trüge dann
-// den Vortag ins Schreiben und die 14-Tage-Frist einen Tag zu kurz.
+// Ein PDF ist ein Schreiben an einen Menschen: Bescheid mit Zahlungsfrist, Rechnung,
+// Kontoauszug. Sein Datum ist ein Kalendertag, und der hängt an der Zeitzone der Schule, nicht an
+// der des Containers (im Image UTC). Zwischen 22 und 24 Uhr UTC ist in Berlin schon der
+// Folgetag; ein `time.Now()` trüge dann den Vortag ins Schreiben und die Frist von 14 Tagen einen
+// Tag zu kurz. Die Zeitzone steht in pkg/schulzeit, eine Quelle, kein Nachbau.
 //
-// Gefunden am 23.08.2026 beim Raster-Durchgang (Frage 6, Zeit und Reihenfolge) an vier
-// Stellen. Die Zeitzone selbst steht in pkg/schulzeit — eine Quelle, kein Nachbau.
-// Erweitert am 03.09.2026: Bis dahin globte die Ratsche nur `*.go` im Paket pdf/ und war
-// damit blind für JEDEN Erzeuger außerhalb — beim Rasterdurchgang lagen zwölf rohe
-// time.Now() in sieben Dateien unter api/ und inventur/, darunter das „Stand"-Datum der
-// neuen Schulbuch-Bestandsliste. Geprüft wird jetzt jede Quelldatei, die einen
-// PDF-Baukasten einbindet; die Selbstprobe unten zählt sie.
+// Geprüft wird jede Quelldatei, die einen Baukasten für PDFs einbindet, nicht nur das Paket pdf/:
+// Erzeuger stehen auch unter api/ und inventur/. Die Selbstprobe unten zählt sie.
 func TestKeinRohesTimeNowInGedrucktenDokumenten(t *testing.T) {
 	dateien := pdfErzeuger(t)
 

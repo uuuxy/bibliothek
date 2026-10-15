@@ -7,13 +7,12 @@ import (
 	"time"
 )
 
-// Der LMF-Plan hängt im Lehrerzimmer und geht als EIN Blatt an die Schulleitung. Absprache vom
-// 06.09.2026: „Das PDF muss zwingend alles auf einer Seite darstellen." Ein zweites Blatt
-// ist kein Schönheitsfehler, sondern ein verlorener Termin — wer nur Seite 1 abheftet,
-// sieht die Hälfte der Klassen nicht.
+// Der LMF-Plan hängt im Lehrerzimmer und geht als ein Blatt an die Schulleitung; alles steht auf
+// einer Seite. Ein zweites Blatt ist kein Schönheitsfehler, sondern ein verlorener Termin: Wer
+// nur Seite 1 abheftet, sieht die Hälfte der Klassen nicht.
 //
-// Vor dieser Ratsche brach maroto ab rund vierzig Terminen von selbst um: 20 Zeilen je
-// Abschnitt ergaben zwei Seiten, 60 ergaben drei, 150 ergaben sieben.
+// Mit festen Zeilenhöhen bräche maroto ab rund vierzig Terminen von selbst um: 20 Zeilen je
+// Abschnitt ergäben zwei Seiten, 60 drei, 150 sieben.
 
 // seitenZahl misst am fertigen Dokument, nicht an der Absicht des Satzes: gofpdf schreibt
 // je Seite ein „/Type /Page"-Objekt und einmal „/Type /Pages" für den Baum darüber.
@@ -35,14 +34,14 @@ const (
 )
 
 // lmfTestPlan baut einen Plan mit je n Terminen in Rückgabe und Ausgabe. vermerk steht in
-// jeder vierten Zeile — so schreibt die Bibliothek („Nur Rückgabe"), und lange Vermerke
-// sind der Fall, an dem die Rechnerei sonst danebenliegt.
-func lmfTestPlan(n int, vermerk string) []LmfPlanAbschnitt {
+// jeder vierten Zeile, wie die Bibliothek schreibt („Nur Rückgabe"); an langen Vermerken läge
+// eine Schätzung daneben.
+func lmfTestPlan(n int, vermerk string) []LMFPlanAbschnitt {
 	tag := time.Date(2026, 7, 13, 0, 0, 0, 0, time.UTC)
-	bauen := func(titel, unter string) LmfPlanAbschnitt {
-		a := LmfPlanAbschnitt{Titel: titel, Untertitel: unter}
+	bauen := func(titel, unter string) LMFPlanAbschnitt {
+		a := LMFPlanAbschnitt{Titel: titel, Untertitel: unter}
 		for i := range n {
-			z := LmfPlanZeile{Datum: tag.AddDate(0, 0, i/6), Stunde: i%6 + 1,
+			z := LMFPlanZeile{Datum: tag.AddDate(0, 0, i/6), Stunde: i%6 + 1,
 				Klassen: fmt.Sprintf("%02dF%d", 5+i%6, i%3+1)}
 			if i%4 == 0 {
 				z.Vermerk = vermerk
@@ -51,19 +50,19 @@ func lmfTestPlan(n int, vermerk string) []LmfPlanAbschnitt {
 		}
 		return a
 	}
-	return []LmfPlanAbschnitt{
+	return []LMFPlanAbschnitt{
 		bauen("BÜCHERRÜCKGABE", lmfRueckgabeSatz),
 		bauen("BÜCHERAUSGABE", lmfAusgabeSatz),
 	}
 }
 
-func TestLmfPlanPasstAufEineSeite(t *testing.T) {
+func TestLMFPlanPasstAufEineSeite(t *testing.T) {
 	for _, vermerk := range []string{"Nur Rückgabe", "Nur Rückgabe — Abschlussklasse, Bücher bitte gebündelt in die Bibliothek"} {
 		for _, zeilen := range []int{1, 10, 20, 30, 45, 60, 100, 150} {
 			t.Run(fmt.Sprintf("%d je Abschnitt, Vermerk %d Zeichen", zeilen, len(vermerk)), func(t *testing.T) {
-				got, err := GenerateLmfPlan(lmfTestPlan(zeilen, vermerk), time.Now())
+				got, err := ErzeugeLMFPlan(lmfTestPlan(zeilen, vermerk), time.Now())
 				if err != nil {
-					t.Fatalf("GenerateLmfPlan: %v", err)
+					t.Fatalf("ErzeugeLMFPlan: %v", err)
 				}
 				istPDF(t, got, "LMF-Plan")
 				if s := seitenZahl(t, got); s != 1 {
@@ -76,14 +75,14 @@ func TestLmfPlanPasstAufEineSeite(t *testing.T) {
 
 // Ein einzelner, sehr langer Abschnitt bricht innerhalb seiner Tabelle auf die zweite
 // Spalte um. Damit dort keine Termine ohne Überschrift stehen, wiederholt der Satz Titel
-// und Tabellenkopf — und auch dieser Fall bleibt ein Blatt.
-func TestLmfPlanEinLangerAbschnittBleibtEinBlatt(t *testing.T) {
+// und Tabellenkopf, und auch dieser Fall bleibt ein Blatt.
+func TestLMFPlanEinLangerAbschnittBleibtEinBlatt(t *testing.T) {
 	plan := lmfTestPlan(120, "Nur Rückgabe")
 	plan[1].Zeilen = nil
 
-	got, err := GenerateLmfPlan(plan, time.Now())
+	got, err := ErzeugeLMFPlan(plan, time.Now())
 	if err != nil {
-		t.Fatalf("GenerateLmfPlan: %v", err)
+		t.Fatalf("ErzeugeLMFPlan: %v", err)
 	}
 	if s := seitenZahl(t, got); s != 1 {
 		t.Fatalf("%d Seiten", s)
@@ -98,9 +97,9 @@ func TestLmfPlanEinLangerAbschnittBleibtEinBlatt(t *testing.T) {
 }
 
 // Die Verkleinerung ist ein Notnagel, kein Normalfall: Ein Plan in der Größenordnung der
-// Schule (zwei Abschnitte, je ein Termin für jede Klasse) steht weiterhin einspaltig in
-// voller Größe da — so, wie das Kollegium ihn aus dem Excel kennt.
-func TestLmfPlanGewoehnlicherPlanBleibtUnveraendert(t *testing.T) {
+// Schule (zwei Abschnitte, je ein Termin für jede Klasse) steht einspaltig in voller Größe da,
+// so, wie das Kollegium ihn aus der Excel-Tabelle kennt.
+func TestLMFPlanGewoehnlicherPlanBleibtUnveraendert(t *testing.T) {
 	satz := lmfSatzWaehlen(lmfTestPlan(18, "Nur Rückgabe"))
 
 	if satz.modus.spalten != 1 {
@@ -111,8 +110,8 @@ func TestLmfPlanGewoehnlicherPlanBleibtUnveraendert(t *testing.T) {
 	}
 }
 
-// Ein Abschnitt ohne Termine steht nicht im Plan — auch nicht als leere Überschrift.
-func TestLmfPlanLeererAbschnittFaelltWeg(t *testing.T) {
+// Ein Abschnitt ohne Termine steht nicht im Plan, auch nicht als leere Überschrift.
+func TestLMFPlanLeererAbschnittFaelltWeg(t *testing.T) {
 	plan := lmfTestPlan(5, "")
 	plan[0].Zeilen = nil
 

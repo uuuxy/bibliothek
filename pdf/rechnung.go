@@ -21,7 +21,7 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Schueler represents a student on an invoice.
+// Schueler ist der Empfänger der Rechnung mit seiner Anschrift für das Fensterkuvert.
 type Schueler struct {
 	Vorname    string
 	Nachname   string
@@ -31,53 +31,49 @@ type Schueler struct {
 	Ort        string
 }
 
-// RechnungItem represents a line item on an invoice.
-type RechnungItem struct {
+// RechnungsPosition ist eine Zeile der Rechnung: eine offene Forderung.
+type RechnungsPosition struct {
 	Titel        string
 	Barcode      string
 	Ausleihdatum time.Time
 	Ersatzpreis  float64
-	// Land: Die Position betrifft ein Buch des Landes (Eigentum nach
+	// Land sagt, dass die Position ein Buch des Landes betrifft (Eigentum nach
 	// repository.ExemplarTopfSQL). Das entscheidet den Zahlungsweg: Bücher des Landes an das
-	// Land, alles andere (Bücherei, Geräte) an den Schulträger (siehe zahlungsweg.go). Eine
-	// Rechnung kann beides tragen — sie listet alle offenen Forderungen eines Schülers und
-	// sucht sie sich nicht aus. Bis zum 29.09.2026 hieß das Feld IstLernmittel und kam aus
-	// ist_lernmittel des Titels.
+	// Land, alles andere (Bücherei, Geräte) an den Schulträger (zahlungsweg.go). Eine Rechnung
+	// kann beides tragen; sie listet alle offenen Forderungen eines Schülers und sucht sie sich
+	// nicht aus.
 	Land bool
 }
 
-// GenerateRechnung creates a DIN 5008 compliant invoice PDF.
-//
-// `zahlung` nennt das Konto des Landes (Zahlstelle und Bankverbindung aus den
-// Einstellungen). Bis zum 17.09.2026 stand am Fuß „bar in der Bibliothek" — für ein
-// Lernmittel ist das der Weg, den die Arbeitshilfe ausdrücklich untersagt.
-func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo, zahlung Zahlungsangaben) ([]byte, error) {
-	cfg := config.NewBuilder().
+// ErzeugeRechnung erzeugt die Rechnung als PDF nach DIN 5008. zahlung nennt das Konto des Landes
+// (Zahlstelle und Bankverbindung aus den Einstellungen); bar in der Bibliothek ist für ein
+// Lernmittel der Weg, den die Arbeitshilfe ausdrücklich untersagt.
+func ErzeugeRechnung(schueler Schueler, positionen []RechnungsPosition, schule SchuleInfo, zahlung Zahlungsangaben) ([]byte, error) {
+	konfig := config.NewBuilder().
 		WithPageSize("A4").
-		WithLeftMargin(25). // Left margin 25mm for DIN 5008 A/B
+		WithLeftMargin(25). // linker Rand 25 mm nach DIN 5008
 		WithTopMargin(20).
 		WithRightMargin(20).
 		Build()
 
-	m := maroto.New(cfg)
+	m := maroto.New(konfig)
 
-	buildAddressBlock(m, schule, schueler)
-	buildHeaderBlock(m)
-	buildIntroBlock(m)
-	buildItemsTableBlock(m, items)
-	buildFooterBlock(m, items, zahlung)
+	baueAnschrift(m, schule, schueler)
+	baueKopf(m)
+	baueEinleitung(m)
+	bauePositionen(m, positionen)
+	baueFuss(m, positionen, zahlung)
 
-	doc, err := m.Generate()
+	dokument, err := m.Generate()
 	if err != nil {
 		return nil, err
 	}
 
-	return doc.GetBytes(), nil
+	return dokument.GetBytes(), nil
 }
 
-func buildAddressBlock(m core.Maroto, schule SchuleInfo, schueler Schueler) {
-	// DIN 5008 Address Window (Sender + Receiver)
-	// Absender (Sender line above address)
+func baueAnschrift(m core.Maroto, schule SchuleInfo, schueler Schueler) {
+	// Fensterfeld nach DIN 5008: die Absenderzeile über der Anschrift.
 	m.AddRow(15,
 		col.New(12).Add(
 			text.New(schule.Absenderzeile(), props.Text{
@@ -88,25 +84,24 @@ func buildAddressBlock(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 		),
 	)
 
-	// Address lines. Fehlt die Anschrift, steht das AUSDRÜCKLICH im Fensterfeld —
-	// zwei leere Zeilen sähen aus wie ein Druckfehler; so ist sofort sichtbar,
-	// dass diese Rechnung nicht per Post gehen kann (gleiche Regel wie der
-	// Eltern-Mahnbrief, mahnbrief.go).
+	// Die Anschrift. Fehlt sie, steht das im Fensterfeld: Zwei leere Zeilen sähen aus wie ein
+	// Druckfehler, so ist sofort sichtbar, dass die Rechnung nicht mit der Post gehen kann
+	// (dieselbe Regel wie beim Eltern-Mahnbrief, mahnbrief.go).
 	zeile2 := strings.TrimSpace(schueler.Strasse + " " + schueler.Hausnummer)
 	zeile3 := strings.TrimSpace(schueler.PLZ + " " + schueler.Ort)
 	if zeile2 == "" && zeile3 == "" {
 		zeile2 = "(keine Adresse hinterlegt)"
 	}
-	addressLines := []string{
+	anschriftZeilen := []string{
 		fmt.Sprintf("%s %s", schueler.Vorname, schueler.Nachname),
 		zeile2,
 		zeile3,
 	}
 
-	for _, line := range addressLines {
+	for _, zeile := range anschriftZeilen {
 		m.AddRow(5,
 			col.New(12).Add(
-				text.New(line, props.Text{
+				text.New(zeile, props.Text{
 					Size:  10,
 					Align: align.Left,
 				}),
@@ -114,12 +109,12 @@ func buildAddressBlock(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 		)
 	}
 
-	// Space before subject (DIN 5008 padding)
+	// Abstand vor dem Betreff nach DIN 5008
 	m.AddRow(20, col.New(12))
 }
 
-func buildHeaderBlock(m core.Maroto) {
-	// Date aligned right
+func baueKopf(m core.Maroto) {
+	// Datum rechtsbündig
 	m.AddRow(10,
 		col.New(12).Add(
 			text.New(fmt.Sprintf("Datum: %s", schulzeit.Jetzt().Format("02.01.2006")), props.Text{
@@ -129,7 +124,7 @@ func buildHeaderBlock(m core.Maroto) {
 		),
 	)
 
-	// Subject
+	// Betreff
 	m.AddRow(15,
 		col.New(12).Add(
 			text.New("Ersatzforderung für verlorene Medien", props.Text{
@@ -141,8 +136,8 @@ func buildHeaderBlock(m core.Maroto) {
 	)
 }
 
-func buildIntroBlock(m core.Maroto) {
-	// Introductory Text
+func baueEinleitung(m core.Maroto) {
+	// Einleitung
 	m.AddRow(10,
 		col.New(12).Add(
 			text.New("Sehr geehrte Erziehungsberechtigte,", props.Text{Size: 10}),
@@ -155,8 +150,8 @@ func buildIntroBlock(m core.Maroto) {
 	)
 }
 
-func buildItemsTableBlock(m core.Maroto, items []RechnungItem) {
-	// Table Header
+func bauePositionen(m core.Maroto, positionen []RechnungsPosition) {
+	// Kopf der Tabelle
 	m.AddRow(10,
 		col.New(5).Add(text.New("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
 		col.New(3).Add(text.New("Barcode", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Center})),
@@ -164,34 +159,34 @@ func buildItemsTableBlock(m core.Maroto, items []RechnungItem) {
 		col.New(2).Add(text.New("Preis", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 	)
 
-	// Table Rows
-	var total float64
-	for _, item := range items {
-		m.AddRows(generateItemRow(item)...)
-		total += item.Ersatzpreis
+	// Zeilen der Tabelle
+	var summe float64
+	for _, position := range positionen {
+		m.AddRows(positionsZeilen(position)...)
+		summe += position.Ersatzpreis
 	}
-	// Geldbeträge liegen in der DB exakt als NUMERIC(10,2); in Go werden sie als
-	// float64 geführt. Bei der einzigen Akkumulation hier die Summe explizit auf
-	// Cent runden, damit theoretische Float-Drift nie in den Rechnungsbetrag leckt.
-	total = math.Round(total*100) / 100
+	// Geldbeträge stehen in der Datenbank genau als NUMERIC(10,2), in Go als float64. Die Summe
+	// wird hier auf Cent gerundet, damit eine Abweichung der Gleitkommazahl nie im Betrag der
+	// Rechnung steht.
+	summe = math.Round(summe*100) / 100
 
-	// Total Row
+	// Summenzeile
 	m.AddRow(15,
 		col.New(10).Add(text.New("Summe:", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
-		col.New(2).Add(text.New(betrag.Text(total)+" EUR", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(betrag.Text(summe)+" EUR", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 	)
 }
 
-// buildFooterBlock zeichnet den Zahlungsweg — je Topf einen, damit Geld des Landes und
+// baueFuss zeichnet den Zahlungsweg, je Topf einen, damit Geld des Landes und
 // Geld des Schulträgers nicht in einer Summe auf einem Konto landen (zahlungsweg.go).
-func buildFooterBlock(m core.Maroto, items []RechnungItem, zahlung Zahlungsangaben) {
+func baueFuss(m core.Maroto, positionen []RechnungsPosition, zahlung Zahlungsangaben) {
 	var land, traeger float64
-	for _, item := range items {
-		if item.Land {
-			land += item.Ersatzpreis
+	for _, position := range positionen {
+		if position.Land {
+			land += position.Ersatzpreis
 			continue
 		}
-		traeger += item.Ersatzpreis
+		traeger += position.Ersatzpreis
 	}
 	land = math.Round(land*100) / 100
 	traeger = math.Round(traeger*100) / 100
@@ -210,19 +205,19 @@ func buildFooterBlock(m core.Maroto, items []RechnungItem, zahlung Zahlungsangab
 	}
 }
 
-// generateItemRow liefert zwei Zeilen: den Rechnungsposten mit Barcode-Bild und darunter
+// positionsZeilen liefert zwei Zeilen: den Rechnungsposten mit Barcode-Bild und darunter
 // die lesbare Barcode-Nummer.
-func generateItemRow(item RechnungItem) []core.Row {
+func positionsZeilen(position RechnungsPosition) []core.Row {
 	return []core.Row{
 		row.New(12).Add(
-			col.New(5).Add(text.New(item.Titel, props.Text{Size: 10})),
-			code.NewBarCol(3, item.Barcode, props.Barcode{Center: true, Percent: 90}),
-			col.New(2).Add(text.New(item.Ausleihdatum.Format("02.01.2006"), props.Text{Size: 10})),
-			col.New(2).Add(text.New(betrag.Text(item.Ersatzpreis)+" EUR", props.Text{Size: 10, Align: align.Right})),
+			col.New(5).Add(text.New(position.Titel, props.Text{Size: 10})),
+			code.NewBarCol(3, position.Barcode, props.Barcode{Center: true, Percent: 90}),
+			col.New(2).Add(text.New(position.Ausleihdatum.Format("02.01.2006"), props.Text{Size: 10})),
+			col.New(2).Add(text.New(betrag.Text(position.Ersatzpreis)+" EUR", props.Text{Size: 10, Align: align.Right})),
 		),
 		row.New(5).Add(
 			col.New(5),
-			col.New(3).Add(text.New(item.Barcode, props.Text{Size: 8, Align: align.Center})),
+			col.New(3).Add(text.New(position.Barcode, props.Text{Size: 8, Align: align.Center})),
 			col.New(4),
 		),
 	}

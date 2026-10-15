@@ -14,29 +14,29 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/props"
 )
 
-// LmfPlanZeile ist eine Zeile des Plans, wie ihn das Kollegium kennt: Wochentag,
+// LMFPlanZeile ist eine Zeile des Plans, wie ihn das Kollegium kennt: Wochentag,
 // Datum, Stunde, Klassen, Besonderheiten.
-type LmfPlanZeile struct {
+type LMFPlanZeile struct {
 	Datum   time.Time
 	Stunde  int
 	Klassen string // „6F1/6F2" oder leer
 	Vermerk string
 }
 
-// LmfPlanAbschnitt ist „BÜCHERRÜCKGABE" oder „BÜCHERAUSGABE" mit seinen Zeilen.
-type LmfPlanAbschnitt struct {
+// LMFPlanAbschnitt ist „BÜCHERRÜCKGABE" oder „BÜCHERAUSGABE" mit seinen Zeilen.
+type LMFPlanAbschnitt struct {
 	Titel      string
 	Untertitel string // der eine Satz unter der Überschrift (was in diesem Abschnitt geschieht)
-	Zeilen     []LmfPlanZeile
+	Zeilen     []LMFPlanZeile
 }
 
-// lmfSortierhinweis steht über jeder Tabelle — die Zeilen stehen in der Reihenfolge, in
+// lmfSortierhinweis steht über jeder Tabelle: Die Zeilen stehen in der Reihenfolge, in
 // der die Termine stattfinden, nicht in der des Planers.
 const lmfSortierhinweis = "Sortiert nach Zeitpunkt/Termin"
 
 var wochentage = [...]string{"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"}
 
-// Wochentag liefert den deutschen Namen — für PDF und Tests dieselbe Tabelle.
+// Wochentag liefert den deutschen Namen; PDF und Tests nehmen dieselbe Tabelle.
 func Wochentag(t time.Time) string { return wochentage[t.Weekday()] }
 
 // WochentagKurz ist die zweibuchstabige Abkürzung („Do."). Sie steht nur im zweispaltigen
@@ -46,16 +46,16 @@ func WochentagKurz(t time.Time) string {
 	return string([]rune(name)[:2]) + "."
 }
 
-// GenerateLmfPlan baut den Plan in der Form der bisherigen Excel-Tabelle der Schule:
-// Kopf „LMF-PLAN", je Abschnitt eine Überschrift und die Tabelle, sortiert nach
+// ErzeugeLMFPlan baut den Plan in der Form, die das Kollegium aus der Excel-Tabelle der Schule
+// kennt: Kopf „LMF-PLAN", je Abschnitt eine Überschrift und die Tabelle, sortiert nach
 // Zeitpunkt. Ein Abschnitt ohne Zeilen wird ausgelassen.
 //
-// Das Ergebnis ist EIN Blatt — auch bei einem vollen Plan. Wie das erreicht wird (und
+// Das Ergebnis ist ein Blatt, auch bei einem vollen Plan. Wie das erreicht wird (und
 // warum feste Zeilenhöhen es nicht konnten), steht in lmfplan_satz.go.
-func GenerateLmfPlan(abschnitte []LmfPlanAbschnitt, stand time.Time) ([]byte, error) {
+func ErzeugeLMFPlan(abschnitte []LMFPlanAbschnitt, stand time.Time) ([]byte, error) {
 	satz := lmfSatzWaehlen(abschnitte)
 	breite := lmfGrid * satz.modus.spalten
-	cfg := config.NewBuilder().
+	konfig := config.NewBuilder().
 		WithPageSize("A4").
 		WithLeftMargin(satz.modus.rand).
 		WithRightMargin(satz.modus.rand).
@@ -63,7 +63,7 @@ func GenerateLmfPlan(abschnitte []LmfPlanAbschnitt, stand time.Time) ([]byte, er
 		WithBottomMargin(lmfRandUnten).
 		WithMaxGridSize(breite).
 		Build()
-	m := maroto.New(cfg)
+	m := maroto.New(konfig)
 	p := page.New()
 
 	p.Add(row.New(satz.masse.kopfHoehe()).Add(col.New(breite).Add(
@@ -72,14 +72,14 @@ func GenerateLmfPlan(abschnitte []LmfPlanAbschnitt, stand time.Time) ([]byte, er
 		p.Add(r)
 	}
 	p.Add(row.New(satz.masse.fussHoehe()).Add(col.New(breite).Add(
-		text.New("Stand: "+stand.Format(dateFormatDE), props.Text{Size: satz.masse.fuss, Style: fontstyle.Italic, Align: align.Right}))))
+		text.New("Stand: "+stand.Format(datumsformat), props.Text{Size: satz.masse.fuss, Style: fontstyle.Italic, Align: align.Right}))))
 
 	m.AddPages(p)
-	doc, err := m.Generate()
+	dokument, err := m.Generate()
 	if err != nil {
 		return nil, err
 	}
-	return doc.GetBytes(), nil
+	return dokument.GetBytes(), nil
 }
 
 func stundeText(stunde int) string {

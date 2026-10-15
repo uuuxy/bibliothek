@@ -146,14 +146,14 @@ func TestEtikettEingabe_DetektorErkenntJedeForm(t *testing.T) {
 		}
 	}
 	ohne := map[string]string{
-		"nur das Ergebnis":       kopf + "func f() any { return pdf.GenerateLabelsPDF }\n",
+		"nur das Ergebnis":       kopf + "func f() any { return pdf.ErzeugeBuchEtiketten }\n",
 		"anderer Typ des Pakets": kopf + "func f() any { return pdf.SchuelerEtikett{} }\n",
 		"anderes Paket":          "package x\nimport \"bibliothek/andere\"\nfunc f() any { return andere.BuchEtikett{} }\n",
 		"anderes Paket neben pdf": "package x\nimport (\n\t\"bibliothek/andere\"\n\t\"bibliothek/pdf\"\n)\n" +
-			"func f() any { return andere.BuchEtikett{} }\nvar _ = pdf.GenerateLabelsPDF\n",
+			"func f() any { return andere.BuchEtikett{} }\nvar _ = pdf.ErzeugeBuchEtiketten\n",
 		"eigener Typ":      "package x\ntype BuchEtikett struct{}\nfunc f() any { return BuchEtikett{} }\n",
-		"nur im Kommentar": kopf + "// pdf.BuchEtikett füllt ein anderer\nvar _ = pdf.GenerateLabelsPDF\n",
-		"nur als Text":     kopf + "var _ = pdf.GenerateLabelsPDF\nvar s = \"pdf.BuchEtikett\"\n",
+		"nur im Kommentar": kopf + "// pdf.BuchEtikett füllt ein anderer\nvar _ = pdf.ErzeugeBuchEtiketten\n",
+		"nur als Text":     kopf + "var _ = pdf.ErzeugeBuchEtiketten\nvar s = \"pdf.BuchEtikett\"\n",
 	}
 	for form, quelle := range ohne {
 		if n := etikettEingabeNennungen(t, "probe.go", quelle); len(n) != 0 {

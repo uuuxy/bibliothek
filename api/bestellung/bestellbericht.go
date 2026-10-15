@@ -141,7 +141,7 @@ func (t *Tueren) BestellberichtPDF() http.HandlerFunc {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
-		pdfDaten, err := pdf.GenerateBestellberichtPDF(pdf.Bestellbericht{
+		pdfDaten, err := pdf.ErzeugeBestellbericht(pdf.Bestellbericht{
 			Titel:         a.titel,
 			Von:           a.von,
 			Bis:           a.bis,

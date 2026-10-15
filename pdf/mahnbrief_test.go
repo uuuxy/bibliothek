@@ -16,9 +16,9 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-func renderMahnbrief(t *testing.T, e MahnbriefEmpfaenger, betreff, text string) string {
+func erzeugeMahnbrief(t *testing.T, e MahnbriefEmpfaenger, betreff, text string) string {
 	t.Helper()
-	roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{e},
+	roh, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{e},
 		MahnbriefVorlage{Betreff: betreff, Text: text, Absender: "Testschule"})
 	if err != nil {
 		t.Fatalf("PDF erzeugen: %v", err)
@@ -26,9 +26,9 @@ func renderMahnbrief(t *testing.T, e MahnbriefEmpfaenger, betreff, text string) 
 	return blattText(t, roh)
 }
 
-func renderElternMahnbrief(t *testing.T, e MahnbriefEmpfaenger) string {
+func erzeugeElternMahnbrief(t *testing.T, e MahnbriefEmpfaenger) string {
 	t.Helper()
-	return renderMahnbrief(t, e, "Mahnung", "Liebe Eltern von {{.Vorname}} {{.Nachname}},\nbitte zurückgeben:\n{{.BuchListe}}")
+	return erzeugeMahnbrief(t, e, "Mahnung", "Liebe Eltern von {{.Vorname}} {{.Nachname}},\nbitte zurückgeben:\n{{.BuchListe}}")
 }
 
 func testMahnbriefEmpfaenger() MahnbriefEmpfaenger {
@@ -48,7 +48,7 @@ func TestElternMahnbriefDrucktAnschriftInsFensterfeld(t *testing.T) {
 	e.Strasse, e.Hausnummer = "Blumenweg", "7"
 	e.PLZ, e.Ort = "61169", "Friedberg"
 
-	text := renderElternMahnbrief(t, e)
+	text := erzeugeElternMahnbrief(t, e)
 	for _, soll := range []string{"Blumenweg 7", "61169 Friedberg", "Eltern von Mia Musterkind"} {
 		if !strings.Contains(text, soll) {
 			t.Errorf("Brief ohne %q — das Fensterkuvert bliebe leer", soll)
@@ -71,13 +71,13 @@ func TestElternMahnbriefFristIstDieAeltesteRueckgabefrist(t *testing.T) {
 		TageUeberfaellig: 40,
 	})
 
-	text := renderMahnbrief(t, e, "Mahnung", "Frist war {{.Frist}} Ende\n{{.BuchListe}}")
+	text := erzeugeMahnbrief(t, e, "Mahnung", "Frist war {{.Frist}} Ende\n{{.BuchListe}}")
 
 	// Der Brief nennt den Kalendertag der Schule.
-	if soll := "Frist war " + aeltere.In(schulzeit.Zone()).Format(dateFormatDE) + " Ende"; !strings.Contains(text, soll) {
+	if soll := "Frist war " + aeltere.In(schulzeit.Zone()).Format(datumsformat) + " Ende"; !strings.Contains(text, soll) {
 		t.Errorf("Brief nennt nicht die älteste Rückgabefrist: %q fehlt", soll)
 	}
-	if falsch := "Frist war " + schulzeit.Jetzt().Format(dateFormatDE); strings.Contains(text, falsch) {
+	if falsch := "Frist war " + schulzeit.Jetzt().Format(datumsformat); strings.Contains(text, falsch) {
 		t.Errorf("Brief füllt {{.Frist}} mit dem Druckdatum (%q)", falsch)
 	}
 }
@@ -86,7 +86,7 @@ func TestElternMahnbriefFristIstDieAeltesteRueckgabefrist(t *testing.T) {
 // Betreffzeile, und bei zwei Vorkommen im Text verschwände alles nach dem zweiten samt
 // Grußformel.
 func TestElternMahnbriefUeberlebtSchiefePlatzhalter(t *testing.T) {
-	text := renderMahnbrief(t, testMahnbriefEmpfaenger(),
+	text := erzeugeMahnbrief(t, testMahnbriefEmpfaenger(),
 		"Mahnung {{.BuchListe}}",
 		"Anfang {{.BuchListe}} Mitte {{.BuchListe}} Grussformel-Ende")
 
@@ -102,7 +102,7 @@ func TestElternMahnbriefUeberlebtSchiefePlatzhalter(t *testing.T) {
 }
 
 func TestElternMahnbriefOhneAnschriftSagtEsAusdruecklich(t *testing.T) {
-	text := renderElternMahnbrief(t, testMahnbriefEmpfaenger())
+	text := erzeugeElternMahnbrief(t, testMahnbriefEmpfaenger())
 	if !strings.Contains(text, "(keine Adresse hinterlegt)") {
 		t.Error("Brief ohne Anschrift muss '(keine Adresse hinterlegt)' ins Fensterfeld drucken — " +
 			"eine leere Zeile ist von einem Druckfehler nicht zu unterscheiden")
@@ -113,7 +113,7 @@ func TestElternMahnbriefOhneAnschriftSagtEsAusdruecklich(t *testing.T) {
 // Betreff und Text mit den Namen aus der Vorlage, die Tabelle mit ihren Spalten, der Rest des
 // Texts. Die Tage der Tabelle sind Kalendertage der Schule: 23:30 Uhr UTC ist dort der Folgetag.
 func TestMahnbrief_SetztVorlageAnschriftUndTabelleInIhrerFolge(t *testing.T) {
-	roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{{
+	roh, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{{
 		Vorname: "Mia", Nachname: "Musterkind", Strasse: "Blumenweg", Hausnummer: "7", PLZ: "61169", Ort: "Friedberg",
 		Buecher: []MahnbriefBuch{
 			{Titel: "Gregs Tagebuch", Barcode: "B-00042", TageUeberfaellig: 9,
@@ -134,7 +134,7 @@ func TestMahnbrief_SetztVorlageAnschriftUndTabelleInIhrerFolge(t *testing.T) {
 	folge := strings.Join([]string{
 		"Testschule · Schulweg 1 · 61381 Friedrichsdorf",
 		"Eltern von Mia Musterkind", "Blumenweg 7", "61169 Friedberg",
-		"Datum: " + schulzeit.Jetzt().Format(dateFormatDE),
+		"Datum: " + schulzeit.Jetzt().Format(datumsformat),
 		"Mahnung für Mia Musterkind",
 		"Liebe Eltern von Mia Musterkind, Frist war 15.04.2026.",
 		"Titel", "Barcode", "Ausgeliehen", "Tage überfällig",
@@ -152,7 +152,7 @@ func TestMahnbrief_JeSchuelerEinBriefAufEigenerSeite(t *testing.T) {
 	erster := testMahnbriefEmpfaenger()
 	zweiter := MahnbriefEmpfaenger{Vorname: "Ben", Nachname: "Birne", Buecher: []MahnbriefBuch{
 		{Titel: "Atlas", Barcode: "BC-2", AusgeliehenAm: time.Now(), Frist: time.Now(), TageUeberfaellig: 3}}}
-	roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{erster, zweiter},
+	roh, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{erster, zweiter},
 		MahnbriefVorlage{Betreff: "Mahnung", Text: "Eltern von {{.Vorname}}:\n{{.BuchListe}}", Absender: "Testschule"})
 	if err != nil {
 		t.Fatalf("Mahnbriefe drucken: %v", err)
@@ -175,7 +175,7 @@ func TestMahnbrief_TitelBleibtInSeinerSpalteUndStrichcodeAlsBild(t *testing.T) {
 	e.Buecher[0].Titel = breit
 	e.Buecher = append(e.Buecher, e.Buecher[0])
 	e.Buecher[1].Titel, e.Buecher[1].Barcode = schmal, "BC-2"
-	mit, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{e}, MahnbriefVorlage{Text: "{{.BuchListe}}"})
+	mit, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{e}, MahnbriefVorlage{Text: "{{.BuchListe}}"})
 	if err != nil {
 		t.Fatalf("Mahnbrief drucken: %v", err)
 	}
@@ -200,7 +200,7 @@ func TestMahnbrief_TitelBleibtInSeinerSpalteUndStrichcodeAlsBild(t *testing.T) {
 
 	e.Buecher = e.Buecher[:1]
 	e.Buecher[0].Barcode = ""
-	ohne, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{e}, MahnbriefVorlage{Text: "{{.BuchListe}}"})
+	ohne, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{e}, MahnbriefVorlage{Text: "{{.BuchListe}}"})
 	if err != nil {
 		t.Fatalf("Mahnbrief drucken: %v", err)
 	}
@@ -213,11 +213,11 @@ func TestMahnbrief_TitelBleibtInSeinerSpalteUndStrichcodeAlsBild(t *testing.T) {
 func TestMahnbrief_HalbeAnschriftOhneVermerk(t *testing.T) {
 	nurOrt := testMahnbriefEmpfaenger()
 	nurOrt.PLZ, nurOrt.Ort = "61169", "Friedberg"
-	pruefeBlatt(t, renderElternMahnbrief(t, nurOrt), []string{"61169 Friedberg"}, []string{"keine Adresse hinterlegt"})
+	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurOrt), []string{"61169 Friedberg"}, []string{"keine Adresse hinterlegt"})
 
 	nurStrasse := testMahnbriefEmpfaenger()
 	nurStrasse.Strasse = "Blumenweg"
-	pruefeBlatt(t, renderElternMahnbrief(t, nurStrasse), []string{"Blumenweg"}, []string{"keine Adresse hinterlegt"})
+	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurStrasse), []string{"Blumenweg"}, []string{"keine Adresse hinterlegt"})
 }
 
 // langerMahnbrief baut einen Brief mit n Büchern, jedes mit eigenen Texten.
@@ -278,7 +278,7 @@ func mahnbriefZeilenJeSeite(t *testing.T, seiten []seiteMitOrten, anzahl int) []
 func TestMahnbrief_LangeTabelleHaeltJedeZeileBeisammen(t *testing.T) {
 	vorlage := MahnbriefVorlage{Betreff: "Mahnung", Text: "Zeile eins\n{{.BuchListe}}\nSchluss-Zeile", Absender: "Testschule"}
 	for anzahl := 1; anzahl <= 30; anzahl++ {
-		roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{langerMahnbrief("Mia", anzahl)}, vorlage)
+		roh, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{langerMahnbrief("Mia", anzahl)}, vorlage)
 		if err != nil {
 			t.Fatalf("%d Bücher: %v", anzahl, err)
 		}
@@ -301,7 +301,7 @@ func TestMahnbrief_LangeTabelleHaeltJedeZeileBeisammen(t *testing.T) {
 // gehört, ob die Tabelle sie füllt oder der Text; die erste Seite eines Briefs nennt es nicht.
 func TestMahnbrief_FolgeseitenNennenDenEmpfaenger(t *testing.T) {
 	vorlage := MahnbriefVorlage{Betreff: "Mahnung", Text: "Zeile eins\n{{.BuchListe}}\n" + strings.Repeat("Schluss-Zeile\n", 45), Absender: "Testschule"}
-	roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{langerMahnbrief("Mia", 12), langerMahnbrief("Ben", 2)}, vorlage)
+	roh, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{langerMahnbrief("Mia", 12), langerMahnbrief("Ben", 2)}, vorlage)
 	if err != nil {
 		t.Fatalf("Mahnbriefe drucken: %v", err)
 	}
@@ -336,7 +336,7 @@ func TestMahnbrief_FolgeseitenNennenDenEmpfaenger(t *testing.T) {
 // Tabelle auf der nächsten Seite: Köpfe ohne Zeile darunter nennen Spalten ohne Inhalt.
 func TestMahnbrief_KoepfeStehenNichtAlleinAmSeitenfuss(t *testing.T) {
 	vorlage := MahnbriefVorlage{Betreff: "Mahnung", Text: strings.Repeat("Zeile\n", 24) + "{{.BuchListe}}", Absender: "Testschule"}
-	roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{langerMahnbrief("Mia", 3)}, vorlage)
+	roh, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{langerMahnbrief("Mia", 3)}, vorlage)
 	if err != nil {
 		t.Fatalf("Mahnbrief drucken: %v", err)
 	}

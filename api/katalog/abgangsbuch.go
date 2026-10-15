@@ -106,7 +106,7 @@ func (t *Tueren) AbgangsbuchPDF() http.HandlerFunc {
 			PLZ: einst.SchulePLZ, Ort: einst.SchuleOrt,
 		}
 
-		blatt, err := pdf.GenerateAbgangsbuchPDF(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), schule)
+		blatt, err := pdf.ErzeugeAbgangsbuch(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), schule)
 		if err != nil {
 			return apierrors.Internal("Abgangsbuch konnte nicht gedruckt werden", err)
 		}

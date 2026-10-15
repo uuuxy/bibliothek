@@ -23,7 +23,7 @@ type berichtMonthStat struct {
 	betrag           float64
 }
 
-type berichtSupplierStat struct {
+type lieferantenSumme struct {
 	count     int
 	exemplare int
 	betrag    float64
@@ -32,17 +32,17 @@ type berichtSupplierStat struct {
 // zeichneBerichtMonate setzt die Tabelle „Übersicht nach Monat". Ohne Preise entfällt die
 // Betragsspalte, und die übrigen Spalten füllen dieselbe Breite; sonst endete die Tabelle
 // mitten auf der Seite.
-func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, orders []BestellberichtBestellung, gesamtExemplare int, gesamtBetrag float64, mitPreisen bool) {
-	monthly := map[time.Month]*berichtMonthStat{}
-	for _, o := range orders {
+func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, bestellungen []BestellberichtBestellung, gesamtExemplare int, gesamtBetrag float64, mitPreisen bool) {
+	jeMonat := map[time.Month]*berichtMonthStat{}
+	for _, o := range bestellungen {
 		// Der Monat der Schule: Eine Bestellung aus der ersten Stunde eines Monats zählt zu ihm.
 		m := o.Bestelldatum.In(schulzeit.Zone()).Month()
-		if monthly[m] == nil {
-			monthly[m] = &berichtMonthStat{}
+		if jeMonat[m] == nil {
+			jeMonat[m] = &berichtMonthStat{}
 		}
-		monthly[m].count++
-		monthly[m].exemplare += o.AnzahlExemplare
-		monthly[m].betrag += o.Gesamtbetrag
+		jeMonat[m].count++
+		jeMonat[m].exemplare += o.AnzahlExemplare
+		jeMonat[m].betrag += o.Gesamtbetrag
 	}
 
 	p.SetFont("Arial", "B", 11)
@@ -65,21 +65,21 @@ func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, orders []Beste
 	p.SetFont("Arial", "", 9)
 	p.SetFillColor(255, 255, 255)
 	for m := time.January; m <= time.December; m++ {
-		if stat, ok := monthly[m]; ok {
+		if werte, ok := jeMonat[m]; ok {
 			p.CellFormat(bMonat, 6, tr(berichtMonatsnamen[m-1]), "1", 0, "L", false, 0, "")
-			p.CellFormat(bAnzahl, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
+			p.CellFormat(bAnzahl, 6, fmt.Sprintf("%d", werte.count), "1", 0, "C", false, 0, "")
 			if mitPreisen {
-				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", stat.exemplare), "1", 0, "C", false, 0, "")
-				p.CellFormat(35, 6, tr(betrag.Euro(stat.betrag)), "1", 1, "R", false, 0, "")
+				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", werte.exemplare), "1", 0, "C", false, 0, "")
+				p.CellFormat(35, 6, tr(betrag.Euro(werte.betrag)), "1", 1, "R", false, 0, "")
 			} else {
-				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", stat.exemplare), "1", 1, "C", false, 0, "")
+				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", werte.exemplare), "1", 1, "C", false, 0, "")
 			}
 		}
 	}
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(240, 240, 240)
 	p.CellFormat(bMonat, 7, tr("Gesamt"), "1", 0, "L", true, 0, "")
-	p.CellFormat(bAnzahl, 7, fmt.Sprintf("%d", len(orders)), "1", 0, "C", true, 0, "")
+	p.CellFormat(bAnzahl, 7, fmt.Sprintf("%d", len(bestellungen)), "1", 0, "C", true, 0, "")
 	if mitPreisen {
 		p.CellFormat(bExemplare, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 0, "C", true, 0, "")
 		p.CellFormat(35, 7, tr(betrag.Euro(gesamtBetrag)), "1", 1, "R", true, 0, "")
@@ -93,15 +93,15 @@ func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, orders []Beste
 // zeichneBerichtLieferanten setzt die Aufteilung nach Lieferant. Ohne Preise heißt sie
 // nicht „Ausgaben", und statt des Betrags stehen die Exemplare: Wie viel die Schule wo
 // bezogen hat, bleibt auch ohne Geld eine Auskunft.
-func zeichneBerichtLieferanten(p *gofpdf.Fpdf, tr func(string) string, orders []BestellberichtBestellung, mitPreisen bool) {
-	bySupplier := map[string]*berichtSupplierStat{}
-	for _, o := range orders {
-		if bySupplier[o.LieferantName] == nil {
-			bySupplier[o.LieferantName] = &berichtSupplierStat{}
+func zeichneBerichtLieferanten(p *gofpdf.Fpdf, tr func(string) string, bestellungen []BestellberichtBestellung, mitPreisen bool) {
+	jeLieferant := map[string]*lieferantenSumme{}
+	for _, o := range bestellungen {
+		if jeLieferant[o.LieferantName] == nil {
+			jeLieferant[o.LieferantName] = &lieferantenSumme{}
 		}
-		bySupplier[o.LieferantName].count++
-		bySupplier[o.LieferantName].exemplare += o.AnzahlExemplare
-		bySupplier[o.LieferantName].betrag += o.Gesamtbetrag
+		jeLieferant[o.LieferantName].count++
+		jeLieferant[o.LieferantName].exemplare += o.AnzahlExemplare
+		jeLieferant[o.LieferantName].betrag += o.Gesamtbetrag
 	}
 	ueberschrift := "Ausgaben nach Lieferant"
 	if !mitPreisen {
@@ -123,8 +123,8 @@ func zeichneBerichtLieferanten(p *gofpdf.Fpdf, tr func(string) string, orders []
 	p.SetFillColor(255, 255, 255)
 	// Eine Map hat keine Reihenfolge: Ohne die sortierten Namen stünden die Lieferanten bei
 	// jedem Druck anders untereinander.
-	namen := make([]string, 0, len(bySupplier))
-	for name := range bySupplier {
+	namen := make([]string, 0, len(jeLieferant))
+	for name := range jeLieferant {
 		namen = append(namen, name)
 	}
 	slices.SortFunc(namen, func(a, b string) int {
@@ -134,13 +134,13 @@ func zeichneBerichtLieferanten(p *gofpdf.Fpdf, tr func(string) string, orders []
 		return cmp.Compare(a, b)
 	})
 	for _, name := range namen {
-		stat := bySupplier[name]
+		werte := jeLieferant[name]
 		p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
-		p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
+		p.CellFormat(40, 6, fmt.Sprintf("%d", werte.count), "1", 0, "C", false, 0, "")
 		if mitPreisen {
-			p.CellFormat(45, 6, tr(betrag.Euro(stat.betrag)), "1", 1, "R", false, 0, "")
+			p.CellFormat(45, 6, tr(betrag.Euro(werte.betrag)), "1", 1, "R", false, 0, "")
 		} else {
-			p.CellFormat(45, 6, fmt.Sprintf("%d", stat.exemplare), "1", 1, "C", false, 0, "")
+			p.CellFormat(45, 6, fmt.Sprintf("%d", werte.exemplare), "1", 1, "C", false, 0, "")
 		}
 	}
 	p.Ln(10)

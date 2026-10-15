@@ -18,7 +18,7 @@ type bestellungBestaetigenAnfrage struct {
 	// EtikettenGroesse: welche Etikettengröße der Lieferant (laut externer Rückmeldung,
 	// z. B. per Naacher-Link) letztlich gewählt/gedruckt hat.
 	EtikettenGroesse string `json:"etiketten_groesse"`
-	// EtikettenFormat: bei 'klein' zusätzlich das Bogenraster (siehe pdf.LabelFormatAuswahl).
+	// EtikettenFormat: bei 'klein' zusätzlich das Bogenraster (siehe pdf.EtikettFormate).
 	// Optional — wer nachträgt, weiß es nicht immer.
 	EtikettenFormat string `json:"etiketten_format"`
 }

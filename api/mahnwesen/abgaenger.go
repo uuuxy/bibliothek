@@ -175,7 +175,7 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 		}
 
 		// Der Kontoauszug der Abgänger trägt die Unterschriftszeile (eine Seite je Abgänger).
-		pdfDaten, err := pdf.GenerateKontoauszugBatch(eintraege, true)
+		pdfDaten, err := pdf.ErzeugeKontoauszuege(eintraege, true)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return

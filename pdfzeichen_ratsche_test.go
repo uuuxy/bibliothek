@@ -232,8 +232,8 @@ func TestPdfDruck_DetektorKenntJedeForm(t *testing.T) {
 		`"ISBN"`, `""`,
 		`fmt.Sprintf("%d Tage", n)`, `fmt.Sprintf("- %d -", p.PageNo())`, `fmt.Sprintf("%.2f %%", x)`,
 		`strconv.Itoa(n)`,
-		`tag.Format(dateFormatDE)`, `tag.In(zone).Format("02.01.2006")`,
-		`"Datum: " + schulzeit.Jetzt().Format(dateFormatDE)`, `("Nr. " + strconv.Itoa(n))`,
+		`tag.Format(datumsformat)`, `tag.In(zone).Format("02.01.2006")`,
+		`"Datum: " + schulzeit.Jetzt().Format(datumsformat)`, `("Nr. " + strconv.Itoa(n))`,
 	}
 	for _, text := range geprueft {
 		if v, n := druckaufrufeOhneUebersetzer(t, "probe.go", quelle(text)); n != 1 || len(v) != 0 {

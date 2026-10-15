@@ -8,18 +8,18 @@ import (
 	"bibliothek/internal/pdftest"
 )
 
-func TestGenerateLabelsPDF(t *testing.T) {
-	labels := []BuchEtikett{
+func TestErzeugeBuchEtiketten(t *testing.T) {
+	etiketten := []BuchEtikett{
 		{Schulname: "Testbibliothek", BarcodeID: "B-10001", Titel: "Test Buch 1", Autor: "Autor 1", Signatur: "LMF-Deutsch 5", Eigentumsvermerk: "Eigentum des Landes Hessen"},
 		{Schulname: "Testbibliothek", BarcodeID: "B-10002", Titel: "Test Buch 2", Autor: "Autor 2", Eigentumsvermerk: "Eigentum des Landes Hessen"},
 	}
 
-	labelDoc, err := GenerateLabelsPDF("zweckform_l4760", 1, false, labels)
+	dokument, err := ErzeugeBuchEtiketten("zweckform_l4760", 1, false, etiketten)
 	if err != nil {
 		t.Fatalf("Failed to generate label PDF: %v", err)
 	}
 	var buf bytes.Buffer
-	if err := labelDoc.Output(&buf); err != nil {
+	if err := dokument.Output(&buf); err != nil {
 		t.Fatalf("Failed to output label PDF: %v", err)
 	}
 	if buf.Len() == 0 {
@@ -27,25 +27,25 @@ func TestGenerateLabelsPDF(t *testing.T) {
 	}
 }
 
-// Naacher & Co. bekommen zusätzlich zum kleinen das große Lernmittel-Etikett
-// mitgeschickt, damit sie selbst wählen können, welches sie drucken.
-func TestGenerateLernmittelEtikettenPDF(t *testing.T) {
-	items := []BuchEtikett{
+// Lieferanten, die selbst etikettieren, bekommen zum kleinen das große Lernmittel-Etikett
+// mitgeschickt und wählen selbst, welches sie drucken.
+func TestErzeugeLernmittelEtiketten(t *testing.T) {
+	etiketten := []BuchEtikett{
 		{Schulname: "Testbibliothek", BarcodeID: "B-10001", Titel: "Test Buch 1", AnschaffungsJahr: "2024", Signatur: "LMF-Deutsch 5", Eigentumsvermerk: "Eigentum des Landes Hessen"},
 		{Schulname: "Testbibliothek", BarcodeID: "B-10002", Titel: "Test Buch 2", Eigentumsvermerk: "Eigentum des Landes Hessen"},
 	}
 
-	pdfBytes, err := GenerateLernmittelEtikettenPDF(items)
+	dokument, err := ErzeugeLernmittelEtiketten(etiketten)
 	if err != nil {
 		t.Fatalf("Failed to generate Lernmittel-Etikett PDF: %v", err)
 	}
-	if len(pdfBytes) == 0 {
+	if len(dokument) == 0 {
 		t.Error("Generated Lernmittel-Etikett PDF is empty")
 	}
 }
 
 func TestZweiteZeile(t *testing.T) {
-	cases := []struct {
+	faelle := []struct {
 		jahr, signatur, want string
 	}{
 		{"2016", "LMF-Deutsch 5", "Ansch.J. 2016 · LMF-Deutsch 5"},
@@ -53,7 +53,7 @@ func TestZweiteZeile(t *testing.T) {
 		{"", "LMF-Deutsch 5", "LMF-Deutsch 5"},
 		{"", "", ""},
 	}
-	for _, c := range cases {
+	for _, c := range faelle {
 		if got := zweiteZeile(c.jahr, c.signatur); got != c.want {
 			t.Errorf("zweiteZeile(%q, %q) = %q, want %q", c.jahr, c.signatur, got, c.want)
 		}
@@ -77,24 +77,24 @@ func gedruckteZeilen(t *testing.T, roh []byte, wort string) []string {
 // das Etikett trägt, und ohne Vermerk keinen. Auf dem kleinen Format unter 30 mm hat die
 // Zeile des Vermerks keinen Platz.
 func TestBuchEtikett_DrucktSchulnameUndVermerkDesEtiketts(t *testing.T) {
-	items := []BuchEtikett{
+	etiketten := []BuchEtikett{
 		{Schulname: "Schule Eins", BarcodeID: "B-1", Titel: "Eins", Eigentumsvermerk: "Vermerk Eins"},
 		{Schulname: "Schule Zwei", BarcodeID: "B-2", Titel: "Zwei", Eigentumsvermerk: "Vermerk Zwei"},
 		{Schulname: "Schule Drei", BarcodeID: "B-3", Titel: "Drei"},
 	}
 	bogen := func(format string) []byte {
 		t.Helper()
-		doc, err := GenerateLabelsPDF(format, 1, false, items)
+		dokument, err := ErzeugeBuchEtiketten(format, 1, false, etiketten)
 		if err != nil {
 			t.Fatalf("Bogen %s: %v", format, err)
 		}
 		var buf bytes.Buffer
-		if err := doc.Output(&buf); err != nil {
+		if err := dokument.Output(&buf); err != nil {
 			t.Fatalf("Bogen %s ausgeben: %v", format, err)
 		}
 		return buf.Bytes()
 	}
-	gross, err := GenerateLernmittelEtikettenPDF(items)
+	gross, err := ErzeugeLernmittelEtiketten(etiketten)
 	if err != nil {
 		t.Fatalf("großes Etikett: %v", err)
 	}

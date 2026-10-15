@@ -1,17 +1,17 @@
 package pdf
 
-// lmfplan_satz.go — der Satzspiegel des LMF-Plans. Absprache vom 06.09.2026: „Das PDF muss
-// zwingend alles auf einer Seite darstellen." Der Plan hängt im Lehrerzimmer und geht als
-// EIN Blatt an die Schulleitung; ein zweites Blatt kostet Termine, weil niemand es sucht.
+// Der Satzspiegel des LMF-Plans. Der Plan hängt im Lehrerzimmer und geht als ein Blatt an die
+// Schulleitung; alles steht auf einer Seite, denn ein zweites Blatt kostet Termine, weil niemand
+// es sucht.
 //
-// Feste Zeilenhöhen konnten das nicht halten: ab rund vierzig Terminen brach maroto von
-// selbst um. Der Satz rechnet deshalb vorher, was passt, und wählt den größten Schriftgrad,
-// mit dem alles auf ein Blatt geht:
+// Feste Zeilenhöhen halten das nicht: Ab rund vierzig Terminen bricht maroto von selbst um. Der
+// Satz rechnet deshalb vorher, was passt, und wählt den größten Schriftgrad, mit dem alles auf
+// ein Blatt geht:
 //
 //	1. eine Spalte, solange die Schrift lesbar bleibt (Faktor ≥ 0,8 → 7,2 pt)
 //	2. zwei Spalten nebeneinander, wieder von voller Größe abwärts
 //
-// Alles steht auf einem Raster aus EINHEITSZEILEN gleicher Höhe: nur so lassen sich zwei
+// Alles steht auf einem Raster aus Einheitszeilen gleicher Höhe: Nur so lassen sich zwei
 // Spalten Zeile für Zeile nebeneinander setzen. Ein Baustein (Überschrift, Tabellenkopf,
 // Termin) belegt so viele Einheitszeilen, wie sein Text nach dem Umbruch braucht — die
 // Folgezeilen bleiben leer, der Text fließt sichtbar hinein.
@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	lmfGrid        = 24 // Rasterspalten INNERHALB einer Satzspalte
+	lmfGrid        = 24 // Rasterspalten innerhalb einer Satzspalte
 	lmfSeiteBreite = 210.0
 	lmfSeiteHoehe  = 297.0
 	lmfRandOben    = 15.0
@@ -131,9 +131,8 @@ func lmfNeuerMesser() *lmfMesser {
 	return &lmfMesser{pdf: p, tr: pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))}
 }
 
-// groessteWortBreite ist die Breite des breitesten Wortes — ein einzelnes Wort bricht
-// maroto NICHT um, es läuft in die Nachbarzelle. Genau das sah man an „Wochentag" über
-// einer halb so breiten Spalte.
+// groessteWortBreite ist die Breite des breitesten Wortes. Ein einzelnes Wort bricht maroto nicht
+// um, es läuft in die Nachbarzelle, etwa „Wochentag" über einer halb so breiten Spalte.
 func (me *lmfMesser) groessteWortBreite(text string, groesse float64, stil fontstyle.Type) float64 {
 	me.pdf.SetFont("helvetica", string(stil), groesse)
 	breiteste := 0.0

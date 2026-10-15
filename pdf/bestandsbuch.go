@@ -21,7 +21,7 @@ func bestandsbuchKopf(p *gofpdf.Fpdf, tr func(string) string, titel string, von,
 	p.Ln(10)
 
 	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(dateFormatDE))), "", 1, "R", false, 0, "")
+	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(datumsformat))), "", 1, "R", false, 0, "")
 	p.Ln(4)
 
 	p.SetFont("Arial", "B", 14)
@@ -29,7 +29,7 @@ func bestandsbuchKopf(p *gofpdf.Fpdf, tr func(string) string, titel string, von,
 	p.Ln(7)
 	p.SetFont("Arial", "", 10)
 	p.SetTextColor(80, 80, 80)
-	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", von.Format(dateFormatDE), bis.Format(dateFormatDE))))
+	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", von.Format(datumsformat), bis.Format(datumsformat))))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(12)
 }

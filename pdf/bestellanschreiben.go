@@ -94,9 +94,9 @@ func anschreibenSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string) {
 	p.SetFont("Arial", "", 9)
 }
 
-// GenerateBestellanschreibenPDF setzt das Anschreiben an den Lieferanten mit der Tabelle der
+// ErzeugeBestellanschreiben setzt das Anschreiben an den Lieferanten mit der Tabelle der
 // bestellten Titel.
-func GenerateBestellanschreibenPDF(b Bestellanschreiben, schule SchuleInfo) ([]byte, error) {
+func ErzeugeBestellanschreiben(b Bestellanschreiben, schule SchuleInfo) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(anschreibenRand, anschreibenRand, anschreibenRand)
 	p.SetAutoPageBreak(true, anschreibenRand)
@@ -116,7 +116,7 @@ func GenerateBestellanschreibenPDF(b Bestellanschreiben, schule SchuleInfo) ([]b
 	p.Ln(15)
 
 	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(dateFormatDE))), "", 0, "R", false, 0, "")
+	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(datumsformat))), "", 0, "R", false, 0, "")
 	p.Ln(10)
 
 	p.SetFont("Arial", "B", 9)
@@ -137,16 +137,16 @@ func GenerateBestellanschreibenPDF(b Bestellanschreiben, schule SchuleInfo) ([]b
 		p.AddPage()
 	}
 	anschreibenSpaltenkoepfe(p, tr)
-	for _, item := range b.Positionen {
+	for _, position := range b.Positionen {
 		// Jede Seite mit Positionen trägt die Köpfe.
 		if p.GetY()+anschreibenZeilenHoehe > anschreibenSeitenende {
 			p.AddPage()
 			anschreibenSpaltenkoepfe(p, tr)
 		}
-		p.CellFormat(anschreibenSpalteTitel, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, item.Titel, anschreibenSpalteTitel)), "1", 0, "L", false, 0, "")
-		p.CellFormat(anschreibenSpalteAutor, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, item.Autor, anschreibenSpalteAutor)), "1", 0, "L", false, 0, "")
-		p.CellFormat(anschreibenSpalteISBN, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, item.ISBN, anschreibenSpalteISBN)), "1", 0, "L", false, 0, "")
-		p.CellFormat(anschreibenSpalteMenge, anschreibenZeilenHoehe, fmt.Sprintf("%d", item.Menge), "1", 1, "C", false, 0, "")
+		p.CellFormat(anschreibenSpalteTitel, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, position.Titel, anschreibenSpalteTitel)), "1", 0, "L", false, 0, "")
+		p.CellFormat(anschreibenSpalteAutor, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, position.Autor, anschreibenSpalteAutor)), "1", 0, "L", false, 0, "")
+		p.CellFormat(anschreibenSpalteISBN, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, position.ISBN, anschreibenSpalteISBN)), "1", 0, "L", false, 0, "")
+		p.CellFormat(anschreibenSpalteMenge, anschreibenZeilenHoehe, fmt.Sprintf("%d", position.Menge), "1", 1, "C", false, 0, "")
 	}
 
 	// Gruß und Unterschrift stehen zusammen auf einer Seite.

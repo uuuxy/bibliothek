@@ -39,7 +39,7 @@ func (t *Tueren) BescheidPDF(bescheidAbfragen repository.BescheidAbfragen) http.
 		if err != nil {
 			return err
 		}
-		roh, err := pdf.GenerateBescheidPDF(brief)
+		roh, err := pdf.ErzeugeBescheid(brief)
 		if err != nil {
 			return apierrors.Internal("Bescheid konnte nicht erzeugt werden", err)
 		}

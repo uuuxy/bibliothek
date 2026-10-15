@@ -106,7 +106,7 @@ func bestellAnhaenge(m bestellMail) ([]mailservice.MailAttachment, error) {
 	if err != nil {
 		return nil, err
 	}
-	anschreibenPDF, err := pdf.GenerateBestellanschreibenPDF(anschreiben, m.Schule)
+	anschreibenPDF, err := pdf.ErzeugeBestellanschreiben(anschreiben, m.Schule)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func etikettenboegen(bestellEtiketten []buchetikett.Etikett, kopf buchetikett.Ko
 	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
 	// diese Angaben.
 	etiketten := buchetikett.PDFEtiketten(bestellEtiketten, kopf)
-	bogen, err := pdf.GenerateLabelsPDF("zweckform_l4760", 1, false, etiketten)
+	bogen, err := pdf.ErzeugeBuchEtiketten("zweckform_l4760", 1, false, etiketten)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func etikettenboegen(bestellEtiketten []buchetikett.Etikett, kopf buchetikett.Ko
 		return boegen, nil
 	}
 
-	lernmittelPDF, err := pdf.GenerateLernmittelEtikettenPDF(etiketten)
+	lernmittelPDF, err := pdf.ErzeugeLernmittelEtiketten(etiketten)
 	if err != nil {
 		return nil, err
 	}

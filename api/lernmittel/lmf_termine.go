@@ -116,8 +116,8 @@ func jahrgaengeText(eingang []int) string {
 // Kennung einer Zeile ist nach jedem Speichern neu.
 //
 // „Nur Rückgabe" steht, wo die Bibliothek es hingeschrieben hat: im Vermerk.
-func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.LmfPlanAbschnitt, error) {
-	abschnitte := []pdf.LmfPlanAbschnitt{
+func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.LMFPlanAbschnitt, error) {
+	abschnitte := []pdf.LMFPlanAbschnitt{
 		{Titel: strings.ToUpper(lmfArtTitel(repository.LMFTerminRueckgabe)), Untertitel: lmfArtErklaerung(repository.LMFTerminRueckgabe, eingang)},
 		{Titel: strings.ToUpper(lmfArtTitel(repository.LMFTerminAusgabe)), Untertitel: lmfArtErklaerung(repository.LMFTerminAusgabe, eingang)},
 	}
@@ -126,7 +126,7 @@ func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.Lmf
 		if err != nil {
 			return nil, err
 		}
-		z := pdf.LmfPlanZeile{Datum: datum, Stunde: t.Stunde, Klassen: strings.Join(t.Klassen, "/"), Vermerk: t.Vermerk}
+		z := pdf.LMFPlanZeile{Datum: datum, Stunde: t.Stunde, Klassen: strings.Join(t.Klassen, "/"), Vermerk: t.Vermerk}
 		if t.Art == repository.LMFTerminAusgabe {
 			abschnitte[1].Zeilen = append(abschnitte[1].Zeilen, z)
 		} else {
@@ -166,7 +166,7 @@ func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
-		pdfDaten, err := pdf.GenerateLmfPlan(abschnitte, t.Jetzt())
+		pdfDaten, err := pdf.ErzeugeLMFPlan(abschnitte, t.Jetzt())
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return

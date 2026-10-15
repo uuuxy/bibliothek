@@ -12,17 +12,17 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// Der Schadensersatz-Bescheid als PDF — der Nachbau des Musteranschreibens, das die
+// Der Schadensersatz-Bescheid als PDF, nachgebaut nach dem Musteranschreiben, das die
 // Schule vorgelegt hat (Wortlaut aus der Vorlage, Layout nach dem Original).
 //
 // Warum wörtlich und fest im Code: Der Brief ist ein Bescheid. Eine frei editierbare
-// Vorlage könnte einen Satz verlieren, ohne dass es auffällt — und ein Bescheid ohne
-// seinen Schlussabsatz ist fehlerhaft. Deshalb steht der Text an EINER Stelle hier;
-// austauschbar ist er trotzdem, es ist eine Konstante je Absatz.
+// Vorlage könnte einen Satz verlieren, ohne dass es auffällt, und ein Bescheid ohne seinen
+// Schlussabsatz ist fehlerhaft. Deshalb steht der Text an einer Stelle hier; austauschbar ist
+// er trotzdem, es ist eine Konstante je Absatz.
 //
-// Bewusst NICHT übernommen: die Ausfüllhilfe unter der Referenznummer („SSANr.
-// (4stellig)+ Jahr (4stellig) …"). Sie erklärt dem Ausfüller, wie die Nummer entsteht,
-// nicht dem Empfänger, wie er zahlt — im fertigen Brief wäre sie ein Fremdkörper.
+// Nicht übernommen ist die Ausfüllhilfe unter der Referenznummer („SSANr. (4stellig)+ Jahr
+// (4stellig) …"). Sie erklärt dem Ausfüller, wie die Nummer entsteht, nicht dem Empfänger, wie
+// er zahlt; im fertigen Brief wäre sie ein Fremdkörper.
 //
 // Zwei Fallgruppen, wie im Formular: nicht zurückgegeben und so stark beschädigt, dass
 // eine Nutzung nicht möglich ist. Gezeigt wird eine Gruppe nur, wenn sie Positionen hat;
@@ -115,12 +115,12 @@ type BescheidBrief struct {
 	Schulleitung        string
 }
 
-// GenerateBescheidPDF zeichnet den Bescheid.
-func GenerateBescheidPDF(b BescheidBrief) ([]byte, error) {
+// ErzeugeBescheid zeichnet den Bescheid.
+func ErzeugeBescheid(b BescheidBrief) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
-	// Jede Zeichenkette, die auf das Papier geht, läuft durch pdfzeichen: Ohne die
-	// Ersetzung kam „Ayşe" als „Ay.e" aus dem Drucker — cp1252 kennt das ş nicht. Ein
-	// Bescheid mit entstelltem Namen ist ein fehlerhafter Bescheid.
+	// Jede Zeichenkette, die auf das Papier geht, läuft durch pdfzeichen: Ohne die Ersetzung
+	// käme „Ayşe" als „Ay.e" aus dem Drucker, cp1252 kennt das ş nicht. Ein Bescheid mit
+	// entstelltem Namen ist ein fehlerhafter Bescheid.
 	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
 	// Ab der zweiten Seite die Seitenzahl mittig oben, wie im Original („- 2 -").
 	p.SetHeaderFunc(func() {
@@ -183,8 +183,8 @@ func bescheidKopf(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 }
 
 // bescheidAnschriftZeilen baut das Anschriftfeld. Fehlt die Anschrift, sagt der Brief
-// das an der Stelle, an der sie stehen müsste — ein Bescheid ohne Empfänger darf nicht
-// aussehen wie ein vollständiger (dieselbe Regel wie beim Eltern-Mahnbrief).
+// das an der Stelle, an der sie stehen müsste: Ein Bescheid ohne Empfänger darf nicht aussehen
+// wie ein vollständiger (dieselbe Regel wie beim Eltern-Mahnbrief).
 func bescheidAnschriftZeilen(e BescheidEmpfaenger) []string {
 	zeilen := make([]string, 0, 4)
 	if e.AnZeile != "" {
@@ -198,7 +198,7 @@ func bescheidAnschriftZeilen(e BescheidEmpfaenger) []string {
 }
 
 // bescheidInfoblock setzt Geschäftszeichen, Bearbeiter, Durchwahl und Datum rechts neben
-// das Anschriftfeld. Leere Angaben lassen ihre Zeile weg — im Muster sind es Formularfelder.
+// das Anschriftfeld. Eine leere Angabe lässt ihre Zeile weg; im Muster sind es Formularfelder.
 func bescheidInfoblock(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 	p.SetFont("Arial", "", 9)
 	y := bescheidYAnschrift
@@ -220,12 +220,12 @@ func bescheidInfoblock(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) 
 	p.SetXY(bescheidXInfoblock, y+4.5)
 	p.Cell(30, 4.5, tr("Datum"))
 	p.SetXY(bescheidXInfoblock+30, y+4.5)
-	p.Cell(35, 4.5, b.BriefDatum.Format(dateFormatDE))
+	p.Cell(35, 4.5, b.BriefDatum.Format(datumsformat))
 }
 
 // bescheidFallgruppen zeichnet die zutreffenden Kästchen samt Tabelle und Fristsatz.
 func bescheidFallgruppen(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
-	frist := b.FristBis.Format(dateFormatDE)
+	frist := b.FristBis.Format(datumsformat)
 	gruppen := []struct {
 		positionen []BescheidPosition
 		kasten     string
@@ -239,8 +239,8 @@ func bescheidFallgruppen(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief
 			continue
 		}
 		// Einleitung, Kästchen, „Folgende Lernmittel sind betroffen:", Kopfzeile und eine
-		// Datenzeile gehören zusammen — sonst steht die Ankündigung am Fuß der einen und
-		// die Tabelle am Kopf der nächsten Seite.
+		// Datenzeile gehören zusammen, sonst steht die Ankündigung am Fuß der einen und die
+		// Tabelle am Kopf der nächsten Seite.
 		bescheidPlatzOderNeueSeite(p, 3*7.5+bescheidKopfHoehe+bescheidZeileHoehe)
 		bescheidAbsatz(p, tr, bescheidEinleitung)
 		bescheidKaestchen(p, tr, g.kasten)
@@ -278,16 +278,15 @@ const (
 	bescheidSeitenende = 297.0 - 20.0
 )
 
-// bescheidTabelle zeichnet die Tabelle der betroffenen Lernmittel — vier Spalten wie im
-// Original: Name des/der Schülers/Schülerin, Titel, ISBN, Preis.
+// bescheidTabelle zeichnet die Tabelle der betroffenen Lernmittel, vier Spalten wie im Original:
+// Name des/der Schülers/Schülerin, Titel, ISBN, Preis.
 //
-// Der Platz wird VOR jedem Block geprüft und die Kopfzeile auf einer neuen Seite
-// wiederholt. Ohne das riss gofpdf die Kopfzeile mitten entzwei: „Name des/der" stand
-// unten auf Seite 1, „Schülers/Schülerin" oben auf Seite 2, die Spaltenüberschriften
-// dahinter am Fuß der Folgeseite. Ein zerrissener Bescheid ist ein fehlerhafter.
+// Der Platz wird vor jedem Block geprüft und die Kopfzeile auf einer neuen Seite wiederholt.
+// Ohne das risse gofpdf die Kopfzeile entzwei: „Name des/der" stünde unten auf Seite 1,
+// „Schülers/Schülerin" oben auf Seite 2. Ein zerrissener Bescheid ist ein fehlerhafter.
 func bescheidTabelle(p *gofpdf.Fpdf, tr func(string) string, positionen []BescheidPosition) {
-	// Kopfzeile plus mindestens eine Datenzeile gehören zusammen — eine Kopfzeile allein
-	// am Seitenfuß ist nichts wert.
+	// Kopfzeile und mindestens eine Datenzeile gehören zusammen; eine Kopfzeile allein am
+	// Seitenfuß ist nichts wert.
 	bescheidPlatzOderNeueSeite(p, bescheidKopfHoehe+bescheidZeileHoehe)
 	bescheidTabellenkopf(p, tr)
 
@@ -313,9 +312,9 @@ func bescheidTabelle(p *gofpdf.Fpdf, tr func(string) string, positionen []Besche
 	}
 }
 
-// bescheidTabellenkopf zeichnet die Kopfzeile. Die erste Spalte ist zweizeilig; beide
-// Zeilen werden EINZELN gesetzt statt per MultiCell — MultiCell darf umbrechen, und
-// genau dieser Umbruch zerriss die Kopfzeile.
+// bescheidTabellenkopf zeichnet die Kopfzeile. Die erste Spalte ist zweizeilig; beide Zeilen
+// werden einzeln gesetzt statt mit MultiCell, denn MultiCell darf umbrechen und zerrisse damit
+// die Kopfzeile.
 func bescheidTabellenkopf(p *gofpdf.Fpdf, tr func(string) string) {
 	y := p.GetY()
 	x := bescheidRandLinks
@@ -360,8 +359,8 @@ func bescheidZahlung(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 	}
 	p.Ln(4)
 
-	// „Referenz-Nr." fett, die Nummer daneben — sie ist die Angabe, an der die Zahlung
-	// zugeordnet wird, und darf nicht im Fließtext untergehen.
+	// „Referenz-Nr." fett, die Nummer daneben: An ihr wird die Zahlung zugeordnet, sie darf
+	// nicht im Fließtext untergehen.
 	p.SetX(bescheidRandLinks)
 	p.SetFont("Times", "", 11)
 	p.Write(5.5, tr(bescheidReferenz))
@@ -388,8 +387,8 @@ func bescheidSchluss(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 	bescheidAbsatz(p, tr, fmt.Sprintf(bescheidRechtsText, bescheidSchulanschriftEinzeilig(b.Schule), b.Aufsicht))
 }
 
-// bescheidSchulanschriftEinzeilig nennt die Schule mit Anschrift in einem Satzteil —
-// dort wird der Widerspruch eingelegt.
+// bescheidSchulanschriftEinzeilig nennt die Schule mit Anschrift in einem Satzteil; dort wird
+// der Widerspruch eingelegt.
 func bescheidSchulanschriftEinzeilig(s SchuleInfo) string {
 	teile := []string{s.Name}
 	if s.Strasse != "" {

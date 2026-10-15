@@ -54,7 +54,7 @@ func (t *Tueren) TitelEtiketten() http.HandlerFunc {
 			return
 		}
 
-		bogen, err := pdf.GenerateLabelsPDF(formatID, start, alsQR, buchetikett.PDFEtiketten(etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
+		bogen, err := pdf.ErzeugeBuchEtiketten(formatID, start, alsQR, buchetikett.PDFEtiketten(etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
@@ -96,7 +96,7 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 		ctx := r.Context()
 		buchetikett.ErgaenzeServerfelder(ctx, t.DB.Pool, req.Etiketten)
 
-		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.Startposition, req.AlsQR, buchetikett.PDFEtiketten(req.Etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
+		bogen, err := pdf.ErzeugeBuchEtiketten(req.FormatID, req.Startposition, req.AlsQR, buchetikett.PDFEtiketten(req.Etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
