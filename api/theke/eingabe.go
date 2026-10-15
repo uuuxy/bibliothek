@@ -164,7 +164,7 @@ func (t *Tueren) antworteAusAblage(w http.ResponseWriter, antwort *repository.Id
 		if merkmal := fehlerDaten[sperrAblageFeld]; merkmal == sperrUebergehbar || merkmal == sperrAmLeser {
 			w.Header().Set(sperrKopf, merkmal)
 		}
-		apierrors.AntworteFehler(w, status, errors.New(fehlerDaten["error"]))
+		apierrors.AntworteFehlerMitMeldung(w, status, fehlerDaten["error"], nil)
 		return true
 	}
 
@@ -233,7 +233,8 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 		// Vor dem Ablegen kürzen, sonst läge der Freitext in der Ablage.
 		err = ohneSperrgrund(err, t.HatRecht(r, "view_students"))
 		status := statusDesFehlers(err)
-		ablageDaten := map[string]string{"error": err.Error()}
+		meldung := service.MeldungAus(err)
+		ablageDaten := map[string]string{"error": meldung}
 		if merkmal := sperrMerkmal(err); merkmal != "" {
 			// Merkmal für den Sperr-Dialog der Theke: im Kopf, damit der Rumpf die eine
 			// Fehlerform behält, und in der Ablage, damit eine Wiederholung es nicht verliert
@@ -242,7 +243,7 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 			ablageDaten[sperrAblageFeld] = merkmal
 		}
 		t.legeAntwortAb(ctx, req.IdempotenzSchluessel, ablageDaten, status)
-		apierrors.AntworteFehler(w, status, err)
+		apierrors.AntworteFehlerMitMeldung(w, status, meldung, err)
 		return
 	}
 

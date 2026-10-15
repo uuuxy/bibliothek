@@ -200,7 +200,7 @@ func (t *Tueren) bucheEintragNach(ctx context.Context, dienst service.NachbuchDi
 		// Abgelegt wird der Grund ohne den Freitext der Sperre, gleich wer die Portion schickt:
 		// Die Warteschlange gehört dem Rechner, und die Wiederholung kann unter der Anmeldung
 		// einer Person kommen, die ihn nicht lesen darf.
-		out.Grund = ohneSperrgrund(erg.Schranke, false).Error()
+		out.Grund = service.MeldungAus(ohneSperrgrund(erg.Schranke, false))
 	}
 	if erg.Gebucht != nil {
 		out.Daten = zurEingabeAntwort(service.OmniboxErgebnisAus(erg.Gebucht))
@@ -208,7 +208,7 @@ func (t *Tueren) bucheEintragNach(ctx context.Context, dienst service.NachbuchDi
 	t.legeNachbuchErgebnisAb(ctx, out)
 	if erg.Schranke != nil {
 		// Die Antwort an diesen Absender kürzt dieselbe Funktion wie an der Online-Theke.
-		out.Grund = ohneSperrgrund(erg.Schranke, absender.darfSperrgrundSehen).Error()
+		out.Grund = service.MeldungAus(ohneSperrgrund(erg.Schranke, absender.darfSperrgrundSehen))
 	}
 	return out
 }

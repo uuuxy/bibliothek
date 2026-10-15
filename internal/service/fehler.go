@@ -22,21 +22,32 @@ var (
 )
 
 // meldung liefert einen Fehler der Art art (ErrNichtGefunden, ErrKonflikt,
-// ErrUngueltigerZustand), dessen Text allein die Meldung für die Theke ist: Die Theke zeigt
-// err.Error(), und der Text der Art ist eine interne Bezeichnung. errors.Is erkennt die Art
-// weiter; an ihr hängt der HTTP-Status.
+// ErrUngueltigerZustand) mit dem Satz, den die Theke zeigt. Der Satz ist ein Feld des Fehlers,
+// das MeldungAus liefert; Error beginnt mit dem Text der Art, der eine interne Bezeichnung ist
+// und nicht auf den Bildschirm gehört. errors.Is erkennt die Art weiter; an ihr hängt der
+// HTTP-Status.
 //
 // ErrGesperrt geht nicht hierüber: Sein Text ist ein Satz und mit Absicht der Kopf jeder
 // Sperrmeldung.
 func meldung(art error, format string, args ...any) error {
-	return &meldungsfehler{art: art, text: fmt.Sprintf(format, args...)}
+	return &meldungsfehler{art: art, satz: fmt.Sprintf(format, args...)}
 }
 
 type meldungsfehler struct {
 	art  error
-	text string
+	satz string
 }
 
-func (e *meldungsfehler) Error() string { return e.text }
+func (e *meldungsfehler) Error() string { return e.art.Error() + ": " + e.satz }
 
 func (e *meldungsfehler) Unwrap() error { return e.art }
+
+// MeldungAus liefert den Satz, den die Theke zu einem Fehler des Dienstes zeigt: den Satz eines
+// Fehlers aus meldung, auch eingewickelt, sonst den Text des Fehlers, etwa den einer Sperre.
+func MeldungAus(err error) string {
+	var m *meldungsfehler
+	if errors.As(err, &m) {
+		return m.satz
+	}
+	return err.Error()
+}

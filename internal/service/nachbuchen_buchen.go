@@ -145,7 +145,7 @@ func (d *ausleihDienst) leiheImSavepointAus(ctx context.Context, tx pgx.Tx, l *n
 		if !errors.Is(err, ErrGesperrt) && !errors.Is(err, ErrKonflikt) {
 			return nil, nil, err
 		}
-		abweisung, abwErr := d.weiseImSavepointAb(ctx, tx, sp, l, err.Error(), err)
+		abweisung, abwErr := d.weiseImSavepointAb(ctx, tx, sp, l, MeldungAus(err), err)
 		return nil, abweisung, abwErr
 	}
 

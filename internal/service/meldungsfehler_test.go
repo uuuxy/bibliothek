@@ -12,16 +12,24 @@ import (
 	"testing"
 )
 
-// TestMeldungZeigtNurDieMeldung: Die Theke zeigt err.Error() (api/theke/eingabe.go). Stünde dort
-// die Bezeichnung der Fehlerart vor der Meldung („Fehler: conflict: dieses Exemplar wurde
+// TestMeldungZeigtNurDieMeldung: Die Theke zeigt MeldungAus(err) (api/theke/eingabe.go). Stünde
+// dort die Bezeichnung der Fehlerart vor der Meldung („Fehler: conflict: dieses Exemplar wurde
 // soeben bereits ausgeliehen"), wäre es kein Satz für den Bildschirm (M3, Word choice: „UI text
-// should be understandable by anyone, anywhere"). Die Art bleibt für errors.Is erhalten, auch
-// eingewickelt, denn an ihr hängt der HTTP-Status.
+// should be understandable by anyone, anywhere"). Der Text des Fehlers beginnt dagegen mit der
+// Art, klein, wie ein Fehlertext (Decisions, „Error strings"). Die Art bleibt für errors.Is
+// erhalten, auch eingewickelt, denn an ihr hängt der HTTP-Status.
 func TestMeldungZeigtNurDieMeldung(t *testing.T) {
 	for _, art := range []error{ErrUngueltigerZustand, ErrKonflikt, ErrNichtGefunden} {
 		err := meldung(art, "Buchexemplar %s ist ausgesondert", "4711")
-		if soll := "Buchexemplar 4711 ist ausgesondert"; err.Error() != soll {
-			t.Errorf("%v: Meldung %q, erwartet %q", art, err.Error(), soll)
+		const satz = "Buchexemplar 4711 ist ausgesondert"
+		if got := MeldungAus(err); got != satz {
+			t.Errorf("MeldungAus(%v) = %q, erwartet %q", art, got, satz)
+		}
+		if got := MeldungAus(fmt.Errorf("beim Ausleihen: %w", err)); got != satz {
+			t.Errorf("MeldungAus(eingewickelt, %v) = %q, erwartet %q", art, got, satz)
+		}
+		if soll := art.Error() + ": " + satz; err.Error() != soll {
+			t.Errorf("%v: Error() = %q, erwartet %q", art, err.Error(), soll)
 		}
 		if !errors.Is(err, art) || !errors.Is(fmt.Errorf("beim Ausleihen: %w", err), art) {
 			t.Errorf("die Art %q muss erkennbar bleiben, auch eingewickelt", art)
