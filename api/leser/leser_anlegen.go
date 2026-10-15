@@ -78,14 +78,14 @@ func pruefeKollegiumEmail(roh string) error {
 	}
 	at := strings.LastIndex(email, "@")
 	if at <= 0 || at == len(email)-1 || strings.ContainsAny(email, " \t") {
-		return apierrors.BadRequest(fmt.Sprintf("%q ist keine E-Mail-Adresse.", email), nil)
+		return apierrors.BadRequest(fmt.Sprintf("„%s“ ist keine E-Mail-Adresse", email), nil)
 	}
 	// Vergleich über das letzte „@" und die vollständige Domain — dieselbe Regel wie in
 	// auth.darfSichSelbstAnmelden. Ein Suffix-Vergleich ließe „boesephilipp-reis-schule.de"
 	// durch.
 	if freigegeben := auth.SelbstanmeldeDomain(); freigegeben != "" {
 		if !strings.EqualFold(strings.TrimSpace(email[at+1:]), freigegeben) {
-			return apierrors.BadRequest(fmt.Sprintf("Die Adresse muss auf @%s enden — angemeldet wird über den Schulserver.", freigegeben), nil)
+			return apierrors.BadRequest(fmt.Sprintf("Die Adresse muss auf @%s enden. Angemeldet wird über den Schulserver.", freigegeben), nil)
 		}
 	}
 	return nil

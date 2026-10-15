@@ -74,7 +74,7 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 		{"das eigene Konto", admin, alsAdmin, http.StatusForbidden, "Das eigene Konto lässt sich nicht löschen"},
 		{"ein Administrator, gelöscht ohne Adminrechte", zweiterAdmin, alsMitarbeiter, http.StatusForbidden, "Administrator"},
 		{"ein Konto mit offener Ausleihe", mitBuch, alsAdmin, http.StatusConflict,
-			"Das Konto hat noch ausgeliehene Bücher — bitte zuerst zurückbuchen (1 offen)"},
+			"Das Konto hat noch ausgeliehene Exemplare (1 offen). Bitte zuerst zurückbuchen."},
 		{"eine unbekannte Kennung", "00000000-0000-0000-0000-00000000dead", alsAdmin, http.StatusNotFound, "error"},
 	} {
 		rec := loesche(f.ziel, f.claims)

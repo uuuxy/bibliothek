@@ -83,7 +83,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 		{"Lehrkraft ohne Schul-E-Mail", `{"vorname":"Lena","nachname":"Ohnemail","art":"lehrkraft"}`,
 			"Die Schul-E-Mail-Adresse ist Pflicht: An ihr erkennt die Anmeldung die Person, und sie verhindert einen zweiten Eintrag, wenn sie sich später selbst anmeldet."},
 		{"Lehrkraft mit Adresse ohne @", `{"vorname":"Lena","nachname":"Ohneat","art":"lehrkraft","email":"lena-ohne-at"}`,
-			`"lena-ohne-at" ist keine E-Mail-Adresse.`},
+			"„lena-ohne-at“ ist keine E-Mail-Adresse"},
 		{"unbekannte Art", `{"vorname":"Zora","nachname":"Zauber","art":"zauberer"}`,
 			`Unbekannte Art "zauberer". Möglich sind: ` + moeglicheArten + "."},
 		{"Schüler ohne Klasse", `{"vorname":"Karl","nachname":"Ohneklasse","geburtsdatum":"2012-03-04"}`,
@@ -106,7 +106,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	t.Run("Anlegen: Schul-E-Mail außerhalb der freigegebenen Domain", func(t *testing.T) {
 		t.Setenv("SELBSTANMELDUNG_DOMAIN", "lesertest.invalid")
 		erwarte(t, anlegen(t, `{"vorname":"Lena","nachname":"Fremddomain","art":"lehrkraft","email":"lena@anderswo.invalid"}`),
-			http.StatusBadRequest, "Die Adresse muss auf @lesertest.invalid enden — angemeldet wird über den Schulserver.")
+			http.StatusBadRequest, "Die Adresse muss auf @lesertest.invalid enden. Angemeldet wird über den Schulserver.")
 	})
 	t.Run("Anlegen: Schüler doppelt", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7a","geburtsdatum":"2012-05-06"}`)
@@ -126,7 +126,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	t.Run("Anlegen: Schul-E-Mail mit Zugang", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Kai","nachname":"Kontoerst","art":"lehrkraft","email":"kai.konto@lesertest.invalid"}`)
 		erwarte(t, anlegen(t, `{"vorname":"Kim","nachname":"Kontozweit","art":"lehrkraft","email":"kai.konto@lesertest.invalid"}`),
-			http.StatusConflict, "Unter kai.konto@lesertest.invalid steht bereits ein Zugang. Die Person ist schon in der Leserdatei — bitte dort suchen, statt einen zweiten Eintrag anzulegen.")
+			http.StatusConflict, "Unter kai.konto@lesertest.invalid steht bereits ein Zugang. Die Person ist schon in der Leserdatei. Bitte dort suchen, statt einen zweiten Eintrag anzulegen.")
 	})
 
 	// Akte
@@ -148,7 +148,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 		{"Schul-E-Mail entfernen", lehrkraft, `{"email":""}`,
 			"Die Schul-E-Mail lässt sich hier nicht entfernen, ohne sie kommt die Person nicht mehr ins Portal. Das Konto abschalten geht in der Benutzerverwaltung."},
 		{"Schul-E-Mail ändern", lehrkraft, `{"email":"lea.neu@lesertest.invalid"}`,
-			"Unter lea.akte@lesertest.invalid besteht bereits ein Zugang. Die Adresse ist der Schlüssel der Anmeldung — ändern lässt sie sich in der Benutzerverwaltung, hier ist sie nur nachtragbar, solange keine da ist."},
+			"Unter lea.akte@lesertest.invalid besteht bereits ein Zugang. Die Adresse ist der Schlüssel der Anmeldung und lässt sich nur in der Benutzerverwaltung ändern. Hier lässt sie sich nur nachtragen, solange keine eingetragen ist."},
 	} {
 		t.Run("Akte: "+f.name, func(t *testing.T) {
 			erwarte(t, aendern(t, f.id, f.rumpf), http.StatusBadRequest, f.meldung)

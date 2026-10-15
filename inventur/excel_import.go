@@ -200,7 +200,7 @@ func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) 
 
 	const maxImportZeilen = 100000
 	if len(datenZeilen) > maxImportZeilen {
-		schreibeFehler(w, http.StatusBadRequest, fmt.Sprintf("zu viele zeilen (%d), maximal %d erlaubt", len(datenZeilen), maxImportZeilen))
+		schreibeFehler(w, http.StatusBadRequest, fmt.Sprintf("Die Datei hat %d Zeilen, höchstens %d sind möglich", len(datenZeilen), maxImportZeilen))
 		return nil, nil, false
 	}
 

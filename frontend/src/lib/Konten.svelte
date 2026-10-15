@@ -106,7 +106,7 @@
 			const res = await apiFetch(`/api/benutzer/${userToDelete.id}`, { method: 'DELETE' });
 			if (!res.ok) {
 				// Bei 409 (offene Handapparat-Ausleihen) trägt die Server-Meldung bereits den
-				// Hinweis "bitte zuerst zurückbuchen"; extractApiError packt sie aus dem JSON aus.
+				// Hinweis „Bitte zuerst zurückbuchen.“; extractApiError packt sie aus dem JSON aus.
 				throw new Error(await extractApiError(res));
 			}
 			showDeleteConfirm = false;

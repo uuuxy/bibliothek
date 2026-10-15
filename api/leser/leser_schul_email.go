@@ -77,7 +77,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 			return "", false
 		}
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
-			fmt.Sprintf("Unter %s besteht bereits ein Zugang. Die Adresse ist der Schlüssel der Anmeldung — ändern lässt sie sich in der Benutzerverwaltung, hier ist sie nur nachtragbar, solange keine da ist.", amKonto), nil)
+			fmt.Sprintf("Unter %s besteht bereits ein Zugang. Die Adresse ist der Schlüssel der Anmeldung und lässt sich nur in der Benutzerverwaltung ändern. Hier lässt sie sich nur nachtragen, solange keine eingetragen ist.", amKonto), nil)
 		return "", false
 	}
 
@@ -101,7 +101,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 func antworteAufKontoFehler(w http.ResponseWriter, err error, email string) {
 	if repository.IstAdressenKollision(err) {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
-			fmt.Sprintf("Unter %s steht bereits ein Zugang. Die Person ist schon in der Leserdatei — bitte dort suchen, statt einen zweiten Eintrag anzulegen.", email), err)
+			fmt.Sprintf("Unter %s steht bereits ein Zugang. Die Person ist schon in der Leserdatei. Bitte dort suchen, statt einen zweiten Eintrag anzulegen.", email), err)
 		return
 	}
 	if errors.Is(err, repository.ErrKontoNichtEntstanden) {

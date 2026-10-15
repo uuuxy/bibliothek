@@ -33,9 +33,12 @@ import (
 // anschlägt, einen Gedankenstrich hat, als ein Satz mit Punkt endet oder als mehrere Sätze ohne.
 // meldungBestand nennt je Datei, wie viele Verstöße noch stehen; die Zahl kann nur sinken.
 //
-// Sieht nicht: Texte, die erst zur Laufzeit entstehen (err.Error(), Variablen, fmt.Sprintf), einen
-// Status aus einer Variablen, eigene Helfer außer inventur.schreibeFehler und Antworten, die
-// {"error": …} selbst schreiben.
+// Von fmt.Sprintf liest sie den Formattext; er ist der feste Satz, die Werte setzt erst die Laufzeit
+// ein.
+//
+// Sieht nicht: Texte, die erst zur Laufzeit entstehen (err.Error(), Variablen), einen Status aus
+// einer Variablen, eigene Helfer außer inventur.schreibeFehler und Antworten, die {"error": …}
+// selbst schreiben.
 
 // meldungBestand: Dateien mit Verstößen und ihre Zahl. Eine Datei ohne Verstoß fällt heraus.
 var meldungBestand = map[string]int{}
@@ -147,6 +150,29 @@ func TestMeldungVerstoss_Formen(t *testing.T) {
 	}
 	if diff := cmp.Diff(400, meldungStatus()["StatusBadRequest"]); diff != "" {
 		t.Errorf("meldungStatus()[StatusBadRequest] (-erwartet +ist):\n%s", diff)
+	}
+}
+
+// Von fmt.Sprintf zählt der Formattext als Meldung, von fmt.Errorf und errors.New als Fehlertext.
+func TestFesterText_FormattextIstMeldung(t *testing.T) {
+	faelle := []struct {
+		ausdruck  string
+		text      string
+		alsFehler bool
+	}{
+		{`fmt.Sprintf("Die Datei hat %d Zeilen", n)`, "Die Datei hat %d Zeilen", false},
+		{`fmt.Errorf("zeile %d: %w", n, err)`, "zeile %d: %w", true},
+		{`errors.New("leser fehlt")`, "leser fehlt", true},
+	}
+	for _, f := range faelle {
+		ausdruck, err := parser.ParseExpr(f.ausdruck)
+		if err != nil {
+			t.Fatalf("parser.ParseExpr(%q): %v", f.ausdruck, err)
+		}
+		text, alsFehler, ok := festerText(ausdruck, meldungKonstanten{})
+		if !ok || text != f.text || alsFehler != f.alsFehler {
+			t.Errorf("festerText(%s) = %q, %v, %v, erwartet %q, %v, true", f.ausdruck, text, alsFehler, ok, f.text, f.alsFehler)
+		}
 	}
 }
 
@@ -326,7 +352,8 @@ func statusAus(e ast.Expr, status map[string]int) int {
 }
 
 // festerText liefert den Text eines Literals, einer Textkonstante, einer Verkettung daraus oder
-// des ersten Arguments von errors.New und fmt.Errorf; alsFehler sagt, dass er als Fehler kam.
+// des ersten Arguments von errors.New, fmt.Errorf und fmt.Sprintf; alsFehler sagt, dass er als
+// Fehler kam.
 func festerText(e ast.Expr, konstanten meldungKonstanten) (text string, alsFehler, ok bool) {
 	switch v := e.(type) {
 	case *ast.BasicLit:
@@ -357,11 +384,12 @@ func festerText(e ast.Expr, konstanten meldungKonstanten) (text string, alsFehle
 		}
 		istNew := paket.Name == "errors" && sel.Sel.Name == "New"
 		istErrorf := paket.Name == "fmt" && sel.Sel.Name == "Errorf"
-		if !istNew && !istErrorf {
+		istSprintf := paket.Name == "fmt" && sel.Sel.Name == "Sprintf"
+		if !istNew && !istErrorf && !istSprintf {
 			return "", false, false
 		}
 		s, _, ok := festerText(v.Args[0], konstanten)
-		return s, true, ok
+		return s, !istSprintf, ok
 	}
 	return "", false, false
 }

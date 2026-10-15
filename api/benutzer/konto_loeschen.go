@@ -74,7 +74,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 		var mitAusleihen *repository.KontoHatAusleihenFehler
 		if errors.As(err, &mitAusleihen) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf(
-				"Das Konto hat noch ausgeliehene Bücher — bitte zuerst zurückbuchen (%d offen)", mitAusleihen.Offen), err)
+				"Das Konto hat noch ausgeliehene Exemplare (%d offen). Bitte zuerst zurückbuchen.", mitAusleihen.Offen), err)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

@@ -223,13 +223,14 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   `nolint` dafür gibt es nicht.
 - Den Satz für die Oberfläche bestimmt die Tür ([ARCHITEKTUR.md](ARCHITEKTUR.md), „Tür und
   Abfrage"). Er geht als Meldung hinaus, nicht als Fehlertext: hinter `MitFehlerantwort` mit
-  `apierrors.Conflict("Satz.", err)`, sonst mit `apierrors.AntworteFehlerMitMeldung(w, status,
-  "Satz.", err)`. Eine Prüfung neben der Tür liefert `apierrors.BadRequest("Satz.", nil)`;
+  `apierrors.Conflict("Satz", err)`, sonst mit `apierrors.AntworteFehlerMitMeldung(w, status,
+  "Satz", err)`. Eine Prüfung neben der Tür liefert `apierrors.BadRequest("Satz", nil)`;
   `AntworteFehler` schickt dessen Meldung, die Ursache steht nur im Log.
 - Eine Meldung ist ein Satz nach M3 (Content design, Grammar and punctuation): groß begonnen,
   deutsch, ein einzelner Satz ohne Punkt, mehrere Sätze mit Punkt, kein Gedankenstrich. Sätze, die
   mehrere Türen teilen, stehen als Konstante beim Thema (`auth.MeldungNichtAngemeldet`).
-  `meldung_ratsche_test.go` hält es für jeden festen Text mit Status unter 500.
+  `meldung_ratsche_test.go` hält es für jeden festen Text mit Status unter 500, auch für den
+  Formattext von `fmt.Sprintf`.
 - Braucht der Satz Einzelheiten aus einer tieferen Schicht, trägt der Fehler sie als Felder,
   und die Tür formuliert (`repository.KontoHatAusleihenFehler`, `lusd.MassenabgangFehler`): „If
   there is extra information in the error that the caller needs programmatically, it should
