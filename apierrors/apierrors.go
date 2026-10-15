@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -144,15 +145,15 @@ func AntworteFehler(w http.ResponseWriter, status int, ursache error) {
 // Meldung geht hinaus, die Ursache ganz ins Log. Der Rufer nennt den Satz, weil eine Ursache wie
 // ein Verbindungsabriss weder SQL noch eine Bedingung nennt und am Filter vorbeiginge.
 //
-// Eine leere Meldung nimmt den Text des Fehlers. Ein 500 bleibt auch mit Meldung neutral; eine
-// Diagnose braucht 400, 409 oder 502.
+// Eine leere Meldung nimmt den Text des Fehlers. Ohne Ursache steht die Meldung im Log, wie sonst
+// die Ursache. Ein 500 bleibt auch mit Meldung neutral; eine Diagnose braucht 400, 409 oder 502.
 func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string, ursache error) {
 	if istAbbruch(ursache) {
 		antworteAbbruch(w)
 		return
 	}
-	if ursache != nil {
-		log.Printf("API Error [HTTP %d]: %v (path: %s)", status, ursache, "unknown")
+	if zeile, ok := logZeile(status, meldung, ursache); ok {
+		log.Print(zeile)
 	}
 
 	text := http.StatusText(status)
@@ -178,6 +179,18 @@ func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string,
 	}
 
 	schreibeFehlerJSON(w, status, text)
+}
+
+// logZeile ist der Eintrag im Log zu einer Fehlerantwort: die Ursache, ohne sie die Meldung. Ohne
+// beides gibt es keinen Eintrag.
+func logZeile(status int, meldung string, ursache error) (string, bool) {
+	switch {
+	case ursache != nil:
+		return fmt.Sprintf("API Error [HTTP %d]: %v (path: %s)", status, ursache, "unknown"), true
+	case meldung != "":
+		return fmt.Sprintf("API Error [HTTP %d]: %s (path: %s)", status, meldung, "unknown"), true
+	}
+	return "", false
 }
 
 // schreibeFehlerJSON legt fest, wie jede Fehlerantwort aussieht: {"error": meldung} mit Status

@@ -195,3 +195,34 @@ func TestAntworteFehlerMitMeldung_DatenbanktextWirdTrotzdemGefiltert(t *testing.
 		t.Errorf("SQL-Wortlaut in der Meldung durchgereicht: %q", meldung)
 	}
 }
+
+// Ein Satz für die Oberfläche geht ohne Umweg über einen Fehlerwert hinaus. Antwort und Eintrag
+// im Log sind dieselben wie mit errors.New(Satz) als Ursache; nur ein 500 nennt ohne Ursache
+// keine eigene Meldung und steht deshalb nicht in der Liste.
+func TestAntworteFehlerMitMeldung_OhneUrsacheWieMitFehlerwert(t *testing.T) {
+	const satz = "Bitte einen Grund für die Korrektur angeben."
+	for _, status := range []int{
+		http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound,
+		http.StatusConflict, http.StatusRequestEntityTooLarge, http.StatusBadGateway, http.StatusServiceUnavailable,
+	} {
+		mitFehlerwert := httptest.NewRecorder()
+		AntworteFehler(mitFehlerwert, status, errors.New(satz))
+		ohneUrsache := httptest.NewRecorder()
+		AntworteFehlerMitMeldung(ohneUrsache, status, satz, nil)
+
+		if ohneUrsache.Code != mitFehlerwert.Code || ohneUrsache.Body.String() != mitFehlerwert.Body.String() {
+			t.Errorf("AntworteFehlerMitMeldung(%d) = %d %q, erwartet %d %q", status,
+				ohneUrsache.Code, ohneUrsache.Body.String(), mitFehlerwert.Code, mitFehlerwert.Body.String())
+		}
+		zeileMitFehlerwert, ok := logZeile(status, "", errors.New(satz))
+		if !ok {
+			t.Fatalf("logZeile(%d) mit Ursache: kein Eintrag", status)
+		}
+		if zeile, ok := logZeile(status, satz, nil); !ok || zeile != zeileMitFehlerwert {
+			t.Errorf("logZeile(%d) ohne Ursache = %q, %v, erwartet %q", status, zeile, ok, zeileMitFehlerwert)
+		}
+	}
+	if zeile, ok := logZeile(http.StatusBadRequest, "", nil); ok {
+		t.Errorf("logZeile ohne Meldung und Ursache = %q, erwartet keinen Eintrag", zeile)
+	}
+}
