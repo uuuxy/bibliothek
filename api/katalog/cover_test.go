@@ -119,7 +119,7 @@ func TestCover_TransparentesGIFOhneDownload(t *testing.T) {
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest("GET", "/api/cover"+tt.query, nil)
 
-			s.liefereCover(rec, req)
+			s.Cover()(rec, req)
 
 			if rec.Code != 200 {
 				t.Errorf("Status = %d; want 200", rec.Code)

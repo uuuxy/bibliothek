@@ -47,9 +47,6 @@ const maxCoverBytes = 10 << 20
 // ersten Aufruf ihre Kacheln in einem Zug lädt.
 const coverDownloadsProSekunde = 30
 
-// coverDownloadBremse bremst die Fehltreffer je Adresse des Aufrufers.
-var coverDownloadBremse = ratelimit.New(coverDownloadsProSekunde)
-
 // coverCacheVerzeichnis ist die Ablage der umgewandelten Cover im Betrieb.
 const coverCacheVerzeichnis = "uploads/covers"
 
@@ -245,14 +242,19 @@ func schreibeCoverAlsWebP(root *os.Root, dateiname string, rohBytes []byte) erro
 }
 
 // Cover liefert das Cover eines Titels als WebP aus dem Cache; fehlt es, lädt die Tür es von
-// einer erlaubten Adresse und wandelt es um. Bei jedem Fehler kommt transparentesGIF.
+// einer erlaubten Adresse und wandelt es um. Bei jedem Fehler kommt transparentesGIF. Die
+// Bremse der Fehltreffer gilt für alle Anfragen an die gelieferte Tür; der Router baut sie
+// einmal.
 func (t *Tueren) Cover() http.HandlerFunc {
-	return t.liefereCover
+	bremse := ratelimit.New(coverDownloadsProSekunde)
+	return func(w http.ResponseWriter, r *http.Request) {
+		t.liefereCover(w, r, bremse)
+	}
 }
 
 // liefereCover liefert das Cover zur ISBN aus dem Cache oder lädt es; bei jedem Fehler
-// transparentesGIF (siehe Cover).
-func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request) {
+// transparentesGIF (siehe Cover). bremse begrenzt die Fehltreffer je Adresse.
+func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request, bremse *ratelimit.Bremse) {
 	isbn := r.URL.Query().Get("isbn")
 	adresse := r.URL.Query().Get("url")
 
@@ -308,7 +310,7 @@ func (t *Tueren) liefereCover(w http.ResponseWriter, r *http.Request) {
 	// Zweig ist gebremst, und er antwortet im Grenzfall mit dem transparenten GIF statt mit
 	// 429, weil am anderen Ende ein <img> hängt: Ein Fehlercode erzeugt dort nur einen
 	// roten Konsoleneintrag, das Bild fehlt so oder so. Der nächste Aufruf holt es nach.
-	if !coverDownloadBremse.LaesstDurch(clientip.AusAnfrage(r)) {
+	if !bremse.LaesstDurch(clientip.AusAnfrage(r)) {
 		liefereTransparentesGIF(w)
 		return
 	}

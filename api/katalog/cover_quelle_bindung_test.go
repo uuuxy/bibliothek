@@ -87,7 +87,7 @@ func holeCover(s *Tueren, isbn, adresse string) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/images/cover?isbn="+isbn+"&url="+url.QueryEscape(adresse), nil)
 	req.RemoteAddr = "203.0.113.5:1234"
-	s.liefereCover(rr, req)
+	s.Cover()(rr, req)
 	return rr
 }
 
