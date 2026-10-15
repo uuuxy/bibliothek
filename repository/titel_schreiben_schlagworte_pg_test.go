@@ -18,11 +18,11 @@ func TestSchreibeTitel_SchlagworteNurAnTitelOhne(t *testing.T) {
 	repo := NewKatalogAbfragen(pool)
 
 	// Vorher: ein gepflegter Titel mit eigenem Schlagwort und einer ohne.
-	gepflegt := seedSchlagwortTitel(t, pool, "Die Republik von Weimar")
+	gepflegt := legeSchlagwortTitelAn(t, pool, "Die Republik von Weimar")
 	if _, err := SetzeSchlagworte(ctx, pool, gepflegt, []string{"Weimar (gepflegt)"}); err != nil {
 		t.Fatal(err)
 	}
-	ohne := seedSchlagwortTitel(t, pool, "Krabat")
+	ohne := legeSchlagwortTitelAn(t, pool, "Krabat")
 
 	viele := make([]string, SchlagworteJeTitelMax+1)
 	for i := range viele {

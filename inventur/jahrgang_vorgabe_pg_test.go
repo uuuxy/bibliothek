@@ -183,7 +183,7 @@ func TestTitelAendern_SpanneGanzOderGarNicht(t *testing.T) {
 // nicht erstellt werden". Ein geleertes Zahlenfeld der Maske geht als null hinaus; zwei null
 // leeren die Spanne.
 func TestTitelTueren_JahrgangsSpanne(t *testing.T) {
-	p := neueGenanntProbe(t)
+	p := newGenanntProbe(t)
 	ctx := context.Background()
 	const satz = "gehören zusammen"
 

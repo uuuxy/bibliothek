@@ -14,12 +14,12 @@ func TestMahnbriefe_ZurueckgegebeneRausfiltern(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "MahnTest", 2)
-	schueler := seedSchueler(t, pool, "M-1", "Tom", "7a")
-	bearbeiter := seedBearbeiter(t, pool)
+	ex := legeSignaturMitExemplarenAn(t, pool, "MahnTest", 2)
+	schueler := legeSchuelerAn(t, pool, "M-1", "Tom", "7a")
+	bearbeiter := legeBearbeiterAn(t, pool)
 
-	loanOffen := seedAusleihe(t, pool, ex[0], schueler, bearbeiter)
-	loanZurueck := seedAusleihe(t, pool, ex[1], schueler, bearbeiter)
+	loanOffen := legeAusleiheAn(t, pool, ex[0], schueler, bearbeiter)
+	loanZurueck := legeAusleiheAn(t, pool, ex[1], schueler, bearbeiter)
 	// Beide Fristen sind abgelaufen: Die Abfrage nennt nur überfällige Bücher, und der
 	// Unterschied der zwei Ausleihen soll allein die Rückgabe sein.
 	if _, err := pool.Exec(ctx,
@@ -27,7 +27,7 @@ func TestMahnbriefe_ZurueckgegebeneRausfiltern(t *testing.T) {
 		[]string{loanOffen, loanZurueck}); err != nil {
 		t.Fatalf("Fristen ablaufen lassen: %v", err)
 	}
-	returnLoan(t, pool, loanZurueck) // dieses Buch ist schon zurück
+	bucheRueckgabe(t, pool, loanZurueck) // dieses Buch ist schon zurück
 
 	repo := NewMahnwesenAbfragen(pool)
 	tx, err := pool.Begin(ctx)

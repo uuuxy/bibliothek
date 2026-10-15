@@ -44,7 +44,7 @@ func TestSperreLeserzeile_ZweiteTransaktionWartet(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	leser := seedSchueler(t, pool, "ZSP-1", "Sperrzeile", "7a")
+	leser := legeSchuelerAn(t, pool, "ZSP-1", "Sperrzeile", "7a")
 
 	erste := beginne(t, pool)
 	defer db.Verwerfe(ctx, erste)
@@ -61,7 +61,7 @@ func TestSperreExemplarzeile_StandUndSperre(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	titel := titelIDVonExemplar(t, pool, seedSignaturMitExemplaren(t, pool, "Sperrstand", 1)[0])
+	titel := titelIDVonExemplar(t, pool, legeSignaturMitExemplarenAn(t, pool, "Sperrstand", 1)[0])
 	bewegt := time.Date(2026, 4, 2, 9, 30, 0, 0, time.UTC)
 	var imRegal, abgeschrieben, gesperrt string
 	for nummer, ziel := range map[string]*string{"ZSP-REGAL": &imRegal, "ZSP-ABGESCHRIEBEN": &abgeschrieben, "ZSP-GESPERRT": &gesperrt} {

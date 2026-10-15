@@ -13,7 +13,7 @@ import (
 // Prüfte ihn der Server nicht, würde „30.06." gespeichert und angezeigt, gerechnet aber still
 // mit 07-31; „06-31" würde zum 1. Juli, „02-30" zum 2. März. Die Nachbarn (Sommerferien,
 // Eingangsjahrgänge) prüft der Server ebenso.
-func TestEinstellungenSchreiben_LmfStichtagIstEinKalendertag(t *testing.T) {
+func TestEinstellungenSchreiben_LMFStichtagIstEinKalendertag(t *testing.T) {
 	faelle := []struct {
 		wert    string
 		erwarte int

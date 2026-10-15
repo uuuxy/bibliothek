@@ -22,10 +22,10 @@ func TestLeserSortierung(t *testing.T) {
 	// Die Namen sind so gewählt, dass Klasse und Name gegenläufig sortieren: Wer nach
 	// Klasse sortiert, bekommt eine andere Reihenfolge als wer nach Namen sortiert.
 	// Sonst wäre der Test blind gegen eine Sortierung, die immer dasselbe tut.
-	seedSuchSchueler(t, pool, "SORT-1", "Anna", "Zeidler") // Klasse 05F1
-	seedSuchSchueler(t, pool, "SORT-2", "Bodo", "Ahrens")  // Klasse 05F1
-	seedSuchSchueler(t, pool, "SORT-3", "Clara", "Maier")  // Klasse 05F1
-	seedSuchLeser(t, pool, "SORT-4", "Detlef", "Bauer", "lehrkraft")
+	legeSuchSchuelerAn(t, pool, "SORT-1", "Anna", "Zeidler") // Klasse 05F1
+	legeSuchSchuelerAn(t, pool, "SORT-2", "Bodo", "Ahrens")  // Klasse 05F1
+	legeSuchSchuelerAn(t, pool, "SORT-3", "Clara", "Maier")  // Klasse 05F1
+	legeSuchLeserAn(t, pool, "SORT-4", "Detlef", "Bauer", "lehrkraft")
 
 	if _, err := pool.Exec(ctx, `
 		UPDATE leser SET klasse = CASE barcode_id

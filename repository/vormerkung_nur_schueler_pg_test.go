@@ -16,10 +16,10 @@ func TestVormerkungLegeAn_NurFuerSchueler(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "NurSchueler", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "NurSchueler", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
-	kollege := seedKollege(t, pool, "A-VM-K1", "Kim")
-	schueler := seedSchueler(t, pool, "VM-S1", "Mia", "7a")
+	kollege := legeKollegenAn(t, pool, "A-VM-K1", "Kim")
+	schueler := legeSchuelerAn(t, pool, "VM-S1", "Mia", "7a")
 	repo := NewVormerkungsAbfragen(pool)
 
 	if _, err := repo.LegeAn(ctx, titelID, "", kollege); !errors.Is(err, ErrVormerkungNurFuerSchueler) {

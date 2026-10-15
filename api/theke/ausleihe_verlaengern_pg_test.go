@@ -207,7 +207,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 
 // Die Verlängerung einer gesperrten Ausleihe wird abgelehnt, und den Grund der Sperre liest nur,
 // wer view_students hat (wie an der Theke, ohneSperrgrund). Gelingt sie, beginnt die Mahnfolge neu.
-func TestAusleiheVerlaengern_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
+func TestAusleiheVerlaengern_SperrgrundNurMitRechtSchuelerdateiAnzeigenUndMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()

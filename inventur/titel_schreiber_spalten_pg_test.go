@@ -11,7 +11,7 @@ import (
 // eigenen Wert und muss in seiner Spalte ankommen: Ein verrutschter Parameter schriebe den
 // Verlag in den Untertitel, ohne dass eine Anweisung scheitert.
 func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
-	p := neueGenanntProbe(t)
+	p := newGenanntProbe(t)
 	ctx := context.Background()
 	abfragen := NewTitelAbfragen(p.pool)
 

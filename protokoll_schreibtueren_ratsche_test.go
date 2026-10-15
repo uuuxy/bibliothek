@@ -12,7 +12,7 @@ import (
 // DSGVO braucht die Schreibtür. Eine Konvention ohne Ratsche ist keine; dieser Test hält die
 // Liste der Dateien fest, die audit_log(s) verändern oder löschen dürfen. Wer eine neue Tür baut,
 // trägt sie hier ein und begründet sie im Commit.
-func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
+func TestProtokollSchreibtueren_NurBekannteDateien(t *testing.T) {
 	erlaubt := map[string]string{
 		// Auch der Lauf nach DSGVO (jobs/cron_dsgvo.go) fährt diese Statements, über
 		// repository.SpurTilgungen, die eine Liste; er hat keine eigene Tür.

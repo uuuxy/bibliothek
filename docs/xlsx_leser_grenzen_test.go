@@ -37,7 +37,7 @@ var (
 	musterLeseMappe  = regexp.MustCompile(`xlsxgrenze\.LeseMappe\(`)
 )
 
-func TestXlsxLeser_JederDurchLeseMappe(t *testing.T) {
+func TestXLSXLeser_JederDurchLeseMappe(t *testing.T) {
 	leser := map[string]int{}
 	direkt := map[string]bool{}
 	wurzel := ".."

@@ -74,7 +74,7 @@ func pruefeISBNs(t *testing.T, ist map[string]*string, soll map[string]string) {
 // Migration 140 bringt ISBNs, die vor Migration 133 geschrieben wurden, in die Normalform.
 // Gemessen am Testserver: 10.061 Titel mit ISBN, einer
 // weicht ab, keine zwei werden nach dem Normalisieren gleich.
-func TestIsbnAltbestand_Migration140(t *testing.T) {
+func TestISBNAltbestand_Migration140(t *testing.T) {
 	danach := fahreMigrationUeberAltzeilen(t, "140_isbn_altbestand_normalform.sql", map[string]string{
 		"Alt mit Strichen": "978-3-12-622042-2", // der Fall vom Testserver
 		"Alt kleines x":    "3-12-345678-x",
@@ -97,7 +97,7 @@ func TestIsbnAltbestand_Migration140(t *testing.T) {
 // Migration 157 rechnet zehnstellige ISBNs mit richtigem Prüfzeichen in die dreizehnstellige
 // um. Am Testserver trägt keine Zeile eine solche (die Messung steht im Kopf der Migration);
 // die Fälle hier stehen für eine Anlage, an der es sie gibt.
-func TestIsbnAltbestand_Migration157(t *testing.T) {
+func TestISBNAltbestand_Migration157(t *testing.T) {
 	danach := fahreMigrationUeberAltzeilen(t, "157_isbn_eine_laenge.sql", map[string]string{
 		"Zehn gültig":        "316148410X",
 		"Zehn mit Strichen":  "0-306-40615-2",

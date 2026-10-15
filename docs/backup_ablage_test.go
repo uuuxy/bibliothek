@@ -48,9 +48,9 @@ var (
 	nameMuster = regexp.MustCompile(`-name\s+"([^"]+)"`)
 )
 
-// findMuster liefert die -name-Muster der find-Aufrufe eines Skripts, getrennt nach
+// findeMuster liefert die -name-Muster der find-Aufrufe eines Skripts, getrennt nach
 // Aufräumen (-delete, rm) und Zählen, und jeweils nach verschlüsselt und Klartext.
-func findMuster(t *testing.T, skript string) (loeschtEnc, loeschtKlar, zaehltKlar []string) {
+func findeMuster(t *testing.T, skript string) (loeschtEnc, loeschtKlar, zaehltKlar []string) {
 	t.Helper()
 	for _, zeile := range findZeile.FindAllString(skript, -1) {
 		loescht := strings.Contains(zeile, "-delete") || strings.Contains(zeile, "rm -f")
@@ -89,7 +89,7 @@ func TestBackupAblage_JedesSkriptLoeschtNurSeineVerschluesselten(t *testing.T) {
 		if !strings.Contains(skript, eigen.erzeugt) {
 			t.Fatalf("%s bildet seinen Dateinamen nicht mehr über %q — Beispielnamen im Test nachziehen", pfad, eigen.erzeugt)
 		}
-		loeschtEnc, _, _ := findMuster(t, skript)
+		loeschtEnc, _, _ := findeMuster(t, skript)
 		if len(loeschtEnc) == 0 {
 			t.Fatalf("%s: kein find-Aufruf, der verschlüsselte Sicherungen löscht — der Detektor sieht nichts", pfad)
 		}
@@ -118,7 +118,7 @@ func TestBackupAblage_KlartextHatEineFristUndWirdGemeldet(t *testing.T) {
 		alleKlar = append(alleKlar, eigen.eigene...)
 	}
 	for pfad := range backupSkripte {
-		_, loeschtKlar, zaehltKlar := findMuster(t, lies(t, pfad))
+		_, loeschtKlar, zaehltKlar := findeMuster(t, lies(t, pfad))
 		if len(loeschtKlar) == 0 || len(zaehltKlar) == 0 {
 			t.Fatalf("%s: Klartext wird nicht gelöscht (%v) oder nicht gezählt (%v) — der Detektor sieht nichts",
 				pfad, loeschtKlar, zaehltKlar)

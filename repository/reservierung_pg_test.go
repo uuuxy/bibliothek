@@ -16,7 +16,7 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 	ctx := context.Background()
 	repo := NewReservierungsAbfragen(pool)
 
-	// Ein Titel mit drei Exemplaren. seedSignaturMitExemplaren taugt hier nicht: Es legt je
+	// Ein Titel mit drei Exemplaren. legeSignaturMitExemplarenAn taugt hier nicht: Es legt je
 	// Exemplar einen eigenen Titel an, und die Verfügbarkeit wäre immer 1.
 	var titel string
 	if err := pool.QueryRow(ctx,
@@ -31,7 +31,7 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 			t.Fatalf("Exemplar anlegen: %v", err)
 		}
 	}
-	bearbeiter := seedEigenerBearbeiter(t, pool, "KSQ-B")
+	bearbeiter := legeEigenenBearbeiterAn(t, pool, "KSQ-B")
 
 	// Zwei Reservierungen nacheinander: 8a zuerst, 9b stellt sich an.
 	ersteID, _, err := repo.LegeAn(ctx, titel, "8a", 3, nil, bearbeiter, nil)
@@ -63,8 +63,8 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 
 	// (2) Ein Exemplar wird verliehen, verfügbar sinkt auf 2. Diese Zahl erspart der Bibliothek
 	// das Zählen am Regal.
-	schueler := seedSchueler(t, pool, "S-KSQ-1", "Kim", "8a")
-	seedAusleihe(t, pool, exemplare[0], schueler, bearbeiter)
+	schueler := legeSchuelerAn(t, pool, "S-KSQ-1", "Kim", "8a")
+	legeAusleiheAn(t, pool, exemplare[0], schueler, bearbeiter)
 
 	liste, err = repo.LadeAlle(ctx)
 	if err != nil {
@@ -131,10 +131,10 @@ func nurTitel(liste []Reservierung, titelID string) []Reservierung {
 	return out
 }
 
-// seedEigenerBearbeiter legt ein Konto mit eigenem Barcode an: Der feste Barcode von
-// seedBearbeiter gehört den Tests in schaden_melden_ausleihe_pg_test.go, und mit einem
+// legeEigenenBearbeiterAn legt ein Konto mit eigenem Barcode an: Der feste Barcode von
+// legeBearbeiterAn gehört den Tests in schaden_melden_ausleihe_pg_test.go, und mit einem
 // geteilten Konto hinge das Ergebnis an der Reihenfolge der Tests.
-func seedEigenerBearbeiter(t *testing.T, pool *pgxpool.Pool, barcode string) string {
+func legeEigenenBearbeiterAn(t *testing.T, pool *pgxpool.Pool, barcode string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -155,9 +155,9 @@ func TestReservierungIdempotenz(t *testing.T) {
 	ctx := context.Background()
 	repo := NewReservierungsAbfragen(pool)
 
-	ex := seedSignaturMitExemplaren(t, pool, "KsIdem", 3)
+	ex := legeSignaturMitExemplarenAn(t, pool, "KsIdem", 3)
 	titel := titelIDVonExemplar(t, pool, ex[0])
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 	key := "11111111-1111-1111-1111-111111111111"
 
 	id1, neu1, err := repo.LegeAn(ctx, titel, "8a", 2, nil, bearbeiter, &key)

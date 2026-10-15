@@ -13,9 +13,9 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 	resetAuflagen(t, pool)
 	ctx := context.Background()
 
-	alt := seedAuflage(t, pool, "Mathe 7", 2019, true)
-	neu := seedAuflage(t, pool, "Mathe 7", 2023, true)
-	einzeln := seedAuflage(t, pool, "Physik 8", 2020, true)
+	alt := legeAuflageAn(t, pool, "Mathe 7", 2019, true)
+	neu := legeAuflageAn(t, pool, "Mathe 7", 2023, true)
+	einzeln := legeAuflageAn(t, pool, "Physik 8", 2020, true)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET auflage = CASE WHEN id = $1::uuid THEN '3. Aufl.' ELSE '4. Aufl.' END
 		WHERE id IN ($1::uuid, $2::uuid)`, alt, neu); err != nil {
 		t.Fatal(err)
@@ -43,12 +43,12 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 		}
 	}
 
-	ida := seedSchueler(t, pool, "S-518001", "Ida", "7b")
-	ben := seedSchueler(t, pool, "S-518002", "Ben", "7b")
-	cem := seedSchueler(t, pool, "S-518003", "Cem", "07B") // dieselbe Klasse, andere Schreibweise
-	dora := seedSchueler(t, pool, "S-518004", "Dora", "7b")
-	emil := seedSchueler(t, pool, "S-518005", "Emil", "7c")
-	neuling := seedSchueler(t, pool, "S-518006", "Nele", "7b")
+	ida := legeSchuelerAn(t, pool, "S-518001", "Ida", "7b")
+	ben := legeSchuelerAn(t, pool, "S-518002", "Ben", "7b")
+	cem := legeSchuelerAn(t, pool, "S-518003", "Cem", "07B") // dieselbe Klasse, andere Schreibweise
+	dora := legeSchuelerAn(t, pool, "S-518004", "Dora", "7b")
+	emil := legeSchuelerAn(t, pool, "S-518005", "Emil", "7c")
+	neuling := legeSchuelerAn(t, pool, "S-518006", "Nele", "7b")
 	leihe(alt, ida, false)
 	leihe(alt, ben, false)
 	leihe(alt, cem, false)
@@ -58,8 +58,8 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 
 	// Wer nicht mehr zur Klasse gehört, zählt nicht — auch mit der alten Auflage in der Hand:
 	// ein Abgänger und ein gelöschtes Kind. Die Sicht schueler filtert beides nicht.
-	gustav := seedSchueler(t, pool, "S-518009", "Gustav", "7b")
-	hanna := seedSchueler(t, pool, "S-518010", "Hanna", "7b")
+	gustav := legeSchuelerAn(t, pool, "S-518009", "Gustav", "7b")
+	hanna := legeSchuelerAn(t, pool, "S-518010", "Hanna", "7b")
 	leihe(alt, gustav, false)
 	leihe(alt, hanna, false)
 	if _, err := pool.Exec(ctx, `UPDATE leser SET ist_abgaenger = true WHERE id = $1`, gustav); err != nil {
@@ -95,7 +95,7 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 	}
 
 	// Die 7c bekommt die neue Auflage: dort hat nur Emil die alte.
-	emma := seedSchueler(t, pool, "S-518007", "Emma", "7c")
+	emma := legeSchuelerAn(t, pool, "S-518007", "Emma", "7c")
 	if m, err := LadeAuflagenMischungInKlasse(ctx, pool, neu, emma); err != nil || m == nil || m.Andere[0].Kinder != 1 {
 		t.Errorf("7c: %+v, %v — erwartet 1 Kind mit der 3. Auflage", m, err)
 	}
@@ -104,7 +104,7 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 	if m, err := LadeAuflagenMischungInKlasse(ctx, pool, einzeln, neuling); err != nil || m != nil {
 		t.Errorf("Titel ohne Werk: %+v, %v — erwartet kein Hinweis", m, err)
 	}
-	fremd := seedSchueler(t, pool, "S-518008", "Finn", "9a")
+	fremd := legeSchuelerAn(t, pool, "S-518008", "Finn", "9a")
 	if m, err := LadeAuflagenMischungInKlasse(ctx, pool, neu, fremd); err != nil || m != nil {
 		t.Errorf("9a ohne andere Auflage: %+v, %v — erwartet kein Hinweis", m, err)
 	}

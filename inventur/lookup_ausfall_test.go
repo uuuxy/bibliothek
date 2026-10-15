@@ -35,7 +35,7 @@ func (leereQuellen) RoundTrip(r *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-func lookupMit(t *testing.T, transport http.RoundTripper) *httptest.ResponseRecorder {
+func findeISBNMit(t *testing.T, transport http.RoundTripper) *httptest.ResponseRecorder {
 	t.Helper()
 	client := NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: transport})
@@ -49,7 +49,7 @@ func lookupMit(t *testing.T, transport http.RoundTripper) *httptest.ResponseReco
 }
 
 func TestLookup_NetzausfallIst502(t *testing.T) {
-	rec := lookupMit(t, kaputtesNetz{})
+	rec := findeISBNMit(t, kaputtesNetz{})
 	if rec.Code != http.StatusBadGateway {
 		t.Fatalf("Netzausfall: erwartet 502, bekam %d (%s) — Ausfall sieht aus wie „Buch existiert nicht»",
 			rec.Code, strings.TrimSpace(rec.Body.String()))
@@ -57,7 +57,7 @@ func TestLookup_NetzausfallIst502(t *testing.T) {
 }
 
 func TestLookup_ErreichbarOhneTrefferBleibt404(t *testing.T) {
-	rec := lookupMit(t, leereQuellen{})
+	rec := findeISBNMit(t, leereQuellen{})
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("Kein Treffer bei erreichbaren Quellen: erwartet 404, bekam %d (%s)",
 			rec.Code, strings.TrimSpace(rec.Body.String()))

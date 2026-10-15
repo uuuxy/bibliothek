@@ -25,7 +25,7 @@ import (
 // welche Türen hinter einem schreibenden /api/lmf-plan hängen, und verlangt von jeder den
 // Aufruf. Eine neue Route wächst damit von selbst in diese Prüfung hinein.
 func TestJederLMFPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
-	handler := lmfPlanSchreibHandler(t)
+	handler := lmfPlanSchreibtueren(t)
 	if len(handler) < 3 {
 		t.Fatalf("nur %d schreibende LMF-Plan-Routen gefunden (%v) — erwartet mindestens 3 "+
 			"(speichern, verwerfen, veröffentlichen). Ist api/routen_katalog.go umformuliert? "+
@@ -66,9 +66,9 @@ func TestJederLMFPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 	}
 }
 
-// lmfPlanSchreibHandler liest aus der Routenliste api/routen_katalog.go die Namen der Türen
+// lmfPlanSchreibtueren liest aus der Routenliste api/routen_katalog.go die Namen der Türen
 // hinter schreibenden /api/lmf-plan-Routen (PUT, POST, DELETE, PATCH).
-func lmfPlanSchreibHandler(t *testing.T) []string {
+func lmfPlanSchreibtueren(t *testing.T) []string {
 	t.Helper()
 	inhalt, err := os.ReadFile(filepath.Join("..", "routen_katalog.go"))
 	if err != nil {

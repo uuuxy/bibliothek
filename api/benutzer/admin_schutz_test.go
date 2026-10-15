@@ -214,7 +214,7 @@ func TestAdminDarfWeiterhinAdminsAnlegenUndBearbeiten(t *testing.T) {
 
 // Und der Normalfall bleibt offen: manage_users verwaltet Konten unterhalb der
 // Administratorebene weiterhin ohne Einschränkung.
-func TestManageUsersDarfNichtAdminKontenWeiterhinBearbeiten(t *testing.T) {
+func TestRechtBenutzerVerwalten_BearbeitetKontenUnterhalbDerAdministratoren(t *testing.T) {
 	repo := &eskalationsAttrappe{rollen: map[string]string{"helfer-1": "HELFER"}}
 	srv := &Tueren{Basis: &tuer.Basis{}}
 

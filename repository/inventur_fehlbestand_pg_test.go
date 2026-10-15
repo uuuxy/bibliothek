@@ -21,7 +21,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 
 	// Ein Titel mit Signatur, damit der Bericht auch die Regalangabe trägt; danach sortiert man
 	// beim Nachsuchen. Quelle ist buecher_titel.signatur, der Text vom Buchrücken.
@@ -120,7 +120,7 @@ func TestInventurScanUndAbschlussAbgestimmt(t *testing.T) {
 
 	for runde := 0; runde < 8; runde++ {
 		resetInventurDaten(t, pool)
-		bearbeiter := seedBearbeiter(t, pool)
+		bearbeiter := legeBearbeiterAn(t, pool)
 		var titelID string
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO buecher_titel (titel) VALUES ('KoordTitel') RETURNING id`).Scan(&titelID); err != nil {

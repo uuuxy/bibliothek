@@ -12,7 +12,7 @@ import (
 // Die Quelle: CSV oder Excel, Kopfzeile gesucht statt vorausgesetzt. Ob die Schule
 // wirklich eine Excel-Datei bekommt, ist offen — beide müssen gehen.
 
-func TestLeseDatei_XlsxMitTitelzeilenUndDatumszellen(t *testing.T) {
+func TestLeseDatei_XLSXMitTitelzeilenUndDatumszellen(t *testing.T) {
 	geb := time.Date(2012, 3, 4, 0, 0, 0, 0, time.UTC)
 	xlsx := xlsxtest.Baue(t, map[string][][]any{
 		"Klassenliste": {
@@ -42,7 +42,7 @@ func TestLeseDatei_XlsxMitTitelzeilenUndDatumszellen(t *testing.T) {
 	}
 }
 
-func TestLeseDatei_XlsxNimmtDasBlattMitKopfzeile(t *testing.T) {
+func TestLeseDatei_XLSXNimmtDasBlattMitKopfzeile(t *testing.T) {
 	// Das erste Blatt ist ein Deckblatt ohne Tabelle; die Daten stehen im zweiten.
 	xlsx := xlsxtest.Baue(t, map[string][][]any{
 		"Deckblatt": {{"Philipp-Reis-Schule"}, {"Export vom 01.08.2026"}},
@@ -57,7 +57,7 @@ func TestLeseDatei_XlsxNimmtDasBlattMitKopfzeile(t *testing.T) {
 	}
 }
 
-func TestLeseDatei_XlsxOhneKopfzeileMeldetPflichtspalte(t *testing.T) {
+func TestLeseDatei_XLSXOhneKopfzeileMeldetPflichtspalte(t *testing.T) {
 	xlsx := xlsxtest.Baue(t, map[string][][]any{"Tabelle1": {{"foo", "bar"}, {"1", "2"}}})
 	_, err := LeseDatei(xlsx)
 	if err == nil || !strings.Contains(err.Error(), "Pflichtspalte") {
@@ -73,7 +73,7 @@ func TestLeseDatei_AltesXlsWirdMitAnleitungAbgewiesen(t *testing.T) {
 	}
 }
 
-func TestLeseDatei_CsvMitTitelzeileUeberKopfzeile(t *testing.T) {
+func TestLeseDatei_CSVMitTitelzeileUeberKopfzeile(t *testing.T) {
 	csv := "Klassenliste 2026/27\n\nNachname;Vorname;Klasse;Geburtsdatum\nMustermann;Max;5a;1.2.2012\n"
 	datei, err := LeseDatei([]byte(csv))
 	if err != nil {
@@ -94,7 +94,7 @@ func TestLeseDatei_BinaermuellBleibtVerstaendlich(t *testing.T) {
 // Eine Klassenliste mit den Feldkürzeln der LUSD (kein Export der LUSD): je Klasse ein
 // Blatt, gleiche Kopfzeile im SLR_/KLA_-Kürzelstil, kein Geburtsdatum. Alle Blätter müssen
 // ankommen; käme nur das erste an, gälten im Nur-Name-Modus die übrigen Klassen als Abgänger.
-func TestLeseDatei_XlsxLiestAlleBlaetterMitKopfzeile(t *testing.T) {
+func TestLeseDatei_XLSXLiestAlleBlaetterMitKopfzeile(t *testing.T) {
 	kopf := []any{"SLR_Nachname", "SLR_Vorname", "SLR_Strasse", "SLR_PLZ", "SLR_ORT", "KLA_Klassennamen", "KLA_KlassenlehrerKuerzel"}
 	xlsx := xlsxtest.Baue(t, map[string][][]any{
 		"6F1": {kopf, {"Adler", "Ava", "Weg 1", "61381", "Ort", "06F1", "FLA"}, {"Beck", "Ben", "Weg 2", "61381", "Ort", "06F1", "FLA"}},
@@ -133,7 +133,7 @@ func TestLeseDatei_XlsxLiestAlleBlaetterMitKopfzeile(t *testing.T) {
 // Steht über der Kopfzeile jedes Blatts eine Titelzeile, gibt trotzdem die Kopfzeile die
 // Breite der Tabelle vor. An der Titelzeile abgelesen, bliebe von den Zeilen des zweiten
 // Blatts nur eine Spalte übrig.
-func TestLeseDatei_XlsxTitelzeileUeberJedemBlatt(t *testing.T) {
+func TestLeseDatei_XLSXTitelzeileUeberJedemBlatt(t *testing.T) {
 	xlsx := xlsxtest.Baue(t, map[string][][]any{
 		"6F1": {{"Klasse 6F1"}, {"Nachname", "Vorname", "Klasse"}, {"Adler", "Ava", "06F1"}},
 		"6F2": {{"Klasse 6F2"}, {"Klasse", "Vorname", "Nachname"}, {"06F2", "Cem", "Cato"}},

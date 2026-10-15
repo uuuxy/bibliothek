@@ -17,10 +17,10 @@ func TestNachruecken_GesperrteLeserzeileUeberspringtDenAeltestenNicht(t *testing
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	exemplar := seedSignaturMitExemplaren(t, pool, "Nachruecksperre", 1)[0]
+	exemplar := legeSignaturMitExemplarenAn(t, pool, "Nachruecksperre", 1)[0]
 	titel := titelIDVonExemplar(t, pool, exemplar)
-	aelteste := seedSchueler(t, pool, "NRS-1", "Aelteste", "7a")
-	naechste := seedSchueler(t, pool, "NRS-2", "Naechste", "7a")
+	aelteste := legeSchuelerAn(t, pool, "NRS-1", "Aelteste", "7a")
+	naechste := legeSchuelerAn(t, pool, "NRS-2", "Naechste", "7a")
 	for i, leser := range []string{aelteste, naechste} {
 		if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status, erstellt_am)
 			VALUES ($1, $2, 'wartend', now() - make_interval(days => $3))`, titel, leser, 10-i); err != nil {

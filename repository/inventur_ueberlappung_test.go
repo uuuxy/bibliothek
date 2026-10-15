@@ -98,7 +98,7 @@ func TestInventurSignaturGegenFilterUeberlappungAmBestand(t *testing.T) {
 	repo := NewInventurAbfragen(pool)
 
 	// Ein Titel, der in beiden Bereichen liegt: Signatur „BIB Deu" und Fach Deutsch.
-	seedSignaturFachExemplar(t, pool, "BIB Deu 5 KRÜ", "Deutsch", 5, 6, "BC-KREUZ-1")
+	legeSignaturFachExemplarAn(t, pool, "BIB Deu 5 KRÜ", "Deutsch", 5, 6, "BC-KREUZ-1")
 
 	sigDeu := "BIB Deu"
 	if _, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &sigDeu}, "Signatur BIB Deu", ""); err != nil {
@@ -127,7 +127,7 @@ func TestInventurSignaturGegenFilterUeberlappungAmBestand(t *testing.T) {
 
 	// Umgekehrte Richtung: Der Lauf mit Filter ist offen, der Start mit Signatur scheitert.
 	resetInventurDaten(t, pool)
-	seedSignaturFachExemplar(t, pool, "BIB Deu 5 KRÜ", "Deutsch", 5, 6, "BC-KREUZ-2")
+	legeSignaturFachExemplarAn(t, pool, "BIB Deu 5 KRÜ", "Deutsch", 5, 6, "BC-KREUZ-2")
 	if _, err := repo.LegeLaufAn(ctx, "filter", InventurBereich{Fach: &deutsch}, "Fach Deutsch", ""); err != nil {
 		t.Fatalf("Filter-Session anlegen: %v", err)
 	}

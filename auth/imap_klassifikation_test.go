@@ -124,7 +124,7 @@ func TestPruefeIMAPAnmeldung_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
 	}
 }
 
-func TestPruefeIMAPAnmeldung_VerbindungsabbruchBeimLoginIstAusfall(t *testing.T) {
+func TestPruefeIMAPAnmeldung_VerbindungsabbruchBeimAnmeldenIstAusfall(t *testing.T) {
 	mitMiniIMAP(t, "CLOSE")
 	err := pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
 	if !errors.Is(err, errMailserverNichtErreichbar) {

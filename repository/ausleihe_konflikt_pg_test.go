@@ -21,10 +21,10 @@ func TestAusleiheLegeAn_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "Konflikt", 1)
-	ersterSchueler := seedSchueler(t, pool, "KFL-1", "Anna", "7a")
-	zweiterSchueler := seedSchueler(t, pool, "KFL-2", "Bernd", "7a")
-	bearbeiter := seedBearbeiter(t, pool)
+	ex := legeSignaturMitExemplarenAn(t, pool, "Konflikt", 1)
+	ersterSchueler := legeSchuelerAn(t, pool, "KFL-1", "Anna", "7a")
+	zweiterSchueler := legeSchuelerAn(t, pool, "KFL-2", "Bernd", "7a")
+	bearbeiter := legeBearbeiterAn(t, pool)
 	frist := time.Now().AddDate(0, 0, 21)
 
 	repo := NewAusleihAbfragen(pool)
@@ -71,9 +71,9 @@ func TestAusleiheLegeAn_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "KonfliktFrei", 1)
-	schueler := seedSchueler(t, pool, "KFL-3", "Clara", "7a")
-	bearbeiter := seedBearbeiter(t, pool)
+	ex := legeSignaturMitExemplarenAn(t, pool, "KonfliktFrei", 1)
+	schueler := legeSchuelerAn(t, pool, "KFL-3", "Clara", "7a")
+	bearbeiter := legeBearbeiterAn(t, pool)
 	frist := time.Now().AddDate(0, 0, 21)
 
 	repo := NewAusleihAbfragen(pool)

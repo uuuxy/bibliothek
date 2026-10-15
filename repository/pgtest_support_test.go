@@ -38,10 +38,10 @@ func resetInventurDaten(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-// seedSignaturMitExemplaren legt n ausleihbare Exemplare unter der Signatur an und
+// legeSignaturMitExemplarenAn legt n ausleihbare Exemplare unter der Signatur an und
 // liefert die Exemplar-IDs. Die Signatur ist seit Migration 060 der Text auf dem
 // Buchrücken (buecher_titel.signatur), kein Fremdschlüssel mehr.
-func seedSignaturMitExemplaren(t *testing.T, pool *pgxpool.Pool, signatur string, n int) []string {
+func legeSignaturMitExemplarenAn(t *testing.T, pool *pgxpool.Pool, signatur string, n int) []string {
 	t.Helper()
 	ctx := context.Background()
 
@@ -79,10 +79,10 @@ func sichereTestSystematik(t *testing.T, pool *pgxpool.Pool, subject string) {
 	}
 }
 
-// seedSignaturFachExemplar legt einen Titel an, der beide Scope-Dimensionen trägt
+// legeSignaturFachExemplarAn legt einen Titel an, der beide Scope-Dimensionen trägt
 // (Signatur und Fach/Jahrgang) — genau die Konstellation, in der ein Signatur- und ein
 // Filter-Scope dasselbe Exemplar treffen. Liefert die Exemplar-ID.
-func seedSignaturFachExemplar(t *testing.T, pool *pgxpool.Pool, signatur, subject string, jvon, jbis int, barcode string) string {
+func legeSignaturFachExemplarAn(t *testing.T, pool *pgxpool.Pool, signatur, subject string, jvon, jbis int, barcode string) string {
 	t.Helper()
 	ctx := context.Background()
 	sichereTestSystematik(t, pool, subject)
@@ -103,9 +103,9 @@ func seedSignaturFachExemplar(t *testing.T, pool *pgxpool.Pool, signatur, subjec
 	return exID
 }
 
-// seedFachExemplar legt einen Titel mit Fach (subject) + Jahrgangsbereich und genau
+// legeFachExemplarAn legt einen Titel mit Fach (subject) + Jahrgangsbereich und genau
 // einem ausleihbaren Exemplar an; liefert die Exemplar-ID. Für Filter-Scope-Tests.
-func seedFachExemplar(t *testing.T, pool *pgxpool.Pool, subject string, jvon, jbis int, barcode string) string {
+func legeFachExemplarAn(t *testing.T, pool *pgxpool.Pool, subject string, jvon, jbis int, barcode string) string {
 	t.Helper()
 	ctx := context.Background()
 	sichereTestSystematik(t, pool, subject)

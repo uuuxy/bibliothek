@@ -24,7 +24,7 @@ type vormerkTheke struct {
 	dienst      AusleihDienst
 }
 
-func neueVormerkTheke(t *testing.T) *vormerkTheke {
+func newVormerkTheke(t *testing.T) *vormerkTheke {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -119,7 +119,7 @@ func (v *vormerkTheke) vormerkungen(t *testing.T, titelID string) int {
 // und kein Kollege. Nimmt er es, ist seine Vormerkung erfüllt, und die Antwort nennt kein
 // Exemplar, das zurück ins Regal müsste.
 func TestAusleihe_ReserviertesExemplarNurFuerDenVorgemerkten(t *testing.T) {
-	v := neueVormerkTheke(t)
+	v := newVormerkTheke(t)
 	titelID, nummern := v.titel(t, "Reserviert", "A")
 	vorgemerkt := v.leser(t, "Vorgemerkt", "schueler")
 	v.legeBereit(t, titelID, vorgemerkt, nummern["A"])
@@ -153,7 +153,7 @@ func TestAusleihe_ReserviertesExemplarNurFuerDenVorgemerkten(t *testing.T) {
 // Vormerkung ebenfalls erfüllt, und die Antwort nennt das Exemplar im Abholfach: Es muss
 // zurück ins Regal.
 func TestAusleihe_AnderesExemplarNenntDasBereitgelegte(t *testing.T) {
-	v := neueVormerkTheke(t)
+	v := newVormerkTheke(t)
 	titelID, nummern := v.titel(t, "Freihand", "Fach", "Regal")
 	vorgemerkt := v.leser(t, "Freihand", "schueler")
 	v.legeBereit(t, titelID, vorgemerkt, nummern["Fach"])

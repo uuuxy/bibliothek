@@ -13,11 +13,11 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 
 	mathe, deutsch := "Mathematik", "Deutsch"
-	matheEx := seedSignaturMitExemplaren(t, pool, mathe, 5)
-	deutschEx := seedSignaturMitExemplaren(t, pool, deutsch, 4)
+	matheEx := legeSignaturMitExemplarenAn(t, pool, mathe, 5)
+	deutschEx := legeSignaturMitExemplarenAn(t, pool, deutsch, 4)
 
 	// Kollege A: Lauf für Mathematik, scannt 3 von 5.
 	sessA, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &mathe}, "Mathematik", "")
@@ -64,10 +64,10 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 
 	physik := "Physik"
-	ex := seedSignaturMitExemplaren(t, pool, physik, 3)
+	ex := legeSignaturMitExemplarenAn(t, pool, physik, 3)
 	leiheAus(t, pool, ex[0]) // ein Exemplar verliehen
 
 	// Der Bereich zählt nur die 2, die im Regal stehen.
@@ -106,7 +106,7 @@ func TestInventurEinOffenerLaufJeBereich(t *testing.T) {
 	repo := NewInventurAbfragen(pool)
 
 	chemie := "Chemie"
-	seedSignaturMitExemplaren(t, pool, chemie, 2)
+	legeSignaturMitExemplarenAn(t, pool, chemie, 2)
 
 	if _, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &chemie}, "Chemie", ""); err != nil {
 		t.Fatalf("erste Session: %v", err)
@@ -140,14 +140,14 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 
-	matheKl5 := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA5")  // im Scope
-	matheKl9 := seedFachExemplar(t, pool, "Mathematik", 9, 10, "BC-MA9") // falsche Klasse
-	deutschKl5 := seedFachExemplar(t, pool, "Deutsch", 5, 6, "BC-DE5")   // falsches Fach
+	matheKl5 := legeFachExemplarAn(t, pool, "Mathematik", 5, 6, "BC-MA5")  // im Scope
+	matheKl9 := legeFachExemplarAn(t, pool, "Mathematik", 9, 10, "BC-MA9") // falsche Klasse
+	deutschKl5 := legeFachExemplarAn(t, pool, "Deutsch", 5, 6, "BC-DE5")   // falsches Fach
 	// Ein Titel ohne Jahrgangsangabe gehört zu keinem Jahrgang. Läge er in jeder Inventur der
 	// Jahrgänge 5 bis 10, stünde er beim Abschluss als Verlust im Bericht.
-	matheOhne := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA0")
+	matheOhne := legeFachExemplarAn(t, pool, "Mathematik", 5, 6, "BC-MA0")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = NULL, jahrgang_bis = NULL
 		WHERE id = (SELECT titel_id FROM buecher_exemplare WHERE id = $1)`, matheOhne); err != nil {
 		t.Fatalf("Titel ohne Jahrgang: %v", err)

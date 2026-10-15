@@ -45,7 +45,7 @@ func TestAbgaengerSperre_EinPraefixEineUhr(t *testing.T) {
 		// Ein SQL, das eine Go-Konstante einbettet (` + repository.X + `), ist eine einzige Anweisung.
 		zusammen := verkettung.ReplaceAllString(string(inhalt), "'K'")
 		for _, s := range rohstrings.FindAllString(zusammen, -1) {
-			for _, set := range setKlauseln(s) {
+			for _, set := range zuweisungenInSet(s) {
 				if setztAbgaenger.MatchString(set) && !strings.Contains(set, "abgaenger_seit") {
 					verstoesse = append(verstoesse, pfad+": setzt ist_abgaenger = true ohne abgaenger_seit zu stempeln")
 				}
@@ -62,19 +62,19 @@ func TestAbgaengerSperre_EinPraefixEineUhr(t *testing.T) {
 	// Selbstprobe: Der Detektor fasst beide Schreibformen — und lässt Lesezugriffe
 	// (WHERE ist_abgaenger = true) in Ruhe.
 	for _, form := range []string{"UPDATE schueler SET ist_abgaenger = true WHERE id = $1", "UPDATE schueler SET jahr = EXTRACT(YEAR FROM NOW()), ist_abgaenger = true WHERE id = $1", "UPDATE schueler s SET klasse = 'ABG',\n ist_abgaenger = c.is_graduating FROM calculated c WHERE s.id = c.id"} {
-		if sets := setKlauseln(form); len(sets) != 1 || !setztAbgaenger.MatchString(sets[0]) {
+		if sets := zuweisungenInSet(form); len(sets) != 1 || !setztAbgaenger.MatchString(sets[0]) {
 			t.Errorf("Selbstprobe: Detektor fasst %q nicht", form)
 		}
 	}
-	if sets := setKlauseln("UPDATE schueler SET klasse = 'x' WHERE ist_abgaenger = true"); len(sets) != 1 || setztAbgaenger.MatchString(sets[0]) {
+	if sets := zuweisungenInSet("UPDATE schueler SET klasse = 'x' WHERE ist_abgaenger = true"); len(sets) != 1 || setztAbgaenger.MatchString(sets[0]) {
 		t.Error("Selbstprobe: Lesezugriff in WHERE darf nicht als Schreiber gelten")
 	}
 }
 
-// setKlauseln schneidet aus einem SQL-Text jede SET-Klausel bis zum nächsten WHERE/FROM/
+// zuweisungenInSet schneidet aus einem SQL-Text jede SET-Klausel bis zum nächsten WHERE/FROM/
 // RETURNING heraus — nur dort wird geschrieben; ein „ist_abgaenger = true" im WHERE ist
 // ein Lesezugriff.
-func setKlauseln(sql string) []string {
+func zuweisungenInSet(sql string) []string {
 	// EXTRACT(YEAR FROM …) trägt ein FROM, das keine Klausel beendet.
 	sql = regexp.MustCompile(`(?i)EXTRACT\([^)]*\)`).ReplaceAllString(sql, "EXTRACT()")
 	setRe := regexp.MustCompile(`(?is)\bSET\b(.*?)(\bWHERE\b|\bFROM\b|\bRETURNING\b|$)`)

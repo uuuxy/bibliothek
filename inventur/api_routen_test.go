@@ -187,7 +187,7 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 		t.Fatalf("Upload: Antwort nicht lesbar: %v", err)
 	}
 
-	bild := createDummyImage("png", 20, 20)
+	bild := erzeugeTestbild("png", 20, 20)
 	fremd := &http.Client{Transport: &mockTransport{
 		roundTripFunc: func(*http.Request) (*http.Response, error) {
 			return &http.Response{

@@ -19,7 +19,7 @@ func TestRueckgabeTerminLage(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 	repo := NewLMFAbfragen(pool)
-	t.Cleanup(func() { raeumeLmfPlaene(t, pool) })
+	t.Cleanup(func() { raeumeLMFPlaene(t, pool) })
 
 	veroeffentliche(t, repo, speicherePlan(t, repo, LMFPlan{Art: LMFTerminRueckgabe, ErsterTag: "2026-06-01", Startstunde: 1, StundenJeTag: 6},
 		[]LMFPlanZeile{{Klassen: []string{"9H1"}, Vermerk: "vergangen"}}, nil))
@@ -108,7 +108,7 @@ func speicherePlan(t *testing.T, repo *LMFAbfragen, plan LMFPlan, zeilen []LMFPl
 			plan.LetzterTag, plan.LetzteStunde = plaetze[n-1].Datum.Format("2006-01-02"), plaetze[n-1].Stunde
 		}
 	}
-	st, err := speichereLmfPlanImTest(context.Background(), repo, plan, zeilen, plaetze, ausgelassen)
+	st, err := schreibeLMFPlanImTest(context.Background(), repo, plan, zeilen, plaetze, ausgelassen)
 	if err != nil {
 		t.Fatalf("Plan %s ab %s speichern: %v", plan.Art, plan.ErsterTag, err)
 	}
@@ -126,8 +126,8 @@ func veroeffentliche(t *testing.T, repo *LMFAbfragen, st LMFPlanStand) LMFPlanSt
 	return st
 }
 
-// raeumeLmfPlaene löscht alle Pläne (CASCADE nimmt Zeilen, Klassen und Auslassungen mit).
-func raeumeLmfPlaene(t *testing.T, pool *pgxpool.Pool) {
+// raeumeLMFPlaene löscht alle Pläne (CASCADE nimmt Zeilen, Klassen und Auslassungen mit).
+func raeumeLMFPlaene(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `DELETE FROM lmf_plaene`); err != nil {
 		t.Logf("Aufräumen: %v", err)

@@ -23,7 +23,7 @@ import (
 // Regel: Eine Zeile, die UnicodeTranslatorFromDescriptor( aufruft, trägt auf derselben Zeile
 // pdfzeichen.Uebersetzer(. Wer einen neuen Renderer baut, bekommt die Ersetzung damit von allein,
 // oder diesen Test rot.
-func TestPdfUebersetzer_NurUeberPdfzeichen(t *testing.T) {
+func TestPDFUebersetzer_NurUeberPdfzeichen(t *testing.T) {
 	var verstoesse []string
 	gefunden := 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
@@ -178,7 +178,7 @@ func druckaufrufeOhneUebersetzer(t *testing.T, pfad string, quelle any) (verstoe
 	return verstoesse, gelesen
 }
 
-func TestPdfDruck_JederTextGehtDurchDenUebersetzer(t *testing.T) {
+func TestPDFDruck_JederTextGehtDurchDenUebersetzer(t *testing.T) {
 	var verstoesse []string
 	gelesen := 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
@@ -221,7 +221,7 @@ func TestPdfDruck_JederTextGehtDurchDenUebersetzer(t *testing.T) {
 }
 
 // Der Detektor kennt jede Form: was er durchlässt und was er meldet.
-func TestPdfDruck_DetektorKenntJedeForm(t *testing.T) {
+func TestPDFDruck_DetektorKenntJedeForm(t *testing.T) {
 	quelle := func(text string) string {
 		return "package x\nfunc f() { p.CellFormat(10, 5, " + text + ", \"1\", 0, \"L\", false, 0, \"\") }\n"
 	}

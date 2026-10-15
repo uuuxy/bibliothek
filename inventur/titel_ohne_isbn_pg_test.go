@@ -36,9 +36,9 @@ type ohneISBNProbe struct {
 	sql    func(abfrage string, werte ...any) string
 }
 
-// neueOhneISBNProbe stellt die Tür der Maske vor die Test-Datenbank und räumt die Titel der
+// newOhneISBNProbe stellt die Tür der Maske vor die Test-Datenbank und räumt die Titel der
 // Probe vorher und nachher ab.
-func neueOhneISBNProbe(t *testing.T) *ohneISBNProbe {
+func newOhneISBNProbe(t *testing.T) *ohneISBNProbe {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -134,7 +134,7 @@ func (p *ohneISBNProbe) zaehle(name string) string {
 // Beim Ändern prüft die Tür, was sich ändert. Was unverändert am Titel steht, hindert das
 // Speichern eines anderen Felds nicht.
 func TestTitelOhneISBN_Aendern(t *testing.T) {
-	p := neueOhneISBNProbe(t)
+	p := newOhneISBNProbe(t)
 
 	t.Run("ein Titel ohne ISBN nimmt eine Signatur an und bleibt ohne ISBN", func(t *testing.T) {
 		id := p.lege("allein", "Autorin", nil)
@@ -200,7 +200,7 @@ func TestTitelOhneISBN_Aendern(t *testing.T) {
 // Die Aufnahme verlangt den Titel, die ISBN nicht. Ohne ISBN fragt sie nach dem Titel, der
 // ohne Nummer gleich heißt, und legt erst nach der Antwort „anderes Medium" an.
 func TestTitelOhneISBN_Anlegen(t *testing.T) {
-	p := neueOhneISBNProbe(t)
+	p := newOhneISBNProbe(t)
 
 	t.Run("ein Spiel ohne ISBN und ohne Autor", func(t *testing.T) {
 		rumpf := map[string]any{"isbn": "", "title": ohneISBNVorsatz + "Spiel", "author": "", "medientyp": "Spiel", "signatur": "Pro 4"}

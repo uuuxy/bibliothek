@@ -20,7 +20,7 @@ import (
 // view_students hat — wie an der Online-Theke (ohneSperrgrund) und bei der Verlängerung. Die
 // Tür selbst steht hinter perform_actions, das auch ein Helfer hat; die Meldung mit dem vollen
 // Grund liegt hinter view_students. Der Helfer erfährt, dass gesperrt ist, nicht warum.
-func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
+func TestNachbuchen_SperrgrundNurMitRechtSchuelerdateiAnzeigen(t *testing.T) {
 	helferOhneRechte(t)
 	// Der Helfer darf an die Tür (perform_actions), aber keine Schülerdaten ansehen.
 	tuer.MerkeRechtFuerTest("helfer", "perform_actions", true)

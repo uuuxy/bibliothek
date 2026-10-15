@@ -7,8 +7,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// seedSuchTitel legt einen Buchtitel mit Titel, Autor, ISBN und Signatur an.
-func seedSuchTitel(t *testing.T, pool *pgxpool.Pool, titel, autor, isbn, signatur string) string {
+// legeSuchTitelAn legt einen Buchtitel mit Titel, Autor, ISBN und Signatur an.
+func legeSuchTitelAn(t *testing.T, pool *pgxpool.Pool, titel, autor, isbn, signatur string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -41,12 +41,12 @@ func TestFindeTitelUnscharf_TokenUndDiakritika(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchTitel(t, pool, "Der Vorleser", "Bernhard Schlink", "978-3-257-06065-3", "SIG-A1")
-	seedSuchTitel(t, pool, "Harry Potter und der Stein der Weisen", "J. K. Rowling", "978-3-551-55741-1", "SIG-B2")
-	seedSuchTitel(t, pool, "Öl auf Leinwand", "José Saramago", "978-3-499-22222-2", "SIG-C3")
-	seedSuchTitel(t, pool, "Buddenbrooks in der Straße", "Thomas Mann", "978-3-596-29431-2", "SIG-D4")
+	legeSuchTitelAn(t, pool, "Der Vorleser", "Bernhard Schlink", "978-3-257-06065-3", "SIG-A1")
+	legeSuchTitelAn(t, pool, "Harry Potter und der Stein der Weisen", "J. K. Rowling", "978-3-551-55741-1", "SIG-B2")
+	legeSuchTitelAn(t, pool, "Öl auf Leinwand", "José Saramago", "978-3-499-22222-2", "SIG-C3")
+	legeSuchTitelAn(t, pool, "Buddenbrooks in der Straße", "Thomas Mann", "978-3-596-29431-2", "SIG-D4")
 	// Autor bereits in Ersatzschreibung erfasst — die Suche mit Umlaut muss ihn finden.
-	seedSuchTitel(t, pool, "Die Blechtrommel", "Guenter Grass", "978-3-423-11821-5", "SIG-E5")
+	legeSuchTitelAn(t, pool, "Die Blechtrommel", "Guenter Grass", "978-3-423-11821-5", "SIG-E5")
 
 	repo := NewKatalogAbfragen(pool)
 
@@ -92,7 +92,7 @@ func TestFindeTitelUnscharf_GesamtzahlTrotzLimit(t *testing.T) {
 	ctx := context.Background()
 
 	for _, n := range []string{"A", "B", "C", "D"} {
-		seedSuchTitel(t, pool, "Faust Band "+n, "Goethe", "978-0-00-00000"+n, "SIG-F"+n)
+		legeSuchTitelAn(t, pool, "Faust Band "+n, "Goethe", "978-0-00-00000"+n, "SIG-F"+n)
 	}
 
 	repo := NewKatalogAbfragen(pool)
@@ -115,7 +115,7 @@ func TestFindeTitelUnscharf_LeereEingabe(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchTitel(t, pool, "Der Vorleser", "Bernhard Schlink", "978-3-257-06065-3", "SIG-A1")
+	legeSuchTitelAn(t, pool, "Der Vorleser", "Bernhard Schlink", "978-3-257-06065-3", "SIG-A1")
 
 	repo := NewKatalogAbfragen(pool)
 

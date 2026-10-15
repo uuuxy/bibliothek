@@ -18,8 +18,8 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// createDummyImage liefert die Bytes eines Bildes im genannten Format.
-func createDummyImage(format string, breite, hoehe int) []byte {
+// erzeugeTestbild liefert die Bytes eines Bildes im genannten Format.
+func erzeugeTestbild(format string, breite, hoehe int) []byte {
 	bild := image.NewRGBA(image.Rect(0, 0, breite, hoehe))
 	for y := 0; y < hoehe; y++ {
 		for x := 0; x < breite; x++ {
@@ -37,8 +37,8 @@ func createDummyImage(format string, breite, hoehe int) []byte {
 	return puffer.Bytes()
 }
 
-// createMultipartRequest baut eine Anfrage multipart mit einer Bilddatei.
-func createMultipartRequest(t *testing.T, feldname, dateiname, format string, daten []byte) *http.Request {
+// baueMultipartAnfrage baut eine Anfrage multipart mit einer Bilddatei.
+func baueMultipartAnfrage(t *testing.T, feldname, dateiname, format string, daten []byte) *http.Request {
 	t.Helper()
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -59,7 +59,7 @@ func createMultipartRequest(t *testing.T, feldname, dateiname, format string, da
 
 func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 	t.Run("Valid JPEG", func(t *testing.T) {
-		bildDaten := createDummyImage("jpeg", 100, 150)
+		bildDaten := erzeugeTestbild("jpeg", 100, 150)
 		ergebnis, ext, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -73,7 +73,7 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 	})
 
 	t.Run("Valid PNG", func(t *testing.T) {
-		bildDaten := createDummyImage("png", 100, 150)
+		bildDaten := erzeugeTestbild("png", 100, 150)
 		ergebnis, ext, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -95,7 +95,7 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 	})
 
 	t.Run("Resize Large Image", func(t *testing.T) {
-		bildDaten := createDummyImage("jpeg", 1200, 1800)
+		bildDaten := erzeugeTestbild("jpeg", 1200, 1800)
 		ergebnis, ext, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -119,10 +119,10 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 }
 
 func TestLeseCoverUpload(t *testing.T) {
-	bildDaten := createDummyImage("jpeg", 100, 100)
+	bildDaten := erzeugeTestbild("jpeg", 100, 100)
 
 	t.Run("Valid Upload", func(t *testing.T) {
-		anfrage := createMultipartRequest(t, "cover", "test.jpg", "jpeg", bildDaten)
+		anfrage := baueMultipartAnfrage(t, "cover", "test.jpg", "jpeg", bildDaten)
 		w := httptest.NewRecorder()
 
 		daten, ok := leseCoverUpload(w, anfrage, "123")
@@ -135,7 +135,7 @@ func TestLeseCoverUpload(t *testing.T) {
 	})
 
 	t.Run("Invalid Field Name", func(t *testing.T) {
-		anfrage := createMultipartRequest(t, "wrong_field", "test.jpg", "jpeg", bildDaten)
+		anfrage := baueMultipartAnfrage(t, "wrong_field", "test.jpg", "jpeg", bildDaten)
 		w := httptest.NewRecorder()
 
 		_, ok := leseCoverUpload(w, anfrage, "123")
@@ -148,7 +148,7 @@ func TestLeseCoverUpload(t *testing.T) {
 	})
 
 	t.Run("Invalid Extension", func(t *testing.T) {
-		anfrage := createMultipartRequest(t, "cover", "test.txt", "txt", bildDaten)
+		anfrage := baueMultipartAnfrage(t, "cover", "test.txt", "txt", bildDaten)
 		w := httptest.NewRecorder()
 
 		_, ok := leseCoverUpload(w, anfrage, "123")
@@ -161,7 +161,7 @@ func TestLeseCoverUpload(t *testing.T) {
 	})
 
 	t.Run("Empty File", func(t *testing.T) {
-		anfrage := createMultipartRequest(t, "cover", "test.jpg", "jpeg", []byte{})
+		anfrage := baueMultipartAnfrage(t, "cover", "test.jpg", "jpeg", []byte{})
 		w := httptest.NewRecorder()
 
 		_, ok := leseCoverUpload(w, anfrage, "123")
@@ -181,7 +181,7 @@ func TestSpeichereHochgeladenesCover(t *testing.T) {
 
 	t.Run("Valid Save", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		bildDaten := createDummyImage("jpeg", 100, 100)
+		bildDaten := erzeugeTestbild("jpeg", 100, 100)
 		id := "test-id"
 
 		adresse, ok := speichereHochgeladenesCover(w, id, bildDaten, ".jpg")
@@ -211,7 +211,7 @@ func TestSpeichereHochgeladenesCover(t *testing.T) {
 
 	t.Run("Path Traversal Protection", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		bildDaten := createDummyImage("jpeg", 100, 100)
+		bildDaten := erzeugeTestbild("jpeg", 100, 100)
 
 		// filepath.Base in der Tür macht daraus einen harmlosen Namen.
 		id := "../../../etc/passwd"
@@ -260,7 +260,7 @@ func TestCoverHochladen(t *testing.T) {
 			name:           "Kennung ist keine UUID",
 			method:         http.MethodPost,
 			id:             "123",
-			bodyData:       createDummyImage("jpeg", 100, 100),
+			bodyData:       erzeugeTestbild("jpeg", 100, 100),
 			dateiname:      "test.jpg",
 			contentType:    "multipart/form-data",
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
@@ -290,7 +290,7 @@ func TestCoverHochladen(t *testing.T) {
 			name:        "Success Upload",
 			method:      http.MethodPost,
 			id:          uploadTestBuchID,
-			bodyData:    createDummyImage("jpeg", 100, 100),
+			bodyData:    erzeugeTestbild("jpeg", 100, 100),
 			dateiname:   "test.jpg",
 			contentType: "multipart/form-data",
 			setupMock: func(m pgxmock.PgxPoolIface) {
@@ -314,7 +314,7 @@ func TestCoverHochladen(t *testing.T) {
 			name:        "Buch unbekannt",
 			method:      http.MethodPost,
 			id:          uploadTestBuchID,
-			bodyData:    createDummyImage("jpeg", 100, 100),
+			bodyData:    erzeugeTestbild("jpeg", 100, 100),
 			dateiname:   "test.jpg",
 			contentType: "multipart/form-data",
 			setupMock: func(m pgxmock.PgxPoolIface) {

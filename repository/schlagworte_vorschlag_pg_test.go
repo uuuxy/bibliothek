@@ -16,8 +16,8 @@ func TestSchlagworteAusStichwoertern_NurWasDieEigeneListeKennt(t *testing.T) {
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
 
-	drachen := seedSchlagwortTitel(t, pool, "Drachenreiter")
-	boie := seedSchlagwortTitel(t, pool, "Dunkelnacht")
+	drachen := legeSchlagwortTitelAn(t, pool, "Drachenreiter")
+	boie := legeSchlagwortTitelAn(t, pool, "Dunkelnacht")
 	if _, err := SetzeSchlagworte(ctx, pool, drachen, []string{"Fantasy", "Science-Fiction"}); err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestSchlagworte_ZerlegteUmlauteSindDasselbeWort(t *testing.T) {
 	ctx := context.Background()
 
 	const zusammengesetzt, zerlegt = "Vögel", "Vo\u0308gel"
-	amsel := seedSchlagwortTitel(t, pool, "Die Amsel")
+	amsel := legeSchlagwortTitelAn(t, pool, "Die Amsel")
 	if _, err := SetzeSchlagworte(ctx, pool, amsel, []string{zusammengesetzt}); err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestSchlagworte_ZerlegteUmlauteSindDasselbeWort(t *testing.T) {
 		t.Errorf("Vorschlag %+q, erwartet %+q", got, []string{zusammengesetzt})
 	}
 
-	meise := seedSchlagwortTitel(t, pool, "Die Meise")
+	meise := legeSchlagwortTitelAn(t, pool, "Die Meise")
 	if _, err := SetzeSchlagworte(ctx, pool, meise, []string{zerlegt}); err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestSchlagworteAusNormdaten_VorhandenUndNeu(t *testing.T) {
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
 
-	prozess := seedSchlagwortTitel(t, pool, "Der Process")
+	prozess := legeSchlagwortTitelAn(t, pool, "Der Process")
 	if _, err := SetzeSchlagworte(ctx, pool, prozess, []string{"Kafka <Franz>", "Zweiter Weltkrieg"}); err != nil {
 		t.Fatal(err)
 	}

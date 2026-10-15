@@ -27,17 +27,17 @@ func TestVormerkungLegeAn_SperrtSelbstAusgeliehenenTitel_PG(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "Vorm", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "Vorm", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
-	schueler := seedSchueler(t, pool, "V-1", "Mia", "7a")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, ex[0], schueler, bearbeiter)
+	schueler := legeSchuelerAn(t, pool, "V-1", "Mia", "7a")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, ex[0], schueler, bearbeiter)
 
 	repo := NewVormerkungsAbfragen(pool)
 
-	ex2 := seedSignaturMitExemplaren(t, pool, "Vorm2", 1)
+	ex2 := legeSignaturMitExemplarenAn(t, pool, "Vorm2", 1)
 	titel2 := titelIDVonExemplar(t, pool, ex2[0])
-	frisch := seedSchueler(t, pool, "V-3", "Zoe", "7a")
+	frisch := legeSchuelerAn(t, pool, "V-3", "Zoe", "7a")
 
 	// (1) Solange die Eigen-Ausleihe offen ist, darf keine Vormerkung auf denselben Titel entstehen.
 	if _, err := repo.LegeAn(ctx, titelID, "", schueler); !errors.Is(err, ErrTitelBereitsAusgeliehen) {
@@ -55,7 +55,7 @@ func TestVormerkungLegeAn_SperrtSelbstAusgeliehenenTitel_PG(t *testing.T) {
 	}
 
 	// (4) Nach der Rückgabe ist die Vormerkung auf den eigenen Titel wieder erlaubt.
-	returnLoan(t, pool, loan)
+	bucheRueckgabe(t, pool, loan)
 	if _, err := repo.LegeAn(ctx, titelID, "", schueler); err != nil {
 		t.Fatalf("nach Rückgabe muss Vormerkung möglich sein, bekam: %v", err)
 	}
@@ -70,11 +70,11 @@ func TestLasseAbgelaufeneVerfallen(t *testing.T) {
 	ctx := context.Background()
 	repo := NewVormerkungsAbfragen(pool)
 
-	ex := seedSignaturMitExemplaren(t, pool, "Verfall", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "Verfall", 1)
 	exID := ex[0]
 	titelID := titelIDVonExemplar(t, pool, exID)
-	noShow := seedSchueler(t, pool, "VF-NOSHOW", "Nora", "7a")
-	naechster := seedSchueler(t, pool, "VF-NEXT", "Nils", "7b")
+	noShow := legeSchuelerAn(t, pool, "VF-NOSHOW", "Nora", "7a")
+	naechster := legeSchuelerAn(t, pool, "VF-NEXT", "Nils", "7b")
 
 	// Nicht abgeholt: abholbereit, Frist gestern abgelaufen, hält exID.
 	if _, err := pool.Exec(ctx, `
@@ -126,13 +126,13 @@ func TestLasseAbgelaufeneVerfallen_ExemplarWeg(t *testing.T) {
 	ctx := context.Background()
 	repo := NewVormerkungsAbfragen(pool)
 
-	ex := seedSignaturMitExemplaren(t, pool, "VerfallWeg", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "VerfallWeg", 1)
 	exID := ex[0]
 	titelID := titelIDVonExemplar(t, pool, exID)
-	noShow := seedSchueler(t, pool, "VFW-NOSHOW", "Nora", "7a")
-	naechster := seedSchueler(t, pool, "VFW-NEXT", "Nils", "7b")
-	borger := seedSchueler(t, pool, "VFW-BORG", "Ben", "8c")
-	bearbeiter := seedBearbeiter(t, pool)
+	noShow := legeSchuelerAn(t, pool, "VFW-NOSHOW", "Nora", "7a")
+	naechster := legeSchuelerAn(t, pool, "VFW-NEXT", "Nils", "7b")
+	borger := legeSchuelerAn(t, pool, "VFW-BORG", "Ben", "8c")
+	bearbeiter := legeBearbeiterAn(t, pool)
 
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis, erstellt_am)
@@ -146,7 +146,7 @@ func TestLasseAbgelaufeneVerfallen_ExemplarWeg(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Das Exemplar ist inzwischen an einen Dritten ausgeliehen.
-	seedAusleihe(t, pool, exID, borger, bearbeiter)
+	legeAusleiheAn(t, pool, exID, borger, bearbeiter)
 
 	verfallen, neuBereit, err := repo.LasseAbgelaufeneVerfallen(ctx)
 	if err != nil {
@@ -176,9 +176,9 @@ func TestVormerkungLegeAn_ZweiteIstKonflikt_PG(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "VormDup", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "VormDup", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
-	schueler := seedSchueler(t, pool, "V-DUP", "Ida", "7a")
+	schueler := legeSchuelerAn(t, pool, "V-DUP", "Ida", "7a")
 	repo := NewVormerkungsAbfragen(pool)
 
 	if _, err := repo.LegeAn(ctx, titelID, "", schueler); err != nil {

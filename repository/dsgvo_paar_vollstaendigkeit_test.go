@@ -33,13 +33,13 @@ func TestDSGVOAuskunftLiestJedeSchuelerQuelle(t *testing.T) {
 	}
 }
 
-// TestAuditDetails_EinSchluesselFuerDenSchueler friert das Vokabular der Schlüssel ein: Der
+// TestProtokollDetails_EinSchluesselFuerDenSchueler friert das Vokabular der Schlüssel ein: Der
 // Verweis auf einen Schüler in den Details eines Protokolleintrags heißt `schueler_id`,
 // überall. Schriebe eine Stelle denselben Wert als `student_id`, sähe jede Abfrage über
 // details->>'schueler_id', die Auskunft ebenso wie die Tilgung, diese Einträge nicht. Zwei
 // Namen für denselben Wert sind zwei Wahrheitsquellen; Migration 091 hat die Altzeilen
 // umgeschlüsselt.
-func TestAuditDetails_EinSchluesselFuerDenSchueler(t *testing.T) {
+func TestProtokollDetails_EinSchluesselFuerDenSchueler(t *testing.T) {
 	var verstoesse []string
 	schuelerIDForm := 0
 

@@ -7,10 +7,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// seedSuchLeser legt einen Leser beliebiger Art an — ohne Klasse, ohne Abgängerjahr,
+// legeSuchLeserAn legt einen Leser beliebiger Art an — ohne Klasse, ohne Abgängerjahr,
 // wie ein Kollege in der Leserdatei steht. Geschrieben wird in die Tabelle `leser`:
 // Durch die Sicht `schueler` ließe WITH CHECK OPTION diese Zeile gar nicht entstehen.
-func seedSuchLeser(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname, art string) string {
+func legeSuchLeserAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname, art string) string {
 	t.Helper()
 	var id string
 	var barcodeWert any
@@ -37,11 +37,11 @@ func TestFindeUnscharf_FindetKollegium(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchSchueler(t, pool, "LSUCH-1", "Katrin", "Wendland")
-	seedSuchLeser(t, pool, "LSUCH-2", "Katrin", "Wendlandt", "lehrkraft")
+	legeSuchSchuelerAn(t, pool, "LSUCH-1", "Katrin", "Wendland")
+	legeSuchLeserAn(t, pool, "LSUCH-2", "Katrin", "Wendlandt", "lehrkraft")
 	// Ein Kollege ohne gedruckten Ausweis: Seine Nummer ist NULL. Er muss trotzdem
 	// gefunden werden — und der Scan der Spalten darf an der NULL nicht zerbrechen.
-	seedSuchLeser(t, pool, "", "Hendrik", "Wendlandt", "liv")
+	legeSuchLeserAn(t, pool, "", "Hendrik", "Wendlandt", "liv")
 
 	repo := NewLeserAbfragen(pool)
 	treffer, gesamt, err := repo.FindeUnscharf(ctx, "Wendlandt", 10)

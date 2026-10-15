@@ -19,7 +19,7 @@ func TestFindeOffene_NullBearbeiterKein500(t *testing.T) {
 		t.Fatalf("reset: %v", err)
 	}
 
-	schuelerID := seedSchueler(t, pool, "LOAN-NB", "Nulli", "7a")
+	schuelerID := legeSchuelerAn(t, pool, "LOAN-NB", "Nulli", "7a")
 
 	var titelID, copyID string
 	if err := pool.QueryRow(ctx,

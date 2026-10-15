@@ -61,8 +61,9 @@ var (
 // Der Bestand an Namen und Kommentaren, die docs/STIL.md noch nicht folgen, wächst nicht, und
 // ein Paket ohne Eintrag bleibt ohne Fund. Die Zahlen stehen in stil_bestand_test.go.
 //
-// Blindheit: Testdateien und die Oberfläche liest die Prüfung nicht. Sie sieht nur Wörter der
-// drei Listen oben; ob ein deutscher Name die richtige Sache trifft, ob ein Name öffentlich
+// Blindheit: Die Oberfläche liest die Prüfung nicht. In Testdateien zählt sie Namen und
+// Dateinamen, aber kein Datum: Dort ist ein Datum meist ein Testwert (eine feste Uhr, ein
+// Ferientag). Sie sieht nur Wörter der drei Listen oben; ob ein deutscher Name die richtige Sache trifft, ob ein Name öffentlich
 // sein muss und ob ein Kommentar das Warum nennt, liest ein Mensch. Lokale Variablen und
 // Parameter zählt sie nicht. Das Datum einer Quelle (stilQuelle) zählt sie nicht als Datum.
 func TestStil_BestandWaechstNicht(t *testing.T) {
@@ -98,8 +99,8 @@ func TestStil_BestandWaechstNicht(t *testing.T) {
 	}
 }
 
-// stilMessen liest den Programmcode und zählt je Paket die Funde, mit ihren Stellen; dazu die
-// Zahl der gelesenen Namen und Pakete.
+// stilMessen liest Programmcode und Tests und zählt je Paket die Funde, mit ihren Stellen; dazu
+// die Zahl der gelesenen Namen und Pakete.
 func stilMessen(t *testing.T) (map[string]stilZahl, map[string][]string, int, int) {
 	t.Helper()
 	fset := token.NewFileSet()
@@ -118,10 +119,10 @@ func stilMessen(t *testing.T) (map[string]stilZahl, map[string][]string, int, in
 			}
 			return nil
 		}
-		if !strings.HasSuffix(pfad, ".go") || strings.HasSuffix(pfad, "_test.go") ||
-			filepath.ToSlash(pfad) == "docs/docs.go" {
+		if !strings.HasSuffix(pfad, ".go") || filepath.ToSlash(pfad) == "docs/docs.go" {
 			return nil
 		}
+		test := strings.HasSuffix(pfad, "_test.go")
 		datei, err := parser.ParseFile(fset, pfad, nil, parser.ParseComments|parser.SkipObjectResolution)
 		if err != nil {
 			return err
@@ -130,16 +131,18 @@ func stilMessen(t *testing.T) (map[string]stilZahl, map[string][]string, int, in
 		gelesen[paket] = true
 		z := ist[paket]
 		merke := func(art, was string) { funde[paket] = append(funde[paket], art+": "+was+" ("+pfad+")") }
-		if hatWort(woerter(strings.TrimSuffix(filepath.Base(pfad), ".go")), stilFachwoerter) {
+		if hatWort(woerter(strings.TrimSuffix(strings.TrimSuffix(filepath.Base(pfad), ".go"), "_test")), stilFachwoerter) {
 			z.Datei++
 			merke("Datei", filepath.Base(pfad))
 		}
-		for _, gruppe := range datei.Comments {
-			for _, k := range gruppe.List {
-				for _, zeile := range strings.Split(k.Text, "\n") {
-					if stilDatum.MatchString(stilQuelle.ReplaceAllString(zeile, "")) {
-						z.Datum++
-						merke("Datum", strings.TrimSpace(zeile))
+		if !test {
+			for _, gruppe := range datei.Comments {
+				for _, k := range gruppe.List {
+					for _, zeile := range strings.Split(k.Text, "\n") {
+						if stilDatum.MatchString(stilQuelle.ReplaceAllString(zeile, "")) {
+							z.Datum++
+							merke("Datum", strings.TrimSpace(zeile))
+						}
 					}
 				}
 			}

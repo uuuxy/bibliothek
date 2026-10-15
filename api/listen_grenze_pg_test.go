@@ -230,7 +230,7 @@ func TestListenNennenIhreGrenze(t *testing.T) {
 		tuertest.SetzeGenauEinRecht(t, pool, permission)
 		req := httptest.NewRequest(http.MethodGet, aufrufe[route].URL, nil)
 		if mitSitzung {
-			req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.sessionToken})
+			req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.anmeldeToken})
 		}
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)

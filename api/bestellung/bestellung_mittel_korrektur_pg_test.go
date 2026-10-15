@@ -40,7 +40,7 @@ func korrigiereTopfUeberTuer(t *testing.T, srv *Tueren, pool *pgxpool.Pool, best
 	return rec
 }
 
-func topfInDb(t *testing.T, pool *pgxpool.Pool, id string) *string {
+func topfInDB(t *testing.T, pool *pgxpool.Pool, id string) *string {
 	t.Helper()
 	var mittel *string
 	if err := pool.QueryRow(context.Background(), `SELECT mittel FROM bestellungen_verlauf WHERE id = $1`, id).Scan(&mittel); err != nil {
@@ -49,7 +49,7 @@ func topfInDb(t *testing.T, pool *pgxpool.Pool, id string) *string {
 	return mittel
 }
 
-func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
+func TestBestellungTopfKorrektur_SchreibtTopfUndProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -85,7 +85,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 	if antwort.Mittel != "schultraeger" || antwort.Von != "land" || !antwort.Geaendert {
 		t.Errorf("Antwort: %+v — muss neuen Topf, alten Topf und geaendert=true nennen", antwort)
 	}
-	if got := topfInDb(t, pool, id); got == nil || *got != "schultraeger" {
+	if got := topfInDB(t, pool, id); got == nil || *got != "schultraeger" {
 		t.Errorf("Topf in der Datenbank: %v, want schultraeger", got)
 	}
 
@@ -159,7 +159,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 			t.Errorf("%s: Status %d, want 400: %s", rumpf, rec.Code, rec.Body.String())
 		}
 	}
-	if got := topfInDb(t, pool, id); got == nil || *got != "land" {
+	if got := topfInDB(t, pool, id); got == nil || *got != "land" {
 		t.Errorf("Topf wurde trotz abgewiesener Anfrage verändert: %v", got)
 	}
 	var anzahl int
@@ -192,7 +192,7 @@ func TestBestellungTopfKorrektur_OrdnetAltBestellungOhneZuordnungZu(t *testing.T
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"von":""`) {
 		t.Fatalf("Alt-Bestellung zuordnen: %d %s", rec.Code, rec.Body.String())
 	}
-	if got := topfInDb(t, pool, id); got == nil || *got != "land" {
+	if got := topfInDB(t, pool, id); got == nil || *got != "land" {
 		t.Errorf("Topf: %v, want land", got)
 	}
 }

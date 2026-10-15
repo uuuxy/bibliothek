@@ -9,7 +9,7 @@ import (
 // Versetzung, Auskunft und Papierkorb: Die beiden Rechte, die daraus hervorgingen, erben den
 // Wert. Ohne das Erbe legte SchreibeRechteVorgabe sie mit der Vorgabe false an, und die Rolle
 // verlöre sie still.
-func TestRechteVererbung_AufteilungVonManageUsers(t *testing.T) {
+func TestRechteVererbung_AufteilungDesRechtsBenutzerVerwalten(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 	d := &Verbindung{Pool: pool}

@@ -13,16 +13,16 @@ func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	resetAuflagen(t, pool)
 	ctx := context.Background()
 
-	a := seedAuflage(t, pool, "Mathe 7", 2019, true)
-	b := seedAuflage(t, pool, "Mathe 7", 2023, true)
-	c := seedAuflage(t, pool, "Mathe 7", 2025, true)
+	a := legeAuflageAn(t, pool, "Mathe 7", 2019, true)
+	b := legeAuflageAn(t, pool, "Mathe 7", 2023, true)
+	c := legeAuflageAn(t, pool, "Mathe 7", 2025, true)
 	for _, andere := range []string{b, c} {
 		if _, err := FasseAuflagenZusammen(ctx, pool, a, andere); err != nil {
 			t.Fatal(err)
 		}
 	}
 	repo := NewProtokollAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 	werke := func() (n int) {
 		t.Helper()
 		if err := pool.QueryRow(ctx, `SELECT count(*) FROM werke`).Scan(&n); err != nil {

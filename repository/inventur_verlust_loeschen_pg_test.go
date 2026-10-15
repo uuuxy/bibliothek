@@ -18,11 +18,11 @@ func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 
-	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Erdkundebuch 7", "VL-HIST", bearbeiter)
-	schuelerID := seedSchuelerFuerVerlust(t, ctx, pool, "VL-S1")
-	ausleiheID := seedZurueckgegebeneAusleihe(t, ctx, pool, exemplarID, schuelerID)
+	exemplarID := legeVerlorenesExemplarAn(t, ctx, repo, "Erdkundebuch 7", "VL-HIST", bearbeiter)
+	schuelerID := legeSchuelerFuerVerlustAn(t, ctx, pool, "VL-S1")
+	ausleiheID := legeZurueckgegebeneAusleiheAn(t, ctx, pool, exemplarID, schuelerID)
 
 	// Eine bezahlte Forderung an derselben Ausleihe ist erledigt: Sie sperrt nicht und geht
 	// mit, sonst hielte ihr RESTRICT das Exemplar fest.
@@ -70,12 +70,12 @@ func TestLoescheVerlusteEndgueltig_OffeneForderungSperrt(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 
-	frei := seedVerlorenesExemplar(t, ctx, repo, "Mathebuch 5", "VL-FREI", bearbeiter)
-	gesperrt := seedVerlorenesExemplar(t, ctx, repo, "Mathebuch 6", "VL-GEBUEHR", bearbeiter)
-	schuelerID := seedSchuelerFuerVerlust(t, ctx, pool, "VL-S2")
-	ausleiheID := seedZurueckgegebeneAusleihe(t, ctx, pool, gesperrt, schuelerID)
+	frei := legeVerlorenesExemplarAn(t, ctx, repo, "Mathebuch 5", "VL-FREI", bearbeiter)
+	gesperrt := legeVerlorenesExemplarAn(t, ctx, repo, "Mathebuch 6", "VL-GEBUEHR", bearbeiter)
+	schuelerID := legeSchuelerFuerVerlustAn(t, ctx, pool, "VL-S2")
+	ausleiheID := legeZurueckgegebeneAusleiheAn(t, ctx, pool, gesperrt, schuelerID)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
 		VALUES ($1, $2, $3, 'Buch verloren', 24.90, false)`, gesperrt, ausleiheID, schuelerID); err != nil {
@@ -117,7 +117,7 @@ func TestLoescheVerlusteEndgueltig_OffeneForderungSperrt(t *testing.T) {
 	}
 }
 
-func seedSchuelerFuerVerlust(t *testing.T, ctx context.Context, pool *pgxpool.Pool, barcode string) string {
+func legeSchuelerFuerVerlustAn(t *testing.T, ctx context.Context, pool *pgxpool.Pool, barcode string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(ctx, `
@@ -128,9 +128,9 @@ func seedSchuelerFuerVerlust(t *testing.T, ctx context.Context, pool *pgxpool.Po
 	return id
 }
 
-// seedZurueckgegebeneAusleihe legt eine abgeschlossene Ausleihe an: die Historie, an der ON
+// legeZurueckgegebeneAusleiheAn legt eine abgeschlossene Ausleihe an: die Historie, an der ON
 // DELETE RESTRICT hängt.
-func seedZurueckgegebeneAusleihe(t *testing.T, ctx context.Context, pool *pgxpool.Pool, exemplarID, schuelerID string) string {
+func legeZurueckgegebeneAusleiheAn(t *testing.T, ctx context.Context, pool *pgxpool.Pool, exemplarID, schuelerID string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(ctx, `

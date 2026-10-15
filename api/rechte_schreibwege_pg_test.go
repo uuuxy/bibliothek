@@ -147,7 +147,7 @@ func TestSchreibwegeWeisenOhneDasRechtAb(t *testing.T) {
 
 		req := tuertest.MitCSRF(httptest.NewRequest(methode, url, strings.NewReader("{}")))
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.sessionToken})
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.anmeldeToken})
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 		geprueft++

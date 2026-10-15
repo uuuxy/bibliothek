@@ -8,7 +8,7 @@ import (
 
 const testQUpdate = "UPDATE"
 
-func neuerUpsertContext() *titelSchreibLauf {
+func newTitelSchreibLauf() *titelSchreibLauf {
 	return &titelSchreibLauf{
 		bestand:       NewTitelBestand(),
 		geseheneISBN:  map[string]bool{},
@@ -21,7 +21,7 @@ func neuerUpsertContext() *titelSchreibLauf {
 // über den Titel gematcht werden (UPDATE mit ISBN-Nachtrag) — vor dem Fix wurde
 // nur über die ISBN gematcht und für jeden CSV-Titel eine Dublette angelegt.
 func TestReiheTitelEin_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
-	c := neuerUpsertContext()
+	c := newTitelSchreibLauf()
 	c.bestand.nachTitel["LMF-Deutschbuch 9"] = "id-bestand"
 
 	batch := &pgx.Batch{}
@@ -47,7 +47,7 @@ func TestReiheTitelEin_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 // Eine Datei mit ISBN-Variante und ISBN-loser Variante desselben Titels darf nur
 // einen Insert erzeugen.
 func TestReiheTitelEin_InBatchDedupUeberVarianten(t *testing.T) {
-	c := neuerUpsertContext()
+	c := newTitelSchreibLauf()
 	batch := &pgx.Batch{}
 
 	if ok := reiheTitelEin(batch, Titel{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate); !ok {
@@ -92,7 +92,7 @@ func TestNormalisiereTitelSchluessel(t *testing.T) {
 // Titel, die sich nur in der Anführungszeichen-Kodierung unterscheiden, müssen
 // dieselbe Bestandszeile treffen (UPDATE statt INSERT-Dublette).
 func TestReiheTitelEin_QuoteVariantenMatchen(t *testing.T) {
-	c := neuerUpsertContext()
+	c := newTitelSchreibLauf()
 	c.bestand.nachTitel[NormalisiereTitelSchluessel(`"Kein Bock auf Lernen?"`)] = "id-quoted"
 
 	batch := &pgx.Batch{}
@@ -105,7 +105,7 @@ func TestReiheTitelEin_QuoteVariantenMatchen(t *testing.T) {
 
 // ISBN-Match hat Vorrang vor dem Titel-Match: existieren beide, gewinnt die ISBN-Zeile.
 func TestReiheTitelEin_ISBNVorTitel(t *testing.T) {
-	c := neuerUpsertContext()
+	c := newTitelSchreibLauf()
 	c.bestand.nachISBN["978-1"] = "id-isbn"
 	c.bestand.nachTitel["Faust"] = "id-titel"
 

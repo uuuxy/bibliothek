@@ -20,7 +20,7 @@ import (
 // die Zusage an beiden Sorten von Türen fest: Routen, deren Zweck Personendaten sind, hängen an
 // view_students; die Geräteliste blendet den Namen des Ausleihers aus.
 
-// TestPersonendatenRoutenHinterViewStudents liest die Routen-Registrierung als
+// TestPersonendatenRoutenHinterRechtSchuelerdateiAnzeigen liest die Routen-Registrierung als
 // Quelle (dieselbe Technik wie geschuetzte_routen_test.go): Diese Antworten
 // verknüpfen Schülernamen mit Titeln und dürfen nie hinter ein Recht rutschen,
 // das die Helfer-Rolle ab Werk besitzt (view_books, perform_actions).
@@ -29,7 +29,7 @@ import (
 // view_students. Die Vormerkungen hängen am engen Recht der Theke manage_vormerkungen (Felder des
 // Kiosks: Name und Klasse); für Helfer ist es in der Rechte-Matrix zuschaltbar und ab Werk aus
 // (db/rechte_vorgabe.go RechteVorgabe und RechteOptional).
-func TestPersonendatenRoutenHinterViewStudents(t *testing.T) {
+func TestPersonendatenRoutenHinterRechtSchuelerdateiAnzeigen(t *testing.T) {
 	quelle, err := os.ReadFile("routen_katalog.go")
 	if err != nil {
 		t.Fatalf("routen_katalog.go lesen: %v", err)
@@ -105,12 +105,12 @@ func eingabeSiehtUebergehen(rolle string) bool {
 	return spy.gesehenesUebergehen
 }
 
-// TestSperreUebergehenNurMitEditStudents: Eine Sperre aufheben ist ein Verwaltungsakt.
+// TestSperreUebergehenNurMitRechtSchuelerdatenAendern: Eine Sperre aufheben ist ein Verwaltungsakt.
 // override_block darf nur wirken, wenn der Aufrufer edit_students besitzt, dasselbe Recht, das
 // auch das Sperren und Entsperren erlaubt. Reichte perform_actions, fiele die Sperre für ein
 // Helferkonto über ein Feld der Anfrage, auch wenn die Oberfläche den Schalter nie anbietet:
 // Schutz nur als Konvention.
-func TestSperreUebergehenNurMitEditStudents(t *testing.T) {
+func TestSperreUebergehenNurMitRechtSchuelerdatenAendern(t *testing.T) {
 	tuer.LeereRechteCache()
 	t.Cleanup(tuer.LeereRechteCache)
 	tuer.MerkeRechtFuerTest("helfer", "edit_students", false)
@@ -152,11 +152,11 @@ func geraeteAnfrage(rolle string) *httptest.ResponseRecorder {
 	return w
 }
 
-// TestGeraetelisteBlendetAusleiherOhneViewStudentsAus: Der Helfer sieht, dass
+// TestGeraetelisteBlendetAusleiherOhneRechtSchuelerdateiAnzeigenAus: Der Helfer sieht, dass
 // ein Gerät verliehen ist (ausgeliehen_an = ""), aber nicht, an wen. Ein Admin
 // sieht den Namen. Der Cache wird gezielt vorbefüllt, damit der Test ohne
 // Datenbank läuft und trotzdem den echten Rechte-Pfad nimmt.
-func TestGeraetelisteBlendetAusleiherOhneViewStudentsAus(t *testing.T) {
+func TestGeraetelisteBlendetAusleiherOhneRechtSchuelerdateiAnzeigenAus(t *testing.T) {
 	tuer.LeereRechteCache()
 	t.Cleanup(tuer.LeereRechteCache)
 	tuer.MerkeRechtFuerTest("helfer", "view_students", false)

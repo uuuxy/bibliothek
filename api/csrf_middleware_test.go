@@ -122,7 +122,7 @@ func TestCSRFMiddlewareAusnahmenBleibenOffen(t *testing.T) {
 // Sitzung eines Kontos des Angreifers anmelden. Alles, was danach am Tresen gescannt wird,
 // landet dort. SameSite=Strict verhindert das nicht: Es regelt das Senden von Cookies, nicht
 // das Setzen durch die Antwort.
-func TestCSRFMiddlewarePrueftAuchLoginUnterpfade(t *testing.T) {
+func TestCSRFMiddlewarePrueftAuchUnterpfadeDerAnmeldung(t *testing.T) {
 	for _, pfad := range []string{"/login", "/login/code", "/login/barcode"} {
 		t.Run(pfad, func(t *testing.T) {
 			erreicht, code := durchlaufCSRF(t, http.MethodPost, pfad, false)

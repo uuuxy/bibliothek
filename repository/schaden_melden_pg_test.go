@@ -17,10 +17,10 @@ func TestSchadenMelden_NichtZurueckgegebenIstVerlust(t *testing.T) {
 	ctx := context.Background()
 	repo := NewSchadensAbfragen(pool)
 
-	copyID := seedSignaturMitExemplaren(t, pool, "VerlustGrund", 1)[0]
-	schueler := seedSchueler(t, pool, "VG-A", "Dana", "8b")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
+	copyID := legeSignaturMitExemplarenAn(t, pool, "VerlustGrund", 1)[0]
+	schueler := legeSchuelerAn(t, pool, "VG-A", "Dana", "8b")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 
 	if _, err := repo.Melde(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 0); err != nil {
 		t.Fatalf("Verlust melden: %v", err)
@@ -45,10 +45,10 @@ func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	copyID := seedSignaturMitExemplaren(t, pool, "FundForderung", 1)[0]
-	schueler := seedSchueler(t, pool, "FF-A", "Emil", "9c")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
+	copyID := legeSignaturMitExemplarenAn(t, pool, "FundForderung", 1)[0]
+	schueler := legeSchuelerAn(t, pool, "FF-A", "Emil", "9c")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 18.50)
 	if err != nil {
 		t.Fatalf("Verlust melden: %v", err)
@@ -101,10 +101,10 @@ func TestSchadenMelden_KollegeOhneForderung(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	copyID := seedSignaturMitExemplaren(t, pool, "KollegeVerlust", 1)[0]
-	kollege := seedKollege(t, pool, "A-90001", "Mara")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, copyID, kollege, bearbeiter)
+	copyID := legeSignaturMitExemplarenAn(t, pool, "KollegeVerlust", 1)[0]
+	kollege := legeKollegenAn(t, pool, "A-90001", "Mara")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, copyID, kollege, bearbeiter)
 
 	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
 		"nicht zurückgegeben", SchadensArtNichtZurueck, 15.0)
@@ -145,10 +145,10 @@ func TestSchadenMelden_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	copyID := seedSignaturMitExemplaren(t, pool, "KollegeZweimal", 1)[0]
-	kollege := seedKollege(t, pool, "A-90002", "Tom")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, copyID, kollege, bearbeiter)
+	copyID := legeSignaturMitExemplarenAn(t, pool, "KollegeZweimal", 1)[0]
+	kollege := legeKollegenAn(t, pool, "A-90002", "Tom")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, copyID, kollege, bearbeiter)
 	repo := NewSchadensAbfragen(pool)
 
 	if _, err := repo.Melde(ctx, copyID, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
@@ -172,7 +172,7 @@ func TestSchadenMelden_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 }
 
 // Ein Kollege steht in derselben Tabelle wie ein Schüler, unterschieden nur durch `art`.
-func seedKollege(t *testing.T, pool *pgxpool.Pool, barcode, vorname string) string {
+func legeKollegenAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),

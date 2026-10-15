@@ -32,10 +32,10 @@ func um10(j int, m time.Month, d int) time.Time {
 func abholLage(t *testing.T, pool *pgxpool.Pool, praefix string) (noraVormerkung, nora, nils string) {
 	t.Helper()
 	ctx := context.Background()
-	ex := seedSignaturMitExemplaren(t, pool, praefix, 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, praefix, 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
-	nora = seedSchueler(t, pool, praefix+"-NORA", "Nora", "7a")
-	nils = seedSchueler(t, pool, praefix+"-NILS", "Nils", "7b")
+	nora = legeSchuelerAn(t, pool, praefix+"-NORA", "Nora", "7a")
+	nils = legeSchuelerAn(t, pool, praefix+"-NILS", "Nils", "7b")
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis, erstellt_am)
 		VALUES ($1, $2, 'abholbereit', $3, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '5 days')

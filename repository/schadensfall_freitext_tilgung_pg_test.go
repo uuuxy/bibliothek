@@ -20,8 +20,8 @@ func TestTilgeSchuelerSpuren_FreitextNurBeiErledigtenFaellen(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 
-	schueler := seedSchueler(t, pool, "S-FREI-1", "Freitext", "9c")
-	exemplare := seedSignaturMitExemplaren(t, pool, "Freitext", 2)
+	schueler := legeSchuelerAn(t, pool, "S-FREI-1", "Freitext", "9c")
+	exemplare := legeSignaturMitExemplarenAn(t, pool, "Freitext", 2)
 
 	const erzaehlung = "Buch im Bus liegen gelassen, Mutter angerufen"
 

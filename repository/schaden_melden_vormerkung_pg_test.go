@@ -14,12 +14,12 @@ func TestSchadenMelden_SetztAbholbereiteVormerkungZurueck(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "DmgVorm", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "DmgVorm", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
-	schueler := seedSchueler(t, pool, "DV-1", "Mia", "7a")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, ex[0], schueler, bearbeiter)
-	returnLoan(t, pool, loan)
+	schueler := legeSchuelerAn(t, pool, "DV-1", "Mia", "7a")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, ex[0], schueler, bearbeiter)
+	bucheRueckgabe(t, pool, loan)
 
 	// Vormerkung, die genau dieses Exemplar als abholbereit bereitstellt.
 	var vID string

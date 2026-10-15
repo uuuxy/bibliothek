@@ -14,11 +14,11 @@ func TestLoescheLeserEndgueltig_BedientNaechstenWartenden(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "PurgeVorm", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "PurgeVorm", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
-	gehend := seedSchueler(t, pool, "PV-1", "Mia", "9a")
-	wartend := seedSchueler(t, pool, "PV-2", "Ben", "9a")
-	bearbeiter := seedBearbeiter(t, pool)
+	gehend := legeSchuelerAn(t, pool, "PV-1", "Mia", "9a")
+	wartend := legeSchuelerAn(t, pool, "PV-2", "Ben", "9a")
+	bearbeiter := legeBearbeiterAn(t, pool)
 
 	// Der gehende Schüler hat das Exemplar abholbereit liegen.
 	if _, err := pool.Exec(ctx,

@@ -23,7 +23,7 @@ func resetSchlagworte(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-func seedSchlagwortTitel(t *testing.T, pool *pgxpool.Pool, titel string) string {
+func legeSchlagwortTitelAn(t *testing.T, pool *pgxpool.Pool, titel string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -38,8 +38,8 @@ func TestSetzeSchlagworte_VorhandeneSchreibweiseGewinnt(t *testing.T) {
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
 
-	erster := seedSchlagwortTitel(t, pool, "Tintenherz")
-	zweiter := seedSchlagwortTitel(t, pool, "Woodwalkers")
+	erster := legeSchlagwortTitelAn(t, pool, "Tintenherz")
+	zweiter := legeSchlagwortTitelAn(t, pool, "Woodwalkers")
 
 	if _, err := SetzeSchlagworte(ctx, pool, erster, []string{"Fantasy"}); err != nil {
 		t.Fatalf("erster Titel: %v", err)
@@ -65,7 +65,7 @@ func TestSetzeSchlagworte_ErsetztDieMengeUndLeerEntferntAlle(t *testing.T) {
 	pool := pgTestPool(t)
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
-	id := seedSchlagwortTitel(t, pool, "Die drei ???")
+	id := legeSchlagwortTitelAn(t, pool, "Die drei ???")
 
 	schritte := []struct {
 		eingabe []string
@@ -121,7 +121,7 @@ func TestSetzeSchlagworte_Grenzen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
-	id := seedSchlagwortTitel(t, pool, "Grenzfall")
+	id := legeSchlagwortTitelAn(t, pool, "Grenzfall")
 
 	zuViele := make([]string, SchlagworteJeTitelMax+1)
 	for i := range zuViele {
@@ -154,7 +154,7 @@ func TestSchlagwortVorschlaege_HaeufigsteZuerstGekapptOhneWaisen(t *testing.T) {
 	ctx := context.Background()
 
 	haeufig := []string{
-		seedSchlagwortTitel(t, pool, "A"), seedSchlagwortTitel(t, pool, "B"), seedSchlagwortTitel(t, pool, "C"),
+		legeSchlagwortTitelAn(t, pool, "A"), legeSchlagwortTitelAn(t, pool, "B"), legeSchlagwortTitelAn(t, pool, "C"),
 	}
 	for _, id := range haeufig {
 		if _, err := SetzeSchlagworte(ctx, pool, id, []string{"Zauberei"}); err != nil {
@@ -163,7 +163,7 @@ func TestSchlagwortVorschlaege_HaeufigsteZuerstGekapptOhneWaisen(t *testing.T) {
 	}
 	// Mehr Wörter als die Kappung, je an einem Titel — direkt geschrieben, weil ein
 	// Titel über den Schreibpfad höchstens SchlagworteJeTitelMax trägt.
-	sammel := seedSchlagwortTitel(t, pool, "Sammelband")
+	sammel := legeSchlagwortTitelAn(t, pool, "Sammelband")
 	if _, err := pool.Exec(ctx, `
 		WITH neu AS (
 			INSERT INTO schlagworte (wort)
@@ -209,7 +209,7 @@ func TestSchlagwortVorschlaege_SucheUeberAlleWoerter(t *testing.T) {
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
 
-	sammel := seedSchlagwortTitel(t, pool, "Sammelband")
+	sammel := legeSchlagwortTitelAn(t, pool, "Sammelband")
 	if _, err := pool.Exec(ctx, `
 		WITH neu AS (
 			INSERT INTO schlagworte (wort)
@@ -224,7 +224,7 @@ func TestSchlagwortVorschlaege_SucheUeberAlleWoerter(t *testing.T) {
 		"Kochbuch":   {"Speisepilze"},
 		"Wanderbuch": {"Wald"},
 	} {
-		if _, err := SetzeSchlagworte(ctx, pool, seedSchlagwortTitel(t, pool, titel), woerter); err != nil {
+		if _, err := SetzeSchlagworte(ctx, pool, legeSchlagwortTitelAn(t, pool, titel), woerter); err != nil {
 			t.Fatal(err)
 		}
 	}

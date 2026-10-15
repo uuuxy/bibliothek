@@ -20,7 +20,7 @@ import (
 // Rechte: USER_CREATE mit ziel_id und der angemeldeten Person als Handelnder. Ohne den
 // Eintrag hinge die Rechenschaft an der Tür, zwei Türen zum selben Zustand. Über die ziel_id
 // findet die Auskunft den Eintrag beim Konto.
-func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
+func TestLeserdatei_KontoAnlageSchreibtProtokolleintrag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")

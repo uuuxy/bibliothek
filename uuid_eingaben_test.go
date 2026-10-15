@@ -143,13 +143,13 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, namen eing
 	uuidSichtbar := ruftAuf(fn.Body, "kennung", "IstUUID") || ruftAuf(fn.Body, "uuid", "Parse") ||
 		ruftHelferAuf(fn.Body, "alleUUIDs")
 	validateSichtbar := ruftAuf(fn.Body, namen.validator, "Struct", "Var") || ruftValidatorDerTuerenAuf(fn.Body, namen.validator)
-	queryVars := queryVariablen(fn.Body)
+	queryVars := parameterVariablen(fn.Body)
 	ast.Inspect(fn.Body, func(n ast.Node) bool {
 		call, ok := n.(*ast.CallExpr)
 		if !ok {
 			return true
 		}
-		if name, ok := queryIDName(call, queryVars); ok {
+		if name, ok := idParameterName(call, queryVars); ok {
 			melde(fmt.Sprintf("%s:%s:query:%s", paket, fn.Name.Name, name), fn.Name.Name)
 		}
 		ziel, direkt := dekodierZiel(call, namen.dekodierer)
@@ -209,10 +209,10 @@ func kompositTyp(e ast.Expr) ast.Expr {
 	return nil
 }
 
-// queryVariablen: Namen, die `….Query()` halten (`q := r.URL.Query()`). Ein `q.Get("…id")` darauf
-// ist dieselbe Tür wie `r.URL.Query().Get("…id")`; wer nur die zweite Schreibweise sieht, lässt
-// etwa `lieferant_id` am Bestellbericht durch.
-func queryVariablen(body *ast.BlockStmt) map[string]bool {
+// parameterVariablen: Namen, die `….Query()` halten (`q := r.URL.Query()`). Ein `q.Get("…id")`
+// darauf ist dieselbe Tür wie `r.URL.Query().Get("…id")`; wer nur die zweite Schreibweise
+// sieht, lässt etwa `lieferant_id` am Bestellbericht durch.
+func parameterVariablen(body *ast.BlockStmt) map[string]bool {
 	namen := map[string]bool{}
 	istQueryAufruf := func(e ast.Expr) bool {
 		call, ok := e.(*ast.CallExpr)
@@ -472,9 +472,9 @@ func dekodierZiel(call *ast.CallExpr, dekodierer map[string]bool) (string, bool)
 	return "", false
 }
 
-// queryIDName: `….Query().Get("…id")` oder `q.Get("…id")` (q aus queryVariablen) mit
+// idParameterName: `….Query().Get("…id")` oder `q.Get("…id")` (q aus parameterVariablen) mit
 // festem Namen.
-func queryIDName(call *ast.CallExpr, queryVars map[string]bool) (string, bool) {
+func idParameterName(call *ast.CallExpr, queryVars map[string]bool) (string, bool) {
 	sel, ok := call.Fun.(*ast.SelectorExpr)
 	if !ok || sel.Sel.Name != "Get" || len(call.Args) != 1 {
 		return "", false
@@ -564,8 +564,9 @@ func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besu
 			}
 			continue
 		}
-		// Liste von Structs: Der Validator steigt in Elemente nur mit `dive` hinab. Ein `[]Eintrag` mit
-		// geprüftem `id` im Element, aber ohne `dive` am Feld, ist so ungeprüft wie ohne Tag.
+		// Liste von Structs: Der Validator steigt in Elemente nur mit `dive` hinab. Ein
+		// `[]Eintrag` mit geprüftem `id` im Element, aber ohne `dive` am Feld, ist so ungeprüft
+		// wie ohne Tag.
 		vorher := *kennungen
 		pruefeStructFelder(p, paket, funktion, feld.Type, besucht, melde, kennungen)
 		if istListe(feld.Type) && *kennungen > vorher && !strings.Contains(validate, "dive") {
@@ -772,12 +773,12 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 	nimmUUIDDatei(fremd, fremdDatei)
 	maengel, _ := pruefeUUIDEingaben(map[string]*uuidPaket{"p": p, "fremd": fremd}, namen)
 	// Dazu die Formen, die ein engerer Detektor übersähe: Kurzform `req := T{}` (oKurz),
-	// Query-Variable (pQueryVar), Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne `dive`
-	// (sListeOhneDive), Typ aus fremdem Paket (tFremd); rStapelDive ist die saubere Gegenprobe.
-	// Kennungsliste mit `dive`, aber ohne `required` je Element (uListeLeer); vListeSauber ist ihre
-	// Gegenprobe. Der Dekodierer hinter dem Paketnamen (wTuer, xTuerStreng) zählt wie ohne;
-	// yTuerSauber und zDirektTuerValidator sind die Gegenproben, die zweite für den Validator der
-	// Türen nach einem eigenen Dekodieren.
+	// Query-Variable (pQueryVar), Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne
+	// `dive` (sListeOhneDive), Typ aus fremdem Paket (tFremd); rStapelDive ist die saubere
+	// Gegenprobe. Kennungsliste mit `dive`, aber ohne `required` je Element (uListeLeer);
+	// vListeSauber ist ihre Gegenprobe. Der Dekodierer hinter dem Paketnamen (wTuer,
+	// xTuerStreng) zählt wie ohne; yTuerSauber und zDirektTuerValidator sind die Gegenproben,
+	// die zweite für den Validator der Türen nach einem eigenen Dekodieren.
 	erwartet := []string{
 		"fremd.Anfrage.ID (tFremd)",
 		"p.liste.IDs (fListe)",

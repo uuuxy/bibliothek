@@ -35,7 +35,7 @@ import (
 // Bei Rot: den Pfad nachziehen. Nennt die Stelle mit Absicht eine Datei, die es nicht gibt,
 // steht sie mit Grund in dateiverweiseOhneDatei.
 func TestDateiverweise_ZeigenAufDateienDieEsGibt(t *testing.T) {
-	baum := neuerRepoBaum(repoDateien(t))
+	baum := newDateiBaum(projektDateien(t))
 	if len(baum.dateien) < 1500 {
 		t.Fatalf("nur %d Dateien im Repository gelesen — die Prüfung mäße gegen einen leeren Baum", len(baum.dateien))
 	}
@@ -151,9 +151,9 @@ func hatEndung(datei string, endungen ...string) bool {
 	return slices.Contains(endungen, strings.TrimPrefix(path.Ext(datei), "."))
 }
 
-// repoDateien nennt die Dateien des Repositorys: was git führt und was neu dazugekommen ist,
+// projektDateien nennt die Dateien des Repositorys: was git führt und was neu dazugekommen ist,
 // ohne das, was .gitignore ausnimmt, und ohne das, was im Arbeitsbaum gelöscht ist.
-func repoDateien(t *testing.T) []string {
+func projektDateien(t *testing.T) []string {
 	t.Helper()
 	geloescht := gitListe(t, "ls-files", "-z", "--deleted")
 	var dateien []string
@@ -226,14 +226,14 @@ func istVerknuepfung(pfad string) bool {
 	return err == nil && info.Mode()&os.ModeSymlink != 0
 }
 
-// repoBaum sind die Dateien des Repositorys mit ihren Ordnern.
-type repoBaum struct {
+// dateiBaum sind die Dateien des Repositorys mit ihren Ordnern.
+type dateiBaum struct {
 	dateien map[string]bool
 	ordner  map[string]bool
 }
 
-func neuerRepoBaum(dateien []string) repoBaum {
-	baum := repoBaum{dateien: map[string]bool{}, ordner: map[string]bool{}}
+func newDateiBaum(dateien []string) dateiBaum {
+	baum := dateiBaum{dateien: map[string]bool{}, ordner: map[string]bool{}}
 	for _, datei := range dateien {
 		baum.dateien[datei] = true
 		for ordner := path.Dir(datei); ordner != "."; ordner = path.Dir(ordner) {
@@ -243,7 +243,7 @@ func neuerRepoBaum(dateien []string) repoBaum {
 	return baum
 }
 
-func (b repoBaum) gibtEines(ziele []string) bool {
+func (b dateiBaum) gibtEines(ziele []string) bool {
 	return slices.ContainsFunc(ziele, func(ziel string) bool { return b.dateien[ziel] || b.ordner[ziel] })
 }
 
@@ -293,7 +293,7 @@ var dateiEndungen = []string{
 
 // pfadVerweise liest aus einem Text die Pfade, die auf eine Datei zeigen: Der erste Ordner
 // liegt unter einer der Wurzeln der Quelle, der letzte Teil trägt eine Dateiendung.
-func pfadVerweise(stueck textstueck, baum repoBaum, ab []string) []dateiverweis {
+func pfadVerweise(stueck textstueck, baum dateiBaum, ab []string) []dateiverweis {
 	var verweise []dateiverweis
 	for _, stelle := range pfadLauf.FindAllStringIndex(stueck.text, -1) {
 		pfad := strings.TrimRight(stueck.text[stelle[0]:stelle[1]], ".-/@~")
@@ -338,7 +338,7 @@ func linkVerweise(stueck textstueck, ordner string) []dateiverweis {
 // Der Sammler erkennt jede Form, in der eine Stelle eine Datei beim Pfad nennt, und hält nichts
 // für einen Verweis, was keiner ist.
 func TestDateiverweise_Selbstprobe(t *testing.T) {
-	baum := neuerRepoBaum([]string{
+	baum := newDateiBaum([]string{
 		"api/router.go", "api/thema/tuer.go", "docs/OFFEN.md", "docs/datenschutz/nachweis.md", "README.md",
 		"frontend/src/lib/stores/meldung.svelte.js", "frontend/scripts/gate.mjs", "scripts/gate.sh",
 	})

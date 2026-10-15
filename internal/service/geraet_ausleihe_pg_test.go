@@ -25,7 +25,7 @@ type geraeteTheke struct {
 	dienst           GeraeteDienst
 }
 
-func neueGeraeteTheke(t *testing.T) *geraeteTheke {
+func newGeraeteTheke(t *testing.T) *geraeteTheke {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -140,7 +140,7 @@ func warteAufWartende(t *testing.T, pool *pgxpool.Pool, sperrer pgx.Tx, anzahl i
 // Die Antwort der Theke nennt die Ausleihe, die in der Datenbank steht: ihre Kennung und ihre
 // Frist. Die Zeile trägt den Leser und den Mitarbeiter, der ausgegeben hat.
 func TestGeraetAusleihe_AntwortNenntDieGeschriebeneAusleihe(t *testing.T) {
-	g := neueGeraeteTheke(t)
+	g := newGeraeteTheke(t)
 	nummer := g.geraet(t, "antwort")
 	leser := g.schueler(t, "Antwort")
 
@@ -163,7 +163,7 @@ func TestGeraetAusleihe_AntwortNenntDieGeschriebeneAusleihe(t *testing.T) {
 // Eine Nummer, die kein Gerät trägt, ist an der Theke ein Bedienfehler (nicht gefunden), kein
 // Serverfehler.
 func TestGeraet_UnbekannteNummerIstNichtGefunden(t *testing.T) {
-	g := neueGeraeteTheke(t)
+	g := newGeraeteTheke(t)
 	_, err := g.dienst.VerarbeiteScan(context.Background(), "G-TH-unbekannt-"+g.suffix, nil, true, false, g.ausgabe)
 	if !errors.Is(err, ErrNichtGefunden) {
 		t.Errorf("unbekannte Nummer: Fehler %v, erwartet ErrNichtGefunden", err)
@@ -174,7 +174,7 @@ func TestGeraet_UnbekannteNummerIstNichtGefunden(t *testing.T) {
 // Antwort nennt den Vorbesitzer mit Name und Klasse, die Zeile trägt das Merkmal und den
 // Mitarbeiter, der angenommen hat. Bringt es der Ausleiher selbst, steht keines von beidem da.
 func TestGeraetRueckgabe_FremdrueckgabeNenntDenVorbesitzer(t *testing.T) {
-	g := neueGeraeteTheke(t)
+	g := newGeraeteTheke(t)
 	ctx := context.Background()
 	ausleiher := g.schueler(t, "Ausleiher")
 	bringer := g.schueler(t, "Bringer")
@@ -215,7 +215,7 @@ func TestGeraetRueckgabe_FremdrueckgabeNenntDenVorbesitzer(t *testing.T) {
 // Ist der Vorbesitzer inzwischen gelöscht, bleibt er in der Antwort ohne Namen, und die
 // Rückgabe geht durch.
 func TestGeraetRueckgabe_GeloeschterVorbesitzerHaeltNichtAuf(t *testing.T) {
-	g := neueGeraeteTheke(t)
+	g := newGeraeteTheke(t)
 	ctx := context.Background()
 	nummer := g.geraet(t, "geloescht")
 	ausleiher := g.schueler(t, "Geloescht")
@@ -243,7 +243,7 @@ func TestGeraetRueckgabe_GeloeschterVorbesitzerHaeltNichtAuf(t *testing.T) {
 // erste Platz ist hier eine Transaktion des Tests, die ihre Ausleihe geschrieben, aber noch
 // nicht abgeschlossen hat; der Dienst sieht sie nicht und wartet beim Schreiben auf sie.
 func TestGeraetAusleihe_ZweiterPlatzBekommtDenKonflikt(t *testing.T) {
-	g := neueGeraeteTheke(t)
+	g := newGeraeteTheke(t)
 	ctx := context.Background()
 	nummer := g.geraet(t, "konflikt")
 	erster := g.schueler(t, "Erster")
@@ -282,7 +282,7 @@ func TestGeraetAusleihe_ZweiterPlatzBekommtDenKonflikt(t *testing.T) {
 // wartet an der gesperrten Ausleihe und findet danach ein freies Gerät, zu dem ihm der Ausweis
 // fehlt. Beide warten zuerst auf eine Transaktion des Tests, damit sie sicher zugleich ankommen.
 func TestGeraetRueckgabe_ZweiPlaetzeBuchenNurEinmal(t *testing.T) {
-	g := neueGeraeteTheke(t)
+	g := newGeraeteTheke(t)
 	ctx := context.Background()
 	nummer := g.geraet(t, "doppelt")
 	leser := g.schueler(t, "Doppelt")
@@ -352,7 +352,7 @@ func (protokollScheitert) ProtokolliereRueckgabe(context.Context, pgx.Tx, string
 // Lässt sich der Protokolleintrag nicht schreiben, gibt es die Ausleihe nicht und die Rückgabe
 // nicht: Beide stehen in derselben Transaktion wie ihr Eintrag.
 func TestGeraet_OhneProtokollWederAusleiheNochRueckgabe(t *testing.T) {
-	g := neueGeraeteTheke(t)
+	g := newGeraeteTheke(t)
 	ctx := context.Background()
 	nummer := g.geraet(t, "protokoll")
 	leser := g.schueler(t, "Protokoll")

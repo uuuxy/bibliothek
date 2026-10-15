@@ -24,8 +24,8 @@ func resetAuflagen(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-// seedAuflage legt einen Titel an; jahr 0 heißt ohne Erscheinungsjahr.
-func seedAuflage(t *testing.T, pool *pgxpool.Pool, titel string, jahr int, lernmittel bool) string {
+// legeAuflageAn legt einen Titel an; jahr 0 heißt ohne Erscheinungsjahr.
+func legeAuflageAn(t *testing.T, pool *pgxpool.Pool, titel string, jahr int, lernmittel bool) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -71,8 +71,8 @@ func TestFasseAuflagenZusammen_ZweiTitelWerdenEinBuch(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	alt := seedAuflage(t, pool, "Lambacher Schweizer 7", 2019, true)
-	neu := seedAuflage(t, pool, "Lambacher Schweizer 7", 2023, true)
+	alt := legeAuflageAn(t, pool, "Lambacher Schweizer 7", 2019, true)
+	neu := legeAuflageAn(t, pool, "Lambacher Schweizer 7", 2023, true)
 
 	auflagen, err := FasseAuflagenZusammen(ctx, pool, alt, neu)
 	if err != nil {
@@ -101,9 +101,9 @@ func TestFasseAuflagenZusammen_DritteAuflageKommtDazu(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	a := seedAuflage(t, pool, "Deutschbuch 7", 2015, true)
-	b := seedAuflage(t, pool, "Deutschbuch 7", 2019, true)
-	c := seedAuflage(t, pool, "Deutschbuch 7", 2024, true)
+	a := legeAuflageAn(t, pool, "Deutschbuch 7", 2015, true)
+	b := legeAuflageAn(t, pool, "Deutschbuch 7", 2019, true)
+	c := legeAuflageAn(t, pool, "Deutschbuch 7", 2024, true)
 
 	if _, err := FasseAuflagenZusammen(ctx, pool, a, b); err != nil {
 		t.Fatal(err)
@@ -128,10 +128,10 @@ func TestFasseAuflagenZusammen_ZweiGruppenWerdenEine(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	a := seedAuflage(t, pool, "Mathe live 5", 2012, true)
-	b := seedAuflage(t, pool, "Mathe live 5", 2014, true)
-	c := seedAuflage(t, pool, "Mathe live 5", 2018, true)
-	d := seedAuflage(t, pool, "Mathe live 5", 2022, true)
+	a := legeAuflageAn(t, pool, "Mathe live 5", 2012, true)
+	b := legeAuflageAn(t, pool, "Mathe live 5", 2014, true)
+	c := legeAuflageAn(t, pool, "Mathe live 5", 2018, true)
+	d := legeAuflageAn(t, pool, "Mathe live 5", 2022, true)
 	if _, err := FasseAuflagenZusammen(ctx, pool, a, b); err != nil {
 		t.Fatal(err)
 	}
@@ -164,8 +164,8 @@ func TestFasseAuflagenZusammen_NurLernmittel(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	schulbuch := seedAuflage(t, pool, "Tintenherz", 2003, true)
-	roman := seedAuflage(t, pool, "Tintenherz", 2020, false)
+	schulbuch := legeAuflageAn(t, pool, "Tintenherz", 2003, true)
+	roman := legeAuflageAn(t, pool, "Tintenherz", 2020, false)
 
 	_, err := FasseAuflagenZusammen(ctx, pool, schulbuch, roman)
 	if !errors.Is(err, ErrAuflageUngueltig) || !strings.Contains(err.Error(), "kein Lernmittel") {
@@ -180,7 +180,7 @@ func TestFasseAuflagenZusammen_NichtMitSichSelbst(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	id := seedAuflage(t, pool, "Green Line 1", 2014, true)
+	id := legeAuflageAn(t, pool, "Green Line 1", 2014, true)
 
 	// Auch in Großbuchstaben ist es derselbe Titel — sonst liefe die Anweisung auf eine
 	// Zeile statt zwei und endete als 500.
@@ -198,7 +198,7 @@ func TestFasseAuflagenZusammen_UnbekannterTitel(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	id := seedAuflage(t, pool, "Green Line 2", 2015, true)
+	id := legeAuflageAn(t, pool, "Green Line 2", 2015, true)
 	const unbekannt = "00000000-0000-0000-0000-000000000148"
 
 	if _, err := FasseAuflagenZusammen(ctx, pool, id, unbekannt); !errors.Is(err, ErrTitelNichtGefunden) {
@@ -216,9 +216,9 @@ func TestLoeseAuflage_DieAnderenBleibenZusammen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	a := seedAuflage(t, pool, "Biologie heute 7", 2010, true)
-	b := seedAuflage(t, pool, "Biologie heute 7", 2016, true)
-	c := seedAuflage(t, pool, "Biologie heute 7", 2021, true)
+	a := legeAuflageAn(t, pool, "Biologie heute 7", 2010, true)
+	b := legeAuflageAn(t, pool, "Biologie heute 7", 2016, true)
+	c := legeAuflageAn(t, pool, "Biologie heute 7", 2021, true)
 	if _, err := FasseAuflagenZusammen(ctx, pool, a, b); err != nil {
 		t.Fatal(err)
 	}
@@ -248,8 +248,8 @@ func TestLoeseAuflage_DerLetzteWirdMitGeloest(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	a := seedAuflage(t, pool, "Physik 8", 2011, true)
-	b := seedAuflage(t, pool, "Physik 8", 2020, true)
+	a := legeAuflageAn(t, pool, "Physik 8", 2011, true)
+	b := legeAuflageAn(t, pool, "Physik 8", 2020, true)
 	if _, err := FasseAuflagenZusammen(ctx, pool, a, b); err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +275,7 @@ func TestAuflagenDesTitels_BestandWieImKatalog(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
-	id := seedAuflage(t, pool, "Geschichte und Geschehen 7", 2018, true)
+	id := legeAuflageAn(t, pool, "Geschichte und Geschehen 7", 2018, true)
 	// Im Regal, gesperrt, bestellt und ausgesondert: gesamt 2, verfügbar 1, im Zulauf 1.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, ist_ausgesondert, aussonderung_grund, bestellstatus)

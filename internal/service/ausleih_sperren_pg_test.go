@@ -26,7 +26,7 @@ type sperrTheke struct {
 	bearbeiter string
 }
 
-func neueSperrTheke(t *testing.T) *sperrTheke {
+func newSperrTheke(t *testing.T) *sperrTheke {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -79,7 +79,7 @@ func (th *sperrTheke) geraet(t *testing.T, barcode, leserID string, bestaetigt, 
 	})
 }
 
-func (th *sperrTheke) neuesGeraet(t *testing.T, barcode, zubehoer string) {
+func (th *sperrTheke) legeGeraetAn(t *testing.T, barcode, zubehoer string) {
 	t.Helper()
 	if _, err := th.pool.Exec(context.Background(),
 		`INSERT INTO geraete (modellname, barcode_id, zubehoer) VALUES ('Tablet', $1, $2)`, barcode, zubehoer); err != nil {
@@ -138,14 +138,14 @@ func istSperreAmLeser(err error) bool {
 // Rot gesehen am Rückbau: pruefeAusleihSperren lässt die Sperre am Leser mit override_block
 // durch — das Buch geht raus.
 func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
-	th := neueSperrTheke(t)
+	th := newSperrTheke(t)
 	buecherei, schulbuch := th.bestand(t, "SVH")
 	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-1", "Handsperre", "07A")
 	if _, err := th.pool.Exec(context.Background(),
 		`UPDATE schueler SET is_manually_blocked = true, block_reason = 'Ausweis verloren' WHERE id = $1`, kind); err != nil {
 		t.Fatalf("sperren: %v", err)
 	}
-	th.neuesGeraet(t, "G-SPERRWEG-1", "")
+	th.legeGeraetAn(t, "G-SPERRWEG-1", "")
 
 	if err := th.buch(t, buecherei, kind, true); !istSperreAmLeser(err) {
 		t.Errorf("Buch der Bücherei mit override_block: erwartet Sperre am Leser, bekam %v", err)
@@ -173,14 +173,14 @@ func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 // Rot gesehen am Rückbau: `&& !lernmittel` aus pruefeSperrschalter entfernt — das Schulbuch
 // wird abgewiesen.
 func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
-	th := neueSperrTheke(t)
+	th := newSperrTheke(t)
 	buecherei, schulbuch := th.bestand(t, "EHM")
 	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-2", "Ehemalig", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Automatisierte Abgänger-Sperre (Schuljahreswechsel)' WHERE id = $1`, kind); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
 	}
-	th.neuesGeraet(t, "G-SPERRWEG-2", "")
+	th.legeGeraetAn(t, "G-SPERRWEG-2", "")
 
 	if err := th.buch(t, schulbuch, kind, false); err != nil {
 		t.Fatalf("Schulbuch an den Ehemaligen abgewiesen: %v", err)
@@ -205,7 +205,7 @@ func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 // Rot gesehen am Rückbau: die Prüfung auf IstAnonymisiert entfernt — das Schulbuch geht an
 // den anonymisierten Datensatz.
 func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {
-	th := neueSperrTheke(t)
+	th := newSperrTheke(t)
 	_, schulbuch := th.bestand(t, "ANO")
 	anonym := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-3", "Anonym", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
@@ -226,7 +226,7 @@ func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {
 // Konto steht, und nicht mit einer offenen Forderung; am Buch wie am Gerät.
 // Rot gesehen am Rückbau: die Prüfung auf istKollegium entfernt — Buch und Gerät abgewiesen.
 func TestTheke_KollegeWirdNieGesperrt(t *testing.T) {
-	th := neueSperrTheke(t)
+	th := newSperrTheke(t)
 	buecherei, _ := th.bestand(t, "KOL")
 	var kollege string
 	if err := th.pool.QueryRow(context.Background(), `
@@ -240,7 +240,7 @@ func TestTheke_KollegeWirdNieGesperrt(t *testing.T) {
 		VALUES ($1, $2, 'Verloren', 12.00, 'nicht_zurueckgegeben')`, verloren, kollege); err != nil {
 		t.Fatalf("alte Forderung anlegen: %v", err)
 	}
-	th.neuesGeraet(t, "G-SPERRWEG-K", "")
+	th.legeGeraetAn(t, "G-SPERRWEG-K", "")
 
 	if err := th.buch(t, buecherei, kollege, false); err != nil {
 		t.Errorf("Buch an den Kollegen abgewiesen: %v", err)
@@ -262,7 +262,7 @@ func TestTheke_KollegeWirdNieGesperrt(t *testing.T) {
 // — das Gerät bleibt gesperrt; ebenso, wenn die Omnibox es nicht ans Gerät gibt;
 // protokolliereUebergangen vor die Zubehör-Liste gezogen — zwei Einträge statt einem.
 func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
-	th := neueSperrTheke(t)
+	th := newSperrTheke(t)
 	ctx := context.Background()
 	buecherei, schulbuch := th.bestand(t, "FOR")
 	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-4", "Forderung", "08B")
@@ -277,7 +277,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 		VALUES ($1, $2, 'Verloren', 25.00, 'nicht_zurueckgegeben')`, ex, kind); err != nil {
 		t.Fatalf("Forderung anlegen: %v", err)
 	}
-	th.neuesGeraet(t, "G-SPERRWEG-4", "Ladekabel")
+	th.legeGeraetAn(t, "G-SPERRWEG-4", "Ladekabel")
 
 	uebergehbar := func(err error) bool {
 		return errors.Is(err, service.ErrGesperrt) && service.IstUebergehbareSperre(err)
@@ -319,7 +319,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 // Rot gesehen am Rückbau: protokolliereUebergangen in BucheAmLeser direkt hinter
 // die Prüfung gezogen — ein Eintrag ohne Ausleihe.
 func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
-	th := neueSperrTheke(t)
+	th := newSperrTheke(t)
 	ctx := context.Background()
 	var vorher *string
 	if err := th.pool.QueryRow(ctx,

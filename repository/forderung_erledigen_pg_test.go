@@ -13,7 +13,7 @@ import (
 // Der Betrag im Protokoll stammt aus der Datenbank; der Test übergibt ihn nirgends und findet
 // ihn trotzdem im Eintrag.
 
-func seedOffenerSchadensfall(t *testing.T, pool *pgxpool.Pool, schuelerID, exemplarID string, betrag float64) string {
+func legeOffenenSchadensfallAn(t *testing.T, pool *pgxpool.Pool, schuelerID, exemplarID string, betrag float64) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -30,10 +30,10 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	ctx := context.Background()
 	repo := NewProtokollAbfragen(pool)
 
-	schueler := seedSchueler(t, pool, "S-GEB-1", "Mia", "8b")
-	exemplare := seedSignaturMitExemplaren(t, pool, "GebErl", 2)
+	schueler := legeSchuelerAn(t, pool, "S-GEB-1", "Mia", "8b")
+	exemplare := legeSignaturMitExemplarenAn(t, pool, "GebErl", 2)
 
-	// Eigener Bearbeiter statt seedBearbeiter: Dessen fester Barcode gehört den Tests in
+	// Eigener Bearbeiter statt legeBearbeiterAn: Dessen fester Barcode gehört den Tests in
 	// schaden_melden_ausleihe_pg_test.go, und mit einem geteilten Konto hinge das Ergebnis an
 	// der Reihenfolge der Tests.
 	var bearbeiter string
@@ -45,7 +45,7 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 
 	// (1) Storno: setzt ist_bezahlt und die Spalten des Stornos, der Eintrag trägt den Betrag
 	// aus der Datenbank.
-	storno := seedOffenerSchadensfall(t, pool, schueler, exemplare[0], 12.50)
+	storno := legeOffenenSchadensfallAn(t, pool, schueler, exemplare[0], 12.50)
 	if err := repo.StorniereForderung(ctx, storno, bearbeiter, "Buch wiedergefunden"); err != nil {
 		t.Fatalf("Storno: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 
 	// (3) Bezahlt: setzt ist_bezahlt und lässt die Spalten des Stornos unberührt. Bezahlt und
 	// storniert bleiben unterscheidbar (Auskunft, Kontoauszug).
-	bezahlt := seedOffenerSchadensfall(t, pool, schueler, exemplare[1], 7.00)
+	bezahlt := legeOffenenSchadensfallAn(t, pool, schueler, exemplare[1], 7.00)
 	if err := repo.VerbucheZahlung(ctx, bezahlt, bearbeiter); err != nil {
 		t.Fatalf("Bezahlen: %v", err)
 	}

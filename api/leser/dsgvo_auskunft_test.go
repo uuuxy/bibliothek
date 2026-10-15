@@ -154,7 +154,7 @@ func TestDSGVOAuskunft_UnbekannterSchuelerIst404(t *testing.T) {
 	}
 }
 
-func TestDSGVOAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
+func TestDSGVOAuskunft_ProtokollFehlerVerhindertAuskunftNicht(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)

@@ -55,7 +55,7 @@ func TestLoescheTitel_NimmtDasLokaleCoverMit(t *testing.T) {
 	}
 
 	repo := NewProtokollAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 	for _, id := range []string{allein, erster} {
 		if err := repo.LoescheTitel(ctx, id, bearbeiter); err != nil {
 			t.Fatalf("LoescheTitel: %v", err)

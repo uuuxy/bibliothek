@@ -23,8 +23,8 @@ func TestLoescheKonto_LeserzeileGehtMitWennUnberuehrt(t *testing.T) {
 	ctx := context.Background()
 	repo := NewProtokollAbfragen(pool)
 
-	konto, leser := seedZugangsanfrage(t, pool, "anfrage.unberuehrt@schule.example")
-	if err := repo.LoescheKonto(ctx, konto, seedBearbeiter(t, pool)); err != nil {
+	konto, leser := legeZugangsanfrageAn(t, pool, "anfrage.unberuehrt@schule.example")
+	if err := repo.LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
@@ -43,11 +43,11 @@ func TestLoescheKonto_LeserzeileBleibtWennEtwasDranHaengt(t *testing.T) {
 	ctx := context.Background()
 	repo := NewProtokollAbfragen(pool)
 
-	konto, leser := seedZugangsanfrage(t, pool, "anfrage.mitbuch@schule.example")
-	bearbeiter := seedBearbeiter(t, pool)
-	copyID := seedSignaturMitExemplaren(t, pool, "LeserzeileBleibt", 1)[0]
-	loan := seedAusleihe(t, pool, copyID, leser, bearbeiter)
-	returnLoan(t, pool, loan)
+	konto, leser := legeZugangsanfrageAn(t, pool, "anfrage.mitbuch@schule.example")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	copyID := legeSignaturMitExemplarenAn(t, pool, "LeserzeileBleibt", 1)[0]
+	loan := legeAusleiheAn(t, pool, copyID, leser, bearbeiter)
+	bucheRueckgabe(t, pool, loan)
 
 	if err := repo.LoescheKonto(ctx, konto, bearbeiter); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
@@ -66,12 +66,12 @@ func TestLoescheKonto_LeserzeileBleibtMitAusweis(t *testing.T) {
 	ctx := context.Background()
 	repo := NewProtokollAbfragen(pool)
 
-	konto, leser := seedZugangsanfrage(t, pool, "anfrage.mitausweis@schule.example")
+	konto, leser := legeZugangsanfrageAn(t, pool, "anfrage.mitausweis@schule.example")
 	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = 'A-77001' WHERE id = $1`, leser); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := repo.LoescheKonto(ctx, konto, seedBearbeiter(t, pool)); err != nil {
+	if err := repo.LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
@@ -82,7 +82,7 @@ func TestLoescheKonto_LeserzeileBleibtMitAusweis(t *testing.T) {
 
 // Ein Konto aus der Selbstanmeldung: ohne leser_id angelegt, die Leserzeile hängt der Trigger
 // an.
-func seedZugangsanfrage(t *testing.T, pool *pgxpool.Pool, email string) (string, string) {
+func legeZugangsanfrageAn(t *testing.T, pool *pgxpool.Pool, email string) (string, string) {
 	t.Helper()
 	var konto string
 	var leser *string

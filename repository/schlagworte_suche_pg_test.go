@@ -18,9 +18,9 @@ func TestSchlagwortSuche_ServerUndBrowserFindenDieselbenTitel(t *testing.T) {
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
 
-	drachen := seedSchlagwortTitel(t, pool, "Drachenreiter")
-	krabat := seedSchlagwortTitel(t, pool, "Krabat")
-	mathe := seedSchlagwortTitel(t, pool, "Mathematik heute 7")
+	drachen := legeSchlagwortTitelAn(t, pool, "Drachenreiter")
+	krabat := legeSchlagwortTitelAn(t, pool, "Krabat")
+	mathe := legeSchlagwortTitelAn(t, pool, "Mathematik heute 7")
 	for id, woerter := range map[string][]string{drachen: {"Fantasy", "Drachen"}, krabat: {"Sage"}} {
 		if _, err := SetzeSchlagworte(ctx, pool, id, woerter); err != nil {
 			t.Fatalf("Schlagworte setzen: %v", err)

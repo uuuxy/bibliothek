@@ -23,7 +23,7 @@ func pflegeStand(t *testing.T, pool *pgxpool.Pool, titelWoerter map[string][]str
 	t.Helper()
 	ctx := context.Background()
 	for titel, woerter := range titelWoerter {
-		if _, err := SetzeSchlagworte(ctx, pool, seedSchlagwortTitel(t, pool, titel), woerter); err != nil {
+		if _, err := SetzeSchlagworte(ctx, pool, legeSchlagwortTitelAn(t, pool, titel), woerter); err != nil {
 			t.Fatalf("%s: %v", titel, err)
 		}
 	}
@@ -116,7 +116,7 @@ func TestSchlagwortPflege_ZusammenfuehrenMachtDasAlteWortZumVerweis(t *testing.T
 	}
 
 	// Wer den Verweis tippt, bekommt das Ziel.
-	neu := seedSchlagwortTitel(t, pool, "Warrior Cats")
+	neu := legeSchlagwortTitelAn(t, pool, "Warrior Cats")
 	got, err := SetzeSchlagworte(ctx, pool, neu, []string{"tierfantasy", "Fantasy"})
 	if err != nil {
 		t.Fatal(err)
@@ -309,7 +309,7 @@ func TestSchlagwortPflege_GleichzeitigKeinTitelAmVerweis(t *testing.T) {
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
 	ids := pflegeStand(t, pool, map[string][]string{"Emil": {"Krimi"}, "Kalle": {"Detektiv"}})
-	neu := seedSchlagwortTitel(t, pool, "Die drei ???")
+	neu := legeSchlagwortTitelAn(t, pool, "Die drei ???")
 
 	pflege, err := pool.Begin(ctx)
 	if err != nil {

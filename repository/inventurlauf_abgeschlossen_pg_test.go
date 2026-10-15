@@ -14,7 +14,7 @@ func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 
 	// Drei Inventuren mit verschiedenen Zahlen für Erfassung und Verlust; sonst belegte der
 	// Test nicht, dass die beiden Zählungen an der richtigen Spalte hängen. Je Bereich: n
@@ -29,7 +29,7 @@ func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 	}
 
 	for _, f := range faelle {
-		ex := seedSignaturMitExemplaren(t, pool, f.signatur, f.exemplare)
+		ex := legeSignaturMitExemplarenAn(t, pool, f.signatur, f.exemplare)
 		signatur := f.signatur
 		sess, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &signatur}, f.signatur, "")
 		if err != nil {
@@ -85,11 +85,11 @@ func TestLadeAbgeschlosseneLaeufe_Kappung(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
-	bearbeiter := seedBearbeiter(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
 
 	namen := []string{"Alpha", "Beta", "Gamma", "Delta"}
 	for _, name := range namen {
-		seedSignaturMitExemplaren(t, pool, name, 2)
+		legeSignaturMitExemplarenAn(t, pool, name, 2)
 		signatur := name
 		sess, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &signatur}, name, "")
 		if err != nil {

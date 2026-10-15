@@ -14,7 +14,7 @@ import (
 // (sie stehen vor Menschen).
 
 // mittelAusJs ist ein Eintrag des MITTEL-Objekts der Oberfläche.
-type mittelAusJs struct{ Label, Traeger string }
+type mittelAusJs struct{ Bezeichnung, Traeger string }
 
 // Ein Eintrag steht am Anfang seiner Zeile; eine auskommentierte Zeile zählt nicht.
 // land: { label: 'Lernmittelfreiheit', traeger: 'Land' }
@@ -23,7 +23,7 @@ var mittelJsEintrag = regexp.MustCompile(`(?m)^\s*(\w+):\s*\{\s*label:\s*'([^']+
 func mittelEintraege(quelle string) map[string]mittelAusJs {
 	aus := map[string]mittelAusJs{}
 	for _, m := range mittelJsEintrag.FindAllStringSubmatch(quelle, -1) {
-		aus[m[1]] = mittelAusJs{Label: m[2], Traeger: m[3]}
+		aus[m[1]] = mittelAusJs{Bezeichnung: m[2], Traeger: m[3]}
 	}
 	return aus
 }
@@ -56,9 +56,9 @@ func TestVokabularIstInGoUndOberflaecheDasselbe(t *testing.T) {
 			t.Errorf("%q hat keine Texte für Anschreiben und Mail: %v", wert, err)
 			continue
 		}
-		if texte.Kurz != eintrag.Label {
+		if texte.Kurz != eintrag.Bezeichnung {
 			t.Errorf("Topf %q heißt in der Oberfläche %q, auf Anschreiben und in der Mail aber %q — "+
-				"die Bibliothekskraft sieht eine andere Bezeichnung als der Händler.", wert, eintrag.Label, texte.Kurz)
+				"die Bibliothekskraft sieht eine andere Bezeichnung als der Händler.", wert, eintrag.Bezeichnung, texte.Kurz)
 		}
 		// Der Träger steht im Chip der Oberfläche und über dem Block im Bericht. Mit zwei
 		// Schreibweisen hieße die Zahl in der Abrechnung anders als auf dem Bildschirm, gegen den
@@ -82,7 +82,7 @@ func TestVokabularIstInGoUndOberflaecheDasselbe(t *testing.T) {
 // Gegenprobe am Detektor: Ein Parser, der nichts findet, meldet für immer „alles gut".
 func TestVokabularDetektorGreift(t *testing.T) {
 	ui := leseMittelJs(t)
-	if ui["land"].Label == "" || ui["schultraeger"].Label == "" ||
+	if ui["land"].Bezeichnung == "" || ui["schultraeger"].Bezeichnung == "" ||
 		ui["land"].Traeger == "" || ui["schultraeger"].Traeger == "" {
 		t.Fatalf("Der Parser liest Beschriftung oder Träger nicht mehr: %v", ui)
 	}

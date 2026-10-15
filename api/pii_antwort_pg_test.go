@@ -86,7 +86,7 @@ func verboteneKanarien(stufe int) []string {
 // ── Die gesäte Welt ──────────────────────────────────────────────────────────
 
 type kanarienWelt struct {
-	mitarbeiterID, sessionToken string
+	mitarbeiterID, anmeldeToken string
 	schuelerID, abgaengerID     string
 	titelID, exemplarID         string
 	buchBarcode                 string
@@ -111,7 +111,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanar
 	if err != nil {
 		t.Fatalf("Session-Token: %v", err)
 	}
-	w.sessionToken = token
+	w.anmeldeToken = token
 
 	// Aktiver Schüler mit allen Stufen: Name/Barcode (1), Geburtsdatum, LUSD-ID
 	// und Sperrgrund (2), Adresse und Eltern-Mail (3).
@@ -619,7 +619,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, aufruf.URL, nil)
 		if mitSitzung {
-			req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.sessionToken})
+			req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.anmeldeToken})
 		}
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
@@ -759,7 +759,7 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 		for _, fall := range aufrufe[route] {
 			req := fall.Anfrage(t)
 			if mitSitzung {
-				req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.sessionToken})
+				req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.anmeldeToken})
 			}
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)

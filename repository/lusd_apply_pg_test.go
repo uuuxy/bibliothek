@@ -62,8 +62,8 @@ func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
 // sind, und andernfalls automatisch entsperren. Der Kern ist SQL-CASE-Logik mit Sub-Selects —
 // nur ein echter DB-Test (nicht pgxmock) prüft sie.
 
-// insertGesperrterAbgaenger legt einen als Abgänger gesperrten Schüler an und liefert die ID.
-func insertGesperrterAbgaenger(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname, klasse, blockReason string) string {
+// legeGesperrtenAbgaengerAn legt einen als Abgänger gesperrten Schüler an und liefert die ID.
+func legeGesperrtenAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname, klasse, sperrgrund string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -71,16 +71,16 @@ func insertGesperrterAbgaenger(t *testing.T, pool *pgxpool.Pool, barcode, vornam
 		   (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, ist_gesperrt, block_reason)
 		 VALUES ($1, $2, $3, $4, 2025, true, true, $5)
 		 RETURNING id`,
-		barcode, vorname, nachname, klasse, blockReason).Scan(&id); err != nil {
+		barcode, vorname, nachname, klasse, sperrgrund).Scan(&id); err != nil {
 		t.Fatalf("gesperrten Abgänger %q anlegen: %v", barcode, err)
 	}
 	return id
 }
 
-// runAktualisiere führt repository.AendereLUSDBestand für einen Schüler in einer echten
+// fuehreAktualisierungAus führt repository.AendereLUSDBestand für einen Schüler in einer echten
 // Transaktion aus. Das Verpacken in Scheiben mit einem Element ist Gerüst des Tests und steht
 // deshalb hier und nicht als zweiter Einstieg im Programmcode.
-func runAktualisiere(t *testing.T, pool *pgxpool.Pool, zeile repository.LUSDAktualisierung, id string) {
+func fuehreAktualisierungAus(t *testing.T, pool *pgxpool.Pool, zeile repository.LUSDAktualisierung, id string) {
 	t.Helper()
 	ctx := context.Background()
 	tx, err := pool.Begin(ctx)
@@ -102,10 +102,10 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 	t.Run("gesperrter Abgänger ohne offene Vorgänge wird entsperrt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
-		id := insertGesperrterAbgaenger(t, pool, "R-A", "Max", "Muster", "ABG",
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-A", "Max", "Muster", "ABG",
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
 
-		runAktualisiere(t, pool, repository.LUSDAktualisierung{Vorname: "Max", Nachname: "Muster", Klasse: "9a"}, id)
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Max", Nachname: "Muster", Klasse: "9a"}, id)
 
 		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
 		if gesperrt {
@@ -121,11 +121,11 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 	t.Run("gesperrter Abgänger mit offener Ausleihe bleibt gesperrt, Grund umbenannt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
-		id := insertGesperrterAbgaenger(t, pool, "R-B", "Lea", "Klein", "ABG",
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-B", "Lea", "Klein", "ABG",
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
 		testdaten.LegeOffeneAusleiheAn(t, pool, id, "B")
 
-		runAktualisiere(t, pool, repository.LUSDAktualisierung{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
 
 		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
 		if !gesperrt {
@@ -141,11 +141,11 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 	t.Run("gesperrter Abgänger mit unbezahltem Schaden bleibt gesperrt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
-		id := insertGesperrterAbgaenger(t, pool, "R-C", "Tom", "Groß", "ABG",
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-C", "Tom", "Groß", "ABG",
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
 		testdaten.LegeOffenenSchadenAn(t, pool, id, "C")
 
-		runAktualisiere(t, pool, repository.LUSDAktualisierung{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
 
 		gesperrt, _, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
 		if !gesperrt {
@@ -159,9 +159,9 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	t.Run("manuelle Sperre bleibt unangetastet", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		const manuell = "Manuell gesperrt: wiederholter Vandalismus"
-		id := insertGesperrterAbgaenger(t, pool, "R-D", "Nia", "Wolf", "ABG", manuell)
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-D", "Nia", "Wolf", "ABG", manuell)
 
-		runAktualisiere(t, pool, repository.LUSDAktualisierung{Vorname: "Nia", Nachname: "Wolf", Klasse: "9a"}, id)
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Nia", Nachname: "Wolf", Klasse: "9a"}, id)
 
 		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
 		if !gesperrt {
@@ -178,10 +178,10 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	t.Run("anonymisierter Abgänger wird entsperrt und umbenannt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		// Anonymisierte tragen 'Abgänger' / 'Anonymisiert-…' und den festen Grund.
-		id := insertGesperrterAbgaenger(t, pool, "R-E", "Abgänger", "Anonymisiert-xyz", "ABG",
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-E", "Abgänger", "Anonymisiert-xyz", "ABG",
 			"Abgänger anonymisiert")
 
-		runAktualisiere(t, pool, repository.LUSDAktualisierung{Vorname: "Sophie", Nachname: "Real", Klasse: "Q1"}, id)
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Sophie", Nachname: "Real", Klasse: "Q1"}, id)
 
 		gesperrt, abgaenger, reason, vorname := testdaten.LadeSchuelerStatus(t, pool, id)
 		if gesperrt {

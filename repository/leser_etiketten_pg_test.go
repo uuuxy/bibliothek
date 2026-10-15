@@ -70,10 +70,10 @@ func TestLadeEtikettZeilen_SortiertUndNurLebende(t *testing.T) {
 
 	// Bewusst in einer Reihenfolge angelegt, die nicht der erwarteten entspricht:
 	// Käme die Sortierung aus der Eingabe statt aus dem SQL, fiele es nicht auf.
-	zimmer := seedSuchSchueler(t, pool, "ETI-1", "Tim", "Zimmermann")
-	anders := seedSuchSchueler(t, pool, "ETI-2", "Bea", "Anders")
-	mueller := seedSuchSchueler(t, pool, "ETI-3", "Ayse", "Müller")
-	geloescht := seedSuchSchueler(t, pool, "ETI-4", "Erik", "Fort")
+	zimmer := legeSuchSchuelerAn(t, pool, "ETI-1", "Tim", "Zimmermann")
+	anders := legeSuchSchuelerAn(t, pool, "ETI-2", "Bea", "Anders")
+	mueller := legeSuchSchuelerAn(t, pool, "ETI-3", "Ayse", "Müller")
+	geloescht := legeSuchSchuelerAn(t, pool, "ETI-4", "Erik", "Fort")
 
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = now() WHERE id = $1`, geloescht); err != nil {
 		t.Fatalf("Schüler als gelöscht markieren: %v", err)
@@ -118,7 +118,7 @@ func TestLadeEtikettZeilen_UnbekannteIDsSindKeinFehler(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	da := seedSuchSchueler(t, pool, "ETI-5", "Lea", "Berger")
+	da := legeSuchSchuelerAn(t, pool, "ETI-5", "Lea", "Berger")
 	repo := NewLeserAbfragen(pool)
 
 	zeilen, err := repo.LadeEtikettZeilen(ctx, []string{da, "00000000-0000-0000-0000-000000000000"})

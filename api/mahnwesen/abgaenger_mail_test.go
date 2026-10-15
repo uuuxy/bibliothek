@@ -79,7 +79,7 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 }
 
 // Eine Mail je Klasse, darin ein PDF je Schüler; das ist die fachliche Zusage.
-func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
+func TestVersendeAbgaengerKontoauszuege_EinPDFJeSchueler(t *testing.T) {
 	var mails []mailservice.Nachricht
 	klassen := []abgaengerKlasse{{
 		Klasse:     "5a",
@@ -130,7 +130,7 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 // Ein kaputtes Schüler-PDF darf nicht die ganze Klasse kosten: Der Rest geht raus,
 // nur der eine Anhang fehlt. Fällt jedes PDF aus, ist die Klasse fehlgeschlagen, nicht
 // „übersprungen": Das wäre Absicht.
-func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
+func TestVersendeAbgaengerKontoauszuege_EinzelnesPDFScheitert(t *testing.T) {
 	kaputt := func(e pdf.KontoauszugEintrag) ([]byte, error) {
 		if e.Schueler.Vorname == "Kaputt" {
 			return nil, errors.New("pdf kaputt")

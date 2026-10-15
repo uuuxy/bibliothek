@@ -33,8 +33,8 @@ func TestGeraeteVerwaltung_AnlegenListeStatus(t *testing.T) {
 	}
 
 	// (3) Ausleihe an einen Schüler → die Liste nennt ihn mit Klasse.
-	schueler := seedSchueler(t, pool, "S-GER-1", "Nio", "6c")
-	bearbeiter := seedEigenerBearbeiter(t, pool, "GER-B")
+	schueler := legeSchuelerAn(t, pool, "S-GER-1", "Nio", "6c")
+	bearbeiter := legeEigenenBearbeiterAn(t, pool, "GER-B")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id)
 		VALUES ($1, $2, now() + interval '14 days', $3)`, id, schueler, bearbeiter); err != nil {

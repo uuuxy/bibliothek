@@ -29,9 +29,9 @@ type genanntProbe struct {
 	nr     int
 }
 
-// neueGenanntProbe stellt die Tür der Maske vor die Test-Datenbank und räumt Titel und Fächer
+// newGenanntProbe stellt die Tür der Maske vor die Test-Datenbank und räumt Titel und Fächer
 // der Probe vorher und nachher ab.
-func neueGenanntProbe(t *testing.T) *genanntProbe {
+func newGenanntProbe(t *testing.T) *genanntProbe {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -133,7 +133,7 @@ func geaenderteSpalten(vorher, nachher map[string]string) []string {
 // Platz 1 hat den Titel offen, Platz 2 berichtigt den Listenpreis, danach speichert Platz 1
 // einen anderen Verlag. Beide Eingaben bleiben stehen.
 func TestTitelAendern_ZweiPlaetzeBehaltenIhreFelder(t *testing.T) {
-	p := neueGenanntProbe(t)
+	p := newGenanntProbe(t)
 	id := p.lege()
 
 	if status, rumpf := p.aendere(id, map[string]any{"listenpreis": 21.5}); status != http.StatusOK {
@@ -154,7 +154,7 @@ func TestTitelAendern_ZweiPlaetzeBehaltenIhreFelder(t *testing.T) {
 // Jedes Feld der Tür einzeln: Der Rumpf nennt eines, und in der Tabelle ändert sich genau
 // seine Spalte. Ein Feld ohne Beispiel fällt hier auf, bevor es ungeprüft bleibt.
 func TestTitelAendern_SchreibtNurDasGenannteFeld(t *testing.T) {
-	p := neueGenanntProbe(t)
+	p := newGenanntProbe(t)
 	beispiele := map[string]struct {
 		wert   any
 		spalte string
@@ -213,7 +213,7 @@ func TestTitelAendern_SchreibtNurDasGenannteFeld(t *testing.T) {
 // wurde. Die Tür kennt das Feld nicht mehr: Sie ändert dafür nichts, scheitert nicht daran und
 // speichert, was der Rumpf daneben nennt (docs/ARCHITEKTUR.md 11.5).
 func TestTitelAendern_FruehereKlasseWirdNichtGelesen(t *testing.T) {
-	p := neueGenanntProbe(t)
+	p := newGenanntProbe(t)
 	id := p.lege()
 	vorher := p.zeile(id)
 
@@ -229,7 +229,7 @@ func TestTitelAendern_FruehereKlasseWirdNichtGelesen(t *testing.T) {
 // Was der Rumpf nicht nennt, wird weder geschrieben noch geprüft; was er nennt, wird am Stand
 // nach der Änderung geprüft.
 func TestTitelAendern_PrueftWasSichAendert(t *testing.T) {
-	p := neueGenanntProbe(t)
+	p := newGenanntProbe(t)
 	id := p.lege()
 	start := p.zeile(id)
 

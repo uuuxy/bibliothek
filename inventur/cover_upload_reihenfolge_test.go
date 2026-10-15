@@ -33,7 +33,7 @@ func coverUploadAnfrage(t *testing.T, id string) *http.Request {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := feld.Write(createDummyImage("jpeg", 20, 20)); err != nil {
+	if _, err := feld.Write(erzeugeTestbild("jpeg", 20, 20)); err != nil {
 		t.Fatal(err)
 	}
 	if err := w.Close(); err != nil {

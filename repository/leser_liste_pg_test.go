@@ -22,9 +22,9 @@ func TestLadeLeserListe_ZeigtKollegium(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchSchueler(t, pool, "LLIST-1", "Lena", "Hoffmann")
-	seedSuchLeser(t, pool, "LLIST-2", "Katrin", "Wendlandt", "lehrkraft")
-	seedSuchLeser(t, pool, "", "Hendrik", "Aalbers", "liv")
+	legeSuchSchuelerAn(t, pool, "LLIST-1", "Lena", "Hoffmann")
+	legeSuchLeserAn(t, pool, "LLIST-2", "Katrin", "Wendlandt", "lehrkraft")
+	legeSuchLeserAn(t, pool, "", "Hendrik", "Aalbers", "liv")
 
 	repo := NewLeserAbfragen(pool)
 

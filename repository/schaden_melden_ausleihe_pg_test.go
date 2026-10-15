@@ -16,17 +16,17 @@ func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	ctx := context.Background()
 	repo := NewSchadensAbfragen(pool)
 
-	ex := seedSignaturMitExemplaren(t, pool, "RaceTest", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "RaceTest", 1)
 	copyID := ex[0]
-	schuelerA := seedSchueler(t, pool, "RACE-A", "Anna", "7a")
-	schuelerB := seedSchueler(t, pool, "RACE-B", "Ben", "7b")
-	bearbeiter := seedBearbeiter(t, pool)
+	schuelerA := legeSchuelerAn(t, pool, "RACE-A", "Anna", "7a")
+	schuelerB := legeSchuelerAn(t, pool, "RACE-B", "Ben", "7b")
+	bearbeiter := legeBearbeiterAn(t, pool)
 
 	// Ausleihe 1 an Schüler A (die im Schadensformular referenzierte).
-	alteLoan := seedAusleihe(t, pool, copyID, schuelerA, bearbeiter)
+	alteLoan := legeAusleiheAn(t, pool, copyID, schuelerA, bearbeiter)
 	// A gibt zurück, B leiht neu aus (die Ausleihe, die es zu schützen gilt).
-	returnLoan(t, pool, alteLoan)
-	seedAusleihe(t, pool, copyID, schuelerB, bearbeiter)
+	bucheRueckgabe(t, pool, alteLoan)
+	legeAusleiheAn(t, pool, copyID, schuelerB, bearbeiter)
 
 	// Der verspätete Klick auf „Schaden melden" nennt die alte Ausleihe.
 	_, err := repo.Melde(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
@@ -56,11 +56,11 @@ func TestSchadenMelden_Normalfall(t *testing.T) {
 	ctx := context.Background()
 	repo := NewSchadensAbfragen(pool)
 
-	ex := seedSignaturMitExemplaren(t, pool, "NormalTest", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "NormalTest", 1)
 	copyID := ex[0]
-	schueler := seedSchueler(t, pool, "NORM-A", "Cora", "8a")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
+	schueler := legeSchuelerAn(t, pool, "NORM-A", "Cora", "8a")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 
 	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 3.0)
 	if err != nil {
@@ -87,11 +87,11 @@ func TestSchadenMelden_Idempotent(t *testing.T) {
 	ctx := context.Background()
 	repo := NewSchadensAbfragen(pool)
 
-	ex := seedSignaturMitExemplaren(t, pool, "IdemTest", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "IdemTest", 1)
 	copyID := ex[0]
-	schueler := seedSchueler(t, pool, "IDEM-A", "Dora", "9a")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
+	schueler := legeSchuelerAn(t, pool, "IDEM-A", "Dora", "9a")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 
 	id1, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
 	if err != nil {
@@ -115,7 +115,7 @@ func TestSchadenMelden_Idempotent(t *testing.T) {
 	}
 }
 
-func seedSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
+func legeSchuelerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -126,7 +126,7 @@ func seedSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse str
 	return id
 }
 
-func seedBearbeiter(t *testing.T, pool *pgxpool.Pool) string {
+func legeBearbeiterAn(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -137,7 +137,7 @@ func seedBearbeiter(t *testing.T, pool *pgxpool.Pool) string {
 	return id
 }
 
-func seedAusleihe(t *testing.T, pool *pgxpool.Pool, copyID, schuelerID, bearbeiterID string) string {
+func legeAusleiheAn(t *testing.T, pool *pgxpool.Pool, copyID, schuelerID, bearbeiterID string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -148,10 +148,10 @@ func seedAusleihe(t *testing.T, pool *pgxpool.Pool, copyID, schuelerID, bearbeit
 	return id
 }
 
-func returnLoan(t *testing.T, pool *pgxpool.Pool, loanID string) {
+func bucheRueckgabe(t *testing.T, pool *pgxpool.Pool, ausleiheID string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(),
-		`UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1`, loanID); err != nil {
+		`UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1`, ausleiheID); err != nil {
 		t.Fatalf("Rückgabe buchen: %v", err)
 	}
 }
@@ -165,13 +165,13 @@ func TestSchadenMelden_SchuldnerAusAusleihe(t *testing.T) {
 	ctx := context.Background()
 	repo := NewSchadensAbfragen(pool)
 
-	ex := seedSignaturMitExemplaren(t, pool, "BindTest", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "BindTest", 1)
 	copyID := ex[0]
-	echterSchuldner := seedSchueler(t, pool, "BIND-A", "Anna", "7a")
-	fremder := seedSchueler(t, pool, "BIND-B", "Ben", "7b")
-	bearbeiter := seedBearbeiter(t, pool)
+	echterSchuldner := legeSchuelerAn(t, pool, "BIND-A", "Anna", "7a")
+	fremder := legeSchuelerAn(t, pool, "BIND-B", "Ben", "7b")
+	bearbeiter := legeBearbeiterAn(t, pool)
 
-	loan := seedAusleihe(t, pool, copyID, echterSchuldner, bearbeiter)
+	loan := legeAusleiheAn(t, pool, copyID, echterSchuldner, bearbeiter)
 
 	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss", SchadensArtBeschaedigt, 4.0)
 	if err != nil {
@@ -199,11 +199,11 @@ func TestSchadenMelden_AusleiheInzwischenZurueck(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	copyID := seedSignaturMitExemplaren(t, pool, "ZurueckTest", 1)[0]
-	schueler := seedSchueler(t, pool, "ZUR-A", "Eda", "7a")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
-	returnLoan(t, pool, loan)
+	copyID := legeSignaturMitExemplarenAn(t, pool, "ZurueckTest", 1)[0]
+	schueler := legeSchuelerAn(t, pool, "ZUR-A", "Eda", "7a")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
+	bucheRueckgabe(t, pool, loan)
 
 	_, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
 		"nicht zurückgegeben", SchadensArtNichtZurueck, 12.0)
@@ -230,11 +230,11 @@ func TestSchadenMelden_ExemplarKommtAusDerAusleihe(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "ExemplarTest", 2)
+	ex := legeSignaturMitExemplarenAn(t, pool, "ExemplarTest", 2)
 	geliehen, imRegal := ex[0], ex[1]
-	schueler := seedSchueler(t, pool, "EXA-A", "Finn", "8a")
-	bearbeiter := seedBearbeiter(t, pool)
-	loan := seedAusleihe(t, pool, geliehen, schueler, bearbeiter)
+	schueler := legeSchuelerAn(t, pool, "EXA-A", "Finn", "8a")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, geliehen, schueler, bearbeiter)
 
 	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, imRegal, loan, bearbeiter,
 		"Wasserschaden", SchadensArtBeschaedigt, 6.0)

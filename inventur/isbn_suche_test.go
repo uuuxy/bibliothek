@@ -10,9 +10,9 @@ import (
 	"testing"
 )
 
-// lookupAnfrage baut den GET für eine ISBN. Den Platzhalter {isbn} füllt im Betrieb der
+// baueISBNAnfrage baut den GET für eine ISBN. Den Platzhalter {isbn} füllt im Betrieb der
 // Mux (api_routen.go); die Route selbst prüft er auch.
-func lookupAnfrage(isbn string) *http.Request {
+func baueISBNAnfrage(isbn string) *http.Request {
 	anfrage := httptest.NewRequest(http.MethodGet, "/api/lookup/x", nil)
 	anfrage.SetPathValue("isbn", isbn)
 	return anfrage
@@ -20,7 +20,7 @@ func lookupAnfrage(isbn string) *http.Request {
 
 func TestISBNSuche_LehntUngueltigeISBNAb(t *testing.T) {
 	tueren := &Tueren{}
-	anfrage := lookupAnfrage("123&foo=bar")
+	anfrage := baueISBNAnfrage("123&foo=bar")
 	rr := httptest.NewRecorder()
 
 	tueren.ISBNSuche(rr, anfrage)
@@ -55,7 +55,7 @@ func TestISBNSuche_SucheScheitert(t *testing.T) {
 	}
 
 	// 9783161484100 ist eine gültige ISBN.
-	anfrage := lookupAnfrage("9783161484100")
+	anfrage := baueISBNAnfrage("9783161484100")
 	rr := httptest.NewRecorder()
 
 	tueren.ISBNSuche(rr, anfrage)
@@ -67,9 +67,9 @@ func TestISBNSuche_SucheScheitert(t *testing.T) {
 	}
 }
 
-// lookupMitDNB fragt die Tür nach einer ISBN, zu der die DNB die genannten Datenfelder meldet;
+// findeISBNMitDNB fragt die Tür nach einer ISBN, zu der die DNB die genannten Datenfelder meldet;
 // die übrigen Katalogdienste kennen sie nicht.
-func lookupMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
+func findeISBNMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
 	t.Helper()
 	dnbXML := `<?xml version="1.0" encoding="UTF-8"?>
 <searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
@@ -99,7 +99,7 @@ func lookupMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
 	tueren := &Tueren{metadaten: metadaten}
 
 	rr := httptest.NewRecorder()
-	tueren.ISBNSuche(rr, lookupAnfrage("9783161484100"))
+	tueren.ISBNSuche(rr, baueISBNAnfrage("9783161484100"))
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, rr.Code, rr.Body.String())
@@ -108,7 +108,7 @@ func lookupMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
 }
 
 func TestISBNSuche_Erfolg(t *testing.T) {
-	rr := lookupMitDNB(t, `
+	rr := findeISBNMitDNB(t, `
           <datafield tag="245" ind1="1" ind2="0">
             <subfield code="a">Mocked Title</subfield>
           </datafield>
@@ -125,7 +125,7 @@ func TestISBNSuche_Erfolg(t *testing.T) {
 // Nennt der Titel zwei Jahrgänge, trägt die Antwort die Spanne in „jahrgangVon" und
 // „jahrgangBis". Das Titelfeld ist das der DNB zur ISBN 9783141096835.
 func TestISBNSuche_SpanneAusDemTitel(t *testing.T) {
-	rr := lookupMitDNB(t, `
+	rr := findeISBNMitDNB(t, `
           <datafield tag="245" ind1="1" ind2="0">
             <subfield code="a">EinFach Deutsch Unterrichtsmodelle</subfield>
             <subfield code="b">John Green: Eine wie Alaska Klassen 8 - 10</subfield>
@@ -148,7 +148,7 @@ func TestISBNSuche_SpanneAusDemTitel(t *testing.T) {
 func TestISBNSuche_LehntFehlendeISBNAb(t *testing.T) {
 	tueren := &Tueren{}
 	// Nur Leerzeichen im Platzhalter: nach dem Trimmen ist die ISBN leer
-	anfrage := lookupAnfrage("   ")
+	anfrage := baueISBNAnfrage("   ")
 	rr := httptest.NewRecorder()
 
 	tueren.ISBNSuche(rr, anfrage)

@@ -22,7 +22,7 @@ import (
 // Mahn-Eskalation, genau das, was die beiden Verlängerungen auf demselben Recht ausdrücklich
 // verbieten. Ein vorgezogenes Datum (Rückruf) bleibt erlaubt, weil es die Sperre nicht
 // aufhebt. Und jede Frist von Hand steht im Protokoll.
-func TestAusleihFristSetzen_SperrKonsistenzUndAudit(t *testing.T) {
+func TestAusleihFristSetzen_SperrKonsistenzUndProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()

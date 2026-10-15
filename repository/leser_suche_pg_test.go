@@ -7,10 +7,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// seedSuchSchueler legt einen Schüler mit frei wählbarem Vor- und Nachnamen an.
-// Der vorhandene seedSchueler nagelt den Nachnamen auf "Test" fest und taugt für
+// legeSuchSchuelerAn legt einen Schüler mit frei wählbarem Vor- und Nachnamen an.
+// Der vorhandene legeSchuelerAn nagelt den Nachnamen auf "Test" fest und taugt für
 // Namenssuchtests deshalb nicht.
-func seedSuchSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname string) string {
+func legeSuchSchuelerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
@@ -49,15 +49,15 @@ func TestFindeUnscharf_ReihenfolgeUndDiakritika(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchSchueler(t, pool, "SUCH-1", "Lena", "Hoffmann")
-	seedSuchSchueler(t, pool, "SUCH-2", "Anna Maria", "Müller-Schmidt")
-	seedSuchSchueler(t, pool, "SUCH-3", "José", "García Rodríguez")
-	seedSuchSchueler(t, pool, "SUCH-4", "Mehmet", "Öztürk")
-	seedSuchSchueler(t, pool, "SUCH-5", "Lena", "Bauer")
-	seedSuchSchueler(t, pool, "SUCH-6", "Jörg", "Straßburger")
+	legeSuchSchuelerAn(t, pool, "SUCH-1", "Lena", "Hoffmann")
+	legeSuchSchuelerAn(t, pool, "SUCH-2", "Anna Maria", "Müller-Schmidt")
+	legeSuchSchuelerAn(t, pool, "SUCH-3", "José", "García Rodríguez")
+	legeSuchSchuelerAn(t, pool, "SUCH-4", "Mehmet", "Öztürk")
+	legeSuchSchuelerAn(t, pool, "SUCH-5", "Lena", "Bauer")
+	legeSuchSchuelerAn(t, pool, "SUCH-6", "Jörg", "Straßburger")
 	// Umgekehrter Fall: Der Name steht bereits in Ersatzschreibung in der Datenbank
 	// (so kommt er aus manchen Importen) und wird mit Umlaut gesucht.
-	seedSuchSchueler(t, pool, "SUCH-7", "Kaethe", "Schaefer")
+	legeSuchSchuelerAn(t, pool, "SUCH-7", "Kaethe", "Schaefer")
 
 	repo := NewLeserAbfragen(pool)
 
@@ -125,9 +125,9 @@ func TestFindeUnscharf_TrenntNamensgleiche(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchSchueler(t, pool, "TRENN-1", "Lena", "Hoffmann")
-	seedSuchSchueler(t, pool, "TRENN-2", "Lena", "Bauer")
-	seedSuchSchueler(t, pool, "TRENN-3", "Lena", "Fischer")
+	legeSuchSchuelerAn(t, pool, "TRENN-1", "Lena", "Hoffmann")
+	legeSuchSchuelerAn(t, pool, "TRENN-2", "Lena", "Bauer")
+	legeSuchSchuelerAn(t, pool, "TRENN-3", "Lena", "Fischer")
 
 	repo := NewLeserAbfragen(pool)
 
@@ -158,7 +158,7 @@ func TestFindeUnscharf_GesamtzahlTrotzLimit(t *testing.T) {
 	ctx := context.Background()
 
 	for _, n := range []string{"Bauer", "Becker", "Braun", "Demir", "Fischer"} {
-		seedSuchSchueler(t, pool, "LIMIT-"+n, "Maximilian", n)
+		legeSuchSchuelerAn(t, pool, "LIMIT-"+n, "Maximilian", n)
 	}
 
 	repo := NewLeserAbfragen(pool)
@@ -183,9 +183,9 @@ func TestFindeUnscharf_RanktVollenNamenNachOben(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchSchueler(t, pool, "RANK-1", "Lena", "Bauer")
-	seedSuchSchueler(t, pool, "RANK-2", "Hoffmann", "Lenau") // Namensteile vertauscht als Störtreffer
-	seedSuchSchueler(t, pool, "RANK-3", "Lena", "Hoffmann")
+	legeSuchSchuelerAn(t, pool, "RANK-1", "Lena", "Bauer")
+	legeSuchSchuelerAn(t, pool, "RANK-2", "Hoffmann", "Lenau") // Namensteile vertauscht als Störtreffer
+	legeSuchSchuelerAn(t, pool, "RANK-3", "Lena", "Hoffmann")
 
 	repo := NewLeserAbfragen(pool)
 
@@ -209,8 +209,8 @@ func TestFindeUnscharf_WildcardsWirkenNichtAlsMuster(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchSchueler(t, pool, "WILD-1", "Lena", "Hoffmann")
-	seedSuchSchueler(t, pool, "WILD-2", "Tim", "Berger")
+	legeSuchSchuelerAn(t, pool, "WILD-1", "Lena", "Hoffmann")
+	legeSuchSchuelerAn(t, pool, "WILD-2", "Tim", "Berger")
 
 	repo := NewLeserAbfragen(pool)
 
@@ -232,7 +232,7 @@ func TestFindeUnscharf_LeereEingabe(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	seedSuchSchueler(t, pool, "LEER-1", "Lena", "Hoffmann")
+	legeSuchSchuelerAn(t, pool, "LEER-1", "Lena", "Hoffmann")
 
 	repo := NewLeserAbfragen(pool)
 

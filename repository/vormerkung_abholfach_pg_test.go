@@ -22,9 +22,9 @@ func TestAbholbereit_FaelltZurueckWennDasExemplarVerschwindet(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "Abholfach", 4)
-	schueler := seedSchueler(t, pool, "AF-1", "Mia", "7a")
-	bearbeiter := seedBearbeiter(t, pool)
+	ex := legeSignaturMitExemplarenAn(t, pool, "Abholfach", 4)
+	schueler := legeSchuelerAn(t, pool, "AF-1", "Mia", "7a")
+	bearbeiter := legeBearbeiterAn(t, pool)
 	books := NewKatalogAbfragen(pool)
 
 	tueren := []struct {
@@ -77,10 +77,10 @@ func TestVormerkungLoeschen_AbholbereitRuecktNach(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := seedSignaturMitExemplaren(t, pool, "Nachruecken", 1)[0]
+	ex := legeSignaturMitExemplarenAn(t, pool, "Nachruecken", 1)[0]
 	titel := titelIDVonExemplar(t, pool, ex)
-	a := seedSchueler(t, pool, "NR-A", "Anna", "7a")
-	b := seedSchueler(t, pool, "NR-B", "Ben", "7a")
+	a := legeSchuelerAn(t, pool, "NR-A", "Anna", "7a")
+	b := legeSchuelerAn(t, pool, "NR-B", "Ben", "7a")
 
 	var va string
 	if err := pool.QueryRow(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis, erstellt_am)

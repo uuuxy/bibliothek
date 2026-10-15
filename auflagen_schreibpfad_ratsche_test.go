@@ -127,7 +127,7 @@ var (
 )
 
 // schreibtWerk: Schreibt dieses SQL werk_id oder ändert es die Tabelle werke? werk_id in
-// einer WHERE-Bedingung ist ein Lesezugriff (setKlauseln schneidet nur die SET-Klauseln).
+// einer WHERE-Bedingung ist ein Lesezugriff (zuweisungenInSet schneidet nur die SET-Klauseln).
 func schreibtWerk(sql string) bool {
 	if werkeAendern.MatchString(sql) {
 		return true
@@ -137,7 +137,7 @@ func schreibtWerk(sql string) bool {
 			return true
 		}
 	}
-	for _, set := range setKlauseln(sql) {
+	for _, set := range zuweisungenInSet(sql) {
 		if werkIDSetzen.MatchString(set) {
 			return true
 		}

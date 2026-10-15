@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-// seedVerlorenesExemplar legt einen Titel mit einem Exemplar an, schließt einen eigenen Lauf
+// legeVerlorenesExemplarAn legt einen Titel mit einem Exemplar an, schließt einen eigenen Lauf
 // ohne diesen Scan ab und liefert die ID des Exemplars: den Zustand, den
 // MarkiereVerlustAlsGefunden und LoescheVerlusteEndgueltig vorfinden (ist_ausgesondert = true,
 // aussonderung_grund = 'VERLUST', eine Zeile in inventur_verluste).
-func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventurAbfragen, titel, barcode, bearbeiterID string) string {
+func legeVerlorenesExemplarAn(t *testing.T, ctx context.Context, repo *InventurAbfragen, titel, barcode, bearbeiterID string) string {
 	t.Helper()
 	var titelID string
 	if err := repo.db.QueryRow(ctx,
@@ -45,8 +45,8 @@ func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
 
-	bearbeiterID := seedBearbeiter(t, pool)
-	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Physikbuch 8", "GEF-1", bearbeiterID)
+	bearbeiterID := legeBearbeiterAn(t, pool)
+	exemplarID := legeVerlorenesExemplarAn(t, ctx, repo, "Physikbuch 8", "GEF-1", bearbeiterID)
 
 	gefunden, _, err := repo.MarkiereVerlustAlsGefunden(ctx, exemplarID, bearbeiterID)
 	if err != nil {
@@ -115,9 +115,9 @@ func TestLoescheVerlusteEndgueltig(t *testing.T) {
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
 
-	bearbeiterID := seedBearbeiter(t, pool)
-	verloren1 := seedVerlorenesExemplar(t, ctx, repo, "Chemiebuch 9", "LOE-1", bearbeiterID)
-	verloren2 := seedVerlorenesExemplar(t, ctx, repo, "Biobuch 9", "LOE-2", bearbeiterID)
+	bearbeiterID := legeBearbeiterAn(t, pool)
+	verloren1 := legeVerlorenesExemplarAn(t, ctx, repo, "Chemiebuch 9", "LOE-1", bearbeiterID)
+	verloren2 := legeVerlorenesExemplarAn(t, ctx, repo, "Biobuch 9", "LOE-2", bearbeiterID)
 
 	// Ein gewöhnliches, nicht ausgesondertes Exemplar dazwischen: Es wird nicht gelöscht, auch
 	// wenn seine ID mitgeschickt wird.

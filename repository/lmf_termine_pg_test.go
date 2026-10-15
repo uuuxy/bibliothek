@@ -29,7 +29,7 @@ func TestLMFPlan_SpeichernListenAuslassen(t *testing.T) {
 	ctx := context.Background()
 	repo := NewLMFAbfragen(pool)
 	t.Cleanup(func() {
-		raeumeLmfPlaene(t, pool)
+		raeumeLMFPlaene(t, pool)
 		if _, err := pool.Exec(ctx, `DELETE FROM schueler WHERE nachname = 'Lmfplantest'`); err != nil {
 			t.Logf("Aufräumen: %v", err)
 		}
@@ -190,7 +190,7 @@ func TestLMFPlan_FesterPlatzUndFreieTage(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 	repo := NewLMFAbfragen(pool)
-	t.Cleanup(func() { raeumeLmfPlaene(t, pool) })
+	t.Cleanup(func() { raeumeLMFPlaene(t, pool) })
 
 	tag := func(s string) time.Time {
 		d, err := time.ParseInLocation("2006-01-02", s, schulzeit.Zone())
@@ -205,7 +205,7 @@ func TestLMFPlan_FesterPlatzUndFreieTage(t *testing.T) {
 	fest := []*lmfplan.Platz{nil, {Datum: tag("2026-08-28"), Stunde: 4}}
 	frei := []lmfplan.Zeitraum{{Von: tag("2026-08-25"), Bis: tag("2026-08-25"), Name: "Pädagogischer Tag"}}
 	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag("2026-08-24"), Startstunde: 1, StundenJeTag: 6}, fest, lmfplan.Schultage(frei))
-	if _, err := speichereLmfPlanImTest(ctx, repo, plan, zeilen, plaetze, nil); err != nil {
+	if _, err := schreibeLMFPlanImTest(ctx, repo, plan, zeilen, plaetze, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -227,7 +227,7 @@ func TestLMFPlan_FesterPlatzUndFreieTage(t *testing.T) {
 	plan.FreieTage = nil
 	zeilen[1].Fest = false
 	plaetze = lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag("2026-08-24"), Startstunde: 1, StundenJeTag: 6}, make([]*lmfplan.Platz, 2), lmfplan.Schultage(nil))
-	if _, err := speichereLmfPlanImTest(ctx, repo, plan, zeilen, plaetze, nil); err != nil {
+	if _, err := schreibeLMFPlanImTest(ctx, repo, plan, zeilen, plaetze, nil); err != nil {
 		t.Fatal(err)
 	}
 	if st, err = repo.LadeNeuestenPlan(ctx, LMFTerminAusgabe); err != nil {
