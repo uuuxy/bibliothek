@@ -1,23 +1,21 @@
 package main
 
-// Bugklasse „Parameter-Struktur mit vergessenem Feld" (Rasterdurchgang 05.09.2026 abends,
-// Frage 2 „Spezialwert"): Zehn zugelieferte PRs formten lange Parameterlisten in Strukturen um
-// (1359408b). Der Gewinn ist echt — benachbarte Argumente desselben Typs lassen sich nicht
-// mehr stumm vertauschen. Der Preis steht in derselben Commit-Botschaft: Aus einem
-// Pflichtargument wird ein Feld, und ein VERGESSENES Feld ist kein Compilerfehler, sondern
-// der Nullwert. Bei fristAngaben wären das 0 Tage Frist, bei den Zusammenführ-Parametern
-// eine Rückweg-Spur ohne Bezug.
+// Bugklasse „Parameter-Struktur mit vergessenem Feld": Eine Struktur statt einer langen
+// Parameterliste verhindert, dass benachbarte Argumente desselben Typs stumm vertauscht werden.
+// Der Preis: Aus einem Pflichtargument wird ein Feld, und ein vergessenes Feld ist kein
+// Compilerfehler, sondern der Nullwert. Bei fristAngaben wären das 0 Tage Frist, bei den
+// Parametern des Zusammenführens eine Spur für den Rückweg ohne Bezug.
 //
-// Diese Ratsche verlangt für genau diese Strukturen, dass JEDES Literal JEDES Feld setzt.
-// Sie gilt bewusst nicht für alle Strukturen des Baums: Ein Options-Objekt mit
-// Vorgabewerten darf teilbefüllt sein. Wer eine neue Parameter-Struktur einführt, trägt
-// sie hier ein — die Liste ist die Aussage, nicht der Zufall.
+// Diese Ratsche verlangt für genau diese Strukturen, dass jedes Literal jedes Feld setzt. Sie
+// gilt absichtlich nicht für alle Strukturen des Baums: Ein Objekt mit Optionen und Vorgabewerten
+// darf teilbefüllt sein. Wer eine neue Parameter-Struktur einführt, trägt sie hier ein, sonst ist
+// die Ratsche für sie blind; die Liste ist die Aussage, nicht der Zufall.
 //
-// Positionale Literale (`coverBox{x, y, b, h}`) zwingt der Compiler bereits zur
-// Vollständigkeit; sie werden deshalb nicht bemängelt.
+// Positionale Literale (`coverBox{x, y, b, h}`) zwingt der Compiler bereits zur Vollständigkeit;
+// sie werden deshalb nicht bemängelt.
 //
-// Ein Literal zählt mit und ohne Paketnamen: Zieht eine Struktur in ein anderes Paket, steht
-// an ihren Aufrufstellen `paket.Typ{…}`. Verglichen wird der Typname allein; zwei gelistete
+// Ein Literal zählt mit und ohne Paketnamen: Zieht eine Struktur in ein anderes Paket, steht an
+// ihren Aufrufstellen `paket.Typ{…}`. Verglichen wird der Typname allein; zwei gelistete
 // Strukturen gleichen Namens in verschiedenen Paketen kann die Ratsche nicht unterscheiden.
 //
 // Blindheit: Strukturen, die nicht in der Liste stehen; Nullwerte über Zwischenvariablen; ein
@@ -47,18 +45,13 @@ var parameterStrukturen = map[string]string{
 	"klassifizierungsLauf":   "fehlendes Feld = LUSD-Klassifizierung ohne Ergebnis- oder Gesehen-Liste",
 	"Bestellbericht":         "fehlendes Feld = Bericht über den falschen Zeitraum, ohne Preise oder ohne Bestellungen",
 	"Flaeche":                "fehlendes Maß = Cover an Position 0 oder mit Größe 0",
-	// Nachgetragen im Rasterdurchgang 06.09.2026 (Frage 7): Alle drei entstanden am
-	// 05./06.09. — „exemplarZurGruppe" sogar in einem Commit, dessen Botschaft genau
-	// diese Bugklasse nennt („fünf benachbarte string-Parameter, der Vertauscher war
-	// stumm"). Die Liste ist die Aussage, nicht der Zufall: Wer die Struktur einführt,
-	// trägt sie ein, sonst ist die Ratsche für sie blind.
-	"exemplarZurGruppe": "fehlendes Feld = Zulaufzeile ohne Exemplar-ID oder ohne Cover",
-	"Rahmen":            "fehlendes Feld = Plan ohne Startstunde oder mit 0 Stunden je Tag, also ohne Plätze",
-	"Ende":              "fehlendes Feld = Rückgabe-Plan ohne Anker oder mit 0 Stunden je Tag, also still leer",
-	"paarSignale":       "fehlendes Feld = ein Signal der Umbenennungs-Paarung zählt still nie",
-	"leserAenderung":    "fehlendes Feld = Nachtrag ohne Protokolleintrag oder Schul-E-Mail ohne Konto",
-	"nachbuchAbsender":  "fehlendes Feld = Nachbuchung ohne Bearbeiter, mit unberichtigter Uhr oder ohne Entscheidung über den Sperrgrund",
-	"BestellMailWerte":  "fehlendes Feld = Bestellmail ohne Kundennummer, ohne Bestätigungs-Link oder ohne den Vermerk zum Topf",
+	"exemplarZurGruppe":      "fehlendes Feld = Zulaufzeile ohne Exemplar-ID oder ohne Cover",
+	"Rahmen":                 "fehlendes Feld = Plan ohne Startstunde oder mit 0 Stunden je Tag, also ohne Plätze",
+	"Ende":                   "fehlendes Feld = Rückgabe-Plan ohne Anker oder mit 0 Stunden je Tag, also still leer",
+	"paarSignale":            "fehlendes Feld = ein Signal der Umbenennungs-Paarung zählt still nie",
+	"leserAenderung":         "fehlendes Feld = Nachtrag ohne Protokolleintrag oder Schul-E-Mail ohne Konto",
+	"nachbuchAbsender":       "fehlendes Feld = Nachbuchung ohne Bearbeiter, mit unberichtigter Uhr oder ohne Entscheidung über den Sperrgrund",
+	"BestellMailWerte":       "fehlendes Feld = Bestellmail ohne Kundennummer, ohne Bestätigungs-Link oder ohne den Vermerk zum Topf",
 }
 
 func TestParameterStrukturen_JedesLiteralSetztJedesFeld(t *testing.T) {
@@ -121,7 +114,7 @@ func mitPaketnamenVollstaendig() any {
 	felder, literale := sammleParameterStrukturen(t, quelle)
 	if len(felder["coverBox"]) != 4 {
 		t.Errorf("gruppierte Felder (x, y, breite, hoehe) nicht erkannt: %v — genau diese Form "+
-			"war beim ersten Anlauf am 05.09.2026 der blinde Fleck", felder["coverBox"])
+			"übersieht ein Sammler, der je Feld einen eigenen Namen erwartet", felder["coverBox"])
 	}
 	var gemeldet []string
 	for _, l := range literale {

@@ -12,28 +12,25 @@ import (
 	"testing"
 )
 
-// Gate gegen Phantom-Erfolg.
+// Prüfung gegen Phantom-Erfolg.
 //
-// Anlass (31.08.2026): Ein Exec (UPDATE/DELETE per ID) läuft fehlerfrei, trifft 0 Zeilen,
-// und der Aufrufer meldet trotzdem Erfolg — teils samt Audit-Eintrag über eine Änderung,
-// die nie stattfand. Der Sweep über alle 163 Exec-Stellen fand 10 solcher Pfade (u. a.
-// Mail-Vorlage, Konto ändern, Titel löschen, Konto löschen, Vormerkung löschen) plus einen
-// Grenzfall; alle sind behoben (RowsAffected → Sentinel → 404/409, Hausform wie
-// exemplar_status.go).
+// Warum: Ein Exec (UPDATE/DELETE per ID) läuft fehlerfrei, trifft 0 Zeilen, und der Aufrufer
+// meldet trotzdem Erfolg, womöglich samt Eintrag im Protokoll über eine Änderung, die nie
+// stattfand. Die Hausform prüft RowsAffected und antwortet über einen Sentinel mit 404/409 (wie
+// repository/exemplar_status.go).
 //
-// Regel: Wer den pgconn.CommandTag eines Exec verwirft (`_, err := x.Exec(...)` oder
-// bare Aufruf), steht in diesem Bestand — mit der Zahl der Stellen je Funktion. Eine
-// NEUE verwerfende Stelle macht das Gate rot, bis sie entweder RowsAffected prüft oder
-// hier begründet eingefroren wird. Der Bestand ist die Liste bewusster Ausnahmen:
-// INSERT/Upsert (0 Zeilen unmöglich oder legitim), Bulk-/FK-Aufräumen (0 = Normalfall),
-// vorgelagerte Existenz-Checks/FOR-UPDATE-Locks, DDL/Seed/Migrationen. Die Einordnung
-// je Stelle steht im Sweep-Bericht (docs/sweeps.md, Zeile Phantom-Erfolg).
+// Regel: Wer den pgconn.CommandTag eines Exec verwirft (`_, err := x.Exec(...)` oder blanker
+// Aufruf), steht in diesem Bestand, mit der Zahl der Stellen je Funktion. Eine neue verwerfende
+// Stelle macht die Prüfung rot, bis sie entweder RowsAffected prüft oder hier begründet
+// eingefroren wird. Der Bestand ist die Liste absichtlicher Ausnahmen: INSERT/Upsert (0 Zeilen
+// unmöglich oder legitim), Aufräumen in Mengen oder über Fremdschlüssel (0 = Normalfall),
+// vorgelagerte Prüfung auf Existenz oder Sperre mit FOR UPDATE, DDL, Vorgabedaten, Migrationen.
 //
-// Reparatur bei Rot: Entweder ist die neue Stelle ein Einzelzeilen-Schreibpfad, dessen
-// Erfolg jemand meldet — dann RowsAffected prüfen (Muster: exemplar_status.go,
-// ErrExemplarNichtGefunden). Oder 0 Zeilen ist dort legitim — dann den Zähler hier
-// anheben und im Commit begründen. Sinkt ein Zähler (Stelle behoben/entfernt), wird
-// er hier ABGESENKT — die Ratsche dreht nur zu.
+// Reparatur bei Rot: Entweder ist die neue Stelle ein Schreibpfad für eine einzelne Zeile, dessen
+// Erfolg jemand meldet; dann RowsAffected prüfen (Muster: repository/exemplar_status.go,
+// ErrExemplarNichtGefunden). Oder 0 Zeilen ist dort legitim; dann den Zähler hier anheben und im
+// Commit begründen. Sinkt ein Zähler (Stelle behoben oder entfernt), wird er hier abgesenkt; die
+// Ratsche dreht nur zu.
 var phantomBestand = map[string]int{
 	"repository/ausweis_layout.go:SchreibeAusweisLayout":      1,
 	"repository/dsgvo_auskunft.go:ProtokolliereDSGVOAuskunft": 1,
@@ -63,7 +60,7 @@ var phantomBestand = map[string]int{
 	// widerrufen; beim Aufräumen, dass nichts abgelaufen ist.
 	"repository/widerrufene_token.go:WiderrufeToken":              1,
 	"repository/widerrufene_token.go:LoescheAbgelaufeneWiderrufe": 1,
-	// sitzungen (Migration 155): 0 Zeilen heißt jedes Mal „die Zeile der Anmeldung gibt es
+	// sitzungen: 0 Zeilen heißt jedes Mal „die Zeile der Anmeldung gibt es
 	// nicht (mehr)" — dann ist nichts gesperrt, kein Prüfwert zu halten, nichts zu löschen.
 	// Wo die Zahl etwas entscheidet (SperreSitzung, VerlaengereSitzung), wird sie gelesen.
 	"repository/sitzungen.go:LoescheSitzung":              1,
@@ -75,14 +72,12 @@ var phantomBestand = map[string]int{
 	"db/migrationen.go:spieleMigrationEin":                2,
 	"db/migrationen.go:spieleSchemaEin":                   1,
 	"db/migrationen.go:legeMigrationstabelleAn":           1,
-	// 3 seit 03.09.2026: zweite Vererbung (manage_students_admin → merge_students), ebenfalls
-	// INSERT … ON CONFLICT DO NOTHING — 0 Zeilen beim zweiten Start sind der Normalfall.
+	// Drei Stellen: Auch die Vererbungen von Rechten (etwa manage_students_admin → merge_students)
+	// sind INSERT … ON CONFLICT DO NOTHING; 0 Zeilen beim zweiten Start sind der Normalfall.
 	"db/rechte_vorgabe.go:SchreibeRechteVorgabe":               3,
 	"internal/littera/schreiber_ausleihen.go:schreibeAusleihe": 1,
-	// Test-Harness (nur von *_test.go importiert): advisory_lock, DROP SCHEMA und
-	// schema.sql-Load sind DDL/Setup — 0 Zeilen ist dort kein meldbarer Erfolg.
-	// Vorher stand derselbe Code fünffach in _test.go-Dateien, die die Ratsche
-	// per Konstruktion nicht sieht.
+	// Gerüst der Tests (nur von *_test.go eingebunden): advisory_lock, DROP SCHEMA und das Laden von
+	// schema.sql sind DDL und Aufbau; 0 Zeilen ist dort kein meldbarer Erfolg.
 	"internal/pgtest/pgtest.go:baueTestDB": 3,
 	// Cover-Abgleich: Null Zeilen heißt, der Titel trägt inzwischen ein lokales Cover oder
 	// ist gelöscht; der Abgleich geht zum nächsten Titel.
@@ -90,7 +85,7 @@ var phantomBestand = map[string]int{
 	"repository/titel_cover.go:SetzeCoverStatus":     1,
 	// Zeilensperre am Leser, bevor Scan und Nachbuchen buchen (Reihenfolge Leser, Ausleihe,
 	// Exemplar). Die Anweisung sperrt und schreibt nicht; dass es den Leser gibt, steht beim
-	// Aufrufer vorher fest. Null Zeilen meldet hier niemand als Erfolg.
+	// Aufrufer schon fest. Null Zeilen meldet hier niemand als Erfolg.
 	"repository/ausleihe_zeilensperren.go:SperreLeserzeile": 1,
 	// Signaturen aus dem Bestands-Import: Null Zeilen heißt, der Titel wurde seit dem Laden des
 	// Bestands gelöscht. Der Import meldet nur angelegte Titel und Exemplare.
@@ -104,13 +99,13 @@ var phantomBestand = map[string]int{
 	"inventur/titel_anlegen.go:legeImportExemplareAn":                  1,
 	"inventur/titel_loeschen_spur.go:protokolliereGeloeschteExemplare": 1,
 	"inventur/titel_loeschen_spur.go:protokolliereOffeneAusleihen":     1,
-	// Dieselbe Bauart wie die Zeile darüber (Rasterdurchgang 06.09.2026): ein INSERT ins
-	// Protokoll je gelesener Zeile. Ein CommandTag zu prüfen hieße, einen INSERT ohne
-	// ON CONFLICT auf 1 zu vergleichen — die Fehlerrückgabe deckt den Fall schon ab.
+	// Dieselbe Bauart wie die Zeile darüber: ein INSERT ins Protokoll je gelesener Zeile. Ein
+	// CommandTag zu prüfen hieße, einen INSERT ohne ON CONFLICT auf 1 zu vergleichen; die
+	// Fehlerrückgabe deckt den Fall schon ab.
 	"inventur/titel_loeschen_spur.go:protokolliereOffeneSchaeden":           1,
 	"repository/titel_loeschen_forderung.go:protokolliereOffeneForderungen": 1,
-	// Dritte Zeile derselben Bauart (Frage 12 „Gegenrichtung Schema", 06.09.2026):
-	// ein INSERT ins Protokoll je Zeile, die der CASCADE gleich nimmt.
+	// Dritte Zeile derselben Bauart: ein INSERT ins Protokoll je Zeile, die der CASCADE gleich
+	// nimmt.
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
 	"inventur/titel_aendern.go:gleicheExemplareAn":                       1,
 	"repository/systematik_sicherung.go:registriereFach":                 2,
@@ -120,24 +115,23 @@ var phantomBestand = map[string]int{
 	// Legt das Ergebnis der Restore-Probe an oder ersetzt es: Die Anweisung trifft immer
 	// genau eine Zeile.
 	"repository/betriebszustand.go:SchreibeEinstellungswert": 1,
-	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null
-	// gelöschte Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
-	// Seit 07.09.2026 heißt der Rumpf SchreibePlan (Transaktion des Aufrufers);
-	// SaveLmfPlan ist nur noch die Hülle mit eigener kurzer Transaktion.
+	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null gelöschte
+	// Zeilen sind der Normalfall beim Anlegen; RowsAffected sagt hier nichts. SchreibePlan läuft in
+	// der Transaktion des Aufrufers.
 	"repository/lmf_plan.go:SchreibePlan": 3,
-	// Schlagworte eines Titels (Migration 138), dieselbe Bauart: Wörter anlegen mit
+	// Schlagworte eines Titels, dieselbe Bauart: Wörter anlegen mit
 	// ON CONFLICT DO NOTHING (0 heißt „gibt es schon in anderer Schreibweise"), dann die
 	// Verbindungen ersetzen (DELETE + INSERT, 0 ist der Normalfall). Dass es den Titel gibt,
 	// sichert der FOR-UPDATE-Lock davor (ErrTitelNichtGefunden → 404); das Ergebnis misst
 	// repository/schlagworte_pg_test.go.
 	"repository/schlagworte.go:SetzeSchlagworte": 3,
-	// Zusammenführen zweier Schlagworte (Migration 143): fünf Schritte in einer Schleife —
+	// Zusammenführen zweier Schlagworte: fünf Schritte in einer Schleife —
 	// Titel umhängen, lösen, Verweise umhängen, Filter übernehmen, zum Verweis machen. Null
 	// Zeilen ist bei den ersten vier der Normalfall (ein Wort ohne Titel, ohne Verweise); dass
 	// es beide Wörter gibt, sichern die FOR-UPDATE-Sperren davor (ErrSchlagwortNichtGefunden).
 	// Das Ergebnis misst repository/schlagworte_pflege_pg_test.go.
 	"repository/schlagworte_pflege.go:fuehreZusammenIn": 1,
-	// Auflagen eines Schulbuchs (Migration 148): nimmAuflagenSperre nimmt nur die Sperre
+	// Auflagen eines Schulbuchs: nimmAuflagenSperre nimmt nur die Sperre
 	// (pg_advisory_xact_lock) — kein Schreibvorgang, dessen Erfolg jemand meldet.
 	// raeumeWerkAuf löst den letzten Titel eines Werks; 0 Zeilen sind richtig, wenn nur der
 	// eben gelöste daran hing (gezählt direkt davor). Die übrigen Stellen der Datei prüfen
@@ -149,18 +143,17 @@ var phantomBestand = map[string]int{
 	"repository/forderung_erledigen.go:VerbucheZahlung":       1,
 	"repository/leser_loeschen.go:tilgeSpurenUndLoescheLeser": 2,
 	"repository/barcode_vergabe.go:hebeSequenzUeberBestand":   1,
-	// Umschlüsselung der Protokollspuren beim Zusammenführen (02.09.2026): audit_log/
-	// audit_logs dürfen 0 Zeilen zur Quelle haben — 0 ist kein Phantom, das Ergebnis
-	// (jede Tabelle wandert) misst TestZusammenfuehren_JedeTabelleWandert am Postgres.
+	// Umschlüsselung der Protokollspuren beim Zusammenführen: audit_log/audit_logs dürfen 0 Zeilen
+	// zur Quelle haben; 0 ist kein Phantom, das Ergebnis (jede Tabelle wandert) misst
+	// TestZusammenfuehren_JedeTabelleWandert an Postgres.
 	"repository/leser_zusammenfuehren.go:verschiebeVorgaenge": 1,
 	"repository/titel_schreiben.go:SchreibeTitel":             1,
-	// Seit 15.09.2026 heißt der Rumpf meldeSchaden (Transaktion des Aufrufers, damit
-	// der Bescheid Verlust und Brief in EINER Transaktion bucht); SchadensAbfragen.Melde ist nur
-	// noch die Hülle. Die drei Tags sind dieselben wie vorher (Exemplar aussondern,
-	// Vormerkung lösen, Ausleihe beenden) — die Ausleihe ist per FOR UPDATE gelesen.
+	// meldeSchaden läuft in der Transaktion des Aufrufers, damit der Bescheid Verlust und Brief in
+	// einer Transaktion bucht. Die drei Stellen: Exemplar aussondern, Vormerkung lösen, Ausleihe
+	// beenden; die Ausleihe ist per FOR UPDATE gelesen.
 	"repository/schaden_melden.go:meldeSchaden": 3,
 	// INSERT … ON CONFLICT DO NOTHING: 0 Zeilen ist die Wiederholung desselben Schlüssels
-	// vom Theken-Rechner — kein Phantom, sondern gewollte Idempotenz (Migration 117).
+	// vom Theken-Rechner — kein Phantom, sondern gewollte Idempotenz.
 	"repository/nachbuch_meldungen.go:SchreibeNachbuchMeldung":   1,
 	"repository/inventurlauf_abschluss.go:SchliesseLaufAb":       1,
 	"repository/inventurlauf_scan.go:VerbucheScan":               1,

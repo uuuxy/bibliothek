@@ -393,7 +393,7 @@ auf der Leitung, aber keines für den Speicher.
 
 Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Defaults verwenden, kann jeder mit Repo-Zugriff Admin-JWTs fälschen (vollständige Übernahme) oder AES-verschlüsselte Schülerfotos entschlüsseln.
 
-### Lösung (`main.go/loadConfig` + `bereitschaft.IstGeheimnisSchutzScharf`)
+### Lösung (`main.go/leseKonfig` + `bereitschaft.IstGeheimnisSchutzScharf`)
 
 Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
 (`bereitschaft.IstBeispielGeheimnis`) aktiv ist — und zwar **als Vorgabe** (seit 05.09.2026):
@@ -411,7 +411,7 @@ vergessene Zeile in der `.env` genügte, damit der Schulserver mit dem JWT-Schl�
 Repository lief — Admin-Sitzungen fälschbar, nichts rot. Dieselbe Regel liest die
 Selbstprüfung (`internal/bereitschaft/geheimnisse.go`), damit Seite und Server nicht verschieden
 entscheiden. Gates: `internal/bereitschaft/geheimnisse_test.go`,
-`TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT` (mit dem alten Code rot).
+`TestLeseKonfig_ProduktionOhneSchalterVerweigertBeispielJWT` (mit dem alten Code rot).
 
 Die Entkopplung von `APP_ENV` bleibt für den Ausnahmefall: `APP_ENV=local` würde zugleich
 `IMAP_HOST=mock` erlauben, also die Anmeldung mit jedem Passwort, und Swagger öffentlich

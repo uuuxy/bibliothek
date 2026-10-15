@@ -12,23 +12,22 @@ import (
 	"testing"
 )
 
-// Gate: Ein gescheitertes Lesen gilt nicht als „nichts gespeichert".
+// Prüfung: Ein gescheitertes Lesen gilt nicht als „nichts gespeichert".
 //
-// Anlass (08.10.2026, api/druck/ausweis_layout.go): `case errors.Is(err, pgx.ErrNoRows) ||
-// strings.TrimSpace(wert) == ""` stand vor `case err != nil`. Nach einem gescheiterten Scan
-// ist der Wert leer; der erste Zweig traf deshalb jeden Fehler, und die Tür beantwortete
-// einen Lesefehler mit dem leeren Design. Der Ausweis-Designer speichert nach dieser
-// Antwort seine Vorgabewerte über das Design der Schule.
+// Warum: Steht `case errors.Is(err, pgx.ErrNoRows) || strings.TrimSpace(wert) == ""` vor `case
+// err != nil`, trifft der erste Zweig jeden Fehler, denn nach einem gescheiterten Scan ist der
+// Wert leer. Die Tür beantwortet dann einen Lesefehler mit dem leeren Design, und der Designer
+// der Ausweise speichert nach dieser Antwort seine Vorgabewerte über das Design der Schule.
 //
-// Regel: Steht „keine Zeile" (`errors.Is(<err>, …ErrNoRows)` oder `<err> == …ErrNoRows`) in
-// einem Oder, nennt jeder andere Teil des Oders denselben Fehler. Die Hausform bindet den
-// Wert an das gelungene Lesen: `errors.Is(err, pgx.ErrNoRows) || (err == nil && wert == "")`.
+// Regel: Steht „keine Zeile" (`errors.Is(<err>, …ErrNoRows)` oder `<err> == …ErrNoRows`) in einem
+// Oder, nennt jeder andere Teil des Oders denselben Fehler. Die Hausform bindet den Wert an das
+// gelungene Lesen: `errors.Is(err, pgx.ErrNoRows) || (err == nil && wert == "")`.
 //
-// Reparatur bei Rot: den Fehler in einem eigenen Zweig vor dem Wert prüfen oder den Wert
-// mit `err == nil &&` binden.
+// Reparatur bei Rot: den Fehler in einem eigenen Zweig vor dem Wert prüfen oder den Wert mit `err
+// == nil &&` binden.
 //
-// Sieht nicht: einen Nullwert, der erst in einer späteren Anweisung geprüft wird, und
-// „keine Zeile" hinter einem eigenen Sentinel (ErrTitelNichtGefunden).
+// Sieht nicht: einen Nullwert, der erst in einer späteren Anweisung geprüft wird, und „keine
+// Zeile" hinter einem eigenen Sentinel (ErrTitelNichtGefunden).
 
 func ohneKlammern(e ast.Expr) ast.Expr {
 	for {

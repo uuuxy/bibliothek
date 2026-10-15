@@ -7,15 +7,13 @@ import (
 	"testing"
 )
 
-// Die Ratsche zu Befund F1: Kein Produktions-SQL darf den Bestellstatus je
-// wieder aus dem Freitext zustand_notiz ableiten. Die Muster unten sind genau
-// die vier LIKE-Filter, die bis Migration 071 in OPAC, Inventur und
-// Wareneingang standen. Erlaubt bleibt das Go-Präfix-Parsen des
-// LIEFERANTENNAMENS aus der Notiz (reine Anzeige, strings.HasPrefix) —
-// verboten ist jede SQL-Entscheidung über den Text.
+// Kein SQL im Programm darf den Bestellstatus wieder aus dem Freitext zustand_notiz ableiten; er
+// steht in der Spalte bestellstatus. Die Muster unten sind die vier Filter auf den Text, die es
+// dafür gab. Erlaubt bleibt, in Go den Namen des Lieferanten vorn aus der Notiz zu lesen (reine
+// Anzeige, strings.HasPrefix); verboten ist jede Entscheidung in SQL über den Text.
 //
-// Blind für jede andere Schreibweise der vier Muster: like klein geschrieben, ein Vergleich
-// ohne Leerzeichen, ein Muster aus einer Variablen.
+// Blind für jede andere Schreibweise der vier Muster: like klein geschrieben, ein Vergleich ohne
+// Leerzeichen, ein Muster aus einer Variablen.
 func TestKeinBestellstatusAusNotizText(t *testing.T) {
 	verboten := []string{
 		"LIKE 'Im Zulauf",
@@ -48,7 +46,7 @@ func TestKeinBestellstatusAusNotizText(t *testing.T) {
 		}
 		for _, muster := range verboten {
 			if strings.Contains(string(inhalt), muster) {
-				t.Errorf("%s entscheidet wieder über den Notiz-Text (%q) — Bestellstatus gehört in die Spalte bestellstatus (Migration 071, Befund F1)", pfad, muster)
+				t.Errorf("%s entscheidet wieder über den Notiz-Text (%q) — der Bestellstatus steht in der Spalte bestellstatus", pfad, muster)
 			}
 		}
 		return nil

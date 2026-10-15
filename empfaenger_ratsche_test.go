@@ -18,7 +18,7 @@ import (
 // Ein Test neben dem Linter: Die Regel receiver-naming von revive vergleicht die Methoden
 // einer Datei; ein Typ, dessen Methoden in mehreren Dateien stehen, bestand sie mit zwei Namen.
 //
-// BLINDHEIT: Testdateien liest die Prüfung nicht. Ob der Name ein Kürzel des Typs ist, liest
+// Blindheit: Testdateien liest die Prüfung nicht. Ob der Name ein Kürzel des Typs ist, liest
 // ein Mensch; die Türen der Themen heißen s wie am Server, von dem sie stammen.
 func TestEmpfaenger_EinNameJeTyp(t *testing.T) {
 	fset := token.NewFileSet()

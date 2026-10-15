@@ -26,7 +26,7 @@ var pruefhilfen = []string{
 // Tests mehrerer Pakete sie teilen können (docs/ARCHITEKTUR.md 5.2.2); was sie tun, gehört
 // nicht in das ausgelieferte Programm.
 //
-// BLINDHEIT: Nur die Einbindung im Kopf einer Datei. Eine Prüfhilfe, die dieser Liste fehlt,
+// Blindheit: Nur die Einbindung im Kopf einer Datei. Eine Prüfhilfe, die dieser Liste fehlt,
 // sieht die Prüfung nicht; ein neues Paket der Art wird hier eingetragen.
 func TestPruefhilfen_NurTestsBindenSieEin(t *testing.T) {
 	fset := token.NewFileSet()

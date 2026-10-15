@@ -12,9 +12,9 @@ wird sie durch „effective naming, helpful commentary, and efficient code organ
 etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das Glossar in
 [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 12.
 
-Der Bestand folgt diesen Regeln noch nicht überall. Er wird Paket für Paket umgestellt; welche
-Pakete fertig sind, steht in [OFFEN.md](OFFEN.md), und `stil_ratsche_test.go` hält je Paket
-fest, was erreicht ist. Neuer Code folgt den Regeln von Anfang an.
+Der Programmcode folgt diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund. Was
+darüber hinaus noch abweicht (Testdateien, Fehlertexte, Zustand auf der Ebene eines Pakets),
+steht in [OFFEN.md](OFFEN.md) 5.66. Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
 

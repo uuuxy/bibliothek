@@ -9,10 +9,9 @@ import (
 )
 
 // Ein Geldbetrag steht überall in derselben Schreibweise: zwei Nachkommastellen mit Komma, aus
-// pkg/betrag. Neben zwei Helfern, die das Komma schrieben, standen sieben Stellen mit
-// Dezimalpunkt: zwei Meldungen der Theke („Forderung über 12.50 € storniert") und fünf in
-// Briefen und Rechnungen („12.50 EUR"). Dieselbe Bugklasse wie im Frontend (docs/sweeps.md,
-// „Schreibweise neben ihrem Helfer").
+// pkg/betrag. Eine Stelle, die den Betrag selbst formatiert, schreibt leicht einen Dezimalpunkt
+// („Forderung über 12.50 € storniert", „12.50 EUR" im Brief). Dieselbe Bugklasse wie in der
+// Oberfläche (docs/sweeps.md, „Schreibweise neben ihrem Helfer").
 //
 // Blind für: einen Betrag über %v oder strconv, ein Format aus zwei Zeichenketten, und einen
 // Betrag ohne Währung dahinter (Tabellenspalten, deren Kopf die Währung nennt).

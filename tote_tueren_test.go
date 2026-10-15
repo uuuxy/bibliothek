@@ -10,30 +10,24 @@ import (
 	"testing"
 )
 
-// Gate gegen tote Interface-Türen.
+// Prüfung gegen tote Türen in Schnittstellen.
 //
-// Anlass (16.08.2026): UpsertBookTitle stand fünf Wochen ohne produktiven Aufrufer
-// in der Schnittstelle KatalogAbfragen — nur Implementierung und ein eigener Test hielten es
-// am Leben. In der Zeit driftete sein Blanking-Schutz vom echten Bulk-Pfad weg.
-// `deadcode` (x/tools) KANN diese Klasse nicht finden: Sobald ein Typ in ein
-// Interface gewandelt wird, gilt seine komplette Methodentabelle als erreichbar
-// (an genau diesem Fall per Gegenprobe belegt). Deshalb dieser eigene Detektor.
+// Warum: Eine Methode, die nur noch in der Schnittstelle, ihrer Implementierung und einem eigenen
+// Test lebt, driftet vom echten Pfad weg, ohne dass es jemand merkt. `deadcode` (x/tools) kann
+// diese Klasse nicht finden: Sobald ein Typ in eine Schnittstelle gewandelt wird, gilt seine
+// komplette Methodentabelle als erreichbar. Deshalb dieser eigene Detektor.
 //
-// Regel: Jede Methode, die eines UNSERER Interfaces deklariert, muss außerhalb
-// von _test.go-Dateien mindestens einmal als Selektor benutzt werden. Der Abgleich
-// läuft über den Namen (konservativ: ein Aufruf gleichen Namens irgendwo genügt) —
-// das erzeugt keine Fehlalarme durch dynamische Aufrufe, übersieht dafür Türen,
-// deren Name anderswo lebt. Als Ratsche reicht das: Neue Türen ohne jeden Aufrufer
-// werden rot.
+// Regel: Jede Methode, die eine unserer Schnittstellen deklariert, muss außerhalb von
+// _test.go-Dateien mindestens einmal als Selektor benutzt werden. Der Abgleich läuft über den
+// Namen (konservativ: ein Aufruf gleichen Namens irgendwo genügt); das erzeugt keine Fehlalarme
+// durch dynamische Aufrufe, übersieht dafür Türen, deren Name anderswo lebt. Als Ratsche reicht
+// das: Neue Türen ohne jeden Aufrufer werden rot.
 //
-// Reparatur bei Rot: Entweder die Tür samt Implementierung und Test zurückbauen
-// (Regelfall — Parallel-Türen driften), oder sie hier mit Begründung eintragen.
-var bewussteTueren = map[string]string{
-	// (derzeit leer — StorniereForderung hat seit 16.08.2026 seine Tür:
-	// POST /api/schadensfaelle/{id}/storno, siehe api/schaden/forderung_erledigen.go)
-}
+// Reparatur bei Rot: Entweder die Tür samt Implementierung und Test zurückbauen (Regelfall,
+// Parallel-Türen driften), oder sie hier mit Begründung eintragen.
+var bewussteTueren = map[string]string{}
 
-func TestInterfaceOhneProduktivenAufrufer(t *testing.T) {
+func TestSchnittstellen_JedeMethodeHatAufrufer(t *testing.T) {
 	deklariert := map[string]token.Position{} // Methodenname → Deklarationsort
 	benutzt := map[string]bool{}              // Selektorname → irgendwo produktiv verwendet
 

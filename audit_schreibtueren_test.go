@@ -8,15 +8,14 @@ import (
 	"testing"
 )
 
-// Append-only auf audit_log/audit_logs ist seit Migration 083 bewusst KEIN Trigger mehr
-// (die DSGVO-Tilgung braucht die Schreibtür), sondern Konvention. Eine Konvention ohne
-// Ratsche ist keine (Prüfung 22.08.2026): Dieser Test hält die Liste der Dateien fest, die
-// audit_log(s) verändern oder löschen dürfen. Wer eine neue Tür baut, trägt sie hier ein —
-// und begründet sie im Commit.
+// Append-only auf audit_log/audit_logs ist kein Trigger, sondern Konvention: Die Tilgung nach
+// DSGVO braucht die Schreibtür. Eine Konvention ohne Ratsche ist keine; dieser Test hält die
+// Liste der Dateien fest, die audit_log(s) verändern oder löschen dürfen. Wer eine neue Tür baut,
+// trägt sie hier ein und begründet sie im Commit.
 func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 	erlaubt := map[string]string{
-		// Seit 31.08.2026 fährt auch der DSGVO-Cron (jobs/cron_dsgvo.go) diese Statements —
-		// über repository.SpurTilgungen, die eine Liste; er hat keine eigene Tür mehr.
+		// Auch der Lauf nach DSGVO (jobs/cron_dsgvo.go) fährt diese Statements, über
+		// repository.SpurTilgungen, die eine Liste; er hat keine eigene Tür.
 		"repository/spur_tilgung.go": "SpurTilgungen (DSGVO: Purge + LUSD-Anonymisierung + Cron)",
 		// Die Anweisungen, die SpurTilgungen aus den Schlüssellisten baut: Personenbezug neben
 		// der Kennung eines Lesers und in den Einträgen seiner früheren Zugangskonten.
@@ -25,11 +24,11 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 		// Spuren gelöschter Vormerkungen nach der Frist der Lesehistorie, und das Löschen nach
 		// der Aufbewahrungsfrist beider Protokolle.
 		"repository/nachtlauf.go": "Lesehistorie-Frist und Aufbewahrung der Protokolle",
-		// Zusammenführen zweier Schülerdatensätze (02.09.2026): Die Protokollspuren der
-		// aufgelösten Quelle (details->>'schueler_id', datensatz_id) werden auf das Ziel
-		// UMGESCHLÜSSELT, nicht gelöscht oder geändert — sonst verlöre die Art.-15-Auskunft
-		// die Lesehistorie, und die DSGVO-Tilgung fände sie nicht mehr (dieselben Schlüssel
-		// wie SpurTilgungen). Aussage und Zeitstempel der Einträge bleiben.
+		// Zusammenführen zweier Schülerdatensätze: Die Protokollspuren der aufgelösten Quelle
+		// (details->>'schueler_id', datensatz_id) werden auf das Ziel umgeschlüsselt, nicht gelöscht
+		// oder geändert; sonst verlöre die Auskunft nach Art. 15 die Lesehistorie, und die Tilgung nach
+		// DSGVO fände sie nicht mehr (dieselben Schlüssel wie SpurTilgungen). Aussage und Zeitstempel
+		// der Einträge bleiben.
 		"repository/leser_zusammenfuehren.go": "verschiebeVorgaenge (Umschlüsselung beim Zusammenführen)",
 	}
 	muster := regexp.MustCompile(`(?i)\b(UPDATE|DELETE\s+FROM)\s+audit_logs?\b`)

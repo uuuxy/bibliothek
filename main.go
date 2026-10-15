@@ -47,38 +47,33 @@ import (
 // @description     Backend-API fuer das Schulbibliothek-Verwaltungssystem.
 // @BasePath        /api
 
-// main is the entry point of the school library system backend application.
-// It initializes configs, setups database connection pools, starts the SSE broker,
-// mounts middleware-protected routes, and starts the server with graceful shutdown.
-
-func startServer(port string, server *api.Server) *http.Server {
+// starteServer startet den HTTP-Server im Hintergrund und liefert ihn für das Herunterfahren.
+func starteServer(port string, server *api.Server) *http.Server {
 	httpServer := &http.Server{
 		Addr:    ":" + port,
 		Handler: server.Routes(),
 
-		// ReadHeaderTimeout begrenzt das Senden der Kopfzeilen. Es begrenzt NICHT das
-		// Senden des Rumpfes: Wer korrekte Header schickt, "Content-Length: 10000000"
-		// ankündigt und danach ein Byte pro Minute nachreicht, hielt bisher Verbindung,
-		// Goroutine und ggf. eine Datenbankverbindung beliebig lange fest. Die
-		// fristMiddleware half dagegen nicht — ein Kontext-Deadline bricht kein
-		// blockierendes Read auf der Verbindung ab.
+		// ReadHeaderTimeout begrenzt das Senden der Kopfzeilen, nicht das des Rumpfes: Wer korrekte
+		// Kopfzeilen schickt, "Content-Length: 10000000" ankündigt und danach ein Byte pro Minute
+		// nachreicht, hielte Verbindung, Goroutine und womöglich eine Verbindung der Datenbank beliebig
+		// lange fest. Die fristMiddleware hilft dagegen nicht, ein Ablauf des Kontexts bricht kein
+		// blockierendes Read auf der Verbindung ab. Deshalb dazu ReadTimeout.
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       api.LesefristVorgabe,
 
-		// IdleTimeout gilt zwischen zwei Anfragen derselben Keep-Alive-Verbindung.
-		// Ohne den Wert übernimmt Go hier ReadTimeout — was funktioniert, aber die
-		// beiden Fristen aneinanderkettet; getrennt gesetzt bleibt jede änderbar.
+		// IdleTimeout gilt zwischen zwei Anfragen derselben Verbindung mit Keep-Alive. Ohne den Wert
+		// übernimmt Go hier ReadTimeout; das wirkt, kettet aber die beiden Fristen aneinander, getrennt
+		// gesetzt bleibt jede änderbar.
 		IdleTimeout: 120 * time.Second,
 
-		// BEWUSST KEIN WriteTimeout: Es gilt für die gesamte Antwort, und der
-		// SSE-Stream (/events) ist definitionsgemäß eine Antwort, die nie endet. Ein
-		// globaler Wert würde jede Live-Verbindung nach Ablauf kappen — die Oberfläche
-		// verlöre reihum ihre Aktualisierung, ohne dass ein Fehler sichtbar würde.
-		// Die Schreibrichtung begrenzt stattdessen Caddy (write_timeout 600s) und für
-		// die Bearbeitungsdauer die fristMiddleware (api.anfrageFrist).
+		// Absichtlich kein WriteTimeout: Es gilt für die ganze Antwort, und der Strom der Server-Sent
+		// Events (/events) ist eine Antwort, die nie endet. Ein Wert für alle kappte jede laufende
+		// Verbindung nach Ablauf; die Oberfläche verlöre reihum ihre Aktualisierung, ohne dass ein Fehler
+		// sichtbar würde. Die Richtung des Schreibens begrenzen stattdessen Caddy (write_timeout 600s)
+		// und für die Dauer der Bearbeitung die fristMiddleware (api.anfrageFrist).
 	}
 
-	// Start server asynchronously
+	// Der Server läuft im Hintergrund; main wartet auf das Signal zum Beenden.
 	go func() {
 		slog.Info("Server listening", "url", "http://localhost:"+port)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -90,12 +85,12 @@ func startServer(port string, server *api.Server) *http.Server {
 	return httpServer
 }
 
-// startBereitschaftsWaechter meldet kritische Befunde der Selbstprüfung täglich per
-// Mail an die Admins — der Wächter, der sich meldet, statt gelesen werden zu müssen
-// (api/system/betriebsbereitschaft_alarm.go; auf Spielwiesen schweigt er von selbst).
-// Erster Lauf 3 Minuten nach dem Start: ein Deploy mit kaputter Umgebung meldet sich
-// so noch am selben Vormittag, nicht erst am nächsten Tag.
-func startBereitschaftsWaechter(ctx context.Context, server *api.Server) {
+// starteBereitschaftsWaechter meldet kritische Befunde der Selbstprüfung täglich per Mail an die
+// Admins, ein Wächter, der sich meldet, statt gelesen werden zu müssen
+// (api/system/betriebsbereitschaft_alarm.go; auf Spielwiesen schweigt er von selbst). Der erste
+// Lauf kommt drei Minuten nach dem Start: Ein Deploy mit kaputter Umgebung meldet sich so noch am
+// selben Vormittag, nicht erst am nächsten Tag.
+func starteBereitschaftsWaechter(ctx context.Context, server *api.Server) {
 	go func() {
 		select {
 		case <-time.After(3 * time.Minute):
@@ -118,11 +113,13 @@ func startBereitschaftsWaechter(ctx context.Context, server *api.Server) {
 	}()
 }
 
-func startGDPRWorker(ctx context.Context, scheduler *jobs.Zeitplan) {
+// starteDSGVOLauf fährt die Anonymisierung der Bearbeiter und die Löschung der Abgänger beim
+// Start und danach alle 24 Stunden, neben den Läufen des Zeitplans.
+func starteDSGVOLauf(ctx context.Context, zeitplan *jobs.Zeitplan) {
 	go func() {
 		slog.Info("Background Worker: Running initial GDPR cleanup on startup...")
-		scheduler.FuehreBearbeiterAnonymisierungAus()
-		scheduler.FuehreAbgaengerLoeschungAus()
+		zeitplan.FuehreBearbeiterAnonymisierungAus()
+		zeitplan.FuehreAbgaengerLoeschungAus()
 
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
@@ -131,8 +128,8 @@ func startGDPRWorker(ctx context.Context, scheduler *jobs.Zeitplan) {
 			select {
 			case <-ticker.C:
 				slog.Info("Background Worker: Running scheduled 24h GDPR cleanup...")
-				scheduler.FuehreBearbeiterAnonymisierungAus()
-				scheduler.FuehreAbgaengerLoeschungAus()
+				zeitplan.FuehreBearbeiterAnonymisierungAus()
+				zeitplan.FuehreAbgaengerLoeschungAus()
 			case <-ctx.Done():
 				slog.Info("Background Worker: GDPR worker gracefully stopped.")
 				return
@@ -141,9 +138,11 @@ func startGDPRWorker(ctx context.Context, scheduler *jobs.Zeitplan) {
 	}()
 }
 
-func setupDatabase(ctx context.Context, dsn string) *db.Verbindung {
+// richteDatenbankEin verbindet die Datenbank, fährt die Migrationen, schreibt die Vorgabe der
+// Rechte, legt bei leerer Datenbank den ersten Admin an und übernimmt die Mail-Konfiguration.
+func richteDatenbankEin(ctx context.Context, dsn string) *db.Verbindung {
 	slog.Info("Establishing database connection pool...")
-	database, err := db.Verbinde(ctx, dsn)
+	verbindung, err := db.Verbinde(ctx, dsn)
 	if err != nil {
 		slog.Error("Database connection pool failed", "error", err)
 		os.Exit(1)
@@ -151,52 +150,47 @@ func setupDatabase(ctx context.Context, dsn string) *db.Verbindung {
 	slog.Info("Database connection pool successfully initialized.")
 
 	slog.Info("Running database migrations...")
-	if err := database.FuehreMigrationenAus(ctx, "migrations"); err != nil {
+	if err := verbindung.FuehreMigrationenAus(ctx, "migrations"); err != nil {
 		slog.Error("Database migration failed", "error", err)
 		os.Exit(1)
 	}
 
 	slog.Info("Initializing role permissions...")
-	if err := database.SchreibeRechteVorgabe(ctx); err != nil {
+	if err := verbindung.SchreibeRechteVorgabe(ctx); err != nil {
 		slog.Error("Database permission initialization failed", "error", err)
 		os.Exit(1)
 	}
 
 	slog.Info("Bootstrapping initial admin (if database is empty)...")
-	if err := database.LegeErstenAdminAn(ctx); err != nil {
+	if err := verbindung.LegeErstenAdminAn(ctx); err != nil {
 		slog.Error("Admin bootstrapping failed", "error", err)
 		os.Exit(1)
 	}
 
-	// Muss vor dem ersten Versand laufen: Übernimmt die SMTP-Zugangsdaten aus der
-	// Umgebung in die Datenbank, solange dort die Schema-Vorgabe steht. Ab dann gilt
-	// die Konfiguration aus der Oberfläche — ohne diese Übernahme gingen die Mahnungen
-	// nach dem Umstieg an localhost:1025.
-	// Meldet sich nur, wenn wirklich übernommen wurde — sonst stünde bei jedem Start
-	// "übernehme", obwohl nichts passiert.
+	// Muss vor dem ersten Versand laufen: Übernimmt die Zugangsdaten für SMTP aus der Umgebung in die
+	// Datenbank, solange dort die Vorgabe des Schemas steht. Danach gilt die Konfiguration aus der
+	// Oberfläche; ohne diese Übernahme gingen die Mahnungen nach dem Umstieg an localhost:1025. Die
+	// Meldung kommt nur, wenn wirklich übernommen wurde, sonst stünde sie bei jedem Start da.
 	slog.Info("Prüfe gespeicherte SMTP-Konfiguration...")
-	if err := database.UebernimmMailKonfig(ctx); err != nil {
+	if err := verbindung.UebernimmMailKonfig(ctx); err != nil {
 		slog.Error("Übernahme der Mail-Konfiguration fehlgeschlagen", "error", err)
 		os.Exit(1)
 	}
 
-	return database
+	return verbindung
 }
 
-// ermittleCookieSecure entscheidet über das Secure-Flag der Sitzungs- und
-// CSRF-Cookies.
+// ermittleCookieSecure entscheidet über das Merkmal Secure der Cookies für Sitzung und CSRF.
 //
-// Vorher galt bei fehlender oder unlesbarer Variable still `false` — ausgerechnet
-// die unsichere Richtung. Ein vergessenes COOKIE_SECURE im Deploy reichte, damit
-// Sitzungscookies ohne Secure ausgeliefert werden; auffallen würde das niemandem,
-// weil über HTTPS trotzdem alles funktioniert. Jetzt ist die Vorgabe außerhalb der
-// lokalen Entwicklung `true`: Wer es unsicher will, muss es hinschreiben.
+// Ohne Variable gilt außerhalb der lokalen Entwicklung `true`: Bei einer stillen Vorgabe `false`
+// reichte ein vergessenes COOKIE_SECURE im Deploy, damit Sitzungscookies ohne Secure ausgeliefert
+// werden, und auffallen würde das niemandem, weil über HTTPS trotzdem alles funktioniert. Wer es
+// unsicher will, muss es hinschreiben.
 //
-// Bewusst KEIN harter Abbruch bei explizitem false: Der geplante Server in der
-// Schule läuft möglicherweise über schlichtes HTTP im LAN, und dort würde ein
-// Secure-Cookie den Login unmöglich machen (der Browser sendet es über http nicht
-// mit). Diese Entscheidung darf der Betrieb treffen — sie soll nur nicht
-// versehentlich passieren, deshalb die deutliche Warnung.
+// Kein Abbruch bei ausdrücklichem false: Ein Server in der Schule läuft womöglich über schlichtes
+// HTTP im LAN, und dort machte ein Secure-Cookie die Anmeldung unmöglich (der Browser sendet es
+// über http nicht mit). Diese Entscheidung darf der Betrieb treffen; sie soll nur nicht
+// versehentlich geschehen, deshalb die deutliche Warnung.
 func ermittleCookieSecure() bool {
 	appEnv := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
 	lokal := appEnv == "local" || appEnv == "development" || appEnv == "test"
@@ -213,8 +207,8 @@ func ermittleCookieSecure() bool {
 
 	wert, err := strconv.ParseBool(strings.TrimSpace(roh))
 	if err != nil {
-		// Ein unlesbarer Wert ist immer ein Fehler und nie eine Absicht. Ihn als
-		// "false" zu deuten, war genau die stille Fehlannahme von vorher.
+		// Ein unlesbarer Wert ist immer ein Fehler und nie eine Absicht; ihn als "false" zu deuten, wäre
+		// eine stille Fehlannahme.
 		log.Fatalf("FATAL: COOKIE_SECURE=%q ist kein Wahrheitswert (erlaubt: true/false)", roh)
 	}
 
@@ -225,62 +219,62 @@ func ermittleCookieSecure() bool {
 	return wert
 }
 
-func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
+// leseKonfig liest die Konfiguration aus der Umgebung und bricht beim Start ab, wenn sie
+// unbrauchbar oder gefährlich ist.
+func leseKonfig() (dsn, jwtGeheimnis, port string, nurHTTPS bool) {
 	dsn = os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		log.Fatalf("FATAL: DATABASE_URL environment variable is required and cannot be empty")
 	}
 
-	jwtSecret = os.Getenv("JWT_SECRET")
-	if len(jwtSecret) < 32 {
+	jwtGeheimnis = os.Getenv("JWT_SECRET")
+	if len(jwtGeheimnis) < 32 {
 		log.Fatalf("FATAL: JWT_SECRET environment variable must be at least 32 characters long for security")
 	}
 
-	aesKey := os.Getenv(crypto.SchluesselVariable)
-	if len(aesKey) != 32 && len(aesKey) != 64 {
+	schluessel := os.Getenv(crypto.SchluesselVariable)
+	if len(schluessel) != 32 && len(schluessel) != 64 {
 		log.Fatalf("FATAL: %s must be exactly 32 bytes (or 64 hex characters) long", crypto.SchluesselVariable)
 	}
 
-	// Der frühere Zweitname darf nicht still danebenstehen. internal/crypto las ihn bis
-	// zum 06.08.2026 VORRANGIG — an allen Prüfungen dieser Funktion vorbei. Er wird jetzt
-	// nicht mehr gelesen; wer ihn gesetzt hat, erwartet aber, dass er gilt. Also lieber
-	// hier laut abbrechen als verschlüsseln, womit der Betrieb nicht rechnet.
-	if alt := os.Getenv(crypto.FruehereVariable); alt != "" && alt != aesKey {
+	// Der frühere Zweitname darf nicht unbemerkt danebenstehen. Er wird nicht mehr gelesen; wer ihn
+	// gesetzt hat, erwartet aber, dass er gilt. Also lieber hier laut abbrechen als mit einem
+	// Schlüssel verschlüsseln, mit dem der Betrieb nicht rechnet.
+	if alt := os.Getenv(crypto.FruehereVariable); alt != "" && alt != schluessel {
 		log.Fatalf("FATAL: %s ist gesetzt und weicht von %s ab. Der Zweitname wird nicht mehr gelesen — "+
 			"bitte %s entfernen und ausschließlich %s setzen. Achtung: Mit dem falschen Schlüssel sind "+
 			"Schülerfotos und das gespeicherte SMTP-Passwort nicht mehr entschlüsselbar.",
 			crypto.FruehereVariable, crypto.SchluesselVariable, crypto.FruehereVariable, crypto.SchluesselVariable)
 	}
 
-	// Sicherheit: Die im Repo committeten Default-Secrets dürfen im echten Produktionsbetrieb
-	// NICHT verwendet werden. Sonst könnte jeder mit Repo-Zugriff Admin-JWTs fälschen (JWT_SECRET)
-	// bzw. die AES-verschlüsselten Schülerfotos entschlüsseln (APP_ENCRYPTION_KEY).
+	// Die Beispiel-Geheimnisse aus dem Repository dürfen im echten Betrieb nicht verwendet werden.
+	// Sonst könnte jeder mit Zugang zum Repository Tokens eines Admins fälschen (JWT_SECRET) oder die
+	// verschlüsselten Schülerfotos entschlüsseln (APP_ENCRYPTION_KEY).
 	//
-	// Außerhalb von local/development/test verweigert der Server die Beispielwerte von
-	// selbst. Nur ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet das für eine
-	// Testphase ab (bereitschaft.IstGeheimnisSchutzScharf, geteilt mit der Selbstprüfung).
-	enforceProdSecrets := bereitschaft.IstGeheimnisSchutzScharf(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS"))
-	if !enforceProdSecrets && strings.EqualFold(strings.TrimSpace(os.Getenv("ENFORCE_PROD_SECRETS")), "false") {
+	// Außerhalb von local/development/test verweigert der Server die Beispielwerte von selbst. Nur
+	// ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet das für eine Testphase ab
+	// (bereitschaft.IstGeheimnisSchutzScharf, geteilt mit der Selbstprüfung).
+	geheimnisSchutz := bereitschaft.IstGeheimnisSchutzScharf(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS"))
+	if !geheimnisSchutz && strings.EqualFold(strings.TrimSpace(os.Getenv("ENFORCE_PROD_SECRETS")), "false") {
 		slog.Warn("ENFORCE_PROD_SECRETS=false — der Server startet auch mit Beispiel-Geheimnissen aus dem Repository. Nur für die Testphase zulässig.",
 			"app_env", os.Getenv("APP_ENV"))
 	}
-	if enforceProdSecrets {
-		// Die Liste der Beispiel-Geheimnisse steht seit dem 11.08.2026 in
-		// bereitschaft.IstBeispielGeheimnis und wird von der Selbstpruefung
-		// (internal/bereitschaft/geheimnisse.go) mitbenutzt. Zwei Listen waeren genau die Fehlerart,
-		// gegen die die Selbstpruefung antritt: Sie meldete "alles gut", waehrend der Server
-		// aus demselben Grund den Start verweigert.
-		if bereitschaft.IstBeispielGeheimnis(jwtSecret) {
+	if geheimnisSchutz {
+		// Die Liste der Beispiel-Geheimnisse steht in bereitschaft.IstBeispielGeheimnis und gilt auch für
+		// die Selbstprüfung (internal/bereitschaft/geheimnisse.go). Zwei Listen wären genau die
+		// Fehlerart, gegen die die Selbstprüfung antritt: Sie meldete „alles gut", während der Server aus
+		// demselben Grund den Start verweigert.
+		if bereitschaft.IstBeispielGeheimnis(jwtGeheimnis) {
 			log.Fatalf("FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
-		if bereitschaft.IstBeispielGeheimnis(aesKey) {
+		if bereitschaft.IstBeispielGeheimnis(schluessel) {
 			log.Fatalf("FATAL: APP_ENCRYPTION_KEY nutzt einen bekannten Default-Wert. Setze einen eigenen 32-Byte-Schlüssel — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
 	}
 
-	// Anmeldekonfiguration früh prüfen: Ein fehlender oder auf "mock" stehender
-	// IMAP_HOST ist kein Detail, das beim ersten Login auffallen darf — im einen Fall
-	// kann sich niemand anmelden, im anderen jeder.
+	// Die Konfiguration der Anmeldung früh prüfen: Ein fehlender oder auf "mock" stehender IMAP_HOST
+	// ist kein Detail, das bei der ersten Anmeldung auffallen darf; im einen Fall kann sich niemand
+	// anmelden, im anderen jeder.
 	if err := auth.PruefeIMAPKonfiguration(); err != nil {
 		log.Fatalf("FATAL: %v", err)
 	}
@@ -295,43 +289,41 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 		log.Fatalf("FATAL: PORT environment variable is required and cannot be empty")
 	}
 
-	cookieSecure = ermittleCookieSecure()
+	nurHTTPS = ermittleCookieSecure()
 
-	// Trusted-Proxy-Konfiguration für die Client-IP-Ermittlung (Rate-Limiting,
-	// Login-Brute-Force, Audit-Logs). Ohne TRUSTED_PROXIES wird nur Loopback
-	// vertraut — hinter Caddy im Docker-Netz muss das Netz dort gesetzt werden,
-	// sonst kollabieren alle Clients auf die Proxy-IP.
+	// Die vertrauten Proxys für die Adresse des Browsers (Bremsen, Anmeldung, Protokoll). Ohne
+	// TRUSTED_PROXIES wird nur Loopback vertraut; hinter Caddy im Docker-Netz muss das Netz dort
+	// gesetzt werden, sonst fallen alle Browser auf die Adresse des Proxys zusammen.
 	clientip.SetzeProxysAusUmgebung()
 
 	return
 }
 
 func main() {
-	// 0. Setup strukturiertes JSON-Logging
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	// 0. Strukturiertes Log als JSON.
+	logAusgabe := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
-	// slog.SetDefault haengt seit Go 1.21 AUCH das Standard-log-Paket hier ein. Alle 171
-	// log.Printf-Aufrufe im Haus laufen damit durch diesen JSONHandler.
+	// slog.SetDefault hängt seit Go 1.21 auch das Standardpaket log hier ein; alle log.Printf im Haus
+	// laufen damit durch diesen JSONHandler.
 	//
-	// Das ist zugleich der Schutz gegen eingeschleuste Protokollzeilen (CodeQL meldet
-	// dafuer 25-mal go/log-injection): Ein Zeilenumbruch in einem Wert aus einer Anfrage
-	// wird beim Serialisieren zu \n INNERHALB des JSON-Strings; er kann keinen zweiten
-	// Eintrag erzeugen. Am laufenden Server nachgemessen (11.08.2026) mit
+	// Das ist zugleich der Schutz gegen eingeschleuste Zeilen im Log (CodeQL meldet dafür
+	// go/log-injection): Ein Zeilenumbruch in einem Wert aus einer Anfrage wird beim Serialisieren zu
+	// \n innerhalb der Zeichenkette in JSON; er kann keinen zweiten Eintrag erzeugen. Am laufenden
+	// Server nachgemessen mit
 	//   GET /api/%0ASYSTEM:%20Alle%20Sperren%20aufgehoben
-	// — r.URL.Path ist bereits dekodiert, der Umbruch kommt also wirklich an, und die
-	// Ausgabe blieb ein einziger JSON-Eintrag.
+	// r.URL.Path ist schon dekodiert, der Umbruch kommt also wirklich an, und die Ausgabe blieb ein
+	// einziger Eintrag in JSON.
 	//
-	// Wer diese Zeile entfernt oder log.SetOutput dahinter setzt, hebt beides auf: die
-	// strukturierte Ausgabe UND den Schutz. Genau das hatte ich am 11.08. versucht, bevor
-	// die Messung es zeigte.
-	slog.SetDefault(logger)
+	// Wer diese Zeile entfernt oder log.SetOutput dahinter setzt, hebt beides auf: die strukturierte
+	// Ausgabe und den Schutz.
+	slog.SetDefault(logAusgabe)
 
-	// Initialize Sentry
-	sentryDsn := os.Getenv("SENTRY_DSN")
-	if sentryDsn != "" {
+	// Sentry, falls eingestellt.
+	sentryDSN := os.Getenv("SENTRY_DSN")
+	if sentryDSN != "" {
 		err := sentry.Init(sentry.ClientOptions{
-			Dsn: sentryDsn,
+			Dsn: sentryDSN,
 		})
 		if err != nil {
 			slog.Error("sentry.Init failed", "error", err)
@@ -341,68 +333,65 @@ func main() {
 		}
 	}
 
-	// 1. Config environment resolution
-	dsn, jwtSecret, port, cookieSecure := loadConfig()
+	// 1. Konfiguration aus der Umgebung.
+	dsn, jwtGeheimnis, port, nurHTTPS := leseKonfig()
 
-	// Capture interrupt and termination signals for graceful shutdown
+	// Auf Interrupt und SIGTERM geordnet herunterfahren.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// 2. Database Connection pool setup
-	database := setupDatabase(ctx, dsn)
-	defer database.Close()
+	// 2. Datenbank.
+	verbindung := richteDatenbankEin(ctx, dsn)
+	defer verbindung.Close()
 
-	// 3. Anmeldung (12 hours token expiration duration)
-	authenticator, err := auth.NewAnmeldung(jwtSecret, database.Pool, 12*time.Hour)
+	// 3. Anmeldung, Tokens zwölf Stunden gültig.
+	anmeldung, err := auth.NewAnmeldung(jwtGeheimnis, verbindung.Pool, 12*time.Hour)
 	if err != nil {
 		slog.Error("Failed to initialize authenticator", "error", err)
 		os.Exit(1)
 	}
 
-	// 4. Server-Sent Events broker initialization
+	// 4. Verteiler für Server-Sent Events.
 	broker := sse.NewBroker()
 	go broker.FuehreAus(ctx)
 	slog.Info("Server-Sent Events (SSE) broker started.")
 
-	// 5. Background Jobs & Scheduler
-	auditRepo := repository.NewProtokollAbfragen(database.Pool)
-	scheduler := jobs.NewZeitplan(database.Pool, auditRepo)
-	scheduler.Starte()
-	defer scheduler.Stoppe()
+	// 5. Zeitplan der Läufe.
+	protokollAbfragen := repository.NewProtokollAbfragen(verbindung.Pool)
+	zeitplan := jobs.NewZeitplan(verbindung.Pool, protokollAbfragen)
+	zeitplan.Starte()
+	defer zeitplan.Stoppe()
 
-	// Native async background worker for GDPR cleanup (runs on startup + every 24h)
-	startGDPRWorker(ctx, scheduler)
+	// Anonymisierung und Löschung nach DSGVO beim Start und alle 24 Stunden.
+	starteDSGVOLauf(ctx, zeitplan)
 
-	// 6. Initialize API Server and routing
-	server := api.NewServer(database, authenticator, broker, cookieSecure)
-	startBereitschaftsWaechter(ctx, server)
-	httpServer := startServer(port, server)
+	// 6. Server und Routen.
+	server := api.NewServer(verbindung, anmeldung, broker, nurHTTPS)
+	starteBereitschaftsWaechter(ctx, server)
+	httpServer := starteServer(port, server)
 
-	// 7. Autostart: Resume downloading missing covers
-	go service.NewCoverDienst(database.Pool).GleicheFehlendeCoverAb()
+	// 7. Fehlende Cover im Hintergrund nachladen.
+	go service.NewCoverDienst(verbindung.Pool).GleicheFehlendeCoverAb()
 
-	// Block until signal is received
+	// Warten auf das Signal zum Beenden.
 	<-ctx.Done()
 	slog.Info("Shutdown signal received. Commencing graceful stop...")
 
-	// Timeout context for pending connections to finish
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// Frist, in der offene Verbindungen enden dürfen.
+	herunterfahrKontext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+	if err := httpServer.Shutdown(herunterfahrKontext); err != nil {
 		slog.Error("Graceful shutdown failed", "error", err)
 		os.Exit(1)
 	}
 
-	// Die Aufraeumschleife der Token-Sperrliste anhalten (Ticker, alle 15 Minuten).
-	//
-	// Stop() war bis zum 11.08.2026 geschrieben, getestet — und von niemandem aufgerufen;
-	// die Suche nach unerreichbarem Code hat es gefunden. Beim Beenden des Prozesses waere
-	// das folgenlos geblieben, die Goroutine stirbt ohnehin mit. Trotzdem gehoert es hier
-	// hin: Ein geordnetes Herunterfahren, das die Haelfte stehen laesst, ist keins, und die
-	// naechste Hintergrundaufgabe wuerde sich an dieser Stelle orientieren.
-	authenticator.Sperrliste.Stoppe()
-	authenticator.Sitzungen.Stoppe()
+	// Das Abräumen von Sperrliste und Sitzungen anhalten (alle 15 Minuten). Beim Beenden des Prozesses
+	// wäre das folgenlos, die Goroutinen sterben ohnehin mit; trotzdem gehört es hierher: Ein
+	// geordnetes Herunterfahren, das die Hälfte stehen lässt, ist keins, und die nächste Aufgabe im
+	// Hintergrund würde sich an dieser Stelle orientieren.
+	anmeldung.Sperrliste.Stoppe()
+	anmeldung.Sitzungen.Stoppe()
 
 	slog.Info("Server stopped successfully.")
 }

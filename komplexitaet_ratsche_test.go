@@ -18,23 +18,9 @@ import (
 // komplexitaetsGrenze ist die Schwelle von SonarQube go:S3776: Gemeldet wird ab 16.
 const komplexitaetsGrenze = 15
 
-// Keine Produktionsfunktion liegt über der Grenze (Cognitive Complexity). Gemessen wird mit
-// der Bibliothek hinter dem Werkzeug gocognit; dessen Zahlen deckten sich mit dem Scan von
-// SonarQube. Eine Bestandsliste gibt es nicht: Die Grenze gilt für jede Funktion.
-//
-// Ein Test und kein Eintrag in .golangci.yml: Der Linter liest keine Datei mit
-// `//go:build ignore`, und `//nolint` oder `//gocognit:ignore` schalten ihn für eine Funktion
-// stumm. Dieser Test liest jede Datei und kennt keine Ausnahme per Kommentar.
-//
 // Reparatur bei Rot: zusammenhängende Prüfungen in einen Helfer ziehen, der die Antwort selbst
-// schreibt. Bei einem Handler den Rumpf der Closure als Methode führen (`return s.handleX`):
-// In der Closure kostet jede Prüfung 2, in der Methode 1.
-//
-// BLINDHEIT: Misst mit gocognit, nicht mit SonarQube; eine neue Version einer der beiden Seiten
-// kann anders zählen. Testdateien sind mit Absicht ausgenommen, wie in
-// sonar-project.properties; läuft beides auseinander, merkt es dieser Test nicht. Ein
-// Funktionsliteral auf Paketebene zählt als eigene Funktion; ob SonarQube es ebenso wertet,
-// ist nicht gemessen.
+// schreibt. Liefert eine Tür eine Closure, deren Rumpf als Methode führen: In der Closure kostet
+// jede Prüfung 2, in der Methode 1.
 func TestKomplexitaet_KeineProduktionsfunktionUeberDerGrenze(t *testing.T) {
 	fset := token.NewFileSet()
 	dateien := 0

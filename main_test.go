@@ -7,179 +7,179 @@ import (
 	"testing"
 )
 
-func setenv(key, value string) {
-	if err := os.Setenv(key, value); err != nil {
+func setzeVariable(name, wert string) {
+	if err := os.Setenv(name, wert); err != nil {
 		panic(err)
 	}
 }
 
-func unsetenv(key string) {
-	if err := os.Unsetenv(key); err != nil {
+func loescheVariable(name string) {
+	if err := os.Unsetenv(name); err != nil {
 		panic(err)
 	}
 }
 
-func setupSuccessEnv() {
+func setzeGueltigeUmgebung() {
 	os.Clearenv()
-	setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
-	setenv("JWT_SECRET", "this-is-a-very-secret-key-that-is-at-least-32-bytes")
-	setenv("APP_ENCRYPTION_KEY", "12345678901234567890123456789012")
-	setenv("PORT", "8080")
-	setenv("COOKIE_SECURE", "true")
-	setenv("ENFORCE_PROD_SECRETS", "false")
-	setenv("IMAP_HOST", "imap.example.test")
+	setzeVariable("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
+	setzeVariable("JWT_SECRET", "this-is-a-very-secret-key-that-is-at-least-32-bytes")
+	setzeVariable("APP_ENCRYPTION_KEY", "12345678901234567890123456789012")
+	setzeVariable("PORT", "8080")
+	setzeVariable("COOKIE_SECURE", "true")
+	setzeVariable("ENFORCE_PROD_SECRETS", "false")
+	setzeVariable("IMAP_HOST", "imap.example.test")
 }
 
-func restoreEnv(originalEnv []string) {
+func stelleUmgebungHer(vorher []string) {
 	os.Clearenv()
-	for _, e := range originalEnv {
-		parts := strings.SplitN(e, "=", 2)
-		if len(parts) == 2 {
-			setenv(parts[0], parts[1])
+	for _, eintrag := range vorher {
+		teile := strings.SplitN(eintrag, "=", 2)
+		if len(teile) == 2 {
+			setzeVariable(teile[0], teile[1])
 		}
 	}
 }
 
-func TestLoadConfig_Success(t *testing.T) {
-	originalEnv := os.Environ()
-	defer restoreEnv(originalEnv)
+func TestLeseKonfig_Gueltig(t *testing.T) {
+	vorher := os.Environ()
+	defer stelleUmgebungHer(vorher)
 
-	setupSuccessEnv()
-	dsn, jwt, port, secure := loadConfig()
+	setzeGueltigeUmgebung()
+	dsn, jwtGeheimnis, port, nurHTTPS := leseKonfig()
 
 	if dsn != "postgres://user:pass@localhost:5432/db" {
-		t.Errorf("Expected dsn, got %s", dsn)
+		t.Errorf("dsn = %s, erwartet ist der gesetzte Wert", dsn)
 	}
-	if jwt != "this-is-a-very-secret-key-that-is-at-least-32-bytes" {
-		t.Errorf("Expected jwt, got %s", jwt)
+	if jwtGeheimnis != "this-is-a-very-secret-key-that-is-at-least-32-bytes" {
+		t.Errorf("jwtGeheimnis = %s, erwartet ist der gesetzte Wert", jwtGeheimnis)
 	}
 	if port != "8080" {
-		t.Errorf("Expected port, got %s", port)
+		t.Errorf("port = %s, erwartet ist der gesetzte Wert", port)
 	}
-	if !secure {
-		t.Errorf("Expected secure to be true, got %v", secure)
+	if !nurHTTPS {
+		t.Errorf("nurHTTPS = %v, erwartet ist true", nurHTTPS)
 	}
 }
 
-func testFatal(t *testing.T, testName string, setupEnv func()) {
+// pruefeAbbruch startet den Test als eigenen Prozess und verlangt, dass leseKonfig ihn beendet;
+// log.Fatalf ließe sich im selben Prozess nicht beobachten.
+func pruefeAbbruch(t *testing.T, testName string, richteEin func()) {
 	if os.Getenv("BE_CRASHER") == "1" {
-		setupEnv()
-		loadConfig()
+		richteEin()
+		leseKonfig()
 		return
 	}
 
-	cmd := exec.Command(os.Args[0], "-test.run="+testName)
-	cmd.Env = append(os.Environ(), "BE_CRASHER=1")
-	err := cmd.Run()
-	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+	befehl := exec.Command(os.Args[0], "-test.run="+testName)
+	befehl.Env = append(os.Environ(), "BE_CRASHER=1")
+	err := befehl.Run()
+	if abbruch, ok := err.(*exec.ExitError); ok && !abbruch.Success() {
 		return
 	}
-	t.Fatalf("process ran with err %v, want exit status 1", err)
+	t.Fatalf("der Prozess endete mit %v, erwartet ist ein Exit-Status ungleich 0", err)
 }
 
-func TestLoadConfig_MissingDatabaseURL(t *testing.T) {
-	testFatal(t, "TestLoadConfig_MissingDatabaseURL", func() {
-		setupSuccessEnv()
-		unsetenv("DATABASE_URL")
+func TestLeseKonfig_OhneDatabaseURL(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_OhneDatabaseURL", func() {
+		setzeGueltigeUmgebung()
+		loescheVariable("DATABASE_URL")
 	})
 }
 
-func TestLoadConfig_ShortJWT(t *testing.T) {
-	testFatal(t, "TestLoadConfig_ShortJWT", func() {
-		setupSuccessEnv()
-		setenv("JWT_SECRET", "short")
+func TestLeseKonfig_KurzesJWTGeheimnis(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_KurzesJWTGeheimnis", func() {
+		setzeGueltigeUmgebung()
+		setzeVariable("JWT_SECRET", "short")
 	})
 }
 
-func TestLoadConfig_InvalidAESKey(t *testing.T) {
-	testFatal(t, "TestLoadConfig_InvalidAESKey", func() {
-		setupSuccessEnv()
-		setenv("APP_ENCRYPTION_KEY", "invalid")
+func TestLeseKonfig_UngueltigerSchluessel(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_UngueltigerSchluessel", func() {
+		setzeGueltigeUmgebung()
+		setzeVariable("APP_ENCRYPTION_KEY", "invalid")
 	})
 }
 
-func TestLoadConfig_MissingPort(t *testing.T) {
-	testFatal(t, "TestLoadConfig_MissingPort", func() {
-		setupSuccessEnv()
-		unsetenv("PORT")
+func TestLeseKonfig_OhnePort(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_OhnePort", func() {
+		setzeGueltigeUmgebung()
+		loescheVariable("PORT")
 	})
 }
 
-func TestLoadConfig_EnforceProdSecrets_KnownJWT(t *testing.T) {
-	testFatal(t, "TestLoadConfig_EnforceProdSecrets_KnownJWT", func() {
-		setupSuccessEnv()
-		setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
-		setenv("ENFORCE_PROD_SECRETS", "true")
+func TestLeseKonfig_GeheimnisSchutz_BeispielJWT(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_GeheimnisSchutz_BeispielJWT", func() {
+		setzeGueltigeUmgebung()
+		setzeVariable("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
+		setzeVariable("ENFORCE_PROD_SECRETS", "true")
 	})
 }
 
-func TestLoadConfig_EnforceProdSecrets_KnownAES(t *testing.T) {
-	testFatal(t, "TestLoadConfig_EnforceProdSecrets_KnownAES", func() {
-		setupSuccessEnv()
-		setenv("APP_ENCRYPTION_KEY", "super-secure-aes-key-32-chars-ok")
-		setenv("ENFORCE_PROD_SECRETS", "true")
+func TestLeseKonfig_GeheimnisSchutz_BeispielSchluessel(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_GeheimnisSchutz_BeispielSchluessel", func() {
+		setzeGueltigeUmgebung()
+		setzeVariable("APP_ENCRYPTION_KEY", "super-secure-aes-key-32-chars-ok")
+		setzeVariable("ENFORCE_PROD_SECRETS", "true")
 	})
 }
 
-// Der IMAP-Mock akzeptiert jedes Passwort für jede in benutzer eingetragene
-// E-Mail. Als Compose-Default stand damit die Anmeldung offen, sobald jemand
-// den Stack ohne eigenes IMAP_HOST hochfuhr. Außerhalb von local/development/test
-// muss der Start deshalb scheitern — nicht warnen.
-func TestLoadConfig_MockIMAPInProduktionVerweigertStart(t *testing.T) {
-	testFatal(t, "TestLoadConfig_MockIMAPInProduktionVerweigertStart", func() {
-		setupSuccessEnv()
-		setenv("APP_ENV", "production")
-		setenv("IMAP_HOST", "mock")
+// Die Attrappe für IMAP nimmt jedes Passwort für jede in benutzer eingetragene E-Mail an. Stünde
+// sie in einer Vorgabe für den Betrieb, wäre die Anmeldung offen, sobald jemand den Server ohne
+// eigenes IMAP_HOST startet. Außerhalb von local/development/test muss der Start deshalb
+// scheitern, nicht nur warnen.
+func TestLeseKonfig_MockIMAPInProduktionVerweigertStart(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_MockIMAPInProduktionVerweigertStart", func() {
+		setzeGueltigeUmgebung()
+		setzeVariable("APP_ENV", "production")
+		setzeVariable("IMAP_HOST", "mock")
 	})
 }
 
-// Gegenprobe zum stillen Rückfall auf imap.philipp-reis-schule.de: Ohne
-// IMAP_HOST wurde vorher der Produktiv-Mailserver der Schule angesprochen —
-// aus jedem "go run" heraus. Jetzt startet der Server erst gar nicht.
-func TestLoadConfig_FehlenderIMAPHostVerweigertStart(t *testing.T) {
-	testFatal(t, "TestLoadConfig_FehlenderIMAPHostVerweigertStart", func() {
-		setupSuccessEnv()
-		unsetenv("IMAP_HOST")
+// Ohne IMAP_HOST startet der Server nicht. Ein stiller Rückfall auf den Mailserver der Schule
+// spräche aus jedem "go run" heraus den echten Dienst an.
+func TestLeseKonfig_FehlenderIMAPHostVerweigertStart(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_FehlenderIMAPHostVerweigertStart", func() {
+		setzeGueltigeUmgebung()
+		loescheVariable("IMAP_HOST")
 	})
 }
 
-// Seit dem 05.09.2026 ist die Verweigerung bekannter Beispiel-Geheimnisse die VORGABE
-// außerhalb von local/development/test. Vorher musste ENFORCE_PROD_SECRETS=true gesetzt
-// werden — mit dem alten Code startet dieser Aufbau durch (rot gesehen).
-func TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT(t *testing.T) {
-	testFatal(t, "TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT", func() {
-		setupSuccessEnv()
-		unsetenv("ENFORCE_PROD_SECRETS")
-		setenv("APP_ENV", "production")
-		setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
+// Außerhalb von local/development/test verweigert der Server bekannte Beispiel-Geheimnisse auch
+// ohne ENFORCE_PROD_SECRETS.
+func TestLeseKonfig_ProduktionOhneSchalterVerweigertBeispielJWT(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_ProduktionOhneSchalterVerweigertBeispielJWT", func() {
+		setzeGueltigeUmgebung()
+		loescheVariable("ENFORCE_PROD_SECRETS")
+		setzeVariable("APP_ENV", "production")
+		setzeVariable("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
 	})
 }
 
 // Die Spielwiese bleibt bequem: lokal ohne Schalter startet der Server mit den
 // Beispielwerten aus docker-compose.local.yml.
-func TestLoadConfig_LokalOhneSchalterStartetMitBeispielJWT(t *testing.T) {
-	originalEnv := os.Environ()
-	defer restoreEnv(originalEnv)
+func TestLeseKonfig_LokalOhneSchalterStartetMitBeispielJWT(t *testing.T) {
+	vorher := os.Environ()
+	defer stelleUmgebungHer(vorher)
 
-	setupSuccessEnv()
-	unsetenv("ENFORCE_PROD_SECRETS")
-	setenv("APP_ENV", "local")
-	setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
-	if _, jwt, _, _ := loadConfig(); jwt != "super-secret-default-key-at-least-32-bytes" {
-		t.Fatalf("loadConfig hat den lokalen Beispielwert nicht durchgelassen: %q", jwt)
+	setzeGueltigeUmgebung()
+	loescheVariable("ENFORCE_PROD_SECRETS")
+	setzeVariable("APP_ENV", "local")
+	setzeVariable("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
+	if _, jwtGeheimnis, _, _ := leseKonfig(); jwtGeheimnis != "super-secret-default-key-at-least-32-bytes" {
+		t.Fatalf("leseKonfig hat den lokalen Beispielwert nicht durchgelassen: %q", jwtGeheimnis)
 	}
 }
 
 // Ausdrückliches false bleibt der Weg für eine Testphase auf einem production-Server.
-func TestLoadConfig_AusdruecklichFalseLaesstBeispielJWTDurch(t *testing.T) {
-	originalEnv := os.Environ()
-	defer restoreEnv(originalEnv)
+func TestLeseKonfig_AusdruecklichFalseLaesstBeispielJWTDurch(t *testing.T) {
+	vorher := os.Environ()
+	defer stelleUmgebungHer(vorher)
 
-	setupSuccessEnv()
-	setenv("APP_ENV", "production")
-	setenv("ENFORCE_PROD_SECRETS", "false")
-	setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
-	if _, jwt, _, _ := loadConfig(); jwt == "" {
-		t.Fatal("loadConfig ist ausgestiegen, obwohl ENFORCE_PROD_SECRETS=false gesetzt ist")
+	setzeGueltigeUmgebung()
+	setzeVariable("APP_ENV", "production")
+	setzeVariable("ENFORCE_PROD_SECRETS", "false")
+	setzeVariable("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
+	if _, jwtGeheimnis, _, _ := leseKonfig(); jwtGeheimnis == "" {
+		t.Fatal("leseKonfig ist ausgestiegen, obwohl ENFORCE_PROD_SECRETS=false gesetzt ist")
 	}
 }

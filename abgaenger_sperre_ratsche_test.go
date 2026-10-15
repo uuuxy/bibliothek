@@ -8,11 +8,10 @@ import (
 	"testing"
 )
 
-// Abgänger-Sperre: EIN Präfix, EINE Uhr (Rasterdurchgang 02.09.2026). Der Rückkehrer-
-// Pfad des LUSD-Imports und das Zusammenführen erkennen die automatische Sperre am
-// Präfix des Sperrgrunds; die Karenz vor der Anonymisierung rechnet mit abgaenger_seit.
-// Die Versetzung schrieb ein anderes Präfix („Automatische" statt „Automatisierte") und
-// stempelte die Uhr nicht — ein Ghost-Block, den nur ein Zwillingsvergleich fand.
+// Abgänger-Sperre: ein Präfix, eine Uhr. Der Pfad der Rückkehrer im LUSD-Import und das
+// Zusammenführen erkennen die automatische Sperre am Präfix des Sperrgrunds; die Karenz vor der
+// Anonymisierung rechnet mit abgaenger_seit. Ein Weg mit anderem Präfix („Automatische" statt
+// „Automatisierte") oder ohne Stempel der Uhr erzeugt eine Sperre, die diese Pfade nicht erkennen.
 // Zwei Regeln, mechanisch:
 //  1. Das Präfix steht als Literal nur in repository/abgaenger_sperre.go.
 //  2. Jedes SQL, das ist_abgaenger auf true setzt, stempelt im selben Statement abgaenger_seit.
@@ -43,7 +42,7 @@ func TestAbgaengerSperre_EinPraefixEineUhr(t *testing.T) {
 		if praefix.Match(inhalt) && pfad != "repository/abgaenger_sperre.go" {
 			verstoesse = append(verstoesse, pfad+": Sperrgrund-Präfix als Literal — repository.AbgaengerSperrPraefix nutzen")
 		}
-		// Ein SQL, das eine Go-Konstante einbettet (` + repository.X + `), ist EIN Statement.
+		// Ein SQL, das eine Go-Konstante einbettet (` + repository.X + `), ist eine einzige Anweisung.
 		zusammen := verkettung.ReplaceAllString(string(inhalt), "'K'")
 		for _, s := range rohstrings.FindAllString(zusammen, -1) {
 			for _, set := range setKlauseln(s) {

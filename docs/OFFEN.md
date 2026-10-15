@@ -181,7 +181,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] `api/tuer`.
 - [x] Die zwölf Themen unter `api/`.
 - [x] `api/`.
-- [ ] Das Wurzelpaket.
+- [x] Das Wurzelpaket.
 - [ ] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
 - [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, Zustand auf der Ebene eines
   Pakets, der Kopf der Schule an acht Türen.
@@ -439,21 +439,8 @@ Zeilen kürzen. Kategorie B.
 
 ### 5.66 Lesbarkeit nach Googles Regelwerk für Go
 
-Gemessen am 13.10.2026 vor dem ersten Paket am Go-Code ohne Tests (566 Dateien, 79 Pakete),
-gezählt von `stil_ratsche_test.go`; den Bestand von heute führt `stil_bestand_test.go`: 783 Namen tragen ein englisches Fachwort, für das es ein deutsches
-gibt (`Student` neben `Leser` und `Schueler`), 389 Funktionen beginnen mit einem englischen
-Verb (`Get`, `Handle`, `Create` neben `Lade`, `Pruefe`, `Schreibe`), 180 Namen schreiben ein
-Kürzel gemischt (`LmfPlan`), 121 Dateinamen tragen ein englisches Fachwort, 563 Kommentarzeilen
-nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen nennt kein anderes
-Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
-bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
-
-**Fertig sind 78 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
-gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
-Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
-`middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), `repository` und
-von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera`, `lusd`,
-`service`, `testdaten`, `tuertest` und `routertest`, dazu `api/tuer` und die zwölf Themen darüber (`api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung`, `api/leser` und `api/katalog`), `api/` selbst, `apierrors`, `sse`, `db`, `pdf`, `mailservice`, `auth`, `jobs`, die neun unter `cmd/`, `scripts` mit `scripts/generalprobe` und `inventur`.
+**Fertig sind alle 79 Pakete.** `stil_bestand_test.go` ist leer; ein neuer Fund im Programmcode
+macht `stil_ratsche_test.go` rot.
 
 **Ein Paket ist fertig, wenn:**
 
@@ -464,14 +451,6 @@ von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera`, `
 3. seine Kommentare in ein bis zwei Sätzen das Warum nennen, ohne Datum und Vorgeschichte;
 4. die Tests in seinem Ordner dieselben Namen und denselben Stil der Kommentare tragen;
 5. seine Zeile in `stil_bestand_test.go` entfernt ist.
-
-**Reihenfolge:** von unten nach oben, zuerst die Pakete, die kein anderes des Projekts
-einbinden. So bekommt jeder Name seinen endgültigen in einem Schritt, und die Rufer in den
-Paketen darüber ziehen mit. Acht Pakete unter `internal/` binden `repository` oder ein Paket
-darüber ein und kommen deshalb nach ihm an die Reihe: `auskunft`, `bereitschaft`,
-`buchetikett`, `littera` und `lusd` nach `repository`, `testdaten` nach `internal/service`,
-`tuertest` und `routertest` nach `api/`. Ihre Attrappen erfüllen Schnittstellen von dort
-(`tuertest.EinstellungenAttrappe.Lade`) und bekommen ihre Namen mit diesen.
 
 **Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede
 Nennung über die Typprüfung findet. Danach laufen die ganze Go-Suite an der Datenbank, der
@@ -510,9 +489,9 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- Testdateien: 500 Kommentarzeilen mit Datum in 270 von 907 Dateien (gezählt am 14.10.2026
-  nach `internal/service` an Zeilen, die ganz Kommentar sind, ohne das Datum einer Quelle); 29
-  Dateien vergleichen mit testify, das Regelwerk lässt nur das Paket `testing` zu (Decisions,
+- Testdateien: 105 Kommentarzeilen mit Datum in 41 von 904 Dateien (gezählt am 15.10.2026 an
+  Zeilen, die ganz Kommentar sind, ohne das Datum einer Quelle), 61 davon in den Prüfungen unter
+  `docs/`; außerhalb von `docs/` nennen sie Testdaten. 29 Dateien vergleichen mit testify, das Regelwerk lässt nur das Paket `testing` zu (Decisions,
   „Use package testing"). In `repository/` sind die Tests umgestellt; dort bleiben acht Zeilen
   mit Datum, fünf nennen Testdaten (ein Termin, ein Ferientag) und drei stehen im Kopf der
   datierten Nachstellungen hinter dem Build-Tag `raster`. In `internal/service` bleiben 15,

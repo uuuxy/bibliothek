@@ -5,14 +5,13 @@ import (
 	"testing"
 )
 
-// Die Richtung des Zweifelsfalls ist hier das Sicherheitsmerkmal: Fehlt die
-// Variable, galt bisher false — also OHNE Secure-Flag. Über HTTPS funktioniert
-// dann trotzdem alles, weshalb es niemandem auffällt; das Cookie geht aber auch
-// über eine einfache HTTP-Verbindung mit, sobald jemand eine erzwingt.
+// Die Richtung des Zweifelsfalls ist hier das Sicherheitsmerkmal: Gälte bei fehlender Variable
+// false, also kein Secure, funktionierte über HTTPS trotzdem alles, und niemandem fiele es auf;
+// das Cookie ginge aber auch über eine einfache HTTP-Verbindung mit, sobald jemand eine erzwingt.
 //
-// CodeQL meldet die fünf Set-Cookie-Stellen weiterhin (es kann eine Variable nicht
-// auflösen). Der Fund ist damit nicht "falsch" — er zeigt auf eine Entscheidung,
-// die vorher an der falschen Stelle stillschweigend getroffen wurde.
+// CodeQL meldet die Stellen mit Set-Cookie weiterhin (es kann eine Variable nicht auflösen). Der
+// Fund ist damit nicht falsch; er zeigt auf eine Entscheidung, die hier ausdrücklich fällt und
+// geprüft wird.
 func TestErmittleCookieSecure(t *testing.T) {
 	faelle := []struct {
 		name         string

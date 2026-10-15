@@ -8,23 +8,19 @@ import (
 	"testing"
 )
 
-// TestPrivilegierteRequestFelderRegistriert ist die Ratsche zur Bugklasse
-// „privilegiertes Request-Feld" (override_block-Fund, 18.08.2026): Ein Feld im
-// Request-Body hebt eine Regel auf, und der einzige Schutz ist, dass die
-// Oberfläche das Feld nicht anbietet — der Server prüft kein Recht. So konnte
-// ein HELFER per {"override_block":true} jede Schülersperre aushebeln.
+// TestPrivilegierteAnfrageFelderEingetragen ist die Ratsche zur Bugklasse „privilegiertes Feld
+// der Anfrage": Ein Feld im Rumpf der Anfrage hebt eine Regel auf, und der einzige Schutz ist,
+// dass die Oberfläche das Feld nicht anbietet; der Server prüft kein Recht. So könnte ein Helfer
+// per {"override_block":true} jede Schülersperre aushebeln.
 //
-// Der einmalige Rollen×Aktionen-Sweep hat den damaligen Bestand geprüft (drei
-// Funde, alle gefixt). Diese Ratsche hält den Zustand: Jedes NEUE JSON-Feld,
-// dessen Name nach Regel-Aufhebung klingt, muss hier mit dem Recht registriert
-// werden, das es serverseitig verlangt — oder mit der Begründung, warum es
-// unbedenklich ist. Wer das Feld einführt, beantwortet die Frage; nicht der,
-// der den Bypass später ausbaden muss.
+// Die Ratsche hält den Zustand: Jedes neue JSON-Feld, dessen Name nach der Aufhebung einer Regel
+// klingt, muss hier mit dem Recht eingetragen werden, das es auf dem Server verlangt, oder mit
+// der Begründung, warum es unbedenklich ist. Wer das Feld einführt, beantwortet die Frage, nicht
+// der, der die Umgehung später ausbaden muss.
 //
-// Die Liste steht BEWUSST hier im Test, nicht in einer Sammeldatei — eine
-// ausgelagerte Bestandsliste versteckt sich vor dem Gate (siehe die Lehre aus
-// dem Verwaisten-Komponenten-Test des Frontends).
-var registriertePrivilegFelder = map[string]string{
+// Die Liste steht absichtlich hier im Test, nicht in einer Sammeldatei: Eine ausgelagerte Liste
+// des Bestands versteckt sich vor der Prüfung.
+var eingetragenePrivilegFelder = map[string]string{
 	"api/theke/eingabe_anfrage_antwort.go:override_block": "Gate an der HTTP-Grenze: nur mit HatRecht(edit_students), sonst wird das Feld ignoriert (154c1f85)",
 	"api/mahnwesen/mahnlisten_versand.go:override_email":  "Route hinter create_orders (nur Mitarbeiter/Admin); Umleitung dokumentiert und namentlich auditiert",
 	"internal/lusd/lauf.go:skipped_no_id":                 "Antwort-Zähler, kein Request-Feld",
@@ -37,7 +33,7 @@ var (
 	privilegNamenMuster = regexp.MustCompile(`(?i)(override|force|bypass|skip|ignore|unlock)`)
 )
 
-func TestPrivilegierteRequestFelderRegistriert(t *testing.T) {
+func TestPrivilegierteAnfrageFelderEingetragen(t *testing.T) {
 	wurzel := "."
 	gefunden := map[string]bool{}
 
@@ -71,9 +67,9 @@ func TestPrivilegierteRequestFelderRegistriert(t *testing.T) {
 			}
 			schluessel := rel + ":" + name
 			gefunden[schluessel] = true
-			if _, registriert := registriertePrivilegFelder[schluessel]; !registriert {
+			if _, registriert := eingetragenePrivilegFelder[schluessel]; !registriert {
 				t.Errorf("neues override-artiges JSON-Feld %q — prüfe: Welche Regel hebt es auf, und welches "+
-					"Recht erzwingt der SERVER dafür (nicht die UI)? Dann in registriertePrivilegFelder "+
+					"Recht erzwingt der Server dafür (nicht die Oberfläche)? Dann in eingetragenePrivilegFelder "+
 					"mit Recht bzw. Begründung eintragen (Bugklasse override_block, 18.08.2026).", schluessel)
 			}
 		}
@@ -85,7 +81,7 @@ func TestPrivilegierteRequestFelderRegistriert(t *testing.T) {
 
 	// Gegenrichtung: Ein registrierter Eintrag, den es im Code nicht mehr gibt, ist
 	// Karteileiche — die Liste soll den Ist-Zustand beschreiben, nicht Geschichte.
-	for schluessel := range registriertePrivilegFelder {
+	for schluessel := range eingetragenePrivilegFelder {
 		if !gefunden[schluessel] {
 			t.Errorf("registriertes Feld %q existiert im Code nicht mehr — Eintrag entfernen", schluessel)
 		}

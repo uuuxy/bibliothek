@@ -12,24 +12,23 @@ import (
 	"testing"
 )
 
-// Gate: Ein Fehler wird an seinem Namen erkannt, nicht an seinem Wortlaut.
+// Prüfung: Ein Fehler wird an seinem Namen erkannt, nicht an seinem Wortlaut.
 //
-// Anlass (docs/OFFEN.md 5.10, gezählt am 08.10.2026): Sieben Stellen entschieden den Status
-// ihrer Antwort mit strings.Contains(err.Error(), "…"). Formuliert jemand die Meldung an der
-// Quelle um, wird dort aus einer Auskunft ein Serverfehler oder umgekehrt, und kein Test
-// merkt es. An einer der sieben war es schon geschehen: Den gesuchten Wortlaut erzeugte keine
-// Stelle mehr, der Zweig war tot.
+// Warum: Entscheidet eine Stelle den Status ihrer Antwort mit strings.Contains(err.Error(), "…")
+// und formuliert jemand die Meldung an der Quelle um, wird dort aus einer Auskunft ein
+// Serverfehler oder umgekehrt, und kein Test merkt es. Erzeugt keine Stelle den gesuchten
+// Wortlaut mehr, ist der Zweig tot, ohne dass es jemand sieht.
 //
-// Regel: Kein Vergleich und keine Teilsuche am Text eines Fehlers — weder direkt an
-// <x>.Error() noch an einer Variablen, die in derselben Funktion diesen Text bekommt.
+// Regel: Kein Vergleich und keine Teilsuche am Text eines Fehlers, weder direkt an <x>.Error()
+// noch an einer Variablen, die in derselben Funktion diesen Text bekommt.
 //
-// Reparatur bei Rot: ein benannter Fehler mit errors.Is, ein eigener Fehlertyp mit errors.As
-// oder bei Datenbankfehlern der SQLSTATE und der Name der Bedingung (pgconn.PgError, Helfer
-// wie repository.IstExemplarBarcodeVergeben).
+// Reparatur bei Rot: ein benannter Fehler mit errors.Is, ein eigener Fehlertyp mit errors.As oder
+// bei Datenbankfehlern der SQLSTATE und der Name der Bedingung (pgconn.PgError, Helfer wie
+// repository.IstExemplarBarcodeVergeben).
 //
-// Sieht nicht: einen Text, der als Parameter in eine andere Funktion wandert und dort
-// durchsucht wird (apierrors.istDatenbankFehler), und einen Text, der über ein Feld oder über
-// zwei Zuweisungen weitergereicht wird.
+// Sieht nicht: einen Text, der als Parameter in eine andere Funktion wandert und dort durchsucht
+// wird (apierrors.istDatenbankFehler), und einen Text, der über ein Feld oder über zwei
+// Zuweisungen weitergereicht wird.
 
 // wortlautPraedikate sind die Funktionen aus strings, deren Ergebnis eine Entscheidung ist.
 var wortlautPraedikate = map[string]bool{

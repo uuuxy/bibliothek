@@ -12,50 +12,42 @@ import (
 	"testing"
 )
 
-// Gate gegen Fehler-Kollaps.
+// Prüfung gegen den Kollaps von Fehlern.
 //
-// Anlass (29.08.2026): LadeTitel nannte JEDEN Fehler „buch nicht gefunden" — ein
-// Scan-Fehler (NULL in string, Schema-Drift) wäre als 404 verkleidet gewesen, und ein
-// Ein zugelieferter PR (#529) wollte genau das per Test festschreiben. Dieselbe Form stand in
-// ReservierungsAbfragen.LegeAn: `if err != nil || !exists { 404 }`. Die Klasse:
-// Eine Bedingung, die einen ECHTEN Fehler (err != nil) und einen fachlichen
-// Nicht-Treffer in dieselbe harmlose Antwort (404/401/403) presst. Die Diagnose
-// stirbt, der Betreiber sieht einen Bedienfehler statt eines kaputten Systems.
+// Warum: Eine Bedingung, die einen echten Fehler (err != nil) und einen fachlichen Nicht-Treffer
+// in dieselbe harmlose Antwort (404/401/403) presst, verkleidet einen Ausfall als Bedienfehler.
+// Ein Fehler beim Lesen (NULL in string, abweichendes Schema) erscheint dann als „nicht
+// gefunden", die Diagnose stirbt, und der Betrieb sieht einen Bedienfehler statt eines kaputten
+// Systems. Die Form: `if err != nil || !exists { 404 }`.
 //
 // Regel: Ein `if`, dessen Bedingung `<err> != nil` enthält und dessen Rumpf mit
-// StatusNotFound/StatusUnauthorized/StatusForbidden antwortet, muss den Fehler in der
-// Bedingung EINORDNEN (errors.Is / errors.As / ein Err*-Sentinel). Sonst ist es ein
-// Kollaps. Konservativ: Nur die Bedingung wird gelesen, nicht der Rumpf — ein
-// `errors.Is` im Rumpf gilt nicht, weil dann der Rest des Rumpfs trotzdem alles
-// andere in dieselbe Antwort kippt.
+// StatusNotFound/StatusUnauthorized/StatusForbidden antwortet, muss den Fehler in der Bedingung
+// einordnen (errors.Is / errors.As / ein Err*-Sentinel). Sonst ist es ein Kollaps. Konservativ:
+// Nur die Bedingung wird gelesen, nicht der Rumpf; ein `errors.Is` im Rumpf gilt nicht, weil dann
+// der Rest des Rumpfs trotzdem alles andere in dieselbe Antwort kippt.
 //
-// Die übliche saubere Form im Haus — `if err != nil { if errors.Is(err, ErrNoRows)
-// { 404 }; 500 }` — ordnet im ERSTEN verschachtelten if ein; die gilt als sauber.
+// Die übliche Form im Haus, `if err != nil { if errors.Is(err, ErrNoRows) { 404 }; 500 }`, ordnet
+// im ersten verschachtelten if ein; die gilt als sauber.
 //
-// Reparatur bei Rot: `errors.Is(err, pgx.ErrNoRows)` bzw. den Sentinel prüfen und den
-// Rest als 500 (oder gewrappt) weiterreichen — wie titel_metadaten.go seit 29.08.
+// Reparatur bei Rot: `errors.Is(err, pgx.ErrNoRows)` bzw. den Sentinel prüfen und den Rest als
+// 500 (oder eingepackt) weiterreichen, wie inventur/titel_metadaten.go.
 var kollapsBestand = map[string]string{
-	// „datei:funktion": Einordnung. Der Sweep vom 29.08.2026 fand 12 Stellen; 4 davon
-	// waren echte DB-Kollapse und sind behoben (AngemeldetesKonto, Foto, zwei Druck-Handler,
-	// dazu LadeTitel und ReservierungsAbfragen.LegeAn). Die folgenden acht sind
-	// semantisch vertretbar — der Fehler IST dort die negative Antwort:
+	// „datei:funktion": Einordnung. Die Stellen hier sind vertretbar; der Fehler ist dort die
+	// negative Antwort.
 	"api/csrf.go:csrfMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
-	// Die drei Token-Stellen lesen über PruefeToken die DB (Sperrliste, Kontostatus). Bis
-	// 11.09.2026 stand hier „kein DB-Zugriff" — falsch seit Juni/August; ein DB-Ausfall
-	// wurde zur 401. Seitdem ordnet die Zeile davor ErrPruefungGestoert als 503 ein; die
-	// verbleibende 401 ist Parse-/Signatur-/Widerrufsfehler bzw. deaktiviertes Konto.
+	// Die drei Stellen mit dem Token lesen über PruefeToken die Datenbank (Sperrliste, Kontostatus).
+	// Die Zeile davor ordnet ErrPruefungGestoert als 503 ein; die verbleibende 401 ist ein Fehler
+	// beim Lesen oder an der Signatur, ein widerrufenes Token oder ein deaktiviertes Konto.
 	"api/tuer/sitzung.go:PruefeSitzung":   "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
 	"auth/anmelden.go:leseSitzung":        "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
 	"auth/anmelden.go:SitzungVerlaengern": "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
-	// Die drei externen Lookups (DNB, Google, OpenLibrary) sind seit dem 31.08.2026
-	// eingeordnet: Netzausfall = 502 (inventur.ErrKatalogdiensteNichtErreichbar),
-	// erreichbar ohne Treffer = 404 (Produktentscheidung; Sweep docs/sweeps.md).
+	// Die drei Kataloge (DNB, Google, OpenLibrary) stehen nicht hier, sie ordnen ein: Netzausfall =
+	// 502 (inventur.ErrKatalogdiensteNichtErreichbar), erreichbar ohne Treffer = 404.
 }
 
-// kollapsAntworten: die harmlosen Antworten als Status-Konstante UND als Helfer der
-// Hausform (apierrors.NotFound/Unauthorized/Forbidden hinter apierrors.MitFehlerantwort). Bis zum
-// 10.09.2026 standen nur die Konstanten hier — die Ratsche war mit dem Umzug der Handler
-// auf MitFehlerantwort für die häufigste Form blind geworden (Bestands-Durchgang, „Lügende Ratsche").
+// kollapsAntworten: die harmlosen Antworten als Status-Konstante und als Helfer der Hausform
+// (apierrors.NotFound/Unauthorized/Forbidden hinter apierrors.MitFehlerantwort). Ohne die Helfer
+// wäre die Ratsche für die häufigste Form blind.
 var kollapsAntworten = map[string]bool{
 	"StatusNotFound": true, "StatusUnauthorized": true, "StatusForbidden": true,
 	"NotFound": true, "Unauthorized": true, "Forbidden": true,
@@ -221,10 +213,9 @@ func sauber5() error { _, err := f(); if errors.Is(err, pgx.ErrNoRows) { return 
 	if err != nil {
 		t.Fatal(err)
 	}
-	// kollaps3/kollaps4/sauber5 (Bestands-Durchgang 10.09.2026): die Hausform der Handler
-	// hinter apierrors.MitFehlerantwort. Der Detektor kannte nur http.StatusNotFound & Co. — 49 Handler
-	// laufen über MitFehlerantwort, und ein neuer `return apierrors.NotFound("…", err)` im err-Zweig
-	// wäre grün geblieben.
+	// kollaps3/kollaps4/sauber5: die Hausform der Türen hinter apierrors.MitFehlerantwort. Ein
+	// Detektor, der nur http.StatusNotFound & Co. kennt, ließe einen neuen `return
+	// apierrors.NotFound("…", err)` im Zweig des Fehlers durch.
 	erwartet := map[string]bool{"kollaps": true, "kollaps2": true, "kollaps3": true, "kollaps4": true,
 		"sauber": false, "sauber2": false, "sauber3": false, "sauber4": false, "sauber5": false}
 	for _, decl := range datei.Decls {

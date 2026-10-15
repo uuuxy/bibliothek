@@ -16,15 +16,13 @@ import (
 
 // Ratsche: Jeder cp1252-Übersetzer eines PDF-Dokuments läuft durch pdfzeichen.Uebersetzer.
 //
-// Anlass (21.09.2026, OFFEN.md 5.5): Die Ersetzung für Buchstaben außerhalb von cp1252
-// (ş, ł, ğ …) gab es seit dem Schüler-Etikett — aber nur dort und im Bescheid. Die
-// Buchetiketten, die Mahnbriefe, die Bestellungen und alle anderen Renderer holten sich
-// ihren Übersetzer direkt von gofpdf und druckten weiter Punkte. Zwei Wege zum selben
-// Papier, und der zweite kannte die Regel des ersten nicht.
+// Warum: Holt sich ein Renderer seinen Übersetzer direkt von gofpdf, druckt er für Buchstaben
+// außerhalb von cp1252 (ş, ł, ğ …) Punkte statt der Ersetzung. Zwei Wege zum selben Papier, und
+// der zweite kennt die Regel des ersten nicht.
 //
-// Regel: Eine Zeile, die UnicodeTranslatorFromDescriptor( aufruft, trägt auf derselben
-// Zeile pdfzeichen.Uebersetzer(. Wer einen neuen Renderer baut, bekommt die Ersetzung
-// damit von allein — oder diesen Test rot.
+// Regel: Eine Zeile, die UnicodeTranslatorFromDescriptor( aufruft, trägt auf derselben Zeile
+// pdfzeichen.Uebersetzer(. Wer einen neuen Renderer baut, bekommt die Ersetzung damit von allein,
+// oder diesen Test rot.
 func TestPdfUebersetzer_NurUeberPdfzeichen(t *testing.T) {
 	var verstoesse []string
 	gefunden := 0

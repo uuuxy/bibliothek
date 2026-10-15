@@ -1,32 +1,28 @@
 package main
 
-// Gate: Eine Kennung, die als UUID in die Datenbank geht, wird an der Tür geprüft.
+// Prüfung: Eine Kennung, die als UUID in die Datenbank geht, wird an der Tür geprüft.
 //
-// Anlass (ZAP-Lauf 13.09.2026, am Stack nachgestellt): `?session_id=x` am Fehlbestand,
-// `?titel_id=x` an den Vormerkungen, `{"session_id":"x"}` an Inventur-Abschluss und
-// -Abbruch — jedes Mal ging der Text ungeprüft an Postgres, und `invalid input syntax for
-// type uuid` (SQLSTATE 22P02) kam als 500 zurück. `ValidateUUIDParamsMiddleware` prüft
-// nur Pfad-Parameter.
+// Warum: Geht ein Text wie `?session_id=x`, `?titel_id=x` oder `{"session_id":"x"}` ungeprüft an
+// Postgres, kommt `invalid input syntax for type uuid` (SQLSTATE 22P02) als 500 zurück.
+// uuidPfadMiddleware (api/middleware.go) prüft nur Pfad-Parameter.
 //
 // Warum nicht zentral „22P02 → 400" in apierrors: Das wäre die Bugklasse Fehler-Kollaps
-// (fehler_kollaps_test.go) — ein kaputter Wert, den der SERVER erzeugt, sähe dann aus wie
-// ein Bedienfehler. Die Prüfung gehört an die Stelle, die weiß, dass hier eine Eingabe
-// ankommt.
+// (fehler_kollaps_test.go); ein kaputter Wert, den der Server erzeugt, sähe dann aus wie ein
+// Bedienfehler. Die Prüfung gehört an die Stelle, die weiß, dass hier eine Eingabe ankommt.
 //
-// Regel: In jedem Struct, das ein Handler aus dem Request-Body liest (tuer.LeseAnfrage
-// oder json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf „id"/„ids" vom
-// Typ string, *string oder []string einen validate-Tag mit „uuid" — oder steht mit Grund
-// in uuidEingabenAusnahmen. Liest ein Handler direkt per json.NewDecoder, muss er außerdem
-// selbst prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
+// Regel: In jedem Struct, das eine Tür aus dem Rumpf der Anfrage liest (tuer.LeseAnfrage oder
+// json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf „id"/„ids" vom Typ string,
+// *string oder []string einen validate-Tag mit „uuid", oder es steht mit Grund in
+// uuidEingabenAusnahmen. Liest eine Tür direkt per json.NewDecoder, muss sie außerdem selbst
+// prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
 // tuer.Pruefer.Struct. Dasselbe für `Query().Get("…id")` mit festem Namen.
 //
-// uuid.Validate und ein uuid.Parse, dessen Ergebnis verworfen wird, zählen NICHT als
-// Prüfung und werden gemeldet (prueftLocker): Beide nehmen `urn:uuid:…` an, Postgres nicht.
+// uuid.Validate und ein uuid.Parse, dessen Ergebnis verworfen wird, zählen nicht als Prüfung und
+// werden gemeldet (prueftLocker): Beide nehmen `urn:uuid:…` an, Postgres nicht.
 //
-// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/tuer/eingabe.go),
-// für Query-Parameter tuer.LeseUUIDParameter, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
-// keine UUID (Barcode, LUSD-ID), Eintrag in uuidEingabenAusnahmen mit der Spalte, die das
-// belegt.
+// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/tuer/eingabe.go), für
+// Query-Parameter tuer.LeseUUIDParameter, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
+// keine UUID (Barcode, LUSD-ID), Eintrag in uuidEingabenAusnahmen mit der Spalte, die das belegt.
 
 import (
 	"fmt"
@@ -41,9 +37,9 @@ import (
 	"testing"
 )
 
-// uuidEingabenAusnahmen: „paket.Typ.Feld" bzw. „paket:Funktion:query:name" /
-// „paket:Funktion:ohne Validierung" → warum es so richtig ist. Belegt am 13.09.2026 an
-// information_schema.columns: alle Barcode-Spalten und schueler.lusd_id sind VARCHAR.
+// uuidEingabenAusnahmen: „paket.Typ.Feld" bzw. „paket:Funktion:query:name" / „paket:Funktion:ohne
+// Validierung" → warum es so richtig ist. Belegt an information_schema.columns: alle
+// Barcode-Spalten und schueler.lusd_id sind VARCHAR.
 var uuidEingabenAusnahmen = map[string]string{
 	"leser.leserAnlegenAnfrage.BarcodeID":      "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
 	"leser.leserAendernAnfrage.BarcodeID":      "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
@@ -61,8 +57,8 @@ var uuidEingabenAusnahmen = map[string]string{
 type uuidPaket struct {
 	typen   map[string]ast.Expr
 	dateien []*ast.File
-	// alle: die anderen Pakete nach Namen — für Request-Typen aus einem fremden Paket
-	// (`var req repository.X`), die der Detektor bis zum 22.09.2026 überging.
+	// alle: die anderen Pakete nach Namen, für Typen der Anfrage aus einem fremden Paket (`var req
+	// repository.X`).
 	alle map[string]*uuidPaket
 }
 
@@ -169,9 +165,8 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, namen eing
 	})
 }
 
-// lokaleVariablen: `var req T`, `var req = T{}` und `req := T{}` / `req := &T{}`. Die
-// Kurzform übersah der Detektor bis zum 22.09.2026 — ein Handler in dieser Schreibweise
-// war für ihn unsichtbar (OFFEN.md 5.12).
+// lokaleVariablen: `var req T`, `var req = T{}` und `req := T{}` / `req := &T{}`. Ohne die
+// Kurzform wäre eine Tür in dieser Schreibweise für den Detektor unsichtbar.
 func lokaleVariablen(body *ast.BlockStmt) map[string]ast.Expr {
 	typen := map[string]ast.Expr{}
 	ast.Inspect(body, func(n ast.Node) bool {
@@ -214,9 +209,9 @@ func kompositTyp(e ast.Expr) ast.Expr {
 	return nil
 }
 
-// queryVariablen: Namen, die `….Query()` halten (`q := r.URL.Query()`). Ein `q.Get("…id")`
-// darauf ist dieselbe Tür wie `r.URL.Query().Get("…id")` — bis zum 22.09.2026 sah der
-// Detektor nur die zweite Schreibweise; so kam `lieferant_id` am Bestellbericht durch.
+// queryVariablen: Namen, die `….Query()` halten (`q := r.URL.Query()`). Ein `q.Get("…id")` darauf
+// ist dieselbe Tür wie `r.URL.Query().Get("…id")`; wer nur die zweite Schreibweise sieht, lässt
+// etwa `lieferant_id` am Bestellbericht durch.
 func queryVariablen(body *ast.BlockStmt) map[string]bool {
 	namen := map[string]bool{}
 	istQueryAufruf := func(e ast.Expr) bool {
@@ -537,7 +532,7 @@ func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besu
 		// Typ aus einem fremden Paket (`repository.EinstellungenPatch`): dort nachschlagen,
 		// der Schlüssel trägt dann dessen Paketnamen.
 		if pkg, ok := k.X.(*ast.Ident); ok && p.alle[pkg.Name] != nil {
-			// Als Ident weiterreichen, damit der Schlüssel den TYPNAMEN trägt (fremd.Anfrage.ID),
+			// Als Ident weiterreichen, damit der Schlüssel den Typnamen trägt (fremd.Anfrage.ID),
 			// nicht den der aufrufenden Funktion.
 			pruefeStructFelder(p.alle[pkg.Name], pkg.Name, funktion, &ast.Ident{Name: k.Sel.Name}, besucht, melde, kennungen)
 		}
@@ -569,9 +564,8 @@ func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besu
 			}
 			continue
 		}
-		// Liste von Structs: Der Validator steigt in Elemente nur mit `dive` hinab. Ein
-		// `[]Eintrag` mit geprüftem `id` im Element, aber ohne `dive` am Feld, ist so
-		// ungeprüft wie ohne Tag — bis zum 22.09.2026 für den Detektor unsichtbar.
+		// Liste von Structs: Der Validator steigt in Elemente nur mit `dive` hinab. Ein `[]Eintrag` mit
+		// geprüftem `id` im Element, aber ohne `dive` am Feld, ist so ungeprüft wie ohne Tag.
 		vorher := *kennungen
 		pruefeStructFelder(p, paket, funktion, feld.Type, besucht, melde, kennungen)
 		if istListe(feld.Type) && *kennungen > vorher && !strings.Contains(validate, "dive") {
@@ -582,12 +576,11 @@ func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besu
 	}
 }
 
-// elementIstPflicht sagt, ob ein Listen-Tag jedes Element als Pflicht prüft: `required`
-// hinter `dive`. uuid_oder_leer lässt "" durch — für ein optionales Einzelfeld richtig. In
-// einer Liste von Kennungen ist ein leeres Element aber keine Angabe, sondern ein Fehler,
-// und es lief bis zur Datenbank: am 08.10.2026 am Wareneingang nachgestellt, 500 statt 400.
-// Das Muster der Geschwister (Eigentum, Standort, Schlagwort-Pflege) ist
-// `dive,required,uuid_oder_leer`.
+// elementIstPflicht sagt, ob ein Listen-Tag jedes Element als Pflicht prüft: `required` hinter
+// `dive`. uuid_oder_leer lässt "" durch, für ein optionales Einzelfeld richtig. In einer Liste
+// von Kennungen ist ein leeres Element aber keine Angabe, sondern ein Fehler, und es liefe bis
+// zur Datenbank: 500 statt 400. Das Muster der Geschwister (Eigentum, Standort,
+// Schlagwort-Pflege) ist `dive,required,uuid_oder_leer`.
 func elementIstPflicht(validate string) bool {
 	teile := strings.Split(validate, ",")
 	for i, t := range teile {
@@ -642,11 +635,11 @@ func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
 	}
 }
 
-// prueftLocker: uuid.Validate oder ein uuid.Parse, dessen Ergebnis verworfen wird. Beide
-// sagen nur ja oder nein, und weiter geht der Rohtext. google/uuid nimmt aber Formen an,
-// die Postgres abweist (`urn:uuid:…`) — die Prüfung war bestanden, die Datenbank meldete
-// 22P02, der Aufrufer bekam 500 (am Stack nachgestellt am 13.09.2026). Ein uuid.Parse,
-// dessen Wert weiterverwendet wird, ist keine Lücke: uuid.UUID schreibt sich kanonisch.
+// prueftLocker: uuid.Validate oder ein uuid.Parse, dessen Ergebnis verworfen wird. Beide sagen
+// nur ja oder nein, und weiter geht der Rohtext. google/uuid nimmt aber Formen an, die Postgres
+// abweist (`urn:uuid:…`): Die Prüfung ist bestanden, die Datenbank meldet 22P02, der Aufrufer
+// bekommt 500. Ein uuid.Parse, dessen Wert weiterverwendet wird, ist keine Lücke: uuid.UUID
+// schreibt sich kanonisch.
 func prueftLocker(body *ast.BlockStmt) bool {
 	gefunden := ruftAuf(body, "uuid", "Validate")
 	ast.Inspect(body, func(n ast.Node) bool {
@@ -669,11 +662,10 @@ func prueftLocker(body *ast.BlockStmt) bool {
 	return gefunden
 }
 
-// pfadSelbstZerlegt: Der Handler holt ein Segment aus r.URL.Path per strings.Split & Co.
-// statt über einen Platzhalter ({id}) und PathValue. Ein solches Segment sieht weder
-// ValidateUUIDParamsMiddleware (sie liest nur Platzhalter) noch der Rest dieses Detektors
-// (Query und Body). Bis zum 13.09.2026 kamen so PUT /api/books/x, PUT …/x/cover,
-// POST …/x/refresh-cover und POST …/x/cover-upload als 500 zurück (am Stack nachgestellt).
+// pfadSelbstZerlegt: Die Tür holt ein Segment aus r.URL.Path per strings.Split & Co. statt über
+// einen Platzhalter ({id}) und PathValue. Ein solches Segment sieht weder uuidPfadMiddleware (sie
+// liest nur Platzhalter) noch der Rest dieses Detektors (Query und Rumpf); ein kaputtes Segment
+// käme als 500 zurück.
 func pfadSelbstZerlegt(body *ast.BlockStmt) bool {
 	gefunden := false
 	ast.Inspect(body, func(n ast.Node) bool {
@@ -779,13 +771,13 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 	fremd := &uuidPaket{typen: map[string]ast.Expr{}}
 	nimmUUIDDatei(fremd, fremdDatei)
 	maengel, _ := pruefeUUIDEingaben(map[string]*uuidPaket{"p": p, "fremd": fremd}, namen)
-	// Seit dem 22.09.2026 auch: Kurzform `req := T{}` (oKurz), Query-Variable (pQueryVar),
-	// Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne `dive` (sListeOhneDive),
-	// Typ aus fremdem Paket (tFremd). rStapelDive ist die saubere Gegenprobe. Seit dem
-	// 08.10.2026 auch: Kennungsliste mit `dive`, aber ohne `required` je Element
-	// (uListeLeer); vListeSauber ist ihre Gegenprobe. Der Dekodierer hinter dem Paketnamen
-	// (wTuer, xTuerStreng) zählt wie ohne; yTuerSauber und zDirektTuerValidator sind die
-	// Gegenproben, die zweite für den Validator der Türen nach einem eigenen Dekodieren.
+	// Dazu die Formen, die ein engerer Detektor übersähe: Kurzform `req := T{}` (oKurz),
+	// Query-Variable (pQueryVar), Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne `dive`
+	// (sListeOhneDive), Typ aus fremdem Paket (tFremd); rStapelDive ist die saubere Gegenprobe.
+	// Kennungsliste mit `dive`, aber ohne `required` je Element (uListeLeer); vListeSauber ist ihre
+	// Gegenprobe. Der Dekodierer hinter dem Paketnamen (wTuer, xTuerStreng) zählt wie ohne;
+	// yTuerSauber und zDirektTuerValidator sind die Gegenproben, die zweite für den Validator der
+	// Türen nach einem eigenen Dekodieren.
 	erwartet := []string{
 		"fremd.Anfrage.ID (tFremd)",
 		"p.liste.IDs (fListe)",

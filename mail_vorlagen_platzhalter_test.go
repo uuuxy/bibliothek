@@ -1,23 +1,19 @@
 package main
 
-// Platzhalter-Paritäts-Gate (Sweep „gebaut, aber nie verdrahtet", 01.09.2026).
+// Die Platzhalter einer Mail-Vorlage stimmen an drei Orten überein.
 //
-// Drei Orte behaupten je Vorlagen-Typ, welche {{.X}}-Platzhalter gelten:
+// Drei Orte nennen je Typ der Vorlage, welche {{.X}}-Platzhalter gelten:
 //
-//   1. der GO-RENDERER — die einzige Menge, die wirklich ersetzt wird
+//   1. der Renderer in Go, die einzige Menge, die wirklich ersetzt wird
 //      (pdf/mahnbrief.go für MAHNUNG_ELTERN, internal/service/bestellmail_text.go für
 //      BESTELLUNG_HAENDLER),
-//   2. die ANZEIGE im Vorlagen-Editor (vorlagenInfo in mailVorlagenInfo.js),
-//   3. die SEED-TEXTE (schema.sql).
+//   2. die Anzeige im Editor der Vorlagen (vorlagenInfo in mailVorlagenInfo.js),
+//   3. die Vorgabetexte (schema.sql).
 //
-// Bis zum 01.09.2026 zeigte der Editor für JEDE Vorlage dieselben vier
-// Platzhalter — für die Händler-Mail ersetzte der Renderer keinen einzigen
-// davon: Wer die Vorlage laut Anleitung umformulierte, schickte dem Händler
-// wörtlich „{{.BuchListe}}". Und die Seed-Vorlage BESTELLUNG_EINGETROFFEN hat
-// überhaupt keinen Renderer — sie ließ sich bearbeiten und speichern, ohne je
-// verschickt zu werden. Dieses Gate hält die drei Orte deckungsgleich; die
-// bekannte tote Vorlage steht als begründete Ausnahme unten und fliegt raus,
-// sobald die Betreiber-Entscheidung fällt (bauen oder austragen).
+// Warum: Zeigt der Editor Platzhalter, die der Renderer nicht ersetzt, schickt eine nach
+// Anleitung umformulierte Vorlage dem Händler wörtlich „{{.BuchListe}}". Eine Vorlage ohne
+// Renderer lässt sich bearbeiten und speichern, ohne je verschickt zu werden. Diese Prüfung hält
+// die drei Orte deckungsgleich.
 
 import (
 	"os"
@@ -30,8 +26,8 @@ import (
 
 var platzhalterMuster = regexp.MustCompile(`\{\{\.[A-Za-z]+\}\}`)
 
-// rendererQuellen: je Typ die Go-Datei, deren STRING-LITERALE die wirksame
-// Platzhalter-Menge tragen (Replacer, Split, Fallback-Vorlage).
+// rendererQuellen: je Typ die Go-Datei, deren Zeichenketten die wirksame Menge der Platzhalter
+// tragen (Replacer, Split, Ersatzvorlage).
 var rendererQuellen = map[string]string{
 	"MAHNUNG_ELTERN":      filepath.Join("pdf", "mahnbrief.go"),
 	"BESTELLUNG_HAENDLER": filepath.Join("internal", "service", "bestellmail_text.go"),
@@ -43,11 +39,8 @@ var standardtextQuellen = map[string]string{
 	"MAHNUNG_ELTERN": filepath.Join("api", "mahnwesen", "mahnbriefe.go"),
 }
 
-// ohneRenderer: Seed-Typen, die BEWUSST keinen Renderer haben — mit Begründung.
-// Ein Eintrag hier ist ein geparkter Befund, kein Normalzustand. Der bisher
-// einzige Fall (BESTELLUNG_EINGETROFFEN) ist mit Migration 092 ausgetragen:
-// Die Abholbereit-Benachrichtigung ist der Abholfach-Hinweis am Theken-Terminal
-// (OmniboxDienst), keine Mail — Betreiber-Entscheidung 01.09.2026.
+// ohneRenderer: Typen aus den Vorgabetexten, die absichtlich keinen Renderer haben, je mit
+// Begründung. Ein Eintrag hier ist eine geparkte Lücke, kein Normalzustand.
 var ohneRenderer = map[string]string{}
 
 // sammlePlatzhalter zieht alle {{.X}}-Vorkommen aus einem Text als Menge.
@@ -68,9 +61,9 @@ func sortierteMenge(m map[string]bool) []string {
 	return out
 }
 
-// leseRendererPlatzhalter liest die wirksame Menge aus den String-Literalen der
-// Renderer-Datei. Kommentare zählen nicht (dort wird über Platzhalter GEREDET,
-// nicht ersetzt) — dieselbe ohneKommentare-Technik wie das Schichtungs-Gate.
+// leseRendererPlatzhalter liest die wirksame Menge aus den Zeichenketten der Datei des Renderers.
+// Kommentare zählen nicht (dort wird über Platzhalter geredet, nicht ersetzt); dieselbe Technik
+// mit ohneKommentare wie in der Prüfung der Schichtung.
 func leseRendererPlatzhalter(t *testing.T, datei string) map[string]bool {
 	t.Helper()
 	roh, err := os.ReadFile(datei)
@@ -99,8 +92,8 @@ func leseEditorPlatzhalter(t *testing.T) map[string]map[string]bool {
 	return out
 }
 
-// leseSeedVorlagen liefert je Seed-Typ die Platzhalter seines Vorlagentexts.
-func leseSeedVorlagen(t *testing.T) map[string]map[string]bool {
+// leseVorgabetexte liefert je Typ aus den Vorgabetexten die Platzhalter seines Texts.
+func leseVorgabetexte(t *testing.T) map[string]map[string]bool {
 	t.Helper()
 	roh, err := os.ReadFile("schema.sql")
 	if err != nil {
@@ -110,33 +103,33 @@ func leseSeedVorlagen(t *testing.T) map[string]map[string]bool {
 	start := strings.Index(inhalt, "INSERT INTO mail_vorlagen")
 	ende := strings.Index(inhalt[start:], "ON CONFLICT (typ)")
 	if start < 0 || ende < 0 {
-		t.Fatal("mail_vorlagen-Seed in schema.sql nicht gefunden")
+		t.Fatal("die Vorgabetexte von mail_vorlagen in schema.sql nicht gefunden")
 	}
-	seed := inhalt[start : start+ende]
+	vorgabe := inhalt[start : start+ende]
 
 	typMuster := regexp.MustCompile(`'([A-Z_]+)',`)
-	treffer := typMuster.FindAllStringSubmatchIndex(seed, -1)
+	treffer := typMuster.FindAllStringSubmatchIndex(vorgabe, -1)
 	out := map[string]map[string]bool{}
 	for i, m := range treffer {
-		typ := seed[m[2]:m[3]]
-		blockEnde := len(seed)
+		typ := vorgabe[m[2]:m[3]]
+		blockEnde := len(vorgabe)
 		if i+1 < len(treffer) {
 			blockEnde = treffer[i+1][0]
 		}
-		out[typ] = sammlePlatzhalter(seed[m[0]:blockEnde])
+		out[typ] = sammlePlatzhalter(vorgabe[m[0]:blockEnde])
 	}
 	if len(out) < 2 {
-		t.Fatalf("nur %d Seed-Vorlagen erkannt — Parser prüfen", len(out))
+		t.Fatalf("nur %d Vorgabetexte erkannt — Parser prüfen", len(out))
 	}
 	return out
 }
 
 func TestVorlagenPlatzhalterSindDeckungsgleich(t *testing.T) {
 	editor := leseEditorPlatzhalter(t)
-	seeds := leseSeedVorlagen(t)
+	vorgaben := leseVorgabetexte(t)
 
-	// 1) Je Renderer-Typ: Editor-Anzeige ≡ wirksame Renderer-Menge, und die
-	//    Seed-Vorlage benutzt nichts, was der Renderer nicht ersetzt.
+	// 1) Je Typ mit Renderer: Anzeige im Editor ≡ wirksame Menge des Renderers, und der
+	//    Vorgabetext benutzt nichts, was der Renderer nicht ersetzt.
 	for typ, datei := range rendererQuellen {
 		renderer := leseRendererPlatzhalter(t, datei)
 		if len(renderer) == 0 {
@@ -154,12 +147,12 @@ func TestVorlagenPlatzhalterSindDeckungsgleich(t *testing.T) {
 		}
 		for p := range ui {
 			if !renderer[p] {
-				t.Errorf("%s: Editor bietet %s an, der Renderer (%s) ersetzt es NICHT — der Platzhalter stünde wörtlich im Versand.", typ, p, datei)
+				t.Errorf("%s: Editor bietet %s an, der Renderer (%s) ersetzt es nicht — der Platzhalter stünde wörtlich im Versand.", typ, p, datei)
 			}
 		}
-		for p := range seeds[typ] {
+		for p := range vorgaben[typ] {
 			if !renderer[p] {
-				t.Errorf("%s: Seed-Vorlage (schema.sql) enthält %s, der Renderer ersetzt es nicht.", typ, p)
+				t.Errorf("%s: Der Vorgabetext (schema.sql) enthält %s, der Renderer ersetzt es nicht.", typ, p)
 			}
 		}
 		if quelle, hat := standardtextQuellen[typ]; hat {
@@ -175,16 +168,16 @@ func TestVorlagenPlatzhalterSindDeckungsgleich(t *testing.T) {
 		}
 	}
 
-	// 2) Jeder Seed-Typ braucht einen Renderer ODER eine begründete Ausnahme —
+	// 2) Jeder Typ aus den Vorgabetexten braucht einen Renderer oder eine begründete Ausnahme,
 	//    und die Ausnahme darf im Editor nichts anbieten.
-	for typ := range seeds {
+	for typ := range vorgaben {
 		_, hatRenderer := rendererQuellen[typ]
 		grund, istAusnahme := ohneRenderer[typ]
 		switch {
 		case hatRenderer && istAusnahme:
-			t.Errorf("%s steht in rendererQuellen UND ohneRenderer — eines von beidem stimmt nicht.", typ)
+			t.Errorf("%s steht in rendererQuellen und ohneRenderer — eines von beidem stimmt nicht.", typ)
 		case !hatRenderer && !istAusnahme:
-			t.Errorf("Seed-Vorlage %s hat keinen Renderer und keine begründete Ausnahme — tote Vorlage (Klasse F1).", typ)
+			t.Errorf("Der Vorgabetext %s hat keinen Renderer und keine begründete Ausnahme — tote Vorlage.", typ)
 		case istAusnahme && strings.TrimSpace(grund) == "":
 			t.Errorf("Ausnahme %s ohne Begründung.", typ)
 		case istAusnahme:
@@ -194,21 +187,21 @@ func TestVorlagenPlatzhalterSindDeckungsgleich(t *testing.T) {
 		}
 	}
 
-	// 3) Rückrichtung: Ausnahmen und Editor-Blöcke ohne Seed-Typ veralten lautlos.
+	// 3) Rückrichtung: Ausnahmen und Blöcke im Editor ohne Typ in den Vorgabetexten veralten
+	//    lautlos.
 	for typ := range ohneRenderer {
-		if _, ok := seeds[typ]; !ok {
-			t.Errorf("ohneRenderer führt %s, der Seed kennt den Typ nicht (mehr) — Eintrag entfernen.", typ)
+		if _, ok := vorgaben[typ]; !ok {
+			t.Errorf("ohneRenderer führt %s, die Vorgabetexte kennen den Typ nicht (mehr) — Eintrag entfernen.", typ)
 		}
 	}
 	for typ := range editor {
-		if _, ok := seeds[typ]; !ok {
-			t.Errorf("vorlagenInfo führt %s, der Seed kennt den Typ nicht (mehr) — Block entfernen oder Seed ergänzen.", typ)
+		if _, ok := vorgaben[typ]; !ok {
+			t.Errorf("vorlagenInfo führt %s, die Vorgabetexte kennen den Typ nicht (mehr) — Block entfernen oder Vorgabetext ergänzen.", typ)
 		}
 	}
 }
 
-// Gegenprobe am Detektor (Regel 2 des Sweep-Registers): Ein Muster, das nichts
-// findet, meldet ewig „alles gut".
+// Gegenprobe am Detektor: Ein Muster, das nichts findet, meldet ewig „alles gut".
 func TestVorlagenPlatzhalterDetektorGreift(t *testing.T) {
 	if m := sammlePlatzhalter(`x := "{{.Vorname}} und {{.Frist}}"`); !m["{{.Vorname}}"] || !m["{{.Frist}}"] {
 		t.Error("Platzhalter-Muster erkennt String-Literale nicht")

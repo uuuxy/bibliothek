@@ -29,7 +29,7 @@ import (
 // Reparatur bei Rot: die Tabelle nennen, deren Zeile gesperrt werden soll (`FOR UPDATE OF a`).
 // Das gilt auch, wenn der Verbund nur in einer Unterabfrage steht; die Angabe schadet dort nicht.
 //
-// BLINDHEIT: Einen Verbund über ein Komma (`FROM a, b`) sieht der Detektor nicht, ebenso wenig
+// Blindheit: Einen Verbund über ein Komma (`FROM a, b`) sieht der Detektor nicht, ebenso wenig
 // eine Anweisung, deren Stücke über Variablen in mehreren Anweisungen des Programms
 // zusammenkommen, oder eine Sperre über eine Sicht, die selbst ein Verbund ist.
 var (

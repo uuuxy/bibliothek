@@ -13,23 +13,21 @@ import (
 	"testing"
 )
 
-// Auflagen eines Schulbuchs: EIN Schreibpfad (Migration 148, docs/OFFEN.md 4.18).
+// Auflagen eines Schulbuchs: ein Schreibpfad.
 //
-// Die Regeln der Auflagen — nur Lernmittel, zwei Gruppen werden eine, ein Werk mit weniger
-// als zwei Titeln fällt — stehen an einer Stelle, repository/auflagen.go. Das behaupteten
-// die Migration, FACHKONZEPT, arc42 und zwei Kommentare; geprüft hat es nichts. Beim
-// Rasterdurchgang über 4.18 (25.09.2026) lag die Lücke an einer Tür, die niemand im Blick
-// hatte: Die beiden Löschwege eines Titels kannten die dritte Regel nicht (c54e368c). Zwei
-// Regeln, mechanisch:
+// Die Regeln der Auflagen (nur Lernmittel, zwei Gruppen werden eine, ein Werk mit weniger als zwei
+// Titeln fällt) stehen an einer Stelle, repository/auflagen.go. Eine Tür, die daran vorbei
+// schreibt, kennt sie nicht: So ließen die beiden Löschwege eines Titels die dritte Regel aus.
+// Zwei Regeln, mechanisch:
 //  1. SQL, das werk_id schreibt (SET-Klausel, Spaltenliste eines INSERT) oder die Tabelle
 //     werke ändert, steht nur in repository/auflagen.go.
 //  2. Jede Funktion mit DELETE FROM buecher_titel ruft LadeWerkeDerTitel und RaeumeWerkeAuf.
 //
-// BLINDHEIT: Liest Zeichenketten-Literale einzeln — SQL, das erst aus Variablen oder
+// Blindheit: Liest Zeichenketten-Literale einzeln; SQL, das erst aus Variablen oder
 // Sprintf-Teilen entsteht, sieht sie nur, soweit das Merkmal in einem Literal steht. Skripte
-// (scripts/*.sql) und Migrationen liest sie nicht; die Skripte, die Titel löschen, stehen in
-// docs/OFFEN.md 5.26. Ob RaeumeWerkeAuf NACH dem DELETE und in derselben Transaktion läuft,
-// prüft sie nicht — das messen repository/ und inventur/auflagen_loeschen_pg_test.go.
+// (scripts/*.sql) und Migrationen liest sie nicht. Ob RaeumeWerkeAuf nach dem DELETE und in
+// derselben Transaktion läuft, prüft sie nicht; das messen repository/ und
+// inventur/auflagen_loeschen_pg_test.go.
 func TestAuflagen_EinSchreibpfad(t *testing.T) {
 	const tuer = "repository/auflagen.go"
 	var verstoesse []string
@@ -90,7 +88,7 @@ func TestAuflagen_EinSchreibpfad(t *testing.T) {
 		t.Error(v)
 	}
 
-	// Nicht-leer-Garantie je Quelle, von Hand gezählt am 25.09.2026: In der Tür stehen
+	// Nicht-leer-Garantie je Quelle, von Hand gezählt: In der Tür stehen
 	// INSERT INTO werke, drei SET werk_id und DELETE FROM werke; Titel löschen LoescheTitel und
 	// inventur.LoescheTitel. Findet der Detektor weniger, misst er nichts mehr.
 	if schreiberInTuer < 5 {

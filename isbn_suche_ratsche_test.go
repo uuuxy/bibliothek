@@ -14,20 +14,19 @@ import (
 
 // Eine Suche, die die ISBN als Teilstring vergleicht, findet einen Titel nicht über die andere
 // Länge seiner ISBN: Die Datenbank führt eine zehnstellige mit richtigem Prüfzeichen
-// dreizehnstellig (isbn_normalform, Migration 157), und beide Längen enden auf verschiedene
-// Prüfzeichen. Sechs Suchabfragen hatten nur den Teilstring-Vergleich.
+// dreizehnstellig (isbn_normalform), und beide Längen enden auf verschiedene Prüfzeichen.
 //
-// Die Regel: Wo SQL die Spalte isbn mit LIKE oder ILIKE gegen einen Suchtext vergleicht, steht
-// in derselben Deklaration auch repository.SQLSuchtextIstISBN — der Vergleich mit der
-// Normalform des Suchtexts.
+// Die Regel: Wo SQL die Spalte isbn mit LIKE oder ILIKE gegen einen Suchtext vergleicht, steht in
+// derselben Deklaration auch repository.SQLSuchtextIstISBN, der Vergleich mit der Normalform des
+// Suchtexts.
 //
-// BLINDHEIT: Liest Zeichenketten-Literale; SQL, das erst aus Sprintf-Teilen entsteht, sieht sie
+// Blindheit: Liest Zeichenketten-Literale; SQL, das erst aus Sprintf-Teilen entsteht, sieht sie
 // nur, soweit Spalte und LIKE in einem Literal auf einer Zeile stehen. Ob der Baustein in
-// derselben Abfrage und an der richtigen Stelle steht, prüft sie nicht — das messen die
-// Suchtests je Paket (isbn_suche_pg_test.go, order_search_pg_test.go,
-// opac_isbn_laenge_pg_test.go). Andere Teilstring-Vergleiche (~*, position, strpos, SIMILAR TO)
-// fasst sie nicht; über die ISBN gibt es im Baum keinen. Suchen, die die ISBN nur über den
-// Volltext (search_vector) treffen, und Filter im Browser sieht sie nicht.
+// derselben Abfrage und an der richtigen Stelle steht, prüft sie nicht; das messen die Suchtests
+// je Paket (isbn_suche_pg_test.go, bestellsuche_pg_test.go, opac_isbn_laenge_pg_test.go). Andere
+// Teilstring-Vergleiche (~*, position, strpos, SIMILAR TO) fasst sie nicht; über die ISBN gibt es
+// im Baum keinen. Suchen, die die ISBN nur über den Volltext (search_vector) treffen, und Filter
+// im Browser sieht sie nicht.
 func TestISBNSuche_VergleichtDieNormalform(t *testing.T) {
 	const baustein = "SQLSuchtextIstISBN"
 	var verstoesse []string

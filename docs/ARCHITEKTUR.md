@@ -535,7 +535,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört, nach der Theke `api/`, `api/druck`, `api/lernmittel` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/theke` ergänzt, in 5.2.2 die Ratsche genannt, die die Themen auseinanderhält, nach Stufe 5 in 5.2.2 ergänzt, wo ein Test steht und warum `repository/` ein Paket bleibt, abends in 5.2.2 neun Pakete neu gezählt (fünf Themen, `repository/`, `internal/service`, `internal/bereitschaft`, `pdf/`), ergänzt, was neben einer Tür steht und welche Dateien ohne Tür bleiben; am 14.10.2026 `internal/bereitschaft`, `internal/lusd` und die übrigen Pakete unter `internal/` neu gezählt, nach dem Umbau von `internal/service` seine Zeile, nach dem Umbau von `internal/testdaten` die übrigen Pakete unter `internal/`, nach dem Umbau von `api/tuer` seine Zeile, nach dem Umbau von `api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung` und `api/leser` ihre Zeilen, am 15.10.2026 nach dem Umbau von `api/katalog` und von `api/` ihre Zeilen
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört, nach der Theke `api/`, `api/druck`, `api/lernmittel` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/theke` ergänzt, in 5.2.2 die Ratsche genannt, die die Themen auseinanderhält, nach Stufe 5 in 5.2.2 ergänzt, wo ein Test steht und warum `repository/` ein Paket bleibt, abends in 5.2.2 neun Pakete neu gezählt (fünf Themen, `repository/`, `internal/service`, `internal/bereitschaft`, `pdf/`), ergänzt, was neben einer Tür steht und welche Dateien ohne Tür bleiben; am 14.10.2026 `internal/bereitschaft`, `internal/lusd` und die übrigen Pakete unter `internal/` neu gezählt, nach dem Umbau von `internal/service` seine Zeile, nach dem Umbau von `internal/testdaten` die übrigen Pakete unter `internal/`, nach dem Umbau von `api/tuer` seine Zeile, nach dem Umbau von `api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung` und `api/leser` ihre Zeilen, am 15.10.2026 nach dem Umbau von `api/katalog` und von `api/` ihre Zeilen, nach dem Umbau des Wurzelpakets die Zeile von `main.go`
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -623,7 +623,7 @@ HTTP-Anfrage
 
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
+| `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Zeitplan, Server, Graceful Shutdown  |
 | `api/`                  | 1.743 Zeilen, 13 Dateien   | HTTP-Schicht: Router mit den Routenlisten und den Zugängen zu den Themen, Middleware, CSRF, die Bremsen für Anfragen und Anmeldungen und die Abmeldung. Die Türen stehen je Thema in einem eigenen Paket darunter (Themen unter `api/`) |
 | `api/tuer/`             | 529 Zeilen, 6 Dateien      | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Sitzung, die Rechteprüfung mit ihrem Zwischenspeicher, das Protokoll der Verwaltung mit dem Eintrag zur Konto-Anlage, die Uhr. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
 | `api/lernmittel/`       | 960 Zeilen, 7 Dateien      | Die Türen des LMF-Plans, das erste Thema mit eigenem Paket: den Plan als Reihenfolge lesen, rechnen, speichern, veröffentlichen und verwerfen, die Termine für das Kollegium als Liste und als PDF, das Signal an offene Ansichten, dazu die Verlängerung der Lernmittel einer Klasse. Der Typ `Tueren` hält die `tuer.Basis` des Servers als eingebetteten Zeiger |
@@ -1305,9 +1305,9 @@ Pfadparameter davor, und deren Liste gehört zu den Routen. Ein Test legt eine E
 | Cover-Sync                       | `0 */6 * * *` + on demand       | Worker-Pool (8), Re-Entrancy-Guard, Retry für FAILED                                                        |
 | `FuehreRestoreProbeAus`          | `30 3 * * 0`                    | Jüngstes Backup in eine Wegwerf-Datenbank einspielen; Ergebnis wird Befund der Selbstprüfung                |
 
-Daneben laufen **zwei** Starter im Prozess selbst: `startGDPRWorker` (beim Start und alle
+Daneben laufen **zwei** Starter im Prozess selbst: `starteDSGVOLauf` (beim Start und alle
 24 h, nur `FuehreBearbeiterAnonymisierungAus` + `FuehreAbgaengerLoeschungAus` — **nicht**
-`FuehreSchuelerAnonymisierungAus`) und `startBereitschaftsWaechter` (3 Minuten nach dem Start,
+`FuehreSchuelerAnonymisierungAus`) und `starteBereitschaftsWaechter` (3 Minuten nach dem Start,
 danach alle 24 h). Der erste Lauf nach 3 Minuten ist Absicht: Ein Deploy mit kaputter
 Umgebung meldet sich noch am selben Vormittag, nicht erst am nächsten Tag.
 
@@ -3336,7 +3336,7 @@ entschlüsseln können (APP_ENCRYPTION_KEY).
 wären genau die Fehlerart, gegen die die Selbstprüfung antritt: Sie meldete „alles gut",
 während der Server aus demselben Grund den Start verweigert.
 
-**Fundstelle.** `main.go/loadConfig`, `internal/bereitschaft/geheimnisse.go`, `scripts/pruefe_secrets.sh`.
+**Fundstelle.** `main.go/leseKonfig`, `internal/bereitschaft/geheimnisse.go`, `scripts/pruefe_secrets.sh`.
 
 ---
 
@@ -4328,8 +4328,7 @@ Fenstern bekannt ist:
   ([Guide](https://google.github.io/styleguide/go/guide),
   [Decisions](https://google.github.io/styleguide/go/decisions),
   [Best Practices](https://google.github.io/styleguide/go/best-practices)): Was abweicht, wird
-  umgestellt und steht deshalb nicht hier, sondern mit Zahl und Reihenfolge in
-  [OFFEN.md](OFFEN.md) 5.66; die Regeln nennt [STIL.md](STIL.md).
+  umgestellt und steht deshalb nicht hier, sondern in [OFFEN.md](OFFEN.md) 5.66; die Regeln nennt [STIL.md](STIL.md).
 
 #### Kleinigkeiten
 
