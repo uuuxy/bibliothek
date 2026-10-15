@@ -212,6 +212,8 @@ der Nummer nichts mehr dazu offen ist.
   `cmd/migrate-fotos`.
 - [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** 216 Meldungen der Türen beginnen
   klein, geschätzt 57 davon englisch.
+- [ ] **Tippfehler in TRUSTED_PROXIES (5.69):** Ein unlesbarer Eintrag fällt still weg; fehlt
+  so das Netz von Caddy, zählen alle Browser unter der Adresse des Proxys.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -562,6 +564,18 @@ Gezählt über den Syntaxbaum: der Text in den Aufrufen von `AntworteFehler`,
 `AntworteFehlerMitMeldung`, `BadRequest`, `Conflict`, `NotFound` und `Unauthorized`; englisch heißt
 ein Text mit Wörtern wie „not", „missing", „invalid". Nächster Schritt: je Tür die Meldungen in
 Satzschreibung und auf Deutsch, je Satz ein Test an der Antwort; die englischen zuerst.
+
+### 5.69 Tippfehler in TRUSTED_PROXIES
+
+`clientip.NewErmittler` übergeht einen Eintrag, der weder Netz noch Adresse ist, damit ein
+Tippfehler den Start nicht verhindert, und meldet ihn nirgends (gelesen am 15.10.2026).
+`.env.example` trägt einen eigenen Wert; die Vorgabe in `docker-compose.yml` gilt nur, wenn die
+`.env` keinen setzt. Fällt so das Netz von Caddy weg, sieht der Server jeden Browser unter der
+Adresse des Proxys: Die ganze Schule teilt sich dann 50 Anfragen je Sekunde
+(`api/anfrage_bremse.go`) und 50 Fehlversuche der Anmeldung in 15 Minuten
+(`api/anmelde_bremse.go`), und das Protokoll nennt den Proxy. Nächster Schritt: Der Ermittler
+nennt die übergangenen Einträge, der Start schreibt sie als Warnung ins Log, und die Seite
+„Betriebsbereitschaft" zeigt sie.
 
 ## 7. Betrieb (liegt bei der Schulseite)
 
