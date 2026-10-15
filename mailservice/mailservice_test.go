@@ -11,7 +11,7 @@ import (
 
 // angriffe sind die Varianten, mit denen man eine zusätzliche Kopfzeile in eine
 // Mail schmuggelt: Ein CR oder LF beendet die laufende Kopfzeile, alles danach
-// liest der Mailserver als neue — ein "Bcc:" etwa, das eine Mahnung an einen
+// liest der Mailserver als neue, etwa ein "Bcc:", das eine Mahnung an einen
 // stillen Mitleser schickt.
 var angriffe = []string{
 	"opfer@example.com\r\nBcc: heimlich@angreifer.de",
@@ -38,24 +38,24 @@ func TestParseAddressWeistKopfzeilenSchmuggelAb(t *testing.T) {
 	}
 }
 
-// TestHeaderWertWeistUmbruchAb belegt die zweite Schranke direkt an der
-// Schreibstelle — sie muss auch dann greifen, wenn ParseAddress davor entfiele.
-func TestHeaderWertWeistUmbruchAb(t *testing.T) {
+// TestKopfzeilenWertWeistUmbruchAb belegt die zweite Schranke an der Stelle, an der die
+// Kopfzeile entsteht; sie greift auch, wenn ParseAddress davor entfiele.
+func TestKopfzeilenWertWeistUmbruchAb(t *testing.T) {
 	for _, p := range angriffe {
-		if _, err := HeaderWert("To", p); err == nil {
-			t.Errorf("HeaderWert ließ %q durch", p)
-		} else if !errors.Is(err, ErrHeaderUmbruch) {
+		if _, err := KopfzeilenWert("To", p); err == nil {
+			t.Errorf("KopfzeilenWert ließ %q durch", p)
+		} else if !errors.Is(err, ErrUmbruchInKopfzeile) {
 			t.Errorf("falscher Fehlertyp für %q: %v", p, err)
 		}
 	}
 
-	if _, err := HeaderWert("To", "opfer@example.com"); err != nil {
+	if _, err := KopfzeilenWert("To", "opfer@example.com"); err != nil {
 		t.Errorf("gültige Adresse wurde abgewiesen: %v", err)
 	}
 }
 
 // TestBaueTextNachrichtGlaettetBetreff: Ein Umbruch im Betreff einer
-// Datenbank-Vorlage ist ein Tippfehler, kein Angriff — er wird geglättet statt
+// Vorlage aus der Datenbank ist ein Tippfehler, kein Angriff; er wird geglättet statt
 // abgewiesen, damit ein Mahnlauf nicht an einem versehentlichen Enter scheitert.
 // Die Kopfzeile darf danach trotzdem nicht mehrzeilig sein.
 func TestBaueTextNachrichtGlaettetBetreff(t *testing.T) {
@@ -74,7 +74,7 @@ func TestBaueTextNachrichtGlaettetBetreff(t *testing.T) {
 		t.Fatal("Nachricht hat keinen Kopf-/Körper-Trenner")
 	}
 
-	// Entscheidend ist die ZEILE, nicht der Text: "Bcc:" mitten im Betreff ist ein
+	// Entscheidend ist die Zeile, nicht der Text: "Bcc:" mitten im Betreff ist ein
 	// Wort, "Bcc:" am Zeilenanfang wäre eine Kopfzeile.
 	zeilen := strings.Split(kopf, "\r\n")
 	for _, z := range zeilen {
@@ -87,9 +87,9 @@ func TestBaueTextNachrichtGlaettetBetreff(t *testing.T) {
 	}
 }
 
-// TestBaueTextNachrichtWeistAdressenUmbruchAb: Beim Empfänger wird NICHT geglättet
-// — eine Adresse mit Umbruch ist ein Angriff oder ein Datenfehler, beides soll
-// auffallen statt stillschweigend zurechtgebogen zu werden.
+// TestBaueTextNachrichtWeistAdressenUmbruchAb: Beim Empfänger wird nicht geglättet. Eine
+// Adresse mit Umbruch ist ein Angriff oder ein Fehler in den Daten; beides soll auffallen,
+// statt still zurechtgebogen zu werden.
 func TestBaueTextNachrichtWeistAdressenUmbruchAb(t *testing.T) {
 	if _, err := baueTextNachricht("a@b.de", "opfer@example.com\r\nBcc: x@y.de", "Betreff", "Text"); err == nil {
 		t.Error("Empfänger mit Zeilenumbruch wurde akzeptiert")
@@ -117,7 +117,7 @@ func TestBeschreibeSMTPFehlerNenntZertifikatsnamen(t *testing.T) {
 	}
 }
 
-// Ohne DNS-SANs bleibt nur der Common Name — sonst stünde dort eine leere Liste.
+// Ohne DNS-Namen im Zertifikat bleibt nur der Common Name, sonst stünde dort eine leere Liste.
 func TestBeschreibeSMTPFehlerFaelltAufCommonNameZurueck(t *testing.T) {
 	hostErr := x509.HostnameError{
 		Certificate: &x509.Certificate{Subject: pkix.Name{CommonName: "srv1.example.de"}},

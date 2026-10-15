@@ -16,21 +16,19 @@ func testKonfig(host, port string) SMTPKonfig {
 
 // erlaubeKlartext schaltet für einen Test die Klartext-Ausnahme frei.
 //
-// Der Test-Server (internal/smtptest) kündigt bewusst kein STARTTLS an — er soll die
-// SMTP-Ablaufe prüfen, nicht TLS. Seit sichereVerbindung den Versand ohne STARTTLS
-// abbricht, brauchen genau deshalb alle Ablauf-Tests diese Ausnahme. Dass die
-// Erzwingung selbst wirkt, prüft TestVersendeUeberSMTPBrichtOhneSTARTTLSAb — sonst
-// hätte man sie hier nur wegkonfiguriert.
+// Der Testserver (internal/smtptest) kündigt kein STARTTLS an; er prüft die Abläufe von SMTP,
+// nicht TLS. Weil sichereVerbindung ohne STARTTLS abbricht, brauchen die Tests der Abläufe diese
+// Ausnahme. Dass die Erzwingung wirkt, prüft TestVersendeUeberSMTPBrichtOhneSTARTTLSAb; sonst
+// hätte man sie hier nur abgeschaltet.
 func erlaubeKlartext(t *testing.T) {
 	t.Helper()
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 }
 
-// Das Gate: Ein Server ohne STARTTLS bekommt keine Nachricht zu sehen.
+// Ein Server ohne STARTTLS bekommt keine Nachricht zu sehen.
 //
-// Ohne diesen Test wäre die Erzwingung nicht belegt — alle anderen Tests laufen mit
-// gesetzter Ausnahme, und ein versehentliches Zurückdrehen auf "dann eben ohne" fiele
-// nirgends auf.
+// Ohne diesen Test wäre die Erzwingung nicht belegt: Alle anderen Tests laufen mit gesetzter
+// Ausnahme, und wer sie versehentlich abschaltete, merkte es nirgends.
 func TestVersendeUeberSMTPBrichtOhneSTARTTLSAb(t *testing.T) {
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
@@ -42,8 +40,8 @@ func TestVersendeUeberSMTPBrichtOhneSTARTTLSAb(t *testing.T) {
 	if !errors.Is(err, ErrSMTPKlartext) {
 		t.Errorf("Fehler = %v, want ErrSMTPKlartext", err)
 	}
-	// Der Marker entscheidet über den HTTP-Status (502 statt neutralisierter 500) —
-	// ohne ihn erreicht die Begründung den Admin im Formular nicht.
+	// Der Marker entscheidet über den Status der Antwort (502 statt eines neutralen 500); ohne ihn
+	// erreicht die Begründung den Admin im Formular nicht.
 	if !errors.Is(err, ErrSMTPVersand) {
 		t.Errorf("Fehler trägt den Marker nicht (→ falscher HTTP-Status): %v", err)
 	}
@@ -59,9 +57,8 @@ func TestVersendeUeberSMTPBrichtOhneSTARTTLSAb(t *testing.T) {
 	}
 }
 
-// Die Gegenprobe zum Gate: Mit gesetzter Ausnahme geht der Versand durch — der
-// Escape-Hatch für ein Legacy-Relay im Schulnetz ist erreichbar und nicht nur
-// dokumentiert.
+// Die Gegenprobe: Mit gesetzter Ausnahme geht der Versand durch; der Ausweg für einen alten
+// Relay im Schulnetz ist erreichbar und nicht nur beschrieben.
 func TestVersendeUeberSMTPErlaubtKlartextMitAusnahme(t *testing.T) {
 	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
@@ -75,7 +72,7 @@ func TestVersendeUeberSMTPErlaubtKlartextMitAusnahme(t *testing.T) {
 	}
 }
 
-// Der Normalfall — und zugleich der Beleg, dass genau ein Empfänger im Envelope steht.
+// Der gewöhnliche Fall und zugleich der Beleg, dass genau ein Empfänger im Umschlag steht.
 func TestVersendeUeberSMTPStelltZu(t *testing.T) {
 	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
@@ -95,14 +92,12 @@ func TestVersendeUeberSMTPStelltZu(t *testing.T) {
 	}
 }
 
-// Der teure Fall: Der Server nimmt die Nachricht an (250 nach dem Punkt) und kappt
-// die Verbindung, ohne das QUIT zu beantworten. Das ist ZUGESTELLT.
+// Der teure Fall: Der Server nimmt die Nachricht an (250 nach dem Punkt) und kappt die
+// Verbindung, ohne das QUIT zu beantworten. Die Nachricht ist zugestellt.
 //
-// Als Fehlschlag gemeldet, wäre der Schaden real: Der Mahnlauf zählte eine bereits
-// zugestellte Mahnung als „nicht versendet", und der nächste Lauf schickte sie ein
-// zweites Mal an dieselbe Klassenleitung — bei einer Mahnung an Eltern kein
-// kosmetischer Fehler. Vorher gab der Code genau hier einen Fehler zurück, weil er
-// das Ergebnis von QUIT durchreichte.
+// Als Fehlschlag gemeldet, zählte der Mahnlauf eine zugestellte Mahnung als „nicht versendet",
+// und der nächste Lauf schickte sie ein zweites Mal an dieselbe Klassenleitung; bei einer
+// Mahnung an Eltern ist das kein kosmetischer Fehler.
 func TestVersendeUeberSMTPWertetAbbruchNachAnnahmeAlsZugestellt(t *testing.T) {
 	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.BrichtVorQuitAb)
@@ -119,7 +114,7 @@ func TestVersendeUeberSMTPWertetAbbruchNachAnnahmeAlsZugestellt(t *testing.T) {
 	}
 }
 
-// Die Gegenprobe: Weist der Server die Nachricht ab, ist das ein Fehlschlag — mit
+// Die Gegenprobe: Weist der Server die Nachricht ab, ist das ein Fehlschlag, mit
 // Marker (→ HTTP 502) und der Serverantwort im Klartext.
 func TestVersendeUeberSMTPMeldetAbweisung(t *testing.T) {
 	erlaubeKlartext(t)
@@ -152,9 +147,9 @@ func TestVersendeUeberSMTPMeldetUnerreichbarenServer(t *testing.T) {
 	}
 }
 
-// Ein Zeilenumbruch in einer Envelope-Adresse schmuggelt SMTP-Befehle in die
-// Sitzung. net/smtp.SendMail prüfte das mit; auf dem eigenen Weg muss die Hürde
-// ausdrücklich stehen — und zwar VOR dem Verbindungsaufbau.
+// Ein Zeilenumbruch in einer Adresse des Umschlags schmuggelt Befehle in die Sitzung.
+// net/smtp.SendMail prüft das mit; auf dem eigenen Weg steht die Prüfung ausdrücklich, und zwar
+// vor dem Aufbau der Verbindung.
 func TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb(t *testing.T) {
 	host, port := smtptest.GeschlossenerPort(t) // wird nie erreicht
 
@@ -165,29 +160,29 @@ func TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb(t *testing.T) {
 	for name, f := range faelle {
 		t.Run(name, func(t *testing.T) {
 			err := VersendeUeberSMTP(testKonfig(host, port), f.absender, []string{f.empfaenger}, []byte("x"))
-			if !errors.Is(err, ErrHeaderUmbruch) {
-				t.Fatalf("Fehler = %v, want ErrHeaderUmbruch", err)
+			if !errors.Is(err, ErrUmbruchInKopfzeile) {
+				t.Fatalf("Fehler = %v, want ErrUmbruchInKopfzeile", err)
 			}
 		})
 	}
 }
 
-// Der Mailtext selbst ist NICHT gefiltert — mit Absicht. Er darf alles enthalten, was
+// Der Mailtext selbst ist mit Absicht nicht gefiltert. Er darf alles enthalten, was
 // ein Mensch schreiben kann, und ein Mahntext mit einer Zeile "." oder einem Doppelpunkt
 // darin ist kein Angriff.
 //
-// Dieser Test hält fest, WARUM das gefahrlos ist, denn genau darauf zeigt CodeQL mit
+// Dieser Test hält fest, warum das gefahrlos ist, denn darauf zeigt CodeQL mit
 // go/email-injection (Email content injection, versand.go w.Write):
 //
 //  1. Der Text steht hinter der Leerzeile, die Kopf und Rumpf trennt. Was dort wie eine
-//     Kopfzeile aussieht, IST keine — es bleibt Fließtext.
+//     Kopfzeile aussieht, ist keine; es bleibt Fließtext.
 //  2. Eine Zeile, die nur aus einem Punkt besteht, beendet in SMTP die Übertragung.
 //     smtp.Client.Data() schreibt über textproto.DotWriter, der solche Zeilen verdoppelt
 //     ("dot stuffing"). Ohne das könnte ein Schülername oder ein Vorlagentext die
 //     Nachricht abschneiden und den Rest als SMTP-Befehle einschleusen.
 //
-// Die Kopfzeilen sind die Stelle, an der es wirklich gefährlich wäre — die werden beim
-// Bauen geprüft (TestBaueTextNachrichtWeistAdressenUmbruchAb) und im Envelope nochmal
+// Die Kopfzeilen sind die Stelle, an der es wirklich gefährlich wäre; sie werden beim
+// Bauen geprüft (TestBaueTextNachrichtWeistAdressenUmbruchAb) und im Umschlag noch einmal
 // (TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb). Fällt dieser Test hier, ist die
 // Einschätzung "Fließtext ist ungefährlich" nicht mehr gedeckt.
 func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
@@ -210,7 +205,7 @@ func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
 
 	sitzung := <-sitzungen
 
-	// Der Envelope ist unberührt: Kein zweiter Empfänger, kein zweites MAIL FROM.
+	// Der Umschlag ist unberührt: kein zweiter Empfänger, kein zweites MAIL FROM.
 	if len(sitzung.Empfaenger) != 1 || sitzung.Empfaenger[0] != "lehrerin@schule.de" {
 		t.Fatalf("Empfänger = %v — aus dem Mailtext wurde ein Empfänger geschmuggelt", sitzung.Empfaenger)
 	}
@@ -221,7 +216,7 @@ func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
 		t.Fatalf("Nachricht wurde vorzeitig beendet, Server sah nur: %q", sitzung.Nachricht)
 	}
 
-	// Und das "Bcc:" ist Fließtext geblieben — es steht hinter der Trennleerzeile.
+	// Und das "Bcc:" ist Fließtext geblieben; es steht hinter der trennenden Leerzeile.
 	kopf, rumpf, getrennt := strings.Cut(sitzung.Nachricht, "\r\n\r\n")
 	if !getrennt {
 		t.Fatal("Nachricht hatte keine Trennung zwischen Kopf und Rumpf")
@@ -234,15 +229,13 @@ func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
 	}
 }
 
-// TestVersendeUeberSMTP_SchweigenderServerHaengtNicht schließt den Ewig-Hänger aus der
-// Ausfallmatrix (20.08.2026): Ein Server, der die TCP-Verbindung annimmt und dann
-// SCHWEIGT (Firewall-Blackhole, überlasteter Relay), blockierte VersendeUeberSMTP
-// unbegrenzt — smtp.Dial hatte weder Verbindungs-Timeout noch Sitzungs-Deadline, und
-// eine Context-Deadline bricht kein blockierendes Socket-Read ab. Am schwersten traf
-// das den Kritisch-Alarm-Wächter: hängt dessen SendEmail, steht seine Ticker-Schleife
-// für immer. Jetzt muss der Versand binnen der Sitzungsfrist mit Fehler zurückkehren.
+// TestVersendeUeberSMTP_SchweigenderServerHaengtNicht: Ein Server, der die Verbindung annimmt und
+// dann schweigt (Firewall, überlasteter Relay), hält VersendeUeberSMTP nicht unbegrenzt fest,
+// denn die Frist eines Kontexts bricht kein blockierendes Lesen auf einem Socket ab. Am
+// schwersten träfe es den Wächter für kritische Alarme, dessen Schleife sonst für immer stünde.
+// Der Versand kehrt innerhalb der Frist der Sitzung mit einem Fehler zurück.
 func TestVersendeUeberSMTP_SchweigenderServerHaengtNicht(t *testing.T) {
-	// Schweige-Server: akzeptiert Verbindungen, sendet NIE die 220-Begrüßung.
+	// Ein Server, der Verbindungen annimmt und die Begrüßung 220 nie sendet.
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Listener: %v", err)
@@ -259,7 +252,7 @@ func TestVersendeUeberSMTP_SchweigenderServerHaengtNicht(t *testing.T) {
 		}
 	}()
 
-	// Fristen für den Test verkürzen (Produktionswerte: 10s/60s).
+	// Die Fristen für den Test verkürzen (im Betrieb 10 s und 60 s).
 	alteVerbindung, alteSitzung := smtpVerbindungsTimeout, smtpSitzungsFrist
 	smtpVerbindungsTimeout, smtpSitzungsFrist = 2*time.Second, 2*time.Second
 	t.Cleanup(func() { smtpVerbindungsTimeout, smtpSitzungsFrist = alteVerbindung, alteSitzung })

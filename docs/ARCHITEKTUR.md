@@ -649,7 +649,7 @@ HTTP-Anfrage
 | `db/`                   | 651 Zeilen, 5 Dateien      | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                  |
 | `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 3.628 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben, Bestellbericht |
-| `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
+| `mailservice/`          | 634 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`Nachricht`, `Sende`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
 | `sse/`                  | 191 Zeilen, 1 Datei        | Broker und Tür für Server-Sent Events                                                                                                                                     |
 | `apierrors/`            | 223 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`AntworteFehler`) und ihre Abbildung auf HTTP-Status                                                                                         |
 | `internal/*` (übrige)   | 6.912 Zeilen, 59 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `buchetikett` (Eingabe der Etiketten-Erzeuger für Bücher: Typ des Druckauftrags, Kopf der Schule, Wahl des Eigentumsvermerks nach dem Topf, die Daten eines Etiketts aus Titel, Bestellung und Druckauftrag), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
@@ -984,7 +984,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   `repository.MailEinstellungsAbfragen.Lade`, dieselbe Funktion wie die Maske der
   Mail-Einstellungen; das Paket behält den Rückfall auf die Umgebung, das Entschlüsseln des
   Passworts und die Vorgaben für Port und Absender. Auch der Aufbau einer Mail mit Anlagen
-  und ihr Versand stehen dort (`mail_sender.go`: `MailRequest`, `SendEmail`). Die Tür
+  und ihr Versand stehen dort (`mail_sender.go`: `Nachricht`, `Sende`). Die Tür
   bestimmt, an wen was geht und was ihre Antwort über den Versand sagt: den Status zu einem
   Versandfehler (`mailFehlerStatus`, `api/system/mail_einstellungen.go`) und die Werte des Felds `mail`
   (`api/portal/anliegen.go`). Ein Test stellt die Konfiguration über
@@ -2065,7 +2065,7 @@ fest; das [Glossar](#12-glossar) nennt, wo der Code noch anders heißt.
 | **Parsing-Differential**      | Die Cover-/Metadaten-URL wird aus geprüften Teilen **neu gebaut** (Schema fest HTTPS, Host aus der Konstante, nur Pfad und Query vom Aufrufer). Geprüft wurde bisher mit `url.Parse`, angefragt der rohe String — verschiedene Parser sind sich über `\`, `@`, `#`, `?` nicht einig |
 | **Path-Traversal**            | `os.OpenRoot` bindet Dateizugriffe **OS-seitig** an ein Verzeichnis (SPA-Auslieferung, Cover-Einbettung ins PDF). Manuelle `filepath.Clean`+`HasPrefix`-Logik ist fehleranfällig und war als Existenz-Orakel außerhalb des Verzeichnisses nutzbar |
 | **Log-Injection**             | `slog.SetDefault` mit JSON-Handler: Ein Zeilenumbruch aus einer Anfrage wird zu `\n` **innerhalb** des JSON-Strings und kann keinen zweiten Eintrag erzeugen. Am laufenden Server nachgemessen. Wer diese Zeile entfernt oder `log.SetOutput` dahinter setzt, hebt beides auf |
-| **SMTP-Header-Injection**     | `mailservice.HeaderWert` weist CR/LF in Kopfzeilenwerten ab — direkt an der Schreibstelle, nicht nur bei der Empfängerprüfung                                                    |
+| **SMTP-Header-Injection**     | `mailservice.KopfzeilenWert` weist CR/LF in Kopfzeilenwerten ab — direkt an der Schreibstelle, nicht nur bei der Empfängerprüfung                                                    |
 | **Dekompressionsbombe**       | Bild-Uploads werden gegen aufgeblähte Pixelmaße geprüft, bevor dekodiert wird                                                                                                   |
 | **Token im Pfad**             | Der Bestätigungslink des Händlers trägt sein Geheimnis im Pfad; `maskiereToken` hält es aus der Logzeile (sonst wäre die Hash-Speicherung in der Datenbank entwertet)             |
 | **Panics**                    | `panikMiddleware` für HTTP-Handler, `pkg/safego` für unbeaufsichtigte Goroutinen — ein ungefangenes Panic in einer Goroutine reißt in Go den **ganzen** Prozess mit      |
@@ -2423,9 +2423,9 @@ vierzig Terminen von selbst um.
   Übernahme gingen die Mahnungen nach dem Umstieg an `localhost:1025`. Gemeldet wird nur,
   wenn wirklich übernommen wurde.
 - **Aufbau und Versand stehen in `mailservice/`** (`mail_sender.go`, `versand.go`); eine Tür
-  ruft `mailservice.SendEmail`. Ein Test fängt ab, was eine Tür verschickt
+  ruft `mailservice.Sende`. Ein Test fängt ab, was eine Tür verschickt
   (`tuertest.FangeMailAb`, ein Mailserver am Arbeitsplatz), oder ersetzt den Versand:
-  `SendEmail` ist ein Wert des Pakets.
+  `Sende` ist ein Wert des Pakets.
 - **STARTTLS erzwungen**, mit Zertifikatsprüfung. Bietet der Server es nicht an, bricht der
   Versand ab (`ErrSMTPKlartext`) — vorher galt „dann eben ohne", und ein Angreifer, der die
   EHLO-Antwort streicht („STARTTLS stripping"), bekam Mahntexte mit Schülernamen.

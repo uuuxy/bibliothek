@@ -80,7 +80,7 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 
 // Eine Mail je Klasse, darin ein PDF je Schüler; das ist die fachliche Zusage.
 func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
-	var mails []mailservice.MailRequest
+	var mails []mailservice.Nachricht
 	klassen := []abgaengerKlasse{{
 		Klasse:     "5a",
 		Empfaenger: "lehrer5a@schule.de",
@@ -88,7 +88,7 @@ func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
 	}}
 
 	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m mailservice.MailRequest) error { mails = append(mails, m); return nil })
+		func(m mailservice.Nachricht) error { mails = append(mails, m); return nil })
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 0 {
 		t.Fatalf("%+v, want sent=1", erg)
@@ -96,14 +96,14 @@ func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
 	if len(mails) != 1 {
 		t.Fatalf("%d Mails, want genau 1 je Klasse", len(mails))
 	}
-	if len(mails[0].Attachments) != 2 {
-		t.Fatalf("%d Anhänge, want 2 (ein PDF je Schüler)", len(mails[0].Attachments))
+	if len(mails[0].Anhaenge) != 2 {
+		t.Fatalf("%d Anhänge, want 2 (ein PDF je Schüler)", len(mails[0].Anhaenge))
 	}
-	if mails[0].Attachments[0].Name != "Kontoauszug_Max_Mustermann.pdf" {
-		t.Fatalf("Anhangname = %q — Leerzeichen im Namen machen den Anhang unhandlich", mails[0].Attachments[0].Name)
+	if mails[0].Anhaenge[0].Name != "Kontoauszug_Max_Mustermann.pdf" {
+		t.Fatalf("Anhangname = %q — Leerzeichen im Namen machen den Anhang unhandlich", mails[0].Anhaenge[0].Name)
 	}
-	if !strings.Contains(mails[0].Subject, "5a") {
-		t.Fatalf("Betreff nennt die Klasse nicht: %q", mails[0].Subject)
+	if !strings.Contains(mails[0].Betreff, "5a") {
+		t.Fatalf("Betreff nennt die Klasse nicht: %q", mails[0].Betreff)
 	}
 }
 
@@ -117,7 +117,7 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 	}
 
 	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m mailservice.MailRequest) error { empfaenger = append(empfaenger, m.To); return nil })
+		func(m mailservice.Nachricht) error { empfaenger = append(empfaenger, m.An); return nil })
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 2 || erg.Fehlgeschlagen != 0 {
 		t.Fatalf("sent=%d skipped=%d failed=%d, want 1/2/0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
@@ -138,8 +138,8 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 		return []byte("%PDF-fake"), nil
 	}
 
-	var mails []mailservice.MailRequest
-	sammeln := func(m mailservice.MailRequest) error { mails = append(mails, m); return nil }
+	var mails []mailservice.Nachricht
+	sammeln := func(m mailservice.Nachricht) error { mails = append(mails, m); return nil }
 
 	erg := versendeAbgaengerKontoauszuege([]abgaengerKlasse{{
 		Klasse:     "5a",
@@ -150,8 +150,8 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 0 {
 		t.Fatalf("%+v, want sent=1 — ein kaputtes PDF darf die Klasse nicht blockieren", erg)
 	}
-	if len(mails[0].Attachments) != 1 {
-		t.Fatalf("%d Anhänge, want 1 (nur der heile Kontoauszug)", len(mails[0].Attachments))
+	if len(mails[0].Anhaenge) != 1 {
+		t.Fatalf("%d Anhänge, want 1 (nur der heile Kontoauszug)", len(mails[0].Anhaenge))
 	}
 
 	mails = nil
@@ -237,8 +237,8 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 
 	// Einzelfehler (abgelehnte Adresse): failed, kein Abbruch.
 	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m mailservice.MailRequest) error {
-			if m.To == "kl10a@schule.de" {
+		func(m mailservice.Nachricht) error {
+			if m.An == "kl10a@schule.de" {
 				return errors.New("550 mailbox unavailable")
 			}
 			return nil
@@ -249,7 +249,7 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 
 	// Totes Relay (ErrSMTPVersand): Abbruch, die restlichen zählen als fehlgeschlagen.
 	erg = versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(mailservice.MailRequest) error {
+		func(mailservice.Nachricht) error {
 			return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand)
 		})
 	if !erg.Abgebrochen || erg.Fehlgeschlagen != 2 || erg.Versendet != 0 {
@@ -275,8 +275,8 @@ func TestVersendeAbgaengerKontoauszuege_NachAbbruchBleibtUebersprungenUebersprun
 			pdfs++
 			return fakeKontoauszugPDF(e)
 		},
-		func(m mailservice.MailRequest) error {
-			if m.To == "kl10b@schule.de" {
+		func(m mailservice.Nachricht) error {
+			if m.An == "kl10b@schule.de" {
 				return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand)
 			}
 			return nil

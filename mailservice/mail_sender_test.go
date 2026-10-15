@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSendEmail_InvalidRecipient(t *testing.T) {
-	// Setup required env variables to pass the first validation step.
-	// t.Setenv restores the previous value automatically when the test ends.
+func TestSende_UngueltigerEmpfaenger(t *testing.T) {
+	// Die Umgebung, mit der die erste Prüfung bestanden ist; t.Setenv stellt am Ende den vorigen
+	// Wert wieder her.
 	t.Setenv("SMTP_HOST", "localhost")
 	t.Setenv("SMTP_PORT", "2525")
 	t.Setenv("SMTP_USER", "test")
@@ -27,28 +27,28 @@ func TestSendEmail_InvalidRecipient(t *testing.T) {
 		{
 			name:    "Valid Email",
 			to:      "valid@example.com",
-			wantErr: true, // Will still fail because no actual SMTP server is listening, but we expect an SMTP failure, not a validation failure. Let's make it more precise below.
+			wantErr: true, // scheitert am fehlenden Server, nicht an der Prüfung der Adresse
 		},
 		{
 			name:    "Header Injection",
 			to:      "valid@example.com\r\nBcc: evil@example.com",
-			wantErr: true, // Should fail at validation.
+			wantErr: true, // scheitert an der Prüfung der Adresse
 		},
 		{
 			name:    "Invalid Email Format",
 			to:      "not an email",
-			wantErr: true, // Should fail at validation.
+			wantErr: true, // scheitert an der Prüfung der Adresse
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := MailRequest{
-				To:      tt.to,
-				Subject: "Test Subject",
-				Body:    "Test Body",
+			req := Nachricht{
+				An:      tt.to,
+				Betreff: "Test Subject",
+				Text:    "Test Body",
 			}
-			err := SendEmail(req)
+			err := Sende(req)
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.name != "Valid Email" {
@@ -56,7 +56,7 @@ func TestSendEmail_InvalidRecipient(t *testing.T) {
 					assert.False(t, errors.Is(err, ErrSMTPVersand),
 						"eine unbrauchbare Adresse ist kein Fehler des Zielservers — sonst antwortet der Handler mit 502 statt 400")
 				} else {
-					// Marker statt Meldungstext: Daran entscheidet der Handler zwischen
+					// Marker statt Meldungstext: Daran entscheidet die Tür zwischen
 					// 502 (Zielserver versagt, Meldung wird durchgereicht) und 500.
 					assert.ErrorIs(t, err, ErrSMTPVersand)
 				}
@@ -69,12 +69,11 @@ func TestSendEmail_InvalidRecipient(t *testing.T) {
 
 // Ein unlesbares SMTP-Passwort muss auffallen.
 //
-// LadeSMTPKonfig erzeugt diesen Fehler ausdrücklich, damit er NICHT still bleibt
-// („Ein unlesbares Passwort heißt, dass der APP_ENCRYPTION_KEY nicht mehr derselbe
-// ist"). smtpKonfiguriert verschluckte ihn bis zum 31.08.2026 und meldete schlicht
-// „nicht konfiguriert" — nach einer Schlüsselrotation suchte der Admin in den
-// Einstellungen, wo Host, Port und Benutzer korrekt standen.
-func TestSmtpKonfiguriert_LoggtUnlesbareKonfiguration(t *testing.T) {
+// LadeSMTPKonfig erzeugt diesen Fehler ausdrücklich, damit er nicht still bleibt („Ein
+// unlesbares Passwort heißt, dass der APP_ENCRYPTION_KEY nicht mehr derselbe ist"). Meldete
+// IstSMTPKonfiguriert nur „nicht konfiguriert", suchte der Admin nach einem Wechsel des
+// Schlüssels in den Einstellungen, wo Host, Port und Benutzer stimmen.
+func TestIstSMTPKonfiguriert_LoggtUnlesbareKonfiguration(t *testing.T) {
 	alt := smtpKonfigLader
 	t.Cleanup(func() { smtpKonfigLader = alt })
 
@@ -86,7 +85,7 @@ func TestSmtpKonfiguriert_LoggtUnlesbareKonfiguration(t *testing.T) {
 	smtpKonfigLader = func() (SMTPKonfig, error) {
 		return SMTPKonfig{}, errors.New("fehler beim Entschlüsseln des SMTP-Passworts")
 	}
-	if SMTPKonfiguriert() {
+	if IstSMTPKonfiguriert() {
 		t.Error("unlesbare Konfiguration gilt als konfiguriert")
 	}
 	if !strings.Contains(protokoll.String(), "nicht lesbar") {

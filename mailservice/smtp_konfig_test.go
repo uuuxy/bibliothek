@@ -1,8 +1,7 @@
 package mailservice
 
-// Diese Tests halten die Antwort auf eine Frage fest, die vorher zwei verschiedene
-// Antworten hatte: Womit wird verschickt? Die gespeicherte Konfiguration gewinnt, die
-// Umgebung trägt nur, solange nichts gespeichert ist.
+// Diese Tests halten die eine Antwort auf die Frage fest, womit verschickt wird: Die gespeicherte
+// Konfiguration gewinnt, die Umgebung trägt nur, solange nichts gespeichert ist.
 
 import (
 	"context"
@@ -16,7 +15,7 @@ import (
 
 const testSchluessel = "0123456789abcdef0123456789abcdef" // 32 Zeichen für AES-256
 
-func mockPool(t *testing.T) pgxmock.PgxPoolIface {
+func attrappe(t *testing.T) pgxmock.PgxPoolIface {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -31,7 +30,7 @@ func konfigZeile(host, port, benutzer string, passwort []byte, absender string) 
 		AddRow(host, port, benutzer, passwort, absender)
 }
 
-// Der Kernfall: Was der Admin gespeichert hat, gilt — auch wenn in der Umgebung noch
+// Der Kernfall: Was der Admin gespeichert hat, gilt, auch wenn in der Umgebung noch
 // etwas anderes steht (auf dem Schulserver steht dort die alte Konfiguration).
 func TestLadeSMTPKonfigGespeichertesGewinnt(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", testSchluessel)
@@ -44,7 +43,7 @@ func TestLadeSMTPKonfigGespeichertesGewinnt(t *testing.T) {
 		t.Fatalf("Verschlüsseln: %v", err)
 	}
 
-	mock := mockPool(t)
+	mock := attrappe(t)
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(konfigZeile("smtp.schule.de", "587", "bib", verschluesselt, "bib@schule.de"))
 
@@ -70,7 +69,7 @@ func TestLadeSMTPKonfigGespeichertesGewinnt(t *testing.T) {
 	}
 }
 
-// Solange nichts gespeichert ist, trägt die Umgebung weiter — sonst stünde eine
+// Solange nichts gespeichert ist, trägt die Umgebung weiter, sonst stünde eine
 // frische Datenbank ohne Mailversand da.
 func TestLadeSMTPKonfigFaelltAufUmgebungZurueck(t *testing.T) {
 	t.Setenv("SMTP_HOST", "smtp.umgebung.de")
@@ -80,7 +79,7 @@ func TestLadeSMTPKonfigFaelltAufUmgebungZurueck(t *testing.T) {
 	t.Setenv("SMTP_PASS", "")
 	t.Setenv("SMTP_FROM", "")
 
-	mock := mockPool(t)
+	mock := attrappe(t)
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(konfigZeile("", "", "", nil, ""))
 
@@ -105,7 +104,7 @@ func TestLadeSMTPKonfigOhneZeileTraegtDieUmgebung(t *testing.T) {
 	t.Setenv("SMTP_PORT", "2525")
 	t.Setenv("SMTP_FROM", "bib@umgebung.de")
 
-	mock := mockPool(t)
+	mock := attrappe(t)
 	mock.ExpectQuery(`SELECT smtp_host`).WillReturnError(pgx.ErrNoRows)
 
 	konfig, err := LadeSMTPKonfig(context.Background(), mock)
@@ -123,7 +122,7 @@ func TestLadeSMTPKonfigErgaenztPortUndAbsender(t *testing.T) {
 	t.Setenv("SMTP_HOST", "smtp.umgebung.de")
 	t.Setenv("SMTP_FROM", "bib@umgebung.de")
 
-	mock := mockPool(t)
+	mock := attrappe(t)
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(konfigZeile(" smtp.schule.de ", " ", "", nil, " "))
 
@@ -134,8 +133,8 @@ func TestLadeSMTPKonfigErgaenztPortUndAbsender(t *testing.T) {
 	if konfig.Adresse() != "smtp.schule.de:587" {
 		t.Errorf("Adresse = %q, want smtp.schule.de:587", konfig.Adresse())
 	}
-	if konfig.Absender != defaultFromAddress {
-		t.Errorf("Absender = %q, want die Vorgabe %q", konfig.Absender, defaultFromAddress)
+	if konfig.Absender != absenderVorgabe {
+		t.Errorf("Absender = %q, want die Vorgabe %q", konfig.Absender, absenderVorgabe)
 	}
 	if konfig.Auth() != nil {
 		t.Error("ohne Benutzer und Passwort darf keine SMTP-Auth entstehen")
@@ -143,13 +142,13 @@ func TestLadeSMTPKonfigErgaenztPortUndAbsender(t *testing.T) {
 }
 
 // Ein unlesbares Passwort heißt: Der APP_ENCRYPTION_KEY ist nicht mehr derselbe. Das
-// muss auffallen und darf nicht still auf die Umgebung ausweichen — sonst verschickt
-// die Anwendung über einen anderen Server als den, der im Formular steht.
+// muss auffallen und darf nicht still auf die Umgebung ausweichen, sonst verschickt das
+// Programm über einen anderen Server als den, der im Formular steht.
 func TestLadeSMTPKonfigMeldetUnlesbaresPasswort(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", testSchluessel)
 	t.Setenv("SMTP_HOST", "smtp.umgebung.de")
 
-	mock := mockPool(t)
+	mock := attrappe(t)
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(konfigZeile("smtp.schule.de", "587", "bib", []byte("kein-gueltiger-geheimtext"), "bib@schule.de"))
 
@@ -159,8 +158,8 @@ func TestLadeSMTPKonfigMeldetUnlesbaresPasswort(t *testing.T) {
 }
 
 // IstKonfiguriert entscheidet, ob ein Versand versucht oder übersprungen wird. Die
-// Platzhalter stammen aus der Beispielkonfiguration — ein Verbindungsversuch gegen
-// einen Host namens "Ihr SMTP-Host" hilft niemandem.
+// Platzhalter stammen aus der Beispielkonfiguration; ein Versuch, einen Host namens "Ihr
+// SMTP-Host" zu erreichen, hilft niemandem.
 func TestIstKonfiguriert(t *testing.T) {
 	faelle := map[string]struct {
 		konfig SMTPKonfig

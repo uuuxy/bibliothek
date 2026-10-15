@@ -25,7 +25,7 @@ import (
 // Mahnlisten gehen doppelt hinaus, eine Bestellung meldet „war bereits erfasst", obwohl ihre
 // Mail nie ankam.
 //
-// Gemessen wird am Merkmal: jede Funktion in api/ und seinen Unterordnern, die SendEmail oder
+// Gemessen wird am Merkmal: jede Funktion in api/ und seinen Unterordnern, die Sende oder
 // den Versand aus mailservice erreicht, und jede Route, deren Anmeldung eine solche Funktion
 // nennt. Blind für einen Versand über ein Paket außerhalb von api/, für Routen außerhalb von
 // mux.Handle in routen*.go und router.go, für eine Adresse, die die Oberfläche aus Teilen
@@ -119,13 +119,13 @@ func TestVersandFunktionen_Selbstprobe(t *testing.T) {
 		"tuer.go": "package api\nfunc (s *Server) Mahnen() { thema.Verschicke() }\n" +
 			"func (s *Server) Lesen() { thema.Zaehle() }\n" +
 			"func (s *Server) Melden() { s.benachrichtige() }\n" +
-			"func (s *Server) benachrichtige() { SendEmail(nil) }\n" +
-			"func (s *Server) Erinnern() { mailservice.SendEmail(nil) }\n",
+			"func (s *Server) benachrichtige() { Sende(nil) }\n" +
+			"func (s *Server) Erinnern() { mailservice.Sende(nil) }\n",
 		"thema/versand.go": "package thema\nfunc Verschicke() { _ = mailservice.VersendeUeberSMTP }\n" +
 			"func Zaehle() int { return 1 }\n",
 		// Drei Funktionen namens Starte: Nur die mittlere erreicht den Versand.
 		"thema/starte.go":  "package thema\nfunc Starte() { Verschicke() }\n",
-		"anders/starte.go": "package anders\nfunc Starte() {}\nfunc Pruefe() { mailservice.SendTestMail() }\n",
+		"anders/starte.go": "package anders\nfunc Starte() {}\nfunc Pruefe() { mailservice.SendeTestmail() }\n",
 		"weiter/starte.go": "package weiter\nfunc Starte() {}\n",
 	})
 	for _, name := range []string{"Mahnen", "Melden", "benachrichtige", "Erinnern", "Verschicke", "Starte", "Pruefe"} {
@@ -161,7 +161,7 @@ func funktionenDieMailVerschicken(t *testing.T) map[string]bool {
 	}
 	sendet, unmittelbar := versandFunktionen(t, quellen)
 	if unmittelbar < 4 {
-		t.Fatalf("nur %d Funktionen mit unmittelbarem Versand gefunden: SendEmail oder mailservice heißen anders", unmittelbar)
+		t.Fatalf("nur %d Funktionen mit unmittelbarem Versand gefunden: Sende oder mailservice heißen anders", unmittelbar)
 	}
 	return sendet
 }
@@ -198,12 +198,12 @@ func versandFunktionen(t *testing.T, quellen map[string]string) (sendet map[stri
 				switch k := knoten.(type) {
 				case *ast.SelectorExpr:
 					if x, ok := k.X.(*ast.Ident); ok && x.Name == "mailservice" &&
-						(k.Sel.Name == "SendTestMail" || k.Sel.Name == "VersendeUeberSMTP") {
+						(k.Sel.Name == "SendeTestmail" || k.Sel.Name == "VersendeUeberSMTP") {
 						sendet[name] = true
 					}
 					nennt[name][k.Sel.Name] = true
 				case *ast.Ident:
-					if k.Name == "SendEmail" {
+					if k.Name == "Sende" {
 						sendet[name] = true
 					}
 					nennt[name][k.Name] = true

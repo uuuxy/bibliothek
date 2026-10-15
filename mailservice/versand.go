@@ -1,11 +1,7 @@
 package mailservice
 
-// versand.go — Der Transportweg für JEDE Mail dieser Anwendung.
-//
-// Vorher gab es zwei: net/smtp.SendMail für den Testversand und eine eigene
-// Client-Schleife (mit verifiziertem STARTTLS) für Mahnungen, Abgänger und
-// Bestellungen. Zwei Wege heißt zwei Verhaltensweisen im Fehlerfall — und damit
-// einen Test-Knopf, der etwas anderes tut als der Mahnlauf, den er prüfen soll.
+// Der eine Weg jeder Mail zum Server. Zwei Wege hießen zwei Verhaltensweisen im Fehlerfall und
+// damit einen Knopf für den Testversand, der etwas anderes tut als der Mahnlauf, den er prüft.
 
 import (
 	"crypto/tls"
@@ -19,35 +15,32 @@ import (
 	"bibliothek/pkg/closeutil"
 )
 
-// Fristen des SMTP-Transports. Ohne sie war smtp.Dial der klassische Ewig-Hänger
-// (Ausfallmatrix 20.08.2026): Ein Server, der die TCP-Verbindung annimmt und dann
-// schweigt (Firewall-Blackhole, überlasteter Relay), blockierte die Goroutine
-// unbegrenzt — die Context-Deadline der fristMiddleware bricht kein blockierendes
-// Read auf einem Socket ab. Am schwersten traf das den Kritisch-Alarm-Wächter selbst:
-// Hängt SendEmail dort, steht seine Ticker-Schleife für immer, und der Mechanismus,
-// der stille Ausfälle melden soll, ist selbst still ausgefallen.
-// Variablen (keine Konstanten), damit Tests sie verkürzen können.
+// Fristen des Versands. Ohne sie hinge smtp.Dial ohne Ende: Ein Server, der die Verbindung annimmt
+// und dann schweigt (Firewall, überlasteter Relay), hielte die Goroutine unbegrenzt fest, und die
+// Frist des Kontexts aus fristMiddleware bricht kein blockierendes Lesen auf einem Socket ab. Am
+// schwersten träfe das den Wächter für kritische Alarme: Hinge Sende dort, stünde seine Schleife
+// für immer, und der Mechanismus, der stille Ausfälle melden soll, fiele selbst still aus.
+// Variablen und keine Konstanten, damit Tests sie verkürzen können.
 var (
 	smtpVerbindungsTimeout = 10 * time.Second
-	// Gesamtfrist für die komplette SMTP-Sitzung (Begrüßung bis Zustellung). Als
-	// Deadline auf der Verbindung gesetzt, wirkt sie auf jedes Read/Write — auch
-	// hinter STARTTLS, dessen TLS-Schicht die Deadline der Rohverbindung erbt.
+	// Frist für die ganze Sitzung (Begrüßung bis Zustellung). Auf der Verbindung gesetzt, wirkt
+	// sie auf jedes Lesen und Schreiben, auch hinter STARTTLS, dessen TLS-Schicht sie erbt.
 	smtpSitzungsFrist = 60 * time.Second
 )
 
 // VersendeUeberSMTP überträgt eine fertige Nachricht an den konfigurierten Server.
 // Fehler tragen den Marker ErrSMTPVersand und die Übersetzung aus
-// BeschreibeSMTPFehler — der Aufrufer kann sie damit als 502 mit lesbarer Ursache
-// ausliefern statt als neutralisierte 500.
+// BeschreibeSMTPFehler; der Aufrufer antwortet damit mit 502 und lesbarer Ursache statt mit einem
+// neutralen 500.
 func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, nachricht []byte) error {
-	// Envelope-Adressen dürfen keinen Zeilenumbruch enthalten — sonst schmuggelt man
-	// SMTP-Befehle in die Sitzung. net/smtp.SendMail prüfte das mit; auf diesem Weg
-	// muss die Hürde ausdrücklich stehen.
-	if _, err := HeaderWert("MAIL FROM", absender); err != nil {
+	// Die Adressen des Umschlags dürfen keinen Zeilenumbruch enthalten, sonst schmuggelt man
+	// Befehle in die Sitzung. net/smtp.SendMail prüft das mit; auf diesem Weg steht die Prüfung
+	// ausdrücklich.
+	if _, err := KopfzeilenWert("MAIL FROM", absender); err != nil {
 		return err
 	}
 	for _, e := range empfaenger {
-		if _, err := HeaderWert("RCPT TO", e); err != nil {
+		if _, err := KopfzeilenWert("RCPT TO", e); err != nil {
 			return err
 		}
 	}
@@ -61,7 +54,7 @@ func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, 
 		_ = conn.Close() //nolint:errcheck
 		return BeschreibeSMTPFehler(adresse, err)
 	}
-	// smtp.NewClient liest bereits die Server-Begrüßung — auch das unter der Deadline.
+	// smtp.NewClient liest schon die Begrüßung des Servers, auch das unter der Frist.
 	c, err := smtp.NewClient(conn, konfig.Host)
 	if err != nil {
 		_ = conn.Close() //nolint:errcheck
@@ -83,13 +76,11 @@ func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, 
 		return BeschreibeSMTPFehler(adresse, err)
 	}
 
-	// Ab hier ist die Nachricht zugestellt: Der Server hat den abschließenden Punkt
-	// mit 250 quittiert. Ein Fehler beim Verabschieden sagt darüber nichts mehr aus —
-	// und manche Server kappen die Verbindung nach der Annahme einfach.
-	//
-	// Das als Fehlschlag zu melden, wäre teuer: Der Mahnlauf zählte eine zugestellte
-	// Mahnung als „nicht versendet", und der nächste Lauf schickte sie ein zweites Mal
-	// an dieselbe Klassenleitung.
+	// Ab hier ist die Nachricht zugestellt: Der Server hat den abschließenden Punkt mit 250
+	// quittiert. Ein Fehler beim Verabschieden sagt darüber nichts mehr, und manche Server kappen
+	// die Verbindung nach der Annahme einfach. Als Fehlschlag gemeldet, zählte der Mahnlauf eine
+	// zugestellte Mahnung als „nicht versendet", und der nächste Lauf schickte sie ein zweites
+	// Mal an dieselbe Klassenleitung.
 	if err := c.Quit(); err != nil {
 		log.Printf("mail: Verbindung zu %s wurde nach der Annahme nicht sauber beendet (Nachricht ist zugestellt): %v", adresse, err)
 	}
@@ -103,24 +94,18 @@ var ErrSMTPKlartext = errors.New("SMTP-Server bietet kein STARTTLS an — Versan
 
 // sichereVerbindung hebt die Sitzung auf TLS und bricht ab, wenn das nicht geht.
 //
-// Das Zertifikat wird gegen den konfigurierten Host VERIFIZIERT — ohne Verifikation
-// könnte ein MITM beim Upgrade ein beliebiges Zertifikat vorlegen und sowohl die
-// SMTP-AUTH-Zugangsdaten als auch den Mailinhalt (Schülernamen, Mahndaten,
-// Elternadressen) mitlesen. Escape-Hatch für Legacy-Server mit Self-Signed-Zertifikat:
-// SMTP_ALLOW_INSECURE_TLS.
+// Das Zertifikat wird gegen den eingestellten Host geprüft; ohne Prüfung könnte ein Angreifer in
+// der Mitte ein beliebiges Zertifikat vorlegen und Zugangsdaten und Inhalt (Schülernamen,
+// Mahnungen, Anschriften der Eltern) mitlesen. Für alte Server mit selbst signiertem Zertifikat
+// gibt es SMTP_ALLOW_INSECURE_TLS.
 //
-// Bietet der Server gar kein STARTTLS an, galt hier bisher "dann eben ohne" — die
-// Funktion hieß starttlsWennMoeglich und gab in diesem Fall nil zurück. Damit hing die
-// Vertraulichkeit jeder Mahnung am Wohlwollen der Gegenstelle: Ein Server, der die
-// Erweiterung nicht ankündigt (falsch konfiguriert, oder ein MITM, der sie aus der
-// EHLO-Antwort streicht — "STARTTLS stripping"), bekam Mahntexte mit Schülernamen und
-// Elternadressen im Klartext. Die AUTH-Zugangsdaten waren dabei nie in Gefahr:
-// smtp.PlainAuth verweigert die Übertragung über eine unverschlüsselte Verbindung von
-// sich aus. Der Inhalt aber schon, und bei einem Relay ohne Zugangsdaten (Versand nach
-// IP, im Schulnetz üblich) fiel diese Bremse ganz weg.
-//
-// Geprüft am 06.08.2026: srv1.philipp-reis-schule.de bietet STARTTLS auf 25 und 587 an
-// (EHLO-Probe, ohne Anmeldung). Für den Schulbetrieb ändert die Erzwingung also nichts.
+// Ohne STARTTLS bricht der Versand ab. Sonst hinge die Vertraulichkeit jeder Mahnung an der
+// Gegenstelle: Ein Server, der die Erweiterung nicht ankündigt (falsch eingestellt, oder ein
+// Angreifer, der sie aus der EHLO-Antwort streicht), bekäme die Mahntexte im Klartext.
+// smtp.PlainAuth verweigert die Zugangsdaten über eine unverschlüsselte Verbindung von sich aus,
+// den Inhalt aber nicht, und bei einem Relay ohne Zugangsdaten (Versand nach IP, im Schulnetz
+// üblich) fiele diese Bremse ganz weg. Der Mailserver der Schule bietet STARTTLS auf 25 und 587
+// an; für den Betrieb ändert die Erzwingung nichts.
 func sichereVerbindung(c *smtp.Client, host string) error {
 	if ok, _ := c.Extension("STARTTLS"); !ok {
 		if os.Getenv("SMTP_ALLOW_PLAINTEXT") == "true" {
@@ -129,12 +114,12 @@ func sichereVerbindung(c *smtp.Client, host string) error {
 		}
 		return ErrSMTPKlartext
 	}
-	config := &tls.Config{
+	tlsKonfig := &tls.Config{
 		ServerName:         host,
 		MinVersion:         tls.VersionTLS12,
 		InsecureSkipVerify: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true", // #nosec G402 - bewusst per Env, Default sicher
 	}
-	return c.StartTLS(config)
+	return c.StartTLS(tlsKonfig)
 }
 
 // authentifiziere meldet sich an, sofern Zugangsdaten vorliegen und der Server
@@ -149,8 +134,8 @@ func authentifiziere(c *smtp.Client, a smtp.Auth) error {
 	return nil
 }
 
-// uebertrage schickt Envelope (MAIL FROM / RCPT TO) und Nachrichtentext. Kehrt ohne
-// Fehler zurück, sobald der Server die Nachricht angenommen hat.
+// uebertrage schickt den Umschlag (MAIL FROM / RCPT TO) und den Text der Nachricht. Sie kehrt
+// ohne Fehler zurück, sobald der Server die Nachricht angenommen hat.
 func uebertrage(c *smtp.Client, absender string, empfaenger []string, nachricht []byte) error {
 	if err := c.Mail(absender); err != nil {
 		return err
@@ -167,7 +152,7 @@ func uebertrage(c *smtp.Client, absender string, empfaenger []string, nachricht 
 	if _, err := w.Write(nachricht); err != nil {
 		return err
 	}
-	// Close schreibt den abschließenden Punkt und liest die Antwort darauf — hier
-	// entscheidet sich, ob die Nachricht angenommen wurde.
+	// Close schreibt den abschließenden Punkt und liest die Antwort darauf; hier entscheidet sich,
+	// ob die Nachricht angenommen wurde.
 	return w.Close()
 }

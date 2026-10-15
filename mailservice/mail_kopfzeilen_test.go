@@ -6,31 +6,27 @@ import (
 	"testing"
 )
 
-// Kopfzeilen-Gate für den Weg, über den JEDE echte Mail geht.
+// Die Kopfzeilen auf dem Weg, über den jede echte Mail geht. Neun Stellen bauen eine Nachricht
+// (Mahnungen, Bestellungen, Laufzettel der Abgänger, Antworten auf Anliegen, Alarme); geprüft
+// wird an der einen Stelle, an der die Kopfzeilen entstehen.
 //
-// Bis zum 23.08.2026 stand über baueMailNachricht der Satz "req.To und req.Subject
-// müssen bereits sanitiert sein". Neun Stellen bauen eine MailRequest — Mahnungen,
-// Bestellungen, Abgänger-Laufzettel, Anliegen-Antworten, Betriebsalarme —, und keine
-// davon prüfte. Ein Kommentar ist keine Absicherung.
-//
-// Geprüft war nur der SMTP-Umschlag (MAIL FROM / RCPT TO). Der bestimmt zwar, WOHIN
-// zugestellt wird — aber die Kopfzeilen der Nachricht bestimmen, was der Empfänger
-// sieht: ein zweites From, ein Reply-To auf eine fremde Adresse, ein vorzeitiges Ende
-// des Kopfteils und damit gefälschter Text vor dem eigentlichen Inhalt.
+// Der Umschlag (MAIL FROM / RCPT TO) bestimmt, wohin zugestellt wird, die Kopfzeilen der
+// Nachricht bestimmen, was der Empfänger sieht: ein zweites From, ein Reply-To auf eine fremde
+// Adresse, ein vorzeitiges Ende des Kopfteils und damit gefälschter Text vor dem Inhalt.
 func TestBaueMailNachricht_WeistUmbruecheInAdressenAb(t *testing.T) {
 	faelle := []struct {
 		name string
-		req  MailRequest
+		req  Nachricht
 		from string
 	}{
 		{
 			name: "Empfänger mit eingeschmuggelter Kopfzeile",
-			req:  MailRequest{To: "lehrer@schule.de\r\nBcc: fremd@example.org", Subject: "Mahnung", Body: "Text"},
+			req:  Nachricht{An: "lehrer@schule.de\r\nBcc: fremd@example.org", Betreff: "Mahnung", Text: "Text"},
 			from: "bibliothek@schule.de",
 		},
 		{
 			name: "Absender mit Umbruch",
-			req:  MailRequest{To: "lehrer@schule.de", Subject: "Mahnung", Body: "Text"},
+			req:  Nachricht{An: "lehrer@schule.de", Betreff: "Mahnung", Text: "Text"},
 			from: "bibliothek@schule.de\nReply-To: fremd@example.org",
 		},
 	}
@@ -41,7 +37,7 @@ func TestBaueMailNachricht_WeistUmbruecheInAdressenAb(t *testing.T) {
 			if err == nil {
 				t.Fatal("die Nachricht wurde gebaut — eine Adresse mit Zeilenumbruch muss abgewiesen werden")
 			}
-			if !errors.Is(err, ErrHeaderUmbruch) {
+			if !errors.Is(err, ErrUmbruchInKopfzeile) {
 				t.Errorf("unerwarteter Fehler: %v", err)
 			}
 		})
@@ -49,13 +45,13 @@ func TestBaueMailNachricht_WeistUmbruecheInAdressenAb(t *testing.T) {
 }
 
 // Ein Betreff aus einer Vorlage ist etwas anderes als eine Adresse: Dort bleibt beim
-// Bearbeiten leicht ein Umbruch stehen. Der wird geglättet, nicht abgewiesen — aber er
-// darf keine zweite Kopfzeile öffnen.
+// Bearbeiten leicht ein Umbruch stehen. Der wird geglättet, nicht abgewiesen, aber er darf keine
+// zweite Kopfzeile öffnen.
 func TestBaueMailNachricht_GlaettetBetreffStattIhnAbzuweisen(t *testing.T) {
-	req := MailRequest{
-		To:      "lehrer@schule.de",
-		Subject: "Erinnerung\r\nX-Gefaelscht: ja",
-		Body:    "Text",
+	req := Nachricht{
+		An:      "lehrer@schule.de",
+		Betreff: "Erinnerung\r\nX-Gefaelscht: ja",
+		Text:    "Text",
 	}
 
 	roh, err := baueMailNachricht(req, "bibliothek@schule.de")
@@ -67,7 +63,7 @@ func TestBaueMailNachricht_GlaettetBetreffStattIhnAbzuweisen(t *testing.T) {
 	if i := strings.Index(kopf, "\r\n\r\n"); i > 0 {
 		kopf = kopf[:i]
 	}
-	// Es geht um ZEILENANFÄNGE: Der Text darf im Betreff stehen bleiben (dort ist er
+	// Es geht um Zeilenanfänge: Der Text darf im Betreff stehen bleiben (dort ist er
 	// harmlos), er darf nur keine eigene Kopfzeile eröffnen.
 	for _, zeile := range strings.Split(kopf, "\r\n") {
 		if strings.HasPrefix(zeile, "X-Gefaelscht:") {

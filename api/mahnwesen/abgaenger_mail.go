@@ -50,7 +50,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 			return
 		}
 
-		if !mailservice.SMTPKonfiguriert() {
+		if !mailservice.IstSMTPKonfiguriert() {
 			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Versand nicht möglich"))
 			return
 		}
@@ -92,7 +92,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		audit.Phase = "start"
 		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		erg := versendeAbgaengerKontoauszuege(gewaehlt, erzeugeKontoauszugPDF, mailservice.SendEmail)
+		erg := versendeAbgaengerKontoauszuege(gewaehlt, erzeugeKontoauszugPDF, mailservice.Sende)
 
 		audit.Phase = "ende"
 		audit.Versendet, audit.Uebersprungen, audit.Fehlgeschlagen, audit.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen
@@ -203,7 +203,7 @@ func erzeugeKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
 func versendeAbgaengerKontoauszuege(
 	klassen []abgaengerKlasse,
 	erzeugePDF func(pdf.KontoauszugEintrag) ([]byte, error),
-	sendeMail func(mailservice.MailRequest) error,
+	sendeMail func(mailservice.Nachricht) error,
 ) versandErgebnis {
 	var erg versandErgebnis
 	for _, kl := range klassen {
@@ -240,12 +240,12 @@ func versendeAbgaengerKontoauszuege(
 func baueKontoauszugAnhaenge(
 	kl abgaengerKlasse,
 	erzeugePDF func(pdf.KontoauszugEintrag) ([]byte, error),
-) []mailservice.MailAttachment {
+) []mailservice.Anhang {
 	// Leerzeichen und Schrägstriche aus dem Namen halten — ein Anhang „Kontoauszug_Max
 	// Mustermann.pdf" ist beim Weiterreichen unhandlich, ein „/" darin sogar kaputt.
 	sauber := strings.NewReplacer(" ", "_", "/", "-", "\\", "-")
 
-	anhaenge := make([]mailservice.MailAttachment, 0, len(kl.Eintraege))
+	anhaenge := make([]mailservice.Anhang, 0, len(kl.Eintraege))
 	for _, e := range kl.Eintraege {
 		pdfDaten, err := erzeugePDF(e)
 		if err != nil {
@@ -253,16 +253,16 @@ func baueKontoauszugAnhaenge(
 				e.Schueler.Vorname, e.Schueler.Nachname, kl.Klasse, err)
 			continue
 		}
-		anhaenge = append(anhaenge, mailservice.MailAttachment{
+		anhaenge = append(anhaenge, mailservice.Anhang{
 			Name:        sauber.Replace(fmt.Sprintf("Kontoauszug_%s_%s.pdf", e.Schueler.Vorname, e.Schueler.Nachname)),
 			ContentType: tuer.ContentTypePDF,
-			Data:        pdfDaten,
+			Inhalt:      pdfDaten,
 		})
 	}
 	return anhaenge
 }
 
-func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.MailAttachment) mailservice.MailRequest {
+func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.Anhang) mailservice.Nachricht {
 	text := fmt.Sprintf(
 		"Sehr geehrte Damen und Herren,\n\n"+
 			"anbei erhalten Sie die Kontoauszüge der Abgänger der Klasse %s (Stand: %s).\n\n"+
@@ -276,11 +276,11 @@ func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.MailAttachment
 		len(anhaenge),
 	)
 
-	return mailservice.MailRequest{
-		To:          kl.Empfaenger,
-		Subject:     fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
-		Body:        text,
-		Attachments: anhaenge,
+	return mailservice.Nachricht{
+		An:       kl.Empfaenger,
+		Betreff:  fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
+		Text:     text,
+		Anhaenge: anhaenge,
 	}
 }
 

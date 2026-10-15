@@ -50,7 +50,7 @@ func anhangNamen(t *testing.T, m bestellMail) []string {
 	}
 	namen := make([]string, 0, len(anhaenge))
 	for _, a := range anhaenge {
-		if len(a.Data) == 0 {
+		if len(a.Inhalt) == 0 {
 			t.Errorf("Anlage %q ist leer — der Händler öffnet eine kaputte Datei", a.Name)
 		}
 		namen = append(namen, a.Name[:strings.LastIndex(a.Name, "_")])
@@ -134,7 +134,7 @@ func TestBestellAnhaenge_DasAnschreibenNenntDenWegSeinerEtiketten(t *testing.T) 
 		for _, a := range anhaenge {
 			if strings.HasPrefix(a.Name, "bestellanschreiben_") {
 				// Der Satz ist länger als die Zeile; verglichen wird ohne die Umbrüche des Blatts.
-				brief = strings.Join(pdftest.TexteInReihenfolge(t, a.Data), " ")
+				brief = strings.Join(pdftest.TexteInReihenfolge(t, a.Inhalt), " ")
 			}
 			if strings.HasPrefix(a.Name, "etiketten_") {
 				liegtBei = true

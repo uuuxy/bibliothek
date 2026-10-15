@@ -28,9 +28,9 @@ import (
 // ersetzeMailversand ersetzt den Versand für einen Test und stellt ihn danach wieder her.
 func ersetzeMailversand(t *testing.T, fehler error) {
 	t.Helper()
-	alt := mailservice.SendEmail
-	mailservice.SendEmail = func(mailservice.MailRequest) error { return fehler }
-	t.Cleanup(func() { mailservice.SendEmail = alt })
+	alt := mailservice.Sende
+	mailservice.Sende = func(mailservice.Nachricht) error { return fehler }
+	t.Cleanup(func() { mailservice.Sende = alt })
 }
 
 // mailStatusAusAntwort erwartet 200 und liest das "mail"-Feld.
@@ -110,10 +110,10 @@ func TestAnliegenErledigen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	})
 
 	t.Run("die Mail nennt Art, Klasse und Notiz, ein zweites Abhaken schickt keine", func(t *testing.T) {
-		var mails []mailservice.MailRequest
-		alt := mailservice.SendEmail
-		mailservice.SendEmail = func(m mailservice.MailRequest) error { mails = append(mails, m); return nil }
-		t.Cleanup(func() { mailservice.SendEmail = alt })
+		var mails []mailservice.Nachricht
+		alt := mailservice.Sende
+		mailservice.Sende = func(m mailservice.Nachricht) error { mails = append(mails, m); return nil }
+		t.Cleanup(func() { mailservice.Sende = alt })
 
 		var meldung string
 		if err := pool.QueryRow(ctx, `
@@ -131,16 +131,16 @@ func TestAnliegenErledigen_MailAusfallStehtInDerAntwort(t *testing.T) {
 			t.Fatalf("%d Mails nach zwei erledigten Anliegen, erwartet 2", len(mails))
 		}
 		m, wunsch := mails[0], mails[1]
-		if m.To != "anliegen-mailstatus@test.invalid" || m.Subject != "Ihre Meldung ist erledigt: Atlas, Seite 12 fehlt" {
-			t.Errorf("Meldung: an %q mit Betreff %q", m.To, m.Subject)
+		if m.An != "anliegen-mailstatus@test.invalid" || m.Betreff != "Ihre Meldung ist erledigt: Atlas, Seite 12 fehlt" {
+			t.Errorf("Meldung: an %q mit Betreff %q", m.An, m.Betreff)
 		}
 		for _, stueck := range []string{"Betreff: Atlas, Seite 12 fehlt", "Klasse:  7b", "Notiz:   besorgt"} {
-			if !strings.Contains(m.Body, stueck) {
-				t.Errorf("Meldung: der Text nennt %q nicht: %s", stueck, m.Body)
+			if !strings.Contains(m.Text, stueck) {
+				t.Errorf("Meldung: der Text nennt %q nicht: %s", stueck, m.Text)
 			}
 		}
-		if wunsch.Subject != "Ihr Wunsch ist erledigt: Faust II" || strings.Contains(wunsch.Body, "Klasse:") {
-			t.Errorf("Wunsch ohne Klasse: Betreff %q, Text %s", wunsch.Subject, wunsch.Body)
+		if wunsch.Betreff != "Ihr Wunsch ist erledigt: Faust II" || strings.Contains(wunsch.Text, "Klasse:") {
+			t.Errorf("Wunsch ohne Klasse: Betreff %q, Text %s", wunsch.Betreff, wunsch.Text)
 		}
 
 		if rec := erledige(t, meldung); rec.Code != http.StatusNotFound {
@@ -214,10 +214,10 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 	// steht in der Mail, damit die Antwort einen Bezug hat. Ohne Rumpf geht die Mail ohne
 	// Notiz der Bibliothek, aber sie geht.
 	t.Run("Notiz der Bibliothek steht in Mail und Zeile", func(t *testing.T) {
-		var gesendet mailservice.MailRequest
-		alt := mailservice.SendEmail
-		mailservice.SendEmail = func(m mailservice.MailRequest) error { gesendet = m; return nil }
-		t.Cleanup(func() { mailservice.SendEmail = alt })
+		var gesendet mailservice.Nachricht
+		alt := mailservice.Sende
+		mailservice.Sende = func(m mailservice.Nachricht) error { gesendet = m; return nil }
+		t.Cleanup(func() { mailservice.Sende = alt })
 
 		body := `{"notiz":"24 von 30, der Rest ist bei der 8a"}`
 		rec, resID := erledigeMit(t, &body)
@@ -225,8 +225,8 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 			t.Fatalf("mail=%q, erwartet versendet", got)
 		}
 		for _, muss := range []string{"24 von 30, der Rest ist bei der 8a", "Ihre Notiz: ab 15. September", "Der Besuch der alten Dame"} {
-			if !strings.Contains(gesendet.Body, muss) {
-				t.Errorf("Mail ohne %q:\n%s", muss, gesendet.Body)
+			if !strings.Contains(gesendet.Text, muss) {
+				t.Errorf("Mail ohne %q:\n%s", muss, gesendet.Text)
 			}
 		}
 		var gespeichert string
@@ -237,13 +237,13 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 			t.Fatalf("erledigt_notiz=%q", gespeichert)
 		}
 
-		gesendet = mailservice.MailRequest{}
+		gesendet = mailservice.Nachricht{}
 		rec, _ = erledigeMit(t, nil)
 		if got := mailStatusAusAntwort(t, rec); got != "versendet" {
 			t.Fatalf("ohne Body: mail=%q, erwartet versendet", got)
 		}
-		if strings.Contains(gesendet.Body, "Notiz der Bibliothek") {
-			t.Errorf("ohne Body darf keine Bibliotheks-Notiz in der Mail stehen:\n%s", gesendet.Body)
+		if strings.Contains(gesendet.Text, "Notiz der Bibliothek") {
+			t.Errorf("ohne Body darf keine Bibliotheks-Notiz in der Mail stehen:\n%s", gesendet.Text)
 		}
 	})
 }

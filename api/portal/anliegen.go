@@ -199,7 +199,7 @@ func sendeAnliegenErledigtMail(erledigt *repository.AnliegenErledigt) string {
 		text += fmt.Sprintf("  Notiz:   %s\n", erledigt.ErledigtNotiz)
 	}
 	text += "\nDiese Mail wurde automatisch beim Abhaken verschickt."
-	if err := mailservice.SendEmail(mailservice.MailRequest{To: *erledigt.AnfragendeMail, Subject: betreff, Body: text}); err != nil {
+	if err := mailservice.Sende(mailservice.Nachricht{An: *erledigt.AnfragendeMail, Betreff: betreff, Text: text}); err != nil {
 		log.Printf("Anliegen-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
 		return mailStatusFehlgeschlagen
 	}

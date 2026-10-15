@@ -80,7 +80,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		}
 
 		// 2. Ohne konfigurierten Mailserver kein Massenversand.
-		if !mailservice.SMTPKonfiguriert() {
+		if !mailservice.IstSMTPKonfiguriert() {
 			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
 			return
 		}
@@ -111,10 +111,10 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 			Unbekannt:   unbekannt,
 		})
 
-		// 6. Je Klasse eine eigene Mahnliste versenden. erzeugeMahnliste und SendEmail kommen
+		// 6. Je Klasse eine eigene Mahnliste versenden. erzeugeMahnliste und Sende kommen
 		//    als Parameter, damit sich das Überspringen und die Adressierung ohne echten
 		//    PDF- und Mailversand prüfen lassen.
-		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, mailservice.SendEmail)
+		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, mailservice.Sende)
 
 		// 7. Ergebnis protokollieren.
 		t.protokolliereKlassenVersand(r, "BULK_OVERDUE_MAIL", klassenVersandProtokoll{
@@ -318,13 +318,13 @@ type versandErgebnis struct {
 // Mailserver-Fehler (ErrSMTPVersand) bricht ab: Das Relay ist weg, jede weitere Klasse
 // hinge nur bis zur Frist; die Restlichen zählen als fehlgeschlagen.
 //
-// erzeugePDF und sendeMail kommen als Parameter (im Betrieb erzeugeMahnliste und SendEmail),
+// erzeugePDF und sendeMail kommen als Parameter (im Betrieb erzeugeMahnliste und Sende),
 // damit sich das Überspringen und die Adressierung ohne echten PDF- und Mailversand prüfen
 // lassen.
 func versendeKlassenMahnungen(
 	klassen []repository.MahnwesenKlasse,
 	erzeugePDF func([]repository.MahnwesenKlasse) ([]byte, error),
-	sendeMail func(mailservice.MailRequest) error,
+	sendeMail func(mailservice.Nachricht) error,
 ) versandErgebnis {
 	var erg versandErgebnis
 	for _, kl := range klassen {

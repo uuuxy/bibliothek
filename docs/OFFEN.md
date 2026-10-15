@@ -181,7 +181,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] `api/tuer`.
 - [x] Die zwölf Themen unter `api/`.
 - [x] `api/`.
-- [ ] `inventur/`, `auth/`, `jobs/`, `mailservice/`, `cmd/` und das Wurzelpaket.
+- [ ] `inventur/`, `auth/`, `jobs/`, `cmd/` und das Wurzelpaket.
 - [ ] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
 - [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, Zustand auf der Ebene eines
   Pakets, der Kopf der Schule an acht Türen.
@@ -448,12 +448,12 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 63 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+**Fertig sind 64 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
 gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
 Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
 `middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), `repository` und
 von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera`, `lusd`,
-`service`, `testdaten`, `tuertest` und `routertest`, dazu `api/tuer` und die zwölf Themen darüber (`api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung`, `api/leser` und `api/katalog`), `api/` selbst, `apierrors`, `sse`, `db` und `pdf`.
+`service`, `testdaten`, `tuertest` und `routertest`, dazu `api/tuer` und die zwölf Themen darüber (`api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung`, `api/leser` und `api/katalog`), `api/` selbst, `apierrors`, `sse`, `db`, `pdf` und `mailservice`.
 
 **Ein Paket ist fertig, wenn:**
 
@@ -523,7 +523,7 @@ Ordner des Pakets und für die Form `paket.Name`.
   `apierrors.AntworteFehlerMitMeldung`; die Meldungen an der Oberfläche bleiben dabei Wort für
   Wort, was ein Test je Stelle belegt.
 - Zustand auf der Ebene eines Pakets hinter drei Nähten für Tests: der Mailversand
-  (`mailservice.SendEmail` als Variable, der Lader der Konfiguration), der Zwischenspeicher
+  (`mailservice.Sende` als Variable, der Lader der Konfiguration), der Zwischenspeicher
   der Rechte (`tuer.MerkeRechtFuerTest`) und das Ersatzbild der Cover
   (`coverquelle.MerkeErsatzbildFuerTest`). Das Regelwerk (Best Practices, „Global state")
   verlangt Werte, die der Rufer anlegt und weiterreicht, wie es `tuer.Basis` für Datenbank,

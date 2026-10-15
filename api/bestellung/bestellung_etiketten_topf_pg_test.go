@@ -61,6 +61,6 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 		t.Fatal("kein Bogen im Anhang")
 	}
 	for _, b := range boegen {
-		pdftest.Aufdruck(t, "Mailanhang "+b.Name, pdftest.Suchtext(t, b.Data), testdaten.VermerkStadt, testdaten.VermerkLand)
+		pdftest.Aufdruck(t, "Mailanhang "+b.Name, pdftest.Suchtext(t, b.Inhalt), testdaten.VermerkStadt, testdaten.VermerkLand)
 	}
 }

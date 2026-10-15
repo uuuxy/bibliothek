@@ -14,43 +14,41 @@ import (
 	"time"
 )
 
-// MailAttachment represents an email attachment.
-type MailAttachment struct {
+// Anhang ist eine Datei, die an der Mail hängt.
+type Anhang struct {
 	Name        string
 	ContentType string
-	Data        []byte
+	Inhalt      []byte
 }
 
-// MailRequest aggregates email recipient, subject, body, and attachments.
-type MailRequest struct {
-	To          string
-	Subject     string
-	Body        string
-	Attachments []MailAttachment
+// Nachricht ist eine Mail, die verschickt werden soll: Empfänger, Betreff, Text und Anhänge.
+type Nachricht struct {
+	An       string
+	Betreff  string
+	Text     string
+	Anhaenge []Anhang
 }
 
-// SendEmail versendet eine Mail. Als überschreibbare Variable (nicht als reine
-// Funktion), damit Tests den Versand simulieren können — u. a. um zu prüfen, dass ein
-// SMTP-Fehler die Bestell-Transaktion zurückrollt (keine Ghost-Orders).
-var SendEmail = sendEmailSMTP
+// Sende verschickt eine Mail. Sie ist eine Variable und keine Funktion, damit Tests den Versand
+// ersetzen können, etwa um zu prüfen, dass ein Fehler beim Versand die Transaktion einer
+// Bestellung zurückrollt und keine Bestellung ohne Mail stehen bleibt.
+var Sende = sendeNachricht
 
 // smtpKonfigLader liefert die Konfiguration für den nächsten Versand.
 //
-// Als Variable, damit NewServer sie an die Datenbank binden kann: Der Versand ist über
-// die injizierbare Funktion SendEmail(MailRequest) erreichbar und hat weder Kontext
-// noch Pool zur Hand. Vorgabe bleibt die Umgebung, damit Tests und Werkzeuge ohne
-// Datenbank weiter versenden können.
+// Eine Variable, damit NewServer sie an die Datenbank binden kann: Sende(Nachricht) hat weder
+// Kontext noch Pool zur Hand. Die Vorgabe ist die Umgebung, damit Tests und Werkzeuge ohne
+// Datenbank versenden können.
 var smtpKonfigLader = func() (SMTPKonfig, error) {
 	return KonfigAusUmgebung(), nil
 }
 
 // BindeSMTPKonfigAnDatenbank lässt jeden Versand die in der Oberfläche gespeicherte
-// Konfiguration benutzen. Wird beim Start einmal aufgerufen (NewServer), bevor der
-// erste Request läuft.
+// Konfiguration benutzen. Der Start ruft sie einmal (NewServer), bevor die erste Anfrage läuft.
 func BindeSMTPKonfigAnDatenbank(pool db.Pool) {
 	smtpKonfigLader = func() (SMTPKonfig, error) {
-		// Eigener Kontext mit kurzer Frist: Der Aufrufer hat keinen, und ein hängender
-		// Konfigurationszugriff darf einen Massenversand nicht blockieren.
+		// Eigener Kontext mit kurzer Frist: Der Aufrufer hat keinen, und ein hängendes Lesen
+		// der Konfiguration darf den Versand vieler Mails nicht aufhalten.
 		ctx, abbruch := context.WithTimeout(context.Background(), 5*time.Second)
 		defer abbruch()
 		return LadeSMTPKonfig(ctx, pool)
@@ -71,20 +69,17 @@ func TauscheKonfigLaderFuerTest(lader func() (SMTPKonfig, error)) (zurueck func(
 	return func() { smtpKonfigLader = alt }
 }
 
-// SMTPKonfiguriert meldet, ob ein Versand versucht werden kann. Die Handler fragen
-// damit die tatsächlich benutzte Konfiguration ab statt os.Getenv("SMTP_HOST") —
-// sonst melden sie "SMTP nicht konfiguriert", während in der Oberfläche ein Server
-// steht (und umgekehrt).
-func SMTPKonfiguriert() bool {
+// IstSMTPKonfiguriert meldet, ob ein Versand versucht werden kann. Die Türen fragen damit die
+// Konfiguration ab, die wirklich benutzt wird, statt os.Getenv("SMTP_HOST"); sonst meldeten sie
+// „SMTP nicht konfiguriert", während in der Oberfläche ein Server steht, und umgekehrt.
+func IstSMTPKonfiguriert() bool {
 	konfig, err := smtpKonfigLader()
 	if err != nil {
-		// Den Fehler NICHT verschlucken (31.08.2026): LadeSMTPKonfig erzeugt ihn
-		// ausdrücklich, damit er auffällt („Ein unlesbares Passwort heißt, dass der
-		// APP_ENCRYPTION_KEY nicht mehr derselbe ist"). Ohne diese Zeile meldete der
-		// Mahnlauf nach einer Schlüsselrotation „SMTP nicht konfiguriert", während in
-		// der Oberfläche Host, Port und Benutzer korrekt standen — der Admin suchte an
-		// der falschen Stelle, und der Bestellversand übersprang die Händlermail
-		// kommentarlos mit status "success".
+		// Der Fehler steht im Log: LadeSMTPKonfig erzeugt ihn, damit er auffällt („Ein
+		// unlesbares Passwort heißt, dass der APP_ENCRYPTION_KEY nicht mehr derselbe ist").
+		// Ohne die Zeile meldete der Mahnlauf nach einem Wechsel des Schlüssels nur „SMTP nicht
+		// konfiguriert", während Host, Port und Benutzer stimmen, und der Admin suchte an der
+		// falschen Stelle.
 		slog.Error("SMTP-Konfiguration nicht lesbar — Versand wird als „nicht konfiguriert\" behandelt",
 			"fehler", err)
 		return false
@@ -92,9 +87,9 @@ func SMTPKonfiguriert() bool {
 	return konfig.IstKonfiguriert()
 }
 
-// sendEmailSMTP sends a multipart email (HTML/Text) with attachments using net/smtp.
-// Die Zugangsdaten kommen aus der gespeicherten Konfiguration (siehe smtpKonfigLader).
-func sendEmailSMTP(req MailRequest) error {
+// sendeNachricht verschickt eine Mail mit Text und Anhängen über SMTP. Die Zugangsdaten kommen
+// aus der gespeicherten Konfiguration (smtpKonfigLader).
+func sendeNachricht(nachricht Nachricht) error {
 	konfig, err := smtpKonfigLader()
 	if err != nil {
 		return err
@@ -103,108 +98,96 @@ func sendEmailSMTP(req MailRequest) error {
 		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", ErrMailNichtKonfiguriert)
 	}
 
-	from := konfig.Absender
+	absender := konfig.Absender
 
-	parsedFrom, err := mail.ParseAddress(from)
+	gelesenerAbsender, err := mail.ParseAddress(absender)
 	if err != nil {
 		return fmt.Errorf("invalid sender email address: %w", err)
 	}
-	from = parsedFrom.Address
+	absender = gelesenerAbsender.Address
 
-	parsedTo, err := mail.ParseAddress(req.To)
+	gelesenerEmpfaenger, err := mail.ParseAddress(nachricht.An)
 	if err != nil {
 		return fmt.Errorf("invalid recipient email address: %w", err)
 	}
-	req.To = parsedTo.Address
+	nachricht.An = gelesenerEmpfaenger.Address
 
-	// Sanitize subject to prevent CRLF injection
-	req.Subject = strings.ReplaceAll(req.Subject, "\r", "")
-	req.Subject = strings.ReplaceAll(req.Subject, "\n", "")
+	// Ein Zeilenumbruch im Betreff könnte weitere Kopfzeilen anhängen.
+	nachricht.Betreff = strings.ReplaceAll(nachricht.Betreff, "\r", "")
+	nachricht.Betreff = strings.ReplaceAll(nachricht.Betreff, "\n", "")
 
-	msg, err := baueMailNachricht(req, from)
+	rohtext, err := baueMailNachricht(nachricht, absender)
 	if err != nil {
 		return err
 	}
 
-	return VersendeUeberSMTP(konfig, from, []string{req.To}, msg)
+	return VersendeUeberSMTP(konfig, absender, []string{nachricht.An}, rohtext)
 }
 
-// baueMailNachricht erstellt die vollständige MIME-Multipart-Nachricht (Header, Textteil,
-// Anhänge).
-//
-// Hier stand bis zum 23.08.2026 "req.To und req.Subject müssen bereits sanitiert sein" —
-// ein Kommentar, der eine Absicherung behauptete, die es nicht gab. Neun Stellen bauen
-// eine MailRequest (Mahnungen, Bestellungen, Abgänger, Anliegen, Alarme, Testmail),
-// keine davon prüfte. Geprüft war nur der SMTP-Umschlag (MAIL FROM / RCPT TO in
-// mailservice/versand.go); ein Zeilenumbruch im Betreff einer Vorlage konnte damit
-// beliebige weitere Kopfzeilen anhängen. Jetzt entscheidet dieselbe Funktion wie für die
-// Testmail — an EINER Stelle, hier, wo die Zeilen tatsächlich entstehen.
-func baueMailNachricht(req MailRequest, from string) ([]byte, error) {
-	from, an, betreff, err := PruefeKopfzeilen(from, req.To, req.Subject)
+// baueMailNachricht setzt die ganze Nachricht im Format MIME zusammen: Kopfzeilen, Text und
+// Anhänge. Die Kopfzeilen prüft PruefeKopfzeilen hier, wo sie entstehen, für jeden Aufrufer.
+func baueMailNachricht(nachricht Nachricht, absender string) ([]byte, error) {
+	absender, an, betreff, err := PruefeKopfzeilen(absender, nachricht.An, nachricht.Betreff)
 	if err != nil {
 		return nil, err
 	}
 
 	var buf bytes.Buffer
-	writer := multipart.NewWriter(&buf)
-	boundary := writer.Boundary()
+	teile := multipart.NewWriter(&buf)
+	grenze := teile.Boundary()
 
-	// Write SMTP Headers
-	fmt.Fprintf(&buf, "From: %s\r\n", from)
+	fmt.Fprintf(&buf, "From: %s\r\n", absender)
 	fmt.Fprintf(&buf, "To: %s\r\n", an)
 	fmt.Fprintf(&buf, "Subject: %s\r\n", betreff)
 	fmt.Fprintf(&buf, "MIME-Version: 1.0\r\n")
-	fmt.Fprintf(&buf, "Content-Type: multipart/mixed; boundary=%s\r\n\r\n", boundary)
+	fmt.Fprintf(&buf, "Content-Type: multipart/mixed; boundary=%s\r\n\r\n", grenze)
 
-	// Body Part
-	bodyHeader := make(textproto.MIMEHeader)
-	bodyHeader.Set("Content-Type", "text/plain; charset=utf-8")
-	part, err := writer.CreatePart(bodyHeader)
+	kopfDesTexts := make(textproto.MIMEHeader)
+	kopfDesTexts.Set("Content-Type", "text/plain; charset=utf-8")
+	teil, err := teile.CreatePart(kopfDesTexts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create email body part: %w", err)
 	}
-	if _, err := part.Write([]byte(req.Body)); err != nil {
+	if _, err := teil.Write([]byte(nachricht.Text)); err != nil {
 		return nil, fmt.Errorf("failed to write email body: %w", err)
 	}
 
-	// Attachments
-	for _, att := range req.Attachments {
-		if err := schreibeAnhang(writer, att); err != nil {
+	for _, anhang := range nachricht.Anhaenge {
+		if err := schreibeAnhang(teile, anhang); err != nil {
 			return nil, err
 		}
 	}
 
-	// Close writes the closing MIME boundary; a failure leaves the message malformed.
-	if err := writer.Close(); err != nil {
+	// Close schreibt die schließende Grenze; scheitert es, ist die Nachricht unvollständig.
+	if err := teile.Close(); err != nil {
 		return nil, fmt.Errorf("failed to finalize multipart message: %w", err)
 	}
 
 	return buf.Bytes(), nil
 }
 
-// schreibeAnhang hängt eine Datei base64-kodiert als MIME-Part an. Dateiname und
-// Content-Type werden gegen Header-Injection abgesichert (CRLF bzw. Anführungszeichen
-// entfernt): CreatePart schreibt Header-Werte unvalidiert, ein eingeschleustes CRLF
-// würde also zusätzliche MIME-Header erzeugen.
-func schreibeAnhang(writer *multipart.Writer, att MailAttachment) error {
-	safeName := strings.NewReplacer("\r", "", "\n", "", `"`, "").Replace(att.Name)
-	safeContentType := strings.NewReplacer("\r", "", "\n", "").Replace(att.ContentType)
-	attHeader := make(textproto.MIMEHeader)
-	attHeader.Set("Content-Type", safeContentType)
-	attHeader.Set("Content-Transfer-Encoding", "base64")
-	attHeader.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeName))
-	part, err := writer.CreatePart(attHeader)
+// schreibeAnhang hängt eine Datei in Base64 als Teil der Nachricht an. Aus Dateiname und
+// Content-Type entfernt sie Zeilenumbrüche und Anführungszeichen: CreatePart schreibt die Werte
+// ungeprüft, ein eingeschleuster Umbruch erzeugte weitere Kopfzeilen.
+func schreibeAnhang(teile *multipart.Writer, anhang Anhang) error {
+	name := strings.NewReplacer("\r", "", "\n", "", `"`, "").Replace(anhang.Name)
+	contentType := strings.NewReplacer("\r", "", "\n", "").Replace(anhang.ContentType)
+	kopf := make(textproto.MIMEHeader)
+	kopf.Set("Content-Type", contentType)
+	kopf.Set("Content-Transfer-Encoding", "base64")
+	kopf.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, name))
+	teil, err := teile.CreatePart(kopf)
 	if err != nil {
-		return fmt.Errorf("failed to create attachment part for %s: %w", att.Name, err)
+		return fmt.Errorf("failed to create attachment part for %s: %w", anhang.Name, err)
 	}
 
-	encoder := base64.NewEncoder(base64.StdEncoding, part)
-	if _, err := encoder.Write(att.Data); err != nil {
-		return fmt.Errorf("failed to write attachment data for %s: %w", att.Name, err)
+	kodierer := base64.NewEncoder(base64.StdEncoding, teil)
+	if _, err := kodierer.Write(anhang.Inhalt); err != nil {
+		return fmt.Errorf("failed to write attachment data for %s: %w", anhang.Name, err)
 	}
-	// Close flushes the final base64 bytes; a failure here corrupts the attachment.
-	if err := encoder.Close(); err != nil {
-		return fmt.Errorf("failed to finalize attachment encoding for %s: %w", att.Name, err)
+	// Close schreibt die letzten Bytes in Base64; scheitert es, ist der Anhang verdorben.
+	if err := kodierer.Close(); err != nil {
+		return fmt.Errorf("failed to finalize attachment encoding for %s: %w", anhang.Name, err)
 	}
 	return nil
 }

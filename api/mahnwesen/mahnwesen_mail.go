@@ -59,7 +59,7 @@ func mahnStatistik(klassen []repository.MahnwesenKlasse) (schuelerGesamt, medien
 }
 
 // baueMahnMail baut die E-Mail (Text + PDF-Anhang) für eine Klassen-Mahnliste.
-func baueMahnMail(empfaenger mahnlisteEmpfaenger, pdfDaten []byte, schuelerGesamt, medienGesamt int) mailservice.MailRequest {
+func baueMahnMail(empfaenger mahnlisteEmpfaenger, pdfDaten []byte, schuelerGesamt, medienGesamt int) mailservice.Nachricht {
 	text := fmt.Sprintf(
 		"Sehr geehrte Damen und Herren,\n\n"+
 			"anbei erhalten Sie die aktuelle Mahnliste der Schulbibliothek für die Klasse %s (Stand: %s).\n\n"+
@@ -73,15 +73,15 @@ func baueMahnMail(empfaenger mahnlisteEmpfaenger, pdfDaten []byte, schuelerGesam
 		medienGesamt,
 	)
 
-	return mailservice.MailRequest{
-		To:      empfaenger.Email,
-		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", empfaenger.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
-		Body:    text,
-		Attachments: []mailservice.MailAttachment{
+	return mailservice.Nachricht{
+		An:      empfaenger.Email,
+		Betreff: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", empfaenger.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
+		Text:    text,
+		Anhaenge: []mailservice.Anhang{
 			{
 				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", empfaenger.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatISO)),
 				ContentType: tuer.ContentTypePDF,
-				Data:        pdfDaten,
+				Inhalt:      pdfDaten,
 			},
 		},
 	}

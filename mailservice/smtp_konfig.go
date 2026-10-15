@@ -1,18 +1,12 @@
 package mailservice
 
-// smtp_konfig.go — Eine Quelle für die Frage "womit wird verschickt?".
+// Eine Quelle für die Frage „womit wird verschickt?". Gäbe es zwei, bestätigte der Knopf für den
+// Testversand eine Konfiguration, die kein Mahnlauf benutzt, und wer den SMTP-Server umstellte,
+// änderte am Versand nichts; das fiele erst auf, wenn eine Mahnung nicht ankommt.
 //
-// Vorher gab es zwei Antworten: Der Testversand las die in der Oberfläche
-// gespeicherte Konfiguration aus der Datenbank, jeder echte Versand (Mahnungen
-// einzeln und im Massenlauf, Abgänger-Kontoauszüge, Bestellungen) las die
-// Umgebungsvariablen des Containers. Damit bestätigte der Test-Knopf eine
-// Konfiguration, die kein Mahnlauf jemals benutzt hat — und wer im Admin-Bereich den
-// SMTP-Server umstellte, änderte am Versand nichts. Beides fiel erst auf, wenn eine
-// Mahnung nicht ankam.
-//
-// Ab hier gilt: Die gespeicherte Konfiguration ist die Wahrheit. Die Umgebung ist nur
-// noch Rückfall, solange dort nichts steht — beim ersten Start übernimmt
-// db.UebernimmMailKonfig sie in die Datenbank, damit im Formular steht, was gilt.
+// Die gespeicherte Konfiguration gilt. Die Umgebung ist nur Rückfall, solange dort nichts steht;
+// beim ersten Start übernimmt db.UebernimmMailKonfig sie in die Datenbank, damit im Formular
+// steht, was gilt.
 
 import (
 	"context"
@@ -29,11 +23,11 @@ import (
 )
 
 // ErrMailNichtKonfiguriert meldet, dass kein Mailserver hinterlegt ist. Das ist kein
-// Fehler des Systems, sondern eine offene Einstellung — der Aufrufer antwortet damit
-// 503 statt 500 und die Meldung erreicht den Admin (apierrors neutralisiert nur 500).
+// Fehler des Systems, sondern eine offene Einstellung: Der Aufrufer antwortet damit 503 statt
+// 500, und die Meldung erreicht den Admin (apierrors.AntworteFehler neutralisiert nur 500).
 var ErrMailNichtKonfiguriert = errors.New("SMTP nicht konfiguriert")
 
-// SMTPKonfig ist die effektive Versandkonfiguration.
+// SMTPKonfig ist die Konfiguration, mit der verschickt wird.
 type SMTPKonfig struct {
 	Host     string
 	Port     string
@@ -47,7 +41,7 @@ func (k SMTPKonfig) Adresse() string {
 	return k.Host + ":" + k.Port
 }
 
-// Auth liefert die SMTP-Authentifizierung — oder nil, wenn keine Zugangsdaten
+// Auth liefert die Anmeldung am SMTP-Server oder nil, wenn keine Zugangsdaten
 // hinterlegt sind (Relay im Schulnetz, das nach IP zulässt).
 func (k SMTPKonfig) Auth() smtp.Auth {
 	if k.Benutzer == "" || k.Passwort == "" {
@@ -57,9 +51,8 @@ func (k SMTPKonfig) Auth() smtp.Auth {
 }
 
 // IstKonfiguriert meldet, ob mit dieser Konfiguration ein Versand überhaupt versucht
-// werden kann. Die Platzhalter-Erkennung stammt aus der Bestell-Abwicklung: Eine
-// unausgefüllte Beispielkonfiguration soll zu "übersprungen" führen und nicht zu
-// einem Verbindungsversuch gegen einen Host namens "Ihr SMTP-Host".
+// werden kann. Eine nicht ausgefüllte Beispielkonfiguration führt zu „übersprungen" und nicht
+// zu einem Versuch, einen Host namens "Ihr SMTP-Host" zu erreichen.
 func (k SMTPKonfig) IstKonfiguriert() bool {
 	if strings.TrimSpace(k.Host) == "" || strings.TrimSpace(k.Port) == "" {
 		return false
@@ -71,7 +64,7 @@ func (k SMTPKonfig) IstKonfiguriert() bool {
 }
 
 // KonfigAusUmgebung liest die Konfiguration aus den Umgebungsvariablen. Sie ist der
-// Rückfall für eine Datenbank ohne gespeicherte Konfiguration — und die Quelle, aus
+// Rückfall für eine Datenbank ohne gespeicherte Konfiguration und die Quelle, aus
 // der db.UebernimmMailKonfig beim ersten Start übernimmt.
 func KonfigAusUmgebung() SMTPKonfig {
 	k := SMTPKonfig{
@@ -82,7 +75,7 @@ func KonfigAusUmgebung() SMTPKonfig {
 		Absender: strings.TrimSpace(os.Getenv("SMTP_FROM")),
 	}
 	if k.Passwort == "" {
-		// docker-compose setzt beide Namen; historisch gewachsen.
+		// docker-compose setzt beide Namen.
 		k.Passwort = os.Getenv("SMTP_PASS")
 	}
 	if k.Host != "" && k.Port == "" {
@@ -95,11 +88,11 @@ func KonfigAusUmgebung() SMTPKonfig {
 }
 
 // LadeSMTPKonfig liefert die Konfiguration, mit der tatsächlich versendet wird.
-// Jeder Versender im System benutzt diese Funktion — nur so kann der Test-Knopf
-// etwas über den Mahnlauf aussagen. Die gespeicherte Zeile liest sie über dieselbe Funktion
+// Jeder Versand benutzt diese Funktion; nur so sagt der Knopf für den Testversand etwas über den
+// Mahnlauf. Die gespeicherte Zeile liest sie über dieselbe Funktion
 // wie die Maske der Mail-Einstellungen (repository.MailEinstellungsAbfragen.Lade).
-func LadeSMTPKonfig(ctx context.Context, dbPool db.Pool) (SMTPKonfig, error) {
-	gespeichert, err := repository.NewMailEinstellungsAbfragen(dbPool).Lade(ctx)
+func LadeSMTPKonfig(ctx context.Context, pool db.Pool) (SMTPKonfig, error) {
+	gespeichert, err := repository.NewMailEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
 		// Keine Zeile (frische Datenbank, noch nicht gelaufene Migration): Die Umgebung
 		// trägt weiter, damit ein Mahnlauf nicht an einer Konfigurationslücke scheitert.
@@ -133,7 +126,7 @@ func LadeSMTPKonfig(ctx context.Context, dbPool db.Pool) (SMTPKonfig, error) {
 		k.Port = "587"
 	}
 	if strings.TrimSpace(k.Absender) == "" {
-		k.Absender = defaultFromAddress
+		k.Absender = absenderVorgabe
 	}
 	return k, nil
 }

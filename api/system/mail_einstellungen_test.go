@@ -110,7 +110,7 @@ func TestTestmailSenden_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 // eine Konfiguration, die kein Mahnlauf benutzt. Deshalb steht hier die Umgebung absichtlich
 // auf einem falschen Server: Landet die Mail trotzdem beim Test-SMTP aus der Datenbank, ist die
 // Frage beantwortet.
-func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
+func TestSende_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 	// Testserver ohne STARTTLS — siehe mailservice.sichereVerbindung.
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
@@ -126,7 +126,7 @@ func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 		mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil })
 	})
 
-	err := mailservice.SendEmail(mailservice.MailRequest{To: "lehrerin@schule.de", Subject: "Mahnliste 5b", Body: "Anbei die Liste."})
+	err := mailservice.Sende(mailservice.Nachricht{An: "lehrerin@schule.de", Betreff: "Mahnliste 5b", Text: "Anbei die Liste."})
 	if err != nil {
 		t.Fatalf("Versand fehlgeschlagen: %v", err)
 	}
@@ -145,13 +145,13 @@ func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 
 // Ohne hinterlegten Server ist der Versand keine Störung, sondern eine offene
 // Einstellung: 503 mit Klartext, nicht 500 mit "Datenbankfehler".
-func TestSendEmail_OhneKonfigurationMeldetOffeneEinstellung(t *testing.T) {
+func TestSende_OhneKonfigurationMeldetOffeneEinstellung(t *testing.T) {
 	t.Setenv("SMTP_HOST", "")
 	t.Setenv("SMTP_PORT", "")
 	t.Setenv("SMTP_FROM", "")
 	t.Setenv("SMTP_USER", "")
 
-	err := mailservice.SendEmail(mailservice.MailRequest{To: "lehrerin@schule.de", Subject: "x", Body: "y"})
+	err := mailservice.Sende(mailservice.Nachricht{An: "lehrerin@schule.de", Betreff: "x", Text: "y"})
 	if !errors.Is(err, mailservice.ErrMailNichtKonfiguriert) {
 		t.Fatalf("Fehler = %v, want ErrMailNichtKonfiguriert", err)
 	}

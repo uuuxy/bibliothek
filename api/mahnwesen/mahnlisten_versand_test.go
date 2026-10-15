@@ -65,8 +65,8 @@ func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
 // Mail an genau die hinterlegte Lehrer-Adresse (keine klassenübergreifenden Empfänger).
 func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 	var empfaenger []string
-	fakeSend := func(m mailservice.MailRequest) error {
-		empfaenger = append(empfaenger, m.To)
+	fakeSend := func(m mailservice.Nachricht) error {
+		empfaenger = append(empfaenger, m.An)
 		return nil
 	}
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) {
@@ -112,8 +112,8 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) {
 		return []byte("%PDF-fake"), nil
 	}
-	fakeSend := func(m mailservice.MailRequest) error {
-		if m.To == "kaputt@schule.de" {
+	fakeSend := func(m mailservice.Nachricht) error {
+		if m.An == "kaputt@schule.de" {
 			return http.ErrHandlerTimeout // beliebiger Versandfehler
 		}
 		return nil
@@ -140,9 +140,9 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T) {
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil }
 	var versuche []string
-	fakeSend := func(m mailservice.MailRequest) error {
-		versuche = append(versuche, m.To)
-		if m.To == "zweite@schule.de" {
+	fakeSend := func(m mailservice.Nachricht) error {
+		versuche = append(versuche, m.An)
+		if m.An == "zweite@schule.de" {
 			return fmt.Errorf("%w (Server relay:587): connection refused", mailservice.ErrSMTPVersand)
 		}
 		return nil
@@ -313,7 +313,7 @@ func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 	erg := versendeKlassenMahnungen(
 		umgelenkt,
 		func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil },
-		func(m mailservice.MailRequest) error { empfaenger = append(empfaenger, m.To); return nil },
+		func(m mailservice.Nachricht) error { empfaenger = append(empfaenger, m.An); return nil },
 	)
 
 	if erg.Versendet != 2 || erg.Uebersprungen != 1 {

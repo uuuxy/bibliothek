@@ -132,7 +132,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 		// Die Adresse hier prüfen, nicht erst im Versand: Eine unbrauchbare Eingabe
 		// ist ein Eingabefehler (400) und keine Störung des Servers (500) — nur so kann das
 		// Formular sie von einem echten SMTP-Ausfall unterscheiden. Die Hürde in
-		// SendTestMail bleibt trotzdem stehen, sie schützt die anderen Aufrufer.
+		// SendeTestmail bleibt trotzdem stehen, sie schützt die anderen Aufrufer.
 		adresse, err := mail.ParseAddress(an)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err))
@@ -140,7 +140,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		err = mailservice.SendTestMail(ctx, t.DB.Pool, adresse.Address)
+		err = mailservice.SendeTestmail(ctx, t.DB.Pool, adresse.Address)
 		if err != nil {
 			// mailFehlerStatus: 502, wenn der Zielserver versagt hat — nur so erreicht
 			// die Diagnose (falscher Port, abgelehnte Zugangsdaten, Zertifikatsname)

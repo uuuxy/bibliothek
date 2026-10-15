@@ -33,7 +33,7 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 		t.Fatal("kein Bogen erzeugt")
 	}
 	for _, b := range boegen {
-		text := pdftest.Suchtext(t, b.Data)
+		text := pdftest.Suchtext(t, b.Inhalt)
 		if !strings.Contains(text, "Eigentum des Kreises Wetterau") {
 			t.Errorf("%s: konfigurierter Eigentumsvermerk fehlt auf dem Bogen", b.Name)
 		}
@@ -53,7 +53,7 @@ func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T
 		t.Fatalf("etikettenboegen: %v", err)
 	}
 	for _, b := range boegen {
-		if !strings.Contains(pdftest.Suchtext(t, b.Data), repository.EigentumsvermerkVorgabe) {
+		if !strings.Contains(pdftest.Suchtext(t, b.Inhalt), repository.EigentumsvermerkVorgabe) {
 			t.Errorf("%s: ohne Konfiguration muss die Werksvorgabe drucken", b.Name)
 		}
 	}
@@ -129,7 +129,7 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 				t.Fatalf("erwartet kleinen und großen Bogen, bekam %d", len(boegen))
 			}
 			for _, b := range boegen {
-				text := pdftest.Suchtext(t, b.Data)
+				text := pdftest.Suchtext(t, b.Inhalt)
 				if f.want != "" && !strings.Contains(text, f.want) {
 					t.Errorf("%s: Vermerk %q fehlt", b.Name, f.want)
 				}

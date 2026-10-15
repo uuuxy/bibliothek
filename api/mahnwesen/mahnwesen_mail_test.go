@@ -82,13 +82,13 @@ func TestBaueMahnMail_NenntKlasseTagUndZahlenUndTraegtDieListe(t *testing.T) {
 		return text == fmt.Sprintf(muster, vorher.Format(form)) || text == fmt.Sprintf(muster, nachher.Format(form))
 	}
 
-	if mail.To != "leitung7b@schule.invalid" {
-		t.Errorf("Empfänger = %q, erwartet die Adresse der Klassenleitung", mail.To)
+	if mail.An != "leitung7b@schule.invalid" {
+		t.Errorf("Empfänger = %q, erwartet die Adresse der Klassenleitung", mail.An)
 	}
-	if !einerDerTage(mail.Subject, "Mahnliste Schulbibliothek – Klasse 07B – %s", "02.01.2006") {
-		t.Errorf("Betreff = %q, erwartet Klasse und heutigen Tag in der Form TT.MM.JJJJ", mail.Subject)
+	if !einerDerTage(mail.Betreff, "Mahnliste Schulbibliothek – Klasse 07B – %s", "02.01.2006") {
+		t.Errorf("Betreff = %q, erwartet Klasse und heutigen Tag in der Form TT.MM.JJJJ", mail.Betreff)
 	}
-	kopf, rest, _ := strings.Cut(mail.Body, "\n\nBetroffene")
+	kopf, rest, _ := strings.Cut(mail.Text, "\n\nBetroffene")
 	if !einerDerTage(kopf, "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die aktuelle Mahnliste der "+
 		"Schulbibliothek für die Klasse 07B (Stand: %s).", "02.01.2006") {
 		t.Errorf("Anfang des Texts = %q, erwartet Klasse und heutigen Tag", kopf)
@@ -97,14 +97,14 @@ func TestBaueMahnMail_NenntKlasseTagUndZahlenUndTraegtDieListe(t *testing.T) {
 		t.Errorf("Zahlen im Text = %q, erwartet 3 Schüler/innen und 5 Medien", rest)
 	}
 
-	if len(mail.Attachments) != 1 {
-		t.Fatalf("%d Anhänge, erwartet einen", len(mail.Attachments))
+	if len(mail.Anhaenge) != 1 {
+		t.Fatalf("%d Anhänge, erwartet einen", len(mail.Anhaenge))
 	}
-	anhang := mail.Attachments[0]
+	anhang := mail.Anhaenge[0]
 	if !einerDerTage(anhang.Name, "mahnliste_07B_%s.pdf", "2006-01-02") {
 		t.Errorf("Name des Anhangs = %q, erwartet Klasse und heutigen Tag in der Form JJJJ-MM-TT", anhang.Name)
 	}
-	if anhang.ContentType != tuer.ContentTypePDF || !bytes.Equal(anhang.Data, liste) {
-		t.Errorf("Anhang: Typ %q mit %d Bytes, erwartet die übergebene Liste als PDF", anhang.ContentType, len(anhang.Data))
+	if anhang.ContentType != tuer.ContentTypePDF || !bytes.Equal(anhang.Inhalt, liste) {
+		t.Errorf("Anhang: Typ %q mit %d Bytes, erwartet die übergebene Liste als PDF", anhang.ContentType, len(anhang.Inhalt))
 	}
 }
