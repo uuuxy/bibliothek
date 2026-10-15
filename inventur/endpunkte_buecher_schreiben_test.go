@@ -10,14 +10,12 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// ensure mockTransport is either used or we redefine it if it's not exported.
-// Since mockTransport is defined in metadaten_client_test.go without export,
-// we can use it here if they are in the same package (inventur).
+// mockTransport steht in metadaten_client_test.go im selben Paket und ist hier nutzbar.
 
 // Pflicht ist beim Anlegen der Titel. Die ISBN darf fehlen und wird nur geprüft, wenn sie
 // dasteht.
-func TestValidiereBuchErstellenEingabe(t *testing.T) {
-	tests := []struct {
+func TestPruefeTitelEingabe(t *testing.T) {
+	faelle := []struct {
 		name       string
 		eingabe    TitelEingabe
 		wantResult bool
@@ -30,37 +28,37 @@ func TestValidiereBuchErstellenEingabe(t *testing.T) {
 		{name: "Nummer ohne ISBN-Form", eingabe: TitelEingabe{Titel: "T", ISBN: "123"}, wantError: "ungültiges ISBN-Format"},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			result := pruefeTitelEingabe(recorder, tt.eingabe)
-			if result != tt.wantResult {
-				t.Errorf("got result %v, want %v", result, tt.wantResult)
+			ergebnis := pruefeTitelEingabe(recorder, f.eingabe)
+			if ergebnis != f.wantResult {
+				t.Errorf("got result %v, want %v", ergebnis, f.wantResult)
 			}
-			if tt.wantResult {
+			if f.wantResult {
 				return
 			}
-			if recorder.Code != http.StatusBadRequest || !strings.Contains(recorder.Body.String(), tt.wantError) {
-				t.Errorf("got %d %s, want 400 mit %q", recorder.Code, recorder.Body.String(), tt.wantError)
+			if recorder.Code != http.StatusBadRequest || !strings.Contains(recorder.Body.String(), f.wantError) {
+				t.Errorf("got %d %s, want 400 mit %q", recorder.Code, recorder.Body.String(), f.wantError)
 			}
 		})
 	}
 }
 
-func TestBearbeiteBuecherLoeschen(t *testing.T) {
+func TestTitelLoeschen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewTitelAbfragen(mock)
-	handler := &Tueren{abfragen: repo}
+	abfragen := NewTitelAbfragen(mock)
+	tueren := &Tueren{abfragen: abfragen}
 
 	t.Run("Invalid JSON", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader("invalid json"))
+		anfrage := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader("invalid json"))
 		rec := httptest.NewRecorder()
-		handler.TitelLoeschen(rec, req)
+		tueren.TitelLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -68,9 +66,9 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 	})
 
 	t.Run("Empty IDs", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(`{"ids": []}`))
+		anfrage := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(`{"ids": []}`))
 		rec := httptest.NewRecorder()
-		handler.TitelLoeschen(rec, req)
+		tueren.TitelLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -80,10 +78,9 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		imTestVerzeichnis(t) // das Aufräumen der Cover-Dateien legt sonst inventur/uploads im Repo an
 
-		// Die Erwartungen in der Reihenfolge von DeleteBooks (seit 21.09.2026: Begin
-		// ZUERST, jeder Leser in der Transaktion, die Löschbefehle liefern ihre Spur
-		// per RETURNING). Die Reihenfolge selbst prüft titel_loeschen_test.go; hier
-		// zählt, dass der Endpunkt mit 200 antwortet.
+		// Die Erwartungen in der Reihenfolge von LoescheTitel (Begin zuerst, jedes Lesen in der
+		// Transaktion, die Befehle des Löschens liefern ihre Spur über RETURNING). Die Reihenfolge selbst
+		// prüft titel_loeschen_test.go; hier zählt, dass die Tür mit 200 antwortet.
 		mock.ExpectBegin()
 		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
 
@@ -92,9 +89,8 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel", "war_im_bestand"}))
 
-		// Die drei CASCADE-Kinder des Titels, seit Frage 12 („Gegenrichtung Schema",
-		// 06.09.2026) im Protokoll: Vormerkungen, Klassensatz-Reservierungen,
-		// Klassensatz-Zuordnungen.
+		// Die drei Kinder des Titels über CASCADE im Protokoll: Vormerkungen, Reservierungen und
+		// Zuordnungen von Klassensätzen.
 		mock.ExpectQuery(`FROM vormerkungen v`).
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}))
@@ -125,10 +121,10 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 
 		mock.ExpectCommit()
 
-		body := `{"ids": ["11111111-1111-1111-1111-111111111111"]}`
-		req := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(body))
+		rumpf := `{"ids": ["11111111-1111-1111-1111-111111111111"]}`
+		anfrage := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(rumpf))
 		rec := httptest.NewRecorder()
-		handler.TitelLoeschen(rec, req)
+		tueren.TitelLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusOK)
@@ -136,19 +132,19 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 	})
 }
 
-func TestBearbeiteBuchErstellen(t *testing.T) {
+func TestTitelAnlegen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewTitelAbfragen(mock)
+	abfragen := NewTitelAbfragen(mock)
 
-	// Mock HTTP Client for MetadatenClient
+	// Attrappe des HTTP-Clients für den MetadatenClient.
 	mockHTTP := &http.Client{
 		Transport: &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       http.NoBody,
@@ -156,17 +152,17 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 			},
 		},
 	}
-	metaClient := &MetadatenClient{httpClient: mockHTTP}
+	metadatenClient := &MetadatenClient{httpClient: mockHTTP}
 
-	handler := &Tueren{
-		abfragen:  repo,
-		metadaten: metaClient,
+	tueren := &Tueren{
+		abfragen:  abfragen,
+		metadaten: metadatenClient,
 	}
 
 	t.Run("Invalid JSON", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader("invalid json"))
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader("invalid json"))
 		rec := httptest.NewRecorder()
-		handler.TitelAnlegen(rec, req)
+		tueren.TitelAnlegen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -174,23 +170,23 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 	})
 
 	t.Run("ohne Titel wird nichts angelegt", func(t *testing.T) {
-		body := `{"isbn": "978-3-16-148410-0", "subject": "Math"}`
-		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
+		rumpf := `{"isbn": "978-3-16-148410-0", "subject": "Math"}`
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(rumpf))
 		rec := httptest.NewRecorder()
-		handler.TitelAnlegen(rec, req)
+		tueren.TitelAnlegen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "titel darf nicht leer sein") {
 			t.Errorf("got %d %s, want 400 mit „titel darf nicht leer sein“", rec.Code, rec.Body.String())
 		}
 	})
 
-	// chk_listenpreis_nonneg (Migration 127): Vorher lief der Wert bis in die Datenbank, und
-	// die Antwort hieß nur „buch konnte nicht erstellt werden".
+	// chk_listenpreis_nonneg: Liefe der Wert bis in die Datenbank, hieße die Antwort nur „buch
+	// konnte nicht erstellt werden".
 	t.Run("Negativer Listenpreis nennt den erlaubten Bereich", func(t *testing.T) {
-		body := `{"isbn": "978-3-16-148410-0", "title": "T", "author": "A", "listenpreis": -5}`
-		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
+		rumpf := `{"isbn": "978-3-16-148410-0", "title": "T", "author": "A", "listenpreis": -5}`
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(rumpf))
 		rec := httptest.NewRecorder()
-		handler.TitelAnlegen(rec, req)
+		tueren.TitelAnlegen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -209,7 +205,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// „gradeLevel" nennt ein Browser-Fenster von vor dem Umbau noch: Die Tür liest das Feld
 		// nicht mehr und legt den Titel ohne es an.
-		body := `{
+		rumpf := `{
 			"isbn": "978-3-16-148410-0",
 			"subject": "Math",
 			"gradeLevel": 5,
@@ -219,7 +215,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 		}`
 
 		erwarteFachBekannt(mock, "Math") // auf dem Pool, vor der Tx
-		// CreateBook ist atomar (Tx): Begin, INSERT, Commit — kein Stock im Body, also
+		// LegeTitelAn ist atomar (Tx): Begin, INSERT, Commit — kein Stock im Body, also
 		// wird gleicheBestandAb nicht aufgerufen.
 		mock.ExpectBegin()
 		erwarteKeineDublette(mock)
@@ -243,28 +239,28 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				false,               // ist_lernmittel
 				"",                  // auflage
 				// listenpreis: nil, weil dieser Test keine ISBN-Metadaten liefert. Bei
-				// einem echten Nachschlagen füllt ihn der DNB-Ladenpreis (Migration 127).
+				// einem echten Nachschlagen füllt ihn der DNB-Ladenpreis.
 				pgxmock.AnyArg(),
-				false, // mehrjahresband (Migration 134)
+				false, // mehrjahresband
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("11111111-1111-1111-1111-111111111111"))
 		mock.ExpectCommit()
 
-		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
-		// Add context value if necessary (like auth), but it doesn't seem strictly required for these endpoints based on their code.
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(rumpf))
+		// Ein Wert im Kontext (etwa die Sitzung) ist für diese Türen nicht nötig.
 		rec := httptest.NewRecorder()
-		handler.TitelAnlegen(rec, req)
+		tueren.TitelAnlegen(rec, anfrage)
 
 		if rec.Code != http.StatusCreated {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusCreated)
 		}
 
-		var resp map[string]any
-		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		var httpAntwort map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &httpAntwort); err != nil {
 			t.Fatalf("failed to parse response body: %v", err)
 		}
-		if resp["message"] != "buch erstellt" {
-			t.Errorf("got message %v, want 'buch erstellt'", resp["message"])
+		if httpAntwort["message"] != "buch erstellt" {
+			t.Errorf("got message %v, want 'buch erstellt'", httpAntwort["message"])
 		}
 	})
 }

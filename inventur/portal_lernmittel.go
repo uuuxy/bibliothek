@@ -11,13 +11,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Lehrerportal → Schulbücher je Fach (03.09.2026). Beide Türen liegen hinter der
-// Anmeldung, ohne view_books (wie /api/portal/klassensaetze): Sie liefern nur Buch- und
-// Zähldaten, keine Ausleih- oder Personendaten.
+// Portal des Kollegiums → Schulbücher je Fach. Beide Türen liegen hinter der Anmeldung, ohne
+// view_books (wie /api/portal/klassensaetze): Sie liefern nur Buch- und Zähldaten, keine Daten
+// zu Ausleihen oder Personen.
 
-// PortalLernmittel bedient GET /api/portal/lernmittel[?fach=…]: immer die
-// Fach-Zahlen und die Titel — ohne ?fach alle Schulbücher (Reiter-Startansicht seit
-// 03.09.2026 abends: Liste statt Kachelwand), mit ?fach= die des Fachs ("" = ohne Fach).
+// PortalLernmittel ist die Tür GET /api/portal/lernmittel[?fach=…]: immer die Zahlen je Fach und
+// die Titel; ohne ?fach alle Schulbücher (die erste Ansicht des Reiters ist eine Liste), mit
+// ?fach= die des Fachs ("" = ohne Fach).
 func (t *Tueren) PortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	filter := lernmittelFilterParam(r)
@@ -106,7 +106,7 @@ func filterKlartext(f LernmittelFilter) string {
 func lernmittelFilterParam(r *http.Request) LernmittelFilter {
 	q := r.URL.Query()
 	f := LernmittelFilter{Zweig: strings.TrimSpace(q.Get("zweig")), Suche: repository.TiteltextNormalform(q.Get("q"))}
-	// Nach ZEICHEN kappen, nicht nach Bytes: Ein Schnitt mitten in einem Mehrbyte-Zeichen
+	// Nach Zeichen kappen, nicht nach Bytes: Ein Schnitt mitten in einem Mehrbyte-Zeichen
 	// schickt ungültiges UTF-8 an Postgres, und aus einer Suche würde ein 500er.
 	if r := []rune(f.Suche); len(r) > 100 {
 		f.Suche = string(r[:100])

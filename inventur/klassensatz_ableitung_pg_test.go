@@ -7,10 +7,10 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Klassensätze aus zwei Quellen (05.09.2026): die Handliste bleibt, dazu kommt live,
-// was mehr als die Hälfte einer Klasse (mindestens fünf Kinder) gerade ausgeliehen hat.
-// Geprüft am echten Postgres, weil der Kern ein Schwellwert über Klassen-Normschlüssel ist.
-func TestGetClassGroups_HandUndAusAusleihen(t *testing.T) {
+// Klassensätze aus zwei Quellen: Die Liste von Hand bleibt, dazu kommt jedes Mal gerechnet, was
+// mehr als die Hälfte einer Klasse (mindestens fünf Kinder) gerade ausgeliehen hat. Geprüft an
+// Postgres, weil der Kern ein Schwellwert über den Normschlüsseln der Klassen ist.
+func TestLadeKlassensatzGruppen_HandUndAusAusleihen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	for _, sql := range []string{
@@ -67,12 +67,12 @@ func TestGetClassGroups_HandUndAusAusleihen(t *testing.T) {
 		}
 	})
 
-	groups, err := NewTitelAbfragen(pool).LadeKlassensatzGruppen(ctx, "", "")
+	gruppen, err := NewTitelAbfragen(pool).LadeKlassensatzGruppen(ctx, "", "")
 	if err != nil {
 		t.Fatalf("LadeKlassensatzGruppen: %v", err)
 	}
 	je := map[string]map[string]klassensatzTitel{}
-	for _, g := range groups {
+	for _, g := range gruppen {
 		je[g.Klasse] = map[string]klassensatzTitel{}
 		for _, b := range g.Titel {
 			if _, doppelt := je[g.Klasse][b.Titel]; doppelt {
@@ -84,7 +84,7 @@ func TestGetClassGroups_HandUndAusAusleihen(t *testing.T) {
 
 	g1, ok := je["07G1"]
 	if !ok {
-		t.Fatalf("Gruppe 07G1 fehlt (Gruppen: %v)", gruppenNamen(groups))
+		t.Fatalf("Gruppe 07G1 fehlt (Gruppen: %v)", gruppenNamen(gruppen))
 	}
 	if b := g1["Hand-Lektüre"]; b.Quelle != "hand" {
 		t.Errorf("Hand-Lektüre: Quelle %q, erwartet hand", b.Quelle)
@@ -103,9 +103,9 @@ func TestGetClassGroups_HandUndAusAusleihen(t *testing.T) {
 	}
 }
 
-func gruppenNamen(groups []klassensatzGruppe) []string {
-	namen := make([]string, 0, len(groups))
-	for _, g := range groups {
+func gruppenNamen(gruppen []klassensatzGruppe) []string {
+	namen := make([]string, 0, len(gruppen))
+	for _, g := range gruppen {
 		namen = append(namen, g.Klasse)
 	}
 	return namen

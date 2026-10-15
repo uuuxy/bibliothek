@@ -31,9 +31,9 @@ const (
 )
 
 type ohneISBNProbe struct {
-	t       *testing.T
-	handler *Tueren
-	sql     func(abfrage string, werte ...any) string
+	t      *testing.T
+	tueren *Tueren
+	sql    func(abfrage string, werte ...any) string
 }
 
 // neueOhneISBNProbe stellt die Tür der Maske vor die Test-Datenbank und räumt die Titel der
@@ -54,7 +54,7 @@ func neueOhneISBNProbe(t *testing.T) *ohneISBNProbe {
 	durchlass := func(next http.Handler) http.Handler { return next }
 	return &ohneISBNProbe{
 		t: t,
-		handler: NewTueren(TuerenKonfig{
+		tueren: NewTueren(TuerenKonfig{
 			Abfragen:          NewTitelAbfragen(pool),
 			Metadaten:         offlineMetadatenClient(),
 			VerlangeLesen:     durchlass,
@@ -100,7 +100,7 @@ func (p *ohneISBNProbe) schicke(id string, rumpf map[string]any) ohneISBNAntwort
 		methode, pfad = http.MethodPut, "/api/books/"+id
 	}
 	rec := httptest.NewRecorder()
-	p.handler.ServeHTTP(rec, httptest.NewRequest(methode, pfad, bytes.NewReader(daten)))
+	p.tueren.ServeHTTP(rec, httptest.NewRequest(methode, pfad, bytes.NewReader(daten)))
 	antwort := ohneISBNAntwort{Status: rec.Code, Rumpf: rec.Body.String()}
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		p.t.Fatalf("Antwort ist kein JSON: %v — %s", err, rec.Body.String())

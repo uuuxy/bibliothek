@@ -9,12 +9,12 @@ import (
 
 // Titel-Verwaltung und Lernmittel-Liste suchen am Server und vergleichen eine getippte ISBN
 // als Teilstring. Die zehnstellige vom Titelblatt und die dreizehnstellige, unter der die
-// Datenbank den Titel führt (Migration 157), enden auf verschiedene Prüfzeichen: Ohne den
+// Datenbank den Titel führt, enden auf verschiedene Prüfzeichen: Ohne den
 // Vergleich mit der Normalform des Suchtexts fände die getippte zehnstellige den Titel nicht.
 func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 	const titel, zehn, dreizehn, barcode = "Advanced Organic Chemistry", "0306406152", "9780306406157", "B-ISBN-SUCHE-INV-1"
 
 	raeume := func() {
@@ -38,14 +38,14 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	}
 
 	for _, suchtext := range []string{zehn, "0-306-40615-2", dreizehn, "978-0-306-40615-7"} {
-		liste, err := repo.LadeTitelListe(ctx, "", suchtext, false)
+		liste, err := abfragen.LadeTitelListe(ctx, "", suchtext, false)
 		if err != nil {
-			t.Fatalf("ListBooks(%q): %v", suchtext, err)
+			t.Fatalf("LadeTitelListe(%q): %v", suchtext, err)
 		}
 		if len(liste) != 1 || liste[0].ID != id {
 			t.Errorf("Titel-Verwaltung, Suche %q: %d Treffer, erwartet den Titel %q", suchtext, len(liste), titel)
 		}
-		lernmittel, err := repo.LadeLernmittelTitel(ctx, "", true, LernmittelFilter{Suche: suchtext})
+		lernmittel, err := abfragen.LadeLernmittelTitel(ctx, "", true, LernmittelFilter{Suche: suchtext})
 		if err != nil {
 			t.Fatalf("GetLernmittelTitel(%q): %v", suchtext, err)
 		}
@@ -55,7 +55,7 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	}
 
 	// Gegenprobe: Dieselben Ziffern mit falschem Prüfzeichen sind eine andere Nummer.
-	if liste, err := repo.LadeTitelListe(ctx, "", "0306406153", false); err != nil || len(liste) != 0 {
+	if liste, err := abfragen.LadeTitelListe(ctx, "", "0306406153", false); err != nil || len(liste) != 0 {
 		t.Errorf("Titel-Verwaltung mit falschem Prüfzeichen: %d Treffer, %v — erwartet keinen", len(liste), err)
 	}
 }

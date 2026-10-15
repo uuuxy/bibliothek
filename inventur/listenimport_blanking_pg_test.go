@@ -7,32 +7,29 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Der Listenimport ist für „Sammelkäufe und Spenden" gedacht (ListenImportWidget) —
-// genau der Fall einer ISBN, die schon im Katalog steht. Dort soll er Exemplare
-// dazulegen, nicht die Stammdaten ersetzen: Bestand gewinnt, der Import füllt Lücken.
+// Der Listenimport ist für „Sammelkäufe und Spenden" gedacht (ListenImportWidget), genau der
+// Fall einer ISBN, die schon im Katalog steht. Dort soll er Exemplare dazulegen, nicht die
+// Stammdaten ersetzen: Der Bestand gewinnt, der Import füllt Lücken.
 //
-// Bis zum 10.09.2026 setzte ON CONFLICT jede Spalte auf EXCLUDED.* (nur signatur und
-// ist_lernmittel waren geschützt). Eine Datei `isbn;bestand` für 30 weitere Exemplare
-// leerte Titel, Autor, Verlag, Beschreibung, setzte Jahr und Jahrgang auf 0, Medientyp auf
-// „Buch", die Stufe auf die Vorgabe und warf ein von Hand hochgeladenes Cover weg — und
-// die Antwort meldete „1 Titel importiert" (Bestands-Durchgang, Bugklasse
-// Upsert-Blanking; der Littera-Zwilling ist seit 96c2f8c geschützt).
+// Setzte ON CONFLICT jede Spalte auf EXCLUDED.*, leerte eine Datei `isbn;bestand` für 30 weitere
+// Exemplare Titel, Autor und Verlag, setzte Jahr und Jahrgang auf 0, den Medientyp auf „Buch",
+// würfe ein von Hand hochgeladenes Cover weg, und die Antwort meldete „1 Titel importiert".
 func TestListenimport_UeberschreibtVorhandeneStammdatenNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 
 	wege := map[string]func(isbn string) error{
 		"SchreibeTitelStapel": func(isbn string) error {
-			_, err := repo.SchreibeTitelStapel(ctx, []Titel{{ISBN: isbn, Bestand: 2}})
+			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{{ISBN: isbn, Bestand: 2}})
 			return err
 		},
-		"UpsertBook (Einzel-Rückfall)": func(isbn string) error {
-			_, err := repo.SchreibeTitel(ctx, Titel{ISBN: isbn, Bestand: 2})
+		"SchreibeTitel (Einzel-Rückfall)": func(isbn string) error {
+			_, err := abfragen.SchreibeTitel(ctx, Titel{ISBN: isbn, Bestand: 2})
 			return err
 		},
 	}
-	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300000-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-300000-2"}
+	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300000-1", "SchreibeTitel (Einzel-Rückfall)": "978-9-99-300000-2"}
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]

@@ -36,15 +36,13 @@ func verarbeiteImportZeile(konfig importZeile) (*Titel, error) {
 
 	titelText := spalteLesen("titel")
 	autor := spalteLesen("autor")
-	// Die Fach-Spalte ist Freitext, buecher_titel.subject aber ein Fremdschlüssel auf die
-	// Systematik (Migration 078): Was hier durchgeht, wird eine Kategorie und steht danach
-	// in der Fach-Auswahl der Maske und als Fach im Portal. Deshalb dieselbe Prüfung wie
-	// im CSV-Bestandsimport seit dem 03.09.2026 (fachDerZeile): nur ein echter Fachname
-	// oder eine bekannte Schreibvariante, sonst leer.
+	// Die Spalte des Fachs ist Freitext, buecher_titel.subject aber ein Fremdschlüssel auf die
+	// Systematik: Was hier durchgeht, wird eine Kategorie und steht danach in der Auswahl der Fächer
+	// in der Maske und als Fach im Portal. Deshalb dieselbe Prüfung wie im Import des Bestands aus
+	// CSV (fachDerZeile): nur ein echter Fachname oder eine bekannte Schreibvariante, sonst leer.
 	//
-	// Der frühere Rückfall auf das wörtliche Fach „Unbekannt" ist damit entfallen — er
-	// legte eine Systematik-Kategorie dieses Namens an, die kein Fach ist. Leer heißt
-	// überall sonst „ohne Fach", und genau das ist hier gemeint.
+	// Ein Rückfall auf das wörtliche Fach „Unbekannt" legte eine Kategorie dieses Namens an, die kein
+	// Fach ist. Leer heißt überall sonst „ohne Fach", und genau das ist hier gemeint.
 	fach := lmf.FachExakt(spalteLesen("fach"))
 
 	// Die Spalte „klasse" nennt einen Jahrgang. Er steht als Spanne N bis N am Titel: Mit ihr

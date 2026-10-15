@@ -50,10 +50,9 @@ func TestVerarbeiteISBNBehaeltGueltigeNummerBeiNachfolgendemSchrott(t *testing.T
 	}
 }
 
-// Die ISBN-13 gewinnt vor der ISBN-10, gleich in welcher Reihenfolge; innerhalb einer Länge
-// der erste gültige Wert. Die DNB führt beide Formen desselben Buchs, die ISBN-10 zuletzt —
-// bis zum 23.09.2026 gewann sie deshalb, und ein über die Freitextsuche bestellter Titel
-// entstand zehnstellig (docs/OFFEN.md 5.5).
+// Die ISBN-13 gewinnt vor der ISBN-10, gleich in welcher Reihenfolge; innerhalb einer Länge der
+// erste gültige Wert. Die DNB führt beide Formen desselben Buchs, die ISBN-10 zuletzt; gewönne
+// sie, entstünde ein über die Freitextsuche bestellter Titel zehnstellig.
 func TestVerarbeiteISBNNimmtDieISBN13(t *testing.T) {
 	faelle := []struct {
 		name    string

@@ -10,11 +10,11 @@ import (
 )
 
 type mockTransport struct {
-	roundTripFunc func(req *http.Request) (*http.Response, error)
+	roundTripFunc func(anfrage *http.Request) (*http.Response, error)
 }
 
-func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	return m.roundTripFunc(req)
+func (m *mockTransport) RoundTrip(anfrage *http.Request) (*http.Response, error) {
+	return m.roundTripFunc(anfrage)
 }
 
 func TestSucheNachISBN(t *testing.T) {
@@ -38,8 +38,8 @@ func testSucheISBNInvalid(t *testing.T) {
 
 func testSucheISBNDNB(t *testing.T) {
 	mockTr := &mockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			if strings.Contains(req.URL.String(), "services.dnb.de") {
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+			if strings.Contains(anfrage.URL.String(), "services.dnb.de") {
 				dnbXML := `<?xml version="1.0" encoding="UTF-8"?>
 <searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
   <records>
@@ -75,29 +75,29 @@ func testSucheISBNDNB(t *testing.T) {
 		httpClient: &http.Client{Transport: mockTr},
 	}
 
-	res, err := client.SucheNachISBN(context.Background(), "9783161484100")
+	ergebnis, err := client.SucheNachISBN(context.Background(), "9783161484100")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if res.Titel != "DNB Book" {
-		t.Errorf("Expected title 'DNB Book', got '%s'", res.Titel)
+	if ergebnis.Titel != "DNB Book" {
+		t.Errorf("Expected title 'DNB Book', got '%s'", ergebnis.Titel)
 	}
-	if res.Autor != "DNB Author" {
-		t.Errorf("Expected author 'DNB Author', got '%s'", res.Autor)
+	if ergebnis.Autor != "DNB Author" {
+		t.Errorf("Expected author 'DNB Author', got '%s'", ergebnis.Autor)
 	}
 }
 
 func testSucheISBNGoogle(t *testing.T) {
 	mockTr := &mockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			if strings.Contains(req.URL.String(), "services.dnb.de") {
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+			if strings.Contains(anfrage.URL.String(), "services.dnb.de") {
 				return &http.Response{
 					StatusCode: http.StatusNotFound,
 					Body:       io.NopCloser(bytes.NewBufferString("")),
 					Header:     make(http.Header),
 				}, nil
 			}
-			if strings.Contains(req.URL.String(), "googleapis.com") {
+			if strings.Contains(anfrage.URL.String(), "googleapis.com") {
 				googleJSON := `{
 					"items": [{
 						"volumeInfo": {
@@ -124,29 +124,29 @@ func testSucheISBNGoogle(t *testing.T) {
 		httpClient: &http.Client{Transport: mockTr},
 	}
 
-	res, err := client.SucheNachISBN(context.Background(), "9783161484100")
+	ergebnis, err := client.SucheNachISBN(context.Background(), "9783161484100")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if res.Titel != "Google Book" {
-		t.Errorf("Expected title 'Google Book', got '%s'", res.Titel)
+	if ergebnis.Titel != "Google Book" {
+		t.Errorf("Expected title 'Google Book', got '%s'", ergebnis.Titel)
 	}
-	if res.Autor != "Google Author" {
-		t.Errorf("Expected author 'Google Author', got '%s'", res.Autor)
+	if ergebnis.Autor != "Google Author" {
+		t.Errorf("Expected author 'Google Author', got '%s'", ergebnis.Autor)
 	}
 }
 
 func testSucheISBNOpenLibrary(t *testing.T) {
 	mockTr := &mockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			if strings.Contains(req.URL.String(), "services.dnb.de") || strings.Contains(req.URL.String(), "googleapis.com") {
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+			if strings.Contains(anfrage.URL.String(), "services.dnb.de") || strings.Contains(anfrage.URL.String(), "googleapis.com") {
 				return &http.Response{
 					StatusCode: http.StatusNotFound,
 					Body:       io.NopCloser(bytes.NewBufferString("")),
 					Header:     make(http.Header),
 				}, nil
 			}
-			if strings.Contains(req.URL.String(), "openlibrary.org") {
+			if strings.Contains(anfrage.URL.String(), "openlibrary.org") {
 				openLibraryJSON := `{
 					"ISBN:9783161484100": {
 						"title": "OpenLibrary Book",
@@ -171,21 +171,21 @@ func testSucheISBNOpenLibrary(t *testing.T) {
 		httpClient: &http.Client{Transport: mockTr},
 	}
 
-	res, err := client.SucheNachISBN(context.Background(), "9783161484100")
+	ergebnis, err := client.SucheNachISBN(context.Background(), "9783161484100")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if res.Titel != "OpenLibrary Book" {
-		t.Errorf("Expected title 'OpenLibrary Book', got '%s'", res.Titel)
+	if ergebnis.Titel != "OpenLibrary Book" {
+		t.Errorf("Expected title 'OpenLibrary Book', got '%s'", ergebnis.Titel)
 	}
-	if res.Autor != "OpenLibrary Author" {
-		t.Errorf("Expected author 'OpenLibrary Author', got '%s'", res.Autor)
+	if ergebnis.Autor != "OpenLibrary Author" {
+		t.Errorf("Expected author 'OpenLibrary Author', got '%s'", ergebnis.Autor)
 	}
 }
 
 func testSucheISBNNotFound(t *testing.T) {
 	mockTr := &mockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusNotFound,
 				Body:       io.NopCloser(bytes.NewBufferString("")),

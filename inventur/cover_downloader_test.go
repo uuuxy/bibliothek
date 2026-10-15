@@ -22,54 +22,54 @@ func TestLadeCoverBytes(t *testing.T) {
 
 	t.Run("empty url", func(t *testing.T) {
 		client := &http.Client{}
-		res := ladeCoverBytes(ctx, client, "")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
+		ergebnis := ladeCoverBytes(ctx, client, "")
+		if ergebnis != nil {
+			t.Errorf("expected nil, got %v", ergebnis)
 		}
 	})
 
 	t.Run("openLibrary placeholder url", func(t *testing.T) {
 		client := &http.Client{}
-		res := ladeCoverBytes(ctx, client, openLibraryLeeresCover)
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
+		ergebnis := ladeCoverBytes(ctx, client, openLibraryLeeresCover)
+		if ergebnis != nil {
+			t.Errorf("expected nil, got %v", ergebnis)
 		}
 	})
 
 	t.Run("invalid url format", func(t *testing.T) {
 		client := &http.Client{}
-		res := ladeCoverBytes(ctx, client, "http://%42")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
+		ergebnis := ladeCoverBytes(ctx, client, "http://%42")
+		if ergebnis != nil {
+			t.Errorf("expected nil, got %v", ergebnis)
 		}
 	})
 
 	t.Run("disallowed host", func(t *testing.T) {
 		client := &http.Client{}
-		res := ladeCoverBytes(ctx, client, "https://evil.com/img.png")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
+		ergebnis := ladeCoverBytes(ctx, client, "https://evil.com/img.png")
+		if ergebnis != nil {
+			t.Errorf("expected nil, got %v", ergebnis)
 		}
 	})
 
 	t.Run("client error", func(t *testing.T) {
 		client := &http.Client{
 			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 					return nil, errors.New("network error")
 				},
 			},
 		}
-		res := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
+		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
+		if ergebnis != nil {
+			t.Errorf("expected nil, got %v", ergebnis)
 		}
 	})
 
 	t.Run("non 200 status code", func(t *testing.T) {
 		client := &http.Client{
 			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 					return &http.Response{
 						StatusCode: http.StatusNotFound,
 						Body:       io.NopCloser(bytes.NewBufferString("not found")),
@@ -77,29 +77,29 @@ func TestLadeCoverBytes(t *testing.T) {
 				},
 			},
 		}
-		res := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
+		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
+		if ergebnis != nil {
+			t.Errorf("expected nil, got %v", ergebnis)
 		}
 	})
 
 	t.Run("bot protection html response", func(t *testing.T) {
 		client := &http.Client{
 			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					resp := &http.Response{
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+					antwort := &http.Response{
 						StatusCode: http.StatusOK,
 						Body:       io.NopCloser(bytes.NewBufferString("<html><head>bot check</head></html>")),
 						Header:     make(http.Header),
 					}
-					resp.Header.Set("Content-Type", "text/html; charset=utf-8")
-					return resp, nil
+					antwort.Header.Set("Content-Type", "text/html; charset=utf-8")
+					return antwort, nil
 				},
 			},
 		}
-		res := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
+		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
+		if ergebnis != nil {
+			t.Errorf("expected nil, got %v", ergebnis)
 		}
 	})
 
@@ -107,20 +107,20 @@ func TestLadeCoverBytes(t *testing.T) {
 		expectedBytes := []byte("fake_image_data")
 		client := &http.Client{
 			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					resp := &http.Response{
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+					antwort := &http.Response{
 						StatusCode: http.StatusOK,
 						Body:       io.NopCloser(bytes.NewReader(expectedBytes)),
 						Header:     make(http.Header),
 					}
-					resp.Header.Set("Content-Type", "image/jpeg")
-					return resp, nil
+					antwort.Header.Set("Content-Type", "image/jpeg")
+					return antwort, nil
 				},
 			},
 		}
-		res := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
-		if !bytes.Equal(res, expectedBytes) {
-			t.Errorf("expected %v, got %v", expectedBytes, res)
+		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
+		if !bytes.Equal(ergebnis, expectedBytes) {
+			t.Errorf("expected %v, got %v", expectedBytes, ergebnis)
 		}
 	})
 }
@@ -131,9 +131,9 @@ func TestLadeCoverBytes_ErsatzbildIstKeinCover(t *testing.T) {
 	bild := []byte("das ersatzbild der quelle")
 	client := &http.Client{Transport: &mockTransport{
 		roundTripFunc: func(*http.Request) (*http.Response, error) {
-			resp := &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(bild)), Header: make(http.Header)}
-			resp.Header.Set("Content-Type", "image/png")
-			return resp, nil
+			antwort := &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(bild)), Header: make(http.Header)}
+			antwort.Header.Set("Content-Type", "image/png")
+			return antwort, nil
 		},
 	}}
 	const adresse = "https://books.google.com/books/content?vid=ISBN:9783551551672&printsec=frontcover&img=1&zoom=1"
@@ -148,25 +148,25 @@ func TestLadeCoverBytes_ErsatzbildIstKeinCover(t *testing.T) {
 }
 
 func TestSpeichereCoverDatei(t *testing.T) {
-	// Im temporären Verzeichnis, nicht im Paketverzeichnis: Bis zum 21.09.2026 legte
-	// der Test inventur/uploads im Repo an und räumte es per RemoveAll wieder weg —
-	// während die Ratschen im Wurzelpaket (WalkDir) parallel den Baum lasen und über
-	// das verschwundene Verzeichnis stolperten („open inventur/uploads: no such file").
+	// Im vorübergehenden Verzeichnis, nicht im Verzeichnis des Pakets: Ein Test, der
+	// inventur/uploads im Repository anlegt und wieder löscht, stört die Ratschen im Wurzelpaket,
+	// die parallel den Baum lesen (WalkDir) und über das verschwundene Verzeichnis stolpern
+	// („open inventur/uploads: no such file").
 	imTestVerzeichnis(t)
 
 	t.Run("successful save", func(t *testing.T) {
-		res := speichereCoverDatei([]byte("dummy data"), "1234567890", ".webp")
-		if !strings.HasPrefix(res, "/uploads/cover_auto_1234567890_") {
-			t.Errorf("expected path to start with /uploads/cover_auto_1234567890_, got %s", res)
+		ergebnis := speichereCoverDatei([]byte("dummy data"), "1234567890", ".webp")
+		if !strings.HasPrefix(ergebnis, "/uploads/cover_auto_1234567890_") {
+			t.Errorf("expected path to start with /uploads/cover_auto_1234567890_, got %s", ergebnis)
 		}
-		if !strings.HasSuffix(res, ".webp") {
-			t.Errorf("expected path to end with .webp, got %s", res)
+		if !strings.HasSuffix(ergebnis, ".webp") {
+			t.Errorf("expected path to end with .webp, got %s", ergebnis)
 		}
 
-		// Verify file exists
-		localPath := filepath.Join(".", res)
-		if _, err := os.Stat(localPath); os.IsNotExist(err) {
-			t.Errorf("expected file %s to exist, but it does not", localPath)
+		// Die Datei muss bestehen.
+		lokalerPfad := filepath.Join(".", ergebnis)
+		if _, err := os.Stat(lokalerPfad); os.IsNotExist(err) {
+			t.Errorf("expected file %s to exist, but it does not", lokalerPfad)
 		}
 	})
 
@@ -189,91 +189,91 @@ func TestSpeichereCoverDatei(t *testing.T) {
 	})
 
 	t.Run("path traversal attempt in isbn is sanitized", func(t *testing.T) {
-		res := speichereCoverDatei([]byte("dummy data"), "../../../etc/passwd", ".webp")
-		if !strings.HasPrefix(res, "/uploads/cover_auto_passwd_") {
-			t.Errorf("expected path traversal to be sanitized to base name, got %s", res)
+		ergebnis := speichereCoverDatei([]byte("dummy data"), "../../../etc/passwd", ".webp")
+		if !strings.HasPrefix(ergebnis, "/uploads/cover_auto_passwd_") {
+			t.Errorf("expected path traversal to be sanitized to base name, got %s", ergebnis)
 		}
 	})
 }
 
-func TestDownloadAndSaveCoverLocally(t *testing.T) {
+func TestSpeichereCoverLokal(t *testing.T) {
 	ctx := context.Background()
 	imTestVerzeichnis(t) // siehe TestSpeichereCoverDatei
 
 	t.Run("invalid image data fails decode", func(t *testing.T) {
 		client := &http.Client{
 			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					resp := &http.Response{
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+					antwort := &http.Response{
 						StatusCode: http.StatusOK,
 						Body:       io.NopCloser(bytes.NewReader([]byte("not an image"))),
 						Header:     make(http.Header),
 					}
-					resp.Header.Set("Content-Type", "image/jpeg")
-					return resp, nil
+					antwort.Header.Set("Content-Type", "image/jpeg")
+					return antwort, nil
 				},
 			},
 		}
-		res := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
-		if res != "" {
-			t.Errorf("expected empty string, got %s", res)
+		ergebnis := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
+		if ergebnis != "" {
+			t.Errorf("expected empty string, got %s", ergebnis)
 		}
 	})
 
 	t.Run("small image is ignored", func(t *testing.T) {
-		img := image.NewRGBA(image.Rect(0, 0, 5, 5))
-		var buf bytes.Buffer
-		if err := png.Encode(&buf, img); err != nil {
+		bild := image.NewRGBA(image.Rect(0, 0, 5, 5))
+		var puffer bytes.Buffer
+		if err := png.Encode(&puffer, bild); err != nil {
 			t.Fatalf("png encode: %v", err)
 		}
 
 		client := &http.Client{
 			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					resp := &http.Response{
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+					antwort := &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewReader(buf.Bytes())),
+						Body:       io.NopCloser(bytes.NewReader(puffer.Bytes())),
 						Header:     make(http.Header),
 					}
-					resp.Header.Set("Content-Type", "image/png")
-					return resp, nil
+					antwort.Header.Set("Content-Type", "image/png")
+					return antwort, nil
 				},
 			},
 		}
-		res := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
-		if res != "" {
-			t.Errorf("expected empty string for small image, got %s", res)
+		ergebnis := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
+		if ergebnis != "" {
+			t.Errorf("expected empty string for small image, got %s", ergebnis)
 		}
 	})
 
 	t.Run("valid large image is saved", func(t *testing.T) {
-		img := image.NewRGBA(image.Rect(0, 0, 15, 15))
+		bild := image.NewRGBA(image.Rect(0, 0, 15, 15))
 		for x := 0; x < 15; x++ {
 			for y := 0; y < 15; y++ {
-				img.Set(x, y, color.RGBA{255, 0, 0, 255})
+				bild.Set(x, y, color.RGBA{255, 0, 0, 255})
 			}
 		}
-		var buf bytes.Buffer
-		if err := png.Encode(&buf, img); err != nil {
+		var puffer bytes.Buffer
+		if err := png.Encode(&puffer, bild); err != nil {
 			t.Fatalf("png encode: %v", err)
 		}
 
 		client := &http.Client{
 			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					resp := &http.Response{
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+					antwort := &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewReader(buf.Bytes())),
+						Body:       io.NopCloser(bytes.NewReader(puffer.Bytes())),
 						Header:     make(http.Header),
 					}
-					resp.Header.Set("Content-Type", "image/png")
-					return resp, nil
+					antwort.Header.Set("Content-Type", "image/png")
+					return antwort, nil
 				},
 			},
 		}
-		res := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
-		if !strings.HasPrefix(res, "/uploads/cover_auto_123_") {
-			t.Errorf("expected path to start with /uploads/cover_auto_123_, got %s", res)
+		ergebnis := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
+		if !strings.HasPrefix(ergebnis, "/uploads/cover_auto_123_") {
+			t.Errorf("expected path to start with /uploads/cover_auto_123_, got %s", ergebnis)
 		}
 	})
 }

@@ -20,23 +20,23 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// mockTransportCover is a local mock transport to avoid unexported type dependency
+// mockTransportCover ist eine eigene Attrappe des Transports dieses Tests.
 type mockTransportCover struct {
-	roundTripFunc func(req *http.Request) (*http.Response, error)
+	roundTripFunc func(anfrage *http.Request) (*http.Response, error)
 }
 
-func (m *mockTransportCover) RoundTrip(req *http.Request) (*http.Response, error) {
-	return m.roundTripFunc(req)
+func (m *mockTransportCover) RoundTrip(anfrage *http.Request) (*http.Response, error) {
+	return m.roundTripFunc(anfrage)
 }
 
-func TestHandleRefreshCover_UngueltigeKennung(t *testing.T) {
+func TestCoverAktualisieren_UngueltigeKennung(t *testing.T) {
 	for _, id := range []string{"", "123", "urn:uuid:0f8fad5b-d9cb-469f-a165-70867728950e"} {
-		req := httptest.NewRequest(http.MethodPost, "/api/books/x/refresh-cover", nil)
-		req.SetPathValue("id", id)
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/books/x/refresh-cover", nil)
+		anfrage.SetPathValue("id", id)
 		w := httptest.NewRecorder()
 
-		handler := &Tueren{}
-		handler.CoverAktualisieren(w, req)
+		tueren := &Tueren{}
+		tueren.CoverAktualisieren(w, anfrage)
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Kennung %q: expected status %d, got %d", id, http.StatusBadRequest, w.Code)
@@ -44,24 +44,24 @@ func TestHandleRefreshCover_UngueltigeKennung(t *testing.T) {
 	}
 }
 
-func TestHandleRefreshCover_BookNotFound(t *testing.T) {
+func TestCoverAktualisieren_TitelFehlt(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	handler := &Tueren{abfragen: NewTitelAbfragen(mock)}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs("00000000-0000-0000-0000-000000000000").
 		WillReturnError(pgx.ErrNoRows)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
-	req.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
+	anfrage.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
 	w := httptest.NewRecorder()
 
-	handler.CoverAktualisieren(w, req)
+	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
@@ -72,26 +72,26 @@ func TestHandleRefreshCover_BookNotFound(t *testing.T) {
 	}
 }
 
-// Gegenprobe: Ein DB-Fehler ist kein „nicht gefunden" — bis 29.08.2026 wurde jeder
-// Fehler aus LadeTitel als 404 verkleidet (Schema-Drift wäre unsichtbar geblieben).
-func TestHandleRefreshCover_DBFehlerIst500(t *testing.T) {
+// Gegenprobe: Ein Fehler der Datenbank ist kein „nicht gefunden"; als 404 verkleidet bliebe ein
+// Auseinanderlaufen des Schemas unsichtbar.
+func TestCoverAktualisieren_DatenbankfehlerIst500(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	handler := &Tueren{abfragen: NewTitelAbfragen(mock)}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs("00000000-0000-0000-0000-000000000000").
 		WillReturnError(errTest)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
-	req.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
+	anfrage.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
 	w := httptest.NewRecorder()
 
-	handler.CoverAktualisieren(w, req)
+	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
@@ -101,7 +101,7 @@ func TestHandleRefreshCover_DBFehlerIst500(t *testing.T) {
 	}
 }
 
-func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
+func TestCoverAktualisieren_SucheScheitert(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
@@ -109,7 +109,7 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 	defer mock.Close()
 
 	mockTr := &mockTransportCover{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusNotFound,
 				Body:       io.NopCloser(bytes.NewBufferString("")),
@@ -119,38 +119,38 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 	}
 	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
 
-	handler := &Tueren{
+	tueren := &Tueren{
 		abfragen:  NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 
-	bookID := "11111111-1111-1111-1111-111111111111"
-	lastCounted := "2023-01-01"
+	titelID := "11111111-1111-1111-1111-111111111111"
+	zuletztGezaehlt := "2023-01-01"
 
-	// mock LadeTitel
+	// LadeTitel nachspielen.
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
-		WithArgs(bookID).
+		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
-			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
+			AddRow(titelID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &zuletztGezaehlt, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
-	req.SetPathValue("id", bookID)
-	req = req.WithContext(context.Background())
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/"+titelID+"/refresh-cover", nil)
+	anfrage.SetPathValue("id", titelID)
+	anfrage = anfrage.WithContext(context.Background())
 	w := httptest.NewRecorder()
 
-	handler.CoverAktualisieren(w, req)
+	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
 	}
 
-	var response map[string]string
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	var antwort map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 
-	if response["error"] != "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel" {
-		t.Errorf("unexpected error message: %v", response["error"])
+	if antwort["error"] != "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel" {
+		t.Errorf("unexpected error message: %v", antwort["error"])
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -158,10 +158,10 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 	}
 }
 
-// Metadaten gefunden, aber kein Bild: 404 — und KEIN Schreibzugriff. Bis zum 22.09.2026
-// schrieb die Tür hier "New Title"/"New Author" ins Buch, obwohl der Aufrufer nur ein
-// Cover wollte; der Mock hätte jedes UPDATE gemeldet, das jetzt noch käme.
-func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
+// Angaben gefunden, aber kein Bild: 404, und kein Schreibzugriff. Die Tür darf weder Titel noch
+// Autor ins Buch schreiben, der Aufrufer wollte nur ein Cover; die Attrappe meldete jedes
+// UPDATE, das käme.
+func TestCoverAktualisieren_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
@@ -169,8 +169,8 @@ func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	defer mock.Close()
 
 	mockTr := &mockTransportCover{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			if strings.Contains(req.URL.String(), "googleapis.com") {
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+			if strings.Contains(anfrage.URL.String(), "googleapis.com") {
 				googleJSON := `{
 					"items": [{
 						"volumeInfo": {
@@ -195,26 +195,26 @@ func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	}
 	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
 
-	handler := &Tueren{
+	tueren := &Tueren{
 		abfragen:  NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 
-	bookID := "22222222-2222-2222-2222-222222222222"
-	lastCounted := "2023-01-01"
+	titelID := "22222222-2222-2222-2222-222222222222"
+	zuletztGezaehlt := "2023-01-01"
 
-	// mock LadeTitel
+	// LadeTitel nachspielen.
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
-		WithArgs(bookID).
+		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
-			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
+			AddRow(titelID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &zuletztGezaehlt, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
-	req.SetPathValue("id", bookID)
-	req = req.WithContext(context.Background())
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/"+titelID+"/refresh-cover", nil)
+	anfrage.SetPathValue("id", titelID)
+	anfrage = anfrage.WithContext(context.Background())
 	w := httptest.NewRecorder()
 
-	handler.CoverAktualisieren(w, req)
+	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected 404, got %d: %s", w.Code, w.Body.String())
@@ -228,11 +228,11 @@ func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	}
 }
 
-// Erfolg: Google liefert Metadaten, DNB das Bild. Geschrieben wird NUR das Cover — Titel
+// Erfolg: Google liefert Metadaten, DNB das Bild. Geschrieben wird nur das Cover — Titel
 // und Autor gehen mit leeren Werten an AendereTitelMetadaten, das einen leeren Wert übergeht
 // (NULLIF auf den leeren Text, dann COALESCE mit dem alten Wert); die Antwort trägt den alten
 // Titel und den neuen lokalen Cover-Pfad.
-func TestHandleRefreshCover_Success(t *testing.T) {
+func TestCoverAktualisieren_Erfolg(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
@@ -245,23 +245,23 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 			bild.Set(x, y, color.RGBA{255, 0, 0, 255})
 		}
 	}
-	var pngBytes bytes.Buffer
-	if err := png.Encode(&pngBytes, bild); err != nil {
+	var pngDaten bytes.Buffer
+	if err := png.Encode(&pngDaten, bild); err != nil {
 		t.Fatalf("png encode: %v", err)
 	}
 
 	mockTr := &mockTransportCover{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			if strings.Contains(req.URL.String(), "portal.dnb.de/opac/mvb/cover") {
-				resp := &http.Response{
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+			if strings.Contains(anfrage.URL.String(), "portal.dnb.de/opac/mvb/cover") {
+				antwort := &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader(pngBytes.Bytes())),
+					Body:       io.NopCloser(bytes.NewReader(pngDaten.Bytes())),
 					Header:     make(http.Header),
 				}
-				resp.Header.Set("Content-Type", "image/png")
-				return resp, nil
+				antwort.Header.Set("Content-Type", "image/png")
+				return antwort, nil
 			}
-			if strings.Contains(req.URL.String(), "googleapis.com") {
+			if strings.Contains(anfrage.URL.String(), "googleapis.com") {
 				googleJSON := `{
 					"items": [{
 						"volumeInfo": {
@@ -286,52 +286,52 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 	}
 	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
 
-	handler := &Tueren{
+	tueren := &Tueren{
 		abfragen:  NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 
-	bookID := "33333333-3333-3333-3333-333333333333"
-	lastCounted := "2023-01-01"
+	titelID := "33333333-3333-3333-3333-333333333333"
+	zuletztGezaehlt := "2023-01-01"
 
-	// mock LadeTitel
+	// LadeTitel nachspielen.
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
-		WithArgs(bookID).
+		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
-			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
+			AddRow(titelID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &zuletztGezaehlt, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
-	// mock AendereTitelMetadaten: Titel und Autor LEER, nur das Cover.
+	// mock AendereTitelMetadaten: Titel und Autor leer, nur das Cover.
 	mock.ExpectExec(`UPDATE buecher_titel`).
-		WithArgs("", "", pgxmock.AnyArg(), bookID).
+		WithArgs("", "", pgxmock.AnyArg(), titelID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
-	req.SetPathValue("id", bookID)
-	req = req.WithContext(context.Background())
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/"+titelID+"/refresh-cover", nil)
+	anfrage.SetPathValue("id", titelID)
+	anfrage = anfrage.WithContext(context.Background())
 	w := httptest.NewRecorder()
 
-	handler.CoverAktualisieren(w, req)
+	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var response map[string]any
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	var tuerAntwort map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &tuerAntwort); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 
-	if response["message"] != "cover aktualisiert" {
-		t.Errorf("unexpected message: %v", response["message"])
+	if tuerAntwort["message"] != "cover aktualisiert" {
+		t.Errorf("unexpected message: %v", tuerAntwort["message"])
 	}
 
-	data, ok := response["data"].(map[string]any)
+	daten, ok := tuerAntwort["data"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected data field in response")
 	}
-	coverURL, ok := data["coverUrl"].(string)
-	if !ok || data["title"] != "Old Title" || data["author"] != "Old Author" || !strings.HasPrefix(coverURL, "/uploads/cover_auto_") {
-		t.Fatalf("erwartet: Titel und Autor unverändert, Cover lokal — bekommen: %v", data)
+	coverURL, ok := daten["coverUrl"].(string)
+	if !ok || daten["title"] != "Old Title" || daten["author"] != "Old Author" || !strings.HasPrefix(coverURL, "/uploads/cover_auto_") {
+		t.Fatalf("erwartet: Titel und Autor unverändert, Cover lokal — bekommen: %v", daten)
 	}
 	if err := os.Remove(filepath.Join("uploads", filepath.Base(coverURL))); err != nil {
 		t.Errorf("heruntergeladenes Testbild aufräumen: %v", err)

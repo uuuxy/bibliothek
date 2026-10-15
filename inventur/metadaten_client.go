@@ -16,8 +16,8 @@ import (
 	"bibliothek/repository"
 )
 
-// MetadatenClient ist der zentrale HTTP-Client zur Abfrage von Buchmetadaten
-// über externe APIs (DNB, Google Books, OpenLibrary etc.).
+// MetadatenClient fragt die Katalogdienste (DNB, Google Books, OpenLibrary) über HTTP nach den
+// Angaben zu einem Buch.
 type MetadatenClient struct {
 	httpClient *http.Client
 }
@@ -38,25 +38,24 @@ type MetadatenErgebnis struct {
 	Verlag      string `json:"verlag"`
 	Jahr        string `json:"jahr"`
 	Zielgruppe  string `json:"zielgruppe"` // Altersempfehlung des Verlags, z. B. "ab 10 Jahre" (DNB 653)
-	// Preis ist der DNB-Ladenpreis (MARC21 020 $c) als VORSCHLAG. 0 = keiner ermittelbar.
-	// Er gilt zum Erscheinungszeitpunkt und ist NICHT der Schulpreis — die Oberflaeche
+	// Preis ist der DNB-Ladenpreis (MARC21 020 $c) als Vorschlag. 0 = keiner ermittelbar.
+	// Er gilt zum Erscheinungszeitpunkt und ist nicht der Schulpreis — die Oberflaeche
 	// darf ihn nur vorschlagen, nie als erfasste Ausgabe verbuchen.
 	Preis float64 `json:"preis,omitempty"`
-	// Stichwoerter sind die Gattungsbegriffe (655 $a) und die freien Verlagswörter (653 $a
-	// ohne Vorsatz) der DNB — Kandidaten für den Schlagwort-Vorschlag beim Bestellen per
-	// ISBN (docs/OFFEN.md 4.20, repository.ladeSchlagworteAusStichwoertern). Nie gespeichert
-	// und nie ausgeliefert: Ein Satz trägt bis zu 98 Verlagswörter, darunter Werbung
-	// („TikTok", „Must Read"); vorgeschlagen wird nur, was es in der eigenen Liste gibt.
+	// Stichwoerter sind die Gattungsbegriffe (655 $a) und die freien Wörter des Verlags (653 $a ohne
+	// Vorsatz) der DNB, Kandidaten für den Vorschlag der Schlagworte beim Bestellen über die ISBN
+	// (repository.ladeSchlagworteAusStichwoertern). Nie gespeichert und nie ausgeliefert: Ein Satz
+	// trägt bis zu 98 Wörter des Verlags, darunter Werbung („TikTok", „Must Read"); vorgeschlagen
+	// wird nur, was es in der eigenen Liste gibt.
 	Stichwoerter []string `json:"-"`
-	// Normdaten sind die Schlagwörter der Gemeinsamen Normdatei (MARC 600–651 mit $2 gnd) —
-	// ein festes Vokabular ohne Werbewörter. Angeboten werden sie auch, wenn die eigene Liste
-	// sie noch nicht kennt (repository.ladeSchlagworteAusNormdaten, docs/OFFEN.md 4.25). Nie
-	// gespeichert und nie ausgeliefert.
+	// Normdaten sind die Schlagwörter der Gemeinsamen Normdatei (MARC 600–651 mit $2 gnd), ein
+	// festes Vokabular ohne Werbewörter. Angeboten werden sie auch, wenn die eigene Liste sie noch
+	// nicht kennt (repository.ladeSchlagworteAusNormdaten). Nie gespeichert und nie ausgeliefert.
 	Normdaten []repository.Normdatenbegriff `json:"-"`
 }
 
-// NewMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,
-// um ewig ladende APIs zu unterbrechen.
+// NewMetadatenClient baut den Client mit einer Frist von 8 Sekunden, damit ein hängender Dienst
+// die Anfrage nicht aufhält.
 //
 // Der Client kommt aus pkg/safehttp und nicht mehr blank aus http.Client: Er spricht
 // mit fremden Servern (DNB, Google, OpenLibrary, lobid) und lädt über dieselbe Instanz
@@ -70,7 +69,7 @@ func NewMetadatenClient() *MetadatenClient {
 }
 
 // SetzeHTTPClientFuerTest injiziert einen HTTP-Client mit eigenem Transport. Der Zweck
-// ist ausschließlich, in Tests ANDERER Pakete den echten Netzzugriff zu kappen (DNB/
+// ist ausschließlich, in Tests anderer Pakete den echten Netzzugriff zu kappen (DNB/
 // Google/OpenLibrary): Innerhalb von inventur reicht das unexportierte httpClient-Feld,
 // aber ein Test der Bestellsuche in internal/service kommt sonst nur über unsafe/reflect an
 // das Feld — genau die Fragilität, die bei einer Feldumbenennung still bricht. Diese
@@ -79,14 +78,13 @@ func (c *MetadatenClient) SetzeHTTPClientFuerTest(httpClient *http.Client) {
 	c.httpClient = httpClient
 }
 
-// ErrKatalogdiensteNichtErreichbar heißt: KEINE der Quellen (DNB, Google, OpenLibrary)
-// war erreichbar — das ist ein Ausfall (502 beim Aufrufer), kein Nicht-Treffer (404).
-// Bis zum 31.08.2026 sahen beide Fälle gleich aus, und bei einer WLAN-Störung
-// katalogisierte die Theke Bücher von Hand, die längst in der DNB stehen
-// (Sweep „Fehler-Kollaps").
+// ErrKatalogdiensteNichtErreichbar heißt: Keine der Quellen (DNB, Google, OpenLibrary) war
+// erreichbar. Das ist ein Ausfall (502 beim Aufrufer), kein Fehlen eines Treffers (404); sähen
+// beide gleich aus, katalogisierte die Theke bei einer Störung des WLANs Bücher von Hand, die
+// längst in der DNB stehen.
 var ErrKatalogdiensteNichtErreichbar = errors.New("katalogdienste (DNB, Google Books, OpenLibrary) nicht erreichbar")
 
-// errQuelleNichtErreichbar markiert Ausfälle EINER Quelle (holeInhalt): Verbindung
+// errQuelleNichtErreichbar markiert Ausfälle einer Quelle (holeInhalt): Verbindung
 // gescheitert oder Status ≥ 500. Alles andere — 4xx, leere Antwort, „nicht gefunden",
 // unlesbare Nutzlast — heißt: Die Quelle war da, sie hatte nur nichts.
 var errQuelleNichtErreichbar = errors.New("quelle nicht erreichbar")
@@ -101,11 +99,11 @@ var ErrNichtInDerDNB = errors.New("die DNB kennt diese ISBN nicht")
 // ErrUngueltigeISBN heißt: Die Eingabe hat nicht die Form einer ISBN; gefragt wurde niemand.
 var ErrUngueltigeISBN = errors.New("ungültiges ISBN-Format")
 
-// SucheDNBNachISBN fragt NUR die DNB — für den Schlagwort-Vorschlag im Buchformular und beim
-// Nachbestellen (GET /api/schlagworte/dnb-vorschlag, entschieden am 30.09.2026). Schlagworte
-// liefert keine andere Quelle; SucheNachISBN fragt nach der DNB auch Google Books und
-// OpenLibrary und lädt das Cover herunter — für einen Vorschlag unnötig, und das anonyme
-// Tageskontingent von Google teilen wir mit allen.
+// SucheDNBNachISBN fragt nur die DNB, für den Vorschlag der Schlagworte im Formular des Titels
+// und beim Nachbestellen (GET /api/schlagworte/dnb-vorschlag). Schlagworte liefert keine andere
+// Quelle; SucheNachISBN fragt nach der DNB auch Google Books und OpenLibrary und lädt das Cover
+// herunter, für einen Vorschlag unnötig, und das anonyme Kontingent von Google für den Tag teilt
+// das Programm mit allen.
 func (c *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
 	saubereIsbn := isbnutil.OhneTrenner(isbn)
 	if !validiereISBN(saubereIsbn) {
@@ -132,14 +130,14 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	saubereIsbn := isbnutil.OhneTrenner(isbn)
 
 	// SSRF und Argument Injection Schutz: Nur gültige ISBN-Zeichenfolgen zulassen
-	// ⚡ Bolt: Using validiereISBN() which utilizes a pre-compiled regex instead of regexp.MatchString
-	// to avoid expensive implicit regex compilation on every API invocation.
+	// validiereISBN nimmt einen vorab übersetzten regulären Ausdruck, statt ihn bei jedem Aufruf
+	// neu zu übersetzen.
 	if !validiereISBN(saubereIsbn) {
 		return nil, fmt.Errorf("ungültiges ISBN format: sicherheitsabbruch")
 	}
 
 	// Der Reihe nach: DNB (beste Quelle für deutsche Schulbücher), Google, OpenLibrary.
-	// Nebenbei wird gezählt, ob überhaupt EINE Quelle geantwortet hat: „alle nicht
+	// Nebenbei wird gezählt, ob überhaupt eine Quelle geantwortet hat: „alle nicht
 	// erreichbar" ist ein Ausfall (Sentinel → 502 beim Aufrufer), kein Nicht-Treffer.
 	quellen := []func(context.Context, string) (*MetadatenErgebnis, error){
 		c.sucheDNB,
@@ -177,15 +175,15 @@ func (c *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Metadat
 }
 
 // aufloeseCover probiert mehrere Cover-Quellen der Reihe nach durch und gibt den lokalen
-// /uploads/-Pfad der ERSTEN Quelle zurück, die tatsächlich ein dekodierbares Bild liefert.
+// /uploads/-Pfad der ersten Quelle zurück, die tatsächlich ein dekodierbares Bild liefert.
 // Schlägt jede Quelle fehl, wird "" zurückgegeben (= „kein Cover", der Titel bleibt erhalten).
 //
-// Wir verlassen uns bewusst NICHT mehr auf einen HEAD-Verfügbarkeits-Check: Eine Bot-Schranke
+// Wir verlassen uns bewusst nicht mehr auf einen HEAD-Verfügbarkeits-Check: Eine Bot-Schranke
 // kann mit HTTP 200 + HTML antworten (siehe coverFetchUserAgent), wodurch ein HEAD-200
 // fälschlich „Cover vorhanden" bedeutete, die Fallback-Quellen blockierte und am Ende eine
 // HTML-Seite statt eines Bildes lieferte. Stattdessen laden wir jeden Kandidaten echt herunter;
 // downloadAndSaveCoverLocally akzeptiert nur dekodierbare Bilder ausreichender Größe. Ein
-// fehlgeschlagener Download verwirft hier NICHT mehr ein bereits gefundenes Cover.
+// fehlgeschlagener Download verwirft hier nicht mehr ein bereits gefundenes Cover.
 func (c *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) string {
 	// DNB und OpenLibrary werden mit der Normalform gefragt, derselben Regel wie in der
 	// Datenbank: Eine zehnstellige ISBN wird nur mit richtigem Prüfzeichen dreizehnstellig.
@@ -218,9 +216,9 @@ func (c *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *Metad
 	return ""
 }
 
-// holeInhalt ist eine HTTP-GET Wrapper-Funktion, die die Antwort einer API als Bytearray zurückliefert.
+// holeInhalt holt eine Adresse mit GET und liefert den Rumpf der Antwort.
 func (c *MetadatenClient) holeInhalt(kontext context.Context, adresse string) ([]byte, error) {
-	// Angefragt wird die NEU GEBAUTE URL, nicht apiURL: Geprüft hätte url.Parse,
+	// Angefragt wird die NEU gebaute URL, nicht apiURL: Geprüft hätte url.Parse,
 	// losgeschickt worden wäre der rohe String. Wo sich die beiden Parser über ein
 	// Zeichen uneinig sind, geht die Anfrage an einen anderen Host als den geprüften
 	// (Parsing Differential, gosec G704). Die Liste liegt in pkg/coverquelle und ist
@@ -238,7 +236,7 @@ func (c *MetadatenClient) holeInhalt(kontext context.Context, adresse string) ([
 	anfrage.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 	antwort, fehler := c.httpClient.Do(anfrage)
 	if fehler != nil {
-		// Transportfehler tragen das Sentinel: Die Quelle war NICHT da — der Unterschied
+		// Transportfehler tragen das Sentinel: Die Quelle war nicht da — der Unterschied
 		// zwischen „Netz weg" (502) und „Buch unbekannt" (404) entsteht genau hier.
 		return nil, fmt.Errorf("%w: %v", errQuelleNichtErreichbar, fehler)
 	}

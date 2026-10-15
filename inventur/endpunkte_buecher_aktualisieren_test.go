@@ -11,15 +11,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestBuchEingabeDecodesAlleFelder sichert die Regression ab, bei der
+// TestTitelEingabe_LiestAlleFelder sichert die Regression ab, bei der
 // jahrgangVon/jahrgangBis nicht im Request-Struct standen: der JSON-Decoder verwarf
 // die Felder still, der Handler schrieb 0/0 in die DB und meldete trotzdem 200
 // ("erfolgreich gespeichert", aber der Klassenbereich 11–13 war weg). Der Test
 // dekodiert exakt die Nutzlast, die das Frontend sendet, und prüft, dass alle vom
 // Formular gebundenen Felder ankommen.
-func TestBuchEingabeDecodesAlleFelder(t *testing.T) {
+func TestTitelEingabe_LiestAlleFelder(t *testing.T) {
 	// Feldnamen entsprechen den json-Tags aus dem Frontend (BuchEingabefelder*.svelte).
-	body := `{
+	rumpf := `{
 		"isbn": "978-3-16-148410-0",
 		"title": "Testtitel",
 		"jahrgangVon": 11,
@@ -30,7 +30,7 @@ func TestBuchEingabeDecodesAlleFelder(t *testing.T) {
 	}`
 
 	var eingabe TitelEingabe
-	if err := json.NewDecoder(strings.NewReader(body)).Decode(&eingabe); err != nil {
+	if err := json.NewDecoder(strings.NewReader(rumpf)).Decode(&eingabe); err != nil {
 		t.Fatalf("Decode fehlgeschlagen: %v", err)
 	}
 
@@ -51,8 +51,8 @@ func TestBuchEingabeDecodesAlleFelder(t *testing.T) {
 	}
 }
 
-func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
-	tests := []struct {
+func TestBereinigeTitelEingabe(t *testing.T) {
+	faelle := []struct {
 		name        string
 		eingabe     TitelEingabe
 		wantErr     bool
@@ -95,7 +95,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 			wantErr: true,
 			errMsg:  "stock muss >= 0 sein",
 		},
-		// chk_listenpreis_nonneg (Migration 127) lehnte ab, bevor die Tür prüfte: Beim Ändern
+		// chk_listenpreis_nonneg lehnte ab, bevor die Tür prüfte: Beim Ändern
 		// kam eine 500 „buch konnte nicht aktualisiert werden", ohne zu sagen, was erlaubt ist.
 		{
 			name: "Negativer Listenpreis",
@@ -142,18 +142,18 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := bereinigeTitelEingabe(&tt.eingabe)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("bereinigeUndValidiereBuchEingabe() error = %v, wantErr %v", err, tt.wantErr)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			err := bereinigeTitelEingabe(&f.eingabe)
+			if (err != nil) != f.wantErr {
+				t.Errorf("bereinigeUndValidiereBuchEingabe() error = %v, wantErr %v", err, f.wantErr)
 				return
 			}
-			if tt.wantErr && err.Error() != tt.errMsg {
-				t.Errorf("bereinigeUndValidiereBuchEingabe() expected error message %q, got %q", tt.errMsg, err.Error())
+			if f.wantErr && err.Error() != f.errMsg {
+				t.Errorf("bereinigeUndValidiereBuchEingabe() expected error message %q, got %q", f.errMsg, err.Error())
 			}
-			if !tt.wantErr && tt.wantEingabe != nil {
-				assert.Equal(t, *tt.wantEingabe, tt.eingabe)
+			if !f.wantErr && f.wantEingabe != nil {
+				assert.Equal(t, *f.wantEingabe, f.eingabe)
 			}
 		})
 	}
@@ -166,9 +166,9 @@ func zeigerAuf(n int) *int { return &n }
 // zeigerAufPreis: dasselbe für den Listenpreis — nil heißt „nicht erfasst", 0 ist ein Preis.
 func zeigerAufPreis(p float64) *float64 { return &p }
 
-// Die drei folgenden Fälle sind das Gate zum Raster-Fund vom 23.08.2026: Beim ÄNDERN
-// bedeutet ein fehlender oder geleerter Wert etwas anderes als beim Anlegen.
-func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing.T) {
+// Die drei folgenden Fälle: Beim Ändern bedeutet ein fehlender oder geleerter Wert etwas anderes
+// als beim Anlegen.
+func TestTitelAendern_LeerHeisstBeimAendernNichtVorgabe(t *testing.T) {
 	t.Run("fehlender Bestand lässt die Exemplare unangetastet", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
@@ -188,9 +188,9 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectCommit()
 
-		handler := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
+		tueren := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"Titel","author":"Autor","subject":"Mathe"}`
-		w := ruf(t, handler, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
+		w := ruf(t, tueren, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
 		if w.Code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200 — Rumpf: %s", w.Code, w.Body.String())
@@ -207,9 +207,9 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		}
 		defer mock.Close()
 
-		handler := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
+		tueren := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"","author":"Autor","subject":"Mathe"}`
-		w := ruf(t, handler, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
+		w := ruf(t, tueren, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
 		if w.Code != http.StatusBadRequest {
 			t.Fatalf("Status %d, erwartet 400 — ein geleerter Titel darf nicht still zu "+
@@ -258,8 +258,8 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 				mock.ExpectCommit()
 			}
 
-			handler := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
-			w := ruf(t, handler, id, `{"isbn":"9783161484100","title":"Titel","author":"","subject":"Mathe"}`)
+			tueren := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
+			w := ruf(t, tueren, id, `{"isbn":"9783161484100","title":"Titel","author":"","subject":"Mathe"}`)
 
 			if w.Code != fall.status {
 				t.Fatalf("Status %d, erwartet %d — Rumpf: %s", w.Code, fall.status, w.Body.String())
@@ -276,13 +276,13 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 
 // ruf schickt einen PUT an den Aktualisieren-Handler. Den Platzhalter {id} füllt im
 // Betrieb der Mux (api_routen.go).
-func ruf(t *testing.T, handler *Tueren, id, rumpf string) *httptest.ResponseRecorder {
+func ruf(t *testing.T, tueren *Tueren, id, rumpf string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPut, "/api/books/"+id, strings.NewReader(rumpf))
-	req.SetPathValue("id", id)
-	req.Header.Set("Content-Type", "application/json")
+	anfrage := httptest.NewRequest(http.MethodPut, "/api/books/"+id, strings.NewReader(rumpf))
+	anfrage.SetPathValue("id", id)
+	anfrage.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	handler.TitelAendern(w, req)
+	tueren.TitelAendern(w, anfrage)
 	return w
 }
 

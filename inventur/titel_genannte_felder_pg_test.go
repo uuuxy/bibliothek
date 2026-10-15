@@ -16,17 +16,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// PUT /api/books/{id} schreibt die Felder, die der Rumpf nennt (docs/OFFEN.md 5.5). Die Maske
+// PUT /api/books/{id} schreibt die Felder, die der Rumpf nennt. Die Maske
 // schickt die Felder, die sie geändert hat: Zwei Plätze mit demselben Titel überschreiben sich
 // nicht, was nur einer von beiden angefasst hat.
 
 const genanntVorsatz = "Genannte-Felder-Probe "
 
 type genanntProbe struct {
-	t       *testing.T
-	pool    *pgxpool.Pool
-	handler *Tueren
-	nr      int
+	t      *testing.T
+	pool   *pgxpool.Pool
+	tueren *Tueren
+	nr     int
 }
 
 // neueGenanntProbe stellt die Tür der Maske vor die Test-Datenbank und räumt Titel und Fächer
@@ -49,7 +49,7 @@ func neueGenanntProbe(t *testing.T) *genanntProbe {
 	t.Cleanup(loesche)
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	return &genanntProbe{t: t, pool: pool, handler: NewTueren(TuerenKonfig{
+	return &genanntProbe{t: t, pool: pool, tueren: NewTueren(TuerenKonfig{
 		Abfragen:          NewTitelAbfragen(pool),
 		Metadaten:         offlineMetadatenClient(),
 		VerlangeLesen:     durchlass,
@@ -93,7 +93,7 @@ func (p *genanntProbe) aendere(id string, rumpf any) (int, string) {
 		p.t.Fatal(err)
 	}
 	rec := httptest.NewRecorder()
-	p.handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/api/books/"+id, bytes.NewReader(daten)))
+	p.tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/api/books/"+id, bytes.NewReader(daten)))
 	return rec.Code, rec.Body.String()
 }
 
@@ -130,8 +130,8 @@ func geaenderteSpalten(vorher, nachher map[string]string) []string {
 	return spalten
 }
 
-// Der Ablauf aus OFFEN 5.5: Platz 1 hat den Titel offen, Platz 2 berichtigt den Listenpreis,
-// danach speichert Platz 1 einen anderen Verlag. Beide Eingaben bleiben stehen.
+// Platz 1 hat den Titel offen, Platz 2 berichtigt den Listenpreis, danach speichert Platz 1
+// einen anderen Verlag. Beide Eingaben bleiben stehen.
 func TestTitelAendern_ZweiPlaetzeBehaltenIhreFelder(t *testing.T) {
 	p := neueGenanntProbe(t)
 	id := p.lege()

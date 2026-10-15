@@ -4,8 +4,8 @@ import (
 	"testing"
 )
 
-func TestInferSubjectFromTitle(t *testing.T) {
-	tests := []struct {
+func TestErrateFachAusTitel(t *testing.T) {
+	faelle := []struct {
 		name     string
 		title    string
 		expected string
@@ -23,11 +23,11 @@ func TestInferSubjectFromTitle(t *testing.T) {
 		{"Empty string", "", ""},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := errateFachAusTitel(tt.title)
-			if result != tt.expected {
-				t.Errorf("inferSubjectFromTitle(%q) = %q; want %q", tt.title, result, tt.expected)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			ergebnis := errateFachAusTitel(f.title)
+			if ergebnis != f.expected {
+				t.Errorf("errateFachAusTitel(%q) = %q; want %q", f.title, ergebnis, f.expected)
 			}
 		})
 	}

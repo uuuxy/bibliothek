@@ -39,9 +39,9 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 		  <datafield tag="245" ind1="1" ind2="0"><subfield code="a">Harry Potter und der Stein der Weisen</subfield></datafield>
 		</record></recordData></record></records></searchRetrieveResponse>`
 	var gefragt []string
-	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: &MetadatenClient{httpClient: &http.Client{
-		Transport: &mockTransport{roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			gefragt = append(gefragt, req.URL.Host)
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: &MetadatenClient{httpClient: &http.Client{
+		Transport: &mockTransport{roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+			gefragt = append(gefragt, anfrage.URL.Host)
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(satz)), Header: make(http.Header)}, nil
 		}},
 	}}}
@@ -52,13 +52,13 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		req := httptest.NewRequest(methode, "/api/books/"+id, bytes.NewReader(daten))
-		req.SetPathValue("id", id)
+		anfrage := httptest.NewRequest(methode, "/api/books/"+id, bytes.NewReader(daten))
+		anfrage.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		if methode == http.MethodPost {
-			handler.TitelAnlegen(rec, req)
+			tueren.TitelAnlegen(rec, anfrage)
 		} else {
-			handler.TitelAendern(rec, req)
+			tueren.TitelAendern(rec, anfrage)
 		}
 		return rec
 	}
@@ -119,10 +119,10 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 	}
 
 	// Die ISBN-Abfrage der Maske nennt den Preis.
-	req := httptest.NewRequest(http.MethodGet, "/api/lookup/"+isbn, nil)
-	req.SetPathValue("isbn", isbn)
+	anfrage := httptest.NewRequest(http.MethodGet, "/api/lookup/"+isbn, nil)
+	anfrage.SetPathValue("isbn", isbn)
 	abfrage := httptest.NewRecorder()
-	handler.ISBNSuche(abfrage, req)
+	tueren.ISBNSuche(abfrage, anfrage)
 	var antwort struct {
 		Data struct {
 			Preis float64 `json:"preis"`

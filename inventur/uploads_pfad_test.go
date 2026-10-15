@@ -52,7 +52,7 @@ func TestSchreibeUploadDateiVerlaesstUploadsNicht(t *testing.T) {
 			}
 
 			// Und nichts ist außerhalb gelandet.
-			if _, statErr := os.Stat(filepath.Join(verzeichnis, "entwischt.txt")); statErr == nil {
+			if _, statFehler := os.Stat(filepath.Join(verzeichnis, "entwischt.txt")); statFehler == nil {
 				t.Error("Datei liegt neben uploads/ statt darin")
 			}
 		})
@@ -80,7 +80,7 @@ func TestSchreibeUploadDateiFolgtKeinemSymlinkAusUploadsHeraus(t *testing.T) {
 	if err == nil {
 		t.Error("dem Symlink wurde gefolgt — der Schreibzugriff landete außerhalb von uploads/")
 	}
-	if _, statErr := os.Stat(filepath.Join(ausserhalb, "beute.txt")); statErr == nil {
+	if _, statFehler := os.Stat(filepath.Join(ausserhalb, "beute.txt")); statFehler == nil {
 		t.Error("Datei wurde außerhalb von uploads/ angelegt")
 	}
 }

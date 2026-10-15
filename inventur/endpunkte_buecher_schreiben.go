@@ -218,7 +218,7 @@ func (t *Tueren) TitelAnlegen(antwort http.ResponseWriter, anfrage *http.Request
 }
 
 // bestandOderNull löst den Zeiger für den ANLEGEN-Weg auf: Wer beim Anlegen keinen
-// Bestand nennt, legt einen Titel ohne Exemplare an. Beim ÄNDERN ist dieselbe Angabe
+// Bestand nennt, legt einen Titel ohne Exemplare an. Beim ändern ist dieselbe Angabe
 // etwas anderes — dort heißt "nicht mitgeschickt" ausdrücklich "nicht anfassen"
 // (endpunkte_buecher_aktualisieren.go).
 func bestandOderNull(bestand *int) int {

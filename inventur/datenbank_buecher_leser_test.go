@@ -12,15 +12,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBookRepository_ListBooks(t *testing.T) {
+func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
 	ctx := context.Background()
-	lastCounted := "2023-01-01"
+	zuletztGezaehlt := "2023-01-01"
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
 			WithArgs("Math", "algebra", 50000).
@@ -31,7 +31,7 @@ func TestBookRepository_ListBooks(t *testing.T) {
 				"listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 			}).AddRow(
 				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", "A", false,
-				2, 3, 0, &lastCounted, 1, "Buch", 5, 6,
+				2, 3, 0, &zuletztGezaehlt, 1, "Buch", 5, 6,
 				"", "", 2020, map[string]any{}, "4. Aufl. 2023", nil, false, "werk-1", 2,
 			))
 		mock.ExpectQuery(`SELECT tsw.titel_id.+FROM schlagworte sw`).
@@ -42,17 +42,17 @@ func TestBookRepository_ListBooks(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "standort", "anzahl"}).
 				AddRow("book-1", "Lehrerschrank", 2))
 
-		books, err := repo.LadeTitelListe(ctx, "Math", "algebra", false)
+		eintraege, err := abfragen.LadeTitelListe(ctx, "Math", "algebra", false)
 		assert.NoError(t, err)
-		assert.Len(t, books, 1)
-		if len(books) > 0 {
-			assert.Equal(t, "book-1", books[0].ID)
-			assert.Equal(t, 3, books[0].Bestand)
-			// Die Standorte der Exemplare (docs/OFFEN.md 5.53) kommen mit der Liste.
-			assert.Equal(t, []repository.StandortZahl{{Standort: "Lehrerschrank", Anzahl: 2}}, books[0].Standorte)
-			// Buch und Rang der Auflage (docs/OFFEN.md 4.18, Stufe 6) stehen am Ende der Zeile.
-			assert.Equal(t, "werk-1", books[0].WerkID)
-			assert.Equal(t, 2, books[0].WerkRang)
+		assert.Len(t, eintraege, 1)
+		if len(eintraege) > 0 {
+			assert.Equal(t, "book-1", eintraege[0].ID)
+			assert.Equal(t, 3, eintraege[0].Bestand)
+			// Die Standorte der Exemplare kommen mit der Liste.
+			assert.Equal(t, []repository.StandortZahl{{Standort: "Lehrerschrank", Anzahl: 2}}, eintraege[0].Standorte)
+			// Buch und Rang der Auflage stehen am Ende der Zeile.
+			assert.Equal(t, "werk-1", eintraege[0].WerkID)
+			assert.Equal(t, 2, eintraege[0].WerkRang)
 		}
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -61,38 +61,38 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
 			WithArgs("", "", 50000).
 			WillReturnError(fmt.Errorf("db connection failed"))
 
-		books, err := repo.LadeTitelListe(ctx, "", "", false)
+		eintraege, err := abfragen.LadeTitelListe(ctx, "", "", false)
 		assert.ErrorContains(t, err, "bücher konnten nicht geladen werden")
-		assert.Nil(t, books)
+		assert.Nil(t, eintraege)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
-func TestBookRepository_ListExternalCoverBooks(t *testing.T) {
+func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\) AS isbn, titel AS title, COALESCE\(cover_url, ''\) AS cover_url FROM buecher_titel WHERE cover_url LIKE 'http%' ORDER BY id ASC LIMIT \$1`).
 			WithArgs(10).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "cover_url"}).
 				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg"))
 
-		books, err := repo.LadeTitelMitFremdemCover(ctx, 10)
+		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
 		assert.NoError(t, err)
-		assert.Len(t, books, 1)
-		if len(books) > 0 {
-			assert.Equal(t, "book-1", books[0].ID)
+		assert.Len(t, eintraege, 1)
+		if len(eintraege) > 0 {
+			assert.Equal(t, "book-1", eintraege[0].ID)
 		}
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -101,18 +101,18 @@ func TestBookRepository_ListExternalCoverBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\) AS isbn, titel AS title, COALESCE\(cover_url, ''\) AS cover_url FROM buecher_titel WHERE cover_url LIKE 'http%' ORDER BY id ASC LIMIT \$1`).
 			WithArgs(100).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "cover_url"}).
 				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg"))
 
-		books, err := repo.LadeTitelMitFremdemCover(ctx, 0)
+		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 0)
 		assert.NoError(t, err)
-		assert.Len(t, books, 1)
-		if len(books) > 0 {
-			assert.Equal(t, "book-1", books[0].ID)
+		assert.Len(t, eintraege, 1)
+		if len(eintraege) > 0 {
+			assert.Equal(t, "book-1", eintraege[0].ID)
 		}
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -121,15 +121,15 @@ func TestBookRepository_ListExternalCoverBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\) AS isbn, titel AS title, COALESCE\(cover_url, ''\) AS cover_url FROM buecher_titel WHERE cover_url LIKE 'http%' ORDER BY id ASC LIMIT \$1`).
 			WithArgs(100).
 			WillReturnError(fmt.Errorf("db failure"))
 
-		books, err := repo.LadeTitelMitFremdemCover(ctx, -1)
+		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, -1)
 		assert.ErrorContains(t, err, "bücher mit externen covern konnten nicht geladen werden")
-		assert.Nil(t, books)
+		assert.Nil(t, eintraege)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -137,16 +137,16 @@ func TestBookRepository_ListExternalCoverBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\) AS isbn, titel AS title, COALESCE\(cover_url, ''\) AS cover_url FROM buecher_titel WHERE cover_url LIKE 'http%' ORDER BY id ASC LIMIT \$1`).
 			WithArgs(10).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title"}). // Missing column to trigger scan error
 												AddRow("book-1", "123", "Title 1"))
 
-		books, err := repo.LadeTitelMitFremdemCover(ctx, 10)
+		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
 		assert.ErrorContains(t, err, "bücher mit externen covern konnten nicht gelesen werden")
-		assert.Nil(t, books)
+		assert.Nil(t, eintraege)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -154,7 +154,7 @@ func TestBookRepository_ListExternalCoverBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\) AS isbn, titel AS title, COALESCE\(cover_url, ''\) AS cover_url FROM buecher_titel WHERE cover_url LIKE 'http%' ORDER BY id ASC LIMIT \$1`).
 			WithArgs(10).
@@ -162,26 +162,26 @@ func TestBookRepository_ListExternalCoverBooks(t *testing.T) {
 				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg").
 				RowError(1, fmt.Errorf("row error")))
 
-		books, err := repo.LadeTitelMitFremdemCover(ctx, 10)
+		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
 		assert.ErrorContains(t, err, "fehler beim iterieren externer cover-bücher")
-		assert.Nil(t, books)
+		assert.Nil(t, eintraege)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
-func TestBookRepository_ListBooksByIDs(t *testing.T) {
+func TestTitelAbfragen_LadeTitelNachIDs(t *testing.T) {
 	ctx := context.Background()
-	lastCounted := "2023-01-01"
+	zuletztGezaehlt := "2023-01-01"
 
 	t.Run("empty ids", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
-		books, err := repo.LadeTitelNachIDs(ctx, []string{})
+		eintraege, err := abfragen.LadeTitelNachIDs(ctx, []string{})
 		assert.NoError(t, err)
-		assert.Empty(t, books)
+		assert.Empty(t, eintraege)
 		// No query expected
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -190,7 +190,7 @@ func TestBookRepository_ListBooksByIDs(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		ids := []string{"book-1"}
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
@@ -202,15 +202,15 @@ func TestBookRepository_ListBooksByIDs(t *testing.T) {
 				"listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 			}).AddRow(
 				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", "A", false,
-				2, 3, 0, &lastCounted, 1, "Buch", 5, 6,
+				2, 3, 0, &zuletztGezaehlt, 1, "Buch", 5, 6,
 				"", "", 2020, map[string]any{}, "4. Aufl. 2023", nil, false, "", 0,
 			))
 
-		books, err := repo.LadeTitelNachIDs(ctx, ids)
+		eintraege, err := abfragen.LadeTitelNachIDs(ctx, ids)
 		assert.NoError(t, err)
-		assert.Len(t, books, 1)
-		if len(books) > 0 {
-			assert.Equal(t, "book-1", books[0].ID)
+		assert.Len(t, eintraege, 1)
+		if len(eintraege) > 0 {
+			assert.Equal(t, "book-1", eintraege[0].ID)
 		}
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -219,16 +219,16 @@ func TestBookRepository_ListBooksByIDs(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		ids := []string{"book-1"}
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
 			WithArgs(ids).
 			WillReturnError(fmt.Errorf("db connection failed"))
 
-		books, err := repo.LadeTitelNachIDs(ctx, ids)
+		eintraege, err := abfragen.LadeTitelNachIDs(ctx, ids)
 		assert.ErrorContains(t, err, "bücher nach ids konnten nicht geladen werden")
-		assert.Nil(t, books)
+		assert.Nil(t, eintraege)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }

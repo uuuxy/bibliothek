@@ -15,7 +15,7 @@ import (
 // und der Ausdruck, der ihren Wert schreibt.
 type titelFeld struct{ name, spalte, wert string }
 
-// titelFelder sind die Felder, die UpdateBook schreibt, mit den Parametern seiner Anweisung.
+// titelFelder sind die Felder, die AendereTitel schreibt, mit den Parametern seiner Anweisung.
 // Geschrieben wird nur, was der Aufrufer nennt: Zwei Plätze, die denselben Titel offen haben,
 // überschrieben sich sonst gegenseitig Felder, die keiner von beiden angefasst hat.
 var titelFelder = []titelFeld{
@@ -28,7 +28,7 @@ var titelFelder = []titelFeld{
 	{"lastCounted", "last_counted", "NULLIF($7::text, '')::date"},
 	{"medientyp", "medientyp", "$8"},
 	{"erweiterteEigenschaften", "erweiterte_eigenschaften", "$9"},
-	// 0 heißt „unbekannt" und wird NULL (Migration 162).
+	// 0 heißt „unbekannt" und wird NULL.
 	{"jahrgangVon", "jahrgang_von", "NULLIF($10, 0)"},
 	{"jahrgangBis", "jahrgang_bis", "NULLIF($11, 0)"},
 	{"untertitel", "untertitel", "$12"},
@@ -101,7 +101,7 @@ func (a *TitelAbfragen) AendereTitel(ctx context.Context, id string, eintrag Tit
 		return ErrTitelNichtGefunden
 	}
 
-	// Schlagworte in derselben Transaktion (Migration 138). nil heißt „nicht
+	// Schlagworte in derselben Transaktion. nil heißt „nicht
 	// mitgeschickt" und lässt die vorhandenen stehen — wie beim Bestand oben.
 	if eintrag.Schlagworte != nil {
 		if _, err := repository.SetzeSchlagworte(ctx, tx, id, eintrag.Schlagworte); err != nil {
@@ -123,9 +123,9 @@ func (a *TitelAbfragen) AendereTitel(ctx context.Context, id string, eintrag Tit
 	return nil
 }
 
-// titelWerte sind die Parameter von sqlTitelAendern, der letzte nennt die Felder. Ein
-// genanntes Fach wird vorher registriert, wenn die Systematik es nicht kennt (subject ist FK,
-// Migration 078), und in ihrer Schreibweise geschrieben; ein Leerwert wird NULL.
+// titelWerte sind die Parameter von sqlTitelAendern, der letzte nennt die Felder. Ein genanntes
+// Fach wird vorher eingetragen, wenn die Systematik es nicht kennt (subject ist ein
+// Fremdschlüssel), und in ihrer Schreibweise geschrieben; ein Leerwert wird NULL.
 func (a *TitelAbfragen) titelWerte(ctx context.Context, id string, eintrag Titel, felder []string) ([]any, error) {
 	if err := pruefeFeldnamen(felder); err != nil {
 		return nil, err
@@ -293,10 +293,10 @@ func zaehleBestand(ctx context.Context, q repository.Datenbank, titelID string) 
 	return bestand, nil
 }
 
-// gleicheBestandAb synchronizes the physical buecher_exemplare records to match the expected stock.
+// gleicheBestandAb gleicht die Zeilen in buecher_exemplare an den erwarteten Bestand an.
 //
-// q ist repository.Datenbank statt dbSchreiber, weil die Nummernvergabe (barcode_seq gegen
-// Bestandsabgleich) Query braucht — pgx.Tx und der Pool erfüllen beides. bearbeiterID darf
+// q ist repository.Datenbank statt dbSchreiber, weil die Vergabe der Nummern (barcode_seq beim
+// Abgleich des Bestands) Query braucht; pgx.Tx und der Pool erfüllen beides. bearbeiterID darf
 // leer sein, solange der Bestand nicht sinkt: Das Anlegen eines Titels sondert nichts aus.
 func (a *TitelAbfragen) gleicheBestandAb(ctx context.Context, q repository.Datenbank, titelID string, erwarteterBestand int, bearbeiterID string) error {
 	aktuellerBestand, err := zaehleBestand(ctx, q, titelID)
@@ -313,8 +313,8 @@ func (a *TitelAbfragen) gleicheBestandAb(ctx context.Context, q repository.Daten
 // Protokoll (repository.ProtokolliereAussonderung); ohne sie sondert der Abgleich nichts aus.
 func (a *TitelAbfragen) gleicheExemplareAn(ctx context.Context, q repository.Datenbank, titelID string, aktuellerBestand, erwarteterBestand int, bearbeiterID string) error {
 	if erwarteterBestand > aktuellerBestand {
-		// Nummern aus barcode_seq — dieselbe Quelle wie Bestellwesen, Handvergabe und
-		// Littera-Import (Migration 068: eine Quelle für alle Wege).
+		// Nummern aus barcode_seq, dieselbe Quelle wie Bestellwesen, Vergabe von Hand und Import aus
+		// Littera: eine Quelle für alle Wege.
 		barcodes, err := repository.ZieheFreieExemplarBarcodes(ctx, q, erwarteterBestand-aktuellerBestand)
 		if err != nil {
 			return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)

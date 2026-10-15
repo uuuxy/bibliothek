@@ -86,14 +86,14 @@ func bestimmeSpalten(kopf []string) (map[string]int, bool) {
 	spalten := map[string]int{"isbn": -1, "titel": -1, "autor": -1, "fach": -1, "klasse": -1, "bestand": -1}
 	mitKopfzeile := true
 
-	// Versuche Header zu erkennen
+	// Die Kopfzeile erkennen.
 	for i, spalte := range kopf {
 		if feld := feldZurKopfzeile(spalte); feld != "" {
 			spalten[feld] = i
 		}
 	}
 
-	// Fallback: Wenn kein Header erkannt wurde (keine ISBN Spalte), versuche Inhalt zu erraten
+	// Ohne erkannte Kopfzeile (keine Spalte ISBN) die Spalten aus dem Inhalt erraten.
 	if spalten["isbn"] == -1 {
 		mitKopfzeile = false
 		errateSpaltenAusInhalt(kopf, spalten)
@@ -136,7 +136,7 @@ func (t *Tueren) verarbeiteImportZeilen(ctx context.Context, datenZeilen [][]str
 
 	for _, zeile := range datenZeilen {
 		wg.Add(1)
-		// Semaphore VOR dem Start der Goroutine belegen, damit die Schleife blockiert und
+		// Semaphore vor dem Start der Goroutine belegen, damit die Schleife blockiert und
 		// nicht für jede Zeile sofort eine Goroutine erzeugt. Bei großen Importen (z. B. 20k
 		// Zeilen) entstünden sonst zehntausende gleichzeitig lebende Goroutinen, die alle nur
 		// auf einen Semaphor-Slot warten — unnötiger Speicher- und Scheduler-Druck.
@@ -220,11 +220,11 @@ func (t *Tueren) speichereImportierteTitel(ctx context.Context, zuSchreiben []Ti
 		return t.speichereTitelEinzeln(ctx, zuSchreiben, gescheitert, ersterFehler)
 	}
 
-	// #nosec G115 - count is bounded by maxImportRows (5000)
+	// #nosec G115 - die Zahl ist durch maxImportZeilen (5000) begrenzt
 	importiert += int32(anzahl)
 	if importiert == 0 {
 		// Falls count 0 ist wegen z.B. nur Updates in manchen DB Versionen
-		// #nosec G115 - len is bounded by maxImportRows (5000)
+		// #nosec G115 - die Länge ist durch maxImportZeilen (5000) begrenzt
 		importiert = int32(len(zuSchreiben))
 	}
 	return importiert, gescheitert, ersterFehler
@@ -282,7 +282,7 @@ func (t *Tueren) ExcelImport(w http.ResponseWriter, r *http.Request) {
 	schreibeJSON(w, status, antwort)
 }
 
-// importAntwort formt das Ergebnis eines Laufs — EINE Stelle, weil dieselbe Antwort
+// importAntwort formt das Ergebnis eines Laufs — eine Stelle, weil dieselbe Antwort
 // beim Wiederholungsaufruf aus dem Idempotenz-Gedächtnis kommt.
 func importAntwort(importiert, gescheitert int32, ersterFehler error) (int, map[string]any) {
 	if importiert == 0 && gescheitert > 0 {

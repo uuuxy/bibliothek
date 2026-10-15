@@ -10,7 +10,7 @@ import (
 )
 
 // Die Bestandskorrektur der Buchmaske ist die fünfte und sechste Tür zum Zustand
-// „ausgesondert" (Migration 128, docs/OFFEN.md 9.3 d): Wird der Bestand eines Titels nach
+// „ausgesondert": Wird der Bestand eines Titels nach
 // unten gesetzt, sondert sie erst freie und dann notfalls verliehene Exemplare aus. Sie
 // liegt in einem anderen Paket als die vier Türen aus api/katalog/abgangsdatum_pg_test.go — und
 // genau so entstehen Lücken in einem Nachweis: Der Test steht da, wo man ihn erwartet,
@@ -35,12 +35,12 @@ func TestAbgangsdatum_BestandskorrekturStempelt(t *testing.T) {
 		}
 	})
 
-	repo := NewTitelAbfragen(pool)
-	if err := repo.gleicheBestandAb(ctx, pool, titelID, 3, ""); err != nil {
+	abfragen := NewTitelAbfragen(pool)
+	if err := abfragen.gleicheBestandAb(ctx, pool, titelID, 3, ""); err != nil {
 		t.Fatalf("Bestand aufbauen: %v", err)
 	}
 	// Runter auf 1 — zwei Exemplare gehen ab.
-	if err := repo.gleicheBestandAb(ctx, pool, titelID, 1, bearbeiterFuerAussonderung(t, pool)); err != nil {
+	if err := abfragen.gleicheBestandAb(ctx, pool, titelID, 1, bearbeiterFuerAussonderung(t, pool)); err != nil {
 		t.Fatalf("Bestand korrigieren: %v", err)
 	}
 

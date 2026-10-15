@@ -11,8 +11,8 @@ import (
 
 var errTest = errors.New("test error")
 
-func TestUpdateClassBooks(t *testing.T) {
-	tests := []struct {
+func TestAendereKlassensaetze(t *testing.T) {
+	faelle := []struct {
 		name          string
 		oldClassName  string
 		newClassNames []string
@@ -161,23 +161,23 @@ func TestUpdateClassBooks(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
 			if err != nil {
 				t.Fatalf("failed to create pgxmock: %v", err)
 			}
 			defer mock.Close()
 
-			repo := NewTitelAbfragen(mock)
-			tt.mockSetup(mock)
+			abfragen := NewTitelAbfragen(mock)
+			f.mockSetup(mock)
 
-			err = repo.AendereKlassensaetze(context.Background(), tt.oldClassName, tt.newClassNames, tt.bookIDs)
-			if tt.wantErr {
+			err = abfragen.AendereKlassensaetze(context.Background(), f.oldClassName, f.newClassNames, f.bookIDs)
+			if f.wantErr {
 				if err == nil {
 					t.Errorf("expected error, got nil")
-				} else if err.Error() != tt.errMsg {
-					t.Errorf("expected error message %q, got %q", tt.errMsg, err.Error())
+				} else if err.Error() != f.errMsg {
+					t.Errorf("expected error message %q, got %q", f.errMsg, err.Error())
 				}
 			} else {
 				if err != nil {
@@ -192,16 +192,16 @@ func TestUpdateClassBooks(t *testing.T) {
 	}
 }
 
-func TestDeleteClassGroup(t *testing.T) {
+func TestLoescheKlassensatzGruppe(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewTitelAbfragen(mock)
+	abfragen := NewTitelAbfragen(mock)
 
-	tests := []struct {
+	faelle := []struct {
 		name       string
 		classNames []string
 		mockSetup  func()
@@ -247,13 +247,13 @@ func TestDeleteClassGroup(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.mockSetup()
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			f.mockSetup()
 
-			err := repo.LoescheKlassensatzGruppe(context.Background(), tt.classNames)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("DeleteClassGroup() error = %v, wantErr %v", err, tt.wantErr)
+			err := abfragen.LoescheKlassensatzGruppe(context.Background(), f.classNames)
+			if (err != nil) != f.wantErr {
+				t.Errorf("LoescheKlassensatzGruppe() error = %v, wantErr %v", err, f.wantErr)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -263,17 +263,17 @@ func TestDeleteClassGroup(t *testing.T) {
 	}
 }
 
-func TestGetClassGroups(t *testing.T) {
+func TestLadeKlassensatzGruppen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewTitelAbfragen(mock)
+	abfragen := NewTitelAbfragen(mock)
 	ctx := context.Background()
 
-	tests := []struct {
+	faelle := []struct {
 		name       string
 		branch     string
 		sortOrder  string
@@ -286,7 +286,7 @@ func TestGetClassGroups(t *testing.T) {
 			branch:    "",
 			sortOrder: "",
 			mockSetup: func() {
-				rows := pgxmock.NewRows([]string{
+				zeilen := pgxmock.NewRows([]string{
 					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
 					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "hand", 0, nil).
@@ -295,7 +295,7 @@ func TestGetClassGroups(t *testing.T) {
 
 				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM zuordnung cb.*ORDER BY.*CASE.*ASC, b\.titel ASC`).
 					WithArgs("", KlassensatzMindestLeser).
-					WillReturnRows(rows)
+					WillReturnRows(zeilen)
 			},
 			wantErr:    false,
 			wantGroups: 2, // 5A and 6B
@@ -305,14 +305,14 @@ func TestGetClassGroups(t *testing.T) {
 			branch:    "F",
 			sortOrder: "desc",
 			mockSetup: func() {
-				rows := pgxmock.NewRows([]string{
+				zeilen := pgxmock.NewRows([]string{
 					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
 					AddRow("10F", "550e8400-e29b-41d4-a716-446655440003", "Buch 3", "Englisch", "F", "url3", "789", 1, 1, 0, "hand", 0, nil)
 
 				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM zuordnung cb.*ORDER BY.*CAST.*DESC, cb\.class_name DESC, b\.titel ASC`).
 					WithArgs("F", KlassensatzMindestLeser).
-					WillReturnRows(rows)
+					WillReturnRows(zeilen)
 			},
 			wantErr:    false,
 			wantGroups: 1, // 10F
@@ -334,15 +334,15 @@ func TestGetClassGroups(t *testing.T) {
 			branch:    "",
 			sortOrder: "",
 			mockSetup: func() {
-				// Invalid type for gesamt (string instead of int) to force scan error
-				rows := pgxmock.NewRows([]string{
+				// Falscher Typ für gesamt (Text statt Zahl), damit der Scan scheitert.
+				zeilen := pgxmock.NewRows([]string{
 					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
 					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, "invalid", 0, "hand", 0, nil)
 
 				mock.ExpectQuery(`(?s)SELECT.*`).
 					WithArgs("", KlassensatzMindestLeser).
-					WillReturnRows(rows)
+					WillReturnRows(zeilen)
 			},
 			wantErr:    true,
 			wantGroups: 0,
@@ -352,7 +352,7 @@ func TestGetClassGroups(t *testing.T) {
 			branch:    "",
 			sortOrder: "",
 			mockSetup: func() {
-				rows := pgxmock.NewRows([]string{
+				zeilen := pgxmock.NewRows([]string{
 					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
 					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "hand", 0, nil).
@@ -360,42 +360,42 @@ func TestGetClassGroups(t *testing.T) {
 
 				mock.ExpectQuery(`(?s)SELECT.*`).
 					WithArgs("", KlassensatzMindestLeser).
-					WillReturnRows(rows)
+					WillReturnRows(zeilen)
 			},
 			wantErr:    true,
 			wantGroups: 0,
 		},
 		{
-			// Die Aufschlüsselung der Auflagen (4.18, Stufe 5) ist JSON aus der Abfrage; ist es
-			// nicht lesbar, ist das ein Fehler und keine Kachel ohne Mischung.
+			// Die Aufschlüsselung der Auflagen ist JSON aus der Abfrage; ist es nicht lesbar, ist das ein
+			// Fehler und keine Kachel ohne Mischung.
 			name:      "auflagen error",
 			branch:    "",
 			sortOrder: "",
 			mockSetup: func() {
-				rows := pgxmock.NewRows([]string{
+				zeilen := pgxmock.NewRows([]string{
 					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
 					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "ausleihe", 6, []byte(`{kaputt`))
 
 				mock.ExpectQuery(`(?s)SELECT.*`).
 					WithArgs("", KlassensatzMindestLeser).
-					WillReturnRows(rows)
+					WillReturnRows(zeilen)
 			},
 			wantErr:    true,
 			wantGroups: 0,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.mockSetup()
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			f.mockSetup()
 
-			groups, err := repo.LadeKlassensatzGruppen(ctx, tt.branch, tt.sortOrder)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("LadeKlassensatzGruppen() error = %v, wantErr %v", err, tt.wantErr)
+			gruppen, err := abfragen.LadeKlassensatzGruppen(ctx, f.branch, f.sortOrder)
+			if (err != nil) != f.wantErr {
+				t.Errorf("LadeKlassensatzGruppen() error = %v, wantErr %v", err, f.wantErr)
 			}
-			if len(groups) != tt.wantGroups {
-				t.Errorf("LadeKlassensatzGruppen() got %d groups, want %d", len(groups), tt.wantGroups)
+			if len(gruppen) != f.wantGroups {
+				t.Errorf("LadeKlassensatzGruppen() got %d groups, want %d", len(gruppen), f.wantGroups)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -405,8 +405,8 @@ func TestGetClassGroups(t *testing.T) {
 	}
 }
 
-func TestAddBooksToClasses(t *testing.T) {
-	tests := []struct {
+func TestOrdneTitelKlassenZu(t *testing.T) {
+	faelle := []struct {
 		name       string
 		classNames []string
 		bookIDs    []string
@@ -429,7 +429,7 @@ func TestAddBooksToClasses(t *testing.T) {
 			classNames: []string{"5A", "5B"},
 			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000", "98765432-e89b-12d3-a456-426614174000"},
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
-				// The combinations of 5A and 5B with the two books means 4 rows total
+				// 05A und 05B mit den zwei Titeln ergeben vier Zeilen.
 				mock.ExpectExec(`^[\s\S]*INSERT INTO class_books[\s\S]*ON CONFLICT[\s\S]*DO NOTHING[\s\S]*$`).
 					WithArgs(
 						[]string{"5A", "5A", "5B", "5B"},
@@ -475,20 +475,20 @@ func TestAddBooksToClasses(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
 			if err != nil {
 				t.Fatalf("failed to create pgxmock: %v", err)
 			}
 			defer mock.Close()
 
-			repo := NewTitelAbfragen(mock)
-			tt.mockSetup(mock)
+			abfragen := NewTitelAbfragen(mock)
+			f.mockSetup(mock)
 
-			err = repo.OrdneTitelKlassenZu(context.Background(), tt.classNames, tt.bookIDs)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AddBooksToClasses() error = %v, wantErr %v", err, tt.wantErr)
+			err = abfragen.OrdneTitelKlassenZu(context.Background(), f.classNames, f.bookIDs)
+			if (err != nil) != f.wantErr {
+				t.Errorf("OrdneTitelKlassenZu() error = %v, wantErr %v", err, f.wantErr)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {

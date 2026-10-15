@@ -8,12 +8,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Schulbücher je Fach fürs Lehrerportal (03.09.2026): Die Fachsprecher wollen
-// wissen, wie viele Mathebücher die Schule hat. Grundlage ist ausschließlich der
-// Lernmittel-Schalter (buecher_titel.ist_lernmittel, Migration 093) und das Fach
-// (buecher_titel.subject, FK auf systematik_kategorien). Zählweise wie bei den
-// Klassensätzen (LadeKlassensatzGruppen): gesamt = nicht ausgesondert und nicht nur bestellt;
-// verliehen = offene Ausleihe; verfügbar = ausleihbar, nicht ausgesondert, nicht verliehen.
+// Schulbücher je Fach für das Portal des Kollegiums: Die Fachsprecher wollen wissen, wie viele
+// Mathebücher die Schule hat. Grundlage ist allein der Schalter der Lernmittel
+// (buecher_titel.ist_lernmittel) und das Fach (buecher_titel.subject, Fremdschlüssel auf
+// systematik_kategorien). Gezählt wird wie bei den Klassensätzen (LadeKlassensatzGruppen): gesamt
+// = nicht ausgesondert und nicht nur bestellt; verliehen = offene Ausleihe; verfügbar =
+// ausleihbar, nicht ausgesondert, nicht verliehen.
 
 // FachBestand ist eine Fach-Kachel: Titel und Exemplare eines Fachs. Fach "" = ohne Fach.
 type FachBestand struct {
@@ -24,8 +24,9 @@ type FachBestand struct {
 	Verfuegbar int    `json:"verfuegbar"`
 }
 
-// LernmittelTitel ist ein Schulbuch in der Fach-Liste — Feldnamen wie ClassBook, damit
-// die Kachel des Klassensatzes (KlassenBuchKachel) sie unverändert zeigt.
+// LernmittelTitel ist ein Schulbuch in der Liste eines Fachs, mit denselben Schlüsseln in JSON
+// wie klassensatzTitel, damit die Kachel des Klassensatzes (KlassenBuchKachel) es unverändert
+// zeigt.
 type LernmittelTitel struct {
 	ID         string `json:"id"`
 	Titel      string `json:"title"`
@@ -36,21 +37,20 @@ type LernmittelTitel struct {
 	Gesamt     int    `json:"gesamt"`
 	Verliehen  int    `json:"verliehen"`
 	Verfuegbar int    `json:"verfuegbar"`
-	// Jahrgang aus Signatur, Import oder Maske; 0 und 0 heißt „unbekannt" (Migration 162).
+	// Jahrgang aus Signatur, Import oder Maske; 0 und 0 heißt „unbekannt".
 	JahrgangVon int `json:"jahrgangVon"`
 	JahrgangBis int `json:"jahrgangBis"`
-	// Schulzweig (buecher_titel.track): am Schulbuch gepflegt, seit 03.09.2026 wieder in
-	// der Maske. Leer heißt „gilt für alle Zweige", nicht „unbekannt".
+	// Schulzweig (buecher_titel.track): am Schulbuch gepflegt, in der Maske einstellbar. Leer heißt
+	// „gilt für alle Zweige", nicht „unbekannt".
 	Zweig string `json:"track"`
-	// Gezaehlt ist das Datum der letzten Zählung (buecher_titel.last_counted) als
-	// „TT.MM.JJJJ"; leer heißt „noch nie gezählt". Absprache vom 03.09.2026: Eine Bestandszahl
-	// ohne Datum sagt nicht, wie alt sie ist — im Ausdruck steht sie sonst so da, als
-	// wäre sie von heute.
+	// Gezaehlt ist das Datum der letzten Zählung (buecher_titel.last_counted) als „TT.MM.JJJJ";
+	// leer heißt „noch nie gezählt". Eine Bestandszahl ohne Datum sagt nicht, wie alt sie ist; im
+	// Ausdruck stünde sie sonst so da, als wäre sie von heute.
 	Gezaehlt string `json:"gezaehlt"`
-	// AuflagenBestand: Steht die Zeile für ein Buch in mehreren Auflagen (docs/OFFEN.md 4.18,
-	// Stufe 6), sind die Zahlen oben die Summe, und hier steht, woraus sie besteht — die
-	// neueste Auflage zuerst. Sonst fehlt das Feld. Nicht „auflagen": Unter diesem Namen trägt
-	// dieselbe Kachel im Klassensatz die Kinder je Auflage (ClassBook.Auflagen).
+	// AuflagenBestand: Steht die Zeile für ein Buch in mehreren Auflagen, sind die Zahlen oben die
+	// Summe, und hier steht, woraus sie besteht, die neueste Auflage zuerst. Sonst fehlt das Feld.
+	// Nicht „auflagen": Unter diesem Namen trägt dieselbe Kachel im Klassensatz die Kinder je Auflage
+	// (klassensatzTitel.Auflagen).
 	AuflagenBestand []AuflageImBestand `json:"auflagenBestand,omitempty"`
 }
 
@@ -76,15 +76,14 @@ type LernmittelFilter struct {
 // Zweigname nicht vorkommt, damit es keinen echten Wert verdeckt.
 const ZweigOhne = "-"
 
-// lernmittelFilterSQL: $1 Jahrgang (0 = alle; ein Atlas 5–10 zählt bei Jahrgang 7 mit),
-// $2 Zweig, $3 Suchtext über Titel, ISBN, Autor und Fach.
+// lernmittelFilterSQL: $1 Jahrgang (0 = alle; ein Atlas 5–10 zählt bei Jahrgang 7 mit), $2 Zweig,
+// $3 Suchtext über Titel, ISBN, Autor und Fach.
 //
-// Zum Zweig: Ein leerer track heißt „gilt für ALLE Zweige" — so sagt es die Buchmaske
-// („leer heißt gilt für alle"), und so ist der Altbestand: Littera hat den Zweig nie
-// geliefert, 470 von 578 Schulbüchern tragen keinen. Ein Filter auf „Gymnasium", der
-// nur `track = 'Gymnasium'` prüft, versteckte deshalb fünf Sechstel des Bestands vor dem
-// Fachsprecher (Befund 03.09.2026). Gesucht wird darum „dieser Zweig ODER für alle";
-// ZweigOhne ist die Gegenrichtung — nur die ohne Angabe.
+// Zum Zweig: Ein leerer track heißt „gilt für alle Zweige"; so sagt es die Maske („leer heißt
+// gilt für alle"), und so ist der Altbestand: Littera hat den Zweig nie geliefert, 470 von 578
+// Schulbüchern tragen keinen. Ein Filter auf „Gymnasium", der nur `track = 'Gymnasium'` prüft,
+// versteckte deshalb fünf Sechstel des Bestands vor dem Fachsprecher. Gesucht wird darum
+// „dieser Zweig oder für alle"; ZweigOhne ist die Gegenrichtung, nur die ohne Angabe.
 var lernmittelFilterSQL = `
 	AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))
 	AND ($2 = '' OR ($2 = '` + ZweigOhne + `' AND COALESCE(b.track, '') = '')
@@ -104,12 +103,12 @@ const lernmittelJoins = `
 	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 	WHERE b.ist_lernmittel`
 
-// lernmittelJeBuchSQL liefert eine Zeile je Buch (docs/OFFEN.md 4.18, Stufe 6; entschieden
-// am 17.09.2026: ein Treffer mit der Gesamtzahl und darunter die Aufschlüsselung je Auflage).
-// Die Filter ($1–$3) wählen die Bücher: Trifft eine Auflage, gehört das Buch dazu. Gezählt
-// wird über alle Schulbuch-Auflagen des Buchs, und oben steht die neueste getroffene — nach
-// einer ISBN also genau diese. Ein Titel ohne Werk ist über COALESCE(werk_id, id) sein
-// eigenes Buch: Für ihn ändert sich nichts. Liste, Fach-Zahlen und PDF lesen dieselben Zeilen.
+// lernmittelJeBuchSQL liefert eine Zeile je Buch: ein Treffer mit der Gesamtzahl und darunter
+// die Aufschlüsselung je Auflage. Die Filter ($1–$3) wählen die Bücher: Trifft eine Auflage,
+// gehört das Buch dazu. Gezählt wird über alle Auflagen des Buchs, die Schulbücher sind, und
+// oben steht die neueste getroffene, nach einer ISBN also genau diese. Ein Titel ohne Werk ist
+// über COALESCE(werk_id, id) sein eigenes Buch: Für ihn ändert sich nichts. Liste, Zahlen je
+// Fach und PDF lesen dieselben Zeilen.
 func lernmittelJeBuchSQL() string {
 	neueste := repository.SQLNeuesteAuflageZuerst("t")
 	return `

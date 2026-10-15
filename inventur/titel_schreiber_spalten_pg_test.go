@@ -13,7 +13,7 @@ import (
 func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 	p := neueGenanntProbe(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(p.pool)
+	abfragen := NewTitelAbfragen(p.pool)
 
 	fach := genanntVorsatz + "Fach Schreiber"
 	preis := 19.9
@@ -66,16 +66,16 @@ func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 		mehrjahresband string
 		schreibe       func(Titel) error
 	}{
-		{"CreateBook", "true", func(b Titel) error {
-			_, err := repo.LegeTitelAn(ctx, b)
+		{"LegeTitelAn", "true", func(b Titel) error {
+			_, err := abfragen.LegeTitelAn(ctx, b)
 			return err
 		}},
-		{"UpsertBook (Einzel-Rückfall)", "false", func(b Titel) error {
-			_, err := repo.SchreibeTitel(ctx, b)
+		{"SchreibeTitel (Einzel-Rückfall)", "false", func(b Titel) error {
+			_, err := abfragen.SchreibeTitel(ctx, b)
 			return err
 		}},
 		{"SchreibeTitelStapel", "false", func(b Titel) error {
-			_, err := repo.SchreibeTitelStapel(ctx, []Titel{b})
+			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		}},
 	}

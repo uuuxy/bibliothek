@@ -12,7 +12,7 @@ import (
 	"bibliothek/repository"
 )
 
-// GET /api/books findet über Schlagwort und Verweis (docs/OFFEN.md 4.20) — in beiden
+// GET /api/books findet über Schlagwort und Verweis — in beiden
 // Reitern des Medienkatalogs. Die Titel-Verwaltung schickt den Suchtext mit (?q=) und
 // bekommt die Treffer vom Server; „Suche & Filter" lädt die ganze Liste und sucht im
 // Browser, braucht also die Wörter je Titel in der Antwort. Fehlt eins von beiden, findet
@@ -20,7 +20,7 @@ import (
 func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}}
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}}
 
 	titel := func(name, barcode string) string {
 		t.Helper()
@@ -64,7 +64,7 @@ func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	liste := func(q string) []zeile {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		handler.TitelListe(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+q, nil))
+		tueren.TitelListe(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+q, nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("GET /api/books?q=%s: %d %s", q, rec.Code, rec.Body.String())
 		}

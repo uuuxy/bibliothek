@@ -21,26 +21,26 @@ import (
 // Go-Dateiserver an seiner Stelle die Dateinamen darin als Liste.
 func TestNeuteredFileSystem_Open(t *testing.T) {
 	// t.TempDir raeumt selbst auf — kein deferter RemoveAll, dessen Fehler niemand liest.
-	tempDir := t.TempDir()
+	testVerzeichnis := t.TempDir()
 
-	if err := os.WriteFile(filepath.Join(tempDir, "file.txt"), []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(testVerzeichnis, "file.txt"), []byte("test"), 0644); err != nil {
 		t.Fatalf("Datei anlegen: %v", err)
 	}
 
-	subDirWithIndex := filepath.Join(tempDir, "with_index")
-	if err := os.Mkdir(subDirWithIndex, 0755); err != nil {
+	unterordnerMitIndex := filepath.Join(testVerzeichnis, "with_index")
+	if err := os.Mkdir(unterordnerMitIndex, 0755); err != nil {
 		t.Fatalf("Verzeichnis anlegen: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(subDirWithIndex, "index.html"), []byte("index"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(unterordnerMitIndex, "index.html"), []byte("index"), 0644); err != nil {
 		t.Fatalf("index.html anlegen: %v", err)
 	}
 
-	subDirWithoutIndex := filepath.Join(tempDir, "without_index")
-	if err := os.Mkdir(subDirWithoutIndex, 0755); err != nil {
+	unterordnerOhneIndex := filepath.Join(testVerzeichnis, "without_index")
+	if err := os.Mkdir(unterordnerOhneIndex, 0755); err != nil {
 		t.Fatalf("Verzeichnis anlegen: %v", err)
 	}
 
-	fs := neuteredFileSystem{http.Dir(tempDir)}
+	fs := neuteredFileSystem{http.Dir(testVerzeichnis)}
 
 	// schliesse macht aus dem Close ein gepruefte Handlung: bliebe hier ein Handle
 	// offen, faende man die Ursache spaeter nur noch als Datei-Limit im Betrieb.
@@ -116,7 +116,7 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 	lege("uploads/covers/abc.webp", "zwischenspeicher-inhalt")
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	handler := NewTueren(TuerenKonfig{
+	tueren := NewTueren(TuerenKonfig{
 		VerlangeLesen:     durchlass,
 		VerlangeAendern:   durchlass,
 		VerlangeLoeschen:  durchlass,
@@ -136,7 +136,7 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 	}
 	for _, f := range faelle {
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, f.pfad, nil))
+		tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, f.pfad, nil))
 		if rec.Code != f.status {
 			t.Errorf("GET %s: Status %d, erwartet %d", f.pfad, rec.Code, f.status)
 		}
@@ -201,7 +201,7 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 		"https://covers.openlibrary.org/b/id/1-L.jpg", "9783161484100")
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	handler := NewTueren(TuerenKonfig{
+	tueren := NewTueren(TuerenKonfig{
 		VerlangeLesen:     durchlass,
 		VerlangeAendern:   durchlass,
 		VerlangeLoeschen:  durchlass,
@@ -216,7 +216,7 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 			continue
 		}
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, f.adresse, nil))
+		tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, f.adresse, nil))
 		if rec.Code != http.StatusOK || rec.Body.Len() == 0 {
 			t.Errorf("%s legte %s ab, der Abruf darauf: Status %d, %d Bytes — die Oberfläche zeigt für diesen Titel kein Cover",
 				f.schreiber, f.adresse, rec.Code, rec.Body.Len())
@@ -227,7 +227,7 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 	}
 }
 
-func TestNewAPIHandler_And_ServeHTTP(t *testing.T) {
+func TestNewTueren_UndServeHTTP(t *testing.T) {
 	// Dummy configurations
 	config := TuerenKonfig{
 		Abfragen:  nil,
@@ -235,45 +235,45 @@ func TestNewAPIHandler_And_ServeHTTP(t *testing.T) {
 		VerlangeLesen: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Middleware", "ViewBooks")
-				// We don't call next.ServeHTTP because repo is nil and the underlying handler would panic
+				// next.ServeHTTP wird nicht gerufen: Ohne Abfragen bräche die Tür dahinter ab.
 				w.WriteHeader(http.StatusOK)
 			})
 		},
 		VerlangeAendern: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Middleware", "EditBooks")
-				// We don't call next.ServeHTTP because repo is nil and the underlying handler would panic
+				// next.ServeHTTP wird nicht gerufen: Ohne Abfragen bräche die Tür dahinter ab.
 				w.WriteHeader(http.StatusOK)
 			})
 		},
 		VerlangeLoeschen: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("X-Middleware", "DeleteBooks")
+				w.Header().Set("X-Middleware", "LoescheTitel")
 				w.WriteHeader(http.StatusOK)
 			})
 		},
 		VerlangeAnmeldung: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Middleware", "Authenticated")
-				// We don't call next.ServeHTTP because repo is nil and the underlying handler would panic
+				// next.ServeHTTP wird nicht gerufen: Ohne Abfragen bräche die Tür dahinter ab.
 				w.WriteHeader(http.StatusOK)
 			})
 		},
 	}
 
-	handler := NewTueren(config)
+	tueren := NewTueren(config)
 
-	if handler.abfragen != nil {
+	if tueren.abfragen != nil {
 		t.Errorf("Expected repo to be nil")
 	}
-	if handler.metadaten != nil {
+	if tueren.metadaten != nil {
 		t.Errorf("Expected metadaten to be nil")
 	}
-	if handler.mux == nil {
+	if tueren.mux == nil {
 		t.Errorf("Expected mux to be initialized")
 	}
 
-	tests := []struct {
+	faelle := []struct {
 		name           string
 		method         string
 		path           string
@@ -324,15 +324,15 @@ func TestNewAPIHandler_And_ServeHTTP(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
+	for _, tc := range faelle {
 		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequest(tc.method, tc.path, nil)
+			anfrage, err := http.NewRequest(tc.method, tc.path, nil)
 			if err != nil {
 				t.Fatalf("Failed to create request: %v", err)
 			}
 			rr := httptest.NewRecorder()
 
-			handler.ServeHTTP(rr, req)
+			tueren.ServeHTTP(rr, anfrage)
 
 			if rr.Code != tc.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rr.Code)

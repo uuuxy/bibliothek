@@ -27,11 +27,11 @@ type klassensatzTitel struct {
 	Leser  int    `json:"leser"`
 	// Auflagen: Haben Kinder der Klasse eine andere Auflage desselben Buchs als die der
 	// Kachel, stehen hier alle Auflagen, die die Klasse hat, mit der Zahl der Kinder — die
-	// meisten zuerst (docs/OFFEN.md 4.18, Stufe 5). Sonst fehlt das Feld.
+	// meisten zuerst. Sonst fehlt das Feld.
 	Auflagen []repository.AuflageInKlasse `json:"auflagen,omitempty"`
 }
 
-// klassensatzGruppe bündelt die Klassensatz-Titel EINER Klasse — die Gruppierung passiert
+// klassensatzGruppe bündelt die Klassensatz-Titel einer Klasse — die Gruppierung passiert
 // serverseitig, damit die Oberfläche nicht über alle Zuordnungen iterieren muss.
 type klassensatzGruppe struct {
 	Klasse string             `json:"className"`
@@ -72,7 +72,7 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Support both single className and multi classNames payload
+	// Der Rumpf nennt eine Klasse (className) oder mehrere (classNames).
 	var zielKlassen []string
 	if len(eingabe.ClassNames) > 0 {
 		for _, name := range eingabe.ClassNames {
@@ -98,7 +98,7 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// We can only rename a single class safely
+	// Umbenennen lässt sich sicher nur eine einzelne Klasse.
 	alterName := strings.TrimSpace(eingabe.OldClassName)
 
 	if !alleUUIDs(eingabe.BookIDs) {

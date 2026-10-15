@@ -18,12 +18,12 @@ type TitelAbfragen struct {
 }
 
 // Fachliche Fehler, die der Aufrufer unterscheiden können muss: Beide sind
-// Bedienfehler (HTTP 400/404), keine Störung — der Handler darf daraus keinen 500 machen.
+// Bedienfehler (HTTP 400/404), keine Störung; die Tür darf daraus keinen 500 machen.
 var (
 	ErrTitelNichtGefunden = errors.New("kein buch mit dieser ID gefunden")
 	ErrISBNDoppelt        = errors.New("ein buch mit dieser ISBN existiert bereits")
 	// ErrDubletteTitel: derselbe Titel desselben Autors steht ohne ISBN schon im
-	// Katalog — die Dublettenkontrolle ohne Nummer (OFFEN.md 4.18, Stufe 2).
+	// Katalog — die Dublettenkontrolle ohne Nummer.
 	ErrDubletteTitel = errors.New("dieser titel steht ohne ISBN bereits im katalog")
 	// ErrISBNFormat: Die ISBN wurde geändert, und der neue Wert hat nicht die Form einer ISBN.
 	ErrISBNFormat = errors.New("ungültiges ISBN-Format")

@@ -8,19 +8,19 @@ import (
 	"bibliothek/repository"
 )
 
-// Klassensätze zählen am Buch, nicht an der Auflage (docs/OFFEN.md 4.18, Stufe 5, 25.09.2026).
-// Ein Buch mit zwei Auflagen — die 3. von 2019 und die 4. von 2023 — in vier Klassen:
+// Klassensätze zählen am Buch, nicht an der Auflage. Ein Buch mit zwei Auflagen, der 3. von
+// 2019 und der 4. von 2023, in vier Klassen:
 //
 //   - 07B, zehn Kinder: je vier haben die 3. und die 4. Auflage, eines davon beide. Je Auflage
 //     gezählt ist das kein Satz (vier sind unter der Mindestzahl), am Buch sind es sieben.
 //     Gleichstand: Die Kachel zeigt die neueste Auflage.
-//   - 08C, acht Kinder: sechs mit der 3., eines mit der 4. Die Kachel zeigt die 3. mit
-//     sieben Lesern; die eine 4. Auflage steht in der Aufschlüsselung.
+//   - 08C, acht Kinder: sechs mit der 3., eines mit der 4. Die Kachel zeigt die 3. mit sieben
+//     Lesern; die eine 4. Auflage steht in der Aufschlüsselung.
 //   - 09D, sechs Kinder, alle mit der 4.: keine Aufschlüsselung.
-//   - 10E: von Hand die 3. Auflage zugeordnet, alle sechs Kinder haben die 4. Die Kachel ist
-//     die von Hand (einmal, nicht dazu noch eine aus den Ausleihen), die Aufschlüsselung
-//     sagt, was die Klasse wirklich hat.
-func TestGetClassGroups_ZaehltAmBuch(t *testing.T) {
+//   - 10E: von Hand die 3. Auflage zugeordnet, alle sechs Kinder haben die 4. Die Kachel ist die
+//     von Hand (einmal, nicht dazu noch eine aus den Ausleihen), die Aufschlüsselung sagt, was
+//     die Klasse wirklich hat.
+func TestLadeKlassensatzGruppen_ZaehltAmBuch(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const (
@@ -77,12 +77,12 @@ func TestGetClassGroups_ZaehltAmBuch(t *testing.T) {
 	leihe(neu, "KB-D1", "KB-D2", "KB-D3", "KB-D4", "KB-D5", "KB-D6")
 	leihe(neu, "KB-E1", "KB-E2", "KB-E3", "KB-E4", "KB-E5", "KB-E6")
 
-	groups, err := NewTitelAbfragen(pool).LadeKlassensatzGruppen(ctx, "", "")
+	gruppen, err := NewTitelAbfragen(pool).LadeKlassensatzGruppen(ctx, "", "")
 	if err != nil {
 		t.Fatalf("LadeKlassensatzGruppen: %v", err)
 	}
 	je := map[string][]klassensatzTitel{}
-	for _, g := range groups {
+	for _, g := range gruppen {
 		je[g.Klasse] = g.Titel
 	}
 	einzige := func(klasse string) klassensatzTitel {

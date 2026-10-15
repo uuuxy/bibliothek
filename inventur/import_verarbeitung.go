@@ -15,9 +15,9 @@ func errateFachAusTitel(titelText string) string {
 func feldZurKopfzeile(kopf string) string {
 	roh := strings.ToLower(strings.TrimSpace(kopf))
 
-	// ⚡ Bolt: Single pass string cleaning using strings.Builder
-	// Replaces multiple strings.ReplaceAll calls to prevent unnecessary allocations
-	// when cleaning headers from spaces, underscores, dashes, and slashes.
+	// Ein Durchgang mit strings.Builder statt mehrerer strings.ReplaceAll: Leerzeichen,
+	// Unterstriche, Bindestriche und Schrägstriche fallen aus der Kopfzeile, ohne unnötige
+	// Zwischenzeichenketten.
 	var b strings.Builder
 	b.Grow(len(roh))
 	for i := 0; i < len(roh); i++ {

@@ -31,11 +31,11 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 		}
 	})
 
-	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 	schluessel := uuid.NewString()
-	sende := func(key string) *httptest.ResponseRecorder {
-		body := new(bytes.Buffer)
-		w := multipart.NewWriter(body)
+	sende := func(idempotenzSchluessel string) *httptest.ResponseRecorder {
+		rumpf := new(bytes.Buffer)
+		w := multipart.NewWriter(rumpf)
 		teil, err := w.CreateFormFile("file", "liste.csv")
 		if err != nil {
 			t.Fatalf("Formularteil: %v", err)
@@ -46,13 +46,13 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 		if err := w.Close(); err != nil {
 			t.Fatalf("Formular schließen: %v", err)
 		}
-		req := httptest.NewRequest(http.MethodPost, "/api/books/import", body)
-		req.Header.Set("Content-Type", w.FormDataContentType())
-		if key != "" {
-			req.Header.Set(importSchluesselKopf, key)
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/books/import", rumpf)
+		anfrage.Header.Set("Content-Type", w.FormDataContentType())
+		if idempotenzSchluessel != "" {
+			anfrage.Header.Set(importSchluesselKopf, idempotenzSchluessel)
 		}
 		rec := httptest.NewRecorder()
-		handler.ExcelImport(rec, req)
+		tueren.ExcelImport(rec, anfrage)
 		return rec
 	}
 	zaehleExemplare := func() int {
@@ -93,7 +93,7 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 
 	// Ein reservierter, noch offener Lauf: 409, kein zweiter Import.
 	offen := uuid.NewString()
-	if frisch, _, err := handler.reserviereImportLauf(ctx, offen); err != nil || !frisch {
+	if frisch, _, err := tueren.reserviereImportLauf(ctx, offen); err != nil || !frisch {
 		t.Fatalf("reservieren: frisch=%v err=%v", frisch, err)
 	}
 	dritter := sende(offen)

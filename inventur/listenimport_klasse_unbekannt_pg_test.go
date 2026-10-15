@@ -13,19 +13,19 @@ import (
 func TestListenimport_OhneKlasseUnbekanntUndSpaeterNachgetragen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 
 	wege := map[string]func(Titel) error{
 		"SchreibeTitelStapel": func(b Titel) error {
-			_, err := repo.SchreibeTitelStapel(ctx, []Titel{b})
+			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		},
-		"UpsertBook (Einzel-Rückfall)": func(b Titel) error {
-			_, err := repo.SchreibeTitel(ctx, b)
+		"SchreibeTitel (Einzel-Rückfall)": func(b Titel) error {
+			_, err := abfragen.SchreibeTitel(ctx, b)
 			return err
 		},
 	}
-	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300001-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-300001-2"}
+	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300001-1", "SchreibeTitel (Einzel-Rückfall)": "978-9-99-300001-2"}
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]

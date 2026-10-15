@@ -18,85 +18,85 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// createDummyImage returns the bytes of a generic dummy image in the specified format
-func createDummyImage(format string, width, height int) []byte {
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			img.Set(x, y, color.RGBA{255, 0, 0, 255})
+// createDummyImage liefert die Bytes eines Bildes im genannten Format.
+func createDummyImage(format string, breite, hoehe int) []byte {
+	bild := image.NewRGBA(image.Rect(0, 0, breite, hoehe))
+	for y := 0; y < hoehe; y++ {
+		for x := 0; x < breite; x++ {
+			bild.Set(x, y, color.RGBA{255, 0, 0, 255})
 		}
 	}
 
-	var buf bytes.Buffer
+	var puffer bytes.Buffer
 	switch format {
 	case "png":
-		_ = png.Encode(&buf, img) //nolint:errcheck
+		_ = png.Encode(&puffer, bild) //nolint:errcheck
 	case "jpeg", "jpg":
-		_ = jpeg.Encode(&buf, img, nil) //nolint:errcheck
+		_ = jpeg.Encode(&puffer, bild, nil) //nolint:errcheck
 	}
-	return buf.Bytes()
+	return puffer.Bytes()
 }
 
-// createMultipartRequest creates a multipart request with an image file
-func createMultipartRequest(t *testing.T, fieldName, fileName, format string, data []byte) *http.Request {
+// createMultipartRequest baut eine Anfrage multipart mit einer Bilddatei.
+func createMultipartRequest(t *testing.T, feldname, dateiname, format string, daten []byte) *http.Request {
 	t.Helper()
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
 
-	fw, err := w.CreateFormFile(fieldName, fileName)
+	fw, err := w.CreateFormFile(feldname, dateiname)
 	if err != nil {
 		t.Fatalf("failed to create form file: %v", err)
 	}
-	if _, err := fw.Write(data); err != nil {
+	if _, err := fw.Write(daten); err != nil {
 		t.Fatalf("failed to write data: %v", err)
 	}
 	_ = w.Close() //nolint:errcheck
 
-	req := httptest.NewRequest(http.MethodPost, "/api/books/123/cover-upload", &b)
-	req.Header.Set("Content-Type", w.FormDataContentType())
-	return req
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/123/cover-upload", &b)
+	anfrage.Header.Set("Content-Type", w.FormDataContentType())
+	return anfrage
 }
 
-func TestProcessUploadedImage(t *testing.T) {
+func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 	t.Run("Valid JPEG", func(t *testing.T) {
-		imgData := createDummyImage("jpeg", 100, 150)
-		result, ext, err := verarbeiteHochgeladenesBild(imgData, "test-id")
+		bildDaten := createDummyImage("jpeg", 100, 150)
+		ergebnis, ext, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if ext != ".jpg" {
 			t.Errorf("expected .jpg extension, got %s", ext)
 		}
-		if len(result) == 0 {
+		if len(ergebnis) == 0 {
 			t.Error("expected non-empty image data")
 		}
 	})
 
 	t.Run("Valid PNG", func(t *testing.T) {
-		imgData := createDummyImage("png", 100, 150)
-		result, ext, err := verarbeiteHochgeladenesBild(imgData, "test-id")
+		bildDaten := createDummyImage("png", 100, 150)
+		ergebnis, ext, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if ext != ".png" {
 			t.Errorf("expected .png extension, got %s", ext)
 		}
-		if len(result) == 0 {
+		if len(ergebnis) == 0 {
 			t.Error("expected non-empty image data")
 		}
 	})
 
 	t.Run("Invalid Format", func(t *testing.T) {
-		imgData := []byte("not an image")
-		_, _, err := verarbeiteHochgeladenesBild(imgData, "test-id")
+		bildDaten := []byte("not an image")
+		_, _, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
 		if err == nil {
 			t.Fatal("expected error for invalid image data, got nil")
 		}
 	})
 
 	t.Run("Resize Large Image", func(t *testing.T) {
-		imgData := createDummyImage("jpeg", 1200, 1800)
-		result, ext, err := verarbeiteHochgeladenesBild(imgData, "test-id")
+		bildDaten := createDummyImage("jpeg", 1200, 1800)
+		ergebnis, ext, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -104,43 +104,43 @@ func TestProcessUploadedImage(t *testing.T) {
 			t.Errorf("expected .jpg extension, got %s", ext)
 		}
 
-		img, format, err := image.Decode(bytes.NewReader(result))
+		bild, format, err := image.Decode(bytes.NewReader(ergebnis))
 		if err != nil {
 			t.Fatalf("failed to decode result image: %v", err)
 		}
 		if format != "jpeg" {
 			t.Errorf("expected jpeg format, got %s", format)
 		}
-		bounds := img.Bounds()
+		bounds := bild.Bounds()
 		if bounds.Dx() > 600 || bounds.Dy() > 900 {
 			t.Errorf("image was not properly resized. got %dx%d", bounds.Dx(), bounds.Dy())
 		}
 	})
 }
 
-func TestReadCoverUpload(t *testing.T) {
-	imgData := createDummyImage("jpeg", 100, 100)
+func TestLeseCoverUpload(t *testing.T) {
+	bildDaten := createDummyImage("jpeg", 100, 100)
 
 	t.Run("Valid Upload", func(t *testing.T) {
-		req := createMultipartRequest(t, "cover", "test.jpg", "jpeg", imgData)
+		anfrage := createMultipartRequest(t, "cover", "test.jpg", "jpeg", bildDaten)
 		w := httptest.NewRecorder()
 
-		data, ok := leseCoverUpload(w, req, "123")
+		daten, ok := leseCoverUpload(w, anfrage, "123")
 		if !ok {
-			t.Fatal("readCoverUpload() failed unexpectedly")
+			t.Fatal("leseCoverUpload() failed unexpectedly")
 		}
-		if !bytes.Equal(data, imgData) {
+		if !bytes.Equal(daten, bildDaten) {
 			t.Error("read data does not match uploaded data")
 		}
 	})
 
 	t.Run("Invalid Field Name", func(t *testing.T) {
-		req := createMultipartRequest(t, "wrong_field", "test.jpg", "jpeg", imgData)
+		anfrage := createMultipartRequest(t, "wrong_field", "test.jpg", "jpeg", bildDaten)
 		w := httptest.NewRecorder()
 
-		_, ok := leseCoverUpload(w, req, "123")
+		_, ok := leseCoverUpload(w, anfrage, "123")
 		if ok {
-			t.Error("expected readCoverUpload() to fail with wrong field name")
+			t.Error("expected leseCoverUpload() to fail with wrong field name")
 		}
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
@@ -148,12 +148,12 @@ func TestReadCoverUpload(t *testing.T) {
 	})
 
 	t.Run("Invalid Extension", func(t *testing.T) {
-		req := createMultipartRequest(t, "cover", "test.txt", "txt", imgData)
+		anfrage := createMultipartRequest(t, "cover", "test.txt", "txt", bildDaten)
 		w := httptest.NewRecorder()
 
-		_, ok := leseCoverUpload(w, req, "123")
+		_, ok := leseCoverUpload(w, anfrage, "123")
 		if ok {
-			t.Error("expected readCoverUpload() to fail with invalid extension")
+			t.Error("expected leseCoverUpload() to fail with invalid extension")
 		}
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
@@ -161,12 +161,12 @@ func TestReadCoverUpload(t *testing.T) {
 	})
 
 	t.Run("Empty File", func(t *testing.T) {
-		req := createMultipartRequest(t, "cover", "test.jpg", "jpeg", []byte{})
+		anfrage := createMultipartRequest(t, "cover", "test.jpg", "jpeg", []byte{})
 		w := httptest.NewRecorder()
 
-		_, ok := leseCoverUpload(w, req, "123")
+		_, ok := leseCoverUpload(w, anfrage, "123")
 		if ok {
-			t.Error("expected readCoverUpload() to fail with empty file")
+			t.Error("expected leseCoverUpload() to fail with empty file")
 		}
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
@@ -174,71 +174,69 @@ func TestReadCoverUpload(t *testing.T) {
 	})
 }
 
-func TestSaveCoverFile(t *testing.T) {
-	// Change working directory to temp dir for this test
-	// Avoid changing global directory state, which breaks parallel execution.
-	// Actually, running `os.Chdir` is not needed since the function creates `uploads/`
-	// in the current directory (which for `go test` is the `inventur` package directory).
-	// We'll clean up the created file after the test.
+func TestSpeichereHochgeladenesCover(t *testing.T) {
+	// Das Arbeitsverzeichnis bleibt, wie es ist (das bräche das parallele Laufen): Die Funktion legt
+	// `uploads/` im aktuellen Verzeichnis an, für `go test` das Verzeichnis des Pakets; die erzeugte
+	// Datei wird nach dem Test gelöscht.
 
 	t.Run("Valid Save", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		imgData := createDummyImage("jpeg", 100, 100)
+		bildDaten := createDummyImage("jpeg", 100, 100)
 		id := "test-id"
 
-		url, ok := speichereHochgeladenesCover(w, id, imgData, ".jpg")
+		adresse, ok := speichereHochgeladenesCover(w, id, bildDaten, ".jpg")
 
 		if !ok {
-			t.Fatalf("saveCoverFile() failed unexpectedly. Status: %d, Body: %s", w.Code, w.Body.String())
+			t.Fatalf("speichereHochgeladenesCover() failed unexpectedly. Status: %d, Body: %s", w.Code, w.Body.String())
 		}
 
-		if !strings.HasPrefix(url, "/uploads/") {
-			t.Errorf("expected URL to start with /uploads/, got %s", url)
+		if !strings.HasPrefix(adresse, "/uploads/") {
+			t.Errorf("expected URL to start with /uploads/, got %s", adresse)
 		}
 
-		if !strings.HasSuffix(url, ".jpg") {
-			t.Errorf("expected URL to end with .jpg, got %s", url)
+		if !strings.HasSuffix(adresse, ".jpg") {
+			t.Errorf("expected URL to end with .jpg, got %s", adresse)
 		}
 
-		// Verify file exists
-		filename := filepath.Base(url)
-		filePath := filepath.Join("uploads", filename)
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			t.Errorf("expected file %s to be created, but it was not", filePath)
+		// Die Datei muss bestehen.
+		dateiname := filepath.Base(adresse)
+		dateipfad := filepath.Join("uploads", dateiname)
+		if _, err := os.Stat(dateipfad); os.IsNotExist(err) {
+			t.Errorf("expected file %s to be created, but it was not", dateipfad)
 		}
 
-		// Clean up the created file
-		defer func() { _ = os.Remove(filePath) }() //nolint:errcheck
+		// Die erzeugte Datei löschen.
+		defer func() { _ = os.Remove(dateipfad) }() //nolint:errcheck
 	})
 
 	t.Run("Path Traversal Protection", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		imgData := createDummyImage("jpeg", 100, 100)
+		bildDaten := createDummyImage("jpeg", 100, 100)
 
-		// This should be stripped to "evil" or similar by filepath.Base in the handler
+		// filepath.Base in der Tür macht daraus einen harmlosen Namen.
 		id := "../../../etc/passwd"
 
-		url, ok := speichereHochgeladenesCover(w, id, imgData, ".jpg")
+		adresse, ok := speichereHochgeladenesCover(w, id, bildDaten, ".jpg")
 
 		if !ok {
-			t.Fatalf("saveCoverFile() failed unexpectedly")
+			t.Fatalf("speichereHochgeladenesCover() failed unexpectedly")
 		}
 
-		// Check that the URL does not contain path traversal elements
-		if strings.Contains(url, "..") {
-			t.Errorf("expected URL to not contain path traversal elements, got %s", url)
+		// Die Adresse darf keinen Weg aus dem Verzeichnis heraus enthalten.
+		if strings.Contains(adresse, "..") {
+			t.Errorf("expected URL to not contain path traversal elements, got %s", adresse)
 		}
 
-		filename := filepath.Base(url)
-		if strings.Contains(filename, "passwd") { // since filepath.Base("../../../etc/passwd") is "passwd"
-			// it should use "passwd", which is safe within the uploads directory.
-			filePath := filepath.Join("uploads", filename)
-			if !strings.HasPrefix(filepath.Clean(filePath), filepath.Clean("uploads")) {
-				t.Errorf("file path escapes uploads directory: %s", filePath)
+		dateiname := filepath.Base(adresse)
+		if strings.Contains(dateiname, "passwd") { // since filepath.Base("../../../etc/passwd") is "passwd"
+			// Übrig bleibt "passwd", sicher innerhalb von uploads.
+			dateipfad := filepath.Join("uploads", dateiname)
+			if !strings.HasPrefix(filepath.Clean(dateipfad), filepath.Clean("uploads")) {
+				t.Errorf("file path escapes uploads directory: %s", dateipfad)
 			}
 
-			// Clean up the created file
-			defer func() { _ = os.Remove(filePath) }() //nolint:errcheck
+			// Die erzeugte Datei löschen.
+			defer func() { _ = os.Remove(dateipfad) }() //nolint:errcheck
 		}
 	})
 }
@@ -247,13 +245,13 @@ func TestSaveCoverFile(t *testing.T) {
 // Upload-Dateien heißen danach (cover_<id>_…), das Aufräumen unten sucht sie so.
 const uploadTestBuchID = "6ba7b810-9dad-41d1-80b4-00c04fd430c8"
 
-func TestHandleUploadCover(t *testing.T) {
-	tests := []struct {
+func TestCoverHochladen(t *testing.T) {
+	faelle := []struct {
 		name           string
 		method         string
 		id             string
 		bodyData       []byte
-		fileName       string
+		dateiname      string
 		contentType    string
 		setupMock      func(pgxmock.PgxPoolIface)
 		expectedStatus int
@@ -263,7 +261,7 @@ func TestHandleUploadCover(t *testing.T) {
 			method:         http.MethodPost,
 			id:             "123",
 			bodyData:       createDummyImage("jpeg", 100, 100),
-			fileName:       "test.jpg",
+			dateiname:      "test.jpg",
 			contentType:    "multipart/form-data",
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -273,7 +271,7 @@ func TestHandleUploadCover(t *testing.T) {
 			method:         http.MethodPost,
 			id:             "",
 			bodyData:       nil,
-			fileName:       "",
+			dateiname:      "",
 			contentType:    "",
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -283,7 +281,7 @@ func TestHandleUploadCover(t *testing.T) {
 			method:         http.MethodPost,
 			id:             uploadTestBuchID,
 			bodyData:       nil,
-			fileName:       "",
+			dateiname:      "",
 			contentType:    "multipart/form-data",
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -293,7 +291,7 @@ func TestHandleUploadCover(t *testing.T) {
 			method:      http.MethodPost,
 			id:          uploadTestBuchID,
 			bodyData:    createDummyImage("jpeg", 100, 100),
-			fileName:    "test.jpg",
+			dateiname:   "test.jpg",
 			contentType: "multipart/form-data",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
@@ -317,7 +315,7 @@ func TestHandleUploadCover(t *testing.T) {
 			method:      http.MethodPost,
 			id:          uploadTestBuchID,
 			bodyData:    createDummyImage("jpeg", 100, 100),
-			fileName:    "test.jpg",
+			dateiname:   "test.jpg",
 			contentType: "multipart/form-data",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
@@ -328,48 +326,48 @@ func TestHandleUploadCover(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, fall := range faelle {
+		t.Run(fall.name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
 			if err != nil {
 				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 			}
 			defer mock.Close()
 
-			repo := NewTitelAbfragen(mock)
-			handler := &Tueren{abfragen: repo}
+			abfragen := NewTitelAbfragen(mock)
+			tueren := &Tueren{abfragen: abfragen}
 
-			tt.setupMock(mock)
+			fall.setupMock(mock)
 
-			pfad := "/api/books/" + tt.id + "/cover-upload"
-			var req *http.Request
-			if tt.contentType == "multipart/form-data" && len(tt.bodyData) > 0 {
+			pfad := "/api/books/" + fall.id + "/cover-upload"
+			var anfrage *http.Request
+			if fall.contentType == "multipart/form-data" && len(fall.bodyData) > 0 {
 				var b bytes.Buffer
 				w := multipart.NewWriter(&b)
-				fw, _ := w.CreateFormFile("cover", tt.fileName) //nolint:errcheck
-				_, _ = fw.Write(tt.bodyData)                    //nolint:errcheck
-				_ = w.Close()                                   //nolint:errcheck
+				fw, _ := w.CreateFormFile("cover", fall.dateiname) //nolint:errcheck
+				_, _ = fw.Write(fall.bodyData)                     //nolint:errcheck
+				_ = w.Close()                                      //nolint:errcheck
 
-				req = httptest.NewRequest(tt.method, pfad, &b)
-				req.Header.Set("Content-Type", w.FormDataContentType())
-			} else if tt.contentType == "multipart/form-data" && len(tt.bodyData) == 0 {
+				anfrage = httptest.NewRequest(fall.method, pfad, &b)
+				anfrage.Header.Set("Content-Type", w.FormDataContentType())
+			} else if fall.contentType == "multipart/form-data" && len(fall.bodyData) == 0 {
 				var b bytes.Buffer
 				w := multipart.NewWriter(&b)
 				_ = w.Close() //nolint:errcheck
-				req = httptest.NewRequest(tt.method, pfad, &b)
-				req.Header.Set("Content-Type", w.FormDataContentType())
+				anfrage = httptest.NewRequest(fall.method, pfad, &b)
+				anfrage.Header.Set("Content-Type", w.FormDataContentType())
 			} else {
-				req = httptest.NewRequest(tt.method, pfad, nil)
+				anfrage = httptest.NewRequest(fall.method, pfad, nil)
 			}
 			// Den Platzhalter {id} füllt im Betrieb der Mux (api_routen.go).
-			req.SetPathValue("id", tt.id)
+			anfrage.SetPathValue("id", fall.id)
 
 			w := httptest.NewRecorder()
 
-			handler.CoverHochladen(w, req)
+			tueren.CoverHochladen(w, anfrage)
 
-			if w.Code != tt.expectedStatus {
-				t.Errorf("expected status %d, got %d. Body: %s", tt.expectedStatus, w.Code, w.Body.String())
+			if w.Code != fall.expectedStatus {
+				t.Errorf("expected status %d, got %d. Body: %s", fall.expectedStatus, w.Code, w.Body.String())
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -379,8 +377,8 @@ func TestHandleUploadCover(t *testing.T) {
 	}
 
 	// Clean up created upload files during tests
-	filepaths, _ := filepath.Glob("uploads/cover_" + uploadTestBuchID + "_*.jpg") //nolint:errcheck
-	for _, f := range filepaths {
+	dateipfade, _ := filepath.Glob("uploads/cover_" + uploadTestBuchID + "_*.jpg") //nolint:errcheck
+	for _, f := range dateipfade {
 		_ = os.Remove(f) //nolint:errcheck
 	}
 }

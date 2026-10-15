@@ -13,17 +13,17 @@ import (
 // lookupAnfrage baut den GET für eine ISBN. Den Platzhalter {isbn} füllt im Betrieb der
 // Mux (api_routen.go); die Route selbst prüft er auch.
 func lookupAnfrage(isbn string) *http.Request {
-	req := httptest.NewRequest(http.MethodGet, "/api/lookup/x", nil)
-	req.SetPathValue("isbn", isbn)
-	return req
+	anfrage := httptest.NewRequest(http.MethodGet, "/api/lookup/x", nil)
+	anfrage.SetPathValue("isbn", isbn)
+	return anfrage
 }
 
-func TestHandleLookupRejectsInvalidISBN(t *testing.T) {
-	handler := &Tueren{}
-	req := lookupAnfrage("123&foo=bar")
+func TestISBNSuche_LehntUngueltigeISBNAb(t *testing.T) {
+	tueren := &Tueren{}
+	anfrage := lookupAnfrage("123&foo=bar")
 	rr := httptest.NewRecorder()
 
-	handler.ISBNSuche(rr, req)
+	tueren.ISBNSuche(rr, anfrage)
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
@@ -31,17 +31,17 @@ func TestHandleLookupRejectsInvalidISBN(t *testing.T) {
 }
 
 type mockTransportForLookup struct {
-	RoundTripFunc func(req *http.Request) (*http.Response, error)
+	RoundTripFunc func(anfrage *http.Request) (*http.Response, error)
 }
 
-func (m *mockTransportForLookup) RoundTrip(req *http.Request) (*http.Response, error) {
-	return m.RoundTripFunc(req)
+func (m *mockTransportForLookup) RoundTrip(anfrage *http.Request) (*http.Response, error) {
+	return m.RoundTripFunc(anfrage)
 }
 
-func TestHandleLookupSucheFehlschlag(t *testing.T) {
+func TestISBNSuche_SucheScheitert(t *testing.T) {
 	mockClient := &http.Client{
 		Transport: &mockTransportForLookup{
-			RoundTripFunc: func(req *http.Request) (*http.Response, error) {
+			RoundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				return nil, errors.New("simulated network error")
 			},
 		},
@@ -50,18 +50,18 @@ func TestHandleLookupSucheFehlschlag(t *testing.T) {
 	metadaten := NewMetadatenClient()
 	metadaten.SetzeHTTPClientFuerTest(mockClient)
 
-	handler := &Tueren{
+	tueren := &Tueren{
 		metadaten: metadaten,
 	}
 
-	// 9783161484100 is a valid ISBN
-	req := lookupAnfrage("9783161484100")
+	// 9783161484100 ist eine gültige ISBN.
+	anfrage := lookupAnfrage("9783161484100")
 	rr := httptest.NewRecorder()
 
-	handler.ISBNSuche(rr, req)
+	tueren.ISBNSuche(rr, anfrage)
 
-	// Seit dem 31.08.2026 ist ein Netzausfall KEIN Nicht-Treffer mehr: keine Quelle
-	// erreichbar → 502 (siehe lookup_ausfall_test.go), nur „erreichbar ohne Treffer" → 404.
+	// Ein Ausfall des Netzes ist kein fehlender Treffer: keine Quelle erreichbar → 502
+	// (lookup_ausfall_test.go), nur „erreichbar ohne Treffer" → 404.
 	if rr.Code != http.StatusBadGateway {
 		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusBadGateway, rr.Code, rr.Body.String())
 	}
@@ -82,9 +82,9 @@ func lookupMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
   </records>
 </searchRetrieveResponse>`
 	mockTr := &mockTransportForLookup{
-		RoundTripFunc: func(req *http.Request) (*http.Response, error) {
+		RoundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 			status, koerper := http.StatusNotFound, ""
-			if strings.Contains(req.URL.String(), "services.dnb.de") {
+			if strings.Contains(anfrage.URL.String(), "services.dnb.de") {
 				status, koerper = http.StatusOK, dnbXML
 			}
 			return &http.Response{
@@ -96,10 +96,10 @@ func lookupMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
 	}
 	metadaten := NewMetadatenClient()
 	metadaten.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTr})
-	handler := &Tueren{metadaten: metadaten}
+	tueren := &Tueren{metadaten: metadaten}
 
 	rr := httptest.NewRecorder()
-	handler.ISBNSuche(rr, lookupAnfrage("9783161484100"))
+	tueren.ISBNSuche(rr, lookupAnfrage("9783161484100"))
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, rr.Code, rr.Body.String())
@@ -107,7 +107,7 @@ func lookupMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
 	return rr
 }
 
-func TestHandleLookupHappyPath(t *testing.T) {
+func TestISBNSuche_Erfolg(t *testing.T) {
 	rr := lookupMitDNB(t, `
           <datafield tag="245" ind1="1" ind2="0">
             <subfield code="a">Mocked Title</subfield>
@@ -116,15 +116,15 @@ func TestHandleLookupHappyPath(t *testing.T) {
             <subfield code="a">Mocked Author</subfield>
           </datafield>`)
 
-	expectedJSONSnippet := `"title":"Mocked Title"`
-	if !strings.Contains(rr.Body.String(), expectedJSONSnippet) {
-		t.Fatalf("expected response to contain %s, got %s", expectedJSONSnippet, rr.Body.String())
+	erwartetesJSON := `"title":"Mocked Title"`
+	if !strings.Contains(rr.Body.String(), erwartetesJSON) {
+		t.Fatalf("expected response to contain %s, got %s", erwartetesJSON, rr.Body.String())
 	}
 }
 
 // Nennt der Titel zwei Jahrgänge, trägt die Antwort die Spanne in „jahrgangVon" und
 // „jahrgangBis". Das Titelfeld ist das der DNB zur ISBN 9783141096835.
-func TestHandleLookup_SpanneAusDemTitel(t *testing.T) {
+func TestISBNSuche_SpanneAusDemTitel(t *testing.T) {
 	rr := lookupMitDNB(t, `
           <datafield tag="245" ind1="1" ind2="0">
             <subfield code="a">EinFach Deutsch Unterrichtsmodelle</subfield>
@@ -145,13 +145,13 @@ func TestHandleLookup_SpanneAusDemTitel(t *testing.T) {
 	}
 }
 
-func TestHandleLookupRejectsMissingISBN(t *testing.T) {
-	handler := &Tueren{}
+func TestISBNSuche_LehntFehlendeISBNAb(t *testing.T) {
+	tueren := &Tueren{}
 	// Nur Leerzeichen im Platzhalter: nach dem Trimmen ist die ISBN leer
-	req := lookupAnfrage("   ")
+	anfrage := lookupAnfrage("   ")
 	rr := httptest.NewRecorder()
 
-	handler.ISBNSuche(rr, req)
+	tueren.ISBNSuche(rr, anfrage)
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)

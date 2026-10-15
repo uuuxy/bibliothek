@@ -30,7 +30,7 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 	sitzung := &auth.Claims{KontoID: bearbeiterFuerAussonderung(t, pool)}
 	sende := func(methode, id string, extra map[string]any) *httptest.ResponseRecorder {
 		t.Helper()
@@ -42,14 +42,14 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		req := httptest.NewRequest(methode, "/api/books/"+id, bytes.NewReader(daten))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, sitzung))
-		req.SetPathValue("id", id)
+		anfrage := httptest.NewRequest(methode, "/api/books/"+id, bytes.NewReader(daten))
+		anfrage = anfrage.WithContext(context.WithValue(anfrage.Context(), auth.ClaimsSchluessel, sitzung))
+		anfrage.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		if methode == http.MethodPost {
-			handler.TitelAnlegen(rec, req)
+			tueren.TitelAnlegen(rec, anfrage)
 		} else {
-			handler.TitelAendern(rec, req)
+			tueren.TitelAendern(rec, anfrage)
 		}
 		return rec
 	}

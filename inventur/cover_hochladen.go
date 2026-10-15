@@ -130,11 +130,10 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reihenfolge: erst das Buch, dann die Datei, dann das UPDATE, zuletzt das alte Cover.
-	// Bis zum 13.09.2026 lag die neue Datei schon auf der Platte, wenn sich herausstellte,
-	// dass es das Buch nicht gibt, und das alte Cover war schon gelöscht, wenn das UPDATE
-	// scheiterte — die Datenbank zeigte dann auf eine Datei, die fehlte
-	// (cover_upload_reihenfolge_test.go).
+	// Reihenfolge: erst der Titel, dann die Datei, dann das UPDATE, zuletzt das alte Cover. Sonst
+	// läge die neue Datei schon auf der Platte, wenn sich herausstellt, dass es den Titel nicht
+	// gibt, und das alte Cover wäre schon gelöscht, wenn das UPDATE scheitert; die Datenbank zeigte
+	// dann auf eine Datei, die fehlt (cover_upload_reihenfolge_test.go).
 	buch, err := t.abfragen.LadeTitel(r.Context(), id)
 	if errors.Is(err, ErrTitelNichtGefunden) {
 		schreibeFehler(w, http.StatusNotFound, "buch nicht gefunden")
@@ -167,7 +166,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Zwei Uploads in derselben Sekunde tragen denselben Dateinamen (cover_<id>_<Sekunde>):
-	// Dann IST das alte Cover das neue und darf nicht gelöscht werden.
+	// Dann ist das alte Cover das neue und darf nicht gelöscht werden.
 	if buch.CoverURL != coverURL {
 		loescheCoverDatei(buch.CoverURL)
 	}

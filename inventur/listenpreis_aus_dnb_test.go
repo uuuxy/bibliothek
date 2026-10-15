@@ -2,20 +2,18 @@ package inventur
 
 import "testing"
 
-// Der DNB-Ladenpreis füllt den Listenpreis (Migration 127, OFFEN.md 9.8).
+// Der Ladenpreis der DNB füllt den Listenpreis.
 //
-// Ohne diese Verbindung wäre `listenpreis` eine leere Spalte, die jemand für rund 4.000
-// Titel von Hand füllen müsste — und bis dahin rechnete die Staffel des Erlasses ab dem
-// zweiten Verleihjahr weiter ersatzweise mit dem Kaufpreis.
+// Ohne diese Verbindung wäre `listenpreis` eine leere Spalte, die jemand für rund 4.000 Titel von
+// Hand füllen müsste, und bis dahin rechnete die Staffel des Erlasses ab dem zweiten Verleihjahr
+// ersatzweise mit dem Kaufpreis.
 //
-// Die Quelle gab es schon: Die DNB liefert den Ladenpreis aus MARC21 020 $c in jeder
-// Antwort mit, sorgfältig gefiltert (kein DM, keine Umrechnung aus der Umstellungszeit —
-// metadaten_preis.go, mit echten Antworten belegt). Er stand bis zum 17.09.2026 ungenutzt
-// darin. Gebaut wurde also keine neue Preisquelle, sondern die fehlende Leitung zur
-// vorhandenen.
+// Die DNB liefert den Ladenpreis aus MARC21 020 $c in jeder Antwort mit, sorgfältig gefiltert
+// (kein DM, keine Umrechnung aus der Zeit der Umstellung; metadaten_preis.go, an echten Antworten
+// belegt).
 //
-// Geprüft wird die Entscheidungsregel, nicht der HTTP-Weg: Dass die DNB-Antwort richtig
-// gelesen wird, steht in metadaten_preis_test.go; hier geht es darum, WANN ihr Preis
+// Geprüft wird die Regel der Entscheidung, nicht der Weg über HTTP: Dass die Antwort der DNB
+// richtig gelesen wird, steht in metadaten_preis_test.go; hier geht es darum, wann ihr Preis
 // übernommen werden darf.
 func TestListenpreisAusNachschlagen(t *testing.T) {
 	preis := func(p float64) *float64 { return &p }

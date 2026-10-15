@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNormalizeAllClasses_Regex(t *testing.T) {
+func TestKlassennamen_RegulaererAusdruck(t *testing.T) {
 	dbURL := os.Getenv("TEST_DATABASE_URL")
 	if dbURL == "" {
 		t.Skip("TEST_DATABASE_URL nicht gesetzt — DB-Integrationstest übersprungen")
@@ -36,7 +36,7 @@ func TestNormalizeAllClasses_Regex(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	bookID := "123e4567-e89b-12d3-a456-426614174000"
+	titelID := "123e4567-e89b-12d3-a456-426614174000"
 	bookID2 := "123e4567-e89b-12d3-a456-426614174001"
 
 	_, err = tx.Exec(ctx, `
@@ -48,10 +48,10 @@ func TestNormalizeAllClasses_Regex(t *testing.T) {
 		('07', $1),
 		('8', $2),
 		('10A', $1)
-	`, bookID, bookID2)
+	`, titelID, bookID2)
 	require.NoError(t, err)
 
-	// Run exact queries from NormalizeAllClasses
+	// Genau die Abfragen der Normalisierung aller Klassen.
 
 	// 1. Delete dup spaces
 	_, err = tx.Exec(ctx, `
@@ -93,31 +93,31 @@ func TestNormalizeAllClasses_Regex(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	// Verify
-	rows, err := tx.Query(ctx, "SELECT class_name, book_id FROM class_books ORDER BY class_name, book_id")
+	// Prüfen.
+	zeilen, err := tx.Query(ctx, "SELECT class_name, book_id FROM class_books ORDER BY class_name, book_id")
 	require.NoError(t, err)
-	defer rows.Close()
+	defer zeilen.Close()
 
-	type result struct {
+	type ergebnis struct {
 		ClassName string
 		BookID    string
 	}
-	var results []result
-	for rows.Next() {
-		var r result
-		err := rows.Scan(&r.ClassName, &r.BookID)
+	var ergebnisse []ergebnis
+	for zeilen.Next() {
+		var r ergebnis
+		err := zeilen.Scan(&r.ClassName, &r.BookID)
 		require.NoError(t, err)
-		results = append(results, r)
+		ergebnisse = append(ergebnisse, r)
 	}
-	require.NoError(t, rows.Err())
+	require.NoError(t, zeilen.Err())
 
-	expected := []result{
-		{"05A", bookID},
+	expected := []ergebnis{
+		{"05A", titelID},
 		{"06B", bookID2},
-		{"07", bookID},
+		{"07", titelID},
 		{"08", bookID2},
-		{"10A", bookID},
+		{"10A", titelID},
 	}
 
-	assert.Equal(t, expected, results)
+	assert.Equal(t, expected, ergebnisse)
 }

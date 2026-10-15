@@ -14,13 +14,13 @@ import (
 // Titel-Verwaltung und Lernmittel-Liste suchen am Server und vergleichen den Suchtext mit
 // dem Wortlaut. Littera führt Titel mit zwei Leerzeichen in Folge („La  Peste") und mit
 // geschütztem Leerzeichen; „La Peste" traf sie nicht. Die Datenbank speichert Titeltexte
-// mit einem Leerzeichen zwischen den Wörtern (Migration 160), und die Suche nimmt den
+// mit einem Leerzeichen zwischen den Wörtern, und die Suche nimmt den
 // Suchtext in derselben Form. Der Titel entsteht hier an der Tür der Maske.
 func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
-	handler := &Tueren{abfragen: repo, metadaten: offlineMetadatenClient()}
+	abfragen := NewTitelAbfragen(pool)
+	tueren := &Tueren{abfragen: abfragen, metadaten: offlineMetadatenClient()}
 	const gespeichert, barcode = "Leerraumprobe La Peste", "B-LEERRAUM-INV-1"
 	geschuetzt := string(rune(0x00A0))
 
@@ -35,7 +35,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	raeume()
 	t.Cleanup(raeume)
 
-	id, err := repo.LegeTitelAn(ctx, Titel{
+	id, err := abfragen.LegeTitelAn(ctx, Titel{
 		Titel: "Leerraumprobe La  Peste", Autor: "Camus," + geschuetzt + "Albert", IstLernmittel: true,
 	})
 	if err != nil {
@@ -50,7 +50,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	lernmittel := func(suchtext string) []LernmittelTitel {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		handler.PortalLernmittel(rec, httptest.NewRequest(http.MethodGet,
+		tueren.PortalLernmittel(rec, httptest.NewRequest(http.MethodGet,
 			"/api/portal/lernmittel?q="+url.QueryEscape(suchtext), nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Lernmittel, Suche %+q: %d %s", suchtext, rec.Code, rec.Body.String())
@@ -71,9 +71,9 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 		"Camus, Albert",
 		"Camus,  Alb",
 	} {
-		liste, err := repo.LadeTitelListe(ctx, "", suchtext, false)
+		liste, err := abfragen.LadeTitelListe(ctx, "", suchtext, false)
 		if err != nil {
-			t.Fatalf("ListBooks(%+q): %v", suchtext, err)
+			t.Fatalf("LadeTitelListe(%+q): %v", suchtext, err)
 		}
 		if len(liste) != 1 || liste[0].ID != id || liste[0].Titel != gespeichert {
 			t.Errorf("Titel-Verwaltung, Suche %+q: %d Treffer, erwartet den Titel %q", suchtext, len(liste), gespeichert)
@@ -84,7 +84,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	}
 
 	// Gegenprobe: Der Leerraum fällt nicht weg, zwei Wörter bleiben zwei.
-	if liste, err := repo.LadeTitelListe(ctx, "", "Leerraumprobe LaPeste", false); err != nil || len(liste) != 0 {
+	if liste, err := abfragen.LadeTitelListe(ctx, "", "Leerraumprobe LaPeste", false); err != nil || len(liste) != 0 {
 		t.Errorf("Titel-Verwaltung ohne Leerzeichen: %d Treffer, %v — erwartet keinen", len(liste), err)
 	}
 	if treffer := lernmittel("Leerraumprobe LaPeste"); len(treffer) != 0 {

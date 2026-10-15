@@ -10,16 +10,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Exemplare, die das System selbst anlegt — Bestandskorrektur in der Buchmaske und
-// Excel-Sammelimport — bekommen ihre Nummer aus barcode_seq, derselben Quelle wie das
-// Bestellwesen, die Handvergabe und der Littera-Import (Migration 068: „EINE Quelle für
-// alle Wege"). Bis zum 07.09.2026 zogen genau diese zwei Pfade aus einer eigenen, nirgends
-// deklarierten Sequenz und prägten „SYS-…"-Nummern — ein zweiter Nummernkreis, den 068
-// schlicht übersehen hatte (Migration 105 räumt ihn ab).
+// Exemplare, die das Programm selbst anlegt (Korrektur des Bestands in der Maske und
+// Sammelimport aus Excel), bekommen ihre Nummer aus barcode_seq, derselben Quelle wie das
+// Bestellwesen, die Vergabe von Hand und der Import aus Littera: eine Quelle für alle Wege. Eine
+// eigene Sequenz mit „SYS-…"-Nummern wäre ein zweiter Nummernkreis.
 //
-// Warum ein PG-Test: Die Vergabe ist SQL (nextval gegen Bestandsabgleich), und die
-// eigentliche Zusicherung — keine Kollision mit einer von Hand vorweggenommenen Nummer —
-// zeigt sich erst am UNIQUE-Constraint. pgxmock spielt das nur nach.
+// Warum an Postgres: Die Vergabe ist SQL (nextval gegen den Abgleich mit dem Bestand), und die
+// eigentliche Zusage, keine Kollision mit einer von Hand vorweggenommenen Nummer, zeigt sich
+// erst am UNIQUE-Constraint. pgxmock spielt das nur nach.
 func TestBestandskorrekturUndImportZiehenAusBarcodeSeq(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -44,7 +42,7 @@ func TestBestandskorrekturUndImportZiehenAusBarcodeSeq(t *testing.T) {
 		}
 	})
 
-	// Von Hand die NÄCHSTE Sequenznummer vorwegnehmen — der Fall, den 068 beschreibt:
+	// Von Hand die nächste Sequenznummer vorwegnehmen — der Fall, den 068 beschreibt:
 	// Die Sequenz kennt nur ihre eigenen Züge; eine in der Exemplarkarte eingetippte
 	// Nummer steht in der Tabelle, nicht in der Sequenz.
 	var letzte int64
@@ -57,16 +55,16 @@ func TestBestandskorrekturUndImportZiehenAusBarcodeSeq(t *testing.T) {
 		t.Fatalf("Handnummer %s: %v", vorweg, err)
 	}
 
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 
 	// Bestandskorrektur: 1 vorhanden, 4 gewünscht → 3 neue.
-	if err := repo.gleicheBestandAb(ctx, pool, titelKorrektur, 4, ""); err != nil {
+	if err := abfragen.gleicheBestandAb(ctx, pool, titelKorrektur, 4, ""); err != nil {
 		t.Fatalf("gleicheBestandAb: %v", err)
 	}
 	pruefeNummernkreis(t, pool, titelKorrektur, 4)
 
 	// Excel-Sammelimport: 2 Stück zur ISBN.
-	if err := repo.legeImportExemplareAn(ctx, pool, []string{isbnImport}, []int32{2}); err != nil {
+	if err := abfragen.legeImportExemplareAn(ctx, pool, []string{isbnImport}, []int32{2}); err != nil {
 		t.Fatalf("legeImportExemplareAn: %v", err)
 	}
 	pruefeNummernkreis(t, pool, titelImport, 2)

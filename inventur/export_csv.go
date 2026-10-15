@@ -16,19 +16,18 @@ import (
 // exportSchlagwortTrenner trennt die Schlagworte eines Titels in ihrer einen Zelle.
 const exportSchlagwortTrenner = " | "
 
-// CSVExport handles the GET /api/admin/books/export route.
+// CSVExport ist die Tür GET /api/admin/books/export.
 //
-// Streamt zeilenweise direkt in die HTTP-Antwort: Der Bestand (eine Zeile JE EXEMPLAR,
-// die größte Zeilenmenge im System) wird NICHT mehr vollständig als [][]string im
-// Speicher materialisiert und dann noch einmal kopiert-sanitisiert. Bei einem großen
-// Katalog war das ein Speicher-Risiko; jetzt liegt immer nur eine Zeile im Speicher.
+// Sie schreibt Zeile für Zeile direkt in die Antwort: Der Bestand (eine Zeile je Exemplar, die
+// größte Menge an Zeilen im Programm) liegt nie vollständig als [][]string im Speicher und wird
+// nicht noch einmal entschärft kopiert; im Speicher liegt immer nur eine Zeile.
 func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	csvSchreiber := csv.NewWriter(w)
 	csvSchreiber.Comma = ';' // German Excel standard
 
-	// HTTP-Header und CSV-Kopf erst, NACHDEM die Query erfolgreich gestartet ist
+	// HTTP-Header und CSV-Kopf erst, nachdem die Query erfolgreich gestartet ist
 	// (kopf-Callback): Scheitert die Datenbank, ist noch nichts gesendet und der
 	// Client bekommt einen echten 500 — statt einer leeren 200er-CSV, die wie ein
 	// gelungener (aber leerer) Export aussähe.
@@ -36,7 +35,7 @@ func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 	kopf := func() error {
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="bestand_export_%s.csv"`, schulzeit.Jetzt().Format("2006-01-02")))
-		// Write UTF-8 BOM so Excel opens it correctly with UTF-8
+		// Das BOM für UTF-8, damit Excel die Datei richtig öffnet.
 		_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
 		kopfGesendet = true
 		return csvSchreiber.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand", "Signatur", "Schlagworte", "Eigentum", "Standort"})
@@ -60,7 +59,7 @@ func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 }
 
 // LadeTitelFuerCSVExport liest alle Titel×Exemplare und ruft schreibe je Zeile auf —
-// ohne die Gesamtmenge im Speicher zu halten. kopf wird genau einmal NACH erfolgreichem
+// ohne die Gesamtmenge im Speicher zu halten. kopf wird genau einmal nach erfolgreichem
 // Query-Start aufgerufen (der Aufrufer sendet dort seine Header). Bricht schreibe ab
 // (z. B. Verbindung weg), endet der Stream mit diesem Fehler.
 //
@@ -119,7 +118,7 @@ func (a *TitelAbfragen) LadeTitelFuerCSVExport(ctx context.Context, kopf func() 
 			jahrStr = strconv.Itoa(jahr)
 		}
 
-		// Prefix ISBN with a single quote so Excel treats it as text and doesn't remove leading zeros
+		// Ein Hochkomma vor der ISBN, damit Excel sie als Text liest und führende Nullen behält.
 		if isbn != "" {
 			isbn = "'" + isbn
 		}

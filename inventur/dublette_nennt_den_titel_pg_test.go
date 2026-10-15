@@ -17,7 +17,7 @@ import (
 // Ablehnung der Dublettenkontrolle — und fand den Titel bis dahin über keine Suche. Die
 // Antwort nennt deshalb den Titel, seine Kennung und ob er ohne Exemplar ist: Die Maske
 // führt damit zu ihm.
-func TestBuchAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
+func TestTitelAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	const isbn = "9780306406164"
 	const titel = "Dubletten-Probe ohne Exemplar"
@@ -29,7 +29,7 @@ func TestBuchAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 
 	lege := func(bestand int) *httptest.ResponseRecorder {
 		t.Helper()
@@ -38,14 +38,14 @@ func TestBuchAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 			t.Fatal(err)
 		}
 		rec := httptest.NewRecorder()
-		handler.TitelAnlegen(rec, httptest.NewRequest(http.MethodPost, "/api/books", bytes.NewReader(daten)))
+		tueren.TitelAnlegen(rec, httptest.NewRequest(http.MethodPost, "/api/books", bytes.NewReader(daten)))
 		return rec
 	}
 	// treffer zählt, wie oft die Liste die ISBN zeigt — so, wie die Titelliste sie abfragt.
 	treffer := func(sicht string) int {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		handler.TitelListe(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+isbn+sicht, nil))
+		tueren.TitelListe(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+isbn+sicht, nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Liste: %d %s", rec.Code, rec.Body.String())
 		}

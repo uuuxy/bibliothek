@@ -7,25 +7,20 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Seit 01.09.2026 über internal/pgtest statt eines eigenen Harness: Der frühere
-// ladeSchemaPool hielt den Advisory-Lock 0x42DB0001 SELBST (eigene Verbindung,
-// eigener Schema-Reset je Test). Sobald ein zweiter Test im selben Binary den Lock
-// über pgtest genommen hätte — der ihn bewusst bis Prozessende hält —, hätte dieser
-// Test für immer auf sein eigenes Binary gewartet; genau dieser Selbst-Deadlock hat
-// am 01.09. über order_search die ganze Suite in 10-Minuten-Timeouts gezogen
-// (de42b820). Der eigene DROP SCHEMA mitten im Binary hätte zudem jedem
-// nachfolgenden Test die Tabellen weggezogen. pgtest teilt das Schema mit allen
-// Tests des Binaries — deshalb räumt jeder Test seine Zeilen selbst ab und prüft
-// nur ID-gescoped.
+// Die Datenbank kommt aus internal/pgtest. pgtest hält die Sperre der Datenbank bis zum Ende des
+// Prozesses; ein Test mit eigener Sperre wartete ewig auf sie, und ein eigenes DROP SCHEMA mitten
+// im Testprogramm zöge den folgenden Tests die Tabellen weg. pgtest teilt das Schema mit allen
+// Tests des Programms; deshalb räumt jeder Test seine Zeilen selbst ab und prüft nur an seinen
+// eigenen Kennungen.
 
-// TestListBooksSchlank_KeineSchwerenFelder belegt die Payload-Verschlankung von
+// TestLadeTitelListe_SchlankOhneSchwereFelder belegt die Payload-Verschlankung von
 // GET /api/books: Die Katalogliste liefert die schwerste Spalte (erweiterte_eigenschaften)
 // nicht mit — die Listenansicht und ihre Suche im Browser brauchen sie nicht. Der
-// Einzel-Read (ListBooksByIDs, für Detail und Bearbeiten) liefert sie vollständig.
-func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
+// Einzel-Read (LadeTitelNachIDs, für Detail und Bearbeiten) liefert sie vollständig.
+func TestLadeTitelListe_SchlankOhneSchwereFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 
 	var id string
 	if err := pool.QueryRow(ctx, `
@@ -47,9 +42,9 @@ func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
 	}
 
 	// Listenansicht: Titel da, aber das schwere Feld leer.
-	liste, err := repo.LadeTitelListe(ctx, "", "", false)
+	liste, err := abfragen.LadeTitelListe(ctx, "", "", false)
 	if err != nil {
-		t.Fatalf("ListBooks: %v", err)
+		t.Fatalf("LadeTitelListe: %v", err)
 	}
 	var gefunden *Titel
 	for i := range liste {
@@ -69,9 +64,9 @@ func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
 	}
 
 	// Detail-Read: das schwere Feld vollständig.
-	detail, err := repo.LadeTitelNachIDs(ctx, []string{id})
+	detail, err := abfragen.LadeTitelNachIDs(ctx, []string{id})
 	if err != nil {
-		t.Fatalf("ListBooksByIDs: %v", err)
+		t.Fatalf("LadeTitelNachIDs: %v", err)
 	}
 	if len(detail) != 1 {
 		t.Fatalf("Detail-Read lieferte %d statt 1", len(detail))

@@ -22,7 +22,7 @@ import (
 // Cover, das schon lokal liegt — auch ein von Hand hochgeladenes —, fasst der Lauf nicht an
 // (Bugklasse „Maschine gegen Hand", cover_hand_gegen_maschine_pg_test.go). Am echten Postgres,
 // die Katalogdienste sind nachgestellt: Google nennt den Titel, die DNB liefert das Bild.
-func TestRetryExternalCovers_ErsetztNurAdressenImNetz(t *testing.T) {
+func TestFremdeCoverNeuLaden_ErsetztNurAdressenImNetz(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	titel := func(name, isbn, cover string) string {
@@ -59,29 +59,29 @@ func TestRetryExternalCovers_ErsetztNurAdressenImNetz(t *testing.T) {
 			bild.Set(x, y, color.RGBA{0, 0, 255, 255})
 		}
 	}
-	var pngBytes bytes.Buffer
-	if err := png.Encode(&pngBytes, bild); err != nil {
+	var pngDaten bytes.Buffer
+	if err := png.Encode(&pngDaten, bild); err != nil {
 		t.Fatalf("png encode: %v", err)
 	}
 	antwort := func(status int, inhalt []byte, typ string) *http.Response {
-		resp := &http.Response{StatusCode: status, Body: io.NopCloser(bytes.NewReader(inhalt)), Header: make(http.Header)}
+		httpAntwort := &http.Response{StatusCode: status, Body: io.NopCloser(bytes.NewReader(inhalt)), Header: make(http.Header)}
 		if typ != "" {
-			resp.Header.Set("Content-Type", typ)
+			httpAntwort.Header.Set("Content-Type", typ)
 		}
-		return resp
+		return httpAntwort
 	}
-	katalog := &mockTransportCover{roundTripFunc: func(req *http.Request) (*http.Response, error) {
+	katalog := &mockTransportCover{roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 		switch {
-		case strings.Contains(req.URL.String(), "portal.dnb.de/opac/mvb/cover"):
-			return antwort(http.StatusOK, pngBytes.Bytes(), "image/png"), nil
-		case strings.Contains(req.URL.String(), "googleapis.com"):
+		case strings.Contains(anfrage.URL.String(), "portal.dnb.de/opac/mvb/cover"):
+			return antwort(http.StatusOK, pngDaten.Bytes(), "image/png"), nil
+		case strings.Contains(anfrage.URL.String(), "googleapis.com"):
 			return antwort(http.StatusOK, []byte(`{"items":[{"volumeInfo":{"title":"Katalogtitel","authors":["Katalog"],"imageLinks":{"thumbnail":""}}}]}`), ""), nil
 		}
 		return antwort(http.StatusNotFound, nil, ""), nil
 	}}
-	handler := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: &MetadatenClient{httpClient: &http.Client{Transport: katalog}}}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: &MetadatenClient{httpClient: &http.Client{Transport: katalog}}}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/books/retry-covers",
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/books/retry-covers",
 		strings.NewReader(`{"ids":["`+extern+`","`+hand+`"]}`))
 	w := httptest.NewRecorder()
 	// Was der Lauf herunterlädt, kommt nach dem Test wieder weg — auch wenn er scheitert.
@@ -98,20 +98,20 @@ func TestRetryExternalCovers_ErsetztNurAdressenImNetz(t *testing.T) {
 			}
 		}
 	})
-	handler.FremdeCoverNeuLaden(w, req)
+	tueren.FremdeCoverNeuLaden(w, anfrage)
 	neu := cover(extern)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", w.Code, w.Body.String())
 	}
-	var resp struct {
+	var httpAntwort struct {
 		Data map[string]int `json:"data"`
 	}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+	if err := json.Unmarshal(w.Body.Bytes(), &httpAntwort); err != nil {
 		t.Fatalf("Antwort: %v (%s)", err, w.Body.String())
 	}
-	if resp.Data["retried"] != 2 || resp.Data["updated"] != 1 || resp.Data["skipped"] != 1 || resp.Data["failed"] != 0 {
-		t.Errorf("Zahlen %v — erwartet 2 versucht, 1 aktualisiert, 1 übersprungen, 0 gescheitert", resp.Data)
+	if httpAntwort.Data["retried"] != 2 || httpAntwort.Data["updated"] != 1 || httpAntwort.Data["skipped"] != 1 || httpAntwort.Data["failed"] != 0 {
+		t.Errorf("Zahlen %v — erwartet 2 versucht, 1 aktualisiert, 1 übersprungen, 0 gescheitert", httpAntwort.Data)
 	}
 	if !strings.HasPrefix(neu, "/uploads/cover_auto_") {
 		t.Errorf("das externe Cover steht weiter als %q da — erwartet den lokalen Pfad des heruntergeladenen Bilds", neu)

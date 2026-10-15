@@ -7,7 +7,7 @@ import (
 )
 
 func TestSichereCoverURL(t *testing.T) {
-	tests := []struct {
+	faelle := []struct {
 		name        string
 		rohURL      string
 		expectedURL string
@@ -45,11 +45,11 @@ func TestSichereCoverURL(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
+	for _, tc := range faelle {
 		t.Run(tc.name, func(t *testing.T) {
-			resultURL, ok := SichereCoverURL(tc.rohURL)
+			ergebnisURL, ok := SichereCoverURL(tc.rohURL)
 			assert.Equal(t, tc.expectedOk, ok)
-			assert.Equal(t, tc.expectedURL, resultURL)
+			assert.Equal(t, tc.expectedURL, ergebnisURL)
 		})
 	}
 }

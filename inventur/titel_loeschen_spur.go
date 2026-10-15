@@ -1,20 +1,16 @@
 package inventur
 
-// titel_loeschen_spur.go — die Spur, die ein gelöschtes verliehenes Buch hinterlässt.
+// Die Spur, die ein gelöschtes verliehenes Buch hinterlässt.
 //
-// Seit dem 23.08.2026 löscht „Titel löschen" auch aktuell verliehene Exemplare. Das ist
-// so gewollt, aber es erzeugt eine Lage, die es vorher nicht gab: Ein Buch liegt bei
-// einem Kind zu Hause, und im System existiert es nicht mehr. Bringt es das Kind zurück,
-// findet der Scan nichts — kein Titel, kein Exemplar, keine Ausleihe, keine Mahnung.
+// „Titel löschen" löscht auch gerade verliehene Exemplare. Das ist gewollt, aber es erzeugt eine
+// Lage, in der ein Buch bei einem Kind zu Hause liegt und im Programm nicht mehr besteht. Bringt
+// es das Kind zurück, findet der Scan nichts: keinen Titel, kein Exemplar, keine Ausleihe, keine
+// Mahnung.
 //
-// Genau dagegen steht diese Datei. Bevor die Zeilen fallen, wird jede offene Ausleihe
-// einzeln festgehalten: Barcode, Titel und Entleiher. Der Vorgang ist damit nicht
-// rückgängig zu machen, aber nachschlagbar — jemand kann im Protokoll sehen, wer das
-// Buch hatte, und es von Hand klären.
-//
-// Der Titel-Delete schrieb bis dahin ÜBERHAUPT kein Audit. Solange verliehene Exemplare
-// die Löschung blockierten, war das vertretbar; jetzt wäre es der Unterschied zwischen
-// „alles gelöscht" und „spurlos verschwunden".
+// Genau dagegen steht diese Datei. Bevor die Zeilen fallen, wird jede offene Ausleihe einzeln
+// festgehalten: Barcode, Titel und Entleiher. Der Vorgang lässt sich damit nicht rückgängig
+// machen, aber nachschlagen: Jemand kann im Protokoll sehen, wer das Buch hatte, und es von Hand
+// klären. Ohne diese Spur wäre „alles gelöscht" dasselbe wie „spurlos verschwunden".
 
 import (
 	"context"
@@ -37,21 +33,21 @@ type offeneAusleihe struct {
 	Seit       string
 }
 
-// loescheAusleihenMitSpur entfernt ALLE Ausleihen der Titel (die laufenden wie die
-// abgeschlossenen — sonst hielte ihr ON DELETE RESTRICT das Exemplar fest) und liefert
-// die laufenden als Spur zurück: aus demselben Befehl, der sie entfernt.
+// loescheAusleihenMitSpur entfernt alle Ausleihen der Titel (die laufenden wie die
+// abgeschlossenen, sonst hielte ihr ON DELETE RESTRICT das Exemplar fest) und liefert die
+// laufenden als Spur zurück, aus demselben Befehl, der sie entfernt.
 //
-// Bis zum 21.09.2026 wurden die laufenden Ausleihen VOR der Transaktion gelesen und erst
-// Befehle später gelöscht: Eine Ausleihe, die dazwischen zustande kam, fiel ohne Spur
-// (OFFEN.md 5.5). DELETE … RETURNING schließt das Fenster ohne zusätzliche Sperre — und
-// ohne die Sperrreihenfolge Schüler → Ausleihe → Exemplar anzutasten, die eine vorgezogene
-// Exemplar-Sperre gekippt hätte (docs/invarianten.md, Abschnitt 1; die Rückgabe hält
-// erst die Ausleihe, dann stempelt sie das Exemplar).
+// Würden die laufenden Ausleihen vor der Transaktion gelesen und erst Befehle später gelöscht,
+// fiele eine Ausleihe, die dazwischen zustande kommt, ohne Spur. DELETE … RETURNING schließt das
+// Fenster ohne zusätzliche Sperre und ohne die Reihenfolge der Sperren Schüler → Ausleihe →
+// Exemplar anzutasten, die eine vorgezogene Sperre des Exemplars gekippt hätte
+// (docs/invarianten.md, Abschnitt 1; die Rückgabe hält erst die Ausleihe, dann stempelt sie das
+// Exemplar).
 //
-// Schüler UND Kollegium (Handapparat): Beide Entleiher-Spalten sind polymorph, und ein
-// Handapparat-Buch ist genauso weg wie ein Schülerbuch. „(unbekannt)" statt eines
-// leeren Feldes, damit die Protokollzeile auch dann etwas aussagt, wenn die Zuordnung
-// bereits von der Lesehistorie-Befristung getrennt wurde.
+// Schüler und Kollegium (Handapparat): Beide Spalten des Entleihers sind polymorph, und ein Buch
+// aus dem Handapparat ist genauso weg wie ein Schülerbuch. „(unbekannt)" statt eines leeren
+// Feldes, damit die Zeile im Protokoll auch dann etwas aussagt, wenn die Befristung der
+// Lesehistorie die Zuordnung schon getrennt hat.
 func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]offeneAusleihe, error) {
 	// Die schreibende CTE sieht sich selbst nicht; die äußere Abfrage liest nur Tabellen,
 	// die dieser Befehl nicht anfasst (Exemplare fallen erst mit dem Titel).
@@ -93,10 +89,10 @@ func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]of
 // protokolliereOffeneAusleihen schreibt je eine SYSTEM-Zeile ins Audit-Log. Läuft in der
 // Transaktion der Löschung: Entweder beides oder nichts.
 //
-// datensatz_id ist das EXEMPLAR — so sucht man später, wenn das Buch auf dem Tresen liegt
-// und der Scan ins Leere geht. akteur 'SYSTEM' ohne bearbeiter_id, weil der Handler den
-// Benutzer hier nicht durchreicht; WER gelöscht hat, steht in der Admin-Spur des
-// Endpunkts, WAS dabei verschwand, steht hier.
+// datensatz_id ist das Exemplar — so sucht man später, wenn das Buch auf dem Tresen liegt
+// und der Scan ins Leere geht. akteur 'SYSTEM' ohne bearbeiter_id, weil die Tür das
+// Konto hier nicht durchreicht; wer gelöscht hat, steht in der Admin-Spur des
+// Endpunkts, was dabei verschwand, steht hier.
 func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offeneAusleihe) error {
 	for _, o := range offene {
 		inhalt := map[string]any{
@@ -107,7 +103,7 @@ func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offen
 			"ausleihe_id":    o.AusleiheID,
 			"action":         "titel_geloescht_mit_offener_ausleihe",
 		}
-		// schueler_id ist NICHT nur Information, sondern der Schlüssel, an dem die
+		// schueler_id ist nicht nur Information, sondern der Schlüssel, an dem die
 		// Lesehistorie-Befristung diese Zeile überhaupt findet: Ihr Prädikat verlangt
 		// `details ? 'schueler_id'` (repository/loeschfristen.go). Ohne ihn stünde der
 		// Klarname 24 Monate hier (bis zur Audit-Aufbewahrung) statt 90 Tage wie jede
@@ -141,14 +137,12 @@ type exemplarSnapshot struct {
 	WarImBestand bool
 }
 
-// leseExemplarSnapshots sammelt ALLE Exemplare der zu löschenden Titel — in der
-// Transaktion der Löschung, bevor die Zeilen fallen. Nicht nur die verliehenen:
-// Die Tresen-Auskunft (repository.FindeTresenExemplare) findet gelöschte Exemplare
-// ausschließlich über audit_log-Zeilen mit tabelle='buecher_exemplare' und
-// details->>'barcode_id'; die Ausleihen-Spur oben sieht sie nicht. Bis zum
-// 01.09.2026 fehlte dieser Snapshot hier wie beim Geschwister-Pfad LoescheTitel
-// (Befund-Register): Ein per Titel-Löschung verschwundenes Buch war beim Scannen
-// „nie gesehen" statt „gelöscht am …".
+// leseExemplarSnapshots sammelt alle Exemplare der zu löschenden Titel, in der Transaktion der
+// Löschung, bevor die Zeilen fallen. Nicht nur die verliehenen: Die Auskunft am Tresen
+// (repository.FindeTresenExemplare) findet gelöschte Exemplare nur über Zeilen in audit_log mit
+// tabelle='buecher_exemplare' und details->>'barcode_id'; die Spur der Ausleihen oben sieht sie
+// nicht. Ohne den Schnappschuss wäre ein durch das Löschen eines Titels verschwundenes Buch beim
+// Scannen „nie gesehen" statt „gelöscht am …".
 func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exemplarSnapshot, error) {
 	zeilen, err := tx.Query(ctx, `
 		SELECT e.id, e.barcode_id, t.titel, `+repository.SQLWarImBestand+`
@@ -202,7 +196,7 @@ func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, schnappsch
 	return nil
 }
 
-// offenerSchaden ist eine UNBEZAHLTE Forderung, die eine Titel-Löschung mit abräumt.
+// offenerSchaden ist eine unbezahlte Forderung, die eine Titel-Löschung mit abräumt.
 type offenerSchaden struct {
 	ID         string
 	ExemplarID string
@@ -215,19 +209,15 @@ type offenerSchaden struct {
 	Seit       string
 }
 
-// loescheSchaedenMitSpur entfernt ALLE Schadensfälle der Titel und liefert die
-// unbezahlten, nicht stornierten als Spur zurück — aus demselben Befehl, wie bei den
-// Ausleihen.
+// loescheSchaedenMitSpur entfernt alle Schadensfälle der Titel und liefert die unbezahlten, nicht
+// stornierten als Spur zurück, aus demselben Befehl wie bei den Ausleihen.
 //
-// Warum das eine eigene Spur braucht (Rasterdurchgang 06.09.2026): Beide Löschwege
-// räumen `schadensfaelle` ohne Rücksicht auf `ist_bezahlt` ab; der Funktionskommentar in
-// repository/titel_loeschen.go behauptete sogar, nur ABGESCHLOSSENE Fälle würden bereinigt.
-// Ein unbezahlter Schadensfall ist aber Geld, das ein Schüler der Schule schuldet, und er
-// steuert sechs Entscheidungen — Kontoanzeige, Lösch-Sperre, Zusammenführen,
-// Abgänger-Wächter, LUSD-Anonymisierungsbremse und das DSGVO-Löschprädikat. Mit dem Titel
-// verschwand die Forderung samt allen sechs Wirkungen, und niemand konnte es später
-// sehen. Für die offenen AUSLEIHEN gibt es diese Spur seit dem 23.08.2026; fürs Geld
-// fehlte sie.
+// Warum das eine eigene Spur braucht: Beide Wege der Löschung räumen `schadensfaelle` ohne
+// Rücksicht auf `ist_bezahlt` ab. Ein unbezahlter Schadensfall ist aber Geld, das ein Schüler
+// der Schule schuldet, und er steuert sechs Entscheidungen: Anzeige des Kontos, Sperre der
+// Löschung, Zusammenführen, Wächter der Abgänger, Bremse der Anonymisierung beim Abgleich mit der
+// LUSD und die Bedingung der Löschung nach DSGVO. Mit dem Titel verschwände die Forderung samt
+// allen sechs Wirkungen, und niemand könnte es später sehen.
 func loescheSchaedenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]offenerSchaden, error) {
 	zeilen, err := tx.Query(ctx, `
 		WITH weg AS (

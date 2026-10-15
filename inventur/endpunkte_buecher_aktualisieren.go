@@ -163,8 +163,8 @@ func bestandsangabe(anfrage *http.Request, eingabe TitelEingabe) *Bestandsangabe
 	return angabe
 }
 
-// bereinigeTitelEingabe trimmt Leerzeichen der Eingabefelder und prüft auf Gültigkeit.
-// Es gibt einen Fehler zurück, der als HTTP-Fehlermeldung an den Client gesendet werden kann.
+// bereinigeTitelEingabe entfernt Leerzeichen an den Rändern der Felder und prüft sie; der
+// Fehler ist als Meldung für die Oberfläche geschrieben.
 // ISBN und Mehrjahresband prüft sie nicht: Was sich ändert und was am Titel steht, weiß erst
 // der Schreibpfad, der den gespeicherten Titel liest (pruefeAenderung).
 func bereinigeTitelEingabe(eingabe *TitelEingabe) error {
@@ -188,9 +188,9 @@ func bereinigeTitelEingabe(eingabe *TitelEingabe) error {
 }
 
 // pruefeListenpreis nennt den erlaubten Bereich, bevor die Datenbank ablehnt
-// (chk_listenpreis_nonneg, Migration 127): Beim Ändern kam dort eine 500, beim Anlegen
-// „buch konnte nicht erstellt werden" — beides ohne zu sagen, was erlaubt ist. Leer (nil)
-// heißt „nicht erfasst" und ist etwas anderes als 0.
+// (chk_listenpreis_nonneg): Sonst käme beim Ändern eine 500 und beim Anlegen „buch konnte nicht
+// erstellt werden", beides ohne zu sagen, was erlaubt ist. Leer (nil) heißt „nicht erfasst" und
+// ist etwas anderes als 0.
 func pruefeListenpreis(preis *float64) error {
 	if preis != nil && *preis < 0 {
 		return errors.New("listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)")

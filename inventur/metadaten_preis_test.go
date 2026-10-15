@@ -15,9 +15,9 @@ func TestPreisAusVerfuegbarkeit(t *testing.T) {
 		{"Euro mit Komma", "kart. : EUR 24,95", 24.95},
 		{"Euro ohne Einband-Vorspann", "EUR 12.50", 12.50},
 
-		// Der Weltatlas der Schule: Der Satz kennt nur D-Mark. Ein Preis von damals ist
-		// kein Preis von heute — und ein Buch, das nur in DM verzeichnet ist, wird ohnehin
-		// nicht mehr nachbestellt.
+		// Der Weltatlas der Schule: Der Satz kennt nur D-Mark. Ein Preis aus der Zeit vor dem Euro ist
+		// kein Preis von heute, und ein Buch, das nur in DM verzeichnet ist, wird ohnehin nicht mehr
+		// nachbestellt.
 		{"nur D-Mark (ISBN 9783124801005)", "Pp. : DM 35.20", 0},
 
 		// Der gefährlichste Fall: Der Satz nennt einen Euro-Betrag, aber es ist die

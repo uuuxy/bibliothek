@@ -7,7 +7,7 @@ import (
 // isbnMuster prüft auf gültige ISBN-10 oder ISBN-13 Zeichenfolgen.
 var isbnMuster = regexp.MustCompile(`^[0-9]{9,13}[0-9xX]?$`)
 
-// bereinigeISBNZeichen removes spaces, hyphens, and whitespace efficiently without multiple string allocations.
+// bereinigeISBNZeichen entfernt Leerzeichen, Bindestriche und Leerraum in einem Durchgang.
 func bereinigeISBNZeichen(s string) string {
 	mussBereinigen := false
 	behalten := 0

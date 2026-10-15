@@ -12,8 +12,8 @@ import (
 func TestSucheOpenLibrary(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
-				if strings.Contains(req.URL.String(), "openlibrary.org") {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+				if strings.Contains(anfrage.URL.String(), "openlibrary.org") {
 					openLibraryJSON := `{
 						"ISBN:9783161484100": {
 							"title": "OpenLibrary Book",
@@ -43,27 +43,27 @@ func TestSucheOpenLibrary(t *testing.T) {
 			httpClient: &http.Client{Transport: mockTr},
 		}
 
-		res, err := client.sucheOpenLibrary(context.Background(), "9783161484100")
+		ergebnis, err := client.sucheOpenLibrary(context.Background(), "9783161484100")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if res.Titel != "OpenLibrary Book" {
-			t.Errorf("Expected title 'OpenLibrary Book', got '%s'", res.Titel)
+		if ergebnis.Titel != "OpenLibrary Book" {
+			t.Errorf("Expected title 'OpenLibrary Book', got '%s'", ergebnis.Titel)
 		}
-		if res.Untertitel != "OpenLibrary Subtitle" {
-			t.Errorf("Expected subtitle 'OpenLibrary Subtitle', got '%s'", res.Untertitel)
+		if ergebnis.Untertitel != "OpenLibrary Subtitle" {
+			t.Errorf("Expected subtitle 'OpenLibrary Subtitle', got '%s'", ergebnis.Untertitel)
 		}
-		if res.Autor != "OpenLibrary Author" {
-			t.Errorf("Expected author 'OpenLibrary Author', got '%s'", res.Autor)
+		if ergebnis.Autor != "OpenLibrary Author" {
+			t.Errorf("Expected author 'OpenLibrary Author', got '%s'", ergebnis.Autor)
 		}
-		if res.CoverURL != "http://large.cover" {
-			t.Errorf("Expected cover URL 'http://large.cover', got '%s'", res.CoverURL)
+		if ergebnis.CoverURL != "http://large.cover" {
+			t.Errorf("Expected cover URL 'http://large.cover', got '%s'", ergebnis.CoverURL)
 		}
 	})
 
 	t.Run("Medium Cover Fallback", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				openLibraryJSON := `{
 					"ISBN:9783161484100": {
 						"title": "OpenLibrary Book",
@@ -80,18 +80,18 @@ func TestSucheOpenLibrary(t *testing.T) {
 			},
 		}
 		client := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
-		res, err := client.sucheOpenLibrary(context.Background(), "9783161484100")
+		ergebnis, err := client.sucheOpenLibrary(context.Background(), "9783161484100")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if res.CoverURL != "http://medium.cover" {
-			t.Errorf("Expected fallback to medium cover, got '%s'", res.CoverURL)
+		if ergebnis.CoverURL != "http://medium.cover" {
+			t.Errorf("Expected fallback to medium cover, got '%s'", ergebnis.CoverURL)
 		}
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString(`{}`)),
@@ -112,7 +112,7 @@ func TestSucheOpenLibrary(t *testing.T) {
 
 	t.Run("HTTP Error", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusInternalServerError,
 					Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
@@ -133,7 +133,7 @@ func TestSucheOpenLibrary(t *testing.T) {
 
 	t.Run("Invalid JSON", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString("{invalid json}")),
@@ -153,11 +153,11 @@ func TestSucheOpenLibrary(t *testing.T) {
 	})
 }
 
-func TestSucheGoogleBooks(t *testing.T) {
+func TestSucheBeiGoogle(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
-				if strings.Contains(req.URL.String(), "googleapis.com") {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+				if strings.Contains(anfrage.URL.String(), "googleapis.com") {
 					googleJSON := `{
 						"items": [{
 							"volumeInfo": {
@@ -189,27 +189,27 @@ func TestSucheGoogleBooks(t *testing.T) {
 			httpClient: &http.Client{Transport: mockTr},
 		}
 
-		res, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
+		ergebnis, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if res.Titel != "Google Book" {
-			t.Errorf("Expected title 'Google Book', got '%s'", res.Titel)
+		if ergebnis.Titel != "Google Book" {
+			t.Errorf("Expected title 'Google Book', got '%s'", ergebnis.Titel)
 		}
-		if res.Untertitel != "Google Subtitle" {
-			t.Errorf("Expected subtitle 'Google Subtitle', got '%s'", res.Untertitel)
+		if ergebnis.Untertitel != "Google Subtitle" {
+			t.Errorf("Expected subtitle 'Google Subtitle', got '%s'", ergebnis.Untertitel)
 		}
-		if res.Autor != "Google Author" {
-			t.Errorf("Expected author 'Google Author', got '%s'", res.Autor)
+		if ergebnis.Autor != "Google Author" {
+			t.Errorf("Expected author 'Google Author', got '%s'", ergebnis.Autor)
 		}
-		if res.CoverURL != "https://thumbnail.cover" {
-			t.Errorf("Expected cover URL 'https://thumbnail.cover', got '%s'", res.CoverURL)
+		if ergebnis.CoverURL != "https://thumbnail.cover" {
+			t.Errorf("Expected cover URL 'https://thumbnail.cover', got '%s'", ergebnis.CoverURL)
 		}
 	})
 
 	t.Run("Small Thumbnail Fallback", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				googleJSON := `{
 					"items": [{
 						"volumeInfo": {
@@ -228,18 +228,18 @@ func TestSucheGoogleBooks(t *testing.T) {
 			},
 		}
 		client := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
-		res, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
+		ergebnis, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if res.CoverURL != "https://small.thumbnail.cover" {
-			t.Errorf("Expected fallback to small thumbnail cover, got '%s'", res.CoverURL)
+		if ergebnis.CoverURL != "https://small.thumbnail.cover" {
+			t.Errorf("Expected fallback to small thumbnail cover, got '%s'", ergebnis.CoverURL)
 		}
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString(`{"items": []}`)),
@@ -260,7 +260,7 @@ func TestSucheGoogleBooks(t *testing.T) {
 
 	t.Run("HTTP Error", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusNotFound,
 					Body:       io.NopCloser(bytes.NewBufferString("Not Found")),
@@ -281,7 +281,7 @@ func TestSucheGoogleBooks(t *testing.T) {
 
 	t.Run("Invalid JSON", func(t *testing.T) {
 		mockTr := &mockTransport{
-			roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString("{invalid json}")),

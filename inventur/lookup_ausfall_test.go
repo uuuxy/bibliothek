@@ -8,14 +8,13 @@ import (
 	"testing"
 )
 
-// Netzausfall ist kein Nicht-Treffer.
+// Ein Ausfall des Netzes ist kein fehlender Treffer.
 //
-// Bis zum 31.08.2026 antworteten alle drei Lookup-Wege (api/katalog/isbn_zu_titel.go,
-// inventur/isbn_suche.go, inventur/cover_aktualisierung.go) bei ausgefallenem Netz mit
-// 404 „nicht gefunden" — für die Theke derselbe Bildschirm wie ein Buch, das die DNB
-// wirklich nicht kennt. Bei einer WLAN-Störung katalogisiert dann jemand Bücher von
-// Hand, die längst in der DNB stehen (Produktentscheidung 31.08.2026: 502 mit klarer
-// Meldung; Sweep „Fehler-Kollaps", docs/sweeps.md).
+// Antworteten die drei Wege des Nachschlagens (api/katalog/isbn_zu_titel.go,
+// inventur/isbn_suche.go, inventur/cover_aktualisierung.go) bei ausgefallenem Netz mit 404 „nicht
+// gefunden", zeigte die Theke denselben Bildschirm wie bei einem Buch, das die DNB wirklich nicht
+// kennt, und bei einer Störung des WLANs katalogisierte jemand Bücher von Hand, die längst in der
+// DNB stehen. Deshalb 502 mit klarer Meldung.
 
 // kaputtesNetz lässt jede Verbindung scheitern — wie ein gezogener Uplink.
 type kaputtesNetz struct{}
@@ -40,12 +39,12 @@ func lookupMit(t *testing.T, transport http.RoundTripper) *httptest.ResponseReco
 	t.Helper()
 	client := NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: transport})
-	handler := &Tueren{metadaten: client}
+	tueren := &Tueren{metadaten: client}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/lookup/9783551551672", nil)
-	req.SetPathValue("isbn", "9783551551672")
+	anfrage := httptest.NewRequest(http.MethodGet, "/api/lookup/9783551551672", nil)
+	anfrage.SetPathValue("isbn", "9783551551672")
 	rec := httptest.NewRecorder()
-	handler.ISBNSuche(rec, req)
+	tueren.ISBNSuche(rec, anfrage)
 	return rec
 }
 

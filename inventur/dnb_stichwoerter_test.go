@@ -11,7 +11,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Kandidaten des Schlagwort-Vorschlags (docs/OFFEN.md 4.20): Gattungsbegriffe aus 655 $a
+// Die Kandidaten des Schlagwort-Vorschlags: Gattungsbegriffe aus 655 $a
 // und die freien Verlagswörter aus 653 $a — aber nicht die 653-Einträge mit Vorsatz, die
 // Angaben anderer Art sind. Der Satz ist einem echten DNB-Satz nachgebaut (Kirsten Boie,
 // „Dunkelnacht", abgerufen am 23.09.2026), gekürzt.
@@ -41,20 +41,20 @@ func TestSucheDNB_StichwoerterOhneVorsatzEintraege(t *testing.T) {
 		},
 	}}}
 
-	res, err := client.sucheDNB(context.Background(), "9783751200530")
+	ergebnis, err := client.sucheDNB(context.Background(), "9783751200530")
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"Jugendbuch", "Jugendbücher ab 12 Jahre", "Burgen", "Erste Liebe", "Krieg"}
-	if !slices.Equal(res.Stichwoerter, want) {
-		t.Errorf("Stichwoerter = %q, erwartet %q — Einträge mit Vorsatz sind keine Verlagswörter", res.Stichwoerter, want)
+	if !slices.Equal(ergebnis.Stichwoerter, want) {
+		t.Errorf("Stichwoerter = %q, erwartet %q — Einträge mit Vorsatz sind keine Verlagswörter", ergebnis.Stichwoerter, want)
 	}
-	if res.Zielgruppe != "Für Jugendliche und Erwachsene,ab 15 Jahren" {
-		t.Errorf("Zielgruppe = %q — der Vorsatz-Eintrag wird weiter gelesen", res.Zielgruppe)
+	if ergebnis.Zielgruppe != "Für Jugendliche und Erwachsene,ab 15 Jahren" {
+		t.Errorf("Zielgruppe = %q — der Vorsatz-Eintrag wird weiter gelesen", ergebnis.Zielgruppe)
 	}
 }
 
-// Die DNB liefert Umlaute zerlegt: „a" + U+0308 statt „ä" (gemessen am 30.09.2026 an ihrer
+// Die DNB liefert Umlaute zerlegt: „a" + U+0308 statt „ä" (gemessen an ihrer
 // MARC21-Schnittstelle). Zerlegt traf kein eingetippter Suchbegriff den Titel und kein
 // Stichwort das gleichnamige Schlagwort der Liste. Heraus kommt jeder Wert zusammengesetzt —
 // über ISBN und über die Freitextsuche, die dieselbe Antwort lesen.
@@ -77,12 +77,12 @@ func TestSucheDNB_UmlauteZusammengesetzt(t *testing.T) {
 	}}}
 
 	const titel, autor, stichwort = "Der Herr der Ringe - Anhänge und Register", "März, Tobias", "Vögel"
-	res, err := client.sucheDNB(context.Background(), "9783608126044")
+	ergebnis, err := client.sucheDNB(context.Background(), "9783608126044")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Titel != titel || res.Autor != autor || !slices.Equal(res.Stichwoerter, []string{stichwort}) {
-		t.Errorf("über ISBN: Titel %+q, Autor %+q, Stichwörter %+q — erwartet zusammengesetzt", res.Titel, res.Autor, res.Stichwoerter)
+	if ergebnis.Titel != titel || ergebnis.Autor != autor || !slices.Equal(ergebnis.Stichwoerter, []string{stichwort}) {
+		t.Errorf("über ISBN: Titel %+q, Autor %+q, Stichwörter %+q — erwartet zusammengesetzt", ergebnis.Titel, ergebnis.Autor, ergebnis.Stichwoerter)
 	}
 
 	treffer, err := client.SucheTextDNB(context.Background(), "Herr der Ringe")
@@ -94,10 +94,10 @@ func TestSucheDNB_UmlauteZusammengesetzt(t *testing.T) {
 	}
 }
 
-// Die Freitextsuche der Bestellung schickt „jedes Wort irgendwo im Satz" (any all "…").
-// Bis zum 23.09.2026 ging any=Dunkelnacht+Boie hinaus, und die DNB lieferte mit zwei Wörtern
-// keinen Satz. Anführungszeichen und Backslash der Eingabe sind maskiert, sonst endete die
-// Zeichenkette mitten in der Eingabe; „and" ist ein Wort, kein Operator.
+// Die Freitextsuche der Bestellung schickt „jedes Wort irgendwo im Satz" (any all "…"); als
+// any=Dunkelnacht+Boie lieferte die DNB mit zwei Wörtern keinen Satz. Anführungszeichen und
+// Backslash der Eingabe sind maskiert, sonst endete die Zeichenkette mitten in der Eingabe;
+// „and" ist ein Wort, kein Operator.
 func TestCqlAlleWoerter(t *testing.T) {
 	faelle := map[string]string{
 		"Dunkelnacht":      `any all "Dunkelnacht"`,
@@ -131,11 +131,10 @@ func TestSucheTextDNB_SchicktAlleWoerter(t *testing.T) {
 	}
 }
 
-// Die Schlagwörter der Gemeinsamen Normdatei (docs/OFFEN.md 4.25, entschieden am 30.09.2026):
-// 600–651 mit $2 gnd, in der Schreibweise der Littera-Liste angeboten und unter beiden Formen
-// gesucht. Andere Vokabulare in denselben Feldern und die Kette in 689 bleiben draußen. Die
-// Felder sind echten DNB-Sätzen nachgebaut („Franz Kafka", „Der Zweite Weltkrieg", abgerufen
-// am 30.09.2026).
+// Die Schlagwörter der Gemeinsamen Normdatei: 600–651 mit $2 gnd, in der Schreibweise der Liste
+// aus Littera angeboten und unter beiden Formen gesucht. Andere Vokabulare in denselben Feldern
+// und die Kette in 689 bleiben draußen. Die Felder sind echten Sätzen der DNB nachgebaut („Franz
+// Kafka", „Der Zweite Weltkrieg").
 func TestSucheDNB_Normdaten(t *testing.T) {
 	const satz = `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
@@ -159,7 +158,7 @@ func TestSucheDNB_Normdaten(t *testing.T) {
 		},
 	}}}
 
-	res, err := client.sucheDNB(context.Background(), "9783499500916")
+	ergebnis, err := client.sucheDNB(context.Background(), "9783499500916")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,9 +170,9 @@ func TestSucheDNB_Normdaten(t *testing.T) {
 		{Anzeige: "Bank <Möbel>", Formen: []string{"Bank <Möbel>", "Bank"}},
 		{Anzeige: "Oslo", Formen: []string{"Oslo"}},
 	}
-	if !slices.EqualFunc(res.Normdaten, want, func(a, b repository.Normdatenbegriff) bool {
+	if !slices.EqualFunc(ergebnis.Normdaten, want, func(a, b repository.Normdatenbegriff) bool {
 		return a.Anzeige == b.Anzeige && slices.Equal(a.Formen, b.Formen)
 	}) {
-		t.Errorf("Normdaten =\n  %q\nerwartet\n  %q", res.Normdaten, want)
+		t.Errorf("Normdaten =\n  %q\nerwartet\n  %q", ergebnis.Normdaten, want)
 	}
 }

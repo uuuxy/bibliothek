@@ -8,12 +8,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// LadeTitel liest einen Titel samt Metadaten. Fehlt er, kommt ErrTitelNichtGefunden zurück
-// — ein Bedienfehler, kein Serverfehler. Jeder ANDERE Fehler (Verbindung, Scan einer
-// NULL-Spalte in einen String) wird weitergereicht: Bis 29.08.2026 hieß auch der
-// „buch nicht gefunden", und ein Schema-Drift wäre als 404 verkleidet gewesen
-// (NULL-Scan-Bugklasse). Aufgefallen, als PR #529 genau dieses Verhalten per Test
-// festschreiben wollte.
+// LadeTitel liest einen Titel samt Metadaten. Fehlt er, kommt ErrTitelNichtGefunden zurück, ein
+// Bedienfehler, kein Fehler des Servers. Jeder andere Fehler (Verbindung, Scan einer Spalte mit
+// NULL in einen String) geht weiter: Hieße auch er „buch nicht gefunden", wäre ein
+// Auseinanderlaufen des Schemas als 404 verkleidet.
 func (a *TitelAbfragen) LadeTitel(ctx context.Context, id string) (*Titel, error) {
 	abfrage := `
 		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(signatur, '') AS signatur, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(track, '') AS track,

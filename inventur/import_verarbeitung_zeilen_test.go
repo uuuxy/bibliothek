@@ -4,8 +4,8 @@ import (
 	"testing"
 )
 
-func TestParseKlassenStufe(t *testing.T) {
-	tests := []struct {
+func TestLeseKlassenstufe(t *testing.T) {
+	faelle := []struct {
 		name     string
 		gradeStr string
 		expected int16
@@ -21,18 +21,18 @@ func TestParseKlassenStufe(t *testing.T) {
 		{"Grade string is empty", "", 0},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := leseKlassenstufe(tt.gradeStr)
-			if result != tt.expected {
-				t.Errorf("leseKlassenstufe(%q) = %d; want %d", tt.gradeStr, result, tt.expected)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			ergebnis := leseKlassenstufe(f.gradeStr)
+			if ergebnis != f.expected {
+				t.Errorf("leseKlassenstufe(%q) = %d; want %d", f.gradeStr, ergebnis, f.expected)
 			}
 		})
 	}
 }
 
-func TestParseBestand(t *testing.T) {
-	tests := []struct {
+func TestLeseBestand(t *testing.T) {
+	faelle := []struct {
 		name     string
 		input    string
 		expected int
@@ -47,24 +47,22 @@ func TestParseBestand(t *testing.T) {
 		{"Absurd großer Wert", "5000000000", 0},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := leseBestand(tt.input)
-			if result != tt.expected {
-				t.Errorf("parseBestand(%q) = %d; want %d", tt.input, result, tt.expected)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			ergebnis := leseBestand(f.input)
+			if ergebnis != f.expected {
+				t.Errorf("leseBestand(%q) = %d; want %d", f.input, ergebnis, f.expected)
 			}
 		})
 	}
 }
 
-// Die Fach-Spalte des Excel-Imports ist Freitext, buecher_titel.subject aber ein
-// Fremdschlüssel auf die Systematik: Jede eigenständige Zeichenkette wird dort eine
-// eigene Kategorie und steht danach in der Fach-Auswahl der Buchmaske und als Fach im
-// Portal-Reiter Schulbücher. Bis zum 03.09.2026 ging der Wert ungeprüft durch, und ein
-// leeres Feld wurde zum wörtlichen Fach „Unbekannt" — dieselbe Form, die der
-// CSV-Bestandsimport an diesem Tag verloren hat (fachDerZeile, Commit 21b8e172), nur
-// durch die zweite Tür. Ein Lauf hätte gereicht, um scripts/repair_fach_kategorie.sql
-// wieder aufzuheben.
+// Die Spalte des Fachs im Import aus Excel ist Freitext, buecher_titel.subject aber ein
+// Fremdschlüssel auf die Systematik: Jede eigenständige Zeichenkette wird dort eine eigene
+// Kategorie und steht danach in der Auswahl der Fächer in der Maske und als Fach im Reiter
+// Schulbücher des Portals. Ein ungeprüfter Wert oder ein leeres Feld als wörtliches Fach
+// „Unbekannt" wären dieselbe Form wie im Import des Bestands aus CSV (fachDerZeile), nur durch die
+// zweite Tür.
 func TestVerarbeiteImportZeile_FachNurWennFach(t *testing.T) {
 	faelle := []struct{ spalte, want string }{
 		{"Mathematik", "Mathematik"},

@@ -18,17 +18,16 @@ import (
 )
 
 // Bildplatzierungen im Inhaltsstrom: `q 10.00 0 0 15.00 17.00 260.00 cm /I1 Do Q`.
-// Die vierte Zahl ist die Höhe, die sechste die y-Position VON UNTEN (PDF-Koordinaten).
+// Die vierte Zahl ist die Höhe, die sechste die y-Position von unten (PDF-Koordinaten).
 var bildMatrix = regexp.MustCompile(`([0-9.]+) 0 0 ([0-9.]+) ([0-9.]+) ([0-9.]+) cm`)
 
-// TestSchulbuecherAlsPDF_CoverBleibtBeiSeinerZeile hält den Seitenumbruch fest.
+// Hält den Seitenumbruch fest.
 //
-// gofpdf prüft den Umbruch erst in der ersten Tabellenzelle. Das Cover wird aber mit
-// fester Position gezeichnet und ging deshalb noch auf die ALTE Seite, während seine
-// Zeile schon auf der neuen stand: ab der 14. Zeile klebte auf jedem Blattende ein
-// herrenloses Buchcover im Fußsteg, und die zugehörige Zeile hatte oben ein leeres
-// Bildkästchen — was aussieht wie „für dieses Buch ist kein Cover hinterlegt"
-// (Befund Rasterdurchgang 03.09.2026). Der PG-Test sah es nicht: drei Titel, eine Seite.
+// gofpdf prüft den Umbruch erst in der ersten Zelle der Tabelle. Das Cover wird aber mit fester
+// Position gezeichnet und ginge deshalb noch auf die alte Seite, während seine Zeile schon auf
+// der neuen steht: Ab der 14. Zeile klebte auf jedem Blattende ein herrenloses Cover im Fußsteg,
+// und die zugehörige Zeile hätte oben ein leeres Bildkästchen, was aussieht wie „für dieses Buch
+// ist kein Cover hinterlegt". Der Test an Postgres sieht das nicht: drei Titel, eine Seite.
 func TestSchulbuecherAlsPDF_CoverBleibtBeiSeinerZeile(t *testing.T) {
 	// coverdatei liest relativ zum Arbeitsverzeichnis; ein eigenes uploads/ mit einem
 	// echten Bild darin macht den Cover-Pfad im Test begehbar.
@@ -236,7 +235,7 @@ func TestSchulbuecherAlsPDF_GezaehltSpalte(t *testing.T) {
 }
 
 func TestSchulbuecherAlsPDF_JahrgangText(t *testing.T) {
-	tests := []struct {
+	faelle := []struct {
 		name string
 		t    LernmittelTitel
 		want string
@@ -247,11 +246,11 @@ func TestSchulbuecherAlsPDF_JahrgangText(t *testing.T) {
 		{"Von-Bis", LernmittelTitel{JahrgangVon: 7, JahrgangBis: 13}, "7–13"},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := jahrgangText(tt.t)
-			if got != tt.want {
-				t.Errorf("jahrgangText() = %v, want %v", got, tt.want)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			got := jahrgangText(f.t)
+			if got != f.want {
+				t.Errorf("jahrgangText() = %v, want %v", got, f.want)
 			}
 		})
 	}
@@ -295,11 +294,10 @@ func TestJahrgangText_WieImBrowser(t *testing.T) {
 	}
 }
 
-// Die Beschriftung einer Auflage im Ausdruck ist der Zwilling der Browser-Seite
+// Die Beschriftung einer Auflage im Ausdruck ist der Zwilling der Seite im Browser
 // (frontend/src/lib/utils/auflagenText.js). Beide Seiten lesen dieselben Prüffälle
-// (auflagenText.faelle.json, Bauart wie code39.faelle.json) — rechnen sie verschieden, nennt
-// das PDF eine Auflage anders als der Bildschirm. Bis zum Rasterdurchgang vom 25.09.2026 standen
-// die Fälle zweimal von Hand da.
+// (auflagenText.faelle.json, Bauart wie code39.faelle.json); rechneten sie verschieden, nennte
+// das PDF eine Auflage anders als der Bildschirm.
 func TestAuflagenBeschriftung_WieImBrowser(t *testing.T) {
 	const faelleDatei = "../frontend/src/lib/utils/auflagenText.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
@@ -355,7 +353,7 @@ func TestAuflagenBeschriftung_WieImBrowser(t *testing.T) {
 	}
 }
 
-// Ein Buch in mehreren Auflagen (docs/OFFEN.md 4.18, Stufe 6): Unter dem Titel steht im
+// Ein Buch in mehreren Auflagen: Unter dem Titel steht im
 // Ausdruck, woraus die Zahlen der Zeile bestehen — ein Buch ohne weitere Auflage bleibt, wie es
 // war.
 func TestSchulbuecherAlsPDF_AuflagenUnterDemTitel(t *testing.T) {

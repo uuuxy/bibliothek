@@ -63,7 +63,7 @@ func TestTitelliste_StehtNachTitel(t *testing.T) {
 	}
 
 	durch := func(h http.Handler) http.Handler { return h }
-	handler := NewTueren(TuerenKonfig{
+	tueren := NewTueren(TuerenKonfig{
 		Abfragen:          NewTitelAbfragen(pool),
 		Metadaten:         &MetadatenClient{httpClient: &http.Client{}},
 		VerlangeLesen:     durch,
@@ -73,7 +73,7 @@ func TestTitelliste_StehtNachTitel(t *testing.T) {
 	})
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+strings.ToLower(marke), nil))
+	tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books?q="+strings.ToLower(marke), nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /api/books: HTTP %d — %s", rec.Code, rec.Body.String())
 	}
@@ -96,7 +96,7 @@ func TestTitelliste_StehtNachTitel(t *testing.T) {
 
 	// Die Tür zum Umsortieren ist zu: Der Mux kennt für den Pfad kein PUT mehr.
 	rec = httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/api/admin/books/reorder",
+	tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/api/admin/books/reorder",
 		strings.NewReader(`{"bookIds":[]}`)))
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("PUT /api/admin/books/reorder: HTTP %d, erwartet 405", rec.Code)

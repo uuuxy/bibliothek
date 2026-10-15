@@ -12,12 +12,11 @@ import (
 // Katalogliste, Einzel-Read und Klassenkachel nennen neben Bestand und verfügbar die
 // bestellten, noch nicht eingetroffenen Exemplare — dieselbe Grenze wie die Theken-Suche
 // (repository.SQLBestandImZulauf, dort TestTitelSucheNenntDenBestand). Ohne die dritte Zahl
-// stand über einem Titel, dessen Exemplare alle unterwegs sind, „Keine Exemplare"
-// (docs/OFFEN.md 5.5).
+// stand über einem Titel, dessen Exemplare alle unterwegs sind, „Keine Exemplare".
 func TestBestandNenntDenZulauf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 	marke := fmt.Sprintf("ZULAUF%d", time.Now().UnixNano())
 	klasse := "Z" + marke[len(marke)-8:]
 
@@ -75,15 +74,15 @@ func TestBestandNenntDenZulauf(t *testing.T) {
 		}
 	}
 
-	liste, err := repo.LadeTitelListe(ctx, "", marke, false)
+	liste, err := abfragen.LadeTitelListe(ctx, "", marke, false)
 	if err != nil {
-		t.Fatalf("ListBooks: %v", err)
+		t.Fatalf("LadeTitelListe: %v", err)
 	}
-	einzeln, err := repo.LadeTitelNachIDs(ctx, []string{nurBestellt, teils})
+	einzeln, err := abfragen.LadeTitelNachIDs(ctx, []string{nurBestellt, teils})
 	if err != nil {
-		t.Fatalf("ListBooksByIDs: %v", err)
+		t.Fatalf("LadeTitelNachIDs: %v", err)
 	}
-	for tuer, buecher := range map[string][]Titel{"ListBooks": liste, "ListBooksByIDs": einzeln} {
+	for tuer, buecher := range map[string][]Titel{"LadeTitelListe": liste, "LadeTitelNachIDs": einzeln} {
 		if len(buecher) != 2 {
 			t.Fatalf("%s: %d Titel, erwartet 2", tuer, len(buecher))
 		}
@@ -92,7 +91,7 @@ func TestBestandNenntDenZulauf(t *testing.T) {
 		}
 	}
 
-	gruppen, err := repo.LadeKlassensatzGruppen(ctx, klasse, "")
+	gruppen, err := abfragen.LadeKlassensatzGruppen(ctx, klasse, "")
 	if err != nil {
 		t.Fatalf("LadeKlassensatzGruppen: %v", err)
 	}

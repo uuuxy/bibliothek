@@ -10,7 +10,7 @@ import (
 
 func TestDekodiereMARC(t *testing.T) {
 	t.Run("Valid XML", func(t *testing.T) {
-		xmlData := []byte(`
+		xmlDaten := []byte(`
 			<root>
 			<records>
 				<record>
@@ -25,21 +25,21 @@ func TestDekodiereMARC(t *testing.T) {
 			</records>
 			</root>
 		`)
-		res, err := dekodiereMARC(xmlData)
+		ergebnis, err := dekodiereMARC(xmlDaten)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if len(res.Records.Record) != 1 {
-			t.Fatalf("Expected 1 record, got %d", len(res.Records.Record))
+		if len(ergebnis.Records.Record) != 1 {
+			t.Fatalf("Expected 1 record, got %d", len(ergebnis.Records.Record))
 		}
-		if len(res.Records.Record[0].RecordData.Record.Datafield) != 1 {
+		if len(ergebnis.Records.Record[0].RecordData.Record.Datafield) != 1 {
 			t.Fatalf("Expected 1 datafield")
 		}
 	})
 
 	t.Run("Invalid XML", func(t *testing.T) {
-		xmlData := []byte(`<invalid>`)
-		_, err := dekodiereMARC(xmlData)
+		xmlDaten := []byte(`<invalid>`)
+		_, err := dekodiereMARC(xmlDaten)
 		if err == nil {
 			t.Fatalf("Expected error for invalid XML, got nil")
 		}
@@ -49,7 +49,7 @@ func TestDekodiereMARC(t *testing.T) {
 func TestVerarbeiteFeld_Und_Subfelder(t *testing.T) {
 	b := &marcBibDaten{}
 
-	// Test Title and Extracted Authors
+	// Titel und ausgelesene Autoren.
 	b.verarbeiteFeld(marcDatafield{
 		Tag: "245",
 		Subfield: []marcSubfield{
@@ -145,11 +145,11 @@ func TestAutorUndTitel(t *testing.T) {
 }
 
 func TestSucheDNB_And_SucheTextDNB(t *testing.T) {
-	// mockTransport is defined in metadaten_client_test.go
+	// mockTransport steht in metadaten_client_test.go.
 	mockTr := &mockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			if strings.Contains(req.URL.String(), "NUM=9781234567890") || req.URL.Query().Get("query") == `any all "Test Book"` {
-				xmlData := `
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+			if strings.Contains(anfrage.URL.String(), "NUM=9781234567890") || anfrage.URL.Query().Get("query") == `any all "Test Book"` {
+				xmlDaten := `
 					<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
 					  <records>
 						<record>
@@ -168,7 +168,7 @@ func TestSucheDNB_And_SucheTextDNB(t *testing.T) {
 					</searchRetrieveResponse>`
 				return &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(strings.NewReader(xmlData)), // Mock response correctly
+					Body:       io.NopCloser(strings.NewReader(xmlDaten)), // Mock response correctly
 				}, nil
 			}
 			return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
@@ -179,22 +179,22 @@ func TestSucheDNB_And_SucheTextDNB(t *testing.T) {
 	}
 
 	t.Run("sucheDNB Found", func(t *testing.T) {
-		res, err := client.sucheDNB(context.Background(), "9781234567890")
+		ergebnis, err := client.sucheDNB(context.Background(), "9781234567890")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if res.Titel != "Test Title" || res.Autor != "Test Author" {
-			t.Errorf("Unexpected result: %+v", res)
+		if ergebnis.Titel != "Test Title" || ergebnis.Autor != "Test Author" {
+			t.Errorf("Unexpected result: %+v", ergebnis)
 		}
 	})
 
 	t.Run("SucheTextDNB Found", func(t *testing.T) {
-		res, err := client.SucheTextDNB(context.Background(), "Test Book")
+		ergebnis, err := client.SucheTextDNB(context.Background(), "Test Book")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if len(res) != 1 || res[0].Titel != "Test Title" || res[0].Autor != "Test Author" {
-			t.Errorf("Unexpected result: %+v", res)
+		if len(ergebnis) != 1 || ergebnis[0].Titel != "Test Title" || ergebnis[0].Autor != "Test Author" {
+			t.Errorf("Unexpected result: %+v", ergebnis)
 		}
 	})
 }

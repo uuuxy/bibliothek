@@ -7,17 +7,16 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Antwort der Schule vom 22.09.2026 auf Punkt 4 des Protokolls (docs/OFFEN.md 9.4): Ein
-// Titel ohne (verliehene oder verfügbare) Exemplare erscheint nicht im Katalog. GET
-// /api/books ist der Katalog des Portals UND die Liste der Verwaltung; die Verwaltung
-// erreicht die versteckten Titel über die Aufräumsicht (bestand=ohne) derselben Tür.
-// Beide Sichten sind EIN Prädikat (repository.SQLTitelHatExemplar) mit und ohne NOT —
-// der Zulauf zählt als vorhanden, ein ausgesondertes Exemplar nicht.
-// Rot gesehen am Rückbau des Prädikats.
-func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
+// Ein Titel ohne (verliehene oder verfügbare) Exemplare erscheint nicht im Katalog (so hat es
+// die Schule entschieden). GET /api/books ist der Katalog des Portals und die Liste der
+// Verwaltung; die Verwaltung erreicht die versteckten Titel über die Sicht zum Aufräumen
+// (bestand=ohne) derselben Tür. Beide Sichten sind eine Bedingung (repository.SQLTitelHatExemplar)
+// mit und ohne NOT; der Zulauf zählt als vorhanden, ein ausgesondertes Exemplar nicht. Rot
+// gesehen am Rückbau der Bedingung.
+func TestLadeTitelListe_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 	marke := "Sicht-" + t.Name()
 
 	titel := func(name string) string {
@@ -74,7 +73,7 @@ func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 		}
 	}
 
-	katalog, err := repo.LadeTitelListe(ctx, "", marke, false)
+	katalog, err := abfragen.LadeTitelListe(ctx, "", marke, false)
 	if err != nil {
 		t.Fatalf("Katalog: %v", err)
 	}
@@ -82,7 +81,7 @@ func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 		map[string]string{"Mit Exemplar": mit, "Nur im Zulauf": zulauf},
 		map[string]string{"Ohne Exemplar": ohne, "Nur ausgesondert": ausgesondert})
 
-	aufraeumen, err := repo.LadeTitelListe(ctx, "", marke, true)
+	aufraeumen, err := abfragen.LadeTitelListe(ctx, "", marke, true)
 	if err != nil {
 		t.Fatalf("Aufräumsicht: %v", err)
 	}

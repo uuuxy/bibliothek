@@ -10,11 +10,11 @@ import (
 // Die Massenaktion der Bestandstabelle hält dieselbe Regel wie das Löschen eines einzelnen
 // Titels (repository.LadeWerkeDerTitel, RaeumeWerkeAuf): Werden beide Auflagen eines Buchs
 // gelöscht, bleibt kein Werk ohne Titel zurück; bleibt eine von zweien, ist sie wieder ihr
-// eigenes Buch (Rasterdurchgang 25.09.2026, docs/OFFEN.md 4.18).
-func TestDeleteBooks_HaeltDieRegelDerAuflagen(t *testing.T) {
+// eigenes Buch.
+func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 	for _, sql := range []string{`DELETE FROM ausleihen`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`, `DELETE FROM werke`} {
 		if _, err := pool.Exec(ctx, sql); err != nil {
 			t.Fatal(err)
@@ -46,8 +46,8 @@ func TestDeleteBooks_HaeltDieRegelDerAuflagen(t *testing.T) {
 	werkBeide, beide := buch()
 	werkEiner, einer := buch()
 
-	if err := repo.LoescheTitel(ctx, append(beide, einer[0])); err != nil {
-		t.Fatalf("DeleteBooks: %v", err)
+	if err := abfragen.LoescheTitel(ctx, append(beide, einer[0])); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 	var rest []string
 	if err := pool.QueryRow(ctx, `SELECT coalesce(array_agg(id::text), '{}') FROM werke`).Scan(&rest); err != nil {

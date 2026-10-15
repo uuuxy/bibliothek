@@ -7,24 +7,22 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Frage 12 „Gegenrichtung Schema" (06.09.2026): An `buecher_titel` hängen vier Kinder
-// mit ON DELETE CASCADE. Der Löschpfad kannte nur die Exemplare — Vormerkungen,
-// Klassensatz-Reservierungen und Klassensatz-Zuordnungen fielen lautlos.
+// An `buecher_titel` hängen vier Kinder mit ON DELETE CASCADE: die Exemplare, Vormerkungen,
+// Reservierungen und Zuordnungen von Klassensätzen. Die drei letzten fielen sonst lautlos.
 //
-// Dahinter stehen Menschen, die gewartet haben: ein Schüler auf Platz 1 der
-// Warteschlange, eine Lehrkraft mit einer angemeldeten Klassensatz-Anforderung. Ohne
-// Protokollzeile ist an der Theke später nicht einmal nachvollziehbar, dass sie je
-// gewartet haben. Dieselbe Antwort wie bei offenen Ausleihen und Forderungen: Was
-// verschwindet, steht vorher im Protokoll.
-func TestDeleteBooks_WartendeHinterlassenEineSpur(t *testing.T) {
+// Dahinter stehen Menschen, die gewartet haben: ein Schüler auf Platz 1 der Warteschlange, eine
+// Lehrkraft mit einer angemeldeten Anforderung eines Klassensatzes. Ohne Zeile im Protokoll wäre
+// an der Theke später nicht einmal nachzuvollziehen, dass sie je gewartet haben. Dieselbe Antwort
+// wie bei offenen Ausleihen und Forderungen: Was verschwindet, steht zuvor im Protokoll.
+func TestLoescheTitel_WartendeHinterlassenEineSpur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 
-	eins := func(was, sql string, args ...any) string {
+	eins := func(was, sql string, argumente ...any) string {
 		t.Helper()
 		var id string
-		if err := pool.QueryRow(ctx, sql, args...).Scan(&id); err != nil {
+		if err := pool.QueryRow(ctx, sql, argumente...).Scan(&id); err != nil {
 			t.Fatalf("%s: %v", was, err)
 		}
 		return id
@@ -71,8 +69,8 @@ func TestDeleteBooks_WartendeHinterlassenEineSpur(t *testing.T) {
 		t.Fatalf("Klassensatz-Zuordnung anlegen: %v", err)
 	}
 
-	if err := repo.LoescheTitel(ctx, []string{titelID}); err != nil {
-		t.Fatalf("DeleteBooks: %v", err)
+	if err := abfragen.LoescheTitel(ctx, []string{titelID}); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 
 	// Die drei Zeilen sind weg (das tut der CASCADE) — aber jede hat eine Spur.

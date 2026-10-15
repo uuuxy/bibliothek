@@ -10,12 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Die Reihenfolge ist hier der Prüfgegenstand — pgxmock verlangt sie genau so, wie sie
-// erwartet wird: Begin ZUERST, dann jeder Leser in der Transaktion, dann die beiden
-// Löschbefehle, die ihre Spur per RETURNING liefern. Bis zum 21.09.2026 standen die
-// Leser vor dem Begin (OFFEN.md 5.5): Ein Rückbau dorthin lässt diesen Test rot werden,
-// weil dann eine Abfrage VOR dem erwarteten Begin ankommt.
-func TestDeleteBooks(t *testing.T) {
+// Hier wird die Reihenfolge geprüft; pgxmock verlangt sie genau so, wie sie erwartet wird: Begin
+// zuerst, dann jedes Lesen in der Transaktion, dann die beiden Befehle des Löschens, die ihre Spur
+// über RETURNING liefern. Ein Lesen vor dem Begin lässt den Test rot werden, weil dann eine
+// Abfrage vor dem erwarteten Begin ankommt.
+func TestLoescheTitel(t *testing.T) {
 	ctx := context.Background()
 	ids := []string{"id-1", "id-2"}
 
@@ -24,15 +23,14 @@ func TestDeleteBooks(t *testing.T) {
 	erwarteLeser := func(mock pgxmock.PgxPoolIface, cover string) {
 		mock.ExpectBegin()
 		erwarteAuflagenSperre(mock, ids)
-		// Barcode-Snapshots ALLER Exemplare vor den DELETEs — die Tresen-Auskunft
-		// findet gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
+		// Schnappschüsse der Barcodes aller Exemplare vor den DELETEs: Die Auskunft am Tresen findet
+		// gelöschte Exemplare nur über diese Spur.
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel", "war_im_bestand"}).
 				AddRow("ex-1", "BC-1", "Titel Eins", true))
-		// Die drei CASCADE-Kinder des Titels, die niemand nannte, bis Frage 12
-		// („Gegenrichtung Schema", 06.09.2026) die DDL gelesen hat: Vormerkungen,
-		// Klassensatz-Reservierungen, Klassensatz-Zuordnungen.
+		// Die drei Kinder des Titels über CASCADE: Vormerkungen, Reservierungen und Zuordnungen von
+		// Klassensätzen.
 		mock.ExpectQuery(`FROM vormerkungen v`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}))
@@ -57,21 +55,21 @@ func TestDeleteBooks(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
-		err = repo.LoescheTitel(ctx, []string{})
+		err = abfragen.LoescheTitel(ctx, []string{})
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-	// Scheitert das Löschen der Ausleihen, bleibt NICHTS stehen: kein Titel-DELETE,
+	// Scheitert das Löschen der Ausleihen, bleibt nichts stehen: kein Titel-DELETE,
 	// keine Spur, Rollback. Ohne die Spur verschwände ein verliehenes Buch lautlos.
 	t.Run("Ausleihen nicht löschbar", func(t *testing.T) {
-		imTestVerzeichnis(t) // DeleteBooks legt sonst inventur/uploads/ im Repo an
+		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		erwarteLeser(mock, "")
 		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
@@ -82,22 +80,22 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnError(fmt.Errorf("db error"))
 		mock.ExpectRollback()
 
-		err = repo.LoescheTitel(ctx, ids)
+		err = abfragen.LoescheTitel(ctx, ids)
 		assert.ErrorContains(t, err, "ausleihen konnten nicht gelöscht werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("success", func(t *testing.T) {
-		imTestVerzeichnis(t) // DeleteBooks legt sonst inventur/uploads/ im Repo an
+		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		erwarteLeser(mock, "/uploads/cover1.jpg")
-		// Offene Forderungen und laufende Ausleihen kommen als Spur aus dem Löschbefehl
-		// selbst (RETURNING) — eine unbezahlte Forderung ist Geld, das ein Schüler
-		// schuldet, und sie verschwand bis zum 06.09.2026 spurlos mit dem Titel.
+		// Offene Forderungen und laufende Ausleihen kommen als Spur aus dem Befehl des Löschens selbst
+		// (RETURNING): Eine unbezahlte Forderung ist Geld, das ein Schüler schuldet, und darf nicht
+		// spurlos mit dem Titel verschwinden.
 		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows(schadenSpalten))
@@ -112,17 +110,17 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		mock.ExpectCommit()
 
-		err = repo.LoescheTitel(ctx, ids)
+		err = abfragen.LoescheTitel(ctx, ids)
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("book not found", func(t *testing.T) {
-		imTestVerzeichnis(t) // DeleteBooks legt sonst inventur/uploads/ im Repo an
+		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
 		erwarteLeser(mock, "/uploads/cover1.jpg")
 		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
@@ -136,15 +134,15 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
 		mock.ExpectRollback()
 
-		err = repo.LoescheTitel(ctx, ids)
+		err = abfragen.LoescheTitel(ctx, ids)
 		assert.ErrorIs(t, err, ErrTitelNichtGefunden)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
-// erwarteAuflagenSperre: DeleteBooks nimmt als ERSTES die Sperre der Auflagen und liest die
-// Werke der Titel (repository.LadeWerkeDerTitel, docs/OFFEN.md 4.18) — hier gehört keiner zu
-// einem, also räumt repository.RaeumeWerkeAuf danach nichts auf.
+// erwarteAuflagenSperre: LoescheTitel nimmt als Erstes die Sperre der Auflagen und liest die
+// Werke der Titel (repository.LadeWerkeDerTitel); hier gehört keiner zu einem, also räumt
+// repository.RaeumeWerkeAuf danach nichts auf.
 func erwarteAuflagenSperre(mock pgxmock.PgxPoolIface, ids any) {
 	mock.ExpectExec(`SELECT pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("SELECT", 1))

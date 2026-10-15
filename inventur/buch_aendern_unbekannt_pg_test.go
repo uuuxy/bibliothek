@@ -10,16 +10,16 @@ import (
 )
 
 // Einen Titel zu ändern, den es nicht gibt, ist ein 404 mit Auskunft und kein 500.
-func TestBuchAendern_UnbekannterTitelIst404(t *testing.T) {
+func TestTitelAendern_UnbekannterTitelIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 
 	const unbekannt = "00000000-0000-0000-0000-00000000dead"
-	req := httptest.NewRequest(http.MethodPut, "/api/books/"+unbekannt,
+	anfrage := httptest.NewRequest(http.MethodPut, "/api/books/"+unbekannt,
 		strings.NewReader(`{"title":"Nie da","author":"Niemand"}`))
-	req.SetPathValue("id", unbekannt)
+	anfrage.SetPathValue("id", unbekannt)
 	rec := httptest.NewRecorder()
-	handler.TitelAendern(rec, req)
+	tueren.TitelAendern(rec, anfrage)
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())

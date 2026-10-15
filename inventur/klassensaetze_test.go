@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHandleClassBooks(t *testing.T) {
-	tests := []struct {
+func TestKlassensaetze(t *testing.T) {
+	faelle := []struct {
 		name           string
 		branch         string
 		sort           string
@@ -41,7 +41,7 @@ func TestHandleClassBooks(t *testing.T) {
 			expectedBody:   `{"data":[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","verfuegbar":5,"gesamt":10,"imZulauf":0,"quelle":"hand","leser":0}]}]}`,
 		},
 		{
-			// Gemischte Auflagen (docs/OFFEN.md 4.18, Stufe 5): Die Schlüssel der Aufschlüsselung
+			// Gemischte Auflagen: Die Schlüssel der Aufschlüsselung
 			// liest die Kachel (KlassenBuchKachel) — id, auflage, erscheinungsjahr, kinder.
 			name:   "Success - Auflagen der Klasse",
 			branch: "",
@@ -101,36 +101,36 @@ func TestHandleClassBooks(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
 			if err != nil {
 				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 			}
 			defer mock.Close()
 
-			repo := NewTitelAbfragen(mock)
-			handler := &Tueren{abfragen: repo}
+			abfragen := NewTitelAbfragen(mock)
+			tueren := &Tueren{abfragen: abfragen}
 
-			tt.setupMock(mock)
+			f.setupMock(mock)
 
-			req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/api/class-books", nil) //nolint:errcheck
-			if tt.branch != "" || tt.sort != "" {
-				q := req.URL.Query()
-				if tt.branch != "" {
-					q.Add("branch", tt.branch)
+			anfrage, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/api/class-books", nil) //nolint:errcheck
+			if f.branch != "" || f.sort != "" {
+				q := anfrage.URL.Query()
+				if f.branch != "" {
+					q.Add("branch", f.branch)
 				}
-				if tt.sort != "" {
-					q.Add("sort", tt.sort)
+				if f.sort != "" {
+					q.Add("sort", f.sort)
 				}
-				req.URL.RawQuery = q.Encode()
+				anfrage.URL.RawQuery = q.Encode()
 			}
 
 			w := httptest.NewRecorder()
-			handler.Klassensaetze(w, req)
+			tueren.Klassensaetze(w, anfrage)
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
-			assert.JSONEq(t, tt.expectedBody, w.Body.String())
+			assert.Equal(t, f.expectedStatus, w.Code)
+			assert.JSONEq(t, f.expectedBody, w.Body.String())
 
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
@@ -139,8 +139,8 @@ func TestHandleClassBooks(t *testing.T) {
 	}
 }
 
-func TestFormatClassName(t *testing.T) {
-	tests := []struct {
+func TestNormalisiereKlassenname(t *testing.T) {
+	faelle := []struct {
 		name     string
 		input    string
 		expected string
@@ -217,30 +217,30 @@ func TestFormatClassName(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := normalisiereKlassenname(tt.input)
-			if result != tt.expected {
-				t.Errorf("formatClassName(%q) = %q, want %q", tt.input, result, tt.expected)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			ergebnis := normalisiereKlassenname(f.input)
+			if ergebnis != f.expected {
+				t.Errorf("formatClassName(%q) = %q, want %q", f.input, ergebnis, f.expected)
 			}
 		})
 	}
 }
 
-func TestHandleDeleteClassGroup(t *testing.T) {
+func TestKlassensatzGruppeLoeschen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewTitelAbfragen(mock)
-	handler := &Tueren{abfragen: repo}
+	abfragen := NewTitelAbfragen(mock)
+	tueren := &Tueren{abfragen: abfragen}
 
 	t.Run("No class name provided", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodDelete, "/api/class-books", nil)
+		anfrage := httptest.NewRequest(http.MethodDelete, "/api/class-books", nil)
 		rec := httptest.NewRecorder()
-		handler.KlassensatzGruppeLoeschen(rec, req)
+		tueren.KlassensatzGruppeLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
@@ -252,9 +252,9 @@ func TestHandleDeleteClassGroup(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnError(fmt.Errorf("db error"))
 
-		req := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
+		anfrage := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
 		rec := httptest.NewRecorder()
-		handler.KlassensatzGruppeLoeschen(rec, req)
+		tueren.KlassensatzGruppeLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusInternalServerError {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusInternalServerError)
@@ -266,9 +266,9 @@ func TestHandleDeleteClassGroup(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
 
-		req := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
+		anfrage := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
 		rec := httptest.NewRecorder()
-		handler.KlassensatzGruppeLoeschen(rec, req)
+		tueren.KlassensatzGruppeLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusOK)
@@ -276,7 +276,7 @@ func TestHandleDeleteClassGroup(t *testing.T) {
 	})
 }
 
-func TestHandleAddClassBooks(t *testing.T) {
+func TestKlassensaetzeZuordnen(t *testing.T) {
 	t.Run("Invalid JSON", func(t *testing.T) {
 		mockPool, err := pgxmock.NewPool()
 		if err != nil {
@@ -284,12 +284,12 @@ func TestHandleAddClassBooks(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
-		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBufferString("invalid json"))
+		anfrage := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBufferString("invalid json"))
 		rr := httptest.NewRecorder()
 
-		handler.KlassensaetzeZuordnen(rr, req)
+		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusBadRequest {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
@@ -303,20 +303,20 @@ func TestHandleAddClassBooks(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
-		payload := map[string]interface{}{
+		nutzlast := map[string]interface{}{
 			"classNames": []string{"   ", ""},
 			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
-		body, err := json.Marshal(payload)
+		rumpf, err := json.Marshal(nutzlast)
 		if err != nil {
 			t.Fatalf("failed to marshal payload: %v", err)
 		}
-		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
+		anfrage := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(rumpf))
 		rr := httptest.NewRecorder()
 
-		handler.KlassensaetzeZuordnen(rr, req)
+		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusBadRequest {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
@@ -330,20 +330,20 @@ func TestHandleAddClassBooks(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
-		payload := map[string]interface{}{
+		nutzlast := map[string]interface{}{
 			"classNames": []string{"ThisClassNameIsWayTooLongToBeValidAndShouldBeRejected"},
 			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
-		body, err := json.Marshal(payload)
+		rumpf, err := json.Marshal(nutzlast)
 		if err != nil {
 			t.Fatalf("failed to marshal payload: %v", err)
 		}
-		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
+		anfrage := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(rumpf))
 		rr := httptest.NewRecorder()
 
-		handler.KlassensaetzeZuordnen(rr, req)
+		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusBadRequest {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
@@ -357,21 +357,21 @@ func TestHandleAddClassBooks(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 		mockPool.ExpectExec("INSERT INTO class_books").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errors.New("db error"))
 
-		payload := map[string]interface{}{
+		nutzlast := map[string]interface{}{
 			"classNames": []string{"10A"},
 			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
-		body, err := json.Marshal(payload)
+		rumpf, err := json.Marshal(nutzlast)
 		if err != nil {
 			t.Fatalf("failed to marshal payload: %v", err)
 		}
-		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
+		anfrage := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(rumpf))
 		rr := httptest.NewRecorder()
 
-		handler.KlassensaetzeZuordnen(rr, req)
+		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusInternalServerError {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
@@ -387,20 +387,20 @@ func TestHandleAddClassBooks(t *testing.T) {
 
 		mockPool.ExpectExec("INSERT INTO class_books").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 2))
 
-		handler := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
-		payload := map[string]interface{}{
+		nutzlast := map[string]interface{}{
 			"classNames": []string{"10A", "10B"},
 			"bookIds":    []string{"11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"},
 		}
-		body, err := json.Marshal(payload)
+		rumpf, err := json.Marshal(nutzlast)
 		if err != nil {
 			t.Fatalf("failed to marshal payload: %v", err)
 		}
-		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
+		anfrage := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(rumpf))
 		rr := httptest.NewRecorder()
 
-		handler.KlassensaetzeZuordnen(rr, req)
+		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusOK {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
@@ -408,13 +408,13 @@ func TestHandleAddClassBooks(t *testing.T) {
 	})
 }
 
-func TestHandleUpdateClassBooks(t *testing.T) {
+func TestKlassensaetzeAendern(t *testing.T) {
 	errTest := errors.New("test error")
 
-	tests := []struct {
+	faelle := []struct {
 		name           string
 		method         string
-		body           string
+		rumpf          string
 		mockSetup      func(mock pgxmock.PgxPoolIface)
 		expectedStatus int
 		expectedBody   string
@@ -422,7 +422,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:           "Invalid JSON",
 			method:         "POST",
-			body:           `{invalid}`,
+			rumpf:          `{invalid}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "ungültiges JSON",
@@ -430,7 +430,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:           "Missing Class Name",
 			method:         "POST",
-			body:           `{"bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
+			rumpf:          `{"bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "es muss mindestens ein klassenname angegeben werden",
@@ -438,7 +438,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:           "Class Name Too Long",
 			method:         "POST",
-			body:           `{"className": "ThisClassNameIsWayTooLong", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
+			rumpf:          `{"className": "ThisClassNameIsWayTooLong", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "klassenname darf maximal 20 zeichen lang sein",
@@ -446,7 +446,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:   "Database Error",
 			method: "POST",
-			body:   `{"className": "5A", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
+			rumpf:  `{"className": "5A", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin().WillReturnError(errTest)
 			},
@@ -456,7 +456,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:   "Success single className",
 			method: "POST",
-			body:   `{"oldClassName": "5A", "className": "5B", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
+			rumpf:  `{"oldClassName": "5A", "className": "5B", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
 				mock.ExpectExec("^DELETE FROM class_books WHERE class_name = \\$1$").
@@ -476,7 +476,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:   "Success multiple classNames",
 			method: "POST",
-			body:   `{"classNames": ["5C", "5D"], "bookIds": ["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"]}`,
+			rumpf:  `{"classNames": ["5C", "5D"], "bookIds": ["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
 				mock.ExpectExec("^DELETE FROM class_books WHERE class_name = ANY\\(\\$1\\)$").
@@ -492,32 +492,32 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
 			if err != nil {
 				t.Fatalf("failed to create pgxmock: %v", err)
 			}
 			defer mock.Close()
 
-			repo := NewTitelAbfragen(mock)
-			handler := &Tueren{abfragen: repo}
+			abfragen := NewTitelAbfragen(mock)
+			tueren := &Tueren{abfragen: abfragen}
 
-			tt.mockSetup(mock)
+			f.mockSetup(mock)
 
-			req := httptest.NewRequest(tt.method, "/api/admin/class-books", strings.NewReader(tt.body))
-			req.Header.Set("Content-Type", "application/json")
+			anfrage := httptest.NewRequest(f.method, "/api/admin/class-books", strings.NewReader(f.rumpf))
+			anfrage.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
-			handler.KlassensaetzeAendern(w, req)
+			tueren.KlassensaetzeAendern(w, anfrage)
 
-			if w.Code != tt.expectedStatus {
-				t.Errorf("expected status %v, got %v", tt.expectedStatus, w.Code)
+			if w.Code != f.expectedStatus {
+				t.Errorf("expected status %v, got %v", f.expectedStatus, w.Code)
 			}
 
-			bodyStr := strings.TrimSpace(w.Body.String())
-			if !strings.Contains(bodyStr, tt.expectedBody) {
-				t.Errorf("expected body to contain %q, got %q", tt.expectedBody, bodyStr)
+			rumpfText := strings.TrimSpace(w.Body.String())
+			if !strings.Contains(rumpfText, f.expectedBody) {
+				t.Errorf("expected body to contain %q, got %q", f.expectedBody, rumpfText)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {

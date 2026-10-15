@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-func TestParseCSVRows(t *testing.T) {
-	tests := []struct {
+func TestLeseCSVZeilen(t *testing.T) {
+	faelle := []struct {
 		name      string
 		csvData   string
 		expect    [][]string
@@ -47,11 +47,11 @@ func TestParseCSVRows(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := strings.NewReader(tt.csvData)
-			result, err := leseCSVZeilen(r)
-			if tt.expectErr {
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			r := strings.NewReader(f.csvData)
+			ergebnis, err := leseCSVZeilen(r)
+			if f.expectErr {
 				if err == nil {
 					t.Errorf("expected error, got nil")
 				}
@@ -59,8 +59,8 @@ func TestParseCSVRows(t *testing.T) {
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
-				if !reflect.DeepEqual(result, tt.expect) {
-					t.Errorf("expected %v, got %v", tt.expect, result)
+				if !reflect.DeepEqual(ergebnis, f.expect) {
+					t.Errorf("expected %v, got %v", f.expect, ergebnis)
 				}
 			}
 		})
@@ -68,7 +68,7 @@ func TestParseCSVRows(t *testing.T) {
 }
 
 func TestDetermineColumnIndices(t *testing.T) {
-	tests := []struct {
+	faelle := []struct {
 		name            string
 		header          []string
 		expectedIdx     map[string]int
@@ -115,21 +115,21 @@ func TestDetermineColumnIndices(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			idx, hasHead := bestimmeSpalten(tt.header)
-			if hasHead != tt.expectedHasHead {
-				t.Errorf("expected hasHeader=%v, got %v", tt.expectedHasHead, hasHead)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			idx, mitKopf := bestimmeSpalten(f.header)
+			if mitKopf != f.expectedHasHead {
+				t.Errorf("expected hasHeader=%v, got %v", f.expectedHasHead, mitKopf)
 			}
-			if !reflect.DeepEqual(idx, tt.expectedIdx) {
-				t.Errorf("expected %v, got %v", tt.expectedIdx, idx)
+			if !reflect.DeepEqual(idx, f.expectedIdx) {
+				t.Errorf("expected %v, got %v", f.expectedIdx, idx)
 			}
 		})
 	}
 }
 
 func TestErrateSpaltenAusInhalt(t *testing.T) {
-	tests := []struct {
+	faelle := []struct {
 		name     string
 		header   []string
 		initIdx  map[string]int
@@ -177,11 +177,11 @@ func TestErrateSpaltenAusInhalt(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			errateSpaltenAusInhalt(tt.header, tt.initIdx)
-			if !reflect.DeepEqual(tt.initIdx, tt.expected) {
-				t.Errorf("expected %v, got %v", tt.expected, tt.initIdx)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			errateSpaltenAusInhalt(f.header, f.initIdx)
+			if !reflect.DeepEqual(f.initIdx, f.expected) {
+				t.Errorf("expected %v, got %v", f.expected, f.initIdx)
 			}
 		})
 	}

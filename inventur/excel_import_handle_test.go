@@ -16,7 +16,7 @@ import (
 )
 
 // offlineMetadatenClient baut einen MetadatenClient, dessen Transport jede
-// Anfrage mit 404 beantwortet. Die Import-Tests duerfen NIE ins echte Netz
+// Anfrage mit 404 beantwortet. Die Import-Tests duerfen nie ins echte Netz
 // (ergaenzeMetadaten wuerde sonst pro CSV-Zeile DNB/Google/OpenLibrary
 // abfragen und gefundene Cover real nach uploads/ schreiben).
 func offlineMetadatenClient() *MetadatenClient {
@@ -31,62 +31,62 @@ func offlineMetadatenClient() *MetadatenClient {
 	}}}
 }
 
-func TestHandleImportExcel(t *testing.T) {
+func TestExcelImport(t *testing.T) {
 	t.Run("Method Not Allowed", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/admin/import", nil)
+		anfrage := httptest.NewRequest(http.MethodGet, "/api/admin/import", nil)
 		w := httptest.NewRecorder()
 
-		handler := &Tueren{}
-		handler.ExcelImport(w, req)
+		tueren := &Tueren{}
+		tueren.ExcelImport(w, anfrage)
 
 		assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
 	})
 
 	t.Run("Missing File", func(t *testing.T) {
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		err := writer.Close()
+		rumpf := new(bytes.Buffer)
+		schreiber := multipart.NewWriter(rumpf)
+		err := schreiber.Close()
 		require.NoError(t, err)
 
-		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
-		req.Header.Set("Content-Type", writer.FormDataContentType())
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
+		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
 
 		w := httptest.NewRecorder()
 
-		handler := &Tueren{}
-		handler.ExcelImport(w, req)
+		tueren := &Tueren{}
+		tueren.ExcelImport(w, anfrage)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
-		var resp map[string]interface{}
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		var antwort map[string]interface{}
+		err = json.NewDecoder(w.Body).Decode(&antwort)
 		require.NoError(t, err)
-		assert.Equal(t, "keine datei gefunden", resp["error"])
+		assert.Equal(t, "keine datei gefunden", antwort["error"])
 	})
 
 	t.Run("Missing ISBN column", func(t *testing.T) {
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("file", "test.csv")
+		rumpf := new(bytes.Buffer)
+		schreiber := multipart.NewWriter(rumpf)
+		teil, err := schreiber.CreateFormFile("file", "test.csv")
 		require.NoError(t, err)
-		_, err = part.Write([]byte("titel,autor\nBuch1,Autor1"))
+		_, err = teil.Write([]byte("titel,autor\nBuch1,Autor1"))
 		require.NoError(t, err)
-		err = writer.Close()
+		err = schreiber.Close()
 		require.NoError(t, err)
 
-		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
-		req.Header.Set("Content-Type", writer.FormDataContentType())
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
+		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
 
 		w := httptest.NewRecorder()
 
-		handler := &Tueren{}
-		handler.ExcelImport(w, req)
+		tueren := &Tueren{}
+		tueren.ExcelImport(w, anfrage)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		var resp map[string]interface{}
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		var antwort map[string]interface{}
+		err = json.NewDecoder(w.Body).Decode(&antwort)
 		require.NoError(t, err)
-		assert.Contains(t, resp["error"], "spalte 'isbn' fehlt")
+		assert.Contains(t, antwort["error"], "spalte 'isbn' fehlt")
 	})
 
 	t.Run("Successful Import", func(t *testing.T) {
@@ -94,46 +94,46 @@ func TestHandleImportExcel(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("file", "test.csv")
+		rumpf := new(bytes.Buffer)
+		schreiber := multipart.NewWriter(rumpf)
+		teil, err := schreiber.CreateFormFile("file", "test.csv")
 		require.NoError(t, err)
-		_, err = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
+		_, err = teil.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
 		require.NoError(t, err)
-		err = writer.Close()
+		err = schreiber.Close()
 		require.NoError(t, err)
 
-		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
-		req.Header.Set("Content-Type", writer.FormDataContentType())
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
+		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
 
 		w := httptest.NewRecorder()
 
-		handler := &Tueren{
-			abfragen:  repo,
+		tueren := &Tueren{
+			abfragen:  abfragen,
 			metadaten: offlineMetadatenClient(),
 		}
 
-		// Kein Fach-Nachschlag: Die Testdatei hat keine Fach-Spalte, und seit dem
-		// 03.09.2026 wird daraus ein LEERES Fach statt des wörtlichen Fachs „Unbekannt"
-		// (das eine Systematik-Kategorie dieses Namens anlegte). StelleFaecherSicher
-		// überspringt leere Eingaben. Der Batch (Upsert + Exemplare) läuft atomar in einer Tx.
+		// Kein Nachschlagen des Fachs: Die Testdatei hat keine Spalte für das Fach, und daraus wird ein
+		// leeres Fach, nicht das wörtliche Fach „Unbekannt" (das eine Kategorie dieses Namens anlegte).
+		// StelleFaecherSicher überspringt leere Eingaben. Der Batch (Titel und Exemplare) läuft in einer
+		// Transaktion.
 		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		erwarteBarcodeVergabe(mock, 5) // bestand 5 in der Testdatei
 		mock.ExpectExec("INSERT INTO buecher_exemplare").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 0))
 		mock.ExpectCommit()
 
-		handler.ExcelImport(w, req)
+		tueren.ExcelImport(w, anfrage)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		var resp map[string]interface{}
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		var antwort map[string]interface{}
+		err = json.NewDecoder(w.Body).Decode(&antwort)
 		require.NoError(t, err)
-		assert.Equal(t, "1 bücher importiert", resp["message"])
-		assert.Equal(t, float64(1), resp["imported"])
-		assert.Equal(t, float64(0), resp["failed"])
+		assert.Equal(t, "1 bücher importiert", antwort["message"])
+		assert.Equal(t, float64(1), antwort["imported"])
+		assert.Equal(t, float64(0), antwort["failed"])
 	})
 
 	t.Run("Import failed completely", func(t *testing.T) {
@@ -141,46 +141,43 @@ func TestHandleImportExcel(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("file", "test.csv")
+		rumpf := new(bytes.Buffer)
+		schreiber := multipart.NewWriter(rumpf)
+		teil, err := schreiber.CreateFormFile("file", "test.csv")
 		require.NoError(t, err)
-		_, err = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
+		_, err = teil.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
 		require.NoError(t, err)
-		err = writer.Close()
+		err = schreiber.Close()
 		require.NoError(t, err)
 
-		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
-		req.Header.Set("Content-Type", writer.FormDataContentType())
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
+		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
 
 		w := httptest.NewRecorder()
 
-		handler := &Tueren{
-			abfragen:  repo,
+		tueren := &Tueren{
+			abfragen:  abfragen,
 			metadaten: offlineMetadatenClient(),
 		}
 
 		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
 		mock.ExpectRollback()
-		// Fallback je Zeile: UpsertBook macht KEINEN Fach-Nachschlag mehr (das Fach ist seit
-		// dem 03.09.2026 leer statt „Unbekannt") und öffnet direkt seine eigene Transaktion.
-		// Bis dahin stand hier eine ExpectQuery mit 18 Platzhaltern, die in Wahrheit den
-		// EINSTELLIGEN Fach-Nachschlag bediente — die Erwartung beschrieb also etwas
-		// anderes, als sie traf.
+		// Rückfall je Zeile: SchreibeTitel schlägt kein Fach nach (das Fach ist leer statt „Unbekannt")
+		// und öffnet direkt seine eigene Transaktion.
 		mock.ExpectBegin()
 		mock.ExpectQuery(".*").WillReturnError(assert.AnError)
 		mock.ExpectRollback()
 
-		handler.ExcelImport(w, req)
+		tueren.ExcelImport(w, anfrage)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		var resp map[string]interface{}
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		var antwort map[string]interface{}
+		err = json.NewDecoder(w.Body).Decode(&antwort)
 		require.NoError(t, err)
-		assert.Contains(t, resp["error"], "keine bücher konnten importiert werden")
+		assert.Contains(t, antwort["error"], "keine bücher konnten importiert werden")
 	})
 
 	t.Run("Partial Failure", func(t *testing.T) {
@@ -188,24 +185,24 @@ func TestHandleImportExcel(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("file", "test.csv")
+		rumpf := new(bytes.Buffer)
+		schreiber := multipart.NewWriter(rumpf)
+		teil, err := schreiber.CreateFormFile("file", "test.csv")
 		require.NoError(t, err)
-		_, err = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5\n9780987654321,Buch2,Autor2,5"))
+		_, err = teil.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5\n9780987654321,Buch2,Autor2,5"))
 		require.NoError(t, err)
-		err = writer.Close()
+		err = schreiber.Close()
 		require.NoError(t, err)
 
-		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
-		req.Header.Set("Content-Type", writer.FormDataContentType())
+		anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/import", rumpf)
+		anfrage.Header.Set("Content-Type", schreiber.FormDataContentType())
 
 		w := httptest.NewRecorder()
 
-		handler := &Tueren{
-			abfragen:  repo,
+		tueren := &Tueren{
+			abfragen:  abfragen,
 			metadaten: offlineMetadatenClient(),
 		}
 
@@ -223,14 +220,14 @@ func TestHandleImportExcel(t *testing.T) {
 		mock.ExpectExec("INSERT INTO buecher_exemplare").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 5))
 		mock.ExpectCommit()
 
-		handler.ExcelImport(w, req)
+		tueren.ExcelImport(w, anfrage)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		var resp map[string]interface{}
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		var antwort map[string]interface{}
+		err = json.NewDecoder(w.Body).Decode(&antwort)
 		require.NoError(t, err)
-		assert.Equal(t, "1 bücher importiert, 1 fehlgeschlagen", resp["message"])
-		assert.Equal(t, float64(1), resp["imported"])
-		assert.Equal(t, float64(1), resp["failed"])
+		assert.Equal(t, "1 bücher importiert, 1 fehlgeschlagen", antwort["message"])
+		assert.Equal(t, float64(1), antwort["imported"])
+		assert.Equal(t, float64(1), antwort["failed"])
 	})
 }

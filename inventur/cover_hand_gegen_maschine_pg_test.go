@@ -7,12 +7,11 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Ein von Hand hochgeladenes Cover ist die Entscheidung eines Menschen. Der Cover-Sync
-// (internal/service/cover.go) wählt seine Titel aber über cover_status — und den
-// setzten die Hand-Wege nie: Ein neuer Titel steht auf 'PENDING', die Bibliothekarin lädt
-// das richtige Cover hoch, und beim nächsten Lauf (alle 6 Stunden, beim Neustart) stand
-// wieder das DNB-Cover der falschen Auflage da, ohne Meldung (Bestands-Durchgang
-// 10.09.2026, neue Bugklasse „Maschine gegen Hand").
+// Ein von Hand hochgeladenes Cover ist die Entscheidung eines Menschen. Der Abgleich der Cover
+// (internal/service/cover.go) wählt seine Titel über cover_status; setzten die Wege von Hand den
+// Status nicht, stünde ein neuer Titel auf 'PENDING', die Bibliothekarin lüde das richtige Cover
+// hoch, und beim nächsten Lauf (alle 6 Stunden, beim Neustart) stünde wieder das Cover der DNB von
+// der falschen Auflage da, ohne Meldung.
 func TestHandUpload_SetztCoverStatusFound(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

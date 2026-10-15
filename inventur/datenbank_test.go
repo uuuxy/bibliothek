@@ -9,19 +9,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewBookRepository(t *testing.T) {
+func TestNewTitelAbfragen(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 	defer mockPool.Close()
 
-	repo := NewTitelAbfragen(mockPool)
+	abfragen := NewTitelAbfragen(mockPool)
 
-	assert.NotNil(t, repo)
-	assert.Equal(t, mockPool, repo.pool)
+	assert.NotNil(t, abfragen)
+	assert.Equal(t, mockPool, abfragen.pool)
 }
 
-func TestHandleDbError(t *testing.T) {
-	tests := []struct {
+func TestUebersetzeDatenbankfehler(t *testing.T) {
+	faelle := []struct {
 		name     string
 		inputErr error
 		expected error
@@ -68,10 +68,10 @@ func TestHandleDbError(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := uebersetzeDatenbankfehler(tt.inputErr)
-			assert.Equal(t, tt.expected, result)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			ergebnis := uebersetzeDatenbankfehler(f.inputErr)
+			assert.Equal(t, f.expected, ergebnis)
 		})
 	}
 }

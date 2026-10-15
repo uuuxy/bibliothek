@@ -22,7 +22,7 @@ func (a *TitelAbfragen) LegeTitelAlsAnderesMediumAn(ctx context.Context, eintrag
 }
 
 func (a *TitelAbfragen) legeTitelZeileAn(ctx context.Context, eintrag Titel, anderesMedium bool) (string, error) {
-	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
+	// subject ist FK auf die Systematik: unbekannte Fächer erst
 	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
 	kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 	if err != nil {
@@ -44,10 +44,9 @@ func (a *TitelAbfragen) legeTitelZeileAn(ctx context.Context, eintrag Titel, and
 		eigenschaften = make(map[string]any)
 	}
 
-	// Titel-Insert und Bestands-Synchronisierung atomar: Schlägt das Anlegen der
-	// Exemplare fehl, darf kein Titel mit 0 Exemplaren zurückbleiben, den der Handler
-	// als "erstellt" meldet (Transaktionsgrenzen-Sweep A2). Der Sync-Fehler wird deshalb
-	// ZURÜCKGEGEBEN, nicht nur geloggt.
+	// Anlegen des Titels und Abgleich des Bestands in einer Transaktion: Scheitert das Anlegen der
+	// Exemplare, darf kein Titel mit 0 Exemplaren zurückbleiben, den die Tür als „erstellt" meldet.
+	// Der Fehler des Abgleichs geht deshalb zurück und steht nicht nur im Log.
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", err)
@@ -87,7 +86,7 @@ func (a *TitelAbfragen) legeTitelZeileAn(ctx context.Context, eintrag Titel, and
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", uebersetzeDatenbankfehler(err))
 	}
 
-	// Schlagworte in derselben Transaktion (Migration 138): Scheitern sie, entsteht auch
+	// Schlagworte in derselben Transaktion: Scheitern sie, entsteht auch
 	// der Titel nicht. nil (Scanner-Neuanlage, Aufrufer ohne das Feld) legt keine an.
 	if eintrag.Schlagworte != nil {
 		if _, err := repository.SetzeSchlagworte(ctx, tx, id, eintrag.Schlagworte); err != nil {
@@ -107,20 +106,18 @@ func (a *TitelAbfragen) legeTitelZeileAn(ctx context.Context, eintrag Titel, and
 	return id, nil
 }
 
-// titelBeiKonflikt ist die Regel des Listenimports für eine ISBN, die schon im Katalog
-// steht — EINE Fassung für den Batch und den Einzel-Rückfall: Bestand gewinnt, der Import
-// füllt nur Lücken. Der Listenimport ist für Sammelkäufe und Spenden gedacht (weitere
-// Exemplare eines vorhandenen Titels); die Stammdaten hat dort ein Mensch gepflegt.
+// titelBeiKonflikt ist die Regel des Listenimports für eine ISBN, die schon im Katalog steht,
+// eine Fassung für den Batch und den Rückfall auf einzelne Titel: Der Bestand gewinnt, der Import
+// füllt nur Lücken. Der Listenimport ist für Sammelkäufe und Spenden gedacht (weitere Exemplare
+// eines vorhandenen Titels); die Stammdaten hat dort ein Mensch gepflegt. Setzte die Klausel
+// jede Spalte auf EXCLUDED.*, leerte eine Datei `isbn;bestand` Titel, Autor und Verlag, setzte
+// Jahr und Jahrgang auf 0 und den Medientyp auf „Buch", würfe ein von Hand hochgeladenes Cover
+// weg und meldete „1 Titel importiert".
 //
-// Bis zum 10.09.2026 setzte die Klausel jede Spalte auf EXCLUDED.*: Eine Datei
-// `isbn;bestand` leerte Titel, Autor und Verlag, setzte Jahr und Jahrgang auf
-// 0, den Medientyp auf „Buch" und warf ein von Hand hochgeladenes Cover weg — gemeldet
-// wurde „1 Titel importiert" (Bestands-Durchgang, Bugklasse Upsert-Blanking).
-//
-// Zwei bewusste Ausnahmen: signatur — ein GESETZTER Wert aus der Datei gewinnt (die
-// Signatur-Liste ist der Zweck mancher Importe), ein leerer überschreibt nie; und
-// ist_lernmittel — wird nur gesetzt, nie gelöscht. Bei den Eigenschaften werden beide
-// Seiten gemischt, bei gleichem Schlüssel gewinnt der Bestand.
+// Zwei Ausnahmen mit Absicht: signatur, ein gesetzter Wert aus der Datei gewinnt (die Liste der
+// Signaturen ist der Zweck mancher Importe), ein leerer überschreibt nie; und ist_lernmittel,
+// wird nur gesetzt, nie gelöscht. Bei den Eigenschaften werden beide Seiten gemischt, bei
+// gleichem Schlüssel gewinnt der Bestand.
 const titelBeiKonflikt = `ON CONFLICT (isbn) DO UPDATE SET
 			titel = COALESCE(NULLIF(buecher_titel.titel, ''), EXCLUDED.titel),
 			autor = COALESCE(NULLIF(buecher_titel.autor, ''), EXCLUDED.autor),
@@ -199,7 +196,7 @@ func baueTitelStapel(eintraege []Titel) titelStapel {
 		daten.coverURLs[i] = b.CoverURL
 		daten.faecher[i] = b.Fach
 		daten.zweige[i] = b.Zweig
-		// #nosec G115 - parseBestand begrenzt Stock beim Import auf [0, MaxInt32]
+		// #nosec G115 - leseBestand begrenzt den Bestand beim Import auf [0, MaxInt32]
 		daten.bestaende[i] = int32(b.Bestand)
 		daten.zuletztGezaehlt[i] = b.ZuletztGezaehlt
 		daten.medientypen[i] = b.Medientyp
@@ -269,14 +266,15 @@ func (a *TitelAbfragen) fuehreStapelAbfrageAus(ctx context.Context, q dbSchreibe
 	return ergebnis.RowsAffected(), nil
 }
 
-// SchreibeTitelStapel handles batch upserting book records.
+// SchreibeTitelStapel schreibt einen Stapel Titel aus dem Listenimport (titelBeiKonflikt) und legt
+// ihre Exemplare an.
 func (a *TitelAbfragen) SchreibeTitelStapel(ctx context.Context, eintraege []Titel) (int64, error) {
 	if len(eintraege) == 0 {
 		return 0, nil
 	}
 
 	daten := baueTitelStapel(eintraege)
-	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer der
+	// subject ist FK auf die Systematik: unbekannte Fächer der
 	// Import-Zeilen registrieren und jede auf die kanonische Schreibweise ziehen.
 	kanonisch, err := StelleFaecherSicher(ctx, a.pool, daten.faecher)
 	if err != nil {
@@ -286,11 +284,11 @@ func (a *TitelAbfragen) SchreibeTitelStapel(ctx context.Context, eintraege []Tit
 		daten.faecher[i] = kanonisch[s]
 	}
 
-	// Titel-Upsert und Exemplar-Erzeugung atomar: legeImportExemplareAn ist ADDITIV und
-	// nicht idempotent (jede Zeile legt ihre Stückzahl an). Ohne gemeinsame Tx hinterließe
-	// ein Fehler danach Titel ohne Exemplare — und ein Wiederholungslauf des Imports legte
-	// die Exemplare der bereits erfolgreichen Titel ein ZWEITES Mal an (aufgeblähter
-	// Bestand). Mit Tx rollt ein Fehlschlag den ganzen Batch zurück (Sweep A4).
+	// Schreiben der Titel und Anlegen der Exemplare in einer Transaktion: legeImportExemplareAn ist
+	// additiv und nicht idempotent (jede Zeile legt ihre Stückzahl an). Ohne gemeinsame Transaktion
+	// hinterließe ein Fehler danach Titel ohne Exemplare, und ein wiederholter Lauf des Imports legte
+	// die Exemplare der schon gelungenen Titel ein zweites Mal an. So rollt ein Fehlschlag den ganzen
+	// Batch zurück.
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("import konnte nicht begonnen werden: %w", err)
@@ -301,10 +299,9 @@ func (a *TitelAbfragen) SchreibeTitelStapel(ctx context.Context, eintraege []Tit
 	if err != nil {
 		return 0, err
 	}
-	// Stückzahlen werden zu ECHTEN Exemplaren (Befund F5): Bis Migration 072
-	// summierte der Import nur die ungelesene stock-Spalte auf — die Zahl war
-	// danach nirgends mehr sichtbar, es entstanden Titel ohne Exemplare.
-	// Additiv wie das alte stock += : jede Import-Zeile legt ihre Stückzahl an.
+	// Stückzahlen werden zu echten Exemplaren; eine bloß aufsummierte Zahl stünde nirgends mehr
+	// sichtbar, und es entstünden Titel ohne Exemplare. Additiv: Jede Zeile des Imports legt ihre
+	// Stückzahl an.
 	if err := a.legeImportExemplareAn(ctx, tx, daten.isbns, daten.bestaende); err != nil {
 		return 0, fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
 	}
@@ -314,14 +311,13 @@ func (a *TitelAbfragen) SchreibeTitelStapel(ctx context.Context, eintraege []Tit
 	return betroffen, nil
 }
 
-// legeImportExemplareAn erzeugt je Import-Zeile stück-viele Exemplare (gleiche Mechanik
-// wie gleicheBestandAb, aber additiv je Zeile). Die Nummern kommen aus barcode_seq, der
-// einen Quelle aller Exemplarnummern (Migration 068) — bis zum 07.09.2026 aus einer
-// eigenen SYS-Sequenz, die 068 übersehen hatte (Migration 105).
+// legeImportExemplareAn legt je Zeile des Imports so viele Exemplare an, wie sie nennt (dieselbe
+// Mechanik wie gleicheBestandAb, aber additiv je Zeile). Die Nummern kommen aus barcode_seq, der
+// einen Quelle aller Exemplarnummern.
 //
-// Gezogen wird die Summe aller Stückzahlen, zugeordnet über die Zeilennummer. Eine ISBN,
-// die keinen Titel findet, lässt ihre Nummern ungenutzt: Eine Lücke im Nummernkreis ist
-// harmlos, eine doppelt vergebene Nummer nicht (repository/barcode_vergabe.go).
+// Gezogen wird die Summe aller Stückzahlen, zugeordnet über die Zeilennummer. Eine ISBN, die
+// keinen Titel findet, lässt ihre Nummern ungenutzt: Eine Lücke im Nummernkreis ist harmlos,
+// eine doppelt vergebene Nummer nicht (repository/barcode_vergabe.go).
 func (a *TitelAbfragen) legeImportExemplareAn(ctx context.Context, q repository.Datenbank, isbns []string, stueck []int32) error {
 	gesamt := 0
 	for _, n := range stueck {
@@ -354,9 +350,10 @@ func (a *TitelAbfragen) legeImportExemplareAn(ctx context.Context, q repository.
 	return err
 }
 
-// SchreibeTitel inserts or updates a book record.
+// SchreibeTitel schreibt einen einzelnen Titel aus dem Listenimport, neu oder nach
+// titelBeiKonflikt, und legt seine Exemplare an.
 func (a *TitelAbfragen) SchreibeTitel(ctx context.Context, eintrag Titel) (string, error) {
-	// subject ist FK auf die Systematik (Migration 078), siehe CreateBook.
+	// subject ist ein Fremdschlüssel auf die Systematik, siehe LegeTitelAn.
 	kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 	if err != nil {
 		return "", err
@@ -378,8 +375,8 @@ func (a *TitelAbfragen) SchreibeTitel(ctx context.Context, eintrag Titel) (strin
 		eigenschaften = make(map[string]any)
 	}
 
-	// Titel-Upsert und (additive) Exemplar-Erzeugung atomar — wie der Batch-Weg, gegen
-	// Titel-ohne-Exemplare und Doppel-Bestand beim Import-Retry (Sweep A4).
+	// Schreiben des Titels und (additives) Anlegen der Exemplare in einer Transaktion, wie im Batch:
+	// gegen Titel ohne Exemplare und doppelten Bestand bei einem wiederholten Import.
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
@@ -415,7 +412,7 @@ func (a *TitelAbfragen) SchreibeTitel(ctx context.Context, eintrag Titel) (strin
 
 	// Additiv wie der Batch-Weg: die Stückzahl der Import-Zeile wird zu Exemplaren.
 	if eintrag.Bestand > 0 {
-		if err := a.legeImportExemplareAn(ctx, tx, []string{eintrag.ISBN}, []int32{int32(eintrag.Bestand)}); err != nil { // #nosec G115 -- parseBestand begrenzt Stock
+		if err := a.legeImportExemplareAn(ctx, tx, []string{eintrag.ISBN}, []int32{int32(eintrag.Bestand)}); err != nil { // #nosec G115 -- leseBestand begrenzt den Bestand
 			return "", fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
 		}
 	}

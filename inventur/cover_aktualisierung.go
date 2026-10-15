@@ -40,10 +40,9 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Nur das Cover. Bis zum 22.09.2026 schrieb die Tür auch Titel und Autor aus der
-	// Suche zurück — ohne Aufrufer fiel das nicht auf. Mit dem Knopf „Cover neu holen" in
-	// der Titel-Akte wäre es ein stilles Überschreiben von Handkorrekturen: Wer „Mathe 7,
-	// Ausgabe Hessen" eingetippt hat, bekäme den Katalogtitel zurück, ohne es zu sehen.
+	// Nur das Cover. Schriebe die Tür auch Titel und Autor aus der Suche zurück, überschriebe der
+	// Knopf „Cover neu holen" in der Titel-Akte unbemerkt Korrekturen von Hand: Wer „Mathe 7,
+	// Ausgabe Hessen" eingetippt hat, bekäme den Titel aus dem Katalog zurück, ohne es zu sehen.
 	// Der Knopf verspricht ein Bild, also ändert die Tür nur das Bild.
 	coverURL := strings.TrimSpace(nachschlagen.CoverURL)
 	if coverURL == "" {

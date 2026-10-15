@@ -7,18 +7,16 @@ import (
 	"bibliothek/pkg/closeutil"
 )
 
-// Dateizugriffe unter uploads/ laufen über os.OpenRoot statt über einen Präfixvergleich.
+// Zugriffe auf Dateien unter uploads/ laufen über os.OpenRoot statt über einen Vergleich des
+// Präfixes.
 //
-// Vorher stand an drei Stellen dasselbe Muster: filepath.Join, dann filepath.Clean, dann
-// strings.HasPrefix gegen "uploads/". Das hält den geradlinigen Fall auf, ist aber eine
-// Prüfung im Programm über einen Pfad, der danach trotzdem ans Betriebssystem geht —
-// zwischen Prüfung und Zugriff kann sich der Pfad ändern (ein Symlink in uploads/ genügt,
-// und HasPrefix sieht Symlinks nicht). os.OpenRoot bindet die Auflösung OS-seitig an das
-// Verzeichnis: Ein Name, der herausführt, scheitert am Kernel, nicht an einer
-// Zeichenkettenprüfung.
-//
-// Der Rest des Projekts arbeitet bereits so (api/katalog/cover.go, pkg/coverdatei,
-// api/router.go, cmd/migrate-fotos). Die Inventur war die letzte Ausnahme.
+// filepath.Join, dann filepath.Clean, dann strings.HasPrefix gegen "uploads/" hält den
+// geradlinigen Fall auf, ist aber eine Prüfung im Programm über einen Pfad, der danach trotzdem
+// ans Betriebssystem geht: Zwischen Prüfung und Zugriff kann sich der Pfad ändern (ein Symlink in
+// uploads/ genügt, und HasPrefix sieht Symlinks nicht). os.OpenRoot bindet die Auflösung im
+// Betriebssystem an das Verzeichnis: Ein Name, der herausführt, scheitert am Kernel, nicht an
+// einer Prüfung der Zeichenkette. So arbeitet auch der Rest des Projekts (api/katalog/cover.go,
+// pkg/coverdatei, api/router.go, cmd/migrate-fotos).
 
 const uploadsVerzeichnis = "uploads"
 

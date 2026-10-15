@@ -13,11 +13,10 @@ import (
 
 // holeInhalt trennt „die Quelle ist kaputt" von „die Quelle kennt das Buch nicht".
 //
-// Am Sentinel errQuelleNichtErreichbar hängt die Antwort nach draußen: 502 („Netz weg,
-// später noch einmal") statt 404 („Buch unbekannt, von Hand erfassen"). Wer die beiden
-// verwechselt, schickt die Bibliothek bei einem DNB-Ausfall ans Abtippen — oder lässt sie
-// bei einem wirklich unbekannten Titel warten. (Zusammengeführt aus den PRs #606
-// und #608; #608 prüfte nur den Text, nicht, dass der 4xx das Sentinel NICHT trägt.)
+// Am Fehlerwert errQuelleNichtErreichbar hängt die Antwort nach draußen: 502 („Netz weg, später
+// noch einmal") statt 404 („Buch unbekannt, von Hand erfassen"). Wer die beiden verwechselt,
+// schickt die Bibliothek bei einem Ausfall der DNB ans Abtippen oder lässt sie bei einem wirklich
+// unbekannten Titel warten. Geprüft wird auch, dass ein 4xx den Fehlerwert nicht trägt.
 func TestHoleInhalt_KaputteQuelleIstNichtLeer(t *testing.T) {
 	antwort := func(status int) func(*http.Request) (*http.Response, error) {
 		return func(*http.Request) (*http.Response, error) {
@@ -53,16 +52,16 @@ func TestHoleInhalt_KaputteQuelleIstNichtLeer(t *testing.T) {
 	}
 }
 
-// aufloeseCover fragt die Quellen der Reihe nach; eine scheiternde hält die nächste nicht
-// auf, und scheitern alle, bleibt das Cover leer — der Titel selbst wird trotzdem angelegt.
-// (Aus PR #610; ergänzt um die Prüfung, dass die Rückfallquellen wirklich gefragt
-// wurden — sonst wäre auch ein Abbruch nach der ersten Quelle grün.)
+// aufloeseCover fragt die Quellen der Reihe nach; eine scheiternde hält die nächste nicht auf,
+// und scheitern alle, bleibt das Cover leer, der Titel selbst wird trotzdem angelegt. Geprüft
+// wird auch, dass die Quellen des Rückfalls wirklich gefragt wurden; sonst wäre auch ein Abbruch
+// nach der ersten Quelle grün.
 func TestAufloeseCover_AlleQuellenScheitern(t *testing.T) {
 	var gefragt []string
 	client := NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: &mockTransport{
-		roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			gefragt = append(gefragt, req.URL.Host)
+		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+			gefragt = append(gefragt, anfrage.URL.Host)
 			return nil, http.ErrServerClosed
 		},
 	}})
@@ -95,8 +94,8 @@ func TestAufloeseCover_FragtMitDerNormalform(t *testing.T) {
 			var adressen []string
 			client := NewMetadatenClient()
 			client.SetzeHTTPClientFuerTest(&http.Client{Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					adressen = append(adressen, req.URL.String())
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+					adressen = append(adressen, anfrage.URL.String())
 					return nil, http.ErrServerClosed
 				},
 			}})

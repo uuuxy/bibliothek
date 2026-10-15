@@ -8,23 +8,20 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Dublettenkontrolle beim Anlegen (OFFEN.md 4.18, Stufe 2) — nach dem Vorbild von
-// Littera: Dort wird bei der Medienaufnahme über die ISBN geprüft (ohne ISBN über
-// Verfasser und Haupttitel), und statt eines zweiten Titels bietet das Programm an,
-// ein weiteres Exemplar anzulegen.
+// Dublettenkontrolle beim Anlegen nach dem Vorbild von Littera: Dort wird bei der Aufnahme eines
+// Mediums über die ISBN geprüft (ohne ISBN über Verfasser und Haupttitel), und statt eines
+// zweiten Titels bietet das Programm an, ein weiteres Exemplar anzulegen.
 //
-// Der UNIQUE-Index auf isbn fängt nur ZEICHENGLEICHE Dubletten: „978-3-12-345678-9" und
-// „9783123456789" sind dieselbe Nummer und standen bis zum 17.09.2026 als zwei Titel
-// nebeneinander — zwei Bestände, zwei Meldebestände, zwei Zeilen in der Nachbestellung
-// (OFFEN.md 5.5, 5.12).
+// Der UNIQUE-Index auf isbn fängt nur zeichengleiche Dubletten: „978-3-12-345678-9" und
+// „9783123456789" sind dieselbe Nummer und stünden sonst als zwei Titel nebeneinander, mit zwei
+// Beständen, zwei Meldebeständen und zwei Zeilen in der Nachbestellung.
 //
-// Ohne ISBN entscheidet das Paar aus Titel und Autor. Eine ZWEITE AUFLAGE ist erlaubt:
-// Seit Stufe 1 gibt es dafür ein Feld, und wer es füllt, sagt damit, dass er ein anderes
-// Buch meint.
+// Ohne ISBN entscheidet das Paar aus Titel und Autor. Eine zweite Auflage ist erlaubt: Dafür
+// gibt es ein Feld, und wer es füllt, sagt damit, dass er ein anderes Buch meint.
 func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 
 	aufraeumen := func(t *testing.T, titel string) {
 		t.Helper()
@@ -41,10 +38,10 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := repo.LegeTitelAn(ctx, Titel{ISBN: "978-3-12-345678-9", Titel: titel}); err != nil {
+		if _, err := abfragen.LegeTitelAn(ctx, Titel{ISBN: "978-3-12-345678-9", Titel: titel}); err != nil {
 			t.Fatalf("erster Titel: %v", err)
 		}
-		_, err := repo.LegeTitelAn(ctx, Titel{ISBN: "9783123456789", Titel: titel + " (zweite Schreibweise)"})
+		_, err := abfragen.LegeTitelAn(ctx, Titel{ISBN: "9783123456789", Titel: titel + " (zweite Schreibweise)"})
 		if !errors.Is(err, ErrISBNDoppelt) {
 			t.Errorf("zweite Schreibweise: Fehler %v, erwartet ErrDuplicateISBN — es ist dieselbe Nummer", err)
 		}
@@ -56,16 +53,16 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer"}); err != nil {
+		if _, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer"}); err != nil {
 			t.Fatalf("erster Titel: %v", err)
 		}
-		_, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer"})
+		_, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer"})
 		if !errors.Is(err, ErrDubletteTitel) {
 			t.Errorf("zweiter gleicher Titel: Fehler %v, erwartet ErrDubletteTitel", err)
 		}
 
 		// Eine andere Auflage ist ein anderes Buch und darf angelegt werden.
-		if _, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "2. Aufl."}); err != nil {
+		if _, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "2. Aufl."}); err != nil {
 			t.Errorf("zweite Auflage: %v — mit eigener Auflage ist es ein anderes Buch", err)
 		}
 	})
@@ -80,22 +77,22 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "3.  Aufl."}); err != nil {
+		if _, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "3.  Aufl."}); err != nil {
 			t.Fatalf("erster Titel: %v", err)
 		}
 		for _, auflage := range []string{"", "3. aufl. ", "3.   Aufl."} {
-			_, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: auflage})
+			_, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: auflage})
 			if !errors.Is(err, ErrDubletteTitel) {
 				t.Errorf("Auflage %q: Fehler %v, erwartet ErrDubletteTitel", auflage, err)
 			}
 		}
-		if _, err := repo.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "4. Aufl."}); err != nil {
+		if _, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "4. Aufl."}); err != nil {
 			t.Errorf("andere Auflage: %v — mit eigener Auflage ist es ein anderes Buch", err)
 		}
 	})
 
-	// Die Datenbank speichert Titel und Autor mit einem Leerzeichen zwischen den Wörtern
-	// (Migration 160). Die Kontrolle vergleicht die Eingabe in derselben Form: Sonst legte,
+	// Die Datenbank speichert Titel und Autor mit einem Leerzeichen zwischen den Wörtern.
+	// Die Kontrolle vergleicht die Eingabe in derselben Form: Sonst legte,
 	// wer denselben Wortlaut ein zweites Mal tippt, ohne Rückfrage einen zweiten Titel an.
 	t.Run("ohne ISBN: Leerraum in Folge ist derselbe Titel", func(t *testing.T) {
 		const titel = "Dubletten-Probe La Peste"
@@ -104,7 +101,7 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
 			t.Fatal(err)
 		}
-		id, err := repo.LegeTitelAn(ctx, Titel{Titel: "Dubletten-Probe La  Peste", Autor: "Camus,  Albert"})
+		id, err := abfragen.LegeTitelAn(ctx, Titel{Titel: "Dubletten-Probe La  Peste", Autor: "Camus,  Albert"})
 		if err != nil {
 			t.Fatalf("erster Titel: %v", err)
 		}
@@ -122,7 +119,7 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 			{Titel: " Dubletten-Probe La" + geschuetzt + "Peste ", Autor: "Camus," + geschuetzt + "Albert"},
 			{Titel: "Dubletten-Probe La Peste", Autor: "Camus, Albert"},
 		} {
-			_, err := repo.LegeTitelAn(ctx, eingabe)
+			_, err := abfragen.LegeTitelAn(ctx, eingabe)
 			if !errors.Is(err, ErrDubletteTitel) {
 				t.Errorf("%+q von %+q: Fehler %v, erwartet ErrDubletteTitel", eingabe.Titel, eingabe.Autor, err)
 			}

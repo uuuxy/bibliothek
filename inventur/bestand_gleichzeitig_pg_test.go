@@ -13,13 +13,13 @@ import (
 )
 
 // Zwei Plätze speichern denselben Titel im selben Augenblick. Der Vergleich mit dem gesehenen
-// Stand (setzeBestand) trägt dann nur, weil UpdateBook davor die Zeile des Titels schreibt:
-// Der zweite Vorgang wartet auf den ersten und zählt erst danach. Zählte er vorher, sähe er
-// den Stand von vor dem ersten und sonderte ein zweites Mal aus.
+// Stand (setzeBestand) trägt dann nur, weil AendereTitel davor die Zeile des Titels schreibt: Der
+// zweite Vorgang wartet auf den ersten und zählt erst danach. Zählte er zuvor, sähe er den Stand
+// von vor dem ersten und sonderte ein zweites Mal aus.
 func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 	marke := fmt.Sprintf("GLEICH%d", time.Now().UnixNano())
 
 	var titelID string
@@ -60,13 +60,13 @@ func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 		return z
 	}
 
-	buecher, err := repo.LadeTitelNachIDs(ctx, []string{titelID})
+	buecher, err := abfragen.LadeTitelNachIDs(ctx, []string{titelID})
 	if err != nil || len(buecher) != 1 || buecher[0].Bestand != 3 {
 		t.Fatalf("Einzel-Read: %v, %d Titel — erwartet einen mit Bestand 3", err, len(buecher))
 	}
 	buch := buecher[0]
 
-	// Der erste Vorgang hält die Zeile des Titels, wie UpdateBook es tut, und hat ein viertes
+	// Der erste Vorgang hält die Zeile des Titels, wie AendereTitel es tut, und hat ein viertes
 	// Exemplar angelegt; festgeschrieben ist noch nichts.
 	erster, err := pool.Begin(ctx)
 	if err != nil {
@@ -82,7 +82,7 @@ func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 	ergebnis := make(chan error, 1)
 	go func() {
 		gesehen := 3
-		ergebnis <- repo.AendereTitel(ctx, titelID, buch, alleTitelFelder(), &Bestandsangabe{Soll: 1, Gesehen: &gesehen})
+		ergebnis <- abfragen.AendereTitel(ctx, titelID, buch, alleTitelFelder(), &Bestandsangabe{Soll: 1, Gesehen: &gesehen})
 	}()
 
 	select {

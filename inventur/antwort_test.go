@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-func TestWriteJSON(t *testing.T) {
+func TestSchreibeJSON(t *testing.T) {
 	t.Run("ValidPayload", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
-		payload := map[string]string{"message": "success"}
+		nutzlast := map[string]string{"message": "success"}
 
-		schreibeJSON(recorder, http.StatusOK, payload)
+		schreibeJSON(recorder, http.StatusOK, nutzlast)
 
 		if recorder.Code != http.StatusOK {
 			t.Errorf("expected status %d, got %d", http.StatusOK, recorder.Code)
@@ -24,13 +24,13 @@ func TestWriteJSON(t *testing.T) {
 			t.Errorf("expected Content-Type %q, got %q", expectedContentType, contentType)
 		}
 
-		var response map[string]string
-		if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		var antwort map[string]string
+		if err := json.Unmarshal(recorder.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("failed to parse JSON response: %v", err)
 		}
 
-		if response["message"] != "success" {
-			t.Errorf("expected message 'success', got %v", response["message"])
+		if antwort["message"] != "success" {
+			t.Errorf("expected message 'success', got %v", antwort["message"])
 		}
 	})
 
@@ -51,11 +51,11 @@ func TestWriteJSON(t *testing.T) {
 	t.Run("UnencodablePayload", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
-		// A channel cannot be encoded to JSON
-		payload := make(chan int)
+		// Ein Kanal lässt sich nicht als JSON kodieren.
+		nutzlast := make(chan int)
 
-		// This should not panic
-		schreibeJSON(recorder, http.StatusInternalServerError, payload)
+		// Das darf nicht abbrechen.
+		schreibeJSON(recorder, http.StatusInternalServerError, nutzlast)
 
 		if recorder.Code != http.StatusInternalServerError {
 			t.Errorf("expected status %d, got %d", http.StatusInternalServerError, recorder.Code)

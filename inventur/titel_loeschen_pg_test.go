@@ -9,37 +9,35 @@ import (
 	"bibliothek/repository"
 )
 
-// „Titel löschen" gegen ein echtes Postgres — an der Regel, die der Betreiber am
-// 23.08.2026 gesetzt hat: Es geht ALLES, auch ein Exemplar, das gerade bei einem Kind
-// zu Hause liegt. Vorher brach der Lauf dann ab; ein versehentlich importierter Titel
-// liess sich nicht aufräumen, bis das letzte Buch zurück war.
+// „Titel löschen" an Postgres, an der Regel des Betreibers: Es geht alles, auch ein Exemplar,
+// das gerade bei einem Kind zu Hause liegt; sonst ließe sich ein versehentlich importierter Titel
+// nicht aufräumen, bis das letzte Buch zurück ist.
 //
-// Der Test prüft deshalb zwei Dinge zusammen, denn nur zusammen sind sie vertretbar:
-// dass wirklich alles verschwindet — UND dass das verliehene Buch eine Spur hinterlässt.
-// Ein spurlos verschwundenes Buch ist ein verlorenes Buch: Wer es zurückbringt, findet
-// beim Scannen nichts mehr vor, und ohne Protokollzeile weiss niemand mehr, wer es hatte.
-func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
+// Der Test prüft deshalb zwei Dinge zusammen, denn nur zusammen sind sie vertretbar: dass
+// wirklich alles verschwindet und dass das verliehene Buch eine Spur hinterlässt. Ein spurlos
+// verschwundenes Buch ist ein verlorenes Buch: Wer es zurückbringt, findet beim Scannen nichts
+// mehr vor, und ohne Zeile im Protokoll weiß niemand mehr, wer es hatte.
+func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewTitelAbfragen(pool)
+	abfragen := NewTitelAbfragen(pool)
 
-	eins := func(was, sql string, args ...any) string {
+	eins := func(was, sql string, argumente ...any) string {
 		t.Helper()
 		var id string
-		if err := pool.QueryRow(ctx, sql, args...).Scan(&id); err != nil {
+		if err := pool.QueryRow(ctx, sql, argumente...).Scan(&id); err != nil {
 			t.Fatalf("%s: %v", was, err)
 		}
 		return id
 	}
 
-	// pgtest teilt das Schema mit allen Tests des Binaries — die eigenen Zeilen werden
-	// deshalb abgeräumt. Die IDs stehen VOR dem Cleanup, damit die Closure sie sieht;
-	// die Guards greifen, wenn ein früher t.Fatal einen Teil nie angelegt hat.
-	// Reihenfolge wegen ON DELETE RESTRICT (ausleihen/schadensfaelle → exemplare):
-	// erst die abhängigen Zeilen, dann der Titel (Exemplare kaskadieren), dann der
-	// Schüler; die Protokollzeilen aus DeleteBooks zuletzt scoped über datensatz_id.
-	// Im Erfolgsfall hat DeleteBooks das meiste schon entfernt — die DELETEs treffen
-	// dann 0 Zeilen, und genau das ist in Ordnung.
+	// pgtest teilt das Schema mit allen Tests des Testprogramms; die eigenen Zeilen werden deshalb
+	// abgeräumt. Die Kennungen stehen vor dem Cleanup, damit die Closure sie sieht; die Prüfungen
+	// greifen, wenn ein frühes t.Fatal einen Teil nie angelegt hat. Reihenfolge wegen ON DELETE
+	// RESTRICT (ausleihen/schadensfaelle → exemplare): erst die abhängigen Zeilen, dann der Titel
+	// (Exemplare kaskadieren), dann der Schüler; die Zeilen im Protokoll aus LoescheTitel zuletzt,
+	// über datensatz_id begrenzt. Im Erfolgsfall hat LoescheTitel das meiste schon entfernt; die
+	// DELETEs treffen dann 0 Zeilen, und genau das ist in Ordnung.
 	var titelID, imRegal, verliehen, schuelerID string
 	t.Cleanup(func() {
 		ctx := context.Background()
@@ -84,7 +82,7 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('ZB-S1', 'Hans', 'Castorp', '9a', 2030) RETURNING id`)
 
-	// Eine LAUFENDE Ausleihe (rueckgabe_am IS NULL) — das Buch ist bei ihm zu Hause.
+	// Eine laufende Ausleihe (rueckgabe_am IS NULL) — das Buch ist bei ihm zu Hause.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
 		VALUES ($1, $2, now() - interval '5 days', now() + interval '9 days')`,
@@ -104,11 +102,11 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		t.Fatalf("Gebühr: %v", err)
 	}
 
-	if err := repo.LoescheTitel(ctx, []string{titelID}); err != nil {
+	if err := abfragen.LoescheTitel(ctx, []string{titelID}); err != nil {
 		t.Fatalf("Titel mit verliehenem Exemplar muss löschbar sein: %v", err)
 	}
 
-	// 1. Wirklich alles weg — Titel, BEIDE Exemplare, alle Ausleihen, die Gebühr.
+	// 1. Wirklich alles weg — Titel, beide Exemplare, alle Ausleihen, die Gebühr.
 	for _, fall := range []struct {
 		name, sql string
 	}{
@@ -163,7 +161,7 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		t.Errorf("Protokollzeile ohne schueler_id — die Befristung erreicht den Klarnamen nie: %s", details)
 	}
 
-	// 2b. Die Spur der offenen FORDERUNG (Rasterdurchgang 06.09.2026). Die Gebühr fällt
+	// 2b. Die Spur der offenen Forderung. Die Gebühr fällt
 	//     mit dem Titel — sie ist aber Geld, das ein Schüler der Schule schuldet, und sie
 	//     steuert sechs Entscheidungen (Kontoanzeige, Lösch-Sperre, Zusammenführen,
 	//     Abgänger-Wächter, LUSD-Anonymisierungsbremse, DSGVO-Löschprädikat). Ohne Spur
@@ -197,15 +195,13 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		t.Errorf("%d Protokollzeilen für ein Exemplar, das gar nicht verliehen war", rauschen)
 	}
 
-	// 4. BEIDE Exemplare bleiben am Tresen auffindbar — nicht nur das verliehene.
-	//    Die Tresen-Auskunft findet gelöschte Exemplare ausschließlich über
-	//    audit_log-Zeilen mit tabelle='buecher_exemplare' und details->>'barcode_id'
-	//    (repository.FindeTresenExemplare); die Ausleihen-Spur aus Schritt 2 sieht sie
-	//    nicht. Bis zum 01.09.2026 fehlte dieser Snapshot hier wie beim
-	//    Geschwister-Pfad LoescheTitel (Befund-Register): Ein per Titel-Löschung
-	//    verschwundenes Buch war beim Scannen „nie gesehen" statt „gelöscht am …".
-	//    Geprüft über den echten Leseweg, nicht über count(*) — eine Zeile im falschen
-	//    Format bestünde die Zählung und bliebe trotzdem unsichtbar.
+	// 4. Beide Exemplare bleiben am Tresen auffindbar, nicht nur das verliehene. Die Auskunft am
+	//    Tresen findet gelöschte Exemplare nur über Zeilen in audit_log mit
+	//    tabelle='buecher_exemplare' und details->>'barcode_id' (repository.FindeTresenExemplare);
+	//    die Spur der Ausleihen aus Schritt 2 sieht sie nicht. Ohne den Schnappschuss wäre ein
+	//    durch das Löschen eines Titels verschwundenes Buch beim Scannen „nie gesehen" statt
+	//    „gelöscht am …". Geprüft über den echten Leseweg, nicht über count(*): Eine Zeile im
+	//    falschen Format bestünde die Zählung und bliebe trotzdem unsichtbar.
 	for _, fall := range []struct{ barcode, exemplarID string }{
 		{"ZB-REGAL", imRegal},
 		{"ZB-DRAUSSEN", verliehen},

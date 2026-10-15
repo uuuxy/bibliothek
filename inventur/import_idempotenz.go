@@ -11,7 +11,7 @@ import (
 
 // Idempotenz des Listenimports.
 //
-// Der Import ist ADDITIV: Jede Zeile legt ihre Stückzahl als frische Exemplare an
+// Der Import ist additiv: Jede Zeile legt ihre Stückzahl als frische Exemplare an
 // (legeImportExemplareAn). Wer dieselbe Liste zweimal einspielt, hat doppelten Bestand —
 // und zweimal einspielen ist genau das, was nach einer verlorenen Antwort passiert: Der
 // Server hat committet, der Browser sah Timeout oder Netzfehler, der Mensch drückt
@@ -19,7 +19,7 @@ import (
 //
 // Der Aufrufer benennt seinen Lauf mit X-Idempotency-Key (eine UUID je Dateiauswahl,
 // ListenImportWidget.svelte). Der Server merkt sich den Schlüssel in idempotency_keys —
-// derselben Tabelle wie die Theken-Aktionen (api/theke/eingabe.go, Migration 028, Aufräumen nach
+// derselben Tabelle wie die Aktionen der Theke (api/theke/eingabe.go; Aufräumen nach
 // 24 h in jobs/cron.go). Drei Zustände:
 //
 //   - Schlüssel neu: reservieren (Marker 409 „läuft"), importieren, Ergebnis eintragen.
@@ -27,10 +27,10 @@ import (
 //     startet keinen zweiten Import.
 //   - Schlüssel abgeschlossen: die gespeicherte Antwort — der Klick holt das Ergebnis ab.
 //
-// Gemerkt wird nur, was GESCHRIEBEN wurde. Ein Lauf ohne ein einziges importiertes Buch
+// Gemerkt wird nur, was geschrieben wurde. Ein Lauf ohne ein einziges importiertes Buch
 // (Abbruch, Netzfehler bei allen Lookups) gibt den Schlüssel wieder frei, damit ein
 // erneuter Versuch mit derselben Dateiauswahl echt läuft statt die Fehlmeldung von eben
-// zu wiederholen. Ohne Schlüssel läuft der Import wie bisher — der Header ist freiwillig,
+// zu wiederholen. Ohne Schlüssel läuft der Import ohne diesen Schutz; die Kopfzeile ist freiwillig,
 // damit Skripte und alte Aufrufer nicht brechen.
 
 const importSchluesselKopf = "X-Idempotency-Key"

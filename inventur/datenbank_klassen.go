@@ -40,25 +40,24 @@ func legeKlassensatzZuordnungenAn(ctx context.Context, tx pgx.Tx, neueKlassen, t
 // ein Satz.
 const KlassensatzMindestLeser = 5
 
-// LadeKlassensatzGruppen liefert je Klasse ihre Klassensatz-Titel aus ZWEI Quellen (Absprache vom
-// 05.09.2026: „über die LUSD wissen wir genau, in welcher Klasse jeder Schüler ist — die
-// Liste kann sich selbstständig aktualisieren"): der von Hand gepflegten Zuordnung
-// (class_books, Quelle „hand" — bleibt unangetastet, nichts wird geschrieben oder
-// gelöscht) und den laufenden Ausleihen (Quelle „ausleihe", live gerechnet, nie
-// gespeichert): Halten mehr als die Hälfte der aktiven Kinder einer Klasse, mindestens
-// KlassensatzMindestLeser, denselben Titel, ist das ihr Klassensatz — Schulbuch oder
-// Lektüre. Ein Titel, der schon von Hand zugeordnet ist, erscheint nur einmal (hand).
-// Beide Quellen laufen durch dieselbe Sortierung; branch filtert auf den Bildungsgang,
-// sortOrder bestimmt die Reihenfolge der Klassen.
+// LadeKlassensatzGruppen liefert je Klasse ihre Titel der Klassensätze aus zwei Quellen (über
+// die LUSD weiß das Programm, in welcher Klasse jeder Schüler ist, also kann sich die Liste
+// selbst aktualisieren): der von Hand gepflegten Zuordnung (class_books, Quelle „hand"; bleibt
+// unangetastet, nichts wird geschrieben oder gelöscht) und den laufenden Ausleihen (Quelle
+// „ausleihe", jedes Mal gerechnet, nie gespeichert): Halten mehr als die Hälfte der aktiven
+// Kinder einer Klasse, mindestens KlassensatzMindestLeser, denselben Titel, ist das ihr
+// Klassensatz, Schulbuch oder Lektüre. Ein Titel, der schon von Hand zugeordnet ist, erscheint
+// nur einmal (hand). Beide Quellen laufen durch dieselbe Sortierung; zweig filtert auf den
+// Bildungsgang, reihenfolge bestimmt die Reihenfolge der Klassen.
 //
-// Auflagen (docs/OFFEN.md 4.18, Stufe 5, 25.09.2026): Gezählt wird am BUCH, nicht an der
-// Auflage — COALESCE(werk_id, id) wie im Bestellbedarf. Je Auflage gezählt, verschwand ein
-// Klassensatz, sobald er auf zwei Auflagen verteilt war (14 Kinder mit der 4., 14 mit der
-// 3. Auflage: keine hat mehr als die Hälfte), und bei 20 zu 8 blieb die Mischung
-// unsichtbar. Für ein Buch aus den Ausleihen steht die Auflage, die die meisten Kinder der
-// Klasse haben, bei Gleichstand die neueste: Die Kachel zeigt, was die Klasse hat, nicht,
-// was zuletzt erschien. Eine Zuordnung von Hand deckt das ganze Buch ab. Haben Kinder der
-// Klasse eine andere Auflage als die der Kachel, trägt die Zeile die Aufschlüsselung.
+// Auflagen: Gezählt wird am Buch, nicht an der Auflage, mit COALESCE(werk_id, id) wie im
+// Bestellbedarf. Je Auflage gezählt, verschwände ein Klassensatz, sobald er auf zwei Auflagen
+// verteilt ist (14 Kinder mit der 4., 14 mit der 3. Auflage: keine hat mehr als die Hälfte), und
+// bei 20 zu 8 bliebe die Mischung unsichtbar. Für ein Buch aus den Ausleihen steht die Auflage,
+// die die meisten Kinder der Klasse haben, bei Gleichstand die neueste: Die Kachel zeigt, was die
+// Klasse hat, nicht, was zuletzt erschien. Eine Zuordnung von Hand deckt das ganze Buch ab.
+// Haben Kinder der Klasse eine andere Auflage als die der Kachel, trägt die Zeile die
+// Aufschlüsselung.
 func (a *TitelAbfragen) LadeKlassensatzGruppen(ctx context.Context, zweig string, reihenfolge string) ([]klassensatzGruppe, error) {
 	neueste := repository.SQLNeuesteAuflageZuerst("t")
 	abfrage := `
@@ -217,21 +216,21 @@ func (a *TitelAbfragen) AendereKlassensaetze(ctx context.Context, alteKlasse str
 	}
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
-	// If there's an old class name, delete it.
+	// Gibt es einen alten Namen der Klasse, wird er gelöscht.
 	if alteKlasse != "" {
 		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = $1`, alteKlasse); err != nil {
 			return fmt.Errorf("alte zuweisungen konnten nicht gelöscht werden: %w", err)
 		}
 	}
 
-	// ⚡ Bolt: Batch DELETE existing bindings for all target classes (overwrite)
+	// Die bisherigen Zuordnungen aller Zielklassen in einem DELETE entfernen (überschreiben).
 	if len(neueKlassen) > 0 {
 		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, neueKlassen); err != nil {
 			return fmt.Errorf("vorhandene zuweisungen des neuen namens konnten nicht gelöscht werden: %w", err)
 		}
 	}
 
-	// ⚡ Bolt: Batch INSERT new bindings using PostgreSQL unnest
+	// Die neuen Zuordnungen in einem INSERT mit unnest anlegen.
 	if err := legeKlassensatzZuordnungenAn(ctx, tx, neueKlassen, titelIDs); err != nil {
 		return err
 	}
@@ -257,7 +256,7 @@ func (a *TitelAbfragen) LoescheKlassensatzGruppe(ctx context.Context, klassen []
 }
 
 // OrdneTitelKlassenZu ergänzt Titel in mehreren Klassensätzen, ohne die bestehende
-// Zuordnung zu ersetzen — anders als UpdateClassBooks, das sie neu schreibt.
+// Zuordnung zu ersetzen — anders als AendereKlassensaetze, das sie neu schreibt.
 func (a *TitelAbfragen) OrdneTitelKlassenZu(ctx context.Context, klassen []string, titelIDs []string) error {
 	if len(klassen) == 0 || len(titelIDs) == 0 {
 		return nil
@@ -273,7 +272,7 @@ func (a *TitelAbfragen) OrdneTitelKlassenZu(ctx context.Context, klassen []strin
 		}
 	}
 
-	// Use ON CONFLICT DO NOTHING so existing assignments are ignored and not duplicated
+	// ON CONFLICT DO NOTHING: Vorhandene Zuordnungen bleiben und entstehen nicht doppelt.
 	abfrage := `
 		INSERT INTO class_books (class_name, book_id)
 		SELECT class_name, book_id::uuid FROM unnest($1::text[], $2::text[]) AS t(class_name, book_id)

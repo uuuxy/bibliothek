@@ -8,18 +8,18 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestHandleAdminBooks_Routing(t *testing.T) {
+func TestTitelVerwaltung_Routen(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer mockPool.Close()
 
-	repo := NewTitelAbfragen(mockPool)
+	abfragen := NewTitelAbfragen(mockPool)
 	metadatenClient := &MetadatenClient{httpClient: &http.Client{}}
 
-	handler := NewTueren(TuerenKonfig{
-		Abfragen:          repo,
+	tueren := NewTueren(TuerenKonfig{
+		Abfragen:          abfragen,
 		Metadaten:         metadatenClient,
 		VerlangeLesen:     func(h http.Handler) http.Handler { return h },
 		VerlangeAendern:   func(h http.Handler) http.Handler { return h },
@@ -28,16 +28,15 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 	})
 
 	// Keiner der Fälle erreicht die Datenbank: Das Mock hat keine Erwartung.
-	tests := []struct {
+	faelle := []struct {
 		name           string
 		method         string
 		path           string
 		expectedStatus int
 	}{
 		{
-			// Der 501-Zweig zu diesem Pfad ist am 01.09.2026 zurückgebaut (C-Posten,
-			// keine Aufrufer in Frontend oder Go): Der funktionierende Import ist
-			// /api/books/import; dieser Pfad fällt jetzt ehrlich in den 404-Default.
+			// Der Pfad hat keine Tür (keine Aufrufer in Oberfläche oder Go): Der Import ist
+			// /api/books/import; dieser Pfad fällt in die Vorgabe 404.
 			name:           "POST /api/admin/books/import - zurückgebaut, 404",
 			method:         http.MethodPost,
 			path:           "/api/admin/books/import",
@@ -82,12 +81,12 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
+	for _, tc := range faelle {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(tc.method, tc.path, nil)
+			anfrage := httptest.NewRequest(tc.method, tc.path, nil)
 			rec := httptest.NewRecorder()
 
-			handler.TitelVerwaltung(rec, req)
+			tueren.TitelVerwaltung(rec, anfrage)
 
 			if rec.Code != tc.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rec.Code)

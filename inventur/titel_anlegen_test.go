@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateBook(t *testing.T) {
-	book := Titel{
+func TestLegeTitelAn(t *testing.T) {
+	eintrag := Titel{
 		ISBN:                    "123",
 		Titel:                   "Title",
 		Autor:                   "Author",
@@ -31,22 +31,22 @@ func TestCreateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	insertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, signatur, ist_lernmittel, auflage, listenpreis, mehrjahresband\) VALUES \(NULLIF\(\$1, ''\), \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, NULLIF\(\$7::text, ''\)::date, \$8, \$9, NULLIF\(\$10, 0\), NULLIF\(\$11, 0\), \$12, \$13, \$14, NULLIF\(\$15, ''\), \$16, NULLIF\(\$17, ''\), \$18, \$19\) RETURNING id`
+	anlegeAbfrage := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, signatur, ist_lernmittel, auflage, listenpreis, mehrjahresband\) VALUES \(NULLIF\(\$1, ''\), \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, NULLIF\(\$7::text, ''\)::date, \$8, \$9, NULLIF\(\$10, 0\), NULLIF\(\$11, 0\), \$12, \$13, \$14, NULLIF\(\$15, ''\), \$16, NULLIF\(\$17, ''\), \$18, \$19\) RETURNING id`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Fach)
+		erwarteFachBekannt(mock, eintrag.Fach)
 		mock.ExpectBegin()
 		erwarteKeineDublette(mock)
-		mock.ExpectQuery(insertQuery).
+		mock.ExpectQuery(anlegeAbfrage).
 			WithArgs(
-				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				eintrag.ISBN, eintrag.Titel, eintrag.Autor, eintrag.CoverURL, eintrag.Fach, eintrag.Zweig, eintrag.ZuletztGezaehlt, eintrag.Medientyp, eintrag.ErweiterteEigenschaften, eintrag.JahrgangVon, eintrag.JahrgangBis, eintrag.Untertitel, eintrag.Verlag, eintrag.Erscheinungsjahr, eintrag.Signatur, eintrag.IstLernmittel, eintrag.Auflage, eintrag.Listenpreis, eintrag.Mehrjahresband,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -60,7 +60,7 @@ func TestCreateBook(t *testing.T) {
 
 		mock.ExpectCommit()
 
-		id, err := repo.LegeTitelAn(ctx, book)
+		id, err := abfragen.LegeTitelAn(ctx, eintrag)
 		assert.NoError(t, err)
 		assert.Equal(t, "book-123", id)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -71,20 +71,20 @@ func TestCreateBook(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Fach)
+		erwarteFachBekannt(mock, eintrag.Fach)
 		mock.ExpectBegin()
 		erwarteKeineDublette(mock)
-		mock.ExpectQuery(insertQuery).
+		mock.ExpectQuery(anlegeAbfrage).
 			WithArgs(
-				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				eintrag.ISBN, eintrag.Titel, eintrag.Autor, eintrag.CoverURL, eintrag.Fach, eintrag.Zweig, eintrag.ZuletztGezaehlt, eintrag.Medientyp, eintrag.ErweiterteEigenschaften, eintrag.JahrgangVon, eintrag.JahrgangBis, eintrag.Untertitel, eintrag.Verlag, eintrag.Erscheinungsjahr, eintrag.Signatur, eintrag.IstLernmittel, eintrag.Auflage, eintrag.Listenpreis, eintrag.Mehrjahresband,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
 
-		_, err = repo.LegeTitelAn(ctx, book)
+		_, err = abfragen.LegeTitelAn(ctx, eintrag)
 		assert.ErrorContains(t, err, "buch konnte nicht erstellt werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -94,15 +94,15 @@ func TestCreateBook(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Fach)
+		erwarteFachBekannt(mock, eintrag.Fach)
 		mock.ExpectBegin()
 		erwarteKeineDublette(mock)
-		mock.ExpectQuery(insertQuery).
+		mock.ExpectQuery(anlegeAbfrage).
 			WithArgs(
-				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				eintrag.ISBN, eintrag.Titel, eintrag.Autor, eintrag.CoverURL, eintrag.Fach, eintrag.Zweig, eintrag.ZuletztGezaehlt, eintrag.Medientyp, eintrag.ErweiterteEigenschaften, eintrag.JahrgangVon, eintrag.JahrgangBis, eintrag.Untertitel, eintrag.Verlag, eintrag.Erscheinungsjahr, eintrag.Signatur, eintrag.IstLernmittel, eintrag.Auflage, eintrag.Listenpreis, eintrag.Mehrjahresband,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -111,14 +111,14 @@ func TestCreateBook(t *testing.T) {
 			WillReturnError(fmt.Errorf("bestand nicht lesbar"))
 		mock.ExpectRollback()
 
-		_, err = repo.LegeTitelAn(ctx, book)
+		_, err = abfragen.LegeTitelAn(ctx, eintrag)
 		assert.ErrorContains(t, err, "exemplare konnten nicht angelegt werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
-func TestUpsertBook(t *testing.T) {
-	book := Titel{
+func TestSchreibeTitel(t *testing.T) {
+	eintrag := Titel{
 		ISBN:                    "123",
 		Titel:                   "Title",
 		Autor:                   "Author",
@@ -137,33 +137,33 @@ func TestUpsertBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	upsertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, NULLIF\(\$7::text, ''\)::date, \$8, NULLIF\(\$9, 0\), NULLIF\(\$10, 0\), \$11, \$12, \$13, \$14, NULLIF\(\$15, ''\), \$16, NULLIF\(\$17, ''\), \$18\) ON CONFLICT \(isbn\) DO UPDATE SET titel = COALESCE\(NULLIF\(buecher_titel.titel, ''\), EXCLUDED.titel\), .+ ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel RETURNING id`
+	schreibAbfrage := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, NULLIF\(\$7::text, ''\)::date, \$8, NULLIF\(\$9, 0\), NULLIF\(\$10, 0\), \$11, \$12, \$13, \$14, NULLIF\(\$15, ''\), \$16, NULLIF\(\$17, ''\), \$18\) ON CONFLICT \(isbn\) DO UPDATE SET titel = COALESCE\(NULLIF\(buecher_titel.titel, ''\), EXCLUDED.titel\), .+ ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel RETURNING id`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Fach)
+		erwarteFachBekannt(mock, eintrag.Fach)
 		mock.ExpectBegin()
-		mock.ExpectQuery(upsertQuery).
+		mock.ExpectQuery(schreibAbfrage).
 			WithArgs(
-				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
+				eintrag.ISBN, eintrag.Titel, eintrag.Autor, eintrag.CoverURL, eintrag.Fach, eintrag.Zweig, eintrag.ZuletztGezaehlt, eintrag.Medientyp, eintrag.JahrgangVon, eintrag.JahrgangBis, eintrag.Untertitel, eintrag.Verlag, eintrag.Erscheinungsjahr, eintrag.ErweiterteEigenschaften, eintrag.Signatur, eintrag.IstLernmittel, eintrag.Auflage, eintrag.Listenpreis,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
 		// Upsert calls legeImportExemplareAn
-		codes := erwarteBarcodeVergabe(mock, book.Bestand)
+		codes := erwarteBarcodeVergabe(mock, eintrag.Bestand)
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
-			WithArgs([]string{book.ISBN}, []int32{int32(book.Bestand)}, codes).
+			WithArgs([]string{eintrag.ISBN}, []int32{int32(eintrag.Bestand)}, codes).
 			WillReturnResult(pgxmock.NewResult("INSERT", 2))
 
 		mock.ExpectCommit()
 
-		id, err := repo.SchreibeTitel(ctx, book)
+		id, err := abfragen.SchreibeTitel(ctx, eintrag)
 		assert.NoError(t, err)
 		assert.Equal(t, "book-123", id)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -174,26 +174,26 @@ func TestUpsertBook(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, book.Fach)
+		erwarteFachBekannt(mock, eintrag.Fach)
 		mock.ExpectBegin()
-		mock.ExpectQuery(upsertQuery).
+		mock.ExpectQuery(schreibAbfrage).
 			WithArgs(
-				book.ISBN, book.Titel, book.Autor, book.CoverURL, book.Fach, book.Zweig, book.ZuletztGezaehlt, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
+				eintrag.ISBN, eintrag.Titel, eintrag.Autor, eintrag.CoverURL, eintrag.Fach, eintrag.Zweig, eintrag.ZuletztGezaehlt, eintrag.Medientyp, eintrag.JahrgangVon, eintrag.JahrgangBis, eintrag.Untertitel, eintrag.Verlag, eintrag.Erscheinungsjahr, eintrag.ErweiterteEigenschaften, eintrag.Signatur, eintrag.IstLernmittel, eintrag.Auflage, eintrag.Listenpreis,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
 
-		_, err = repo.SchreibeTitel(ctx, book)
+		_, err = abfragen.SchreibeTitel(ctx, eintrag)
 		assert.ErrorContains(t, err, "buch konnte nicht importiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
-func TestUpsertBooksBatch(t *testing.T) {
-	books := []Titel{
+func TestSchreibeTitelStapel(t *testing.T) {
+	eintraege := []Titel{
 		{
 			ISBN:                    "123",
 			Titel:                   "Title",
@@ -221,48 +221,48 @@ func TestUpsertBooksBatch(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, books[0].Fach)
+		erwarteFachBekannt(mock, eintraege[0].Fach)
 		mock.ExpectBegin()
 
-		jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
+		eigenschaftenJSON, err := json.Marshal(eintraege[0].ErweiterteEigenschaften)
 		require.NoError(t, err)
 		mock.ExpectExec(batchQuery).
 			WithArgs(
-				[]string{books[0].ISBN},
-				[]string{books[0].Titel},
-				[]string{books[0].Autor},
-				[]string{books[0].CoverURL},
-				[]string{books[0].Fach},
-				[]string{books[0].Zweig},
-				[]*string{books[0].ZuletztGezaehlt},
-				[]string{books[0].Medientyp},
-				[]int{books[0].JahrgangVon},
-				[]int{books[0].JahrgangBis},
-				[]string{books[0].Untertitel},
-				[]string{books[0].Verlag},
-				[]int{books[0].Erscheinungsjahr},
-				[][]byte{jsonProps},
-				[]string{books[0].Signatur},
-				[]bool{books[0].IstLernmittel},
-				[]string{books[0].Auflage},
-				[]*float64{books[0].Listenpreis},
+				[]string{eintraege[0].ISBN},
+				[]string{eintraege[0].Titel},
+				[]string{eintraege[0].Autor},
+				[]string{eintraege[0].CoverURL},
+				[]string{eintraege[0].Fach},
+				[]string{eintraege[0].Zweig},
+				[]*string{eintraege[0].ZuletztGezaehlt},
+				[]string{eintraege[0].Medientyp},
+				[]int{eintraege[0].JahrgangVon},
+				[]int{eintraege[0].JahrgangBis},
+				[]string{eintraege[0].Untertitel},
+				[]string{eintraege[0].Verlag},
+				[]int{eintraege[0].Erscheinungsjahr},
+				[][]byte{eigenschaftenJSON},
+				[]string{eintraege[0].Signatur},
+				[]bool{eintraege[0].IstLernmittel},
+				[]string{eintraege[0].Auflage},
+				[]*float64{eintraege[0].Listenpreis},
 			).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		// Batch Upsert calls legeImportExemplareAn
-		codes := erwarteBarcodeVergabe(mock, books[0].Bestand)
+		codes := erwarteBarcodeVergabe(mock, eintraege[0].Bestand)
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
-			WithArgs([]string{books[0].ISBN}, []int32{int32(books[0].Bestand)}, codes).
+			WithArgs([]string{eintraege[0].ISBN}, []int32{int32(eintraege[0].Bestand)}, codes).
 			WillReturnResult(pgxmock.NewResult("INSERT", 2))
 
 		mock.ExpectCommit()
 
-		rowsAffected, err := repo.SchreibeTitelStapel(ctx, books)
+		betroffen, err := abfragen.SchreibeTitelStapel(ctx, eintraege)
 		assert.NoError(t, err)
-		assert.Equal(t, int64(1), rowsAffected)
+		assert.Equal(t, int64(1), betroffen)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -271,12 +271,12 @@ func TestUpsertBooksBatch(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		rowsAffected, err := repo.SchreibeTitelStapel(ctx, []Titel{})
+		betroffen, err := abfragen.SchreibeTitelStapel(ctx, []Titel{})
 		assert.NoError(t, err)
-		assert.Equal(t, int64(0), rowsAffected)
+		assert.Equal(t, int64(0), betroffen)
 	})
 
 	t.Run("db error on batch upsert", func(t *testing.T) {
@@ -284,39 +284,39 @@ func TestUpsertBooksBatch(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		repo := NewTitelAbfragen(mock)
+		abfragen := NewTitelAbfragen(mock)
 		ctx := context.Background()
 
-		erwarteFachBekannt(mock, books[0].Fach)
+		erwarteFachBekannt(mock, eintraege[0].Fach)
 		mock.ExpectBegin()
 
-		jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
+		eigenschaftenJSON, err := json.Marshal(eintraege[0].ErweiterteEigenschaften)
 		require.NoError(t, err)
 		mock.ExpectExec(batchQuery).
 			WithArgs(
-				[]string{books[0].ISBN},
-				[]string{books[0].Titel},
-				[]string{books[0].Autor},
-				[]string{books[0].CoverURL},
-				[]string{books[0].Fach},
-				[]string{books[0].Zweig},
-				[]*string{books[0].ZuletztGezaehlt},
-				[]string{books[0].Medientyp},
-				[]int{books[0].JahrgangVon},
-				[]int{books[0].JahrgangBis},
-				[]string{books[0].Untertitel},
-				[]string{books[0].Verlag},
-				[]int{books[0].Erscheinungsjahr},
-				[][]byte{jsonProps},
-				[]string{books[0].Signatur},
-				[]bool{books[0].IstLernmittel},
-				[]string{books[0].Auflage},
-				[]*float64{books[0].Listenpreis},
+				[]string{eintraege[0].ISBN},
+				[]string{eintraege[0].Titel},
+				[]string{eintraege[0].Autor},
+				[]string{eintraege[0].CoverURL},
+				[]string{eintraege[0].Fach},
+				[]string{eintraege[0].Zweig},
+				[]*string{eintraege[0].ZuletztGezaehlt},
+				[]string{eintraege[0].Medientyp},
+				[]int{eintraege[0].JahrgangVon},
+				[]int{eintraege[0].JahrgangBis},
+				[]string{eintraege[0].Untertitel},
+				[]string{eintraege[0].Verlag},
+				[]int{eintraege[0].Erscheinungsjahr},
+				[][]byte{eigenschaftenJSON},
+				[]string{eintraege[0].Signatur},
+				[]bool{eintraege[0].IstLernmittel},
+				[]string{eintraege[0].Auflage},
+				[]*float64{eintraege[0].Listenpreis},
 			).
 			WillReturnError(fmt.Errorf("db batch failed"))
 		mock.ExpectRollback()
 
-		_, err = repo.SchreibeTitelStapel(ctx, books)
+		_, err = abfragen.SchreibeTitelStapel(ctx, eintraege)
 		assert.ErrorContains(t, err, "bücher konnten nicht im batch importiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

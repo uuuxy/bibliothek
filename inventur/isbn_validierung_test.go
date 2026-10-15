@@ -5,7 +5,7 @@ import (
 )
 
 func TestValidiereISBN(t *testing.T) {
-	tests := []struct {
+	faelle := []struct {
 		name     string
 		isbn     string
 		expected bool
@@ -29,16 +29,16 @@ func TestValidiereISBN(t *testing.T) {
 		{"Invalid characters", "12345a7890", false},
 		{"Only hyphens", "---", false},
 
-		// Edge cases with spaces
+		// Grenzfälle mit Leerzeichen.
 		{"Leading and trailing spaces", "  123456789X  ", true},
 		{"Only spaces", "     ", false},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := validiereISBN(tt.isbn)
-			if result != tt.expected {
-				t.Errorf("validiereISBN(%q) = %v; expected %v", tt.isbn, result, tt.expected)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			ergebnis := validiereISBN(f.isbn)
+			if ergebnis != f.expected {
+				t.Errorf("validiereISBN(%q) = %v; expected %v", f.isbn, ergebnis, f.expected)
 			}
 		})
 	}

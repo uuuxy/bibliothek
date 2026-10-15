@@ -181,7 +181,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] `api/tuer`.
 - [x] Die zwölf Themen unter `api/`.
 - [x] `api/`.
-- [ ] `inventur/` und das Wurzelpaket.
+- [ ] Das Wurzelpaket.
 - [ ] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
 - [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, Zustand auf der Ebene eines
   Pakets, der Kopf der Schule an acht Türen.
@@ -448,12 +448,12 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 77 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+**Fertig sind 78 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
 gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
 Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
 `middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), `repository` und
 von den Paketen darüber `auskunft`, `bereitschaft`, `buchetikett`, `littera`, `lusd`,
-`service`, `testdaten`, `tuertest` und `routertest`, dazu `api/tuer` und die zwölf Themen darüber (`api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung`, `api/leser` und `api/katalog`), `api/` selbst, `apierrors`, `sse`, `db`, `pdf`, `mailservice`, `auth`, `jobs`, die neun unter `cmd/` und `scripts` mit `scripts/generalprobe`.
+`service`, `testdaten`, `tuertest` und `routertest`, dazu `api/tuer` und die zwölf Themen darüber (`api/druck`, `api/portal`, `api/inventurlauf`, `api/benutzer`, `api/lernmittel`, `api/schaden`, `api/mahnwesen`, `api/system`, `api/theke`, `api/bestellung`, `api/leser` und `api/katalog`), `api/` selbst, `apierrors`, `sse`, `db`, `pdf`, `mailservice`, `auth`, `jobs`, die neun unter `cmd/`, `scripts` mit `scripts/generalprobe` und `inventur`.
 
 **Ein Paket ist fertig, wenn:**
 

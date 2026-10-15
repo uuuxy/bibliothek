@@ -14,14 +14,14 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// Der Schulbuch-Export ist ein PDF, kein Excel (03.09.2026): „es rechnet niemand,
-// also können wir Excel löschen." Entscheidend war das Coverbild — in einer .xlsx schwebt
-// ein Bild über der Zelle statt darin, verrutscht beim Sortieren und bläht die Datei.
-// Im PDF steht es fest an seiner Zeile, druckt sauber und öffnet sich ohne Excel.
+// Der Export der Schulbücher ist ein PDF, kein Excel („es rechnet niemand"). Entscheidend ist
+// das Coverbild: In einer .xlsx schwebt ein Bild über der Zelle statt darin, verrutscht beim
+// Sortieren und bläht die Datei. Im PDF steht es fest an seiner Zeile, druckt sauber und öffnet
+// sich ohne Excel.
 //
-// Gezeigt wird, was der Reiter zeigt: Bild, Titel, Autor, ISBN, Jahrgang, Schulzweig,
-// Gesamt, Verliehen, Verfügbar — bei einem Buch in mehreren Auflagen unter dem Titel, woraus
-// die Zahlen bestehen (docs/OFFEN.md 4.18, Stufe 6).
+// Gezeigt wird, was der Reiter zeigt: Bild, Titel, Autor, ISBN, Jahrgang, Schulzweig, Gesamt,
+// Verliehen, Verfügbar; bei einem Buch in mehreren Auflagen unter dem Titel, woraus die Zahlen
+// bestehen.
 
 // Spaltenbreiten in mm. Die Summe ist immer 178 = A4-Breite (210) minus zweimal 16 mm
 // Rand; die Titelspalte nimmt auf, was die optionale Zählspalte übrig lässt.
@@ -36,7 +36,7 @@ const (
 	nutzBreite = 178.0
 	randLinks  = 16.0
 	// randUnten ist die Schwelle, ab der eine weitere Zeile nicht mehr aufs Blatt passt
-	// (A4-Höhe 297 minus 16 mm Fußsteg). Der Umbruch wird VOR dem Cover selbst geprüft,
+	// (A4-Höhe 297 minus 16 mm Fußsteg). Der Umbruch wird vor dem Cover selbst geprüft,
 	// siehe zeichneSchulbuchZeile.
 	randUnten = 281.0
 	zeilenH   = 17.0
@@ -105,7 +105,7 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 		zeichneSchulbuchZeile(pdf, tr, t, breiteTitel, mitGezaehlt, &fehlendeCover)
 	}
 	// Ein einzelnes unlesbares Cover darf die Liste nie kosten und bleibt deshalb still.
-	// Der TOTALAUSFALL aber — falsch gemountetes uploads/, falsches Arbeitsverzeichnis —
+	// Der Totalausfall aber — falsch gemountetes uploads/, falsches Arbeitsverzeichnis —
 	// sähe genauso aus: ein PDF ohne ein einziges Bild, ohne Hinweis, ohne Log. Eine Zeile
 	// macht den Unterschied auffindbar.
 	if fehlendeCover > 0 {
@@ -172,7 +172,7 @@ func zeichneFachTrenner(pdf *gofpdf.Fpdf, tr func(string) string, fach string) {
 // zeichneSchulbuchZeile rendert eine Zeile samt Cover. Fehlt das Bild, bleibt die
 // Rahmenzelle leer — die Zeile darf deshalb nicht ausfallen.
 func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breiteTitel float64, mitGezaehlt bool, fehlend *int) {
-	// Den Seitenumbruch selbst auslösen, BEVOR das Cover gezeichnet wird. gofpdf prüft
+	// Den Seitenumbruch selbst auslösen, bevor das Cover gezeichnet wird. gofpdf prüft
 	// ihn erst in der ersten CellFormat; das Bild geht aber mit fester Position an die
 	// aktuelle Seite und wäre dann schon unten im Fußsteg gelandet, während die Zeile
 	// dazu auf der nächsten Seite steht (nachgestellt: ab Zeile 14 auf jeder Seite ein
@@ -221,7 +221,7 @@ func fachAnzeige(fach string) string {
 }
 
 // zeichneTitelZelle schreibt den Titel in seine Zelle. Steht die Zeile für ein Buch in
-// mehreren Auflagen (docs/OFFEN.md 4.18, Stufe 6), steht darunter kleiner, woraus ihre Zahlen
+// mehreren Auflagen, steht darunter kleiner, woraus ihre Zahlen
 // bestehen — dieselben Worte wie auf dem Bildschirm. Die Zelle behält ihre Höhe: Wüchse die
 // Zeile, stimmte der Umbruch vor dem Cover nicht mehr (zeichneSchulbuchZeile).
 func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breite float64) {

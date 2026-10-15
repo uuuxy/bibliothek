@@ -10,11 +10,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// buchWerkSpalten: das Buch, zu dem ein Titel als Auflage gehört (Migration 148), und sein
-// Rang darin — 1 ist die neueste nach repository.SQLNeuesteAuflageZuerst, gezählt über ALLE
+// buchWerkSpalten: das Buch, zu dem ein Titel als Auflage gehört, und sein
+// Rang darin — 1 ist die neueste nach repository.SQLNeuesteAuflageZuerst, gezählt über alle
 // Auflagen des Buchs, auch die ohne Exemplar. Ohne Werk "" und 0; die Unterabfrage läuft nur
-// für Titel mit Werk. Der Medienkatalog fasst damit die Auflagen zu einer Kachel zusammen
-// (docs/OFFEN.md 4.18, Stufe 6). Eine Stelle für beide SELECTs, damit scanBuchZeilen passt.
+// für Titel mit Werk. Der Medienkatalog fasst damit die Auflagen zu einer Kachel zusammen.
+// Eine Stelle für beide SELECTs, damit scanBuchZeilen passt.
 var buchWerkSpalten = `,
 		COALESCE(bt.werk_id::text, '') AS werk_id,
 		CASE WHEN bt.werk_id IS NULL THEN 0 ELSE (
@@ -53,7 +53,7 @@ const buchListenGroupBy = `
 // (scanBuchZeilen bleibt unverändert), aber die schwerste Spalte, erweiterte_eigenschaften
 // (JSONB), kommt als leere Konstante statt vom Server. Die Listen- und Katalogansicht und
 // ihre Suche im Browser nutzen sie nicht; das Detail holt sie per Einzel-Read
-// (ListBooksByIDs) mit dem vollen buchListenSelect nach.
+// (LadeTitelNachIDs) mit dem vollen buchListenSelect nach.
 var buchListenSelectSchlank = `
 	SELECT
 		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
@@ -81,7 +81,7 @@ const buchListenGroupBySchlank = `
 
 // titelListeGrenze kappt die Katalogliste als reine Runaway-/Speicher-Bremse.
 // Bewusst weit über jedem realistischen Katalog (~14k Titel), damit die clientseitige
-// Sofort-Suche (lädt den ganzen gefilterten Satz) im Normalbetrieb NIE etwas verliert.
+// Sofort-Suche (lädt den ganzen gefilterten Satz) im Normalbetrieb nie etwas verliert.
 // Wird die Grenze je erreicht, ist das das Signal, auf echte serverseitige Pagination
 // umzustellen — und es wird geloggt, statt still Titel zu verschlucken.
 const titelListeGrenze = 50000
@@ -133,26 +133,24 @@ func leseTitelZeilen(zeilen pgx.Rows) ([]Titel, error) {
 
 // LadeTitelListe liefert die Titel zu Fach und Suchtext.
 //
-// Nutzt die schlanke Listen-Variante (ohne erweiterte_eigenschaften) und
-// eine Sicherheits-Kappung gegen unbegrenztes Wachstum — siehe buchListenSelectSchlank
-// bzw. titelListeGrenze.
+// Sie nimmt die schlanke Fassung der Liste (ohne erweiterte_eigenschaften) und eine Kappung gegen
+// grenzenloses Wachstum (buchListenSelectSchlank, titelListeGrenze).
 //
-// nurOhneExemplare wählt die Sicht: false ist der Katalog (nur Titel mit mindestens einem
-// nicht ausgesonderten Exemplar, repository.SQLTitelHatExemplar), true die Aufräumsicht
-// der Verwaltung mit genau den Titeln, die der Katalog nicht zeigt. Beide Sichten sind
-// dasselbe Prädikat mit und ohne NOT — eine dritte Zahl über denselben Titel gibt es nicht.
+// nurOhneExemplare wählt die Sicht: false ist der Katalog (nur Titel mit mindestens einem nicht
+// ausgesonderten Exemplar, repository.SQLTitelHatExemplar), true die Sicht zum Aufräumen in der
+// Verwaltung mit genau den Titeln, die der Katalog nicht zeigt. Beide Sichten sind dieselbe
+// Bedingung mit und ohne NOT; eine dritte Zahl über denselben Titel gibt es nicht.
 //
-// Der Suchtext trifft seit dem 23.09.2026 auch die Schlagworte und die Verweise darauf
-// (repository.SQLTitelUeberSchlagwort), und jeder Titel bringt seine Suchwörter mit: Der
-// Reiter „Suche & Filter" lädt die ganze Liste und sucht im Browser — ohne die Wörter fände
-// er über ein Schlagwort nichts, während die Titel-Verwaltung daneben am Server sucht und
-// es fände.
+// Der Suchtext trifft auch die Schlagworte und die Verweise darauf
+// (repository.SQLTitelUeberSchlagwort), und jeder Titel bringt seine Suchwörter mit: Der Reiter
+// „Suche & Filter" lädt die ganze Liste und sucht im Browser; ohne die Wörter fände er über ein
+// Schlagwort nichts, während die Titel-Verwaltung daneben am Server sucht und es fände.
 //
-// Die Reihenfolge der Abfrage hält die Kappung und gleiche Titel fest; nach dem Titel ordnet
-// der Aufrufer (sortiereBuecherNachTitel), weil die Datenbank keine deutsche Sortierregel hat.
+// Die Reihenfolge der Abfrage hält die Kappung und gleiche Titel fest; nach dem Titel ordnet der
+// Aufrufer (sortiereBuecherNachTitel), weil die Datenbank keine deutsche Sortierregel hat.
 //
-// Der Suchtext wird als Wortlaut verglichen und geht deshalb in die Form, in der Titeltexte
-// und Schlagworte gespeichert sind (repository.TiteltextNormalform).
+// Der Suchtext wird als Wortlaut verglichen und geht deshalb in die Form, in der Titeltexte und
+// Schlagworte gespeichert sind (repository.TiteltextNormalform).
 func (a *TitelAbfragen) LadeTitelListe(ctx context.Context, fach string, suchanfrage string, nurOhneExemplare bool) ([]Titel, error) {
 	suchanfrage = repository.TiteltextNormalform(suchanfrage)
 	sicht := repository.SQLTitelHatExemplar("bt")
@@ -238,18 +236,16 @@ func (a *TitelAbfragen) LadeTitelMitFremdemCover(ctx context.Context, grenze int
 	return eintraege, nil
 }
 
-// LadeSchlagworteDesTitels lädt die Schlagworte eines Titels (Migration 138) für den
+// LadeSchlagworteDesTitels lädt die Schlagworte eines Titels für den
 // Einzel-Read. Nicht in buchListenSelect: Die Katalogliste bleibt schlank, und ein Feld,
 // das dort als nil steht, sagt „nicht geladen" — Speichern lässt es dann unangetastet.
 func (a *TitelAbfragen) LadeSchlagworteDesTitels(ctx context.Context, id string) ([]string, error) {
 	return repository.LadeSchlagworteDesTitels(ctx, a.pool, id)
 }
 
-// LadeTitelNachIDs retrieves list of books for provided IDs.
-// Liefert den VOLLEN Datensatz inkl. Signatur und Bestandszählung — der
-// Einzel-Read GET /api/books/{id} (Buch-Akte, „Titel bearbeiten") hängt daran.
-// Das frühere Minimal-SELECT (id, isbn, titel, cover_url) ließ Signatur und
-// Exemplar-Zahlen im Frontend leer erscheinen.
+// LadeTitelNachIDs liefert die Titel zu den Kennungen, mit dem vollen Datensatz samt Signatur
+// und Bestandszählung: Daran hängt GET /api/books/{id} (Titel-Akte, „Titel bearbeiten"). Ohne
+// Signatur und Zahlen der Exemplare erschienen sie in der Oberfläche leer.
 func (a *TitelAbfragen) LadeTitelNachIDs(ctx context.Context, ids []string) ([]Titel, error) {
 	if len(ids) == 0 {
 		return []Titel{}, nil

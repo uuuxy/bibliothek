@@ -11,7 +11,7 @@ import (
 )
 
 // SucheDNBNachISBN ist die Quelle des Schlagwort-Vorschlags im Buchformular und beim
-// Nachbestellen (entschieden am 30.09.2026). Sie fragt NUR die DNB: Schlagworte hat keine
+// Nachbestellen. Sie fragt nur die DNB: Schlagworte hat keine
 // andere Quelle, und SucheNachISBN fragte danach noch Google Books (anonymes Tageskontingent)
 // und lüde das Cover herunter. Die drei Ausgänge tragen je ein eigenes Sentinel, weil die
 // Oberfläche sie verschieden ansagt: kennt die ISBN nicht, nicht erreichbar, keine ISBN.
@@ -44,9 +44,9 @@ func TestSucheDNBNachISBN_FragtNurDieDNB(t *testing.T) {
 			var gefragt []string
 			client := NewMetadatenClient()
 			client.SetzeHTTPClientFuerTest(&http.Client{Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					gefragt = append(gefragt, req.URL.Host)
-					if req.URL.Host != "services.dnb.de" {
+				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+					gefragt = append(gefragt, anfrage.URL.Host)
+					if anfrage.URL.Host != "services.dnb.de" {
 						return &http.Response{StatusCode: http.StatusNotFound, Body: http.NoBody, Header: make(http.Header)}, nil
 					}
 					return &http.Response{StatusCode: f.status, Body: io.NopCloser(bytes.NewBufferString(f.koerper)), Header: make(http.Header)}, nil

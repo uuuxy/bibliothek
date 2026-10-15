@@ -22,7 +22,7 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	handler := &Tueren{abfragen: NewTitelAbfragen(mock)}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(mock)}
 
 	faelle := []struct {
 		name    string
@@ -30,18 +30,18 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 		methode string
 		rumpf   string
 	}{
-		{"Bücher löschen", handler.TitelLoeschen, http.MethodDelete, `{"ids":["x"]}`},
-		{"Klassenbücher hinzufügen", handler.KlassensaetzeZuordnen, http.MethodPost, `{"classNames":["05G1"],"bookIds":["x"]}`},
-		{"Klassenbücher ändern", handler.KlassensaetzeAendern, http.MethodPut, `{"className":"05G1","bookIds":["x"]}`},
-		{"Cover neu laden", handler.FremdeCoverNeuLaden, http.MethodPost, `{"ids":["x"]}`},
+		{"Bücher löschen", tueren.TitelLoeschen, http.MethodDelete, `{"ids":["x"]}`},
+		{"Klassenbücher hinzufügen", tueren.KlassensaetzeZuordnen, http.MethodPost, `{"classNames":["05G1"],"bookIds":["x"]}`},
+		{"Klassenbücher ändern", tueren.KlassensaetzeAendern, http.MethodPut, `{"className":"05G1","bookIds":["x"]}`},
+		{"Cover neu laden", tueren.FremdeCoverNeuLaden, http.MethodPost, `{"ids":["x"]}`},
 		// Besteht uuid.Validate, Postgres weist sie ab (api/uuid_eingaben_test.go, urnForm).
-		{"Bücher löschen, urn-Form", handler.TitelLoeschen, http.MethodDelete, `{"ids":["urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7"]}`},
+		{"Bücher löschen, urn-Form", tueren.TitelLoeschen, http.MethodDelete, `{"ids":["urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7"]}`},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			req := httptest.NewRequest(f.methode, "/api/books", strings.NewReader(f.rumpf))
+			anfrage := httptest.NewRequest(f.methode, "/api/books", strings.NewReader(f.rumpf))
 			rec := httptest.NewRecorder()
-			f.aufruf(rec, req)
+			f.aufruf(rec, anfrage)
 			if rec.Code != http.StatusBadRequest {
 				t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 			}
@@ -55,20 +55,20 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 // Der Import-Schlüssel geht als UUID in idempotency_keys. uuid.Parse nahm die urn-Form an,
 // Postgres nicht: Der Fehler käme erst beim Eintragen, als 500.
 func TestImportSchluesselInUrnFormIst400(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/api/books/import", nil)
-	req.Header.Set(importSchluesselKopf, "urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7")
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/import", nil)
+	anfrage.Header.Set(importSchluesselKopf, "urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7")
 	rec := httptest.NewRecorder()
-	if _, ok := importSchluessel(rec, req); ok || rec.Code != http.StatusBadRequest {
+	if _, ok := importSchluessel(rec, anfrage); ok || rec.Code != http.StatusBadRequest {
 		t.Fatalf("urn-Form angenommen: ok=%v, Status %d", ok, rec.Code)
 	}
 }
 
-// Die Buch-Kennung steht im Pfad. Bis zum 13.09.2026 zerlegten vier Handler hinter den
-// Sammelrouten POST/PUT /api/books/ den Pfad selbst; die Pfad-Middleware sah keinen
-// Platzhalter, und PUT /api/books/x kam als 500 zurück (am Stack nachgestellt). Der Test
-// fährt den echten Mux des Moduls, die Rechte-Wrapper reichen durch. Die Meldung zählt mit:
-// Ein 400 aus einem anderen Grund (Upload ohne Datei) bewiese nichts.
-func TestBuchKennungImPfadIst400AmMux(t *testing.T) {
+// Die Kennung des Titels steht im Pfad. Zerlegten Türen hinter den Sammelrouten POST/PUT
+// /api/books/ den Pfad selbst, sähe die Middleware des Pfads keinen Platzhalter, und PUT
+// /api/books/x käme als 500 zurück. Der Test fährt den echten Mux des Moduls, die Prüfungen der
+// Rechte reichen durch. Die Meldung zählt mit: Ein 400 aus einem anderen Grund (Hochladen ohne
+// Datei) bewiese nichts.
+func TestTitelKennungImPfadIst400AmMux(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -105,7 +105,7 @@ func TestBuchKennungImPfadIst400AmMux(t *testing.T) {
 	}
 }
 
-func TestBuchIDAusPfad(t *testing.T) {
+func TestTitelIDAusPfad(t *testing.T) {
 	faelle := []struct {
 		name, id string
 		ok       bool
@@ -118,11 +118,11 @@ func TestBuchIDAusPfad(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/api/books/x/cover-upload", nil)
-			req.SetPathValue("id", f.id)
+			anfrage := httptest.NewRequest(http.MethodPost, "/api/books/x/cover-upload", nil)
+			anfrage.SetPathValue("id", f.id)
 			rec := httptest.NewRecorder()
 
-			id, ok := titelIDAusPfad(rec, req)
+			id, ok := titelIDAusPfad(rec, anfrage)
 
 			if ok != f.ok {
 				t.Fatalf("ok = %v, erwartet %v", ok, f.ok)

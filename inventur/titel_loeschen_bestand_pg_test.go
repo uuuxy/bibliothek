@@ -11,7 +11,7 @@ import (
 // Die Massenaktion „Titel löschen" vermerkt an der Spur jedes Exemplars, ob es im Bestand
 // war. Das Abgangsbuch zählt danach; ein bestelltes, nie eingetroffenes Exemplar ist kein
 // Abgang.
-func TestDeleteBooks_VermerktObDasExemplarImBestandWar(t *testing.T) {
+func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 

@@ -13,11 +13,11 @@ import (
 )
 
 // Eine zehnstellige Nummer mit falschem Prüfzeichen ist keine andere Schreibweise der
-// dreizehnstelligen (Migration 157): Am Testserver steht unter 3499500252 ein anderes
+// dreizehnstelligen: Am Testserver steht unter 3499500252 ein anderes
 // Buch als unter 9783499500251, und die Rechnung führt von der einen auf die andere. Die
 // Auskunft der Maske (GET /api/books/vorhanden) nennt deshalb zu der einen Nummer nicht den
 // Titel der anderen, auch nicht als Vorschlag, und das Speichern legt an.
-func TestBuchVorhanden_FalschesPruefzeichenWirdNichtGepaart(t *testing.T) {
+func TestTitelVorhanden_FalschesPruefzeichenWirdNichtGepaart(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const falsch, dreizehn = "3499500252", "9783499500251"
@@ -33,7 +33,7 @@ func TestBuchVorhanden_FalschesPruefzeichenWirdNichtGepaart(t *testing.T) {
 	}
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	handler := NewTueren(TuerenKonfig{
+	tueren := NewTueren(TuerenKonfig{
 		Abfragen: NewTitelAbfragen(pool), Metadaten: offlineMetadatenClient(),
 		VerlangeLesen: durchlass, VerlangeAendern: durchlass,
 		VerlangeLoeschen: durchlass, VerlangeAnmeldung: durchlass,
@@ -42,7 +42,7 @@ func TestBuchVorhanden_FalschesPruefzeichenWirdNichtGepaart(t *testing.T) {
 	vorab := func(isbn string) map[string]any {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books/vorhanden?isbn="+url.QueryEscape(isbn), nil))
+		tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books/vorhanden?isbn="+url.QueryEscape(isbn), nil))
 		var antwort struct {
 			Data map[string]any `json:"data"`
 		}
@@ -64,7 +64,7 @@ func TestBuchVorhanden_FalschesPruefzeichenWirdNichtGepaart(t *testing.T) {
 		t.Fatal(err)
 	}
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/books", bytes.NewReader(daten)))
+	tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/books", bytes.NewReader(daten)))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Anlegen unter der Nummer mit falschem Prüfzeichen: %d %s, erwartet 201", rec.Code, rec.Body.String())
 	}

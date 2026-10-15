@@ -10,7 +10,7 @@ import (
 // eine bloße Zahl stünde dort als Jahrgang, mit dem Inventur und Portal rechnen. Die Formen
 // stammen aus Titeln der DNB.
 func TestAutomatischeKategorisierung(t *testing.T) {
-	tests := []struct {
+	faelle := []struct {
 		name       string
 		titel      string
 		untertitel string
@@ -73,14 +73,14 @@ func TestAutomatischeKategorisierung(t *testing.T) {
 		{"nichts erkannt", "Ein spannender Roman", "Teil Drei", "", 0, 0},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotFach, gotVon, gotBis := automatischeKategorisierung(tt.titel, tt.untertitel)
-			if gotFach != tt.wantFach {
-				t.Errorf("Fach = %q, erwartet %q", gotFach, tt.wantFach)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			gotFach, gotVon, gotBis := automatischeKategorisierung(f.titel, f.untertitel)
+			if gotFach != f.wantFach {
+				t.Errorf("Fach = %q, erwartet %q", gotFach, f.wantFach)
 			}
-			if gotVon != tt.wantVon || gotBis != tt.wantBis {
-				t.Errorf("Stufe = %d bis %d, erwartet %d bis %d", gotVon, gotBis, tt.wantVon, tt.wantBis)
+			if gotVon != f.wantVon || gotBis != f.wantBis {
+				t.Errorf("Stufe = %d bis %d, erwartet %d bis %d", gotVon, gotBis, f.wantVon, f.wantBis)
 			}
 		})
 	}

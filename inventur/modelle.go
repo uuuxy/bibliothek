@@ -9,14 +9,13 @@ type Titel struct {
 	Titel string `json:"title" db:"title"`
 	Autor string `json:"author" db:"author"`
 	// Signatur steht physisch auf dem Buchrücken-Etikett (Littera-Systematik,
-	// z. B. "Bio 5" oder "Row") — Importe dürfen befüllte Werte NIE leeren.
+	// z. B. "Bio 5" oder "Row") — Importe dürfen befüllte Werte nie leeren.
 	Signatur string `json:"signatur" db:"signatur"`
 	CoverURL string `json:"coverUrl" db:"cover_url"`
 	Fach     string `json:"subject" db:"subject"`
 	Zweig    string `json:"track" db:"track"`
-	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Vorher stand das
-	// im Text („LMF" vor Titel oder Signatur); heute schaltet die Maske es, Importe
-	// lesen es aus Litteras Kennung.
+	// IstLernmittel: Schulbuch der Lernmittelfreiheit. Die Maske schaltet es; Importe lesen es aus
+	// der Kennung von Littera.
 	IstLernmittel   bool    `json:"istLernmittel" db:"ist_lernmittel"`
 	Bestand         int     `json:"stock" db:"stock"`
 	Verfuegbar      int     `json:"verfuegbar"`
@@ -26,25 +25,23 @@ type Titel struct {
 	Reihenfolge     int     `json:"sortOrder" db:"sort_order"`
 	Medientyp       string  `json:"medientyp" db:"medientyp"`
 	// JahrgangVon, JahrgangBis: „im Unterricht von Jahrgang … bis". 0 und 0 heißt „unbekannt"
-	// und ist eine eigene Angabe; in der Datenbank steht dann NULL (Migration 162).
+	// und ist eine eigene Angabe; in der Datenbank steht dann NULL.
 	JahrgangVon int `json:"jahrgangVon" db:"jahrgang_von"`
 	JahrgangBis int `json:"jahrgangBis" db:"jahrgang_bis"`
-	// Mehrjahresband (Migration 134, Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6):
-	// Das Buch bleibt über die Spanne JahrgangVon..JahrgangBis beim Kind; die Frist rechnet
-	// bis zum Stichtag des Schuljahres, in dem das Kind JahrgangBis beendet. Nur an einem
-	// Lernmittel und nur mit einer Spanne über mehr als einen Jahrgang (pruefeMehrjahresband,
-	// CHECK chk_mehrjahresband_spanne). Die Jahreszahl ist JahrgangBis, eine zweite gibt es nicht.
+	// Mehrjahresband: Das Buch bleibt über die Spanne JahrgangVon..JahrgangBis beim Kind; die Frist
+	// rechnet bis zum Stichtag des Schuljahres, in dem das Kind JahrgangBis beendet. Nur an einem
+	// Lernmittel und nur mit einer Spanne über mehr als einen Jahrgang (pruefeMehrjahresband, CHECK
+	// chk_mehrjahresband_spanne). Die Jahreszahl ist JahrgangBis, eine zweite gibt es nicht.
 	Mehrjahresband bool   `json:"mehrjahresband" db:"mehrjahresband"`
 	Untertitel     string `json:"untertitel" db:"untertitel"`
-	// Auflage: die Auflagenbezeichnung („4. Aufl. 2023", Migration 126). Eine neue
-	// Auflage ist ein eigener Titel mit eigener ISBN — dieses Feld unterscheidet die
-	// beiden Zeilen in Liste, Akte und Ausgabe.
+	// Auflage: die Bezeichnung der Auflage („4. Aufl. 2023"). Eine neue Auflage ist ein eigener Titel
+	// mit eigener ISBN; dieses Feld unterscheidet die beiden Zeilen in Liste, Akte und Ausgabe.
 	Auflage string `json:"auflage" db:"auflage"`
-	// Listenpreis: was ein Ersatz HEUTE kostet (Migration 127) — der „Neupreis zum
+	// Listenpreis: was ein Ersatz heute kostet — der „Neupreis zum
 	// Zeitpunkt des Verlusts" der Arbeitshilfe, in der Sprache des Medienzentrums der
 	// Listenpreis. Ab dem zweiten Verleihjahr rechnet die Staffel darauf.
 	//
-	// ZEIGER, nicht float64: „nicht erfasst" (nil) und „kostet nichts" (0) sind zwei
+	// Zeiger, nicht float64: „nicht erfasst" (nil) und „kostet nichts" (0) sind zwei
 	// verschiedene Aussagen, und der Unterschied steht am Ende in einem Bescheid an
 	// Erziehungsberechtigte. Bei nil weicht die Staffel auf den Kaufpreis aus und sagt
 	// das; bei 0 nennte sie 0,00 €.
@@ -52,7 +49,7 @@ type Titel struct {
 	Verlag                  string         `json:"verlag" db:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr" db:"erscheinungsjahr"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften" db:"erweiterte_eigenschaften"`
-	// Schlagworte (Migration 138) stehen in einer eigenen Tabelle. nil heißt „keine
+	// Schlagworte stehen in einer eigenen Tabelle. nil heißt „keine
 	// Aussage": Die Katalogliste lädt sie nicht, und beim Speichern lässt nil die
 	// vorhandenen unangetastet. Eine leere Liste ist eine Aussage — keine Schlagworte.
 	Schlagworte []string `json:"schlagworte"`
@@ -61,16 +58,16 @@ type Titel struct {
 	// der Katalogliste. Ein Suchindex, keine Anzeige und kein Schreibweg: Ein Verweis ist
 	// kein Schlagwort des Titels, und das Speichern liest das Feld nicht.
 	Suchwoerter []string `json:"suchwoerter,omitempty"`
-	// WerkID und WerkRang (Migration 148, docs/OFFEN.md 4.18, Stufe 6): das Buch, zu dem die
+	// WerkID und WerkRang: das Buch, zu dem die
 	// Auflage gehört, und ihr Rang darin — 1 ist die neueste nach
-	// repository.SQLNeuesteAuflageZuerst, gezählt über ALLE Auflagen des Buchs. Der
+	// repository.SQLNeuesteAuflageZuerst, gezählt über alle Auflagen des Buchs. Der
 	// Medienkatalog fasst damit die Auflagen eines Buchs zu einer Kachel zusammen. Ohne Werk
 	// "" und 0. Nur Ausgabe: Geschrieben wird werk_id allein in repository/auflagen.go.
 	WerkID   string `json:"werkId,omitempty"`
 	WerkRang int    `json:"werkRang,omitempty"`
 	// Standorte: je Standort die Zahl der Exemplare im Bestand, die ihn tragen
-	// (repository.LadeStandorteDerTitel, docs/OFFEN.md 5.53). Nur in der Katalogliste, für die
-	// Spalte „Standort" der Titel-Verwaltung; geändert wird der Standort am Exemplar.
+	// (repository.LadeStandorteDerTitel). Nur in der Katalogliste, für die Spalte „Standort" der
+	// Titel-Verwaltung; geändert wird der Standort am Exemplar.
 	Standorte []repository.StandortZahl `json:"standorte,omitempty"`
 }
 
@@ -82,11 +79,10 @@ type TitelEingabe struct {
 	Fach          string `json:"subject"`
 	Schulzweig    string `json:"track"`
 	IstLernmittel bool   `json:"istLernmittel"`
-	// Zeiger, nicht int: "nicht mitgeschickt" muss sich von "null" unterscheiden lassen.
-	// Beim Aktualisieren gleicht gleicheBestandAb die physischen Exemplare an diese Zahl an
-	// — eine fehlende 0 sonderte bis zum 23.08.2026 den GESAMTEN Bestand aus, im
-	// Rückfallzweig auch ausgeliehene Exemplare. `Number(undefined)` im Formular wird zu
-	// NaN und in JSON zu null; genau das ist der Weg dorthin.
+	// Zeiger, nicht int: "nicht mitgeschickt" muss sich von "null" unterscheiden lassen. Beim
+	// Ändern gleicht gleicheBestandAb die Exemplare an diese Zahl an; eine fehlende 0 sonderte sonst
+	// den ganzen Bestand aus, im Rückfallzweig auch ausgeliehene Exemplare. `Number(undefined)` im
+	// Formular wird zu NaN und in JSON zu null; genau das ist der Weg dorthin.
 	Bestand *int `json:"stock"`
 	// BestandGesehen: die Zahl, die die Maske beim Öffnen geladen hat. Beim Aktualisieren
 	// gilt „stock" nur, wenn sie dem Stand am Server entspricht (setzeBestand) — sonst
@@ -101,10 +97,10 @@ type TitelEingabe struct {
 	JahrgangBis    int     `json:"jahrgangBis"`
 	Mehrjahresband bool    `json:"mehrjahresband"`
 	Untertitel     string  `json:"untertitel"`
-	// Auflage: Auflagenbezeichnung des Titels (Migration 126). Ohne dieses Feld käme der
+	// Auflage: Auflagenbezeichnung des Titels. Ohne dieses Feld käme der
 	// Wert aus der Maske nie am Repository an — die Tür wäre gebaut und nicht verdrahtet.
 	Auflage string `json:"auflage"`
-	// Listenpreis aus der Maske (Migration 127). Zeiger aus demselben Grund wie oben:
+	// Listenpreis aus der Maske. Zeiger aus demselben Grund wie oben:
 	// Ein leeres Feld ist „nicht erfasst", eine getippte 0 ist eine Aussage.
 	Listenpreis             *float64       `json:"listenpreis"`
 	Verlag                  string         `json:"verlag"`
@@ -120,7 +116,7 @@ type TitelEingabe struct {
 	AnderesMedium bool `json:"anderesMedium"`
 }
 
-// schlagworteAusEingabe prüft und normalisiert die Schlagworte einer Eingabe VOR dem
+// schlagworteAusEingabe prüft und normalisiert die Schlagworte einer Eingabe vor dem
 // Schreiben, damit ein Verstoß als 400 mit Text zurückgeht (die Regel selbst steht in
 // repository.NormalisiereSchlagworte). nil bleibt nil: nichts gesagt, nichts geändert.
 func schlagworteAusEingabe(eingabe *[]string) ([]string, error) {

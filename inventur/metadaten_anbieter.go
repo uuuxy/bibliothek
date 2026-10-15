@@ -16,11 +16,10 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// --- Gemeinsame MARC21-/SRU-Strukturen und Parsing-Logik ---
+// --- Gemeinsame Strukturen für MARC21 und SRU und ihr Lesen ---
 //
-// sucheDNB und SucheTextDNB werten dieselbe MARC21-XML-Antwort der DNB aus.
-// Die Feld-Auswertung ist deshalb in einem gemeinsamen Akkumulator gebündelt
-// (früher zwei je ~100er-Cognitive-Complexity-Funktionen, SonarQube go:S3776).
+// sucheDNB und SucheTextDNB werten dieselbe Antwort der DNB in MARC21-XML aus. Das Auswerten der
+// Felder ist deshalb in einem gemeinsamen Sammler gebündelt.
 
 type marcSubfield struct {
 	Code  string `xml:"code,attr"`
@@ -52,7 +51,7 @@ type sruAntwort struct {
 // Jeder Wert wird dabei zusammengesetzt (Unicode NFC). Die DNB liefert Umlaute und Akzente
 // zerlegt, als Grundbuchstabe mit dem Zeichen dahinter („u" + U+0308 statt „ü"). Das sieht
 // gleich aus, trifft aber keine eingetippte Suche und kein Schlagwort der eigenen Liste. Die
-// Datenbank setzt Titeltexte ebenfalls zusammen (Migration 154); hier geschieht es für alles,
+// Datenbank setzt Titeltexte ebenfalls zusammen; hier geschieht es für alles,
 // was nie gespeichert wird (die Stichwörter des Vorschlags).
 //
 // Die Nichtsortierzeichen fallen weg: Die DNB umschließt mit ihnen den Artikel am Anfang
@@ -91,21 +90,20 @@ type marcBibDaten struct {
 	jahr            string
 	isbn            string
 	genres          []string
-	// freieWoerter: 653 $a ohne Vorsatz — die Verlagswörter („Burgen", „Erste Liebe").
-	// Einträge mit Vorsatz sind Angaben anderer Art: „(Zielgruppe)", „(Lesealter)",
-	// „(Produktform)", „(VLB-WN)", „(BISAC Subject Heading)", „(Produktgruppe)" (gesehen an
-	// DNB-Sätzen vom 23.09.2026).
+	// freieWoerter: 653 $a ohne Vorsatz, die Wörter des Verlags („Burgen", „Erste Liebe").
+	// Einträge mit Vorsatz sind Angaben anderer Art: „(Zielgruppe)", „(Lesealter)", „(Produktform)",
+	// „(VLB-WN)", „(BISAC Subject Heading)", „(Produktgruppe)" (gesehen an Sätzen der DNB).
 	freieWoerter []string
 	// normdaten: die Schlagwörter der Gemeinsamen Normdatei (600–651 mit $2 gnd), für den
-	// Vorschlag beim Bestellen (docs/OFFEN.md 4.25).
+	// Vorschlag beim Bestellen.
 	normdaten  []repository.Normdatenbegriff
 	zielgruppe string
-	// preis ist der Ladenpreis aus MARC21 020 $c — ein VORSCHLAG, keine Tatsache:
+	// preis ist der Ladenpreis aus MARC21 020 $c — ein Vorschlag, keine Tatsache:
 	// Er gilt zum Erscheinungszeitpunkt und ist nicht der Schulpreis.
 	preis float64
 }
 
-// verarbeiteFeld leitet ein Datafield an den passenden Tag-Handler weiter.
+// verarbeiteFeld gibt ein Datenfeld an die Auswertung seines Tags weiter.
 func (b *marcBibDaten) verarbeiteFeld(feld marcDatafield) {
 	switch feld.Tag {
 	case "020":
@@ -126,22 +124,20 @@ func (b *marcBibDaten) verarbeiteFeld(feld marcDatafield) {
 	}
 }
 
-// verarbeiteISBN liest die ISBN aus Tag 020 $a und nebenbei den Ladenpreis aus $c. Der
-// stand bisher ungenutzt in jeder DNB-Antwort.
+// verarbeiteISBN liest die ISBN aus Tag 020 $a und nebenbei den Ladenpreis aus $c.
 //
 // Die ISBN-13 gewinnt vor der ISBN-10; innerhalb einer Länge der erste gültige Wert. Die DNB
 // führt beide Formen desselben Buchs in 020, erst die 13-, dann die 10-stellige
-// („Dunkelnacht": 9783751200530, dann 3751200533). Bis zum 23.09.2026 gewann der letzte
-// gültige Wert — an 30 Sätzen der Freitextsuche gemessen trugen 19 beide Formen, und in
-// allen 19 stand die ISBN-10 zuletzt, mit gleichem Kern. Ein über die Freitextsuche
-// bestellter Titel entstand damit zehnstellig, und der Strichcode auf dem Buch (immer
-// EAN-13) fand ihn später nicht: Die Normalform trennt 10 und 13 bewusst (Migration 133),
-// die Bestelltür legte den Titel ein zweites Mal an (docs/OFFEN.md 5.5).
+// („Dunkelnacht": 9783751200530, dann 3751200533). Gewönne der letzte gültige Wert, entstünde
+// ein über die Freitextsuche bestellter Titel zehnstellig (an 30 Sätzen der Freitextsuche
+// gemessen trugen 19 beide Formen, alle mit der ISBN-10 zuletzt), und der Strichcode auf dem Buch
+// (immer EAN-13) fände ihn später nicht: Die Normalform trennt 10 und 13 absichtlich, und die
+// Tür der Bestellung legte den Titel ein zweites Mal an.
 //
-// Der ERSTE brauchbare Preis gewinnt, nicht der letzte: Die DNB liefert zu einer ISBN
-// mehrere Sätze (Auflagen), die neueren zuerst. Bei der Alexander Gesamtausgabe steht im
-// ersten Satz "EUR 27.00", in einem späteren "DM 42.00, EUR 21.47" — der ältere darf den
-// jüngeren nicht überschreiben.
+// Der erste brauchbare Preis gewinnt, nicht der letzte: Die DNB liefert zu einer ISBN mehrere
+// Sätze (Auflagen), die neueren zuerst. Bei der Alexander Gesamtausgabe steht im ersten Satz
+// "EUR 27.00", in einem späteren "DM 42.00, EUR 21.47"; der ältere darf den jüngeren nicht
+// überschreiben.
 func (b *marcBibDaten) verarbeiteISBN(subfelder []marcSubfield) {
 	for _, unterFeld := range subfelder {
 		if unterFeld.Code == "c" && b.preis == 0 {
@@ -243,11 +239,11 @@ func (b *marcBibDaten) verarbeitePublikation(subfelder []marcSubfield) {
 	}
 }
 
-// verarbeiteGenre sammelt Genre-/Formangaben aus Tag 655 $a (GND-Vokabular) — die
-// Gattungsbegriffe. Bis zum 22.09.2026 wurde daraus ein Signaturvorschlag „BIB Jugendbuch"
-// abgeleitet; die Signaturen der Schülerbücherei sind aber die Littera-Codes am Regal. Die
-// gesammelten Begriffe sind eine Quelle des Schlagwort-Vorschlags (docs/OFFEN.md 4.20,
-// stichwoerter): vorgeschlagen wird nur, was es schon als Schlagwort oder Verweis gibt.
+// verarbeiteGenre sammelt Angaben zu Genre und Form aus Tag 655 $a (Vokabular der GND), die
+// Gattungsbegriffe. Eine Signatur leitet sich daraus nicht ab: Die Signaturen der
+// Schülerbücherei sind die Codes von Littera am Regal. Die gesammelten Begriffe sind eine Quelle
+// des Vorschlags für Schlagworte (stichwoerter): Vorgeschlagen wird nur, was es schon als
+// Schlagwort oder Verweis gibt.
 func (b *marcBibDaten) verarbeiteGenre(subfelder []marcSubfield) {
 	for _, unterFeld := range subfelder {
 		if unterFeld.Code == "a" {
@@ -284,12 +280,12 @@ func (b *marcBibDaten) verarbeiteFreieWoerter(subfelder []marcSubfield) {
 // „Geschichte 1250 v. Chr.".
 var zeitMitJahren = regexp.MustCompile(`^(.*\S) (\d{1,4}( v\. Chr\.)?(-\d{1,4}( v\. Chr\.)?)?)$`)
 
-// verarbeiteNormdaten liest ein Schlagwort der Gemeinsamen Normdatei (docs/OFFEN.md 4.25,
-// entschieden am 30.09.2026): Person (600), Körperschaft (610, 611), Werk (630), Zeit (648),
-// Sache (650) und Ort (651), jeweils nur mit $2 gnd — andere Vokabulare stehen in denselben
-// Feldern. Feld 689 wiederholt dieselben Begriffe als Kette und wird nicht gelesen.
+// verarbeiteNormdaten liest ein Schlagwort der Gemeinsamen Normdatei: Person (600), Körperschaft
+// (610, 611), Werk (630), Zeit (648), Sache (650) und Ort (651), jeweils nur mit $2 gnd; andere
+// Vokabulare stehen in denselben Feldern. Feld 689 wiederholt dieselben Begriffe als Kette und
+// wird nicht gelesen.
 //
-// Angeboten wird in der Schreibweise der Littera-Liste, in der ein Zusatz in spitzen Klammern
+// Angeboten wird in der Schreibweise der Liste aus Littera, in der ein Zusatz in spitzen Klammern
 // steht: „Kafka, Franz" wird „Kafka <Franz>", „Friedrich" mit „II." und „Preußen, König" wird
 // „Friedrich <Preußen, König, II.>", „Geschichte 1918-1933" wird „Geschichte <1918-1933>", der
 // Zusatz $g einer Sache oder eines Orts kommt in die Klammer. Gesucht wird unter beiden Formen.
@@ -393,12 +389,11 @@ func (c *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*Metad
 	}, nil
 }
 
-// cqlAlleWoerter baut aus einer Eingabe die CQL-Abfrage „jedes Wort irgendwo im Satz":
-// any all "…". Bis zum 23.09.2026 ging die Eingabe als any=Dunkelnacht+Boie hinaus, und die
-// DNB lieferte mit zwei Wörtern 0 Sätze — mit „Dunkelnacht" allein 15, mit any all
-// "Dunkelnacht Boie" 14 (gemessen). In Anführungszeichen ist jedes Wort ein Suchwort, auch
-// „and" oder „or"; maskiert werden nur Backslash und Anführungszeichen, die die Zeichenkette
-// sonst beendeten.
+// cqlAlleWoerter baut aus einer Eingabe die Abfrage in CQL „jedes Wort irgendwo im Satz":
+// any all "…". Als any=Dunkelnacht+Boie lieferte die DNB mit zwei Wörtern 0 Sätze, mit
+// „Dunkelnacht" allein 15, mit any all "Dunkelnacht Boie" 14 (gemessen). In Anführungszeichen
+// ist jedes Wort ein Suchwort, auch „and" oder „or"; maskiert werden nur Backslash und
+// Anführungszeichen, die die Zeichenkette sonst beendeten.
 func cqlAlleWoerter(text string) string {
 	return `any all "` + strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(text) + `"`
 }

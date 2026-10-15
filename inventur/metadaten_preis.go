@@ -20,18 +20,17 @@ var (
 	enthaeltDM = regexp.MustCompile(`(?i)\bDM\s*[0-9]`)
 )
 
-// preisAusVerfuegbarkeit liest einen Euro-Betrag aus MARC21 020 $c.
-// 0 bedeutet: kein brauchbarer Preis — der Aufrufer schlägt dann gar nichts vor.
+// preisAusVerfuegbarkeit liest einen Betrag in Euro aus MARC21 020 $c. 0 heißt: kein brauchbarer
+// Preis; der Aufrufer schlägt dann gar nichts vor.
 //
-// Zwei Regeln, beide an echten DNB-Antworten entstanden:
+// Zwei Regeln, beide an echten Antworten der DNB entstanden:
 //
-//  1. NUR EURO. Ein reiner DM-Betrag ist als Preis wertlos.
+//  1. Nur Euro. Ein reiner Betrag in DM ist als Preis wertlos.
 //
-//  2. NENNT DER SATZ D-MARK, GILT AUCH SEIN EURO-BETRAG NICHT. Solche Sätze stammen aus
-//     der Umstellungszeit, der Euro-Wert ist die Umrechnung eines Preises von damals
-//     ("DM 42.00, EUR 21.47" — derselbe Titel kostet heute laut neuerem Satz 27.00).
-//     Ein plausibel aussehender falscher Preis ist schlimmer als gar keiner: Er wird
-//     übernommen, ohne dass jemand stutzt.
+//  2. Nennt der Satz D-Mark, gilt auch sein Betrag in Euro nicht. Solche Sätze stammen aus der
+//     Zeit der Umstellung, der Wert in Euro ist die Umrechnung eines alten Preises ("DM 42.00,
+//     EUR 21.47"; derselbe Titel kostet laut neuerem Satz 27.00). Ein plausibel aussehender
+//     falscher Preis ist schlimmer als gar keiner: Er wird übernommen, ohne dass jemand stutzt.
 func preisAusVerfuegbarkeit(verfuegbarkeit string) float64 {
 	if verfuegbarkeit == "" || enthaeltDM.MatchString(verfuegbarkeit) {
 		return 0

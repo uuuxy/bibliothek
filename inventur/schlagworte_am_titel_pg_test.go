@@ -15,7 +15,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Schlagworte gehen im Buchformular mit dem ganzen Titel hin und her (Migration 138):
+// Die Schlagworte gehen im Buchformular mit dem ganzen Titel hin und her:
 // GET /api/books/{id} lädt sie, PUT /api/books/{id} schickt sie zurück. Drei Eingaben
 // müssen sich dabei unterscheiden — und genau das sieht nur ein Test über JSON:
 //
@@ -24,7 +24,7 @@ import (
 //   - `[]`: Der Mensch hat alle entfernt — sie fallen.
 //   - Liste: genau diese, in der vorhandenen Schreibweise.
 //
-// Dazu die andere Richtung: Ein Titel OHNE Schlagworte kommt im Einzel-Read als [] an,
+// Dazu die andere Richtung: Ein Titel ohne Schlagworte kommt im Einzel-Read als [] an,
 // nicht als null. Die Maske schickt zurück, was sie gelesen hat.
 func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -37,7 +37,7 @@ func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) 
 	loesche()
 	t.Cleanup(loesche)
 
-	handler := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 
 	sende := func(methode string, id string, koerper map[string]any) *httptest.ResponseRecorder {
 		t.Helper()
@@ -49,23 +49,23 @@ func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) 
 		if id != "" {
 			pfad += "/" + id
 		}
-		req := httptest.NewRequest(methode, pfad, bytes.NewReader(daten))
-		req.SetPathValue("id", id)
+		anfrage := httptest.NewRequest(methode, pfad, bytes.NewReader(daten))
+		anfrage.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		if methode == http.MethodPost {
-			handler.TitelAnlegen(rec, req)
+			tueren.TitelAnlegen(rec, anfrage)
 		} else {
-			handler.TitelAendern(rec, req)
+			tueren.TitelAendern(rec, anfrage)
 		}
 		return rec
 	}
 	// lies holt die Schlagworte so, wie die Maske sie bekommt: als JSON des Einzel-Reads.
 	lies := func(id string) []string {
 		t.Helper()
-		req := httptest.NewRequest(http.MethodGet, "/api/books/"+id, nil)
-		req.SetPathValue("id", id)
+		anfrage := httptest.NewRequest(http.MethodGet, "/api/books/"+id, nil)
+		anfrage.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		handler.Titel(rec, req)
+		tueren.Titel(rec, anfrage)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Einzel-Read: %d %s", rec.Code, rec.Body.String())
 		}
@@ -128,9 +128,9 @@ func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) 
 	}
 }
 
-// zuVieleSchlagworte liegt eins über der Grenze des Schreibpfads. Die Zahl steht nur dort: Bis
-// zum 30.09.2026 stand hier 31, und die Anhebung der Grenze auf 300 machte daraus einen Fall,
-// der gar nicht mehr zu viele war.
+// zuVieleSchlagworte liegt eins über der Grenze des Schreibwegs. Die Zahl steht nur dort: Eine
+// eigene Zahl hier würde bei einer Anhebung der Grenze zu einem Fall, der gar nicht mehr zu viele
+// ist.
 func zuVieleSchlagworte() []string {
 	woerter := make([]string, repository.SchlagworteJeTitelMax+1)
 	for i := range woerter {

@@ -21,19 +21,18 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// coverAbruferKennung identifiziert uns gegenüber DNB/Google/OpenLibrary als ehrliches
-// Programm. WICHTIG (verifiziert 2026-06-24): Die DNB-MVB-Cover-Schnittstelle
-// (portal.dnb.de/opac/mvb/cover) liegt hinter der Bot-Schranke "Anubis". Diese triggert
-// gerade auf BROWSER-ähnliche User-Agents ("Mozilla/5.0 … Chrome …"): solche Requests
-// erhalten HTTP 200 mit einer HTML-Proof-of-Work-Challenge STATT des Bildes — das Cover
-// schlägt dann beim Dekodieren fehl. Ein schlichter, nicht-browserartiger Programm-UA wird
-// von Anubis als legitimer API-Client durchgelassen und liefert das echte Bild (bzw. ein
-// sauberes 404, wenn kein Cover existiert). Daher NICHT auf einen Chrome-UA „aufrüsten".
+// coverAbruferKennung ist der User-Agent, mit dem das Programm sich bei DNB, Google und
+// OpenLibrary als Programm ausweist. Die Schnittstelle der DNB für Cover
+// (portal.dnb.de/opac/mvb/cover) liegt hinter der Bot-Schranke "Anubis", die gerade bei
+// User-Agents anschlägt, die wie ein Browser aussehen ("Mozilla/5.0 … Chrome …"): Solche
+// Anfragen bekommen HTTP 200 mit einer Aufgabe in HTML statt des Bildes, und das Cover scheitert
+// beim Dekodieren. Ein schlichter Name, der kein Browser ist, kommt durch und liefert das echte
+// Bild (oder ein sauberes 404, wenn es kein Cover gibt). Deshalb nicht auf einen User-Agent von
+// Chrome „aufrüsten".
 const coverAbruferKennung = "Inventur/1.0"
 
-// openLibraryLeeresCover ist die URL, die OpenLibrary fuer eine ISBN OHNE Cover
-// liefert — ein 1x1-Platzhalter, kein Bild. Stand bis zum 04.08.2026 in
-// hintergrund_jobs.go; die Datei ist entfallen, die Konstante wird hier gebraucht.
+// openLibraryLeeresCover ist die URL, die OpenLibrary für eine ISBN ohne Cover liefert: ein
+// Platzhalter von 1x1 Punkt, kein Bild.
 const openLibraryLeeresCover = "https://covers.openlibrary.org/b/isbn/-L.jpg"
 
 // ladeCoverBytes lädt die Bilddaten einer whitelisteten Cover-URL (SSRF-Schutz) und
@@ -43,7 +42,7 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 		return nil
 	}
 
-	// Angefragt wird die NEU GEBAUTE URL, nicht die Eingabe: Geprüft hat url.Parse,
+	// Angefragt wird die NEU gebaute URL, nicht die Eingabe: Geprüft hat url.Parse,
 	// losgeschickt hätte der HTTP-Client den rohen String — und wo sich beide Parser
 	// über ein Zeichen uneinig sind, geht die Anfrage an einen anderen Host als den
 	// freigegebenen (Parsing Differential, gosec G704). Siehe pkg/coverquelle.

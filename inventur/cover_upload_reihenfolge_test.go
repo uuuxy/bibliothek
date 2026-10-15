@@ -13,11 +13,10 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// Reihenfolge beim Cover-Upload. Bis zum 13.09.2026 schrieb handleUploadCover die neue
-// Datei, BEVOR feststand, dass es das Buch gibt, und löschte das alte Cover, BEVOR das
-// UPDATE gelungen war. Am Stack gesehen: POST /api/books/<unbekannte UUID>/cover-upload
-// antwortete 404, die Datei lag trotzdem in uploads/. Und scheitert das UPDATE, zeigte die
-// Datenbank auf ein Cover, das gerade gelöscht worden war.
+// Reihenfolge beim Hochladen eines Covers: Schriebe die Tür die neue Datei, bevor feststeht, dass
+// es den Titel gibt, und löschte sie das alte Cover, bevor das UPDATE gelungen ist, antwortete
+// POST /api/books/<unbekannte UUID>/cover-upload 404, und die Datei läge trotzdem in uploads/.
+// Scheiterte das UPDATE, zeigte die Datenbank auf ein Cover, das gerade gelöscht wurde.
 
 const reihenfolgeBuchID = "9f1c2b3a-4d5e-4f60-8a7b-1c2d3e4f5a6b"
 
@@ -40,10 +39,10 @@ func coverUploadAnfrage(t *testing.T, id string) *http.Request {
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/api/books/"+id+"/cover-upload", &rumpf)
-	req.Header.Set("Content-Type", w.FormDataContentType())
-	req.SetPathValue("id", id)
-	return req
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/"+id+"/cover-upload", &rumpf)
+	anfrage.Header.Set("Content-Type", w.FormDataContentType())
+	anfrage.SetPathValue("id", id)
+	return anfrage
 }
 
 // coverDateien: alles, was in uploads/ zu dieser Kennung liegt (cover_<id>_…). Aufgeräumt

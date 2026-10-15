@@ -20,8 +20,8 @@ import (
 //
 // Zu den Schreibweisen gehört die Länge: Die zehnstellige ISBN vom Titelblatt und die
 // dreizehnstellige vom Strichcode sind dieselbe Nummer, und die Datenbank führt sie
-// dreizehnstellig (Migration 157).
-func TestBuchVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
+// dreizehnstellig.
+func TestTitelVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	const dreizehn = "9780306406171"
 	const zehn, zehnGespeichert = "080442957X", "9780804429573"
@@ -36,7 +36,7 @@ func TestBuchVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 	t.Cleanup(loesche)
 
 	durchlass := func(next http.Handler) http.Handler { return next }
-	handler := NewTueren(TuerenKonfig{
+	tueren := NewTueren(TuerenKonfig{
 		Abfragen:          NewTitelAbfragen(pool),
 		Metadaten:         offlineMetadatenClient(),
 		VerlangeLesen:     durchlass,
@@ -54,7 +54,7 @@ func TestBuchVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 	vorab := func(isbn string) (vorhanden *titel, meldung string) {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books/vorhanden?isbn="+url.QueryEscape(isbn), nil))
+		tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books/vorhanden?isbn="+url.QueryEscape(isbn), nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Auskunft zu %q: %d %s", isbn, rec.Code, rec.Body.String())
 		}
@@ -80,7 +80,7 @@ func TestBuchVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 			t.Fatal(err)
 		}
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/books", bytes.NewReader(daten)))
+		tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/books", bytes.NewReader(daten)))
 		return rec.Code, rec.Body.Bytes()
 	}
 
@@ -160,7 +160,7 @@ func TestBuchVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books/vorhanden", nil))
+	tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books/vorhanden", nil))
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("ohne isbn: %d %s, erwartet 400", rec.Code, rec.Body.String())
 	}
