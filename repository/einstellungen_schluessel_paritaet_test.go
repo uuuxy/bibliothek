@@ -50,7 +50,7 @@ func TestEinstellungsSchluesselDeckenSichMitDemPatchStruct(t *testing.T) {
 // meldet ein Feld weiter als versorgt, nachdem der Schreibweg entfernt wurde.
 func schluesselAusKategorien(t *testing.T) map[string]bool {
 	t.Helper()
-	dir := filepath.Join("..", "frontend", "src", "lib", "components", "settings", "kategorien")
+	dir := filepath.Join("..", "frontend", "src", "lib", "components", "einstellungen", "kategorien")
 	eintraege, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatalf("Kategorien-Verzeichnis lesen: %v", err)
