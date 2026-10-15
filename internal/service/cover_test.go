@@ -36,16 +36,13 @@ func (panikDatenbank) Query(context.Context, string, ...any) (pgx.Rows, error) {
 }
 
 // TestGleicheFehlendeCoverAbUeberlebtPanik: Eine Panik in der äußeren Sync-Goroutine darf
-// den Prozess nicht mitreißen (safego.FangePanic) — und muss coverAbgleichLaeuft zurücksetzen,
-// sonst überspringt jeder künftige Lauf für immer.
+// den Prozess nicht mitreißen (safego.FangePanic) — und muss laeuft zurücksetzen, sonst
+// überspringt jeder künftige Lauf für immer.
 func TestGleicheFehlendeCoverAbUeberlebtPanik(t *testing.T) {
-	coverAbgleichLaeuft.Store(false)
-	t.Cleanup(func() { coverAbgleichLaeuft.Store(false) })
-
 	svc := &CoverDienst{pool: panikDatenbank{}}
 	svc.GleicheFehlendeCoverAb() // darf nicht paniken — sonst stirbt der Test mit
 
-	if coverAbgleichLaeuft.Load() {
-		t.Error("coverAbgleichLaeuft blieb true nach dem Panik — künftige Cover-Läufe überspringen still für immer")
+	if svc.laeuft.Load() {
+		t.Error("laeuft blieb true nach dem Panik — künftige Cover-Läufe überspringen still für immer")
 	}
 }

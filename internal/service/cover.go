@@ -19,6 +19,9 @@ type CoverDienst struct {
 	// katalog baut den Client für die Katalogdienste. Ein Test stellt die Dienste darüber
 	// nach, statt DNB, Google Books und OpenLibrary im Netz zu fragen.
 	katalog func() *inventur.MetadatenClient
+	// laeuft verhindert, dass zwei Läufe sich überlappen. Start, Zeitplan und der Knopf in der
+	// Verwaltung teilen sich deshalb einen Dienst (main.go).
+	laeuft atomic.Bool
 }
 
 // NewCoverDienst baut den Dienst für den Abgleich der Cover.
@@ -41,10 +44,6 @@ const coverAbgleichArbeiter = 8
 // Stunden durch.
 const coverAbgleichTakt = 500 * time.Millisecond
 
-// coverAbgleichLaeuft verhindert, dass zwei Läufe sich überlappen: Start, Nachtlauf und der
-// Knopf in der Verwaltung bauen je einen eigenen CoverDienst.
-var coverAbgleichLaeuft atomic.Bool
-
 // fehlendesCover ist ein Titel, dessen Cover der Abgleich holen soll.
 type fehlendesCover = repository.TitelMitISBN
 
@@ -52,11 +51,11 @@ type fehlendesCover = repository.TitelMitISBN
 // zugleich. Auch Titel, deren letzter Versuch scheiterte, kommen wieder dran, damit ein
 // vorübergehender Fehler beim nächsten Lauf verschwindet.
 func (d *CoverDienst) GleicheFehlendeCoverAb() {
-	if !coverAbgleichLaeuft.CompareAndSwap(false, true) {
+	if !d.laeuft.CompareAndSwap(false, true) {
 		log.Println("Cover Sync: Lauf bereits aktiv – überspringe.")
 		return
 	}
-	defer coverAbgleichLaeuft.Store(false)
+	defer d.laeuft.Store(false)
 	// Das Netz für die äußere Goroutine, nicht nur für die Arbeiter: Die Funktion läuft als `go
 	// d.GleicheFehlendeCoverAb()` ohne die Erholung des HTTP-Servers, und eine Panik risse
 	// sonst den Prozess mit. Es steht nach dem Defer, der den Schalter zurücksetzt, damit bei
@@ -86,7 +85,7 @@ func (d *CoverDienst) GleicheFehlendeCoverAb() {
 	var gefunden, nichtGefunden, gescheitert atomic.Int64
 	// Gepuffert auf die Zahl der Aufgaben, damit das Verteilen nie beim Senden wartet: Stirbt
 	// ein Arbeiter (eine Panik, die sein eigenes Netz fängt) und liest nicht mehr, hinge ein
-	// ungepufferter Kanal beim `aufgaben <- titel` für immer, und coverAbgleichLaeuft bliebe
+	// ungepufferter Kanal beim `aufgaben <- titel` für immer, und laeuft bliebe
 	// gesetzt, sodass jeder weitere Lauf still übersprungen würde.
 	aufgaben := make(chan fehlendesCover, len(fehlende))
 	var wg sync.WaitGroup

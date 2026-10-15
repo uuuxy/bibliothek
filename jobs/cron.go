@@ -46,8 +46,9 @@ const (
 	zeitRestoreProbe          = "30 3 * * 0"
 )
 
-// Starte meldet alle Läufe beim Cron an und startet ihn.
-func (z *Zeitplan) Starte() {
+// Starte meldet alle Läufe beim Cron an und startet ihn. Den Abgleich der Cover teilt er mit
+// dem Start und dem Server, damit nie zwei Läufe zugleich laufen.
+func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// Täglich um Mitternacht: Anonymisierung und Löschung nach DSGVO.
 	if _, err := z.cron.AddFunc("0 0 * * *", z.FuehreNaechtlicheDSGVOAus); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
@@ -96,10 +97,10 @@ func (z *Zeitplan) Starte() {
 	}
 
 	// Alle sechs Stunden fehlende und gescheiterte Cover nachladen (neu importierte Titel und
-	// vorübergehende Fehler, Status FAILED); dabei entsteht das WebP im Haus. Die Sperre gegen
-	// gleichzeitige Läufe verhindert die Überschneidung mit dem Lauf beim Start.
+	// vorübergehende Fehler, Status FAILED); dabei entsteht das WebP im Haus. Läuft der Abgleich
+	// noch vom Start oder vom Knopf, entfällt dieser Lauf.
 	if _, err := z.cron.AddFunc("0 */6 * * *", func() {
-		service.NewCoverDienst(z.pool).GleicheFehlendeCoverAb()
+		coverAbgleich.GleicheFehlendeCoverAb()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register cover resync job: %v", err)
 	}

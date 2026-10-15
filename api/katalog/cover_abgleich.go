@@ -8,11 +8,11 @@ import (
 )
 
 // CoverAbgleichen startet im Hintergrund den Abgleich fehlender Cover
-// (CoverDienst.GleicheFehlendeCoverAb) und antwortet sofort.
-func (t *Tueren) CoverAbgleichen() http.HandlerFunc {
+// (CoverDienst.GleicheFehlendeCoverAb) und antwortet sofort. abgleich ist derselbe Dienst wie
+// beim Start und im Zeitplan; läuft er schon, entfällt der zweite Lauf.
+func (t *Tueren) CoverAbgleichen(abgleich *service.CoverDienst) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dienst := service.NewCoverDienst(t.DB.Pool)
-		go dienst.GleicheFehlendeCoverAb()
+		go abgleich.GleicheFehlendeCoverAb()
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{
 			"status":  "success",

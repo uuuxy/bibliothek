@@ -355,22 +355,25 @@ func main() {
 	go broker.FuehreAus(ctx)
 	slog.Info("Server-Sent Events (SSE) broker started.")
 
-	// 5. Zeitplan der Läufe.
+	// 5. Zeitplan der Läufe. Den Abgleich der Cover teilen Zeitplan, Start und der Knopf in der
+	// Verwaltung; so läuft nie mehr als einer.
 	protokollAbfragen := repository.NewProtokollAbfragen(verbindung.Pool)
+	coverAbgleich := service.NewCoverDienst(verbindung.Pool)
 	zeitplan := jobs.NewZeitplan(verbindung.Pool, protokollAbfragen)
-	zeitplan.Starte()
+	zeitplan.Starte(coverAbgleich)
 	defer zeitplan.Stoppe()
 
 	// Anonymisierung und Löschung nach DSGVO beim Start und alle 24 Stunden.
 	starteDSGVOLauf(ctx, zeitplan)
 
 	// 6. Server und Routen.
+	serverKonfig.CoverAbgleich = coverAbgleich
 	server := api.NewServer(verbindung, anmeldung, broker, serverKonfig)
 	starteBereitschaftsWaechter(ctx, server)
 	httpServer := starteServer(port, server)
 
 	// 7. Fehlende Cover im Hintergrund nachladen.
-	go service.NewCoverDienst(verbindung.Pool).GleicheFehlendeCoverAb()
+	go coverAbgleich.GleicheFehlendeCoverAb()
 
 	// Warten auf das Signal zum Beenden.
 	<-ctx.Done()

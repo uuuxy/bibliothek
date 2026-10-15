@@ -242,8 +242,6 @@ func TestVerarbeiteCover_HandUploadWaehrendDesLaufsBleibt(t *testing.T) {
 func TestGleicheFehlendeCoverAb_EinLaufUeberDieAuswahl(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Chdir(t.TempDir())
-	coverAbgleichLaeuft.Store(false)
-	t.Cleanup(func() { coverAbgleichLaeuft.Store(false) })
 	const handCover = "/uploads/covers/von-hand.webp"
 
 	offen := coverTitel(t, pool, "9789991940014", "PENDING", "")
@@ -277,20 +275,19 @@ func TestGleicheFehlendeCoverAb_EinLaufUeberDieAuswahl(t *testing.T) {
 	if status, url := coverStand(t, pool, abgeschrieben.ID); status != "NOT_FOUND" || url != "" {
 		t.Errorf("Titel ohne Cover bei allen Diensten: Stand %q, Cover %q — der Lauf hat ihn erneut gefragt", status, url)
 	}
-	if coverAbgleichLaeuft.Load() {
+	if svc.laeuft.Load() {
 		t.Error("nach dem Lauf steht der Merker noch: Jeder weitere Lauf würde übersprungen")
 	}
 }
 
-// Start, Zeitplan und Handauslösung bauen je einen eigenen Dienst und teilen sich nur den
-// Merker. Ein zweiter Lauf, während einer läuft, tut nichts und lässt den Merker stehen.
+// Start, Zeitplan und Handauslösung teilen sich einen Dienst. Ein zweiter Lauf, während einer
+// läuft, tut nichts und lässt den Merker stehen.
 func TestGleicheFehlendeCoverAb_ZweiterLaufWirdUebersprungen(t *testing.T) {
 	pool := pgtest.Pool(t)
-	coverAbgleichLaeuft.Store(true)
-	t.Cleanup(func() { coverAbgleichLaeuft.Store(false) })
 	offen := coverTitel(t, pool, "9789991940052", "PENDING", "")
 
 	svc := NewCoverDienst(pool)
+	svc.laeuft.Store(true)
 	svc.katalog = func() *inventur.MetadatenClient {
 		t.Error("der übersprungene Lauf fragt die Katalogdienste")
 		return katalog{}.client()
@@ -300,7 +297,7 @@ func TestGleicheFehlendeCoverAb_ZweiterLaufWirdUebersprungen(t *testing.T) {
 	if status, _ := coverStand(t, pool, offen.ID); status != "PENDING" {
 		t.Errorf("Stand %q — der übersprungene Lauf hat den Titel angefasst", status)
 	}
-	if !coverAbgleichLaeuft.Load() {
+	if !svc.laeuft.Load() {
 		t.Error("der übersprungene Lauf hat den Merker des laufenden zurückgesetzt")
 	}
 }

@@ -65,12 +65,15 @@ type Server struct {
 	nurHTTPS bool
 	// vertrauteProxys sind die Netze der Proxys, deren X-Forwarded-For gilt; Loopback gilt immer.
 	vertrauteProxys []string
+	// coverAbgleich ist der Abgleich der Cover, den der Knopf in der Verwaltung startet.
+	coverAbgleich *service.CoverDienst
 	// bremse zählt die gescheiterten Anmeldungen je Adresse; der Nullwert ist leer.
 	bremse anmeldeBremse
 }
 
-// ServerKonfig sind die Angaben, die der Start für den Server aus der Umgebung liest. Der
-// Nullwert gilt für Tests: ohne HTTPS, als Proxy nur Loopback.
+// ServerKonfig ist, was der Start dem Server über Datenbank, Anmeldung und Live-Leitung hinaus
+// mitgibt. Der Nullwert gilt für Tests: ohne HTTPS, als Proxy nur Loopback, mit eigenem Abgleich
+// der Cover.
 type ServerKonfig struct {
 	// NurHTTPS setzt die Cookies nur für HTTPS und leitet Anfragen über HTTP dorthin um
 	// (COOKIE_SECURE).
@@ -78,12 +81,19 @@ type ServerKonfig struct {
 	// VertrauteProxys sind CIDR-Angaben oder Adressen der Proxys, deren X-Forwarded-For gilt
 	// (TRUSTED_PROXIES).
 	VertrauteProxys []string
+	// CoverAbgleich ist der Abgleich der Cover, den Start und Zeitplan mit dem Knopf in der
+	// Verwaltung teilen; nil heißt, der Server legt einen eigenen an.
+	CoverAbgleich *service.CoverDienst
 }
 
 // NewServer baut den Server. Sein Mailversand liest die in der Oberfläche gespeicherte
 // SMTP-Konfiguration, nicht die Umgebungsvariablen des Containers; so nutzen der Test-Knopf und
 // jeder echte Versand dieselbe Quelle.
 func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *sse.Broker, konfig ServerKonfig) *Server {
+	coverAbgleich := konfig.CoverAbgleich
+	if coverAbgleich == nil {
+		coverAbgleich = service.NewCoverDienst(datenbank.Pool)
+	}
 	return &Server{
 		Basis: tuer.Basis{
 			DB: datenbank, Auth: authenticator, Broker: broker,
@@ -91,6 +101,7 @@ func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *
 		},
 		nurHTTPS:        konfig.NurHTTPS,
 		vertrauteProxys: konfig.VertrauteProxys,
+		coverAbgleich:   coverAbgleich,
 	}
 }
 
@@ -263,7 +274,7 @@ func (s *Server) registriereImportRouten(mux *http.ServeMux) {
 	// Der Import aus Littera, der Bestandsimport und der Abgleich der Cover (manage_inventory).
 	mux.Handle("POST /api/import/littera", s.verlangeRecht("manage_inventory")(s.system().LitteraImport()))
 	mux.Handle("POST /api/admin/import-bestand", s.verlangeRecht("manage_inventory")(http.HandlerFunc(s.system().BestandImport)))
-	mux.Handle("POST /api/admin/sync-covers", s.verlangeRecht("manage_inventory")(s.katalog().CoverAbgleichen()))
+	mux.Handle("POST /api/admin/sync-covers", s.verlangeRecht("manage_inventory")(s.katalog().CoverAbgleichen(s.coverAbgleich)))
 }
 
 func (s *Server) registriereSwaggerRouten(mux *http.ServeMux) {
