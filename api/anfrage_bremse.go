@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +11,9 @@ import (
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/ratelimit"
 )
+
+// meldungZuVieleAnfragen steht an der Oberfläche, wenn die Bremse eine Anfrage abweist.
+const meldungZuVieleAnfragen = "Zu viele Anfragen in kurzer Zeit. Bitte einen Moment warten."
 
 // anfrageBremse lässt je Adresse höchstens jeSekunde Anfragen in der Sekunde durch.
 // Ausgenommen sind Pfade, bei denen ein einzelner Seitenaufruf Dutzende Anfragen erzeugt; die
@@ -37,7 +39,7 @@ func anfrageBremse(jeSekunde int) func(http.Handler) http.Handler {
 
 			adresse := clientip.AusAnfrage(r)
 			if !bremse.LaesstDurch(adresse) {
-				apierrors.AntworteFehler(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusTooManyRequests, meldungZuVieleAnfragen, nil)
 				return
 			}
 			next.ServeHTTP(w, r)

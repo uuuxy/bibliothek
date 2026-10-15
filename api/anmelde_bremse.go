@@ -1,12 +1,12 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 	"sync"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/pkg/clientip"
 )
 
@@ -126,7 +126,7 @@ func (b *anmeldeBremse) schuetze(next http.Handler) http.Handler {
 		jetzt := time.Now()
 		versuche, gesperrt := b.reserviere(adresse, jetzt)
 		if gesperrt {
-			apierrors.AntworteFehler(w, http.StatusTooManyRequests, errors.New("zu viele fehlerhafte Login-Versuche. Bitte warten Sie 15 Minuten"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusTooManyRequests, auth.MeldungZuVieleFehlversuche, nil)
 			return
 		}
 

@@ -16,7 +16,7 @@ func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) htt
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			return apierrors.Unauthorized("missing session information", nil)
+			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, nil)
 		}
 
 		var req struct {

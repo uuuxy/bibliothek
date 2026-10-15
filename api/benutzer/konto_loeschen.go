@@ -39,7 +39,7 @@ func (t *Tueren) KontoLoeschen(protokollAbfragen repository.ProtokollAbfragen, k
 func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen repository.KontoAbfragen) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 		return
 	}
 	id := r.PathValue("id")

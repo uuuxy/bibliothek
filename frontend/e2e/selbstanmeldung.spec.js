@@ -27,7 +27,7 @@ test('Selbstanmeldung: Antrag → sichtbar → freigeschaltet → nur Mein Porta
 	await expect(email).toHaveValue(EMAIL);
 	await expect(passwort).toHaveValue(ADMIN_PASSWORD);
 	await page.getByRole('button', { name: 'Anmelden' }).click();
-	const meldung = page.getByText('Zugang beantragt — die Bibliothek muss ihn noch freischalten');
+	const meldung = page.getByText('Zugang beantragt. Die Bibliothek muss ihn noch freischalten.');
 	await expect(meldung).toBeVisible();
 	await page.waitForTimeout(4500); // die 401-Meldung wäre nach 4 s weg — diese nicht
 	await expect(meldung).toBeVisible();

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -196,4 +197,45 @@ func TestAnmeldeBremse_403ZaehltNichtAlsFehlversuch(t *testing.T) {
 			t.Fatalf("Versuch %d: 429 — 403 (richtiges Passwort, Zugang nur noch nicht frei) wurde als Fehlversuch gezählt", versuch)
 		}
 	}
+}
+
+// Die Bremsen antworten mit einem Satz, den die Anmeldung unverändert zeigt: die Bremse der
+// Adresse mit demselben Satz wie die der Anmeldung (auth.MeldungZuVieleFehlversuche), die der
+// Anfragen mit ihrem eigenen.
+func TestBremsen_MeldenEinenSatz(t *testing.T) {
+	proxys := clientip.NewErmittler([]string{"172.16.0.0/12"})
+	var b anmeldeBremse
+	scheitereNMal(t, &b, proxys, "172.18.0.5:40000", "203.0.113.9", maxAnmeldeFehlversucheJeAdresse)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/login", nil)
+	req.RemoteAddr = "172.18.0.5:40000"
+	req.Header.Set("X-Forwarded-For", "203.0.113.9")
+	proxys.Middleware(b.schuetze(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))).ServeHTTP(rec, req)
+	if got, want := meldungDerAntwort(t, rec), "Zu viele fehlgeschlagene Anmeldungen. Bitte 15 Minuten warten."; rec.Code != http.StatusTooManyRequests || got != want {
+		t.Errorf("Bremse der Anmeldung: Status %d, Meldung %q, erwartet 429 und %q", rec.Code, got, want)
+	}
+
+	bremse := anfrageBremse(1)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	var letzte *httptest.ResponseRecorder
+	for i := 0; i < 3; i++ {
+		letzte = httptest.NewRecorder()
+		bremse.ServeHTTP(letzte, httptest.NewRequest(http.MethodGet, "/api/titel", nil))
+	}
+	if got, want := meldungDerAntwort(t, letzte), "Zu viele Anfragen in kurzer Zeit. Bitte einen Moment warten."; letzte.Code != http.StatusTooManyRequests || got != want {
+		t.Errorf("Bremse der Anfragen: Status %d, Meldung %q, erwartet 429 und %q", letzte.Code, got, want)
+	}
+}
+
+// meldungDerAntwort liest das Feld error einer Fehlerantwort.
+func meldungDerAntwort(t *testing.T, rec *httptest.ResponseRecorder) string {
+	t.Helper()
+	var antwort struct {
+		Fehler string `json:"error"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort ist kein JSON-Fehler (%s): %v", rec.Body.String(), err)
+	}
+	return antwort.Fehler
 }

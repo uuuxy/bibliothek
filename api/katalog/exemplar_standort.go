@@ -42,7 +42,7 @@ func (t *Tueren) ExemplarStandortSetzen() http.HandlerFunc {
 		}
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			return apierrors.Unauthorized("nicht angemeldet", errors.New("keine Sitzung"))
+			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, errors.New("keine Sitzung"))
 		}
 
 		geaendert, err := repository.SetzeExemplarStandort(r.Context(), t.DB.Pool, repository.StandortAenderung{

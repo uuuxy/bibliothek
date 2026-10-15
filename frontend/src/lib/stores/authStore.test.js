@@ -272,17 +272,17 @@ describe('authStore Login-Meldung', () => {
 	}
 
 	it('401 (falsches Passwort): Meldung räumt sich nach vier Sekunden weg', async () => {
-		await loginMit(401, 'invalid email or password');
-		expect(authStore.loginError).toBe('invalid email or password');
+		await loginMit(401, 'E-Mail-Adresse oder Passwort stimmt nicht');
+		expect(authStore.loginError).toBe('E-Mail-Adresse oder Passwort stimmt nicht');
 		await vi.advanceTimersByTimeAsync(4000);
 		expect(authStore.loginError).toBeNull();
 	});
 
 	it('403 (Zugang beantragt): Meldung bleibt stehen', async () => {
-		await loginMit(403, 'Zugang beantragt — die Bibliothek muss ihn noch freischalten');
+		await loginMit(403, 'Zugang beantragt. Die Bibliothek muss ihn noch freischalten.');
 		await vi.advanceTimersByTimeAsync(60_000);
 		expect(authStore.loginError).toBe(
-			'Zugang beantragt — die Bibliothek muss ihn noch freischalten'
+			'Zugang beantragt. Die Bibliothek muss ihn noch freischalten.'
 		);
 	});
 });

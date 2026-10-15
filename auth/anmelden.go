@@ -158,7 +158,7 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFun
 		sitzungID, err := anmeldung.Sitzungen.beginne(ctx, konto.id, passwort, time.Now().Add(anmeldung.laufzeit))
 		if err != nil {
 			slog.Error("Login: Sitzung konnte nicht angelegt werden", "fehler", err)
-			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, errAnmeldedienstGestoert)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungAnmeldedienstGestoert, errAnmeldedienstGestoert)
 			return
 		}
 		token, err := anmeldung.ErzeugeToken(konto.id, konto.ausweisnummer, rolle, sitzungID)
@@ -219,11 +219,11 @@ type anmeldeKonto struct {
 // geschrieben.
 func pruefeAnmeldedaten(w http.ResponseWriter, anfrage anmeldeAnfrage) (passwort string, ok bool) {
 	if anfrage.Email == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("email is required"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungEmailFehlt, nil)
 		return "", false
 	}
 	if anfrage.Passwort == "" {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("password is required"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungPasswortFehlt, nil)
 		return "", false
 	}
 	return anfrage.Passwort, true
@@ -238,8 +238,7 @@ func pruefeAnmeldedaten(w http.ResponseWriter, anfrage anmeldeAnfrage) (passwort
 func (a *Anmeldung) pruefeFehlversuche(w http.ResponseWriter, email, adresse string) (schluessel string, ok bool) {
 	schluessel = strings.ToLower(strings.TrimSpace(email)) + "|" + adresse
 	if a.bremse.istGesperrt(schluessel) {
-		apierrors.AntworteFehler(w, http.StatusTooManyRequests,
-			errors.New("zu viele fehlgeschlagene Login-Versuche – bitte 15 Minuten warten"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusTooManyRequests, MeldungZuVieleFehlversuche, nil)
 		return "", false
 	}
 	return schluessel, true
@@ -263,11 +262,11 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 		// Ebenso ein Aussetzer der Datenbank. Der Grund steht im Log.
 		if errors.Is(err, errAnmeldedienstGestoert) {
 			slog.Error("Login: Anmeldedienst gestört", "fehler", err)
-			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, errAnmeldedienstGestoert)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungAnmeldedienstGestoert, errAnmeldedienstGestoert)
 			return anmeldeKonto{}, false
 		}
 		a.bremse.merkeFehlversuch(schluessel)
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, meldungAnmeldungFalsch, nil)
 		return anmeldeKonto{}, false
 	}
 
@@ -280,12 +279,12 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 	// selbst aus, während seine Freischaltung noch aussteht.
 	if konto.neuAngelegt || (!konto.aktiv && konto.beantragt) {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden,
-			"Zugang beantragt — die Bibliothek muss ihn noch freischalten", nil)
+			meldungZugangBeantragt, nil)
 		return anmeldeKonto{}, false
 	}
 	if !konto.aktiv {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden,
-			"Konto deaktiviert — bitte an die Bibliothek wenden", nil)
+			meldungKontoDeaktiviert, nil)
 		return anmeldeKonto{}, false
 	}
 	return konto, true
@@ -355,7 +354,7 @@ func ladeRechteDerRolle(ctx context.Context, pool db.Pool, rolle string) ([]stri
 func leseSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldung) (*Claims, bool) {
 	cookie, err := r.Cookie("session_token")
 	if errors.Is(err, http.ErrNoCookie) {
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, MeldungNichtAngemeldet, nil)
 		return nil, false
 	}
 	if err != nil {
@@ -368,11 +367,11 @@ func leseSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldung) (
 		// Ein Aussetzer der Datenbank ist keine abgelaufene Sitzung: 503 statt 401, sonst meldet
 		// die Oberfläche ab. Sie liest nur den Satz des Fehlerwerts; die Ursache („sperrliste:
 		// connection reset by peer") bleibt im Log.
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 		return nil, false
 	}
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, MeldungNichtAngemeldet, err)
 		return nil, false
 	}
 	return claims, true
@@ -390,7 +389,7 @@ func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, pool db.Pool, kont
 	keineSitzung := errors.Is(err, pgx.ErrNoRows) || (err == nil && !konto.Aktiv)
 	switch {
 	case keineSitzung:
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, MeldungNichtAngemeldet, nil)
 		return anmeldeAntwort{}, false
 	case err != nil:
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -428,7 +427,7 @@ func AngemeldetesKonto(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 
 		gesperrt, err := anmeldung.Sitzungen.istGesperrt(claims.SitzungID)
 		if err != nil {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 			return
 		}
 
@@ -440,7 +439,7 @@ func AngemeldetesKonto(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 		w.Header().Set(headerContentType, contentTypeJSON)
 		if gesperrt {
 			w.WriteHeader(http.StatusLocked)
-			httpresp.SchreibeJSON(w, map[string]string{"error": ErrSitzungGesperrt.Error(), "email": antwort.Email})
+			httpresp.SchreibeJSON(w, map[string]string{"error": MeldungSitzungGesperrt, "email": antwort.Email})
 			return
 		}
 		httpresp.SchreibeJSON(w, antwort)
@@ -460,7 +459,7 @@ func SitzungVerlaengern(anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFunc {
 		cookie, err := r.Cookie("session_token")
 		if err != nil {
 			if errors.Is(err, http.ErrNoCookie) {
-				apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, MeldungNichtAngemeldet, nil)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
@@ -473,11 +472,11 @@ func SitzungVerlaengern(anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFunc {
 		if errors.Is(err, ErrPruefungGestoert) {
 			// Ein Aussetzer der Datenbank ist keine abgelaufene Sitzung: 503 statt 401, sonst
 			// meldet die Oberfläche ab. Die Ursache bleibt im Log.
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 			return
 		}
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, MeldungNichtAngemeldet, err)
 			return
 		}
 		erneuereSitzung(w, r, anmeldung, claims, nurHTTPS)
@@ -504,7 +503,7 @@ func erneuereSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldun
 	// unbegrenzt erhalten.
 	verlaengert, err := anmeldung.Sitzungen.verlaengere(r.Context(), claims.SitzungID, time.Now().Add(anmeldung.laufzeit))
 	if err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 		return
 	}
 	if !verlaengert {

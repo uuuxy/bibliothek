@@ -24,7 +24,7 @@ func Sperren(anmeldung *Anmeldung) http.HandlerFunc {
 		}
 		gesperrt, err := anmeldung.Sitzungen.sperre(r.Context(), claims.SitzungID)
 		if err != nil {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 			return
 		}
 		w.Header().Set(headerContentType, contentTypeJSON)
@@ -54,7 +54,7 @@ func Entsperren(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 			return
 		}
 		if anfrage.Passwort == "" {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New("password is required"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungPasswortFehlt, nil)
 			return
 		}
 
@@ -76,7 +76,7 @@ func Entsperren(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 		}
 
 		if err := anmeldung.Sitzungen.entsperre(ctx, claims.SitzungID); err != nil {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 			return
 		}
 
@@ -96,13 +96,13 @@ func pruefeEntsperrPasswort(ctx context.Context, w http.ResponseWriter, anmeldun
 	}
 	if !errors.Is(imapFehler, errMailserverNichtErreichbar) {
 		anmeldung.bremse.merkeFehlversuch(schluessel)
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, meldungPasswortFalsch, nil)
 		return false
 	}
 
 	passt, vorhanden, err := anmeldung.Sitzungen.passwortPasst(ctx, sitzungID, passwort)
 	if err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 		return false
 	}
 	if !vorhanden {
@@ -111,7 +111,7 @@ func pruefeEntsperrPasswort(ctx context.Context, w http.ResponseWriter, anmeldun
 	}
 	if !passt {
 		anmeldung.bremse.merkeFehlversuch(schluessel)
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, meldungPasswortFalsch, nil)
 		return false
 	}
 	slog.Warn("Sperre ohne Mailserver aufgeschlossen: Passwort gegen den Prüfwert der Anmeldung geprüft")

@@ -69,8 +69,8 @@ func TestGesperrteSitzung_Antwortet423UndErreichtKeineTuer(t *testing.T) {
 			if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
 				t.Fatalf("Body ist kein JSON: %q (%v)", rr.Body.String(), err)
 			}
-			if body["error"] != auth.ErrSitzungGesperrt.Error() {
-				t.Errorf("Meldung %q, erwartet %q", body["error"], auth.ErrSitzungGesperrt.Error())
+			if want := "Gesperrt wegen Inaktivität. Bitte das Passwort eingeben."; body["error"] != want {
+				t.Errorf("Meldung %q, erwartet %q", body["error"], want)
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("unerfüllte Erwartungen: %v", err)

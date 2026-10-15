@@ -146,6 +146,9 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 	if zustand["email"] != email {
 		t.Errorf("/api/auth/me gesperrt: email = %v, erwartet %q", zustand["email"], email)
 	}
+	if got, want := zustand["error"], "Gesperrt wegen Inaktivität. Bitte das Passwort eingeben."; got != want {
+		t.Errorf("/api/auth/me gesperrt: Meldung %v, erwartet %q", got, want)
+	}
 	for _, feld := range []string{"permissions", "rolle", "vorname", "nachname", "user_id"} {
 		if _, da := zustand[feld]; da {
 			t.Errorf("/api/auth/me gesperrt liefert %q — hinter der Sperre steht nur die E-Mail-Adresse", feld)
@@ -154,8 +157,12 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 
 	// Der Mailserver fällt aus. Ein falsches Passwort schließt nicht auf, das der Anmeldung schon.
 	mailserverTot(t)
-	if rec := sperreEntsperren(pool, a, cookie, "geraten"); rec.Code != http.StatusUnauthorized {
+	rec = sperreEntsperren(pool, a, cookie, "geraten")
+	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("Mailserver tot, falsches Passwort: Status %d, erwartet 401: %s", rec.Code, rec.Body.String())
+	}
+	if got, want := fehlermeldungAus(t, rec), "Das Passwort stimmt nicht"; got != want {
+		t.Errorf("Entsperren mit falschem Passwort: Meldung %q, erwartet %q", got, want)
 	}
 	if _, err := a.PruefeToken(cookie.Value); !errors.Is(err, ErrSitzungGesperrt) {
 		t.Fatalf("nach falschem Passwort muss die Sperre stehen: %v", err)
@@ -257,7 +264,7 @@ func TestSperre_TokenOhneZeileWirdNichtGesperrtUndNichtErneuert(t *testing.T) {
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("Entsperren ohne Zeile bei totem Mailserver: Status %d, erwartet 503: %s", rec.Code, rec.Body.String())
 	}
-	const erwartet = "Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen"
+	const erwartet = "Der Mailserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
 	if got := fehlermeldungAus(t, rec); got != erwartet {
 		t.Errorf("Entsperren: Meldung %q, erwartet %q", got, erwartet)
 	}

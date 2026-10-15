@@ -156,7 +156,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	}
 	t.Run("Akte: ohne Sitzung", func(t *testing.T) {
 		rec := rufe(t, srv.LeserAendern(repository.NewProtokollAbfragen(pool)), http.MethodPatch, "/api/schueler/"+schueler, schueler, `{"vorname":"X"}`, nil)
-		erwarte(t, rec, http.StatusUnauthorized, "Sitzungs-Information fehlt oder ist abgelaufen")
+		erwarte(t, rec, http.StatusUnauthorized, "Nicht angemeldet. Bitte neu anmelden.")
 	})
 
 	// Löschen

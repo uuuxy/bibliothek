@@ -80,8 +80,8 @@ func pruefeFehlerwertOhneUrsache(t *testing.T, rec *httptest.ResponseRecorder, u
 		t.Fatalf("503-Body ist kein JSON: %q (%v)", rec.Body.String(), err)
 	}
 	msg := rumpf["error"]
-	if msg != ErrPruefungGestoert.Error() {
-		t.Errorf("503-Meldung %q, erwartet genau %q", msg, ErrPruefungGestoert.Error())
+	if want := "Die Anmeldung ließ sich nicht prüfen. Bitte erneut versuchen."; msg != want {
+		t.Errorf("503-Meldung %q, erwartet genau %q", msg, want)
 	}
 	// Die Glieder der eingewickelten Kette je einzeln: Ein gekürzter Text machte den Vergleich oben
 	// zwar auch rot, sagte aber nicht, was durchkam.

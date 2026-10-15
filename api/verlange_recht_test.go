@@ -297,8 +297,8 @@ func pruefeSitzungsfehlerRumpf(t *testing.T, rr *httptest.ResponseRecorder, ursa
 		t.Fatalf("503-Body ist kein JSON: %q (%v)", rr.Body.String(), err)
 	}
 	msg := body["error"]
-	if msg != auth.ErrPruefungGestoert.Error() {
-		t.Errorf("503-Meldung %q, erwartet genau %q", msg, auth.ErrPruefungGestoert.Error())
+	if want := "Die Anmeldung ließ sich nicht prüfen. Bitte erneut versuchen."; msg != want {
+		t.Errorf("503-Meldung %q, erwartet genau %q", msg, want)
 	}
 	for _, leck := range []string{ursache, "sperrliste", "kontostatus"} {
 		if strings.Contains(strings.ToLower(msg), leck) {

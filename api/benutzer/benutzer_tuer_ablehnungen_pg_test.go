@@ -70,7 +70,7 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 		status int
 		stueck string
 	}{
-		{"ohne Sitzung", ohneBuch, nil, http.StatusUnauthorized, "session"},
+		{"ohne Sitzung", ohneBuch, nil, http.StatusUnauthorized, "Nicht angemeldet. Bitte neu anmelden."},
 		{"das eigene Konto", admin, alsAdmin, http.StatusForbidden, "eigenes Konto"},
 		{"ein Administrator, gelöscht ohne Adminrechte", zweiterAdmin, alsMitarbeiter, http.StatusForbidden, "Administrator"},
 		{"ein Konto mit offener Ausleihe", mitBuch, alsAdmin, http.StatusConflict,

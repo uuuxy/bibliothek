@@ -1,0 +1,444 @@
+package main
+
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
+	"net/http"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"testing"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/google/go-cmp/cmp"
+)
+
+// Prüfung: Eine Meldung der Türen ist ein Satz für die Oberfläche, deutsch und nach M3 gesetzt.
+//
+// Warum: Die Oberfläche zeigt das Feld error einer Antwort unverändert an, an der Anmeldung wie in
+// jedem Dialog. M3 (Content design, Grammar and punctuation): „Use sentence case for all product
+// text", „Omit punctuation on single-line sentences", „Use periods on: Multiple sentences", „Em
+// dashes are best avoided in UX writing". Ein Fehlertext beginnt dagegen klein (docs/STIL.md,
+// Abschnitt 11); er geht deshalb nie als Meldung hinaus.
+//
+// Regel: Ein Aufruf von apierrors mit einem Status unter 500 und festem Text ist ein Verstoß, wenn
+// er den Text als Fehlertext übergibt (AntworteFehler mit errors.New oder fmt.Errorf) oder wenn die
+// Meldung (AntworteFehlerMitMeldung, BadRequest, Conflict, NotFound, Unauthorized, New) klein
+// beginnt, ein englisches Wort trägt, ein Wort trägt, an dem der Filter für Datenbanktexte
+// anschlägt, einen Gedankenstrich hat, als ein Satz mit Punkt endet oder als mehrere Sätze ohne.
+// meldungBestand nennt je Datei, wie viele Verstöße noch stehen; die Zahl kann nur sinken.
+//
+// Sieht nicht: Texte, die erst zur Laufzeit entstehen (err.Error(), Variablen, fmt.Sprintf), einen
+// Status aus einer Variablen, eigene Helfer wie inventur.schreibeFehler und Antworten, die
+// {"error": …} selbst schreiben.
+
+// meldungBestand: Dateien mit Verstößen und ihre Zahl. Eine Datei ohne Verstoß fällt heraus.
+var meldungBestand = map[string]int{
+	"api/benutzer/admin_schutz.go":                      4,
+	"api/benutzer/konto_anlegen_aendern.go":             3,
+	"api/benutzer/konto_loeschen.go":                    2,
+	"api/benutzer/konto_pruefungen.go":                  4,
+	"api/benutzer/rechte_matrix.go":                     2,
+	"api/bestellung/bestellbestaetigung.go":             6,
+	"api/bestellung/bestellbestaetigung_etiketten.go":   4,
+	"api/bestellung/bestellbestaetigung_link.go":        4,
+	"api/bestellung/bestellbestaetigung_oeffentlich.go": 4,
+	"api/bestellung/bestelldetail.go":                   2,
+	"api/bestellung/bestellmail_erneut.go":              2,
+	"api/bestellung/bestellung_mittel.go":               3,
+	"api/bestellung/bestellungen.go":                    3,
+	"api/bestellung/lieferanten.go":                     8,
+	"api/druck/ausweis_layout.go":                       2,
+	"api/druck/barcode_bild.go":                         1,
+	"api/druck/etiketten_offen.go":                      2,
+	"api/druck/etikettenbogen.go":                       3,
+	"api/druck/schueler_etiketten.go":                   1,
+	"api/druck/titel_suche.go":                          1,
+	"api/inventurlauf/inventur_abschluss.go":            3,
+	"api/inventurlauf/inventur_laeufe.go":               1,
+	"api/inventurlauf/inventur_scan.go":                 5,
+	"api/inventurlauf/inventur_start.go":                3,
+	"api/inventurlauf/inventur_verlust_aktionen.go":     4,
+	"api/katalog/exemplar_aussondern.go":                1,
+	"api/katalog/exemplar_barcode.go":                   4,
+	"api/katalog/exemplar_eigentum.go":                  1,
+	"api/katalog/exemplar_standort.go":                  1,
+	"api/katalog/exemplar_status.go":                    1,
+	"api/katalog/geraete.go":                            1,
+	"api/katalog/isbn_zu_titel.go":                      2,
+	"api/katalog/schlagworte.go":                        3,
+	"api/katalog/schlagworte_dnb.go":                    1,
+	"api/katalog/schlagworte_pflege.go":                 4,
+	"api/katalog/signaturen.go":                         1,
+	"api/katalog/titel_auflagen.go":                     1,
+	"api/katalog/titel_ausleihen.go":                    2,
+	"api/katalog/titel_exemplare.go":                    1,
+	"api/katalog/titel_lernmittel.go":                   1,
+	"api/katalog/titel_loeschen.go":                     1,
+	"api/katalog/titel_signatur.go":                     1,
+	"api/lernmittel/lmf_plan.go":                        1,
+	"api/lernmittel/lmf_plan_veroeffentlichung.go":      1,
+	"api/lernmittel/lmf_termine.go":                     1,
+	"api/lernmittel/lmf_verlaengerung.go":               2,
+	"api/leser/dsgvo_auskunft.go":                       3,
+	"api/leser/dsgvo_pdf.go":                            1,
+	"api/leser/foto.go":                                 2,
+	"api/leser/foto_hochladen.go":                       2,
+	"api/leser/kontoauszug.go":                          2,
+	"api/leser/leser_aendern.go":                        13,
+	"api/leser/leser_anlegen.go":                        8,
+	"api/leser/leser_klasse_regel.go":                   1,
+	"api/leser/leser_schul_email.go":                    5,
+	"api/leser/leser_sperre.go":                         5,
+	"api/leser/leser_zusammenfuehren.go":                6,
+	"api/leser/leserakte.go":                            2,
+	"api/leser/papierkorb.go":                           4,
+	"api/leser/schuljahreswechsel.go":                   3,
+	"api/mahnwesen/abgaenger.go":                        1,
+	"api/mahnwesen/klassenleitung.go":                   3,
+	"api/mahnwesen/mahnbriefe.go":                       2,
+	"api/middleware.go":                                 1,
+	"api/portal/anliegen.go":                            4,
+	"api/portal/klassensatz_reservierung.go":            5,
+	"api/router.go":                                     2,
+	"api/schaden/bescheid.go":                           2,
+	"api/schaden/bescheid_druck.go":                     1,
+	"api/schaden/bescheid_erstellen.go":                 5,
+	"api/schaden/bescheid_vorschlag.go":                 1,
+	"api/schaden/ersatzwert_vorschlag.go":               1,
+	"api/schaden/rechnung.go":                           3,
+	"api/schaden/schaden_melden.go":                     1,
+	"api/system/einstellungen.go":                       1,
+	"api/system/littera_import.go":                      6,
+	"api/system/mail_einstellungen.go":                  3,
+	"api/system/mail_vorlagen.go":                       2,
+	"api/system/theken_auskunft.go":                     1,
+	"api/theke/ausleihe.go":                             6,
+	"api/theke/eingabe.go":                              2,
+	"api/theke/nachbuch_meldungen.go":                   2,
+	"api/theke/nachbuchen.go":                           1,
+	"api/theke/suche.go":                                1,
+	"api/tuer/rechte.go":                                2,
+}
+
+// meldungEnglisch sind Wörter, die es im Deutschen nicht gibt; eines davon in einer Meldung heißt,
+// sie ist englisch.
+var meldungEnglisch = map[string]bool{
+	"the": true, "is": true, "are": true, "not": true, "no": true, "missing": true, "invalid": true,
+	"required": true, "requires": true, "found": true, "cannot": true, "must": true, "empty": true,
+	"provided": true, "parameter": true, "exceeded": true, "allowed": true, "already": true,
+	"please": true, "failed": true, "unknown": true, "error": true, "method": true, "search": true,
+	"query": true, "payload": true, "encoded": true, "record": true, "records": true, "student": true,
+	"reader": true, "order": true, "supplier": true, "user": true, "session": true, "copy": true,
+	"title": true, "scope": true, "least": true, "email": true, "password": true, "rate": true,
+	"graduates": true, "damage": true, "for": true, "or": true, "and": true, "of": true, "be": true,
+	"with": true, "type": true,
+}
+
+// meldungSatzende erkennt das Ende eines Satzes mitten im Text: ein Wort aus zwei Zeichen oder eine
+// Klammer, dann . ! ? oder :, dann ein großer Anfang. „z. B. G" ist so kein Satzende.
+var meldungSatzende = regexp.MustCompile(`(?:[\p{L}\p{N}]{2}|\))[.!?:]\s+[\p{Lu}„"]`)
+
+// meldungStatus löst die Namen der Status aus net/http auf (StatusBadRequest → 400).
+func meldungStatus() map[string]int {
+	status := map[string]int{"StatusTeapot": http.StatusTeapot}
+	for code := 100; code < 600; code++ {
+		if text := http.StatusText(code); text != "" {
+			name := "Status" + strings.NewReplacer(" ", "", "-", "", "'", "").Replace(text)
+			status[name] = code
+		}
+	}
+	return status
+}
+
+// meldungAufruf ist ein Aufruf von apierrors mit festem Text und bekanntem Status.
+type meldungAufruf struct {
+	pos         token.Position
+	status      int
+	text        string
+	alsFehler   bool // der Text kam als errors.New oder fmt.Errorf
+	gelesenFest bool
+}
+
+func TestMeldungen_SaetzeFuerDieOberflaeche(t *testing.T) {
+	aufrufe := sammleMeldungen(t, ".")
+	fest := 0
+	gezaehlt := map[string]int{}
+	var neu []string
+	for _, a := range aufrufe {
+		fest++
+		if grund := meldungVerstoss(a); grund != "" {
+			gezaehlt[a.pos.Filename]++
+			if gezaehlt[a.pos.Filename] > meldungBestand[a.pos.Filename] {
+				neu = append(neu, a.pos.String()+": "+grund+": "+strconv.Quote(a.text))
+			}
+		}
+	}
+	// Untergrenze: Liest der Durchlauf kaum feste Meldungen, prüft er nichts.
+	if fest < 250 {
+		t.Fatalf("nur %d feste Meldungen gelesen, erwartet mindestens 250 — der Detektor läuft leer", fest)
+	}
+	sort.Strings(neu)
+	if len(neu) > 0 {
+		t.Errorf("Meldung nicht als Satz für die Oberfläche:\n  %s\nFix: apierrors.AntworteFehlerMitMeldung(w, "+
+			"status, \"Satz\", ursache) oder apierrors.BadRequest(\"Satz\", nil); groß beginnen, deutsch, ein Satz "+
+			"ohne Punkt, mehrere Sätze mit Punkt, kein Gedankenstrich (docs/STIL.md, Abschnitt 11).",
+			strings.Join(neu, "\n  "))
+	}
+	var veraltet []string
+	for datei, zahl := range meldungBestand {
+		if gezaehlt[datei] < zahl {
+			veraltet = append(veraltet, datei+": "+strconv.Itoa(zahl)+" → "+strconv.Itoa(gezaehlt[datei]))
+		}
+	}
+	sort.Strings(veraltet)
+	if len(veraltet) > 0 {
+		t.Errorf("meldungBestand führt mehr, als noch steht; austragen oder senken:\n  %s", strings.Join(veraltet, "\n  "))
+	}
+}
+
+// Gegenprobe am Detektor: verbotene und erlaubte Formen.
+func TestMeldungVerstoss_Formen(t *testing.T) {
+	verboten := []meldungAufruf{
+		{text: "rate limit exceeded"},
+		{text: "leser nicht gefunden"},
+		{text: "Leser nicht gefunden."},
+		{text: "Leser nicht gefunden. Bitte neu laden"},
+		{text: "Die Frist läuft noch — bitte warten"},
+		{text: "Zu viele Versuche – bitte warten"},
+		{text: "Eingabe enthält select * from"},
+		{text: "Leser nicht gefunden", alsFehler: true},
+	}
+	for _, a := range verboten {
+		if meldungVerstoss(a) == "" {
+			t.Errorf("meldungVerstoss(%q, alsFehler=%v) = \"\", erwartet ein Verstoß", a.text, a.alsFehler)
+		}
+	}
+	erlaubt := []meldungAufruf{
+		{text: "Leser nicht gefunden"},
+		{text: "Der Leser liegt im Papierkorb. Erst wiederherstellen."},
+		{text: "Übergabe nicht möglich: Der Bescheid ist nicht mehr offen."},
+		{text: "Der Barcode muss mit G- beginnen, z. B. G-IPAD-01"},
+		{text: "ID fehlt"},
+	}
+	for _, a := range erlaubt {
+		if grund := meldungVerstoss(a); grund != "" {
+			t.Errorf("meldungVerstoss(%q) = %q, erwartet kein Verstoß", a.text, grund)
+		}
+	}
+	if diff := cmp.Diff(400, meldungStatus()["StatusBadRequest"]); diff != "" {
+		t.Errorf("meldungStatus()[StatusBadRequest] (-erwartet +ist):\n%s", diff)
+	}
+}
+
+// meldungVerstoss nennt den Grund, aus dem ein Text keine Meldung nach der Regel ist, sonst "".
+func meldungVerstoss(a meldungAufruf) string {
+	text := a.text
+	if a.alsFehler {
+		return "als Fehlertext übergeben"
+	}
+	erstes, _ := utf8.DecodeRuneInString(text)
+	if text == "" || (!unicode.IsUpper(erstes) && !unicode.IsDigit(erstes) && erstes != '„') {
+		return "beginnt nicht groß"
+	}
+	for _, wort := range strings.FieldsFunc(strings.ToLower(text), func(r rune) bool { return !unicode.IsLetter(r) }) {
+		if meldungEnglisch[wort] {
+			return "englisches Wort „" + wort + "“"
+		}
+	}
+	klein := strings.ToLower(text)
+	for _, muster := range []string{"pgx", "pgconn", "sql:", "unique constraint", "foreign key", "duplicate key",
+		"violates", "insert into", "select ", "update ", "delete "} {
+		if strings.Contains(klein, muster) {
+			return "der Filter für Datenbanktexte schlägt an („" + muster + "“)"
+		}
+	}
+	if strings.Contains(text, "—") || strings.Contains(text, " – ") {
+		return "Gedankenstrich"
+	}
+	mehrere := meldungSatzende.MatchString(text)
+	endetMitPunkt := strings.HasSuffix(text, ".") || strings.HasSuffix(text, "!") || strings.HasSuffix(text, "?")
+	switch {
+	case mehrere && !endetMitPunkt:
+		return "mehrere Sätze ohne Punkt am Ende"
+	case !mehrere && strings.HasSuffix(text, "."):
+		return "ein Satz mit Punkt am Ende"
+	}
+	return ""
+}
+
+// sammleMeldungen liest jeden Aufruf von apierrors mit festem Text und einem Status unter 500 im
+// Programmcode unter wurzel, ohne Tests. Ein fester Text ist auch eine Konstante des Pakets oder
+// eines anderen (auth.MeldungNichtAngemeldet).
+func sammleMeldungen(t *testing.T, wurzel string) []meldungAufruf {
+	t.Helper()
+	status := meldungStatus()
+	fset := token.NewFileSet()
+	dateien := map[string][]*ast.File{}
+	err := filepath.WalkDir(wurzel, func(pfad string, eintrag fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if eintrag.IsDir() {
+			switch eintrag.Name() {
+			case "frontend", "node_modules", ".git", "vendor":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(pfad, ".go") || strings.HasSuffix(pfad, "_test.go") {
+			return nil
+		}
+		datei, err := parser.ParseFile(fset, pfad, nil, 0)
+		if err != nil {
+			return err
+		}
+		dateien[filepath.Dir(pfad)] = append(dateien[filepath.Dir(pfad)], datei)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fremde := map[string]string{} // paket.Name → Text
+	eigene := map[string]map[string]string{}
+	for ordner, paket := range dateien {
+		eigene[ordner] = textKonstanten(paket)
+		for name, wert := range eigene[ordner] {
+			fremde[paket[0].Name.Name+"."+name] = wert
+		}
+	}
+	var aufrufe []meldungAufruf
+	for ordner, paket := range dateien {
+		konstanten := meldungKonstanten{eigene: eigene[ordner], fremde: fremde}
+		for _, datei := range paket {
+			ast.Inspect(datei, func(n ast.Node) bool {
+				aufruf, ok := n.(*ast.CallExpr)
+				if !ok {
+					return true
+				}
+				if a, ok := meldungAusAufruf(aufruf, status, konstanten); ok {
+					a.pos = fset.Position(aufruf.Pos())
+					aufrufe = append(aufrufe, a)
+				}
+				return true
+			})
+		}
+	}
+	return aufrufe
+}
+
+// meldungKonstanten löst Namen von Textkonstanten auf: eigene des Pakets, fremde als paket.Name.
+type meldungKonstanten struct {
+	eigene map[string]string
+	fremde map[string]string
+}
+
+// meldungAusAufruf liest Status und festen Text eines Aufrufs von apierrors; false heißt: kein
+// solcher Aufruf, Status 500 und mehr, oder der Text entsteht erst zur Laufzeit.
+func meldungAusAufruf(aufruf *ast.CallExpr, status map[string]int, konstanten meldungKonstanten) (meldungAufruf, bool) {
+	sel, ok := aufruf.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return meldungAufruf{}, false
+	}
+	if paket, ok := sel.X.(*ast.Ident); !ok || paket.Name != "apierrors" {
+		return meldungAufruf{}, false
+	}
+	code, textArg := -1, ast.Expr(nil)
+	switch sel.Sel.Name {
+	case "AntworteFehler":
+		if len(aufruf.Args) == 3 {
+			code, textArg = statusAus(aufruf.Args[1], status), aufruf.Args[2]
+		}
+	case "AntworteFehlerMitMeldung":
+		if len(aufruf.Args) == 4 {
+			code, textArg = statusAus(aufruf.Args[1], status), aufruf.Args[2]
+		}
+	case "BadRequest":
+		code, textArg = http.StatusBadRequest, aufruf.Args[0]
+	case "NotFound":
+		code, textArg = http.StatusNotFound, aufruf.Args[0]
+	case "Unauthorized":
+		code, textArg = http.StatusUnauthorized, aufruf.Args[0]
+	case "Conflict":
+		code, textArg = http.StatusConflict, aufruf.Args[0]
+	case "New":
+		if len(aufruf.Args) == 3 {
+			code, textArg = statusAus(aufruf.Args[0], status), aufruf.Args[1]
+		}
+	}
+	if code <= 0 || code >= 500 || textArg == nil {
+		return meldungAufruf{}, false
+	}
+	text, alsFehler, ok := festerText(textArg, konstanten)
+	if !ok || (sel.Sel.Name != "AntworteFehler" && alsFehler) {
+		return meldungAufruf{}, false
+	}
+	if sel.Sel.Name == "AntworteFehler" && !alsFehler {
+		return meldungAufruf{}, false
+	}
+	if text == "" && sel.Sel.Name == "NotFound" {
+		return meldungAufruf{}, false // die Vorgabe von apierrors.NotFound
+	}
+	return meldungAufruf{status: code, text: text, alsFehler: alsFehler, gelesenFest: true}, true
+}
+
+// statusAus löst einen Status als Name aus net/http oder als Zahl auf, sonst -1.
+func statusAus(e ast.Expr, status map[string]int) int {
+	switch v := e.(type) {
+	case *ast.SelectorExpr:
+		if code, ok := status[v.Sel.Name]; ok {
+			return code
+		}
+	case *ast.BasicLit:
+		if code, err := strconv.Atoi(v.Value); err == nil {
+			return code
+		}
+	}
+	return -1
+}
+
+// festerText liefert den Text eines Literals, einer Textkonstante, einer Verkettung daraus oder
+// des ersten Arguments von errors.New und fmt.Errorf; alsFehler sagt, dass er als Fehler kam.
+func festerText(e ast.Expr, konstanten meldungKonstanten) (text string, alsFehler, ok bool) {
+	switch v := e.(type) {
+	case *ast.BasicLit:
+		if v.Kind == token.STRING {
+			s, err := strconv.Unquote(v.Value)
+			return s, false, err == nil
+		}
+	case *ast.Ident:
+		s, ok := konstanten.eigene[v.Name]
+		return s, false, ok
+	case *ast.SelectorExpr:
+		if paket, ok := v.X.(*ast.Ident); ok {
+			s, ok := konstanten.fremde[paket.Name+"."+v.Sel.Name]
+			return s, false, ok
+		}
+	case *ast.BinaryExpr:
+		links, _, ok1 := festerText(v.X, konstanten)
+		rechts, _, ok2 := festerText(v.Y, konstanten)
+		return links + rechts, false, ok1 && ok2 && v.Op == token.ADD
+	case *ast.CallExpr:
+		sel, ok := v.Fun.(*ast.SelectorExpr)
+		if !ok || len(v.Args) == 0 {
+			return "", false, false
+		}
+		paket, ok := sel.X.(*ast.Ident)
+		if !ok {
+			return "", false, false
+		}
+		istNew := paket.Name == "errors" && sel.Sel.Name == "New"
+		istErrorf := paket.Name == "fmt" && sel.Sel.Name == "Errorf"
+		if !istNew && !istErrorf {
+			return "", false, false
+		}
+		s, _, ok := festerText(v.Args[0], konstanten)
+		return s, true, ok
+	}
+	return "", false, false
+}

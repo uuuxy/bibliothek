@@ -140,7 +140,7 @@ var errMailserverNichtErreichbar = errors.New("mailserver nicht erreichbar")
 
 // meldungMailserverNichtErreichbar ist der Satz, mit dem Anmeldung und Entsperren auf einen
 // Ausfall des Mailservers antworten.
-const meldungMailserverNichtErreichbar = "Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen"
+const meldungMailserverNichtErreichbar = "Der Mailserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
 
 // PruefeIMAPKonfiguration prüft IMAP_HOST beim Start des Servers, damit eine unbrauchbare oder
 // gefährliche Konfiguration der Anmeldung sofort auffällt und nicht erst bei der ersten

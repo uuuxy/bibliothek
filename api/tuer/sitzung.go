@@ -41,16 +41,18 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 	return claims, 0, nil
 }
 
-// sendeSitzungsfehler schickt den Fehler aus PruefeSitzung an den Client. Beim 503 (Aussetzer
-// der Datenbank) sieht er nur den Satz von auth.ErrPruefungGestoert: Die Ursache, die
-// PruefeToken mitliefert, gehört ins Log und nicht in die Meldung an der Theke
-// (apierrors.AntworteFehlerMitMeldung).
+// sendeSitzungsfehler schickt den Fehler aus PruefeSitzung an den Client: einen Satz der
+// Anmeldung, die Ursache nur ins Log. Der Text der Prüfung („failed to parse token: …") gehört
+// nicht an die Theke.
 func sendeSitzungsfehler(w http.ResponseWriter, status int, err error) {
-	if errors.Is(err, auth.ErrPruefungGestoert) {
-		apierrors.AntworteFehlerMitMeldung(w, status, auth.ErrPruefungGestoert.Error(), err)
-		return
+	switch {
+	case errors.Is(err, auth.ErrPruefungGestoert):
+		apierrors.AntworteFehlerMitMeldung(w, status, auth.MeldungPruefungGestoert, err)
+	case errors.Is(err, auth.ErrSitzungGesperrt):
+		apierrors.AntworteFehlerMitMeldung(w, status, auth.MeldungSitzungGesperrt, err)
+	default:
+		apierrors.AntworteFehlerMitMeldung(w, status, auth.MeldungNichtAngemeldet, err)
 	}
-	apierrors.AntworteFehler(w, status, err)
 }
 
 // erlaubeZugriff legt die Angaben der Sitzung in den Kontext der Anfrage und ruft next.

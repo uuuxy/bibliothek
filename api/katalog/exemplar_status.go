@@ -66,7 +66,7 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 	// Wer speichert, steht beim Aussondern im Protokoll.
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 		return
 	}
 

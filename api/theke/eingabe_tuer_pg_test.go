@@ -41,8 +41,8 @@ func TestEingabeVerarbeiten_AblehnungenVorDerBuchung(t *testing.T) {
 
 	if w := rufe(`{"query":"B-123"}`, false); w.Code != http.StatusUnauthorized {
 		t.Errorf("ohne Sitzung: Status %d, erwartet 401: %s", w.Code, w.Body.String())
-	} else if got := tuertest.Fehlermeldung(t, w); got != "Sitzungs-Information fehlt oder ist abgelaufen" {
-		t.Errorf("ohne Sitzung: Meldung %q, erwartet %q", got, "Sitzungs-Information fehlt oder ist abgelaufen")
+	} else if got := tuertest.Fehlermeldung(t, w); got != "Nicht angemeldet. Bitte neu anmelden." {
+		t.Errorf("ohne Sitzung: Meldung %q, erwartet %q", got, "Nicht angemeldet. Bitte neu anmelden.")
 	}
 	if w := rufe(`{"query":"   "}`, true); w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "leer") {
 		t.Errorf("Suchtext aus Leerzeichen: Status %d, erwartet 400 mit dem Hinweis „leer“: %s", w.Code, w.Body.String())
@@ -77,7 +77,7 @@ func TestWarteschlangeNachbuchen_OhneSitzung(t *testing.T) {
 		`","absicht":"ausleihe","barcode":"B-1","gescannt_am":"2026-09-01T09:59:00Z"}]}`
 	rec := httptest.NewRecorder()
 	(&Tueren{Basis: &tuer.Basis{}}).WarteschlangeNachbuchen(nachbuchFehler{})(rec, httptest.NewRequest(http.MethodPost, "/api/action/nachbuchen", strings.NewReader(rumpf)))
-	if rec.Code != http.StatusUnauthorized || !strings.Contains(rec.Body.String(), "nicht angemeldet") {
-		t.Errorf("ohne Sitzung: Status %d, erwartet 401 mit „nicht angemeldet“: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusUnauthorized || tuertest.Fehlermeldung(t, rec) != "Nicht angemeldet. Bitte neu anmelden." {
+		t.Errorf("ohne Sitzung: Status %d, erwartet 401 mit „Nicht angemeldet. Bitte neu anmelden.“: %s", rec.Code, rec.Body.String())
 	}
 }

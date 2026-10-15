@@ -47,7 +47,7 @@ func (t *Tueren) LeserSperren(protokollAbfragen repository.ProtokollAbfragen) ht
 func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) error {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		return apierrors.Unauthorized("missing session information", nil)
+		return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, nil)
 	}
 	id := r.PathValue("id")
 	if id == "" {

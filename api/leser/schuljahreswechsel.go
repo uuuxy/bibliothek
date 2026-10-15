@@ -66,7 +66,7 @@ func (t *Tueren) Schuljahreswechsel() http.HandlerFunc {
 
 		claims, ok := auth.ClaimsAusKontext(ctx)
 		if !ok {
-			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 			return
 		}
 

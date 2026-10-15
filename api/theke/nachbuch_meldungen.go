@@ -63,7 +63,7 @@ func (t *Tueren) NachbuchMeldungQuittieren() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
+			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, errors.New("missing session information"))
 		}
 		// {id} ist durch uuidPfadMiddleware schon als UUID geprüft.
 		id := r.PathValue("id")

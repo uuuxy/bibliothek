@@ -43,7 +43,7 @@ func (t *Tueren) ExemplarEigentumSetzen() http.HandlerFunc {
 		}
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			return apierrors.Unauthorized("nicht angemeldet", errors.New("keine Sitzung"))
+			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, errors.New("keine Sitzung"))
 		}
 
 		geaendert, err := repository.SetzeExemplarEigentum(r.Context(), t.DB.Pool, repository.EigentumAenderung{

@@ -55,7 +55,7 @@ func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			return apierrors.Unauthorized("missing session information", nil)
+			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, nil)
 		}
 		if err := protokollAbfragen.VerbucheZahlung(r.Context(), r.PathValue("id"), claims.KontoID); err != nil {
 			return erledigungsFehler(err, "Verbuchen")
@@ -71,7 +71,7 @@ func (t *Tueren) ForderungStornieren(protokollAbfragen repository.ProtokollAbfra
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			return apierrors.Unauthorized("missing session information", nil)
+			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, nil)
 		}
 		var req struct {
 			Grund string `json:"grund"`

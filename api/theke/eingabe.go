@@ -189,7 +189,7 @@ func (t *Tueren) EingabeVerarbeiten(omnibox service.OmniboxDienst) http.HandlerF
 func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnibox service.OmniboxDienst) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, "Sitzungs-Information fehlt oder ist abgelaufen", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 		return
 	}
 

@@ -149,7 +149,7 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("fehlende Session-Information"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 			return
 		}
 

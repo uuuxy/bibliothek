@@ -42,11 +42,19 @@ func TestAnmelden_FehlendeZugangsdatenSind400(t *testing.T) {
 	aktiviereIMAPAttrappe(t)
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
-	if rec := rufeAnmelden(t, a, mock, `{"password":"x"}`); rec.Code != http.StatusBadRequest {
+	rec := rufeAnmelden(t, a, mock, `{"password":"x"}`)
+	if rec.Code != http.StatusBadRequest {
 		t.Errorf("ohne email: erwartet 400, bekam %d", rec.Code)
 	}
-	if rec := rufeAnmelden(t, a, mock, `{"email":"a@b.de"}`); rec.Code != http.StatusBadRequest {
+	if got, want := fehlermeldungAus(t, rec), "Bitte die E-Mail-Adresse eingeben"; got != want {
+		t.Errorf("ohne email: Meldung %q, erwartet %q", got, want)
+	}
+	rec = rufeAnmelden(t, a, mock, `{"email":"a@b.de"}`)
+	if rec.Code != http.StatusBadRequest {
 		t.Errorf("ohne password: erwartet 400, bekam %d", rec.Code)
+	}
+	if got, want := fehlermeldungAus(t, rec), "Bitte das Passwort eingeben"; got != want {
+		t.Errorf("ohne password: Meldung %q, erwartet %q", got, want)
 	}
 }
 
@@ -63,6 +71,9 @@ func TestAnmelden_UnbekanntesKontoIst401(t *testing.T) {
 	rec := rufeAnmelden(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("erwartet 401, bekam %d: %s", rec.Code, rec.Body.String())
+	}
+	if got, want := fehlermeldungAus(t, rec), "E-Mail-Adresse oder Passwort stimmt nicht"; got != want {
+		t.Errorf("Anmelden: Meldung %q, erwartet %q", got, want)
 	}
 	if len(rec.Result().Cookies()) != 0 {
 		t.Errorf("bei fehlgeschlagenem Login darf kein Cookie gesetzt werden")
@@ -82,7 +93,7 @@ func TestAnmelden_DeaktiviertesKontoIst403(t *testing.T) {
 	if rec.Code != http.StatusForbidden {
 		t.Errorf("erwartet 403, bekam %d: %s", rec.Code, rec.Body.String())
 	}
-	const erwartet = "Konto deaktiviert — bitte an die Bibliothek wenden"
+	const erwartet = "Konto deaktiviert. Bitte an die Bibliothek wenden."
 	if got := fehlermeldungAus(t, rec); got != erwartet {
 		t.Errorf("Anmelden: Meldung %q, erwartet %q", got, erwartet)
 	}
@@ -180,6 +191,9 @@ func TestAnmelden_BremseWeistDenSechstenVersuchAb(t *testing.T) {
 	rec := rufeAnmelden(t, a, mock, rumpf)
 	if rec.Code != http.StatusTooManyRequests {
 		t.Errorf("erwartet 429 nach 5 Fehlversuchen, bekam %d", rec.Code)
+	}
+	if got, want := fehlermeldungAus(t, rec), "Zu viele fehlgeschlagene Anmeldungen. Bitte 15 Minuten warten."; got != want {
+		t.Errorf("Anmelden: Meldung %q, erwartet %q", got, want)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen (6. Versuch hätte die DB nicht erreichen dürfen): %v", err)
@@ -296,7 +310,7 @@ func TestAnmelden_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 		if rec.Code != http.StatusServiceUnavailable {
 			t.Fatalf("Versuch %d: erwartet 503 bei totem Mailserver, bekam %d: %s", i, rec.Code, rec.Body.String())
 		}
-		const erwartet = "Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen"
+		const erwartet = "Der Mailserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
 		if got := fehlermeldungAus(t, rec); got != erwartet {
 			t.Fatalf("Versuch %d: Meldung %q, erwartet %q", i, got, erwartet)
 		}

@@ -110,7 +110,7 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if code != http.StatusForbidden {
 		t.Fatalf("erster Versuch: Status %d, erwartet 403 — ein neues Konto darf NICHT hineinkommen", code)
 	}
-	if erwartet := "Zugang beantragt — die Bibliothek muss ihn noch freischalten"; meldung != erwartet {
+	if erwartet := "Zugang beantragt. Die Bibliothek muss ihn noch freischalten."; meldung != erwartet {
 		t.Errorf("erster Versuch: Meldung %q, erwartet %q", meldung, erwartet)
 	}
 

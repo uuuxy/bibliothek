@@ -71,7 +71,7 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			apierrors.AntworteFehler(w, http.StatusUnauthorized, errors.New("missing session information"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 			return
 		}
 
@@ -146,7 +146,7 @@ func (t *Tueren) LeserAendern(protokollAbfragen repository.ProtokollAbfragen) ht
 func (t *Tueren) aendereLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, "Sitzungs-Information fehlt oder ist abgelaufen", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 		return
 	}
 

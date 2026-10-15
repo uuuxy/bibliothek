@@ -25,7 +25,7 @@ func (t *Tueren) FundMelden() http.HandlerFunc {
 		}
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
-			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
+			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, errors.New("missing session information"))
 		}
 
 		ctx := r.Context()
@@ -97,7 +97,7 @@ func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Reques
 	}
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
+		return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, errors.New("missing session information"))
 	}
 
 	ctx := r.Context()

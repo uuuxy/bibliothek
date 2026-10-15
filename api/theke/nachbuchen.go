@@ -119,7 +119,7 @@ func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, 
 	empfangen := time.Now()
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
-		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
+		return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, errors.New("missing session information"))
 	}
 	var req nachbuchAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {

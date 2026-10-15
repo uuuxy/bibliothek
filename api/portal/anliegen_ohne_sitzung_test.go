@@ -24,8 +24,8 @@ func TestAnliegen_OhneSitzung(t *testing.T) {
 			t.Errorf("%s: Status %d, erwartet 401: %s", name, rec.Code, rec.Body.String())
 			continue
 		}
-		if got := tuertest.Fehlermeldung(t, rec); got != "Sitzungs-Information fehlt" {
-			t.Errorf("%s: Meldung %q, erwartet %q", name, got, "Sitzungs-Information fehlt")
+		if got := tuertest.Fehlermeldung(t, rec); got != "Nicht angemeldet. Bitte neu anmelden." {
+			t.Errorf("%s: Meldung %q, erwartet %q", name, got, "Nicht angemeldet. Bitte neu anmelden.")
 		}
 	}
 }
