@@ -62,6 +62,8 @@ import (
 type Server struct {
 	tuer.Basis
 	nurHTTPS bool
+	// bremse zählt die gescheiterten Anmeldungen je Adresse; der Nullwert ist leer.
+	bremse anmeldeBremse
 }
 
 // NewServer baut den Server. Sein Mailversand liest die in der Oberfläche gespeicherte
@@ -215,7 +217,7 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 
 func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 	// Ohne Anmeldung erreichbar.
-	mux.Handle("POST /login", anmeldeBremse(http.HandlerFunc(auth.Anmelden(s.DB.Pool, s.Auth, s.nurHTTPS))))
+	mux.Handle("POST /login", s.bremse.schuetze(http.HandlerFunc(auth.Anmelden(s.DB.Pool, s.Auth, s.nurHTTPS))))
 
 	// Cover aus dem Cache, ohne Anmeldung.
 	mux.HandleFunc("GET /api/images/cover", s.katalog().Cover())
@@ -237,7 +239,7 @@ func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 	// Sperre nach Inaktivität: gilt am Server für die Anmeldung, mit der die Anfrage kommt.
 	// Entsperren prüft ein Passwort und hängt deshalb an derselben Bremse wie /login.
 	mux.HandleFunc("POST /api/auth/sperren", auth.Sperren(s.Auth))
-	mux.Handle("POST /api/auth/entsperren", anmeldeBremse(auth.Entsperren(s.DB.Pool, s.Auth)))
+	mux.Handle("POST /api/auth/entsperren", s.bremse.schuetze(auth.Entsperren(s.DB.Pool, s.Auth)))
 
 	mux.HandleFunc("GET /health", s.lebenszeichen())
 }

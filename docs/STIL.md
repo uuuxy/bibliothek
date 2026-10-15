@@ -205,3 +205,7 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
 - Eine Abweichung meldet `t.Error`, damit ein Lauf alle zeigt; `t.Fatal` steht dort, wo die
   folgenden Prüfungen sinnlos würden, etwa nach einem unerwarteten Fehler (Decisions, „Keep
   going").
+- Ein Test setzt keine Variable der Paketebene um, auch nicht mit Zurücksetzen danach: Was er
+  austauschen will, gehört einem Typ, den der Rufer anlegt und weiterreicht, wie die Basis der
+  Türen mit Mailversand und Cache der Rechte (Best Practices, „Global state").
+  `paketzustand_ratsche_test.go` hält es.

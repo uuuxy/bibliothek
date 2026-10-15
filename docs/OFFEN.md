@@ -183,8 +183,8 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] `api/`.
 - [x] Das Wurzelpaket.
 - [x] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
-- [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, Zustand auf der Ebene eines
-  Pakets.
+- [ ] Was sonst von Googles Regelwerk abweicht: Fehlertexte, drei Werte der Paketebene, die
+  noch kein Rufer anlegt.
 - [ ] Die Oberfläche: Dateinamen und Namen in einer Sprache.
 - [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
@@ -495,12 +495,13 @@ Ordner des Pakets und für die Form `paket.Name`.
   Satzzeichen (Decisions, „Error strings"). Den Satz vom Fehler trennt schon
   `apierrors.AntworteFehlerMitMeldung`; die Meldungen an der Oberfläche bleiben dabei Wort für
   Wort, was ein Test je Stelle belegt.
-- Zustand auf der Ebene eines Pakets hinter drei Nähten für Tests: der Mailversand
-  (`mailservice.Sende` als Variable, der Lader der Konfiguration), der Zwischenspeicher
-  der Rechte (`tuer.MerkeRechtFuerTest`) und das Ersatzbild der Cover
-  (`coverquelle.MerkeErsatzbildFuerTest`). Das Regelwerk (Best Practices, „Global state")
-  verlangt Werte, die der Rufer anlegt und weiterreicht, wie es `tuer.Basis` für Datenbank,
-  Anmeldung und Uhr tut.
+- Drei Werte der Paketebene legt noch kein Rufer an: die Bremse der Anmeldung je E-Mail und
+  Adresse (`auth.anmeldeBremse`), die Bremse der Cover-Downloads (`katalog.coverDownloadBremse`)
+  und die vertrauten Proxys (`clientip`, gesetzt mit `SetzeProxys`, das auch Tests rufen). Das
+  Regelwerk (Best Practices, „Global state") verlangt Werte, die der Rufer anlegt und
+  weiterreicht, wie Mailversand, Cache der Rechte und Bremse je Adresse an der Basis und am
+  Server. `paketzustand_ratsche_test.go` sieht nur Zuweisungen, keinen Aufruf von
+  `SetzeProxys`.
 - `repository.ProtokollAbfragen` trägt neben dem Schreiben der Einträge das Löschen von Titel,
   Konto und Leser, das Aussondern eines Exemplars und das Erledigen einer Forderung, weil jeder
   dieser Vorgänge mit seinem Eintrag in einer Transaktion steht. Wer „Titel löschen" sucht,

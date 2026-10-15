@@ -25,15 +25,15 @@ import (
 )
 
 func main() {
-	if err := fuehreAus(); err != nil {
+	if err := fuehreAus(os.Args[1:], os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "restore-backup: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-// fuehreAus ist der ganze Ablauf: Datei lesen, entschlüsseln, entpacken, ausgeben.
-func fuehreAus() error {
-	argumente := os.Args[1:]
+// fuehreAus ist der ganze Ablauf: Datei lesen, entschlüsseln, entpacken, ausgeben, ohne zweites
+// Argument nach stdout.
+func fuehreAus(argumente []string, stdout io.Writer) error {
 	if len(argumente) < 1 || len(argumente) > 2 {
 		return fmt.Errorf("usage: BACKUP_ENCRYPTION_KEY=<passphrase> restore-backup <backup.sql.gz.enc> [ausgabe.sql]")
 	}
@@ -63,7 +63,7 @@ func fuehreAus() error {
 	defer func() { _ = entpacker.Close() }() //nolint:errcheck
 
 	// 3. Ziel bestimmen: Datei oder stdout (für `| psql`).
-	var ziel io.Writer = os.Stdout
+	ziel := stdout
 	if len(argumente) == 2 {
 		datei, err := os.OpenFile(argumente[1], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 - Argument des Betreibers
 		if err != nil {

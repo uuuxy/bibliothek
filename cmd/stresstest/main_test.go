@@ -183,39 +183,17 @@ func TestDruckeErgebnisse(t *testing.T) {
 		},
 	}
 
-	altStdout := os.Stdout
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("os.Pipe: %v", err)
-	}
-	os.Stdout = w
-	defer func() { os.Stdout = altStdout }()
+	var aus strings.Builder
+	lauf.druckeErgebnisse(&aus)
 
-	lauf.druckeErgebnisse()
-
-	err = w.Close()
-	if err != nil {
-		t.Fatalf("w.Close: %v", err)
-	}
-
-	out, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatalf("io.ReadAll: %v", err)
-	}
-
-	err = r.Close()
-	if err != nil {
-		t.Fatalf("r.Close: %v", err)
-	}
-
-	gelesen := string(out)
+	gelesen := aus.String()
 	if !strings.Contains(gelesen, "42x 200 OK") {
-		t.Errorf("string(out) = %q, erwartet darin %q", gelesen, "42x 200 OK")
+		t.Errorf("druckeErgebnisse schreibt %q, erwartet darin %q", gelesen, "42x 200 OK")
 	}
 	if !strings.Contains(gelesen, "3x Network Error") {
-		t.Errorf("string(out) = %q, erwartet darin %q", gelesen, "3x Network Error")
+		t.Errorf("druckeErgebnisse schreibt %q, erwartet darin %q", gelesen, "3x Network Error")
 	}
 	if !strings.Contains(gelesen, "5x 500 Internal Server Error") {
-		t.Errorf("string(out) = %q, erwartet darin %q", gelesen, "5x 500 Internal Server Error")
+		t.Errorf("druckeErgebnisse schreibt %q, erwartet darin %q", gelesen, "5x 500 Internal Server Error")
 	}
 }

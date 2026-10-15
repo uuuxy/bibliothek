@@ -31,30 +31,31 @@ type fehlversuche struct {
 // Standort, ein Skript sofort.
 const maxAnmeldeFehlversucheJeAdresse = 50
 
-var (
-	fehlversucheJeAdresse = make(map[string]*fehlversuche)
-	fehlversucheMu        sync.Mutex
-)
+// anmeldeBremse zählt je Adresse die gescheiterten Anmeldungen der letzten 15 Minuten. Ihr
+// Nullwert ist leer und benutzbar; der Server trägt eine, die Anmelden und Entsperren teilen.
+type anmeldeBremse struct {
+	mu        sync.Mutex
+	jeAdresse map[string]*fehlversuche
+}
 
-// raeumeAbgelaufeneAuf entfernt abgelaufene Fehlversuche; der Aufrufer hält fehlversucheMu.
-// Es läuft beim Anlegen neuer Einträge ab einer Schwelle. So bleibt die Map ohne eine dauernd
-// laufende Goroutine begrenzt, die in Tests liegen bliebe.
-func raeumeAbgelaufeneAuf(jetzt time.Time) {
-	for adresse, versuche := range fehlversucheJeAdresse {
+// raeumeAbgelaufeneAuf entfernt abgelaufene Fehlversuche; der Aufrufer hält b.mu. Es läuft
+// beim Anlegen neuer Einträge ab einer Schwelle. So bleibt die Map ohne eine dauernd laufende
+// Goroutine begrenzt, die in Tests liegen bliebe.
+func (b *anmeldeBremse) raeumeAbgelaufeneAuf(jetzt time.Time) {
+	for adresse, versuche := range b.jeAdresse {
 		if jetzt.Sub(versuche.erster) > 15*time.Minute {
-			delete(fehlversucheJeAdresse, adresse)
+			delete(b.jeAdresse, adresse)
 		}
 	}
 }
 
-// reserviereAnmeldeVersuch prüft und erneuert den Zähler einer Adresse, unter der Sperre.
-// gesperrt heißt: Die Adresse ist im Fenster von 15 Minuten gesperrt
-// (maxAnmeldeFehlversucheJeAdresse).
-func reserviereAnmeldeVersuch(adresse string, jetzt time.Time) (versuche *fehlversuche, gesperrt bool) {
-	fehlversucheMu.Lock()
-	defer fehlversucheMu.Unlock()
+// reserviere prüft und erneuert den Zähler einer Adresse, unter der Sperre. gesperrt heißt: Die
+// Adresse ist im Fenster von 15 Minuten gesperrt (maxAnmeldeFehlversucheJeAdresse).
+func (b *anmeldeBremse) reserviere(adresse string, jetzt time.Time) (versuche *fehlversuche, gesperrt bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
-	versuche, vorhanden := fehlversucheJeAdresse[adresse]
+	versuche, vorhanden := b.jeAdresse[adresse]
 	if vorhanden {
 		// Ist das Fenster von 15 Minuten abgelaufen, beginnt die Zählung neu.
 		if jetzt.Sub(versuche.erster) > 15*time.Minute {
@@ -68,19 +69,22 @@ func reserviereAnmeldeVersuch(adresse string, jetzt time.Time) (versuche *fehlve
 
 	// Vor dem Einfügen ab einer Schwelle abgelaufene Einträge entfernen, um die Map
 	// ohne Dauer-Goroutine beschränkt zu halten (wie ratelimit.Bremse).
-	if len(fehlversucheJeAdresse) > 5000 {
-		raeumeAbgelaufeneAuf(jetzt)
+	if len(b.jeAdresse) > 5000 {
+		b.raeumeAbgelaufeneAuf(jetzt)
+	}
+	if b.jeAdresse == nil {
+		b.jeAdresse = make(map[string]*fehlversuche)
 	}
 	versuche = &fehlversuche{
 		anzahl: 0,
 		erster: jetzt,
 	}
-	fehlversucheJeAdresse[adresse] = versuche
+	b.jeAdresse[adresse] = versuche
 	return versuche, false
 }
 
-// verzeichneAnmeldeErgebnis zählt nach dem Status der Antwort, unter der Sperre: Nur 401 zählt
-// als Fehlversuch, 200 setzt den Zähler zurück.
+// verzeichne zählt nach dem Status der Antwort, unter der Sperre: Nur 401 zählt als
+// Fehlversuch, 200 setzt den Zähler zurück.
 //
 // 403 zählt nicht: Bei „Zugang beantragt" (Selbstanmeldung) und „Konto deaktiviert" war das
 // Passwort richtig. Die Tür zählt deshalb nicht (auth/anmelden.go), und diese Schicht darf
@@ -88,25 +92,25 @@ func reserviereAnmeldeVersuch(adresse string, jetzt time.Time) (versuche *fehlve
 // der Selbstanmeldung hinter der einen NAT-Adresse der Schule die Anmeldung für alle, auch für
 // die Bibliothekskraft, die die Freischaltungen vornimmt. Für Credential-Stuffing, den Zweck
 // dieser Bremse, ist 401 das Signal, nicht 403.
-func verzeichneAnmeldeErgebnis(versuche *fehlversuche, status int, jetzt time.Time) {
+func (b *anmeldeBremse) verzeichne(versuche *fehlversuche, status int, jetzt time.Time) {
 	switch status {
 	case http.StatusUnauthorized:
-		fehlversucheMu.Lock()
+		b.mu.Lock()
 		versuche.anzahl++
-		fehlversucheMu.Unlock()
+		b.mu.Unlock()
 	case http.StatusOK:
 		// Eine erfolgreiche Anmeldung setzt den Zähler zurück.
-		fehlversucheMu.Lock()
+		b.mu.Lock()
 		if versuche.anzahl > 0 {
 			versuche.anzahl = 0
 			versuche.erster = jetzt
 		}
-		fehlversucheMu.Unlock()
+		b.mu.Unlock()
 	}
 }
 
-// anmeldeBremse lässt je Adresse höchstens maxAnmeldeFehlversucheJeAdresse gescheiterte
-// Anmeldungen in 15 Minuten zu; weitere Versuche im Fenster beantwortet sie mit 429.
+// schuetze lässt je Adresse höchstens maxAnmeldeFehlversucheJeAdresse gescheiterte Anmeldungen
+// in 15 Minuten zu; weitere Versuche im Fenster beantwortet sie mit 429.
 //
 // Sie ist die Schranke für die Menge. Den Schutz eines einzelnen Kontos gegen gezieltes Raten
 // trägt der Handler der Anmeldung, der je E-Mail und Adresse zählt; warum beide Schichten
@@ -115,12 +119,12 @@ func verzeichneAnmeldeErgebnis(versuche *fehlversuche, status int, jetzt time.Ti
 // Die Adresse kommt aus clientip, damit Anfragen hinter Caddy als Reverse-Proxy nach dem
 // echten Aufrufer zählen und nicht nach der einen Adresse des Proxys; sonst sperrten wenige
 // Fehlversuche alle Nutzer aus.
-func anmeldeBremse(next http.Handler) http.Handler {
+func (b *anmeldeBremse) schuetze(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		adresse := clientip.AusAnfrage(r)
 
 		jetzt := time.Now()
-		versuche, gesperrt := reserviereAnmeldeVersuch(adresse, jetzt)
+		versuche, gesperrt := b.reserviere(adresse, jetzt)
 		if gesperrt {
 			apierrors.AntworteFehler(w, http.StatusTooManyRequests, errors.New("zu viele fehlerhafte Login-Versuche. Bitte warten Sie 15 Minuten"))
 			return
@@ -135,6 +139,6 @@ func anmeldeBremse(next http.Handler) http.Handler {
 		next.ServeHTTP(merker, r)
 
 		// Nach dem Ergebnis der Anmeldung zählen oder zurücksetzen.
-		verzeichneAnmeldeErgebnis(versuche, merker.status, jetzt)
+		b.verzeichne(versuche, merker.status, jetzt)
 	})
 }

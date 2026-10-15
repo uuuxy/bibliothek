@@ -39,42 +39,33 @@ func gzipDaten(t *testing.T, daten []byte) []byte {
 	return puffer.Bytes()
 }
 
-func setzeArgumente(t *testing.T, argumente ...string) {
-	t.Helper()
-	altArgumente := os.Args
-	os.Args = append([]string{"restore-backup"}, argumente...)
-	t.Cleanup(func() {
-		os.Args = altArgumente
-	})
-}
-
 func TestFuehreAus_FalscheArgumente(t *testing.T) {
-	setzeArgumente(t) // kein Argument
-	err := fuehreAus()
+	argumente := []string{} // kein Argument
+	err := fuehreAus(argumente, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "usage:") {
 		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "usage:")
 	}
 
-	setzeArgumente(t, "in.enc", "out.sql", "extra") // drei Argumente
-	err = fuehreAus()
+	argumente = []string{"in.enc", "out.sql", "extra"} // drei Argumente
+	err = fuehreAus(argumente, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "usage:") {
 		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "usage:")
 	}
 }
 
 func TestFuehreAus_OhneSchluessel(t *testing.T) {
-	setzeArgumente(t, "in.enc")
+	argumente := []string{"in.enc"}
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "")
-	err := fuehreAus()
+	err := fuehreAus(argumente, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "BACKUP_ENCRYPTION_KEY nicht gesetzt") {
 		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "BACKUP_ENCRYPTION_KEY nicht gesetzt")
 	}
 }
 
 func TestFuehreAus_DateiFehlt(t *testing.T) {
-	setzeArgumente(t, "does_not_exist.enc")
+	argumente := []string{"does_not_exist.enc"}
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
-	err := fuehreAus()
+	err := fuehreAus(argumente, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "konnte nicht gelesen werden") {
 		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "konnte nicht gelesen werden")
 	}
@@ -88,9 +79,9 @@ func TestFuehreAus_EntschluesselungScheitert(t *testing.T) {
 		t.Fatalf("os.WriteFile: %v", err)
 	}
 
-	setzeArgumente(t, eingabe)
+	argumente := []string{eingabe}
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
-	err = fuehreAus()
+	err = fuehreAus(argumente, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "entschlüsselung fehlgeschlagen") {
 		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "entschlüsselung fehlgeschlagen")
 	}
@@ -107,9 +98,9 @@ func TestFuehreAus_GzipScheitert(t *testing.T) {
 		t.Fatalf("os.WriteFile: %v", err)
 	}
 
-	setzeArgumente(t, eingabe)
+	argumente := []string{eingabe}
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
-	err = fuehreAus()
+	err = fuehreAus(argumente, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "gzip-header ungültig") {
 		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "gzip-header ungültig")
 	}
@@ -128,33 +119,16 @@ func TestFuehreAus_ErfolgAufStdout(t *testing.T) {
 		t.Fatalf("os.WriteFile: %v", err)
 	}
 
-	setzeArgumente(t, eingabe)
+	argumente := []string{eingabe}
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 
-	// stdout umleiten.
-	altStdout := os.Stdout
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("os.Pipe: %v", err)
-	}
-	os.Stdout = w
-	t.Cleanup(func() {
-		os.Stdout = altStdout
-	})
-
-	err = fuehreAus()
+	var stdout bytes.Buffer
+	err = fuehreAus(argumente, &stdout)
 	if err != nil {
 		t.Fatalf("fuehreAus: %v", err)
 	}
 
-	if err := w.Close(); err != nil {
-		t.Fatalf("w.Close: %v", err)
-	}
-
-	ausgabeDaten, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatalf("io.ReadAll: %v", err)
-	}
+	ausgabeDaten := stdout.Bytes()
 	if !bytes.Equal(ausgabeDaten, sqlDaten) {
 		t.Errorf("ausgabeDaten = %q, erwartet %q", ausgabeDaten, sqlDaten)
 	}
@@ -174,10 +148,10 @@ func TestFuehreAus_ErfolgInDatei(t *testing.T) {
 		t.Fatalf("os.WriteFile: %v", err)
 	}
 
-	setzeArgumente(t, eingabe, ausgabeDatei)
+	argumente := []string{eingabe, ausgabeDatei}
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 
-	err = fuehreAus()
+	err = fuehreAus(argumente, io.Discard)
 	if err != nil {
 		t.Fatalf("fuehreAus: %v", err)
 	}
@@ -224,10 +198,10 @@ func TestFuehreAus_NachSchluesselwechsel(t *testing.T) {
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
 			ausgabe := filepath.Join(t.TempDir(), "wiederherstellung.sql")
-			setzeArgumente(t, fall.datei, ausgabe)
+			argumente := []string{fall.datei, ausgabe}
 			t.Setenv("BACKUP_ENCRYPTION_KEY", fall.schluessel)
 
-			err := fuehreAus()
+			err := fuehreAus(argumente, io.Discard)
 			if fall.inhalt == nil {
 				if err == nil || !strings.Contains(err.Error(), "falscher Schlüssel") {
 					t.Errorf("Fehler %v, erwartet einen mit %q", err, "falscher Schlüssel")
@@ -271,10 +245,10 @@ func TestFuehreAus_AusgabedateiScheitert(t *testing.T) {
 		t.Fatalf("os.WriteFile: %v", err)
 	}
 
-	setzeArgumente(t, eingabe, ausgabeDatei)
+	argumente := []string{eingabe, ausgabeDatei}
 	t.Setenv("BACKUP_ENCRYPTION_KEY", "secret")
 
-	err = fuehreAus()
+	err = fuehreAus(argumente, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "ausgabedatei") {
 		t.Errorf("fuehreAus: Fehler %v, erwartet einen mit %q", err, "ausgabedatei")
 	}
@@ -283,7 +257,6 @@ func TestFuehreAus_AusgabedateiScheitert(t *testing.T) {
 func TestMain_FehlerEndetMitExitEins(t *testing.T) {
 	// Im zweiten Durchlauf, erkannt an der Umgebungsvariablen, läuft main selbst.
 	if os.Getenv("BE_CRASHER") == "1" {
-		setzeArgumente(t)
 		main()
 		return
 	}
@@ -291,7 +264,8 @@ func TestMain_FehlerEndetMitExitEins(t *testing.T) {
 	programm := os.Args[0]
 	// Das Testprogramm noch einmal starten, nur mit diesem Test und gesetzter Variable.
 	befehl := exec.Command(programm, "-test.run=TestMain_FehlerEndetMitExitEins")
-	befehl.Env = append(os.Environ(), "BE_CRASHER=1")
+	// Ohne Schlüssel scheitert main an jedem Argument, auch an den Schaltern des Testlaufs.
+	befehl.Env = append(os.Environ(), "BE_CRASHER=1", "BACKUP_ENCRYPTION_KEY=")
 	err := befehl.Run()
 	// main endet mit 1; dann liefert Run einen Fehler.
 	if exitFehler, ok := err.(*exec.ExitError); ok && !exitFehler.Success() {

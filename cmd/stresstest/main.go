@@ -215,15 +215,15 @@ func (r *lastlauf) gibStartsignal() {
 	r.startSperre.Unlock()
 }
 
-// druckeErgebnisse gibt die Zahl der Antworten je Status aus.
-func (r *lastlauf) druckeErgebnisse() {
-	fmt.Println("\n--- Stress Test Results ---")
+// druckeErgebnisse schreibt die Zahl der Antworten je Status nach aus.
+func (r *lastlauf) druckeErgebnisse(aus io.Writer) {
+	fmt.Fprintln(aus, "\n--- Stress Test Results ---") //nolint:errcheck // Ausgabe auf der Konsole
 	for code, count := range r.jeStatus {
 		if code == 0 {
-			fmt.Printf("%dx Network Error (Failed to execute request)\n", count)
+			fmt.Fprintf(aus, "%dx Network Error (Failed to execute request)\n", count) //nolint:errcheck // Ausgabe auf der Konsole
 		} else {
 			statusText := http.StatusText(code)
-			fmt.Printf("%dx %d %s\n", count, code, statusText)
+			fmt.Fprintf(aus, "%dx %d %s\n", count, code, statusText) //nolint:errcheck // Ausgabe auf der Konsole
 		}
 	}
 }
@@ -262,5 +262,5 @@ func main() {
 	lauf.gibStartsignal()
 	lauf.alle.Wait()
 
-	lauf.druckeErgebnisse()
+	lauf.druckeErgebnisse(os.Stdout)
 }

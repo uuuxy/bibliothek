@@ -8,11 +8,11 @@ import (
 	"bibliothek/pkg/clientip"
 )
 
-// scheitereNMal schickt n Anfragen durch die Middleware, deren innere Tür immer 401 liefert
+// scheitereNMal schickt n Anfragen durch die Bremse b, deren innere Tür immer 401 liefert
 // (gescheiterte Anmeldung), und gibt den letzten Statuscode zurück.
-func scheitereNMal(t *testing.T, remoteAddr, xff string, n int) int {
+func scheitereNMal(t *testing.T, b *anmeldeBremse, remoteAddr, xff string, n int) int {
 	t.Helper()
-	handler := anmeldeBremse(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := b.schuetze(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 	}))
 	last := 0
@@ -27,12 +27,6 @@ func scheitereNMal(t *testing.T, remoteAddr, xff string, n int) int {
 		last = rec.Code
 	}
 	return last
-}
-
-func leereFehlversuche() {
-	fehlversucheMu.Lock()
-	fehlversucheJeAdresse = make(map[string]*fehlversuche)
-	fehlversucheMu.Unlock()
 }
 
 // schickeNAnfragen schickt n GET-Anfragen auf path durch die allgemeine Bremse je Adresse
@@ -85,21 +79,21 @@ func TestAnfrageBremse_BarcodeSalveIstAusgenommen(t *testing.T) {
 func TestAnmeldeBremse_AufruferHinterProxyZaehlenGetrennt(t *testing.T) {
 	clientip.SetzeProxys([]string{"172.16.0.0/12"})
 	t.Cleanup(func() { clientip.SetzeProxys(nil) })
-	leereFehlversuche()
+	var b anmeldeBremse
 
 	const proxy = "172.18.0.5:40000"
 
 	// Angreifer verbrennt sein Kontingent und wird gesperrt.
-	if got := scheitereNMal(t, proxy, "203.0.113.9", maxAnmeldeFehlversucheJeAdresse); got != http.StatusUnauthorized {
+	if got := scheitereNMal(t, &b, proxy, "203.0.113.9", maxAnmeldeFehlversucheJeAdresse); got != http.StatusUnauthorized {
 		t.Fatalf("letzter erlaubter Versuch des Angreifers: Status %d; want 401 (noch nicht gesperrt)", got)
 	}
-	if got := scheitereNMal(t, proxy, "203.0.113.9", 1); got != http.StatusTooManyRequests {
+	if got := scheitereNMal(t, &b, proxy, "203.0.113.9", 1); got != http.StatusTooManyRequests {
 		t.Fatalf("Versuch über dem Limit: Status %d; want 429 (gesperrt)", got)
 	}
 
 	// Ein anderer, unbeteiligter Nutzer hinter demselben Proxy darf sich
 	// weiterhin einloggen — sein Zähler ist eigenständig.
-	if got := scheitereNMal(t, proxy, "198.51.100.7", 1); got != http.StatusUnauthorized {
+	if got := scheitereNMal(t, &b, proxy, "198.51.100.7", 1); got != http.StatusUnauthorized {
 		t.Fatalf("unbeteiligter Nutzer: Status %d; want 401 (nicht mitgesperrt)", got)
 	}
 }
@@ -109,15 +103,15 @@ func TestAnmeldeBremse_AufruferHinterProxyZaehlenGetrennt(t *testing.T) {
 func TestAnmeldeBremse_FremderAufruferKannXFFNichtFaelschen(t *testing.T) {
 	clientip.SetzeProxys([]string{"172.16.0.0/12"})
 	t.Cleanup(func() { clientip.SetzeProxys(nil) })
-	leereFehlversuche()
+	var b anmeldeBremse
 
 	const attacker = "203.0.113.50:40000"
 
 	// Trotz rotierender, gefälschter XFF-Werte zählt nur die echte Peer-IP: Die
 	// Versuche addieren sich über alle XFF-Identitäten hinweg zum selben Zähler.
-	scheitereNMal(t, attacker, "1.1.1.1", maxAnmeldeFehlversucheJeAdresse-10)
-	scheitereNMal(t, attacker, "2.2.2.2", 10)
-	if got := scheitereNMal(t, attacker, "3.3.3.3", 1); got != http.StatusTooManyRequests {
+	scheitereNMal(t, &b, attacker, "1.1.1.1", maxAnmeldeFehlversucheJeAdresse-10)
+	scheitereNMal(t, &b, attacker, "2.2.2.2", 10)
+	if got := scheitereNMal(t, &b, attacker, "3.3.3.3", 1); got != http.StatusTooManyRequests {
 		t.Fatalf("Angreifer über dem Limit: Status %d; want 429 (XFF-Spoof wirkungslos)", got)
 	}
 }
@@ -132,21 +126,21 @@ func TestAnmeldeBremse_FremderAufruferKannXFFNichtFaelschen(t *testing.T) {
 func TestAnmeldeBremse_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testing.T) {
 	clientip.SetzeProxys([]string{"172.16.0.0/12"})
 	t.Cleanup(func() { clientip.SetzeProxys(nil) })
-	leereFehlversuche()
+	var b anmeldeBremse
 
 	const proxy = "172.18.0.5:40000"
 	const nat = "203.0.113.9" // eine einzige NAT-IP für die ganze Schule
 
 	// Ein Dutzend Fehlversuche über den Tag verteilt — mehrere Nutzer, ein Standort.
-	if got := scheitereNMal(t, proxy, nat, 12); got != http.StatusUnauthorized {
+	if got := scheitereNMal(t, &b, proxy, nat, 12); got != http.StatusUnauthorized {
 		t.Fatalf("12 Fehlversuche vom Schulstandort: Status %d; want 401 — der Standort darf "+
 			"nicht gesperrt werden, sonst kommt niemand mehr rein", got)
 	}
 
 	// Gegenprobe: Ein Skript, das den Standort als Tarnung nutzt, läuft weiterhin
 	// in die Sperre. Ohne diese Zusicherung wäre die Schicht wirkungslos statt weit.
-	scheitereNMal(t, proxy, nat, maxAnmeldeFehlversucheJeAdresse)
-	if got := scheitereNMal(t, proxy, nat, 1); got != http.StatusTooManyRequests {
+	scheitereNMal(t, &b, proxy, nat, maxAnmeldeFehlversucheJeAdresse)
+	if got := scheitereNMal(t, &b, proxy, nat, 1); got != http.StatusTooManyRequests {
 		t.Fatalf("Credential-Stuffing über dem Limit: Status %d; want 429", got)
 	}
 }
@@ -154,9 +148,9 @@ func TestAnmeldeBremse_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testi
 func TestAnmeldeBremse_ErfolgSetztZaehlerZurueck(t *testing.T) {
 	clientip.SetzeProxys(nil) // nur Loopback
 	t.Cleanup(func() { clientip.SetzeProxys(nil) })
-	leereFehlversuche()
+	var b anmeldeBremse
 
-	handler := anmeldeBremse(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := b.schuetze(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// /login mit korrektem Passwort → 200
 		if r.Header.Get("X-Test-Outcome") == "ok" {
 			w.WriteHeader(http.StatusOK)
@@ -194,11 +188,8 @@ func TestAnmeldeBremse_ErfolgSetztZaehlerZurueck(t *testing.T) {
 // mehrfach, alle hinter einer einzigen NAT-Adresse, und nach 50 solcher 403 sperrte die Bremse
 // auch die Bibliothekskraft aus, die die Freischaltungen vornehmen müsste.
 func TestAnmeldeBremse_403ZaehltNichtAlsFehlversuch(t *testing.T) {
-	fehlversucheMu.Lock()
-	fehlversucheJeAdresse = make(map[string]*fehlversuche)
-	fehlversucheMu.Unlock()
-
-	zugangBeantragt := anmeldeBremse(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	var b anmeldeBremse
+	zugangBeantragt := b.schuetze(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 	}))
 
