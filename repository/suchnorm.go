@@ -4,8 +4,6 @@ import (
 	"strings"
 	"unicode"
 
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -58,18 +56,17 @@ func suchnorm(s string) string {
 	return s
 }
 
-// unaccentZerlegung zerlegt in Grundbuchstabe + Akzent (NFD), wirft die Akzente
-// (Kategorie Mn) weg und setzt wieder zusammen.
-var unaccentZerlegung = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-
-// zerlegeRune wendet die Zerlegung auf ein einzelnes Zeichen an. transform.String
-// scheitert nur an ungültigem UTF-8; dann bleibt das Zeichen, wie es ist.
+// zerlegeRune zerlegt ein Zeichen in Grundbuchstabe und Akzente (NFD), wirft die Akzente
+// (Kategorie Mn) weg und setzt den Rest wieder zusammen (NFC). Jeder Aufruf rechnet für sich:
+// Eine geteilte transform.Chain trägt Puffer, die sich gleichzeitige Aufrufe überschreiben.
 func zerlegeRune(r rune) string {
-	z, _, err := transform.String(unaccentZerlegung, string(r))
-	if err != nil {
-		return string(r)
+	var ohneAkzent strings.Builder
+	for _, z := range norm.NFD.String(string(r)) {
+		if !unicode.Is(unicode.Mn, z) {
+			ohneAkzent.WriteRune(z)
+		}
 	}
-	return z
+	return norm.NFC.String(ohneAkzent.String())
 }
 
 // unaccentTabelle: erzeugt gegen PostgreSQL 18.6 (unaccent-Regeln der
