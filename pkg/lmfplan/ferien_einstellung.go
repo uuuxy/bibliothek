@@ -7,7 +7,6 @@ package lmfplan
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -22,6 +21,21 @@ type SommerferienEintrag struct {
 	Jahr int    `json:"jahr"`
 	Von  string `json:"von"`
 	Bis  string `json:"bis"`
+}
+
+// SommerferienFehler meldet Sommerferien, die nicht gespeichert werden. Jahr ist der Eintrag,
+// der nicht stimmt, 0 für die Liste als Ganzes; Grund sagt, was nicht stimmt. Die Tür setzt
+// beides zur Meldung zusammen.
+type SommerferienFehler struct {
+	Jahr  int
+	Grund string
+}
+
+func (e *SommerferienFehler) Error() string {
+	if e.Jahr == 0 {
+		return "sommerferien: " + e.Grund
+	}
+	return fmt.Sprintf("sommerferien %d: %s", e.Jahr, e.Grund)
 }
 
 // zeitraum liefert den Eintrag als Zeitraum; ok ist false, wenn ein Datum nicht lesbar ist.
@@ -43,7 +57,7 @@ func leseSommerferien(text string) ([]SommerferienEintrag, error) {
 	}
 	var eintraege []SommerferienEintrag
 	if err := json.Unmarshal([]byte(text), &eintraege); err != nil {
-		return nil, errors.New("Sommerferien: die Liste ist nicht lesbar")
+		return nil, &SommerferienFehler{Grund: "die Liste ist nicht lesbar"}
 	}
 	gesehen := map[int]bool{}
 	for _, e := range eintraege {
@@ -51,7 +65,7 @@ func leseSommerferien(text string) ([]SommerferienEintrag, error) {
 			return nil, err
 		}
 		if gesehen[e.Jahr] {
-			return nil, fmt.Errorf("Sommerferien %d: das Jahr steht zweimal in der Liste", e.Jahr)
+			return nil, &SommerferienFehler{Jahr: e.Jahr, Grund: "das Jahr steht zweimal in der Liste"}
 		}
 		gesehen[e.Jahr] = true
 	}
@@ -63,21 +77,22 @@ func leseSommerferien(text string) ([]SommerferienEintrag, error) {
 func (e SommerferienEintrag) pruefe() error {
 	z, ok := e.zeitraum()
 	if !ok {
-		return fmt.Errorf("Sommerferien %d: Datum nicht lesbar (JJJJ-MM-TT)", e.Jahr)
+		return &SommerferienFehler{Jahr: e.Jahr, Grund: "Datum nicht lesbar (JJJJ-MM-TT)"}
 	}
 	// Ein Zahlendreher im Jahr (2131 statt 2031) machte die Selbstprüfung sonst hundert Jahre
 	// stumm.
 	if e.Jahr < 2000 || e.Jahr > 2100 {
-		return fmt.Errorf("Sommerferien %d: das Jahr liegt außerhalb von 2000 bis 2100 — Zahlendreher?", e.Jahr)
+		return &SommerferienFehler{Jahr: e.Jahr, Grund: "das Jahr liegt außerhalb von 2000 bis 2100 — Zahlendreher?"}
 	}
 	if z.Von.Year() != e.Jahr || z.Bis.Year() != e.Jahr {
-		return fmt.Errorf("Sommerferien %d: Beginn und Ende müssen im Jahr %d liegen", e.Jahr, e.Jahr)
+		return &SommerferienFehler{Jahr: e.Jahr, Grund: fmt.Sprintf("Beginn und Ende müssen im Jahr %d liegen", e.Jahr)}
 	}
 	if !z.Bis.After(z.Von) {
-		return fmt.Errorf("Sommerferien %d: das Ende liegt nicht nach dem Beginn", e.Jahr)
+		return &SommerferienFehler{Jahr: e.Jahr, Grund: "das Ende liegt nicht nach dem Beginn"}
 	}
 	if tage := z.Bis.Sub(z.Von).Hours() / 24; tage < 28 || tage > 63 {
-		return fmt.Errorf("Sommerferien %d: %d Tage sind keine Sommerferien (erwartet 4 bis 9 Wochen)", e.Jahr, int(tage)+1)
+		return &SommerferienFehler{Jahr: e.Jahr,
+			Grund: fmt.Sprintf("%d Tage sind keine Sommerferien (erwartet 4 bis 9 Wochen)", int(tage)+1)}
 	}
 	return nil
 }

@@ -1,7 +1,7 @@
 package lmfplan
 
 import (
-	"strings"
+	"errors"
 	"testing"
 	"time"
 )
@@ -64,8 +64,10 @@ func TestNormalisiereSommerferien(t *testing.T) {
 		"zu lang":        `[{"jahr":2031,"von":"2031-06-01","bis":"2031-08-31"}]`,
 		"doppelt":        `[{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"},{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"}]`,
 	} {
-		if _, err := NormalisiereSommerferien(text); err == nil || !strings.Contains(err.Error(), "Sommerferien") {
-			t.Errorf("%s: erwartet Fehler mit Sommerferien, bekommen %v", name, err)
+		_, err := NormalisiereSommerferien(text)
+		var ferien *SommerferienFehler
+		if !errors.As(err, &ferien) {
+			t.Errorf("%s: NormalisiereSommerferien = %v, erwartet SommerferienFehler", name, err)
 		}
 	}
 }

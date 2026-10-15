@@ -3,8 +3,10 @@ package system
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -75,10 +77,10 @@ func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, e
 	// Protokoll-Eintrag, damit dort nicht die Eingabe steht, während in der Datenbank
 	// etwas anderes liegt.
 	if err := req.PruefeZahlen(); err != nil {
-		return apierrors.BadRequest(err.Error(), err)
+		return einstellungAbgelehnt(err)
 	}
 	if err := normalisiereLernmittelAngaben(&req); err != nil {
-		return apierrors.BadRequest(err.Error(), err)
+		return einstellungAbgelehnt(err)
 	}
 
 	if err := einstellungsAbfragen.Schreibe(r.Context(), &req); err != nil {
@@ -124,6 +126,25 @@ func normalisiereLernmittelAngaben(req *repository.EinstellungenPatch) error {
 		req.LMFStichtag = &norm
 	}
 	return nil
+}
+
+// einstellungAbgelehnt antwortet auf eine Einstellung, die ihre Regel verletzt, mit 400 und einem
+// Satz, der Einstellung, Wert und Regel nennt; jeder andere Fehler ist ein Serverfehler.
+func einstellungAbgelehnt(err error) error {
+	var zahlen *repository.ZahlenAusserhalbFehler
+	var wert *repository.EinstellungUngueltigFehler
+	var ferien *lmfplan.SommerferienFehler
+	switch {
+	case errors.As(err, &zahlen):
+		return apierrors.BadRequest("Nichts gespeichert. "+strings.Join(zahlen.Maengel, "; ")+".", err)
+	case errors.As(err, &wert):
+		return apierrors.BadRequest(wert.Feld+": "+wert.Grund, err)
+	case errors.As(err, &ferien) && ferien.Jahr == 0:
+		return apierrors.BadRequest("Sommerferien: "+ferien.Grund, err)
+	case errors.As(err, &ferien):
+		return apierrors.BadRequest(fmt.Sprintf("Sommerferien %d: %s", ferien.Jahr, ferien.Grund), err)
+	}
+	return apierrors.Internal("Fehler beim Speichern der Einstellungen", err)
 }
 
 // protokolliereEinstellungen schreibt den gespeicherten Patch ins Protokoll; die IP-Adresse

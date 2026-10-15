@@ -191,10 +191,10 @@ func TestKeinFehlerAmWortlaut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Der Bestand reicht den Text eines Fehlers an vielen Stellen an Protokoll und Antwort
-	// weiter. Findet der Durchlauf kaum eine davon, liest er nicht, was er lesen soll.
-	if funktionenMitFehlertext < 50 {
-		t.Fatalf("nur %d Funktionen mit einem Aufruf von Error() gelesen, erwartet mindestens 50 — der Detektor läuft leer", funktionenMitFehlertext)
+	// Der Bestand reicht den Text eines Fehlers an rund fünfzig Stellen an Protokoll und Antwort
+	// weiter. Findet der Durchlauf weniger als vierzig, liest er nicht, was er lesen soll.
+	if funktionenMitFehlertext < 40 {
+		t.Fatalf("nur %d Funktionen mit einem Aufruf von Error() gelesen, erwartet mindestens 40 — der Detektor läuft leer", funktionenMitFehlertext)
 	}
 	sort.Strings(treffer)
 

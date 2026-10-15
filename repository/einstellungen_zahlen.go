@@ -59,6 +59,15 @@ func zahlenFelder(p *EinstellungenPatch) []zahlFeld {
 	}
 }
 
+// ZahlenAusserhalbFehler meldet Zahlen der Einstellungen außerhalb ihrer Spanne. Ein Mangel nennt
+// das Feld, wie es das Formular zeigt, den Wert und die Spanne; die Tür setzt die Meldung daraus
+// zusammen.
+type ZahlenAusserhalbFehler struct{ Maengel []string }
+
+func (e *ZahlenAusserhalbFehler) Error() string {
+	return "zahlen außerhalb ihrer spanne: " + strings.Join(e.Maengel, "; ")
+}
+
 // PruefeZahlen meldet jede mitgeschickte Zahl außerhalb ihrer Spanne, alle auf einmal, damit
 // der Mensch nicht nach jedem Speichern ein neues Feld erfährt. Ein Feld mit nil gehört nicht
 // zur gespeicherten Kategorie und wird nicht geprüft.
@@ -76,6 +85,5 @@ func (p *EinstellungenPatch) PruefeZahlen() error {
 	if len(maengel) == 0 {
 		return nil
 	}
-	//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor dem Menschen.
-	return fmt.Errorf("Nichts gespeichert. %s.", strings.Join(maengel, "; "))
+	return &ZahlenAusserhalbFehler{Maengel: maengel}
 }

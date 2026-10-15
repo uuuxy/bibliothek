@@ -43,6 +43,15 @@ func EingangsjahrgaengeAus(einstellung string) []int {
 	return jahrgaenge
 }
 
+// EinstellungUngueltigFehler meldet einen Wert der Einstellungen, der nicht gespeichert wird.
+// Feld ist der Name der Einstellung, wie ihn das Formular zeigt, Grund der Verstoß gegen ihre
+// Regel; die Tür setzt beides zur Meldung zusammen.
+type EinstellungUngueltigFehler struct{ Feld, Grund string }
+
+func (e *EinstellungUngueltigFehler) Error() string {
+	return "einstellung ungültig: " + e.Feld + ": " + e.Grund
+}
+
 // NormalisiereEingangsjahrgaenge prüft die Eingabe und gibt sie in Normalform zurück („5, 7").
 // Ein Fehler statt einer stillen Vorgabe: Sonst würde ein Text wie „8/9" (mit Schrägstrich, wie
 // Klassen geschrieben werden) gespeichert und angezeigt, beim Lesen aber verworfen, und
@@ -57,8 +66,8 @@ func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 	for _, teil := range teile {
 		n, err := strconv.Atoi(strings.TrimPrefix(teil, "0"))
 		if err != nil || n < 1 || n > 13 {
-			//nolint:staticcheck // ST1005: nutzer-sichtbarer Text, erscheint als 400-Meldung im Formular
-			return "", fmt.Errorf("Eingangsjahrgänge: %q ist kein Jahrgang zwischen 1 und 13 — erwartet wird etwa „5, 7“", teil)
+			return "", &EinstellungUngueltigFehler{Feld: "Eingangsjahrgänge",
+				Grund: fmt.Sprintf("%q ist kein Jahrgang zwischen 1 und 13 — erwartet wird etwa „5, 7“", teil)}
 		}
 		if gesehen[n] {
 			continue
@@ -93,8 +102,8 @@ func NormalisiereLMFStichtag(text string) (string, error) {
 			return s, nil
 		}
 	}
-	//nolint:staticcheck // ST1005: nutzer-sichtbarer Text, erscheint als 400-Meldung im Formular
-	return "", fmt.Errorf("Lernmittel-Stichtag: %q ist kein Kalendertag im Format MM-TT — erwartet wird etwa „07-31“ für den 31. Juli", text)
+	return "", &EinstellungUngueltigFehler{Feld: "Lernmittel-Stichtag",
+		Grund: fmt.Sprintf("%q ist kein Kalendertag im Format MM-TT — erwartet wird etwa „07-31“ für den 31. Juli", text)}
 }
 
 // nurRueckgabeSQL ist das Prädikat „diese Klasse gibt vor den Ferien nur ab": Abschluss-
