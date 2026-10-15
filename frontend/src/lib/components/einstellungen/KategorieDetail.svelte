@@ -2,8 +2,8 @@
 	/**
 	 * @component KategorieDetail
 	 * Die Detailfläche der Einstellungen: welche Kategorie welches Bauteil zeigt. Stand bis
-	 * zum 23.09.2026 in SystemSettings.svelte; ausgelagert, als die Schlagwort-Pflege
-	 * dazukam und die Seite an der 200-Zeilen-Grenze stand. SystemSettings.svelte hält
+	 * zum 23.09.2026 in Einstellungen.svelte; ausgelagert, als die Schlagwort-Pflege
+	 * dazukam und die Seite an der 200-Zeilen-Grenze stand. Einstellungen.svelte hält
 	 * Laden, Auswahl und Liste, diese Datei nur die Zuordnung.
 	 *
 	 * @prop {string} aktiv - id der gewählten Kategorie (kategorien.js).
@@ -11,10 +11,10 @@
 	 * @prop {Record<string, any>} daten - GET /api/einstellungen.
 	 * @prop {() => Promise<void>} onSaved - lädt die Einstellungen neu.
 	 */
-	import DataManagement from '../admin/DataManagement.svelte';
+	import Datenverwaltung from '../admin/Datenverwaltung.svelte';
 	import SchuljahreswechselBereich from '../admin/SchuljahreswechselBereich.svelte';
 	import Betriebsbereitschaft from '../../Betriebsbereitschaft.svelte';
-	import SystemSettingsRouting from '../../SystemSettingsRouting.svelte';
+	import Klassenleitungen from '../../Klassenleitungen.svelte';
 	import GlobalLMFExtendWidget from '../../GlobalLMFExtendWidget.svelte';
 	import KategorieRahmen from './KategorieRahmen.svelte';
 	import SchuleKategorie from './kategorien/SchuleKategorie.svelte';
@@ -48,7 +48,7 @@
 			titel="Mahnwesen-Routing"
 			kurz="Welche Lehrkraft die Mahnliste einer Klasse bekommt."
 		>
-			<SystemSettingsRouting />
+			<Klassenleitungen />
 		</KategorieRahmen>
 	{:else if aktiv === 'bestellwesen'}
 		<BestellwesenKategorie {daten} {onSaved} />
@@ -76,7 +76,7 @@
 			titel="Datenverwaltung"
 			kurz="Importe und Exporte des Bestands, Offline-Sicherungen einspielen."
 		>
-			<DataManagement />
+			<Datenverwaltung />
 		</KategorieRahmen>
 	{:else if aktiv === 'schuljahr' && sichtbar.has('schuljahr')}
 		<KategorieRahmen

@@ -7,7 +7,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Der Listenimport ist für „Sammelkäufe und Spenden" gedacht (ListenImportWidget), genau der
+// Der Listenimport ist für „Sammelkäufe und Spenden" gedacht (ListenImport), genau der
 // Fall einer ISBN, die schon im Katalog steht. Dort soll er Exemplare dazulegen, nicht die
 // Stammdaten ersetzen: Der Bestand gewinnt, der Import füllt Lücken.
 //

@@ -17,7 +17,7 @@ import (
 // Ein Hinweis schickt mit „A → B" an einen Ort der Oberfläche. Der Weg beginnt bei einem
 // Menüpunkt, den es gibt (frontend/src/lib/menu.js), wahlweise mit seiner Gruppe davor
 // („System → Benutzer & Rechte"); hinter „Einstellungen →" steht eine Kategorie der
-// Einstellungen (settings/kategorien.js). Nach einer Umbenennung zeigt der Hinweis sonst weiter
+// Einstellungen (einstellungen/kategorien.js). Nach einer Umbenennung zeigt der Hinweis sonst weiter
 // auf den alten Namen. Der Pfeil steht in Texten deshalb nur für einen Weg; was er sonst
 // verbindet, steht mit Grund in wegKeinWeg.
 //
@@ -78,7 +78,7 @@ var wegKeinWeg = []struct{ datei, stueck, grund string }{
 	{"db/rechte_vorgabe.go", "vererbung manage_", "Fehlertext über zwei Rechte"},
 	{"jobs/backup.go", "S3 upload successful → s3://", "Protokollzeile mit dem Ziel der Auslagerung"},
 	{"frontend/src/lib/Zugangsanfragen.svelte", "„Bearbeiten“ → Aktiv", "Knopf und Wert im Dialog"},
-	{"frontend/src/lib/components/settings/kategorien.js", "Klasse → Lehrkraft", "Zuordnung, die die Kategorie pflegt"},
+	{"frontend/src/lib/components/einstellungen/kategorien.js", "Klasse → Lehrkraft", "Zuordnung, die die Kategorie pflegt"},
 	{"frontend/src/lib/components/leser/Schuljahreswechsel.svelte", "5a → 6a", "Beispiel einer Versetzung"},
 }
 
@@ -289,7 +289,7 @@ func wegOrteDerOberflaeche(t *testing.T) wegOrte {
 		orte.gruppen[gruppe][treffer[2]] = true
 		orte.menue[treffer[2]] = true
 	}
-	for _, treffer := range wegTreffer(t, "frontend/src/lib/components/settings/kategorien.js", `titel: '([^']+)'`) {
+	for _, treffer := range wegTreffer(t, "frontend/src/lib/components/einstellungen/kategorien.js", `titel: '([^']+)'`) {
 		orte.kategorien[treffer[1]] = true
 	}
 	// Nicht-leer-Garantie je Quelle.

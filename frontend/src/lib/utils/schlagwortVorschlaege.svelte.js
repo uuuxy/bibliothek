@@ -9,7 +9,7 @@ import { ladeSchlagwortVorschlaege } from './schlagworte.js';
  * (Katalogisat vom Juni 2026: 13.224) deckten sie 56 % der Zuordnungen ab; 12.724 Wörter wurden
  * nie angeboten, und wer „Pilz" tippte, sah das vorhandene „Pilze" nicht und legte ein zweites
  * Wort an (Rasterdurchgang vom 30.09.2026). Dasselbe Muster wie die Suche der Pflegeseite
- * (settings/schlagwortPflegeListe.svelte.js): 300 ms nach dem Tippen, nur die jüngste Antwort
+ * (einstellungen/schlagwortPflegeListe.svelte.js): 300 ms nach dem Tippen, nur die jüngste Antwort
  * schreibt. Ein leeres Feld holt wieder die häufigsten.
  *
  * Antwortet der Server nicht, bleibt die bisherige Liste stehen: Das Feld nimmt weiter freien

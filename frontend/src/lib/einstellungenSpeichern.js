@@ -16,7 +16,7 @@
 // die keiner von beiden angefasst hat.
 import { apiPut } from './apiFetch.js';
 import { toastStore } from './stores/toastStore.svelte.js';
-import { sammleZahlen } from './settingsWerte.js';
+import { sammleZahlen } from './einstellungsWerte.js';
 import { nurGeaendertes } from './utils/geaendert.js';
 
 /**

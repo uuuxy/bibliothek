@@ -46,7 +46,7 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Inventur                                | `UnifiedInventory.svelte`                                                                | `api/inventurlauf/inventurlauf.go` |
 | Schuljahreswechsel (LMF-Plan)           | `LmfPlan.svelte`                                                                         | `api/lernmittel/lernmittel.go`     |
 | Benutzer & Rechte                       | `Berechtigungen.svelte`                                                                  | `api/benutzer/benutzer.go`         |
-| Einstellungen, Statistiken, System-Logs | `SystemSettings.svelte`, `StatsDashboard.svelte`, `SystemLogs.svelte`                    | `api/system/system.go`             |
+| Einstellungen, Statistiken, System-Logs | `Einstellungen.svelte`, `StatsDashboard.svelte`, `SystemLogs.svelte`                    | `api/system/system.go`             |
 | Mein Portal, öffentlicher Katalog       | `KollegiumPortal.svelte`, `OpacSearch.svelte`                                            | `api/portal/portal.go`             |
 
 Der Medienkatalog ist ein eigenes Untermodul: Titelliste, Buchmaske und Import haben ihre
@@ -65,7 +65,7 @@ Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bi
 | eine neue Adresse anlegen                     | die Tür im Ordner ihres Themas, Adresse und Recht in der passenden Liste `api/routen_*.go`                                          |
 | festlegen, was eine Rolle ab Werk darf        | `db/rechte_vorgabe.go`                                                                                                                        |
 | einen Menüpunkt ändern                        | `frontend/src/lib/menu.js`                                                                                                          |
-| eine Kategorie der Einstellungen ändern       | `frontend/src/lib/components/settings/kategorien.js`                                                                                |
+| eine Kategorie der Einstellungen ändern       | `frontend/src/lib/components/einstellungen/kategorien.js`                                                                                |
 | ein gemeinsames Bauteil der Oberfläche ändern | `frontend/src/lib/components/ui/`                                                                                                   |
 | Farben und Schriftgrößen ändern               | `frontend/src/styles/rollen.css`, `frontend/src/styles/theme-mass.css`                                                              |
 | einen Nachtlauf ändern                        | `jobs/cron.go` nennt die Läufe und ihre Uhrzeit                                                                                     |

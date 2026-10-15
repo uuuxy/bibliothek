@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { srcRoot } from './hygiene-quellen.js';
-import { KATEGORIEN } from './components/settings/kategorien.js';
+import { KATEGORIEN } from './components/einstellungen/kategorien.js';
 
 // Zwei Struktur-Invarianten der Einstellungsseite. Beide sind Antworten auf Fragen aus
 // dem Prüfraster vom 22.08.2026 („Konvention statt Regel", „zwei Wahrheitsquellen") —
@@ -16,9 +16,9 @@ import { KATEGORIEN } from './components/settings/kategorien.js';
 // würde es pflichtschuldig schreiben. Der e2e-Test daneben prüft GENAU EIN Paar
 // (Datenschutz gegen den Rest); dieser hier prüft alle gegen alle.
 
-const KATEGORIE_DIR = join(srcRoot, 'lib/components/settings/kategorien');
+const KATEGORIE_DIR = join(srcRoot, 'lib/components/einstellungen/kategorien');
 // Die Zuordnung Kategorie → Bauteil steht seit dem 23.09.2026 in KategorieDetail.svelte.
-const SHELL = join(srcRoot, 'lib/components/settings/KategorieDetail.svelte');
+const SHELL = join(srcRoot, 'lib/components/einstellungen/KategorieDetail.svelte');
 
 // Das Vokabular der Einstellungs-Schlüssel — GELESEN aus repository/einstellungen_patch.go,
 // nicht danebengeschrieben.

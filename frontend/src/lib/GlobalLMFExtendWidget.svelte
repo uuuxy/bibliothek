@@ -63,7 +63,7 @@
 </script>
 
 <!-- Ohne PageShell: Das ist keine eigene Route, sondern Inhalt der Einstellungs-Kategorie
-     „LMF-Aktionen" — das Seitengerüst stellt SystemSettings. -->
+     „LMF-Aktionen" — das Seitengerüst stellt Einstellungen. -->
 <div class="space-y-5">
 	<div>
 		<h3 class="text-base font-bold text-on-surface">LMF-Massenverlängerung (Klasse)</h3>

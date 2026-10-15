@@ -1,5 +1,5 @@
 <!--
-  @component DataManagement
+  @component Datenverwaltung
   Verwaltungszentrum für den Import und Export von Medien- und Katalogdaten: Katalog-Import
   (Littera), Bestands-Import (Kombi-CSV), Listenimport (ISBN + Stückzahl), Cover-Sync und
   CSV-Export. Jeder Import ist ein eigenes Widget, damit diese Datei unter der
@@ -7,11 +7,11 @@
 -->
 <script lang="ts">
 	import { Download, Upload } from '@lucide/svelte';
-	import LitteraImportWidget from '../../LitteraImportWidget.svelte';
+	import LitteraImport from '../../LitteraImport.svelte';
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import BestandImportWidget from './BestandImportWidget.svelte';
-	import ListenImportWidget from './ListenImportWidget.svelte';
+	import BestandImport from './BestandImport.svelte';
+	import ListenImport from './ListenImport.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { exportiereCSV } from '../../../inventur/lib/admin_api.js';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
@@ -97,10 +97,10 @@
 
 {#snippet importContent()}
 	<div class="flex flex-col gap-8">
-		<LitteraImportWidget />
+		<LitteraImport />
 
-		<BestandImportWidget />
-		<ListenImportWidget />
+		<BestandImport />
+		<ListenImport />
 
 		<div class="border-t border-outline-variant pt-6">
 			<h4 class="mb-1 text-sm font-bold text-on-surface">Cover-Synchronisation</h4>

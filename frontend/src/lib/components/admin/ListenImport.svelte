@@ -1,5 +1,5 @@
 <!--
-  @component ListenImportWidget
+  @component ListenImport
   Listenimport: CSV oder Excel mit ISBN und Stückzahl → neue Titel samt Exemplaren.
 
   Der Weg existierte seit dem 21.06.2026 nur noch als Backend-Route (POST /api/books/import):

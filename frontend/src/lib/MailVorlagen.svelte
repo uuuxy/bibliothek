@@ -1,4 +1,4 @@
-<!-- @component MailTemplates — die Texte von Eltern-Mahnbrief und Bestellmail.
+<!-- @component MailVorlagen — die Texte von Eltern-Mahnbrief und Bestellmail.
 
      Steht in der Einstellungs-Kategorie „Mail" unter deren Überschrift „Mail-Vorlagen", die
      auch den Hinweis trägt; eine eigene Überschrift hätte die Ordnung der Seite umgekehrt. -->

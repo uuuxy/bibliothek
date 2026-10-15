@@ -579,7 +579,7 @@ Bestand am 07.10.2026:
   (`api/mail_routen_frist_test.go`).
 - **Frage 5, das Formular nach dem Ladefehler:** Zeigt eine Maske nach einem gescheiterten
   Abruf leere Felder, schreibt „Speichern" sie über die echten Werte. Beleg vom 07.10.2026:
-  die Mailserver-Angaben (`MailConfig.test.js`); dieselbe Form am 31.08.2026 an den
+  die Mailserver-Angaben (`MailEinstellungen.test.js`); dieselbe Form am 31.08.2026 an den
   Einstellungen und am 05.09.2026 im LMF-Planer (`ui/LadeFehler`).
 - **Frage 3, die Prüfung der Schwester:** Führen zwei Türen zum selben Vorgang, prüft jede,
   was die andere prüft? Beleg vom 07.10.2026: Der Bescheid lehnte ein Buch ab, das

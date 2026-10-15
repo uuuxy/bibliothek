@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { zahlOderLeer, sammleZahlen } from './settingsWerte.js';
+import { zahlOderLeer, sammleZahlen } from './einstellungsWerte.js';
 
 /**
  * Die getippte 0 ist ein Wert („aus"), ein LEERES Feld ist keiner. Der Unterschied ist

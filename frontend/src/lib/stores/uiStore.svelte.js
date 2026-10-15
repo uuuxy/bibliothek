@@ -92,7 +92,7 @@ class UIStore {
 	}
 	/**
 	 * Aus einem System-Alert angeforderte KATEGORIE der Einstellungen (ihre id, z. B.
-	 * 'erreichbarkeit'). Gleiche Mechanik wie requestedStudentId: SystemSettings greift
+	 * 'erreichbarkeit'). Gleiche Mechanik wie requestedStudentId: Einstellungen greift
 	 * den Wert auf und setzt ihn zurück. Damit verweist ein Alert direkt dorthin, wo
 	 * sich das Problem beheben lässt, statt den Nutzer auf der ersten Kategorie
 	 * abzusetzen. Bis zum 23.08.2026 stand hier ein Reiter-NAME ("Allgemein").

@@ -21,7 +21,7 @@
 	import KollegiumPortal from './KollegiumPortal.svelte';
 	import Mahnwesen from './Mahnwesen.svelte';
 	import StatistikDetailPage from './components/stats/StatistikDetailPage.svelte';
-	import SystemSettings from './SystemSettings.svelte';
+	import Einstellungen from './Einstellungen.svelte';
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
 	import Graduates from './Graduates.svelte';
@@ -149,7 +149,7 @@
 	{:else if uiStore.activeTab === 'berechtigungen'}
 		<div class="w-full animate-fade-in"><Berechtigungen /></div>
 	{:else if uiStore.activeTab === 'settings'}
-		<div class="w-full animate-fade-in"><SystemSettings /></div>
+		<div class="w-full animate-fade-in"><Einstellungen /></div>
 	{:else if uiStore.activeTab === 'book_detail'}
 		<div class="w-full animate-fade-in">
 			<Buchakte

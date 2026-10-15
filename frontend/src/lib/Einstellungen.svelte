@@ -26,12 +26,12 @@
 	import { onMount } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
-	import KategorieListe from './components/settings/KategorieListe.svelte';
-	import KategorieDetail from './components/settings/KategorieDetail.svelte';
+	import KategorieListe from './components/einstellungen/KategorieListe.svelte';
+	import KategorieDetail from './components/einstellungen/KategorieDetail.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
-	import { sichtbareKategorien } from './components/settings/kategorien.js';
+	import { sichtbareKategorien } from './components/einstellungen/kategorien.js';
 	import { hatRecht } from './menu.js';
 
 	let loading = $state(true);

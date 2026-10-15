@@ -1,7 +1,7 @@
 <script>
 	import LusdImport from '../leser/LusdImport.svelte';
 	import Schuljahreswechsel from '../leser/Schuljahreswechsel.svelte';
-	import SommerferienKategorie from '../settings/kategorien/SommerferienKategorie.svelte';
+	import SommerferienKategorie from '../einstellungen/kategorien/SommerferienKategorie.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menu.js';
 

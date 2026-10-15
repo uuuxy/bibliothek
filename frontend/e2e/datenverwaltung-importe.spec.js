@@ -13,7 +13,7 @@ import {
 // Stückzahl) erzeugt — und hatte vom 21.06. bis zum 07.09.2026 keinen Knopf: Er saß in der
 // Titel-Verwaltung und ging beim Entschlacken der Toolbar ohne Ersatz verloren; nur die
 // Backend-Route blieb (Befund-Register). Der Bestands-Import übernimmt — und zog am
-// 07.09.2026 aus DataManagement.svelte in ein eigenes Widget.
+// 07.09.2026 aus Datenverwaltung.svelte in ein eigenes Widget.
 //
 // Beide Wege laufen hier bis in die Datenbank, denn genau dort liegt der Unterschied:
 // frische B-Nummern ohne Etikett gegen die mitgebrachte Nummer mit Etikett.

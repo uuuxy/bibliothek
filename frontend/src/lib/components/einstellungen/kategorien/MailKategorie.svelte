@@ -11,8 +11,8 @@
 	 * das genauso, nur über zwei getrennte Reiter verteilt).
 	 */
 	import KategorieRahmen from '../KategorieRahmen.svelte';
-	import MailConfig from '../../admin/MailConfig.svelte';
-	import MailTemplates from '../../../MailTemplates.svelte';
+	import MailEinstellungen from '../../admin/MailEinstellungen.svelte';
+	import MailVorlagen from '../../../MailVorlagen.svelte';
 </script>
 
 <KategorieRahmen titel="Mail" kurz="Der Postausgang der Schule und die Texte, die er verschickt.">
@@ -24,7 +24,7 @@
 	{/snippet}
 
 	<div class="flex flex-col gap-10">
-		<MailConfig />
+		<MailEinstellungen />
 		<div class="flex flex-col gap-6">
 			<div class="flex flex-col gap-1">
 				<h3 class="text-base font-medium text-on-surface">Mail-Vorlagen</h3>
@@ -33,7 +33,7 @@
 					Platzhalter gelten, hängt von der Vorlage ab — siehe Hinweis unter dem Text.
 				</p>
 			</div>
-			<MailTemplates />
+			<MailVorlagen />
 		</div>
 	</div>
 </KategorieRahmen>

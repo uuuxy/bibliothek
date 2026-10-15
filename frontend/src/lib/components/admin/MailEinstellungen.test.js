@@ -10,16 +10,16 @@ vi.mock('../../apiFetch.js', async (original) => ({
 vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
 
 import { apiGet, apiPut } from '../../apiFetch.js';
-import MailConfig from './MailConfig.svelte';
+import MailEinstellungen from './MailEinstellungen.svelte';
 
 // Scheitert das Laden, steht kein Formular da: Mit leeren Feldern speicherte „Speichern" einen
 // leeren Server, Port und Benutzer über die echten Angaben, und keine Mail ginge mehr hinaus.
-describe('MailConfig', () => {
+describe('MailEinstellungen', () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it('zeigt nach einem gescheiterten Laden kein Formular, das sich speichern ließe', async () => {
 		vi.mocked(apiGet).mockRejectedValueOnce(new Error('Netz weg'));
-		const screen = render(MailConfig);
+		const screen = render(MailEinstellungen);
 
 		await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
 		expect(screen.queryByLabelText('SMTP Host')).toBeNull();
@@ -36,7 +36,7 @@ describe('MailConfig', () => {
 			sender_email: 'bibliothek@schule.example',
 			has_password: true
 		});
-		const screen = render(MailConfig);
+		const screen = render(MailEinstellungen);
 
 		await fireEvent.click(await screen.findByRole('button', { name: 'Erneut versuchen' }));
 

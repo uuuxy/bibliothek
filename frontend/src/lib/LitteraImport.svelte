@@ -54,7 +54,7 @@
 </script>
 
 <!-- Der erste Baustein der Gruppe, deshalb ohne Trennlinie darüber; sonst gebaut wie
-     BestandImportWidget und ListenImportWidget. -->
+     BestandImport und ListenImport. -->
 <div>
 	<h4 class="mb-1 text-sm font-bold text-on-surface">Katalog-Import (Littera)</h4>
 	<p class="mb-4 text-xs text-on-surface-variant">

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
-import MailTemplates from './MailTemplates.svelte';
+import MailVorlagen from './MailVorlagen.svelte';
 import { apiClient } from './apiFetch.js';
 import { toastStore } from './stores/toastStore.svelte.js';
 
@@ -19,7 +19,7 @@ const antwort = (/** @type {any} */ daten, ok = true) =>
 	/** @type {any} */ ({ ok, json: async () => daten });
 
 async function vorlagen() {
-	const screen = render(MailTemplates);
+	const screen = render(MailVorlagen);
 	await screen.findByLabelText('Text-Inhalt');
 	return screen;
 }
@@ -85,7 +85,7 @@ describe('Mail-Vorlagen', () => {
 
 	it('nennt einen Ladefehler als Meldung', async () => {
 		vi.mocked(apiClient.get).mockResolvedValue(antwort({}, false));
-		const screen = render(MailTemplates);
+		const screen = render(MailVorlagen);
 		const meldung = await screen.findByRole('alert');
 		expect(meldung.textContent).toContain('Fehler beim Laden der Vorlagen.');
 		// Neben dem Fehler behauptet die Liste nicht, sie lade noch.

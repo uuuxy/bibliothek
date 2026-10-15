@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ALLE_KATEGORIE_RECHTE } from './components/settings/kategorien.js';
+import { ALLE_KATEGORIE_RECHTE } from './components/einstellungen/kategorien.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { canSeeItem, erlaubteTabs, menuGroups, tabIstGesperrt } from './menu.js';

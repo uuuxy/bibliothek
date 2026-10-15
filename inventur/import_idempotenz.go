@@ -18,7 +18,7 @@ import (
 // nochmal. Der Schaden ist still: nirgends steht, dass 400 Exemplare zu viel da sind.
 //
 // Der Aufrufer benennt seinen Lauf mit X-Idempotency-Key (eine UUID je Dateiauswahl,
-// ListenImportWidget.svelte). Der Server merkt sich den Schlüssel in idempotency_keys —
+// ListenImport.svelte). Der Server merkt sich den Schlüssel in idempotency_keys —
 // derselben Tabelle wie die Aktionen der Theke (api/theke/eingabe.go; Aufräumen nach
 // 24 h in jobs/cron.go). Drei Zustände:
 //
