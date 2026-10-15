@@ -7,7 +7,7 @@ vi.mock('./apiFetch.js', () => ({
 }));
 
 import { apiClient } from './apiFetch.js';
-import StudentCreateModal from './StudentCreateModal.svelte';
+import LeserAnlegenDialog from './LeserAnlegenDialog.svelte';
 
 // „Neuen Leser anlegen" fragt zuerst nach der Art, und an ihr hängt, WAS hinausgeht.
 //
@@ -35,7 +35,7 @@ describe('Neuen Leser anlegen', () => {
 
 	/** @param {string} art */
 	async function anlegen(art, vorname = 'Katrin', nachname = 'Wendland') {
-		const screen = render(StudentCreateModal, {
+		const screen = render(LeserAnlegenDialog, {
 			open: true,
 			klassen: ['07A'],
 			onclose: vi.fn(),
@@ -90,7 +90,7 @@ describe('Neuen Leser anlegen', () => {
 	// nur nicht mit.
 
 	it('lässt eine Lehrkraft ohne Schul-E-Mail gar nicht erst los', async () => {
-		const screen = render(StudentCreateModal, {
+		const screen = render(LeserAnlegenDialog, {
 			open: true,
 			klassen: [],
 			onclose: vi.fn(),
@@ -110,7 +110,7 @@ describe('Neuen Leser anlegen', () => {
 	// solange die Adresse fehlte, und führte genau zu dem Doppeleintrag, den die Pflicht
 	// jetzt abschafft. Was der Dialog NICHT vergibt, ist eine Rolle.
 	it('sagt einer Lehrkraft, dass hier ihr Zugang entsteht — aber keine Rolle', async () => {
-		const screen = render(StudentCreateModal, {
+		const screen = render(LeserAnlegenDialog, {
 			open: true,
 			klassen: [],
 			onclose: vi.fn(),
@@ -126,7 +126,7 @@ describe('Neuen Leser anlegen', () => {
 	// ließ sich ein Praktikant ohne Schuladresse gar nicht anlegen: Die Adresse war für jeden
 	// Kollegen Pflicht.
 	it('legt ein Praktikum ohne Schul-E-Mail an und schickt keine mit', async () => {
-		const screen = render(StudentCreateModal, {
+		const screen = render(LeserAnlegenDialog, {
 			open: true,
 			klassen: [],
 			onclose: vi.fn(),
@@ -151,7 +151,7 @@ describe('Neuen Leser anlegen', () => {
 	// Eine vorher getippte Adresse geht nicht mit, wenn die Art danach auf Fachbereich wechselt:
 	// Der Server wiese sie ab.
 	it('schickt beim Fachbereich auch eine vorher getippte Adresse nicht mit', async () => {
-		const screen = render(StudentCreateModal, {
+		const screen = render(LeserAnlegenDialog, {
 			open: true,
 			klassen: [],
 			onclose: vi.fn(),
@@ -185,7 +185,7 @@ describe('Neuen Leser anlegen', () => {
 	// ist die Eingabe gesperrt — und der Dialog sagte dann „Die Klassen kommen mit dem
 	// LUSD-Abgleich", ein falscher Grund, der zum Warten auf einen Abgleich schickt.
 	it('sagt, dass die Klassen nicht geladen sind, statt auf den LUSD-Abgleich zu warten', () => {
-		const screen = render(StudentCreateModal, {
+		const screen = render(LeserAnlegenDialog, {
 			open: true,
 			klassen: [],
 			klassenFehler: true,
@@ -201,7 +201,7 @@ describe('Neuen Leser anlegen', () => {
 	});
 
 	it('verweist auf den LUSD-Abgleich, wenn die Schule noch keine Klassen hat', () => {
-		const screen = render(StudentCreateModal, {
+		const screen = render(LeserAnlegenDialog, {
 			open: true,
 			klassen: [],
 			onclose: vi.fn(),

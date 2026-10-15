@@ -71,7 +71,7 @@ class UIStore {
 	/**
 	 * Aus einer anderen Ansicht (Mahnwesen/Abgänger) angefordertes Schülerprofil.
 	 * Zentral im Store, bewusst NICHT localStorage: welches Profil DU gerade ansiehst,
-	 * ist Session-lokal und nicht PC-übergreifend zu teilen (Multi-PC). StudentDirectory
+	 * ist Session-lokal und nicht PC-übergreifend zu teilen (Multi-PC). Schuelerdatei
 	 * greift die ID auf, öffnet das Profil und setzt sie zurück.
 	 */
 	requestedStudentId = $state(/** @type {string | null} */ (null));

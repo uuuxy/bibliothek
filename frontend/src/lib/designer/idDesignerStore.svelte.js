@@ -253,7 +253,7 @@ export const idStore = $state({
 	barcodeType: 'code39',
 	/**
 	 * Womit gedruckt wird — die Einstellung, der auch der Stapeldruck der Schülerdatei
-	 * folgt (StudentDirectory.svelte). Der Designer legt fest WIE, die Schülerdatei WER.
+	 * folgt (Schuelerdatei.svelte). Der Designer legt fest WIE, die Schülerdatei WER.
 	 *
 	 * 'a4' gab es bis zum 24.08.2026: acht Kartenabbilder auf einem A4-Blatt zum
 	 * Ausschneiden. Als Notbehelf gedacht, im Alltag nutzlos — an seine Stelle ist der

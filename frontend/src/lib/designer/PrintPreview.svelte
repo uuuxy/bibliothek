@@ -14,7 +14,7 @@
 	 * nicht über die Druck-CSS des Browsers. Deshalb bleiben hier nur die zwei Karten.
 	 *
 	 * Jede Sektion rendert pro Schüler eine Karte über CardFace — dieselbe Render-Quelle
-	 * wie der profilseitige Einzeldruck (StudentPrintCard).
+	 * wie der profilseitige Einzeldruck (Ausweiskarte).
 	 */
 	import { idStore } from './idDesignerStore.svelte.js';
 	import CardFace from './CardFace.svelte';

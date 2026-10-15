@@ -31,7 +31,7 @@ async function openBlockedStudent(page, suffix, art) {
 
 	if (art === 'von-hand') {
 		// Grund ist beim Sperren Pflicht (Backend-Check + DB-Constraint chk_schueler_block_reason,
-		// gespiegelt in StudentLockModal). Ohne reason antwortet der Endpoint mit 400.
+		// gespiegelt in LeserSperreDialog). Ohne reason antwortet der Endpoint mit 400.
 		const locked = await apiPatch(page, `/api/admin/students/${studentId}/lock`, {
 			is_locked: true,
 			reason: 'E2E: manuell gesperrt'

@@ -387,7 +387,7 @@ Vermerk.
   Der Linter meldet nach dem Update drei gebundene Eigenschaften (`$bindable()`) als „assigned
   a value but only used as a type" (`@typescript-eslint/no-unused-vars`), und er läuft mit
   `--max-warnings 0`: `queryVal` in `CameraScanner.svelte`, `element` in `ui/Suchpille.svelte`
-  und `showWebcam` in `StudentProfileCard.svelte`. Jedes der drei Bauteile setzt den Wert nur,
+  und `showWebcam` in `LeserakteKopf.svelte`. Jedes der drei Bauteile setzt den Wert nur,
   und er geht über `bind:` an den Aufrufer; die Meldung ist falsch. Nachgestellt am 12.10.2026
   in einem eigenen Arbeitsverzeichnis mit `npm ci`: Sie kommt mit typescript-eslint 8.71.1 und
   bleibt mit 8.71.0 aus; eslint, eslint-plugin-svelte und svelte ändern daran nichts. Bei den

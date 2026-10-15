@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/svelte';
-import LeserEditFelder from './components/students/LeserEditFelder.svelte';
+import LeserakteFelder from './components/leser/LeserakteFelder.svelte';
 import { LESER_ARTEN } from './leserArt.js';
 
 // EINE Maske für jeden Leser.
@@ -36,7 +36,7 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 
 	/** Die ids der verschlossenen Felder, sortiert. @param {string} art @returns {string[]} */
 	function verschlossen(art) {
-		const screen = render(LeserEditFelder, { formData: formular(art) });
+		const screen = render(LeserakteFelder, { formData: formular(art) });
 		return [...screen.container.querySelectorAll('input, [role="combobox"]')]
 			.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)
 			.map((e) => e.id)
@@ -45,7 +45,7 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 
 	/** @param {string} art @returns {string[]} */
 	function felderVon(art) {
-		const screen = render(LeserEditFelder, { formData: formular(art) });
+		const screen = render(LeserakteFelder, { formData: formular(art) });
 		// Seit dem 30.09.2026 ist die Klasse ein Auswahlfeld (Knopf mit role="combobox").
 		return [...screen.container.querySelectorAll('input, [role="combobox"]')]
 			.map((e) => e.id || e.getAttribute('value') || '')
@@ -60,7 +60,7 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 
 	it('nennt die Abschnitte für jeden gleich', () => {
 		for (const art of LESER_ARTEN) {
-			const text = render(LeserEditFelder, { formData: formular(art) }).container.textContent ?? '';
+			const text = render(LeserakteFelder, { formData: formular(art) }).container.textContent ?? '';
 			expect(text, `Abschnitte bei art=${art}`).toContain('Persönliche Daten');
 			expect(text).toContain('Schuldaten');
 			expect(text).toContain('Kontaktdaten');
@@ -115,7 +115,7 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 			// Die Liste hängt am Dokument, nicht am Container: vorher aufräumen, sonst fände die
 			// Abfrage die Liste der ersten Maske ein zweites Mal.
 			cleanup();
-			const screen = render(LeserEditFelder, { formData: formular(art) });
+			const screen = render(LeserakteFelder, { formData: formular(art) });
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Art des Lesers' }));
 			return [...screen.getByRole('listbox').querySelectorAll('[role="option"]')].map((o) => ({
 				text: o.textContent?.trim(),

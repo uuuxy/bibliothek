@@ -1,6 +1,6 @@
 <script>
-	import StudentIdDesigner from './StudentIdDesigner.svelte';
-	import KlassenDruckEinstieg from './components/students/KlassenDruckEinstieg.svelte';
+	import AusweisDesigner from './AusweisDesigner.svelte';
+	import KlassenDruckEinstieg from './components/leser/KlassenDruckEinstieg.svelte';
 	import LabelPrinter from './LabelPrinter.svelte';
 	import EtikettenNachdruck from './components/labels/EtikettenNachdruck.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
@@ -70,7 +70,7 @@
 			</div>
 		{:else}
 			<div class="animate-fade-in h-full py-6">
-				<StudentIdDesigner />
+				<AusweisDesigner />
 			</div>
 		{/if}
 	</div>

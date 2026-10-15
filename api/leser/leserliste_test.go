@@ -18,7 +18,7 @@ import (
 // Der Ablauf: frische Installation -> noch keine Schüler -> das Repository gibt eine
 // nil-Slice zurück -> JSON "null" -> im Frontend "students = null" -> students.length
 // wirft "Cannot read properties of null (reading 'length')" und reißt die ganze Ansicht ab
-// (StudentDirectory.svelte).
+// (Schuelerdatei.svelte).
 //
 // Der Test prüft den echten HTTP-Pfad, nicht nur die Kodierfunktion: Genau hier ist die
 // Zusicherung "eine Liste ist immer ein Array" für die Oberfläche sichtbar.

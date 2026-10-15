@@ -6,7 +6,7 @@ import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
 /**
  * Laden, Speichern und Zurücksetzen des zentral abgelegten Ausweis-Designs.
  *
- * Aus StudentIdDesigner.svelte herausgelöst (24.08.2026): Die Komponente lag an der
+ * Aus AusweisDesigner.svelte herausgelöst (24.08.2026): Die Komponente lag an der
  * 200-Zeilen-Marke und hat zweimal hintereinander die Größen-Ratsche gerissen, als
  * etwas an ihr gebaut wurde. Kommentare zu kürzen, um einen Zähler zu bedienen, ist die
  * falsche Antwort darauf — der Bildschirm macht schlicht zwei Dinge, und die Ablage ist

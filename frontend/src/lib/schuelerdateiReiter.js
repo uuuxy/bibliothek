@@ -1,5 +1,5 @@
 // Die Reiter der Leserdatei — welche es gibt, hängt an den Rechten des Bedieners:
-// Papierkorb an delete_students. Reine Funktion, damit StudentDirectory schlank bleibt.
+// Papierkorb an delete_students. Reine Funktion, damit Schuelerdatei schlank bleibt.
 
 /**
  * @param {{ loeschen: boolean }} rechte

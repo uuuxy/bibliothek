@@ -1,6 +1,6 @@
 <script>
-	import LusdImportView from '../students/LusdImportView.svelte';
-	import PromoteStudentsView from '../students/PromoteStudentsView.svelte';
+	import LusdImport from '../leser/LusdImport.svelte';
+	import Schuljahreswechsel from '../leser/Schuljahreswechsel.svelte';
 	import SommerferienKategorie from '../settings/kategorien/SommerferienKategorie.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menu.js';
@@ -24,11 +24,11 @@
 	     vom KategorieRahmen. -->
 	<div class="divide-y divide-outline-variant [&>*+*]:pt-8 [&>*+*]:mt-8">
 		{#if darfLusd}
-			<LusdImportView />
+			<LusdImport />
 		{/if}
 
 		{#if darfVersetzen}
-			<PromoteStudentsView />
+			<Schuljahreswechsel />
 		{/if}
 
 		{#if darfEinstellen}

@@ -39,8 +39,8 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Buchakte, Signaturen                    | `BookAkte.svelte`, `SignaturenView.svelte`                                               | `api/katalog/katalog.go`           |
 | Bestandsbücher                          | `components/bestand/Bestandsbuecher.svelte`                                              | `api/katalog/katalog.go`           |
 | Druck-Center                            | `DruckCenter.svelte`                                                                     | `api/druck/druck.go`               |
-| Leserdatei, Leserakte                   | `StudentDirectory.svelte`, `StudentProfile.svelte`                                       | `api/leser/leser.go`               |
-| Schaden, Forderung, Bescheid            | `DamageReportModal.svelte`, `StudentGebuehrenCard.svelte`, `StudentBescheideCard.svelte` | `api/schaden/schaden.go`           |
+| Leserdatei, Leserakte                   | `Schuelerdatei.svelte`, `Leserakte.svelte`                                       | `api/leser/leser.go`               |
+| Schaden, Forderung, Bescheid            | `DamageReportModal.svelte`, `LeserGebuehrenKarte.svelte`, `LeserBescheideKarte.svelte` | `api/schaden/schaden.go`           |
 | Mahnwesen, Abgänger                     | `Mahnwesen.svelte`, `Graduates.svelte`                                                   | `api/mahnwesen/mahnwesen.go`       |
 | Bestellungen, Bestellberichte           | `BestellWorkspace.svelte`, `components/bestellungen/BestellBerichte.svelte`              | `api/bestellung/bestellung.go`     |
 | Inventur                                | `UnifiedInventory.svelte`                                                                | `api/inventurlauf/inventurlauf.go` |

@@ -1151,7 +1151,7 @@ frontend/src
 │   ├─ Omnibox.svelte    Das Eingabefeld des Tresens
 │   ├─ stores/*.svelte.js Geteilter Zustand (Runes-Singletons): authStore, uiStore,
 │   │                     omnibox, offlineSync, printQueue, toastStore, mahnwesen*, …
-│   └─ …                 Fachansichten (StudentProfile, BookAkte, Mahnwesen, LmfPlan,
+│   └─ …                 Fachansichten (Leserakte, BookAkte, Mahnwesen, LmfPlan,
 │                         DruckCenter, KollegiumPortal, Betriebsbereitschaft, Monitor, …)
 ├─ inventur/             Die Katalog-Oberfläche des Untermoduls (eigene lib/ + routes/)
 └─ styles/, assets/
@@ -4242,7 +4242,7 @@ Fenstern bekannt ist:
   nicht. Ein unbekannter Barcode in einer schnellen Folge steht nur so lange da, bis der
   nächste Scan gebucht ist.
 - Die Meldung „Änderungen gespeichert." der Maske „Stammdaten bearbeiten" erscheint nie: Die
-  Maske schließt mit dem Speichern, und die Meldung gehört zu ihr (`StudentEditSheet.svelte`).
+  Maske schließt mit dem Speichern, und die Meldung gehört zu ihr (`LeserBearbeiten.svelte`).
   Die Akte zeigt danach den gespeicherten Stand.
 - Theke: Antwortet der Server nicht, wartet jeder eingereihte Scan seine eigene Frist ab
   (10 s, `apiFetch.js`), bevor er ohne Netz abgelegt wird; die Reihe läuft dann langsam ab.
@@ -4347,10 +4347,10 @@ Fenstern bekannt ist:
 - Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
   01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
   Vormerk-Liste (`permissionMetadata.js`, `BookVormerkungenTab.svelte`), das Etikett der
-  Reiterleiste (`StudentDirectory.svelte`), „Öffnet die Schülerdatei …" im Druck-Einstieg
+  Reiterleiste (`Schuelerdatei.svelte`), „Öffnet die Schülerdatei …" im Druck-Einstieg
   (`KlassenDruckEinstieg.svelte`), „Schülerakte" in drei Erklärtexten (`permissionMetadata.js`,
   `DatenschutzKategorie.svelte`, `BescheideTabelle.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
-  auch das Kollegium steht (`DeletedStudentList.svelte`). Beim Umbenennen die E2E-Specs
+  auch das Kollegium steht (`Papierkorb.svelte`). Beim Umbenennen die E2E-Specs
   mitziehen.
 - Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht (gefunden am 01.10.2026 beim
   Durchgang über die Speichern-Wege der Oberfläche, am Code gelesen): die Nummer eines
@@ -4364,8 +4364,8 @@ Fenstern bekannt ist:
   02.10.2026 vor den Feldern; wer mit der Tastatur ausfüllt, erreicht den Knopf nach dem
   letzten Feld nur rückwärts.
 - Elf Dialoge sperren „Abbrechen", solange ihre Anfrage läuft (etwa
-  `StudentProfileDeleteModal.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`),
-  dazu sieben Stellen in Formularen und Listen (`PromoteStudentsView.svelte` zweimal,
+  `LeserLoeschenDialog.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`),
+  dazu sieben Stellen in Formularen und Listen (`Schuljahreswechsel.svelte` zweimal,
   `GeraeteVerwaltung.svelte`, `AnliegenListe.svelte`, `KlassensatzReservierungen.svelte`,
   `AusleiheRueckgabe.svelte`, `portal/ProblemFormular.svelte`; gezählt am 06.10.2026). M3 Dialogs, Guidelines: „Disable confirming
   actions until a choice is made. Dismissive actions are never disabled." Abbrechen bricht die
@@ -4379,7 +4379,7 @@ Fenstern bekannt ist:
   `ueberschriftDavor`); seit dem 05.10.2026 nutzt beides kein Aufrufer mehr.
 - Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
   in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
-  freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
+  freigeschalteten Zugang (`LeserakteAktionen.svelte`, `data-tip`).
 - Browser-Gates: Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
   Anfangszustand; kein Screenreader-Durchgang; der Ausweis-Designer geht nur per Maus.
 - Symbol-Knöpfe haben 32 × 32 px ohne größere Trefferfläche (`.icon-btn` in
@@ -4444,12 +4444,12 @@ Fenstern bekannt ist:
   gezählt am 06.10.2026). Die Liste sieht je Browser anders aus und folgt nicht Material 3;
   im Haus ist sie einheitlich. Anlass zum Bauen: Die Vorschläge sollen aussehen wie die Menüs
   der Anwendung.
-- Die Ausleih-Quittung der Leserakte (`StudentPrintReceipt.svelte`) hat keinen Knopf. Sie
+- Die Ausleih-Quittung der Leserakte (`AusleihQuittung.svelte`) hat keinen Knopf. Sie
   erscheint, wenn jemand die offene Akte über den Browser druckt (Strg+P; so gesehen am
   05.10.2026, 1c4fbdd4), und sonst nirgends (`styles/druck-ausweise.css`). Den Knopf
   „Ausleihen-Liste" nahm 9e225604 am 23.07.2026 aus der Akte; für Schüler ist seitdem der
   Kontoauszug das Ausleih-Dokument. Für einen Kollegen gibt es den Kontoauszug nicht
-  (`StudentProfileActions.svelte`), die Quittung ist dort der einzige Ausdruck seiner
+  (`LeserakteAktionen.svelte`), die Quittung ist dort der einzige Ausdruck seiner
   Ausleihen. Anlass zum Bauen: Jemand braucht den Ausdruck an der Theke, etwa die Dauerleihen
   einer Lehrkraft; dann bekommt er einen Knopf.
 
@@ -4509,7 +4509,7 @@ Einstieg.
 | **Klassensatz**             | Mehrere Exemplare eines Titels für eine Klasse. Zwei Quellen: Handliste und live aus den Ausleihen abgeleitet                                                            | `class_books`, `klassensatz_reservierungen`                  |
 | **Kollegium**               | **Grundzustand** jeder Lehrkraft, keine vergebene Rolle. Ein Recht: `create_reservations`                                                                                | Enum `benutzer_rolle = 'kollegium'`, `db/rechte_vorgabe.go`            |
 | **Leser**                   | Jeder Entleiher — Schüler und Kollegium, jeweils mit seiner Art. Eine Tabelle, ein Ausweis-Nummernkreis                                                                 | `leser`                                                    |
-| **Leserdatei**              | Die Liste aller Leser in der Oberfläche                                                                                                                                 | `frontend/src/lib/StudentDirectory.svelte`                  |
+| **Leserdatei**              | Die Liste aller Leser in der Oberfläche                                                                                                                                 | `frontend/src/lib/Schuelerdatei.svelte`                  |
 | **Leitung**                 | Rolle: Admin **minus** `manage_users` und `manage_settings` — abgeleitet, nicht abgeschrieben                                                                            | Migration 122, `db/rolle_leitung_test.go`                    |
 | **Littera**                 | Die Windows-Vorgängersoftware. Ihr Altbestand kommt über `mdb-export`-CSVs herein; ihre Barcodes dürfen nicht neu geklebt werden                                        | `internal/littera`, `cmd/littera-altbestand`                 |
 | **LiV**                     | Lehrkraft im Vorbereitungsdienst. Eigene Art, gleiche Rechte wie eine Lehrkraft als Entleiher                                                                            | `leser.art = 'liv'`                                         |

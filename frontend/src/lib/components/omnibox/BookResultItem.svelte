@@ -16,7 +16,7 @@
 	const ohneBestand = $derived(book.bestand === 0 && !book.im_zulauf);
 </script>
 
-<!-- Gleiches Spaltenraster wie StudentResultItem, damit beide Gruppen im selben
+<!-- Gleiches Spaltenraster wie LeserTreffer, damit beide Gruppen im selben
      Dropdown auf einer Kante stehen. Die markierte Zeile trägt in beiden Gruppen
      dieselbe Schicht wie in den Menüs des Hauses (ui/SelectListe).
      Die Signatur steht vor dem Autor, weil sie beim Suchen im Regal die Frage

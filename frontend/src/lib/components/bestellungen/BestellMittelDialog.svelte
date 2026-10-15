@@ -7,7 +7,7 @@
      eigene Zuordnung: Das Anschreiben, das der Händler bekommen hat, bleibt, wie es
      rausging. Deshalb ist der Grund Pflicht, und der Eingriff steht im Admin-Audit-Log.
 
-     Bauform wie der Storno-Dialog der Gebühren (StudentGebuehrenCard): Modal, Radio-Gruppe,
+     Bauform wie der Storno-Dialog der Gebühren (LeserGebuehrenKarte): Modal, Radio-Gruppe,
      ein Feld für den Grund, die Aktion erst mit Grund freigegeben. -->
 <script>
 	import Modal from '../../Modal.svelte';

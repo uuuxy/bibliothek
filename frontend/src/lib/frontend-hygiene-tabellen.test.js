@@ -16,7 +16,7 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 //
 // Rot bewiesen am 08.09.2026 gegen den Bestand vor der Umstellung (24 Dateien).
 const AUSNAHMEN = new Set([
-	'src/lib/StudentPrintReceipt.svelte',
+	'src/lib/AusleihQuittung.svelte',
 	'src/lib/components/stats/StatsTrendChart.svelte'
 ]);
 const ROHE_TABELLE = /<table\b/g;

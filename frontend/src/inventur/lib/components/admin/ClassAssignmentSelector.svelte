@@ -10,7 +10,7 @@
 		erzeugeKlassenVorschlaege,
 		klassenPlatzhalter,
 		KLASSEN_LADEFEHLER
-	} from '../../../../lib/components/students/klassenVorschlaege.svelte.js';
+	} from '../../../../lib/components/leser/klassenVorschlaege.svelte.js';
 
 	/** @type {{ selectedClasses: string[], vorhandeneGruppen?: { className: string }[] }} */
 	let { selectedClasses = $bindable([]), vorhandeneGruppen = [] } = $props();

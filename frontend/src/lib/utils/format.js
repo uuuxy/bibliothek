@@ -27,7 +27,7 @@ export function formatProzent(wert) {
 /**
  * „19,92 €" — Beträge stehen in Forderungen und Bescheiden, deshalb immer zwei
  * Nachkommastellen und immer dieselbe Schreibweise. Bis zum 17.09.2026 trugen
- * StudentGebuehrenCard und StatsDashboard je eine eigene Kopie dieser Zeile.
+ * LeserGebuehrenKarte und StatsDashboard je eine eigene Kopie dieser Zeile.
  * @param {number | null | undefined} wert
  */
 export function formatEuro(wert) {

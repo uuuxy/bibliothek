@@ -64,7 +64,7 @@ export function useBookAkte() {
 	let currentCandidateIndex = $state(0);
 	let coverFailed = $state(false);
 
-	// Sequenznummer wie in der Schülerakte (useStudentProfile) und im orderStore: Die
+	// Sequenznummer wie in der Schülerakte (useLeserakte) und im orderStore: Die
 	// Buch-Akte bleibt beim Wechsel MONTIERT — die Omnibox setzt nur appState.activeBookId,
 	// der Router hält `book_detail`. Zwei Titel kurz hintereinander geöffnet, und die
 	// langsamere Antwort gewinnt.

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { initialen } from './avatarKachel.js';
 
-// Die Initialen-Kachel steht in der Schülerakte, wenn kein Foto da ist (StudentProfileCard).
+// Die Initialen-Kachel steht in der Schülerakte, wenn kein Foto da ist (LeserakteKopf).
 describe('avatarKachel', () => {
 	describe('initialen', () => {
 		it('nimmt je den ersten Buchstaben von Vor- und Nachname, groß geschrieben', () => {

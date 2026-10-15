@@ -4,7 +4,7 @@
 	 * @file CardFace.svelte
 	 * Rendert EINE Ausweisseite (front/back) aus dem zentralen Element-Modell für einen
 	 * konkreten Leser — Schüler wie Kollegen. Dies ist die EINZIGE Render-Quelle sowohl für den Batch-Druck
-	 * (PrintPreview, DruckCenter) als auch den Einzeldruck (StudentPrintCard, Profil) —
+	 * (PrintPreview, DruckCenter) als auch den Einzeldruck (Ausweiskarte, Profil) —
 	 * so fällt an jedem Klick-Pfad exakt derselbe Ausweis heraus (Single Source of Truth).
 	 * Rein für Ausgabe/Vorschau, kein Editier-Chrome.
 	 *

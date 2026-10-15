@@ -1,4 +1,4 @@
-// Initialen-Kachel als Passbild-Ersatz (StudentProfileCard). Eine leere graue Box liest
+// Initialen-Kachel als Passbild-Ersatz (LeserakteKopf). Eine leere graue Box liest
 // sich wie „kaputt"; fehlt das Foto, stehen dort die Initialen des Lesers.
 
 /** @param {{ vorname?: string, nachname?: string }} p */

@@ -4,7 +4,7 @@ import LadeFehler from './LadeFehler.svelte';
 
 // Ein Knopf, der nichts tut, ist schlimmer als keiner.
 //
-// Fund (OFFEN.md 5.12): `ActiveStudentList` reichte `() => {}` durch, wenn es keinen
+// Fund (OFFEN.md 5.12): `AktiveLeserListe` reichte `() => {}` durch, wenn es keinen
 // Rückruf hatte. „Erneut versuchen" stand da und lief ins Leere — wer ihn drückt, wartet
 // auf etwas, das nicht kommt, und hält die Liste für kaputt statt den Knopf.
 describe('LadeFehler', () => {

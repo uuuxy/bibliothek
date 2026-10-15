@@ -1,7 +1,7 @@
 // Welche Aktionen die Schüler-Ansichten anbieten, entscheidet das Recht — dasselbe,
 // das der Server an der jeweiligen Route verlangt (api/routen_leser.go).
 //
-// Bis zum 24.08.2026 fragten StudentDirectory, StudentProfile und ihre Bauteile
+// Bis zum 24.08.2026 fragten Schuelerdatei, Leserakte und ihre Bauteile
 // `role === 'admin'`; ein Schalter auf der Berechtigungsseite blieb dort wirkungslos,
 // weil die Oberfläche ihn nie las. Die Zuordnung steht EINMAL hier, damit Profil und
 // Verzeichnis nicht auseinanderlaufen (Ratsche: frontend-hygiene-rechte.test.js).

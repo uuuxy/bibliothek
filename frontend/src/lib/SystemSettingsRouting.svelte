@@ -10,7 +10,7 @@
 	import {
 		erzeugeKlassenVorschlaege,
 		klassenPlatzhalter
-	} from './components/students/klassenVorschlaege.svelte.js';
+	} from './components/leser/klassenVorschlaege.svelte.js';
 	import { Trash } from '@lucide/svelte';
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */

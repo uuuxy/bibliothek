@@ -10,7 +10,7 @@ import { apiGet } from '../../apiFetch.js';
  * Bis zum 30.09.2026 lud die Seite die ersten 5.000 Wörter in alphabetischer Folge und suchte
  * im Browser nur darunter. Littera bringt 13.207 Wörter mit (docs/OFFEN.md 4.20); zwei
  * Drittel davon wären weder zu finden noch als Filter zu markieren gewesen. Dasselbe Muster
- * wie die Leserdatei (students/schuelerSuche.svelte.js): Tippen wird entprellt, und nur die
+ * wie die Leserdatei (leser/schuelerSuche.svelte.js): Tippen wird entprellt, und nur die
  * jüngste Anfrage schreibt die Liste.
  */
 export function erzeugeSchlagwortPflegeListe() {
@@ -20,7 +20,7 @@ export function erzeugeSchlagwortPflegeListe() {
 	let suche = $state('');
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let timer;
-	// Sequenznummer wie in useStudentProfile: Zwei schnell umgelegte Schalter laden die Liste
+	// Sequenznummer wie in useLeserakte: Zwei schnell umgelegte Schalter laden die Liste
 	// zweimal, und kam die ältere Antwort zuletzt, zeigte ein Schalter den alten Stand.
 	let laufNr = 0;
 

@@ -1,5 +1,5 @@
 <script>
-	import StudentProfile from '../StudentProfile.svelte';
+	import Leserakte from '../Leserakte.svelte';
 	import OmniboxThekeHinweise from './OmniboxThekeHinweise.svelte';
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 
@@ -24,7 +24,7 @@
 {#if leser}
 	<!-- Fremdrückgabe-, Abholfach- und Kollegiums-Banner (200-Zeilen-Regel: eigene Datei). -->
 	<OmniboxThekeHinweise />
-	<StudentProfile
+	<Leserakte
 		bind:this={profil}
 		student={leser}
 		defaultTab="ausleihen"

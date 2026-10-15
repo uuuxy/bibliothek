@@ -2,7 +2,7 @@
   @component MahnwesenAktionen
   Die Knopfzeile des Mahnwesens. Sie steht in der Werkzeugzeile UNTER der Suchpille
   (MahnwesenSuchleiste), rechts neben dem Klassenfilter — so wie „Neuer Schueler" in
-  StudentDirectoryToolbar.
+  SchuelerdateiLeiste.
 
   Bis zum 04.09.2026 stand sie GANZ OBEN im `aktionen`-Slot von PageShell, weil sie dort
   einmal neben dem Seitentitel gestanden hatte. Den Seitentitel hat 68c4810 am 08.08.2026

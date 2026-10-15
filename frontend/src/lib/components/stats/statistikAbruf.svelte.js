@@ -9,7 +9,7 @@ import { apiFetch } from '../../apiFetch.js';
  * gewechselt, und unter der neuen Überschrift standen die Zahlen des alten. Und ein
  * Fehler ergab eine leere Seite: protokolliert im Server (api/system/statistik.go), im Browser
  * nur eine Konsolenzeile, für den Menschen „keine Daten". `laufNr` verwirft, was
- * überholt wurde (wie useStudentProfile); `fehler` gibt der Seite den Zustand, den sie
+ * überholt wurde (wie useLeserakte); `fehler` gibt der Seite den Zustand, den sie
  * mit LadeFehler zeigt.
  */
 export function statistikAbruf() {

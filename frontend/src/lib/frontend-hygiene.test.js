@@ -56,7 +56,7 @@ const ZEICHNUNGEN = [
 // Wer eine Datei bereinigt, nimmt sie hier heraus. Der Test meldet beides:
 // neu hinzugekommene Dateien UND Einträge, die inzwischen sauber sind.
 const EMOJI_BESTAND = [
-	'src/lib/StudentPrintReceipt.svelte',
+	'src/lib/AusleihQuittung.svelte',
 	'src/lib/components/OmniboxBlockAlert.svelte',
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/bestellungen/OrderCart.svelte',

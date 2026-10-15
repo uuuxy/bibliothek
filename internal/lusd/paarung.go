@@ -18,7 +18,7 @@ import (
 //
 // Hier macht das System den Vorschlag: Aus den Abgängern und den Neuzugängen einer
 // Vorschau werden Paare gebildet, die nach allem, was der Export sonst noch hergibt,
-// dieselbe Person sind. Der Admin bestätigt je Paar (LusdImportView); bestätigt heißt,
+// dieselbe Person sind. Der Admin bestätigt je Paar (LusdImport); bestätigt heißt,
 // der bestehende Datensatz bekommt den neuen Namen bzw. das korrigierte Datum und
 // behält UUID, Barcode, Ausleihen und Historie. Unbestätigt bleibt alles, wie es ist.
 //

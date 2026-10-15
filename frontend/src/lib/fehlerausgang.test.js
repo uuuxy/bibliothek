@@ -33,7 +33,7 @@ const BESTAND = {
 		1,
 		'Systematik-Vorschläge (Datalist)'
 	],
-	'src/lib/components/students/KlassenDruckEinstieg.svelte': [
+	'src/lib/components/leser/KlassenDruckEinstieg.svelte': [
 		1,
 		'Klassenliste; der Weg über die Schülerdatei bleibt'
 	],
@@ -63,11 +63,11 @@ const BESTAND = {
 		1,
 		'Flur-Monitor: null heißt „nichts Neues" — der Takt behält die Folien und versucht es wieder (monitorTakt.svelte.js)'
 	],
-	'src/lib/components/students/zusammenfuehrenSuche.svelte.js': [
+	'src/lib/components/leser/zusammenfuehrenSuche.svelte.js': [
 		1,
 		'leere Trefferliste MIT Meldung: die Zeile darunter setzt `fehler` aus extractApiError'
 	],
-	'src/lib/useStudentProfile.svelte.js': [
+	'src/lib/useLeserakte.svelte.js': [
 		1,
 		'der Kopf, bewusst zugewiesen (06.09.2026): Scheitert sein Abruf, darf NICHT der vorher geöffnete Schüler stehen bleiben. Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026 in fehlendeListen (OFFEN.md 1.5)'
 	]

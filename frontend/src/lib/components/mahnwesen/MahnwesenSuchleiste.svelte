@@ -15,7 +15,7 @@
      empfinde es als Stilbruch". Der Slot war ein Überbleibsel: Er hielt die Knöpfe „neben
      dem Seitentitel", und den Seitentitel hat 68c4810 am 08.08.2026 abgeschafft. Die
      Knöpfe stehen jetzt hier unten neben dem Klassenfilter, so wie „Neuer Schüler" in
-     StudentDirectoryToolbar. In M3 ist die Suchleiste „a persistent and prominent search
+     SchuelerdateiLeiste. In M3 ist die Suchleiste „a persistent and prominent search
      field at the top of the screen" und nimmt den Platz der App-Leiste ein; Reiter sitzen
      „at the top of the content pane under an app bar". Eine Knopfzeile darüber gibt es in
      dieser Reihenfolge nicht.

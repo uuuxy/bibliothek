@@ -9,7 +9,7 @@
 	import {
 		erzeugeKlassenVorschlaege,
 		klassenPlatzhalter
-	} from './components/students/klassenVorschlaege.svelte.js';
+	} from './components/leser/klassenVorschlaege.svelte.js';
 
 	/** @type {string} */
 	let klasse = $state('');

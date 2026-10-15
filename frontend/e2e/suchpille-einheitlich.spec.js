@@ -523,7 +523,7 @@ test('Die Suchpille beginnt auf jeder Seite an derselben Startlinie', async ({ p
 				s.werte.drueber.map((/** @type {string} */ d) => `  • ${d}`).join('\n') +
 				`\nErlaubt ist dort ${s.reiter ? 'genau ein Reiterband' : 'nichts'}. ` +
 				`Knopfzeilen und Erklärsätze stehen UNTER der Pille ` +
-				`(Vorbild: StudentDirectoryToolbar, MahnwesenSuchleiste, SignaturenView).`
+				`(Vorbild: SchuelerdateiLeiste, MahnwesenSuchleiste, SignaturenView).`
 		).toEqual(s.reiter ? ['tablist'] : []);
 	}
 

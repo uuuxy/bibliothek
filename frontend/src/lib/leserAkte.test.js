@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
-import StudentProfileStammdaten from './StudentProfileStammdaten.svelte';
+import LeserakteStammdaten from './LeserakteStammdaten.svelte';
 
 // EINE Akte für jeden Leser — dieselbe Form wie im Formular.
 //
@@ -35,7 +35,7 @@ describe('Akte eines Lesers', () => {
 	});
 
 	it('zeigt einem Kollegen persönliche Daten statt Stammdaten & Adresse', () => {
-		const screen = render(StudentProfileStammdaten, {
+		const screen = render(LeserakteStammdaten, {
 			profile: akte('lehrkraft'),
 			darfBearbeiten: true,
 			darfZusammenfuehren: true,
@@ -55,7 +55,7 @@ describe('Akte eines Lesers', () => {
 	it('zeigt einem Kollegen dieselben Angaben wie einem Schüler', () => {
 		/** @param {string} art */
 		const angaben = (art) => {
-			const screen = render(StudentProfileStammdaten, {
+			const screen = render(LeserakteStammdaten, {
 				profile: akte(art),
 				darfBearbeiten: true,
 				onEdit: vi.fn()
@@ -75,7 +75,7 @@ describe('Akte eines Lesers', () => {
 		['lehrkraft', 'Lehrkraft'],
 		['liv', 'LiV']
 	])('nennt bei art=%s die Art „%s" in der Akte', (art, wort) => {
-		const screen = render(StudentProfileStammdaten, {
+		const screen = render(LeserakteStammdaten, {
 			profile: { ...akte(art), klasse: art === 'schueler' ? '07A' : '' },
 			onEdit: vi.fn()
 		});
@@ -89,7 +89,7 @@ describe('Akte eines Lesers', () => {
 	// nicht an der Art.
 	it('bietet auch einem Kollegen das Bearbeiten an', async () => {
 		const onEdit = vi.fn();
-		const screen = render(StudentProfileStammdaten, {
+		const screen = render(LeserakteStammdaten, {
 			profile: akte('lehrkraft'),
 			darfBearbeiten: true,
 			onEdit
@@ -100,7 +100,7 @@ describe('Akte eines Lesers', () => {
 	});
 
 	it('zeigt den Bearbeiten-Knopf ohne das Recht nicht', () => {
-		const screen = render(StudentProfileStammdaten, {
+		const screen = render(LeserakteStammdaten, {
 			profile: akte('lehrkraft'),
 			darfBearbeiten: false,
 			onEdit: vi.fn()
@@ -109,7 +109,7 @@ describe('Akte eines Lesers', () => {
 	});
 
 	it('nennt eine LiV auch so', () => {
-		const screen = render(StudentProfileStammdaten, {
+		const screen = render(LeserakteStammdaten, {
 			profile: akte('liv'),
 			onEdit: vi.fn()
 		});
@@ -123,7 +123,7 @@ describe('Akte eines Lesers', () => {
 	// zu reparieren, auch nicht vom Administrator.
 	it('bietet das Zusammenführen bei jedem an, der das Recht hat', () => {
 		for (const art of ['schueler', 'lehrkraft', 'liv']) {
-			const screen = render(StudentProfileStammdaten, {
+			const screen = render(LeserakteStammdaten, {
 				profile: akte(art),
 				darfZusammenfuehren: true,
 				onEdit: vi.fn()
@@ -136,7 +136,7 @@ describe('Akte eines Lesers', () => {
 	// Schüler der LUSD-Export, beim Kollegen die Selbstanmeldung. Wer den falschen Satz
 	// liest, sucht den Fehler an der falschen Stelle.
 	it('nennt dem Kollegen den richtigen Grund für ein Doppel', () => {
-		const kollege = render(StudentProfileStammdaten, {
+		const kollege = render(LeserakteStammdaten, {
 			profile: akte('lehrkraft'),
 			darfZusammenfuehren: true,
 			onEdit: vi.fn()
@@ -150,7 +150,7 @@ describe('Akte eines Lesers', () => {
 			'Namensänderung'
 		);
 
-		const schueler = render(StudentProfileStammdaten, {
+		const schueler = render(LeserakteStammdaten, {
 			profile: akte('schueler'),
 			darfZusammenfuehren: true,
 			onEdit: vi.fn()
@@ -160,7 +160,7 @@ describe('Akte eines Lesers', () => {
 	});
 
 	it('lässt die Akte eines Schülers, wie sie war', () => {
-		const screen = render(StudentProfileStammdaten, {
+		const screen = render(LeserakteStammdaten, {
 			profile: { ...akte('schueler'), klasse: '07A', strasse: 'Hauptstraße' },
 			onEdit: vi.fn()
 		});

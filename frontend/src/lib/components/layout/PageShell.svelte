@@ -8,7 +8,7 @@
   volle Breite, dann Filter und Knöpfe auf der Grundlinie von 36 px. So gibt es auch
   Material 3 vor — die Suchleiste ist „a persistent and prominent search field at the top of
   the screen", Reiter sitzen „at the top of the content pane under an app bar". Wer eine
-  Knopfzeile braucht, stellt sie unter die Pille (Vorbild: StudentDirectoryToolbar,
+  Knopfzeile braucht, stellt sie unter die Pille (Vorbild: SchuelerdateiLeiste,
   MahnwesenSuchleiste). Gate: e2e/suchpille-einheitlich.spec.js misst die Startlinie.
 
   Das Gerüst gibt es, damit nicht jede Route eigene Breite, Polsterung und Fläche mitbringt.

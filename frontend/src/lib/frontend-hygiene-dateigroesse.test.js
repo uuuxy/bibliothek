@@ -27,13 +27,13 @@ const BESTAND = {
 	'src/lib/BestellWorkspace.svelte': 232,
 	'src/lib/Omnibox.svelte': 217,
 	'src/lib/StatsDashboard.svelte': 351,
-	'src/lib/StudentProfile.svelte': 230,
+	'src/lib/Leserakte.svelte': 230,
 	'src/lib/UnifiedInventory.svelte': 237,
 	'src/lib/UserManagement.svelte': 208,
 	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
 	'src/lib/components/stats/StatsTrendChart.svelte': 242,
-	'src/lib/components/students/LusdImportView.svelte': 311,
-	'src/lib/components/students/PromoteStudentsView.svelte': 209
+	'src/lib/components/leser/LusdImport.svelte': 311,
+	'src/lib/components/leser/Schuljahreswechsel.svelte': 209
 };
 
 describe('Komponenten-Regel: hoechstens 200 Zeilen je .svelte-Datei', () => {

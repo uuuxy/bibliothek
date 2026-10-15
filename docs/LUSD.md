@@ -214,7 +214,7 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_pg_test.go`).
 | Tür: Upload, Wahl des Admins, Audit                                  | `api/leser/lusd.go`                                                                                                                                          |
 | Zusammenführen                                                       | `repository/leser_zusammenfuehren.go`, `api/leser/leser_zusammenfuehren.go`                                                                             |
 | Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`; Uhr: `migrations/137_letzter_vorgang_am_leser.sql`              |
-| Oberfläche                                                           | `frontend/src/lib/components/students/LusdImportView.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
+| Oberfläche                                                           | `frontend/src/lib/components/leser/LusdImport.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
 | Tests, die den Jahreszyklus spielen                                  | `api/leser/lusd_namensmodus_pg_test.go`, `api/leser/lusd_umbenennung_pg_test.go`, `repository/leser_zusammenfuehren_pg_test.go`, `internal/lusd/paarung_test.go`             |
 
 Zwei Tests halten fest, was ein Umbau des Schreibens nicht verlieren darf.

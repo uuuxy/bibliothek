@@ -995,7 +995,7 @@ export function createOmniboxStore() {
 	// ohne Meldung ins Leere (e2e/scanner-fokus-menue.spec.js).
 	uiStore.beimWechselZurTheke = scanfeldWiederScharfstellen;
 
-	// Nach dem Zusammenführen zweier Datensätze (StudentProfile → onMerged): Der aktive
+	// Nach dem Zusammenführen zweier Datensätze (Leserakte → onMerged): Der aktive
 	// Schüler wird auf das Ziel umgehängt. Bis zum 15.09.2026 blieb an der Theke die
 	// gelöschte Kennung stehen — die Akte zeigte schon das Ziel, aber jede weitere Buchung
 	// und jeder Eintrag in der Offline-Warteschlange (enqueueOfflineAction) lief auf einen

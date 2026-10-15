@@ -17,7 +17,7 @@ import (
 
 // Ein geleertes Stammdatenfeld muss auch in der Datenbank leer werden.
 //
-// Das Formular (useStudentEditForm.svelte.js) schickt ein geräumtes Feld als leeren Text.
+// Das Formular (useLeserakteFormular.svelte.js) schickt ein geräumtes Feld als leeren Text.
 // Käme es als JSON-null, landete es in leserAendernAnfrage als nil im *string und hieße
 // „nicht mitgeschickt": Der alte Wert bliebe stehen, die Oberfläche meldete „Änderungen
 // gespeichert", und beim nächsten Öffnen der Akte stünde die gelöschte Adresse wieder da.

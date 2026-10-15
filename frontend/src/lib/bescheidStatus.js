@@ -18,7 +18,7 @@ export function liegtBeiDerSchule(b) {
  * Der Zustand eines Schadensersatz-Bescheids als Angaben für einen StatusChip.
  *
  * EINE Stelle für beide Anzeigen: die Arbeitsliste im Mahnwesen (BescheideTabelle) und
- * die Schülerakte (StudentBescheideCard). Zwei Abschriften derselben fünf Fälle wären
+ * die Schülerakte (LeserBescheideKarte). Zwei Abschriften derselben fünf Fälle wären
  * genau die Art Doppelung, an der die Liste später „übergeben" sagt und die Akte noch
  * „offen" — bei einem Brief, der Geld fordert.
  *

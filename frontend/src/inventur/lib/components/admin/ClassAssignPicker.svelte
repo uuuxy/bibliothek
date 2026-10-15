@@ -12,7 +12,7 @@
 		erzeugeKlassenVorschlaege,
 		klassenPlatzhalter,
 		KLASSEN_LADEFEHLER
-	} from '../../../../lib/components/students/klassenVorschlaege.svelte.js';
+	} from '../../../../lib/components/leser/klassenVorschlaege.svelte.js';
 
 	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { bookIds, onClose, onAssigned } = $props();

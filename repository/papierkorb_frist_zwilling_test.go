@@ -26,8 +26,8 @@ func TestPapierkorbFrist_OberflaecheNenntDieZahlDerLoeschlaeufe(t *testing.T) {
 		// nurZeilenMit grenzt in einer Datei mit vielen Texten auf die Zeilen zum Papierkorb ein.
 		nurZeilenMit string
 	}{
-		{"../frontend/src/lib/StudentProfileDeleteModal.svelte", ""},
-		{"../frontend/src/lib/components/students/DeletedStudentList.svelte", "Papierkorb"},
+		{"../frontend/src/lib/LeserLoeschenDialog.svelte", ""},
+		{"../frontend/src/lib/components/leser/Papierkorb.svelte", "Papierkorb"},
 		{"../frontend/src/lib/permissionMetadata.js", "Papierkorb"},
 	} {
 		quelle, err := os.ReadFile(stelle.datei)

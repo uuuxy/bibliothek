@@ -16,7 +16,7 @@
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import SignaturenView from './SignaturenView.svelte';
 	import StatsDashboard from './StatsDashboard.svelte';
-	import StudentDirectory from './StudentDirectory.svelte';
+	import Schuelerdatei from './Schuelerdatei.svelte';
 	import Schulklassen from './Schulklassen.svelte';
 	import KollegiumPortal from './KollegiumPortal.svelte';
 	import Mahnwesen from './Mahnwesen.svelte';
@@ -135,7 +135,7 @@
 	{:else if uiStore.activeTab === 'inventory'}
 		<div class="w-full animate-fade-in"><UnifiedInventory /></div>
 	{:else if uiStore.activeTab === 'students_dir'}
-		<div class="w-full animate-fade-in"><StudentDirectory /></div>
+		<div class="w-full animate-fade-in"><Schuelerdatei /></div>
 	{:else if uiStore.activeTab === 'schulklassen'}
 		<div class="w-full animate-fade-in"><Schulklassen /></div>
 	{:else if uiStore.activeTab === 'graduates'}

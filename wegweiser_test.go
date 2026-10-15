@@ -79,7 +79,7 @@ var wegKeinWeg = []struct{ datei, stueck, grund string }{
 	{"jobs/backup.go", "S3 upload successful → s3://", "Protokollzeile mit dem Ziel der Auslagerung"},
 	{"frontend/src/lib/UserManagementZugangsanfragen.svelte", "„Bearbeiten“ → Aktiv", "Knopf und Wert im Dialog"},
 	{"frontend/src/lib/components/settings/kategorien.js", "Klasse → Lehrkraft", "Zuordnung, die die Kategorie pflegt"},
-	{"frontend/src/lib/components/students/PromoteStudentsView.svelte", "5a → 6a", "Beispiel einer Versetzung"},
+	{"frontend/src/lib/components/leser/Schuljahreswechsel.svelte", "5a → 6a", "Beispiel einer Versetzung"},
 }
 
 // Der Detektor an den Formen, die er finden und durchlassen muss.

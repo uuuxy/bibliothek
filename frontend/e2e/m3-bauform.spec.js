@@ -49,7 +49,7 @@
 //     Nachzählen, statt dieser Liste zu glauben:
 //       grep -rl "fixed inset-0" frontend/src --include='*.svelte' \
 //         | xargs grep -L Modal.svelte | grep -v /Modal.svelte
-//     Bis zum 16.09.2026 standen hier „elf" und als Beispiele StudentLockModal und
+//     Bis zum 16.09.2026 standen hier „elf" und als Beispiele LeserSperreDialog und
 //     DamageReportModal — beide benutzen das Bauteil seit dem Durchgang bis zum
 //     07.09.2026 (dc99bad2), die Liste war also älter als der Code.
 //     Eine Quelltext-Zählung fand am 04.09.2026 vierzig Kandidaten mit Rahmen und

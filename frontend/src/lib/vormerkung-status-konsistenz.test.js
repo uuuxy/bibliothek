@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 //
 // Die Statuswerte einer Vormerkung leben in der DB (chk_vormerkung_status in schema.sql)
 // UND in der Oberfläche, die je Status etwas anderes zeigen muss. Bis zum 19.08.2026
-// kannte die Oberfläche 'abholbereit' nicht: StudentVormerkungenCard.svelte zeigte JEDE
+// kannte die Oberfläche 'abholbereit' nicht: LeserVormerkungenKarte.svelte zeigte JEDE
 // Reservierung als „Wartet seit …" — auch eine, die zur Abholung bereitlag und deren
 // Frist bald verfiel. Der Zustand war in DB und Backend real, nur nirgends sichtbar.
 //
@@ -22,7 +22,7 @@ const repoRoot = join(libDir, '..', '..', '..');
 
 const schema = readFileSync(join(repoRoot, 'schema.sql'), 'utf8');
 // Die UI-Dateien, die den Vormerkungs-Status anzeigen dürfen.
-const uiQuellen = [readFileSync(join(libDir, 'StudentVormerkungenCard.svelte'), 'utf8')];
+const uiQuellen = [readFileSync(join(libDir, 'LeserVormerkungenKarte.svelte'), 'utf8')];
 
 /** Liest die erlaubten Statuswerte aus chk_vormerkung_status. */
 function statusWerteAusSchema() {
