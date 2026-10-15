@@ -224,12 +224,13 @@ func istDatenbankFehler(text string) bool {
 }
 
 // neutraleMeldung liefert die Meldung für einen Fehler im Server; zwei bekannte Verletzungen
-// einer Bedingung nennt sie in Worten der Bibliothek.
+// einer Bedingung nennt sie in Worten der Bibliothek. Ohne Ursache gilt die allgemeine Meldung,
+// damit ein 500 ohne Ursache wie jeder andere deutsch antwortet.
 func neutraleMeldung(ursache error) string {
-	if ursache == nil {
-		return "Internal Server Error"
+	var text string
+	if ursache != nil {
+		text = ursache.Error()
 	}
-	text := ursache.Error()
 	switch {
 	case strings.Contains(text, "23505") || strings.Contains(text, "unique_violation") || strings.Contains(text, "duplicate key"):
 		return "Ein Eintrag mit diesen eindeutigen Eigenschaften existiert bereits."

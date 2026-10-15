@@ -1,7 +1,6 @@
 package inventur
 
 import (
-	"errors"
 	"net/http"
 
 	"bibliothek/apierrors"
@@ -17,6 +16,8 @@ func schreibeJSON(w http.ResponseWriter, status int, nutzlast any) {
 	httpresp.SchreibeJSON(w, nutzlast)
 }
 
+// schreibeFehler schickt eine Meldung für die Oberfläche; bei 500 bleibt sie neutral, wie überall
+// (apierrors.AntworteFehlerMitMeldung).
 func schreibeFehler(w http.ResponseWriter, status int, meldung string) {
-	apierrors.AntworteFehler(w, status, errors.New(meldung))
+	apierrors.AntworteFehlerMitMeldung(w, status, meldung, nil)
 }

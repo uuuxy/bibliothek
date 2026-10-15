@@ -156,7 +156,7 @@ func TestISBNSuche_LehntFehlendeISBNAb(t *testing.T) {
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
 	}
-	if !strings.Contains(rr.Body.String(), "isbn fehlt") {
+	if !strings.Contains(rr.Body.String(), "Die ISBN fehlt") {
 		t.Fatalf("expected response to contain isbn fehlt, got %s", rr.Body.String())
 	}
 }

@@ -429,7 +429,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			rumpf:          `{invalid}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "ungültiges JSON",
+			expectedBody:   "Die Anfrage ließ sich nicht lesen",
 		},
 		{
 			name:           "Missing Class Name",
@@ -437,7 +437,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			rumpf:          `{"bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "es muss mindestens ein klassenname angegeben werden",
+			expectedBody:   "Bitte mindestens eine Klasse angeben",
 		},
 		{
 			name:           "Class Name Too Long",
@@ -445,7 +445,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			rumpf:          `{"className": "ThisClassNameIsWayTooLong", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "klassenname darf maximal 20 zeichen lang sein",
+			expectedBody:   "Der Name einer Klasse hat höchstens 20 Zeichen",
 		},
 		{
 			name:   "Database Error",

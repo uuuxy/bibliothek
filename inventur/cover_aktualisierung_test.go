@@ -149,7 +149,7 @@ func TestCoverAktualisieren_SucheScheitert(t *testing.T) {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 
-	if antwort["error"] != "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel" {
+	if antwort["error"] != "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel." {
 		t.Errorf("unexpected error message: %v", antwort["error"])
 	}
 

@@ -12,12 +12,12 @@ import (
 func (t *Tueren) ISBNSuche(w http.ResponseWriter, r *http.Request) {
 	isbn := strings.TrimSpace(r.PathValue("isbn"))
 	if isbn == "" {
-		schreibeFehler(w, http.StatusBadRequest, "isbn fehlt")
+		schreibeFehler(w, http.StatusBadRequest, "Die ISBN fehlt")
 		return
 	}
 
 	if !validiereISBN(isbn) {
-		schreibeFehler(w, http.StatusBadRequest, "ungültiges ISBN-Format")
+		schreibeFehler(w, http.StatusBadRequest, "Die ISBN ist ungültig")
 		return
 	}
 
@@ -31,7 +31,7 @@ func (t *Tueren) ISBNSuche(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("isbn-lookup fehlgeschlagen für %s: %v", isbn, err)
-		schreibeFehler(w, http.StatusNotFound, "metadaten nicht gefunden")
+		schreibeFehler(w, http.StatusNotFound, "Keine Angaben zu dieser ISBN gefunden")
 		return
 	}
 

@@ -8,7 +8,7 @@ func TestConstantsValues(t *testing.T) {
 		actual   string
 		expected string
 	}{
-		{"routeNotFoundMsg", meldungUnbekannteRoute, "route nicht gefunden"},
+		{"routeNotFoundMsg", meldungUnbekannteRoute, "Unbekannter Endpunkt"},
 		{"routeClassBooks", routeKlassensaetze, "/api/admin/class-books"},
 		{"langFrench", spracheFranzoesisch, "Französisch"},
 	}

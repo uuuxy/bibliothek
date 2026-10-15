@@ -569,17 +569,16 @@ ausdrückliches Ja.
 
 ### 5.68 Meldungen in Satzschreibung und auf Deutsch
 
-Die festen Meldungen der Türen sind erledigt: `meldung_ratsche_test.go` prüft jeden Aufruf von
-`apierrors` mit Status unter 500 und festem Text, Konstanten eingeschlossen, ihr Bestand ist leer
-([STIL.md](STIL.md), Abschnitt 11). Offen, gezählt am 16.10.2026:
+Die festen Meldungen der Türen sind erledigt, die der Inventur eingeschlossen:
+`meldung_ratsche_test.go` prüft jeden Aufruf von `apierrors` und von `inventur.schreibeFehler` mit
+Status unter 500 und festem Text, Konstanten eingeschlossen, ihr Bestand ist leer
+([STIL.md](STIL.md), Abschnitt 11). Ein 500 antwortet auch ohne Ursache mit der deutschen
+neutralen Meldung. Offen, gezählt am 16.10.2026:
 
 - **Text eines Fehlers:** 59 Aufrufe von `AntworteFehler` geben eine Fehlervariable weiter, 24
   nehmen `err.Error()` als Meldung (`apierrors.BadRequest(err.Error(), err)`). Fehlertexte
   beginnen klein (Abschnitt 11) und kommen so klein an der Oberfläche an. Nächster Schritt: je
   Tür einen Satz, Einzelheiten als Felder des Fehlers.
-- **`inventur/`** antwortet über `schreibeFehler(w, status, meldung)` (88 Aufrufe); die Ratsche
-  sieht diesen Helfer nicht. Nächster Schritt: den Helfer auf `AntworteFehlerMitMeldung`
-  stellen und die Ratsche auf ihn ausdehnen.
 - Antworten, die `{"error": …}` selbst schreiben, sieht die Ratsche ebenfalls nicht.
 
 ## 7. Betrieb (liegt bei der Schulseite)
@@ -757,7 +756,7 @@ einem offenen Fenster der Theke ist es am 07.10.2026 belegt: Der Scan wurde erka
 - Buchmaske, ohne Scanner: einen Titel mit vielen Exemplaren öffnen (der größte am
   Testserver hat 383) und nach unten rollen. Erwartet: „Speichern", das Cover und die Knöpfe
   darunter bleiben im Bild. Dann ins Feld ISBN „12345" tippen und „Speichern" drücken.
-  Erwartet: Die Meldung oben rechts („ungültiges ISBN-Format") liegt nicht über dem Knopf.
+  Erwartet: Die Meldung oben rechts („Die ISBN ist ungültig") liegt nicht über dem Knopf.
 - Druck-Center, Buch-Etiketten: einen Titel mit mehr als fünf Exemplaren wählen, den Haken
   „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
   dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.

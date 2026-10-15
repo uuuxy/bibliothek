@@ -136,7 +136,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 	// dann auf eine Datei, die fehlt (cover_upload_reihenfolge_test.go).
 	buch, err := t.abfragen.LadeTitel(r.Context(), id)
 	if errors.Is(err, ErrTitelNichtGefunden) {
-		schreibeFehler(w, http.StatusNotFound, "buch nicht gefunden")
+		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
 		return
 	}
 	if err != nil {
@@ -155,7 +155,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 	err = t.abfragen.AendereTitelMetadaten(r.Context(), id, "", "", coverURL)
 	if errors.Is(err, ErrTitelNichtGefunden) {
 		loescheCoverDatei(coverURL)
-		schreibeFehler(w, http.StatusNotFound, "buch nicht gefunden")
+		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
 		return
 	}
 	if err != nil {
@@ -186,13 +186,13 @@ func leseCoverUpload(w http.ResponseWriter, r *http.Request, id string) ([]byte,
 	r.Body = http.MaxBytesReader(w, r.Body, maxCoverUploadBytes)
 	if err := r.ParseMultipartForm(maxCoverUploadBytes); err != nil {
 		log.Printf("cover-upload: multipart parse failed for book %s: %v", logger.OhneUmbruch(id), err)
-		schreibeFehler(w, http.StatusBadRequest, "datei zu groß oder ungültig (max. 10 MB)")
+		schreibeFehler(w, http.StatusBadRequest, "Die Datei ist zu groß oder ungültig, höchstens 10 MB")
 		return nil, false
 	}
 
 	datei, kopf, err := r.FormFile("cover")
 	if err != nil {
-		schreibeFehler(w, http.StatusBadRequest, "kein bild gefunden")
+		schreibeFehler(w, http.StatusBadRequest, "Kein Bild gefunden")
 		return nil, false
 	}
 	defer func() { _ = datei.Close() }() //nolint:errcheck
@@ -204,13 +204,13 @@ func leseCoverUpload(w http.ResponseWriter, r *http.Request, id string) ([]byte,
 		return nil, false
 	}
 	if len(inhalt) == 0 {
-		schreibeFehler(w, http.StatusBadRequest, "leere datei")
+		schreibeFehler(w, http.StatusBadRequest, "Die Datei ist leer")
 		return nil, false
 	}
 
 	endung := strings.ToLower(filepath.Ext(kopf.Filename))
 	if endung != ".jpg" && endung != ".jpeg" && endung != ".png" && endung != ".webp" {
-		schreibeFehler(w, http.StatusBadRequest, "nur jpg, jpeg, png oder webp erlaubt")
+		schreibeFehler(w, http.StatusBadRequest, "Nur JPG, PNG oder WebP")
 		return nil, false
 	}
 	return inhalt, true

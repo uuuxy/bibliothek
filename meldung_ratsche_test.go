@@ -34,7 +34,7 @@ import (
 // meldungBestand nennt je Datei, wie viele Verstöße noch stehen; die Zahl kann nur sinken.
 //
 // Sieht nicht: Texte, die erst zur Laufzeit entstehen (err.Error(), Variablen, fmt.Sprintf), einen
-// Status aus einer Variablen, eigene Helfer wie inventur.schreibeFehler und Antworten, die
+// Status aus einer Variablen, eigene Helfer außer inventur.schreibeFehler und Antworten, die
 // {"error": …} selbst schreiben.
 
 // meldungBestand: Dateien mit Verstößen und ihre Zahl. Eine Datei ohne Verstoß fällt heraus.
@@ -255,6 +255,15 @@ type meldungKonstanten struct {
 // meldungAusAufruf liest Status und festen Text eines Aufrufs von apierrors; false heißt: kein
 // solcher Aufruf, Status 500 und mehr, oder der Text entsteht erst zur Laufzeit.
 func meldungAusAufruf(aufruf *ast.CallExpr, status map[string]int, konstanten meldungKonstanten) (meldungAufruf, bool) {
+	// Der Helfer der Inventur gibt seine Meldung an AntworteFehlerMitMeldung weiter.
+	if name, ok := aufruf.Fun.(*ast.Ident); ok && name.Name == "schreibeFehler" && len(aufruf.Args) == 3 {
+		code := statusAus(aufruf.Args[1], status)
+		text, alsFehler, ok := festerText(aufruf.Args[2], konstanten)
+		if code <= 0 || code >= 500 || !ok || alsFehler {
+			return meldungAufruf{}, false
+		}
+		return meldungAufruf{status: code, text: text, gelesenFest: true}, true
+	}
 	sel, ok := aufruf.Fun.(*ast.SelectorExpr)
 	if !ok {
 		return meldungAufruf{}, false

@@ -14,8 +14,8 @@ import (
 // uebersetzeDatenbankfehler erkennt die Verletzung am Namen `buecher_titel_isbn_key` (auf dem
 // Server nachgesehen). Spielte ein Test einen veralteten Namen nach (`books_isbn_key` aus der Zeit,
 // als die Tabelle `books` hieß), bliebe er grün, während die Übersetzung nie griffe und, wer einen
-// Titel mit vorhandener ISBN anlegt, „buch konnte nicht erstellt werden" läse statt „existiert
-// bereits".
+// Titel mit vorhandener ISBN anlegt, „Der Titel ließ sich nicht anlegen" läse statt des Titels,
+// der die ISBN schon trägt.
 func TestISBNDublette_WirdAlsDubletteErkannt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

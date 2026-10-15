@@ -22,7 +22,7 @@ func (t *Tueren) TitelAendern(antwort http.ResponseWriter, anfrage *http.Request
 
 	eingabe, felder, fehler := leseAenderung(anfrage)
 	if fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges JSON")
+		schreibeFehler(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
 		return
 	}
 
@@ -42,7 +42,7 @@ func (t *Tueren) TitelAendern(antwort http.ResponseWriter, anfrage *http.Request
 	// in der Akte stünde, was niemand eingetragen und niemand gesehen hat.
 	if slices.Contains(felder, "title") && eingabe.Titel == "" {
 		schreibeFehler(antwort, http.StatusBadRequest,
-			"titel darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
+			"Der Titel darf nicht leer sein. Beim Ändern setzt das Programm keinen Platzhalter ein.")
 		return
 	}
 
@@ -134,15 +134,15 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 	}
 	if errors.Is(fehler, ErrAutorGeleert) {
 		schreibeFehler(antwort, http.StatusBadRequest,
-			"autor darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
+			"Der Autor darf nicht leer sein. Beim Ändern setzt das Programm keinen Platzhalter ein.")
 		return
 	}
 	if errors.Is(fehler, ErrISBNFormat) {
-		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
+		schreibeFehler(antwort, http.StatusBadRequest, "Die ISBN ist ungültig")
 		return
 	}
 	if errors.Is(fehler, repository.ErrAussonderungOhneBearbeiter) {
-		schreibeFehler(antwort, http.StatusUnauthorized, "nicht angemeldet")
+		schreibeFehler(antwort, http.StatusUnauthorized, auth.MeldungNichtAngemeldet)
 		return
 	}
 	log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)

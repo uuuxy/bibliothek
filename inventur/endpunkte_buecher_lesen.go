@@ -23,7 +23,7 @@ func (t *Tueren) TitelListe(antwort http.ResponseWriter, anfrage *http.Request) 
 
 	suchbegriff := strings.TrimSpace(strings.ToLower(anfrageParameter.Get("q")))
 	if len(suchbegriff) > 200 {
-		schreibeFehler(antwort, http.StatusBadRequest, "suchbegriff zu lang (max. 200 zeichen)")
+		schreibeFehler(antwort, http.StatusBadRequest, "Der Suchbegriff ist zu lang, höchstens 200 Zeichen")
 		return
 	}
 
@@ -35,7 +35,7 @@ func (t *Tueren) TitelListe(antwort http.ResponseWriter, anfrage *http.Request) 
 	// nicht ausgesondertes Exemplar. Ohne den Parameter ist es der Katalog.
 	sicht := strings.TrimSpace(anfrageParameter.Get("bestand"))
 	if sicht != "" && sicht != "ohne" {
-		schreibeFehler(antwort, http.StatusBadRequest, "ungültiger query-parameter bestand (erlaubt: ohne)")
+		schreibeFehler(antwort, http.StatusBadRequest, "Unbekannter Wert für den Bestand")
 		return
 	}
 	buecher, fehler := t.abfragen.LadeTitelListe(anfrage.Context(), fach, suchbegriff, sicht == "ohne")
@@ -202,7 +202,7 @@ func (t *Tueren) gespeichert(ctx context.Context, gesendet Titel) Titel {
 func (t *Tueren) TitelVorhanden(antwort http.ResponseWriter, anfrage *http.Request) {
 	isbn := strings.TrimSpace(anfrage.URL.Query().Get("isbn"))
 	if isbn == "" {
-		schreibeFehler(antwort, http.StatusBadRequest, "isbn fehlt")
+		schreibeFehler(antwort, http.StatusBadRequest, "Die ISBN fehlt")
 		return
 	}
 

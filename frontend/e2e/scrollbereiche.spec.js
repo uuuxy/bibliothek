@@ -239,7 +239,7 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 		await page.locator('#buch-isbn').fill('12345');
 		await page.getByText(`B-scm-${s}-20`).scrollIntoViewIfNeeded();
 		await speichern.click();
-		const meldung = page.getByRole('alert').filter({ hasText: 'ungültiges ISBN-Format' });
+		const meldung = page.getByRole('alert').filter({ hasText: 'Die ISBN ist ungültig' });
 		await expect(meldung).toBeVisible();
 		const k = await speichern.boundingBox();
 		const m = await meldung.boundingBox();

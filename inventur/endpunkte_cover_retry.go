@@ -29,11 +29,11 @@ func (t *Tueren) FremdeCoverNeuLaden(w http.ResponseWriter, r *http.Request) {
 		Limit int      `json:"limit"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-		schreibeFehler(w, http.StatusBadRequest, "ungültiges JSON")
+		schreibeFehler(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
 		return
 	}
 	if !alleUUIDs(eingabe.IDs) {
-		schreibeFehler(w, http.StatusBadRequest, "ids enthält eine ungültige Kennung")
+		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
 		return
 	}
 

@@ -168,7 +168,7 @@ func TestTitelOhneISBN_Aendern(t *testing.T) {
 			return map[string]any{"isbn": isbn, "title": ohneISBNVorsatz + "bekommt eine Nummer", "author": "Autorin"}
 		}
 
-		if a := p.schicke(id, rumpf("12345")); a.Status != http.StatusBadRequest || a.Error != "ungültiges ISBN-Format" {
+		if a := p.schicke(id, rumpf("12345")); a.Status != http.StatusBadRequest || a.Error != "Die ISBN ist ungültig" {
 			t.Errorf("Nummer ohne ISBN-Form: Status %d %s", a.Status, a.Rumpf)
 		}
 		a := p.schicke(id, rumpf("978-3-00-047110-0"))
@@ -223,7 +223,7 @@ func TestTitelOhneISBN_Anlegen(t *testing.T) {
 	t.Run("ohne Titel wird nichts angelegt", func(t *testing.T) {
 		for _, isbn := range []string{"", ohneISBNOhneTitel} {
 			a := p.schicke("", map[string]any{"isbn": isbn, "title": "  ", "author": "Autorin"})
-			if a.Status != http.StatusBadRequest || !strings.Contains(a.Error, "titel") {
+			if a.Status != http.StatusBadRequest || !strings.Contains(a.Error, "Titel") {
 				t.Errorf("ISBN %q ohne Titel: Status %d %s", isbn, a.Status, a.Rumpf)
 			}
 		}

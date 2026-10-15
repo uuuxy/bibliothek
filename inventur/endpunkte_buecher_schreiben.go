@@ -16,11 +16,11 @@ import (
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
 func pruefeTitelEingabe(antwort http.ResponseWriter, eingabe TitelEingabe) bool {
 	if strings.TrimSpace(eingabe.Titel) == "" {
-		schreibeFehler(antwort, http.StatusBadRequest, "titel darf nicht leer sein")
+		schreibeFehler(antwort, http.StatusBadRequest, "Der Titel darf nicht leer sein")
 		return false
 	}
 	if isbn := strings.TrimSpace(eingabe.ISBN); isbn != "" && !validiereISBN(isbn) {
-		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
+		schreibeFehler(antwort, http.StatusBadRequest, "Die ISBN ist ungültig")
 		return false
 	}
 	return true
@@ -61,7 +61,7 @@ func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseW
 			return false
 		}
 		log.Printf("Fehler beim Erstellen von Buch ISBN %s: %v", buch.ISBN, fehler)
-		schreibeFehler(antwort, http.StatusBadRequest, "buch konnte nicht erstellt werden")
+		schreibeFehler(antwort, http.StatusBadRequest, "Der Titel ließ sich nicht anlegen")
 		return false
 	}
 	buch.ID = erstellteID
@@ -75,7 +75,7 @@ func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseW
 func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 	var dublette *DubletteISBN
 	if !errors.As(fehler, &dublette) {
-		schreibeFehler(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
+		schreibeFehler(antwort, http.StatusConflict, "Einen Titel mit dieser ISBN gibt es bereits")
 		return
 	}
 	log.Printf("Dublette abgelehnt: %v", fehler)
@@ -115,7 +115,7 @@ func alleUUIDs(ids []string) bool {
 func titelIDAusPfad(antwort http.ResponseWriter, anfrage *http.Request) (string, bool) {
 	id := anfrage.PathValue("id")
 	if !kennung.IstUUID(id) {
-		schreibeFehler(antwort, http.StatusBadRequest, "ungültige Buch-ID")
+		schreibeFehler(antwort, http.StatusBadRequest, "Die Kennung des Titels ist ungültig")
 		return "", false
 	}
 	return id, true
@@ -128,22 +128,22 @@ func (t *Tueren) TitelLoeschen(antwort http.ResponseWriter, anfrage *http.Reques
 		IDs []string `json:"ids"`
 	}
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges request body")
+		schreibeFehler(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
 		return
 	}
 
 	if len(eingabe.IDs) == 0 {
-		schreibeFehler(antwort, http.StatusBadRequest, "keine IDs übergeben")
+		schreibeFehler(antwort, http.StatusBadRequest, "Keine Titel ausgewählt")
 		return
 	}
 	if !alleUUIDs(eingabe.IDs) {
-		schreibeFehler(antwort, http.StatusBadRequest, "ids enthält eine ungültige Kennung")
+		schreibeFehler(antwort, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
 		return
 	}
 
 	if fehler := t.abfragen.LoescheTitel(anfrage.Context(), eingabe.IDs); fehler != nil {
 		if errors.Is(fehler, ErrTitelNichtGefunden) {
-			schreibeFehler(antwort, http.StatusNotFound, "keines der ausgewählten bücher wurde gefunden")
+			schreibeFehler(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden")
 			return
 		}
 		log.Printf("Fehler beim Löschen von Büchern: %v", fehler)
@@ -161,7 +161,7 @@ func (t *Tueren) TitelAnlegen(antwort http.ResponseWriter, anfrage *http.Request
 	var eingabe TitelEingabe
 
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, "ungültiges JSON")
+		schreibeFehler(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
 		return
 	}
 

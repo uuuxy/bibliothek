@@ -62,7 +62,7 @@ describe('IsbnFeld: der Ausgang einer Abfrage ohne Treffer', () => {
 	});
 
 	it('die ISBN kennt kein Dienst: ein Hinweis, kein Fehler', async () => {
-		server(() => antwort(404, { error: 'metadaten nicht gefunden' }));
+		server(() => antwort(404, { error: 'Keine Angaben zu dieser ISBN gefunden' }));
 		const { eingabe, hinweis } = feld({ id: null, isbn: ISBN, title: '' });
 
 		await fireEvent.blur(eingabe);

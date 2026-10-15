@@ -104,8 +104,8 @@ func TestExcelImport(t *testing.T) {
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
 		}
-		if got, ok := antwort["error"].(string); !ok || !strings.Contains(got, "spalte 'isbn' fehlt") {
-			t.Errorf("antwort[\"error\"] = %v, erwartet darin %q", antwort["error"], "spalte 'isbn' fehlt")
+		if got, ok := antwort["error"].(string); !ok || !strings.Contains(got, "Die Spalte ISBN fehlt") {
+			t.Errorf("antwort[\"error\"] = %v, erwartet darin %q", antwort["error"], "Die Spalte ISBN fehlt")
 		}
 	})
 

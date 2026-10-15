@@ -177,7 +177,7 @@ func (t *Tueren) verarbeiteImportZeilen(ctx context.Context, datenZeilen [][]str
 // bereits geschrieben.
 func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) (datenZeilen [][]string, spalten map[string]int, ok bool) {
 	if r.Method != http.MethodPost {
-		schreibeFehler(w, http.StatusMethodNotAllowed, "nur post-anfragen erlaubt")
+		schreibeFehler(w, http.StatusMethodNotAllowed, "Nur Anfragen mit POST")
 		return nil, nil, false
 	}
 
@@ -189,7 +189,7 @@ func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) 
 
 	spalten, mitKopfzeile := bestimmeSpalten(zeilen[0])
 	if spalten["isbn"] == -1 {
-		schreibeFehler(w, http.StatusBadRequest, "spalte 'isbn' fehlt in der datei. bitte stellen sie sicher, dass eine isbn-spalte vorhanden ist.")
+		schreibeFehler(w, http.StatusBadRequest, "Die Spalte ISBN fehlt in der Datei. Bitte eine Spalte ISBN anlegen.")
 		return nil, nil, false
 	}
 

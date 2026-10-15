@@ -23,9 +23,9 @@ func TestPruefeTitelEingabe(t *testing.T) {
 	}{
 		{name: "Titel und ISBN", eingabe: TitelEingabe{Titel: "T", ISBN: "978-3-16-148410-0"}, wantResult: true},
 		{name: "ohne ISBN", eingabe: TitelEingabe{Titel: "T"}, wantResult: true},
-		{name: "ohne Titel", eingabe: TitelEingabe{ISBN: "978-3-16-148410-0"}, wantError: "titel darf nicht leer sein"},
-		{name: "Titel nur aus Leerzeichen", eingabe: TitelEingabe{Titel: "  "}, wantError: "titel darf nicht leer sein"},
-		{name: "Nummer ohne ISBN-Form", eingabe: TitelEingabe{Titel: "T", ISBN: "123"}, wantError: "ungültiges ISBN-Format"},
+		{name: "ohne Titel", eingabe: TitelEingabe{ISBN: "978-3-16-148410-0"}, wantError: "Der Titel darf nicht leer sein"},
+		{name: "Titel nur aus Leerzeichen", eingabe: TitelEingabe{Titel: "  "}, wantError: "Der Titel darf nicht leer sein"},
+		{name: "Nummer ohne ISBN-Form", eingabe: TitelEingabe{Titel: "T", ISBN: "123"}, wantError: "Die ISBN ist ungültig"},
 	}
 
 	for _, f := range faelle {
@@ -175,7 +175,7 @@ func TestTitelAnlegen(t *testing.T) {
 		rec := httptest.NewRecorder()
 		tueren.TitelAnlegen(rec, anfrage)
 
-		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "titel darf nicht leer sein") {
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Der Titel darf nicht leer sein") {
 			t.Errorf("got %d %s, want 400 mit „titel darf nicht leer sein“", rec.Code, rec.Body.String())
 		}
 	})

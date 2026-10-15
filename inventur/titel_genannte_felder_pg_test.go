@@ -258,8 +258,8 @@ func TestTitelAendern_PrueftWasSichAendert(t *testing.T) {
 		rumpf map[string]any
 		text  string
 	}{
-		{"ein genannter Titel ist nicht leer", map[string]any{"title": "  "}, "titel darf nicht leer sein"},
-		{"ein genannter Autor wird nicht geleert", map[string]any{"author": ""}, "autor darf nicht leer sein"},
+		{"ein genannter Titel ist nicht leer", map[string]any{"title": "  "}, "Der Titel darf nicht leer sein"},
+		{"ein genannter Autor wird nicht geleert", map[string]any{"author": ""}, "Der Autor darf nicht leer sein"},
 		{"Mehrjahresband nur am Lernmittel", map[string]any{"istLernmittel": false}, "mehrjahresband"},
 		{"Mehrjahresband nur über mehr als einen Jahrgang", map[string]any{"jahrgangBis": 5}, "mehrjahresband"},
 	}

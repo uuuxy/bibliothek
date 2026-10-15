@@ -200,13 +200,14 @@ func TestAntworteFehlerMitMeldung_DatenbanktextWirdTrotzdemGefiltert(t *testing.
 }
 
 // Eine Meldung geht ohne Umweg über einen Fehlerwert hinaus. Antwort und Eintrag im Log sind
-// dieselben wie mit errors.New(Meldung) als Ursache, für jeden Text; nur ein 500 nennt ohne
-// Ursache keine eigene Meldung und steht deshalb nicht in der Liste.
+// dieselben wie mit errors.New(Meldung) als Ursache, für jeden Text und jeden Status; ein 500
+// antwortet auf beiden Wegen mit der neutralen Meldung.
 func TestAntworteFehlerMitMeldung_OhneUrsacheWieMitFehlerwert(t *testing.T) {
 	const satz = "bitte einen grund für die korrektur angeben"
 	for _, status := range []int{
 		http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound,
-		http.StatusConflict, http.StatusRequestEntityTooLarge, http.StatusBadGateway, http.StatusServiceUnavailable,
+		http.StatusConflict, http.StatusRequestEntityTooLarge, http.StatusInternalServerError,
+		http.StatusBadGateway, http.StatusServiceUnavailable,
 	} {
 		mitFehlerwert := httptest.NewRecorder()
 		AntworteFehler(mitFehlerwert, status, errors.New(satz))

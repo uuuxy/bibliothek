@@ -167,13 +167,13 @@ func TestTitelListe(t *testing.T) {
 			name:           "Error - unbekannte Sicht",
 			adresse:        "/api/books?bestand=alle",
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"ungültiger query-parameter bestand (erlaubt: ohne)"}`,
+			expectedBody:   `{"error":"Unbekannter Wert für den Bestand"}`,
 		},
 		{
 			name:           "Error - query string too long",
 			adresse:        "/api/books?q=" + strings.Repeat("a", 201),
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"suchbegriff zu lang (max. 200 zeichen)"}`,
+			expectedBody:   `{"error":"Der Suchbegriff ist zu lang, höchstens 200 Zeichen"}`,
 		},
 		{
 			// Die Liste kennt keinen Filter nach Klasse mehr: Der Parameter wird nicht gelesen,

@@ -19,7 +19,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 
 	eintrag, err := t.abfragen.LadeTitel(r.Context(), id)
 	if errors.Is(err, ErrTitelNichtGefunden) {
-		schreibeFehler(w, http.StatusNotFound, "buch nicht gefunden")
+		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
 		return
 	}
 	if err != nil {
@@ -36,7 +36,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 			schreibeFehler(w, http.StatusBadGateway, "Katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen")
 			return
 		}
-		schreibeFehler(w, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel")
+		schreibeFehler(w, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel.")
 		return
 	}
 

@@ -95,7 +95,7 @@ func TestTitelKennungImPfadIst400AmMux(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
 			mux.ServeHTTP(rec, httptest.NewRequest(f.methode, f.pfad, strings.NewReader(f.rumpf)))
-			if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "ungültige Buch-ID") {
+			if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Die Kennung des Titels ist ungültig") {
 				t.Fatalf("Status %d, erwartet 400 „ungültige Buch-ID“: %s", rec.Code, rec.Body.String())
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -130,7 +130,7 @@ func TestTitelIDAusPfad(t *testing.T) {
 			if ok && id != f.id {
 				t.Fatalf("Kennung %q, erwartet %q", id, f.id)
 			}
-			if !ok && (rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "ungültige Buch-ID")) {
+			if !ok && (rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Die Kennung des Titels ist ungültig")) {
 				t.Fatalf("Status %d, erwartet 400 „ungültige Buch-ID“: %s", rec.Code, rec.Body.String())
 			}
 		})

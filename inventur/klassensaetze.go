@@ -68,7 +68,7 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-		schreibeFehler(w, http.StatusBadRequest, "ungültiges JSON")
+		schreibeFehler(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
 		return
 	}
 
@@ -86,14 +86,14 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(zielKlassen) == 0 {
-		schreibeFehler(w, http.StatusBadRequest, "es muss mindestens ein klassenname angegeben werden")
+		schreibeFehler(w, http.StatusBadRequest, "Bitte mindestens eine Klasse angeben")
 		return
 	}
 
 	// Klassennamen-Länge begrenzen (max. 20 Zeichen Schutz gegen Missbrauch)
 	for _, cn := range zielKlassen {
 		if len(cn) > 20 {
-			schreibeFehler(w, http.StatusBadRequest, "klassenname darf maximal 20 zeichen lang sein")
+			schreibeFehler(w, http.StatusBadRequest, "Der Name einer Klasse hat höchstens 20 Zeichen")
 			return
 		}
 	}
@@ -102,7 +102,7 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 	alterName := strings.TrimSpace(eingabe.OldClassName)
 
 	if !alleUUIDs(eingabe.BookIDs) {
-		schreibeFehler(w, http.StatusBadRequest, "bookIds enthält eine ungültige Kennung")
+		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
 		return
 	}
 	err := t.abfragen.AendereKlassensaetze(r.Context(), alterName, zielKlassen, eingabe.BookIDs)
@@ -129,7 +129,7 @@ func (t *Tueren) KlassensatzGruppeLoeschen(w http.ResponseWriter, r *http.Reques
 	}
 
 	if len(klassen) == 0 {
-		schreibeFehler(w, http.StatusBadRequest, "klassenname fehlt")
+		schreibeFehler(w, http.StatusBadRequest, "Der Name der Klasse fehlt")
 		return
 	}
 
@@ -162,7 +162,7 @@ func (t *Tueren) KlassensaetzeZuordnen(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-		schreibeFehler(w, http.StatusBadRequest, "ungültiges JSON")
+		schreibeFehler(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
 		return
 	}
 
@@ -175,19 +175,19 @@ func (t *Tueren) KlassensaetzeZuordnen(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(zielKlassen) == 0 {
-		schreibeFehler(w, http.StatusBadRequest, "es muss mindestens ein klassenname angegeben werden")
+		schreibeFehler(w, http.StatusBadRequest, "Bitte mindestens eine Klasse angeben")
 		return
 	}
 
 	for _, cn := range zielKlassen {
 		if len(cn) > 20 {
-			schreibeFehler(w, http.StatusBadRequest, "klassenname darf maximal 20 zeichen lang sein")
+			schreibeFehler(w, http.StatusBadRequest, "Der Name einer Klasse hat höchstens 20 Zeichen")
 			return
 		}
 	}
 
 	if !alleUUIDs(eingabe.BookIDs) {
-		schreibeFehler(w, http.StatusBadRequest, "bookIds enthält eine ungültige Kennung")
+		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
 		return
 	}
 	err := t.abfragen.OrdneTitelKlassenZu(r.Context(), zielKlassen, eingabe.BookIDs)
