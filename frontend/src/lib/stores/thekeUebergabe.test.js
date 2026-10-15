@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { authStore } from './authStore.svelte.js';
-import { idleLock } from './idleLock.svelte.js';
+import { leerlaufSperre } from './leerlaufSperre.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
 
 // Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
@@ -41,7 +41,7 @@ describe('Theken-Übergabe', () => {
 	});
 
 	it('der Inaktivitäts-Wächter räumt dieselbe Liste', () => {
-		idleLock.thekeLeeren();
+		leerlaufSperre.thekeLeeren();
 		expect(omniboxStore.activeStudent).toBeNull();
 		expect(omniboxStore.blockAlert).toBeNull();
 		expect(omniboxStore.queryVal).toBe('');

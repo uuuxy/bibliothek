@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 
-vi.mock('../../stores/toastStore.svelte.js', () => ({
-	toastStore: { addToast: vi.fn() }
+vi.mock('../../stores/snackbars.svelte.js', () => ({
+	snackbars: { addToast: vi.fn() }
 }));
 
 vi.mock('../../apiFetch.js', () => ({

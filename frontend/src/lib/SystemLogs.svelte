@@ -1,11 +1,11 @@
 <script>
-	import AuditLog from './AuditLog.svelte';
-	import AdminAuditLog from './AdminAuditLog.svelte';
+	import Logbuch from './Logbuch.svelte';
+	import VerwaltungsProtokoll from './VerwaltungsProtokoll.svelte';
 	import TresenAuskunft from './TresenAuskunft.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
-	import { hatRecht } from './menu.js';
+	import { hatRecht } from './menue.js';
 
 	let activeTab = $state('system');
 	// Das Admin-Audit-Log liest GET /api/admin/auditlog, und die Route verlangt
@@ -21,17 +21,17 @@
 	]);
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<Reiter etikett="System-Logs" {reiter} aktiv={activeTab} onwahl={(id) => (activeTab = id)} />
 
 	<div class="flex-1 overflow-y-auto">
 		{#if activeTab === 'system'}
 			<div class="animate-fade-in h-full">
-				<AuditLog />
+				<Logbuch />
 			</div>
 		{:else if activeTab === 'admin' && darfAdminLog}
 			<div class="animate-fade-in h-full">
-				<AdminAuditLog />
+				<VerwaltungsProtokoll />
 			</div>
 		{:else if activeTab === 'tresen' && darfTresen}
 			<div class="animate-fade-in h-full p-6">
@@ -39,4 +39,4 @@
 			</div>
 		{/if}
 	</div>
-</PageShell>
+</Seitenrahmen>

@@ -11,7 +11,7 @@
 	import { ladeTitelSchlagworte, setzeTitelSchlagworte } from '../../utils/schlagworte.js';
 	import { erzeugeSchlagwortVorschlaege } from '../../utils/schlagwortVorschlaege.svelte.js';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../utils/dnbSchlagwortVorschlag.svelte.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import ChipFeld from '../ui/ChipFeld.svelte';
 	import SchlagwortDnbVorschlag from '../SchlagwortDnbVorschlag.svelte';
 	import { untrack } from 'svelte';
@@ -66,7 +66,7 @@
 		try {
 			await setzeTitelSchlagworte(titelId, schlagworte);
 		} catch {
-			toastStore.addToast(
+			snackbars.addToast(
 				'Schlagworte konnten nicht gespeichert werden — Titel wird trotzdem bestellt.',
 				'error'
 			);

@@ -12,7 +12,7 @@ import {
 	extractApiError,
 	FRIST_MAILVERSAND_MS
 } from '../apiFetch.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import {
 	MITTEL,
 	MITTEL_REIHENFOLGE,
@@ -283,7 +283,7 @@ class OrderStore {
 		try {
 			await apiPut(`/api/lieferanten/${id}`, aenderung);
 			await this.loadSuppliers();
-			toastStore.addToast('Lieferant aktualisiert.', 'success');
+			snackbars.addToast('Lieferant aktualisiert.', 'success');
 		} catch {
 			/* apiFetch zeigt Fehler-Toast */
 		}
@@ -333,7 +333,7 @@ class OrderStore {
 			const res = await apiClient.post('/api/bestellungen/suche', { query });
 			if (seq !== this.#searchSeq) return;
 			if (!res.ok) {
-				toastStore.addToast(await extractApiError(res), 'error');
+				snackbars.addToast(await extractApiError(res), 'error');
 				this.#leereTreffer();
 				return;
 			}
@@ -533,7 +533,7 @@ class OrderStore {
 			const toastType = data?.status === 'warning' ? 'error' : 'success';
 			const barcodeInfo =
 				data?.ordered_qty != null ? ` (${data.ordered_qty} Barcodes reserviert.)` : '';
-			toastStore.addToast(
+			snackbars.addToast(
 				`${gruppe.label}: ${data?.message ?? 'Bestellung ausgelöst.'}${barcodeInfo}`,
 				toastType
 			);

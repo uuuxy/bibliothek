@@ -2,7 +2,7 @@
 --
 -- Befund vom 10.08.2026 auf dem Schulserver: Ein Kollegiums-Konto sah 10 von 15
 -- Menüpunkten, darunter Schülerdatei, Mahnwesen, System-Logs und Einstellungen. Das Menü
--- ist rechtegesteuert (frontend/src/lib/menu.js), und role_permissions führte für
+-- ist rechtegesteuert (frontend/src/lib/menue.js), und role_permissions führte für
 -- KOLLEGIUM manage_users, audit_logs, view_stats, view_students, view_books und
 -- perform_actions auf true. Es war keine reine Anzeigefrage: Dieselbe Tabelle entscheidet
 -- in RequirePermission, die API hätte es also auch zugelassen.

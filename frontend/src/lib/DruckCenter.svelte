@@ -4,7 +4,7 @@
 	import Etikettendruck from './Etikettendruck.svelte';
 	import EtikettenNachdruck from './components/etiketten/EtikettenNachdruck.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
 
 	let activeTab = $state('labels');
@@ -19,7 +19,7 @@
 	});
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<!-- Reiter auf der Leinwand, nicht in einem eigenen weissen Balken — wie Mahnwesen,
 	     Medienkatalog und Schuelerdatei. -->
 	<!-- Ohne max-w-6xl mx-auto: Die Reiterzeile stand dadurch auf einer ANDEREN Kante als
@@ -47,7 +47,7 @@
 
 	<div class="flex-1 overflow-y-auto">
 		<!-- Alle drei Reiter tragen dieselbe Kante wie die Tab-Leiste darüber. Das px-8 ist
-		     dabei entfallen: Die äußere Polsterung sitzt laut PageShell in App.svelte und gilt
+		     dabei entfallen: Die äußere Polsterung sitzt laut Seitenrahmen in App.svelte und gilt
 		     für alle Routen — ein zusätzliches px-8 hier polsterte doppelt und schob den
 		     Inhalt gegenüber den Reitern um 32 px nach innen. Vorher
 		     bekam nur "Fehlende Etiketten" dieses Padding, die anderen beiden Reiter waren
@@ -74,4 +74,4 @@
 			</div>
 		{/if}
 	</div>
-</PageShell>
+</Seitenrahmen>

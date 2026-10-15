@@ -1,6 +1,6 @@
 import { apiFetch, apiClient, extractApiError } from './apiFetch.js';
 import { istKollegium } from './leserArt.js';
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 import { fehlertext } from './utils/fehlertext.js';
 
 export function useLeserakte() {
@@ -195,7 +195,7 @@ export function useLeserakte() {
 				// Kein Brief-Fenster mehr: Der frühere Elternbrief verlangte Barzahlung in der
 				// Bibliothek und widersprach dem Bescheid des Landes (OFFEN.md 5.2). Der Brief
 				// ist ein eigener Schritt — „Bescheid erstellen" an der Gebühren-Karte.
-				toastStore.addToast(
+				snackbars.addToast(
 					damageBook.ohneForderung
 						? 'Verlust/Schaden gebucht, das Exemplar ist ausgesondert. Eine Forderung entsteht bei einem Kollegen nicht.'
 						: 'Verlust/Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
@@ -208,11 +208,11 @@ export function useLeserakte() {
 					console.error('Fehler:', e);
 					return {};
 				});
-				toastStore.addToast(err.error || 'Fehler beim Melden.', 'error');
+				snackbars.addToast(err.error || 'Fehler beim Melden.', 'error');
 			}
 		} catch (e) {
 			console.error('Schaden melden fehlgeschlagen:', e);
-			toastStore.addToast('Netzwerkfehler.', 'error');
+			snackbars.addToast('Netzwerkfehler.', 'error');
 		} finally {
 			isSubmittingDamage = false;
 		}

@@ -48,7 +48,7 @@
 </script>
 
 <!-- Seit 16.08.2026 ein Tab der Einstellungen (Betreiber-Entscheidung: schlankeres
-     Menue), kein eigener Bildschirm mehr — deshalb KEIN PageShell; die Huelle stellt
+     Menue), kein eigener Bildschirm mehr — deshalb KEIN Seitenrahmen; die Huelle stellt
      Einstellungen. Der Einleitungssatz erklaert, was diese Ansicht NICHT ist — keine
      Fehlerliste. Sie zeigt, was eingerichtet, aber nicht in Betrieb ist; solche
      Luecken melden sich nie von selbst. -->

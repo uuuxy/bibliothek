@@ -1,7 +1,7 @@
 // thekeLeeren.js — die Theken-Ansicht in einen Zustand ohne Personendaten bringen.
 //
 // Eigene Datei, weil ZWEI Anlässe dasselbe brauchen: der Inaktivitäts-Wächter
-// (idleLock: Theke leeren nach der kurzen Frist, Sperrbildschirm nach der langen) und
+// (leerlaufSperre: Theke leeren nach der kurzen Frist, Sperrbildschirm nach der langen) und
 // das ausdrückliche Abmelden. Bis zum 31.08.2026 konnte es nur der Wächter: Ein
 // Bediener scannte einen Schüler, meldete sich ab, der nächste meldete sich an — und
 // sah weiterhin dessen Profil samt Ausleihen, Sperren und Mahnstufen, weil die

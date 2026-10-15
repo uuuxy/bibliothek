@@ -4,7 +4,7 @@ import Katalogseite from './KatalogSuche.svelte';
 
 /**
  * Der ganze Weg eines Kamera-Scans im Medienkatalog, an einem Stück: KameraScanner →
- * CameraScanner → Suchpille → StartseitenFilter → Seite → Kachelraster.
+ * ThekenKamera → Suchpille → StartseitenFilter → Seite → Kachelraster.
  *
  * Grund für diesen Test (Rückmeldung 18.09.2026): „wenn ich bei medienkatalog die kamera
  * verwende passiert nichts — ein Fenster öffnet sich eine Millisekunde und dann nichts."

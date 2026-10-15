@@ -4,14 +4,14 @@
      Browser-Dialoge. Es ist ein echtes DELETE und kein Papierkorb — die Abfrage nennt die
      Zahl, statt nur „sicher?" zu fragen. -->
 <script>
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 
 	/** @type {{ open: boolean, anzahl: number, laeuft: boolean, onConfirm: () => void, onClose: () => void }} */
 	let { open, anzahl, laeuft, onConfirm, onClose } = $props();
 </script>
 
-<Modal {open} onclose={onClose} size="sm">
+<Dialog {open} onclose={onClose} size="sm">
 	{#snippet header()}
 		<h3 class="text-base font-bold text-on-surface">Endgültig löschen?</h3>
 	{/snippet}
@@ -29,4 +29,4 @@
 			</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

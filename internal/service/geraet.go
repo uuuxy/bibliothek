@@ -284,7 +284,7 @@ func (d *geraeteDienst) VerarbeiteScan(
 
 	// Hat das Gerät Zubehör und ist die Checkliste noch nicht bestätigt, endet der Scan mit der
 	// Bitte darum. Das Übergehen einer Sperre geht dabei nicht verloren: Die Theke schickt
-	// override_block mit der Bestätigung erneut (OmniboxChecklistDialog.svelte), und
+	// override_block mit der Bestätigung erneut (OmniboxPrueflisteDialog.svelte), und
 	// protokolliert wird erst in leiheGeraetAus.
 	if g.Zubehoer != "" && !checklisteBestaetigt {
 		return &GeraeteErgebnis{Art: "geraet_check", Geraet: &g}, nil

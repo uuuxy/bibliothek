@@ -13,7 +13,7 @@
 	import { showToast } from '$lib/store.svelte.js';
 	import { onMount } from 'svelte';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
-	import { hatRecht } from '../../../../lib/menu.js';
+	import { hatRecht } from '../../../../lib/menue.js';
 	import KlassensatzDialog from './KlassensatzDialog.svelte';
 	import KlassenKarte from './KlassenKarte.svelte';
 	import KlassenSuchfeld from '../KlassenSuchfeld.svelte';

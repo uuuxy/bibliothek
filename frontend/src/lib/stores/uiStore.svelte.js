@@ -51,7 +51,7 @@ class UIStore {
 	selectedBook = $state(/** @type {any} */ (null));
 	/**
 	 * Was der Doppelpfeil der Seitenleiste zuletzt gewählt hat: true eingeklappt, false
-	 * ausgeklappt. Ohne Wahl (null) entscheidet die Fensterbreite, siehe Sidebar.svelte.
+	 * ausgeklappt. Ohne Wahl (null) entscheidet die Fensterbreite, siehe Seitenleiste.svelte.
 	 */
 	sidebarWahl = $state(/** @type {boolean | null} */ (null));
 	pendingReservierungen = $state(0);

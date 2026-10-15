@@ -1,4 +1,4 @@
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import { scanne, schliesseAb, deuteScanErgebnis } from './inventurApi.js';
 import { useFehlbestand } from './useFehlbestand.svelte.js';
@@ -84,7 +84,7 @@ export function useInventur() {
 	async function finishInventory() {
 		const r = await schliesseAb(session.sessionId);
 		if (r.ok) {
-			toastStore.addToast(
+			snackbars.addToast(
 				`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`,
 				'success'
 			);
@@ -104,7 +104,7 @@ export function useInventur() {
 			// sonst müsste man die Seite neu laden, um sie dort zu finden.
 			await fb.loadAbgeschlosseneInventuren();
 		} else {
-			toastStore.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
+			snackbars.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
 		}
 	}
 

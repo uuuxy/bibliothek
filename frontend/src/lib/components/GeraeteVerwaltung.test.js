@@ -9,7 +9,7 @@ vi.mock('../apiFetch.js', () => ({
 	extractApiError: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
 
-vi.mock('../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 // „Noch keine Geräte erfasst" heißt: Der Schrank ist leer, leg eins an. Bis zum
 // 12.09.2026 stand derselbe Satz da, wenn der Abruf gescheitert war — mit der Einladung,

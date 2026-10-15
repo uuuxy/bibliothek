@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor, within } from '@testing-library/svelte';
 import Konten from './Konten.svelte';
 import { apiFetch } from './apiFetch.js';
 import { authStore } from './stores/authStore.svelte.js';
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 
 // importOriginal statt eines vollständigen Ersatzes: Am Modul hängt auch der Sitzungs-Haken
 // des authStore (siehe Zugangsanfragen.test.js).
@@ -40,13 +40,13 @@ async function benutzerliste() {
 	return screen;
 }
 
-const meldungen = () => toastStore.toasts.map((t) => [t.message, t.type]);
+const meldungen = () => snackbars.toasts.map((t) => [t.message, t.type]);
 
 beforeEach(() => {
 	vi.mocked(apiFetch).mockReset();
 	server();
 	authStore.currentUser = null;
-	for (const t of [...toastStore.toasts]) toastStore.removeToast(t.id);
+	for (const t of [...snackbars.toasts]) snackbars.removeToast(t.id);
 });
 
 describe('Benutzerliste: Meldungen', () => {

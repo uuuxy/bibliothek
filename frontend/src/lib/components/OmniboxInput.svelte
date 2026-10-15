@@ -1,6 +1,6 @@
 <script>
 	import { Camera, Search } from '@lucide/svelte';
-	import { keyboardNav } from '../actions/keyboardNav.js';
+	import { tastaturNavigation } from '../actions/tastaturNavigation.js';
 
 	let {
 		queryVal = $bindable(),
@@ -44,7 +44,7 @@
 		: undefined}
 	bind:value={queryVal}
 	oninput={onInput}
-	use:keyboardNav={{
+	use:tastaturNavigation={{
 		totalItems: totalDropdownItems,
 		isOpen: isDropdownOpen,
 		selectedIndex: selectedDropdownIndex,

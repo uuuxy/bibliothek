@@ -9,7 +9,7 @@
 //
 // Warum je Seite ein eigener Test: Ein roter Lauf soll die SEITE nennen, nicht nur
 // „irgendwo 37 Verstöße". Gemessen wird am laufenden Container (8084), wie alle
-// Browser-Gates — die Fixes sitzen in Bauteilen (Modal, Tabelle, PageShell, Token), und
+// Browser-Gates — die Fixes sitzen in Bauteilen (Modal, Tabelle, Seitenrahmen, Token), und
 // ob ein Bauteil auf einer Seite wirkt, sieht man nur dort.
 //
 // Dieses Gate wurde vor dem ersten Fix ROT gesehen (09.09.2026, 17 von 19 Tests).

@@ -10,7 +10,7 @@
 // mit „0" am Reiter, obwohl eine Zeile darin wartete.
 
 import { apiGet, apiPost } from '../apiFetch.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { liegtBeiDerSchule } from '../bescheidStatus.js';
 
 class BescheideStore {
@@ -51,7 +51,7 @@ class BescheideStore {
 	async uebergebe(id) {
 		try {
 			await apiPost(`/api/bescheide/${id}/uebergeben`, {});
-			toastStore.addToast('Bescheid als übergeben gebucht.', 'success');
+			snackbars.addToast('Bescheid als übergeben gebucht.', 'success');
 			await this.lade();
 		} catch {
 			/* apiFetch zeigt den Fehler-Toast */

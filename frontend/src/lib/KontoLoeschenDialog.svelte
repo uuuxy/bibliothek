@@ -6,7 +6,7 @@
 <script>
 	import { TriangleAlert } from '@lucide/svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
-	import Modal from './Modal.svelte';
+	import Dialog from './Dialog.svelte';
 	import Button from './components/ui/Button.svelte';
 
 	/**
@@ -22,7 +22,7 @@
 	let { open, onclose, userToDelete, deletingUser, error, confirmDeleteUser } = $props();
 </script>
 
-<Modal {open} {onclose} size="sm" beschriftetDurch="benutzer-loeschen-titel">
+<Dialog {open} {onclose} size="sm" beschriftetDurch="benutzer-loeschen-titel">
 	<div class="space-y-4 p-6">
 		<h2 id="benutzer-loeschen-titel" class="text-lg font-bold text-on-surface">
 			Benutzer unwiderruflich löschen?
@@ -52,4 +52,4 @@
 			</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

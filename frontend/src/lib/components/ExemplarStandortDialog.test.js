@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
 vi.mock('../apiFetch.js', () => ({ apiPut: vi.fn(), apiFetch: vi.fn() }));
-vi.mock('../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 import { apiFetch, apiPut } from '../apiFetch.js';
-import { toastStore } from '../stores/toastStore.svelte.js';
+import { snackbars } from '../stores/snackbars.svelte.js';
 import ExemplarStandortDialog from './ExemplarStandortDialog.svelte';
 
 // Der Standort markierter Exemplare (docs/OFFEN.md 5.53). Was hier schiefgehen kann: eine
@@ -75,7 +75,7 @@ describe('ExemplarStandortDialog', () => {
 		});
 		await waitFor(() => expect(onclose).toHaveBeenCalledTimes(1));
 		expect(onGeaendert).toHaveBeenCalledTimes(1);
-		expect(toastStore.addToast).toHaveBeenCalledWith('Standort geändert: 2 Exemplare.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Standort geändert: 2 Exemplare.', 'success');
 	});
 
 	it('schickt „entfernen" als leeren Standort, auch wenn im Feld noch etwas steht', async () => {
@@ -88,7 +88,7 @@ describe('ExemplarStandortDialog', () => {
 
 		expect(vi.mocked(apiPut).mock.calls[0][1]).toEqual({ exemplar_ids: ['e1'], standort: '' });
 		await waitFor(() =>
-			expect(toastStore.addToast).toHaveBeenCalledWith('Standort entfernt: 1 Exemplar.', 'success')
+			expect(snackbars.addToast).toHaveBeenCalledWith('Standort entfernt: 1 Exemplar.', 'success')
 		);
 	});
 
@@ -103,7 +103,7 @@ describe('ExemplarStandortDialog', () => {
 		await waitFor(() => expect(aendern(getByRole).disabled).toBe(false));
 		expect(onclose).not.toHaveBeenCalled();
 		expect(onGeaendert).not.toHaveBeenCalled();
-		expect(toastStore.addToast).not.toHaveBeenCalled();
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 	});
 
 	it('schlägt die Standorte aus dem Bestand vor, den häufigsten zuerst', async () => {

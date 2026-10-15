@@ -4,8 +4,8 @@
 	import { druckWarteschlange } from './stores/druckWarteschlange.svelte.js';
 	import { bestellStore } from './stores/bestellStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
-	import { toastStore } from './stores/toastStore.svelte.js';
-	import PageShell from './components/layout/PageShell.svelte';
+	import { snackbars } from './stores/snackbars.svelte.js';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 
 	import BestellEntwurf from './components/bestellungen/BestellEntwurf.svelte';
 	import Wareneingang from './components/bestellungen/Wareneingang.svelte';
@@ -73,7 +73,7 @@
 		// Druck-Center und nicht mehr auf dieser Seite.
 		const ohneEtikett = receivedItems.filter((item) => !item.etikett_gedruckt);
 		if (ohneEtikett.length > 0) {
-			toastStore.addToast(
+			snackbars.addToast(
 				`Eingebucht. ${ohneEtikett.length} ${ohneEtikett.length === 1 ? 'Exemplar braucht' : 'Exemplare brauchen'} noch ein Etikett.`,
 				'success',
 				{
@@ -84,12 +84,12 @@
 				}
 			);
 		} else {
-			toastStore.addToast('Eingebucht.', 'success');
+			snackbars.addToast('Eingebucht.', 'success');
 		}
 	}
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<!-- Über den Reitern und nicht in einem von ihnen: Die fehlende Adresse betrifft das
 	     Bestellen (Mail ohne Link) UND die Historie (Bestätigung, die nie kommt). -->
 	<BestelllinkHinweis />
@@ -97,7 +97,7 @@
 	<!-- Reiterzeile: reine Navigation, keine Aktionen. Genau deshalb steht „Nachdrucken"
 	     NICHT hier — in M3 wechseln Reiter gleichrangige Ansichten EINES Ziels, sie fuehren
 	     keine Aktionen aus und springen nicht zu anderen Zielen. Das Nachdrucken liegt im
-	     Druck-Center und traegt sein Badge dort (Sidebar.svelte).
+	     Druck-Center und traegt sein Badge dort (Seitenleiste.svelte).
 
 	     Seit 04.09.2026 aus ui/Reiter.svelte statt von Hand — der letzte der vier
 	     Bestandsfaelle aus der Reiter-Hygiene, „bei ihrem naechsten fachlichen Anfassen
@@ -229,4 +229,4 @@
 	{#if activeTab === 'anliegen'}
 		<AnliegenListe />
 	{/if}
-</PageShell>
+</Seitenrahmen>

@@ -15,7 +15,7 @@
 // Plätze, die dieselbe Kategorie offen haben, überschrieben sich sonst gegenseitig Felder,
 // die keiner von beiden angefasst hat.
 import { apiPut } from './apiFetch.js';
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 import { sammleZahlen } from './einstellungsWerte.js';
 import { nurGeaendertes } from './utils/geaendert.js';
 
@@ -30,7 +30,7 @@ import { nurGeaendertes } from './utils/geaendert.js';
 export async function speichereKategorie({ geladen, felder = {}, zahlen = [], onSaved }) {
 	const { werte, fehlend } = sammleZahlen(zahlen);
 	if (fehlend.length > 0) {
-		toastStore.addToast(
+		snackbars.addToast(
 			`Bitte eine gültige Zahl eintragen bei: ${fehlend.join(', ')}. Nichts wurde gespeichert.`,
 			'warning'
 		);
@@ -41,7 +41,7 @@ export async function speichereKategorie({ geladen, felder = {}, zahlen = [], on
 	try {
 		// Ohne Änderung gibt es nichts zu schicken; der Server wiese den leeren Rumpf ab.
 		if (Object.keys(rumpf).length > 0) await apiPut('/api/einstellungen', rumpf);
-		toastStore.addToast('Gespeichert.', 'success');
+		snackbars.addToast('Gespeichert.', 'success');
 		if (onSaved) await onSaved();
 		return true;
 	} catch {

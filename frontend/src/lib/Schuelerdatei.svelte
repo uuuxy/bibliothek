@@ -7,7 +7,7 @@
 	import AktiveLeserListe from './components/leser/AktiveLeserListe.svelte';
 	import Papierkorb from './components/leser/Papierkorb.svelte';
 	import SchuelerdateiLeiste from './components/leser/SchuelerdateiLeiste.svelte';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import AuswahlAktionsleiste from './components/leser/AuswahlAktionsleiste.svelte';
 	import AusweisStapeldruck from './components/leser/AusweisStapeldruck.svelte';
 	import { erzeugeAusweisdruck } from './components/leser/ausweisdruck.svelte.js';
@@ -93,7 +93,7 @@
 			/>
 		</div>
 	{:else}
-		<PageShell>
+		<Seitenrahmen>
 			<Reiter
 				etikett="Schülerdatei"
 				reiter={reiterListe}
@@ -160,7 +160,7 @@
 					/>
 				</div>
 			{/if}
-		</PageShell>
+		</Seitenrahmen>
 	{/if}
 </div>
 

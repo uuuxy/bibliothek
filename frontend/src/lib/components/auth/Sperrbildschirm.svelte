@@ -3,7 +3,7 @@
 	import { Lock } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
-	import { idleLock } from '../../stores/idleLock.svelte.js';
+	import { leerlaufSperre } from '../../stores/leerlaufSperre.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { scanSchutz } from '../../scanErkennung.js';
@@ -14,7 +14,7 @@
 	// sie nicht, Screenreader lesen sie nicht (Prüfung 22.08.2026, A6). Tasten und Zeiger
 	// hält sperrSchild.js von ihr fern; data-sperrbildschirm ist sein Kennzeichen. Weiter
 	// geht es nur mit dem Passwort der angemeldeten Person oder per Abmelden. Der Server
-	// hält die Anmeldung so lange gesperrt (stores/idleLock).
+	// hält die Anmeldung so lange gesperrt (stores/leerlaufSperre).
 
 	let passwort = $state('');
 	// Ein Scan am Sperrbildschirm ist kein Passwort: Er geht nicht zum Server, wo er als
@@ -22,7 +22,7 @@
 	let scanErkannt = $state(false);
 
 	function beiScan() {
-		idleLock.entsperrFehler = null;
+		leerlaufSperre.entsperrFehler = null;
 		scanErkannt = true;
 	}
 
@@ -33,15 +33,15 @@
 	/** @param {SubmitEvent} e */
 	async function entsperren(e) {
 		e.preventDefault();
-		if (idleLock.entsperreLaeuft) return;
+		if (leerlaufSperre.entsperreLaeuft) return;
 		scanErkannt = false;
-		const ok = await idleLock.entsperren(passwort);
+		const ok = await leerlaufSperre.entsperren(passwort);
 		passwort = '';
 		if (!ok) setTimeout(() => document.getElementById('sperre-passwort')?.focus(), 50);
 	}
 
 	function abmelden() {
-		idleLock.stop();
+		leerlaufSperre.stop();
 		authStore.handleLogout();
 	}
 </script>
@@ -79,11 +79,11 @@
 			autocomplete="current-password"
 			aria-label="Passwort"
 			bind:value={passwort}
-			disabled={idleLock.entsperreLaeuft}
+			disabled={leerlaufSperre.entsperreLaeuft}
 			placeholder="Passwort"
 		/>
-		<Button type="submit" size="lg" disabled={idleLock.entsperreLaeuft} class="w-full">
-			{#if idleLock.entsperreLaeuft}
+		<Button type="submit" size="lg" disabled={leerlaufSperre.entsperreLaeuft} class="w-full">
+			{#if leerlaufSperre.entsperreLaeuft}
 				<Ladekreis size="sm" farbe="aktuell" />
 				Prüfe…
 			{:else}
@@ -94,9 +94,9 @@
 			<p class="text-xs text-error font-semibold text-center animate-slide-up" role="alert">
 				Scan erkannt: Die Anwendung ist gesperrt. Bitte erst das Passwort eintippen, dann scannen.
 			</p>
-		{:else if idleLock.entsperrFehler}
+		{:else if leerlaufSperre.entsperrFehler}
 			<p class="text-xs text-error font-semibold animate-slide-up" role="alert">
-				{idleLock.entsperrFehler}
+				{leerlaufSperre.entsperrFehler}
 			</p>
 		{/if}
 		<button

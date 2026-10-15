@@ -133,7 +133,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 		await expect(blase).toHaveText(`${TITEL[0]} · ${AUTORIN} · ${nummer(0)}`);
 	});
 
-	// Unter 1280 px Fensterbreite beginnt die Navigation eingeklappt (Sidebar.svelte). Neben
+	// Unter 1280 px Fensterbreite beginnt die Navigation eingeklappt (Seitenleiste.svelte). Neben
 	// ihr in voller Breite und der Leserkarte blieb dem Titel bei 1100 px kein Platz und bei
 	// 1200 px 82 px.
 	test('unter 1280 px beginnt die Navigation eingeklappt; bei 1100 px ist jeder Titel zu lesen', async ({

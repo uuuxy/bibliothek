@@ -5,7 +5,7 @@
 // `role === 'admin'`; ein Schalter auf der Berechtigungsseite blieb dort wirkungslos,
 // weil die Oberfläche ihn nie las. Die Zuordnung steht EINMAL hier, damit Profil und
 // Verzeichnis nicht auseinanderlaufen (Ratsche: frontend-hygiene-rechte.test.js).
-import { hatRecht } from './menu.js';
+import { hatRecht } from './menue.js';
 
 /**
  * @param {any} user  authStore.currentUser

@@ -1,7 +1,7 @@
 <script>
 	import { TriangleAlert } from '@lucide/svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
-	import Modal from './Modal.svelte';
+	import Dialog from './Dialog.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Switch from './components/ui/Switch.svelte';
 	import Select from './components/ui/Select.svelte';
@@ -35,7 +35,7 @@
 	const AUSWAHLEN = [{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN_AUSWAHL }];
 </script>
 
-<Modal {open} {onclose} size="md" beschriftetDurch="benutzer-formular-titel">
+<Dialog {open} {onclose} size="md" beschriftetDurch="benutzer-formular-titel">
 	{#snippet header()}
 		<h3 id="benutzer-formular-titel" class="text-base font-bold text-on-surface">
 			{isEditingUser ? 'Benutzer bearbeiten' : 'Neuen Benutzer anlegen'}
@@ -89,4 +89,4 @@
 			</Button>
 		</div>
 	</form>
-</Modal>
+</Dialog>

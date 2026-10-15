@@ -3,7 +3,7 @@
 	import Schuljahreswechsel from '../leser/Schuljahreswechsel.svelte';
 	import SommerferienKategorie from '../einstellungen/kategorien/SommerferienKategorie.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
-	import { hatRecht } from '../../menu.js';
+	import { hatRecht } from '../../menue.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();

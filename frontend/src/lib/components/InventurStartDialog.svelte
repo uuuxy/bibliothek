@@ -6,7 +6,7 @@
      im Dialog (M3 Dialogs: „Errors about the dialog fields should always appear inline"). -->
 <script>
 	import { slide } from 'svelte/transition';
-	import Modal from '../Modal.svelte';
+	import Dialog from '../Dialog.svelte';
 	import Button from './ui/Button.svelte';
 	import Select from './ui/Select.svelte';
 	import Feld from './ui/Feld.svelte';
@@ -48,7 +48,7 @@
 	);
 </script>
 
-<Modal {open} onclose={onClose} size="md" beschriftetDurch="inventur-start-titel">
+<Dialog {open} onclose={onClose} size="md" beschriftetDurch="inventur-start-titel">
 	<div class="space-y-4 p-6">
 		<h2 id="inventur-start-titel" class="text-lg font-bold text-on-surface">
 			Bereich der Inventur wählen
@@ -124,4 +124,4 @@
 			<Button onclick={onStart} disabled={!bereit}>Inventur Starten</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

@@ -9,7 +9,7 @@
      Backend als Bedingung (pruefeLeserAngaben). Das Backend ist die Wahrheit; diese
      Seite erspart nur den Umweg über eine Fehlermeldung vom Server. -->
 <script>
-	import Modal from './Modal.svelte';
+	import Dialog from './Dialog.svelte';
 	import { apiClient } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
 	import SchuelerEingabeFelder from './components/leser/SchuelerEingabeFelder.svelte';
@@ -115,7 +115,7 @@
 	}
 </script>
 
-<Modal {open} onclose={() => onclose?.()} size="md">
+<Dialog {open} onclose={() => onclose?.()} size="md">
 	{#snippet header()}
 		<h3 class="text-base font-bold text-on-surface">Neuen Leser anlegen</h3>
 	{/snippet}
@@ -164,4 +164,4 @@
 			</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

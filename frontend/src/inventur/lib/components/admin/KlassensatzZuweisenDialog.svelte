@@ -5,7 +5,7 @@
 	// POST /api/admin/class-books/add (klassenname wird serverseitig normalisiert).
 	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
-	import Modal from '../../../../lib/Modal.svelte';
+	import Dialog from '../../../../lib/Dialog.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import {
@@ -75,9 +75,9 @@
 	}
 </script>
 
-<!-- Hintergrund, Fokusfalle und Escape stellt Modal.svelte; der Name des Dialogs kommt als
+<!-- Hintergrund, Fokusfalle und Escape stellt Dialog.svelte; der Name des Dialogs kommt als
      `beschriftung`. -->
-<Modal open={true} onclose={onClose} beschriftung="Zum Klassensatz hinzufügen">
+<Dialog open={true} onclose={onClose} beschriftung="Zum Klassensatz hinzufügen">
 	<div class="p-6 space-y-5">
 		<h3 class="text-lg font-bold text-on-surface">Zum Klassensatz hinzufügen</h3>
 		<p class="text-sm text-on-surface-variant">
@@ -109,4 +109,4 @@
 			</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

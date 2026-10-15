@@ -7,7 +7,7 @@ import { uiLogin, apiPost, csrfToken, uniqueSuffix, ADMIN_PASSWORD } from './hel
  * Zwei Stufen: Nach der kurzen Frist verschwindet der geladene Schüler aus der Theke
  * (der nächste an der Theke darf nicht den vorigen sehen), nach der langen kommt der
  * Sperrbildschirm, der nur mit dem eigenen Passwort wieder aufgeht. Der Store-Test
- * (idleLock.test.js) kennt die Uhr; dieser Test beweist, dass App, Einstellungs-Endpunkt
+ * (leerlaufSperre.test.js) kennt die Uhr; dieser Test beweist, dass App, Einstellungs-Endpunkt
  * und Sperrbildschirm zusammen funktionieren — mit Playwrights gestellter Uhr, denn die
  * Fristen sind Minuten und kein Test wartet fünf davon.
  *

@@ -15,11 +15,11 @@
      Lieferanten-Kategorie der Einstellungen lädt, also kein zweiter Datenweg. -->
 <script>
 	import { onMount } from 'svelte';
-	import { localISO } from '../../utils/dates.js';
+	import { localISO } from '../../utils/datum.js';
 	import { berichtOptionen as optionen, berichtURL } from './bestellberichte.js';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
-	import PageShell from '../layout/PageShell.svelte';
+	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
@@ -82,7 +82,7 @@
 	);
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<div class="max-w-3xl space-y-8 overflow-y-auto">
 		<!-- Berichtstyp: flache Liste, kein Kachel-Design -->
 		<section class="space-y-3">
@@ -173,4 +173,4 @@
 			</p>
 		</section>
 	</div>
-</PageShell>
+</Seitenrahmen>

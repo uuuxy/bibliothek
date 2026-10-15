@@ -10,7 +10,7 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 // auf confirm() zurück, weil es keinen billigen Weg gab. Seither:
 //   Rückfrage  → `await bestaetigen({ titel, text, aktion, gefaehrlich })`
 //                (stores/bestaetigung.svelte.js, Dialog hängt einmal in App.svelte)
-//   Meldung    → toastStore.addToast(text, 'error' | 'info' | …)
+//   Meldung    → snackbars.addToast(text, 'error' | 'info' | …)
 //
 // Rot bewiesen am 08.09.2026 gegen den Bestand vor der Umstellung (33 Fundstellen).
 const BROWSER_DIALOG = /(?<![\w.$])(?:window\.)?(?:confirm|alert|prompt)\s*\(/g;
@@ -26,7 +26,7 @@ describe('Keine Browser-Dialoge', () => {
 		}
 		expect(
 			treffer,
-			'Browser-Dialog — bitte bestaetigen() aus stores/bestaetigung.svelte.js bzw. toastStore.addToast()'
+			'Browser-Dialog — bitte bestaetigen() aus stores/bestaetigung.svelte.js bzw. snackbars.addToast()'
 		).toEqual([]);
 	});
 });

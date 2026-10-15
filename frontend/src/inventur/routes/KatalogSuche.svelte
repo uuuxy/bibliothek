@@ -15,7 +15,7 @@
 	import SuchZustand from '../../lib/components/ui/SuchZustand.svelte';
 	import { Search } from '@lucide/svelte';
 	import Button from '../../lib/components/ui/Button.svelte';
-	import { hatRecht } from '../../lib/menu.js';
+	import { hatRecht } from '../../lib/menue.js';
 	import { authStore } from '../../lib/stores/authStore.svelte.js';
 	import { buecherLaden, buecherSuchen, buecherJeBuch } from '$lib/startseiten_api.js';
 

@@ -7,7 +7,7 @@
 // an jeder Einsetzstelle auch aufgerufen wird (ausleiherDruck.test.js hält das zu).
 
 import { baueListenDruckHtml } from './listenDruck.js';
-import { fmtDateDE } from './dates.js';
+import { fmtDateDE } from './datum.js';
 import { istUeberfaellig } from './ueberfaellig.js';
 
 /**

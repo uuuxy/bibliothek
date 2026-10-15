@@ -1,10 +1,10 @@
 <script>
 	import { apiClient } from './apiFetch.js';
-	import { toastStore } from './stores/toastStore.svelte.js';
+	import { snackbars } from './stores/snackbars.svelte.js';
 	import { Receipt, CircleCheck, Ban, FileText } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
-	import Modal from './Modal.svelte';
+	import Dialog from './Dialog.svelte';
 	import { formatEuro as euro } from './utils/format.js';
 	import BescheidDialog from './components/mahnwesen/BescheidDialog.svelte';
 
@@ -47,10 +47,10 @@
 		try {
 			const res = await apiClient.post(url, stornoFall ? { grund: stornoGrund.trim() } : {});
 			if (res.ok) {
-				toastStore.addToast(erfolgsMeldung, 'success');
+				snackbars.addToast(erfolgsMeldung, 'success');
 			} else {
 				const err = await res.json().catch(() => ({}));
-				toastStore.addToast(err.error || 'Aktion fehlgeschlagen.', 'error');
+				snackbars.addToast(err.error || 'Aktion fehlgeschlagen.', 'error');
 			}
 			// Auch nach einem Fehler-STATUS neu laden (nur bei Netzwerkfehler nicht):
 			// 409 heisst am Mehrplatz-System "eine Kollegin war schneller" — die Akte
@@ -58,7 +58,7 @@
 			schliesseStornoModal();
 			onChanged?.();
 		} catch {
-			toastStore.addToast('Netzwerkfehler.', 'error');
+			snackbars.addToast('Netzwerkfehler.', 'error');
 		} finally {
 			isSubmitting = false;
 		}
@@ -152,8 +152,8 @@
 
 {#if stornoFall}
 	<!-- Ebene „darueber": aus der Schülerakte heraus, die selbst ein Overlay ist. Seit
-	     07.09.2026 auf Modal.svelte (Register 05.09.). -->
-	<Modal
+	     07.09.2026 auf Dialog.svelte (Register 05.09.). -->
+	<Dialog
 		open={true}
 		onclose={schliesseStornoModal}
 		ebene="darueber"
@@ -191,5 +191,5 @@
 				</Button>
 			</div>
 		</div>
-	</Modal>
+	</Dialog>
 {/if}

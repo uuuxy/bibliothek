@@ -7,7 +7,7 @@
 	import Reiter from './components/ui/Reiter.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
-	import { toastStore } from './stores/toastStore.svelte.js';
+	import { snackbars } from './stores/snackbars.svelte.js';
 	import { permissionsMetadata } from './rechteKategorien.js';
 	import { fehlertext } from './utils/fehlertext.js';
 
@@ -84,9 +84,9 @@
 			}
 			permissionsState[role][permission] = newVal;
 
-			toastStore.addToast('Rechte erfolgreich aktualisiert.', 'success');
+			snackbars.addToast('Rechte erfolgreich aktualisiert.', 'success');
 		} catch (err) {
-			toastStore.addToast(fehlertext(err), 'error');
+			snackbars.addToast(fehlertext(err), 'error');
 		} finally {
 			const copy = { ...updatingKeys };
 			delete copy[updateKey];

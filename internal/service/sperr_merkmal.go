@@ -4,7 +4,7 @@ import "errors"
 
 // Die zwei Merkmale einer Ausleihsperre. Die Tür setzt dafür den Kopf X-Sperre
 // (api/theke/eingabe.go), und daran wählt der Dialog der Theke, was er anbietet
-// (OmniboxBlockAlert.svelte):
+// (OmniboxSperrHinweis.svelte):
 //
 //   - uebergehbar: ein Hinweis des Programms (offene Forderung, Überfällig-Automatik). Wer
 //     Schülerdaten ändern darf, übergeht ihn einmalig (override_block).

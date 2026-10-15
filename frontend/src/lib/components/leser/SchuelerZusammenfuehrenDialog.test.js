@@ -8,7 +8,7 @@ vi.mock('../../apiFetch.js', () => ({
 	apiClient: { post: vi.fn() },
 	extractApiError: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
 }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 // Raster-Funde 02.09.2026 (Frontend-Prüfer, Funde 2 und 3) an der Kandidatensuche des
 // Zusammenführen-Dialogs. Die Suche ist ein Schreibpfad in eine Liste, aus der ein

@@ -2,12 +2,12 @@
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { formatEuro as euro } from './utils/format.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
-	import OverdueWidget from './OverdueWidget.svelte';
+	import UeberfaelligQuote from './UeberfaelligQuote.svelte';
 	import StatistikVerlauf from './components/statistik/StatistikVerlauf.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Segmente from './components/ui/Segmente.svelte';
 	import BuchCover from './components/ui/BuchCover.svelte';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { statistikAbruf } from './components/statistik/statistikAbruf.svelte.js';
 	import { ChartColumn, ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
@@ -240,7 +240,7 @@
      flex-1/min-h-0 statt min-h-full: Die Deckelung braucht eine DEFINITE Höhe. min-height:100%
      setzt nur eine Untergrenze — die Card unten wäre trotzdem auf Inhaltshöhe gewachsen und
      hätte die Seite wieder scrollen lassen. Die Höhe kommt aus der Flex-Kette des Routers. -->
-<PageShell>
+<Seitenrahmen>
 	<div class="flex-1 min-h-0 flex flex-col gap-4">
 		<!-- Filterleiste: kompakt in EINER Zeile, direkt auf der grauen Fläche. -->
 		<div class="shrink-0 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">
@@ -312,7 +312,7 @@
 				</div>
 				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
 				<div class="{FLAECHE} p-5 h-72 flex flex-col">
-					<OverdueWidget aktuellVerliehen={stats.zirkulation?.aktuell_verliehen ?? 0} />
+					<UeberfaelligQuote aktuellVerliehen={stats.zirkulation?.aktuell_verliehen ?? 0} />
 				</div>
 			</div>
 
@@ -348,4 +348,4 @@
 			</div>
 		{/if}
 	</div>
-</PageShell>
+</Seitenrahmen>

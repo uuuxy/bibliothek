@@ -9,12 +9,12 @@
      Bestätigen. Keine Auswahl vorbelegt: Die markierten Exemplare können verschiedene Werte
      tragen, und eine Vorbelegung wäre eine Entscheidung, die niemand getroffen hat. -->
 <script>
-	import Modal from '../Modal.svelte';
+	import Dialog from '../Dialog.svelte';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
 	import Radio from './ui/Radio.svelte';
 	import { apiPut } from '../apiFetch.js';
-	import { toastStore } from '../stores/toastStore.svelte.js';
+	import { snackbars } from '../stores/snackbars.svelte.js';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './bestellungen/mittel.js';
 
 	/**
@@ -48,7 +48,7 @@
 				grund: grund.trim()
 			});
 			const n = antwort?.geaendert ?? 0;
-			toastStore.addToast(
+			snackbars.addToast(
 				n === 0 ? 'Eigentum war schon so eingetragen.' : `Eigentum geändert: ${n} Exemplar(e).`,
 				'success'
 			);
@@ -62,7 +62,7 @@
 	}
 </script>
 
-<Modal {open} {onclose} size="sm" beschriftetDurch="eigentum-dialog-titel">
+<Dialog {open} {onclose} size="sm" beschriftetDurch="eigentum-dialog-titel">
 	<div class="space-y-4 p-6">
 		<h2 id="eigentum-dialog-titel" class="text-lg font-bold text-on-surface">Eigentum ändern</h2>
 		<p class="text-sm leading-relaxed text-on-surface-variant">
@@ -104,4 +104,4 @@
 			</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

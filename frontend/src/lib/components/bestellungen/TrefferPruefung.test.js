@@ -6,7 +6,7 @@ vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(async () => ({ ok: true, json: async () => [] })),
 	apiClient: { post: vi.fn() }
 }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../../stores/bestellStore.svelte.js', () => ({
 	bestellStore: { addToCart: vi.fn(), preiseErfassen: true }
 }));

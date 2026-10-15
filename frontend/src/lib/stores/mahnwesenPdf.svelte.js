@@ -1,5 +1,5 @@
 import { apiFetch } from '../apiFetch.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { SvelteDate } from 'svelte/reactivity';
 
 /** Der Druck der Mahnbriefe aus der Auswahl. */
@@ -29,7 +29,7 @@ export function useMahnwesenPdf() {
 			}
 
 			if (ausleihIds.length === 0) {
-				toastStore.addToast(
+				snackbars.addToast(
 					'Keine überfälligen Medien für die ausgewählten Schüler gefunden.',
 					'info'
 				);
@@ -57,7 +57,7 @@ export function useMahnwesenPdf() {
 			selectedIds.clear();
 			await refreshData();
 		} catch (e) {
-			toastStore.addToast('Fehler: ' + String(e), 'error');
+			snackbars.addToast('Fehler: ' + String(e), 'error');
 		} finally {
 			pdfLoading = false;
 		}

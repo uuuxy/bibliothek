@@ -14,7 +14,7 @@ import {
 // Symbole kommen aus @lucide/svelte, nicht aus handgeschriebenem <svg>.
 //
 // Warum das zählt: Derselbe Pfad steht mehrfach im Baum — das Kiosk-Symbol allein
-// viermal (menu.js, Sidebar 2×, BestandstabelleLeiste). Jede Kopie hat ihre eigene
+// viermal (menue.js, Seitenleiste 2×, BestandstabelleLeiste). Jede Kopie hat ihre eigene
 // Strichstärke, ihre eigene Kantenform und altert für sich. Material 3 verlangt an
 // erster Stelle Konsistenz; ein Symbolsatz, der an 67 Stellen nachgezeichnet wird,
 // ist genau das Gegenteil. Lucide liefert die Rolle EINMAL.

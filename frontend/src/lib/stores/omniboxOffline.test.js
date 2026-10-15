@@ -47,7 +47,7 @@ import { omniboxStore } from './omnibox.svelte.js';
 // 16.09.2026. Belegt in stores/omniboxZeitgeber.test.js.
 afterEach(() => omniboxStore.stoppeZeitgeber());
 
-import { loadQueue, dequeueOfflineAction } from '../offlineQueue.js';
+import { loadQueue, dequeueOfflineAction } from '../offlineWarteschlange.js';
 
 /**
  * Eine Server-Antwort, wie apiClient.post sie liefert.

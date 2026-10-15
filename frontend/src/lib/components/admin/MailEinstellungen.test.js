@@ -7,7 +7,7 @@ vi.mock('../../apiFetch.js', async (original) => ({
 	apiPut: vi.fn(),
 	apiPost: vi.fn()
 }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 import { apiGet, apiPut } from '../../apiFetch.js';
 import MailEinstellungen from './MailEinstellungen.svelte';

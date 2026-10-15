@@ -1,9 +1,9 @@
 <script>
-	import WebcamCapture from './WebcamCapture.svelte';
+	import WebcamAufnahme from './WebcamAufnahme.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
-	import DamageReportModal from './DamageReportModal.svelte';
+	import SchadenMeldenDialog from './SchadenMeldenDialog.svelte';
 	import LeserSperreDialog from './LeserSperreDialog.svelte';
 	import LeserBearbeiten from './LeserBearbeiten.svelte';
 	import LeserakteKopf from './LeserakteKopf.svelte';
@@ -187,7 +187,7 @@
 {/if}
 
 {#if st.showWebcam}
-	<WebcamCapture
+	<WebcamAufnahme
 		studentId={st.profile.id}
 		onCapture={() => st.handlePhotoCaptured(st.profile.id)}
 		onClose={() => (st.showWebcam = false)}
@@ -211,7 +211,7 @@
 />
 
 {#if st.showDamageModal && st.damageBook}
-	<DamageReportModal
+	<SchadenMeldenDialog
 		book={st.damageBook}
 		isSubmitting={st.isSubmittingDamage}
 		onCancel={() => (st.showDamageModal = false)}

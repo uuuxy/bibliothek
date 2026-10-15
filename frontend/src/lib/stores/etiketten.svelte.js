@@ -4,7 +4,7 @@
 import { apiFetch } from '../apiFetch.js';
 import { felderProBogen } from '../etikettformate.js';
 import { druckWarteschlange, clearPrintQueue } from './druckWarteschlange.svelte.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { normalisiereScan } from '../scanEinordnen.js';
 import { dekodiereLitteraEtikett } from '../litteraEtikett.js';
 import { ohnePruefzeichen } from '../code39Pruefzeichen.js';
@@ -227,7 +227,7 @@ function createLabelStore() {
 					// Treffer des VORIGEN Suchtextes stehen — man klickt auf eine Zeile,
 					// die zu einer anderen Eingabe gehört, und druckt deren Etikett.
 					searchResults = [];
-					toastStore.addToast('Titelsuche fehlgeschlagen — bitte erneut versuchen.', 'error');
+					snackbars.addToast('Titelsuche fehlgeschlagen — bitte erneut versuchen.', 'error');
 				}
 			} catch (err) {
 				if (lauf !== suchLauf) return;
@@ -310,11 +310,11 @@ function createLabelStore() {
 				await vermerkeGedruckt(itemsToPrint);
 			} else {
 				console.error('Fehler beim Erstellen des PDFs');
-				toastStore.addToast('Fehler beim Erstellen des PDFs', 'error');
+				snackbars.addToast('Fehler beim Erstellen des PDFs', 'error');
 			}
 		} catch (err) {
 			console.error('Netzwerkfehler beim Drucken', err);
-			toastStore.addToast('Fehler beim Senden der Daten', 'error');
+			snackbars.addToast('Fehler beim Senden der Daten', 'error');
 		}
 	}
 

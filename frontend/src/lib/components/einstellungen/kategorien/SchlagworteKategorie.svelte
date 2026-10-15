@@ -14,7 +14,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { Trash } from '@lucide/svelte';
 	import { apiPut, apiPost } from '../../../apiFetch.js';
-	import { toastStore } from '../../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../../stores/snackbars.svelte.js';
 	import { loeschenBestaetigen } from '../../../stores/bestaetigung.svelte.js';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import SchlagwortPflegeDialog from '../SchlagwortPflegeDialog.svelte';
@@ -68,7 +68,7 @@
 		try {
 			const ids = gewaehlt.map((z) => z.id);
 			const antwort = await apiPost('/api/schlagworte/loeschen', { ids });
-			toastStore.addToast(loeschErgebnis(gewaehlt, antwort), 'success');
+			snackbars.addToast(loeschErgebnis(gewaehlt, antwort), 'success');
 			for (const id of ids) auswahl.delete(id);
 		} catch {
 			// Meldung kam bereits aus apiPost; gelöscht ist nichts (alle oder keins). Neu laden

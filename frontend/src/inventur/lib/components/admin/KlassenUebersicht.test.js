@@ -11,7 +11,7 @@ vi.mock('../../../../lib/apiFetch.js', () => ({
 
 // Die Seite steht jedem mit view_books offen, auch den Bibliotheks-Helfern:
 //
-//   1. Der Menüpunkt hängt an view_books        (menu.js)
+//   1. Der Menüpunkt hängt an view_books        (menue.js)
 //   2. Gelesen wird über /api/class-books       (view_books, nicht edit_books)
 //
 // Wer nicht pflegen darf, sieht deshalb keine Verwaltungsknöpfe — sie liefen ins 403.

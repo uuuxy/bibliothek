@@ -1,6 +1,6 @@
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
-	import MahnwesenTabs from './MahnwesenTabs.svelte';
+	import MahnwesenReiter from './MahnwesenReiter.svelte';
 	import MahnwesenSuchleiste from './MahnwesenSuchleiste.svelte';
 
 	/** @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean, darfMahnen: boolean }} */
@@ -13,6 +13,6 @@
      neben der Fehlermeldung der Tabelle eine Behauptung statt einer Zahl. Suche und
      Werkzeugzeile stehen unabhängig davon — sie tragen den Rückweg „Neu laden". -->
 {#if mahnwesenStore.data && !mahnwesenStore.loading}
-	<MahnwesenTabs />
+	<MahnwesenReiter />
 {/if}
 <MahnwesenSuchleiste {onMahnlauf} {onBescheid} {darfBescheid} {darfMahnen} />

@@ -9,7 +9,7 @@
      risse die Control-Grundlinie aus styles/basis.css auf.
 
      Am selben Tag, abends: Die Knopfzeile des Mahnwesens stand bis dahin ÜBER den Reitern
-     im `aktionen`-Slot von PageShell — als einzige Seite von sechzehn. Die Pille begann
+     im `aktionen`-Slot von Seitenrahmen — als einzige Seite von sechzehn. Die Pille begann
      dadurch 84 px tiefer als auf Schülerdatei, Katalog, Abgängern und allen anderen; die Rückmeldung
      an zwei Bildschirmfotos: „hier ist die Suchleiste immer an anderen Positionen … ich
      empfinde es als Stilbruch". Der Slot war ein Überbleibsel: Er hielt die Knöpfe „neben
@@ -23,7 +23,7 @@
      Warum die Zeile NICHT an `data` hängt (die Reiter schon): Schlägt das Laden fehl,
      bleibt `data` null — die Reiter würden dann „Alle 0" behaupten, was der Fehlermeldung
      darunter widerspricht. Der Knopf „Neu laden" ist in genau diesem Moment aber der
-     einzige Rückweg und muss stehen bleiben. Vorher trug ihn PageShell und er überlebte
+     einzige Rückweg und muss stehen bleiben. Vorher trug ihn Seitenrahmen und er überlebte
      jeden Fehler; das darf der Umzug nicht kosten. -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';

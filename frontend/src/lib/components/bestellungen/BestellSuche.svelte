@@ -3,7 +3,7 @@
 	import { scanUebernehmen } from './scanTreffer.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiPost } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import TrefferPruefung from './TrefferPruefung.svelte';
@@ -27,10 +27,10 @@
 			if (localBook && localBook.titel_id) {
 				stageBook(fensterAusAntwort(localBook, book));
 			} else {
-				toastStore.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
+				snackbars.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
 			}
 		} catch {
-			toastStore.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
+			snackbars.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
 		} finally {
 			resolvingDnb = false;
 		}

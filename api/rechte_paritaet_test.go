@@ -14,7 +14,7 @@ import (
 // Es gibt zwei Listen von Berechtigungen, und beide steuern etwas Echtes:
 //
 //   - `frontend/src/lib/rechteKategorien.js` — die Schalter, die ein Admin umlegt,
-//     samt Beschriftung; `menu.js` blendet Menüpunkte danach ein.
+//     samt Beschriftung; `menue.js` blendet Menüpunkte danach ein.
 //   - die `verlangeRecht("…")` an den Routen — was der Server tatsächlich prüft.
 //
 // Läuft ein Name nur in einer der beiden Listen, ist der Schaden still und geht in
@@ -55,9 +55,9 @@ func TestRechteInOberflaecheUndRoutenSindDeckungsgleich(t *testing.T) {
 func TestMenuepunkteVerlangenBekannteRechte(t *testing.T) {
 	inOberflaeche := rechteAusOberflaeche(t)
 
-	roh, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "menu.js"))
+	roh, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "menue.js"))
 	if err != nil {
-		t.Fatalf("menu.js lesen: %v", err)
+		t.Fatalf("menue.js lesen: %v", err)
 	}
 	muster := regexp.MustCompile(`permission:\s*'([a-z_]+)'`)
 	treffer := muster.FindAllStringSubmatch(string(roh), -1)

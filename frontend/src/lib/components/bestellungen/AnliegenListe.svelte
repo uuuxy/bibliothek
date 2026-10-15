@@ -6,7 +6,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { apiFetch, extractApiError, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
@@ -78,7 +78,7 @@
 				anliegen = anliegen.filter((a) => a.id !== id);
 				confirmingId = null;
 				uiStore.fetchOffeneAnliegen();
-				toastStore.addToast('Anliegen war bereits erledigt.', 'success');
+				snackbars.addToast('Anliegen war bereits erledigt.', 'success');
 				return;
 			}
 			if (!res.ok) {
@@ -93,17 +93,17 @@
 			// trotzdem „bekommt eine Mail".
 			const mail = (await res.json().catch(() => null))?.mail;
 			if (mail === 'fehlgeschlagen') {
-				toastStore.addToast(
+				snackbars.addToast(
 					'Erledigt, aber die Mail an die Lehrkraft konnte nicht versendet werden — bitte selbst Bescheid geben.',
 					'warning'
 				);
 			} else if (mail === 'keine_adresse') {
-				toastStore.addToast('Erledigt — zum Konto ist keine Mail-Adresse hinterlegt.', 'warning');
+				snackbars.addToast('Erledigt — zum Konto ist keine Mail-Adresse hinterlegt.', 'warning');
 			} else {
-				toastStore.addToast('Erledigt — die Lehrkraft bekommt eine Mail.', 'success');
+				snackbars.addToast('Erledigt — die Lehrkraft bekommt eine Mail.', 'success');
 			}
 		} catch (err) {
-			toastStore.addToast(/** @type {any} */ (err).message || String(err), 'error');
+			snackbars.addToast(/** @type {any} */ (err).message || String(err), 'error');
 		} finally {
 			completingId = null;
 		}

@@ -1,5 +1,5 @@
 <script>
-	import OpacSearch from './lib/OpacSearch.svelte';
+	import OpacSuche from './lib/OpacSuche.svelte';
 	import Ladekreis from './lib/components/ui/Ladekreis.svelte';
 	import Monitor from './lib/Monitor.svelte';
 	import BestellBestaetigung from './lib/BestellBestaetigung.svelte';
@@ -9,13 +9,13 @@
 	import { starteHintergrundAbrufe } from './lib/stores/hintergrundAbrufe.svelte.js';
 	import { appState } from './inventur/lib/store.svelte.js';
 	import { druckWarteschlange } from './lib/stores/druckWarteschlange.svelte.js';
-	import { idleLock } from './lib/stores/idleLock.svelte.js';
+	import { leerlaufSperre } from './lib/stores/leerlaufSperre.svelte.js';
 
-	import Login from './lib/components/auth/Login.svelte';
+	import Anmeldung from './lib/components/auth/Anmeldung.svelte';
 	import Sperrbildschirm from './lib/components/auth/Sperrbildschirm.svelte';
 	import Anwendungsrahmen from './lib/components/layout/Anwendungsrahmen.svelte';
-	import OfflineIndicator from './lib/components/OfflineIndicator.svelte';
-	import ToastContainer from './lib/ToastContainer.svelte';
+	import OfflineAnzeige from './lib/components/OfflineAnzeige.svelte';
+	import SnackbarAnzeige from './lib/SnackbarAnzeige.svelte';
 	import BestaetigungsDialog from './lib/components/ui/BestaetigungsDialog.svelte';
 	import ThekenDaten from './lib/components/ThekenDaten.svelte';
 	import { initTooltips } from './lib/actions/tooltip.js';
@@ -46,7 +46,7 @@
 
 	// Hinter der Sperre nach Inaktivität beantwortet der Server nichts: Die Abrufe ruhen.
 	$effect(() => {
-		if (!authStore.isLoggedIn || !authStore.currentUser || idleLock.gesperrt) {
+		if (!authStore.isLoggedIn || !authStore.currentUser || leerlaufSperre.gesperrt) {
 			uiStore.pendingReservierungen = 0;
 			return;
 		}
@@ -58,12 +58,12 @@
 	// Fristen kommen aus den Einstellungen (/api/einstellungen/sitzung), 0 = aus.
 	$effect(() => {
 		if (!authStore.isLoggedIn) {
-			idleLock.stop();
+			leerlaufSperre.stop();
 			return;
 		}
-		idleLock.start();
-		idleLock.ladeFristen();
-		return () => idleLock.stop();
+		leerlaufSperre.start();
+		leerlaufSperre.ladeFristen();
+		return () => leerlaufSperre.stop();
 	});
 
 	$effect(() => {
@@ -97,7 +97,7 @@
 	class="app min-h-screen bg-surface text-on-surface font-sans selection:bg-surface-container-highest selection:text-on-surface"
 >
 	{#if _currentPath === '/katalog'}
-		<OpacSearch />
+		<OpacSuche />
 	{:else if _currentPath === '/monitor'}
 		<Monitor />
 	{:else if _currentPath.startsWith('/bestellung/')}
@@ -115,28 +115,28 @@
 				<Ladekreis size="lg" />
 			</div>
 		{:else if !authStore.isLoggedIn}
-			<Login />
+			<Anmeldung />
 		{:else}
-			{#if idleLock.gesperrt}
+			{#if leerlaufSperre.gesperrt}
 				<Sperrbildschirm />
 			{/if}
 			<!-- Gesperrt bleibt die Anwendung stehen, aber ausgeblendet und träge: Was getippt
 			     und nicht gespeichert ist, überlebt die Sperre. Die Druckvorschau (Strg+P)
 			     zeigt sie nicht, Tab erreicht sie nicht, Screenreader lesen sie nicht (Prüfung
 			     22.08.2026, A6). Nach einem Start in die Sperre steht nichts dahinter. -->
-			{#if !idleLock.gesperrt || idleLock.anwendungSteht}
-				<Anwendungsrahmen verdeckt={idleLock.gesperrt} />
+			{#if !leerlaufSperre.gesperrt || leerlaufSperre.anwendungSteht}
+				<Anwendungsrahmen verdeckt={leerlaufSperre.gesperrt} />
 			{/if}
 		{/if}
 	{/if}
-	<OfflineIndicator
-		verbindungVerloren={authStore.isLoggedIn && !authStore.heartbeatOk && !idleLock.gesperrt}
+	<OfflineAnzeige
+		verbindungVerloren={authStore.isLoggedIn && !authStore.heartbeatOk && !leerlaufSperre.gesperrt}
 	/>
 	<!-- Meldungen und eine offene Rückfrage nennen Namen und Titel: Hinter der Sperre sind
 	     sie nicht zu sehen. Die Rückfrage bleibt gestellt und steht nach dem Aufschließen
 	     wieder da. -->
-	{#if !idleLock.gesperrt}
-		<ToastContainer />
+	{#if !leerlaufSperre.gesperrt}
+		<SnackbarAnzeige />
 		<BestaetigungsDialog />
 	{/if}
 </div>

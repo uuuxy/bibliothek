@@ -14,7 +14,7 @@
 	import { apiFetch, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 	import { erzeugeKlassensatzListe } from './klassensatzListe.svelte.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
@@ -60,7 +60,7 @@
 				// Bereits anderweitig erledigt (z. B. zweiter Admin) — lokal genauso entfernen
 				reservierungen.entferne(id);
 				confirmingId = null;
-				toastStore.addToast('Reservierung war bereits abgeschlossen.', 'success');
+				snackbars.addToast('Reservierung war bereits abgeschlossen.', 'success');
 				return;
 			}
 			if (!res.ok) {
@@ -80,21 +80,21 @@
 			// war vorher nur eine Server-Logzeile, die Lehrkraft wartete vergeblich.
 			const mail = (await res.json().catch(() => null))?.mail;
 			if (mail === 'fehlgeschlagen') {
-				toastStore.addToast(
+				snackbars.addToast(
 					'Abgeschlossen, aber die Bereit-Mail konnte nicht versendet werden — bitte die Lehrkraft selbst benachrichtigen.',
 					'warning'
 				);
 			} else if (mail === 'keine_adresse') {
-				toastStore.addToast(
+				snackbars.addToast(
 					'Abgeschlossen — zum Konto ist keine Mail-Adresse hinterlegt, bitte die Lehrkraft selbst benachrichtigen.',
 					'warning'
 				);
 			} else {
-				toastStore.addToast('Reservierung abgeschlossen.', 'success');
+				snackbars.addToast('Reservierung abgeschlossen.', 'success');
 			}
 			uiStore.fetchPendingReservierungen();
 		} catch (err) {
-			toastStore.addToast(/** @type {any} */ (err).message || String(err), 'error');
+			snackbars.addToast(/** @type {any} */ (err).message || String(err), 'error');
 		} finally {
 			completingId = null;
 		}

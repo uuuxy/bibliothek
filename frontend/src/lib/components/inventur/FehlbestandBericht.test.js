@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
 import FehlbestandBericht from './FehlbestandBericht.svelte';
-import { toastStore } from '../../stores/toastStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 import { FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
 
 const PROPS = {
@@ -69,7 +69,7 @@ describe('FehlbestandBericht', () => {
 
 	it('meldet, wenn der Browser das Druckfenster nicht öffnet', async () => {
 		vi.spyOn(window, 'open').mockReturnValue(null);
-		const meldung = vi.spyOn(toastStore, 'addToast').mockImplementation(() => {});
+		const meldung = vi.spyOn(snackbars, 'addToast').mockImplementation(() => {});
 		const bericht = render(FehlbestandBericht, { ...PROPS, eintraege: [OFFEN] });
 
 		await fireEvent.click(bericht.getByRole('button', { name: 'Liste drucken' }));

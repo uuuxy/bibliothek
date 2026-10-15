@@ -23,7 +23,7 @@
 	 * @prop {() => Promise<void>} onfertig - lädt die Liste neu.
 	 */
 	import { apiPost, apiPut } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -98,19 +98,19 @@
 					alte_als_verweis: wahl && behalten
 				});
 				const rest = r?.verweise ? ` „${zeile.wort}“ bleibt als Verweis.` : '';
-				toastStore.addToast(`Umbenannt in „${r?.wort ?? neu}“.${rest}`, 'success');
+				snackbars.addToast(`Umbenannt in „${r?.wort ?? neu}“.${rest}`, 'success');
 			} else if (art === 'zusammenfuehren' && ziel) {
 				const r = await apiPost(`/api/schlagworte/${zeile.id}/zusammenfuehren`, {
 					ziel_id: ziel.id,
 					alte_als_verweis: behalten
 				});
-				toastStore.addToast(
+				snackbars.addToast(
 					`Zusammengeführt: ${r?.titel ?? 0} Titel ${r?.titel === 1 ? 'trägt' : 'tragen'} jetzt „${ziel.wort}“.`,
 					'success'
 				);
 			} else {
 				await apiPost('/api/schlagworte/verweise', { wort: neu, ziel_id: zeile.id });
-				toastStore.addToast(`„${neu}“ verweist jetzt auf „${zeile.wort}“.`, 'success');
+				snackbars.addToast(`„${neu}“ verweist jetzt auf „${zeile.wort}“.`, 'success');
 			}
 		} catch {
 			return; // Meldung kam bereits aus apiFetch; der Dialog bleibt offen.

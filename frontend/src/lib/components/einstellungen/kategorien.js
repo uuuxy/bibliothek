@@ -28,13 +28,13 @@ import {
 	Truck
 } from '@lucide/svelte';
 
-import { hatRecht } from '../../menu.js';
+import { hatRecht } from '../../menue.js';
 
 /**
  * `rechte`: EINES der genannten Rechte genügt — das der Routen, die die Kategorie
  * tatsächlich aufruft. Ohne Eintrag gilt manage_settings (GET/PUT /api/einstellungen).
  * Bis 24.08.2026 stand hier `nurAdmin`, ein Rollenvergleich, den die Berechtigungsseite
- * nicht erreichte. Der Menüpunkt „Einstellungen" (menu.js) öffnet sich mit der
+ * nicht erreichte. Der Menüpunkt „Einstellungen" (menue.js) öffnet sich mit der
  * Vereinigung aller Rechte hier — sonst gäbe es Rechte ohne Tür.
  * @typedef {{ id: string, titel: string, kurz: string, icon: unknown, rechte?: string[] }} Kategorie
  */

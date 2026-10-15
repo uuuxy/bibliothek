@@ -12,7 +12,7 @@
 	import Button from './ui/Button.svelte';
 	import Select from './ui/Select.svelte';
 	import Suchpille from './ui/Suchpille.svelte';
-	import { hatRecht } from '../menu.js';
+	import { hatRecht } from '../menue.js';
 	import { authStore } from '../stores/authStore.svelte.js';
 
 	/**

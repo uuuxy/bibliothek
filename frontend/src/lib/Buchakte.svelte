@@ -7,11 +7,11 @@
 	import BuchakteVormerkungen from './BuchakteVormerkungen.svelte';
 	import BuchakteKopf from './BuchakteKopf.svelte';
 	import { useBuchakte } from './useBuchakte.svelte.js';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
-	import { hatRecht } from './menu.js';
+	import { hatRecht } from './menue.js';
 	import { exemplarZahlen } from './components/exemplarStatus.js';
 	import { ChevronLeft, FaceSlightlyFrowning } from '@lucide/svelte';
 	import { untrack } from 'svelte';
@@ -55,7 +55,7 @@
 	});
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<!-- Back Button + Breadcrumb -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-3">
@@ -139,4 +139,4 @@
 			>
 		</div>
 	{/if}
-</PageShell>
+</Seitenrahmen>

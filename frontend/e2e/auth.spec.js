@@ -6,7 +6,7 @@ import { uiLogin } from './helpers.js';
 test('Login, Session-Restore nach Reload, Logout', async ({ page }) => {
 	await uiLogin(page);
 
-	// Eingeloggt: Sidebar mit Navigation und Abmelden-Knopf
+	// Eingeloggt: Seitenleiste mit Navigation und Abmelden-Knopf
 	const logoutBtn = page.getByRole('button', { name: 'Abmelden' });
 	await expect(logoutBtn).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Ausleihe' })).toBeVisible();

@@ -8,7 +8,7 @@
      haben keinen (Migration 153). -->
 <script>
 	import { apiFetch } from './apiFetch.js';
-	import Modal from './Modal.svelte';
+	import Dialog from './Dialog.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
@@ -69,7 +69,7 @@
 </script>
 
 {#if open && profile}
-	<Modal open={true} onclose={handleClose} beschriftetDurch="loeschen-titel">
+	<Dialog open={true} onclose={handleClose} beschriftetDurch="loeschen-titel">
 		<div class="p-6 text-on-surface text-left">
 			<h3 id="loeschen-titel" class="text-lg font-bold text-error flex items-center gap-2">
 				<TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
@@ -142,5 +142,5 @@
 				</div>
 			{/if}
 		</div>
-	</Modal>
+	</Dialog>
 {/if}

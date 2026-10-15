@@ -5,13 +5,13 @@
      Jahr vorkommt, einen Dialog vor („Dialogs … ask for a decision", Formulare dagegen für
      das, was man ständig ausfüllt). Seit dem 23.09.2026 in ui/, weil die Schlagwort-Pflege
      dieselbe Form braucht (umbenennen, zusammenführen, Verweis anlegen).
-     Ein Formular: Enter bestätigt, Escape und „Abbrechen" schließen (Modal.svelte trägt
+     Ein Formular: Enter bestätigt, Escape und „Abbrechen" schließen (Dialog.svelte trägt
      escapeSchliesst). Der Fokus liegt beim Öffnen im ersten Feld. Die Aktion bleibt gesperrt,
      bis die Eingabe gültig ist (M3 Dialogs: „Disable confirming actions until a choice is
      made. Dismissive actions are never disabled."). -->
 <script>
 	import { tick } from 'svelte';
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 	import Button from './Button.svelte';
 
 	/** @type {{ open: boolean, titel: string, aktion: string, gueltig: boolean, onclose: () => void, onbestaetigen: () => void, children: import('svelte').Snippet }} */
@@ -19,7 +19,7 @@
 
 	/** @type {HTMLFormElement | undefined} */
 	let form = $state();
-	// Der Dialog braucht einen Namen (Modal.svelte: beschriftetDurch) — eindeutig je Instanz.
+	// Der Dialog braucht einen Namen (Dialog.svelte: beschriftetDurch) — eindeutig je Instanz.
 	const eigen = $props.id();
 	const titelId = `${eigen}-titel`;
 
@@ -35,7 +35,7 @@
 	}
 </script>
 
-<Modal {open} {onclose} size="sm" beschriftetDurch={titelId}>
+<Dialog {open} {onclose} size="sm" beschriftetDurch={titelId}>
 	<form bind:this={form} onsubmit={absenden} class="space-y-6 p-6">
 		<h2 id={titelId} class="text-lg font-medium text-on-surface">{titel}</h2>
 		<div class="space-y-4">
@@ -46,4 +46,4 @@
 			<Button type="submit" disabled={!gueltig}>{aktion}</Button>
 		</div>
 	</form>
-</Modal>
+</Dialog>

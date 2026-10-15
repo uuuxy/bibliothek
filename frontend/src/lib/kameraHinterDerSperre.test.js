@@ -7,7 +7,7 @@ vi.mock('$lib/components/scanner/barcodeErkennung.js', () => ({
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 
 import KameraScanner from '../inventur/lib/components/scanner/KameraScanner.svelte';
-import WebcamCapture from './WebcamCapture.svelte';
+import WebcamAufnahme from './WebcamAufnahme.svelte';
 
 // Die Anwendung bleibt hinter dem Sperrbildschirm stehen und wird träge (inert), also auch
 // ein Bauteil mit offener Kamera. Der Strom darf dort nicht weiterlaufen: Ein vorgehaltener
@@ -52,7 +52,7 @@ describe('Kamera hinter der Sperre', () => {
 		[
 			'die Aufnahme des Ausweisfotos',
 			() =>
-				render(WebcamCapture, { props: { studentId: 's1', onCapture: vi.fn(), onClose: vi.fn() } })
+				render(WebcamAufnahme, { props: { studentId: 's1', onCapture: vi.fn(), onClose: vi.fn() } })
 		]
 	])('%s hält den Strom an und läuft nach dem Aufschließen wieder', async (_name, baue) => {
 		const { unmount, container } = baue();

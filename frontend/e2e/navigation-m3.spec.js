@@ -91,7 +91,7 @@ test.describe('Navigation: Material-3-Rollen', () => {
 	test('jedes sichtbare Ziel hat ein Symbol', async ({ page }) => {
 		await uiLogin(page);
 
-		// Fängt eine Lücke in der Zuordnung von NavIcon: Steht dort ein Name, den menu.js
+		// Fängt eine Lücke in der Zuordnung von NavIcon: Steht dort ein Name, den menue.js
 		// nicht kennt (oder umgekehrt), fehlt still ein Symbol. In der eingeklappten
 		// Leiste ist das Symbol die EINZIGE Beschriftung — dann ist der Punkt unbedienbar.
 		const ohneSymbol = await page.evaluate(() => {

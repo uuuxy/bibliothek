@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // unverzüglich zu informieren). Das Zweite in einer grünen Erfolgsmeldung mitzuliefern
 // hieße, es zu verstecken — geprüft wird deshalb der KANAL, nicht nur der Text.
 
-vi.mock('./toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
 	playSoundSuccess: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('../audio.js', () => ({
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { createOmniboxStore } from './omnibox.svelte.js';
 
 const STORNO =
@@ -56,17 +56,17 @@ describe('Rückkehr eines abgerechneten Buches', () => {
 	it('meldet die Stornierung als Erfolg', async () => {
 		await scanne({ type: 'info', message: STORNO });
 
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			expect.stringContaining('storniert'),
 			'success'
 		);
-		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
+		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
 	});
 
 	it('meldet die offene Aufgabe als Warnung, nicht als Erfolg', async () => {
 		await scanne({ type: 'info', message: 'Buch reaktiviert', aufsicht_informieren: AUFSICHT });
 
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			expect.stringContaining('Schulaufsicht'),
 			'warning'
 		);
@@ -83,11 +83,11 @@ describe('Rückkehr eines abgerechneten Buches', () => {
 			aufsicht_informieren: AUFSICHT
 		});
 
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			expect.stringContaining('storniert'),
 			'success'
 		);
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			expect.stringContaining('Schulaufsicht'),
 			'warning'
 		);
@@ -97,7 +97,7 @@ describe('Rückkehr eines abgerechneten Buches', () => {
 	it('schweigt, wenn es nichts zu melden gibt', async () => {
 		await scanne({ type: 'info', message: 'Buch reaktiviert' });
 
-		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
-		expect(toastStore.addToast).toHaveBeenCalledWith('Buch reaktiviert', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
+		expect(snackbars.addToast).toHaveBeenCalledWith('Buch reaktiviert', 'success');
 	});
 });

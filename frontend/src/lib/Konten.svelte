@@ -14,7 +14,7 @@
 		benutzerFormularAus,
 		benutzerNutzlast
 	} from './benutzerFormular.js';
-	import { toastStore } from './stores/toastStore.svelte.js';
+	import { snackbars } from './stores/snackbars.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import { fehlertext } from './utils/fehlertext.js';
@@ -86,7 +86,7 @@
 			});
 			if (!res.ok) throw new Error(await extractApiError(res));
 			showUserModal = false;
-			toastStore.addToast(
+			snackbars.addToast(
 				isEditingUser ? 'Benutzer erfolgreich aktualisiert.' : 'Benutzer erfolgreich angelegt.',
 				'success'
 			);
@@ -111,7 +111,7 @@
 			}
 			showDeleteConfirm = false;
 			userToDelete = null;
-			toastStore.addToast('Benutzer erfolgreich gelöscht.', 'success');
+			snackbars.addToast('Benutzer erfolgreich gelöscht.', 'success');
 			fetchUsers();
 		} catch (err) {
 			// Der Dialog bleibt offen: Der Satz des Servers sagt, was zu tun ist, und steht

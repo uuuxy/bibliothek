@@ -6,7 +6,7 @@ import { render } from '@testing-library/svelte';
 // hält ihn bis zum nächsten Scan, die Theke zeigt ihn als Zeile über dem Konto und blitzt wie
 // bei der Fremdrückgabe. Gebucht ist die Ausleihe trotzdem.
 
-vi.mock('./toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
 	playSoundSuccess: vi.fn(),

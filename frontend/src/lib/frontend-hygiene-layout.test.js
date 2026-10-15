@@ -12,7 +12,7 @@ import { srcRoot, sammleQuelldateien } from './hygiene-quellen.js';
 //
 // Die Zustaendigkeiten seitdem:
 //   Flaeche  -> App.svelte (weiss, edge-to-edge)
-//   Kopf     -> PageShell.svelte (Titel, Unterzeile, Aktionen)
+//   Kopf     -> Seitenrahmen.svelte (Titel, Unterzeile, Aktionen)
 // KEINE Breitenbegrenzung und KEINE Karten-Wrapper: f2320e1, e81ce75 und 95d5d33
 // haben das Floating-Card-Muster und die max-w-Einengung ausdruecklich abgeschafft.
 // Ich hatte beides am 07.08. wieder eingefuehrt — genau das ist aufgefallen.
@@ -54,7 +54,7 @@ describe('Seitengeruest', () => {
 		expect(
 			gefunden,
 			'Eine Route setzt auf oberster Ebene eine eigene Flaeche (bg-*) oder Breite (max-w-*).\n' +
-				'Die Flaeche gehoert App.svelte, der Kopf PageShell.svelte. Inhalt laeuft\n' +
+				'Die Flaeche gehoert App.svelte, der Kopf Seitenrahmen.svelte. Inhalt laeuft\n' +
 				'edge-to-edge ueber die volle Breite:\n  ' +
 				gefunden.join('\n  ')
 		).toEqual([]);
@@ -103,7 +103,7 @@ describe('Seitengeruest', () => {
 		expect(
 			gefunden,
 			'Router.svelte gibt einer Route eine eigene Breite, Flaeche oder Polsterung.\n' +
-				'Die Huelle ist fuer alle Routen gleich; Breite und Kopf gehoeren in PageShell:\n  ' +
+				'Die Huelle ist fuer alle Routen gleich; Breite und Kopf gehoeren in Seitenrahmen:\n  ' +
 				gefunden.join('\n  ')
 		).toEqual([]);
 	});

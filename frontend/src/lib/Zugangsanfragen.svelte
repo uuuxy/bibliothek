@@ -37,7 +37,7 @@
 	 */
 	import { apiFetch } from './apiFetch.js';
 	import { ordneZu } from './zugangsanfrageZuordnen.js';
-	import { hatRecht } from './menu.js';
+	import { hatRecht } from './menue.js';
 	import { authStore } from './stores/authStore.svelte.js';
 	import Button from './components/ui/Button.svelte';
 

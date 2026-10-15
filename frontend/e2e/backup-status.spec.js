@@ -49,6 +49,6 @@ async function erwarteAlert(page, meldung) {
 	const alert = page.getByRole('alert');
 	await expect(alert).toBeVisible();
 	await expect(alert).toContainText(meldung);
-	// Ein Alert ohne Weg zur Behebung ist eine Sackgasse (siehe BackupAlert.svelte).
+	// Ein Alert ohne Weg zur Behebung ist eine Sackgasse (siehe BackupHinweis.svelte).
 	await expect(alert.getByRole('button', { name: 'Betriebsbereitschaft öffnen' })).toBeVisible();
 }

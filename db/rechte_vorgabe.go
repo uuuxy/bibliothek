@@ -122,7 +122,7 @@ var RechteVorgabe = []RechteEintrag{
 
 	// Kollegium: Eine Lehrkraft meldet sich an, um im Portal einen Klassensatz zu reservieren;
 	// dafür reicht create_reservations, das keine Personendaten öffnet. Jedes weitere Recht
-	// öffnete über das Menü (frontend/src/lib/menu.js) Seiten wie Medienkatalog, Druck-Center
+	// öffnete über das Menü (frontend/src/lib/menue.js) Seiten wie Medienkatalog, Druck-Center
 	// oder Schülerdatei, perform_actions dazu Ausleihe und Rückgabe (/api/action).
 	{"KOLLEGIUM", "create_reservations", true},
 	{"KOLLEGIUM", "perform_actions", false},

@@ -1,4 +1,4 @@
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 import {
 	ladeAbgeschlosseneInventuren,
 	ladeFehlbestand,
@@ -46,7 +46,7 @@ export function useFehlbestand() {
 	async function fehlbestandGefunden(exemplarId) {
 		const r = await meldeVerlustGefunden(exemplarId);
 		if (!r.ok) {
-			toastStore.addToast(r.error || 'Fund konnte nicht verbucht werden.', 'error');
+			snackbars.addToast(r.error || 'Fund konnte nicht verbucht werden.', 'error');
 			return;
 		}
 		// Nur ein Wahrheitswert nötig — die Karte zeigt "Gefunden" statt Datum an, ein
@@ -59,20 +59,20 @@ export function useFehlbestand() {
 		// 15.09.2026, dieselbe Regel wie an der Theke). Liegt der Bescheid dazu schon bei
 		// der Aufsicht, bleibt sie offen — dann sagt der Server, wer zu informieren ist.
 		const storniert = Number(r.data?.stornierte_forderungen) || 0;
-		toastStore.addToast(
+		snackbars.addToast(
 			storniert > 0
 				? `Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über ${formatEuro(r.data.stornierter_betrag)} wurde storniert.`
 				: 'Als gefunden verbucht — Exemplar ist wieder verfügbar.',
 			'success'
 		);
-		if (r.data?.hinweis) toastStore.addToast(r.data.hinweis, 'warning');
+		if (r.data?.hinweis) snackbars.addToast(r.data.hinweis, 'warning');
 	}
 
 	/** @param {string[]} exemplarIds */
 	async function fehlbestandEndgueltigLoeschen(exemplarIds) {
 		const r = await loescheVerlustEndgueltig(exemplarIds);
 		if (!r.ok) {
-			toastStore.addToast(r.error || 'Löschen fehlgeschlagen.', 'error');
+			snackbars.addToast(r.error || 'Löschen fehlgeschlagen.', 'error');
 			return;
 		}
 		// Entfernt wird, was der Server WIRKLICH gelöscht hat — nicht, was angefragt
@@ -90,17 +90,17 @@ export function useFehlbestand() {
 		// Projekt schon einmal eine falsche Sortier-Bilanz hatte.
 		const uebersprungen = exemplarIds.length - geloeschteIds.length;
 		if (geloeschteIds.length === 0) {
-			toastStore.addToast(
+			snackbars.addToast(
 				'Nichts gelöscht — keines der ausgewählten Exemplare ist (noch) als Verlust gebucht.',
 				'warning'
 			);
 		} else if (uebersprungen > 0) {
-			toastStore.addToast(
+			snackbars.addToast(
 				`${geloeschteIds.length} endgültig gelöscht, ${uebersprungen} übersprungen (nicht mehr als Verlust gebucht).`,
 				'warning'
 			);
 		} else {
-			toastStore.addToast(`${geloeschteIds.length} Exemplare endgültig gelöscht.`, 'success');
+			snackbars.addToast(`${geloeschteIds.length} Exemplare endgültig gelöscht.`, 'success');
 		}
 	}
 
@@ -114,13 +114,13 @@ export function useFehlbestand() {
 		try {
 			const r = await ladeFehlbestand(inventur.session_id);
 			if (!r.ok) {
-				toastStore.addToast(r.error || 'Fehlbestand konnte nicht geladen werden.', 'error');
+				snackbars.addToast(r.error || 'Fehlbestand konnte nicht geladen werden.', 'error');
 				return;
 			}
 			fehlbestand = r.data ?? [];
 			fehlbestandLabel = inventur.label;
 			if (fehlbestand.length === 0) {
-				toastStore.addToast('Diese Inventur war vollständig — kein Fehlbestand.', 'success');
+				snackbars.addToast('Diese Inventur war vollständig — kein Fehlbestand.', 'success');
 			}
 		} finally {
 			ladeFruehereLaeuft = false;

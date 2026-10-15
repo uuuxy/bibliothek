@@ -9,8 +9,8 @@ import 'fake-indexeddb/auto';
 // gescannter Ausweis ist ein LESER, und seine Art steht an ihm. Der Hinweis hängt an der Art,
 // nicht mehr an einem eigenen Antworttyp.
 //
-// Der Store meldet über seine eigene showToast → toastStore.addToast (omnibox.svelte.js), nicht
-// über den Inventur-Store. Beobachtet wird deshalb addToast am echten toastStore.
+// Der Store meldet über seine eigene showToast → snackbars.addToast (omnibox.svelte.js), nicht
+// über den Inventur-Store. Beobachtet wird deshalb addToast am echten snackbars.
 vi.mock('../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn() }
@@ -23,7 +23,7 @@ vi.mock('../audio.js', () => ({
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
 
 // Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
@@ -42,7 +42,7 @@ describe('Omnibox: Lehrerausweis gescannt', () => {
 	});
 
 	it('meldet den geladenen Kollegen ohne Wörter aus dem Code', async () => {
-		const addToast = vi.spyOn(toastStore, 'addToast');
+		const addToast = vi.spyOn(snackbars, 'addToast');
 		vi.mocked(apiClient.post).mockResolvedValueOnce(
 			/** @type {any} */ ({
 				ok: true,
@@ -66,7 +66,7 @@ describe('Omnibox: Lehrerausweis gescannt', () => {
 	// Ein Schüler bekommt KEINEN solchen Hinweis: Sein Profil steht groß daneben, und ein
 	// zusätzlicher Zuruf bei jedem Scan wäre Lärm.
 	it('meldet einen geladenen Schüler nicht eigens', async () => {
-		const addToast = vi.spyOn(toastStore, 'addToast');
+		const addToast = vi.spyOn(snackbars, 'addToast');
 		vi.mocked(apiClient.post).mockResolvedValueOnce(
 			/** @type {any} */ ({
 				ok: true,

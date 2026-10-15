@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { erzeugeAusweisdruck } from './ausweisdruck.svelte.js';
 import { idStore, vergissDesignLadezustand } from '../../designer/idDesignerStore.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
-import { toastStore } from '../../stores/toastStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 
 vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 // Dieses Modul entscheidet am zentral gespeicherten printMode, ob Karten oder Etiketten aus
 // dem Drucker kommen. Wer den Zustand liest, lädt ihn auch selbst: Die Druckfläche
@@ -48,7 +48,7 @@ describe('erzeugeAusweisdruck: lädt das zentrale Design selbst', () => {
 		await stillhalten();
 
 		expect(druck.etikettModus).toBe(false);
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			expect.stringContaining('Ausweis-Design nicht geladen'),
 			'error'
 		);
@@ -117,12 +117,12 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 		vi.stubGlobal('print', drucken);
 		const druck = erzeugeAusweisdruck();
 		await stillhalten();
-		vi.mocked(toastStore.addToast).mockClear();
+		vi.mocked(snackbars.addToast).mockClear();
 
 		await druck.drucke([{ id: 's1' }]);
 
 		expect(drucken).not.toHaveBeenCalled();
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Nicht gedruckt: Das Ausweis-Design ist nicht geladen.',
 			'error'
 		);

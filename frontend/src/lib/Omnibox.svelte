@@ -1,13 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
-	import CameraScanner from './CameraScanner.svelte';
+	import ThekenKamera from './ThekenKamera.svelte';
 	import OmniboxInput from './components/OmniboxInput.svelte';
-	import OmniboxResults from './components/OmniboxResults.svelte';
-	import OmniboxVormerkungAlert from './components/OmniboxVormerkungAlert.svelte';
+	import OmniboxTreffer from './components/OmniboxTreffer.svelte';
+	import OmniboxVormerkungHinweis from './components/OmniboxVormerkungHinweis.svelte';
 	import OmniboxAktiverLeser from './components/OmniboxAktiverLeser.svelte';
-	import OmniboxBlockAlert from './components/OmniboxBlockAlert.svelte';
-	import OmniboxChecklistDialog from './components/OmniboxChecklistDialog.svelte';
-	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
+	import OmniboxSperrHinweis from './components/OmniboxSperrHinweis.svelte';
+	import OmniboxPrueflisteDialog from './components/OmniboxPrueflisteDialog.svelte';
+	import OmniboxRandleuchten from './components/OmniboxRandleuchten.svelte';
 	import OmniboxSchnellrueckgabe from './components/OmniboxSchnellrueckgabe.svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
@@ -77,7 +77,7 @@
 				omniboxStore.isDropdownOpen = false;
 				if (omniboxStore.showCamera) {
 					// Escape schliesst die Kamera. Das Abschalten selbst gehoert dem Bauteil
-					// (CameraScanner → KameraScanner): Es haelt den Strom, es raeumt ihn auf.
+					// (ThekenKamera → KameraScanner): Es haelt den Strom, es raeumt ihn auf.
 					stopCamera();
 				}
 			}
@@ -95,7 +95,7 @@
 	});
 
 	// Die Kamera: Hier steht nur, dass sie gezeigt wird. Starten, Lesen und Aufhören gehören
-	// CameraScanner.svelte — der Strom gehört dem Bauteil, das ihn anfordert.
+	// ThekenKamera.svelte — der Strom gehört dem Bauteil, das ihn anfordert.
 	function startCamera() {
 		omniboxStore.showCamera = true;
 	}
@@ -107,7 +107,7 @@
 	}
 </script>
 
-<OmniboxScreenFlash />
+<OmniboxRandleuchten />
 
 <!-- Die Suchleiste ist oben angedockt und bleibt beim Scrollen stehen (Material 3): Ein Feld,
      das man mit dem Scanner blind bedient, darf seinen Platz nicht wechseln. Der äußere
@@ -159,7 +159,7 @@
 				/>
 
 				{#if omniboxStore.isDropdownOpen && omniboxStore.totalDropdownItems > 0}
-					<OmniboxResults
+					<OmniboxTreffer
 						unifiedSearchResults={omniboxStore.unifiedSearchResults}
 						selectedDropdownIndex={omniboxStore.selectedDropdownIndex}
 						onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
@@ -177,7 +177,7 @@
 
 		<!-- HTML5 Kamera-Scanner (Mobile) -->
 		{#if omniboxStore.showCamera}
-			<CameraScanner
+			<ThekenKamera
 				{stopCamera}
 				bind:queryVal={omniboxStore.queryVal}
 				submitAction={(e) =>
@@ -189,10 +189,10 @@
 	</div>
 </div>
 
-<OmniboxVormerkungAlert />
+<OmniboxVormerkungHinweis />
 
-<OmniboxBlockAlert onReload={() => studentProfileComponent?.reloadProfile()} />
-<OmniboxChecklistDialog onReload={() => studentProfileComponent?.reloadProfile()} />
+<OmniboxSperrHinweis onReload={() => studentProfileComponent?.reloadProfile()} />
+<OmniboxPrueflisteDialog onReload={() => studentProfileComponent?.reloadProfile()} />
 
 <style>
 	/* Rütteln ohne Skalierung: Eine angedockte Leiste soll nicht aufpumpen. */

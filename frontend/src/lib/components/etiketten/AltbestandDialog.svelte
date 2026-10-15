@@ -11,8 +11,8 @@
      sie ausführt — hier die betroffene Anzahl, die vor dem Bestätigen geladen wird. -->
 <script>
 	import { apiGet, apiPost } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
-	import Modal from '../../Modal.svelte';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
+	import Dialog from '../../Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 
@@ -53,18 +53,18 @@
 		arbeitet = true;
 		try {
 			const daten = await apiPost('/api/exemplare/etiketten-altbestand', { bis: stichtag });
-			toastStore.addToast(`${daten?.markiert ?? 0} Exemplare als erledigt vermerkt.`, 'success');
+			snackbars.addToast(`${daten?.markiert ?? 0} Exemplare als erledigt vermerkt.`, 'success');
 			onfertig();
 			onclose();
 		} catch {
-			toastStore.addToast('Der Altbestand konnte nicht vermerkt werden.', 'error');
+			snackbars.addToast('Der Altbestand konnte nicht vermerkt werden.', 'error');
 		} finally {
 			arbeitet = false;
 		}
 	}
 </script>
 
-<Modal {open} {onclose} size="lg">
+<Dialog {open} {onclose} size="lg">
 	{#snippet header()}
 		<h3 class="text-lg font-semibold text-on-surface">Altbestand aufräumen</h3>
 	{/snippet}
@@ -109,4 +109,4 @@
 			</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

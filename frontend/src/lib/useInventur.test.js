@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('./stores/toastStore.svelte.js', () => ({
-	toastStore: { addToast: vi.fn() }
+vi.mock('./stores/snackbars.svelte.js', () => ({
+	snackbars: { addToast: vi.fn() }
 }));
 vi.mock('./stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
 vi.mock('./inventurApi.js');

@@ -19,7 +19,7 @@
 	import { onMount } from 'svelte';
 	import { apiGet, apiPost } from '../../apiFetch.js';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Printer, Eraser, Undo2 } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
@@ -98,7 +98,7 @@
 		} catch (err) {
 			if (meiner !== lauf) return;
 			console.error('Offene Etiketten konnten nicht geladen werden', err);
-			toastStore.addToast('Liste konnte nicht geladen werden.', 'error');
+			snackbars.addToast('Liste konnte nicht geladen werden.', 'error');
 		} finally {
 			if (meiner === lauf) laedt = false;
 		}
@@ -154,7 +154,7 @@
 			titel: e.titel,
 			autor: e.autor
 		}));
-		toastStore.addToast(
+		snackbars.addToast(
 			`${auswahl.length} ${auswahl.length === 1 ? 'Etikett' : 'Etiketten'} im Druck übernommen.`,
 			'success'
 		);
@@ -202,10 +202,10 @@
 		arbeitet = true;
 		try {
 			const daten = await apiPost(pfad, { barcode_ids: barcodes });
-			toastStore.addToast(meldung(daten?.markiert ?? daten?.zurueckgesetzt ?? 0), 'success');
+			snackbars.addToast(meldung(daten?.markiert ?? daten?.zurueckgesetzt ?? 0), 'success');
 			await laden();
 		} catch {
-			toastStore.addToast('Vermerken nicht möglich.', 'error');
+			snackbars.addToast('Vermerken nicht möglich.', 'error');
 		} finally {
 			arbeitet = false;
 		}

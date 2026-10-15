@@ -136,7 +136,7 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 | Update und Sicherung von Hand löschen je nur ihre eigenen verschlüsselten Sicherungen; jeden unverschlüsselten Rest löschen und melden beide | `docs/backup_ablage_test.go`                                                                            |
 | Antworten mit Personendaten legt der Browser nicht ab                                       | `api/pii_antwort_pg_test.go` verlangt an jeder lesenden Adresse ab Stufe 1 den Kopf `Cache-Control: no-store` |
 | Mail geht nie unverschlüsselt hinaus                                                          | `mailservice/versand_test.go`                                                                           |
-| Die Theke leert sich und sperrt nach der eingestellten Zeit                                   | `frontend/src/lib/stores/idleLock.test.js`                                                              |
+| Die Theke leert sich und sperrt nach der eingestellten Zeit                                   | `frontend/src/lib/stores/leerlaufSperre.test.js`                                                              |
 
 ## 7. Auskunft, Berichtigung, Löschung
 

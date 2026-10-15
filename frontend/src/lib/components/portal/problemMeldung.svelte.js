@@ -1,5 +1,5 @@
 import { apiFetch } from '../../apiFetch.js';
-import { toastStore } from '../../stores/toastStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 
 /** Schlüssel des Formulars, das zu keinem Treffer gehört. */
 export const OHNE_BUCH = 'ohne-buch';
@@ -89,12 +89,12 @@ export function erzeugeProblemMeldung(nachSenden) {
 					const data = await res.json().catch(() => null);
 					throw new Error(data?.error || 'Die Meldung konnte nicht gesendet werden.');
 				}
-				toastStore.addToast('Meldung ist bei der Bibliothek.', 'success');
+				snackbars.addToast('Meldung ist bei der Bibliothek.', 'success');
 				forms[key] = leer();
 				await nachSenden();
 				return true;
 			} catch (err) {
-				toastStore.addToast(/** @type {any} */ (err).message || String(err), 'error');
+				snackbars.addToast(/** @type {any} */ (err).message || String(err), 'error');
 				return false;
 			} finally {
 				if (forms[key]) forms[key].sending = false;

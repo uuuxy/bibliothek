@@ -1,12 +1,12 @@
 <!-- @component LeserSperreDialog — Ausleihe eines Schülers sperren oder freigeben.
 
-     Seit 07.09.2026 auf Modal.svelte (Register 05.09.); Kopfzeile und Schließen-Knopf
+     Seit 07.09.2026 auf Dialog.svelte (Register 05.09.); Kopfzeile und Schließen-Knopf
      stellt das Bauteil. -->
 <script>
 	import { apiClient } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { LockOpen, Lock, CircleAlert } from '@lucide/svelte';
-	import Modal from './Modal.svelte';
+	import Dialog from './Dialog.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { ausleiheGesperrt } from './sperrStatus.js';
 
@@ -66,7 +66,7 @@
 	}
 </script>
 
-<Modal {open} onclose={() => (open = false)} beschriftetDurch="sperre-titel">
+<Dialog {open} onclose={() => (open = false)} beschriftetDurch="sperre-titel">
 	{#snippet header()}
 		<h3
 			id="sperre-titel"
@@ -138,4 +138,4 @@
 			{/if}
 		</Button>
 	</div>
-</Modal>
+</Dialog>

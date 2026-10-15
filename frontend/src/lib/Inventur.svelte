@@ -8,7 +8,7 @@
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import FehlbestandBericht from './components/inventur/FehlbestandBericht.svelte';
 	import ScanRueckmeldung from './components/inventur/ScanRueckmeldung.svelte';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import { formatDatum } from './utils/format.js';
 	import { ClipboardCheck, Plus, ScanBarcode } from '@lucide/svelte';
 
@@ -37,7 +37,7 @@
 	}
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<!-- Steht GANZ OBEN und ueberlebt das Zuruecksetzen: Der Bericht ist das Ergebnis der
 	     Arbeit, nicht eine Randnotiz. Vorher endete eine Inventur mit einer Zahl im Toast,
 	     die drei Sekunden spaeter weg war. -->
@@ -224,7 +224,7 @@
 			</div>
 		</div>
 	{/if}
-</PageShell>
+</Seitenrahmen>
 
 <InventurStartDialog
 	open={inventoryState.showStartModal}

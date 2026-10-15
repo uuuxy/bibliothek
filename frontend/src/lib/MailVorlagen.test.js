@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import MailVorlagen from './MailVorlagen.svelte';
 import { apiClient } from './apiFetch.js';
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 
 // apiClient ruft apiFetch innerhalb desselben Moduls; ersetzt wird deshalb apiClient selbst.
 vi.mock('./apiFetch.js', async (importOriginal) => ({
@@ -27,7 +27,7 @@ async function vorlagen() {
 beforeEach(() => {
 	vi.mocked(apiClient.get).mockReset().mockResolvedValue(antwort(VORLAGEN));
 	vi.mocked(apiClient.put).mockReset().mockResolvedValue(antwort({}));
-	for (const t of [...toastStore.toasts]) toastStore.removeToast(t.id);
+	for (const t of [...snackbars.toasts]) snackbars.removeToast(t.id);
 });
 
 describe('Mail-Vorlagen', () => {
@@ -36,7 +36,7 @@ describe('Mail-Vorlagen', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /Speichern/ }));
 
 		await waitFor(() =>
-			expect(toastStore.toasts.map((t) => [t.message, t.type])).toEqual([
+			expect(snackbars.toasts.map((t) => [t.message, t.type])).toEqual([
 				['Vorlage gespeichert.', 'success']
 			])
 		);

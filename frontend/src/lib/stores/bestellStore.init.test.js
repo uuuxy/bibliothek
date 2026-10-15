@@ -6,8 +6,8 @@ vi.mock('../apiFetch.js', () => ({
 	apiPut: vi.fn(async () => ({})),
 	apiDelete: vi.fn(async () => ({}))
 }));
-vi.mock('./toastStore.svelte.js', () => ({
-	toastStore: { addToast: vi.fn() }
+vi.mock('./snackbars.svelte.js', () => ({
+	snackbars: { addToast: vi.fn() }
 }));
 
 /**

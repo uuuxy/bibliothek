@@ -19,7 +19,7 @@
 //     fehlende Meldung, das ist eine falsche Auskunft über gelöschte Schülerdaten.
 
 import { apiFetch } from '../../apiFetch.js';
-import { toastStore } from '../../stores/toastStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 
 /**
  * Anonymisiert? Dann ist die Zeile kein Schüler mehr, sondern ein Pseudonym: Name,
@@ -104,12 +104,12 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 					onRestoreSuccess();
 					return;
 				}
-				toastStore.addToast(await meldungAus(res, 'Wiederherstellen fehlgeschlagen.'), 'error');
+				snackbars.addToast(await meldungAus(res, 'Wiederherstellen fehlgeschlagen.'), 'error');
 				// Der Grund kann in der Zwischenzeit entstanden sein (der nächtliche Lauf
 				// hat anonymisiert) — nachladen, damit die Liste die Wahrheit zeigt.
 				await this.laden();
 			} catch (err) {
-				toastStore.addToast('Netzwerkfehler bei der Wiederherstellung.', 'error');
+				snackbars.addToast('Netzwerkfehler bei der Wiederherstellung.', 'error');
 				console.error('Fehler bei Wiederherstellung:', err);
 			}
 		},
@@ -120,16 +120,13 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 			try {
 				const res = await apiFetch(`/api/schueler/deleted/${id}`, { method: 'DELETE' });
 				if (res.ok) {
-					toastStore.addToast('Schüler endgültig gelöscht.', 'success');
+					snackbars.addToast('Schüler endgültig gelöscht.', 'success');
 					await this.laden();
 				} else {
-					toastStore.addToast(
-						await meldungAus(res, 'Endgültiges Löschen fehlgeschlagen.'),
-						'error'
-					);
+					snackbars.addToast(await meldungAus(res, 'Endgültiges Löschen fehlgeschlagen.'), 'error');
 				}
 			} catch (err) {
-				toastStore.addToast('Netzwerkfehler beim endgültigen Löschen.', 'error');
+				snackbars.addToast('Netzwerkfehler beim endgültigen Löschen.', 'error');
 				console.error(err);
 			} finally {
 				loeschtGerade = false;

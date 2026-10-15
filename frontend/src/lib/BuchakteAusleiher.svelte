@@ -1,11 +1,11 @@
 <script>
 	import Button from './components/ui/Button.svelte';
-	import { toastStore } from './stores/toastStore.svelte.js';
+	import { snackbars } from './stores/snackbars.svelte.js';
 	import Select from './components/ui/Select.svelte';
 	import AusleiherListe from './components/AusleiherListe.svelte';
 	import { baueAusleiherDruckHtml } from './utils/ausleiherDruck.js';
 	import { druckeDokument, FENSTER_BLOCKIERT } from './utils/listenDruck.js';
-	import { fmtDateDE as fmtDate } from './utils/dates.js';
+	import { fmtDateDE as fmtDate } from './utils/datum.js';
 	import { Printer, Users } from '@lucide/svelte';
 	import Suchfeld from './components/ui/Suchfeld.svelte';
 
@@ -34,7 +34,7 @@
 
 	function printAusleiher() {
 		const html = baueAusleiherDruckHtml(filteredBorrowers, book, filterKlasse);
-		if (!druckeDokument(html)) toastStore.addToast(FENSTER_BLOCKIERT, 'warning');
+		if (!druckeDokument(html)) snackbars.addToast(FENSTER_BLOCKIERT, 'warning');
 	}
 </script>
 

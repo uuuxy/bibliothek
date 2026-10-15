@@ -177,7 +177,7 @@ export const apiClient = {
 	}
 };
 
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 
 /**
  * Zieht die menschenlesbare Fehlermeldung aus einer fehlgeschlagenen Response.
@@ -218,7 +218,7 @@ async function handleSmartResponse(res) {
 		}
 	} else {
 		const errorText = await extractApiError(res);
-		toastStore.addToast(errorText, 'error');
+		snackbars.addToast(errorText, 'error');
 		const err = new Error(errorText);
 		// Markiert den Fehler als "dem Nutzer bereits gezeigt". Ohne das legen Aufrufer
 		// in ihrem catch-Block gern noch einen generischen Toast ("Fehler beim Speichern")

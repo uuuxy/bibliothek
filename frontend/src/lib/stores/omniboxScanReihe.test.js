@@ -10,7 +10,7 @@ import 'fake-indexeddb/auto';
 // gebucht und im Banner genannt: Nach einem gescheiterten Ausweis gingen die Bücher an den
 // Leser davor.
 
-vi.mock('./toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
 	playSoundSuccess: vi.fn(),
@@ -33,7 +33,7 @@ import { apiClient } from '../apiFetch.js';
 import { playSoundError } from '../audio.js';
 import { createOmniboxStore } from './omnibox.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
-import { loadQueue, dequeueOfflineAction } from '../offlineQueue.js';
+import { loadQueue, dequeueOfflineAction } from '../offlineWarteschlange.js';
 
 const MIA = { id: 'leser-1', art: 'schueler', vorname: 'Mia', nachname: 'Muster', klasse: '07B' };
 const TOM = { id: 'leser-2', art: 'schueler', vorname: 'Tom', nachname: 'Test', klasse: '07B' };

@@ -6,7 +6,7 @@
 	// schon gezeigt. Ein zweiter Toast im catch verdeckte den Grund („Kürzel existiert bereits").
 	import { apiGet, apiPost, apiPut, apiDelete } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 
@@ -48,7 +48,7 @@
 			bezeichnung = '';
 			await laden();
 			onChanged?.();
-			toastStore.addToast('Sachgruppe angelegt.', 'success');
+			snackbars.addToast('Sachgruppe angelegt.', 'success');
 		} catch {
 			// Meldung kam bereits aus apiPost.
 		} finally {
@@ -87,12 +87,12 @@
 		// Nur die Signatur am Buchrücken bleibt — die klebt physisch und folgt einem
 		// Umlabeln, nicht einem Klick.
 		if (daten?.titel_mitgezogen > 0) {
-			toastStore.addToast(
+			snackbars.addToast(
 				`Geändert. ${daten.titel_mitgezogen} Bücher auf das neue Fach umgestellt (Signatur am Buchrücken bleibt).`,
 				'success'
 			);
 		} else {
-			toastStore.addToast('Sachgruppe geändert.', 'success');
+			snackbars.addToast('Sachgruppe geändert.', 'success');
 		}
 	}
 
@@ -111,7 +111,7 @@
 		}
 		await laden();
 		onChanged?.();
-		toastStore.addToast('Sachgruppe gelöscht.', 'success');
+		snackbars.addToast('Sachgruppe gelöscht.', 'success');
 	}
 </script>
 

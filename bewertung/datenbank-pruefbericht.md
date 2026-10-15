@@ -179,7 +179,7 @@ Diese Doppelbedeutung des Wortes „lehrer" hat bereits einen echten Vorfall ver
 
 Eine zweite, ähnliche Konvention: **Ob ein Buch ein Lernmittel ist, entscheidet sein Name.** Ein Buch gilt als Schulbuch, wenn Titel oder Signatur mit „lmf" beginnt. Das bestimmt Ausleihlimit und Rückgabefrist (31. Juli). Wird ein Buch umbenannt oder ohne das Kürzel erfasst, ändern sich seine Ausleihregeln stillschweigend. Kein Feld, keine Regel, kein Hinweis am Bildschirm, dass die ersten Buchstaben eines Titels Gesetz sind.
 
-> *Technischer Nachweis:* `schema.sql:34` („schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER"), `frontend/.../mahnwesen.svelte.js:29` und `MahnwesenTabs.svelte:18` (Sonderbehandlung), `migrations/069_rolle_lehrer_zu_kollegium.sql` (Vorfallsbeschreibung), `internal/service/loan_return.go:96–116` (Personal-Ausleihe/Handapparat), `internal/littera/schreiber_personen.go:219–284` (Import legt Lehrkräfte als Konten an), `pkg/lmf` (Lernmittel-Kürzelregel).
+> *Technischer Nachweis:* `schema.sql:34` („schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER"), `frontend/.../mahnwesen.svelte.js:29` und `MahnwesenReiter.svelte:18` (Sonderbehandlung), `migrations/069_rolle_lehrer_zu_kollegium.sql` (Vorfallsbeschreibung), `internal/service/loan_return.go:96–116` (Personal-Ausleihe/Handapparat), `internal/littera/schreiber_personen.go:219–284` (Import legt Lehrkräfte als Konten an), `pkg/lmf` (Lernmittel-Kürzelregel).
 
 ### F2 — Jeder Programmteil sieht den vollständigen Schülerdatensatz · `Mittel`
 

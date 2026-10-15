@@ -30,7 +30,7 @@
 //
 // Und der Grund für den zweiten Teil dieser Datei: Ein Gate, das nur Routen abläuft,
 // ist für Dialoge BLIND — sie sind zu. Genau daran ist die erste Messung dieses
-// Befundes vorbeigelaufen und hat `Modal.svelte` (Rahmen + shadow-2xl, wirksam für
+// Befundes vorbeigelaufen und hat `Dialog.svelte` (Rahmen + shadow-2xl, wirksam für
 // elf Dialoge) nicht gesehen. Die Öffner unten sind deshalb Pflicht, und wenn einer
 // nicht mehr greift, scheitert dieser Test LAUT statt still zu überspringen.
 //
@@ -43,19 +43,19 @@
 //     unsichtbar (grün), im vollen e2e-Lauf sichtbar (rot) — weil ein anderer
 //     Test die Einstellung verändert hatte. Gefunden wurde er also durch Zufall,
 //     nicht durch Konstruktion.
-//   * Die selbstgebauten Overlays, die NICHT Modal.svelte benutzen. Am 03.10.2026
+//   * Die selbstgebauten Overlays, die NICHT Dialog.svelte benutzen. Am 03.10.2026
 //     sind das sechs Dateien: App.svelte, StrichcodeScannerOverlay, Monitor,
-//     OmniboxVormerkungAlert, OmniboxBlockAlert und Sperrbildschirm.
+//     OmniboxVormerkungHinweis, OmniboxSperrHinweis und Sperrbildschirm.
 //     Nachzählen, statt dieser Liste zu glauben:
 //       grep -rl "fixed inset-0" frontend/src --include='*.svelte' \
-//         | xargs grep -L Modal.svelte | grep -v /Modal.svelte
+//         | xargs grep -L Dialog.svelte | grep -v /Dialog.svelte
 //     Bis zum 16.09.2026 standen hier „elf" und als Beispiele LeserSperreDialog und
-//     DamageReportModal — beide benutzen das Bauteil seit dem Durchgang bis zum
+//     SchadenMeldenDialog — beide benutzen das Bauteil seit dem Durchgang bis zum
 //     07.09.2026 (dc99bad2), die Liste war also älter als der Code.
 //     Eine Quelltext-Zählung fand am 04.09.2026 vierzig Kandidaten mit Rahmen und
 //     Schatten in derselben Klassenliste; der grösste Teil davon sitzt in genau
 //     diesen Overlays. Sie sind bewusst NICHT pauschal geändert worden: Bei
-//     `OmniboxBlockAlert` ist der `border-4 border-error` ein Alarmsignal an
+//     `OmniboxSperrHinweis` ist der `border-4 border-error` ein Alarmsignal an
 //     der Theke, kein Dekor — das ist Einzelfallprüfung, kein Suchen-und-Ersetzen.
 //
 // Wer dieses Gate erweitert, erweitert die Öffnerliste — nicht die Regel.

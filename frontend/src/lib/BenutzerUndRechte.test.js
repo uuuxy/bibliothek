@@ -9,7 +9,7 @@ vi.mock('./apiFetch.js', async (original) => ({
 
 import { apiFetch, apiClient } from './apiFetch.js';
 import { authStore } from './stores/authStore.svelte.js';
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 import BenutzerUndRechte from './BenutzerUndRechte.svelte';
 
 // Die Rechte-Matrix zeigt nur, was der Server geliefert hat: Ohne geladene Matrix stünden
@@ -41,7 +41,7 @@ async function oeffneRechte() {
 describe('Rechte-Matrix', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		toastStore.toasts = [];
+		snackbars.toasts = [];
 		authStore.currentUser = { id: 1, rolle: 'admin', permissions: ['manage_users'] };
 	});
 
@@ -78,7 +78,7 @@ describe('Rechte-Matrix', () => {
 		await fireEvent.click(schalter[0]);
 
 		await waitFor(() =>
-			expect(toastStore.toasts.map((t) => `${t.type}: ${t.message}`)).toContain(
+			expect(snackbars.toasts.map((t) => `${t.type}: ${t.message}`)).toContain(
 				'error: Die Rechte-Matrix ändert nur ein Administrator.'
 			)
 		);
@@ -93,6 +93,6 @@ describe('Rechte-Matrix', () => {
 
 		await fireEvent.click(schalter[0]);
 
-		await waitFor(() => expect(toastStore.toasts.map((t) => t.type)).toEqual(['success']));
+		await waitFor(() => expect(snackbars.toasts.map((t) => t.type)).toEqual(['success']));
 	});
 });

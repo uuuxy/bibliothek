@@ -16,7 +16,7 @@
 	import { onMount, untrack } from 'svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { abonniere } from './liveEvents.js';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import Button from './components/ui/Button.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import LmfPlanKopf from './components/lmfplan/LmfPlanKopf.svelte';
@@ -93,7 +93,7 @@
 	onverwerfen={() => uiStore.erzwingeWechsel()}
 />
 
-<PageShell>
+<Seitenrahmen>
 	<LmfPlanKopf
 		art={z.art}
 		stand={z.stand}
@@ -156,4 +156,4 @@
 			/>
 		</div>
 	{/if}
-</PageShell>
+</Seitenrahmen>

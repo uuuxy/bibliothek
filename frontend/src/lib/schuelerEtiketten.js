@@ -1,5 +1,5 @@
 import { apiFetch } from './apiFetch.js';
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 
 /**
  * Holt den Schüler-Etikettenbogen als PDF und öffnet ihn.
@@ -35,14 +35,14 @@ export async function oeffneEtikettenbogen({
 			// „Fehler beim Drucken" zu ersetzen: Sie nennt den Grund, den die Theke
 			// beheben kann (Startposition außerhalb des Bogens, zu viele Markierte).
 			const daten = await res.json().catch(() => null);
-			toastStore.addToast(daten?.error || 'Etikettenbogen konnte nicht erzeugt werden.', 'error');
+			snackbars.addToast(daten?.error || 'Etikettenbogen konnte nicht erzeugt werden.', 'error');
 			return false;
 		}
 
 		const url = URL.createObjectURL(await res.blob());
 		const fenster = window.open(url, '_blank');
 		if (!fenster) {
-			toastStore.addToast('Der Etikettenbogen wurde vom Browser blockiert (Pop-up).', 'error');
+			snackbars.addToast('Der Etikettenbogen wurde vom Browser blockiert (Pop-up).', 'error');
 			URL.revokeObjectURL(url);
 			return false;
 		}
@@ -51,7 +51,7 @@ export async function oeffneEtikettenbogen({
 		setTimeout(() => URL.revokeObjectURL(url), 60_000);
 		return true;
 	} catch {
-		toastStore.addToast('Netzwerkfehler beim Erzeugen des Etikettenbogens.', 'error');
+		snackbars.addToast('Netzwerkfehler beim Erzeugen des Etikettenbogens.', 'error');
 		return false;
 	}
 }

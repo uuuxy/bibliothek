@@ -1,6 +1,6 @@
 <script>
 	import Ladekreis from './components/ui/Ladekreis.svelte';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import { Search } from '@lucide/svelte';
@@ -74,7 +74,7 @@
 	}
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<!-- Vier Reiter. Der erste nimmt alles auf, was eine Lehrkraft an die Bibliothek schickt —
 	     suchen, reservieren, ein Problem melden — und zeigt, was daraus geworden ist; die
 	     drei anderen sind Seiten zum Nachschlagen. M3 rät von mehr als vier Reitern ab. -->
@@ -176,7 +176,7 @@
 	{:else}
 		<PortalLmfPlan />
 	{/if}
-</PageShell>
+</Seitenrahmen>
 
 <!-- Der Ladepunkt sitzt in der Pille: Absolut darüber gelegt, liefe ein langer Suchbegriff
      unter ihn. -->

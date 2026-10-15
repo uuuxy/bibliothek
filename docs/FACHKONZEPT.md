@@ -548,9 +548,9 @@ Schule — das ist eine Produktentscheidung.
 
    Erteilt sind genau zwei Rechte (`db/rechte_vorgabe.go`): `perform_actions` (Scannen, Ausleihe, Rückgabe) und `view_books` (Katalog). Erreichbar sind damit Ausleihe, Medienkatalog, Signaturen und Schulklassen — Letztere seit dem 08.08.2026, weil der Klassensatz-Reiter im Katalog aufgelöst wurde und der Blick darauf sonst verloren gegangen wäre. Die Pflege-Aktionen auf diesen Seiten hängen an `edit_books` und bleiben dem Helfer verborgen.
 
-   **Welche Seiten eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menu.js` — und nur diese Funktion.** Der Router fragt dieselbe. Bis zum 08.08.2026 führte er eine zweite, handgepflegte Liste; als das Recht für „Schulklassen" wechselte, liefen beide auseinander, und der Helfer bekam einen Menüpunkt, der ihn beim Klick wortlos an die Theke zurückwarf. Wer eine Rolle oder ein Recht ändert, fasst deshalb `menu.js` an und sonst nichts. Abgesichert durch `e2e/menue-fuehrt-irgendwohin.spec.js`, das für Helfer, Mitarbeiter und Lehrkraft jeden sichtbaren Menüpunkt anklickt.
+   **Welche Seiten eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menue.js` — und nur diese Funktion.** Der Router fragt dieselbe. Bis zum 08.08.2026 führte er eine zweite, handgepflegte Liste; als das Recht für „Schulklassen" wechselte, liefen beide auseinander, und der Helfer bekam einen Menüpunkt, der ihn beim Klick wortlos an die Theke zurückwarf. Wer eine Rolle oder ein Recht ändert, fasst deshalb `menue.js` an und sonst nichts. Abgesichert durch `e2e/menue-fuehrt-irgendwohin.spec.js`, das für Helfer, Mitarbeiter und Lehrkraft jeden sichtbaren Menüpunkt anklickt.
 
-   **Welche Aktion jemand sieht, entscheidet das Recht der Route, nicht die Rolle** (seit 24.08.2026). Am Server hängt jede Route an einem Recht, keine an einer Rolle; die Oberfläche fragt deshalb `hatRecht(Benutzer, Recht)` aus `menu.js` mit demselben Recht, das die Route verlangt. Ein Rollenvergleich an dieser Stelle machte den Schalter in der Rechte-Matrix wirkungslos: Der Server erlaubte, der Knopf fehlte — oder umgekehrt. Ratsche: `frontend/src/lib/frontend-hygiene-rechte.test.js`, mit den begründeten Ausnahmen. Der Menüpunkt „Einstellungen" ist ein Sammelpunkt über Kategorien mit verschiedenen Rechten (§17): Er öffnet sich mit jedem Recht, das eine Kategorie verlangt (`ALLE_KATEGORIE_RECHTE`, Gate `menu.test.js`). Dass eine Rolle etwas nicht darf, zeigt deshalb die Antwort 403 des Servers und nicht ein fehlender Menüpunkt.
+   **Welche Aktion jemand sieht, entscheidet das Recht der Route, nicht die Rolle** (seit 24.08.2026). Am Server hängt jede Route an einem Recht, keine an einer Rolle; die Oberfläche fragt deshalb `hatRecht(Benutzer, Recht)` aus `menue.js` mit demselben Recht, das die Route verlangt. Ein Rollenvergleich an dieser Stelle machte den Schalter in der Rechte-Matrix wirkungslos: Der Server erlaubte, der Knopf fehlte — oder umgekehrt. Ratsche: `frontend/src/lib/frontend-hygiene-rechte.test.js`, mit den begründeten Ausnahmen. Der Menüpunkt „Einstellungen" ist ein Sammelpunkt über Kategorien mit verschiedenen Rechten (§17): Er öffnet sich mit jedem Recht, das eine Kategorie verlangt (`ALLE_KATEGORIE_RECHTE`, Gate `menue.test.js`). Dass eine Rolle etwas nicht darf, zeigt deshalb die Antwort 403 des Servers und nicht ein fehlender Menüpunkt.
 
 ### 12.3. Leserdatei: eine Tabelle, drei Arten (Migration 123–125, 16.09.2026)
 
@@ -880,12 +880,12 @@ auch wenn der Schalter an bleibt (`leseclubFrist`).
 ### 18.1 Kamera als Barcode-Scanner
 
 Der Handscanner ist der Normalfall. Zusätzlich kann die Kamera des Geräts scannen
-(`CameraScanner.svelte`, Bibliothek `html5-qrcode`, wird erst beim Einschalten geladen) —
+(`ThekenKamera.svelte`, Bibliothek `html5-qrcode`, wird erst beim Einschalten geladen) —
 gedacht für Laptops oder Tablets ohne Scanner. Ein-/Ausschalter neben dem Omnibox-Feld.
 
 ### 18.2 Passbild per Webcam
 
-In der Theke lässt sich ein Passbild aufnehmen (`WebcamCapture.svelte`,
+In der Theke lässt sich ein Passbild aufnehmen (`WebcamAufnahme.svelte`,
 `POST /api/schueler/{id}/photo`). Das Bild wird **verschlüsselt** gespeichert
 (`schueler_fotos.foto_encrypted`, AES). Aufnehmen verlangt das Recht `upload_photos`,
 ausgeliefert wird es nur mit `view_students`.
@@ -922,7 +922,7 @@ tragen sie, der Server löst sie beim Nachbuchen auf. Personendaten liegen bewus
 Rechner — eine Namenssuche gibt es ohne Netz deshalb nicht. Ein unklarer Scan lässt den Merker
 fallen: Ab dann wird nichts mehr zugeordnet, bis ein eindeutiger Ausweis kommt.
 
-**Warteschlange.** Die Scans liegen in einer lokalen IndexedDB (`offlineQueue.js`) mit
+**Warteschlange.** Die Scans liegen in einer lokalen IndexedDB (`offlineWarteschlange.js`) mit
 Scan-Zeitpunkt und Idempotenz-Schlüssel. Ein Band oben zeigt den Zustand; die Theke wird dabei
 nicht verdeckt, und ohne Netz sperrt auch der Inaktivitäts-Wächter nicht (aufgeschlossen wird
 am Server, und der ist dann nicht erreichbar). Geleert wird die Theke weiter. War die Sperre
@@ -986,8 +986,8 @@ der hat nicht stattgefunden.
 
 **Was gebaut ist (09.09.2026).** Die Fixes sitzen in Bauteilen, nicht in Seiten:
 
-- `ui/fokusFalle.js` in `Modal.svelte` (24 Verwender), im Sperrbildschirm und in den zwei
-  Theken-Alarmen (`OmniboxBlockAlert`, `OmniboxVormerkungAlert`, als `alertdialog`); die
+- `ui/fokusFalle.js` in `Dialog.svelte` (24 Verwender), im Sperrbildschirm und in den zwei
+  Theken-Alarmen (`OmniboxSperrHinweis`, `OmniboxVormerkungHinweis`, als `alertdialog`); die
   Vorlagen-Galerie des Designers ist ein Popover ohne Falle.
 - `ui/Tabelle.svelte`: `beschriftung` ist Pflicht (Ratsche `frontend-hygiene-tabellen`, 26
   Tabellen), `scope` setzt das Bauteil; die sr-only-Tabelle des Trend-Diagramms trägt eine
@@ -995,7 +995,7 @@ der hat nicht stattgefunden.
 - `layout/SkipLink.svelte`, `layout/Hauptbereich.svelte` (das eine `<main>` mit unsichtbarer
   `h1` aus dem Menü — sichtbare Seitenköpfe bleiben abgeschafft), `basis.css` (Bewegung).
 - Rahmen von Feld, Select und Suchfeld in der M3-Rolle `outline` (#72777f auf Weiß 4,5:1)
-  statt `outline-variant` (#c2c7cf, 1,7:1; WCAG 1.4.11 verlangt 3:1). Sidebar-Gruppentitel
+  statt `outline-variant` (#c2c7cf, 1,7:1; WCAG 1.4.11 verlangt 3:1). Seitenleiste-Gruppentitel
   ohne 70 %-Deckung; Monitor-Folien und der inaktive Schritt im Druck-Center ohne die
   Theme-Töne `slate-400/500`, die dort Dunkelgrau sind.
 - Toasts pausieren unter Maus und Fokus (2.2.1), Fehler-Toasts, Snackbar-Fehler und
@@ -1038,7 +1038,7 @@ Technische Alternativen stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 4.3.
 | **Enddatum am Leser, Liste der Gegangenen aus dem Kollegium** | 30.09.2026 (`2074db30`) | Wer geht und noch Bücher hat, klärt bei Bedarf das Sekretariat |
 | **Meldung, wenn zwei Plätze dasselbe Feld eines Titels ändern** | 06.10.2026 (`ddeba157`) | Die Maske schickt nur geänderte Felder; damit verliert niemand, was er nicht angefasst hat. Ändern beide dasselbe Feld, gilt der spätere Eintrag (`frontend/e2e/buchmaske-zwei-plaetze.spec.js`) |
 | **Seite zum Umbenennen, Zusammenlegen und Löschen von Klassen** | 30.09.2026 (`160b4cf2`) | Die Klasse wird an den Eingabestellen ausgewählt statt getippt; falsche Klassen entstehen so nicht, und die Klassen selbst kommen aus der LUSD |
-| **Sammelseite „Schuljahreswechsel"** mit LMF-Plan, Abgängern und LUSD/Versetzung als Reitern | 05.09.2026 | Sie stand einen Abend und verwirrte. Der LMF-Plan steht unter System → Schuljahreswechsel, die Abgänger unter Verwaltung, LUSD und Versetzung in den Einstellungen (`frontend/src/lib/menu.js`) |
+| **Sammelseite „Schuljahreswechsel"** mit LMF-Plan, Abgängern und LUSD/Versetzung als Reitern | 05.09.2026 | Sie stand einen Abend und verwirrte. Der LMF-Plan steht unter System → Schuljahreswechsel, die Abgänger unter Verwaltung, LUSD und Versetzung in den Einstellungen (`frontend/src/lib/menue.js`) |
 | **Unterteilung der Ausleihliste der Leserakte nach Bücherei und Lernmittel** | 01.10.2026 | Abgelehnt; das Kennzeichen „Lernmittel" an der Zeile bleibt |
 | **Zugang ohne Mailserver für Tester** | 08.09.2026, gebaut mit `cb6dd13b`, zurückgenommen mit `94577bbe` | Er wurde nicht mehr gebraucht. Angemeldet wird nur gegen den Mailserver der Schule ([ARCHITEKTUR.md](ARCHITEKTUR.md) A2); die fertige Fassung liegt im ersten Commit |
 | **A4-Bogen mit acht Ausweisen zum Ausschneiden** | 24.08.2026 (`6bc2829c`) | Als Notbehelf gedacht, im Alltag ohne Nutzen. Gedruckt wird auf dem Kartendrucker oder als Klebeetikett mit Name, Klasse und Strichcode (§9) |

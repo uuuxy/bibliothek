@@ -35,7 +35,7 @@ for (const [rolle, email] of ROLLEN) {
 		seedBenutzer(rolle, email);
 		await uiLogin(page, email);
 
-		// Die Navigation trägt title="…" je Punkt (siehe Sidebar).
+		// Die Navigation trägt title="…" je Punkt (siehe Seitenleiste).
 		const punkte = page.locator('nav [title]');
 		const anzahl = await punkte.count();
 
@@ -54,7 +54,7 @@ for (const [rolle, email] of ROLLEN) {
 
 			await punkt.click();
 			// Auf den Navigationszustand warten statt auf eine Zeitspanne: aria-current
-			// setzt die Sidebar erst, wenn der Tab wirklich gewechselt hat.
+			// setzt die Seitenleiste erst, wenn der Tab wirklich gewechselt hat.
 			//
 			// Genau das behauptete dieser Kommentar schon, während darunter `waitForTimeout(600)`
 			// stand (SonarQube S2925, 22.08.2026): eine feste Frist, nach der ein langsam
@@ -74,7 +74,7 @@ for (const [rolle, email] of ROLLEN) {
 		expect(
 			tot,
 			`Menüpunkte, die ins Leere führen (Rolle ${rolle}).\n` +
-				`Ursache ist fast immer eine zweite Rechte-Definition neben canSeeItem in menu.js:\n  ` +
+				`Ursache ist fast immer eine zweite Rechte-Definition neben canSeeItem in menue.js:\n  ` +
 				tot.join('\n  ')
 		).toEqual([]);
 	});

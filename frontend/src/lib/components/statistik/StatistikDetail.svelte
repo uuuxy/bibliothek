@@ -10,7 +10,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
-	import PageShell from '../layout/PageShell.svelte';
+	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import { ChevronLeft } from '@lucide/svelte';
 
 	/** @param {string} alle @param {string[]} werte */
@@ -69,7 +69,7 @@
 	);
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<!-- Zurück zur Statistik-Übersicht -->
 	<button
 		onclick={() => (uiStore.activeTab = 'stats')}
@@ -161,4 +161,4 @@
 			{/each}
 		</ul>
 	{/if}
-</PageShell>
+</Seitenrahmen>

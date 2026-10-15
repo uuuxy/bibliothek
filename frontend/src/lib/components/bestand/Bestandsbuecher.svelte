@@ -14,7 +14,7 @@
      Die Spaltenbeschreibungen stehen hier, weil sie zum BUCH gehören und nicht zum
      Bauteil: Bestandsbuch.svelte zeichnet, was es bekommt. -->
 <script>
-	import PageShell from '../layout/PageShell.svelte';
+	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Reiter from '../ui/Reiter.svelte';
 	import Bestandsbuch from './Bestandsbuch.svelte';
 
@@ -23,7 +23,7 @@
 	let aktiv = $state('zugangsbuch');
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<Reiter
 		etikett="Bestandsbücher"
 		reiter={[
@@ -60,4 +60,4 @@
 			]}
 		/>
 	{/if}
-</PageShell>
+</Seitenrahmen>

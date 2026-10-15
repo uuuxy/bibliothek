@@ -10,12 +10,12 @@ import { srcRoot, repoFrontend, ohneKommentare } from './hygiene-quellen.js';
 // Kachel eines Buchs, das so heißt. Solange kein solches Buch im Katalog steht, klickt der Test
 // richtig; legt ein anderer Test eines an, bricht Playwright ab oder klickt die Kachel.
 //
-// Die Namen kommen aus menu.js, nicht aus einer Liste hier. Blind für: einen Namen aus einer
+// Die Namen kommen aus menue.js, nicht aus einer Liste hier. Blind für: einen Namen aus einer
 // Variablen und eine Suche über einen regulären Ausdruck.
 const UEBER_DIE_SEITE = /getByTitle\(\s*(['"`])([^'"`]+)\1/g;
 
 describe('Menüpunkte in Browser-Tests', () => {
-	const menue = readFileSync(join(srcRoot, 'lib', 'menu.js'), 'utf8');
+	const menue = readFileSync(join(srcRoot, 'lib', 'menue.js'), 'utf8');
 	const namen = [...menue.matchAll(/label:\s*'([^']+)'/g)].map((m) => m[1]);
 
 	it('der Detektor kennt die Menüpunkte und erkennt die Form', () => {

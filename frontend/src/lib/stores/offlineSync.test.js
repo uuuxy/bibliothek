@@ -13,7 +13,7 @@ vi.mock('../audio.js', () => ({
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { enqueueOfflineAction, loadQueue, dequeueOfflineAction } from '../offlineQueue.js';
+import { enqueueOfflineAction, loadQueue, dequeueOfflineAction } from '../offlineWarteschlange.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
@@ -73,7 +73,7 @@ const wieGescannt = (/** @type {any} */ e) => ({
 
 // Die Offline-Queue ist der riskante Teil des PWA-Verhaltens — bewusst als
 // Unit-Test statt E2E (Service-Worker-Offline-Simulation ist CI-flaky).
-describe('offlineQueue', () => {
+describe('offlineWarteschlange', () => {
 	beforeEach(async () => {
 		await clearQueue();
 		vi.clearAllMocks();
@@ -175,7 +175,7 @@ describe('offlineSync.startSync', () => {
 		expect(offlineSync.abgelehntMitStatus).toBeNull();
 	});
 
-	// Die Sperre nach Inaktivität wartet auf das Ende der Übertragung (idleLock). Liefe der
+	// Die Sperre nach Inaktivität wartet auf das Ende der Übertragung (leerlaufSperre). Liefe der
 	// zweite Aufruf sofort zurück, sperrte sie mitten im Stapel.
 	it('ein zweiter Aufruf während eines Laufs wartet auf dessen Ende', async () => {
 		await enqueueOfflineAction(rueckgabe('B-204'));

@@ -1,9 +1,9 @@
 <script>
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
-	import { idleLock } from './stores/idleLock.svelte.js';
+	import { leerlaufSperre } from './stores/leerlaufSperre.svelte.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
-	import { erlaubteTabs, tabIstGesperrt } from './menu.js';
+	import { erlaubteTabs, tabIstGesperrt } from './menue.js';
 	import { escapeGehoertJemandAnderem } from './escapeRegel.js';
 
 	import Berechtigungen from './Berechtigungen.svelte';
@@ -14,7 +14,7 @@
 	import Medienkatalog from './Medienkatalog.svelte';
 	import Bestandsbuecher from './components/bestand/Bestandsbuecher.svelte';
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
-	import SignaturenView from './SignaturenView.svelte';
+	import Signaturen from './Signaturen.svelte';
 	import Statistik from './Statistik.svelte';
 	import Schuelerdatei from './Schuelerdatei.svelte';
 	import Schulklassen from './Schulklassen.svelte';
@@ -24,7 +24,7 @@
 	import Einstellungen from './Einstellungen.svelte';
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
-	import Graduates from './Graduates.svelte';
+	import Abgaenger from './Abgaenger.svelte';
 	import LmfPlan from './LmfPlan.svelte';
 	import RouteFallback from './components/layout/RouteFallback.svelte';
 	import { applyPathToState, currentTargetPath } from './routenAnwenden.js';
@@ -35,7 +35,7 @@
 	// Als „Schulklassen" von manage_users auf view_books wechselte, sah der Helfer den
 	// Menüpunkt und wurde beim Klick wortlos an die Theke geworfen. Ein Menüpunkt, der
 	// nichts tut, sieht aus wie ein Defekt der Seite dahinter. Jetzt liest der Router
-	// dieselbe Regel (erlaubteTabs/tabIstGesperrt bei canSeeItem in menu.js) nur ab.
+	// dieselbe Regel (erlaubteTabs/tabIstGesperrt bei canSeeItem in menue.js) nur ab.
 
 	function handleSelectBook(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
@@ -58,9 +58,9 @@
 			uiStore.isInitialRouteMatched = true;
 
 			// Gesperrten Bildschirm auf den ERSTEN erlaubten zurückstellen — für den
-			// Helfer ist das der Kiosk (Gruppe „Kiosk" steht in menu.js oben), für die
+			// Helfer ist das der Kiosk (Gruppe „Kiosk" steht in menue.js oben), für die
 			// Lehrkraft ihr Portal. Kein Rollenname im Router: Wer eine Rolle ergänzt,
-			// pflegt ihre Rechte in menu.js und hier gar nichts.
+			// pflegt ihre Rechte in menue.js und hier gar nichts.
 			if (tabIstGesperrt(uiStore.activeTab, erlaubt)) {
 				uiStore.activeTab = [...erlaubt][0] ?? 'kiosk';
 			}
@@ -83,7 +83,7 @@
 		function handlePopState() {
 			// Hinter der Sperre bleibt der Bildschirm, wie er ist: Die Zurück-Taste des
 			// Browsers verließe sonst die offene Maske. Die Adresszeile geht zurück.
-			if (idleLock.gesperrt) {
+			if (leerlaufSperre.gesperrt) {
 				window.history.pushState(null, '', currentTargetPath());
 				return;
 			}
@@ -131,7 +131,7 @@
 	{:else if uiStore.activeTab === 'bestandsbuecher'}
 		<div class="w-full animate-fade-in"><Bestandsbuecher /></div>
 	{:else if uiStore.activeTab === 'signaturen'}
-		<div class="w-full animate-fade-in"><SignaturenView /></div>
+		<div class="w-full animate-fade-in"><Signaturen /></div>
 	{:else if uiStore.activeTab === 'inventory'}
 		<div class="w-full animate-fade-in"><Inventur /></div>
 	{:else if uiStore.activeTab === 'students_dir'}
@@ -139,7 +139,7 @@
 	{:else if uiStore.activeTab === 'schulklassen'}
 		<div class="w-full animate-fade-in"><Schulklassen /></div>
 	{:else if uiStore.activeTab === 'graduates'}
-		<div class="w-full animate-fade-in"><Graduates /></div>
+		<div class="w-full animate-fade-in"><Abgaenger /></div>
 	{:else if uiStore.activeTab === 'schuljahr'}
 		<div class="w-full animate-fade-in"><LmfPlan /></div>
 	{:else if uiStore.activeTab === 'mahnwesen'}

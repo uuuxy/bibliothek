@@ -18,7 +18,7 @@ const OHNE_SCHILD = {
 	popstate: 'der Router stellt hinter der Sperre die Adresse zurück (Router.svelte)',
 	offline: 'Netzlage',
 	online: 'Netzlage',
-	focus: 'idleLock fragt den Server, ob nebenan aufgeschlossen wurde',
+	focus: 'leerlaufSperre fragt den Server, ob nebenan aufgeschlossen wurde',
 	storage: 'Signale der anderen Fenster desselben Browsers',
 	mouseover: 'Sprechblase zeigen; der Sperrbildschirm trägt kein data-tip',
 	mouseout: 'Sprechblase schließen',
@@ -28,7 +28,7 @@ const OHNE_SCHILD = {
 
 // Dateien, die den Namen des Ereignisses aus einer Variablen nehmen.
 const NAME_AUS_VARIABLE = {
-	'src/lib/stores/idleLock.svelte.js':
+	'src/lib/stores/leerlaufSperre.svelte.js':
 		'zählt Bedienung für die Uhr der Sperre; aktivitaet() steigt aus, solange gesperrt ist',
 	'src/lib/sperrSchild.js': 'der Schild selbst'
 };

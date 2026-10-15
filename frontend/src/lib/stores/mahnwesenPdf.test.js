@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('./toastStore.svelte.js', () => ({
-	toastStore: { addToast: vi.fn() }
+vi.mock('./snackbars.svelte.js', () => ({
+	snackbars: { addToast: vi.fn() }
 }));
 
 vi.mock('../apiFetch.js', () => ({
@@ -10,7 +10,7 @@ vi.mock('../apiFetch.js', () => ({
 
 import { apiFetch } from '../apiFetch.js';
 import { useMahnwesenPdf } from './mahnwesenPdf.svelte.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 
@@ -95,7 +95,7 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 		await store.printSelectedMahnungen(selectedIds, () => schuelerListe, vi.fn());
 
 		expect(apiFetch).not.toHaveBeenCalled();
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Keine überfälligen Medien für die ausgewählten Schüler gefunden.',
 			'info'
 		);
@@ -129,8 +129,8 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 
 		await store.printSelectedMahnungen(selectedIds, () => schuelerListe, refreshData);
 
-		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
-		expect(String(vi.mocked(toastStore.addToast).mock.calls[0][0])).toContain('Drucker brennt');
+		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
+		expect(String(vi.mocked(snackbars.addToast).mock.calls[0][0])).toContain('Drucker brennt');
 		expect(selectedIds.size).toBe(1); // Auswahl bleibt für einen zweiten Versuch
 		expect(refreshData).not.toHaveBeenCalled();
 		expect(store.pdfLoading).toBe(false);

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Hinweis, Zubehör-Anfrage, Suchtreffer. Die Rückkehr eines abgerechneten Buchs steht in
 // omniboxRueckkehr.test.js, die gemischten Auflagen in omniboxAuflagenHinweis.test.js.
 
-vi.mock('./toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
 	playSoundSuccess: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock('../audio.js', () => ({
 
 import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess, playSoundError } from '../audio.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { createOmniboxStore } from './omnibox.svelte.js';
 
 const IDA = { id: 'l-1', vorname: 'Ida', nachname: 'Berg', art: 'schueler' };
@@ -93,8 +93,8 @@ describe('Theke: Ausleihe', () => {
 
 		const neuLaden = await scanne(store, { type: 'ausleihe', book: { titel: 'Mathe 7' } });
 
-		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
-		expect(toastStore.addToast).toHaveBeenCalledWith('„Mathe 7" ausgeliehen an Ida.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
+		expect(snackbars.addToast).toHaveBeenCalledWith('„Mathe 7" ausgeliehen an Ida.', 'success');
 		expect(neuLaden).toHaveBeenCalledTimes(1);
 		expect(store.flashBorder).toBe('green');
 		expect(playSoundSuccess).toHaveBeenCalledTimes(1);
@@ -130,7 +130,7 @@ describe('Theke: Ausleihe', () => {
 
 		await scanne(store, { type: 'ausleihe', geraet: { modellname: 'Tablet 9' } });
 
-		expect(toastStore.addToast).toHaveBeenCalledWith('„Tablet 9" ausgeliehen an Ida.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledWith('„Tablet 9" ausgeliehen an Ida.', 'success');
 	});
 
 	// Der Leser hatte ein anderes Exemplar reserviert und eines aus dem Regal genommen.
@@ -143,8 +143,8 @@ describe('Theke: Ausleihe', () => {
 			regalfreigabe_barcode: 'B-518-2'
 		});
 
-		expect(toastStore.addToast).toHaveBeenCalledTimes(2);
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledTimes(2);
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Hinweis: Reserviertes Exemplar B-518-2 zurück ins Regal räumen.',
 			'warning'
 		);
@@ -173,7 +173,7 @@ describe('Theke: Gerät mit Zubehör', () => {
 		const neuLaden = await scanne(store, { type: 'geraet_check', geraet }, 'g-77');
 
 		expect(store.checklistAnfrage).toEqual({ query: 'G-77', geraet, overrideBlock: false });
-		expect(toastStore.addToast).not.toHaveBeenCalled();
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(neuLaden).not.toHaveBeenCalled();
 		expect(store.screenFlash).toBe('');
 		expect(playSoundSuccess).not.toHaveBeenCalled();
@@ -187,8 +187,8 @@ describe('Theke: Suchtreffer statt Buchung', () => {
 		const neuLaden = await scanne(store, { type: 'search_results' }, 'Mathe');
 
 		expect(store.isShaking).toBe(true);
-		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Bitte wähle ein Ergebnis aus der Liste.',
 			'warning'
 		);
@@ -209,7 +209,7 @@ describe('Theke: der Server lehnt den Scan ab', () => {
 
 		expect(store.errorMessage).toBe('Fehler: Das Exemplar ist ausgesondert.');
 		expect(store.flashBorder).toBe('red');
-		expect(toastStore.addToast).not.toHaveBeenCalled();
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(neuLaden).not.toHaveBeenCalled();
 	});
 
@@ -241,7 +241,7 @@ describe('Theke: eine Antwort unbekannter Art', () => {
 		const neuLaden = await scanne(store, { type: 'kuenftige_art' });
 
 		expect(store.activeStudent).toEqual(IDA);
-		expect(toastStore.addToast).not.toHaveBeenCalled();
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(neuLaden).not.toHaveBeenCalled();
 		expect(store.screenFlash).toBe('');
 		expect(store.isShaking).toBe(false);

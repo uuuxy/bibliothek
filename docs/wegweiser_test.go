@@ -12,7 +12,7 @@ import (
 // vollständig ist: Ein neuer Menüpunkt oder ein neues Thema unter api/, das dort fehlt, lässt
 // den Leser an der Stelle allein, an der er sucht.
 //
-// Geprüft wird: Jede Beschriftung aus dem Menü der Oberfläche (frontend/src/lib/menu.js) steht
+// Geprüft wird: Jede Beschriftung aus dem Menü der Oberfläche (frontend/src/lib/menue.js) steht
 // im Wegweiser, jeder Ordner unter api/ mit Programmcode ist dort genannt, und jeder Bildschirm,
 // den die Tabelle der Menüpunkte nennt, liegt unter frontend/src/lib/. Die Dateien mit ganzem
 // Pfad hält schon dateiverweise_test.go.
@@ -27,13 +27,13 @@ func TestWegweiser_NenntJedenMenuepunktUndJedesThema(t *testing.T) {
 	}
 	wegweiser := string(roh)
 
-	menue, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "menu.js"))
+	menue, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "menue.js"))
 	if err != nil {
-		t.Fatalf("menu.js lesen: %v", err)
+		t.Fatalf("menue.js lesen: %v", err)
 	}
 	beschriftungen := regexp.MustCompile(`label: '([^']+)'`).FindAllStringSubmatch(string(menue), -1)
 	if len(beschriftungen) < 10 {
-		t.Fatalf("nur %d Beschriftungen in menu.js gefunden — das Muster greift nicht mehr", len(beschriftungen))
+		t.Fatalf("nur %d Beschriftungen in menue.js gefunden — das Muster greift nicht mehr", len(beschriftungen))
 	}
 	for _, b := range beschriftungen {
 		if !strings.Contains(wegweiser, b[1]) {

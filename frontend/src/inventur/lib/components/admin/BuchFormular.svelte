@@ -62,7 +62,7 @@
 	<!-- Der Kopf ist das einzige stehende Band der Maske: Schließen, Überschrift und die eine
 	     Aktion, die die ganze Seite betrifft. Alles Weitere steht in der rechten Spalte, damit
 	     die Höhe den Feldern bleibt. „Speichern" folgt auf die Überschrift und steht nicht am
-	     rechten Rand: Dort erscheinen die Meldungen (ToastContainer) und lägen über dem Knopf. -->
+	     rechten Rand: Dort erscheinen die Meldungen (SnackbarAnzeige) und lägen über dem Knopf. -->
 	<div
 		class="h-14 px-4 border-b border-outline-variant flex items-center gap-2 bg-surface-container-lowest sticky top-0 z-10"
 	>

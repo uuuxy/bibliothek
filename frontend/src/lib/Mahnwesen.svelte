@@ -2,14 +2,14 @@
 	import { mahnwesenStore } from './stores/mahnwesen.svelte.js';
 	import { offlineSync } from './stores/offlineSync.svelte.js';
 	import MahnwesenFilters from './components/mahnwesen/MahnwesenFilters.svelte';
-	import MahnwesenTable from './components/mahnwesen/MahnwesenTable.svelte';
+	import MahnwesenTabelle from './components/mahnwesen/MahnwesenTabelle.svelte';
 	import BescheideTabelle from './components/mahnwesen/BescheideTabelle.svelte';
 	import BescheidDialog from './components/mahnwesen/BescheidDialog.svelte';
 	import { bescheideStore } from './stores/bescheide.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
-	import { hatRecht } from './menu.js';
+	import { hatRecht } from './menue.js';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
 
 	// „Alle anmahnen" lief frueher gegen ein window.confirm: alles oder nichts, immer an
@@ -17,7 +17,7 @@
 	// und auf OBERSTER Ebene, nicht in der Aktionszeile: Ein Overlay hat in einem
 	// Flex-Container mit print:hidden nichts verloren.
 	//
-	// Die Knopfzeile selbst sass bis zum 04.09.2026 im `aktionen`-Slot von PageShell und
+	// Die Knopfzeile selbst sass bis zum 04.09.2026 im `aktionen`-Slot von Seitenrahmen und
 	// damit UEBER den Reitern — als einzige Seite von sechzehn, mit der Folge, dass die
 	// Suchpille hier 84 px tiefer begann als ueberall sonst. Sie steht jetzt unter der
 	// Pille, siehe MahnwesenSuchleiste. Den Slot gibt es seitdem nicht mehr.
@@ -69,7 +69,7 @@
 			</div>
 		</div>
 	{:else}
-		<PageShell>
+		<Seitenrahmen>
 			<MahnwesenFilters
 				onMahnlauf={() => (mahnlaufOffen = true)}
 				onBescheid={(id) => (bescheidFuer = id)}
@@ -79,9 +79,9 @@
 			{#if mahnwesenStore.activeFilter === 'Schadensersatz'}
 				<BescheideTabelle darfSchreiben={darfBescheid} onBescheid={(id) => (bescheidFuer = id)} />
 			{:else}
-				<MahnwesenTable />
+				<MahnwesenTabelle />
 			{/if}
-		</PageShell>
+		</Seitenrahmen>
 	{/if}
 </div>
 

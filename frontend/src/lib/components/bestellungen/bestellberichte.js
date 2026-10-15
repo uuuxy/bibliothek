@@ -3,7 +3,7 @@
  *  Getrennt von BestellBerichte.svelte, weil hier nichts angezeigt wird: Was in der
  *  Liste steht und welche Adresse der Download bekommt, ist eine Frage von Wörtern
  *  und Parametern. */
-import { lastOfMonth } from '../../utils/dates.js';
+import { lastOfMonth } from '../../utils/datum.js';
 
 const MONATE = [
 	'Januar',

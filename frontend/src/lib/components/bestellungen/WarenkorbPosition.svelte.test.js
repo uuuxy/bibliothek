@@ -8,7 +8,7 @@ vi.mock('../../apiFetch.js', async (original) => ({
 	apiPut: vi.fn(async () => ({})),
 	apiDelete: vi.fn(async () => ({}))
 }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 import { bestellStore } from '../../stores/bestellStore.svelte.js';
 import WarenkorbPosition from './WarenkorbPosition.svelte';

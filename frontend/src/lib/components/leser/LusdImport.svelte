@@ -11,7 +11,7 @@
 	import { TriangleAlert, ChevronRight, CircleCheck, FolderOpen } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Button from '../ui/Button.svelte';
 	import LusdUmbenennungen from './LusdUmbenennungen.svelte';
@@ -117,7 +117,7 @@
 			importResult = await submitLusdFile('/api/lusd/import', confirmGraduates);
 			stage = 'done';
 			needsGraduateConfirm = false;
-			toastStore.addToast('LUSD-Import erfolgreich übernommen.', 'success');
+			snackbars.addToast('LUSD-Import erfolgreich übernommen.', 'success');
 			onImported(/** @type {LusdPreviewResult} */ (importResult));
 		} catch (err) {
 			// 409 = serverseitige Massenabgang-Bremse: bewusste zweite Bestätigung anbieten.

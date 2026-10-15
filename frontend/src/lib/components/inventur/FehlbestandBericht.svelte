@@ -14,7 +14,7 @@
      Zurücksetzen der Inventur hinweg; sonst wäre er weg, sobald er entsteht. -->
 <script>
 	import { Printer, X, PackageSearch, Trash } from '@lucide/svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { baueFehlbestandDruckHtml } from '../../utils/fehlbestandDruck.js';
 	import { druckeDokument, FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
 	import Tabelle from '../ui/Tabelle.svelte';
@@ -44,7 +44,7 @@
 	// Auf das Blatt kommt, was noch zu suchen ist; Geklärtes steht dort nur als Zahl.
 	function drucken() {
 		const html = baueFehlbestandDruckHtml(offene, { label, gebucht: eintraege.length });
-		if (!druckeDokument(html)) toastStore.addToast(FENSTER_BLOCKIERT, 'warning');
+		if (!druckeDokument(html)) snackbars.addToast(FENSTER_BLOCKIERT, 'warning');
 	}
 
 	/** @param {string} exemplarId */

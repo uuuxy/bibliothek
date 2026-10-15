@@ -1,7 +1,7 @@
 // Gate gegen Barrieren, die nur VERHALTEN zeigt — axe sieht sie nicht:
 //   1. Ein Dialog nimmt den Fokus, hält ihn (Tab kreist), und gibt ihn beim Schließen an
 //      den Auslöser zurück (WCAG 2.4.3, 2.1.2). Gemessen am 08.09.2026: EIN Tab verließ
-//      den Dialog; 22 von 24 Dialogen hängen an Modal.svelte, der Fix sitzt dort.
+//      den Dialog; 22 von 24 Dialogen hängen an Dialog.svelte, der Fix sitzt dort.
 //   2. Tabellen tragen eine Beschriftung und ihre Kopfzellen einen scope (1.3.1) — im
 //      Bauteil ui/Tabelle, nicht in 147 einzelnen <th>.
 //   3. Wer im System „Bewegung reduzieren" wählt, bekommt keine Animation (2.3.3) —

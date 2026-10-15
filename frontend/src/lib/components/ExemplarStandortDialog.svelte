@@ -11,7 +11,7 @@
 	import Kaestchen from './ui/Kaestchen.svelte';
 	import { apiPut } from '../apiFetch.js';
 	import { scanSchutz } from '../scanErkennung.js';
-	import { toastStore } from '../stores/toastStore.svelte.js';
+	import { snackbars } from '../stores/snackbars.svelte.js';
 	import { ladeStandorte } from '../utils/standorte.js';
 
 	/**
@@ -58,7 +58,7 @@
 				standort: weg ? '' : neu
 			});
 			const n = antwort?.geaendert ?? 0;
-			toastStore.addToast(
+			snackbars.addToast(
 				n === 0
 					? 'Der Standort war schon so eingetragen.'
 					: `Standort ${weg ? 'entfernt' : 'geändert'}: ${anzahlText(n)}.`,

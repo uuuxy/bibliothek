@@ -10,12 +10,12 @@
      Bauform wie der Storno-Dialog der Gebühren (LeserGebuehrenKarte): Modal, Radio-Gruppe,
      ein Feld für den Grund, die Aktion erst mit Grund freigegeben. -->
 <script>
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import { apiPut } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { MITTEL, MITTEL_REIHENFOLGE, mittelLabel } from './mittel.js';
 
 	/**
@@ -55,7 +55,7 @@
 				mittel: gewaehlt,
 				grund: grund.trim()
 			});
-			toastStore.addToast(`Topf geändert: ${mittelLabel(gewaehlt)}.`, 'success');
+			snackbars.addToast(`Topf geändert: ${mittelLabel(gewaehlt)}.`, 'success');
 			await onAktualisieren();
 			onclose();
 		} catch {
@@ -66,7 +66,7 @@
 	}
 </script>
 
-<Modal {open} {onclose} size="sm" beschriftetDurch="mittel-dialog-titel">
+<Dialog {open} {onclose} size="sm" beschriftetDurch="mittel-dialog-titel">
 	<div class="space-y-4 p-6">
 		<h2 id="mittel-dialog-titel" class="text-lg font-bold text-on-surface">
 			Topf der Bestellung ändern
@@ -104,4 +104,4 @@
 			</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

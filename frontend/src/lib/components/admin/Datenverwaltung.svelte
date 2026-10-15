@@ -16,7 +16,7 @@
 	import { exportiereCSV } from '../../../inventur/lib/admin_api.js';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
-	import { hatRecht } from '../../menu.js';
+	import { hatRecht } from '../../menue.js';
 
 	const darfImport = $derived(hatRecht(authStore.currentUser, 'manage_inventory'));
 	const darfExport = $derived(hatRecht(authStore.currentUser, 'edit_books'));

@@ -476,7 +476,7 @@ test('Die Suchpille beginnt auf jeder Seite an derselben Startlinie', async ({ p
 	// Er hatte recht, und das Gate darueber konnte es nicht sehen: Es misst Hoehe, Radius,
 	// Flaeche, Rahmen, Schrift und Farbe — also wie die Pille AUSSIEHT, nicht wo sie
 	// STEHT. Das Mahnwesen fuellte als einzige von sechzehn Routen den `aktionen`-Slot von
-	// PageShell; seine Knopfzeile stand ueber den Reitern und schob die Pille 84 px nach
+	// Seitenrahmen; seine Knopfzeile stand ueber den Reitern und schob die Pille 84 px nach
 	// unten. Signaturen und Benutzer & Rechte trugen je einen Erklaersatz darueber.
 	//
 	// Die Hausordnung, die hier zugesichert wird (und die Material 3 so vorgibt — die
@@ -523,7 +523,7 @@ test('Die Suchpille beginnt auf jeder Seite an derselben Startlinie', async ({ p
 				s.werte.drueber.map((/** @type {string} */ d) => `  • ${d}`).join('\n') +
 				`\nErlaubt ist dort ${s.reiter ? 'genau ein Reiterband' : 'nichts'}. ` +
 				`Knopfzeilen und Erklärsätze stehen UNTER der Pille ` +
-				`(Vorbild: SchuelerdateiLeiste, MahnwesenSuchleiste, SignaturenView).`
+				`(Vorbild: SchuelerdateiLeiste, MahnwesenSuchleiste, Signaturen).`
 		).toEqual(s.reiter ? ['tablist'] : []);
 	}
 

@@ -1,7 +1,7 @@
 <script>
 	import { apiPost } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import WareneingangTabelle from './WareneingangTabelle.svelte';
 	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
 	import Button from '../ui/Button.svelte';
@@ -28,7 +28,7 @@
 			const data = await apiPost('/api/bestellungen/bulk-receive', {
 				exemplar_ids: selectedExemplarIds
 			});
-			toastStore.addToast(`${data.received_count} Exemplare erfolgreich eingebucht!`, 'success');
+			snackbars.addToast(`${data.received_count} Exemplare erfolgreich eingebucht!`, 'success');
 			selectedExemplarIds = [];
 			onReceived(data.received_items ?? []);
 		} catch {

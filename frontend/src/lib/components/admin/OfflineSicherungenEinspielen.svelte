@@ -17,7 +17,7 @@
 -->
 <script>
 	import { offlineSync } from '../../stores/offlineSync.svelte.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import { Upload } from '@lucide/svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
@@ -49,7 +49,7 @@
 
 		laeuft = false;
 		bericht = { dateien: files.length - fehler.length, vorgaenge };
-		if (fehler.length > 0) toastStore.addToast(fehler.join(' · '), 'error');
+		if (fehler.length > 0) snackbars.addToast(fehler.join(' · '), 'error');
 	}
 </script>
 

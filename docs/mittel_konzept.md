@@ -120,7 +120,7 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 
 | Baustein                             | Fundstelle                                                                                                                                                    | Stand                                                                                                                                                              |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Forderung anlegen                    | `repository/schaden.go` (`SchadensAbfragen.Melde` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `DamageReportModal.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. Der Betrag ist ein gerechneter VORSCHLAG mit Herleitung (seit 17.09.2026; vorher Freitext mit der Vorgabe 15,00 € ohne Bezug zum Preis) — überschreibbar, denn er liegt im Ermessen der Schule.               |
+| Forderung anlegen                    | `repository/schaden.go` (`SchadensAbfragen.Melde` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `SchadenMeldenDialog.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. Der Betrag ist ein gerechneter VORSCHLAG mit Herleitung (seit 17.09.2026; vorher Freitext mit der Vorgabe 15,00 € ohne Bezug zum Preis) — überschreibbar, denn er liegt im Ermessen der Schule.               |
 | Forderung erledigen                  | `api/schaden/forderung_erledigen.go`, `repository/forderung_erledigen.go` (Bezahlt / Storno mit Grund, Audit, 409 bei Doppelbuchung)                                              | ✅ „Bezahlt" bedeutet heute **Barzahlung am Tresen**.                                                                                                              |
 | Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/schaden/rechnung.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), Zahlungsweg je Topf seit 17.09.2026 — aber weiterhin ohne Nummer und ohne Frist im Landesformat.                  |
 | Brief 3: Eltern-Mahnbrief            | `pdf/mahnbrief.go`, Vorlage `MAHNUNG_ELTERN`                                                                                                                  | DIN-5008-Fensterkuvert, Falzmarken, Tabelle der überfälligen Bücher — **die Bauform, die der Bescheid braucht.**                                                   |
@@ -239,7 +239,7 @@ Anschriftfeld, „(keine Adresse hinterlegt)"-Regel).
   überfälligen Lernmittel plus offene Lernmittel-Forderungen; die Tabelle des Briefs
   füllt sich aus denselben Daten wie heute der Mahnbrief. Dritter Filter „Bescheide"
   (Frist abgelaufen → Übergabe).
-- **Schaden melden** (`DamageReportModal`): Art (verloren / beschädigt), Staffel-Vorschlag
+- **Schaden melden** (`SchadenMeldenDialog`): Art (verloren / beschädigt), Staffel-Vorschlag
   mit Herleitung, Betrag überschreibbar; kein automatisches PDF-Popup mehr — der Brief
   ist ein eigener Schritt des Sekretariats.
 - **Einstellungen → neue Kategorie „Schadensersatz"** (ein JSON-Schlüssel nach dem

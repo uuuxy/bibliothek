@@ -2,7 +2,7 @@
      ungespeicherter Arbeit verlassen will (uiStore.blockierterWechsel). Zwei Ausgänge,
      keine dritte Option: bleiben und speichern, oder verwerfen und gehen. -->
 <script>
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 
 	/** @type {{ offen: boolean, onbleiben: () => void, onverwerfen: () => void }} */
@@ -10,7 +10,7 @@
 </script>
 
 {#if offen}
-	<Modal open={true} onclose={onbleiben} size="sm" beschriftetDurch="lmf-ungespeichert-titel">
+	<Dialog open={true} onclose={onbleiben} size="sm" beschriftetDurch="lmf-ungespeichert-titel">
 		<div class="p-6">
 			<h3 id="lmf-ungespeichert-titel" class="text-xl font-bold text-on-surface mb-2">
 				Ungespeicherte Änderungen
@@ -24,5 +24,5 @@
 				<Button variant="danger" onclick={onverwerfen}>Verwerfen und weiter</Button>
 			</div>
 		</div>
-	</Modal>
+	</Dialog>
 {/if}

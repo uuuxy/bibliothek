@@ -3,7 +3,7 @@
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { onMount } from 'svelte';
-	import { toastStore } from './stores/toastStore.svelte.js';
+	import { snackbars } from './stores/snackbars.svelte.js';
 	import Feld from './components/ui/Feld.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Select from './components/ui/Select.svelte';
@@ -49,7 +49,7 @@
 			newMappingKlasse = '';
 			newMappingEmail = '';
 			await fetchMapping();
-			toastStore.addToast('Zuordnung gespeichert.', 'success');
+			snackbars.addToast('Zuordnung gespeichert.', 'success');
 		} catch {
 			// Toast already shown by apiPost
 		} finally {
@@ -62,7 +62,7 @@
 		try {
 			await apiDelete(`/api/klassen-mapping/${encodeURIComponent(klasse)}`);
 			await fetchMapping();
-			toastStore.addToast(`Zuordnung für ${klasse} gelöscht.`, 'success');
+			snackbars.addToast(`Zuordnung für ${klasse} gelöscht.`, 'success');
 		} catch {
 			// Toast already shown by apiDelete
 		}

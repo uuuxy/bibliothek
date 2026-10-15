@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor, fireEvent } from '@testing-library/svelte';
-import DamageReportModal from './DamageReportModal.svelte';
+import SchadenMeldenDialog from './SchadenMeldenDialog.svelte';
 import { apiFetch } from './apiFetch.js';
 
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
@@ -43,7 +43,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 			ist_lernmittel: true
 		});
 
-		const screen = render(DamageReportModal, {
+		const screen = render(SchadenMeldenDialog, {
 			book: buch,
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
@@ -57,7 +57,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 	it('fragt den Server nach genau diesem Exemplar', async () => {
 		serverLiefert({ betrag: 12, herleitung: 'egal', ist_lernmittel: false });
 
-		render(DamageReportModal, { book: buch, onCancel: vi.fn(), onSubmit: vi.fn() });
+		render(SchadenMeldenDialog, { book: buch, onCancel: vi.fn(), onSubmit: vi.fn() });
 
 		await waitFor(() =>
 			expect(apiFetch).toHaveBeenCalledWith('/api/buecher/exemplare/e1/ersatzwert-vorschlag')
@@ -71,7 +71,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 			ist_lernmittel: false
 		});
 
-		const screen = render(DamageReportModal, {
+		const screen = render(SchadenMeldenDialog, {
 			book: buch,
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
@@ -89,7 +89,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		// rot, obwohl der Dialog den Fehler sauber fängt.
 		vi.mocked(apiFetch).mockImplementation(() => Promise.reject(new Error('Netz weg')));
 
-		const screen = render(DamageReportModal, {
+		const screen = render(SchadenMeldenDialog, {
 			book: buch,
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
@@ -118,7 +118,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 				})
 		);
 		const onSubmit = vi.fn();
-		const screen = render(DamageReportModal, { book: buch, onCancel: vi.fn(), onSubmit });
+		const screen = render(SchadenMeldenDialog, { book: buch, onCancel: vi.fn(), onSubmit });
 
 		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Ersatzbetrag/));
 		await fireEvent.input(feld, { target: { value: '12.5' } });
@@ -135,7 +135,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 	it('fragt bei einem Kollegen gar nicht erst — dort entsteht keine Forderung', async () => {
 		serverLiefert({ betrag: 99, herleitung: 'darf nie erscheinen', ist_lernmittel: true });
 
-		render(DamageReportModal, {
+		render(SchadenMeldenDialog, {
 			book: { ...buch, ohneForderung: true },
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()

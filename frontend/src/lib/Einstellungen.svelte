@@ -30,9 +30,9 @@
 	import KategorieDetail from './components/einstellungen/KategorieDetail.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import { sichtbareKategorien } from './components/einstellungen/kategorien.js';
-	import { hatRecht } from './menu.js';
+	import { hatRecht } from './menue.js';
 
 	let loading = $state(true);
 	/** @type {Record<string, any>} */
@@ -98,7 +98,7 @@
 	onMount(erneutLaden);
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	{#if loading}
 		<div class="flex items-center justify-center py-20">
 			<Ladekreis size="lg" />
@@ -124,4 +124,4 @@
 			</div>
 		</div>
 	{/if}
-</PageShell>
+</Seitenrahmen>

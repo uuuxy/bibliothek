@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/svelte';
 import Papierkorb from './Papierkorb.svelte';
 import { apiFetch } from '../../apiFetch.js';
-import { toastStore } from '../../stores/toastStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 
 vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({
-	toastStore: { addToast: vi.fn() }
+vi.mock('../../stores/snackbars.svelte.js', () => ({
+	snackbars: { addToast: vi.fn() }
 }));
 
 /**
@@ -53,7 +53,7 @@ function antwort(body, opts = {}) {
 
 beforeEach(() => {
 	vi.mocked(apiFetch).mockReset();
-	vi.mocked(toastStore.addToast).mockReset();
+	vi.mocked(snackbars.addToast).mockReset();
 });
 
 describe('Papierkorb', () => {
@@ -98,7 +98,7 @@ describe('Papierkorb', () => {
 		knopf.click();
 
 		await waitFor(() =>
-			expect(vi.mocked(toastStore.addToast)).toHaveBeenCalledWith(
+			expect(vi.mocked(snackbars.addToast)).toHaveBeenCalledWith(
 				'dieser Datensatz ist bereits anonymisiert (DSGVO)',
 				'error'
 			)

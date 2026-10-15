@@ -5,7 +5,7 @@
 <script>
 	import { TriangleAlert } from '@lucide/svelte';
 	import { apiClient } from './apiFetch.js';
-	import { toastStore } from './stores/toastStore.svelte.js';
+	import { snackbars } from './stores/snackbars.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import MailVorlagenPlatzhalter from './MailVorlagenPlatzhalter.svelte';
@@ -55,7 +55,7 @@
 			});
 
 			if (res.ok) {
-				toastStore.addToast('Vorlage gespeichert.', 'success');
+				snackbars.addToast('Vorlage gespeichert.', 'success');
 			} else {
 				errorMessage = 'Fehler beim Speichern der Vorlage.';
 			}

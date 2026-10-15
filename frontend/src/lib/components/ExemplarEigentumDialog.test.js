@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 
 vi.mock('../apiFetch.js', () => ({ apiPut: vi.fn() }));
-vi.mock('../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 import { apiPut } from '../apiFetch.js';
 import ExemplarEigentumDialog from './ExemplarEigentumDialog.svelte';

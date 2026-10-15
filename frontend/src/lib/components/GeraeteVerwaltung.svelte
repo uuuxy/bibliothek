@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { apiClient } from '../apiFetch.js';
 	import { erzeugeGeraeteListe } from './geraeteListe.svelte.js';
-	import { toastStore } from '../stores/toastStore.svelte.js';
+	import { snackbars } from '../stores/snackbars.svelte.js';
 	import { leeresGeraetFormular, geraetFormularAus, geraetNutzlast } from '../geraetFormular.js';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
@@ -52,15 +52,15 @@
 				? await apiClient.put(`/api/geraete/${bearbeiteId}`, geraetNutzlast(form, true))
 				: await apiClient.post('/api/geraete', geraetNutzlast(form, false));
 			if (res.ok) {
-				toastStore.addToast(bearbeiteId ? 'Gerät gespeichert.' : 'Gerät angelegt.', 'success');
+				snackbars.addToast(bearbeiteId ? 'Gerät gespeichert.' : 'Gerät angelegt.', 'success');
 				schliesseForm();
 				geraete.lade();
 			} else {
 				const err = await res.json().catch(() => ({}));
-				toastStore.addToast(err.error || 'Speichern fehlgeschlagen.', 'error');
+				snackbars.addToast(err.error || 'Speichern fehlgeschlagen.', 'error');
 			}
 		} catch {
-			toastStore.addToast('Netzwerkfehler.', 'error');
+			snackbars.addToast('Netzwerkfehler.', 'error');
 		} finally {
 			speichert = false;
 		}
@@ -77,10 +77,10 @@
 				geraete.lade();
 			} else {
 				const err = await res.json().catch(() => ({}));
-				toastStore.addToast(err.error || 'Statuswechsel fehlgeschlagen.', 'error');
+				snackbars.addToast(err.error || 'Statuswechsel fehlgeschlagen.', 'error');
 			}
 		} catch {
-			toastStore.addToast('Netzwerkfehler.', 'error');
+			snackbars.addToast('Netzwerkfehler.', 'error');
 		}
 	}
 </script>

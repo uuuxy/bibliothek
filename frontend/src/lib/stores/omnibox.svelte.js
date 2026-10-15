@@ -3,11 +3,11 @@
 
 import { apiFetch, apiClient } from '../apiFetch.js';
 import { playSoundSuccess, playSoundError } from '../audio.js';
-import { enqueueOfflineAction } from '../offlineQueue.js';
+import { enqueueOfflineAction } from '../offlineWarteschlange.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
 import { normalisiereScan, ordneScanEin } from '../scanEinordnen.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { escapeIstBelegt } from '../components/ui/escapeSchliesst.js';
@@ -30,7 +30,7 @@ function leserMitKlasse(leser) {
 	return leser.klasse ? `${name} (${leser.klasse})` : name;
 }
 
-// Geht an den globalen toastStore (ToastContainer.svelte in App.svelte). Vorher
+// Geht an den globalen snackbars (SnackbarAnzeige.svelte in App.svelte). Vorher
 // hielt die Omnibox einen eigenen Toast-Zustand samt eigenem Markup und eigenem
 // Auto-Dismiss — zwei Meldungswege mit zwei Optiken für dieselbe Sache.
 //
@@ -38,10 +38,10 @@ function leserMitKlasse(leser) {
 // bei jedem createOmniboxStore() eine neue, identische Funktion angelegt (sonarjs S7721).
 /**
  * @param {string} message
- * @param {import('./toastStore.svelte.js').ToastTyp} [type='success']
+ * @param {import('./snackbars.svelte.js').ToastTyp} [type='success']
  */
 function showToast(message, type = 'success') {
-	toastStore.addToast(message, type);
+	snackbars.addToast(message, type);
 }
 
 export function createOmniboxStore() {
@@ -52,7 +52,7 @@ export function createOmniboxStore() {
 	let activeStudent = $state(/** @type {any} */ (null));
 	// Der ohne Netz gescannte Ausweis — nur die NUMMER, kein Name, keine Ausleihen.
 	// Aufloesen kann ihn nur der Server; bis dahin tragen die folgenden Buecher sie mit
-	// (offlineQueue: `ausweis_barcode`, die Nachbuch-Tuer kennt das Feld).
+	// (offlineWarteschlange: `ausweis_barcode`, die Nachbuch-Tuer kennt das Feld).
 	let offlineAusweis = $state('');
 	// Schnellrückgabe: Jeder Scan nimmt nur zurück. Sie und ein geladener Leser schließen
 	// einander aus; ohne Leser bekommt der Server keinen und leiht nie aus.
@@ -114,12 +114,12 @@ export function createOmniboxStore() {
 	// UI Feedback-Methoden
 	//
 	// Jeder dieser Zeitgeber bekommt ein HANDLE und wird vor dem Neuplanen verworfen —
-	// dasselbe Muster wie in actions/keyboardNav.js und actions/tooltip.js. Der Grund ist
+	// dasselbe Muster wie in actions/tastaturNavigation.js und actions/tooltip.js. Der Grund ist
 	// nicht Ordnungsliebe: Ein Timer, der die Seite überlebt, feuert ins Leere. In der
 	// Testumgebung ist „ins Leere" ein Absturz — nach dem Abbau von jsdom gibt es kein
 	// `document` mehr, und der Rückruf reisst den GANZEN Lauf mit („Unhandled Errors:
 	// document is not defined"), obwohl jeder einzelne Test grün ist. Genau so stand die
-	// CI am 16.09.2026 rot bei 697 grünen Tests; am 11.09.2026 war es keyboardNav.
+	// CI am 16.09.2026 rot bei 697 grünen Tests; am 11.09.2026 war es tastaturNavigation.
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let screenFlashTimer = null;
 	/** @type {ReturnType<typeof setTimeout> | null} */
@@ -522,14 +522,14 @@ export function createOmniboxStore() {
 	 * @param {string} q
 	 * @param {string} idempotencyKey
 	 * @param {'ausleihe' | 'rueckgabe' | null} absicht
-	 * @returns {import('../offlineQueue.js').OfflineEintrag}
+	 * @returns {import('../offlineWarteschlange.js').OfflineEintrag}
 	 */
 	function schnappschuss(q, idempotencyKey, absicht) {
 		// Uhr-Anker neben dem Zeitstempel: `performance.now()` laeuft gleichmaessig und
 		// springt nicht, die Wanduhr schon — und zwar gern genau dann, wenn das Netz
 		// zurueckkommt, also zwischen Scan und Versand. Der Sync rechnet daraus den
 		// Scan-Zeitpunkt neu, solange der Eintrag aus demselben Seitenaufruf stammt
-		// (offlineQueue.js, OfflineEintrag).
+		// (offlineWarteschlange.js, OfflineEintrag).
 		// Ohne geladene Person, aber mit Ausweis-Merker: Das ist eine AUSLEIHE an die
 		// Person hinter dem Merker. Ohne beides bleibt es eine Rueckgabe.
 		const merker = !activeStudent?.id && offlineAusweis ? offlineAusweis : '';
@@ -559,7 +559,7 @@ export function createOmniboxStore() {
 	// Littera-Etikett traegt im Strichcode eine EAN-13, der Server kennt nur die Nummer
 	// darin.
 	/**
-	 * @param {import('../offlineQueue.js').OfflineEintrag} eintrag
+	 * @param {import('../offlineWarteschlange.js').OfflineEintrag} eintrag
 	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
 	 */
 	async function speichereOfflineAktion(eintrag) {
@@ -727,7 +727,7 @@ export function createOmniboxStore() {
 	// Der Versand ist gescheitert (Netzfehler, Timeout, CSRF-Bootstrap ohne Netz): Der
 	// Server hat den Scan nicht gesehen, der Schnappschuss geht in die Warteschlange.
 	/**
-	 * @param {unknown} e @param {import('../offlineQueue.js').OfflineEintrag} eintrag
+	 * @param {unknown} e @param {import('../offlineWarteschlange.js').OfflineEintrag} eintrag
 	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
 	 */
 	function verarbeiteVersandfehler(e, eintrag) {

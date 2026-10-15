@@ -90,7 +90,7 @@ describe('Sperr-Dialog an der Theke', () => {
 	});
 
 	// Seit dem 24.09.2026 trägt eine Sperre am Leser ihr eigenes Merkmal: Der Dialog öffnet
-	// und bietet das Aufheben an, nicht das Übergehen (OmniboxBlockAlert.test.js).
+	// und bietet das Aufheben an, nicht das Übergehen (OmniboxSperrHinweis.test.js).
 	it('öffnet für eine Sperre am Leser und merkt sich die Art', async () => {
 		post.mockResolvedValue(
 			antwort403('die ausleihe ist gesperrt: Manuelle Sperre', { 'X-Sperre': 'leser' })

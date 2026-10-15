@@ -2,7 +2,7 @@
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
-	import { erlaubteTabs, hatRecht } from './menu.js';
+	import { erlaubteTabs, hatRecht } from './menue.js';
 	import { druckWarteschlange } from './stores/druckWarteschlange.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';

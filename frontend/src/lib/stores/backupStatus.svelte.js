@@ -4,7 +4,7 @@ import { backupMessage, backupHint } from '../backupStatusText.js';
 /**
  * Backup-Wächter: der nächtliche Job überspringt sich still, wenn
  * BACKUP_ENCRYPTION_KEY fehlt. Der Status wird an zwei Stellen gebraucht —
- * als ruhige Bestätigungszeile im Sidebar-Fuß und, bei Handlungsbedarf, als
+ * als ruhige Bestätigungszeile im Seitenleiste-Fuß und, bei Handlungsbedarf, als
  * Alert über dem Inhalt. Beide lesen aus diesem Store, damit der Endpunkt
  * einmal pro Sitzung abgefragt wird und nicht zweimal.
  */

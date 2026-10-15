@@ -15,7 +15,7 @@
 	import SchuljahreswechselBereich from '../admin/SchuljahreswechselBereich.svelte';
 	import Betriebsbereitschaft from '../../Betriebsbereitschaft.svelte';
 	import Klassenleitungen from '../../Klassenleitungen.svelte';
-	import GlobalLMFExtendWidget from '../../GlobalLMFExtendWidget.svelte';
+	import LMFVerlaengerung from '../../LMFVerlaengerung.svelte';
 	import KategorieRahmen from './KategorieRahmen.svelte';
 	import SchuleKategorie from './kategorien/SchuleKategorie.svelte';
 	import AusleiheKategorie from './kategorien/AusleiheKategorie.svelte';
@@ -69,7 +69,7 @@
 			titel="LMF-Aktionen"
 			kurz="Massenwerkzeuge für Lernmittel — sie verändern viele Ausleihen zugleich."
 		>
-			<GlobalLMFExtendWidget />
+			<LMFVerlaengerung />
 		</KategorieRahmen>
 	{:else if aktiv === 'daten' && sichtbar.has('daten')}
 		<KategorieRahmen

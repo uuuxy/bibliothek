@@ -12,7 +12,7 @@
 <script>
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { apiFetch } from '../../apiFetch.js';
 	import { Printer, TriangleAlert, ShieldCheck } from '@lucide/svelte';
 
@@ -53,11 +53,11 @@
 			} else {
 				const text = await res.text();
 				console.error('Auskunft Error:', text);
-				toastStore.addToast('Fehler beim Herunterladen der Auskunft.', 'error');
+				snackbars.addToast('Fehler beim Herunterladen der Auskunft.', 'error');
 			}
 		} catch (e) {
 			console.error(e);
-			toastStore.addToast('Netzwerkfehler beim Herunterladen der Auskunft.', 'error');
+			snackbars.addToast('Netzwerkfehler beim Herunterladen der Auskunft.', 'error');
 		}
 	}
 </script>

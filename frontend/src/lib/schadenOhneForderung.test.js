@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import DamageReportModal from './DamageReportModal.svelte';
+import SchadenMeldenDialog from './SchadenMeldenDialog.svelte';
 
 // Ein Kollege bekommt keine Forderung (entschieden am 16.09.2026). Entschieden wird das am
 // Server (repository/schaden_melden.go); der Dialog darf dann aber auch nicht nach einem
@@ -10,7 +10,7 @@ describe('Verlust/Schaden melden', () => {
 	const buch = { id: 'e1', ausleihe_id: 'a1', titel: 'Momo', barcode_id: 'B-1' };
 
 	it('fragt bei einem Kollegen nicht nach einem Ersatzbetrag', () => {
-		const screen = render(DamageReportModal, {
+		const screen = render(SchadenMeldenDialog, {
 			book: { ...buch, ohneForderung: true },
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
@@ -24,7 +24,7 @@ describe('Verlust/Schaden melden', () => {
 
 	it('schickt bei einem Kollegen den Betrag 0', async () => {
 		const onSubmit = vi.fn();
-		const screen = render(DamageReportModal, {
+		const screen = render(SchadenMeldenDialog, {
 			book: { ...buch, ohneForderung: true },
 			onCancel: vi.fn(),
 			onSubmit
@@ -35,7 +35,7 @@ describe('Verlust/Schaden melden', () => {
 	});
 
 	it('fragt bei einem Schüler weiter nach dem Ersatzbetrag', () => {
-		const screen = render(DamageReportModal, {
+		const screen = render(SchadenMeldenDialog, {
 			book: buch,
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()

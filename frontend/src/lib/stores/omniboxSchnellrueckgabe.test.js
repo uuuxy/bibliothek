@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Der Server leiht nur aus, wenn die Anfrage einen Leser nennt. Geprüft wird deshalb an der
 // Anfrage, dass im Modus keiner mitgeht, und am Zustand, dass keiner geladen wird.
 
-vi.mock('./toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
 	playSoundSuccess: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock('./buchBarcodes.svelte.js', () => ({
 
 import { apiClient } from '../apiFetch.js';
 import { playSoundError } from '../audio.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { createOmniboxStore } from './omnibox.svelte.js';
 import { thekeLeeren } from './thekeLeeren.js';
 import { escapeSchliesst } from '../components/ui/escapeSchliesst.js';
@@ -83,7 +83,7 @@ describe('Schnellrückgabe', () => {
 
 		expect(theke.activeStudent, 'die Rückgabe hat einen Leser geladen').toBeNull();
 		expect(theke.schnellrueckgabe).toBe(true);
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'„Natura 2" zurückgegeben, war bei Mia Muster (07B).',
 			'success'
 		);
@@ -114,7 +114,7 @@ describe('Schnellrückgabe', () => {
 
 		expect(theke.activeStudent?.id).toBe('leser-1');
 		expect(letzteAnfrage().active_leser_id).toBe('leser-1');
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'„Natura 2" erfolgreich zurückgegeben.',
 			'success'
 		);

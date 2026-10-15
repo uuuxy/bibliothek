@@ -13,7 +13,7 @@
 	import { apiPut } from '../../apiFetch.js';
 	import { ladeSignaturen } from '../../utils/signaturen.js';
 	import TrefferPruefungSchlagworte from './TrefferPruefungSchlagworte.svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -64,7 +64,7 @@
 			try {
 				await apiPut(`/api/buecher/titel/${book.id}/signatur`, { signatur: neueSignatur });
 			} catch {
-				toastStore.addToast(
+				snackbars.addToast(
 					'Signatur konnte nicht gespeichert werden — Titel wird trotzdem bestellt.',
 					'error'
 				);
@@ -75,7 +75,7 @@
 			try {
 				await apiPut(`/api/buecher/titel/${book.id}/lernmittel`, { ist_lernmittel: istLernmittel });
 			} catch {
-				toastStore.addToast(
+				snackbars.addToast(
 					'Lernmittel-Kennzeichen konnte nicht gespeichert werden — Titel wird trotzdem bestellt.',
 					'error'
 				);

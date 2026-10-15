@@ -10,7 +10,7 @@ const stapel = [];
  * ein und kommt deshalb ZWEITER dran. Sein preventDefault erreicht den Router nicht mehr.
  * Steht der Fokus nicht in einem Eingabefeld (Menüeintrag, Knopf), sprang das Programm
  * mit demselben Tastendruck an die Theke UND schloss den Dialog — seit dem 05.09. für
- * jedes Overlay mit dieser Aktion, auch Modal.svelte.
+ * jedes Overlay mit dieser Aktion, auch Dialog.svelte.
  */
 export function escapeIstBelegt() {
 	return stapel.length > 0;
@@ -20,15 +20,15 @@ export function escapeIstBelegt() {
  * `use:escapeSchliesst={schliessen}` — Escape schließt diesen Dialog.
  *
  * Anlass (05.09.2026): KEINES der elf selbstgebauten Overlays reagierte auf Escape,
- * `Modal.svelte` als einziges schon. An der Theke wird schnell gearbeitet; ein Dialog,
+ * `Dialog.svelte` als einziges schon. An der Theke wird schnell gearbeitet; ein Dialog,
  * der nur mit der Maus zugeht, hält den Betrieb auf — und mit der Tastatur allein war
  * er gar nicht zu schließen (der Klick auf den Hintergrund ist kein Tastaturweg).
  *
  * Warum eine Aktion und kein weiteres Bauteil: Die elf Dialoge unterscheiden sich in
  * ihrem Aufbau (dunkles Kamerafeld, Alarmfläche ohne Kopfzeile, Formular mit eigener
- * Fußzeile). Sie alle auf `Modal.svelte` zu ziehen, ist ein eigener Durchgang mit
+ * Fußzeile). Sie alle auf `Dialog.svelte` zu ziehen, ist ein eigener Durchgang mit
  * sichtbaren Folgen. Das VERHALTEN lässt sich vorher zusammenführen, ohne die Gestalt
- * anzufassen — und es gibt danach genau eine Stelle, an der es steht. `Modal.svelte`
+ * anzufassen — und es gibt danach genau eine Stelle, an der es steht. `Dialog.svelte`
  * benutzt dieselbe Aktion.
  *
  * NUR DER OBERSTE Dialog reagiert. Ohne diese Regel schlösse ein Escape über einer

@@ -4,7 +4,7 @@ import { srcRoot, relPfad, ohneKommentare, sammleTestdateien } from './hygiene-q
 
 // Wer die Theke im Test bedient, räumt ihre Zeitgeber weg.
 //
-// Die Bugklasse dahinter (CI am 16.09.2026, davor am 11.09.2026 mit keyboardNav): Der
+// Die Bugklasse dahinter (CI am 16.09.2026, davor am 11.09.2026 mit tastaturNavigation): Der
 // Lauf war ROT bei 128 grünen Dateien und 697 grünen Tests. Grund war kein Test, sondern
 // ein Zeitgeber — `scanfeldWiederScharfstellen` plant einen Fokussprung über 50 ms, der
 // `document` anfasst. Endet die Testdatei vorher, baut Vitest jsdom ab, und der Rückruf

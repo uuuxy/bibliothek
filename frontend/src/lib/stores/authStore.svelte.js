@@ -1,9 +1,9 @@
 import { appState } from '../../inventur/lib/store.svelte.js';
 import { apiFetch, registriereSitzungAbgelaufenHandler } from '../apiFetch.js';
 import { abonniere, trenne, verbinde } from '../liveEvents.js';
-import { hatRecht } from '../menu.js';
+import { hatRecht } from '../menue.js';
 import { thekeLeeren } from './thekeLeeren.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 
 // Boot-Restore gegen einen Datenbank-Aussetzer: dreimal fragen, 2 s auseinander. Die
 // Frist des Servers bei der Token-Prüfung ist 2 s (auth/token.go), ein kurzer Aussetzer ist
@@ -47,8 +47,8 @@ function abmeldungZugestellt(status) {
 	return status === 200 || status === 503;
 }
 
-// Findet der Start die Anmeldung gesperrt, verdeckt idleLock das Fenster, bevor `isLoggedIn`
-// die Anwendung rendert. Eine Registrierung statt eines Imports: idleLock importiert diesen Store.
+// Findet der Start die Anmeldung gesperrt, verdeckt leerlaufSperre das Fenster, bevor `isLoggedIn`
+// die Anwendung rendert. Eine Registrierung statt eines Imports: leerlaufSperre importiert diesen Store.
 /** @type {(() => void) | null} */
 let gesperrterStartHandler = null;
 
@@ -317,7 +317,7 @@ class AuthStore {
 	sitzungAbgelaufen() {
 		if (!this.isLoggedIn) return;
 		this.handleLogout();
-		toastStore.addToast('Sitzung abgelaufen — bitte neu anmelden.', 'warning');
+		snackbars.addToast('Sitzung abgelaufen — bitte neu anmelden.', 'warning');
 	}
 
 	handleLogout(onLogoutCallback) {

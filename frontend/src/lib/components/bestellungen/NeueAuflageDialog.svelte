@@ -11,10 +11,10 @@
 <script>
 	import { CircleAlert } from '@lucide/svelte';
 	import { apiClient, extractApiError } from '../../apiFetch.js';
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	/** @type {{ zeile: any | null, onschliessen: () => void, onbestellt: (titel: any) => void }} */
 	let { zeile, onschliessen, onbestellt } = $props();
@@ -91,7 +91,7 @@
 				fehler = await extractApiError(res);
 				return;
 			}
-			toastStore.addToast(
+			snackbars.addToast(
 				`„${gefunden.titel}" als neue Auflage zugeordnet und in den Warenkorb gelegt.`,
 				'success'
 			);
@@ -104,7 +104,7 @@
 	}
 </script>
 
-<Modal open={offen} onclose={onschliessen} size="2xl" beschriftetDurch="neue-auflage-titel">
+<Dialog open={offen} onclose={onschliessen} size="2xl" beschriftetDurch="neue-auflage-titel">
 	{#snippet header()}
 		<h3 id="neue-auflage-titel" class="text-lg font-bold text-on-surface">
 			Neue Auflage bestellen
@@ -177,4 +177,4 @@
 			</Button>
 		{/if}
 	</div>
-</Modal>
+</Dialog>

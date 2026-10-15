@@ -11,7 +11,7 @@
 	} from '../../buch_speichern.js';
 	import { frageVorhandenenOeffnen, speichereMitFrage } from '../../buch_vorhanden.js';
 	import { uebernimmGespeichert } from '../../buch_felder.js';
-	import { hatRecht } from '../../../../lib/menu.js';
+	import { hatRecht } from '../../../../lib/menue.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 

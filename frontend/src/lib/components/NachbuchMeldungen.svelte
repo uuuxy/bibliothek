@@ -12,7 +12,7 @@
 
      Liegt über dem Band (Ebene „darueber"), weil die Liste aus ihm heraus öffnet. -->
 <script>
-	import Modal from '../Modal.svelte';
+	import Dialog from '../Dialog.svelte';
 	import Button from './ui/Button.svelte';
 	import Tabelle from './ui/Tabelle.svelte';
 	import Kaestchen from './ui/Kaestchen.svelte';
@@ -39,7 +39,7 @@
 		[z.ausleiher, z.ausleiher_klasse].filter(Boolean).join(', ') || z.ausweis_text || '';
 </script>
 
-<Modal
+<Dialog
 	open={m.geoeffnet}
 	onclose={() => m.schliesse()}
 	size="3xl"
@@ -119,4 +119,4 @@
 			</Tabelle>
 		{/if}
 	</div>
-</Modal>
+</Dialog>

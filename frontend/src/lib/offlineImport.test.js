@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const enqueueSpy = vi.fn();
 
-vi.mock('./offlineQueue.js', async (importOriginal) => ({
+vi.mock('./offlineWarteschlange.js', async (importOriginal) => ({
 	// normalisiereEintrag bleibt echt: Der Import übersetzt damit beide Formate.
 	.../** @type {any} */ (await importOriginal()),
 	enqueueOfflineAction: (...args) => {

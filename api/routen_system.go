@@ -65,7 +65,7 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen r
 	mux.Handle("GET /api/dashboard/summary", s.verlangeRecht("view_students")(s.system().MahnUebersicht()))
 	// view_stats, nicht view_students: Der Schalter, den ein Admin in der Rechte-Oberfläche
 	// umlegt, heißt „Statistiken anzeigen", und das Menü blendet den Punkt genau danach ein
-	// (frontend/src/lib/menu.js). Verlangte die Route view_students, gewänne still der Server,
+	// (frontend/src/lib/menue.js). Verlangte die Route view_students, gewänne still der Server,
 	// sobald ein Admin die beiden trennt: Die Statistik antwortete trotz entzogenem Recht weiter,
 	// oder der Menüpunkt lieferte jedes Mal 403. Die Antwort trägt keine Personendaten
 	// (PII-Stufe 0), view_students wäre also auch fachlich die falsche Schranke.

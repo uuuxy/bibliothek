@@ -8,7 +8,7 @@
 	import { CircleAlert } from '@lucide/svelte';
 	import { apiClient, apiFetch, extractApiError } from '../../../../lib/apiFetch.js';
 	import { showToast } from '$lib/store.svelte.js';
-	import Modal from '../../../../lib/Modal.svelte';
+	import Dialog from '../../../../lib/Dialog.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchfeld from '../../../../lib/components/ui/Suchfeld.svelte';
 	import AuflagenZeile from './AuflagenZeile.svelte';
@@ -79,7 +79,7 @@
 	}
 </script>
 
-<Modal {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="auflage-zuordnen-titel">
+<Dialog {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="auflage-zuordnen-titel">
 	{#snippet header()}
 		<h3 id="auflage-zuordnen-titel" class="text-lg font-bold text-on-surface">
 			Andere Auflage zuordnen
@@ -177,4 +177,4 @@
 			{laeuft ? 'Wird zugeordnet …' : 'Zuordnen'}
 		</Button>
 	</div>
-</Modal>
+</Dialog>

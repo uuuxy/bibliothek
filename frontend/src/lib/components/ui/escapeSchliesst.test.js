@@ -85,7 +85,7 @@ describe('escapeSchliesst', () => {
 });
 
 // Ratsche: Wer ein Overlay baut, gibt ihm einen Tastaturweg hinaus. Am 05.09.2026 hatte
-// KEINES der elf selbstgebauten Overlays einen — nur `Modal.svelte` und, in eigener
+// KEINES der elf selbstgebauten Overlays einen — nur `Dialog.svelte` und, in eigener
 // Handarbeit, `KlassensatzZuweisenDialog`. Beide benutzen jetzt dieselbe Aktion.
 const KEIN_DIALOG = [
 	// Ladeschleier über der ganzen Anwendung; er hat keinen Ausgang, er wartet.
@@ -180,7 +180,7 @@ describe('Overlay-Hygiene', () => {
 		expect(
 			neu,
 			'Neues Overlay ohne Tastaturweg hinaus. Der Klick auf den Hintergrund ist keiner. ' +
-				'`use:escapeSchliesst={schliessen}` oder `Modal.svelte` — und wenn es wirklich kein ' +
+				'`use:escapeSchliesst={schliessen}` oder `Dialog.svelte` — und wenn es wirklich kein ' +
 				'Dialog ist, gehört es mit Begründung in KEIN_DIALOG.\n' +
 				neu.join('\n')
 		).toEqual([]);

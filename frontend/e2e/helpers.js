@@ -323,7 +323,7 @@ export function menuepunkt(page, name) {
 /**
  * Wartet, bis die Navigation ihre Breite erreicht hat.
  *
- * Sie fährt beim Ein- und Ausklappen 300 ms (Sidebar.svelte). Wer in dieser Zeit misst, misst
+ * Sie fährt beim Ein- und Ausklappen 300 ms (Seitenleiste.svelte). Wer in dieser Zeit misst, misst
  * neben einer Zwischenbreite, und was daneben umbricht, steht beim nächsten Blick woanders.
  *
  * @param {import('@playwright/test').Page} page

@@ -8,13 +8,13 @@ vi.mock('../apiFetch.js', async (original) => ({
 	apiPut: vi.fn(async () => ({})),
 	apiDelete: vi.fn(async () => ({}))
 }));
-vi.mock('./toastStore.svelte.js', () => ({
-	toastStore: { addToast: vi.fn() }
+vi.mock('./snackbars.svelte.js', () => ({
+	snackbars: { addToast: vi.fn() }
 }));
 
 import { apiClient, apiGet, apiPost, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
 import { bestellStore } from './bestellStore.svelte.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 
 const apiPostMock = vi.mocked(apiPost);
 
@@ -366,7 +366,7 @@ describe('bestellStore Suche', () => {
 
 		await bestellStore.sucheSofort('faust');
 
-		expect(toastStore.addToast).toHaveBeenCalledWith('Suche gescheitert', 'error');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Suche gescheitert', 'error');
 		expect(bestellStore.searchResults).toEqual([]);
 		expect(bestellStore.showDropdown).toBe(false);
 	});

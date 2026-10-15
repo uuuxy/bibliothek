@@ -24,7 +24,7 @@ describe('Fenster der Theke stehen in rueckfrageOffen', () => {
 			.map((z) => z.trim()) ?? [];
 	const fenster = [...lies('Omnibox.svelte').matchAll(/'\.\/(components\/Omnibox\w+\.svelte)'/g)]
 		.map((m) => m[1])
-		.filter((rel) => /aria-modal="true"|<Modal\b/.test(lies(rel)));
+		.filter((rel) => /aria-modal="true"|<Dialog\b/.test(lies(rel)));
 
 	it('findet Fenster und Zustände — sonst wäre das Gate wertlos grün', () => {
 		expect(zustaende.length).toBeGreaterThanOrEqual(3);

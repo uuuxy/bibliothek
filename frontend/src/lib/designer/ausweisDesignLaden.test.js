@@ -7,11 +7,11 @@ import {
 } from './ausweisDesignLaden.js';
 import { idStore, vergissDesignLadezustand } from './idDesignerStore.svelte.js';
 import { apiFetch } from '../apiFetch.js';
-import { toastStore } from '../stores/toastStore.svelte.js';
+import { snackbars } from '../stores/snackbars.svelte.js';
 import { ohneKommentare, relPfad, sammleQuelldateien, srcRoot } from '../hygiene-quellen.js';
 
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn() }));
-vi.mock('../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 /** @param {any} daten */
 const antwort = (daten) => /** @type {any} */ ({ ok: true, json: async () => daten });
@@ -39,7 +39,7 @@ describe('ladeAusweisDesign', () => {
 		vi.mocked(apiFetch).mockRejectedValue(new Error('Netz weg'));
 
 		expect(await ladeAusweisDesign()).toBe(false);
-		expect(toastStore.addToast).not.toHaveBeenCalled();
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(idStore.printMode).toBe('card');
 	});
 
@@ -103,8 +103,8 @@ describe('designFuerDruck', () => {
 		vi.mocked(apiFetch).mockRejectedValue(new Error('Netz weg'));
 
 		expect(await designFuerDruck()).toBe(false);
-		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Nicht gedruckt: Das Ausweis-Design ist nicht geladen.',
 			'error'
 		);
@@ -124,7 +124,7 @@ describe('designFuerDruck', () => {
 
 		bildIstDa();
 		expect(await druck).toBe(true);
-		expect(toastStore.addToast).not.toHaveBeenCalled();
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 	});
 
 	it('wartet nicht ewig auf ein Bild, das sich nicht laden lässt', async () => {
@@ -144,7 +144,7 @@ describe('meldeDesignNichtGeladen', () => {
 	it('sagt, dass ohne das Design nicht gedruckt wird', () => {
 		meldeDesignNichtGeladen();
 
-		expect(toastStore.addToast).toHaveBeenCalledWith(
+		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Ausweis-Design nicht geladen: Ausweise lassen sich gerade nicht drucken.',
 			'error'
 		);

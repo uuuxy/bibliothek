@@ -17,7 +17,7 @@ import {
 // Die dritte — handgesetzte Schriftgrößen — ist hier trotzdem entscheidbar: Eine
 // literale Größe UMGEHT die Skala, statt sie zu wählen.
 //
-// Frei, deterministisch, Millisekunden — wie routing-consistency.test.js. Und im
+// Frei, deterministisch, Millisekunden — wie routing-konsistenz.test.js. Und im
 // Gegensatz zum Git-Hook läuft es auf JEDEM Arbeitsplatz, weil es im Repo liegt.
 
 // Ein Emoji ist ein Zeichen, das von sich aus bunt dargestellt wird
@@ -57,8 +57,8 @@ const ZEICHNUNGEN = [
 // neu hinzugekommene Dateien UND Einträge, die inzwischen sauber sind.
 const EMOJI_BESTAND = [
 	'src/lib/AusleihQuittung.svelte',
-	'src/lib/components/OmniboxBlockAlert.svelte',
-	'src/lib/components/OmniboxVormerkungAlert.svelte',
+	'src/lib/components/OmniboxSperrHinweis.svelte',
+	'src/lib/components/OmniboxVormerkungHinweis.svelte',
 	'src/lib/components/bestellungen/Warenkorb.svelte',
 	'src/lib/components/layout/RouteFallback.svelte',
 	'src/lib/designer/Werkzeugleiste.svelte'

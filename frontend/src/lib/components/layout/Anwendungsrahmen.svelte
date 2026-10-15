@@ -8,11 +8,11 @@
      fern. -->
 <script>
 	import { authStore } from '../../stores/authStore.svelte.js';
-	import { hatRecht } from '../../menu.js';
+	import { hatRecht } from '../../menue.js';
 	import Router from '../../Router.svelte';
-	import BackupAlert from '../system/BackupAlert.svelte';
+	import BackupHinweis from '../system/BackupHinweis.svelte';
 	import Hauptbereich from './Hauptbereich.svelte';
-	import Sidebar from './Sidebar.svelte';
+	import Seitenleiste from './Seitenleiste.svelte';
 	import SkipLink from './SkipLink.svelte';
 
 	/** @type {{ verdeckt: boolean }} */
@@ -26,7 +26,7 @@
 	data-anwendungsrahmen
 >
 	<SkipLink />
-	<Sidebar />
+	<Seitenleiste />
 	<!-- Die Arbeitsfläche ist weiß, nicht getönt: Auf getöntem Grund treten die Karten hervor,
 	     und die Anwendung wirkt in Kacheln gezwängt. Getrennt wird durch Linien, über die volle
 	     Breite. -->
@@ -37,7 +37,7 @@
 		     nicht in der Navigation. Sichtbar für alle, die den Backup-Status lesen
 		     dürfen (GET /api/admin/system/backup-status verlangt manage_settings). -->
 		{#if hatRecht(authStore.currentUser, 'manage_settings')}
-			<BackupAlert />
+			<BackupHinweis />
 		{/if}
 		<Hauptbereich><Router /></Hauptbereich>
 	</div>

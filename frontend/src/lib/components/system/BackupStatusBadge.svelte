@@ -1,8 +1,8 @@
-<!-- @component BackupStatusBadge — ruhige Bestätigungszeile im Sidebar-Fuß.
+<!-- @component BackupStatusBadge — ruhige Bestätigungszeile im Seitenleiste-Fuß.
      Der Backup-Job überspringt sich still, wenn BACKUP_ENCRYPTION_KEY fehlt.
      Diese Zeile beantwortet nur die passive Frage „läuft es?" — sie zeigt
      ausschließlich den ok-Fall. Handlungsbedarf gehört nicht in die Navigation
-     und wird von BackupAlert über dem Inhalt gemeldet (mit Weg zur Behebung).
+     und wird von BackupHinweis über dem Inhalt gemeldet (mit Weg zur Behebung).
      Eingeklappt bleibt ein Punkt als Hinweis, dass es dazu etwas zu sehen gibt. -->
 <script>
 	import { onMount } from 'svelte';

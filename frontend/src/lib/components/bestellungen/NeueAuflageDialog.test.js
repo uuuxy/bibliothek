@@ -5,7 +5,7 @@ vi.mock('../../apiFetch.js', () => ({
 	apiClient: { post: vi.fn(), put: vi.fn() },
 	extractApiError: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
 }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 import { apiClient } from '../../apiFetch.js';
 import NeueAuflageDialog from './NeueAuflageDialog.svelte';

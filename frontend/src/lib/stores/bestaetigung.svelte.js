@@ -12,8 +12,8 @@
  *                               gefaehrlich: true }))) return;
  *
  * Der Dialog selbst (ui/BestaetigungsDialog.svelte) hängt EINMAL in App.svelte neben
- * dem ToastContainer und liest diesen Store. Meldungen ohne Entscheidung (`alert`)
- * gehen an den toastStore — eine Meldung braucht keinen Klick.
+ * dem SnackbarAnzeige und liest diesen Store. Meldungen ohne Entscheidung (`alert`)
+ * gehen an den snackbars — eine Meldung braucht keinen Klick.
  *
  * Eine zweite Rückfrage, während eine offen ist, beantwortet die erste mit „nein":
  * Zwei Dialoge übereinander wären genau die Unordnung, die confirm() hatte.

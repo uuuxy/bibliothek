@@ -2,7 +2,7 @@
 	import KatalogSuche from '../inventur/routes/KatalogSuche.svelte';
 	import TitelVerwaltung from '../inventur/routes/admin/TitelVerwaltung.svelte';
 	import { appState } from '../inventur/lib/store.svelte.js';
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import GeraeteVerwaltung from './components/GeraeteVerwaltung.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
 
@@ -18,7 +18,7 @@
 	});
 </script>
 
-<PageShell>
+<Seitenrahmen>
 	<Reiter
 		etikett="Medienkatalog Navigation"
 		aktiv={activeView}
@@ -40,4 +40,4 @@
 			<GeraeteVerwaltung />
 		{/if}
 	</div>
-</PageShell>
+</Seitenrahmen>

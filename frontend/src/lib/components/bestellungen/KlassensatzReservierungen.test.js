@@ -7,7 +7,7 @@ vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
 	extractApiError: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 // Dieselbe Klasse wie bei den Anliegen: Eine leere Warteschlange heißt „niemand wartet",
 // und genau das stand bis zum 12.09.2026 auch dann da, wenn der Abruf gescheitert war.

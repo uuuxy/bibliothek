@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { erzeugeProblemMeldung, OHNE_BUCH } from './problemMeldung.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
-import { toastStore } from '../../stores/toastStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 
 vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 /** Der Rumpf der letzten Anfrage an die Tür für Anliegen. */
 function gesendet() {
@@ -15,7 +15,7 @@ function gesendet() {
 describe('Problem melden', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
-		vi.mocked(toastStore.addToast).mockReset();
+		vi.mocked(snackbars.addToast).mockReset();
 		vi.mocked(apiFetch).mockResolvedValue(
 			/** @type {any} */ ({ ok: true, json: async () => ({ id: 'neu' }) })
 		);
@@ -96,7 +96,7 @@ describe('Problem melden', () => {
 			text: 'Seiten fehlen',
 			sending: false
 		});
-		expect(vi.mocked(toastStore.addToast)).toHaveBeenCalledWith('gerade nicht möglich', 'error');
+		expect(vi.mocked(snackbars.addToast)).toHaveBeenCalledWith('gerade nicht möglich', 'error');
 		expect(nachSenden).not.toHaveBeenCalled();
 	});
 

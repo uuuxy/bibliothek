@@ -53,7 +53,7 @@
 
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();
-	import CameraScanner from '../../CameraScanner.svelte';
+	import ThekenKamera from '../../ThekenKamera.svelte';
 
 	// Kamera-Scanner (Schalter `kamera`, Standard aus): Der erkannte Code
 	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche
@@ -123,7 +123,7 @@
 </div>
 {#if kameraOffen}
 	<div class="mt-2">
-		<CameraScanner
+		<ThekenKamera
 			stopCamera={() => (kameraOffen = false)}
 			bind:queryVal={wert}
 			submitAction={nachScan}

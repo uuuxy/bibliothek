@@ -11,7 +11,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // `document`. Ein einziger solcher Rückruf färbt den GANZEN Lauf rot, obwohl kein Test
 // etwas falsch macht, und der Fehler zeigt auf die Testdatei statt auf den Timer.
 //
-// Dieselbe Bugklasse traf am 11.09.2026 actions/keyboardNav.js. Die Antwort ist dieselbe:
+// Dieselbe Bugklasse traf am 11.09.2026 actions/tastaturNavigation.js. Die Antwort ist dieselbe:
 // ein Handle je Zeitgeber, verworfen vor dem Neuplanen und beim Abbau.
 //
 // Gemessen wird hier an der ZUSAGE, nicht am Wortlaut: nach stoppeZeitgeber() steht kein

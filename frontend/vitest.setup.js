@@ -1,7 +1,7 @@
 // Was jsdom fehlt, aber jeder Browser hat — hier EINMAL nachgereicht.
 //
 // jsdom kennt kein `scrollIntoView`. Eine Komponente, die den aktiven Eintrag sichtbar
-// hält (SelectListe, keyboardNav), wirft damit in einem `$effect` — und zwar an der
+// hält (SelectListe, tastaturNavigation), wirft damit in einem `$effect` — und zwar an der
 // Zusammenfassung vorbei: Der Lauf druckt „104 passed / 547 passed" und beendet sich
 // trotzdem mit 1. Am 12.09.2026 stand `main` genau so rot, während die letzte Zeile
 // grün aussah; gefunden wurde es erst, weil jemand auf den Exit-Code geschaut hat.

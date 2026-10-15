@@ -7,13 +7,13 @@
      siehe bestellVersandMeldung im Backend): Eine schon versendete Mail lässt sich nicht
      zurückholen — der Link muss dann von Hand aus der Bestellhistorie nachgereicht werden.
 
-     Form wie BackupAlert: 3-px-Schweregradstreifen auf ruhigem Grund, ein Satz zur Lage,
+     Form wie BackupHinweis: 3-px-Schweregradstreifen auf ruhigem Grund, ein Satz zur Lage,
      ein Satz zur Folge, ein Knopf, der genau dorthin führt, wo es zu beheben ist. -->
 <script>
 	import { TriangleAlert, ArrowRight } from '@lucide/svelte';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
-	import { hatRecht } from '../../menu.js';
+	import { hatRecht } from '../../menue.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 
@@ -43,7 +43,7 @@
 	}
 </script>
 
-<!-- Kein Schatten neben dem Rahmen: dieselbe Bauform wie BackupAlert, dieselbe
+<!-- Kein Schatten neben dem Rahmen: dieselbe Bauform wie BackupHinweis, dieselbe
      Begruendung (Gate: e2e/m3-bauform.spec.js). Der 3-px-Streifen traegt die
      Aussage, er bleibt. -->
 {#if sichtbar}

@@ -6,11 +6,11 @@ vi.mock('../../apiFetch.js', async (original) => ({
 	apiPost: vi.fn(),
 	apiDelete: vi.fn()
 }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../../stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
 
 import { apiPost, apiDelete, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
-import { toastStore } from '../../stores/toastStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
 import BestellMailBlock from './BestellMailBlock.svelte';
 import BestellStatusBlock from './BestellStatusBlock.svelte';
@@ -51,7 +51,7 @@ describe('Bestellung: gescheiterter Versand der Bestellmail', () => {
 		expect(apiPost).toHaveBeenCalledWith('/api/bestellungen/b1/mail', null, {
 			timeoutMs: FRIST_MAILVERSAND_MS
 		});
-		expect(toastStore.addToast).toHaveBeenCalledWith('Bestellung gesendet.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Bestellung gesendet.', 'success');
 	});
 
 	it('lädt die Bestellung auch nach einem gescheiterten Versuch neu', async () => {
@@ -65,7 +65,7 @@ describe('Bestellung: gescheiterter Versand der Bestellmail', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut senden' }));
 		await waitFor(() => expect(neuLaden).toHaveBeenCalledTimes(1));
-		expect(toastStore.addToast).not.toHaveBeenCalled();
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 	});
 
 	it('zeigt ohne das Recht zu bestellen den Hinweis ohne Knopf', () => {
@@ -105,7 +105,7 @@ describe('Bestellung: gescheiterter Versand der Bestellmail', () => {
 			);
 			expect(apiDelete).toHaveBeenCalledWith('/api/bestellungen/b1/mail');
 			expect(apiPost).not.toHaveBeenCalled();
-			expect(toastStore.addToast).toHaveBeenCalledWith('Hinweis entfernt.', 'success');
+			expect(snackbars.addToast).toHaveBeenCalledWith('Hinweis entfernt.', 'success');
 		});
 
 		it('tut nichts, wenn die Rückfrage abgelehnt wird', async () => {
@@ -136,7 +136,7 @@ describe('Bestellung: gescheiterter Versand der Bestellmail', () => {
 
 			await fireEvent.click(screen.getByRole('button', { name: 'Auf anderem Weg bestellt' }));
 			await waitFor(() => expect(neuLaden).toHaveBeenCalledTimes(1));
-			expect(toastStore.addToast).not.toHaveBeenCalled();
+			expect(snackbars.addToast).not.toHaveBeenCalled();
 		});
 
 		// Mit Bestätigungsschritt lehnt der Server ab; dort trägt man die Zusage nach.

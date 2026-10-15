@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
-vi.mock('../../stores/toastStore.svelte.js', () => ({
-	toastStore: { addToast: vi.fn() }
+vi.mock('../../stores/snackbars.svelte.js', () => ({
+	snackbars: { addToast: vi.fn() }
 }));
 
 vi.mock('../../apiFetch.js', () => ({

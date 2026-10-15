@@ -7,10 +7,10 @@
      Fokus: Bei einer gefährlichen Frage steht der Fokus auf „Abbrechen", sonst auf der
      Aktion. Enter bestätigt damit nur, was man auch mit der Maus als Vorgabe nähme —
      confirm() bestätigte per Enter IMMER, auch das Löschen von 300 Büchern.
-     Escape und Klick auf den Hintergrund schließen ohne Antwort (Modal.svelte): Für
+     Escape und Klick auf den Hintergrund schließen ohne Antwort (Dialog.svelte): Für
      bestaetigen ist das „nein", fragen unterscheidet es vom zweiten Knopf. -->
 <script>
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 	import Button from './Button.svelte';
 	import { bestaetigungStore } from '../../stores/bestaetigung.svelte.js';
 
@@ -29,7 +29,7 @@
 </script>
 
 {#if frage}
-	<Modal
+	<Dialog
 		open={true}
 		onclose={() => bestaetigungStore.antworten(null)}
 		size="sm"
@@ -56,5 +56,5 @@
 				>
 			</div>
 		</div>
-	</Modal>
+	</Dialog>
 {/if}

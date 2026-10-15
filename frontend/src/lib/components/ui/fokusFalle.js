@@ -24,7 +24,7 @@ function kandidaten(node) {
  * Anlass (Prüfung 08.09.2026, gemessen im Browser): EIN Tab verließ jeden Dialog. Der
  * Fokus blieb auf dem Knopf, der den Dialog geöffnet hatte, und wanderte von dort
  * durch die Seite dahinter — für Tastatur- und Screenreader-Nutzung war der Dialog
- * damit nur ein Bild. 22 von 24 Dialogen hängen an Modal.svelte; die Aktion steht dort
+ * damit nur ein Bild. 22 von 24 Dialogen hängen an Dialog.svelte; die Aktion steht dort
  * EINMAL und gilt für alle (WCAG 2.4.3 Fokus-Reihenfolge, 2.1.2 keine Tastaturfalle
  * — die hier ist die erlaubte: Escape führt heraus, siehe escapeSchliesst).
  *

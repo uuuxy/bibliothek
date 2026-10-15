@@ -1,6 +1,6 @@
 import { tick } from 'svelte';
 import { apiFetch } from '../apiFetch.js';
-import { toastStore } from '../stores/toastStore.svelte.js';
+import { snackbars } from '../stores/snackbars.svelte.js';
 import { applyDesign, designWurdeGeladen } from './idDesignerStore.svelte.js';
 
 /** @type {Promise<boolean> | null} */
@@ -34,7 +34,7 @@ async function abruf() {
 
 /** Die Meldung einer Seite, deren Bedienung vom Design abhängt (Karte oder Etikett). */
 export function meldeDesignNichtGeladen() {
-	toastStore.addToast(
+	snackbars.addToast(
 		'Ausweis-Design nicht geladen: Ausweise lassen sich gerade nicht drucken.',
 		'error'
 	);
@@ -49,7 +49,7 @@ export function meldeDesignNichtGeladen() {
 export async function designFuerDruck() {
 	const standSchon = designWurdeGeladen();
 	if (!(await ladeAusweisDesign())) {
-		toastStore.addToast('Nicht gedruckt: Das Ausweis-Design ist nicht geladen.', 'error');
+		snackbars.addToast('Nicht gedruckt: Das Ausweis-Design ist nicht geladen.', 'error');
 		return false;
 	}
 	// Erst jetzt geladen: Die Karten zeichnen sich neu und holen Logo und Strichcode. Der

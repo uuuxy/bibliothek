@@ -15,7 +15,7 @@ import (
 )
 
 // Ein Hinweis schickt mit „A → B" an einen Ort der Oberfläche. Der Weg beginnt bei einem
-// Menüpunkt, den es gibt (frontend/src/lib/menu.js), wahlweise mit seiner Gruppe davor
+// Menüpunkt, den es gibt (frontend/src/lib/menue.js), wahlweise mit seiner Gruppe davor
 // („System → Benutzer & Rechte"); hinter „Einstellungen →" steht eine Kategorie der
 // Einstellungen (einstellungen/kategorien.js). Nach einer Umbenennung zeigt der Hinweis sonst weiter
 // auf den alten Namen. Der Pfeil steht in Texten deshalb nur für einen Weg; was er sonst
@@ -267,7 +267,7 @@ func wegSchrittAmAnfang(nach string) string {
 	return strings.TrimSpace(nach)
 }
 
-// wegOrteDerOberflaeche liest Gruppen und Menüpunkte aus menu.js und die Kategorien der
+// wegOrteDerOberflaeche liest Gruppen und Menüpunkte aus menue.js und die Kategorien der
 // Einstellungen aus kategorien.js. Ein Menüpunkt gehört zur Gruppe, deren Name vor ihm steht.
 func wegOrteDerOberflaeche(t *testing.T) wegOrte {
 	t.Helper()
@@ -277,14 +277,14 @@ func wegOrteDerOberflaeche(t *testing.T) wegOrte {
 		kategorien: map[string]bool{},
 	}
 	gruppe := ""
-	for _, treffer := range wegTreffer(t, "frontend/src/lib/menu.js", `(?m)^\t\tname: '([^']+)'|label: '([^']+)'`) {
+	for _, treffer := range wegTreffer(t, "frontend/src/lib/menue.js", `(?m)^\t\tname: '([^']+)'|label: '([^']+)'`) {
 		if treffer[1] != "" {
 			gruppe = treffer[1]
 			orte.gruppen[gruppe] = map[string]bool{}
 			continue
 		}
 		if gruppe == "" {
-			t.Fatalf("menu.js: Menüpunkt „%s“ steht vor der ersten Gruppe — Form geändert?", treffer[2])
+			t.Fatalf("menue.js: Menüpunkt „%s“ steht vor der ersten Gruppe — Form geändert?", treffer[2])
 		}
 		orte.gruppen[gruppe][treffer[2]] = true
 		orte.menue[treffer[2]] = true
@@ -299,7 +299,7 @@ func wegOrteDerOberflaeche(t *testing.T) wegOrte {
 	}
 	for name, punkte := range orte.gruppen {
 		if len(punkte) == 0 {
-			t.Fatalf("menu.js: Gruppe „%s“ ohne Menüpunkt gelesen — Form geändert?", name)
+			t.Fatalf("menue.js: Gruppe „%s“ ohne Menüpunkt gelesen — Form geändert?", name)
 		}
 	}
 	return orte

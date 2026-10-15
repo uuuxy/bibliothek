@@ -1,5 +1,5 @@
 <script>
-	import PageShell from './components/layout/PageShell.svelte';
+	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import BenutzerUndRechte from './BenutzerUndRechte.svelte';
 </script>
 
@@ -10,6 +10,6 @@
      Startlinie begann. Er stimmte an dieser Stelle ohnehin nur halb: „steuert Menue und
      API" gilt fuer die Rechte-Tabelle, nicht fuer die Benutzerliste. Er steht jetzt in
      ihrem eigenen Reiter, siehe BenutzerUndRechte. -->
-<PageShell>
+<Seitenrahmen>
 	<BenutzerUndRechte />
-</PageShell>
+</Seitenrahmen>

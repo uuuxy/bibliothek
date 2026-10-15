@@ -7,7 +7,7 @@
 <script>
 	import { apiPost, apiDelete, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 	import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { formatZeitpunkt } from '../../utils/format.js';
 	import Button from '../ui/Button.svelte';
 	import { MailWarning } from '@lucide/svelte';
@@ -24,7 +24,7 @@
 			const antwort = await apiPost(`/api/bestellungen/${b.id}/mail`, null, {
 				timeoutMs: FRIST_MAILVERSAND_MS
 			});
-			toastStore.addToast(
+			snackbars.addToast(
 				antwort?.message ?? 'Bestellmail gesendet.',
 				antwort?.status === 'warning' ? 'error' : 'success'
 			);
@@ -51,7 +51,7 @@
 		laeuft = true;
 		try {
 			const antwort = await apiDelete(`/api/bestellungen/${b.id}/mail`);
-			toastStore.addToast(antwort?.message ?? 'Der Hinweis ist entfernt.', 'success');
+			snackbars.addToast(antwort?.message ?? 'Der Hinweis ist entfernt.', 'success');
 		} catch {
 			// Die Meldung des Servers hat apiFetch schon gezeigt.
 		} finally {

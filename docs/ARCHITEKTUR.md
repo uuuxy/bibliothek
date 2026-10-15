@@ -257,7 +257,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | **Paketkommentar**                                | Jedes Go-Paket trägt genau einen Kommentar unmittelbar über der `package`-Zeile; er sagt in ein bis drei Sätzen, wofür das Paket da ist. So verlangt es Googles Regelwerk für Go, Abschnitt [Package comments](https://google.github.io/styleguide/go/decisions#package-comments). Ein Kommando beginnt mit `Command <Name>`. | `golangci-lint` (revive, Regel `package-comments`) |
 | **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen der Themen heißen noch `s`, wie am Server, von dem sie stammen; mit ihrem Paket bekommen sie `t` ([STIL.md](STIL.md), Abschnitt 4). | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
 | **Komponenten-Größe Frontend**                    | ≤ 200 Zeilen je **neuer** `.svelte`-Datei; der Altbestand darüber darf nicht wachsen.                                                                                                                              | Ratsche `frontend/src/lib/frontend-hygiene-dateigroesse.test.js`     |
-| **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menu.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
+| **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menue.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
 | **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `verlangeRecht(...)` oder, wo jede Sitzung genügt, `VerlangeAnmeldung()`; öffentliche Routen stehen in einer Allowlist.                        | `api/geschuetzte_routen_test.go`                                  |
 | **Fundstellen beim Namen**                        | In der Dokumentation werden Constraint-, Index-, Datei- und Paketnamen genannt — keine Zeilennummern und keine Migrationsnummern als Beleg (eine Datei existiert weiter, auch wenn eine spätere Migration sie aufhebt). | `docs/invarianten_fundstellen_test.go`                               |
 | **Stand-Angaben**                                 | Kein Dokument behauptet im Kopf einen Stand, unter dem es jüngere Vorgänge beschreibt.                                                                                                                             | `docs/stand_angaben_test.go` (jede `.md` unter `docs/`)              |
@@ -1146,11 +1146,11 @@ frontend/src
 ├─ main.js               Einstiegspunkt, Service-Worker-Registrierung
 ├─ App.svelte            App-Shell: Layout, Menü, SSE-Abonnement, Sperrbildschirm
 ├─ lib/                  237 Einträge — Ansichten, Komponenten, Stores, Metadaten
-│   ├─ Router.svelte     Client-Routing; fragt canSeeItem() aus menu.js
-│   ├─ menu.js           EINZIGE Wahrheitsquelle: welche Rolle erreicht welche Seite
+│   ├─ Router.svelte     Client-Routing; fragt canSeeItem() aus menue.js
+│   ├─ menue.js           EINZIGE Wahrheitsquelle: welche Rolle erreicht welche Seite
 │   ├─ Omnibox.svelte    Das Eingabefeld des Tresens
 │   ├─ stores/*.svelte.js Geteilter Zustand (Runes-Singletons): authStore, uiStore,
-│   │                     omnibox, offlineSync, druckWarteschlange, toastStore, mahnwesen*, …
+│   │                     omnibox, offlineSync, druckWarteschlange, snackbars, mahnwesen*, …
 │   └─ …                 Fachansichten (Leserakte, Buchakte, Mahnwesen, LmfPlan,
 │                         DruckCenter, KollegiumPortal, Betriebsbereitschaft, Monitor, …)
 ├─ inventur/             Die Katalog-Oberfläche des Untermoduls (eigene lib/ + routes/)
@@ -1161,7 +1161,7 @@ frontend/src
 | -------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `App.svelte`         | Rahmen, Navigation, SSE-Verbindung samt Reconnect-Guards, Leerlauf-Sperre                                         |
 | `Router.svelte`      | Pfad → Ansicht, **mit derselben Sichtbarkeitsfunktion wie das Menü**                                              |
-| `menu.js`            | `canSeeItem()` — die einzige Stelle, an der Rolle/Recht über Sichtbarkeit entscheidet                              |
+| `menue.js`            | `canSeeItem()` — die einzige Stelle, an der Rolle/Recht über Sichtbarkeit entscheidet                              |
 | `stores/omnibox`     | Eingabe, Auflösung, Warteschlange, Sperrdialog, Leserauswahl, Zusammenführen                                        |
 | `stores/offlineSync` | IndexedDB-Warteschlange; entfernt einen Eintrag **nur** bei einem endgültigen Serverurteil                         |
 | `stores/authStore`   | Sitzungszustand, Rechte-Map für die Blende, Abmeldung                                                              |
@@ -1201,7 +1201,7 @@ frontend/src
 - **Ein Knopf steht bei dem Inhalt, den er betrifft** (Material 3, Spacing: „buttons should be
   close to the content they're affecting"), nicht am fernen Rand der Zeile.
 - **Was jemand sieht, entscheidet das Recht der Route,** nicht die Rolle: `hatRecht` aus
-  `menu.js` (Ratsche `frontend-hygiene-rechte.test.js`, [FACHKONZEPT.md §12.2](FACHKONZEPT.md)).
+  `menue.js` (Ratsche `frontend-hygiene-rechte.test.js`, [FACHKONZEPT.md §12.2](FACHKONZEPT.md)).
 - **Suchen, Sortieren und Filtern einer gekappten Liste geschehen am Server.** Im Browser
   sortiert, ordnete die Liste nur die Zeilen um, die die Kappung durchgelassen hat
   ([sweeps.md](sweeps.md), „Sortierung hinter der Kappung"; sortierbare Spaltenköpfe:
@@ -2624,7 +2624,7 @@ wenn man ihn einmal gebraucht hat.
   Nachweis an der Datenbank).
 - **Nach dem Speichern wartet ein Browser-Test auf den gespeicherten Stand, nicht auf die
   Meldung.** Eine Meldung der Oberfläche steht fünf Sekunden
-  (`frontend/src/lib/stores/toastStore.svelte.js`). Speichert ein Test zweimal kurz
+  (`frontend/src/lib/stores/snackbars.svelte.js`). Speichert ein Test zweimal kurz
   hintereinander, ist die Erwartung an den Text „Buch erfolgreich gespeichert!" gleich nach dem
   Klick an der Meldung vom ersten Mal erfüllt und belegt das zweite Speichern nicht; erscheint
   die zweite dazu, trifft der Ausdruck zwei Elemente, und der Test bricht ab. Am Arbeitsplatz
@@ -3606,7 +3606,7 @@ vermerkt.
 | S12 | Gescannt wird ein Ausweis mit dem **alten** Aufdruck (Prüfzeichen im Strichcode)            | Der Scan trifft — über den zweiten Versuch ohne Prüfzeichen. Ein unbekannter Scan darf nicht wie „Scanner tot" aussehen     | `internal/service/omnibox_altes_etikett_pg_test.go`, `frontend/e2e/barcode-lesbar.spec.js` |
 | S13 | Das Netz fällt während des Ausleihbetriebs aus                                              | Scans laufen weiter in die lokale Warteschlange; nach Rückkehr bucht die Nachbuch-Tür die Wirklichkeit, Abweichungen bleiben als Meldung stehen | `frontend/src/lib/stores/offlineSync.test.js`, `api/nachbuchen_*_pg_test.go` |
 | S14 | Eine Hauptansicht wird mit Tastatur und Screenreader bedient                                 | Keine axe-Verstöße im Anfangszustand; keine Fokusfalle; Tabellen semantisch korrekt                                        | `frontend/e2e/barrierefreiheit-axe.spec.js`, `…-dialog.spec.js`           |
-| S15 | Der Thekenrechner bleibt unbedient stehen                                                    | Nach 5 min ist der geladene Leser weg, nach 15 min der Sperrbildschirm; der Server beantwortet die Anmeldung bis zum Passwort mit 423, auch nach dem Neuladen; bei totem Mailserver schließt das Passwort gegen den Prüfwert auf | `auth/sperre_pg_test.go`, `frontend/src/lib/stores/idleLock*.test.js` (gestellte Uhr, am Rückbau rot gesehen), `frontend/e2e/sperrbildschirm.spec.js` |
+| S15 | Der Thekenrechner bleibt unbedient stehen                                                    | Nach 5 min ist der geladene Leser weg, nach 15 min der Sperrbildschirm; der Server beantwortet die Anmeldung bis zum Passwort mit 423, auch nach dem Neuladen; bei totem Mailserver schließt das Passwort gegen den Prüfwert auf | `auth/sperre_pg_test.go`, `frontend/src/lib/stores/leerlaufSperre*.test.js` (gestellte Uhr, am Rückbau rot gesehen), `frontend/e2e/sperrbildschirm.spec.js` |
 | S22 | Ein Menüpunkt ist für eine Rolle sichtbar                                                    | Der Klick führt **irgendwohin** — nicht wortlos zurück an die Theke                                                        | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js` (Helfer, Mitarbeiter, Lehrkraft) |
 
 #### Q5 Änderbarkeit
@@ -4084,7 +4084,7 @@ Fenstern bekannt ist:
   und über und unter dem Inhalt bleiben beim Scrollen je 24 px stehen. Betrifft jedes
   Bauteil, das beim Scrollen stehen bleibt (`sticky top-0`).
 - **Leserakte bei 1024 bis 1065 px Fensterbreite:** Seit dem 02.10.2026 beginnt die
-  Navigation unter 1280 px eingeklappt (`Sidebar.svelte`); der Titel in der Ausleihliste hat
+  Navigation unter 1280 px eingeklappt (`Seitenleiste.svelte`); der Titel in der Ausleihliste hat
   damit ab 1066 px mindestens 140 px (`e2e/ausleihliste-zeilen.spec.js`). Darunter, bis zur
   Grenze von 1024 px, an der die Akte Leserkarte (320 px) und Inhalt nebeneinanderstellt,
   bleiben ihm 98 bis 139 px (gemessen am 02.10.2026 mit zwölf Ausleihen). Wer die
@@ -4139,7 +4139,7 @@ Fenstern bekannt ist:
   in der Maske „Buch bearbeiten" (Felder bis 704 px); die übrigen Masken sind nicht
   durchgesehen. Der Wert steht bisher nur in `BuchFormular.svelte`; mit der zweiten Maske gehört
   er an eine Stelle.
-- Die Meldungen der Anwendung (`ToastContainer.svelte`) erscheinen oben rechts, bis 384 px
+- Die Meldungen der Anwendung (`SnackbarAnzeige.svelte`) erscheinen oben rechts, bis 384 px
   breit, 5 s lang, und halten ihre Standzeit an, solange der Mauszeiger auf ihnen ruht. Was
   dort steht, ist in dieser Zeit verdeckt (gemessen am 02.10.2026 bei 1280 × 720: Meldung bei
   x 975 bis 1256, y 24 bis 68). In der Maske „Buch bearbeiten" steht „Speichern" deshalb
@@ -4576,7 +4576,7 @@ Einstieg.
 
 Ein **Helfer braucht ein Postfach auf dem Schul-Mailserver** — es gibt keinen Code- oder
 Barcode-Anmeldeweg (A2). Welche Seiten eine Rolle erreicht, entscheidet `canSeeItem()` in
-`frontend/src/lib/menu.js` — und nur diese Funktion.
+`frontend/src/lib/menue.js` — und nur diese Funktion.
 
 ---
 

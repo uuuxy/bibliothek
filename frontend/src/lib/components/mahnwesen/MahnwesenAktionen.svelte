@@ -4,7 +4,7 @@
   (MahnwesenSuchleiste), rechts neben dem Klassenfilter — so wie „Neuer Schueler" in
   SchuelerdateiLeiste.
 
-  Bis zum 04.09.2026 stand sie GANZ OBEN im `aktionen`-Slot von PageShell, weil sie dort
+  Bis zum 04.09.2026 stand sie GANZ OBEN im `aktionen`-Slot von Seitenrahmen, weil sie dort
   einmal neben dem Seitentitel gestanden hatte. Den Seitentitel hat 68c4810 am 08.08.2026
   abgeschafft, die Knopfzeile blieb — als einzige von sechzehn Routen — allein oben stehen
   und schob die Suchpille um 84 px nach unten. Den Slot gibt es seitdem nicht mehr.
@@ -20,7 +20,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { baueMahnlisteDruckHtml } from '../../utils/mahnlisteDruck.js';
 	import { druckeDokument, FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
 	import { FileText, Mail, Printer, RefreshCw, X } from '@lucide/svelte';
@@ -56,7 +56,7 @@
 			klasse: mahnwesenStore.selectedKlasse,
 			suche: mahnwesenStore.searchQuery
 		});
-		if (!druckeDokument(html)) toastStore.addToast(FENSTER_BLOCKIERT, 'warning');
+		if (!druckeDokument(html)) snackbars.addToast(FENSTER_BLOCKIERT, 'warning');
 	}
 </script>
 

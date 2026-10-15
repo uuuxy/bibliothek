@@ -14,12 +14,12 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
 // zufällig übereinstimmten.
 //
 // Regel seit dem 24.08.2026: Sichtbarkeit einer Aktion = hatRecht(user, '<recht der
-// route>') aus menu.js. Ein Rollenvergleich ist nur dort erlaubt, wo es wirklich um die
+// route>') aus menue.js. Ein Rollenvergleich ist nur dort erlaubt, wo es wirklich um die
 // Rolle geht — und jede dieser Stellen steht unten mit Begründung.
 
 /**
  * Rollenvergleiche im Quelltext: links eine Rollen-Variable (`rolle`, `role`, das `r` aus
- * menu.js oder `.toLowerCase()`), rechts ein Rollen-LITERAL aus der DB-Enum (Migration
+ * menue.js oder `.toLowerCase()`), rechts ein Rollen-LITERAL aus der DB-Enum (Migration
  * 069). Beides zusammen, weil jedes allein danebengreift: Nur das Literal fängt
  * `activeTab === 'admin'` (ein Reiter-Name), nur der Variablenname übersieht `r ===`.
  */
@@ -52,7 +52,7 @@ const ROLLEN_VERGLEICH = new RegExp(
 // hatRecht da. Erlaubt ist ein Rollenvergleich, wenn die Rolle selbst das Thema ist.
 const AUSNAHMEN = [
 	{
-		datei: 'src/lib/menu.js',
+		datei: 'src/lib/menue.js',
 		grund:
 			'Die EINE Stelle der Regel: Admin-Vorrang in hatRecht/canSeeItem und die Portal-Weiche ' +
 			'für die Rolle kollegium. Alle anderen Dateien rufen hatRecht auf.'
@@ -95,7 +95,7 @@ describe('Rechte-Hygiene', () => {
 		expect(
 			summe,
 			`Rollenvergleiche außerhalb der Ausnahmen: ${summe} statt ${BESTAND}.\n` +
-				`Sichtbarkeit einer Aktion folgt dem Recht ihrer Route: hatRecht(authStore.currentUser, '…') aus menu.js.\n` +
+				`Sichtbarkeit einer Aktion folgt dem Recht ihrer Route: hatRecht(authStore.currentUser, '…') aus menue.js.\n` +
 				`Geht es wirklich um die Rolle, Ausnahme mit Grund in frontend-hygiene-rechte.test.js eintragen.\n${liste}`
 		).toBe(BESTAND);
 	});
@@ -113,8 +113,8 @@ describe('Rechte-Hygiene', () => {
 		}
 	});
 
-	it('Detektor greift (Gegenprobe an menu.js)', () => {
-		const quelle = readFileSync(`${srcRoot}/lib/menu.js`, 'utf8');
+	it('Detektor greift (Gegenprobe an menue.js)', () => {
+		const quelle = readFileSync(`${srcRoot}/lib/menue.js`, 'utf8');
 		expect((quelle.match(ROLLEN_VERGLEICH) ?? []).length).toBeGreaterThan(0);
 	});
 });

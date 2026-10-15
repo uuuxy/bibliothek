@@ -4,7 +4,7 @@ import BuchakteVormerkungen from './BuchakteVormerkungen.svelte';
 import { apiFetch, apiClient } from './apiFetch.js';
 import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 import { authStore } from './stores/authStore.svelte.js';
-import { toastStore } from './stores/toastStore.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 
 vi.mock('./apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
@@ -34,7 +34,7 @@ beforeEach(() => {
 		rolle: 'mitarbeiter',
 		permissions: ['view_students']
 	});
-	for (const t of [...toastStore.toasts]) toastStore.removeToast(t.id);
+	for (const t of [...snackbars.toasts]) snackbars.removeToast(t.id);
 });
 
 // Der Reiter hält zwei Abläufe: einen Schüler vormerken und eine Vormerkung löschen. Beide
@@ -67,7 +67,7 @@ describe('BuchakteVormerkungen', () => {
 		);
 		const tabelle = await screen.findByRole('table', { name: 'Vormerkungen' });
 		expect(within(tabelle).getByText('Ida Imker')).toBeTruthy();
-		expect(toastStore.toasts.map((t) => t.message)).toContain('Erfolgreich vorgemerkt');
+		expect(snackbars.toasts.map((t) => t.message)).toContain('Erfolgreich vorgemerkt');
 	});
 
 	// M3, Tabs: „Text labels should clearly and succinctly describe the content within the

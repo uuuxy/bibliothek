@@ -25,7 +25,7 @@ vi.mock('../audio.js', () => ({
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
 
-import { enqueueOfflineAction, loadQueue } from '../offlineQueue.js';
+import { enqueueOfflineAction, loadQueue } from '../offlineWarteschlange.js';
 import { omniboxStore } from './omnibox.svelte.js';
 
 // Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
@@ -36,7 +36,7 @@ import { omniboxStore } from './omnibox.svelte.js';
 afterEach(() => omniboxStore.stoppeZeitgeber());
 
 import { offlineSync } from './offlineSync.svelte.js';
-import { toastStore } from './toastStore.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
 import { playSoundSuccess, playSoundError } from '../audio.js';
 
 describe('Warteschlange nicht erreichbar', () => {
@@ -67,7 +67,7 @@ describe('Warteschlange nicht erreichbar', () => {
 		expect(omniboxStore.errorMessage).toMatch(/NICHT gespeichert/);
 		expect(playSoundError).toHaveBeenCalled();
 		expect(playSoundSuccess).not.toHaveBeenCalled();
-		const erfolgsToast = toastStore.toasts.find((t) => /gespeichert\.$/.test(t.message));
+		const erfolgsToast = snackbars.toasts.find((t) => /gespeichert\.$/.test(t.message));
 		expect(erfolgsToast, 'kein „Offline: gespeichert"').toBeUndefined();
 	});
 

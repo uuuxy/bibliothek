@@ -7,7 +7,7 @@ vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
 	extractApiError: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 // „Keine offenen Anliegen" ist eine Aussage über die Arbeit der Bibliothek: nichts zu tun.
 // Bis zum 12.09.2026 stand derselbe Satz da, wenn der Abruf gescheitert war

@@ -14,7 +14,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
-	import { hatRecht } from '../../menu.js';
+	import { hatRecht } from '../../menue.js';
 
 	// Die Route verlangt edit_books (inventur/api_routen.go); die Karte darüber zeigt sich
 	// schon bei manage_inventory. Ohne eigene Prüfung sähe jemand einen Knopf, der 403 liefert.

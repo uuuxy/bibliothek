@@ -16,13 +16,13 @@
      Dialog sagt das, damit niemand den Knopf zum Ausprobieren drückt. Der Zustand lebt
      in bescheidFormular.svelte.js. -->
 <script>
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import BescheidPositionen from './BescheidPositionen.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { BescheidFormular } from './bescheidFormular.svelte.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { formatEuro } from '../../utils/format.js';
 
 	/**
@@ -46,7 +46,7 @@
 	async function erstellen() {
 		const bescheid = await formular.erstellen();
 		if (!bescheid) return;
-		toastStore.addToast(`Bescheid ${bescheid.referenznummer ?? ''} erstellt.`, 'success', {
+		snackbars.addToast(`Bescheid ${bescheid.referenznummer ?? ''} erstellt.`, 'success', {
 			label: 'Brief öffnen',
 			onClick: () => window.open(`/api/bescheide/${bescheid.id}/pdf`, '_blank')
 		});
@@ -55,7 +55,7 @@
 	}
 </script>
 
-<Modal open={true} {onclose} size="2xl" {ebene} beschriftetDurch="bescheid-titel">
+<Dialog open={true} {onclose} size="2xl" {ebene} beschriftetDurch="bescheid-titel">
 	<div class="space-y-5 p-6">
 		<div>
 			<h2 id="bescheid-titel" class="text-lg font-bold text-on-surface">
@@ -124,4 +124,4 @@
 			</Button>
 		</div>
 	</div>
-</Modal>
+</Dialog>

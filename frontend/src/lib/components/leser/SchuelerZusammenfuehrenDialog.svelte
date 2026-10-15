@@ -1,18 +1,18 @@
 <!-- @component SchuelerZusammenfuehrenDialog — zwei Datensätze, ein Mensch (Umbenennung
      ohne Schüler-ID, Dublette). Der Admin sucht den anderen Datensatz (auch Abgänger und
      Gesperrte) und legt fest, welcher bleibt; Regeln in repository/leser_zusammenfuehren.go,
-     Konzept in docs/LUSD.md §5. Seit 07.09.2026 auf Modal.svelte (Register 05.09.);
+     Konzept in docs/LUSD.md §5. Seit 07.09.2026 auf Dialog.svelte (Register 05.09.);
      Kopfzeile und Schließen-Knopf stellt das Bauteil. -->
 <script>
 	import { Merge, CircleAlert } from '@lucide/svelte';
 	import { apiClient, extractApiError } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import ZusammenfuehrenKandidat from './ZusammenfuehrenKandidat.svelte';
 	import { erzeugeKandidatenSuche } from './zusammenfuehrenSuche.svelte.js';
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 
 	/** @type {{ open: boolean, profile: any, onMerged: (zielId: string) => void }} */
 	let { open = $bindable(false), profile, onMerged } = $props();
@@ -58,7 +58,7 @@
 				return;
 			}
 			const erg = await res.json();
-			toastStore.addToast(
+			snackbars.addToast(
 				`Zusammengeführt: ${erg.vorname} ${erg.nachname} (${erg.klasse}) — ${erg.ausleihen} Ausleihen, ${erg.schaeden} Gebühren, ${erg.vormerkungen} Vormerkungen übernommen.`,
 				'success'
 			);
@@ -72,7 +72,7 @@
 	}
 </script>
 
-<Modal {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="zf-titel">
+<Dialog {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="zf-titel">
 	{#snippet header()}
 		<h3 id="zf-titel" class="text-lg font-bold text-on-surface flex items-center gap-2">
 			<Merge class="w-5 h-5 text-primary" aria-hidden="true" />
@@ -161,4 +161,4 @@
 			{laeuft ? 'Wird zusammengeführt …' : 'Zusammenführen'}
 		</Button>
 	</div>
-</Modal>
+</Dialog>

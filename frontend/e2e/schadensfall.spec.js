@@ -89,7 +89,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	await gebuehrenKarte.getByRole('button', { name: 'Stornieren' }).click();
 	// Über Rolle und Namen, nicht über die Struktur `div:has(> h3 …)`: Der alte Selektor
 	// hing daran, wie das Markup verschachtelt ist — und riss beim Umzug des Dialogs auf
-	// Modal.svelte (07.09.2026). Ein Mensch findet den Dialog an seiner Überschrift.
+	// Dialog.svelte (07.09.2026). Ein Mensch findet den Dialog an seiner Überschrift.
 	const stornoModal = page.getByRole('dialog', { name: 'Gebühr wirklich stornieren?' });
 	await expect(stornoModal.getByRole('button', { name: 'Stornieren' })).toBeDisabled();
 	await stornoModal.locator('#storno-grund').fill('E2E: Buch wiedergefunden');

@@ -3,7 +3,7 @@ import {
 	dequeueOfflineAction,
 	enqueueOfflineAction,
 	normalisiereEintrag
-} from '../offlineQueue.js';
+} from '../offlineWarteschlange.js';
 import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess } from '../audio.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
@@ -30,7 +30,7 @@ import { netzLage } from './netzLage.svelte.js';
 // aus einem frueheren Seitenaufruf (Neuladen, eingespielte Sicherung), gilt der
 // gespeicherte Wert — dort gibt es nichts Besseres.
 /**
- * @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems
+ * @param {import('../offlineWarteschlange.js').OfflineEintrag[]} batchItems
  * @returns {{ gesendet_am: string, eintraege: any[] }}
  */
 function baueNachbuchPayload(batchItems) {
@@ -96,7 +96,7 @@ const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
 //   - `aufsicht_informieren` ist keine Meldung, sondern eine Aufgabe: Das Buch stand auf
 //     einem Bescheid, der schon bei der Schulaufsicht liegt.
 /**
- * @param {import('../offlineQueue.js').OfflineEintrag} item
+ * @param {import('../offlineWarteschlange.js').OfflineEintrag} item
  * @param {any} erg das endgültige Ergebnis des Servers zu diesem Eintrag
  * @returns {{ barcode: string, meldung: string }[]}
  */
@@ -143,7 +143,7 @@ function zuPruefendeFuer(item, erg) {
 // Schweigen ist kein Erfolg — bis zum 15.09.2026 galt es als erledigt.
 /**
  * @param {any} data
- * @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems
+ * @param {import('../offlineWarteschlange.js').OfflineEintrag[]} batchItems
  * @returns {Promise<{ pruefen: { barcode: string, meldung: string }[], weiter: boolean }>}
  */
 async function verarbeiteNachbuchErgebnisse(data, batchItems) {
@@ -274,7 +274,7 @@ function createOfflineSyncStore() {
 	}
 
 	// Ein Lauf zur Zeit. Wer während eines Laufs ruft, wartet auf dessen Ende — die Sperre
-	// nach Inaktivität lässt so erst die Warteschlange durch (idleLock).
+	// nach Inaktivität lässt so erst die Warteschlange durch (leerlaufSperre).
 	/** @type {Promise<void> | null} */
 	let laufenderSync = null;
 	function startSync() {
@@ -291,7 +291,7 @@ function createOfflineSyncStore() {
 		let syncedAny = false;
 
 		while (!netzLage.offline) {
-			/** @type {import('../offlineQueue.js').OfflineEintrag[]} */
+			/** @type {import('../offlineWarteschlange.js').OfflineEintrag[]} */
 			let q;
 			try {
 				q = await loadQueue();

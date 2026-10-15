@@ -25,7 +25,7 @@
 	import BestellMittelDialog from './BestellMittelDialog.svelte';
 	import { mittelLabel } from './mittel.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
-	import { hatRecht } from '../../menu.js';
+	import { hatRecht } from '../../menue.js';
 	import { ArrowLeft } from '@lucide/svelte';
 	import { formatEuro } from '../../utils/format.js';
 

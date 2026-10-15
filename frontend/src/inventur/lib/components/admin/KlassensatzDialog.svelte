@@ -1,6 +1,6 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
-	import { toastStore } from '../../../../lib/stores/toastStore.svelte.js';
+	import { snackbars } from '../../../../lib/stores/snackbars.svelte.js';
 	import { vorauswahlAusGruppe } from './klassensatzVorauswahl.js';
 	import { erzeugeBuecherListe } from './klassensatzBuecher.svelte.js';
 	import { onMount } from 'svelte';
@@ -8,7 +8,7 @@
 	import KlassensatzTitelRaster from './KlassensatzTitelRaster.svelte';
 	import KlassensatzZusammenfassung from './KlassensatzZusammenfassung.svelte';
 	import { TriangleAlert, X } from '@lucide/svelte';
-	import Modal from '../../../../lib/Modal.svelte';
+	import Dialog from '../../../../lib/Dialog.svelte';
 
 	/**
 	 * @type {{
@@ -120,11 +120,11 @@
 				});
 				onClose();
 			} else {
-				toastStore.addToast('Ein Fehler ist aufgetreten. Bitte erneut versuchen.', 'error');
+				snackbars.addToast('Ein Fehler ist aufgetreten. Bitte erneut versuchen.', 'error');
 			}
 		} catch (e) {
 			console.error('Netzwerkfehler', e);
-			toastStore.addToast('Fehler beim Speichern der Zuweisung.', 'error');
+			snackbars.addToast('Fehler beim Speichern der Zuweisung.', 'error');
 		} finally {
 			isSaving = false;
 		}
@@ -132,10 +132,10 @@
 </script>
 
 {#if isOpen}
-	<!-- Modal.svelte in Größe „voll" (M3 full-screen dialog) stellt Hintergrund, Fokusfalle,
+	<!-- Dialog.svelte in Größe „voll" (M3 full-screen dialog) stellt Hintergrund, Fokusfalle,
 	     Escape und Hintergrundklick; die zweispaltige Arbeitsfläche samt eigenem
 	     Schließen-Knopf ist Inhalt. -->
-	<Modal open={true} onclose={() => onClose()} size="voll" beschriftetDurch="zuweisung-titel">
+	<Dialog open={true} onclose={() => onClose()} size="voll" beschriftetDurch="zuweisung-titel">
 		<div
 			class="h-full p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden"
 		>
@@ -177,7 +177,7 @@
 				</div>
 			</div>
 
-			<!-- Right Sidebar Area -->
+			<!-- Right Seitenleiste Area -->
 			<aside
 				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-outline-variant pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
 			>
@@ -202,5 +202,5 @@
 				<X class="w-4 h-4" aria-hidden="true" />
 			</button>
 		</div>
-	</Modal>
+	</Dialog>
 {/if}

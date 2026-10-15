@@ -13,7 +13,7 @@
          `outline-variant` (typo-rollen.spec.js: th 12, td 14).
        - Zelle: 14 px in `on-surface`, py-2 → Zeilen von 36–40 px, unsere Dichte.
        - Trennlinien zwischen den Zeilen in `outline-variant` (M3 Divider), keine
-         Zebrastreifen, kein Rahmen um die Tabelle (edge-to-edge, siehe MahnwesenTable).
+         Zebrastreifen, kein Rahmen um die Tabelle (edge-to-edge, siehe MahnwesenTabelle).
        - Hover: State-Layer 8 % `on-surface` — dieselbe Regel wie bei den Knöpfen.
        - Gewählt: `aria-selected="true"` an der Zeile → `secondary-container`, wie in
          M3-Listen und wie die 21 Stellen, die es schon so machten.

@@ -1,7 +1,7 @@
 <script>
 	import { untrack } from 'svelte';
 	import { Mail } from '@lucide/svelte';
-	import Modal from '../../Modal.svelte';
+	import Dialog from '../../Dialog.svelte';
 	import Button from './Button.svelte';
 	import Kaestchen from './Kaestchen.svelte';
 	import Feld from './Feld.svelte';
@@ -95,7 +95,7 @@
 	);
 </script>
 
-<Modal {open} {onclose} size="lg">
+<Dialog {open} {onclose} size="lg">
 	{#snippet header()}
 		<h3 class="text-lg font-bold text-on-surface">{titel}</h3>
 	{/snippet}
@@ -184,4 +184,4 @@
 			{aktion}
 		</Button>
 	</div>
-</Modal>
+</Dialog>

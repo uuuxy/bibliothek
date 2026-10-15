@@ -3,7 +3,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { apiGet, apiPut, apiPost, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 
@@ -62,13 +62,13 @@
 				smtp_password: password,
 				sender_email: sender
 			});
-			toastStore.addToast('Mail-Konfiguration gespeichert', 'success');
+			snackbars.addToast('Mail-Konfiguration gespeichert', 'success');
 			if (password !== '') hasPassword = true;
 			password = '';
 		} catch (e) {
 			// Servermeldung wurde von apiFetch bereits als Toast gezeigt — nicht überdecken.
 			if (!(/** @type {any} */ (e)?.handled)) {
-				toastStore.addToast('Fehler beim Speichern', 'error');
+				snackbars.addToast('Fehler beim Speichern', 'error');
 			}
 		} finally {
 			saving = false;
@@ -77,7 +77,7 @@
 
 	async function testConfig() {
 		if (!testEmail) {
-			toastStore.addToast('Bitte eine Test-E-Mail-Adresse angeben', 'error');
+			snackbars.addToast('Bitte eine Test-E-Mail-Adresse angeben', 'error');
 			return;
 		}
 		testing = true;

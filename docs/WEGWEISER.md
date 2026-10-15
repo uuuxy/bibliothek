@@ -36,23 +36,23 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | --------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------- |
 | Ausleihe (Theke)                        | `Omnibox.svelte`                                                                         | `api/theke/theke.go`               |
 | Medienkatalog, Klassensätze             | `Medienkatalog.svelte`, `Schulklassen.svelte`                                             | `inventur/api_routen.go`           |
-| Buchakte, Signaturen                    | `Buchakte.svelte`, `SignaturenView.svelte`                                               | `api/katalog/katalog.go`           |
+| Buchakte, Signaturen                    | `Buchakte.svelte`, `Signaturen.svelte`                                               | `api/katalog/katalog.go`           |
 | Bestandsbücher                          | `components/bestand/Bestandsbuecher.svelte`                                              | `api/katalog/katalog.go`           |
 | Druck-Center                            | `DruckCenter.svelte`                                                                     | `api/druck/druck.go`               |
 | Leserdatei, Leserakte                   | `Schuelerdatei.svelte`, `Leserakte.svelte`                                       | `api/leser/leser.go`               |
-| Schaden, Forderung, Bescheid            | `DamageReportModal.svelte`, `LeserGebuehrenKarte.svelte`, `LeserBescheideKarte.svelte` | `api/schaden/schaden.go`           |
-| Mahnwesen, Abgänger                     | `Mahnwesen.svelte`, `Graduates.svelte`                                                   | `api/mahnwesen/mahnwesen.go`       |
+| Schaden, Forderung, Bescheid            | `SchadenMeldenDialog.svelte`, `LeserGebuehrenKarte.svelte`, `LeserBescheideKarte.svelte` | `api/schaden/schaden.go`           |
+| Mahnwesen, Abgänger                     | `Mahnwesen.svelte`, `Abgaenger.svelte`                                                   | `api/mahnwesen/mahnwesen.go`       |
 | Bestellungen, Bestellberichte           | `Bestellwesen.svelte`, `components/bestellungen/BestellBerichte.svelte`              | `api/bestellung/bestellung.go`     |
 | Inventur                                | `Inventur.svelte`                                                                | `api/inventurlauf/inventurlauf.go` |
 | Schuljahreswechsel (LMF-Plan)           | `LmfPlan.svelte`                                                                         | `api/lernmittel/lernmittel.go`     |
 | Benutzer & Rechte                       | `Berechtigungen.svelte`                                                                  | `api/benutzer/benutzer.go`         |
 | Einstellungen, Statistiken, System-Logs | `Einstellungen.svelte`, `Statistik.svelte`, `SystemLogs.svelte`                    | `api/system/system.go`             |
-| Mein Portal, öffentlicher Katalog       | `KollegiumPortal.svelte`, `OpacSearch.svelte`                                            | `api/portal/portal.go`             |
+| Mein Portal, öffentlicher Katalog       | `KollegiumPortal.svelte`, `OpacSuche.svelte`                                            | `api/portal/portal.go`             |
 
 Der Medienkatalog ist ein eigenes Untermodul: Titelliste, Buchmaske und Import haben ihre
 Türen und ihre Abfragen in `inventur/`. Was jede Tür braucht (Eingabe lesen, Recht prüfen,
 Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bildschirm
-öffnet, steht in `frontend/src/lib/menu.js` und `frontend/src/lib/Router.svelte`.
+öffnet, steht in `frontend/src/lib/menue.js` und `frontend/src/lib/Router.svelte`.
 
 ## Ich will etwas ändern
 
@@ -64,7 +64,7 @@ Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bi
 | eine Tabelle oder Spalte ergänzen             | ein neuer Schritt in `migrations/` und derselbe Stand in `schema.sql`; `db/migrationen_schema_paritaet_pg_test.go` hält beide gleich |
 | eine neue Adresse anlegen                     | die Tür im Ordner ihres Themas, Adresse und Recht in der passenden Liste `api/routen_*.go`                                          |
 | festlegen, was eine Rolle ab Werk darf        | `db/rechte_vorgabe.go`                                                                                                                        |
-| einen Menüpunkt ändern                        | `frontend/src/lib/menu.js`                                                                                                          |
+| einen Menüpunkt ändern                        | `frontend/src/lib/menue.js`                                                                                                          |
 | eine Kategorie der Einstellungen ändern       | `frontend/src/lib/components/einstellungen/kategorien.js`                                                                                |
 | ein gemeinsames Bauteil der Oberfläche ändern | `frontend/src/lib/components/ui/`                                                                                                   |
 | Farben und Schriftgrößen ändern               | `frontend/src/styles/rollen.css`, `frontend/src/styles/theme-mass.css`                                                              |
