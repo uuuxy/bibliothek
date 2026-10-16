@@ -15,6 +15,9 @@ import (
 	"testing"
 
 	"bibliothek/internal/pdftest"
+	"bibliothek/pkg/pdfzeichen"
+
+	"github.com/jung-kurt/gofpdf"
 )
 
 // Bildplatzierungen im Inhaltsstrom: `q 10.00 0 0 15.00 17.00 260.00 cm /I1 Do Q`.
@@ -443,5 +446,37 @@ func TestSchulbuecherAlsPDF_QuerformatBleibtInSeinerSpalte(t *testing.T) {
 	}
 	if links/mm < randLinks || (links+breite)/mm > randLinks+spCover {
 		t.Errorf("Cover reicht von %.1f bis %.1f mm, die Spalte von %.0f bis %.0f", links/mm, (links+breite)/mm, randLinks, randLinks+spCover)
+	}
+}
+
+// Die Aufschlüsselung unter dem Titel hat höchstens drei Zeilen, auch in Großbuchstaben in der
+// schmalen Titelspalte (mit der Spalte „Gezählt"); eine vierte druckte MultiCell in die nächste
+// Zeile. Was passt, bleibt ungekürzt.
+func TestAuflagenText_HoechstensDreiZeilen(t *testing.T) {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "", 6.5)
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
+	breite := titelBreite(true)
+
+	gross := []AuflageImBestand{
+		{Auflage: "AUSGABE HESSEN WWW", Erscheinungsjahr: 2019, Gesamt: 100},
+		{Auflage: "AUSGABE HESSEN MMM", Erscheinungsjahr: 2020, Gesamt: 100},
+		{Auflage: "AUSGABE HESSEN WWW", Erscheinungsjahr: 2021, Gesamt: 100},
+	}
+	text := auflagenText(pdf, tr, gross, breite)
+	if n := len(pdf.SplitLines([]byte(tr(text)), breite)); n > 3 {
+		t.Errorf("Aufschlüsselung in Großbuchstaben: %d Zeilen, erwartet höchstens 3: %q", n, text)
+	}
+	if !strings.HasSuffix(text, "…") {
+		t.Errorf("Aufschlüsselung in Großbuchstaben ungekürzt: %q", text)
+	}
+
+	ueblich := []AuflageImBestand{
+		{Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 16},
+		{Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 42},
+	}
+	if text, soll := auflagenText(pdf, tr, ueblich, breite), auflagenAufschluesselung(ueblich); text != soll {
+		t.Errorf("auflagenText = %q, erwartet ungekürzt %q", text, soll)
 	}
 }

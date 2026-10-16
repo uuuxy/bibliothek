@@ -72,3 +72,37 @@ func TestKuerzeAufZelle_ZiehtDenRandDerZelleAb(t *testing.T) {
 		}
 	}
 }
+
+// festeZeilen bricht nach einer festen Zahl von Bytes um, ohne auf Wörter zu achten.
+type festeZeilen struct{ proZeile int }
+
+func (f festeZeilen) SplitLines(text []byte, _ float64) [][]byte {
+	var zeilen [][]byte
+	for len(text) > f.proZeile {
+		zeilen = append(zeilen, text[:f.proZeile])
+		text = text[f.proZeile:]
+	}
+	if len(text) > 0 {
+		zeilen = append(zeilen, text)
+	}
+	return zeilen
+}
+
+func TestKuerzeAufZeilen(t *testing.T) {
+	faelle := []struct {
+		name, text string
+		zeilen     int
+		soll       string
+	}{
+		{"passt in zwei Zeilen", "abcdefgh", 2, "abcdefgh"},
+		{"eine Zeile zu viel", "abcdefghij", 2, "abcde…"},
+		{"kein Leerraum vor dem Auslassungszeichen", "abcd efghij", 2, "abcd…"},
+		{"nichts passt", "abcdef", 0, "…"},
+	}
+	for _, f := range faelle {
+		// Vier Bytes je Zeile; das Auslassungszeichen belegt in UTF-8 drei.
+		if ist := KuerzeAufZeilen(festeZeilen{proZeile: 4}, gleich, f.text, 0, f.zeilen); ist != f.soll {
+			t.Errorf("%s: KuerzeAufZeilen(%q, %d Zeilen) = %q, erwartet %q", f.name, f.text, f.zeilen, ist, f.soll)
+		}
+	}
+}

@@ -235,11 +235,16 @@ func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTit
 	pdf.SetXY(x, y+1.5)
 	pdf.CellFormat(breite, 4, tr(titel), "", 2, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 6.5)
-	// Höchstens drei Zeilen (1,5 + 4 + 3 × 3 = 14,5 mm von 17): rund 1,25 mm je Zeichen in
-	// dieser Größe. Drei Auflagen passen so auch in die schmale Titelspalte (45 mm).
-	pdf.MultiCell(breite, 3, tr(kuerze(auflagenAufschluesselung(t.AuflagenBestand), int(3*breite/1.25))), "", "L", false)
+	pdf.MultiCell(breite, 3, tr(auflagenText(pdf, tr, t.AuflagenBestand, breite)), "", "L", false)
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetXY(x+breite, y)
+}
+
+// auflagenText ist die Aufschlüsselung unter dem Titel, gekürzt auf höchstens drei Zeilen
+// (1,5 + 4 + 3 × 3 = 14,5 mm von 17), gezählt, wie MultiCell in der gesetzten Schrift umbricht.
+// Eine vierte Zeile druckte MultiCell in die nächste Zeile der Tabelle.
+func auflagenText(pdf pdfzeichen.Zeilenteiler, tr func(string) string, auflagen []AuflageImBestand, breite float64) string {
+	return pdfzeichen.KuerzeAufZeilen(pdf, tr, auflagenAufschluesselung(auflagen), breite, 3)
 }
 
 // auflagenBeschriftung ist der Zwilling von auflagenBeschriftung in
@@ -268,15 +273,6 @@ func auflagenAufschluesselung(auflagen []AuflageImBestand) string {
 		teile = append(teile, fmt.Sprintf("%s (%d)", auflagenBeschriftung(a.Auflage, a.Erscheinungsjahr), a.Gesamt))
 	}
 	return fmt.Sprintf("Bestand aus %d Auflagen: %s", len(auflagen), strings.Join(teile, ", "))
-}
-
-// kuerze kürzt auf eine Zahl von Zeichen, für den mehrzeiligen Text unter dem Titel.
-func kuerze(s string, grenze int) string {
-	r := []rune(strings.TrimSpace(s))
-	if len(r) <= grenze {
-		return string(r)
-	}
-	return string(r[:grenze-1]) + "…"
 }
 
 // dateinamenTeil macht aus einem Fachnamen einen Dateinamen-Bestandteil.

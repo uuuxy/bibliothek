@@ -207,8 +207,8 @@ der Nummer nichts mehr dazu offen ist.
   Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
   Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
   (Tür und Abfrage), die Größen in 11.1 unter R4.
-- [ ] **Auflagen-Zeile im Schulbuch-Export (5.63):** kürzt auf eine geschätzte Zahl von
-  Zeichen über drei Zeilen; messen, ob ein breiter Text eine vierte Zeile beginnt.
+- [x] **Auflagen-Zeile im Schulbuch-Export (5.63):** erledigt am 16.10.2026. Gemessen: In
+  Großbuchstaben wurde die Zeile vierzeilig; sie kürzt jetzt nach gezählten Zeilen.
 - [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, SQL-Testdaten über
   `internal/testdaten`; mit deinem Ja: `cmd/migrate-fotos`, der Lasttest, Migration 164.
 - [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** Feste Meldungen, Fehlertexte an
@@ -435,16 +435,6 @@ Schulserver feststeht.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
-
-### 5.63 Auflagen-Zeile im Schulbuch-Export kürzt nach Zeichenzahl
-
-Listen, Briefe und Etiketten mit gofpdf kürzen den Text einer Zelle auf ihre gedruckte Breite
-(die Fehlerart steht in [sweeps.md](sweeps.md), „Gedruckter Text nach Zeichenzahl gekürzt").
-Offen ist eine Stelle: Die Zeile mit den Auflagen im Schulbuch-Export
-(`inventur/lernmittel_pdf.go`) bricht über drei Zeilen um und kürzt auf eine Zahl von Zeichen,
-die sie aus der Spaltenbreite schätzt. Nächster Schritt: mit dem breitesten Text messen, ob
-eine vierte Zeile entsteht und in die nächste Zeile der Tabelle druckt; dann nach gemessenen
-Zeilen kürzen. Kategorie B.
 
 ### 5.66 Lesbarkeit nach Googles Regelwerk für Go
 

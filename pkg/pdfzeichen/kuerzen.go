@@ -41,6 +41,32 @@ func KuerzeAufZelle(pdf Zellenmesser, messbar func(string) string, text string, 
 	return KuerzeAufBreite(pdf, messbar, text, breite-2*pdf.GetCellMargin())
 }
 
+// Zeilenteiler bricht einen Text in der gerade gesetzten Schrift auf eine Breite um, wie
+// MultiCell ihn druckt; gofpdf erfüllt ihn mit SplitLines.
+type Zeilenteiler interface {
+	SplitLines(text []byte, breite float64) [][]byte
+}
+
+// KuerzeAufZeilen kürzt den Text, bis er umbrochen auf höchstens so viele Zeilen der Breite
+// passt. Gezählt wird, wie MultiCell umbricht, nicht nach Zeichen: Großbuchstaben füllen eine
+// Zeile mit halb so vielen Zeichen wie Ziffern, und eine Zeile zu viel druckt MultiCell unter die
+// Zelle.
+func KuerzeAufZeilen(pdf Zeilenteiler, messbar func(string) string, text string, breite float64, zeilen int) string {
+	passt := func(t string) bool { return len(pdf.SplitLines([]byte(messbar(t)), breite)) <= zeilen }
+	if passt(text) {
+		return text
+	}
+	runen := []rune(text)
+	for len(runen) > 1 {
+		runen = runen[:len(runen)-1]
+		gekuerzt := strings.TrimRight(string(runen), " ") + "…"
+		if passt(gekuerzt) {
+			return gekuerzt
+		}
+	}
+	return "…"
+}
+
 // KuerzeAufZeichen kürzt den Text auf höchstens so viele Zeichen, das Auslassungszeichen
 // eingerechnet; hoechstens ist damit die Länge der Ausgabe, an der sich eine Spaltenbreite
 // ablesen lässt. Gezählt wird in Zeichen und nicht in Bytes: Ein Umlaut belegt in UTF-8 zwei,
