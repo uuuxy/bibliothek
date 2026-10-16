@@ -17,14 +17,9 @@ func TestNewGeraeteDienst(t *testing.T) {
 	var loanRepo repository.AusleihAbfragen = nil
 	var auditRepo repository.ProtokollAbfragen = nil
 
-	service := NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
-	if service == nil {
+	ds := NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
+	if ds == nil {
 		t.Fatal("erwartete GeraeteDienst-Instanz, bekam nil")
-	}
-
-	ds, ok := service.(*geraeteDienst)
-	if !ok {
-		t.Fatalf("erwartete Typ *geraeteDienst, bekam %T", service)
 	}
 
 	if ds.pool != pool {
@@ -60,7 +55,7 @@ func (s gesperrterLeserAttrappe) Finde(context.Context, string) (*repository.Les
 func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 	sid := "s1"
 	// Nur manuell gesperrt → blockiert vor jeder Pool-Nutzung (Flag-Check zuerst).
-	svc := &geraeteDienst{leserAbfragen: gesperrterLeserAttrappe{
+	svc := &GeraeteDienst{leserAbfragen: gesperrterLeserAttrappe{
 		leser: &repository.Leser{ID: sid, Art: "schueler", IstVonHandGesperrt: true}}}
 	for _, uebergehen := range []bool{false, true} {
 		_, _, err := svc.ladeAkteur(context.Background(), &sid, uebergehen)
@@ -75,7 +70,7 @@ func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 // sie lassen sich am Gerät übergehen wie am Buch.
 func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 	sid := "s1"
-	neu := func(t *testing.T, vorbereiten func(pgxmock.PgxPoolIface)) (*geraeteDienst, pgxmock.PgxPoolIface) {
+	neu := func(t *testing.T, vorbereiten func(pgxmock.PgxPoolIface)) (*GeraeteDienst, pgxmock.PgxPoolIface) {
 		t.Helper()
 		mock, err := pgxmock.NewPool()
 		if err != nil {
@@ -83,7 +78,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 		}
 		t.Cleanup(mock.Close)
 		vorbereiten(mock)
-		return &geraeteDienst{pool: mock, leserAbfragen: gesperrterLeserAttrappe{
+		return &GeraeteDienst{pool: mock, leserAbfragen: gesperrterLeserAttrappe{
 			leser: &repository.Leser{ID: sid, Art: "schueler"}}}, mock
 	}
 	schaden := func(mock pgxmock.PgxPoolIface) {
@@ -146,7 +141,7 @@ func TestGeraeteAusleiheKollegeOhneSperre(t *testing.T) {
 	defer mock.Close()
 	mock.ExpectQuery(`FROM system_einstellungen`).
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("sommerferien", strPtr("")))
-	svc := &geraeteDienst{pool: mock, leserAbfragen: gesperrterLeserAttrappe{
+	svc := &GeraeteDienst{pool: mock, leserAbfragen: gesperrterLeserAttrappe{
 		leser: &repository.Leser{ID: kid, Art: "lehrkraft", IstVonHandGesperrt: true, Sperrgrund: strPtr("alt")}}}
 
 	leser, lage, err := svc.ladeAkteur(context.Background(), &kid, false)

@@ -89,7 +89,7 @@ func TestNewOmniboxDienst(t *testing.T) {
 	var bookRepo repository.KatalogAbfragen
 	var loanRepo repository.AusleihAbfragen
 	var loanSvc AusleihDienst
-	var deviceSvc GeraeteDienst
+	var deviceSvc *GeraeteDienst
 
 	svc := NewOmniboxDienst(
 		pool,

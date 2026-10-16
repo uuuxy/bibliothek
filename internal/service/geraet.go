@@ -36,16 +36,7 @@ type geraeteErgebnis struct {
 }
 
 // GeraeteDienst bucht den Scan eines Geräts (Laptop, Tablet).
-type GeraeteDienst interface {
-	// verarbeiteScan leiht ein freies Gerät dem geöffneten Leser aus und nimmt ein verliehenes
-	// zurück. Hat das Gerät Zubehör, muss vor der Ausleihe die Checkliste bestätigt sein.
-	// uebergehen übergeht die Hinweise (offene Forderung, Überfällig-Automatik), nicht die
-	// Sperre am Leser, wie beim Buch (pruefeAusleihSperren).
-	verarbeiteScan(ctx context.Context, nummer string, aktiverLeserID *string, checklisteBestaetigt, uebergehen bool, bearbeiterID string) (*geraeteErgebnis, error)
-}
-
-// geraeteDienst erfüllt GeraeteDienst.
-type geraeteDienst struct {
+type GeraeteDienst struct {
 	pool              db.Pool
 	leserAbfragen     repository.LeserAbfragen
 	ausleihAbfragen   repository.AusleihAbfragen
@@ -53,8 +44,8 @@ type geraeteDienst struct {
 }
 
 // NewGeraeteDienst baut den Dienst für Geräte.
-func NewGeraeteDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) GeraeteDienst {
-	return &geraeteDienst{
+func NewGeraeteDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) *GeraeteDienst {
+	return &GeraeteDienst{
 		pool:              pool,
 		leserAbfragen:     leserAbfragen,
 		ausleihAbfragen:   ausleihAbfragen,
@@ -65,7 +56,7 @@ func NewGeraeteDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, ausl
 // ladeGeraet lädt das Gerät zu seiner Nummer. Ob es verliehen werden darf, prüft erst der Zweig
 // der Ausleihe (pruefeGeraetAusleihbar): Ein verliehenes Gerät, das danach als defekt gemeldet
 // wurde, muss sich zurückgeben lassen (geraet_rueckgabe_sperre_pg_test.go).
-func (d *geraeteDienst) ladeGeraet(ctx context.Context, nummer string) (repository.Geraet, error) {
+func (d *GeraeteDienst) ladeGeraet(ctx context.Context, nummer string) (repository.Geraet, error) {
 	g, err := repository.LadeGeraetZuNummer(ctx, d.pool, nummer)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -94,7 +85,7 @@ func pruefeGeraetAusleihbar(g repository.Geraet) error {
 // Leser und beide Hinweise. Die Rückgabe nimmt ladeRueckgeber, weil ein gesperrter Leser sein
 // Gerät zurückgeben können muss. Die Lage geht mit zurück: leiheGeraetAus rechnet aus ihren
 // Einstellungen die Frist und protokolliert, was übergangen wurde.
-func (d *geraeteDienst) ladeAkteur(ctx context.Context, aktiverLeserID *string, uebergehen bool) (*repository.Leser, sperrLage, error) {
+func (d *GeraeteDienst) ladeAkteur(ctx context.Context, aktiverLeserID *string, uebergehen bool) (*repository.Leser, sperrLage, error) {
 	leser, err := d.ladeRueckgeber(ctx, aktiverLeserID)
 	if err != nil || leser == nil {
 		return nil, sperrLage{}, err
@@ -115,7 +106,7 @@ func (d *geraeteDienst) ladeAkteur(ctx context.Context, aktiverLeserID *string, 
 
 // ladeRueckgeber lädt den geöffneten Leser ohne Prüfung der Sperren. Die Rückgabe braucht ihn
 // nur, um eine Fremdrückgabe zu erkennen.
-func (d *geraeteDienst) ladeRueckgeber(ctx context.Context, aktiverLeserID *string) (*repository.Leser, error) {
+func (d *GeraeteDienst) ladeRueckgeber(ctx context.Context, aktiverLeserID *string) (*repository.Leser, error) {
 	if aktiverLeserID == nil || *aktiverLeserID == "" {
 		return nil, nil
 	}
@@ -142,7 +133,7 @@ func geraeteRueckgabeFrist(ab time.Time, kalender lmfplan.Ferientabelle) time.Ti
 }
 
 // leiheGeraetAus leiht das freie Gerät dem geöffneten Leser aus.
-func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Leser, lage sperrLage, bearbeiterID string) (*geraeteErgebnis, error) {
+func (d *GeraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Leser, lage sperrLage, bearbeiterID string) (*geraeteErgebnis, error) {
 	if leser == nil {
 		return nil, meldung(ErrUngueltigerZustand, "Bitte scannen Sie zuerst einen Ausweis")
 	}
@@ -192,7 +183,7 @@ func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 
 // findeVorbesitzer sagt, ob es eine Fremdrückgabe ist (der Rückgeber ist nicht der Ausleiher),
 // und legt dann den Ausleiher als Vorbesitzer in erg.
-func (d *geraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, erg *geraeteErgebnis) (bool, error) {
+func (d *GeraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, erg *geraeteErgebnis) (bool, error) {
 	if offeneAusleihe.SchuelerID == nil {
 		return false, nil
 	}
@@ -209,7 +200,7 @@ func (d *geraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *re
 }
 
 // gibGeraetZurueck nimmt das verliehene Gerät zurück.
-func (d *geraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, bearbeiterID string) (*geraeteErgebnis, error) {
+func (d *GeraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, bearbeiterID string) (*geraeteErgebnis, error) {
 	erg := &geraeteErgebnis{}
 
 	istFremd, err := d.findeVorbesitzer(ctx, offeneAusleihe, leser, erg)
@@ -240,8 +231,11 @@ func (d *geraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repo
 	return erg, nil
 }
 
-// verarbeiteScan bucht den Scan eines Geräts.
-func (d *geraeteDienst) verarbeiteScan(
+// verarbeiteScan leiht ein freies Gerät dem geöffneten Leser aus und nimmt ein verliehenes
+// zurück. Hat das Gerät Zubehör, muss vor der Ausleihe die Checkliste bestätigt sein.
+// uebergehen übergeht die Hinweise (offene Forderung, Überfällig-Automatik), nicht die Sperre
+// am Leser, wie beim Buch (pruefeAusleihSperren).
+func (d *GeraeteDienst) verarbeiteScan(
 	ctx context.Context,
 	nummer string,
 	aktiverLeserID *string,

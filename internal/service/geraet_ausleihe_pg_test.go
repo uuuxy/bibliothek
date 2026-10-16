@@ -22,7 +22,7 @@ type geraeteTheke struct {
 	pool             *pgxpool.Pool
 	suffix           string
 	ausgabe, annahme string
-	dienst           GeraeteDienst
+	dienst           *GeraeteDienst
 }
 
 func newGeraeteTheke(t *testing.T) *geraeteTheke {

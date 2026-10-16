@@ -95,7 +95,7 @@ type omniboxDienst struct {
 	katalogAbfragen repository.KatalogAbfragen
 	ausleihAbfragen repository.AusleihAbfragen
 	ausleihe        AusleihDienst
-	geraete         GeraeteDienst
+	geraete         *GeraeteDienst
 }
 
 // NewOmniboxDienst baut den Dienst der Omnibox.
@@ -105,7 +105,7 @@ func NewOmniboxDienst(
 	katalogAbfragen repository.KatalogAbfragen,
 	ausleihAbfragen repository.AusleihAbfragen,
 	ausleihe AusleihDienst,
-	geraete GeraeteDienst,
+	geraete *GeraeteDienst,
 ) OmniboxDienst {
 	return &omniboxDienst{
 		pool:            pool,
