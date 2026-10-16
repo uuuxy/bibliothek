@@ -32,7 +32,7 @@
 </script>
 
 <section
-	class="mt-8 border border-error-container bg-error-container/20 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
+	class="mt-8 border border-error-container bg-error-container/20 rounded-xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
 >
 	<div>
 		<h3 class="text-error font-bold text-base flex items-center gap-2">

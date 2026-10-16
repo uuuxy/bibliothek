@@ -126,23 +126,40 @@ describe('Seitengeruest', () => {
 //   rounded-md  — 8 px ist die Chip-Rolle und auf einem Badge korrekt.
 // Ein Test, der auch die beiden meldet, faende 27 Dateien ohne einen einzigen
 // sichtbaren Fehler — und wuerde nach der dritten Falschmeldung abgeschaltet.
-const KARTENFLAECHE = /class="[^"]*\bbg-(?:white|surface-container-lowest)\b[^"]*"/g;
+//
+// Eine Karte ist eine weisse Flaeche oder eine umrandete: ganzer Rahmen (`border`,
+// `border-2`), auch gestrichelt und ohne Fuellung, wie ein leerer Zustand oder eine
+// Ablageflaeche. M3, Cards, Specs: „Shape | 12dp corner radius", fuer jede Art von Karte.
+// Ein Bild mit Rahmen ist keine Karte.
+const KLASSE = /class="([^"]*)"/g;
+const WEISSE_FLAECHE = /\bbg-(?:white|surface-container-lowest)\b/;
+const GANZER_RAHMEN = /(?:^|\s)border(?:-[0-9])?(?=\s|$)/;
 const FALSCHE_ROLLE = /\brounded-(?:2xl|4xl)\b/;
 
+/** Name des Elements, in dessen Kopf die Stelle steht. @param {string} text @param {number} stelle */
+function elementVor(text, stelle) {
+	return /^<([a-zA-Z][\w-]*)/.exec(text.slice(text.lastIndexOf('<', stelle)))?.[1] ?? '';
+}
+
 describe('Form-Skala', () => {
-	it('gibt keiner weissen Flaeche den Radius der Navigationsflaechen', () => {
+	it('gibt keiner Karte den Radius der Navigationsflaechen', () => {
 		const gefunden = sammleQuelldateien(srcRoot)
 			.filter((f) => f.endsWith('.svelte'))
-			.flatMap((f) =>
-				[...readFileSync(f, 'utf8').matchAll(KARTENFLAECHE)]
-					.map((m) => m[0])
-					.filter((tag) => FALSCHE_ROLLE.test(tag))
-					.map((tag) => `${f.slice(srcRoot.length + 1)}: ${tag.slice(0, 110)}`)
-			);
+			.flatMap((f) => {
+				const text = readFileSync(f, 'utf8');
+				return [...text.matchAll(KLASSE)]
+					.filter(
+						(m) =>
+							FALSCHE_ROLLE.test(m[1]) &&
+							(WEISSE_FLAECHE.test(m[1]) || GANZER_RAHMEN.test(m[1])) &&
+							elementVor(text, m.index ?? 0) !== 'img'
+					)
+					.map((m) => `${f.slice(srcRoot.length + 1)}: ${m[1].slice(0, 110)}`);
+			});
 
 		expect(
 			gefunden,
-			'Weisse Flaeche mit 16 px Radius. 16 px gehoert den Navigationsflaechen;\n' +
+			'Karte mit 16 px Radius. 16 px gehoert den Navigationsflaechen;\n' +
 				'Karten und Eingabefelder sind 12 px (rounded-xl), Dialoge 28 px (rounded-3xl),\n' +
 				'Menues stehen auf bg-surface-container mit 4 px (siehe SelectListe.svelte).\n' +
 				'Die Zuordnung steht in styles/theme-mass.css:\n  ' +

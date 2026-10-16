@@ -58,7 +58,7 @@
 {/snippet}
 
 {#if leer}
-	<div class="rounded-2xl border border-outline-variant py-10 text-center">
+	<div class="rounded-xl border border-outline-variant py-10 text-center">
 		<p class="font-semibold text-on-surface">Keine offenen Schadensersatz-Fälle.</p>
 		<p class="mt-1 text-sm text-on-surface-variant">
 			Ein Fall beginnt in der Schülerakte mit „Verlust/Schaden melden" an der Ausleihzeile. Er steht

@@ -88,7 +88,7 @@
 	</div>
 
 	{#if isAdding}
-		<div class="p-5 bg-surface border border-outline-variant rounded-2xl space-y-4 animate-fade-in">
+		<div class="p-5 bg-surface border border-outline-variant rounded-xl space-y-4 animate-fade-in">
 			{#if !rechte.einsehen}
 				<!-- Sichtbar statt still: Ein fehlendes Suchfeld sähe wie ein Fehler aus. -->
 				<p class="text-sm text-on-surface-variant">
@@ -151,7 +151,7 @@
 
 	{#if vormerkungen.length === 0}
 		<div
-			class="py-12 flex flex-col items-center text-on-surface-variant gap-3 border-2 border-dashed border-outline-variant rounded-2xl bg-surface/50"
+			class="py-12 flex flex-col items-center text-on-surface-variant gap-3 border-2 border-dashed border-outline-variant rounded-xl bg-surface/50"
 		>
 			<Clock class="w-10 h-10" aria-hidden="true" />
 			<p class="font-medium text-sm">Keine ausstehenden Vormerkungen für diesen Titel.</p>

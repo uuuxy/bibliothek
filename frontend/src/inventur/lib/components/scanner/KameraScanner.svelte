@@ -143,7 +143,7 @@
 <!-- Hinter der Sperre läuft keine Kamera: Der Bereich wird träge, der Strom ruht und läuft
      nach dem Aufschließen wieder an. Der Sucher steht im dunklen Schema (styles/rollen.css). -->
 <div
-	class="schema-dunkel relative overflow-hidden rounded-2xl border border-outline-variant bg-surface min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
+	class="schema-dunkel relative overflow-hidden rounded-xl border border-outline-variant bg-surface min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
 	use:ruhtWennTraege={{ anhalten: stopScanner, fortsetzen: startScanner }}
 >
 	<!-- Ausgeschriebenes Schluss-Tag: <video /> ist kein void-Element, die selbstschliessende

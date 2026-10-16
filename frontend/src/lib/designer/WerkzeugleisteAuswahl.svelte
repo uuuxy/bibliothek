@@ -31,7 +31,7 @@
 </script>
 
 <div
-	class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-surface border border-outline-variant rounded-2xl p-4"
+	class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-surface border border-outline-variant rounded-xl p-4"
 >
 	<div class="space-y-1">
 		<span class="text-sm font-medium text-on-surface-variant">Design-Vorlage</span>
