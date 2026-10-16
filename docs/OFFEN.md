@@ -44,7 +44,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Ohne Umbau ließen sich 48 der 151 Dateien einem Thema zuordnen; was mehrere Themen
   brauchen (Protokoll, Einstellungen, Titel, Leser), bliebe ein gemeinsames Paket mit 72 %
   der Zeilen, und 21 Tabellen bekämen Schreiber in zwei Paketen. Die Zahlen stehen in
-  [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2. Gebaut ist dafür nichts; die Entscheidung lässt
+  [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 9 (A25). Gebaut ist dafür nichts; die Entscheidung lässt
   sich ändern, ohne etwas zurückzunehmen.
 - [ ] Sicherung außer Haus: Alte Sicherungen löscht das Programm nur auf dem Server, am
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
@@ -193,7 +193,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] Die Oberfläche, Stufe 2: Namen innerhalb der Dateien (5.66), bis auf `apiDelete`, das wie
   die HTTP-Methode heißt.
 - [x] Die Oberfläche, Stufe 3: Props, die ein Bauteil vom Rufer bekommt (5.66).
-- [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
+- [x] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -206,7 +206,7 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Schichtung des Backends (5.62):** abgeschlossen am 13.10.2026. Die sechs Dateien mit
   Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
   Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
-  (Tür und Abfrage), die Größen in 11.1 unter R4.
+  (Tür und Abfrage); die Größen misst der Anhang von Kapitel 5.
 - [x] **Auflagen-Zeile im Schulbuch-Export (5.63):** erledigt am 16.10.2026. Gemessen: In
   Großbuchstaben wurde die Zeile vierzeilig; sie kürzt jetzt nach gezählten Zeilen.
 - [ ] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.

@@ -7,17 +7,17 @@ Kapitel nennt seinen eigenen Stand
 
 ## Was das hier ist
 
-Die Architekturdokumentation dieses Systems, gegliedert nach arc42 — zwölf Kapitel in
-dieser einen Datei. Sie beschreibt **den gebauten Stand**, nicht einen Plan: Jede Aussage ist
-am Code, an `schema.sql`, an den Migrationen, am `Dockerfile`, an den CI-Workflows oder an
-einem Gate nachgelesen, und wo eine Fundstelle die Aussage trägt, steht sie dabei.
-
-Diese Dokumentation ist **die** Architekturbeschreibung des Systems. Die Arbeitsteilung mit den übrigen
-Dokumenten unter [`docs/`](../README.md#dokumentation):
+Die Architekturdokumentation dieses Systems, gegliedert nach arc42, in dieser einen Datei. Sie
+beschreibt den gebauten Stand: Jede Aussage ist am Code, an `schema.sql`, an den Migrationen,
+am `Dockerfile`, an den CI-Workflows oder an einem Gate nachgelesen, und wo eine Fundstelle die
+Aussage trägt, steht sie dabei. Was ein Paket oder eine Datei tut, sagt ihr Kommentar im Code;
+hier steht, wie die Teile zusammenhängen und warum sie so gebaut sind.
 
 | Frage                                                        | Dort steht die Antwort                                     |
 | ------------------------------------------------------------ | ---------------------------------------------------------- |
 | Wie ist das System gebaut, und **warum so**?                 | **hier** (arc42)                                           |
+| Wo steht der Code zu einem Menüpunkt?                        | [WEGWEISER.md](WEGWEISER.md)                            |
+| Wie heißt etwas im Code?                                     | [STIL.md](STIL.md)                                      |
 | Welche fachliche Regel gilt genau?                           | [FACHKONZEPT.md](FACHKONZEPT.md)                        |
 | Wie bediene ich das System?                                  | [HANDBUCH.md](HANDBUCH.md)                              |
 | Wie betreibe, deploye, sichere ich es?                       | [DEPLOYMENT.md](DEPLOYMENT.md), [resilience_and_recovery.md](resilience_and_recovery.md) |
@@ -26,9 +26,8 @@ Dokumenten unter [`docs/`](../README.md#dokumentation):
 | Welche Bugklassen kennt das Projekt, und wer detektiert sie? | [sweeps.md](sweeps.md)                                  |
 | Was ist **offen**?                                           | [OFFEN.md](OFFEN.md) — die einzige Offen-Liste          |
 
-> **Diese Dokumentation führt keine eigene Offen-Liste.** Kapitel 11 benennt Risiken und
-> technische Schulden, verweist für den Bearbeitungsstand aber auf `OFFEN.md`. Zwei Listen
-> wären genau die Fehlerart, gegen die dieses Projekt antritt.
+Kapitel 11 nennt Risiken und bekannte Grenzen; was zu tun ist, steht nur in
+[OFFEN.md](OFFEN.md).
 
 ---
 
@@ -44,7 +43,7 @@ Dokumenten unter [`docs/`](../README.md#dokumentation):
 | 6   | [Laufzeitsicht](#6-laufzeitsicht)                                       | Zehn Szenarien im Ablauf — Scan, Login, Offline, Nachtlauf, Shutdown …            |
 | 7   | [Verteilungssicht](#7-verteilungssicht)                                 | Container, Volumes, Ports, Reverse Proxy, CI/CD-Wege                              |
 | 8   | [Querschnittliche Konzepte](#8-querschnittliche-konzepte)               | Sicherheit, Datenschutz, Persistenz, Nebenläufigkeit, Zeit, Fehler, Test …        |
-| 9   | [Architekturentscheidungen](#9-architekturentscheidungen)               | 24 Entscheidungen als ADR: Stand, Grund, Folge, Fundstelle                        |
+| 9   | [Architekturentscheidungen](#9-architekturentscheidungen)               | 26 Entscheidungen als ADR: Stand, Grund, Folge, Fundstelle                        |
 | 10  | [Qualitätsanforderungen](#10-qualitätsanforderungen)                    | Qualitätsbaum und messbare Szenarien samt zugehörigem Gate                        |
 | 11  | [Risiken und technische Schulden](#11-risiken-und-technische-schulden)   | Was heute weh tut oder morgen weh tun wird — mit Einschätzung                     |
 | 12  | [Glossar](#12-glossar)                                                   | Die Fachsprache des Hauses, deutsch, mit Code-Bezug                               |
@@ -70,27 +69,21 @@ Dokumenten unter [`docs/`](../README.md#dokumentation):
 ## Wie diese Dokumentation gepflegt wird
 
 1. **Kein Kapitel behauptet einen Stand, den es nicht hat.** Jedes Kapitel trägt unter seiner
-   Überschrift eine `Stand:`-Zeile, das Dokument eine im Kopf. Das Gate
-   `docs/stand_angaben_test.go` prüft für jede Datei unter `docs/`, dass **kein im Text
-   genanntes Datum jünger ist als der Kopf**. Wer hier einen datierten Absatz ergänzt, zieht
-   den Stand des Kapitels und den Kopf mit — sonst wird der Test rot.
-2. **Zahlen tragen ihr Messdatum.** Die Umfangszahlen in Kapitel 1.4 und Kapitel 5 sind mit
-   den Befehlen aus dem [Anhang von Kapitel 5](#anhang-die-zahlen-selbst-nachmessen) erhoben;
-   wann, steht beim Kapitel oder bei der Zahl. Sie altern; der Befehl daneben altert nicht.
-3. **Fundstellen werden beim Namen genannt, nicht gezählt.** Keine Zeilennummern: Datei-,
-   Paket-, Constraint- und Indexnamen halten, Zeilennummern wandern, sobald eine Datei
-   wächst, und beim Lesen fällt es nicht auf; dieselbe Regel gilt in
-   [invarianten.md](invarianten.md). Eine Datei, die beim Pfad genannt ist, hält `docs/dateiverweise_test.go` gegen die
-   Dateien des Repositorys: Zieht sie um, wird der Test rot und nennt die Stelle.
-4. **Das Warum steht im Commit.** Wo eine Entscheidung eine längere Geschichte hat, nennt
-   Kapitel 9 sie knapp und verlässt sich im Übrigen auf `git log` — die Historie ist
-   ausführlicher als jede gepflegte Liste und kann nicht veralten.
+   Überschrift eine `Stand:`-Zeile, das Dokument eine im Kopf; `docs/stand_angaben_test.go`
+   prüft, dass kein im Text genanntes Datum jünger ist als der Kopf.
+2. **Zahlen stehen an einer Stelle** (1.4), mit dem Tag der Messung; die Befehle dazu stehen im
+   [Anhang von Kapitel 5](#anhang-die-zahlen-selbst-nachmessen).
+3. **Fundstellen werden beim Namen genannt, nicht gezählt:** Datei-, Paket-, Constraint- und
+   Indexnamen statt Zeilennummern. `docs/dateiverweise_test.go` hält jeden genannten Pfad gegen
+   die Dateien des Repositorys.
+4. **Das Dokument nennt, was gilt.** Wie es dazu kam, steht in der Commit-Nachricht, was eine
+   Datei tut, in ihrem Kommentar.
 
 ---
 
 ## 1. Einführung und Ziele
 
-Stand: 08.10.2026
+Stand: 16.10.2026
 
 ---
 
@@ -121,7 +114,7 @@ Grund, nicht der Geschmack.
 | F6 | **Öffentliche Seiten ohne Anmeldung** (Katalog `/katalog`, Monitor `/monitor`) — Titeldaten ja, Personendaten nie.                            | `api/portal/opac.go`, `api/portal/monitor.go`, FACHKONZEPT §16 |
 | F7 | **Kollegiums-Portal** mit Selbstanmeldung über das Schulpostfach, Klassensatz-Reservierung und Meldungen.                                     | `auth/selbstanmeldung.go`, `frontend/src/lib/KollegiumPortal.svelte` |
 | F8 | **Altbestandsübernahme aus Littera**: Titel, Exemplare, Personen, offene Ausleihen — verlustfrei und nachweisbar.                             | `internal/littera`, `internal/uebernahme`, `cmd/littera-altbestand` |
-| F9 | **Bestellwesen** bis zum Wareneingang, inklusive Bestätigungslink für Händler, die selbst etikettieren.                                       | `api/bestellbestaetigung_*.go`                   |
+| F9 | **Bestellwesen** bis zum Wareneingang, inklusive Bestätigungslink für Händler, die selbst etikettieren.                                       | `api/bestellung/bestellbestaetigung*.go`                   |
 | F10| **Der Betrieb muss merken, wenn eine Funktion still nichts tut** (fehlende Einstellung, fehlendes Geheimnis, fehlgeschlagene Restore-Probe).  | `internal/bereitschaft/bereitschaft.go`, FACHKONZEPT §15   |
 
 ---
@@ -175,32 +168,31 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | **Datenschutzbeauftragte(r)**        | Nachweisbare Fristen, Rechtsgrundlagen, Verarbeitungsverzeichnis, Auskunft                                                          | PII-Matrix je Route als Gate, automatische Löschroutinen, VVT- und Art.-13-Entwürfe unter `docs/datenschutz/`         |
 | **Schulträger**                      | Nachweispflichten (Zugangs-/Abgangsbuch, Bestandsnachweis zum Stichtag), getrennte Töpfe Land/Träger                                | Bestandsbücher als eigene Reiter mit Druckblatt; Mittelherkunft an der Bestellung ([mittel_konzept.md](mittel_konzept.md)) |
 | **Betreiber/Entwickler** (eine Person) | Ein Deploy darf nichts still zerstören; ein Fehler muss sich selbst melden; die Doku muss die Entscheidung tragen, nicht nur das Ergebnis | Gates, Drift-Tests, Selbstprüfung, Bereitschafts-Wächter, `OFFEN.md` als einzige Liste, Commit-Historie als Doku      |
-| **Land (Lernmittelfreiheit)**         | Leihbücher nach Erlass behandeln: Fristen, Ersatzwert-Staffel, Bescheid statt Barzahlung                                            | `pkg/ersatzwert` (Staffel als Vorschlag mit Herleitung), `api/bescheid_*.go`, Gate `docs/ersatzwert_staffel_test.go`  |
+| **Land (Lernmittelfreiheit)**         | Leihbücher nach Erlass behandeln: Fristen, Ersatzwert-Staffel, Bescheid statt Barzahlung                                            | `pkg/ersatzwert` (Staffel als Vorschlag mit Herleitung), `api/schaden/bescheid_*.go`, Gate `docs/ersatzwert_staffel_test.go`  |
 
 ---
 
-### 1.4 Umfang in Zahlen (gemessen 08.10.2026)
+### 1.4 Umfang in Zahlen (gemessen 16.10.2026)
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 76.340 Zeilen (ohne das generierte `docs/docs.go`) |
-| Go-Tests                          | 118.234 Zeilen in 811 Testdateien          |
-| Svelte/JavaScript (`frontend/src`) | 83.128 Zeilen in 745 Dateien, davon 309 `.svelte` |
+| Go-Produktivcode                  | 78.997 Zeilen (ohne das generierte `docs/docs.go`) |
+| Go-Tests                          | 133.541 Zeilen in 928 Testdateien          |
+| Svelte/JavaScript (`frontend/src`) | 83.994 Zeilen in 748 Dateien, davon 309 `.svelte` |
 | e2e (Playwright, `frontend/e2e`)  | 161 Dateien, davon 156 Specs               |
-| Registrierte HTTP-Routen          | 229 (davon 88 Operationen Swagger-annotiert) |
+| Registrierte HTTP-Routen          | 228; davon in Swagger beschrieben 88 Operationen auf 75 Pfaden |
 | Datenbank-Migrationen             | 167 Dateien, die höchste Nummer ist 164    |
-| Tabellen / Sichten in `schema.sql`| 44 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
+| Tabellen / Sichten in `schema.sql`| 43 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 
-Die Befehle, mit denen diese Zahlen in zehn Sekunden neu erhoben werden, stehen in
-[Kapitel 5](#anhang-die-zahlen-selbst-nachmessen). Das ist Absicht: Eine
-gepflegte Behauptung altert, ein Messbefehl nicht. Die vorige Fassung im README lag bei den
-Testzeilen um 47 % daneben, weil sie gepflegt statt gemessen war.
+Die Befehle, mit denen diese Zahlen neu erhoben werden, stehen im
+[Anhang von Kapitel 5](#anhang-die-zahlen-selbst-nachmessen): Eine gepflegte Zahl altert, ein
+Messbefehl nicht.
 
 ---
 
 ## 2. Randbedingungen
 
-Stand: 08.10.2026
+Stand: 16.10.2026
 
 Randbedingungen sind das, was **nicht zur Diskussion stand**. Sie erklären mehr von dieser
 Architektur als jede Entwurfsvorliebe: Der Grund für die Omnibox, für IMAP als
@@ -247,11 +239,11 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 
 | Konvention                                        | Regel                                                                                                                                                                                                              | Durchsetzung                                                        |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| **Namen, Sichtbarkeit, Kommentare**               | Eine Sache hat ein Wort, und das Fachwort ist deutsch; Verben, Kürzel, Türen, was öffentlich ist und was ein Kommentar sagt, regelt [STIL.md](STIL.md) nach Googles Regelwerk für Go. Der Bestand mischt noch Deutsch und Englisch (`Student` neben `Leser`) und wird Paket für Paket umgestellt. | `stil_ratsche_test.go` (Bestand je Paket, sinkt nur); `golangci-lint` (revive, Regel `exported`) |
+| **Namen, Sichtbarkeit, Kommentare**               | Eine Sache hat ein Wort, und das Fachwort ist deutsch; Verben, Kürzel, Türen, was öffentlich ist und was ein Kommentar sagt, regelt [STIL.md](STIL.md) nach Googles Regelwerk für Go. | `stil_ratsche_test.go` (Bestand je Paket, sinkt nur); `golangci-lint` (revive, Regel `exported`) |
 | **Migrationen**                                   | `NNN_beschreibung.sql`, idempotent (`IF NOT EXISTS` / `DO $$ … EXCEPTION`), dedupliziert über `schema_migrations`; die Seed-Liste in `schema.sql` muss exakt den Dateien entsprechen.                               | `db/migrationen_drift_test.go`, `db/migrationen_nummern_test.go`, `db/migrationen_schema_paritaet_pg_test.go` |
 | **Rows-Iteration**                                | Jede `rows.Next()`-Schleife endet mit `rows.Err()`. Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als Erfolg — die Liste wäre still unvollständig.                                                   | `golangci-lint`, Review                                              |
 | **Paketkommentar**                                | Jedes Go-Paket trägt genau einen Kommentar unmittelbar über der `package`-Zeile; er sagt in ein bis drei Sätzen, wofür das Paket da ist. So verlangt es Googles Regelwerk für Go, Abschnitt [Package comments](https://google.github.io/styleguide/go/decisions#package-comments). Ein Kommando beginnt mit `Command <Name>`. | `golangci-lint` (revive, Regel `package-comments`) |
-| **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen der Themen heißen noch `s`, wie am Server, von dem sie stammen; mit ihrem Paket bekommen sie `t` ([STIL.md](STIL.md), Abschnitt 4). | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
+| **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen eines Themas nennen ihn `t` ([STIL.md](STIL.md), Abschnitt 4). | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
 | **Komponenten-Größe Frontend**                    | ≤ 200 Zeilen je **neuer** `.svelte`-Datei; der Altbestand darüber darf nicht wachsen.                                                                                                                              | Ratsche `frontend/src/lib/frontend-hygiene-dateigroesse.test.js`     |
 | **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `darfSehen()` in `frontend/src/lib/menue.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
 | **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `verlangeRecht(...)` oder, wo jede Sitzung genügt, `VerlangeAnmeldung()`; öffentliche Routen stehen in einer Allowlist.                        | `api/geschuetzte_routen_test.go`                                  |
@@ -270,7 +262,7 @@ Diese Werkzeuge sind keine Beigabe: Ohne sie wären mehrere Entscheidungen in
 | Werkzeug                                | Rolle in der Architektur                                                                                            |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `golangci-lint` (`.golangci.yml`)       | Steht in CI **vor** allem anderen: Bricht er ab, laufen Tests, Deadcode-Gate und Restore-Probe nicht. Deshalb fragt ihn auch der Hook vor dem Push. |
-| `scripts/deadcode_gate.sh` + Baseline   | Unerreichbarer Code ist eine Fehlerquelle: `Sperrliste.Stoppe()` war geschrieben, getestet und von niemandem aufgerufen. |
+| `scripts/deadcode_gate.sh` + Baseline   | Unerreichbarer Code täuscht Sicherheit vor: geschrieben, getestet und von niemandem aufgerufen. |
 | `govulncheck` + `scripts/govulncheck-gate.sh`, `security/vuln-ausnahmen.json` | Schwachstellen-Gate mit **benannten, begründeten** Ausnahmen statt globalem Abschalten.               |
 | `gosec`, CodeQL, Trivy, `npm audit`      | Vier unabhängige Blickwinkel; Befunde, die begründet keine sind, werden dokumentiert (`.jules/sentinel.md`).          |
 | Playwright gegen den **gebauten Container** | e2e misst, was ausgeliefert wird — nicht einen Dev-Server.                                                       |
@@ -434,82 +426,13 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ### 4.2 Wie die Qualitätsziele technisch erreicht werden
 
-#### Q1 Korrektheit unter Nebenläufigkeit
-
-Vier Ebenen, absteigend nach Verlässlichkeit:
-
-1. **Struktur (DB):** `uniq_ausleihen_aktiv_exemplar` / `uniq_ausleihen_aktiv_geraet`
-   (partielle Unique-Indizes), `check_loan_item` (Exemplar XOR Gerät), `check_return_date`,
-   Fremdschlüssel auf `leser`, Enum-Vokabular für Rollen und Status.
-2. **Transaktion + Zeilensperre:** `READ COMMITTED` mit `SELECT … FOR UPDATE`. Die
-   **Sperrreihenfolge** ist festgelegt — Schüler → Ausleihe → Exemplar —, weil Online-Scan
-   und Nachbuchen sich sonst gegeneinander verklemmen. Die Rückgabe mit Vormerkung nimmt
-   `FOR UPDATE OF v SKIP LOCKED`, damit eine fremde Sperre den Rückgabevorgang nicht anhält.
-   Eine bekannte Ausnahme: Der Rückgabe-Trigger aus Migration 137 sperrt die Leserzeile nach
-   der Ausleihe ([Kapitel 11](#11-risiken-und-technische-schulden), R2).
-3. **Idempotenz:** `idempotency_keys` mit gespeicherter Antwort, stündlicher TTL-Lauf,
-   Wartezeit auf eine laufende Anfrage desselben Schlüssels. Der Unique-Index deckt den
-   TOCTOU-Fall ab, in dem zwei Anfragen die Idempotenz-Prüfung gleichzeitig passieren.
-4. **Fehler ehrlich abbilden:** Eine Unique-Verletzung wird zu **409 Conflict**
-   (`deuteAnlegeFehler`), nicht zu 500 und nicht zu einem stillen Erfolg. Die Testklasse
-   dazu heißt `phantom_erfolg_test.go` — „hat es geklappt?" muss beantwortbar sein.
-
-#### Q2 Datenschutz-Konformität
-
-- **Ein Ort für Schülerdaten, eine gefilterte Sicht für „wirklich Schüler":** Seit
-  Migration 123 stehen Schüler und Kollegium in `leser` mit der Spalte `art`; `schueler`
-  ist eine **Sicht** mit `WHERE art = 'schueler'` und `WITH CHECK OPTION`. Klassenlisten,
-  LUSD-Abgleich, Mahnlauf und die Löschfristen lesen die Sicht und sehen das Kollegium nicht.
-- **Verschlüsselung am Ruhepunkt:** Schülerfotos und das gespeicherte SMTP-Passwort liegen
-  AES-256-GCM verschlüsselt in der Datenbank (`internal/crypto`); Backups zusätzlich mit
-  scrypt-abgeleitetem Schlüssel (`internal/backupkrypto`). Für den Schlüsselwechsel gibt es
-  ein Werkzeug mit Probelauf (`cmd/rotate-encryption-key`).
-- **Fristen als Code, nicht als Vorsatz:** Anonymisierung, Karenz und Hard-Delete der
-  Abgänger laufen als Cronjob in festgelegter Reihenfolge (Anonymisierung **vor** Löschung,
-  damit die Karenz für beides gilt).
-- **Einstufung jeder Route:** [PII_MATRIX.de.md](PII_MATRIX.de.md) ordnet jede Route
-  einer Stufe 0–3 zu; `api/pii_matrix_test.go` hält Dokument und Code deckungsgleich.
-- **Kein Personenbezug in Logs:** Die Logzeile je Anfrage trägt keine IP; der
-  Bestätigungstoken im Pfad wird maskiert.
-
-#### Q3 Betriebstransparenz
-
-| Mittel                                        | Beantwortet die Frage                                                         |
-| --------------------------------------------- | ----------------------------------------------------------------------------- |
-| `GET /health` (mit DB-Ping)                   | Läuft der Prozess und erreicht er die Datenbank?                              |
-| Selbstprüfung der Betriebsbereitschaft        | Was ist **eingerichtet, aber nicht in Betrieb** (Mail, Selbstanmeldung, Geheimnisse, Backup)? |
-| Bereitschafts-Wächter (3 min nach Start, dann täglich) | Muss jemand hinsehen? Der Wächter meldet sich per Mail, statt gelesen werden zu müssen; auf Spielwiesen schweigt er von selbst. |
-| Restore-Probe (wöchentlich So 03:30)          | Ist das Backup **wiederherstellbar** — nicht nur vorhanden?                    |
-| Start-Verweigerung bei Default-Geheimnissen   | Läuft der Schulserver mit dem Schlüssel aus dem Repository?                    |
-| Skip-Bilanz im pre-push-Hook                  | Was hat dieser Lauf **nicht** geprüft?                                         |
-
-#### Q4 Bedienbarkeit an der Theke
-
-- **Ein Feld für alles.** Die Omnibox löst ohne Präfix in der Reihenfolge Buch → Ausweis →
-  Volltextsuche auf; Präfixe (`B-`, `A-`, `G-`, historisch `S-`/`L-`) sind eine Abkürzung.
-  Die Vorsilbe bleibt trotzdem nötig, weil sie **offline** die einzige Information ist, an
-  der ein Buchscan von einem Ausweisscan zu unterscheiden ist.
-- **Nachsicht für alte Aufdrucke.** Bleibt ein Scan ohne Treffer, wird ein mögliches
-  Code-39-Prüfzeichen abgeschnitten und **ein zweiter Versuch** gestartet — nur als zweiter
-  Versuch, weil im Schnitt jeder 43. gültige Code zufällig so aussieht, als hinge eines dran.
-- **Sperre statt Logout.** Nach 5 Minuten leert sich die Theke, nach 15 kommt der
-  Sperrbildschirm, und der Server sperrt die Anmeldung, bis das Passwort eingegeben ist; die
-  Sitzung läuft weiter (Mehrplatzrechner).
-- **Barrierefreiheit gemessen, nicht behauptet:** axe über den Anfangszustand aller
-  Hauptansichten, dazu Gates für Fokusfalle, Tabellen und Bewegung.
-
-#### Q5 Änderbarkeit
-
-- **Testebenen mit klarer Zuständigkeit:** Unit (Regeln), `*_pg_test.go` (Constraints gegen
-  echtes Postgres), e2e gegen den **gebauten Container** (was ausgeliefert wird).
-- **Drift-Gates gegen auseinanderlaufende Wahrheiten:** Swagger gegen Annotationen,
-  Migrationsliste gegen `schema.sql`, Compose-Variablen gegen den Code, Dokumentzahlen
-  gegen die Rechenfunktion, Fundstellen gegen `schema.sql`.
-- **Deadcode-Gate mit Baseline:** Unerreichbarer Code wird sichtbar, statt als
-  Scheinsicherheit dazustehen.
-- **Eine Wahrheitsquelle je Frage.** Menü und Router fragen dieselbe Funktion; die
-  Host-Allowlist steht in einem Paket; die Rechte der Leitung werden aus den Admin-Rechten
-  **abgeleitet** statt abgeschrieben.
+| Ziel                                    | Mittel                                                                                                                                                            | Näheres                          |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **Q1 Korrektheit unter Nebenläufigkeit** | Struktur in der Datenbank (partielle Unique-Indizes, Constraints, Fremdschlüssel), Transaktion mit Zeilensperren in fester Reihenfolge, Idempotenz-Schlüssel; eine Unique-Verletzung wird 409 statt eines stillen Erfolgs | 6.4, 8.4, 8.5, 8.6, A5, A7, A8   |
+| **Q2 Datenschutz-Konformität**          | Eine Tabelle `leser` mit der Sicht `schueler`, Verschlüsselung am Ruhepunkt, Löschfristen als Nachtlauf in fester Reihenfolge, Einstufung jeder Route mit Gate, keine IP und kein Token im Log | 8.3, A10, A17, A20               |
+| **Q3 Betriebstransparenz**              | `/health`, Selbstprüfung der Betriebsbereitschaft, Bereitschafts-Wächter per Mail, wöchentliche Restore-Probe, Start-Verweigerung bei Beispiel-Geheimnissen, Skip-Bilanz | 8.11, 8.14, A15, A17             |
+| **Q4 Bedienbarkeit an der Theke**       | Ein Feld für alle Scans, Vorsilben, die auch ohne Netz tragen, Nachsicht für alte Aufdrucke, Sperre statt Abmeldung, gemessene Barrierefreiheit | 5.4.2, 6.5, 8.8, 8.13, A13, A14, A21 |
+| **Q5 Änderbarkeit**                     | Testebenen mit klarer Zuständigkeit, Drift-Gates, Deadcode-Gate, eine Ratsche je Bugklasse, eine Wahrheitsquelle je Frage (Menü und Router fragen dieselbe Funktion, die Rechte der Leitung sind abgeleitet) | 2.3, 8.14, [sweeps.md](sweeps.md), A12 |
 
 ---
 
@@ -531,8 +454,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen gemessen vom 08. bis 15.10.2026
-(Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
+Stand: 16.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -545,19 +467,19 @@ Stand: 10.10.2026 · Umfangszahlen gemessen vom 08. bis 15.10.2026
 │  ┌────────────────────────────┐        ┌───────────────────────────────────┐ │
 │  │  Frontend (SPA + PWA)      │        │  Backend (Go)                     │ │
 │  │  Svelte 5 Runes, Tailwind  │◄──────►│  net/http, pgx/v5                 │ │
-│  │  309 .svelte, 83.128 Zeilen│  JSON  │  76.340 Zeilen Produktivcode      │ │
-│  │  IndexedDB-Warteschlange   │  SSE   │  229 Routen, 166 Migrationen      │ │
+│  │  Ansichten, Stores, Druck  │  JSON  │  Türen, Fachlogik, Abfragen       │ │
+│  │  IndexedDB-Warteschlange   │  SSE   │  Nachtläufe, Migrationen          │ │
 │  └────────────────────────────┘        └──────────────┬────────────────────┘ │
 │           ausgeliefert AUS dem Backend                │                       │
 │           (frontend/dist, os.OpenRoot)                │ pgx-Pool              │
 │                                                        ▼                      │
 │                                          ┌───────────────────────────────┐   │
 │                                          │  PostgreSQL 18                │   │
-│                                          │  44 Tabellen, 2 Sichten       │   │
+│                                          │  Tabellen, Sichten, Indizes   │   │
 │                                          └───────────────────────────────┘   │
 │                                                                              │
 │  ┌──────────────────────────────────────────────────────────────────────────┐│
-│  │  Einmal-/Betriebswerkzeuge (cmd/, 9 Kommandos) — NICHT über HTTP        ││
+│  │  Einmal-/Betriebswerkzeuge (cmd/, 6 Kommandos) — NICHT über HTTP        ││
 │  └──────────────────────────────────────────────────────────────────────────┘│
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -567,7 +489,7 @@ Stand: 10.10.2026 · Umfangszahlen gemessen vom 08. bis 15.10.2026
 | **Frontend (SPA/PWA)**     | Bedienung, Ansichten, Offline-Warteschlange, Menü-Sichtbarkeit, Druckvorbereitung                     | Autorisierung (nur Blende — Autorität ist immer das Backend)          |
 | **Backend (Go)**           | Routing, Auth/RBAC, Fachlogik, Persistenz, PDF, Mail, Hintergrundjobs, Echtzeit, Auslieferung der SPA  | Rendering der Oberfläche; Zustandshaltung über Prozessgrenzen hinweg  |
 | **PostgreSQL**             | Datenhaltung **und Durchsetzung der Invarianten** (Constraints, partielle Unique-Indizes, Sichten)    | Geschäftsregeln, die Ermessen enthalten (Ersatzwert-Vorschlag, Übergehen eines Hinweises) |
-| **cmd-Werkzeuge**          | Altbestandsübernahme, Migrationen von Hand, Foto-Migration, Backup/Restore, Schlüsselwechsel, Seeding, Lasttest | Alles, was im laufenden Betrieb über die Oberfläche erreichbar sein muss |
+| **cmd-Werkzeuge**          | Übernahme aus Littera und aus MySQL, Backup verschlüsseln und zurückspielen, Schlüsselwechsel (5.2.4) | Alles, was im laufenden Betrieb über die Oberfläche erreichbar sein muss |
 
 ---
 
@@ -616,409 +538,136 @@ HTTP-Anfrage
 
 #### 5.2.2 Pakete des Backends
 
-| Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
-| ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Zeitplan, Server, Graceful Shutdown  |
-| `api/`                  | 1.743 Zeilen, 13 Dateien   | HTTP-Schicht: Router mit den Routenlisten und den Zugängen zu den Themen, Middleware, CSRF, die Bremsen für Anfragen und Anmeldungen und die Abmeldung. Die Türen stehen je Thema in einem eigenen Paket darunter (Themen unter `api/`) |
-| `api/tuer/`             | 542 Zeilen, 7 Dateien      | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Sitzung, die Rechteprüfung mit ihrem Zwischenspeicher, das Protokoll der Verwaltung mit dem Eintrag zur Konto-Anlage, die Uhr, den Kopf der Briefe (`SchuleAus`). Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
-| `api/lernmittel/`       | 960 Zeilen, 7 Dateien      | Die Türen des LMF-Plans, das erste Thema mit eigenem Paket: den Plan als Reihenfolge lesen, rechnen, speichern, veröffentlichen und verwerfen, die Termine für das Kollegium als Liste und als PDF, das Signal an offene Ansichten, dazu die Verlängerung der Lernmittel einer Klasse. Der Typ `Tueren` hält die `tuer.Basis` des Servers als eingebetteten Zeiger |
-| `api/inventurlauf/`     | 784 Zeilen, 6 Dateien      | Die Türen der Inventur: einen Lauf über die ganze Bibliothek, eine Signatur oder Fach und Klasse beginnen, Exemplare scannen, den Lauf abschließen oder verwerfen, den Fehlbestand lesen, ein als Verlust gebuchtes Exemplar wieder aufnehmen oder endgültig löschen. Der Name weicht dem Medienkatalog `inventur/` aus (5.2.3) |
-| `api/benutzer/`         | 802 Zeilen, 7 Dateien      | Die Türen zu „Benutzer & Rechte": die Konten des Personals und die Matrix, die je Rolle nennt, was sie darf, mit den Regeln zum Schutz der Admin-Konten |
-| `api/portal/`           | 687 Zeilen, 6 Dateien      | „Mein Portal" des Kollegiums (Suche im Katalog, Reservierung von Klassensätzen, Meldungen an die Bibliothek), der öffentliche Katalog und die Folien für den Monitor |
-| `api/system/`           | 1.474 Zeilen, 13 Dateien   | Die Türen der Systempflege: Einstellungen, Mail-Einrichtung und Vorlagen, die Selbstprüfung der Betriebsbereitschaft mit ihrer täglichen Warnmail, der Stand der Sicherung, das Protokoll, Statistik und Übersicht, die zwei Importe |
-| `api/mahnwesen/`        | 1.409 Zeilen, 9 Dateien    | Die Türen des Mahnwesens und der Abgänger: die überfälligen Ausleihen je Klasse, Mahnlisten und Mahnbriefe als PDF und als Mail an die Klassenleitungen, deren Adressen je Klasse, die Liste der Abschlussklassen mit offenen Büchern in der Saison und ihre Kontoauszüge |
-| `api/schaden/`          | 1.069 Zeilen, 11 Dateien   | Die Türen zu Schaden und Ersatz: einen Verlust oder Schaden melden, Forderungen lesen und erledigen, der Vorschlag zum Betrag, der Bescheid über den Schadensersatz und die Rechnung an die Eltern |
-| `api/katalog/`          | 3.090 Zeilen, 26 Dateien   | Die Türen des Medienkatalogs zu einem Titel und seinen Exemplaren: Exemplare, Ausleiher und Historie eines Titels, Nummer, Zustand, Eigentum und Standort eines Exemplars, die nächste freie Nummer, Auflagen, Signaturen, Systematik, Schlagworte, die Abfrage über die ISBN, die Cover, die Geräte, Zugangs- und Abgangsbuch. Titelliste, Buchmaske und Import stehen in `inventur/` (5.2.3) |
-| `api/druck/`            | 648 Zeilen, 7 Dateien      | Die Türen des Druck-Centers: die Suche nach einem Titel, die Etiketten eines Titels und eines Druckauftrags als PDF, die Liste der Exemplare ohne Etikett mit Zähler, Vermerk und Stichtag, die Etiketten für Schüler, das Design der Ausweise, ein Strichcode als Bild |
-| `api/bestellung/`       | 2.428 Zeilen, 18 Dateien   | Die Türen des Bestellwesens: Vorschläge zum Nachbestellen, die Suche nach Titeln, die Bestellung mit ihrer Mail an den Lieferanten, Zulauf und Wareneingang, Bestellhistorie mit Übersicht, Einzelheiten und Bericht, die Lieferanten, die Bestätigung im Haus und über den Link des Lieferanten, das erneute Senden der Mail, der Topf einer Bestellung |
-| `api/leser/`            | 2.989 Zeilen, 18 Dateien   | Die Türen der Leserdatei: die Liste der Leser mit Klassen und Jahrgängen, die Leserakte, Anlegen, Ändern, Sperren, Löschen mit Papierkorb, das Zusammenführen zweier Datensätze, das Passbild, der Abgleich mit der LUSD, die Versetzung zum Schuljahreswechsel, die Auskunft nach Art. 15 DSGVO, der Kontoauszug |
-| `api/theke/`            | 1.565 Zeilen, 11 Dateien   | Die Türen der Theke: der Scan mit Ausleihe und Rückgabe, das Nachbuchen der Warteschlange ohne Netz mit seinen Meldungen und der Liste der Buchnummern, die Suche der Omnibox, Verlängern und Frist von Hand an einer Ausleihe, die Vormerkungen |
-| `repository/`           | 21.844 Zeilen, 167 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
-| `internal/service/`     | 5.093 Zeilen, 36 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`ausleih*.go`, `rueckgabe.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, womit ein neuer Plan beginnt (Rahmen und Reihenfolge) und seine Verteilung über die Schultage, Importe, Littera-Etiketten        |
-| `internal/lusd/`        | 1.776 Zeilen, 8 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/leser/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
-| `internal/bereitschaft/` | 973 Zeilen, 11 Dateien    | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert (`bereitschaft.go`, die Prüfungen in Dateien nach ihrer Sache), die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
-| `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/leser/dsgvo_auskunft.go` und `api/leser/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
-| `inventur/`             | 6.451 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenen Türen und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
-| `auth/`                 | 1.740 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Verlängern der Sitzung |
-| `jobs/`                 | 1.593 Zeilen, 14 Dateien   | Zeitplan für den Cron (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
-| `db/`                   | 651 Zeilen, 5 Dateien      | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                  |
-| `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.628 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben, Bestellbericht |
-| `mailservice/`          | 634 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`Nachricht`, `Sende`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
-| `sse/`                  | 191 Zeilen, 1 Datei        | Broker und Tür für Server-Sent Events                                                                                                                                     |
-| `apierrors/`            | 241 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`AntworteFehler`) und ihre Abbildung auf HTTP-Status                                                                                         |
-| `internal/*` (übrige)   | 6.912 Zeilen, 59 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `buchetikett` (Eingabe der Etiketten-Erzeuger für Bücher: Typ des Druckauftrags, Kopf der Schule, Wahl des Eigentumsvermerks nach dem Topf, die Daten eines Etiketts aus Titel, Bestellung und Druckauftrag), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
-| `migrations/`           | 167 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
-| `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
-| `cmd/` (6 Kommandos)    | 1.776 Zeilen, 10 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`                                                             |
+Was ein Paket tut, sagt sein Kommentar (`go doc ./<paket>`); die Tabelle ordnet die Pakete
+ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selbst-nachmessen).
+
+| Paket                   | Verantwortung                                                                                                                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main.go`               | Konfiguration lesen **und hart prüfen** (DSN, Länge der Schlüssel, IMAP, Secret-Guard), Pool, Migrationen, Rechte ab Werk, erster Admin, Übernahme der SMTP-Konfiguration, Broker, Zeitplan, Server, geordnetes Herunterfahren |
+| `api/`                  | Router mit den Routenlisten (`routen_*.go`) und den Zugängen zu den Themen, Middleware, CSRF, die Bremsen für Anfragen und Anmeldungen, die Abmeldung                          |
+| `api/tuer/`             | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, Sitzung, Rechteprüfung mit Zwischenspeicher (5.4.3), Protokoll der Verwaltung, Uhr, Kopf der Briefe. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
+| `api/<Thema>/`          | Die Türen je Menüpunkt (A26): `lernmittel`, `inventurlauf`, `benutzer`, `portal`, `system`, `mahnwesen`, `schaden`, `katalog`, `druck`, `bestellung`, `leser`, `theke`        |
+| `internal/service/`     | Fachlogik mit Transaktionsklammer: Ausleihe und Rückgabe (5.4.1), Omnibox (5.4.2), Nachbuchen, Geräte, Cover, Passbilder, Ersatzwert, Bestellungen, LMF-Plan und seine Fristen, Importe, Littera-Etiketten |
+| `repository/`           | Die Datenbankschicht (A25): Abfragen, Schreibpfade, Zeilensperren, Bewegungsstempel, Protokoll, Einstellungen, die Anweisungen der Nachtläufe, der Anmeldung und der Theke     |
+| `inventur/`             | Der Medienkatalog mit eigenen Türen und eigener Datenbankschicht (5.2.3)                                                                                                        |
+| `auth/`                 | Anmeldung gegen IMAP, Token, Sperrliste widerrufener Token, Sperre nach Inaktivität mit Prüfwert des Passworts, Selbstanmeldung des Kollegiums                                 |
+| `jobs/`                 | Zeitplan (UTC) und Nachtläufe: DSGVO-Kette, Protokoll-Aufbewahrung, Backup, Idempotenz-TTL, Vormerkungs-Verfall, Cover-Abgleich, Restore-Probe (5.4.5)                        |
+| `internal/lusd/`        | Abgleich mit dem Export der LUSD: Datei lesen, Zeilen zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion ([LUSD.md](LUSD.md))                              |
+| `internal/bereitschaft/` | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, je Bereich ein Befund mit Folge und Abhilfe; die Lage sammelt `api/system`                         |
+| `internal/auskunft/`    | Auskunft nach Art. 15 DSGVO: Typen der Antwort, Pflichtangaben, das Blatt aus derselben Antwort                                                                                |
+| `internal/buchetikett/` | Die Eingabe der Buchetiketten, die Druck-Center und Bestellung drucken (8.9)                                                                                                    |
+| `internal/littera/`, `internal/uebernahme/` | Übernahme des Littera-Altbestands (5.2.4)                                                                                                                   |
+| `internal/crypto/`, `internal/backupkrypto/`, `internal/ausweis/`, `internal/middleware/` | AES-256-GCM; scrypt und Dateiformat der Backups; Gültigkeit eines Ausweises; Security-Header                                    |
+| `internal/pgtest/`, `smtptest/`, `pdftest/`, `xlsxtest/`, `testdaten/`, `tuertest/`, `routertest/` | Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden                                                                   |
+| `pdf/`                  | Erzeugte Dokumente: Briefe, Listen, Bescheid, Rechnung, Etiketten mit ihren Bogenformaten, Bestandsbücher (8.9)                                                                 |
+| `mailservice/`          | Aufbau und Versand einer Mail, erzwungenes STARTTLS, Kopfzeilen-Härtung, die Konfiguration, mit der verschickt wird (8.10)                                                     |
+| `sse/`                  | Broker und Tür für Server-Sent Events (5.4.4)                                                                                                                                   |
+| `apierrors/`            | Einheitliche Fehlerantworten und ihre Abbildung auf HTTP-Status (8.6)                                                                                                          |
+| `db/`                   | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                           |
+| `pkg/`                  | Regeln und Hilfen ohne Abhängigkeit zu den Schichten darüber (Tabelle unten)                                                                                                    |
+| `cmd/`                  | Sechs Kommandos neben dem Server (5.2.4)                                                                                                                                        |
+| `migrations/`           | Nummerierte, idempotente Schritte des Schemas; laufen beim Start                                                                                                                |
+| `docs/` (Go-Anteil)     | Swagger-Spezifikation (generiert, ausgeliefert **nur** bei `APP_ENV=local`/`development`) und die Gates der Dokumente                                                         |
 
 ##### Themen unter `api/`
 
-Die Türen stehen je Thema in einem eigenen Paket unter `api/`,
-zwölf Themen nach den Menüpunkten der Oberfläche:
-`api/lernmittel`, `api/inventurlauf`, `api/benutzer`, `api/portal`, `api/system`,
-`api/mahnwesen`, `api/schaden`, `api/katalog`, `api/druck`, `api/bestellung`, `api/leser` und
-`api/theke`. In `api/` selbst stehen der Router mit den Routenlisten, die Middleware, CSRF,
-Rate-Limit und die Abmeldung.
-
-- Ein Thema trägt seine Türen als Methoden an einem eigenen Typ `Tueren`. Er bettet einen
-  Zeiger auf die `tuer.Basis` des Servers ein: Datenbank, Anmeldung, Live-Leitung und Uhr
-  erreicht eine Tür unter denselben Namen wie am Server (`s.DB`, `s.Jetzt()`), und es gibt
-  sie einmal. Der Typ steht mit dem Kommentar zum Paket in der Datei, die wie das Paket
-  heißt (`api/lernmittel/lernmittel.go`).
-- Zu welchem Thema eine Tür gehört, sagt die Stelle der Oberfläche, die sie ruft, nicht der
-  Name ihrer Datei: der Menüpunkt, in den Einstellungen die Kategorie. Die Einstellungen
-  tragen Kategorien mehrerer Themen. Die Lieferanten stehen bei der Bestellung, die
-  Schlagworte beim Katalog, „LUSD & Versetzung" bei den Lesern und die Adressen der
-  Klassenleitungen („Mahnwesen-Routing") beim Mahnwesen (`api/mahnwesen/klassenleitung.go`),
-  auch wenn ihre Routen neben denen der Leser angemeldet sind. Bei der Systempflege steht,
-  was die Einstellungen selbst speichern, und die Mail-Einrichtung. Die nächste freie
-  Exemplarnummer ruft die Buchmaske und steht beim Katalog, den Kontoauszug ruft die
-  Leserakte, er steht bei den Lesern. Die Titelsuche für den Etikettendruck ruft das
-  Druck-Center und steht beim Druck, die Verlängerung der Lernmittel einer Klasse rufen die
-  „LMF-Aktionen" der Einstellungen, sie steht bei den Lernmitteln. Rufen Stellen mehrerer
-  Themen eine Tür, steht sie bei dem Thema, dessen Daten sie liest: die Liste der Klassen bei
-  den Lesern, Verlängern und Frist von Hand an einer Ausleihe und die Vormerkungen bei der
-  Theke.
-- Die Routenlisten bleiben in `api/` (`routen_*.go`): Dort steht jede Tür mit Adresse und
-  Recht. Sie erreichen ein Thema über den Zugang des Servers, eine Methode mit dem Namen des
-  Themas (`s.lernmittel().LMFPlanSchreiben()`, erklärt in `api/router.go`). Der Zugang
-  reicht dem Thema die Basis des Servers als Zeiger, keine Kopie: Was am Server gestellt
-  wird, etwa die Uhr in einem Test, gilt für die Türen jedes Themas, auch nach dem Bau des
-  Routers. `api/zugaenge_basis_test.go` vergleicht je Zugang den Zeiger mit der Basis des
-  Servers; ein Zugang, den der Test nicht nennt, macht ihn rot.
-- Ein Zugang ist klein geschrieben: Außerhalb von `api/` erreicht niemand die Türen eines
-  Themas. Was der Start am Server ruft und was bei einem Thema steht, reicht der Server
-  weiter: `Server.BereitschaftsAlarm` ruft die tägliche Warnmail bei den Türen der
-  Systempflege, wo auch die Seite „Betriebsbereitschaft" ihre Lage sammelt
-  (`api/router.go`, `api/bereitschafts_alarm_weiterleitung_test.go`).
-- Ein Thema bindet `api/tuer` und die Schichten darunter ein. `api/` kann es nicht
-  einbinden: `api/` bindet das Thema ein, und Go weist den Kreis ab. Dass kein Thema ein
-  anderes einbindet, hält `api/themen_ratsche_test.go`: Sie liest die Einbindungen jeder
-  Datei in den Ordnern der Themen, auch der Tests, und lässt aus `api/` nur `api/tuer` zu;
-  ein Testpaket darf für den Router `api/` einbinden. Was zwei Themen brauchen, steht deshalb
-  in `api/tuer` oder einer Schicht darunter: Den Eintrag zur Konto-Anlage schreiben Benutzer
-  & Rechte und die Leserdatei über `tuer.Basis.ProtokolliereKontoAnlage`. Den Ersatzwert
-  eines Buchs nennen zwei Türen des Schadens und zwei des Katalogs; die Rechnung steht in
-  `internal/service/ersatzwert_vorschlag.go`, und `api/ersatzwert_grundlage_tueren_pg_test.go`
-  hält, dass alle vier dieselbe Grundlage nehmen. Buchetiketten drucken das Druck-Center und
-  die Bestellung; der Typ des Etiketts, der Kopf der Schule, die drei Wege zu den Daten eines
-  Etiketts und die Funktion, die die Eingabe der Erzeuger füllt, stehen in
-  `internal/buchetikett`.
-- Die Datei, die wie das Paket heißt, trägt den Typ und den Kommentar zum Paket, keine Tür.
-  Hieß eine Datei der Türen schon so, bekommt sie vor dem Umzug einen anderen Namen
-  (`api/mahnwesen/mahnwesen_liste.go`).
+- Ein Thema trägt seine Türen als Methoden am Typ `Tueren`. Er bettet einen Zeiger auf die
+  `tuer.Basis` des Servers ein: Datenbank, Anmeldung, Live-Leitung und Uhr gibt es einmal, und
+  was am Server gestellt wird (etwa die Uhr in einem Test), gilt für jedes Thema. Typ und
+  Paketkommentar stehen in der Datei, die wie das Paket heißt (`api/lernmittel/lernmittel.go`).
+- Zu welchem Thema eine Tür gehört, sagt die Stelle der Oberfläche, die sie ruft, nicht der Name
+  ihrer Datei: der Menüpunkt, in den Einstellungen die Kategorie. Rufen Stellen mehrerer Themen
+  eine Tür, steht sie bei dem Thema, dessen Daten sie liest.
+- Adresse und Recht jeder Tür stehen in den Routenlisten in `api/` (`routen_*.go`). Sie
+  erreichen ein Thema über einen klein geschriebenen Zugang des Servers
+  (`s.lernmittel().LMFPlanSchreiben()`), der die Basis als Zeiger weiterreicht;
+  `api/zugaenge_basis_test.go` hält das je Zugang. Außerhalb von `api/` erreicht niemand die
+  Türen eines Themas.
+- Kein Thema bindet ein anderes oder `api/` ein (`api/themen_ratsche_test.go`). Was zwei Themen
+  brauchen, steht in `api/tuer` oder einer Schicht darunter: der Eintrag zur Konto-Anlage
+  (`tuer.Basis.ProtokolliereKontoAnlage`), der Ersatzwert (`internal/service/ersatzwert_vorschlag.go`),
+  die Buchetiketten (`internal/buchetikett`).
 - Die Tests eines Themas stehen in seinem Ordner und bauen die Türen selbst
-  (`&Tueren{Basis: &tuer.Basis{DB: …}}`). Ein Test ohne Datenbank gibt ihnen eine leere
-  Basis (`&Tueren{Basis: &tuer.Basis{}}`): `s.DB` ist dann nil wie an einem Server ohne
-  Datenbank, und das Protokoll der Verwaltung schreibt nichts. Ohne Basis (`&Tueren{}`)
-  bricht jeder Zugriff auf sie ab, auch der des Protokolls. Ein Test, der eine Tür über den
-  ganzen Router prüft, steht im selben Ordner in einem eigenen Testpaket
-  (`package lernmittel_test`), weil das Paket des Themas `api/` nicht einbinden kann (8.14).
-  Den Router mit einem angemeldeten Konto baut ihm `routertest.MitSitzung`.
+  (`&Tueren{Basis: &tuer.Basis{DB: …}}`); ohne Datenbank bekommen sie eine leere Basis. Ein
+  Test über den ganzen Router steht dort als eigenes Testpaket (`package lernmittel_test`) und
+  baut ihn mit `routertest.MitSitzung`.
 
 ##### Wo ein Test steht
 
-- Ein Test steht bei dem Paket, dessen Regel er prüft. Die Tests der Türen eines Themas stehen
-  in seinem Ordner. Ein Test an der Datenbank für eine Abfrage oder Regel der
-  Datenbankschicht steht in `repository/`, auch wenn er sie über den Medienkatalog oder einen
-  Dienst erreicht (`repository/exemplar_standort_erben_pg_test.go` geht vier Wege zu einem
-  neuen Exemplar), ein Test des Ausleih-Dienstes in `internal/service`. Ein Paar aus Go und
-  SQL steht bei der Go-Seite (`internal/lusd/klassen_schluessel_pg_test.go`,
-  `pkg/leserart/leserart_pg_test.go`), der Lauf einer Migration in `db/`.
-- Braucht ein Test eine Prüfhilfe, die sein Paket einbindet, steht er als Testpaket
-  (`package repository_test`): `internal/testdaten` bindet `repository/` und
-  `internal/service` ein, im Paket selbst wäre das ein Kreis. Dasselbe gilt für einen Test
-  über den ganzen Router, im Ordner eines Themas wie in `api/` selbst (`package api_test`):
-  `internal/routertest` bindet `api/` ein. So nennt es Googles Regelwerk für Go, Abschnitt
-  [Test package](https://google.github.io/styleguide/go/decisions#test-package).
-- In `api/` stehen die Tests an Router, Middleware, CSRF und Abmeldung, die Prüfungen über
-  alle Routen und an den Routenlisten (Schutz, Rechte, Personendaten, Grenzen der Listen,
-  bloße Sitzung), die Schichtung, die Ratsche der Themen und jeder Test, der Türen zweier
-  Themen prüft; er ruft sie über die Zugänge des Servers.
-- Eine Prüfung, die den ganzen Baum liest und keinem Paket gehört, steht im Wurzelpaket und
-  liest ab `.`. Dort gilt Regel 7 aus [sweeps.md](sweeps.md): die Blindheit im Kopf der Datei
-  und eine Zeile in der Landkarte; `docs/landkarte_ratschen_test.go` hält das für das
-  Wurzelpaket und `docs/`. Gehört die Regel einem Paket, steht die Prüfung dort, auch wenn
-  sie dafür den Baum durchläuft: Dass niemand die Einstellungen an der Schicht vorbei liest,
-  hält `repository/einstellungen_gelesene_schluessel_test.go`.
+- Bei dem Paket, dessen Regel er prüft: ein Test an der Datenbank für eine Abfrage in
+  `repository/`, auch wenn er sie über eine Tür oder einen Dienst erreicht; ein Test des
+  Ausleih-Dienstes in `internal/service`; ein Paar aus Go und SQL bei der Go-Seite; der Lauf
+  einer Migration in `db/`.
+- Braucht er eine Prüfhilfe, die sein Paket einbindet (`internal/testdaten`,
+  `internal/routertest`), steht er als Testpaket daneben (`package repository_test`), wie es
+  Googles Regelwerk für diesen Fall vorsieht
+  ([Test package](https://google.github.io/styleguide/go/decisions#test-package)).
+- In `api/` stehen die Tests an Router, Middleware, CSRF und Abmeldung, die Prüfungen über alle
+  Routen (Schutz, Rechte, Personendaten, Grenzen der Listen), die Schichtung und jeder Test, der
+  Türen zweier Themen prüft.
+- Eine Prüfung, die den ganzen Baum liest und keinem Paket gehört, steht im Wurzelpaket; ihre
+  Blindheit steht im Kopf der Datei und in der Landkarte von [sweeps.md](sweeps.md) (Regel 7,
+  gehalten von `docs/landkarte_ratschen_test.go`). Gehört die Regel einem Paket, steht die
+  Prüfung dort, auch wenn sie dafür den Baum durchläuft
+  (`repository/einstellungen_gelesene_schluessel_test.go`).
 
-##### Warum `repository/` ein Paket bleibt
+##### `repository/` bleibt ein Paket
 
-Entschieden am 13.10.2026 nach einer Messung: Die Datenbankschicht wird nicht nach den Themen
-der Türen geteilt. Gemessen mit Typprüfung (`go/types`) über den Produktivcode am Stand vom
-Nachmittag dieses Tages (151 Dateien, 22.367 Zeilen): je Name von `repository/`, welche
-Pakete ihn brauchen und was die Dateien voneinander brauchen.
-
-- An den Türen sieht die Schicht teilbar aus: Von 465 Namen, die ein Thema braucht, braucht
-  437 genau ein Thema.
-- An den Dateien, die umziehen müssten, nicht. 83 der 151 Dateien braucht genau ein Thema
-  (12.489 von 22.367 Zeilen), 24 brauchen mehrere (5.387 Zeilen), 35 kein Thema, sondern die
-  Schichten dazwischen und daneben (3.559 Zeilen: `internal/service`, `jobs/`, `auth/`,
-  `inventur/`, LUSD, Auskunft), neun nur das Paket selbst (932 Zeilen). Ein gemeinsames Paket
-  kann ein Themenpaket nicht einbinden, und eine Methode steht im Paket ihres Typs. Ohne
-  Umbau blieben deshalb 48 Dateien mit 6.243 Zeilen bei einem Thema und 103 Dateien mit
-  16.124 Zeilen gemeinsam (72 %). Die Lernmittel und die Inventur hätten keine Datei für
-  sich.
-- Was mehrere Themen brauchen, ist der Kern der Schicht: das Protokoll (acht Themen), die
-  Einstellungen (acht), Titel und Exemplare (drei, dazu die Dienste), die Leser (drei, dazu
-  die Dienste).
-- Die Türen nähmen nach dieser Teilung 329 von 524 Namen weiter aus dem gemeinsamen Paket:
-  die Leser 61 von 112, der Katalog 40 von 81, die Theke 28 von 43. Nur das Portal käme mit
-  einem eigenen Paket aus. `internal/service` bände neben dem gemeinsamen drei Themenpakete
-  ein, `inventur/` zwei.
-- Die Schreiber einer Tabelle stünden in mehreren Paketen. Von 42 Tabellen, die
-  `repository/` beschreibt, hätten 21 Schreiber in mehr als einem Paket, darunter
-  `ausleihen`, `buecher_exemplare`, `buecher_titel`, `leser` und `schadensfaelle` (gezählt am
-  Text der Anweisungen). Zusammenführen und Tilgen fassen jede Tabelle mit Bezug auf einen
-  Leser an. Wie es aussieht, wenn eine Tabelle zwei Datenbankschichten hat, zeigt
-  `inventur/` (5.2.3): `buecher_titel` beschreiben sieben Dateien von `repository/` und vier
-  von `inventur/`.
-
-Googles Regelwerk für Go nennt in
-[Package size](https://google.github.io/styleguide/go/best-practices#package-size) die Probe:
-Muss ein Nutzer zweier Pakete beide einbinden, um eines sinnvoll zu nutzen, gehören sie
-zusammen, und eng gekoppelte Typen in einem Paket müssen ihre Einzelheiten nicht öffentlich
-machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 167 Dateien hat
-höchstens 111 Zeilen, neun von zehn höchstens 244, zwei haben über 500
-(`leser_zusammenfuehren.go` 629, `schlagworte_pflege.go` 524; gezählt am 14.10.2026 nachts).
-Eine Teilung schriebe 2.213 Zeilen in 461 Dateien um, die einen Namen des Pakets nennen, und
-bewegte einen Teil der 161 Testdateien.
+Die Datenbankschicht wird nicht nach den Themen geteilt (A25): Protokoll, Einstellungen, Titel
+und Leser brauchen mehrere Themen, und die Schreiber jeder Tabelle stehen in einem Paket.
+Gefunden wird über den Namen der Datei, der wie ihre Sache heißt (`repository/auflagen.go`).
 
 ##### Tür und Abfrage
 
-Für `api/` und `repository/` gilt:
+Für `api/`, `internal/service` und `repository/` gilt:
 
-- Die Tür prüft Eingabe und Recht, öffnet die Transaktion, bestimmt die Reihenfolge der
-  Schritte, entscheidet Status und Meldung und schreibt ins Protokoll. Die Anweisung und das
-  Lesen ihrer Zeilen stehen in `repository/`, als Funktion über `repository.Datenbank`; den erfüllen der
-  Pool und eine Transaktion.
-- Eine Abfrage liefert ihren eigenen Zeilentyp. Typen, die die Schnittstellenbeschreibung
-  nennt, ziehen nicht mit nach `repository/`; bei gleichen Feldern genügt die Typumwandlung
-  (`SignaturGruppe(zeile)`). Sie bleiben in `api/`, außer ein Fachpaket verarbeitet die Antwort
-  selbst weiter: Die Typen der Auskunft stehen mit ihrem Blatt in `internal/auskunft`. Dasselbe
-  gilt gegenüber `internal/service`: Ferien und Rahmen eines neuen LMF-Plans rechnet
-  `service.LMFPlanSommerferien` und `service.LMFPlanRahmenVorgabe` in eigenen Typen, die Tür
-  wandelt sie in die Typen ihrer Antwort (`api/lernmittel/lmf_plan.go`). Ebenso die
-  Reihenfolge, mit der ein neuer Plan beginnt (`service.LMFPlanReihenfolgeVorgabe`), und die
-  Ausfälle der Verteilung (`lmfPlanAusfaelle`). In der anderen Richtung prüft die Tür die
-  Anfrage und füllt daraus den Entwurf (`pruefeLMFPlan`, `service.LMFPlanEntwurf`); die
-  Verteilung über die Schultage rechnet der Dienst (`service.VerteileLMFPlan`). Dort stehen
-  auch die Regeln, die die Tür nur fragt: welche Klassen eine Art auslässt, wann ein Plan
-  vorbei ist, welcher Vermerk vorbelegt wird (`lmf_plan_reihenfolge.go`) und welcher Plan
-  beim Speichern als vorher zählt (`LadeLMFPlanZeilenVorher`, `lmf_frist_kopplung.go`).
-- `repository/` und `pdf/` kennen einander nicht. Die Tür füllt die Typen der PDF-Erzeuger
-  aus den Zeilen. Hängt ein gedruckter Text an einer Regel, die `pdf/` nicht kennt, wählt die
-  Tür ihn und reicht den fertigen Text: Den Eigentumsvermerk eines Etiketts bestimmt der Topf
-  des Exemplars, `buchetikett.PDFEtiketten` setzt ihn je Exemplar in
-  `pdf.BuchEtikett`, neben dem Schulnamen aus den Einstellungen, und der Erzeuger druckt, was
-  dort steht. Den Typ füllt nur diese Funktion (`etikett_eingabe_ratsche_test.go`). Sie steht
-  mit dem Typ des Druckauftrags aus dem Browser (`buchetikett.Etikett`) und
-  dem Kopf der Schule in `internal/buchetikett`, unter den Türen: Das Druck-Center und die
-  Bestellung drucken beide Buchetiketten. Das Feld des Druckauftrags für den Topf nimmt aus
-  einer Anfrage nichts an. Ein Test hält jedes Feld der Eingabe gegen seine Quelle
-  (`internal/buchetikett/buchetikett_test.go`). Das Blatt eines Bestandsbuchs entsteht aus der Antwort für
-  den Bildschirm (`abgangsbuchBlatt`, `zugangsbuchBlatt`): Es trägt dieselben Abschnitte,
-  Überschriften und Zahlen wie die Liste (`api/katalog/bestandsbuch_test.go`). Die Mahnliste bekommt
-  je Schüler eine Seite aus den Gruppen der Abfrage (`mahnlisteSeiten`,
-  `api/mahnwesen/mahnwesen_mail.go`), der Mahnbrief je Schüler Anschrift und Bücher aus den Zeilen der
-  Abfrage (`mahnbriefEmpfaenger`, `api/mahnwesen/mahnbriefe.go`); Betreff, Text und Absenderzeile
-  lädt die Tür aus Vorlage und Einstellungen. Das Bestellanschreiben bekommt Betreff und Vermerk
-  als fertige Texte zum Topf der Bestellung und den Weg der Etiketten als Wert
-  (`bestellanschreiben`, `api/bestellung/bestellmail_anhaenge.go`); den Satz dazu wählt der Brief.
-  Der Bestellbericht bekommt je Topf einen Block mit fertiger Beschriftung, in der Reihenfolge
-  der Berichte (`bestellberichtToepfe`, `api/bestellung/bestellbericht.go`); der
-  Erzeuger druckt die Blöcke seiner Eingabe und kennt die Töpfe der Schule nicht. Trägt eine
-  Bestellung einen Topf, den die Reihenfolge nicht nennt, entsteht kein Blatt: Sie stünde in
-  keinem Block und fehlte in jeder Summe.
-- Das Anlegen einer Bestellung steht in `internal/service` (`bestellung_anlegen.go`,
-  `BestellDienst.LegeAn`) und kennt weder die Anfrage noch den Druckauftrag der Tür. Die Tür füllt den
-  Auftrag aus der Anfrage (`bestellAuftrag`, `api/bestellung/bestellungen.go`) und die Angaben der
-  Bestellmail aus dem Ergebnis (`bestellmailDatenAus`, `api/bestellung/bestellmail_versand.go`).
-  Position, bestellter Titel und Etikett haben in beiden Paketen dieselben Felder, die Tür
-  wandelt per Typumwandlung; ein Feld, das nur eine Seite bekommt, übersetzt nicht mehr. Den
-  Topf jedes Etiketts setzt das Anlegen aus dem Topf der Bestellung, er kommt nicht aus einer
-  Anfrage. Ein Test hält jedes Feld beider Füll-Funktionen gegen seine Quelle
-  (`api/bestellung/bestellung_fuellen_test.go`).
-- Den Text der Bestellmail formuliert `internal/service` (`bestellmail_text.go`): die Vorlage
-  mit ihrem Rückfall auf den Vorgabetext, die Platzhalter und die zwei Absätze zu Topf und
-  Bestätigungs-Link, die `LoeseBestellMailAuf` anhängt, wenn die Vorlage sie nicht selbst
-  setzt. Die Tür reicht Kundennummer, Zahlen, Link, Ablauf und Topf (`sendeBestellmail`,
-  `api/bestellung/bestellmail_versand.go`) und entscheidet die Rückmeldung an die Oberfläche
-  (`bestellVersandMeldung`). Das Gate der Platzhalter liest den Renderer beim Dateinamen
-  (`mail_vorlagen_platzhalter_test.go`); zieht er um, zieht der Pfad dort mit.
-- Fachlogik, die in der Transaktion einer Tür läuft, bekommt diese Transaktion und keinen
-  Pool daneben: `service.KoppleLMFPlanFristen` liest die Einstellungen
-  (`repository.LadeEinstellungen`) und schreibt die Fristen über denselben Zugang. Mit Pool
-  und Transaktion als Nachbar-Argumenten ließe sich die Kopplung am Pool rufen, und kein
-  Compiler merkte es. Ein Test der Tür lässt die Kopplung nach ihrer ersten Änderung scheitern
-  und verlangt, dass keine Frist umgeschrieben bleibt (`api/lernmittel/lmf_plan_transaktion_pg_test.go`).
-- Die Auskunft nach Art. 15 DSGVO steht in `internal/auskunft` und nicht in `pdf/`. Antwort und
-  Blatt entstehen aus einem Objekt (`auskunft.Antwort`), damit das Blatt nichts auslässt,
-  was die abgerufene Auskunft nennt; eigene Eingabetypen in `pdf/` hießen, 16 Typen zu doppeln.
-  Und das Blatt liest die Tabelle der Protokoll-Angaben aus `repository/`
-  (`ProtokollAngaben`), die `pdf/` nicht einbinden darf. Die Tür liest die Zeilen, wandelt sie
-  in die Typen der Antwort und reicht die eingestellten Fristen (`auskunft.FristWerte`); die
-  Pflichtangaben formuliert das Paket (`auskunft.Pflichtangaben`). Den Namen eines Vorgangs im
-  Protokoll, den eine Tür schreibt, nennt das Paket als Text; ein Test der Tür hält ihn gegen
-  das Blatt (`api/schaden/bescheid_auskunft_test.go`).
-- Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer
-  Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
-- Neben einer Tür steht in ihrer Datei, was sie für Anfrage und Antwort braucht: die Prüfung
-  der Eingabe mit Status und Meldung, Füll-Funktionen zwischen den Typen der Schichten, das
-  Sammeln aus Datenbank, Einstellungen und Umgebung, der Versand an die Empfänger ihrer Mail
-  und das Protokoll. Eine Regel, die ohne Anfrage gilt, steht bei ihrem Fach. Die Probe:
-  Müsste eine zweite Stelle die Funktion nachformulieren, wenn `repository/`,
-  `internal/service` oder ein anderes Thema dieselbe Antwort braucht? Danach gelesen sind am
-  13.10.2026 die sechs Dateien mit den meisten Zeilen in Funktionen ohne einen Typ aus
-  `net/http`. An der Tür bleiben: der Bescheid (Füll-Funktionen,
-  Eingabeprüfung, die Anrede als fertiger Text nach der Volljährigkeit; die Datei ist nach
-  den Schritten Vorschlag, Erstellen und Druck geteilt, `api/schaden/bescheid_*.go`), die
-  Auskunft nach Art. 15 (Zeilen lesen und in die Typen der Antwort wandeln, das Recht am
-  Zugangskonto, das Protokoll) und die Kontoauszüge der Abgänger (wer was bekommt, die
-  Schleife des Versands, die Rückmeldung). Die Messung zählt auch solche Funktionen; sie
-  zeigt, wo zu lesen ist, und sagt nicht, dass dort eine Regel steht (11.1, R4).
-- Für die Nachtläufe gilt dieselbe Teilung. `jobs/` bestimmt, wann ein Lauf fährt, liest die
-  Einstellungen, schreibt Protokollzeile und Systemeintrag und entscheidet, ob ein Fehler den
-  Lauf beendet. Die Anweisungen stehen in `repository/nachtlauf.go`. Wo eine Frist gilt, setzt
-  die Funktion die Bedingung aus `loeschfristen.go` selbst ein, mit der Kulanz des Laufs; der
-  Aufrufer reicht nur die Frist. So kann kein Lauf einer Tabelle die Bedingung einer anderen
-  reichen. Eine Frist von 0 schaltet eine Befristung ab: Die Funktion schickt dann keine
-  Anweisung. `repository/nachtlauf_ratsche_test.go` hält zweierlei: Jede Funktion, die `jobs/`
-  ruft und die ändert oder löscht, setzt eine Bedingung aus `loeschfristen.go` ein oder steht
-  mit Grund als Ausnahme da, und eine `Loeschbedingung` entsteht nur in `loeschfristen.go`.
-  Dass Lauf und Wächter des Rückstands dieselbe Frage stellen, misst
-  `jobs/loeschrueckstand_paarung_pg_test.go` an der Datenbank; dass der Lauf ohne die Kulanz
-  des Wächters rechnet, `jobs/cron_dsgvo_kulanz_pg_test.go`.
-- Auch `auth/` formuliert kein SQL. Die Zeilen der Sitzungen, die Sperrliste widerrufener
-  Token und was die Anmeldung über ein Konto liest und schreibt, stehen in
-  `repository/sitzungen.go`, `widerrufene_token.go` und `anmeldung.go`, die Rechte einer Rolle
-  in `rechte.go`. `auth/` behält, was eine fehlende Zeile bedeutet (nicht gesperrt, keine
-  Sitzung, Selbstanmeldung), den Prüfwert des Passworts, die Fristen der Abfragen und die
-  Antworten; die Lesefunktionen reichen `pgx.ErrNoRows` deshalb durch. Anmeldung und
-  Selbstanmeldung lesen das Konto mit derselben Funktion (`LadeAnmeldeKonto`) und füllen den
-  Stand der Anmeldung an einer Stelle (`anmeldeKontoAus`, `auth/anmelden.go`).
-- Aus `internal/service` stehen die Anweisungen zum Passbild in `repository/leser_foto.go`
-  und die des Cover-Abgleichs in `repository/titel_cover.go`. Der Dienst behält das Umwandeln
-  und Verschlüsseln des Bilds, den Lauf über die Katalogdienste und dessen Zählung. Die
-  Bedingung „kein lokales Cover" steht einmal (`coverNichtLokal`) und gilt in der Auswahl wie
-  in beiden Schreibanweisungen: Zwischen Auswählen und Schreiben liegt die Laufzeit des
-  Abgleichs, und ein in dieser Zeit von Hand hochgeladenes Cover bleibt stehen.
-- Der Bestands-Import (`internal/service/import_zeilen.go`) liest die Zeilen der Datei,
-  ordnet sie Titeln zu und zählt; seine Anweisungen stehen in `repository/bestandsimport.go`.
-  Was er mit dem Katalog-Import gemeinsam hat, steht einmal: Beide laden den Titelbestand mit
-  `LadeTitelBestand`, beide fragen ihn mit derselben Methode, zu welchem Titel eine Zeile
-  gehört (`TitelBestand.TitelZu`, `repository/titelbestand.go`: zuerst die ISBN in ihrer
-  Normalform, sonst der Titeltext), und beide legen einen neuen Titel mit derselben Anweisung
-  an (`reiheTitelAnlageEin`, `repository/titel_schreiben.go`). Die zwei Karten des Bestands
-  sind außerhalb des Typs nicht erreichbar: Keine weitere Stelle kann die Frage noch einmal
-  selbst formulieren. Das Fach eines neuen Titels registriert
-  `LegeImportTitelAn` selbst in der Systematik, bevor es schreibt: `subject` ist ein
-  Fremdschlüssel, und ein Aufrufer kann den Schritt so nicht auslassen.
-- Zulauf, Bestellsuche und Wareneingang (`internal/service/zulauf.go`, `bestellsuche.go`,
-  `wareneingang.go`) gruppieren den Zulauf nach Bestellung, hängen die Treffer der DNB an die
-  des eigenen Katalogs, merken an ihnen an, welche ISBN ein Titel schon trägt, und schreiben
-  das Einbuchen ins Protokoll. Ihre
-  Anweisungen stehen in `repository/bestellung_zulauf.go` (`LadeExemplareImZulauf`,
-  `BucheZulaufEin`) und `repository/bestellsuche.go` (`FindeTitelZumBestellen`,
-  `FindeISBNsImKatalog`). Das Cover einer Zeile formuliert `sqlCoverOderDNB` einmal für Zulauf,
-  Bestellsuche und Bestellbedarf: der eigene Eintrag des Titels, sonst die Cover-Adresse der
-  DNB zu seiner ISBN. Bricht das Lesen der vorhandenen ISBN ab, gilt keine als vorhanden.
-- Die Geräte-Ausleihe (`internal/service/geraet.go`) entscheidet, ob ein Scan eine
-  Ausleihe oder eine Rückgabe ist, prüft Gerät und Leser, rechnet die Frist und schreibt das
-  Protokoll in der Transaktion der Buchung. Ihre Anweisungen stehen in
-  `repository/geraete_ausleihe.go`. `SperreOffeneGeraeteAusleihe` sperrt die Zeile der offenen
-  Ausleihe bis zum Ende der Transaktion; `BucheGeraeteRueckgabe` meldet eine Ausleihe, die es
-  nicht gibt, statt null Zeilen als gebucht zu nehmen. Die Funktionen nehmen Pool oder
-  Transaktion (`repository.Datenbank`); dass der Dienst ihnen die Transaktion reicht, halten drei Tests an
-  der Datenbank (`internal/service/geraet_ausleihe_pg_test.go`): zwei Plätze zugleich an
-  derselben Ausleihe und an derselben Rückgabe, und ein Protokoll, das sich nicht schreiben
-  lässt.
-- Die Sperrprüfung einer neuen Ausleihe (`internal/service/ausleih_sperren.go`) entscheidet,
-  welche Sperre hält und welcher Hinweis sich übergehen lässt. Ihre zwei Zahlen liest sie aus
-  `repository/`: die offenen Forderungen (`ZaehleOffeneSchaeden`) und die überfälligen Bücher
-  (`ZaehleUeberfaelligeAusleihen`: offen, kein Gerät, keine Dauerleihe, länger überfällig als
-  die Kulanz). Den Hinweis auf das Abholfach beim Scan eines Ausweises liest
-  `LadeAbholbereiteTitel`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
-  (`internal/service/omnibox.go`).
-- Fristen und Sperr-Schwellen liest die Ausleihe über `repository.LadeEinstellungen`
-  (`ladeAusleihEinstellungen`, `internal/service/ausleih_einstellungen.go`) und nimmt daraus neun Felder
-  (`ausleihEinstellungenAus`). Die Zeilen der Einstellungen liest und bildet damit eine Stelle
-  ab: Ein fehlender oder unlesbarer Wert hat an der Theke dieselbe Vorgabe wie in der Maske
-  der Einstellungen.
-- Ausleihe, Rückgabe und Nachbuchen eines Buchs (`internal/service/loan_*.go`,
-  `nachbuchen.go`) bestimmen die Reihenfolge der Schritte in ihrer Transaktion, die Schranken
-  (Sperre, Ausleihlimit, fremde Reservierung) und die Meldung. Ihre Anweisungen stehen in
-  `repository/`: die Zeilensperren an Leser und Exemplar in `ausleihe_zeilensperren.go`, die
-  Zählung gegen das Ausleihlimit und die Reservierung eines Exemplars in
-  `ausleihe_schranken.go`, die erfüllte Vormerkung, die nächste wartende und das
-  Bereitstellen in `vormerkung_theke.go`. Eine Funktion, die sperrt, nimmt eine Transaktion
-  (`pgx.Tx`) und keinen Pool: Am Pool endete die Sperre mit der Anweisung, und der Compiler
-  weist einen solchen Aufruf ab. Den Leser sperren Scan und Nachbuchen mit derselben Anweisung
-  an `leser` (`SperreLeserzeile`). Wer als Wartender ein Buch bekommt (nicht
-  gelöscht, nicht gesperrt), steht als eine Bedingung in `vormerkung_nachruecken.go` und gilt
-  bei der Rückgabe wie beim Nachrücken. `internal/service` formuliert damit keine Anweisung.
-- Womit verschickt wird, bestimmt `mailservice.LadeSMTPKonfig`: die gespeicherte Zeile, und
-  solange dort kein Server steht, die Umgebung. Die Zeile liest es über
-  `repository.MailEinstellungsAbfragen.Lade`, dieselbe Funktion wie die Maske der
-  Mail-Einstellungen; das Paket behält den Rückfall auf die Umgebung, das Entschlüsseln des
-  Passworts und die Vorgaben für Port und Absender. Auch der Aufbau einer Mail mit Anlagen
-  und ihr Versand stehen dort (`mail_sender.go`: `Nachricht`, `Postausgang`). Die Tür
-  bestimmt, an wen was geht und was ihre Antwort über den Versand sagt: den Status zu einem
-  Versandfehler (`mailFehlerStatus`, `api/system/mail_einstellungen.go`) und die Werte des Felds `mail`
-  (`api/portal/anliegen.go`). Der Server legt einen Postausgang an und gibt ihn den Türen
-  über die Basis (`Basis.Mail`, gelesen über `Basis.Post()`); ein Test gibt seiner Tür einen
-  eigenen.
-- Was jede Tür braucht, steht in `api/tuer`: `AntworteJSON` und `LeseAnfrage`, die
-  Rechteprüfung mit ihrem Zwischenspeicher (5.4.3), das Protokoll der Verwaltung, die Uhr. Das
-  Paket steht unter den Türen, damit das Paket eines Themas es einbinden kann; `api/` selbst
-  ließe sich von dort nicht einbinden. Der Typ `tuer.Basis` trägt
-  Datenbank, Anmeldung, Live-Leitung und Uhr mit den Methoden dazu. `api.Server` bettet ihn
-  ein: Eine Tür schreibt weiter `s.DB` und `s.HatRecht(…)`, und die Routenlisten rufen
-  `s.verlangeRecht(…)` wie bisher. Ein Literal nennt die vier Felder über die Basis
-  (`&Server{Basis: tuer.Basis{DB: …}}`). Router, Routenlisten und die Kette der Middleware
-  bleiben in `api/`.
-- Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
-  `ProtokolliereAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
-  Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
-  `repository/` `auth/` nicht einbinden, sonst entsteht ein Kreis.
-- Hängt die SET-Liste einer Änderung von den genannten Feldern ab, nennt `repository/` die
-  Spalten in einem Typ der Änderung (`LeserAenderung`: ein Feld ohne Wert bleibt, wie es ist);
-  die Tür prüft und füllt nur Werte. Ein Test hält jedes Feld des Typs gegen eine Spalte, ein
-  zweiter jedes Feld der Anfrage gegen die gesetzten Spalten.
-- Eine Regel, die auch `repository/` oder `internal/service/` brauchen, steht in einem Paket
-  unter `pkg/` und nicht in `api/`: Die beiden können `api/` nicht einbinden und formulieren
-  die Regel sonst ein zweites Mal. So fragen alle Stellen über `pkg/leserart`, ob ein Leser
-  Schüler ist (`IstSchueler`, und wo die Art fehlen kann, `IstKollegium`). Aus demselben Grund
-  stehen die zwei Töpfe einer Bestellung in `pkg/mitteltopf`: Der Export des Bestands in
-  `inventur/` braucht das Wort des Trägers, `api/` Kurzwort, Betreff und Vermerk. Das Paket
-  trägt die Werte, die Wörter und die Regel zum großen Lernmittel-Etikett; `repository/mittel.go`
-  behält, wie eine Abfrage den Topf eines Exemplars bestimmt.
+- **Die Tür** prüft Eingabe und Recht, öffnet die Transaktion, bestimmt die Reihenfolge der
+  Schritte, entscheidet Status und Meldung und schreibt ins Protokoll. Neben ihr in ihrer Datei
+  steht, was nur sie braucht: die Prüfung der Eingabe, Füll-Funktionen zwischen den Typen der
+  Schichten, das Sammeln aus Datenbank und Einstellungen, der Versand ihrer Mail. Eine Regel,
+  die ohne Anfrage gilt, steht bei ihrem Fach. Die Probe: Müsste eine zweite Stelle die
+  Funktion nachformulieren, wenn eine andere Schicht dieselbe Antwort braucht?
+- **Die Fachlogik** (`internal/service`) entscheidet, was gilt (Frist, Sperre, Schranke,
+  Reihenfolge der Schritte), und formuliert keine Anweisung. Läuft sie in der Transaktion einer
+  Tür, bekommt sie diese Transaktion und keinen Pool daneben (`service.KoppleLMFPlanFristen`):
+  Mit beiden als Nachbar-Argumenten ließe sie sich am Pool rufen, und kein Compiler merkte es.
+  Eine Funktion, die Zeilen sperrt, nimmt `pgx.Tx`; am Pool endete die Sperre mit der
+  Anweisung.
+- **Die Abfrage** steht in `repository/` als Funktion über `repository.Datenbank` (Pool oder
+  Transaktion) und liefert ihren eigenen Zeilentyp. Die Typen der Schnittstellenbeschreibung
+  bleiben an der Tür; bei gleichen Feldern genügt die Typumwandlung (`SignaturGruppe(zeile)`).
+  Was mehrere Abfragen teilen, steht einmal: eine Bedingung (`coverNichtLokal`,
+  `sqlCoverOderDNB`, die Wartenden in `vormerkung_nachruecken.go`), das Lesen der
+  Einstellungen (`repository.LadeEinstellungen`), der Eintrag ins Protokoll
+  (`repository.SchreibeAdminProtokoll`). Hängt die SET-Liste einer Änderung von den genannten
+  Feldern ab, nennt `repository/` die Spalten in einem Typ der Änderung (`LeserAenderung`). Ein
+  Fehler beim Lesen der Zeilen trägt `repository.ErrZeileUnlesbar`.
+- **`repository/` und `pdf/` kennen einander nicht.** Die Tür füllt die Eingabe der Erzeuger aus
+  den Zeilen. Hängt ein gedruckter Text an einer Regel, die `pdf/` nicht kennt, reicht sie ihn
+  fertig: den Eigentumsvermerk nach dem Topf des Exemplars, Betreff und Vermerk einer
+  Bestellung. Ein Blatt entsteht aus derselben Antwort wie die Ansicht am Bildschirm
+  (`abgangsbuchBlatt`, `auskunft.Antwort`), und ein Test hält jedes Feld einer Füll-Funktion
+  gegen seine Quelle (`api/bestellung/bestellung_fuellen_test.go`,
+  `internal/buchetikett/buchetikett_test.go`).
+- **Eine Regel, die auch `repository/` oder `internal/service` brauchen,** steht in `pkg/` und
+  nicht in `api/`, das die beiden nicht einbinden können: `pkg/leserart` (Schüler oder
+  Kollegium), `pkg/mitteltopf` (die zwei Töpfe einer Bestellung), `pkg/lmfplan` (Fristen nach
+  Schultagen).
+- **Die Nachtläufe** teilen sich ebenso: `jobs/` bestimmt Zeitpunkt, Einstellungen, Protokoll
+  und Abbruch, die Anweisungen stehen in `repository/nachtlauf.go`. Wo eine Frist gilt, setzt die
+  Funktion die Bedingung aus `repository/loeschfristen.go` selbst ein; der Aufrufer reicht nur
+  die Frist. `repository/nachtlauf_ratsche_test.go` hält das.
+- **`auth/` formuliert kein SQL.** Es behält, was eine fehlende Zeile bedeutet (nicht gesperrt,
+  keine Sitzung, Selbstanmeldung), den Prüfwert des Passworts und die Antworten.
 
-Zwei Ratschen halten den Stand. `schichtung_ratsche_test.go` im Wurzelpaket liest jede
-Produktivdatei: Anweisungen formuliert und schickt nur die Datenbankschicht, das sind
-`repository/`, `inventur/` (5.2.3), `db/`, der Schreiber der Littera-Übernahme und die
-Einmal-Werkzeuge; die Liste mit dem Grund je Paket steht in der Datei. Sie hat zwei Detektoren:
-den Text einer Anweisung und den Aufruf, der sie abschickt (`Exec`, `Query`, `QueryRow`,
-`SendBatch`, `CopyFrom`). Der zweite sieht auch eine Anweisung, deren Text erst aus Variablen
-entsteht, etwa mit dem Tabellennamen als Variable. Was außerhalb der Datenbankschicht noch
-Anweisungen trägt, führt die Ratsche je Datei als Bestand, der nur sinken kann: die zwei
-Dateien der Restore-Probe in `jobs/`: Sie legen eine Wegwerf-Datenbank an und
-zählen darin die Tabellen, keine ihrer Anweisungen trifft eine Tabelle der Anwendung. Dass
-die Detektoren messen, belegen sie an `repository/`: Dort müssen sie Anweisungen finden.
-`api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der nur kleiner
-werden kann. Es sind 25, und sie bleiben: je Thema die Datei mit seinem
-Typ (zwölf), drei in `api/tuer` (`constants.go`, `verwaltung_protokoll.go`, `tuer.go`) und
-zehn mit Typen einer Anfrage oder Antwort, Füll-Funktionen und Helfern mehrerer Türen
-(`lernmittel/lmf_plan_live.go`, `system/betriebsbereitschaft_alarm.go`,
-`mahnwesen/abgaenger_fenster.go`, `mahnwesen/mahnwesen_mail.go`,
-`schaden/bescheid_schnappschuss.go`, `bestellung/bestellmail_anhaenge.go`,
-`bestellung/bestellmail_versand.go`, `leser/leser_klasse_regel.go`,
-`theke/eingabe_anfrage_antwort.go`, `theke/theken_leser.go`). Der Bestand sieht eine Datei nicht, die
-`net/http` nur für Statuswerte einbindet (`theke/nachbuchen_schluessel.go`), und keine Regel
-in einer Datei mit Tür; die sechs Dateien mit den meisten Zeilen ohne Anfrage sind dafür
-gelesen (oben, „Neben einer Tür"). Als Anweisung zählt auch eine Massenkopie (`CopyFrom`): Sie nennt Tabelle und
-Spalten als Werte und trägt keinen SQL-Text.
+Zwei Ratschen halten die Schichtung. `schichtung_ratsche_test.go` liest jede Produktivdatei:
+Anweisungen formuliert und schickt nur die Datenbankschicht (`repository/`, `inventur/`, `db/`,
+der Schreiber der Littera-Übernahme, die Einmal-Werkzeuge; der Grund je Paket steht in der
+Datei). Sie erkennt eine Anweisung an ihrem Text und am Aufruf, der sie abschickt (`Exec`,
+`Query`, `QueryRow`, `SendBatch`, `CopyFrom`), auch wenn der Text erst aus Variablen entsteht;
+was außerhalb noch Anweisungen trägt (die Restore-Probe in `jobs/`), führt sie als Bestand, der
+nur sinken kann. `api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der
+nur kleiner werden kann.
 
 ##### Die `pkg/`-Pakete im Einzelnen
 
@@ -1026,30 +675,30 @@ Spalten als Werte und trägt keinen SQL-Text.
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | `clientip`         | Echte Client-IP hinter dem Proxy — `X-Forwarded-For` wird **nur** von konfigurierten Proxies geglaubt (sonst wäre Rate-Limiting ein globaler DoS) |
 | `safehttp`         | HTTP-Clients für **fremde** Ziele; Verbindungen zu nicht-öffentlichen IP-Adressen werden abgelehnt (SSRF)                          |
-| `ratelimit`        | Die Bremse je Adresse: ein Vorrat von Anfragen je Sekunde, der sich wieder füllt. Die Middleware nimmt sie für jede Anfrage, der Abruf der Cover für seine Fehltreffer |
+| `ratelimit`        | Die Bremse je Adresse: ein Vorrat von Anfragen je Sekunde, der sich wieder füllt                                                  |
 | `coverquelle`      | Host-Allowlists für Cover und Metadaten; baut die URL aus geprüften Teilen **neu** auf (Parsing-Differential)                     |
-| `coverdatei`       | Lokal gespeicherte WebP-Cover in einer Form, die `gofpdf`/`maroto` einbetten können; dazu die eine Stelle, die ein Cover im Seitenverhältnis in ein gofpdf-Dokument setzt (`BindeEin`) |
-| `coverablage`      | Der Ort der lokal gespeicherten Cover: Pfad einer Cover-URL prüfen, Verzeichnis öffnen, Datei entfernen — ohne Bildbibliothek, damit auch die ohne CGO gebauten Werkzeuge es einbinden können |
-| `betrag`           | Geldbeträge in der deutschen Form (zwei Nachkommastellen, Komma) — eine Stelle für Briefe, Berichte und die Meldungen der Theke   |
-| `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG), Qualitätsvorgabe                                                                    |
+| `coverdatei`       | Lokale WebP-Cover in einer Form, die die PDF-Bibliotheken einbetten können, und die eine Stelle, die ein Cover im Seitenverhältnis setzt (`BindeEin`) |
+| `coverablage`      | Der Ort der lokal gespeicherten Cover, ohne Bildbibliothek, damit auch die ohne CGO gebauten Werkzeuge es einbinden können        |
+| `betrag`           | Geldbeträge in der deutschen Form (zwei Nachkommastellen, Komma)                                                                  |
+| `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG)                                                                                      |
 | `csvutil`          | Schutz vor CSV-/Formel-Injection (CWE-1236) beim Export                                                                           |
-| `pdfzeichen`       | Die eine Zeichenersetzung für alle PDFs: gofpdf druckt in cp1252, ş, ł, ğ … würden sonst zum Punkt (Ratsche `pdfzeichen_ratsche_test.go`: Jeder Übersetzer kommt von hier, und jeder Druckaufruf nennt ihn); dazu das Kürzen eines Texts auf eine Zeichenzahl, auf eine gedruckte Breite und auf eine Zelle (`KuerzeAufZelle`) |
+| `pdfzeichen`       | Die eine Zeichenersetzung für alle PDFs (gofpdf druckt in cp1252) und das Kürzen eines Texts auf Zeichen, gedruckte Breite und Zelle; Ratsche `pdfzeichen_ratsche_test.go` |
 | `xlsxgrenze`       | Die eine Tür zu einer hochgeladenen XLSX: Entpackgrenze, Abweisung verschlüsselter Container, Schranke gegen Abstürze der Bibliothek |
 | `isbnutil`         | ISBN normalisieren                                                                                                                |
-| `strichcode`       | Der Strichcode eines Ausweises, Etiketts oder Briefs als PNG, Code 128 oder QR: eine Stelle für die Tür `GET /api/barcode` und die Erzeuger der PDFs |
+| `strichcode`       | Strichcode als PNG (Code 128, QR) für die Tür `GET /api/barcode` und die Erzeuger der PDFs                                        |
 | `code39`           | Rechnet das Prüfzeichen heraus, das alte Aufdrucke in Code 39 tragen (A14)                                                         |
 | `kennung`          | UUID-Form genau so prüfen, wie Postgres sie annimmt (nicht `urn:uuid:…`)                                                          |
 | `schulzeit`        | „Jetzt" aus Sicht der Schule, Stichtage der Bestandskartei (15.3./15.9.), Kalendertag-Rechnung                                    |
 | `lmf`              | Das Wissen über Lernmittel: Schuljahresfrist, Ausleihlimit, Katalogsichtbarkeit, Löschfrist                                       |
-| `bestelllink`      | Der Bestätigungs-Link einer Bestellung: das Geheimnis im Link, sein Hash für die Datenbank, die Adresse aus der öffentlichen Adresse der Einstellungen, die Frist mit ihrer Vorgabe — eine Stelle für das Anlegen der Bestellung und die Türen |
-| `leserart`         | Das Wissen über die Arten eines Lesers: welche es gibt, ihr Wort, Schüler oder Kollegium, Zugang zu „Mein Portal" — eine Stelle für Türen, Fachlogik und Abfragen |
-| `mitteltopf`       | Das Wissen über die zwei Töpfe, aus denen die Schule Bücher bezahlt: welche es gibt, ihr Wort, ihr Träger, Betreff und Vermerk einer Bestellung, die Reihenfolge in Berichten — eine Stelle für Türen, Abfragen, den Export des Bestands und die Littera-Übernahme |
-| `lmfplan`          | Feiertage (Osterformel), freie Tage, Terminlagen des LMF-Plans                                                                    |
+| `bestelllink`      | Der Bestätigungs-Link einer Bestellung: Geheimnis, Hash für die Datenbank, Adresse, Frist                                         |
+| `leserart`         | Die Arten eines Lesers, ihr Wort, Schüler oder Kollegium, Zugang zu „Mein Portal"                                                 |
+| `mitteltopf`       | Die zwei Töpfe, aus denen die Schule Bücher bezahlt: Wort, Träger, Betreff und Vermerk einer Bestellung, Reihenfolge in Berichten |
+| `lmfplan`          | Feiertage (Osterformel), Ferientabelle, Fristen nach Schultagen, Terminlagen des LMF-Plans                                        |
 | `ersatzwert`       | Schadensersatz-**Vorschlag** nach Staffel, **mit Herleitung** (der Betrag liegt im Ermessen der Schule)                           |
 | `httpresp`         | Antwortkörper schreiben, wenn Status und Header schon draußen sind (dann bleibt nur Logging)                                       |
 | `closeutil`        | Schließen mit protokolliertem, aber nicht behebbarem Fehler                                                                       |
 | `logger`           | Log-Injection-Schutz für Werte, die nicht durch `slog` gehen (CWE-117)                                                            |
-| `safego`           | Unbeaufsichtigte Goroutinen überleben ein Panic — ohne den Prozess mitzunehmen                                                    |
+| `safego`           | Unbeaufsichtigte Goroutinen überleben ein Panic, ohne den Prozess mitzunehmen                                                     |
 
 #### 5.2.3 Warum `inventur/` ein eigenes Untermodul ist
 
@@ -1068,24 +717,25 @@ Grenze sauber ist: Der Katalog kennt keine Ausleihen, keine Leser und kein Mahnw
 
 #### 5.2.4 Neben der Anfragekette: die Einmal-Werkzeuge
 
-Die Altbestandsübernahme läuft **nicht** über Handler/Service/Repository, sondern als
-eigenes Kommando gegen dieselbe Datenbank:
+Sechs Kommandos laufen nicht über Handler, Service und Repository, sondern für sich gegen
+dieselbe Datenbank oder die Dateien einer Sicherung ([SCRIPTS.md](SCRIPTS.md)):
 
-| Paket                    | Aufgabe                                                                                                                                         |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `internal/littera`       | Liest den Littera-Export (`mdb-export`-CSVs), bildet ihn auf die Begriffe dieser Anwendung ab und schreibt ihn: Bestand, Personen, Barcodes, Verleih, Abgang |
-| `internal/uebernahme`    | Das Gemeinsame **jeder** Übernahme: Savepoint je Datensatz, Einordnung von Postgres-Fehlern nach SQLSTATE, ISBN-Prüfung, Spaltenbreiten, Protokoll mit getrennten Zählern für Abwertung und Ausfall |
-| `cmd/littera-altbestand` | Das Kommando davor ([SCRIPTS.md](SCRIPTS.md))                                                                                                |
+| Kommando / Paket                             | Aufgabe                                                                                                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cmd/littera-altbestand`, `internal/littera` | Liest den Littera-Export (`mdb-export`-CSVs), bildet ihn auf die Begriffe dieser Anwendung ab und schreibt ihn: Bestand, Personen, Barcodes, Verleih, Abgang |
+| `cmd/littera-import`                         | Übernimmt ein Katalogisat aus Littera (MAB2 als XML)                                                                                           |
+| `cmd/migrate`                                | Überträgt einmalig einen Bestand aus MySQL                                                                                                      |
+| `internal/uebernahme`                        | Das Gemeinsame **jeder** Übernahme: Savepoint je Datensatz, Einordnung von Postgres-Fehlern nach SQLSTATE, ISBN-Prüfung, Spaltenbreiten, Protokoll mit getrennten Zählern für Abwertung und Ausfall |
+| `cmd/encrypt-backup`, `cmd/restore-backup`, `cmd/rotate-encryption-key` | Sicherung verschlüsseln und zurückspielen, Schlüssel wechseln; sie liegen im Image (7.2)                                 |
 
-Warum `internal/uebernahme` ein eigenes Paket ist und nicht in `cmd/` liegt: Die Härtung
-entstand in `cmd/migrate` gegen echtes PostgreSQL. Eine zweite Kopie für Littera hätte
-bedeutet, dass die zweite Fassung dieselben Fehler noch einmal macht — der fehlende
-Savepoint war jahrelang unbemerkt und kostete im Fehlerfall ganze Batches.
+`internal/uebernahme` ist ein eigenes Paket, weil die Härtung gegen echtes PostgreSQL in
+`cmd/migrate` entstand: Eine zweite Fassung für Littera hätte dieselben Fehler noch einmal
+gemacht, etwa den fehlenden Savepoint je Datensatz, mit dem ein Fehler den ganzen Batch mitnimmt.
 
 #### 5.2.5 Fremdbibliotheken des Backends
 
-Maßgeblich ist `go.mod` (25 direkte Abhängigkeiten am 08.10.2026). Die Tabelle nennt, **wo**
-jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht abgeschrieben:
+Maßgeblich ist `go.mod`. Die Tabelle nennt, **wo** jede direkte Abhängigkeit eingesetzt wird,
+gemessen über die Importe des Produktivcodes:
 
 | Modul                                                          | eingesetzt in                                                    | Rolle                                                                                   |
 | -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -1151,7 +801,7 @@ frontend/src
 - **Datenarrays in `.js`-Metadatendateien** (z. B. `rechteKategorien.js`) statt in
   Komponenten.
 - **Logikfreie Teilkomponenten mit `{#snippet}` / `{@render}`** statt kopierter
-  Markup-Blöcke (gemessen 18.09.2026: 67 Dateien).
+  Markup-Blöcke.
 - **Flat & Edge-to-Edge:** Trennung über `border-b`, nicht über Karten; Karten bleiben
   Modals, Toasts, Dropdowns und Cover-Kacheln. Gemeint sind die Flächen der Seite, nicht die
   Eingabefelder: Ein Textfeld läuft nicht über die volle Breite
@@ -1247,8 +897,7 @@ beide lesen denselben Zwischenspeicher. Eine Route, der jede Sitzung genügt, pr
 `verlangeRecht` steht beim Router (`api/middleware.go`): Es setzt die Prüfung der
 Pfadparameter davor, und deren Liste gehört zu den Routen. Der Cache ist ein Feld der Basis
 (`Basis.Rechte`, Typ `RechteCache`, der Nullwert ist leer); alle Themen teilen ihn über die eine
-Basis des Servers. Ein Test legt eine Entscheidung mit `Rechte.MerkeFuerTest` in den Cache
-seines eigenen Servers.
+Basis des Servers.
 
 #### 5.4.4 `sse/sse.go` — Broker ohne Event-Loop
 
@@ -1262,11 +911,7 @@ seines eigenen Servers.
 | Abbruch                | Kontext-Abbruch beim Shutdown; Zeitfenster 10 s in `main.go`                                          |
 
 > **Wer hier einen „zentralen Event-Loop" wiederherstellt, baut einen Betriebsfehler
-> zurück ein.** Mit register-/unregister-Kanälen gelingt das saubere Herunterfahren nicht:
-> Kehrt die Schleife durch den abgebrochenen Kontext zurück, liest niemand mehr aus den
-> Kanälen, jeder SSE-Handler bleibt in seinem `defer` stehen, `Shutdown` wartet auf eben
-> diese Handler bis zum Timeout — und `main` endet mit `os.Exit(1)`. In einer Schule mit
-> dauerhaft verbundenen Arbeitsplätzen wäre das **jeder** Deploy (A6).
+> zurück ein:** Mit Register-Kanälen endete jeder Deploy mit `os.Exit(1)` (A6).
 
 #### 5.4.5 `jobs/` — der Zeitplan
 
@@ -1346,6 +991,9 @@ grep -rhoE '\.(Handle|HandleFunc)\(' api inventur --include='*.go' --exclude='*_
 
 # Schema — „^", weil zwei Kommentarzeilen in schema.sql CREATE TABLE nennen
 grep -c '^CREATE TABLE' schema.sql
+
+# Swagger: Pfade und Operationen der Schnittstellenbeschreibung
+python3 -c "import json; p=json.load(open('docs/swagger.json'))['paths']; print(len(p), sum(1 for v in p.values() for k in v if k in ('get','post','put','patch','delete')))"
 ```
 
 Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufrufer in
@@ -1355,7 +1003,7 @@ Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufruf
 
 ## 6. Laufzeitsicht
 
-Stand: 08.10.2026
+Stand: 16.10.2026
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -1536,9 +1184,7 @@ Welcher Pfad welche Zeile sperrt:
 > nicht das Exemplar (`FOR UPDATE OF a` an `ausleihen` in `repository/schaden_melden.go`) —
 > und zwar mit Absicht: Zwei parallele
 > „Schaden melden"-Klicks würden sonst beide den Prüfschritt passieren und je einen
-> Schadensfall anlegen; der Schüler würde für dasselbe Buch doppelt belastet. Im
-> Produktivcode stehen am 26.09.2026 **20** `FOR UPDATE`-Anweisungen in 18 Dateien
-> (Kommentare nicht mitgezählt).
+> Schadensfall anlegen; der Schüler würde für dasselbe Buch doppelt belastet.
 
 ---
 
@@ -1711,17 +1357,14 @@ sequenceDiagram
 ```
 
 **Warum das ein Architekturthema ist:** Mit einem Broker, der über Kanäle an- und abmeldet,
-bliebe jeder SSE-Handler in seinem `defer` stehen, sobald die Schleife zurückgekehrt ist;
-`Shutdown` wartete auf eben diese Handler bis zum Timeout, und `main` endete mit
-`os.Exit(1)` — bei dauerhaft verbundenen Arbeitsplätzen bei **jedem** Deploy (5.4.4, A6). Die
-Migrationen laufen beim Start des neuen Containers von selbst; das Zeitfenster von 10 s ist
+endete jeder Deploy mit `os.Exit(1)` (A6). Die Migrationen laufen beim Start des neuen Containers von selbst; das Zeitfenster von 10 s ist
 kürzer als der Heartbeat-Abstand und länger als jede normale Anfrage.
 
 ---
 
 ## 7. Verteilungssicht
 
-Stand: 08.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
+Stand: 16.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ---
 
@@ -1760,14 +1403,14 @@ Stand: 08.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 
 | Entscheidung                                                   | Grund                                                                                                                                                                              |
 | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Alle Host-Ports auf `127.0.0.1` gebunden**                    | `"5434:5432"` veröffentlichte die Datenbank auf **allen** Interfaces: Wer den Host im Netz erreichte, sprach mit dem DSN aus der `.env` direkt die Datenbank an — vorbei an Rolle, Audit und Anonymisierung. Für einen Zugriff von außen: SSH-Tunnel. |
-| **`restart: unless-stopped` für beide Container**               | `unattended-upgrades` startete den Docker-Daemon neu, und der Dienst lag **zwölf Stunden** still. Die Policy stand danach als uncommitteter Hotfix auf dem Server und blockierte jedes `git pull` — sie gehört ins Repo. |
-| **Log-Rotation 3 × 10 MB je Container**                          | Der Docker-Default `json-file` kennt **keine** Größengrenze. Das fällt nicht in Wochen auf, sondern in dem Moment, in dem die Platte voll ist — und mit ihr die Datenbank desselben Hosts. |
-| **`GIT_COMMIT` als Build-Argument ins Image**                    | Beantwortet die Frage, die kein Healthcheck beantwortet: Läuft der Container, der aus **diesem** Commit gebaut wurde? „Gesund" heißt nicht „aktuell".                              |
-| **Volume-Mount auf `/var/lib/postgresql`, nicht `…/data`**        | Seit dem 18er-Image liegt `PGDATA` unter `/var/lib/postgresql/18/docker`. Der alte Mount ginge ins Leere — die Daten landeten in einem **anonymen** Volume und wären beim nächsten Neuerstellen weg. |
-| **`bibliothek_backups` als benanntes Volume**                     | Damit die verschlüsselten Dumps einen Container-Neubau überleben.                                                                                                                 |
-| **Netz `caddy_global_net` extern**                                | Auf dem Host laufen mehrere Dienste (schul-orga, inventur, bibliothek) hinter **einem** Caddy.                                                                                     |
-| **Die `Caddyfile` im Repo ist nicht maßgeblich**                   | Maßgeblich ist `/root/caddy/Caddyfile` auf dem Server, geschrieben von `update_caddy.sh`. Die Repo-Datei sagt das in ihrer ersten Zeile — eine Vorlage, die niemand ausprobiert, fällt erst im Ernstfall auf. |
+| **Alle Host-Ports auf `127.0.0.1` gebunden**                    | Auf allen Schnittstellen veröffentlicht, wäre die Datenbank für jeden im Netz mit dem DSN aus der `.env` erreichbar, vorbei an Rolle, Protokoll und Anonymisierung. Zugriff von außen: SSH-Tunnel. |
+| **`restart: unless-stopped` für beide Container**               | Startet der Docker-Daemon neu (etwa durch `unattended-upgrades`), laufen die Container wieder an (R9). Die Policy steht im Repository, nicht nur auf dem Server, sonst blockiert sie jedes `git pull`. |
+| **Log-Rotation 3 × 10 MB je Container**                          | Der Docker-Default `json-file` kennt keine Größengrenze; eine volle Platte nimmt die Datenbank desselben Hosts mit.                                                               |
+| **`GIT_COMMIT` als Build-Argument ins Image**                    | Beantwortet, was kein Healthcheck beantwortet: Läuft der Container aus **diesem** Commit? „Gesund" heißt nicht „aktuell".                                                          |
+| **Volume-Mount auf `/var/lib/postgresql`, nicht `…/data`**        | Seit dem 18er-Image liegt `PGDATA` unter `/var/lib/postgresql/18/docker`; der alte Mount landete in einem anonymen Volume, das ein Neuerstellen löscht.                            |
+| **`bibliothek_backups` als benanntes Volume**                     | Die verschlüsselten Dumps überleben einen Neubau des Containers.                                                                                                                  |
+| **Netz `caddy_global_net` extern**                                | Auf dem Host laufen mehrere Dienste hinter **einem** Caddy.                                                                                                                        |
+| **Die `Caddyfile` im Repo ist nicht maßgeblich**                   | Maßgeblich ist `/root/caddy/Caddyfile` auf dem Server, geschrieben von `update_caddy.sh`; die Repo-Datei sagt das in ihrer ersten Zeile (D8).                                     |
 
 #### Fristen müssen zueinander passen
 
@@ -1829,26 +1472,20 @@ protokolliert das beim Start ausdrücklich.
 
 ### 7.4 Konfiguration (Umgebungsvariablen)
 
-| Variable                                        | Pflicht     | Wirkung bei Fehlen / Besonderheit                                                                            |
-| ----------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`                                  | ja          | Start bricht ab                                                                                              |
-| `JWT_SECRET` (≥ 32 Zeichen)                     | ja          | Start bricht ab; bekannter Default-Wert → Start verweigert (Secret-Guard)                                     |
-| `APP_ENCRYPTION_KEY` (32 Byte / 64 Hex)         | ja          | Start bricht ab; ein abweichend gesetzter **früherer Zweitname** bricht ebenfalls ab, statt still zu gelten    |
-| `PORT`                                          | ja          | Start bricht ab                                                                                              |
-| `POSTGRES_PASSWORD`                             | ja (Compose)| Compose startet nicht — es gibt bewusst kein committetes Default-Passwort                                      |
-| `APP_ENV`                                       | Vorgabe `production` | Steuert Cookie-Secure-Vorgabe, Swagger-Sichtbarkeit und den Secret-Guard                              |
-| `ENFORCE_PROD_SECRETS`                          | nein        | **Von selbst scharf**; nur ein ausdrückliches `false` schaltet es für eine Testphase ab — mit Warnung und Vermerk in der Selbstprüfung |
-| `COOKIE_SECURE`                                 | nein        | Fehlt → sichere Vorgabe `true` (mit Warnung); unlesbarer Wert → **Abbruch**; `false` außerhalb lokal → laute Warnung |
-| `TRUSTED_PROXIES`                               | praktisch ja| Ohne das Netz von Caddy sieht das Backend nur die Adresse des Proxys: 50 Fehl-Logins aus der ganzen Schule sperren die Anmeldung für **alle** 15 Minuten, und alle teilen sich die Bremse der Anfragen. Compose setzt das private Docker-Netz als Vorgabe; ein unlesbarer Eintrag fällt weg, Start-Log und Selbstprüfung nennen ihn |
-| `IMAP_HOST`, `IMAP_PORT`                        | ja          | `PruefeIMAPKonfiguration()` bricht früh ab — fehlt der Host, kann sich niemand anmelden; steht er auf `mock`, jeder |
-| `SELBSTANMELDUNG_DOMAIN`                        | nein        | Leer ⇒ der Weg ist zu; richtige Zugangsdaten enden in „Anmeldung fehlgeschlagen". Die Selbstprüfung meldet das als Warnung |
-| `INITIAL_ADMIN_EMAIL`                           | nein        | Leer ⇒ System startet ohne Admin-Zugang und sagt das in einer Logzeile; keine Adresse ⇒ der erste Start bricht ab. **Kein** Passwort — es gibt keins |
-| `BACKUP_ENCRYPTION_KEY`, `BACKUP_DIR`           | nein        | Ohne Schlüssel **überspringt** sich der Backup-Job — die Selbstprüfung macht genau das sichtbar                 |
-| `S3_ENDPOINT/ACCESS_KEY/SECRET_KEY/BUCKET/USE_SSL` | nein     | Nur bei vollständiger Angabe läuft der Offsite-Upload; sonst überspringt der Job ihn und protokolliert es       |
-| `ALLOWED_ORIGIN`                                | nein        | CORS-Herkunft der Schuldomain                                                                                 |
-| `SENTRY_DSN`                                    | nein        | Ohne DSN kein Sentry                                                                                          |
-| `SMTP_ALLOW_PLAINTEXT`                          | nein        | Nur `true` erlaubt Versand ohne STARTTLS — mit deutlicher Warnung über die Folgen                              |
-| `TZ`                                            | nein        | Hält Logs konsistent; gefahrlos setzbar, weil der Cron-Plan auf UTC genagelt ist                               |
+Jede Variable mit Pflicht, Vorgabe und Wirkung steht in [DEPLOYMENT.md](DEPLOYMENT.md),
+Abschnitt 1; was in die Umgebung gehört und was in die Datenbank, in 8.12. Für die Architektur
+zählt dreierlei:
+
+- **Was fehlt, hält den Start an, statt still zu gelten:** `DATABASE_URL`, `JWT_SECRET`
+  (mindestens 32 Zeichen), `APP_ENCRYPTION_KEY` (genau 32 Byte), `PORT`, `IMAP_HOST`. Ein
+  abweichend gesetzter früherer Zweitname des Schlüssels bricht ebenfalls ab, und ein
+  unlesbarer Wert von `COOKIE_SECURE` auch.
+- **Die Vorgabe ist die sichere Richtung:** `ENFORCE_PROD_SECRETS` ist von selbst scharf,
+  `COOKIE_SECURE` ohne Wert ist `true`; abschalten geht nur ausdrücklich und mit Warnung.
+- **`TRUSTED_PROXIES` ist praktisch Pflicht.** Ohne das Netz von Caddy sieht das Backend nur die
+  Adresse des Proxys: 50 Fehlversuche aus der ganzen Schule sperren die Anmeldung für alle 15
+  Minuten, und alle teilen sich die Bremse der Anfragen. Compose setzt das private Docker-Netz
+  als Vorgabe; ein unlesbarer Eintrag fällt weg, Start-Log und Selbstprüfung nennen ihn.
 
 `docs/compose_variablen_test.go` prüft die Richtung, die ohne Liste auskommt: Was der Code
 liest, muss in Compose ankommen.
@@ -1921,7 +1558,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026
+Stand: 16.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1955,22 +1592,14 @@ an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
 Genau diese Trennung ist der Grund, warum die Trefferliste an der Theke „3 Stück, 1 frei"
 sagen kann — und warum ein Titel ohne Exemplar es ausdrücklich sagen muss.
 
-**Auflagen desselben Buchs fasst ein Werk zusammen** (`buecher_titel.werk_id`, Migration 148).
-Die Spalte ist nullbar und wird über `COALESCE(werk_id, id)` gelesen: Ein Titel ohne Werk ist
-sein eigenes, und jeder Lesepfad, der nicht nach Auflagen fragt, bleibt, wie er ist. An der
-Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe, weil sich Auflagen in den Seitenzahlen
-unterscheiden. Geschrieben wird `werk_id` nur in `repository/auflagen.go`. Am Werk zählen
-Bedarf und Nachbestellung: Die Nachbestell-Liste summiert über `COALESCE(werk_id, id)` und
-zeigt die neueste Auflage (`repository/bestellbedarf.go`); „Neue Auflage bestellen" fasst aus
-der Zeile heraus zusammen. An der Theke warnt eine Zeile, wenn eine Klasse gemischte Auflagen
-bekommt; die Klassensatz-Übersicht zählt am Buch und schlüsselt die Auflagen einer Klasse auf
-(`inventur/datenbank_klassen.go`). Der Medienkatalog zeigt ein Buch als eine Kachel mit der
-Summe; zusammengefasst wird erst in der Anzeige, weil dieselbe Katalogliste jede Auflage
-einzeln an die Titel-Verwaltung liefert. Der Reiter „Schulbücher" im Portal fasst am Server
-zusammen, weil er dort filtert; Liste, Fach-Zahlen und PDF lesen dieselben Zeilen. Die zehn-
-und die dreizehnstellige Form einer ISBN sind dieselbe Nummer: Die Datenbank führt eine
-zehnstellige mit richtigem Prüfzeichen dreizehnstellig (`isbn_normalform`, Migration 157), und
-jede Tür findet den Titel über beide Längen, statt einen zweiten anzulegen.
+**Auflagen desselben Buchs fasst ein Werk zusammen** (`buecher_titel.werk_id`). Die Spalte ist
+nullbar und wird über `COALESCE(werk_id, id)` gelesen: Ein Titel ohne Werk ist sein eigenes. An
+der Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe, weil sich Auflagen in den
+Seitenzahlen unterscheiden; am Werk zählen Bedarf und Nachbestellung
+(`repository/bestellbedarf.go`). Geschrieben wird `werk_id` nur in `repository/auflagen.go`. Die
+zehn- und die dreizehnstellige Form einer ISBN sind dieselbe Nummer: Die Datenbank führt sie
+dreizehnstellig (`isbn_normalform`), und jede Tür findet den Titel über beide Längen, statt einen
+zweiten anzulegen.
 
 **Rolle und Art sind zwei verschiedene Fragen.** Die **Rolle** sagt, was jemand im
 Programm darf (Admin, Leitung, Mitarbeiter, Helfer — dazu `kollegium` als Grundzustand).
@@ -1995,10 +1624,9 @@ nicht zu sehen.
 Kleinbuchstaben (`admin`, `kollegium`, `mitarbeiter`, `helfer`, `leitung`). SQL-Vergleiche
 müssen `LOWER(rolle::text)` verwenden — kein `= 'KOLLEGIUM'`.
 
-**Sprache:** Fachwörter sind deutsch (`ausleihen`, `leser`, `vormerkungen`, `Ersatzwert`,
-`Abgaenger`, `Nachbuchen`). Aus der Frühzeit steht Englisch daneben, auch für dieselbe Sache:
-Der Typ `repository.Leser` hält einen Leser. Welches Wort gilt, legt [STIL.md](STIL.md)
-fest; das [Glossar](#12-glossar) nennt, wo der Code noch anders heißt.
+**Sprache:** Fachwörter sind deutsch, je Sache ein Wort ([STIL.md](STIL.md)); Adressen, Felder
+in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Abschnitt 9). Das
+[Glossar](#12-glossar) nennt zu jedem Begriff den Namen im Code.
 
 ---
 
@@ -2015,7 +1643,7 @@ fest; das [Glossar](#12-glossar) nennt, wo der Code noch anders heißt.
 | **Rate-Limit**            | 50 Anfragen/s/IP (Map + Mutex, kein externer Cache). Ausgenommen sind Auslieferungspfade (`/api/images/cover`, `/uploads/`, `/api/barcode`, `/events`) — ein Seitenaufruf lädt dutzende Bilder, SSE ist eine Dauerverbindung. Der **teure** Zweig des Cover-Proxys hat eine eigene Bremse |
 | **CSRF**                  | Double-Submit-Cookie; `GET /api/csrf-token` holt Token und Cookie vor der ersten Änderung; die Refresh-Route ist ausgenommen                        |
 | **Anmeldung**             | IMAP über implizites TLS (:993, min. TLS 1.2, feste Cipher-Auswahl). **Kein** Passwort im System                                                     |
-| **Brute-Force**           | Schlüssel `lower(email)|ip`, 5 Fehlversuche / 15 min. Nur-IP wäre an einer Schul-NAT eine Aussperrung der ganzen Schule                              |
+| **Brute-Force**           | Schlüssel `lower(email)\|ip`, 5 Fehlversuche / 15 min; je Adresse allein erst 50 (`api/anmelde_bremse.go`). Nur-IP mit 5 wäre an einer Schul-NAT eine Aussperrung der ganzen Schule                            |
 | **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, Cookie `HttpOnly` + `SameSite=Strict` (+ `Secure` nach Betriebslage); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
 | **Fail-closed**           | Ist die Sperrlisten- oder Kontostatus-Abfrage nicht erreichbar, wird die Anfrage mit **503** abgelehnt — nicht durchgelassen und **nicht** mit 401 beantwortet (eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist) |
 | **Autorisierung**         | `verlangeRecht` je Route: Recht aus `role_permissions` (Cache 60 s mit Epochenzähler) **plus** Live-Kontostatus **plus** UUID-Form der Pfadparameter |
@@ -2153,9 +1781,7 @@ Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Beispiele f
 `ausleihen_schueler_id_fkey`, `chk_leser_nur_schueler_werden_abgaenger`,
 `UNIQUE lower(email)`.
 
-Ein Beispiel für ein bewusst gebliebenes 🟡: die **Sperrreihenfolge** Schüler → Ausleihe →
-Exemplar. Sie ist Konvention; die Schreibpfade des Codes halten sie, der Rückgabe-Trigger aus
-Migration 137 nicht, und ein Gate gibt es nicht ([Kapitel 11](#11-risiken-und-technische-schulden), R2).
+Ein bewusst gebliebenes 🟡 ist die **Sperrreihenfolge** (A7, R2).
 
 #### Migrations-Hygiene
 
@@ -2184,11 +1810,9 @@ werden.
 Vier Schichten, in dieser Reihenfolge wirksam:
 
 1. **Transaktion und Zeilensperre.** `READ COMMITTED` (Postgres-Standard, hoher Durchsatz)
-   mit `SELECT … FOR UPDATE`. Die Sperrreihenfolge ist **Schüler → Ausleihe → Exemplar**;
-   Online-Scan und Nachbuchen halten sie gleich, sonst verklemmen sie sich gegeneinander.
-   Die Rückgabe mit Vormerkung nimmt `FOR UPDATE OF v SKIP LOCKED`, damit eine fremde
-   Sperre den Rückgabevorgang nicht anhält. Der Rückgabe-Trigger aus Migration 137 sperrt
-   die Leserzeile nach der Ausleihe; die Folge steht in Kapitel 11, R2.
+   mit `SELECT … FOR UPDATE`, in der Reihenfolge **Schüler → Ausleihe → Exemplar** (A7). Die
+   Rückgabe mit Vormerkung nimmt `FOR UPDATE OF v SKIP LOCKED`, damit eine fremde Sperre den
+   Rückgabevorgang nicht anhält (6.3).
 2. **Struktur.** Die partiellen Unique-Indizes sind an der entscheidenden Stelle **der
    einzige** Schutz: Zwei Stationen, die dasselbe Exemplar für verschiedene Leser scannen,
    greifen auf keine gemeinsame Zeile (siehe
@@ -2215,21 +1839,19 @@ höchstens Serverzeit).
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Eine Unique-Verletzung wird 409, nicht 500**                  | Ein Doppelscan ist ein Fachfall, keine Störung. `deuteAnlegeFehler` bildet SQLSTATE 23505 ab                                                     |
 | **DB-Aussetzer bei der Sitzungsprüfung wird 503, nicht 401**    | Eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist                                                                               |
-| **Ein unbekannter `/api/`-Pfad wird 404, nicht die App-Shell**  | Mit der App-Shell (200 text/html) scheiterte der Aufrufer erst beim JSON-Parsen — mit einer Meldung, die nichts mit der Ursache zu tun hätte |
-| **Jede `rows.Next()`-Schleife endet mit `rows.Err()`**          | Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als **Erfolg** — die Liste wäre still unvollständig. In `titel_loeschen.go` hätte das einen Titel trotz aktiver Ausleihen als „ausleihbar" behandeln können |
+| **Ein unbekannter `/api/`-Pfad wird 404, nicht die App-Shell**  | Mit der App-Shell (200 text/html) scheiterte der Aufrufer erst beim JSON-Parsen, mit einer Meldung ohne Bezug zur Ursache                       |
+| **Jede `rows.Next()`-Schleife endet mit `rows.Err()`**          | Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als **Erfolg**: Die Liste wäre still unvollständig                                  |
 | **Schweigen ist kein Erfolg**                                   | Ein Nachbuch-Schlüssel ohne Antwort bleibt in der Warteschlange liegen                                                                          |
-| **Eine gekappte Liste sagt es**                                 | Wo eine Ausgabe begrenzt wird, steht die Begrenzung dabei — auch wenn zusätzlich gefiltert wurde                                                 |
-| **Fehlt einer Liste eine Quelle, sagt sie es**                  | Die Bestellsuche zeigt den eigenen Katalog und die DNB. Antwortet die DNB nicht, bleibt es bei 200 mit den Treffern aus dem Katalog, und der Kopf `X-DNB-Ausfall` nennt den Ausfall; die Trefferliste zeigt ihn. Ohne ihn sähe ein Buch, das die DNB kennt, aus wie eines, das sie nicht kennt. Ist ein fremder Dienst die einzige Quelle, antwortet die Tür mit 502 |
-| **Ein Lesefehler ist keine Vorgabe**                           | Das Lesen der Einstellungen liefert bei einem Fehler die Vorgaben des Programms zusammen mit dem Fehler. Eine Tür, die daraus ein Blatt oder eine Mail füllt, verweigert die Antwort: Mit den Vorgaben fehlten der Kopf der Schule und der Link, und die Bankverbindung wäre die der Vorgabe. `repository/einstellungen_lesefehler_ratsche_test.go` hält, dass niemand den Fehler verwirft. Zwei Stellen wählen die Vorgabe ausdrücklich: die Fristen der Pflichtangaben in der Auskunft (wie die Löschläufe) und der Kopf der Etiketten (druckt ohne Schulnamen) |
+| **Eine gekappte Liste sagt es**                                 | Wo eine Ausgabe begrenzt wird, steht die Begrenzung dabei, auch wenn zusätzlich gefiltert wurde                                                  |
+| **Fehlt einer Liste eine Quelle, sagt sie es**                  | Antwortet die DNB in der Bestellsuche nicht, bleibt es bei 200 mit den Treffern aus dem Katalog, und der Kopf `X-DNB-Ausfall` nennt den Ausfall. Ist ein fremder Dienst die einzige Quelle, antwortet die Tür mit 502 |
+| **Ein Lesefehler ist keine Vorgabe**                           | Das Lesen der Einstellungen liefert bei einem Fehler die Vorgaben samt Fehler. Eine Tür, die daraus ein Blatt oder eine Mail füllt, verweigert dann die Antwort, statt ohne Kopf der Schule oder mit der Bankverbindung der Vorgabe zu drucken (`repository/einstellungen_lesefehler_ratsche_test.go`) |
 | **Ein Fehler wird an seinem Namen erkannt**                     | `errors.Is`, ein eigener Fehlertyp mit `errors.As` oder bei Datenbankfehlern der SQLSTATE mit dem Namen der Bedingung (`pgconn.PgError`). Ein Vergleich am Text bricht still, sobald jemand die Meldung umformuliert (`fehler_am_wortlaut_test.go`) |
-| **Fehlertext und Meldung sind getrennt**                        | Ein Fehlertext beginnt klein und endet ohne Satzzeichen (Googles Regelwerk). Den Satz für die Oberfläche nennt die Tür als Meldung (`apierrors.Conflict("Satz.", err)`, `AntworteFehlerMitMeldung`); Einzelheiten aus tieferen Schichten trägt der Fehler als Felder ([STIL.md](STIL.md), Abschnitt 11; `fehlertext_ratsche_test.go`) |
-| **Fehlerantworten einheitlich**                                 | `apierrors.AntworteFehler`; Fehlermeldungen sind deutsch und nennen die nächste Handlung                                                          |
-| **Ein 500 trägt nie den Text des Fehlers**                     | `AntworteFehler` ersetzt bei jedem 500 die Meldung durch einen neutralen Satz (`neutraleMeldung`); nur unterhalb von 500 geht eine Meldung hinaus: die eines `apierrors.Fehler` in der Kette, sonst der Text des Fehlers. `MitFehlerantwort` schreibt die Meldung eines `apierrors.Internal`, wie sie dort steht, die Ursache nie; diese Meldung nennt deshalb nichts aus dem Server. Eine Diagnose, die jemand lesen soll, braucht 400 (Eingabe), 409 (Fachfall) oder 502 (ein fremder Dienst versagt, etwa der Mailserver: `mailFehlerStatus`). Soll die Ursache nur ins Log, trennt `AntworteFehlerMitMeldung` Meldung und Ursache |
-| **Ein Panic beendet nicht den Prozess**                         | `panikMiddleware` für Handler, `pkg/safego` für Goroutinen. Ein Test schickt eine Panik über den ganzen Router: Die Antwort ist ein neutrales 500, und mit eingerichtetem Sentry kommt die Meldung dort an (`api/panik_ueber_den_router_pg_test.go`) |
+| **Fehlertext und Meldung sind getrennt**                        | Ein Fehlertext beginnt klein und endet ohne Satzzeichen; den Satz für die Oberfläche nennt die Tür als Meldung, Einzelheiten trägt der Fehler als Felder ([STIL.md](STIL.md), Abschnitt 11) |
+| **Keine Antwort verrät den Server**                             | `apierrors.AntworteFehler` schickt die Meldung eines `apierrors.Fehler` in der Kette, sonst einen neutralen Satz, nie den Text des Fehlers. Ein 500 bleibt auch mit Meldung neutral; eine Diagnose, die jemand lesen soll, braucht 400, 409 oder 502 (ein fremder Dienst versagt, etwa der Mailserver: `mailFehlerStatus`) |
+| **Ein Panic beendet nicht den Prozess**                         | `panikMiddleware` für Handler, `pkg/safego` für Goroutinen; über den ganzen Router geprüft in `api/panik_ueber_den_router_pg_test.go`            |
 
-Die Testklasse dazu heißt `phantom_erfolg_test.go` und `fehler_kollaps_test.go`: „Hat es
-geklappt?" muss beantwortbar sein, und mehrere verschiedene Fehler dürfen nicht zu einer
-einzigen unbrauchbaren Meldung kollabieren.
+`phantom_erfolg_test.go` und `fehler_kollaps_test.go` halten zwei Zusagen: „Hat es geklappt?"
+ist beantwortbar, und verschiedene Fehler fallen nicht in eine unbrauchbare Meldung zusammen.
 
 ---
 
@@ -2286,145 +1908,102 @@ gegen die Tür klopft.
 
 | Dokument                                  | Erzeuger                               | Besonderheit                                                                                         |
 | ----------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Mahnliste                                 | `pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite, ab dem elften Buch Folgeseiten mit seinem Namen; der Versand zählt keine Mahnung |
-| Mahnbrief                                 | `pdf/mahnbrief.go`                     | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe. Brief nach DIN 5008 für das Fensterkuvert, Betreff und Text aus der Vorlage der Schule; passt die Tabelle nicht auf die Seite, folgen Seiten mit dem Namen |
-| Bestellanschreiben                        | `pdf/bestellanschreiben.go`            | Anhang der Bestellmail. Betreff und Vermerk nennen den Topf; ein Satz nennt den Weg zu den Etiketten und stimmt mit den Anlagen der Mail überein (`bestellAnhaenge`) |
+| Mahnliste                                 | `pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite; der Versand zählt keine Mahnung        |
+| Mahnbrief                                 | `pdf/mahnbrief.go`                     | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe (A18). Brief nach DIN 5008 für das Fensterkuvert, Betreff und Text aus der Vorlage der Schule |
+| Bestellanschreiben                        | `pdf/bestellanschreiben.go`            | Anhang der Bestellmail; Betreff und Vermerk nennen den Topf, ein Satz den Weg zu den Etiketten       |
 | Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)             | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`pdf/zahlungsweg.go`)                       |
 | Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
 | Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
 | Zugangs-/Abgangsbuch                      | `pdf/abgangsbuch.go`, `pdf/zugangsbuch.go`; Gliederung nach Topf in `api/katalog/bestandsbuch.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
-| DSGVO-Auskunft                            | `internal/auskunft/blatt*.go`          | Auskunftsrecht als Dokument, gedruckt aus derselben Antwort wie die abgerufene Auskunft               |
-| Barcodebogen für den Händler              | `api/bestellung/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                                  |
+| DSGVO-Auskunft                            | `internal/auskunft/blatt*.go`          | Gedruckt aus derselben Antwort wie die abgerufene Auskunft                                           |
+| Barcodebogen für den Händler              | `api/bestellung/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                      |
 
-**Barcode-Symbologie:** Gedruckt wird **Code 128 ohne Prüfzeichen**. Ein Prüfzeichen steht in
-den Strichcode-Daten, und ein Lesegerät gibt es als Teil der Nummer zurück: Unter der Karte
-stünde `A-10003`, gescannt würde `A-100037`. Der Server suchte eine Nummer, die es nicht
-gibt, und weil ein unbekannter Scan nur eine leere Trefferliste erzeugt, sähe es an der Theke
-aus, als täte der Scanner **gar nichts**. Alte Aufdrucke in Code 39 tragen ein solches
-Zeichen; `pkg/code39` rechnet es heraus (A14).
+**Strichcodes** druckt das Programm als Code 128 ohne Prüfzeichen; alte Aufdrucke in Code 39
+tragen eines, und `pkg/code39` rechnet es heraus (A14). **Cover** werden für die PDFs aus WebP
+umgewandelt (`pkg/coverdatei`), weder `gofpdf` noch `maroto` kennen WebP; in ein
+gofpdf-Dokument setzt sie eine Stelle, `coverdatei.BindeEin`, im Seitenverhältnis des Bilds.
+`npm run test:druck` prüft die Drucksektionen am gebauten Frontend.
 
-Cover werden für die PDF-Einbettung aus WebP konvertiert (`pkg/coverdatei`) — weder
-`gofpdf` noch `maroto` kennen WebP. In ein gofpdf-Dokument setzt sie eine Stelle,
-`coverdatei.BindeEin`: im Seitenverhältnis des Bilds und mittig in dem Platz, den der Erzeuger
-nennt (Mahnliste, Schulbuch-Export). Ein Gate (`npm run test:druck`) prüft die
-Drucksektionen am gebauten Frontend.
+**Tabellen über mehrere Seiten.** gofpdf bricht erst in der Zelle um, die nicht mehr passt; die
+Teile einer Zeile stünden dann auf verschiedenen Seiten ([sweeps.md](sweeps.md), „Zeile an
+festen Stellen über dem Seitenumbruch"). Eine Zeile prüft deshalb vorher den Platz und beginnt
+sonst selbst die nächste Seite mit den Spaltenköpfen (`bescheidPlatzOderNeueSeite`,
+`zeichneMahnSeite`, `zeichneMahnbriefBuecher`, `ErzeugeBestellanschreiben`); ein Block, der
+zusammengehört (Gruß und Unterschrift), prüft seinen Platz als Ganzes. Die Folgeseiten von
+Mahnliste und Mahnbrief nennen, wem sie gehören („Fortsetzung: …"), weil sie je Schüler
+ausgeteilt oder kuvertiert werden. Text in einer Zelle wird auf ihre gedruckte Breite gekürzt
+(`pdfzeichen.KuerzeAufZelle`), nicht auf eine Zahl von Zeichen: gofpdf druckt Überlanges über
+die Nachbarzelle. Buch- und Lernmittel-Etikett kürzen auf ihre Obergrenze in Zeichen und auf
+die Breite ihrer Zelle (`kuerzeAufEtikett` in `pdf/etikett_buch.go`).
 
-**Tabellen über mehrere Seiten.** Eine Zeile, die Bild oder Text an Stellen setzt, die sie aus
-ihrer Höhe rechnet, prüft vorher den Platz und beginnt sonst selbst die nächste Seite, mit
-Spaltenköpfen (`bescheidPlatzOderNeueSeite` in `pdf/bescheid.go`, die Schleifen in
-`zeichneMahnSeite`, `zeichneMahnbriefBuecher` und `ErzeugeBestellanschreiben`). gofpdf bricht erst in der Zelle um, die nicht
-mehr passt; die Teile der Zeile stünden dann auf verschiedenen Seiten ([sweeps.md](sweeps.md),
-„Zeile an festen Stellen über dem Seitenumbruch"). Die Köpfe stehen nicht allein am Fuß einer
-Seite. Mahnliste und Mahnbrief werden je Schüler ausgeteilt oder kuvertiert: Ihre Folgeseiten
-nennen, wem sie gehören („Fortsetzung: …"), beim Mahnbrief über einen Seitenkopf, weil dort
-auch der Text der Vorlage auf die nächste Seite laufen kann. Den Text einer Zelle kürzen sie,
-das Bestellanschreiben, Zugangs- und Abgangsbuch, der Bestellbericht und der Schulbuch-Export auf
-ihre gedruckte Breite (`pdfzeichen.KuerzeAufZelle`), nicht auf eine Zahl von Zeichen: gofpdf
-druckt Überlanges über die Nachbarzelle. Buch- und Lernmittel-Etikett kürzen jede Zeile auf
-ihre Obergrenze in Zeichen und auf die Breite ihrer Zelle (`kuerzeAufEtikett` in
-`pdf/etikett_buch.go`): Die Zeichenzahl hält die Zeile auf breiten Bögen, wie sie abgenommen
-ist, die Breite hält sie auf dem Bogen mit 48,3 mm im Etikett. Gemessen wird gegen die ganze
-Zelle, ohne den Rand, den gofpdf in einer Zelle lässt; mit ihm stünde der Schulname auf diesem
-Bogen gekürzt da. Ein Block, der
-zusammengehört (Gruß und Unterschrift), prüft seinen Platz als Ganzes.
+**Was auf ein Blatt gehört, wird am fertigen PDF gemessen.** Der LMF-Plan hängt als ein Blatt
+aus; `pdf/lmfplan_satz.go` wählt vor dem Setzen den größten Schriftgrad, mit dem alles auf eine
+Seite geht, erst in einer Spalte, dann in zweien.
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
-zweimal: `designer/CanvasElement.svelte` auf dem Bildschirm, mit den Griffen zum Bearbeiten,
-und `designer/Kartenseite.svelte` für das Papier. `Kartenseite` ist die eine Quelle für den
-Testdruck des Designers, den Stapeldruck aus der Leserdatei und den Einzeldruck aus der Akte.
-Wo die beiden auseinanderlaufen, sieht man es nur auf dem Papier. Daraus folgen
-drei Regeln. Eine neue Elementart wird an drei Stellen gebaut — `Kartenseite`, `CanvasElement`,
-`Eigenschaften`; der Server speichert das Layout als Ganzes und prüft die Arten nicht.
-Platzhalter für leere Felder zeichnet `Kartenseite` nur, wenn der Designer es verlangt
-(`platzhalter`): Ein echter Ausweis trägt nie „PASSBILD", weil ein Foto fehlt. Die Größe
-des Strichcodes rechnet eine Funktion für beide (`strichcodeBildOptionenFuerElement` in
+zweimal: `designer/CanvasElement.svelte` am Bildschirm, mit den Griffen zum Bearbeiten, und
+`designer/Kartenseite.svelte` für das Papier, die eine Quelle für Testdruck, Stapeldruck aus
+der Leserdatei und Einzeldruck aus der Akte. Wo die beiden auseinanderlaufen, sieht man es nur
+auf dem Papier. Daraus folgen vier Regeln: Eine neue Elementart wird an drei Stellen gebaut
+(`Kartenseite`, `CanvasElement`, `Eigenschaften`), der Server speichert das Layout als Ganzes
+und prüft die Arten nicht. Platzhalter für leere Felder zeichnet `Kartenseite` nur, wenn der
+Designer es verlangt (`platzhalter`): Ein echter Ausweis trägt nie „PASSBILD". Die Größe des
+Strichcodes rechnet eine Funktion für beide (`strichcodeBildOptionenFuerElement` in
 `strichcodeBild.js`). Farbflächen der Vorlagen sind Elemente der Art `box`, keine Bilder: Ein
 Bild ließ weiße Streifen am Kartenrand, und seine Farbe war nicht zu ändern.
 
-**Das Design liegt am Server** (`GET`/`PUT /api/ausweis-layout`), samt der Betriebsart
-(`printMode`: Karte oder Etikett) und dem Bogenformat. Mehrere Arbeitsplätze drucken
-deshalb dasselbe; im Browser gespeichert, hätte jeder Rechner sein eigenes Design. Die
-Antwort `{}` heißt „noch keines gespeichert": Der Designer zeigt danach seine Vorgabewerte
-und speichert sie. Ein gescheitertes Lesen beantwortet der Server deshalb mit einem Fehler,
-nie mit `{}` (`api/druck/ausweis_layout_tuer_pg_test.go`).
+**Das Design liegt am Server** (`GET`/`PUT /api/ausweis-layout`), samt Betriebsart (Karte oder
+Etikett) und Bogenformat: Alle Arbeitsplätze drucken dasselbe. Die Antwort `{}` heißt „noch
+keines gespeichert"; ein gescheitertes Lesen beantwortet der Server deshalb mit einem Fehler,
+nie mit `{}` (`api/druck/ausweis_layout_tuer_pg_test.go`). Gedruckt wird nur mit geladenem
+Design: Jeder Druckweg fragt vor dem Druckdialog `designFuerDruck`
+(`designer/ausweisDesignLaden.js`); scheitert das Laden, steht die Meldung da und nichts wird
+gedruckt. Mit den Standardwerten käme sonst eine Karte aus dem Drucker, die richtig aussieht und
+es nicht ist. Einen weiteren Abrufer des Designs hält `designer/ausweisDesignLaden.test.js` auf.
 
-**Gedruckt wird nur mit geladenem Design.** Die Druckwege — Stapeldruck und Druckfläche der
-Leserdatei, Einzeldruck der Akte — laden es über einen Lader (`designer/ausweisDesignLaden.js`):
-einmal je Sitzung, Bauteile derselben Seite teilen sich den Abruf. Er meldet nichts, weil die
-Akte auch an der Theke lädt und die Meldung dort bei jedem Leser aufginge. Vor dem Druckdialog
-fragt jeder Weg `designFuerDruck`: Fehlt das Design, wird es jetzt geladen; scheitert das, steht
-die Meldung da und nichts wird gedruckt. Mit den Standardwerten käme sonst eine Karte aus dem
-Drucker, die richtig aussieht und es nicht ist, oder eine Karte statt des eingestellten
-Etiketts. Der Designer lädt eigens (`idDesignPersistenz.svelte.js`): Er zeigt den Fehler an
-der Leinwand und sperrt das Speichern. Einen weiteren Abrufer hält
-`designer/ausweisDesignLaden.test.js` auf.
-
-**Etiketten: drei Wege zum selben Blatt.** Ein Buch-Etikett entsteht über „Barcodes
-drucken" am Titel (`GET /api/buecher/titel/{id}/etiketten`), über das Druck-Center
-(`POST /api/print/labels`) und für den Händler (Seite und Mailanhang). Die Daten lädt
-`internal/buchetikett` auf jedem der drei Wege: `LadeDesTitels`, `ErgaenzeServerfelder` und
-`LadeDerBestellung`. Das Druck-Center schickt nur Nummer, Titel und Autor; was der Server
-weiß — Anschaffungsjahr, Signatur, Eigentum —, trägt `ErgaenzeServerfelder` nach. Ein neues
-Feld auf dem Etikett gehört an alle drei Wege und in `pdf.BuchEtikett`, die Eingabe der
-Erzeuger, die `buchetikett.PDFEtiketten` für alle Wege füllt. Das Gate liest den gedruckten Text:
-`api/druck/etiketten_pdf_paritaet_pg_test.go` fährt die Handler, entpackt die Inhaltsströme des PDF
-und vergleicht die Textstücke; Statuscode und Dateigröße sind bei einem fehlenden Feld
-dieselben. Einen eigenen Endpunkt für ein einzelnes Etikett gibt es nicht; der Knopf an der
-Exemplarkarte übergibt an das Druck-Center.
-
-**Was auf ein Blatt gehört, wird am fertigen PDF gemessen.** Der LMF-Plan hängt als ein Blatt
-aus; `pdf/lmfplan_satz.go` wählt vor dem Setzen den größten Schriftgrad, mit dem alles auf
-eine Seite geht, erst in einer Spalte, dann in zweien. Eine feste Zeilenhöhe brach ab rund
-vierzig Terminen von selbst um.
+**Etiketten: drei Wege zum selben Blatt.** Ein Buch-Etikett entsteht über „Barcodes drucken" am
+Titel, über das Druck-Center und für den Händler (Seite und Mailanhang). Die Daten lädt
+`internal/buchetikett` auf jedem Weg (`LadeDesTitels`, `ErgaenzeServerfelder`,
+`LadeDerBestellung`), und `buchetikett.PDFEtiketten` füllt die Eingabe der Erzeuger
+(`pdf.BuchEtikett`) für alle. Ein neues Feld gehört an alle drei Wege; einen eigenen Endpunkt
+für ein einzelnes Etikett gibt es nicht, der Knopf an der Exemplarkarte übergibt an das
+Druck-Center.
+`api/druck/etiketten_pdf_paritaet_pg_test.go` vergleicht den gedruckten Text der Wege;
+Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben.
 
 ---
 
 ### 8.10 Mail
 
-- **Konfiguration aus der Datenbank, nicht aus der Umgebung.** Der Postausgang des Servers
-  liest sie vor jedem Versand (`mailservice.KonfigAusDatenbank`), der Test-Knopf
-  (`SendeTestmail`) aus derselben Quelle. `UebernimmMailKonfig` übernimmt beim Start die Werte aus der
-  Umgebung **nur**, solange in der Datenbank noch die Schema-Vorgabe steht — ohne diese
-  Übernahme gingen die Mahnungen nach dem Umstieg an `localhost:1025`. Gemeldet wird nur,
-  wenn wirklich übernommen wurde.
-- **Aufbau und Versand stehen in `mailservice/`** (`mail_sender.go`, `versand.go`); eine Tür
-  ruft `t.Post().Sende`, den Postausgang ihrer Basis. Ein Test fängt ab, was eine Tür
-  verschickt (`tuertest.FangeMailAb` liefert einen Postausgang an einen Mailserver am
-  Arbeitsplatz), oder gibt der Basis eine Attrappe. Ohne Postausgang lehnt `Post()` jede Mail
-  als nicht konfiguriert ab, wie ein Server ohne SMTP.
+- **Konfiguration aus der Datenbank, nicht aus der Umgebung.** Der Postausgang des Servers liest
+  sie vor jedem Versand (`mailservice.KonfigAusDatenbank`), der Test-Knopf (`SendeTestmail`) aus
+  derselben Quelle. `UebernimmMailKonfig` übernimmt beim Start die Werte aus der Umgebung nur,
+  solange in der Datenbank noch die Vorgabe des Schemas steht, und meldet nur, wenn wirklich
+  übernommen wurde.
+- **Aufbau und Versand stehen in `mailservice/`**; eine Tür ruft `t.Post().Sende`, den
+  Postausgang ihrer Basis. Ohne Postausgang lehnt `Post()` jede Mail als nicht konfiguriert ab,
+  wie ein Server ohne SMTP. Ein Test fängt ab, was eine Tür verschickt (`tuertest.FangeMailAb`),
+  oder gibt der Basis eine Attrappe.
 - **STARTTLS erzwungen**, mit Zertifikatsprüfung. Bietet der Server es nicht an, bricht der
-  Versand ab (`ErrSMTPKlartext`): Sonst bekäme ein Angreifer, der die EHLO-Antwort streicht
-  („STARTTLS stripping"), Mahntexte mit Schülernamen.
-  `SMTP_ALLOW_PLAINTEXT=true` erlaubt es ausdrücklich und protokolliert die Folgen.
+  Versand ab (`ErrSMTPKlartext`): Sonst bekäme ein Angreifer, der die EHLO-Antwort streicht,
+  Mahntexte mit Schülernamen. `SMTP_ALLOW_PLAINTEXT=true` erlaubt es ausdrücklich und
+  protokolliert die Folgen.
 - **Kopfzeilen-Härtung** direkt an der Schreibstelle (Betreff, Absender, Empfänger).
 - **Jede Verbindung hat eine Frist:** 10 Sekunden für den Aufbau, 60 Sekunden für die ganze
-  Sitzung (`mailservice/versand.go`). Ohne sie hing ein Versand an einem Server, der die
-  Verbindung annimmt und dann schweigt, für immer — auch die Alarm-Mail des Wächters.
-- **Eine Mail nach dem Speichern meldet ihr Ergebnis.** „Klassensatz liegt bereit" und
-  „Meldung erledigt" gehen nach dem Commit hinaus; die Antwort der Tür nennt im Feld `mail`,
-  ob sie versendet wurde, fehlschlug oder keine Adresse hatte, und die Oberfläche warnt dann
-  („bitte die Lehrkraft selbst benachrichtigen").
-- **Die Bestellmail hält ihr Scheitern an der Bestellung fest** (Migration 161,
-  `bestellungen_verlauf.mail_gescheitert_am`). Die Bestellung ist gespeichert, bevor die Mail
-  geht. Scheitert der Versand oder ist kein Mailserver eingerichtet, steht der Zeitpunkt an
-  der Bestellung, die Bestellhistorie nennt „Mail nicht versendet", und die Bestellung lässt
-  sich erneut senden (`POST /api/bestellungen/{id}/mail`). Erster und erneuter Versand bauen
-  die Mail über dieselbe Funktion (`sendeBestellmail`); der erneute liest Positionen und
-  Etiketten aus der gespeicherten Bestellung, sendet an die heutige Adresse des Lieferanten
-  und erzeugt einen neuen Bestätigungs-Link, weil vom alten nur der Hash gespeichert ist.
-  Zwei Dinge schützen den Vermerk: Er hängt nicht an der Anfrage (`context.WithoutCancel`),
-  steht also auch, wenn der Browser das Warten aufgibt, während der Mailserver nicht antwortet.
-  Und der erneute Versand nimmt der Bestellung den Vermerk, bevor er sendet
-  (`repository.BeanspruchBestellmail`): Ein zweiter Klick bekommt 409 und schickt nichts
-  doppelt; scheitert der Versuch, kommt der Vermerk zurück. Liste, Detail und der erneute
-  Versand lesen den Vermerk über einen Ausdruck (`repository.sqlBestellmailOffen`): Er gilt,
-  solange die Bestellung nicht bestätigt ist. Hat der Händler die Bestellung auf anderem Weg
-  erhalten, nimmt `DELETE /api/bestellungen/{id}/mail` den Vermerk, ohne zu senden
-  (`repository.NimmBestellmailVermerk`), und schreibt einen Eintrag ins Protokoll. Die Tür
-  gilt nur für Bestellungen ohne Bestätigungs-Link (`repository.sqlBestellungMitBestaetigung`,
-  dieselbe Bedingung wie `mit_bestaetigung` in Liste und Detail): Mit Link zeigt die
-  Oberfläche den Bestätigungsblock, und der nennte den Link nach dem Entfernen als mit der
-  Mail verschickt; dort nimmt die nachgetragene Zusage den Vermerk.
+  Sitzung (`mailservice/versand.go`). Ohne sie hinge ein Versand an einem Server, der die
+  Verbindung annimmt und schweigt, für immer, auch die Alarm-Mail des Wächters.
+- **Eine Mail nach dem Speichern meldet ihr Ergebnis.** „Klassensatz liegt bereit" und „Meldung
+  erledigt" gehen nach dem Commit hinaus; das Feld `mail` der Antwort nennt, ob sie versendet
+  wurde, fehlschlug oder keine Adresse hatte, und die Oberfläche warnt dann.
+- **Die Bestellmail hält ihr Scheitern an der Bestellung fest**
+  (`bestellungen_verlauf.mail_gescheitert_am`). Die Bestellung ist gespeichert, bevor die Mail
+  geht; scheitert der Versand, nennt die Bestellhistorie „Mail nicht versendet", und
+  `POST /api/bestellungen/{id}/mail` sendet erneut über dieselbe Funktion wie der erste Versand
+  (`sendeBestellmail`), mit einem neuen Bestätigungs-Link. Der Vermerk hängt nicht an der Anfrage
+  (`context.WithoutCancel`), und der erneute Versand nimmt ihn vor dem Senden
+  (`repository.BeanspruchBestellmail`): Ein zweiter Klick bekommt 409. Hat der Händler auf
+  anderem Weg bestellt, nimmt `DELETE /api/bestellungen/{id}/mail` den Vermerk ohne Versand, nur
+  bei Bestellungen ohne Bestätigungs-Link.
 - **Wer Post bekommt:** Klassenleitung (Mahnlisten), Händler (Bestellung), Admins
   (Bereitschafts-Wächter), Lehrkräfte (Portal-Vorgänge). **Nicht** Schüler.
 - Vorlagen mit Platzhaltern liegen in `mail_vorlagen` und sind in der Oberfläche pflegbar.
@@ -2501,387 +2080,121 @@ und liefe beim nächsten neuen Recht auseinander, ohne dass es jemand merkt.
 
 **Die Skip-Bilanz ist Teil der Strategie.** Ein Test, der sich lokal überspringt, kann auf
 `main` das Gegenteil der geltenden Entscheidung behaupten, solange niemand den Lauf in der CI
-liest. Der pre-push-Hook zieht keine Datenbank hoch (das gehört nicht in einen Push), **sagt aber, was er nicht
-geprüft hat** — gezählt werden die Dateien, nicht die Skips, weil `go test` ohne `-v` keine
-Skip-Gründe druckt und ein Zähler auf der Ausgabe immer auf 0 stünde.
+liest. Der pre-push-Hook zieht keine Datenbank hoch, **sagt aber, was er nicht geprüft hat**;
+gezählt werden die Dateien, weil `go test` ohne `-v` keine Skip-Gründe druckt. Die Landkarte der
+Ratschen in [sweeps.md](sweeps.md) nennt zu jeder Ratsche, was sie systembedingt **nicht**
+sieht.
 
-Die Landkarte der Ratschen in [sweeps.md](sweeps.md) nennt zu **jeder** Ratsche auch,
-was sie systembedingt **nicht** sieht. Das ist der Teil, den man nur einmal aufschreibt,
-wenn man ihn einmal gebraucht hat.
+#### Handgriffe beim Prüfen
 
-**Handgriffe beim Prüfen.** Was die Tabelle oben behauptet, wird so nachgewiesen:
+**Am Go-Code:**
 
-- **Tests an der Datenbank am Arbeitsplatz.** Läuft der lokale Stack, nimmt der Hook vor dem
-  Push dessen Postgres (Port 5434, Datenbank `bibliothek_test`, Passwort aus `.env`) und fährt
-  die `*_pg_test.go` mit (`scripts/git-hooks/pre-push`). Von Hand: `TEST_DATABASE_URL` auf
-  dieselbe Datenbank setzen oder den Wegwerf-Container aus [SCRIPTS.md](SCRIPTS.md) §5 nehmen.
-  Die Harness (`internal/pgtest`) lädt `schema.sql`, nicht die Migrationen, hält eine Sperre
-  über alle Pakete und weigert sich bei einem Datenbanknamen ohne „test".
-- **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF, nicht am Handler allein: Was
-  die Registrierung davorhängt (Recht, `uuidPfadMiddleware`), gehört zum Verhalten.
-  Muster: `baueKanarienWelt` in `api/pii_antwort_pg_test.go`, `tuertest.SetzeGenauEinRecht`,
-  `tuertest.MitCSRF`, `registrierteRouten` in `api/pii_matrix_test.go`. Prüft der Test die
-  Türen eines Themas mit eigenem Paket, steht er in dessen Ordner als eigenes Testpaket
-  (`package lernmittel_test`): `api/` bindet das Thema ein, und im Paket des Themas wiese Go
-  die Einbindung von `api/` als Kreis ab (`import cycle not allowed in test`). So hält es auch Googles Regelwerk
-  für Go, Abschnitt [Test package](https://google.github.io/styleguide/go/decisions#test-package):
-  ein Paket mit der Endung `_test`, wenn Tests im selben Paket einen Kreis ergäben. Der Test
-  baut den Server mit `api.NewServer`; Konto, Sitzung und Anmeldung liefert
-  `tuertest.AdminSitzung`. Beides in einem Schritt liefert `routertest.MitSitzung`; das Paket
-  `internal/routertest` bindet `api/` ein und ist deshalb nur für solche Testpakete, auch in `api/`
-  selbst (`package api_test`); ein Test im Paket `api` kann es nicht nutzen. Muster:
-  `api/lernmittel/lmf_plan_tuer_pg_test.go`, `api/system/littera_import_pg_test.go`,
-  `api/verwaltung_protokoll_pg_test.go`. Prüfungen über alle Routen bleiben in `api/`.
-- **Gegenprobe am Rückbau.** Ein neuer Test zählt, wenn er am alten Code rot war. Als Beweis
-  gilt die erwartete Meldung des Tests, nicht der Exit-Code: Ein Rückbau, der nicht übersetzt,
-  endet auch mit 1. Ohne den Arbeitsstand anzufassen geht es in Go mit
-  `go test -overlay probe.json -run <Test> ./api/`; die Datei ordnet dem Pfad der echten Datei
-  eine geänderte Kopie zu (`{"Replace": {"/…/api/x.go": "/tmp/x_alt.go"}}`), danach ist
-  `git status` leer. Ratschen, die Go-Quelltext oder SQL-Dateien zur Laufzeit lesen, sehen das
-  Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren. Bleibt eine Probe grün,
-  misst der Test den Fall nicht: Ein Test, der geleerte Spalten mit `coalesce(spalte, '')`
-  zurückliest, unterscheidet NULL nicht von leerem Text (die Regel „leer wird NULL" prüft
-  `api/leser/leser_aendern_pg_test.go` mit `IS NULL`). Reicht eine
-  Tür mehrere Werte gleichen Typs weiter (Fristen, Titel und Autor), gehört je Wert eine Probe
-  mit dem Nachbarwert dazu: Ein Test, der jeden Wert irgendwo im Text sucht, bleibt bei
-  vertauschten Feldern grün ([sweeps.md](sweeps.md), „Erwartung ohne Stelle").
-- **Eine Regel über Titeltexte wird an Sätzen der DNB gemessen.** Die Datenbank am
-  Arbeitsplatz trägt keine Untertitel, und eine Schulstufe nennen dort nur Titel aus
-  Testläufen. Die DNB liefert Sätze über SRU ohne Anmeldung, 100 je Abruf, `startRecord`
-  blättert:
-  `https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=tit%3DSchuljahr&recordSchema=MARC21-xml&maximumRecords=100&startRecord=1`.
-  Ein Wegwerf-Test im Paket `inventur`, über `go test -overlay` als zusätzliche Datei
-  eingehängt, liest die Antworten mit `dekodiereMARC`, bildet den Titel wie die ISBN-Abfrage
-  (`marcBibDaten`: die Unterfelder a, b, n und p von Feld 245, mit Leerzeichen verbunden) und
-  lässt alte und neue Regel nebeneinander laufen. Gezählt wird je Titel: neu, geändert,
-  verloren, unverändert; jede Gruppe wird gelesen. So gemessen am 08.10.2026 für den Vorschlag
-  des Jahrgangs an 1.327 Sätzen: Ein Strich mit Leerzeichen trennt dort Band und Jahrgang
-  („Band 1 - 11. Schuljahr"), und vor der Stufe steht oft eine Jahreszahl („Ausgabe 2027 - 5.
-  Schuljahr"). Die Regel dazu steht in [FACHKONZEPT.md](FACHKONZEPT.md) §13, „Jahrgang am
-  Titel".
-- **Welchen Code kein Go-Test ausführt,** zeigt die ganze Suite mit `-coverpkg` über alle
-  Pakete des Moduls (ohne das Go-Paket, das npm unter `frontend/node_modules` ablegt). Am
-  08.10.2026 führt sie 86,5 % der Anweisungen aus (28.016 von 32.405); ohne `cmd/`, `main.go`
-  und Dateien mit weniger als 20 Anweisungen liegt keine Datei unter 50 %. Eine Datei darunter
-  bekommt einen Test über ihre Tür, mit Datenbank und einer Gegenprobe je Zusicherung (Muster:
-  `api/inventurlauf/inventur_verlust_aktionen_pg_test.go`). Ob Browser-Tests den übrigen
-  Code erreichen, ist nicht gemessen.
-- **Messende Browser-Tests warten auf die Daten der Seite.** `networkidle` tritt nie ein, weil
-  die Live-Leitung offen bleibt. `frontend/e2e/messhilfe.js` führt deshalb Buch über die
-  Datenanfragen einer Seite (fetch und XHR unter `/api/`): Gemessen wird, wenn keine mehr offen
-  ist und die Zählung dreimal hintereinander gleich ausfällt. Nach der Messung zählt eine
-  Gegenprobe noch einmal und macht den Test rot, wenn inzwischen etwas dazugekommen ist; eine
-  feste Untergrenze je Seite gibt es nicht, weil die CI mit einer frischen Datenbank läuft.
-  `gehZu` in `frontend/e2e/helpers.js` ruft eine Seite auf und belegt, dass die Anwendung dort
-  geblieben ist: Einen unbekannten Pfad schiebt sie auf die Theke, und ein Gate mäße die Theke
-  zweimal.
-- **Scanfelder werden getippt, nicht gefüllt.** Ein Handscanner tippt in das Element, das den
-  Fokus hat; `locator.fill()` und `locator.click()` setzen den Fokus selbst und verdecken, dass
-  er fehlt. Vorlage: `frontend/e2e/kiosk-scannerfokus.spec.js` (`page.keyboard.type`, Enter,
-  Nachweis an der Datenbank).
-- **Nach dem Speichern wartet ein Browser-Test auf den gespeicherten Stand, nicht auf die
-  Meldung.** Eine Meldung der Oberfläche steht fünf Sekunden
-  (`frontend/src/lib/stores/snackbars.svelte.js`). Speichert ein Test zweimal kurz
-  hintereinander, ist die Erwartung an den Text „Buch erfolgreich gespeichert!" gleich nach dem
-  Klick an der Meldung vom ersten Mal erfüllt und belegt das zweite Speichern nicht; erscheint
-  die zweite dazu, trifft der Ausdruck zwei Elemente, und der Test bricht ab. Am Arbeitsplatz
-  blieb das grün, im Prüflauf wurde es rot. Vorlage: `expect.poll` auf eine Abfrage der
-  Datenbank in `frontend/e2e/feld-roundtrip.spec.js`.
-- **Eine Druckseite wird in der Druckansicht gemessen.** `window.print` durch eine Attrappe
-  ersetzen, den echten Auslöser klicken, `page.emulateMedia({ media: 'print' })`, dann in der
-  Seite messen (`frontend/e2e/ausweis-druckseite.spec.js`). Am DOM allein fällt nicht auf, wenn
-  ein Bauteil des Seitengerüsts mitdruckt ([sweeps.md](sweeps.md), „Bedienung druckt mit").
-- **Ein Umbau, der die Oberfläche nicht ändern soll,** wird am Bau belegt: `npx vite build
-  --outDir <Ordner>` vor und nach dem Umbau, dann die Prüfsummen der Dateien vergleichen. Zwei
-  Bauten desselben Stands sind gleich (15 Dateien, nachgestellt am 07.10.2026).
-- **Namen der Oberfläche werden am Syntaxbaum umbenannt, nie nach Wortlaut** (`svelte/compiler`,
-  `acorn`): Ersetzen nach Wortgrenze trifft Klassen (`text-error`), Attribute (`loading="lazy"`)
-  und Schlüssel. Ein Store wird als Ganzes umbenannt: erst die Variablen im Modul, dann die
-  Schlüssel des zurückgegebenen Objekts und bei jedem Aufrufer `instanz.name`; eine Prop in der
-  Komponente und bei jedem Rufer samt `bind:` und Kurzform. Was das Werkzeug nicht sieht, melden
-  svelte-check und Vitest: Attrappen eines Stores, Props, die ein Test in einer Konstante baut und
-  per Spread übergibt, `Object.assign` mit Schlüsseln, JSDoc-Typen wie `@returns {{ … }}`, einen
-  neuen Namen, den die Datei schon führt, und in TypeScript die Typangabe, die zum Knoten des
-  Bezeichners gehört. Belegt wird am Bau: beide Bündel roh mit derselben Prettier-Einstellung
-  formatieren und die Wörter zählen, die nur in einem stehen; jedes alte Wort braucht einen
-  Partner in gleicher Zahl. Lokale Namen und Exporte verschwinden beim Verkleinern, Schlüssel und
-  Props stehen im Bündel. Die Ratsche ist `frontend-hygiene-sprache.test.js` (Pfade, Namen,
-  Props); die Umbenennungs-Commits stehen in `.git-blame-ignore-revs`.
-- **Eine Änderung der Oberfläche ansehen, ohne den Stack neu zu bauen:** `npm run dev` im
-  Ordner `frontend` (Port 5173, reicht die Abrufe an den laufenden Stack durch) und eine
-  Wegwerf-Spec in `frontend/e2e/`, gestartet mit
-  `E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/<Datei>`. Die Spec legt ihre
-  Daten selbst an, misst in der Seite, legt ein Bild ab und räumt über die Kennung auf; eine
-  gescheiterte Antwort stellt `page.route` her. Der Server ist dabei der des laufenden Stacks:
-  Was eine Änderung am Server braucht, zeigt die Ansicht erst nach `scripts/stack-neu.sh`. Die
-  Spec wird nicht eingecheckt.
-- **Verhalten hinter dem Proxy** lässt sich am Arbeitsplatz nachstellen: ein Caddy-Container
-  mit dem `reverse_proxy`-Block aus `update_caddy.sh` vor dem lokalen Stack
-  (`host.docker.internal:8084`, `auto_https off`). Nachgestellt am 07.10.2026; TLS und HTTP/2
-  des Servers bildet das nicht nach.
-- **Browser-Tests verschicken keine Mail.** Der Stack, gegen den die Suite läuft, hat einen
-  Mailserver eingetragen, und mehrere Abläufe verschicken Mail (Meldung erledigt, Klassensatz
-  bereit, Alarme). Für die Dauer des Laufs zeigt die Einstellung deshalb auf eine Adresse, an
-  der nichts zuhört (`frontend/e2e/mailserver.js`); `frontend/e2e/mailserver-stumm.spec.js`
-  hält es fest. Eine Spec, die einen Versand bis zum Ende klickt, fängt die Anfrage ab.
+- **Tests an der Datenbank am Arbeitsplatz.** Läuft der lokale Stack, nimmt der Hook vor dem Push
+  dessen Postgres (Port 5434, Datenbank `bibliothek_test`, Passwort aus `.env`). Von Hand:
+  `TEST_DATABASE_URL` auf dieselbe Datenbank setzen oder den Wegwerf-Container aus
+  [SCRIPTS.md](SCRIPTS.md) §5 nehmen. `internal/pgtest` lädt `schema.sql`, nicht die
+  Migrationen, hält eine Sperre über alle Pakete und weigert sich bei einem Datenbanknamen ohne
+  „test". Läuft daneben schon eine Suite, bekommt der zweite Lauf eine eigene Datenbank
+  (`CREATE DATABASE` am lokalen Stack, danach wieder entfernen).
+- **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF: Was die Registrierung
+  davorhängt (Recht, `uuidPfadMiddleware`), gehört zum Verhalten. Muster:
+  `routertest.MitSitzung`, `tuertest.SetzeGenauEinRecht`, `tuertest.MitCSRF`,
+  `api/lernmittel/lmf_plan_tuer_pg_test.go`.
+- **Gegenprobe am Rückbau.** Ein neuer Test zählt, wenn er am alten Code rot war, mit seiner
+  erwarteten Meldung, nicht nur mit dem Exit-Code (ein Rückbau, der nicht übersetzt, endet auch
+  mit 1). Ohne den Arbeitsstand anzufassen: `go test -overlay probe.json -run <Test> ./<paket>/`,
+  die Datei ordnet dem Pfad der echten Datei eine geänderte Kopie zu. Ratschen, die Quelltext zur
+  Laufzeit lesen, sehen das Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren.
+  Reicht eine Tür mehrere Werte gleichen Typs weiter, gehört je Wert eine Probe mit dem
+  Nachbarwert dazu ([sweeps.md](sweeps.md), „Erwartung ohne Stelle").
+- **Welchen Code kein Go-Test ausführt,** zeigt die ganze Suite mit `-coverpkg` über alle Pakete
+  des Moduls. Eine Datei unter 50 % (ohne `cmd/`, `main.go` und sehr kleine Dateien) bekommt
+  einen Test über ihre Tür, mit Datenbank und einer Gegenprobe je Zusicherung.
 - **Eine neue Tabelle oder Route macht Register rot, die ein gezielter Testlauf nicht sieht.**
-  Nach der ersten grünen Einzelprobe deshalb
-  die ganze Suite fahren, `go test ./...` mit `TEST_DATABASE_URL`. Erwartet wird je ein
-  Eintrag: in `phantom_erfolg_test.go` für jeden `Exec`, dessen Ergebnis verworfen wird; in
-  `docs/PII_MATRIX.de.md` eine Zeile je Route (`api/pii_matrix_test.go`); in `bauePIIAufrufe`
-  ein Aufruf je GET-Route (`api/pii_antwort_pg_test.go`); am Ende von `schema.sql` die
-  neue Migration in der Liste der angewendeten (`db/migrationen_drift_test.go`); in
-  `repository/schema_gegenrichtung_pg_test.go` jede neue Lösch-Folge und jede neue Bedingung
-  mit der Antwort, wer die Folge behandelt; in
-  `repository/schema_gegenrichtung_sperren_pg_test.go` jeder neue Fremdschlüssel, an dem ein
-  Löschen scheitert oder der ein Umbenennen weiterträgt, und jede neue Eindeutigkeit; in
-  `listenGrenze` je Liste in der Antwort einer GET-Route, was sie begrenzt
-  (`api/listen_grenze_pg_test.go`). Dazu Tests, die JSON wörtlich vergleichen (ein
-  neues Feld erscheint dort als `null`), Swagger (`docs/swagger_drift_test.go`),
-  [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag
-  ist eine Antwort, keine hochgesetzte Zahl.
-- **Eine Anweisung zieht in eine andere Schicht,** etwa aus einer Tür nach `repository/` (5.2.2,
-  Tür und Abfrage). Vorher messen, ob ein Test an der Datenbank sie ausführt: `go test` auf das
-  Paket mit `-coverprofile`, `-coverpkg` und `-run` über die Namen der Tests aus den
-  `*_pg_test.go`; die Zeile der Anweisung muss im Profil gezählt sein, sonst kommt der Test
-  zuerst. Das Literal aus der Quelle schneiden, nicht abtippen. Danach alle
-  Zeichenketten-Literale der berührten Dateien vor und nach dem Umzug vergleichen (mit
-  `go/scanner` gelesen): Unterschiede nur bei den Einbindungen. Ändert sich mehr als der Ort
-  (eine Anweisung, die aus Feldern zusammengesetzt wird; Zeilen, die in einen anderen Typ
-  gelesen werden), den alten Code wörtlich unter anderem Namen in einen Wegwerf-Test legen und
-  alt gegen neu laufen lassen: über alle Kombinationen der Felder oder an Probe-Daten, in
-  denen jede Spalte einen eigenen Wert trägt. Ob der Vergleich misst, zeigt eine absichtlich
-  vertauschte Spalte. Umzubuchen sind für einen verworfenen `CommandTag`
-  `phantom_erfolg_test.go`, für `FROM schueler` `docs/lesepfade_gegen_sicht_test.go`, für
-  `CURRENT_DATE` `docs/kalendertag_bestand_test.go`, für ein UPDATE oder DELETE an einem der
-  Protokolle `protokoll_schreibtueren_ratsche_test.go`, für `FROM system_einstellungen`
-  `repository/einstellungen_gelesene_schluessel_test.go`, dazu der Bestand in
-  `schichtung_ratsche_test.go`; die ganze Suite nennt jeden Eintrag, der
-  fehlt. Eine Ratsche, die die Dateien des alten Pakets liest, verliert mit dem Umzug ihren
-  Gegenstand: Ihre Aussage zieht mit und prüft die Funktionen am neuen Ort (so
-  `repository/nachtlauf_ratsche_test.go` für die Löschbedingungen der Nachtläufe). Zieht ein Erzeuger eines PDFs um, das Blatt vorher und nachher am entpackten Inhalt
-  vergleichen (die Ströme als Menge): gofpdf schreibt Zeitstempel und legt Schriften und
-  Bilder in der Reihenfolge einer Go-Map ab, die Datei selbst ist deshalb von Lauf zu Lauf
-  verschieden. Die Fälle dafür über die Verzweigungen des Erzeugers legen (jedes Format,
-  Startposition, leere Felder, Zeichen außerhalb von cp1252, jeder Topf) und zuerst zwei
-  Läufe desselben Standes gegeneinander halten: Ein Unterschied dort liegt am Erzeuger, nicht
-  am Umzug. Die Probe hängt als zusätzliche Testdatei über `go test -overlay` im Paket und
-  ruft die Erzeuger über eine zweite Datei, die es je Stand einmal gibt. Zum
-  Schluss `./scripts/gosec-gate.sh` fahren: Die Taint-Analyse von gosec sieht nach dem Umzug
-  einen Weg von der Anfrage in die Antwort, den sie vorher nicht sah
-  ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5, Fall vom 09.10.2026). Der Hook vor dem Push fährt
-  das Skript mit, meldet sich aber erst nach dem Commit.
-- **Vorher und nachher aufnehmen, was die Tests an die Datenbank schicken.** Der Testlauf des
-  Pakets läuft mit `PGOPTIONS="-c log_statement=all"` in der Umgebung. Die Einstellung gilt
-  dann für jede Verbindung des Laufs, auch zu den Wegwerf-Datenbanken, die sich die Tests von
-  `jobs/` anlegen; ein Zusatz in der Adresse ginge dort verloren, weil die Tests sie neu
-  bauen. Währenddessen schreibt `docker logs -f --tail 0` das Protokoll des
-  Datenbank-Containers in eine Datei; hinterher lesen taugt nicht: `--since` lieferte
-  nichts, ein großes `--tail` brach an einer alten Stelle ab. Aus dem Protokoll je
-  Zeile `LOG:  execute …:` oder `LOG:  statement:` eine Anweisung schneiden (sie reicht bis
-  zur nächsten Zeile mit Zeitstempel), Leerraum zusammenziehen, Zahlen ab sechs Stellen und
-  die Prozessnummer im Namen der Wegwerf-Datenbanken ersetzen (`pg_dump` nennt Objekte mit
-  ihrer Nummer), und beide Aufnahmen als Menge mit Anzahl vergleichen. Die Aufnahme vom alten
-  Stand zeigt zugleich, ob ein Test jede Anweisung ausführt, die umzieht. So belegt für die
-  Nachtläufe: 4.329 Anweisungen vorher wie nachher, bei einer gewollten Abweichung. Die Zahl
-  der Läufe einzelner Anweisungen schwankt von Lauf zu Lauf, auch am selben Stand und mit den
-  Paketen nacheinander (`-p 1`): vier Anweisungen um den Abschluss einer Inventur (Erfassen,
-  sein Protokolleintrag, `commit`, `rollback`) um eins oder zwei, eine Abfrage der Leserakte im Test des
-  LUSD-Imports um bis zu drei, die Warteschleife eines Tests (`-- ping`) um eins. Eine
-  Abweichung in diesen Zahlen sagt über einen Umzug nichts; im Zweifel denselben Stand ein
-  zweites Mal aufnehmen. Öffnet der umgezogene Code Transaktionen mit Zeilensperren, die
-  Aufnahme auch je Transaktion vergleichen: je Verbindung die Folge der Anweisungen von
-  `begin` bis `commit` oder `rollback`, beide Stände als Menge solcher Folgen. Der Vergleich
-  einzelner Anweisungen sagt über die Reihenfolge der Sperren nichts.
-- **Ein Name zieht in ein anderes Paket,** etwa ein Vokabular aus `repository/` nach `pkg/`.
-  `gofmt -r 'repository.Alt -> paket.Neu' -w <Datei>` stellt jede Nennung im Code um,
-  `goimports -w` richtet die Einbindungen. Danach dreierlei prüfen. Kommentare schreibt
-  `gofmt -r` nicht um, und einen Kommentar am Ende einer umgeschriebenen Zeile verliert es:
-  je geänderter Datei die Kommentare vorher
-  und nachher als Menge vergleichen, gelesen mit `go/scanner` und `ScanComments`. `goimports`
-  setzt eine Einbindung aus diesem Modul in die Gruppe der Standardbibliothek, wenn die Datei
-  bis dahin keine andere aus dem Modul hatte. Und die geänderten Zeilen heben sich paarweise
-  auf, sobald alter und neuer Name gleichgesetzt sind; was übrig bleibt, ist von Hand geändert
-  und wird gelesen.
-- **Eine Datei wird beim Umzug von Hand neu geschrieben,** weil sie eigene Typen und neue
-  Kommentare bekommt. Den Code vorher und nachher als Folge seiner Token vergleichen, gelesen
-  mit `go/scanner` ohne Kommentare und ohne Einbindungen, nachdem die umbenannten Namen
-  gleichgesetzt sind: Übrig bleiben die gewollten Unterschiede (neue Typen, ein verlegter
-  Fehlerwert), jeder andere ist ein Tippfehler. Danach je Regel der Datei und je Aufrufstelle
-  eine Probe mit zurückgebauter Stelle gegen die Tests der Türen: Bleibt eine grün, fehlt ein
-  Test, oder der vorhandene trifft den Fall nicht.
-- **Dateien ziehen in einen Unterordner oder ein anderes Paket,** und am Verhalten soll sich
-  nichts ändern. Vorher und nachher die Liste der Tests mit ihrem Ausgang festhalten:
-  `go test -json -count=1 ./...` mit `TEST_DATABASE_URL`, je Paket und Test die letzte Meldung
-  `pass`, `fail` oder `skip`. Ziehen Testdateien mit um, zählt der Name des Tests, nicht sein
-  Paket. Das Paket, das npm unter `frontend/node_modules` ablegt, erscheint nur in einer
-  Arbeitskopie mit installierter Oberfläche. Methode, Pfad und Recht jeder Route hält `api/pii_matrix_test.go`
-  gegen [PII_MATRIX.de.md](PII_MATRIX.de.md); die Anmeldungen selbst (`mux.Handle(…)` als ein
-  Ausdruck über Zeilengrenzen) vorher und nachher als Liste vergleichen, Unterschiede stehen
-  dann nur am Namen der Tür. Eine Prüfung, die Quelltext von der Platte liest, sieht eine Datei
-  am neuen Ort nur, wenn sie den Baum durchläuft: mit einer Datei, die gegen ihre Regel
-  verstößt, im neuen Ordner einer Wegwerf-Arbeitskopie belegen (`git worktree add`); das
-  Overlay von `go test` sehen solche Prüfungen nicht. Eine Wegwerf-Arbeitskopie baut in
-  einen eigenen Zwischenspeicher (`GOCACHE=<Ordner>`), der mit ihr gelöscht wird: Go legt
-  je Pfad eigene Einträge an ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5, Fall vom 13.10.2026). Wer
-  danach noch den alten Ort nennt, steht in der
-  Ausgabe von `docs/dateiverweise_test.go`.
-- **Ein Helfer der Tests zieht in ein Paket für Prüfhilfen,** weil Tests aus mehr als einem
-  Paket ihn brauchen und eine Testdatei sich nicht einbinden lässt. Die Nennungen schreibt ein
-  Werkzeug mit Typprüfung um (`go/types`, `Info.Uses`): `gofmt -r` träfe jeden Bezeichner
-  gleichen Namens, auch eine Variable `exemplar` oder ein Feld `datum`. Das Paket ist danach
-  gewöhnlicher Code, und die Ratschen über den Go-Baum lesen es. Es braucht je einen Eintrag
-  mit Grund: als Paket in `schichtung_ratsche_test.go`, je Funktion mit verworfenem Ergebnis in
-  `phantom_erfolg_test.go`, je Datei in `docs/schreibpfade_gegen_sicht_test.go` und
-  `repository/einstellungen_gelesene_schluessel_test.go`, dazu jede Funktion in
-  `scripts/deadcode_baseline.txt`. Der Linter verlangt über jedem exportierten Namen einen
-  Kommentar, der mit ihm beginnt. `goimports` rät für `pgx` den Pfad ohne `/v5` und setzt eine
-  Einbindung aus dem eigenen Modul in die Gruppe der Standardbibliothek; neue Dateien bekommen
-  ihre Einbindungen deshalb mit. Beleg: dieselbe Liste der Tests mit demselben Ausgang, und
-  der Vergleich Token für Token, in dem jeder neue Name auf den alten zurückgeführt ist.
-- **Code zieht in ein Paket, das die Türen einbinden,** etwa das, was jede Tür braucht, nach
-  `api/tuer`. Es ziehen ganze Dateien; was aus einer Datei bleiben soll, zieht vorher
-  innerhalb des Pakets um. Ein Werkzeug mit Typprüfung schreibt die Nennungen um: den
-  Paketnamen vor jeden Namen, der umzieht, den groß geschriebenen Namen, wo ein anderes Paket
-  ihn braucht, und den eingebetteten Typ in jedes Literal (`Server{Basis: tuer.Basis{DB: …}}`).
-  Es meldet, was eine umziehende Datei aus dem alten Paket noch bräuchte. Eine Methode bleibt
-  unter ihrem Namen erreichbar, wenn der alte Typ den neuen einbettet. Verglichen wird danach
-  je Erklärung, Token für Token und unabhängig von Datei und Paket; die Rückführung (neuer
-  Name, Paketname vor dem Punkt, Schachtelung eines Literals) läuft über beide Stände. Ob der
-  Vergleich misst, zeigt ein absichtlich geändertes Token. Dreierlei fällt dabei an. Ein Test,
-  der in einen Wert des Pakets schrieb, kommt von außen nicht mehr heran: Der Wert gehört dann
-  einem Typ, den der Rufer anlegt und weiterreicht (Googles Best Practices, „Global state"), wie
-  der Cache der Rechte als Feld der Basis; eine Methode, die nur Tests rufen, endet auf
-  `FuerTest` und steht in `scripts/deadcode_baseline.txt` (`RechteCache.MerkeFuerTest`). Eine Prüfung, die den Aufruf einer Funktion am
-  Namen ohne Paket erkennt (`*ast.Ident`), sieht den Aufruf mit Paketnamen nicht
-  (`*ast.SelectorExpr`): jede Prüfung suchen, die einen umziehenden Namen als Text nennt, ihren
-  Detektor um die neue Form ergänzen und belegen, dass er vor und nach dem Umzug dasselbe
-  findet und einen Verstoß in der neuen Form meldet. Und ein Literal ohne Feldnamen weist
-  `go vet` ab, sobald der Typ aus einem anderen Paket kommt: Die Felder werden vorher benannt.
-  Ein Test im Paket eines Themas kann `api/` nicht einbinden, wenn `api/` das Thema einbindet
-  (`import cycle not allowed in test`); ein Testpaket daneben (`package thema_test`) kann es.
-- **Die Türen eines Themas ziehen in ein eigenes Paket unter `api/`** (5.2.2, Themen unter
-  `api/`). Es ziehen die Dateien des Themas und die Testdateien, die nur dieses Thema
-  brauchen. Das Werkzeug mit Typprüfung schreibt dreierlei um: die Paketzeile; den Typ
-  `Server` zum Typ des Themas in jedem Empfänger und jedem Literal der umziehenden Dateien,
-  wobei die Basis im Literal ihr `&` bekommt, weil das Thema sie als Zeiger hält; und den
-  Zugang hinter dem Empfänger in jeder Datei, die bleibt und eine umziehende Tür ruft
-  (`s.LMFPlanSchreiben()` wird `s.lernmittel().LMFPlanSchreiben()`). Es meldet, was eine
-  umziehende Datei aus `api/` noch bräuchte und was eine bleibende klein geschrieben aus dem
-  Thema bräuchte. Von Hand kommen die Datei mit dem Typ und der Zugang in `api/router.go`
-  dazu. Vier Prüfungen werden von selbst rot und ziehen nach: der Bestand `dateienOhneTuer`
-  (die Datei mit dem Typ kommt dazu, eine umgezogene Datei ohne Tür bekommt ihren neuen
-  Pfad); jeder Test, der eine Datei relativ zu seinem Ordner liest (er liegt einen Ordner
-  tiefer); jede Prüfung, die ihr Thema in der Routenliste an der Form der Anmeldung sucht
-  (`api/lernmittel/lmf_plan_live_test.go` liest die Türen hinter dem Zugang und meldet eine
-  schreibende Route ohne ihn); und `docs/dateiverweise_test.go`
-  für jeden Pfad in Dokumenten, Kommentaren und Oberfläche. Die Pfade schreibt ein Skript
-  um. Dreierlei wird nicht rot: ein Dateiname ohne Ordner in einem Kommentar oder Dokument,
-  ein Kommentar, der den alten Typ nennt, und die Schnittstellenbeschreibung.
-  `docs/swagger_drift_test.go` vergleicht nur die Adressen; die Typen der Antworten heißen
-  nach dem Umzug `lernmittel.…` statt `api.…`. Also `swag init -g main.go -o docs` fahren
-  und die erzeugte `swagger.json` beider Stände als Datenstruktur vergleichen, nachdem der
-  neue Paketname zurückgeführt ist. Belegt wird wie beim Umzug nach `api/tuer`: dieselbe
-  Liste der Tests mit demselben Ausgang, die Anmeldungen der Routen, der Vergleich je
-  Erklärung (die Rückführung nimmt auch den Zugang und das `&` vor der Basis heraus), dazu
-  je angepasster Prüfung eine Probe am Rückbau und der Nachweis, dass sie vorher und nachher
-  dasselbe sieht. Die Proben der Prüfungen über den Quellbaum laufen ein zweites Mal, mit
-  dem Verstoß im Ordner des Themas.
-  Das Werkzeug zieht eine Testdatei auch als eigenes Testpaket um.
-  Namen des Themas bekommen dessen Namen davor, groß geschriebene Namen aus `api/` den Namen
-  `api`; was ein Testpaket nicht erreicht (klein Geschriebenes, einen Helfer aus einer
-  Testdatei, die bleibt), meldet es. Ein leeres Literal des Servers (`&Server{}`) schreibt es
-  als `&Tueren{Basis: &tuer.Basis{}}`: Am Server war die Basis eingebettet und leer, am Typ
-  des Themas wäre sie nil. Der Vergleich je Erklärung führt das zurück; ohne die Rückführung
-  meldete er genau die Tests mit dem leeren Literal. Das Werkzeug liest nur `api/`: Einen
-  Aufruf von außerhalb (`server.BereitschaftsAlarm` in `main.go`) zeigt erst
-  `go build ./...`. Zwei weitere Arten von Prüfungen werden von selbst rot, jede in beide
-  Richtungen: eine Liste, die einen Typ mit seinem Paket nennt (`uuid_eingaben_test.go`),
-  und ein Bestand, der Dateien beim Pfad führt (`docs/xlsx_leser_grenzen_test.go`). Das
-  Skript für die Pfade liest auch Dateien ohne Endung (`Dockerfile`) und lässt aus, was eine
-  Datei nennt, wie sie einmal war: den datierten Prüfbericht unter `bewertung/` und die
-  Ordner der Werkzeuge (`.claude/`, `.jules/`). Je Thema zeigt eine Probe per Overlay, dass
-  ein Zugang ohne die Basis des Servers Tests rot macht. Die Zahlen je Thema stehen in der
-  Nachricht seines Commits.
-  Manches Thema braucht Vorarbeit, je in eigenen Commits vor dem Umzug. Ein Helfer in einer Testdatei, den Tests mehrerer Themen rufen, zieht zuerst zu den
-  Prüfhilfen. Eine Testdatei mit Tests zu Türen zweier Themen wird nach Thema getrennt: Ein
-  Test, der beide Themen braucht, bleibt in `api/` und liest die Türen selbst, statt über
-  einen Helfer, der mit einem Thema umzieht; wird er dafür umgeschrieben, belegt ihn ein
-  Rückbau in jeder Richtung (`api/abgaenger_versetzung_paar_pg_test.go`). Eine Regel, die
-  zwei Themen brauchen, zieht zuerst aus den Türen in die Schicht darunter: innerhalb von
-  `api/` in eine eigene Datei schneiden, dann mit dem Werkzeug als ganze Datei umziehen, wie
-  beim Umzug nach `api/tuer`. Danach je Aufrufstelle eine Probe per Overlay: Sie zeigt, an
-  welcher Tür die Regel ohne Test gerufen wird. Eine Datei, die Türen zweier Themen trägt,
-  wird vorher geteilt. Zieht ein Typ mit seiner Methode um, braucht ein Aufrufer, der bleibt,
-  keinen Zugang. Zwei weitere Prüfungen werden von selbst rot: der
-  Bestand der Felder, die eine Regel aufheben (`privilegierte_felder_test.go`, Datei beim
-  Pfad), und eine Prüfung, die eine Datei neben sich liest
-  (`mail_vorlagen_platzhalter_test.go`). Die Prüfung der Mail-Routen leitet die sendenden
-  Türen aus den Namen in der Routenliste her; was sie sieht, lässt sich an zwei Ständen über
-  eine Probe-Datei per Overlay ausgeben und vergleichen.
-  Still bleibt eine Prüfung, die mit ihrem Thema umzieht und den Quellbaum ab einem relativen
-  Ordner durchläuft (`".."`): Einen Ordner tiefer liest sie nur noch `api/` und findet nichts
-  zu melden. Ein gezielt gelesener Pfad wird dagegen von selbst rot, weil die Datei fehlt.
-  Vor dem Umzug deshalb in den umziehenden Testdateien nach Baumläufen suchen
-  (`filepath.Walk`, `filepath.WalkDir`, `os.ReadDir`, Pfade über `..`). Eine Prüfung über den
-  Baum, die keine Tür prüft, wird vorher in eine eigene Datei geschnitten; sie steht im
-  Wurzelpaket bei den übrigen Prüfungen über den Baum. Sie hält selbst, dass ihr Lauf die Stelle erreicht, an der ihr Gegenstand steht:
-  `abgangsdatum_ratsche_test.go` zählt die Zeilen, die die Spalte nennen, und scheitert
-  bei null.
-  Die Probe am Zugang hat zwei Formen: ohne die Basis und mit einer Kopie von ihr. Die Kopie
-  fällt nur einem Test auf, der den Zeiger vergleicht: `api/zugaenge_basis_test.go` hält je
-  Zugang den Zeiger gegen die Basis des Servers und die Liste der geprüften Zugänge gegen
-  die erklärten. Ein neues Thema trägt seinen Zugang dort ein.
-  Vor dem Umzug je Tür des Themas die rufende Stelle
-  der Oberfläche suchen (`grep -rn "<Adresse>" frontend/src`), bis zum Menüpunkt oder zur
-  Kategorie der Einstellungen, die das Bauteil einbindet; nennt sie ein anderes Thema, zieht
-  die Tür dorthin (5.2.2). Welchen Helfer ein Test braucht, der in `api/` bleibt, nennt
-  der Probelauf erst mit der endgültigen Liste: nach dem Herausnehmen der Tests zweier Themen
-  wiederholen. Zieht eine Liste zu den Prüfhilfen, die mehrere Prüfungen lesen, belegt eine
-  Probe mit einem Eintrag zu viel, dass jede Prüfung sie am neuen Ort liest, und je Art von
-  Eintrag eine Probe, dass sein Fehlen auffällt; eine Quelle ohne Fremdschlüssel fällt sonst
-  unbemerkt weg (`repository/dsgvo_paar_vollstaendigkeit_test.go` hält die drei in der Liste
-  der Tabellen mit Bezug auf einen Leser).
-  Trägt eine Datei Türen zweier Themen, wird die fremde Tür vorher in eine eigene Datei
-  geschnitten und mit dem Werkzeug in ihr Thema gezogen. Ein Feld des Servers, das nur ein Thema liest, zieht an den Typ des
-  Themas: Die Liste nennt es hinter dem Typ (`typ Server Tueren Basis IdempotenzWartezeit`),
-  der Typ des Themas bekommt es vor dem Lauf von Hand, am Server entfällt es danach. Braucht
-  ein Test, der in `api/` bleibt, einen klein geschriebenen Namen des Themas, schreibt die
-  Regel `name` ihn groß; der Linter verlangt dann einen Kommentar, der mit dem Namen als Satz
-  beginnt. Läufe neben dem Hook vor dem Push, der die Testdatenbank selbst braucht, gehen an
-  eine eigene Datenbank: `CREATE DATABASE` am lokalen Stack genügt, `internal/pgtest` spielt
-  das Schema je Lauf neu ein; am Ende wird sie wieder entfernt.
-  Zieht eine Testdatei aus `api/` zu dem Paket, dessen Regel sie prüft (5.2.2, „Wo ein Test
-  steht“), ändert sich je Datei die Paketzeile, sonst nur ein
-  Pfad, wo die Tiefe des Ordners wechselt: `repository/` und `db/` liegen so tief wie
-  `api/`, im Wurzelpaket entfällt `..`, in `pkg/leserart` kommt eines dazu. Eine Prüfung,
-  die im Wurzelpaket ankommt, fällt unter Regel 7 ([sweeps.md](sweeps.md)); die Prüfung
-  dazu wird von selbst rot und verlangt die Zeile in der Landkarte. Belegt wird der Umzug
-  an der Liste der Tests (Namen und Ausgang gleich, die Zahl je Paket verschoben) und je
-  umgezogener Prüfung am neuen Ort: je Baumlauf ein Verstoß außerhalb von `api/`, je
-  geändertem Pfad eine Änderung an der gelesenen Datei, je Zielpaket ein Rückbau an der
-  geprüften Regel. Eine Prüfung über den Baum ohne Untergrenze läuft an einer falschen
-  Wurzel grün; `bestellstatus_ratsche_test.go` zählt deshalb die Dateien, die die Spalte
-  nennen. Als
-  falsche Wurzel taugt für die Probe nur ein Ordner, in dem der Gegenstand wirklich
-  nicht steht: In `docs/` nennt die Schnittstellenbeschreibung fast jedes Feld. Welche
-  Tests nichts aus `api/` prüfen, zeigt das Maß „keine Nennung eines Namens aus `api/`"
-  nicht allein: Ein Test, der den Typ `Server` nur baut, um an den Pool zu kommen, nennt
-  ihn. Deshalb jede Testdatei lesen, die aus dem Paket nur einen Typ braucht.
-- **Eine Regel zieht aus einer Datei mit Tür in ihr Fachpaket** (5.2.2, Tür und Abfrage).
-  Belegt wird am Ergebnis, nicht am Lesen: dieselben Eingaben durch die alten und die neuen
-  Funktionen schicken, je als Wegwerf-Test per `go test -overlay` im Paket seines Stands, und
-  die Ergebnisse als JSON Byte für Byte vergleichen; ein Blatt als entpackte Inhaltsströme.
-  Die Eingaben erzeugt ein Skript einmal als Datei, beide Stände lesen sie. Am alten Stand
-  mit `-coverprofile` messen, welche Blöcke die Eingaben auslassen, und zwei Läufe desselben
-  Stands gegeneinander halten. Eine geänderte Stelle im neuen Stand muss im Vergleich
-  auffallen. Danach je Regel und je Aufrufstelle eine Rückbau-Probe. Der Umzug macht Lücken
-  sichtbar, die es vorher schon gab, weil die Probe an jeder Aufrufstelle fragt, welcher Test
-  sie hält. Wird eine Datei nur geteilt,
-  genügt der Vergleich je Erklärung, Token für Token ohne Kommentare. Ein Kommentar über
-  einem Feld eines Antworttyps steht als Beschreibung in `docs/docs.go`: nach einer Änderung
-  dort `swag init -g main.go -o docs`; `docs/swagger_drift_test.go` vergleicht nur die
-  Adressen und sieht eine veraltete Beschreibung nicht.
+  Deshalb nach der ersten grünen Probe die ganze Suite fahren. Erwartet wird je ein Eintrag: in
+  `phantom_erfolg_test.go` für jeden `Exec` mit verworfenem Ergebnis; in
+  `docs/PII_MATRIX.de.md` je Route (`api/pii_matrix_test.go`); in `bauePIIAufrufe` je GET-Route
+  (`api/pii_antwort_pg_test.go`); am Ende von `schema.sql` die neue Migration
+  (`db/migrationen_drift_test.go`); in `repository/schema_gegenrichtung_pg_test.go` und
+  `repository/schema_gegenrichtung_sperren_pg_test.go` jede neue Lösch-Folge, Bedingung,
+  Fremdschlüssel und Eindeutigkeit mit der Antwort, wer sie behandelt; in `listenGrenze` je Liste
+  einer GET-Route, was sie begrenzt (`api/listen_grenze_pg_test.go`). Dazu Swagger,
+  [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag ist
+  eine Antwort, keine hochgesetzte Zahl.
+- **Code zieht um** (eine Anweisung in eine andere Schicht, ein Name oder eine Datei in ein
+  anderes Paket, eine Regel aus einer Tür in ihr Fachpaket). Belegt wird, dass sich am Verhalten
+  nichts ändert:
+  - vorher und nachher dieselbe Liste der Tests mit demselben Ausgang
+    (`go test -json -count=1 ./...` mit `TEST_DATABASE_URL`);
+  - der Code je Erklärung, Token für Token ohne Kommentare (`go/scanner`), nachdem umbenannte
+    Namen gleichgesetzt sind, und alle Zeichenketten-Literale; ob der Vergleich misst, zeigt ein
+    absichtlich geändertes Token;
+  - zieht eine Anweisung um: vorher messen, dass ein Test an der Datenbank sie ausführt
+    (`-coverprofile`); die Anweisungen, die die Tests schicken, vorher und nachher aufnehmen
+    (`PGOPTIONS="-c log_statement=all"`, das Protokoll des Containers mit `docker logs -f`
+    mitschreiben) und als Menge vergleichen, bei Zeilensperren auch je Transaktion;
+  - zieht ein PDF-Erzeuger um: das Blatt am entpackten Inhalt vergleichen (die Ströme als Menge),
+    denn gofpdf schreibt Zeitstempel und legt Objekte in der Reihenfolge einer Go-Map ab;
+  - zieht eine Regel um: dieselben Eingaben durch alte und neue Funktionen, je als Wegwerf-Test
+    per Overlay, Ergebnisse als JSON Byte für Byte vergleichen; danach je Aufrufstelle eine
+    Rückbau-Probe;
+  - zum Schluss `./scripts/gosec-gate.sh`: Die Taint-Analyse sieht nach einem Umzug Wege, die
+    sie vorher nicht sah ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5).
+
+  Was dabei nicht von selbst rot wird: `gofmt -r` schreibt Kommentare nicht um und verliert einen
+  Kommentar am Ende einer umgeschriebenen Zeile; `goimports` setzt eine Einbindung aus dem Modul
+  in die Gruppe der Standardbibliothek und rät für `pgx` den Pfad ohne `/v5`; ein Werkzeug ohne
+  Typprüfung trifft jeden Bezeichner gleichen Namens (umbenannt wird mit `gopls rename` oder
+  über `go/types`). Eine Prüfung, die einen Aufruf am Namen erkennt, sieht ihn mit Paketnamen
+  nicht (`*ast.Ident` gegen `*ast.SelectorExpr`). Eine Prüfung, die den Baum ab einem relativen
+  Ordner liest, findet nach einem Umzug nichts mehr und bleibt grün; sie trägt deshalb eine
+  Untergrenze (`abgangsdatum_ratsche_test.go` scheitert bei null Funden). Ein Literal ohne
+  Feldnamen weist `go vet` ab, sobald der Typ aus einem anderen Paket kommt. Eine
+  Wegwerf-Arbeitskopie baut in einen eigenen Zwischenspeicher (`GOCACHE=<Ordner>`), der mit ihr
+  gelöscht wird ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5). Wer danach noch einen alten Pfad nennt,
+  steht in der Ausgabe von `docs/dateiverweise_test.go`.
+- **Eine Regel über Titeltexte wird an Sätzen der DNB gemessen,** nicht an der Datenbank am
+  Arbeitsplatz. Die DNB liefert Sätze über SRU ohne Anmeldung, 100 je Abruf:
+  `https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=tit%3DSchuljahr&recordSchema=MARC21-xml&maximumRecords=100&startRecord=1`.
+  Ein Wegwerf-Test im Paket `inventur` liest sie mit `dekodiereMARC`, bildet den Titel wie die
+  ISBN-Abfrage (`marcBibDaten`) und lässt alte und neue Regel nebeneinander laufen; gezählt wird
+  je Titel neu, geändert, verloren, unverändert, und jede Gruppe wird gelesen.
+
+**An der Oberfläche und im Browser:**
+
+- **Messende Browser-Tests warten auf die Daten der Seite.** `networkidle` tritt nie ein, weil
+  die Live-Leitung offen bleibt; `frontend/e2e/messhilfe.js` misst, wenn keine Datenanfrage mehr
+  offen ist und die Zählung dreimal gleich ausfällt, und zählt danach zur Gegenprobe noch einmal.
+  `gehZu` in `frontend/e2e/helpers.js` belegt, dass die Anwendung auf der Seite geblieben ist.
+- **Scanfelder werden getippt, nicht gefüllt** (`page.keyboard.type`, Enter, Nachweis an der
+  Datenbank; Vorlage `frontend/e2e/kiosk-scannerfokus.spec.js`): `locator.fill()` und
+  `locator.click()` setzen den Fokus selbst und verdecken, dass er fehlt.
+- **Nach dem Speichern wartet ein Browser-Test auf den gespeicherten Stand, nicht auf die
+  Meldung:** Eine Meldung steht fünf Sekunden, und die vom ersten Speichern erfüllt sonst die
+  Erwartung an das zweite (Vorlage: `expect.poll` auf die Datenbank in
+  `frontend/e2e/feld-roundtrip.spec.js`).
+- **Eine Druckseite wird in der Druckansicht gemessen:** `window.print` durch eine Attrappe
+  ersetzen, den echten Auslöser klicken, `page.emulateMedia({ media: 'print' })`
+  (`frontend/e2e/ausweis-druckseite.spec.js`).
+- **Browser-Tests verschicken keine Mail:** Für die Dauer des Laufs zeigt die Einstellung auf
+  eine Adresse, an der nichts zuhört (`frontend/e2e/mailserver.js`, gehalten von
+  `frontend/e2e/mailserver-stumm.spec.js`).
+- **Ein Umbau, der die Oberfläche nicht ändern soll,** wird am Bau belegt: `npx vite build
+  --outDir <Ordner>` vor und nach dem Umbau, dann die Prüfsummen der Dateien vergleichen; zwei
+  Bauten desselben Stands sind gleich.
+- **Namen der Oberfläche werden am Syntaxbaum umbenannt, nie nach Wortlaut** (`svelte/compiler`,
+  `acorn`): Ersetzen nach Wortgrenze trifft Klassen (`text-error`), Attribute und Schlüssel. Was
+  das Werkzeug nicht sieht (Attrappen eines Stores, Props aus einem Spread, JSDoc-Typen), melden
+  svelte-check und Vitest; belegt wird am Bau, Wort für Wort zwischen beiden Bündeln. Die
+  Umbenennungs-Commits stehen in `.git-blame-ignore-revs`.
+- **Eine Änderung der Oberfläche ansehen, ohne den Stack neu zu bauen:** `npm run dev` im Ordner
+  `frontend` (Port 5173, reicht die Abrufe an den laufenden Stack durch) und eine Wegwerf-Spec,
+  gestartet mit `E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/<Datei>`; sie legt
+  ihre Daten selbst an und räumt über die Kennung auf.
+- **Verhalten hinter dem Proxy** lässt sich am Arbeitsplatz nachstellen: ein Caddy-Container mit
+  dem `reverse_proxy`-Block aus `update_caddy.sh` vor dem lokalen Stack
+  (`host.docker.internal:8084`, `auto_https off`); TLS und HTTP/2 des Servers bildet das nicht
+  nach.
 
 ---
 
@@ -2911,9 +2224,9 @@ wenn man ihn einmal gebraucht hat.
 
 ## 9. Architekturentscheidungen
 
-Stand: 07.10.2026
+Stand: 16.10.2026
 
-Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
+Sechsundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
 Geschichte hat, steht sie knapp; ausführlicher ist die Commit-Historie, und die kann nicht
 veralten.
@@ -2952,6 +2265,8 @@ veralten.
 | A22 | Kein TypeScript; JSDoc + `svelte-check`                                        | von Anfang an | gültig   |
 | A23 | Swagger nur lokal; `api_inventar.md` ist das vollständige Verzeichnis           | —             | gültig   |
 | A24 | Keine Changelog-Datei; `OFFEN.md` ist die einzige Liste                        | 15.09.2026    | gültig   |
+| A25 | `repository/` bleibt ein Paket                                                 | 13.10.2026    | gültig   |
+| A26 | Die Türen stehen je Menüpunkt in einem Paket unter `api/`                      | 12.10.2026    | gültig   |
 
 ---
 
@@ -3415,8 +2730,8 @@ CI und im pre-push-Hook.
 **Entscheidung.** Die interaktive API-Doku wird **nur** bei `APP_ENV=local`/`development`
 gemountet. Das vollständige Routenverzeichnis ist ein generiertes Dokument.
 
-**Anlass.** Swagger deckt die **annotierten** Endpunkte ab (am 17.09.2026 63 Operationen auf 54
-Pfaden von 206 registrierten Routen). Eine unvollständige Liste, die vollständig aussieht,
+**Anlass.** Swagger deckt nur die **annotierten** Endpunkte ab (Zahlen in 1.4). Eine
+unvollständige Liste, die vollständig aussieht,
 ist schlechter als keine.
 
 **Folge.** `./scripts/api_inventar.sh` erzeugt [api_inventar.md](api_inventar.md) und
@@ -3444,9 +2759,51 @@ eigene Offen-Liste**; Kapitel 11 benennt Risiken und verweist für den Stand auf
 
 ---
 
+### A25 — `repository/` bleibt ein Paket
+
+**Entscheidung (13.10.2026).** Die Datenbankschicht wird nicht nach den Themen der Türen geteilt.
+
+**Anlass.** Gemessen mit Typprüfung über die 151 Dateien des Pakets: An den Namen sah die
+Schicht teilbar aus, an den Dateien nicht. Ohne Umbau ließen sich 48 Dateien einem Thema
+zuordnen; 103 mit 72 % der Zeilen blieben gemeinsam, weil Protokoll, Einstellungen, Titel und
+Leser mehrere Themen bedienen. 21 Tabellen bekämen Schreiber in mehr als einem Paket. Wie das
+aussieht, zeigt `inventur/` mit einer zweiten Datenbankschicht für `buecher_titel` (5.2.3).
+
+**Folge.** Die Schreiber einer Tabelle stehen in einem Paket. Gefunden wird über den Namen der
+Datei, der wie ihre Sache heißt. Googles Regelwerk für Go, [Package
+size](https://google.github.io/styleguide/go/best-practices#package-size): „If you have a few
+related types whose implementation is tightly coupled, placing them in the same package lets
+you achieve this coupling without polluting the public API with these details." Gebaut ist für
+die Entscheidung nichts; sie lässt sich ändern, ohne etwas zurückzunehmen.
+
+**Fundstelle.** `repository/`, 5.2.2 („`repository/` bleibt ein Paket").
+
+---
+
+### A26 — Die Türen stehen je Menüpunkt in einem Paket unter `api/`
+
+**Entscheidung (12.10.2026).** Geteilt wird die Schicht der Türen: je Menüpunkt der Oberfläche
+ein Paket unter `api/` mit einem Typ `Tueren`. Router, Routenlisten und Middleware bleiben in
+`api/`, was jede Tür braucht, steht in `api/tuer`, die Abfragen bleiben in einer
+Datenbankschicht (A25).
+
+**Anlass.** Alle Türen waren Methoden des einen Typs `Server` (349 Methoden), und rund 200
+Testdateien bauten ihn selbst. Gemessen mit Typprüfung hingen zwischen den zwölf Themen neun
+Namen an drei Stellen (Etikett, Ersatzwert, Konto-Anlage). Googles Regelwerk für Go, Package
+size: „When something is conceptually distinct, giving it its own small package can make it
+easier to use."
+
+**Folge.** Eine Änderung an einem Thema berührt die Dateien der anderen nicht, und kein Thema
+bindet ein anderes ein (`api/themen_ratsche_test.go`). Was zwei Themen brauchen, steht in
+`api/tuer` oder einer Schicht darunter.
+
+**Fundstelle.** `api/router.go` (die Zugänge), `api/<Thema>/<Thema>.go`, 5.2.2.
+
+---
+
 ## 10. Qualitätsanforderungen
 
-Stand: 08.10.2026
+Stand: 16.10.2026
 
 ---
 
@@ -3513,7 +2870,7 @@ vermerkt.
 
 | ID  | Auslöser / Situation                                                                            | Erwartete Reaktion                                                                                               | Nachweis                                                     |
 | --- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| S10 | Eine fertige Funktion tut still nichts, weil eine Einstellung fehlt (SMTP, Selbstanmeldung, Backup-Schlüssel) | Selbstprüfung führt sie als Befund; kritische Befunde gehen **per Mail** an die Admins — 3 Minuten nach dem Start und danach täglich | `api/betriebsbereitschaft*.go`, `frontend/e2e/betriebsbereitschaft.spec.js` |
+| S10 | Eine fertige Funktion tut still nichts, weil eine Einstellung fehlt (SMTP, Selbstanmeldung, Backup-Schlüssel) | Selbstprüfung führt sie als Befund; kritische Befunde gehen **per Mail** an die Admins — 3 Minuten nach dem Start und danach täglich | `api/system/betriebsbereitschaft*.go`, `frontend/e2e/betriebsbereitschaft.spec.js` |
 | S11 | Nach einem Deploy: läuft der Container aus dem aktuellen Commit?                                 | `update.sh` vergleicht `GIT_COMMIT` im Image mit `git rev-parse HEAD`; „gesund" genügt **nicht** als Antwort       | `update.sh` Schritt 4b                                       |
 | S21 | Ein Testlauf überspringt die DB-Integrationstests (kein `TEST_DATABASE_URL`)                      | Der Lauf **sagt es** (Skip-Bilanz), statt grün auszusehen                                                         | `scripts/git-hooks/pre-push`, CI-Schritt „Skip-Bilanz"        |
 
@@ -3522,7 +2879,7 @@ vermerkt.
 | ID  | Auslöser / Situation                                                                       | Erwartete Reaktion                                                                                                         | Nachweis                                                                 |
 | --- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | S12 | Gescannt wird ein Ausweis mit dem **alten** Aufdruck (Prüfzeichen im Strichcode)            | Der Scan trifft — über den zweiten Versuch ohne Prüfzeichen. Ein unbekannter Scan darf nicht wie „Scanner tot" aussehen     | `internal/service/omnibox_altes_etikett_pg_test.go`, `frontend/e2e/barcode-lesbar.spec.js` |
-| S13 | Das Netz fällt während des Ausleihbetriebs aus                                              | Scans laufen weiter in die lokale Warteschlange; nach Rückkehr bucht die Nachbuch-Tür die Wirklichkeit, Abweichungen bleiben als Meldung stehen | `frontend/src/lib/stores/offlineSync.test.js`, `api/nachbuchen_*_pg_test.go` |
+| S13 | Das Netz fällt während des Ausleihbetriebs aus                                              | Scans laufen weiter in die lokale Warteschlange; nach Rückkehr bucht die Nachbuch-Tür die Wirklichkeit, Abweichungen bleiben als Meldung stehen | `frontend/src/lib/stores/offlineSync.test.js`, `api/theke/nachbuchen_*_pg_test.go` |
 | S14 | Eine Hauptansicht wird mit Tastatur und Screenreader bedient                                 | Keine axe-Verstöße im Anfangszustand; keine Fokusfalle; Tabellen semantisch korrekt                                        | `frontend/e2e/barrierefreiheit-axe.spec.js`, `…-dialog.spec.js`           |
 | S15 | Der Thekenrechner bleibt unbedient stehen                                                    | Nach 5 min ist der geladene Leser weg, nach 15 min der Sperrbildschirm; der Server beantwortet die Anmeldung bis zum Passwort mit 423, auch nach dem Neuladen; bei totem Mailserver schließt das Passwort gegen den Prüfwert auf | `auth/sperre_pg_test.go`, `frontend/src/lib/stores/leerlaufSperre*.test.js` (gestellte Uhr, am Rückbau rot gesehen), `frontend/e2e/sperrbildschirm.spec.js` |
 | S22 | Ein Menüpunkt ist für eine Rolle sichtbar                                                    | Der Klick führt **irgendwohin** — nicht wortlos zurück an die Theke                                                        | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js` (Helfer, Mitarbeiter, Lehrkraft) |
@@ -3575,14 +2932,14 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 - **Barrierefreiheit ist im Anfangszustand gemessen.** Zustände nach mehreren
   Interaktionsschritten sind nur teilweise abgedeckt; Umfang und bekannte Lücken stehen in
   [FACHKONZEPT.md §19](FACHKONZEPT.md).
-- **Swagger deckt 88 von 229 Routen ab** (Messung in Kapitel 1.4). Das vollständige Verzeichnis ist
-  [api_inventar.md](api_inventar.md) — generiert, nicht gepflegt.
+- **Swagger beschreibt nur einen Teil der Routen** (Zahlen in 1.4). Das vollständige Verzeichnis ist
+  [api_inventar.md](api_inventar.md), generiert, nicht gepflegt.
 
 ---
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026
+Stand: 16.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3619,14 +2976,11 @@ richtig — sie muss nur bewusst bleiben.
 | **Auswirkung** | hoch (Deadlock im Ausleihbetrieb) |
 | **Sichtbarkeit** | mittel — ein Deadlock fällt auf, aber erst unter Last |
 
-Die Schreibpfade des Codes halten Schüler → Ausleihe → Exemplar (A7). Ein neuer Pfad, der die
-Reihenfolge tauscht, verklemmt sich gegen die bestehenden — und das ist eingetreten: Der
-Rückgabe-Trigger aus Migration 137 sperrt die Leserzeile nach der Ausleihe. Geben zwei Kinder an
-zwei Theken zugleich je das Buch des anderen ab, bricht Postgres eine Buchung ab (40P01);
-erneutes Scannen bucht, Daten gehen nicht verloren. Am 24.09.2026
-entschieden, das bis zum nächsten Umbau der Karenz-Uhr so zu lassen. Es gibt **keinen Detektor**;
-die Invariante steht als 🟡 im Katalog. Ein Gate wäre schwer, weil die Sperren über mehrere
-Funktionen verteilt sind — der ehrliche Zwischenstand ist der Kommentar an jeder Stelle.
+Ein neuer Pfad, der die Reihenfolge aus A7 tauscht, verklemmt sich gegen die bestehenden.
+Eingetreten ist das am Rückgabe-Trigger (A7): Postgres bricht dann eine Buchung ab (40P01),
+erneutes Scannen bucht, Daten gehen nicht verloren. Es gibt **keinen Detektor**; ein Gate wäre
+schwer, weil die Sperren über mehrere Funktionen verteilt sind, und der Zwischenstand ist der
+Kommentar an jeder Stelle.
 
 #### R3 — Die gefilterte Sicht `schueler` erzeugt stille 404
 
@@ -3641,40 +2995,18 @@ null Zeilen und meldet „nicht gefunden". Es gibt einen Detektor
 und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — Die Türen stehen in zwölf Themenpaketen; `api/` trägt Router und Middleware
+#### R4 — Große Pakete
 
 | | |
 | --- | --- |
 | **Auswirkung** | gering: Eine Änderung an einem Thema berührt die Dateien der anderen nicht |
 | **Sichtbarkeit** | hoch |
 
-`api/` trägt den Router mit den Routenlisten, die Middleware, CSRF, Rate-Limit und die
-Abmeldung. Die Türen der zwölf Themen stehen in eigenen Paketen darunter. Gemessen am
-16.10.2026 (ohne Tests): `api/` selbst 1.781 Zeilen in 13 Dateien, die größten `router.go`
-(407) und `middleware.go` (345); `api/lernmittel` 959 Zeilen in sieben Dateien,
-`api/inventurlauf` 797 in sechs, `api/benutzer` 799 in sieben, `api/portal` 682 in sechs,
-`api/system` 1.531 in 13, `api/mahnwesen` 1.432 in neun, `api/schaden` 1.073 in elf,
-`api/katalog` 3.171 in 26, `api/druck` 643 in sieben, `api/bestellung` 2.452 in 18,
-`api/leser` 3.035 in 18 und `api/theke` 1.580 in elf. Das größte Paket der Türen ist
-`api/katalog`; `repository/` hat 21.823 Zeilen in 168 Dateien, `inventur/` 6.481 in 42 und
-`internal/service` 5.116 in 36. Von den 139 Dateien der Themen hat die Hälfte höchstens 112
-Zeilen, neun von zehn höchstens 267, vier haben über 400: `leser/leser_aendern.go` (539),
-`lernmittel/lmf_plan.go` (490), `leser/leser_anlegen.go` (416) und
-`mahnwesen/mahnlisten_versand.go` (404). In Funktionen ohne einen Typ aus `net/http` standen
-in den Themen am 13.10.2026 3.162 Zeilen in 209 Funktionen; die meisten trugen
-`leser/dsgvo_auskunft.go` (193), `mahnwesen/abgaenger_mail.go` (159) und
-`system/betriebsbereitschaft.go` (132). Die Zahl ist eine Obergrenze für das, was keine Tür
-ist: Dazu zählen auch Füll-Funktionen (5.2.2) und Helfer, die aus einer Tür herausgelöst sind,
-um die Grenze der Komplexität zu halten. Als Schranke taugt sie deshalb nicht; sie zeigt, wo
-zu lesen ist. Was an der Tür bleibt und warum, steht in 5.2.2 (Tür und Abfrage).
-
-Dass kein Thema ein anderes einbindet, hält `api/themen_ratsche_test.go`. Tests, die nichts
-aus `api/` prüfen, stehen bei ihrem Paket; in `api/` liegen die zu Router, Middleware,
-Routenlisten und Türen zweier Themen. Keine Datei von `api/` formuliert SQL:
-`schichtung_ratsche_test.go` weist jede SQL-Anweisung außerhalb der Datenbankschicht ab, und
-`api/schichtung_test.go` führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann.
-`repository/` bleibt ein Paket: Ohne Umbau ließen sich bei der Messung 48 von 151 Dateien
-einem Thema zuordnen (5.2.2).
+`repository/` ist das größte Paket und bleibt eines (A25); gefunden wird dort über den Namen der
+Datei. Die Türen stehen in zwölf Themenpaketen (A26), das größte ist `api/katalog`. Die Größen
+misst der [Anhang von Kapitel 5](#anhang-die-zahlen-selbst-nachmessen), die Komplexität jeder
+Funktion begrenzt `komplexitaet_ratsche_test.go`. Dass kein Thema ein anderes einbindet und keine
+Datei außerhalb der Datenbankschicht SQL formuliert, halten die Ratschen aus 5.2.2.
 
 #### R5 — Die Rechtematrix ist konfigurierbar und damit verstellbar
 
@@ -3772,7 +3104,7 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 | #  | Schuld                                                                                                                  | Kosten heute                                                     | Warum sie (noch) steht                                                                      |
 | -- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | D1 | **Invarianten auf Ebene 🟡** (Sperren des Lesers, Überfällig-Automatik, Ausleihlimit, Sperrreihenfolge)                   | Ein zweiter Schreibpfad kann sie auslassen                        | Teils Ermessen enthalten (Override mit Audit), teils über Funktionsgrenzen verteilt          |
-| D2 | **Swagger deckt 88 von 229 Routen** (Kapitel 1.4)                                                                        | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
+| D2 | **Swagger beschreibt nur einen Teil der Routen** (1.4)                                                                   | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
 | D3 | **Doppelte Migrationsnummern** (003, 008, 021, 022)                                                                      | Style-Smell; sortiert deterministisch                            | Umnummerieren würde bereits gelaufene Migrationen betreffen — Risiko ohne Nutzen              |
 | D4 | **Frontend-Altbestand über 200 Zeilen**                                                                                  | Große Komponenten sind schwer zu ändern                          | Ratsche friert den Bestand ein (darf nicht wachsen); Umbau läuft nebenher                    |
 | D5 | **Gemischte Sprache an der Grenze** (Adressen, JSON-Felder, Tabellen und Spalten: `idempotency_key` neben `idempotenz_schluessel`) | Wer den Vertrag liest, sieht zwei Sprachen                        | Der Vertrag mit Oberfläche und gespeicherten Daten wird nicht umbenannt ([STIL.md](STIL.md) 9); die Namen im Code folgen STIL.md, gehalten von `stil_ratsche_test.go` und `frontend-hygiene-sprache.test.js` |
@@ -3819,489 +3151,245 @@ nur, damit niemand die Architekturdokumentation liest und das größte Risiko da
 
 ### 11.5 Bekannte Grenzen — beschrieben, gebaut wird nur mit Anlass
 
-Die Punkte hier sind keine geplante Arbeit. Jeder beschreibt eine Stelle, an
-der das Programm eine Grenze hat, mit Beleg am Code oder Messwert, und nennt, wo es einen gibt,
-den Anlass, bei dem gebaut würde. Tritt ein Anlass ein, kommt der Schritt in den Fahrplan von
+Die Punkte hier sind keine geplante Arbeit. Jeder beschreibt eine Stelle, an der das Programm
+eine Grenze hat, mit Beleg am Code oder Messwert, und nennt, wo es einen gibt, den Anlass, bei
+dem gebaut würde. Tritt ein Anlass ein, kommt der Schritt in den Fahrplan von
 [OFFEN.md](OFFEN.md), und der Punkt fällt hier weg. Die Reihenfolge sagt nichts über das
 Gewicht.
 
-#### Leserakte und Titel verwerfen unbekannte Felder still
+#### Daten und Abläufe
 
-Die Türen für Benutzer, Gerät, Lieferant und Einstellungen lehnen ein Feld ab, das sie nicht kennen
-(`LeseAnfrageStreng`). `PATCH /api/schueler/{id}` und `PUT /api/books/{id}` verwerfen es
-still: Steht ein vertippter Name neben einem richtigen, wird der richtige gespeichert, und der
-andere fällt ohne Meldung. Die Leserakte lehnt nur einen Rumpf ab, der gar kein bekanntes Feld
-nennt (am Stack geprüft am 08.10.2026); der Titel nimmt das ganze Objekt entgegen, samt der
-Felder, die nur der Server füllt. Einziger Aufrufer sind die Masken, und die prüfen Browser-Tests
-am gespeicherten Wert. Anlass zum Bauen: ein zweiter Aufrufer oder ein Feld, das eine Maske
-schickt und das nicht ankommt.
+- **Leserakte und Titel verwerfen unbekannte Felder still.** Die Türen für Benutzer, Gerät,
+  Lieferant und Einstellungen lehnen ein Feld ab, das sie nicht kennen (`LeseAnfrageStreng`);
+  `PATCH /api/schueler/{id}` und `PUT /api/books/{id}` verwerfen es: Steht ein vertippter Name
+  neben einem richtigen, fällt er ohne Meldung. Der Titel nimmt das ganze Objekt entgegen, samt
+  der Felder, die nur der Server füllt. Einzige Aufrufer sind die Masken, und Browser-Tests
+  prüfen sie am gespeicherten Wert. Anlass: ein zweiter Aufrufer oder ein Feld, das nicht
+  ankommt.
+- **Der Vermerk „Mail nicht versendet" fällt mit der Lieferung nicht weg.** Ihn nehmen „Erneut
+  senden", die Bestätigung des Händlers und „Auf anderem Weg bestellt"; der Wareneingang nicht
+  (`repository.sqlBestellmailOffen` fragt nur die Bestätigung). Anlass: gelieferte Bestellungen
+  mit dem Hinweis in der Bestellhistorie.
+- **Eine Forderung für ein Gerät lässt sich nicht anlegen.** Die Datenbank sieht sie vor
+  (`check_damage_item`), die Rechnung an die Eltern könnte sie drucken, aber der einzige
+  Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar. Beim Bau
+  mitnehmen: Der Bescheid-Dialog zeigt eine Forderung ohne Exemplar mit dem Satz für Bücher der
+  Schülerbücherei und „kein Preis hinterlegt" (`BescheidPositionen.svelte`).
+- **Versetzung und eine Klasse, deren Zahl kein Jahrgang ist.** Die Versetzung liest die Zahl am
+  Anfang der Klasse (`sqlVersetzeSchueler`, `LadeKlassenleitungVersetzungen`). Ist sie größer als
+  2.147.483.647 (eine Buchnummer im Feld Klasse), antwortet die Versetzung mit 500 und versetzt
+  niemanden, ohne Klasse oder Schüler zu nennen; jede Zahl ab 13 gilt als Abschlussklasse
+  (`repository.AbschlussklasseSQL`). Die lesenden Türen antworten auch dann
+  (`api/klasse_lange_ziffernfolge_pg_test.go`); die Klassen der Schule lösen keinen der Fälle
+  aus. Nächster Schritt mit Anlass: Klassen außerhalb von 1 bis 13 ausnehmen und in der Vorschau
+  nennen.
+- **Klassensätze aus den Ausleihen.** Für ET1 bis ET3 entsteht keiner: Die Übersicht zählt nur
+  Klassen, deren Name mit einer Ziffer beginnt (`LadeKlassensatzGruppen`), und nur Ausleihen auf
+  die Ausweise der Kinder. Die Theke warnt bei einer anderen Auflage als der Klasse und bei einem
+  Buch, das auf ein anderes Kind verbucht ist, nicht aber bei einem Buch eines anderen Jahrgangs
+  oder einem zweiten Exemplar desselben Titels.
+- **Die kurze Nummer der alten Littera-Etiketten.** Nach der Übernahme ist die Nummer eines
+  Exemplars der EAN-13 seines Etiketts; lesbar steht darauf nur „Exemplar-Nr.: 58968". Die
+  getippte kurze Nummer findet die Theke nicht (`verarbeiteOhneVorsilbe` in
+  `internal/service/omnibox.go`); sie steht als `littera_exemplarnr` in
+  `erweiterte_eigenschaften` und wird nirgends gelesen. Ist `FremdLeserNummer` in der Sicherung
+  von 2026 leer ([OFFEN.md](OFFEN.md) 7.2), beginnen Leser- und kurze Buchnummern beide bei 1, und
+  eine getippte Buchnummer kann einen Leser laden. Bis dahin: den Titel suchen oder das Etikett im
+  Druck-Center unter „Fehlende Etiketten" nachdrucken. Entschieden wird nach der Generalprobe.
+- **Vormerkungen und Schadensfälle an einem Kollegen** sehen die Lesepfade gegen die Sicht
+  `schueler` nicht; neue Vormerkungen für Kollegen lehnt die Tür ab
+  (`ErrVormerkungNurFuerSchueler`). Am Testserver waren beide Zählungen 0; auf einer anderen
+  Anlage vorher zählen:
 
-#### Der Vermerk „Mail nicht versendet" fällt mit der Lieferung nicht weg
+  ```
+  SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
+  SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
+  ```
+- **Listenimport gegen den Nummern-Wächter.** Trägt eine Zeile die Ausweisnummer eines Lesers als
+  Buch-Barcode, lehnt der Wächter ab, und der ganze Import bricht mit der rohen Datenbankmeldung
+  ab (`ON CONFLICT DO NOTHING` fängt nur den Index). Laut, also richtig; nur nennt die Meldung
+  weder Zeile noch Weg. Anlass: Es kommt einmal vor.
+- **Das Feld „Auflage" trägt aus Littera auch Heftnummern und eigene Nummern** („34 / 2010",
+  „D-Ga-066"; im Katalog-Export vom Juni 2026 neben 5.033 Auflagen 955 Heftnummern, 69 eigene
+  Nummern und 96 andere Angaben). Keine Suche vergleicht das Feld (`repository/titel_suche.go`, `inventur/datenbank_buecher_leser.go`). Anlass: Die
+  Bücherei sucht nach einer dieser Angaben.
+- **Der Katalogisat-Import legt Einträge über den Titeltext zusammen;** ein zweiter Lauf schreibt
+  die Angaben des zuletzt passenden Eintrags darüber (`SchreibeTitel`). Am Export vom Juni 2026
+  wurden aus 13.708 Einträgen 11.302 Titel, „Harry Potter und der Feuerkelch" als Buch,
+  Taschenbuch und DVD ein Titel. Der Import aus CSV und Excel gleicht ebenso ab; die Übernahme
+  aus der Sicherung (`internal/littera`), mit der der Echtbetrieb beginnt, tut es nicht. Anlass:
+  Das Katalogisat wird wieder ein Weg in den Echtbetrieb.
+- **Die Datenbank ordnet Text nach Codepunkt** („Mathe 10 < Mathe 5 < apfel < Ägypten"). Die
+  Titelliste ordnet deshalb in Go; 30 Abfragen ordnen in der Datenbank nach Titel oder Nachname,
+  und ob die Oberfläche ihre Antwort neu ordnet, ist je Liste nicht durchgesehen (die Mahnliste
+  tut es). Anlass: ein Name, der in einer Liste nicht an seinem Platz steht.
+- **Skripte, die Titel löschen, lassen Werke zurück** (`e2e_altlasten.sql`,
+  `entferne_demo_daten.sql`, `seed_demo.sql`); die Ratsche `auflagen_schreibpfad_ratsche_test.go`
+  liest keine Skripte. Kein Schaden.
+- **Der Stand-Merker der Barcode-Liste** (Anzahl und `max(aktualisiert_am)`) rechnet mit dem
+  Beginn der Transaktion: Committet eine lange Transaktion nach einem kürzeren Schreiber, bleibt
+  es bei 304 (nachgestellt hinter dem Build-Tag `raster`). Heute ändert nur
+  `KatalogAbfragen.SetzeExemplarBarcode` einen Barcode, als kurzer Einzelbefehl.
+- **Eine ausgeschiedene `A-`-Nummer lässt sich von Hand wieder eintragen,** gewollt für die alte
+  Karte eines Schülers, der zurückkommt. Die Maske sagt dabei nicht, dass die Nummer schon
+  vergeben war; nur Generator und Littera-Übernahme lesen `ausweisnummern_ausgeschieden`. Anlass:
+  eine alte Karte, die so an eine andere Person gerät.
+- **Anmeldungen stehen nicht im Protokoll** (`Anmelden` in `auth/anmelden.go`, nur die
+  Selbstanmeldung schreibt). Ein Protokoll wären neue Personendaten des Personals mit eigener
+  Frist; der Datenschutz-Nachweis sagt das so. Anlass: ein Vorfall oder eine Frage des
+  Datenschutzbeauftragten.
+- **Die Live-Leitung** (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
+  trägt zu jeder Buchung die Kennung des Lesers, Buchnummer und Titel, aber keinen Namen
+  (PII-Matrix, Stufe 0). Zuhörer sind nur Theke und Abgänger-Seite. Frage mit Anlass: Braucht
+  jeder Empfänger die Kennung?
 
-Den Vermerk an einer Bestellung (8.9) nehmen „Erneut senden", die Bestätigung des Händlers
-und „Auf anderem Weg bestellt". Wird die Lieferung im Wareneingang gebucht, bleibt er stehen:
-`repository.sqlBestellmailOffen` fragt nur die Bestätigung (am Code gelesen am 07.10.2026).
-Anlass zum Bauen: In der Bestellhistorie stehen gelieferte Bestellungen mit dem Hinweis.
+#### Theke, Netz und Zwischenspeicher
 
-#### Eine Forderung für ein Gerät lässt sich nicht anlegen
-
-Die Datenbank sieht sie vor (`check_damage_item`: genau eines von `exemplar_id` und
-`geraet_id`), die Rechnung an die Eltern kann sie drucken (`ladeRechnungPosten`), aber der
-einzige Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar:
-Er sondert das Exemplar aus und legt die Forderung mit `exemplar_id` an. Fehlt bei der Rückgabe
-Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung. Gesperrt würde wie heute (Schülerbücherei und
-Geräte).
-
-Beim Bau mitnehmen (am Code gelesen): Der Bescheid-Dialog
-listet auch eine Forderung ohne Exemplar (`topf` leer). Sie steht richtig gesperrt da, darunter
-aber der Satz „Buch der Schülerbücherei — gehört nicht auf den Bescheid des Landes."
-(`frontend/src/lib/components/mahnwesen/BescheidPositionen.svelte`). Die Zeile darüber zeigt
-„ohne ISBN" und, weil ein Gerät keinen Buchpreis hat, „kein Preis hinterlegt — Betrag bitte
-eintragen" neben dem gesperrten Feld. Heute nicht zu sehen: Ohne Schreiber gibt es keine
-Forderung für ein Gerät.
-
-#### Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
-
-Die Versetzung liest die Zahl am Anfang der Klasse (`sqlVersetzeSchueler` in
-`repository/schuljahreswechsel.go` und `LadeKlassenleitungVersetzungen` in
-`repository/klassenleitung.go`). Nachgestellt am 04.10.2026 am
-Router, in der Vorschau (`dry_run`):
-
-- Trägt ein aktiver Schüler eine Klasse, deren Zahl am Anfang größer ist als 2.147.483.647 (eine
-  Buchnummer im Feld Klasse, „9783123456789"), antwortet die Versetzung mit 500 und versetzt
-  niemanden. Die Meldung nennt weder die Klasse noch den Schüler.
-- Jede Zahl ab 13 gilt als Abschlussklasse (`repository.AbschlussklasseSQL`): Der Schüler der
-  Klasse „2147483647A" wird in der Vorschau als Abgänger gezählt (`archived_count` 1).
-
-Die lesenden Türen (Jahrgangs-Auswahl und Jahrgangsfilter der Leserdatei, LMF-Planer,
-Abgängerliste) antworten auch mit einer solchen Klasse (`klassenZahlSQL` in
-`repository/abschlussklasse.go`, `api/klasse_lange_ziffernfolge_pg_test.go`); offen ist nur die
-Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächster Schritt mit
-Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
-sie in der Vorschau.
-
-#### Klassensätze aus den Ausleihen und Hinweise an der Theke
-
-Am Code gelesen am 03.10.2026; gebaut wird nur mit Anlass.
-
-- Für ET1 bis ET3 entsteht kein Klassensatz „aus Ausleihen": Die Übersicht zählt nur Klassen,
-  deren Name mit einer Ziffer beginnt (`LadeKlassensatzGruppen` in `inventur/datenbank_klassen.go`).
-  Gezählt werden Ausleihen auf die Ausweise der Kinder; ein Stapel auf dem Ausweis der Lehrkraft
-  erscheint nicht bei der Klasse.
-- Die Theke warnt, wenn ein Kind eine andere Auflage bekommt als seine Klasse, und wenn ein Buch
-  auf ein anderes Kind verbucht ist. Sie warnt nicht, wenn ein Kind ein Buch bekommt, das nicht
-  zu seinem Jahrgang gehört, oder ein zweites Exemplar eines Titels, den es schon hat (am Code
-  gelesen am 03.10.2026, nicht nachgestellt). Die Kachel eines Klassensatzes nennt die Zahl der
-  Leser, nicht, wem das Buch fehlt.
-
-#### Die kurze Nummer der alten Littera-Etiketten an der Theke
-
-Am Code gelesen am 30.09.2026, nicht nachgestellt. Nach der Übernahme ist die Nummer
-eines Littera-Exemplars der EAN-13 seines Etiketts (`5896800039556`); lesbar steht auf dem
-Etikett nur „Exemplar-Nr.: 58968". Liest der Scanner das Etikett nicht mehr, findet die Theke
-das Buch über die getippte kurze Nummer nicht: `verarbeiteOhneVorsilbe`
-(`internal/service/omnibox.go`) sucht die Nummer genau und rechnet nur 13-stellige
-Scans zurück; die kurze Nummer steht in `erweiterte_eigenschaften` als `littera_exemplarnr`
-und wird nirgends gelesen. Ist `FremdLeserNummer` in der Sicherung von 2026 leer
-([OFFEN.md](OFFEN.md) 7.2), tragen die Ausweise die Littera-Lesernummer, und beide
-Nummernkreise beginnen bei 1: Eine getippte kurze Buchnummer kann dann einen Leser laden. Bis
-dahin: den Titel suchen (die 13 Ziffern beginnen mit der kurzen Nummer) oder im Druck-Center
-unter „Fehlende Etiketten", Stufe „Alle", nach der kurzen Nummer suchen und das Etikett
-nachdrucken; der Nachdruck trägt die volle Nummer als Strichcode und als Text. Entschieden
-wird, sobald die Generalprobe zeigt, ob `FremdLeserNummer` gefüllt ist.
-
-#### Vormerkungen und Schadensfälle an einem Kollegen
-
-Die Lesepfade gegen die Sicht `schueler` sehen sie nicht: Die Warteschlange geht über eine
-solche Vormerkung hinweg. Neue Vormerkungen für Kollegen lehnt die Tür ab
-(`ErrVormerkungNurFuerSchueler`); am Testserver waren beide Zählungen 0 (zuletzt am
-08.10.2026). Auf einer anderen Anlage vorher zählen:
-
-```
-SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
-SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
-```
-
-#### Lange Listen, schmale Fenster und Tablet
-
-Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich der Seite
-(`e2e/scrollbereiche.spec.js`); so stehen die Ausleihliste der Leserakte, die Positionen im
-Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Was daran und an schmalen
-Fenstern bekannt ist:
-
-- **Die Exemplare in „Buch bearbeiten" bei Mengen wie an der Schule** (am Testserver lesend
-  gezählt am 02.10.2026): 2.253 Titel haben Exemplare, mindestens die Hälfte davon eines, 90 %
-  höchstens 58; über 100 Exemplare haben 68 Titel, der größte 383. Lokal mit 403 Exemplaren
-  öffnet die Maske in 0,3 s, „Speichern", Cover und Knöpfe bleiben im Bild, die Seite ist
-  28.377 px hoch. In der Liste lässt sich nicht suchen (`BuchExemplareListe.svelte`); ein
-  einzelnes Exemplar findet dort nur die Suche des Browsers. Anlass zum Bauen: Jemand sucht in
-  der Maske ein bestimmtes Exemplar.
-- **Der Abstand des Rahmens liegt um den Scrollbereich, nicht in ihm** (alle Seiten, gemessen
-  am 02.10.2026 bei 1710 × 952 px): `Anwendungsrahmen.svelte` gibt der Arbeitsfläche 24 px
-  oben und unten und 32 px an den Seiten, gescrollt wird erst das Element darin
-  (`Router.svelte`, `overflow-y-auto`). Die Scrollleiste sitzt deshalb 32 px vom Fensterrand,
-  und über und unter dem Inhalt bleiben beim Scrollen je 24 px stehen. Betrifft jedes
-  Bauteil, das beim Scrollen stehen bleibt (`sticky top-0`).
-- **Leserakte bei 1024 bis 1065 px Fensterbreite:** Die Navigation beginnt unter 1280 px
-  eingeklappt (`Seitenleiste.svelte`); der Titel in der Ausleihliste hat
-  damit ab 1066 px mindestens 140 px (`e2e/ausleihliste-zeilen.spec.js`). Darunter, bis zur
-  Grenze von 1024 px, an der die Akte Leserkarte (320 px) und Inhalt nebeneinanderstellt,
-  bleiben ihm 98 bis 139 px (gemessen am 02.10.2026 mit zwölf Ausleihen). Wer die
-  Navigation unter 1258 px von Hand ausklappt, lässt dem Titel weniger als 140 px, unter
-  1118 px nichts. Bei 1024 bis rund 1035 px ist auch die
-  Reiterzeile der Akte 12 px zu schmal, sobald „Gebühren & Schäden" eine Zahl trägt (gemessen am
-  05.10.2026: 540 von 528 px); sie lässt sich dann seitlich schieben.
-- **Eingeklappte Navigation:** Sie zeigt nur Symbole, bis zu 18; der Name steht im `title`
-  des Knopfs und erscheint beim Zeigen mit der Maus. M3, Navigation rail, Guidelines: „All
-  navigation items require a one word label text" und „The collapsed nav rail … should
-  contain 3–7 navigation items". Ausgeklappt schiebt sie in schmalen Fenstern den Inhalt
-  zusammen; M3: „A navigation rail can be expanded by default on larger screen sizes, or can
-  be expanded over content on smaller screen sizes". Anlass zum Bauen: Die Anwendung wird
-  an einem Tablet oder in Fenstern unter 1280 px bedient.
-- **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
-  Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
-  gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
-  Maus; an einem Tablet ohne Maus sind beide Angaben in der Akte nicht zu sehen.
-  Vorleseprogramme bekommen sie als unsichtbaren Text.
-- **Leserakte, doppelte Beschriftung:** Unter dem Reiter „Stammdaten & Adresse" steht dieselbe
-  Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste „Forderungen".
-
-#### Beobachtungen
-
-- Listenimport gegen den Nummern-Wächter (Migration 131): Trägt eine Zeile der Datei die
-  Ausweisnummer eines Lesers als Buch-Barcode, lehnt der Wächter ab und der ganze Import
-  bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
-  nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
-  Anlass zum Bauen: Es kommt einmal vor.
-- Im Feld „Auflage" führt die Bücherei in Littera nicht nur Auflagen: bei Zeitschriften steht
-  dort die Heftnummer („34 / 2010"), an einem Teil der Bücher eine eigene Nummer der Form
-  „D-Ga-066". Nach der Form gezählt am 07.10.2026: in der Sicherung von 2010 2.512 Auflagen,
-  199 Heftnummern, 432 solche Nummern (an Titeln mit zusammen 11.278 Exemplaren) und 39 andere
-  Angaben; im Katalog-Export vom Juni 2026 5.033, 955, 69 und 96. Die Übernahme bringt alles ins
-  Feld „Auflage"; es steht in der Buchakte, in der Maske „Buch bearbeiten" und in „Suche &
-  Filter" unter dem Titel. Keine Suche vergleicht das Feld (`repository/titel_suche.go`,
-  `inventur/datenbank_buecher_leser.go`): Ein Heft lässt sich nicht über seine Nummer finden,
-  ein Buch nicht über „D-Ga-066". Anlass zum Bauen: Die Bücherei sucht nach einer dieser
-  Angaben.
-- Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, gekappt
-  erst bei 50.000 Titeln), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
-  Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
-  4,87 MB, gepackt über die Leitung 0,43 MB (`api/kompression.go`); auch über den
-  Proxy des Testservers kommen die Antworten gepackt an. Größe und Dauer am Server über das
-  Schulnetz sind nicht gemessen (im Browser: F12, Netzwerk, Zeile `books`). Anlass zum Bauen:
-  Der Katalog öffnet am Server spürbar verzögert. Dann beantwortet der Server einen
-  unveränderten Bestand mit 304 statt mit der Liste, wie bei den Buchnummern der Theke
-  (`api/theke/buchbarcodes.go`).
-- Breite der Textfelder: Textfelder folgen Material 3 (Text fields, Guidelines: „Text fields
-  shouldn’t span the full width of a large screen"; entschieden am 03.10.2026). Umgesetzt ist das
-  in der Maske „Buch bearbeiten" (Felder bis 704 px); die übrigen Masken sind nicht
-  durchgesehen. Der Wert steht bisher nur in `BuchFormular.svelte`; mit der zweiten Maske gehört
-  er an eine Stelle.
-- Die Meldungen der Anwendung (`SnackbarAnzeige.svelte`) erscheinen oben rechts, bis 384 px
-  breit, 5 s lang, und halten ihre Standzeit an, solange der Mauszeiger auf ihnen ruht. Was
-  dort steht, ist in dieser Zeit verdeckt (gemessen am 02.10.2026 bei 1280 × 720: Meldung bei
-  x 975 bis 1256, y 24 bis 68). In der Maske „Buch bearbeiten" steht „Speichern" deshalb
-  hinter der Überschrift statt am rechten Rand (`e2e/scrollbereiche.spec.js`); unter rund
-  1070 px Fensterbreite reicht eine Meldung in voller Breite trotzdem bis an den Knopf. M3,
-  Snackbar, Guidelines: „Snackbars should be placed at the bottom of a UI, in front of the
-  main content" und „avoid positioning the snackbar in a way that completely obscures
-  actionable elements". Am unteren Rand stehen die Auswahlleisten der Listen
-  (`ui/AuswahlLeiste`, `AuswahlAktionsleiste`); dort müssten die Meldungen ausweichen.
-- Das Zugangsbuch baut alle Zugänge des Zeitraums auf einmal auf
-  (`components/bestand/Bestandsbuch.svelte`; die Abfrage in `repository/zugangsbuch.go` begrenzt
-  nur der Zeitraum, höchstens ein Jahr). Gemessen am 02.10.2026 an der lokalen Datenbank: 34.621 Zeilen im laufenden
-  Halbjahr, 5,4 MB, Abruf 0,1 s, Aufbau im Browser 4,2 s. Die lokalen Zugangsdaten stammen aus
-  Importen und Testläufen und sagen nichts über die Schule; ein neues Exemplar übernimmt sein
-  Erwerbsdatum als Zugangsdatum (`stempel_zugang_am`). Anlass zum Bauen: ein Halbjahr mit
-  mehreren tausend Zugängen am Server. Die Felder je Topf über der Liste bauen dabei nichts
-  neu auf: Eine Liste mit Zeilen bleibt im Dokument und wird aus- und eingeblendet (gemessen am
-  02.10.2026 mit 38.810 Zeilen: ausblenden 0,1 s, einblenden 0,8 bis 0,9 s).
-- Bei 390 px Breite ist die Bestellspalte (Bestellwesen, das Fenster vor dem Warenkorb) 68 px
-  breit, auch das Eingabefeld der Schlagworte; die Chips ragen darüber hinaus (gemessen am
-  30.09.2026 im echten Chrome). Unterhalb von `lg` legt
-  `Bestellwesen.svelte` die Spalten untereinander (`grid-cols-1`); woher die Breite kommt, ist
-  nicht nachgesehen. Anlass zum Bauen: Bestellen soll am Telefon gehen.
-- Die Leiste der markierten Exemplare in der Buchakte trägt mit „Standort ändern" vier Knöpfe
-  und ist 692 px breit. Sie passt bis zu einem Fenster von 768 px. Bei 640 px ragt das × um
-  10 px über die Leiste, bei 390 px sind „Eigentum ändern", „Löschen" und das × abgeschnitten
-  (gemessen am 06.10.2026 im Browser). Material 3, Toolbars: „If there's not
-  enough space for all items, put them in an overflow menu in the trailing slot";
-  `ui/AuswahlLeiste` hat kein solches Menü. Anlass zum Bauen: Die Buchakte soll am Telefon oder
-  an einem kleinen Tablet bedient werden.
-- Der Stand-Merker der Barcode-Liste (Anzahl + `max(aktualisiert_am)`) rechnet mit dem Beginn
-  der Transaktion: Ändert eine lange Transaktion ein Etikett und committet nach einem kürzeren
-  Schreiber, bleibt es bei 304. Nachgestellt hinter dem Build-Tag `raster`
-  (`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_ ./repository/`). Heute ändert nur
-  `KatalogAbfragen.SetzeExemplarBarcode` einen Barcode, als kurzer Einzelbefehl — scharf wird es erst mit einem
-  Schreiber, der in einer langen Transaktion umetikettiert.
-- Ein Ausweis aus dem Altbestand ohne Vorsilbe (gemessen `B97601826457`) ist ohne Netz „unklar"
-  und wird abgewiesen. Hängt am Ausweis-Neudruck und entscheidet sich mit dem frischen
-  Littera-Backup ([OFFEN.md](OFFEN.md) 7.2).
-- Band „Keine Verbindung": Der Herzschlag-Wächter (`App.svelte`, 25 s ohne `ping`) unterscheidet
-  nicht zwischen „kein Ping gekommen" und „der Tab selbst stand" (Standby, eingefrorener
-  Hintergrund-Tab). Beim Aufwachen wäre der Herzschlag alt und das Band stünde bis zum nächsten
-  Ping, höchstens 15 s. Nicht nachgestellt.
-- Schreibweise der Nummern (entschieden am 23.09.2026: am Server nichts bauen). Der Server
-  schlägt Nummern exakt nach (`LeserAbfragen.FindeZuBarcode`, `KatalogAbfragen.FindeExemplar`); die Theke
-  vereinheitlicht vorher (`normalisiereScan`, nur mit Ziffer hinter der Vorsilbe) — beim
-  Buchen und in der Offline-Warteschlange. Roh fragt nur die Vorschau beim Tippen
-  (`/api/search`). Gemessen am Testserver am 23.09.2026: alle gespeicherten Vorsilben groß
-  (40 Leser, 4.130 Exemplare, keine klein). **Anlass zum Bauen:** ein zweiter Aufrufer, der
-  rohe Nummern schickt — dann die Eingabe am Server vereinheitlichen (nicht `upper(barcode_id)`,
-  das nimmt den Index), mit einer gemeinsamen Fall-Tabelle für Go und JS.
-- Von Hand lässt sich eine ausgeschiedene `A-`-Nummer wieder eintragen, in der Akte wie in
-  „Benutzer & Rechte" — gewollt für die alte Karte eines Schülers, der zurückkommt (Migration
-  146). Die Maske sagt dabei nicht, dass die Nummer schon einmal vergeben war; nur der Generator
-  und die Littera-Übernahme lesen `ausweisnummern_ausgeschieden`. Anlass zum Bauen: eine alte
-  Karte, die auf diesem Weg an eine andere Person gerät.
-- Cover-Dateien ohne Titel (`uploads/cover_auto_…`): Eine ISBN-Abfrage, nach der nicht
-  gespeichert wird, lässt eine Datei je ISBN liegen (der Name kommt seit dem 02.10.2026 aus
-  ISBN und Inhalt, eine Wiederholung legt keine weitere ab), und ein ersetztes Cover die alte
-  Datei. Was vorher entstand, liegt weiter dort; gemessen ist die Menge an keinem Server.
-  Im Zwischenspeicher des Cover-Abrufs (`uploads/covers`) liegen dazu die Ersatzbilder von
-  Google Books, die bis zum 02.10.2026 als Cover abgelegt wurden (je 1.118 Byte); abgerufen
-  werden sie nicht mehr. Anlass zum Bauen: Der Ordner wird merklich groß.
-- Ein Titel ohne gespeichertes Cover zeigt, was Google Books oder OpenLibrary liefern. Für
-  Schulbücher ist das wenig (gemessen am 02.10.2026 an sieben ISBN der Reihen Deutschbuch,
-  Lambacher Schweizer, Green Line und Mensch und Politik): Google Books hat eines, OpenLibrary
-  keines, der Cover-Dienst der DNB fünf. Die DNB fragt nur der Cover-Abgleich des Servers
-  (beim Start und alle sechs Stunden); bis er einen Titel erreicht hat, steht dort die
-  Initiale. Anlass zum Bauen: Nach der Littera-Übernahme fehlen in den Katalogen merklich
-  Cover, die es bei der DNB gibt.
-- Der Cover-Abgleich fragt eine ISBN, die kein Katalogdienst kennt, alle sechs Stunden und bei
-  jedem Start neu (am Code gelesen am 02.10.2026): `verarbeiteCover`
-  (`internal/service/cover.go`) setzt `FAILED`, sobald die Abfrage einen Fehler
-  liefert, und „nicht gefunden" ist dort ein Fehler; `NOT_FOUND` gibt es nur für einen Treffer
-  ohne Cover. Je Titel sind das bis zu fünf Anfragen an DNB, Google Books und OpenLibrary,
-  gedrosselt auf zwei Titel je Sekunde. Wie viele Titel es trifft, zeigt
-  `SELECT cover_status, count(*) FROM buecher_titel GROUP BY 1` am Server. Anlass zum Bauen:
-  Ein Dienst sperrt die Adresse der Schule, oder der Lauf dauert merklich.
-- Die Sperrprüfung liest aus dem Pool, während die Checkout-Transaktion mit `FOR UPDATE` offen ist
-  (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim Nachbuchen
-  vieler Ausleihen ([OFFEN.md](OFFEN.md), Abschnitt 2) beobachten.
-- Die Rate-Limiter-Maps räumen erst ab 5.000 Einträgen; nur mit vielen frischen Adressen ein
+- **Ein Ausweis aus dem Altbestand ohne Vorsilbe** ist ohne Netz „unklar" und wird abgewiesen;
+  das entscheidet sich mit dem frischen Littera-Backup ([OFFEN.md](OFFEN.md) 7.2).
+- **Schreibweise der Nummern** (entschieden am 23.09.2026: am Server nichts bauen). Der Server
+  schlägt Nummern exakt nach, die Theke vereinheitlicht vorher (`normalisiereScan`); roh fragt
+  nur die Vorschau beim Tippen (`/api/search`). Anlass: ein zweiter Aufrufer mit rohen Nummern;
+  dann am Server vereinheitlichen, mit einer gemeinsamen Fall-Tabelle für Go und JS.
+- **Antwortet der Server nicht,** wartet jeder eingereihte Scan seine eigene Frist ab (10 s,
+  `apiFetch.js`), bevor er ohne Netz abgelegt wird; ein Neuladen nimmt die wartenden Scans ohne
+  Meldung mit. Anlass: Die Theke reagiert bei hängendem Server spürbar verzögert.
+- **Kommt die Antwort auf einen Ausweis-Scan erst nach „Theke leeren",** lädt sie den Leser doch
+  (`verarbeiteLeser`, am Store nachgestellt); nach der nächsten Anmeldung stünde sein Konto offen.
+- **Ungespeichertes übersteht die Sperre, aber nicht, was ihr vorausgeht:** Nach fünf Minuten
+  leert sich die Theke samt offenem Dialog; „Abmelden und als andere Person anmelden" verwirft
+  ohne Hinweis. Ob etwas ungespeichert ist, weiß die Anwendung nur beim LMF-Planer
+  (`uiStore.verlassenSperre`). Anlass: eine verlorene Eingabe an der Theke.
+- **Der LMF-Planer erfährt nur über die Live-Leitung,** dass ein anderer Platz den Plan geändert
+  hat (`fremdesSignal`); war sie unterbrochen, überschreibt das nächste Speichern die fremde
+  Änderung. Abhilfe mit Anlass: nach dem Wiederaufbau der Leitung und nach dem Aufschließen den
+  Stand am Server vergleichen.
+- **Das Band „Keine Verbindung"** (`App.svelte`, 25 s ohne `ping`) unterscheidet nicht zwischen
+  fehlendem Ping und einem eingefrorenen Tab; beim Aufwachen stünde es höchstens 15 s. Nicht
+  nachgestellt.
+- **Nach einem Rückbau auf einen älteren Stand** behält ein Browser die neuere Startseite: Sie
+  geht mit `Last-Modified` und ohne `Cache-Control` hinaus (`http.ServeFileFS` in
+  `api/router.go`), und der ältere Stand antwortet auf das jüngere Datum mit 304. Abhilfe mit
+  Anlass: `Cache-Control: no-cache` und ein ETag aus dem Namen des Bundles.
+- **Die Sperrprüfung liest aus dem Pool,** während die Transaktion der Ausleihe mit `FOR UPDATE`
+  offen ist (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim
+  Nachbuchen vieler Ausleihen beobachten.
+- **Die Rate-Limiter** räumen erst ab 5.000 Einträgen; nur mit vielen frischen Adressen ein
   CPU-Thema.
-- Das Druck-Center hängt im Menü an `view_students`, seine Buch-Etiketten brauchen nur
-  `view_books` und `edit_books`. Ab Werk hat jede Rolle mit `edit_books` auch `view_students`;
-  wer die Rechte anders verteilt, erreicht die Buch-Etiketten nicht (Sammelpunkt wie
-  „Einstellungen"). Der Etikett-Knopf der Buchakte fragt deshalb beides ab.
-- Dieselbe Form bei der Klassenauswahl: `GET /api/klassen` verlangt
-  `view_students`, gewählt wird die Klasse aber auch in den Klassensätzen und der
-  LMF-Verlängerung (`edit_books`) und im Mahnwesen-Routing (`manage_settings`). Ab Werk hat jede
-  Rolle mit einem dieser Rechte auch `view_students`. Wer die Rechte anders verteilt, sieht dort
-  „Klassen nicht geladen", und der Rat „Bitte neu öffnen" hilft ihm nicht.
-- Auch die Katalogdienste werden in einer Anfrage gefragt, die die Oberfläche nach 10 s
-  aufgibt: `POST /api/buecher/aus-isbn` fragt DNB, Google Books und OpenLibrary
-  (`SucheNachISBN`), „Cover erneut lokalisieren" läuft in der Anfrage über alle gewählten
-  Titel (`FremdeCoverNeuLaden`). Am Code gelesen am 07.10.2026, die Dauer nicht
-  gemessen. Anlass zum Bauen: ein Abbruch, nach dem unklar ist, was gespeichert wurde.
-- Die Inventur meldet einen Scan nur auf dem Bildschirm; einen Ton wie an der Theke gibt es
-  nicht. Ein unbekannter Barcode in einer schnellen Folge steht nur so lange da, bis der
-  nächste Scan gebucht ist.
-- Die Meldung „Änderungen gespeichert." der Maske „Stammdaten bearbeiten" erscheint nie: Die
+- **Die Prüfung der UUID-Pfadparameter** (`uuidPfadMiddleware`) sitzt in `verlangeRecht`. Eine
+  Route mit UUID-Platzhalter unter `VerlangeAnmeldung` liefe an ihr vorbei; heute gibt es keine
+  (alle 65 antworteten am 04.10.2026 am echten Router auf eine Nicht-UUID mit 400), und kein Gate
+  hält das. Anlass: die erste solche Route.
+- **Katalogdienste in einer Anfrage, die die Oberfläche nach 10 s aufgibt:**
+  `POST /api/buecher/aus-isbn` und „Cover erneut lokalisieren" (`FremdeCoverNeuLaden`). Anlass:
+  ein Abbruch, nach dem unklar ist, was gespeichert wurde.
+- **Der Medienkatalog lädt die ganze Titelliste** (`GET /api/books`, gekappt bei 50.000), am
+  lokalen Stack 9.738 Titel mit 4,87 MB, gepackt 0,43 MB. Anlass: Der Katalog öffnet am Server
+  spürbar verzögert; dann antwortet der Server mit 304 wie bei den Buchnummern der Theke
+  (`api/theke/buchbarcodes.go`).
+- **Das Zugangsbuch baut alle Zugänge des Zeitraums auf einmal auf** (höchstens ein Jahr); lokal
+  34.621 Zeilen in 4,2 s im Browser, an Daten aus Importen. Anlass: ein Halbjahr mit mehreren
+  tausend Zugängen am Server.
+- **Cover:** Eine ISBN-Abfrage ohne Speichern und ein ersetztes Cover lassen Dateien in
+  `uploads/` zurück. Ohne gespeichertes Cover zeigt ein Titel, was Google Books oder OpenLibrary
+  liefern, für Schulbücher wenig; die DNB fragt nur der Cover-Abgleich. Der Abgleich fragt eine
+  ISBN, die kein Dienst kennt, bei jedem Lauf neu (`verarbeiteCover` setzt `FAILED`). Anlass:
+  Der Ordner wird groß, Cover fehlen nach der Übernahme merklich, oder ein Dienst sperrt die
+  Adresse der Schule.
+- **Das Anfrage-Log** nennt weder Dauer noch Anfragekennung; mehr Logzeilen am Schulserver sind
+  eine Betriebsfrage.
+
+#### Oberfläche
+
+- **Lange Listen und schmale Fenster.** Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich
+  der Seite (`e2e/scrollbereiche.spec.js`). In „Buch bearbeiten" lässt sich in den Exemplaren
+  nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der
+  Ausleihliste ab 1066 px mindestens 140 px, darunter bis 1024 px weniger; dort ist auch die
+  Reiterzeile 12 px zu schmal. Die eingeklappte Navigation zeigt bis zu 18 Symbole ohne Namen
+  (M3, Navigation rail: „All navigation items require a one word label text"). Autor und Nummer
+  eines Exemplars stehen in der Akte nur in einer Sprechblase, an einem Tablet ohne Maus also
+  nicht. Der Abstand des Rahmens (`Anwendungsrahmen.svelte`) liegt um den Scrollbereich, nicht
+  in ihm: Die Scrollleiste sitzt 32 px vom Fensterrand, und über und unter dem Inhalt bleiben
+  beim Scrollen je 24 px stehen. Anlass: Bedienung an einem Tablet oder in Fenstern unter
+  1280 px.
+- **Die Meldungen** (`SnackbarAnzeige.svelte`) erscheinen oben rechts und verdecken dort 5 s lang,
+  was darunter steht; M3, Snackbar: „Snackbars should be placed at the bottom of a UI". Am unteren
+  Rand stehen die Auswahlleisten der Listen, dort müssten die Meldungen ausweichen.
+- **Schmale Breiten:** Bei 390 px ist die Bestellspalte 68 px breit; die Leiste der markierten
+  Exemplare in der Buchakte passt bis 768 px, `ui/AuswahlLeiste` hat kein Überlaufmenü (M3,
+  Toolbars). Anlass: Bestellen oder die Buchakte am Telefon.
+- **Breite der Textfelder** nach M3 („Text fields shouldn't span the full width of a large
+  screen") ist nur in „Buch bearbeiten" umgesetzt (bis 704 px, in `BuchFormular.svelte`); mit
+  der zweiten Maske gehört der Wert an eine Stelle.
+- **Verwerfen ohne Rückfrage:** Das Schließen-Symbol von „Buch bearbeiten" und „Neues Buch"
+  verwirft Ungespeichertes (`TitelVerwaltung.svelte`); M3, Dialogs: „a basic dialog should appear
+  to confirm that they want to discard the unsaved changes."
+- **Elf Dialoge und sieben weitere Stellen sperren „Abbrechen", solange ihre Anfrage läuft**
+  (etwa `LeserLoeschenDialog.svelte`). M3, Dialogs: „Dismissive actions are never disabled."
+  Voraussetzung je Stelle: Erfolg und Ablehnung werden außerhalb des Dialogs gemeldet.
+- **Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht** (`speichereBarcode` in
+  `ExemplarKarte.svelte`, `speichereBearbeitung` in `SystematikVerwaltung.svelte`,
+  `authStore.handleLogin`).
+- **„Buch bearbeiten" speichert nur per Klick;** die Eingabetaste löst nichts aus, und in der
+  Tab-Reihenfolge steht „Speichern" vor den Feldern.
+- **Die Meldung „Änderungen gespeichert." der Maske „Stammdaten bearbeiten" erscheint nie:** Die
   Maske schließt mit dem Speichern, und die Meldung gehört zu ihr (`LeserBearbeiten.svelte`).
-  Die Akte zeigt danach den gespeicherten Stand.
-- Theke: Antwortet der Server nicht, wartet jeder eingereihte Scan seine eigene Frist ab
-  (10 s, `apiFetch.js`), bevor er ohne Netz abgelegt wird; die Reihe läuft dann langsam ab.
-  Ein Neuladen oder Schließen der Seite nimmt die wartenden Scans mit, ohne Meldung (am Code
-  gelesen am 07.10.2026). Anlass zum Bauen: Die Theke reagiert bei hängendem Server spürbar
-  verzögert auf einen Stapel.
-- Die Datenbank ordnet Text nach Codepunkt (gemessen am 07.10.2026 am lokalen Stack:
-  „Banane < Mathe 10 < Mathe 5 < Ofen < Zebra < apfel < Ägypten < Ökologie"). Die Titelliste
-  ordnet deshalb in Go. 30 Abfragen ordnen in der Datenbank nach Titel oder Nachname, darunter
-  die Schüler-Etiketten, die Abgängerliste, die Suche des öffentlichen Katalogs und die
-  Bestandsliste; ob die Oberfläche ihre Antwort neu ordnet, ist je Liste nicht durchgesehen
-  (die Mahnliste tut es). Anlass zum Bauen: ein Name oder Titel, der in einer Liste nicht an
-  seinem Platz steht.
-- Theke: Kommt die Antwort auf einen Ausweis-Scan erst nach „Theke leeren" (Abmelden, während
-  die Anfrage läuft), lädt sie den Leser doch (`verarbeiteLeser`; am Store nachgestellt am
-  07.10.2026). Nach der nächsten Anmeldung stünde sein Konto offen.
-- Ausfallmatrix A3 und B4; A3 erst nach S3 ([OFFEN.md](OFFEN.md) 7.3).
-- Anmeldungen stehen nicht im Protokoll (am Code nachgesehen am 28.09.2026): `Anmelden` in
-  `auth/anmelden.go` schreibt keinen Eintrag, nur die Selbstanmeldung
-  (`auth/selbstanmeldung.go`). Nach einem Missbrauch lässt sich nicht nachsehen, wann und von wo
-  ein Konto angemeldet war; der Datenschutz-Nachweis (Abschnitte 8 und 9) sagt das so. Ein
-  Protokoll der Anmeldungen wären neue Personendaten des Personals (Zeitpunkt, Netzadresse) mit
-  eigener Frist. Anlass zum Bauen: ein Vorfall oder eine Frage des Datenschutzbeauftragten.
-- Skripte, die Titel löschen, lassen Werke zurück:
-  `e2e_altlasten.sql`, `entferne_demo_daten.sql` und `seed_demo.sql` löschen Titel per DELETE;
-  das erreicht `werke` nicht, der Verweis zeigt vom Titel zum Werk. Zurück bleiben Werke ohne
-  Titel, die keine Ansicht zeigt, oder mit einem einzigen Titel, der überall wie ein Titel ohne
-  weitere Auflage erscheint (Titelmaske: unter „Andere Auflagen" steht keine Liste). Kein Schaden; die
-  Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine Skripte.
-- Der Katalogisat-Import legt Einträge über den Titeltext zusammen, und ein zweiter Lauf schreibt
-  die Angaben des zuletzt passenden Eintrags darüber (`reiheTitelEin` in
-  `SchreibeTitel` sucht über die ISBN, sonst über den Titeltext). Gemessen am 30.09.2026
-  am Export vom Juni 2026: Aus 13.708 Einträgen werden 11.302 Titel (226 echte Dubletten, 432
-  mit gleicher ISBN und anderem Text, 1.748 mit gleichem Text bei anderer oder fehlender ISBN) —
-  „Harry Potter und der Feuerkelch" steht als Buch, Taschenbuch und DVD in der Datei und wird
-  ein Titel. Ein zweiter Lauf ändert 789 Titel; der letzte passende Eintrag gewinnt. Der Import
-  aus CSV und Excel (`internal/service/import_zeilen.go`) gleicht ebenso ab, dort nicht
-  gemessen; die Übernahme aus der Sicherung (`internal/littera`), mit der der Echtbetrieb
-  beginnt, tut es nicht. Der Katalog am Testserver stammt aus diesem Import. Anlass zum Bauen:
-  Das Katalogisat wird wieder ein Weg in den Echtbetrieb, oder ein gepflegter Katalog soll es
-  erneut einlesen.
-- Nach einem Rückbau auf einen älteren Stand behält ein Browser die neuere Startseite: Sie geht
-  mit `Last-Modified` und ohne `Cache-Control` hinaus (`http.ServeFileFS` in `api/router.go`),
-  und auf die Rückfrage mit dem jüngeren Datum antwortet der ältere Stand mit 304 (gemessen am
-  01.10.2026: 304 mit späterem, 200 mit früherem Datum). Die Seite verlangt dann ein Bundle,
-  das der Server nicht hat, bis jemand ohne Zwischenspeicher neu lädt. Bei einem Update nach
-  vorn tritt es nicht auf. Abhilfe mit Anlass: `Cache-Control: no-cache` und ein ETag aus dem
-  Namen des Bundles für die Startseite. Ein Fenster, das über den Rückbau hinweg offen bleibt,
-  arbeitet mit dem neueren Programm weiter: Sperrt es nach Inaktivität, lässt es sich nicht
-  aufschließen, weil dem älteren Stand die Wege zum Sperren und Aufschließen fehlen (am
-  01.10.2026 am Code gelesen, nicht nachgestellt); es hilft nur das Neuladen ohne
-  Zwischenspeicher.
-- Der LMF-Planer erfährt nur über die Live-Leitung, dass ein anderer Platz den Plan geändert
-  hat (`fremdesSignal`). War die Leitung unterbrochen — kein Netz, oder die Sperre nach
-  Inaktivität, hinter der sie ruht —, fehlt der Hinweis, und wer danach speichert,
-  überschreibt die fremde Änderung. Am Code gelesen am 01.10.2026, nicht nachgestellt. Hinter
-  der Sperre bleibt der Planer mit seinen ungespeicherten Änderungen stehen. Abhilfe mit Anlass: nach dem
-  Wiederaufbau der Leitung und nach dem Aufschließen den Stand am Server vergleichen.
-- Ungespeichertes übersteht die Sperre nach Inaktivität, aber nicht, was ihr vorausgeht oder
-  folgen kann (Raster, Frage 15). Nach fünf Minuten
-  ohne Bedienung leert sich die Theke und baut die Akte des Lesers ab (am Stack nachgestellt),
-  samt einem offenen Dialog — Schaden melden, Stammdaten bearbeiten, Rückgabedatum ändern — und
-  dem, was darin getippt war. „Abmelden und als andere Person anmelden" am Sperrbildschirm
-  verwirft, was dahinter ungespeichert steht, ohne es zu sagen (am Code gelesen). Ob etwas
-  ungespeichert ist, weiß die Anwendung nur beim LMF-Planer (`uiStore.verlassenSperre`), und
-  gefragt wird nur beim Wechsel des Menüpunkts und beim Schließen des Fensters. Das Leeren der
-  Theke ist gewollt (Datenschutz-Nachweis, Abschnitt 5). Anlass zum Bauen: eine verlorene Eingabe an
-  der Theke.
-- Das Schließen-Symbol der Maske „Buch bearbeiten" und „Neues Buch" verwirft, was getippt und
-  nicht gespeichert ist, ohne Rückfrage: `onClose` schaltet nur zurück zur Titelliste
-  (`frontend/src/inventur/routes/admin/TitelVerwaltung.svelte`). „Speichern" steht im Kopf
-  neben dem Symbol. M3, Dialogs, Guidelines: „When someone dismisses a full-screen dialog, a basic
-  dialog should appear to confirm that they want to discard the unsaved changes." Dafür müsste
-  die Maske wissen, ob etwas geändert ist (wie `uiStore.verlassenSperre` beim LMF-Planer).
-- Die Live-Leitung (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
-  trägt zu jeder Buchung die Kennung des Lesers, die Buchnummer und den Titel
-  (`sendeThekenEreignis`). Jedes angemeldete Konto bekommt sie, auch das Kollegium ohne
-  Leserecht; einen Namen trägt sie nicht (PII-Matrix, Stufe 0). Gelesen am 01.10.2026, nicht
-  nachgestellt. Zuhörer sind nur die Theke und die Abgänger-Seite. Frage mit Anlass: Braucht
-  die Meldung die Kennung des Lesers für jeden Empfänger?
-- Das Anfrage-Log nennt weder Dauer noch Anfragekennung. Mehr Logzeilen am Schulserver
-  sind eine Betriebsfrage.
-- Barrierefreiheit: Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs
-  braucht (HTML-Druckweg oder begründete Ausnahme), ist nicht geklärt; bis dahin geparkt. Was
-  die Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
-- Abgleich des Go-Codes mit Googles Regelwerk für Go
-  ([Guide](https://google.github.io/styleguide/go/guide),
-  [Decisions](https://google.github.io/styleguide/go/decisions),
-  [Best Practices](https://google.github.io/styleguide/go/best-practices)): Was abweicht, wird
-  umgestellt und steht deshalb nicht hier, sondern in [OFFEN.md](OFFEN.md) 5.66; die Regeln nennt [STIL.md](STIL.md).
-
-#### Kleinigkeiten
-
-- gosec nimmt sieben Regeln global aus (gemessen mit der Fassung aus `scripts/gosec-gate.sh` am
-  16.10.2026, ohne `-exclude`): G706 (36 Stellen in 19 Dateien), G704 (6), G703 (5), G120 (5),
-  G124 (4), G115 (3), G101 (3); der Grund je Regel steht in `scripts/gosec-gate.sh`. Eine neue
-  Stelle dieser Regeln meldet gosec nicht. Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund,
-  dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 26 Stellen in 16 Dateien.
-- Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (gefunden am
-  01.10.2026): das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
-  Vormerk-Liste (`rechteKategorien.js`, `BuchakteVormerkungen.svelte`), das Etikett der
-  Reiterleiste (`Schuelerdatei.svelte`), „Öffnet die Schülerdatei …" im Druck-Einstieg
-  (`KlassenDruckEinstieg.svelte`), „Schülerakte" in drei Erklärtexten (`rechteKategorien.js`,
-  `DatenschutzKategorie.svelte`, `BescheideTabelle.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
-  auch das Kollegium steht (`Papierkorb.svelte`). Beim Umbenennen die E2E-Specs
-  mitziehen.
-- Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht (am Code gelesen am 01.10.2026): die Nummer eines
-  Exemplars speichern (`speichereBarcode` in `ExemplarKarte.svelte`), eine Sachgruppe „Sichern"
-  (`speichereBearbeitung` in `SystematikVerwaltung.svelte`) und „Anmelden" mit leerer Adresse
-  oder leerem Passwort (`authStore.handleLogin`). Verloren geht nichts. Den Knopf in dem
-  Zustand sperren oder das Feld nennen.
-- Die Maske „Buch bearbeiten" speichert nur per Klick auf „Speichern": Sie ist kein Formular,
-  die Eingabetaste und ein Tastenkürzel lösen nichts aus (`BuchFormular.svelte`, am Code
-  gelesen am 02.10.2026). In der Reihenfolge der Tabulatortaste steht „Speichern" vor den
-  Feldern; wer mit der Tastatur ausfüllt, erreicht den Knopf nach dem
-  letzten Feld nur rückwärts.
-- Elf Dialoge sperren „Abbrechen", solange ihre Anfrage läuft (etwa
-  `LeserLoeschenDialog.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`),
-  dazu sieben Stellen in Formularen und Listen (`Schuljahreswechsel.svelte` zweimal,
-  `GeraeteVerwaltung.svelte`, `AnliegenListe.svelte`, `KlassensatzReservierungen.svelte`,
-  `AusleiheRueckgabe.svelte`, `portal/ProblemFormular.svelte`; gezählt am 06.10.2026). M3 Dialogs, Guidelines: „Disable confirming
-  actions until a choice is made. Dismissive actions are never disabled." Abbrechen bricht die
-  laufende Anfrage am Server nicht ab. In der Lösch-Rückfrage der Benutzerliste schließt der
-  Knopf den Dialog wie Escape, und das Ergebnis der Anfrage steht auf der Seite; zu entscheiden
-  wäre, ob das für die übrigen ebenso gilt. Voraussetzung je Stelle: Erfolg und Ablehnung werden
-  außerhalb des Dialogs gemeldet.
-- Mahnwesen: „Neu laden" ist ein Symbolknopf ohne Wort (`MahnwesenAktionen.svelte`); auf den
-  anderen Seiten heißt der Knopf „Aktualisieren" oder „Neu prüfen".
-- `ui/Menue` kann einen Kopf über den Einträgen und Gruppen-Überschriften (`kopf`,
-  `ueberschriftDavor`); beides nutzt kein Aufrufer.
-- Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
-  in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
-  freigeschalteten Zugang (`LeserakteAktionen.svelte`, `data-tip`).
-- Browser-Gates: Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
-  Anfangszustand; kein Screenreader-Durchgang; der Ausweis-Designer geht nur per Maus.
-- Symbol-Knöpfe haben 32 × 32 px ohne größere Trefferfläche (`.icon-btn` in
-  `styles/komponenten.css`, Gate `e2e/icon-trefferflaechen.spec.js` mit 32 px als Untergrenze).
-  M3, Icon buttons: „Extra small and small icon buttons must have a target size of 48x48dp or
-  larger to be accessible." `CLAUDE.md` nennt 48 px Trefferfläche als Hausmaß; gemessen wird
-  sie nirgends. In Tabellenzeilen stehen bis zu drei Symbole ohne Abstand nebeneinander
-  (Ausleihliste der Leserakte: verlängern, Schaden melden, zurückgeben). Anlass zum Bauen:
+- **Symbolknöpfe:** 32 × 32 px ohne größere Trefferfläche (`.icon-btn`, Gate
+  `e2e/icon-trefferflaechen.spec.js` mit 32 px); M3 verlangt 48 × 48 dp. In der Exemplarkarte der
+  Buchakte sind sie 14 px groß und fehlen in den Gates der Symbolknöpfe; ein 32-px-Knopf bricht
+  dort die Kopfzeile um. Vier Symbolknöpfe erklären sich mit `title` statt `data-tip`. Anlass:
   Fehlklicks an der Theke oder Bedienung am Tablet.
-- 9 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`).
-  Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
-- 3.000 Titel ohne ISBN: Die Textsuche der DNB (`SucheTextDNB`, heute nur in der Bestellsuche)
-  nur mit Bestätigung durch einen Menschen für sie verdrahten.
-- Titel aus der DNB tragen deren Platzhalter für eine fehlende Zählung („Deutschbuch [...]
-  Gymnasium 5."), und der Zusatz zum Sachtitel (MARC 245 $b) steht im Titel statt im Feld
-  Untertitel („Lambacher Schweizer Mathematik 6. Ausgabe Hessen Schulbuch mit Medien Klasse
-  6"; an Sätzen der DNB gelesen am 02.10.2026). Die Maske zeigt den Titel vor dem Speichern.
-- Die Altersangabe der DNB (653 „(Zielgruppe)ab 10 Jahre", `MetadatenErgebnis.Zielgruppe`) wird
-  gelesen und nicht gespeichert: Es gibt keine Spalte und keinen Leser. Anlass zum Bauen: ein
-  Leser, etwa ein Filter im Portal.
+- **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen); sie folgen
+  nicht Material 3.
+- **Die Inventur meldet einen Scan nur auf dem Bildschirm,** ohne Ton wie an der Theke.
+- **Das Druck-Center hängt im Menü an `view_students`,** seine Buch-Etiketten brauchen nur
+  `view_books` und `edit_books`; ebenso verlangt `GET /api/klassen` `view_students`, gewählt wird
+  die Klasse aber auch mit `edit_books` und `manage_settings`. Ab Werk hat jede dieser Rollen
+  auch `view_students`; wer die Rechte anders verteilt, erreicht die Etiketten nicht oder sieht
+  „Klassen nicht geladen".
+- **Die Ausleih-Quittung der Leserakte** (`AusleihQuittung.svelte`) hat keinen Knopf und erscheint
+  nur beim Druck der Akte über den Browser; für einen Kollegen ist sie der einzige Ausdruck
+  seiner Ausleihen. Anlass: Jemand braucht ihn an der Theke.
+- **Reste des Worts „Schülerdatei"** nach der Umbenennung in „Leserdatei": das Recht „Schülerdatei
+  anzeigen" (`rechteKategorien.js`), `Schuelerdatei.svelte`, `KlassenDruckEinstieg.svelte`,
+  „Schülerakte" in drei Erklärtexten und „Gelöschte Schüler (Papierkorb)" (`Papierkorb.svelte`).
+  Beim Umbenennen die E2E-Specs mitziehen.
+- Mahnwesen: „Neu laden" ist ein Symbolknopf ohne Wort (`MahnwesenAktionen.svelte`), sonst heißt
+  der Knopf „Aktualisieren". `ui/Menue` kann einen Kopf und Gruppen-Überschriften; beides nutzt
+  kein Aufrufer. Die Akte eines Kollegen ohne Ausweisnummer verweist auf „Benutzer & Rechte", wo
+  er ohne Konto keinen Eintrag hat. Unter dem Reiter „Stammdaten & Adresse" steht dieselbe
+  Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste „Forderungen".
+- **Browser-Gates:** Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
+  Anfangszustand, es gibt keinen Screenreader-Durchgang, und der Ausweis-Designer geht nur per
+  Maus. Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs braucht, ist
+  nicht geklärt ([FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19).
+- 9 Stellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`); umstellen beim
+  fachlichen Anfassen.
+
+#### Code und Werkzeuge
+
+- **gosec nimmt sieben Regeln global aus** (G706, G704, G703, G120, G124, G115, G101; der Grund je
+  Regel steht in `scripts/gosec-gate.sh`). Eine neue Stelle dieser Regeln meldet gosec nicht.
+  Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund, dann die Regel aus `-exclude` nehmen.
+- **`github.com/jung-kurt/gofpdf` ist archiviert** und steckt in 17 Dateien; gepflegt wird der
+  Ableger `github.com/phpdave11/gofpdf`, den maroto mitbringt. Neue PDFs nicht mehr auf dem
+  archivierten, die übrigen beim fachlichen Anfassen umstellen.
+- **Zwei Normalformen für Namen** (`repository.suchnorm`, `normierterName` in
+  `internal/lusd/paarung.go`); beim Anfassen der Paarung zusammenführen.
+- `auth.Claims.Ausweisnummer` (JSON `barcode_id`) liest niemand; sie wird nur beim Erneuern des
+  Tokens weitergereicht. `abgaenger_jahr` in der Antwort der Aktivliste hat keinen Konsumenten.
+- Die Grenze `format.Hoehe >= 30` steht zweimal (`pdf/etikett_buch.go`, `pdf/etikett_schueler.go`).
 - `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=time.Now()` in der Zone des
-  Testprozesses; unter `TZ=Pacific/Midway` ist das der Vortag und der Zähler nennt 0. Kein
-  Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen
-  auf `schulzeit.Zone()` umstellen.
-- `github.com/jung-kurt/gofpdf` ist seit 2021 archiviert und steckt in 17 Dateien (ohne Tests,
-  gezählt am 30.09.2026); gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto
-  mitbringt. Neue PDFs nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
-  umstellen, mit den PDF-Gates.
-- Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
-  Konsument.
-- Die Prüfung der UUID-Pfadparameter (`uuidPfadMiddleware`) sitzt in
-  `verlangeRecht`. Eine Route mit `{id}`, `{schueler_id}` oder `{ausleihe_id}` unter
-  `VerlangeAnmeldung` liefe an ihr vorbei, und die Kennung ginge ungeprüft an die Datenbank.
-  Heute gibt es keine: Am 04.10.2026 antworteten alle 65 Routen mit UUID-Platzhalter am echten
-  Router auf eine Kennung, die keine UUID ist, mit 400. Kein Gate hält das;
-  `api/uuid_pfadparameter_test.go` prüft die Namen der Platzhalter, nicht die Hülle der Route.
-  Anlass zum Bauen: die erste Route mit UUID-Platzhalter ohne `verlangeRecht`.
-- `auth.Claims.BarcodeID` liest niemand mehr; die Ausweisnummer kommt seit Migration 125
-  als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
-- Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
-- `LabelHeight >= 30` steht zweimal (`pdf/etikett_buch.go`, `pdf/etikett_schueler.go`).
-- Zwei Normalformen für Namen (`repository.suchnorm`, `normierterName` in `internal/lusd/paarung.go`); beim
-  Anfassen der Paarung zusammenführen.
-- Der Paritätstest vergleicht keine COMMENTs und Seeds.
-- Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
-- Klone: Go 9 Gruppen (05.09.2026), Frontend 0,41 %.
-- Exemplarkarte der Buchakte (`ExemplarKarte.svelte`): Die vier Symbolknöpfe sind 14 px groß
-  statt 32 px (`.icon-btn`), drei erklären sich per `title` statt `data-tip`; die Buchakte fehlt
-  in `icon-trefferflaechen.spec.js` und `icon-tooltips.spec.js`. Ein 32-px-Knopf bricht die
-  Kopfzeile bei 1280 px um (gemessen am 24.09.2026: Karte 70 → 100 px) — die Knöpfe brauchen
-  eine eigene Zeile; eine Layoutfrage, nicht einzeln. „Barcode scannen" ist 24 px hoch, und
-  „Interne ID generieren" bricht bei 1280 px im Knopf in zwei Zeilen um (gemessen am
-  06.10.2026).
-- Vier Symbolknöpfe erklären sich mit dem Hinweis des Browsers (`title`) statt mit der
-  Sprechblase des Hauses (`data-tip`): im LMF-Planer „Nach oben", „Nach unten" und „Festen
-  Platz lösen", in den Einstellungen „Sommerferien … entfernen". Einen Namen für den
-  Screenreader tragen alle acht Symbolknöpfe (gezählt am 12.10.2026);
-  `frontend-hygiene-knoepfe.test.js` verlangt Namen und Hinweis und lässt beide Formen zu.
-- Vorschläge an einem Textfeld zeichnet der Browser (`datalist`): am Feld „Signatur", im
-  Dialog „Standort ändern", in der Schlagwort-Pflege und in `ui/ChipFeld` (sechs Stellen,
-  gezählt am 06.10.2026). Die Liste sieht je Browser anders aus und folgt nicht Material 3;
-  im Haus ist sie einheitlich. Anlass zum Bauen: Die Vorschläge sollen aussehen wie die Menüs
-  der Anwendung.
-- Die Ausleih-Quittung der Leserakte (`AusleihQuittung.svelte`) hat keinen Knopf. Sie
-  erscheint, wenn jemand die offene Akte über den Browser druckt (Strg+P), und sonst nirgends
-  (`styles/druck-ausweise.css`). Für Schüler ist der Kontoauszug das Ausleih-Dokument. Für einen Kollegen gibt es den Kontoauszug nicht
-  (`LeserakteAktionen.svelte`), die Quittung ist dort der einzige Ausdruck seiner
-  Ausleihen. Anlass zum Bauen: Jemand braucht den Ausdruck an der Theke, etwa die Dauerleihen
-  einer Lehrkraft; dann bekommt er einen Knopf.
+  Testprozesses; unter einer Zone westlich von UTC ist das der Vortag. Beim nächsten Anfassen auf
+  `schulzeit.Zone()` umstellen.
+- Der Paritätstest vergleicht keine COMMENTs und Seeds. Erbe der Pull Requests von außen:
+  Go-Testdateien über 200 Zeilen, ein schwacher Test des CSV-Exports.
+- 3.000 Titel ohne ISBN: Die Textsuche der DNB (`SucheTextDNB`, heute nur in der Bestellsuche)
+  nur mit Bestätigung durch einen Menschen für sie verdrahten. Titel aus der DNB tragen deren
+  Platzhalter für eine fehlende Zählung und den Zusatz zum Sachtitel im Titel statt im
+  Untertitel; die Maske zeigt den Titel vor dem Speichern. Die Altersangabe der DNB wird gelesen
+  und nicht gespeichert.
+- Tabellen-Inline-Felder mit 36 px: eine Variante `size="sm"` von `Feld` erst bei Bedienbefund.
 
 #### Bewusst nicht entschieden
 
@@ -4323,7 +3411,7 @@ Frage).
 
 ## 12. Glossar
 
-Stand: 08.10.2026
+Stand: 16.10.2026
 
 Die Fachsprache des Hauses, mit dem Code-Bezug daneben. Wo ein Begriff im Code **anders**
 heißt als in der Oberfläche, steht beides — das ist die häufigste Stolperstelle beim
@@ -4347,7 +3435,7 @@ Einstieg.
 | **Bestand**                 | Die physischen Stücke — im Unterschied zum **Katalog** (den Titeln)                                                                                                     | `buecher_exemplare`                                        |
 | **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `ladeVorgang` (`internal/service/ausleih_vorgang.go`) |
 | **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `api/katalog/bestandsbuch.go`                                      |
-| **Betriebsbereitschaft**    | Die Selbstprüfung: „Was ist eingerichtet, aber nicht in Betrieb?"                                                                                                       | `api/betriebsbereitschaft*.go`                              |
+| **Betriebsbereitschaft**    | Die Selbstprüfung: „Was ist eingerichtet, aber nicht in Betrieb?"                                                                                                       | `api/system/betriebsbereitschaft*.go`                              |
 | **Exemplar**                | Ein einzelnes physisches Buch mit eigenem Barcode                                                                                                                       | `buecher_exemplare`                                        |
 | **Ersatzwert**              | Was ein Buch **heute noch wert** ist — als Vorschlag **mit Herleitung**, weil der Betrag im Ermessen der Schule liegt                                                    | `pkg/ersatzwert`                                            |
 | **Freihand**                | Sonderbestände (CDs, DVDs, Hörbücher) mit rollierender Frist statt Jahresfrist                                                                                          | `internal/service/frist.go`                            |
@@ -4365,7 +3453,7 @@ Einstieg.
 | **LiV**                     | Lehrkraft im Vorbereitungsdienst. Eigene Art, gleiche Rechte wie eine Lehrkraft als Entleiher                                                                            | `leser.art = 'liv'`                                         |
 | **LMF / Lernmittelfreiheit**| Schulbücher, die die Schule dem Schüler für ein Schuljahr leiht. Feste Jahresfrist (Stichtag 31. Juli) statt rollierender Frist                                          | `pkg/lmf`, `buecher_titel.ist_lernmittel`                    |
 | **LMF-Plan**                | Termine je Klasse für Büchertausch (vor den Sommerferien) und Bücherausgabe (danach). Ein Termin **verschiebt die Frist**                                                | `lmf_plaene`, `lmf_termine`, `pkg/lmfplan`                  |
-| **LUSD**                    | Das Schulverwaltungssystem des Landes. Liefert Schülerdaten als Bericht (`.xlsx`) — in der Praxis **ohne** Schüler-ID                                                     | `api/lusd*.go`, [LUSD.md](LUSD.md)                       |
+| **LUSD**                    | Das Schulverwaltungssystem des Landes. Liefert Schülerdaten als Bericht (`.xlsx`) — in der Praxis **ohne** Schüler-ID                                                     | `api/leser/lusd*.go`, [LUSD.md](LUSD.md)                       |
 | **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `api/mahnwesen/mahnbriefe.go`                                     |
 | **Mehrjahresband**          | Lernmittel, das über seine Jahrgangsspanne beim selben Kind bleibt, statt am Rückgabetermin der Klasse zurückzukommen | `buecher_titel.mehrjahresband` (Migration 134) |
 | **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
