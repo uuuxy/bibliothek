@@ -90,22 +90,18 @@ type BestellungDetail struct {
 // Verlag, Cover und die angelegten Exemplare mit ihren Barcodes dazu, an denen sich eine
 // Lieferung wiedererkennen lässt. Jedes beim Bestellen angelegte Exemplar trägt seine
 // bestellung_id; am Altbestand aus Littera ist die Spalte leer.
-type BestelldetailAbfragen interface {
-	Lade(ctx context.Context, bestellungID string) (*BestellungDetail, error)
-}
-
-type pgBestelldetailAbfragen struct {
+type BestelldetailAbfragen struct {
 	db db.Pool
 }
 
 // NewBestelldetailAbfragen liefert die Abfragen der Detailansicht an Postgres.
-func NewBestelldetailAbfragen(pool db.Pool) BestelldetailAbfragen {
-	return &pgBestelldetailAbfragen{db: pool}
+func NewBestelldetailAbfragen(pool db.Pool) *BestelldetailAbfragen {
+	return &BestelldetailAbfragen{db: pool}
 }
 
 // Lade lädt Kopf, Positionen und Exemplare einer Bestellung; pgx.ErrNoRows, wenn es sie nicht
 // gibt.
-func (a *pgBestelldetailAbfragen) Lade(ctx context.Context, bestellungID string) (*BestellungDetail, error) {
+func (a *BestelldetailAbfragen) Lade(ctx context.Context, bestellungID string) (*BestellungDetail, error) {
 	kopf, err := a.ladeKopf(ctx, bestellungID)
 	if err != nil {
 		return nil, err
@@ -126,7 +122,7 @@ func (a *pgBestelldetailAbfragen) Lade(ctx context.Context, bestellungID string)
 
 // ladeKopf liefert pgx.ErrNoRows, wenn es die Bestellung nicht gibt; die Tür macht daraus 404
 // statt einer Seite, die wie eine leere Bestellung aussieht.
-func (a *pgBestelldetailAbfragen) ladeKopf(ctx context.Context, bestellungID string) (*BestellungKopf, error) {
+func (a *BestelldetailAbfragen) ladeKopf(ctx context.Context, bestellungID string) (*BestellungKopf, error) {
 	var k BestellungKopf
 	err := a.db.QueryRow(ctx, `
 		SELECT id, lieferant_name, lieferant_email, kundennummer, bestelldatum,
@@ -152,7 +148,7 @@ func (a *pgBestelldetailAbfragen) ladeKopf(ctx context.Context, bestellungID str
 // bestellungen_positionen.titel_id steht auf ON DELETE SET NULL, die Bestellung bleibt als
 // Beleg, wenn der Titel aus dem Katalog verschwindet, und mit INNER JOIN fielen solche
 // Positionen aus dem Beleg.
-func (a *pgBestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID string) ([]BestellPositionDetail, error) {
+func (a *BestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID string) ([]BestellPositionDetail, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT coalesce(p.titel_id::text, ''), p.titel_name, p.isbn, p.menge, p.einzelpreis,
 		       coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.cover_url, ''),
@@ -184,7 +180,7 @@ func (a *pgBestelldetailAbfragen) ladePositionen(ctx context.Context, bestellung
 // ladeExemplare liefert die Bücher, die aus dieser Bestellung entstanden sind, sortiert nach
 // Titel und Barcode: Der Barcode klebt auf dem Buch, und wer es im Regal sucht, sucht in
 // aufsteigender Reihenfolge.
-func (a *pgBestelldetailAbfragen) ladeExemplare(ctx context.Context, bestellungID string) ([]BestellExemplar, error) {
+func (a *BestelldetailAbfragen) ladeExemplare(ctx context.Context, bestellungID string) ([]BestellExemplar, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT e.barcode_id, e.titel_id::text, t.titel, e.etikett_gedruckt, e.ist_ausgesondert
 		FROM buecher_exemplare e

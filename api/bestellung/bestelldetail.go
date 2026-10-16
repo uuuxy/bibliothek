@@ -20,7 +20,7 @@ import (
 // eine einzige Bestellung angesehen wird.
 //
 // Kein SQL in dieser Datei: Eine neue Tür nimmt repository/ (siehe schichtung_ratsche_test.go).
-func (t *Tueren) Bestelldetail(bestelldetailAbfragen repository.BestelldetailAbfragen) http.HandlerFunc {
+func (t *Tueren) Bestelldetail(bestelldetailAbfragen *repository.BestelldetailAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
