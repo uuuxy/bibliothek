@@ -33,7 +33,7 @@ export function erzeugeScanErkennung() {
 	let zeichen = 0;
 	let letzte = 0;
 	let begonnen = false;
-	return {
+	return /** @satisfies {object} */ ({
 		/** Hat die letzte Taste eine neue Folge begonnen? Dann steht das Feld noch wie davor. */
 		get begonnen() {
 			return begonnen;
@@ -62,7 +62,7 @@ export function erzeugeScanErkennung() {
 			}
 			return false;
 		}
-	};
+	});
 }
 
 /**

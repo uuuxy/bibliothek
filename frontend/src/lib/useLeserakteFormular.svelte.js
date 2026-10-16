@@ -180,7 +180,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get eingaben() {
 			return eingaben;
 		},
@@ -192,5 +192,5 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 		},
 		uebernimmLeser,
 		speichere
-	};
+	});
 }

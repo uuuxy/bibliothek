@@ -579,10 +579,9 @@ einem Teil; die anderen bekommen Funktionen, kein geteiltes Objekt. Der Ausweis-
 über dieselbe Funktion wie der Scan: Es bleibt ein Weg zu `/api/action`, und die Erlaubnisliste
 von `frontend-hygiene-action-endpunkt.test.js` tauscht die Datei, statt zu wachsen. Bauteile
 importieren nur `omnibox.svelte.js`; ein kleines Gate hält das, sonst entginge ein Import am Teil
-vorbei `frontend-hygiene-thekenzeitgeber.test.js`. Die Rückgabe des Stores trägt `@satisfies`:
-Ein Objektliteral in JS hat sonst einen offenen Typ, und svelte-check meldet keinen Zugriff auf
-einen Namen, den der Store nicht hat (gesehen an `activeTeacher`, einem Feld von vor Migration
-125); mit dem geschlossenen Typ meldet es jeden, auch in Bauteilen.
+vorbei `frontend-hygiene-thekenzeitgeber.test.js`. Jeder Teil liefert sein Objektliteral mit
+`@satisfies` ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3); dann meldet svelte-check jeden Zugriff auf
+einen Namen, den der Teil oder die Fassade nicht hat, auch in Bauteilen. Darauf baut Stufe 7.
 
 Nachweis je Stufe: die Store-Tests (13 Dateien, 91 Fälle) und `scanOhneFokus.test.js` ohne
 Änderung grün, svelte-check ohne Fehler und Warnung, vitest ganz, am frisch gebauten Stack

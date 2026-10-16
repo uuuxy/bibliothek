@@ -318,7 +318,7 @@ function erzeugeEtikettenStore() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get suche() {
 			return suche;
 		},
@@ -441,7 +441,7 @@ function erzeugeEtikettenStore() {
 		leereDruckauftrag() {
 			leereDruckwarteschlange();
 		}
-	};
+	});
 }
 
 export const etikettenStore = erzeugeEtikettenStore();

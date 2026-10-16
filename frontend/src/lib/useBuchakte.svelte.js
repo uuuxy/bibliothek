@@ -200,7 +200,7 @@ export function useBuchakte() {
 		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get buch() {
 			return buch;
 		},
@@ -248,5 +248,5 @@ export function useBuchakte() {
 		bearbeiteTitel,
 		naechsteQuelle,
 		pruefeGeladenes
-	};
+	});
 }

@@ -31,7 +31,7 @@ export function erzeugeReservierungsListen() {
 	let offene = $state(/** @type {any[]} */ ([]));
 	let eigene = $state(/** @type {any[]} */ ([]));
 
-	return {
+	return /** @satisfies {object} */ ({
 		get offene() {
 			return offene;
 		},
@@ -44,7 +44,7 @@ export function erzeugeReservierungsListen() {
 			ladeListe('/api/reservierungen/klassensatz/offen', (d) => (offene = d));
 			ladeListe('/api/reservierungen/klassensatz/eigene', (d) => (eigene = d));
 		}
-	};
+	});
 }
 
 /**

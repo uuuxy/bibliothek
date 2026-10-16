@@ -17,7 +17,7 @@ export function erzeugeAuswahl() {
 	/** @type {string[]} */
 	let ids = $state([]);
 
-	return {
+	return /** @satisfies {object} */ ({
 		get ids() {
 			return ids;
 		},
@@ -55,5 +55,5 @@ export function erzeugeAuswahl() {
 		leeren() {
 			ids = [];
 		}
-	};
+	});
 }

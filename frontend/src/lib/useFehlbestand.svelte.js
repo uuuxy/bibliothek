@@ -127,7 +127,7 @@ export function useFehlbestand() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get fehlbestand() {
 			return fehlbestand;
 		},
@@ -146,5 +146,5 @@ export function useFehlbestand() {
 		},
 		ladeFruehereInventuren,
 		zeigeFrueherenFehlbestand
-	};
+	});
 }

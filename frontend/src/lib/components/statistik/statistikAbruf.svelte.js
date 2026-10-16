@@ -41,7 +41,7 @@ export function statistikAbruf() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get daten() {
 			return daten;
 		},
@@ -52,5 +52,5 @@ export function statistikAbruf() {
 			return fehler;
 		},
 		laden
-	};
+	});
 }

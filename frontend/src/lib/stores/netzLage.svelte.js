@@ -75,7 +75,7 @@ function erzeugeNetzLage() {
 		}, NACHPROBE_MS);
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get offline() {
 			return offline;
 		},
@@ -90,7 +90,7 @@ function erzeugeNetzLage() {
 				zuhoerer = zuhoerer.filter((h) => h !== handler);
 			};
 		}
-	};
+	});
 }
 
 export const netzLage = erzeugeNetzLage();

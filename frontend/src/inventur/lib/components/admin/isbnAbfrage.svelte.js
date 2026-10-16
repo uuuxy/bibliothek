@@ -177,7 +177,7 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 		return lauf;
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		/** Läuft gerade eine Abfrage bei den Katalogdiensten? */
 		get aktiv() {
 			return aktiv;
@@ -195,5 +195,5 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 		 * @returns {Promise<boolean>} ob dabei nach einem vorhandenen Titel gefragt wurde
 		 */
 		ruht: () => lauf ?? Promise.resolve(false)
-	};
+	});
 }

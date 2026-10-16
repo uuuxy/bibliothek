@@ -119,7 +119,7 @@ export function useInventurlauf(opts = {}) {
 		stand = { erwartet: 0, erfasst: 0, label: '' };
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get status() {
 			return status;
 		},
@@ -179,5 +179,5 @@ export function useInventurlauf(opts = {}) {
 		setzeLaufFort,
 		verwerfeLauf,
 		setzeZurueck
-	};
+	});
 }

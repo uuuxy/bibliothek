@@ -31,7 +31,7 @@ export function erzeugeSchlagwortVorschlaege() {
 		liste = antwort;
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
 		},
@@ -42,5 +42,5 @@ export function erzeugeSchlagwortVorschlaege() {
 			clearTimeout(timer);
 			timer = setTimeout(() => lade(text), 300);
 		}
-	};
+	});
 }

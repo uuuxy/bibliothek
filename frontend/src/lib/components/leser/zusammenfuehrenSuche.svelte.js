@@ -52,7 +52,7 @@ export function erzeugeKandidatenSuche(profilId) {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get suche() {
 			return suche;
 		},
@@ -79,5 +79,5 @@ export function erzeugeKandidatenSuche(profilId) {
 			treffer = [];
 			fehler = '';
 		}
-	};
+	});
 }

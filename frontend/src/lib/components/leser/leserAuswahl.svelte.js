@@ -29,7 +29,7 @@ export function erzeugeLeserAuswahl(sichtbare) {
 		markierte.filter((/** @type {any} */ s) => s.ausweis_gueltig_bis == null).length
 	);
 
-	return {
+	return /** @satisfies {object} */ ({
 		get auswahl() {
 			return auswahl;
 		},
@@ -64,5 +64,5 @@ export function erzeugeLeserAuswahl(sichtbare) {
 			auswahl.clear();
 			for (const s of sichtbare()) auswahl.add(s.id);
 		}
-	};
+	});
 }

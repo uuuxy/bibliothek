@@ -94,7 +94,7 @@ export function erzeugePortalSuche() {
 		return () => clearTimeout(zeitgeber);
 	});
 
-	return {
+	return /** @satisfies {object} */ ({
 		get text() {
 			return text;
 		},
@@ -131,5 +131,5 @@ export function erzeugePortalSuche() {
 			return text.trim() === '' && schlagwort === null;
 		},
 		ladeFilter
-	};
+	});
 }

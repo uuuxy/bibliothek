@@ -398,7 +398,7 @@ function erzeugeOfflineSync() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get ohneNetz() {
 			return netzLage.offline;
 		},
@@ -420,7 +420,7 @@ function erzeugeOfflineSync() {
 		exportiereWarteschlange,
 		importiereWarteschlange,
 		init
-	};
+	});
 }
 
 export const offlineSync = erzeugeOfflineSync();

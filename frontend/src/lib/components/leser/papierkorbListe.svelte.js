@@ -60,7 +60,7 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 	let ladefehler = $state('');
 	let loeschtGerade = $state(false);
 
-	return {
+	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
 		},
@@ -132,5 +132,5 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 				loeschtGerade = false;
 			}
 		}
-	};
+	});
 }

@@ -142,7 +142,7 @@ export function useInventur() {
 		return Math.min(100, Math.round((lauf.stand.erfasst / lauf.stand.erwartet) * 100));
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get fehlbestand() {
 			return fb.fehlbestand;
 		},
@@ -230,5 +230,5 @@ export function useInventur() {
 		verarbeiteScan,
 		abschliessenNachRueckfrage,
 		fortschrittProzent
-	};
+	});
 }

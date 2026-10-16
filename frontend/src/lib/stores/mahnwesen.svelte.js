@@ -164,7 +164,7 @@ function erzeugeMahnwesen() {
 		await pdfStore.druckeGewaehlteMahnungen(gewaehlteKennungen, gefilterteSchueler, lade);
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get daten() {
 			return daten;
 		},
@@ -232,7 +232,7 @@ function erzeugeMahnwesen() {
 			return pdfStore.drucktPdf;
 		},
 		druckeGewaehlteMahnungen
-	};
+	});
 }
 
 export const mahnwesenStore = erzeugeMahnwesen();

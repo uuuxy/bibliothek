@@ -63,10 +63,10 @@ export function useMahnwesenPdf() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get drucktPdf() {
 			return drucktPdf;
 		},
 		druckeGewaehlteMahnungen
-	};
+	});
 }

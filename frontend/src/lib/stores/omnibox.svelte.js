@@ -1010,8 +1010,6 @@ export function erzeugeOmniboxStore() {
 		return fuehreAktionAus(null, reloadProfileCb, false, false, 'rueckgabe');
 	}
 
-	// Ohne Kontexttyp gibt TypeScript einem Objektliteral in JS einen offenen Typ, und ein Zugriff
-	// auf einen Namen, den der Store nicht hat, bliebe ohne Meldung; @satisfies schließt ihn.
 	return /** @satisfies {object} */ ({
 		get aktiverLeser() {
 			return aktiverLeser;

@@ -48,7 +48,7 @@ export function erzeugeAuflagenSuche(bekannte) {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get suche() {
 			return suche;
 		},
@@ -72,7 +72,7 @@ export function erzeugeAuflagenSuche(bekannte) {
 			treffer = [];
 			fehler = '';
 		}
-	};
+	});
 }
 
 /** Höchstens so viele Treffer; wer mehr braucht, tippt weiter. */

@@ -13,7 +13,7 @@ export function erzeugeBuecherListe() {
 	let liste = $state([]);
 	let fehler = $state(false);
 
-	return {
+	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
 		},
@@ -36,5 +36,5 @@ export function erzeugeBuecherListe() {
 				console.error('Fehler beim Laden der Bücher:', e);
 			}
 		}
-	};
+	});
 }

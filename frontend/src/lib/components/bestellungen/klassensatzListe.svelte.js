@@ -35,7 +35,7 @@ export function erzeugeKlassensatzListe() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
 		},
@@ -58,5 +58,5 @@ export function erzeugeKlassensatzListe() {
 		aendere(id, felder) {
 			liste = liste.map((/** @type {any} */ r) => (r.id === id ? { ...r, ...felder } : r));
 		}
-	};
+	});
 }

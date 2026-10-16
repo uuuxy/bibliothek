@@ -235,7 +235,7 @@ export function useLeserakte() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get akte() {
 			return akte;
 		},
@@ -324,5 +324,5 @@ export function useLeserakte() {
 		oeffneSchaden,
 		meldeSchaden,
 		nachSperre
-	};
+	});
 }

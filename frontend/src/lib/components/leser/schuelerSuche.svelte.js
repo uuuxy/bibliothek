@@ -144,7 +144,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	}
 	ladeJahrgaenge();
 
-	return {
+	return /** @satisfies {object} */ ({
 		get schueler() {
 			return schueler;
 		},
@@ -212,5 +212,5 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			clearTimeout(timer);
 			timer = setTimeout(lade, 300);
 		}
-	};
+	});
 }

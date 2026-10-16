@@ -38,7 +38,7 @@ export function erzeugeDesignAblage() {
 	// statt still mit Vorgabewerten weiterzuarbeiten.
 	let ladefehler = $state('');
 
-	return {
+	return /** @satisfies {object} */ ({
 		get zustand() {
 			return zustand;
 		},
@@ -143,7 +143,7 @@ export function erzeugeDesignAblage() {
 			await heileSchulstammdaten();
 			return true;
 		}
-	};
+	});
 }
 
 // /api/einstellungen verlangt manage_settings — wer den Ausweis-Designer nur zum Drucken

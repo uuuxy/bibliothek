@@ -36,7 +36,7 @@ export function erstelleTitelListe() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get buecher() {
 			return buecher;
 		},
@@ -49,5 +49,5 @@ export function erstelleTitelListe() {
 			return wirdGeladen;
 		},
 		lade
-	};
+	});
 }

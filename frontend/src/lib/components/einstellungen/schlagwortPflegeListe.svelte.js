@@ -39,7 +39,7 @@ export function erzeugeSchlagwortPflegeListe() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
 		},
@@ -58,5 +58,5 @@ export function erzeugeSchlagwortPflegeListe() {
 			clearTimeout(timer);
 			timer = setTimeout(lade, 300);
 		}
-	};
+	});
 }

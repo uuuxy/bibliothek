@@ -32,7 +32,7 @@ export function erzeugeAusweisdruck() {
 	let startPosition = $state(1);
 	const maxPosition = $derived(felderProBogen(idStore.etikettFormat));
 
-	return {
+	return /** @satisfies {object} */ ({
 		get etikettModus() {
 			return etikettModus;
 		},
@@ -67,5 +67,5 @@ export function erzeugeAusweisdruck() {
 			delete document.body.dataset.printMode;
 			delete document.body.dataset.printSide;
 		}
-	};
+	});
 }

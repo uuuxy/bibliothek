@@ -37,7 +37,7 @@ export function erzeugeKlassenVorschlaege() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
 		},
@@ -45,7 +45,7 @@ export function erzeugeKlassenVorschlaege() {
 			return ladefehler;
 		},
 		lade
-	};
+	});
 }
 
 /**

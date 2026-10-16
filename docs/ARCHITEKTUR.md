@@ -798,6 +798,12 @@ frontend/src
   Zugriff: Jede Datenabfrage ist rechtegeschützt, eine erzwungene Ansicht endet in 403.
 - **≤ 200 Zeilen je neuer Komponente und je neuem JS-Modul**, Altbestand darüber darf nicht wachsen (Ratsche).
 - **Geteilter Zustand nur in `stores/*.svelte.js`**, Komponentenzustand lokal mit Runes.
+- **Ein Objektliteral mit Gettern trägt `/** @satisfies {object} */`.** In JS hat es sonst einen
+  offenen Typ: „object literals have an open-ended type (an index signature) that allows adding
+  and looking up properties that were not defined originally" (TypeScript Handbook, „Type
+  Checking JavaScript Files"). svelte-check meldet dann keinen Zugriff auf einen Namen, den der
+  Store nicht hat; gelesen liefert er `undefined`, geschrieben legt er still ein Feld an.
+  `frontend-hygiene-geschlossene-typen.test.js` hält es.
 - **Datenarrays in `.js`-Metadatendateien** (z. B. `rechteKategorien.js`) statt in
   Komponenten.
 - **Logikfreie Teilkomponenten mit `{#snippet}` / `{@render}`** statt kopierter
@@ -2190,17 +2196,8 @@ sieht.
 - **Namen der Oberfläche werden am Syntaxbaum umbenannt, nie nach Wortlaut** (`svelte/compiler`,
   `acorn`): Ersetzen nach Wortgrenze trifft Klassen (`text-error`), Attribute und Schlüssel. Was
   das Werkzeug nicht sieht (Attrappen eines Stores, Props aus einem Spread, JSDoc-Typen), melden
-  svelte-check (an einem Store nur bei geschlossenem Typ, nächster Punkt) und Vitest; belegt
-  wird am Bau, Wort für Wort zwischen beiden Bündeln. Die Umbenennungs-Commits stehen in
-  `.git-blame-ignore-revs`.
-- **Liefert ein Store ein Objektliteral, sieht svelte-check keinen Namen, den es dort nicht
-  gibt.** In JS hat ein Objektliteral einen offenen Typ (TypeScript, „Type Checking JavaScript
-  Files": „object literals have an open-ended type (an index signature) that allows adding and
-  looking up properties that were not defined originally"); ein gelesener oder geschriebener
-  Name, den der Store nicht hat, bleibt im Modul wie im Bauteil ohne Meldung.
-  `/** @satisfies {object} */` an der Rückgabe gibt dem Literal einen Kontexttyp und schließt
-  ihn (`stores/omnibox.svelte.js`). Eine Zuweisung an eine Eigenschaft ohne Setter meldet
-  svelte-check auch beim offenen Typ.
+  svelte-check und Vitest; belegt wird am Bau, Wort für Wort zwischen beiden Bündeln. Die
+  Umbenennungs-Commits stehen in `.git-blame-ignore-revs`.
 - **Eine Änderung der Oberfläche ansehen, ohne den Stack neu zu bauen:** `npm run dev` im Ordner
   `frontend` (Port 5173, reicht die Abrufe an den laufenden Stack durch) und eine Wegwerf-Spec,
   gestartet mit `E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/<Datei>`; sie legt

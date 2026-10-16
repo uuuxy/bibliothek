@@ -36,7 +36,7 @@ export function erzeugeGeraeteListe() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
 		},
@@ -47,5 +47,5 @@ export function erzeugeGeraeteListe() {
 			return ladefehler;
 		},
 		lade
-	};
+	});
 }

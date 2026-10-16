@@ -38,7 +38,7 @@ export function erzeugeEigeneAnliegen() {
 		}
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
 		},
@@ -47,5 +47,5 @@ export function erzeugeEigeneAnliegen() {
 			return fehler;
 		},
 		lade
-	};
+	});
 }

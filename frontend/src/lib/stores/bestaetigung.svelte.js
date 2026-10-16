@@ -32,7 +32,7 @@
 /** @type {(Rueckfrage & { resolve: (antwort: boolean | null) => void }) | null} */
 let offen = $state(null);
 
-export const bestaetigungStore = {
+export const bestaetigungStore = /** @satisfies {object} */ ({
 	get anfrage() {
 		return offen;
 	},
@@ -42,7 +42,7 @@ export const bestaetigungStore = {
 		offen = null;
 		a?.resolve(antwort);
 	}
-};
+});
 
 /**
  * Eine Frage, bei der auch der zweite Knopf etwas auslöst („Titel öffnen" oder „Anderes
