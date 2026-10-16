@@ -62,7 +62,7 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen r
 	mux.Handle("GET /api/print/kontoauszug/{schueler_id}", s.verlangeRecht("view_students")(s.leser().KontoauszugPDF()))
 
 	// Übersicht und Statistik
-	mux.Handle("GET /api/dashboard/summary", s.verlangeRecht("view_students")(s.system().MahnUebersicht()))
+	mux.Handle("GET /api/dashboard/summary", s.verlangeRecht("view_students")(s.system().GetDashboardSummaryHandler()))
 	// view_stats, nicht view_students: Der Schalter, den ein Admin in der Rechte-Oberfläche
 	// umlegt, heißt „Statistiken anzeigen", und das Menü blendet den Punkt genau danach ein
 	// (frontend/src/lib/menue.js). Verlangte die Route view_students, gewänne still der Server,

@@ -32,7 +32,7 @@ type ueberfaelligZeitspanne struct {
 
 // MahnUebersicht liefert die Kennzahlen der überfälligen Ausleihen, nur zusammengefasst und
 // ohne Namen (siehe mahnUebersicht).
-func (t *Tueren) MahnUebersicht() http.HandlerFunc {
+func (t *Tueren) GetDashboardSummaryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
