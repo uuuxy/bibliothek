@@ -23,7 +23,7 @@ import (
 type BestellDienst struct {
 	datenbank           *db.Verbindung
 	katalogAbfragen     repository.KatalogAbfragen
-	lieferantenAbfragen repository.LieferantenAbfragen
+	lieferantenAbfragen *repository.LieferantenAbfragen
 }
 
 // NewBestellDienst baut den Dienst für Bestellungen.

@@ -87,7 +87,6 @@ linters:
       - { linters: [ireturn], text: ^NewKatalogAbfragen returns }
       - { linters: [ireturn], text: ^NewKontoAbfragen returns }
       - { linters: [ireturn], text: ^NewLeserAbfragen returns }
-      - { linters: [ireturn], text: ^NewLieferantenAbfragen returns }
       - { linters: [ireturn], text: ^NewProtokollAbfragen returns }
       - { linters: [ireturn], text: ^NewSchadensAbfragen returns }
       - { linters: [ireturn], text: ^NewVormerkungsAbfragen returns }
