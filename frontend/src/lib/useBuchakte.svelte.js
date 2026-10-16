@@ -85,7 +85,7 @@ function useBuchAktionen() {
 	/**
 	 * @param {any} buch
 	 * @param {any[]} exemplare
-	 * @param {((msg: string, type: string) => void)=} melde
+	 * @param {((msg: string, type?: import('./stores/snackbars.svelte.js').ToastTyp | undefined) => void)=} melde
 	 * @param {(() => void)=} onBack
 	 */
 	async function loescheTitel(buch, exemplare, melde, onBack) {
@@ -319,7 +319,7 @@ export function useBuchakte() {
 		},
 		ladeAlles,
 		/**
-		 * @param {((msg: string, type: string) => void)=} melde
+		 * @param {((msg: string, type?: import('./stores/snackbars.svelte.js').ToastTyp | undefined) => void)=} melde
 		 * @param {(() => void)=} onBack
 		 */
 		loescheTitel: (melde, onBack) => aktionen.loescheTitel(buch, listen.exemplare, melde, onBack),
