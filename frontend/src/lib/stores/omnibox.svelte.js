@@ -606,12 +606,8 @@ export function erzeugeOmniboxStore() {
 
 	/** @param {import('../scanEinordnen.js').ScanEinordnung} einordnung */
 	function verwirfOfflineScan(einordnung) {
+		// Den Ausweis merkt speichereOfflineAktion vorher; hier kommt er nicht an.
 		const meldungen = {
-			// Ausweise ohne Netz bekommen ihren eigenen Weg (Stufe 1, naechster Schritt).
-			// Bis dahin: sagen, dass es nicht geht, statt es stillschweigend zu schlucken.
-			ausweis:
-				`Ohne Netz laesst sich der Ausweis \u201e${einordnung.nummer}\u201c noch nicht laden. ` +
-				`Buecher dieser Person bitte notieren und nach der Rueckkehr der Verbindung buchen.`,
 			// Geräte gehen ohne Netz nicht: Sie hängen an einer Checkliste, die es nur online gibt.
 			geraet:
 				`Geraete lassen sich ohne Netz nicht ausgeben oder zuruecknehmen — die Checkliste dazu gibt es nur online. ` +
