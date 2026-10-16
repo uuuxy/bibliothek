@@ -1,51 +1,50 @@
-# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 29.09.2026)
+# Landesmittel und Kreismittel — Konzept
+
+Stand: 16.10.2026
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
 Beide Teile teilen EIN Vokabular für die Mittelherkunft: `land` (Lernmittelfreiheit) und
 `schultraeger` (Schülerbücherei) — `pkg/mitteltopf`, `bestellungen_verlauf.mittel`.
 
-**Status (17.09.2026):** Teil A ist im ERSTEN SCHNITT GEBAUT — der Bescheid als Brief,
-Datenmodell mit Nummernkreis, Staffel, Einstellungen, Erstellen aus dem Mahnwesen,
-Nachdruck, Übergabe; seit dem 12.09.2026 auch der Rückgabe-Hook. Am 17.09.2026 kam die
-BEWERTUNG dazu: Listenpreis am Titel (Migration 127, aus der DNB gefüllt),
-Beschädigungsgrad am Exemplar, der gerechnete Betragsvorschlag samt Herleitung in jedem
-Weg — Melde-Dialog, Bescheid aus einer Forderung, Bescheid aus einer überfälligen Ausleihe
-— und die wählbare Berechnungsgrundlage. Damit ist auch der „Staffel-Vorschlag im
-Schaden-Dialog" aus Etappe 4 erledigt. Offen bleiben aus Abschnitt 4.7 der Rest der
-Etappe 2 (die Folgen der Übergabe: Exemplare `VERLUST`, Übergabe-PDF), Etappe 3
-(Kreis-Rechnung) und der Rest der Etappe 4 (Altbriefe abräumen). Die Bauschritte dazu
-standen ausgearbeitet in OFFEN.md (4.4, 5.3, 5.4) und sind dort entfallen; nachzulesen mit
-`git show c8049cf8:docs/OFFEN.md`.
-Teil B ist ebenfalls im ersten Schnitt gebaut (Abschnitt 7.3).
+**Was gebaut ist:** Teil A im ersten Schnitt — der Bescheid als Brief, Datenmodell mit
+Nummernkreis, Staffel, Einstellungen, Erstellen aus dem Mahnwesen, Nachdruck, Übergabe und
+der Rückgabe-Hook; dazu die Bewertung: Listenpreis am Titel (Migration 127, aus der DNB
+gefüllt), Beschädigungsgrad am Exemplar, der gerechnete Betragsvorschlag samt Herleitung in
+jedem Weg — Melde-Dialog, Bescheid aus einer Forderung, Bescheid aus einer überfälligen
+Ausleihe — und die wählbare Berechnungsgrundlage. Offen sind aus Abschnitt 4.7 das
+Übergabe-PDF (Etappe 2), die Rechnung für den Schulträger (Etappe 3) und der Rest der
+Etappe 4 (Altbriefe abräumen). Die ausgearbeiteten Bauschritte dazu stehen in einer
+früheren Fassung von OFFEN.md (4.4, 5.3, 5.4): `git show c8049cf8:docs/OFFEN.md`.
+Teil B ist im ersten Schnitt gebaut (Abschnitt 7.3).
 
-**Was der Einbau geworden ist (Absprache 10.09.2026, drei Entscheidungen):** Der Bescheid
-entsteht in der bestehenden Auswahlleiste des Mahnwesens und nur bei GENAU EINEM
+**Wie der Bescheid eingebaut ist (drei Entscheidungen, abgesprochen am 10.09.2026):** Der
+Bescheid entsteht in der bestehenden Auswahlleiste des Mahnwesens und nur bei GENAU EINEM
 markierten Schüler — jeder Betrag ist Ermessen, jede Referenznummer unwiderruflich. Die
-Briefe leben im vierten Reiter derselben Reiterzeile (Alle → Akut fällig → Eskaliert →
-Bescheide), dessen Zahl nur die abgelaufenen Fristen nennt. Der Erstell-Schritt ist EIN
-Basis-Dialog ohne Schritte (Material 3: Vollbild ist die Form für Telefone, einen Stepper
-gibt es dort nicht) und zeigt genau das, was ein Mensch entscheidet: welche Bücher, welcher
-Betrag, mit der Herleitung daneben.
+Briefe stehen im vierten Reiter derselben Reiterzeile (Alle → Akut fällig → Eskaliert →
+Schadensersatz), zusammen mit den Kindern, die einen Verlust oder Schaden gemeldet haben und
+noch keinen Brief; die Zahl am Reiter zählt, was bei der Schule liegt. Der Erstell-Schritt
+ist EIN Basis-Dialog ohne Schritte (Material 3: Vollbild ist die Form für Telefone, einen
+Stepper gibt es dort nicht) und zeigt genau das, was ein Mensch entscheidet: welche Bücher,
+welcher Betrag, mit der Herleitung daneben.
 
-**Zwei Fehler, die erst das ANSEHEN des fertigen PDFs zeigte** (die Gates waren grün):
-„Ayşe" wurde zu „Ay.e" (der Zeichensatz des PDFs kennt das ş nicht), und der Seitenumbruch
-riss die Tabellenkopfzeile entzwei. Beide Klassen haben jetzt ein Gate; für das zweite
-liest `internal/pdftest` die Seiten getrennt (`TexteJeSeite`).
+**Am fertigen PDF prüfen:** Zwei Fehler zeigen erst die Seiten selbst, auch bei grünen
+Gates: ein Zeichen, das der Zeichensatz des PDFs nicht kennt („Ayşe" würde zu „Ay.e"), und
+ein Seitenumbruch, der die Kopfzeile der Tabelle trennt. Beide Klassen haben ein Gate; für
+das zweite liest `internal/pdftest` die Seiten getrennt (`TexteJeSeite`).
 
-**Anlass:** Am 08./09.09.2026 lagen vier Unterlagen der Schule vor — die
-Verfahrensbeschreibung für den Schadensersatz bei Lernmitteln (Stand 2014), die
-Arbeitshilfe dazu, das verbindliche Musteranschreiben an die Erziehungsberechtigten und
-eine Anforderungsliste „Mahnverfahren". Auftrag: das Verfahren in die bestehende
-Anwendung einbauen, ohne die Struktur zu zerstören, und dabei möglichst viel Bestehendes
-weiterverwenden. Zwei Randbedingungen aus dem Gespräch: **Den Brief schickt das
+**Grundlage** sind vier Unterlagen der Schule: die Verfahrensbeschreibung für den
+Schadensersatz bei Lernmitteln (Stand 2014), die Arbeitshilfe dazu, das verbindliche
+Musteranschreiben an die Erziehungsberechtigten und eine Anforderungsliste
+„Mahnverfahren". Das Verfahren steht in der bestehenden Anwendung und nimmt so viel
+Bestehendes wie möglich. Zwei Randbedingungen der Schule: **Den Brief schickt das
 Sekretariat** (im System als Admin angemeldet), nicht die Lernmittel-Stelle. Und es
 braucht **zwei Rechnungen**, weil zwei Töpfe: Lernmittel gehören dem Land, die
 Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
 
 ---
 
-## 1. Was das Verfahren der Schule verlangt (aus den Unterlagen, Stand 09.09.2026)
+## 1. Was das Verfahren der Schule verlangt (aus den Unterlagen)
 
 ### 1.1 Lernmittel (Landesmittel)
 
@@ -74,10 +73,10 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
   Original + Buchungsbeleg an die Schulaufsicht, Kopie bleibt; **spätere Rückgabe →
   Schulaufsicht unverzüglich informieren.**
 - **Keine Sperre bei Lernmitteln:** Die Sperre weiterer Ausleihen bis zur Zahlung steht in
-  keiner der vorliegenden Unterlagen des Landes; sie war eine Annahme. Die Schule hat am
-  22.09.2026 entschieden: Für Lernmittel gibt es keinerlei automatische Sperre, auch keine
-  übergehbare; für die Schülerbücherei bleibt sie. Am 28.09.2026 entschieden: auch nicht die
-  der Ehemaligen und auch nicht bei der Verlängerung. Gebaut in
+  keiner der vorliegenden Unterlagen des Landes. Die Schule hat am 22.09.2026 entschieden:
+  Für Lernmittel gibt es keinerlei automatische Sperre, auch keine übergehbare; für die
+  Schülerbücherei bleibt sie. Am 28.09.2026 entschieden: auch nicht die der Ehemaligen und
+  auch nicht bei der Verlängerung. Gebaut in
   `internal/service/ausleih_sperren.go` (`pruefeAusleihSperren`, `PruefeSperreAmLeser`). „Nur Überweisung, keine Barzahlung" ist
   dagegen belegt (Arbeitshilfe, Abschnitt 1).
 
@@ -89,9 +88,8 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
    Schulaufsicht anfordern. Die Bauweise unten hält den Brieftext an EINER Stelle
    austauschbar; Struktur, Nummer, Konto und Frist dürften unverändert sein.
 2. Barzahlung „in der Bibliothek" ist für Landeseigentum die **Ausnahme, nicht der Weg**.
-   Die beiden Briefe, die sie verlangten, nennen seit dem 17.09.2026 das Konto des Landes
-   (Elternbrief und Rechnung, `pdf/zahlungsweg.go`); der Mahnbrief verlangt ohnehin kein
-   Geld. Bar angenommenes Geld bleibt möglich — als Einzelfall mit Quittung, nicht als
+   Die Rechnung nennt für Lernmittel das Konto des Landes (`pdf/zahlungsweg.go`); der
+   Mahnbrief verlangt kein Geld. Bar angenommenes Geld bleibt möglich — als Einzelfall mit Quittung, nicht als
    Weg, den ein Brief vorsieht.
 
 ### 1.2 Schülerbücherei (Mittel des Schulträgers)
@@ -100,13 +98,12 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
   gehört ihm.
 - Das Benutzungsverhältnis folgt der Benutzungsordnung der Schule: zuerst
   Ersatzbeschaffung, sonst Geld in Höhe des Neuwerts.
-- **Umgesetzt seit 17.09.2026:** „Neuwert" ist der LISTENPREIS, nicht der Einkaufspreis —
-  was ein Ersatz heute kostet. Vorher rechnete das Programm mit dem Kaufpreis, weil es
-  keinen anderen kannte; ein 2015 für 8 € beschaffter Roman wurde mit 8 € ersetzt, obwohl
-  er heute 14 € kostet. Die Staffel des Landes gilt hier NICHT (kein Altersabschlag), ein
-  erfasster Beschädigungsgrad dagegen schon. Zur Schülerbücherei sagt weder der Erlass vom
-  17.12.2014 noch die Arbeitshilfe etwas — beide sprechen ausschließlich von Lehrwerken
-  der Lernmittelfreiheit (am 17.09.2026 nachgesehen).
+- „Neuwert" ist der LISTENPREIS, nicht der Einkaufspreis — was ein Ersatz heute kostet. Mit
+  dem Kaufpreis würde ein 2015 für 8 € beschaffter Roman mit 8 € ersetzt, obwohl er heute
+  14 € kostet (`ersatzwert.BerechneNeuwert`). Die Staffel des Landes gilt hier NICHT (kein
+  Altersabschlag), ein erfasster Beschädigungsgrad dagegen schon. Zur Schülerbücherei sagt
+  weder der Erlass vom 17.12.2014 noch die Arbeitshilfe etwas — beide sprechen
+  ausschließlich von Lehrwerken der Lernmittelfreiheit.
 
 Folge: Für den Bestand der Schülerbücherei gibt es **keinen förmlichen Bescheid, keine
 Referenznummer im Landesformat** — sondern eine gewöhnliche Rechnung/Zahlungsaufforderung
@@ -116,27 +113,28 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 
 ---
 
-## 2. Was die Anwendung heute kann (am Code nachgesehen)
+## 2. Was die Anwendung kann (am Code nachgesehen)
 
 | Baustein                             | Fundstelle                                                                                                                                                    | Stand                                                                                                                                                              |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Forderung anlegen                    | `repository/schaden.go` (`SchadensAbfragen.Melde` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `SchadenMeldenDialog.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. Der Betrag ist ein gerechneter VORSCHLAG mit Herleitung (seit 17.09.2026; vorher Freitext mit der Vorgabe 15,00 € ohne Bezug zum Preis) — überschreibbar, denn er liegt im Ermessen der Schule.               |
-| Forderung erledigen                  | `api/schaden/forderung_erledigen.go`, `repository/forderung_erledigen.go` (Bezahlt / Storno mit Grund, Audit, 409 bei Doppelbuchung)                                              | ✅ „Bezahlt" bedeutet heute **Barzahlung an der Theke**.                                                                                                              |
-| Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/schaden/rechnung.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), Zahlungsweg je Topf seit 17.09.2026 — aber weiterhin ohne Nummer und ohne Frist im Landesformat.                  |
+| Forderung anlegen                    | `repository/schaden.go` (`SchadensAbfragen.Melde` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `SchadenMeldenDialog.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. Der Betrag ist ein gerechneter VORSCHLAG mit Herleitung — überschreibbar, denn er liegt im Ermessen der Schule.               |
+| Forderung erledigen                  | `api/schaden/forderung_erledigen.go`, `repository/forderung_erledigen.go` (Bezahlt / Storno mit Grund, Audit, 409 bei Doppelbuchung)                                              | ✅ „Bezahlt" bedeutet **Barzahlung an der Theke**.                                                                                                              |
+| Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/schaden/rechnung.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), Zahlungsweg je Topf (`pdf/zahlungsweg.go`), ohne Nummer und ohne Frist im Landesformat.                  |
 | Brief 3: Eltern-Mahnbrief            | `pdf/mahnbrief.go`, Vorlage `MAHNUNG_ELTERN`                                                                                                                  | DIN-5008-Fensterkuvert, Falzmarken, Tabelle der überfälligen Bücher — **die Bauform, die der Bescheid braucht.**                                                   |
-| Mahnwesen                            | `api/mahnwesen*.go`, `repository/mahnwesen_*.go`, `Mahnwesen.svelte` + `components/mahnwesen/`                                                                | Überfällige nach Klasse, Auswahl → „Mahnbriefe drucken" (Mahnstufe steigt nur beim Druck), Klassenleitungs-Mail, Sperre ab `max_overdue_days` (nur Schülerbücherei). |
-| Schulstammdaten                      | `SchuleKategorie.svelte`, `einstellungen*.go`                                                                                                                 | Name, Anschrift, Eigentumsvermerk. **Fehlt:** Schulnummer, Schulaufsicht (Nr. + Anschrift), Bankverbindungen, Schulleitung, Geschäftszeichen/Bearbeiter/Durchwahl. |
-| Preise                               | `buecher_exemplare.einkaufspreis` (aus Littera übernommen), `erworben_am` = Littera-Zugangsdatum (echt, nicht Importdatum), `buecher_titel.listenpreis` und `buecher_exemplare.zustand_abwertung_prozent` (Migration 127) | ✅ seit 17.09.2026. Der Listenpreis kommt beim Anlegen über die ISBN aus der DNB (MARC21 020 $c) und ist von Hand überschreibbar; leer heißt „nicht erfasst", dann weicht die Staffel auf den Kaufpreis aus und sagt es. |
+| Mahnwesen                            | `api/mahnwesen/`, `repository/mahnbriefe.go`, `Mahnwesen.svelte` + `components/mahnwesen/`                                                                | Überfällige nach Klasse, Auswahl → „Mahnbriefe drucken" (Mahnstufe steigt nur beim Druck), Klassenleitungs-Mail, Sperre ab `max_overdue_days` (nur Schülerbücherei). |
+| Schulstammdaten                      | `SchuleKategorie.svelte`, `einstellungen*.go`                                                                                                                 | Name, Anschrift, Eigentumsvermerk; die Angaben des Bescheids (Bereichs-Nr., Schulnummer, Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle, Bankverbindung) in der Kategorie „Schadensersatz" (`repository/einstellungen.go`). |
+| Preise                               | `buecher_exemplare.einkaufspreis` (aus Littera übernommen), `erworben_am` = Littera-Zugangsdatum (echt, nicht Importdatum), `buecher_titel.listenpreis` und `buecher_exemplare.zustand_abwertung_prozent` (Migration 127) | ✅ Der Listenpreis kommt beim Anlegen über die ISBN aus der DNB (MARC21 020 $c) und ist von Hand überschreibbar; leer heißt „nicht erfasst", dann weicht die Staffel auf den Kaufpreis aus und sagt es. |
 | Ausleihhistorie je Exemplar          | `ausleihen` (Zeilen bleiben nach der Anonymisierung ohne Person)                                                                                              | Zählbar. Aus Littera kamen nur die **offenen** Ausleihen — für den Altbestand ist die Zahl der Verleihjahre unbekannt.                                             |
-| Volljährigkeit                       | `schueler.geburtsdatum` (NULL bei Altdaten)                                                                                                                   | Anrede „Erziehungsberechtigte" vs. volljährig ableitbar.                                                                                                           |
-| Rollen                               | ADMIN / MITARBEITER / KOLLEGIUM / HELFER; Sekretariat = ADMIN                                                                                                 | Neues Recht nach dem Muster `merge_students` (db/rechte_vorgabe.go, rechteKategorien.js, schuelerRechte.js, permissions.spec.js, PII-Matrix, FACHKONZEPT).                 |
-| Nummernkreise                        | `barcode_seq`; Regel: EIN Generator, nie recyceln (Register 068)                                                                                              | Für die Referenznummer braucht es einen Zähler je Kassenjahr.                                                                                                      |
+| Volljährigkeit                       | `leser.geburtsdatum` (NULL bei Altdaten)                                                                                                                   | Anrede „Erziehungsberechtigte" vs. volljährig ableitbar.                                                                                                           |
+| Rollen                               | ADMIN / MITARBEITER / KOLLEGIUM / HELFER; Sekretariat = ADMIN                                                                                                 | Kein eigenes Recht für den Bescheid: Erstellen und Übergeben verlangen `edit_students`, Lesen `view_students` (`api/routen_leser.go`; Grund in 4.7).                 |
+| Nummernkreise                        | `barcode_seq`; Regel: EIN Generator, nie recyceln (Register 068)                                                                                              | Die Referenznummer zählt `schadensersatz_nummern` je Topf und Kassenjahr (Migration 110).                                                                                                      |
 
-**Kern-Befund:** Die Forderung (`schadensfaelle`) ist die richtige Wahrheit — Sperre (nur
-Schülerbücherei), Löschblockade, DSGVO-Auskunft, Zusammenführen, Bezahlt/Storno hängen alle daran. Es fehlt
-ihr die **Art** (nicht zurückgegeben / beschädigt), der **Topf** (Land / Schulträger) und
-der **Brief** als eigener Datensatz mit Nummer, Frist und Status. Die drei Briefe sind drei
-Fassungen derselben Sache und werden zu **einem Renderer mit zwei Varianten**.
+**Kern:** Die Forderung (`schadensfaelle`) ist die Wahrheit — Sperre (nur Schülerbücherei),
+Löschblockade, DSGVO-Auskunft, Zusammenführen, Bezahlt/Storno hängen alle daran. Sie trägt
+die **Art** (`schadensfaelle.art`: nicht zurückgegeben / beschädigt); den **Topf** liefert
+das Eigentum des Exemplars (`repository.ExemplarTopfSQL`); der **Brief** ist ein eigener
+Datensatz mit Nummer, Frist und Status (`schadensersatz_bescheide`), seine Positionen sind
+die Forderungen (`schadensfaelle.bescheid_id`).
 
 ---
 
@@ -144,13 +142,13 @@ Fassungen derselben Sache und werden zu **einem Renderer mit zwei Varianten**.
 
 | Nr. | Wunsch                                                                                                              | Bewertung                                                                                                                                                                                                                                                                                                                    |
 | --- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Automatische Abwertung (10 %/Jahr oder je Ausleihe)                                                                 | ✅ **gebaut am 17.09.2026**, anders als hier zunächst bewertet. Der Einwand war, ein laufend abgewerteter Buchwert habe außerhalb der Forderung keinen Zweck; er hat einen — man will vor dem Schadensfall wissen, was ein Buch noch wert ist. Ein ZWEITER, frei eingestellter Abwertungssatz wäre trotzdem falsch geblieben (zwei Beträge für dasselbe Buch, einer davon im Bescheid): Gebaut ist die Staffel des Erlasses selbst, jetzt auch sichtbar an jedem Exemplar. |
-| 2   | Beschädigung mit Prozentwert bei Katalogisierung/Rückgabe                                                           | ✅ **gebaut am 17.09.2026**: `zustand_abwertung_prozent` am Exemplar, Feld im Zustands-Dialog der Buchakte, wirkt auf jeden künftigen Ersatzbetrag (auch für den Bücherei-Bestand). Der Wert ist ein ZUSTAND, keine Forderung — er erzeugt von sich aus keinen Betrag. Nicht an der Theke: Die ist ein Scanfeld, kein Formular (entschieden 17.09.2026); erfasst wird nach der Rückgabe in der Buchakte. |
-| 3   | Einkaufspreis UND Listenpreis, wählbar                                                                              | ✅ **gebaut am 17.09.2026** (Migration 127 + Einstellung „Immer mit dem Einkaufspreis rechnen" in der Kategorie Schadensersatz). Aus = der heutige Listenpreis, wie es die Arbeitshilfe verlangt; an = immer der Einkaufspreis. Die Herleitung nennt, welcher Preis gegolten hat, und unterscheidet „kein Listenpreis hinterlegt" von „so eingestellt". |
+| 1   | Automatische Abwertung (10 %/Jahr oder je Ausleihe)                                                                 | ✅ Gebaut ist die Staffel des Erlasses selbst, sichtbar an jedem Exemplar („Ersatzwert heute" in der Buchakte): Man will vor dem Schadensfall wissen, was ein Buch noch wert ist. Ein ZWEITER, frei eingestellter Abwertungssatz wäre falsch (zwei Beträge für dasselbe Buch, einer davon im Bescheid). |
+| 2   | Beschädigung mit Prozentwert bei Katalogisierung/Rückgabe                                                           | ✅ `zustand_abwertung_prozent` am Exemplar, Feld im Zustands-Dialog der Buchakte, wirkt auf jeden künftigen Ersatzbetrag (auch für den Bücherei-Bestand). Der Wert ist ein ZUSTAND, keine Forderung — er erzeugt von sich aus keinen Betrag. Nicht an der Theke: Die ist ein Scanfeld, kein Formular (entschieden am 17.09.2026); erfasst wird nach der Rückgabe in der Buchakte. |
+| 3   | Einkaufspreis UND Listenpreis, wählbar                                                                              | ✅ Migration 127 und die Einstellung „Immer mit dem Einkaufspreis rechnen" in der Kategorie Schadensersatz. Aus = der heutige Listenpreis, wie es die Arbeitshilfe verlangt; an = immer der Einkaufspreis. Die Herleitung nennt, welcher Preis gegolten hat, und unterscheidet „kein Listenpreis hinterlegt" von „so eingestellt". |
 | 4   | Übersicht Verluste/Beschädigungen                                                                                   | Gibt es (Mahnwesen, Fehlbestand, Gebühren in der Akte). Neu: Liste der Bescheide mit Fristablauf.                                                                                                                                                                                                                            |
 | 5   | Versand per Post/E-Mail/App; Referenznummer, jährlich neu                                                           | **Nur Druck/Post.** Das Verfahren verlangt Schriftform; Datenschutz-Entscheidung A3 vom 22.08.2026 (keine Eltern-Mahnmail). Referenznummer ja; „Zurücksetzen zu Jahresbeginn" ergibt sich, weil das Kassenjahr Teil der Nummer ist.                                                                                          |
 | 6   | Zahlung bestätigen; Rückgabe → Buch wieder verfügbar, Saldo null; Zahlung ohne Rückgabe → „verloren" + **gelöscht** | Bezahlt gibt es. Rückgabe → Forderung automatisch stornieren (neu). **Gelöscht wird nie**: Die Bestandskartei muss die Aussonderung nachweisen → `ist_ausgesondert`/`aussonderung_grund = 'VERLUST'`, genau wie heute.                                                                                                       |
-| 7   | Nach Fristablauf: zweiter Ausdruck für die Schulaufsicht, Rest automatisch „verloren", Saldo bereinigt              | Liste „Frist abgelaufen" + Aktion **„An die Schulaufsicht übergeben"** (Mensch klickt, kein Cron): Original-Nachdruck + Sammelliste, Bücher werden ausgesondert. Automatik über Nacht wäre eine stille Aussonderung — genau die Bugklasse, die dieses Projekt meidet. Der Satz „Der Saldo der betroffenen Leser wird entsprechend bereinigt" beantwortet E6 (nachgetragen am 24.09.2026). |
+| 7   | Nach Fristablauf: zweiter Ausdruck für die Schulaufsicht, Rest automatisch „verloren", Saldo bereinigt              | Liste „Frist abgelaufen" + Aktion **„An die Schulaufsicht übergeben"** (Mensch klickt, kein Cron): Original-Nachdruck + Sammelliste, Bücher werden ausgesondert. Automatik über Nacht wäre eine stille Aussonderung — genau die Bugklasse, die dieses Projekt meidet. Der Satz „Der Saldo der betroffenen Leser wird entsprechend bereinigt" beantwortet E6. |
 | —   | Frist **sechs** Wochen                                                                                              | Verfahrensbeschreibung und Arbeitshilfe sagen **vier Wochen mit Datum** → Vorgabe 28 Tage, einstellbar (E3).                                                                                                                                                                                                                 |
 | —   | Importfelder Ansprechpartner 2/3 (Eltern-Namen, zweite Anschrift getrennt lebender Eltern)                          | **Nicht bauen (E8).** Das Musteranschreiben adressiert „An die Erziehungsberechtigten des/der Schülers/in" — Elternnamen braucht es nicht; die LUSD liefert eine Anschrift; zusätzliche Daten widersprechen der Datensparsamkeit. Ein zweiter Brief an einen getrennt lebenden Elternteil ist ein Handfall des Sekretariats. |
 
@@ -189,8 +187,8 @@ Schulaufsicht ordnet Zahlungen darüber zu). `mittel` ist dasselbe Vokabular wie
 ### 4.2 Betrag: Vorschlag, kein Automat (`pkg/ersatzwert`)
 
 Reine Funktion `Berechne(verleihjahr, kaufpreis, neupreis, zustandAbschlag, quelle) Vorschlag`
-nach der Staffel der Schule (seit dem 17.09.2026 mit dem Zustands-Abschlag des Exemplars und
-der eingestellten Preisquelle; `BerechneNeuwert` ist derselbe Weg ohne Staffel). `verleihjahr = max(Anzahl Schuljahre mit Ausleihe des
+nach der Staffel der Schule (mit dem Zustands-Abschlag des Exemplars und der eingestellten
+Preisquelle; `BerechneNeuwert` ist derselbe Weg ohne Staffel). `verleihjahr = max(Anzahl Schuljahre mit Ausleihe des
 Exemplars, Schuljahre seit erworben_am + 1)` — die zweite Größe fängt den Littera-Altbestand
 ohne Historie ab (ein 2019 gekauftes Buch ist nicht im 1. Verleihjahr, nur weil wir seine
 Ausleihen nicht kennen). Der Dialog zeigt die Herleitung („3. Verleihjahr → 60 % von
@@ -200,15 +198,15 @@ Ausleihen nicht kennen). Der Dialog zeigt die Herleitung („3. Verleihjahr → 
 
 | Weg                                                                                                   | Was passiert                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/schueler/{id}/bescheide` `{mittel, positionen:[{ausleihe_id \| schadensfall_id, betrag}]}` | Eine Transaktion: Schülerzeile sperren, Positionen prüfen (gehören zum Schüler, Eigentum passt zum Topf via `repository.ExemplarTopfSQL`, seit dem 29.09.2026; vorher `ist_lernmittel`), für überfällige Ausleihen je eine Forderung `art = nicht_zurueckgegeben` anlegen (**Ausleihe bleibt offen, Buch wird NICHT ausgesondert** — es kann noch zurückkommen), Nummer ziehen, Frist rechnen, Snapshot schreiben, PDF erzeugen, **erst dann committen** (Muster `erzeugeUndCommitBulkMahnung`: Papier == DB), Audit. |
+| `POST /api/schueler/{id}/bescheide` `{mittel, positionen:[{ausleihe_id \| schadensfall_id, betrag}]}` | Eine Transaktion: Schülerzeile sperren, Positionen prüfen (gehören zum Schüler, Eigentum passt zum Topf via `repository.ExemplarTopfSQL`), für überfällige Ausleihen den Verlust buchen (`bucheVerluste`: die Ausleihe endet, das Exemplar wird als `VERLUST` ausgesondert, die Forderung `art = nicht_zurueckgegeben` entsteht — so gibt es keinen Brief über ein Buch, dessen Ausleihe weiterläuft; kommt es zurück, storniert der Rückgabe-Hook die Forderung), Nummer ziehen, Frist rechnen, Snapshot schreiben, PDF erzeugen, **erst dann committen** (Muster `erzeugeMahnbriefe`: Papier == DB), Audit. |
 | `GET /api/bescheide/{id}/pdf`                                                                         | Nachdruck aus dem Snapshot, dieselbe Nummer, `letzter_druck_am`. Nie eine neue Nummer.                                                                                                                                                                                                                                                                                                                                                                   |
-| `POST /api/bescheide/{id}/uebergeben`                                                                 | Nach Fristablauf, von Hand: Status `uebergeben`; Forderungen `nicht_zurueckgegeben` → Ausleihe beenden + Exemplar `VERLUST` (Ablauf Nr. 7). Liefert Übergabe-PDF: Original + Sammelliste für die Schulaufsicht.                                                                                                                                                                                                                                          |
-| Rückgabe-Hook — **GEBAUT 12.09.2026** in `repository/bescheid_rueckkehr.go` (`verbucheRueckkehr`), gerufen aus der Reaktivierung beim Scan (`versucheReaktivierung`) | Hat das Exemplar eine offene Forderung `nicht_zurueckgegeben`: Storno mit Grund „Rückgabe am …"; steht der Brief auf `uebergeben`, wird NICHTS storniert — der Bescheid bekommt `rueckgabe_nach_uebergabe` und die Theke den Satz, dass die Aufsicht unverzüglich zu informieren ist. **Nicht in `repository/ausleihe.go`, wie hier geplant:** `SchadensAbfragen.Melde` beendet die Ausleihe schon beim Anlegen der Forderung und sondert das Exemplar aus — wenn das Buch zurückkommt, gibt es keine offene Ausleihe mehr, sondern ein ausgesondertes Exemplar am Scanner. Reaktivierung und Storno liegen in EINER Transaktion. |
+| `POST /api/bescheide/{id}/uebergeben`                                                                 | Nach Fristablauf, von Hand: Status `uebergeben`, nur aus „offen", nur nach Fristablauf und nur, solange etwas zu zahlen ist (`Uebergebe`). Ausleihe und Exemplar sind da schon gebucht (beim Erstellen oder Melden). Offen: das Übergabe-PDF, Original + Sammelliste für die Schulaufsicht (Etappe 2).                                                                                                                                                                                                                                          |
+| Rückgabe-Hook in `repository/bescheid_rueckkehr.go` (`verbucheRueckkehr`), gerufen aus der Reaktivierung beim Scan (`versucheReaktivierung`) | Hat das Exemplar eine offene Forderung `nicht_zurueckgegeben`: Storno mit Grund „Rückgabe am …"; steht der Brief auf `uebergeben`, wird NICHTS storniert — der Bescheid bekommt `rueckgabe_nach_uebergabe` und die Theke den Satz, dass die Aufsicht unverzüglich zu informieren ist. **Nicht in `repository/ausleihe.go`:** `SchadensAbfragen.Melde` beendet die Ausleihe schon beim Anlegen der Forderung und sondert das Exemplar aus — wenn das Buch zurückkommt, gibt es keine offene Ausleihe mehr, sondern ein ausgesondertes Exemplar am Scanner. Reaktivierung und Storno liegen in EINER Transaktion. |
 | Bezahlt / Storno                                                                                      | unverändert (`/api/schadensfaelle/{id}/bezahlt`, `/storno`). Brief gilt als `erledigt`, wenn keine Position mehr offen ist (abgeleitet, nicht doppelt gespeichert).                                                                                                                                                                                                                                                                                      |
 | `GET /api/bescheide?status=`                                                                          | Liste für das Sekretariat. Gebaut ist nur `status=offen` (nicht übergeben), ohne Parameter alle; Frist abgelaufen, übergeben und „Rückgabe nach Übergabe" zeigt die Liste als Zustand je Bescheid, nicht als Filter.                                                                                                                                                                                                                                     |
 
-Recht: neu `schadensersatz_bescheide` (ab Werk nur ADMIN — das Sekretariat), Anlegen
-einer Forderung bleibt `edit_students`. PII-Stufe 3 → PII-Matrix + Antwort-Gate.
+Recht: `edit_students` zum Erstellen und Übergeben, `view_students` zum Lesen
+(`api/routen_leser.go`), kein eigenes Recht (4.7). PII-Stufe 3 → PII-Matrix + Antwort-Gate.
 
 ### 4.4 Briefe: ein Renderer, zwei Varianten (`pdf/bescheid.go`)
 
@@ -262,7 +260,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 
 ### 4.7 Etappen
 
-1. ~~Datenmodell + Nummernkreis + Landes-Bescheid + Einstellungen.~~ **GEBAUT 10.09.2026**
+1. Datenmodell + Nummernkreis + Landes-Bescheid + Einstellungen — **gebaut**
    (Migration 110, `pkg/ersatzwert`, `pdf/bescheid.go`, `repository/bescheid.go`,
    `api/schaden/bescheid.go`, Kategorie „Schadensersatz", Reiter und Dialog im Mahnwesen).
    Abweichungen vom Plan oben, jeweils mit Grund: Der Bescheid entsteht im **Mahnwesen**
@@ -273,27 +271,26 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
    blockiert); das Recht ist `edit_students` statt eines neuen — ein eigenes Recht bliebe
    ab Werk bei niemandem und wäre eine Tür, die keiner öffnen kann.
 2. Mahnwesen-Anbindung (Auswahl → Bescheide) + Bescheid-Liste + Übergabe + Rückgabe-Hook.
-   Anbindung, Liste und der **Rückgabe-Hook** (12.09.2026) sind gebaut; die Übergabe setzt
-   bisher nur den Status. Offen: ihre Folgen (Exemplare `VERLUST`,
-   Übergabe-PDF; die Ausleihe beendet schon `SchadensAbfragen.Melde` beim Melden). **Beim Bau zwingend:** Sobald die Übergabe Exemplare auf `VERLUST` setzt,
-   führt der Fehlbestandsbericht („Buch doch gefunden", `MarkiereVerlustAlsGefunden`) zum
-   zweiten Mal in den Umlauf zurück — `verbucheRueckkehr` gehört dann auch dorthin, sonst
-   endet die Forderung nur an der Theke.
+   Gebaut sind Anbindung, Liste, Rückgabe-Hook und die Übergabe als Status. Das Exemplar
+   steht schon beim Erstellen des Briefs oder beim Melden auf `VERLUST` (`bucheVerluste`,
+   `SchadensAbfragen.Melde`), und ein „Buch doch gefunden" im Fehlbestandsbericht
+   (`MarkiereVerlustAlsGefunden`) storniert die Forderung über denselben Weg wie die Theke
+   (`verbucheRueckkehr`). Offen: das Übergabe-PDF.
 3. Schulträger-Rechnung + Betriebsbereitschaft-Warnung. **Bis dahin nimmt der Server nur
-   `mittel = land` an, und jede Position muss ein Lernmittel sein** (Bestands-Durchgang
-   10.09.2026: der Dialog schickte `schultraeger`, sobald kein Lernmittel gewählt war — die
-   Eltern bekamen für ein Bücherei-Buch den Landes-Wortlaut mit Landeskonto). Beim Bau
+   `mittel = land` an, und jede Position muss ein Buch des Landes sein** (409 an der Tür,
+   `ExemplarTopfSQL`) — sonst bekämen Eltern für ein Bücherei-Buch den Landes-Wortlaut mit
+   Landeskonto. Beim Bau
    zwingend: Der Topf muss in die Referenznummer oder in ein eigenes Format — der Zähler
    läuft je Topf, `referenznummer` ist aber global UNIQUE, und die heutige Nummer enthält
    keinen Topf. Der erste Brief des zweiten Topfs kollidiert sonst mit dem ersten des
    anderen (23505, Rollback, der Zähler bleibt stehen — der Topf wäre dauerhaft blockiert).
 4. Altbriefe abräumen, Doku (FACHKONZEPT §3/§14, HANDBUCH, PII-Matrix, invarianten §7,
-   SECURITY/VVT: neuer Zweck „Bescheid"). Der Staffel-Vorschlag im Schaden-Dialog stand
-   hier und ist am 17.09.2026 gebaut.
+   SECURITY/VVT: neuer Zweck „Bescheid"). Der Elternbrief je Schadensfall ist entfernt
+   (Migration 164), der Staffel-Vorschlag im Schaden-Dialog gebaut.
 
 ---
 
-## 5. Was ich bewusst NICHT baue
+## 5. Was bewusst nicht gebaut wird
 
 - E-Mail-/App-Versand der Bescheide (Schriftform; A3).
 - Automatische Aussonderung per Cron nach Fristablauf (stille Bestandsänderung).
@@ -308,20 +305,19 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 | #      | Frage                                                                                                                                                                                          | Empfehlung                                                                                                                                |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | **E1** | Bereichs-Nr. (4-stellig) und Schulnummer (4-stellig) für die Referenznummer — beides kennt nur das Sekretariat bzw. die Schulaufsicht.                                                         | Sekretariat fragt nach; bis dahin Platzhalter, Betriebsbereitschaft warnt.                                                                |
-| **E2** | Aktuelle Fassung des Verfahrens samt Musterschreiben bei der Schulaufsicht anfordern? Ich baue nach dem 2014er Muster; der Text ist an einer Stelle austauschbar.                              | Ja, anfordern — parallel bauen.                                                                                                           |
+| **E2** | Aktuelle Fassung des Verfahrens samt Musterschreiben bei der Schulaufsicht anfordern? Gebaut ist nach dem Muster von 2014; der Text ist an einer Stelle austauschbar.                              | Ja, anfordern — parallel bauen.                                                                                                           |
 | **E3** | Frist 28 Tage (Verfahren) oder 6 Wochen (Anforderungsliste)?                                                                                                                                   | 28 Tage, einstellbar.                                                                                                                     |
-| **E4** | Preisbasis ab dem 2. Verleihjahr: neues Feld „Listenpreis" am Titel (von Hand gepflegt) oder Einkaufspreis als Näherung?                                                                       | ✅ **entschieden und gebaut am 17.09.2026.** Feld `listenpreis` am Titel, optional — aber NICHT von Hand gepflegt: Die DNB liefert den Ladenpreis in jeder ISBN-Abfrage mit, er stand dort ungenutzt. Der Vorschlag nimmt den Listenpreis, sonst den Einkaufspreis, und sagt welchen; welcher gilt, ist zusätzlich einstellbar. |
+| **E4** | Preisbasis ab dem 2. Verleihjahr: neues Feld „Listenpreis" am Titel (von Hand gepflegt) oder Einkaufspreis als Näherung?                                                                       | ✅ **Entschieden am 17.09.2026, gebaut.** Feld `listenpreis` am Titel, optional — aber NICHT von Hand gepflegt: Die DNB liefert den Ladenpreis in jeder ISBN-Abfrage mit, er stand dort ungenutzt. Der Vorschlag nimmt den Listenpreis, sonst den Einkaufspreis, und sagt welchen; welcher gilt, ist zusätzlich einstellbar. |
 | **E5** | Zahlungsweg für die Schülerbücherei (Kasse des Trägers + Kassenzeichen? Budgetkonto? bar mit Quittung?) — mit dem Schulträger klären.                                                          | Bis zur Antwort: Schulträger-Rechnung druckt sichtbar „(Bankverbindung des Schulträgers nicht hinterlegt)" — nie ein erfundenes Konto.    |
-| **E6** | Nach Übergabe an die Schulaufsicht: bleibt der Schüler gesperrt und die Forderung offen, bis das Sekretariat „bezahlt laut Finanzbericht" bucht — oder gilt Übergabe schulseitig als erledigt? | Übergabe = für die Schule erledigt, auch für die Sperre: Arbeitshilfe Abschnitt 2 („Weitere Schritte sind durch die Schule nicht zu veranlassen") und Anforderungsliste Punkt 7 („Saldo … bereinigt"). Bis zum 24.09.2026 stand hier „Sperre bleibt, Löschblockade fällt". Die Frage stand in OFFEN.md 4.4 und ist dort entfallen (Kopf dieses Dokuments). |
+| **E6** | Nach Übergabe an die Schulaufsicht: bleibt der Schüler gesperrt und die Forderung offen, bis das Sekretariat „bezahlt laut Finanzbericht" bucht — oder gilt Übergabe schulseitig als erledigt? | Übergabe = für die Schule erledigt, auch für die Sperre: Arbeitshilfe Abschnitt 2 („Weitere Schritte sind durch die Schule nicht zu veranlassen") und Anforderungsliste Punkt 7 („Saldo … bereinigt"). |
 | **E7** | Kein E-Mail-/App-Versand der Bescheide — bestätigen?                                                                                                                                           | Ja.                                                                                                                                       |
 | **E8** | Keine Eltern-Namen / zweite Anschrift im Datenbestand — bestätigen?                                                                                                                            | Ja.                                                                                                                                       |
 
 ---
 
-## 7. Teil B — Beschaffung: getrennte Töpfe im Bestellwesen (09.09.2026)
+## 7. Teil B — Beschaffung: getrennte Töpfe im Bestellwesen
 
-**Anlass:** Nach einem Telefonat mit der Schule: Die Bestellungen und Rechnungen
-sollen getrennt ausweisen, was aus Landesmitteln (Lernmittelfreiheit) und was aus Mitteln
+**Ziel:** Bestellungen und Rechnungen weisen getrennt aus, was aus Landesmitteln (Lernmittelfreiheit) und was aus Mitteln
 des Schulträgers (Schülerbücherei) beschafft wird.
 
 ### 7.1 Was das Verfahren verlangt
@@ -344,38 +340,31 @@ des Schulträgers (Schülerbücherei) beschafft wird.
 - Der Topf ist eine **Entscheidung je Bestellung**, die der Titel nur vorschlägt — ein
   falsch gekennzeichneter Titel darf im Warenkorb umgehängt werden.
 
-### 7.2 Was die Anwendung vor Teil B tat (am Code nachgesehen, 09.09.2026)
+### 7.2 Warum die Schritte nötig sind
 
-- **Keine Bestellung kannte ihren Topf.** `bestellungen_verlauf` trug Lieferant,
-  Kundennummer, Betrag, Exemplare, Bestätigung — sonst nichts. Berichte, Historie,
-  Übersicht und Detail konnten deshalb nicht trennen.
-- **Das Anschreiben behauptete für JEDE Bestellung die Schülerbücherei:** Der Erzeuger
-  (heute `pdf/bestellanschreiben.go`)
-  schrieb „hiermit bestellen wir für unsere Schulbibliothek …" und im Betreff
-  „Buchbestellung für die Schulbibliothek" — auch wenn ein Lernmittel-Klassensatz bestellt
-  wurde. Das war genau der geforderte Vermerk, nur falsch herum: Ein Händler, der den
-  Brief ernst nimmt, gewährt auf Lernmittel den falschen Nachlass.
-- **Ein Lieferant hatte EINE Kundennummer.** Händler führen für Lernmittel und Bibliothek
-  oft getrennte Kundenkonten (anderer Nachlass, andere Rechnungsstelle).
+- **Ohne Topf an der Bestellung** können Berichte, Historie, Übersicht und Detail nicht
+  trennen.
+- **Ein Anschreiben ohne Topf nennt einen Zweck für alle Bestellungen.** Ein Händler, der den
+  Brief ernst nimmt, gewährt dann auf Lernmittel oder auf Bücherei-Bestand den falschen
+  Nachlass. Das Anschreiben erzeugt `pdf/bestellanschreiben.go`.
+- **Händler führen für Lernmittel und Bibliothek oft getrennte Kundenkonten** (anderer
+  Nachlass, andere Rechnungsstelle); deshalb kann ein Lieferant zwei Kundennummern tragen.
 - **Der Bestellbedarf ist Lernmittel** (`bestellbedarfFilter`: Vorgabe `lmf`), die Titelsuche
-  liefert alles. Ein über die DNB-Suche NEU angelegter Titel (`schreibeTitelAusMetadaten`)
-  bekam **kein** `ist_lernmittel` — ein neues Schulbuch entstand als Bücherei-Titel und
-  blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
-- Der Wareneingang hängt an `buecher_exemplare.bestellung_id` (Migration 063) — das
-  Zugangsbuch war damit aus den Daten ableitbar, nur nicht ausgedruckt. **Seit dem
-  17.09.2026 gibt es den Ausdruck** (Berichte → „Bestandsbücher", Reiter Zugangsbuch und
+  liefert alles. Ein über die DNB-Suche neu angelegter Titel (`schreibeTitelAusMetadaten`)
+  bekäme ohne Frage kein `ist_lernmittel` — ein neues Schulbuch entstünde als Bücherei-Titel
+  und bliebe es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
+- Der Wareneingang hängt an `buecher_exemplare.bestellung_id` (Migration 063); daraus
+  entsteht das Zugangsbuch (Berichte → „Bestandsbücher", Reiter Zugangsbuch und
   Abgangsbuch, je Halbjahr und Topf; FACHKONZEPT.md Abschnitt 13).
 
 ### 7.3 Bauplan (kleiner als Teil A)
 
-**Stand 12.09.2026 — Teil B gebaut:** Schritte 1, 2, 3 und 5 im ersten Schnitt
-(Migration 109, Warenkorb in zwei Gruppen mit Verschieben, je Gruppe eine Bestellung,
-Vermerk auf Anschreiben und Mail, Lernmittel-Frage im Staging-Fenster, Topf-Chip in
-Historie und Detail, Topf nachträglich mit Grund korrigierbar), **Schritt 4 am
-12.09.2026** (Bericht in Blöcken je Topf mit eigener Summe, Topf-Filter für alle drei
-Berichtsarten, Filter und Aufteilung der Kennzahlen in der Historie). Schritt 6 ist nach den Antworten unten auf
-die zweite Kundennummer geschrumpft — eine eigene Rechnungsanschrift je Topf gibt es
-nicht, beide Rechnungen gehen an die Schule. Der Vermerk nennt weder Träger noch
+**Gebaut** sind die Schritte 1 bis 7 im ersten Schnitt: Migration 109, Warenkorb in zwei
+Gruppen mit Verschieben, je Gruppe eine Bestellung, Vermerk auf Anschreiben und Mail,
+Lernmittel-Frage im Staging-Fenster, Topf-Chip in Historie und Detail, Topf nachträglich mit
+Grund korrigierbar, Bericht in Blöcken je Topf mit eigener Summe, Topf-Filter für alle drei
+Berichtsarten, Filter und Aufteilung der Kennzahlen in der Historie. Eine eigene
+Rechnungsanschrift je Topf gibt es nicht, beide Rechnungen gehen an die Schule (D3). Der Vermerk nennt weder Träger noch
 Behörde, nur den Topf (Vorgabe: kein Rechts- oder Regionalbezug außerhalb der
 Formulare an Schüler). Gates: `api/bestellung/bestellung_mittel_pg_test.go`,
 `db/bestellung_mittel_nachtrag_pg_test.go`, `api/bestellung/bestellanschreiben_test.go`,
@@ -402,7 +391,7 @@ Formulare an Schüler). Gates: `api/bestellung/bestellung_mittel_pg_test.go`,
    Topfs. EINE Textquelle `pkg/mitteltopf`; Platzhalter `{{.Mittel}}` für die
    Vorlage `BESTELLUNG_HAENDLER` (Platzhalter-Paritäts-Gate zieht mit; fehlt der
    Platzhalter, ergänzt der Versand den Vermerk).
-4. **Berichte getrennt — GEBAUT 12.09.2026** (`14e6a56d`, `9f0fca8f`): Die Detailliste
+4. **Berichte getrennt:** Die Detailliste
    steht in Blöcken (Lernmittelfreiheit, Schülerbücherei, zuletzt die Alt-Bestellungen
    ohne Zuordnung), je mit eigener Summe und der Gesamtsumme darunter; alle drei
    Berichtsarten nehmen den Topf-Filter (`?mittel=land|schultraeger|ohne`), der Titel
@@ -422,8 +411,8 @@ Formulare an Schüler). Gates: `api/bestellung/bestellung_mittel_pg_test.go`,
    von/nach/Grund). Das Anschreiben beim Händler ändert sich nicht; die Korrektur gilt der
    eigenen Zuordnung, aus der die Berichte rechnen — auch für Alt-Bestellungen „ohne
    Zuordnung".
-7. **Später, kein Teil dieses Pakets:** Zugangsbuch-Ausdruck je Schulhalbjahr und Topf
-   aus dem Wareneingang — die Daten liegen vollständig vor.
+7. **Zugangsbuch-Ausdruck** je Schulhalbjahr und Topf aus dem Wareneingang: der Bericht
+   „Bestandsbücher" (7.2).
 
 ### 7.4 Entscheidungen (Teil B)
 
